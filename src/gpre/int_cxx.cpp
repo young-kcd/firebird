@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: int_cxx.cpp,v 1.29 2004-03-20 14:31:57 alexpeshkoff Exp $
+//	$Id: int_cxx.cpp,v 1.30 2004-03-30 04:10:43 robocop Exp $
 //
 
 #include "firebird.h"
@@ -589,7 +589,7 @@ static void gen_send( const gpre_req* request, const gpre_port* port,
 		align(column);
 		ib_fprintf(out_file, "if (ignore_perm)");
 		align(column);
-		ib_fprintf(out_file, "\t((jrd_req*)request)->req_flags |= req_ignore_perm;");
+		ib_fprintf(out_file, "\trequest->req_flags |= req_ignore_perm;");
 	}
 	align(column);
 

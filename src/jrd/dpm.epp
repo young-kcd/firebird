@@ -2030,7 +2030,7 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 		ib_printf
 			("    old flags %d, old transaction %"SLONGFORMAT
 			 ", old format %d, old back record %"SLONGFORMAT":%d\n",
-			 header->rhd_flags, header->rhd_transaction, header->rhd_format,
+			 header->rhd_flags, header->rhd_transaction, (int) header->rhd_format,
 			 header->rhd_b_page, header->rhd_b_line);
 		ib_printf
 			("    new flags %d, new transaction %"SLONGFORMAT

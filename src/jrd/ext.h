@@ -31,7 +31,7 @@ namespace Jrd {
 class ExternalFile : public pool_alloc_rpt<SCHAR, type_ext>
 {
     public:
-	Jrd::fmt*	ext_format;			/* External format */
+	Format*	ext_format;			/* External format */
 	UCHAR*	ext_stuff;			/* Random stuff */
 	USHORT	ext_flags;			/* Misc and cruddy flags */
 #ifdef VMS

@@ -903,7 +903,7 @@ USHORT BTR_key_length(jrd_rel* relation, index_desc* idx)
  **************************************/
 	thread_db* tdbb = GET_THREAD_DATA;
 
-	const fmt* format = MET_current(tdbb, relation);
+	const Format* format = MET_current(tdbb, relation);
 	index_desc::idx_repeat* tail = idx->idx_rpt;
 
 	// If there is only a single key, the computation is straightforward.

@@ -934,7 +934,7 @@ int INF_request_info(const jrd_req* request,
 					INF_convert((IPTR) node->nod_arg[e_msg_number],
 								buffer_ptr);
 			else {
-				const fmt* format = (fmt*) node->nod_arg[e_msg_format];
+				const Format* format = (Format*) node->nod_arg[e_msg_format];
 				length = INF_convert(format->fmt_length, buffer_ptr);
 			}
 			break;

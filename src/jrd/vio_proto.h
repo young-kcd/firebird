@@ -33,7 +33,7 @@ namespace Jrd {
 	class RecordSource;
 	struct record_param;
 	class Savepoint;
-	class fmt;
+	class Format;
 }
 struct blk;
 
@@ -61,7 +61,7 @@ bool	VIO_writelock(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*, Jrd:
 void	VIO_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
 bool	VIO_next_record(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*, Jrd::jrd_tra*,
 							   blk*, bool, bool);
-Jrd::Record*	VIO_record(Jrd::thread_db*, Jrd::record_param*, const Jrd::fmt*, JrdMemoryPool*);
+Jrd::Record*	VIO_record(Jrd::thread_db*, Jrd::record_param*, const Jrd::Format*, JrdMemoryPool*);
 void	VIO_start_save_point(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*);

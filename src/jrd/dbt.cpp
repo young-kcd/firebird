@@ -199,11 +199,11 @@ jrd_rel[] = {
 		FLD(jrd_rel*, "Root: %ld", rel_index_root),
 		0
 },
-fmt[] = {
+Format[] = {
 	"FORMAT",
-		FLD(fmt*, "Count: %d", fmt_count),
-		FLD(fmt*, "Length: %d", fmt_length),
-		FLD(fmt*, "Version: %d", fmt_version),
+		FLD(Format*, "Count: %d", fmt_count),
+		FLD(Format*, "Length: %d", fmt_length),
+		FLD(Format*, "Version: %d", fmt_version),
 		0
 },
 jrd_req[] = {
@@ -351,7 +351,7 @@ static TEXT_PTR River[] = {	"SORT MERGE RIVER", 0};
 static TEXT_PTR UserId[] = {	"USER IDENTIFICATION BLOCK ", 0};
 static TEXT_PTR Attachment[] = {	"ATTACHMENT BLOCK", 0};
 static TEXT_PTR Symbol[] = {	"SYMBOL", 0};
-static TEXT_PTR fun[] = {	"FUNCTION", 0};
+static TEXT_PTR UserFunction[] = {	"FUNCTION", 0};
 static TEXT_PTR IndexedRelationship[] = {	"INDEXED RELATIONSHIP", 0};
 static TEXT_PTR AccessItem[] = {	"ACCESS", 0};
 static TEXT_PTR Resource[] = {	"RESOURCE", 0};

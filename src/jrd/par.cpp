@@ -734,7 +734,7 @@ static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
 	jrd_nod* node = PAR_make_node(tdbb, e_cast_length);
 	node->nod_count = count_table[blr_cast];
 
-	fmt* format = fmt::newFmt(*tdbb->tdbb_default, 1);
+	Format* format = Format::newFormat(*tdbb->tdbb_default, 1);
 	format->fmt_count = 1;
 	node->nod_arg[e_cast_fmt] = (jrd_nod*) format;
 
@@ -1226,7 +1226,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 	SqlIdentifier name;
 	const USHORT count = par_name(csb, name);
 
-	fun* function = FUN_lookup_function(name,
+	UserFunction* function = FUN_lookup_function(name,
 					!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment));
 	if (!function) {
 		if (tdbb->tdbb_flags & TDBB_prc_being_dropped) {
@@ -1242,7 +1242,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 		}
 	}
 
-	fun* homonyms;
+	UserFunction* homonyms;
 	for (homonyms = function; homonyms; homonyms = homonyms->fun_homonym) {
 		if (homonyms->fun_entrypoint)
 			break;
@@ -1447,12 +1447,12 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
    out the format block */
 
 	n = BLR_WORD;
-	fmt* format = fmt::newFmt(*tdbb->tdbb_default, n);
+	Format* format = Format::newFormat(*tdbb->tdbb_default, n);
 	node->nod_arg[e_msg_format] = (jrd_nod*) format;
 	format->fmt_count = n;
 	ULONG offset = 0;
 
-	fmt::fmt_desc_iterator desc, end;
+	Format::fmt_desc_iterator desc, end;
 	for (desc = format->fmt_desc.begin(), end = desc + n; desc < end; desc++) {
 		const USHORT alignment = PAR_desc(csb, &*desc);
 		if (alignment)
@@ -1835,7 +1835,7 @@ static void par_procedure_parms(
 		*message_ptr = message;
 		message->nod_count = 0;
 		message->nod_arg[e_msg_number] = (jrd_nod*)(IPTR) n;
-		const fmt* format =
+		const Format* format =
 			input_flag ? procedure->prc_input_fmt : procedure->prc_output_fmt;
 		/* dimitr: procedure (with its parameter formats) is allocated out of
 				   its own pool (prc_request->req_pool) and can be freed during
@@ -1843,7 +1843,7 @@ static void par_procedure_parms(
 				   tdbb_default pool is different from the procedure's one,
 				   it's dangerous to copy a pointer from one request to another.
 				   As an experiment, I've decided to copy format by value
-				   instead of copying the reference. Since fmt structure
+				   instead of copying the reference. Since Format structure
 				   doesn't contain any pointers, it should be safe to use a
 				   default assignment operator which does a simple byte copy.
 				   This change fixes one serious bug in the current codebase.
@@ -1854,7 +1854,7 @@ static void par_procedure_parms(
 
 		message->nod_arg[e_msg_format] = (jrd_nod*) format;
 		*/
-		fmt* fmt_copy = fmt::newFmt(*tdbb->tdbb_default, format->fmt_count);
+		Format* fmt_copy = Format::newFormat(*tdbb->tdbb_default, format->fmt_count);
 		*fmt_copy = *format;
 		message->nod_arg[e_msg_format] = (jrd_nod*) fmt_copy;
 		/* --- end of fix --- */
@@ -2668,7 +2668,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			node->nod_arg[e_arg_message] = message;
 			n = BLR_WORD;
 			node->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
-			const fmt* format = (fmt*) message->nod_arg[e_msg_format];
+			const Format* format = (Format*) message->nod_arg[e_msg_format];
 			if (n >= format->fmt_count)
 				error(csb, isc_badparnum, 0);
 			if (blr_operator != blr_parameter) {

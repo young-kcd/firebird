@@ -508,8 +508,8 @@ int DBG_block(BLK block)
 
 	case type_fmt:
 		ib_fprintf(dbg_file, "\t");
-		for (i = 0, desc = BLOCK(fmt*)->fmt_desc;
-			 i < BLOCK(fmt*)->fmt_count; desc++, i++)
+		for (i = 0, desc = BLOCK(Format*)->fmt_desc;
+			 i < BLOCK(Format*)->fmt_count; desc++, i++)
 		{
 			prt_dsc(desc, (i % 4) * 20);
 			if (i % 4 == 3)

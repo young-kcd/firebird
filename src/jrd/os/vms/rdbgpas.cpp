@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	rdbvmsinit
- *	MODULE:		rdbvmsinit.c
+ *	MODULE:		rdbgpas.cpp
  *	DESCRIPTION:	imitate rdb$vmsinitpas
  *
  * The contents of this file are subject to the Interbase Public
@@ -59,15 +59,15 @@ int rdb$vmspas_init(int dbcount, int *d)
  *	Mimic RdB's rdb$vmspas_init
  *
  **************************************/
-	TEB tebs[16], *teb, *end;
+	TEB tebs[16];
 	struct dsc$descriptor_s *dbname;
-	int *dbhandle, *trhandle, stat, **v, i;
 
-	stat = 1;
-	v = &d;
-	for (i = 0; i < dbcount; i++) {
+	int stat = 1;
+	int** v = &d;
+	for (int i = 0; i < dbcount; i++) {
 		dbname = *v++;
-		tebs[i].teb_database = dbhandle = *v++;
+		int* dbhandle = *v++
+		tebs[i].teb_database = dbhandle;
 		tebs[i].teb_tpb_length = 0;
 		tebs[i].teb_tpb = 0;
 		if (!(*dbhandle)) {
@@ -76,7 +76,7 @@ int rdb$vmspas_init(int dbcount, int *d)
 				return stat;
 		}
 	}
-	trhandle = *v++;
+	int* trhandle = *v++;
 	if (trhandle && (!(*trhandle))) {
 		gds__start_multiple(status_vector, trhandle, dbcount, tebs);
 		stat = gds_to_rdb(status_vector, RDB$MSG_VECTOR);
@@ -98,11 +98,10 @@ static int gds_to_rdb(int *status_vector, int *user_status)
  *	Translate a status vector from the Groton world to the RDB world.
  *
  **************************************/
-	int code, trans;
 	USHORT fac = 0, dummy_class = 0;
 
-	code = gds__decode(status_vector[1], &fac, &dummy_class);
-	trans = codes[code];
+	const int code = gds__decode(status_vector[1], &fac, &dummy_class);
+	const int trans = codes[code];
 
 	return set_status(user_status, trans);
 }

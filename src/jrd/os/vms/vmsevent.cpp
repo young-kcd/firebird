@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		vmsevent.c
+ *	MODULE:		vmsevent.cpp
  *	DESCRIPTION:	Event Manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -72,7 +72,7 @@ typedef struct vms_req {
 	struct ses *req_session;	/* Parent session */
 	struct rint *req_interests;	/* Request interests */
 	FPTR_EVENT_CALLBACK req_ast;	/* Associated AST (zero is fired) */
-	void *req_ast_arg;			/* Argument for ast */
+	void* req_ast_arg;			/* Argument for ast */
 	SLONG req_request_id;		/* Request id */
 } *VMS_REQ;
 
@@ -87,12 +87,12 @@ typedef struct rint {
 } *RINT;
 
 
-static SES sessions;
-static EVNT parent_events;
-static SLONG request_id;
-static POKE pokes;
-static bool thread_started;
-static bool delivery_flag;
+static SES global_sessions;
+static EVNT global_parent_events;
+static SLONG global_request_id;
+static POKE global_pokes;
+static bool global_thread_started;
+static bool global_delivery_flag;
 
 static UCHAR *alloc(USHORT);
 static void blocking_ast(EVNT);
@@ -123,11 +123,8 @@ int EVENT_cancel(SLONG request_id)
  *	Cancel an outstanding event.
  *
  **************************************/
-	VMS_REQ request;
-	SES session;
-
-	for (session = sessions; session; session = session->ses_next)
-		for (request = session->ses_requests; request;
+	for (SES session = global_sessions; session; session = session->ses_next)
+		for (VMS_REQ request = session->ses_requests; request;
 			 request = request->req_next)
 		{
 			if (request->req_request_id == request_id) {
@@ -150,18 +147,15 @@ SLONG EVENT_create_session(ISC_STATUS status_vector)
  *	Create session.
  *
  **************************************/
-	SES session;
-	SLONG id;
-
-	session = (SES) alloc(sizeof(struct ses));
+	SES session = (SES) alloc(sizeof(struct ses));
 	if (!session) {
 		fb_assert(false);			/* No error handling */
 		return 0L;
 	}
-	session->ses_next = sessions;
-	sessions = session;
+	session->ses_next = global_sessions;
+	global_sessions = session;
 
-	id = (SLONG) session;
+	const SLONG id = (SLONG) session;
 
 	return id;
 }
@@ -179,13 +173,7 @@ void EVENT_delete_session(SLONG session_id)
  *	Delete a session.
  *
  **************************************/
-	SES session;
-	SES *ptr;
-	VMS_REQ request;
-	EVNT event;
-	RINT interest, *int_ptr;
-
-	session = (SES) session_id;
+	SES session = (SES) session_id;
 
 /* Delete all requests */
 
@@ -194,10 +182,11 @@ void EVENT_delete_session(SLONG session_id)
 
 /* Delete any historical interests */
 
+	RINT interest;
 	while (interest = session->ses_interests) {
 		session->ses_interests = interest->rint_req_interests;
-		event = interest->rint_event;
-		for (int_ptr = &event->evnt_interests; *int_ptr;
+		EVNT event = interest->rint_event;
+		for (RINT* int_ptr = &event->evnt_interests; *int_ptr;
 			 int_ptr = &(*int_ptr)->rint_req_interests)
 		{
 			if (*int_ptr == interest) {
@@ -212,7 +201,7 @@ void EVENT_delete_session(SLONG session_id)
 
 /* Delete from global list of sessions */
 
-	for (ptr = &sessions; *ptr; ptr = &(*ptr)->ses_next)
+	for (SES* ptr = &global_sessions; *ptr; ptr = &(*ptr)->ses_next)
 		if (*ptr == session) {
 			*ptr = session->ses_next;
 			break;
@@ -258,16 +247,14 @@ int EVENT_post(
  *	Post an event.
  *
  **************************************/
-	lock_status lksb;
-	POKE poke;
-	int status;
-	struct dsc$descriptor desc;
 
 /* Get parent lock.  If it isn't held, we will get an invalid lock block */
 
+	struct dsc$descriptor desc;
 	ISC_make_desc(major, &desc, major_length);
 
-	status = sys$enq(0,			/* event flag */
+	lock_status lksb;
+	int status = sys$enq(0,			/* event flag */
 					 LCK$K_CRMODE,	/* lock mode */
 					 &lksb,		/* Lock status block */
 					 LCK$M_SYSTEM,	/* flags */
@@ -284,7 +271,8 @@ int EVENT_post(
 
 /* Find a free poke block to use */
 
-	for (poke = pokes; poke; poke = poke->poke_next)
+	POKE poke;
+	for (poke = global_pokes; poke; poke = poke->poke_next)
 		if (!poke->poke_use_count)
 			break;
 
@@ -293,8 +281,8 @@ int EVENT_post(
 		/* FREE: unknown */
 		if (!poke)				/* NOMEM: */
 			return error(status_vector, "gds__alloc", 0);
-		poke->poke_next = pokes;
-		pokes = poke;
+		poke->poke_next = global_pokes;
+		global_pokes = poke;
 	}
 
 	++poke->poke_use_count;
@@ -343,37 +331,27 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
  *	Que an event.
  *
  **************************************/
-	SES session;
-	UCHAR *p, *end, *find_end;
-	USHORT count;
-	bool flag;
-	USHORT len;
-	VMS_REQ request, next;
-	EVNT event, parent;
-	RINT interest, *ptr, *ptr2;
-	SLONG id;
+	SES session = (SES) session_id;
 
-	session = (SES) session_id;
-
-	if (!thread_started) {
-		thread_started = true;
+	if (!global_thread_started) {
+		global_thread_started = true;
 		gds__thread_start(delivery_thread, 0, THREAD_high, THREAD_ast);
 	}
 
 /* Cleanup any residual stuff */
 
-	for (next = session->ses_requests; next;)
+	for (VMS_REQ next = session->ses_requests; next;)
 		if (next->req_ast)
 			next = next->req_next;
 		else {
-			request = next;
+			VMS_REQ request = next;
 			next = next->req_next;
 			delete_request(request);
 		}
 
 /* Allocate request block */
 
-	request = (VMS_REQ) alloc(sizeof(struct vms_req));
+	VMS_REQ request = (VMS_REQ) alloc(sizeof(struct vms_req));
 /* FREE: unknown */
 	if (!request)				/* NOMEM: */
 		return error(status_vector, "gds__alloc", 0);
@@ -384,32 +362,37 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 
 	request->req_ast = ast_routine;
 	request->req_ast_arg = ast_arg;
-	request->req_request_id = id = ++request_id;
+	const SLONG id = ++global_request_id;
+	request->req_request_id = id;
 
 /* Find parent block */
 
-	if (!(parent = find_event(string_length, string, 0)))
+	EVNT parent = find_event(string_length, string, 0);
+	if (!parent)
 		parent = make_event(string_length, string, 0);
 
 /* Process event block */
 
-	ptr = &request->req_interests;
-	p = events + 1;
-	end = events + events_length;
-	flag = false;
+	RINT* ptr = &request->req_interests;
+	UCHAR* p = events + 1;
+	const UCHAR* const end = events + events_length;
+	bool flag = false;
 
 	while (p < end) {
-		count = *p++;
+		const USHORT count = *p++;
 
 		/* The data in the event block may have trailing blanks.  Strip them off. */
 
+		const UCHAR* find_end;
 		for (find_end = p + count; --find_end >= p && *find_end == ' ';);
-		len = find_end - p + 1;
-		if (!(event = find_event(len, p, parent)))
+		const USHORT len = find_end - p + 1;
+		EVNT event = find_event(len, p, parent);
+		if (!event)
 			event = make_event(len, p, parent);
 		p += count;
-		if (interest = historical_interest(session, event)) {
-			for (ptr2 = &session->ses_interests; *ptr2;
+		RINT interest = historical_interest(session, event);
+		if (interest) {
+			for (RINT* ptr2 = &session->ses_interests; *ptr2;
 				 ptr2 = &(*ptr2)->rint_req_interests)
 			{
 				if (*ptr2 == interest) {
@@ -457,17 +440,16 @@ static UCHAR *alloc(USHORT size)
  *	Allocate and zero some memory.
  *
  **************************************/
-	UCHAR *p, *block;
-
-	p = block = gds__alloc((SLONG) size);
+	UCHAR* const block = gds__alloc((SLONG) size);
+	UCHAR* p = block;
 /* FREE: handled by caller */
 /* NOMEM: handled by caller */
 	if (!block)
 		return block;
 
-	do
+	do {
 		*p++ = 0;
-	while (--size);
+	} while (--size);
 
 	return block;
 }
@@ -485,14 +467,11 @@ static void blocking_ast(EVNT event)
  *	Somebody else is trying to post a lock.
  *
  **************************************/
-	lock_status* lksb;
-	int status;
-
-	lksb = &event->evnt_lksb;
+	lock_status* lksb = &event->evnt_lksb;
 
 /* Initially down grade the lock to let the other guy complete */
 
-	status = sys$enqw(0,		/* event flag */
+	int status = sys$enqw(0,		/* event flag */
 					  LCK$K_NLMODE,	/* lock mode */
 					  lksb,		/* Lock status block */
 					  LCK$M_CONVERT,	/* flags */
@@ -532,17 +511,17 @@ static void delete_event(EVNT event)
  *	Delete an unused and unloved event.
  *
  **************************************/
-	EVNT *ptr, parent;
-	int status;
 
 /* Delete associated lock */
 
-	status = sys$deq(event->evnt_lksb.lksb_lock_id, 0, 0, 0);
+	int status = sys$deq(event->evnt_lksb.lksb_lock_id, 0, 0, 0);
 
-	if (parent = event->evnt_parent)
+	EVNT* ptr;
+	EVNT parent = event->evnt_parent;
+	if (parent)
 		ptr = &parent->evnt_offspring;
 	else
-		ptr = &parent_events;
+		ptr = &global_parent_events;
 
 	for (; *ptr; ptr = &(*ptr)->evnt_next)
 		if (*ptr == event) {
@@ -569,18 +548,14 @@ static void delete_request(VMS_REQ request)
  *	Release an unwanted and unloved request.
  *
  **************************************/
-	SES session;
-	RINT *ptr, interest;
-	EVNT event;
-	VMS_REQ *req_ptr;
+	SES session = request->req_session;
 
-	session = request->req_session;
-
+	RINT interest;
 	while (interest = request->req_interests) {
 		request->req_interests = interest->rint_req_interests;
 		if (historical_interest(session, interest->rint_event)) {
-			event = interest->rint_event;
-			for (ptr = &event->evnt_interests; *ptr;
+			EVNT event = interest->rint_event;
+			for (RINT* ptr = &event->evnt_interests; *ptr;
 				 ptr = &(*ptr)->rint_evnt_interests)
 			{
 				if (*ptr == interest) {
@@ -597,7 +572,7 @@ static void delete_request(VMS_REQ request)
 		}
 	}
 
-	for (req_ptr = &session->ses_requests; *req_ptr;
+	for (VMS_REQ* req_ptr = &session->ses_requests; *req_ptr;
 		 req_ptr = &(*req_ptr)->req_next)
 	{
 		if (*req_ptr == request) {
@@ -622,19 +597,14 @@ static void deliver(EVNT event)
  *	We've been poked -- deliver any satisfying requests.
  *
  **************************************/
-	RINT interest;
-	VMS_REQ request;
-	SES session;
-	USHORT flag;
-
 	event->evnt_count = event->evnt_lksb.lksb_value[0];
 
-	for (interest = event->evnt_interests; interest;
+	for (RINT interest = event->evnt_interests; interest;
 		 interest = interest->rint_evnt_interests) 
 	{
-		if (request = interest->rint_request)
+		if (VMS_REQ request = interest->rint_request)
 			if (request->req_ast && request_completed(request))
-				delivery_flag = true;
+				global_delivery_flag = true;
 	}
 
 	gds__completion_ast();
@@ -654,25 +624,22 @@ static void deliver_request(VMS_REQ request)
  *	Clean up request.
  *
  **************************************/
-	int (*ast) ();
-	void *arg;
-	SLONG count;
-	RINT interest;
-	EVNT event;
-	UCHAR buffer[512], *p, *event_buffer, *end;
+	FPTR_EVENT_CALLBACK ast = request->req_ast;
+	void* arg = request->req_ast_arg;
 
-	ast = request->req_ast;
-	arg = request->req_ast_arg;
-	p = event_buffer = buffer;
-	end = buffer + sizeof(buffer);
+	UCHAR buffer[512]
+	UCHAR* event_buffer = buffer;
+	UCHAR* p = event_buffer;
+	const UCHAR* const end = buffer + sizeof(buffer);
 	*p++ = 1;
 
 /* Loop thru interest block picking up event name, counts, and unlinking
    stuff */
 
-	for (interest = request->req_interests; interest;
-		 interest = interest->rint_req_interests) {
-		event = interest->rint_event;
+	for (RINT interest = request->req_interests; interest;
+		 interest = interest->rint_req_interests) 
+	{
+		EVNT event = interest->rint_event;
 		if (end < p + event->evnt_length + 5) {
 			UCHAR *new_buffer;
 			/* Running out of space - allocate some more and copy it over */
@@ -691,7 +658,7 @@ static void deliver_request(VMS_REQ request)
 		*p++ = event->evnt_length;
 		memcpy(p, event->evnt_name, event->evnt_length);
 		p += event->evnt_length;
-		count = event->evnt_count + 1;
+		const SLONG count = event->evnt_count + 1;
 		*p++ = count;
 		*p++ = count >> 8;
 		*p++ = count >> 16;
@@ -716,13 +683,10 @@ static void delivery_thread(void)
  *	Look for events to deliver.
  *
  **************************************/
-	VMS_REQ request;
-	SES session;
-
 	for (;;) {
-		delivery_flag = false;
-		for (session = sessions; session; session = session->ses_next)
-			for (request = session->ses_requests; request;
+		global_delivery_flag = false;
+		for (SES session = global_sessions; session; session = session->ses_next)
+			for (VMS_REQ request = session->ses_requests; request;
 				 request = request->req_next)
 			{
 				if (request->req_ast && request_completed(request)) 
@@ -734,6 +698,7 @@ static void delivery_thread(void)
 		gds__thread_wait(delivery_wait, 0);
 	}
 }
+
 
 static int delivery_wait(void)
 {
@@ -747,10 +712,9 @@ static int delivery_wait(void)
  *	See if the deliver thread should wake up.
  *
  **************************************/
-
-
-	return delivery_flag;
+	return global_delivery_flag;
 }
+
 
 static ISC_STATUS error(ISC_STATUS * status_vector,
 						TEXT * string,
@@ -792,8 +756,7 @@ static EVNT find_event(USHORT length,
  *	Lookup an event.
  *
  **************************************/
-	EVNT event;
-	event = (parent) ? parent->evnt_offspring : parent_events;
+	EVNT event = (parent) ? parent->evnt_offspring : global_parent_events;
 	for (; event; event = event->evnt_next)
 		if (event->evnt_length == length &&
 			!strncmp(string, event->evnt_name, length))
@@ -833,8 +796,8 @@ static RINT historical_interest(SES session,
  *	Find a historical interest, if any, of an event with a session.
  *
  **************************************/
-	RINT interest, *ptr;
-	for (ptr = &session->ses_interests; interest = *ptr;
+	RINT interest;
+	for (RINT* ptr = &session->ses_interests; interest = *ptr;
 		 ptr = &(*ptr)->rint_req_interests)
 	{
 		if (interest->rint_event == event)
@@ -858,18 +821,20 @@ static EVNT make_event(USHORT length,
  *	Allocate an link in an event.
  *
  **************************************/
-	EVNT event, *ptr;
-	lock_status* lksb;
+	EVNT event = (EVNT) alloc(sizeof(struct evnt) + length);
+	if (!event) 
+		return NULL; 
+
+	EVNT* ptr;
 	SLONG parent_id;
-	int status;
-	struct dsc$descriptor desc;
-	event = (EVNT) alloc(sizeof(struct evnt) + length);
-	if (!event) return NULL; if (parent) {
-	ptr = &parent->evnt_offspring;
-	parent_id = parent->evnt_lksb.lksb_lock_id;}
+	if (parent) {
+		ptr = &parent->evnt_offspring;
+		parent_id = parent->evnt_lksb.lksb_lock_id;}
 	else
 	{
-	ptr = &parent_events; parent_id = 0;}
+		ptr = &global_parent_events; 
+		parent_id = 0;
+	}
 
 	event->evnt_next = *ptr;
 	*ptr = event;
@@ -877,18 +842,20 @@ static EVNT make_event(USHORT length,
 	event->evnt_length = length;
 	strncpy(event->evnt_name, string, length);
 /* Request VMS lock on event */
+	struct dsc$descriptor desc;
 	ISC_make_desc(string, &desc, length);
-	lksb = &event->evnt_lksb; status = sys$enqw(0,	/* event flag */
-												LCK$K_PRMODE,	/* lock mode */
-												lksb,	/* Lock status block */
-												LCK$M_SYSTEM | LCK$M_VALBLK,	/* flags */
-												&desc,	/* resource name */
-												parent_id,	/* parent id */
-												0,	/* ast address */
-												event,	/* ast argument */
-												blocking_ast,	/* blocking ast */
-												0,	/* access mode */
-												0);
+	lock_status* lksb = &event->evnt_lksb; 
+	int status = sys$enqw(0,	/* event flag */
+							LCK$K_PRMODE,	/* lock mode */
+							lksb,	/* Lock status block */
+							LCK$M_SYSTEM | LCK$M_VALBLK,	/* flags */
+							&desc,	/* resource name */
+							parent_id,	/* parent id */
+							0,	/* ast address */
+							event,	/* ast argument */
+							blocking_ast,	/* blocking ast */
+							0,	/* access mode */
+							0);
 	event->evnt_count = lksb->lksb_value[0];
 /* If the lock block is invalid, clean it up immediately */
 	if ((status & 1) &&
@@ -934,12 +901,10 @@ static void poke_ast(POKE poke)
  *	and deque the lock.
  *
  **************************************/
-	int status;
-	lock_status* lksb;
-	lksb = &poke->poke_lksb;
+	lock_status* lksb = &poke->poke_lksb;
 	lksb->lksb_value[0] += poke->poke_value;
-	status = sys$deq(lksb->lksb_lock_id, lksb->lksb_value, 0, 0);
-	status = sys$deq(poke->poke_parent_id, 0, 0, 0);
+	sys$deq(lksb->lksb_lock_id, lksb->lksb_value, 0, 0);
+	sys$deq(poke->poke_parent_id, 0, 0, 0);
 	--poke->poke_use_count;
 }
 
@@ -956,12 +921,10 @@ static bool request_completed(VMS_REQ request)
  *	See if request is completed.
  *
  **************************************/
-	RINT interest;
-	EVNT event;
-	for (interest = request->req_interests; interest;
+	for (RINT interest = request->req_interests; interest;
 		 interest = interest->rint_req_interests) 
 	{
-		event = interest->rint_event;
+		EVNT event = interest->rint_event;
 		if (interest->rint_count <= event->evnt_count) 
 			return true;
 	}

@@ -50,7 +50,7 @@ struct sort_work_file;
 struct sort_context;
 class CompilerScratch;
 class jrd_prc;
-class fmt;
+class Format;
 
 // Record source block (RSB) types
 
@@ -92,7 +92,7 @@ public:
 	jrd_rel*	rsb_relation;			// relation, if appropriate
 	str*		rsb_alias;				// SQL alias for relation
 	jrd_prc*	rsb_procedure;			// procedure, if appropriate
-	fmt*		rsb_format;				// format, if appropriate
+	Format*		rsb_format;				// format, if appropriate
 	jrd_nod*	rsb_any_boolean;		// any/all boolean
 	RecordSource* rsb_arg[1];
 };

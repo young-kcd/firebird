@@ -26,11 +26,11 @@
 
 class Jrd::CompilerScratch;
 
-void		FUN_evaluate(Jrd::fun*, Jrd::jrd_nod*, Jrd::impure_value*);
+void		FUN_evaluate(Jrd::UserFunction*, Jrd::jrd_nod*, Jrd::impure_value*);
 void		FUN_fini(Jrd::thread_db*);
 void		FUN_init(void);
-Jrd::fun*	FUN_lookup_function(const TEXT*, bool ShowAccessError);
-Jrd::fun*	FUN_resolve(Jrd::CompilerScratch*, Jrd::fun*, Jrd::jrd_nod*);
+Jrd::UserFunction*	FUN_lookup_function(const TEXT*, bool ShowAccessError);
+Jrd::UserFunction*	FUN_resolve(Jrd::CompilerScratch*, Jrd::UserFunction*, Jrd::jrd_nod*);
 
 #endif // JRD_FUN_PROTO_H
 

@@ -109,7 +109,7 @@ class jrd_tra;
 class jrd_req;
 class Lock;
 class jrd_file;
-class fmt;
+class Format;
 class jrd_nod;
 class BufferControl;
 class SparseBitmap;
@@ -522,9 +522,9 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	USHORT prc_outputs;
 	jrd_nod*	prc_input_msg;
 	jrd_nod*	prc_output_msg;
-	fmt*		prc_input_fmt;
-	fmt*		prc_output_fmt;
-	fmt*		prc_format;
+	Format*		prc_input_fmt;
+	Format*		prc_output_fmt;
+	Format*		prc_format;
 	vec*		prc_input_fields;	/* vector of field blocks */
 	vec*		prc_output_fields;	/* vector of field blocks */
 	jrd_req*	prc_request;	/* compiled procedure request */
@@ -615,7 +615,7 @@ public:
 	USHORT	rel_flags;
 	USHORT	rel_current_fmt;	/* Current format number */
 	UCHAR	rel_length;			/* length of ascii relation name */
-	fmt*	rel_current_format;	/* Current record format */
+	Format*	rel_current_format;	/* Current record format */
 	TEXT*	rel_name;			/* pointer to ascii relation name */
 	vec*	rel_formats;		/* Known record formats */
 	TEXT*	rel_owner_name;		/* pointer to ascii owner */

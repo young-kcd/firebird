@@ -74,7 +74,7 @@ class Resource;
 class jrd_prc;
 class AccessItem;
 struct index_desc;
-class fmt;
+class Format;
 
 // NOTE: The definition of structures RecordSelExpr and lit must be defined in
 //       exactly the same way as structure jrd_nod through item nod_count.
@@ -629,7 +629,7 @@ public:
 		index_desc* csb_idx;		/* Packed description of indices */
 		str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */
 		jrd_nod* csb_message;			/* Msg for send/receive */
-		fmt* csb_format;		/* Default fmt for stream */
+		Format* csb_format;		/* Default Format for stream */
 		SparseBitmap* csb_fields;		/* Fields referenced */
 		float csb_cardinality;		/* Cardinality of relation */
 		jrd_nod* csb_plan;				/* user-specified plan for this relation */

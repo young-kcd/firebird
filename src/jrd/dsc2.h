@@ -116,7 +116,7 @@ typedef struct dsc
 	bool		canDivide() const;
 	bool		canMultiply() const;
 
-	bool		mayExactMulDivFit(const dsc& d2) const;
+	//bool		mayExactMulDivFit(const dsc& d2) const;
 
 	// Some conversion routines that assume NULL is tested separately.
 	address_t	asUText();
@@ -501,6 +501,7 @@ const int ISC_TIME_SECONDS_PRECISION_SCALE	= -4;
 // It's not a guarantee that it fits.
 // It's only an exercise, not to be taken as useful or accurate.
 // Notice the decimal places are considered only rounding.
+/* Should be moved to dsc.cpp since it's not inline.
 bool dsc::mayExactMulDivFit(const dsc& d2) const
 {
 	if (isVarNull() || d2.isVarNull() || !isExact() || !d2.isExact())
@@ -530,6 +531,7 @@ bool dsc::mayExactMulDivFit(const dsc& d2) const
 	}
 	return c + sc < 19; // approx
 }
+*/
 
 // Conversion routines.
 

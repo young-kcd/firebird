@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		vmsthread.c
+ *	MODULE:		vmsthread.cpp
  *	DESCRIPTION:	VMS Thread Manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -85,7 +85,6 @@ THREAD_wakeup()
  *	system service.
  *
  **************************************/
-	TCB tcb;
 	int (*callback) ();
 
 	if (pthread_once(&init_block, thread_init))
@@ -94,13 +93,15 @@ THREAD_wakeup()
 	if (pthread_mutex_lock(&threads_mutex))
 		gds__put_error("THREAD_completion: pthread_mutex_lock error!\n");
 
-	for (tcb = threads; tcb; tcb = tcb->tcb_next) {
+	for (TCB tcb = threads; tcb; tcb = tcb->tcb_next) {
 		if (tcb->tcb_flags & TCB_active &&
 			(callback = tcb->tcb_callback) &&
 			(*callback) (tcb->tcb_callback_arg))
+		{
 				if (pthread_cond_signal(&tcb->tcb_cond_wait))
 					gds__put_error
 					("THREAD_completion: pthread_cond_signal error!\n");
+		}
 	}
 
 	if (pthread_mutex_unlock(&threads_mutex))
@@ -121,25 +122,22 @@ THREAD_completion_ast()
  *	system service.
  *
  **************************************/
-	TCB tcb;
 	int (*callback) ();
 
-	for (tcb = threads; tcb; tcb = tcb->tcb_next) {
+	for (TCB tcb = threads; tcb; tcb = tcb->tcb_next) {
 		if (tcb->tcb_flags & TCB_active &&
 			(callback = tcb->tcb_callback) &&
 			(*callback) (tcb->tcb_callback_arg))
+		{
 				if (pthread_cond_signal_int_np(&tcb->tcb_cond_wait))
 				gds__put_error
 					("THREAD_completion_ast: pthread_cond_signal_int error!\n");
+		}
 	}
 }
 
 
-THREAD_start(routine, arg, priority, flags)
-	 int (*routine) ();
-	 long arg;
-	 int priority;
-	 int flags;
+THREAD_start(int (*routine) (), long arg, int priority, int flags)
 {
 /**************************************
  *
@@ -152,7 +150,6 @@ THREAD_start(routine, arg, priority, flags)
  *	status if not.
  *
  **************************************/
-	TCB tcb, prior;
 
 /* Make sure thread subsystem has been initialized. */
 
@@ -162,7 +159,8 @@ THREAD_start(routine, arg, priority, flags)
 	if (pthread_mutex_lock(&threads_mutex))
 		gds__put_error("THREAD_start: pthread_mutex_lock error!\n");
 
-	prior = threads;
+	TCB prior = threads;
+	TCB tcb;
 	for (tcb = threads; tcb; tcb = tcb->tcb_next) {
 		if (!(tcb->tcb_flags & TCB_active))
 			break;
@@ -193,9 +191,7 @@ THREAD_start(routine, arg, priority, flags)
 }
 
 
-THREAD_wait(callback, arg)
-	 int (*callback) ();
-	 long arg;
+THREAD_wait(int (*callback) (), long arg)
 {
 /**************************************
  *
@@ -207,19 +203,17 @@ THREAD_wait(callback, arg)
  *	Wait on thread condition variable.
  *
  **************************************/
-	pthread_t self;
-	TCB tcb;
-
 	if (pthread_once(&init_block, thread_init))
 		gds__put_error("THREAD_wait: pthread_once() error!\n");
 
-	self = pthread_self();
+	pthread_t self = pthread_self();
 
 	if (pthread_mutex_lock(&threads_mutex))
 		gds__put_error("THREAD_wait: pthread_mutex_lock() error!\n");
 
 /* Find this thread's control block. */
 
+	TCB tcb;
 	for (tcb = threads; tcb; tcb = tcb->tcb_next)
 		if (pthread_equal(tcb->tcb_tid, self))
 			break;
@@ -260,8 +254,6 @@ static void thread_init()
  *	once and for all.
  *
  **************************************/
-	TCB tcb;
-
 	if (pthread_mutex_init(&threads_mutex, pthread_mutexattr_default))
 		gds__put_error("thread_init: pthread_mutex_init error!\n");
 
@@ -271,7 +263,7 @@ static void thread_init()
 	if (pthread_attr_setstacksize(&thread_attributes, TCB_STACKSIZE))
 		gds__put_error("thread_init: pthread_attr_setstacksize error!\n");
 
-	tcb = (TCB) gds__alloc((long) sizeof(struct tcb));
+	TCB tcb = (TCB) gds__alloc((long) sizeof(struct tcb));
 	memset(tcb, 0, sizeof(struct tcb));
 	if (pthread_cond_init(&tcb->tcb_cond_wait, pthread_condattr_default))
 		gds__put_error("thread_init: pthread_cond_init error!\n");
@@ -282,8 +274,7 @@ static void thread_init()
 }
 
 
-static void thread_starter(tcb)
-	 TCB tcb;
+static void thread_starter(TCB tcb)
 {
 /**************************************
  *

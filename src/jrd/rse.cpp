@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.65 2004-03-28 09:10:15 robocop Exp $
+ * $Id: rse.cpp,v 1.66 2004-03-30 04:10:50 robocop Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2085,9 +2085,9 @@ static bool get_procedure(thread_db*			tdbb,
 	jrd_req* request = tdbb->tdbb_request;
 	impure = (IRSB_PROCEDURE) ((UCHAR *) request + rsb->rsb_impure);
 	jrd_req* proc_request = impure->irsb_req_handle;
-	fmt* rec_format = procedure->prc_format;
+	Format* rec_format = procedure->prc_format;
 
-	const fmt* msg_format = (fmt*) procedure->prc_output_msg->nod_arg[e_msg_format];
+	const Format* msg_format = (Format*) procedure->prc_output_msg->nod_arg[e_msg_format];
 	if (!impure->irsb_message)
 	{
 		const SLONG size = msg_format->fmt_length + ALIGNMENT;
@@ -2874,7 +2874,7 @@ static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, USHORT streams)
 
 		Record* record = rpb->rpb_record;
 		if (!record) {
-			const fmt* format = rpb->rpb_relation->rel_current_format;
+			const Format* format = rpb->rpb_relation->rel_current_format;
 			if (!format) {
 				format =
 					MET_format(tdbb, rpb->rpb_relation,
@@ -3051,7 +3051,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, IRSB_PROCEDURE im
 
 		request->req_operation = saved_state;
 		jrd_nod* in_message = (jrd_nod*) rsb->rsb_arg[RSB_PRC_in_msg];
-		const fmt* format = (fmt*) in_message->nod_arg[e_msg_format];
+		const Format* format = (Format*) in_message->nod_arg[e_msg_format];
 		iml = format->fmt_length;
 		im = (UCHAR *) request + in_message->nod_impure;
 	}

@@ -48,18 +48,18 @@
 static struct FAB fab;
 static struct RAB rab;
 
-static bool check_sort(NOD, index_desc*, USHORT);
+static bool check_sort(const jrd_nod*, const index_desc*, USHORT);
 static bool compare(const UCHAR*, const UCHAR*, USHORT);
-static int compare_segment(NOD, UCHAR *, DSC *);
+static int compare_segment(jrd_nod*, UCHAR *, DSC *);
 static int connect(ExternalFile*, USHORT);
 static void disconnect(ExternalFile*);
-static void expand_format(fmt*, const fmt*);
-static SLONG find_field(const fmt*, USHORT, USHORT, USHORT);
+static void expand_format(Format*, const Format*);
+static SLONG find_field(const Format*, USHORT, USHORT, USHORT);
 static bool get_dbkey(RecordSource*);
 static bool get_indexed(RecordSource*);
-static USHORT get_key_segment(NOD, UCHAR *, DSC *);
+static USHORT get_key_segment(jrd_nod*, UCHAR *, DSC *);
 static bool get_sequential(RecordSource*);
-static bool match_index(const fmt*, struct XABKEY *, index_desc*);
+static bool match_index(const Format*, struct XABKEY *, index_desc*);
 static int open_indexed(RecordSource*);
 static int open_sequential(RecordSource*);
 static void position_by_rfa(ExternalFile*, USHORT *);
@@ -148,11 +148,11 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
    external format and flesh it out using the internal
    format. */
 
-	USHORT l = strlen(file_name);
+	const USHORT l = strlen(file_name);
 	ExternalFile* file = FB_NEW_RPT(dbb->dbb_permanent, l) ExternalFile();
 	relation->rel_file = file;
 	strcpy(file->ext_filename, file_name);
-	fmt* format = file->ext_format = MET_format(tdbb, relation, 0);
+	Format* format = file->ext_format = MET_format(tdbb, relation, 0);
 	expand_format(format, MET_current(tdbb, relation));
 
 /* Groan -- time to check in with RMS.  We're going to start
@@ -228,9 +228,10 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 				++file->ext_index_count;
 				index = (index_desc*) (index->idx_rpt + index->idx_count);
 			}
-		if (l = (UCHAR *) index - index_buffer) {
-			str* string = FB_NEW_RPT(tdbb->tdbb_default, l) str();
-			MOVE_FAST(index_buffer, string->str_data, l);
+		const ptrdiff_t l2 = (UCHAR *) index - index_buffer;
+		if (l2) {
+			str* string = FB_NEW_RPT(tdbb->tdbb_default, l2) str();
+			MOVE_FAST(index_buffer, string->str_data, l2);
 			file->ext_indices = string->str_data;
 		}
 	}
@@ -327,7 +328,7 @@ void EXT_modify(record_param* old_rpb, record_param* new_rpb, int *transaction)
 	Record* record = new_rpb->rpb_record;
 	jrd_rel* relation = new_rpb->rpb_relation;
 	ExternalFile* file = relation->rel_file;
-	const fmt* format = record->rec_format;
+	const Format* format = record->rec_format;
 	set_missing(old_rpb->rpb_relation, record);
 	const int offset = FLAG_BYTES(format->fmt_count);
 
@@ -365,7 +366,7 @@ EXT_open(RecordSource* rsb)
 	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
-	const fmt* format;
+	const Format* format;
 	Record* record = rpb->rpb_record;
 	if (!record || !(format = record->rec_format)) {
 		format = MET_current(tdbb, relation);
@@ -392,7 +393,7 @@ EXT_open(RecordSource* rsb)
 }
 
 
-RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, NOD * sort_ptr)
+RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, jrd_nod** sort_ptr)
 {
 /**************************************
  *
@@ -414,8 +415,8 @@ RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, NOD * sort_ptr)
 	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	jrd_rel* relation = csb_tail->csb_relation;
 	ExternalFile* file = relation->rel_file;
-	NOD dbkey, inversion;
-	dbkey = inversion = NULL;
+	jrd_nod* dbkey = NULL;
+	jrd_nod* inversion = NULL;
 
 /* Check for a dbkey retrieval.  If we find it, ignore everything
    else */
@@ -514,7 +515,7 @@ void EXT_store(record_param* rpb, int *transaction)
 	jrd_rel* relation = rpb->rpb_relation;
 	ExternalFile* file = relation->rel_file;
 	Record* record = rpb->rpb_record;
-	const fmt* format = record->rec_format;
+	const Format* format = record->rec_format;
 	set_missing(relation, record);
 	const USHORT offset = FLAG_BYTES(format->fmt_count);
 
@@ -603,7 +604,7 @@ void EXT_trans_start(tra* transaction)
 }
 
 
-static bool check_sort(NOD sort, index_desc* index, USHORT stream)
+static bool check_sort(const jrd_nod* sort, const index_desc* index, USHORT stream)
 {
 /**************************************
  *
@@ -626,11 +627,12 @@ static bool check_sort(NOD sort, index_desc* index, USHORT stream)
 /* For each sort key, make sure the key matches the index segment,
    and that the sort is ascending */
 
-	index_desc::idx_repeat* tail = index->idx_rpt;
-	NOD* ptr = sort->nod_arg;
-	for (NOD* const end = ptr + sort->nod_count; ptr < end; ptr++, tail++)
+	const index_desc::idx_repeat* tail = index->idx_rpt;
+	const jrd_nod* const* ptr = sort->nod_arg;
+	for (const jrd_nod* const* const end = ptr + sort->nod_count; ptr < end; 
+		ptr++, tail++)
 	{
-		NOD field = *ptr;
+		const jrd_nod* field = *ptr;
 		if (field->nod_type != nod_field ||
 			(USHORT) field->nod_arg[e_fld_stream] != stream ||
 			(USHORT) field->nod_arg[e_fld_id] != tail->idx_field ||
@@ -666,7 +668,7 @@ static bool compare(const UCHAR* string1, const UCHAR* string2, USHORT length)
 }
 
 
-static int compare_segment(NOD node, UCHAR * buffer, DSC * target)
+static int compare_segment(jrd_nod* node, UCHAR * buffer, DSC * target)
 {
 /**************************************
  *
@@ -735,7 +737,7 @@ static void disconnect(ExternalFile* file)
 }
 
 
-static void expand_format(fmt* external, const fmt* internal)
+static void expand_format(Format* external, const Format* internal)
 {
 /**************************************
  *
@@ -771,7 +773,7 @@ static void expand_format(fmt* external, const fmt* internal)
 
 
 static SLONG find_field(
-						const fmt* format, USHORT type, USHORT offset, USHORT length)
+						const Format* format, USHORT type, USHORT offset, USHORT length)
 {
 /**************************************
  *
@@ -847,7 +849,7 @@ static bool get_dbkey(RecordSource* rsb)
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	Record* record = rpb->rpb_record;
-	const fmt* format = record->rec_format;
+	const Format* format = record->rec_format;
 
 /* If this isn't the first time thru its the last time thru */
 
@@ -856,7 +858,7 @@ static bool get_dbkey(RecordSource* rsb)
 
 /* Evaluate expression */
 
-	NOD node = (NOD) rsb->rsb_arg[0];
+	jrd_nod* node = (jrd_nod*) rsb->rsb_arg[0];
 	const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
 
 	const SSHORT offset = FLAG_BYTES(format->fmt_count);
@@ -904,13 +906,13 @@ static bool get_indexed(RecordSource* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	const fmt* format = file->ext_format;
+	const Format* format = file->ext_format;
 
 	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 
-	NOD node = rsb->rsb_arg[0];
+	jrd_nod* node = rsb->rsb_arg[0];
 	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 	index_desc* index = &retrieval->irb_desc;
 
@@ -923,9 +925,9 @@ static bool get_indexed(RecordSource* rsb)
 		if (retrieval->irb_lower_count) {
 			UCHAR* p = key_buffer;
 			index_desc::idx_repeat* segment = index->idx_rpt;
-			NOD* ptr = retrieval->irb_value;
-			for (NOD* const end = ptr + retrieval->irb_lower_count; ptr < end;
-				 ptr++, segment++)
+			jrd_nod** ptr = retrieval->irb_value;
+			for (const jrd_nod* const* const end = ptr + retrieval->irb_lower_count; 
+				ptr < end; ptr++, segment++)
 			{
 				p += get_key_segment(*ptr, p,
 									format->fmt_desc + segment->idx_field);
@@ -961,9 +963,9 @@ static bool get_indexed(RecordSource* rsb)
 
 	index_desc::idx_repeat* segment = index->idx_rpt;
 
-	NOD* ptr = retrieval->irb_value + index->idx_count;
-	for (NOD* const end = ptr + retrieval->irb_upper_count; ptr < end;
-		ptr++, segment++)
+	jrd_nod** ptr = retrieval->irb_value + index->idx_count;
+	for (const jrd_nod* const* const end = ptr + retrieval->irb_upper_count;
+		ptr < end; ptr++, segment++)
 	{
 		const int result =
 			compare_segment(*ptr, rab.rab$l_ubf,
@@ -978,7 +980,7 @@ static bool get_indexed(RecordSource* rsb)
 }
 
 
-static USHORT get_key_segment(NOD node, UCHAR * buffer, DSC * target)
+static USHORT get_key_segment(jrd_nod* node, UCHAR * buffer, DSC * target)
 {
 /**************************************
  *
@@ -1023,7 +1025,7 @@ static bool get_sequential(RecordSource* rsb)
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	Record* record = rpb->rpb_record;
-	const fmt* format = record->rec_format;
+	const Format* format = record->rec_format;
 
 	const SSHORT offset = FLAG_BYTES(format->fmt_count);
 	rab.rab$w_isi = rpb->rpb_ext_isi;
@@ -1068,7 +1070,7 @@ static bool get_sequential(RecordSource* rsb)
 }
 
 
-static bool match_index(const fmt* format, struct XABKEY *xab, index_desc* idx)
+static bool match_index(const Format* format, struct XABKEY *xab, index_desc* idx)
 {
 /**************************************
  *
@@ -1122,7 +1124,7 @@ static open_indexed(RecordSource* rsb)
 	ExternalFile* file = relation->rel_file;
 	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
-	NOD node = (NOD) rsb->rsb_arg[0];
+	jrd_nod* node = (jrd_nod*) rsb->rsb_arg[0];
 	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 	index_desc* index = &retrieval->irb_desc;
 
@@ -1209,7 +1211,7 @@ static void set_flags(jrd_rel* relation, Record* record)
  **************************************/
 	DSC desc;
 
-	const fmt* format = record->rec_format;
+	const Format* format = record->rec_format;
 	jrd_fld** field_ptr = relation->rel_fields->vec_object;
 	dsc* desc_ptr = format->fmt_desc;
 
@@ -1244,7 +1246,7 @@ static void set_missing(jrd_rel* relation, Record* record)
  **************************************/
 	DSC desc;
 
-	const fmt* format = record->rec_format;
+	const Format* format = record->rec_format;
 	jrd_fld** field_ptr = relation->rel_fields->vec_object;
 	dsc* desc_ptr = format->fmt_desc;
 

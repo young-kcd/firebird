@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.73 2004-03-28 09:10:15 robocop Exp $ 
+  * $Id: evl.cpp,v 1.74 2004-03-30 04:10:49 robocop Exp $ 
  */
 
 /*
@@ -226,7 +226,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
  *
  **************************************/
 	dsc* desc;
-	fmt* format;
+	Format* format;
 	jrd_nod* message;
 	Record* record;
 
@@ -246,7 +246,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 	switch (node->nod_type) {
 	case nod_argument:
 		message = node->nod_arg[e_arg_message];
-		format = (fmt*) message->nod_arg[e_msg_format];
+		format = (Format*) message->nod_arg[e_msg_format];
 		arg_number = (int) (IPTR)node->nod_arg[e_arg_number];
 		desc = &format->fmt_desc[arg_number];
 		impure->vlu_desc.dsc_address =
@@ -825,7 +825,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 			const jrd_nod* message = node->nod_arg[e_arg_message];
-			const fmt* format = (fmt*) message->nod_arg[e_msg_format];
+			const Format* format = (Format*) message->nod_arg[e_msg_format];
 			desc = &format->fmt_desc[(int)(IPTR) node->nod_arg[e_arg_number]];
 
 			impure->vlu_desc.dsc_address = (UCHAR *) request +
@@ -865,7 +865,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		}
 
 	case nod_function:
-		FUN_evaluate(reinterpret_cast<fun*>(node->nod_arg[e_fun_function]),
+		FUN_evaluate(reinterpret_cast<UserFunction*>(node->nod_arg[e_fun_function]),
 				     node->nod_arg[e_fun_args], impure);
 		/*request->req_flags |= req_null; THIS IS A TEST ONLY.
 		return NULL;*/
@@ -1239,7 +1239,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 		return false;
 	}
 
-	const fmt* format = record->rec_format;
+	const Format* format = record->rec_format;
 
 	if (format) {
 		*desc = format->fmt_desc[id];
@@ -2968,7 +2968,7 @@ static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_
 
 /* value is present; make the conversion */
 
-	const fmt* format = (fmt*) node->nod_arg[e_cast_fmt];
+	const Format* format = (Format*) node->nod_arg[e_cast_fmt];
 	impure->vlu_desc = format->fmt_desc[0];
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc;
 	if (DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype)) {

@@ -38,7 +38,7 @@ BLKDEF(type_lck, Lock, 1)
 BLKDEF(type_fil, jrd_file, 1)
 BLKDEF(type_pgc, PageControl, 0)
 BLKDEF(type_rel, jrd_rel, 0)
-BLKDEF(type_fmt, fmt, sizeof(((fmt*) NULL)->fmt_desc[0]))   /* Done */
+BLKDEF(type_fmt, Format, sizeof(((Format*) NULL)->fmt_desc[0]))   /* Done */
 BLKDEF(type_vcl, vcl, sizeof(((vcl*) NULL)->vcl_long[0]))   /* Done */
 BLKDEF(type_req, jrd_req, sizeof(((jrd_req*) NULL)->req_rpb[0]))    /* Done */
 BLKDEF(type_tra, jrd_tra, 1)
@@ -64,7 +64,7 @@ BLKDEF(type_riv, River, 1)	/* River block -- used in optimizer */
 BLKDEF(type_usr, UserId, 0)	/* User identification block */
 BLKDEF(type_att, Jrd::Attachment, 0)	/* Database attachment */
 BLKDEF(type_sym, Symbol, 0)
-BLKDEF(type_fun, fun, sizeof(((fun*) NULL)->fun_rpt[0]))	/* Done Function definition */
+BLKDEF(type_fun, UserFunction, sizeof(((UserFunction*) NULL)->fun_rpt[0]))	/* Done Function definition */
 BLKDEF(type_irl, IndexedRelationship, 0)
 BLKDEF(type_acc, AccessItem, 0)
 BLKDEF(type_idl, IndexLock, 0)

@@ -40,7 +40,7 @@ class lls;
 namespace Jrd {
 
 class Lock;
-class fmt;
+class Format;
 class jrd_rel;
 class jrd_prc;
 class Record;
@@ -118,10 +118,10 @@ struct record_param {
 class Record : public pool_alloc_rpt<SCHAR, type_rec>
 {
     public:
-	const fmt* rec_format;		/* what the data looks like */
+	const Format* rec_format;	/* what the data looks like */
 	lls* rec_precedence;		/* stack of higher precedence pages */
 	USHORT rec_length;			/* how much there is */
-	const fmt* rec_fmt_bk;   	// backup format to cope with Borland's ill null signaling
+	const Format* rec_fmt_bk;   // backup format to cope with Borland's ill null signaling
 	UCHAR rec_flags;			/* misc record flags */
 	SLONG rec_number;			/* original record_param number - used for undoing multiple updates */
 	double rec_dummy;			/* this is to force next field to a double boundary */
@@ -214,7 +214,6 @@ public:
 
 	record_param req_rpb[1];		/* record parameter blocks */
 };
-typedef jrd_req* JRD_REQ;  // CVC: Scheduled for termination, don't use the uppercase type!!!
 
 // Size of request without rpb items at the tail. Used to calculate impure area size
 //

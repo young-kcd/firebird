@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		MBLR.C
+ *	MODULE:		mblr.cpp
  *	DESCRIPTION:	RDB DDL Call translator
  *			Translate MBLR byte strings to DYN byte strings.
  *
@@ -52,7 +52,7 @@ typedef struct met {
 	USHORT met_dyn_length;
 } *MET;
 
-static int area, level, duplicates;
+static int global_area, global_level, global_duplicates;
 
 static int field_def(MET);
 static int field_descriptor(MET);
@@ -85,26 +85,25 @@ USHORT * dyn_length, UCHAR * dyn_buffer)
  *	for any failure.
  *
  ************************************************/
-	struct met mblr;
-	UCHAR op;
-	int result;
-	UCHAR *dyn_start;
-
-	level = FALSE;
+	global_level = FALSE;
 
 	if ((ddl_operation != mblr$k_define) &&
 		(ddl_operation != mblr$k_modify) && (ddl_operation != mblr$k_delete))
+	{
 		return FALSE;
+	}
 
+	struct met mblr;
 	mblr.met_op = ddl_operation;
 
 	mblr.met_mblr = mblr_buffer;
 	mblr.met_mblr_length = mblr_buffer_length;
 
-	mblr.met_dyn = dyn_start = dyn_buffer;
+	const UCHAR* const dyn_start = dyn_buffer;
+	mblr.met_dyn = dyn_buffer;
 	mblr.met_dyn_length = 0;
 
-	op = *mblr.met_mblr++;
+	UCHAR op = *mblr.met_mblr++;
 	mblr.met_mblr_length--;
 
 	if (op != mblr$k_version_1)
@@ -116,21 +115,23 @@ USHORT * dyn_length, UCHAR * dyn_buffer)
 	op = *mblr.met_mblr++;
 	mblr.met_mblr_length--;
 
+	int result;
+
 	switch (op) {
 	case mblr$k_relation_def:
-		area = IN_RELATION;
+		global_area = IN_RELATION;
 		result = relation_def(&mblr);
 		break;
 	case mblr$k_field_def:
-		area = IN_FIELD;
+		global_area = IN_FIELD;
 		result = field_def(&mblr);
 		break;
 	case mblr$k_view_def:
-		area = IN_VIEW;
+		global_area = IN_VIEW;
 		result = view_def(&mblr);
 		break;
 	case mblr$k_index_def:
-		area = IN_INDEX;
+		global_area = IN_INDEX;
 		result = index_def(&mblr);
 		break;
 	default:
@@ -160,9 +161,7 @@ static int field_def(MET mblr)
  *	Translate a field modify / update / delete.
  *
  **************************************/
-	int op, result;
-
-	result = TRUE;
+	int result = TRUE;
 
 	switch (mblr->met_op) {
 	case mblr$k_modify:
@@ -173,7 +172,7 @@ static int field_def(MET mblr)
 		break;
 
 	case mblr$k_define:
-		if (level)
+		if (global_level)
 			STUFF(gds_dyn_def_local_fld);
 		else
 			STUFF(gds_dyn_def_global_fld);
@@ -183,7 +182,7 @@ static int field_def(MET mblr)
 		break;
 
 	case mblr$k_delete:
-		if (area == IN_FIELD)
+		if (global_area == IN_FIELD)
 			STUFF(gds_dyn_delete_global_fld);
 		else
 			STUFF(gds_dyn_delete_local_fld);
@@ -191,8 +190,10 @@ static int field_def(MET mblr)
 		break;
 	}
 
-	if (level)
+	if (global_level) {
+		int op;
 		GET_BYTE(op);
+	}
 
 	STUFF_END;
 
@@ -214,9 +215,7 @@ static int index_def(MET mblr)
  *	Translate a index modify / update / delete.
  *
  **************************************/
-	int result;
-
-	result = TRUE;
+	int result = TRUE;
 
 	switch (mblr->met_op) {
 	case mblr$k_modify:
@@ -224,14 +223,14 @@ static int index_def(MET mblr)
 		break;
 
 	case mblr$k_define:
-		duplicates = FALSE;
+		global_duplicates = FALSE;
 		STUFF(gds_dyn_def_idx);
 		STUFF_LITERAL;
 		while ((PEEK_BYTE != mblr$k_index_end) && result)
 			result = parse_mblr(mblr);
 		STUFF(gds_dyn_idx_inactive);
 		STUFF(FALSE);
-		if (duplicates == FALSE) {
+		if (global_duplicates == FALSE) {
 			STUFF(gds_dyn_idx_unique);
 			STUFF_WORD(2);
 			STUFF_WORD(TRUE);
@@ -265,8 +264,7 @@ static int relation_def(MET mblr)
  *
  **************************************/
 	int result;
-
-	level = result = TRUE;
+	global_level = result = TRUE;
 
 	switch (mblr->met_op) {
 	case mblr$k_modify:
@@ -307,9 +305,7 @@ static int view_def(MET mblr)
  *	Translate a view modify / update / delete.
  *
  **************************************/
-	int result;
-
-	result = TRUE;
+	int result = TRUE;
 
 	switch (mblr->met_op) {
 	case mblr$k_modify:
@@ -349,12 +345,12 @@ static int field_descriptor(MET mblr)
  *	from within a define relation statement.
  *
  **************************************/
-	int op, type, result;
+	int result = TRUE;
 
-	result = TRUE;
-
+	int op;
 	GET_BYTE(op);
 	STUFF(gds_dyn_fld_type);
+	int type;
 	GET_BYTE(type);
 
 	switch (type) {
@@ -428,14 +424,13 @@ static void get_literal(MET mblr)
  *            DYN literals use a word.
  *
  **************************************/
-
-	int length, op, n;
-
+	int length;
 	GET_BYTE(length);
-	n = length;
+	int n = length;
 	STUFF_WORD(length);
 
 	while (--n >= 0) {
+		int op;
 		GET_BYTE(op);
 		STUFF(op);
 	}
@@ -457,13 +452,13 @@ static void get_literal_w(MET mblr)
  *	Get a length prefixed literal (word)
  *
  **************************************/
-	int length, op, n;
-
+	int length;
 	GET_WORD(length);
-	n = length;
+	int n = length;
 	STUFF_WORD(length);
 
 	while (--n >= 0) {
+		int op;
 		GET_BYTE(op);
 		STUFF(op);
 	}
@@ -486,9 +481,9 @@ static int get_word(MET mblr)
  *	Pick up a VAX style word.
  *
  **************************************/
-	int op, i;
-
+	int op;
 	GET_BYTE(op);
+	int i;
 	GET_BYTE(i);
 	op |= i << 8;
 
@@ -509,15 +504,15 @@ static int parse_mblr(MET mblr)
  *	Primary recursive routine to translate mblr.
  *
  ***************************************************/
-	int op, result, save_area;
-	UCHAR *save_dyn;
+	UCHAR* save_dyn;
 
 	if (!mblr->met_mblr_length)
 		return FALSE;
 
-	op = PEEK_BYTE;
+	int op = PEEK_BYTE;
 
-	result = TRUE;
+	int result = TRUE;
+	int save_area;
 
 	switch (op) {
 	case mblr$k_change_attributes:
@@ -528,11 +523,11 @@ static int parse_mblr(MET mblr)
 	case mblr$k_change_field:
 	case mblr$k_delete_field:
 	case mblr$k_define_field:
-		save_area = area;
-		area = IN_FIELD;
+		save_area = global_area;
+		global_area = IN_FIELD;
 		GET_BYTE(op);
 		result = field_def(mblr);
-		area = save_area;
+		global_area = save_area;
 		break;
 
 	case mblr$k_dtr_def_val:
@@ -562,7 +557,7 @@ static int parse_mblr(MET mblr)
 
 	case mblr$k_duplicates:
 		GET_BYTE(op);
-		duplicates = TRUE;
+		global_duplicates = TRUE;
 		break;
 
 	case mblr$k_field_def:
@@ -581,7 +576,7 @@ static int parse_mblr(MET mblr)
 
 	case mblr$k_field_name:
 		GET_BYTE(op);
-		if (area == IN_INDEX)
+		if (global_area == IN_INDEX)
 			STUFF(gds_dyn_fld_name);
 		else
 			STUFF(gds_dyn_fld_source);

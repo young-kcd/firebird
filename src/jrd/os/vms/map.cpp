@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		map.c
+ *	MODULE:		map.cpp
  *	DESCRIPTION:	Map GALAXY blr into RDB blr
  *
  * The contents of this file are subject to the Interbase Public
@@ -68,7 +68,7 @@ static int translate_status(ISC_STATUS *, ISC_STATUS *, SCHAR **);
 #include "../include/gen/rdb_codes.h"
 //};
 
-static SCHAR workbuf[1024];
+static SCHAR global_workbuf[1024];
 
 
 void MAP_date_to_gds(SLONG * vms_date, SLONG * gds_date)
@@ -102,18 +102,18 @@ void MAP_date_to_rdb(SLONG * gds_date, SLONG * vms_date)
  *	Map a date to VMS date format from GDS format.
  *
  **************************************/
-	SLONG time[2], zero[2], temp, temp2;
+	SLONG time[2], zero[2];
 
 /* Compute time portion */
 
 	zero[0] = zero[1] = 0;
-	temp = 1000;
+	SLONG temp = 1000;
 	lib$emul(gds_date + 1, &temp, zero, time);
 
 /* Compute date portion being careful of overflow */
 
 	temp = 60 * 10000000;
-	temp2 = gds_date[0] * 24 * 60;
+	SLONG temp2 = gds_date[0] * 24 * 60;
 	lib$emul(&temp2, &temp, time, vms_date);
 }
 
@@ -134,10 +134,6 @@ int MAP_gds_to_rdb(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
  *	of the Rdb record.
  *
  **************************************/
-	VARY vary;
-	UCHAR *p, *q;
-	USHORT l;
-	struct msg_repeat *desc, *end;
 
 /* Find the message.  If none, return 0 and get out */
 
@@ -150,21 +146,26 @@ int MAP_gds_to_rdb(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
 
 /* Map data.  Whoppee */
 
-	for (desc = msg->msg_rpt, end = desc + msg->msg_count; desc < end; desc++)
+	vary* avary;
+	const UCHAR* q;
+	USHORT l;
+	msg_repeat* desc = msg->msg_rpt;
+	for (const msg_repeat* const end = desc + msg->msg_count; desc < end; desc++)
+	{
 		switch (desc->msg_dtype) {
 		case blr_cstring:
 			q = from;
 			from += desc->msg_length;
-			vary = to;
+			avary = reinterpret_cast<vary*>(to);
 			to += desc->msg_length + 1;
 			l = strlen(q);
 			if (l > desc->msg_length - 1)
 				l = desc->msg_length - 1;
-			if (vary->vary_length = l) {
-				p = vary->vary_data;
-				do
+			if (avary->vary_length = l) {
+				UCHAR* p = avary->vary_data;
+				do {
 					*p++ = *q++;
-				while (--l);
+				} while (--l);
 			}
 			break;
 
@@ -182,10 +183,11 @@ int MAP_gds_to_rdb(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
 
 		default:
 			if (l = desc->msg_length)
-				do
+				do {
 					*to++ = *from++;
-				while (--l);
+				} while (--l);
 		}
+	}
 
 	return msg->msg_rdb_length;
 }
@@ -209,15 +211,11 @@ map_msg* MAP_parse_blr(UCHAR * org_blr,
  *	types and build message blocks for the offending messages.
  *
  **************************************/
-	msp_msg* msg;
-	map_msg* next;
-	UCHAR *end_org_blr, *new, *org, *last_copied;
-	SLONG max;
-
-	end_org_blr = org_blr + org_blr_length;
+	const UCHAR* const end_org_blr = org_blr + org_blr_length;
+	UCHAR *org, *last_copied;
 	org = last_copied = org_blr;
-	new = new_blr;
-	msg = NULL;
+	UCHAR* new_blr = new_blr;
+	map_msg* msg = NULL;
 
 /* Check version.  It must be version 4 or 5 or else we can't handle this */
 
@@ -234,8 +232,9 @@ map_msg* MAP_parse_blr(UCHAR * org_blr,
 	while (*org++ == blr_message)
 		if (check_message(&org)) {
 			while (last_copied < org)
-				*new++ = *last_copied++;
-			if (!(next = rebuild_message(&org, &new)))
+				*new_blr++ = *last_copied++;
+			map_msg* next = rebuild_message(&org, &new_blr);
+			if (!next)
 				return NULL;
 			next->msg_next = msg;
 			msg = next;
@@ -245,7 +244,8 @@ map_msg* MAP_parse_blr(UCHAR * org_blr,
 /* If we've process all messages and none require work, indicate that
    nothing remains to be done and get out */
 
-	for (max = 0, next = msg; next; next = next->msg_next) {
+	SLONG max = 0;
+	for (map_msg* next = msg; next; next = next->msg_next) {
 		max = MAX(max, next->msg_gds_length);
 		max = MAX(max, next->msg_rdb_length);
 	}
@@ -259,9 +259,9 @@ map_msg* MAP_parse_blr(UCHAR * org_blr,
    messages, now finish the rest of the request. */
 
 	while (last_copied < end_org_blr)
-		*new++ = *last_copied++;
+		*new_blr++ = *last_copied++;
 
-	*new_blr_length = new - new_blr;
+	*new_blr_length = new_blr - new_blr;
 
 	return msg;
 }
@@ -280,7 +280,6 @@ int MAP_rdb_length(USHORT number, map_msg* msg)
  *	and if so, the Rdb length.
  *
  **************************************/
-
 	for (; msg; msg = msg->msg_next)
 		if (msg->msg_number == number)
 			return msg->msg_rdb_length;
@@ -305,10 +304,6 @@ int MAP_rdb_to_gds(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
  *	of the GDS record.
  *
  **************************************/
-	VARY vary;
-	UCHAR *p, *q;
-	USHORT l;
-	struct msg_repeat *desc, *end;
 
 /* Find the message.  If none, return 0 and get out */
 
@@ -321,19 +316,24 @@ int MAP_rdb_to_gds(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
 
 /* Map data.  Whoppee */
 
-	for (desc = msg->msg_rpt, end = desc + msg->msg_count; desc < end; desc++)
+	vary* avary;
+	UCHAR* p;
+	USHORT l;
+	msg_repeat* desc = msg->msg_rpt;
+	for (const msg_repeat* const end = desc + msg->msg_count; desc < end; desc++)
+	{
 		switch (desc->msg_dtype) {
 		case blr_cstring:
-			vary = from;
+			avary = reinterpret_cast<vary*>(from);
 			from += desc->msg_length + 1;
 			p = to;
 			to += desc->msg_length;
-			l = MIN(vary->vary_length, desc->msg_length - 1);
+			l = MIN(avary->vary_length, desc->msg_length - 1);
 			if (l) {
-				q = vary->vary_data;
-				do
+				const UCHAR* q = avary->vary_data;
+				do {
 					*p++ = *q++;
-				while (--l);
+				} while (--l);
 			}
 			*p = 0;
 			break;
@@ -352,10 +352,11 @@ int MAP_rdb_to_gds(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
 
 		default:
 			if (l = desc->msg_length)
-				do
+				do {
 					*to++ = *from++;
-				while (--l);
+				} while (--l);
 		}
+	}
 
 	return msg->msg_gds_length;
 }
@@ -374,7 +375,6 @@ void MAP_release(map_msg* msg)
  *
  **************************************/
 	map_msg* next;
-
 	while (next = msg) {
 		msg = msg->msg_next;
 		gds__free(next);
@@ -394,36 +394,35 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
  *	Translate an RDB status vector to a GDS error status vector.
  *
  **************************************/
-	ISC_STATUS code, number, length, gds_index, *tmp;
-	ISC_STATUS_ARRAY temp;
-	USHORT shift;
-	bool flag;
-	SCHAR msgbuff[WRKBUF_SIZ], *p, *q, *pw1, *pw2, flags[4], part;
-	struct dsc$descriptor_s desc, *dsc_ptr;
 //	static const SCHAR * const messages[] = {
 #include "gen/msgs.h"
 //		0
 //	};
 
-	tmp = temp;
-	pw1 = pw2 = workbuf;
+	ISC_STATUS_ARRAY temp;
+	ISC_STATUS* tmp = temp;
+	char *pw1, *pw2;
+	pw1 = pw2 = global_workbuf;
 
 	gds_status[0] = isc_arg_gds;
-	code = vms_status[1];
+	ISC_STATUS code = vms_status[1];
 
 	if (code == 1)
 		return (gds_status[1] = FB_SUCCESS);
 
-	p = msgbuff;
-	length = 0;
+	char msgbuff[WRKBUF_SIZ];
+	char* p = msgbuff;
+	ISC_STATUS length = 0;
+	struct dsc$descriptor_s desc;
 	desc.dsc$b_class = DSC$K_CLASS_S;
 	desc.dsc$b_dtype = DSC$K_DTYPE_T;
 	desc.dsc$w_length = WRKBUF_SIZ;
 	desc.dsc$a_pointer = p;
+	char flags[4];
 	sys$getmsg(code, &length, &desc, 15, flags);
 	p[length] = 0;
 
-	gds_index = (code >> 3) - 2560000;
+	const ISC_STATUS gds_index = (code >> 3) - 2560000;
 
 	if (gds_index < 0 || gds_index > isc_err_max) {
 		gds_status[1] = isc_random;
@@ -435,11 +434,15 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 		return isc_random;
 	}
 
-	flag = false;
+	bool flag = false;
 	vms_status = vms_status + 3;
 
 	if (*p == '%')
 		p++;
+
+	const char* q;
+	ISC_STATUS number;
+	const struct dsc$descriptor_s* dsc_ptr;
 
 	while (*pw2++ = *p) {
 		if (*p++ != '!')
@@ -529,15 +532,15 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
    Get gds_message into buffer, parse & fudge parms*/
 
 	gds_status[1] = code = gds__encode(gds_index, 0);
-	p = messages[gds_index];
+	const char* s = messages[gds_index];
 	tmp = temp;
 	gds_status = gds_status + 2;
 	flag = false;
 
-	while (*p) {
-		if (*p++ != '%')
+	while (*s) {
+		if (*s++ != '%')
 			continue;
-		switch (*p) {
+		switch (*s) {
 		case 's':
 			*gds_status++ = isc_arg_cstring;
 			if (*tmp++ != isc_arg_cstring || flag) {
@@ -552,7 +555,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 			break;
 
 		case 'l':
-			++p;
+			++s;
 		case 'd':
 			*gds_status++ = isc_arg_number;
 			if (*tmp++ != isc_arg_number || flag) {
@@ -589,22 +592,20 @@ int MAP_status_to_rdb(ISC_STATUS * status_vector, ISC_STATUS * user_status)
  *	we hit a code that we don't know.
  *
  **************************************/
-	ISC_STATUS *gds, *rdb;
-	SLONG total_longwds, ret_value;
-	SCHAR *buf_ptr;
+	SLONG total_longwds = 0;
+	ISC_STATUS* gds = status_vector;
+	ISC_STATUS* rdb = user_status + 1;
+	char* buf_ptr = global_workbuf;
 
-	total_longwds = 0;
-	gds = status_vector;
-	rdb = user_status + 1;
-	buf_ptr = workbuf;
-
-	while (*gds)
-		if (ret_value = translate_status(&gds, &rdb, &buf_ptr))
-			total_longwds += ret_value += 2;
+	while (*gds) {
+		SLONG ret_value = translate_status(&gds, &rdb, &buf_ptr);
+		if (ret_value)
+			total_longwds += ret_value += 2; // ???
 		else {
 			total_longwds += 2;
 			break;
 		}
+	}
 
 	user_status[0] = DEFAULT_STATUS_FLAGS + total_longwds;	/* Hack, hack, hack... */
 	return user_status[1];
@@ -623,16 +624,16 @@ static void bugcheck(int number)
  * output an error message
  *
  **************************************/
-	int n;
-	SCHAR buffer[128], number_text[20];
+	SCHAR buffer[128];
 	USHORT flags;
-
-	n =
+	const int n =
 		gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(buffer), buffer,
 						&flags);
 
 	if (n < 1)
 		strcpy(buffer, "error code");
+
+	char number_text[20];
 	sprintf(number_text, " (%d)", number);
 	strcat(buffer, number_text);
 
@@ -653,17 +654,16 @@ static bool check_message(UCHAR ** org_ptr)
  *	return true.  Otherwise update the blr pointer and return false.
  *
  **************************************/
-	UCHAR *org, dtype;
-	SSHORT count;
 
 /* Throw away the message number then pick up the number of fields */
 
-	org = *org_ptr + 1;
-	count = *org++;
+	UCHAR* org = *org_ptr + 1;
+	SSHORT count = *org++;
 	count |= *org++ << 16;
 
-	while (count--)
-		switch (dtype = *org++) {
+	while (count--) {
+		const UCHAR dtype = *org++;
+		switch (dtype) {
 		case blr_timestamp:
 		case blr_cstring:
 		case blr_d_float:
@@ -678,6 +678,7 @@ static bool check_message(UCHAR ** org_ptr)
 		case blr_quad:
 			*org++;
 		}
+	}
 
 	*org_ptr = org;
 
@@ -700,20 +701,16 @@ static map_msg* rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
  *	any reason, return NULL;
  *
  **************************************/
-	map_msg* msg;
-	UCHAR *org, *new_msg, *last_copied;
-	USHORT number, l, length, gds_length, rdb_length;
-	struct msg_repeat *desc, *end;
 
 /* Do some housekeeping then pick up message number and count of parameters */
 
-	length = 0;
+	UCHAR *org, *last_copied;
 	org = last_copied = *org_ptr;
-	new_msg = *new_ptr;
-	number = *org++;
-	l = *org++;
+	UCHAR* new_msg = *new_ptr;
+	const USHORT number = *org++;
+	USHORT l = *org++;
 	l |= *org++ << 16;
-	msg = gds__alloc((SLONG)
+	map_msg* msg = gds__alloc((SLONG)
 					 (sizeof(struct msg) + l * sizeof(struct msg_repeat)));
 /* FREE: by MAP_release() */
 	if (!msg)
@@ -725,7 +722,11 @@ static map_msg* rebuild_message(UCHAR ** org_ptr, UCHAR ** new_ptr)
 	msg->msg_gds_length = 0;
 	msg->msg_rdb_length = 0;
 
-	for (desc = msg->msg_rpt, end = desc + l; desc < end; desc++) {
+	USHORT gds_length, rdb_length;
+
+	msg_repeat* desc = msg->msg_rpt;
+	for (const msg_repeat* const end = desc + l; desc < end; desc++) 
+	{
 		switch (desc->msg_dtype = *org++) {
 		case blr_text:
 			gds_length = *org++;
@@ -816,20 +817,16 @@ static int translate_status(
  *	If we don't know the status code, return it to caller.
  *
  **************************************/
-	ISC_STATUS *gds, *rdb, code, *count_addr;
-	USHORT fac = 0, dummy_class = 0;
-	SSHORT count, length;
-	SCHAR msgbuff[WRKBUF_SIZ], *p, *q, *pw1, *pw2, flags[4];
-	struct dsc$descriptor_s desc, *desc_ptr;
-
-	p = msgbuff;
+	char msgbuff[WRKBUF_SIZ];
+	char* p = msgbuff;
+	char *pw1, *pw2;
 	pw1 = pw2 = *buf_ptr;
-	gds = *status_vector;
-	rdb = *user_status;
-	count = 0;
+	ISC_STATUS* gds = *status_vector;
+	ISC_STATUS* rdb = *user_status;
+	SSHORT count = 0;
 
 	if (*gds == isc_arg_interpreted) {
-		q = gds[1];
+		const char* q = gds[1];
 		rdb[0] = GDS$_MISC_INTERPRETED;
 		rdb[1] = DEFAULT_STATUS_FLAGS + 1;
 		rdb[2] = strlen(q);
@@ -840,7 +837,8 @@ static int translate_status(
 	if (*gds++ != isc_arg_gds)
 		BUGCHECK(239);			/* msg 239 Interbase status vector inconsistent */
 
-	code = gds__decode(*gds, &fac, &dummy_class);
+	USHORT fac = 0, dummy_class = 0;
+	ISC_STATUS code = gds__decode(*gds, &fac, &dummy_class);
 
 	if ((code < 0) || (code > isc_err_max)) {
 		rdb[0] = *gds;
@@ -850,19 +848,24 @@ static int translate_status(
 
 	code = *rdb++ = user_codes[code];
 
-	length = 0;
+	SSHORT length = 0;
+	struct dsc$descriptor_s desc;
 	desc.dsc$b_class = DSC$K_CLASS_S;
 	desc.dsc$b_dtype = DSC$K_DTYPE_T;
 	desc.dsc$w_length = WRKBUF_SIZ;
 	desc.dsc$a_pointer = p;
+	char flags[4];
 	sys$getmsg(code, &length, &desc, 15, flags);
 
 	p[length] = 0;
-	count_addr = rdb++;
+	ISC_STATUS* count_addr = rdb++;
 	++gds;
 
 /* GDS message parameters should be the same in number, order & datatype
    as those RDB expects.  If not, be real unpleasant about it. */
+
+	const char* q;
+	struct dsc$descriptor_s* desc_ptr;
 
 	while (*p) {
 		if (*p++ != '!')

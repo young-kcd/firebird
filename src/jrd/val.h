@@ -60,15 +60,17 @@ class jrd_tra;
 class Symbol;
 
 
-class fmt : public pool_alloc<type_fmt>
+class Format : public pool_alloc<type_fmt>
 {
 public:
-	fmt(MemoryPool& p, int len)
+	Format(MemoryPool& p, int len)
 	:	fmt_desc(len, p, type_fmt)
 	{
 	}
-	static fmt* newFmt(MemoryPool& p, int len = 0)
-		{ return FB_NEW(p) fmt(p, len); }
+	static Format* newFormat(MemoryPool& p, int len = 0)
+	{ 
+		return FB_NEW(p) Format(p, len); 
+	}
 
 	USHORT fmt_length;
 	USHORT fmt_count;
@@ -105,11 +107,11 @@ struct fun_repeat {
 };
 
 
-class fun : public pool_alloc_rpt<fun_repeat, type_fun>
+class UserFunction : public pool_alloc_rpt<fun_repeat, type_fun>
 {
     public:
 	Firebird::string fun_exception_message;	/* message containing the exception error message */
-	fun*		fun_homonym;		/* Homonym functions */
+	UserFunction*	fun_homonym;	/* Homonym functions */
 	Symbol*		fun_symbol;			/* Symbol block */
 	int (*fun_entrypoint) ();		/* Function entrypoint */
 	USHORT		fun_count;			/* Number of arguments (including return) */
@@ -119,9 +121,8 @@ class fun : public pool_alloc_rpt<fun_repeat, type_fun>
 	ULONG		fun_temp_length;	/* Temporary space required */
     fun_repeat fun_rpt[1];
     public:
-	fun(MemoryPool& p) : fun_exception_message(p) { }
+	UserFunction(MemoryPool& p) : fun_exception_message(p) { }
 };
-typedef fun* FUN;
 
 // Those two defines seems an intention to do something that wasn't completed.
 #define FUN_value	0

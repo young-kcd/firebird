@@ -3804,7 +3804,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	if (in_msg_length)
 	{
 		if (in_message) {
-			const fmt* format = (fmt*) in_message->nod_arg[e_msg_format];
+			const Format* format = (Format*) in_message->nod_arg[e_msg_format];
 			len = format->fmt_length;
 		}
 		else {
@@ -3829,7 +3829,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	EXE_start(tdbb, request, transaction);
 
 	if (out_message) {
-		const fmt* format = (fmt*) out_message->nod_arg[e_msg_format];
+		const Format* format = (Format*) out_message->nod_arg[e_msg_format];
 		len = format->fmt_length;
 	}
 	else {

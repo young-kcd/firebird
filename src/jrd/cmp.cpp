@@ -152,7 +152,7 @@ static void plan_set(CompilerScratch*, RecordSelExpr*, jrd_nod*);
 static void post_procedure_access(thread_db*, CompilerScratch*, jrd_prc*);
 static RecordSource* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void	post_trigger_access(thread_db*, CompilerScratch*, jrd_rel*, trig_vec*, jrd_rel*);
-static void process_map(thread_db*, CompilerScratch*, jrd_nod*, fmt**);
+static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static bool stream_in_rse(USHORT, RecordSelExpr*);
 static SSHORT strcmp_space(const TEXT*, const TEXT*);
 
@@ -541,7 +541,7 @@ void CMP_fini(thread_db* tdbb)
 }
 
 
-fmt* CMP_format(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
+Format* CMP_format(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
 /**************************************
  *
@@ -766,7 +766,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 	case nod_field:
 		{
 			const USHORT id = (USHORT) (IPTR) node->nod_arg[e_fld_id];
-			const fmt* format =
+			const Format* format =
 				CMP_format(tdbb, csb, (USHORT) (IPTR) node->nod_arg[e_fld_stream]);
 			if (id >= format->fmt_count) {
 				desc->dsc_dtype = dtype_unknown;
@@ -1556,7 +1556,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_cast:
 		{
-			const fmt* format = (fmt*) node->nod_arg[e_cast_fmt];
+			const Format* format = (Format*) node->nod_arg[e_cast_fmt];
 			*desc = format->fmt_desc[0];
 			if ((desc->dsc_dtype <= dtype_any_text && !desc->dsc_length) ||
 				(desc->dsc_dtype == dtype_varying
@@ -1578,7 +1578,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 	case nod_argument:
 		{
 			const jrd_nod* message = node->nod_arg[e_arg_message];
-			const fmt* format = (fmt*) message->nod_arg[e_msg_format];
+			const Format* format = (Format*) message->nod_arg[e_msg_format];
 			*desc = format->fmt_desc[(IPTR) node->nod_arg[e_arg_number]];
 			return;
 		}
@@ -1616,7 +1616,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_function:
 		{
-			const fun* function = (FUN) node->nod_arg[e_fun_function];
+			const UserFunction* function = (UserFunction*) node->nod_arg[e_fun_function];
 			// Null value for the function indicates that the function was not
 			// looked up during parsing the blr. This is true if the function 
 			// referenced in the procedure blr was dropped before dropping the
@@ -4504,7 +4504,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 				!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
 			{
 				jrd_nod* value = node->nod_arg[e_fun_args];
-				fun* function = (FUN) node->nod_arg[e_fun_function];
+				UserFunction* function = (UserFunction*) node->nod_arg[e_fun_function];
 				node->nod_arg[e_fun_function] =
 					(jrd_nod*) FUN_resolve(csb, function, value);
 				if (!node->nod_arg[e_fun_function]) {
@@ -4745,7 +4745,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 
 	case nod_message:
 		{
-			const fmt* format = (fmt*) node->nod_arg[e_msg_format];
+			const Format* format = (Format*) node->nod_arg[e_msg_format];
 			if (!((tdbb->tdbb_flags & TDBB_prc_being_dropped) && !format)) {
 				csb->csb_impure += FB_ALIGN(format->fmt_length, 2);
 			}
@@ -4756,8 +4756,8 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_update;
-			const fmt* format = CMP_format(tdbb, csb, stream);
-			fmt::fmt_desc_const_iterator desc = format->fmt_desc.begin();
+			const Format* format = CMP_format(tdbb, csb, stream);
+			Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
 			for (ULONG id = 0; id < format->fmt_count; id++, desc++) {
 				if (desc->dsc_dtype) {
 					SBM_set(tdbb, &csb->csb_rpt[stream].csb_fields, id);
@@ -5060,7 +5060,7 @@ static jrd_nod* pass2_union(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 
 	jrd_nod* clauses = node->nod_arg[e_uni_clauses];
 	const USHORT id = (USHORT)(IPTR) node->nod_arg[e_uni_stream];
-	fmt** format = &csb->csb_rpt[id].csb_format;
+	Format** format = &csb->csb_rpt[id].csb_format;
 
 	// process alternating RecordSelExpr and map blocks
 
@@ -5469,8 +5469,9 @@ static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelEx
 }
 
 
-static void post_trigger_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* owner_relation,
-	trig_vec* triggers, jrd_rel* view)
+static void post_trigger_access(thread_db* tdbb, CompilerScratch* csb, 
+								jrd_rel* owner_relation,
+								trig_vec* triggers, jrd_rel* view)
 {
 /**************************************
  *
@@ -5619,7 +5620,8 @@ static void post_trigger_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* 
 }
 
 
-static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, fmt** input_format)
+static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, 
+						Format** input_format)
 {
 /**************************************
  *
@@ -5638,9 +5640,9 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, fmt
 
 	SET_TDBB(tdbb);
 	
-	fmt* format = *input_format;
+	Format* format = *input_format;
 	if (!format) {
-		format = *input_format = fmt::newFmt(*tdbb->tdbb_default, map->nod_count);
+		format = *input_format = Format::newFormat(*tdbb->tdbb_default, map->nod_count);
 		format->fmt_count = map->nod_count;
 	}
 
@@ -5718,8 +5720,8 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, fmt
 
 	format->fmt_length = (USHORT) FLAG_BYTES(format->fmt_count);
 
-	fmt::fmt_desc_iterator desc3 = format->fmt_desc.begin();
-	for (const fmt::fmt_desc_const_iterator end_desc = format->fmt_desc.end();
+	Format::fmt_desc_iterator desc3 = format->fmt_desc.begin();
+	for (const Format::fmt_desc_const_iterator end_desc = format->fmt_desc.end();
 		 desc3 < end_desc; desc3++)
 	{
 		const USHORT align = type_alignments[desc3->dsc_dtype];

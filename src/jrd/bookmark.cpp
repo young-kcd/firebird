@@ -107,7 +107,7 @@ Bookmark* BKM_allocate(RecordSource* rsb, USHORT length)
 
 
 #ifdef PC_ENGINE
-Bookmark* BKM_lookup(NOD node)
+Bookmark* BKM_lookup(jrd_nod* node)
 {
 /**************************************
  *
@@ -146,7 +146,7 @@ Bookmark* BKM_lookup(NOD node)
 
 
 #ifdef PC_ENGINE
-void BKM_release(NOD node)
+void BKM_release(jrd_nod* node)
 {
 /**************************************
  *

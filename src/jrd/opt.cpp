@@ -2891,8 +2891,8 @@ static bool expression_equal(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 
 		case nod_cast:
 			{
-				const dsc* desc1 = &((fmt*) node1->nod_arg[e_cast_fmt])->fmt_desc[0];
-				const dsc* desc2 = &((fmt*) node2->nod_arg[e_cast_fmt])->fmt_desc[0];
+				const dsc* desc1 = &((Format*) node1->nod_arg[e_cast_fmt])->fmt_desc[0];
+				const dsc* desc2 = &((Format*) node2->nod_arg[e_cast_fmt])->fmt_desc[0];
 				if (DSC_EQUIV(desc1, desc2) &&
 					expression_equal(tdbb, node1->nod_arg[0], node2->nod_arg[0])) 
 				{
@@ -3790,7 +3790,7 @@ static void gen_join(thread_db*     tdbb,
 		if (csb_tail->csb_flags & csb_compute) {
 			jrd_rel* relation = csb_tail->csb_relation;
 			fb_assert(relation);
-			const fmt* format = CMP_format(tdbb, csb, streams[1]);
+			const Format* format = CMP_format(tdbb, csb, streams[1]);
 			fb_assert(format);
 			csb_tail->csb_cardinality =
 				(float) DPM_data_pages(tdbb, relation) *
@@ -3817,7 +3817,7 @@ static void gen_join(thread_db*     tdbb,
 		fb_assert(csb_tail);
 		jrd_rel* relation = csb_tail->csb_relation;
 		fb_assert(relation);
-		const fmt* format = CMP_format(tdbb, csb, *stream);
+		const Format* format = CMP_format(tdbb, csb, *stream);
 		// if this is an external file, set an arbitrary cardinality; 
 		// if a plan was specified, don't bother computing cardinality;
 		// otherwise give a rough estimate based on the number of data
@@ -4963,7 +4963,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 	while (stream_stack) {
 		const SLONG id = (SLONG)(IPTR) LLS_POP(&id_stack);
 		const USHORT stream = (USHORT)(IPTR) LLS_POP(&stream_stack);
-		const fmt* format = CMP_format(tdbb, csb, stream);
+		const Format* format = CMP_format(tdbb, csb, stream);
 		const dsc* desc = &format->fmt_desc[id];
 		if (id >= format->fmt_count || desc->dsc_length == 0)
 			IBERROR(157);		/* msg 157 cannot sort on a field that does not exist */

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.62 2004-03-28 09:10:14 robocop Exp $
+$Id: blb.cpp,v 1.63 2004-03-30 04:10:48 robocop Exp $
 */
 
 #include "firebird.h"
@@ -312,7 +312,7 @@ void BLB_garbage_collect(
 		Record* rec1 = (Record*) stack1->lls_object;
 		if (!rec1)
 			continue;
-		const fmt* format = (fmt*) rec1->rec_format;
+		const Format* format = (Format*) rec1->rec_format;
 
 		/* Look for active blob records */
 

@@ -574,7 +574,7 @@ static void dmp_data(const data_page* page)
 					   i, index->dpg_offset, index->dpg_length,
 					   expanded_length);
 			ib_fprintf(dbg_file, "trans: %d, format: %d, flags: %#x\n\t",
-					   header->rhd_transaction, header->rhd_format,
+					   header->rhd_transaction, (int) header->rhd_format,
 					   header->rhd_flags);
 			if (header->rhd_b_page)
 			{

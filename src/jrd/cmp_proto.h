@@ -37,7 +37,7 @@ void CMP_expunge_transaction(Jrd::jrd_tra*);
 void CMP_decrement_prc_use_count(Jrd::thread_db*, Jrd::jrd_prc*);
 Jrd::jrd_req* CMP_find_request(Jrd::thread_db*, USHORT, USHORT);
 void CMP_fini(Jrd::thread_db*);
-Jrd::fmt* CMP_format(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
+Jrd::Format* CMP_format(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
 void CMP_get_desc(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*, dsc*);
 Jrd::IndexLock* CMP_get_index_lock(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 SLONG CMP_impure(Jrd::CompilerScratch*, USHORT);

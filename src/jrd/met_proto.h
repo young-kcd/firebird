@@ -33,7 +33,7 @@ namespace Jrd {
 	class jrd_tra;
 	class jrd_req;
 	class jrd_prc;
-	class fmt;
+	class Format;
 	class jrd_rel;
 	class CompilerScratch;
 	class jrd_nod;
@@ -44,11 +44,11 @@ namespace Jrd {
 void		MET_activate_shadow(Jrd::thread_db*);
 ULONG		MET_align(const dsc*, USHORT);
 void		MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, dsc*);
-Jrd::fmt*	MET_current(Jrd::thread_db*, Jrd::jrd_rel*);
+Jrd::Format*	MET_current(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_delete_dependencies(Jrd::thread_db*, const TEXT*, USHORT);
 void		MET_delete_shadow(Jrd::thread_db*, USHORT);
 void		MET_error(const TEXT*, ...);
-Jrd::fmt*	MET_format(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
+Jrd::Format*	MET_format(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 bool		MET_get_char_subtype(Jrd::thread_db*, SSHORT*, const UCHAR*, USHORT);
 Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const TEXT*,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,

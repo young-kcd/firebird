@@ -656,7 +656,7 @@ void EXE_receive(thread_db*		tdbb,
 	}
 
 	const jrd_nod* message = request->req_message;
-	const fmt* format = (fmt*) message->nod_arg[e_msg_format];
+	const Format* format = (Format*) message->nod_arg[e_msg_format];
 
 	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
 		ERR_post(isc_req_sync, 0);
@@ -811,7 +811,7 @@ void EXE_send(thread_db*		tdbb,
 	else
 		BUGCHECK(167);			/* msg 167 invalid SEND request */
 
-	const fmt* format = (fmt*) message->nod_arg[e_msg_format];
+	const Format* format = (Format*) message->nod_arg[e_msg_format];
 
 	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
 		ERR_post(isc_req_sync, 0);
@@ -1014,7 +1014,7 @@ static void cleanup_rpb(thread_db* tdbb, record_param* rpb)
  *
  **************************************/
 	Record* record = rpb->rpb_record;
-	const fmt* format = record->rec_format;
+	const Format* format = record->rec_format;
 
 	SET_TDBB(tdbb); /* Is it necessary? */
 
@@ -1130,7 +1130,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		{
 		if (!node->nod_arg[e_erase_statement])
 			break;
-		const fmt* format = MET_current(tdbb, rpb->rpb_relation);
+		const Format* format = MET_current(tdbb, rpb->rpb_relation);
 		Record* record = VIO_record(tdbb, rpb, format, tdbb->tdbb_default);
 		rpb->rpb_address = record->rec_data;
 		rpb->rpb_length = format->fmt_length;
@@ -1414,7 +1414,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	SCHAR* in_msg;
 	jrd_nod* in_message = node->nod_arg[e_esp_in_msg];
 	if (in_message) {
-		const fmt* format = (fmt*) in_message->nod_arg[e_msg_format];
+		const Format* format = (Format*) in_message->nod_arg[e_msg_format];
 		in_msg_length = format->fmt_length;
 		in_msg = (SCHAR *) request + in_message->nod_impure;
 	}
@@ -1423,7 +1423,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	SCHAR* out_msg;
 	jrd_nod* out_message = node->nod_arg[e_esp_out_msg];
 	if (out_message) {
-		const fmt* format = (fmt*) out_message->nod_arg[e_msg_format];
+		const Format* format = (Format*) out_message->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
 		out_msg = (SCHAR *) request + out_message->nod_impure;
 	}
@@ -1434,7 +1434,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	str* temp_buffer = NULL;
 	
 	if (!out_message) {
-		const fmt* format = (fmt*) procedure->prc_output_msg->nod_arg[e_msg_format];
+		const Format* format = (Format*) procedure->prc_output_msg->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
 		temp_buffer =
 			FB_NEW_RPT(*tdbb->tdbb_default, out_msg_length + DOUBLE_ALIGN - 1) str();
@@ -3061,13 +3061,13 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    exists for the stream and is big enough, and copying fields from the
    original record to the new record. */
 
-	const fmt* new_format = MET_current(tdbb, new_rpb->rpb_relation);
+	const Format* new_format = MET_current(tdbb, new_rpb->rpb_relation);
 	Record* new_record = VIO_record(tdbb, new_rpb, new_format, tdbb->tdbb_default);
 	new_rpb->rpb_address = new_record->rec_data;
 	new_rpb->rpb_length = new_format->fmt_length;
 	new_rpb->rpb_format_number = new_format->fmt_version;
 
-	const fmt* org_format;
+	const Format* org_format;
 	Record* org_record = org_rpb->rpb_record;
 	if (!org_record) {
 		org_record =
@@ -3910,7 +3910,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    exists for the stream and is big enough, and initialize all null flags
    to "missing." */
 
-	const fmt* format = MET_current(tdbb, relation);
+	const Format* format = MET_current(tdbb, relation);
 	record = VIO_record(tdbb, rpb, format, tdbb->tdbb_default);
 
 	rpb->rpb_address = record->rec_data;

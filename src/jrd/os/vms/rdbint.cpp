@@ -45,7 +45,7 @@ typedef struct handle {
 } *HANDLE, *REQ, *DBB, *HND_TRA, *HND_BLB;
 
 typedef struct teb {
-	Database** teb_database;
+	DBB* teb_database;
 	int teb_tpb_length;
 	UCHAR *teb_tpb;
 } TEB;
@@ -98,7 +98,7 @@ int RDB_attach_database(
 						int* user_status,
 						SSHORT file_length,
 						const SCHAR* file_name,
-						Database** handle,
+						DBB* handle,
 						SSHORT dpb_length, const SCHAR* dpb, SSHORT db_type)
 {
 /**************************************
@@ -118,13 +118,14 @@ int RDB_attach_database(
 	ISC_STATUS stat;
 	ISC_STATUS_ARRAY status_vector;
 	struct dsc$descriptor_s name;
-	SCHAR new_dpb[128], *p, *q;
-	SSHORT new_length, l, c_len;
+	SCHAR new_dpb[128];
+	SSHORT new_length;
 
 	init();
 
 	if (!RDB$ATTACH_DATABASE &&
-		!find_symbol(&RDB$ATTACH_DATABASE, "RDB$ATTACH_DATABASE")) {
+		!find_symbol(&RDB$ATTACH_DATABASE, "RDB$ATTACH_DATABASE")) 
+	{
 		user_status[0] = isc_arg_gds;
 		user_status[1] = gds_unavailable;
 		user_status[0] = 0;
@@ -132,20 +133,20 @@ int RDB_attach_database(
 	}
 
 	if (dpb_length > 1) {
-		p = new_dpb;
-		q = dpb;
+		char* p = new_dpb;
+		const char* q = dpb;
 		*p++ = gds_dpb_version1;
 		q++;
-		for (l = dpb_length; l; l -= (q - dpb))
+		for (int l = dpb_length; l; l -= (q - dpb))
 			if (*q < gds_dpb_damaged) {
 				*p++ = *q++;
-				c_len = *p++ = *q++;
+				int c_len = *p++ = *q++;
 				while (c_len--)
 					*p++ = *q++;
 			}
 			else {
 				*q++;
-				c_len = *q++;
+				int c_len = *q++;
 				while (c_len--)
 					*q++;
 			}
@@ -288,7 +289,7 @@ int RDB_commit_transaction(int *user_status, HND_TRA* tra_handle)
 
 int RDB_compile_request(
 						int* user_status,
-						Database** db_handle,
+						DBB* db_handle,
 						REQ* req_handle, SSHORT blr_length, const SCHAR* blr)
 {
 /**************************************
@@ -302,20 +303,17 @@ int RDB_compile_request(
  **************************************/
 	ISC_STATUS stat;
 	ISC_STATUS_ARRAY status_vector;
-	int *messages;
-	UCHAR *temp;
-	USHORT temp_length;
-	Database* database;
-	REQ request;
-	SLONG max_length;
 
 	CHECK_HANDLE(db_handle, gds_bad_db_handle);
-	messages = NULL;
-	database = *db_handle;
-	temp = allocate_temp(blr_length + 200);
+	DBB database = *db_handle;
+	UCHAR* temp = allocate_temp(blr_length + 200);
 
-	if (messages =
-		MAP_parse_blr(blr, blr_length, temp, &temp_length, &max_length)) {
+	USHORT temp_length;
+	SLONG max_length;
+	int* messages =
+		MAP_parse_blr(blr, blr_length, temp, &temp_length, &max_length);
+	if (messages)
+	{
 		blr = temp;
 		blr_length = temp_length;
 		allocate_temp(max_length);
@@ -327,7 +325,8 @@ int RDB_compile_request(
 	if (stat = MAP_status_to_gds(status_vector, user_status))
 		MAP_release(messages);
 	else {
-		*req_handle = request = allocate_handle(*req_handle);
+		REQ request = allocate_handle(*req_handle);
+		*req_handle = request;
 		request->messages = messages;
 		request->parent = database;
 		request->next = database->next;
@@ -376,7 +375,7 @@ int RDB_create_database(
 						int* user_status,
 						USHORT file_length,
 						const UCHAR* file_name,
-						Database** handle,
+						DBB* handle,
 						USHORT dpb_length, const UCHAR* dpb, USHORT db_type)
 {
 /**************************************
@@ -417,7 +416,7 @@ int RDB_create_database(
 
 int RDB_database_info(
 					  int* user_status,
-					  Database** handle,
+					  DBB* handle,
 					  SSHORT item_length,
 					  const SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
 {
@@ -432,7 +431,7 @@ int RDB_database_info(
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	SCHAR item, tmp_buff[32];
+	SCHAR tmp_buff[32];
 
 	CHECK_HANDLE(handle, gds_bad_db_handle);
 
@@ -444,7 +443,8 @@ int RDB_database_info(
 	const SCHAR* item_ptr = items;
 	const SCHAR* const end = item_ptr + item_length;
 	while (item_ptr < end) {
-		*tmp_ptr = item = *item_ptr++;
+		const char item = *item_ptr++;
+		*tmp_ptr = item;
 		if (item > gds_info_limbo)
 			*tmp_ptr += 200;
 		tmp_ptr++;
@@ -457,9 +457,9 @@ int RDB_database_info(
 /* Now clean the clumplets all back up again... */
 
 	item_ptr = buffer;
-	end = item_ptr + buffer_length;
-	while (item_ptr < end) {
-		item = *item_ptr++;
+	const char* const end2 = item_ptr + buffer_length;
+	while (item_ptr < end2) {
+		const char item = *item_ptr++;
 		SSHORT len = *item_ptr++;
 		len |= (*item_ptr++) << 8;
 		if (item == gds_info_error && *item_ptr > 200)
@@ -473,7 +473,7 @@ int RDB_database_info(
 }
 
 
-int RDB_detach_database(int *user_status, Database** handle)
+int RDB_detach_database(int *user_status, DBB* handle)
 {
 /**************************************
  *
@@ -487,15 +487,14 @@ int RDB_detach_database(int *user_status, Database** handle)
  **************************************/
 	ISC_STATUS stat;
 	ISC_STATUS_ARRAY status_vector;
-	Database* database;
-	REQ request;
 
 	CHECK_HANDLE(handle, gds_bad_db_handle);
-	database = *handle;
+	DBB database = *handle;
 
 	RDB_CALL(RDB$DETACH_DATABASE) (status_vector, &database->handle);
 
 	if (!(stat = MAP_status_to_gds(status_vector, user_status))) {
+		REQ request;
 		while (request = database->next) {
 			database->next = request->next;
 			MAP_release(request->messages);
@@ -634,13 +633,12 @@ int RDB_receive(
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	int length;
-	UCHAR *temp;
 
 	CHECK_HANDLE(req_handle, gds_bad_req_handle);
-	temp = allocate_temp(0);
+	UCHAR* temp = allocate_temp(0);
 
-	if (length = MAP_rdb_length(msg_type, (*req_handle)->messages)) {
+	const int length = MAP_rdb_length(msg_type, (*req_handle)->messages);
+	if (length) {
 		RDB_CALL(RDB$RECEIVE) (status_vector, &(*req_handle)->handle,
 							   msg_type, length, temp, level);
 		MAP_rdb_to_gds(msg_type, (*req_handle)->messages, temp, msg);
@@ -656,7 +654,7 @@ int RDB_receive(
 
 int RDB_reconnect_transaction(
 							  int* user_status,
-							  Database** db_handle,
+							  DBB* db_handle,
 							  HND_TRA* tra_handle, SSHORT length,
 							  const UCHAR* id)
 {
@@ -694,17 +692,15 @@ int RDB_release_request(int *user_status, REQ * req_handle)
  **************************************/
 	ISC_STATUS stat;
 	ISC_STATUS_ARRAY status_vector;
-	Database* database;
-	REQ request, *ptr;
 
 	CHECK_HANDLE(req_handle, gds_bad_req_handle);
 
-	request = *req_handle;
+	REQ request = *req_handle;
 	RDB_CALL(RDB$RELEASE_REQUEST) (status_vector, &request->handle);
 
 	if (!(stat = MAP_status_to_gds(status_vector, user_status))) {
-		database = request->parent;
-		for (ptr = &database->next; *ptr; ptr = &(*ptr)->next)
+		DBB database = request->parent;
+		for (REQ* ptr = &database->next; *ptr; ptr = &(*ptr)->next)
 			if (*ptr == request) {
 				*ptr = request->next;
 				break;
@@ -791,13 +787,11 @@ int RDB_send(
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	UCHAR *temp;
-	int length;
 
+	UCHAR* temp = allocate_temp(0);
 
-	temp = allocate_temp(0);
-
-	if (length = MAP_gds_to_rdb(msg_type, (*req_handle)->messages, msg, temp)) {
+	const int length = MAP_gds_to_rdb(msg_type, (*req_handle)->messages, msg, temp);
+	if (length) {
 		msg_length = length;
 		msg = temp;
 	}
@@ -829,14 +823,13 @@ int RDB_start_and_send(
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	UCHAR *temp;
-	int length;
 
 	CHECK_HANDLE(tra_handle, gds_bad_trans_handle);
 	CHECK_HANDLE(req_handle, gds_bad_req_handle);
-	temp = allocate_temp(0);
+	UCHAR* temp = allocate_temp(0);
 
-	if (length = MAP_gds_to_rdb(msg_type, (*req_handle)->messages, msg, temp)) {
+	const int length = MAP_gds_to_rdb(msg_type, (*req_handle)->messages, msg, temp);
+	if (length) {
 		msg_length = length;
 		msg = temp;
 	}
@@ -892,20 +885,19 @@ int RDB_start_multiple(
  **************************************/
 	ISC_STATUS stat;
 	ISC_STATUS_ARRAY status_vector;
-	Database* database;
-	int rdb_vector[32], *rdb, c;
+	int rdb_vector[32];
 
 	if (*tra_handle)
 		return bad_handle(user_status, gds_bad_trans_handle);
 
-	rdb = rdb_vector;
+	int* rdb = rdb_vector;
 	*rdb++ = 0;
 	*rdb++ = status_vector;
 	*rdb++ = tra_handle;
 	*rdb++ = 0;
 
-	for (c = 0; c < count; c++, teb++) {
-		database = *teb->teb_database;
+	for (int c = 0; c < count; c++, teb++) {
+		DBB database = *teb->teb_database;
 		if (!database)
 			return bad_handle(user_status, gds_bad_db_handle);
 		++rdb_vector[3];
@@ -929,7 +921,7 @@ int RDB_start_transaction(
 						  int* user_status,
 						  HND_TRA* tra_handle,
 						  SSHORT count,
-						  Database** db_handle, SSHORT tpb_length, SCHAR * tpb)
+						  DBB* db_handle, SSHORT tpb_length, SCHAR * tpb)
 {
 /**************************************
  *
@@ -943,21 +935,20 @@ int RDB_start_transaction(
  **************************************/
 	ISC_STATUS stat;
 	ISC_STATUS_ARRAY status_vector;
-	TEB *teb;
-	Database* database;
-	int rdb_vector[32], *rdb, c;
+	int rdb_vector[32];
 
 	if (*tra_handle)
 		return bad_handle(user_status, gds_bad_trans_handle);
 
-	rdb = rdb_vector;
+	int* rdb = rdb_vector;
 	*rdb++ = 0;
 	*rdb++ = status_vector;
 	*rdb++ = tra_handle;
 	*rdb++ = 0;
 
-	for (teb = &db_handle, c = 0; c < count; c++, teb++) {
-		database = *teb->teb_database;
+	int c = 0;
+	for (TEB* teb = &db_handle; c < count; c++, teb++) {
+		DBB database = *teb->teb_database;
 		if (!database)
 			return bad_handle(user_status, gds_bad_db_handle);
 		++rdb_vector[3];
@@ -1041,9 +1032,7 @@ static HANDLE allocate_handle(int *real_handle)
  *	Allocate an indirect handle.
  *
  **************************************/
-	HANDLE handle;
-
-	handle = gds__alloc((SLONG) sizeof(struct handle));
+	HANDLE handle = gds__alloc((SLONG) sizeof(struct handle));
 /* FREE: unknown - user process? */
 	if (!handle)				/* NOMEM: not a great handler */
 		return NULL;
@@ -1096,9 +1085,7 @@ static ISC_STATUS bad_handle(ISC_STATUS *user_status, ISC_STATUS code)
  *
  **************************************/
 	ISC_STATUS_ARRAY local_status;
-	ISC_STATUS *vector;
-
-	vector = (user_status) ? user_status : local_status;
+	ISC_STATUS* vector = (user_status) ? user_status : local_status;
 	*vector++ = isc_arg_gds;
 	*vector++ = code;
 	*vector = 0;
@@ -1119,9 +1106,8 @@ static int check_handle(HANDLE * handle)
  *	Validate a handle.  Return TRUE if it's lousy.
  *
  **************************************/
-	HANDLE blk;
-
-	if (blk = *handle)
+	HANDLE blk = *handle;
+	if (blk)
 		return FALSE;
 
 	return TRUE;
@@ -1181,19 +1167,18 @@ static void init(void)
  *	Rdb/VMS debug flags.
  *
  **************************************/
-	UCHAR *p, buffer[16];
 	USHORT l;
-	int status;
 	struct dsc$descriptor name, value;
 
 	make_desc("RDMS$DEBUG_FLAGS", 0, &name);
 	make_desc(buffer, sizeof(buffer), &value);
-	status = lib$sys_trnlog(&name, &l, &value);
+	const int status = lib$sys_trnlog(&name, &l, &value);
 
 	if (status != SS$_NORMAL)
 		return;
 
-	for (p = buffer; l; --l)
+	UCHAR buffer[16];
+	for (const UCHAR* p = buffer; l; --l)
 		switch (*p++) {
 		case 'B':
 			debug_flags |= DEBUG_BLR;

@@ -123,12 +123,12 @@ int rdb$attach_database(
  *
  **************************************/
 	int *status, stat;
-	int len;
 
 /* Try Rdb/VMS first. If it succeeds, everything is ducky */
 
 	if (RDB$ATTACH_DATABASE ||
-		find_symbol(&RDB$ATTACH_DATABASE, "RDB$ATTACH_DATABASE")) {
+		find_symbol(&RDB$ATTACH_DATABASE, "RDB$ATTACH_DATABASE")) 
+	{
 		RDB_CALL(RDB$ATTACH_DATABASE) (user_status, file, handle, dpb_length,
 									   dpb);
 		if (stat & 1) {
@@ -141,6 +141,7 @@ int rdb$attach_database(
    Rdb/VMS implemented a new dpb version number, not documented.
    Sense it and ignore the dpb. */
 
+	int len;
 	if (dpb_length && (dpb[0] == 2))
 		len = 0;
 	else
@@ -284,21 +285,17 @@ int rdb$compile_request(
  *
  **************************************/
 	ISC_STATUS stat;
-	int *messages;
-	REQ request;
-	Database* database;
-	USHORT temp_length;
-	UCHAR *temp;
-	SLONG max_length;
 
 	if (!*db_handle)
 		return set_status(user_status, rdb$_bad_db_handle);
 
-	messages = NULL;
-	database = *db_handle;
-	temp = allocate_temp(blr_length + 200);
+	int* messages = NULL;
+	DBB database = *db_handle;
+	UCHAR* temp = allocate_temp(blr_length + 200);
 
 	if ((*db_handle)->implementation == impl_gds) {
+		USHORT temp_length;
+		SLONG max_length;
 		if (messages =
 			MAP_parse_blr(blr, blr_length, temp, &temp_length, &max_length)) {
 			blr = temp;
@@ -316,8 +313,8 @@ int rdb$compile_request(
 	}
 
 	if (stat & 1) {
-		*req_handle = request =
-			allocate_handle(database->implementation, *req_handle);
+		REQ request = allocate_handle(database->implementation, *req_handle);
+		*req_handle = request;
 		request->parent = database;
 		request->next = database->next;
 		database->next = request;
@@ -331,7 +328,7 @@ int rdb$compile_request(
 int rdb$create_database(
 						int* user_status,
 						struct dsc$descriptor* file,
-						Database** handle,
+						DBB* handle,
 						USHORT dpb_length, const UCHAR* dpb, USHORT db_type)
 {
 /**************************************
@@ -409,7 +406,7 @@ int rdb$create_segmented_string(int *user_status,
 
 int rdb$database_info(
 					  int* user_status,
-					  Database** handle,
+					  DBB* handle,
 					  SSHORT item_length,
 					  const SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
 {
@@ -452,8 +449,8 @@ int rdb$database_info(
 		/* Now clean the clumplets all back up again... */
 
 		item_ptr = buffer;
-		end = item_ptr + buffer_length;
-		while (item_ptr < end) {
+		const char* const end2 = item_ptr + buffer_length;
+		while (item_ptr < end2) {
 			item = *item_ptr++;
 			SSHORT len = *item_ptr++;
 			len |= (*item_ptr++) << 8;
@@ -478,7 +475,7 @@ int rdb$database_info(
 
 int rdb$ddl(
 			int *user_status,
-			Database** db_handle, UCHAR ddl_operation, int length, UCHAR * buffer)
+			DBB* db_handle, UCHAR ddl_operation, int length, UCHAR * buffer)
 {
 /**************************************
  *
@@ -492,8 +489,7 @@ int rdb$ddl(
  *    it through as before to RDB.
  *
  **************************************/
-	int stat, dyn_length, gds_vector[32], *gds;
-	UCHAR *dyn_buffer;
+	int stat, gds_vector[32];
 
 	if (!*db_handle)
 		return set_status(user_status, rdb$_bad_db_handle);
@@ -505,10 +501,13 @@ int rdb$ddl(
 
 /* First see if we can in fact translate the MBLR string into a DYN string */
 
-		dyn_buffer = allocate_temp(2 * length);
+		UCHAR* dyn_buffer = allocate_temp(2 * length);
+		int dyn_length;
 		if (!MBLR_translate_to_dyn((int) ddl_operation, length, buffer,
 								   &dyn_length, dyn_buffer))
+		{
 			return set_status(user_status, rdb$_wish_list);
+		}
 
 /* Finally we can ship off the DYN string built to be processed */
 
@@ -528,7 +527,7 @@ int rdb$ddl(
 }
 
 
-int rdb$detach_database(int *user_status, Database** handle)
+int rdb$detach_database(int *user_status, DBB* handle)
 {
 /**************************************
  *
@@ -540,11 +539,10 @@ int rdb$detach_database(int *user_status, Database** handle)
  *	Close down a database.
  *
  **************************************/
-	Database* database;
-	REQ request;
 	int stat;
 
-	if (!(database = *handle))
+	DBB database = *handle;
+	if (!database)
 		return set_status(user_status, rdb$_bad_db_handle);
 
 	if (database->implementation == impl_gds) {
@@ -556,6 +554,7 @@ int rdb$detach_database(int *user_status, Database** handle)
 	}
 
 	if (stat & 1) {
+		REQ request;
 		while (request = database->next) {
 			database->next = request->next;
 			MAP_release(request->messages);
@@ -762,16 +761,15 @@ int rdb$receive(
  *
  **************************************/
 	ISC_STATUS stat;
-	REQ request;
-	UCHAR *temp;
-	int length;
 
-	if (!(request = *req_handle))
+	REQ request = *req_handle;
+	if (!request)
 		return set_status(user_status, rdb$_bad_req_handle);
 
 	if (request->implementation == impl_gds) {
-		if (length = MAP_rdb_length(msg_type, request->messages)) {
-			temp = allocate_temp(0);
+		const int length = MAP_rdb_length(msg_type, request->messages);
+		if (length) {
+			UCHAR* temp = allocate_temp(0);
 			gds__receive(status_vector, &request->handle,
 						 msg_type, length, temp, level);
 			MAP_gds_to_rdb(msg_type, request->messages, temp, msg);
@@ -792,7 +790,7 @@ int rdb$receive(
 
 int rdb$reconnect_transaction(
 							  int* user_status,
-							  Database** db_handle,
+							  DBB* db_handle,
 							  HND_TRA* tra_handle, SSHORT length,
 							  const UCHAR* id)
 {
@@ -875,11 +873,10 @@ int rdb$release_request(int *user_status, REQ * req_handle)
  *	Release a request.
  *
  **************************************/
-	REQ *ptr, request;
-	Database* database;
 	int stat;
 
-	if (!(request = *req_handle))
+	REQ request = *req_handle;
+	if (!request)
 		return set_status(user_status, rdb$_bad_req_handle);
 
 	if (request->implementation == impl_gds) {
@@ -891,8 +888,8 @@ int rdb$release_request(int *user_status, REQ * req_handle)
 	}
 
 	if (stat & 1) {
-		database = request->parent;
-		for (ptr = &database->next; *ptr; ptr = &(*ptr)->next)
+		DBB database = request->parent;
+		for (REQ* ptr = &database->next; *ptr; ptr = &(*ptr)->next)
 			if (*ptr == request) {
 				*ptr = request->next;
 				break;
@@ -993,16 +990,16 @@ int rdb$send(
  *	Get a record from the host program.
  *
  **************************************/
-	int length, stat;
-	REQ request;
-	UCHAR *temp;
+	int stat;
 
-	if (!(request = *req_handle))
+	REQ request = *req_handle;
+	if (!request)
 		return set_status(user_status, rdb$_bad_req_handle);
 
 	if (request->implementation == impl_gds) {
-		temp = allocate_temp(0);
-		if (length = MAP_rdb_to_gds(msg_type, request->messages, msg, temp)) {
+		UCHAR* temp = allocate_temp(0);
+		const int length = MAP_rdb_to_gds(msg_type, request->messages, msg, temp);
+		if (length) {
 			msg_length = length;
 			msg = temp;
 		}
@@ -1036,16 +1033,16 @@ USHORT msg_length, SCHAR * msg, SSHORT level)
  *	Get a record from the host program.
  *
  **************************************/
-	int length, stat;
-	REQ request;
-	UCHAR *temp;
+	int stat;
 
-	if (!(request = *req_handle))
+	REQ request = *req_handle;
+	if (!request)
 		return set_status(user_status, rdb$_bad_req_handle);
 
 	if ((*req_handle)->implementation == impl_gds) {
-		temp = allocate_temp(0);
-		if (length = MAP_rdb_to_gds(msg_type, request->messages, msg, temp)) {
+		UCHAR* temp = allocate_temp(0);
+		cons int length = MAP_rdb_to_gds(msg_type, request->messages, msg, temp);
+		if (length) {
 			msg_length = length;
 			msg = temp;
 		}
@@ -1119,7 +1116,7 @@ int rdb$start_transaction(
 						  int* user_status,
 						  HND_TRA* tra_handle,
 						  SSHORT count,
-						  Database** db_handle, SSHORT tpb_length, SCHAR * tpb)
+						  DBB* db_handle, SSHORT tpb_length, SCHAR * tpb)
 {
 /**************************************
  *
@@ -1131,27 +1128,26 @@ int rdb$start_transaction(
  *	Start a transaction.
  *
  **************************************/
-	TEB *teb;
-	Database* database;
-	int stat, gds_vector[32], rdb_vector[32], *gds, *rdb, c;
+	int stat, gds_vector[32], rdb_vector[32];
 
 	if (*tra_handle)
 		return set_status(user_status, rdb$_bad_trans_handle);
 
-	gds = gds_vector;
+	int* gds = gds_vector;
 	*gds++ = 0;
 	*gds++ = user_status;
 	*gds++ = tra_handle;
 	*gds++ = 0;
 
-	rdb = rdb_vector;
+	int* rdb = rdb_vector;
 	*rdb++ = 0;
 	*rdb++ = status_vector;
 	*rdb++ = tra_handle;
 	*rdb++ = 0;
 
-	for (teb = &db_handle, c = 0; c < count; c++, teb++) {
-		database = *teb->teb_database;
+	int c = 0;
+	for (TEB* teb = &db_handle; c < count; c++, teb++) {
+		DBB database = *teb->teb_database;
 		if (!database)
 			return set_status(user_status, rdb$_bad_db_handle);
 		if (database->implementation == impl_gds) {
@@ -1268,17 +1264,15 @@ static HANDLE allocate_handle(IMPL implementation, int *real_handle)
  *	Allocate an indirect handle.
  *
  **************************************/
-	UCHAR *p, *end;
-	HANDLE handle;
-
-	handle = gds__alloc((SLONG) sizeof(struct handle));
+	HANDLE handle = gds__alloc((SLONG) sizeof(struct handle));
 /* FREE: unknown */
 	if (!handle) {				/* NOMEM: crash here */
 		DEV_REPORT("allocate_handle: no memory");
 		/* NOMEM: not handled, crash here */
 	}
 
-	for (p = handle, end = p + sizeof(struct handle); p < end;)
+	UCHAR* p = (UCHAR*) handle;
+	for (const UCHAR* const end = p + sizeof(struct handle); p < end;)
 		*p++ = 0;
 
 	handle->implementation = implementation;

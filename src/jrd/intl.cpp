@@ -697,7 +697,7 @@ static FPTR_SHORT lookup_init_function(
 			break;
 	}
 	INTL_TRACE(("INTL: trying user fn %s\n", entry));
-	FUN function_block = FUN_lookup_function(entry, false);
+	UserFunction* function_block = FUN_lookup_function(entry, false);
 	if (function_block) {
 		INTL_TRACE(("INTL: found a user fn, validating\n"));
 		if ((function_block->fun_count == argcount) &&

@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.102 2004-03-28 09:10:15 robocop Exp $
+$Id: met.epp,v 1.103 2004-03-30 04:10:49 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -676,7 +676,7 @@ void MET_change_fields( thread_db* tdbb, jrd_tra* transaction, DSC * field_sourc
 }
 
 
-fmt* MET_current(thread_db* tdbb, jrd_rel* relation)
+Format* MET_current(thread_db* tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -800,7 +800,7 @@ void MET_error(const TEXT* string, ...)
 			 ERR_cstring(s), 0);
 }
 
-fmt* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
+Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 {
 /**************************************
  *
@@ -815,11 +815,11 @@ fmt* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	fmt* format;
+	Format* format;
 	vec* formats = relation->rel_formats;
 	if (formats &&
 		(number < formats->count()) &&
-		(format = (fmt*) (*formats)[number]))
+		(format = (Format*) (*formats)[number]))
 	{
 		return format;
 	}
@@ -837,12 +837,12 @@ fmt* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 		}
 		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$DESCRIPTOR);
 		const USHORT count = blob->blb_length / sizeof(struct dsc);
-		format = fmt::newFmt(*dbb->dbb_permanent, count);
+		format = Format::newFormat(*dbb->dbb_permanent, count);
 		format->fmt_count = count;
 //		BLB_get_data(tdbb, blob, (UCHAR*) &*(format->fmt_desc.begin()), blob->blb_length);
 		BLB_get_data(tdbb, blob, (UCHAR*) &(format->fmt_desc[0]), blob->blb_length);
 
-		for (fmt::fmt_desc_const_iterator desc = format->fmt_desc.end() - 1;
+		for (Format::fmt_desc_const_iterator desc = format->fmt_desc.end() - 1;
 			 desc >= format->fmt_desc.begin();
 			 --desc)
 		{
@@ -860,7 +860,7 @@ fmt* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 	}
 
 	if (!format) {
-		format = fmt::newFmt(*dbb->dbb_permanent);
+		format = Format::newFormat(*dbb->dbb_permanent);
 	}
 
 	format->fmt_version = number;
@@ -2544,8 +2544,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	vec::iterator ptr, end;
 	JrdMemoryPool *old_pool;
 	jrd_nod* node;
-	fmt* format;
-	fmt::fmt_desc_iterator desc;
+	Format* format;
+	Format::fmt_desc_iterator desc;
 	SSHORT i;
 
 	SET_TDBB(tdbb);
@@ -2744,7 +2744,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			{
 				ULONG length;
 				format = procedure->prc_format =
-					fmt::newFmt(*dbb->dbb_permanent, procedure->prc_outputs);
+					Format::newFormat(*dbb->dbb_permanent, procedure->prc_outputs);
 				format->fmt_count = procedure->prc_outputs;
 				length = FLAG_BYTES(format->fmt_count);
 				desc = format->fmt_desc.begin();
@@ -4014,7 +4014,7 @@ static bool par_messages(thread_db*	tdbb,
  *
  * Functional description
  *      Parse the messages of a blr request.  For specified message, allocate
- *      a format (fmt) block.
+ *      a format (Format) block.
  *
  **************************************/
 	csb->csb_running = blr;
@@ -4033,11 +4033,11 @@ static bool par_messages(thread_db*	tdbb,
 		const USHORT msg_number = BLR_BYTE;
 		USHORT count = BLR_BYTE;
 		count += (BLR_BYTE) << 8;
-		fmt* format = fmt::newFmt(*tdbb->tdbb_default, count);
+		Format* format = Format::newFormat(*tdbb->tdbb_default, count);
 		format->fmt_count = count;
 		// CVC: This offset should be protected against 32K overflow in the future
 		USHORT offset = 0;
-		for (fmt::fmt_desc_iterator desc = format->fmt_desc.begin(); count;
+		for (Format::fmt_desc_iterator desc = format->fmt_desc.begin(); count;
 			--count, ++desc)
 		{
 			const USHORT align = PAR_desc(csb, &*desc);
@@ -4356,7 +4356,7 @@ static void store_dependencies(thread_db*	tdbb,
 			}
         case obj_udf:
 			{
-			    fun* udf = (FUN) node->nod_arg [e_dep_object];
+			    UserFunction* udf = (UserFunction*) node->nod_arg [e_dep_object];
                 dpdo_name = udf->fun_symbol->sym_string;
 		    }
             break;

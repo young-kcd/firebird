@@ -1,6 +1,6 @@
 /*
- *	PROGRAM:	JRD Utilties
- *	MODULE:		vms_command.c
+ *	PROGRAM:	JRD Utilities
+ *	MODULE:		vms_command.cpp
  *	DESCRIPTION:	Parse & translate VMS command line
  *
  * The contents of this file are subject to the Interbase Public
@@ -25,7 +25,7 @@
 #include "../jrd/common.h"
 #include descrip
 
-static SCHAR output_buffer[1024], *args[16];
+static char global_output_buffer[1024], *global_args[16];
 
 
 int VMS_parse(SCHAR *** argv, int argc)
@@ -40,7 +40,6 @@ int VMS_parse(SCHAR *** argv, int argc)
  *	Parse a VMS foreign command line into C style
  *
  **************************************/
-	SCHAR *p, *q, *out, input[256], **arg, filename, **temp;
 
 /*
  * Rebuild the argv elements into a single string
@@ -49,19 +48,20 @@ int VMS_parse(SCHAR *** argv, int argc)
  * Why must they do us these favors?
  */
 
-	q = input;
-	temp = *argv;
+	char input[256];
+	char* q = input;
+	const char* const* temp = *argv;
 	while (--argc) {
-		for (p = *++temp; *p; p++)
+		for (const char* p = *++temp; *p; p++)
 			*q++ = *p;
 		*q++ = ' ';
 	}
 	*q = 0;
 
-	*argv = args;
-	arg = args + 1;
-	p = input;
-	out = output_buffer;
+	*argv = global_args;
+	char** arg = global_args + 1;
+	const char* p = input;
+	char* out = global_output_buffer;
 
 /* 
  * Command line arguments can be switches which start with '/' or
@@ -70,7 +70,7 @@ int VMS_parse(SCHAR *** argv, int argc)
  */
 
 	while (*p) {
-		filename = TRUE;
+		bool filename = true;
 		while (*p == ' ' || *p == '\t' || *p == '=')
 			p++;
 		if (!*p)
@@ -79,7 +79,7 @@ int VMS_parse(SCHAR *** argv, int argc)
 		if (*p == '/' || *p == '-') {
 			*out++ = '-';
 			p++;
-			filename = FALSE;
+			filename = false;
 		}
 		while (*p && *p != ' ' && *p != '=' && *p != '\t') {
 			if (!filename && *p == '/')
@@ -89,5 +89,5 @@ int VMS_parse(SCHAR *** argv, int argc)
 		*out++ = 0;
 	}
 
-	return arg - args;
+	return arg - global_args;
 }

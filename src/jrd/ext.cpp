@@ -254,7 +254,7 @@ bool EXT_get(RecordSource* rsb)
 
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	Record* record = rpb->rpb_record;
-	const fmt* format = record->rec_format;
+	const Format* format = record->rec_format;
 
 	const SSHORT offset = (SSHORT) (IPTR) format->fmt_desc[0].dsc_address;
 	UCHAR* p = record->rec_data + offset;
@@ -282,7 +282,7 @@ bool EXT_get(RecordSource* rsb)
    or the missing value */
 
 	dsc desc;
-	fmt::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
+	Format::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
 
     SSHORT i = 0;
 	for (vec::iterator itr = relation->rel_fields->begin();
@@ -342,7 +342,7 @@ void EXT_open(RecordSource* rsb)
 	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
-	const fmt* format;
+	const Format* format;
 	Record* record = rpb->rpb_record;
 	if (!record || !(format = record->rec_format)) {
 		format = MET_current(tdbb, relation);
@@ -453,7 +453,7 @@ void EXT_store(record_param* rpb, int* transaction)
 	jrd_rel* relation = rpb->rpb_relation;
 	ExternalFile* file = relation->rel_file;
 	Record* record = rpb->rpb_record;
-	const fmt* format = record->rec_format;
+	const Format* format = record->rec_format;
 
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
@@ -477,7 +477,7 @@ void EXT_store(record_param* rpb, int* transaction)
 
 	dsc desc;
 	vec::iterator field_ptr = relation->rel_fields->begin();
-	fmt::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
+	Format::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
 
 	for (USHORT i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
 	{

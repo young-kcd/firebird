@@ -954,8 +954,8 @@ static void print_rhd(USHORT length, const rhd* header)
  *
  **************************************/
 	if (VAL_debug_level) {
-		ib_fprintf(ib_stdout, "rhd: len %d TX %d fmt %d ",
-				   length, header->rhd_transaction, header->rhd_format);
+		ib_fprintf(ib_stdout, "rhd: len %d TX %d format %d ",
+				   length, header->rhd_transaction, (int) header->rhd_format);
 		ib_fprintf(ib_stdout, "BP %d/%d flags 0x%x ",
 				   header->rhd_b_page, header->rhd_b_line, header->rhd_flags);
 		if (header->rhd_flags & rhd_incomplete) {
@@ -1944,7 +1944,7 @@ static RTN walk_record(thread_db* tdbb,
 
 /* Check out record length and format */
 
-	const fmt* format = MET_format(tdbb, relation, header->rhd_format);
+	const Format* format = MET_format(tdbb, relation, header->rhd_format);
 
 	if (!delta_flag && record_length != format->fmt_length)
 		return corrupt(tdbb, control, VAL_REC_WRONG_LENGTH, relation, number);
@@ -1980,7 +1980,7 @@ static RTN walk_relation(thread_db* tdbb, VDR control, jrd_rel* relation)
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
-		ib_fprintf(ib_stdout, "walk_relation: id %d fmt %d %s %s\n",
+		ib_fprintf(ib_stdout, "walk_relation: id %d Format %d %s %s\n",
 				   relation->rel_id, relation->rel_current_fmt,
 				   relation->rel_name, relation->rel_owner_name);
 #endif

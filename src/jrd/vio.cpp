@@ -1066,7 +1066,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, BLK pool)
    optimization. */
 
 	Record* record = VIO_record(tdbb, rpb, 0, (JrdMemoryPool*) pool);
-	const fmt* format = record->rec_format;
+	const Format* format = record->rec_format;
 
 /* If the record is a delta version, start with data from prior record. */
 	UCHAR* tail;
@@ -2465,7 +2465,8 @@ bool VIO_next_record(thread_db* tdbb,
 }
 
 
-Record* VIO_record(thread_db* tdbb, record_param* rpb, const fmt* format, JrdMemoryPool *pool)
+Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format, 
+				   JrdMemoryPool *pool)
 {
 /**************************************
  *

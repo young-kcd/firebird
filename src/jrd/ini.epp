@@ -533,13 +533,13 @@ void INI_init(void)
 		vec* fields = vec::newVector(*dbb->dbb_permanent, n);
 		relation->rel_fields = fields;
 		vec::iterator itr = fields->begin();
-		fmt* format = fmt::newFmt(*dbb->dbb_permanent, n);
+		Format* format = Format::newFormat(*dbb->dbb_permanent, n);
 		relation->rel_current_format = format;
 		vec* formats = vec::newVector(*dbb->dbb_permanent, 1);
 		relation->rel_formats = formats;
 		(*formats)[0] = format;
 		format->fmt_count = n;
-		fmt::fmt_desc_iterator desc = format->fmt_desc.begin();
+		Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 
 		for (fld_ = relfld + RFLD_RPT; fld_[RFLD_F_NAME];
 			 fld_ += RFLD_F_LENGTH, desc++, itr++)
@@ -602,7 +602,7 @@ void INI_init2(void)
 		else
 		{
 			jrd_rel* relation = MET_relation(tdbb, relfld[RFLD_R_ID]);
-			fmt* format = relation->rel_current_format;
+			Format* format = relation->rel_current_format;
 
 			int n = 0;
 			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
@@ -666,7 +666,7 @@ void INI_init2(void)
 			relation->rel_fields->resize(n);
 			format->fmt_count = n;
 			format->fmt_length = (USHORT)FLAG_BYTES(n);
-			fmt::fmt_desc_iterator desc = format->fmt_desc.begin();
+			Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
 				 fld += RFLD_F_LENGTH, desc++)
 			{

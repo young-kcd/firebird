@@ -184,13 +184,13 @@ static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 static void check_dependencies(thread_db*, const TEXT*, const TEXT*, USHORT, jrd_tra*);
 static void check_filename(const TEXT*, USHORT);
-static bool formatsAreEqual(const fmt*, const fmt*);
+static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
 static void get_array_desc(thread_db*, const TEXT*, internal_array_desc*);
 static void get_procedure_dependencies(DeferredWork*);
 static void get_trigger_dependencies(DeferredWork*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
-static fmt*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
+static Format*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
 static USHORT name_length(const TEXT*);
 static DeferredWork*	post_work(jrd_tra*, SLONG, DeferredWork**, enum dfw_t,
 	dsc*, USHORT);
@@ -1371,7 +1371,7 @@ static void check_filename(const TEXT* name, USHORT l)
 }
 
 
-static bool formatsAreEqual(const fmt* old_format, const fmt* new_format)
+static bool formatsAreEqual(const Format* old_format, const Format* new_format)
 {
 /**************************************
  *
@@ -1386,10 +1386,10 @@ static bool formatsAreEqual(const fmt* old_format, const fmt* new_format)
 		return false;
     }
 
-    fmt::fmt_desc_const_iterator old_desc = old_format->fmt_desc.begin();
-    const fmt::fmt_desc_const_iterator old_end = old_format->fmt_desc.end();
+    Format::fmt_desc_const_iterator old_desc = old_format->fmt_desc.begin();
+    const Format::fmt_desc_const_iterator old_end = old_format->fmt_desc.end();
 
-    fmt::fmt_desc_const_iterator new_desc = new_format->fmt_desc.begin();
+    Format::fmt_desc_const_iterator new_desc = new_format->fmt_desc.begin();
 
     while (old_desc != old_end)
     {
@@ -3318,7 +3318,7 @@ static void load_trigs(thread_db* tdbb, jrd_rel* relation, trig_vec** triggers)
 }
 
 
-static fmt* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
+static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 	TemporaryField* stack)
 {
 /**************************************
@@ -3342,7 +3342,7 @@ static fmt* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 	for (tfb = stack; tfb; tfb = tfb->tfb_next)
 		count = MAX(count, tfb->tfb_id);
 
-	fmt* format = fmt::newFmt(*dbb->dbb_permanent, count + 1);
+	Format* format = Format::newFormat(*dbb->dbb_permanent, count + 1);
 	format->fmt_count = count + 1;
 	if (version)
 		format->fmt_version = *version;
@@ -3368,7 +3368,7 @@ static fmt* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 	ULONG offset = FLAG_BYTES(count);
 
 	count = 0;
-	for (fmt::fmt_desc_iterator desc2 = format->fmt_desc.begin();
+	for (Format::fmt_desc_iterator desc2 = format->fmt_desc.begin();
 		 count < format->fmt_count;
 		 count++, desc2++)
 	{
@@ -3418,7 +3418,7 @@ static fmt* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		/* Msg361: new record size of %ld bytes is too big */
 	}
 
-	fmt* old_format;
+	Format* old_format;
 	if ((format->fmt_version)
 		&& (old_format = MET_format(tdbb, relation, (format->fmt_version - 1)))    
 		&& (formatsAreEqual(old_format, format)))
