@@ -153,6 +153,7 @@
 #endif
 
 ASSERT_FILENAME					/* Define things assert() needs */
+ASSERT_BLKCHK_MSG
 static BOOLEAN aggregate_found(DSQL_REQ, DSQL_NOD);
 static BOOLEAN aggregate_found2(DSQL_REQ, DSQL_NOD, USHORT *, USHORT *, BOOLEAN);
 static DSQL_NOD ambiguity_check (DSQL_NOD, DSQL_REQ, DSQL_FLD, DLLS, DLLS);

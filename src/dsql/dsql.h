@@ -665,9 +665,8 @@ extern FILE    *redirected_output;
 
 // Define the assert_filename as a static variable to save on codespace
 
-#define	ASSERT_FILENAME	\
-	static UCHAR assert_filename[] = __FILE__; \
-	static UCHAR assert_blkchk_msg[] = "Unexpected memory block type";	// NTX: dev
+#define	ASSERT_FILENAME static UCHAR assert_filename[] = __FILE__; 
+#define	ASSERT_BLKCHK_MSG static UCHAR assert_blkchk_msg[] = "Unexpected memory block type";	// NTX: dev
 
 #else // PROD_BUILD
 
