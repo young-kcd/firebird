@@ -1,3 +1,353 @@
+2003-02-14 00:18  bellardo
+
+	* firebird2/src/jrd/time.h:
+	
+	remove time.h in favor of jrd_time.h due to name conflict with
+	system header.
+
+2003-02-14 00:11  bellardo
+
+	* firebird2/src/jrd/flu.cpp:
+	
+	include libgen in Darwin.
+
+2003-02-14 00:05  bellardo
+
+	* firebird2/src/jrd/jrd_time.h:
+	
+	Absolute path hack no longer needed now that time.h has been
+	renamed jrd_time.h.
+
+2003-02-14 00:04  bellardo
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	Remove the Darwin specific MTAB entry.
+
+2003-02-14 00:03  bellardo
+
+	* firebird2/src/jrd/gds.cpp:
+	
+	No longer need the Darwin specific stuff in the prefix functions -
+	it has moved to config_root.
+
+2003-02-14 00:01  bellardo
+
+	* firebird2/src/jrd/dbt.cpp:
+	
+	Update dbt entries to reflect new jrd_* structure names.
+
+2003-02-13 23:49  brodsom
+
+	* firebird2/src/jrd/: jrd.cpp, svc.h, why.cpp, block_cache.h,
+	btr.cpp, ib_stdio.h:
+	
+	Remove inline keyword.
+
+2003-02-13 23:49  bellardo
+
+	* firebird2/: src/common/classes/alloc.h,
+	src/common/classes/tree.h, src/make.new/config/config.h.in,
+	configure.in:
+	
+	add a configure check for malloc.h
+
+2003-02-13 23:44  brodsom
+
+	* firebird2/src/: extlib/fbudf/fbudf.cpp, common/classes/tree.h,
+	common/classes/alloc.h, common/config/config_impl.h:
+	
+	Remove inline keyword.
+
+2003-02-13 23:44  bellardo
+
+	* firebird2/src/jrd/jrd_pwd.h:
+	
+	Opps, I should at least commit the newly renamed file :-)
+
+2003-02-13 23:40  bellardo
+
+	* firebird2/src/jrd/os/darwin/config_root.cpp:
+	
+	config_root implementation for Darwin.	The root directory is
+	located using Darwin specific framework search methods.
+
+2003-02-13 23:40  brodsom
+
+	* firebird2/src/: alice/alice.cpp, gpre/gpre.h, dsql/dsql.h,
+	dsql/user_dsql.cpp, dsql/ddl.cpp:
+	
+	Remove inline keyword.
+
+2003-02-13 23:37  bellardo
+
+	* firebird2/src/: jrd/alt.cpp, jrd/pwd.cpp, jrd/scl.epp,
+	jrd/svc.cpp, jrd/svc.h, jrd/tra.cpp, jrd/math.h, jrd/pwd.h,
+	remote/interface.cpp, utilities/gsec.cpp, utilities/security.epp:
+	
+	Renamed two header files that conflicted with Darwin (and
+	presumably other *nix ) system headers: pwd.h and math.h
+
+2003-02-13 18:30  tamlin
+
+	* firebird2/src/jrd/rse.cpp:
+	
+	Try to enhance readability of code.
+
+2003-02-13 18:28  tamlin
+
+	* firebird2/src/jrd/evl.cpp:
+	
+	Reduce code size a little bit. Try to enhance readability of code.
+
+2003-02-13 17:52  dimitr
+
+	* firebird2/src/intl/ld2.c:
+	
+	Cleanup.
+
+2003-02-13 17:45  brodsom
+
+	* firebird2/src/jrd/cdefs.h:
+	
+	Remove __STDC__ obsolete define (used for pre C88 code)
+
+2003-02-13 16:31  brodsom
+
+	* firebird2/src/: v5_examples/example.h, qli/nounix.cpp,
+	jrd/ib_stdio.h, jrd/common.h, jrd/gdsold.h, jrd/align.cpp,
+	jrd/blrtable.cpp:
+	
+	Remove __STDC__ obsolete define (used for pre C88 code)
+
+2003-02-13 15:55  eku
+
+	* firebird2/src/intl/ldcommon.h:
+	
+	Added missing system header file.
+
+2003-02-13 14:44  dimitr
+
+	* firebird2/src/common/classes/: alloc.cpp, tree.h:
+	
+	Fixed exception handling.
+
+2003-02-13 14:42  brodsom
+
+	* firebird2/src/jrd/ib_stdio.h:
+	
+	Remove some unused defines & macros
+
+2003-02-13 14:33  dimitr
+
+	* firebird2/src/jrd/: align.cpp, blb.cpp, btr.cpp, cch.cpp,
+	cmp.cpp, dfw.epp, dyn.epp, dyn_def.epp, dyn_del.epp, dyn_mod.epp,
+	dyn_util.epp, exe.cpp, fun.epp, gds.cpp, grant.epp, jrd.cpp,
+	met.epp, nav.cpp, opt.cpp, pag.cpp, scl.epp, sdw.cpp, shut.cpp,
+	sort.cpp, svc.cpp, tra.cpp, val.cpp, vio.cpp:
+	
+	Fixed exception handling.
+
+2003-02-13 14:09  dimitr
+
+	* firebird2/src/: utilities/dba.epp, utilities/gsec.cpp,
+	wal/walw.cpp:
+	
+	Fixed exception handling.
+
+2003-02-13 13:59  dimitr
+
+	* firebird2/src/: ipserver/ipserver.cpp, qli/dtr.cpp, qli/exe.cpp,
+	remote/interface.cpp, remote/server.cpp:
+	
+	Fixed exception handling.
+
+2003-02-13 13:16  brodsom
+
+	* firebird2/src/jrd/: ansi.h, btr.cpp, cdefs.h:
+	
+	Remove some unused defines & macros
+
+2003-02-13 13:01  dimitr
+
+	* firebird2/src/gpre/: gpre.cpp, par.cpp:
+	
+	Fixed exception handling.
+
+2003-02-13 13:00  eku
+
+	* firebird2/configure.in:
+	
+	Removed the test for 'const'
+
+2003-02-13 12:57  dimitr
+
+	* firebird2/src/: alice/alice.cpp, burp/burp.cpp, dsql/ddl.cpp,
+	dsql/dsql.cpp, dsql/user_dsql.cpp, dudley/expand.cpp,
+	dudley/parse.cpp:
+	
+	Fixed exception handling.
+
+2003-02-13 11:10  dimitr
+
+	* firebird2/src/jrd/: align.h, arg.h, blrtable.cpp, btr.cpp,
+	cmp.cpp, cmp_proto.h, codes.epp, cvt.cpp, cvt2.cpp, dflt.h,
+	dfw.epp, dmp.cpp, dsc.cpp, dsc_proto.h, dyn_def.epp, dyn_util.epp,
+	err.cpp, err_proto.h, event.cpp, evl.cpp, exe.cpp, filters.cpp,
+	gds.cpp, gds.pas, gds.vpas, gds_proto.h, ibase.h, idx.cpp, idx.h,
+	ini.epp, ini.h, ini_proto.h, intl_builtin.cpp, jrd.h, lck.cpp,
+	met.epp, met_proto.h, opt.cpp, par.cpp, req.h, scl.epp,
+	scl_proto.h, sort.cpp, svc.cpp, svc.h, tra.cpp, trig.h, val.cpp,
+	vio.cpp, why.cpp, why_proto.h, y-valve.cpp, boot_codes/msg_facs.h,
+	boot_codes/sql_code.h:
+	
+	CONST -> const
+
+2003-02-13 10:55  dimitr
+
+	* firebird2/src/: include/gen/blrtable.h,
+	include/gen/gds_codes.pas, include/gen/msg_facs.h,
+	include/gen/sql_code.h, include/fb_types.h, gpre/gpre_meta.epp,
+	gpre/gpre_meta_boot.cpp, gpre/int.cpp, gpre/int_cxx.cpp,
+	gpre/jrdmet.cpp:
+	
+	CONST -> const
+
+2003-02-13 10:49  dimitr
+
+	* firebird2/src/intl/: collations/bl88591ca0.h,
+	collations/bl88591da0.h, collations/bl88591de0.h,
+	collations/bl88591es0.h, collations/bl88591fi0.h,
+	collations/bl88591fr0.h, collations/bl88591is0.h,
+	collations/bl88591it0.h, collations/bl88591nl0.h,
+	collations/bl88591no0.h, collations/bl88591pt0.h,
+	collations/bl88591sv0.h, collations/bl88591uk0.h,
+	collations/bl88591us0.h, collations/blNEXTde0.h,
+	collations/blNEXTes0.h, collations/blNEXTfr0.h,
+	collations/blNEXTit0.h, collations/blNEXTus0.h,
+	collations/db437de0.h, collations/db437es1.h,
+	collations/db437fi0.h, collations/db437fr0.h,
+	collations/db437it0.h, collations/db437nl0.h,
+	collations/db437sv0.h, collations/db437uk0.h,
+	collations/db437us0.h, collations/db850cf0.h,
+	collations/db850de0.h, collations/db850es0.h,
+	collations/db850fr0.h, collations/db850it1.h,
+	collations/db850nl0.h, collations/db850pt0.h,
+	collations/db850sv1.h, collations/db850uk0.h,
+	collations/db850us0.h, collations/db852cz0.h,
+	collations/db852po0.h, collations/db852sl0.h,
+	collations/db857tr0.h, collations/db860pt0.h,
+	collations/db863cf1.h, collations/db865da0.h,
+	collations/db865no0.h, collations/db866ru0.h,
+	collations/pd437intl.h, collations/pd437swedfin.h,
+	collations/pd852czech.h, collations/pd852hundc.h,
+	collations/pd852polish.h, collations/pd852slovene.h,
+	collations/pd861iceland.h, collations/pd865nordan40.h,
+	collations/pd866cyrr.h, collations/pw1250czech.h,
+	collations/pw1250hun.h, collations/pw1250hundc.h,
+	collations/pw1250polish.h, collations/pw1250slov.h,
+	collations/pw1251cyrr.h, collations/pw1252i850.h,
+	collations/pw1252intl.h, collations/pw1252nor4.h,
+	collations/pw1252span.h, collations/pw1252swfn.h,
+	collations/pw1253greek1.h, collations/pw1254turk.h,
+	collations/xx1251_ua.h, collations/xx88592czech.h,
+	charsets/cs_437.h, charsets/cs_737.h, charsets/cs_775.h,
+	charsets/cs_850.h, charsets/cs_852.h, charsets/cs_857.h,
+	charsets/cs_858.h, charsets/cs_860.h, charsets/cs_861.h,
+	charsets/cs_862.h, charsets/cs_863.h, charsets/cs_864.h,
+	charsets/cs_865.h, charsets/cs_866.h, charsets/cs_869.h,
+	charsets/cs_big5.h, charsets/cs_cyrl.h, charsets/cs_gb2312.h,
+	charsets/cs_iso8859_1.h, charsets/cs_iso8859_13.h,
+	charsets/cs_iso8859_2.h, charsets/cs_iso8859_3.h,
+	charsets/cs_iso8859_4.h, charsets/cs_iso8859_5.h,
+	charsets/cs_iso8859_6.h, charsets/cs_iso8859_7.h,
+	charsets/cs_iso8859_8.h, charsets/cs_iso8859_9.h,
+	charsets/cs_jis_0208_1990.h, charsets/cs_ksc5601.h,
+	charsets/cs_next.h, charsets/cs_sjis.h, charsets/cs_w1250.h,
+	charsets/cs_w1251.h, charsets/cs_w1252.h, charsets/cs_w1253.h,
+	charsets/cs_w1254.h, charsets/cs_w1255.h, charsets/cs_w1256.h,
+	charsets/cs_w1257.h, cs_big5.c, cs_gb2312.c, cs_jis.c, cs_ksc.c,
+	cs_unicode_fss.c, cs_unicode_ucs2.c, lc_ascii.c, lc_big5.c,
+	lc_dos.c, lc_gb2312.c, lc_iso8859_1.c, lc_iso8859_2.c, lc_jis.c,
+	lc_ksc.c, ld.c, ld_proto.h, ldcommon.h, utils/mapgen4.c,
+	utils/maptest2.c, conversions/tx437_865.h,
+	conversions/tx437_lat1.h, conversions/tx865_lat1.h, ld.h:
+	
+	CONST -> const
+
+2003-02-13 10:42  dimitr
+
+	* firebird2/src/isql/: extract.epp, isql.epp, show.epp:
+	
+	CONST -> const
+
+2003-02-13 10:38  dimitr
+
+	* firebird2/src/: lock/lock.cpp, lock/print.cpp, qli/meta.epp,
+	qli/show.epp:
+	
+	CONST -> const
+
+2003-02-13 10:33  dimitr
+
+	* firebird2/src/misc/: msg_facs.h, sql_code.h:
+	
+	CONST -> const
+
+2003-02-13 10:30  dimitr
+
+	* firebird2/src/: remote/inet.cpp, remote/protocol.cpp,
+	remote/server.cpp, misc/gds_codes.pas:
+	
+	CONST -> const
+
+2003-02-13 10:26  dimitr
+
+	* firebird2/src/: dsql/chars.h, dsql/ddl.cpp, dsql/dsql.cpp,
+	dsql/dsql.tab.h, dsql/dsql_proto.h, dsql/gen.cpp,
+	dsql/keywords.cpp, dsql/keywords.h, dsql/make.cpp,
+	dsql/make_proto.h, dsql/metd.epp, dsql/parse.cpp, dsql/parse.sed,
+	dsql/parse.y, dsql/preparse.cpp, utilities/gsec.cpp,
+	utilities/ppg.cpp, utilities/services.cpp:
+	
+	CONST -> const
+
+2003-02-13 10:19  dimitr
+
+	* firebird2/src/burp/: backup.epp, burp.cpp, restore.epp:
+	
+	CONST -> const
+
+2003-02-13 10:14  dimitr
+
+	* firebird2/src/alice/alice.cpp:
+	
+	CONST -> const
+
+2003-02-13 08:21  eku
+
+	* firebird2/src/jrd/intl_builtin.cpp:
+	
+	Removed nested comments.
+
+2003-02-13 07:12  eku
+
+	* firebird2/src/jrd/common.h:
+	
+	Removed nested comments.
+
+2003-02-13 03:21  brodsom
+
+	* firebird2/src/common/config/config_impl.h:
+	
+	Remove warning 'static is not at beginning of declaration'
+
+2003-02-13 03:19  brodsom
+
+	* firebird2/src/common/classes/: tree.h, alloc.cpp:
+	
+	Remove warning 'declaration shadows a previous local'
+
 2003-02-12 23:57  arnobrinkman
 
 	* firebird2/src/jrd/: cch.cpp, jrd.h, vio.cpp:
