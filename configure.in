@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.146 2003-07-12 09:55:15 brodsom Exp $
+dnl $Id: configure.in,v 1.147 2003-07-14 09:45:18 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -570,10 +570,10 @@ mkdir -p gen/RPM/BUILD
 dnl #### TEMP ######### directories for .o and .d
 dnl # by module name
 
-mkdir -p temp/libfbserver
 mkdir -p temp/libfbserver/jrd
 mkdir -p temp/libfbserver/dsql
 mkdir -p temp/libfbserver/lock
+mkdir -p temp/libfbserver/misc
 mkdir -p temp/libfbserver/remote
 mkdir -p temp/libfbserver/pipe
 mkdir -p temp/libfbserver/gpre
@@ -618,10 +618,10 @@ mkdir -p temp/static.gpre/gpre
 mkdir -p temp/static.gbak/burp
 mkdir -p temp/static.isql/isql
 
-mkdir -p temp/libfbstatic
 mkdir -p temp/libfbstatic/jrd
 mkdir -p temp/libfbstatic/dsql
 mkdir -p temp/libfbstatic/lock
+mkdir -p temp/libfbstatic/misc
 mkdir -p temp/libfbstatic/remote
 mkdir -p temp/libfbstatic/gpre
 mkdir -p temp/libfbstatic/jrd/os/posix
@@ -645,10 +645,10 @@ mkdir -p temp/extlib/extlib
 mkdir -p temp/extlib/extlib/fbudf
 mkdir -p temp/examples
 
-mkdir -p temp/libfbembed
 mkdir -p temp/libfbembed/jrd
 mkdir -p temp/libfbembed/dsql
 mkdir -p temp/libfbembed/lock
+mkdir -p temp/libfbembed/misc
 mkdir -p temp/libfbembed/remote
 mkdir -p temp/libfbembed/pipe
 mkdir -p temp/libfbembed/gpre
@@ -661,7 +661,7 @@ mkdir -p temp/libfbembed/burp
 mkdir -p temp/libfbembed/wal
 mkdir -p temp/libfbembed/common/classes
 mkdir -p temp/libfbembed/common/config
-mkdir -p temp/codes
+mkdir -p temp/codes/misc
 mkdir -p temp/codes/jrd
 
 mkdir -p temp/editline/extern/editline

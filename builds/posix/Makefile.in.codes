@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.codes,v 1.11 2003-07-12 20:37:54 brodsom Exp $
+#  $Id: Makefile.in.codes,v 1.12 2003-07-14 09:44:59 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=codes
@@ -55,35 +55,33 @@ include     $(ROOT)/gen/make.shared.variables
 #CODES_OutFiles= gds_codes.pas gds_codes.ftn codes.h iberror.h codetext.h \
 #                msgs.h rdb_codes.h sql_code.h msg_facs.h
 #CODES_Results=$(addprefix include/gen/, $(CODES_OutFiles))
-CODES_Sources = jrd/codes.epp
+CODES_Sources = misc/codes.epp
 CODES_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CODES_Sources))))
+RELATIONS_Sources = misc/relations.epp
+RELATIONS_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELATIONS_Sources))))
 
 AllObjects = $(CODES_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 generated_headers: build_codes $(SRC_ROOT)/include/gen/ids.h
 
-# Rebuild error codes
+# Rebuild error codes and relations
 
 build_codes: $(BIN)/codes msg.fdb $(BIN)/relations
 	$(BIN)/codes $(SRC_ROOT)/include/gen $(LNG_ROOT)
 	$(BIN)/relations $(SRC_ROOT)/include/gen
 
-$(SRC_ROOT)/jrd/codes.cpp: $(SRC_ROOT)/jrd/codes.epp
+$(SRC_ROOT)/misc/codes.cpp: $(SRC_ROOT)/misc/codes.epp
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
-$(SRC_ROOT)/jrd/relations.cpp: $(SRC_ROOT)/jrd/relations.epp
+$(SRC_ROOT)/misc/relations.cpp: $(SRC_ROOT)/misc/relations.epp
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
 $(BIN)/codes: $(CODES_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
 	$(CXX) $(LINK_OPTS) $(CODES_Objects) -o $@ -L $(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
-$(BIN)/relations: $(CODES_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
-	$(CXX) $(LINK_OPTS) $(CODES_Objects) -o $@ -L $(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
-
-# Rebuild ids.h
-#$(SRC_ROOT)/include/gen/ids.h:	$(SRC_ROOT)/jrd/ids.m $(SRC_ROOT)/include/gen/relations.h
-#	m4 $< > $(SRC_ROOT)/include/gen/ids.h
+$(BIN)/relations: $(RELATIONS_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
+	$(CXX) $(LINK_OPTS) $(RELATIONS_Objects) -o $@ -L $(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets
 

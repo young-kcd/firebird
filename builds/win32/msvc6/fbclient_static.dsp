@@ -289,7 +289,7 @@ SOURCE=..\..\..\src\jrd\gds.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ibinitdll.cpp
+SOURCE=..\..\..\src\jrd\os\win32\ibinitdll.cpp
 # End Source File
 # Begin Source File
 

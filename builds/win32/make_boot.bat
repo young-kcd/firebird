@@ -34,6 +34,8 @@
 @mkdir %ROOT_PATH%\gen\isql 2>nul
 @rmdir /s /q %ROOT_PATH%\gen\jrd 2>nul
 @mkdir %ROOT_PATH%\gen\jrd 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\misc 2>nul
+@mkdir %ROOT_PATH%\gen\misc 2>nul
 @rmdir /s /q %ROOT_PATH%\gen\msgs 2>nul
 @mkdir %ROOT_PATH%\gen\msgs 2>nul
 @rmdir /s /q %ROOT_PATH%\gen\qli 2>nul

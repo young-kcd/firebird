@@ -37,7 +37,6 @@ rm src/gpre/gpre_meta.cpp 2>/dev/null
 rm src/isql/extract.cpp 2>/dev/null
 rm src/isql/isql.cpp 2>/dev/null
 rm src/isql/show.cpp 2>/dev/null
-rm src/jrd/codes.cpp 2>/dev/null
 rm src/jrd/dfw.cpp 2>/dev/null
 rm src/jrd/dpm.cpp 2>/dev/null
 rm src/jrd/dyn.cpp 2>/dev/null
@@ -51,6 +50,8 @@ rm src/jrd/ini.cpp 2>/dev/null
 rm src/jrd/met.cpp 2>/dev/null
 rm src/jrd/pcmet.cpp 2>/dev/null
 rm src/jrd/scl.cpp 2>/dev/null
+rm src/misc/codes.cpp 2>/dev/null
+rm src/misc/relations.cpp 2>/dev/null
 rm src/msgs/build_file.cpp 2>/dev/null
 rm src/msgs/change_msgs.cpp 2>/dev/null
 rm src/msgs/check_msgs.cpp 2>/dev/null

@@ -299,5 +299,5 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
 #
 # blrtable builder
 
-BLRTABLE_Sources = jrd/blrtable.cpp
+BLRTABLE_Sources = misc/blrtable.cpp
 BLRTABLE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BLRTABLE_Sources))))

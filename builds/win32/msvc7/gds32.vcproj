@@ -136,7 +136,7 @@
 			Name="JRD files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
+				RelativePath="..\..\..\src\jrd\os\win32\ibinitdll.cpp">
 			</File>
 		</Filter>
 		<Filter

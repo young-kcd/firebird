@@ -95,7 +95,7 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ibinitdll.cpp
+SOURCE=..\..\..\src\jrd\os\win32\ibinitdll.cpp
 # End Source File
 # End Group
 # Begin Group "Resource files"

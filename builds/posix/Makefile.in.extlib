@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.11 2003-07-09 09:21:25 fsg Exp $
+#  $Id: Makefile.in.extlib,v 1.12 2003-07-14 09:44:59 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=extlib
@@ -59,9 +59,9 @@ AllObjects = $(UDF_Objects) $(UTIL_Objects) $(FBUDF_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
-.PHONY: all lib_ib_udf lib_ib_util lib_fbudf
+.PHONY: all lib_ib_udf lib_ib_util
 
-all: lib_ib_udf lib_fbudf lib_ib_util 
+all: lib_ib_udf lib_ib_util 
 
 
 # The libraires in this directory could do with a bit more work, since they

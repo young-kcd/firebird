@@ -276,7 +276,7 @@
 				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
+				RelativePath="..\..\..\src\jrd\os\win32\ibinitdll.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
