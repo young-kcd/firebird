@@ -30,7 +30,7 @@
  * 2003.08.10 Claudio Valderrama: Fix SF Bugs #544132 and #728839.
  */
 /*
-$Id: fun.epp,v 1.66 2004-09-20 08:41:49 robocop Exp $
+$Id: fun.epp,v 1.67 2004-11-10 04:41:59 robocop Exp $
 */
 
 #include "firebird.h"
@@ -407,8 +407,10 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 			case dtype_varying:
 				if (tail == return_ptr)
 				{
-					temp_ptr = value->vlu_desc.dsc_address;
-					length = 0;
+					//temp_ptr = value->vlu_desc.dsc_address;
+					//length = 0;
+					*arg_ptr++ = value->vlu_desc.dsc_address;
+					continue;
 				}
 				else
 				{
@@ -422,8 +424,10 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 			case dtype_timestamp:
 			    if (tail == return_ptr)
 				{
-					temp_ptr = value->vlu_desc.dsc_address;
-					length = sizeof(GDS_TIMESTAMP);
+					//temp_ptr = value->vlu_desc.dsc_address;
+					//length = sizeof(GDS_TIMESTAMP);
+					*arg_ptr++ = value->vlu_desc.dsc_address;
+					continue;
 				}
 				else
 				{
