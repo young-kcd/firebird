@@ -71,12 +71,10 @@ Firebird 1.5 installation notes
 
   New version uses updated ODS (10.1). It doens't cause any
   incompatibilities with previous versions, but you should be
-  aware of this fact. ODS upgrade is automatically performed
-  on the first connection to ODS 10.0 database. If upgrade
-  was unsuccessful (for any reason), the appropriate message
-  is written to firebird.log and ODS version kept unchanged.
+  aware of this fact. Engine doesn't upgrade ODS automatically
+  and Firebird 1.0 and 1.5 can use both ODS 10.0 and 10.1 databases.
   Regardless of the above, backup/restore is still the
-  recommended procedure of migrating databases to the new
+  recommended procedure of migrating databases to the different
   version of the server.
 
   Since a number of bugs has been fixed, the behaviour of the
