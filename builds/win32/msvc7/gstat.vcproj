@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="_DEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT"
+				PreprocessorDefinitions="_DEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\debug\gstat/gstat.pch"

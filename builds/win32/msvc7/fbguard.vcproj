@@ -83,7 +83,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER,WIN32_LEAN_AND_MEAN"
+				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,SERVER_SHUTDOWN,SUPERSERVER,WIN32_LEAN_AND_MEAN,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\debug\fbguard/fbguard.pch"

@@ -70,7 +70,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="WIN32,_DEBUG,_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\debug\lock_cs/lock_classic.pch"

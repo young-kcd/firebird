@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include"
-				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
+				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,_X86_,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\debug\wal_ss/wal.pch"

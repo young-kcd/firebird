@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.00"
 	Name="gpre_boot"
+	ProjectGUID="{D352771D-BBF8-49AB-828A-6C0381A47008}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -27,7 +28,6 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include"
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,WIN32_LEAN_AND_MEAN"
-				BasicRuntimeChecks="3"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=".\release\gpre_boot/gpre_boot.pch"
 				AssemblerListingLocation=".\release\gpre_boot/"

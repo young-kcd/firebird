@@ -150,10 +150,10 @@
 				RelativePath="..\..\..\src\intl\cs_narrow.c">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_unicode.c">
+				RelativePath="..\..\..\src\intl\cs_unicode_fss.c">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_utffss.c">
+				RelativePath="..\..\..\src\intl\cs_unicode_ucs2.c">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\cv_big5.c">
@@ -183,22 +183,22 @@
 				RelativePath="..\..\..\src\intl\lc_gb2312.c">
 			</File>
 			<File
+				RelativePath="..\..\..\src\intl\lc_iso8859_1.c">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\lc_iso8859_2.c">
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\lc_jis.c">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\lc_ksc.c">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\lc_latin1.c">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\lc_latin2.c">
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\lc_narrow.c">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\lc_unicode.c">
+				RelativePath="..\..\..\src\intl\lc_unicode_ucs2.c">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\ld.c">
@@ -316,16 +316,16 @@
 				RelativePath="..\..\..\src\intl\charsets\cs_gb2312.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_1.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_2.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_jis_0208_1990.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_ksc5601.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_latin1.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\charsets\cs_latin2.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_next.h">

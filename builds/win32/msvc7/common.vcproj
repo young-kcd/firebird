@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="4"
+				Optimization="0"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				ImproveFloatingPointConsistency="TRUE"
@@ -34,7 +34,6 @@
 				AssemblerListingLocation=".\release\common_ss/"
 				ObjectFile=".\release\common_ss/"
 				ProgramDataBaseFileName=".\release\common_ss/"
-				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
