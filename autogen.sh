@@ -2,7 +2,7 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
-# $Id: autogen.sh,v 1.4 2002-09-11 11:30:43 eku Exp $
+# $Id: autogen.sh,v 1.5 2002-11-05 01:36:39 nmcc Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
@@ -29,7 +29,7 @@ if test "$DIE" -eq 1; then
 fi
 
 # Give a warning if no arguments to 'configure' have been supplied.
-if test -z "$*"; then
+if test -z "$*" -a x$NOCONFIGURE = x; then
   echo "**Warning**: I am going to run \`configure' with no arguments."
   echo "If you wish to pass any to it, please specify them on the"
   echo \`$0\'" command line."
@@ -48,7 +48,7 @@ then
   $SRCDIR/configure $conf_flags "$@" \
   && echo Now type \`make\' to compile $PKG_NAME
 else
-  echo Skipping configure process.
+  echo Autogen skipping configure process.
 fi
 
 # EOF
