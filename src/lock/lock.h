@@ -106,8 +106,8 @@ const UCHAR LCK_max		= 7;
 const UCHAR LCK_read	= LCK_PR;
 const UCHAR LCK_write	= LCK_EX;
 
-const SSHORT LCK_WAIT		= TRUE;
-const SSHORT LCK_NO_WAIT	= FALSE;
+const SSHORT LCK_WAIT		= 1;
+const SSHORT LCK_NO_WAIT	= 0;
 
 /* Lock block types */
 
