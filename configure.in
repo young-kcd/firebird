@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.26 2004-09-17 20:34:15 skidder Exp $
+dnl $Id: configure.in,v 1.141.2.27 2004-09-18 06:56:16 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -364,17 +364,14 @@ dnl Check for libraries
 AC_CHECK_LIB(dl, main)
 AC_CHECK_LIB(c,main)
 AC_CHECK_LIB(m, main)
-if test "$FIREBIRD_ARCH_TYPE" = "super"; then
 case "$PLATFORM" in
   SOLARIS|solx86)
-dnl #Solaris always check for lthread not only SuperServer
+  AC_CHECK_LIB(thread, main) 
   ;;
   *)
   AC_CHECK_LIB(pthread, main)
-    ;;
+  ;;
 esac
-
-fi
 AC_CHECK_LIB(crypt, main)
 AC_CHECK_LIB(curses, main)
 dnl AC_CHECK_LIB(termcap, main)
@@ -386,7 +383,6 @@ AC_CHECK_LIB(stdc++, main,,, $LIBS)
 dnl kkuznetsov: Solaris always check for -lnsl
 if test "$PLATFORM" = "solx86" -o "$PLATFORM" = "SOLARIS"; then
   AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
-  AC_CHECK_LIB(thread, main) 
 fi
 
 
