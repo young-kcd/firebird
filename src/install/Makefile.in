@@ -1,0 +1,222 @@
+# 
+#   The contents of this file are subject to the Mozilla Public
+#   License Version 1.1 (the "License"); you may not use this file
+#   except in compliance with the License. You may obtain a copy of
+#   the License at http://www.mozilla.org/MPL/
+#   Alternatively, the contents of this file may be used under the
+#   terms of the GNU General Public License Version 2 or later (the
+#   "GPL"), in which case the provisions of the GPL are applicable
+#   instead of those above. You may obtain a copy of the Licence at
+#   http://www.gnu.org/copyleft/gpl.html
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   Relevant for more details.
+# 
+#   This file was created by members of the firebird development team.
+#   All individual contributions remain the Copyright (C) of those
+#   individuals.  Contributors to this file are either listed here or
+#   can be obtained from a CVS history command.
+# 
+#   All rights reserved.
+#
+#   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+# 
+# 
+#   $Id: Makefile.in,v 1.1 2001-08-01 07:59:14 skywalker Exp $
+# 
+
+ROOT=../..
+
+
+
+include     $(ROOT)/src/make.rules
+include     $(ROOT)/src/make.defaults
+include     $(ROOT)/src/make.platform
+include     $(ROOT)/src/make.shared.variables
+
+INSTALLDIR=@prefix@
+
+ @SET_MAKE@
+
+
+
+.PHONY: all CSrpmscript SSrpmscript ssinstall runclassicinstall \
+        classicpackages
+
+
+# Some of these targets are run from the root tree of the build.
+# those need to know where the install subdirectory is kept.
+# Others are run locally these need to know the path back to the
+# root of the build tree.
+
+BuildRoot=$(GEN_ROOT)
+
+InstallRoot=$(SRC_ROOT)/src/install/linux
+RedhatPackageDir=/usr/src/redhat/RPMS/i386
+
+Version=1.5.0-1
+
+
+ClassicTarFile=FirebirdCS-$(Version).tar.gz
+SuperTarFile=FirebirdSS-$(Version).tar.gz
+
+ClassicRPMFile=FirebirdCS-$(Version).i386.rpm
+SuperRPMFile=FirebirdSS-$(Version).i386.rpm
+
+ClassicSrcDir=$(InstallRoot)/classic
+SuperSrcDir=$(InstallRoot)/super
+
+LastClassicInstallFlg=.classicinstallflg
+LastSuperInstallFlg=.superinstallflg
+
+install: 
+	@echo "you need to make a choice here "
+	@echo "make target"
+	@echo ""
+	@echo "Firebird classic targets:"
+	@echo "runclassicinstall - install classic from build tree"
+	@echo "classicpackages   - build tar and rpm install files"
+	@echo "classictarfile    - build tar install file"
+	@echo "classicrpmfile    - build redhat rpm install file"
+	@echo ""
+	@echo "Firebird super targets:"
+	@echo "runsuperinstall   - install super from build tree"
+	@echo "superpackages     - build tar and rpm install files"
+	@echo "supertarfile      - build tar install file"
+	@echo "superrpmfile      - build redhat rpm install file"
+	@echo ""
+
+all2: CSrpmscript SSrpmscript csinstall ssinstall
+
+
+classicpackages: classictarfile classicrpmfile
+
+runclassicinstall: $(LastClassicInstallFlg)
+
+
+classictarfile: runclassicinstall $(ClassicTarFile)
+
+classicrpmfile: runclassicinstall $(ClassicRPMFile)
+
+
+$(LastClassicInstallFlg) : $(BIN)/gsec
+	sh $(InstallRoot)/classic/CSTarInstall.sh
+	touch $(LastClassicInstallFlg)
+
+$(ClassicTarFile) : csinstall runclassicinstall
+	mv csinstall install
+	tar -czf $(ClassicTarFile) install
+	mv install csinstall
+
+
+$(ClassicRPMFile): CSrpmscript
+	rpm -bb CSrpmscript
+	cp $(RedhatPackageDir)/$(ClassicRPMFile) .
+
+
+superpackages: supertarfile superrpmfile
+
+runsuperinstall: $(LastSuperInstallFlg)
+
+
+supertarfile: runsuperinstall $(SuperTarFile)
+
+superrpmfile: runsuperinstall $(SuperRPMFile)
+
+
+$(LastSuperInstallFlg) : interbase/bin/gsec
+	sh $(InstallRoot)/super/SSTarInstall.sh
+	touch $(LastSuperInstallFlg)
+
+$(SuperTarFile) : ssinstall runsuperinstall
+	mv ssinstall install
+	tar -czf $(SuperTarFile) install
+	mv install ssinstall
+
+
+$(SuperRPMFile): SSrpmscript
+	rpm -bb SSrpmscript
+	cp $(RedhatPackageDir)/$(SuperRPMFile) .
+
+
+CSrpmscript: 
+	echo $@
+	cat $(ClassicSrcDir)/CSrpmheader.txt > $@
+	echo "" >> $@
+	echo "%prep" >> $@
+#	cat $(ClassicSrcDir)/CSprepinstall.sh >> $@
+	echo "" >> $@
+	echo "%build" >> $@
+#	cat $(ClassicSrcDir)/CSbuildinstall.sh >> $@
+	echo "" >> $@
+	echo "%install" >> $@
+#	cat $(ClassicSrcDir)/CSinstall.sh >> $@
+	echo "" >> $@
+	echo "%files" >> $@
+	cat $(ClassicSrcDir)/CSrpmfiles.txt >> $@
+	echo "" >> $@
+	echo "%pre" >> $@
+	cat $(ClassicSrcDir)/CSpreinstall.sh >> $@
+	echo "" >> $@
+	echo "%post" >> $@
+	cat $(ClassicSrcDir)/CSpostinstall.sh >> $@
+	echo "" >> $@
+	echo "%preun" >> $@
+	cat $(ClassicSrcDir)/CSpreuninstall.sh >> $@
+	echo "" >> $@
+	echo "%postun" >> $@
+	cat $(ClassicSrcDir)/CSpostuninstall.sh >> $@
+
+SSrpmscript: 
+	echo $@
+	cat $(SuperSrcDir)/SSrpmheader.txt > $@
+	echo "" >> $@
+	echo "%prep" >> $@
+#	cat $(SuperSrcDir)/SSprepinstall.sh >> $@
+	echo "" >> $@
+	echo "%build" >> $@
+#	cat $(SuperSrcDir)/SSbuildinstall.sh >> $@
+	echo "" >> $@
+	echo "%install" >> $@
+#	cat $(SuperSrcDir)/SSinstall.sh >> $@
+	echo "" >> $@
+	echo "%files" >> $@
+	cat $(SuperSrcDir)/SSrpmfiles.txt >> $@
+	echo "" >> $@
+	echo "%pre" >> $@
+	cat $(SuperSrcDir)/SSpreinstall.sh >> $@
+	echo "" >> $@
+	echo "%post" >> $@
+	cat $(SuperSrcDir)/SSpostinstall.sh >> $@
+	echo "" >> $@
+	echo "%preun" >> $@
+	cat $(SuperSrcDir)/SSpreuninstall.sh >> $@
+	echo "" >> $@
+	echo "%postun" >> $@
+	cat $(SuperSrcDir)/SSpostuninstall.sh >> $@
+
+
+CSTarInstallDir=csinstall
+
+csinstall:
+	mkdir -p $(CSTarInstallDir)/scripts
+#	(cd $(BuildRoot); tar -czf - interbase ) | cat > $(CSTarInstallDir)/interbase.tar.gz
+	cp $(ClassicSrcDir)/CSpreinstall.sh $(CSTarInstallDir)/scripts
+	cp $(ClassicSrcDir)/CSinstall.sh $(CSTarInstallDir)/scripts
+	cp $(ClassicSrcDir)/CSpostinstall.sh $(CSTarInstallDir)/scripts
+	cp $(ClassicSrcDir)/CSTarInstall.sh $(CSTarInstallDir)/install.sh
+	tar -czf $(CSTarInstallDir)/interbase.tar.gz interbase
+
+SSTarInstallDir=ssinstall
+
+ssinstall:
+	mkdir -p $(SSTarInstallDir)/scripts
+	cp $(SuperSrcDir)/SSpreinstall.sh $(SSTarInstallDir)/scripts
+	cp $(SuperSrcDir)/SSinstall.sh $(SSTarInstallDir)/scripts
+	cp $(SuperSrcDir)/SSpostinstall.sh $(SSTarInstallDir)/scripts
+	cp $(SuperSrcDir)/SSTarInstall.sh $(SSTarInstallDir)/install.sh
+	tar -czf $(SSTarInstallDir)/interbase.tar.gz interbase

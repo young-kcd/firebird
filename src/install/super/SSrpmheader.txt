@@ -1,0 +1,15 @@
+Summary: Firebird Database Server and Client tools. 
+Name: FirebirdSS 
+Version: 0.9
+Release: 4 
+Copyright: Distributable 
+Group: Applications/Databases 
+Source: FirebirdSS0.9src.tar.gz 
+URL: http://firebird.sourceforge.net 
+Prefix: /opt 
+AutoReqProv: no 
+
+%description
+Firebird is a powerful, high-performance relational database designed to be embedded into
+applications on multiple platforms.  
+
