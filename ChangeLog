@@ -1,3 +1,10 @@
+2005-02-07 10:00  robocop
+
+	* firebird2/src/isql/isql.epp (1.130):
+	
+	sqldaid and sqldabc are unused crap borrowed from IBM 15 years ago.
+	 Don't show them as they contain garbage.
+
 2005-02-06 15:08  dimitr
 
 	* firebird2/src/jrd/cmp.cpp (1.169):
