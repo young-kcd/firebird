@@ -2156,6 +2156,7 @@ static void explode_asterisk(dsql_req* request, dsql_nod* node,
 	}
 	else if (node->nod_type == nod_derived_table) {
 		// AB: Derived table support
+		tsql* tdsql = DSQL_get_thread_data();
 		dsql_nod* sub_items = node->nod_arg[e_derived_table_rse]->nod_arg[e_rse_items];
 		dsql_nod** ptr = sub_items->nod_arg;
 		for (const dsql_nod* const* const end = ptr + sub_items->nod_count;
@@ -2172,11 +2173,7 @@ static void explode_asterisk(dsql_req* request, dsql_nod* node,
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					  isc_arg_gds, isc_dsql_command_err, 0);
 			}
-			dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
-			derived_field->nod_arg[e_derived_field_value] = select_item->nod_arg[e_derived_field_value];
-			derived_field->nod_arg[e_derived_field_name] = select_item->nod_arg[e_derived_field_name];
-			derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) request->req_scope_level;
-			derived_field->nod_desc = select_item->nod_desc;
+			dsql_nod* derived_field = pass1_make_derived_field(request, tdsql, select_item);				
 			stack.push(derived_field);
 		}
 	}
@@ -3744,15 +3741,16 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 			rse->nod_arg[e_rse_items]->nod_arg[count] = derived_field;
 		}
 	}
-
-	// For those select-items where no alias is specified try
-	// to generate one from the field_name.
-	int count;
-	for (count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++) {
-		rse->nod_arg[e_rse_items]->nod_arg[count] = 
-			pass1_make_derived_field(request, tdsql, rse->nod_arg[e_rse_items]->nod_arg[count]);
+	else {
+		// For those select-items where no alias is specified try
+		// to generate one from the field_name.
+		for (int count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++) {
+			rse->nod_arg[e_rse_items]->nod_arg[count] = 
+				pass1_make_derived_field(request, tdsql, rse->nod_arg[e_rse_items]->nod_arg[count]);
+		}
 	}
 
+	int count;
 	// Check if all root select-items have an derived field else show a message.
 	for (count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++) {
 		const dsql_nod* select_item = rse->nod_arg[e_rse_items]->nod_arg[count];
@@ -4648,6 +4646,7 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 		case nod_user_name:
 		case nod_current_role:
 		case nod_internal_info:
+		case nod_field_name:
 			return false;
 
 		default:
@@ -5038,7 +5037,7 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
 
     @param request
     @param tdsql
-    @param field
+    @param select_item
 
  **/
 static dsql_nod* pass1_make_derived_field(dsql_req* request, tsql* tdsql,
@@ -5112,6 +5111,15 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, tsql* tdsql,
 					return select_item;
 				}
 			} 
+
+		case nod_via :
+			{
+				// Try to generate derived field from sub-select
+				dsql_nod* derived_field = pass1_make_derived_field(request, tdsql, 
+					select_item->nod_arg[e_via_value_1]);
+				derived_field->nod_arg[e_derived_field_value] = select_item;
+				return derived_field;
+			}
 
 		default:
 			break;
