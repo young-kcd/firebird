@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.99 2004-01-26 16:28:06 skidder Exp $
+$Id: common.h,v 1.100 2004-01-26 16:44:49 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -100,12 +100,12 @@ $Id: common.h,v 1.99 2004-01-26 16:28:06 skidder Exp $
 #define QUADCONST(n) (n##LL)
 
 // SLONG is a 32-bit integer on 64-bit platforms
-#if SIZEOF_LONG == 4
+/*#if SIZEOF_LONG == 4
 #define SLONGFORMAT "ld"
 #define ULONGFORMAT "lu"
 #define XLONGFORMAT "lX"
 #define xLONGFORMAT "lx"
-#endif
+#endif*/
 
 
 //format for __LINE__
@@ -246,10 +246,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //format for __LINE__
 #define LINEFORMAT "d"
 
-#define SLONGFORMAT "ld"
+/*#define SLONGFORMAT "ld"
 #define ULONGFORMAT "lu"
 #define XLONGFORMAT "lX"
-#define xLONGFORMAT "lx"
+#define xLONGFORMAT "lx"*/
 #endif /* SINIXZ */
 
 /*****************************************************
@@ -264,10 +264,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 //format for __LINE__
 #define LINEFORMAT "d"
 
-#define SLONGFORMAT	"ld"
+/*#define SLONGFORMAT	"ld"
 #define ULONGFORMAT "lu"
 #define XLONGFORMAT "lX"
-#define xLONGFORMAT "lx"
+#define xLONGFORMAT "lx"*/
 
 /*#define ALIGNMENT       4*/
 /*#define DOUBLE_ALIGN    4*/
@@ -579,10 +579,10 @@ typedef unsigned int64 UATOM;
 #define MEMMOVE(from,to,length)         memmove ((void *)to, (void *)from, (size_t) length)
 
 #define SYS_ARG		isc_arg_win32
-#define SLONGFORMAT	"ld"
+/*#define SLONGFORMAT	"ld"
 #define ULONGFORMAT	"lu"
 #define XLONGFORMAT "lX"
-#define xLONGFORMAT "lx"
+#define xLONGFORMAT "lx"*/
 
 //format for __LINE__
 #define LINEFORMAT "d"
