@@ -1,3 +1,42 @@
+2005-03-28 23:52  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.171), dfw.epp (1.145), exe.h
+	(1.67), jrd.cpp (1.204), jrd.h (1.132), met.epp (1.154),
+	met_proto.h (1.44), pcmet.epp (1.33):
+	
+	1) Deliver trigger type to the compiler level 2) Disallow NEW
+	context assignments for POST-triggers
+
+2005-03-28 21:36  dimitr
+
+	* firebird2/src/jrd/dfw.epp (1.144):
+	
+	Solved restore issues with recent (and future) compiler changes.
+
+2005-03-28 17:39  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.235):
+	
+	Oops.
+
+2005-03-28 17:29  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.17):
+	
+	Oops.
+
+2005-03-28 17:24  dimitr
+
+	* firebird2/src/jrd/: opt.cpp (1.234), Optimizer.cpp (1.16):
+	
+	Corrected previous commit + ODS11 branch.
+
+2005-03-28 17:07  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.233):
+	
+	Allowed navigation using an expression index.
+
 2005-03-27 17:01  dimitr
 
 	* firebird2/src/jrd/: exe.cpp (1.142), vio.cpp (1.129), vio_proto.h
