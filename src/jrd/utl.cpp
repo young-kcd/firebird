@@ -2164,8 +2164,7 @@ static int edit(
 	TEXT buffer[25];
 #endif
 	IB_FILE *file;
-#if defined FREEBSD || defined NETBSD
-
+#ifdef HAVE_MKSTEMP
 	int fd;
 #endif
 
