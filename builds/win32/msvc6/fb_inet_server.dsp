@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gi /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "NOMSG" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
-# ADD CPP /nologo /G4 /MD /W3 /Gi /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
+# ADD CPP /nologo /G4 /MD /W3 /Gi /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -83,8 +83,8 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib comctl32.lib wsock32.lib mpr.lib shell32.lib /nologo /subsystem:windows /incremental:no /machine:I386 /pdbtype:sept
 # SUBTRACT BASE LINK32 /verbose /profile /pdb:none /map /debug
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /stack:0x200000 /subsystem:windows /incremental:no /machine:I386 /out:"..\..\..\temp\release\firebird/bin/fb_inet_server.exe" /pdbtype:sept
-# SUBTRACT LINK32 /verbose /profile /pdb:none /map /debug
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /stack:0x200000 /subsystem:windows /incremental:no /pdb:"..\..\..\temp\release\firebird/bin/fb_inet_server.pdb" /debug /machine:I386 /out:"..\..\..\temp\release\firebird/bin/fb_inet_server.exe" /opt:ref,icf
+# SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
 
