@@ -107,7 +107,7 @@ extern "C" {
 
 // fwd. decl.
 class vec;
-class tdbb;
+struct tdbb;
 
 
 class dbb : private pool_alloc<type_dbb>

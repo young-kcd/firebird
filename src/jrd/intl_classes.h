@@ -32,7 +32,7 @@ typedef unsigned short TTYPE_ID;
 typedef unsigned short UCS2_CHAR;
 typedef unsigned char NCHAR;
 typedef unsigned char MBCHAR;
-typedef class tdbb *TDBB;
+typedef struct tdbb *TDBB;
 typedef signed char ASCII;
 typedef unsigned char BYTE;
 typedef unsigned short (*FPTR_SHORT) ();

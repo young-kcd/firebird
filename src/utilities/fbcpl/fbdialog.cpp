@@ -1386,11 +1386,11 @@ bool CFBDialog::UpdateFirebirdConf(CString option, CString value)
 		
 		}
 	}
-	 catch ( CFileException e)
+	 catch (CFileException *e)
 	{
     #ifdef _DEBUG
-        afxDump << "Problem updating " << e.m_strFileName << ".\n \
-					cause = " << e.m_cause << "\n";
+        afxDump << "Problem updating " << e->m_strFileName << ".\n \
+					cause = " << e->m_cause << "\n";
     #endif
 	}
 	
@@ -1407,7 +1407,7 @@ bool CFBDialog::UpdateFirebirdConf(CString option, CString value)
 		//If we get this far then all is well and we can return good news
 		result = true;
 	}
-	catch ( CFileException e)
+	catch (CFileException*)
 	{
 		CFile::Rename(FirebirdConfOldname, FirebirdConfFilename);
 	}
