@@ -41,7 +41,7 @@
 #define SYNTAX_ERROR(string)	PARSE_syntax_error (string)
 #define IBERROR(string)		DDL_error (string)
 #define BLKCHK(blk, type)	if (blk->blk_type != (SCHAR) type) BUGCHECK ("expected type")
-#define LLS_PUSH(object,stack)	DDL_push ((NOD) object, stack)
+#define LLS_PUSH(object,stack)	DDL_push ((DUDLEY_NOD) object, stack)
 #define LLS_POP(stack)		DDL_pop (stack)
 
 
@@ -351,9 +351,9 @@ typedef struct nod {
 	UCHAR *nod_blr;				/* symbolic blr string */
 	SSHORT nod_count;			/* number of sub-items */
 	struct nod *nod_arg[1];		/* argument */
-} *NOD;
+} *DUDLEY_NOD;
 
-#define NOD_LEN(cnt) (sizeof (struct nod) + (cnt - 1) * sizeof (((NOD) 0)->nod_arg[0]))
+#define NOD_LEN(cnt) (sizeof (struct nod) + (cnt - 1) * sizeof (((DUDLEY_NOD) 0)->nod_arg[0]))
 
 
 /* Relation block, not to be confused with siblings or in-laws */
@@ -486,7 +486,7 @@ static TRG_T trig_table[] = {
 typedef struct trg {
 	TRG_T trg_type;
 	REL trg_relation;
-	NOD trg_statement;			/* blr */
+	DUDLEY_NOD trg_statement;			/* blr */
 	struct sym *trg_name;		/* symbol for trigger */
 	struct txt *trg_description;	/* description of relation */
 	struct txt *trg_source;		/* source of trigger */

@@ -33,8 +33,8 @@ extern void DDL_error_abort(STATUS *, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
 extern void DDL_exit(int);
 extern void DDL_msg_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 extern void DDL_msg_put(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-extern NOD DDL_pop(LLS *);
-extern void DDL_push(NOD, LLS *);
+extern DUDLEY_NOD DDL_pop(LLS *);
+extern void DDL_push(DUDLEY_NOD, LLS *);
 extern int DDL_yes_no(USHORT);
 
 #endif /* _DUDLEY_DDL_PROTO_H_ */

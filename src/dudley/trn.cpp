@@ -69,9 +69,9 @@ static void modify_relation(STR, REL);
 static void modify_trigger(STR, TRG);
 static void modify_trigger_msg(STR, TRGMSG);
 static void put_acl(STR, UCHAR, SCL);
-static void put_blr(STR, UCHAR, REL, NOD);
+static void put_blr(STR, UCHAR, REL, DUDLEY_NOD);
 static void put_number(STR, TEXT, SSHORT);
-static void put_query_header(STR, TEXT, NOD);
+static void put_query_header(STR, TEXT, DUDLEY_NOD);
 static void put_symbol(STR, TEXT, SYM);
 static void put_text(STR, UCHAR, TXT);
 static void raw_ada(STR);
@@ -804,7 +804,7 @@ static void add_view( STR dyn, REL relation)
  **************************************/
 	FLD field;
 	CTX context;
-	NOD *arg, contexts;
+	DUDLEY_NOD *arg, contexts;
 	SSHORT i;
 
 	put_symbol(dyn, gds_dyn_def_view, relation->rel_name);
@@ -1569,7 +1569,7 @@ static void put_acl( STR dyn, UCHAR attribute, SCL class_)
 }
 
 
-static void put_blr( STR dyn, UCHAR attribute, REL relation, NOD node)
+static void put_blr( STR dyn, UCHAR attribute, REL relation, DUDLEY_NOD node)
 {
 /**************************************
  *
@@ -1625,7 +1625,7 @@ static void put_number( STR dyn, TEXT attribute, SSHORT number)
 }
 
 
-static void put_query_header( STR dyn, TEXT attribute, NOD node)
+static void put_query_header( STR dyn, TEXT attribute, DUDLEY_NOD node)
 {
 /**************************************
  *
@@ -1636,7 +1636,7 @@ static void put_query_header( STR dyn, TEXT attribute, NOD node)
  * Functional description
  *
  **************************************/
-	NOD *ptr, *end;
+	DUDLEY_NOD *ptr, *end;
 	SYM symbol;
 	SCHAR *s;
 	USHORT length, offset;

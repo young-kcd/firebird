@@ -24,9 +24,9 @@
 #ifndef _DUDLEY_EXPR_PROTO_H_
 #define _DUDLEY_EXPR_PROTO_H_
 
-extern NOD EXPR_boolean(USHORT *);
-extern NOD EXPR_rse(USHORT);
-extern NOD EXPR_statement(void);
-extern NOD EXPR_value(USHORT *, USHORT *);
+extern DUDLEY_NOD EXPR_boolean(USHORT *);
+extern DUDLEY_NOD EXPR_rse(USHORT);
+extern DUDLEY_NOD EXPR_statement(void);
+extern DUDLEY_NOD EXPR_value(USHORT *, USHORT *);
 
 #endif /* _DUDLEY_EXPR_PROTO_H_ */

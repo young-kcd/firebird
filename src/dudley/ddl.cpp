@@ -649,7 +649,7 @@ void DDL_msg_put(
 }
 
 
-NOD DDL_pop(LLS * pointer)
+DUDLEY_NOD DDL_pop(LLS * pointer)
 {
 /**************************************
  *
@@ -662,7 +662,7 @@ NOD DDL_pop(LLS * pointer)
  *
  **************************************/
 	LLS stack;
-	NOD node;
+	DUDLEY_NOD node;
 
 	stack = *pointer;
 	node = stack->lls_object;
@@ -674,7 +674,7 @@ NOD DDL_pop(LLS * pointer)
 }
 
 
-void DDL_push( NOD object, LLS * pointer)
+void DDL_push( DUDLEY_NOD object, LLS * pointer)
 {
 /**************************************
  *

@@ -25,6 +25,6 @@
 #define _DUDLEY_GENER_PROTO_H_
 
 extern int GENERATE_acl(SCL, UCHAR *);
-extern void GENERATE_blr(STR, NOD);
+extern void GENERATE_blr(STR, DUDLEY_NOD);
 
 #endif /* _DUDLEY_GENER_PROTO_H_ */

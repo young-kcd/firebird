@@ -30,8 +30,8 @@
 #include "../jrd/gds_proto.h"
 #include "../dudley/trn_proto.h"
 
-static void generate(STR, NOD);
-static void get_set_generator(STR, NOD);
+static void generate(STR, DUDLEY_NOD);
+static void get_set_generator(STR, DUDLEY_NOD);
 
 #define STUFF(c)	*blr->str_current++ = c
 #define STUFF_WORD(c)	{STUFF (c); STUFF (c >> 8);}
@@ -88,7 +88,7 @@ int GENERATE_acl( SCL class_, UCHAR * buffer)
 }
 
 
-void GENERATE_blr( STR blr, NOD node)
+void GENERATE_blr( STR blr, DUDLEY_NOD node)
 {
 /**************************************
  *
@@ -109,7 +109,7 @@ void GENERATE_blr( STR blr, NOD node)
 }
 
 
-static void generate( STR blr, NOD node)
+static void generate( STR blr, DUDLEY_NOD node)
 {
 /**************************************
  *
@@ -125,7 +125,7 @@ static void generate( STR blr, NOD node)
 	REL relation;
 	SYM symbol;
 	CON constant;
-	NOD sub, *arg, *end;
+	DUDLEY_NOD sub, *arg, *end;
 	CTX context;
 	SCHAR operatr, *p;
 	SLONG value;
@@ -575,7 +575,7 @@ static void generate( STR blr, NOD node)
 }
 
 
-static void get_set_generator( STR blr, NOD node)
+static void get_set_generator( STR blr, DUDLEY_NOD node)
 {
 /**************************************
  *

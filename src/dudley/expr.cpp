@@ -37,21 +37,21 @@
 extern jmp_buf parse_env;
 
 static CON make_numeric_constant(TEXT *, USHORT);
-static NOD parse_add(USHORT *, USHORT *);
-static NOD parse_and(USHORT *);
-static NOD parse_field(void);
-static NOD parse_from(USHORT *, USHORT *);
-static NOD parse_function(void);
-static NOD parse_gen_id(void);
+static DUDLEY_NOD parse_add(USHORT *, USHORT *);
+static DUDLEY_NOD parse_and(USHORT *);
+static DUDLEY_NOD parse_field(void);
+static DUDLEY_NOD parse_from(USHORT *, USHORT *);
+static DUDLEY_NOD parse_function(void);
+static DUDLEY_NOD parse_gen_id(void);
 static CON parse_literal(void);
 static void parse_matching_paren(void);
-static NOD parse_multiply(USHORT *, USHORT *);
-static NOD parse_not(USHORT *);
-static NOD parse_primitive_value(USHORT *, USHORT *);
+static DUDLEY_NOD parse_multiply(USHORT *, USHORT *);
+static DUDLEY_NOD parse_not(USHORT *);
+static DUDLEY_NOD parse_primitive_value(USHORT *, USHORT *);
 static CTX parse_relation(void);
-static NOD parse_relational(USHORT *);
-static NOD parse_sort(void);
-static NOD parse_statistical(void);
+static DUDLEY_NOD parse_relational(USHORT *);
+static DUDLEY_NOD parse_sort(void);
+static DUDLEY_NOD parse_statistical(void);
 static void parse_terminating_parens(USHORT *, USHORT *);
 
 static struct nod_types {
@@ -72,7 +72,7 @@ static enum nod_t relationals[] = {
 };
 
 
-NOD EXPR_boolean(USHORT * paren_count)
+DUDLEY_NOD EXPR_boolean(USHORT * paren_count)
 {
 /**************************************
  *
@@ -85,7 +85,7 @@ NOD EXPR_boolean(USHORT * paren_count)
  *	here.
  *
  **************************************/
-	NOD expr, node;
+	DUDLEY_NOD expr, node;
 	USHORT local_count;
 
 	if (!paren_count) {
@@ -109,7 +109,7 @@ NOD EXPR_boolean(USHORT * paren_count)
 }
 
 
-NOD EXPR_rse(USHORT view_flag)
+DUDLEY_NOD EXPR_rse(USHORT view_flag)
 {
 /**************************************
  *
@@ -121,7 +121,7 @@ NOD EXPR_rse(USHORT view_flag)
  *	Parse a record selection expression.
  *
  **************************************/
-	NOD node, boolean, field_name, a_boolean, temp;
+	DUDLEY_NOD node, boolean, field_name, a_boolean, temp;
 	LLS stack, field_stack;
 	CTX context;
 	SYM field_sym;
@@ -147,12 +147,12 @@ NOD EXPR_rse(USHORT view_flag)
 				field_sym = PARSE_symbol(tok_ident);
 				field_name = SYNTAX_NODE(nod_field_name, 2);
 				context = (CTX) stack->lls_object;
-				field_name->nod_arg[0] = (NOD) context->ctx_name;
-				field_name->nod_arg[1] = (NOD) field_sym;
+				field_name->nod_arg[0] = (DUDLEY_NOD) context->ctx_name;
+				field_name->nod_arg[1] = (DUDLEY_NOD) field_sym;
 				boolean->nod_arg[0] = field_name;
 				field_name = SYNTAX_NODE(nod_over, 2);
-				field_name->nod_arg[0] = (NOD) context->ctx_name;
-				field_name->nod_arg[1] = (NOD) field_sym;
+				field_name->nod_arg[0] = (DUDLEY_NOD) context->ctx_name;
+				field_name->nod_arg[1] = (DUDLEY_NOD) field_sym;
 				boolean->nod_arg[1] = field_name;
 				if (node->nod_arg[s_rse_boolean]) {
 					a_boolean = SYNTAX_NODE(nod_and, 2);
@@ -170,7 +170,7 @@ NOD EXPR_rse(USHORT view_flag)
 			break;
 	}
 
-	node->nod_arg[s_rse_contexts] = (NOD) stack;
+	node->nod_arg[s_rse_contexts] = (DUDLEY_NOD) stack;
 
 /* Pick up various other clauses */
 
@@ -201,7 +201,7 @@ NOD EXPR_rse(USHORT view_flag)
 }
 
 
-NOD EXPR_statement(void)
+DUDLEY_NOD EXPR_statement(void)
 {
 /**************************************
  *
@@ -214,7 +214,7 @@ NOD EXPR_statement(void)
  *
  **************************************/
 	LLS stack;
-	NOD node, list;
+	DUDLEY_NOD node, list;
 	int number;
 
 	if (MATCH(KW_BEGIN)) {
@@ -243,7 +243,7 @@ NOD EXPR_statement(void)
 	}
 	else if (MATCH(KW_STORE)) {
 		node = SYNTAX_NODE(nod_store, 2);
-		node->nod_arg[s_store_rel] = (NOD) parse_relation();
+		node->nod_arg[s_store_rel] = (DUDLEY_NOD) parse_relation();
 		MATCH(KW_USING);
 		stack = NULL;
 		while (!MATCH(KW_END_STORE))
@@ -256,18 +256,18 @@ NOD EXPR_statement(void)
 		number = PARSE_number();
 		if (number > 255)
 			PARSE_error(235, NULL, NULL);	/* msg 235: abort code cannot exceed 255 */
-		node->nod_arg[0] = (NOD) (SLONG) number;
+		node->nod_arg[0] = (DUDLEY_NOD) (SLONG) number;
 	}
 	else if (MATCH(KW_ERASE)) {
 		node = SYNTAX_NODE(nod_erase, 1);
 		node->nod_count = 0;
-		node->nod_arg[0] = (NOD) PARSE_symbol(tok_ident);
+		node->nod_arg[0] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
 	}
 	else if (MATCH(KW_MODIFY)) {
 		MATCH(KW_USING);
 		node = SYNTAX_NODE(nod_modify, 3);
 		node->nod_count = 0;
-		node->nod_arg[s_mod_old_ctx] = (NOD) PARSE_symbol(tok_ident);
+		node->nod_arg[s_mod_old_ctx] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
 		MATCH(KW_USING);
 		stack = NULL;
 		while (!MATCH(KW_END_MODIFY))
@@ -293,7 +293,7 @@ NOD EXPR_statement(void)
 }
 
 
-NOD EXPR_value(USHORT * paren_count, USHORT * bool_flag)
+DUDLEY_NOD EXPR_value(USHORT * paren_count, USHORT * bool_flag)
 {
 /**************************************
  *
@@ -306,7 +306,7 @@ NOD EXPR_value(USHORT * paren_count, USHORT * bool_flag)
  *	lowest precedence operator CONCATENATE.
  *
  **************************************/
-	NOD node, arg;
+	DUDLEY_NOD node, arg;
 	enum nod_t operatr;
 	USHORT local_count, local_flag;
 
@@ -421,7 +421,7 @@ static CON make_numeric_constant( TEXT * string, USHORT length)
 }
 
 
-static NOD parse_add( USHORT * paren_count, USHORT * bool_flag)
+static DUDLEY_NOD parse_add( USHORT * paren_count, USHORT * bool_flag)
 {
 /**************************************
  *
@@ -434,7 +434,7 @@ static NOD parse_add( USHORT * paren_count, USHORT * bool_flag)
  *	lowest precedence operators, ADD and SUBTRACT.
  *
  **************************************/
-	NOD node, arg;
+	DUDLEY_NOD node, arg;
 	enum nod_t operatr;
 
 	node = parse_multiply(paren_count, bool_flag);
@@ -454,7 +454,7 @@ static NOD parse_add( USHORT * paren_count, USHORT * bool_flag)
 }
 
 
-static NOD parse_and( USHORT * paren_count)
+static DUDLEY_NOD parse_and( USHORT * paren_count)
 {
 /**************************************
  *
@@ -466,7 +466,7 @@ static NOD parse_and( USHORT * paren_count)
  *	Parse an AND expression.
  *
  **************************************/
-	NOD expr, node;
+	DUDLEY_NOD expr, node;
 
 	expr = parse_not(paren_count);
 
@@ -481,7 +481,7 @@ static NOD parse_and( USHORT * paren_count)
 }
 
 
-static NOD parse_field(void)
+static DUDLEY_NOD parse_field(void)
 {
 /**************************************
  *
@@ -493,7 +493,7 @@ static NOD parse_field(void)
  *	Parse a qualified field name.
  *
  **************************************/
-	NOD field, array;
+	DUDLEY_NOD field, array;
 	LLS stack;
 
 	stack = NULL;
@@ -530,7 +530,7 @@ static NOD parse_field(void)
 }
 
 
-static NOD parse_from( USHORT * paren_count, USHORT * bool_flag)
+static DUDLEY_NOD parse_from( USHORT * paren_count, USHORT * bool_flag)
 {
 /**************************************
  *
@@ -542,7 +542,7 @@ static NOD parse_from( USHORT * paren_count, USHORT * bool_flag)
  *	Parse either an explicit or implicit FIRST ... FROM statement.
  *
  **************************************/
-	NOD node, value;
+	DUDLEY_NOD node, value;
 
 	if (MATCH(KW_FIRST)) {
 		value = parse_primitive_value(0, 0);
@@ -567,7 +567,7 @@ static NOD parse_from( USHORT * paren_count, USHORT * bool_flag)
 }
 
 
-static NOD parse_function(void)
+static DUDLEY_NOD parse_function(void)
 {
 /**************************************
  *
@@ -580,7 +580,7 @@ static NOD parse_function(void)
  *
  **************************************/
 	SYM symbol;
-	NOD node;
+	DUDLEY_NOD node;
 	LLS stack;
 
 /* Look for symbol of type function.  If we don't find it, give up */
@@ -594,8 +594,8 @@ static NOD parse_function(void)
 
 	node = SYNTAX_NODE(nod_function, 3);
 	node->nod_count = 1;
-	node->nod_arg[1] = (NOD) PARSE_symbol(tok_ident);
-	node->nod_arg[2] = (NOD) symbol->sym_object;
+	node->nod_arg[1] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
+	node->nod_arg[2] = (DUDLEY_NOD) symbol->sym_object;
 	stack = NULL;
 
 	if (MATCH(KW_LEFT_PAREN) && !MATCH(KW_RIGHT_PAREN))
@@ -614,7 +614,7 @@ static NOD parse_function(void)
 }
 
 
-static NOD parse_gen_id(void)
+static DUDLEY_NOD parse_gen_id(void)
 {
 /**************************************
  *
@@ -628,7 +628,7 @@ static NOD parse_gen_id(void)
  *		GEN_ID (<relation_name>, <value>)
  *
  **************************************/
-	NOD node;
+	DUDLEY_NOD node;
 
 	LEX_token();
 
@@ -637,7 +637,7 @@ static NOD parse_gen_id(void)
 
 	node = SYNTAX_NODE(nod_gen_id, 2);
 	node->nod_count = 1;
-	node->nod_arg[1] = (NOD) PARSE_symbol(tok_ident);
+	node->nod_arg[1] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
 	MATCH(KW_COMMA);
 	node->nod_arg[0] = EXPR_value(0, 0);
 	parse_matching_paren();
@@ -710,7 +710,7 @@ static void parse_matching_paren(void)
 }
 
 
-static NOD parse_multiply( USHORT * paren_count, USHORT * bool_flag)
+static DUDLEY_NOD parse_multiply( USHORT * paren_count, USHORT * bool_flag)
 {
 /**************************************
  *
@@ -722,7 +722,7 @@ static NOD parse_multiply( USHORT * paren_count, USHORT * bool_flag)
  *	Parse the operators * and /.
  *
  **************************************/
-	NOD node, arg;
+	DUDLEY_NOD node, arg;
 	enum nod_t operatr;
 
 	node = parse_from(paren_count, bool_flag);
@@ -742,7 +742,7 @@ static NOD parse_multiply( USHORT * paren_count, USHORT * bool_flag)
 }
 
 
-static NOD parse_not( USHORT * paren_count)
+static DUDLEY_NOD parse_not( USHORT * paren_count)
 {
 /**************************************
  *
@@ -754,7 +754,7 @@ static NOD parse_not( USHORT * paren_count)
  *	Parse a prefix NOT expression.
  *
  **************************************/
-	NOD node;
+	DUDLEY_NOD node;
 
 	LEX_real();
 
@@ -768,7 +768,7 @@ static NOD parse_not( USHORT * paren_count)
 }
 
 
-static NOD parse_primitive_value( USHORT * paren_count, USHORT * bool_flag)
+static DUDLEY_NOD parse_primitive_value( USHORT * paren_count, USHORT * bool_flag)
 {
 /**************************************
  *
@@ -781,7 +781,7 @@ static NOD parse_primitive_value( USHORT * paren_count, USHORT * bool_flag)
  *	or a constant value.
  *
  **************************************/
-	NOD node, sub;
+	DUDLEY_NOD node, sub;
 	CON constant;
 	SYM symbol;
 	TEXT *p;
@@ -859,7 +859,7 @@ static NOD parse_primitive_value( USHORT * paren_count, USHORT * bool_flag)
 			break;
 		}
 		node = SYNTAX_NODE(nod_literal, 1);
-		node->nod_arg[0] = (NOD) parse_literal();
+		node->nod_arg[0] = (DUDLEY_NOD) parse_literal();
 	}
 
 	return node;
@@ -898,7 +898,7 @@ static CTX parse_relation(void)
 }
 
 
-static NOD parse_relational( USHORT * paren_count)
+static DUDLEY_NOD parse_relational( USHORT * paren_count)
 {
 /**************************************
  *
@@ -910,7 +910,7 @@ static NOD parse_relational( USHORT * paren_count)
  *	Parse a relational expression.
  *
  **************************************/
-	NOD node, expr1, expr2, or_node;
+	DUDLEY_NOD node, expr1, expr2, or_node;
 	LLS stack;
 	USHORT count, negation;
 	enum nod_t operatr, *rel_ops;
@@ -1066,7 +1066,7 @@ static NOD parse_relational( USHORT * paren_count)
 }
 
 
-static NOD parse_sort(void)
+static DUDLEY_NOD parse_sort(void)
 {
 /**************************************
  *
@@ -1078,7 +1078,7 @@ static NOD parse_sort(void)
  *	Parse a sort list.
  *
  **************************************/
-	NOD node, *ptr;
+	DUDLEY_NOD node, *ptr;
 	LLS stack;
 	SSHORT direction;
 
@@ -1101,7 +1101,7 @@ static NOD parse_sort(void)
 }
 
 
-static NOD parse_statistical(void)
+static DUDLEY_NOD parse_statistical(void)
 {
 /**************************************
  *
@@ -1114,7 +1114,7 @@ static NOD parse_statistical(void)
  *
  **************************************/
 	struct nod_types *types;
-	NOD node;
+	DUDLEY_NOD node;
 	enum kwwords keyword;
 
 	keyword = PARSE_keyword();

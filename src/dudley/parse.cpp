@@ -141,7 +141,7 @@ static int parse_page_size(void);
 static SLONG parse_privileges(void);
 static void revoke_user_privilege(void);
 static SLONG score_entry(SCE);
-static NOD set_generator(void);
+static DUDLEY_NOD set_generator(void);
 static void sort_out_attributes(TRG, SLONG, SLONG, SLONG);
 static TXT start_text(void);
 static void validate_field(FLD);
@@ -271,7 +271,7 @@ enum kwwords PARSE_keyword(void)
 }
 
 
-NOD PARSE_make_list(LLS stack)
+DUDLEY_NOD PARSE_make_list(LLS stack)
 {
 /**************************************
  *
@@ -284,7 +284,7 @@ NOD PARSE_make_list(LLS stack)
  *	them first.
  *
  **************************************/
-	NOD node, *ptr;
+	DUDLEY_NOD node, *ptr;
 	LLS temp;
 	USHORT count;
 
@@ -306,7 +306,7 @@ NOD PARSE_make_list(LLS stack)
 }
 
 
-NOD PARSE_make_node(enum nod_t type, USHORT count)
+DUDLEY_NOD PARSE_make_node(enum nod_t type, USHORT count)
 {
 /**************************************
  *
@@ -318,9 +318,9 @@ NOD PARSE_make_node(enum nod_t type, USHORT count)
  *	Allocate and initialize a syntax node of given type.
  *
  **************************************/
-	NOD node;
+	DUDLEY_NOD node;
 
-	node = (NOD) DDL_alloc(NOD_LEN(count));
+	node = (DUDLEY_NOD) DDL_alloc(NOD_LEN(count));
 	node->nod_type = type;
 	node->nod_count = count;
 
@@ -1570,7 +1570,7 @@ static void define_view(void)
 	contexts = (LLS) relation->rel_rse->nod_arg[s_rse_contexts];
 	my_context = make_context(0, relation);
 	LLS_PUSH(my_context, &contexts);
-	relation->rel_rse->nod_arg[s_rse_contexts] = (NOD) contexts;
+	relation->rel_rse->nod_arg[s_rse_contexts] = (DUDLEY_NOD) contexts;
 
 	rel_actions = action = make_action(act_a_relation, (DBB) relation);
 	action->act_flags |= ACT_ignore;
@@ -4063,7 +4063,7 @@ static SLONG score_entry( SCE element)
 }
 
 
-static NOD set_generator(void)
+static DUDLEY_NOD set_generator(void)
 {
 /**************************************
  *
@@ -4074,7 +4074,7 @@ static NOD set_generator(void)
  * Functional description
  *      get the name and new value for generator
  **************************************/
-	NOD node;
+	DUDLEY_NOD node;
 	SYM symbol;
 
 	if (DDL_token.tok_type != tok_ident)
@@ -4082,7 +4082,7 @@ static NOD set_generator(void)
 
 	node = PARSE_make_node(nod_set_generator, 2);
 	node->nod_count = 1;
-	node->nod_arg[1] = (NOD) PARSE_symbol(tok_ident);
+	node->nod_arg[1] = (DUDLEY_NOD) PARSE_symbol(tok_ident);
 	MATCH(KW_TO);
 	node->nod_arg[0] = EXPR_value(0, 0);
 
