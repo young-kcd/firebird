@@ -1,3 +1,48 @@
+2004-02-08 19:47  skidder
+
+	* firebird2/src/jrd/: flu.cpp, os/posix/config_root.cpp,
+	os/posix/mod_loader.cpp, os/posix/path_utils.cpp:
+	
+	Get posix build closer to buildable state after Alex' commits, but
+	build is still broken. It was very bad idea to commit incomplete
+	and broken stuff into CVS, in particular, fb_string still has some
+	rough edges, doesn't work with memory pools correctly and
+	fb_string.cpp is just missing.
+
+2004-02-08 18:08  alexpeshkoff
+
+	* firebird2/: builds/win32/msvc6/common.dsp,
+	builds/win32/msvc6/common_classic.dsp,
+	builds/win32/msvc6/common_static.dsp, src/common/config/config.cpp,
+	src/common/config/config_file.cpp, src/common/config/config_file.h,
+	src/common/config/config_impl.h, src/jrd/os/win32/config_root.cpp,
+	src/jrd/os/win32/mod_loader.cpp, src/jrd/os/win32/path_utils.cpp,
+	src/jrd/os/config_root.h, src/jrd/os/mod_loader.h,
+	src/jrd/os/path_utils.h, src/jrd/db_alias.cpp, src/jrd/dyn_def.epp,
+	src/jrd/flu.cpp, src/jrd/isc_file.cpp, src/jrd/plugin_manager.cpp,
+	src/jrd/plugin_manager.h, src/include/fb_string.h:
+	
+	Added native firebird::string class.
+
+2004-02-08 17:35  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.h:
+	
+	const correctness
+
+2004-02-08 12:34  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/super/postinstall.sh.in:
+	
+	One more fix from Andreas Bentele
+
+2004-02-08 11:49  alexpeshkoff
+
+	* firebird2/src/install/misc/SSchangeRunUser.sh.in:
+	
+	Fixed typo
+
 2004-02-06 08:45  skidder
 
 	* firebird2/src/burp/: backup.epp, restore.epp:
