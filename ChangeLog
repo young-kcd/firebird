@@ -1,3 +1,15 @@
+2005-03-25 09:05  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.232):
+	
+	Minor RSB tree output change.
+
+2005-03-25 08:54  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.15):
+	
+	Fixed "wrong page type" bugcheck.
+
 2005-03-24 22:49  arnobrinkman
 
 	* firebird2/src/jrd/Optimizer.cpp (1.14):
