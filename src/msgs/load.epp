@@ -74,6 +74,7 @@ static STUFF stuff[] = {
 		ITEM(blr_leave, BLR, STATEMENTS)
 		ITEM(blr_store2, BLR, STATEMENTS)
 		ITEM(blr_post, BLR, STATEMENTS)
+		ITEM (blr_exec_sql, BLR, STATEMENTS)
 
 		ITEM(blr_literal, BLR, VALUES)
 		ITEM(blr_dbkey, BLR, VALUES)

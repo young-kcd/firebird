@@ -1283,6 +1283,7 @@ proc_statement	: assignment ';'
 		| EXCEPTION symbol_exception_name ';'
 			{ $$ = make_node (nod_exception_stmt, 1, $2); }
 		| exec_procedure
+		| exec_sql
 		| for_select
 		| if_then_else
 		| insert ';'
@@ -1300,6 +1301,10 @@ proc_statement	: assignment ';'
 exec_procedure	: EXECUTE PROCEDURE symbol_procedure_name proc_inputs proc_outputs ';'
 			{ $$ = make_node (nod_exec_procedure, e_exe_count, $3,
 					  $4, $5); }
+		;
+
+exec_sql	: EXECUTE VARCHAR value ';'
+			{ $$ = make_node (nod_exec_sql, e_exec_vc_count, $3); }
 		;
 
 for_select	: FOR select INTO variable_list cursor_def DO proc_block

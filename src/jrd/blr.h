@@ -276,6 +276,14 @@
 #define blr_gen_id2			(unsigned char)172
 #define blr_set_generator2	(unsigned char)173
 
+/* FB1 specific BLR */
+
+#define blr_current_role	(unsigned char)174
+#define blr_skip		(unsigned char)175
+
+/* FB2 specific BLR */
+#define blr_exec_sql		(unsigned char)176
+
 #endif /* _JRD_BLR_H_ */
 
 

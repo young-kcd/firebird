@@ -1094,6 +1094,13 @@ NOD PASS1_statement(REQ request, NOD input, USHORT proc_flag)
 												proc_flag);
 		return node;
 
+	case nod_exec_sql:
+		node = MAKE_node(input->nod_type, input->nod_count);
+		node->nod_arg[e_exec_vc] = PASS1_node(request,
+											  input->nod_arg[e_exec_vc],
+											  proc_flag);
+		return node;
+
 	case nod_rollback:
 		request->req_type = REQ_ROLLBACK;
 		return input;

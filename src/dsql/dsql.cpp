@@ -25,7 +25,7 @@
  * December 2001 Mike Nordell: Major overhaul to (try to) make it C++
  */
 /*
-$Id: dsql.cpp,v 1.9 2002-04-04 05:35:21 bellardo Exp $
+$Id: dsql.cpp,v 1.10 2002-04-04 13:50:07 dimitr Exp $
 */
 /**************************************************************
 V4 Multi-threading changes.
@@ -634,31 +634,32 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(STATUS*		user_status,
 }
 
 
-STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS*	user_status,
-										 int**		db_handle,
-										 int**		trans_handle,
-										 USHORT		length,
-										 TEXT*		string,
-										 USHORT		dialect,
-										 USHORT		in_blr_length,
-										 UCHAR*		in_blr,
-										 USHORT		in_msg_type,
-										 USHORT		in_msg_length,
-										 UCHAR*		in_msg,
-										 USHORT		out_blr_length,
-										 UCHAR*		out_blr,
-										 USHORT		out_msg_type,
-										 USHORT		out_msg_length,
-										 UCHAR*		out_msg)
+static STATUS dsql8_execute_immediate_common(STATUS*	user_status,
+											 int**		db_handle,
+											 int**		trans_handle,
+											 USHORT		length,
+											 TEXT*		string,
+											 USHORT		dialect,
+											 USHORT		in_blr_length,
+											 UCHAR*		in_blr,
+											 USHORT		in_msg_type,
+											 USHORT		in_msg_length,
+											 UCHAR*		in_msg,
+											 USHORT		out_blr_length,
+											 UCHAR*		out_blr,
+											 USHORT		out_msg_type,
+											 USHORT		out_msg_length,
+											 UCHAR*		out_msg,
+											 long 		possible_requests)
 {
 /**************************************
  *
- *	d s q l _ e x e c u t e _ i m m e d i a t e
+ *	d s q l _ e x e c u t e _ i m m e d i a t e _ c o m m o n
  *
  **************************************
  *
  * Functional description
- *	Prepare and execute a statement.
+ *	Common part of prepare and execute a statement.
  *
  **************************************/
 	REQ request;
@@ -725,6 +726,11 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS*	user_status,
 			request->req_client_dialect = dialect;
 
 			request = prepare(request, length, string, dialect, parser_version);
+
+			if (!((1 << request->req_type) & possible_requests))
+				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -901,
+					gds_arg_gds, gds_wish_list, 0);
+
 			execute_request(request,
 					reinterpret_cast<isc_tr_handle*>(trans_handle),
 					in_blr_length,
@@ -753,6 +759,152 @@ STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS*	user_status,
 	}
 
 	return return_success();
+}
+
+STATUS DLL_EXPORT GDS_DSQL_EXECUTE_IMMED(STATUS*	user_status,
+					 int**		db_handle,
+					 int**		trans_handle,
+					 USHORT		length,
+					 TEXT*		string,
+					 USHORT		dialect,
+					 USHORT		in_blr_length,
+					 UCHAR*		in_blr,
+					 USHORT		in_msg_type,
+					 USHORT		in_msg_length,
+					 UCHAR*		in_msg,
+					 USHORT		out_blr_length,
+					 UCHAR*		out_blr,
+					 USHORT		out_msg_type,
+					 USHORT		out_msg_length,
+					 UCHAR*		out_msg)
+{
+/**************************************
+ *
+ *	d s q l _ e x e c u t e _ i m m e d i a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Prepare and execute a statement.
+ *
+ **************************************/
+	return dsql8_execute_immediate_common(user_status, db_handle, trans_handle, length,
+		string, dialect, in_blr_length, in_blr, in_msg_type, in_msg_length,
+		in_msg, out_blr_length, out_blr, out_msg_type, out_msg_length, out_msg, -1);
+}
+
+static int check_for_create_database( TEXT* sql,
+									  int l,
+									  TEXT* crdb)
+{
+/**************************************
+ *
+ *	c h e c k _ f o r _ c r e a t e _ d a t a b a s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	When executing dynamic sql_operator in context of existing connrction and
+ *	existing transaction, it is not clear - what should do "Create Database"
+ *	operator with existing db_handle and tra_handle. Therefore we don't exec it.
+ *
+ **************************************/
+	for (; l--; sql++) {
+    	switch (*sql) {
+        	case '\t':
+        	case '\n':
+        	case '\r':
+        	case ' ':
+            	continue;
+        }
+	    if (tolower(*sql) != *crdb++)
+    	    break;
+	    if (! *crdb)
+    	    return 1;
+    }
+
+	return 0;
+}
+
+STATUS callback_execute_immediate( STATUS* status,
+								   int* jrd_attachment_handle,
+								   int* jrd_transaction_handle,
+    							   TEXT* sql_operator,
+    							   int len)
+{
+/**************************************
+ *
+ *	c a l l b a c k _ e x e c u t e _ i m m e d i a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Execute sql_operator in context of jrd_transaction_handle
+ *
+ **************************************/
+
+#pragma FB_COMPILER_MESSAGE("Warning! Same struct declared TWICE!")
+	typedef struct hndl {
+    	UCHAR type;
+    	UCHAR flags;
+    	USHORT implementation;
+    	int *handle;
+    	struct hndl *parent;
+    	struct hndl *next;
+    	struct hndl *requests;
+    	struct hndl *statements;
+    	struct hndl *blobs;
+    	struct hndl **user_handle;
+    	struct clean *cleanup;
+    	TEXT *db_path;
+	} *WHY;  /* exact copy of `struct hndl' from why.c */
+
+	struct hndl w;
+	WHY	why_db_handle = NULL;
+	WHY	why_trans_handle = &w;
+	DBB	database;
+
+	/* Other requests appear to be incorrect in this context */
+	long requests = (1 << REQ_INSERT) | (1 << REQ_DELETE) | (1 << REQ_UPDATE)
+			      | (1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE);
+
+	if (check_for_create_database(sql_operator, len, "createdatabase") ||
+    	check_for_create_database(sql_operator, len, "createschema"))
+    	requests = 0;
+
+	/* 1. Locate why_db_handle, corresponding to jrd_database_handle */
+	THD_MUTEX_LOCK (&databases_mutex);
+	for (database = databases; database; database = database->dbb_next)
+	    if (((WHY) (database->dbb_database_handle))->handle == jrd_attachment_handle)
+			break;
+	if (! database) {
+    	status[0] = gds_arg_gds;
+    	status[1] = gds_bad_db_handle;
+    	status[2] = gds_arg_end;
+    	THD_MUTEX_UNLOCK(&databases_mutex);
+    	return status[1];
+    }
+	why_db_handle = (WHY) (database->dbb_database_handle);
+
+	/* 2. Create why_trans_handle - it's new, but points to the same jrd
+    	  transaction as original before callback. */
+	memset (why_trans_handle, 0, sizeof(struct hndl));
+	why_trans_handle->implementation = why_db_handle->implementation;
+	why_trans_handle->handle = jrd_transaction_handle;
+
+#define HANDLE_transaction 2   /* exact copy of `HANDLE_transaction' from why.c */
+	why_trans_handle->type = HANDLE_transaction;
+#undef HANDLE_transaction
+
+	why_trans_handle->parent = why_db_handle;
+	THD_MUTEX_UNLOCK (&databases_mutex);
+
+	/* 3. Call execute... function */
+	return dsql8_execute_immediate_common(status,
+										  reinterpret_cast <int **> (&why_db_handle),
+										  reinterpret_cast <int **> (&why_trans_handle),
+										  len, sql_operator, database->dbb_db_SQL_dialect,
+										  0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL, requests);
 }
 
 

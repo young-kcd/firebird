@@ -138,3 +138,7 @@
 	{"agg_total_distinct2", one}, {"agg_average2", one}, {"agg_average_distinct2", one},	/* 170 */
 	{"average2", two}, {"gen_id2", gen_id}, 
     {"set_generator2", gen_id},
+/* New BLR in FB1 !!!!! NOT IMPLEMENTED IN FB2 YET !!!!! */
+	{"current_role", zero}, {"skip", one}, 
+/* New BLR in FB2 */
+	{"execute_varchar", one},

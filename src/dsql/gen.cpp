@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gen.cpp,v 1.3 2001-12-24 02:50:48 tamlin Exp $
+$Id: gen.cpp,v 1.4 2002-04-04 13:50:07 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -992,6 +992,11 @@ void GEN_statement( REQ request, NOD node)
 		GEN_expr(request, node->nod_arg[e_pst_event]);
 		return;
 
+	case nod_exec_sql:
+		STUFF(blr_exec_sql);
+		GEN_expr(request, node->nod_arg[e_exec_vc]);
+		return;
+	
 	case nod_return:
 		GEN_return(request, node->nod_arg[e_rtn_procedure], FALSE);
 		return;

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: par.cpp,v 1.6 2002-02-23 07:49:48 dimitr Exp $
+$Id: par.cpp,v 1.7 2002-04-04 13:52:28 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2314,6 +2314,7 @@ static NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 	case blr_agg_total_distinct2:
 	case blr_agg_average_distinct2:
 	case blr_post:
+	case blr_exec_sql:
 		*arg++ = parse(tdbb, csb, sub_type);
 		break;
 

@@ -294,7 +294,9 @@ typedef ENUM nod_t
 	nod_mod_domain_type,
 	nod_mod_field_name,
 	nod_mod_field_type,
-	nod_mod_field_pos
+	nod_mod_field_pos,
+	/* EXECUTE VARCHAR */
+	nod_exec_sql
 } NOD_TYPE;
 
 
@@ -399,6 +401,9 @@ typedef nod *NOD;
 
 #define e_pst_event	0			/* nod_procedure */
 #define e_pst_count	1
+
+#define e_exec_vc	0			/* nod_exec_sql */
+#define e_exec_vc_count	1
 
 #define e_rtn_procedure 0		/* nod_procedure */
 #define e_rtn_count	1

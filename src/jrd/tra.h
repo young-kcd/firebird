@@ -61,6 +61,7 @@ class tra : public pool_alloc_rpt<SCHAR, type_tra>
 	struct dfw *tra_deferred_work;	/* work deferred to commit time */
 	class Rsc *tra_resources;	/* resource existence list */
 	UCHAR tra_use_count;		/* use count for safe AST delivery */
+	UCHAR tra_callback_count;	/* callback count for 'execute varchar' */
 	UCHAR tra_transactions[1];
 };
 typedef tra *TRA;

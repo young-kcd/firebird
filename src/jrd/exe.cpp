@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: exe.cpp,v 1.7 2002-04-02 23:12:03 bellardo Exp $
+$Id: exe.cpp,v 1.8 2002-04-04 13:52:27 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -99,6 +99,7 @@ IDX_E IDX_modify_check_constraints(TDBB tdbb,
 
 static NOD erase(TDBB, NOD, SSHORT);
 static void execute_looper(TDBB, REQ, TRA, ENUM req::req_s);
+static void exec_sql(TDBB, REQ, DSC *);
 static void execute_procedure(TDBB, NOD);
 static REQ execute_triggers(TDBB, VEC *, REC, REC);
 static NOD looper(TDBB, REQ, NOD);
@@ -159,6 +160,8 @@ static SLONG memory_count = 0;
 #ifndef MAX_CLONES
 #define MAX_CLONES	1000
 #endif
+
+#define MAX_CALLBACKS	50
 
 #define ALL_TRIGS	0
 #define PRE_TRIG	1
@@ -1240,6 +1243,71 @@ static void execute_looper(
 }
 
 
+static void exec_sql(TDBB tdbb, REQ request, DSC* dsc)
+{
+/**************************************
+ *
+ *	e x e c _ s q l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Execute a string as SQL operator.
+ *
+ **************************************/
+
+	extern STATUS DLL_EXPORT callback_execute_immediate(
+		STATUS *status,
+		int* jrd_attachment_handle,
+		int* jrd_transaction_handle,
+		UCHAR *sql_operator,
+		int len);
+
+	UCHAR *p;
+	vary *v = reinterpret_cast <vary*> (new char[BUFFER_LARGE + sizeof(vary)]);
+	v->vary_length = BUFFER_LARGE;
+	SSHORT l;
+	STATUS *status, local[ISC_STATUS_LENGTH];
+	static char *cba = "Callback Argument";
+
+	memset(local, 0, sizeof(local));
+	status = local;
+
+	SET_TDBB(tdbb);
+	p = 0;
+	l = MOV_get_string(dsc, &p, v, BUFFER_LARGE); // !!! How call Msgs ?
+	if (p) {
+		if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
+			status[0] = gds_arg_gds;
+			status[1] = gds_req_max_clones_exceeded;
+			status[2] = gds_arg_end;
+		}
+		else {
+			tdbb->tdbb_transaction->tra_callback_count++;
+			callback_execute_immediate(status,
+									   reinterpret_cast <int *> (tdbb->tdbb_attachment),
+									   reinterpret_cast <int *> (tdbb->tdbb_transaction),
+									   p, l);
+			tdbb->tdbb_transaction->tra_callback_count--;
+		}
+	}
+	else {
+		status[0] = gds_arg_gds;
+		status[1] = gds_convert_error;
+		status[2] = gds_arg_string;
+		status[3] = reinterpret_cast <long> (cba);
+		status[4] = gds_arg_end;
+	}
+
+	if (status[1]) {
+ 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
+		ERR_punt();
+	}
+
+	delete v;
+}
+
+
 static void execute_procedure(TDBB tdbb, NOD node)
 {
 /**************************************
@@ -2126,6 +2194,17 @@ static NOD looper(TDBB tdbb, REQ request, NOD in_node)
 
 		case nod_receive:
 			node = receive_msg(tdbb, node);
+			break;
+
+		case nod_exec_sql:
+			if (request->req_operation == req::req_unwind) {
+				node = node->nod_parent;
+				break;
+			}
+			exec_sql(tdbb, request, EVL_expr(tdbb, node->nod_arg[0]));
+			if (request->req_operation == req::req_evaluate)
+				request->req_operation = req::req_return;
+			node = node->nod_parent;
 			break;
 
 		case nod_post:

@@ -188,3 +188,6 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_gen_id2, recnum, "")
 		  NODE(nod_set_generator2, set_generator, "")
 		  NODE(nod_total2, total, "SUM")
+
+/* EXECUTE VARCHAR */
+		  NODE(nod_exec_sql, exec_sql, "EXECUTE VARCHAR")
