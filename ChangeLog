@@ -1,3 +1,68 @@
+2003-12-09 10:12  epocman
+
+	* firebird2/src/utilities/: gdsclient.cpp, gdsclient_proto.h,
+	install_gds.cpp, install_nt.h:
+	
+	Win32 - instgds.exe - Note : according to design decisions this
+	will be replaced by instclient.exe within the next 12 hours. This
+	commit only to share temporary code with P.Reeves and D.Yemanov in
+	between.
+
+2003-12-06 19:13  dimitr
+
+	* firebird2/src/dsql/metd.epp:
+	
+	Fixed problem with parameters used as UDF arguments with type of
+	CSTRING.
+
+2003-12-06 17:01  dimitr
+
+	* firebird2/src/jrd/ini.epp:
+	
+	Fixed initialization bug found by Claudio,
+
+2003-12-06 16:50  dimitr
+
+	* firebird2/src/remote/: inet.cpp, inet.cpp:
+	
+	Fixed issues with TCP/IP port/service specification.
+
+2003-12-06 16:41  dimitr
+
+	* firebird2/src/common/config/config.cpp:
+	
+	Small correction.
+
+2003-12-06 10:40  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/super/:
+	postinstall.sh.in, preuninstall.sh.in:
+	
+	SS scripts - slightly optimized for various linux distibutions
+
+2003-12-06 10:39  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	fixed SS shutdown in case on internal deadlock
+
+2003-12-06 10:18  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/:
+	postinstall.sh.in, preuninstall.sh.in:
+	
+	SS scripts - slightly optimized for various linux distibutions
+
+2003-12-06 03:58  skidder
+
+	* firebird2/src/jrd/: dfw.epp, met.epp, met_proto.h:
+	
+	1) Implement separate algorithm of procedure dependency tracking
+	for procedure modification case. This significantly decreases
+	database restore times for schemas using lots of procedures calling
+	each other and using tables with many triggers.  2) Enable metadata
+	cache logging for PROD_BUILD because it has importance, actually
+
 2003-12-05 21:39  skidder
 
 	* firebird2/builds/win32/msvc7/: engine.vcproj,
