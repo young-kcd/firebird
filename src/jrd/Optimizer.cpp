@@ -45,6 +45,15 @@
 #include "../jrd/par_proto.h"
 
 
+#ifdef WIN_NT
+#undef min
+#define min _cpp_min
+#undef max
+#define max _cpp_max
+#endif
+#include <xutility>
+
+
 namespace Jrd {
 
 bool computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream, 
@@ -1369,8 +1378,9 @@ InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
  *
  **************************************
  *
+ * Functional description
  * Return an inversionCandidate which 
- * contains a created inversion when a
+ * contains a created inversion when an
  * index could be used.
  * This function should always return 
  * an InversionCandidate;
@@ -1446,7 +1456,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 						invCandidate->selectivity = scratch[i]->selectivity;
 						invCandidate->nonFullMatchedSegments = 0;
 						invCandidate->matchedSegments = 
-							max(scratch[i]->lowerCount, scratch[i]->upperCount);
+							std::max(scratch[i]->lowerCount, scratch[i]->upperCount);
 						invCandidate->indexes = 1;
 						invCandidate->scratch = scratch[i];
 						invCandidate->matches.join(matches);
@@ -1503,7 +1513,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				invCandidate->selectivity = scratch[i]->selectivity;
 				invCandidate->nonFullMatchedSegments = scratch[i]->nonFullMatchedSegments;
 				invCandidate->matchedSegments = 
-					max(scratch[i]->lowerCount, scratch[i]->upperCount);
+					std::max(scratch[i]->lowerCount, scratch[i]->upperCount);
 				invCandidate->indexes = 1;
 				invCandidate->scratch = scratch[i];
 				invCandidate->matches.join(matches);
@@ -1616,7 +1626,7 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 		}
 	}
 
-	i = max(indexScratch->lowerCount, indexScratch->upperCount) - 1;
+	i = std::max(indexScratch->lowerCount, indexScratch->upperCount) - 1;
 	if ((i >= 0) && (segment[i]->scanType == segmentScanStarting)) {
 		retrieval->irb_generic |= irb_starting;
 	}
@@ -1849,7 +1859,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->indexes += inversion[bestPosition]->indexes;
 					invCandidate->nonFullMatchedSegments = 0;
 					invCandidate->matchedSegments = 
-						max(inversion[bestPosition]->matchedSegments, invCandidate->matchedSegments);
+						std::max(inversion[bestPosition]->matchedSegments, invCandidate->matchedSegments);
 					for (int j = 0; j < inversion[bestPosition]->matches.getCount(); j++) {
 						size_t pos;
 						if (!matches.find(inversion[bestPosition]->matches[j], pos)) {
@@ -2181,7 +2191,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			invCandidate->indexes = invCandidate1->indexes + invCandidate2->indexes;
 			invCandidate->nonFullMatchedSegments = 0;
 			invCandidate->matchedSegments = 
-				min(invCandidate1->matchedSegments, invCandidate2->matchedSegments);
+				std::min(invCandidate1->matchedSegments, invCandidate2->matchedSegments);
 
 			// Add matches conjunctions that exists in both left and right inversion
 			if ((invCandidate1->matches.getCount()) && (invCandidate2->matches.getCount())) {
@@ -2582,10 +2592,10 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	// Create the optimizer retrieval generation class and calculate
 	// which indexes will be used and the total estimated 
 	// selectivity will be returned.
-	InversionCandidate* candidate = NULL;
 	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool) 
 		OptimizerRetrieval(pool, optimizer, stream, false, false, NULL);
-	candidate = optimizerRetrieval->getCost();
+	// I'm allowed to apply delete to this const object, is this MS extension? Let gcc decide.
+	const InversionCandidate* candidate = optimizerRetrieval->getCost();
 	double selectivity = candidate->selectivity;
 	if (candidate->indexes) {
 		const double nodesPerPage = ((double)database->dbb_page_size / 10);
@@ -2778,7 +2788,8 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 				if (!found) {
 					// Add relationship sorted on cost (cheapest as first)
 					IndexRelationship** relationships = processList->begin();
-					for (int index = 0; index < processList->getCount(); index++) {
+					int index = 0;
+					for (; index < processList->getCount(); index++) {
 						if (cheaperRelationship(relationship, relationships[index])) {
 							break;
 						}
