@@ -198,7 +198,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		return 0;
 	}
 
-	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_ipc | SRVR_xnet))==0) {
+	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_ipc | SRVR_xnet)) == 0) {
 
 		if (ISC_is_WinNT())		/* True - NT, False - Win95 */
 			server_flag |= SRVR_wnet;
@@ -433,6 +433,9 @@ static void THREAD_ROUTINE ipc_connect_wait_thread( void *dummy)
 
 	if (Config::getCreateInternalWindow()) {
 		WINDOW_main(hInst, SW_NORMAL, server_flag);
+	}
+	else {
+		Sleep(INFINITE);
 	}
 
 	if (!(server_flag & SRVR_non_service))
