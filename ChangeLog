@@ -1,3 +1,40 @@
+2002-12-13 15:50  dimitr
+
+	* firebird2/src/gpre/pretty.cpp:
+	
+	Cleanup.
+
+2002-12-13 15:12  dimitr
+
+	* firebird2/src/qli/meta.epp:
+	
+	Let's learn QLI to understand BIGINT datatype.
+
+2002-12-13 15:04  dimitr
+
+	* firebird2/src/qli/gener.cpp:
+	
+	Let's learn CLI to understand BIGINT datatype.
+
+2002-12-13 14:41  dimitr
+
+	* firebird2/src/jrd/dsc.cpp:
+	
+	Cleanup.
+
+2002-12-13 12:09  dimitr
+
+	* firebird2/src/jrd/: dls.cpp, jrd.cpp:
+	
+	Moved temporary hack from jrd.cpp to dls.cpp.
+
+2002-12-13 03:02  arnobrinkman
+
+	* firebird2/src/dsql/ddl.cpp:
+	
+	bugfix: length of text variables inside procs/triggers wasn't
+	copied to descriptor structure.
+
 2002-12-12 13:08  dimitr
 
 	* firebird2/: configure.in, builds/posix/Makefile.in.boot.gpre,
