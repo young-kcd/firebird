@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.40 2004-11-24 08:58:06 robocop Exp $
+ * $Id: isql.h,v 1.41 2005-03-04 09:17:34 robocop Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -43,7 +43,7 @@
    FSG 17.Nov.2000
 */
 const int PRINT_BUFFER_LENGTH	= 2048;
-const int MAXTERM_LENGTH		= 32;	// SQL termination character 
+const int MAXTERM_SIZE			= 32;	// SQL termination character
 const int USER_LENGTH 			= 128;
 const int PASSWORD_LENGTH		= 128;
 const int ROLE_LENGTH			= 128;
@@ -316,7 +316,7 @@ struct IsqlGlobals {
 	FILE* Errfp;
 	SCHAR global_Db_name[128];
 	SCHAR global_Target_db[128];
-	SCHAR global_Term[MAXTERM_LENGTH];
+	SCHAR global_Term[MAXTERM_SIZE];
 	SCHAR User[128];
 	SCHAR Role[256];
 	USHORT SQL_dialect;

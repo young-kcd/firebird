@@ -134,12 +134,14 @@ const int UNKNOWN_LEN		= 20;	// Unknown type: %d
 
 const int MAX_TERMS		= 10;	// max # of terms in an interactive cmd
 
-static inline void commit_trans(isc_tr_handle* x)
+static inline bool commit_trans(isc_tr_handle* x)
 {
 	if (isc_commit_transaction (isc_status, x)) {
 		ISQL_errmsg (isc_status); 
 		isc_rollback_transaction (isc_status, x);
+		return false;
 	}
+	return true;
 }
 
 static inline int fb_isspace(const char c)
@@ -157,7 +159,6 @@ struct indev {
 	indev* indev_next;
 	FILE* indev_fpointer;
 };
-typedef indev* INDEV;
 
 struct collist {
 	collist* collist_next;
@@ -184,8 +185,12 @@ static processing_state edit(const TEXT* const*);
 static processing_state end_trans();
 static processing_state escape(const TEXT*);
 static processing_state frontend(const TEXT*);
+static processing_state frontend_set(const char* cmd, const char* const* parms,
+	const char* const* lparms, char* const bad_dialect_buf, bool& bad_dialect);
 static void frontend_free_parms(TEXT*[], TEXT*[]);
-static processing_state get_statement(TEXT* const, USHORT, const TEXT*);
+static processing_state get_dialect(const char* const dialect_str,
+	char* const bad_dialect_buf, bool& bad_dialect);
+static processing_state get_statement(TEXT* const, const size_t, const TEXT*);
 static bool get_numeric(const UCHAR*, USHORT, SSHORT*, SINT64*);
 static void get_str(const TEXT* const, const TEXT**, const TEXT**,
 	literal_string_type*);
@@ -202,18 +207,20 @@ static SSHORT print_item(TEXT**, XSQLVAR*, SLONG);
 static processing_state print_item_blob(FILE*, const XSQLVAR*, FB_API_HANDLE);
 static void print_item_numeric(SINT64, SSHORT, SSHORT, TEXT*);
 static processing_state print_line(XSQLDA*, const SLONG*, TEXT*);
+static processing_state print_sqlda_input(const SSHORT statement_type);
+static void print_sqlda_output(const XSQLDA& sqlda);
 static int process_statement(const TEXT*, XSQLDA**);
 static void CLIB_ROUTINE query_abort(int);
 static void strip_quotes(const TEXT*, TEXT*);
 static processing_state do_set_command(const TEXT*, bool*);
-#ifdef DEV_BUILD
+//#ifdef DEV_BUILD
 static const char* sqltype_to_string(USHORT);
-#endif
+//#endif
 
 XSQLDA* global_sqlda;
 XSQLDA** global_sqldap;
 // The dialect spoken by the database, should be 0 when no database is connected.
-USHORT dialect_spoken = 0;
+USHORT global_dialect_spoken = 0;
 USHORT requested_SQL_dialect = SQL_DIALECT_V6;
 bool connecting_to_pre_v6_server = false;
 SCHAR server_version[256];
@@ -237,7 +244,7 @@ static bool Merge_stderr;
 
 static collist* global_Cols = NULL;
 static SCHAR statistics[256];
-static INDEV Filelist;
+static indev* Filelist;
 static TEXT Tmpfile[128];
 static bool Abort_flag = false;
 static bool Echo = false;
@@ -671,7 +678,7 @@ bool ISQL_dbcheck()
 //static std::string userPrompt;
 static char userPrompt2[MSG_LENGTH];
 static const char* const userPrompt = userPrompt2;
-static char* lastInputLine = NULL; // Apparently never deallocated when isql exits.
+static char* lastInputLine = NULL;
 static int getColumn = -1;
 
 
@@ -723,7 +730,7 @@ static void readNextInputLine(const char* prompt)
 #ifdef HAVE_EDITLINE_H
 		if (Ifp == stdin)
 		{
-			lastInputLine = readline(const_cast<char*>(prompt));
+			lastInputLine = readline(prompt);
 
 			if (lastInputLine != NULL && strlen(lastInputLine) != 0) {
 				add_history(lastInputLine);
@@ -732,7 +739,7 @@ static void readNextInputLine(const char* prompt)
 		}
 
 #endif
-		if (Interactive || Echo)
+		if (Interactive && !Input_file || Echo)
 		{
 			// Write the prompt out.
 			fprintf(stdout, prompt);
@@ -1464,7 +1471,7 @@ void ISQL_disconnect_database(bool nQuietMode)
 	// This should fix SF Bug #910430.
 	isqlGlob.db_SQL_dialect = 0;
 	// BRS this is also needed to fix #910430.
-	dialect_spoken = 0;
+	global_dialect_spoken = 0;
 	return;
 }
 
@@ -2682,8 +2689,8 @@ static void do_isql()
 	signal(SIGINT, query_abort);
 
 	//
-	// We will not excute this for now on WINDOWS. We are not prompting for
-	// a database name, username password.  A connect statement has to be in
+	// We will not execute this for now on WINDOWS. We are not prompting for
+	// a database name, username and password. A connect statement has to be in
 	// the file containing the script.
 	//
 
@@ -2815,6 +2822,12 @@ static void do_isql()
 			/* fb_assert (FALSE);  -- removed as finds too many problems */
 		case ERR:
 		case FAIL:
+			{
+				Exit_value = FINI_ERROR;
+				if (!Interactive && BailOnError)
+					Abort_flag = true;
+			}
+			break;
 		case SKIP:
 			break;
 		}
@@ -2834,8 +2847,27 @@ static void do_isql()
 
 	if (global_sqlda)
 		ISQL_FREE(global_sqlda);
-	if (Filelist)
+	//if (Filelist)
+	//	ISQL_FREE(Filelist);
+	// CVC: If we were halt by an error and Bail, we have pending cleanup.
+	while (Filelist)
+	{
+		indev* const flist = Filelist->indev_next;
+		FILE* const p = Filelist->indev_fpointer;
+		if (p != stdin && p != Ofp)
+			fclose(p);
 		ISQL_FREE(Filelist);
+		Filelist = flist;
+	}
+	if (Ifp != stdin && Ifp != Ofp)
+		fclose(Ifp);
+	if (lastInputLine)
+		free(lastInputLine);
+		
+#ifdef HAVE_EDITLINE_H
+	clear_history();
+#endif
+		
 	while (global_Cols) {
 		collist* p = global_Cols;
 		global_Cols = global_Cols->collist_next;
@@ -2882,7 +2914,7 @@ static processing_state drop_db()
 	// This should fix SF Bug #910430.
 	isqlGlob.db_SQL_dialect = 0;
 	// BRS this is also needed to fix #910430.
-	dialect_spoken = 0;
+	global_dialect_spoken = 0;
 
 // Zero database name 
 
@@ -2913,11 +2945,7 @@ static processing_state edit(const TEXT* const* cmd)
 	if (!errbuf)
 		return (ERR);
 
-// Local pointer to global list of input files 
-
-	indev* flist = Filelist;
-
-// Set up editing command for shell 
+// Set up editing command for shell
 
 	const TEXT* file = cmd[1];
 
@@ -2930,16 +2958,10 @@ static processing_state edit(const TEXT* const* cmd)
 		if (fp) {
 			// Push the current ifp on the indev 
 
-			indev* current = (INDEV) ISQL_ALLOC((SLONG) sizeof(indev));
+			indev* current = (indev*) ISQL_ALLOC((SLONG) sizeof(indev));
 			current->indev_fpointer = Ifp;
-			current->indev_next = NULL;
-			if (!Filelist)
-				Filelist = current;
-			else {
-				while (flist->indev_next)
-					flist = flist->indev_next;
-				flist->indev_next = current;
-			}
+			current->indev_next = Filelist;
+			Filelist = current;
 			Ifp = fp;
 			gds__edit(file, 0);
 		}
@@ -2952,17 +2974,11 @@ static processing_state edit(const TEXT* const* cmd)
 	else {
 		// No file given, edit the temp file 
 
-		indev* current = (INDEV) ISQL_ALLOC((SLONG) sizeof(indev));
+		indev* current = (indev*) ISQL_ALLOC((SLONG) sizeof(indev));
 		current->indev_fpointer = Ifp;
-		current->indev_next = NULL;
-		if (!Filelist)
-			Filelist = current;
-		else {
-			while (flist->indev_next)
-				flist = flist->indev_next;
-			flist->indev_next = current;
-		}
-		// Close the file, edit it, then reopen and read from the top 
+		current->indev_next = Filelist;
+		Filelist = current;
+		// Close the file, edit it, then reopen and read from the top
 		fclose(Ofp);
 		gds__edit(Tmpfile, 0);
 		Ofp = fopen(Tmpfile, "r+");
@@ -3210,7 +3226,6 @@ static processing_state frontend(const TEXT* statement)
 
     char bad_dialect_buf[512];
 	bool bad_dialect = false;
-	bool print_warning = false;
 
 	/*
 	** Look to see if the words (parms) match any known verbs.  If nothing
@@ -3290,215 +3305,7 @@ static processing_state frontend(const TEXT* statement)
 		ret = escape(cmd);
 	else if (!strcmp(parms[0], "SET"))
 	{
-		// Display current set options 
-		if (!*parms[1])
-			ret = print_sets();
-		else if ((!strcmp(parms[1], "STATS")) || (!strcmp(parms[1], "STAT")))
-			ret = do_set_command(parms[2], &Stats);
-		else if (!strcmp(parms[1], "COUNT"))
-			ret = do_set_command(parms[2], &Docount);
-		else if (!strcmp(parms[1], "LIST"))
-			ret = do_set_command(parms[2], &List);
-		else if (!strcmp(parms[1], "PLAN"))
-			ret = do_set_command(parms[2], &Plan);
-		else if (!strcmp (parms[1], "PLANONLY")) {
-			ret = do_set_command (parms[2], &Planonly);
-			if ( Planonly && (! Plan) ) {
-				// turn on plan 
-				ret = do_set_command ("ON", &Plan);
-			}
-		}
-		else if ((!strcmp(parms[1], "BLOBDISPLAY")) ||
-				 (!strcmp(parms[1], "BLOB")))
-		{
-			// No arg means turn off blob display 
-
-			if (!*parms[2] || !strcmp(parms[2], "OFF"))
-				Doblob = NO_BLOBS;
-			else if (!strcmp(parms[2], "ALL"))
-				Doblob = ALL_BLOBS;
-			else
-				Doblob = atoi(parms[2]);
-		}
-		else if (!strcmp(parms[1], "ECHO")) {
-			ret = do_set_command(parms[2], &Echo);
-			if (!Echo)
-				ISQL_prompt("");
-		}
-		else if ((!strcmp(parms[1], "AUTODDL")) ||
-				 (!strcmp(parms[1], "AUTO")))
-		{
-				ret = do_set_command(parms[2], &Autocommit);
-		}
-#ifdef SCROLLABLE_CURSORS
-		else if (!strcmp(parms[1], "AUTOFETCH"))
-			ret = do_set_command(parms[2], &Autofetch);
-#endif
-		else if (!strcmp(parms[1], "WIDTH"))
-			ret = newsize(parms[2], parms[3]);
-		else if ((!strcmp(parms[1], "TRANSACTION")) ||
-				 (!strcmp(parms[1], "TRANS")))
-		{
-			ret = newtrans(cmd);
-		}
-		else if ((!strcmp(parms[1], "TERM")) ||
-				 (!strcmp(parms[1], "TERMINATOR")))
-		{
-			const TEXT* a = (*lparms[2]) ? lparms[2] : DEFTERM;
-			Termlen = strlen(a);
-			if (Termlen <= MAXTERM_LENGTH)
-			{
-				strcpy(isqlGlob.global_Term, a);
-			}
-			else
-			{
-				Termlen = MAXTERM_LENGTH;
-				strncpy(isqlGlob.global_Term, a, MAXTERM_LENGTH);
-			}
-		}
-		else if (!strcmp(parms[1], "NAMES"))
-		{
-			if (!*parms[2])
-			{
-				const size_t lgth = strlen(DEFCHARSET);
-				if (lgth <= MAXCHARSET_LENGTH)
-					strcpy(ISQL_charset, DEFCHARSET);
-				else
-					strncpy(ISQL_charset, DEFCHARSET, MAXCHARSET_LENGTH);
-			}
-			else
-			{
-				const size_t lgth = strlen(parms[2]);
-				if (lgth <= MAXCHARSET_LENGTH)
-					strcpy(ISQL_charset, parms[2]);
-				else
-					strncpy(ISQL_charset, parms[2], MAXCHARSET_LENGTH);
-			}
-		}
-		else if (!strcmp(parms[1], "TIME"))
-		{
-			ret = do_set_command(parms[2], &Time_display);
-		}
-#ifdef DEV_BUILD
-		else if (!strcmp(parms[1], "SQLDA_DISPLAY"))
-		{
-			ret = do_set_command(parms[2], &Sqlda_display);
-		}
-#endif // DEV_BUILD 
-		else if (!strcmp(parms[1], "SQL"))
-		{
-			if (!strcmp(parms[2], "DIALECT"))
-			{
-				const USHORT old_SQL_dialect = isqlGlob.SQL_dialect; // save the old SQL dialect
-				const SCHAR* dialect_str = parms[3];
-				if (dialect_str && (isqlGlob.SQL_dialect = atoi(dialect_str)))
-				{
-					if (isqlGlob.SQL_dialect < SQL_DIALECT_V5 ||
-						isqlGlob.SQL_dialect > SQL_DIALECT_V6)
-					{
-						bad_dialect = true;
-						sprintf(bad_dialect_buf, "%s%s",
-								"invalid SQL dialect ", dialect_str);
-						isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect 
-						ret = ERR;
-					}
-					else
-					{
-						if (isqlGlob.major_ods)
-						{
-							if (isqlGlob.major_ods < ODS_VERSION10)
-							{
-								if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
-								{
-									if (dialect_spoken) {
-										sprintf(bad_dialect_buf,
-												"%s%d%s%s%s%d%s",
-												"ERROR: Database SQL dialect ",
-												dialect_spoken,
-												" database does not accept Client SQL dialect ",
-												dialect_str,
-												" setting. Client SQL dialect still remains ",
-												old_SQL_dialect, NEWLINE);
-									}
-									else {
-										sprintf(bad_dialect_buf,
-												"%s%s%s%s%s%s",
-												"ERROR: Pre IB V6 database only speaks ",
-												"Database SQL dialect 1 and ",
-												"does not accept Client SQL dialect ",
-												dialect_str,
-												" setting. Client SQL dialect still remains 1.",
-												NEWLINE);
-									}
-									isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect 
-									ISQL_printf(isqlGlob.Out, bad_dialect_buf);
-								}
-							}
-							else
-							{	// ODS 10 databases 
-								switch (dialect_spoken)
-								{
-								case SQL_DIALECT_V5:
-									if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
-									{
-										if (SQL_DIALECT_V6_TRANSITION)
-											Merge_stderr = true;
-										print_warning = true;
-									}
-									break;
-								case SQL_DIALECT_V6:
-									if (isqlGlob.SQL_dialect == SQL_DIALECT_V5 ||
-										isqlGlob.SQL_dialect ==
-										SQL_DIALECT_V6_TRANSITION)
-									{
-										if (SQL_DIALECT_V6_TRANSITION)
-											Merge_stderr = true;
-										print_warning = true;
-									}
-									break;
-								default:
-									break;
-								}
-								if (print_warning && Warnings)
-								{
-									print_warning = false;
-									sprintf(bad_dialect_buf, "%s%d%s%d%s%s",
-											"WARNING: Client SQL dialect has been set to ",
-											isqlGlob.SQL_dialect,
-											" when connecting to Database SQL dialect ",
-											dialect_spoken,
-											" database. ", NEWLINE);
-									ISQL_printf(isqlGlob.Out, bad_dialect_buf);
-								}
-							}
-						}
-					}
-				}
-				else
-				{			// handle non numeric invalid "set sql dialect" case 
-					isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect 
-					bad_dialect = true;
-					sprintf(bad_dialect_buf, "%s%s", "invalid SQL dialect ",
-							dialect_str);
-					ret = ERR;
-				}
-			}
-			else
-				ret = ERR;
-		}
-		else if (!strcmp (parms[1], "WARNINGS") || !strcmp (parms[1], "WNG")) {
-			ret = do_set_command (parms[2], &Warnings);
-		}
-		else if (!strcmp(parms[1], "GENERATOR"))
-			ret = CONT;
-		else if (!strcmp(parms[1], "STATISTICS"))
-			ret = CONT;
-		else if (!strcmp(parms[1], "HEADING"))
-			ret = do_set_command(parms[2], &Heading);
-		else if (!strcmp(parms[1], "BAIL"))
-			ret = do_set_command(parms[2], &BailOnError);
-		else
-			ret = ERR;
+		ret = frontend_set(cmd, parms, lparms, bad_dialect_buf, bad_dialect);
 	}
 	else if (!strcmp(parms[0], "CREATE"))
 	{
@@ -3601,7 +3408,8 @@ static processing_state frontend(const TEXT* statement)
 	else if (!strcmp(parms[0], "EDIT"))
 		ret = edit(lparms);
 	else if ((!strcmp(parms[0], "INPUT")) || (!strcmp(parms[0], "IN"))) {
-		Input_file = true;
+		// CVC: Set by input() below only if successful.
+		//Input_file = true;
 		ret = input(lparms[1]);
 	}
 	else if (!strcmp(parms[0], "QUIT"))
@@ -3638,6 +3446,7 @@ static processing_state frontend(const TEXT* statement)
 	return (ret);
 }
 
+
 static void frontend_free_parms(TEXT* parms[], TEXT* lparms[])
 {
 	for (int j = 0; j < MAX_TERMS; j++) {
@@ -3647,6 +3456,135 @@ static void frontend_free_parms(TEXT* parms[], TEXT* lparms[])
 		}
 	}
 }
+
+
+// ***********************
+// f r o n t e n d _ s e t
+// ***********************
+// Validates and executes the SET {option {params}} command.
+static processing_state frontend_set(const char* cmd, const char* const* parms,
+	const char* const* lparms, char* const bad_dialect_buf, bool& bad_dialect)
+{
+	processing_state ret = SKIP;
+	// Display current set options
+	if (!*parms[1])
+		ret = print_sets();
+	else if ((!strcmp(parms[1], "STATS")) || (!strcmp(parms[1], "STAT")))
+		ret = do_set_command(parms[2], &Stats);
+	else if (!strcmp(parms[1], "COUNT"))
+		ret = do_set_command(parms[2], &Docount);
+	else if (!strcmp(parms[1], "LIST"))
+		ret = do_set_command(parms[2], &List);
+	else if (!strcmp(parms[1], "PLAN"))
+		ret = do_set_command(parms[2], &Plan);
+	else if (!strcmp (parms[1], "PLANONLY")) {
+		ret = do_set_command (parms[2], &Planonly);
+		if ( Planonly && (! Plan) ) {
+			// turn on plan
+			ret = do_set_command ("ON", &Plan);
+		}
+	}
+	else if ((!strcmp(parms[1], "BLOBDISPLAY")) ||
+			 (!strcmp(parms[1], "BLOB")))
+	{
+		// No arg means turn off blob display
+
+		if (!*parms[2] || !strcmp(parms[2], "OFF"))
+			Doblob = NO_BLOBS;
+		else if (!strcmp(parms[2], "ALL"))
+			Doblob = ALL_BLOBS;
+		else
+			Doblob = atoi(parms[2]);
+	}
+	else if (!strcmp(parms[1], "ECHO")) {
+		ret = do_set_command(parms[2], &Echo);
+		if (!Echo)
+			ISQL_prompt("");
+	}
+	else if ((!strcmp(parms[1], "AUTODDL")) ||
+			 (!strcmp(parms[1], "AUTO")))
+	{
+			ret = do_set_command(parms[2], &Autocommit);
+	}
+#ifdef SCROLLABLE_CURSORS
+	else if (!strcmp(parms[1], "AUTOFETCH"))
+		ret = do_set_command(parms[2], &Autofetch);
+#endif
+	else if (!strcmp(parms[1], "WIDTH"))
+		ret = newsize(parms[2], parms[3]);
+	else if ((!strcmp(parms[1], "TRANSACTION")) ||
+			 (!strcmp(parms[1], "TRANS")))
+	{
+		ret = newtrans(cmd);
+	}
+	else if ((!strcmp(parms[1], "TERM")) ||
+			 (!strcmp(parms[1], "TERMINATOR")))
+	{
+		const TEXT* a = (*lparms[2]) ? lparms[2] : DEFTERM;
+		Termlen = strlen(a);
+		if (Termlen < MAXTERM_SIZE)
+		{
+			strcpy(isqlGlob.global_Term, a);
+		}
+		else
+		{
+			Termlen = MAXTERM_SIZE - 1;
+			strncpy(isqlGlob.global_Term, a, Termlen);
+			isqlGlob.global_Term[Termlen] = 0;
+		}
+	}
+	else if (!strcmp(parms[1], "NAMES"))
+	{
+		if (!*parms[2])
+		{
+			const size_t lgth = strlen(DEFCHARSET);
+			if (lgth <= MAXCHARSET_LENGTH)
+				strcpy(ISQL_charset, DEFCHARSET);
+			else
+				strncpy(ISQL_charset, DEFCHARSET, MAXCHARSET_LENGTH);
+		}
+		else
+		{
+			const size_t lgth = strlen(parms[2]);
+			if (lgth <= MAXCHARSET_LENGTH)
+				strcpy(ISQL_charset, parms[2]);
+			else
+				strncpy(ISQL_charset, parms[2], MAXCHARSET_LENGTH);
+		}
+	}
+	else if (!strcmp(parms[1], "TIME"))
+	{
+		ret = do_set_command(parms[2], &Time_display);
+	}
+//#ifdef DEV_BUILD
+	else if (!strcmp(parms[1], "SQLDA_DISPLAY"))
+	{
+		ret = do_set_command(parms[2], &Sqlda_display);
+	}
+//#endif // DEV_BUILD
+	else if (!strcmp(parms[1], "SQL"))
+	{
+		if (!strcmp(parms[2], "DIALECT"))
+			ret = get_dialect(parms[3], bad_dialect_buf, bad_dialect);
+		else
+			ret = ERR;
+	}
+	else if (!strcmp (parms[1], "WARNINGS") || !strcmp (parms[1], "WNG")) {
+		ret = do_set_command (parms[2], &Warnings);
+	}
+	else if (!strcmp(parms[1], "GENERATOR"))
+		ret = CONT;
+	else if (!strcmp(parms[1], "STATISTICS"))
+		ret = CONT;
+	else if (!strcmp(parms[1], "HEADING"))
+		ret = do_set_command(parms[2], &Heading);
+	else if (!strcmp(parms[1], "BAIL"))
+		ret = do_set_command(parms[2], &BailOnError);
+	else
+		ret = ERR;
+	return ret;
+}
+
 
 static processing_state do_set_command(const TEXT* parm,
 							 bool* global_flag)
@@ -3679,8 +3617,112 @@ static processing_state do_set_command(const TEXT* parm,
 }
 
 
+// *********************
+// g e t _ d i a l e c t
+// *********************
+// Validates SET SQL DIALECT command according to the target db.
+static processing_state get_dialect(const char* const dialect_str,
+	char* const bad_dialect_buf, bool& bad_dialect)
+{
+	processing_state ret = SKIP;
+	bool print_warning = false;
+	const USHORT old_SQL_dialect = isqlGlob.SQL_dialect; // save the old SQL dialect
+	if (dialect_str && (isqlGlob.SQL_dialect = atoi(dialect_str)))
+	{
+		if (isqlGlob.SQL_dialect < SQL_DIALECT_V5 ||
+			isqlGlob.SQL_dialect > SQL_DIALECT_V6)
+		{
+			bad_dialect = true;
+			sprintf(bad_dialect_buf, "%s%s",
+					"invalid SQL dialect ", dialect_str);
+			isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect
+			ret = ERR;
+		}
+		else
+		{
+			if (isqlGlob.major_ods)
+			{
+				if (isqlGlob.major_ods < ODS_VERSION10)
+				{
+					if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
+					{
+						if (global_dialect_spoken) {
+							sprintf(bad_dialect_buf,
+									"%s%d%s%s%s%d%s",
+									"ERROR: Database SQL dialect ",
+									global_dialect_spoken,
+									" database does not accept Client SQL dialect ",
+									dialect_str,
+									" setting. Client SQL dialect still remains ",
+									old_SQL_dialect, NEWLINE);
+						}
+						else {
+							sprintf(bad_dialect_buf,
+									"%s%s%s%s%s%s",
+									"ERROR: Pre IB V6 database only speaks ",
+									"Database SQL dialect 1 and ",
+									"does not accept Client SQL dialect ",
+									dialect_str,
+									" setting. Client SQL dialect still remains 1.",
+									NEWLINE);
+						}
+						isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect
+						ISQL_printf(isqlGlob.Out, bad_dialect_buf);
+					}
+				}
+				else
+				{	// ODS 10 databases
+					switch (global_dialect_spoken)
+					{
+					case SQL_DIALECT_V5:
+						if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
+						{
+							if (SQL_DIALECT_V6_TRANSITION)
+								Merge_stderr = true;
+							print_warning = true;
+						}
+						break;
+					case SQL_DIALECT_V6:
+						if (isqlGlob.SQL_dialect == SQL_DIALECT_V5 ||
+							isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION)
+						{
+							if (SQL_DIALECT_V6_TRANSITION)
+								Merge_stderr = true;
+							print_warning = true;
+						}
+						break;
+					default:
+						break;
+					}
+					if (print_warning && Warnings)
+					{
+						//print_warning = false;
+						sprintf(bad_dialect_buf, "%s%d%s%d%s%s",
+								"WARNING: Client SQL dialect has been set to ",
+								isqlGlob.SQL_dialect,
+								" when connecting to Database SQL dialect ",
+								global_dialect_spoken,
+								" database. ", NEWLINE);
+						ISQL_printf(isqlGlob.Out, bad_dialect_buf);
+					}
+				}
+			}
+		}
+	}
+	else
+	{			// handle non numeric invalid "set sql dialect" case
+		isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect
+		bad_dialect = true;
+		sprintf(bad_dialect_buf, "%s%s", "invalid SQL dialect ",
+				dialect_str);
+		ret = ERR;
+	}
+	return ret;
+}
+			
+			
 static processing_state get_statement(TEXT* const statement,
-							USHORT bufsize,
+							const size_t bufsize,
 							const TEXT* statement_prompt)
 {
 /**************************************
@@ -3696,13 +3738,13 @@ static processing_state get_statement(TEXT* const statement,
  *
  **************************************/
 	processing_state ret = CONT;
-	INDEV flist, oflist;
+	indev* flist = 0;
 
 // Lookup the continuation prompt once 
 	TEXT con_prompt[MSG_LENGTH];
 	ISQL_msg_get(CON_PROMPT, con_prompt, NULL, NULL, NULL, NULL, NULL);
 
-	if (Interactive || Echo) {
+	if (Interactive && !Input_file || Echo) {
 		ISQL_prompt(statement_prompt);
 		//		fprintf(stdout, statement_prompt);
 		//		fflush(stdout);
@@ -3745,7 +3787,8 @@ static processing_state get_statement(TEXT* const statement,
 			}
 
 			// If we hit EOF at the top of the flist, exit time 
-
+			
+			// Save the last flist so it can be deleted
 			flist = Filelist;
 			if (!flist->indev_next)
 				return FOUND_EOF;
@@ -3755,25 +3798,23 @@ static processing_state get_statement(TEXT* const statement,
 			if (Ifp != Ofp)
 				fclose(Ifp);
 
-			// Save the last flist so it can be deleted 
+			Filelist = flist->indev_next;
 
-			while (flist->indev_next) {
-				oflist = flist;
-				flist = flist->indev_next;
-			}
-
-			// Zero out last pointer 
-
-			oflist->indev_next = NULL;
-
-			// Reset to previous after other input 
+			// Reset to previous after other input
 
 			Ifp = flist->indev_fpointer;
 			ISQL_FREE(flist);
 
-			if (Interactive || Echo)
+			if (Interactive && !Input_file || Echo)
 				ISQL_prompt(statement_prompt);
-				
+
+			// CVC: Let's detect if we went back to the first level.
+			if (Ifp == stdin)
+			{
+				Interactive = true;
+				Input_file = false;
+			}
+
 			// Try to convince the new routines to go back to previous file(s)
 			// This should fix the INPUT bug introduced with editline.
 			getColumn = -1;
@@ -3794,7 +3835,7 @@ static processing_state get_statement(TEXT* const statement,
 			}
 
 			// If in a comment, keep reading 
-			if (Interactive || Echo)
+			if (Interactive && !Input_file || Echo)
 			{
 				if (state == in_comment)
 				{	//  Comment prompt 
@@ -4080,7 +4121,7 @@ void ISQL_get_version(bool call_by_create_db)
 	char bad_dialect_buf[BUFFER_LENGTH512];
 	bool print_warning = false;
 
-	dialect_spoken = 0;
+	global_dialect_spoken = 0;
 
 	if (isc_database_info(isc_status, &DB, sizeof(db_version_info),
 						  reinterpret_cast<const char*>(db_version_info),
@@ -4103,7 +4144,7 @@ void ISQL_get_version(bool call_by_create_db)
 		//	minor_ods = gds__vax_integer(p, length);
 		//	break;
 		case isc_info_db_sql_dialect:
-			dialect_spoken = gds__vax_integer(p, length);
+			global_dialect_spoken = gds__vax_integer(p, length);
 			if (isqlGlob.major_ods < ODS_VERSION10) {
 				if (isqlGlob.SQL_dialect > SQL_DIALECT_V5 && Warnings) {
 					ISQL_printf(isqlGlob.Out, NEWLINE);
@@ -4118,7 +4159,7 @@ void ISQL_get_version(bool call_by_create_db)
 			}
 			else {				// ODS 10 databases 
 
-				switch (dialect_spoken) {
+				switch (global_dialect_spoken) {
 				case SQL_DIALECT_V5:
 					if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
 						print_warning = true;
@@ -4136,7 +4177,7 @@ void ISQL_get_version(bool call_by_create_db)
 					ISQL_printf(isqlGlob.Out, NEWLINE);
 					sprintf(bad_dialect_buf, "%s%d%s%d%s%s",
 							"WARNING: This database speaks SQL dialect ",
-							dialect_spoken,
+							global_dialect_spoken,
 							" but Client SQL dialect was set to ",
 							isqlGlob.SQL_dialect, " .", NEWLINE);
 					ISQL_printf(isqlGlob.Out, bad_dialect_buf);
@@ -4221,15 +4262,15 @@ void ISQL_get_version(bool call_by_create_db)
    dialect to that spoken by the server.  Otherwise the
    current dialect is set to whatever the user requested. */
 
-	if (dialect_spoken == 0)
+	if (global_dialect_spoken == 0)
 		isqlGlob.SQL_dialect = SQL_DIALECT_V5;
 	else if (isqlGlob.major_ods < ODS_VERSION10)
-		isqlGlob.SQL_dialect = dialect_spoken;
+		isqlGlob.SQL_dialect = global_dialect_spoken;
 	else if (isqlGlob.SQL_dialect == 0)	// client SQL dialect has not been set 
-		isqlGlob.SQL_dialect = dialect_spoken;
+		isqlGlob.SQL_dialect = global_dialect_spoken;
 
-	if (dialect_spoken > 0)
-		isqlGlob.db_SQL_dialect = dialect_spoken;
+	if (global_dialect_spoken > 0)
+		isqlGlob.db_SQL_dialect = global_dialect_spoken;
 	else
 		isqlGlob.db_SQL_dialect = SQL_DIALECT_V5;
 }
@@ -4598,10 +4639,7 @@ static processing_state input(const TEXT* infile)
 	if (!errbuf)
 		return (ERR);
 
-// Local pointer to global list of input files 
-	indev* flist = Filelist;
-
-// Set up editing command for shell 
+// Set up editing command for shell
 	const TEXT* file = infile;
 
 // If there is no file name specified, return error
@@ -4622,19 +4660,13 @@ static processing_state input(const TEXT* infile)
 
 	FILE* fp = fopen(file, "r");
 	if (fp) {
-		indev* current = (INDEV) ISQL_ALLOC((SLONG) sizeof(indev));
+		indev* current = (indev*) ISQL_ALLOC((SLONG) sizeof(indev));
 		current->indev_fpointer = Ifp;
-		current->indev_next = NULL;
+		current->indev_next = Filelist;
 #ifdef DEBUG_GDS_ALLOC
 		gds_alloc_flag_unfreed((void*) current);
 #endif
-		if (!Filelist)
-			Filelist = current;
-		else {
-			while (flist->indev_next)
-				flist = flist->indev_next;
-			flist->indev_next = current;
-		}
+		Filelist = current;
 		Ifp = fp;
 	}
 	else {
@@ -5119,7 +5151,7 @@ static processing_state newtrans(const TEXT* statement)
 	if (!ISQL_dbcheck())
 		return FAIL;
 
-	if (end_trans())
+	if (end_trans() == FAIL)
 		return FAIL;
 
 	M__trans = 0;
@@ -5163,8 +5195,8 @@ static processing_state parse_arg(int argc,
 
 // Initialize database name
 
-	*isqlGlob.global_Db_name = '\0';
-	*isqlGlob.global_Target_db = '\0';
+	isqlGlob.global_Db_name[0] = '\0';
+	isqlGlob.global_Target_db[0] = '\0';
 	Password[0] = '\0';
 	isqlGlob.User[0] = '\0';
 	isqlGlob.Role[0] = '\0';
@@ -5204,11 +5236,12 @@ static processing_state parse_arg(int argc,
 // Terminators  are initialized 
 
 	Termlen = strlen(DEFTERM);
-	if (Termlen <= MAXTERM_LENGTH)
+	if (Termlen < MAXTERM_SIZE)
 		strcpy(isqlGlob.global_Term, DEFTERM);
 	else {
-		Termlen = MAXTERM_LENGTH;
-		strncpy(isqlGlob.global_Term, DEFTERM, MAXTERM_LENGTH);
+		Termlen = MAXTERM_SIZE - 1;
+		strncpy(isqlGlob.global_Term, DEFTERM, Termlen);
+		isqlGlob.global_Term[Termlen] = 0;
 	}
 
 // Initialize list of input file pointers 
@@ -5268,23 +5301,24 @@ static processing_state parse_arg(int argc,
 			else if (c == 'I') {
 				// Alternate input file 
 
-				if ((s = argv[++i]) && (input(s) != FAIL))
-					;
+				if ((s = argv[++i]) && (input(s) == SKIP))
+					Interactive = false;
 				else
 					ret = ERR;
-				Interactive = false;
-				Input_file = true;
+				// CVC: Set by input() above only if successful.
+				//Input_file = true;
 			}
 			else if (c == 'T') {
 				// The next string is the proposed terminator 
 
 				if ((s = argv[++i]) && *s) {
 					Termlen = strlen(s);
-					if (Termlen <= MAXTERM_LENGTH)
+					if (Termlen < MAXTERM_SIZE)
 						STRARGCPY(isqlGlob.global_Term, s);
 					else {
-						Termlen = MAXTERM_LENGTH;
-						STRARGNCPY(isqlGlob.global_Term, s, MAXTERM_LENGTH);
+						Termlen = MAXTERM_SIZE - 1;
+						STRARGNCPY(isqlGlob.global_Term, s, Termlen);
+						isqlGlob.global_Term[Termlen] = 0;
 					}
 				}
 				else
@@ -5420,7 +5454,7 @@ static processing_state parse_arg(int argc,
 // If not input, then set up first filelist 
 
 	if (Ifp == stdin) {
-		Filelist = (INDEV) ISQL_ALLOC((SLONG) sizeof(indev));
+		Filelist = (indev*) ISQL_ALLOC((SLONG) sizeof(indev));
 		Filelist->indev_fpointer = Ifp;
 		Filelist->indev_next = NULL;
 #ifdef DEBUG_GDS_ALLOC
@@ -6130,6 +6164,125 @@ static processing_state print_line(XSQLDA* sqlda,
 }
 
 
+// *********************************
+// p r i n t _ s q l d a _ i n p u t
+// *********************************
+// Show the contents of the input sqlda, used typically for parameters.
+static processing_state print_sqlda_input(const SSHORT statement_type)
+{
+	// Describe the input
+	XSQLDA* input_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(10)));
+	input_sqlda->version = SQLDA_VERSION1;
+	input_sqlda->sqld = input_sqlda->sqln = 10;
+
+	if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect, input_sqlda)) {
+		ISQL_FREE(input_sqlda);
+		ISQL_errmsg(isc_status);
+		return ERR;
+	}
+	else if (isc_status[2] == isc_arg_warning)
+		ISQL_warning(isc_status);
+
+	// Reallocate if there's LOTS of input
+	if (input_sqlda->sqld > input_sqlda->sqln) {
+		USHORT n_columns = input_sqlda->sqld;
+		ISQL_FREE(input_sqlda);
+		input_sqlda =
+			(XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
+		input_sqlda->version = SQLDA_VERSION1;
+		input_sqlda->sqld = input_sqlda->sqln = n_columns;
+		if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect,
+								   input_sqlda))
+		{
+			ISQL_FREE(input_sqlda);
+			ISQL_errmsg(isc_status);
+			return ERR;
+		}
+		else if (isc_status[2] == isc_arg_warning)
+			ISQL_warning(isc_status);
+	}
+
+	if ((statement_type == isc_info_sql_stmt_select) ||
+		(statement_type == isc_info_sql_stmt_select_for_upd) ||
+		(statement_type == isc_info_sql_stmt_exec_procedure))
+	{
+		TEXT buffer[100];
+		sprintf(buffer,
+				//"\nINPUT  SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
+				"\nINPUT  SQLDA version: %d sqln: %d sqld: %d\n",
+				//input_sqlda->version, input_sqlda->sqldaid,
+				//input_sqlda->sqldabc, input_sqlda->sqln,
+				input_sqlda->version, input_sqlda->sqln,
+				input_sqlda->sqld);
+		ISQL_printf(isqlGlob.Out, buffer);
+		int i = 0;
+		const XSQLVAR* var = input_sqlda->sqlvar;
+		for (const XSQLVAR* const end = var + input_sqlda->sqld; var < end;
+			var++, i++)
+		{
+			sprintf(buffer,
+					"%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
+					i + 1, var->sqltype, sqltype_to_string(var->sqltype),
+					(var->sqltype & 1) ? "Nullable" : "		",
+					var->sqlscale, var->sqlsubtype, var->sqllen);
+			ISQL_printf(isqlGlob.Out, buffer);
+			sprintf(buffer, "  :  name: (%d)%*s  alias: (%d)%*s\n",
+					var->sqlname_length, var->sqlname_length,
+					var->sqlname, var->aliasname_length,
+					var->aliasname_length, var->aliasname);
+			ISQL_printf(isqlGlob.Out, buffer);
+			sprintf(buffer, "  : table: (%d)%*s  owner: (%d)%*s\n",
+					var->relname_length, var->relname_length,
+					var->relname, var->ownname_length,
+					var->ownname_length, var->ownname);
+			ISQL_printf(isqlGlob.Out, buffer);
+		}
+	}
+
+	ISQL_FREE(input_sqlda);
+	return CONT;
+}
+
+
+// ***********************************
+// p r i n t _ s q l d a _ o u t p u t
+// ***********************************
+// Show the contents of the output sqlda, that's the result of SELECT from
+// both tables and procedures and execution of procedures that return output.
+static void print_sqlda_output(const XSQLDA& sqlda)
+{
+	TEXT buffer[100];
+	sprintf(buffer,
+			//"\nOUTPUT SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
+			"\nOUTPUT SQLDA version: %d sqln: %d sqld: %d\n",
+			//sqlda.version, sqlda.sqldaid, sqlda.sqldabc, sqlda.sqln,
+			sqlda.version, sqlda.sqln,
+			sqlda.sqld);
+	ISQL_printf(isqlGlob.Out, buffer);
+	int i = 0;
+	const XSQLVAR* var = sqlda.sqlvar;
+	for (const XSQLVAR* const end = var + sqlda.sqld; var < end;
+		 var++, i++)
+	{
+		sprintf(buffer,
+				"%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
+				i + 1, var->sqltype, sqltype_to_string(var->sqltype),
+				(var->sqltype & 1) ? "Nullable" : "		",
+				var->sqlscale, var->sqlsubtype, var->sqllen);
+		ISQL_printf(isqlGlob.Out, buffer);
+		sprintf(buffer, "  :  name: (%d)%*s  alias: (%d)%*s\n",
+				var->sqlname_length, var->sqlname_length, var->sqlname,
+				var->aliasname_length, var->aliasname_length,
+				var->aliasname);
+		ISQL_printf(isqlGlob.Out, buffer);
+		sprintf(buffer, "  : table: (%d)%*s  owner: (%d)%*s\n",
+				var->relname_length, var->relname_length, var->relname,
+				var->ownname_length, var->ownname_length, var->ownname);
+		ISQL_printf(isqlGlob.Out, buffer);
+	}
+}
+
+
 static int process_statement(const TEXT* string,
 							 XSQLDA** sqldap)
 {
@@ -6220,78 +6373,13 @@ static int process_statement(const TEXT* string,
 	}
 
 
-#ifdef DEV_BUILD
-	if (Sqlda_display) {
-		// Describe the input
-		XSQLDA* input_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(10)));
-		input_sqlda->version = SQLDA_VERSION1;
-		input_sqlda->sqld = input_sqlda->sqln = 10;
-
-		if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect, input_sqlda)) {
-			ISQL_errmsg(isc_status);
+//#ifdef DEV_BUILD
+	if (Sqlda_display)
+	{
+		if (print_sqlda_input(statement_type) == ERR)
 			return ERR;
-		}
-		else if (isc_status[2] == isc_arg_warning)
-			ISQL_warning(isc_status);
-
-		// Reallocate if there's LOTS of input 
-		if (input_sqlda->sqld > input_sqlda->sqln) {
-			USHORT n_columns = input_sqlda->sqld;
-			ISQL_FREE(input_sqlda);
-			input_sqlda =
-				(XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
-			input_sqlda->version = SQLDA_VERSION1;
-			input_sqlda->sqld = input_sqlda->sqln = n_columns;
-			if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect,
-									   input_sqlda))
-			{
-				ISQL_errmsg(isc_status);
-				return ERR;
-			}
-			else if (isc_status[2] == isc_arg_warning)
-				ISQL_warning(isc_status);
-		}
-
-		if ((statement_type == isc_info_sql_stmt_select) ||
-			(statement_type == isc_info_sql_stmt_select_for_upd) ||
-			(statement_type == isc_info_sql_stmt_exec_procedure))
-		{
-			TEXT buffer[100];
-			sprintf(buffer,
-					//"\nINPUT  SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
-					"\nINPUT  SQLDA version: %d sqln: %d sqld: %d\n",
-					//input_sqlda->version, input_sqlda->sqldaid,
-					//input_sqlda->sqldabc, input_sqlda->sqln,
-					input_sqlda->version, input_sqlda->sqln,
-					input_sqlda->sqld);
-			ISQL_printf(isqlGlob.Out, buffer);
-			int i = 0;
-			const XSQLVAR* var = input_sqlda->sqlvar;
-			for (const XSQLVAR* const end = var + input_sqlda->sqld; var < end;
-				var++, i++)
-			{
-				sprintf(buffer,
-						"%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
-						i + 1, var->sqltype, sqltype_to_string(var->sqltype),
-						(var->sqltype & 1) ? "Nullable" : "		",
-						var->sqlscale, var->sqlsubtype, var->sqllen);
-				ISQL_printf(isqlGlob.Out, buffer);
-				sprintf(buffer, "  :  name: (%d)%*s  alias: (%d)%*s\n",
-						var->sqlname_length, var->sqlname_length,
-						var->sqlname, var->aliasname_length,
-						var->aliasname_length, var->aliasname);
-				ISQL_printf(isqlGlob.Out, buffer);
-				sprintf(buffer, "  : table: (%d)%*s  owner: (%d)%*s\n",
-						var->relname_length, var->relname_length,
-						var->relname, var->ownname_length,
-						var->ownname_length, var->ownname);
-				ISQL_printf(isqlGlob.Out, buffer);
-			}
-		}
-
-		ISQL_FREE(input_sqlda);
 	}
-#endif
+//#endif // DEV_BUILD
 
 
 // check for warnings 
@@ -6341,7 +6429,13 @@ static int process_statement(const TEXT* string,
 				ISQL_errmsg(isc_status);
 				ret = ERR;
 			}
-			commit_trans(&D__trans);
+			// CVC: DDL statements that aren't syntax errors are caught by DFW
+			// only at commit time, so we need to check here.
+			if (!commit_trans(&D__trans))
+			{
+				ISQL_errmsg(isc_status);
+				ret = ERR;
+			}
 
 			// check for warnings 
 			if (isc_status[2] == isc_arg_warning)
@@ -6353,7 +6447,12 @@ static int process_statement(const TEXT* string,
 		// Check to see if this is a SET TRANSACTION statement 
 
 		if (statement_type == isc_info_sql_stmt_start_trans) {
-			newtrans(string);
+			// CVC: Starting a txn can fail, too. Let's check it, although I
+			// suspect isql will catch it in frontend() through get_statement(),
+			// so this place has little chance to be reached.
+			if (newtrans(string) == FAIL)
+				return ERR;
+				
 			return ret;
 		}
 
@@ -6376,7 +6475,12 @@ static int process_statement(const TEXT* string,
 		if ((statement_type == isc_info_sql_stmt_commit) ||
 			(statement_type == isc_info_sql_stmt_rollback))
 		{
-				commit_trans(&D__trans);
+			// CVC: Commit may fail with AUTO-DDL off and DDL changes rejected by DFW.
+			if (!commit_trans(&D__trans))
+			{
+				ISQL_errmsg(isc_status);
+				ret = ERR;
+			}
 		}
 
 		// Print statistics report 
@@ -6459,12 +6563,16 @@ static int process_statement(const TEXT* string,
 	if (statement_type != isc_info_sql_stmt_exec_procedure) {
 		// Otherwise, open the cursor to start things up 
 
+#ifdef SCROLLABLE_CURSORS
 		// Declare the C cursor for what it is worth 
+		// CVC: isql doesn't do positioned updates, so I assumed declaring a cursor
+		// may be needed if scrollable cursors are enabled in the engine.
 
 		if (isc_dsql_set_cursor_name(isc_status, &global_Stmt, "C ", 0)) {
 			ISQL_errmsg(isc_status);
 			return (ERR);
 		}
+#endif
 
 		// check for warnings 
 		if (isc_status[2] == isc_arg_warning)
@@ -6481,44 +6589,15 @@ static int process_statement(const TEXT* string,
 
 	}
 
-#ifdef DEV_BUILD
+//#ifdef DEV_BUILD
 
 /* To facilitate debugging, the option
    SET SQLDA_DISPLAY ON
    will activate code to display the SQLDA after each statement. */
 
-	if (Sqlda_display) {
-		TEXT buffer[100];
-		sprintf(buffer,
-				//"\nOUTPUT SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
-				"\nOUTPUT SQLDA version: %d sqln: %d sqld: %d\n",
-				//sqlda->version, sqlda->sqldaid, sqlda->sqldabc, sqlda->sqln,
-				sqlda->version, sqlda->sqln,
-				sqlda->sqld);
-		ISQL_printf(isqlGlob.Out, buffer);
-		int i = 0;
-		const XSQLVAR* var = sqlda->sqlvar;
-		for (const XSQLVAR* const end = var + sqlda->sqld; var < end;
-			 var++, i++)
-		{
-			sprintf(buffer,
-					"%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
-					i + 1, var->sqltype, sqltype_to_string(var->sqltype),
-					(var->sqltype & 1) ? "Nullable" : "		",
-					var->sqlscale, var->sqlsubtype, var->sqllen);
-			ISQL_printf(isqlGlob.Out, buffer);
-			sprintf(buffer, "  :  name: (%d)%*s  alias: (%d)%*s\n",
-					var->sqlname_length, var->sqlname_length, var->sqlname,
-					var->aliasname_length, var->aliasname_length,
-					var->aliasname);
-			ISQL_printf(isqlGlob.Out, buffer);
-			sprintf(buffer, "  : table: (%d)%*s  owner: (%d)%*s\n",
-					var->relname_length, var->relname_length, var->relname,
-					var->ownname_length, var->ownname_length, var->ownname);
-			ISQL_printf(isqlGlob.Out, buffer);
-		}
-	}
-#endif
+	if (Sqlda_display)
+		print_sqlda_output(*sqlda);
+//#endif // DEV_BUILD
 
 	SSHORT* nullind = NULL;
 	if (n_cols) {
@@ -6954,7 +7033,7 @@ static void strip_quotes(const TEXT* in,
 }
 
 
-#ifdef DEV_BUILD
+//#ifdef DEV_BUILD
 static const char* sqltype_to_string(USHORT sqltype)
 {
 /**************************************
@@ -7000,6 +7079,6 @@ static const char* sqltype_to_string(USHORT sqltype)
 		return "unknown  ";
 	}
 }
-#endif
+//#endif
 
 
