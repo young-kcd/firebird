@@ -27,7 +27,7 @@
  *             stored procedure doesn't access tables, views or other procedures directly.
  */
 /*
-$Id: opt.cpp,v 1.13 2002-09-25 17:12:10 skidder Exp $
+$Id: opt.cpp,v 1.14 2002-10-12 19:39:19 skidder Exp $
 */
 
 #include "firebird.h"
@@ -441,9 +441,18 @@ RSB OPT_compile(TDBB tdbb,
 			compute_rse_streams(csb, (RSE) node, beds);
 			compute_rse_streams(csb, (RSE) node, local_streams);
 			compute_dbkey_streams(csb, node, key_streams);
-			*stack_end = parent_stack;
-			rsb = OPT_compile(tdbb, csb, (RSE) node, conjunct_stack);
-			*stack_end = NULL;
+			/* pass rse boolean only to inner substreams because join condition 
+			  should never exclude records from outer substreams */
+			if ( rse->rse_jointype==blr_inner || 
+			  (rse->rse_jointype==blr_left && (ptr - rse->rse_relation)==1) ||
+			  (rse->rse_jointype==blr_right && (ptr - rse->rse_relation)==0) )
+			{
+				*stack_end = parent_stack;
+				rsb = OPT_compile(tdbb, csb, (RSE) node, conjunct_stack);
+				*stack_end = NULL;
+			} else {
+				rsb = OPT_compile(tdbb, csb, (RSE) node, parent_stack);				
+			}
 		}
 
 		/* if an rsb has been generated, we have a non-relation;
