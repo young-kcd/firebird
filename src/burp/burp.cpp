@@ -61,7 +61,7 @@
 #undef WIN95
 #endif
 
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../burp/burp_proto.h"
 #include "../burp/backu_proto.h"
 #include "../burp/mvol_proto.h"

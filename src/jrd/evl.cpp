@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.15 2002-09-25 17:12:09 skidder Exp $ 
+  * $Id: evl.cpp,v 1.16 2002-09-27 00:20:08 bellardo Exp $ 
  */
 
 /*
@@ -77,7 +77,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/bookmark.h"
 #include "../jrd/blb_proto.h"

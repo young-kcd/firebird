@@ -56,7 +56,7 @@
 #endif
 
 #include <stdarg.h>
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/misc.h"
 
 #ifdef DARWIN

@@ -29,7 +29,7 @@
 #include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/jrd.h"
 #include "../jrd/isc.h"
 #include "../wal/wal.h"

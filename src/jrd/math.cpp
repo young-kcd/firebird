@@ -30,7 +30,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/math.h"
+#include "../jrd/jrd_math.h"
 
 double _export MATH_multiply(double f1, double f2)
 {

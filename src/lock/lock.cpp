@@ -24,11 +24,11 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.12 2002-09-18 12:50:04 eku Exp $
+$Id: lock.cpp,v 1.13 2002-09-27 00:20:08 bellardo Exp $
 */
 
 #include "firebird.h"
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include "../jrd/thd.h"

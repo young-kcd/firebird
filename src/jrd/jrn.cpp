@@ -29,7 +29,7 @@
 #endif
 
 #include "firebird.h"
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
 #include <string.h>
 #include <stdlib.h>

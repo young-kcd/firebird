@@ -28,7 +28,7 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <limits.h>
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
 #include "../jrd/gds.h"
 #include "../jrd/perf.h"

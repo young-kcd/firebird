@@ -39,7 +39,7 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/misc.h"
 #include "../jrd/gdsassert.h"
 

@@ -29,7 +29,7 @@
 #else
 #include "../pyxis/pyxis.h"
 #endif
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/intl.h"
 #if (defined JPN_SJIS || defined JPN_EUC)
 #include "../intl/kanji.h"

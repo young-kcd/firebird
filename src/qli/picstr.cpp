@@ -35,7 +35,7 @@
 #include "../pyxis/pyxis.h"
 #include "../pyxis/all.h"
 #endif
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #if (defined JPN_SJIS || defined JPN_EUC)
 #include "../intl/kanji.h"
 #endif

@@ -78,7 +78,7 @@
 #include "../jrd/lls.h"
 #include "../jrd/cch.h"
 #include "../jrd/iberr.h"
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../intl/charsets.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"

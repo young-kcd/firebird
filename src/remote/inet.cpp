@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.21 2002-09-24 19:53:31 skidder Exp $
+$Id: inet.cpp,v 1.22 2002-09-27 00:20:09 bellardo Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -42,7 +42,7 @@ $Id: inet.cpp,v 1.21 2002-09-24 19:53:31 skidder Exp $
 #include "../jrd/file_params.h"
 #include <stdarg.h>
 
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 
 /*	
  * The PWD stuf is a bit of a mess! It probably wont build

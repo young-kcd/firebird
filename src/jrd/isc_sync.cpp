@@ -57,7 +57,7 @@
 #include <sys/pstat.h>
 #endif
 
-#include "../jrd/time.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/common.h"
 #include "gen/codes.h"
 #include "../jrd/isc.h"
