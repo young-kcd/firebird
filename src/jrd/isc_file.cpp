@@ -48,7 +48,6 @@
 #include "../jrd/common.h"
 #include "gen/iberror.h"
 #include "../jrd/jrd.h"
-#include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"

@@ -29,8 +29,8 @@
 extern "C" {
 #endif
 
-struct mod*	FLU_lookup_module(TEXT*);
-void		FLU_unregister_module(struct mod*);
+mod*	FLU_lookup_module(TEXT*);
+void	FLU_unregister_module(mod*);
 int (*ISC_lookup_entrypoint(TEXT*, TEXT*, const TEXT*, bool)) (void);
 int (*FUNCTIONS_entrypoint(TEXT*, TEXT*)) (void);
 int (*BUILTIN_entrypoint(TEXT*, TEXT*)) (void);

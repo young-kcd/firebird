@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.42 2003-11-18 07:58:34 robocop Exp $
+$Id: why.cpp,v 1.43 2003-11-26 11:15:32 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -64,6 +64,7 @@ $Id: why.cpp,v 1.42 2003-11-18 07:58:34 robocop Exp $
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
 #include "../jrd/fil.h"
+#include "../jrd/flu.h"
 
 /* includes specific for DSQL */
 

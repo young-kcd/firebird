@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.40 2003-11-16 12:23:07 brodsom Exp $
+$Id: flu.cpp,v 1.41 2003-11-26 11:15:32 aafemt Exp $
 */
 
 #include "firebird.h"
@@ -836,7 +836,7 @@ static int condition_handler(int *sig, int *mech, int *enbl)
 }
 #endif
 
-static MOD search_for_module(TEXT* module, TEXT* name, bool ShowAccessError)
+static MOD search_for_module(TEXT* module_name, TEXT* name, bool ShowAccessError)
 {
 /**************************************
  *
@@ -859,7 +859,7 @@ static MOD search_for_module(TEXT* module, TEXT* name, bool ShowAccessError)
 	} iUdfDirectoryList;
 
 	Firebird::PathName path, relative;
-	Firebird::PathName absolute_module = module;
+	Firebird::PathName absolute_module = module_name;
 
 	// Search for module name in UdfAccess restricted paths list
 	PathUtils::splitLastComponent(path, relative, absolute_module);
@@ -880,22 +880,22 @@ static MOD search_for_module(TEXT* module, TEXT* name, bool ShowAccessError)
 		return NULL;
 	}
 
-	MOD mod = (MOD) gds__alloc(sizeof(struct mod) + absolute_module.length());
-	if (!mod) {
+	MOD module = (MOD) gds__alloc(sizeof(mod) + absolute_module.length());
+	if (!module) {
 		return NULL;
 	}
 
-	if (!(mod->mod_handle = OPEN_HANDLE(absolute_module))) {
+	if (!(module->mod_handle = OPEN_HANDLE(absolute_module))) {
 /*
  * Temporarily commented - what to do with dlerror() on NT ?
 #ifdef DEV_BUILD
-		gds__log("%s: %s\n", module, dlerror());
+		gds__log("%s: %s\n", module_name, dlerror());
 #endif
  */
-		gds__free(mod);
+		gds__free(module);
 		return NULL;						
 	}
-	return mod;
+	return module;
 #endif  //REQUIRED_MODULE_ACCESS
 }
 

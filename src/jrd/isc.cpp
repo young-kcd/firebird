@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.43 2003-11-11 12:13:37 brodsom Exp $
+$Id: isc.cpp,v 1.44 2003-11-26 11:15:32 aafemt Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -55,7 +55,6 @@ $Id: isc.cpp,v 1.43 2003-11-11 12:13:37 brodsom Exp $
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"
-#include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"

@@ -46,7 +46,7 @@ typedef void *HMOD;
 
 typedef struct mod {
 	HMOD mod_handle;			/* Handle to search for entrypoints */
-	struct mod *mod_next;		/* Linked list of open modules */
+	mod* mod_next;				/* Linked list of open modules */
 	SLONG mod_use_count;		/* Databases interested in module */
 	USHORT mod_length;			/* Module name length */
 	TEXT mod_name[1];			/* Module name */
