@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.51 2004-06-05 09:36:56 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.52 2004-06-11 03:09:54 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1499,7 +1499,7 @@ static void gen_database( const act* action, int column)
 	gen_compatibility_symbol("status2", "isc_", "");
 	gen_compatibility_symbol("array_length", "isc_", "");
 	if (max_count)
-		gen_compatibility_symbol("gpreGlob.events", "isc_", "");
+		gen_compatibility_symbol("events", "isc_", "");
 	gen_compatibility_symbol("count", "isc_", "");
 	gen_compatibility_symbol("slack", "isc_", "");
 	gen_compatibility_symbol("utility", "isc_",

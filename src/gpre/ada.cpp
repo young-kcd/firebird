@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.42 2004-05-24 17:13:36 brodsom Exp $
+//	$Id: ada.cpp,v 1.43 2004-06-11 03:10:41 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -1749,7 +1749,7 @@ static SSHORT gen_event_block( const act* action)
 	printa(0,
 		   "isc_%db\t\t: system.address;\t\t-- result parameter block --\n",
 		   ident);
-	printa(0, "isc_%dc\t\t: %s;\t\t-- count of gpreGlob.events --\n", ident,
+	printa(0, "isc_%dc\t\t: %s;\t\t-- count of events --\n", ident,
 		   USHORT_DCL);
 	printa(0, "isc_%dl\t\t: %s;\t\t-- length of event parameter block --\n",
 		   ident, USHORT_DCL);
