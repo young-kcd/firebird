@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.15 2003-09-15 09:33:50 dimitr Exp $
+ *	$Id: alice_meta.epp,v 1.16 2003-09-15 12:50:39 dimitr Exp $
  */
 
 #include "firebird.h"
@@ -416,7 +416,7 @@ static void parse_fullpath(TDR trans)
 			p--;
 		// dimitr:	make sure that the remote path is parsed correctly
 		//			for win32 servers, i.e. the drive separator is taken into account
-		if ((p-2 >= start) && p[-2] == ':' && (p[0] == ':'))
+		if ((p - 2 >= start) && p[-2] == ':' && (p[0] == ':'))
 			p -= 2;
 		trans->tdr_filename = p + 1;
 
