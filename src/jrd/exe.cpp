@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.29 2002-11-14 07:35:44 dimitr Exp $
+$Id: exe.cpp,v 1.30 2002-11-14 07:42:50 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2007,6 +2007,7 @@ static JRD_NOD looper(TDBB tdbb, REQ request, JRD_NOD in_node)
 					last_error.xcp_rpt[0].xcp_code = request->req_last_xcp.xcp_code;
 					last_error.xcp_rpt[0].xcp_msg = request->req_last_xcp.xcp_msg;
 					request->req_last_xcp.xcp_type = 0;
+					request->req_last_xcp.xcp_msg = 0;
 					set_error(tdbb, &last_error, node->nod_arg[1]);
 				}
 				else
