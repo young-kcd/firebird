@@ -42,7 +42,7 @@ btr*	BTR_find_page(tdbb*, irb*, win*, idx*, key*, key*, bool);
 void	BTR_insert(tdbb*, win*, iib*);
 enum idx_e	BTR_key(tdbb*, jrd_rel*, rec*, idx*, key*, idx_null_state*);
 USHORT	BTR_key_length(jrd_rel*, idx*);
-btn*	BTR_last_node(btr*, exp*, btx**);
+btn*	BTR_last_node(btr*, jrd_exp*, btx**);
 btr*	BTR_left_handoff(tdbb*, win*, btr*, SSHORT);
 USHORT	BTR_lookup(TDBB, jrd_rel*, USHORT, idx*);
 void	BTR_make_key(tdbb*, USHORT, jrd_nod**, idx*, key*, USHORT);

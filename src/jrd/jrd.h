@@ -889,9 +889,9 @@ typedef btb *BTB;
 
 typedef struct win {
 	SLONG win_page;
-	struct pag *win_buffer;
-	struct exp *win_expanded_buffer;
-	struct bdb *win_bdb;
+	struct pag* win_buffer;
+	struct jrd_exp* win_expanded_buffer;
+	struct bdb* win_bdb;
 	SSHORT win_scans;
 	USHORT win_flags;
 } WIN;

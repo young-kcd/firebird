@@ -77,7 +77,7 @@ class bdb : public pool_alloc<type_bdb>
 	struct que	bdb_que;				/* Buffer que */
 	struct que	bdb_in_use;				/* queue of buffers in use */
 	struct pag*	bdb_buffer;				/* Actual buffer */
-	struct exp*	bdb_expanded_buffer;	/* expanded index buffer */
+	struct jrd_exp*	bdb_expanded_buffer;	/* expanded index buffer */
 	bdb*		bdb_jrn_bdb;			/* BDB containing journal records */
 	struct btb*	bdb_blocked;			/* Blocked attachments block */
 	SLONG		bdb_page;				/* Database page number in buffer */

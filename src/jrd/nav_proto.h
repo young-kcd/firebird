@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		nav_proto.h
- *	DESCRIPTION:	Prototype header file for nav.c
+ *	DESCRIPTION:	Prototype header file for nav.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -27,17 +27,17 @@
 #include "../jrd/rse.h"
 
 #ifdef SCROLLABLE_CURSORS
-struct exp *NAV_expand_index(struct win *, struct irsb_nav *);
+struct jrd_exp* NAV_expand_index(struct win*, struct irsb_nav*);
 #endif
-BOOLEAN NAV_get_record(TDBB tdbb, class Rsb *, struct irsb_nav *, struct rpb *,
+BOOLEAN NAV_get_record(TDBB tdbb, class Rsb*, struct irsb_nav*, struct rpb*,
 							  enum rse_get_mode);
 
 #ifdef PC_ENGINE
-BOOLEAN NAV_find_record(class Rsb *, USHORT, USHORT, struct jrd_nod *);
-void NAV_get_bookmark(class Rsb *, struct irsb_nav *, struct bkm *);
-BOOLEAN NAV_reset_position(class Rsb *, struct rpb *);
-BOOLEAN NAV_set_bookmark(class Rsb *, struct irsb_nav *, struct rpb *,
-								struct bkm *);
+BOOLEAN NAV_find_record(class Rsb*, USHORT, USHORT, struct jrd_nod*);
+void NAV_get_bookmark(class Rsb*, struct irsb_nav*, struct bkm*);
+BOOLEAN NAV_reset_position(class Rsb*, struct rpb*);
+BOOLEAN NAV_set_bookmark(class Rsb*, struct irsb_nav*, struct rpb*,
+								struct bkm*);
 #endif
 
 #endif // JRD_NAV_PROTO_H
