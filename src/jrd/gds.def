@@ -235,15 +235,6 @@ EXPORTS
 	_isc_service_start		    @266
 	_isc_transact_request		    @243
 
-; ../JRD/THIN.C
-	_gds__alloc  		= _THIN_gds__alloc 	   	@18
-	_gds__free   		= _THIN_gds__free	    	@36
-	_gds__msg_format  	= _THIN_gds__msg_format    	@39
-	_gds__temp_file	  	= _THIN_gds__temp_file     	@55
-	_gds__vax_integer 	= _THIN_gds__vax_integer    	@57
-	_gds__print_status	= _THIN_gds__print_status	@44
-	_isc_sql_interprete	= _THIN_isc_sql_interprete	@114
-
 ; ../DSQL/BLOB.C
 	_isc_blob_default_desc         @235
 	_isc_blob_gen_bpb              @236
