@@ -2973,6 +2973,9 @@ joined_table	: table_reference join_type JOIN table_reference ON search_conditio
 table_proc	: symbol_procedure_name proc_table_inputs symbol_table_alias_name
 			{ $$ = make_node (nod_rel_proc_name, 
 					(int) e_rpn_count, $1, $3, $2); }
+		| symbol_procedure_name proc_table_inputs AS symbol_table_alias_name
+			{ $$ = make_node (nod_rel_proc_name, 
+					(int) e_rpn_count, $1, $4, $2); }
 		| symbol_procedure_name proc_table_inputs
 			{ $$ = make_node (nod_rel_proc_name, 
 					(int) e_rpn_count, $1, NULL, $2); }
