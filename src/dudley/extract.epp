@@ -1750,6 +1750,7 @@ static char name_trunc(const TEXT * in, TEXT * out)
  * 	Copy a name (or other single word)
  *	to the output string, elmininating
  *	trailing blanks.
+ *	CVC: This function truncates at the first blank. Not suited for dialect 3.
  *
  **************************************/
 	if (!in || *in == ' ')
