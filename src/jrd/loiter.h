@@ -25,10 +25,6 @@
 #ifndef _JRD_LOITER_H_
 #define _JRD_LOITER_H_
 
-#ifndef __WINDOWS_H
-#include <windows.h>
-#endif
-
 BOOLEAN LOITER_loiter(void);
 /*
  * future additions:
