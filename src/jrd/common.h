@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.92 2003-11-03 01:13:29 brodsom Exp $
+$Id: common.h,v 1.93 2003-11-16 10:31:33 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -597,7 +597,11 @@ typedef unsigned __int64 UINT64;
    not permit the LL suffix which some other platforms require, but it
    handles numbers up to the largest 64-bit integer correctly without such
    a suffix, so the macro definition is trivial. */
+#ifdef MINGW // needed for gcc 3.3.1
+#define QUADCONST(n) (n##LL)
+#else
 #define QUADCONST(n) (n)
+#endif
 
 #ifdef _X86_
 #ifndef I386
