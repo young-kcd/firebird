@@ -4733,7 +4733,7 @@ static rem_port* analyze(Firebird::PathName&	file_name,
 /* all remote attempts have failed, so access locally through the
    interprocess server */
 
-	if (!port)
+	if (!port && node_name.isEmpty())
 	{
 		return XNET_analyze(file_name, 
 							status_vector,
@@ -4760,7 +4760,7 @@ static rem_port* analyze(Firebird::PathName&	file_name,
 		}
 	}
 
-	if (ostype == OSTYPE_NT && !port)
+	if (ostype == OSTYPE_NT && !port && node_name.isEmpty())
 	{
 		file_name.insert(0, "\\\\.\\");
 		if (ISC_analyze_pclan(file_name, node_name))
