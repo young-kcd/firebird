@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.83 2003-09-22 17:52:27 brodsom Exp $
+$Id: common.h,v 1.84 2003-10-02 10:17:39 aafemt Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -544,8 +544,6 @@ typedef unsigned int64 UATOM;
 *****************************************************/
 
 #ifdef WIN_NT
-
-#define vsnprintf _vsnprintf
 
 #define NO_NFS
 

@@ -56,15 +56,7 @@ Where is your mingw installation? ANSWER your mingw directory using slashes (as 
 </ol>
 </p>
 
-<h3>3.- PATCHES TO MINGW headers</h3>
-
-<p>There are an error in the gcc 3.2.3 headers delivered with MINGW.<p>
-<p>You should edit <mingw installdir>/include/c++/3.2.3/cstdio and comment the following lines<br><br>
-&nbsp;&nbsp;&nbsp;using ::vsnprintf;<br>
-&nbsp;&nbsp;&nbsp;using __gnu_cxx::vsnprintf;<br>
-</p>
-
-<h3>4.- BUILD PROCESS</h3>
+<h3>3.- BUILD PROCESS</h3>
 
 <ol>
 <li>Start msys with the icon.</li>
@@ -89,7 +81,7 @@ or<br>
 warning: unknown conversion type character `I' in format<br>
 warning: too many arguments for format</p>
 
-<h3>5.- TROUBLESHOOTING</h3>
+<h3>4.- TROUBLESHOOTING</h3>
 
 <p>AUTOGEN<p>
 <p>The autogen script creates an output file in the same directory where it is executed with the name config.out. If the autogen fails look at config.out first.</p>
@@ -98,9 +90,5 @@ warning: too many arguments for format</p>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;autom4te: cannot open configure: Permission denied<br><br>
 execute in the same directory:<br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;>chmod -R +uw *</p>
-
-<br>
-<br>
-<br>
 </BODY>
 </HTML>

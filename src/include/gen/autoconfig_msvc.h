@@ -137,6 +137,7 @@
 #undef HAVE_SIGACTION
 #undef HAVE_SETITIMER
 #define HAVE_SNPRINTF
+#define vsnprintf _vsnprintf
 #define HAVE_VSNPRINTF
 #define HAVE_SWAB
 #define HAVE__SWAB

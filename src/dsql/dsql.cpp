@@ -93,10 +93,6 @@ nested FOR loops are added.
 #include <ctype.h>
 #endif
 
-#if defined(WIN_NT)
-#define vsnprintf _vsnprintf
-#endif
-
 ASSERT_FILENAME
 #ifdef VMS
 #include <descrip.h>

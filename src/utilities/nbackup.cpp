@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbackup.cpp,v 1.8 2003-09-15 10:14:22 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.9 2003-10-02 10:17:40 aafemt Exp $
  *
  */
  
@@ -67,10 +67,6 @@
 
 #if defined(WIN_NT)
 #include <io.h>
-#endif
-
-#if defined(WIN_NT)
-#define vsnprintf _vsnprintf
 #endif
 
 #ifndef O_LARGEFILE

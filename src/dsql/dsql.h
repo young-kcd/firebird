@@ -36,10 +36,7 @@
 #include "../dsql/all.h"
 #include "../jrd/y_ref.h"
 
-// BRS 01-10-2003 If DSQL_DEBUG is defined, there are a problem in the MinGW build 
-// when creating the empty.fdb database. The error is a seg_fault calling vsnprintf.
-// Something to investigate
-#if defined(DEV_BUILD) && !defined(MINGW)
+#ifdef DEV_BUILD
 // This macro enables DSQL tracing code
 #define DSQL_DEBUG
 #endif
