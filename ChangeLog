@@ -1,3 +1,10 @@
+2004-05-13 16:02  paulbeach
+
+	* firebird2/src/qli/compile.cpp (1.11.2.1):
+	
+	Fix QLI AV.... as per patch submitted by Vladimir Tsvigun
+	QLI>declare i long; QLI>i = 10; Bang!
+
 2004-05-03 15:15  paul_reeves
 
 	* firebird2/src/install/arch-specific/win32/Readme.txt (1.2.2.5):
