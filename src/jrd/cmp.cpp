@@ -299,7 +299,7 @@ JRD_REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 	n =
 		(USHORT) ((request->req_impure_size - REQ_SIZE + REQ_TAIL - 1) /
 				  REQ_TAIL);
-	clone = FB_NEW_RPT(*request->req_pool, n) jrd_req;
+ 	clone = FB_NEW_RPT(*request->req_pool, n) jrd_req(request->req_pool);
 	(*vector)[level] = (BLK) clone;
 	clone->req_attachment = tdbb->tdbb_attachment;
 	clone->req_count = request->req_count;
@@ -311,6 +311,8 @@ JRD_REQ DLL_EXPORT CMP_clone_request(TDBB tdbb,
 	clone->req_last_xcp.xcp_type = request->req_last_xcp.xcp_type;
 	clone->req_last_xcp.xcp_code = request->req_last_xcp.xcp_code;
 	clone->req_last_xcp.xcp_msg = request->req_last_xcp.xcp_msg;
+ 	clone->req_invariants.join(request->req_invariants);
+ 	clone->req_fors.join(request->req_fors);
 
 	rpb1 = clone->req_rpb;
 	end = rpb1 + clone->req_count;
@@ -1717,7 +1719,6 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 
 	JRD_REQ request = 0;
 	LLS temp;
-	vec::iterator ptr;
 
 	DEV_BLKCHK(*csb_ptr, type_csb);
 
@@ -1746,7 +1747,7 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
    count of hold the impure areas. */
 
 	int n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
-	request = FB_NEW_RPT(*tdbb->tdbb_default, n) jrd_req;
+	request = FB_NEW_RPT(*tdbb->tdbb_default, n) jrd_req(tdbb->tdbb_default);
 	request->req_count = csb->csb_n_stream;
 	request->req_pool = tdbb->tdbb_default;
 	request->req_impure_size = csb->csb_impure;
@@ -1764,6 +1765,76 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 	request->req_async_message = csb->csb_async_message;
 #endif
 
+ 	// Walk over invariant nodes and bind them to variables so
+ 	// assignment to variables can clear out dependent invariants
+ 	jrd_nod **link_ptr, **link_end;
+ 	for (link_ptr = csb->csb_invariants.begin(), link_end = csb->csb_invariants.end();
+ 		 link_ptr < link_end; link_ptr++)
+ 	{
+ 		RSE rse;
+ 		switch ((*link_ptr)->nod_type) {
+ 		case nod_max:
+ 		case nod_min:
+ 		case nod_count:
+ 		case nod_count2:
+ 		case nod_average:
+ 		case nod_total:
+ 		case nod_from:
+ 			rse = reinterpret_cast<RSE>((*link_ptr)->nod_arg[e_stat_rse]);
+ 			break;
+ 		case nod_ansi_all:
+ 		case nod_ansi_any:
+ 		case nod_any:
+ 		case nod_exists:
+ 		case nod_unique:
+ 			rse = reinterpret_cast<RSE>((*link_ptr)->nod_arg[e_any_rse]);
+ 			break;
+ 		}
+ 		if (!rse->rse_variables)
+ 			continue;
+ 		// Put dependent invariants to variables blocks
+ 		jrd_nod **ptr, **end;
+ 		for (ptr = rse->rse_variables->begin(), end = rse->rse_variables->end();
+ 			 ptr < end; ptr++)
+ 		{
+ 			VarInvariantArray **var_invariants;
+ 			switch((*ptr)->nod_type) {
+ 			case nod_argument: 
+ 				{
+ 					jrd_nod* msg = (*ptr)->nod_arg[e_arg_message];
+ 					MsgInvariantArray *msg_invariants;
+ 					if (!msg->nod_arg[e_msg_invariants]) {
+ 						msg_invariants = FB_NEW(*tdbb->tdbb_default) 
+ 							MsgInvariantArray(tdbb->tdbb_default);
+ 						msg->nod_arg[e_msg_invariants] = 
+ 							reinterpret_cast<jrd_nod*>(msg_invariants);
+ 					} else {
+ 						msg_invariants = reinterpret_cast<MsgInvariantArray *>(
+ 							msg->nod_arg[e_msg_invariants]);
+ 					}
+ 					SLONG arg_number = (SLONG)(IPTR)(*ptr)->nod_arg[e_arg_number];
+ 					if (msg_invariants->getCount() <= arg_number)
+ 						msg_invariants->grow(arg_number + 1);
+ 					var_invariants = &(*msg_invariants)[arg_number];
+ 					break;
+ 				}
+ 			case nod_variable:
+ 				var_invariants = reinterpret_cast<VarInvariantArray**>(
+ 					&(*ptr)->nod_arg[e_var_variable]->nod_arg[e_dcl_invariants]);
+ 				break;
+ 			}
+ 
+ 			if (!(*var_invariants)) {
+ 				*var_invariants = FB_NEW(*tdbb->tdbb_default) 
+ 					VarInvariantArray(tdbb->tdbb_default);
+ 			}
+ 			int pos;
+ 			if (!(*var_invariants)->find((*link_ptr)->nod_impure, pos))
+ 				(*var_invariants)->insert(pos, (*link_ptr)->nod_impure);
+ 		}
+ 	}
+ 
+ 
 /* Take out existence locks on resources used in request.  This is
    a little complicated since relation locks MUST be taken before
    index locks */
@@ -1819,10 +1890,10 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 
 	//csb_repeat* tail = &*(csb->csb_rpt.begin());
     csb_repeat* tail = &(csb->csb_rpt[0]);
-	csb_repeat* end  = tail + csb->csb_n_stream;
+	csb_repeat* streams_end  = tail + csb->csb_n_stream;
 	DEBUG;
 
-	for (RPB* rpb = request->req_rpb; tail < end; rpb++, tail++)
+	for (RPB* rpb = request->req_rpb; tail < streams_end; rpb++, tail++)
 	{
 		/* Fetch input stream for update if all booleans matched against indices. */
 
@@ -1833,35 +1904,13 @@ JRD_REQ DLL_EXPORT CMP_make_request(TDBB tdbb, CSB * csb_ptr)
 		SBM_release(tail->csb_fields);
 	}
 
-	USHORT count;
-	for (temp = csb->csb_fors, count = 0; temp; count++) {
-		temp = temp->lls_next;
-	}
-
-	if (count) {
-		VEC vector = request->req_fors =
-			vec::newVector(*request->req_pool, request->req_fors, count + 1);
-		ptr = vector->begin();
-		while (csb->csb_fors) {
-			*ptr++ = (BLK) LLS_POP(&csb->csb_fors);
-		}
-	}
+  	// make a vector of all used RSEs
+ 	request->req_fors.join(csb->csb_fors);
 
 /* make a vector of all invariant-type nodes, so that we will
    be able to easily reinitialize them when we restart the request */
 
-	for (temp = csb->csb_invariants, count = 0; temp; count++) {
-		temp = temp->lls_next;
-	}
-
-	if (count) {
-		VEC vector = request->req_invariants =
-			vec::newVector(*request->req_pool, request->req_invariants, count + 1);
-		ptr = vector->begin();
-		while (csb->csb_invariants) {
-			*ptr++ = (BLK) LLS_POP(&csb->csb_invariants);
-		}
-	}
+	request->req_invariants.join(csb->csb_invariants);
 
 	DEBUG;
 	tdbb->tdbb_request = old_request;
@@ -3058,9 +3107,24 @@ static JRD_NOD pass1(
 /* If there is processing to be done before sub expressions, do it here */
 
 	switch (node->nod_type) {
+	case nod_variable:
+	case nod_argument:
+		{
+			for (RSE *rse = (*csb)->csb_current_rses.begin(); 
+				 rse < (*csb)->csb_current_rses.end(); rse++) 
+			{
+				if (!(*rse)->rse_variables) 
+				{
+					(*rse)->rse_variables = 
+						FB_NEW(*tdbb->tdbb_default) 
+							Firebird::Array<jrd_nod*>(tdbb->tdbb_default);
+				}
+				(*rse)->rse_variables->add(node);
+			}
+		}
+		break;
 	case nod_field:
 		{
-			LLS stack;
 			JRD_REL relation;
 			JRD_FLD field;
 			UCHAR *map, local_map[MAP_LENGTH];
@@ -3073,13 +3137,14 @@ static JRD_NOD pass1(
 			   can't be invariant.  This won't optimize all cases, but it is the simplest 
 			   operating assumption for now. */
 
-			for (stack = (*csb)->csb_current_rses; stack;
-				 stack = stack->lls_next) {
-
-				RSE rse = (RSE) stack->lls_object;
-				if (stream_in_rse(stream, rse))
-					break;
-				rse->nod_flags |= rse_variant;
+			if ((*csb)->csb_current_rses.getCount()) {
+				for (RSE *rse = (*csb)->csb_current_rses.end()-1; 
+					 rse >= (*csb)->csb_current_rses.begin(); rse--) 
+	 			{  
+	 				if (stream_in_rse(stream, *rse))
+	  					break;
+	 				(*rse)->nod_flags |= rse_variant;
+	  			}
 			}
 			tail = &(*csb)->csb_rpt[stream];
 			if (!(relation = tail->csb_relation) ||
@@ -3713,9 +3778,9 @@ static RSE pass1_rse(TDBB    tdbb,
    yet, mark the rse as variant to make sure that statement-
    level aggregates are not treated as invariants--bug #6535 */
 
-	if (!(*csb)->csb_current_rses)
+	if ((*csb)->csb_current_rses.getCount() == 0)
 		rse->nod_flags |= rse_variant;
-	LLS_PUSH(rse, &(*csb)->csb_current_rses);
+ 	(*csb)->csb_current_rses.push(rse);
 
 	stack = NULL;
 	boolean = NULL;
@@ -3754,8 +3819,8 @@ static RSE pass1_rse(TDBB    tdbb,
 /* AB: Because we've build an new rse, we must put this one in the stack 
   of current_rses else could rse's not be flagged an rse_variant.
   See SF BUG # [ 523589 ] for an example */
-		LLS_POP(&(*csb)->csb_current_rses);
-		LLS_PUSH(new_rse, &(*csb)->csb_current_rses);
+ 		(*csb)->csb_current_rses.pop();
+ 		(*csb)->csb_current_rses.push(new_rse);
 	}
 
 
@@ -3811,7 +3876,7 @@ static RSE pass1_rse(TDBB    tdbb,
 
 /* we are no longer in the scope of this rse */
 
-	LLS_POP(&(*csb)->csb_current_rses);
+ 	(*csb)->csb_current_rses.pop();
 
 	return rse;
 }
@@ -4330,7 +4395,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		}
 		if (!(rse_node->nod_flags & rse_variant)) {
 			node->nod_flags |= nod_invariant;
-			LLS_PUSH(node, &csb->csb_invariants);
+			csb->csb_invariants.push(node);
 		}
 		rsb_ptr = (RSB *) & node->nod_arg[e_stat_rsb];
 		break;
@@ -4343,7 +4408,7 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 		rse_node = node->nod_arg[e_any_rse];
 		if (!(rse_node->nod_flags & rse_variant)) {
 			node->nod_flags |= nod_invariant;
-			LLS_PUSH(node, &csb->csb_invariants);
+			csb->csb_invariants.push(node);
 		}
 		rsb_ptr = (RSB *) & node->nod_arg[e_any_rsb];
 		break;
@@ -5262,7 +5327,7 @@ static RSB post_rse(TDBB tdbb, CSB csb, RSE rse)
 		}
 	}
 
-	LLS_PUSH(rsb, &csb->csb_fors);
+	csb->csb_fors.push(rsb);
 #ifdef SCROLLABLE_CURSORS
 	rse->rse_rsb = rsb;
 #endif

@@ -693,7 +693,6 @@ void EXE_seek(TDBB tdbb, JRD_REQ request, USHORT direction, ULONG offset)
  *	for offset records. 
  *
  **************************************/
-	VEC vector;
 	RSB rsb;
 	SLONG i;
 
@@ -705,17 +704,15 @@ void EXE_seek(TDBB tdbb, JRD_REQ request, USHORT direction, ULONG offset)
    go backwards because items were popped
    off the stack backwards */
 
-	vector = request->req_fors;
-	if (!vector)
-		return FALSE;
-
 /* find the top-level rsb in the request and seek it */
 
-	for (i = vector->vec_count - 1; i >= 0; i--)
-		if (rsb = (RSB) vector->vec_object[i]) {
+ 	for (SLONG i = request->req_fors.getCount() - 1; i >= 0; i--) {
+ 		RSB rsb = request->req_fors[i];
+		if (rsb) {
 			seek_rsb(tdbb, request, rsb, direction, offset);
 			break;
 		}
+	}
 }
 #endif
 
@@ -890,19 +887,14 @@ void EXE_start(TDBB tdbb, JRD_REQ request, JRD_TRA transaction)
 		request->req_timestamp = time(NULL);
 	}
 
-	if (request->req_invariants)
+	// Set all invariants to not computed.
+	jrd_nod **ptr, **end;
+	for (ptr = request->req_invariants.begin(),
+		end = request->req_invariants.end(); ptr < end;
+		++ptr)
 	{
-		// Set all invariants to not computed.
-		vec::iterator ptr, end;
-		for (ptr = request->req_invariants->begin(),
-			end = request->req_invariants->end(); ptr < end;
-			++ptr)
-		{
-			if (*ptr) {
-				VLU impure = (VLU) ((SCHAR *) request + ((JRD_NOD)(*ptr))->nod_impure);
-				impure->vlu_flags = 0;
-			}
-		}
+		VLU impure = (VLU) ((SCHAR *) request + (*ptr)->nod_impure);
+		impure->vlu_flags = 0;
 	}
 
 	// Start a save point if not in middle of one
@@ -956,24 +948,27 @@ void EXE_unwind(TDBB tdbb, JRD_REQ request)
  *	simple since nothing really needs to be done.
  *
  **************************************/
-	vec::iterator ptr, end;
-
 	DEV_BLKCHK(request, type_req);
 
 	SET_TDBB(tdbb);
 
 	if (request->req_flags & req_active) {
-		if (request->req_fors) {
+		if (request->req_fors.getCount()) {
 			JrdMemoryPool *old_pool = tdbb->tdbb_default;
 			tdbb->tdbb_default = request->req_pool;
 			JRD_REQ old_request = tdbb->tdbb_request;
 			tdbb->tdbb_request = request;
 			JRD_TRA old_transaction = tdbb->tdbb_transaction;
 			tdbb->tdbb_transaction = request->req_transaction;
-			for (ptr = request->req_fors->begin(), end =
-				 request->req_fors->end(); ptr < end; ptr++)
-				if (*ptr)
-					RSE_close(tdbb, reinterpret_cast < class Rsb *>((Rsb*)(*ptr)));
+
+ 			Rsb **ptr, **end;
+ 			for (ptr = request->req_fors.begin(), end =
+ 				 request->req_fors.end(); ptr < end; ptr++)
+  			{
+  				if (*ptr)
+ 					RSE_close(tdbb, *ptr);
+  			}
+
 			tdbb->tdbb_default = old_pool;
 			tdbb->tdbb_request = old_request;
 			tdbb->tdbb_transaction = old_transaction;

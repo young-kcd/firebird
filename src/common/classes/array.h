@@ -29,57 +29,136 @@
 
 #include <assert.h>
 #include <string.h>
-#include "../common/classes/vector.h"
 #include "../common/classes/alloc.h"
 
 namespace Firebird {
 
-// Dynamic array of simple types
-template <typename T>
-class Array {
+// Static part of the array
+template <typename T, int Capacity>
+class InlineStorage {
 public:
-	Array(MemoryPool*p, int InitialSize) : 
-	  count(0), capacity(0), data(0), pool(p)  {grow(InitialSize);}
-	~Array() {pool->deallocate(data);}
+	T* getStorage() {
+		return buffer;
+	}
+	int getStorageSize() const {
+		return Capacity;
+	}
+private:
+	T buffer[Capacity];
+};
+
+// Used when array doesn't have static part
+template <typename T>
+class EmptyStorage {
+public:
+	T* getStorage() { return NULL; }
+	int getStorageSize() const { return 0; }
+};
+
+// Dynamic array of simple types
+template <typename T, typename Storage = EmptyStorage<T> >
+class Array : private Storage {
+public:
+	Array(MemoryPool* p) : 
+	  count(0), capacity(getStorageSize()), data(getStorage()), pool(p)  {}
+	Array(MemoryPool* p, int InitialCapacity) : count(0), 
+		capacity(getStorageSize()), data(getStorage()), pool(p)  
+	{
+		ensureCapacity(InitialCapacity);
+	}
+	~Array()
+	{
+		if (data != getStorage())
+			pool->deallocate(data);
+	}
 	void clear() { count = 0; };
-	T& operator[](int index) {
+protected:
+	const T& getElement(int index) const {
   		assert(index >= 0 && index < count);
   		return data[index];
 	}
+	T& getElement(int index) {
+  		assert(index >= 0 && index < count);
+  		return data[index];
+	}
+public:
+	const T& operator[](int index) const {
+  		return getElement(index);
+	}
+	T& operator[](int index) {
+  		return getElement(index);
+	}
+	const T& front() const {
+  		assert(count > 0);
+		return *data;
+	}
+	const T& back() const {
+  		assert(count > 0);
+		return *(data + count - 1);
+	}
+	const T* begin() const { return data; }
+	const T* end() const { return data + count; }
+	T& front() {
+  		assert(count > 0);
+		return *data;
+	}
+	T& back() {
+  		assert(count > 0);
+		return *(data + count - 1);
+	}
 	T* begin() { return data; }
-	T* end() { return data+count; }
+	T* end() { return data + count; }
 	void insert(int index, const T& item) {
 		assert(index >= 0 && index <= count);
-		grow(1);
-		memmove(data+index+1, data+index, sizeof(T)*(count++-index));
+		ensureCapacity(count + 1);
+		memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 		data[index] = item;
 	}
 	int add(const T& item) {
-		grow(1);
+		ensureCapacity(count + 1);
 		data[count++] = item;
   		return count;
 	};
 	void remove(int index) {
   		assert(index >= 0 && index < count);
-  		memmove(data+index, data+index+1, sizeof(T)*(--count-index));
+  		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
+	}
+	void remove(T* itr) {
+		int index = itr - begin();
+  		assert(index >= 0 && index < count);
+  		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 	}
 	void shrink(int newCount) {
 		assert(newCount <= count);
 		count = newCount;
 	};
+	// Grow size of our array and zero-initialize new items
+	void grow(int newCount) {
+		assert(newCount >= count);
+		ensureCapacity(newCount);
+		memset(data + count, 0, sizeof(T) * (newCount - count));
+		count = newCount;
+	}
 	void join(Array<T>& L) {
-		grow(L.count);
-		memcpy(data + count, L.data, sizeof(T)*L.count);
+		ensureCapacity(count + L.count);
+		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
 	}
 	int getCount() const { return count; }
 	int getCapacity() const { return capacity; }
+	void push(const T& item) {
+		add(item);
+	}
+	T pop() {
+		assert(count > 0);
+		count--;
+		return data[count];
+	}
 protected:
 	int count, capacity;
 	T* data;
 	MemoryPool* pool;
-	void grow(int incr) {
-		int newcapacity = incr + count;
+	void ensureCapacity(int newcapacity) {
 		if (newcapacity > capacity) {
 			if (newcapacity < capacity * 2) {
 				newcapacity = capacity * 2;
@@ -91,7 +170,8 @@ protected:
 #endif
 						));
 			memcpy(newdata, data, sizeof(T) * count);
-			pool->deallocate(data);
+			if (data != getStorage())
+				pool->deallocate(data);
 			data = newdata;
 			capacity = newcapacity;
 		}
@@ -105,26 +185,36 @@ template <typename Value,
 	typename Cmp = DefaultComparator<Key> >
 class SortedArray : public Array<Value> {
 public:
-	SortedArray(MemoryPool *p, int s) : Array<Value>(p, s) {}
+	SortedArray(MemoryPool* p, int s) : Array<Value>(p, s) {}
+	SortedArray(MemoryPool* p) : Array<Value>(p) {}
 	bool find(const Key& item, int& pos) {
-		int highBound=count, lowBound=0;
+		int highBound = count, lowBound = 0;
 		while (highBound > lowBound) {
 			int temp = (highBound + lowBound) >> 1;
-			if (Cmp::compare(item, KeyOfValue::generate(this,data[temp])))
-				lowBound = temp+1;
+			if (Cmp::compare(item, KeyOfValue::generate(this, data[temp])))
+				lowBound = temp + 1;
 			else
 				highBound = temp;
 		}
 		pos = lowBound;
 		return highBound != count &&
-			!Cmp::compare(KeyOfValue::generate(this,data[lowBound]), item);
+			!Cmp::compare(KeyOfValue::generate(this, data[lowBound]), item);
 	}
 	int add(const Value& item) {
 	    int pos;
-  	    find(KeyOfValue::generate(this,item),pos);
-		insert(pos,item);
+  	    find(KeyOfValue::generate(this, item), pos);
+		insert(pos, item);
 		return pos;
 	}
+};
+
+// Nice shorthand for arrays with static part
+template <typename T, int InlineCapacity>
+class HalfStaticArray : public Array<T, InlineStorage<T, InlineCapacity> > {
+public:
+	HalfStaticArray(MemoryPool* p) : Array<T,InlineStorage<T, InlineCapacity> > (p) {}
+	HalfStaticArray(MemoryPool* p, int InitialCapacity) : 
+		Array<T, InlineStorage<T, InlineCapacity> > (p, InitialCapacity) {}
 };
 
 }	// Firebird
