@@ -66,7 +66,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/pag.h"
 #include "../jrd/ods.h"
-#include "../jrd/pio.h"
+#include "../jrd/os/pio.h"
 #include "../jrd/gds.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/license.h"
@@ -90,7 +90,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
-#include "../jrd/pio_proto.h"
+#include "../jrd/os/pio_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/ail.h"
 

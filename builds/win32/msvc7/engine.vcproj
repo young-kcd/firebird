@@ -407,7 +407,7 @@
 				RelativePath="..\..\..\src\jrd\why.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\winnt.cpp">
+				RelativePath="..\..\..\src\jrd\os\win32\winnt.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -855,10 +855,10 @@
 				RelativePath="..\..\..\src\jrd\perf_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\pio.h">
+				RelativePath="..\..\..\src\jrd\os\pio.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\pio_proto.h">
+				RelativePath="..\..\..\src\jrd\os\pio_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\pragma.h">

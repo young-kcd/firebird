@@ -57,7 +57,7 @@
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
 #include "../jrd/ods.h"
-#include "../jrd/pio.h"
+#include "../jrd/os/pio.h"
 #include "../jrd/btr.h"
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"

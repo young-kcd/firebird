@@ -537,7 +537,7 @@ SOURCE=..\..\..\src\jrd\why.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\winnt.cpp
+SOURCE=..\..\..\src\jrd\os\win32\winnt.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -1133,11 +1133,11 @@ SOURCE=..\..\..\src\jrd\perf_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\pio.h
+SOURCE=..\..\..\src\jrd\os\pio.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\pio_proto.h
+SOURCE=..\..\..\src\jrd\os\pio_proto.h
 # End Source File
 # Begin Source File
 

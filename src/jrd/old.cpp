@@ -26,7 +26,7 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
-#include "../jrd/pio.h"
+#include "../jrd/os/pio.h"
 #include "../jrd/ods.h"
 #include "../jrd/pag.h"
 #include "../jrd/jrn.h"

@@ -37,7 +37,7 @@
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 #include "../jrd/jrd.h"
-#include "../jrd/pio.h"
+#include "../jrd/os/pio.h"
 #include "../jrd/val.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"

@@ -96,7 +96,7 @@ defined APIs for this function.
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sdw.h"
-#include "../jrd/pio.h"
+#include "../jrd/os/pio.h"
 #include "gen/codes.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/flu_proto.h"

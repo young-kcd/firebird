@@ -52,7 +52,7 @@
 #endif
 
 #include "../jrd/jrd.h"
-#include "../jrd/pio.h"
+#include "../jrd/os/pio.h"
 #include "../jrd/ods.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
@@ -69,7 +69,7 @@
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/pio_proto.h"
+#include "../jrd/os/pio_proto.h"
 #include "../jrd/thd_proto.h"
 
 /* SUPERSERVER uses a mutex to allow atomic seek/read(write) sequences.

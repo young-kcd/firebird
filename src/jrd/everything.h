@@ -23,7 +23,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/cch.h"
 #include "../jrd/all.h"
-#include "../jrd/pio.h"
+#include "../jrd/os/pio.h"
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
 #include "../jrd/exe.h"

@@ -34,7 +34,7 @@
 #include "../jrd/jrn.h"
 #include "../jrd/lls.h"
 #include "../jrd/req.h"
-#include "../jrd/pio.h"
+#include "../jrd/os/pio.h"
 #include "../jrd/all.h"
 #include "../jrd/sdw.h"
 #include "../jrd/sbm.h"
@@ -48,7 +48,7 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/pag_proto.h"
-#include "../jrd/pio_proto.h"
+#include "../jrd/os/pio_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/thd_proto.h"
 
