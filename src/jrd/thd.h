@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.15 2003-10-03 01:47:54 brodsom Exp $
+$Id: thd.h,v 1.16 2003-10-29 07:00:04 stryqx Exp $
 */
 
 #ifndef JRD_THD_H
@@ -62,6 +62,10 @@ $Id: thd.h,v 1.15 2003-10-03 01:47:54 brodsom Exp $
    about yet. Tomas Nejedlik (tomas@nejedlik.cz)
 */
 #if (defined(LINUX) && defined(SUPERCLIENT))
+#define POSIX_THREADS           1
+#endif
+
+#if (defined(FREEBSD) && defined(SUPERCLIENT))
 #define POSIX_THREADS           1
 #endif
 
