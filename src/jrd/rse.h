@@ -315,7 +315,7 @@ typedef srl *SRL;
 #define MAX_STREAMS	255
 
 // This is number of ULONG's needed to store bit-mapped flags for all streams
-// OPT_STREAM_BITS = (MAX_STREAMS+1)/sizeof(ULONG)
+// OPT_STREAM_BITS = (MAX_STREAMS + 1) / sizeof(ULONG)
 // This value cannot be increased simple way. Decrease is possible, but it is also
 // hardcoded in several places such as TEST_DEP_ARRAYS macro
 #define OPT_STREAM_BITS 8
@@ -341,15 +341,15 @@ public:
 	// and improve performance
 	struct opt_segment {
 		// Index segments and their options
-		struct jrd_nod *opt_lower; // Lower bound on index value
-		struct jrd_nod *opt_upper; // Upper bound on index value
-		struct jrd_nod *opt_match; // Conjunct which matches index segment
+		struct jrd_nod* opt_lower; // Lower bound on index value
+		struct jrd_nod* opt_upper; // Upper bound on index value
+		struct jrd_nod* opt_match; // Conjunct which matches index segment
 	} opt_segments[MAX_INDEX_SEGMENTS];
 	struct opt_conjunct {
 		// Conjunctions and their options
-		struct jrd_nod *opt_conjunct_node; // Conjunction
+		struct jrd_nod* opt_conjunct_node; // Conjunction
 		// Stream dependencies to compute conjunct
-		ULONG opt_dependencies[(MAX_STREAMS+1) / 32];
+		ULONG opt_dependencies[(MAX_STREAMS + 1) / 32];
 		UCHAR opt_conjunct_flags;
 	};
 	struct opt_stream {
@@ -360,11 +360,11 @@ public:
 		USHORT opt_stream_number; // Stream in position of join order
 		UCHAR opt_stream_flags;
 	};
-	Firebird::HalfStaticArray<opt_conjunct,OPT_STATIC_ITEMS> opt_conjuncts;
-	Firebird::HalfStaticArray<opt_stream,OPT_STATIC_ITEMS> opt_streams;
-	Opt(JrdMemoryPool *pool) : opt_conjuncts(pool), opt_streams(pool) {}
+	Firebird::HalfStaticArray<opt_conjunct, OPT_STATIC_ITEMS> opt_conjuncts;
+	Firebird::HalfStaticArray<opt_stream, OPT_STATIC_ITEMS> opt_streams;
+	Opt(JrdMemoryPool* pool) : opt_conjuncts(pool), opt_streams(pool) {}
 };
-typedef Opt *OPT;
+typedef Opt* OPT;
 
 // Values for opt_stream_flags
 const USHORT opt_stream_used = 1; // Stream is used
