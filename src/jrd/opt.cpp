@@ -6331,7 +6331,7 @@ static void sort_indices_by_selectivity(csb_repeat * csb_tail)
  *    Lowest selectivy as first, highest as last.
  *
  ***************************************************/
-	IDX *idx, *selected_idx;
+	IDX *idx, *selected_idx = NULL;
 	USHORT i, j;
 	IDX idx_sort[MAX_IDX];
 	float selectivity;
@@ -6341,16 +6341,16 @@ static void sort_indices_by_selectivity(csb_repeat * csb_tail)
 		return;
 	}
 
-	/* Walk through the indices and sort them into into idx_sort
-	   where idx_sort[0] contains the lowest selectivity (best) and
-	   idx_sort[csb_tail->csb_indices - 1] the highest (worst) */
+	// Walk through the indices and sort them into into idx_sort
+	// where idx_sort[0] contains the lowest selectivity (best) and
+	// idx_sort[csb_tail->csb_indices - 1] the highest (worst)
 
 	if (csb_tail->csb_idx && (csb_tail->csb_indices > 1)) {
 		for (j = 0; j < csb_tail->csb_indices; j++) {
-			selectivity = 1; /* Maximum selectivity is 1 (when all keys are the same) */
+			selectivity = 1; // Maximum selectivity is 1 (when all keys are the same)
 			idx = csb_tail->csb_idx;
 			for (i = 0; i < csb_tail->csb_indices; i++) {
-				/* Prefer ASC indices in the case of almost the same selectivities */
+				// Prefer ASC indices in the case of almost the same selectivities
 				if (selectivity > idx->idx_selectivity) {
 					same_selectivity = ((selectivity - idx->idx_selectivity) <= 0.00001);
 				}
@@ -6365,7 +6365,8 @@ static void sort_indices_by_selectivity(csb_repeat * csb_tail)
 				}
 				idx = NEXT_IDX(idx->idx_rpt, idx->idx_count);
 			}
-			if (!selected_idx) {
+			// If no index was found than pick the first one available out of the list
+			if ((!selected_idx) || (selected_idx->idx_runtime_flags & idx_marker)) {
 				idx = csb_tail->csb_idx;
 				for (i = 0; i < csb_tail->csb_indices; i++) {
 					if (!(idx->idx_runtime_flags & idx_marker)) {
@@ -6379,7 +6380,7 @@ static void sort_indices_by_selectivity(csb_repeat * csb_tail)
 			MOVE_FAST(selected_idx, &idx_sort[j], sizeof(IDX));
 		}
 
-		/* Finally store the right order in cbs_tail->csb_idx */
+		// Finally store the right order in cbs_tail->csb_idx
 		idx = csb_tail->csb_idx;
 		for (j = 0; j < csb_tail->csb_indices; j++) {
 			idx->idx_runtime_flags &= ~idx_marker;
