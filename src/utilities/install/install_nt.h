@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Windows NT installation utilities
- *	MODULE:		install.h
+ *	MODULE:		install_nt.h
  *	DESCRIPTION:	Defines for Windows NT installation utilities
  *
  * The contents of this file are subject to the Interbase Public
@@ -92,4 +92,4 @@ const USHORT FB_INSTALL_CANT_REMOVE_ALIEN_VERSION	= 204;
 const USHORT FB_INSTALL_FILE_PROBABLY_IN_USE	= 205;
 const USHORT FB_INSTALL_SHARED_COUNT_ZERO  		= 206;
 
-#endif /* _UTILITIES_INSTALL_NT_H_ */
+#endif // UTILITIES_INSTALL_NT_H

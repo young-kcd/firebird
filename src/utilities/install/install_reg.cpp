@@ -31,7 +31,7 @@
 #include "../utilities/install/regis_proto.h"
 
 static USHORT reg_error(SLONG, const TEXT*, HKEY);
-static void usage(void);
+static void usage_exit(void);
 
 static const struct
 {
@@ -96,7 +96,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			if (!cmd)
 			{
 				printf("Unknown command \"%s\"\n", *argv);
-				usage();
+				usage_exit();
 			}
 			sw_command = commands[i].code;
 		}
@@ -111,7 +111,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 
 				default:
 					printf("Unknown switch \"%s\"\n", p);
-					usage();
+					usage_exit();
 			}
 		}
 	}
@@ -120,7 +120,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		printf("instreg version %s\n", GDS_VERSION);
 
 	if (sw_command == COMMAND_NONE)
-		usage();
+		usage_exit();
 
 	HKEY hkey_node = HKEY_LOCAL_MACHINE;
 
@@ -199,11 +199,11 @@ static USHORT reg_error( SLONG status, const TEXT* string, HKEY hkey)
 	return FB_FAILURE;
 }
 
-static void usage(void)
+static void usage_exit(void)
 {
 /**************************************
  *
- *	u s a g e
+ *	u s a g e _ e x i t
  *
  **************************************
  *

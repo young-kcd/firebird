@@ -101,7 +101,7 @@ SOURCE=..\..\..\src\utilities\install\install_client.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\install_proto.h
+SOURCE=..\..\..\src\utilities\install\install_proto.h
 # End Source File
 # End Group
 # Begin Group "Resource files"

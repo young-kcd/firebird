@@ -36,7 +36,7 @@
 #include "../utilities/install/install_proto.h"
 
 static USHORT inst_error(ULONG, const TEXT *);
-static void usage(void);
+static void usage_exit(void);
 
 static const struct
 {
@@ -118,7 +118,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				if (!cmd)
 				{
 					printf("Unknown command \"%s\"\n", *argv);
-					usage();
+					usage_exit();
 				}
 				sw_command = commands[i].code;
 			}
@@ -136,7 +136,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				if (!cln)
 				{
 					printf("Unknown library \"%s\"\n", *argv);
-					usage();
+					usage_exit();
 				}
 				sw_client = clients[i].code;
 			}
@@ -156,7 +156,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				default:
 					printf("Unknown switch \"%s\"\n", p);
-					usage();
+					usage_exit();
 			}
 		}
 	}
@@ -166,7 +166,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	if (sw_command == COMMAND_NONE || sw_client == CLIENT_NONE)
 	{
-		usage();
+		usage_exit();
 	}
 
 	const TEXT* clientname = (sw_client == CLIENT_GDS) ? GDS32_NAME : FBCLIENT_NAME;
@@ -260,7 +260,7 @@ static USHORT inst_error(ULONG status, const TEXT * string)
 {
 /**************************************
  *
- *	g d s _ e r r o r
+ *	i n s t _ e r r o r
  *
  **************************************
  *
@@ -298,11 +298,11 @@ static USHORT inst_error(ULONG status, const TEXT * string)
 	return FB_FAILURE;
 }
 
-static void usage(void)
+static void usage_exit(void)
 {
 /**************************************
  *
- *	u s a g e
+ *	u s a g e _ e x i t
  *
  **************************************
  *
