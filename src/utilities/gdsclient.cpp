@@ -38,6 +38,7 @@
 static USHORT PatchVersion(const TEXT* gds32, WORD major, WORD minor,
 	USHORT(*err_handler)(ULONG, const TEXT *));
 
+
 USHORT GDSCLIENT_install(const TEXT * rootdir, bool sw_force,
 	USHORT(*err_handler)(ULONG, const TEXT *))
 {
@@ -213,16 +214,16 @@ USHORT GDSCLIENT_remove(const TEXT * rootdir,
 	lstrcpy(gds32, sysdir);
 	lstrcat(gds32, "\\gds32.dll");
 	
+	HANDLE hfile = CreateFile(gds32, GENERIC_READ,
+		0 /* FILE_SHARE_NONE */, 0, OPEN_EXISTING, 0, 0);
+	if (hfile == INVALID_HANDLE_VALUE)
+		return FB_GDS32_NOT_FOUND;
+	CloseHandle(hfile);
+
 	DWORD dwUnused;
 	DWORD rsize = GetFileVersionInfoSize(gds32, &dwUnused);
 	if (rsize == 0)
-	{
-		ULONG werr = GetLastError();
-		if (werr == ERROR_RESOURCE_DATA_NOT_FOUND)
-			return FB_GDS32_NOT_FOUND;
-		else
-			return (*err_handler) (GetLastError(), "GetFileVersionInfoSize()");
-	}
+		return (*err_handler) (GetLastError(), "GetFileVersionInfoSize()");
 
 	BYTE* hver = new BYTE[rsize];
 	if (! GetFileVersionInfo(gds32, 0, rsize, hver))
@@ -276,30 +277,70 @@ static USHORT PatchVersion(const TEXT* gds32, WORD major, WORD minor,
  *	We typically use this trick to build a GDS32.DLL whose version is 6.3
  *	from our FBCLIENT.DLL whose version is 1.5.
  *
+ *	The politically correct way (speaking of Win32 API) of changing the
+ *	version info, should involve using GetFileVersionInfo() and VerQueryValue()
+ *	to read the existing version resource, and using BeginUpdateResource(),
+ *	UpdateResource() and EndUpdateResource() to actually update the dll file.
+ *	Unfortunately those last 3 APIs are not implemented on Win95/98/Me.
+ *
+ *	Therefore this function proceeds by straight hacking of the dll file.
+ *	This is not intellectually satisfactory, but does work and fits the bill.
+ *
  **************************************/
 
-	DWORD dwUnused;
-	DWORD rsize = GetFileVersionInfoSize(const_cast<char*>(gds32), &dwUnused);
-	if (rsize == 0)
-		return (*err_handler) (GetLastError(), "GetFileVersionInfoSize()");
+	HANDLE hfile = CreateFile(gds32, GENERIC_READ | GENERIC_WRITE,
+		0 /* FILE_SHARE_NONE */, 0, OPEN_EXISTING,
+		FILE_FLAG_SEQUENTIAL_SCAN, 0);
+	if (hfile == INVALID_HANDLE_VALUE)
+		return (*err_handler) (GetLastError(), "CreateFile()");
 
-	BYTE* hver = new BYTE[rsize];
-	if (! GetFileVersionInfo(const_cast<char*>(gds32), 0, rsize, hver))
+	DWORD fsize = GetFileSize(hfile, 0);
+
+	HANDLE hmap = CreateFileMapping(hfile, 0,
+		PAGE_READWRITE | SEC_COMMIT, 0, 0, 0);
+	if (hmap == 0)
 	{
 		ULONG werr = GetLastError();
-		delete [] hver;
-		return (*err_handler) (werr, "GetFileVersionInfo()");
+		CloseHandle(hfile);
+		return (*err_handler) (werr, "CreateFileMapping()");
 	}
 
-	VS_FIXEDFILEINFO* ffi;
-	UINT uiUnused;
-	if (! VerQueryValue(hver, "\\", (void**)&ffi, &uiUnused))
+	BYTE* mem = static_cast<BYTE*>(MapViewOfFile(hmap,
+		FILE_MAP_WRITE, 0, 0, 0));
+	if (mem == 0)
 	{
 		ULONG werr = GetLastError();
-		delete [] hver;
-		return (*err_handler) (werr, "VerQueryValue()");
+		CloseHandle(hmap);
+		CloseHandle(hfile);
+		return (*err_handler) (werr, "MapViewOfFile()");
 	}
 
+	BYTE* p = mem;
+	BYTE* end = p + fsize;
+	BYTE lookup[] = {'V', 0, 'S', 0, '_', 0,
+		'V', 0, 'E', 0, 'R', 0, 'S', 0, 'I', 0, 'O', 0, 'N', 0, '_', 0,
+		'I', 0, 'N', 0, 'F', 0, 'O', 0, 0, 0, 0, 0, 0xbd, 0x04, 0xef, 0xfe};
+	int i = 0;
+	while (p < end)
+	{
+		if (*p++ == lookup[i])
+		{
+			if (++i == sizeof(lookup)) break;
+		}
+		else i = 0;
+	}
+	
+	if (p >= end)
+	{
+		UnmapViewOfFile(mem);
+		CloseHandle(hmap);
+		CloseHandle(hfile);
+		return (*err_handler) (0, "Could not patch the version info resource.");
+	}
+
+	// The VS_FIXEDFILEINFO structure starts with the 4 bytes signature
+	// (which are the last 4 bytes of the 'lookup' buffer above).
+	VS_FIXEDFILEINFO* ffi = (VS_FIXEDFILEINFO*)(p - 4);
 	ffi->dwFileVersionMS =		(major << 16) | minor;
 	ffi->dwProductVersionMS =	(major << 16) | minor;
 
@@ -310,33 +351,10 @@ static USHORT PatchVersion(const TEXT* gds32, WORD major, WORD minor,
 	ib_printf("ProductVersionMS : %8.8x\n", ffi->dwProductVersionMS);
 	ib_printf("ProductVersionLS : %8.8x\n", ffi->dwProductVersionLS);
 	*/
-	
-	HANDLE hupd = BeginUpdateResource(gds32, FALSE);
-	if (hupd == 0)
-	{
-		ULONG werr = GetLastError();
-		delete [] hver;
-		return (*err_handler) (werr, "BeginUpdateResource()");
-	}
-
-	if (! UpdateResource(hupd, RT_VERSION, MAKEINTRESOURCE(VS_VERSION_INFO),
-		 MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL), hver, rsize))
-	{
-		ULONG werr = GetLastError();
-		delete [] hver;
-		EndUpdateResource(hupd, TRUE);	// TRUE = discard updates
-		return (*err_handler) (werr, "UpdateResource()");
-	}
-
-	if (! EndUpdateResource(hupd, FALSE))	// FALSE == don't discard
-	{
-		ULONG werr = GetLastError();
-		delete [] hver;
-		EndUpdateResource(hupd, TRUE);	// Discard
-		return (*err_handler) (werr, "EndUpdateResource()");
-	}
-
-	delete [] hver;	// It is important to delete AFTER EndUpdateResource !
+		
+	UnmapViewOfFile(mem);
+	CloseHandle(hmap);
+	CloseHandle(hfile);
 
 	return FB_SUCCESS;
 }
