@@ -39,14 +39,11 @@
 #include "../iscguard/cntlg_proto.h"
 #include "../utilities/install_nt.h"
 #include "../remote/chop_proto.h"
+#include "../common/config/config.h"
 
 #if defined(_MSC_VER) || defined(__BORLANDC__)
 #include <process.h>			/* _beginthread */
 #endif
-
-// fwd. decl.
-int GetGuardStartupInfo(char *svrpath, char *opt);
-
 
 /* Startup Configuration Entry point for regcfg.exe. */
 #define SVC_CONFIG          4
@@ -259,7 +256,7 @@ static int WINDOW_main(int option)
 		(thread_id =
 		 _beginthread(reinterpret_cast <
 					  void (*)(void *) >(start_and_watch_server), 0,
-					  IBSERVER)) == -1) {
+					  FBSERVER)) == -1) {
 		/* error starting server thread */
 		char szMsgString[256];
 		LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
@@ -520,6 +517,8 @@ static LRESULT CALLBACK WindowFunc(
 	}
 	return FALSE;
 }
+
+
 void start_and_watch_server(char *server_name)
 {
 /**************************************
@@ -536,7 +535,6 @@ void start_and_watch_server(char *server_name)
  **************************************/
 	char prog_name[MAXPATHLEN + 128];
 	char path[MAXPATHLEN];
-	char opt[3];
 	short option;
 	HANDLE procHandle = NULL;
 	unsigned short done = TRUE;
@@ -546,21 +544,10 @@ void start_and_watch_server(char *server_name)
 	SC_HANDLE hScManager = 0, hService = 0;
 
 /* get the guardian startup information */
-	if (GetGuardStartupInfo(path, opt)) {
-		option = atoi(opt);
-		sprintf(prog_name, "%s%s -a -n", path, server_name);
-		sprintf(path, "%s%s", path, IBSERVER);
-	}
-	else {
-		char szMsgString[256];
-		LoadString(hInstance_gbl, IDS_REGISTRY_INFO_MISSING, szMsgString,
-				   256);
-		MessageBox(NULL, szMsgString, APP_LABEL, MB_OK | MB_ICONSTOP);
-		write_log(IDS_REGISTRY_INFO_MISSING, szMsgString);
-		PostMessage(hWndGbl, WM_CLOSE, 0, 0);
-		Sleep(100);
-		exit(-1);
-	}
+	option = Config::getGuardianOption(START_FOREVER);
+	strcpy(path, Config::getRootDirectory().c_str());
+	sprintf(prog_name, "%s%s%s -a -n", path, "bin\\", server_name);
+	sprintf(path, "%s%s%s", path, "bin\\", FBSERVER);
 
 /* if the guardian is set to FOREVER then set the error mode */
 	if (option == START_FOREVER)
@@ -754,6 +741,7 @@ void start_and_watch_server(char *server_name)
 		PostMessage(hWndGbl, WM_CLOSE, 0, 0);
 }
 
+
 HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
 {
 /******************************************************************************
@@ -800,6 +788,7 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
 		hPSDlg = NULL;
 	return hPSDlg;
 }
+
 
 LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 							 LPARAM lParam)
@@ -953,6 +942,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	return FALSE;
 }
 
+
 void swap_icons(HWND hWnd)
 {
 /******************************************************************************
@@ -1011,6 +1001,7 @@ displayed, stop animating the icon
 	if (hIconAlert)
 		DestroyIcon(hIconAlert);
 }
+
 
 void write_log(int log_action, char *buff)
 {
@@ -1113,6 +1104,7 @@ void write_log(int log_action, char *buff)
 	if (*buff)
 		gds__log(buff);
 }
+
 
 void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
 {
