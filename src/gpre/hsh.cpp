@@ -25,12 +25,11 @@
 //
 //____________________________________________________________
 //
-//	$Id: hsh.cpp,v 1.18 2004-01-28 07:50:27 robocop Exp $
+//	$Id: hsh.cpp,v 1.19 2004-05-24 17:13:37 brodsom Exp $
 //
 
 #include "firebird.h"
 #include "../gpre/gpre.h"
-#include "../gpre/parse.h"
 #include "../gpre/hsh_proto.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/msc_proto.h"

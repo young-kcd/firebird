@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.21 2004-05-12 19:34:43 brodsom Exp $
+//	$Id: msc.cpp,v 1.22 2004-05-24 17:13:37 brodsom Exp $
 //
 //  
 //  
@@ -50,13 +50,10 @@
 #include <stdio.h>
 #include <string.h>
 #include "../gpre/gpre.h"
-#include "../gpre/parse.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/msc_proto.h"
 #include "../jrd/gds_proto.h"
 
-
-extern act* cur_routine;
 
 typedef struct spc {
 	spc* spc_next;
@@ -267,8 +264,8 @@ void MSC_free( UCHAR* block)
 void MSC_free_request( gpre_req* request)
 {
 
-	requests = request->req_next;
-	cur_routine->act_object = (REF) request->req_routine;
+	gpreGlob.requests = request->req_next;
+	gpreGlob.cur_routine->act_object = (REF) request->req_routine;
 	MSC_free((UCHAR *) request);
 }
 
@@ -301,21 +298,21 @@ void MSC_init(void)
 bool MSC_match(KWWORDS keyword)
 {
 
-	if (token_global.tok_keyword == KW_none && token_global.tok_symbol) {
+	if (gpreGlob.token_global.tok_keyword == KW_none && gpreGlob.token_global.tok_symbol) {
 		gpre_sym* symbol;
-		for (symbol = token_global.tok_symbol->sym_collision; symbol;
+		for (symbol = gpreGlob.token_global.tok_symbol->sym_collision; symbol;
 			 symbol = symbol->sym_collision)
 		{
-			if ((strcmp(symbol->sym_string, token_global.tok_string) ==
+			if ((strcmp(symbol->sym_string, gpreGlob.token_global.tok_string) ==
 								 0) && symbol->sym_keyword != KW_none) 
 			{
-				token_global.tok_symbol = symbol;
-				token_global.tok_keyword = static_cast < kwwords > (symbol->sym_keyword);
+				gpreGlob.token_global.tok_symbol = symbol;
+				gpreGlob.token_global.tok_keyword = static_cast < kwwords > (symbol->sym_keyword);
 			}
 		}
 	}
 
-	if ((int) token_global.tok_keyword != (int) keyword)
+	if ((int) gpreGlob.token_global.tok_keyword != (int) keyword)
 		return false;
 
 	CPR_token();
@@ -440,15 +437,15 @@ gpre_req* MSC_request(enum req_t type)
 {
 	gpre_req* request = (gpre_req*) MSC_alloc(REQ_LEN);
 	request->req_type = type;
-	request->req_next = requests;
-	requests = request;
+	request->req_next = gpreGlob.requests;
+	gpreGlob.requests = request;
 
-	request->req_routine = (gpre_req*) cur_routine->act_object;
-	cur_routine->act_object = (REF) request;
+	request->req_routine = (gpre_req*) gpreGlob.cur_routine->act_object;
+	gpreGlob.cur_routine->act_object = (REF) request;
 
-	if (!(cur_routine->act_flags & ACT_main))
+	if (!(gpreGlob.cur_routine->act_flags & ACT_main))
 		request->req_flags |= REQ_local;
-	if (sw_sql_dialect <= SQL_DIALECT_V5)
+	if (gpreGlob.sw_sql_dialect <= SQL_DIALECT_V5)
 		request->req_flags |= REQ_blr_version4;
 
 	return request;

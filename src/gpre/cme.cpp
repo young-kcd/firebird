@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cme.cpp,v 1.27 2004-05-24 11:02:10 brodsom Exp $
+//	$Id: cme.cpp,v 1.28 2004-05-24 17:13:36 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -455,7 +455,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		return;
 
 	case nod_gen_id:
-		if ((sw_sql_dialect == SQL_DIALECT_V5) || (sw_server_version < 6))
+		if ((gpreGlob.sw_sql_dialect == SQL_DIALECT_V5) || (gpreGlob.sw_server_version < 6))
 		{
 			f->fld_dtype = dtype_long;
 			f->fld_length = sizeof(SLONG);
@@ -477,7 +477,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 	case nod_agg_min:
 	case nod_negate:
 		CME_get_dtype(node->nod_arg[0], f);
-		if ((sw_sql_dialect == SQL_DIALECT_V5)
+		if ((gpreGlob.sw_sql_dialect == SQL_DIALECT_V5)
 			&& (f->fld_dtype == dtype_int64))
 		{
 			f->fld_precision = 0;
@@ -557,7 +557,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 	case nod_times:
 		CME_get_dtype(node->nod_arg[0], &field1);
 		CME_get_dtype(node->nod_arg[1], &field2);
-		if (sw_sql_dialect == SQL_DIALECT_V5)
+		if (gpreGlob.sw_sql_dialect == SQL_DIALECT_V5)
 		{
 			if (field1.fld_dtype == dtype_int64)
 			{
@@ -645,7 +645,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 	case nod_minus:
 		CME_get_dtype(node->nod_arg[0], &field1);
 		CME_get_dtype(node->nod_arg[1], &field2);
-		if (sw_sql_dialect == SQL_DIALECT_V5)
+		if (gpreGlob.sw_sql_dialect == SQL_DIALECT_V5)
 		{
 			if (field1.fld_dtype == dtype_int64)
 			{
@@ -750,7 +750,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 	case nod_divide:
 		CME_get_dtype(node->nod_arg[0], &field1);
 		CME_get_dtype(node->nod_arg[1], &field2);
-		if (sw_sql_dialect == SQL_DIALECT_V5)
+		if (gpreGlob.sw_sql_dialect == SQL_DIALECT_V5)
 		{
 			if (field1.fld_dtype == dtype_int64)
 			{
@@ -803,7 +803,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			CME_get_dtype(node->nod_arg[0], f);
 		if (!DTYPE_CAN_AVERAGE(f->fld_dtype))
 			CPR_error("expression evaluation not supported");
-		if (sw_sql_dialect != SQL_DIALECT_V5)
+		if (gpreGlob.sw_sql_dialect != SQL_DIALECT_V5)
 		{
 			if (DTYPE_IS_EXACT(f->fld_dtype))
 			{
@@ -824,7 +824,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			CME_get_dtype(node->nod_arg[1], f);
 		else
 			CME_get_dtype(node->nod_arg[0], f);
-		if (sw_sql_dialect == SQL_DIALECT_V5)
+		if (gpreGlob.sw_sql_dialect == SQL_DIALECT_V5)
 		{
 			if ((f->fld_dtype == dtype_short) || (f->fld_dtype == dtype_long))
 			{
@@ -934,7 +934,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 				/* subtract 2 for starting & terminating quote */
 
 				f->fld_length = strlen(string) - 2;
-				if (sw_cstring)
+				if (gpreGlob.sw_cstring)
 				{
 					// add 1 back for the NULL byte 
 
@@ -1012,7 +1012,7 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 	gpre_rel* relation = context->ctx_relation;
 	if (relation)
 	{
-		if (sw_ids)
+		if (gpreGlob.sw_ids)
 		{
 			if ((context->ctx_alias) &&
 				!(request->req_database->dbb_flags & DBB_v3))
@@ -1042,7 +1042,7 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 	}
 	else if (procedure = context->ctx_procedure)
 	{
-		if (sw_ids)
+		if (gpreGlob.sw_ids)
 		{
 			request->add_byte(blr_pid);
 			request->add_word(procedure->prc_id);
@@ -1260,7 +1260,7 @@ static void cmp_array( GPRE_NOD node, gpre_req* request)
 
 		//  The relation and field identifiers or strings  
 
-		if (sw_ids)
+		if (gpreGlob.sw_ids)
 		{
 			reference->add_byte(isc_sdl_rid);
 			reference->add_byte(reference->ref_id);
@@ -1379,7 +1379,7 @@ static void cmp_field( const gpre_nod* node, gpre_req* request)
 		request->add_byte(context->ctx_internal);
 		request->add_word(reference->ref_id);
 	}
-	else if (sw_ids)
+	else if (gpreGlob.sw_ids)
 	{
 		request->add_byte(blr_fid);
 		request->add_byte(context->ctx_internal);
@@ -1426,7 +1426,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 
 			if (!(request->req_database->dbb_flags & DBB_v3))
 				request->add_byte(blr_double);
-			else if (sw_know_interp)
+			else if (gpreGlob.sw_know_interp)
 			{	// then must be using blr_version5 
 				request->add_byte(blr_text2);
 				request->add_word(ttype_ascii);
@@ -1690,10 +1690,10 @@ static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
 	case dtype_cstring:
 		// 3.2j has new, tagged blr intruction for cstring 
 
-		if (sw_know_interp)
+		if (gpreGlob.sw_know_interp)
 		{
 			reference->add_byte(blr_cstring2);
-			reference->add_word(sw_interp);
+			reference->add_word(gpreGlob.sw_interp);
 			reference->add_word(field->fld_length);
 		}
 		else
@@ -1706,10 +1706,10 @@ static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
 	case dtype_text:
 		// 3.2j has new, tagged blr intruction for text too 
 
-		if (sw_know_interp)
+		if (gpreGlob.sw_know_interp)
 		{
 			reference->add_byte(blr_text2);
-			reference->add_word(sw_interp);
+			reference->add_word(gpreGlob.sw_interp);
 			reference->add_word(field->fld_length);
 		}
 		else
@@ -1722,10 +1722,10 @@ static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
 	case dtype_varying:
 		// 3.2j has new, tagged blr intruction for varying also 
 
-		if (sw_know_interp)
+		if (gpreGlob.sw_know_interp)
 		{
 			reference->add_byte(blr_varying2);
-			reference->add_word(sw_interp);
+			reference->add_word(gpreGlob.sw_interp);
 			reference->add_word(field->fld_length);
 		}
 		else
@@ -1772,7 +1772,7 @@ static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
 		break;
 
 	case dtype_double:
-		if (sw_d_float)
+		if (gpreGlob.sw_d_float)
 			reference->add_byte(blr_d_float);
 		else
 			reference->add_byte(blr_double);
@@ -1920,7 +1920,7 @@ static void stuff_sdl_element(ref* reference, const gpre_fld* field)
 
 //  Fortran needs the array in column-major order 
 
-	if (sw_language == lang_fortran)
+	if (gpreGlob.sw_language == lang_fortran)
 	{
 		for (SSHORT i = field->fld_array_info->ary_dimension_count - 1;
 			i >= 0; i--)
@@ -1950,7 +1950,7 @@ static void stuff_sdl_loops(ref* reference, const gpre_fld* field)
 {
 //  Fortran needs the array in column-major order
 
-	if (sw_language == lang_fortran)
+	if (gpreGlob.sw_language == lang_fortran)
 	{
 		const dim* dimension;
 		for (dimension = field->fld_array_info->ary_dimension;

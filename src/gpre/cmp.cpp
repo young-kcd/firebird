@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.30 2004-05-24 11:02:11 brodsom Exp $
+//	$Id: cmp.cpp,v 1.31 2004-05-24 17:13:36 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -43,9 +43,6 @@
 #include "../gpre/par_proto.h"
 
 
-
-extern const TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
-	*transaction_name;
 
 static void cmp_any(gpre_req*);
 static void cmp_assignment(GPRE_NOD, gpre_req*);
@@ -131,11 +128,11 @@ void CMP_compile_request( gpre_req* request)
 
 	if (!request->req_handle && (request->req_type != REQ_procedure)) {
 		request->req_handle = (TEXT *) MSC_alloc(20);
-		sprintf(request->req_handle, ident_pattern, CMP_next_ident());
+		sprintf(request->req_handle, gpreGlob.ident_pattern, CMP_next_ident());
 	}
 
 	if (!request->req_trans)
-		request->req_trans = transaction_name;
+		request->req_trans = gpreGlob.transaction_name;
 
 	if (!request->req_request_level)
 		request->req_request_level = "0";
@@ -155,11 +152,11 @@ void CMP_compile_request( gpre_req* request)
 
 	ref* reference;
 	if (!eof_field) {
-		eof_field = MET_make_field(utility_name, dtype_short, sizeof(SSHORT),
+		eof_field = MET_make_field(gpreGlob.utility_name, dtype_short, sizeof(SSHORT),
 								   false);
-		count_field = MET_make_field(count_name, dtype_long, sizeof(SLONG),
+		count_field = MET_make_field(gpreGlob.count_name, dtype_long, sizeof(SLONG),
 									 false);
-		slack_byte_field = MET_make_field(slack_name, dtype_text, 1, false);
+		slack_byte_field = MET_make_field(gpreGlob.slack_name, dtype_text, 1, false);
 		reference = (REF) MSC_alloc(REF_LEN);
 		reference->ref_value = "0";
 		lit0 = MSC_unary(nod_literal, (GPRE_NOD) reference);
@@ -426,7 +423,7 @@ void CMP_t_start( gpre_tra* trans)
 	*text = 0;
 	const USHORT tpb_len = text - tpb_buffer;
 
-	for (dbb* database = isc_databases; database; database = database->dbb_next)
+	for (dbb* database = gpreGlob.isc_databases; database; database = database->dbb_next)
 	{
 		/* 
 		 * figure out if this is a simple transaction or a reserving
@@ -824,7 +821,7 @@ static void cmp_field( gpre_req* request, const gpre_fld* field,
 		break;
 
 	case dtype_double:
-		if (sw_d_float)
+		if (gpreGlob.sw_d_float)
 			request->add_byte(blr_d_float);
 		else
 			request->add_byte(blr_double);
@@ -1161,7 +1158,7 @@ static void cmp_procedure( gpre_req* request)
 		make_send(request->req_vport, request);
 	}
 
-	if (sw_ids) {
+	if (gpreGlob.sw_ids) {
 		request->add_byte(blr_exec_pid);
 		request->add_word(procedure->prc_id);
 	}
@@ -1316,7 +1313,7 @@ static void cmp_ready( gpre_req* request)
 static void cmp_sdl_fudge( gpre_req* request, SLONG lower_bound)
 {
 
-	switch (sw_language) {
+	switch (gpreGlob.sw_language) {
 	case lang_c:
 	case lang_cxx:
     case lang_internal:

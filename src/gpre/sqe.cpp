@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.30 2004-05-21 06:15:23 robocop Exp $
+//	$Id: sqe.cpp,v 1.31 2004-05-24 17:13:37 brodsom Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -68,9 +68,6 @@ struct scope {
 	USHORT req_in_order_by_clause;	// processing order by clause 
 	USHORT req_in_subselect;	// processing a subselect clause 
 };
-
-extern act* cur_routine;
-extern tok prior_token;
 
 static bool compare_expr(GPRE_NOD, GPRE_NOD);
 static GPRE_NOD copy_fields(GPRE_NOD, map*);
@@ -266,8 +263,8 @@ gpre_ctx* SQE_context(gpre_req* request)
 //  It may, however, be an "end of line" token.  If so, trade it in on the
 //  next "real" token. 
 
-	if ((symbol = token_global.tok_symbol) && symbol->sym_type == SYM_keyword) {
-		if (!token_global.tok_length)
+	if ((symbol = gpreGlob.token_global.tok_symbol) && symbol->sym_type == SYM_keyword) {
+		if (!gpreGlob.token_global.tok_length)
 			CPR_token();
 		return context;
 	}
@@ -284,7 +281,7 @@ gpre_ctx* SQE_context(gpre_req* request)
 			&& (symbol->sym_type == SYM_relation
 				|| symbol->sym_type == SYM_context
 				|| symbol->sym_type == SYM_procedure)
-			&& (!strcmp(symbol->sym_string, token_global.tok_string))
+			&& (!strcmp(symbol->sym_string, gpreGlob.token_global.tok_string))
 			&& (conflict->ctx_scope_level == request-> req_scope_level))
 		{
 			break;
@@ -301,11 +298,11 @@ gpre_ctx* SQE_context(gpre_req* request)
 			error_type = "context";
 
 		sprintf(s, "context %s conflicts with a %s in the same statement",
-				token_global.tok_string, error_type);
+				gpreGlob.token_global.tok_string, error_type);
 		PAR_error(s);
 	}
 
-	symbol = MSC_symbol(SYM_context, token_global.tok_string, token_global.tok_length, 0);
+	symbol = MSC_symbol(SYM_context, gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, 0);
 	symbol->sym_object = context;
 	context->ctx_symbol = symbol;
 	context->ctx_alias = symbol->sym_name;
@@ -370,7 +367,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 		(action->act_type == ACT_create_domain ||
 		 action->act_type == ACT_alter_domain)) {
 		sprintf(s, "Illegal use of identifier: %s in domain constraint",
-				token_global.tok_string);
+				gpreGlob.token_global.tok_string);
 		PAR_error(s);
 	}
 
@@ -394,12 +391,12 @@ GPRE_NOD SQE_field(gpre_req* request,
 		node->nod_count = 0;
 		f_token = (TOK) MSC_alloc(TOK_LEN);
 		node->nod_arg[0] = (GPRE_NOD) f_token;
-		f_token->tok_length = token_global.tok_length;
+		f_token->tok_length = gpreGlob.token_global.tok_length;
 		SQL_resolve_identifier("<identifier>", f_token->tok_string);
 		CPR_token();
 
 		if (MSC_match(KW_DOT)) {
-			if ((int) token_global.tok_keyword == (int) KW_ASTERISK) {
+			if ((int) gpreGlob.token_global.tok_keyword == (int) KW_ASTERISK) {
 				if (aster_ok)
 					node->nod_type = nod_asterisk;
 				else
@@ -409,7 +406,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 				node->nod_arg[1] = node->nod_arg[0];
 				f_token = (TOK) MSC_alloc(TOK_LEN);
 				node->nod_arg[0] = (GPRE_NOD) f_token;
-				f_token->tok_length = token_global.tok_length;
+				f_token->tok_length = gpreGlob.token_global.tok_length;
 				SQL_resolve_identifier("<identifier>", f_token->tok_string);
 			}
 			CPR_token();
@@ -466,7 +463,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 	reference = (REF) MSC_alloc(REF_LEN);
 	node = MSC_unary(nod_field, (GPRE_NOD) reference);
 
-	if (symbol = token_global.tok_symbol) {
+	if (symbol = gpreGlob.token_global.tok_symbol) {
 		/* if there is a homonym which is a context, use the context;
 		   otherwise we may match with a relation or procedure which 
 		   is not in the request, resulting in a bogus error */
@@ -502,12 +499,12 @@ GPRE_NOD SQE_field(gpre_req* request,
 				SQL_resolve_identifier("<Column Name>", s);
 				if (!
 					(reference->ref_field =
-					 MET_context_field(context, token_global.tok_string))) {
+					 MET_context_field(context, gpreGlob.token_global.tok_string))) {
 					sprintf(s, "column \"%s\" not in context",
-							token_global.tok_string);
+							gpreGlob.token_global.tok_string);
 					PAR_error(s);
 				}
-				if (SQL_DIALECT_V5 == sw_sql_dialect) {
+				if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) {
 					USHORT field_dtype;
 					field_dtype = reference->ref_field->fld_dtype;
 					if ((dtype_sql_date == field_dtype) ||
@@ -536,9 +533,9 @@ GPRE_NOD SQE_field(gpre_req* request,
 				 */
 
 				if (!MSC_match(KW_DOT)) {
-					hold_token = token_global;
-					token_global = prior_token;
-					token_global.tok_symbol = 0;
+					hold_token = gpreGlob.token_global;
+					gpreGlob.token_global = gpreGlob.prior_token;
+					gpreGlob.token_global.tok_symbol = 0;
 				}
 				else {
 		/** We've got the column name. resolve it **/
@@ -548,8 +545,8 @@ GPRE_NOD SQE_field(gpre_req* request,
 							if (context->ctx_relation == relation &&
 								(reference->ref_field =
 								 MET_field(context->ctx_relation,
-										   token_global.tok_string))) {
-							if (SQL_DIALECT_V5 == sw_sql_dialect) {
+										   gpreGlob.token_global.tok_string))) {
+							if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) {
 								USHORT field_dtype;
 								field_dtype = reference->ref_field->fld_dtype;
 								if ((dtype_sql_date == field_dtype) ||
@@ -570,7 +567,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 						}
 
 					sprintf(s, "column \"%s\" not in context",
-							token_global.tok_string);
+							gpreGlob.token_global.tok_string);
 					PAR_error(s);
 				}
 			}
@@ -586,8 +583,8 @@ GPRE_NOD SQE_field(gpre_req* request,
 					 context = context->ctx_next)
 						if (context->ctx_procedure == procedure &&
 							(reference->ref_field =
-							 MET_context_field(context, token_global.tok_string))) {
-						if (SQL_DIALECT_V5 == sw_sql_dialect) {
+							 MET_context_field(context, gpreGlob.token_global.tok_string))) {
+						if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) {
 							USHORT field_dtype;
 							field_dtype = reference->ref_field->fld_dtype;
 							if ((dtype_sql_date == field_dtype) ||
@@ -607,7 +604,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 						return node;
 					}
 
-				sprintf(s, "column \"%s\" not in context", token_global.tok_string);
+				sprintf(s, "column \"%s\" not in context", gpreGlob.token_global.tok_string);
 				PAR_error(s);
 			}
 		}
@@ -620,9 +617,9 @@ GPRE_NOD SQE_field(gpre_req* request,
 		 context = context->ctx_next)
 	{
 		if (reference->ref_field = MET_context_field(context,
-													 token_global.tok_string))
+													 gpreGlob.token_global.tok_string))
 		{
-			if (SQL_DIALECT_V5 == sw_sql_dialect) {
+			if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) {
 				USHORT field_dtype;
 				field_dtype = reference->ref_field->fld_dtype;
 				if ((dtype_sql_date == field_dtype) ||
@@ -638,8 +635,8 @@ GPRE_NOD SQE_field(gpre_req* request,
 			   ** continue.
 			 */
 			if (hold_token.tok_type != 0) {
-				prior_token = token_global;
-				token_global = hold_token;
+				gpreGlob.prior_token = gpreGlob.token_global;
+				gpreGlob.token_global = hold_token;
 			}
 			else
 				CPR_token();
@@ -711,17 +708,17 @@ REF SQE_parameter(gpre_req* request,
 
 	assert_IS_REQ(request);
 
-	if (token_global.tok_type == tok_number) {
+	if (gpreGlob.token_global.tok_type == tok_number) {
 		reference = (REF) MSC_alloc(REF_LEN);
-		string = (TEXT *) MSC_alloc(token_global.tok_length + 1);
-		MSC_copy(token_global.tok_string, token_global.tok_length, string);
+		string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
 		reference->ref_value = string;
 		reference->ref_flags |= REF_literal;
 		CPR_token();
 		return reference;
 	}
-	if ((isQuoted(token_global.tok_type) && sw_sql_dialect == 1) ||
-		token_global.tok_type == tok_sglquoted)
+	if ((isQuoted(gpreGlob.token_global.tok_type) && gpreGlob.sw_sql_dialect == 1) ||
+		gpreGlob.token_global.tok_type == tok_sglquoted)
 	{
 	/** 
     Since we have stripped the quotes, it is time now to put it back
@@ -729,29 +726,29 @@ REF SQE_parameter(gpre_req* request,
     literal.
     ***/
 		reference = (REF) MSC_alloc(REF_LEN);
-		string = (TEXT *) MSC_alloc(token_global.tok_length + 3);
+		string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 3);
 		string[0] = '\"';
-		MSC_copy(token_global.tok_string, token_global.tok_length, string + 1);
-		string[token_global.tok_length + 1] = '\"';
-		string[token_global.tok_length + 2] = 0;
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string + 1);
+		string[gpreGlob.token_global.tok_length + 1] = '\"';
+		string[gpreGlob.token_global.tok_length + 2] = 0;
 		reference->ref_value = string;
 		reference->ref_flags |= REF_literal;
 		CPR_token();
 		return reference;
 	}
-	if (token_global.tok_keyword == KW_PLUS || token_global.tok_keyword == KW_MINUS) {
-		if (token_global.tok_keyword == KW_MINUS)
+	if (gpreGlob.token_global.tok_keyword == KW_PLUS || gpreGlob.token_global.tok_keyword == KW_MINUS) {
+		if (gpreGlob.token_global.tok_keyword == KW_MINUS)
 			sign = 1;
 		else
 			sign = 0;
 		CPR_token();
-		if (token_global.tok_type != tok_number)
+		if (gpreGlob.token_global.tok_type != tok_number)
 			CPR_s_error("<host variable> or <constant>");
 		reference = (REF) MSC_alloc(REF_LEN);
-		s = string = (TEXT *) MSC_alloc(token_global.tok_length + 1 + sign);
+		s = string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1 + sign);
 		if (sign)
 			*s++ = '-';
-		MSC_copy(token_global.tok_string, token_global.tok_length, s);
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, s);
 		reference->ref_value = string;
 		reference->ref_flags |= REF_literal;
 		CPR_token();
@@ -761,12 +758,12 @@ REF SQE_parameter(gpre_req* request,
 	if (!MSC_match(KW_COLON))
 		CPR_s_error("<host variable> or <constant>");
 
-	if (token_global.tok_type != tok_ident)
+	if (gpreGlob.token_global.tok_type != tok_ident)
 		CPR_s_error("<host variable> or <constant>");
 
 	reference = (REF) MSC_alloc(REF_LEN);
 
-	for (symbol = token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (symbol = gpreGlob.token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_variable) {
 			reference->ref_field = (gpre_fld*) symbol->sym_object;
 			break;
@@ -1020,7 +1017,7 @@ bool SQE_resolve(GPRE_NOD node,
 
 //  Make sure that a dialect-1 program isn't trying to select a
 //  dialect-3-only field type. 
-	if ((SQL_DIALECT_V5 == sw_sql_dialect) &&
+	if ((SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) &&
 		((dtype_sql_date == field->fld_dtype) ||
 		 (dtype_sql_time == field->fld_dtype) ||
 		 (dtype_int64 == field->fld_dtype)))
@@ -1220,12 +1217,12 @@ GPRE_NOD SQE_variable(gpre_req* request,
 	if (!MSC_match(KW_COLON))
 		CPR_s_error("<colon>");
 
-	if (isQuoted(token_global.tok_type))
+	if (isQuoted(gpreGlob.token_global.tok_type))
 		CPR_s_error("<host variable>");
 
 	reference = (REF) MSC_alloc(REF_LEN);
 
-	for (symbol = token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (symbol = gpreGlob.token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_variable) {
 			reference->ref_field = (gpre_fld*) symbol->sym_object;
 			break;
@@ -1936,7 +1933,7 @@ static GPRE_NOD par_in( gpre_req* request, GPRE_NOD value)
 				}
 				else {
 					sprintf(s, "datatype of %s can not be determined",
-							token_global.tok_string);
+							gpreGlob.token_global.tok_string);
 					PAR_error(s);
 				}
 			}
@@ -2064,7 +2061,7 @@ static GPRE_NOD par_multiply(gpre_req* request,
 	if (node->nod_type == nod_asterisk)
 		return node;
 
-	if (token_global.tok_keyword == KW_COLLATE)
+	if (gpreGlob.token_global.tok_keyword == KW_COLLATE)
 		return par_collate(request, node);
 
 	GPRE_NOD arg;
@@ -2183,13 +2180,13 @@ static void par_order(gpre_req* request,
 
 	while (true) {
 		direction = FALSE;
-		if (token_global.tok_type == tok_number) {
+		if (gpreGlob.token_global.tok_type == tok_number) {
 			i = EXP_USHORT_ordinal(false);
 			if (i < 1 || i > values->nod_count)
 				CPR_s_error("<ordinal column position>");
 			sort = values->nod_arg[i - 1];
 			PAR_get_token();
-			if (token_global.tok_keyword == KW_COLLATE)
+			if (gpreGlob.token_global.tok_keyword == KW_COLLATE)
 				sort = par_collate(request, sort);
 		}
 		else {
@@ -2283,8 +2280,8 @@ static GPRE_NOD par_plan_item(gpre_req* request,
 
 //  check for a plan expression 
 
-	if (token_global.tok_keyword == KW_JOIN || token_global.tok_keyword == KW_SORT ||
-		token_global.tok_keyword == KW_MERGE || token_global.tok_keyword == KW_LEFT_PAREN)
+	if (gpreGlob.token_global.tok_keyword == KW_JOIN || gpreGlob.token_global.tok_keyword == KW_SORT ||
+		gpreGlob.token_global.tok_keyword == KW_MERGE || gpreGlob.token_global.tok_keyword == KW_LEFT_PAREN)
 	{
 		return par_plan(request);
 	}
@@ -2293,14 +2290,15 @@ static GPRE_NOD par_plan_item(gpre_req* request,
 //  aliases (more than one is used when there is
 //  a need to differentiate base tables of a view) 
 
-	for (count = 0; token_global.tok_type == tok_ident; count++) {
-		if (token_global.tok_keyword == KW_NATURAL || token_global.tok_keyword == KW_ORDER || 
-			token_global.tok_keyword == KW_INDEX)
+	for (count = 0; gpreGlob.token_global.tok_type == tok_ident; count++) {
+		if (gpreGlob.token_global.tok_keyword == KW_NATURAL ||
+			gpreGlob.token_global.tok_keyword == KW_ORDER || 
+			gpreGlob.token_global.tok_keyword == KW_INDEX)
 		{
 			break;
 		}
 
-		MSC_push((GPRE_NOD) upcase_string(token_global.tok_string), &stack);
+		MSC_push((GPRE_NOD) upcase_string(gpreGlob.token_global.tok_string), &stack);
 		PAR_get_token();
 	}
 
@@ -2317,21 +2315,21 @@ static GPRE_NOD par_plan_item(gpre_req* request,
 
 //  parse the access type 
 
-	if (token_global.tok_keyword == KW_NATURAL) {
+	if (gpreGlob.token_global.tok_keyword == KW_NATURAL) {
 		access_type = MSC_node(nod_natural, 0);
 		PAR_get_token();
 	}
-	else if (token_global.tok_keyword == KW_ORDER) {
+	else if (gpreGlob.token_global.tok_keyword == KW_ORDER) {
 		access_type = MSC_node(nod_index_order, 1);
 		access_type->nod_count = 0;
 		PAR_get_token();
 
-		if (token_global.tok_type != tok_ident)
+		if (gpreGlob.token_global.tok_type != tok_ident)
 			CPR_s_error("<index name>");
-		access_type->nod_arg[0] = (GPRE_NOD) upcase_string(token_global.tok_string);
+		access_type->nod_arg[0] = (GPRE_NOD) upcase_string(gpreGlob.token_global.tok_string);
 		PAR_get_token();
 	}
-	else if (token_global.tok_keyword == KW_INDEX) {
+	else if (gpreGlob.token_global.tok_keyword == KW_INDEX) {
 		access_type = MSC_node(nod_index, 1);
 		access_type->nod_count = 0;
 		PAR_get_token();
@@ -2339,8 +2337,8 @@ static GPRE_NOD par_plan_item(gpre_req* request,
 		EXP_left_paren(0);
 
 		stack = NULL;
-		for (count = 0; token_global.tok_type == tok_ident;) {
-			MSC_push((GPRE_NOD) upcase_string(token_global.tok_string), &stack);
+		for (count = 0; gpreGlob.token_global.tok_type == tok_ident;) {
+			MSC_push((GPRE_NOD) upcase_string(gpreGlob.token_global.tok_string), &stack);
 			PAR_get_token();
 
 			count++;
@@ -2509,9 +2507,9 @@ static GPRE_NOD par_primitive_value(gpre_req* request,
 
 //  If it's a number or a quoted string, it's a literal 
 
-	if (token_global.tok_type == tok_number ||
-		(isQuoted(token_global.tok_type) && sw_sql_dialect == 1) ||
-		token_global.tok_type == tok_sglquoted)
+	if (gpreGlob.token_global.tok_type == tok_number ||
+		(isQuoted(gpreGlob.token_global.tok_type) && gpreGlob.sw_sql_dialect == 1) ||
+		gpreGlob.token_global.tok_type == tok_sglquoted)
 	{
 		node = EXP_literal();
 		return node;
@@ -2525,7 +2523,7 @@ static GPRE_NOD par_primitive_value(gpre_req* request,
 
 //  If the next token is a colon, it is a variable reference 
 
-	if ((int) token_global.tok_keyword == (int) KW_COLON) {
+	if ((int) gpreGlob.token_global.tok_keyword == (int) KW_COLON) {
 		if (!request) {
 			/* We must be processing a subquery - and without the request to
 			 * post the :hostvar to we can't continue.
@@ -2556,10 +2554,10 @@ static GPRE_NOD par_primitive_value(gpre_req* request,
 //  anything that makes sense until now 
 	{
 // ** Begin date/time/timestamp support *
-		kw_word = token_global.tok_keyword;
+		kw_word = gpreGlob.token_global.tok_keyword;
 
 		if (MSC_match(KW_DATE) || MSC_match(KW_TIME) || MSC_match(KW_TIMESTAMP)) {
-			token_global.tok_keyword = kw_word;
+			gpreGlob.token_global.tok_keyword = kw_word;
 			node = EXP_literal();
 			return node;
 		}
@@ -2588,9 +2586,9 @@ static GPRE_NOD par_relational(gpre_req* request,
 	assert_IS_REQ(request);
 
 	gpre_nod* expr1 = SQE_value(request, false, paren_count, &local_flag);
-	if (token_global.tok_keyword == KW_RIGHT_PAREN)
+	if (gpreGlob.token_global.tok_keyword == KW_RIGHT_PAREN)
 		return expr1;
-	if (token_global.tok_keyword == KW_SEMI_COLON)
+	if (gpreGlob.token_global.tok_keyword == KW_SEMI_COLON)
 	{
 		for (const NOD_T* relational_ops = relationals; *relational_ops != (NOD_T) 0;
 			 relational_ops++)
@@ -2932,11 +2930,11 @@ static GPRE_NOD par_subscript( gpre_req* request)
 
 //  Special case literals 
 
-	if (token_global.tok_type == tok_number) {
+	if (gpreGlob.token_global.tok_type == tok_number) {
 		node->nod_type = nod_literal;
-		char* string = (TEXT *) MSC_alloc(token_global.tok_length + 1);
+		char* string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		reference->ref_value = string;
-		MSC_copy(token_global.tok_string, token_global.tok_length, string);
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
 		PAR_get_token();
 		return node;
 	}
@@ -2996,20 +2994,20 @@ static GPRE_NOD par_udf( gpre_req* request)
 
 //  Check for user defined functions 
 // ** resolve only if an identifier *
-	if ((isQuoted(token_global.tok_type)) || token_global.tok_type == tok_ident)
+	if ((isQuoted(gpreGlob.token_global.tok_type)) || gpreGlob.token_global.tok_type == tok_ident)
 		SQL_resolve_identifier("<Udf Name>", s);
 	if (request->req_database)
-		an_udf = MET_get_udf(request->req_database, token_global.tok_string);
+		an_udf = MET_get_udf(request->req_database, gpreGlob.token_global.tok_string);
 	else {
 		/* no database was specified, check the metadata for all the databases
 		   for the existence of the udf */
 
 		an_udf = NULL;
-		for (db = isc_databases; db; db = db->dbb_next)
-			if (tmp_udf = MET_get_udf(db, token_global.tok_string))
+		for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
+			if (tmp_udf = MET_get_udf(db, gpreGlob.token_global.tok_string))
 				if (an_udf) {
 					// udf was found in more than one database 
-					sprintf(s, "UDF %s is ambiguous", token_global.tok_string);
+					sprintf(s, "UDF %s is ambiguous", gpreGlob.token_global.tok_string);
 					PAR_error(s);
 				}
 				else {
@@ -3019,7 +3017,7 @@ static GPRE_NOD par_udf( gpre_req* request)
 	}
 
 	if (an_udf) {
-		if ((SQL_DIALECT_V5 == sw_sql_dialect) &&
+		if ((SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) &&
 			((dtype_sql_date == an_udf->udf_dtype) ||
 			 (dtype_sql_time == an_udf->udf_dtype) ||
 			 (dtype_int64 == an_udf->udf_dtype)))
@@ -3032,7 +3030,7 @@ static GPRE_NOD par_udf( gpre_req* request)
 		node->nod_arg[1] = (GPRE_NOD) an_udf;
 		PAR_get_token();
 		EXP_left_paren(0);
-		if (!(token_global.tok_keyword == KW_RIGHT_PAREN)) {
+		if (!(gpreGlob.token_global.tok_keyword == KW_RIGHT_PAREN)) {
 			// parse udf parameter references 
 			node->nod_arg[0] = SQE_list(SQE_value, request, false);
 
@@ -3095,7 +3093,7 @@ static GPRE_NOD par_udf( gpre_req* request)
 		KWWORDS kw_word;
 		node = MSC_node(nod_extract, 2);
 		EXP_left_paren(0);
-		kw_word = token_global.tok_keyword;
+		kw_word = gpreGlob.token_global.tok_keyword;
 		if (MSC_match(KW_YEAR) || MSC_match(KW_MONTH) || MSC_match(KW_DAY) ||
 			MSC_match(KW_HOUR) || MSC_match(KW_MINUTE) || MSC_match(KW_SECOND) ||
 			MSC_match(KW_WEEKDAY) || MSC_match(KW_YEARDAY))
@@ -3177,7 +3175,7 @@ static GPRE_NOD par_udf_or_field_with_collate(gpre_req* request,
 	assert_IS_REQ(request);
 
 	gpre_nod* node = par_udf_or_field(request, aster_ok);
-	if (token_global.tok_keyword == KW_COLLATE)
+	if (gpreGlob.token_global.tok_keyword == KW_COLLATE)
 		node = par_collate(request, node);
 
 	return node;
@@ -3406,7 +3404,7 @@ static gpre_fld* resolve(
 		/* This caused gpre to dump core if there are lower case 
 		   table aliases in a where clause used with dialect 2 or 3 
 
-		   if ( (symbol == NULL) && (sw_case || sw_sql_dialect == SQL_DIALECT_V5))
+		   if ( (symbol == NULL) && (sw_case || gpreGlob.sw_sql_dialect == SQL_DIALECT_V5))
 		   symbol = HSH_lookup2 (q_token->tok_string);
 		 */
 

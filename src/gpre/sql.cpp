@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.44 2004-05-12 19:34:44 brodsom Exp $
+//	$Id: sql.cpp,v 1.45 2004-05-24 17:13:38 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -33,7 +33,6 @@
 #include <string.h>
 #include "../gpre/gpre.h"
 #include "../jrd/ibase.h"
-#include "../gpre/parse.h"
 #include "../jrd/intl.h"
 #include "../jrd/constants.h"
 #include "../gpre/cme_proto.h"
@@ -54,11 +53,6 @@ const int MIN_CACHE_BUFFERS	= 250;
 const int DEF_CACHE_BUFFERS	= 1000;
 #endif
 const int DEFAULT_BLOB_SEGMENT_LENGTH	= 80;	// bytes 
-
-extern act* cur_routine;
-extern const TEXT* database_name;
-
-const TEXT* module_lc_ctype = NULL;
 
 static act* act_alter(void);
 static act* act_alter_database(void);
@@ -149,10 +143,10 @@ static swe* global_whenever_list;
 
 static inline bool end_of_command(void)
 {
-	return ((sw_language != lang_cobol) &&
-		((int) token_global.tok_keyword == (int) KW_SEMI_COLON)) ||
-		 ((sw_language == lang_cobol) &&
-		 ((int) token_global.tok_keyword == (int) KW_END_EXEC));
+	return ((gpreGlob.sw_language != lang_cobol) &&
+		((int) gpreGlob.token_global.tok_keyword == (int) KW_SEMI_COLON)) ||
+		 ((gpreGlob.sw_language == lang_cobol) &&
+		 ((int) gpreGlob.token_global.tok_keyword == (int) KW_END_EXEC));
 }
 
 static inline bool range_short_integer(const SLONG x)
@@ -176,7 +170,7 @@ act* SQL_action(const TEXT* base_directory)
 	enum kwwords keyword;
 
 
-	switch (keyword = token_global.tok_keyword) {
+	switch (keyword = gpreGlob.token_global.tok_keyword) {
 	case KW_ALTER:
 	case KW_COMMENT:
 	case KW_CONNECT:
@@ -387,7 +381,7 @@ void SQL_adjust_field_dtype( gpre_fld* field)
 			 * type definition for local use
 			 */
 			if (field->fld_dtype != dtype_cstring)
-				field->fld_dtype = (sw_cstring
+				field->fld_dtype = (gpreGlob.sw_cstring
 									&& field->fld_sub_type != dsc_text_type_fixed) ?
 					dtype_cstring : dtype_text;
 			if (field->fld_dtype == dtype_cstring)
@@ -469,7 +463,7 @@ void SQL_init(void)
 	for (int i = 0; i < SWE_max; i++)
 		global_whenever[i] = NULL;
 
-	module_lc_ctype = default_lc_ctype;
+	gpreGlob.module_lc_ctype = gpreGlob.default_lc_ctype;
 }
 
 
@@ -485,9 +479,9 @@ void SQL_par_field_collate( gpre_req* request, gpre_fld* field)
 			(field->fld_dtype != dtype_cstring) &&
 			(field->fld_dtype != dtype_varying))
 				PAR_error("COLLATE applies only to character columns");
-		if (token_global.tok_type != tok_ident)
+		if (gpreGlob.token_global.tok_type != tok_ident)
 			CPR_s_error("<collation name>");
-		gpre_sym* symbol = MSC_find_symbol(token_global.tok_symbol, SYM_collate);
+		gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_collate);
 		if (!symbol)
 			PAR_error("The named COLLATION was not found");
 		field->fld_collate = (INTLSYM) symbol->sym_object;
@@ -528,7 +522,7 @@ void SQL_par_field_dtype(gpre_req* request,
 	char s[ERROR_LENGTH];
 	bool sql_date = false;
 
-	switch (keyword = token_global.tok_keyword) {
+	switch (keyword = gpreGlob.token_global.tok_keyword) {
 	case KW_SMALLINT:
 	case KW_INT:
 	case KW_INTEGER:
@@ -550,23 +544,23 @@ void SQL_par_field_dtype(gpre_req* request,
 		break;
 
 	case KW_DATE:
-		if (sw_sql_dialect == 2)
+		if (gpreGlob.sw_sql_dialect == 2)
 			PAR_error
 				("DATE is ambiguous in dialect 2 use SQL DATE or TIMESTAMP");
 		PAR_get_token();
 		break;
 
 	case KW_TIME:
-		if (sw_sql_dialect == 1)
+		if (gpreGlob.sw_sql_dialect == 1)
 			CPR_s_error("<data type>");
 		PAR_get_token();
 		break;
 
 	case KW_SQL:
-		if (sw_sql_dialect == 1)
+		if (gpreGlob.sw_sql_dialect == 1)
 			CPR_s_error("<data type>");
 		PAR_get_token();
-		if (token_global.tok_keyword == KW_DATE)
+		if (gpreGlob.token_global.tok_keyword == KW_DATE)
 			PAR_get_token();
 		else
 			CPR_s_error("<data type>");
@@ -626,14 +620,14 @@ void SQL_par_field_dtype(gpre_req* request,
 		break;
 
 	case KW_LONG:
-		if (!(token_global.tok_keyword == KW_FLOAT))
+		if (!(gpreGlob.token_global.tok_keyword == KW_FLOAT))
 			CPR_s_error("FLOAT");
 		PAR_get_token();
 		field->fld_dtype = dtype_double;
 		break;
 
 	case KW_DOUBLE:
-		if (!(token_global.tok_keyword == KW_PRECISION))
+		if (!(gpreGlob.token_global.tok_keyword == KW_PRECISION))
 			CPR_s_error("PRECISION");
 		PAR_get_token();
 		field->fld_dtype = dtype_double;
@@ -659,7 +653,7 @@ void SQL_par_field_dtype(gpre_req* request,
 		break;
 
 	case KW_NATIONAL:
-		if (!(token_global.tok_keyword == KW_CHAR))
+		if (!(gpreGlob.token_global.tok_keyword == KW_CHAR))
 			CPR_s_error("CHARACTER");
 		PAR_get_token();
 		field->fld_flags |= FLD_national;
@@ -709,7 +703,7 @@ void SQL_par_field_dtype(gpre_req* request,
 			if ((keyword == KW_NUMERIC) && (p < 5))
 				field->fld_dtype = dtype_short;
 			else if (p > 9) {
-				if (sw_sql_dialect == SQL_DIALECT_V5)
+				if (gpreGlob.sw_sql_dialect == SQL_DIALECT_V5)
 					field->fld_dtype = dtype_double;
 				else
 					field->fld_dtype = dtype_int64;
@@ -783,9 +777,9 @@ void SQL_par_field_dtype(gpre_req* request,
 
 		if (!MSC_match(KW_SET))
 			CPR_s_error("SET");
-		if (token_global.tok_type != tok_ident)
+		if (gpreGlob.token_global.tok_type != tok_ident)
 			CPR_s_error("<character set name>");
-		if (!(symbol2 = MSC_find_symbol(token_global.tok_symbol, SYM_charset)))
+		if (!(symbol2 = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset)))
 			PAR_error("The named CHARACTER SET was not found");
 		field->fld_character_set = (INTLSYM) symbol2->sym_object;
 		PAR_get_token();
@@ -859,7 +853,7 @@ gpre_prc* SQL_procedure(gpre_req* request,
 		//   for the existence of the procedure
 
 		procedure = NULL; // redundant
-		for (db = isc_databases; db; db = db->dbb_next)
+		for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			gpre_prc* tmp_procedure = MET_get_procedure(db, prc_string,
 														owner_string);
@@ -933,7 +927,7 @@ gpre_rel* SQL_relation(gpre_req* request,
 		   for the existence of the relation */
 
 		relation = NULL;
-		for (db = isc_databases; db; db = db->dbb_next)
+		for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			gpre_rel* tmp_relation = MET_get_relation(db, rel_string, owner_string);
 			if (tmp_relation) {
@@ -980,7 +974,7 @@ void SQL_relation_name(TEXT * r_name,
 	TEXT* t_str = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<Table name>", t_str);
 
-	gpre_sym* symbol = MSC_find_symbol(token_global.tok_symbol, SYM_database);
+	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
 	if (symbol) {
 		strcpy(db_name, symbol->sym_name);
 		PAR_get_token();
@@ -989,20 +983,20 @@ void SQL_relation_name(TEXT * r_name,
 	}
 
 	SQL_resolve_identifier("<Table name>", t_str);
-	if (token_global.tok_length > NAME_SIZE)
+	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("Table, owner, or database name too long");
 
-	strcpy(r_name, token_global.tok_string);
+	strcpy(r_name, gpreGlob.token_global.tok_string);
 	PAR_get_token();
 
 	if (MSC_match(KW_DOT)) {
 		// the table name was really a owner specifier 
 
-		if (token_global.tok_length > NAME_SIZE)
+		if (gpreGlob.token_global.tok_length > NAME_SIZE)
 			PAR_error("TABLE name too long");
 		strcpy(owner_name, r_name);
 		SQL_resolve_identifier("<Table name>", t_str);
-		strcpy(r_name, token_global.tok_string);
+		strcpy(r_name, gpreGlob.token_global.tok_string);
 		PAR_get_token();
 	}
 }
@@ -1016,8 +1010,8 @@ void SQL_relation_name(TEXT * r_name,
 TEXT *SQL_var_or_string(bool string_only)
 {
 
-	if ((token_global.tok_type != tok_sglquoted && sw_sql_dialect == 3) ||
-		(!isQuoted(token_global.tok_type) && sw_sql_dialect == 1))
+	if ((gpreGlob.token_global.tok_type != tok_sglquoted && gpreGlob.sw_sql_dialect == 3) ||
+		(!isQuoted(gpreGlob.token_global.tok_type) && gpreGlob.sw_sql_dialect == 1))
 	{
 		if (string_only)
 			CPR_s_error("<quoted string>");
@@ -1036,7 +1030,7 @@ TEXT *SQL_var_or_string(bool string_only)
 static act* act_alter(void)
 {
 
-	switch (token_global.tok_keyword) {
+	switch (gpreGlob.token_global.tok_keyword) {
 
 	case KW_DATABASE:
 	case KW_SCHEMA:
@@ -1074,8 +1068,8 @@ static act* act_alter(void)
 static act* act_alter_database(void)
 {
 	gpre_req* request = MSC_request(REQ_ddl);
-	if (isc_databases && !isc_databases->dbb_next)
-		request->req_database = isc_databases;
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+		request->req_database = gpreGlob.isc_databases;
 	else
 		PAR_error("Can only alter database in context of single database");
 
@@ -1189,8 +1183,8 @@ static act* act_alter_domain(void)
 //  create request block 
 
 	gpre_req* request = MSC_request(REQ_ddl);
-	if (isc_databases && !isc_databases->dbb_next)
-		request->req_database = isc_databases;
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+		request->req_database = gpreGlob.isc_databases;
 	else
 		PAR_error("Can only ALTER a domain in context of single database");
 
@@ -1206,7 +1200,7 @@ static act* act_alter_domain(void)
 
 	while (!end_of_command()) {
 		if (MSC_match(KW_SET)) {
-			if (token_global.tok_keyword == KW_DEFAULT) {
+			if (gpreGlob.token_global.tok_keyword == KW_DEFAULT) {
 				field->fld_default_source = CPR_start_text();
 				PAR_get_token();
 			}
@@ -1219,7 +1213,7 @@ static act* act_alter_domain(void)
 				field->fld_default_value = MSC_node(nod_null, 0);
 			else {
 				if (MSC_match(KW_MINUS)) {
-					if (token_global.tok_type != tok_number)
+					if (gpreGlob.token_global.tok_type != tok_number)
 						CPR_s_error("<number>");
 
 					GPRE_NOD literal_node = EXP_literal();
@@ -1233,7 +1227,7 @@ static act* act_alter_domain(void)
 		}
 		else if (MSC_match(KW_ADD)) {
 			MSC_match(KW_CONSTRAINT);
-			if (token_global.tok_keyword == KW_CHECK) {
+			if (gpreGlob.token_global.tok_keyword == KW_CHECK) {
 				cnstrt* cnstrt_str = par_field_constraint(request, field, 0);
 				*cnstrt_ptr = cnstrt_str;
 				cnstrt_ptr = &cnstrt_str->cnstrt_next;
@@ -1279,7 +1273,7 @@ static act* act_alter_index(void)
 
 	gpre_req* request = MSC_request(REQ_ddl);
 
-	if (token_global.tok_length > NAME_SIZE)
+	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("Index name too long");
 
 	SQL_resolve_identifier("<column name>", i_name);
@@ -1347,7 +1341,7 @@ static act* act_alter_table(void)
 
 	while (!end_of_command()) {
 		if (MSC_match(KW_ADD)) {
-			switch (token_global.tok_keyword) {
+			switch (gpreGlob.token_global.tok_keyword) {
 			case KW_CONSTRAINT:
 			case KW_PRIMARY:
 			case KW_UNIQUE:
@@ -1365,14 +1359,14 @@ static act* act_alter_table(void)
 			}
 		}
 		else if (MSC_match(KW_DROP)) {
-			if (token_global.tok_keyword == KW_CONSTRAINT) {
+			if (gpreGlob.token_global.tok_keyword == KW_CONSTRAINT) {
 				PAR_get_token();
 				cnstrt_str = (CNSTRT) MSC_alloc(CNSTRT_LEN);
 				cnstrt_str->cnstrt_flags |= CNSTRT_delete;
 				cnstrt_str->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 				SQL_resolve_identifier("<constraint name>",
 									   cnstrt_str->cnstrt_name->str_string);
-				if (token_global.tok_length > NAME_SIZE)
+				if (gpreGlob.token_global.tok_length > NAME_SIZE)
 					PAR_error("Constraint name too long");
 				*cnstrt_ptr = cnstrt_str;
 				cnstrt_ptr = &cnstrt_str->cnstrt_next;
@@ -1393,11 +1387,11 @@ static act* act_alter_table(void)
 
 				   Option RESTRICT is default behaviour.
 				 */
-				if (token_global.tok_keyword == KW_CASCADE) {
+				if (gpreGlob.token_global.tok_keyword == KW_CASCADE) {
 					PAR_error("Unsupported construct CASCADE");
 					PAR_get_token();
 				}
-				else if (token_global.tok_keyword == KW_RESTRICT) {
+				else if (gpreGlob.token_global.tok_keyword == KW_RESTRICT) {
 					PAR_get_token();
 				}
 			}
@@ -1446,20 +1440,20 @@ static act* act_connect(void)
 			ready->rdy_next = (rdy*) action->act_object;
 			action->act_object = (REF) ready;
 
-			gpre_sym* symbol = token_global.tok_symbol;
+			gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
 			if (!symbol || symbol->sym_type != SYM_database) {
 				ready->rdy_filename = SQL_var_or_string(false);
 				if (MSC_match(KW_AS))
 					need_handle = true;
 			}
 
-			symbol = token_global.tok_symbol;
+			symbol = gpreGlob.token_global.tok_symbol;
 			if (!symbol || symbol->sym_type != SYM_database) {
-				if (!isc_databases || isc_databases->dbb_next || need_handle) {
+				if (!gpreGlob.isc_databases || gpreGlob.isc_databases->dbb_next || need_handle) {
 					need_handle = false;
 					CPR_s_error("<database handle>");
 				}
-				ready->rdy_database = dup_dbb(isc_databases);
+				ready->rdy_database = dup_dbb(gpreGlob.isc_databases);
 			}
 
 			need_handle = false;
@@ -1520,7 +1514,7 @@ static act* act_connect(void)
 
 	connect_opts(&user, &password, &sql_role, &lc_messages, &buffers);
 
-	for (const dbb* db_iter = isc_databases; db_iter; db_iter = db_iter->dbb_next)
+	for (const dbb* db_iter = gpreGlob.isc_databases; db_iter; db_iter = db_iter->dbb_next)
 		if (db_iter->dbb_runtime || !(db_iter->dbb_flags & DBB_sqlca)) {
 			rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 			ready->rdy_next = (rdy*) action->act_object;
@@ -1602,8 +1596,8 @@ static act* act_create(void)
 	if (MSC_match(KW_VIEW))
 		return (act_create_view());
 
-	if (token_global.tok_keyword == KW_UNIQUE || token_global.tok_keyword == KW_ASCENDING ||
-		token_global.tok_keyword == KW_DESCENDING || token_global.tok_keyword == KW_INDEX) {
+	if (gpreGlob.token_global.tok_keyword == KW_UNIQUE || gpreGlob.token_global.tok_keyword == KW_ASCENDING ||
+		gpreGlob.token_global.tok_keyword == KW_DESCENDING || gpreGlob.token_global.tok_keyword == KW_INDEX) {
 		bool descending = false;
 		bool unique = false;
 		while (true) {
@@ -1634,15 +1628,15 @@ static act* act_create_database(void)
 {
 	bool dummy;
 
-	if (isc_databases && isc_databases->dbb_next)
+	if (gpreGlob.isc_databases && gpreGlob.isc_databases->dbb_next)
 		PAR_error
 			("CREATE DATABASE only allowed in context of a single database");
 
-	if (!isc_databases) {
+	if (!gpreGlob.isc_databases) {
 		// generate a dummy db 
 
 		dummy = true;
-		isc_databases = (DBB) MSC_alloc_permanent(DBB_LEN);
+		gpreGlob.isc_databases = (DBB) MSC_alloc_permanent(DBB_LEN);
 
 		// allocate symbol block 
 
@@ -1651,14 +1645,14 @@ static act* act_create_database(void)
 		// make it the default database 
 
 		symbol->sym_type = SYM_database;
-		symbol->sym_object = (gpre_ctx*) isc_databases;
-		symbol->sym_string = database_name;
+		symbol->sym_object = (gpre_ctx*) gpreGlob.isc_databases;
+		symbol->sym_string = gpreGlob.database_name;
 
 		// database block points to the symbol block 
 
-		isc_databases->dbb_name = symbol;
-		isc_databases->dbb_filename = NULL;
-		isc_databases->dbb_c_lc_ctype = module_lc_ctype;
+		gpreGlob.isc_databases->dbb_name = symbol;
+		gpreGlob.isc_databases->dbb_filename = NULL;
+		gpreGlob.isc_databases->dbb_c_lc_ctype = gpreGlob.module_lc_ctype;
 	}
 	else
 		dummy = false;
@@ -1666,13 +1660,13 @@ static act* act_create_database(void)
 //  get database name 
 
 	DBB db = NULL;
-	if (isQuoted(token_global.tok_type)) {
-		db = dup_dbb(isc_databases);
-		TEXT* string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
+	if (isQuoted(gpreGlob.token_global.tok_type)) {
+		db = dup_dbb(gpreGlob.isc_databases);
+		TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		db->dbb_filename = string;
-		MSC_copy(token_global.tok_string, token_global.tok_length, string);
-		if (!isc_databases->dbb_filename)
-			isc_databases->dbb_filename = string;
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
+		if (!gpreGlob.isc_databases->dbb_filename)
+			gpreGlob.isc_databases->dbb_filename = string;
 		PAR_get_token();
 	}
 	else
@@ -1707,7 +1701,7 @@ static act* act_create_database(void)
 
 //  Create a request to generate dpb 
 
-	ada_flags |= ADA_create_database;
+	gpreGlob.ada_flags |= gpreGlob.ADA_create_database;
 
 	request = MSC_request(REQ_create_database);
 	request->req_actions = action;
@@ -1730,8 +1724,8 @@ static act* act_create_domain(void)
 //  create request block 
 
 	gpre_req* request = MSC_request(REQ_ddl);
-	if (isc_databases && !isc_databases->dbb_next)
-		request->req_database = isc_databases;
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+		request->req_database = gpreGlob.isc_databases;
 	else
 		PAR_error("Can only CREATE DOMAIN in context of single database");
 
@@ -1745,7 +1739,7 @@ static act* act_create_domain(void)
 
 //  Check if default value was specified 
 
-	if (token_global.tok_keyword == KW_DEFAULT) {
+	if (gpreGlob.token_global.tok_keyword == KW_DEFAULT) {
 		field->fld_default_source = CPR_start_text();
 		PAR_get_token();
 
@@ -1755,7 +1749,7 @@ static act* act_create_domain(void)
 			field->fld_default_value = MSC_node(nod_null, 0);
 		else {
 			if (MSC_match(KW_MINUS)) {
-				if (token_global.tok_type != tok_number)
+				if (gpreGlob.token_global.tok_type != tok_number)
 					CPR_s_error("<number>");
 
 				GPRE_NOD literal_node = EXP_literal();
@@ -1775,7 +1769,7 @@ static act* act_create_domain(void)
 	bool in_constraints = true;
 
 	while (in_constraints) {
-		switch (token_global.tok_keyword) {
+		switch (gpreGlob.token_global.tok_keyword) {
 		case KW_CONSTRAINT:
 		case KW_CHECK:
 		case KW_NOT:
@@ -1810,12 +1804,12 @@ static act* act_create_generator(void)
 	SQL_resolve_identifier("<identifier>", generator_name);
 
 	gpre_req* request = MSC_request(REQ_ddl);
-	if (isc_databases && !isc_databases->dbb_next)
-		request->req_database = isc_databases;
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+		request->req_database = gpreGlob.isc_databases;
 	else
 		PAR_error("Can only CREATE GENERATOR in context of single database");
 
-	if (token_global.tok_length > NAME_SIZE)
+	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("Generator name too long");
 
 
@@ -1843,7 +1837,7 @@ static act* act_create_index(bool dups,
 
 //  get index and table names and create index and relation blocks 
 
-	if (token_global.tok_length > NAME_SIZE)
+	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("Index name too long");
 
 	SCHAR i_name[NAME_SIZE + 1];
@@ -1893,8 +1887,8 @@ static act* act_create_index(bool dups,
 static act* act_create_shadow(void)
 {
 	gpre_req* request = MSC_request(REQ_ddl);
-	if (isc_databases && !isc_databases->dbb_next)
-		request->req_database = isc_databases;
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+		request->req_database = gpreGlob.isc_databases;
 	else
 		PAR_error("Can only CREATE SHADOW in context of single database");
 
@@ -1956,10 +1950,10 @@ static act* act_create_table(void)
 	if (MSC_match(KW_EXTERNAL)) {
 		TEXT* string = NULL;
 		MSC_match(KW_FILE);
-		if (isQuoted(token_global.tok_type)) {
-			string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
+		if (isQuoted(gpreGlob.token_global.tok_type)) {
+			string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 			relation->rel_ext_file = string;
-			MSC_copy(token_global.tok_string, token_global.tok_length, string);
+			MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
 			PAR_get_token();
 		}
 		else
@@ -1992,7 +1986,7 @@ static act* act_create_table(void)
 	cnstrt** cnstrt_ptr = &relation->rel_constraints;
 
 	for (;;) {
-		switch (token_global.tok_keyword) {
+		switch (gpreGlob.token_global.tok_keyword) {
 		case KW_CONSTRAINT:
 		case KW_PRIMARY:
 		case KW_UNIQUE:
@@ -2100,12 +2094,12 @@ static act* act_d_section( enum act_t type)
 	action->act_type = type;
 
 	if (type == ACT_b_declare)
-		cur_routine = action; // Hmm, global var.
+		gpreGlob.cur_routine = action; // Hmm, global var.
 
-	if (!isc_databases) {
+	if (!gpreGlob.isc_databases) {
 		// allocate database block and link to db chain 
 
-		isc_databases = (DBB) MSC_alloc_permanent(DBB_LEN);
+		gpreGlob.isc_databases = (DBB) MSC_alloc_permanent(DBB_LEN);
 
 		// allocate symbol block 
 
@@ -2114,38 +2108,38 @@ static act* act_d_section( enum act_t type)
 		// make it a database, specifically this one 
 
 		symbol->sym_type = SYM_database;
-		symbol->sym_object = (gpre_ctx*) isc_databases;
-		symbol->sym_string = database_name;
+		symbol->sym_object = (gpre_ctx*) gpreGlob.isc_databases;
+		symbol->sym_string = gpreGlob.database_name;
 
 		// database block points to the symbol block 
 
-		isc_databases->dbb_name = symbol;
-		isc_databases->dbb_filename = NULL;
-		isc_databases->dbb_flags = DBB_sqlca;
-		isc_databases->dbb_c_lc_ctype = module_lc_ctype;
-		if (sw_external)
-			isc_databases->dbb_scope = DBB_EXTERN;
+		gpreGlob.isc_databases->dbb_name = symbol;
+		gpreGlob.isc_databases->dbb_filename = NULL;
+		gpreGlob.isc_databases->dbb_flags = DBB_sqlca;
+		gpreGlob.isc_databases->dbb_c_lc_ctype = gpreGlob.module_lc_ctype;
+		if (gpreGlob.sw_external)
+			gpreGlob.isc_databases->dbb_scope = DBB_EXTERN;
 	}
 	else {
 		/* Load up the symbol (hash) table with relation names from this database */
 
-		MET_load_hash_table(isc_databases);
+		MET_load_hash_table(gpreGlob.isc_databases);
 	}
 
-	HSH_insert(isc_databases->dbb_name);
+	HSH_insert(gpreGlob.isc_databases->dbb_name);
 
 	if (MSC_match(KW_SQL)) {
 		if (!MSC_match(KW_NAMES))
 			CPR_s_error("NAMES ARE");
 		if (!MSC_match(KW_ARE))
 			CPR_s_error("NAMES ARE");
-		gpre_sym* symbol = MSC_find_symbol(token_global.tok_symbol, SYM_charset);
+		gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset);
 		if (!symbol)
 			PAR_error("The named CHARACTER SET was not found");
-		if (module_lc_ctype && !strcmp(module_lc_ctype, symbol->sym_string))
+		if (gpreGlob.module_lc_ctype && !strcmp(gpreGlob.module_lc_ctype, symbol->sym_string))
 			PAR_error("Duplicate specification of module CHARACTER SET.");
-		module_lc_ctype = symbol->sym_string;
-		isc_databases->dbb_c_lc_ctype = symbol->sym_string;
+		gpreGlob.module_lc_ctype = symbol->sym_string;
+		gpreGlob.isc_databases->dbb_c_lc_ctype = symbol->sym_string;
 		CPR_token();
 	}
 
@@ -2163,20 +2157,20 @@ static act* act_declare(void)
 	act* action = NULL;
 	DBB db = NULL;
 
-	if (token_global.tok_symbol && (token_global.tok_symbol->sym_type == SYM_database)) {
+	if (gpreGlob.token_global.tok_symbol && (gpreGlob.token_global.tok_symbol->sym_type == SYM_database)) {
 		// must be a database specifier in a DECLARE TABLE statement 
 
-		db = (DBB) token_global.tok_symbol->sym_object;
+		db = (DBB) gpreGlob.token_global.tok_symbol->sym_object;
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error(". (period)");
 		gpre_sym* symbol = PAR_symbol(SYM_dummy);
-		if (token_global.tok_keyword != KW_TABLE)
+		if (gpreGlob.token_global.tok_keyword != KW_TABLE)
 			CPR_s_error("TABLE");
 		return (act_declare_table(symbol, db));
 	}
 
-	switch (token_global.tok_keyword) {
+	switch (gpreGlob.token_global.tok_keyword) {
 	case KW_FILTER:
 		return (act_declare_filter());
 		break;
@@ -2197,10 +2191,10 @@ static act* act_declare(void)
 
 	TEXT t_str[132];  // CVC: is it always enough?
 	SQL_resolve_identifier("<Cursor Name>", t_str);
-	if (token_global.tok_type == tok_dblquoted)
+	if (gpreGlob.token_global.tok_type == tok_dblquoted)
 		delimited = true;
 	else {
-		gpre_sym* symb = HSH_lookup2(token_global.tok_string);
+		gpre_sym* symb = HSH_lookup2(gpreGlob.token_global.tok_string);
 		if (symb &&
 			(symb->sym_type == SYM_cursor ||
 			 symb->sym_type == SYM_delimited_cursor)) {
@@ -2213,7 +2207,7 @@ static act* act_declare(void)
 
 	gpre_sym* symbol = PAR_symbol(SYM_cursor);
 
-	switch (token_global.tok_keyword) {
+	switch (gpreGlob.token_global.tok_keyword) {
 	case KW_TABLE:
 		return (act_declare_table(symbol, 0));
 
@@ -2221,7 +2215,7 @@ static act* act_declare(void)
 	case KW_SCROLL:
 		PAR_get_token();
 		scroll = true;
-		if (token_global.tok_keyword != KW_CURSOR)
+		if (gpreGlob.token_global.tok_keyword != KW_CURSOR)
 			CPR_s_error("CURSOR");
 #endif
 	case KW_CURSOR:
@@ -2308,8 +2302,8 @@ static act* act_declare_filter(void)
 {
 	gpre_req* request = MSC_request(REQ_ddl);
 
-	if (isc_databases && !isc_databases->dbb_next)
-		request->req_database = isc_databases;
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+		request->req_database = gpreGlob.isc_databases;
 	else
 		PAR_error("Can only DECLARE FILTER in context of single database");
 
@@ -2317,7 +2311,7 @@ static act* act_declare_filter(void)
 	FLTR filter = (FLTR) MSC_alloc(FLTR_LEN);
 	filter->fltr_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", filter->fltr_name);
-	if (token_global.tok_length > NAME_SIZE)
+	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("Filter name too long");
 
 	PAR_get_token();
@@ -2459,8 +2453,8 @@ static act* act_declare_udf(void)
 
 	gpre_req* request = MSC_request(REQ_ddl);
 
-	if (isc_databases && !isc_databases->dbb_next)
-		request->req_database = isc_databases;
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+		request->req_database = gpreGlob.isc_databases;
 	else
 		PAR_error
 			("Can only DECLARE EXTERNAL FUNCTION in context of single database");
@@ -2468,7 +2462,7 @@ static act* act_declare_udf(void)
 	decl_udf* udf_declaration = (decl_udf*) MSC_alloc(DECL_UDF_LEN);
 	udf_declaration->decl_udf_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", udf_declaration->decl_udf_name);
-	if (token_global.tok_length > NAME_SIZE)
+	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("external function name too long");
 	PAR_get_token();
 
@@ -2550,7 +2544,7 @@ static act* act_delete(void)
 
 //  Parse the optional alias (context variable) 
 
-	gpre_sym* alias = (token_global.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
+	gpre_sym* alias = (gpreGlob.token_global.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
 
 //  Now the moment of truth.  If the next few tokens are WHERE CURRENT OF
 //  then this is a sub-action of an existing request.  If not, then it is
@@ -2563,8 +2557,8 @@ static act* act_delete(void)
 	if (where && MSC_match(KW_CURRENT)) {
 		if (!MSC_match(KW_OF))
 			CPR_s_error("OF <cursor>");
-		requests = request->req_next;
-		cur_routine->act_object = (REF) request->req_routine; // Beware global var
+		gpreGlob.requests = request->req_next;
+		gpreGlob.cur_routine->act_object = (REF) request->req_routine; // Beware global var
 		MSC_free((UCHAR *) request);
 		request = par_cursor(NULL);
 		if ((transaction || request->req_trans) &&
@@ -2620,11 +2614,11 @@ static act* act_delete(void)
 	context->ctx_relation = relation;
 
 	bool hsh_rm = false;
-	if (alias && !token_global.tok_symbol) {
+	if (alias && !gpreGlob.token_global.tok_symbol) {
 		alias->sym_type = SYM_context;
 		alias->sym_object = context;
 		context->ctx_symbol = alias;
-		token_global.tok_symbol = alias;
+		gpreGlob.token_global.tok_symbol = alias;
 		HSH_insert(alias);
 		hsh_rm = true;
 	}
@@ -2700,13 +2694,13 @@ static act* act_disconnect(void)
 	if (!all) {
 		if (MSC_match(KW_CURRENT))
 			PAR_error("DISCONNECT CURRENT not supported");
-		gpre_sym* test_symbol = token_global.tok_symbol;
+		gpre_sym* test_symbol = gpreGlob.token_global.tok_symbol;
 		if (!(test_symbol && test_symbol->sym_type == SYM_database))
 		{
 			CPR_s_error("ALL, DEFAULT, or <database handle>");
 		}
 		while (true) {
-			gpre_sym* symbol = token_global.tok_symbol;
+			gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
 			if (symbol && symbol->sym_type == SYM_database) {
 				rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 				ready->rdy_next = (rdy*) action->act_object;
@@ -2721,7 +2715,7 @@ static act* act_disconnect(void)
 		}
 	}
 
-	if (sw_language == lang_ada)
+	if (gpreGlob.sw_language == lang_ada)
 		MSC_match(KW_SEMI_COLON);
 	return action;
 }
@@ -2741,18 +2735,18 @@ static act* act_drop(void)
 	SCHAR* db_string;
 	TEXT* identifier_name;
 
-	switch (token_global.tok_keyword) {
+	switch (gpreGlob.token_global.tok_keyword) {
 	case KW_DATABASE:
 		{
 		PAR_error("DROP DATABASE not supported");
 
 		request = MSC_request(REQ_ddl);
 		PAR_get_token();
-		if (!isQuoted(token_global.tok_type))
+		if (!isQuoted(gpreGlob.token_global.tok_type))
 			CPR_s_error("<quoted database name>");
 		db = (DBB) MSC_alloc(DBB_LEN);
-		db->dbb_filename = db_string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
-		MSC_copy(token_global.tok_string, token_global.tok_length, db_string);
+		db->dbb_filename = db_string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, db_string);
 		gpre_sym* symbol = PAR_symbol(SYM_dummy);
 		db->dbb_name = symbol;
 		symbol->sym_type = SYM_database;
@@ -2766,8 +2760,8 @@ static act* act_drop(void)
 
 	case KW_DOMAIN:
 		request = MSC_request(REQ_ddl);
-		if (isc_databases && !isc_databases->dbb_next)
-			request->req_database = isc_databases;
+		if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+			request->req_database = gpreGlob.isc_databases;
 		else
 			PAR_error("Can only DROP DOMAIN in context of single database");
 		PAR_get_token();
@@ -2781,8 +2775,8 @@ static act* act_drop(void)
 
 	case KW_FILTER:
 		request = MSC_request(REQ_ddl);
-		if (isc_databases && !isc_databases->dbb_next)
-			request->req_database = isc_databases;
+		if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+			request->req_database = gpreGlob.isc_databases;
 		else
 			PAR_error("Can only DROP FILTER in context of single database");
 		PAR_get_token();
@@ -2800,8 +2794,8 @@ static act* act_drop(void)
 		if (!MSC_match(KW_FUNCTION))
 			CPR_s_error("FUNCTION");
 		request = MSC_request(REQ_ddl);
-		if (isc_databases && !isc_databases->dbb_next)
-			request->req_database = isc_databases;
+		if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+			request->req_database = gpreGlob.isc_databases;
 		else
 			PAR_error
 				("Can only DROP EXTERNAL FUNCTION in context of a single database");
@@ -2820,7 +2814,7 @@ static act* act_drop(void)
 		PAR_get_token();
 		identifier_name = (TEXT*) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<identifier>", identifier_name);
-		IND index = make_index(request, token_global.tok_string);
+		IND index = make_index(request, gpreGlob.token_global.tok_string);
 		action = MSC_action(request, ACT_drop_index);
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) index;
@@ -2840,8 +2834,8 @@ static act* act_drop(void)
 	case KW_SHADOW:
 		{
 		request = MSC_request(REQ_ddl);
-		if (isc_databases && !isc_databases->dbb_next)
-			request->req_database = isc_databases;
+		if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+			request->req_database = gpreGlob.isc_databases;
 		else
 			PAR_error("Can only DROP SHADOW in context of a single database");
 		PAR_get_token();
@@ -2913,24 +2907,24 @@ static act* act_execute(void)
 //  EXECUTE IMMEDIATE is a different sort of duck 
 
 	if (MSC_match(KW_IMMEDIATE)) {
-		if (isc_databases && isc_databases->dbb_next) {
+		if (gpreGlob.isc_databases && gpreGlob.isc_databases->dbb_next) {
 			TEXT s[ERROR_LENGTH];
 			sprintf(s,
 					"Executing dynamic SQL statement in context of database %s",
-					isc_databases->dbb_name->sym_string);
+					gpreGlob.isc_databases->dbb_name->sym_string);
 			CPR_warn(s);
 		}
 		DYN statement = (DYN) MSC_alloc(DYN_LEN);
 		par_options(&statement->dyn_trans);
 
-		switch (sw_sql_dialect) {
+		switch (gpreGlob.sw_sql_dialect) {
 		case 1:
-			if ((!isQuoted(token_global.tok_type)) && (!MSC_match(KW_COLON)))
+			if ((!isQuoted(gpreGlob.token_global.tok_type)) && (!MSC_match(KW_COLON)))
 				CPR_s_error(": <string expression>");
 			break;
 
 		default:
-			if (token_global.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
+			if (gpreGlob.token_global.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
 				CPR_s_error(": <string expression>");
 			break;
 		}
@@ -2939,7 +2933,7 @@ static act* act_execute(void)
 		if (statement->dyn_using)
 			PAR_error("Using host-variable list not supported.");
 		par_into(statement);
-		statement->dyn_database = isc_databases;
+		statement->dyn_database = gpreGlob.isc_databases;
 
 		act* action = (act*) MSC_alloc(ACT_LEN);
 		action->act_type = ACT_dyn_immediate;
@@ -3262,10 +3256,10 @@ static act* act_grant_revoke( enum act_t type)
 		}
 		else {
 			MSC_match(KW_USER);
-			if (token_global.tok_type != tok_ident)
+			if (gpreGlob.token_global.tok_type != tok_ident)
 				CPR_s_error("<user name identifier>");
 			else
-				to_upcase(token_global.tok_string, r_name);
+				to_upcase(gpreGlob.token_global.tok_string, r_name);
 			user_dyn = isc_dyn_grant_user;
 			CPR_token();
 		}
@@ -3338,12 +3332,12 @@ static act* act_include(void)
 
 	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = ACT_b_declare;
-	cur_routine = action; // Hmm, global var
+	gpreGlob.cur_routine = action; // Hmm, global var
 
-	if (!isc_databases) {
+	if (!gpreGlob.isc_databases) {
 		// allocate database block and link to db chain 
 
-		isc_databases = (DBB) MSC_alloc_permanent(DBB_LEN);
+		gpreGlob.isc_databases = (DBB) MSC_alloc_permanent(DBB_LEN);
 
 		// allocate symbol block 
 
@@ -3352,23 +3346,23 @@ static act* act_include(void)
 		// make it a database, specifically this one 
 
 		symbol->sym_type = SYM_database;
-		symbol->sym_object = (gpre_ctx*) isc_databases;
-		symbol->sym_string = database_name;
+		symbol->sym_object = (gpre_ctx*) gpreGlob.isc_databases;
+		symbol->sym_string = gpreGlob.database_name;
 
 		// database block points to the symbol block 
 
-		isc_databases->dbb_name = symbol;
-		isc_databases->dbb_filename = NULL;
-		isc_databases->dbb_flags = DBB_sqlca;
-		isc_databases->dbb_c_lc_ctype = module_lc_ctype;
-		if (sw_external)
-			isc_databases->dbb_scope = DBB_EXTERN;
+		gpreGlob.isc_databases->dbb_name = symbol;
+		gpreGlob.isc_databases->dbb_filename = NULL;
+		gpreGlob.isc_databases->dbb_flags = DBB_sqlca;
+		gpreGlob.isc_databases->dbb_c_lc_ctype = gpreGlob.module_lc_ctype;
+		if (gpreGlob.sw_external)
+			gpreGlob.isc_databases->dbb_scope = DBB_EXTERN;
 	}
 	else
 		/* Load the symbol (hash) table with relation names from this database. */
-		MET_load_hash_table(isc_databases);
+		MET_load_hash_table(gpreGlob.isc_databases);
 
-	HSH_insert(isc_databases->dbb_name);
+	HSH_insert(gpreGlob.isc_databases->dbb_name);
 
 	return action;
 }
@@ -3420,7 +3414,7 @@ static act* act_insert(void)
 			}
 
 			// Dialect 1 program may not insert new datatypes 
-			if ((SQL_DIALECT_V5 == sw_sql_dialect) &&
+			if ((SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) &&
 				(nod_field == node->nod_type)) {
 				USHORT field_dtype;
 
@@ -3681,7 +3675,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 //  if the token isn't an identifier, complain 
 
 	TOK f_token = (TOK) MSC_alloc(TOK_LEN);
-	f_token->tok_length = token_global.tok_length;
+	f_token->tok_length = gpreGlob.token_global.tok_length;
 
 	SQL_resolve_identifier("<column_name>", f_token->tok_string);
 	CPR_token();
@@ -3740,7 +3734,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 		if (MSC_match(KW_FROM)) {
 			blob->blb_const_from_type =
 				PAR_blob_subtype(request->req_database);
-			if (token_global.tok_keyword == KW_CHAR)
+			if (gpreGlob.token_global.tok_keyword == KW_CHAR)
 				if (blob->blb_const_from_type == isc_blob_text) {
 					blob->blb_from_charset = par_char_set();
 					if (act_op == ACT_blob_open
@@ -3767,7 +3761,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 		if (!MSC_match(KW_TO))
 			CPR_s_error("TO");
 		blob->blb_const_to_type = PAR_blob_subtype(request->req_database);
-		if (token_global.tok_keyword == KW_CHAR)
+		if (gpreGlob.token_global.tok_keyword == KW_CHAR)
 			if (blob->blb_const_to_type == isc_blob_text) {
 				blob->blb_to_charset = par_char_set();
 				if (act_op == ACT_blob_create
@@ -3833,11 +3827,11 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 
 static act* act_prepare(void)
 {
-	if (isc_databases && isc_databases->dbb_next) {
+	if (gpreGlob.isc_databases && gpreGlob.isc_databases->dbb_next) {
 		TEXT s[ERROR_LENGTH];
 		sprintf(s,
 				"Executing dynamic SQL statement in context of database %s",
-				isc_databases->dbb_name->sym_string);
+				gpreGlob.isc_databases->dbb_name->sym_string);
 		CPR_warn(s);
 	}
 
@@ -3845,7 +3839,7 @@ static act* act_prepare(void)
 	par_options(&transaction);
 
 	DYN statement = par_statement();
-	statement->dyn_database = isc_databases;
+	statement->dyn_database = gpreGlob.isc_databases;
 	statement->dyn_trans = transaction;
 
 	if (MSC_match(KW_INTO)) {
@@ -3857,14 +3851,14 @@ static act* act_prepare(void)
 	if (!MSC_match(KW_FROM))
 		CPR_s_error("FROM");
 
-	switch (sw_sql_dialect) {
+	switch (gpreGlob.sw_sql_dialect) {
 	case 1:
-		if ((!isQuoted(token_global.tok_type)) && (!MSC_match(KW_COLON)))
+		if ((!isQuoted(gpreGlob.token_global.tok_type)) && (!MSC_match(KW_COLON)))
 			CPR_s_error(": <string expression>");
 		break;
 
 	default:
-		if (token_global.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
+		if (gpreGlob.token_global.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
 			CPR_s_error(": <string expression>");
 		break;
 	}
@@ -3899,7 +3893,7 @@ static act* act_procedure(void)
 	gpre_lls* values = NULL;
 
 	SSHORT inputs = 0;
-	if (!(token_global.tok_keyword == KW_RETURNING) && !(token_global.tok_keyword == KW_SEMI_COLON)) {
+	if (!(gpreGlob.token_global.tok_keyword == KW_RETURNING) && !(gpreGlob.token_global.tok_keyword == KW_SEMI_COLON)) {
 		// parse input references
 
 		bool paren = MSC_match(KW_LEFT_PAREN);
@@ -3975,7 +3969,7 @@ static act* act_select(void)
 
 	if (!MSC_match(KW_SEMI_COLON)) {
 		TEXT s[ERROR_LENGTH];
-		sprintf(s, "Expected ';', got %s.", token_global.tok_string);
+		sprintf(s, "Expected ';', got %s.", gpreGlob.token_global.tok_string);
 		CPR_warn(s);
 	}
 
@@ -4038,8 +4032,8 @@ static act* act_set_dialect(void)
 	if ((dialect < 1) || (dialect > 3))
 		CPR_s_error("SQL DIALECT 1,2 or 3");
 
-	if (isc_databases && dialect != compiletime_db_dialect
-		&& sw_ods_version < 10) {
+	if (gpreGlob.isc_databases && dialect != gpreGlob.compiletime_db_dialect
+		&& gpreGlob.sw_ods_version < 10) {
 		char warn_mesg[100];
 		sprintf(warn_mesg,
 				"Pre 6.0 database. Cannot use dialect %d, Resetting to %d\n",
@@ -4047,11 +4041,11 @@ static act* act_set_dialect(void)
 		dialect = SQL_DIALECT_V5;
 		CPR_warn(warn_mesg);
 	}
-	else if (isc_databases && dialect != compiletime_db_dialect) {
+	else if (gpreGlob.isc_databases && dialect != gpreGlob.compiletime_db_dialect) {
 		char warn_mesg[100];
 		sprintf(warn_mesg,
 				"Client dialect set to %d. Compiletime database dialect is %d\n",
-				dialect, compiletime_db_dialect);
+				dialect, gpreGlob.compiletime_db_dialect);
 		CPR_warn(warn_mesg);
 	}
 
@@ -4059,8 +4053,8 @@ static act* act_set_dialect(void)
 	((SDT) action->act_object)->sdt_dialect = dialect;
 
 //  Needed because subsequent parsing pass1 looks at sw_Sql_dialect value 
-	sw_sql_dialect = dialect;
-	dialect_specified = true;
+	gpreGlob.sw_sql_dialect = dialect;
+	gpreGlob.dialect_specified = true;
 
 	PAR_get_token();
 	return action;
@@ -4076,25 +4070,25 @@ static act* act_set_generator(void)
 {
 	gpre_req* request = MSC_request(REQ_set_generator);
 	
-	if (isc_databases && !isc_databases->dbb_next)
-		request->req_database = isc_databases;
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+		request->req_database = gpreGlob.isc_databases;
 	else
 		PAR_error("Can SET GENERATOR in context of single database only");
 
-	if (token_global.tok_length > NAME_SIZE)
+	if (gpreGlob.token_global.tok_length > NAME_SIZE)
 		PAR_error("Generator name too long");
 
 	SGEN setgen = (SGEN) MSC_alloc(SGEN_LEN);
-	setgen->sgen_name = (TEXT*) MSC_alloc(token_global.tok_length + 1);
+	setgen->sgen_name = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 	SQL_resolve_identifier("<identifier>", setgen->sgen_name);
 	if (!MET_generator(setgen->sgen_name, request->req_database)) {
 		SCHAR s[128];
-		sprintf(s, "generator %s not found", token_global.tok_string);
+		sprintf(s, "generator %s not found", gpreGlob.token_global.tok_string);
 		PAR_error(s);
 	}
 	PAR_get_token();
 	MSC_match(KW_TO);
-	if ((sw_sql_dialect == SQL_DIALECT_V5) || (sw_server_version < 6)) {
+	if ((gpreGlob.sw_sql_dialect == SQL_DIALECT_V5) || (gpreGlob.sw_server_version < 6)) {
 		setgen->sgen_value = EXP_SLONG_ordinal(true);
 		setgen->sgen_dialect = SQL_DIALECT_V5;
 	}
@@ -4119,7 +4113,7 @@ static act* act_set_generator(void)
 
 static act* act_set_names(void)
 {
-	if (sw_auto)
+	if (gpreGlob.sw_auto)
 		CPR_warn("SET NAMES requires -manual switch to gpre.");
 
 	act* action = (act*) MSC_alloc(ACT_LEN);
@@ -4130,7 +4124,7 @@ static act* act_set_names(void)
 		 * the character set.  Make this the run-time set.
 		 */
 		TEXT* value = PAR_native_value(false, false);
-		for (dbb* db = isc_databases; db; db = db->dbb_next) {
+		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 			if (db->dbb_r_lc_ctype) {
 				char buffer[256];
 				sprintf(buffer,
@@ -4142,22 +4136,22 @@ static act* act_set_names(void)
 			db->dbb_r_lc_ctype = value;
 		}
 	}
-	else if (token_global.tok_type == tok_ident) {
+	else if (gpreGlob.token_global.tok_type == tok_ident) {
 		// User is specifying the name of a character set 
 		// Make this the compile time character set 
 
-		TEXT* value = (TEXT*) MSC_alloc(token_global.tok_length + 1);
-		MSC_copy(token_global.tok_string, token_global.tok_length, value);
-		value[token_global.tok_length] = '\0';
+		TEXT* value = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, value);
+		value[gpreGlob.token_global.tok_length] = '\0';
 
 		/* Due to the ambiguities involved in having modules expressed
 		 * in multiple compile-time character sets, we disallow it.
 		 */
-		if (module_lc_ctype && strcmp(module_lc_ctype, value) != 0)
+		if (gpreGlob.module_lc_ctype && strcmp(gpreGlob.module_lc_ctype, value) != 0)
 			PAR_error("Duplicate declaration of module CHARACTER SET");
 
-		module_lc_ctype = value;
-		for (dbb* db = isc_databases; db; db = db->dbb_next) {
+		gpreGlob.module_lc_ctype = value;
+		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 			if (db->dbb_c_lc_ctype) {
 				char buffer[256];
 				sprintf(buffer, "Supersedes character set for database %s",
@@ -4173,7 +4167,7 @@ static act* act_set_names(void)
 				 * so we can resolve against it.
 				 * So what if we go through this code once for each database...
 				 */
-				if (!(MSC_find_symbol(token_global.tok_symbol, SYM_charset)))
+				if (!(MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset)))
 					PAR_error("The named CHARACTER SET was not found");
 			}
 		}
@@ -4196,8 +4190,8 @@ static act* act_set_statistics(void)
 	gpre_req* request = MSC_request(REQ_ddl);
 	STS stats = (STS) MSC_alloc(STS_LEN);
 
-	if (isc_databases && !isc_databases->dbb_next)
-		request->req_database = isc_databases;
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+		request->req_database = gpreGlob.isc_databases;
 	else
 		PAR_error("Can SET STATISTICS in context of single database only");
 
@@ -4205,7 +4199,7 @@ static act* act_set_statistics(void)
 		stats->sts_flags = STS_index;
 		stats->sts_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<index name>", stats->sts_name->str_string);
-		if (token_global.tok_length > NAME_SIZE)
+		if (gpreGlob.token_global.tok_length > NAME_SIZE)
 			PAR_error("Index name too long");
 		PAR_get_token();
 	}
@@ -4348,7 +4342,7 @@ static act* act_update(void)
 
 //  Parse the optional alias (context variable) 
 
-	gpre_sym* alias = (token_global.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
+	gpre_sym* alias = (gpreGlob.token_global.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
 
 //  Now we need the SET list list.  Do this thru a linked list stack 
 
@@ -4364,7 +4358,7 @@ static act* act_update(void)
 		alias->sym_type = SYM_context;
 		alias->sym_object = input_context;
 		HSH_insert(alias);
-		token_global.tok_symbol = HSH_lookup(token_global.tok_string);
+		gpreGlob.token_global.tok_symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 	}
 
 	gpre_lls* stack = NULL;
@@ -4478,11 +4472,11 @@ static act* act_update(void)
 			act* slice_action = (act*) field_ref->ref_slice;
 			if (slice_action &&
 				(slice = (slc*) slice_action->act_object)) {
-				// These requests got lost in freeing the main request  
+				// These gpreGlob.requests got lost in freeing the main request  
 
 				gpre_req* slice_request = slice_action->act_request;
-				slice_request->req_next = requests;
-				requests = slice_request;
+				slice_request->req_next = gpreGlob.requests;
+				gpreGlob.requests = slice_request;
 				slice->slc_field_ref = field_ref;
 				slice->slc_array = (GPRE_NOD) set_item->nod_arg[0];
 				slice->slc_parent_request = request;
@@ -4533,9 +4527,9 @@ static act* act_update(void)
 	select->rse_count = 1;
 	select->rse_context[0] = input_context;
 
-	if (!alias && !token_global.tok_symbol)
+	if (!alias && !gpreGlob.token_global.tok_symbol)
 		// may have a relation name put parser didn't know it when it parsed it 
-		token_global.tok_symbol = HSH_lookup(token_global.tok_string);
+		gpreGlob.token_global.tok_symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 
 	for (ptr = set_list->nod_arg; ptr < end_list; ptr++) {
 		GPRE_NOD set_item = *ptr;
@@ -4571,7 +4565,7 @@ static act* act_update(void)
 		/* In dialect 1, neither the value being assigned (nod_arg[0])
 		   nor the field to which it is being assigned (nod_arg[1]) may
 		   be of a data type added in V6. */
-		if (SQL_DIALECT_V5 == sw_sql_dialect) {
+		if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) {
 			for (int arg_num = 0; arg_num <= 1; arg_num++)
 				if (nod_field == set_item->nod_arg[arg_num]->nod_type) {
 					USHORT field_dtype =((REF)
@@ -4632,13 +4626,13 @@ static act* act_whenever(void)
 		label = NULL;
 	else if ((MSC_match(KW_GO) && MSC_match(KW_TO)) || MSC_match(KW_GOTO)) {
 		MSC_match(KW_COLON);
-		USHORT l = token_global.tok_length;
+		USHORT l = gpreGlob.token_global.tok_length;
 		label = (swe*) MSC_alloc(sizeof(swe) + l);
 		label->swe_condition = condition;
 		label->swe_length = l;
 		if (label->swe_length) {
 			TEXT* p = label->swe_label;
-			const TEXT* q = token_global.tok_string;
+			const TEXT* q = gpreGlob.token_global.tok_string;
 			do {
 				*p++ = *q++;
 			} while (--l);
@@ -4703,7 +4697,7 @@ static void connect_opts(
 {
 	for (;;) {
 		if (MSC_match(KW_CACHE)) {
-			*buffers = atoi(token_global.tok_string);
+			*buffers = atoi(gpreGlob.token_global.tok_string);
 			PAR_get_token();
 			MSC_match(KW_BUFFERS);
 		}
@@ -4712,13 +4706,13 @@ static void connect_opts(
 		else if (MSC_match(KW_PASSWORD))
 			*password = SQL_var_or_string(false);
 		else if (MSC_match(KW_ROLE)) {
-			if (token_global.tok_type == tok_ident) {
+			if (gpreGlob.token_global.tok_type == tok_ident) {
 				// reserve extra bytes for quotes and NULL
-				TEXT* s = (TEXT*) MSC_alloc(token_global.tok_length + 3);
+				TEXT* s = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 3);
 											   
 				SQL_resolve_identifier("<Role Name>", s);
 				s[0] = '\"';
-				strcpy(s + 1, token_global.tok_string);
+				strcpy(s + 1, gpreGlob.token_global.tok_string);
 				strcat(s, "\"");
 				*sql_role = s;
 			}
@@ -4742,10 +4736,10 @@ static void connect_opts(
 static FIL define_cache(void)
 {
 	FIL file = (FIL) MSC_alloc(sizeof(fil));
-	if (isQuoted(token_global.tok_type)) {
-		TEXT* string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
+	if (isQuoted(gpreGlob.token_global.tok_type)) {
+		TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		file->fil_name = string;
-		MSC_copy(token_global.tok_string, token_global.tok_length, string);
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
 		PAR_get_token();
 	}
 	else
@@ -4778,11 +4772,11 @@ static FIL define_cache(void)
 static FIL define_file(void)
 {
 	FIL file = (FIL) MSC_alloc(sizeof(fil));
-	if (isQuoted(token_global.tok_type)) {
-		TEXT* string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
+	if (isQuoted(gpreGlob.token_global.tok_type)) {
+		TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		file->fil_name = string;
-		MSC_copy(token_global.tok_string, token_global.tok_length, string);
-		token_global.tok_length += 2;
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
+		gpreGlob.token_global.tok_length += 2;
 		PAR_get_token();
 	}
 	else
@@ -4819,10 +4813,10 @@ static FIL define_file(void)
 static FIL define_log_file(bool log_serial)
 {
 	FIL file = (FIL) MSC_alloc(sizeof(fil));
-	if (isQuoted(token_global.tok_type)) {
-		TEXT* string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
+	if (isQuoted(gpreGlob.token_global.tok_type)) {
+		TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		file->fil_name = string;
-		MSC_copy(token_global.tok_string, token_global.tok_length, string);
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
 		PAR_get_token();
 	}
 	else
@@ -4890,20 +4884,20 @@ static void error(const TEXT * format, const TEXT * string2)
 
 static TEXT *extract_string(bool advance_token)
 {
-	switch (sw_sql_dialect) {
+	switch (gpreGlob.sw_sql_dialect) {
 	case 1:
-		if (!isQuoted(token_global.tok_type))
+		if (!isQuoted(gpreGlob.token_global.tok_type))
 			CPR_s_error("<string>");
 		break;
 
 	default:
-		if (token_global.tok_type != tok_sglquoted)
+		if (gpreGlob.token_global.tok_type != tok_sglquoted)
 			CPR_s_error("<string>");
 		break;
 	}
 
-	TEXT* string = (TEXT*) MSC_alloc(token_global.tok_length + 1);
-	MSC_copy(token_global.tok_string, token_global.tok_length, string);
+	TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
+	MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
 	if (advance_token)
 		PAR_get_token();
 	return string;
@@ -5039,11 +5033,11 @@ static IND make_index( gpre_req* request, TEXT * string)
 	IND index = NULL;
 	TEXT s[ERROR_LENGTH];
 
-	if ((isc_databases) && (!(isc_databases->dbb_next))) {
+	if ((gpreGlob.isc_databases) && (!(gpreGlob.isc_databases->dbb_next))) {
 		strcpy(s, string);
 		index = MET_make_index(s);
 		if (request)
-			request->req_database = isc_databases;
+			request->req_database = gpreGlob.isc_databases;
 		index->ind_flags |= IND_meta;
 	}
 	else
@@ -5063,15 +5057,15 @@ static gpre_rel* make_relation( gpre_req* request, const TEXT * relation_name)
 	gpre_rel* relation = NULL;
 	TEXT r[ERROR_LENGTH];
 
-	if (isc_databases && !isc_databases->dbb_next) {
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next) {
 		strcpy(r, relation_name);
 
 		relation = MET_make_relation(r);
-		relation->rel_database = isc_databases;
+		relation->rel_database = gpreGlob.isc_databases;
 		relation->rel_meta = true;
 
 		if (request)
-			request->req_database = isc_databases;
+			request->req_database = gpreGlob.isc_databases;
 	}
 	else
 		PAR_error("Can only reference TABLE in context of single database");
@@ -5199,10 +5193,10 @@ static SSHORT par_char_set(void)
 	if (!MSC_match(KW_SET))
 		CPR_s_error("CHARACTER SET");
 
-	if (token_global.tok_type != tok_ident)
+	if (gpreGlob.token_global.tok_type != tok_ident)
 		CPR_s_error("<character set name>");
 
-	gpre_sym* symbol = MSC_find_symbol(token_global.tok_symbol, SYM_charset);
+	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset);
 	if (!symbol)
 		PAR_error("The named CHARACTER SET was not found");
 
@@ -5283,16 +5277,16 @@ static gpre_req* par_cursor( gpre_sym** symbol_ptr)
 
 	TEXT t_cur[128];
 	SQL_resolve_identifier("<cursor name>", t_cur);
-	gpre_sym* symbol = HSH_lookup(token_global.tok_string);
-	token_global.tok_symbol = symbol;
+	gpre_sym* symbol = HSH_lookup(gpreGlob.token_global.tok_string);
+	gpreGlob.token_global.tok_symbol = symbol;
 	if (symbol && symbol->sym_type == SYM_keyword)
-		token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
+		gpreGlob.token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
 	else
-		token_global.tok_keyword = KW_none;
+		gpreGlob.token_global.tok_keyword = KW_none;
 
-	symbol = MSC_find_symbol(token_global.tok_symbol, SYM_cursor);
+	symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_cursor);
 	if (!symbol)
-		symbol = MSC_find_symbol(token_global.tok_symbol, SYM_delimited_cursor);
+		symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_delimited_cursor);
 	if (symbol) {
 		PAR_get_token();
 		if (symbol_ptr)
@@ -5300,7 +5294,7 @@ static gpre_req* par_cursor( gpre_sym** symbol_ptr)
 		return (gpre_req*) symbol->sym_object;
 	}
 	else {
-		symbol = MSC_find_symbol(token_global.tok_symbol, SYM_dyn_cursor);
+		symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_dyn_cursor);
 		if (symbol)
 			PAR_error("DSQL cursors require DSQL update & delete statements");
 	}
@@ -5318,16 +5312,16 @@ static DYN par_dynamic_cursor(void)
 {
 	gpre_sym* symbol = NULL;
 
-	if (token_global.tok_symbol == NULL) {
+	if (gpreGlob.token_global.tok_symbol == NULL) {
 		TEXT t_cur[128];
 		SQL_resolve_identifier("<cursor name>", t_cur);
-		token_global.tok_symbol = symbol = HSH_lookup(token_global.tok_string);
+		gpreGlob.token_global.tok_symbol = symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
-			token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
+			gpreGlob.token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
 		else
-			token_global.tok_keyword = KW_none;
+			gpreGlob.token_global.tok_keyword = KW_none;
 	}
-	if (symbol = MSC_find_symbol(token_global.tok_symbol, SYM_dyn_cursor)) {
+	if (symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_dyn_cursor)) {
 		PAR_get_token();
 		return (DYN) symbol->sym_object;
 	}
@@ -5359,7 +5353,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 
 //  Check if default value was specified 
 
-	if (token_global.tok_keyword == KW_DEFAULT) {
+	if (gpreGlob.token_global.tok_keyword == KW_DEFAULT) {
 		field->fld_default_source = CPR_start_text();
 		PAR_get_token();
 
@@ -5377,7 +5371,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 			field->fld_default_value = MSC_node(nod_null, 0);
 		else {
 			if (MSC_match(KW_MINUS)) {
-				if (token_global.tok_type != tok_number)
+				if (gpreGlob.token_global.tok_type != tok_number)
 					CPR_s_error("<number>");
 
 				GPRE_NOD literal_node = EXP_literal();
@@ -5396,7 +5390,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 	bool in_constraints = true;
 
 	while (in_constraints) {
-		switch (token_global.tok_keyword) {
+		switch (gpreGlob.token_global.tok_keyword) {
 		case KW_CONSTRAINT:
 		case KW_PRIMARY:
 		case KW_UNIQUE:
@@ -5450,17 +5444,17 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 
 	cnstrt* new_constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
-	if (token_global.tok_keyword == KW_CONSTRAINT) {
+	if (gpreGlob.token_global.tok_keyword == KW_CONSTRAINT) {
 		PAR_get_token();
 		new_constraint->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
 							   new_constraint->cnstrt_name->str_string);
-		if (token_global.tok_length > NAME_SIZE)
+		if (gpreGlob.token_global.tok_length > NAME_SIZE)
 			PAR_error("Constraint name too long");
 		PAR_get_token();
 	}
 
-	switch (keyword = token_global.tok_keyword) {
+	switch (keyword = gpreGlob.token_global.tok_keyword) {
 	case KW_NOT:
 		PAR_get_token();
 		if (!MSC_match(KW_NULL))
@@ -5496,7 +5490,7 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 			new_constraint->cnstrt_referred_rel = (STR) MSC_alloc(NAME_SIZE + 1);
 			SQL_resolve_identifier("referred <table name>",
 								   new_constraint->cnstrt_referred_rel->str_string);
-			if (token_global.tok_length > NAME_SIZE)
+			if (gpreGlob.token_global.tok_length > NAME_SIZE)
 				PAR_error("Referred table name too long");
 			PAR_get_token();
 
@@ -5510,10 +5504,10 @@ static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field,
 				EXP_match_paren();
 			}
 
-			if (token_global.tok_keyword == KW_ON) {
+			if (gpreGlob.token_global.tok_keyword == KW_ON) {
 				par_fkey_extension(new_constraint);
 				PAR_get_token();
-				if (token_global.tok_keyword == KW_ON) {
+				if (gpreGlob.token_global.tok_keyword == KW_ON) {
 					par_fkey_extension(new_constraint);
 					PAR_get_token();
 				}
@@ -5634,7 +5628,7 @@ static DYN par_statement(void)
 {
 	DYN statement = (DYN) MSC_alloc(DYN_LEN);
 	statement->dyn_statement_name = PAR_symbol(SYM_dummy);
-	statement->dyn_database = isc_databases;
+	statement->dyn_database = gpreGlob.isc_databases;
 
 	return statement;
 }
@@ -5657,12 +5651,12 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 //   [ON UPDATE { NO ACTION | CASCADE | SET DEFAULT | SET NULL } ]
 //  
 
-	fb_assert(token_global.tok_keyword == KW_ON);
+	fb_assert(gpreGlob.token_global.tok_keyword == KW_ON);
 	fb_assert(cnstrt_val != NULL);
 
 	PAR_get_token();
 
-	switch (keyword = token_global.tok_keyword) {
+	switch (keyword = gpreGlob.token_global.tok_keyword) {
 	case KW_DELETE:
 		// NOTE: action must be defined only once 
 		if (cnstrt_val->cnstrt_fkey_def_type & REF_DELETE_ACTION)
@@ -5685,10 +5679,10 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 
 	PAR_get_token();
 
-	switch (token_global.tok_keyword) {
+	switch (gpreGlob.token_global.tok_keyword) {
 	case KW_NO:
 		PAR_get_token();
-		if (token_global.tok_keyword != KW_ACTION)
+		if (gpreGlob.token_global.tok_keyword != KW_ACTION)
 			CPR_s_error("ACTION");
 		else if (keyword == KW_DELETE)
 			cnstrt_val->cnstrt_fkey_def_type |= REF_DEL_NONE;
@@ -5703,7 +5697,7 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 		break;
 	case KW_SET:
 		PAR_get_token();
-		switch (token_global.tok_keyword) {
+		switch (gpreGlob.token_global.tok_keyword) {
 		case KW_DEFAULT:
 			if (keyword == KW_DELETE)
 				cnstrt_val->cnstrt_fkey_def_type |= REF_DEL_SET_DEFAULT;
@@ -5744,17 +5738,17 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 
 	cnstrt* constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
-	if (token_global.tok_keyword == KW_CONSTRAINT) {
+	if (gpreGlob.token_global.tok_keyword == KW_CONSTRAINT) {
 		PAR_get_token();
 		constraint->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
 							   constraint->cnstrt_name->str_string);
-		if (token_global.tok_length > NAME_SIZE)
+		if (gpreGlob.token_global.tok_length > NAME_SIZE)
 			PAR_error("Constraint name too long");
 		PAR_get_token();
 	}
 
-	switch (keyword = token_global.tok_keyword) {
+	switch (keyword = gpreGlob.token_global.tok_keyword) {
 	case KW_PRIMARY:
 	case KW_UNIQUE:
 	case KW_FOREIGN:
@@ -5800,7 +5794,7 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 			constraint->cnstrt_referred_rel = (STR) MSC_alloc(NAME_SIZE + 1);
 			SQL_resolve_identifier("referred <table name>",
 								   constraint->cnstrt_referred_rel->str_string);
-			if (token_global.tok_length > NAME_SIZE)
+			if (gpreGlob.token_global.tok_length > NAME_SIZE)
 				PAR_error("Referred table name too long");
 			PAR_get_token();
 
@@ -5830,10 +5824,10 @@ static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
 				num_prim_key_flds != num_for_key_flds)
 					PAR_error
 					("FOREIGN KEY column count does not match PRIMARY KEY");
-			if (token_global.tok_keyword == KW_ON) {
+			if (gpreGlob.token_global.tok_keyword == KW_ON) {
 				par_fkey_extension(constraint);
 				PAR_get_token();
-				if (token_global.tok_keyword == KW_ON) {
+				if (gpreGlob.token_global.tok_keyword == KW_ON) {
 					par_fkey_extension(constraint);
 					PAR_get_token();
 				}
@@ -5953,34 +5947,34 @@ static USHORT resolve_dtypes(KWWORDS typ,
 
 	switch (typ) {
 	case KW_DATE:
-		if ((sw_ods_version < 10) || (sw_server_version < 6))
-			switch (sw_sql_dialect) {
+		if ((gpreGlob.sw_ods_version < 10) || (gpreGlob.sw_server_version < 6))
+			switch (gpreGlob.sw_sql_dialect) {
 			case 1:
 				return dtype_timestamp;
 			case 2:
 				sprintf(err_mesg,
 						"Encountered column type DATE which is ambiguous in dialect %d\n",
-						sw_sql_dialect);
+						gpreGlob.sw_sql_dialect);
 				PAR_error(err_mesg);
 				return dtype_unknown;	// TMN: FIX FIX
 				/* return; */
 			default:
 				sprintf(err_mesg,
 						"Encountered column type DATE which is not supported in ods version %d\n",
-						sw_ods_version);
+						gpreGlob.sw_ods_version);
 				PAR_error(err_mesg);
 			}
 		else {
 		/** column definition SQL DATE is unambiguous in any dialect **/
 			if (sql_date)
 				return dtype_sql_date;
-			switch (sw_sql_dialect) {
+			switch (gpreGlob.sw_sql_dialect) {
 			case 1:
 				return dtype_timestamp;
 			case 2:
 				sprintf(err_mesg,
 						"Encountered column type DATE which is ambiguous in dialect %d\n",
-						sw_sql_dialect);
+						gpreGlob.sw_sql_dialect);
 				PAR_error(err_mesg);
 				return dtype_unknown;	// TMN: FIX FIX
 				/* return; */
@@ -5991,7 +5985,7 @@ static USHORT resolve_dtypes(KWWORDS typ,
 		break;
 
 	case KW_TIME:
-		if ((sw_ods_version < 10) || (sw_server_version < 6)) {
+		if ((gpreGlob.sw_ods_version < 10) || (gpreGlob.sw_server_version < 6)) {
 			sprintf(err_mesg,
 					"Encountered column type TIME which is not supported by pre 6.0 Servers\n");
 			PAR_error(err_mesg);
@@ -6040,12 +6034,12 @@ static bool tail_database(enum act_t action_type,
 			MSC_match(KW_PAGES);
 		}
 		else if (MSC_match(KW_USER)) {
-			if (isQuoted(token_global.tok_type)) {
+			if (isQuoted(gpreGlob.token_global.tok_type)) {
 				database->dbb_c_user = string =
-					(TEXT*) MSC_alloc(token_global.tok_length + 1);
-				MSC_copy(token_global.tok_string, token_global.tok_length, string);
+					(TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
+				MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
 
-				string[token_global.tok_length - 2] = '\0';
+				string[gpreGlob.token_global.tok_length - 2] = '\0';
 				PAR_get_token();
 			}
 			else
@@ -6054,11 +6048,11 @@ static bool tail_database(enum act_t action_type,
 				 * needed for a runtime user name or password.
 				 * 11 April 1995
 				 */
-			if (sw_language == lang_c) {
+			if (gpreGlob.sw_language == lang_c) {
 				if (!MSC_match(KW_COLON))
 					CPR_s_error("<colon> or <quoted string>");
 		/** Should I bother about dialects here ?? **/
-				if (isQuoted(token_global.tok_type))
+				if (isQuoted(gpreGlob.token_global.tok_type))
 					CPR_s_error("<host variable>");
 				database->dbb_r_user = PAR_native_value(false, false);
 				extend_dpb = true;
@@ -6068,11 +6062,11 @@ static bool tail_database(enum act_t action_type,
 
 		}
 		else if (MSC_match(KW_PASSWORD)) {
-			if (isQuoted(token_global.tok_type)) {
+			if (isQuoted(gpreGlob.token_global.tok_type)) {
 				database->dbb_c_password = string =
-					(TEXT*) MSC_alloc(token_global.tok_length + 1);
-				MSC_copy(token_global.tok_string, token_global.tok_length, string);
-				string[token_global.tok_length] = '\0';
+					(TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
+				MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
+				string[gpreGlob.token_global.tok_length] = '\0';
 				PAR_get_token();
 			}
 			else
@@ -6081,10 +6075,10 @@ static bool tail_database(enum act_t action_type,
 				 * needed for a runtime user name or password.
 				 * 11 April 1995
 				 */
-			if (sw_language == lang_c) {
+			if (gpreGlob.sw_language == lang_c) {
 				if (!MSC_match(KW_COLON))
 					CPR_s_error("<colon> or <quoted string>");
-				if (isQuoted(token_global.tok_type))
+				if (isQuoted(gpreGlob.token_global.tok_type))
 					CPR_s_error("<host variable>");
 				database->dbb_r_password = PAR_native_value(false, false);
 				extend_dpb = true;
@@ -6138,7 +6132,7 @@ static bool tail_database(enum act_t action_type,
 //***
 		}
 // ****
-//   else if (token_global.tok_keyword == KW_DESCRIPTION)
+//   else if (gpreGlob.token_global.tok_keyword == KW_DESCRIPTION)
 // database->dbb_description = parse_description();
 //   else if (MSC_match (KW_SECURITY_CLASS))
 // database->dbb_security_class = PARSE_symbol (tok_ident); 
@@ -6232,29 +6226,29 @@ static void to_upcase(const TEXT * p, TEXT * q)
 void SQL_resolve_identifier( TEXT * err_mesg, TEXT * str)
 {
 
-	switch (sw_sql_dialect) {
+	switch (gpreGlob.sw_sql_dialect) {
 	case 2:
-		if (token_global.tok_type == tok_dblquoted)
+		if (gpreGlob.token_global.tok_type == tok_dblquoted)
 			PAR_error("Ambiguous use of double quotes in dialect 2");
 	case 1:
-		if (token_global.tok_type != tok_ident)
+		if (gpreGlob.token_global.tok_type != tok_ident)
 			CPR_s_error(err_mesg);
 		else
-			to_upcase(token_global.tok_string, str);
+			to_upcase(gpreGlob.token_global.tok_string, str);
 		break;
 	case 3:
-		if (token_global.tok_type == tok_dblquoted) {
-			if (token_global.tok_string[0] == '\"')
-				strip_quotes(token_global);
-			strcpy(str, token_global.tok_string);
+		if (gpreGlob.token_global.tok_type == tok_dblquoted) {
+			if (gpreGlob.token_global.tok_string[0] == '\"')
+				strip_quotes(gpreGlob.token_global);
+			strcpy(str, gpreGlob.token_global.tok_string);
 		}
-		else if (token_global.tok_type == tok_ident)
-			to_upcase(token_global.tok_string, str);
+		else if (gpreGlob.token_global.tok_type == tok_ident)
+			to_upcase(gpreGlob.token_global.tok_string, str);
 		else
 			CPR_s_error(err_mesg);
 		break;
 	}
-	strcpy(token_global.tok_string, str);
+	strcpy(gpreGlob.token_global.tok_string, str);
 }
 
 

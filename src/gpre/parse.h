@@ -67,15 +67,5 @@ inline bool isQuoted(const int typ)
 	return (typ == tok_sglquoted || typ == tok_dblquoted);
 }
 
-#ifdef PARSER_MAIN
-#define EXTERN
-#else
-#define EXTERN	extern
-#endif
-
-EXTERN tok token_global;
-
-#undef EXTERN
-
 #endif // GPRE_PARSE_H
 

@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.41 2004-05-02 23:04:17 skidder Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.42 2004-05-24 17:13:37 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -34,7 +34,6 @@
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../jrd/license.h"
-#include "../gpre/parse.h"
 #include "../jrd/intl.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/hsh_proto.h"
@@ -46,10 +45,6 @@
 
 //const int MAX_USER_LENGTH		= 33;
 //const int MAX_PASSWORD_LENGTH	= 33;
-
-extern enum lang_t sw_language;
-extern bool sw_cstring;
-extern DBB isc_databases;
 
 static const UCHAR blr_bpb[] = { isc_bpb_version1,
 	isc_bpb_source_type, 1, isc_blob_blr,
@@ -128,7 +123,7 @@ bool MET_database(DBB db,
 	 */
 
 #ifndef REQUESTER
-	if (sw_language == lang_internal) {
+	if (gpreGlob.sw_language == lang_internal) {
 		JRDMET_init(db);
 		return true;
 	}
@@ -276,7 +271,7 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 			return field;
 		}
 
-	if (sw_language == lang_internal)
+	if (gpreGlob.sw_language == lang_internal)
 		return NULL;
 	fb_assert(0);
 	return NULL;
@@ -328,7 +323,7 @@ GPRE_NOD MET_fields(gpre_ctx* context)
 		return node;
 	}
 
-	if (sw_language == lang_internal)
+	if (gpreGlob.sw_language == lang_internal)
 		return NULL;
 	fb_assert(0);
 	return NULL;
@@ -384,7 +379,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 	case blr_varying:
 	case blr_text:
 		dtype = dtype_text;
-		if (sw_cstring && sub_type != dsc_text_type_fixed) {
+		if (gpreGlob.sw_cstring && sub_type != dsc_text_type_fixed) {
 			++l;
 			dtype = dtype_cstring;
 		}
@@ -531,7 +526,7 @@ gpre_rel* MET_get_relation(DBB db, const TEXT* string, const TEXT* owner_name)
 
 INTLSYM MET_get_text_subtype(SSHORT ttype)
 {
-	for (INTLSYM p = text_subtypes; p; p = p->intlsym_next)
+	for (INTLSYM p = gpreGlob.text_subtypes; p; p = p->intlsym_next)
 		if (p->intlsym_ttype == ttype)
 			return p;
 
@@ -606,7 +601,7 @@ IND MET_index(DBB db, const TEXT* string)
 			return index;
 		}
 
-	if (sw_language == lang_internal)
+	if (gpreGlob.sw_language == lang_internal)
 		return NULL;
 	fb_assert(0);
 	return NULL;
@@ -626,7 +621,7 @@ void MET_load_hash_table( DBB db)
  *  stuff
  */
 
-	if (sw_language == lang_internal)
+	if (gpreGlob.sw_language == lang_internal)
 		return;
 	fb_assert(0);
 	return;

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.66 2004-05-24 11:02:11 brodsom Exp $
+ * $Id: gpre.h,v 1.67 2004-05-24 17:13:37 brodsom Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -1457,74 +1457,76 @@ struct upd {
 
 const size_t UPD_LEN = sizeof(upd);
 
-
 #include "../jrd/dsc.h"
+#include "parse.h"
 
 /* GPRE wide globals */
 
-#ifdef GPRE_MAIN
-#define EXTERN
-#else
-#define EXTERN	extern
-#endif
+struct GpreGlobals{
+	bool sw_ansi;
+	bool sw_auto;
+	bool sw_sql;
+	bool sw_raw;
+	bool sw_cstring;
+	bool sw_dyn_using;
+	bool sw_ids;
+	bool sw_case;
+	bool sw_external;
+	bool sw_version;
+	bool sw_d_float;
+	USHORT sw_sql_dialect;
+	USHORT sw_know_interp;
+	USHORT sw_server_version;
+	USHORT sw_ods_version;
+	bool override_case;
+	bool dialect_specified;
 
-/* Added sw_verbose
-   FSG 14.Nov.2000 */
+	SSHORT sw_interp;
+	USHORT compiletime_db_dialect;
 
-EXTERN bool sw_ansi;
-EXTERN bool sw_verbose;
-EXTERN bool sw_auto;
-EXTERN bool sw_sql;
-EXTERN bool sw_raw;
-EXTERN bool sw_cstring;
-EXTERN bool sw_dyn_using;
-EXTERN bool sw_standard_out;
-EXTERN bool sw_lines;
-EXTERN bool sw_ids;
-EXTERN bool sw_trace;
-EXTERN bool sw_case;
-EXTERN bool sw_external;
-EXTERN bool sw_version;
-EXTERN USHORT sw_window_scope;
-EXTERN bool sw_alsys;
-EXTERN bool sw_d_float;
-EXTERN USHORT sw_sql_dialect;
-EXTERN USHORT sw_know_interp;
-EXTERN USHORT sw_server_version;
-EXTERN USHORT sw_ods_version;
-EXTERN bool override_case;
-EXTERN bool dialect_specified;
-
-EXTERN SSHORT sw_interp;
-EXTERN USHORT compiletime_db_dialect;
-
-
-EXTERN TEXT ada_package[256], *ada_null_address;
-EXTERN DBB isc_databases;
-EXTERN TEXT *default_user, *default_password;
-EXTERN TEXT *default_lc_ctype;
-EXTERN TEXT *default_lc_messages;
-EXTERN gpre_req* requests;
-EXTERN gpre_lls* events;
-EXTERN FILE *out_file;
-EXTERN LANG_T sw_language;
-EXTERN int line_global, errors_global, warnings_global, fatals_global;
-EXTERN act* global_functions;
-EXTERN dbd global_db_list[32];
-EXTERN USHORT global_db_count;
-EXTERN INTLSYM text_subtypes;
+	TEXT ada_package[256];
+	TEXT* ada_null_address;
+	DBB isc_databases;
+	TEXT* default_user;
+	TEXT* default_password;
+	TEXT* default_lc_ctype;
+	gpre_req* requests;
+	gpre_lls* events;
+	FILE *out_file;
+	LANG_T sw_language;
+	int errors_global;
+	act* global_functions;
+	dbd global_db_list[32];
+	USHORT global_db_count;
+	INTLSYM text_subtypes;
 
 /* ada_flags fields definition */
 
-const int ADA_create_database = 1;	// the flag is set when there is a
+	int ADA_create_database;	// the flag is set when there is a
 									// create database SQL statement in
 									// user program, and is used to
 									// generate additional "with" and
 									// "function" declarations
 
-EXTERN USHORT ada_flags;
+	USHORT ada_flags;
+	// from gpre.cpp
+	UCHAR fortran_labels[1024];
+	const TEXT* ident_pattern;
+	const TEXT* utility_name;
+	const TEXT* count_name;
+	const TEXT* slack_name;
+	const TEXT* transaction_name;
+	const TEXT* database_name;
+	tok prior_token;
+	// from par.cpp
+	act* cur_routine;
+	// from sql.cpp
+	const TEXT* module_lc_ctype;
+	// from parse.h
+	tok token_global;
+};
 
-#undef EXTERN
+extern GpreGlobals gpreGlob;
 
 #ifndef fb_assert
 #ifdef DEV_BUILD

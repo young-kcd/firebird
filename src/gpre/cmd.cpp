@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.35 2004-05-24 11:02:10 brodsom Exp $
+//	$Id: cmd.cpp,v 1.36 2004-05-24 17:13:36 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -932,7 +932,7 @@ static void create_set_default_trg(gpre_req* request,
 
 			// If somebody is 'clever' enough to create table and then to alter it
 			//   within the same application ...
-			for (req = requests; req; req = req->req_next) {
+			for (req = gpreGlob.requests; req; req = req->req_next) {
 				if ((req->req_type == REQ_ddl) &&
 					(request_action = req->req_actions) &&
 					(request_action->act_type == ACT_create_table ||
@@ -978,7 +978,7 @@ static void create_set_default_trg(gpre_req* request,
 			// search for domain level default 
 			fb_assert(search_for_column == false);
 			// search for domain in memory 
-			for (req = requests; req; req = req->req_next) {
+			for (req = gpreGlob.requests; req; req = req->req_next) {
 				gpre_fld* domain;
 				if ((req->req_type == REQ_ddl) &&
 					(request_action = req->req_actions) &&
@@ -1166,7 +1166,7 @@ static void get_referred_fields(const act* action, cnstrt* constraint)
 	TEXT s[512];
 	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
-	for (gpre_req* req = requests; req; req = req->req_next) {
+	for (gpre_req* req = gpreGlob.requests; req; req = req->req_next) {
 		const act* request_action;
 		const gpre_rel* rel;
 		if ((req->req_type == REQ_ddl) &&
@@ -1375,8 +1375,8 @@ static void create_database( gpre_req* request, const act* action)
 	request->add_byte(isc_dpb_sql_dialect);
 	request->add_byte(sizeof(int));
 	int def_db_dial = 3;
-	if ((dialect_specified) && (sw_sql_dialect == 1 || sw_sql_dialect == 3))
-		def_db_dial = sw_sql_dialect;
+	if ((gpreGlob.dialect_specified) && (gpreGlob.sw_sql_dialect == 1 || gpreGlob.sw_sql_dialect == 3))
+		def_db_dial = gpreGlob.sw_sql_dialect;
 	request->add_long(def_db_dial);
 
 	if (db->dbb_allocation) {
@@ -2432,7 +2432,7 @@ static void put_dtype( gpre_req* request, const gpre_fld* field)
 
 			// Correct the length of C string for meta data operations 
 
-			if (sw_cstring && field->fld_sub_type != dsc_text_type_fixed)
+			if (gpreGlob.sw_cstring && field->fld_sub_type != dsc_text_type_fixed)
 				length--;
 			dtype = blr_text;
 		}
@@ -2469,7 +2469,7 @@ static void put_dtype( gpre_req* request, const gpre_fld* field)
 	case dtype_short:
 		dtype = blr_short;
 		length = sizeof(SSHORT);
-		if (sw_server_version >= 6) {
+		if (gpreGlob.sw_server_version >= 6) {
 			put_numeric(request, isc_dyn_fld_type, dtype);
 			put_numeric(request, isc_dyn_fld_length, length);
 			put_numeric(request, isc_dyn_fld_scale, field->fld_scale);
@@ -2482,7 +2482,7 @@ static void put_dtype( gpre_req* request, const gpre_fld* field)
 	case dtype_long:
 		dtype = blr_long;
 		length = sizeof(SLONG);
-		if (sw_server_version >= 6) {
+		if (gpreGlob.sw_server_version >= 6) {
 			put_numeric(request, isc_dyn_fld_type, dtype);
 			put_numeric(request, isc_dyn_fld_length, length);
 			put_numeric(request, isc_dyn_fld_scale, field->fld_scale);

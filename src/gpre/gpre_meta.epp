@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.42 2004-05-13 00:33:17 brodsom Exp $
+ *	$Id: gpre_meta.epp,v 1.43 2004-05-24 17:13:37 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -34,7 +34,6 @@
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../jrd/license.h"
-#include "../gpre/parse.h"
 #include "../jrd/intl.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/hsh_proto.h"
@@ -48,10 +47,6 @@ const int MAX_USER_LENGTH	= 33;
 const int MAX_PASSWORD_LENGTH	= 33;
 
 DATABASE DB = FILENAME "yachts.lnk" RUNTIME database->dbb_filename;
-
-extern enum lang_t sw_language;
-extern bool sw_cstring;
-extern DBB isc_databases;
 
 static const UCHAR blr_bpb[] = {
 	isc_bpb_version1,
@@ -138,7 +133,7 @@ bool MET_database(dbb* database, bool print_version)
 	UCHAR sql_buffer[sizeof(sql_version_info) * (1 + 2 + 4)];
 
 #ifndef REQUESTER
-	if (sw_language == lang_internal) {
+	if (gpreGlob.sw_language == lang_internal) {
 		JRDMET_init(database);
 		return true;
 	}
@@ -193,13 +188,13 @@ bool MET_database(dbb* database, bool print_version)
 
 	database->dbb_handle = DB;
 
-	if (sw_version && print_version) {
+	if (gpreGlob.sw_version && print_version) {
 		printf("    Version(s) for database \"%s\"\n", database->dbb_filename);
 		isc_version(&DB, NULL, NULL);
 	}
 
-	sw_ods_version = 0;
-	sw_server_version = 0;
+	gpreGlob.sw_ods_version = 0;
+	gpreGlob.sw_server_version = 0;
 	if (isc_database_info(isc_status, &DB, sizeof(sql_version_info),
 		reinterpret_cast<const char*>(sql_version_info), sizeof(sql_buffer),
 		reinterpret_cast<char*>(sql_buffer)))
@@ -216,15 +211,15 @@ bool MET_database(dbb* database, bool print_version)
 		
 		switch (item) {
 		case isc_info_base_level:
-			sw_server_version = (USHORT) ptr[1];
+			gpreGlob.sw_server_version = (USHORT) ptr[1];
 			break;
 
 		case isc_info_ods_version:
-			sw_ods_version = isc_vax_integer((char*)ptr, length);
+			gpreGlob.sw_ods_version = isc_vax_integer((char*)ptr, length);
 			break;
 
 		case isc_info_db_sql_dialect:
-			compiletime_db_dialect = isc_vax_integer((char*)ptr, length);
+			gpreGlob.compiletime_db_dialect = isc_vax_integer((char*)ptr, length);
 			break;
 			
 		case isc_info_error:
@@ -233,8 +228,8 @@ bool MET_database(dbb* database, bool print_version)
 			   isc_info_db_sql_dialect and assume
 			   that the database dialect is SQL_DIALECT_V5
 			 */
-			if ((sw_server_version != 0) && (sw_ods_version != 0))
-				compiletime_db_dialect = SQL_DIALECT_V5;
+			if ((gpreGlob.sw_server_version != 0) && (gpreGlob.sw_ods_version != 0))
+				gpreGlob.compiletime_db_dialect = SQL_DIALECT_V5;
 			else
 				printf("Internal error: Unexpected isc_info_value %d\n",
 						  item);
@@ -247,34 +242,34 @@ bool MET_database(dbb* database, bool print_version)
 		ptr += length;
 	}
 
-	if (!dialect_specified)
-		sw_sql_dialect = compiletime_db_dialect;
-	if (sw_ods_version < 10) {
-		if (sw_sql_dialect != compiletime_db_dialect) {
+	if (!gpreGlob.dialect_specified)
+		gpreGlob.sw_sql_dialect = gpreGlob.compiletime_db_dialect;
+	if (gpreGlob.sw_ods_version < 10) {
+		if (gpreGlob.sw_sql_dialect != gpreGlob.compiletime_db_dialect) {
 			char warn_mesg[100];
 			sprintf(warn_mesg,
 					"Pre 6.0 database. Cannot use dialect %d, Resetting to %d\n",
-					sw_sql_dialect, compiletime_db_dialect);
+					gpreGlob.sw_sql_dialect, gpreGlob.compiletime_db_dialect);
 			CPR_warn(warn_mesg);
 		}
-		sw_sql_dialect = compiletime_db_dialect;
+		gpreGlob.sw_sql_dialect = gpreGlob.compiletime_db_dialect;
 	}
-	else if (sw_sql_dialect != compiletime_db_dialect) {
+	else if (gpreGlob.sw_sql_dialect != gpreGlob.compiletime_db_dialect) {
 		char warn_mesg[100];
 		sprintf(warn_mesg,
 				"Client dialect set to %d. Compiletime database dialect is %d\n",
-				sw_sql_dialect, compiletime_db_dialect);
+				gpreGlob.sw_sql_dialect, gpreGlob.compiletime_db_dialect);
 		CPR_warn(warn_mesg);
 	}
 
 #ifdef DEBUG
-	if (sw_version && print_version)
+	if (gpreGlob.sw_version && print_version)
 		printf("Gpre Start up values. \
 	\n\tServer Ver                   : %d\
         \n\tCompile time db Ver          : %d\
 	\n\tCompile time db Sql Dialect  : %d\
 	\n\tClient Sql dialect set to    : %d\n\n",
-	sw_server_version, sw_ods_version, compiletime_db_dialect, sw_sql_dialect);
+	gpreGlob.sw_server_version, gpreGlob.sw_ods_version, gpreGlob.compiletime_db_dialect, gpreGlob.sw_sql_dialect);
 #endif
 #ifdef SCROLLABLE_CURSORS
 
@@ -522,7 +517,7 @@ bool MET_get_domain_default(dbb* database,
 		}
 		else {						// default not found 
 
-			if (sw_sql_dialect > SQL_DIALECT_V5)
+			if (gpreGlob.sw_sql_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;
 			else
 				buffer[0] = blr_version4;
@@ -627,7 +622,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 				   buffer[1] == blr_null || buffer[1] == blr_user_name);
 		}
 		else {
-			if (sw_sql_dialect > SQL_DIALECT_V5)
+			if (gpreGlob.sw_sql_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;
 			else
 				buffer[0] = blr_version4;
@@ -727,7 +722,7 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 			return field;
 		}
 
-	if (sw_language == lang_internal)
+	if (gpreGlob.sw_language == lang_internal)
 		return NULL;
 
 	dbb* database = relation->rel_database;
@@ -892,7 +887,7 @@ GPRE_NOD MET_fields(gpre_ctx* context)
 		return anode;
 	}
 
-	if (sw_language == lang_internal)
+	if (gpreGlob.sw_language == lang_internal)
 		return NULL;
 
 	dbb* database = relation->rel_database;
@@ -937,7 +932,7 @@ GPRE_NOD MET_fields(gpre_ctx* context)
 
 void MET_fini(dbb* end)
 {
-	for (dbb* database = isc_databases;
+	for (dbb* database = gpreGlob.isc_databases;
 		 database && database != end;
 		 database = database->dbb_next)
 	{
@@ -1007,7 +1002,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 	case blr_varying:
 	case blr_text:
 		dtype = dtype_text;
-		if (sw_cstring && sub_type != dsc_text_type_fixed) {
+		if (gpreGlob.sw_cstring && sub_type != dsc_text_type_fixed) {
 			++l;
 			dtype = dtype_cstring;
 		}
@@ -1232,7 +1227,7 @@ gpre_rel* MET_get_relation(dbb* database, const TEXT* string, const TEXT* owner_
 
 INTLSYM MET_get_text_subtype(SSHORT ttype)
 {
-	for (INTLSYM p = text_subtypes; p; p = p->intlsym_next)
+	for (INTLSYM p = gpreGlob.text_subtypes; p; p = p->intlsym_next)
 		if (p->intlsym_ttype == ttype)
 			return p;
 
@@ -1413,7 +1408,7 @@ IND MET_index(dbb* database, const TEXT* string)
 			index->ind_relation->rel_database == database)
 			return index;
 
-	if (sw_language == lang_internal)
+	if (gpreGlob.sw_language == lang_internal)
 		return NULL;
 
 	if (database->dbb_flags & DBB_sqlca)
@@ -1450,7 +1445,7 @@ void MET_load_hash_table(dbb* database)
  *  stuff
  */
 
-	if (sw_language == lang_internal)
+	if (gpreGlob.sw_language == lang_internal)
 		return;
 
 	if (!database->dbb_handle)
@@ -1654,8 +1649,8 @@ void MET_load_hash_table(dbb* database)
 		iname->intlsym_bytes_per_char =
 			(CHARSET.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (CHARSET.
 														  RDB$BYTES_PER_CHARACTER);
-		iname->intlsym_next = text_subtypes;
-		text_subtypes = iname;
+		iname->intlsym_next = gpreGlob.text_subtypes;
+		gpreGlob.text_subtypes = iname;
 
 		FOR(REQUEST_HANDLE handle2)
 		TYPE IN RDB$TYPES
@@ -1786,8 +1781,8 @@ void MET_load_hash_table(dbb* database)
 					database->dbb_c_lc_ctype);
 			PAR_error(buffer);
 		}
-		sw_know_interp = database->dbb_know_subtype;
-		sw_interp = database->dbb_char_subtype;
+		gpreGlob.sw_know_interp = database->dbb_know_subtype;
+		gpreGlob.sw_interp = database->dbb_char_subtype;
 	}
 }
 

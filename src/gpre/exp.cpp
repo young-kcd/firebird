@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.33 2004-05-12 19:34:43 brodsom Exp $
+//	$Id: exp.cpp,v 1.34 2004-05-24 17:13:37 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -34,7 +34,6 @@
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../gpre/gpre.h"
-#include "../gpre/parse.h"
 #include "../jrd/intl.h"
 #include "../gpre/cmp_proto.h"
 #include "../gpre/exp_proto.h"
@@ -152,7 +151,7 @@ gpre_fld* EXP_cast(gpre_fld* field)
 		// fall back
 
 	case dtype_text:
-		if (sw_cstring && !(cast->fld_dtype == dtype_cstring)) {
+		if (gpreGlob.sw_cstring && !(cast->fld_dtype == dtype_cstring)) {
 			cast->fld_length++;
 			cast->fld_dtype = dtype_cstring;
 		}
@@ -258,7 +257,7 @@ gpre_ctx* EXP_context(gpre_req* request, gpre_sym* initial_symbol)
 gpre_fld* EXP_field(gpre_ctx** rcontext)
 {
 	gpre_sym* symbol;
-	for (symbol = token_global.tok_symbol; symbol; symbol = symbol->sym_homonym) {
+	for (symbol = gpreGlob.token_global.tok_symbol; symbol; symbol = symbol->sym_homonym) {
 		if (symbol->sym_type == SYM_context)
 			break;
 	}
@@ -275,10 +274,10 @@ gpre_fld* EXP_field(gpre_ctx** rcontext)
 
 	TEXT s[128];
 	SQL_resolve_identifier("<Field Name>", s);
-	gpre_fld* field = MET_field(relation, token_global.tok_string);
+	gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
 	if (!field) {
 		sprintf(s, "field \"%s\" is not defined in relation %s",
-				token_global.tok_string, relation->rel_symbol->sym_string);
+				gpreGlob.token_global.tok_string, relation->rel_symbol->sym_string);
 		PAR_error(s);
 	}
 
@@ -308,34 +307,34 @@ void EXP_left_paren(const TEXT* string)
 
 GPRE_NOD EXP_literal(void)
 {
-	switch (sw_sql_dialect) {
+	switch (gpreGlob.sw_sql_dialect) {
 	case 1:
-		if (!(token_global.tok_type == tok_number || isQuoted(token_global.tok_type)))
+		if (!(gpreGlob.token_global.tok_type == tok_number || isQuoted(gpreGlob.token_global.tok_type)))
 			return NULL;
 		break;
 	default:
-		if (!(token_global.tok_type == tok_number || token_global.tok_type == tok_sglquoted))
+		if (!(gpreGlob.token_global.tok_type == tok_number || gpreGlob.token_global.tok_type == tok_sglquoted))
 			return NULL;
 	}
 
 	ref* reference = (REF) MSC_alloc(REF_LEN);
 	gpre_nod* node = MSC_unary(nod_literal, (GPRE_NOD) reference);
-	if (isQuoted(token_global.tok_type)) {
-	    TEXT* string = (TEXT *) MSC_alloc(token_global.tok_length + 3);
+	if (isQuoted(gpreGlob.token_global.tok_type)) {
+	    TEXT* string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 3);
 		reference->ref_value = string;
 		strcat(string, "\'");
-		MSC_copy(token_global.tok_string, token_global.tok_length, string + 1);
-		strcat((string + token_global.tok_length + 1), "\'");
-		token_global.tok_length += 2;
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string + 1);
+		strcat((string + gpreGlob.token_global.tok_length + 1), "\'");
+		gpreGlob.token_global.tok_length += 2;
 	}
 	else {
-		TEXT* string = (TEXT *) MSC_alloc(token_global.tok_length + 1);
+		TEXT* string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		reference->ref_value = string;
-		MSC_copy(token_global.tok_string, token_global.tok_length, string);
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
 	}
 
 // ** Begin date/time/timestamp *
-	switch (token_global.tok_keyword) {
+	switch (gpreGlob.token_global.tok_keyword) {
 	case KW_DATE:
 		reference->ref_flags |= REF_sql_date;
 		break;
@@ -350,16 +349,16 @@ GPRE_NOD EXP_literal(void)
 	/** Do not put a default here **/
 	}
 // ** End date/time/timestamp *
-	if ((token_global.tok_type == tok_sglquoted && (token_global.tok_charset)) ||
-		((isQuoted(token_global.tok_type) && (sw_sql_dialect == 1))
-		 && (token_global.tok_charset)))
+	if ((gpreGlob.token_global.tok_type == tok_sglquoted && (gpreGlob.token_global.tok_charset)) ||
+		((isQuoted(gpreGlob.token_global.tok_type) && (gpreGlob.sw_sql_dialect == 1))
+		 && (gpreGlob.token_global.tok_charset)))
 	{
 		reference->ref_flags |= REF_ttype;
-		gpre_sym* symbol = token_global.tok_charset;
+		gpre_sym* symbol = gpreGlob.token_global.tok_charset;
 		reference->ref_ttype =
 			((INTLSYM) (symbol->sym_object))->intlsym_ttype;
 	}
-	else if (sw_language == lang_internal) {
+	else if (gpreGlob.sw_language == lang_internal) {
 		// literals referenced in an Internal request are always correct charset 
 		reference->ref_flags |= REF_ttype;
 		reference->ref_ttype = ttype_metadata;
@@ -379,16 +378,16 @@ SINT64 EXP_SINT64_ordinal(bool advance_flag)
 {
 	const bool negate = (MSC_match(KW_MINUS));
 
-	if (token_global.tok_type != tok_number)
+	if (gpreGlob.token_global.tok_type != tok_number)
 		CPR_s_error("<number>");
 
 	const char format[8] = "%"QUADFORMAT"d";
 	SINT64 n;
-	sscanf(token_global.tok_string, format, &n);
+	sscanf(gpreGlob.token_global.tok_string, format, &n);
 	
 	char buffer[64];
 	sprintf(buffer, format, n);
-	if (strcmp(buffer, token_global.tok_string) != 0)
+	if (strcmp(buffer, gpreGlob.token_global.tok_string) != 0)
 		PAR_error("Numeric value out of range");
 
 	if (advance_flag)
@@ -407,13 +406,13 @@ SLONG EXP_SLONG_ordinal(bool advance_flag)
 {
 	const bool negate = (MSC_match(KW_MINUS));
 
-	if (token_global.tok_type != tok_number)
+	if (gpreGlob.token_global.tok_type != tok_number)
 		CPR_s_error("<number>");
 
-	const SLONG n = atoi(token_global.tok_string);
+	const SLONG n = atoi(gpreGlob.token_global.tok_string);
 	char buffer[32];
 	sprintf(buffer, "%"SLONGFORMAT, n);
-	if (strcmp(buffer, token_global.tok_string) != 0)
+	if (strcmp(buffer, gpreGlob.token_global.tok_string) != 0)
 		PAR_error("Numeric value out of range");
 
 	if (advance_flag)
@@ -433,10 +432,10 @@ SSHORT EXP_SSHORT_ordinal(bool advance_flag)
 {
 	const bool negate = (MSC_match(KW_MINUS));
 
-	if (token_global.tok_type != tok_number)
+	if (gpreGlob.token_global.tok_type != tok_number)
 		CPR_s_error("<number>");
 
-	const SLONG n = atoi(token_global.tok_string);
+	const SLONG n = atoi(gpreGlob.token_global.tok_string);
 	if (negate && n > -1L * MIN_SSHORT)
 		PAR_error("Numeric value out of range");
 	else if (!negate && n > (SLONG) MAX_SSHORT)
@@ -457,13 +456,13 @@ SSHORT EXP_SSHORT_ordinal(bool advance_flag)
 
 ULONG EXP_ULONG_ordinal(bool advance_flag)
 {
-	if (token_global.tok_type != tok_number)
+	if (gpreGlob.token_global.tok_type != tok_number)
 		CPR_s_error("<unsigned number>");
 
-	const ULONG n = atoi(token_global.tok_string);
+	const ULONG n = atoi(gpreGlob.token_global.tok_string);
 	char buffer[32];
 	sprintf(buffer, "%"ULONGFORMAT, n);
-	if (strcmp(buffer, token_global.tok_string) != 0)
+	if (strcmp(buffer, gpreGlob.token_global.tok_string) != 0)
 		PAR_error("Numeric value out of range");
 
 	if (advance_flag)
@@ -480,10 +479,10 @@ ULONG EXP_ULONG_ordinal(bool advance_flag)
 
 USHORT EXP_USHORT_ordinal(bool advance_flag)
 {
-	if (token_global.tok_type != tok_number)
+	if (gpreGlob.token_global.tok_type != tok_number)
 		CPR_s_error("<unsigned number>");
 
-	const ULONG n = atoi(token_global.tok_string);
+	const ULONG n = atoi(gpreGlob.token_global.tok_string);
 	if (n > MAX_USHORT)
 		PAR_error("Numeric value out of range");
 
@@ -632,7 +631,7 @@ gpre_rel* EXP_relation(void)
 {
 	TEXT s[256];
 
-	if (!isc_databases)
+	if (!gpreGlob.isc_databases)
 		PAR_error("no database for operation");
 
 //  The current token is (i.e. should be) either a relation
@@ -643,23 +642,23 @@ gpre_rel* EXP_relation(void)
 	gpre_rel* relation = NULL;
 
 	SQL_resolve_identifier("<identifier>", s);
-	gpre_sym* symbol = MSC_find_symbol(token_global.tok_symbol, SYM_database);
+	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
 	if (symbol) {
 		dbb* db = (DBB) symbol->sym_object;
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error("period after database name");
 		SQL_resolve_identifier("<Table name>", s);
-		relation = MET_get_relation(db, token_global.tok_string, "");
+		relation = MET_get_relation(db, gpreGlob.token_global.tok_string, "");
 	}
 	else {
-		for (dbb* db = isc_databases; db; db = db->dbb_next) {
-		    gpre_rel* temp = MET_get_relation(db, token_global.tok_string, "");
+		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
+		    gpre_rel* temp = MET_get_relation(db, gpreGlob.token_global.tok_string, "");
 			if (temp) {
 				if (!relation)
 					relation = temp;
 				else {
-					sprintf(s, "relation %s is ambiguous", token_global.tok_string);
+					sprintf(s, "relation %s is ambiguous", gpreGlob.token_global.tok_string);
 					PAR_get_token();
 					PAR_error(s);
 				}
@@ -700,7 +699,7 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 
 //  parse first context clause 
 
-	if (initial_symbol && sw_language == lang_ada && !check_relation())
+	if (initial_symbol && gpreGlob.sw_language == lang_ada && !check_relation())
 		return NULL;
 
 	gpre_ctx* context = EXP_context(request, initial_symbol);
@@ -867,11 +866,11 @@ GPRE_NOD EXP_subscript(gpre_req* request)
 
 //  Special case literals 
 
-	if (token_global.tok_type == tok_number) {
+	if (gpreGlob.token_global.tok_type == tok_number) {
 		node->nod_type = nod_literal;
-		TEXT* string = (TEXT *) MSC_alloc(token_global.tok_length + 1);
+		TEXT* string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		reference->ref_value = string;
-		MSC_copy(token_global.tok_string, token_global.tok_length, string);
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
 		PAR_get_token();
 		return node;
 	}
@@ -899,12 +898,12 @@ static bool check_relation(void)
 //  it for the relation name.  If it's an unqualified relation
 //  name, search all databases for the name 
 
-	gpre_sym* symbol = token_global.tok_symbol;
+	gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
 	if (symbol && symbol->sym_type == SYM_database)
 		return true;
 
-	for (dbb* db = isc_databases; db; db = db->dbb_next) {
-		if (MET_get_relation(db, token_global.tok_string, ""))
+	for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
+		if (MET_get_relation(db, gpreGlob.token_global.tok_string, ""))
 			return true;
 	}
 
@@ -924,7 +923,7 @@ static GPRE_NOD lookup_field(gpre_ctx* context)
 	char s[132];
 
 	SQL_resolve_identifier("<Field Name>", s);
-	gpre_fld* field = MET_field(context->ctx_relation, token_global.tok_string);
+	gpre_fld* field = MET_field(context->ctx_relation, gpreGlob.token_global.tok_string);
 	if (!field)
 		return NULL;
 
@@ -1094,7 +1093,7 @@ static GPRE_NOD par_array(gpre_req* request,
 			/* Languages which can't handle negative or non-positive bounds need to
 			   be accomodated with normalization of the indices.  */
 
-			switch (sw_language) {
+			switch (gpreGlob.sw_language) {
 			case lang_c:
 			case lang_cxx:
 			case lang_internal:
@@ -1114,7 +1113,7 @@ static GPRE_NOD par_array(gpre_req* request,
 
 			//  Good ole Fortran's column major order needs to be accomodated.  
 
-			if (sw_language == lang_fortran)
+			if (gpreGlob.sw_language == lang_fortran)
 				array_node->nod_arg[fortran_adjustment - i] = index_node;
 			else
 				array_node->nod_arg[i] = index_node;
@@ -1159,7 +1158,7 @@ static GPRE_NOD par_boolean( gpre_req* request)
 
 static GPRE_NOD par_field( gpre_req* request)
 {
-	const gpre_sym* symbol = token_global.tok_symbol;
+	const gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
 	if (!symbol)
 		CPR_s_error("qualified field reference");
 		
@@ -1170,7 +1169,7 @@ static GPRE_NOD par_field( gpre_req* request)
 		upcase_flag = true;
 		if (!MSC_match(KW_LEFT_PAREN))
 			CPR_s_error("left parenthesis");
-		if (!(symbol = token_global.tok_symbol))
+		if (!(symbol = gpreGlob.token_global.tok_symbol))
 			CPR_s_error("qualified field reference");
 	}
 
@@ -1210,7 +1209,7 @@ static GPRE_NOD par_field( gpre_req* request)
 		node->nod_arg[0] = (GPRE_NOD) reference;
 	}
 	else {
-		/* Field wants to straddle two requests.  We need to do
+		/* Field wants to straddle two gpreGlob.requests.  We need to do
 		   two things.  First, post a reference to the field to
 		   the other request.  This is a variance on code found
 		   in par_variable in par.c */
@@ -1272,8 +1271,8 @@ static GPRE_NOD par_native_value( gpre_req* request, gpre_fld* field)
 
 //  Special case literals 
 
-	if (token_global.tok_type == tok_number || token_global.tok_type == tok_sglquoted
-		|| (token_global.tok_type == tok_dblquoted && sw_sql_dialect == 1))
+	if (gpreGlob.token_global.tok_type == tok_number || gpreGlob.token_global.tok_type == tok_sglquoted
+		|| (gpreGlob.token_global.tok_type == tok_dblquoted && gpreGlob.sw_sql_dialect == 1))
 	{
 		gpre_nod* anode = EXP_literal();
 		return anode;
@@ -1339,7 +1338,7 @@ static GPRE_NOD par_over( gpre_ctx* context)
 	do {
 		gpre_nod* field1 = lookup_field(context);
 		if (!field1) {
-			sprintf(s, "OVER field %s undefined", token_global.tok_string);
+			sprintf(s, "OVER field %s undefined", gpreGlob.token_global.tok_string);
 			PAR_error(s);
 		}
 		gpre_nod* field2 = NULL;
@@ -1350,7 +1349,7 @@ static GPRE_NOD par_over( gpre_ctx* context)
 				break;
 		}
 		if (!field2) {
-			sprintf(s, "OVER field %s undefined", token_global.tok_string);
+			sprintf(s, "OVER field %s undefined", gpreGlob.token_global.tok_string);
 			PAR_error(s);
 		}
 		boolean = make_and(boolean, MSC_binary(nod_eq, field1, field2));
@@ -1395,7 +1394,7 @@ static GPRE_NOD par_primitive_value( gpre_req* request, gpre_fld* field)
 	if (node)
 		return node;
 
-	const gpre_sym* symbol = token_global.tok_symbol;
+	const gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
 	if (!symbol || (symbol->sym_type != SYM_context))
 		return par_native_value(request, field);
 
@@ -1522,7 +1521,7 @@ static GPRE_NOD par_udf( gpre_req* request, USHORT type, gpre_fld* field)
 //  Check for user defined functions 
 
 	udf* new_udf;
-	for (gpre_sym* symbol = token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	for (gpre_sym* symbol = gpreGlob.token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_udf && (new_udf = (udf*) symbol->sym_object) &&
 			// request->req_database == new_udf->udf_database &&
 			new_udf->udf_type == type)

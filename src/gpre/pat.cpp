@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.23 2004-04-28 22:05:55 brodsom Exp $
+//	$Id: pat.cpp,v 1.24 2004-05-24 17:13:37 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -36,8 +36,6 @@
 #include "../gpre/pat_proto.h"
 #include "../gpre/lang_proto.h"
 
-
-extern const TEXT* ident_pattern;
 
 typedef enum {
 	NL,
@@ -132,21 +130,21 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 	const TEXT* lang_val = "";
 	const TEXT* valend = "";
 
-	if ((sw_language == lang_c) || (isLangCpp(sw_language))) {
+	if ((gpreGlob.sw_language == lang_c) || (isLangCpp(gpreGlob.sw_language))) {
 		lang_ref = "&";
 		refend = "";
 	}
-	else if (sw_language == lang_pascal) {
+	else if (gpreGlob.sw_language == lang_pascal) {
 		lang_ref = "%%REF ";
 		refend = "";
 	}
-	else if (sw_language == lang_cobol) {
+	else if (gpreGlob.sw_language == lang_cobol) {
 		lang_ref = "BY REFERENCE ";
 		refend = "";
 		lang_val = "BY VALUE ";
 		valend = "";
 	}
-	else if (sw_language == lang_fortran) {
+	else if (gpreGlob.sw_language == lang_fortran) {
 #ifdef VMS
 		lang_ref = "%REF(";
 		refend = ")";
@@ -367,22 +365,22 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		if (!sw_gen)
 			continue;
 		if (string) {
-			if (handle_flag && (sw_language == lang_ada))
-				for (q = ada_package; *q;)
+			if (handle_flag && (gpreGlob.sw_language == lang_ada))
+				for (q = gpreGlob.ada_package; *q;)
 					*p++ = *q++;
 			while (*string)
 				*p++ = *string++;
 			continue;
 		}
 		if (sw_ident)
-			sprintf(p, ident_pattern, value);
+			sprintf(p, gpreGlob.ident_pattern, value);
 		else if (reference) {
 			if (!reference->ref_port)
-				sprintf(p, ident_pattern, reference->ref_ident);
+				sprintf(p, gpreGlob.ident_pattern, reference->ref_ident);
 			else {
-				sprintf(temp1, ident_pattern, reference->ref_port->por_ident);
-				sprintf(temp2, ident_pattern, reference->ref_ident);
-				switch (sw_language) {
+				sprintf(temp1, gpreGlob.ident_pattern, reference->ref_port->por_ident);
+				sprintf(temp2, gpreGlob.ident_pattern, reference->ref_ident);
+				switch (gpreGlob.sw_language) {
 				case lang_fortran:
 				case lang_cobol:
 					strcpy(p, temp2);
@@ -406,7 +404,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 
 	*p = 0;
 #if (defined GPRE_ADA || defined GPRE_COBOL || defined GPRE_FORTRAN) && !defined(BOOT_BUILD)
-	switch (sw_language) {
+	switch (gpreGlob.sw_language) {
 #ifdef GPRE_ADA
 		/*  Ada lines can be up to 120 characters long.  ADA_print_buffer
 		   handles this problem and ensures that GPRE output is <=120 characters.
@@ -436,11 +434,11 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 #endif
 
 	default:
-		fprintf(out_file, buffer);
+		fprintf(gpreGlob.out_file, buffer);
 		break;
 	}
 #else
-	fprintf(out_file, buffer);
+	fprintf(gpreGlob.out_file, buffer);
 #endif
 
 }
