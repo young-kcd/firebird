@@ -84,7 +84,6 @@ static USHORT save_field_privileges(TDBB, STR *, UCHAR **,
 									TEXT *, TEXT *, USHORT, ULONG *);
 static void save_security_class(TDBB, TEXT *, UCHAR *, USHORT);
 static USHORT trans_sql_priv(TEXT *);
-static USHORT terminate(TEXT *);
 static SLONG squeeze_acl(UCHAR *, UCHAR **, TEXT *, SSHORT);
 static BOOLEAN check_string(TEXT *, TEXT *);
 
@@ -314,15 +313,9 @@ static void define_default_class(
 	dbb = tdbb->tdbb_database;
 
 	if (!*default_class) {
-#ifndef EXACT_NUMERICS
-		sprintf(default_class, "%s%ld\0", DEFAULT_CLASS,
-				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), 0,
-						   (SLONG) 1));
-#else
 		sprintf(default_class, "%s%" QUADFORMAT "d\0", DEFAULT_CLASS,
 				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), 0,
 						   (SINT64) 1));
-#endif
 
 		request = (BLK) CMP_find_request(tdbb, irq_grant7, IRQ_REQUESTS);
 
@@ -499,11 +492,11 @@ TEXT * s_class, TEXT * default_class, USHORT * view)
 
             if (!REQUEST(irq_grant1))
                 REQUEST(irq_grant1) = request;
-			terminate(REL.RDB$SECURITY_CLASS);
+			DYN_terminate(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
 			strcpy(s_class, REL.RDB$SECURITY_CLASS);
-			terminate(REL.RDB$DEFAULT_CLASS);
+			DYN_terminate(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
 			strcpy(default_class, REL.RDB$DEFAULT_CLASS);
-			terminate(REL.RDB$OWNER_NAME);
+			DYN_terminate(REL.RDB$OWNER_NAME, sizeof(REL.RDB$OWNER_NAME));
 			strcpy(owner, REL.RDB$OWNER_NAME);
 			*view = (REL.RDB$VIEW_BLR.gds_quad_high ||
 					 REL.RDB$VIEW_BLR.gds_quad_low) ? TRUE : FALSE;
@@ -521,10 +514,10 @@ TEXT * s_class, TEXT * default_class, USHORT * view)
 
             if (!REQUEST(irq_grant9)) REQUEST(irq_grant9) = request;
 
-			terminate(REL.RDB$SECURITY_CLASS);
+			DYN_terminate(REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
 			strcpy(s_class, REL.RDB$SECURITY_CLASS);
 			strcpy(default_class, "");
-			terminate(REL.RDB$OWNER_NAME);
+			DYN_terminate(REL.RDB$OWNER_NAME, sizeof(REL.RDB$OWNER_NAME));
 			strcpy(owner, REL.RDB$OWNER_NAME);
 			*view = FALSE;
 		END_FOR;
@@ -581,7 +574,7 @@ static void get_user_privs(TDBB		tdbb,
 
         if (!REQUEST(irq_grant2)) REQUEST(irq_grant2) = request;
 
-		terminate(PRV.RDB$USER);
+		DYN_terminate(PRV.RDB$USER, sizeof(PRV.RDB$USER));
 		if (strcmp(PRV.RDB$USER, user) || PRV.RDB$USER_TYPE != user_type)
 		{
 			if (user[0])
@@ -736,7 +729,7 @@ static void purge_default_class( TEXT * object_name, SSHORT obj_type)
 
         if (!REQUEST(irq_grant8))
             REQUEST(irq_grant8) = request;
-		terminate(REL.RDB$DEFAULT_CLASS);
+		DYN_terminate(REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
 		delete_security_class(tdbb, REL.RDB$DEFAULT_CLASS);
 
 		MODIFY REL USING
@@ -841,8 +834,8 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 
         if (!REQUEST(irq_grant6))
             REQUEST(irq_grant6) = request;
-		terminate(PRV.RDB$USER);
-		terminate(PRV.RDB$FIELD_NAME);
+		 DYN_terminate(PRV.RDB$USER, sizeof(PRV.RDB$USER));
+		 DYN_terminate(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
 
 		/* create a control break on field_name,user */
 
@@ -918,32 +911,23 @@ TEXT * relation_name, TEXT * owner, USHORT public_priv, ULONG * length_ptr)
 			/* initialize for new field */
 
 			strcpy(field_name, PRV.RDB$FIELD_NAME);
-			terminate(FLD.RDB$SECURITY_CLASS);
+			DYN_terminate(FLD.RDB$SECURITY_CLASS, sizeof(FLD.RDB$SECURITY_CLASS));
 			strcpy(s_class, FLD.RDB$SECURITY_CLASS);
 			if (!s_class[0]) {
-				/* There is no security class name for this field, then make one.
-				   Note that the field security class name is set here and in the
-				   pre-store trigger for rdb$user_privileges.  This field security
-				   class name is removed in the pre erase trigger for
-				   rdb$user_privileges. */
+			    /* We should never get here (I think) because this
+				   value is set by dyn.e when the rdb$user_privileges
+			       record is stored.  There's also a before store trigger
+				   on rdb$user_privileges, but it isn't so smart.  -- AWH
+			    */
+			    sprintf(s_class, "%s%" QUADFORMAT "d\0", "SQL$GRANT", 
+				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), 
+						   0, (SINT64) 1));
+
 				FOR(REQUEST_HANDLE request2)
 					FLD2 IN RDB$RELATION_FIELDS WITH
 						FLD2.RDB$RELATION_NAME EQ FLD.RDB$RELATION_NAME
 						AND FLD2.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
 					MODIFY FLD2
-#ifndef EXACT_NUMERICS
-						sprintf(s_class, "%s%ld\0", "SQL$GRANT",
-								DPM_gen_id(tdbb,
-										   MET_lookup_generator(tdbb,
-																"RDB$SECURITY_CLASS"),
-										   0, (SLONG) 1));
-#else
-						sprintf(s_class, "%s%" QUADFORMAT "d\0", "SQL$GRANT",
-								DPM_gen_id(tdbb,
-										   MET_lookup_generator(tdbb,
-																"RDB$SECURITY_CLASS"),
-										   0, (SINT64) 1));
-#endif
 						jrd_vtof(s_class, FLD2.RDB$SECURITY_CLASS,
 								 sizeof(FLD2.RDB$SECURITY_CLASS));
 					END_MODIFY;
@@ -1148,35 +1132,6 @@ static USHORT trans_sql_priv( TEXT * privileges)
 	}
 
 	return priv;
-}
-
-
-static USHORT terminate( TEXT * string)
-{
-/**************************************
- *
- *	t e r m i n a t e
- *
- **************************************
- *
- * Functional description
- *	Zap trailing blank or null terminated string to null terminated string.
- *	Return length.
- *
- **************************************/
-	TEXT *p, *q;
-#define	BLANK	'\040'
-
-/* Scan forwards to end-of-string -- record the last non-BLANK we saw */
-	q = string - 1;
-	for (p = string; *p; p++) {
-		if (*p != BLANK)
-			q = p;
-	}
-
-	*(q + 1) = '\0';
-
-	return (q + 1) - string;
 }
 
 

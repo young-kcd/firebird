@@ -28,6 +28,7 @@
 #include "../jrd/intl.h"
 #include "../intl/country_codes.h"
 #include "../intl/charsets.h"
+#include "../jrd/obj.h"
 
 /* Define name ids */
 

@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2001.07.28: John Bellardo: Added gds__info_rsb_skip to support LIMIT.
  */
 
 #ifndef _JRD_INF_H_
@@ -132,6 +134,7 @@
 #define gds__info_rsb_sim_cross		19
 #define gds__info_rsb_once		20
 #define gds__info_rsb_procedure		21
+#define gds__info_rsb_skip		22
 
 /* bitmap expressions */
 
