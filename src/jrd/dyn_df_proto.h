@@ -34,8 +34,8 @@ extern void DYN_define_function(GBL, UCHAR **);
 extern void DYN_define_function_arg(GBL, UCHAR **, TEXT *);
 extern void DYN_define_generator(GBL, UCHAR **);
 extern void DYN_define_global_field(GBL, UCHAR **, TEXT *, TEXT *);
-extern void DYN_define_index(GBL, UCHAR **, TEXT *, UCHAR, TEXT *, TEXT *,
-							 TEXT *, UCHAR *);
+extern void DYN_define_index(GBL, UCHAR **, TEXT *, UCHAR, TEXT *, TEXT *, 
+							 TEXT *, TEXT *, UCHAR *);
 extern void DYN_define_local_field(GBL, UCHAR **, TEXT *, TEXT *);
 extern void DYN_define_log_file(GBL, UCHAR **, USHORT, USHORT);
 extern void DYN_define_parameter(GBL, UCHAR **, TEXT *);
