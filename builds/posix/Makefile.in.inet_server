@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.inet_server,v 1.5 2003-03-05 16:15:45 brodsom Exp $
+#  $Id: Makefile.in.inet_server,v 1.6 2003-03-05 17:56:50 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=inet_server
@@ -39,6 +39,9 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
+IPSERVER_Files = $(WIN_IPSERVER_Files)
+IPSERVER_Sources =  $(addprefix ipserver/, $(IPSERVER_Files))
+IPSERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IPSERVER_Sources))))
 
 SERVER_Files = $(OS_ServerFiles) server.cpp
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
@@ -52,8 +55,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 fb_inet_server : $(BIN)/fb_inet_server
 
-$(BIN)/fb_inet_server:	$(SERVER_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(SERVER_Objects) -o $@ -L $(LIB) -lfbembed $(LIB_GUI) $(LINK_LIBS) 
+$(BIN)/fb_inet_server:	$(SERVER_Objects) $(IPSERVER_Objects) $(LIBFBEMBED_SO)  
+	$(LD) $(LINK_OPTS) $(SERVER_Objects) $(IPSERVER_Objects) -o $@ -L $(LIB) -lfbembed $(LIB_GUI) $(LINK_LIBS) 
 #	$(CHMOD_S7) $@
 
 
