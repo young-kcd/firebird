@@ -1,3 +1,9 @@
+2002-12-24 19:14  skidder
+
+	* firebird2/src/jrd/met.epp:
+	
+	Fix for crash during procedure alteration
+
 2002-12-23 18:10  dimitr
 
 	* firebird2/src/jrd/dfw.epp:
