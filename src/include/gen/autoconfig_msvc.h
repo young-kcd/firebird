@@ -8,6 +8,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Cray" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
  */
 
 #ifndef AUTOCONFIG_H
@@ -64,7 +65,6 @@
 #undef LINUX
 #undef FREEBSD
 #undef NETBSD
-#undef apollo
 #undef sun
 #undef SOLARIS
 #undef hpux

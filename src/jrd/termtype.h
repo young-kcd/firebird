@@ -19,12 +19,14 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
+ *
  */
 
 #ifndef _JRD_TERMTYPE_H_
 #define _JRD_TERMTYPE_H_
 
-#define TERM_apollo_dm	1
 #define TERM_rlogin	2
 #define TERM_telnet	3
 #define TERM_sio	4

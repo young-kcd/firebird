@@ -19,21 +19,24 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
+ *
  */
 
 #ifndef ALICE_INFO_H
 #define ALICE_INFO_H
 
 static UCHAR info[] =
-{ 
+{
     gds_info_version,
 	gds_info_implementation,
 	gds_info_end
 };
 
 
-/* this table describes the implementations that 
-   require a node_name,protocol combination be 
+/* this table describes the implementations that
+   require a node_name,protocol combination be
    generated */
 
 static BOOLEAN generate_protocol[] =
@@ -60,7 +63,6 @@ static BOOLEAN generate_protocol[] =
 #define	DECNET_PROTOCOL	 1		/* :: */
 #define TCP_PROTOCOL	 2		/* : */
 #define VMS_TCP_PROTOCOL 4		/* ^ */
-#define APOLLO_PROTOCOL	 8		/* // */
 #define MSLAN_PROTOCOL	16		/* \\ */
 
 static USHORT protocols_supported[] =
@@ -75,11 +77,11 @@ static USHORT protocols_supported[] =
 	DECNET_PROTOCOL | VMS_TCP_PROTOCOL,	/* "JSV" */
 	0,
 	0,
-	TCP_PROTOCOL | APOLLO_PROTOCOL,		/* "InterBase/apollo" */
+    0,
 	DECNET_PROTOCOL | TCP_PROTOCOL,		/* "InterBase/ultrix" */
 	DECNET_PROTOCOL | VMS_TCP_PROTOCOL,	/* "InterBase/vms" */
 	TCP_PROTOCOL,						/* "InterBase/sun" */
-	TCP_PROTOCOL,						/* "InterBase/OS2" */
+    0,
 	0,									/* 15 */
 	0,									/* 16 */
 	0,									/* 17 */
@@ -90,16 +92,16 @@ static USHORT protocols_supported[] =
 	0,									/* 22 */
 	0,									/* 23 */
 	0,									/* 24 */
-	TCP_PROTOCOL | APOLLO_PROTOCOL,		/* "InterBase/apollo" */
+    0,
 	DECNET_PROTOCOL | TCP_PROTOCOL,		/* "InterBase/ultrix" */
 	DECNET_PROTOCOL | VMS_TCP_PROTOCOL,	/* "InterBase/vms" */
 	TCP_PROTOCOL,						/* "InterBase/sun" */
-	TCP_PROTOCOL,						/* "InterBase/OS2" */
+    0,                       /* "InterBase/OS2" */
 	TCP_PROTOCOL,						/* "InterBase/sun4" */
 	TCP_PROTOCOL,						/* "InterBase/hpux" */
 	TCP_PROTOCOL,						/* "InterBase/sun386" */
 	DECNET_PROTOCOL | VMS_TCP_PROTOCOL,	/* "InterBase:ORACLE/vms" */
-	TCP_PROTOCOL,						/* "InterBase/mac/aux" */
+    0,                       /* "InterBase/mac/aux" */
 	TCP_PROTOCOL,						/* "InterBase/ibm/rt" */
 	DECNET_PROTOCOL | TCP_PROTOCOL,		/* "InterBase/mips/ultrix" */
 };

@@ -26,6 +26,9 @@
 /*  define LIKE_JRD to have the lookup follow exactly the syntax
  *  used by intl.c in JRD.
  *  Set the static full_debug to 1 to turn on ib_printf debugging.
+ *
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
+ *
  */
 
 #include "firebird.h"
@@ -51,14 +54,6 @@ typedef unsigned short SHORT;
 
 #ifndef INTL_MODULE
 #define	INTL_MODULE "lib/IBLD_%03d"
-#endif
-
-#ifdef AX
-#define APOLLO
-#endif
-
-#ifdef AP
-#define APOLLO
 #endif
 
 #ifndef INTL_INIT_ENTRY
@@ -127,12 +122,6 @@ main(argc, argv)
 			func = (FPTR_INT) ISC_lookup_entrypoint(path, entry, NULL);
 		}
 #else
-#if (defined( AP ) || defined( AX ) || defined( APOLLO ))
-		sprintf(buffer2, "ld%03d_init", atoi(vector[i]));
-		FULL_DEBUG("looking for %s\n", buffer2);
-		func = (FPTR_INT) ISC_lookup_entrypoint("", buffer2, NULL);
-		FULL_DEBUG("found %ld\n", func);
-#else
 		if (strcmp(vector[i], "ask") == 0) {
 			gets(buffer);
 			func = (FPTR_INT) ISC_lookup_entrypoint(buffer, "ld_init", NULL);
@@ -140,7 +129,6 @@ main(argc, argv)
 		else
 			func =
 				(FPTR_INT) ISC_lookup_entrypoint(vector[i], "ld_init", NULL);
-#endif
 #endif
 		if (func == NULL)
 			ib_printf("Cannot find %s.init\n", vector[i]);

@@ -26,6 +26,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "HP9000 s300" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
  *
  */
 
@@ -46,6 +47,7 @@
  *                         conditionals, second attempt
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" and "MAC_CP" defines
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
  *
  */
 
@@ -127,11 +129,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 	23		Darwin/PowerPC
 
 */
-
-// TMN: Left the APOLLO stuff commented out for historical reference. :-)
-//#ifdef APOLLO
-//#define	CLASS		1
-//#endif
 
 #ifdef sun
 #ifdef i386

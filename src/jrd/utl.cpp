@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.02.15 Sean Leyne - Code Cleanup is required of obsolete "EPSON", "XENIX" ports
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
  *
  */
 
@@ -201,11 +202,11 @@ static const TEXT *const impl_class[] = {
 		"JSV",					/* 7 */
 		NULL,					/* 8 */
 		NULL,					/* 9 */
-		"InterBase/apollo",		/* 10 */
+        NULL, /* "InterBase/apollo",     /* 10 */
 		"InterBase/ultrix",		/* 11 */
 		"InterBase/vms",		/* 12 */
 		"InterBase/sun",		/* 13 */
-		"InterBase/OS2",		/* 14 */
+        NULL, /* "InterBase/OS2",        /* 14 */
 		NULL,					/* 15 */
 		NULL,					/* 16 */
 		NULL,					/* 17 */
@@ -216,39 +217,39 @@ static const TEXT *const impl_class[] = {
 		NULL,					/* 22 */
 		NULL,					/* 23 */
 		NULL,					/* 24 */
-		"InterBase/apollo",		/* 25 */
+        NULL, /* "InterBase/apollo",     /* 25 */
 		"InterBase/ultrix",		/* 26 */
 		"InterBase/vms",		/* 27 */
 		"InterBase/sun",		/* 28 */
-		"InterBase/OS2",		/* 29 */
+        NULL, /* "InterBase/OS2",        /* 29 */
 		"InterBase/sun4",		/* 30 */
 		"InterBase/hpux800",	/* 31 */
 		"InterBase/sun386",		/* 32 */
 		"InterBase:ORACLE/vms",	/* 33 */
-		"InterBase/mac/aux",	/* 34 */
+        NULL, /* "InterBase/mac/aux",    /* 34 */
 		"InterBase/ibm/aix",	/* 35 */
 		"InterBase/mips/ultrix",	/* 36 */
-		"InterBase/xenix",		/* 37 */
+        NULL, /* "InterBase/xenix",      /* 37 */
 		"InterBase/AViiON",		/* 38 */
 		"InterBase/hp/mpexl",	/* 39 */
 		"InterBase/hp/ux300",	/* 40 */
 		"InterBase/sgi",		/* 41 */
 		"InterBase/sco/unix",	/* 42 */
-		"InterBase/Cray",		/* 43 */
-		"InterBase/imp",		/* 44 */
-		"InterBase/delta",		/* 45 */
-		"InterBase/NeXT",		/* 46 */
+        NULL, /* "InterBase/Cray",       /* 43 */
+        NULL, /* "InterBase/imp",        /* 44 */
+        NULL, /* "InterBase/delta",      /* 45 */
+        NULL, /* "InterBase/NeXT",       /* 46 */
 		"InterBase/DOS",		/* 47 */
-		"InterBase/m88k",		/* 48 */
+        NULL, /* "InterBase/m88k",       /* 48 */
 		"InterBase/UNIXWARE",	/* 49 */
 		"InterBase/x86/Windows NT",	/* 50 */
-		"InterBase/epson",		/* 51 */
+        NULL, /* "InterBase/epson",      /* 51 */
 		"InterBase/DEC/OSF",	/* 52 */
 		"InterBase/Alpha/OpenVMS",	/* 53 */
 		"InterBase/NetWare",	/* 54 */
 		"InterBase/Windows",	/* 55 */
-		"InterBase/NCR3000",	/* 56 */
-		"InterBase/PPC/Windows NT",	/* 57 */
+        NULL, /* "InterBase/NCR3000",    /* 56 */
+        NULL, /* "InterBase/PPC/Windows NT", /* 57 */
 		"InterBase/DG_X86",		/* 58 */
 		"InterBase/SCO_SV Intel",	/* 59 *//* 5.5 SCO Port */
 		"InterBase/linux Intel",	/* 60 */

@@ -1,30 +1,32 @@
 //____________________________________________________________
-//  
+//
 //		PROGRAM:	Alice (All Else) Utility
 //		MODULE:		tdr.cpp
 //		DESCRIPTION:	Routines for automated transaction recovery
-//  
+//
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//  
+//
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//  
+//
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//  
+//
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  
+//
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.4 2001-12-24 02:50:47 tamlin Exp $
+//	$Id: tdr.cpp,v 1.5 2002-02-16 04:36:03 seanleyne Exp $
+//
+// 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
 
 #include "firebird.h"
@@ -65,7 +67,7 @@ static UCHAR limbo_info[] = { gds_info_limbo, gds_info_end };
 
 
 
-// 
+//
 // The following routines are shared by the command line gfix and
 // the windows server manager.  These routines should not contain
 // any direct screen I/O (i.e. ib_printf/ib_getc statements).
@@ -73,11 +75,11 @@ static UCHAR limbo_info[] = { gds_info_limbo, gds_info_end };
 
 
 //____________________________________________________________
-//  
+//
 //		Determine the proper action to take
 //		based on the state of the various
 //		transactions.
-//  
+//
 
 USHORT TDR_analyze(TDR trans)
 {
@@ -87,7 +89,7 @@ USHORT TDR_analyze(TDR trans)
 		return TRA_none;
 
 //  if the tdr for the first transaction is missing,
-//  we can assume it was committed 
+//  we can assume it was committed
 
 	state = trans->tdr_state;
 	if (state == TRA_none)
@@ -113,7 +115,7 @@ USHORT TDR_analyze(TDR trans)
 
 			// a prepared transaction requires a commit if there are missing
 			// records up to now, otherwise only do something if somebody else
-			// already has 
+			// already has
 
 		case TRA_limbo:
 			if (state == TRA_none)
@@ -125,7 +127,7 @@ USHORT TDR_analyze(TDR trans)
 			break;
 
 			// an explicitly rolled back transaction requires a rollback unless a
-			// transaction has committed or is assumed committed 
+			// transaction has committed or is assumed committed
 
 		case TRA_rollback:
 			if ((state == TRA_commit) || (state == TRA_none)) {
@@ -141,7 +143,7 @@ USHORT TDR_analyze(TDR trans)
 
 			// a missing TDR indicates a committed transaction if a limbo one hasn't
 			// been found yet, otherwise it implies that the transaction wasn't
-			// prepared 
+			// prepared
 
 		case TRA_none:
 			if (state == TRA_commit)
@@ -171,9 +173,9 @@ USHORT TDR_analyze(TDR trans)
 
 
 //____________________________________________________________
-//  
+//
 //		Attempt to attach a database with a given pathname.
-//  
+//
 
 BOOLEAN TDR_attach_database(STATUS * status_vector,
 							TDR trans, TEXT * pathname)
@@ -254,10 +256,10 @@ BOOLEAN TDR_attach_database(STATUS * status_vector,
 
 
 //____________________________________________________________
-//  
+//
 //		Get the state of the various transactions
 //		in a multidatabase transaction.
-//  
+//
 
 void TDR_get_states(TDR trans)
 {
@@ -271,10 +273,10 @@ void TDR_get_states(TDR trans)
 
 
 //____________________________________________________________
-//  
+//
 //		Detach all databases associated with
 //		a multidatabase transaction.
-//  
+//
 
 void TDR_shutdown_databases(TDR trans)
 {
@@ -290,17 +292,17 @@ void TDR_shutdown_databases(TDR trans)
 
 
 #ifndef GUI_TOOLS
-//  
-// The following routines are only for the command line utility. 
+//
+// The following routines are only for the command line utility.
 // This should really be split into two files...
-//  
+//
 
 
 //____________________________________________________________
-//  
+//
 //		List transaction stuck in limbo.  If the prompt switch is set,
 //		prompt for commit, rollback, or leave well enough alone.
-//  
+//
 
 void TDR_list_limbo(int *handle, TEXT * name, ULONG switches)
 {
@@ -384,16 +386,16 @@ void TDR_list_limbo(int *handle, TEXT * name, ULONG switches)
 
 
 //____________________________________________________________
-//  
+//
 //		Check a transaction's TDR to see if it is
 //		a multi-database transaction.  If so, commit
 //		or rollback according to the user's wishes.
 //		Object strongly if the transaction is in a
-//		state that would seem to preclude committing 
-//		or rolling back, but essentially do what the 
-//		user wants.  Intelligence is assumed for the 
+//		state that would seem to preclude committing
+//		or rolling back, but essentially do what the
+//		user wants.  Intelligence is assumed for the
 //		gfix user.
-//  
+//
 
 BOOLEAN TDR_reconnect_multiple(int *handle,
 							   SLONG id, TEXT * name, ULONG switches)
@@ -403,7 +405,7 @@ BOOLEAN TDR_reconnect_multiple(int *handle,
 	USHORT advice;
 	BOOLEAN error = FALSE;
 
-//  get the state of all the associated transactions 
+//  get the state of all the associated transactions
 
 	if (!(trans = MET_get_transaction(status_vector, handle, id)))
 		return reconnect(handle, id, name, switches);
@@ -412,7 +414,7 @@ BOOLEAN TDR_reconnect_multiple(int *handle,
 	TDR_get_states(trans);
 
 //  analyze what to do with them; if the advice contradicts the user's
-//  desire, make them confirm it; otherwise go with the flow. 
+//  desire, make them confirm it; otherwise go with the flow.
 
 	advice = TDR_analyze(trans);
 
@@ -505,7 +507,7 @@ BOOLEAN TDR_reconnect_multiple(int *handle,
 		error = TRUE;
 	}
 
-//  shutdown all the databases for cleanliness' sake 
+//  shutdown all the databases for cleanliness' sake
 
 	TDR_shutdown_databases(trans);
 
@@ -515,11 +517,11 @@ BOOLEAN TDR_reconnect_multiple(int *handle,
 
 
 //____________________________________________________________
-//  
+//
 //		format and print description of a transaction in
 //		limbo, including all associated transactions
 //		in other databases.
-//  
+//
 
 static void print_description(TDR trans)
 {
@@ -679,7 +681,7 @@ static void print_description(TDR trans)
 
 	}
 
-//  let the user know what the suggested action is 
+//  let the user know what the suggested action is
 
 	switch (TDR_analyze(trans))
 	{
@@ -716,9 +718,9 @@ static void print_description(TDR trans)
 
 
 //____________________________________________________________
-//  
+//
 //		Ask the user whether to commit or rollback.
-//  
+//
 
 static ULONG ask(void)
 {
@@ -759,10 +761,10 @@ static ULONG ask(void)
 
 
 //____________________________________________________________
-//  
-//		Generate pathnames for a given database 
+//
+//		Generate pathnames for a given database
 //		until the database is successfully attached.
-//  
+//
 
 static void reattach_database(TDR trans)
 {
@@ -774,7 +776,7 @@ static void reattach_database(TDR trans)
 
 	tdgbl = GET_THREAD_DATA;
 
-//  determine what protocols are allowable for this OS 
+//  determine what protocols are allowable for this OS
 
 #ifdef VMS
 	protocols |= DECNET_PROTOCOL | VMS_TCP_PROTOCOL;
@@ -788,28 +790,11 @@ static void reattach_database(TDR trans)
 
 	ISC_get_host(reinterpret_cast < char *>(buffer), sizeof(buffer));
 
-//  if this is being run from the same host,
-//  (or if this is apollo land), just
-//  try to reconnect using the same pathname 
-
-	if ((protocols & APOLLO_PROTOCOL) ||
-		!strcmp(reinterpret_cast < const char *>(buffer),
-				reinterpret_cast <
-				const char *>(trans->tdr_host_site->str_data)))
-	{
-		if (TDR_attach_database(status_vector,
-								trans,
-								reinterpret_cast<char*>(trans->tdr_fullpath->str_data)))
-		{
-			return;
-		}
-	}
-
 //  try going through the previous host with all available
 //  protocols, using chaining to try the same method of
-//  attachment originally used from that host 
+//  attachment originally used from that host
 
-	else if (trans->tdr_host_site) {
+    if (trans->tdr_host_site) {
 		for (p = buffer, q = trans->tdr_host_site->str_data; *q;)
 			*p++ = *q++;
 		start = p;
@@ -850,7 +835,7 @@ static void reattach_database(TDR trans)
 	}
 
 //  attaching using the old method didn't work;
-//  try attaching to the remote node directly 
+//  try attaching to the remote node directly
 
 	if (trans->tdr_remote_site) {
 		for (p = buffer, q = trans->tdr_remote_site->str_data; *q;)
@@ -908,7 +893,7 @@ static void reattach_database(TDR trans)
 	}
 
 //  we have failed to reattach; notify the user
-//  and let them try to succeed where we have failed 
+//  and let them try to succeed where we have failed
 
 	ALICE_print(86, reinterpret_cast < char *>(trans->tdr_id), 0, 0, 0, 0);	/* msg 86: Could not reattach to database for transaction %ld. */
 	ALICE_print(87, reinterpret_cast < char *>(trans->tdr_fullpath->str_data),
@@ -943,10 +928,10 @@ static void reattach_database(TDR trans)
 
 
 //____________________________________________________________
-//  
-//		Attempt to locate all databases used in 
+//
+//		Attempt to locate all databases used in
 //		a multidatabase transaction.
-//  
+//
 
 static void reattach_databases(TDR trans)
 {
@@ -959,9 +944,9 @@ static void reattach_databases(TDR trans)
 
 
 //____________________________________________________________
-//  
+//
 //		Commit or rollback a named transaction.
-//  
+//
 
 static BOOLEAN reconnect(int *handle,
 						 SLONG number, TEXT * name, ULONG switches)
@@ -975,7 +960,7 @@ static BOOLEAN reconnect(int *handle,
 	if (gds__reconnect_transaction(status_vector,
 								   reinterpret_cast <
 								   void **>(GDS_REF(handle)),
-								   reinterpret_cast <void **>(GDS_REF(transaction)), 
+								   reinterpret_cast <void **>(GDS_REF(transaction)),
     							   sizeof(id),
 								   reinterpret_cast <char *>(GDS_REF(id)))) {
 		ALICE_print(90, name, 0, 0, 0, 0);	/* msg 90: failed to reconnect to a transaction in database %s */
