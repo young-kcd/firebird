@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.19.2.1 2003-07-19 05:52:49 bellardo Exp $
+#   $Id: make.rules,v 1.19.2.2 2003-07-19 06:19:03 bellardo Exp $
 #
 
 #____________________________________________________________________________
@@ -65,9 +65,9 @@ CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
 #CC =		 libtool @CC@
 #CXX =	 libtool @CXX@
 
-CC =	@CC@
-CXX =	@CXX@
-LD =	@CXX@
+CC ?=	@CC@
+CXX ?=	@CXX@
+LD ?=	@CXX@
 
 
 
@@ -91,16 +91,16 @@ LD =	@CXX@
 ifdef UseLibToolForLink
 
 
-    LIB_LINK= libtool @CC@
-    STATICLIB_LINK = libtool @CC@ -all-static
+    LIB_LINK= libtool $(CC(
+    STATICLIB_LINK = libtool $(CC) -all-static
 #    LIB_LINK_OPTIONS = -version-info 0:0:0 -release 1.5.0.0 -rpath /usr/lib
     LIB_LINK_OPTIONS += -version-info 0:0:0 -release 1.5.0.0 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib
 
-    EXE_LINK = libtool @CC@
-    STATICEXE_LINK = libtool @CC@ -all-static
+    EXE_LINK = libtool $(CC)
+    STATICEXE_LINK = libtool $(CC) -all-static
 else
 
-    LIB_LINK= @CC@
+    LIB_LINK= $(CC)
     STATICLIB_LINK= ar cruvs
 #    LIB_LINK_OPTIONS = -soname libgds.$(SHRLIB_EXT) -rpath /usr/lib
 #    LIB_LINK_OPTIONS = -soname libgds.$(SHRLIB_EXT).2 -rpath /usr/lib
@@ -108,8 +108,8 @@ else
 
 #    EXE_LINK = g++
 #    STATICEXE_LINK = g++
-    EXE_LINK = @CXX@
-    STATICEXE_LINK = @CXX@
+    EXE_LINK = $(CXX)
+    STATICEXE_LINK = $(CXX)
 endif
 
 
