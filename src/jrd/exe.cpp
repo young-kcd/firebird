@@ -2039,7 +2039,7 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 					}
 					if (!found && operation != blr_savepoint_set) {
 						ERR_post(gds_invalid_savepoint,
-							gds_arg_string, node_savepoint_name, 0);
+							gds_arg_string, ERR_cstring(node_savepoint_name), 0);
 					}
 
 					if (operation == blr_savepoint_set) {
