@@ -1,3 +1,17 @@
+2004-06-04 16:36  kkuznetsov
+
+	* firebird2/src/: dsql/array_proto.h (1.14), jrd/alt_proto.h
+	(1.11), jrd/ibase.h (1.82), jrd/utl.cpp (1.68), jrd/why.cpp (1.75):
+	
+	
+	Fixed some more different prototypes of the same functions
+
+2004-06-04 08:55  fsg
+
+	* firebird2/src/qli/: compile.cpp (1.25), eval.cpp (1.44):
+	
+	Fixes issues spotted by Claudio
+
 2004-06-03 17:09  kkuznetsov
 
 	* firebird2/src/jrd/alt_proto.h (1.10):
