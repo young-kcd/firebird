@@ -38,19 +38,19 @@
 
 enum rsb_t
 {
-	rsb_boolean,
-	rsb_cross,
-	rsb_dbkey,
-	rsb_first,
-	rsb_skip,
-	rsb_indexed,
-	rsb_merge,
+	rsb_boolean,		// Describes a restriction
+	rsb_cross,			// Describes a join
+	rsb_dbkey,			// Retrieval of a particular record
+	rsb_first,			// Retrieval of first n records
+	rsb_skip,			
+	rsb_indexed,		// Retrieval via an index
+	rsb_merge,			// Retrieve using a sort merge
 	rsb_multiple,
 	rsb_project,
-	rsb_sequential,
-	rsb_sort,
-	rsb_union,
-	rsb_aggregate,
+	rsb_sequential,		// Retrieve records as stored
+	rsb_sort,			// Perform a sort on the records
+	rsb_union,			// Do a union of the described tables
+	rsb_aggregate,		// Perform an aggregate operation
 	rsb_ext_sequential, // External sequential access
 	rsb_ext_indexed,    // External indexed access
 	rsb_ext_dbkey,      // External dbkey access
