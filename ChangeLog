@@ -1,3 +1,50 @@
+2004-04-18 16:22  alexpeshkoff
+
+	* firebird2/src/: alice/all.cpp (1.19), alice/all.h (1.10),
+	common/classes/alloc.h (1.40), common/classes/array.h (1.22),
+	common/classes/objects_array.h (1.7), common/classes/stack.h (1.1),
+	dsql/all.h (1.11), dsql/alld.cpp (1.21), dsql/ddl.cpp (1.93),
+	dsql/dsql.cpp (1.100), dsql/dsql.h (1.59), dsql/dsql.tab.h (1.35),
+	dsql/gen.cpp (1.61), dsql/gen_proto.h (1.13), dsql/make.cpp (1.57),
+	dsql/make_proto.h (1.21), dsql/metd.epp (1.51), dsql/parse.y
+	(1.130), dsql/pass1.cpp (1.137), jrd/all.cpp (1.29), jrd/all.h
+	(1.16), jrd/blb.cpp (1.67), jrd/blb_proto.h (1.19), jrd/btr.cpp
+	(1.83), jrd/btr.h (1.30), jrd/btr_proto.h (1.27), jrd/cch.cpp
+	(1.80), jrd/cch.h (1.19), jrd/cmp.cpp (1.111), jrd/dpm.epp (1.41),
+	jrd/dpm_proto.h (1.14), jrd/dyn.epp (1.56), jrd/dyn.h (1.19),
+	jrd/dyn_def.epp (1.63), jrd/exe.h (1.50), jrd/fun.epp (1.48),
+	jrd/grant.epp (1.33), jrd/grant_proto.h (1.11), jrd/idx.cpp (1.52),
+	jrd/idx_proto.h (1.20), jrd/jrd.h (1.89), jrd/lls.h (1.6),
+	jrd/met.epp (1.110), jrd/opt.cpp (1.154), jrd/opt_proto.h (1.13),
+	jrd/par.cpp (1.88), jrd/par_proto.h (1.15), jrd/req.h (1.38),
+	jrd/rse.cpp (1.67), jrd/rse.h (1.30), jrd/scl.epp (1.48),
+	jrd/scl_proto.h (1.17), jrd/vio.cpp (1.85):
+	
+	1. removed any mentions of blk_pool() from engine (and method
+	itself) 2. replaced 'struct lls' with 'template Stack'
+
+2004-04-18 05:34  skidder
+
+	* firebird2/src/common/classes/array.h (1.21):
+	
+	Fix MSVC build
+
+2004-04-18 04:50  skidder
+
+	* firebird2/src/: common/classes/array.h (1.20),
+	common/classes/fb_pair.h (1.9), common/classes/objects_array.h
+	(1.6), common/classes/tree.h (1.27), common/classes/vector.h (1.7),
+	jrd/cmp.cpp (1.110), jrd/cmp_proto.h (1.25), jrd/dfw.epp (1.100),
+	jrd/exe.h (1.49), jrd/idx.cpp (1.51), jrd/intl.cpp (1.59),
+	jrd/jrd.cpp (1.150), jrd/met.epp (1.109), jrd/nbak.h (1.13),
+	jrd/opt.cpp (1.153), jrd/opt_proto.h (1.12), jrd/req.h (1.37),
+	jrd/rpb_chain.h (1.11), jrd/scl.epp (1.47), jrd/scl_proto.h (1.16),
+	jrd/tra.cpp (1.65), jrd/tra.h (1.28), jrd/tra_proto.h (1.15):
+	
+	Switch to Firebird container templates for request resource
+	tracking. This significantly reduces CPU time any memory
+	consumption for databases with complex metadata
+
 2004-04-17 04:36  skidder
 
 	* firebird2/builds/install/misc/firebird.conf (1.5):
