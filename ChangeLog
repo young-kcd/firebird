@@ -1,3 +1,11 @@
+2005-01-24 03:19  stryqx
+
+	* firebird2/builds/posix/: prefix.example (1.4.2.2), prefix.freebsd
+	(1.6.2.3), prefix.sinixz (1.16.2.2), prefix.solaris (1.5.2.4),
+	prefix.solx86 (1.18.2.2):
+	
+	Fix final instances of gds_delay to gds_relay.
+
 2005-01-21 11:19  kkuznetsov
 
 	* firebird2/src/install/arch-specific/solx86gcc/: CS/prototype.in
