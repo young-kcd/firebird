@@ -62,7 +62,8 @@ void PluginManager::loadAllPlugins()
 			checkDir = pathItr->first;
 		}
 		
-		PathUtils::dir_iterator *dirItr = PathUtils::newDirItr(*pool, checkDir);
+		PathUtils::dir_iterator *dirItr = 
+			PathUtils::newDirItr(getPool(), checkDir);
 		while (*dirItr)
 		{
 			// See if we have already loaded this module
@@ -96,7 +97,7 @@ void PluginManager::loadAllPlugins()
 			// as defined by the host os, then by all means load it!
 			if (!alreadyLoaded && ModuleLoader::isLoadableModule(**dirItr))
 			{
-				Module *mod = FB_NEW(*pool) PluginModule(pool, **dirItr,
+				Module *mod = FB_NEW(getPool()) PluginModule(getPool(), **dirItr,
 						ModuleLoader::loadModule(**dirItr));
 				if (moduleList)
 				{
@@ -138,13 +139,13 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::PathName&
 			
 			if (ModuleLoader::isLoadableModule(checkPath))
 			{
-				return FB_NEW(*pool) PluginModule(pool, name,
+				return FB_NEW(getPool()) PluginModule(getPool(), name,
 						ModuleLoader::loadModule(checkPath));
 			}
 			ModuleLoader::doctorModuleExtention(checkPath);
 			if (ModuleLoader::isLoadableModule(checkPath))
 			{
-				return FB_NEW(*pool) PluginModule(pool, checkPath,
+				return FB_NEW(getPool()) PluginModule(getPool(), checkPath,
 						ModuleLoader::loadModule(checkPath));
 			}
 		}
@@ -175,14 +176,14 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::PathName&
 			// OK, the module has the correct prefix path, lets try to load it.
 			if (ModuleLoader::isLoadableModule(name))
 			{
-				return FB_NEW(*pool) PluginModule(pool, name,
+				return FB_NEW(getPool()) PluginModule(getPool(), name,
 						ModuleLoader::loadModule(name));
 			}
 			checkPath = name;
 			ModuleLoader::doctorModuleExtention(checkPath);
 			if (ModuleLoader::isLoadableModule(checkPath))
 			{
-				return FB_NEW(*pool) PluginModule(pool, checkPath,
+				return FB_NEW(getPool()) PluginModule(getPool(), checkPath,
 						ModuleLoader::loadModule(checkPath));
 			}
 		}
@@ -206,7 +207,7 @@ void PluginManager::addSearchPath(const Firebird::PathName& path, bool isFBRelat
 			return;
 	}
 	
-	searchPaths.push(Path(getDefaultMemoryPool(), path, isFBRelative));
+	searchPaths.push(Path(path, isFBRelative));
 }
 
 void PluginManager::removeSearchPath(const Firebird::PathName& path, bool isFBRelative)
@@ -294,14 +295,12 @@ const char *PluginManager::ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT =  "register_pl
 
 void PluginManager::load_engine_plugins()
 {
-	PluginManager& enginePluginManager = getEnginePluginManager();
-
-	enginePluginManager.addSearchPath(ENGINE_PLUGIN_DIR);
-	enginePluginManager.loadAllPlugins();
+	enginePluginManager().addSearchPath(ENGINE_PLUGIN_DIR);
+	enginePluginManager().loadAllPlugins();
 	
 	Firebird::string entryPoint(ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT);
-	for (PluginManager::iterator itr = enginePluginManager.begin();
-	    itr != enginePluginManager.end(); ++itr)
+	for (PluginManager::iterator itr = enginePluginManager().begin();
+	    itr != enginePluginManager().end(); ++itr)
 	{
 		engineRegistrationFuncType regFunc = (engineRegistrationFuncType)
 			(*itr).lookupSymbol(entryPoint);
@@ -312,44 +311,4 @@ void PluginManager::load_engine_plugins()
 	}
 }
 
-static PluginManager *manager = 0;
-#ifdef DEBUG_OBJECT_ALLOC
-static MemoryPool *objectPool = 0;
-void PluginManager::releaseEnginePluginManager()
-{
-	if (manager) {
-		delete manager;
-		manager = 0;
-	}
-
-	if (objectPool) {
-		char name[MAXPATHLEN];
-		gds__prefix(name, "ObjPool.log");
-		FILE* file = fopen(name, "w+b");
-		if (file) {
-			fprintf(file,"Object pool allocated blocks\n");
-			objectPool->print_contents(file);
-			fclose(file);
-		}
-	}
-}
-#endif
-
-PluginManager& PluginManager::getEnginePluginManager()
-{
-#ifdef DEBUG_OBJECT_ALLOC
-	if (! objectPool) {
-		objectPool = MemoryPool::createPool();
-	}
-	if (! manager) {
-		manager = FB_NEW(*objectPool) PluginManager(objectPool);
-	}
-#else
-	if (! manager) {
-		manager = FB_NEW(*getDefaultMemoryPool()) 
-						PluginManager(getDefaultMemoryPool());
-	}
-#endif
-	return *manager;
-}
-
+Firebird::InitInstance<PluginManager> PluginManager::enginePluginManager;

@@ -120,6 +120,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/evl_string.h"
 
+#include "../common/classes/init.h"
 #include "../jrd/plugin_manager.h"
 
 #ifdef DEV_BUILD
@@ -185,11 +186,8 @@ static USHORT wc_to_wc(TEXTTYPE, UCS2_CHAR*, USHORT, const UCS2_CHAR*, USHORT,
 #include "../jrd/intlobj.h"
 
 // storage for the loadable modules
-static PluginManager& getIntlBCPlugins() {
-	static PluginManager *intlBCPlugins = 0;
-	if (! intlBCPlugins)
-		intlBCPlugins = new PluginManager (getDefaultMemoryPool());
-	return *intlBCPlugins;
+namespace {
+	Firebird::InitInstance<PluginManager> intlBCPlugins;
 }
 
 static bool bcLoaded = false;
@@ -208,7 +206,7 @@ public:
 class CharSetContainer
 {
 public:
-	CharSetContainer(MemoryPool *p, USHORT cs_id);
+	CharSetContainer(MemoryPool& p, USHORT cs_id);
 	
 	CharSet getCharSet() { return cs; }
 	
@@ -219,7 +217,8 @@ public:
 	static CharSetContainer* lookupCharset(thread_db* tdbb, SSHORT ttype, ISC_STATUS *status);
 	
 private:
-	Firebird::SortedArray<CsConvert, CHARSET_ID, CharsetIDGetter> charset_converters;
+	Firebird::SortedArray<CsConvert, Firebird::EmptyStorage<CsConvert>, 
+		CHARSET_ID, CharsetIDGetter> charset_converters;
 	Firebird::Array<TextType> charset_collations;
 	Firebird::SortedArray<CHARSET_ID> impossible_conversions;
 	CharSet cs;
@@ -264,7 +263,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype,
 
 	// allocate a new character set object if we couldn't find one.
 	if (!cs) {
-		cs = FB_NEW(*dbb->dbb_permanent) CharSetContainer(dbb->dbb_permanent, id);
+		cs = FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id);
 		if (cs->getCharSet() == NULL) {
 			delete cs;
 			return NULL;
@@ -276,7 +275,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype,
 	return cs;
 }
 
-CharSetContainer::CharSetContainer(MemoryPool *p, USHORT cs_id) :
+CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id) :
 	charset_converters(p),
 	charset_collations(p),
 	impossible_conversions(p),
@@ -285,7 +284,7 @@ CharSetContainer::CharSetContainer(MemoryPool *p, USHORT cs_id) :
 	typedef USHORT (*CSInitFunc)(charset*, SSHORT, SSHORT);
 	CSInitFunc csInitFunc = 
 		reinterpret_cast<CSInitFunc>(lookup_init_function(type_charset, cs_id, 0));
-	charset* cs = FB_NEW(*p) charset;
+	charset* cs = FB_NEW(p) charset;
 	memset(cs, 0, sizeof(charset));
 
 	if (!csInitFunc || (*csInitFunc)(cs, cs_id, 0) != 0)
@@ -439,7 +438,7 @@ public:
 	{
 		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(*tdbb->tdbb_default) Firebird::ContainsEvaluator<CharType>(tdbb->tdbb_default, 
+		return FB_NEW(*tdbb->tdbb_default) Firebird::ContainsEvaluator<CharType>(*tdbb->tdbb_default, 
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 	static bool evaluate(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT sl,
@@ -448,7 +447,7 @@ public:
 		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
 		fb_assert(pl % sizeof(CharType) == 0);
 		fb_assert(sl % sizeof(CharType) == 0);
-		Firebird::ContainsEvaluator<CharType> evaluator(tdbb->tdbb_default, 
+		Firebird::ContainsEvaluator<CharType> evaluator(*tdbb->tdbb_default, 
 			reinterpret_cast<const CharType*>(p), pl / sizeof(CharType));
 		evaluator.processNextChunk(reinterpret_cast<const CharType*>(s), sl / sizeof(CharType));
 		return evaluator.getResult();
@@ -471,7 +470,7 @@ public:
 	{
 		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(*tdbb->tdbb_default) Firebird::LikeEvaluator<CharType>(tdbb->tdbb_default, 
+		return FB_NEW(*tdbb->tdbb_default) Firebird::LikeEvaluator<CharType>(*tdbb->tdbb_default, 
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType), 
 			escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR);
 	}
@@ -481,7 +480,7 @@ public:
 		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
 		fb_assert(pl % sizeof(CharType) == 0);
 		fb_assert(sl % sizeof(CharType) == 0);
-		Firebird::LikeEvaluator<CharType> evaluator(tdbb->tdbb_default, 
+		Firebird::LikeEvaluator<CharType> evaluator(*tdbb->tdbb_default, 
 			reinterpret_cast<const CharType*>(p), pl / sizeof(CharType), 
 			escape, SQL_MATCH_ANY_CHARS, SQL_MATCH_1_CHAR);
 		evaluator.processNextChunk(reinterpret_cast<const CharType*>(s), sl / sizeof(CharType));
@@ -604,12 +603,12 @@ static FPTR_SHORT lookup_init_function(
  ***************************************/
 	if (!bcLoaded)
 	{
-		getIntlBCPlugins().addSearchPath(INTL_PLUGIN_DIR);
+		intlBCPlugins().addSearchPath(INTL_PLUGIN_DIR);
 		bcLoaded = true;
 	}
 
-	PluginManager::Plugin intlMod1 = getIntlBCPlugins().findPlugin(INTL_MODULE1);
-	PluginManager::Plugin intlMod2 = getIntlBCPlugins().findPlugin(INTL_MODULE2);
+	PluginManager::Plugin intlMod1 = intlBCPlugins().findPlugin(INTL_MODULE1);
+	PluginManager::Plugin intlMod2 = intlBCPlugins().findPlugin(INTL_MODULE2);
 
 	INTL_TRACE(("INTL: looking for obj %d ttype %d\n", objtype, parm1));
 
