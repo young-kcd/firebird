@@ -51,34 +51,34 @@ FBUDF_API paramdsc* testreflect(paramdsc* rc);
 
 
 FBUDF_API paramdsc* idNvl(paramdsc* v, paramdsc* v2);
-FBUDF_API paramdsc* sNvl(paramdsc* v, paramdsc* v2, paramdsc* rc);
+FBUDF_API void sNvl(const paramdsc* v, const paramdsc* v2, paramdsc* rc);
 
 FBUDF_API paramdsc* iNullIf(paramdsc* v, paramdsc* v2);
 FBUDF_API paramdsc* dNullIf(paramdsc* v, paramdsc* v2);
-FBUDF_API paramdsc* sNullIf(paramdsc* v, paramdsc* v2, paramdsc* rc);
+FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc);
 
-FBUDF_API char* DOW(ISC_TIMESTAMP* v, char* rc);
-FBUDF_API char* SDOW(ISC_TIMESTAMP* v, char* rc);
+FBUDF_API void DOW(const ISC_TIMESTAMP* v, char* rc);
+FBUDF_API void SDOW(const ISC_TIMESTAMP* v, char* rc);
 
-FBUDF_API paramdsc* right(paramdsc* v, short* rl, paramdsc* rc);
+FBUDF_API void right(const paramdsc* v, const short& rl, paramdsc* rc);
 
-FBUDF_API ISC_TIMESTAMP* addDay(ISC_TIMESTAMP* v, int& ndays);
-FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, int& nweeks);
-FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, int& nmonths);
-FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, int& nyears);
+FBUDF_API ISC_TIMESTAMP* addDay(ISC_TIMESTAMP* v, const int& ndays);
+FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, const int& nweeks);
+FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const int& nmonths);
+FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, const int& nyears);
 
-FBUDF_API ISC_TIMESTAMP* addMilliSecond(ISC_TIMESTAMP* v, int& nmseconds);
-FBUDF_API ISC_TIMESTAMP* addSecond(ISC_TIMESTAMP* v, int& nseconds);
-FBUDF_API ISC_TIMESTAMP* addMinute(ISC_TIMESTAMP* v, int& nminutes);
-FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, int& nhours);
+FBUDF_API ISC_TIMESTAMP* addMilliSecond(ISC_TIMESTAMP* v, const int& nmseconds);
+FBUDF_API ISC_TIMESTAMP* addSecond(ISC_TIMESTAMP* v, const int& nseconds);
+FBUDF_API ISC_TIMESTAMP* addMinute(ISC_TIMESTAMP* v, const int& nminutes);
+FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, const int& nhours);
 
-FBUDF_API ISC_TIMESTAMP* getExactTimestamp(ISC_TIMESTAMP* rc);
+FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc);
 
-FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc);
-FBUDF_API paramdsc* fbround(paramdsc* v, paramdsc* rc);
-FBUDF_API paramdsc* power(paramdsc* v, paramdsc* v2, paramdsc* rc);
+FBUDF_API void fbtruncate(const paramdsc* v, paramdsc* rc);
+FBUDF_API void fbround(const paramdsc* v, paramdsc* rc);
+FBUDF_API void power(const paramdsc* v, const paramdsc* v2, paramdsc* rc);
 
-FBUDF_API blobcallback* string2blob(paramdsc* v, blobcallback* outblob);
+FBUDF_API void string2blob(const paramdsc* v, blobcallback* outblob);
 
 #ifdef __cplusplus
 }

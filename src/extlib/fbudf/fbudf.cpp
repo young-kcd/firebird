@@ -24,7 +24,7 @@
  * 2002.01.20 Claudio Valderrama: addMonth should work with negative values, too.
  * 2003.10.26: Made some values const and other minor changes.
  * 2004.09.29 Claudio Valderrama: fix numeric overflow in addHour reported by
- *	"jssahdra" <joga.singh at inventum.cc> Since all add<time> functions are
+ *	"jssahdra" <joga.singh at inventum.cc>. Since all add<time> functions are
  *	wrappers around addTenthMSec, only two lines needed to be fixed.
  */
 
@@ -133,7 +133,7 @@ namespace internal
 	short get_int_type(const paramdsc* v, ISC_INT64& rc)
 	{
 		short s = -1;
-		switch(v->dsc_dtype)
+		switch (v->dsc_dtype)
 		{
 		case dtype_short:
 			rc = *reinterpret_cast<short*>(v->dsc_address);
@@ -155,7 +155,7 @@ namespace internal
 
 	void set_int_type(paramdsc* v, const ISC_INT64 iv)
 	{
-		switch(v->dsc_dtype)
+		switch (v->dsc_dtype)
 		{
 		case dtype_short:
 			*reinterpret_cast<short*>(v->dsc_address) = static_cast<short>(iv);
@@ -172,7 +172,7 @@ namespace internal
 	short get_double_type(const paramdsc* v, double& rc)
 	{
 		short s = -1;
-		switch(v->dsc_dtype)
+		switch (v->dsc_dtype)
 		{
 		case dtype_real:
 			rc = static_cast<double>(*reinterpret_cast<float*>(v->dsc_address));
@@ -190,7 +190,7 @@ namespace internal
 
 	void set_double_type(paramdsc* v, const double iv)
 	{
-		switch(v->dsc_dtype)
+		switch (v->dsc_dtype)
 		{
 		case dtype_real:
 			*reinterpret_cast<float*>(v->dsc_address) = static_cast<float>(iv);
@@ -204,7 +204,7 @@ namespace internal
 	short get_string_type(const paramdsc* v, unsigned char*& text)
 	{
 		short len = v->dsc_length;
-		switch(v->dsc_dtype)
+		switch (v->dsc_dtype)
 		{
 		case dtype_text:
 			text = v->dsc_address;
@@ -238,7 +238,7 @@ namespace internal
 
 	void set_string_type(paramdsc* v, const short len, unsigned char* text = 0)
 	{
-		switch(v->dsc_dtype)
+		switch (v->dsc_dtype)
 		{
 		case dtype_text:
 			v->dsc_length = len;
@@ -299,23 +299,23 @@ FBUDF_API paramdsc* idNvl(paramdsc* v, paramdsc* v2)
 	return v2;
 }
 
-FBUDF_API paramdsc* sNvl(paramdsc* v, paramdsc* v2, paramdsc* rc)
+FBUDF_API void sNvl(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 {
 	if (!internal::isnull(v))
 	{
 		unsigned char* sv = 0;
 		const short len = internal::get_string_type(v, sv);
 		internal::set_string_type(rc, len, sv);
-		return rc;
+		return;
 	}
 	if (!internal::isnull(v2))
 	{
 		unsigned char* sv2 = 0;
 		const short len = internal::get_string_type(v2, sv2);
 		internal::set_string_type(rc, len, sv2);
-		return rc;
+		return;
 	}
-	return internal::setnull(rc);
+	internal::setnull(rc);
 }
 
 
@@ -347,24 +347,28 @@ FBUDF_API paramdsc* dNullIf(paramdsc* v, paramdsc* v2)
 	return v;
 }
 
-FBUDF_API paramdsc* sNullIf(paramdsc* v, paramdsc* v2, paramdsc* rc)
+FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 {
 	if (internal::isnull(v) || internal::isnull(v2))
-		return internal::setnull(rc);
+	{
+		internal::setnull(rc);
+		return;
+	}
 	unsigned char* sv;
 	const short len = internal::get_string_type(v, sv);
 	unsigned char* sv2;
 	const short len2 = internal::get_string_type(v2, sv2);
 	if (len < 0 || len2 < 0) // good luck with the result, we can't do more.
-		return v;
+		return;
 	if (len == len2 && (!len || !memcmp(sv, sv2, len)) &&
 		(v->dsc_sub_type == v2->dsc_sub_type || // ttype
 		!v->dsc_sub_type || !v2->dsc_sub_type)) // tyype
 	{
-		return internal::setnull(rc);
+		internal::setnull(rc);
+		return;
 	}
 	internal::set_string_type(rc, len, sv);
-	return rc;
+	return;
 }
 
 namespace internal
@@ -373,7 +377,7 @@ namespace internal
 	const size_t day_len[] = {4, 14};
 	const char* day_fmtstr[] = {"%a", "%A"};
 
-	char* get_DOW(ISC_TIMESTAMP* v, char* rc, const day_format df)
+	char* get_DOW(const ISC_TIMESTAMP* v, char* rc, const day_format df)
 	{
 		tm times;
 		//ISC_TIMESTAMP timestamp;
@@ -408,48 +412,52 @@ namespace internal
 	}
 } // namespace internal
 
-FBUDF_API char* DOW(ISC_TIMESTAMP* v, char* rc)
+FBUDF_API void DOW(const ISC_TIMESTAMP* v, char* rc)
 {
-	return internal::get_DOW(v, rc, internal::day_long);
+	internal::get_DOW(v, rc, internal::day_long);
 }
 
-FBUDF_API char* SDOW(ISC_TIMESTAMP* v, char* rc)
+FBUDF_API void SDOW(const ISC_TIMESTAMP* v, char* rc)
 {
-	return internal::get_DOW(v, rc, internal::day_short);
+	internal::get_DOW(v, rc, internal::day_short);
 }
 
-FBUDF_API paramdsc* right(paramdsc* v, short* rl, paramdsc* rc)
+FBUDF_API void right(const paramdsc* v, const short& rl, paramdsc* rc)
 {
 	if (internal::isnull(v))
-		return internal::setnull(rc);
+	{
+		internal::setnull(rc);
+		return;
+	}
 	unsigned char* text = 0;
 	short len = internal::get_string_type(v, text);
-	const short diff = static_cast<short>(len - *rl);
-	if (*rl < len)
-		len = *rl;
+	const short diff = static_cast<short>(len - rl);
+	if (rl < len)
+		len = rl;
 	if (len < 0)
-		return internal::setnull(rc);
+	{
+		internal::setnull(rc);
+		return;
+	}
 	if (diff > 0)
 		text += diff;
 	internal::set_string_type(rc, len, text);
-	return rc;
+	return;
 }
 
-FBUDF_API ISC_TIMESTAMP* addDay(ISC_TIMESTAMP* v, int& ndays)
+FBUDF_API ISC_TIMESTAMP* addDay(ISC_TIMESTAMP* v, const int& ndays)
 {
-	//tm times;
 	v->timestamp_date += ndays;
 	return v;
 }
 
-FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, int& nweeks)
+FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, const int& nweeks)
 {
-	//tm times;
 	v->timestamp_date += nweeks * 7;
 	return v;
 }
 
-FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, int& nmonths)
+FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const int& nmonths)
 {
 	tm times;
 	isc_decode_timestamp(v, &times);
@@ -475,7 +483,7 @@ FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, int& nmonths)
 	return v;
 }
 
-FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, int& nyears)
+FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, const int& nyears)
 {
 	tm times;
 	isc_decode_timestamp(v, &times);
@@ -507,27 +515,27 @@ namespace internal
 	}
 } // namespace internal
 
-FBUDF_API ISC_TIMESTAMP* addMilliSecond(ISC_TIMESTAMP* v, int& nmseconds)
+FBUDF_API ISC_TIMESTAMP* addMilliSecond(ISC_TIMESTAMP* v, const int& nmseconds)
 {
 	return internal::addTenthMSec(v, nmseconds, ISC_TIME_SECONDS_PRECISION / 1000);
 }
 
-FBUDF_API ISC_TIMESTAMP* addSecond(ISC_TIMESTAMP* v, int& nseconds)
+FBUDF_API ISC_TIMESTAMP* addSecond(ISC_TIMESTAMP* v, const int& nseconds)
 {
 	return internal::addTenthMSec(v, nseconds, ISC_TIME_SECONDS_PRECISION);
 }
 
-FBUDF_API ISC_TIMESTAMP* addMinute(ISC_TIMESTAMP* v, int& nminutes)
+FBUDF_API ISC_TIMESTAMP* addMinute(ISC_TIMESTAMP* v, const int& nminutes)
 {
 	return internal::addTenthMSec(v, nminutes, 60 * ISC_TIME_SECONDS_PRECISION);
 }
 
-FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, int& nhours)
+FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, const int& nhours)
 {
 	return internal::addTenthMSec(v, nhours, 3600 * ISC_TIME_SECONDS_PRECISION);
 }
 
-FBUDF_API ISC_TIMESTAMP* getExactTimestamp(ISC_TIMESTAMP* rc)
+FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc)
 {
 	//time_t now;
 	//time(&now);
@@ -558,22 +566,28 @@ FBUDF_API ISC_TIMESTAMP* getExactTimestamp(ISC_TIMESTAMP* rc)
 	isc_encode_timestamp(&times, rc);
 	rc->timestamp_time += tv.tv_usec / 100;
 #endif
-	return rc;
+	return;
 }
 
-FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc)
+FBUDF_API void fbtruncate(const paramdsc* v, paramdsc* rc)
 {
 	if (internal::isnull(v))
-		return internal::setnull(rc);
+	{
+		internal::setnull(rc);
+		return;
+	}
 	ISC_INT64 iv;
 	const short rct = internal::get_int_type(v, iv);
 	if (rct < 0 || v->dsc_scale > 0)
-		return internal::setnull(rc);
+	{
+		internal::setnull(rc);
+		return;
+	}
 	if (!v->dsc_scale /*|| !v->dsc_sub_type*/) //second test won't work with ODS9
 	{
 		internal::set_int_type(rc, iv);
 		rc->dsc_scale = 0;
-		return rc;
+		return;
 	}
 
 	// truncate(0.9)  =>  0
@@ -599,22 +613,28 @@ FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc)
 #endif
 	internal::set_int_type(rc, iv);
 	rc->dsc_scale = 0;
-	return rc;
+	return;
 }
 
-FBUDF_API paramdsc* fbround(paramdsc* v, paramdsc* rc)
+FBUDF_API void fbround(const paramdsc* v, paramdsc* rc)
 {
 	if (internal::isnull(v))
-		return internal::setnull(rc);
+	{
+		internal::setnull(rc);
+		return;
+	}
 	ISC_INT64 iv;
 	const short rct = internal::get_int_type(v, iv);
 	if (rct < 0 || v->dsc_scale > 0)
-		return internal::setnull(rc);
+	{
+		internal::setnull(rc);
+		return;
+	}
 	if (!v->dsc_scale /*|| !v->dsc_sub_type*/) //second test won't work with ODS9
 	{
 		internal::set_int_type(rc, iv);
 		rc->dsc_scale = 0;
-		return rc;
+		return;
 	}
 	
 	// round(0.3)  => 0 ### round(0.5)  =>  1
@@ -645,13 +665,16 @@ FBUDF_API paramdsc* fbround(paramdsc* v, paramdsc* rc)
 	}
 	internal::set_int_type(rc, iv);
 	rc->dsc_scale = 0;
-	return rc;
+	return;
 }
 
-FBUDF_API paramdsc* power(paramdsc* v, paramdsc* v2, paramdsc* rc)
+FBUDF_API void power(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 {
 	if (internal::isnull(v) || internal::isnull(v2))
-		return internal::setnull(rc);
+	{
+		internal::setnull(rc);
+		return;
+	}
 	double d, d2;
 	const short rct = internal::get_scaled_double(v, d);
 	const short rct2 = internal::get_scaled_double(v2, d2);
@@ -659,24 +682,30 @@ FBUDF_API paramdsc* power(paramdsc* v, paramdsc* v2, paramdsc* rc)
 	// If we cause a div by zero, SS shutdowns in response.
 	// The doc I read says 0^0 will produce 1, so it's not tested below.
 	if (rct < 0 || rct2 < 0 || !d && d2 < 0)
-		return internal::setnull(rc);
+	{
+		internal::setnull(rc);
+		return;
+	}
 
 	internal::set_double_type(rc, pow(d, d2));
 	rc->dsc_scale = 0;
-	return rc;
+	return;
 }
 
-FBUDF_API blobcallback* string2blob(paramdsc* v, blobcallback* outblob)
+FBUDF_API void string2blob(const paramdsc* v, blobcallback* outblob)
 {
 	if (internal::isnull(v))
-		return 0;
+	{
+	    outblob->blob_handle = 0; // hint for the engine, null blob.
+		return;
+	}
 	unsigned char* text = 0;
 	const short len = internal::get_string_type(v, text);
 	if (len < 0)
-		return 0;
+		outblob->blob_handle = 0; // hint for the engine, null blob.
 	if (!outblob || !outblob->blob_handle)
-		return 0;
+		return;
 	outblob->blob_put_segment(outblob->blob_handle, text, len);
-	return outblob;
+	return;
 }
 
