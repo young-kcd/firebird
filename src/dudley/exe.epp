@@ -1420,7 +1420,7 @@ static void add_index( DUDLEY_IDX index)
 	X.RDB$SEGMENT_COUNT = index->idx_count;
 	X.RDB$UNIQUE_FLAG = (index->idx_unique) ? TRUE : FALSE;
 	X.RDB$INDEX_INACTIVE = (index->idx_inactive) ? TRUE : FALSE;
-	if (index->idx_type != IDX_type_none) {
+	if (index->idx_type) {
 		X.RDB$INDEX_TYPE = index->idx_type;
 		X.RDB$INDEX_TYPE.NULL = FALSE;
 	}
@@ -3706,9 +3706,7 @@ static void modify_index( DUDLEY_IDX index)
 				X.RDB$INDEX_INACTIVE = (index->idx_inactive) ? TRUE : FALSE;
 				if (index->idx_flags & IDX_unique_flag)
 					X.RDB$UNIQUE_FLAG = (index->idx_unique) ? TRUE : FALSE;
-				if ((index->idx_flags & IDX_type_flag) 
-				&& (index->idx_type != IDX_type_none)) 
-				{
+				if (index->idx_flags & IDX_type_flag) {
 					X.RDB$INDEX_TYPE = index->idx_type;
 					X.RDB$INDEX_TYPE.NULL = FALSE;
 				}

@@ -1044,7 +1044,7 @@ static void define_index(void)
 	SSHORT count;
 	bool unique = false;
 	bool inactive = false;
-	bool descending = false;
+	idx_direction descending = IDX_type_none;
 
 	index_name = PARSE_symbol(tok_ident);
 	MATCH(KW_FOR);
@@ -1062,9 +1062,9 @@ static void define_index(void)
 		else if (MATCH(KW_INACTIVE))
 			inactive = true;
 		else if (MATCH(KW_ASCENDING))
-			descending = false;
+			descending = IDX_type_none;
 		else if (MATCH(KW_DESCENDING))
-			descending = true;
+			descending = IDX_type_descend;
 		else
 			break;
 	}
@@ -1089,7 +1089,7 @@ static void define_index(void)
 	index->idx_unique = unique;
 	index->idx_description = description;
 	index->idx_inactive = inactive;
-	index->idx_type = IDX_type_none;
+	index->idx_type = descending;
 
 	ptr = &index->idx_field[count];
 
@@ -2542,11 +2542,11 @@ static void modify_index(void)
 			index->idx_flags |= IDX_active_flag;
 		}
 		else if (MATCH(KW_ASCENDING)) {
-			index->idx_type = IDX_type_ascending;
+			index->idx_type = IDX_type_none;
 			index->idx_flags |= IDX_type_flag;
 		}
 		else if (MATCH(KW_DESCENDING)) {
-			index->idx_type = IDX_type_descending;
+			index->idx_type = IDX_type_descend;
 			index->idx_flags |= IDX_type_flag;
 		}
 		else if (KEYWORD(KW_DESCRIPTION)) {

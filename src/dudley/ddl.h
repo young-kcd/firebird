@@ -286,9 +286,8 @@ typedef struct funcarg {
 
 enum idx_direction
 {
-	IDX_type_none = -1,
-	IDX_type_ascending = 0,
-	IDX_type_descending = 1
+	IDX_type_none = 0,
+	IDX_type_descend = 1
 };
 
 typedef struct dudley_idx {
