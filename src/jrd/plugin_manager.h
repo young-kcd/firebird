@@ -11,10 +11,9 @@
 #define PLUGIN_MANAGER_H
 
 #include "../jrd/os/mod_loader.h"
-#include "fb_map.h"
-#include "fb_list.h"
 #include "fb_string.h"
-
+#include "../common/classes/fb_pair.h"
+#include "../common/classes/objects_array.h"
 
 /** The PluginManager class provides a platform independent interface for
   *   loading, unloading, and accessing symbols in dynamically loadable
@@ -46,6 +45,7 @@
   * The exact semantics of the function the plugin needs to call varies by 
   *    subsystem.  Please refer to the subsystem documentation for details.
   **/
+
 class PluginManager
 {
 	static const char *ENGINE_PLUGIN_DIR;
@@ -58,7 +58,7 @@ public:
 	
 private:
 	/** PluginManager::Module is an internal class that encapsulates
-	  *  the reference counter, module linked list, module
+	  *  the reference counter, module array, module
 	  *  name, and symbol lookup function of a loaded module.  This class
 	  *  is expected to be subclassed to provide module specific functionality.
 	  *  For example, a builtin module class may load modules that have been statically
@@ -71,10 +71,9 @@ private:
 		/// The constructor requires the name of the module.  The initial reference count
 		///  is 1, to indicate that the PluginManager itself has a reference.  This is
 		///  verified in debug builds in the PluginManager destructor.
-		Module(const Firebird::PathName& name)
-			: refCnt(1), module_name(name), prev(0), next(0) {}
-		/// The destructor is responsible for removing the module from the linked
-		///  list.
+		Module(MemoryPool *p, const Firebird::PathName& name)
+			: refCnt(1), module_name(p, name), prev(0), next(0) {}
+		/// The destructor is responsible for removing the module from the array.
 		virtual ~Module();
 		/// aquire indicates the interest of a particular piece of engine code in
 		///  the loadable module.  Currently that interest is tracked via a reference
@@ -109,7 +108,8 @@ public:
 	friend class Plugin;
 	friend class iterator;
 	
-	PluginManager() : moduleList(0) {}
+	explicit PluginManager(MemoryPool *p) : moduleList(0), pool(p), 
+		searchPaths(pool), ignoreModules(pool) {}
 	~PluginManager();
 
 	/** The Plugin class encapsulates the various operations that are available
@@ -178,11 +178,11 @@ public:
 	/// Searches for the plugin with the given name using the
 	///  preset search criteria.
 	Plugin findPlugin(const Firebird::PathName&);
-	/// Adds a path to the list of paths to be searched for a modules.  The
+	/// Adds a path to the array of paths to be searched for a modules.  The
 	///  second parameter indicates if the path is absolute, or relative to
 	///  the current working directory.
 	void addSearchPath(const Firebird::PathName&, bool = true);
-	/// Removes the given search path from the list of search paths.  The path name
+	/// Removes the given search path from the array of search paths.  The path name
 	/// (1st parameter) and the relative indicator (2nd parameter) must exactly match
 	/// those passed in to addSearchPath.
 	void removeSearchPath(const Firebird::PathName&, bool = true);
@@ -190,7 +190,7 @@ public:
 	///  when a directory is scanned, but may be loaded manually via the findPlugin
 	///  function.
 	void addIgnoreModule(const Firebird::PathName &mod)
-		{ ignoreModules.push_back(mod); }
+		{ ignoreModules.push(mod); }
 	/// Loads all the plugins found in the current set of search paths, except those that
 	///  have been ignored.  This function must be called after adding all the needed search paths,
 	///  and before iterating through the plugins.
@@ -204,13 +204,18 @@ public:
 	iterator begin() { return iterator(moduleList); }
 
 	static PluginManager& getEnginePluginManager();
-	
+#ifdef DEBUG_OBJECT_ALLOC
+	static void releaseEnginePluginManager();
+#endif
+
 private:
+	MemoryPool *pool;
 	typedef void (*engineRegistrationFuncType)(Plugin*);
-	typedef std::pair<Firebird::PathName, bool> Path;
+	typedef Firebird::LeftPair<Firebird::PathName, bool> Path;
 	Module *moduleList;
-	Firebird::list<Path> searchPaths;
-	Firebird::list<Firebird::PathName> ignoreModules;
+	Firebird::ObjectsArray<Path> searchPaths;
+	typedef Firebird::ObjectsArray<Path>::iterator spIterator;
+	Firebird::ObjectsArray<Firebird::PathName> ignoreModules;
 	
 	Module *loadPluginModule(const Firebird::PathName& name);
 	Module *loadBuiltinModule(const Firebird::PathName& name);
@@ -218,10 +223,15 @@ private:
 	class BuiltinModule : public Module
 	{
 	public:
-		BuiltinModule(const Firebird::PathName& name) : Module(name) {}
+		BuiltinModule(MemoryPool *p, const Firebird::PathName& name) 
+			: Module(p, name), symbols(p) {}
 		
 	private:
-		Firebird::map<Firebird::string, void*> symbols;
+		typedef Firebird::LeftPair<Firebird::string, void*> Symbol;
+		typedef Firebird::FirstKey<Symbol> SymbolKey;
+		typedef Firebird::SortedArray<Symbol, Firebird::string, 
+			SymbolKey> Symbols;
+		Symbols symbols;
 		
 		void *lookupSymbol(Firebird::string&);
 	};
@@ -229,8 +239,8 @@ private:
 	class PluginModule : public Module
 	{
 	public:
-		PluginModule(const Firebird::PathName &name, ModuleLoader::Module *mod)
-			: Module(name), module(mod) {}
+		PluginModule(MemoryPool *p, const Firebird::PathName &name, ModuleLoader::Module *mod)
+			: Module(p, name), module(mod) {}
 			
 	private:
 		ModuleLoader::Module *module;

@@ -1,7 +1,29 @@
 /*
- *  fb_string.h
+ *	PROGRAM:	string class definition
+ *	MODULE:		fb_string.h
+ *	DESCRIPTION:	Provides almost that same functionality,
+ *			that STL::basic_string<char> does, 
+ *			but behaves MemoryPools friendly.
  *
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
  *
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
+ *
+ *  The Original Code was created by Alexander Peshkoff
+ *  for the Firebird Open Source RDBMS project.
+ *
+ *  Copyright (c) 2004 Alexander Peshkoff <peshkoff@mail.ru>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
  */
 
 #ifndef FB_STRING_H
@@ -43,7 +65,7 @@ namespace Firebird
 			return rc;
 		}
 	};
-	class AbstractString : public StringAllocator {
+	class AbstractString : private StringAllocator {
 	public:
 		typedef char char_type;
 		typedef unsigned int size_type;
@@ -177,6 +199,16 @@ namespace Firebird
 			smallStorage[0] = 0;
 		}
 		AbstractString(size_type size, char_type c);
+		inline AbstractString(MemoryPool* p) : StringAllocator(p) {
+			actualSize = smallStorageSize;
+			userSize = 0;
+			smallStorage[0] = 0;
+		}
+		AbstractString(MemoryPool* p, const AbstractString& v) 
+			: StringAllocator(p) {
+			memcpy(createStorage(v.length()), v.c_str(), v.length());
+		}
+
 		pointer Modify(void) {
 			return getStorage();
 		}
@@ -364,6 +396,8 @@ namespace Firebird
 		inline StringBase<Comparator>(size_type n, char_type c) : AbstractString(n, c) {}
 		inline StringBase<Comparator>(char_type c) : AbstractString(1, c) {}
 		inline StringBase<Comparator>(const_iterator first, const_iterator last) : AbstractString(last - first, first) {}
+		inline StringBase<Comparator>(MemoryPool* p) : AbstractString(p) {}
+		inline StringBase<Comparator>(MemoryPool* p, const AbstractString& v) : AbstractString(p, v) {}
 
 		inline StringType& append(const StringType& str) {
 			fb_assert(&str != this);
@@ -434,8 +468,8 @@ namespace Firebird
 			return append(1, c);
 		}
 		inline StringType operator+(const StringType& v) const {
-			return add(v.c_str(), v.length());
 			fb_assert(&v != this);
+			return add(v.c_str(), v.length());
 		}
 		inline StringType operator+(const_pointer s) const {
 			return add(s, strlen(s));

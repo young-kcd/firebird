@@ -185,7 +185,13 @@ static USHORT wc_to_wc(CSCONVERT, UCS2_CHAR *, USHORT, UCS2_CHAR *, USHORT, SSHO
 #include "../jrd/intlobj.h"
 
 // storage for the loadable modules
-static PluginManager intlBCPlugins;
+static PluginManager& getIntlBCPlugins() {
+	static PluginManager *intlBCPlugins = 0;
+	if (! intlBCPlugins)
+		intlBCPlugins = new PluginManager (getDefaultMemoryPool());
+	return *intlBCPlugins;
+}
+
 static bool bcLoaded = false;
 
 static const char *INTL_PLUGIN_DIR = "intl";
@@ -597,12 +603,12 @@ static FPTR_SHORT lookup_init_function(
 
 	if (!bcLoaded)
 	{
-		intlBCPlugins.addSearchPath(INTL_PLUGIN_DIR);
+		getIntlBCPlugins().addSearchPath(INTL_PLUGIN_DIR);
 		bcLoaded = true;
 	}
 
-	PluginManager::Plugin intlMod1 = intlBCPlugins.findPlugin(INTL_MODULE1);
-	PluginManager::Plugin intlMod2 = intlBCPlugins.findPlugin(INTL_MODULE2);
+	PluginManager::Plugin intlMod1 = getIntlBCPlugins().findPlugin(INTL_MODULE1);
+	PluginManager::Plugin intlMod2 = getIntlBCPlugins().findPlugin(INTL_MODULE2);
 
 	USHORT(*lookup_fn) (USHORT, FPTR_SHORT *, SSHORT, SSHORT);
 
