@@ -1,3 +1,17 @@
+2005-03-27 17:01  dimitr
+
+	* firebird2/src/jrd/: exe.cpp (1.142), vio.cpp (1.129), vio_proto.h
+	(1.26):
+	
+	1) Made RefetchRecord a public routine 2) Use it in EXE to avoid
+	code duplication 3) Some alphabetical code movement
+
+2005-03-27 06:51  robocop
+
+	* firebird2/src/dsql/ddl.cpp (1.131):
+	
+	Fix DY's copy/paste bug.
+
 2005-03-26 17:09  dimitr
 
 	* firebird2/src/: dsql/ddl.cpp (1.130), dsql/dsql.cpp (1.141),
