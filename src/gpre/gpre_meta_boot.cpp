@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.12 2003-02-13 09:58:18 dimitr Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.13 2003-03-02 01:01:25 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -81,7 +81,6 @@ GPRE_FLD MET_context_field( GPRE_CTX context, char *string)
 	GPRE_PRC procedure;
 	GPRE_FLD field;
 	SCHAR name[NAME_SIZE];
-	SSHORT length;
 
 	if (context->ctx_relation) {
 		return (MET_field(context->ctx_relation, string));
@@ -120,14 +119,6 @@ GPRE_FLD MET_context_field( GPRE_CTX context, char *string)
 
 BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 {
-	SCHAR dpb[MAX_PASSWORD_LENGTH + MAX_USER_LENGTH + 5], *d, *p;
-	SCHAR buffer[16], *data;
-	SSHORT l;
-	static const UCHAR sql_version_info[] = { isc_info_base_level,
-		isc_info_ods_version,
-		isc_info_db_sql_dialect,
-		isc_info_end
-	};
 	/* 
 	   ** Each info item requested will return 
 	   **
@@ -138,9 +129,6 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 	   ** isc_info_end will not have a 2-byte length - which gives us
 	   ** some padding in the buffer.
 	 */
-	UCHAR sql_buffer[sizeof(sql_version_info) * (1 + 2 + 4)];
-	UCHAR *ptr;
-
 
 #ifndef REQUESTER
 	if (sw_language == lang_internal) {
@@ -162,11 +150,8 @@ BOOLEAN MET_database(DBB dbb, BOOLEAN print_version)
 USHORT MET_domain_lookup(GPRE_REQ request, GPRE_FLD field, char *string)
 {
 	SYM symbol;
-	DBB dbb;
 	SCHAR name[NAME_SIZE];
 	GPRE_FLD d_field;
-	SSHORT length;
-	SSHORT found = FALSE;
 
 	strcpy(name, string);
 
@@ -206,15 +191,8 @@ BOOLEAN MET_get_domain_default(DBB dbb,
 							   TEXT * domain_name,
 							   TEXT * buffer, USHORT buff_length)
 {
-	SLONG *DB, *gds__rans;
 	SCHAR name[NAME_SIZE];
-	SSHORT length;
 	BOOLEAN has_default;
-	ISC_STATUS status_vect[ISC_STATUS_LENGTH];
-	isc_blob_handle blob_handle = NULL;
-	ISC_QUAD *blob_id;
-	TEXT *ptr_in_buffer;
-	STATUS stat;
 
 
 	strcpy(name, domain_name);
@@ -241,16 +219,8 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 							   TEXT * column_name,
 							   TEXT * buffer, USHORT buff_length)
 {
-	DBB dbb;
-	SLONG *DB, *gds__trans;
 	SCHAR name[NAME_SIZE];
-	SSHORT length;
 	BOOLEAN has_default;
-	ISC_STATUS status_vect[ISC_STATUS_LENGTH];
-	isc_blob_handle blob_handle = NULL;
-	ISC_QUAD *blob_id;
-	TEXT *ptr_in_buffer;
-	STATUS stat;
 
 	strcpy(name, column_name);
 	has_default = FALSE;
@@ -268,11 +238,8 @@ BOOLEAN MET_get_column_default(GPRE_REL relation,
 
 LLS MET_get_primary_key(DBB dbb, TEXT * relation_name)
 {
-	LLS fields = NULL, *ptr_fields;
-	SLONG *DB, *gds__trans;
+	SLONG *gds__trans;
 	SCHAR name[NAME_SIZE];
-	STR field_name;
-	TEXT *tmp;
 
 	strcpy(name, relation_name);
 
@@ -299,7 +266,6 @@ GPRE_FLD MET_field(GPRE_REL relation, char *string)
 {
 	SYM symbol;
 	GPRE_FLD field;
-	DBB dbb;
 	SCHAR name[NAME_SIZE];
 	SSHORT length;
 
@@ -331,14 +297,11 @@ GPRE_FLD MET_field(GPRE_REL relation, char *string)
 
 GPRE_NOD MET_fields(GPRE_CTX context)
 {
-	DBB dbb;
 	GPRE_FLD field;
-	LLS stack;
 	GPRE_NOD node, field_node;
 	REF reference;
 	GPRE_PRC procedure;
 	GPRE_REL relation;
-	TEXT *p;
 	int count;
 
 	if (procedure = context->ctx_procedure) {
@@ -386,8 +349,6 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 
 void MET_fini( DBB end)
 {
-	DBB dbb;
-
 	return;
 }
 
@@ -401,9 +362,7 @@ void MET_fini( DBB end)
 SCHAR *MET_generator(TEXT * string, DBB dbb)
 {
 	SYM symbol;
-	SCHAR *gen_name = NULL;
 	SCHAR name[NAME_SIZE];
-	SSHORT length;
 
 	strcpy(name, string);
 
@@ -514,9 +473,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT * length)
 GPRE_PRC MET_get_procedure(DBB dbb, TEXT * string, TEXT * owner_name)
 {
 	SYM symbol;
-	GPRE_FLD *fld_list, field;
 	GPRE_PRC procedure;
-	USHORT length, type, count;
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
 
 	strcpy(name, string);
@@ -597,9 +554,7 @@ INTLSYM MET_get_text_subtype(SSHORT ttype)
 UDF MET_get_udf(DBB dbb, TEXT * string)
 {
 	SYM symbol;
-	GPRE_FLD field;
 	UDF udf;
-	USHORT length, count;
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
@@ -627,10 +582,6 @@ GPRE_REL MET_get_view_relation(GPRE_REQ request,
 						  char *view_name,
 						  char *relation_or_alias, USHORT level)
 {
-	DBB dbb;
-	TEXT *p;
-	GPRE_REL relation;
-
 	assert(0);
 	return NULL;
 }
@@ -674,17 +625,6 @@ IND MET_index(DBB dbb, TEXT * string)
 
 void MET_load_hash_table( DBB dbb)
 {
-	GPRE_REL relation;
-	GPRE_PRC procedure;
-	SYM symbol;
-	GPRE_FLD dbkey;
-	UDF udf;
-	TEXT *p;
-	int *handle, *handle2;
-	USHORT post_v3_flag;
-	SLONG length;
-	INTLSYM iname;
-
 /*  If this is an internal ISC access method invocation, don't do any of this
  *  stuff
  */
@@ -759,12 +699,8 @@ GPRE_REL MET_make_relation(SCHAR * name)
 
 BOOLEAN MET_type(GPRE_FLD field, TEXT * string, SSHORT * ptr)
 {
-	GPRE_REL relation;
-	DBB dbb;
 	SYM symbol;
 	TYP type;
-	UCHAR buffer[32];			/* BASED ON RDB$TYPES.RDB$TYPE_NAME */
-	UCHAR *p;
 
 	for (symbol = HSH_lookup(string); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_type &&
@@ -790,7 +726,6 @@ BOOLEAN MET_type(GPRE_FLD field, TEXT * string, SSHORT * ptr)
 BOOLEAN MET_trigger_exists(DBB dbb, TEXT * trigger_name)
 {
 	SCHAR name[NAME_SIZE];
-	SSHORT length;
 
 	strcpy(name, trigger_name);
 
@@ -827,10 +762,6 @@ static SLONG array_size( GPRE_FLD field)
 
 static void get_array( DBB dbb, TEXT * field_name, GPRE_FLD field)
 {
-	GPRE_FLD sub_field;
-	ARY array_block;
-	DIM dimension_block, last_dimension_block;
-
 	assert(0);
 	return;
 }
@@ -858,12 +789,6 @@ static int get_intl_char_subtype(
 								 SSHORT * id,
 								 UCHAR * name, USHORT length, DBB dbb)
 {
-	UCHAR buffer[32];			/* BASED ON RDB$COLLATION_NAME */
-	UCHAR *p;
-	UCHAR *period = NULL;
-	UCHAR *end_name;
-	int found_it = 0;
-
 	assert(id != NULL);
 	assert(name != NULL);
 	assert(dbb != NULL);
@@ -904,9 +829,6 @@ static int resolve_charset_and_collation(
 										 SSHORT * id,
 										 UCHAR * charset, UCHAR * collation)
 {
-	int found = 0;
-	int *request = NULL;
-
 	assert(id != NULL);
 
 	assert(0);
