@@ -4088,7 +4088,7 @@ static SLONG create_semaphores(
 				error(status_vector, "semget", errno);
 				return -1;
 			}
-	};
+	}
 }
 #endif
 

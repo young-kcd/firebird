@@ -2329,7 +2329,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	else {
 		node = NULL;
 		arg = NULL;
-	};
+	}
 
 /* Dispatch on operator type. */
 

@@ -5055,7 +5055,7 @@ void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 			bm_tran = *sbm;
 			*sbm = garbage.bm;
 			garbage.bm = bm_tran;
-		};
+		}
 		delete garbage.bm;
 
 		array.remove(0U);

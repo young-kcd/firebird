@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.120 2004-11-04 19:14:20 skidder Exp $ 
+  * $Id: evl.cpp,v 1.121 2004-11-07 10:47:19 robocop Exp $ 
  */
 
 /*
@@ -2515,7 +2515,7 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 	case DTYPE_CANNOT:
 		ERR_post(isc_expression_eval_err, 0);
 		return NULL;
-	};
+	}
 }
 
 
@@ -2875,7 +2875,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		|| (DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
 	{
 		op1_is_timestamp = true;
-	};
+	}
 
 /* Coerce operand2 to a count of microseconds */
 
@@ -2884,7 +2884,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		|| (DTYPE_IS_TEXT(desc->dsc_dtype)))
 	{
 		op2_is_timestamp = true;
-	};
+	}
 
 /* Exactly one of the operands must be a timestamp or
    convertable into a timestamp, otherwise it's one of 
@@ -2905,7 +2905,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		fb_assert(op2_is_timestamp);
 		d1 = get_day_fraction(&value->vlu_desc);
 		d2 = get_timestamp_to_isc_ticks(desc);
-	};
+	}
 
 /* Perform the operation */
 

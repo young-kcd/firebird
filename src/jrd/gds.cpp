@@ -2314,7 +2314,7 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 			s += 3;				/* skip: isc_arg_cstring <len> <ptr> */
 		else
 			s += 2;				/* skip: isc_arg_* <item> */
-	};
+	}
 
 	return sqlcode;
 }

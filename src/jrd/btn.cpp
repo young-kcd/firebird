@@ -377,7 +377,7 @@ bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode)
 			return false;
 		}
 		--l;
-	};
+	}
 
 	return true;
 }

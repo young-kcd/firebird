@@ -2149,7 +2149,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 
 			return error(user_status, ex);
 		}
-	};
+	}
 
 	return return_success(tdbb);
 }

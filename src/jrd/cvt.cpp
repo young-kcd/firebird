@@ -146,7 +146,7 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
 #define CVT_COPY_BUFF(from,to,len) \
 {if (len) {MOVE_FAST(from,to,len); from +=len; to+=len; len=0;} }
 
-enum EXPECT_DATETIME{
+enum EXPECT_DATETIME {
 	expect_timestamp,
 	expect_sql_date,
 	expect_sql_time
@@ -1551,7 +1551,8 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				(charset2 != ttype_none) &&
 				(charset1 != ttype_binary) &&
 				(charset2 != ttype_binary) &&
-				(charset1 != ttype_dynamic) && (charset2 != ttype_dynamic)) {
+				(charset1 != ttype_dynamic) && (charset2 != ttype_dynamic))
+			{
 				if (err == ERR_post) {
 					INTL_convert_string(to, from, err);
 					return;
@@ -1850,7 +1851,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		}
 		while (*p)
 			p++;
-	};
+	}
 
 /* Put in a space to separate date & time components */
 
@@ -1878,7 +1879,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		}
 		while (*p)
 			p++;
-	};
+	}
 
 /* Move the text version of the date/time value into the destination */
 
@@ -2681,7 +2682,7 @@ static void string_to_datetime(
 		{
 			conversion_error(desc, err);
 		}
-	};
+	}
 
 /* Convert fraction of seconds */
 	while (description[6]++ < -ISC_TIME_SECONDS_PRECISION_SCALE)

@@ -934,7 +934,7 @@ static void garbage_collect(thread_db* tdbb, VDR control)
 		{
 			DMP_page(dmp_page_number, dbb->dbb_page_size);
 		}
-	};
+	}
 #endif
 }
 
@@ -962,7 +962,7 @@ static void print_rhd(USHORT length, const rhd* header)
 			fragment = (RHDF) header;
 			fprintf(stdout, "FP %d/%d ",
 					   fragment->rhdf_f_page, fragment->rhdf_f_line);
-		};
+		}
 		fprintf(stdout, "%s ",
 				   (header->rhd_flags & rhd_deleted) ? "DEL" : "   ");
 		fprintf(stdout, "%s ",
@@ -980,7 +980,7 @@ static void print_rhd(USHORT length, const rhd* header)
 		fprintf(stdout, "%s ",
 				   (header->rhd_flags & rhd_damaged) ? "DAM" : "   ");
 		fprintf(stdout, "\n");
-	};
+	}
 }
 #endif
 
@@ -1009,7 +1009,7 @@ static RTN walk_blob(thread_db* tdbb,
 		fprintf(stdout, "           count %d, length %d sub_type %d\n",
 				   header->blh_count, header->blh_length,
 				   header->blh_sub_type);
-	};
+	}
 #endif
 
 /* Level 0 blobs have no work to do. */
@@ -1829,7 +1829,7 @@ static RTN walk_record(thread_db* tdbb,
 				   (USHORT) number / tdbb->tdbb_database->dbb_max_records,
 				   (USHORT) number % tdbb->tdbb_database->dbb_max_records);
 		print_rhd(length, header);
-	};
+	}
 #endif
 
 	if (header->rhd_flags & rhd_damaged) {
