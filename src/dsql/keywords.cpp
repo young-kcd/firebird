@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.30 2004-03-28 09:10:10 robocop Exp $
+ *  $Id: keywords.cpp,v 1.31 2004-08-19 11:19:42 dimitr Exp $
  *
  */
 
@@ -159,6 +159,7 @@ static const TOK tokens[] = {
 	{HAVING, "HAVING", 1},
 	{HOUR, "HOUR", 2},
 	{IF, "IF", 1},
+	{IIF, "IIF", 2},
 	{KW_IN, "IN", 1},
 	{INACTIVE, "INACTIVE", 1},
 	{INDEX, "INDEX", 1},

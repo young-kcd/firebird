@@ -506,6 +506,7 @@ static LexerState lex;
 %token FETCH
 %token ROWS
 %token BLOCK
+%token IIF
 
 /* precedence declarations for expression evaluation */
 
@@ -4003,6 +4004,9 @@ case_abbreviation	: NULLIF '(' value ',' value ')'
 			{ $$ = make_node (nod_searched_case, 2, 
 				make_node (nod_list, 2, make_node (nod_eql, 2, $3, $5), 
 				make_node (nod_null, 0, NULL)), $3); }
+		| IIF '(' search_condition ',' value ',' value ')'
+			{ $$ = make_node (nod_searched_case, 2, 
+				make_node (nod_list, 2, $3, $5), $7); }
 		| COALESCE '(' value ',' value_list ')'
 			{ $$ = make_node (nod_coalesce, 2, $3, $5); }
 		;
@@ -4173,6 +4177,7 @@ non_reserved_word :
 	| BLOCK
 	| BACKUP				/* added in FB 2.0 */
 	| KW_DIFFERENCE
+	| IIF
 	;
 
 %%
