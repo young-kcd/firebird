@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.25 2003-02-10 13:28:23 eku Exp $
+ * $Id: sort.cpp,v 1.26 2003-02-11 00:56:13 brodsom Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -151,7 +151,7 @@ static void sort(SCB);
 static void validate(SCB);
 #endif
 
-#ifdef SORT_TRACE
+#ifdef DEBUG_SORT_TRACE
 static void write_trace(UCHAR *, SFB, ULONG, BLOB_PTR *, ULONG);
 #include "../jrd/ib_stdio.h"
 
@@ -937,7 +937,7 @@ ULONG SORT_read_block(
  **************************************/
 	ULONG len, read_len, i;
 
-#ifdef SORT_TRACE
+#ifdef DEBUG_SORT_TRACE
 	UCHAR *org_address;
 	ULONG org_length, org_seek;
 
@@ -980,7 +980,7 @@ ULONG SORT_read_block(
 
 	THREAD_ENTER;
 
-#ifdef SORT_TRACE
+#ifdef DEBUG_SORT_TRACE
 	write_trace("Read", sfb, org_seek, org_address, org_length);
 #endif
 #ifndef SCROLLABLE_CURSORS
@@ -1235,7 +1235,7 @@ ULONG SORT_write_block(STATUS * status_vector,
  **************************************/
 	ULONG len, write_len, i;
 
-#ifdef SORT_TRACE
+#ifdef DEBUG_SORT_TRACE
 	write_trace("Write", sfb, seek, address, length);
 #endif
 
@@ -3015,7 +3015,7 @@ static void validate(SCB scb)
 #endif
 
 
-#ifdef SORT_TRACE
+#ifdef DEBUG_SORT_TRACE
 static void write_trace(
 						UCHAR * operation,
 						SFB sfb, ULONG seek, BLOB_PTR * address, ULONG length)
@@ -3039,7 +3039,7 @@ static void write_trace(
 #if (defined WIN_NT)
 		strcpy(file_name, "/interbas/stXXXXXX");
 #else
-		strcpy(file_name, "/interbase/sort_trace_XXXXXX");
+		strcpy(file_name, "/interbase/DEBUG_SORT_TRACE_XXXXXX");
 #endif
 #if defined FREEBSD || defined NETBSD
 		fd = mkstemp(file_name);
