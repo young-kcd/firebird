@@ -113,9 +113,7 @@ static char sccsid[] = "@(#)crypt.c	5.11 (Berkeley) 6/25/91";
  * long integers at arbitrary (e.g. odd) memory locations.
  * (Either that or never pass unaligned addresses to des_cipher!)
  */
-#if !defined(vax)
 #define	MUST_ALIGN
-#endif
 
 #ifdef CHAR_BITS
 #if CHAR_BITS != 8
@@ -128,14 +126,6 @@ static char sccsid[] = "@(#)crypt.c	5.11 (Berkeley) 6/25/91";
  * This avoids use of bit fields (your compiler may be sloppy with them).
  */
 #define	LONG_IS_32_BITS
-
-/*
- * define "B64" to be the declaration for a 64 bit integer.
- * XXX this feature is currently unused, see "endian" comment below.
- */
-#if defined(convex)
-#define	B64	long long
-#endif
 
 /*
  * define "LARGEDATA" to get faster permutations, by using about 72 kilobytes
@@ -689,9 +679,6 @@ int des_setkey(const char *key)
 int des_cipher(const char *in, char *out, long salt, int num_iter)
 {
 	/* variables that we want in registers, most important first */
-#if defined(pdp11)
-	int j;
-#endif
 	long L0, L1, R0, R1, k;
 	C_block *kp;
 	int ks_inc, loop_count;
@@ -700,12 +687,7 @@ int des_cipher(const char *in, char *out, long salt, int num_iter)
 	L0 = salt;
 	TO_SIX_BIT(salt, L0);		/* convert to 4*(6+2) format */
 
-#if defined(vax) || defined(pdp11)
-	salt = ~salt;				/* "x &~ y" is faster than "x & y". */
-#define	SALT (~salt)
-#else
 #define	SALT salt
-#endif
 
 #if defined(MUST_ALIGN)
 	B.b[0] = in[0];
@@ -746,18 +728,8 @@ int des_cipher(const char *in, char *out, long salt, int num_iter)
 		do {
 
 #define	SPTAB(t, i)	(*(long *)((unsigned char *)t + i*(sizeof(long)/4)))
-#if defined(gould)
-			/* use this if B.b[i] is evaluated just once ... */
-#define	DOXOR(x,y,i)	x^=SPTAB(SPE[0][i],B.b[i]); y^=SPTAB(SPE[1][i],B.b[i]);
-#else
-#if defined(pdp11)
-			/* use this if your "long" int indexing is slow */
-#define	DOXOR(x,y,i)	j=B.b[i]; x^=SPTAB(SPE[0][i],j); y^=SPTAB(SPE[1][i],j);
-#else
 			/* use this if "k" is allocated to a ... */
 #define	DOXOR(x,y,i)	k=B.b[i]; x^=SPTAB(SPE[0][i],k); y^=SPTAB(SPE[1][i],k);
-#endif
-#endif
 
 #define	CRUNCH(p0, p1, q0, q1)	\
 			k = (q0 ^ q1) & SALT;	\
