@@ -1,6 +1,8 @@
 
 
-:: @echo off
+@echo off
+
+@mkdir temp
 
 :CHECK_ENV
 @if /I "%DB_PATH%"=="" (goto :HELP & goto :EOF) else (@goto :MAIN)
