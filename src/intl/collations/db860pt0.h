@@ -17,23 +17,24 @@
  * Contributor(s): ______________________________________.
  */
 
-#define NUM_EXPAND_CHARS            0
-#define NUM_COMPRESS_CHARS          0
-#define LOWERCASE_LEN               256
-#define UPPERCASE_LEN               256
-#define NOCASESORT_LEN              256
-#define LDRV_TIEBREAK               SECONDARY
+const int NUM_EXPAND_CHARS		= 0;
+const int NUM_COMPRESS_CHARS	= 0;
+const int LOWERCASE_LEN			= 256;
+const int UPPERCASE_LEN			= 256;
+const int NOCASESORT_LEN		= 256;
+const int LDRV_TIEBREAK			= SECONDARY;
 
-#define MAX_NCO_PRIMARY  	194
-#define MAX_NCO_SECONDARY	  4
-#define MAX_NCO_TERTIARY 	  1
-#define MAX_NCO_IGNORE   	  0
-#define NULL_SECONDARY   	0
-#define NULL_TERTIARY    	0
-#define FIRST_IGNORE     	1
-#define FIRST_TERTIARY   	1
-#define FIRST_SECONDARY  	(FIRST_TERTIARY+MAX_NCO_TERTIARY+1)
-#define FIRST_PRIMARY    	(FIRST_SECONDARY+MAX_NCO_SECONDARY+1)
+const int MAX_NCO_PRIMARY		= 194;
+const int MAX_NCO_SECONDARY		= 4;
+const int MAX_NCO_TERTIARY		= 1;
+const int MAX_NCO_IGNORE		= 0;
+const int NULL_SECONDARY		= 0;
+const int NULL_TERTIARY			= 0;
+const int FIRST_IGNORE			= 1;
+const int FIRST_TERTIARY		= 1;
+const int FIRST_SECONDARY		= (FIRST_TERTIARY+MAX_NCO_TERTIARY+1);
+const int FIRST_PRIMARY			= (FIRST_SECONDARY+MAX_NCO_SECONDARY+1);
+
 static const BYTE ToUpperConversionTbl[UPPERCASE_LEN] = {
 	0,							/*     0 ->     0 */
 	1,							/*     1 ->     1 */
