@@ -27,7 +27,7 @@
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *
  *
- *  $Id: fb_types.h,v 1.23 2003-05-16 20:34:58 skidder Exp $
+ *  $Id: fb_types.h,v 1.24 2003-05-25 00:10:03 skidder Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "OS/2" port
  *
@@ -168,5 +168,6 @@ typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
 
 /* Number of elements in an arry */
 #define FB_NELEM(x)	((int)(sizeof(x) / sizeof(x[0])))
+#define FB_ALIGN(n,b) ((n+b-1)&~(b-1))
 
 #endif /* INCLUDE_FB_TYPES_H */
