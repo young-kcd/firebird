@@ -90,7 +90,6 @@ main(argc, argv)
 {
 	FPTR_INT func;
 	char buffer[200];
-	char buffer2[200];
 	int i;
 	struct texttype this_textobj;
 	char **vector;
