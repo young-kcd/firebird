@@ -51,6 +51,7 @@
 #include "../jrd/thd_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/cvt_proto.h"
+#include "../common/config/config.h"
 
 
 ASSERT_FILENAME					/* declare things assert() needs */
@@ -1413,7 +1414,7 @@ PAR MAKE_parameter(DSQL_MSG message, USHORT sqlda_flag, USHORT null_flag, USHORT
 
 /* If the parameter is used declared, set SQLDA index */
 	if (sqlda_flag) {
-		if (sqlda_index) {
+		if (sqlda_index && !Config::getOldParameterOrdering()) {
 			parameter->par_index = sqlda_index;
 			if (message->msg_index < sqlda_index) message->msg_index = sqlda_index;
 		} else {

@@ -69,7 +69,8 @@ class Config
 		KEY_SORT_MEM_UPPER_LIMIT,					// 2
 		KEY_REMOTE_FILE_OPEN_ABILITY,				// 3
 		KEY_GUARDIAN_OPTION,						// 4
-		KEY_CPU_AFFINITY_MASK						// 5
+		KEY_CPU_AFFINITY_MASK,						// 5
+		KEY_OLD_PARAMETER_ORDERING					// 6
 	};
 
 public:
@@ -103,6 +104,11 @@ public:
 		CPU affinity mask
 	*/
 	static int getCpuAffinityMask();
+
+	/*
+		Old parameter ordering for backward compatibility with FB1/IB6.X
+	*/
+	static bool getOldParameterOrdering();
 };
 
 #endif // CONFIG_H

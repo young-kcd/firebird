@@ -144,7 +144,7 @@ SLONG VIO_savepoint_large(struct sav *savepoint, SLONG size)
 {
 /**************************************
  *
- *	s a v e p o i n t _ b i g
+ *	s a v e p o i n t _ l a r g e
  *
  **************************************
  *

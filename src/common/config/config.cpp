@@ -54,7 +54,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 268435456},
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
-	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1}
+	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
+	{TYPE_BOOLEAN,      "OldParameterOrdering",		(ConfigValue) false}
 };
 
 /******************************************************************************
@@ -199,4 +200,9 @@ int Config::getGuardianOption()
 int Config::getCpuAffinityMask()
 {
 	return (int) sysConfig.values[KEY_CPU_AFFINITY_MASK];
+}
+
+bool Config::getOldParameterOrdering()
+{
+	return (bool) sysConfig.values[KEY_OLD_PARAMETER_ORDERING];
 }
