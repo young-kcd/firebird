@@ -53,7 +53,7 @@
 
 /* moved borland types from ./xdr.h */
 #define XDR_INT     int
-typedef struct XDR    xdr_t;
+typedef XDR    xdr_t;
 #ifdef SOLARIS
 typedef   enum_t xrd_enum_type; 
 #else
