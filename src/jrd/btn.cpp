@@ -657,14 +657,16 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 				if (tmp & 0x80) {
 					tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
 					pagePointer++;
+					number |= (tmp & 0x1F) << 27;
+
+/*
+	Change number to 64-bit type and enable this for 64-bit support
+
 					number |= (tmp & 0x7F) << 27;
 					if (tmp & 0x80) {
 						tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
 						pagePointer++;
 						number |= (tmp & 0x7F) << 34;
-/*
-	Change number to 64-bit type and enable this for 64-bit support
-
 						if (tmp & 0x80) {
 							tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
 							pagePointer++;
@@ -679,8 +681,8 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 									number |= (tmp & 0x7F) << 55; // We get 62 bits at this point!
 								}
 							}
-						}*/
-					}
+						}
+					}*/
 				}
 			}
 		}
@@ -722,14 +724,15 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 						if (tmp & 0x80) {
 							tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
 							pagePointer++;
+							number |= (tmp & 0x0F) << 28;
+/*
+	Change number to 64-bit type and enable this for 64-bit support
+
 							number |= (tmp & 0x7F) << 28;
 							if (tmp & 0x80) {
 								tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
 								pagePointer++;
 								number |= (tmp & 0x7F) << 35;
-/*
-	Change number to 64-bit type and enable this for 64-bit support
-
 								if (tmp & 0x80) {
 									tmp = *reinterpret_cast<const UCHAR*>(pagePointer);
 									pagePointer++;
@@ -744,8 +747,8 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 											number |= (tmp & 0x7F) << 56; // We get 63 bits at this point!
 										}
 									}
-								}*/
-							}
+								}
+							}*/
 						}
 					}
 				}
@@ -990,6 +993,13 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 				*pagePointer = tmp;
 				pagePointer++;
 				if (tmp & 0x80) {
+					tmp = (number & 0x1F);
+					number >>= 7; //34
+					*pagePointer = tmp;
+					pagePointer++;
+/*
+	Change number to 64-bit type and enable this for 64-bit support
+
 					tmp = (number & 0x7F);
 					number >>= 7; //34
 					if (number > 0) {
@@ -997,9 +1007,6 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 					}
 					*pagePointer = tmp;
 					pagePointer++;
-/*
-	Change number to 64-bit type and enable this for 64-bit support
-
 					if (tmp & 0x80) {
 						tmp = (number & 0x7F);
 						number >>= 7; //41
@@ -1080,6 +1087,12 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 						*pagePointer = tmp;
 						pagePointer++;
 						if (tmp & 0x80) {
+							tmp = (number & 0x0F);
+							number >>= 7; //35
+							*pagePointer = tmp;
+							pagePointer++;
+/*
+	Change number to 64-bit type and enable this for 64-bit support
 							tmp = (number & 0x7F);
 							number >>= 7; //35
 							if (number > 0) {
@@ -1087,9 +1100,6 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 							}
 							*pagePointer = tmp;
 							pagePointer++;
-/*
-	Change number to 64-bit type and enable this for 64-bit support
-
 							if (tmp & 0x80) {
 								tmp = (number & 0x7F);
 								number >>= 7; //42
