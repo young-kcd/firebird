@@ -1,3 +1,9 @@
+2004-04-27 03:44  skidder
+
+	* firebird2/src/jrd/blb.cpp (1.30.2.6):
+	
+	Back out my block leak fix and return to 1.5.0 logic in this place
+
 2004-04-26 00:05  skidder
 
 	* firebird2/src/jrd/blb.cpp (1.30.2.5):
