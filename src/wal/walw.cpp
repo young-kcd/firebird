@@ -171,11 +171,6 @@ static WAL_TERMINATOR(log_terminator_block);
 #ifdef SUPERSERVER
 int main_walw( char **argv)
 #else
-
-/* JMB - I didn't like have a "main" symbol is the shared library, so
- * I change the function name from main to walw_classic_main and
- * added the walw_main.c file.
- */
 int CLIB_ROUTINE main( int argc, char **argv)
 #endif
 {
