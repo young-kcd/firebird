@@ -1,3 +1,9 @@
+2003-01-14 14:47  dimitr
+
+	* firebird2/src/dsql/dsql.cpp:
+	
+	Remove REQ_SAVEPOINT from allowed requests in EXECUTE STATEMENT.
+
 2003-01-12 23:33  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp:
