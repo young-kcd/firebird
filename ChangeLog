@@ -1,3 +1,35 @@
+2004-04-08 01:42  skidder
+
+	* firebird2/builds/win32/msvc7/: alice.vcproj (1.8.2.3),
+	alice_classic.vcproj (1.8.2.3), burp.vcproj (1.11.2.3),
+	burp_classic.vcproj (1.11.2.3), common.vcproj (1.9.2.3),
+	common_classic.vcproj (1.7.2.3), dsql_server.vcproj (1.10.2.3),
+	dsql_server_classic.vcproj (1.10.2.3), engine.vcproj (1.21.2.3),
+	engine_classic.vcproj (1.20.2.3), engine_embed.vcproj (1.8.2.3),
+	fb2control.vcproj (1.1.2.3), fb_inet_server.vcproj (1.9.2.3),
+	fb_lock_print.vcproj (1.13.2.3), fbclient.vcproj (1.17.2.4),
+	fbembed.vcproj (1.14.2.3), fbguard.vcproj (1.11.2.3),
+	fbserver.vcproj (1.10.2.3), fbudf.vcproj (1.6.2.3), gbak.vcproj
+	(1.11.2.3), gdef.vcproj (1.11.2.3), gds32.vcproj (1.10.2.3),
+	gfix.vcproj (1.10.2.3), gpre.vcproj (1.13.2.4), gsec.vcproj
+	(1.10.2.3), gsplit.vcproj (1.5.2.3), gstat.vcproj (1.11.2.3),
+	ib_udf.vcproj (1.10.2.3), ib_util.vcproj (1.10.2.3), instreg.vcproj
+	(1.9.2.3), instsvc.vcproj (1.9.2.3), intl.vcproj (1.10.2.3),
+	ipserver.vcproj (1.9.2.3), isql.vcproj (1.11.2.3), lock.vcproj
+	(1.8.2.3), lock_classic.vcproj (1.8.2.3), qli.vcproj (1.10.2.3),
+	remote.vcproj (1.11.2.3), remote_classic.vcproj (1.11.2.3),
+	utilities.vcproj (1.10.2.3), utilities_classic.vcproj (1.9.2.3),
+	v5_examples.vcproj (1.1.2.2), wal.vcproj (1.8.2.3),
+	wal_classic.vcproj (1.8.2.3):
+	
+	Update MSVC7 makefiles
+
+2004-04-08 01:40  skidder
+
+	* firebird2/src/jrd/intl.cpp (1.32.2.2):
+	
+	Allow using NONE as a fully transparent charset everywhere
+
 2004-04-06 17:50  dimitr
 
 	* firebird2/doc/WhatsNew (1.36.2.16):
