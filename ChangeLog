@@ -1,3 +1,10 @@
+2003-06-12 11:38  dimitr
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Disallowed explicit locking for aggregate queries.  The same should
+	be done for stored procedure streams (joins require some work too).
+
 2003-06-11 14:00  alexpeshkoff
 
 	* firebird2/src/utilities/: install_svc.cpp, servi_proto.h,
