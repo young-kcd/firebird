@@ -2162,7 +2162,7 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 }
 
 
-BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, JRD_TRA transaction)
+BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, RSB rsb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -2229,6 +2229,12 @@ BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, JRD_TRA transaction)
 					 reinterpret_cast < blk * >(tdbb->tdbb_request->req_pool));
 
 			org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
+			
+			// Make sure refetched record still fulfills search condition
+			RSB r;			
+			for (r = rsb; r && r->rsb_type != rsb_boolean ; r = r->rsb_next);
+			if (r && !EVL_boolean(tdbb, (JRD_NOD) r->rsb_arg[0]))
+				return FALSE;
 		}
 
 		relation = org_rpb->rpb_relation;

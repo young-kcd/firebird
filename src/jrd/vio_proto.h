@@ -52,7 +52,7 @@ extern int VIO_get_current(TDBB, struct rpb *, struct jrd_tra *, struct blk *,
 extern void VIO_init(TDBB);
 #endif
 extern void VIO_merge_proc_sav_points(TDBB, struct jrd_tra *, struct sav **);
-extern BOOLEAN VIO_writelock(TDBB, struct rpb *, struct jrd_tra *);
+extern BOOLEAN VIO_writelock(TDBB, struct rpb *, class Rsb *, struct jrd_tra *);
 extern void VIO_modify(TDBB, struct rpb *, struct rpb *, struct jrd_tra *);
 extern BOOLEAN VIO_next_record(TDBB, struct rpb *, class Rsb *, struct jrd_tra *,
 							   struct blk *, BOOLEAN, BOOLEAN);
