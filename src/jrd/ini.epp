@@ -1188,12 +1188,10 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 			DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS),
 					   false, (SINT64) 1));
 
-	jrd_req* handle1;
+	jrd_req* handle1 = NULL;
 
 	for (int cnt = 0; cnt < 6; cnt++)
 	{
-		handle1 = NULL;
-
 		STORE(REQUEST_HANDLE handle1) PRIV IN RDB$USER_PRIVILEGES
 			switch (cnt)
 			{
@@ -1235,9 +1233,9 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 			PRIV.RDB$USER_TYPE = obj_user;
 			PRIV.RDB$OBJECT_TYPE = obj_relation;
 		END_STORE;
-
-		CMP_release(tdbb, handle1);
 	}
+	
+	CMP_release(tdbb, handle1);
 
 	handle1 = NULL;
 
