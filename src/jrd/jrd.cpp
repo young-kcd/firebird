@@ -555,7 +555,7 @@ STATUS DLL_EXPORT GDS_ATTACH_DATABASE(STATUS*	user_status,
 	TEXT alias_buffer[MAXPATHLEN];
 	TEXT file_name_buffer[MAXPATHLEN];
 	TEXT temp_buffer[MAXPATHLEN];
-	extern bool ResolveDatabaseAlias(char*, char*);
+	extern bool ResolveDatabaseAlias(const char*, char*);
 
 	SSHORT first;
 	STATUS temp_status[ISC_STATUS_LENGTH], *status;

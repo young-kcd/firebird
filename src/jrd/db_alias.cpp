@@ -23,14 +23,17 @@
  * 2002.06.04 Dmitry Yemanov - Server-side database alias management.
  */
 
+#if defined(_MSC_VER) && _MSC_VER < 1300
+// Any Microsoft compiler before MSVC7
+#pragma warning(disable: 4786)
+#endif
+
 #include "../fbutil/FirebirdConfig.h"
 #include "../fbutil/FirebirdConfigFile.h"
 
 extern "C" {
-	bool ResolveDatabaseAlias(char*, char*);
-}
 
-bool ResolveDatabaseAlias(char *alias, char *database)
+bool ResolveDatabaseAlias(const char* alias, char* database)
 {
 	static FirebirdConfigFile aliasConfig;
 	aliasConfig.setConfigFile(FirebirdConfig::getSysString("RootDirectory") + "/aliases.conf");
@@ -41,4 +44,6 @@ bool ResolveDatabaseAlias(char *alias, char *database)
 		return true;
 	}
 	return false;
+}
+
 }
