@@ -1,3 +1,22 @@
+2004-01-11 13:28  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Fixed recently introduced regression. Never rely on vector data
+	pointers after a grow() call.
+
+2004-01-11 10:29  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Fixed bug with computed fields referenced in a trigger context.
+
+2004-01-11 10:28  dimitr
+
+	* firebird2/src/jrd/pag.cpp:
+	
+	Fixed another ODS inconsistency.
+
 2004-01-10 19:04  arnobrinkman
 
 	* firebird2/src/dsql/: ddl.cpp, dsql.h, pass1.cpp:
