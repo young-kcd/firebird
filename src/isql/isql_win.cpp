@@ -53,7 +53,6 @@
 #include "../jrd/ibase.h"
 #include "../isql/isqlw_proto.h"
 #include "../isql/isql_proto.h"
-#include "../jrd/gds_proto.h"
 
 struct scrollkeys {
 	WORD wVirtkey;

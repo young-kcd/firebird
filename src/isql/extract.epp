@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: extract.epp,v 1.30 2004-04-23 18:39:04 brodsom Exp $
+ * $Id: extract.epp,v 1.31 2004-04-24 14:38:27 brodsom Exp $
  * Revision 1.3  2000/11/22 17:07:25  patrickgriffin
  * In get_procedure_args change comment style from // to c style
  *
@@ -49,13 +49,11 @@
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "../dsql/dsql.h"
 #include "../isql/isql.h"
 #include "../jrd/constants.h"
 #include "../isql/extra_proto.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
-#include "../jrd/gds_proto.h"
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
 #include "../common/utils_proto.h"
@@ -428,7 +426,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			ISQL_printf (Out, Print_buffer);
 			// International character sets 
 			// Print only the character set
-			if ((FLD.RDB$FIELD_TYPE == FCHAR || FLD.RDB$FIELD_TYPE == VARCHAR)
+			if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR)
 				&& !RFR.RDB$COLLATION_ID.NULL && RFR.RDB$COLLATION_ID)
 			{
 				char_sets[0] = '\0';
@@ -510,7 +508,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				}
 
 
-			if ((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
+			if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 				if (FLD.RDB$CHARACTER_LENGTH.NULL)
 				{
 
@@ -545,7 +543,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			}
 
 			// International character sets 
-			if ((FLD.RDB$FIELD_TYPE == FCHAR || FLD.RDB$FIELD_TYPE == VARCHAR ||
+			if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR ||
 				 FLD.RDB$FIELD_TYPE == BLOB) &&
 				!FLD.RDB$CHARACTER_SET_ID.NULL)
 			{
@@ -846,7 +844,7 @@ static void get_procedure_args(char* proc_name)
 				   Fix for Bug #122563
 				   FSG 18.Nov.2000
 				*/
-				if ((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
+				if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 					if (FLD.RDB$CHARACTER_LENGTH.NULL)
 					{
 
@@ -1892,7 +1890,7 @@ static void list_domain_table(const SCHAR* table_name,
 			ISQL_printf (Out, Print_buffer);
 		}
 
-		else if ((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
+		else if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 		{
 			// Length for chars 
 			sprintf (Print_buffer, "(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
@@ -2085,7 +2083,7 @@ static void list_domains(SSHORT default_char_set_id)
 			ISQL_printf (Out, Print_buffer);
 		}
 
-		else if ((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
+		else if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 		{
 			// Length for chars 
 			sprintf (Print_buffer, "(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
@@ -2471,7 +2469,7 @@ static void list_functions()
 				i++;
 
 			// Print length where appropriate 
-			if ((FNA.RDB$FIELD_TYPE == FCHAR)   ||
+			if ((FNA.RDB$FIELD_TYPE == T_CHAR)   ||
 				(FNA.RDB$FIELD_TYPE == VARCHAR) ||
 				(FNA.RDB$FIELD_TYPE == CSTRING))
 			{
@@ -2555,7 +2553,7 @@ static void list_functions()
 						sprintf (type_buffer, "%s",
 								 Column_types[i].type_name);
 				} // if !precision_known 
-			} // if FCHAR or VARCHAR or CSTRING ... else 
+			} // if T_CHAR or VARCHAR or CSTRING ... else 
 
 			// If a return argument, save it for the end, otherwise print 
 

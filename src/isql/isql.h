@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.23 2004-04-10 00:25:18 robocop Exp $
+ * $Id: isql.h,v 1.24 2004-04-24 14:38:27 brodsom Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -256,12 +256,14 @@ struct sqltypes {
 };
 
 #define MAXSUBTYPES 8			// Top of subtypes array 
-
+//
+// Use T_FLOAT and T_CHAR to avoid collisions with windows defines
+//
 #define SMALLINT	7
 #define INTEGER		8
 #define QUAD		9
-#define FLOAT		10
-#define FCHAR		14
+#define T_FLOAT		10
+#define T_CHAR		14
 #define DOUBLE_PRECISION 27
 #define DATE		35
 #define VARCHAR		37

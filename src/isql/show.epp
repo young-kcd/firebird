@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.39 2004-04-23 18:39:03 brodsom Exp $
+ * $Id: show.epp,v 1.40 2004-04-24 14:38:27 brodsom Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -44,15 +44,11 @@
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
 #include "../jrd/ibase.h"
-#include "../dsql/dsql.h"
 #include "../isql/isql.h"
-#include "../jrd/license.h"
 #include "../jrd/constants.h"
 #include "../jrd/intl.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/utl_proto.h"
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
 #include "../isql/extra_proto.h"
@@ -116,8 +112,8 @@ extern const sqltypes Column_types[] = {
 	{SMALLINT, "SMALLINT"},		// NTX: keyword
 	{INTEGER, "INTEGER"},		// NTX: keyword
 	{QUAD, "QUAD"},				// NTX: keyword
-	{FLOAT, "FLOAT"},			// NTX: keyword
-	{FCHAR, "CHAR"},			// NTX: keyword
+	{T_FLOAT, "FLOAT"},			// NTX: keyword
+	{T_CHAR, "CHAR"},			// NTX: keyword
 	{DOUBLE_PRECISION, "DOUBLE PRECISION"},	// NTX: keyword
 	{VARCHAR, "VARCHAR"},		// NTX: keyword
 	{CSTRING, "CSTRING"},		// NTX: keyword
@@ -1597,7 +1593,7 @@ static void show_charsets(
 	char_sets[0] = 0;
 	if ((char_set_id != default_char_set_id) || collation){
 		if (show_charset && !show_collation)
-			ISQL_get_character_sets(char_set_id, NULL, false, char_sets);
+			ISQL_get_character_sets(char_set_id, 0, false, char_sets);
 		else if (!show_charset && show_collation)
 			ISQL_get_character_sets(char_set_id, collation, true, char_sets);
 		else
@@ -2027,7 +2023,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 				}
 
 			// Length for CHARs
-			if ((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
+			if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
 				sprintf (Print_buffer, "(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
 				ISQL_printf (Out, Print_buffer);
 			}
@@ -2048,7 +2044,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 			}
 
 			// Show international character sets
-			if (FLD.RDB$FIELD_TYPE == FCHAR ||
+			if (FLD.RDB$FIELD_TYPE == T_CHAR ||
 					   FLD.RDB$FIELD_TYPE == VARCHAR  ||
 					   FLD.RDB$FIELD_TYPE == BLOB)
 			{
@@ -2083,7 +2079,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 			}
 
 			// Show collations
-			if (FLD.RDB$FIELD_TYPE == FCHAR ||
+			if (FLD.RDB$FIELD_TYPE == T_CHAR ||
 					   FLD.RDB$FIELD_TYPE == VARCHAR  ||
 					   FLD.RDB$FIELD_TYPE == BLOB)
 			{
@@ -2404,7 +2400,7 @@ static processing_state show_functions(const SCHAR* object)
 
 		}
 		// Print length where appropriate
-		if ((FNA.RDB$FIELD_TYPE == FCHAR) || (FNA.RDB$FIELD_TYPE == VARCHAR)
+		if ((FNA.RDB$FIELD_TYPE == T_CHAR) || (FNA.RDB$FIELD_TYPE == VARCHAR)
 			|| (FNA.RDB$FIELD_TYPE == CSTRING))
 		{
 			FOR V4FNA IN RDB$FUNCTION_ARGUMENTS CROSS
@@ -2849,7 +2845,7 @@ static processing_state show_proc(const SCHAR* procname)
 			/* Use RDB$CHARACTER_LENGTH instead of RDB$FIELD_LENGTH
 			   FSG 19.Nov.2000
 			*/
-			if (((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
+			if (((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
 				!FLD.RDB$CHARACTER_LENGTH.NULL)
 			{
 				sprintf (lenstring, "(%d)", FLD.RDB$CHARACTER_LENGTH);
@@ -2867,7 +2863,7 @@ static processing_state show_proc(const SCHAR* procname)
 
 			// Show international character sets and collations
 
-			if (FLD.RDB$FIELD_TYPE == FCHAR ||
+			if (FLD.RDB$FIELD_TYPE == T_CHAR ||
 					   FLD.RDB$FIELD_TYPE == VARCHAR  ||
 					   FLD.RDB$FIELD_TYPE == BLOB)
 			{
@@ -3136,7 +3132,7 @@ static processing_state show_table(
 				break;
 			}
 
-		if ((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
+		if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
 			sprintf (Print_buffer, "(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
 			ISQL_printf (Out, Print_buffer);
 
@@ -3203,7 +3199,7 @@ static processing_state show_table(
 		}
 
 		// Handle collations
-		if ((FLD.RDB$FIELD_TYPE == FCHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR) || (FLD.RDB$FIELD_TYPE == BLOB)) {
+		if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR) || (FLD.RDB$FIELD_TYPE == BLOB)) {
 			show_charsets(relation_name, RFR.RDB$FIELD_NAME, false, true, true, true);
 		}
 
