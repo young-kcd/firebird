@@ -394,6 +394,9 @@
 				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\win32\thd_priority.cpp">
 			</File>
 			<File

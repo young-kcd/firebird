@@ -309,6 +309,9 @@
 				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\utl.cpp">
 			</File>
 			<File

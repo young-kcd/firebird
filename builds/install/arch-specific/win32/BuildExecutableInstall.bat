@@ -27,7 +27,7 @@
 set FBBUILD_BUILDTYPE=release
 :: Don't ship pdb files by default
 set FBBUILD_SHIP_PDB=no_pdb
-:: Reset "make" vars to null
+:: Reset "make" vars to zero
 set FBBUILD_ZIP_PACK=0
 set FBBUILD_ISX_PACK=0
 set FBBUILD_EMB_PACK=0
@@ -102,8 +102,8 @@ sed -V | findstr version > nul
 ) else (@echo     o sed found.)
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
-  if not defined 7ZIP (
-    call :ERROR 7ZIP environment variable is not defined.
+  if not defined SEVENZIP (
+    call :ERROR SEVENZIP environment variable is not defined.
     @goto :EOF
   ) else (@echo     o Compression utility found.)
 )
@@ -178,9 +178,12 @@ if not exist %FBBUILD_OUTPUT%\system32 (mkdir %FBBUILD_OUTPUT%\system32)
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
 @echo   Copying ib_util etc
-for %%v in ( ib_util.h ib_util.pas ) do (
-	((copy %ROOT_PATH%\src\extlib\%%v %FBBUILD_OUTPUT%\include\%%v > nul) || (call :WARNING Copying %%v failed.))
+for %%v in ( src\extlib\ib_util.h lang_helpers\ib_util.pas ) do (
+	((copy %ROOT_PATH%\%%v %FBBUILD_OUTPUT%\include\%%v > nul) || (call :WARNING Copying %%v failed.))
 )
+::copy %ROOT_PATH%\src\extlib\ib_util.h %FBBUILD_OUTPUT%\include > nul || (call :WARNING Copying ib_util.h failed.)
+::copy %ROOT_PATH%\lang_helpers\ib_util.pas %FBBUILD_OUTPUT%\include > nul || (call :WARNING Copying ib_util.pas failed.)
+
 
 @echo   Copying fbclient lib etc
 :: For some unknown reason copy sets the errorlevel even when it succeeds,
@@ -198,12 +201,15 @@ for %%v in (fbclient ib_util) do (
 
 @if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @echo   Copying pdb files...
-  @copy %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\firebird\bin\*.pdb %FBBUILD_OUTPUT%\bin > nul
-  @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Copying pdb files failed
-	goto :EOF
+  for %%v in ( fbembed fb_inet_server fbserver fbclient ) do (
+    @copy %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\%%v\%%v.pdb %FBBUILD_OUTPUT%\bin > nul
+    @if %ERRORLEVEL% GEQ 1 (
+      call :ERROR Copying %%v.pdb files failed
+	  goto :EOF
+    )
   )
 )
+::  @copy %ROOT_PATH%\temp\%FBBUILD_BUILDTYPE%\firebird\bin\*.pdb %FBBUILD_OUTPUT%\bin > nul
 
 @echo   Started copying docs...
 @rmdir /S /Q %ROOT_PATH%\output\doc 2>nul
@@ -351,8 +357,8 @@ endlocal
 :GBAK_SEC_DB
 @echo   Let's make sure that we have a backup of the security database handy.
 ::======================================================================
-@copy %ROOT_PATH%\builds\misc\security.gbak %FBBUILD_OUTPUT%\security.fbk > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security.fbk failed ) & (goto :EOF))
+@copy %ROOT_PATH%\builds\misc\security.gbak %FBBUILD_OUTPUT%\security2.fbk > nul
+@if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security2.fbk failed ) & (goto :EOF))
 
 @copy %ROOT_PATH%\src\misc\upgrade\v2\security_database.sql %FBBUILD_OUTPUT%\bin\security_database.sql
 
@@ -396,28 +402,29 @@ endlocal
 
 :GEN_ZIP
 ::======
-if "%FBBUILD_ZIP_PACK%"=="" goto :EOF
-@Echo   Generating zip package
+if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
+::@Echo   Generating zip package
 
 :: Generate the directory tree to be zipped
-set FBBUILD_ZIP_PACK=%ROOT_PATH%\zip_pack
-if not exist (@mkdir %FBBUILD_ZIP_PACK% 2>nul ) else ( del /s /q %FBBUILD_ZIP_PACK%)
-@copy /Y %FBBUILD_OUTPUT% %FBBUILD_ZIP_PACK% > nul
+set FBBUILD_ZIP_PACK_ROOT=%ROOT_PATH%\builds\zip_pack
+if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
+@del /s /q %FBBUILD_ZIP_PACK_ROOT%\ > nul
+@copy /Y %FBBUILD_OUTPUT% %FBBUILD_ZIP_PACK_ROOT% > nul
 for %%v in (bin doc doc\sql.extensions help include intl lib udf examples ) do (
-	@mkdir %FBBUILD_ZIP_PACK%\%%v 2>nul
-	@copy /Y %FBBUILD_OUTPUT%\%%v\*.* %FBBUILD_ZIP_PACK%\%%v\ > nul
+	@mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
+	@copy /Y %FBBUILD_OUTPUT%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
 )
-
-
 :: Now remove stuff that is not needed.
-::for %%v in (bin\gpre_boot.exe bin\gpre_static.exe doc\installation_readme.txt bin\fbembed.dll bin\fbembed.pdb ) do (
-for %%v in ( doc\installation_readme.txt bin\fbembed.dll bin\fbembed.pdb ) do (
-  @del %FBBUILD_ZIP_PACK%\%%v > nul
+for %%v in ( doc\installation_readme.txt bin\fbembed.dll bin\fbembed.pdb bin\gpre_boot.exe bin\gpre_static.exe bin\gds32.dll ) do (
+  @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
 )
 
+if not "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
+  @del /q %FBBUILD_ZIP_PACK_ROOT%\bin\*.pdb > nul 2>&1
+)
 
 :: grab install notes for zip pack
-@copy %ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK%\doc\README_installation.txt > nul
+@copy %ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK_ROOT%\doc\README_installation.txt > nul
 
 ::End of GEN_ZIP
 ::--------------
@@ -426,16 +433,23 @@ goto :EOF
 
 :ZIP_PACK
 ::=======
-if "%FBBUILD_ZIP_PACK%"=="" goto :EOF
+if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
-	del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
-	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip %FBBUILD_ZIP_PACK%\*.*
+    if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
+ 	  del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
+	)
+	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32_pdb.zip
+
 ) else (
-	del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
- 	%PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip %FBBUILD_ZIP_PACK%\*.*
+    if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip (
+	  del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
+	)
+	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_win32.zip
 )
 
-::Endo of ZIP_PACK
+@%SEVENZIP%\7z.exe a -r -tzip -mx9 %FBBUILD_ZIPFILE% %FBBUILD_ZIP_PACK_ROOT%\*.*
+
+::End of ZIP_PACK
 ::----------------
 @goto :EOF
 
@@ -443,32 +457,36 @@ if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
 :GEN_EMBEDDED
 ::===========
 :: Generate the directory tree for the embedded zip pack
-if %FBBUILD_EMB_PACK% NEQ 1 goto :EOF
-set EMB_PATH=%ROOT_PATH%\emb_pack
-@mkdir %EMB_PATH% 2>nul
+if %FBBUILD_EMB_PACK% EQU 0 goto :EOF
+set FBBUILD_EMB_PACK_ROOT=%ROOT_PATH%\emb_pack
+@mkdir %FBBUILD_EMB_PACK_ROOT% 2>nul
 
-for %%v in (aliases.conf firebird.conf firebird.msg) do (	@copy /Y %FBBUILD_OUTPUT%\%%v %EMB_PATH%\%%v > nul)
+for %%v in (aliases.conf firebird.conf firebird.msg) do (	@copy /Y %FBBUILD_OUTPUT%\%%v %FBBUILD_EMB_PACK_ROOT%\%%v > nul)
 
-for %%v in ( doc intl udf ) do (@mkdir %EMB_PATH%\%%v 2>nul)
+for %%v in ( doc intl udf ) do (@mkdir %FBBUILD_EMB_PACK_ROOT%\%%v 2>nul)
 
-@copy /Y %ROOT_PATH%\temp\release\firebird\bin\fbembed.* %EMB_PATH% > nul
-@copy /Y %ROOT_PATH%\temp\release\firebird\bin\ib_util.dll %EMB_PATH% > nul
-@copy /Y %FBBUILD_OUTPUT%\doc\Firebird*.pdf %EMB_PATH%\doc\ > nul
-@copy /Y %FBBUILD_OUTPUT%\intl\*.* %EMB_PATH%\intl\ > nul
-@copy /Y %FBBUILD_OUTPUT%\udf\*.* %EMB_PATH%\udf\ > nul
+@copy /Y %ROOT_PATH%\temp\release\firebird\bin\fbembed.* %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %ROOT_PATH%\temp\release\firebird\bin\ib_util.dll %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %FBBUILD_OUTPUT%\doc\Firebird*.pdf %FBBUILD_EMB_PACK_ROOT%\doc\ > nul
+@copy /Y %FBBUILD_OUTPUT%\intl\*.* %FBBUILD_EMB_PACK_ROOT%\intl\ > nul
+@copy /Y %FBBUILD_OUTPUT%\udf\*.* %FBBUILD_EMB_PACK_ROOT%\udf\ > nul
+
+if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
+  @copy /Y %ROOT_PATH%\temp\release\fbembed\fbembed.pdb %FBBUILD_EMB_PACK_ROOT% > nul
+)
 
 
 :: grab install notes for embedded zip pack
-@copy %ROOT_PATH%\doc\README.user.embedded %EMB_PATH%\doc\README_embedded.txt > nul
-@copy %ROOT_PATH%\doc\WhatsNew %EMB_PATH%\doc\WhatsNew.txt > nul
+@copy %ROOT_PATH%\doc\README.user.embedded %FBBUILD_EMB_PACK_ROOT%\doc\README_embedded.txt > nul
+@copy %ROOT_PATH%\doc\WhatsNew %FBBUILD_EMB_PACK_ROOT%\doc\WhatsNew.txt > nul
 
 :: Add license
 for %%v in (IPLicense.txt IDPLicense.txt ) do (
-	@copy %ROOT_PATH%\builds\install\misc\%%v %EMB_PATH%\%%v > nul
+	@copy %ROOT_PATH%\builds\install\misc\%%v %FBBUILD_EMB_PACK_ROOT%\%%v > nul
 )
 
 :: And readme
-@copy %ROOT_PATH%\builds\install\arch-specific\win32\readme.txt %EMB_PATH%\ > nul
+@copy %ROOT_PATH%\builds\install\arch-specific\win32\readme.txt %FBBUILD_EMB_PACK_ROOT%\ > nul
 
 
 ::End of GEN_EMBEDDED
@@ -478,16 +496,18 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 
 :EMB_PACK
 ::=======
-if %FBBUILD_EMB_PACK% NEQ 1 goto :EOF
+if %FBBUILD_EMB_PACK% EQU 0 goto :EOF
 @echo Now building embedded package
 :: Now we can zip it up and copy the package to the install images directory.
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
-  del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32_pdb.zip
-  %PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32_pdb.zip %ROOT_PATH%\emb_pack\*.*
+  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32_pdb.zip > nul
+  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32_pdb.zip
 ) else (
-  del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32.zip
-  %PKZIP%\pkzip25.exe -level=9 -add=update -rec -path=relative -exclude=*.pdb %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32.zip %ROOT_PATH%\emb_pack\*.*
+  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32.zip > nul
+  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_embed_win32.zip
 )
+
+@%SEVENZIP%\7z.exe a -r -tzip -mx9 %FBBUILD_EMBFILE% %FBBUILD_EMB_PACK_ROOT%\*.*
 
 
 ::End of EMB_PACK
@@ -652,13 +672,13 @@ popd
 @Echo.
 
 if %FBBUILD_EMB_PACK% EQU 1 (
-@Echo gen_embedded
+@Echo   Generating image of embedded install
 @(@call :GEN_EMBEDDED ) || (@echo Error calling GEN_EMBEDDED & @goto :EOF)
 @Echo.
 )
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
-@echo gen_zip
+@echo   Generating image of zipped install
 @(@call :GEN_ZIP ) || (@echo Error calling GEN_ZIP & @goto :EOF)
 @echo.
 )
@@ -671,11 +691,13 @@ if %FBBUILD_ZIP_PACK% EQU 1 (
 @echo.
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
+@echo   Zipping files for zip pack
 @(@call :ZIP_PACK ) || (@echo Error calling ZIP_PACK & @goto :EOF)
 @echo.
 )
 
 if %FBBUILD_EMB_PACK% EQU 1 (
+@echo   Zipping files for embedded pack
 @(@call :EMB_PACK ) || (@echo Error calling EMB_PACK & @goto :EOF)
 @echo.
 )

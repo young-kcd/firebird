@@ -15,16 +15,16 @@
   All Rights Reserved.
 
   This file contains a whole bunch of functions that
-  check the registry and see what versions of firebird or interbase 
+  check the registry and see what versions of firebird or interbase
   are already installed.
-  
+
   This stuff _is_ firebird/interbase specific and some of it is entirely dependant
   upon parts of the InnoSetup install script.
 
   Here is a list of functions available in this script:
-  
+
     function ClassicInstallChosen: Boolean;
-  
+
     procedure SetupSharedFilesArray;
     procedure GetSharedLibCountBeforeCopy;
     procedure CheckSharedLibCountAtEnd;
@@ -41,8 +41,8 @@
     function ShowCopyGds32Task: boolean;
     function CopyFbClientLib: boolean;
     function ShowCopyFbClientLibTask: boolean;
-    
-    
+
+
  *)
 
 
@@ -410,7 +410,7 @@ begin
         FB2Install: begin
           //We don't know (yet) what we should be comparing against here, ClientVersion
           //should be equal or greater than 1.6.0.0
-          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '1.6.0.0',2) < 0) then
+          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.0.0.0',2) < 0) then
             ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + BrokenInstall;
           if ((ProductsInstalledArray[product].InstallType AND ClientInstall)= ClientInstall) then begin
             ProductsInstalled := ProductsInstalled + FB2;
@@ -439,7 +439,7 @@ begin
   end; //for
 end;
 
- 
+
 Var
   InterBaseVer: Array of Integer;
   FirebirdVer: Array of Integer;
@@ -456,7 +456,7 @@ begin
     result := true;
 end;
 
- 
+
 
 /////=======================================
 
@@ -474,7 +474,7 @@ var
 
 
 procedure SetupSharedFilesArray;
-//All shared files go in this list. Use 
+//All shared files go in this list. Use
 // find /n "sharedfile" FirebirdInstall_15.iss
 //to list them in the order they appear in the setup script
 begin
@@ -637,8 +637,8 @@ begin
     Handle:=FindWindowByClassName('FB_Server');
   if ( Handle=0 ) then
     Handle:=FindWindowByClassName('FB_Guard');
-  
-  if (Handle>0) then  
+
+  if (Handle>0) then
     result := True;
 end;
 
@@ -683,12 +683,12 @@ end;
 function CopyFbClientLib: boolean;
 begin
 //Note that the default for this is the opposite to CopyGds32.
-  result := ( (CopyFbClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientToSysTask')= srYes) ); 
+  result := ( (CopyFbClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientToSysTask')= srYes) );
 end;
 
 
 function ShowCopyFbClientLibTask: boolean;
-//See note for ShowCopyGds32Task. 
+//See note for ShowCopyGds32Task.
 begin
   result := False;
   if ConfigureFirebird then

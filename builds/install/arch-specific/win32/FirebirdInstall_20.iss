@@ -269,8 +269,8 @@ Source: src\install\arch-specific\win32\si\*.txt; DestDir: {app}\doc; Components
 #endif
 Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: SaveFirebirdConf
 Source: output\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
-Source: output\security.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
-Source: output\security.fbk; DestDir: {app}; Components: ServerComponent; Flags: ignoreversion
+Source: output\security2.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
+Source: output\security2.fbk; DestDir: {app}; Components: ServerComponent; Flags: ignoreversion
 Source: output\firebird.msg; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
 Source: output\firebird.log; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall skipifsourcedoesntexist external dontcopy
 
@@ -290,6 +290,7 @@ Source: output\bin\instclient.exe; DestDir: {app}\bin; Components: ClientCompone
 Source: output\bin\instreg.exe; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile ignoreversion
 Source: output\bin\instsvc.exe; DestDir: {app}\bin; Components: ServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion
 Source: output\bin\isql.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
+Source: output\bin\nbackup.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: output\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
 Source: output\bin\security_database.sql; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
@@ -377,10 +378,10 @@ Var
                                  // no other working installation is found (unless we are installing
                                  // over the same version)
 
-  //These three command-line options change the default behaviour 
+  //These three command-line options change the default behaviour
   // during a scripted install
-  // They also control whether their associated task checkboxes are displayed 
-  // during an interactive install 
+  // They also control whether their associated task checkboxes are displayed
+  // during an interactive install
   NoCPL: Boolean;               // pass /nocpl on command-line.
   NoLegacyClient: Boolean;      // pass /nogds32 on command line.
   CopyFbClient: Boolean;     // pass /copyfbclient on command line.
@@ -541,7 +542,7 @@ begin
   CommandLine:=GetCmdTail;
   if pos('FORCE',Uppercase(CommandLine))>0 then
     ForceInstall:=True;
-    
+
   if pos('NOCPL', Uppercase(CommandLine))>0 then
     NoCPL := True;
 
@@ -676,8 +677,8 @@ begin
       Result := GetAppPath+'\bin\fb_inet_server.exe'
     else
       Result := GetAppPath+'\bin\fbserver.exe';
-      
-      
+
+
 end;
 
 function IsNotAutoStartApp: boolean;
@@ -752,7 +753,7 @@ begin
         AppStr := StartApp('')+' -a';
         RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
       end;
-      
+
       RemoveSavedConfIfNoDiff;
       UpdateFirebirdConf;
       CheckSharedLibCountAtEnd;
