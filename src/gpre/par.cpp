@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.55 2004-11-10 04:18:58 robocop Exp $
+//  $Id: par.cpp,v 1.56 2005-01-05 04:00:33 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -109,7 +109,6 @@ static bool		terminator();
 
 static int		brace_count;
 static bool		routine_decl;
-static bool		bas_extern_flag;
 static act*		cur_statement;
 static act*		cur_item;
 static gpre_lls*	cur_for;
@@ -129,8 +128,6 @@ static gpre_fld*	flag_field;
 
 act* PAR_action(const TEXT* base_dir)
 {
-	act* action;
-	enum kwwords keyword;
 	jmp_buf env;
 
 	gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
@@ -143,7 +140,7 @@ act* PAR_action(const TEXT* base_dir)
 	if ((USHORT) gpreGlob.token_global.tok_keyword >= (USHORT) KW_start_actions &&
 		(USHORT) gpreGlob.token_global.tok_keyword <= (USHORT) KW_end_actions)
 	{
-		keyword = gpreGlob.token_global.tok_keyword;
+		const enum kwwords keyword = gpreGlob.token_global.tok_keyword;
 		switch (keyword)
 		{
 		case KW_READY:
@@ -300,12 +297,15 @@ act* PAR_action(const TEXT* base_dir)
 			return par_case();
 
 		case KW_EXEC:
-			if (!MSC_match(KW_SQL))
-				break;
-			gpreGlob.sw_sql = true;
-			action = SQL_action(base_dir);
-			gpreGlob.sw_sql = false;
-			return action;
+			{
+				if (!MSC_match(KW_SQL))
+					break;
+				gpreGlob.sw_sql = true;
+				act* action = SQL_action(base_dir);
+				gpreGlob.sw_sql = false;
+				return action;
+			}
+
 		default:
 			break;
 		}
@@ -825,7 +825,6 @@ void PAR_init()
 
 	cur_error = cur_fetch = cur_for = cur_modify = cur_store = NULL;
 	cur_statement = cur_item = NULL;
-	bas_extern_flag = false;
 
 	gpreGlob.cur_routine = MSC_action(0, ACT_routine);
 	gpreGlob.cur_routine->act_flags |= ACT_main;
@@ -1086,11 +1085,12 @@ gpre_req* PAR_set_up_dpb_info(rdy* ready, act* action, USHORT buffercount)
 gpre_sym* PAR_symbol(enum sym_t type)
 {
 	gpre_sym* symbol;
-	TEXT s[128];
+	TEXT s[ERROR_LENGTH];
 
 	for (symbol = gpreGlob.token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (type == SYM_dummy || symbol->sym_type == type) {
-			sprintf(s, "symbol %s is already in use", gpreGlob.token_global.tok_string);
+			fb_utils::snprintf(s, sizeof(s), 
+				"symbol %s is already in use", gpreGlob.token_global.tok_string);
 			PAR_error(s);
 		}
 
@@ -2057,7 +2057,7 @@ static act* par_finish()
 
 static act* par_for()
 {
-	TEXT s[128];
+	TEXT s[ERROR_LENGTH];
 	gpre_sym* symbol = NULL;
 	bool dup_symbol = false;
 
@@ -2074,7 +2074,8 @@ static act* par_for()
 			return NULL;
 		}
 		if (dup_symbol) {
-			sprintf(s, "symbol %s is already in use", gpreGlob.token_global.tok_string);
+			fb_utils::snprintf(s, sizeof(s),
+				"symbol %s is already in use", gpreGlob.token_global.tok_string);
 			PAR_error(s);
 		}
 
