@@ -1,3 +1,13 @@
+2004-08-09 03:24  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp (1.57), alloc.h (1.46),
+	class_test.cpp (1.19), test.sh (1.11):
+	
+	Fix memory manager to allow reliable detection of references to
+	memory from deleted pools under Valgrind. Make memory usage
+	statistics more accurate both in Valgrind and general cases. Adjust
+	pool dumping routine to be aware of delayed free blocks
+
 2004-08-07 18:49  arnobrinkman
 
 	* firebird2/src/jrd/: opt.cpp (1.178), rse.h (1.34):
