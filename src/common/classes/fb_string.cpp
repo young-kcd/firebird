@@ -382,6 +382,7 @@ namespace Firebird {
 	}
 
 	void AbstractString::printf(const char* format,...) {
+#pragma FB_COMPILER_MESSAGE("Broken code! vsnprintf may return -1 on some platforms including Windows!")
 		char temp[256];
 		va_list params;
 		va_start(params, format);
