@@ -39,7 +39,7 @@
 // in applications. That's why for regular SERVER builds
 // it's better to exit with appropriate diags rather continue
 // with missing / wrong configuration.
-#if (! defined(BOOT_BUILD)) && (! defined(EMBEDDED))
+#if (! defined(BOOT_BUILD)) && (! defined(EMBEDDED) && (! defined(SUPERCLIENT)))
 #define EXIT_ON_NO_CONF
 #else
 #ifdef EXIT_ON_NO_CONF

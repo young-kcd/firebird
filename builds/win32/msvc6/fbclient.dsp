@@ -94,6 +94,10 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\src\common\config\config_file.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\os\win32\config_root.cpp
 # End Source File
 # End Group
