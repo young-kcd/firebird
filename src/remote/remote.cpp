@@ -36,9 +36,9 @@
 #include "../jrd/thd_proto.h"
 #include "../common/config/config.h"
 
+extern int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
 
 extern "C" {
-
 
 #define DUMMY_INTERVAL		60	/* seconds */
 #define ATTACH_FAILURE_SPACE	2048	/* bytes */
@@ -52,7 +52,6 @@ static SLONG get_parameter(UCHAR **);
 #define xdrmem_create	(*_libgds_xdrmem_create)
 #endif
 
-extern int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
 extern void DLL_EXPORT THD_init_data();
 
 
