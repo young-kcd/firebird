@@ -158,14 +158,15 @@ pgc[] = {
 		FLD(PGC, "Bytes/PIP: %x", pgc_bytes),
 		0
 },
-rel[] = {
+
+jrd_rel[] = {
 	"RELATION",
-		FLD(REL, "%s", rel_name),
-		FLD(REL, "Id: %d", rel_id),
-		FLD(REL, "Current format: %x", rel_current_format),
-		FLD(REL, "Formats: %x", rel_formats),
-		FLD(REL, "Pages: %x", rel_pages),
-		FLD(REL, "Root: %ld", rel_index_root),
+		FLD(JRD_REL, "%s", rel_name),
+		FLD(JRD_REL, "Id: %d", rel_id),
+		FLD(JRD_REL, "Current format: %x", rel_current_format),
+		FLD(JRD_REL, "Formats: %x", rel_formats),
+		FLD(JRD_REL, "Pages: %x", rel_pages),
+		FLD(JRD_REL, "Root: %ld", rel_index_root),
 		0
 },
 fmt[] = {
@@ -175,7 +176,7 @@ fmt[] = {
 		FLD(FMT, "Version: %d", fmt_version),
 		0
 },
-req[] = {
+jrd_req[] = {
 	"REQUEST",
 		FLD(JRD_REQ, "COUNT: %x", req_count),
 		FLD(JRD_REQ, "Impure: %x", req_impure_size),
@@ -196,7 +197,7 @@ req[] = {
 		FLD(JRD_REQ, "Flags: %x", req_flags),
 		0
 },
-tra[] = {
+jrd_tra[] = {
 	"TRANSACTION",
 		FLD(JRD_TRA, "Number: %ld", tra_number),
 		FLD(JRD_TRA, "Oldest: %ld", tra_oldest),
@@ -207,10 +208,10 @@ tra[] = {
 		FLD(JRD_TRA, "Flags: %x", tra_flags),
 		0
 },
-nod[] = {
+jrd_nod[] = {
 	"NODE",
-		FLD(NOD, "Type: %x", nod_type),
-		FLD(NOD, "Impure: %x", nod_impure),
+		FLD(JRD_NOD, "Type: %x", nod_type),
+		FLD(JRD_NOD, "Impure: %x", nod_impure),
 		0
 },
 lls[] = {
@@ -336,7 +337,7 @@ static TEXT_PTR arr[] = {	"ARRAY DESCRIPTION", 0};
 static TEXT_PTR map[] = {	"MAP BLOCK", 0};
 static TEXT_PTR log[] = {	"LOG BLOCK", 0};
 static TEXT_PTR dls[] = {	"DIR LIST BLOCK", 0};
-static TEXT_PTR prc[] = {
+static TEXT_PTR jrd_prc[] = {
 	"PROCEDURE",
 		FLD(JRD_PRC, "%s", prc_name),
 		FLD(JRD_PRC, "Id: %d", prc_id), 0};
