@@ -1,3 +1,41 @@
+2002-11-23 19:26  dimitr
+
+	* firebird2/src/common/memory/memory_pool.cpp:
+	
+	All pool extends passed from the external world are in bytes, not
+	in allocation units.
+
+2002-11-23 18:59  dimitr
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	no message
+
+2002-11-23 18:58  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Increased maximum size of request block.
+
+2002-11-23 13:19  dimitr
+
+	* firebird2/src/jrd/svc.cpp:
+	
+	Compatibility mode for my previous fix.
+
+2002-11-23 12:38  dimitr
+
+	* firebird2/src/: burp/burp.cpp, jrd/svc.cpp:
+	
+	The type of service invokation never must be specified by the
+	client tool. It should be defined by the server only.
+
+2002-11-23 12:23  dimitr
+
+	* firebird2/src/jrd/status.cpp:
+	
+	Fixed one little issue with unrecognized error type.
+
 2002-11-22 16:27  skidder
 
 	* firebird2/src/dsql/pass1.cpp:
