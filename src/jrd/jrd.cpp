@@ -4017,7 +4017,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 
 
 #ifdef MULTI_THREAD
-void JRD_blocked(Attachment* blocking, BlockingThread** que)
+void JRD_blocked(Attachment* blocking, BlockingThread** bt_que)
 {
 /**************************************
  *
@@ -4055,8 +4055,8 @@ void JRD_blocked(Attachment* blocking, BlockingThread** que)
 	}
 
 	block->btb_thread_id = SCH_current_thread();
-	block->btb_next = *que;
-	*que = block;
+	block->btb_next = *bt_que;
+	*bt_que = block;
 	attachment = tdbb->tdbb_attachment;
 	attachment->att_blocking = blocking;
 
@@ -4420,7 +4420,7 @@ void JRD_set_context(thread_db* tdbb)
 
 
 #ifdef MULTI_THREAD
-void JRD_unblock(BlockingThread** que)
+void JRD_unblock(BlockingThread** bt_que)
 {
 /**************************************
  *
@@ -4436,8 +4436,8 @@ void JRD_unblock(BlockingThread** que)
 	Database* dbb = get_dbb();
 
 	BlockingThread* block;
-	while (block = *que) {
-		*que = block->btb_next;
+	while (block = *bt_que) {
+		*bt_que = block->btb_next;
 		if (block->btb_thread_id) {
 			SCH_wake(block->btb_thread_id);
 		}
