@@ -1412,7 +1412,8 @@ static RTN walk_index(TDBB tdbb,
 	while (next) {
 		fetch_page(tdbb, control, next, pag_index, &window, &page);
 
-		if (page->btr_relation != relation->rel_id || page->btr_id != id) {
+		if (page->btr_relation != relation->rel_id || page->btr_id != (UCHAR) (id % 256)) 
+		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
 					next);
 			CCH_RELEASE(tdbb, &window);

@@ -34,8 +34,9 @@
 
 #include "../jrd/err_proto.h"    /* Index error types */
 
-#define MAX_IDX		 64			/* that should be plenty of indexes */
-#define MAX_KEY		256
+/* 64 turns out not to be enough indexes */
+/* #define MAX_IDX		 64	*/	/* that should be plenty of indexes */
+#define MAX_KEY		256 /* 256 isn't big enough for a key either */
 
 enum idx_null_state {
   idx_nulls_none,
@@ -48,10 +49,10 @@ enum idx_null_state {
 typedef struct idx {
 	SLONG idx_root;				/* Index root */
 	float idx_selectivity;		/* selectivity of index */
-	UCHAR idx_id;
+	USHORT idx_id;
 	UCHAR idx_flags;
 	UCHAR idx_runtime_flags;	/* flags used at runtime, not stored on disk */
-	UCHAR idx_primary_index;	/* id for primary key partner index */
+	USHORT idx_primary_index;	/* id for primary key partner index */
 	USHORT idx_primary_relation;	/* id for primary key partner relation */
 	USHORT idx_count;			/* number of keys */
 	struct vec *idx_foreign_primaries;	/* ids for primary/unique indexes with partners */

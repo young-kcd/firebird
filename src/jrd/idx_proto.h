@@ -36,7 +36,7 @@ extern void IDX_check_access(TDBB, class Csb *, struct jrd_rel *, struct jrd_rel
 							 struct jrd_fld *);
 extern void IDX_create_index(TDBB, struct jrd_rel *, struct idx *, UCHAR *,
 							 USHORT *, struct jrd_tra *, float *);
-extern struct idb *IDX_create_index_block(TDBB, struct jrd_rel *, UCHAR);
+extern struct idb *IDX_create_index_block(TDBB, struct jrd_rel *, USHORT);
 extern void IDX_delete_index(TDBB, struct jrd_rel *, USHORT);
 extern void IDX_delete_indices(TDBB, struct jrd_rel *);
 extern enum idx_e IDX_erase(TDBB, struct rpb *, struct jrd_tra *, struct jrd_rel **,

@@ -1099,6 +1099,16 @@ void VIO_data(TDBB tdbb, RPB * rpb, BLK pool)
 
 	if (format->fmt_length != length)
 	{
+#ifdef VIO_DEBUG
+	    if (debug_flag > DEBUG_WRITES)
+			ib_printf ("VIO_erase (rpb %d, length %d expected %d)\n", rpb->rpb_number, 
+			    length, format->fmt_length);
+	
+	    if (debug_flag > DEBUG_WRITES_INFO)
+			ib_printf ("   record  %d:%d, rpb_trans %d, flags %d, back %d:%d, fragment %d:%d\n",
+				rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction, rpb->rpb_flags,
+			    rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page, rpb->rpb_f_line);
+#endif
 		BUGCHECK(183);			/* msg 183 wrong record length */
 	}
 
@@ -2091,9 +2101,10 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 			EVL_field(0, new_rpb->rpb_record, f_idx_name, &desc1);
 			if (EVL_field(0, new_rpb->rpb_record, f_idx_exp_blr, &desc2))
 				DFW_post_work(transaction, dfw_create_expression_index,
-							  &desc1, MAX_IDX);
+							  &desc1, tdbb->tdbb_database->dbb_max_idx);
 			else
-				DFW_post_work(transaction, dfw_create_index, &desc1, MAX_IDX);
+				DFW_post_work(transaction, dfw_create_index, &desc1, 
+							  tdbb->tdbb_database->dbb_max_idx);
 			break;
 
 		case rel_triggers:
@@ -2501,9 +2512,10 @@ void VIO_store(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 			EVL_field(0, rpb->rpb_record, f_idx_name, &desc);
 			if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2))
 				DFW_post_work(transaction, dfw_create_expression_index, &desc,
-							  MAX_IDX);
+							  tdbb->tdbb_database->dbb_max_idx);
 			else
-				DFW_post_work(transaction, dfw_create_index, &desc, MAX_IDX);
+				DFW_post_work(transaction, dfw_create_index, &desc, 
+							  tdbb->tdbb_database->dbb_max_idx);
 			break;
 
 		case rel_rfr:
