@@ -1,3 +1,196 @@
+2003-09-08 23:44  skidder
+
+	* firebird2/src/: dsql/parse.cpp, dsql/parse.y, jrd/cch.cpp,
+	jrd/nbak.cpp, jrd/os/isc_i_proto.h, jrd/os/win32/isc_ipc.cpp,
+	lock/lock.cpp:
+	
+	Make Win32 version of engine compile
+
+2003-09-08 23:43  skidder
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj,
+	engine_classic.vcproj, engine_embed.vcproj, fb_lock_print.vcproj,
+	fbclient.vcproj, fbclient_static.vcproj, gpre_boot.vcproj,
+	gstat.vcproj:
+	
+	Update MSVC7 makefiles
+
+2003-09-08 23:26  skidder
+
+	* firebird2/src/dsql/: dsql.tab.h, parse.cpp:
+	
+	Update parse.cpp
+
+2003-09-08 22:33  skidder
+
+	* firebird2/src/jrd/os/isc_i_proto.h:
+	
+	Add forgotten file
+
+2003-09-08 22:23  skidder
+
+	* firebird2/: configure.in, builds/posix/Makefile.in.boot.gpre,
+	builds/posix/Makefile.in.client.util,
+	builds/posix/Makefile.in.embed.util, builds/posix/make.defaults,
+	builds/posix/make.shared.variables, builds/posix/prefix.darwin,
+	builds/posix/prefix.example, builds/posix/prefix.freebsd,
+	builds/posix/prefix.linux, builds/posix/prefix.mingw,
+	builds/posix/prefix.sinixz, builds/posix/prefix.solaris,
+	builds/posix/prefix.solx86, builds/posix/prefix.solx86gcc,
+	src/common/classes/alloc.cpp, src/common/classes/alloc.h,
+	src/common/classes/class_perf.cpp,
+	src/common/classes/class_test.cpp, src/common/classes/locks.h,
+	src/common/classes/rwlock.h, src/common/classes/tree.h,
+	src/common/classes/vector.h, src/dsql/parse.y,
+	src/include/firebird.h, src/jrd/cch.cpp, src/jrd/cch.h,
+	src/jrd/cch_proto.h, src/jrd/common.h, src/jrd/dfw.epp,
+	src/jrd/err.cpp, src/jrd/err_proto.h, src/jrd/event.cpp,
+	src/jrd/gds.cpp, src/jrd/gds_proto.h, src/jrd/isc_i_proto.h,
+	src/jrd/isc_ipc.cpp, src/jrd/isc_s_proto.h, src/jrd/isc_sync.cpp,
+	src/jrd/lck.cpp, src/jrd/lck.h, src/jrd/lck_proto.h,
+	src/jrd/nbak.cpp, src/jrd/nbak.h, src/jrd/svc.cpp, src/jrd/thd.h,
+	src/jrd/why.cpp, src/jrd/os/guid.h, src/jrd/os/posix/guid.cpp,
+	src/jrd/os/posix/isc_ipc.cpp, src/jrd/os/posix/unix.cpp,
+	src/jrd/os/win32/guid.cpp, src/jrd/os/win32/isc_ipc.cpp,
+	src/lock/lock.cpp, src/lock/lock_proto.h, src/lock/print.cpp,
+	src/remote/inet.cpp, src/remote/inet_server.cpp,
+	src/remote/server.cpp, src/remote/os/win32/srvr_w32.cpp,
+	src/utilities/nbackup.cpp, src/utilities/gstat/ppg.cpp,
+	src/wal/wal.cpp, src/wal/walc.cpp, src/wal/walc_proto.h,
+	src/wal/walw.cpp:
+	
+	NBACKUP-related changes and some clean-up
+
+2003-09-08 21:30  brodsom
+
+	* firebird2/:
+	builds/install/arch-specific/linux/super/SSchangePasswd.sh,
+	builds/install/arch-specific/linux/super/makeInstallImage.sh.in,
+	builds/install/arch-specific/linux/super/postinstall.sh.in,
+	builds/install/arch-specific/linux/super/postuninstall.sh.in,
+	builds/install/arch-specific/linux/super/preinstall.sh.in,
+	builds/install/arch-specific/linux/super/preuninstall.sh.in,
+	builds/install/arch-specific/linux/super/rpmfiles.txt.in,
+	builds/install/arch-specific/linux/super/rpmheader.txt.in,
+	builds/install/arch-specific/linux/misc/firebird.initd.in,
+	src/install/arch-specific/linux/misc/firebird.initd.in:
+	
+	Move Alex commit to the right place
+
+2003-09-08 20:46  skidder
+
+	* firebird2/src/gpre/sqe.cpp:
+	
+	Make engine compile after recent cleanup
+
+2003-09-08 16:48  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.fbserver,
+	Makefile.in.libfbserver:
+	
+	define REENTRANT to make compiler build MT-safe binaries
+
+2003-09-08 16:14  dimitr
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw, fbclient.dsp,
+	remote.dsp, remote_classic.dsp:
+	
+	Added the current XNET implementation.	Let's hope it works not
+	only for me <g>
+
+2003-09-08 16:08  dimitr
+
+	* firebird2/src/: remote/interface.cpp, remote/serve_proto.h,
+	remote/xnet.cpp, remote/xnet.h, remote/xnet_proto.h,
+	ipserver/ipclient.cpp, jrd/why.cpp, remote/os/win32/property.cpp,
+	remote/os/win32/property.rh, remote/os/win32/srvr_w32.cpp,
+	remote/os/win32/window.cpp:
+	
+	Added the current XNET implementation.	Let's hope it works not
+	only for me <g>
+
+2003-09-08 14:44  dimitr
+
+	* firebird2/src/burp/restore.epp:
+	
+	A bit more information from gbak.
+
+2003-09-08 13:39  robocop
+
+	* firebird2/lang_helpers/: gds_codes.ftn, gds_codes.pas:
+	
+	The products of codes.epp
+
+2003-09-08 13:36  robocop
+
+	* firebird2/src/include/gen/: codes.h, codetext.h, iberror.h,
+	msg_facs.h, msgs.h, rdb_codes.h, sql_code.h:
+	
+	The products of codes.epp
+
+2003-09-08 13:34  robocop
+
+	* firebird2/src/misc/codes.epp:
+	
+	const correctness, almost minimal scope for variables, bool, etc. 
+	Give iberror.h a section for C++ No side effects noticed after
+	several full rebuilds
+
+2003-09-08 13:29  dimitr
+
+	* firebird2/src/dsql/dsql.cpp:
+	
+	Fixed logic after Blas' change of the function return.
+
+2003-09-08 13:27  robocop
+
+	* firebird2/src/gpre/: cmp_proto.h, exp.cpp, exp_proto.h, form.h,
+	gpre.cpp, gpre.h, gpre_proto.h, gpreswi.h, hsh_proto.h,
+	jrdme_proto.h, lang_proto.h, msc.cpp, msc_proto.h, par.cpp,
+	par_proto.h, parse.h, pat.cpp, pat_proto.h, sqe.cpp, sqe_proto.h,
+	sql.cpp, sql_proto.h:
+	
+	const correctness, almost minimal scope for variables, bool, etc. 
+	Hope I did integrate others' changes correctly and totally.
+
+2003-09-08 10:56  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp:
+	
+	Don't forget the OR operations Arno
+
+2003-09-08 10:30  alexpeshkoff
+
+	* firebird2/src/install/arch-specific/linux/super/tarInstall.sh.in:
+	
+	fix typo in file name
+
+2003-09-08 03:50  brodsom
+
+	* firebird2/src/utilities/: common/cmd_util.cpp,
+	common/cmd_util_proto.h, gsec/secur_proto.h, gsec/gsec.cpp,
+	gsec/gsec.h, gstat/ppg.cpp, gstat/ppg_proto.h:
+	
+	Remove unneeded extern C
+
+2003-09-08 03:46  brodsom
+
+	* firebird2/src/: alice/alice.cpp, alice/alice.h,
+	alice/alice_proto.h, alice/exe.cpp, alice/exe_proto.h,
+	alice/tdr_proto.h, burp/backu_proto.h, burp/burp.cpp, burp/burp.h,
+	burp/burp_proto.h, burp/canon_proto.h, burp/canonical.cpp,
+	burp/misc.cpp, burp/misc_proto.h, burp/resto_proto.h:
+	
+	Remove unneeded extern C
+
+2003-09-08 03:42  brodsom
+
+	* firebird2/src/: iscguard/iscguard.cpp, isql/isql.epp,
+	jrd/exe.cpp, jrd/opt.cpp, jrd/os/win32/thd_priority.cpp,
+	remote/os/win32/chop.cpp:
+	
+	Code cleaning
+
 2003-09-07 23:39  epocman
 
 	* firebird2/builds/win32/: uninstall.bat, uninstall.bat:
