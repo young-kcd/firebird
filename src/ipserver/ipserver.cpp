@@ -1282,6 +1282,7 @@ static void end_blob( ICC icc, P_OP operation)
  **************************************/
 	IBL blob;
 	ISC_STATUS_ARRAY status_vector;
+	ISC_STATUS result;
 	UCHAR *buffer;
 	USHORT length;
 	ips_object *ips;
@@ -1313,11 +1314,12 @@ static void end_blob( ICC icc, P_OP operation)
 	// perform operation, send response and free resources 
 
 	if (operation == op_close_blob)
-		GDS_CLOSE_BLOB(status_vector, &blob->ibl_handle);
+		result = GDS_CLOSE_BLOB(status_vector, &blob->ibl_handle);
 	else
-		GDS_CANCEL_BLOB(status_vector, &blob->ibl_handle);
+		result = GDS_CANCEL_BLOB(status_vector, &blob->ibl_handle);
 	send_response(icc, status_vector);
-	release_blob(blob);
+	if (!result)
+		release_blob(blob);
 }
 
 
