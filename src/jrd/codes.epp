@@ -679,7 +679,7 @@ const\n\
 		ib_fprintf(ftn_codes,
 				   "      INTEGER*4 GDS__%-32.32s\n      PARAMETER (GDS__%-32.32s = %lu)\n",
 				   S.GDS_SYMBOL, S.GDS_SYMBOL, new_code);
-		ib_fprintf(rdbcodes, "%d,\n", S.VMS_CODE);
+		ib_fprintf(rdbcodes, "%ld,\n", S.VMS_CODE);
 
 		q = text;
 		end = q;
