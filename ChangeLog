@@ -1,3 +1,9 @@
+2004-09-12 12:48  dimitr
+
+	* firebird2/src/dsql/make.cpp (1.76):
+	
+	Correction.
+
 2004-09-10 06:50  robocop
 
 	* firebird2/src/jrd/ibase.h (1.86):
