@@ -95,7 +95,9 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #endif
 	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
 	{TYPE_BOOLEAN,		"CreateInternalWindow",		(ConfigValue) true},
-	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation",(ConfigValue) false}
+	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation",(ConfigValue) false},
+	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
+	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0}
 };
 
 /******************************************************************************
@@ -406,4 +408,14 @@ bool Config::getCreateInternalWindow()
 bool Config::getCompleteBooleanEvaluation()
 {
 	return (bool) sysConfig.values[KEY_COMPLETE_BOOLEAN_EVALUATION];
+}
+
+int Config::getRemoteAuxPort()
+{
+	return (int) sysConfig.values[KEY_REMOTE_AUX_PORT];
+}
+
+const char *Config::getRemoteBindAddress()
+{
+	return (const char*) sysConfig.values[KEY_REMOTE_BIND_ADDRESS];
 }

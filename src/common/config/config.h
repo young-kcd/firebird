@@ -98,7 +98,9 @@ class Config
 		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 31
 		KEY_PROCESS_PRIORITY_LEVEL,					// 32
 		KEY_CREATE_INTERNAL_WINDOW,					// 33
-		KEY_COMPLETE_BOOLEAN_EVALUATION				// 34
+		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 34
+		KEY_REMOTE_AUX_PORT,						// 35
+		KEY_REMOTE_BIND_ADDRESS						// 36
 	};
 
 public:
@@ -277,6 +279,16 @@ public:
 		Complete boolean evaluation
 	*/
 	static bool getCompleteBooleanEvaluation();
+
+	/*
+		Port for event processing
+	*/
+	static int getRemoteAuxPort();
+
+	/*
+		Server binding NIC address
+	*/
+	static const char *getRemoteBindAddress();
 };
 
 #endif // CONFIG_H
