@@ -6,7 +6,7 @@ Copyright: Distributable
 Group: Applications/Databases 
 Source: FirebirdCS0.9src.tar.gz 
 URL: http://firebird.sourceforge.net 
-Prefix: /
+# Prefix: /
 AutoReqProv: no 
 BuildArchitectures: @CPU_TYPE@
 # BuildRoot: /var/tmp/%{name}-buildroot

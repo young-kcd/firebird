@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.2 2002-11-11 13:52:53 skywalker Exp $
+#   $Id: postinstall.sh.in,v 1.3 2002-11-16 02:17:15 skywalker Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -627,6 +627,35 @@ resetInetdServer() {
     fi
 }
 
+
+#------------------------------------------------------------------------
+#  createLinksForBackCompatibility
+#  Create links for back compatibility to InterBase and Firebird1.0 
+#  linked systems.
+
+createLinksForBackCompatibility() {
+
+    # These two links are required for compatibility with existing ib programs
+    # If the program had been linked with libgds.so then this link is required
+    # to ensure it loads the fb equivalent.  Eventually these should be 
+    # optional and in a seperate rpm install.  MOD 7-Nov-2002.
+
+    if [ ! -e /usr/lib/libgds.so ]
+      then
+        ln -s ../../$FBRootDir/lib/@FIREBIRD_LIBGDS_SO@ /usr/lib/libgds.so
+    fi
+
+    if [ ! -e /usr/lib/libgds.so.0 ]
+      then
+        ln -s ../../$FBRootDir/lib/@FIREBIRD_LIBGDS_SO_X_LNK@ /usr/lib/libgds.so.0
+    fi
+
+
+}
+
+
+    
+
 #= Main Post ===============================================================
 
 
@@ -693,6 +722,7 @@ resetInetdServer() {
     fi
 
     updateConfigFile
+    createLinksForBackCompatibility
 
     buildUninstallFile
 

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.6 2002-11-11 16:07:37 skywalker Exp $
+#  $Id: Makefile.in,v 1.7 2002-11-16 02:17:14 skywalker Exp $
 #
 ROOT=..
 
@@ -135,9 +135,9 @@ install: buildTarDir
 rpmfile: $(RPMFile)
 
 $(RPMFile) : $(GEN_ROOT)/install/rpmscript buildImageDir
-	rpm -bb $(GEN_ROOT)/install/rpmscript
+	rpm --define='_topdir @BUILD_ROOT_DIR@/gen/RPM' -bb $(GEN_ROOT)/install/rpmscript
 #	rpm -bb --buildroot `pwd`/buildroot $(GEN_ROOT)/rpmscript
-	cp $(PackageDir)/$(RPMFile) $(GEN_ROOT)
+	cp @BUILD_ROOT_DIR@/gen/RPM/RPMS/i686/$(RPMFile) $(GEN_ROOT)
 
 
 .PHONY: $(GEN_ROOT)/install/rpmscript
