@@ -34,6 +34,7 @@ enum internal_info_id
 	internal_gdscode = 3,
 	internal_sqlcode = 4,
 	internal_rows_affected = 5,
+	internal_trigger_action = 6,
 	max_internal_id
 };
 
