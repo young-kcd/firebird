@@ -19,9 +19,13 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
+ * 2002.08.21 Dmitry Yemanov: fixed bug with a buffer overrun,
+ *                            which at least caused invalid dependencies
+ *                            to be stored (DB$xxx, for example)
  */
 
 #include "firebird.h"
@@ -1023,7 +1027,7 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 	LLS stack;
 	USHORT id;
 	BOOLEAN same_tx = FALSE;
-	TEXT *relation_name, *revokee, *privilege, *procedure_name;
+	TEXT relation_name[32], revokee[32], privilege[32], procedure_name[32];
 	SLONG tid_fetch;
 	REQ request;
 
@@ -1165,7 +1169,7 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 			SCL_check_relation(&desc, SCL_control);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
 			EVL_field(0, rpb->rpb_record, f_rfr_fname, &desc2);
-			MOV_get_metadata_ptr(&desc, &relation_name);
+			MOV_get_metadata_str(&desc, relation_name, sizeof(relation_name));
 			if ( (r2 = MET_lookup_relation(tdbb, relation_name)) )
 			{
 				DFW_post_work(transaction, dfw_delete_rfr, &desc2,
@@ -1179,7 +1183,7 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 			EVL_field(0, rpb->rpb_record, f_prm_procedure, &desc);
 			SCL_check_procedure(&desc, SCL_control);
 			EVL_field(0, rpb->rpb_record, f_prm_name, &desc2);
-			MOV_get_metadata_ptr(&desc, &procedure_name);
+			MOV_get_metadata_str(&desc, procedure_name, sizeof(procedure_name));
 			if ( (procedure = MET_lookup_procedure(tdbb, procedure_name)) )
 			{
 				DFW_post_work(transaction, dfw_delete_prm, &desc2,
@@ -1296,14 +1300,14 @@ void VIO_erase(TDBB tdbb, RPB * rpb, TRA transaction)
 	if ((RIDS) relation->rel_id == rel_priv)
 	{
 		EVL_field(0, rpb->rpb_record, f_prv_rname, &desc);
-		MOV_get_metadata_ptr(&desc, &relation_name);
+		MOV_get_metadata_str(&desc, relation_name, sizeof(relation_name));
 		EVL_field(0, rpb->rpb_record, f_prv_grant, &desc2);
 		if (MOV_get_long(&desc2, 0))
 		{
 			EVL_field(0, rpb->rpb_record, f_prv_user, &desc2);
-			MOV_get_metadata_ptr(&desc2, &revokee);
+			MOV_get_metadata_str(&desc, revokee, sizeof(revokee));
 			EVL_field(0, rpb->rpb_record, f_prv_priv, &desc2);
-			MOV_get_metadata_ptr(&desc2, &privilege);
+			MOV_get_metadata_str(&desc, privilege, sizeof(privilege));
 			MET_revoke(tdbb, transaction, relation_name, revokee, privilege);
 		}
 	}

@@ -40,7 +40,7 @@ extern void MOV_faster(register SLONG *, register SLONG *, ULONG);
 extern void MOV_fill(register SLONG *, ULONG);
 extern double MOV_get_double(struct dsc *);
 extern SLONG MOV_get_long(struct dsc *, SSHORT);
-extern void MOV_get_metadata_ptr(struct dsc *, TEXT **);
+extern void MOV_get_metadata_str(struct dsc *, TEXT *, USHORT);
 extern void MOV_get_name(struct dsc *, TEXT *);
 extern SQUAD MOV_get_quad(struct dsc *, SSHORT);
 extern SINT64 MOV_get_int64(struct dsc *, SSHORT);

@@ -337,35 +337,35 @@ SINT64 MOV_get_int64(DSC * desc, SSHORT scale)
 }
 
 
-void MOV_get_metadata_ptr(DSC * desc, TEXT ** ptr)
+void MOV_get_metadata_str(DSC * desc, TEXT * buffer, USHORT buffer_length)
 {
 /**************************************
  *
- *	M O V _ g e t _ m e t a d a t a _ p t r 
+ *	M O V _ g e t _ m e t a d a t a _ s t r 
  *
  **************************************
  *
  * Functional description
- *	Get address and length of string, which will afterward's
- *	be treated as an Metadata name value.
- *	Note that any length-of-string worries belong
- *	to the caller.
+ *	Copy string, which will afterward's
+ *	be treated as a metadata name value,
+ *	to the user-supplied buffer.
  *
  **************************************/
 	USHORT dummy_type;
+	UCHAR *ptr;
 
-	USHORT length = CVT_get_string_ptr(desc, &dummy_type,
-									   reinterpret_cast<UCHAR**>(ptr),
+	USHORT length = CVT_get_string_ptr(desc, &dummy_type, &ptr,
 									   NULL, 0, (FPTR_VOID) ERR_post);
 	
-	// dimitr: prevent reading data located after the buffer boundary
-	(*ptr)[length] = 0;
-
 #ifdef DEV_BUILD
 	if ((dummy_type != ttype_metadata) &&
 		(dummy_type != ttype_none) && (dummy_type != ttype_ascii))
 		ERR_bugcheck_msg("Expected METADATA name");
 #endif
+
+	length = ptr ? MIN(length, buffer_length - 1) : 0;
+	memcpy(buffer, ptr, length);
+	buffer[length] = 0;
 }
 
 
