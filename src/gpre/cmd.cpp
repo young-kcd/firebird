@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.28 2004-01-28 07:50:27 robocop Exp $
+//	$Id: cmd.cpp,v 1.29 2004-01-28 11:23:41 aafemt Exp $
 //
 
 #include "firebird.h"
@@ -945,9 +945,11 @@ static void create_set_default_trg(gpre_req* request,
 					 request_action->act_type == ACT_alter_table) &&
 					(rel = (gpre_rel*) request_action->act_object) &&
 					(strcmp(rel->rel_symbol->sym_string,
-							relation->rel_symbol->sym_string) == 0)) {
+							relation->rel_symbol->sym_string) == 0))
+				{
+					gpre_fld* fld;
 					// ... then try to check for the default in memory 
-					for (gpre_fld* fld = (gpre_fld*) rel->rel_fields;
+					for (fld = (gpre_fld*) rel->rel_fields;
 						 fld; fld = fld->fld_next)
 					{
 						if (strcmp(fld->fld_symbol->sym_string,
