@@ -425,7 +425,8 @@ void BTR_evaluate(TDBB tdbb, IRB retrieval, SBM * bitmap)
 	UCHAR *pointer;
 	if (retrieval->irb_lower_count) {
 		while (!(pointer = find_node_start_point(page, &lower, 0, &prefix,
-					idx.idx_flags & idx_descending, true)))
+					idx.idx_flags & idx_descending, 
+					(retrieval->irb_generic & (irb_starting | irb_partial)))))
 		{
 			page = (BTR) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
 				LCK_read, pag_index);

@@ -5657,6 +5657,7 @@ static JRD_NOD make_missing(TDBB tdbb,
 	JRD_NOD field, node, value;
 	IRB retrieval;
 	SET_TDBB(tdbb);
+	DBB dbb = tdbb->tdbb_database;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(relation, type_rel);
 	DEV_BLKCHK(boolean, type_nod);
@@ -5669,11 +5670,22 @@ static JRD_NOD make_missing(TDBB tdbb,
 	node = make_index_node(tdbb, relation, opt->opt_csb, idx);
 	retrieval = (IRB) node->nod_arg[e_idx_retrieval];
 	retrieval->irb_relation = relation;
-	//retrieval->irb_generic = irb_starting;  // AB: irb_starting? Why?
+	if ((dbb->dbb_ods_version < ODS_VERSION11) || (idx->idx_flags & idx_descending)) {
+		// AB: irb_starting? Why?
+		// Commenting myself. Because we don't know exact length for the field.
+		// For ascending NULLs in ODS 11 and higher this doesn't matter, because
+		// a NULL is always stored as a key with length 0 (zero).
+		retrieval->irb_generic = irb_starting;
+	}
 	retrieval->irb_lower_count = retrieval->irb_upper_count = 1;
-/* If we are matching less than the full index, this is a partial match */
-	if (retrieval->irb_upper_count < idx->idx_count)
+	// If we are matching less than the full index, this is a partial match
+	if (retrieval->irb_upper_count < idx->idx_count) {
 		retrieval->irb_generic |= irb_partial;
+	}
+	// Set descending flag on retrieval if index is descending
+	if (idx->idx_flags & idx_descending) {
+		retrieval->irb_generic |= irb_descending;
+	}
 	retrieval->irb_value[0] = retrieval->irb_value[idx->idx_count] =
 		value = PAR_make_node(tdbb, 0);
 	value->nod_type = nod_null;
