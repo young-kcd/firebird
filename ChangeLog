@@ -1,3 +1,11 @@
+2004-06-16 12:40  paul_reeves
+
+	*
+	
+	Make sure that ib_util.dll gets included in the Win32 embedded kit.
+	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
+	t (1.10.2.12):
+
 2004-06-11 09:41  paul_reeves
 
 	* firebird2/src/jrd/isc_version.h (1.1.2.17):
