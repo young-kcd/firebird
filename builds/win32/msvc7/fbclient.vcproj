@@ -23,7 +23,7 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;WIN32;_X86_"
+				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;SERVER_SHUTDOWN;GOVERNOR;EXACT_NUMERICS;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -90,7 +90,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;SERVER_SHUTDOWN;IPSERV;GOVERNOR;EXACT_NUMERICS;I386;_X86_=1;WIN32;_X86_"
+				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;SERVER_SHUTDOWN;GOVERNOR;EXACT_NUMERICS;I386;_X86_=1;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbclient/fbclient.pch"
@@ -228,19 +228,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\utld.cpp">
-			</File>
-		</Filter>
-		<Filter
-			Name="IPSERVER files"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\ipserver\alli.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\ipserver\ipcevent.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\ipserver\ipclient.cpp">
 			</File>
 		</Filter>
 		<Filter
