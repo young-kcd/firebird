@@ -27,15 +27,15 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gpre,v 1.7 2003-03-05 15:57:25 brodsom Exp $
+#  $Id: Makefile.in.client.gpre,v 1.8 2003-03-27 11:21:43 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=client.gpre
 CFLAGS:= -DSUPERCLIENT
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

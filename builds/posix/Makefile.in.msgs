@@ -27,14 +27,14 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.7 2003-03-17 12:05:49 eku Exp $
+#  $Id: Makefile.in.msgs,v 1.8 2003-03-27 11:21:45 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=msgs
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

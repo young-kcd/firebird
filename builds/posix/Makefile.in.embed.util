@@ -27,15 +27,15 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.6 2003-03-05 16:13:07 brodsom Exp $
+#  $Id: Makefile.in.embed.util,v 1.7 2003-03-27 11:21:44 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=embed.util
 
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

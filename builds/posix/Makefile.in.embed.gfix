@@ -27,14 +27,14 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.gfix,v 1.5 2003-03-05 15:57:25 brodsom Exp $
+#  $Id: Makefile.in.embed.gfix,v 1.6 2003-03-27 11:21:44 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=embed.gfix
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

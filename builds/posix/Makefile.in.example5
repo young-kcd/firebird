@@ -26,14 +26,14 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.example5,v 1.4 2003-03-17 12:05:47 eku Exp $
+#   $Id: Makefile.in.example5,v 1.5 2003-03-27 11:21:44 aafemt Exp $
 # 
 
 ROOT=../..
 
+include     $(ROOT)/src/make.defaults
 include     $(ROOT)/src/make.platform
 include     $(ROOT)/src/make.rules
-include     $(ROOT)/src/make.defaults
 include     $(ROOT)/src/make.shared.variables
 
 @SET_MAKE@

@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.13 2003-03-05 15:51:44 brodsom Exp $
+#   $Id: make.rules,v 1.14 2003-03-27 11:21:45 aafemt Exp $
 #
 
 #____________________________________________________________________________
@@ -50,43 +50,6 @@ IsProdTypeBuild = @PROD_BUILD_FLG@
 
 #____________________________________________________________________________
 
-
-GEN_ROOT=$(ROOT)/gen
-SRC_ROOT=$(ROOT)/src
-
-LIB=$(GEN_ROOT)/firebird/lib
-BIN=$(GEN_ROOT)/firebird/bin
-
-MAKE_ROOT=$(GEN_ROOT)
-
-# This picks up the current directory and maps it to the equivalent module
-# in the src and gen area.
-
-RealSrcRootPath = $(shell cd $(SRC_ROOT); pwd)
-
-#ModuleName:=$(notdir $(CURDIR))
-ModuleName:=$(subst $(RealSrcRootPath)/,,$(CURDIR))
-
-SRC=$(SRC_ROOT)
-#SRC=$(SRC_ROOT)/$(ModuleName)
-
-OBJ=$(GEN_ROOT)/$(ObjModuleName)
-DEP=$(OBJ)
-
-GEN_SRC=$(OBJ)
-
-  # This one is not so widely used at the momement.
-  # but I would like it to become so.
-
-
-FIREBIRD=$(GEN_ROOT)/firebird
-INTERBASE=$(FIREBIRD)
-
-export INTERBASE
-export FIREBIRD
-
-# I would like to remove this one.
-SOURCE=$(ROOT)/src
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
 CFLAGS:= $(CFLAGS) -I$(ROOT)/src -I$(ROOT)/src/include

@@ -59,9 +59,10 @@ $(SRC)/dsql/parse.cpp: $(SRC)/dsql/parse.y $(SRC)/dsql/parse.sed<br>
 $(YACC) -l -d -b $(SRC)/dsql/dsql $&lt;<br>
 sed -f $(SRC)/dsql/parse2.sed &lt;$(SRC)/dsql/dsql.tab.c &gt; $@<br><br>
 </code>
+If you are looking for simple way, issue 'touch src/dsql/parse.cpp' from MSYS environment.
 </li>
-<li>The example target in Make.in.firebird is not valid remove it.</li>
-<li>The fb_util target in Make.in.extlib is not valid remove it.</li>
+<li>The lib_fb_udf target in Make.in.extlib cannot be built yet. Remove it from
+dependencies list for 'all'.</li>
 </ul>
 
 <h3>4.- BUILD PROCESS</h3>

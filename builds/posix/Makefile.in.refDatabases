@@ -27,15 +27,15 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.13 2003-03-17 12:05:50 eku Exp $
+#  $Id: Makefile.in.refDatabases,v 1.14 2003-03-27 11:21:45 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=refDatabases
 
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

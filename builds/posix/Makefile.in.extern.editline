@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extern.editline,v 1.1 2003-03-12 12:39:56 eku Exp $
+#  $Id: Makefile.in.extern.editline,v 1.2 2003-03-27 11:21:44 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=editline
@@ -39,9 +39,9 @@ ObjModuleName=editline
 ##  -DDO_SIGTSTP        Send SIGTSTP on "suspend" key
 CFLAGS:= -DANSI_ARROWS -DHIDE -DHIST_SIZE=100 -DUNIQUE_HISTORY -DSYS_UNIX
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

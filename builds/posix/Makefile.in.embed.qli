@@ -27,14 +27,14 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.qli,v 1.6 2003-03-17 12:05:45 eku Exp $
+#  $Id: Makefile.in.embed.qli,v 1.7 2003-03-27 11:21:44 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=embed.qli
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

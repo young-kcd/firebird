@@ -27,15 +27,15 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.10 2003-03-05 15:57:23 brodsom Exp $
+#  $Id: Makefile.in.intl,v 1.11 2003-03-27 11:21:45 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=intl
 CFLAGS:=-DSUPERCLIENT
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

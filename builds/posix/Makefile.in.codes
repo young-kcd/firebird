@@ -29,14 +29,14 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.codes,v 1.4 2003-03-17 12:05:44 eku Exp $
+#  $Id: Makefile.in.codes,v 1.5 2003-03-27 11:21:43 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=codes
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

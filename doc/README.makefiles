@@ -51,9 +51,9 @@ STRUCTURE OF MAKEFILE.IN.XXX
 
 Each Makefile.in.xxx has the following somewhere near the top:
 
-include make.rules
 include make.defaults
 include make.platform
+include make.rules
 include make.shared.variables
 
 ...
@@ -61,12 +61,6 @@ include make.shared.variables
 
 
 These are:
-
-make.rules 
-
-This contains the default rules for compiling the system components.  Such as
-directory macros CXX etc.  
-
 
 make.defaults
 
@@ -78,8 +72,14 @@ make.platform
 
 This file is created from the prefix.xxx where xxx=linux/darwin/freebsd etc.  
 It provides a spot for the user to override or repalce macros that have been
-defined in make.rules and make.defaults.  In addition extra dependancies can
-be added to build extra targets.
+defined in make.defaults.  In addition extra dependancies can be added to
+build extra targets.
+
+
+make.rules 
+
+This contains the default rules for compiling the system components.  Such as
+directory macros CXX etc.  
 
 
 make.shared.variables

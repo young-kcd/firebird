@@ -27,14 +27,14 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbcommon,v 1.5 2003-01-16 17:47:00 skidder Exp $
+#  $Id: Makefile.in.libfbcommon,v 1.6 2003-03-27 11:21:45 aafemt Exp $
 #
 ROOT=..
 ObjModuleName=libfbcommon
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

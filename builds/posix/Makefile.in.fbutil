@@ -27,13 +27,13 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbutil,v 1.5 2003-03-05 16:14:09 brodsom Exp $
+#  $Id: Makefile.in.fbutil,v 1.6 2003-03-27 11:21:45 aafemt Exp $
 #
 ROOT=../..
 
+include     $(ROOT)/src/make.defaults
 include     $(ROOT)/src/make.platform
 include     $(ROOT)/src/make.rules
-include     $(ROOT)/src/make.defaults
 include     $(ROOT)/src/make.shared.variables
 
 @SET_MAKE@

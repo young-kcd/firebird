@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.20 2003-03-21 11:53:48 aafemt Exp $
+#   $Id: make.defaults,v 1.21 2003-03-27 11:21:45 aafemt Exp $
 # 
 
 
@@ -39,10 +39,44 @@
 # prefix.xxx where xxx is the platform name using the form SH := bash 
 # see the readme file with the Makefile.in files for more details.
 
--include $(ROOT)/gen/Make.Version
-
 #_____________________________________________________________________________
 
+GEN_ROOT=$(ROOT)/gen
+SRC_ROOT=$(ROOT)/src
+
+MAKE_ROOT=$(GEN_ROOT)
+
+FIREBIRD=$(GEN_ROOT)/firebird
+INTERBASE=$(FIREBIRD)
+
+export INTERBASE
+export FIREBIRD
+
+LIB=$(FIREBIRD)/lib
+BIN=$(FIREBIRD)/bin
+
+# This picks up the current directory and maps it to the equivalent module
+# in the src and gen area.
+
+RealSrcRootPath = $(shell cd $(SRC_ROOT); pwd)
+
+#ModuleName:=$(notdir $(CURDIR))
+ModuleName:=$(subst $(RealSrcRootPath)/,,$(CURDIR))
+
+SRC=$(SRC_ROOT)
+#SRC=$(SRC_ROOT)/$(ModuleName)
+
+OBJ=$(GEN_ROOT)/$(ObjModuleName)
+DEP=$(OBJ)
+
+GEN_SRC=$(OBJ)
+
+  # This one is not so widely used at the momement.
+  # but I would like it to become so.
+
+
+# I would like to remove this one.
+SOURCE=$(ROOT)/src
 
 #RealFirebirdPath = $(shell cd $(FIREBIRD); pwd)
 RealFirebirdPath = @NEW_FIREBIRD_DIR@
@@ -88,6 +122,11 @@ ARCH_EXT=		.a
 EXEC_EXT=		@EXEEXT@
 SHRLIB_EXT=@SHRLIB_EXT@
 
+#_____________________________________________________________________________
+
+# Include file with version variable definitions
+
+-include $(ROOT)/gen/Make.Version
 
 #_____________________________________________________________________________
 
@@ -96,7 +135,6 @@ SHRLIB_EXT=@SHRLIB_EXT@
 
 JRD_BOOT=		$(LIB)/jrd_boot.a
 BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
-
 
 
 # The shared library name for the embedded (or classic) library

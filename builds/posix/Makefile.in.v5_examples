@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.v5_examples,v 1.6 2003-03-26 11:08:17 brodsom Exp $
+#  $Id: Makefile.in.v5_examples,v 1.7 2003-03-27 11:21:45 aafemt Exp $
 #
 ROOT=../..
 ObjModuleName=v5_examples
@@ -38,9 +38,9 @@ ObjModuleName=v5_examples
 CFLAGS := $(CFLAGS) -I../firebird/include
 
 
+include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
-include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
@@ -147,7 +147,7 @@ nt_examples:
 # MOD 28-July-2002
 
 
-employee.fdb:	empbuild$(EXEC_EXT) $(INPUT_FILES) isql
+employee.fdb:	empbuild$(EXEC_EXT) $(INPUT_FILES) isql$(EXEC_EXT)
 	-$(RM) employee.fdb
 	./empbuild employee.fdb
 	-$(CHMOD_6) employee.fdb
@@ -155,19 +155,15 @@ employee.fdb:	empbuild$(EXEC_EXT) $(INPUT_FILES) isql
 # To get past the fact isql is called from the programs, we create a local link
 # to the static one in this directory
 
-isql:
-	-$(LN) $(ISQL_STATIC) isql
+isql$(EXEC_EXT):
+	-$(LN) $(ISQL_STATIC) isql$(EXEC_EXT)
 
-empbuild: $(EMPBLD_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
+empbuild$(EXEC_EXT): $(EMPBLD_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
 	$(EXE_LINK) $(LINK_OPTS) $(EMPBLD_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
-
-empbuild.exe:	$(EMPBLD_OBJ)
-	-$(RM) empbuild.exe
-	$(CC) $(O_EXE_SWITCH)empbuild $(LINK_OPTS) empbuild.o $(GDS_LINK)
 
 empbuild.c:	empbuild.fdb empbuild.e
 
-empbuild.fdb : $(EXAMPLES_SRC)/empddl.sql $(EXAMPLES_SRC)/empbld.sql
+empbuild.fdb : $(EXAMPLES_SRC)empddl.sql $(EXAMPLES_SRC)empbld.sql
 	-$(CP) $^ .
 	-$(RM) $@
 	$(ISQL_STATIC) -i empbld.sql
