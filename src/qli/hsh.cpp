@@ -63,7 +63,7 @@ void HSH_fini(void)
 		qli_symbol* symbol = key_symbols;
 		key_symbols = (qli_symbol*) key_symbols->sym_object;
 		HSH_remove(symbol);
-		ALL_release((FRB) symbol);
+		ALLQ_release((FRB) symbol);
 	}
 }
 

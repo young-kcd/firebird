@@ -53,7 +53,7 @@ const char* const NOW = "NOW";
 const char* const TOMORROW = "TOMORROW";
 const char* const YESTERDAY = "YESTERDAY";
 
-#define PRECISION	10000
+const int PRECISION		= 10000;
 
 struct dtypes_t {
 	USHORT type;

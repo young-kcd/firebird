@@ -31,10 +31,9 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/gds_proto.h"
 
-#define BUGCHECK		bugcheck
-#define RDB$_SEGSTR_EOF		20480378
-#define RDB$_SEGMENT		20480369
-#define GDS$_MISC_INTERPRETED   1
+//#define RDB$_SEGSTR_EOF		20480378
+//#define RDB$_SEGMENT		20480369
+const ISC_STATUS GDS$_MISC_INTERPRETED	= 1;
 
 /* Struct used to describe records that request mapping */
 
@@ -59,8 +58,8 @@ static bool check_message(UCHAR **);
 static map_msg* rebuild_message(UCHAR **, UCHAR **);
 static int translate_status(ISC_STATUS *, ISC_STATUS *, SCHAR **);
 
-#define WRKBUF_SIZ		256
-#define DEFAULT_STATUS_FLAGS	0xF0000L
+const int WRKBUF_SIZ	= 256;
+const ISC_STATUS DEFAULT_STATUS_FLAGS	= 0xF0000L;
 
 //static SLONG user_codes[] = {
 //	1,
@@ -452,12 +451,12 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 		case 'O':
 		case 'Z':
 		case 'S':
-			BUGCHECK(234);		/* msg 234 Unimplemented conversion, FAO directive O,Z,S */
+			bugcheck(234);		/* msg 234 Unimplemented conversion, FAO directive O,Z,S */
 
 		case 'X':
 		case 'U':
 			if (*p++ != 'L')
-				BUGCHECK(235);	/* msg 235 Unimplemented conversion, FAO directive X,U */
+				bugcheck(235);	/* msg 235 Unimplemented conversion, FAO directive X,U */
 			*tmp++ = isc_arg_number;
 			number = *tmp++ = *vms_status++;
 			flag = (number != 1);
@@ -484,7 +483,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 				q = dsc_ptr->dsc$a_pointer;
 				break;
 			default:
-				BUGCHECK(236);	/* msg 236 Error parsing RDB FAO msg string */
+				bugcheck(236);	/* msg 236 Error parsing RDB FAO msg string */
 				break;
 			}
 
@@ -520,7 +519,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 			break;
 
 		default:
-			BUGCHECK(237);		/* msg 237 Error parsing RDB FAO msg str */
+			bugcheck(237);		/* msg 237 Error parsing RDB FAO msg str */
 #endif
 
 		}
@@ -566,7 +565,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 			break;
 
 		default:
-			BUGCHECK(238);		/* msg 238 unknown parameter in RdB status vector */
+			bugcheck(238);		/* msg 238 unknown parameter in RdB status vector */
 		}
 	}
 	*gds_status++ = isc_arg_interpreted;
@@ -834,7 +833,7 @@ static int translate_status(
 	}
 
 	if (*gds++ != isc_arg_gds)
-		BUGCHECK(239);			/* msg 239 Interbase status vector inconsistent */
+		bugcheck(239);			/* msg 239 Interbase status vector inconsistent */
 
 	USHORT fac = 0, dummy_class = 0;
 	ISC_STATUS code = gds__decode(*gds, &fac, &dummy_class);
@@ -877,7 +876,7 @@ static int translate_status(
 		case 'U':
 		case 'S':
 			if ((*gds++) != isc_arg_number)
-				BUGCHECK(240);	/* msg 240 Interbase/RdB message parameter inconsistency */
+				bugcheck(240);	/* msg 240 Interbase/RdB message parameter inconsistency */
 			*rdb++ = *gds++;
 			++count;
 			break;
@@ -903,7 +902,7 @@ static int translate_status(
 				break;
 
 			default:
-				BUGCHECK(240);	/* msg 240 Interbase/RdB message parameter inconsistency */
+				bugcheck(240);	/* msg 240 Interbase/RdB message parameter inconsistency */
 			}
 
 			switch (*p)
@@ -927,7 +926,7 @@ static int translate_status(
 				pw2 += sizeof(struct dsc$descriptor);
 				break;
 			default:
-				BUGCHECK(241);	/* msg 241 error parsing RDB FAO message string */
+				bugcheck(241);	/* msg 241 error parsing RDB FAO message string */
 				break;
 			}
 
@@ -939,7 +938,7 @@ static int translate_status(
 			++p;
 			if (*p == 'S')
 				break;
-			BUGCHECK(242);		/* msg 242 unimplemented FAO directive */
+			bugcheck(242);		/* msg 242 unimplemented FAO directive */
 
 		case '!':
 			++p;
@@ -960,7 +959,7 @@ static int translate_status(
 			break;
 
 		default:
-			BUGCHECK(241);		/* msg 241 error parsing RDB FAO message string */
+			bugcheck(241);		/* msg 241 error parsing RDB FAO message string */
 #endif
 
 		}

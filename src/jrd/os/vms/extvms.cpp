@@ -42,8 +42,8 @@
 
 #include rms
 
-#define DEFAULT_FILE	".dat"
-#define MAX_KEYS	20
+const char* DEFAULT_FILE	= ".dat";
+const int MAX_KEYS	= 20;
 
 static struct FAB fab;
 static struct RAB rab;

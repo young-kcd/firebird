@@ -33,8 +33,8 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/vmslo_proto.h"
 
-#define	PTR		int
-#define EVENT_FLAG	15
+typedef int PTR;
+const SLONG EVENT_FLAG	= 15;
 
 static SCHAR lock_types[] = {
 	0,

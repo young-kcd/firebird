@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.34 2004-05-02 23:06:03 skidder Exp $
+$Id: gener.cpp,v 1.35 2004-05-16 01:41:20 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -117,7 +117,7 @@ void GEN_release(void)
 		}
 
 		qli_rlb* rlb = QLI_requests->req_blr;
-		RELEASE_RLB;
+		GEN_rlb_release (rlb);
 	}
 }
 
@@ -612,7 +612,7 @@ static void gen_compile( qli_req* request)
 	if (isc_compile_request(status_vector, &dbb->dbb_handle,
 							 &request->req_handle, length,
 							 (const char*) rlb->rlb_base)) {
-		RELEASE_RLB;
+		GEN_rlb_release (rlb);
 		ERRQ_database_error(dbb, status_vector);
 	}
 
@@ -627,7 +627,7 @@ static void gen_compile( qli_req* request)
 	}
 #endif
 
-	RELEASE_RLB;
+	GEN_rlb_release (rlb);
 }
 
 
@@ -705,7 +705,7 @@ static void gen_descriptor(const dsc* desc, qli_req* request)
 		break;
 
 	default:
-		BUGCHECK(352);			// Msg352 gen_descriptor: dtype not recognized
+		ERRQ_bugcheck(352);			// Msg352 gen_descriptor: dtype not recognized
 	}
 }
 
@@ -950,7 +950,7 @@ static void gen_expression(qli_nod* node, qli_req* request)
 			gen_parameter(node->nod_export, request);
 			return;
 		}
-		BUGCHECK(353);			// Msg353 gen_expression: not understood
+		ERRQ_bugcheck(353);			// Msg353 gen_expression: not understood
 	}
 
 	if (request) {
@@ -1736,7 +1736,7 @@ static void gen_statement( qli_nod* node, qli_req* request)
 		return;
 
 	default:
-		BUGCHECK(354);			// Msg354 gen_statement: not yet implemented
+		ERRQ_bugcheck(354);			// Msg354 gen_statement: not yet implemented
 	}
 }
 
@@ -1807,7 +1807,7 @@ static void gen_statistical( qli_nod* node, qli_req* request)
 		break;
 
 	default:
-		BUGCHECK(355);			// Msg355 gen_statistical: not understood
+		ERRQ_bugcheck(355);			// Msg355 gen_statistical: not understood
 	}
 
 /* If there is a request associated with the statement, prepare to

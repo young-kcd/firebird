@@ -27,12 +27,10 @@
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
 
-#define QLI_MSG_FAC		1
-#define BUGCHECK(number)	ERRQ_bugcheck (number)
-#define SYNTAX_ERROR(number)	ERRQ_syntax (number)
+const USHORT QLI_MSG_FAC	= 1;
+
 #define IBERROR(number)		ERRQ_error (number, NULL, NULL, NULL, NULL, NULL)
 
-#define ALL_release(blk)	ALLQ_release (blk)
 #define ALLOCD(type)		ALLQ_alloc (QLI_default_pool, type, 0)
 #define ALLOCDV(type,repeat)	ALLQ_alloc (QLI_default_pool, type, repeat)
 #define ALLOCP(type)		ALLQ_alloc (QLI_permanent_pool, type, 0)
@@ -313,30 +311,30 @@ typedef struct dbb {
 
 // Bits in dbb_flags 
 
-#define DBB_procedures	1		// Procedures relation found 
-#define DBB_active	2		// Database is active in request 
-#define DBB_updates	8		// Updates in current transaction 
-#define DBB_prepared	32		// User transaction has been prepared 
+const USHORT DBB_procedures	= 1;		// Procedures relation found 
+const USHORT DBB_active		= 2;		// Database is active in request 
+const USHORT DBB_updates	= 8;		// Updates in current transaction 
+const USHORT DBB_prepared	= 32;		// User transaction has been prepared 
 
 // Bits in dbb_capabilities 
 
-#define DBB_cap_extern_file	1	// supports the concept of external files 
-#define DBB_cap_files		2	// uses the Interbase concept of multi-file 
-#define DBB_cap_security	4	// InterBase style security classes 
-/* #define DBB_cap_triggers	8	-- OBSOLETE: triggers (old style) */
-#define DBB_cap_idx_inactive	16	// Interbase index inactive flag 
-#define DBB_cap_multi_trans	32	// Database supports multiple transactions 
-#define DBB_cap_single_trans	64	// Database supports only a single transaction 
-#define DBB_cap_dudley		128	// We're authorized for meta-data updates 
-#define DBB_cap_functions	256	// The DBMS knows about function 
-#define DBB_cap_new_triggers	512	// triggers (new V3 style) 
-#define DBB_cap_shadowing	1024	// Database supports shadowing 
-#define DBB_cap_types		2048	// Database has RDB$TYPES relation 
-#define DBB_cap_dimensions	4096	// Database supports arrays -- What a database!  
-#define DBB_cap_external_type	8192	// Database supports external datatypes 
-#define DBB_cap_rfr_sys_flag	16384  	// Database hasn't forgotten about the system flag 
-#define DBB_cap_filters		32768	// Database supports filters 
-#define DBB_cap_index_type	65536	// Database has too damn much stuff 
+const ULONG DBB_cap_extern_file		= 1;	// supports the concept of external files 
+const ULONG DBB_cap_files			= 2;	// uses the Interbase concept of multi-file 
+const ULONG DBB_cap_security		= 4;	// InterBase style security classes 
+/* const ULONG DBB_cap_triggers		= 8;	-- OBSOLETE: triggers (old style) */
+const ULONG DBB_cap_idx_inactive	= 16;	// Interbase index inactive flag 
+const ULONG DBB_cap_multi_trans		= 32;	// Database supports multiple transactions 
+const ULONG DBB_cap_single_trans	= 64;	// Database supports only a single transaction 
+const ULONG DBB_cap_dudley			= 128;	// We're authorized for meta-data updates 
+const ULONG DBB_cap_functions		= 256;	// The DBMS knows about function 
+const ULONG DBB_cap_new_triggers	= 512;	// triggers (new V3 style) 
+const ULONG DBB_cap_shadowing		= 1024;	// Database supports shadowing 
+const ULONG DBB_cap_types			= 2048;	// Database has RDB$TYPES relation 
+const ULONG DBB_cap_dimensions		= 4096;	// Database supports arrays -- What a database!  
+const ULONG DBB_cap_external_type	= 8192;	// Database supports external datatypes 
+const ULONG DBB_cap_rfr_sys_flag	= 16384;	// Database hasn't forgotten about the system flag 
+const ULONG DBB_cap_filters			= 32768;	// Database supports filters 
+const ULONG DBB_cap_index_type		= 65536;	// Database has too damn much stuff 
 // Relation block 
 
 struct qli_rel {
@@ -351,9 +349,10 @@ struct qli_rel {
     USHORT			rel_max_field_pos;	// highest used field position 
 };
 
-#define REL_fields	1		// Fields have been fetched 
-#define REL_system	2		// Relation is system relation 
-#define REL_view	4		// Relation is a view 
+// rel_flags
+const USHORT REL_fields	= 1;	// Fields have been fetched 
+const USHORT REL_system	= 2;	// Relation is system relation 
+const USHORT REL_view	= 4;	// Relation is a view 
 
 // Field block 
 
@@ -382,26 +381,24 @@ struct qli_fld {
     UCHAR		fld_data [1];
 };
 
-#define FLD_computed	1
-#define FLD_drop	2
-#define FLD_modify	4
-#define FLD_missing	8
-#define FLD_not_null	16
-#define FLD_add		32
-#define FLD_unique	64
-#define FLD_array	128
+// fld_flags
+const USHORT FLD_computed	= 1;
+const USHORT FLD_drop		= 2;
+const USHORT FLD_modify		= 4;
+const USHORT FLD_missing	= 8;
+const USHORT FLD_not_null	= 16;
+const USHORT FLD_add		= 32;
+const USHORT FLD_unique		= 64;
+const USHORT FLD_array		= 128;
 
 // Privileges for SQL metadata 
 
-#define PRV_select	1
-#define PRV_insert	2
-#define PRV_delete	4
-#define PRV_update	8
-#define PRV_all		PRV_select + PRV_insert + PRV_delete + PRV_update
-#define PRV_grant_option	16
-
-#define LLS_PUSH(object,stack)		ALLQ_push ((BLK) object, stack)
-#define LLS_POP(stack)			ALLQ_pop (stack)
+const USHORT PRV_select		= 1;
+const USHORT PRV_insert		= 2;
+const USHORT PRV_delete		= 4;
+const USHORT PRV_update		= 8;
+const USHORT PRV_all		= PRV_select + PRV_insert + PRV_delete + PRV_update;
+const USHORT PRV_grant_option	= 16;
 
 struct qli_lls {
 	blk	lls_header;
@@ -450,8 +447,8 @@ typedef struct plb {
                         
 // State flags for dsc_missing 
 
-#define DSC_missing	1
-#define DSC_initial	2
+const USHORT DSC_missing	= 1;
+const USHORT DSC_initial	= 2;
 
 // Function description 
 

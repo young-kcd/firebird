@@ -51,17 +51,11 @@
 
 #ifdef VMS
 #include <descrip.h>
-#define LIB$_INPSTRTRU	0x15821c
-#endif
-
-#ifdef UNIX
-#define UNIX_LINE	1
+const SLONG LIB$_INPSTRTRU	= 0x15821c;
 #endif
 
 #if (defined WIN_NT)
 #include <io.h> // isatty
-#define UNIX_LINE	1
-#define PC_FILE_SEEK
 #endif
 
 #ifdef SMALL_FILE_NAMES
@@ -70,9 +64,7 @@ static const char* SCRATCH		= "fb_q";
 static const char* SCRATCH		= "fb_query_";
 #endif
 
-#ifndef FOPEN_INPUT_TYPE
-#define FOPEN_INPUT_TYPE	"r"
-#endif
+const char* FOPEN_INPUT_TYPE	= "r";
 
 extern bool sw_verify;
 extern bool sw_trace;
@@ -90,7 +82,7 @@ static FILE *input_file = NULL, *trace_file = NULL;
 static char trace_file_name[MAXPATHLEN];
 static SLONG trans_limit;
 
-#define TRANS_LIMIT	10
+const SLONG TRANS_LIMIT	= 10;
 
 const char CHR_ident	= char(1);
 const char CHR_letter	= char(2);
@@ -403,7 +395,7 @@ void LEX_flush(void)
 }
 
 
-#ifdef UNIX_LINE
+#if defined(UNIX) || defined(WIN_NT)
 bool LEX_get_line(TEXT * prompt,
 				  TEXT * buffer,
 				  int size)
@@ -624,7 +616,7 @@ void LEX_pop_line(void)
 	else if (temp->line_type == line_file)
 		fclose(temp->line_source_file);
 
-	ALL_release((FRB) temp);
+	ALLQ_release((FRB) temp);
 }
 
 
@@ -751,7 +743,7 @@ void LEX_put_procedure(FB_API_HANDLE blob, SLONG start, SLONG stop)
 			const SSHORT c = getc(trace_file);
 			*p++ = c;
 			if (c == '\n') {
-#ifdef PC_FILE_SEEK
+#ifdef WIN_NT
 				// account for the extra line-feed on OS/2 and Windows NT
 
 				if (length)
@@ -763,7 +755,7 @@ void LEX_put_procedure(FB_API_HANDLE blob, SLONG start, SLONG stop)
 		const SSHORT l = p - buffer;
 		if (l)
 			if (isc_put_segment(status_vector, &blob, l, buffer))
-				BUGCHECK(58);	// Msg 58 isc_put_segment failed
+				ERRQ_bugcheck(58);	// Msg 58 isc_put_segment failed
 	}
 
 	fseek(trace_file, (SLONG) 0, 2);
@@ -1129,7 +1121,7 @@ static void next_line(const bool eof_ok)
 		while (*p)
 			putc(*p++, trace_file);
 		QLI_position += (TEXT *) p - QLI_line->line_data;
-#ifdef PC_FILE_SEEK
+#ifdef WIN_NT
 		// account for the extra line-feed on OS/2 and Windows NT
 		//   to determine file position
 

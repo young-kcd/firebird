@@ -38,10 +38,10 @@
 #define STUFF_WORD(dyn)	STUFF (dyn); STUFF (dyn >> 8)
 #define STUFF_INT(dyn)	STUFF (dyn); STUFF (dyn >> 8); STUFF (dyn >> 16); STUFF (dyn >> 24)
 
-#define IN_FIELD	1
-#define IN_INDEX	2
-#define IN_RELATION	3
-#define IN_VIEW		4
+const int IN_FIELD		= 1;
+const int IN_INDEX		= 2;
+const int IN_RELATION	= 3;
+const int IN_VIEW		= 4;
 
 typedef struct met {
 	UCHAR met_op;

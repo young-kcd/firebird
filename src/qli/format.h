@@ -112,9 +112,10 @@ struct pics {
     pics*	pic_missing;		// missing value edit string 
 };
 
-#define PIC_suppress_blanks	1	// Suppress leading blanks 
-#define PIC_literal		2	// We're in a quoted string 
-#define PIC_signed		4	// This numeric edit string has a sign indicator 
+// pic_flags
+const USHORT PIC_suppress_blanks	= 1;	// Suppress leading blanks 
+const USHORT PIC_literal			= 2;	// We're in a quoted string 
+const USHORT PIC_signed				= 4;	// This numeric edit string has a sign indicator 
 
 #endif // QLI_FORMAT_H
 

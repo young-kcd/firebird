@@ -132,13 +132,13 @@ TEXT* FMT_format(qli_lls* stack)
 	stack = NULL;
 
 	if (global_fmt_buffer) {
-		ALL_release((FRB) global_fmt_buffer);
+		ALLQ_release((FRB) global_fmt_buffer);
 		global_fmt_buffer = NULL;
 	}
 
 	while (temp) {
-		qli_print_item* item = (qli_print_item*) LLS_POP(&temp);
-		LLS_PUSH(item, &stack);
+		qli_print_item* item = (qli_print_item*) ALLQ_pop(&temp);
+		ALLQ_push((blk*) item, &stack);
 	}
 
 /* Make a pass thru print items computing print lengths and header
@@ -643,7 +643,7 @@ void FMT_report( qli_rpt* report)
  *
  **************************************/
 	if (global_fmt_buffer) {
-		ALL_release((FRB) global_fmt_buffer);
+		ALLQ_release((FRB) global_fmt_buffer);
 		global_fmt_buffer = NULL;
 	}
 
@@ -824,7 +824,7 @@ static void format_index( qli_print_item* item, qli_nod* field, const bool print
 		default:
 			// Punt on anything but constants, fields, and variables
 
-			ALL_release((FRB) str);
+			ALLQ_release((FRB) str);
 			return;
 		}
 
@@ -1125,7 +1125,7 @@ static TEXT* get_buffer(qli_str** str, TEXT* ptr, USHORT length)
 			*p++ = *q++;
 		} while (--l);
 
-	ALL_release((FRB) *str);
+	ALLQ_release((FRB) *str);
 	*str = temp_str;
 
 	return p;
@@ -1409,7 +1409,7 @@ static void report_item( qli_print_item* item, qli_vec** columns_vec, USHORT* co
 	if (columns->vec_object[*col_ndx] &&
 		(node = item->itm_value) && node->nod_type == nod_constant)
 	{
-		LLS_PUSH(item, (qli_lls**) (columns->vec_object + *col_ndx));
+		ALLQ_push((blk*) item, (qli_lls**) (columns->vec_object + *col_ndx));
 		return;
 	}
 
@@ -1424,7 +1424,7 @@ static void report_item( qli_print_item* item, qli_vec** columns_vec, USHORT* co
 		for (qli_lls* temp = *col; temp; temp = temp->lls_next) {
 			qli_print_item* item2 = (qli_print_item*) temp->lls_object;
 			if (match_expr(item->itm_value, item2->itm_value)) {
-				LLS_PUSH(item, col);
+				ALLQ_push((blk*) item, col);
 				*col_ndx = col - (qli_lls**) columns->vec_object;
 				return;
 			}
@@ -1439,7 +1439,7 @@ static void report_item( qli_print_item* item, qli_vec** columns_vec, USHORT* co
 		(*columns_vec)->vec_count = new_index + 16;
 	}
 
-	LLS_PUSH(item, (qli_lls**) ((*columns_vec)->vec_object + new_index));
+	ALLQ_push((blk*) item, (qli_lls**) ((*columns_vec)->vec_object + new_index));
 }
 
 

@@ -24,71 +24,71 @@
 #ifndef QLI_REQS_H
 #define QLI_REQS_H
 
-#define REQ_relation_def	0
-#define REQ_store_relation	1
-#define REQ_relation_id		2
-#define REQ_rfr_def		3
-#define REQ_field_def		4
-#define REQ_store_field		5
-#define REQ_store_rfr		6
-#define REQ_modify_fld		7
-#define REQ_update_fld		8
-#define REQ_modify_rel		9
-#define REQ_show_indices	10
-#define REQ_show_index		11
-#define REQ_check_fld		12
-#define REQ_erase_fld		13
-#define REQ_erase_index		14
-#define REQ_erase_segments	15
-#define REQ_erase_relation	16
-#define REQ_erase_rfr		17
-#define REQ_erase_view		18 
-#define REQ_show_files		19
-#define REQ_show_view		20
-#define REQ_show_field		21
-#define REQ_show_view_field	22
-#define REQ_show_dbb		23
-#define REQ_show_rel_detail	24
-#define REQ_show_global_field	25
-#define REQ_show_field_instance 26
-#define REQ_show_global_fields	27
-#define REQ_show_trigger	28
-#define REQ_show_triggers	29
-#define REQ_show_rel_secur	30
-#define REQ_show_rel_extern	31
-#define REQ_def_index1		32
-#define REQ_def_index2		33
-#define REQ_def_index3		34
-#define REQ_mdf_index		35
-#define REQ_mdf_rfr		36
-#define REQ_show_forms1		37
-#define REQ_show_forms2		38
-/* #define REQ_trig_exists		39	OBSOLETE */
-#define REQ_show_views		40
-#define REQ_show_view_rel	41
-#define REQ_show_secur_class	42
-#define REQ_show_secur		43
-#define REQ_scan_index		44
-#define REQ_show_new_trigger	45
-#define REQ_show_new_triggers	46
-#define REQ_show_sys_triggers	47
-#define REQ_new_trig_exists	48
-#define REQ_sql_grant		49
-#define REQ_sql_revoke		51
-#define REQ_sql_cr_view		52
-#define REQ_sql_alt_table	53
-#define REQ_fld_positions       54
-#define REQ_fld_subtype		55
-#define REQ_show_functions	56
-#define REQ_show_func_detail	57
-#define REQ_show_func_args	58
-#define REQ_fld_dimensions	59
-#define REQ_show_filters	60
-#define REQ_show_filter_detail	61 
-#define REQ_show_index_type	62
-#define REQ_show_trig_message   63
-#define REQ_show_dimensions	64
-#define REQ_max			65
+const int REQ_relation_def		= 0;
+const int REQ_store_relation	= 1;
+const int REQ_relation_id		= 2;
+const int REQ_rfr_def			= 3;
+const int REQ_field_def			= 4;
+const int REQ_store_field		= 5;
+const int REQ_store_rfr			= 6;
+const int REQ_modify_fld		= 7;
+const int REQ_update_fld		= 8;
+const int REQ_modify_rel		= 9;
+const int REQ_show_indices		= 10;
+const int REQ_show_index		= 11;
+const int REQ_check_fld			= 12;
+const int REQ_erase_fld			= 13;
+const int REQ_erase_index		= 14;
+const int REQ_erase_segments	= 15;
+const int REQ_erase_relation	= 16;
+const int REQ_erase_rfr			= 17;
+const int REQ_erase_view		= 18;
+const int REQ_show_files		= 19;
+const int REQ_show_view			= 20;
+const int REQ_show_field		= 21;
+const int REQ_show_view_field	= 22;
+const int REQ_show_dbb			= 23;
+const int REQ_show_rel_detail	= 24;
+const int REQ_show_global_field	= 25;
+const int REQ_show_field_instance	= 26;
+const int REQ_show_global_fields	= 27;
+const int REQ_show_trigger		= 28;
+const int REQ_show_triggers		= 29;
+const int REQ_show_rel_secur	= 30;
+const int REQ_show_rel_extern	= 31;
+const int REQ_def_index1		= 32;
+const int REQ_def_index2		= 33;
+const int REQ_def_index3		= 34;
+const int REQ_mdf_index			= 35;
+const int REQ_mdf_rfr			= 36;
+const int REQ_show_forms1		= 37;
+const int REQ_show_forms2		= 38;
+/* const int REQ_trig_exists		= 39;	OBSOLETE */
+const int REQ_show_views		= 40;
+const int REQ_show_view_rel		= 41;
+const int REQ_show_secur_class	= 42;
+const int REQ_show_secur		= 43;
+const int REQ_scan_index		= 44;
+const int REQ_show_new_trigger	= 45;
+const int REQ_show_new_triggers	= 46;
+const int REQ_show_sys_triggers	= 47;
+const int REQ_new_trig_exists	= 48;
+const int REQ_sql_grant			= 49;
+const int REQ_sql_revoke		= 51;
+const int REQ_sql_cr_view		= 52;
+const int REQ_sql_alt_table		= 53;
+const int REQ_fld_positions		= 54;
+const int REQ_fld_subtype		= 55;
+const int REQ_show_functions	= 56;
+const int REQ_show_func_detail	= 57;
+const int REQ_show_func_args	= 58;
+const int REQ_fld_dimensions	= 59;
+const int REQ_show_filters		= 60;
+const int REQ_show_filter_detail	= 61;
+const int REQ_show_index_type	= 62;
+const int REQ_show_trig_message	= 63;
+const int REQ_show_dimensions	= 64;
+const int REQ_max				= 65;
 
 #endif // QLI_REQS_H
 

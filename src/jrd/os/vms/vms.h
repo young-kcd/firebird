@@ -29,7 +29,7 @@
 #include descrip
 #include ssdef
 
-#define DVI$_DEVLOCKNAM		240
+const SSHORT DVI$_DEVLOCKNAM	= 240;
 
 
 
@@ -46,11 +46,14 @@ typedef struct fib$ {
 	SLONG fib$l_exvbn;
 } FIB$;
 
-#define FIB$M_EXTEND	128
-#define FIB$M_ALDEF	8
-#define FIB$M_ALCONB	2
-#define FIB$M_WRITETHRU	524288
-#define FIB$M_FINDFID	2048
+// fib$w_exclt
+const SSHORT FIB$M_EXTEND	= 128;
+const SSHORT FIB$M_ALDEF	= 8;
+const SSHORT FIB$M_ALCONB	= 2;
+// fib$l_acctl
+const SLONG FIB$M_WRITETHRU	= 524288;
+// fib$w_nmctl
+const SSHORT FIB$M_FINDFID	= 2048;
 
 typedef struct atr$ {
 	SSHORT atr$w_size;
@@ -59,8 +62,10 @@ typedef struct atr$ {
 	SLONG atr$l_zero;
 } ATR$;
 
-#define ATR$S_RECATTR	32
-#define ATR$C_RECATTR	4
+// atr$w_size
+const SSHORT ATR$S_RECATTR	= 32;
+// atr$w_type
+const SSHORT ATR$C_RECATTR	= 4;
 
 typedef struct fab$ {
 	SCHAR fat$b_rtype;

@@ -55,11 +55,9 @@
 #include "../include/fb_exception.h"
 
 #ifdef VMS
-#define STARTUP_FILE	"QLI_STARTUP"
-#endif
-
-#ifndef STARTUP_FILE
-#define STARTUP_FILE    "HOME"	// Assume its Unix 
+const char* STARTUP_FILE	= "QLI_STARTUP";
+#else
+const char* STARTUP_FILE	= "HOME";	// Assume its Unix 
 #endif
 
 #ifndef SIGQUIT

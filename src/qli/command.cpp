@@ -416,7 +416,7 @@ void CMD_set( qli_syntax* node)
 #endif
 
 		default:
-			BUGCHECK(6);		// Msg6 set option not implemented
+			ERRQ_bugcheck(6);		// Msg6 set option not implemented
 		}
 	}
 }

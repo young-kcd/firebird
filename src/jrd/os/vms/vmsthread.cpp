@@ -26,7 +26,7 @@
 
 #include <pthread.h>
 
-#define TCB_STACKSIZE	65536
+const size_t TCB_STACKSIZE	= 65536;
 
 /* Thread control block */
 
@@ -41,7 +41,8 @@ typedef struct tcb {
 	char tcb_flags;
 } *TCB;
 
-#define TCB_active	1			/* Thread control block is active. */
+// tcb_flags
+const char TCB_active	= 1;			/* Thread control block is active. */
 
 /* Mutex for synchronizing condition variables. */
 

@@ -39,8 +39,6 @@
 
 extern USHORT QLI_columns, QLI_lines;
 
-#define MAKE_NODE(type, count)	make_node (type, count)
-
 static bool compare_names(const nam*, const qli_symbol*);
 static bool compare_symbols(const qli_symbol*, const qli_symbol*);
 static qli_symbol* copy_symbol(const qli_symbol*);
@@ -241,8 +239,8 @@ qli_nod* EXP_expand( qli_syntax* node)
 		qli_ctx* context = (qli_ctx*) ALLOCD(type_ctx);
 		context->ctx_type = CTX_VARIABLE;
 		context->ctx_variable = QLI_variables;
-		LLS_PUSH(context, &right);
-		LLS_PUSH(context, &left);
+		ALLQ_push((blk*) context, &right);
+		ALLQ_push((blk*) context, &left);
 	}
 
 	qli_nod* expanded = expand_statement(node, right, left);
@@ -250,7 +248,7 @@ qli_nod* EXP_expand( qli_syntax* node)
 		return NULL;
 
 	while (global_output_stack) {
-		qli_nod* output = (qli_nod*) LLS_POP(&global_output_stack);
+		qli_nod* output = (qli_nod*) ALLQ_pop(&global_output_stack);
 		output->nod_arg[e_out_statement] = expanded;
 		expanded = output;
 	}
@@ -509,7 +507,7 @@ static qli_nod* expand_assignment( qli_syntax* input, qli_lls* right, qli_lls* l
  *	Expand an assigment statement.  All in all, not too tough.
  *
  **************************************/
-	qli_nod* node = MAKE_NODE(input->syn_type, e_asn_count);
+	qli_nod* node = make_node(input->syn_type, e_asn_count);
 	qli_nod* to = expand_expression(input->syn_arg[s_asn_to], left);
 	node->nod_arg[e_asn_to] = to;
 	qli_nod* from = expand_expression(input->syn_arg[s_asn_from], right);
@@ -550,15 +548,15 @@ static qli_nod* expand_any( qli_syntax* input, qli_lls* stack)
  *	for existence.
  *
  **************************************/
-	qli_nod* node = MAKE_NODE(input->syn_type, e_any_count);
+	qli_nod* node = make_node(input->syn_type, e_any_count);
 	node->nod_count = 0;
 	qli_nod* rse = expand_rse(input->syn_arg[0], &stack);
 	node->nod_arg[e_any_rse] = rse;
 
 	if (input->syn_count >= 2 && input->syn_arg[1]) {
-		qli_nod* boolean = MAKE_NODE(nod_missing, 1);
+		qli_nod* boolean = make_node(nod_missing, 1);
 		boolean->nod_arg[0] = expand_expression(input->syn_arg[1], stack);
-		qli_nod* negation = MAKE_NODE(nod_not, 1);
+		qli_nod* negation = make_node(nod_not, 1);
 		negation->nod_arg[0] = boolean;
 		rse->nod_arg[e_rse_boolean] =
 			make_and(rse->nod_arg[e_rse_boolean], negation);
@@ -582,7 +580,7 @@ static qli_nod* expand_boolean( qli_syntax* input, qli_lls* stack)
  **************************************/
 // Make node and process arguments
 
-	qli_nod* node = MAKE_NODE(input->syn_type, input->syn_count);
+	qli_nod* node = make_node(input->syn_type, input->syn_count);
 	qli_nod** ptr = node->nod_arg;
 	qli_nod* value = expand_expression(input->syn_arg[0], stack);
 	*ptr++ = value;
@@ -661,8 +659,8 @@ static void expand_distinct( qli_nod* rse, qli_nod* node)
 		return;
 
 	qli_lls* stack = NULL;
-	LLS_PUSH(node, &stack);
-	LLS_PUSH(0, &stack);
+	ALLQ_push((blk*) node, &stack);
+	ALLQ_push(0, &stack);
 	qli_nod* list = make_list(stack);
 	rse->nod_arg[e_rse_reduced] = list;
 	list->nod_count = 1;
@@ -771,7 +769,7 @@ static qli_nod* expand_erase( qli_syntax* input, qli_lls* right, qli_lls* left)
 // If there is an rse, make up a FOR loop
 
 	if (input->syn_arg[s_era_rse]) {
-		loop = MAKE_NODE(nod_for, e_for_count);
+		loop = make_node(nod_for, e_for_count);
 		loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_era_rse],
 											  &right);
 	}
@@ -795,7 +793,7 @@ static qli_nod* expand_erase( qli_syntax* input, qli_lls* right, qli_lls* left)
 
 // Make up node big enough to hold fixed fields plus all contexts
 
-	qli_nod* node = MAKE_NODE(nod_erase, e_era_count);
+	qli_nod* node = make_node(nod_erase, e_era_count);
 	node->nod_arg[e_era_context] = (qli_nod*) context;
 
 	if (!loop)
@@ -831,7 +829,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 
 	case nod_null:
 	case nod_user_name:
-		return MAKE_NODE(input->syn_type, 0);
+		return make_node(input->syn_type, 0);
 
 	case nod_any:
 	case nod_unique:
@@ -852,7 +850,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 
 	case nod_running_total:
 	case nod_running_count:
-		node = MAKE_NODE(input->syn_type, e_stt_count);
+		node = make_node(input->syn_type, e_stt_count);
 		if (value = input->syn_arg[s_stt_rse])
 			node->nod_arg[e_stt_rse] = expand_rse(value, &stack);
 		if (value = input->syn_arg[s_stt_value])
@@ -873,7 +871,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 	case nod_agg_count:
 	case nod_agg_average:
 	case nod_agg_total:
-		node = MAKE_NODE(input->syn_type, e_stt_count);
+		node = make_node(input->syn_type, e_stt_count);
 		for (; stack; stack = stack->lls_next) {
 			context = (qli_ctx*) stack->lls_object;
 			if (context->ctx_type == CTX_AGGREGATE)
@@ -942,7 +940,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 		return expand_boolean(input, stack);
 
 	case nod_edit_blob:
-		node = MAKE_NODE(input->syn_type, e_edt_count);
+		node = make_node(input->syn_type, e_edt_count);
 		node->nod_count = 0;
 		if (input->syn_arg[0]) {
 			node->nod_count = 1;
@@ -951,7 +949,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 		return node;
 
 	case nod_format:
-		node = MAKE_NODE(input->syn_type, e_fmt_count);
+		node = make_node(input->syn_type, e_fmt_count);
 		node->nod_count = 1;
 		node->nod_arg[e_fmt_value] =
 			expand_expression(input->syn_arg[s_fmt_value], stack);
@@ -962,13 +960,13 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 		return expand_function(input, stack);
 
 	case nod_constant:
-		node = MAKE_NODE(input->syn_type, 0);
+		node = make_node(input->syn_type, 0);
 		constant = (qli_const*) input->syn_arg[0];
 		node->nod_desc = constant->con_desc;
 		return node;
 
 	case nod_prompt:
-		node = MAKE_NODE(input->syn_type, e_prm_count);
+		node = make_node(input->syn_type, e_prm_count);
 		node->nod_arg[e_prm_prompt] = (qli_nod*) input->syn_arg[0];
 		return node;
 
@@ -978,10 +976,10 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 		// Msg141 can't be used when a single element is required
 
 	default:
-		BUGCHECK(135);			// Msg135 expand_expression: not yet implemented
+		ERRQ_bugcheck(135);			// Msg135 expand_expression: not yet implemented
 	}
 
-	node = MAKE_NODE(input->syn_type, input->syn_count);
+	node = make_node(input->syn_type, input->syn_count);
 	qli_nod** ptr = node->nod_arg;
 
 	for (SSHORT i = 0; i < input->syn_count; i++)
@@ -1091,7 +1089,7 @@ static qli_nod* expand_for( qli_syntax* input, qli_lls* right, qli_lls* left)
  *	Expand a statement.
  *
  **************************************/
-	qli_nod* node = MAKE_NODE(input->syn_type, e_for_count);
+	qli_nod* node = make_node(input->syn_type, e_for_count);
 	node->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_for_rse], &right);
 	node->nod_arg[e_for_statement] =
 		expand_statement(input->syn_arg[s_for_statement], right, left);
@@ -1120,7 +1118,7 @@ static qli_nod* expand_function( qli_syntax* input, qli_lls* stack)
 	qli_fun* function = 0;
 	DBB database;
 
-	qli_nod* node = MAKE_NODE(input->syn_type, e_fun_count);
+	qli_nod* node = make_node(input->syn_type, e_fun_count);
 	node->nod_count = 1;
 	qli_ctx* context;
 	if (stack && (context = (qli_ctx*) stack->lls_object)
@@ -1184,7 +1182,7 @@ static qli_nod* expand_group_by( qli_syntax* input, qli_lls* stack, qli_ctx* con
  *	Expand a GROUP BY clause.
  *
  **************************************/
-	qli_nod* node = MAKE_NODE(input->syn_type, input->syn_count);
+	qli_nod* node = make_node(input->syn_type, input->syn_count);
 	qli_nod** ptr2 = node->nod_arg;
 
 	qli_syntax** ptr = input->syn_arg;
@@ -1216,7 +1214,7 @@ static qli_nod* expand_modify( qli_syntax* input, qli_lls* right, qli_lls* left)
 // If there is an rse, make up a FOR loop
 
 	if (input->syn_arg[s_mod_rse]) {
-		loop = MAKE_NODE(nod_for, e_for_count);
+		loop = make_node(nod_for, e_for_count);
 		loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_mod_rse],
 											  &right);
 	}
@@ -1239,7 +1237,7 @@ static qli_nod* expand_modify( qli_syntax* input, qli_lls* right, qli_lls* left)
 
 // Make up node big enough to hold fixed fields plus all contexts
 
-	qli_nod* node = MAKE_NODE(nod_modify, (int) e_mod_count + count);
+	qli_nod* node = make_node(nod_modify, (int) e_mod_count + count);
 	node->nod_count = count;
 	qli_nod** ptr = &node->nod_arg[e_mod_count];
 
@@ -1255,7 +1253,7 @@ static qli_nod* expand_modify( qli_syntax* input, qli_lls* right, qli_lls* left)
 		new_context->ctx_source = context;
 		new_context->ctx_symbol = context->ctx_symbol;
 		new_context->ctx_relation = context->ctx_relation;
-		LLS_PUSH(new_context, &left);
+		ALLQ_push((blk*) new_context, &left);
 		if (context->ctx_rse)
 			break;
 	}
@@ -1267,7 +1265,7 @@ static qli_nod* expand_modify( qli_syntax* input, qli_lls* right, qli_lls* left)
 		node->nod_arg[e_mod_statement] =
 			expand_statement(input->syn_arg[s_mod_statement], right, left);
 	else if (syn_list = input->syn_arg[s_mod_list]) {
-		qli_nod* list = MAKE_NODE(nod_list, syn_list->syn_count);
+		qli_nod* list = make_node(nod_list, syn_list->syn_count);
 		node->nod_arg[e_mod_statement] = list;
 
 		ptr = list->nod_arg;
@@ -1308,8 +1306,8 @@ static qli_nod* expand_output( qli_syntax* input, qli_lls* right, qli_prt** prin
 	if (!input)
 		return NULL;
 
-	qli_nod* output = MAKE_NODE(nod_output, e_out_count);
-	LLS_PUSH(output, &global_output_stack);
+	qli_nod* output = make_node(nod_output, e_out_count);
+	ALLQ_push((blk*) output, &global_output_stack);
 
     qli_nod* node = possible_literal(input->syn_arg[s_out_file], right, false);
 	if (!node)
@@ -1351,7 +1349,7 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* left)
 	qli_nod* loop = NULL;
 	qli_nod* rse = NULL;
 	if (syn_rse) {
-		loop = MAKE_NODE(nod_for, e_for_count);
+		loop = make_node(nod_for, e_for_count);
 		loop->nod_arg[e_for_rse] = rse = expand_rse(syn_rse, &new_right);
 	}
 
@@ -1374,7 +1372,7 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* left)
 				count += generate_items(syn_item, new_right, (qli_lls*) &items, rse);
 			}
 			else {
-				LLS_PUSH(expand_print_item(*sub, new_right), &items);
+				ALLQ_push((blk*) expand_print_item(*sub, new_right), &items);
 				count++;
 			}
 		}
@@ -1388,7 +1386,7 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* left)
 			item->itm_type = item_value;
 			item->itm_value = expand_expression(*sub, new_right);
 			expand_edit_string(item->itm_value, item);
-			LLS_PUSH(item, &items);
+			ALLQ_push((blk*) item, &items);
 			count++;
 		}
 	}
@@ -1418,7 +1416,7 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* left)
 				item->itm_type = item_value;
 				item->itm_value = make_field(field, context);
 				expand_edit_string(item->itm_value, item);
-				LLS_PUSH(item, &items);
+				ALLQ_push((blk*) item, &items);
 				count++;
 			}
 			if (rse = context->ctx_rse)
@@ -1433,7 +1431,7 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* left)
 /* Build new print statement.  Unlike the syntax node, the print statement
    has only print items in it. */
 
-	qli_nod* node = MAKE_NODE(input->syn_type, e_prt_count);
+	qli_nod* node = make_node(input->syn_type, e_prt_count);
 	qli_nod* list = make_list(items);
 	node->nod_arg[e_prt_list] = list;
 	node->nod_arg[e_prt_output] = (qli_nod*) print;
@@ -1441,7 +1439,7 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* left)
 // If DISTINCT was requested, make up a reduced list.
 
 	if (rse && input->syn_arg[s_prt_distinct]) {
-		qli_nod* reduced = MAKE_NODE(nod_list, list->nod_count * 2);
+		qli_nod* reduced = make_node(nod_list, list->nod_count * 2);
 		reduced->nod_count = 0;
 		qli_nod** ptr = reduced->nod_arg;
 		for (USHORT i = 0; i < list->nod_count; i++) {
@@ -1551,7 +1549,7 @@ static qli_nod* expand_print_list( qli_syntax* input, qli_lls* stack)
 	for (const qli_syntax* const* const end = ptr + input->syn_count;
 		ptr < end; ptr++)
 	{
-		LLS_PUSH(expand_print_item(*ptr, stack), &items);
+		ALLQ_push((blk*) expand_print_item(*ptr, stack), &items);
 	}
 
 	return make_list(items);
@@ -1583,9 +1581,9 @@ static qli_nod* expand_report( qli_syntax* input, qli_lls* right, qli_lls* left)
 	if (!report->rpt_columns)
 		report->rpt_columns = QLI_columns;
 
-	qli_nod* loop = MAKE_NODE(nod_report_loop, e_for_count);
+	qli_nod* loop = make_node(nod_report_loop, e_for_count);
 	loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_prt_rse], &right);
-	qli_nod* node = MAKE_NODE(nod_report, e_prt_count);
+	qli_nod* node = make_node(nod_report, e_prt_count);
 	loop->nod_arg[e_for_statement] = node;
 
 	node->nod_arg[e_prt_list] = (qli_nod*) report;
@@ -1624,12 +1622,12 @@ static qli_nod* expand_restructure( qli_syntax* input, qli_lls* right, qli_lls* 
 
 // Make a FOR loop to drive the restructure
 
-	qli_nod* loop = MAKE_NODE(nod_for, e_for_count);
+	qli_nod* loop = make_node(nod_for, e_for_count);
 	loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_asn_from], &right);
 
 // Make a STORE node.
 
-	qli_nod* node = MAKE_NODE(nod_store, e_sto_count);
+	qli_nod* node = make_node(nod_store, e_sto_count);
 	loop->nod_arg[e_for_statement] = node;
 	qli_syntax* rel_node = input->syn_arg[s_asn_to];
 	qli_ctx* context = (qli_ctx*) ALLOCD(type_ctx);
@@ -1689,12 +1687,12 @@ static qli_nod* expand_restructure( qli_syntax* input, qli_lls* right, qli_lls* 
 					}
 
 				if (fld) {
-					qli_nod* assignment = MAKE_NODE(nod_assign, e_asn_count);
+					qli_nod* assignment = make_node(nod_assign, e_asn_count);
 					assignment->nod_count = e_asn_count - 1;
 					assignment->nod_arg[e_asn_to] =
 						make_field(field, context);
 					assignment->nod_arg[e_asn_from] = make_field(fld, ctx);
-					LLS_PUSH(assignment, &stack);
+					ALLQ_push((blk*) assignment, &stack);
 					goto found_field;
 				}
 
@@ -1726,7 +1724,7 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 	qli_lls* old_stack = *stack;
 	qli_lls* new_stack = *stack;
 	qli_nod* boolean = NULL;
-	qli_nod* node = MAKE_NODE(input->syn_type, (int) e_rse_count + input->syn_count);
+	qli_nod* node = make_node(input->syn_type, (int) e_rse_count + input->syn_count);
 	node->nod_count = input->syn_count;
 	qli_nod** ptr2 = &node->nod_arg[e_rse_count];
 
@@ -1757,7 +1755,7 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 
 	if (parent_context) {
 		parent_context->ctx_type = CTX_AGGREGATE;
-		parent_rse = MAKE_NODE(nod_rse, e_rse_count + 1);
+		parent_rse = make_node(nod_rse, e_rse_count + 1);
 		parent_rse->nod_count = 1;
 		parent_rse->nod_arg[e_rse_count] = (qli_nod*) parent_context;
 		parent_context->ctx_sub_rse = node;
@@ -1796,20 +1794,20 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 				symbol->sym_object = (BLK) context;
 			if (over) {
 				qli_lls* short_stack = NULL;
-				LLS_PUSH(context, &short_stack);
+				ALLQ_push((blk*) context, &short_stack);
 				for (USHORT j = 0; j < over->syn_count; j++) {
 					qli_syntax* field = over->syn_arg[j];
-					qli_nod* eql_node = MAKE_NODE(nod_eql, 2);
+					qli_nod* eql_node = make_node(nod_eql, 2);
 					eql_node->nod_arg[0] =
 						expand_expression(field, short_stack);
 					eql_node->nod_arg[1] =
 						expand_expression(field, new_stack);
 					boolean = make_and(eql_node, boolean);
 				}
-				LLS_POP(&short_stack);
+				ALLQ_pop(&short_stack);
 			}
 		}
-		LLS_PUSH(context, &new_stack);
+		ALLQ_push((blk*) context, &new_stack);
 	}
 
 // Handle explicit boolean
@@ -1822,7 +1820,7 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 // Handle implicit boolean from SQL xxx IN (yyy FROM relation) 
 
 	if (input->syn_arg[s_rse_outer]) {
-		qli_nod* eql_node = MAKE_NODE((enum nod_t)(IPTR)input->syn_arg[s_rse_op], 2);
+		qli_nod* eql_node = make_node((enum nod_t)(IPTR)input->syn_arg[s_rse_op], 2);
 		eql_node->nod_arg[0] =
 			expand_expression(input->syn_arg[s_rse_outer], old_stack);
 		eql_node->nod_arg[1] =
@@ -1875,7 +1873,7 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 
 	if (!(parent_context->ctx_relation = context->ctx_relation))
 		parent_context->ctx_stream = context->ctx_stream;
-	LLS_PUSH(parent_context, stack);
+	ALLQ_push((blk*) parent_context, stack);
 
 	if (input->syn_arg[s_rse_having])
 		parent_rse->nod_arg[e_rse_having] =
@@ -1901,7 +1899,7 @@ static qli_nod* expand_sort( qli_syntax* input, qli_lls* stack, qli_nod* list)
  *	number of keys.  So be careful.
  *
  **************************************/
-	qli_nod* node = MAKE_NODE(nod_list, input->syn_count);
+	qli_nod* node = make_node(nod_list, input->syn_count);
 	node->nod_count = input->syn_count / 2;
 	qli_nod** ptr = node->nod_arg;
 	qli_syntax** syn_ptr = input->syn_arg;
@@ -1941,7 +1939,7 @@ static qli_nod* expand_statement( qli_syntax* input, qli_lls* right, qli_lls* le
 
 	switch (input->syn_type) {
 	case nod_abort:
-		node = MAKE_NODE(input->syn_type, input->syn_count);
+		node = make_node(input->syn_type, input->syn_count);
 		if (input->syn_arg[0])
 			node->nod_arg[0] = expand_expression(input->syn_arg[0], right);
 		return node;
@@ -1952,7 +1950,7 @@ static qli_nod* expand_statement( qli_syntax* input, qli_lls* right, qli_lls* le
 
 	case nod_commit_retaining:
 		{
-			node = MAKE_NODE(input->syn_type, input->syn_count);
+			node = make_node(input->syn_type, input->syn_count);
 			for (USHORT i = 0; i < input->syn_count; i++)
 				node->nod_arg[i] = (qli_nod*) input->syn_arg[i];
 			return node;
@@ -1966,7 +1964,7 @@ static qli_nod* expand_statement( qli_syntax* input, qli_lls* right, qli_lls* le
 		break;
 
 	case nod_if:
-		node = MAKE_NODE(input->syn_type, input->syn_count);
+		node = make_node(input->syn_type, input->syn_count);
 		node->nod_arg[e_if_boolean] =
 			expand_expression(input->syn_arg[s_if_boolean], right);
 		node->nod_arg[e_if_true] =
@@ -2000,7 +1998,7 @@ static qli_nod* expand_statement( qli_syntax* input, qli_lls* right, qli_lls* le
 		break;
 
 	case nod_repeat:
-		node = MAKE_NODE(input->syn_type, input->syn_count);
+		node = make_node(input->syn_type, input->syn_count);
 		node->nod_arg[e_rpt_value] =
 			expand_expression(input->syn_arg[s_rpt_value], left);
 		node->nod_arg[e_rpt_statement] =
@@ -2023,11 +2021,11 @@ static qli_nod* expand_statement( qli_syntax* input, qli_lls* right, qli_lls* le
 						resolve_really((qli_fld*) syn_node->syn_arg[0], field_node);
 					}
 					context->ctx_variable = (qli_fld*) syn_node->syn_arg[0];
-					LLS_PUSH(context, &right);
-					LLS_PUSH(context, &left);
+					ALLQ_push((blk*) context, &right);
+					ALLQ_push((blk*) context, &left);
 				}
 				else if (node = expand_statement(syn_node, right, left))
-					LLS_PUSH(node, &stack);
+					ALLQ_push((blk*) node, &stack);
 			}
 			return make_list(stack);
 		}
@@ -2036,7 +2034,7 @@ static qli_nod* expand_statement( qli_syntax* input, qli_lls* right, qli_lls* le
 		return NULL;
 
 	default:
-		BUGCHECK(136);			// Msg136 expand_statement: not yet implemented
+		ERRQ_bugcheck(136);			// Msg136 expand_statement: not yet implemented
 	}
 
 	return (*routine) (input, right, left);
@@ -2061,12 +2059,12 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 // If there is an rse, make up a FOR loop
 
 	if (input->syn_arg[s_sto_rse]) {
-		loop = MAKE_NODE(nod_for, e_for_count);
+		loop = make_node(nod_for, e_for_count);
 		loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_sto_rse],
 											  &right);
 	}
 
-	qli_nod* node = MAKE_NODE(input->syn_type, e_sto_count);
+	qli_nod* node = make_node(input->syn_type, e_sto_count);
 
 	qli_syntax* rel_node = input->syn_arg[s_sto_relation];
 	qli_ctx* context = (qli_ctx*) ALLOCD(type_ctx);
@@ -2083,7 +2081,7 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 	if (symbol)
 		symbol->sym_object = (BLK) context;
 
-	LLS_PUSH(context, &left);
+	ALLQ_push((blk*) context, &left);
 
 //  If there are field and value lists, process them
 
@@ -2093,7 +2091,7 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 			for (qli_fld* field = relation->rel_fields; field;
 				field = field->fld_next)
 			{
-				LLS_PUSH(decompile_field(field, 0), &stack);
+				ALLQ_push((blk*) decompile_field(field, 0), &stack);
 			}
 			input->syn_arg[s_sto_fields] = (qli_syntax*) stack;
 		}
@@ -2107,7 +2105,7 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 		qli_ctx* secondary = (qli_ctx*) ALLOCD(type_ctx);
 		secondary->ctx_type = CTX_RELATION;
 		secondary->ctx_primary = context;
-		LLS_PUSH(secondary, &right);
+		ALLQ_push((blk*) secondary, &right);
 		node->nod_arg[e_sto_statement] =
 			expand_statement(input->syn_arg[s_sto_statement], right, left);
 	}
@@ -2124,7 +2122,7 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 				|| field->fld_flags & FLD_array)
 				continue;
 			qli_nod* assignment = make_assignment(make_field(field, context), 0, 0);
-			LLS_PUSH(assignment, &stack);
+			ALLQ_push((blk*) assignment, &stack);
 		}
 		node->nod_arg[e_sto_statement] = make_list(stack);
 	}
@@ -2171,20 +2169,20 @@ static void expand_values( qli_syntax* input, qli_lls* right)
 // We're going to want the values in the order listed in the command
 
 	qli_lls* values = (qli_lls*) input->syn_arg[s_sto_values];
-	for (; values; LLS_PUSH(LLS_POP(&values), &stack));
+	for (; values; ALLQ_push(ALLQ_pop(&values), &stack));
 
 // now go through, count, and expand where needed
 
 	SSHORT value_count = 0;
 	while (stack) {
-		qli_syntax* value = (qli_syntax*) LLS_POP(&stack);
+		qli_syntax* value = (qli_syntax*) ALLQ_pop(&stack);
 		if (input->syn_arg[s_sto_rse] && value->syn_type == nod_prompt) {
 			if (value->syn_arg[0] == 0) {
 				qli_lls* temp = NULL;
 				for (; right; right = right->lls_next)
-					LLS_PUSH(right->lls_object, &temp);
+					ALLQ_push(right->lls_object, &temp);
 				while (temp) {
-					qli_ctx* context = (qli_ctx*) LLS_POP(&temp);
+					qli_ctx* context = (qli_ctx*) ALLQ_pop(&temp);
 					value_count +=
 						generate_fields(context, (qli_lls*) &values,
 										input->syn_arg[s_sto_rse]);
@@ -2201,7 +2199,7 @@ static void expand_values( qli_syntax* input, qli_lls* right)
 				generate_fields(context, (qli_lls*) &values, input->syn_arg[s_sto_rse]);
 		}
 		else {
-			LLS_PUSH(value, &values);
+			ALLQ_push((blk*) value, &values);
 			value_count++;
 		}
 	}
@@ -2223,8 +2221,8 @@ static void expand_values( qli_syntax* input, qli_lls* right)
 		*--ptr = assignment;
 		assignment->syn_type = nod_assign;
 		assignment->syn_count = s_asn_count;
-		assignment->syn_arg[s_asn_to] = (qli_syntax*) LLS_POP(&fields);
-		assignment->syn_arg[s_asn_from] = (qli_syntax*) LLS_POP(&values);
+		assignment->syn_arg[s_asn_to] = (qli_syntax*) ALLQ_pop(&fields);
+		assignment->syn_arg[s_asn_from] = (qli_syntax*) ALLQ_pop(&values);
 	}
 }
 
@@ -2288,7 +2286,7 @@ static int generate_fields( qli_ctx* context, qli_lls* values, qli_syntax* rse)
 		qli_syntax* value = decompile_field(field, context);
 		if (group_list && invalid_syn_field(value, group_list))
 			continue;
-		LLS_PUSH(value, (qli_lls**) values);
+		ALLQ_push((blk*) value, (qli_lls**) values);
 		count++;
 	}
 
@@ -2345,7 +2343,7 @@ static int generate_items( qli_syntax* symbol, qli_lls* right, qli_lls* items, q
 		item->itm_type = item_value;
 		item->itm_value = make_field(field, context);
 		expand_edit_string(item->itm_value, item);
-		LLS_PUSH(item, (qli_lls**) items);
+		ALLQ_push((blk*) item, (qli_lls**) items);
 		++count;
 	}
 
@@ -2582,7 +2580,7 @@ static qli_nod* make_and( qli_nod* expr1, qli_nod* expr2)
 	if (!expr2)
 		return expr1;
 
-	qli_nod* node = MAKE_NODE(nod_and, 2);
+	qli_nod* node = make_node(nod_and, 2);
 	node->nod_arg[0] = expr1;
 	node->nod_arg[1] = expr2;
 
@@ -2604,12 +2602,12 @@ static qli_nod* make_assignment( qli_nod* target, qli_nod* initial, qli_lls* rig
  **************************************/
 	qli_fld* field = (qli_fld*) target->nod_arg[e_fld_field];
 	qli_lls* stack = NULL;
-	LLS_PUSH(target->nod_arg[e_fld_context], &stack);
+	ALLQ_push((blk*) target->nod_arg[e_fld_context], &stack);
 
 	qli_nod* prompt;
 
 	if (field->fld_dtype == dtype_blob) {
-		prompt = MAKE_NODE(nod_edit_blob, e_edt_count);
+		prompt = make_node(nod_edit_blob, e_edt_count);
 		prompt->nod_count = 0;
 		prompt->nod_arg[e_edt_name] = (qli_nod*) field->fld_name->sym_string;
 		if (initial) {
@@ -2618,12 +2616,12 @@ static qli_nod* make_assignment( qli_nod* target, qli_nod* initial, qli_lls* rig
 		}
 	}
 	else {
-		prompt = MAKE_NODE(nod_prompt, e_prm_count);
+		prompt = make_node(nod_prompt, e_prm_count);
 		prompt->nod_arg[e_prm_prompt] = (qli_nod*) field->fld_name->sym_string;
 		prompt->nod_arg[e_prm_field] = (qli_nod*) field;
 	}
 
-	qli_nod* assignment = MAKE_NODE(nod_assign, e_asn_count);
+	qli_nod* assignment = make_node(nod_assign, e_asn_count);
 	assignment->nod_arg[e_asn_to] = target;
 	assignment->nod_arg[e_asn_from] = prompt;
 
@@ -2633,7 +2631,7 @@ static qli_nod* make_assignment( qli_nod* target, qli_nod* initial, qli_lls* rig
 	else
 		--assignment->nod_count;
 
-	LLS_POP(&stack);
+	ALLQ_pop(&stack);
 
 	return assignment;
 }
@@ -2651,7 +2649,7 @@ static qli_nod* make_field( qli_fld* field, qli_ctx* context)
  *	Make a field block.  Not too tough.
  *
  **************************************/
-	qli_nod* node = MAKE_NODE(nod_field, e_fld_count);
+	qli_nod* node = make_node(nod_field, e_fld_count);
 	node->nod_count = 0;
 	node->nod_arg[e_fld_field] = (qli_nod*) field;
 	node->nod_arg[e_fld_context] = (qli_nod*) context;
@@ -2684,11 +2682,11 @@ static qli_nod* make_list( qli_lls* stack)
 		temp = temp->lls_next;
 	}
 
-	qli_nod* node = MAKE_NODE(nod_list, count);
+	qli_nod* node = make_node(nod_list, count);
 	qli_nod** ptr = &node->nod_arg[count];
 
 	while (stack)
-		*--ptr = (qli_nod*) LLS_POP(&stack);
+		*--ptr = (qli_nod*) ALLQ_pop(&stack);
 
 	return node;
 }
@@ -2726,7 +2724,7 @@ static qli_nod* negate( qli_nod* expr)
  *	Build negation of expression.
  *
  **************************************/
-	qli_nod* node = MAKE_NODE(nod_not, 1);
+	qli_nod* node = make_node(nod_not, 1);
 	node->nod_arg[0] = expr;
 
 	return node;
@@ -2783,7 +2781,7 @@ static qli_nod* possible_literal(qli_syntax* input,
 
 		} while (--l);
 
-	qli_nod* node = MAKE_NODE(nod_constant, 0);
+	qli_nod* node = make_node(nod_constant, 0);
 	node->nod_desc = constant->con_desc;
 
 	return node;
@@ -2817,7 +2815,7 @@ static qli_nod* post_map( qli_nod* node, qli_ctx* context)
 		map->map_node = node;
 	}
 
-	qli_nod* new_node = MAKE_NODE(nod_map, e_map_count);
+	qli_nod* new_node = make_node(nod_map, e_map_count);
 	new_node->nod_count = 0;
 	new_node->nod_arg[e_map_context] = (qli_nod*) context;
 	new_node->nod_arg[e_map_map] = (qli_nod*) map;

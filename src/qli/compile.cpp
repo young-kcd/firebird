@@ -35,7 +35,7 @@
 #include "../qli/meta_proto.h"
 #include "../jrd/dsc_proto.h"
 
-#define PROMPT_LENGTH	80
+const USHORT PROMPT_LENGTH	= 80;
 
 static qli_nod* compile_any(qli_nod*, qli_req*, bool);
 static qli_nod* compile_assignment(qli_nod*, qli_req*, bool);
@@ -416,7 +416,7 @@ static qli_nod* compile_edit( qli_nod* node, qli_req* request)
    can't find the target database. */
 
 	if (!request)
-		BUGCHECK(358);			// Msg358 can't find database for blob edit
+		ERRQ_bugcheck(358);			// Msg358 can't find database for blob edit
 
 // If there is an input blob, get it now.
 
@@ -508,7 +508,7 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 	case nod_rpt_average:
 	case nod_rpt_total:
 		if (report_control_break)
-			LLS_PUSH(node, &report_control_break->brk_statisticals);
+			ALLQ_push((blk*) node, &report_control_break->brk_statisticals);
 
 	case nod_running_total:
 	case nod_running_count:
@@ -683,7 +683,7 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 		return node;
 
 	default:
-		BUGCHECK(359);			// Msg359 compile_expression: not yet implemented
+		ERRQ_bugcheck(359);			// Msg359 compile_expression: not yet implemented
 		return NULL;
 	}
 }
@@ -1054,7 +1054,7 @@ static qli_nod* compile_print_list( qli_nod* list, qli_req* request, qli_lls** s
 	{
 		qli_print_item* item = (qli_print_item*) *ptr;
 		if (stack)
-			LLS_PUSH(item, stack);
+			ALLQ_push((blk*) item, stack);
 		if (item->itm_type == item_value) {
 			qli_nod* value = item->itm_value;
 			value->nod_flags |= NOD_parameter2;
@@ -1385,7 +1385,7 @@ static qli_nod* compile_statement( qli_nod* node, qli_req* request, bool interna
 		return node;
 
 	default:
-		BUGCHECK(360);			// Msg360 not yet implemented (compile_statement) 
+		ERRQ_bugcheck(360);			// Msg360 not yet implemented (compile_statement) 
 		return NULL;
 	}
 }
@@ -1698,7 +1698,7 @@ static bool computable( qli_nod* node, qli_req* request)
 		return true;
 
 	default:
-		BUGCHECK(361);			// Msg361 computable: not yet implemented
+		ERRQ_bugcheck(361);			// Msg361 computable: not yet implemented
 		return false;
 	}
 }
@@ -1902,7 +1902,7 @@ static void make_descriptor( qli_nod* node, dsc* desc)
 
 	case nod_substr:
 	default:
-		BUGCHECK(362);			// Msg362 make_descriptor: not yet implemented
+		ERRQ_bugcheck(362);			// Msg362 make_descriptor: not yet implemented
 	}
 }
 
@@ -2001,7 +2001,7 @@ static qli_nod* make_reference( qli_nod* node, qli_msg* message)
 	qli_par* parm;
 
 	if (!message)
-		BUGCHECK(363);			// Msg363 missing message
+		ERRQ_bugcheck(363);			// Msg363 missing message
 
 // Look for an existing field reference
 
@@ -2071,10 +2071,10 @@ static void release_message( qli_msg* message)
 			break;
 
 	if (!*ptr)
-		BUGCHECK(364);			// Msg 364 lost message
+		ERRQ_bugcheck(364);			// Msg 364 lost message
 
 	*ptr = message->msg_next;
-	ALL_release((FRB) message);
+	ALLQ_release((FRB) message);
 }
 
 

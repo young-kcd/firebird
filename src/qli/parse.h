@@ -26,9 +26,7 @@
 
 #include <stdio.h>
 
-#define MAXSYMLEN	256
-
-#define MATCH(kw) 	PAR_match (kw)
+const int MAXSYMLEN	= 256;
 
 // Keywords 
 

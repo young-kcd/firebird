@@ -34,7 +34,7 @@
 #include "../jrd/jrd_time.h"
 #include "../jrd/gds_proto.h"
 
-#define PRECISION	10000
+const int PRECISION	= 10000;
 
 static TEXT* cvt_to_ascii(SLONG, TEXT*, int);
 static TEXT* default_edit_string(const dsc*, TEXT*);
@@ -320,7 +320,7 @@ void PIC_edit(const dsc* desc, pics* picture, TEXT** output, USHORT max_length)
 		edit_float(desc, picture, output);
 		return;
 	default:
-		BUGCHECK(68);			// Msg 68 PIC_edit: class not yet implemented
+		ERRQ_bugcheck(68);			// Msg 68 PIC_edit: class not yet implemented
 	}
 }
 

@@ -29,12 +29,12 @@
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 
-#define RDB_IMAGE	"RDBVMSSHR"
+const char* RDB_IMAGE	= "RDBVMSSHR";
 #define RDB_CALL(name)	if (!name) find_symbol (&name,"name"); (*name)
 #define CHECK_HANDLE(handle,code)	if (check_handle(handle))\
 		 			return bad_handle (user_status, code)
 
-#define rdb$bad_req_handle	20480058
+//#define rdb$bad_req_handle	20480058
 
 typedef struct handle {
 	int *handle;
@@ -54,9 +54,9 @@ static UCHAR *temp_buffer;
 static SLONG temp_buffer_length;
 static struct handle empty_handle;
 
-
-#define DEBUG_BLR	1
-#define DEBUG_ERROR_BLR	2
+// debug_flags
+const USHORT DEBUG_BLR			= 1;
+const USHORT DEBUG_ERROR_BLR	= 2;
 
 static int (*RDB$ATTACH_DATABASE) (),
 	(*RDB$COMMIT_TRANSACTION) (),

@@ -126,12 +126,12 @@ values for rdb$trigger_type, based from types.h
 until then, this must be kept in sync with jrd/types.h manually.
 */
 
-#define PRE_STORE   1
-#define POST_STORE  2
-#define PRE_MODIFY  3
-#define POST_MODIFY 4
-#define PRE_ERASE   5
-#define POST_ERASE  6
+const USHORT PRE_STORE		= 1;
+const USHORT POST_STORE		= 2;
+const USHORT PRE_MODIFY		= 3;
+const USHORT POST_MODIFY	= 4;
+const USHORT PRE_ERASE		= 5;
+const USHORT POST_ERASE		= 6;
 
 const int buf_len = 256;
 typedef TEXT buf_type[buf_len];
@@ -417,7 +417,7 @@ void SHOW_stuff( qli_syntax* node)
 			break;
 
 		default:
-			BUGCHECK(7);		// Msg7 show option not implemented
+			ERRQ_bugcheck(7);		// Msg7 show option not implemented
 		}
 	}
 }
@@ -772,7 +772,7 @@ static void show_datatype(
 		break;
 
 	default:
-		BUGCHECK(8);			// Msg8 show_fields: dtype not done
+		ERRQ_bugcheck(8);			// Msg8 show_fields: dtype not done
 	}
 
 	ERRQ_msg_partial(msg, (TEXT*)(IPTR)length, NULL, NULL, NULL, NULL);

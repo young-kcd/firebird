@@ -41,12 +41,12 @@
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/thd_proto.h"
 
-#define DEFAULT_FILE_NAME	".fdb"
-#define EVENT_FLAG		15
+const char* DEFAULT_FILE_NAME	= ".fdb";
+const SLONG EVENT_FLAG			= 15;
 
-/***
-#define TRACE	1
-***/
+//
+//#define TRACE	1
+//
 
 #ifdef TRACE
 #include <stdio.h>
@@ -63,7 +63,7 @@ static void setup_trace(jrd_file*, SSHORT);
 static void trace_event(jrd_file*, SSHORT, SCHAR *, SSHORT);
 static bool vms_io_error(ISC_STATUS*, TEXT*, ISC_STATUS, int, jrd_file*);
 
-#define DVI$_DEVLOCKNAM		240
+const SSHORT DVI$_DEVLOCKNAM	= 240;
 
 
 /* ACP File Information block */
@@ -79,11 +79,14 @@ typedef struct fib$ {
 	SLONG fib$l_exvbn;
 } FIB$;
 
-#define FIB$M_EXTEND	128
-#define FIB$M_ALDEF	8
-#define FIB$M_ALCONB	2
-#define FIB$M_WRITETHRU	524288
-#define FIB$M_FINDFID	2048
+// fib$w_exclt
+const SSHORT FIB$M_EXTEND	= 128;
+const SSHORT FIB$M_ALDEF	= 8;
+const SSHORT FIB$M_ALCONB	= 2;
+// fib$l_acctl
+const SLONG FIB$M_WRITETHRU	= 524288;
+// fib$w_nmctl
+const SSHORT FIB$M_FINDFID	= 2048;
 
 typedef struct atr$ {
 	SSHORT atr$w_size;
@@ -92,8 +95,10 @@ typedef struct atr$ {
 	SLONG atr$l_zero;
 } ATR$;
 
-#define ATR$S_RECATTR	32
-#define ATR$C_RECATTR	4
+// atr$w_size
+const SSHORT ATR$S_RECATTR	= 32;
+// atr$w_type
+const SSHORT ATR$C_RECATTR	= 4;
 
 typedef struct fab$ {
 	SCHAR fat$b_rtype;

@@ -36,20 +36,20 @@
 #include "../qli/lex_proto.h"
 #include "../jrd/gds_proto.h"
 
-#define INDENT		"  "
-#define COLUMN_WIDTH	20
-#define RIGHT_MARGIN	70
+const char* INDENT	= "  ";
+const int COLUMN_WIDTH	= 20;
+const int RIGHT_MARGIN	= 70;
 
 #ifdef VMS
-#define TARGET	"[syshlp]help.fdb"
+const char* TARGET	= "[syshlp]help.fdb";
 #endif
 
 #ifdef UNIX
-#define TARGET "help/help.fdb"
+const char* TARGET	= "help/help.fdb";
 #endif
 
 #if (defined WIN_NT)
-#define TARGET "help/help.fdb"
+const char* TARGET	= "help/help.fdb";
 #endif
 
 DATABASE HELP_DB = STATIC "help.fdb" RUNTIME target;
@@ -304,7 +304,7 @@ static void print_topic(
 			END_FOR;
 			ERRQ_msg_format(81, sizeof(banner), banner, INDENT, NULL, NULL,
 							NULL, NULL);	// Msg81 %sSub-topics available:
-			if (additional_topics(string, banner, INDENT))
+			if (additional_topics(string, banner, (TEXT*) INDENT))
 				print_more(level, depth, topics, max_level, string,
 						   error_flag);
 		}

@@ -232,9 +232,9 @@ void PRO_create( DBB database, const TEXT* name)
 		{
 			ERRQ_database_error(database, status_vector);
 		}
-		while (!MATCH(KW_END_PROCEDURE)) {
+		while (!PAR_match(KW_END_PROCEDURE)) {
 			if (QLI_token->tok_type == tok_eof)
-				SYNTAX_ERROR(350);
+				ERRQ_syntax(350);
 			if (QLI_token->tok_type != tok_eol)
 				stop = QLI_token->tok_position + QLI_token->tok_length;
 			LEX_token();

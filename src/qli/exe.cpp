@@ -53,9 +53,7 @@
 #include <string.h>
 #endif
 
-#ifndef FOPEN_WRITE_TYPE
-#define FOPEN_WRITE_TYPE	"w"
-#endif
+const char* FOPEN_WRITE_TYPE	= "w";
 
 extern jmp_buf QLI_env;
 
@@ -80,7 +78,7 @@ static void transaction_state(qli_nod*, DBB);
 
 // definitions for SET COUNT
 
-#define COUNT_ITEMS	4
+const int COUNT_ITEMS	= 4;
 
 static const SCHAR count_info[] = {
 	isc_info_req_select_count,
@@ -196,7 +194,7 @@ void EXEC_execute( qli_nod* node)
 			return;
 
 		default:
-			BUGCHECK(33);		// Msg33 EXEC_execute: not implemented
+			ERRQ_bugcheck(33);		// Msg33 EXEC_execute: not implemented
 		}
 	}
 }
@@ -224,7 +222,7 @@ FB_API_HANDLE EXEC_open_blob( qli_nod* node)
 		node = node->nod_arg[0];
 
 	if (node->nod_type != nod_field)
-		BUGCHECK(34);			// Msg34 print_blob: expected field node
+		ERRQ_bugcheck(34);			// Msg34 print_blob: expected field node
 
 	qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
 	qli_req* request = context->ctx_request;

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.26 2004-03-18 05:55:40 robocop Exp $
+$Id: all.cpp,v 1.27 2004-05-16 01:41:20 brodsom Exp $
 */
 
 /***************************************************
@@ -70,7 +70,7 @@ static void extend_pool(PLB, USHORT);
 
 static qli_vec* global_pools;
 
-#define MIN_ALLOCATION	1024
+const int MIN_ALLOCATION	= 1024;
 
 
 BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
@@ -87,7 +87,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
  *
  **************************************/
 	if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
-		BUGCHECK(1);			// Msg1 bad block type
+		ERRQ_bugcheck(1);			// Msg1 bad block type
 
 // Compute block length
 
@@ -104,7 +104,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 #endif
 
 	if (size <= 4 || size > 65535)
-		BUGCHECK(2);			// Msg2 bad block size
+		ERRQ_bugcheck(2);			// Msg2 bad block size
 
 /* Find best fit.  Best fit is defined to be the free block of SHORTest
    tail.  If there isn't a fit, extend the pool and try, try again. */
@@ -118,7 +118,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 		best_tail = 32767;
 		for (FRB* ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next)
 			if (free->frb_next && (SCHAR *) free >= (SCHAR *) free->frb_next)
-				BUGCHECK(434);	// memory pool free list is incorrect
+				ERRQ_bugcheck(434);	// memory pool free list is incorrect
 			else if ((tail = free->frb_header.blk_length - size) >= 0
 					 && tail < static_cast<SLONG>(best_tail))
 			{
@@ -406,7 +406,7 @@ void ALLQ_release( FRB block)
 	if (pool_id >= global_pools->vec_count ||
 		!(pool = (PLB) global_pools->vec_object[pool_id]))
 	{
-		BUGCHECK(4);
+		ERRQ_bugcheck(4);
 		// Msg4 bad pool id
 	}
 
@@ -421,7 +421,7 @@ void ALLQ_release( FRB block)
 	}
 
 	if ((SCHAR *) block == (SCHAR *) free)
-		BUGCHECK(435);			// block released twice
+		ERRQ_bugcheck(435);			// block released twice
 
 // Merge block into list first, then try to combine blocks
 
@@ -438,7 +438,7 @@ void ALLQ_release( FRB block)
 		}
 		else if ((SCHAR *) block + block->frb_header.blk_length >
 				 (SCHAR *) free)
-			BUGCHECK(436);		// released block overlaps following free block
+			ERRQ_bugcheck(436);		// released block overlaps following free block
 	}
 
 // Try and merge the block with the prior free block
@@ -451,7 +451,7 @@ void ALLQ_release( FRB block)
 		}
 		else if ((SCHAR *) prior + prior->frb_header.blk_length >
 				 (SCHAR *) block)
-			BUGCHECK(437);		// released block overlaps prior free block
+			ERRQ_bugcheck(437);		// released block overlaps prior free block
 	}
 }
 

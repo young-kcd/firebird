@@ -117,140 +117,140 @@ enum set_t {
 
 // Position assignments for syntax tree nodes 
 
-#define s_rel_relation	0		// Actual relation block 
-#define s_rel_context	1		// Symbol block for context, if any 
-#define s_rel_count	2
+const int s_rel_relation	= 0;	// Actual relation block 
+const int s_rel_context		= 1;	// Symbol block for context, if any 
+const int s_rel_count		= 2;
 
-#define s_prt_list	0		// Print list 
-#define s_prt_rse	1		// Rse, if any 
-#define s_prt_output	2		// Output file, if any 
-#define s_prt_distinct	3		// Simple flag indicating distinct 
-#define s_prt_order	4		// SQL order clause 
-#define s_prt_form	5
-#define s_prt_count	6
+const int s_prt_list		= 0;	// Print list 
+const int s_prt_rse			= 1;	// Rse, if any 
+const int s_prt_output		= 2;	// Output file, if any 
+const int s_prt_distinct	= 3;	// Simple flag indicating distinct 
+const int s_prt_order		= 4;	// SQL order clause 
+const int s_prt_form		= 5;
+const int s_prt_count		= 6;
 
-#define s_rse_first	0		// FIRST clause, if any 
-#define s_rse_boolean	1		// Boolean clause, if any 
-#define s_rse_sort	2		// Sort clause, if any 
-#define s_rse_reduced	3		// Reduced clause, if any 
-#define s_rse_group_by	4
-#define s_rse_having	5
-#define s_rse_outer	6		// Outer context value (implicit ANY) 
-#define s_rse_inner	7		// Inner context value 
-#define s_rse_op	8		// Comparison operator 
-#define s_rse_join_type	9		// Join type 
-#define s_rse_all_flag	10		// Explicit "ALL" flag 
-#define s_rse_list	11
+const int s_rse_first		= 0;	// FIRST clause, if any 
+const int s_rse_boolean		= 1;	// Boolean clause, if any 
+const int s_rse_sort		= 2;	// Sort clause, if any 
+const int s_rse_reduced		= 3;	// Reduced clause, if any 
+const int s_rse_group_by	= 4;
+const int s_rse_having		= 5;
+const int s_rse_outer		= 6;	// Outer context value (implicit ANY) 
+const int s_rse_inner		= 7;	// Inner context value 
+const int s_rse_op			= 8;	// Comparison operator 
+const int s_rse_join_type	= 9;	// Join type 
+const int s_rse_all_flag	= 10;	// Explicit "ALL" flag 
+const int s_rse_list		= 11;
 #ifdef PC_ENGINE
-#define s_rse_index	12
-#define s_rse_count	13
+const int s_rse_index		= 12;
+const int s_rse_count		= 13;
 #else
-#define s_rse_count	12
+const int s_rse_count		= 12;
 #endif
 
-#define s_for_rse	0
-#define s_for_statement	1
-#define s_for_count	2
+const int s_for_rse			= 0;
+const int s_for_statement	= 1;
+const int s_for_count		= 2;
 
-#define s_itm_value		0	// Value of print item 
-#define s_itm_edit_string	1	// Edit string, if any 
-#define s_itm_header		2	// Query header, if any 
-#define s_itm_count		3
+const int s_itm_value		= 0;	// Value of print item 
+const int s_itm_edit_string	= 1;	// Edit string, if any 
+const int s_itm_header		= 2;	// Query header, if any 
+const int s_itm_count		= 3;
 
-#define s_sto_relation	0
-#define s_sto_statement	1
-#define s_sto_rse	2
-#define s_sto_fields	3
-#define s_sto_values	4
-#define s_sto_form	5
-#define s_sto_count	6
+const int s_sto_relation	= 0;
+const int s_sto_statement	= 1;
+const int s_sto_rse			= 2;
+const int s_sto_fields		= 3;
+const int s_sto_values		= 4;
+const int s_sto_form		= 5;
+const int s_sto_count		= 6;
 
-#define s_asn_from	0
-#define s_asn_to	1
-#define s_asn_count	2
+const int s_asn_from		= 0;
+const int s_asn_to			= 1;
+const int s_asn_count		= 2;
 
-#define s_mod_list	0		// Field list 
-#define s_mod_statement	1		// Sub-statement 
-#define s_mod_rse	2		// Record selection expression 
-#define s_mod_form	3
-#define s_mod_count	4
+const int s_mod_list		= 0;	// Field list 
+const int s_mod_statement	= 1;	// Sub-statement 
+const int s_mod_rse			= 2;	// Record selection expression 
+const int s_mod_form		= 3;
+const int s_mod_count		= 4;
 
-#define s_era_rse	0
-#define s_era_count	1
+const int s_era_rse			= 0;
+const int s_era_count		= 1;
 
-#define s_rpt_value	0
-#define s_rpt_statement	1
-#define s_rpt_count	2
+const int s_rpt_value		= 0;
+const int s_rpt_statement	= 1;
+const int s_rpt_count		= 2;
 
-#define s_if_boolean	0
-#define s_if_true	1
-#define s_if_false	2
-#define s_if_count	3
+const int s_if_boolean		= 0;
+const int s_if_true			= 1;
+const int s_if_false		= 2;
+const int s_if_count		= 3;
 
-#define s_stt_rse	0
-#define s_stt_value	1
-#define s_stt_default	2
-#define s_stt_distinct	3
-#define s_stt_count	4
+const int s_stt_rse			= 0;
+const int s_stt_value		= 1;
+const int s_stt_default		= 2;
+const int s_stt_distinct	= 3;
+const int s_stt_count		= 4;
 
-#define s_out_file	0
-#define s_out_pipe	1
-#define s_out_count	2
+const int s_out_file		= 0;
+const int s_out_pipe		= 1;
+const int s_out_count		= 2;
 
-#define s_fmt_value	0
-#define s_fmt_edit	1
-#define s_fmt_count	2
+const int s_fmt_value		= 0;
+const int s_fmt_edit		= 1;
+const int s_fmt_count		= 2;
 
-#define s_dfi_name	0
-#define s_dfi_relation	1		// Define index 
-#define s_dfi_fields	2
-#define s_dfi_count	3
+const int s_dfi_name		= 0;
+const int s_dfi_relation	= 1;	// Define index 
+const int s_dfi_fields		= 2;
+const int s_dfi_count		= 3;
 
-#define s_mfi_name	0		// Modify an index 
-#define s_mfi_database	1
-#define s_mfi_count	2
+const int s_mfi_name		= 0;	// Modify an index 
+const int s_mfi_database	= 1;
+const int s_mfi_count		= 2;
 
-#define s_ffr_form	0
-#define s_ffr_statement	1
-#define s_ffr_count	2
+const int s_ffr_form		= 0;
+const int s_ffr_statement	= 1;
+const int s_ffr_count		= 2;
 
-#define s_frm_form	0
-#define s_frm_context	1
-#define s_frm_database	2
-#define s_frm_count	3
+const int s_frm_form		= 0;
+const int s_frm_context		= 1;
+const int s_frm_database	= 2;
+const int s_frm_count		= 3;
 
-#define s_men_string	0
-#define s_men_labels	1
-#define s_men_statements 2
-#define s_men_count	3
+const int s_men_string		= 0;
+const int s_men_labels		= 1;
+const int s_men_statements	= 2;
+const int s_men_count		= 3;
 
-#define s_fun_args	0
-#define s_fun_function	1
-#define s_fun_count	2
+const int s_fun_args		= 0;
+const int s_fun_function	= 1;
+const int s_fun_count		= 2;
 
-#define s_idx_field	0		// array subscript 
-#define s_idx_subs	1
-#define s_idx_count	2
+const int s_idx_field		= 0;	// array subscript 
+const int s_idx_subs		= 1;
+const int s_idx_count		= 2;
 
-#define s_crv_name	0
-#define s_crv_rse	1
-#define s_crv_count	2
+const int s_crv_name		= 0;
+const int s_crv_rse			= 1;
+const int s_crv_count		= 2;
 
-#define s_grant_fields	0
-#define s_grant_relation 1
-#define s_grant_users	2
-#define s_grant_privileges 3
-#define s_grant_count	4   
+const int s_grant_fields	= 0;
+const int s_grant_relation	= 1;
+const int s_grant_users		= 2;
+const int s_grant_privileges	= 3;
+const int s_grant_count		= 4;
 
 //  some flags for index definitions 
 
-#define s_dfi_flag_unique	1
-#define s_dfi_flag_inactive	2	
-#define s_dfi_flag_activity	4
-#define s_dfi_flag_selectivity	8
-#define s_dfi_flag_descending  16
-#define s_dfi_flag_order       32
-#define s_dfi_flag_statistics  64
+const USHORT s_dfi_flag_unique		= 1;
+const USHORT s_dfi_flag_inactive	= 2;
+const USHORT s_dfi_flag_activity	= 4;
+const USHORT s_dfi_flag_selectivity	= 8;
+const USHORT s_dfi_flag_descending	= 16;
+const USHORT s_dfi_flag_order		= 32;
+const USHORT s_dfi_flag_statistics	= 64;
 
 #endif // QLI_COMPILE_H
 

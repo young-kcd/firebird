@@ -35,7 +35,7 @@
 #include lckdef
 #include ssdef
 
-#define MAX_EVENT_BUFFER	65500
+const int MAX_EVENT_BUFFER	= 65500;
 
 
 /* Dummy global section header */

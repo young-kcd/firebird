@@ -35,9 +35,8 @@ struct qli_rlb {
 };
 
 // RLB manipulation macros 
-
-#define RLB_BUFFER_SIZE	2048
-#define RLB_SAFETY_MARGIN	48
+const USHORT RLB_BUFFER_SIZE	= 2048;
+const USHORT RLB_SAFETY_MARGIN	= 48;
 
 #define CHECK_RLB(in)	(!in || (in->rlb_data > in->rlb_limit)) ? (in = GEN_rlb_extend (in)) : in;
 /* Would need gener_proto.h visible here to use this macro.
@@ -59,7 +58,6 @@ inline qli_rlb* CHECK_RLB(qli_rlb*& in)
 //	return in;
 //}
 
-#define RELEASE_RLB	GEN_rlb_release (rlb);
 #define STUFF(blr)	*rlb->rlb_data++ = blr
 #define STUFF_WORD(blr)	{STUFF (blr); STUFF (blr >> 8);}
 
@@ -81,9 +79,10 @@ struct qli_req {
     USHORT			req_label;		// Next available label 
 };
 
-#define REQ_rse_compiled	1
-#define REQ_project		2	// Set during generation of project clause 
-#define REQ_group_by		4	// Set during generation of group by clause 
+// req_flags
+const USHORT REQ_rse_compiled	= 1;
+const USHORT REQ_project		= 2;	// Set during generation of project clause 
+const USHORT REQ_group_by		= 4;	// Set during generation of group by clause 
 
 
 struct qli_nod;
@@ -188,7 +187,8 @@ struct qli_print_item {
     ISC_STATUS	itm_blob_status;	// JPN: status of the last blob fetch 
 };
 
-#define ITM_overlapped	1			// Overlapped by another item 
+// itm_flags
+const USHORT ITM_overlapped	= 1;			// Overlapped by another item 
 
 // Print Control Block 
 
@@ -215,158 +215,159 @@ struct qli_nod {
     qli_nod* 	nod_arg[1];		// If you change this change blk.h too 
 };
 
-#define NOD_local	1		// locally computed expression 
-#define NOD_remote	2
-#define NOD_parameter2	4		// generate a parameter2 if field 
-#define nod_partial	8
-#define nod_comparison 	16
-#define nod_date	32		// node is a date operation, regardless 
+// nod_flags
+const UCHAR NOD_local		= 1;	// locally computed expression 
+const UCHAR NOD_remote		= 2;
+const UCHAR NOD_parameter2	= 4;	// generate a parameter2 if field 
+const UCHAR nod_partial		= 8;
+const UCHAR nod_comparison	= 16;
+const UCHAR nod_date		= 32;	// node is a date operation, regardless 
 
 // Execution node positions 
 
-#define e_fld_field	0		// field block 
-#define e_fld_context	1		// context for field 
-#define e_fld_reference	2		// points to parameter 
-#define e_fld_subs	3		// subscripts 
-#define e_fld_count	4
+const int e_fld_field		= 0;	// field block 
+const int e_fld_context		= 1;	// context for field 
+const int e_fld_reference	= 2;	// points to parameter 
+const int e_fld_subs		= 3;	// subscripts 
+const int e_fld_count		= 4;
 
-#define e_for_request	0		// Request to be started 
-#define e_for_send	1		// Message to be sent 
-#define e_for_receive	2		// Message to be received 
-#define e_for_eof	3		// End of file parameter 
-#define e_for_rse	4
-#define e_for_statement	5
-#define e_for_count	6
+const int e_for_request		= 0;	// Request to be started 
+const int e_for_send		= 1;	// Message to be sent 
+const int e_for_receive		= 2;	// Message to be received 
+const int e_for_eof			= 3;	// End of file parameter 
+const int e_for_rse			= 4;
+const int e_for_statement	= 5;
+const int e_for_count		= 6;
 
-#define e_itm_value	0		// Value of print item 
-#define e_itm_edit_string 1		// Edit string, if any 
-#define e_itm_header	2		// Query header, if any 
-#define e_itm_count	3
+const int e_itm_value		= 0;	// Value of print item 
+const int e_itm_edit_string = 1;	// Edit string, if any 
+const int e_itm_header		= 2;	// Query header, if any 
+const int e_itm_count		= 3;
 
-#define e_rse_first	0		// FIRST clause, if any 
-#define e_rse_boolean	1		// Boolean clause, if any 
-#define e_rse_sort	2		// Sort clause, if any 
-#define e_rse_reduced	3		// Reduced clause, if any 
-#define e_rse_context	4		// Context block 
-#define e_rse_group_by	5
-#define e_rse_having	6
-#define e_rse_join_type	7
+const int e_rse_first		= 0;	// FIRST clause, if any 
+const int e_rse_boolean		= 1;	// Boolean clause, if any 
+const int e_rse_sort		= 2;	// Sort clause, if any 
+const int e_rse_reduced		= 3;	// Reduced clause, if any 
+const int e_rse_context		= 4;	// Context block 
+const int e_rse_group_by	= 5;
+const int e_rse_having		= 6;
+const int e_rse_join_type	= 7;
 #ifdef PC_ENGINE
-#define e_rse_index	8
+const int e_rse_index		= 8;
 #endif
-#define e_rse_count	9
+const int e_rse_count		= 9;
 
-#define e_prt_list	0		// List of print items 
-#define e_prt_file_name	1		// Output file name 
-#define e_prt_output	2		// Output file 
-#define e_prt_header	3		// Header to be printed, if any 
-#define e_prt_count	4
+const int e_prt_list		= 0;	// List of print items 
+const int e_prt_file_name	= 1;	// Output file name 
+const int e_prt_output		= 2;	// Output file 
+const int e_prt_header		= 3;	// Header to be printed, if any 
+const int e_prt_count		= 4;
 
-#define e_prm_prompt	0		// Prompt string, if any 
-#define e_prm_string	1		// String node for data 
-#define e_prm_next	2		// Next prompt in statement 
-#define e_prm_field	3		// Prototype field, if known 
-#define e_prm_count	4
+const int e_prm_prompt		= 0;	// Prompt string, if any 
+const int e_prm_string		= 1;	// String node for data 
+const int e_prm_next		= 2;	// Next prompt in statement 
+const int e_prm_field		= 3;	// Prototype field, if known 
+const int e_prm_count		= 4;
 
-#define e_sto_context	0
-#define e_sto_statement	1
-#define e_sto_request	2
-#define e_sto_send	3
-#define e_sto_count	4
+const int e_sto_context		= 0;
+const int e_sto_statement	= 1;
+const int e_sto_request		= 2;
+const int e_sto_send		= 3;
+const int e_sto_count		= 4;
 
-#define e_asn_to	0
-#define e_asn_from	1
-#define e_asn_initial	2
-#define e_asn_valid	3		// Always second-to-last 
-#define e_asn_count	4
+const int e_asn_to			= 0;
+const int e_asn_from		= 1;
+const int e_asn_initial		= 2;
+const int e_asn_valid		= 3;	// Always second-to-last 
+const int e_asn_count		= 4;
 
-#define e_mod_send	0
-#define e_mod_statement	1		// Sub-statement 
-#define e_mod_request	2		// Parent request for statement 
-#define e_mod_count	3
+const int e_mod_send		= 0;
+const int e_mod_statement	= 1;	// Sub-statement 
+const int e_mod_request		= 2;	// Parent request for statement 
+const int e_mod_count		= 3;
 
-#define e_era_context	0
-#define e_era_request	1		// Parent request for erase 
-#define e_era_message	2		// Message to be sent, if any 
-#define e_era_count	3
+const int e_era_context		= 0;
+const int e_era_request		= 1;	// Parent request for erase 
+const int e_era_message		= 2;	// Message to be sent, if any 
+const int e_era_count		= 3;
 
-#define e_any_request	0		// Request to be started 
-#define e_any_send	1		// Message to be sent 
-#define e_any_receive	2		// Message to be received 
-#define e_any_rse	3
-#define e_any_count	4
+const int e_any_request		= 0;	// Request to be started 
+const int e_any_send		= 1;	// Message to be sent 
+const int e_any_receive		= 2;	// Message to be received 
+const int e_any_rse			= 3;
+const int e_any_count		= 4;
 
-#define e_rpt_value	0
-#define e_rpt_statement	1
-#define e_rpt_count	2
+const int e_rpt_value		= 0;
+const int e_rpt_statement	= 1;
+const int e_rpt_count		= 2;
 
-#define e_if_boolean	0
-#define e_if_true	1
-#define e_if_false	2
-#define e_if_count	3
+const int e_if_boolean		= 0;
+const int e_if_true			= 1;
+const int e_if_false		= 2;
+const int e_if_count		= 3;
 
-#define e_edt_input	0
-#define e_edt_dbb	1
-#define e_edt_id1	2
-#define e_edt_id2	3
-#define e_edt_name	4
-#define e_edt_count	5
+const int e_edt_input		= 0;
+const int e_edt_dbb			= 1;
+const int e_edt_id1			= 2;
+const int e_edt_id2			= 3;
+const int e_edt_name		= 4;
+const int e_edt_count		= 5;
 
-#define e_out_statement	0
-#define e_out_file	1
-#define e_out_pipe	2
-#define e_out_print	3
-#define e_out_count	4
+const int e_out_statement	= 0;
+const int e_out_file		= 1;
+const int e_out_pipe		= 2;
+const int e_out_print		= 3;
+const int e_out_count		= 4;
 
-#define e_fmt_value	0
-#define e_fmt_edit	1
-#define e_fmt_picture	2
-#define e_fmt_count	3
+const int e_fmt_value		= 0;
+const int e_fmt_edit		= 1;
+const int e_fmt_picture		= 2;
+const int e_fmt_count		= 3;
 
 // Statistical expression 
 
-#define e_stt_rse	0
-#define e_stt_value	1
-#define e_stt_default	2
-#define e_stt_request	3			// Request to be started 
-#define e_stt_send	4			// Message to be sent 
-#define e_stt_receive	5			// Message to be received 
-#define e_stt_count	6
+const int e_stt_rse			= 0;
+const int e_stt_value		= 1;
+const int e_stt_default		= 2;
+const int e_stt_request		= 3;	// Request to be started 
+const int e_stt_send		= 4;	// Message to be sent 
+const int e_stt_receive		= 5;	// Message to be received 
+const int e_stt_count		= 6;
 
-#define e_map_context	0
-#define e_map_map	1
-#define e_map_count	2
+const int e_map_context		= 0;
+const int e_map_map			= 1;
+const int e_map_count		= 2;
 
-#define e_ffr_form	0
-#define e_ffr_statement	1
-#define e_ffr_count	2
+const int e_ffr_form		= 0;
+const int e_ffr_statement	= 1;
+const int e_ffr_count		= 2;
 
-#define e_fup_form	0
-#define e_fup_fields	1
-#define e_fup_tag	2
-#define e_fup_count	3
+const int e_fup_form		= 0;
+const int e_fup_fields		= 1;
+const int e_fup_tag			= 2;
+const int e_fup_count		= 3;
 
-#define e_ffl_form	0
-#define e_ffl_field	1
-#define e_ffl_string	2
-#define e_ffl_count	3
+const int e_ffl_form		= 0;
+const int e_ffl_field		= 1;
+const int e_ffl_string		= 2;
+const int e_ffl_count		= 3;
 
-#define e_men_statements	0
-#define e_men_labels		1
-#define e_men_string		2
-#define e_men_menu		4
-#define e_men_count		5
+const int e_men_statements	= 0;
+const int e_men_labels		= 1;
+const int e_men_string		= 2;
+const int e_men_menu		= 4;
+const int e_men_count		= 5;
 
-#define e_fun_args		0
-#define e_fun_function		1
-#define e_fun_request		2			// Request to be started 
-#define e_fun_send		3			// Message to be sent 
-#define e_fun_receive		4			// Message to be received 
-#define e_fun_count		5
+const int e_fun_args		= 0;
+const int e_fun_function	= 1;
+const int e_fun_request		= 2;	// Request to be started 
+const int e_fun_send		= 3;	// Message to be sent 
+const int e_fun_receive		= 4;	// Message to be received 
+const int e_fun_count		= 5;
 
-#define e_syn_statement		0
-#define e_syn_send		1
-#define e_syn_count		2
+const int e_syn_statement	= 0;
+const int e_syn_send		= 1;
+const int e_syn_count		= 2;
 
 // A Program global or two 
 

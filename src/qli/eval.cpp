@@ -186,7 +186,7 @@ int EVAL_boolean( qli_nod* node)
 		return result;
 
 	default:
-		BUGCHECK(28);			// Msg28 EVAL_boolean: not finished
+		ERRQ_bugcheck(28);			// Msg28 EVAL_boolean: not finished
 		return false;
 	}
 }
@@ -558,7 +558,7 @@ dsc* EVAL_value(qli_nod* node)
 	case nod_via:
 
 	default:
-		BUGCHECK(29);			// Msg29 EVAL_value: not finished
+		ERRQ_bugcheck(29);			// Msg29 EVAL_value: not finished
 		return NULL;
 	}
 }

@@ -32,12 +32,12 @@
 #include "../jrd/map_proto.h"
 #include "../jrd/mblr_proto.h"
 
-#define RDB_IMAGE	"RDBVMSSHR"
+const char* RDB_IMAGE	= "RDBVMSSHR";
 #define RDB_CALL(name)	if (!name) find_symbol (&name,"name"); stat = (*name)
 
-#define rdb$bad_req_handle	20480058
+//#define rdb$bad_req_handle	20480058
 
-#define DBTYPE_ISC	37
+const USHORT DBTYPE_ISC	= 37;
 
 /* Transaction element block */
 

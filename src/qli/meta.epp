@@ -552,7 +552,7 @@ void MET_delete_database( DBB dbb)
 	FOR F IN DB.RDB$FILES SORTED BY F.RDB$FILE_START
 		qli_str* astring = (qli_str*) ALLOCDV(type_str, strlen(F.RDB$FILE_NAME));
 		strcpy(astring->str_data, F.RDB$FILE_NAME);
-		LLS_PUSH(astring, &stack);
+		ALLQ_push((blk*) astring, &stack);
 	END_FOR
 	ON_ERROR
 		ERRQ_database_error(dbb, gds_status);
@@ -586,14 +586,14 @@ void MET_delete_database( DBB dbb)
 	}
 
 	while (stack) {
-		qli_str* sstring = (qli_str*) LLS_POP(&stack);
+		qli_str* sstring = (qli_str*) ALLQ_pop(&stack);
 		if (unlink(sstring->str_data))
 			ERRQ_print_error(431, sstring->str_data, NULL, NULL, NULL, NULL);
 			// Msg431 Could not drop database file "%s"
 	}
 
 	while (log_stack) {
-		const qli_str* log_string = (qli_str*) LLS_POP(&log_stack);
+		const qli_str* log_string = (qli_str*) ALLQ_pop(&log_stack);
 		unlink(log_string->str_data);	// do not check for error
 	}
 
@@ -902,8 +902,8 @@ void MET_finish( DBB dbb)
 	while (function = dbb->dbb_functions) {
 		dbb->dbb_functions = function->fun_next;
 		HSH_remove(function->fun_symbol);
-		ALL_release((FRB) function->fun_symbol);
-		ALL_release((FRB) function);
+		ALLQ_release((FRB) function->fun_symbol);
+		ALLQ_release((FRB) function);
 	}
 
 // Finally, actually close down database connection.
@@ -913,7 +913,7 @@ void MET_finish( DBB dbb)
 
 	if (dbb->dbb_symbol) {
 		HSH_remove(dbb->dbb_symbol);
-		ALL_release((FRB) dbb->dbb_symbol);
+		ALLQ_release((FRB) dbb->dbb_symbol);
 	}
 
 	int count = 0;
@@ -922,7 +922,7 @@ void MET_finish( DBB dbb)
 		if (*ptr == dbb)
 		{
 			*ptr = dbb->dbb_next;
-			ALL_release((FRB) dbb);
+			ALLQ_release((FRB) dbb);
 			count++;
 			if (!*ptr) {
 				break;
@@ -931,7 +931,7 @@ void MET_finish( DBB dbb)
 	}
 
 	if (!count)
-		BUGCHECK(231);			// Msg231 database block not found for removal
+		ERRQ_bugcheck(231);			// Msg231 database block not found for removal
 
 	if (status_vector[1])
 		ERRQ_database_error(NULL, status_vector);
@@ -2604,10 +2604,10 @@ static void delete_fields( qli_rel* relation)
  **************************************/
 	while (qli_fld* field = relation->rel_fields) {
 		relation->rel_fields = field->fld_next;
-		ALL_release((FRB) field->fld_name);
+		ALLQ_release((FRB) field->fld_name);
 		if (field->fld_query_name)
-			ALL_release((FRB) field->fld_query_name);
-		ALL_release((FRB) field);
+			ALLQ_release((FRB) field->fld_query_name);
+		ALLQ_release((FRB) field);
 	}
 
 	relation->rel_flags &= ~REL_fields;
@@ -2676,7 +2676,7 @@ static void execute_dynamic_ddl( DBB database, qli_rlb* rlb)
 		ERRQ_database_error(database, gds_status);
 	}
 
-	RELEASE_RLB;
+	GEN_rlb_release (rlb);
 
 }
 
@@ -3423,7 +3423,7 @@ static void purge_relation(qli_rel* relation)
 		ALLQ_release((FRB) field);
 	}
 
-	ALL_release((FRB) relation);
+	ALLQ_release((FRB) relation);
 }
 
 

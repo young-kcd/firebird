@@ -26,6 +26,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
+#include "gen/iberror.h"
 #include "../qli/dtr.h"
 #include "../qli/parse.h"
 #include "../qli/err_proto.h"
@@ -37,11 +38,6 @@ extern TEXT *QLI_error;
 extern jmp_buf QLI_env;
 
 static TEXT ERRQ_message[256];
-
-#ifndef gds__io_error
-#define gds__io_error            	335544344
-#endif
-
 
 void ERRQ_bugcheck( USHORT number)
 {
@@ -90,7 +86,7 @@ void ERRQ_database_error( DBB dbb, ISC_STATUS* status_vector)
    close up neatly.  If we get an I/O error trying to open the
    database, somebody else will clean up */
 
-	if (dbb && dbb->dbb_handle && status_vector[1] == gds__io_error)
+	if (dbb && dbb->dbb_handle && status_vector[1] == isc_io_error)
 		ERRQ_msg_put(458, dbb->dbb_filename, NULL, NULL, NULL, NULL);	/* Msg458 ** connection to database %s lost ** */
 
 	if (QLI_env) {
