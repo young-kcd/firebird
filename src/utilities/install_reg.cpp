@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Windows NT registry installation program
- *	MODULE:		install_reg.c
+ *	MODULE:			install_reg.cpp
  *	DESCRIPTION:	Registry installation program
  *
  * The contents of this file are subject to the Interbase Public

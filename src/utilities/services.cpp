@@ -387,7 +387,8 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
  *  to the user.
  *  Returns FB_FAILURE on any error.
  *
- *  OM - August 2003
+ *  OM - AUG 2003 - Initial implementation
+ *  OM - SEP 2003 - Control flow revision, no functional change
  *
  ***************************************************/
 
@@ -399,6 +400,10 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 	DWORD cchDomain;
 	SID_NAME_USE peUse;
 	LSA_UNICODE_STRING PrivilegeString;
+	PLSA_UNICODE_STRING UserRights;
+	ULONG CountOfRights = 0;
+	ULONG i;
+
 	NTSTATUS lsaErr;
 	
 	// Open the policy on the local machine.
@@ -410,7 +415,8 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 		return (*err_handler)(LsaNtStatusToWinError(lsaErr), "LsaOpenPolicy", NULL);
 	}
 
-	// Obtain the SID of the user/group. First get required buffer sizes.
+	// Obtain the SID of the user/group.
+	// First, dummy call to LookupAccountName to get the required buffer sizes.
 	cbSid = cchDomain = 0;
 	LookupAccountName(NULL, account, NULL, &cbSid, NULL, &cchDomain, &peUse);
 	pSid = (PSID)LocalAlloc(LMEM_ZEROINIT, cbSid);
@@ -430,11 +436,14 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 	}
 	// Now, really obtain the SID of the user/group.
 	if (LookupAccountName(NULL, account, pSid, &cbSid,
-			pDomain, &cchDomain, &peUse) != 0)
+			pDomain, &cchDomain, &peUse) == 0)
 	{
-		PLSA_UNICODE_STRING UserRights;
-		ULONG CountOfRights = 0;
-		ULONG i;
+		DWORD err = GetLastError();
+		LsaClose(PolicyHandle);
+		LocalFree(pSid);
+		LocalFree(pDomain);
+		return (*err_handler)(err, "LookupAccountName", NULL);
+	}
 
 		LsaEnumerateAccountRights(PolicyHandle, pSid, &UserRights, &CountOfRights);
 		// Check if the seServiceLogonRight is already granted
@@ -465,15 +474,6 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 			LocalFree(pSid);
 			LocalFree(pDomain);
 			return FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED;
-		}
-	}
-	else
-	{
-		DWORD err = GetLastError();
-		LsaClose(PolicyHandle);
-		LocalFree(pSid);
-		LocalFree(pDomain);
-		return (*err_handler)(err, "LookupAccountName", NULL);
 	}
 	
 	LsaClose(PolicyHandle);

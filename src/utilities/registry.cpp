@@ -36,7 +36,9 @@
 #include "../utilities/registry.h"
 
 static void cleanup_key(HKEY, TEXT *);
+#ifdef THIS_CODE_IS_TEMPORARILY_NOT_USED_ANYMORE
 static USHORT remove_subkeys(HKEY, bool, USHORT(*)(SLONG, TEXT *, HKEY));
+#endif
 
 USHORT REGISTRY_install(HKEY hkey_rootnode,
 						TEXT * directory, USHORT(*err_handler)(SLONG, TEXT *, HKEY))
@@ -48,7 +50,7 @@ USHORT REGISTRY_install(HKEY hkey_rootnode,
  **************************************
  *
  * Functional description
- *	Install InterBase in the registry.
+ *	Install Firebird in the registry.
  *
  **************************************/
 	HKEY hkey_instances;
@@ -106,7 +108,7 @@ USHORT REGISTRY_remove(HKEY hkey_rootnode,
  **************************************
  *
  * Functional description
- *	Remove InterBase from the registry.
+ *	Remove Firebird from the registry.
  *
  **************************************/
 	HKEY hkey_instances;
@@ -185,7 +187,7 @@ static USHORT remove_subkeys(
  **************************************
  *
  * Functional description
- *	Remove all sub-keys of an InterBase key from the registry.
+ *	Remove all sub-keys of an Firebird key from the registry.
  *
  **************************************/
 	TEXT *sub_key, buffer[MAXPATHLEN], *p;
