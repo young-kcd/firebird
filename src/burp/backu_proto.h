@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
  *	MODULE:		backu_proto.h
- *	DESCRIPTION:	Prototype Header file for backup.e
+ *	DESCRIPTION:	Prototype Header file for backup.epp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,6 +24,7 @@
 #ifndef BURP_BACKU_PROTO_H
 #define BURP_BACKU_PROTO_H
 
-int	BACKUP_backup (TEXT *, const TEXT *);
+int	BACKUP_backup (TEXT*, const TEXT*);
 
 #endif	/*  BURP_BACKU_PROTO_H  */
+

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Backup and Restore program  
  *	MODULE:		burp_proto.h
- *	DESCRIPTION:	Prototype header file for burp.c
+ *	DESCRIPTION:	Prototype header file for burp.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -29,8 +29,8 @@ int BURP_main(SVC service);
 #endif
 
 void	BURP_abort(void);
-void	BURP_svc_error(USHORT, USHORT, const void *, USHORT, const void *,
-						USHORT, const void *, USHORT, const void *, USHORT, const void *);
+void	BURP_svc_error(USHORT, USHORT, const void*, USHORT, const void*,
+						USHORT, const void*, USHORT, const void*, USHORT, const void*);
 void	BURP_error(USHORT, const void*, const void*, const void*, const void*, const void*);
 void	BURP_print_status(const ISC_STATUS*);
 void	BURP_error_redirect(const ISC_STATUS*, USHORT, const void*, const void*);
@@ -40,7 +40,7 @@ void	BURP_msg_put(USHORT, const void*, const void*, const void*,
 					const void*, const void*);
 void	BURP_msg_get(USHORT, TEXT*, const void*, const void*, const void*,
 					const void*, const void*);
-void	BURP_output_version(const TEXT *, TEXT *);
+void	BURP_output_version(const TEXT*, TEXT*);
 void	BURP_print(USHORT, const void*, const void*, const void*, const void*, const void*);
 void	BURP_print_warning(const ISC_STATUS*);
 void	BURP_verbose(USHORT, const void*, const void*, const void*, const void*, const void*);

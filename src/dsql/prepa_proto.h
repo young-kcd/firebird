@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 
-int PREPARSE_execute(ISC_STATUS *, FRBRD **, FRBRD **, USHORT, SCHAR *, BOOLEAN *, USHORT);
+int PREPARSE_execute(ISC_STATUS*, FRBRD**, FRBRD**, USHORT, SCHAR*, BOOLEAN*, USHORT);
 
 #ifdef __cplusplus
 } /* extern "C" */

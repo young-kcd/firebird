@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
  *	MODULE:		misc_proto.h
- *	DESCRIPTION:	Prototype Header file for misc.c
+ *	DESCRIPTION:	Prototype Header file for misc.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -25,9 +25,9 @@
 #define BURP_MISC_PROTO_H
 
 UCHAR*	MISC_alloc_burp(ULONG);
-void	MISC_free_burp(void *);
+void	MISC_free_burp(void*);
 void	MISC_release_request_silent(isc_req_handle& req_handle);
-void	MISC_terminate(const TEXT *, TEXT *, ULONG, ULONG);
+void	MISC_terminate(const TEXT*, TEXT*, ULONG, ULONG);
 
 #endif	// BURP_MISC_PROTO_H
 

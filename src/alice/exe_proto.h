@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Alice (All Else) Utility
  *	MODULE:		exe_proto.h
- *	DESCRIPTION:	Prototype header file for exe.c
+ *	DESCRIPTION:	Prototype header file for exe.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,7 +24,8 @@
 #ifndef ALICE_EXE_PROTO_H
 #define ALICE_EXE_PROTO_H
 
-int EXE_action(TEXT *, ULONG);
-int EXE_two_phase(TEXT *, ULONG);
+int EXE_action(TEXT*, ULONG);
+int EXE_two_phase(TEXT*, ULONG);
 
 #endif // ALICE_EXE_PROTO_H
+

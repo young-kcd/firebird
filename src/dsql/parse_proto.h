@@ -28,10 +28,10 @@
 extern "C" {
 #endif
 
-int dsql_yyparse(USHORT, USHORT, USHORT, BOOLEAN *);
+int dsql_yyparse(USHORT, USHORT, USHORT, BOOLEAN*);
 
 void LEX_dsql_init(void);
-void LEX_string(TEXT *, USHORT, SSHORT);
+void LEX_string(TEXT*, USHORT, SSHORT);
 
 #ifdef __cplusplus
 } /* extern "C" */

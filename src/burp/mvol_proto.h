@@ -45,7 +45,7 @@ UCHAR			MVOL_write(UCHAR, int*, UCHAR**);
 const UCHAR*	MVOL_write_block(TGBL, const UCHAR*, ULONG);
 
 #if defined WIN_NT
-DESC			MVOL_open(const char *, ULONG, ULONG);
+DESC			MVOL_open(const char*, ULONG, ULONG);
 #endif
 
 
