@@ -529,11 +529,7 @@ SOURCE=..\..\..\src\jrd\ansi.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\arg.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\atom.h
+SOURCE=..\..\..\src\jrd\log2.h
 # End Source File
 # Begin Source File
 

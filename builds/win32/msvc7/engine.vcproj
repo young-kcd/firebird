@@ -393,10 +393,7 @@
 				RelativePath="..\..\..\src\jrd\ansi.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\arg.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\atom.h">
+				RelativePath="..\..\..\src\jrd\log2.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\blb.h">

@@ -3833,12 +3833,7 @@
 		};
 		F616C56F0200B0CF01EF0ADE = {
 			isa = PBXFileReference;
-			path = arg.h;
-			refType = 4;
-		};
-		F616C5700200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = atom.h;
+			path = log2.h;
 			refType = 4;
 		};
 		F616C5710200B0CF01EF0ADE = {
