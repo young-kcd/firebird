@@ -336,7 +336,7 @@ ADS array_desc, SLONG * variables, void (*callback) (), SLICE argument)
 	arg.sdl_arg_status_vector = status_vector;
 	p = sdl + 1;
 
-	while ((SCHAR) * p != gds_sdl_eoc)
+	while ((UCHAR) * p != gds_sdl_eoc)
 		switch (*p++) {
 		case gds_sdl_struct:
 			for (n = *p++; n; --n) {
