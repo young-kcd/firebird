@@ -1716,6 +1716,7 @@ static bool computable(CompilerScratch*     csb,
 		//	!(csb->csb_rpt[n].csb_flags & (csb_made_river | csb_active)))
 		return csb->csb_rpt[n].csb_flags & csb_active;
 
+	case nod_rec_version:
 	case nod_dbkey:
 
 		n = (USHORT)(IPTR) node->nod_arg[0];
@@ -1872,6 +1873,7 @@ static void compute_dependencies(const jrd_nod* node, ULONG* dependencies)
 			return;
 		}
 
+	case nod_rec_version:
 	case nod_dbkey:
 		{
 			const SLONG n = (SLONG)(IPTR) node->nod_arg[0];
@@ -2810,6 +2812,7 @@ static bool expression_contains(const jrd_nod* node, NOD_T node_type)
 				return expression_contains(node->nod_arg[e_any_rse], node_type);
 
 			case nod_field:
+			case nod_rec_version:
 			case nod_dbkey:
 			case nod_argument:
 			case nod_current_date:
@@ -2967,6 +2970,7 @@ static bool expression_contains_stream(const jrd_nod* node, UCHAR stream)
 		case nod_field:
 			return ((USHORT)(IPTR) node->nod_arg[e_fld_stream] == stream);
 
+		case nod_rec_version:
 		case nod_dbkey:
 			return ((USHORT)(IPTR) node->nod_arg[0] == stream);
 
@@ -3260,8 +3264,7 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_rec_version:
 		case nod_dbkey:
-			// AB: Please explain index 0 same as index 1 ???
-			if (node1->nod_arg[0] == node2->nod_arg[1])
+			if (node1->nod_arg[0] == node2->nod_arg[0])
 			{
 				return true;
 			}
@@ -3269,13 +3272,9 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_field:
 			{
-				// don't compare stream id's because we will use computable() to 
-				// make sure the field is in the same stream as the index; 
-				// the stream id of the index expression is always 0 so it 
-				// isn't usable for comparison
-//				if (node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) {
 				const USHORT fld_stream = (USHORT)(IPTR) node2->nod_arg[e_fld_stream];
-				if ((node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) && (fld_stream == stream))
+				if ((node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) &&
+					(fld_stream == stream))
 				{
 					/*
 					dsc dsc1, dsc2; 
@@ -3314,9 +3313,11 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_null:
 		case nod_user_name:
+		case nod_current_role:
 		case nod_current_time:
 		case nod_current_date:
 		case nod_current_timestamp:
+		case nod_internal_info:
 			return true;
 
 		case nod_value_if:
@@ -3380,8 +3381,8 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 				CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
 
 				if (DSC_EQUIV(desc1, desc2) &&
-					expression_equal2(tdbb, opt, node1->nod_arg[0],
-									  node2->nod_arg[0], stream)) 
+					expression_equal2(tdbb, opt, node1->nod_arg[e_cast_source],
+									  node2->nod_arg[e_cast_source], stream)) 
 				{
 					return true;
 				}
@@ -3419,10 +3420,6 @@ static bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 			
 				return true;
 		    }
-
-		// non-deterministic function
-		case nod_internal_info:
-			return false;
 
 		// AB: New nodes has to be added
 
@@ -4834,9 +4831,9 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		full = true;
 	}
 
-	CompilerScratch*         csb      = opt->opt_csb;
+	CompilerScratch* csb = opt->opt_csb;
 	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
-	jrd_rel*     relation = csb_tail->csb_relation;
+	jrd_rel* relation = csb_tail->csb_relation;
 
 	fb_assert(relation);
 
