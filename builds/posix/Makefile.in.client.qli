@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.qli,v 1.3 2004-03-25 23:12:31 skidder Exp $
+#  $Id: Makefile.in.client.qli,v 1.1.2.1 2003-11-26 19:42:12 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=client.qli
+CFLAGS:=-DSUPERCLIENT
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -40,18 +41,14 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-QLI_Other_Sources = common/utils.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
-jrd/dsc.cpp gpre/pretty.cpp
-
 QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
-		expand.cpp exe.cpp format.cpp gener.cpp help.cpp \
+		expand.cpp exe.cpp noform.cpp format.cpp gener.cpp help.cpp \
 		hsh.cpp lex.cpp meta.cpp mov.cpp parse.cpp picstr.cpp proc.cpp \
 		report.cpp show.cpp
-QLI_Sources = $(addprefix qli/, $(QLI_Files)) $(QLI_Other_Sources)
+QLI_Sources = $(addprefix qli/, $(QLI_Files))
 QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
 
-AllObjects = $(QLI_Objects)
+AllObjects = $(QLI_Objects) 
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -64,14 +61,21 @@ all:	qli
 qli : create_yachts $(LIBFBCLIENT_SO) $(QLI)
 
 $(QLI): $(QLI_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 	$(CHMOD_S7) $@
 
 # EKU: At this point yachts.lnk is a link to empty.fdb, but gpre will fail
 #      with it. metadata.fdb is what is needed here.
 create_yachts:
 	-$(RM) yachts.lnk
-	-$(LN) -f metadata.fdb yachts.lnk
+	-$(LN) -f $(SRC_ROOT)/metadata.fdb yachts.lnk
+
+
+# qli_help
+#
+# qli_help is now directly build in the refDatabase directory, and doesn't 
+# need to be rebuilt here.
+
 
 
 include $(ROOT)/gen/make.shared.targets

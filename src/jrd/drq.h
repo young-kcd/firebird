@@ -41,8 +41,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_DRQ_H
-#define JRD_DRQ_H
+#ifndef _JRD_DRQ_H_
+#define _JRD_DRQ_H_
 
 #define DYN_REQUEST(drt) (*dbb->dbb_dyn_req)[drt]
 
@@ -177,9 +177,6 @@
 #define drq_e_gens	    127		/* erase generators */
 #define drq_s_f_class	    128 /* set the security class name for a field */
 #define drq_s_u_class	    129 /* find a unique security class name for a field */
-#define drq_l_difference    130 /* Look up a backup difference file */
-#define drq_s_difference    131 /* Store backup difference file */
-#define drq_d_difference    132 /* Delete backup difference file */
-#define drq_MAX             133
+#define drq_MAX             130
 
-#endif /* JRD_DRQ_H */
+#endif /* _JRD_DRQ_H_ */

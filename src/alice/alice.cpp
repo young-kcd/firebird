@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.58 2004-03-20 14:57:13 alexpeshkoff Exp $
+//	$Id: alice.cpp,v 1.27.2.1 2004-01-07 10:09:52 dimitr Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -41,34 +41,38 @@
 #include <string.h>
 #include <stdarg.h>
 
+#define FB_FROM_ALICE_CPP
+
 #include "../alice/alice.h"
 #include "../alice/aliceswi.h"
 #include "../alice/all.h"
+#include "../alice/alice_proto.h"
 #include "../alice/all_proto.h"
 #include "../alice/exe_proto.h"
 #include "../jrd/ib_stdio.h"
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/common.h"
 #include "../jrd/license.h"
+#include "../jrd/ibsetjmp.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
 #include "../jrd/thd_proto.h"
-#include "../alice/alice_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
+#ifdef SUPERSERVER
+#include "../utilities/cmd_util_proto.h"
+#endif
+
 #ifdef WIN_NT
+#include <windows.h>
 #include <io.h>
 #endif
 
-#ifdef SUPERSERVER
-#include "../utilities/common/cmd_util_proto.h"
-#endif
 
 static const USHORT val_err_table[] = {
 	0,
@@ -87,16 +91,13 @@ static const USHORT val_err_table[] = {
 // defined in burp.cpp as well, and is not relevant for SUPERSERVER
 
 #ifndef SUPERSERVER
-Tgbl* gdgbl;
+struct tgbl *gdgbl;
 #endif
 
-const int ALICE_MSG_FAC = 3;
+#define	ALICE_MSG_FAC	3
 
-static inline void exit_local(int code, Tgbl* tdgbl)
-{
-	tdgbl->exit_code = code;
-	Firebird::status_exception::raise();
-}
+#define EXIT(code)	{  tdgbl->exit_code = (code);	\
+						Firebird::status_exception::raise(1);  }
 
 #if defined (WIN95)
 static bool fAnsiCP = false;
@@ -104,26 +105,15 @@ static bool fAnsiCP = false;
 
 static void ALICE_error(USHORT number);	// overloaded to keep down param count
 static inline void translate_cp(TEXT* sz);
-static void expand_filename(const TEXT*, TEXT*);
-#ifndef SUPERSERVER
-static int output_main(Jrd::Service*, const UCHAR*);
+static void expand_filename(TEXT*, TEXT*);
+#ifdef SUPERSERVER
+static int output_thread(SLONG, UCHAR*);
+#else
+static int output_main(SLONG, UCHAR*);
 #endif
-static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
+static int output_svc(SLONG, UCHAR*);
 static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
-
-
-//____________________________________________________________
-//
-//		Routine which is passed to GFIX for calling back when there is output
-//		if gfix is run as a service
-//
-
-static int output_svc(Jrd::Service* output_data, const UCHAR * output_buf)
-{
-	ib_fprintf(ib_stdout, "%s", output_buf);
-	return 0;
-}
 
 
 #ifdef SUPERSERVER
@@ -133,10 +123,13 @@ static int output_svc(Jrd::Service* output_data, const UCHAR * output_buf)
 //	Entry point for GFIX in case of service manager.
 //
 
-int ALICE_main(Jrd::Service* service)
+int main_gfix(SVC service)
 {
-	const int exit_code = common_main(service->svc_argc, service->svc_argv,
-					SVC_output, service);
+	int exit_code =
+		ALICE_gfix(	service->svc_argc,
+					service->svc_argv,
+					output_thread,
+					(SLONG) service);
 
 //  Mark service thread as finished.
 //  If service is detached, cleanup memory being used by service.
@@ -145,10 +138,19 @@ int ALICE_main(Jrd::Service* service)
 	return exit_code;
 }
 
+
 //____________________________________________________________
 //
 //	Routine which is passed to GFIX for calling back when there is output.
 //
+
+static int output_thread(SLONG output_data, UCHAR * output_buf)
+{
+	SVC_fprintf((SVC) output_data, "%s", output_buf);
+
+	return 0;
+}
+
 
 #else	// SUPERSERVER
 
@@ -157,9 +159,9 @@ int ALICE_main(Jrd::Service* service)
 //      Call the 'real' main.
 //
 
-int CLIB_ROUTINE main(int argc, char* argv[])
+int CLIB_ROUTINE main(int argc, char *argv[])
 {
-	const int exit_code = common_main(argc, argv, output_main, NULL);
+	int exit_code = ALICE_gfix(argc, argv, output_main, (SLONG) NULL);
 
 	return exit_code;
 }
@@ -170,7 +172,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 //		Routine which is passed to GFIX for calling back when there is output.
 //
 
-static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
+static int output_main(SLONG output_data, UCHAR * output_buf)
 {
 	ib_fprintf(ib_stderr, "%s", output_buf);
 	return 0;
@@ -180,20 +182,43 @@ static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
 
 //____________________________________________________________
 //
+//		Routine which is passed to GFIX for calling back when there is output
+//		if gfix is run as a service
+//
+
+static int output_svc(SLONG output_data, UCHAR * output_buf)
+{
+	ib_fprintf(ib_stdout, "%s", output_buf);
+	return 0;
+}
+
+
+//____________________________________________________________
+//
 //		Routine called by command line utility, and server manager
 //		Parse switches and do work
 //
 
-int common_main(int			argc,
-				char*		argv[],
-				Jrd::pfn_svc_output	output_proc,
-				Jrd::Service*		output_data)
+int DLL_EXPORT ALICE_gfix(	int			argc,
+							char*		argv[],
+							OUTPUTPROC	output_proc,
+							SLONG		output_data)
 {
+	IN_SW_TAB table = alice_in_sw_table;
+
+	USHORT	error;
+	TEXT*	database;
+	TEXT	string[512];
+	ULONG	switches;
+	SLONG	redir_in;
+	SLONG	redir_out;
+	SLONG	redir_err;
+
 #if defined (WIN95)
 	fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
 
-	Tgbl* tdgbl = (Tgbl*) gds__alloc(sizeof(Tgbl));
+	volatile tgbl* tdgbl = (struct tgbl*) gds__alloc(sizeof(*tdgbl));
 	if (!tdgbl) {
 		//  NOMEM: return error, FREE: during function exit in the SETJMP
 		return FINI_ERROR;
@@ -201,7 +226,7 @@ int common_main(int			argc,
 
 	SET_THREAD_DATA;
 	SVC_PUTSPECIFIC_DATA;
-	memset((void *) tdgbl, 0, sizeof(Tgbl));
+	memset((void *) tdgbl, 0, sizeof(*tdgbl));
 	tdgbl->output_proc = output_proc;
 	tdgbl->output_data = output_data;
 	tdgbl->ALICE_permanent_pool = NULL;
@@ -217,30 +242,32 @@ int common_main(int			argc,
 //  first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
 //  by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr.
 
-	tdgbl->sw_service = false;
-	tdgbl->sw_service_thd = false;
+	tdgbl->sw_service = FALSE;
+	tdgbl->sw_service_thd = FALSE;
 	tdgbl->service_blk = NULL;
-	tdgbl->status =	tdgbl->status_vector;
+	tdgbl->status =
+		/* TMN: cast away volatile */
+		(long *) tdgbl->status_vector;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
-		tdgbl->sw_service = true;
+		tdgbl->sw_service = TRUE;
 		argv++;
 		argc--;
 	}
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
-		tdgbl->sw_service = true;
-		tdgbl->sw_service_thd = true;
-		tdgbl->service_blk = (Jrd::Service*) output_data;
+		tdgbl->sw_service = TRUE;
+		tdgbl->sw_service_thd = TRUE;
+		tdgbl->service_blk = (SVC) output_data;
 		tdgbl->status = tdgbl->service_blk->svc_status;
 		argv++;
 		argc--;
 	}
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		tdgbl->sw_service = true;
+		tdgbl->sw_service = TRUE;
 		tdgbl->output_proc = output_svc;
-		long redir_in = atol(argv[2]);
-		long redir_out = atol(argv[3]);
-		long redir_err = atol(argv[4]);
+		redir_in = atol(argv[2]);
+		redir_out = atol(argv[3]);
+		redir_err = atol(argv[4]);
 #ifdef WIN_NT
 #if defined (WIN95)
 		fAnsiCP = true;
@@ -267,29 +294,23 @@ int common_main(int			argc,
 		argv += 4;
 		argc -= 4;
 	}
-
 	tdgbl->ALICE_data.ua_user = NULL;
 	tdgbl->ALICE_data.ua_password = NULL;
 
 //  Start by parsing switches
 
-	bool error = false;
-	ULONG switches = 0;
+	error = 0;
+	switches = 0;
 	tdgbl->ALICE_data.ua_shutdown_delay = 0;
-	TEXT* database = NULL;
-	TEXT	string[512];
-	
+	database = NULL;
 	argv++;
-	// tested outside the loop
-	const in_sw_tab_t* table = alice_in_sw_table;
 
 	while (--argc > 0)
 	{
 		if ((*argv)[0] != '-')
 		{
 			if (database) {
-				ALICE_error(1, database, 0, 0, 0, 0);
-				// msg 1: "data base file name (%s) already given",
+				ALICE_error(1, database, 0, 0, 0, 0);	/* msg 1: "data base file name (%s) already given", */
 			}
 			database = *argv++;
 
@@ -305,16 +326,16 @@ int common_main(int			argc,
 #endif
 			continue;
 		}
-		ALICE_down_case(*argv++, string, sizeof(string));
+		ALICE_down_case(*argv++, string);
 		if (!string[1]) {
 			continue;
 		}
-		for (table = alice_in_sw_table; true; ++table)
+		for (table = alice_in_sw_table; TRUE; ++table)
 		{
 			const TEXT* p = (TEXT*) table->in_sw_name;
 			if (!p) {
-				ALICE_print(2, *--argv, 0, 0, 0, 0);	// msg 2: invalid switch %s 
-				error = true;
+				ALICE_print(2, *--argv, 0, 0, 0, 0);	/* msg 2: invalid switch %s */
+				error = TRUE;
 				break;
 			}
 
@@ -333,86 +354,65 @@ int common_main(int			argc,
 			tdgbl->ALICE_data.ua_debug++;
 		}
 		if (table->in_sw_value == sw_z) {
-			ALICE_print(3, GDS_VERSION, 0, 0, 0, 0);	// msg 3: gfix version %s 
+			ALICE_print(3, GDS_VERSION, 0, 0, 0, 0);	/* msg 3: gfix version %s */
 		}
 		if ((table->in_sw_incompatibilities & switches) ||
 			(table->in_sw_requires && !(table->in_sw_requires & switches))) {
-			ALICE_print(4, 0, 0, 0, 0, 0);	// msg 4: incompatible switch combination 
-			error = true;
+			ALICE_print(4, 0, 0, 0, 0, 0);	/* msg 4: incompatible switch combination */
+			error = TRUE;
 			break;
 		}
 		switches |= table->in_sw_value;
 
-		if ((table->in_sw_value & (sw_shut | sw_online)) && (argc > 1)) {
-			ALICE_down_case(*argv, string, sizeof(string));
-			bool found = false;
-			if ((found = (strcmp(string, "normal") == 0)))
-				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_NORMAL;
-			else
-			if ((found = (strcmp(string, "multi") == 0)))
-				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_MULTI;
-			else
-			if ((found = (strcmp(string, "single") == 0)))
-				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_SINGLE;
-			else
-			if ((found = (strcmp(string, "full") == 0)))
-				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_FULL;
-			// Consume argument only if we identified mode
-			// Let's hope that database with names of modes above are unusual
-			if (found) {
-				argv++;
-				argc--;
-			}
-		}
-
 		if (table->in_sw_value & sw_begin_log) {
 			if (--argc <= 0) {
-				ALICE_error(5);	// msg 5: replay log pathname required 
+				ALICE_error(5);	/* msg 5: replay log pathname required */
 			}
-			expand_filename(*argv++, tdgbl->ALICE_data.ua_log_file);
+			expand_filename(*argv++,	/* TMN: cast away volatile */
+							(TEXT *) tdgbl->ALICE_data.ua_log_file);
 		}
 
 		if (table->in_sw_value & (sw_buffers)) {
 			if (--argc <= 0) {
-				ALICE_error(6);	// msg 6: number of page buffers for cache required 
+				ALICE_error(6);	/* msg 6: number of page buffers for cache required */
 			}
-			ALICE_down_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string);
 			if ((!(tdgbl->ALICE_data.ua_page_buffers = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7);	// msg 7: numeric value required 
+				ALICE_error(7);	/* msg 7: numeric value required */
 			}
 			if (tdgbl->ALICE_data.ua_page_buffers < 0) {
-				ALICE_error(8);	// msg 8: positive numeric value required 
+				ALICE_error(8);	/* msg 8: positive numeric value required */
 			}
 		}
 
 		if (table->in_sw_value & (sw_housekeeping)) {
 			if (--argc <= 0) {
-				ALICE_error(113);	// msg 113: dialect number required 
+				ALICE_error(113);	/* msg 113: dialect number required */
 			}
-			ALICE_down_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string);
 			if ((!(tdgbl->ALICE_data.ua_sweep_interval = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7);	// msg 7: numeric value required 
+				ALICE_error(7);	/* msg 7: numeric value required */
 			}
 			if (tdgbl->ALICE_data.ua_sweep_interval < 0) {
-				ALICE_error(8);	// msg 8: positive numeric value required 
+				ALICE_error(8);	/* msg 8: positive numeric value required */
 			}
 		}
 
 		if (table->in_sw_value & (sw_set_db_dialect)) {
 			if (--argc <= 0) {
-				ALICE_error(113);	// msg 113: dialect info is required XXX 
+				ALICE_error(113);	/* msg 113: dialect info is required XXX */
 			}
 
-			ALICE_down_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string);
 
 			if ((!(tdgbl->ALICE_data.ua_db_SQL_dialect = atoi(string))) &&
 				(strcmp(string, "0")))
 			{
-				ALICE_error(7);	// msg 7: numeric value required 
+				ALICE_error(7);	/* msg 7: numeric value required */
 			}
 
 			// JMB: Removed because tdgbl->ALICE_data.ua_db_SQL_dialect is
@@ -426,14 +426,13 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & (sw_commit | sw_rollback | sw_two_phase)) {
 			if (--argc <= 0) {
-				ALICE_error(10);	// msg 10: transaction number or "all" required 
+				ALICE_error(10);	/* msg 10: transaction number or "all" required */
 			}
-			ALICE_down_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string);
 			if (!(tdgbl->ALICE_data.ua_transaction = atoi(string))) {
 				if (strcmp(string, "all")) {
-					ALICE_error(10);	// msg 10: transaction number or "all" required 
-				}
-				else {
+					ALICE_error(10);	/* msg 10: transaction number or "all" required */
+				} else {
 					switches |= sw_list;
 				}
 			}
@@ -441,90 +440,86 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & sw_write) {
 			if (--argc <= 0) {
-				ALICE_error(11);	// msg 11: "sync" or "async" required 
+				ALICE_error(11);	/* msg 11: "sync" or "async" required */
 			}
-			ALICE_down_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string);
 			if (!strcmp(string, ALICE_SW_SYNC)) {
-				tdgbl->ALICE_data.ua_force = true;
-			}
-			else if (!strcmp(string, ALICE_SW_ASYNC)) {
-				tdgbl->ALICE_data.ua_force = false;
-			}
-			else {
-				ALICE_error(11);	// msg 11: "sync" or "async" required 
+				tdgbl->ALICE_data.ua_force = TRUE;
+			} else if (!strcmp(string, ALICE_SW_ASYNC)) {
+				tdgbl->ALICE_data.ua_force = FALSE;
+			} else {
+				ALICE_error(11);	/* msg 11: "sync" or "async" required */
 			}
 		}
 
 		if (table->in_sw_value & sw_use) {
 			if (--argc <= 0) {
-				ALICE_error(12);	// msg 12: "full" or "reserve" required 
+				ALICE_error(12);	/* msg 12: "full" or "reserve" required */
 			}
-			ALICE_down_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string);
 			if (!strcmp(string, "full")) {
-				tdgbl->ALICE_data.ua_use = true;
-			}
-			else if (!strcmp(string, "reserve")) {
-				tdgbl->ALICE_data.ua_use = false;
-			}
-			else {
-				ALICE_error(12);	// msg 12: "full" or "reserve" required 
+				tdgbl->ALICE_data.ua_use = TRUE;
+			} else if (!strcmp(string, "reserve")) {
+				tdgbl->ALICE_data.ua_use = FALSE;
+			} else {
+				ALICE_error(12);	/* msg 12: "full" or "reserve" required */
 			}
 		}
 
 		if (table->in_sw_value & sw_user) {
 			if (--argc <= 0) {
-				ALICE_error(13);	// msg 13: user name required 
+				ALICE_error(13);	/* msg 13: user name required */
 			}
-			tdgbl->ALICE_data.ua_user = reinterpret_cast<UCHAR*>(*argv++);
+			tdgbl->ALICE_data.ua_user =
+				const_cast<UCHAR* volatile>(reinterpret_cast<UCHAR*>(*argv++));
 		}
 
 		if (table->in_sw_value & sw_password) {
 			if (--argc <= 0) {
-				ALICE_error(14);	// msg 14: password required 
+				ALICE_error(14);	/* msg 14: password required */
 			}
-			tdgbl->ALICE_data.ua_password = reinterpret_cast<UCHAR*>(*argv++);
+			tdgbl->ALICE_data.ua_password =
+				const_cast<UCHAR* volatile>(reinterpret_cast<UCHAR*>(*argv++));
 		}
 
 		if (table->in_sw_value & sw_disable) {
 			if (--argc <= 0) {
-				ALICE_error(15);	// msg 15: subsystem name  
+				ALICE_error(15);	/* msg 15: subsystem name  */
 			}
-			ALICE_down_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string);
 			if (strcmp(string, "wal")) {
-				ALICE_error(16);	// msg 16: "wal" required 
+				ALICE_error(16);	/* msg 16: "wal" required */
 			}
 		}
 
 		if (table->in_sw_value & (sw_attach | sw_force | sw_tran | sw_cache)) {
 			if (--argc <= 0) {
-				ALICE_error(17);	// msg 17: number of seconds required 
+				ALICE_error(17);	/* msg 17: number of seconds required */
 			}
-			ALICE_down_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string);
 			if ((!(tdgbl->ALICE_data.ua_shutdown_delay = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7);	// msg 7: numeric value required 
+				ALICE_error(7);	/* msg 7: numeric value required */
 			}
 			if (tdgbl->ALICE_data.ua_shutdown_delay < 0
 				|| tdgbl->ALICE_data.ua_shutdown_delay > 32767)
 			{
-				ALICE_error(18);	// msg 18: numeric value between 0 and 32767 inclusive required 
+				ALICE_error(18);	/* msg 18: numeric value between 0 and 32767 inclusive required */
 			}
 		}
 
 		if (table->in_sw_value & sw_mode) {
 			if (--argc <= 0) {
-				ALICE_error(110);	// msg 110: "read_only" or "read_write" required 
+				ALICE_error(110);	/* msg 110: "read_only" or "read_write" required */
 			}
-			ALICE_down_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string);
 			if (!strcmp(string, ALICE_SW_MODE_RO)) {
-				tdgbl->ALICE_data.ua_read_only = true;
-			}
-			else if (!strcmp(string, ALICE_SW_MODE_RW)) {
-				tdgbl->ALICE_data.ua_read_only = false;
-			}
-			else {
-				ALICE_error(110);	// msg 110: "read_only" or "read_write" required 
+				tdgbl->ALICE_data.ua_read_only = TRUE;
+			} else if (!strcmp(string, ALICE_SW_MODE_RW)) {
+				tdgbl->ALICE_data.ua_read_only = FALSE;
+			} else {
+				ALICE_error(110);	/* msg 110: "read_only" or "read_write" required */
 			}
 		}
 
@@ -535,20 +530,20 @@ int common_main(int			argc,
 	if ((switches & sw_shut)
 		&& !(switches & ((sw_attach | sw_force | sw_tran | sw_cache))))
 	{
-		ALICE_error(19);	// msg 19: must specify type of shutdown 
+		ALICE_error(19);	/* msg 19: must specify type of shutdown */
 	}
 
 //  catch the case where -z is only command line option
 //  switches is unset since sw_z == 0
 	if (!switches && !error && table->in_sw_value == sw_z) {
-		exit_local(FINI_OK, tdgbl);
+		EXIT(FINI_OK);
 	}
 
 	if (!switches || !(switches & ~(sw_user | sw_password))) {
 #ifndef SUPERSERVER
-		ALICE_print(20, 0, 0, 0, 0, 0);	// msg 20: please retry, specifying an option 
+		ALICE_print(20, 0, 0, 0, 0, 0);	/* msg 20: please retry, specifying an option */
 #endif
-		error = true;
+		error = TRUE;
 	}
 
 	if (error) {
@@ -556,18 +551,18 @@ int common_main(int			argc,
 		CMD_UTIL_put_svc_status(tdgbl->service_blk->svc_status, ALICE_MSG_FAC,
 								20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-		tdgbl->service_blk->svc_started();
+		SVC_STARTED(tdgbl->service_blk);
 #else
-		ALICE_print(21, 0, 0, 0, 0, 0);	// msg 21: plausible options are:\n 
+		ALICE_print(21, 0, 0, 0, 0, 0);	/* msg 21: plausible options are:\n */
 		for (table = alice_in_sw_table; table->in_sw_msg; table++)
 			ALICE_print(table->in_sw_msg, 0, 0, 0, 0, 0);
-		ALICE_print(22, 0, 0, 0, 0, 0);	// msg 22: \n    qualifiers show the major option in parenthesis 
+		ALICE_print(22, 0, 0, 0, 0, 0);	/* msg 22: \n    qualifiers show the major option in parenthesis */
 #endif
-		exit_local(FINI_ERROR, tdgbl);
+		EXIT(FINI_ERROR);
 	}
 
 	if (!database) {
-		ALICE_error(23);	// msg 23: please retry, giving a database name 
+		ALICE_error(23);	/* msg 23: please retry, giving a database name */
 	}
 
 	//  generate the database parameter block for the attach,
@@ -583,7 +578,9 @@ int common_main(int			argc,
 	{
 		ret = EXE_action(database, switches);
 
-		const SLONG* ua_val_errors = tdgbl->ALICE_data.ua_val_errors;
+		// cast away volatile
+		const SLONG* ua_val_errors = 
+			const_cast<SLONG*>(tdgbl->ALICE_data.ua_val_errors);
 
 		if (!ua_val_errors[VAL_INVALID_DB_VERSION])
 		{
@@ -597,7 +594,7 @@ int common_main(int			argc,
 			}
 
 			if (any_error) {
-				ALICE_print(24, 0, 0, 0, 0, 0);	// msg 24: Summary of validation errors\n 
+				ALICE_print(24, 0, 0, 0, 0, 0);	/* msg 24: Summary of validation errors\n */
 
 				for (int i = 0; i < MAX_VAL_ERRORS; ++i) {
 					if (ua_val_errors[i]) {
@@ -613,35 +610,36 @@ int common_main(int			argc,
 		ALICE_print_status(tdgbl->status);
 	}
 
-	exit_local(FINI_OK, tdgbl);
+	EXIT(FINI_OK);
 
 	}	// try
 	catch (const std::exception&)
 	{
-		// All "calls" to exit_local(), normal and error exits, wind up here 
+		/* All "calls" to EXIT(), normal and error exits, wind up here */
 
-		tdgbl->service_blk->svc_started();
+		SVC_STARTED(tdgbl->service_blk);
 
 		int exit_code = tdgbl->exit_code;
 
-		// Close the status output file 
-		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
+		/* Close the status output file */
+		if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
 			ib_fclose(tdgbl->output_file);
 			tdgbl->output_file = NULL;
 		}
 
-		// Free all unfreed memory used by Gfix itself 
+		/* Free all unfreed memory used by Gfix itself */
 		ALLA_fini();
 
 		RESTORE_THREAD_DATA;
 
-		gds__free(tdgbl);
+		// cast away volatile
+		gds__free((void*)tdgbl);
 
 #if defined(DEBUG_GDS_ALLOC) && !defined(SUPERSERVER)
 		gds_alloc_report(0, __FILE__, __LINE__);
 #endif
 
-		// All returns occur from this point - even normal returns 
+		/* All returns occur from this point - even normal returns */
 		return exit_code;
 	}	// catch
 
@@ -654,10 +652,11 @@ int common_main(int			argc,
 //		Copy a string, down casing as we go.
 //
 
-void ALICE_down_case(const TEXT* in, TEXT* out, const size_t buf_size)
+void ALICE_down_case(TEXT * in, TEXT * out)
 {
-	const TEXT* const end = out + buf_size - 1;
-	for (TEXT c = *in++; c && out < end; c = *in++) {
+	TEXT c;
+
+	while (c = *in++) {
 		*out++ = (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;
 	}
 	*out = 0;
@@ -670,11 +669,11 @@ void ALICE_down_case(const TEXT* in, TEXT* out, const size_t buf_size)
 //
 
 void ALICE_print(USHORT	number,
-				 const TEXT*	arg1,
-				 const TEXT*	arg2,
-				 const TEXT*	arg3,
-				 const TEXT*	arg4,
-				 const TEXT*	arg5)
+				 TEXT*	arg1,
+				 TEXT*	arg2,
+				 TEXT*	arg3,
+				 TEXT*	arg4,
+				 TEXT*	arg5)
 {
 	TEXT buffer[256];
 
@@ -687,18 +686,21 @@ void ALICE_print(USHORT	number,
 
 //____________________________________________________________
 //
-//		Print error message. Use isc_interprete_cpp
+//		Print error message. Use isc_interprete
 //		to allow redirecting output.
 //
 
-void ALICE_print_status(const ISC_STATUS* status_vector)
+void ALICE_print_status(ISC_STATUS* status_vector)
 {
+	ISC_STATUS*	vector;
+	SCHAR	s[1024];
+
 	if (status_vector)
 	{
-		const ISC_STATUS* vector = status_vector;
+		vector = status_vector;
 #ifdef SUPERSERVER
 		int i = 0, j;
-		Tgbl* tdgbl = GET_THREAD_DATA;
+		TGBL tdgbl = GET_THREAD_DATA;
 		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
 			while (*status && (++i < ISC_STATUS_LENGTH)) {
@@ -709,15 +711,13 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 			}
 		}
 #endif
-
-		SCHAR s[1024];
-		isc_interprete_cpp(s, &vector);
+		isc_interprete(s, &vector);
 		translate_cp(s);
 		alice_output("%s\n", s);
 
-		// Continuation of error 
+		/* Continuation of error */
 		s[0] = '-';
-		while (isc_interprete_cpp(s + 1, &vector)) {
+		while (isc_interprete(s + 1, &vector)) {
 			translate_cp(s);
 			alice_output("%s\n", s);
 		}
@@ -731,13 +731,13 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 //
 
 void ALICE_error(USHORT	number,
-				 const TEXT*	arg1,
-				 const TEXT*	arg2,
-				 const TEXT*	arg3,
-				 const TEXT*	arg4,
-				 const TEXT*	arg5)
+				 TEXT*	arg1,
+				 TEXT*	arg2,
+				 TEXT*	arg3,
+				 TEXT*	arg4,
+				 TEXT*	arg5)
 {
-	Tgbl* tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 	TEXT buffer[256];
 
 #ifdef SUPERSERVER
@@ -755,7 +755,7 @@ void ALICE_error(USHORT	number,
 					arg2, arg3, arg4, arg5);
 	translate_cp(buffer);
 	alice_output("%s\n", buffer);
-	exit_local(FINI_ERROR, tdgbl);
+	EXIT(FINI_ERROR);
 }
 
 
@@ -774,22 +774,26 @@ static void ALICE_error(USHORT number)
 //		Platform independent output routine.
 //
 
-static void alice_output(const SCHAR* format, ...)
+static void alice_output(const SCHAR * format, ...)
 {
 	va_list arglist;
 	UCHAR buf[1000];
 	int exit_code;
 
-	Tgbl* tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (tdgbl->sw_redirect == NOOUTPUT || format[0] == '\0') {
-		exit_code = tdgbl->output_proc(tdgbl->output_data, (UCHAR *)(""));
+		exit_code =
+			tdgbl->output_proc(tdgbl->output_data,
+							   (UCHAR *)(""));
 	}
-	else if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
+	else if (tdgbl->sw_redirect == TRUE && tdgbl->output_file != NULL) {
 		VA_START(arglist, format);
 		ib_vfprintf(tdgbl->output_file, format, arglist);
 		va_end(arglist);
-		exit_code = tdgbl->output_proc(tdgbl->output_data, (UCHAR *)(""));
+		exit_code =
+			tdgbl->output_proc(tdgbl->output_data,
+							   (UCHAR *)(""));
 	}
 	else {
 		VA_START(arglist, format);
@@ -800,7 +804,7 @@ static void alice_output(const SCHAR* format, ...)
 	}
 
 	if (exit_code != 0) {
-		exit_local(exit_code, tdgbl);
+		EXIT(exit_code);
 	}
 }
 
@@ -825,9 +829,9 @@ static inline void translate_cp(TEXT* sz)
 //
 //		Fully expand a file name.  If the file doesn't exist, do something
 //		intelligent.
-//      CVC: The above comment is either a joke or a copy/paste.
+//
 
-static void expand_filename(const TEXT* filename, TEXT* expanded_name)
+static void expand_filename(TEXT * filename, TEXT * expanded_name)
 {
 	strcpy(expanded_name, filename);
 }

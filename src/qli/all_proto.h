@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		all_proto.h
- *	DESCRIPTION:	Prototype header file for all.cpp
+ *	DESCRIPTION:	Prototype header file for all.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,20 +21,19 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_ALL_PROTO_H
-#define QLI_ALL_PROTO_H
+#ifndef _QLI_ALL_PROTO_H_
+#define _QLI_ALL_PROTO_H_
 
-blk*	ALLQ_alloc(plb*, UCHAR, int);
-blk*	ALLQ_extend(blk**, int);
-void	ALLQ_fini(void);
-void	ALLQ_free(SCHAR*);
-void	ALLQ_init(void);
-SCHAR*	ALLQ_malloc(SLONG);
-plb*	ALLQ_pool(void);
-void	ALLQ_push(blk*, qli_lls**);
-blk*	ALLQ_pop(qli_lls**);
-void	ALLQ_release(frb*);
-void	ALLQ_rlpool(plb*);
+extern struct blk	*ALLQ_alloc (struct plb *, UCHAR, int);
+extern struct blk	*ALLQ_extend (struct blk **, int);
+extern void		ALLQ_fini (void);
+extern void		ALLQ_free (SCHAR *);
+extern void		ALLQ_init (void);
+extern SCHAR		*ALLQ_malloc (SLONG);
+extern struct plb	*ALLQ_pool (void);
+extern void		ALLQ_push (struct blk *, struct lls **);
+extern struct blk	*ALLQ_pop (struct lls **);
+extern void		ALLQ_release (struct frb *);
+extern void		ALLQ_rlpool (struct plb *);
 
-#endif // QLI_ALL_PROTO_H
-
+#endif /* _QLI_ALL_PROTO_H_ */

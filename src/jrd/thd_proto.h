@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		thd_proto.h
- *	DESCRIPTION:	Prototype header file for thd.cpp
+ *	DESCRIPTION:	Prototype header file for thd.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,25 +21,27 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_THD_PROTO_H
-#define JRD_THD_PROTO_H
+#ifndef _JRD_THD_PROTO_H_
+#define _JRD_THD_PROTO_H_
 
 #include "../jrd/isc.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif
+
 int		API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR, void*, int, int,
 										 void*);
-}
 
-struct thdd* THD_get_specific(void);
-void	THD_init(void);
-void	THD_cleanup(void);
-int		THD_mutex_destroy(struct mutx_t*);
-void	THD_put_specific(struct thdd*);
-int		THD_wlck_destroy(struct wlck_t*);
-int		THD_wlck_init(struct wlck_t*);
-int		THD_wlck_lock(struct wlck_t*, USHORT);
-int		THD_wlck_unlock(struct wlck_t*);
+struct thdd* DLL_EXPORT THD_get_specific(void);
+void	DLL_EXPORT THD_init(void);
+void	DLL_EXPORT THD_cleanup(void);
+int		DLL_EXPORT THD_mutex_destroy(struct mutx_t*);
+void	DLL_EXPORT THD_put_specific(struct thdd*);
+int		DLL_EXPORT THD_wlck_destroy(struct wlck_t*);
+int		DLL_EXPORT THD_wlck_init(struct wlck_t*);
+int		DLL_EXPORT THD_wlck_lock(struct wlck_t*, USHORT);
+int		DLL_EXPORT THD_wlck_unlock(struct wlck_t*);
 
 long	THD_get_thread_id(void);
 void	THD_getspecific_data(void** t_data);
@@ -60,7 +62,7 @@ int		THD_rec_mutex_lock(struct rec_mutx_t*);
 int		THD_rec_mutex_unlock(struct rec_mutx_t*);
 #endif
 
-struct thdd* THD_restore_specific(void);
+struct thdd* DLL_EXPORT THD_restore_specific(void);
 int		THD_resume(THD_T);
 void	THD_sleep(ULONG);
 int		THD_suspend(THD_T);
@@ -68,5 +70,8 @@ void	THD_wlck_destroy_n(struct wlck_t*, USHORT);
 void	THD_wlck_init_n(struct wlck_t*, USHORT);
 void	THD_yield(void);
 
-#endif // JRD_THD_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_THD_PROTO_H_ */

@@ -52,13 +52,20 @@
 #undef CHAR
 #endif
 #define CHAR	SCHAR
-
+/* #define BYTE	UCHAR */
+#define INT8	SCHAR
+#define UINT8	UCHAR
+#define INT16	SSHORT
 #define UINT16	USHORT
+#define INT32	SLONG
+#define UINT32	ULONG
+
+#define BOOL	UINT16
 
 #ifdef WIN_NT
-#define FB_DLL_EXPORT	__declspec(dllexport)
+#define DLL_EXPORT	__declspec(dllexport)
 #else
-#define FB_DLL_EXPORT
+#define DLL_EXPORT
 #endif
 
 
@@ -95,6 +102,75 @@
 #ifndef FALSE
 #define           FALSE 0
 #endif
+
+/*
+//For pointers
+*/
+#ifndef NULL
+#define           NULL 0
+#endif
+
+#ifndef NULLP
+#define           NULLP (0)
+#endif
+
+#ifndef VOID
+#define           VOID void
+#endif
+
+#ifndef CHAR
+#define           CHAR char
+#endif
+
+#ifndef BYTE
+#define           BYTE unsigned char
+#endif
+
+#ifndef INT8
+#define           INT8 char
+#endif
+
+#ifndef UINT8
+#define           UINT8 unsigned char
+#endif
+
+#ifndef INT16
+#define           INT16 int
+#endif
+
+#ifndef UINT16
+#define           UINT16 unsigned int
+#endif
+
+#ifndef INT32
+#define           INT32 long
+#endif
+
+#ifndef UINT32
+#define           UINT32 unsigned long
+#endif
+
+#ifndef BOOL
+#define           BOOL int
+#endif
+
+#define far
+
+typedef VOID far *pVOID;
+typedef pVOID far *ppVOID;
+typedef CHAR far *pCHAR;
+typedef BYTE far *pBYTE;
+typedef INT8 far *pINT8;
+typedef UINT8 far *pUINT8;
+typedef INT32 far *pINT32;
+typedef UINT32 far *pUINT32;
+typedef BOOL far *pBOOL;
+typedef INT16 far *pINT16;
+typedef UINT16 far *pUINT16;
+typedef UINT16 PDXResult;
+
+#define hFILE  INT16
+#define phFILE pINT16
 
 /*
 //-----------------------------------------------------------------
@@ -245,8 +321,8 @@ struct ExpandChar {
 struct CompressPair {
 
 	BYTE CharPair[2];
-	SortOrderTblEntry CaseWeight;
-	SortOrderTblEntry NoCaseWeight;
+	struct SortOrderTblEntry CaseWeight;
+	struct SortOrderTblEntry NoCaseWeight;
 };
 
 
@@ -481,19 +557,9 @@ struct CompressPair {
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.22 2003-11-23 16:44:26 skidder Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.19 2003-02-28 12:45:35 brodsom Exp $
 
 //	$Log: not supported by cvs2svn $
-//	Revision 1.21  2003/09/16 10:33:30  aafemt
-//	'struct' removal
-//	
-//	Revision 1.20  2003/08/21 16:22:11  brodsom
-//	-Replace STATIC with static
-//	-Remove a few unused macros
-//	
-//	Revision 1.19  2003/02/28 12:45:35  brodsom
-//	Remove FAR_VARIABLE
-//	
 //	Revision 1.18  2003/02/14 13:47:27  eku
 //	Fixed nested comment.
 //	

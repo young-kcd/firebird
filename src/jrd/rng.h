@@ -21,27 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_RNG_H
-#define JRD_RNG_H
+#ifndef _JRD_RNG_H_
+#define _JRD_RNG_H_
 
 /* refresh range block used to store info about a particular
    set of records in a refresh range */
 
-namespace Jrd {
-class Attachment;
-class vec;
-
-class RefreshRange : public pool_alloc_rpt<SCHAR, type_rng>
+class rng : public pool_alloc_rpt<SCHAR, type_rng>
 {
     public:
-	RefreshRange*	rng_next;			/* next in list of ranges being created */
-	Attachment*		rng_attachment;		/* attachment that owns range */
-	RefreshRange*	rng_lck_next;		/* next in list of ranges interested in a lock */
-	vec*		rng_relation_locks;	/* relation locks */
-	vec*		rng_relation_trans;	/* relation transactions */
-	vec*		rng_record_locks;	/* record locks */
-	vec*		rng_page_locks;		/* page locks */
-	vec*		rng_transaction_locks;	/* transaction locks */
+	struct rng *rng_next;		/* next in list of ranges being created */
+	struct att *rng_attachment;	/* attachment that owns range */
+	struct rng *rng_lck_next;	/* next in list of ranges interested in a lock */
+	struct vec *rng_relation_locks;	/* relation locks */
+	struct vec *rng_relation_trans;	/* relation transactions */
+	struct vec *rng_record_locks;	/* record locks */
+	struct vec *rng_page_locks;	/* page locks */
+	struct vec *rng_transaction_locks;	/* transaction locks */
 	USHORT rng_relations;		/* count of relations in range */
 	USHORT rng_records;			/* count of records in range */
 	USHORT rng_pages;			/* count of index pages in range */
@@ -51,12 +47,10 @@ class RefreshRange : public pool_alloc_rpt<SCHAR, type_rng>
 	USHORT rng_event_length;	/* length of event name */
 	UCHAR rng_event[1];			/* event name to post */
 };
+typedef rng *RNG;
 
 #define RNG_posted	1			/* range has already been posted */
 
 #define RANGE_NAME_LENGTH	31	/* max. length of range name for the event */
 
-} //namespace Jrd
-
-#endif // JRD_RNG_H
-
+#endif /* _JRD_RNG_H_ */

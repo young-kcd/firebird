@@ -18,7 +18,7 @@
 #include <string.h>
 #include "../jrd/status.h"
 #include "../jrd/gdsassert.h"
-#include "gen/iberror.h"
+#include "gen/codes.h"
 #include "../jrd/gds_proto.h"
 
 
@@ -35,52 +35,52 @@ void STUFF_STATUS_function(ISC_STATUS* status_vector, ISC_STATUS status, va_list
 
 	ISC_STATUS* p = status_vector;
 
-	*p++ = isc_arg_gds;
+	*p++ = gds_arg_gds;
 	*p++ = status;
 
 	while ((type = va_arg(args, int)) && ((p - status_vector) < 17))
 	{
 		switch (*p++ = type)
 		{
-			case isc_arg_gds:
+			case gds_arg_gds:
 				*p++ = va_arg(args, ISC_STATUS);
 				break;
 
-			case isc_arg_string:
+			case gds_arg_string:
 				{
 					ISC_STATUS* q = va_arg(args, ISC_STATUS*);
 					if (strlen((TEXT *) q) >= MAX_ERRSTR_LEN)
 					{
-						*(p - 1) = isc_arg_cstring;
+						*(p - 1) = gds_arg_cstring;
 						*p++ = (ISC_STATUS) MAX_ERRSTR_LEN;
 					}
 					*p++ = (ISC_STATUS) q;
 				}
 				break;
 
-			case isc_arg_interpreted:
+			case gds_arg_interpreted:
 				*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 				break;
 
-			case isc_arg_cstring:
+			case gds_arg_cstring:
 				len = (int) va_arg(args, int);
 				*p++ = (ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
 				*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 				break;
 
-			case isc_arg_number:
+			case gds_arg_number:
 				*p++ = (ISC_STATUS) va_arg(args, SLONG);
 				break;
 
-			case isc_arg_vms:
-			case isc_arg_unix:
-			case isc_arg_win32:
+			case gds_arg_vms:
+			case gds_arg_unix:
+			case gds_arg_win32:
 			default:
 				*p++ = (ISC_STATUS) va_arg(args, int);
 				break;
 		}
 	}
-	*p = isc_arg_end;
+	*p = gds_arg_end;
 }
 
 
@@ -96,7 +96,7 @@ void PARSE_STATUS(ISC_STATUS * status_vector, int &length, int &warning)
 
     int i = 0;
 
-	for (; status_vector[i] != isc_arg_end; i++, length++)
+	for (; status_vector[i] != gds_arg_end; i++, length++)
 	{
 		switch (status_vector[i])
 		{
@@ -104,28 +104,28 @@ void PARSE_STATUS(ISC_STATUS * status_vector, int &length, int &warning)
 			if (!warning)
 				warning = i;	// find the very first
 			// fallthrought intended
-		case isc_arg_gds:
-		case isc_arg_string:
-		case isc_arg_number:
-		case isc_arg_interpreted:
-		case isc_arg_vms:
-		case isc_arg_unix:
-		case isc_arg_win32:
+		case gds_arg_gds:
+		case gds_arg_string:
+		case gds_arg_number:
+		case gds_arg_interpreted:
+		case gds_arg_vms:
+		case gds_arg_unix:
+		case gds_arg_win32:
 			i++;
 			length++;
 			break;
 
-		case isc_arg_cstring:
+		case gds_arg_cstring:
 			i += 2;
 			length += 2;
 			break;
 
 		default:
-			fb_assert(FALSE);
+			assert(FALSE);
 			break;
 		}
 	}
 	if (i) {
-		length++;				// isc_arg_end is counted
+		length++;				// gds_arg_end is counted
 	}
 }

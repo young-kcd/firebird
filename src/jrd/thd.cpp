@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		thd.cpp
+ *	MODULE:		thd.c
  *	DESCRIPTION:	Thread support routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -53,6 +53,9 @@
 #include <thread.h>
 #include <signal.h>
 #endif
+
+
+extern "C" {
 
 
 #ifndef ANY_THREADING
@@ -232,7 +235,7 @@ THDD THD_get_specific(void)
 
 
 #ifndef GET_SPECIFIC_DEFINED
-THDD THD_get_specific(void)
+THDD DLL_EXPORT THD_get_specific(void)
 {
 /**************************************
  *
@@ -266,7 +269,7 @@ void THD_getspecific_data(void **t_data)
 
 /* There are some circumstances in which we do not call THD_putspecific_data(),
    such as services API, and local access on NT. As result of that, t_init
-   does not get initialized. So don't use an fb_assert in here but rather do
+   does not get initialized. So don't use an assert in here but rather do
    the work only if t_init is initialised */
 	if (t_init) {
 #ifdef POSIX_THREADS
@@ -289,7 +292,7 @@ void THD_getspecific_data(void **t_data)
 }
 
 
-void THD_cleanup(void)
+void DLL_EXPORT THD_cleanup(void)
 {
 /**************************************
  *
@@ -326,7 +329,7 @@ void THD_cleanup(void)
 }
 
 
-void THD_init(void)
+void DLL_EXPORT THD_init(void)
 {
 /**************************************
  *
@@ -343,11 +346,11 @@ void THD_init(void)
    pthread_once. This function makes sure that init() routine
    will be called only once by the first thread to call pthread_once.
 */
-#ifndef PTHREAD_ONCE_INIT
+#ifdef HP10
 	static pthread_once_t once = pthread_once_init;
 #else
 	static pthread_once_t once = PTHREAD_ONCE_INIT;
-#endif
+#endif /* HP10 */
 
 	pthread_once(&once, init);
 
@@ -359,7 +362,7 @@ void THD_init(void)
 }
 
 
-void THD_init_data(void)
+void DLL_EXPORT THD_init_data(void)
 {
 /**************************************
  *
@@ -378,11 +381,11 @@ void THD_init_data(void)
    pthread_once. This function makes sure that init_tkey() routine
    will be called only once by the first thread to call pthread_once.
 */
-#ifndef PTHREAD_ONCE_INIT
+#ifdef HP10
 	static pthread_once_t once = pthread_once_init;
 #else
 	static pthread_once_t once = PTHREAD_ONCE_INIT;
-#endif
+#endif /* HP10 */
 
 	pthread_once(&once, init_tkey);
 
@@ -417,7 +420,7 @@ int THD_mutex_destroy(MUTX_T * mutex)
 	state = pthread_mutex_destroy(mutex);
 	if (!state)
 		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
+	assert(state == -1);		/* if state is not 0, it should be -1 */
 	return errno;
 
 #else
@@ -449,7 +452,7 @@ int THD_mutex_init(MUTX_T * mutex)
 	state = pthread_mutex_init(mutex, pthread_mutexattr_default);
 	if (!state)
 		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
+	assert(state == -1);		/* if state is not 0, it should be -1 */
 	return errno;
 
 #else
@@ -480,7 +483,7 @@ int THD_mutex_lock(MUTX_T * mutex)
 	state = pthread_mutex_lock(mutex);
 	if (!state)
 		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
+	assert(state == -1);		/* if state is not 0, it should be -1 */
 	return errno;
 
 #else
@@ -511,7 +514,7 @@ int THD_mutex_unlock(MUTX_T * mutex)
 	state = pthread_mutex_unlock(mutex);
 	if (!state)
 		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
+	assert(state == -1);		/* if state is not 0, it should be -1 */
 	return errno;
 
 #else
@@ -751,7 +754,7 @@ int THD_mutex_unlock(MUTX_T * mutex)
 
 
 #ifndef THREAD_MUTEXES_DEFINED
-int THD_mutex_destroy(MUTX_T * mutex)
+int DLL_EXPORT THD_mutex_destroy(MUTX_T * mutex)
 {
 /**************************************
  *
@@ -1135,7 +1138,7 @@ int THD_wlck_unlock(WLCK_T * wlock)
 
 
 #ifndef RW_LOCK_DEFINED
-int THD_wlck_destroy(WLCK_T * wlock)
+int DLL_EXPORT THD_wlck_destroy(WLCK_T * wlock)
 {
 /**************************************
  *
@@ -1151,7 +1154,7 @@ int THD_wlck_destroy(WLCK_T * wlock)
 }
 
 
-int THD_wlck_init(WLCK_T * wlock)
+int DLL_EXPORT THD_wlck_init(WLCK_T * wlock)
 {
 /**************************************
  *
@@ -1167,7 +1170,7 @@ int THD_wlck_init(WLCK_T * wlock)
 }
 
 
-int THD_wlck_lock(WLCK_T * wlock, USHORT type)
+int DLL_EXPORT THD_wlck_lock(WLCK_T * wlock, USHORT type)
 {
 /**************************************
  *
@@ -1183,7 +1186,7 @@ int THD_wlck_lock(WLCK_T * wlock, USHORT type)
 }
 
 
-int THD_wlck_unlock(WLCK_T * wlock)
+int DLL_EXPORT THD_wlck_unlock(WLCK_T * wlock)
 {
 /**************************************
  *
@@ -1234,7 +1237,7 @@ void THD_wlck_init_n(WLCK_T * wlocks, USHORT n)
 }
 
 
-void THD_put_specific(THDD new_context)
+void DLL_EXPORT THD_put_specific(THDD new_context)
 {
 /**************************************
  *
@@ -1257,7 +1260,7 @@ void THD_put_specific(THDD new_context)
 }
 
 
-void THD_putspecific_data(void *t_data)
+void DLL_EXPORT THD_putspecific_data(void *t_data)
 {
 /**************************************
  *
@@ -1290,7 +1293,7 @@ void THD_putspecific_data(void *t_data)
 }
 
 
-THDD THD_restore_specific(void)
+THDD DLL_EXPORT THD_restore_specific(void)
 {
 /**************************************
  *
@@ -1500,13 +1503,15 @@ void THD_sleep(ULONG milliseconds)
 #else
 
 #ifdef ANY_THREADING
-	event_t timer;
-	event_t* timer_ptr = &timer;
+	EVENT_T timer;
+	EVENT timer_ptr = &timer;
+	SLONG count;
 
 	ISC_event_init(&timer, 0, 0);
-	SLONG count = ISC_event_clear(&timer);
+	count = ISC_event_clear(&timer);
 
-	ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000, NULL, 0);
+	(void) ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000,
+						  (FPTR_VOID) 0, 0);
 	ISC_event_fini(&timer);
 #else /* !ANY_THREADING */
 	int seconds;
@@ -1665,8 +1670,16 @@ static void init(void)
 	THD_mutex_init(&ib_mutex);
 
 #ifdef POSIX_THREADS
+#ifdef HP10
+
+	pthread_keycreate(&specific_key, NULL);
+
+#else
+
 	pthread_key_create(&specific_key, NULL);
-#endif
+
+#endif /* HP10 */
+#endif /* POSIX_THREADS */
 
 #ifdef SOLARIS_MT
 	if (thr_keycreate(&specific_key, NULL)) {
@@ -1682,7 +1695,7 @@ static void init(void)
 		 * Note that we don't care if this thr_min_stack() is called or
 		 * not, we just need to have a reference to it to force a link error.
 		 */
-		thr_min_stack();
+		(void) thr_min_stack();
 		ib_perror("thr_keycreate");
 		exit(1);
 	}
@@ -1725,8 +1738,16 @@ static void init_tkey(void)
 #ifdef ANY_THREADING
 
 #ifdef POSIX_THREADS
+#ifdef HP10
+
+	pthread_keycreate(&t_key, NULL);
+
+#else
+
 	pthread_key_create(&t_key, NULL);
-#endif
+
+#endif /* HP10 */
+#endif /* POSIX_THREADS */
 
 #ifdef SOLARIS_MT
 	thr_keycreate(&t_key, NULL);
@@ -1872,7 +1893,7 @@ static int thread_start(
 
 	state = pthread_attr_create(&pattr);
 	if (state) {
-		fb_assert(state == -1);
+		assert(state == -1);
 		return errno;
 	}
 
@@ -1891,7 +1912,7 @@ static int thread_start(
 	if (stack_size < 0x40000L) {
 		state = pthread_attr_setstacksize(&pattr, 0x40000L);
 		if (state) {
-			fb_assert(state == -1);
+			assert(state == -1);
 			return errno;
 		}
 	}
@@ -1901,17 +1922,17 @@ static int thread_start(
 */
 	state = pthread_create(&thread, pattr, routine, arg);
 	if (state) {
-		fb_assert(state == -1);
+		assert(state == -1);
 		return errno;
 	}
 	state = pthread_detach(&thread);
 	if (state) {
-		fb_assert(state == -1);
+		assert(state == -1);
 		return errno;
 	}
 	state = pthread_attr_delete(&pattr);
 	if (state) {
-		fb_assert(state == -1);
+		assert(state == -1);
 		return errno;
 	}
 	return 0;
@@ -1945,8 +1966,8 @@ static int thread_start(
 	thread_t thread_id;
 	sigset_t new_mask, orig_mask;
 
-	sigfillset(&new_mask);
-	sigdelset(&new_mask, SIGALRM);
+	(void) sigfillset(&new_mask);
+	(void) sigdelset(&new_mask, SIGALRM);
 	if (rval = thr_sigsetmask(SIG_SETMASK, &new_mask, &orig_mask))
 		return rval;
 #if (defined SUPERCLIENT || defined SUPERSERVER)
@@ -1956,7 +1977,7 @@ static int thread_start(
 		thr_create(NULL, 0, (void* (*)(void*) ) routine, arg, (THR_BOUND | THR_DETACHED),
 				   &thread_id);
 #endif
-	thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);
+	(void) thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);
 
 	return rval;
 }
@@ -2082,3 +2103,4 @@ static int thread_start(
 #endif
 
 
+} // extern "C"

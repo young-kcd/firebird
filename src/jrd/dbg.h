@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_DBG_H
-#define JRD_DBG_H
+#ifndef _JRD_DBG_H_
+#define _JRD_DBG_H_
 
 enum s_type {
 	symb_routine,
@@ -38,5 +38,4 @@ typedef struct symb {
 	short symb_size;
 } *SYMB;
 
-#endif // JRD_DBG_H
-
+#endif /* _JRD_DBG_H_ */

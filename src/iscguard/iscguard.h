@@ -16,10 +16,15 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#define GUARDIAN_APP_NAME        "Firebird Guardian"
-#define GUARDIAN_APP_LABEL       "Firebird Guardian"
-#define GUARDIAN_CLASS_NAME      "FB_Guard"
-#define	FBSERVER	    "fbserver.exe"
+#define GUARDIAN_APP_NAME		"Firebird Guardian"
+#define GUARDIAN_APP_LABEL		"Firebird Guardian"
+#define GUARDIAN_CLASS_NAME		"FB_Guard"
+
+#define SS_EXECUTABLE			"fbserver.exe"
+#define CS_EXECUTABLE			"fb_inet_server.exe"
+#define FBSERVER \
+	((sw_arch == ARCH_SS) ? SS_EXECUTABLE : CS_EXECUTABLE)
+
 #define GUARDIAN_HELP_FILE "fbserver.hlp"
 
 /* Help Constants */
@@ -35,12 +40,19 @@
 #define NORMAL_EXIT	0
 #define CRASHED		-1
 
-typedef void (*FPTR_VOID) ();
+#ifdef VMS
+/* also defined in common.h, if this is changed remember to change common.h */
+#define STARTUP_ERROR   46
+#else /* if not VMS */
+/* also defined in common.h, if this is changed remember to change common.h */
+#define STARTUP_ERROR   2
+#endif /* VMS */
+#define args             args
 
-struct log_info {
+typedef void (*FPTR_VOID) ();
+typedef struct log_info {
 	char log_action[25];
 	char log_date[25];
 	char log_time[25];
-	log_info* next;
-};
-
+	struct log_info *next;
+} LOG_INFO;

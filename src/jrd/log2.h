@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	REPLAY Debugging Utility
- *	MODULE:		log2.h
+ *	MODULE:		arg.h
  *	DESCRIPTION:	Arguments for OSRI calls
  *
  * The contents of this file are subject to the Interbase Public
@@ -24,8 +24,8 @@
  *
  */
 
-#ifndef JRD_LOG2_H
-#define JRD_LOG2_H
+#ifndef _JRD_ARG_H_
+#define _JRD_ARG_H_
 
 /* This table will be used to pull off the argument types
    for recording in the log. The status vector is assumed
@@ -131,5 +131,4 @@ static const SCHAR arg_types1[log_max][10] = {
 #define MODE_APPEND	"a"
 #endif
 
-#endif // JRD_LOG2_H
-
+#endif /* _JRD_ARG_H_ */

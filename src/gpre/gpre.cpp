@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.55 2004-04-10 00:25:12 robocop Exp $
+//  $Id: gpre.cpp,v 1.26 2003-07-06 07:04:01 dimitr Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,11 +42,13 @@
 //
 //____________________________________________________________
 //
+//	$Id: gpre.cpp,v 1.26 2003-07-06 07:04:01 dimitr Exp $
 //
 
 #define GPRE_MAIN
 #define PARSER_MAIN
 #include "firebird.h"
+#include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
 #include "../gpre/gpre.h"
@@ -70,52 +72,54 @@
 #ifdef VMS
 #include <descrip.h>
 extern "C" {
-	int lib$get_foreign();
+extern int lib$get_foreign();
 } // extern "C"
 #endif
 
 
+extern "C" {
+
 #ifdef SMALL_FILE_NAMES
-const char* const SCRATCH		= "fb_q";
+#define SCRATCH		"fb_q"
 #else
-const char* const SCRATCH		= "fb_query_";
+#define SCRATCH		"fb_query_"
 #endif
 
-const char* const FOPEN_READ_TYPE		= "r";
-const char* const FOPEN_WRITE_TYPE	= "w";
+#ifndef FOPEN_READ_TYPE
+#define FOPEN_READ_TYPE		"r"
+#define FOPEN_WRITE_TYPE	"w"
+#endif
 
-static bool			all_digits(const char*);
-static bool			arg_is_string(SLONG, TEXT**, const TEXT*);
-static SSHORT		compare_ASCII7z(const char*, const char*);
-static SLONG		compile_module(SLONG, const TEXT*);
-static bool			file_rename(TEXT*, const TEXT*, const TEXT*);
+static BOOLEAN		all_digits(char *);
+static int			arg_is_string(SLONG, TEXT **, TEXT *);
+static SSHORT		compare_ASCII7z(char *, char *);
+static SLONG		compile_module(SLONG,TEXT*);
+static BOOLEAN		file_rename(TEXT *, TEXT *, TEXT *);
 #ifdef GPRE_FORTRAN
-static void			finish_based(act*);
+static void			finish_based(ACT);
 #endif
-static int			get_char(IB_FILE*);
-static bool			get_switches(int, TEXT**, const in_sw_tab_t*, SW_TAB,
-								 TEXT**);
+static int			get_char(IB_FILE *);
+static BOOLEAN		get_switches(int, TEXT **, IN_SW_TAB, SW_TAB, TEXT **);
 static TOK			get_token();
 static int			nextchar();
-static SLONG		pass1(const TEXT*);
+static SLONG		pass1(TEXT*);
 static void			pass2(SLONG);
 static void			print_switches();
-static void			remember_label(const TEXT*);
+static void			remember_label(TEXT *);
 //static IB_FILE*		reposition_file(IB_FILE *, SLONG);
 static void			return_char(SSHORT);
 static SSHORT		skip_white();
 
-// Program wide globals 
+/* Program wide globals */
 
 IB_FILE *input_file, *trace_file;
-const TEXT*	file_name;
+TEXT*	file_name;
 TEXT*	out_file_name;
 SLONG position, last_position, line_position, first_position,
 	prior_line_position;
-act* global_last_action;
-act* global_first_action;
+ACT last_action, first_action;
 UCHAR classes[256], fortran_labels[1024];
-const TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
+TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
 	*transaction_name, *database_name;
 
 static TEXT input_buffer[512], *input_char;
@@ -123,10 +127,10 @@ static TEXT input_buffer[512], *input_char;
 static DBB sw_databases;
 static USHORT sw_first;
 //static jmp_buf fatal_env;
-tok prior_token;
+struct tok prior_token;
 static TEXT *comment_start, *comment_stop;
 
-typedef void (*pfn_gen_routine) (const act*, int);
+typedef void (*pfn_gen_routine) (ACT, int);
 static pfn_gen_routine gen_routine;
 
 static TEXT trace_file_name[128];
@@ -135,8 +139,7 @@ static SLONG traced_position = 0;
 //___________________________________________________________________
 // Test if input language is cpp based.
 //
-bool isLangCpp(LANG_T lang)
-{
+bool isLangCpp(LANG_T lang) {
     if (lang == lang_cxx || lang == lang_internal) {
         return true;
     }
@@ -148,16 +151,16 @@ bool isLangCpp(LANG_T lang)
  * the default extensions for DML and host languages.
  */
 
-struct ext_table_t
+typedef struct ext_table_t
 {
 	lang_t			ext_language;
 	gpre_cmd_switch	ext_in_sw;
 	TEXT*			in;
 	TEXT*			out;
-};
+} *EXT_TAB;
 
 
-static const ext_table_t dml_ext_table[] =
+static struct ext_table_t dml_ext_table[] =
 {
 	{ lang_c, IN_SW_GPRE_C, ".e", ".c" },
 
@@ -175,34 +178,41 @@ static const ext_table_t dml_ext_table[] =
 
 #ifdef GPRE_FORTRAN
 #ifdef VMS
+#define FORTRAN_EXTENSIONS
 	{ lang_fortran, IN_SW_GPRE_F, ".efor", ".for" },
-#else
+#endif
+
+#ifndef FORTRAN_EXTENSIONS
 	{ lang_fortran, IN_SW_GPRE_F, ".ef", ".f" },
 #endif
-#endif // GPRE_FORTRAN
+#endif
 
 #ifdef GPRE_COBOL
 #ifdef VMS
+#define COBOL_EXTENSIONS
 	{ lang_cobol, IN_SW_GPRE_COB, ".ecob", ".cob" },
-#else 
+#endif
+
+#ifndef COBOL_EXTENSIONS
+#define COBOL_EXTENSIONS
 	{ lang_cobol, IN_SW_GPRE_COB, ".ecbl", ".cbl" },
 #endif
-#endif // GPRE_COBOL
-
-#ifdef GPRE_ADA
-#ifdef VMS
-	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
-#elif hpux
-	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
-#else
-	{ lang_ada, IN_SW_GPRE_ADA, ".ea", ".a" },
 #endif
 
+#ifdef VMS
+#define ADA_EXTENSIONS
+	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
+#endif
+#ifdef hpux
+#define ADA_EXTENSIONS
+	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
+#endif
+#ifndef ADA_EXTENSIONS
+	{ lang_ada, IN_SW_GPRE_ADA, ".ea", ".a" },
+#endif
 #ifdef ALSYS_ADA
 	{ lang_ada, IN_SW_GPRE_ALSYS, ".eada", ".ada" },
 #endif
-#endif // GPRE_ADA
-
 #if (defined( WIN_NT))
 	{ lang_cplusplus, IN_SW_GPRE_CPLUSPLUS, ".epp", ".cpp" },
 #else
@@ -211,15 +221,13 @@ static const ext_table_t dml_ext_table[] =
 	{ lang_undef, IN_SW_GPRE_0, NULL, NULL }
 };
 
-enum char_types {
-	CHR_LETTER	= 1,
-	CHR_DIGIT	= 2,
-	CHR_IDENT	= 4,
-	CHR_QUOTE	= 8,
-	CHR_WHITE	= 16,
-	CHR_INTRODUCER	= 32,
-	CHR_DBLQUOTE	= 64
-};
+#define CHR_LETTER	1
+#define CHR_DIGIT	2
+#define CHR_IDENT	4
+#define CHR_QUOTE	8
+#define CHR_WHITE	16
+#define CHR_INTRODUCER	32
+#define CHR_DBLQUOTE	64
 
 //  macro compares chars; case sensitive for some platforms 
 
@@ -239,15 +247,15 @@ enum char_types {
 
 int main(int argc, char* argv[])
 {
-	gpre_sym* symbol;
+	SYM symbol;
+	SLONG end_position;
 	int i;
 	TEXT*	p;
 	TEXT	spare_file_name[256];
 	TEXT	spare_out_file_name[256];
-	bool renamed;
-	bool explicitt;
-	const ext_table_t* ext_tab;
-	sw_tab_t sw_table[IN_SW_GPRE_COUNT];
+	BOOLEAN renamed, explicit_;
+	EXT_TAB ext_tab;
+	struct sw_tab_t sw_table[IN_SW_GPRE_COUNT];
 #ifdef VMS
 	IB_FILE *temp;
 	TEXT temp_name[256];
@@ -256,9 +264,9 @@ int main(int argc, char* argv[])
 
     errors = warnings = fatals = 0;
 
-	bool use_lang_internal_gxx_output;
+	BOOLEAN use_lang_internal_gxx_output;
 
-	use_lang_internal_gxx_output = false;
+	use_lang_internal_gxx_output = FALSE;
 	strcpy(ada_package, "");
 	ada_flags = 0;
 	input_char = input_buffer;
@@ -284,15 +292,15 @@ int main(int argc, char* argv[])
 		classes[i] = CHR_DIGIT | CHR_IDENT;
 	}
 
-	classes[static_cast<UCHAR>('_')]	= CHR_LETTER | CHR_IDENT | CHR_INTRODUCER;
-	classes[static_cast<UCHAR>('$')]	= CHR_IDENT;
-	classes[static_cast<UCHAR>(' ')]	= CHR_WHITE;
-	classes[static_cast<UCHAR>('\t')]	= CHR_WHITE;
-	classes[static_cast<UCHAR>('\n')]	= CHR_WHITE;
-	classes[static_cast<UCHAR>('\r')]	= CHR_WHITE;
-	classes[static_cast<UCHAR>('\'')]	= CHR_QUOTE;
-	classes[static_cast<UCHAR>('\"')]	= CHR_DBLQUOTE;
-	classes[static_cast<UCHAR>('#')]	= CHR_IDENT;
+	classes['_']	= CHR_LETTER | CHR_IDENT | CHR_INTRODUCER;
+	classes['$']	= CHR_IDENT;
+	classes[' ']	= CHR_WHITE;
+	classes['\t']	= CHR_WHITE;
+	classes['\n']	= CHR_WHITE;
+	classes['\r']	= CHR_WHITE;
+	classes['\'']	= CHR_QUOTE;
+	classes['\"']	= CHR_DBLQUOTE;
+	classes['#']	= CHR_IDENT;
 
 //  zorch 0 through 7 in the fortran label vector 
 
@@ -303,17 +311,18 @@ int main(int argc, char* argv[])
 	DBB db = NULL;
 
 	sw_language			= lang_undef;
-	sw_lines			= true;
-	sw_auto				= true;
-	sw_cstring			= true;
-	sw_alsys			= false;
-	sw_external			= false;
-	sw_standard_out		= false;
-	sw_ansi				= false;
-	sw_version			= false;
-	sw_d_float			= false;
+	sw_lines			= TRUE;
+	sw_auto				= TRUE;
+	sw_cstring			= TRUE;
+	sw_alsys			= FALSE;
+	sw_external			= FALSE;
+	sw_gen_sql			= FALSE;
+	sw_standard_out		= FALSE;
+	sw_ansi				= FALSE;
+	sw_dsql				= FALSE;
+	sw_d_float			= sw_version = FALSE;
 	sw_sql_dialect		= SQL_DIALECT_V5;
-	dialect_specified	= false;
+	dialect_specified	= 0;
 	sw_window_scope		= DBB_GLOBAL;
 	gen_routine			= C_CXX_action;
 	comment_start		= "/*";
@@ -330,19 +339,19 @@ int main(int argc, char* argv[])
 	default_lc_ctype	= NULL;
 	default_lc_messages	= NULL;
 	text_subtypes		= NULL;
-	override_case		= false;
+	override_case		= 0;
 
 	sw_know_interp = FALSE;
 	sw_interp = 0;
 //  FSG 14.Nov.2000 
-	sw_verbose = false;
+	sw_verbose = FALSE;
 	sw_sql_dialect = compiletime_db_dialect = SQL_DIALECT_V5;
 
 //  
 //  Call a subroutine to process the input line 
 //  
 
-	TEXT* filename_array[4] = { 0, 0, 0, 0 };
+	TEXT* filename_array[4] = { 0 };
 
 	if (!get_switches(argc, argv, gpre_in_sw_table, sw_table, filename_array)) {
 		CPR_exit(FINI_ERROR);
@@ -351,8 +360,8 @@ int main(int argc, char* argv[])
 	file_name		= filename_array[0];
 	out_file_name	= filename_array[1];
 
-	const TEXT* db_filename = filename_array[2];
-	//TEXT* db_base_directory = filename_array[3];
+	TEXT* db_filename = filename_array[2];
+	TEXT* db_base_directory = filename_array[3];
 
 	if (!file_name) {
 		ib_fprintf(ib_stderr, "gpre:  no source file named.\n");
@@ -369,8 +378,7 @@ int main(int argc, char* argv[])
 
 	if (sw_language == lang_undef)
 		for (ext_tab = dml_ext_table; sw_language = ext_tab->ext_language;
-			 ext_tab++) 
-		{
+			 ext_tab++) {
 			strcpy(spare_file_name, file_name);
 			if (!(file_rename(spare_file_name, ext_tab->in, NULL)))
 				break;
@@ -383,12 +391,10 @@ int main(int argc, char* argv[])
 
 	if (sw_language == lang_undef)
 		for (ext_tab = dml_ext_table; sw_language = ext_tab->ext_language;
-			 ext_tab++) 
-		{
+			 ext_tab++) {
 			strcpy(spare_file_name, file_name);
 			if (file_rename(spare_file_name, ext_tab->in, NULL) &&
-				(input_file = ib_fopen(spare_file_name, FOPEN_READ_TYPE)))
-			{
+				(input_file = ib_fopen(spare_file_name, FOPEN_READ_TYPE))) {
 				file_name = spare_file_name;
 				break;
 			}
@@ -432,8 +438,7 @@ int main(int argc, char* argv[])
 			if (renamed) {
 				ib_fprintf(ib_stderr, "gpre: can't open %s or %s\n",
 						   file_name, spare_file_name);
-			}
-			else {
+			} else {
 				ib_fprintf(ib_stderr, "gpre: can't open %s\n", file_name);
 			}
 			CPR_exit(FINI_ERROR);
@@ -445,7 +450,7 @@ int main(int argc, char* argv[])
 //  adding in the language switch in case we inferred it rather than parsing it.
 //  
 
-	const ext_table_t* src_ext_tab = dml_ext_table;
+	EXT_TAB src_ext_tab = dml_ext_table;
 
 	while (src_ext_tab->ext_language != sw_language) {
 		++src_ext_tab;
@@ -477,33 +482,33 @@ int main(int argc, char* argv[])
 			break;
 
 		case IN_SW_GPRE_D:
-			// allocate database block and link to db chain 
+			/* allocate database block and link to db chain */
 
 			db = (DBB) MSC_alloc_permanent(DBB_LEN);
 			db->dbb_next = isc_databases;
 
-			// put this one in line to be next 
+			/* put this one in line to be next */
 
 			isc_databases = db;
 
-			// allocate symbol block 
+			/* allocate symbol block */
 
-			symbol = (gpre_sym*) MSC_alloc_permanent(SYM_LEN);
+			symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
 
-			// make it a database, specifically this one 
+			/* make it a database, specifically this one */
 
 			symbol->sym_type	= SYM_database;
-			symbol->sym_object	= (gpre_ctx*) db;
+			symbol->sym_object	= (GPRE_CTX) db;
 			symbol->sym_string	= database_name;
 
-			// database block points to the symbol block 
+			/* database block points to the symbol block */
 
 			db->dbb_name = symbol;
 
-			// give it the file name and try to open it 
+			/* give it the file name and try to open it */
 
 			db->dbb_filename = db_filename;
-			if (!MET_database(db, true))
+			if (!MET_database(db, TRUE))
 				CPR_exit(FINI_ERROR);
 			if (sw_external)
 				db->dbb_scope = DBB_EXTERN;
@@ -516,10 +521,9 @@ int main(int argc, char* argv[])
 			break;
 
 		case IN_SW_GPRE_E:
-			sw_case = true;
+			sw_case = TRUE;
 			break;
 
-#ifndef BOOT_BUILD
 #ifdef GPRE_ADA
 		case IN_SW_GPRE_ADA:
 #ifdef VMS
@@ -527,10 +531,10 @@ int main(int argc, char* argv[])
 #else
 			ada_null_address = "0";
 #endif
-			sw_case = true;
+			sw_case = TRUE;
 			sw_language = lang_ada;
-			sw_lines = false;
-			sw_cstring = false;
+			sw_lines = FALSE;
+			sw_cstring = FALSE;
 			gen_routine = ADA_action;
 			utility_name = "isc_utility";
 			count_name = "isc_count";
@@ -545,11 +549,11 @@ int main(int argc, char* argv[])
 			break;
 
 		case IN_SW_GPRE_ALSYS:
-			sw_alsys = true;
-			sw_case = true;
+			sw_alsys = TRUE;
+			sw_case = TRUE;
 			sw_language = lang_ada;
-			sw_lines = false;
-			sw_cstring = false;
+			sw_lines = FALSE;
+			sw_cstring = FALSE;
 			gen_routine = ADA_action;
 			utility_name = "isc_utility";
 			count_name = "isc_count";
@@ -562,15 +566,15 @@ int main(int argc, char* argv[])
 				db->dbb_name->sym_string = "isc_database";
 			comment_stop = "--";
 			break;
-#endif // GPRE_ADA
+#endif
 
 
 #ifdef GPRE_FORTRAN
 		case IN_SW_GPRE_F:
-			sw_case = true;
+			sw_case = TRUE;
 			sw_language = lang_fortran;
-			sw_lines = false;
-			sw_cstring = false;
+			sw_lines = FALSE;
+			sw_cstring = FALSE;
 			gen_routine = FTN_action;
 #ifdef sun
 			comment_start = "*      ";
@@ -579,51 +583,49 @@ int main(int argc, char* argv[])
 #endif
 			comment_stop = " ";
 
-			// Change the patterns for v4.0 
+			/* Change the patterns for v4.0 */
 
 			ident_pattern = "isc_%d";
 			utility_name = "isc_utility";
 			count_name = "isc_count";
 			slack_name = "isc_slack";
 			break;
-#endif // GPRE_FORTRAN
+#endif
 
 #ifdef GPRE_COBOL
 		case IN_SW_GPRE_ANSI:
-			sw_ansi = true;
+			sw_ansi = TRUE;
 			break;
 
 		case IN_SW_GPRE_COB:
-			sw_case = true;
+			sw_case = TRUE;
 			sw_language = lang_cobol;
 			comment_stop = " ";
-			sw_lines = false;
-			sw_cstring = false;
+			sw_lines = FALSE;
+			sw_cstring = FALSE;
 			gen_routine = COB_action;
 			break;
-#endif // GPRE_COBOL
+#endif
 
 #ifdef GPRE_PASCAL
 		case IN_SW_GPRE_P:
-			sw_case			= true;
+			sw_case			= TRUE;
 			sw_language		= lang_pascal;
-			sw_lines		= false;
-			sw_cstring		= false;
+			sw_lines		= FALSE;
+			sw_cstring		= FALSE;
 			gen_routine		= PAS_action;
 			comment_start	= "(*";
 			comment_stop	= "*)";
 			break;
-#endif // GPRE_PASCAL
-#endif // !BOOT_BUILD
-
+#endif
 		case IN_SW_GPRE_D_FLOAT:
-			sw_d_float = true;
+			sw_d_float = TRUE;
 			break;
 
 		case IN_SW_GPRE_G:
 			sw_language			= lang_internal;
-			gen_routine			= INT_CXX_action;
-			sw_cstring			= false;
+			gen_routine			= INT_action;
+			sw_cstring			= FALSE;
 			transaction_name	= "dbb->dbb_sys_trans";
 			sw_know_interp		= TRUE;
 			sw_interp			= ttype_metadata;
@@ -636,7 +638,7 @@ int main(int argc, char* argv[])
 			 * done with it.
 			 */
 			gen_routine			= INT_CXX_action;
-			use_lang_internal_gxx_output = true;
+			use_lang_internal_gxx_output = TRUE;
 			break;
 
 		case IN_SW_GPRE_LANG_INTERNAL:
@@ -646,7 +648,7 @@ int main(int argc, char* argv[])
  			**/
 			sw_language = lang_internal;
 			gen_routine = C_CXX_action;
-			sw_cstring = true;
+			sw_cstring = TRUE;
 			transaction_name = "gds_trans";
 			sw_know_interp = FALSE;
 			sw_interp = 0;
@@ -658,36 +660,36 @@ int main(int argc, char* argv[])
 			break;
 
 		case IN_SW_GPRE_I:
-			sw_ids = true;
+			sw_ids = TRUE;
 			break;
 
 		case IN_SW_GPRE_M:
-			sw_auto = false;
+			sw_auto = FALSE;
 			break;
 
 		case IN_SW_GPRE_N:
-			sw_lines = false;
+			sw_lines = FALSE;
 			break;
 
 		case IN_SW_GPRE_O:
-			sw_standard_out = true;
+			sw_standard_out = TRUE;
 			out_file = ib_stdout;
 			break;
 
 		case IN_SW_GPRE_R:
-			sw_raw = true;
+			sw_raw = TRUE;
 			break;
 
 		case IN_SW_GPRE_S:
-			sw_cstring = false;
+			sw_cstring = FALSE;
 			break;
 
 		case IN_SW_GPRE_T:
-			sw_trace = true;
+			sw_trace = TRUE;
 			break;
 //  FSG 14.Nov.2000 
 		case IN_SW_GPRE_VERBOSE:
-			sw_verbose = true;
+			sw_verbose = TRUE;
 			break;
 		default:
 			break;
@@ -746,7 +748,7 @@ int main(int argc, char* argv[])
 	input_file = temp;
 #endif
 
-#if defined(GPRE_COBOL) && !defined(BOOT_BUILD)
+#ifdef GPRE_COBOL
 //  if cobol is defined we need both sw_cobol and sw_ansi to
 //  determine how the string substitution table is set up
 //  
@@ -784,13 +786,13 @@ int main(int argc, char* argv[])
 			sw_know_interp = TRUE;
 		}
 		else if (compare_ASCII7z(default_lc_ctype, "DYNAMIC") == 0) {
-			// Dynamic means use the interpretation declared at runtime 
+			/* Dynamic means use the interpretation declared at runtime */
 
 			sw_interp = ttype_dynamic;
 			sw_know_interp = TRUE;
 		}
 		else if (isc_databases) {
-			// Name resolution done by MET_load_hash_table 
+			/* Name resolution done by MET_load_hash_table */
 
 			isc_databases->dbb_c_lc_ctype = default_lc_ctype;
 		}
@@ -808,7 +810,7 @@ int main(int argc, char* argv[])
 //  
 
 	if (!sw_standard_out) {
-		const ext_table_t* out_src_ext_tab = src_ext_tab;
+		EXT_TAB out_src_ext_tab = src_ext_tab;
 		if (use_lang_internal_gxx_output) {
 			out_src_ext_tab = dml_ext_table;
     		while (out_src_ext_tab->ext_language != lang_internal_cxx) {
@@ -816,15 +818,13 @@ int main(int argc, char* argv[])
     		}
 		}
 
-		renamed = explicitt = true;
+		renamed = explicit_ = TRUE;
 		if (!out_file_name) {
 			out_file_name = spare_out_file_name;
 			strcpy(spare_out_file_name, file_name);
-			if (renamed = file_rename(spare_out_file_name, out_src_ext_tab->in,
-							out_src_ext_tab->out))
-			{
-				explicitt = false;
-			}
+			if (renamed =
+				file_rename(spare_out_file_name, out_src_ext_tab->in,
+							out_src_ext_tab->out)) explicit_ = FALSE;
 		}
 
 		if (renamed) {
@@ -835,7 +835,7 @@ int main(int argc, char* argv[])
 			while (p != out_file_name && *p != '.' && *p != '/')
 #endif
 				p--;
-			if (!explicitt)
+			if (!explicit_)
 				*p = 0;
 
 			if (*p != '.') {
@@ -863,9 +863,7 @@ int main(int argc, char* argv[])
 	sw_databases = isc_databases;
 
 	try {
-		SLONG end_position = 0;
-		while (end_position = compile_module(end_position,filename_array[3]));
-		// empty loop body
+		for (end_position = 0; end_position = compile_module(end_position,filename_array[3]););  // empty loop
 	}	// try
 	catch (const std::exception&) {}  // fall through to the cleanup code
 
@@ -916,8 +914,9 @@ int main(int argc, char* argv[])
 
 void CPR_abort()
 {
+
 	++fatals;
-	throw std::exception();
+	Firebird::status_exception::raise(1);
 }
 
 
@@ -927,7 +926,7 @@ void CPR_abort()
 //		Report an assertion failure and abort this silly program.
 //  
 
-void CPR_assert(const TEXT* file, int line)
+void CPR_assert( TEXT * file, int line)
 {
 	TEXT buffer[200];
 
@@ -942,8 +941,9 @@ void CPR_assert(const TEXT* file, int line)
 //		Issue an error message.
 //  
 
-void CPR_bugcheck(const TEXT* string)
+void CPR_bugcheck( TEXT * string)
 {
+
 	ib_fprintf(ib_stderr, "*** INTERNAL BUGCHECK: %s ***\n", string);
 	MET_fini(0);
 	CPR_abort();
@@ -955,8 +955,9 @@ void CPR_bugcheck(const TEXT* string)
 //       Mark end of a text description.
 //  
 
-void CPR_end_text(gpre_txt* text)
+void CPR_end_text( TXT text)
 {
+
 	text->txt_length = (USHORT) (token.tok_position - text->txt_position - 1);
 }
 
@@ -966,8 +967,9 @@ void CPR_end_text(gpre_txt* text)
 //		Issue an error message.
 //  
 
-int CPR_error(const TEXT* string)
+int CPR_error( TEXT * string)
 {
+
 	ib_fprintf(ib_stderr, "(E) %s:%d: %s\n", file_name, line + 1, string);
 	errors++;
 
@@ -986,16 +988,25 @@ void CPR_exit( int stat)
 
 	if (trace_file_name[0])
 	 {
+
 		if (trace_file)
+
 			ib_fclose(trace_file);
+
 		unlink(trace_file_name);
+
 	}
 
 #else
+
 	if (trace_file)
+
 		ib_fclose(trace_file);
+
 	if (trace_file_name[0])
+
 		unlink(trace_file_name);
+
 #endif
 
 	exit(stat);
@@ -1007,8 +1018,9 @@ void CPR_exit( int stat)
 //		Issue an warning message.
 //  
 
-void CPR_warn(const TEXT* string)
+void CPR_warn( TEXT * string)
 {
+
 	ib_fprintf(ib_stderr, "(W) %s:%d: %s\n", file_name, line + 1, string);
 	warnings++;
 }
@@ -1025,6 +1037,10 @@ void CPR_warn(const TEXT* string)
 
 TOK CPR_eol_token()
 {
+	SSHORT c, peek;
+	SSHORT num_chars;
+	TEXT *p;
+
 	if (sw_language != lang_fortran)
 		return CPR_token();
 
@@ -1035,12 +1051,11 @@ TOK CPR_eol_token()
 
 	last_position =
 		token.tok_position + token.tok_length + token.tok_white_space - 1;
-	TEXT* p = token.tok_string;
-	SSHORT num_chars = 0;
+	p = token.tok_string;
+	num_chars = 0;
 
 //  skip spaces 
 
-	SSHORT c;
 	for (c = nextchar(); c == ' '; c = nextchar()) {
 		num_chars++;
 		*p++ = (TEXT) c;
@@ -1057,7 +1072,7 @@ TOK CPR_eol_token()
 //  in-line SQL comments are equivalent to end of line 
 
 	if (sw_sql && (c == '-')) {
-		const SSHORT peek = nextchar();
+		peek = nextchar();
 		if (peek != '-')
 			return_char(peek);
 		else {
@@ -1109,10 +1124,14 @@ TOK CPR_eol_token()
 //       Write text from the scratch trace file into a buffer.
 //  
 
-void CPR_get_text( TEXT* buffer, const gpre_txt* text)
+void CPR_get_text( TEXT * buffer, TXT text)
 {
-	SLONG start = text->txt_position;
-	int length = text->txt_length;
+	SLONG start;
+	int length;
+	TEXT *p;
+
+	start = text->txt_position;
+	length = text->txt_length;
 
 //  On PC-like platforms, '\n' will be 2 bytes.  The txt_position
 //  will be incorrect for ib_fseek.  The position is not adjusted
@@ -1138,7 +1157,7 @@ void CPR_get_text( TEXT* buffer, const gpre_txt* text)
 		ib_getc(trace_file);
 #endif
 
-	TEXT* p = buffer;
+	p = buffer;
 	while (length--)
 		*p++ = ib_getc(trace_file);
 	ib_fseek(trace_file, (SLONG) 0, 2);
@@ -1150,19 +1169,20 @@ void CPR_get_text( TEXT* buffer, const gpre_txt* text)
 //       A BASIC-specific function which resides here since it reads from
 //       the input file.  Look for a '\n' with no continuation character (&).
 //       Eat tokens until previous condition is satisfied.
-//       This function is used to "eat" a BASIC external function definition.
+//       This function is used to "eat" an BASIC external function definition.
 //  
 
 void CPR_raw_read()
 {
-	SCHAR token_string[MAXSYMLEN];
-	bool continue_char = false;
-
-	SCHAR* p = token_string;
-
 	SSHORT c;
-	while (c = get_char(input_file))
-	{
+	SCHAR token_string[MAXSYMLEN];
+	SCHAR *p;
+	BOOLEAN continue_char;
+
+	p = token_string;
+	continue_char = FALSE;
+
+	while (c = get_char(input_file)) {
 		position++;
 		if ((classes[c] == CHR_WHITE) && sw_trace && token_string) {
 			*p = 0;
@@ -1173,17 +1193,17 @@ void CPR_raw_read()
 		else
 			*p++ = (SCHAR) c;
 
-		if (c == '\n') { // Changed assignment to comparison. Probable archaic bug
+		if (c = '\n') {
 			line++;
 			line_position = 0;
 			if (!continue_char)
 				return;
-			continue_char = false;
+			continue_char = FALSE;
 		}
 		else {
 			line_position++;
 			if (classes[c] != CHR_WHITE)
-				continue_char = (token.tok_keyword == KW_AMPERSAND);
+				continue_char = (KEYWORD(KW_AMPERSAND)) ? TRUE : FALSE;
 		}
 	}
 }
@@ -1194,7 +1214,7 @@ void CPR_raw_read()
 //		Generate a syntax error.
 //  
 
-void CPR_s_error(const TEXT* string)
+void CPR_s_error( TEXT * string)
 {
 	TEXT s[512];
 
@@ -1209,9 +1229,11 @@ void CPR_s_error(const TEXT* string)
 //       Make the current position to save description text.
 //  
 
-gpre_txt* CPR_start_text()
+TXT CPR_start_text()
 {
-	gpre_txt* text = (gpre_txt*) MSC_alloc(TXT_LEN);
+	TXT text;
+
+	text = (TXT) ALLOC(TXT_LEN);
 	text->txt_position = token.tok_position - 1;
 
 	return text;
@@ -1228,72 +1250,56 @@ gpre_txt* CPR_start_text()
 
 TOK CPR_token()
 {
-	TOK token = get_token();
-	if (!token)
-		return NULL;
+	TOK tok;
+	SYM symbol;
 
-	if (token->tok_type == tok_introducer) {
-		gpre_sym* symbol = MSC_find_symbol(HSH_lookup(token->tok_string + 1), SYM_charset);
-		if (!symbol) {
+	tok = get_token();
+	if (tok && tok->tok_type == tok_introducer) {
+		if (!
+			(symbol =
+			 MSC_find_symbol(HSH_lookup(tok->tok_string + 1), SYM_charset))) {
 			TEXT err_buffer[100];
 
 			sprintf(err_buffer, "Character set not recognized: '%.50s'",
-					token->tok_string);
+					tok->tok_string);
 			CPR_error(err_buffer);
 		}
-		token = get_token();
-
+		tok = get_token();
 		switch (sw_sql_dialect) {
-		case SQL_DIALECT_V5:
-			if (!(isQuoted(token->tok_type)))
+		case 1:
+			if (!(QUOTED(tok->tok_type)))
 				CPR_error("Can only tag quoted strings with character set");
 			else
-				token->tok_charset = symbol;
+				tok->tok_charset = symbol;
 			break;
 
 		default:
-			if (token->tok_type != tok_sglquoted)
+			if (!(SINGLE_QUOTED(tok->tok_type)))
 				CPR_error("Can only tag quoted strings with character set");
 			else
-				token->tok_charset = symbol;
+				tok->tok_charset = symbol;
 			break;
 
 		}
 	}
-	// use -charset switch if there is one for quoted strings
-	// only after a database declaration is loaded and MET_load_hash_table run.
-	else if (default_lc_ctype && text_subtypes) {
-		switch (sw_sql_dialect) {
-		case SQL_DIALECT_V5:
-			if (isQuoted(token->tok_type)) {
-				token->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype), 
-												   SYM_charset);
-			}
-			break;
-		default:
-			if (token->tok_type == tok_sglquoted) {
-				token->tok_charset = MSC_find_symbol(HSH_lookup(default_lc_ctype),
-												   SYM_charset);
-			}
-			break;
-		}
-	}
-	return token;
+
+	return tok;
 }
 
 
 //____________________________________________________________
 //  
-//		Return true if the string consists entirely of digits.
+//		Return TRUE if the string consists entirely of digits.
 //  
 
-static bool all_digits(const char* str1)
+static BOOLEAN all_digits(char *str1)
 {
-	for (; *str1; str1++)
-		if (!(classes[static_cast<UCHAR>(*str1)] & CHR_DIGIT))
-			return false;
 
-	return true;
+	for (; *str1; str1++)
+		if (!(classes[*str1] & CHR_DIGIT))
+			return FALSE;
+
+	return TRUE;
 }
 
 
@@ -1304,19 +1310,19 @@ static bool all_digits(const char* str1)
 //       If there is a problem, explain and return.
 //  
 
-static bool arg_is_string(SLONG argc,
-						  TEXT** argvstring,
-						  const TEXT* errstring)
+static int arg_is_string( SLONG argc, TEXT ** argvstring, TEXT * errstring)
 {
-	const TEXT* str = *++argvstring;
+	TEXT *str;
+
+	str = *++argvstring;
 
 	if (!argc || *str == '-') {
 		ib_fprintf(ib_stderr, "%s", errstring);
 		print_switches();
-		return false;
+		return FALSE;
 	}
 
-	return true;
+	return TRUE;
 }
 
 
@@ -1329,7 +1335,7 @@ static bool arg_is_string(SLONG argc,
 //		(positive) if str1 > str2
 //  
 
-static SSHORT compare_ASCII7z(const char* str1, const char* str2)
+static SSHORT compare_ASCII7z( char *str1, char *str2)
 {
 
 	for (; *str1; str1++, str2++)
@@ -1346,14 +1352,17 @@ static SSHORT compare_ASCII7z(const char* str1, const char* str2)
 //		Process a module and generate output.
 //  
 
-static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
+static SLONG compile_module( SLONG start_position, TEXT* base_directory)
 {
+	SLONG end_position;
+	GPRE_REQ request;
+
 //  Reset miscellaneous pointers 
 
 	isc_databases = sw_databases;
 	requests = NULL;
 	events = NULL;
-	global_last_action = global_first_action = global_functions = NULL;
+	last_action = first_action = functions = NULL;
 
 //  Position the input file and initialize various modules 
 
@@ -1383,13 +1392,13 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 
 //  Take a first pass at the module 
 
-	SLONG end_position = pass1(base_directory);
+	end_position = pass1(base_directory);
 
 //  finish up any based_ons that got deferred 
 
 #ifdef GPRE_FORTRAN
 	if (sw_language == lang_fortran)
-		finish_based(global_first_action);
+		finish_based(first_action);
 #endif
 
 	MET_fini(NULL);
@@ -1398,10 +1407,8 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	if (errors)
 		return end_position;
 
-	for (gpre_req* request = requests; request; request = request->req_next)
-	{
+	for (request = requests; request; request = request->req_next)
 		CMP_compile_request(request);
-	}
 
 	ib_fseek(input_file, start_position, 0);
 	input_char = input_buffer;
@@ -1421,29 +1428,29 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 //		new extension is given, use it.
 //  
 
-static bool file_rename(TEXT* file_name,
-						const TEXT* extension,
-						const TEXT* new_extension)
+static BOOLEAN file_rename(
+						   TEXT * file_name,
+						   TEXT * extension, TEXT * new_extension)
 {
-	TEXT *p;
+	TEXT *p, *q, *terminator, *ext;
 
 //  go to the end of the file name 
 
 	for (p = file_name; *p; p++);
-
-	TEXT* terminator = p;
+	terminator = p;
 
 //  back up to the last extension (if any) 
 
-#if defined(VMS)
+#ifdef VMS
 	while ((p != file_name) && (*p != '.') && (*p != ']'))
-#elif defined(WIN_NT)
+#else
+#if defined(WIN_NT)
 	while ((p != file_name) && (*p != '.') && (*p != '/') && (*p != '\\'))
 #else
 	while ((p != file_name) && (*p != '.') && (*p != '/'))
 #endif
-
-	--p;
+#endif
+		p--;
 
 //  
 //  There's a match and the file spec has no extension, 
@@ -1452,7 +1459,7 @@ static bool file_rename(TEXT* file_name,
 
 	if (*p != '.') {
 		while (*terminator++ = *extension++);
-		return true;
+		return TRUE;
 	}
 
 //  
@@ -1461,12 +1468,12 @@ static bool file_rename(TEXT* file_name,
 //  to add a duplicate.  Otherwise add it.
 //  
 
-	TEXT* ext = p;
-	for (const TEXT* q = extension; SAME(p, q); p++, q++)
+	ext = p;
+	for (q = extension; SAME(p, q); p++, q++)
 		if (!*p) {
 			if (new_extension)
 				while (*ext++ = *new_extension++);
-			return false;
+			return FALSE;
 		}
 
 #ifndef VMS
@@ -1474,7 +1481,7 @@ static bool file_rename(TEXT* file_name,
 	while (*terminator++ = *extension++);
 #endif
 
-	return true;
+	return TRUE;
 }
 
 
@@ -1494,10 +1501,13 @@ static bool file_rename(TEXT* file_name,
 //       for the relation.
 //  
 
-static void finish_based( act* action)
+static void finish_based( ACT action)
 {
-	gpre_rel* relation;
-	gpre_fld* field;
+	DBB db;
+	GPRE_REL relation;
+	GPRE_FLD field;
+	BAS based_on;
+	SYM symbol;
 	TEXT s[128];
 
 	for (; action; action = action->act_rest) {
@@ -1513,13 +1523,13 @@ static void finish_based( act* action)
 			continue;
 		}
 
-		bas* based_on = (bas*) action->act_object;
+		based_on = (BAS) action->act_object;
 		if (!based_on->bas_fld_name)
 			continue;
 
-		DBB db = NULL;
+		db = NULL;
 		if (based_on->bas_db_name) {
-			gpre_sym* symbol = HSH_lookup(based_on->bas_db_name->str_string);
+			symbol = HSH_lookup((SCHAR *) based_on->bas_db_name);
 			for (; symbol; symbol = symbol->sym_homonym)
 				if (symbol->sym_type == SYM_database)
 					break;
@@ -1527,15 +1537,14 @@ static void finish_based( act* action)
 			if (symbol) {
 				db = (DBB) symbol->sym_object;
 				relation =
-					MET_get_relation(db, based_on->bas_rel_name->str_string, "");
+					MET_get_relation(db, (TEXT *) based_on->bas_rel_name, "");
 				if (!relation) {
 					sprintf(s, "relation %s is not defined in database %s",
-							based_on->bas_rel_name->str_string,
-							based_on->bas_db_name->str_string);
+							based_on->bas_rel_name, based_on->bas_db_name);
 					CPR_error(s);
 					continue;
 				}
-				field = MET_field(relation, based_on->bas_fld_name->str_string);
+				field = MET_field(relation, (char *) based_on->bas_fld_name);
 			}
 			else {
 				if (based_on->bas_flags & BAS_ambiguous) {
@@ -1550,7 +1559,7 @@ static void finish_based( act* action)
 				}
 				else {
 					sprintf(s, "database %s is not defined",
-							based_on->bas_db_name->str_string);
+							based_on->bas_db_name);
 					CPR_error(s);
 					continue;
 				}
@@ -1561,26 +1570,26 @@ static void finish_based( act* action)
 			field = NULL;
 			for (db = isc_databases; db; db = db->dbb_next)
 				if (relation =
-					MET_get_relation(db, based_on->bas_rel_name->str_string, "")) {
+					MET_get_relation(db, (TEXT *) based_on->bas_rel_name, "")) {
 					if (field) {
 						/* The field reference is ambiguous.  It exists in more
 						   than one database. */
 
 						sprintf(s, "field %s in relation %s ambiguous",
-								based_on->bas_fld_name->str_string,
-								based_on->bas_rel_name->str_string);
+								based_on->bas_fld_name,
+								based_on->bas_rel_name);
 						CPR_error(s);
 						break;
 					}
 					field =
-						MET_field(relation, based_on->bas_fld_name->str_string);
+						MET_field(relation, (char *) based_on->bas_fld_name);
 				}
 
 			if (db)
 				continue;
 			if (!relation && !field) {
 				sprintf(s, "relation %s is not defined",
-						based_on->bas_rel_name->str_string);
+						based_on->bas_rel_name);
 				CPR_error(s);
 				continue;
 			}
@@ -1588,15 +1597,13 @@ static void finish_based( act* action)
 
 		if (!field) {
 			sprintf(s, "field %s is not defined in relation %s",
-					based_on->bas_fld_name->str_string,
-					based_on->bas_rel_name->str_string);
+					based_on->bas_fld_name, based_on->bas_rel_name);
 			CPR_error(s);
 			continue;
 		}
 
 		if ((based_on->bas_flags & BAS_segment)
-			&& !(field->fld_flags & FLD_blob))
-		{
+			&& !(field->fld_flags & FLD_blob)) {
 			sprintf(s, "field %s is not a blob",
 					field->fld_symbol->sym_string);
 			CPR_error(s);
@@ -1647,12 +1654,15 @@ static int get_char( IB_FILE * file)
 //  later, even if specified here.
 //  
 
-static bool get_switches(int			argc,
-						 TEXT**		argv,
-						 const in_sw_tab_t*	in_sw_table,
-						 SW_TAB		sw_table,
-						 TEXT**		file_array)
+static BOOLEAN get_switches(int			argc,
+							TEXT**		argv,
+							IN_SW_TAB	in_sw_table,
+							SW_TAB		sw_table,
+							TEXT**		file_array)
 {
+	TEXT *p, *q, *string;
+	IN_SW_TAB in_sw_tab;
+	SW_TAB sw_tab;
 	USHORT in_sw;
 
 //  
@@ -1661,11 +1671,11 @@ static bool get_switches(int			argc,
 //  we try to open the file. 
 //  
 
-	SW_TAB sw_table_iterator = sw_table;
+	sw_tab = sw_table;
 
 	for (--argc; argc; argc--)
 	{
-		TEXT* string = *++argv;
+		string = *++argv;
 		if (*string != '?')
 		{
 			if (*string != '-')
@@ -1674,8 +1684,7 @@ static bool get_switches(int			argc,
 				{
 					if (!file_array[0]) {
 						file_array[0] = string;
-					}
-					else {
+					} else {
 						file_array[1] = string;
 					}
 					continue;
@@ -1689,38 +1698,35 @@ static bool get_switches(int			argc,
 			}
 			else
 			{
-				// iterate through the switch table, looking for matches 
+				/* iterate through the switch table, looking for matches */
 
-				sw_table_iterator++;
-				sw_table_iterator->sw_in_sw = IN_SW_GPRE_0;
-				const TEXT* q;
-				for (const in_sw_tab_t* in_sw_table_iterator = in_sw_table;
-					 q = in_sw_table_iterator->in_sw_name;
-					 in_sw_table_iterator++)
-				{
-					const TEXT* p = string + 1;
+				sw_tab++;
+				sw_tab->sw_in_sw = IN_SW_GPRE_0;
+				for (in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name;
+					 in_sw_tab++) {
+					p = string + 1;
 
-					// handle orphaned hyphen case 
+					/* handle orphaned hyphen case */
 
 					if (!*p--)
 						break;
 
-					// compare switch to switch name in table 
+					/* compare switch to switch name in table */
 
 					while (*p) {
 						if (!*++p) {
-							sw_table_iterator->sw_in_sw = (gpre_cmd_switch)in_sw_table_iterator->in_sw;
+							sw_tab->sw_in_sw = (gpre_cmd_switch)in_sw_tab->in_sw;
 						}
 						if (UPPER7(*p) != *q++) {
 							break;
 						}
 					}
-					// end of input means we got a match.  stop looking 
+					/* end of input means we got a match.  stop looking */
 
 					if (!*p)
 						break;
 				}
-				in_sw = sw_table_iterator->sw_in_sw;
+				in_sw = sw_tab->sw_in_sw;
 			}
 		}
 
@@ -1737,17 +1743,17 @@ static bool get_switches(int			argc,
 		switch (in_sw) {
 		case IN_SW_GPRE_C:
 			sw_language = lang_c;
-			sw_table_iterator--;
+			sw_tab--;
 			break;
 
 		case IN_SW_GPRE_CXX:
 			sw_language = lang_cxx;
-			sw_table_iterator--;
+			sw_tab--;
 			break;
 
 		case IN_SW_GPRE_CPLUSPLUS:
 			sw_language = lang_cplusplus;
-			sw_table_iterator--;
+			sw_tab--;
 			break;
 
 		case IN_SW_GPRE_GXX:
@@ -1763,29 +1769,29 @@ static bool get_switches(int			argc,
 
 		case IN_SW_GPRE_G:
 			sw_language = lang_internal;
-			sw_table_iterator--;
+			sw_tab--;
 			break;
 
 #ifdef GPRE_FORTRAN
 		case IN_SW_GPRE_F:
 			sw_language = lang_fortran;
-			sw_table_iterator--;
+			sw_tab--;
 			break;
 #endif
 #ifdef GPRE_PASCAL
 		case IN_SW_GPRE_P:
 			sw_language = lang_pascal;
-			sw_table_iterator--;
+			sw_tab--;
 			break;
 #endif
 		case IN_SW_GPRE_X:
-			sw_external = true;
-			sw_table_iterator--;
+			sw_external = TRUE;
+			sw_tab--;
 			break;
 #ifdef GPRE_COBOL
 		case IN_SW_GPRE_COB:
 			sw_language = lang_cobol;
-			sw_table_iterator--;
+			sw_tab--;
 			break;
 #endif
 		case IN_SW_GPRE_LANG_INTERNAL : 
@@ -1796,10 +1802,8 @@ static bool get_switches(int			argc,
 		case IN_SW_GPRE_D:
 			if (!arg_is_string
 				(--argc, argv,
-				 "Command line syntax: -d requires database name:\n ")) 
-			{
-				return false;
-			}
+				 "Command line syntax: -d requires database name:\n ")) return
+					FALSE;
 
 			file_array[2] = *++argv;
 			string = *argv;
@@ -1807,9 +1811,7 @@ static bool get_switches(int			argc,
 				if (!arg_is_string
 					(--argc, argv,
 					 "Command line syntax: -d requires database name:\n "))
-				{
-					return false;
-				}
+						return FALSE;
 				else
 					file_array[2] = *++argv;
 			break;
@@ -1817,10 +1819,8 @@ static bool get_switches(int			argc,
 		case IN_SW_GPRE_BASE:
 			if (!arg_is_string
 				(--argc, argv,
-				 "Command line syntax: -b requires database base directory:\n ")) 
-			{
-				return false;
-			}
+				 "Command line syntax: -b requires database base directory:\n ")) return
+					FALSE;
 
 			file_array[3] = *++argv;
 			string = *argv;
@@ -1828,9 +1828,7 @@ static bool get_switches(int			argc,
 				if (!arg_is_string
 					(--argc, argv,
 					 "Command line syntax: -b requires database base directory:\n "))
-				{
-					return false;
-				}
+						return FALSE;
 				else
 					file_array[3] = *++argv;
 			break;
@@ -1841,7 +1839,7 @@ static bool get_switches(int			argc,
 					argv,
 					"Command line syntax: -h requires handle package name\n"))
 			{
-					return false;
+					return FALSE;
 			}
 			strcpy(ada_package, *++argv);
 			strcat(ada_package, ".");
@@ -1853,14 +1851,14 @@ static bool get_switches(int			argc,
 					argv,
 					"Command line syntax: -sqlda requires NEW\n "))
 			{
-				return false;
+				return FALSE;
 			}
 
 			if (**argv != 'n' || **argv != 'N') {
 				ib_fprintf(ib_stderr,
 						   "-sqlda :  Deprecated Feature: you must use XSQLDA\n ");
 				print_switches();
-				return false;
+				return FALSE;
 			}
 			break;
 
@@ -1872,7 +1870,7 @@ static bool get_switches(int			argc,
 						argv,
 						"Command line syntax: -SQL_DIALECT requires value 1, 2 or 3 \n "))
 				{
-					return false;
+					return FALSE;
 				}
 				++argv;
 				inp = atoi(*argv);
@@ -1880,12 +1878,12 @@ static bool get_switches(int			argc,
 					ib_fprintf(ib_stderr,
 							   "Command line syntax: -SQL_DIALECT requires value 1, 2 or 3 \n ");
 					print_switches();
-					return false;
+					return FALSE;
 				}
 				else {
 					sw_sql_dialect = inp;
 				}
-				dialect_specified = true;
+				dialect_specified = 1;
 				break;
 			}
 
@@ -1893,7 +1891,7 @@ static bool get_switches(int			argc,
 			if (!sw_version) {
 				ib_printf("gpre version %s\n", GDS_VERSION);
 			}
-			sw_version = true;
+			sw_version = TRUE;
 			break;
 
 		case IN_SW_GPRE_0:
@@ -1901,7 +1899,7 @@ static bool get_switches(int			argc,
 				ib_fprintf(ib_stderr, "gpre: unknown switch %s\n", string);
 			}
 			print_switches();
-			return false;
+			return FALSE;
 
 		case IN_SW_GPRE_USER:
 			if (!arg_is_string(
@@ -1909,7 +1907,7 @@ static bool get_switches(int			argc,
 					argv,
 					"Command line syntax: -user requires user name string:\n "))
 			{
-				return false;
+				return FALSE;
 			}
 			default_user = *++argv;
 			break;
@@ -1920,7 +1918,7 @@ static bool get_switches(int			argc,
 					argv,
 					"Command line syntax: -password requires password string:\n "))
 			{
-				return false;
+				return FALSE;
 			}
 			default_password = *++argv;
 			break;
@@ -1931,7 +1929,7 @@ static bool get_switches(int			argc,
 					argv,
 					"Command line syntax: -charset requires character set name:\n "))
 			{
-				return false;
+				return FALSE;
 			}
 			default_lc_ctype = (TEXT *) * ++argv;
 			break;
@@ -1939,10 +1937,10 @@ static bool get_switches(int			argc,
 		}
 	}
 
-	sw_table_iterator++;
-	sw_table_iterator->sw_in_sw = IN_SW_GPRE_0;
+	sw_tab++;
+	sw_tab->sw_in_sw = IN_SW_GPRE_0;
 
-	return true;
+	return TRUE;
 }
 
 
@@ -1953,22 +1951,27 @@ static bool get_switches(int			argc,
 
 static TOK get_token()
 {
-	SSHORT next;
-	USHORT peek;
+	SSHORT c, next;
+	USHORT peek, label;
 	TEXT *p, *end;
+	UCHAR class_;
+	SYM symbol;
+	SLONG start_position;
+	int start_line;
 
 //  Save the information from the previous token 
 
 	prior_token = token;
 	prior_token.tok_position = last_position;
 
+	label = FALSE;
 	last_position =
 		token.tok_position + token.tok_length + token.tok_white_space - 1;
-	int start_line = line;
-	SLONG start_position = position;
+	start_line = line;
+	start_position = position;
 	token.tok_charset = NULL;
 
-	SSHORT c = skip_white();
+	c = skip_white();
 
 #ifdef GPRE_COBOL
 //  Skip over cobol line continuation characters 
@@ -2015,33 +2018,28 @@ static TOK get_token()
 
 	token.tok_position = position;
 	token.tok_white_space = 0;
-	UCHAR char_class = classes[c];
+	class_ = classes[c];
 
 #ifdef GPRE_ADA
 	if ((sw_language == lang_ada) && (c == '\'')) {
-		const SSHORT c1 = nextchar();
-		const SSHORT c2 = nextchar();
-		if (c2 != '\'') {
-			char_class = CHR_LETTER;
-		}
+		SSHORT c1, c2;
+		c1 = nextchar();
+		c2 = nextchar();
+		if (c2 != '\'')
+			class_ = CHR_LETTER;
 		return_char(c2);
 		return_char(c1);
 	}
 #endif
-
-	bool label = false;
-
-	if (sw_sql && (char_class & CHR_INTRODUCER)) {
-		while (classes[c = nextchar()] & CHR_IDENT) {
-			if (p < end) {
+	if (sw_sql && (class_ & CHR_INTRODUCER)) {
+		while (classes[c = nextchar()] & CHR_IDENT)
+			if (p < end)
 				*p++ = (TEXT) c;
-			}
-		}
 		return_char(c);
 		token.tok_type = tok_introducer;
 	}
-	else if (char_class & CHR_LETTER) {
-		while (true) {
+	else if (class_ & CHR_LETTER) {
+		while (TRUE) {
 			while (classes[c = nextchar()] & CHR_IDENT)
 				*p++ = (TEXT) c;
 			if (c != '-' || sw_language != lang_cobol)
@@ -2054,10 +2052,10 @@ static TOK get_token()
 		return_char(c);
 		token.tok_type = tok_ident;
 	}
-	else if (char_class & CHR_DIGIT) {
+	else if (class_ & CHR_DIGIT) {
 #ifdef GPRE_FORTRAN
 		if (sw_language == lang_fortran && line_position < 7)
-			label = true;
+			label = TRUE;
 #endif
 		while (classes[c = nextchar()] & CHR_DIGIT)
 			*p++ = (TEXT) c;
@@ -2083,13 +2081,13 @@ static TOK get_token()
 		return_char(c);
 		token.tok_type = tok_number;
 	}
-	else if ((char_class & CHR_QUOTE) || (char_class & CHR_DBLQUOTE)) {
-		token.tok_type = (char_class & CHR_QUOTE) ? tok_sglquoted : tok_dblquoted;
+	else if ((class_ & CHR_QUOTE) || (class_ & CHR_DBLQUOTE)) {
+		token.tok_type = (class_ & CHR_QUOTE) ? tok_quoted : tok_dblquoted;
 		for (;;) {
 			next = nextchar();
 			if (sw_language == lang_cobol && sw_ansi && next == '\n') {
 				if (prior_line_position == 73) {
-					// should be a split literal 
+					/* should be a split literal */
 					next = skip_white();
 					if (next != '-' || line_position != 7) {
 						CPR_error("unterminated quoted string");
@@ -2124,14 +2122,14 @@ static TOK get_token()
 			/* If we can hold the literal do so, else assume it is in part
 			   of program we do not care about */
 
-			if (next == '\\' && !sw_sql &&
+			if (next == '\\' &&
+				!sw_sql &&
 				((sw_language == lang_c) || (isLangCpp(sw_language))))
 			{
 				peek = nextchar();
 				if (peek == '\n') {
 					token.tok_white_space += 2;
-				}
-				else if (p < end) {
+				} else if (p < end) {
 					*p++ = (TEXT) next;
 					if (p < end) {
 						*p++ = (TEXT) peek;
@@ -2189,17 +2187,15 @@ static TOK get_token()
 			return_char(*--p);
 	}
 
-	gpre_sym* symbol;
-
 	token.tok_length = p - token.tok_string;
 	*p++ = 0;
-	if (isQuoted(token.tok_type)) {
-		strip_quotes(token);
+	if (QUOTED(token.tok_type)) {
+		STRIP_QUOTES(token)
 	/** If the dialect is 1 then anything that is quoted is
 	a string. Don not lookup in the hash table to prevent 
 	parsing confusion. 
     **/
-		if (sw_sql_dialect != SQL_DIALECT_V5)
+			if (sw_sql_dialect != 1)
 			token.tok_symbol = symbol = HSH_lookup(token.tok_string);
 		else
 			token.tok_symbol = symbol = NULL;
@@ -2222,7 +2218,7 @@ static TOK get_token()
 				token.tok_keyword = (KWWORDS) symbol->sym_keyword;
 			else
 				token.tok_keyword = KW_none;
-			override_case = false;
+			override_case = 0;
 		}
 	}
 	else {
@@ -2240,7 +2236,7 @@ static TOK get_token()
 //IF symbol is null AND it is not a quoted string AND -e switch was specified
 //THEN search again using HSH_lookup2().
 //*  
-	if ((token.tok_symbol == NULL) && (!isQuoted(token.tok_type)) && sw_case) {
+	if ((token.tok_symbol == NULL) && (!QUOTED(token.tok_type)) && sw_case) {
 		token.tok_symbol = symbol = HSH_lookup2(token.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
 			token.tok_keyword = (KWWORDS) symbol->sym_keyword;
@@ -2250,7 +2246,7 @@ static TOK get_token()
 
 //  for FORTRAN, make note of the first token in a statement 
 
-	fb_assert(first_position <= MAX_USHORT);
+	assert(first_position <= MAX_USHORT);
 	token.tok_first = (USHORT) first_position;
 	first_position = FALSE;
 
@@ -2269,10 +2265,11 @@ static TOK get_token()
 
 static int nextchar()
 {
+	SSHORT c;
+
 	position++;
 	line_position++;
-	const SSHORT c = get_char(input_file);
-	if (c == '\n') {
+	if ((c = get_char(input_file)) == '\n') {
 		line++;
 		prior_line_position = line_position;
 		line_position = 0;
@@ -2299,19 +2296,14 @@ static int nextchar()
 
 #ifdef GPRE_FORTRAN
 	if (sw_language == lang_fortran && line_position == 6 && c != ' '
-		&& c != '0')
-	{
-		first_position = FALSE;
-	}
+		&& c != '0') first_position = FALSE;
 #endif
 
 #ifdef GPRE_COBOL
 	if (sw_language == lang_cobol &&
 		(!sw_ansi && line_position == 1 && c == '-') ||
 		(sw_ansi && line_position == 7 && c == '-'))
-	{
 		first_position = FALSE;
-	}
 #endif
 
 	if (position > traced_position) {
@@ -2333,9 +2325,12 @@ static int nextchar()
 //		for processing on pass 2.
 //  
 
-static SLONG pass1(const TEXT* base_directory)
+static SLONG pass1(TEXT* base_directory)
 {
-//  FSG 14.Nov.2000
+	ACT action;
+	SLONG start;
+
+//  FSG 14.Nov.2000 
 	if (sw_verbose) {
 		ib_fprintf(ib_stderr,
 				   "*********************** PASS 1 ***************************\n");
@@ -2345,31 +2340,28 @@ static SLONG pass1(const TEXT* base_directory)
 	{
 		while (token.tok_symbol)
 		{
-			const SLONG start = token.tok_position;
-			act* action = PAR_action(base_directory);
-			if (action)
+			start = token.tok_position;
+			if (action = PAR_action(base_directory))
 			{
 				action->act_position = start;
 				if (!(action->act_flags & ACT_back_token)) {
 					action->act_length = last_position - start;
-				}
-				else {
+				} else {
 					action->act_length =
 						prior_token.tok_position +
 						prior_token.tok_length - 1 - start;
 				}
-				if (global_first_action) {
-					global_last_action->act_rest = action;
-				}
-				else {
-					global_first_action = action;
+				if (first_action) {
+					last_action->act_rest = action;
+				} else {
+					first_action = action;
 				}
 
-				// Allow for more than one action to be generated by a token. 
+				/* Allow for more than one action to be generated by a token. */
 
 				do
 				{
-					global_last_action = action;
+					last_action = action;
 					if (action = action->act_rest)
 					{
 						if (action->act_type == ACT_database)
@@ -2378,22 +2370,22 @@ static SLONG pass1(const TEXT* base_directory)
 							   is do generate global decl at the start of the
 							   program file. */
 
-							global_last_action->act_rest = NULL;
-							action->act_rest = global_first_action;
-							global_first_action = action;
+							last_action->act_rest = NULL;
+							action->act_rest = first_action;
+							first_action = action;
 							action->act_position = -1;
 							action->act_length = -1;
 							break;
 						}
 						else
 						{
-							action->act_position = global_last_action->act_position;
+							action->act_position = last_action->act_position;
 							action->act_length = 0;
 						}
 					}
 				} while (action);
 
-				if (global_last_action->act_flags & ACT_break) {
+				if (last_action->act_flags & ACT_break) {
 					return last_position;
 				}
 
@@ -2426,9 +2418,12 @@ static SLONG pass1(const TEXT* base_directory)
 
 static void pass2( SLONG start_position)
 {
-	SLONG i;
+	SSHORT c, d, prior, comment_start_len, to_skip;
+	SLONG column, start;
+	SLONG i, line, line_pending, current;
+	ACT action;
 
-	SSHORT c = 0;
+	c = 0;
 
 //  FSG 14.Nov.2000 
 	if (sw_verbose) {
@@ -2462,35 +2457,25 @@ static void pass2( SLONG start_position)
 	if ((sw_language == lang_ada) && (ada_flags & ADA_create_database))
 		ib_fprintf(out_file, "with unchecked_conversion;\nwith system;\n");
 #endif
-
-	// Let's prepare for worst case: a lot of small dirs, many "\" to duplicate.
-	char backlash_fixed_file_name[MAXPATHLEN + MAXPATHLEN];
-	{ // scope
-	char* p = backlash_fixed_file_name;
-	for (const char* q = file_name; *q;)
-	{
-		if ((*p++ = *q++) == '\\')
-			*p++ = '\\';
-	}
-	*p = 0;
-	} // scope
-
-//
+//  
 //if (sw_lines)
-//   ib_fprintf (out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
+//   ib_fprintf (out_file, "#line 1 \"%s\"\n", file_name);
 //  
 
-	SLONG line = 0;
-	bool line_pending = sw_lines;
-	SLONG current = 1 + start_position;
-	SLONG column = 0;
+	line = 0;
+	if (sw_lines)
+		line_pending = TRUE;
+	else
+		line_pending = FALSE;
+	current = 1 + start_position;
+	column = 0;
 
-	SSHORT comment_start_len = strlen(comment_start);
-	SSHORT to_skip = 0;
+	comment_start_len = strlen(comment_start);
+	to_skip = 0;
 
 //  Dump text until the start of the next action, then process the action. 
 
-	for (const act* action = global_first_action; action; action = action->act_rest)
+	for (action = first_action; action; action = action->act_rest)
 	{
 		/* Dump text until the start of the next action.  If a line marker
 		   is pending and we see an end of line, dump out the marker. */
@@ -2507,12 +2492,12 @@ static void pass2( SLONG start_position)
 				if (line_pending) {
 					if (line == 1)
 						ib_fprintf(out_file, "#line %ld \"%s\"\n", line,
-								   backlash_fixed_file_name);
+								   file_name);
 					else
 						ib_fprintf(out_file, "\n#line %ld \"%s\"", line,
-								   backlash_fixed_file_name);
+								   file_name);
 
-					line_pending = false;
+					line_pending = FALSE;
 				}
 				if (line == 1 && c == '\n')
 					line++;
@@ -2521,8 +2506,7 @@ static void pass2( SLONG start_position)
 			ib_putc(c, out_file);
 			if (c == '\t') {
 				column = (column + 8) & ~7;
-			}
-			else {
+			} else {
 				++column;
 			}
 		}
@@ -2533,12 +2517,21 @@ static void pass2( SLONG start_position)
 		const bool continue_flag =
 			(action->act_type == ACT_variable)			||
 			(action->act_type == ACT_segment)			||
-			(action->act_type == ACT_segment_length) ;
+			(action->act_type == ACT_segment_length)
+#ifdef PYXIS
+			|| (action->act_type == ACT_title_text)		||
+			(action->act_type == ACT_title_length)		||
+			(action->act_type == ACT_terminator)		||
+			(action->act_type == ACT_entree_text)		||
+			(action->act_type == ACT_entree_length)		||
+			(action->act_type == ACT_entree_value)
+#endif
+			;
 
 		// Unless the action is purely a marker, insert a comment initiator
 		// into the output stream.
 
-		const SLONG start = column;
+		start = column;
 		if (!(action->act_flags & ACT_mark)) {
 			if (sw_language == lang_fortran) {
 				ib_fputc('\n', out_file);
@@ -2546,7 +2539,7 @@ static void pass2( SLONG start_position)
 			}
 			else if (sw_language == lang_cobol)
 				if (continue_flag)
-					suppress_output = true;
+					suppress_output = TRUE;
 				else {
 					ib_fputc('\n', out_file);
 					ib_fputs(comment_start, out_file);
@@ -2557,36 +2550,31 @@ static void pass2( SLONG start_position)
 				ib_fputs(comment_start, out_file);
 		}
 
-		// Next, dump the text of the action to the output stream. 
+		/* Next, dump the text of the action to the output stream. */
 
 		for (i = 0; i <= action->act_length; ++i, ++current) {
 			if (c == EOF) {
 				CPR_error("internal error -- unexpected EOF in action");
 				return;
 			}
-			const SSHORT prior = c;
+			prior = c;
 			c = get_char(input_file);
 			if (!suppress_output) {
-				// close current comment to avoid nesting comments 
+				/* close current comment to avoid nesting comments */
 				if (sw_block_comments && !(action->act_flags & ACT_mark) &&
-					c == comment_start[0])
-				{
-					const SSHORT d = get_char(input_file);
-					return_char(d);
+					c == comment_start[0]) {
+					return_char((d = get_char(input_file)));
 					if (d == comment_start[1])
 						ib_fputs(comment_stop, out_file);
 				}
 				if (sw_language != lang_cobol || !sw_ansi || c == '\n'
 					|| to_skip-- <= 0)
-				{
 					ib_putc(c, out_file);
-				}
 				if (c == '\n') {
 					line++;
 					if ((sw_language == lang_fortran) ||
 						(sw_language == lang_ada) ||
-						(sw_language == lang_cobol))
-					{
+						(sw_language == lang_cobol)) {
 						ib_fputs(comment_start, out_file);
 						to_skip =
 							(column < 7) ? comment_start_len - column : 0;
@@ -2594,17 +2582,15 @@ static void pass2( SLONG start_position)
 					}
 				}
 
-				// reopen our comment at end of user's comment 
+				/* reopen our comment at end of user's comment */
 
 				if (sw_block_comments && !(action->act_flags & ACT_mark) &&
 					prior == comment_stop[0] && c == comment_stop[1])
-				{
 					ib_fputs(comment_start, out_file);
-				}
 			}
 		}
 
-		// Unless action was purely a marker, insert a comment terminator. 
+		/* Unless action was purely a marker, insert a comment terminator. */
 
 		if (!(action->act_flags & ACT_mark) && !suppress_output) {
 			ib_fputs(comment_stop, out_file);
@@ -2612,20 +2598,17 @@ static void pass2( SLONG start_position)
 				ib_fputc('\n', out_file);
 		}
 
-		suppress_output = false;
+		suppress_output = FALSE;
 		(*gen_routine) (action, start);
 		if (action->act_type == ACT_routine &&
 			!action->act_object &&
-			((sw_language == lang_c) || (isLangCpp(sw_language))))
-		{
-			continue;
-		}
+			((sw_language == lang_c) || (isLangCpp(sw_language)))) continue;
 
 		if (action->act_flags & ACT_break)
 			return;
 
 		if (sw_lines)
-			line_pending = true;
+			line_pending = TRUE;
 		column = 0;
 		to_skip = 0;
 	}
@@ -2633,15 +2616,15 @@ static void pass2( SLONG start_position)
 //  We're out of actions -- dump the remaining text to the output stream. 
 
 	if (!line && line_pending) {
-		ib_fprintf(out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
-		line_pending = false;
+		ib_fprintf(out_file, "#line 1 \"%s\"\n", file_name);
+		line_pending = FALSE;
 	}
 
 
 	while ((c = get_char(input_file)) != EOF) {
 		if (c == '\n' && line_pending) {
-			ib_fprintf(out_file, "\n#line %ld \"%s\"", line + 1, backlash_fixed_file_name);
-			line_pending = false;
+			ib_fprintf(out_file, "\n#line %ld \"%s\"", line + 1, file_name);
+			line_pending = FALSE;
 		}
 		if (c == EOF) {
 			CPR_error("internal error -- unexpected EOF in tail");
@@ -2652,8 +2635,8 @@ static void pass2( SLONG start_position)
 
 //  Last but not least, generate any remaining functions 
 
-	for (; global_functions; global_functions = global_functions->act_next)
-		(*gen_routine) (global_functions, 0);
+	for (; functions; functions = functions->act_next)
+		(*gen_routine) (functions, 0);
 }
 
 
@@ -2665,26 +2648,20 @@ static void pass2( SLONG start_position)
 
 static void print_switches()
 {
-	const in_sw_tab_t* in_sw_table_iterator;
+	IN_SW_TAB in_sw_tab;
 
 	ib_fprintf(ib_stderr, "\tlegal switches are:\n");
-	for (in_sw_table_iterator = gpre_in_sw_table;
-		 in_sw_table_iterator->in_sw;
-		 in_sw_table_iterator++)
-	{
-		if (in_sw_table_iterator->in_sw_text) {
-			ib_fprintf(ib_stderr, "%s%s\n", in_sw_table_iterator->in_sw_name,
-					   in_sw_table_iterator->in_sw_text);
+	for (in_sw_tab = gpre_in_sw_table; in_sw_tab->in_sw; in_sw_tab++) {
+		if (in_sw_tab->in_sw_text) {
+			ib_fprintf(ib_stderr, "%s%s\n", in_sw_tab->in_sw_name,
+					   in_sw_tab->in_sw_text);
         }
     }
 
 	ib_fprintf(ib_stderr, "\n\tand the internal 'illegal' switches are:\n");
-	for (in_sw_table_iterator = gpre_in_sw_table;
-		 in_sw_table_iterator->in_sw;
-		 in_sw_table_iterator++)
-	{
-		if (!in_sw_table_iterator->in_sw_text) {
-			ib_fprintf(ib_stderr, "%s\n", in_sw_table_iterator->in_sw_name);
+	for (in_sw_tab = gpre_in_sw_table; in_sw_tab->in_sw; in_sw_tab++) {
+		if (!in_sw_tab->in_sw_text) {
+			ib_fprintf(ib_stderr, "%s\n", in_sw_tab->in_sw_name);
         }
     }
 
@@ -2698,11 +2675,14 @@ static void print_switches()
 //		is bigger than the vector, punt.
 //       
 
-static void remember_label(const TEXT* label_string)
+static void remember_label( TEXT * label_string)
 {
-	SLONG label = atoi(label_string);
+	UCHAR target_byte;
+	SLONG label;
+
+	label = atoi(label_string);
 	if (label < 8192) {
-		const UCHAR target_byte = label & 7;
+		target_byte = label & 7;
 		label >>= 3;
 		fortran_labels[label] |= 1 << target_byte;
 	}
@@ -2737,55 +2717,52 @@ static void return_char( SSHORT c)
 
 static SSHORT skip_white()
 {
-	SSHORT c, next;
+	SSHORT c, c2, next;
 
-	while (true) {
+	while (TRUE) {
 		if ((c = nextchar()) == EOF)
 			return c;
 
 		c = c & 0xff;
 
-		// skip Fortran comments 
+		/* skip Fortran comments */
 
 #ifdef GPRE_FORTRAN
 		if (sw_language == lang_fortran &&
-			line_position == 1 && (c == 'C' || c == 'c' || c == '*'))
-		{
+			line_position == 1 && (c == 'C' || c == 'c' || c == '*')) {
 			while ((c = nextchar()) != '\n' && c != EOF);
 			continue;
 		}
 #endif
 
 #ifdef GPRE_COBOL
-		// skip sequence numbers when ansi COBOL 
+		/* skip sequence numbers when ansi COBOL */
 
 		if (sw_language == lang_cobol && sw_ansi) {
 			while (line_position < 7 && (c = nextchar()) != '\n' && c != EOF);
 		}
 
-		// skip COBOL comments and conditional compilation 
+		/* skip COBOL comments and conditional compilation */
 
 		if (sw_language == lang_cobol &&
 			(!sw_ansi && line_position == 1 &&
 			 (c == 'C' || c == 'c' || c == '*' || c == '/' || c == '\\') ||
 			 (sw_ansi && line_position == 7 && c != '\t' && c != ' '
-			  && c != '-')))
-		{
+			  && c != '-'))) {
 			while ((c = nextchar()) != '\n' && c != EOF);
 			continue;
 		}
 #endif
 
-		const UCHAR char_class = classes[c];
+		SSHORT class_ = classes[c];
 
-		if (char_class & CHR_WHITE) {
+		if (class_ & CHR_WHITE)
 			continue;
-		}
 
-		// skip in-line SQL comments 
+		/* skip in-line SQL comments */
 
 		if (sw_sql && (c == '-')) {
-			const SSHORT c2 = nextchar();
+			c2 = nextchar();
 			if (c2 != '-')
 				return_char(c2);
 			else {
@@ -2816,22 +2793,20 @@ static SSHORT skip_white()
 		}
 
 #if !defined(sun) && defined(GPRE_FORTRAN)
-		// skip fortran embedded comments on VMS or hpux or sgi 
+		/* skip fortran embedded comments on VMS or hpux or sgi */
 
 		if (c == '!'
-			&& (sw_language == lang_fortran))
-		{
+			&& (sw_language == lang_fortran)) {
 			/* If this character is a '!' followed by a '=', this is an
 			   Interbase 'not equal' operator, not a Fortran comment.
 			   Bug #307.  mao 6/14/89  */
 
-			const SSHORT c3 = nextchar();
-			if (c3 == '=') {
-				return_char(c3);
+			if ((c2 = nextchar()) == '=') {
+				return_char(c2);
 				return c;
 			}
 			else {
-				if ((c = c3) != '\n' && c != EOF)
+				if ((c = c2) != '\n' && c != EOF)
 					while ((c = nextchar()) != '\n' && c != EOF);
 				continue;
 			}
@@ -2847,7 +2822,7 @@ static SSHORT skip_white()
 			continue;
 		}
 
-		// skip PASCAL comments - both types 
+		/* skip PASCAL comments - both types */
 
 		if (c == '{' && sw_language == lang_pascal) {
 			while ((c = nextchar()) != EOF && c != '}');
@@ -2871,3 +2846,5 @@ static SSHORT skip_white()
 	return c;
 }
 
+
+} // extern "C"

@@ -1,28 +1,33 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		thd_priority.h
- *	DESCRIPTION:	Thread priorities scheduler
+ *	DESCRIPTION:	Thread priorities scheduler - changes
+ *      priorities of Win32 threads to avoid side effects
+ *      of Windows native priorities scheduling.
  *
- * The contents of this file are subject to the Interbase Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy
- * of the License at http://www.Inprise.com/IPL.html
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
  *
- * Software distributed under the License is distributed on an
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
- * or implied. See the License for the specific language governing
- * rights and limitations under the License.
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
  *
- * 2002.10.20 Alexander Peshkoff: Created this scheduler, changing
- *   priorities of Win32 threads. to avoid side effects of Windows
- *   native priorities scheduling.
+ *  The Original Code was created by Alexander Peshkoff
+ *  for the Firebird Open Source RDBMS project.
  *
- * All Rights Reserved.
- * Contributor(s): ______________________________________.
+ *  Copyright (c) 2003 Alexander Peshkoff <peshkoff@mail.ru>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_OS_THD_PRIORITY_H
-#define JRD_OS_THD_PRIORITY_H
+#ifndef _JRD_OS_THD_PRIORITY_H_
+#define _JRD_OS_THD_PRIORITY_H_
 
 #ifdef WIN_NT
 #if defined(SUPERSERVER) && !defined(EMBEDDED)
@@ -48,14 +53,14 @@
 class ThreadPriorityScheduler {
 private:
 	static MUTX_T mutex;			// locks modification of thps chains
-	static MemoryPool* pool;		// where we should place our thps
-	static ThreadPriorityScheduler* chain;	// where starts thps chain
-	static ThreadPriorityScheduler* news;	// where starts new thps chain
-	static bool initialized;
+	static MemoryPool * pool;		// where we should place our thps
+	static ThreadPriorityScheduler * chain;	// where starts thps chain
+	static ThreadPriorityScheduler * news;	// where starts new thps chain
+	static BOOLEAN initialized;
 	static DWORD specific_key;		// for thread LS access
-	static bool shutdown;		// server shutting down
+	static BOOLEAN shutdown;		// server shutting down
 
-	ThreadPriorityScheduler* next;			// next thread in list
+	ThreadPriorityScheduler * next;			// next thread in list
 	union {
 	struct thdd *context;	// current context
 	DWORD id;				// ID on startup
@@ -77,7 +82,7 @@ public:
 	static void Exit(void);
 	static thdd *Get(void);
 	static void Set(thdd *val);
-	static bool Boosted(void);
+	static BOOLEAN Boosted(void);
 	static void Cleanup(void);
 	static void Init(void);
 	static void Attach(HANDLE tHandle, DWORD thread_id, int &p);
@@ -109,9 +114,8 @@ public:
 #define THPS_INIT()
 #define THPS_FINI()
 #define THPS_ATTACH(handle, thread_id, priority)
-#define THPS_BOOSTDONE() false
+#define THPS_BOOSTDONE() FALSE
 
 #endif // THREAD_PSCHED
 
-#endif // JRD_OS_THD_PRIORITY_H
-
+#endif // _JRD_OS_THD_PRIORITY_H_

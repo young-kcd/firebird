@@ -25,7 +25,7 @@ private:
 	void *module;
 };
 
-bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
+bool ModuleLoader::isLoadableModule(const Firebird::string& module)
 {
 	struct stat sb;
 	if (-1 == stat(module.c_str(), &sb))
@@ -37,15 +37,15 @@ bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
 	return true;
 }
 
-void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
+void ModuleLoader::doctorModuleExtention(Firebird::string& name)
 {
-	Firebird::PathName::size_type pos = name.rfind(".so");
-	if (pos != Firebird::PathName::npos && pos == name.length() - 3)
+	Firebird::string::size_type pos = name.rfind(".so");
+	if (pos != Firebird::string::npos && pos == name.length() - 3)
 		return;		// No doctoring necessary
 	name += ".so";
 }
 
-ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
+ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::string& modPath)
 {
 	void *module;
 	

@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding = "Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="7.00"
 	Name="gds32"
 	SccProjectName=""
 	SccLocalPath="">
@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -30,16 +30,13 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GDS32"
-				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gds32/gds32.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gds32/"
 				ObjectFile="..\..\..\temp\release\gds32/"
 				ProgramDataBaseFileName="..\..\..\temp\release\gds32/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -51,7 +48,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\gds32.def"
-				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gds32/gds32.pdb"
 				ImportLibrary="..\..\..\temp\release\gds32/gds32.lib"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -73,13 +70,7 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
 				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
@@ -91,14 +82,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GDS32"
-				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gds32/gds32.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gds32/"
 				ObjectFile="..\..\..\temp\debug\gds32/"
@@ -116,7 +104,7 @@
 				OutputFile="debug/firebird/bin/gds32.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile="..\defs\gds32.def"
+				ModuleDefinitionFile="..\defs\gds32_debug.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="..\..\..\temp\debug\gds32/gds32.pdb"
 				ImportLibrary="..\..\..\temp\debug\gds32/gds32.lib"/>
@@ -140,23 +128,15 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
 				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
-	<References>
-	</References>
 	<Files>
 		<Filter
 			Name="JRD files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\ibinitdll.cpp">
+				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -182,7 +162,7 @@
 			RelativePath="..\defs\gds32.def">
 		</File>
 		<File
-			RelativePath="..\defs\gds32.def">
+			RelativePath="..\defs\gds32_debug.def">
 		</File>
 	</Files>
 	<Globals>

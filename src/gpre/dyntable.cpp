@@ -24,15 +24,17 @@
 //
 //____________________________________________________________
 //
-//	$Id: dyntable.cpp,v 1.6 2003-11-08 16:31:40 brodsom Exp $
+//	$Id: dyntable.cpp,v 1.3 2001-12-24 02:50:49 tamlin Exp $
 //
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 
 #define NODE(dyn) dyn, "dyn",
+#ifndef NULL
+#define NULL	0
+#endif
 
 struct dyn {
 	SSHORT dyn_value;
@@ -121,7 +123,7 @@ int *table[256];
 
 main()
 {
-	dyn* item;
+	struct dyn *item;
 	int max, *stuff, dyn;
 	SCHAR *table[256];
 

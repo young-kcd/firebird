@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		sbm_proto.h
- *	DESCRIPTION:	Prototype header file for sbm.cpp
+ *	DESCRIPTION:	Prototype header file for sbm.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,28 +21,42 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_SBM_PROTO_H
-#define JRD_SBM_PROTO_H
+#ifndef _JRD_SBM_PROTO_H_
+#define _JRD_SBM_PROTO_H_
 
 #include "../jrd/sbm.h"
 #include "../jrd/rse.h"
 
 #ifdef DEV_BUILD
 #include "../jrd/ib_stdio.h"
-void SBM_dump(IB_FILE*, Jrd::SparseBitmap*);
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern void SBM_dump(IB_FILE *, SBM);
+#ifdef __cplusplus
+} /* extern "C" */
 #endif
 
-Jrd::SparseBitmap**	SBM_and(Jrd::SparseBitmap**, Jrd::SparseBitmap**);
-bool		SBM_clear(Jrd::SparseBitmap*, SLONG);
-bool		SBM_equal(Jrd::SparseBitmap*, Jrd::SparseBitmap*);
-void		SBM_init(void);
-bool		SBM_next(Jrd::SparseBitmap*, SLONG*, Jrd::rse_get_mode);
-Jrd::SparseBitmap**	SBM_or(Jrd::SparseBitmap**, Jrd::SparseBitmap**);
-void		SBM_release(Jrd::SparseBitmap*);
-void		SBM_reset(Jrd::SparseBitmap**);
-void		SBM_set(Jrd::thread_db*, Jrd::SparseBitmap**, SLONG);
-bool		SBM_test(const Jrd::SparseBitmap*, SLONG);
-SLONG		SBM_size(const Jrd::SparseBitmap* const* const);
+#endif
 
-#endif // JRD_SBM_PROTO_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+extern struct sbm **SBM_and(struct sbm **, struct sbm **);
+extern int SBM_clear(struct sbm *, SLONG);
+extern BOOLEAN SBM_equal(SBM, SBM);
+extern void SBM_init(void);
+extern int SBM_next(struct sbm *, SLONG *, enum rse_get_mode);
+extern struct sbm **SBM_or(struct sbm **, struct sbm **);
+extern void SBM_release(struct sbm *);
+extern void SBM_reset(struct sbm **);
+extern void SBM_set(TDBB, struct sbm **, SLONG);
+extern int SBM_test(struct sbm *, SLONG);
+extern SLONG SBM_size(struct sbm **);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _JRD_SBM_PROTO_H_ */

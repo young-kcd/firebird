@@ -66,8 +66,7 @@
 
 				 
 
-			
-
+				 
 			 
 
 						 
@@ -113,8 +112,6 @@
 
 		
 
-						
-
 #define f_pag_page 0  
 #define f_pag_id 1  
 #define f_pag_seq 2  
@@ -154,7 +151,6 @@
 #define f_seg_name 0  
 #define f_seg_field 1  
 #define f_seg_position 2  
-#define f_seg_statistics 3  
 #define f_idx_name 0  
 #define f_idx_relation 1  
 #define f_idx_id 2  
@@ -346,9 +342,3 @@
 #define f_xcp_sys_flag 4  
 #define f_rol_name 0  
 #define f_rol_owner 1  
-#define f_backup_id 0  
-#define f_backup_time 1  
-#define f_backup_level 2  
-#define f_backup_guid 3  
-#define f_backup_scn 4  
-#define f_backup_name 5  

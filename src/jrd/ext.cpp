@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		ext.cpp
+ *	MODULE:		ext.c
  *	DESCRIPTION:	External file access
  *
  * The contents of this file are subject to the Interbase Public
@@ -34,7 +34,6 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
 #include "../jrd/ib_stdio.h"
 #include <errno.h>
 #include <string.h>
@@ -45,7 +44,7 @@
 #include "../jrd/rse.h"
 #include "../jrd/ext.h"
 #include "../jrd/tra.h"
-#include "gen/iberror.h"
+#include "gen/codes.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/ext_proto.h"
@@ -58,42 +57,37 @@
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"
-#include "../common/classes/init.h"
-
-using namespace Jrd;
 
 namespace {
-	IB_FILE *ext_fopen(const char *filename, const char *mode);
+IB_FILE *ext_fopen(const char *filename, const char *mode);
 
-	class ExternalFileDirectoryList : public Firebird::DirectoryList
-	{
-	private:
-		const Firebird::PathName getConfigString(void) const {
-			return Firebird::PathName(Config::getExternalFileAccess());
-		}
-	public:
-		ExternalFileDirectoryList(MemoryPool& p) : DirectoryList(p) 
-		{
-			initialize();
-		}
-	};
-	Firebird::InitInstance<ExternalFileDirectoryList> iExternalFileDirectoryList;
-
-	IB_FILE *ext_fopen(const char *filename, const char *mode) {
-		if (!iExternalFileDirectoryList().isPathInList(filename))
-			ERR_post(isc_conf_access_denied,
-				isc_arg_string, "external file",
-				isc_arg_string, ERR_cstring(filename),
-				isc_arg_end);
-
-		return ib_fopen(filename, mode);
+class ExternalFileDirectoryList : public DirectoryList {
+	const Firebird::PathName GetConfigString(void) const {
+		return Firebird::PathName(Config::getExternalFileAccess());
 	}
+} iExternalFileDirectoryList;
+
+IB_FILE *ext_fopen(const char *filename, const char *mode) {
+	if (!iExternalFileDirectoryList.IsPathInList(filename))
+		ERR_post(gds_conf_access_denied,
+			gds_arg_string, "external file",
+			gds_arg_string, ERR_cstring(const_cast <TEXT *>(filename)),
+			gds_arg_end);
+
+	return ib_fopen(filename, mode);
 }
+};
+
+extern "C" {
+
 
 #ifdef WIN_NT
+#include <windows.h>
+#include <stdlib.h>
+#include <io.h>
 #define FOPEN_TYPE	"a+b"
 #define FOPEN_READ_ONLY	"rb"
-#define	SYS_ERR		isc_arg_win32
+#define	SYS_ERR		gds_arg_win32
 #endif
 
 #ifndef FOPEN_TYPE
@@ -102,12 +96,13 @@ namespace {
 #endif
 
 #ifndef SYS_ERR
-#define SYS_ERR		isc_arg_unix
+#define SYS_ERR		gds_arg_unix
 #endif
 
 
+//static void io_error(EXT, TEXT *, ISC_STATUS, SLONG);
 
-void EXT_close(RecordSource* rsb)
+void EXT_close(RSB rsb)
 {
 /**************************************
  *
@@ -122,7 +117,7 @@ void EXT_close(RecordSource* rsb)
 }
 
 
-void EXT_erase(record_param* rpb, int* transaction)
+void EXT_erase(RPB * rpb, int *transaction)
 {
 /**************************************
  *
@@ -139,8 +134,7 @@ void EXT_erase(record_param* rpb, int* transaction)
 }
 
 
-// Third param is unused.
-ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* description)
+EXT EXT_file(JRD_REL relation, const TEXT * file_name, SLONG * description)
 {
 /**************************************
  *
@@ -152,7 +146,10 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
  *	Create a file block for external file access.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	DBB dbb;
+	EXT file;
+
+	dbb = GET_DBB;
 	CHECK_DBB(dbb);
 
 /* if we already have a external file associated with this relation just
@@ -171,16 +168,15 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
 	Firebird::PathName Path, Name;
 	PathUtils::splitLastComponent(Path, Name, file_name);
 	if (Path.length() == 0)	{	// path component not present in file_name
-		iExternalFileDirectoryList().expandFileName(Path, Name, 4);
+		iExternalFileDirectoryList.ExpandFileName(Path, Name, 4);
 		file_name = Path.c_str();
 	}
 
-	ExternalFile* file =
-		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ExternalFile();
-	relation->rel_file = file;
+	relation->rel_file = file =
+		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ext();
 	strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
 	file->ext_flags = 0;
-	file->ext_ifi = NULL;
+	file->ext_ifi = (int *) NULL;
 
 /* If the database is updateable, then try opening the external files in
  * RW mode. If the DB is ReadOnly, then open the external files only in
@@ -192,23 +188,21 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
 	{
 		/* could not open the file as read write attempt as read only */
 		if (!(file->ext_ifi = (int *) ext_fopen(file_name, FOPEN_READ_ONLY)))
-		{
 			ERR_post(isc_io_error,
-					 isc_arg_string, "ib_fopen",
-					 isc_arg_string,
-					 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
+					 gds_arg_string, "ib_fopen",
+					 gds_arg_string,
+					 ERR_cstring(reinterpret_cast <
+								 char *>(file->ext_filename)),
 					isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
-		}
-		else {
+		else
 			file->ext_flags |= EXT_readonly;
-		}
 	}
 
 	return file;
 }
 
 
-void EXT_fini(jrd_rel* relation)
+void EXT_fini(JRD_REL relation)
 {
 /**************************************
  *
@@ -220,8 +214,10 @@ void EXT_fini(jrd_rel* relation)
  *	Close the file associated with a relation.
  *
  **************************************/
+	EXT file;
+
 	if (relation->rel_file) {
-		ExternalFile* file = relation->rel_file;
+		file = relation->rel_file;
 		if (file->ext_ifi)
 			ib_fclose((IB_FILE *) file->ext_ifi);
 		/* before zeroing out the rel_file we need to deallocate the memory */
@@ -231,7 +227,7 @@ void EXT_fini(jrd_rel* relation)
 }
 
 
-bool EXT_get(RecordSource* rsb)
+int EXT_get(RSB rsb)
 {
 /**************************************
  *
@@ -243,37 +239,49 @@ bool EXT_get(RecordSource* rsb)
  *	Get a record from an external file.
  *
  **************************************/
- 	thread_db* tdbb = GET_THREAD_DATA;
+	TDBB tdbb;
+	JRD_REQ request;
+	JRD_REL relation;
+	EXT file;
+	RPB *rpb;
+	REC record;
+	FMT format;
+	LIT literal;
+	JRD_FLD field;
+	DSC desc;
+	SSHORT c, l, offset, i;
+	UCHAR *p;
+	vec::iterator itr;
 
-	jrd_rel* relation = rsb->rsb_relation;
-	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->tdbb_request;
+	tdbb = GET_THREAD_DATA;
+
+	relation = rsb->rsb_relation;
+	file = relation->rel_file;
+	request = tdbb->tdbb_request;
 
 	if (request->req_flags & req_abort)
-		return false;
+		return FALSE;
 
-	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
-	Record* record = rpb->rpb_record;
-	const Format* format = record->rec_format;
+	rpb = &request->req_rpb[rsb->rsb_stream];
+	record = rpb->rpb_record;
+	format = record->rec_format;
 
-	const SSHORT offset = (SSHORT) (IPTR) format->fmt_desc[0].dsc_address;
-	UCHAR* p = record->rec_data + offset;
-	SSHORT l = record->rec_length - offset;
+	offset = (SSHORT) format->fmt_desc[0].dsc_address;
+	p = record->rec_data + offset;
+	l = record->rec_length - offset;
 
 	if (file->ext_ifi == 0 ||
 		(ib_fseek((IB_FILE *) file->ext_ifi, rpb->rpb_ext_pos, 0) != 0))
-	{
 		ERR_post(isc_io_error,
-				 isc_arg_string, "ib_fseek",
-				 isc_arg_string,
-				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
+				 gds_arg_string, "ib_fseek",
+				 gds_arg_string,
+				 ERR_cstring(reinterpret_cast < char *>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
-	}
 
 	while (l--) {
-		const SSHORT c = ib_getc((IB_FILE *) file->ext_ifi);
+		c = ib_getc((IB_FILE *) file->ext_ifi);
 		if (c == EOF)
-			return false;
+			return FALSE;
 		*p++ = c;
 	}
 	rpb->rpb_ext_pos = ib_ftell((IB_FILE *) file->ext_ifi);
@@ -281,32 +289,28 @@ bool EXT_get(RecordSource* rsb)
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
 
-	dsc desc;
-	Format::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
+	fmt::fmt_desc_iterator desc_ptr = format->fmt_desc.begin();
 
-    SSHORT i = 0;
-	for (vec::iterator itr = relation->rel_fields->begin();
-			i < format->fmt_count; ++i, ++itr, ++desc_ptr)
-	{
-	    const jrd_fld* field = (jrd_fld*) (*itr);
+	for (i = 0, itr = relation->rel_fields->begin();
+			i < format->fmt_count; ++i, ++itr, ++desc_ptr) {
+	    field = (JRD_FLD) (*itr);
 		SET_NULL(record, i);
 		if (!desc_ptr->dsc_length || !field)
 			continue;
-		const Literal* literal = (Literal*) field->fld_missing_value;
-		if (literal) {
+		if ( (literal = (LIT) field->fld_missing_value) ) {
 			desc = *desc_ptr;
-			desc.dsc_address = record->rec_data + (IPTR) desc.dsc_address;
+			desc.dsc_address = record->rec_data + (int) desc.dsc_address;
 			if (!MOV_compare(&literal->lit_desc, &desc))
 				continue;
 		}
 		CLEAR_NULL(record, i);
 	}
 
-	return true;
+	return TRUE;
 }
 
 
-void EXT_modify(record_param* old_rpb, record_param* new_rpb, int* transaction)
+void EXT_modify(RPB * old_rpb, RPB * new_rpb, int *transaction)
 {
 /**************************************
  *
@@ -319,12 +323,12 @@ void EXT_modify(record_param* old_rpb, record_param* new_rpb, int* transaction)
  *
  **************************************/
 
-/* ERR_post (isc_wish_list, isc_arg_interpreted, "EXT_modify: not yet implemented", 0); */
+/* ERR_post (gds_wish_list, gds_arg_interpreted, "EXT_modify: not yet implemented", 0); */
 	ERR_post(isc_ext_file_modify, 0);
 }
 
 
-void EXT_open(RecordSource* rsb)
+void EXT_open(RSB rsb)
 {
 /**************************************
  *
@@ -336,15 +340,20 @@ void EXT_open(RecordSource* rsb)
  *	Open a record stream for an external file.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	TDBB tdbb;
+	JRD_REL relation;
+	JRD_REQ request;
+	RPB *rpb;
+	REC record;
+	FMT format;
 
-	jrd_rel* relation = rsb->rsb_relation;
-	jrd_req* request = tdbb->tdbb_request;
-	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+	tdbb = GET_THREAD_DATA;
 
-	const Format* format;
-	Record* record = rpb->rpb_record;
-	if (!record || !(format = record->rec_format)) {
+	relation = rsb->rsb_relation;
+	request = tdbb->tdbb_request;
+	rpb = &request->req_rpb[rsb->rsb_stream];
+
+	if (!(record = rpb->rpb_record) || !(format = record->rec_format)) {
 		format = MET_current(tdbb, relation);
 		VIO_record(tdbb, rpb, format, request->req_pool);
 	}
@@ -353,7 +362,7 @@ void EXT_open(RecordSource* rsb)
 }
 
 
-RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, jrd_nod** sort_ptr)
+RSB EXT_optimize(OPT opt, SSHORT stream, JRD_NOD * sort_ptr)
 {
 /**************************************
  *
@@ -366,17 +375,23 @@ RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, jrd_nod** sort_ptr)
  *	set of record source blocks (rsb's).
  *
  **************************************/
+	TDBB tdbb;
+	CSB csb;
+	JRD_REL relation;
+	RSB rsb_;
 /* all these are un refrenced due to the code commented below
-jrd_nod*		node, inversion;
-OptimizerBlk::opt_repeat	*tail, *opt_end;
+JRD_NOD		node, inversion;
+opt::opt_repeat	*tail, *opt_end;
 SSHORT		i, size;
 */
+	SSHORT size;
+	csb_repeat *csb_tail;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	tdbb = GET_THREAD_DATA;
 
-	CompilerScratch* csb = opt->opt_csb;
-	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
-	jrd_rel* relation = csb_tail->csb_relation;
+	csb = opt->opt_csb;
+	csb_tail = &csb->csb_rpt[stream];
+	relation = csb_tail->csb_relation;
 
 /* Time to find inversions.  For each index on the relation
    match all unused booleans against the index looking for upper
@@ -410,20 +425,20 @@ if (opt->opt_count)
 */
 
 
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->tdbb_default,0) RecordSource;
-	rsb->rsb_type = rsb_ext_sequential;
-	const SSHORT size = sizeof(irsb);
+	rsb_ = FB_NEW_RPT(*tdbb->tdbb_default,0) Rsb;
+	rsb_->rsb_type = rsb_ext_sequential;
+	size = sizeof(struct irsb);
 
-	rsb->rsb_stream = stream;
-	rsb->rsb_relation = relation;
-	rsb->rsb_impure = csb->csb_impure;
+	rsb_->rsb_stream = stream;
+	rsb_->rsb_relation = relation;
+	rsb_->rsb_impure = csb->csb_impure;
 	csb->csb_impure += size;
 
-	return rsb;
+	return rsb_;
 }
 
 
-void EXT_ready(jrd_rel* relation)
+void EXT_ready(JRD_REL relation)
 {
 /**************************************
  *
@@ -438,7 +453,7 @@ void EXT_ready(jrd_rel* relation)
 }
 
 
-void EXT_store(record_param* rpb, int* transaction)
+void EXT_store(RPB * rpb, int *transaction)
 {
 /**************************************
  *
@@ -450,10 +465,20 @@ void EXT_store(record_param* rpb, int* transaction)
  *	Update an external file.
  *
  **************************************/
-	jrd_rel* relation = rpb->rpb_relation;
-	ExternalFile* file = relation->rel_file;
-	Record* record = rpb->rpb_record;
-	const Format* format = record->rec_format;
+	JRD_REL relation;
+	REC record;
+	FMT format;
+	EXT file;
+	JRD_FLD field;
+	LIT literal;
+	DSC desc;
+	UCHAR *p;
+	USHORT i, l, offset;
+
+	relation = rpb->rpb_relation;
+	file = relation->rel_file;
+	record = rpb->rpb_record;
+	format = record->rec_format;
 
 /* Loop thru fields setting missing fields to either blanks/zeros
    or the missing value */
@@ -461,67 +486,64 @@ void EXT_store(record_param* rpb, int* transaction)
 /* check if file is read only if read only then
    post error we cannot write to this file */
 	if (file->ext_flags & EXT_readonly) {
-		Database* dbb = GET_DBB;
+		DBB dbb;
+
+		dbb = GET_DBB;
 		CHECK_DBB(dbb);
 		/* Distinguish error message for a ReadOnly database */
 		if (dbb->dbb_flags & DBB_read_only)
 			ERR_post(isc_read_only_database, 0);
-		else {
+		else
 			ERR_post(isc_io_error,
-					 isc_arg_string, "insert",
-					 isc_arg_string, file->ext_filename,
+					 gds_arg_string, "insert",
+					 gds_arg_string, file->ext_filename,
 					 isc_arg_gds, isc_io_write_err,
-					 isc_arg_gds, isc_ext_readonly_err, 0);
-		}
+					 gds_arg_gds, gds_ext_readonly_err, 0);
 	}
 
-	dsc desc;
 	vec::iterator field_ptr = relation->rel_fields->begin();
-	Format::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
+	fmt::fmt_desc_iterator desc_ptr = format->fmt_desc.begin();
 
-	for (USHORT i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
+	for (i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
 	{
-		const jrd_fld* field = (jrd_fld*) *field_ptr;
+		field = (JRD_FLD)*field_ptr;
 		if (field &&
 			!field->fld_computation &&
 			desc_ptr->dsc_length &&
 			TEST_NULL(record, i))
 		{
-			UCHAR* p = record->rec_data + (IPTR) desc_ptr->dsc_address;
-			const Literal* literal = (Literal*) field->fld_missing_value;
-			if (literal) {
+			p = record->rec_data + (int) desc_ptr->dsc_address;
+			if ( (literal = (LIT) field->fld_missing_value) ) {
 				desc = *desc_ptr;
 				desc.dsc_address = p;
 				MOV_move(&literal->lit_desc, &desc);
 			}
 			else {
-				USHORT l = desc_ptr->dsc_length;
-				const UCHAR pad = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;
-				do {
-					*p++ = pad;
-				} while (--l);
+				l = desc_ptr->dsc_length;
+				offset = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;
+				do
+					*p++ = offset;
+				while (--l);
 			}
 		}
 	}
 
-	const USHORT offset = (USHORT) (IPTR) format->fmt_desc[0].dsc_address;
-	const UCHAR* p = record->rec_data + offset;
-	USHORT l = record->rec_length - offset;
+	offset = (USHORT) format->fmt_desc[0].dsc_address;
+	p = record->rec_data + offset;
+	l = record->rec_length - offset;
 
 	if (file->ext_ifi == 0
 		|| (ib_fseek((IB_FILE *) file->ext_ifi, (SLONG) 0, 2) != 0))
-	{
-		ERR_post(isc_io_error, isc_arg_string, "ib_fseek", isc_arg_string,
-				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
+		ERR_post(isc_io_error, gds_arg_string, "ib_fseek", gds_arg_string,
+				 ERR_cstring(reinterpret_cast < char *>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
-	}
 	for (; l--; ++p)
 		ib_putc(*p, (IB_FILE *) file->ext_ifi);
 	ib_fflush((IB_FILE *) file->ext_ifi);
 }
 
 
-void EXT_trans_commit(jrd_tra* transaction)
+void EXT_trans_commit(JRD_TRA transaction)
 {
 /**************************************
  *
@@ -536,7 +558,7 @@ void EXT_trans_commit(jrd_tra* transaction)
 }
 
 
-void EXT_trans_prepare(jrd_tra* transaction)
+void EXT_trans_prepare(JRD_TRA transaction)
 {
 /**************************************
  *
@@ -551,7 +573,7 @@ void EXT_trans_prepare(jrd_tra* transaction)
 }
 
 
-void EXT_trans_rollback(jrd_tra* transaction)
+void EXT_trans_rollback(JRD_TRA transaction)
 {
 /**************************************
  *
@@ -566,7 +588,7 @@ void EXT_trans_rollback(jrd_tra* transaction)
 }
 
 
-void EXT_trans_start(jrd_tra* transaction)
+void EXT_trans_start(JRD_TRA transaction)
 {
 /**************************************
  *
@@ -580,3 +602,5 @@ void EXT_trans_start(jrd_tra* transaction)
  **************************************/
 }
 
+
+} // extern "C"

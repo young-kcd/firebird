@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gbak,v 1.7 2003-11-08 07:39:06 bellardo Exp $
+#  $Id: Makefile.in.static.gbak,v 1.6.2.1 2003-07-19 04:57:38 bellardo Exp $
 #
 ROOT=..
 ObjModuleName=static.gbak

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_INTL_H
-#define JRD_INTL_H
+#ifndef _JRD_INTL_H_
+#define _JRD_INTL_H_
 
 #include "../intl/charsets.h"
 
@@ -82,6 +82,8 @@
 #define INTL_GET_COLLATE(dsc)	((SCHAR)((dsc)->dsc_sub_type >> 8))
 
 
+#define	IS_DTYPE_ANY_TEXT(x)		((x) <= dtype_any_text)
+
 /* Define tests for international data */
 
 #define	INTL_TTYPE(desc)		((desc)->dsc_ttype)
@@ -92,7 +94,9 @@
 #define IS_INTL_DATA(d)		((d)->dsc_dtype <= dtype_any_text &&    \
 				 (((USHORT)((d)->dsc_ttype)) > ttype_last_internal))
 
-#define INTL_TEXT_TYPE(desc)    ((DTYPE_IS_TEXT((desc).dsc_dtype)) ? INTL_TTYPE (&(desc)) : ttype_ascii)
+#define NUMERIC_SCALE(desc)	((IS_DTYPE_ANY_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
+
+#define INTL_TEXT_TYPE(desc)    ((IS_DTYPE_ANY_TEXT((desc).dsc_dtype)) ? INTL_TTYPE (&(desc)) : ttype_ascii)
 
 #define INTL_DYNAMIC_CHARSET(desc)	(INTL_GET_CHARSET(desc) == CS_dynamic)
 
@@ -140,5 +144,4 @@
 /* Maps a Character_set_id & collation_id to a text_type (driver ID) */
 #define INTL_CS_COLL_TO_TTYPE(cs,coll)	((SSHORT)((coll) << 8 | ((cs) & 0x00FF)))
 
-#endif /* JRD_INTL_H */
-
+#endif /* _JRD_INTL_H_ */

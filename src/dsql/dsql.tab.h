@@ -1,7 +1,3 @@
-#ifndef YYERRCODE
-#define YYERRCODE 256
-#endif
-
 #define ACTIVE 257
 #define ADD 258
 #define AFTER 259
@@ -261,10 +257,3 @@
 #define KW_INSERTING 513
 #define KW_UPDATING 514
 #define KW_DELETING 515
-#define BACKUP 516
-#define KW_DIFFERENCE 517
-#define OPEN 518
-#define CLOSE 519
-#define FETCH 520
-#define ROWS 521
-#define BLOCK 522

@@ -47,6 +47,8 @@
 #include "jrd.h"
 #include "ods.h"
 
+extern SCHAR *sys_errlist[];
+
 static void analyse(int, SCHAR *, PAG, int);
 static SLONG get_long(void);
 static void db_error(int);
@@ -87,15 +89,14 @@ void main( int argc, char **argv)
  *	Replay all I/O to compute overhead of I/O system.
  *
  **************************************/
-	SSHORT event;
-	bool detail;
+	SSHORT event, detail;
 	USHORT *r, *w;
 	PAG *page;
 	SLONG reads, writes, n, cpu, elapsed, system, length, sequence;
 	SCHAR string[128], *p, *end;
 	struct tms after, before;
 
-	detail = true;
+	detail = TRUE;
 	sequence = 0;
 
 	for (end = argv + argc, ++argv; argv < end; argv++) {
@@ -103,7 +104,7 @@ void main( int argc, char **argv)
 		if (*p++ == '-')
 			switch (UPPER(*p)) {
 			case 'S':
-				detail = false;
+				detail = FALSE;
 				break;
 			}
 	}
@@ -218,7 +219,7 @@ static void analyse( int number, SCHAR * string, PAG page, int sequence)
 
 	case pag_root:
 		ib_printf("Index root page, relation %d\n",
-				  ((index_root_page*) page)->irt_relation);
+				  ((IRT) page)->irt_relation);
 		break;
 
 	case pag_index:
@@ -289,7 +290,7 @@ static void db_error( int status)
  *
  **************************************/
 
-	ib_printf(strerror(status));
+	ib_printf(sys_errlist[status]);
 	abort();
 }
 

@@ -28,8 +28,8 @@
  *
  */
 
-#ifndef JRD_FIL_H
-#define JRD_FIL_H
+#ifndef _JRD_FIL_H_
+#define _JRD_FIL_H_
 
 #include "../jrd/thd.h"
 
@@ -51,36 +51,33 @@
 
 /* Temporary workfile directory list. */
 
-struct dir_list {
+typedef struct dls {
 	SLONG dls_header;
-	dir_list* dls_next;
+	struct dls *dls_next;
 	ULONG dls_size;				/* Maximum size in the directory */
 	ULONG dls_inuse;			/* Occupied space in the directory */
 	TEXT dls_directory[2];		/* Directory name */
-};
+} *DLS;
 
-struct mutexed_dir_list {
-	dir_list* mdls_dls;				/* Pointer to the directory list */
-	bool mdls_mutex_init;
+typedef struct mdls {
+	DLS mdls_dls;				/* Pointer to the directory list */
+	BOOLEAN mdls_mutex_init;
 	MUTX_T mdls_mutex[1];		/* Mutex for directory list. Must
 								   be locked before list operations */
-};
+} MDLS;
 
 /* external function directory list */
-/* OBSOLETE.
-struct function_dir_list {
-	function_dir_list* fdls_next;
+
+typedef struct fdls {
+	struct fdls *fdls_next;
 	TEXT fdls_directory[1];
-};
-*/
+} FDLS;
 
 /* external file directory list */
-/* OBSOLETE
-struct extfile_dir_list {
-    extfile_dir_list* edls_next;
+
+typedef struct edls {
+    struct edls *edls_next;
     TEXT edls_directory[1];
-};
-*/
+} EDLS;
 
-#endif /* JRD_FIL_H */
-
+#endif /* _JRD_FIL_H_ */

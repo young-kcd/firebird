@@ -3,37 +3,24 @@
  *	MODULE:		class_test.cpp
  *	DESCRIPTION:	Class library integrity tests
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * You may obtain a copy of the Licence at
- * http://www.gnu.org/licences/lgpl.html
- * 
- * As a special exception this file can also be included in modules
- * with other source code as long as that source code has been 
- * released under an Open Source Initiative certificed licence.  
- * More information about OSI certification can be found at: 
- * http://www.opensource.org 
- * 
- * This module is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public Licence for more details.
- * 
- * This module was created by members of the firebird development 
- * team.  All individual contributions remain the Copyright (C) of 
- * those individuals and all rights are reserved.  Contributors to 
- * this file are either listed below or can be obtained from a CVS 
- * history command.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  Created by: Nickolay Samofatov <skidder@bssys.com>
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Contributor(s):
- * 
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  $Id: class_test.cpp,v 1.13 2004-03-25 23:12:39 skidder Exp $
+ * Created by: Nickolay Samofatov <skidder@bssys.com>
  *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
 #include "../../include/firebird.h"
@@ -45,32 +32,30 @@ using namespace Firebird;
 
 void testVector() {
 	printf("Test Firebird::Vector: ");
-	Vector<int, 100> v;
+	Vector<int,100> v;
 	int i;
-	for (i = 0; i < 100; i++)
+	for (i=0;i<100;i++)
 		v.add(i);
-	for (i = 0; i < 50; i++)
+	for (i=0;i<50;i++)
 		v.remove(0);
 	bool passed = true;
-	for (i = 50; i < 100; i++)
-		if (v[i - 50] != i)
-			passed = false;
-	printf(passed ? "PASSED\n" : "FAILED\n");
+	for (i=50;i<100;i++)
+		if (v[i-50] != i) passed = false;
+	printf(passed?"PASSED\n":"FAILED\n");
 }
 
 void testSortedVector() {
 	printf("Test Firebird::SortedVector: ");
-	SortedVector<int, 100> v;
+	SortedVector<int,100> v;
 	int i;
-	for (i = 0; i < 100; i++)
-		v.add(99 - i);
-	for (i = 0; i < 50; i++)
+	for (i=0;i<100;i++)
+		v.add(99-i);
+	for (i=0;i<50;i++)
 		v.remove(0);
 	bool passed = true;
-	for (i = 50;i < 100; i++)
-		if (v[i - 50] != i)
-			passed = false;
-	printf(passed ? "PASSED\n" : "FAILED\n");
+	for (i=50;i<100;i++)
+		if (v[i-50] != i) passed = false;
+	printf(passed?"PASSED\n":"FAILED\n");
 }
 
 #define TEST_ITEMS 1000000
@@ -91,10 +76,10 @@ void testBePlusTree() {
 	Vector<int, TEST_ITEMS> v;
 	int n = 0;
 	int i;
-	for (i = 0; i < TEST_ITEMS; i++) {
+	for (i=0;i<TEST_ITEMS;i++) {
 		n = n * 45578 - 17651;
 		// Fill it with quasi-random values in range 0...TEST_ITEMS-1
-		v.add(((i + n) % TEST_ITEMS + TEST_ITEMS) / 2);
+		v.add(((i+n) % TEST_ITEMS + TEST_ITEMS)/2);
 	}
 	printf(" DONE\n");
 	
@@ -104,7 +89,7 @@ void testBePlusTree() {
 	BePlusTree<Test, int, MallocAllocator, Test, 
 		DefaultComparator<int>, 13, 13> tree2(&temp);
 	int cnt1 = 0, cnt2 = 0;
-	for (i = 0; i < v.getCount(); i++) {
+	for (i=0; i < v.getCount(); i++) {
 		if (tree1.locate(locEqual, v[i]))
 			tree1.current().count++;
 		else {
@@ -112,7 +97,7 @@ void testBePlusTree() {
 			t.value = v[i];
 			t.count = 1;
 			if (!tree1.add(t))
-				fb_assert(false);
+				assert(false);
 			cnt1++;
 		}
 		if (tree2.locate(locEqual, v[i]))
@@ -122,7 +107,7 @@ void testBePlusTree() {
 			t.value = v[i];
 			t.count = 1;
 			if (!tree2.add(t))
-				fb_assert(false);
+				assert(false);
 			cnt2++;
 		}	
 	}
@@ -131,19 +116,19 @@ void testBePlusTree() {
 	bool passed = true;
 	
 	printf("Check that tree(2) contains test data: ");
-	for (i = 0; i < v.getCount(); i++) {
-		if (!tree1.locate(locEqual, v[i]))
+	for (i=0; i< v.getCount(); i++) {
+		if(!tree1.locate(locEqual,v[i])) 
 			passed = false;
 	}
-	printf(passed ? "PASSED\n" : "FAILED\n");
+	printf(passed?"PASSED\n":"FAILED\n");
 	passed = true;
 	
 	printf("Check that tree(13) contains test data: ");
-	for (i = 0; i < v.getCount(); i++) {
-		if(!tree2.locate(locEqual, v[i]))
+	for (i=0; i< v.getCount(); i++) {
+		if(!tree2.locate(locEqual,v[i])) 
 			passed = false;
 	}
-	printf(passed ? "PASSED\n" : "FAILED\n");
+	printf(passed?"PASSED\n":"FAILED\n");
 	
 	passed = true;
 	
@@ -156,56 +141,55 @@ void testBePlusTree() {
 	} while (tree1.getNext());
 	if (n != cnt1 || cnt1 != cnt2) 
 		passed = false;
-	printf(passed ? "PASSED\n" : "FAILED\n");
+	printf(passed?"PASSED\n":"FAILED\n");
 	
 	printf("Check that tree(13) contains data from the tree(2) "\
 		   "and its count is correct (check in reverse order): ");
 	n = 0;
 	if (tree2.getLast()) do {
 		n++;
-		if (!tree1.locate(locEqual, tree2.current().value))
-			passed = false;
+		if (!tree1.locate(locEqual, tree2.current().value)) passed = false;
 	} while (tree2.getPrev());
 	if (n != cnt2)
 		passed = false;
-	printf(passed ? "PASSED\n" : "FAILED\n");
+	printf(passed?"PASSED\n":"FAILED\n");
 	
 	printf("Remove half of data from the trees: ");
-	while (v.getCount() > TEST_ITEMS / 2) {
-		if (!tree1.locate(locEqual, v[v.getCount() - 1]))
-			fb_assert(false);
+	while (v.getCount() > TEST_ITEMS/2) {
+		if (!tree1.locate(locEqual, v[v.getCount()-1]))
+			assert(false);
 		if (tree1.current().count > 1) 
 			tree1.current().count--;
 		else {
 			tree1.fastRemove();
 			cnt1--;
 		}
-		if (!tree2.locate(locEqual, v[v.getCount() - 1]))
-			fb_assert(false);
+		if (!tree2.locate(locEqual, v[v.getCount()-1]))
+			assert(false);
 		if (tree2.current().count > 1) 
 			tree2.current().count--;
 		else {
 			tree2.fastRemove();
 			cnt2--;
 		}
-		v.shrink(v.getCount() - 1);
+		v.shrink(v.getCount()-1);
 	}
 	printf(" DONE\n");
 	
 	printf("Check that tree(2) contains test data: ");
-	for (i = 0; i < v.getCount(); i++) {
-		if(!tree1.locate(locEqual, v[i]))
+	for (i=0; i< v.getCount(); i++) {
+		if(!tree1.locate(locEqual,v[i])) 
 			passed = false;
 	}	
-	printf(passed ? "PASSED\n" : "FAILED\n");
+	printf(passed?"PASSED\n":"FAILED\n");
 	passed = true;
 	
 	printf("Check that tree(13) contains test data: ");
-	for (i = 0; i < v.getCount(); i++) {
-		if(!tree2.locate(locEqual, v[i]))
+	for (i=0; i < v.getCount(); i++) {
+		if(!tree2.locate(locEqual,v[i])) 
 			passed = false;
 	}	
-	printf(passed ? "PASSED\n" : "FAILED\n");
+	printf(passed?"PASSED\n":"FAILED\n");
 	
 	passed = true;
 	
@@ -213,12 +197,11 @@ void testBePlusTree() {
 	n = 0;
 	if (tree1.getFirst()) do {
 		n++;
-		if (!tree2.locate(locEqual, tree1.current().value))
-			passed = false;
+		if (!tree2.locate(locEqual, tree1.current().value)) passed = false;
 	} while (tree1.getNext());
 	if (n != cnt1 || cnt1 != cnt2) 
 		passed = false;
-	printf(passed ? "PASSED\n" : "FAILED\n");
+	printf(passed?"PASSED\n":"FAILED\n");
 	
 	passed = true;
 	
@@ -227,19 +210,18 @@ void testBePlusTree() {
 	n = 0;
 	if (tree2.getLast()) do {
 		n++;
-		if (!tree1.locate(locEqual, tree2.current().value))
-			passed = false;
+		if (!tree1.locate(locEqual, tree2.current().value)) passed = false;
 	} while (tree2.getPrev());
 	if (n != cnt2) 
 		passed = false;
-	printf(passed ? "PASSED\n" : "FAILED\n");
+	printf(passed?"PASSED\n":"FAILED\n");
 	
 	passed = true;
 	
 	printf("Remove the rest of data from the trees: ");
-	for (i = 0;i < v.getCount(); i++) {
+	for (i=0;i < v.getCount(); i++) {
 		if (!tree1.locate(locEqual, v[i]))
-			fb_assert(false);
+			assert(false);
 		if (tree1.current().count > 1) 
 			tree1.current().count--;
 		else {
@@ -247,7 +229,7 @@ void testBePlusTree() {
 			cnt1--;
 		}
 		if (!tree2.locate(locEqual, v[i]))
-			fb_assert(false);
+			assert(false);
 		if (tree2.current().count > 1)
 			tree2.current().count--;
 		else {
@@ -262,7 +244,7 @@ void testBePlusTree() {
 		passed = false;
 	if (tree2.getLast())
 		passed = false;
-	printf(passed ? "PASSED\n" : "FAILED\n");
+	printf(passed?"PASSED\n":"FAILED\n");
 }
 
 #define ALLOC_ITEMS 1000000
@@ -270,67 +252,52 @@ void testBePlusTree() {
 #define BIG_ITEMS (ALLOC_ITEMS/10)
 #define BIG_SIZE (MAX_ITEM_SIZE*5)
 
-#define LARGE_ITEMS 10
-#define LARGE_ITEM_SIZE 300000
-
 struct AllocItem {
 	int order;
 	void *item;
-	static bool greaterThan(const AllocItem &i1, const AllocItem &i2) {
-		return i1.order > i2.order || (i1.order == i2.order && i1.item > i2.item);
+	static int compare(const AllocItem &i1, const AllocItem &i2) {
+		return i1.order > i2.order || (i1.order==i2.order && i1.item > i2.item);
 	}
 };
 
 void testAllocator() {
 	printf("Test Firebird::MemoryPool\n");
-	MemoryPool* parent = getDefaultMemoryPool();
-	MemoryPool* pool = MemoryPool::createPool(parent);
+	MemoryPool* pool = MemoryPool::createPool();
 	
 	MallocAllocator allocator;
-	BePlusTree<AllocItem, AllocItem, MallocAllocator, DefaultKeyValue<AllocItem>, AllocItem> items(&allocator),
+	BePlusTree<AllocItem,AllocItem,MallocAllocator,DefaultKeyValue<AllocItem>,AllocItem> items(&allocator),
 		bigItems(&allocator);
-		
-	Vector<void*, LARGE_ITEMS> la;
-	printf("Allocate %d large items: ", LARGE_ITEMS);
-	int i;
-	for (i = 0; i<LARGE_ITEMS; i++)
-		la.add(pool->allocate(LARGE_ITEM_SIZE));		
-	pool->verify_pool();
-	printf(" DONE\n");
-	
 	printf("Allocate %d items: ", ALLOC_ITEMS);
 	int n = 0;
+	int i;
 	pool->verify_pool();
-	for (i = 0; i < ALLOC_ITEMS; i++) {
+	for (i=0;i<ALLOC_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE) / 2 + 1)};
+		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE)/2+1)};
 		items.add(temp);
 	}
 	printf(" DONE\n");
 	pool->verify_pool();
-	parent->verify_pool();
 	
 	printf("Deallocate half of items in quasi-random order: ");
 	n = 0;
 	if (items.getFirst()) do {
 		pool->deallocate(items.current().item);
 		n++;
-	} while (n < ALLOC_ITEMS / 2 && items.getNext());
+	} while (n < ALLOC_ITEMS/2 && items.getNext());
 	printf(" DONE\n");
 	pool->verify_pool();
-	parent->verify_pool();
 	
 	printf("Allocate %d big items: ", BIG_ITEMS);
 	n = 0;
 	pool->verify_pool();
-	for (i = 0; i < BIG_ITEMS; i++) {
+	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE) / 2 + 1)};
+		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE)/2+1)};
 		bigItems.add(temp);
 	}
 	printf(" DONE\n");
 	pool->verify_pool();
-	parent->verify_pool();
 	
 	printf("Deallocate the rest of small items in quasi-random order: ");
 	while (items.getNext()) {
@@ -338,30 +305,17 @@ void testAllocator() {
 	}
 	printf(" DONE\n");
 	pool->verify_pool();
-	parent->verify_pool();
 	
 	printf("Deallocate big items in quasi-random order: ");
 	if (bigItems.getFirst()) do {
 		pool->deallocate(bigItems.current().item);
 	} while (bigItems.getNext());
 	printf(" DONE\n");
-	
-	printf("Deallocate %d large items: ", LARGE_ITEMS/2);
-	for (i = 0; i<LARGE_ITEMS/2; i++)
-		pool->deallocate(la[i]);
 	pool->verify_pool();
-	printf(" DONE\n");
-
-	
-	pool->verify_pool();
-	parent->verify_pool();
-	pool->print_contents(stdout, false);
-	parent->print_contents(stdout, false);
+	pool->print_contents(stdout,true);
 	MemoryPool::deletePool(pool);
-	parent->verify_pool();	
 //  TODO:
 //	Test critically low memory conditions
-//  Test that tree correctly recovers in low-memory conditions
 }
 
 int main() {
@@ -370,4 +324,3 @@ int main() {
 	testBePlusTree();
 	testAllocator();
 }
-

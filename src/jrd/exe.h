@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2001.07.28: Added rse_skip to class RecordSelExpr to support LIMIT.
+ * 2001.07.28: Added rse_skip to struct rse to support LIMIT.
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
@@ -28,69 +28,29 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 
-#ifndef JRD_EXE_H
-#define JRD_EXE_H
+#ifndef _JRD_EXE_H_
+#define _JRD_EXE_H_
 
 #include "../jrd/jrd_blks.h"
-#include "../common/classes/array.h"
-
-#include "gen/iberror.h"
+#include "../include/fb_blk.h"
+#include "../include/fb_vector.h"
 
 #define NODE(type, name, keyword) type,
 
-typedef enum nod_t {
+typedef ENUM nod_t {
 #include "../jrd/nod.h"
 	nod_MAX
 #undef NODE
 } NOD_T;
 
 #include "../jrd/dsc.h"
-#include "../jrd/rse.h"
-
-#include "../jrd/err_proto.h"
-
-// This macro enables DSQL tracing code
-//#define CMP_DEBUG
-
-#ifdef CMP_DEBUG
-DEFINE_TRACE_ROUTINE(cmp_trace);
-#define CMP_TRACE(args) cmp_trace args
-#else
-#define CMP_TRACE(args) /* nothing */
-#endif
-
-class str;
-struct dsc;
-
-namespace Jrd {
-
-class jrd_rel;
-class jrd_nod;
-struct sort_key_def;
-class SparseBitmap;
-class vec;
-class jrd_prc;
-struct index_desc;
-struct IndexDescAlloc;
-class Format;
-
-// NOTE: The definition of structures RecordSelExpr and lit must be defined in
-//       exactly the same way as structure jrd_nod through item nod_count.
-//       Now, inheritance takes care of those common data members.
-class jrd_node_base : public pool_alloc_rpt<jrd_nod*, type_nod>
-{
-public:
-	jrd_nod*	nod_parent;
-	SLONG	nod_impure;			/* Inpure offset from request block */
-	NOD_T	nod_type;				/* Type of node */
-	UCHAR	nod_flags;
-	SCHAR	nod_scale;			/* Target scale factor */
-	USHORT	nod_count;			/* Number of arguments */
-	Firebird::Array<jrd_nod*> *nod_variables; /* Variables and arguments this node depends on */
-};
 
 
-class jrd_nod : public jrd_node_base
+/* NOTE: The definition of structures rse and lit must be defined in
+	 exactly the same way as structure jrd_nod through item nod_count.
+	 If you change one, be sure to change all of them. */
+
+class jrd_nod : public pool_alloc_rpt<class jrd_nod*, type_nod>
 {
 public:
 /*	jrd_nod()
@@ -103,8 +63,16 @@ public:
 	{
 		nod_arg[0] = 0;
 	}*/
+
+	jrd_nod*	nod_parent;
+	SLONG	nod_impure;			/* Inpure offset from request block */
+	NOD_T	nod_type;				/* Type of node */
+	UCHAR	nod_flags;
+	SCHAR	nod_scale;			/* Target scale factor */
+	USHORT	nod_count;			/* Number of arguments */
 	jrd_nod*	nod_arg[1];
 };
+typedef jrd_nod* JRD_NOD;
 
 #define nod_comparison 	1
 #define nod_id		1			/* marks a field node as a blr_fid guy */
@@ -118,15 +86,22 @@ public:
 #define nod_invariant	128		/* node is recognized as being invariant */
 
 
-/* Special RecordSelExpr node */
 
-class RecordSelExpr : public jrd_node_base
+/* Special RSE node */
+
+class rse : public pool_alloc_rpt<jrd_nod*, type_rse>
 {
 public:
-	USHORT		rse_count;
-	USHORT		rse_jointype;		/* inner, left, full */
-	bool		rse_writelock;
-	RecordSource*	rse_rsb;
+	jrd_nod*	nod_parent;
+	SLONG	nod_impure;			/* Inpure offset from request block */
+	NOD_T	nod_type;				/* Type of node */
+	UCHAR	nod_flags;
+	SCHAR	nod_scale;			/* Target scale factor */
+	USHORT	nod_count;			/* Number of arguments */
+	USHORT	rse_count;
+	USHORT	rse_jointype;		/* inner, left, right, full */
+	BOOLEAN rse_writelock;
+	struct rsb *rse_rsb;
 	jrd_nod*	rse_first;
     jrd_nod*	rse_skip;
 	jrd_nod*	rse_boolean;
@@ -139,36 +114,37 @@ public:
 #endif
 	jrd_nod*	rse_relation[1];
 };
+typedef rse* RSE;
 
+#define rse_stream	1			/* flags rse-type node as a blr_stream type */
+#define rse_singular	2		/* flags rse-type node as from a singleton select */
+#define rse_variant	4			/* flags rse as variant (not invariant?) */
 
-#define rse_stream	1			/* flags RecordSelExpr-type node as a blr_stream type */
-#define rse_singular	2		/* flags RecordSelExpr-type node as from a singleton select */
-#define rse_variant	4			/* flags RecordSelExpr as variant (not invariant?) */
-
-// Number of nodes may fit into nod_arg of normal node to get to rse_relation
-const size_t rse_delta = (sizeof(RecordSelExpr) - sizeof(jrd_nod)) / sizeof(jrd_nod::blk_repeat_type);
-
-// Types of nulls placement for each column in sort order
-#define rse_nulls_default 0
-#define rse_nulls_first 1
-#define rse_nulls_last 2
+#define rse_delta	(sizeof(struct rse)-sizeof(struct jrd_nod))/sizeof(((JRD_NOD) 0)->nod_arg[0])
 
 
 /* Literal value */
 
-class Literal : public jrd_node_base
+class lit : public pool_alloc<type_lit>
 {
 public:
+	jrd_nod*	nod_parent;
+	SLONG	nod_impure;			/* Inpure offset from request block */
+	NOD_T	nod_type;				/* Type of node */
+	UCHAR	nod_flags;
+	SCHAR	nod_scale;			/* Target scale factor */
+	USHORT	nod_count;			/* Number of arguments */
 	dsc		lit_desc;
 	SINT64	lit_data[1]; // Defined this way to prevent SIGBUS error in 64-bit ports
 };
+typedef lit* LIT;
 
-#define lit_delta	((sizeof(Literal) - sizeof(jrd_nod) - sizeof(SINT64)) / sizeof(jrd_nod**))
+#define lit_delta	((sizeof(struct lit)-sizeof(struct jrd_nod)-sizeof(SINT64)) / sizeof(JRD_NOD*))
 
 
 /* Aggregate Sort Block (for DISTINCT aggregates) */
 
-class AggregateSort : public pool_alloc<type_asb>
+class asb : public pool_alloc<type_asb>
 {
 public:
 	jrd_nod*	nod_parent;
@@ -178,23 +154,24 @@ public:
 	SCHAR	nod_scale;
 	USHORT	nod_count;
 	dsc		asb_desc;
-	sort_key_def* asb_key_desc;	/* for the aggregate   */
+	struct skd* asb_key_desc;	/* for the aggregate   */
 	UCHAR	asb_key_data[1];
 };
+typedef asb* ASB;
 
-#define asb_delta	((sizeof(AggregateSort) - sizeof(jrd_nod)) / sizeof (jrd_nod**))
+#define asb_delta	((sizeof(struct asb) - sizeof(struct jrd_nod)) / sizeof (JRD_NOD*))
 
 
 /* Various structures in the impure area */
 
-struct impure_state {
+typedef struct sta {
 	SSHORT sta_state;
-};
+} *STA;
 
-struct impure_value {
-	dsc vlu_desc;
+typedef struct vlu {
+	struct dsc vlu_desc;
 	USHORT vlu_flags; // Computed/invariant flags
-	str* vlu_string;
+	struct str *vlu_string;
 	union {
 		SSHORT vlu_short;
 		SLONG vlu_long;
@@ -206,13 +183,27 @@ struct impure_value {
 		GDS_TIMESTAMP vlu_timestamp;
 		GDS_TIME vlu_sql_time;
 		GDS_DATE vlu_sql_date;
-		void* vlu_invariant; // Pre-compiled invariant object for nod_like and other string functions
 	} vlu_misc;
-};
+} *VLU;
 
-struct impure_value_ex : public impure_value {
+typedef struct vlux {
+	struct dsc vlu_desc;
+	USHORT vlu_flags; // Computed/invariant flags
+	struct str *vlu_string;
+	union {
+		SSHORT vlu_short;
+		SLONG vlu_long;
+		SINT64 vlu_int64;
+		SQUAD vlu_quad;
+		SLONG vlu_dbkey[2];
+		float vlu_float;
+		double vlu_double;
+		GDS_TIMESTAMP vlu_timestamp;
+		GDS_TIME vlu_sql_time;
+		GDS_DATE vlu_sql_date;
+	} vlu_misc;
 	SLONG vlux_count;
-};
+} *VLUX;
 
 
 #define VLU_computed	1		/* An invariant sub-query has been computed */
@@ -221,16 +212,16 @@ struct impure_value_ex : public impure_value {
 
 /* Inversion (i.e. nod_index) impure area */
 
-struct impure_inversion {
-	SparseBitmap* inv_bitmap;
-};
+typedef struct inv {
+	struct sbm* inv_bitmap;
+} *INV;
 
 
-/* AggregateSort impure area */
+/* ASB impure area */
 
-struct impure_agg_sort {
-	sort_context* iasb_sort_handle;
-};
+typedef struct iasb {
+	SLONG *iasb_sort_handle;
+} *IASB;
 
 
 /* Various field positions */
@@ -249,14 +240,13 @@ struct impure_agg_sort {
 
 #define	e_msg_number		0
 #define	e_msg_format		1
-#define e_msg_invariants	2
-#define	e_msg_next		3
-#define	e_msg_length		4
+#define	e_msg_next		2
+#define	e_msg_length		3
 
 #define	e_fld_stream		0
 #define	e_fld_id		1
 #define	e_fld_default_value	2	/* hold column default value info if any,
-								   (Literal*) */
+								   (LIT) */
 #define	e_fld_length		3
 
 #define	e_sto_statement		0
@@ -327,7 +317,7 @@ struct impure_agg_sort {
 #define e_val_length		2
 
 #define e_uni_stream		0	/* Stream for union */
-#define e_uni_clauses		1	/* RecordSelExpr's for union */
+#define e_uni_clauses		1	/* rse's for union */
 #define e_uni_length		2
 
 #define e_agg_stream		0
@@ -393,9 +383,8 @@ struct impure_agg_sort {
 #define e_var_length		2
 
 #define e_dcl_id		0
-#define e_dcl_invariants	1
-#define e_dcl_desc		2
-#define e_dcl_length		(2 + sizeof (DSC)/sizeof (::Jrd::jrd_nod*))	/* Room for descriptor */
+#define e_dcl_desc		1
+#define e_dcl_length		(1 + sizeof (DSC)/sizeof (JRD_NOD))	/* Room for descriptor */
 
 #define e_dep_object		0	/* node for registering dependencies */
 #define e_dep_object_type	1
@@ -508,132 +497,6 @@ struct impure_agg_sort {
 #define e_current_time_length	1
 #define e_current_timestamp_length	1
 
-#define e_dcl_cursor_number		0
-#define e_dcl_cursor_rse		1
-#define e_dcl_cursor_rsb		2
-#define e_dcl_cursor_length		3
-
-#define e_cursor_stmt_op		0
-#define e_cursor_stmt_number	1
-#define e_cursor_stmt_seek		2
-#define e_cursor_stmt_into		3
-#define e_cursor_stmt_length	4
-
-// Request resources
-
-struct Resource
-{
-	enum rsc_s
-	{
-		rsc_relation,
-		rsc_procedure,
-		rsc_index
-	};
-
-	enum rsc_s	rsc_type;
-	USHORT		rsc_id;			/* Id of the resource */
-	jrd_rel*	rsc_rel;		/* Relation block */
-	jrd_prc*	rsc_prc;		/* Procedure block */
-
-	static bool greaterThan(const Resource& i1, const Resource& i2) {
-		// A few places of the engine depend on fact that rsc_type 
-		// is the first field in ResourceList ordering
-		if (i1.rsc_type != i2.rsc_type)
-			return i1.rsc_type > i2.rsc_type;
-		if (i1.rsc_type == rsc_index) {
-			// Sort by relation ID for now
-			if (i1.rsc_rel->rel_id != i2.rsc_rel->rel_id)
-				return i1.rsc_rel->rel_id > i2.rsc_rel->rel_id;
-		}
-		return i1.rsc_id > i2.rsc_id;
-	}
-
-	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc) :
-		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc) { }
-};
-
-typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>, 
-	Resource, Firebird::DefaultKeyValue<Resource>, Resource> ResourceList;
-
-/* Access items */
-
-struct AccessItem
-{
-	const TEXT*	acc_security_name;
-	SLONG	acc_view_id;
-	const TEXT*	acc_name;
-	const TEXT*	acc_type;
-	USHORT		acc_mask;
-
-	static int strcmp_null(const char* s1, const char* s2) {
-		return s1 == NULL ? s2 != NULL : s2 == NULL ? -1 : strcmp(s1, s2);
-	}
-
-	static bool greaterThan(const AccessItem& i1, const AccessItem& i2) {
-		int v;
-		if ((v = strcmp_null(i1.acc_security_name, i2.acc_security_name)) != 0)
-			return v > 0;
-
-		if (i1.acc_view_id != i2.acc_view_id)
-			return i1.acc_view_id > i2.acc_view_id;
-
-		if (i1.acc_mask != i2.acc_mask)
-			return i1.acc_mask > i2.acc_mask;
-
-		if ((v = strcmp(i1.acc_type, i2.acc_type)) != 0) 
-			return v > 0;
-
-		if ((v = strcmp(i1.acc_name, i2.acc_name)) != 0)
-			return v > 0;
-
-		return false; // Equal
-	}
-
-	AccessItem(const TEXT* security_name, SLONG view_id, const TEXT* name,
-		const TEXT* type, USHORT mask) 
-	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
-		acc_type(type), acc_mask(mask)
-	{}
-};
-
-typedef Firebird::SortedArray<AccessItem, Firebird::EmptyStorage<AccessItem>, 
-	AccessItem, Firebird::DefaultKeyValue<AccessItem>, AccessItem> AccessItemList;
-
-// Triggers and procedures the request accesses
-struct ExternalAccess
-{
-	enum exa_act {
-		exa_procedure,
-		exa_insert,
-		exa_update,
-		exa_delete
-	};
-	exa_act exa_action;
-	USHORT exa_prc_id;
-	USHORT exa_rel_id;
-	USHORT exa_view_id;
-
-	// Procedure
-	ExternalAccess(USHORT prc_id) : 
-		exa_action(exa_procedure), exa_prc_id(prc_id), exa_rel_id(0), exa_view_id(0)
-	{ }
-
-	// Trigger
-	ExternalAccess(exa_act action, USHORT rel_id, USHORT view_id) :
-		exa_action(action), exa_prc_id(0), exa_rel_id(rel_id), exa_view_id(view_id)
-	{ }
-
-	static bool greaterThan(const ExternalAccess& i1, const ExternalAccess& i2) {
-		if (i1.exa_action != i2.exa_action) return i1.exa_action > i2.exa_action;
-		if (i1.exa_prc_id != i2.exa_prc_id) return i1.exa_prc_id > i2.exa_prc_id;
-		if (i1.exa_rel_id != i2.exa_rel_id) return i1.exa_rel_id > i2.exa_rel_id;
-		if (i1.exa_view_id != i2.exa_view_id) return i1.exa_view_id > i2.exa_view_id;
-		return false; // Equal
-	}
-};
-
-typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAccess>, 
-	ExternalAccess, Firebird::DefaultKeyValue<ExternalAccess>, ExternalAccess> ExternalAccessList;
 
 /* Compile scratch block */
 
@@ -641,22 +504,66 @@ typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAcc
  * TMN: I had to move the enclosed csb_repeat outside this class,
  * since it's part of the C API. Compiling as C++ would enclose it.
  */
-// CVC: Mike comment seems to apply only when the conversion to C++
-// was being done. It's almost impossible that a repeating structure of
-// the compiler scratch block be available to outsiders.
 
-typedef Firebird::SortedArray<SLONG> VarInvariantArray;
-typedef Firebird::Array<VarInvariantArray*> MsgInvariantArray;
+struct csb_repeat
+{
+	// We must zero-initialize this one
+	csb_repeat()
+	:	csb_stream(0),
+		csb_view_stream(0),
+		csb_flags(0),
+		csb_indices(0),
+		csb_relation(0),
+		csb_alias(0),
+		csb_procedure(0),
+		csb_view(0),
+		csb_idx(0),
+		csb_idx_allocation(0),
+		csb_message(0),
+		csb_format(0),
+		csb_fields(0),
+		csb_cardinality(0.0f),	// TMN: Non-natural cardinality?!
+		csb_plan(0),
+		csb_map(0),
+		csb_rsb_ptr(0)
+	{}
 
-class CompilerScratch : public pool_alloc<type_csb>
+	UCHAR csb_stream;			/* Map user context to internal stream */
+	UCHAR csb_view_stream;		/* stream number for view relation, below */
+	USHORT csb_flags;
+	USHORT csb_indices;			/* Number of indices */
+
+	struct jrd_rel* csb_relation;
+	struct str* csb_alias;		/* SQL alias name for this instance of relation */
+	struct jrd_prc* csb_procedure;
+	struct jrd_rel* csb_view;		/* parent view */
+
+	struct idx* csb_idx;		/* Packed description of indices */
+	struct str* csb_idx_allocation;	/* Memory allocated to hold index descriptions */
+	jrd_nod* csb_message;			/* Msg for send/receive */
+	struct fmt* csb_format;		/* Default fmt for stream */
+	struct sbm* csb_fields;		/* Fields referenced */
+	float csb_cardinality;		/* Cardinality of relation */
+	jrd_nod* csb_plan;				/* user-specified plan for this relation */
+	UCHAR* csb_map;				/* Stream map for views */
+	struct rsb** csb_rsb_ptr;	/* point to rsb for nod_stream */
+};
+
+
+class Csb : public pool_alloc<type_csb>
 {
 public:
-	CompilerScratch(MemoryPool& p, size_t len)
+	Csb(MemoryPool& p, size_t len)
 	:	/*csb_blr(0),
 		csb_running(0),
 		csb_node(0),
+		csb_access(0),
 		csb_variables(0),
+		csb_resources(0),
 		csb_dependencies(0),
+		csb_fors(0),
+		csb_invariants(0),
+		csb_current_rses(0),
 #ifdef SCROLLABLE_CURSORS
 		csb_current_rse(0),
 #endif
@@ -666,98 +573,36 @@ public:
 		csb_msg_number(0),
 		csb_impure(0),
 		csb_g_flags(0),*/
-		csb_external(p),
-		csb_access(p),
-		csb_resources(p),
-		csb_dependencies(p),
-		csb_fors(p),
-		csb_invariants(p),
-		csb_current_nodes(p),
-		csb_pool(p),
-		csb_rpt(p, len)
+		csb_rpt(len, p, type_csb)
 	{}
 
-	static CompilerScratch* newCsb(MemoryPool& p, size_t len)
-		{ return FB_NEW(p) CompilerScratch(p, len); }
+	static Csb* newCsb(MemoryPool& p, size_t len)
+		{ return FB_NEW(p) Csb(p, len); }
 
-	int nextStream(bool check = true)
-	{
-		if (csb_n_stream >= MAX_STREAMS && check)
-		{
-			ERR_post(isc_too_many_contexts, 0);
-		}
-		return csb_n_stream++;
-	}
-
-	const UCHAR*	csb_blr;
-	const UCHAR*	csb_running;
+	UCHAR*		csb_blr;
+	UCHAR*		csb_running;
 	jrd_nod*		csb_node;
-	ExternalAccessList csb_external;      /* Access to outside procedures/triggers to be checked */
-	AccessItemList	csb_access;			/* Access items to be checked */
-	vec*			csb_variables;		/* Vector of variables, if any */
-	ResourceList	csb_resources;		/* Resources (relations and indexes) */
-	NodeStack		csb_dependencies;	/* objects this request depends upon */
-	Firebird::Array<RecordSource*> csb_fors;	/* stack of fors */
-	Firebird::Array<jrd_nod*> csb_invariants;	/* stack of invariant nodes */
-	Firebird::Array<jrd_node_base*> csb_current_nodes;	/* RecordSelExpr's and other invariant candidates within whose scope we are */
+	struct acc*	csb_access;		/* Access items to be checked */
+	struct vec*	csb_variables;	/* Vector of variables, if any */
+	class Rsc*	csb_resources;	/* Resources (relations and indexes) */
+	struct lls*	csb_dependencies;	/* objects this request depends upon */
+	struct lls*	csb_fors;		/* stack of fors */
+	struct lls*	csb_invariants;	/* stack of invariant nodes */
+	struct lls*	csb_current_rses;	/* rse's within whose scope we are */
 #ifdef SCROLLABLE_CURSORS
-	RecordSelExpr*	csb_current_rse;	/* this holds the RecordSelExpr currently being processed;
-									   unlike the current_rses stack, it references any expanded view RecordSelExpr */
+	struct rse*	csb_current_rse;	/* this holds the rse currently being processed; 
+									   unlike the current_rses stack, it references any expanded view rse */
 #endif
 	jrd_nod*		csb_async_message;	/* asynchronous message to send to request */
-	USHORT			csb_n_stream;		/* Next available stream */
-	USHORT			csb_msg_number;		/* Highest used message number */
-	SLONG			csb_impure;			/* Next offset into impure area */
-	USHORT			csb_g_flags;
-	MemoryPool&		csb_pool;				/* Memory pool to be used by csb */
-
-    struct csb_repeat
-	{
-		// We must zero-initialize this one
-		csb_repeat()
-		:	csb_stream(0),
-			csb_view_stream(0),
-			csb_flags(0),
-			csb_indices(0),
-			csb_relation(0),
-			csb_alias(0),
-			csb_procedure(0),
-			csb_view(0),
-			csb_idx(0),
-			csb_message(0),
-			csb_format(0),
-			csb_fields(0),
-			csb_cardinality(0.0f),	// TMN: Non-natural cardinality?!
-			csb_plan(0),
-			csb_map(0),
-			csb_rsb_ptr(0)
-		{}
-
-		UCHAR csb_stream;			/* Map user context to internal stream */
-		UCHAR csb_view_stream;		/* stream number for view relation, below */
-		USHORT csb_flags;
-		USHORT csb_indices;			/* Number of indices */
-
-		jrd_rel* csb_relation;
-		Firebird::string* csb_alias;	/* SQL alias name for this instance of relation */
-		jrd_prc* csb_procedure;
-		jrd_rel* csb_view;		/* parent view */
-
-		IndexDescAlloc* csb_idx;	/* Packed description of indices */
-		jrd_nod* csb_message;			/* Msg for send/receive */
-		Format* csb_format;		/* Default Format for stream */
-		SparseBitmap* csb_fields;		/* Fields referenced */
-		float csb_cardinality;		/* Cardinality of relation */
-		jrd_nod* csb_plan;				/* user-specified plan for this relation */
-		UCHAR* csb_map;				/* Stream map for views */
-		RecordSource** csb_rsb_ptr;	/* point to rsb for nod_stream */
-	};
-
-
-	typedef csb_repeat* rpt_itr;
-	typedef const csb_repeat* rpt_const_itr;
-	Firebird::HalfStaticArray<csb_repeat, 5> csb_rpt;
+	USHORT		csb_count;			/* Current tail count */
+	USHORT		csb_n_stream;		/* Next available stream */
+	USHORT		csb_msg_number;		/* Highest used message number */
+	SLONG		csb_impure;			/* Next offset into impure area */
+	USHORT		csb_g_flags;
+	typedef		Firebird::vector<csb_repeat>::iterator rpt_itr;
+	Firebird::vector<csb_repeat> csb_rpt;
 };
+typedef Csb* CSB;
 
 #define csb_internal	     	0x1	/* "csb_g_flag" switch */
 #define csb_get_dependencies 	0x2
@@ -765,7 +610,7 @@ public:
 #define csb_blr_version4 	0x8	/* The blr is of version 4 */
 
 #define csb_active 	1
-#define csb_used	2           /* Context has already been defined (BLR parsing only) */
+#define csb_used	2
 #define csb_view_update	4		/* View update w/wo trigger is in progress */
 #define csb_trigger	8			/* NEW or OLD context in trigger */
 #define csb_no_dbkey	16		/* Stream doesn't have a dbkey */
@@ -785,37 +630,23 @@ public:
 struct xcp_repeat {
 	SSHORT xcp_type;
 	SLONG xcp_code;
+	class str *xcp_msg;
 };
 
-class PsqlException : public pool_alloc_rpt<xcp_repeat, type_xcp>
+class xcp : public pool_alloc_rpt<xcp_repeat, type_xcp>
 {
     public:
 	SLONG xcp_count;
     xcp_repeat xcp_rpt[1];
 };
+typedef xcp *XCP;
 
 #define xcp_sql_code	1
 #define xcp_gds_code	2
 #define xcp_xcp_code	3
 #define xcp_default	4
 
-class StatusXcp {
-	ISC_STATUS_ARRAY status;
-
-public:
-	StatusXcp();
-
-	void clear();
-	void init(const ISC_STATUS*);
-	void copyTo(ISC_STATUS*) const;
-	bool success() const;
-	SLONG as_gdscode() const;
-	SLONG as_sqlcode() const;
-};
-
 #define XCP_MESSAGE_LENGTH	78	// must correspond to the size of
 								// RDB$EXCEPTIONS.RDB$MESSAGE
-} //namespace Jrd
 
-#endif // JRD_EXE_H
-
+#endif /* _JRD_EXE_H_ */

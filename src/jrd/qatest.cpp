@@ -96,8 +96,8 @@ defined APIs for this function.
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sdw.h"
-#include "../jrd/os/pio.h"
-#include "gen/iberror.h"
+#include "../jrd/pio.h"
+#include "gen/codes.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/flu_proto.h"
 #include "../jrd/sch_proto.h"
@@ -133,13 +133,13 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
  *	These entrypoints are *NOT* designed for customer use!
  *
  **************************************/
-	thread_db* tdbb;
+	TDBB tdbb;
 	char filename[MAXPATHLEN];
-	Shadow* shadow;
+	SDW shadow;
 #ifdef WIN_NT
 	HANDLE desc;
 #endif
-	jrd_file* file;
+	FIL file;
 
 
 	switch (*function) {
@@ -147,7 +147,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		/* Parameter 1: SLONG *testvalue */
 		/* Entrypoint for testing the QA entrypoint method */
 
-		return 2 * (*(SLONG*) arg1);
+		return 2 * *(SLONG *) arg1;
 
 	case QATEST_delete_database:
 		/* Parameters: NONE */
@@ -223,8 +223,8 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		sprintf(filename, "Unknown QATEST_entrypoint #%lu",	/* TXNN */
 				*function);
 		THREAD_ENTER;
-		ERR_post(isc_random,
-				 isc_arg_string, ERR_cstring(filename), 0);
+		ERR_post(gds_random,
+				 gds_arg_string, ERR_cstring((TEXT *) filename), 0);
 		THREAD_EXIT;
 		return 0;
 	}

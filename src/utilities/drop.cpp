@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.23 2004-03-28 09:10:27 robocop Exp $
+ * $Id: drop.cpp,v 1.19 2003-04-16 10:18:35 aafemt Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -68,17 +68,13 @@
 
 #define FTOK_KEY		15
 
-#ifndef HAVE_MMAP
 static void dummy_init(void);
-#endif
 static SLONG get_key(TEXT *);
 static void remove_resource(TEXT *, SLONG, SLONG, TEXT *);
 static int sem_exclusive(SLONG, SLONG);
-#ifndef HAVE_MMAP
 static int shm_exclusive(SLONG, SLONG);
-#endif
 #ifdef MANAGER_PROCESS
-static void shut_manager(const TEXT*);
+static void shut_manager(TEXT *);
 #endif
 
 static int orig_argc;
@@ -98,15 +94,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *
  **************************************/
 	SCHAR **end, *p;
-	bool sw_lockmngr = false;
-	bool sw_events = false;
-	bool sw_version = false;
-	bool sw_nobridge = false;
-	bool sw_shutmngr = false;
+	BOOLEAN sw_lockmngr, sw_events, sw_version, sw_nobridge,
+		sw_shutmngr;
 
 	orig_argc = argc;
 	orig_argv = argv;
 
+	sw_lockmngr = sw_events = sw_version = sw_nobridge =
+		sw_shutmngr = FALSE;
 	end = argv + argc;
 	while (++argv < end)
 		if (**argv == '-')
@@ -114,27 +109,27 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				switch (UPPER(*p)) {
 
 				case 'E':
-					sw_events = true;
+					sw_events = TRUE;
 					break;
 
 				case 'L':
-					sw_lockmngr = true;
+					sw_lockmngr = TRUE;
 					break;
 
 				case 'A':
-					sw_events = sw_lockmngr = true;
+					sw_events = sw_lockmngr = TRUE;
 					break;
 
 				case 'S':
-					sw_shutmngr = sw_nobridge = true;
+					sw_shutmngr = sw_nobridge = TRUE;
 					break;
 
 				case 'N':
-					sw_nobridge = true;
+					sw_nobridge = TRUE;
 					break;
 
 				case 'Z':
-					sw_version = true;
+					sw_version = TRUE;
 					break;
 
 				default:
@@ -162,7 +157,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 }
 
 
-#ifndef HAVE_MMAP
 static void dummy_init(void)
 {
 /**************************************
@@ -176,7 +170,7 @@ static void dummy_init(void)
  *
  **************************************/
 }
-#endif
+
 
 static SLONG get_key( TEXT * filename)
 {
@@ -208,7 +202,7 @@ static SLONG get_key( TEXT * filename)
 #ifndef HAVE_MMAP
 static void remove_resource(
 							TEXT * filename,
-							SLONG shm_length, SLONG sem_count, TEXT* label)
+							SLONG shm_length, SLONG sem_count, TEXT * label)
 {
 /**************************************
  *
@@ -257,8 +251,7 @@ static void remove_resource(
 	}
 
 	if ((shmid = shm_exclusive(key, shmem_data.sh_mem_length_mapped)) == -1 ||
-		(semid = sem_exclusive(key, sem_count)) == -1) 
-	{
+		(semid = sem_exclusive(key, sem_count)) == -1) {
 		ib_printf("\n***File or semaphores for %s are currently in use.\n",
 				  label);
 		return;
@@ -400,7 +393,7 @@ static int shm_exclusive( SLONG key, SLONG length)
 
 
 #ifdef MANAGER_PROCESS
-static void shut_manager(const TEXT* label)
+static void shut_manager( TEXT * label)
 {
 /**************************************
  *
@@ -418,7 +411,7 @@ static void shut_manager(const TEXT* label)
 
 	if (!(strcmp(label, "lock manager"))) {
 		owner_handle = 0;
-		LOCK_init(status_vector, false, getpid(), 0, &owner_handle);
+		LOCK_init(status_vector, FALSE, getpid(), 0, &owner_handle);
 
 		/* In case if lock manager is not running, LOCK_init starts it.
 		   It takes time for the manager to be started, hence immediately

@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef JRD_ODS_H
-#define JRD_ODS_H
+#ifndef _JRD_ODS_H_
+#define _JRD_ODS_H_
 
 /**********************************************************************
 **
@@ -40,7 +40,7 @@
 **   ODS 5 was shipped with version 3.3 but no longer supported
 **   ODS 6 and ODS 7 never went out the door
 **   ODS 8 was shipped with version 4.0
-**   ODS 9 is going to be shipped with version 4.5
+**   ODS 9 is  going to be shipped with version 4.5
 **
 ***********************************************************************/
 
@@ -51,8 +51,8 @@
 #define ODS_VERSION8	8		/* new btree structure to support pc semantics */
 #define ODS_VERSION9	9		/* btree leaf pages are always propogated up */
 #define ODS_VERSION10	10		/* V6.0 features. SQL delimited idetifier,
-								   SQLDATE, and 64-bit exact numeric type */
-#define ODS_VERSION11   11      /* Firebird 2.0 features */
+								   SQLDATE, and 64-bit exact numeric
+								   type */
 
 /* ODS minor version -- minor versions ARE compatible, but may be
    increasingly functional.  Add new minor versions, but leave previous
@@ -91,11 +91,6 @@
 #define ODS_SYSINDEX10	1		/* New system indices */
 #define ODS_CURRENT10	1
 
-/* Minor versions for ODS 11 */
-
-#define ODS_CURRENT11_0	0		/* Firebird 2.0 features. */
-#define ODS_CURRENT11	0
-
 /* useful ODS macros. These are currently used to flag the version of the
    system triggers and system indices in ini.e */
 
@@ -106,7 +101,6 @@
 #define ODS_9_1         ENCODE_ODS (ODS_VERSION9, 1)
 #define ODS_10_0        ENCODE_ODS (ODS_VERSION10, 0)
 #define ODS_10_1        ENCODE_ODS (ODS_VERSION10, 1)
-#define ODS_11_0        ENCODE_ODS (ODS_VERSION11, 0)
 
 /* Decode ODS version to Major and Minor parts. The 4 LSB's are minor and 
    the next 4 bits are major version number */
@@ -115,11 +109,11 @@
 
 /* Set current ODS major and minor version */
 
-#define ODS_VERSION	ODS_VERSION11	/* current ods major version -- always 
+#define ODS_VERSION	ODS_VERSION10	/* current ods major version -- always 
 									   the highest */
-#define ODS_CURRENT	ODS_CURRENT11	/* the highest defined minor version
+#define ODS_CURRENT	ODS_CURRENT10	/* the highest defined minor version
 									   number for this ODS_VERSION!! */
-#define ODS_CURRENT_VERSION	ODS_11_0	/* Current ODS version in use which includes 
+#define ODS_CURRENT_VERSION	ODS_10_1	/* Current ODS version in use which includes 
 										   both Major and Minor ODS versions! */
 
 
@@ -150,110 +144,72 @@
 #define MAX_PAGE_SIZE		16384
 #define DEFAULT_PAGE_SIZE	4096
 
-namespace Ods {
-
 /* Basic page header */
 
-typedef struct pag
-{
+typedef struct pag {
 	SCHAR pag_type;
 	SCHAR pag_flags;
 	USHORT pag_checksum;
 	ULONG pag_generation;
-	// We renamed pag_seqno for SCN number usage to avoid major ODS version bump
-	ULONG pag_scn;			/* WAL seqno of last update */
-	ULONG reserved;			/* Was used for WAL */
+	ULONG pag_seqno;			/* WAL seqno of last update */
+	ULONG pag_offset;			/* WAL offset of last update */
 } *PAG;
 
 
 /* Blob page */
 
-struct blob_page : public pag
-{
-	//pag blp_header;
+typedef struct blp {
+	struct pag blp_header;
 	SLONG blp_lead_page;		/* First page of blob (for redundancy only) */
 	SLONG blp_sequence;			/* Sequence within blob */
 	USHORT blp_length;			/* Bytes on page */
 	USHORT blp_pad;				/* Unused */
 	SLONG blp_page[1];			/* Page number if level 1 */
-};
+} *BLP;
 
-#define BLP_SIZE	OFFSETA (Ods::blob_page*, blp_page)
+#define blp_data	blp_page	/* Formerly defined field */
+#define BLP_SIZE	OFFSETA (BLP, blp_page)
 
 #define blp_pointers	1		/* Blob pointer page, not data page */
 
 
 /* B-tree node */
 
-struct btree_nod
+typedef struct btn
 {
 	UCHAR btn_prefix;			/* size of compressed prefix */
 	UCHAR btn_length;			/* length of data in node */
 	UCHAR btn_number[4];		/* page or record number */
 	UCHAR btn_data[1];
-};
+} *BTN;
 
 #define BTN_SIZE	6
 
-// B-tree page ("bucket")
-struct btree_page : public pag
-{
-	//pag btr_header;
-	SLONG btr_sibling;			// right sibling page
-	SLONG btr_left_sibling;		// left sibling page
-	SLONG btr_prefix_total;		// sum of all prefixes on page
-	USHORT btr_relation;		// relation id for consistency
-	USHORT btr_length;			// length of data in bucket
-	UCHAR btr_id;				// index id for consistency
-	UCHAR btr_level;			// index level (0 = leaf)
-	btree_nod btr_nodes[1];
-};
+/* B-tree page ("bucket") */
 
-// Firebird B-tree nodes
-#define BTN_LEAF_SIZE	6
-#define BTN_PAGE_SIZE	10
+typedef struct btr {
+	struct pag btr_header;
+	SLONG btr_sibling;			/* right sibling page */
+	SLONG btr_left_sibling;		/* left sibling page */
+	SLONG btr_prefix_total;		/* sum of all prefixes on page */
+	USHORT btr_relation;		/* relation id for consistency */
+	USHORT btr_length;			/* length of data in bucket */
+	UCHAR btr_id;				/* index id for consistency */
+	UCHAR btr_level;			/* index level (0 = leaf) */
+	struct btn btr_nodes[1];
+} *BTR;
 
-struct IndexNode
-{
-	UCHAR* nodePointer;	// pointer to where this node can be read from the page
-	USHORT prefix;		// size of compressed prefix
-	USHORT length;		// length of data in node
-	SLONG pageNumber;	// page number
-	UCHAR* data;		// Data can be read from here
-	SLONG recordNumber;	// record number
-	bool isEndBucket;
-	bool isEndLevel;
-};
+#define btr_dont_gc		1		/* Don't garbage-collect this page */
+#define btr_not_propogated	2	/* page is not propogated upward */
+#define btr_descending  	8	/* Page/bucket is part of a descending index */
 
-struct IndexJumpNode
-{
-	UCHAR* nodePointer;	// pointer to where this node can be read from the page
-	USHORT prefix;		// length of prefix against previous jump node
-	USHORT length;		// length of data in jump node (together with prefix this is prefix for pointing node)
-	USHORT offset;		// offset to node in page  
-	UCHAR* data;		// Data can be read from here
-};
+#define MAX_NODES	((dbb->dbb_page_size - OFFSETA (BTR, btr_nodes)) / sizeof (struct btn))
 
-struct IndexJumpInfo {
-	USHORT firstNodeOffset;		// offset to node in page
-	USHORT jumpAreaSize;		// size area before a new jumpnode is made
-	UCHAR  jumpers;				// nr of jump-nodes in page, with a maximum of 255
-};
-
-#define btr_dont_gc				1	// Don't garbage-collect this page
-#define btr_not_propogated		2	// page is not propogated upward
-#define btr_descending  		8	// Page/bucket is part of a descending index
-#define btr_all_record_number	16	// Non-leaf-nodes will contain record number information
-#define btr_large_keys			32	// AB: 2003-index-structure enhancement
-#define btr_jump_info			64	// AB: 2003-index-structure enhancement
-
-#define BTR_FLAG_COPY_MASK (btr_descending | btr_all_record_number | btr_large_keys | btr_jump_info)
 
 /* Data Page */
 
-struct data_page : public pag
-{
-	// pag dpg_header;
+typedef struct dpg {
+	struct pag dpg_header;
 	SLONG dpg_sequence;			/* Sequence number in relation */
 	USHORT dpg_relation;		/* Relation id */
 	USHORT dpg_count;			/* Number of record segments on page */
@@ -261,9 +217,13 @@ struct data_page : public pag
 		USHORT dpg_offset;		/* Offset of record fragment */
 		USHORT dpg_length;		/* Length of record fragment */
 	} dpg_rpt[1];
-};
+} *DPG;
 
-#define DPG_SIZE	(sizeof (Ods::data_page) - sizeof (Ods::data_page::dpg_repeat))
+#ifdef __cplusplus
+#define DPG_SIZE	(sizeof (dpg) - sizeof (dpg::dpg_repeat))
+#else
+#define DPG_SIZE	(sizeof (struct dpg) - sizeof(struct dpg_repeat))
+#endif
 
 #define dpg_orphan	1			/* Data page is NOT in pointer page */
 #define dpg_full	2			/* Pointer page is marked FULL */
@@ -272,32 +232,27 @@ struct data_page : public pag
 
 /* Index root page */
 
-struct index_root_page : public pag
-{
-	//pag irt_header;
+typedef struct irt {
+	struct pag irt_header;
 	USHORT irt_relation;		/* relation id (for consistency) */
 	USHORT irt_count;			/* Number of indices */
 	struct irt_repeat {
 		SLONG irt_root;			/* page number of index root */
 		union {
-			float irt_selectivity;	/* selectivity of index - NOT USED since ODS11 */
+			float irt_selectivity;	/* selectivity of index */
 			SLONG irt_transaction;	/* transaction in progress */
 		} irt_stuff;
 		USHORT irt_desc;		/* offset to key descriptions */
 		UCHAR irt_keys;			/* number of keys in index */
 		UCHAR irt_flags;
 	} irt_rpt[1];
-};
+} *IRT;
 
 /* key descriptor */
 
-struct irtd_ods10 {
+typedef struct irtd {
 	USHORT irtd_field;
 	USHORT irtd_itype;
-};
-
-typedef struct irtd : public irtd_ods10 {
-	float irtd_selectivity;
 } IRTD;
 
 #define irt_unique	1
@@ -311,11 +266,18 @@ typedef struct irtd : public irtd_ods10 {
 #define END_LEVEL	-1
 #define END_BUCKET	-2
 
+#ifdef IGNORE_NULL_IDX_KEY
+#define END_NON_NULL	-3
+#define SPECIAL_BTN_NUMBER_COUNT 3	/* This is later used in fast_load() for 
+									   calculating fill_limit. */
+#endif /* IGNORE_NULL_IDX_KEY */
+
+
+
 /* Header page */
 
-struct header_page : public pag
-{
-	//pag hdr_header;
+typedef struct hdr {
+	struct pag hdr_header;
 	USHORT hdr_page_size;		/* Page size of database */
 	USHORT hdr_ods_version;		/* Version of on-disk structure */
 	SLONG hdr_PAGES;			/* Page number of PAGES relation */
@@ -335,12 +297,12 @@ struct header_page : public pag
 	ULONG hdr_page_buffers;		/* Page buffers for database cache */
 	SLONG hdr_bumped_transaction;	/* Bumped transaction id for log optimization */
 	SLONG hdr_oldest_snapshot;	/* Oldest snapshot of active transactions */
-	SLONG hdr_backup_pages; /* The amount of pages in files locked for backup */
-	SLONG hdr_misc[3];			/* Stuff to be named later */
+	SLONG hdr_misc[4];			/* Stuff to be named later */
 	UCHAR hdr_data[1];			/* Misc data */
-};
+} *HDR;
 
-#define HDR_SIZE        OFFSETA (Ods::header_page*, hdr_data)
+#define HDR_SIZE        OFFSETA (HDR, hdr_data)
+#define hdr_cache_file	hdr_data
 
 /* Header page clumplets */
 
@@ -361,9 +323,7 @@ struct header_page : public pag
 #define	HDR_password_file_key	9	/* Key to compare to password db */
 #define HDR_backup_info         10	/* WAL backup information */
 #define HDR_cache_file		11	/* Shared cache file */
-#define HDR_difference_file 12  /* Delta file that is used during backup lock */
-#define HDR_backup_guid     13  /* UID generated on each switch into backup mode */
-#define HDR_max			14		/* Maximum HDR_clump value */
+#define HDR_max			11		/* Maximum HDR_clump value */
 
 /* Header page flags */
 
@@ -374,43 +334,31 @@ struct header_page : public pag
 #define hdr_no_checksums	0x10	/* 16   don't calculate checksums */
 #define hdr_no_reserve		0x20	/* 32   don't reserve space for versions */
 #define hdr_disable_cache	0x40	/* 64   disable using shared cache file */
-//#define hdr_shutdown		0x80	/* 128  database is shutdown */
+#define hdr_shutdown		0x80	/* 128  database is shutdown */
 #define hdr_SQL_dialect_3	0x100	/* 256  database SQL dialect 3 */
 #define hdr_read_only		0x200	/* 512  Database in ReadOnly. If not set, DB is RW */
-/* backup status mask - see bit values in nbak.h */
-#define hdr_backup_mask		0xC00
-#define hdr_shutdown_mask	0x1080
 
-// Values for shutdown mask
-#define hdr_shutdown_none  0x0
-#define hdr_shutdown_multi 0x80
-#define hdr_shutdown_full 0x1000
-#define hdr_shutdown_single 0x1080
 
-/*
 typedef struct sfd {
-	SLONG sfd_min_page;			// Minimum page number
-	SLONG sfd_max_page;			// Maximum page number
-	UCHAR sfd_index;			// Sequence of secondary file
-	UCHAR sfd_file[1];			// Given file name
-} SFD; 
-*/
+	SLONG sfd_min_page;			/* Minimum page number */
+	SLONG sfd_max_page;			/* Maximum page number */
+	UCHAR sfd_index;			/* Sequence of secondary file */
+	UCHAR sfd_file[1];			/* Given file name */
+} SFD;
 
 /* Page Inventory Page */
 
-struct page_inv_page : public pag
-{
-	//pag pip_header;
+typedef struct pip {
+	struct pag pip_header;
 	SLONG pip_min;				/* Lowest (possible) free page */
 	UCHAR pip_bits[1];
-};
+} *PIP;
 
 
 /* Pointer Page */
 
-struct pointer_page : public pag
-{
-	//pag ppg_header;
+typedef struct ppg {
+	struct pag ppg_header;
 	SLONG ppg_sequence;			/* Sequence number in relation */
 	SLONG ppg_next;				/* Next pointer page in relation */
 	USHORT ppg_count;			/* Number of slots active */
@@ -418,7 +366,7 @@ struct pointer_page : public pag
 	USHORT ppg_min_space;		/* Lowest slot with space available */
 	USHORT ppg_max_space;		/* Highest slot with space available */
 	SLONG ppg_page[1];			/* Data page vector */
-};
+} *PPG;
 
 #define ppg_bits	ppg_page
 
@@ -426,19 +374,17 @@ struct pointer_page : public pag
 
 /* Transaction Inventory Page */
 
-struct tx_inv_page : public pag
-{
-	//pag tip_header;
+typedef struct tip {
+	struct pag tip_header;
 	SLONG tip_next;				/* Next transaction inventory page */
 	UCHAR tip_transactions[1];
-};
+} *TIP;
 
 
 /* Generator Page */
 
-struct generator_page : public pag
-{
-	//pag gpg_header;
+typedef struct gpg {
+	struct pag gpg_header;
 	SLONG gpg_sequence;			/* Sequence number */
 	SLONG gpg_waste1;			/* overhead carried for backward compatibility */
 	USHORT gpg_waste2;			/* overhead carried for backward compatibility */
@@ -446,7 +392,7 @@ struct generator_page : public pag
 	USHORT gpg_waste4;			/* overhead carried for backward compatibility */
 	USHORT gpg_waste5;			/* overhead carried for backward compatibility */
 	SINT64 gpg_values[1];		/* Generator vector */
-};
+} *GPG;
 
 
 /* Record header */
@@ -460,7 +406,7 @@ typedef struct rhd {
 	UCHAR rhd_data[1];
 } *RHD;
 
-#define RHD_SIZE	OFFSETA (Ods::rhd*, rhd_data)
+#define RHD_SIZE	OFFSETA (RHD, rhd_data)
 
 /* Record header for fragmented record */
 
@@ -469,13 +415,13 @@ typedef struct rhdf {
 	SLONG rhdf_b_page;			/* back pointer */
 	USHORT rhdf_b_line;			/* back line */
 	USHORT rhdf_flags;			/* flags, etc */
-	UCHAR rhdf_format;			/* format version */  // until here, same than rhd
+	UCHAR rhdf_format;			/* format version */
 	SLONG rhdf_f_page;			/* next fragment page */
 	USHORT rhdf_f_line;			/* next fragment line */
 	UCHAR rhdf_data[1];			/* Blob data */
 } *RHDF;
 
-#define RHDF_SIZE	OFFSETA (Ods::rhdf*, rhdf_data)
+#define RHDF_SIZE	OFFSETA (RHDF, rhdf_data)
 
 /* Record header for blob header */
 
@@ -483,7 +429,7 @@ typedef struct blh {
 	SLONG blh_lead_page;		/* First data page number */
 	SLONG blh_max_sequence;		/* Number of data pages */
 	USHORT blh_max_segment;		/* Longest segment */
-	USHORT blh_flags;			/* flags, etc */
+	USHORT blh_flags;
 	UCHAR blh_level;			/* Number of address levels */
 	SLONG blh_count;			/* Total number of segments */
 	SLONG blh_length;			/* Total length of data */
@@ -493,7 +439,7 @@ typedef struct blh {
 } *BLH;
 
 #define blh_data	blh_page
-#define BLH_SIZE	OFFSETA (Ods::blh*, blh_page)
+#define BLH_SIZE	OFFSETA (BLH, blh_page)
 
 #define rhd_deleted	1			/* record is logically deleted */
 #define rhd_chain	2			/* record is an old version */
@@ -506,23 +452,28 @@ typedef struct blh {
 #define rhd_damaged	128			/* object is known to be damaged */
 #define rhd_gc_active	256		/* garbage collecting dead record version */
 
+/* additions for write ahead log */
+
+#define CTRL_FILE_LEN		255	/* Pre allocated size of file name */
+#define CLUMP_ADD		0
+#define CLUMP_REPLACE		1
+#define CLUMP_REPLACE_ONLY	2
 
 /* Log page */
 
-struct ctrl_pt {
+typedef struct ctrl_pt {
 	SLONG cp_seqno;
 	SLONG cp_offset;
 	SLONG cp_p_offset;
 	SSHORT cp_fn_length;
-};
+} CP;
 
-struct log_info_page : public pag
-{
-	//pag log_header;
-	SLONG log_flags;			/* flags, OBSOLETE      */
-	ctrl_pt log_cp_1;			/* control point 1      */
-	ctrl_pt log_cp_2;			/* control point 2      */
-	ctrl_pt log_file;			/* current file         */
+typedef struct log_info_page {
+	struct pag log_header;
+	SLONG log_flags;			/* flags            */
+	CP log_cp_1;				/* control point 1      */
+	CP log_cp_2;				/* control point 2      */
+	CP log_file;				/* current file         */
 	SLONG log_next_page;		/* Next log page        */
 	SLONG log_mod_tip;			/* tip of modify transaction    */
 	SLONG log_mod_tid;			/* transaction id of modify process */
@@ -530,13 +481,21 @@ struct log_info_page : public pag
 	SLONG log_free[4];			/* some extra space for later use */
 	USHORT log_end;				/* similar to hdr_end   */
 	UCHAR log_data[1];
-};
+} *LIP;
 
-#define LIP_SIZE	OFFSETA (Ods::log_info_page*, log_data);
+#define LIP_SIZE	OFFSETA (LIP, log_data);
 
-/* additions for write ahead log, almost obsolete. */
+/* log flags */
 
-//#define CTRL_FILE_LEN		255	/* Pre allocated size of file name */
+#define log_recover		1		/* recovery required */
+#define log_no_ail		2		/* dummy! will be used till df work */
+#define log_delete		4		/* log files have been deleted */
+#define log_add			8		/* log files have been added */
+#define log_rec_in_progress	16	/* recovery is in progress */
+#define log_partial_rebuild	32	/* partial recovery in progress */
+#define log_recovery_done 	64	/* long term recovery just finished */
+
+#define CTRL_FILE_LEN		255	/* Pre allocated size of file name */
 #define CLUMP_ADD		0
 #define CLUMP_REPLACE		1
 #define CLUMP_REPLACE_ONLY	2
@@ -544,17 +503,14 @@ struct log_info_page : public pag
 /* Log Clumplet types */
 
 #define LOG_end			HDR_end
-//#define LOG_ctrl_file1		1	/* file name of 2nd last control pt */
-//#define LOG_ctrl_file2		2	/* file name of last ctrl pt */
-//#define LOG_logfile		3		/* Primary WAL file name */
-//#define LOG_backup_info		4	/* Journal backup directory */
-//#define LOG_chkpt_len		5	/* checkpoint length */
-//#define LOG_num_bufs		6	/* Number of log buffers */
-//#define LOG_bufsize		7		/* Buffer size */
-//#define LOG_grp_cmt_wait	8	/* Group commit wait time */
+#define LOG_ctrl_file1		1	/* file name of 2nd last control pt */
+#define LOG_ctrl_file2		2	/* file name of last ctrl pt */
+#define LOG_logfile		3		/* Primary WAL file name */
+#define LOG_backup_info		4	/* Journal backup directory */
+#define LOG_chkpt_len		5	/* checkpoint length */
+#define LOG_num_bufs		6	/* Number of log buffers */
+#define LOG_bufsize		7		/* Buffer size */
+#define LOG_grp_cmt_wait	8	/* Group commit wait time */
 #define LOG_max			8		/* Maximum LOG_clump value */
 
-} //namespace Jrd
-
-#endif // JRD_ODS_H
-
+#endif /* _JRD_ODS_H_ */

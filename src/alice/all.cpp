@@ -24,15 +24,17 @@
 //
 //____________________________________________________________
 //
-//	$Id: all.cpp,v 1.19 2004-04-18 14:22:09 alexpeshkoff Exp $
+//	$Id: all.cpp,v 1.11 2003-03-19 11:33:46 skidder Exp $
 //
 
-#include "firebird.h"
 #include "../alice/all.h"
+#include "firebird.h"
 //#include "../jrd/ib_stdio.h"
 //#include "../jrd/common.h"
+//#include "../jrd/ibsetjmp.h"
 #include "../alice/alice.h"
 //#include "../alice/all.h"
+//#include "../alice/alloc.h"
 //#include "../alice/lls.h"
 //#include "../alice/all_proto.h"
 //#include "../jrd/gds_proto.h"
@@ -47,9 +49,9 @@
 
 void ALLA_fini(void)
 {
-	Tgbl* tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
-	for (Tgbl::pool_vec_t::iterator curr = tdgbl->pools.begin();
+	for(tgbl::pool_vec_t::iterator curr = tdgbl->pools.begin();
 					curr != tdgbl->pools.end(); ++curr)
 	{
 		AliceMemoryPool::deletePool(*curr);
@@ -69,7 +71,9 @@ void ALLA_fini(void)
 
 void ALLA_init(void)
 {
-	Tgbl* tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl;
+
+	tdgbl = GET_THREAD_DATA;
 #ifdef NOT_USED_OR_REPLACED
 	tdgbl->ALICE_default_pool = tdgbl->ALICE_permanent_pool =
 		AliceMemoryPool::create_new_pool();
@@ -82,8 +86,7 @@ void ALLA_init(void)
 
 
 
-#ifdef NOT_USED_OR_REPLACED
-void AliceMemoryPool::ALLA_push(blk* object, alice_lls** stack)
+void AliceMemoryPool::ALLA_push(class blk *object, class lls** stack)
 {
 /**************************************
  *
@@ -95,17 +98,20 @@ void AliceMemoryPool::ALLA_push(blk* object, alice_lls** stack)
  *	Push an object on an LLS stack.
  *
  **************************************/
-	Tgbl* tdgbl = GET_THREAD_DATA;
-	AliceMemoryPool* pool = tdgbl->ALICE_default_pool;
+	class lls* node;
+	AliceMemoryPool* pool;
 
-	alice_lls* node = pool->lls_cache.newBlock();
+	TGBL tdgbl = GET_THREAD_DATA;
+	pool = tdgbl->ALICE_default_pool;
+
+	node = pool->lls_cache.newBlock();
 	node->lls_object = object;
 	node->lls_next = *stack;
 	*stack = node;
 }
 
 
-BLK AliceMemoryPool::ALLA_pop(alice_lls** stack)
+BLK AliceMemoryPool::ALLA_pop(LLS *stack)
 {
 /**************************************
  *
@@ -118,16 +124,21 @@ BLK AliceMemoryPool::ALLA_pop(alice_lls** stack)
  *	further use.
  *
  **************************************/
-	alice_lls* node = *stack;
-	*stack = node->lls_next;
-	BLK object = node->lls_object;
+	LLS node;
+	AliceMemoryPool* pool;
+	BLK object;
 
-	AliceMemoryPool* pool = (AliceMemoryPool*)MemoryPool::blk _pool(node);
+	node = *stack;
+	*stack = node->lls_next;
+	object = node->lls_object;
+
+	pool = (AliceMemoryPool*)MemoryPool::blk_pool(node);
 	pool->lls_cache.returnBlock(node);
 
 	return object;
 }
 
+#ifdef NOT_USED_OR_REPLACED
 AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
 {
 /**************************************
@@ -141,13 +152,13 @@ AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
  *
  **************************************/
 
-	Tgbl* tdgbl = GET_THREAD_DATA;
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	// TMN: John, is this correct?
     AliceMemoryPool* pool = new(0, parent) AliceMemoryPool(parent);
 	tgbl::pool_vec_t::iterator curr;
 
-	for (curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
+	for(curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
 	{
 		if (!*curr)
 		{
@@ -157,7 +168,7 @@ AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
 	}
 
 	tdgbl->pools.resize(tdgbl->pools.size() + 10);
-	for (curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
+	for(curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
 	{
 		if (!*curr)
 		{
@@ -166,18 +177,17 @@ AliceMemoryPool* AliceMemoryPool::create_new_pool(MemoryPool* parent)
 		}
 	}
 
-	//fb_assert(0);
+	//assert(0);
 	//BUGCHECK ("ALLA_fini - finishing before starting");
     return 0;//pool;	// Never reached, but makes the compiler happy.
 }
 #endif
 
-void AliceMemoryPool::deletePool(AliceMemoryPool* pool) 
-{
-	Tgbl* tdgbl = GET_THREAD_DATA;
+void AliceMemoryPool::deletePool(AliceMemoryPool* pool) {
+	TGBL tdgbl = GET_THREAD_DATA;
 
-	Tgbl::pool_vec_t::iterator curr;
-	for (curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
+	tgbl::pool_vec_t::iterator curr;
+	for(curr = tdgbl->pools.begin(); curr != tdgbl->pools.end(); ++curr)
 	{
 		if (*curr == pool)
 		{
@@ -185,7 +195,6 @@ void AliceMemoryPool::deletePool(AliceMemoryPool* pool)
 			break;
 		}
 	}
-//	pool->lls_cache.~BlockCache<alice_lls>();
+	pool->lls_cache.~BlockCache<lls>();
 	MemoryPool::deletePool(pool);
 }
-

@@ -36,6 +36,9 @@
 #endif
 
 
+extern "C" {
+
+
 UCHAR *MISC_alloc_burp(ULONG size)
 {
 /**************************************
@@ -52,7 +55,7 @@ UCHAR *MISC_alloc_burp(ULONG size)
 
 	TGBL tdgbl = GET_THREAD_DATA;
 
-// Add some header space to store a list of blocks allocated for this gbak 
+/* Add some header space to store a list of blocks allocated for this gbak */
 	size += ROUNDUP(sizeof(UCHAR *), ALIGNMENT);
 
 	UCHAR* block = (UCHAR*)gds__alloc(size);
@@ -60,8 +63,7 @@ UCHAR *MISC_alloc_burp(ULONG size)
 	if (!block)
 		/* NOMEM: message & abort FREE: all items freed at gbak exit */
 	{
-		BURP_error(238, true, NULL, NULL, NULL, NULL, NULL);
-		// msg 238: System memory exhaused 
+		BURP_error(238, NULL, NULL, NULL, NULL, NULL);	/* msg 238: System memory exhaused */
 		return NULL;
 	}
 
@@ -90,49 +92,37 @@ void MISC_free_burp( void *free)
  *	Release an unwanted block.
  *
  **************************************/
-	TGBL tdgbl = GET_THREAD_DATA;
+	UCHAR **block;
+	TGBL tdgbl;
+	UCHAR **ptr;
+
+	tdgbl = GET_THREAD_DATA;
 
 	if (free != NULL) {
-		// Point at the head of the allocated block 
-		UCHAR **block =
+		/* Point at the head of the allocated block */
+		block =
 			(UCHAR **) ((UCHAR *) free - ROUNDUP(sizeof(UCHAR *), ALIGNMENT));
 
-		// Scan for this block in the list of blocks 
-		for (UCHAR **ptr = &tdgbl->head_of_mem_list; *ptr; ptr = (UCHAR **) *ptr)
-		{
+		/* Scan for this block in the list of blocks */
+		for (ptr = &tdgbl->head_of_mem_list; *ptr; ptr = (UCHAR **) * ptr) {
 			if (*ptr == (UCHAR *) block) {
-				// Found it - remove it from the list 
+				/* Found it - remove it from the list */
 				*ptr = *block;
 
-				// and free it 
+				/* and free it */
 				gds__free((SLONG *) block);
 				return;
 			}
 		}
 
-		// We should always find the block in the list 
-		BURP_error(238, true, NULL, NULL, NULL, NULL, NULL);
-		// msg 238: System memory exhausted 
-		// (too lazy to add a better message)
+		/* We should always find the block in the list */
+		BURP_error(238, NULL, NULL, NULL, NULL, NULL);	/* msg 238: System memory exhausted */
+		/* (too lazy to add a better message) */
 	}
 }
 
 
-// Since this code appears everywhere, it makes more sense to isolate it
-// in a function visible to all gbak components.
-// Given a request, if it's non-zero (compiled), deallocate it but
-// without caring about a possible error.
-void MISC_release_request_silent(isc_req_handle& req_handle)
-{
-	if (req_handle)
-	{
-		ISC_STATUS_ARRAY req_status;
-		isc_release_request(req_status, &req_handle);
-	}
-}
-
-
-void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
+void MISC_terminate(UCHAR* from, UCHAR* to, ULONG length, ULONG max_length)
 {
 /**************************************
  *
@@ -149,9 +139,9 @@ void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
 
 	if (length) {
 		length = MIN(length, max_length - 1);
-		do {
+		do
 			*to++ = *from++;
-		} while (--length);
+		while (--length);
 		*to++ = '\0';
 	}
 	else {
@@ -160,3 +150,5 @@ void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
 	}
 }
 
+
+} // extern "C"

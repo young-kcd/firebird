@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_MET_H
-#define JRD_MET_H
+#ifndef _JRD_MET_H_
+#define _JRD_MET_H_
 
 /* Record types for record summary blob records */
 
@@ -54,14 +54,15 @@ typedef enum rsr_t {
 
 /* Temporary field block */
 
-class TemporaryField : public pool_alloc<type_tfb>
+class tfb : public pool_alloc<type_tfb>
 {
     public:
-	TemporaryField*	tfb_next;		/* next block in chain */
-	USHORT			tfb_id;				/* id of field in relation */
-	USHORT			tfb_flags;
-	DSC				tfb_desc;
+	struct tfb *tfb_next;		/* next block in chain */
+	USHORT tfb_id;				/* id of field in relation */
+	USHORT tfb_flags;
+	DSC tfb_desc;
 };
+typedef tfb *TFB;
 
 #define TFB_computed		1
 #define TFB_array			2
@@ -125,4 +126,4 @@ example #3:
 
 #include "../jrd/obj.h"
 
-#endif /* JRD_MET_H */
+#endif /* _JRD_MET_H_ */

@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef JRD_ALIGN_H
-#define JRD_ALIGN_H
+#ifndef _JRD_ALIGN_H_
+#define _JRD_ALIGN_H_
 
 /* 
 Maximum alignments for corresponding data types are defined in dsc.h
@@ -114,17 +114,16 @@ static const USHORT type_lengths[DTYPE_TYPE_MAX] = {
 	sizeof(SCHAR),				/* dtype_byte */
 	sizeof(SSHORT),				/* dtype_short */
 	sizeof(SLONG),				/* dtype_long */
-	sizeof(ISC_QUAD),			/* dtype_quad */
+	sizeof(GDS_QUAD),			/* dtype_quad */
 	sizeof(float),				/* dtype_real */
 	sizeof(double),				/* dtype_double */
 	sizeof(double),				/* dtype_d_float */
 	sizeof(GDS_DATE),			/* dtype_sql_date */
 	sizeof(GDS_TIME),			/* dtype_sql_time */
 	sizeof(GDS_TIMESTAMP),		/* dtype_timestamp */
-	sizeof(ISC_QUAD),			/* dtype_blob */
-	sizeof(ISC_QUAD),			/* dtype_array */
+	sizeof(GDS_QUAD),			/* dtype_blob */
+	sizeof(GDS_QUAD),			/* dtype_array */
 	sizeof(SINT64)				/* dtype_int64 */
 };
 
-#endif /* JRD_ALIGN_H */
-
+#endif /* _JRD_ALIGN_H_ */

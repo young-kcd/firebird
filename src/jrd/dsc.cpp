@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		dsc.cpp
+ *	MODULE:		dsc.c
  *	DESCRIPTION:	Utility routines for working with data descriptors
  *
  *	Note: This module is used by both engine & utility functions.
@@ -28,8 +28,7 @@
 #include <stdlib.h>
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/constants.h"
 #include "../jrd/intl.h"
 #include "../jrd/gds_proto.h"
@@ -37,12 +36,15 @@
 #include "../jrd/dsc_proto.h"
 
 
+extern "C" {
+
+
 /* When converting non-text values to text, how many bytes to allocate
    for holding the text image of the value.  */
 
-static const USHORT _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
+static USHORT const _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 {
-	0,							/* dtype_unknown */
+	0,							/* dtype_null */
 	0,							/* dtype_text */
 	0,							/* dtype_cstring */
 	0,							/* dtype_varying */
@@ -90,7 +92,7 @@ static const USHORT DSC_blr_type_mapping[] = {
 /* Unimplemented names are in lowercase & <brackets> */
 /* Datatypes that represent a range of SQL datatypes are in lowercase */
 static const TEXT *const DSC_dtype_names[] = {
-	"<dtype_unknown>",
+	"<dtype_null>",
 	"CHAR",
 	"CSTRING",
 	"VARCHAR",
@@ -115,42 +117,42 @@ static const TEXT *const DSC_dtype_names[] = {
 
 /* The result of adding two datatypes in blr_version5 semantics
    Note: DTYPE_CANNOT as the result means that the operation cannot be done.
-   dtype_unknown as the result means that we do not yet know the type of one of
+   dtype_null as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
 const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
-	dtype_unknown	dtype_text	dtype_cstring	dtype_varying
+	dtype_null	dtype_text	dtype_cstring	dtype_varying
 	4 (unused)	5 (unused)	dtype_packed	dtype_byte
 	dtype_short	dtype_long	dtype_quad	dtype_real
 	dtype_double	dtype_d_float	dtype_sql_date	dtype_sql_time
 	dtype_timestamp	dtype_blob	dtype_array	dtype_int64
 */
 
-	/* dtype_unknown */
-	{dtype_unknown, dtype_unknown, dtype_unknown, dtype_unknown,
+	/* dtype_null */
+	{dtype_null, dtype_null, dtype_null, dtype_null,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, dtype_unknown,
-	 dtype_unknown, dtype_unknown, dtype_unknown, dtype_unknown,
-	 dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown},
+	 dtype_null, dtype_null, DTYPE_CANNOT, dtype_null,
+	 dtype_null, dtype_null, dtype_null, dtype_null,
+	 dtype_null, DTYPE_CANNOT, DTYPE_CANNOT, dtype_null},
 
 	/* dtype_text */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_cstring */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_varying */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -185,14 +187,14 @@ const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_short */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, dtype_sql_date, dtype_sql_time,
 	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64},
 
 	/* dtype_long */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, dtype_sql_date, dtype_sql_time,
@@ -206,42 +208,42 @@ const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_real */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, dtype_sql_date, dtype_sql_time,
 	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_double */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, dtype_sql_date, dtype_sql_time,
 	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_d_float -- VMS deprecated */
-	{dtype_unknown, dtype_d_float, dtype_d_float, dtype_d_float,
+	{dtype_null, dtype_d_float, dtype_d_float, dtype_d_float,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, dtype_d_float,
 	 dtype_d_float, dtype_d_float, dtype_sql_date, dtype_sql_time,
 	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_d_float},
 
 	/* dtype_sql_date */
-	{dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	{dtype_null, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_sql_date, dtype_sql_date, DTYPE_CANNOT, dtype_sql_date,
 	 dtype_sql_date, dtype_sql_date, DTYPE_CANNOT, dtype_timestamp,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_date},
 
 	/* dtype_sql_time */
-	{dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	{dtype_null, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_sql_time, dtype_sql_time, DTYPE_CANNOT, dtype_sql_time,
 	 dtype_sql_time, dtype_sql_time, dtype_timestamp, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_time},
 
 	/* dtype_timestamp */
-	{dtype_unknown, dtype_timestamp, dtype_timestamp, dtype_timestamp,
+	{dtype_null, dtype_timestamp, dtype_timestamp, dtype_timestamp,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_timestamp, dtype_timestamp, DTYPE_CANNOT, dtype_timestamp,
 	 dtype_timestamp, dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -262,7 +264,7 @@ const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_int64 */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, dtype_sql_date, dtype_sql_time,
@@ -272,42 +274,42 @@ const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /* The result of subtracting two datatypes in blr_version5 semantics
    Note: DTYPE_CANNOT as the result means that the operation cannot be done.
-   dtype_unknown as the result means that we do not yet know the type of one of
+   dtype_null as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
 const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
-	dtype_unknown	dtype_text	dtype_cstring	dtype_varying
+	dtype_null	dtype_text	dtype_cstring	dtype_varying
 	4 (unused)	5 (unused)	dtype_packed	dtype_byte
 	dtype_short	dtype_long	dtype_quad	dtype_real
 	dtype_double	dtype_d_float	dtype_sql_date	dtype_sql_time
 	dtype_timestamp	dtype_blob	dtype_array	dtype_int64
 */
 
-	/* dtype_unknown */
-	{dtype_unknown, dtype_unknown, dtype_unknown, dtype_unknown,
+	/* dtype_null */
+	{dtype_null, dtype_null, dtype_null, dtype_null,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, dtype_unknown,
-	 dtype_unknown, dtype_unknown, dtype_unknown, dtype_unknown,
-	 dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown},
+	 dtype_null, dtype_null, DTYPE_CANNOT, dtype_null,
+	 dtype_null, dtype_null, dtype_null, dtype_null,
+	 dtype_null, DTYPE_CANNOT, DTYPE_CANNOT, dtype_null},
 
 	/* dtype_text */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_cstring */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_varying */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -342,14 +344,14 @@ const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_short */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64},
 
 	/* dtype_long */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -363,42 +365,42 @@ const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_real */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_double */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_d_float -- VMS deprecated */
-	{dtype_unknown, dtype_d_float, dtype_d_float, dtype_d_float,
+	{dtype_null, dtype_d_float, dtype_d_float, dtype_d_float,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, dtype_d_float,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_d_float},
 
 	/* dtype_sql_date */
-	{dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	{dtype_null, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_sql_date, dtype_sql_date, DTYPE_CANNOT, dtype_sql_date,
 	 dtype_sql_date, dtype_sql_date, dtype_long, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_date},
 
 	/* dtype_sql_time */
-	{dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	{dtype_null, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_sql_time, dtype_sql_time, DTYPE_CANNOT, dtype_sql_time,
 	 dtype_sql_time, dtype_sql_time, DTYPE_CANNOT, dtype_long,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_time},
 
 	/* dtype_timestamp */
-	{dtype_unknown, dtype_timestamp, dtype_timestamp, dtype_timestamp,
+	{dtype_null, dtype_timestamp, dtype_timestamp, dtype_timestamp,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_timestamp, dtype_timestamp, DTYPE_CANNOT, dtype_timestamp,
 	 dtype_timestamp, dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -419,7 +421,7 @@ const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_int64 */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -429,42 +431,42 @@ const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /* The result of multiplying or dividing two datatypes in blr_version5 semantics
    Note: DTYPE_CANNOT as the result means that the operation cannot be done.
-   dtype_unknown as the result means that we do not yet know the type of one of
+   dtype_null as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
 const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
-	dtype_unknown	dtype_text	dtype_cstring	dtype_varying
+	dtype_null	dtype_text	dtype_cstring	dtype_varying
 	4 (unused)	5 (unused)	dtype_packed	dtype_byte
 	dtype_short	dtype_long	dtype_quad	dtype_real
 	dtype_double	dtype_d_float	dtype_sql_date	dtype_sql_time
 	dtype_timestamp	dtype_blob	dtype_array	dtype_int64
 */
 
-	/* dtype_unknown */
-	{dtype_unknown, dtype_unknown, dtype_unknown, dtype_unknown,
+	/* dtype_null */
+	{dtype_null, dtype_null, dtype_null, dtype_null,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, dtype_unknown,
-	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown},
+	 dtype_null, dtype_null, DTYPE_CANNOT, dtype_null,
+	 dtype_null, dtype_null, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_null},
 
 	/* dtype_text */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_cstring */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_varying */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -499,14 +501,14 @@ const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_short */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64},
 
 	/* dtype_long */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -520,21 +522,21 @@ const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_real */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_double */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_d_float -- VMS deprecated */
-	{dtype_unknown, dtype_d_float, dtype_d_float, dtype_d_float,
+	{dtype_null, dtype_d_float, dtype_d_float, dtype_d_float,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, dtype_d_float,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -576,7 +578,7 @@ const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_int64 */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -586,42 +588,42 @@ const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /* The result of multiplying two datatypes in blr_version4 semantics.
    Note: DTYPE_CANNOT as the result means that the operation cannot be done.
-   dtype_unknown as the result means that we do not yet know the type of one of
+   dtype_null as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
 const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
-	dtype_unknown	dtype_text	dtype_cstring	dtype_varying
+	dtype_null	dtype_text	dtype_cstring	dtype_varying
 	4 (unused)	5 (unused)	dtype_packed	dtype_byte
 	dtype_short	dtype_long	dtype_quad	dtype_real
 	dtype_double	dtype_d_float	dtype_sql_date	dtype_sql_time
 	dtype_timestamp	dtype_blob	dtype_array	dtype_int64
 */
 
-	/* dtype_unknown */
-	{dtype_unknown, dtype_unknown, dtype_unknown, dtype_unknown,
+	/* dtype_null */
+	{dtype_null, dtype_null, dtype_null, dtype_null,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, dtype_unknown,
-	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown},
+	 dtype_null, dtype_null, DTYPE_CANNOT, dtype_null,
+	 dtype_null, dtype_null, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_null},
 
 	/* dtype_text */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_cstring */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_varying */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -656,14 +658,14 @@ const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_short */
-	{dtype_unknown, dtype_long, dtype_long, dtype_long,
+	{dtype_null, dtype_long, dtype_long, dtype_long,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_long */
-	{dtype_unknown, dtype_long, dtype_long, dtype_long,
+	{dtype_null, dtype_long, dtype_long, dtype_long,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -677,21 +679,21 @@ const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_real */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_double */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_d_float -- VMS deprecated */
-	{dtype_unknown, dtype_d_float, dtype_d_float, dtype_d_float,
+	{dtype_null, dtype_d_float, dtype_d_float, dtype_d_float,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, dtype_d_float,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -733,7 +735,7 @@ const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_int64 */
-	{dtype_unknown, dtype_double, dtype_double, dtype_double,
+	{dtype_null, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
@@ -742,28 +744,27 @@ const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 };
 
 #ifdef DEV_BUILD
-static bool validate_dsc_tables();
+static BOOLEAN validate_dsc_tables(void);
 #endif
 
 
 
-USHORT DSC_convert_to_text_length(USHORT dsc_type)
+USHORT DLL_EXPORT DSC_convert_to_text_length(USHORT dsc_type)
 {
 	if (dsc_type < (sizeof(_DSC_convert_to_text_length) /
 					sizeof(_DSC_convert_to_text_length[0])))
 		return _DSC_convert_to_text_length[dsc_type];
-	fb_assert(FALSE);
+	assert(FALSE);
 	return 0;
 }
 
 
-void DSC_make_descriptor(DSC* desc,
-						USHORT blr_type,
-						SSHORT scale,
-						USHORT length,
-						SSHORT sub_type,
-						SSHORT charset,
-						SSHORT collation)
+void DLL_EXPORT DSC_make_descriptor(
+									DSC * desc,
+									USHORT blr_type,
+									SSHORT scale,
+									USHORT length,
+SSHORT sub_type, SSHORT charset, SSHORT collation)
 {
 /**************************************
  *
@@ -779,10 +780,10 @@ void DSC_make_descriptor(DSC* desc,
 #ifdef DEV_BUILD
 	{
 /* Execute this validation code once per server startup only */
-		static bool been_here = false;
+		static BOOLEAN been_here = FALSE;
 		if (!been_here) {
-			been_here = true;
-			fb_assert(validate_dsc_tables());
+			been_here = TRUE;
+			assert(validate_dsc_tables());
 		}
 	}
 #endif
@@ -864,7 +865,7 @@ void DSC_make_descriptor(DSC* desc,
 		desc->dsc_length = 2 * sizeof(SLONG);
 		desc->dsc_dtype = dtype_blob;
 		if (sub_type == BLOB_text) {
-			fb_assert(charset <= MAX_SCHAR);
+			assert(charset <= MAX_SCHAR);
 			desc->dsc_scale = (SCHAR) charset;
 		}
 		break;
@@ -875,30 +876,30 @@ void DSC_make_descriptor(DSC* desc,
 		break;
 
 	default:
-		fb_assert(FALSE);
-		desc->dsc_dtype = dtype_unknown;
+		assert(FALSE);
+		desc->dsc_dtype = dtype_null;
 		break;
 	}
 }
 
 
-int DSC_string_length(const dsc* desc)
+int DLL_EXPORT DSC_string_length(DSC* desc)
 {
-/**************************************
- *
- *	D S C _ s t r i n g _ l e n g t h
- *
- **************************************
- *
- * Functional description
- *	Estimate length of string (in bytes) based on descriptor.
- *	Estimated length assumes representing string in 
- *	narrow-char ASCII format.
- *
- *	Note that this strips off the short at the
- *	start of dtype_varying, and the NULL for dtype_cstring.
- *
- **************************************/
+	/**************************************
+     *
+     *	D S C _ s t r i n g _ l e n g t h
+     *
+     **************************************
+     *
+     * Functional description
+     *	Estimate length of string (in bytes) based on descriptor.
+     *	Estimated length assumes representing string in 
+     *	narrow-char ASCII format.
+     *
+     *	Note that this strips off the short at the
+     *	start of dtype_varying, and the NULL for dtype_cstring.
+     *
+     **************************************/
 
 	switch (desc->dsc_dtype) {
 	case dtype_text:
@@ -924,16 +925,16 @@ int DSC_string_length(const dsc* desc)
 
 const TEXT *DSC_dtype_tostring(UCHAR dtype)
 {
-/**************************************
- *
- *	D S C _ d t y p e _ t o s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Convert a datatype to its textual representation	
- *	
- **************************************/
+	/**************************************
+     *
+     *	D S C _ d t y p e _ t o s t r i n g
+     *
+     **************************************
+     *
+     * Functional description
+     *	Convert a datatype to its textual representation	
+     *	
+     **************************************/
 	if (dtype < FB_NELEM(DSC_dtype_names))
 		return DSC_dtype_names[dtype];
 	else
@@ -941,27 +942,24 @@ const TEXT *DSC_dtype_tostring(UCHAR dtype)
 }
 
 
-void DSC_get_dtype_name(const dsc* desc, TEXT * buffer, USHORT len)
+void DLL_EXPORT DSC_get_dtype_name(DSC * desc, TEXT * buffer, USHORT len)
 {
-/**************************************
- *
- *	D S C _ g e t _ d t y p e _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Convert a datatype to its textual representation	
- *	
- **************************************/
-	// This function didn't put a string terminator even though
-	// it's calling strncpy that doesn't put it if source > target.
+	/**************************************
+     *
+     *	D S C _ g e t _ d t y p e _ n a m e
+     *
+     **************************************
+     *
+     * Functional description
+     *	Convert a datatype to its textual representation	
+     *	
+     **************************************/
 	strncpy(buffer, DSC_dtype_tostring(desc->dsc_dtype), len);
-	buffer[len - 1] = 0;
 }
 
 
 #ifdef DEV_BUILD
-static bool validate_dsc_tables()
+static BOOLEAN validate_dsc_tables(void)
 {
 /**************************************
  *
@@ -982,8 +980,9 @@ static bool validate_dsc_tables()
  *          so it won't detach from its controlling terminal.
  *	
  **************************************/
-	for (BYTE op1 = dtype_unknown; op1 < DTYPE_TYPE_MAX; op1++) {
-		for (BYTE op2 = dtype_unknown; op2 < DTYPE_TYPE_MAX; op2++) {
+	BYTE op1, op2;
+	for (op1 = dtype_null; op1 < DTYPE_TYPE_MAX; op1++)
+		for (op2 = dtype_null; op2 < DTYPE_TYPE_MAX; op2++) {
 
 			if ((DSC_add_result[op1][op2] >= DTYPE_TYPE_MAX) &&
 				(DSC_add_result[op1][op2] != DTYPE_CANNOT)) {
@@ -991,7 +990,7 @@ static bool validate_dsc_tables()
 	ib_fprintf (ib_stderr, "DSC_add_result [%d][%d] is %d, invalid.\n",
 		 op1, op2, DSC_add_result [op1][op2]);
 */
-				return false;
+				return FALSE;
 			}
 
 			/* Addition operator must be communitive */
@@ -1002,7 +1001,7 @@ static bool validate_dsc_tables()
 		 op1, op2, DSC_add_result [op1][op2],
 		 op2, op1, DSC_add_result [op2][op1] );
 */
-				return false;
+				return FALSE;
 			}
 
 			/* Difficult to validate Subtraction */
@@ -1013,7 +1012,7 @@ static bool validate_dsc_tables()
 	ib_fprintf (ib_stderr, "DSC_sub_result [%d][%d] is %d, invalid.\n",
 		 op1, op2, DSC_sub_result [op1][op2]);
 */
-				return false;
+				return FALSE;
 			}
 
 			/* Multiplication operator must be commutative */
@@ -1025,7 +1024,7 @@ static bool validate_dsc_tables()
 		 op1, op2, DSC_multiply_result [op1][op2],
 		 op2, op1, DSC_multiply_result [op2][op1]);
 */
-				return false;
+				return FALSE;
 			}
 
 			/* Multiplication operator must be communitive */
@@ -1038,13 +1037,13 @@ static bool validate_dsc_tables()
 	    op1, op2, DSC_multiply_blr4_result [op1][op2],
 	    op2, op1, DSC_multiply_blr4_result [op2][op1] );
 */
-				return false;
+				return FALSE;
 			}
 		}
-	}
-	return true;
+	return TRUE;
 }
 
 #endif /* DEV_BUILD */
 
 
+} // extern "C"

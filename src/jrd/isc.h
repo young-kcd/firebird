@@ -29,8 +29,12 @@
  *
  */
 
-#ifndef JRD_ISC_H
-#define JRD_ISC_H
+#ifndef _JRD_ISC_H_
+#define _JRD_ISC_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 /* Defines for semaphore and shared memory removal */
@@ -48,31 +52,31 @@ typedef struct itm {
 	SSHORT *itm_return_length;
 } ITM;
 
-struct event_t {
+typedef struct event {
 	SLONG event_pid;
 	SLONG event_count;
-};
+} EVENT_T, *EVENT;
 
 typedef struct wait {
 	USHORT wait_count;
-	event_t* wait_events;
+	EVENT wait_events;
 	SLONG *wait_values;
 } WAIT;
 
 /* Lock status block */
 
-struct lock_status {
+typedef struct lksb {
 	SSHORT lksb_status;
 	SSHORT lksb_reserved;
 	SLONG lksb_lock_id;
 	SLONG lksb_value[4];
-};
+} LKSB;
 
 /* Poke block (for asynchronous poking) */
 
 typedef struct poke {
 	struct poke *poke_next;
-	lock_status poke_lksb;
+	LKSB poke_lksb;
 	SLONG poke_parent_id;
 	USHORT poke_value;
 	USHORT poke_use_count;
@@ -95,7 +99,15 @@ typedef struct sh_mem {
 #ifdef UNIX
 #define MTX_STRUCTURE_DEFINED
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #include "../jrd/thd.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 #ifdef ANY_THREADING
@@ -113,20 +125,20 @@ typedef struct mtx {
 
 
 #ifdef ANY_THREADING
-struct event_t
+typedef struct event
 {
 	SLONG event_semid;
 	SLONG event_count;
 	THD_MUTEX_STRUCT event_mutex[1];
 	THD_COND_STRUCT event_semnum[1];
-};
+} EVENT_T, *EVENT;
 #else
-struct event_t
+typedef struct event
 {
 	SLONG event_semid;
 	SLONG event_count;
 	SSHORT event_semnum;
-};
+} EVENT_T, *EVENT;
 #endif /* ANY_THREADING */
 
 
@@ -149,14 +161,14 @@ typedef struct mtx
 	void*	mtx_handle;
 } MTX_T, *MTX;
 
-struct event_t
+typedef struct event
 {
-	SLONG		event_pid;
-	SLONG		event_count;
-	SLONG		event_type;
-	void*		event_handle;
-	event_t*	event_shared;
-};
+	SLONG			event_pid;
+	SLONG			event_count;
+	SLONG			event_type;
+	void*			event_handle;
+	struct event*	event_shared;
+} EVENT_T, *EVENT;
 
 #define SH_MEM_STRUCTURE_DEFINED
 typedef struct sh_mem
@@ -255,5 +267,8 @@ enum ast_t
 #endif
 
 
-#endif /* JRD_ISC_H */
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_ISC_H_ */

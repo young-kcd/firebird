@@ -3,42 +3,29 @@
  *	MODULE:		class_perf.cpp
  *	DESCRIPTION:	Class library performance measurements
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * You may obtain a copy of the Licence at
- * http://www.gnu.org/licences/lgpl.html
- * 
- * As a special exception this file can also be included in modules
- * with other source code as long as that source code has been 
- * released under an Open Source Initiative certificed licence.  
- * More information about OSI certification can be found at: 
- * http://www.opensource.org 
- * 
- * This module is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public Licence for more details.
- * 
- * This module was created by members of the firebird development 
- * team.  All individual contributions remain the Copyright (C) of 
- * those individuals and all rights are reserved.  Contributors to 
- * this file are either listed below or can be obtained from a CVS 
- * history command.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  Created by: Nickolay Samofatov <skidder@bssys.com>
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Contributor(s):
- * 
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  $Id: class_perf.cpp,v 1.9 2004-03-25 23:12:39 skidder Exp $
+ * Created by: Nickolay Samofatov <skidder@bssys.com>
  *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
 #include "tree.h"
 #include "alloc.h"
-//#include "../memory/memory_pool.h"
+#include "../memory/memory_pool.h"
 #include <stdio.h>
 #include <time.h>
 #include <set>
@@ -49,7 +36,7 @@ void start() {
 	t = clock();
 }
 
-#define TEST_ITEMS 10000000
+#define TEST_ITEMS 1000000
 
 void report(int scale) {
 	clock_t d = clock();
@@ -166,7 +153,7 @@ void report() {
 	printf("Operation took %d milliseconds.\n", (int)(d-t)*1000/CLOCKS_PER_SEC);
 }
 
-#define ALLOC_ITEMS 10000000
+#define ALLOC_ITEMS 1000000
 #define MAX_ITEM_SIZE 50
 #define BIG_ITEMS (ALLOC_ITEMS/10)
 #define BIG_SIZE (MAX_ITEM_SIZE*5)
@@ -174,7 +161,7 @@ void report() {
 struct AllocItem {
 	int order;
 	void *item;
-	static bool greaterThan(const AllocItem &i1, const AllocItem &i2) {
+	static int compare(const AllocItem &i1, const AllocItem &i2) {
 		return i1.order > i2.order || (i1.order==i2.order && i1.item > i2.item);
 	}
 };
@@ -190,7 +177,7 @@ static void testAllocatorOverhead() {
 	int i;
 	for (i=0;i<ALLOC_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, (void*)(long)i};
+		AllocItem temp = {n, (void*)i};
 		items.add(temp);
 	}
 	// Deallocate half of small items
@@ -202,7 +189,7 @@ static void testAllocatorOverhead() {
 	// Allocate big items
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
-		AllocItem temp = {n, (void*)(long)i};
+		AllocItem temp = {n, (void*)i};
 		bigItems.add(temp);
 	}
 	// Deallocate the rest of small items
@@ -290,7 +277,7 @@ static void testAllocatorMalloc() {
 	report();
 }
 
-/*static void testAllocatorOldPool() {
+static void testAllocatorOldPool() {
 	printf("Test run for old MemoryPool...\n");
 	start();
 	::MemoryPool *pool = new ::MemoryPool(0,getDefaultMemoryPool());
@@ -327,12 +314,12 @@ static void testAllocatorMalloc() {
 	} while (bigItems.getNext());
 	delete pool;
 	report();
-}*/
+}
 
 int main() {
 	testTree();
 	testAllocatorOverhead();
 	testAllocatorMemoryPool();
 	testAllocatorMalloc();
-//	testAllocatorOldPool();
+	testAllocatorOldPool();
 }

@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding = "Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="7.00"
 	Name="fbclient_static"
 	SccProjectName=""
 	SccLocalPath="">
@@ -22,11 +22,10 @@
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,SERVER_SHUTDOWN,GOVERNOR,I386,_X86_=1,WIN32,_X86_,_LIB,NDEBUG,BOOT_BUILD"
+				PreprocessorDefinitions="_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,SERVER_SHUTDOWN,IPSERV,GOVERNOR,EXACT_NUMERICS,I386,_X86_=1,WIN32,_X86_,_LIB,NDEBUG,BOOT_BUILD"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
-				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\fbclient_static/fbclient_static.pch"
 				AssemblerListingLocation=".\..\..\..\temp\release\fbclient_static/"
@@ -55,12 +54,6 @@
 				Culture="3082"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
@@ -74,10 +67,9 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,SERVER_SHUTDOWN,GOVERNOR,I386,_X86_=1,WIN32,_X86_,_LIB,BOOT_BUILD"
+				PreprocessorDefinitions="NDEBUG,_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,SERVER_SHUTDOWN,IPSERV,GOVERNOR,EXACT_NUMERICS,I386,_X86_=1,WIN32,_X86_,_LIB,BOOT_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\debug\fbclient_static/fbclient_static.pch"
 				AssemblerListingLocation=".\..\..\..\temp\debug\fbclient_static/"
@@ -107,16 +99,8 @@
 				Culture="3082"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
-	<References>
-	</References>
 	<Files>
 		<Filter
 			Name="Resource files"
@@ -142,6 +126,9 @@
 			Filter="">
 			<File
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\db_alias.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dls_proto.h">
@@ -226,13 +213,26 @@
 				RelativePath="..\..\..\src\remote\remote.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\wnet.cpp">
+				RelativePath="..\..\..\src\remote\wnet.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xdr.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xnet.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="IPSERVER files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\ipserver\alli.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\ipserver\ipcevent.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\ipserver\ipclient.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -267,6 +267,9 @@
 				RelativePath="..\..\..\src\jrd\cvt.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\db_alias.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dls.cpp">
 			</File>
 			<File
@@ -279,7 +282,7 @@
 				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\ibinitdll.cpp">
+				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
@@ -288,7 +291,7 @@
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
+				RelativePath="..\..\..\src\jrd\isc_ipc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
@@ -319,7 +322,7 @@
 			RelativePath="..\defs\fbclient.def">
 		</File>
 		<File
-			RelativePath="..\defs\fbclient.def">
+			RelativePath="..\defs\fbclient_debug.def">
 		</File>
 	</Files>
 	<Globals>

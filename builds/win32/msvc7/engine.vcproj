@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding = "Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="7.00"
 	Name="engine"
 	SccProjectName=""
 	SccLocalPath="">
@@ -20,14 +20,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,SERVER_SHUTDOWN,DEV_BUILD"
-				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\engine_ss/engine.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\engine_ss/"
 				ObjectFile="..\..\..\temp\debug\engine_ss/"
@@ -56,12 +53,6 @@
 				Culture="1049"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -73,7 +64,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -83,9 +74,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SERVER_SHUTDOWN,SUPERSERVER"
-				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\engine_ss/engine.pch"
 				AssemblerListingLocation="..\..\..\temp\release\engine_ss/"
@@ -93,7 +82,6 @@
 				ProgramDataBaseFileName="..\..\..\temp\release\engine_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -115,20 +103,18 @@
 				Culture="1049"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
-	<References>
-	</References>
 	<Files>
 		<Filter
 			Name="JRD files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\ExecuteStatement.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ail.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\all.cpp">
 			</File>
@@ -140,9 +126,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\blob_filter.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\btn.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\btr.cpp">
@@ -168,6 +151,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt2.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\db_alias.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\gen\jrd\dfw.cpp">
@@ -215,9 +201,6 @@
 				RelativePath="..\..\..\src\jrd\exe.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\execute_statement.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\ext.cpp">
 			</File>
 			<File
@@ -237,9 +220,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\gen\jrd\grant.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\iberr.cpp">
@@ -276,13 +256,16 @@
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
+				RelativePath="..\..\..\src\jrd\isc_ipc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\jrd.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\jrn.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\lck.cpp">
@@ -297,6 +280,9 @@
 				RelativePath="..\..\..\gen\jrd\met.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\misc.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\mov.cpp">
 			</File>
 			<File
@@ -309,10 +295,10 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\nbak.cpp">
+				RelativePath="..\..\..\src\jrd\nodebug.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\nodebug.cpp">
+				RelativePath="..\..\..\src\jrd\old.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\opt.cpp">
@@ -337,6 +323,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\pwd.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\rec.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rlck.cpp">
@@ -418,12 +407,15 @@
 				RelativePath="..\..\..\src\jrd\why.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\winnt.cpp">
+				RelativePath="..\..\..\src\jrd\winnt.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\ExecuteStatement.h">
+			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\acl.h">
 			</File>
@@ -471,9 +463,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\bookmark.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\btn.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\btr.h">
@@ -596,9 +585,6 @@
 				RelativePath="..\..\..\src\jrd\exe_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\execute_statement.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\ext.h">
 			</File>
 			<File
@@ -648,9 +634,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\grant_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\guid.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ib_stdio.h">
@@ -716,7 +699,7 @@
 				RelativePath="..\..\..\src\jrd\isc_f_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\isc_i_proto.h">
+				RelativePath="..\..\..\src\jrd\isc_i_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_proto.h">
@@ -800,7 +783,13 @@
 				RelativePath="..\..\..\src\jrd\met_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\misc.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\misc_func_ids.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\misc_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\mov_proto.h">
@@ -825,9 +814,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nav_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\nbak.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nlm_thd.h">
@@ -869,10 +855,10 @@
 				RelativePath="..\..\..\src\jrd\perf_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\pio.h">
+				RelativePath="..\..\..\src\jrd\pio.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\pio_proto.h">
+				RelativePath="..\..\..\src\jrd\pio_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\pragma.h">

@@ -37,17 +37,11 @@
  * This file (or y_ref.h) must be included BEFORE ibase.h !
  */
 
-namespace Jrd {
-	class Attachment;
-	class jrd_tra;
-	class jrd_req;
-}
-
 union any_handle {
 	struct why_hndl* h_why;
 	class dsql_req* h_dsql;
-	Jrd::Attachment* h_dbb;
-	Jrd::jrd_tra* h_tra;
+	class att* h_dbb;
+	class jrd_tra* h_tra;
 };
 
 typedef struct why_hndl
@@ -59,8 +53,8 @@ typedef struct why_hndl
 	struct why_hndl*	parent;
 	struct why_hndl*	next;
 	union {
-		struct why_hndl*	requests;
-		struct sqlda_sup*	das;
+		struct why_hndl*requests;
+		struct dasup*	das;
 	};
 	struct why_hndl*	statements;
 	struct why_hndl*	blobs;

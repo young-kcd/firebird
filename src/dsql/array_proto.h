@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		array_proto.h
- *	DESCRIPTION:	Prototype Header file for array.epp
+ *	DESCRIPTION:	Prototype Header file for array.e
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,26 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DSQL_ARRAY_PROTO_H
-#define DSQL_ARRAY_PROTO_H
+#ifndef _DSQL_ARRAY_PROTO_H_
+#define _DSQL_ARRAY_PROTO_H_
 
-ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS*, const ISC_ARRAY_DESC*,
-										SSHORT*, UCHAR*, SSHORT*);
-ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS*, void**, void**,
-											ISC_QUAD*, const ISC_ARRAY_DESC*,
-											void*, SLONG*);
-ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS*, void**, void**,
-												SCHAR*, SCHAR*,
-												ISC_ARRAY_DESC*);
-ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS*, void**, void**,
-												SCHAR*, SCHAR*,
-												ISC_ARRAY_DESC*);
-ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS*, void**, void**,
-											ISC_QUAD*, const ISC_ARRAY_DESC*,
-											void*, SLONG*);
-ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS*, SCHAR*, SCHAR*,
-											SSHORT*, SSHORT*, SSHORT*,
-											ISC_ARRAY_DESC*);
+extern ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS *, ISC_ARRAY_DESC *,
+											SSHORT *, SCHAR *, SSHORT *);
+extern ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS *, void **, void **,
+											  GDS_QUAD *, ISC_ARRAY_DESC *,
+											  void *, SLONG *);
+extern ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS *, void **, void **,
+												  SCHAR *, SCHAR *,
+												  ISC_ARRAY_DESC *);
+extern ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS *, void **, void **,
+												SCHAR *, SCHAR *,
+												ISC_ARRAY_DESC *);
+extern ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS *, void **, void **,
+											  GDS_QUAD *, ISC_ARRAY_DESC *,
+											  void *, SLONG *);
+extern ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS *, SCHAR *, SCHAR *,
+											 SSHORT *, SSHORT *, SSHORT *,
+											 ISC_ARRAY_DESC *);
 
-#endif // DSQL_ARRAY_PROTO_H
-
+#endif /*_DSQL_ARRAY_PROTO_H_ */

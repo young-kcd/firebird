@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Cache Manager
- *	MODULE:		sbc_print.cpp
+ *	MODULE:		sbc_print.c
  *	DESCRIPTION:	Shared Cache printer
  *
  * The contents of this file are subject to the Interbase Public
@@ -41,7 +41,7 @@
 #include "../jrd/cash.h"
 #include "../jrd/ods.h"
 #include "../jrd/llio.h"
-#include "../utilities/gstat/ppg_proto.h"
+#include "../utilities/ppg_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/isc_s_proto.h"
@@ -69,8 +69,12 @@
 
 #define DEFAULT_SIZE	8192
 
+#if !(defined WIN_NT)
+extern SCHAR *sys_errlist[];
+#endif
+
 static void cache_init(void);
-static void db_get_sbc(const SCHAR*, SCHAR*, SLONG*, SSHORT*);
+static void db_get_sbc(SCHAR *, SCHAR *, SLONG *, SSHORT *);
 
 #if (defined WIN_NT)
 static void db_error(SLONG);
@@ -78,7 +82,7 @@ static void db_error(SLONG);
 static void db_error(int);
 #endif
 
-static void db_open(const UCHAR*, USHORT);
+static void db_open(UCHAR *, USHORT);
 static PAG db_read(SLONG);
 static void print_error(void);
 static void print_header(TEXT *);
@@ -88,15 +92,8 @@ static void prt_que(UCHAR *, SRQ, FPTR_VOID, int, int);
 static void prt_que_back(UCHAR *, SRQ, FPTR_VOID, int, int);
 static void print_sccb(void);
 
-static bool sw_mru;
-static bool sw_nbuf;
-static bool sw_header;
-static bool sw_page;
-static bool sw_user;
-static bool sw_free;
-static bool sw_all;
-static const TEXT* dbname;
-static TEXT sw_file[257];
+static int sw_mru, sw_nbuf, sw_header, sw_page, sw_user, sw_free, sw_all;
+static TEXT *dbname, sw_file[257];
 
 static SHB CASH_header;
 static SCCB sccb;
@@ -115,9 +112,9 @@ static int file;
 
 SCHAR global_buffer[MAX_PAGE_SIZE];
 
-static IB_FILE* sw_outfile;
+static IB_FILE *sw_outfile;
 
-const SCHAR* page_type[] = {
+SCHAR *page_type[] = {
 	"pag_undefined    ",
 	"pag_header       ",		/* Database header page */
 	"pag_pages        ",		/* Page inventory page */
@@ -132,7 +129,7 @@ const SCHAR* page_type[] = {
 };
 
 
-int CLIB_ROUTINE main( int argc, char* argv[])
+int CLIB_ROUTINE main( int argc, char *argv[])
 {
 /**************************************
  *
@@ -144,11 +141,16 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *	Initialize shared cache for process.
  *
  **************************************/
+	SLONG length;
+	SCHAR *p, c;
 	ISC_STATUS_ARRAY status_vector;
 	TEXT expanded_filename[256];
 	SH_MEM_T shmem_data;
 	SLONG cache_buffers;
 	SSHORT cache_flags;
+	int nbuf;
+	int nfree_buf;
+	SLONG redir_in, redir_out, redir_err;
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
@@ -159,9 +161,9 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		argc--;
 	}
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		long redir_in = atol(argv[2]);
-		long redir_out = atol(argv[3]);
-		long redir_err = atol(argv[4]);
+		redir_in = atol(argv[2]);
+		redir_out = atol(argv[3]);
+		redir_err = atol(argv[4]);
 #ifdef WIN_NT
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
@@ -184,53 +186,52 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 /* Handle switches, etc. */
 
-	dbname = NULL;
-	int nbuf = 0;
-	int nfree_buf = 0;
+	dbname = (SCHAR *) 0;
+	nbuf = 0;
+	nfree_buf = 0;
 	argv++;
 
 	while (--argc) {
-		const SCHAR* p = *argv++;
+		p = *argv++;
 
 		if (p[0] != '-') {
 			dbname = p;
 			break;
 		}
-		SCHAR c;
 		while (c = *p++)
 			switch (UPPER(c)) {
 			case 'M':
-				sw_mru = true;
+				sw_mru = TRUE;
 				break;
 
 			case 'N':
-				sw_nbuf = true;
+				sw_nbuf = TRUE;
 				nbuf = atoi(*argv++);
 				--argc;
 				break;
 
 			case 'P':
-				sw_page = true;
+				sw_page = TRUE;
 				page_no = atoi(*argv++);
 				--argc;
 				break;
 
 			case 'F':
-				sw_free = true;
+				sw_free = TRUE;
 				nfree_buf = atoi(*argv++);
 				--argc;
 				break;
 
 			case 'H':
-				sw_header = true;
+				sw_header = TRUE;
 				break;
 
 			case 'A':
-				sw_all = true;
+				sw_all = TRUE;
 				break;
 
 			case 'U':
-				sw_user = true;
+				sw_user = TRUE;
 				break;
 
 			case '-':
@@ -264,7 +265,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 							   cache_init, 0, -mapped_size, &shmem_data);
 
 	if (CASH_header && CASH_header->shb_length > mapped_size) {
-		const SLONG length = CASH_header->shb_length;
+		length = CASH_header->shb_length;
 		ISC_unmap_file(status_vector, &shmem_data, FALSE);
 		CASH_header = ISC_map_file(status_vector,
 								   expanded_filename,
@@ -279,7 +280,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	}
 
 	if (sw_all)
-		sw_page = sw_header = sw_user = true;
+		sw_page = sw_header = sw_user = TRUE;
 
 /* print the shared cache header */
 
@@ -365,9 +366,9 @@ static void cache_init(void)
 
 
 static void db_get_sbc(
-					   const SCHAR* db,
-					   SCHAR* name,
-					   SLONG* cache_buffers, SSHORT* cache_flags)
+					   SCHAR * db,
+					   SCHAR * name,
+					   SLONG * cache_buffers, SSHORT * cache_flags)
 {
 /**************************************
  *
@@ -379,8 +380,10 @@ static void db_get_sbc(
  *	Get shared cache info.
  *
  **************************************/
+	HDR hdr;
+
 	db_open(db, strlen(db));
-	header_page* hdr = (header_page*) db_read((SLONG) HEADER_PAGE);
+	hdr = (HDR) db_read((SLONG) HEADER_PAGE);
 
 	*cache_buffers = hdr->hdr_cache_buffers;
 	*cache_flags = hdr->hdr_flags & hdr_disable_cache;
@@ -418,7 +421,7 @@ static void db_error( SLONG status)
 }
 
 
-static void db_open(const UCHAR* file_name, USHORT file_length)
+static void db_open( UCHAR * file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -486,26 +489,19 @@ static void db_error( int status)
  **************************************/
 	SCHAR *p;
 
-	/* FIXME: The strerror() function returns the appropriate description
-	   string, or an unknown error message if the error code is unknown.
-	   EKU: p cannot be NULL! */
-#if 1
-	ib_printf(strerror(status));
-#else
 #ifndef VMS
-	ib_printf(strerror(status));
+	ib_printf(sys_errlist[status]);
 #else
 	if ((p = strerror(status)) || (p = strerror(EVMSERR, status)))
 		ib_printf("%s\n", p);
 	else
 		ib_printf("uninterpreted code %x\n", status);
 #endif
-#endif
 	exit(FINI_ERROR);
 }
 
 
-static void db_open(const UCHAR* file_name, USHORT file_length)
+static void db_open( UCHAR * file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -648,9 +644,11 @@ static void print_page_header( SDB sdb)
  *	header and log pages.
  *
  **************************************/
-	if ((page_no >= 0) && (sdb->sdb_page != page_no)) {
+	PAG page;
+	SDB journal_sdb;
+
+	if ((page_no >= 0) && (sdb->sdb_page != page_no))
 		return;
-	}
 
 /* print sdb information */
 
@@ -659,25 +657,23 @@ static void print_page_header( SDB sdb)
 		 sdb->sdb_page, sdb->sdb_generation, sdb->sdb_length, sdb->sdb_flags,
 		 sdb->sdb_precedence);
 
-	const pag* page = (pag*) ABS_PTR(sdb->sdb_buffer);
+	page = (PAG) ABS_PTR(sdb->sdb_buffer);
 
 /* Print page header */
 
 	ib_printf("\tPage type: %s\n", page_type[(int) page->pag_type]);
 
-	ib_printf("\tFlags: %d.  Generation: %d.  SCN: %d.\n",
+	ib_printf("\tFlags: %d.  Generation: %d.  Seqno: %d.  Offset: %d\n",
 			  (int) page->pag_flags, page->pag_generation,
-			  page->pag_scn);
+			  page->pag_seqno, page->pag_offset);
 
 /* Print full page information for header and log page */
 
 	if (page_no >= 0) {
-		if (page_no == HEADER_PAGE) {
+		if (page_no == HEADER_PAGE)
 			PPG_print_header(page, HEADER_PAGE, sw_outfile);
-		}
-		else if (page_no == LOG_PAGE) {
+		else if (page_no == LOG_PAGE)
 			PPG_print_log(page, LOG_PAGE, sw_outfile);
-		}
 	}
 
 	if (sdb->sdb_flags) {
@@ -706,7 +702,7 @@ static void print_page_header( SDB sdb)
 	}
 
 	if (sdb->sdb_journal) {
-		SDB journal_sdb = (SDB) ABS_PTR(sdb->sdb_journal);
+		journal_sdb = (SDB) ABS_PTR(sdb->sdb_journal);
 		ib_printf("\tJournal buffer information:\n");
 		ib_printf("\t\tCurrent Length %d\n", journal_sdb->sdb_length);
 	}
@@ -715,7 +711,6 @@ static void print_page_header( SDB sdb)
 }
 
 
-// CVC: This PRB doesn't match jrd/event.h's prb struct.
 static void print_process( PRB process)
 {
 /**************************************
@@ -740,6 +735,8 @@ static void print_process( PRB process)
 
 	ib_printf("\tLogical Writes: %d\n", process->prb_logical_writes);
 
+	ib_printf("\tWAL ib_puts: %d\n", process->prb_ail_puts);
+
 	ib_printf("\n");
 }
 
@@ -763,16 +760,18 @@ static void prt_que(
  *	param 2	- if specified, the number of entries to print.
  *
  **************************************/
-	const SLONG offset = REL_PTR(que);
+	SLONG count, offset;
+	SRQ next;
+
+	offset = REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
 		ib_printf("%s: *empty*\n\n", string);
 		return;
 	}
 
-	SLONG count = 0;
+	count = 0;
 
-	SRQ next;
 	QUE_LOOP((*que), next) {
 		++count;
 
@@ -802,16 +801,18 @@ static void prt_que_back(
  *	Same as prt_que, but traverse in reverse order.
  *
  **************************************/
-	const SLONG offset = REL_PTR(que);
+	SLONG count, offset;
+	SRQ next;
+
+	offset = REL_PTR(que);
 
 	if (offset == que->srq_forward && offset == que->srq_backward) {
 		ib_printf("%s: *empty*\n\n", string);
 		return;
 	}
 
-	SLONG count = 0;
+	count = 0;
 
-	SRQ next;
 	QUE_LOOP_BACK((*que), next) {
 		++count;
 
@@ -849,4 +850,3 @@ static void print_sccb(void)
 
 	ib_printf("\tflags: %d\n\n", sccb->sccb_flags);
 }
-

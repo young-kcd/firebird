@@ -21,24 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef ALICE_ALL_H
-#define ALICE_ALL_H
+#ifndef _ALICE_ALL_H_
+#define _ALICE_ALL_H_
 
 #include "../jrd/block_cache.h"
 #include "../alice/lls.h"
 
-struct blk;
+void		ALLA_init();				/* initialize pool system */
+void		ALLA_fini();				/* get rid of everything */
 
 class AliceMemoryPool : public MemoryPool
 {
 protected:
 	// Dummy constructor and destructor. Should never be called
-	AliceMemoryPool() : MemoryPool(NULL, default_stats_group, NULL, NULL)/*, lls_cache(*this)*/ {}
+	AliceMemoryPool() : MemoryPool(NULL, NULL), lls_cache(*this) {}
 	~AliceMemoryPool() {}	
 public:
 	static AliceMemoryPool *createPool() {
 		AliceMemoryPool *result = (AliceMemoryPool *)internal_create(sizeof(AliceMemoryPool));
-		//new (&result->lls_cache) BlockCache<alice_lls> (*result);
+		new (&result->lls_cache) BlockCache<lls> (*result);
 		return result;
 	}
 	static void deletePool(AliceMemoryPool* pool);
@@ -48,12 +49,12 @@ public:
 //		lls_cache(*this)
 //	{}
 
-//	static blk* ALLA_pop(alice_lls**);
-//	static void ALLA_push(blk*, alice_lls**);
+	static class blk* ALLA_pop(class lls**);
+	static void ALLA_push(class blk*, class lls**);
 
-//private:
-//	BlockCache<alice_lls> lls_cache;  // Was plb_lls
+private:
+	BlockCache<class lls> lls_cache;  /* Was plb_lls */
 };
 
-#endif // ALICE_ALL_H
+#endif /* _ALICE_ALL_H_ */
 

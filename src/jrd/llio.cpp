@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		llio.cpp
+ *	MODULE:		llio.h
  *	DESCRIPTION:	Low-level I/O routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -36,7 +36,7 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/llio.h"
-#include "gen/iberror.h"
+#include "gen/codes.h"
 #include "../jrd/iberr_proto.h"
 #include "../jrd/llio_proto.h"
 
@@ -67,6 +67,10 @@
 
 #ifdef WIN_NT
 #include <windows.h>
+#ifdef TEXT
+#undef TEXT
+#endif
+#define TEXT		SCHAR
 #endif
 
 #ifndef O_SYNC
@@ -80,13 +84,19 @@
 #define IO_RETRY	20
 #define BUFSIZE		32768
 
-static void io_error(ISC_STATUS*, const TEXT*, const TEXT*, ISC_STATUS);
+static void io_error(ISC_STATUS *, TEXT *, TEXT *, ISC_STATUS);
+
+#ifdef SHLIB_DEFS
+#define fsync		(*_libgds_fsync)
+
+extern int fsync();
+#endif
 
 
 int LLIO_allocate_file_space(
-							 ISC_STATUS* status_vector,
-							 const TEXT* filename,
-							 SLONG size, UCHAR fill_char, bool overwrite)
+							 ISC_STATUS * status_vector,
+							 TEXT * filename,
+							 SLONG size, UCHAR fill_char, USHORT overwrite)
 {
 /**************************************
  *
@@ -97,7 +107,7 @@ int LLIO_allocate_file_space(
  * Functional description
  *        Open (create if necessary) the given file and write 'size'
  *        number of bytes to it.  Each byte is initialized to
- *        the passed fill_char.  If 'overwrite' is false and the file
+ *        the passed fill_char.  If 'overwrite' is FALSE and the file
  *        already exists, return FB_FAILURE.
  *
  *        This routine may be used to make sure that the file already
@@ -112,26 +122,27 @@ int LLIO_allocate_file_space(
  *        In case of an error, status_vector would be updated.
  *
  **************************************/
+	SLONG fd;
+	SCHAR buffer[BUFSIZE];
+	SLONG times;
+	SLONG last_size, length;
 	USHORT open_mode;
+
 	if (overwrite)
 		open_mode = LLIO_OPEN_RW;
 	else
 		open_mode = LLIO_OPEN_NEW_RW;
 
-	SLONG fd;
-	if (LLIO_open(status_vector, filename, open_mode, true, &fd)) {
+	if (LLIO_open(status_vector, filename, open_mode, TRUE, &fd))
 		return FB_FAILURE;
-	}
 
-	SCHAR buffer[BUFSIZE];
 	memset(buffer, (int) fill_char, BUFSIZE);
-	SLONG times = size / BUFSIZE + 1;	/* For the while loop below */
-	const SLONG last_size = size % BUFSIZE;
+	times = size / BUFSIZE + 1;	/* For the while loop below */
+	last_size = size % BUFSIZE;
 	while (times--) {
-		const SLONG length = (times != 0) ? BUFSIZE : last_size;
+		length = (times != 0) ? BUFSIZE : last_size;
 		if (LLIO_write(status_vector, fd, filename, 0L, LLIO_SEEK_NONE,
-					   reinterpret_cast<const UCHAR*>(buffer), length, 0))
-		{
+					   reinterpret_cast < UCHAR * >(buffer), length, 0)) {
 			LLIO_close(0, fd);
 			return FB_FAILURE;
 		}
@@ -145,7 +156,7 @@ int LLIO_allocate_file_space(
 
 #ifdef WIN_NT
 #define IO_DEFINED
-int LLIO_close(ISC_STATUS* status_vector, SLONG file_desc)
+int LLIO_close(ISC_STATUS * status_vector, SLONG file_desc)
 {
 /**************************************
  *
@@ -163,11 +174,9 @@ int LLIO_close(ISC_STATUS* status_vector, SLONG file_desc)
 
 
 int LLIO_open(
-			  ISC_STATUS* status_vector,
-			  const TEXT* filename,
-			  USHORT open_mode,
-			  bool, //share_flag, // unused, must keep for the non-NT version
-			  SLONG* file_desc)
+			  ISC_STATUS * status_vector,
+			  TEXT * filename,
+			  USHORT open_mode, USHORT share_flag, SLONG * file_desc)
 {
 /**************************************
  *
@@ -179,10 +188,10 @@ int LLIO_open(
  *	Open a file.
  *
  **************************************/
-	DWORD create;
+	DWORD access, create, attributes;
 
-	DWORD access = GENERIC_READ | GENERIC_WRITE;
-	DWORD attributes = 0;
+	access = GENERIC_READ | GENERIC_WRITE;
+	attributes = 0;
 	switch (open_mode) {
 	case LLIO_OPEN_R:
 		access = GENERIC_READ;
@@ -211,7 +220,7 @@ int LLIO_open(
 		break;
 	}
 
-	*file_desc = reinterpret_cast<SLONG> (CreateFile(filename,
+	*file_desc = reinterpret_cast < SLONG > (CreateFile(filename,
 														access,
 														FILE_SHARE_READ |
 														FILE_SHARE_WRITE,
@@ -220,18 +229,15 @@ int LLIO_open(
 														|
 														FILE_FLAG_RANDOM_ACCESS
 														| attributes, 0));
-	if ((HANDLE) *file_desc == INVALID_HANDLE_VALUE
-		&& open_mode == LLIO_OPEN_WITH_TRUNC_RW)
-	{
-		*file_desc =
-			reinterpret_cast<SLONG>
+	if ((HANDLE) * file_desc == INVALID_HANDLE_VALUE
+		&& open_mode == LLIO_OPEN_WITH_TRUNC_RW) *file_desc =
+			reinterpret_cast < SLONG >
 			(CreateFile
 			 (filename, access, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
 			  CREATE_NEW,
 			  FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS | attributes,
 			  0));
-	}
-	if ((HANDLE) *file_desc == INVALID_HANDLE_VALUE) {
+	if ((HANDLE) * file_desc == INVALID_HANDLE_VALUE) {
 		if (status_vector)
 			io_error(status_vector, "CreateFile", filename, isc_io_open_err);
 		return FB_FAILURE;
@@ -242,12 +248,12 @@ int LLIO_open(
 
 
 int LLIO_read(
-			  ISC_STATUS* status_vector,
+			  ISC_STATUS * status_vector,
 			  SLONG file_desc,
-			  const TEXT* filename,
+			  TEXT * filename,
 			  SLONG offset,
 			  USHORT whence,
-	UCHAR* buffer, SLONG length, SLONG* length_read)
+UCHAR * buffer, SLONG length, SLONG * length_read)
 {
 /**************************************
  *
@@ -259,23 +265,19 @@ int LLIO_read(
  *	Read a record from a file.
  *
  **************************************/
+	DWORD len;
+
 	if ((whence != LLIO_SEEK_NONE) &&
 		(LLIO_seek(status_vector, file_desc, filename, offset, whence) ==
-		 FB_FAILURE))
-	{
-		return FB_FAILURE;
-	}
+		 FB_FAILURE)) return FB_FAILURE;
 
-	DWORD len = 0;
-	if (buffer) {
+	if (buffer)
 		if (!ReadFile((HANDLE) file_desc, buffer, length, &len, NULL)) {
-			if (status_vector) {
+			if (status_vector)
 				io_error(status_vector, "ReadFile", filename,
 						 isc_io_read_err);
-			}
 			return FB_FAILURE;
 		}
-	}
 
 	if (length_read)
 		*length_read = len;
@@ -285,8 +287,8 @@ int LLIO_read(
 
 
 int LLIO_seek(
-			  ISC_STATUS* status_vector,
-			  SLONG file_desc, const TEXT* filename, SLONG offset, USHORT whence)
+			  ISC_STATUS * status_vector,
+			  SLONG file_desc, TEXT * filename, SLONG offset, USHORT whence)
 {
 /**************************************
  *
@@ -312,11 +314,10 @@ int LLIO_seek(
 			method = FILE_END;
 			break;
 		}
-		if (SetFilePointer((HANDLE) file_desc, offset, NULL, method) == (DWORD) -1) {
-			if (status_vector) {
+		if (SetFilePointer((HANDLE) file_desc, offset, NULL, method) == -1) {
+			if (status_vector)
 				io_error(status_vector, "SetFilePointer", filename,
 						 isc_io_access_err);
-			}
 			return FB_FAILURE;
 		}
 	}
@@ -325,7 +326,7 @@ int LLIO_seek(
 }
 
 
-int LLIO_sync(ISC_STATUS* status_vector, SLONG file_desc)
+int LLIO_sync(ISC_STATUS * status_vector, SLONG file_desc)
 {
 /**************************************
  *
@@ -343,11 +344,11 @@ int LLIO_sync(ISC_STATUS* status_vector, SLONG file_desc)
 
 
 int LLIO_write(
-			   ISC_STATUS* status_vector,
+			   ISC_STATUS * status_vector,
 			   SLONG file_desc,
-			   const TEXT* filename,
+			   TEXT * filename,
 			   SLONG offset,
-	USHORT whence, const UCHAR* buffer, SLONG length, SLONG* length_written)
+USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 {
 /**************************************
  *
@@ -359,23 +360,19 @@ int LLIO_write(
  *	Write a record to a file.
  *
  **************************************/
+	DWORD len;
+
 	if ((whence != LLIO_SEEK_NONE) &&
 		(LLIO_seek(status_vector, file_desc, filename, offset, whence) ==
-		 FB_FAILURE))
-	{
-		return FB_FAILURE;
-	}
+		 FB_FAILURE)) return FB_FAILURE;
 
-	DWORD len = 0;
-	if (buffer) {
+	if (buffer)
 		if (!WriteFile((HANDLE) file_desc, buffer, length, &len, NULL)) {
-			if (status_vector) {
+			if (status_vector)
 				io_error(status_vector, "WriteFile", filename,
 						 isc_io_write_err);
-			}
 			return FB_FAILURE;
 		}
-	}
 
 	if (length_written)
 		*length_written = len;
@@ -384,8 +381,9 @@ int LLIO_write(
 }
 
 
-static void io_error(ISC_STATUS* status_vector,
-					 const TEXT* op, const TEXT* filename, ISC_STATUS operation)
+static void io_error(
+					 ISC_STATUS * status_vector,
+					 TEXT * op, TEXT * filename, ISC_STATUS operation)
 {
 /**************************************
  *
@@ -398,15 +396,15 @@ static void io_error(ISC_STATUS* status_vector,
  *
  **************************************/
 
-	IBERR_build_status(status_vector, isc_io_error, isc_arg_string, op,
-					   isc_arg_string, filename, isc_arg_gds, operation,
-					   isc_arg_win32, GetLastError(), 0);
+	IBERR_build_status(status_vector, isc_io_error, gds_arg_string, op,
+					   gds_arg_string, filename, isc_arg_gds, operation,
+					   gds_arg_win32, GetLastError(), 0);
 }
 #endif
 
 
 #ifndef IO_DEFINED
-int LLIO_close(ISC_STATUS* status_vector, SLONG file_desc)
+int LLIO_close(ISC_STATUS * status_vector, SLONG file_desc)
 {
 /**************************************
  *
@@ -424,9 +422,9 @@ int LLIO_close(ISC_STATUS* status_vector, SLONG file_desc)
 
 
 int LLIO_open(
-			  ISC_STATUS* status_vector,
-			  const TEXT* filename,
-			  USHORT open_mode, bool share_flag, SLONG* file_desc)
+			  ISC_STATUS * status_vector,
+			  TEXT * filename,
+			  USHORT open_mode, USHORT share_flag, SLONG * file_desc)
 {
 /**************************************
  *
@@ -438,6 +436,7 @@ int LLIO_open(
  *	Open a file.
  *
  **************************************/
+	int oldmask;
 	int mode;
 
 	switch (open_mode) {
@@ -463,15 +462,14 @@ int LLIO_open(
 		mode = O_CREAT | O_EXCL | O_RDWR;
 		break;
 	}
-	
-	const int oldmask = share_flag ? umask(0) : 0;
+	if (share_flag)
+		oldmask = umask(0);
 	*file_desc = open(filename, mode, 0666);
 	if (share_flag)
 		umask(oldmask);
 	if (*file_desc == -1) {
-		if (status_vector) {
+		if (status_vector)
 			io_error(status_vector, "open", filename, isc_io_open_err);
-		}
 		return FB_FAILURE;
 	}
 
@@ -479,12 +477,12 @@ int LLIO_open(
 }
 
 int LLIO_read(
-			  ISC_STATUS* status_vector,
+			  ISC_STATUS * status_vector,
 			  SLONG file_desc,
-			  const TEXT* filename,
+			  TEXT * filename,
 			  SLONG offset,
 			  USHORT whence,
-	UCHAR* buffer, SLONG length, SLONG* length_read)
+UCHAR * buffer, SLONG length, SLONG * length_read)
 {
 /**************************************
  *
@@ -496,24 +494,21 @@ int LLIO_read(
  *	Read a record from a file.
  *
  **************************************/
+	int len, i;
+	UCHAR *p;
+
 	if ((whence != LLIO_SEEK_NONE) &&
 		(LLIO_seek(status_vector, file_desc, filename, offset, whence) ==
-		 FB_FAILURE))
-	{
-		return FB_FAILURE;
-	}
+		 FB_FAILURE)) return FB_FAILURE;
 
-	UCHAR* p = buffer;
-	if (p) {
-		for (int i = 0; length && i++ < IO_RETRY;) {
-			const int len = read((int) file_desc, p, (int) length);
-			if (len == -1) {
+	if (p = buffer)
+		for (i = 0; length && i++ < IO_RETRY;) {
+			if ((len = read((int) file_desc, p, (int) length)) == -1) {
 				if (SYSCALL_INTERRUPTED(errno) && i < IO_RETRY)
 					continue;
-				if (status_vector) {
+				if (status_vector)
 					io_error(status_vector, "read", filename,
 							 isc_io_read_err);
-				}
 				return FB_FAILURE;
 			}
 			if (!len)
@@ -521,7 +516,6 @@ int LLIO_read(
 			length -= len;
 			p += len;
 		}
-	}
 
 	if (length_read)
 		*length_read = p - buffer;
@@ -531,8 +525,8 @@ int LLIO_read(
 
 
 int LLIO_seek(
-			  ISC_STATUS* status_vector,
-			  SLONG file_desc, const TEXT* filename, SLONG offset, USHORT whence)
+			  ISC_STATUS * status_vector,
+			  SLONG file_desc, TEXT * filename, SLONG offset, USHORT whence)
 {
 /**************************************
  *
@@ -563,9 +557,8 @@ int LLIO_seek(
 		 * causing problems with the stack frame, etc.  Bad.
  		 */
 		if (lseek((int) file_desc, LSEEK_OFFSET_CAST offset, (int) whence) == -1) {
-			if (status_vector) {
+			if (status_vector)
 				io_error(status_vector, "lseek", filename, isc_io_access_err);
-			}
 			return FB_FAILURE;
 		}
 	}
@@ -573,7 +566,7 @@ int LLIO_seek(
 }
 
 
-int LLIO_sync(ISC_STATUS* status_vector, SLONG file_desc)
+int LLIO_sync(ISC_STATUS * status_vector, SLONG file_desc)
 {
 /**************************************
  *
@@ -591,11 +584,11 @@ int LLIO_sync(ISC_STATUS* status_vector, SLONG file_desc)
 
 
 int LLIO_write(
-			   ISC_STATUS* status_vector,
+			   ISC_STATUS * status_vector,
 			   SLONG file_desc,
-			   const TEXT* filename,
+			   TEXT * filename,
 			   SLONG offset,
-	USHORT whence, const UCHAR* buffer, SLONG length, SLONG* length_written)
+USHORT whence, UCHAR * buffer, SLONG length, SLONG * length_written)
 {
 /**************************************
  *
@@ -607,27 +600,21 @@ int LLIO_write(
  *	Write a record to a file.
  *
  **************************************/
+	int len, i;
+	UCHAR *p;
+
 	if ((whence != LLIO_SEEK_NONE) &&
 		(LLIO_seek(status_vector, file_desc, filename, offset, whence) ==
-		 FB_FAILURE))
-	{
-		return FB_FAILURE;
-	}
+		 FB_FAILURE)) return FB_FAILURE;
 
-	// CVC: it may be necessary to write here instead
-	// UCHAR* p = const_cast<UCHAR*>(buffer);
-	// to make your platform's C headers happy. Still, it's logically const.
-	const UCHAR* p = buffer;
-	if (p) {
-		for (int i = 0; length && i++ < IO_RETRY;) {
-			const int len = write((int) file_desc, p, (int) length);
-			if (len == -1) {
+	if (p = buffer)
+		for (i = 0; length && i++ < IO_RETRY;) {
+			if ((len = write((int) file_desc, p, (int) length)) == -1) {
 				if (SYSCALL_INTERRUPTED(errno) && i < IO_RETRY)
 					continue;
-				if (status_vector) {
+				if (status_vector)
 					io_error(status_vector, "write", filename,
 							 isc_io_write_err);
-				}
 				return FB_FAILURE;
 			}
 			if (!len)
@@ -635,7 +622,6 @@ int LLIO_write(
 			length -= len;
 			p += len;
 		}
-	}
 
 	if (length_written)
 		*length_written = p - buffer;
@@ -645,8 +631,8 @@ int LLIO_write(
 
 
 static void io_error(
-					 ISC_STATUS* status_vector,
-					 const TEXT* op, const TEXT* filename, ISC_STATUS operation)
+					 ISC_STATUS * status_vector,
+					 TEXT * op, TEXT * filename, ISC_STATUS operation)
 {
 /**************************************
  *
@@ -659,9 +645,8 @@ static void io_error(
  *
  **************************************/
 
-	IBERR_build_status(status_vector, isc_io_error, isc_arg_string, op,
-					   isc_arg_string, filename, isc_arg_gds, operation,
-					   isc_arg_unix, errno, 0);
+	IBERR_build_status(status_vector, isc_io_error, gds_arg_string, op,
+					   gds_arg_string, filename, isc_arg_gds, operation,
+					   gds_arg_unix, errno, 0);
 }
 #endif
-

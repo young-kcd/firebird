@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding = "Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="7.00"
 	Name="fb_inet_server"
 	SccProjectName=""
 	SccLocalPath="">
@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -30,9 +30,7 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,WIN32,_X86_"
-				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fb_inet_server/fb_inet_server.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fb_inet_server/"
 				ObjectFile="..\..\..\temp\release\fb_inet_server/"
@@ -40,7 +38,6 @@
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -51,7 +48,7 @@
 				OutputFile="release/firebird/bin/fb_inet_server.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\fb_inet_server/fb_inet_server.pdb"
 				SubSystem="2"
 				StackReserveSize="2097152"/>
 			<Tool
@@ -74,13 +71,7 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
 				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
@@ -92,14 +83,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,_WINDOWS,WIN32,_X86_,DEV_BUILD"
-				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fb_inet_server/fb_inet_server.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fb_inet_server/"
 				ObjectFile="..\..\..\temp\debug\fb_inet_server/"
@@ -142,39 +130,31 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
 				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
-	<References>
-	</References>
 	<Files>
 		<Filter
 			Name="UTILITIES files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
+				RelativePath="..\..\..\gen\utilities\dba.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
+				RelativePath="..\..\..\src\utilities\ppg.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\caution.ico">
+				RelativePath="..\..\..\src\remote\caution.ico">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\server.ico">
+				RelativePath="..\..\..\src\remote\server.ico">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\window.rc">
+				RelativePath="..\..\..\src\remote\window.rc">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool

@@ -24,21 +24,31 @@
  *
  */
 
-#ifndef JRD_FLU_H
-#define JRD_FLU_H
+#ifndef _JRD_FLU_H_
+#define _JRD_FLU_H_
 
 /* RITTER - changed HP10 to HPUX in the line below */
-#if defined(HPUX)
-#  include <dl.h>
-#  include <shl.h>
+#ifdef HPUX
+#define MODULE_HANDLE
+#include <dl.h>
+#include <shl.h>
 typedef shl_t HMOD;
-#elif defined(SOLARIS)
-#  include <dlfcn.h>
+#endif
+
+#ifdef SOLARIS
+#define MODULE_HANDLE
+#include <dlfcn.h>
 typedef void *HMOD;
-#elif defined(WIN_NT)
-#  include <windows.h>
+#endif
+
+#ifdef WIN_NT
+#define MODULE_HANDLE
+#include <windows.h>
 typedef HMODULE HMOD;
-#else
+#endif
+
+#ifndef MODULE_HANDLE
+#define MODULE_HANDLE
 typedef void *HMOD;
 #endif
 
@@ -46,10 +56,10 @@ typedef void *HMOD;
 
 typedef struct mod {
 	HMOD mod_handle;			/* Handle to search for entrypoints */
-	mod* mod_next;				/* Linked list of open modules */
+	struct mod *mod_next;		/* Linked list of open modules */
 	SLONG mod_use_count;		/* Databases interested in module */
 	USHORT mod_length;			/* Module name length */
 	TEXT mod_name[1];			/* Module name */
 } *MOD;
 
-#endif /* JRD_FLU_H */
+#endif /* _JRD_FLU_H_ */

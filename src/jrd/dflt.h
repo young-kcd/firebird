@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_DFLT_H
-#define JRD_DFLT_H
+#ifndef _JRD_DFLT_H_
+#define _JRD_DFLT_H_
 
 /* This file contains the blr for the default values for fields  
    in system relations.  The GDEF source for these fields is in
@@ -38,8 +38,7 @@
 /* transform int's into network byte format */
 #define TWOBYTES(x)	((x) % 256), ((x) / 256)
 
-static const UCHAR dflt_no[] =
-{
+static const UCHAR dflt_no[] = {
 	blr_version5,
 	blr_literal, blr_text2, TWOBYTES(ttype_ascii), 2, 0, 'N', 'O',
 	blr_eoc
@@ -47,8 +46,7 @@ static const UCHAR dflt_no[] =
 
 /* default value of "FULL" for RDB$MATCH_OPTION in RDB$REF_CONSTRAINTS   */
 
-static const UCHAR dflt_full[] =
-{
+static const UCHAR dflt_full[] = {
 	blr_version5,
 	blr_literal, blr_text2, TWOBYTES(ttype_ascii), 4, 0, 'F', 'U', 'L', 'L',
 	blr_eoc
@@ -57,13 +55,11 @@ static const UCHAR dflt_full[] =
 /* default value of "RESTRICT" for  RDB$UPDATE_RULE,RDB$DELETE_RULE in
    RDB$REF_CONSTRAINTS                                                  */
 
-static const UCHAR dflt_restrict[] =
-{
+static const UCHAR dflt_restrict[] = {
 	blr_version5,
 	blr_literal, blr_text2, TWOBYTES(ttype_ascii), 8, 0, 'R', 'E', 'S', 'T',
 		'R', 'I', 'C', 'T',
 	blr_eoc
 };
 
-#endif // JRD_DFLT_H
-
+#endif

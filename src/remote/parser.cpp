@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
- *	MODULE:		parse.cpp
+ *	MODULE:		parse.c
  *	DESCRIPTION:	BLR parser
  *
  * The contents of this file are subject to the Interbase Public
@@ -21,15 +21,14 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: parser.cpp,v 1.15 2004-01-28 07:50:38 robocop Exp $
+$Id: parser.cpp,v 1.8 2003-04-08 01:06:46 brodsom Exp $
 */
 
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
 #include "../jrd/ib_stdio.h"
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../remote/remote.h"
 #include "../jrd/align.h"
 #include "../jrd/gdsassert.h"
@@ -41,7 +40,7 @@ $Id: parser.cpp,v 1.15 2004-01-28 07:50:38 robocop Exp $
 
 
 
-REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
+REM_MSG DLL_EXPORT PARSE_messages(UCHAR * blr, USHORT blr_length)
 {
 /**************************************
  *
@@ -55,30 +54,34 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
  *	messages found.  If an error occurs, return -1;
  *
  **************************************/
-	REM_MSG next;
+	REM_MSG message, next;
+	FMT format;
+	DSC *desc;
+	USHORT count, msg_number, offset, align, net_length;
+	SSHORT version;
 
-	const SSHORT version = *blr++;
+	version = *blr++;
 	if ((version != blr_version4) && (version != blr_version5))
 		return (REM_MSG) - 1;
 
 	if (*blr++ != blr_begin)
 		return 0;
 
-	REM_MSG message = NULL;
-	USHORT net_length = 0;
+	message = NULL;
+	net_length = 0;
 
 	while (*blr++ == blr_message) {
-		const USHORT msg_number = *blr++;
-		USHORT count = *blr++;
+		msg_number = *blr++;
+		count = *blr++;
 		count += (*blr++) << 8;
-		rem_fmt* format = (rem_fmt*) ALLOCV(type_fmt, count);
+		format = (FMT) ALLOCV(type_fmt, count);
 #ifdef DEBUG_REMOTE_MEMORY
 		ib_printf("PARSE_messages            allocate format  %x\n", format);
 #endif
 		format->fmt_count = count;
-		USHORT offset = 0;
-		for (dsc* desc = format->fmt_desc; count; --count, ++desc) {
-			USHORT align = 4;
+		offset = 0;
+		for (desc = format->fmt_desc; count; --count, ++desc) {
+			align = 4;
 			switch (*blr++) {
 			case blr_text:
 				desc->dsc_dtype = dtype_text;
@@ -210,7 +213,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			default:
-				fb_assert(FALSE);
+				assert(FALSE);
 				ALLR_release(format);
 				while (next = message) {
 					message = message->msg_next;
@@ -225,7 +228,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				net_length += (desc->dsc_length + 3) & ~3;
 			if (align > 1)
 				offset = FB_ALIGN(offset, align);
-			desc->dsc_address = (UCHAR*) (IPTR) offset;
+			desc->dsc_address = (UCHAR *)(ULONG) offset;
 			offset += desc->dsc_length;
 		}
 		format->fmt_length = offset;
@@ -244,7 +247,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 }
 
 
-const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
+UCHAR *PARSE_prepare_messages(UCHAR * blr, USHORT blr_length)
 {
 /**************************************
  *
@@ -259,19 +262,19 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
  *	This function is only called for protocol version 5 and below
  *
  **************************************/
-    const UCHAR* old_blr = blr;
-	const UCHAR* new_blr = blr;
+	UCHAR *new_blr, *old_blr;
+	USHORT count;
+	SSHORT version;
 
-	const SSHORT version = *blr++;
+	new_blr = old_blr = blr;
+
+	version = *blr++;
 	if (((version != blr_version4) && (version != blr_version5)) ||
-		*blr++ != blr_begin)
-	{
-		return old_blr;
-	}
+		*blr++ != blr_begin) return old_blr;
 
 	while (*blr++ == blr_message) {
 		blr++;
-		USHORT count = *blr++;
+		count = *blr++;
 		count += (*blr++) << 8;
 		for (; count; --count)
 			switch (*blr++) {
@@ -308,15 +311,11 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 						("PARSE_prepare_messages    allocate blr     %x\n",
 						 new_blr);
 #endif
-					// Safe const_cast, we are allocating new space for new_blr
-					memcpy(const_cast<UCHAR*>(new_blr), old_blr, blr_length);
+					memcpy(new_blr, old_blr, blr_length);
 					blr = new_blr + (int) (blr - old_blr);
 				}
 
-				// It's safe because blr has been replaced by new space,
-				// we aren't overwriting the original const parameter.
-				fb_assert(new_blr != old_blr);
-				const_cast<UCHAR*>(blr)[-1] = blr_double;
+				blr[-1] = blr_double;
 				break;
 
 			default:
@@ -328,4 +327,3 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 
 	return new_blr;
 }
-

@@ -2,5 +2,5 @@
 
 all: firebird
 
-.DEFAULT:
-	$(MAKE) -C gen $@
+firebird install package packages dist clean clobber:
+	$(MAKE) -C src $@

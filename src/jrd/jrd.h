@@ -33,14 +33,17 @@
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
 #include "../jrd/all.h"
-#include "../jrd/nbak.h"
-#include "../jrd/btn.h"
-#if defined(UNIX) && defined(SUPERSERVER)
-#include <setjmp.h>
-#endif
 
 #include "../include/fb_vector.h"
-#include "fb_string.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef HAVE_SETJMP_H
+#include <setjmp.h>
+#endif
 
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
@@ -52,9 +55,11 @@
 #undef WALW_DEBUG
 #endif
 
-#define BUGCHECK(number)        ERR_bugcheck (number)
+/* Moved to err_proto.h */
+/*#define BUGCHECK(number)        ERR_bugcheck (number)
 #define CORRUPT(number)         ERR_corrupt (number)
 #define IBERROR(number)         ERR_error (number)
+*/
 
 
 #define BLKCHK(blk, type)       if (MemoryPool::blk_type(blk) != (USHORT) (type)) BUGCHECK (147)
@@ -80,75 +85,47 @@
 #endif
 
 
-// Thread data block / IPC related data blocks
+/* Thread data block / IPC related data blocks */
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
 
-// Definition of block types for data allocation in JRD
+/* definition of block types for data allocation in JRD */
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
-class str;
-class CharSetContainer;
-struct dsc;
-struct mod;
 
-namespace Jrd {
-
-// The database block, the topmost block in the metadata
-// cache for a database
+/* the database block, the topmost block in the metadata 
+   cache for a database */
 
 #define HASH_SIZE 101
 
 
 // fwd. decl.
 class vec;
-struct thread_db;
-class Attachment;
-class jrd_tra;
-class jrd_req;
-class Lock;
-class jrd_file;
-class Format;
-class jrd_nod;
-class BufferControl;
-class SparseBitmap;
-class BlockingThread;
-class jrd_rel;
-class ExternalFile;
-class ViewContext;
-class IndexBlock;
-class IndexLock;
-class Bookmark;
-class ArrayField;
-class BlobFilter;
-class PageControl;
-class Symbol;
-class UserId;
-struct sort_context;
-class TxPageCache;
-class RecordSelExpr;
-class SecurityClass;
-class vcl;
-class Shadow;
-class TextType;
+class tdbb;
 
-class Database : private pool_alloc<type_dbb>
+
+class dbb : private pool_alloc<type_dbb>
 {
 public:
-	typedef int (*crypt_routine) (const char*, void*, int, void*);
+	typedef int (*crypt_routine) (char*, void*, int, void*);
 
-	static Database* newDbb(MemoryPool& p) {
-		return FB_NEW(p) Database(p);
+	static dbb* newDbb(MemoryPool& p) {		
+		return FB_NEW(p) dbb(p);
 	}
 	
-	// The deleteDbb function MUST be used to delete a Database object.
+	// The deleteDbb function MUST be used to delete a dbb object.
 	// The function hides some tricky order of operations.  Since the
-	// memory for the vectors in the Database is allocated out of the Database's
+	// memory for the vectors in the dbb is allocated out of the dbb's
 	// permanent memory pool, the entire delete() operation needs
 	// to complete _before_ the permanent pool is deleted, or else
 	// risk an aborted engine.
-	static void deleteDbb(Database* toDelete)
+	static void deleteDbb(dbb *toDelete)
 	{
 		if (toDelete == 0)
 			return;
@@ -157,25 +134,26 @@ public:
 		JrdMemoryPool::noDbbDeletePool(perm);
 	}
 	
-	Database*	dbb_next;		/* Next database block in system */
-	Attachment* dbb_attachments;	/* Active attachments */
-	BufferControl*	dbb_bcb;		/* Buffer control block */
+	class dbb *dbb_next;		/* Next database block in system */
+	class att *dbb_attachments;	/* Active attachments */
+	struct bcb *dbb_bcb;		/* Buffer control block */
 	vec*		dbb_relations;	/* relation vector */
 	vec*		dbb_procedures;	/* scanned procedures */
-	Lock* 		dbb_lock;		/* granddaddy lock */
-	jrd_tra*	dbb_sys_trans;	/* system transaction */
-	jrd_file*	dbb_file;		/* files for I/O operations */
-	Shadow*		dbb_shadow;		/* shadow control block */
-	Lock*		dbb_shadow_lock;	/* lock for synchronizing addition of shadows */
+	struct lck *dbb_lock;		/* granddaddy lock */
+	struct jrd_tra *dbb_sys_trans;	/* system transaction */
+	struct fil *dbb_file;		/* files for I/O operations */
+	struct sdw *dbb_shadow;		/* shadow control block */
+	struct lck *dbb_shadow_lock;	/* lock for synchronizing addition of shadows */
 	SLONG dbb_shadow_sync_count;	/* to synchronize changes to shadows */
-	Lock*		dbb_retaining_lock;	/* lock for preserving commit retaining snapshot */
-	PageControl*	dbb_pcontrol;	/* page control */
-	vcl*		dbb_t_pages;	/* pages number for transactions */
-	vcl*		dbb_gen_id_pages;	/* known pages for gen_id */
-	BlobFilter*	dbb_blob_filters;	/* known blob filters */
-	Firebird::Stack<mod*>	dbb_modules;	/* external function/filter modules */
-	MUTX_T *dbb_mutexes;		/* Database block mutexes */
-	WLCK_T *dbb_rw_locks;		/* Database block read/write locks */
+	struct lck *dbb_retaining_lock;	/* lock for preserving commit retaining snapshot */
+	struct plc *dbb_connection;	/* connection block */
+	struct pgc *dbb_pcontrol;	/* page control */
+	class vcl *dbb_t_pages;	/* pages number for transactions */
+	class vcl *dbb_gen_id_pages;	/* known pages for gen_id */
+	struct blf *dbb_blob_filters;	/* known blob filters */
+	struct lls *dbb_modules;	/* external function/filter modules */
+	MUTX_T *dbb_mutexes;		/* DBB block mutexes */
+	WLCK_T *dbb_rw_locks;		/* DBB block read/write locks */
 	REC_MUTX_T dbb_sp_rec_mutex;	/* Recursive mutex for accessing/updating stored procedure metadata */
 	SLONG dbb_sort_size;		/* Size of sort space per sort */
 
@@ -193,9 +171,9 @@ public:
 	USHORT dbb_refresh_ranges;	/* active count of refresh ranges */
 	USHORT dbb_prefetch_sequence;	/* sequence to pace frequency of prefetch requests */
 	USHORT dbb_prefetch_pages;	/* prefetch pages per request */
-	Firebird::string dbb_spare_string;	/* random buffer */
-	Firebird::PathName dbb_filename;	/* filename string */
-	Firebird::string dbb_encrypt_key;	/* encryption key */
+	class str *dbb_spare_string;	/* random buffer */
+	class str *dbb_filename;	/* filename string */
+	class str *dbb_encrypt_key;	/* encryption key */
 
 	JrdMemoryPool* dbb_permanent;
 	JrdMemoryPool* dbb_bufferpool;
@@ -207,6 +185,7 @@ public:
     USHORT dbb_next_pool_id;
 	vec*		dbb_internal;	/* internal requests */
 	vec*		dbb_dyn_req;	/* internal dyn requests */
+	struct jrn *dbb_journal;	/* journal block */
 
 	SLONG dbb_oldest_active;	/* Cached "oldest active" transaction */
 	SLONG dbb_oldest_transaction;	/* Cached "oldest interesting" transaction */
@@ -216,21 +195,21 @@ public:
 	SLONG dbb_page_incarnation;	/* Cache page incarnation counter */
 	ULONG dbb_page_buffers;		/* Page buffers from header page */
 
-	event_t dbb_writer_event[1];	/* Event to wake up cache writer */
-	event_t dbb_writer_event_init[1];	/* Event for initialization cache writer */
-	event_t dbb_writer_event_fini[1];	/* Event for finalization cache writer */
-	event_t dbb_reader_event[1];	/* Event to wake up cache reader */
+	EVENT_T dbb_writer_event[1];	/* Event to wake up cache writer */
+	EVENT_T dbb_writer_event_init[1];	/* Event for initialization cache writer */
+	EVENT_T dbb_writer_event_fini[1];	/* Event for finalization cache writer */
+	EVENT_T dbb_reader_event[1];	/* Event to wake up cache reader */
 #ifdef GARBAGE_THREAD
-	event_t dbb_gc_event[1];	/* Event to wake up garbage collector */
-	event_t dbb_gc_event_init[1];	/* Event for initialization garbage collector */
-	event_t dbb_gc_event_fini[1];	/* Event for finalization garbage collector */
+	EVENT_T dbb_gc_event[1];	/* Event to wake up garbage collector */
+	EVENT_T dbb_gc_event_init[1];	/* Event for initialization garbage collector */
+	EVENT_T dbb_gc_event_fini[1];	/* Event for finalization garbage collector */
 #endif
-	Attachment* dbb_update_attachment;	/* Attachment with update in process */
-	BlockingThread*	dbb_update_que;	/* Attachments waiting for update */
-	BlockingThread*	dbb_free_btbs;	/* Unused BlockingThread blocks */
+	class att *dbb_update_attachment;	/* Attachment with update in process */
+	class btb *dbb_update_que;	/* Attachments waiting for update */
+	class btb *dbb_free_btbs;	/* Unused btb blocks */
 
-	Firebird::MemoryStats dbb_memory_stats;
-	
+	SLONG dbb_current_memory;
+	SLONG dbb_max_memory;
 	SLONG dbb_reads;
 	SLONG dbb_writes;
 	SLONG dbb_fetches;
@@ -246,29 +225,24 @@ public:
 	crypt_routine dbb_encrypt;		/* External encryption routine */
 	crypt_routine dbb_decrypt;		/* External decryption routine */
 
-	class blb_map *dbb_blob_map;	/* mapping of blobs for REPLAY */
+	class map *dbb_blob_map;	/* mapping of blobs for REPLAY */
 	struct log *dbb_log;		/* log file for REPLAY */
-	Firebird::vector<TextType*>		dbb_text_objects;	/* intl text type descriptions */
-	Firebird::vector<CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
-//	struct wal *dbb_wal;		/* WAL handle for WAL API */
-	TxPageCache*	dbb_tip_cache;	/* cache of latest known state of all transactions in system */
-	vcl*		dbb_pc_transactions;	/* active precommitted transactions */
-	class BackupManager *backup_manager; /* physical backup manager */
-	Symbol*	dbb_hash_table[HASH_SIZE];	/* keep this at the end */
+	Firebird::vector<class TextType*>		dbb_text_objects;	/* intl text type descriptions */
+	Firebird::vector<class CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
+	struct wal *dbb_wal;		/* WAL handle for WAL API */
+	struct tpc *dbb_tip_cache;	/* cache of latest known state of all transactions in system */
+	class vcl *dbb_pc_transactions;	/* active precommitted transactions */
+	class sym *dbb_hash_table[HASH_SIZE];	/* keep this at the end */
 
 private:
-	explicit Database(MemoryPool& p)
-	:	dbb_modules(p),
-		dbb_spare_string(p),
-		dbb_filename(p),
-		dbb_encrypt_key(p),
-		dbb_pools(1, p, type_dbb),
+	dbb(MemoryPool& p)
+	:	dbb_pools(1, p, type_dbb),
 		dbb_text_objects(p),
 		dbb_charsets(p)
 	{
 	}
 
-	~Database()
+	~dbb()
 	{
 		pool_vec_type::iterator itr = dbb_pools.begin();
 		while (itr != dbb_pools.end())
@@ -284,16 +258,17 @@ private:
 			JrdMemoryPool::deletePool(dbb_bufferpool);
 	}
 
-	// The delete operators are no-oped because the Database memory is allocated from the
-	// Database's own permanent pool.  That pool has already been released by the Database
+	// The delete operators are no-oped because the dbb memory is allocated from the
+	// dbb's own permanent pool.  That pool has already been released by the dbb
 	// destructor, so the memory has already been released.  Hence the operator
 	// delete no-op.
 	void operator delete(void *mem) {}
 	void operator delete[](void *mem) {}
 
-	Database(const Database&);	// no impl.
-	const Database& operator =(const Database&) { return *this; }
+	dbb(const dbb&);	// no impl.
+	const dbb& operator =(const dbb&) { return *this; }
 };
+typedef dbb* DBB;
 
 //
 // bit values for dbb_flags
@@ -315,7 +290,7 @@ private:
 #define DBB_DB_SQL_dialect_3 	0x1000L	/* database SQL dialect 3 */
 #define DBB_read_only    		0x2000L	/* DB is ReadOnly (RO). If not set, DB is RW */
 #define DBB_being_opened_read_only 0x4000L	/* DB is being opened RO. If unset, opened as RW */
-#define DBB_not_in_use      	0x8000L	/* Database to be ignored while attaching */
+#define DBB_not_in_use      	0x8000L	/* DBB to be ignored while attaching */
 #define DBB_lck_init_done   	0x10000L	/* LCK_init() called for the database */
 #define DBB_sp_rec_mutex_init 	0x20000L	/* Stored procedure mutex initialized */
 #define DBB_sweep_in_progress 	0x40000L	/* A database sweep operation is in progress */
@@ -335,8 +310,6 @@ private:
 #define DBB_shut_tran		0x20L	// no new transactions accepted
 #define DBB_shut_force		0x40L	// forced shutdown in progress
 #define DBB_shutdown_locks	0x80L	// Database locks release by shutdown
-#define DBB_shutdown_full   0x100L  // Database fully shut down
-#define DBB_shutdown_single 0x200L  // Database is in single-user maintenance mode
 
 //
 // Database attachments
@@ -376,7 +349,6 @@ private:
 
 //
 // Errors during validation - will be returned on info calls
-// CVC: It seems they will be better in a header for val.cpp that's not val.h
 //
 #define VAL_PAG_WRONG_TYPE          0
 #define VAL_PAG_CHECKSUM_ERR        1
@@ -406,18 +378,14 @@ private:
 #define VAL_MAX_ERROR               25
 
 
+
 //
 // the attachment block; one is created for each attachment to a database
 //
-class Attachment : public pool_alloc<type_att>
+class att : public pool_alloc<type_att>
 {
 public:
-	explicit Attachment(Database* dbb) :
-		att_database(dbb), 
-		att_lc_messages(*dbb->dbb_permanent),
-		att_working_directory(*dbb->dbb_permanent), 
-		att_filename(*dbb->dbb_permanent) { }
-/*	Attachment()
+/*	att()
 	:	att_database(0),
 		att_next(0),
 		att_blocking(0),
@@ -448,36 +416,36 @@ public:
 		att_counts[0] = 0;
 	}*/
 
-	Database*	att_database;		// Parent databasea block
-	Attachment*	att_next;			// Next attachment to database
-	Attachment*	att_blocking;		// Blocking attachment, if any
-	UserId*		att_user;			// User identification
-	jrd_tra*	att_transactions;	// Transactions belonging to attachment
-	jrd_tra*	att_dbkey_trans;	// transaction to control db-key scope
-	jrd_req*	att_requests;		// Requests belonging to attachment
-	sort_context*	att_active_sorts;	// Active sorts
-	Lock*		att_id_lock;		// Attachment lock (if any)
+	class dbb*	att_database;		// Parent databasea block
+	att*		att_next;			// Next attachment to database
+	att*		att_blocking;		// Blocking attachment, if any
+	class usr*	att_user;			// User identification
+	struct jrd_tra*	att_transactions;	// Transactions belonging to attachment
+	struct jrd_tra*	att_dbkey_trans;	// transaction to control db-key scope
+	struct jrd_req*	att_requests;		// Requests belonging to attachment
+	struct scb*	att_active_sorts;	// Active sorts
+	struct lck*	att_id_lock;		// Attachment lock (if any)
 	SLONG		att_attachment_id;	// Attachment ID
 	SLONG		att_lock_owner_handle;	// Handle for the lock manager
 	SLONG		att_event_session;	// Event session id, if any
-	SecurityClass*	att_security_class;	// security class for database
-	SecurityClass*	att_security_classes;	// security classes
-	vcl*		att_counts[DBB_max_count];
+	class scl*	att_security_class;	// security class for database
+	class scl*	att_security_classes;	// security classes
+	class vcl*	att_counts[DBB_max_count];
 	vec*		att_relation_locks;	// explicit persistent locks for relations
-	Bookmark*	att_bookmarks;		// list of bookmarks taken out using this attachment
-	Lock*		att_record_locks;	// explicit or implicit record locks taken out during attachment
+	struct bkm*	att_bookmarks;		// list of bookmarks taken out using this attachment
+	struct lck*	att_record_locks;	// explicit or implicit record locks taken out during attachment
 	vec*		att_bkm_quick_ref;	// correspondence table of bookmarks
 	vec*		att_lck_quick_ref;	// correspondence table of locks
 	ULONG		att_flags;			// Flags describing the state of the attachment
 	SSHORT		att_charset;		// user's charset specified in dpb
-	Firebird::string	att_lc_messages;	// attachment's preference for message natural language
-	Lock*		att_long_locks;		// outstanding two phased locks
+	class str*	att_lc_messages;	// attachment's preference for message natural language
+	struct lck*	att_long_locks;		// outstanding two phased locks
 	vec*		att_compatibility_table;	// hash table of compatible locks
-	vcl*		att_val_errors;
-	Firebird::PathName	att_working_directory;	// Current working directory is cached
-	Firebird::PathName	att_filename;			// alias used to attach the database
-	time_t		att_timestamp;		// connection date and time
+	class vcl*	att_val_errors;
+	class str*	att_working_directory;	// Current working directory is cached
+	class str*	att_filename;			// alias used to attach the database
 };
+typedef att* ATT;
 
 
 /* Attachment flags */
@@ -516,33 +484,30 @@ public:
 class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 {
     public:
-	USHORT prc_id;
+	USHORT prc_id; // Should be first field because MET_remove_procedure relies on that
 	USHORT prc_flags;
 	USHORT prc_inputs;
-	USHORT prc_defaults;
 	USHORT prc_outputs;
-	jrd_nod*	prc_input_msg;
-	jrd_nod*	prc_output_msg;
-	Format*		prc_input_fmt;
-	Format*		prc_output_fmt;
-	Format*		prc_format;
+	struct jrd_nod *prc_input_msg;
+	struct jrd_nod *prc_output_msg;
+	struct fmt *prc_input_fmt;
+	struct fmt *prc_output_fmt;
+	struct fmt *prc_format;
 	vec*		prc_input_fields;	/* vector of field blocks */
 	vec*		prc_output_fields;	/* vector of field blocks */
-	jrd_req*	prc_request;	/* compiled procedure request */
-	Firebird::string prc_security_name;	/* security class name for procedure */
+	struct jrd_req *prc_request;	/* compiled procedure request */
+	class str *prc_security_name;	/* pointer to security class name for procedure */
 	USHORT prc_use_count;		/* requests compiled with procedure */
 	SSHORT prc_int_use_count;	/* number of procedures compiled with procedure, set and 
 	                               used internally in the MET_clear_cache procedure 
 								   no code should rely on value of this field 
 								   (it will usually be 0)
 								*/
-	Lock* prc_existence_lock;	/* existence lock, if any */
-	Firebird::string prc_name;	/* ascic name */
+	struct lck *prc_existence_lock;	/* existence lock, if any */
+	class str *prc_name;		/* pointer to ascic name */
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
-
-	public:
-	explicit jrd_prc(MemoryPool& p) : prc_security_name(p), prc_name(p) {}
 };
+typedef jrd_prc* JRD_PRC;
 
 #define PRC_scanned           1		/* Field expressions scanned */
 #define PRC_system            2
@@ -551,12 +516,6 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 #define PRC_blocking          16	/* Blocking someone from dropping procedure */
 #define PRC_create            32	/* Newly created */
 #define PRC_being_altered     64	/* Procedure is getting altered */
-									// This flag is used to make sure that MET_remove_procedure
-									// does not delete and remove procedure block from cache
-									// so dfw.epp:modify_procedure() can flip procedure body without 
-									// invalidating procedure pointers from other parts of metadata cache
-
-#define PRC_check_existence	  128	/* Existence lock released */
 
 #define MAX_PROC_ALTER        64	/* No. of times an in-cache procedure can be altered */
 
@@ -564,18 +523,15 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 
 /* Parameter block */
 
-class Parameter : public pool_alloc_rpt<SCHAR, type_prm>
+class prm : public pool_alloc_rpt<SCHAR, type_prm>
 {
     public:
-	USHORT 		prm_number;
-	dsc			prm_desc;
-	jrd_nod*	prm_default_val;
-//	Firebird::string prm_name;		/* asciiz name */
-	TEXT 		prm_string[2];		/* one byte for ALLOC and one for the terminating null */
-    public:
-//	explicit Parameter(MemoryPool& p) : prm_name(p) { }
-	Parameter() { }
+	USHORT prm_number;
+	struct dsc prm_desc;
+	TEXT *prm_name;				/* pointer to asciiz name */
+	TEXT prm_string[2];			/* one byte for ALLOC and one for the terminating null */
 };
+typedef prm* PRM;
 
 
 /* Primary dependencies from all foreign references to relation's
@@ -596,20 +552,21 @@ typedef struct frgn {
 } *FRGN;
 
 // Relation trigger definition
-struct trig {
-    str*		blr; // BLR code
-	jrd_req*	request; // Compiled request. Gets filled on first invocation
-	bool		compile_in_progress;
-	bool		sys_trigger;
-	USHORT		flags; // Flags as they are in RDB$TRIGGERS table
-	jrd_rel*	relation; // Trigger parent relation
-	str*		name; // Trigger name
-	void compile(thread_db*); // Ensure that trigger is compiled
-	void release(thread_db*); // Try to free trigger request
-};
+typedef struct trig {
+    class str* blr; // BLR code
+	jrd_req* request; // Compiled request. Gets filled on first invocation
+	BOOLEAN compile_in_progress;
+	BOOLEAN sys_trigger;
+	USHORT flags; // Flags as they are in RDB$TRIGGERS table
+	class jrd_rel* relation; // Trigger parent relation
+	class str* name; // Trigger name
+	void compile(tdbb* _tdbb); // Ensure that trigger is compiled
+	BOOLEAN release(tdbb* _tdbb); // Try to free trigger request
+} *TRIG;
 
 typedef Firebird::vector<trig> trig_vec;
 
+typedef trig_vec* TRIG_VEC;
 
 /* Relation block; one is created for each relation referenced
    in the database, though it is not really filled out until
@@ -618,28 +575,28 @@ typedef Firebird::vector<trig> trig_vec;
 class jrd_rel : public pool_alloc<type_rel>
 {
 public:
-	USHORT	rel_id;
-	USHORT	rel_flags;
-	USHORT	rel_current_fmt;	/* Current format number */
-	UCHAR	rel_length;			/* length of ascii relation name */
-	Format*	rel_current_format;	/* Current record format */
-	TEXT*	rel_name;			/* pointer to ascii relation name */
-	vec*	rel_formats;		/* Known record formats */
-	TEXT*	rel_owner_name;		/* pointer to ascii owner */
-	vcl*	rel_pages;			/* vector of pointer page numbers */
-	vec*	rel_fields;			/* vector of field blocks */
+	USHORT rel_id;
+	USHORT rel_flags;
+	USHORT rel_current_fmt;		/* Current format number */
+	UCHAR rel_length;			/* length of ascii relation name */
+	struct fmt *rel_current_format;	/* Current record format */
+	TEXT*	rel_name;				/* pointer to ascii relation name */
+	vec*	rel_formats;	/* Known record formats */
+	TEXT *rel_owner_name;		/* pointer to ascii owner */
+	class vcl *rel_pages;		/* vector of pointer page numbers */
+	vec*	rel_fields;		/* vector of field blocks */
 
-	RecordSelExpr* rel_view_rse;	/* view record select expression */
-	ViewContext*	rel_view_contexts;	/* linked list of view contexts */
+	struct rse *rel_view_rse;	/* view record select expression */
+	class vcx *rel_view_contexts;	/* linked list of view contexts */
 
 	TEXT *rel_security_name;	/* pointer to security class name for relation */
-	ExternalFile* rel_file;		/* external file name */
+	struct ext *rel_file;		/* external file name */
 	SLONG rel_index_root;		/* index root page number */
 	SLONG rel_data_pages;		/* count of relation data pages */
 
 	vec*	rel_gc_rec;		/* vector of records for garbage collection */
 #ifdef GARBAGE_THREAD
-	SparseBitmap*	rel_gc_bitmap;	/* garbage collect bitmap of data page sequences */
+	struct sbm *rel_gc_bitmap;	/* garbage collect bitmap of data page sequences */
 #endif
 
 	USHORT rel_slot_space;		/* lowest pointer page with slot space */
@@ -648,26 +605,27 @@ public:
 	USHORT rel_sweep_count;		/* sweep and/or garbage collector threads active */
 	SSHORT rel_scan_count;		/* concurrent sequential scan count */
 
-	Lock*	rel_existence_lock;	/* existence lock, if any */
-	Lock*	rel_interest_lock;	/* interest lock to ensure compatibility of relation and record locks */
-	Lock*	rel_record_locking;	/* lock to start record locking on relation */
+	struct lck *rel_existence_lock;	/* existence lock, if any */
+	struct lck *rel_interest_lock;	/* interest lock to ensure compatibility of relation and record locks */
+	struct lck *rel_record_locking;	/* lock to start record locking on relation */
 
 	ULONG rel_explicit_locks;	/* count of records explicitly locked in relation */
 	ULONG rel_read_locks;		/* count of records read locked in relation (implicit or explicit) */
 	ULONG rel_write_locks;		/* count of records write locked in relation (implicit or explicit) */
 	ULONG rel_lock_total;		/* count of records locked since database first attached */
 
-	IndexLock*	rel_index_locks;	/* index existence locks */
-	IndexBlock*	rel_index_blocks;	/* index blocks for caching index info */
-	trig_vec*	rel_pre_erase; 	/* Pre-operation erase trigger */
-	trig_vec*	rel_post_erase;	/* Post-operation erase trigger */
-	trig_vec*	rel_pre_modify;	/* Pre-operation modify trigger */
-	trig_vec*	rel_post_modify;	/* Post-operation modify trigger */
-	trig_vec*	rel_pre_store;		/* Pre-operation store trigger */
-	trig_vec*	rel_post_store;	/* Post-operation store trigger */
-	prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
-	frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
+	struct idl *rel_index_locks;	/* index existence locks */
+	struct idb *rel_index_blocks;	/* index blocks for caching index info */
+	trig_vec   *rel_pre_erase; 	/* Pre-operation erase trigger */
+	trig_vec   *rel_post_erase;	/* Post-operation erase trigger */
+	trig_vec   *rel_pre_modify;	/* Pre-operation modify trigger */
+	trig_vec   *rel_post_modify;	/* Post-operation modify trigger */
+	trig_vec   *rel_pre_store;		/* Pre-operation store trigger */
+	trig_vec   *rel_post_store;	/* Post-operation store trigger */
+	struct prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
+	struct frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
 };
+typedef jrd_rel* JRD_REL;
 
 #define REL_scanned					1		/* Field expressions scanned (or being scanned) */
 #define REL_system					2
@@ -689,46 +647,48 @@ public:
 class jrd_fld : public pool_alloc_rpt<SCHAR, type_fld>
 {
     public:
-	jrd_nod*	fld_validation;		/* validation clause, if any */
-	jrd_nod*	fld_not_null;		/* if field cannot be NULL */
-	jrd_nod*	fld_missing_value;	/* missing value, if any */
-	jrd_nod*	fld_computation;	/* computation for virtual field */
-	jrd_nod*	fld_source;			/* source for view fields */
-	jrd_nod*	fld_default_value;	/* default value, if any */
-	TEXT*		fld_security_name;	/* pointer to security class name for field */
-	ArrayField*	fld_array;			/* array description, if array */
+	struct jrd_nod*	fld_validation;		/* validation clause, if any */
+	struct jrd_nod*	fld_not_null;		/* if field cannot be NULL */
+	struct jrd_nod*	fld_missing_value;	/* missing value, if any */
+	struct jrd_nod*	fld_computation;	/* computation for virtual field */
+	struct jrd_nod*	fld_source;			/* source for view fields */
+	struct jrd_nod*	fld_default_value;	/* default value, if any */
+	TEXT *		fld_security_name;	/* pointer to security class name for field */
+	struct arr*	fld_array;			/* array description, if array */
 	const TEXT*	fld_name;			/* Field name */
 	UCHAR		fld_length;			/* Field name length */
 	UCHAR		fld_string[2];		/* one byte for ALLOC and one for the terminating null */
 };
+typedef jrd_fld *JRD_FLD;
 
 
 
 /* Index block to cache index information */
 
-class IndexBlock : public pool_alloc<type_idb>
+class idb : public pool_alloc<type_idb>
 {
     public:
-	IndexBlock*	idb_next;
-	jrd_nod*	idb_expression;			/* node tree for index expression */
-	jrd_req*	idb_expression_request;	/* request in which index expression is evaluated */
-	dsc			idb_expression_desc;	/* descriptor for expression result */
-	Lock*		idb_lock;				/* lock to synchronize changes to index */
+	struct idb*	idb_next;
+	struct jrd_nod*	idb_expression;			/* node tree for index expression */
+	struct jrd_req*	idb_expression_request;	/* request in which index expression is evaluated */
+	struct dsc	idb_expression_desc;	/* descriptor for expression result */
+	struct lck*	idb_lock;				/* lock to synchronize changes to index */
 	UCHAR idb_id;
 };
-
+typedef idb *IDB;
 
 
 /* view context block to cache view aliases */
 
-class ViewContext: public pool_alloc<type_vcx>
+class vcx: public pool_alloc<type_vcx>
 {
     public:
-	ViewContext*	vcx_next;
-	str*	vcx_context_name;
-	str*	vcx_relation_name;
-	USHORT	vcx_context;
+	class vcx *vcx_next;
+	class str *vcx_context_name;
+	class str *vcx_relation_name;
+	USHORT vcx_context;
 };
+typedef vcx *VCX;
 
 
 /* general purpose vector */
@@ -737,21 +697,14 @@ class vec_base : protected pool_alloc<TYPE>
 {
 public:
 	typedef typename Firebird::vector<T>::iterator iterator;
-	typedef typename Firebird::vector<T>::const_iterator const_iterator;
 
 	static vec_base* newVector(MemoryPool& p, int len)
-	{
-		return FB_NEW(p) vec_base<T, TYPE>(p, len);
-	}
+		{ return FB_NEW(p) vec_base<T,TYPE>(p, len); }
 	static vec_base* newVector(MemoryPool& p, const vec_base& base)
-	{
-		return FB_NEW(p) vec_base<T, TYPE>(p, base);
-	}
+		{ return FB_NEW(p) vec_base<T,TYPE>(p, base); }
 		
-	// CVC: This should be size_t instead of ULONG for maximum portability.
-	ULONG count() const { return vector.size(); }
+	ULONG count() { return vector.size(); }
 	T& operator[](size_t index) { return vector[index]; }
-	const T& operator[](size_t index) const { return vector[index]; }
 
 	iterator begin() { return vector.begin(); }
 	iterator end() { return vector.end(); }
@@ -764,7 +717,7 @@ public:
 
 	void resize(size_t n, T val = T()) { vector.resize(n, val); }
 
-	void operator delete(void* mem) { MemoryPool::globalFree(mem); }
+	void operator delete(void *mem) { MemoryPool::globalFree(mem); }
 
 protected:
 	vec_base(MemoryPool& p, int len)
@@ -780,46 +733,39 @@ class vec : public vec_base<BlkPtr, type_vec>
 {
 public:
     static vec* newVector(MemoryPool& p, int len)
-	{
-		return FB_NEW(p) vec(p, len);
-	}
+        { return FB_NEW(p) vec(p, len); }
     static vec* newVector(MemoryPool& p, const vec& base)
-	{
-		return FB_NEW(p) vec(p, base);
-	}
+        { return FB_NEW(p) vec(p, base); }
 	static vec* newVector(MemoryPool& p, vec* base, int len)
-	{
-		if (!base)
-			base = FB_NEW(p) vec(p, len);
-		else if (len > (int) base->count())
-			base->resize(len);
-		return base;
-	}
+		{
+			if (!base)
+				base = FB_NEW(p) vec(p, len);
+			else if (len > (int) base->count())
+				base->resize(len);
+			return base;
+		}
 
 private:
     vec(MemoryPool& p, int len) : vec_base<BlkPtr, type_vec>(p, len) {}
     vec(MemoryPool& p, const vec& base) : vec_base<BlkPtr, type_vec>(p, base) {}
 };
+typedef vec* VEC;
 
 class vcl : public vec_base<SLONG, type_vcl>
 {
 public:
     static vcl* newVector(MemoryPool& p, int len)
-	{
-		return FB_NEW(p) vcl(p, len);
-	}
+        { return FB_NEW(p) vcl(p, len); }
     static vcl* newVector(MemoryPool& p, const vcl& base)
-	{
-		return FB_NEW(p) vcl(p, base);
-	}
+        { return FB_NEW(p) vcl(p, base); }
 	static vcl* newVector(MemoryPool& p, vcl* base, int len)
-	{
-		if (!base)
-			base = FB_NEW(p) vcl(p, len);
-		else if (len > (int) base->count())
-			base->resize(len);
-		return base;
-	}
+		{
+			if (!base)
+				base = FB_NEW(p) vcl(p, len);
+			else if (len > (int) base->count())
+				base->resize(len);
+			return base;
+		}
 
 private:
     vcl(MemoryPool& p, int len) : vec_base<SLONG, type_vcl>(p, len) {}
@@ -839,23 +785,78 @@ typedef struct que {
 } *QUE;
 
 
+
+/* symbol definitions */
+
+typedef ENUM sym_t {
+	SYM_rel,					/* relation block */
+	SYM_fld,					/* field block */
+	SYM_fun,					/* UDF function block */
+	SYM_prc,					/* stored procedure block */
+	SYM_sql,					/* SQL request cache block */
+    SYM_blr,					/* BLR request cache block */
+    SYM_label					/* CVC: I need to track labels if LEAVE is implemented. */
+} SYM_T;
+
+class sym : public pool_alloc<type_sym>
+{
+    public:
+	TEXT *sym_string;			/* address of asciz string */
+/*  USHORT	sym_length; *//* length of asciz string */
+	SYM_T sym_type;				/* symbol type */
+	BLK sym_object;		/* general pointer to object */
+	sym *sym_collision;	/* collision pointer */
+	sym *sym_homonym;	/* homonym pointer */
+};
+typedef sym *SYM;
+
+/* Random string block -- jack of all kludges */
+
+class str : public pool_alloc_rpt<SCHAR, type_str>
+{
+public:
+	USHORT str_length;
+	UCHAR str_data[2];			/* one byte for ALLOC and one for the NULL */
+
+	static bool extend(str*& s, size_t new_len)
+	{
+		fb_assert(s);
+		MemoryPool* pPool = MemoryPool::blk_pool(s);
+		fb_assert(pPool);
+		if (!pPool) {
+			return false;	// runtime safety
+		}
+		// TMN: Note that this violates "common sense" and should be fixed.
+		str* res = FB_NEW_RPT(*pPool, new_len+1) str;
+		res->str_length = new_len;
+		memcpy(res->str_data, s->str_data, s->str_length+1);
+		str* old = s;
+		s = res;
+		delete old;
+		return s != 0;
+	}
+};
+typedef str *STR;
+
+
 //
 // Transaction element block
 //
 typedef struct teb {
-	Attachment** teb_database;
+	ATT *teb_database;
 	int teb_tpb_length;
-	UCHAR* teb_tpb;
+	UCHAR *teb_tpb;
 } TEB;
 
 /* Blocking Thread Block */
 
-class BlockingThread : public pool_alloc<type_btb>
+class btb : public pool_alloc<type_btb>
 {
     public:
-	BlockingThread* btb_next;
+	btb *btb_next;
 	SLONG btb_thread_id;
 };
+typedef btb *BTB;
 
 /* Lock levels */
 
@@ -884,32 +885,15 @@ class BlockingThread : public pool_alloc<type_btb>
 
 
 /* Window block for loading cached pages into */
-// CVC: Apparently, the only possible values are HEADER_PAGE==0 and LOG_PAGE==2
-// and reside in ods.h, although I watched a place with 1 and others with members
-// of a struct.
 
 typedef struct win {
 	SLONG win_page;
-	Ods::pag* win_buffer;
-	exp_index_buf* win_expanded_buffer;
-	class BufferDesc* win_bdb;
+	struct pag *win_buffer;
+	struct exp *win_expanded_buffer;
+	struct bdb *win_bdb;
 	SSHORT win_scans;
 	USHORT win_flags;
-	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
 } WIN;
-
-// This is a compilation artifact: I wanted to be sure I would pick all old "win"
-// declarations at the top, so "win" was built with a mandatory argument in
-// the constructor. This struct satisfies a single place with an array. The
-// alternative would be to initialize 16 elements of the array with 16 calls
-// to the constructor: win my_array[n] = {win(-1), ... (win-1)};
-// When all places are changed, this class can disappear and win's constructor
-// may get the default value of -1 to "wp".
-struct win_for_array: public win
-{
-	win_for_array() : win(-1) {}
-};
-
 
 #define	WIN_large_scan		1	/* large sequential scan */
 #define WIN_secondary		2	/* secondary stream */
@@ -917,79 +901,50 @@ struct win_for_array: public win
 #define WIN_garbage_collect	8	/* scan left a page for garbage collector */
 
 
-// Thread specific database block
-struct thread_db
+/* define used for journaling start transaction */
+
+#define MOD_START_TRAN  100
+
+
+/* Thread specific database block */
+
+typedef struct tdbb
 {
 	struct thdd	tdbb_thd_data;
-	Database*	tdbb_database;
-	Attachment*		tdbb_attachment;
-	jrd_tra*	tdbb_transaction;
-	jrd_req*	tdbb_request;
+	dbb*	tdbb_database;
+	att*	tdbb_attachment;
+	struct jrd_tra*	tdbb_transaction;
+	struct jrd_req*	tdbb_request;
 	JrdMemoryPool*	tdbb_default;
 	ISC_STATUS*	tdbb_status_vector;
 	void*		tdbb_setjmp;
-	USHORT		tdbb_inhibit;		// Inhibit context switch if non-zero
-	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
+	USHORT		tdbb_inhibit;		/* Inhibit context switch if non-zero */
+	SSHORT		tdbb_quantum;		/* Cycles remaining until voluntary schedule */
 	USHORT		tdbb_flags;
 	struct iuo	tdbb_mutexes;
 	struct iuo	tdbb_rw_locks;
 	struct iuo	tdbb_pages;
 
-#if defined(UNIX) && defined(SUPERSERVER)
-    sigjmp_buf tdbb_sigsetjmp;
+    // ansi c want's sigsetjmp to be a different type. So I've used that
+    // for unix implementations. MOD 12-July-2002
+#ifdef WIN_NT
+	void*		tdbb_sigsetjmp;
+#else
+    jmp_buf tdbb_sigsetjmp;
 #endif
-};
+} *TDBB;
 
 #define	TDBB_sweeper			1	/* Thread sweeper or garbage collector */
 #define TDBB_no_cache_unwind	2	/* Don't unwind page buffer cache */
 #define TDBB_prc_being_dropped	4	/* Dropping a procedure  */
-#define TDBB_set_backup_state   8   /* Setting state for backup lock */
-#define TDBB_backup_merge      16   /* Merging changes from difference file */
 
 /* List of internal database handles */
 
-struct ihndl
+typedef struct ihndl
 {
-	ihndl*	ihndl_next;
-	void*	ihndl_object;
-};
-
-// dupilcate context of firebird string to store in jrd_nod::nod_arg
-inline char* stringDup(MemoryPool& p, const Firebird::string& s)
-{
-	char* rc = (char*) p.allocate(s.length() + 1, 0
-#ifdef DEBUG_GDS_ALLOC
-		, __FILE__, __LINE__
-#endif
-		);
-	strcpy(rc, s.c_str());
-	return rc;
-}
-
-inline char* stringDup(MemoryPool& p, const char* s, int l)
-{
-	char* rc = (char*) p.allocate(l + 1, 0
-#ifdef DEBUG_GDS_ALLOC
-		, __FILE__, __LINE__
-#endif
-		);
-	memcpy(rc, s, l);
-	rc[l] = 0;
-	return rc;
-}
-
-} //namespace Jrd
-
-
-/* Random string block -- jack of all kludges */
-
-class str : public pool_alloc_rpt<SCHAR, type_str>
-{
-public:
-	USHORT str_length;
-	UCHAR str_data[2];			/* one byte for ALLOC and one for the NULL */
-};
-typedef str *STR;
+	struct ihndl*	ihndl_next;
+	void*			ihndl_object;
+} *IHNDL;
 
 
 /* Threading macros */
@@ -999,21 +954,26 @@ typedef str *STR;
 #endif
 
 #ifdef V4_THREADING
-#define PLATFORM_GET_THREAD_DATA ((thread_db*) THD_get_specific())
+#define PLATFORM_GET_THREAD_DATA ((TDBB) THD_get_specific())
 #endif
 
 /* RITTER - changed HP10 to HPUX in the expression below */
 #ifdef MULTI_THREAD
 #if (defined SOLARIS_MT || defined WIN_NT || \
 	defined HPUX || defined LINUX || defined DARWIN || defined FREEBSD )
-#define PLATFORM_GET_THREAD_DATA ((thread_db*) THD_get_specific())
+#define PLATFORM_GET_THREAD_DATA ((TDBB) THD_get_specific())
 #endif
 #endif
 
 #ifndef PLATFORM_GET_THREAD_DATA
 
-extern Jrd::thread_db* gdbb;
-
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern TDBB gdbb;
+#ifdef __cplusplus
+}
+#endif
 #define PLATFORM_GET_THREAD_DATA (gdbb)
 #endif
 
@@ -1024,7 +984,7 @@ extern Jrd::thread_db* gdbb;
  *
  * This allows for NULL thread data (which might be an error by itself)
  * If there is thread data, 
- * AND it is tagged as being a thread_db.
+ * AND it is tagged as being a TDBB.
  * AND it has a non-NULL tdbb_database field, 
  * THEN we validate that the structure there is a database block.
  * Otherwise, we return what we got.
@@ -1034,14 +994,13 @@ extern Jrd::thread_db* gdbb;
 #ifdef DEV_BUILD
 #define GET_THREAD_DATA (((PLATFORM_GET_THREAD_DATA) && \
                          (((THDD)(PLATFORM_GET_THREAD_DATA))->thdd_type == THDD_TYPE_TDBB) && \
-			 (((thread_db*)(PLATFORM_GET_THREAD_DATA))->tdbb_database)) \
-			 ? ((MemoryPool::blk_type(((thread_db*)(PLATFORM_GET_THREAD_DATA))->tdbb_database) == type_dbb) \
+			 (((TDBB)(PLATFORM_GET_THREAD_DATA))->tdbb_database)) \
+			 ? ((MemoryPool::blk_type(((TDBB)(PLATFORM_GET_THREAD_DATA))->tdbb_database) == type_dbb) \
 			    ? (PLATFORM_GET_THREAD_DATA) \
 			    : (BUGCHECK (147), (PLATFORM_GET_THREAD_DATA))) \
 			 : (PLATFORM_GET_THREAD_DATA))
-//#define CHECK_DBB(dbb)   fb_assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb) && ((dbb)->dbb_permanent->verify_pool()))
-#define CHECK_DBB(dbb)   fb_assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb))
-#define CHECK_TDBB(tdbb) fb_assert ((tdbb) && \
+#define CHECK_DBB(dbb)   assert ((dbb) && (MemoryPool::blk_type(dbb) == type_dbb) && ((dbb)->dbb_permanent->verify_pool()))
+#define CHECK_TDBB(tdbb) assert ((tdbb) && \
 	(((THDD)(tdbb))->thdd_type == THDD_TYPE_TDBB) && \
 	((!(tdbb)->tdbb_database)||MemoryPool::blk_type((tdbb)->tdbb_database) == type_dbb))
 #else
@@ -1051,14 +1010,16 @@ extern Jrd::thread_db* gdbb;
 #define CHECK_DBB(dbb)			/* nothing */
 #endif
 
-#define GET_DBB         (((thread_db*) (GET_THREAD_DATA))->tdbb_database)
+#define GET_DBB         (((TDBB) (GET_THREAD_DATA))->tdbb_database)
 
 /*-------------------------------------------------------------------------*
- * macros used to set thread_db and Database pointers when there are not set already *
+ * macros used to set tdbb and dbb pointers when there are not set already *
  *-------------------------------------------------------------------------*/
 
-#define	SET_TDBB(tdbb)	if ((tdbb) == NULL) { (tdbb) = GET_THREAD_DATA; }; CHECK_TDBB (tdbb)
-#define	SET_DBB(dbb)	if ((dbb)  == NULL)  { (dbb)  = GET_DBB; }; CHECK_DBB(dbb);
+#define	NULL_TDBB	((TDBB) NULL)
+#define	NULL_DBB	((DBB) NULL)
+#define	SET_TDBB(tdbb)	if ((tdbb) == NULL_TDBB) { (tdbb) = GET_THREAD_DATA; }; CHECK_TDBB (tdbb)
+#define	SET_DBB(dbb)	if ((dbb)  == NULL_DBB)  { (dbb)  = GET_DBB; }; CHECK_DBB(dbb);
 
 #ifdef V4_THREADING
 #define V4_JRD_MUTEX_LOCK(mutx)         JRD_mutex_lock (mutx)
@@ -1089,7 +1050,7 @@ extern Jrd::thread_db* gdbb;
 #if !defined(REQUESTER)
 
 extern int debug;
-extern Jrd::ihndl* internal_db_handles;
+extern IHNDL internal_db_handles;
 
 #endif /* REQUESTER */
 
@@ -1122,4 +1083,3 @@ extern Jrd::ihndl* internal_db_handles;
 
 
 #endif /* JRD_JRD_H */
-

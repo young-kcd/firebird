@@ -26,10 +26,15 @@
  */
 
 
-#ifndef JRD_GDSOLD_H
-#define JRD_GDSOLD_H
+#ifndef _JRD_GDSOLD_H_
+#define _JRD_GDSOLD_H_
 
 #include "fb_types.h"
+
+#ifndef GDS_VAL /* duplicate definition in gds_proto.h */
+#define GDS_VAL(val)	val
+#define GDS_REF(val)	&val
+#endif
 
 #define GDS_EXPORT ISC_EXPORT
 #define GDS_EXPORT_VARARG ISC_EXPORT_VARARG
@@ -68,19 +73,19 @@ typedef GDS_QUAD GDS__QUAD;
 #define FRBRD void
 #endif
 
-ISC_STATUS GDS_EXPORT gds__attach_database(ISC_STATUS*,
+ISC_STATUS GDS_EXPORT gds__attach_database(ISC_STATUS  *,
 										   short,
-										   const char*,
-										   FRBRD**,
+										   char  *,
+										   FRBRD  **,
 										   short,
-										   const char*);
+										   char  *);
 
-ISC_STATUS GDS_EXPORT gds__blob_info(ISC_STATUS*,
-									 FRBRD**,
+ISC_STATUS GDS_EXPORT gds__blob_info(ISC_STATUS  *,
+									 FRBRD  **,
 									 short,
-									 const char*,
+									 char  *,
 									 short,
-									 char*);
+									 char  *);
 
 ISC_STATUS GDS_EXPORT gds__cancel_blob(ISC_STATUS  *,
 									   FRBRD  **);
@@ -91,49 +96,49 @@ ISC_STATUS GDS_EXPORT gds__close_blob(ISC_STATUS  *,
 ISC_STATUS GDS_EXPORT gds__commit_transaction(ISC_STATUS  *,
 											  FRBRD  **);
 
-ISC_STATUS GDS_EXPORT gds__compile_request(ISC_STATUS*,
-										   FRBRD**,
-										   FRBRD**,
+ISC_STATUS GDS_EXPORT gds__compile_request(ISC_STATUS  *,
+										   FRBRD  **,
+										   FRBRD  **,
 										   short,
-										   const char*);
+										   char  *);
 
-ISC_STATUS GDS_EXPORT gds__compile_request2(ISC_STATUS*,
-											FRBRD**,
-											FRBRD**,
+ISC_STATUS GDS_EXPORT gds__compile_request2(ISC_STATUS  *,
+											FRBRD  **,
+											FRBRD  **,
 											short,
-											const char*);
+											char  *);
 
-ISC_STATUS GDS_EXPORT gds__create_blob(ISC_STATUS*,
-									   FRBRD**,
-									   FRBRD**,
-									   FRBRD**,
-									   GDS__QUAD*);
+ISC_STATUS GDS_EXPORT gds__create_blob(ISC_STATUS  *,
+									   FRBRD  **,
+									   FRBRD  **,
+									   FRBRD  **,
+									   GDS__QUAD  *);
 
-ISC_STATUS GDS_EXPORT gds__create_blob2(ISC_STATUS*,
-										FRBRD**,
-										FRBRD**,
-										FRBRD**,
-										GDS__QUAD*,
+ISC_STATUS GDS_EXPORT gds__create_blob2(ISC_STATUS  *,
+										FRBRD  **,
+										FRBRD  **,
+										FRBRD  **,
+										GDS__QUAD  *,
 										short,
-										const char*);
+										char  *);
 
-ISC_STATUS GDS_EXPORT gds__create_database(ISC_STATUS*,
+ISC_STATUS GDS_EXPORT gds__create_database(ISC_STATUS  *,
 										   short,
-										   const char*,
-										   FRBRD**,
+										   char  *,
+										   FRBRD  **,
 										   short,
-										   const char*,
+										   char  *,
 										   short);
 
-ISC_STATUS GDS_EXPORT gds__database_info(ISC_STATUS*,
-										 FRBRD**,
+ISC_STATUS GDS_EXPORT gds__database_info(ISC_STATUS  *,
+										 FRBRD  **,
 										 short,
-										 const char*,
+										 char  *,
 										 short,
-										 char*);
+										 char  *);
 
-void GDS_EXPORT gds__decode_date(const GDS__QUAD*,
-								 void*);
+void GDS_EXPORT gds__decode_date(GDS__QUAD  *,
+								 void  *);
 
 ISC_STATUS GDS_EXPORT gds__detach_database(ISC_STATUS  *,
 										   FRBRD  **);
@@ -146,19 +151,19 @@ ISC_STATUS GDS_EXPORT gds__get_segment(ISC_STATUS  *,
 									   unsigned short,
 									   char  *);
 
-ISC_STATUS GDS_EXPORT gds__open_blob(ISC_STATUS*,
-									 FRBRD**,
-									 FRBRD**,
-									 FRBRD**,
-									 GDS__QUAD*);
+ISC_STATUS GDS_EXPORT gds__open_blob(ISC_STATUS  *,
+									 FRBRD  **,
+									 FRBRD  **,
+									 FRBRD  **,
+									 GDS__QUAD  *);
 
-ISC_STATUS GDS_EXPORT gds__open_blob2(ISC_STATUS*,
-									  FRBRD**,
-									  FRBRD**,
-									  FRBRD**,
-									  GDS__QUAD*,
+ISC_STATUS GDS_EXPORT gds__open_blob2(ISC_STATUS  *,
+									  FRBRD  **,
+									  FRBRD  **,
+									  FRBRD  **,
+									  GDS__QUAD  *,
 									  short,
-									  const char*);
+									  char  *);
 
 ISC_STATUS GDS_EXPORT gds__prepare_transaction(ISC_STATUS  *,
 											   FRBRD  **);
@@ -168,10 +173,10 @@ ISC_STATUS GDS_EXPORT gds__prepare_transaction2(ISC_STATUS  *,
 												short,
 												char  *);
 
-ISC_STATUS GDS_EXPORT gds__put_segment(ISC_STATUS*,
-									   FRBRD**,
+ISC_STATUS GDS_EXPORT gds__put_segment(ISC_STATUS  *,
+									   FRBRD  **,
 									   unsigned short,
-									   const char*);
+									   char  *);
 
 ISC_STATUS GDS_EXPORT gds__receive(ISC_STATUS  *,
 								   FRBRD  **,
@@ -180,19 +185,19 @@ ISC_STATUS GDS_EXPORT gds__receive(ISC_STATUS  *,
 								   void  *,
 								   short);
 
-ISC_STATUS GDS_EXPORT gds__reconnect_transaction(ISC_STATUS*,
-												 FRBRD**,
-												 FRBRD**,
+ISC_STATUS GDS_EXPORT gds__reconnect_transaction(ISC_STATUS  *,
+												 FRBRD  **,
+												 FRBRD  **,
 												 short,
-												 const char*);
+												 char  *);
 
-ISC_STATUS GDS_EXPORT gds__request_info(ISC_STATUS*,
-										FRBRD**,
+ISC_STATUS GDS_EXPORT gds__request_info(ISC_STATUS  *,
+										FRBRD  **,
 										short,
 										short,
-										const char*,
+										char  *,
 										short,
-										char*);
+										char  *);
 
 ISC_STATUS GDS_EXPORT gds__release_request(ISC_STATUS  *,
 										   FRBRD  **);
@@ -237,59 +242,55 @@ ISC_STATUS GDS_EXPORT gds__start_transaction(ISC_STATUS  *,
 											 FRBRD  **,
 											 short, ...);
 
-ISC_STATUS GDS_EXPORT gds__transaction_info(ISC_STATUS*,
-											FRBRD**,
+ISC_STATUS GDS_EXPORT gds__transaction_info(ISC_STATUS  *,
+											FRBRD  **,
 											short,
-											const char*,
+											char  *,
 											short,
-											char*);
+											char  *);
 
 ISC_STATUS GDS_EXPORT gds__unwind_request(ISC_STATUS  *,
 										  FRBRD  **,
 										  short);
 
-SLONG GDS_EXPORT gds__ftof(const char*,
-							  const unsigned short,
-							  char*,
-							  const unsigned short);
+ISC_STATUS GDS_EXPORT gds__ftof(char  *,
+							  unsigned short,
+							  char  *,
+							  unsigned short);
 
-void GDS_EXPORT gds__vtof(const char*,
-						  char*,
-						  unsigned short);
-						  
 void GDS_EXPORT gds__vtov(const SCHAR*, char*, SSHORT);
 
-int GDS_EXPORT gds__version(FRBRD**,
-							FPTR_VERSION_CALLBACK,
-							void*);
+int GDS_EXPORT gds__version(FRBRD  **,
+							FPTR_VOID,
+							void  *);
 
 int GDS_EXPORT gds__disable_subsystem(char  *);
 
 int GDS_EXPORT gds__enable_subsystem(char  *);
 
-ISC_STATUS GDS_EXPORT gds__print_status(const ISC_STATUS*);
+ISC_STATUS GDS_EXPORT gds__print_status(ISC_STATUS  *);
 
-SLONG GDS_EXPORT gds__sqlcode(const ISC_STATUS*);
+ISC_STATUS GDS_EXPORT gds__sqlcode(ISC_STATUS  *);
 
-ISC_STATUS GDS_EXPORT gds__ddl(ISC_STATUS*,
-							   FRBRD**,
-							   FRBRD**,
+ISC_STATUS GDS_EXPORT gds__ddl(ISC_STATUS  *,
+							   FRBRD  **,
+							   FRBRD  **,
 							   short,
-							   const char*);
+							   char  *);
 
 ISC_STATUS GDS_EXPORT gds__commit_retaining(ISC_STATUS  *,
 											FRBRD  **);
 
-void GDS_EXPORT gds__encode_date(const void*,
-								 GDS__QUAD*);
+void GDS_EXPORT gds__encode_date(void  *,
+								 GDS__QUAD  *);
 
-ISC_STATUS GDS_EXPORT gds__que_events(ISC_STATUS*,
-									  FRBRD**,
-									  SLONG*,
+ISC_STATUS GDS_EXPORT gds__que_events(ISC_STATUS  *,
+									  FRBRD  **,
+									  SLONG  *,
 									  short,
-									  const char*,
-									  FPTR_EVENT_CALLBACK,
-									  void*);
+									  char  *,
+									  void ( *) (),
+									  void  *);
 
 ISC_STATUS GDS_EXPORT gds__cancel_events(ISC_STATUS  *,
 										 FRBRD  **,
@@ -301,37 +302,41 @@ ISC_STATUS GDS_EXPORT gds__event_wait(ISC_STATUS  *,
 									  char  *,
 									  char  *);
 
-void GDS_EXPORT gds__event_counts(ULONG*,
+void GDS_EXPORT gds__event_counts(ULONG  *,
 								  short,
-								  char*,
-								  const char*);
+								  char  *,
+								  char  *);
 
-SLONG GDS_EXPORT gds__event_block(char  **,
+ISC_STATUS GDS_EXPORT gds__event_block(char  **,
 									 char  **,
 									 unsigned short, ...);
 
-ISC_STATUS GDS_EXPORT gds__get_slice(ISC_STATUS*,
-									 FRBRD**,
-									 FRBRD**,
-									 GDS__QUAD*,
+ISC_STATUS GDS_EXPORT gds__get_slice(ISC_STATUS  *,
+									 FRBRD  **,
+									 FRBRD  **,
+									 GDS__QUAD  *,
 									 short,
-									 const char*,
+									 char  *,
 									 short,
-									 const SLONG*,
+									 SLONG  *,
 									 SLONG,
-									 void*,
-									 SLONG*);
+									 void  *,
+									 SLONG  *);
 
-ISC_STATUS GDS_EXPORT gds__put_slice(ISC_STATUS*,
-									 FRBRD**,
-									 FRBRD**,
-									 GDS__QUAD*,
+ISC_STATUS GDS_EXPORT gds__put_slice(ISC_STATUS  *,
+									 FRBRD  **,
+									 FRBRD  **,
+									 GDS__QUAD  *,
 									 short,
-									 const char*,
+									 char  *,
 									 short,
-									 const SLONG*,
+									 SLONG  *,
 									 SLONG,
-									 void*);
+									 void  *);
+
+void GDS_EXPORT gds__vtof(char  *,
+						  char  *,
+						  unsigned short);
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -1203,8 +1208,8 @@ const char gds_info_sql_stmt_select_for_upd = 12;
 
 #else /* c++ definitions */
 
-const unsigned char gds_dyn_version_1 = 1;
-const unsigned char gds_dyn_eoc = 0xFF;
+const char gds_dyn_version_1 = 1;
+const char gds_dyn_eoc = -1;
 
 #endif
 
@@ -1926,5 +1931,172 @@ const unsigned char gds_interp_jpn_euc = 6;
 
 #endif
 
-#endif /* JRD_GDSOLD_H */
+
+#ifdef PYXIS
+/*****************************/
+/* Forms Package definitions */
+/*****************************/
+
+/************************************/
+/* Map definition block definitions */
+/************************************/
+
+#ifndef	__cplusplus				/* c definitions */
+
+#define PYXIS__MAP_VERSION1                1
+#define PYXIS__MAP_FIELD2                  2
+#define PYXIS__MAP_FIELD1                  3
+#define PYXIS__MAP_MESSAGE                 4
+#define PYXIS__MAP_TERMINATOR              5
+#define PYXIS__MAP_TERMINATING_FIELD       6
+#define PYXIS__MAP_OPAQUE                  7
+#define PYXIS__MAP_TRANSPARENT             8
+#define PYXIS__MAP_TAG                     9
+#define PYXIS__MAP_SUB_FORM                10
+#define PYXIS__MAP_ITEM_INDEX              11
+#define PYXIS__MAP_SUB_FIELD               12
+#define PYXIS__MAP_END                     -1
+
+#else /* c++ definitions */
+
+const char PYXIS_MAP_VERSION1 = 1;
+const char PYXIS_MAP_FIELD2 = 2;
+const char PYXIS_MAP_FIELD1 = 3;
+const char PYXIS_MAP_MESSAGE = 4;
+const char PYXIS_MAP_TERMINATOR = 5;
+const char PYXIS_MAP_TERMINATING_FIELD = 6;
+const char PYXIS_MAP_OPAQUE = 7;
+const char PYXIS_MAP_TRANSPARENT = 8;
+const char PYXIS_MAP_TAG = 9;
+const char PYXIS_MAP_SUB_FORM = 10;
+const char PYXIS_MAP_ITEM_INDEX = 11;
+const char PYXIS_MAP_SUB_FIELD = 12;
+const char PYXIS_MAP_END = -1;
+
+#endif
+
+
+/******************************************/
+/* Field option flags for display options */
+/******************************************/
+
+#ifndef	__cplusplus				/* c definitions */
+
+#define PYXIS__OPT_DISPLAY                 1
+#define PYXIS__OPT_UPDATE                  2
+#define PYXIS__OPT_WAKEUP                  4
+#define PYXIS__OPT_POSITION                8
+
+#else /* c++ definitions */
+
+const unsigned char PYXIS_OPT_DISPLAY = 1;
+const unsigned char PYXIS_OPT_UPDATE = 2;
+const unsigned char PYXIS_OPT_WAKEUP = 4;
+const unsigned char PYXIS_OPT_POSITION = 8;
+
+#endif
+
+
+/*****************************************/
+/* Field option values following display */
+/*****************************************/
+
+#ifndef	__cplusplus				/* c definitions */
+
+#define PYXIS__OPT_NULL                    1
+#define PYXIS__OPT_DEFAULT                 2
+#define PYXIS__OPT_INITIAL                 3
+#define PYXIS__OPT_USER_DATA               4
+
+#else /* c++ definitions */
+
+const unsigned char PYXIS_OPT_NULL = 1;
+const unsigned char PYXIS_OPT_DEFAULT = 2;
+const unsigned char PYXIS_OPT_INITIAL = 3;
+const unsigned char PYXIS_OPT_USER_DATA = 4;
+
+#endif
+
+
+/**************************/
+/* Pseudo key definitions */
+/**************************/
+
+#ifndef	__cplusplus				/* c definitions */
+
+#define PYXIS__KEY_DELETE                  127
+#define PYXIS__KEY_UP                      128
+#define PYXIS__KEY_DOWN                    129
+#define PYXIS__KEY_RIGHT                   130
+#define PYXIS__KEY_LEFT                    131
+#define PYXIS__KEY_PF1                     132
+#define PYXIS__KEY_PF2                     133
+#define PYXIS__KEY_PF3                     134
+#define PYXIS__KEY_PF4                     135
+#define PYXIS__KEY_PF5                     136
+#define PYXIS__KEY_PF6                     137
+#define PYXIS__KEY_PF7                     138
+#define PYXIS__KEY_PF8                     139
+#define PYXIS__KEY_PF9                     140
+#define PYXIS__KEY_ENTER                   141
+#define PYXIS__KEY_SCROLL_TOP              146
+#define PYXIS__KEY_SCROLL_BOTTOM           147
+
+#else /* c++ definitions */
+
+const unsigned char PYXIS_KEY_DELETE = 127;
+const unsigned char PYXIS_KEY_UP = 128;
+const unsigned char PYXIS_KEY_DOWN = 129;
+const unsigned char PYXIS_KEY_RIGHT = 130;
+const unsigned char PYXIS_KEY_LEFT = 131;
+const unsigned char PYXIS_KEY_PF1 = 132;
+const unsigned char PYXIS_KEY_PF2 = 133;
+const unsigned char PYXIS_KEY_PF3 = 134;
+const unsigned char PYXIS_KEY_PF4 = 135;
+const unsigned char PYXIS_KEY_PF5 = 136;
+const unsigned char PYXIS_KEY_PF6 = 137;
+const unsigned char PYXIS_KEY_PF7 = 138;
+const unsigned char PYXIS_KEY_PF8 = 139;
+const unsigned char PYXIS_KEY_PF9 = 140;
+const unsigned char PYXIS_KEY_ENTER = 141;
+const unsigned char PYXIS_KEY_SCROLL_TOP = 146;
+const unsigned char PYXIS_KEY_SCROLL_BOTTOM = 147;
+
+#endif
+
+
+/*************************/
+/* Menu definition stuff */
+/*************************/
+
+#ifndef	__cplusplus				/* c definitions */
+
+#define PYXIS__MENU_VERSION1               1
+#define PYXIS__MENU_LABEL                  2
+#define PYXIS__MENU_ENTREE                 3
+#define PYXIS__MENU_OPAQUE                 4
+#define PYXIS__MENU_TRANSPARENT            5
+#define PYXIS__MENU_HORIZONTAL             6
+#define PYXIS__MENU_VERTICAL               7
+#define PYXIS__MENU_END                    -1
+
+#else /* c++ definitions */
+
+const unsigned char PYXIS_MENU_VERSION1 = 1;
+const unsigned char PYXIS_MENU_LABEL = 2;
+const unsigned char PYXIS_MENU_ENTREE = 3;
+const unsigned char PYXIS_MENU_OPAQUE = 4;
+const unsigned char PYXIS_MENU_TRANSPARENT = 5;
+const unsigned char PYXIS_MENU_HORIZONTAL = 6;
+const unsigned char PYXIS_MENU_VERTICAL = 7;
+/* Opps, can't set an unsigned value to -1.  Used to be:
+ * const unsigned char PYXIS_MENU_END = -1;
+ */
+const unsigned char PYXIS_MENU_END = 0xFF;
+
+#endif
+
+#endif
+
+#endif /* _JRD_GDSOLD_H_ */
 

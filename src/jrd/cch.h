@@ -21,59 +21,40 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_CCH_H
-#define JRD_CCH_H
+#ifndef _JRD_CCH_H_
+#define _JRD_CCH_H_
 
 #include "../include/fb_blk.h"
-#include "../jrd/os/pio.h"
-
-struct exp_index_buf;
-
-namespace Ods {
-	struct pag;
-}
-
-namespace Jrd {
-
-class Lock;
-class Precedence;
-struct thread_db;
-struct que;
-class BufferDesc;
-class SparseBitmap;
-class BlockingThread;
-class Database;
 
 /* Page buffer cache size constraints. */
 
 #define MIN_PAGE_BUFFERS	50L
 #define MAX_PAGE_BUFFERS	65535L
 
-/* BufferControl -- Buffer control block -- one per system */
+/* BCB -- Buffer control block -- one per system */
+	struct bcb_repeat
+	{
+		struct bdb*	bcb_bdb;		/* Buffer descriptor block */
+		struct que	bcb_page_mod;	/* Que of buffers with page mod n */
+	};
 
-struct bcb_repeat
+class bcb : public pool_alloc_rpt<bcb_repeat, type_bcb>
 {
-	BufferDesc*	bcb_bdb;		/* Buffer descriptor block */
-	que			bcb_page_mod;	/* Que of buffers with page mod n */
-};
-
-class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
-{
-public:
-	BufferControl(MemoryPool& p) : bcb_memory(p) { }
-	UCharStack	bcb_memory;			/* Large block partitioned into buffers */
-	que			bcb_in_use;			/* Que of buffers in use */
-	que			bcb_empty;			/* Que of empty buffers */
-	BufferDesc*	bcb_btree;			/* root of dirty page btree */
-	Precedence*	bcb_free;			/* Free precedence blocks */
-	que			bcb_free_lwt;		/* Free latch wait blocks */
+    public:
+	struct lls*	bcb_memory;			/* Large block partitioned into buffers */
+	struct que	bcb_in_use;			/* Que of buffers in use */
+	struct que	bcb_empty;			/* Que of empty buffers */
+	struct bdb*	bcb_btree;			/* root of dirty page btree */
+	struct pre*	bcb_free;			/* Free precedence blocks */
+	struct que	bcb_free_lwt;		/* Free latch wait blocks */
 	SSHORT		bcb_flags;			/* see below */
 	SSHORT		bcb_free_minimum;	/* Threshold to activate cache writer */
 	ULONG		bcb_count;			/* Number of buffers allocated */
 	ULONG		bcb_checkpoint;		/* Count of buffers to checkpoint */
-	SparseBitmap*	bcb_prefetch;	/* Bitmap of pages to prefetch */
-	bcb_repeat	bcb_rpt[1];
+	struct sbm*	bcb_prefetch;		/* Bitmap of pages to prefetch */
+	bcb_repeat bcb_rpt[1];
 };
+typedef bcb *BCB;
 
 #define BCB_keep_pages		1	/* set during btc_flush(), pages not removed from dirty binary tree */
 #define BCB_cache_writer	2	/* cache writer thread has been started */
@@ -84,44 +65,42 @@ public:
 #define BCB_free_pending	64	/* request cache writer to free pages */
 
 
-/* BufferDesc -- Buffer descriptor block */
+/* BDB -- Buffer descriptor block */
 
-#define BDB_max_shared		20	/* maximum number of shared latch owners per BufferDesc */
+#define BDB_max_shared		20	/* maximum number of shared latch owners per bdb */
 
-class BufferDesc : public pool_alloc<type_bdb>
+class bdb : public pool_alloc<type_bdb>
 {
     public:
-	Database*	bdb_dbb;				/* Database block (for ASTs) */
-	Lock*		bdb_lock;				/* Lock block for buffer */
-	que			bdb_que;				/* Buffer que */
-	que			bdb_in_use;				/* queue of buffers in use */
-	Ods::pag*	bdb_buffer;				/* Actual buffer */
-	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
-	BlockingThread*	bdb_blocked;		/* Blocked attachments block */
+	struct dbb*	bdb_dbb;				/* Database block (for ASTs) */
+	struct lck*	bdb_lock;				/* Lock block for buffer */
+	struct que	bdb_que;				/* Buffer que */
+	struct que	bdb_in_use;				/* queue of buffers in use */
+	struct pag*	bdb_buffer;				/* Actual buffer */
+	struct exp*	bdb_expanded_buffer;	/* expanded index buffer */
+	struct bdb*	bdb_jrn_bdb;			/* BDB containing journal records */
+	struct btb*	bdb_blocked;			/* Blocked attachments block */
 	SLONG		bdb_page;				/* Database page number in buffer */
-	//ULONG		bdb_sequence;
+	ULONG		bdb_sequence;
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
 	SLONG		bdb_mark_transaction;	/* hi-water mark transaction to defer header page I/O */
-	BufferDesc*	bdb_left;				/* dirty page binary tree link */
-	BufferDesc*	bdb_right;				/* dirty page binary tree link */
-	BufferDesc*	bdb_parent;				/* dirty page binary tree link */
-	que			bdb_lower;				/* lower precedence que */
-	que			bdb_higher;				/* higher precedence que */
-	que			bdb_waiters;			/* latch wait que */
-	thread_db*	bdb_exclusive;			/* thread holding exclusive latch */
-	thread_db*	bdb_io;					/* thread holding io latch */
+	struct bdb*	bdb_left;				/* dirty page binary tree link */
+	struct bdb*	bdb_right;				/* dirty page binary tree link */
+	struct bdb*	bdb_parent;				/* dirty page binary tree link */
+	struct que	bdb_lower;				/* lower precedence que */
+	struct que	bdb_higher;				/* higher precedence que */
+	struct que	bdb_waiters;			/* latch wait que */
+	struct tdbb*bdb_exclusive;			/* thread holding exclusive latch */
+	struct tdbb*bdb_io;					/* thread holding io latch */
 	UATOM		bdb_ast_flags;			/* flags manipulated at AST level */
 	USHORT		bdb_flags;
-	SSHORT		bdb_use_count;			/* Number of active users */
-	SSHORT		bdb_scan_count;			/* concurrent sequential scans */
-	USHORT		bdb_write_direction;    /* Where to write buffer */
-	ULONG       bdb_difference_page;    /* Number of page in difference file */
-	SLONG       bdb_diff_generation;    /* Number of backup lock/unlock (NBAK) cycle for 
-										   this database in current process.
-										   Used in CS only. */
-	thread_db*	bdb_shared[BDB_max_shared];	/* threads holding shared latches */
+	USHORT		bdb_length;					/* Length of journal records */
+	SSHORT		bdb_use_count;				/* Number of active users */
+	SSHORT		bdb_scan_count;				/* concurrent sequential scans */
+	struct tdbb*bdb_shared[BDB_max_shared];	/* threads holding shared latches */
 };
+typedef bdb *BDB;
 
 /* bdb_flags */
 
@@ -131,7 +110,7 @@ class BufferDesc : public pool_alloc<type_bdb>
 #define BDB_marked			8		/* page has been updated */
 #define BDB_must_write		16		/* forces a write as soon as the page is released */
 #define BDB_faked			32		/* page was just allocated */
-//#define BDB_journal			64		/* Journal buffer */
+#define BDB_journal			64		/* Journal buffer */
 #define BDB_system_dirty 	128		/* system transaction has marked dirty */
 #define BDB_io_error	 	256		/* page i/o error */
 #define BDB_read_pending 	512		/* read is pending */
@@ -146,25 +125,19 @@ class BufferDesc : public pool_alloc<type_bdb>
 
 #define BDB_blocking 		1	/* a blocking ast was sent while page locked */
 
-/* bdb_write_direction values */
-
-#define BDB_write_undefined 0
-#define BDB_write_normal	1
-#define BDB_write_diff		2
-#define BDB_write_both		3
-
 
 /* PRE -- Precedence block */
 
-class Precedence : public pool_alloc<type_pre>
+class pre : public pool_alloc<type_pre>
 {
     public:
-	BufferDesc*	pre_hi;
-	BufferDesc*	pre_low;
-	que				pre_lower;
-	que				pre_higher;
-	SSHORT			pre_flags;
+	struct bdb*	pre_hi;
+	struct bdb*	pre_low;
+	struct que	pre_lower;
+	struct que	pre_higher;
+	SSHORT		pre_flags;
 };
+typedef pre *PRE;
 
 #define PRE_cleared	1
 
@@ -205,19 +178,20 @@ typedef enum
 
 /* LWT -- Latch wait block */
 
-class LatchWait : public pool_alloc<type_lwt>
+class lwt : public pool_alloc<type_lwt>
 {
     public:
-	thread_db*		lwt_tdbb;
+	struct tdbb*	lwt_tdbb;
 	LATCH			lwt_latch;		/* latch type requested */
-	que				lwt_waiters;	/* latch queue */
-	struct event_t	lwt_event;		/* grant event to wait on */
+	struct que		lwt_waiters;	/* latch queue */
+	struct event	lwt_event;		/* grant event to wait on */
 	USHORT			lwt_flags;
 };
+typedef lwt *LWT;
 
 #define LWT_pending	1			/* latch request is pending */
 
-#include "../jrd/os/pio.h"
+#include "../jrd/pio.h"
 
 /* Constants used by prefetch mechanism */
 
@@ -226,24 +200,22 @@ class LatchWait : public pool_alloc<type_lwt>
 
 /* Prefetch block */
 
-class Prefetch : public pool_alloc<type_prf>
+class prf : public pool_alloc<type_prf>
 {
     public:
-	thread_db*	prf_tdbb;			/* thread database context */
+	struct tdbb*prf_tdbb;			/* thread database context */
 	SLONG		prf_start_page;		/* starting page of multipage prefetch */
 	USHORT		prf_max_prefetch;	/* maximum no. of pages to prefetch */
 	USHORT		prf_page_count;		/* actual no. of pages being prefetched */
-	phys_io_blk	prf_piob;			/* physical I/O status block */
+	struct		piob prf_piob;		/* physical I/O status block */
 	SCHAR*		prf_aligned_buffer;	/* buffer address aligned for raw (OS cache bypass) I/O */
 	SCHAR*		prf_io_buffer;		/* I/O buffer address */
 	UCHAR		prf_flags;
-	BufferDesc*	prf_bdbs[PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE];
+	struct bdb*	prf_bdbs[PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE];
 	SCHAR		prf_unaligned_buffer[PREFETCH_MAX_TRANSFER + MIN_PAGE_SIZE];
 };
+typedef prf *PRF;
 
 #define PRF_active	1			/* prefetch block currently in use */
 
-} //namespace Jrd
-
-#endif // JRD_CCH_H
-
+#endif /* _JRD_CCH_H_ */

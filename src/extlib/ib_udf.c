@@ -37,17 +37,13 @@
 #include "ib_udf.h"
 
 #ifndef SOLARIS
-#ifdef WIN_NT
-#define exception_type _exception
-#else
-#define exception_type exception
-#endif
-int MATHERR(struct exception_type *e)
+
+int MATHERR(struct exception *e)
 {
 	return 1;
 }
-#undef exception_type
-#endif /* SOLARIS */
+
+#endif
 
 double EXPORT IB_UDF_abs( double *a)
 {
@@ -343,8 +339,7 @@ char* EXPORT IB_UDF_substr(char* s, short* m, short* n)
 		/* CVC: We need to compensate for n if it's longer than s's length */
 		if (*n > length) {
 			length -= *m - 1;
-		}
-		else {
+		} else {
 			length = *n - *m + 1;
 		}
 		buf = (char*)ib_util_malloc (length + 1);
@@ -385,8 +380,7 @@ char* EXPORT IB_UDF_substrlen(char* s, short* m, short* n)
 		/* CVC: We need to compensate for n if it's longer than s's length */
 		if (*m + *n - 1 > length) {
 			length -= *m - 1;
-		}
-		else {
+		} else {
 			length = *n;
 		}
 		buf = (char*) ib_util_malloc (length + 1);

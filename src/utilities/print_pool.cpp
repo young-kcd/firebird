@@ -77,8 +77,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	sptr += path_length;
 	if (isc_service_query
 		(status, &svc_handle, NULL, 0, NULL, sptr - sendbuf, sendbuf, 256,
-		 respbuf))
-	{
+		 respbuf)) {
 		ib_printf("Failed to query service\n");
 		isc_service_detach(status, &svc_handle);
 		return 0;
@@ -86,4 +85,3 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	isc_service_detach(status, &svc_handle);
 }
-

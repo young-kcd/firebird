@@ -3,7 +3,13 @@
 
 #define INCLUDE_OLD_FB_BLK
 
+#ifndef JRD_COMMON_H
 #include "../jrd/common.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct blk
 {
@@ -13,5 +19,8 @@ typedef struct blk
 } *BLK;
 
 
-#endif	/* INCLUDE_FB_BLK */
+#ifdef __cplusplus
+}	/* extern "C" */
+#endif
 
+#endif	/* INCLUDE_FB_BLK */

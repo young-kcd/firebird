@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Language
- *	MODULE:		lex.cpp
+ *	MODULE:		lex.c
  *	DESCRIPTION:	Lexical analyser
  *
  * The contents of this file are subject to the Interbase Public
@@ -31,10 +31,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../dudley/ddl.h"
 #include "../dudley/parse.h"
+#include "../intl/kanji.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/hsh_proto.h"
 #include "../dudley/lex_proto.h"
@@ -45,12 +45,12 @@
 #endif
 
 #ifdef SMALL_FILE_NAMES
-const char* SCRATCH = "fb_q";
+#define SCRATCH		"fb_q"
 #else
-const char* SCRATCH = "fb_query_";
+#define SCRATCH		"fb_query_"
 #endif
 
-extern const TEXT* DDL_prompt;
+extern TEXT *DDL_prompt;
 
 
 static int nextchar(void);
@@ -62,21 +62,19 @@ static int skip_white(void);
 static IB_FILE *input_file, *trace_file;
 static TEXT *DDL_char, DDL_buffer[256], trace_file_name[128];
 
-enum chr_types {
-	CHR_ident = 1,
-	CHR_letter = 2,
-	CHR_digit = 4,
-	CHR_quote = 8,
-	CHR_white = 16,
-	CHR_eol = 32,
+#define CHR_ident	1
+#define CHR_letter	2
+#define CHR_digit	4
+#define CHR_quote	8
+#define CHR_white	16
+#define CHR_eol		32
 
-	CHR_IDENT = CHR_ident,
-	CHR_LETTER = CHR_letter + CHR_ident,
-	CHR_DIGIT = CHR_digit + CHR_ident,
-	CHR_QUOTE = CHR_quote,
-	CHR_WHITE = CHR_white,
-	CHR_EOL = CHR_white
-};
+#define CHR_IDENT	CHR_ident
+#define CHR_LETTER	CHR_letter + CHR_ident
+#define CHR_DIGIT	CHR_digit + CHR_ident
+#define CHR_QUOTE	CHR_quote
+#define CHR_WHITE	CHR_white
+#define CHR_EOL		CHR_white
 
 static SCHAR classes[256] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -188,7 +186,7 @@ void LEX_flush(void)
 }
 
 
-void LEX_get_text(UCHAR * buffer, TXT text)
+void LEX_get_text( SCHAR * buffer, TXT text)
 {
 /**************************************
  *
@@ -202,15 +200,14 @@ void LEX_get_text(UCHAR * buffer, TXT text)
  **************************************/
 	SLONG start;
 	int length;
-	UCHAR *p;
+	TEXT *p;
 
 	start = text->txt_position;
 	length = text->txt_length;
 
 	if (ib_fseek(trace_file, start, 0)) {
 		ib_fseek(trace_file, (SLONG) 0, 2);
-		DDL_err(275, NULL, NULL, NULL, NULL, NULL);
-		/* msg 275: ib_fseek failed */
+		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	/* msg 275: ib_fseek failed */
 	}
 
 	p = buffer;
@@ -236,18 +233,17 @@ void LEX_init( void *file)
  **************************************/
 
 #if !(defined WIN_NT)
-	trace_file = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, 0);
+	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, 0);
 #else
-	trace_file = (IB_FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
+	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
 #endif
-	if (trace_file == (IB_FILE*) - 1)
-		DDL_err(276, NULL, NULL, NULL, NULL, NULL);
-		/* msg 276: couldn't open scratch file */
+	if (trace_file == (IB_FILE *) - 1)
+		DDL_err(276, NULL, NULL, NULL, NULL, NULL);	/* msg 276: couldn't open scratch file */
 
-	input_file = (IB_FILE*) file;
+	input_file = (IB_FILE *) file;
 	DDL_char = DDL_buffer;
 	DDL_token.tok_position = 0;
-	DDL_description = false;
+	DDL_description = FALSE;
 	DDL_line = 1;
 }
 
@@ -275,8 +271,7 @@ void LEX_put_text (FRBRD *blob, TXT text)
 
 	if (ib_fseek(trace_file, start, 0)) {
 		ib_fseek(trace_file, (SLONG) 0, 2);
-		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	
-		/* msg 275: ib_fseek failed */
+		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	/* msg 275: ib_fseek failed */
 	}
 
 	while (length) {
@@ -288,9 +283,8 @@ void LEX_put_text (FRBRD *blob, TXT text)
 				break;
 		}
 		if (l = p - buffer)
-			if (isc_put_segment(status_vector, &blob, l, buffer))
-				DDL_err(277, NULL, NULL, NULL, NULL, NULL);	
-		/* msg 277: isc_put_segment failed */
+			if (gds__put_segment(status_vector, GDS_REF(blob), l, buffer))
+				DDL_err(277, NULL, NULL, NULL, NULL, NULL);	/* msg 277: gds__put_segment failed */
 	}
 
 	ib_fseek(trace_file, (SLONG) 0, 2);
@@ -329,16 +323,18 @@ TOK LEX_token(void)
  *	Parse and return the next token.
  *
  **************************************/
+	TOK token;
 	SSHORT c, next;
+	TEXT class_, *p;
 	SYM symbol;
 
-	TOK token = &DDL_token;
-	TEXT* p = token->tok_string;
+	token = &DDL_token;
+	p = token->tok_string;
 	*p++ = c = skip_white();
 
 /* On end of file, generate furious but phony end of line tokens */
 
-	TEXT char_class = classes[c];
+	class_ = classes[c];
 
 	if (DDL_eof) {
 		p = token->tok_string;
@@ -354,14 +350,14 @@ TOK LEX_token(void)
 		*p = '\0';
 		return NULL;
 	}
-	else if (char_class & CHR_letter) {
+	else if (class_ & CHR_letter) {
 		while (classes[c = nextchar()] & CHR_ident)
 			*p++ = c;
 
 		retchar(c);
 		token->tok_type = tok_ident;
 	}
-	else if (char_class & CHR_digit) {
+	else if (class_ & CHR_digit) {
 		while (classes[c = nextchar()] & CHR_digit)
 			*p++ = c;
 		if (c == '.') {
@@ -372,12 +368,11 @@ TOK LEX_token(void)
 		retchar(c);
 		token->tok_type = tok_number;
 	}
-	else if ((char_class & CHR_quote) && !DDL_description) {
+	else if ((class_ & CHR_quote) && !DDL_description) {
 		token->tok_type = tok_quoted;
 		do {
 			if (!(next = nextchar()) || next == '\n') {
-				DDL_err(278, NULL, NULL, NULL, NULL, NULL);
-				/* msg 278: unterminated quoted string */
+				DDL_err(278, NULL, NULL, NULL, NULL, NULL);	/* msg 278: unterminated quoted string */
 				break;
 			}
 			*p++ = next;
@@ -448,8 +443,7 @@ static int nextchar(void)
 			if (DDL_char < end)
 				*DDL_char++ = c;
 			else
-				DDL_err(279, NULL, NULL, NULL, NULL, NULL);
-				/* msg 279: line too SLONG */
+				DDL_err(279, NULL, NULL, NULL, NULL, NULL);	/* msg 279: line too SLONG */
 			if (c == '\n')
 				break;
 		}
@@ -459,7 +453,7 @@ static int nextchar(void)
 			if (DDL_interactive)
 				ib_printf("\n");
 #endif
-			DDL_eof = true;
+			DDL_eof = TRUE;
 			return EOF;
 		}
 		DDL_char = DDL_buffer;
@@ -519,25 +513,22 @@ static int skip_white(void)
  *	Skip over white space and comments in input stream
  *
  **************************************/
-	SSHORT c;
+	SSHORT c, next, class_;
 
 	while ((c = nextchar()) != EOF) {
 
-		const SSHORT char_class = classes[c];
-		if (char_class & CHR_white)
+		class_ = classes[c];
+		if (class_ & CHR_white)
 			continue;
 		if (c == '/') {
-			SSHORT next = nextchar();
-			if (next != '*') {
+			if ((next = nextchar()) != '*') {
 				retchar(next);
 				return c;
 			}
 			c = nextchar();
 			while ((next = nextchar()) &&
 				   (next != EOF) && !(c == '*' && next == '/'))
-			{
 				c = next;
-			}
 			continue;
 		}
 		break;

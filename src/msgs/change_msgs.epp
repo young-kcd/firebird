@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Interbase Message file edit program
- *	MODULE:		change_msgs.epp
+ *	MODULE:		change_msgs.e
  *	DESCRIPTION:	Allow limited change of messages in database
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,8 +23,7 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/common.h"
 
 #include <stdlib.h>
@@ -47,12 +46,12 @@ DATABASE DB = "msg.fdb";
 
 static void ascii_str_upper(UCHAR *);
 static void explicit_print(TEXT *);
-static bool get_sql_class(UCHAR *);
-static bool get_sql_subclass(UCHAR *);
+static int get_sql_class(UCHAR *);
+static int get_sql_subclass(UCHAR *);
 #ifdef NOT_USED_OR_REPLACED
-static bool get_symbol(UCHAR *);
+static int get_symbol(UCHAR *);
 #endif
-static bool mustget(SCHAR *);
+static SSHORT mustget(SCHAR *);
 static int translate(SCHAR *, SCHAR *, SSHORT);
 
 
@@ -99,7 +98,7 @@ int main( int argc, char **argv)
 		FOR X IN FACILITIES WITH X.FACILITY = facility
 			count++;
 			for (;;) {
-				bool sys_error = false;
+				BOOLEAN sys_error = FALSE;
 
 				ib_printf("Message number (%d) ? ", msg_number + 1);
 				if (!ib_gets(input))
@@ -128,7 +127,7 @@ int main( int argc, char **argv)
 					ib_printf("SQLCODE: %d\n", Z.SQL_CODE);
 					ib_printf("   SQL_CLASS:    %s\n", Z.SQL_CLASS);
 					ib_printf("SQL_SUBCLASS: %s\n", Z.SQL_SUBCLASS);
-					sys_error = true;
+					sys_error = TRUE;
 				END_FOR
 
 				ib_printf(" Modify? ");
@@ -172,7 +171,7 @@ int main( int argc, char **argv)
 									ib_printf
 										("Message too long: max length: %d\n",
 										 sizeof(Y.TEXT));
-									mustget(text);
+									(void) mustget(text);
 								}
 							if (symbol[0])
 								strcpy(Y.SYMBOL, (char*) symbol);
@@ -299,7 +298,7 @@ static void explicit_print( TEXT * string)
 }
 
 
-static bool get_sql_class( UCHAR * sql_class)
+static int get_sql_class( UCHAR * sql_class)
 {
 /**************************************
  *
@@ -309,7 +308,7 @@ static bool get_sql_class( UCHAR * sql_class)
  *
  * Functional description
  *	get a two character sql_class string
- *	return true if we get one, otherwise false
+ *	return TRUE if we get one, otherwise FALSE
  *
  **************************************/
 	SSHORT length;
@@ -322,16 +321,16 @@ static bool get_sql_class( UCHAR * sql_class)
 			break;
 
 		if (length == 2)
-			return true;
+			return TRUE;
 		else
 			ib_fprintf(ib_stderr, "Sqlclass is two characters!\n");
 	}
 
-	return false;
+	return FALSE;
 }
 
 
-static bool get_sql_subclass( UCHAR * sql_sub_class)
+static int get_sql_subclass( UCHAR * sql_sub_class)
 {
 /**************************************
  *
@@ -341,7 +340,7 @@ static bool get_sql_subclass( UCHAR * sql_sub_class)
  *
  * Functional description
  *	get a three character sql_subclass string
- *	return true if we get one, otherwise false
+ *	return TRUE if we get one, otherwise FALSE
  *
  **************************************/
 	SSHORT length;
@@ -354,15 +353,15 @@ static bool get_sql_subclass( UCHAR * sql_sub_class)
 			break;
 
 		if (length == 3)
-			return true;
+			return TRUE;
 		else
 			ib_fprintf(ib_stderr, "Sqlsubclass is three characters!\n");
 	}
-	return false;
+	return FALSE;
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static bool get_symbol( UCHAR * symbol)
+static int get_symbol( UCHAR * symbol)
 {
 /**************************************
  *
@@ -372,20 +371,20 @@ static bool get_symbol( UCHAR * symbol)
  *
  * Functional description
  *	insist on getting the symbol
- *	return true when we get one
+ *	return TRUE when we get one
  *
  **************************************/
-	while (true) {
+	while (TRUE) {
 		ib_fprintf(ib_stderr, "Symbols are required for system errors!\n");
 		ib_printf(" Symbol: ");
 		ib_gets((char*) symbol);
 		if (strlen((char*) symbol))
-			return true;
+			return TRUE;
 	}
 }
 #endif
 
-static bool mustget( SCHAR * s)
+static SSHORT mustget( SCHAR * s)
 {
 /**************************************
  *
@@ -394,13 +393,13 @@ static bool mustget( SCHAR * s)
  **************************************
  *
  * Functional description
- *	gets & returns a string.  Returns false
+ *	gets & returns a string.  Returns FALSE
  *	if string is empty.
  *
  **************************************/
 
 	if (!ib_gets((char*) s))
-		return false;
+		return FALSE;
 
 	return (s[0] != 0);
 }

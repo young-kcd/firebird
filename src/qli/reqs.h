@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_REQS_H
-#define QLI_REQS_H
+#ifndef _QLI_REQS_H_
+#define _QLI_REQS_H_
 
 #define REQ_relation_def	0
 #define REQ_store_relation	1
@@ -90,5 +90,4 @@
 #define REQ_show_dimensions	64
 #define REQ_max			65
 
-#endif // QLI_REQS_H
-
+#endif /* _QLI_REQS_H_ */

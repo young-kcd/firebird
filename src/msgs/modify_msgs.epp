@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Interbase Message file modify for escape chars
- *	MODULE:		modify_messages.epp
+ *	MODULE:		modify_messages.e
  *	DESCRIPTION:	Allow modification of messages with translatation of escape sequences
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,8 +23,7 @@
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/common.h"
 
 #include <stdlib.h>

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_LLIO_H
-#define JRD_LLIO_H
+#ifndef _JRD_LLIO_H_
+#define _JRD_LLIO_H_
 
 /* I/O macros */
 
@@ -40,4 +40,4 @@
 #define LLIO_SEEK_END		3
 
 
-#endif /* JRD_LLIO_H */
+#endif /* _JRD_LLIO_H_ */

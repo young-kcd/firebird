@@ -3,22 +3,25 @@
  *	MODULE:		thd_priority.cpp
  *	DESCRIPTION:	Thread priorities scheduler
  *
- * The contents of this file are subject to the Interbase Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy
- * of the License at http://www.Inprise.com/IPL.html
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
  *
- * Software distributed under the License is distributed on an
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
- * or implied. See the License for the specific language governing
- * rights and limitations under the License.
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
  *
- * 2002.10.20 Alexander Peshkoff: Created this scheduler, changing
- *   priorities of Win32 threads. to avoid side effects of Windows
- *   native priorities scheduling.
+ *  The Original Code was created by Alexander Peshkoff
+ *  for the Firebird Open Source RDBMS project.
  *
- * All Rights Reserved.
- * Contributor(s): ______________________________________.
+ *  Copyright (c) 2003 Alexander Peshkoff <peshkoff@mail.ru>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
  */
 
 #include "firebird.h"
@@ -49,9 +52,9 @@ MUTX_T ThreadPriorityScheduler::mutex;
 MemoryPool * ThreadPriorityScheduler::pool = 0;
 ThreadPriorityScheduler * ThreadPriorityScheduler::chain = 0;
 ThreadPriorityScheduler * ThreadPriorityScheduler::news = 0;
-bool ThreadPriorityScheduler::initialized = false;
-DWORD ThreadPriorityScheduler::specific_key = (DWORD) -1;
-bool ThreadPriorityScheduler::shutdown = false;
+BOOLEAN ThreadPriorityScheduler::initialized = FALSE;
+DWORD ThreadPriorityScheduler::specific_key = -1;
+BOOLEAN ThreadPriorityScheduler::shutdown = FALSE;
 
 //____________________________________________________________
 //
@@ -60,8 +63,8 @@ bool ThreadPriorityScheduler::shutdown = false;
 void ThreadPriorityScheduler::Cleanup(void) {
 	if (initialized)
 	{
-		initialized = false;
-		shutdown = true;
+		initialized = FALSE;
+		shutdown = TRUE;
 	}
 }
 
@@ -102,7 +105,7 @@ void ThreadPriorityScheduler::Init(void)
 	if (initialized)
 		return;
 
-	initialized = true;
+	initialized = TRUE;
 	specific_key = TlsAlloc();
 
 	// memory pool for thps allocation
@@ -119,7 +122,7 @@ void ThreadPriorityScheduler::Init(void)
 	HANDLE real_handle = (HANDLE)_beginthreadex(NULL, 0,
 		Scheduler, 0, 0, &thread_id);
 	if (! real_handle)
-		Firebird::system_call_failed::raise("_beginthreadex");
+		Firebird::system_call_failed::raise();
 	SetThreadPriority(real_handle, THREAD_PRIORITY_TIME_CRITICAL);
 	CloseHandle(real_handle);
 }
@@ -162,9 +165,7 @@ void ThreadPriorityScheduler::Attach(HANDLE tHandle, DWORD thread_id, UCHAR flag
 	if (! DuplicateHandle(process, tHandle, 
 				process, &m->handle, 0, 
 				FALSE, DUPLICATE_SAME_ACCESS))
-	{
-		Firebird::system_call_failed::raise("DuplicateHandle");
-	}
+		Firebird::system_call_failed::raise();
 
 	THD_mutex_lock(&mutex);
 	m->next = news;
@@ -226,8 +227,8 @@ void ThreadPriorityScheduler::Exit(void) {
 //
 // Check whether current thread has high priority
 //
-bool ThreadPriorityScheduler::Boosted(void) {
-	return (InternalGet()->flags & THPS_BOOSTED);
+BOOLEAN ThreadPriorityScheduler::Boosted(void) {
+	return InternalGet()->flags & THPS_BOOSTED ? TRUE : FALSE;
 }
 
 //____________________________________________________________
@@ -259,9 +260,7 @@ unsigned int __stdcall ThreadPriorityScheduler::Scheduler(LPVOID) {
 				//			increase priority
 						if (! SetThreadPriority(t->handle, 
 									THREAD_PRIORITY_HIGHEST))
-						{
-							Firebird::system_call_failed::raise("SetThreadPriority");
-						}
+							Firebird::system_call_failed::raise();
 
 #ifdef DEBUG_THREAD_PSCHED
 						gds__log("+ handle=%p priority=%d", t->handle, THREAD_PRIORITY_HIGHEST);
@@ -283,9 +282,7 @@ unsigned int __stdcall ThreadPriorityScheduler::Scheduler(LPVOID) {
 				//		decrease priority
 						if (! SetThreadPriority(t->handle, 
 									THREAD_PRIORITY_NORMAL))
-						{
-							Firebird::system_call_failed::raise("SetThreadPriority");
-						}
+							Firebird::system_call_failed::raise();
 #ifdef DEBUG_THREAD_PSCHED
 						gds__log("- handle=%p priority=%d", t->handle, THREAD_PRIORITY_NORMAL);
 #endif
@@ -325,7 +322,7 @@ start_label:
 					continue;
 				DWORD ExitCode;
 				if (! GetExitCodeThread((*pt)->handle, &ExitCode)) 
-					Firebird::system_call_failed::raise("GetExitCodeThread");
+					Firebird::system_call_failed::raise();
 				if (ExitCode == STILL_ACTIVE) {
 					(*pt)->ticks = THPS_TICKS;
 					continue;

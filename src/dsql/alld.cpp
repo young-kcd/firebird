@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		all.cpp
+ *	MODULE:		all.c
  *	DESCRIPTION:	Internal block allocator
  *
  * The contents of this file are subject to the Interbase Public
@@ -50,19 +50,24 @@ nested FOR loops are added.
     THREAD_ENTER;               // First statment after FOR loop
 ***************************************************************/
 
+#include "../dsql/all.h"
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/ib_stdio.h"
-#include "../dsql/all.h"
 #include "../dsql/dsql.h"
+#include "../dsql/node.h"
+#include "../dsql/sym.h"
+#include "gen/codes.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd_proto.h"
 
+ASSERT_FILENAME			//Define things dsql/assert needed
+
 #include "../include/fb_vector.h"
 
-DsqlMemoryPool* DSQL_permanent_pool = 0;
+DsqlMemoryPool *DSQL_permanent_pool = 0;
 typedef Firebird::vector<DsqlMemoryPool*> pool_vec_t;
 static bool init_flag = false;
 static Firebird::vector<DsqlMemoryPool*> *pools = 0;
@@ -76,7 +81,7 @@ static Firebird::vector<DsqlMemoryPool*> *pools = 0;
 void ALLD_fini()
 {
 	if (!init_flag) {
-		ERRD_bugcheck("ALLD_fini - finishing before starting");
+		BUGCHECK ("ALLD_fini - finishing before starting");
 	}
 
 	for (pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
@@ -96,7 +101,7 @@ void ALLD_fini()
 
 void ALLD_init()
 {
-	tsql* tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 
 	if (!init_flag)
 	{
@@ -108,22 +113,21 @@ void ALLD_init()
 	}
 }
 
-#ifdef NOT_USED_OR_REPLACED
-void DsqlMemoryPool::ALLD_push(BLK object, dsql_lls** stack)
+void DsqlMemoryPool::ALLD_push(BLK object, DLLS * stack)
 {
-	tsql* tdsql = GET_THREAD_DATA;
+	TSQL tdsql = GET_THREAD_DATA;
 	DsqlMemoryPool* pool = tdsql->tsql_default;
 
-	dsql_lls* node = pool->lls_cache.newBlock();
+	DLLS node = pool->lls_cache.newBlock();
 	node->lls_object = object;
 	node->lls_next = *stack;
 	*stack = node;
 }
 
 
-BLK DsqlMemoryPool::ALLD_pop(dsql_lls* *stack)
+BLK DsqlMemoryPool::ALLD_pop(DLLS *stack)
 {
-	dsql_lls* node = *stack;
+	DLLS node = *stack;
 	*stack = node->lls_next;
 	BLK object = node->lls_object;
 
@@ -132,17 +136,16 @@ BLK DsqlMemoryPool::ALLD_pop(dsql_lls* *stack)
 
 	return object;
 }
-#endif //NOT_USED_OR_REPLACED
 
 DsqlMemoryPool* DsqlMemoryPool::createPool()
 {
-	DsqlMemoryPool* result = (DsqlMemoryPool*)internal_create(sizeof(DsqlMemoryPool));
-//	new (&result->lls_cache) BlockCache<class dsql_lls> (*result);
+	DsqlMemoryPool *result = (DsqlMemoryPool *)internal_create(sizeof(DsqlMemoryPool));
+	new (&result->lls_cache) BlockCache<class dsql_lls> (*result);
 	
 	if (!DSQL_permanent_pool)
 		return result;
 		
-	for (pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
+	for(pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
 	{
 		if (!*curr)
 		{
@@ -152,7 +155,7 @@ DsqlMemoryPool* DsqlMemoryPool::createPool()
 	}
 
 	pools->resize(pools->size() + 10);
-	for (pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
+	for(pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
 	{
 		if (!*curr)
 		{
@@ -161,19 +164,19 @@ DsqlMemoryPool* DsqlMemoryPool::createPool()
 		}
 	}
 
-	ERRD_bugcheck("ALLD_fini - finishing before starting");
+	BUGCHECK ("ALLD_fini - finishing before starting");
 	return NULL; //silencer
 }
 
-void DsqlMemoryPool::deletePool(DsqlMemoryPool* pool)
+void DsqlMemoryPool::deletePool(DsqlMemoryPool *pool)
 {
-//	pool->lls_cache.~BlockCache<class dsql_lls>();
+	pool->lls_cache.~BlockCache<class dsql_lls>();
 	MemoryPool::deletePool(pool);
 	
 	if (pool == DSQL_permanent_pool)
 		return;
 		
-	for (pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
+	for(pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
 	{
 		if (*curr == pool)
 		{
@@ -182,4 +185,3 @@ void DsqlMemoryPool::deletePool(DsqlMemoryPool* pool)
 		}
 	}
 }
-

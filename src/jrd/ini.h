@@ -34,7 +34,7 @@
 
 #define NAME(name, id) id,
 
-typedef enum nam_i { nam_MIN,
+typedef ENUM nam_i { nam_MIN,
 #include "../jrd/names.h"
 nam_MAX} name_ids;
 
@@ -56,7 +56,7 @@ static const TEXT* const names[] =
 
 
 #define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	type,
-typedef enum gflds {
+typedef ENUM gflds {
 #include "../jrd/fields.h"
 gfld_MAX} GFLDS;
 #undef FIELD
@@ -69,21 +69,21 @@ gfld_MAX} GFLDS;
 #define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	{ (UCHAR) type, (UCHAR) name, dtype, length, sub_type, ods, NULL, 0 },
 #endif
 
-struct gfld
+typedef struct gfld
 {
 	UCHAR gfld_type;
 	UCHAR gfld_name;
 	UCHAR gfld_dtype;
-	UCHAR gfld_length;		// mismatch; dsc2.h uses USHORT.
-	UCHAR gfld_sub_type;	// mismatch; dsc2.h uses SSHORT.
+	UCHAR gfld_length;
+	UCHAR gfld_sub_type;
 	UCHAR gfld_minor;
 	const UCHAR *gfld_dflt_blr;
 	USHORT gfld_dflt_len;
-};
+} GFLD;
 
 static const struct gfld gfields[] = {
 #include "../jrd/fields.h"
-	{ 0, 0, dtype_unknown, 0, 0, 0, NULL, 0 }
+	{ 0, 0, dtype_null, 0, 0, 0, NULL, 0 }
 };
 #undef FIELD
 
@@ -93,7 +93,7 @@ static const struct gfld gfields[] = {
 #define RELATION(name, id, ods) id,
 #define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)
 #define END_RELATION
-typedef enum rids {
+typedef ENUM rids {
 #include "../jrd/relations.h"
 rel_MAX} RIDS;
 #undef RELATION
@@ -133,11 +133,11 @@ static const UCHAR relfields[] =
 
 /* obtain field types */
 
-struct rtyp {
-	const TEXT* rtyp_name;
+typedef struct rtyp {
+	const TEXT *rtyp_name;
 	SSHORT rtyp_value;
 	UCHAR rtyp_field;
-};
+} RTYP;
 
 #define TYPE(text, type, field)	{ text, type, (UCHAR) field },
 
@@ -147,7 +147,7 @@ struct rtyp {
 #define COLLATION(name, cc_id, cs_id, coll_id, sym)
 #define END_CHARSET
 
-static const rtyp types[] = {
+static const RTYP types[] = {
 #include "../jrd/types.h"
 #include "../jrd/intlnames.h"
 	{NULL, 0, 0}
@@ -164,7 +164,7 @@ static const rtyp types[] = {
 /* obtain international names */
 
 typedef struct initcharset {
-	const UCHAR* init_charset_name;
+	const UCHAR *init_charset_name;
 	SSHORT init_charset_id;
 	USHORT init_charset_bytes_per_char;
 } CS_TYPE;
@@ -206,4 +206,3 @@ static const COLL_TYPE coll_types[] = {
 #undef COLLATION
 #undef END_CHARSET
 #endif
-

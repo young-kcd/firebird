@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		cvt2.cpp
+ *	MODULE:		cvt2.c
  *	DESCRIPTION:	Data mover and converter and comparator, etc.
  *			Routines used ONLY within engine.
  *
@@ -27,11 +27,10 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/quad.h"
-#include "gen/iberror.h"
+#include "gen/codes.h"
 #include "../jrd/intl.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
@@ -49,10 +48,8 @@
 #include "../jrd/tra.h"
 #include "../jrd/req.h"
 
-using namespace Jrd;
-
 #ifdef VMS
-double MTH$CVT_D_G(), MTH$CVT_G_D();
+extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
 
 #ifndef WORDS_BIGENDIAN
@@ -79,7 +76,7 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
    returns the relative priority of types for use when different types
    are compared.
    */
-static const BYTE compare_priority[] = { dtype_unknown,	/* dtype_unknown through dtype_varying  */
+static const BYTE compare_priority[] = { dtype_null,	/* dtype_null through dtype_varying  */
 	dtype_text,					/* have their natural values stored  */
 	dtype_cstring,				/* in the table.                     */
 	dtype_varying,
@@ -100,8 +97,12 @@ static const BYTE compare_priority[] = { dtype_unknown,	/* dtype_unknown through
 	dtype_long + 1
 };								/* int64 goes right after long       */
 
+#pragma FB_COMPILER_MESSAGE("Fix this! Ugly function pointer cast!")
+typedef void (*pfn_cvt_private_cludge) (int, int);
+typedef void (*pfn_cvt_private_cludge2) (int, int, ...);
 
-SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
+
+SSHORT CVT2_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 {
 /**************************************
  *
@@ -113,25 +114,22 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
  *	Compare two descriptors.  Return (-1, 0, 1) if a<b, a=b, or a>b.
  *
  **************************************/
+	UCHAR *p1, *p2;
 	USHORT length, length2;
 	SSHORT fill;
 	USHORT t1, t2;
 	CHARSET_ID charset1, charset2;
-	thread_db* tdbb = NULL;
+	TDBB tdbb = NULL_TDBB;
 
-	// AB: Maybe we need a other error-message, but at least throw 
-	// a message when 1 or both input paramters are empty.
-	if (!arg1 || !arg2) {
-		BUGCHECK(189);	// msg 189 comparison not supported for specified data types.
-	}
+	if (!arg1 || !arg2)
+		BUGCHECK(189);	// msg 189 - comparison not supported for specified data types
 
 /* Handle the simple (matched) ones first */
 
 	if (arg1->dsc_dtype == arg2->dsc_dtype &&
-		arg1->dsc_scale == arg2->dsc_scale) 
-	{
-		const UCHAR* p1 = arg1->dsc_address;
-		const UCHAR* p2 = arg2->dsc_address;
+		arg1->dsc_scale == arg2->dsc_scale) {
+		p1 = arg1->dsc_address;
+		p2 = arg2->dsc_address;
 
 		switch (arg1->dsc_dtype) {
 		case dtype_short:
@@ -282,7 +280,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		default:
 			/* the two arguments have identical dtype and scale, but the
 			   dtype is not one of your defined types! */
-			fb_assert(FALSE);
+			assert(FALSE);
 			break;
 
 		}						/* switch on dtype */
@@ -322,8 +320,6 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 			)
 			return INTL_compare(tdbb, arg1, arg2, err);
 
-		UCHAR* p1 = NULL;
-		UCHAR* p2 = NULL;
 		length = CVT_get_string_ptr(arg1, &t1, &p1, NULL, 0, err);
 		length2 = CVT_get_string_ptr(arg2, &t2, &p2, NULL, 0, err);
 
@@ -413,12 +409,14 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	case dtype_short:
 		{
 			SSHORT scale;
+			SLONG temp1, temp2;
+
 			if (arg2->dsc_dtype > dtype_varying)
 				scale = MIN(arg1->dsc_scale, arg2->dsc_scale);
 			else
 				scale = arg1->dsc_scale;
-			const SLONG temp1 = CVT_get_long(arg1, scale, err);
-			const SLONG temp2 = CVT_get_long(arg2, scale, err);
+			temp1 = CVT_get_long(arg1, scale, err);
+			temp2 = CVT_get_long(arg2, scale, err);
 			if (temp1 == temp2)
 				return 0;
 			if (temp1 > temp2)
@@ -431,12 +429,13 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	case dtype_int64:
 		{
 			SSHORT scale;
+			SINT64 temp1, temp2;
 			if (arg2->dsc_dtype > dtype_varying)
 				scale = MIN(arg1->dsc_scale, arg2->dsc_scale);
 			else
 				scale = arg1->dsc_scale;
-			const SINT64 temp1 = CVT_get_int64(arg1, scale, err);
-			const SINT64 temp2 = CVT_get_int64(arg2, scale, err);
+			temp1 = CVT_get_int64(arg1, scale, err);
+			temp2 = CVT_get_int64(arg2, scale, err);
 			if (temp1 == temp2)
 				return 0;
 			if (temp1 > temp2)
@@ -447,19 +446,23 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	case dtype_quad:
 		{
 			SSHORT scale;
+			SQUAD temp1, temp2;
+
 			if (arg2->dsc_dtype > dtype_varying)
 				scale = MIN(arg1->dsc_scale, arg2->dsc_scale);
 			else
 				scale = arg1->dsc_scale;
-			const SQUAD temp1 = CVT_get_quad(arg1, scale, err);
-			const SQUAD temp2 = CVT_get_quad(arg2, scale, err);
+			temp1 = CVT_get_quad(arg1, scale, err);
+			temp2 = CVT_get_quad(arg2, scale, err);
 			return QUAD_COMPARE(temp1, temp2);
 		}
 
 	case dtype_real:
 		{
-			const float temp1 = (float) CVT_get_double(arg1, err);
-			const float temp2 = (float) CVT_get_double(arg2, err);
+			float temp1, temp2;
+
+			temp1 = (float) CVT_get_double(arg1, err);
+			temp2 = (float) CVT_get_double(arg2, err);
 			if (temp1 == temp2)
 				return 0;
 			if (temp1 > temp2)
@@ -472,8 +475,10 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	case dtype_d_float:
 #endif
 		{
-			const double temp1 = CVT_get_double(arg1, err);
-			const double temp2 = CVT_get_double(arg2, err);
+			double temp1, temp2;
+
+			temp1 = CVT_get_double(arg1, err);
+			temp2 = CVT_get_double(arg2, err);
 			if (temp1 == temp2)
 				return 0;
 			if (temp1 > temp2)
@@ -485,8 +490,11 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		return CVT2_blob_compare(arg1, arg2, err);
 
 	case dtype_array:
-		(*err) (isc_wish_list, isc_arg_gds, isc_blobnotsup,
-				isc_arg_string, "compare", 0);
+		reinterpret_cast < void (*) (...) > (*err) (gds_wish_list,
+													gds_arg_gds,
+													gds_blobnotsup,
+													gds_arg_string, "compare",
+													0);
 		break;
 
 	default:
@@ -497,7 +505,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 }
 
 
-SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
+SSHORT CVT2_blob_compare(DSC * arg1, DSC * arg2, FPTR_VOID err)
 {
 /**************************************
  *
@@ -513,24 +521,27 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
  * complete in the engine.
  *
  **************************************/
-
+	/* CHARSET_ID charset1, charset2; */
+	TDBB tdbb = NULL_TDBB;
 	SSHORT l1, l2;
 	USHORT ttype1, ttype2;
 	SSHORT ret_val = 0;
-	TextType obj1 = NULL, obj2 = NULL;
+	TextType *obj1 = 0, *obj2 = 0;
 	DSC desc1, desc2;
+	BOOLEAN bin_cmp = FALSE, both_are_text = FALSE;
 
-	thread_db* tdbb = NULL;
 	SET_TDBB(tdbb);
 
 /* DEV_BLKCHK (node, type_nod); */
 
 	if (arg1->dsc_dtype != dtype_blob)
-		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
+		reinterpret_cast < pfn_cvt_private_cludge2 >
+			(err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
 
 	/* Is arg2 a blob? */
 	if (arg2->dsc_dtype == dtype_blob)
 	{
+		BLB	blob1, blob2;
 		UCHAR buffer1[BUFFER_LARGE], buffer2[BUFFER_LARGE];
 	
 	    /* Same blob id address? */
@@ -539,14 +550,11 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		else
 		{
 			/* Second test for blob id, checking relation and slot. */
-			bid* bid1 = (bid*) arg1->dsc_address;
-			bid* bid2 = (bid*) arg2->dsc_address;
+			BID bid1 = (BID) arg1->dsc_address, bid2 = (BID) arg2->dsc_address;
 			if (bid1->bid_relation_id == bid2->bid_relation_id &&
-				((!bid1->bid_relation_id && bid1->bid_stuff.bid_temp_id == bid2->bid_stuff.bid_temp_id) ||
-				(bid1->bid_relation_id && bid1->bid_stuff.bid_number == bid2->bid_stuff.bid_number)))
-			{
+				(!bid1->bid_relation_id && bid1->bid_stuff.bid_blob == bid1->bid_stuff.bid_blob ||
+				bid1->bid_relation_id && bid1->bid_stuff.bid_number == bid2->bid_stuff.bid_number))
 				return 0;
-			}
 		}
 	
 		if (arg1->dsc_sub_type == BLOB_text)
@@ -565,23 +573,20 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		INTL_ASSIGN_TTYPE(&desc1, ttype1);
 		INTL_ASSIGN_TTYPE(&desc2, ttype2);
 
-	    blb* blob1 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (bid*) arg1->dsc_address);
-		blb* blob2 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (bid*) arg2->dsc_address);
+	    blob1 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (BID) arg1->dsc_address);
+		blob2 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (BID) arg2->dsc_address);
 
-
-		// Can we have a lightweight, binary comparison?
-		bool both_are_text = false;
-		bool bin_cmp =
-			(arg1->dsc_sub_type != BLOB_text || arg2->dsc_sub_type != BLOB_text);
+		/* Can we have a lightweight, binary comparison? */
+		bin_cmp = (arg1->dsc_sub_type != BLOB_text || arg2->dsc_sub_type != BLOB_text);
 		if (!bin_cmp)
 		{
-			both_are_text = true;
+			both_are_text = TRUE;
 			if (ttype1 == ttype_dynamic || ttype2 == ttype_dynamic)
 			{
 				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
 				obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
-				ttype1 = obj1.getType();
-				ttype2 = obj2.getType();
+				ttype1 = obj1->getType();
+				ttype2 = obj2->getType();
 			}
 			bin_cmp = (ttype1 == ttype2 || ttype1 == ttype_none || ttype1 == ttype_ascii
 				|| ttype2 == ttype_none || ttype2 == ttype_ascii);
@@ -595,19 +600,20 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		characters per chunk from both blobs. */
 		if (!bin_cmp && (blob1->blb_length > BUFFER_LARGE || blob2->blb_length > BUFFER_LARGE))
 		{
-			if (obj1 == NULL)
+			if (!obj1)
 			{
 				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
 				obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
 			}
-			fb_assert(obj1 != NULL);
-			fb_assert(obj2 != NULL);
-			if (obj1.getBytesPerChar() != 1 || obj2.getBytesPerChar() != 1)
-				(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
-		}
+			assert(obj1);
+			assert(obj2);
+			if (obj1->getBytesPerChar() != 1 || obj2->getBytesPerChar() != 1)
+				reinterpret_cast < pfn_cvt_private_cludge2 >
+					(err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
+	    }
 
 		while (!(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
-		{
+	    {
 			l1 = BLB_get_segment(tdbb, blob1, buffer1, BUFFER_LARGE);
 			l2 = BLB_get_segment(tdbb, blob2, buffer2, BUFFER_LARGE);
 			if (bin_cmp)
@@ -624,7 +630,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 				if (!ret_val)
 				{
 					UCHAR blank_char = both_are_text ? '\x20' : '\x0';
-					fb_assert (safemin == common_top);
+					assert (safemin == common_top);
 					if (l1 < l2)
 					{
 						for (safemin = l1; safemin < l2 && !ret_val; ++safemin)
@@ -637,7 +643,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 							if (buffer1[safemin] != blank_char)
 								ret_val = buffer1[safemin] > blank_char ? 1 : -1;
 					}
-					fb_assert(ret_val || l1 == l2);
+					assert(ret_val || l1 == l2);
 				}
 			}
 			else 
@@ -654,9 +660,9 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		This is not safe with MBCS for now. */
 		if (!ret_val)
 		{
-			const bool eof1 = ((blob1->blb_flags & BLB_eof) == BLB_eof);
-			const bool eof2 = ((blob2->blb_flags & BLB_eof) == BLB_eof);
-			const UCHAR blank_char = both_are_text ? '\x20' : '\x0';
+			BOOLEAN eof1 = (blob1->blb_flags & BLB_eof == BLB_eof);
+			BOOLEAN eof2 = (blob2->blb_flags & BLB_eof == BLB_eof);
+			UCHAR blank_char = both_are_text ? '\x20' : '\x0';
 			if (eof1 && !eof2)
 			{
 				if (bin_cmp)
@@ -701,14 +707,18 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		BLB_close(tdbb, blob1);
 		BLB_close(tdbb, blob2);
 	}
-	/* We do not accept arrays for now. Maybe internal_array_desc in the future. */
+	/* We do not accept arrays for now. Maybe ADS in the future. */
 	else if (arg2->dsc_dtype == dtype_array)
-		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
+		reinterpret_cast < pfn_cvt_private_cludge2 >
+		 (err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
 	/* The second parameter should be a string. */
 	else
 	{
+		BLB blob1;
 		UCHAR buffer1[BUFFER_LARGE];
-
+		STR temp_str = 0;
+		UCHAR *dbuf = 0;
+	
 		if (arg1->dsc_sub_type == BLOB_text)
 			ttype1 = arg1->dsc_scale;       /* Load blob character set */
 		else
@@ -725,36 +735,34 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		INTL_ASSIGN_TTYPE(&desc1, ttype1);
 
 		/* Can we have a lightweight, binary comparison?*/
-		bool bin_cmp =
-			(arg1->dsc_sub_type != BLOB_text || arg2->dsc_dtype > dtype_varying);
+		bin_cmp = (arg1->dsc_sub_type != BLOB_text || arg2->dsc_dtype > dtype_varying);
 		if (!bin_cmp)
 		{
 			if (arg1->dsc_sub_type == BLOB_text)
 			{
 				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
-				fb_assert(obj1 != NULL);
-				ttype1 = obj1.getType();
+				assert(obj1);
+				ttype1 = obj1->getType();
 				if (ttype1 == ttype_none || ttype1 == ttype_ascii)
-					bin_cmp = true;
+					bin_cmp = TRUE;
 			}
 			if (arg2->dsc_dtype <= dtype_varying)
 			{
 				obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
-				fb_assert(obj2 != NULL);
-				ttype2 = obj2.getType();
+				assert(obj2);
+				ttype2 = obj2->getType();
 				if (ttype2 == ttype_none || ttype2 == ttype_ascii)
-					bin_cmp = true;
+					bin_cmp = TRUE;
 			}
 			if (ttype1 == ttype2)
-				bin_cmp = true;
+				bin_cmp = TRUE;
 		}
 
 		/* I will stop execution here until I can complete this function. */
 		if (!bin_cmp)
-			(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
+			reinterpret_cast < pfn_cvt_private_cludge2 >
+			 (err) (gds_wish_list, gds_arg_gds, gds_datnotsup, 0);
 
-		str* temp_str = 0;
-		UCHAR* dbuf = 0;
 		if (arg2->dsc_length > BUFFER_LARGE)
 		{
 			temp_str = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(UCHAR) * arg2->dsc_length) str();
@@ -764,7 +772,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 			dbuf = buffer1;
 
 		desc1.dsc_address = dbuf;
-		blb* blob1 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (bid*) arg1->dsc_address);
+		blob1 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (BID) arg1->dsc_address);
 	    l1 = BLB_get_segment(tdbb, blob1, dbuf, arg2->dsc_length);
 		desc1.dsc_length = l1;
 	    ret_val = CVT2_compare(&desc1, arg2, err);
@@ -778,7 +786,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 }
 
 
-void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
+void CVT2_get_name(DSC * desc, TEXT * string, FPTR_VOID err)
 {
 /**************************************
  *
@@ -790,11 +798,12 @@ void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
  *	Get a name (max length 31, NULL terminated) from a descriptor.
  *
  **************************************/
+	USHORT length;
 	VARY_STR(32) temp;			/* 31 bytes + 1 NULL */
 	const char* p;
 
-	USHORT length = CVT_make_string(desc, ttype_metadata, &p,
-							 (vary*) & temp, sizeof(temp), err);
+	length = CVT_make_string(desc, ttype_metadata, &p,
+							 (VARY *) & temp, sizeof(temp), err);
 	for (; length && *p != ' '; --length)
 		*string++ = *p++;
 
@@ -802,10 +811,10 @@ void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
 }
 
 
-USHORT CVT2_make_string2(const dsc* desc,
+USHORT CVT2_make_string2(DSC * desc,
 						 USHORT to_interp,
-						 UCHAR** address,
-						 vary* temp, USHORT length, STR* ptr, FPTR_ERROR err)
+						 UCHAR ** address,
+						 VARY * temp, USHORT length, STR * ptr, FPTR_VOID err)
 {
 /**************************************
  *
@@ -825,17 +834,19 @@ USHORT CVT2_make_string2(const dsc* desc,
  *     
  *
  **************************************/
-	UCHAR* from_buf;
+	VARY *varying;
+	DSC temp_desc;
+	UCHAR *from_buf;
 	USHORT from_len;
 	USHORT from_interp;
 
-	fb_assert(desc != NULL);
-	fb_assert(address != NULL);
-	fb_assert(err != NULL);
-	fb_assert((((temp != NULL) && (length > 0))
+	assert(desc != NULL);
+	assert(address != NULL);
+	assert(err != NULL);
+	assert((((temp != NULL) && (length > 0))
 			|| ((INTL_TTYPE(desc) <= dtype_any_text)
 				&& (INTL_TTYPE(desc) == to_interp))) || (ptr != NULL));
-	fb_assert((ptr == NULL) || (*ptr == NULL));
+	assert((ptr == NULL) || (*ptr == NULL));
 
 	if (desc->dsc_dtype == dtype_text) {
 		from_buf = desc->dsc_address;
@@ -851,7 +862,7 @@ USHORT CVT2_make_string2(const dsc* desc,
 	}
 
 	else if (desc->dsc_dtype == dtype_varying) {
-		vary* varying = (vary*) desc->dsc_address;
+		varying = (VARY *) desc->dsc_address;
 		from_buf = reinterpret_cast<UCHAR*>(varying->vary_string);
 		from_len =
 			MIN(varying->vary_length, (USHORT) (desc->dsc_length - sizeof(SSHORT)));
@@ -859,23 +870,27 @@ USHORT CVT2_make_string2(const dsc* desc,
 	}
 
 	if (desc->dsc_dtype <= dtype_any_text) {
+		USHORT cs1, cs2;
+		TDBB tdbb = NULL_TDBB;
 
 		if (to_interp == from_interp) {
 			*address = from_buf;
 			return from_len;
 		}
 
-		thread_db* tdbb = GET_THREAD_DATA;
-		const USHORT cs1 = INTL_charset(tdbb, to_interp, err);
-		const USHORT cs2 = INTL_charset(tdbb, from_interp, err);
+		tdbb = GET_THREAD_DATA;
+		cs1 = INTL_charset(tdbb, to_interp, err);
+		cs2 = INTL_charset(tdbb, from_interp, err);
 		if (cs1 == cs2) {
 			*address = from_buf;
 			return from_len;
 		}
 		else {
-			const USHORT needed_len = INTL_convert_bytes(tdbb, cs1, NULL, 0,
+			USHORT needed_len;
+			UCHAR *tempptr;
+			needed_len = INTL_convert_bytes(tdbb, cs1, NULL, 0,
 											cs2, from_buf, from_len, err);
-			UCHAR* tempptr = (UCHAR *) temp;
+			tempptr = (UCHAR *) temp;
 			if (needed_len > length) {
 				*ptr = FB_NEW_RPT(*tdbb->tdbb_default, needed_len) str();
 				(*ptr)->str_length = needed_len;
@@ -884,14 +899,13 @@ USHORT CVT2_make_string2(const dsc* desc,
 			}
 			length = INTL_convert_bytes(tdbb, cs1, tempptr, length,
 										cs2, from_buf, from_len, err);
-			*address = tempptr;
+			*address = (UCHAR *) tempptr;
 			return length;
 		}
 	}
 
 /* Not string data, then  -- convert value to varying string. */
 
-	dsc temp_desc;
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 	temp_desc.dsc_length = length;
 	temp_desc.dsc_address = (UCHAR *) temp;
@@ -902,4 +916,3 @@ USHORT CVT2_make_string2(const dsc* desc,
 
 	return temp->vary_length;
 }
-

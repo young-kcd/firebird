@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding = "Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="7.00"
 	Name="instreg"
 	SccProjectName=""
 	SccLocalPath="">
@@ -20,14 +20,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,DEV_BUILD"
-				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\instreg/instreg.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\instreg/"
 				ObjectFile="..\..\..\temp\debug\instreg/"
@@ -64,13 +61,7 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
 				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -82,7 +73,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -92,16 +83,13 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE"
-				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\instreg/instreg.pch"
 				AssemblerListingLocation="..\..\..\temp\release\instreg/"
 				ObjectFile="..\..\..\temp\release\instreg/"
 				ProgramDataBaseFileName="..\..\..\temp\release\instreg/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -112,7 +100,7 @@
 				OutputFile="release/firebird/bin/instreg.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\instreg/instreg.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -130,36 +118,28 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
 				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
-	<References>
-	</References>
 	<Files>
 		<Filter
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\utilities\install\install_reg.cpp">
+				RelativePath="..\..\..\src\utilities\install_reg.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\install\registry.cpp">
+				RelativePath="..\..\..\src\utilities\registry.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\utilities\install\regis_proto.h">
+				RelativePath="..\..\..\src\utilities\regis_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\install\registry.h">
+				RelativePath="..\..\..\src\utilities\registry.h">
 			</File>
 		</Filter>
 		<Filter

@@ -42,8 +42,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\debug\intl"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /GR /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "INTL_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /GR /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "INTL_EXPORTS" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -68,8 +68,8 @@ LINK32=link.exe
 # PROP Intermediate_Dir "..\..\..\temp\release\intl"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /GR /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "INTL_EXPORTS" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GX /GR /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "INTL_EXPORTS" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
+# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "INTL_EXPORTS" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "INTL_EXPORTS" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -93,99 +93,99 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_big5.cpp
+SOURCE=..\..\..\src\intl\cs_big5.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_gb2312.cpp
+SOURCE=..\..\..\src\intl\cs_gb2312.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_jis.cpp
+SOURCE=..\..\..\src\intl\cs_jis.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_ksc.cpp
+SOURCE=..\..\..\src\intl\cs_ksc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_narrow.cpp
+SOURCE=..\..\..\src\intl\cs_narrow.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_unicode_fss.cpp
+SOURCE=..\..\..\src\intl\cs_unicode_fss.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_unicode_ucs2.cpp
+SOURCE=..\..\..\src\intl\cs_unicode_ucs2.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_big5.cpp
+SOURCE=..\..\..\src\intl\cv_big5.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_gb2312.cpp
+SOURCE=..\..\..\src\intl\cv_gb2312.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_jis.cpp
+SOURCE=..\..\..\src\intl\cv_jis.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_ksc.cpp
+SOURCE=..\..\..\src\intl\cv_ksc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_narrow.cpp
+SOURCE=..\..\..\src\intl\cv_narrow.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cv_unicode_fss.cpp
+SOURCE=..\..\..\src\intl\cv_unicode_fss.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_ascii.cpp
+SOURCE=..\..\..\src\intl\lc_ascii.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_big5.cpp
+SOURCE=..\..\..\src\intl\lc_big5.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_dos.cpp
+SOURCE=..\..\..\src\intl\lc_dos.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_gb2312.cpp
+SOURCE=..\..\..\src\intl\lc_gb2312.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_iso8859_1.cpp
+SOURCE=..\..\..\src\intl\lc_iso8859_1.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_iso8859_2.cpp
+SOURCE=..\..\..\src\intl\lc_iso8859_2.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_jis.cpp
+SOURCE=..\..\..\src\intl\lc_jis.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_ksc.cpp
+SOURCE=..\..\..\src\intl\lc_ksc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_narrow.cpp
+SOURCE=..\..\..\src\intl\lc_narrow.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_unicode_ucs2.cpp
+SOURCE=..\..\..\src\intl\lc_unicode_ucs2.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\ld.cpp
+SOURCE=..\..\..\src\intl\ld.c
 # End Source File
 # End Group
 # Begin Group "Header files"

@@ -20,8 +20,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_SCROLL_CURSORS_H
-#define JRD_SCROLL_CURSORS_H
+#ifndef _JRD_SCROLL_CURSORS_H_
+#define _JRD_SCROLL_CURSORS_H_
 
 /* ALL THE FOLLOWING DEFINITIONS HAVE BEEN TAKEN OUT OF JRD/IBASE.H 
    WHEN SCROLLABLE_CURSORS ARE TOTALLY IMPLEMENTED, THE FOLLOWING 
@@ -41,21 +41,21 @@ ISC_STATUS ISC_EXPORT isc_dsql_fetch2(ISC_STATUS *,
 #endif
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS ISC_EXPORT isc_dsql_fetch2_m(ISC_STATUS*,
-										isc_stmt_handle*,
+ISC_STATUS ISC_EXPORT isc_dsql_fetch2_m(ISC_STATUS *,
+										isc_stmt_handle *,
 										unsigned short,
-										const char*,
+										char *,
 										unsigned short,
 										unsigned short,
-										char*,
+										char *,
 										unsigned short, signed long);
 #endif
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS ISC_EXPORT isc_embed_dsql_fetch2(ISC_STATUS*,
-											char*,
+ISC_STATUS ISC_EXPORT isc_embed_dsql_fetch2(ISC_STATUS *,
+											char *,
 											unsigned short,
-											XSQLDA*,
+											XSQLDA *,
 											unsigned short, signed long);
 #endif
 
@@ -84,4 +84,4 @@ ISC_STATUS  ISC_EXPORT isc_receive2();
 #define isc_fetch_absolute		   4
 #define isc_fetch_relative		   5
 
-#endif /* JRD_SCROLL_CURSORS_H */
+#endif /* _JRD_SCROLL_CURSORS_H_ */

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		flu.cpp
+ *	MODULE:		flu.c
  *	DESCRIPTION:	Function Lookup Code
  *
  * The contents of this file are subject to the Interbase Public
@@ -43,25 +43,35 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.46 2004-03-14 13:39:45 alexpeshkoff Exp $
+$Id: flu.cpp,v 1.34 2003-06-16 15:42:58 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"
-#include "../common/classes/init.h"
+
+#include <string>
+
+using namespace std;
 
 #include "../jrd/common.h"
 #include "../jrd/flu.h"
 #include "../jrd/gdsassert.h"
+
+#ifdef SHLIB_DEFS
+// TMN: Why the ... declare this one in the middle of a buch of includes?!
+extern "C" {
+#define FUNCTIONS_entrypoint	(*_libgds_FUNCTIONS_entrypoint)
+}
+#endif
 
 #include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/dls_proto.h"
 #include "../jrd/err_proto.h"
 
-#include "gen/iberror.h"
+#include "../include/gen/codes.h"
 
 #include <string.h>
 
@@ -130,6 +140,9 @@ static void terminate_at_space(char* psz)
 #define NOMSG
 #endif
 #define NOSERVICE
+#include <windows.h>
+#include <stdlib.h>
+#include <io.h>
 #endif
 
 
@@ -186,6 +199,11 @@ void FLU_unregister_module(MOD module)
  *
  **************************************/
 	MOD *mod;
+	#ifdef DARWIN
+	NSSymbol symbol;
+	void (*fini)(void);
+	#endif
+
 
 /* Module is in-use by other databases.*/
 
@@ -216,10 +234,9 @@ void FLU_unregister_module(MOD module)
 
 #ifdef DARWIN
 	/* Make sure the fini function gets called, if there is one */
-	NSSymbol symbol = NSLookupSymbolInModule(module->mod_handle, "__fini");
+	symbol = NSLookupSymbolInModule(module->mod_handle, "__fini");
 	if (symbol != NULL)
 	{
-		void (*fini)(void);
 		fini = (void (*)(void)) NSAddressOfSymbol(symbol);
 		fini();
 	}
@@ -232,9 +249,8 @@ void FLU_unregister_module(MOD module)
 
 #ifdef VMS
 #define LOOKUP
-FPTR_INT ISC_lookup_entrypoint(TEXT* module,
-							   TEXT* name,
-							   const TEXT* ib_path_env_var,
+FPTR_INT ISC_lookup_entrypoint(TEXT * module,
+							   TEXT * name, TEXT * ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -298,7 +314,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   const TEXT* ib_path_env_var,
+							   TEXT* ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -350,9 +366,8 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 
 #ifdef HP10
 #define LOOKUP
-FPTR_INT ISC_lookup_entrypoint(TEXT* module,
-							   TEXT* name,
-							   const TEXT* ib_path_env_var,
+FPTR_INT ISC_lookup_entrypoint(TEXT * module,
+							   TEXT * name, TEXT * ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -405,7 +420,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 			return NULL;
 		}
 
-		fb_assert(mod->mod_handle);	/* fb_assert that we found the module */
+		assert(mod->mod_handle);	/* assert that we found the module */
 		mod->mod_use_count = 0;
 		mod->mod_length = length;
 		strcpy(mod->mod_name, module);
@@ -431,7 +446,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   const TEXT* ib_path_env_var,
+							   TEXT* ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -484,7 +499,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 		}
 
         if (!mod) {  // Start looking for "libxxxx.so" module names
-			Firebird::PathName moduleName = "lib";
+            string moduleName = "lib";
             moduleName += (const char*) absolute_module;
 			mod = search_for_module((TEXT*) moduleName.c_str(), name, ShowAccessError);
         }
@@ -493,7 +508,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 			return NULL;
 		}
 
-		fb_assert(mod->mod_handle);	/* fb_assert that we found the module */
+		assert(mod->mod_handle);	/* assert that we found the module */
 		mod->mod_use_count = 0;
 		mod->mod_length = length;
 		strcpy(mod->mod_name, module);
@@ -517,7 +532,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #define LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   const TEXT* ib_path_env_var,
+							   TEXT* ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -570,7 +585,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 			return NULL;
 		}
 
-		fb_assert(mod->mod_handle);	/* fb_assert that we found the module */
+		assert(mod->mod_handle);	/* assert that we found the module */
 		mod->mod_use_count = 0;
 		mod->mod_length = length;
 		strcpy(mod->mod_name, module);
@@ -600,7 +615,7 @@ FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 #define REQUIRED_MODULE_ACCESS 4
 #define OPEN_HANDLE(name) AdjustAndLoad(name)
 
-HMOD AdjustAndLoad(Firebird::PathName name) {
+HMOD AdjustAndLoad(Firebird::string name) {
 /**************************************
  *
  *	A d j u s t A n d L o a d	( W I N _ N T )
@@ -612,10 +627,10 @@ HMOD AdjustAndLoad(Firebird::PathName name) {
  *		name, to provide stable behaviour (implicit .DLL suffix).
  *
  **************************************/
-	Firebird::PathName suffix = name.length() > 4 ?
-		name.substr(name.length() - 4, 4) : Firebird::PathName("");
-	if (suffix != ".dll") {
-		if (name[name.length() - 1] != '.') {
+	Firebird::string suffix = name.length() > 4 ?
+		name.substr(name.length() - 4, 4) : Firebird::string("");
+	if (stricmp(suffix.c_str(), ".dll") != 0) {
+		if (name.substr(name.length() - 1, 1) != ".") {
 			name += '.';
 		}
 	}
@@ -628,10 +643,10 @@ HMOD AdjustAndLoad(Firebird::PathName name) {
 NSModule ISC_link_with_module (TEXT*);
 
 FPTR_INT ISC_lookup_entrypoint (
-    TEXT* module,
-    TEXT* name,
-    const TEXT* ib_path_env_var,
-	bool ShowAccessError)
+    TEXT        *module,
+    TEXT        *name,
+    TEXT        *ib_path_env_var,
+	bool		ShowAccessError)
 {
 /**************************************
  *
@@ -692,7 +707,7 @@ if (!(mod = FLU_lookup_module (module)))
         return NULL;
     }
 
-    fb_assert (mod->mod_handle);   /* fb_assert that we found the module */
+    assert (mod->mod_handle);   /* assert that we found the module */
     mod->mod_use_count = 0;
     mod->mod_length = length;
     strcpy (mod->mod_name, module);
@@ -738,15 +753,16 @@ NSModule ISC_link_with_module (
  *
  **************************************/
  NSObjectFileImage image;
+ NSObjectFileImageReturnCode retVal;
+ NSModule mod_handle;
  NSSymbol initSym;
  void (*init)(void);
 
  /* Create an object file image from the given path */
- const NSObjectFileImageReturnCode retVal =
- 	NSCreateObjectFileImageFromFile(fileName, &image);
- if (retVal != NSObjectFileImageSuccess)
+ retVal = NSCreateObjectFileImageFromFile(fileName, &image);
+ if(retVal != NSObjectFileImageSuccess)
  {
-     switch (retVal)
+     switch(retVal)
      {
          case NSObjectFileImageFailure:
                 /*printf("object file setup failure");*/
@@ -770,9 +786,9 @@ NSModule ISC_link_with_module (
  }
 
  /* link the image */
- NSModule mod_handle = NSLinkModule(image, fileName, NSLINKMODULE_OPTION_PRIVATE);
+ mod_handle = NSLinkModule(image, fileName, NSLINKMODULE_OPTION_PRIVATE);
  NSDestroyObjectFileImage(image) ;
- if (mod_handle == NULL)
+ if(mod_handle == NULL)
  {
      /*printf("NSLinkModule() failed for dlopen()");*/
      return NULL;
@@ -794,7 +810,7 @@ NSModule ISC_link_with_module (
 #ifndef LOOKUP
 FPTR_INT ISC_lookup_entrypoint(TEXT* module,
 							   TEXT* name,
-							   const TEXT* ib_path_env_var,
+							   TEXT* ib_path_env_var,
 							   bool ShowAccessError)
 {
 /**************************************
@@ -832,23 +848,7 @@ static int condition_handler(int *sig, int *mech, int *enbl)
 }
 #endif
 
-namespace {
-	class UdfDirectoryList : public Firebird::DirectoryList
-	{
-	private:
-		const Firebird::PathName getConfigString(void) const {
-			return Firebird::PathName(Config::getUdfAccess());
-		}
-	public:
-		UdfDirectoryList(MemoryPool& p) : DirectoryList(p) 
-		{
-			initialize();
-		}
-	};
-	Firebird::InitInstance<UdfDirectoryList> iUdfDirectoryList;
-}
-
-static MOD search_for_module(TEXT* module_name, TEXT* name, bool ShowAccessError)
+static MOD search_for_module(TEXT* module, TEXT* name, bool ShowAccessError)
 {
 /**************************************
  *
@@ -864,47 +864,51 @@ static MOD search_for_module(TEXT* module_name, TEXT* name, bool ShowAccessError
 #ifndef REQUIRED_MODULE_ACCESS
 	return NULL;
 #else
-	
+	static class UdfDirectoryList : public DirectoryList {
+		const Firebird::PathName GetConfigString(void) const {
+			return Firebird::PathName(Config::getUdfAccess());
+		}
+	} iUdfDirectoryList;
+
 	Firebird::PathName path, relative;
-	Firebird::PathName absolute_module = module_name;
+	Firebird::PathName absolute_module = module;
 
 	// Search for module name in UdfAccess restricted paths list
 	PathUtils::splitLastComponent(path, relative, absolute_module);
 	if (path.length() == 0 && PathUtils::isRelative(absolute_module)) {
 		relative = absolute_module;
-		iUdfDirectoryList().expandFileName(absolute_module, relative, REQUIRED_MODULE_ACCESS);
+		iUdfDirectoryList.ExpandFileName(absolute_module, relative, REQUIRED_MODULE_ACCESS);
 	}
 
 	// The module name, including directory path,
 	// must satisfy UdfAccess entry in config file.
-	if (!iUdfDirectoryList().isPathInList(absolute_module)) {
+	if (!iUdfDirectoryList.IsPathInList(absolute_module)) {
 		if (ShowAccessError) {
-			ERR_post(isc_conf_access_denied,
-				isc_arg_string, "UDF library",
-				isc_arg_string, ERR_cstring(absolute_module.c_str()),
-				isc_arg_end);
+			ERR_post(gds_conf_access_denied,
+				gds_arg_string, "UDF library",
+				gds_arg_string, ERR_cstring(const_cast <TEXT *>(absolute_module.c_str())),
+				gds_arg_end);
 		}
 		return NULL;
 	}
 
-	MOD module = (MOD) gds__alloc(sizeof(mod) + absolute_module.length());
-	if (!module) {
+	MOD mod = (MOD) gds__alloc(sizeof(struct mod) + absolute_module.length());
+	if (!mod) {
 		return NULL;
 	}
 
-	if (!(module->mod_handle = OPEN_HANDLE(absolute_module))) {
+	if (!(mod->mod_handle = OPEN_HANDLE(absolute_module))) {
 /*
  * Temporarily commented - what to do with dlerror() on NT ?
 #ifdef DEV_BUILD
-		gds__log("%s: %s\n", module_name, dlerror());
+		gds__log("%s: %s\n", module, dlerror());
 #endif
  */
-		gds__free(module);
+		gds__free(mod);
 		return NULL;						
 	}
-	return module;
+	return mod;
 #endif  //REQUIRED_MODULE_ACCESS
 }
 
 } // extern "C"
-

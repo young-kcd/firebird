@@ -17,7 +17,7 @@ WHY_Sources = why.cpp
 
 
 JRD_ClientFiles = alt.cpp cvt.cpp dsc.cpp dls.cpp \
-		enc.cpp gds.cpp isc.cpp isc_file.cpp \
+		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
 		isc_sync.cpp perf.cpp sch.cpp sdl.cpp status.cpp \
 		thd.cpp utl.cpp \
         $(WHY_Sources)
@@ -29,20 +29,20 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
         grant.epp ini.epp met.epp pcmet.epp scl.epp \
                    \
-        all.cpp bookmark.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
+        ail.cpp all.cpp bookmark.cpp blb.cpp btr.cpp builtin.cpp \
 		cch.cpp cmp.cpp cvt2.cpp db_alias.cpp \
 		dfw.cpp divorce.cpp \
 		err.cpp iberr.cpp \
 		event.cpp evl.cpp exe.cpp ext.cpp \
-		execute_statement.cpp filters.cpp flu.cpp functions.cpp \
+		ExecuteStatement.cpp filters.cpp flu.cpp functions.cpp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp inuse.cpp \
-		jrd.cpp lck.cpp llio.cpp log.cpp  \
-		mov.cpp nav.cpp opt.cpp pag.cpp par.cpp \
-		plugin_manager.cpp pwd.cpp rlck.cpp \
+		jrd.cpp jrn.cpp lck.cpp llio.cpp log.cpp  \
+		misc.cpp mov.cpp nav.cpp old.cpp opt.cpp pag.cpp par.cpp \
+		plugin_manager.cpp pwd.cpp rec.cpp rlck.cpp \
 		rng.cpp rpb_chain.cpp rse.cpp sbm.cpp \
 		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
 		svc.cpp sym.cpp tpc.cpp tra.cpp val.cpp vio.cpp \
-		nodebug.cpp nbak.cpp $(Physical_IO_Module)
+		nodebug.cpp $(Physical_IO_Module)
 
 
 JRD_Files = $(JRD_ClientFiles) $(JRD_ServerFiles)
@@ -99,7 +99,7 @@ REMOTE_ClientFiles =  allr.cpp inet.cpp interface.cpp merge.cpp \
             parser.cpp protocol.cpp remote.cpp xdr.cpp
 
 ifeq ($(PLATFORM),win32)
-REMOTE_ClientFiles += os/win32/wnet.cpp xnet.cpp
+REMOTE_ClientFiles += wnet.cpp xnet.cpp
 endif
 
 INTERFACE_Files=	$(REMOTE_ClientFiles)
@@ -114,6 +114,19 @@ INTERFACE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTERFACE_
 
 # none currently.
 
+
+#________________________________________________________________________
+#
+# wal
+
+WAL_ClientFiles = 
+
+WAL_ServerFiles=	walf.cpp wal.cpp walc.cpp walr.cpp wstatus.cpp walw.cpp
+
+WAL_Files = $(WAL_ClientFiles) $(WAL_ServerFiles)
+
+WAL_Sources = $(addprefix wal/, $(WAL_Files))
+WAL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WAL_Sources))))
 
 #________________________________________________________________________
 #
@@ -157,26 +170,17 @@ BURP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BURP_Sources)))
 #
 # utilities
 
-SECURITY_ClientFiles_gsec = security.cpp
+SECURITY_ClientFiles = security.cpp
 
-SECURITY_ServerFiles_gsec:=
-SECURITY_ServerFiles_gstat:=
-SECURITY_ServerFiles_common:=
+SECURITY_ServerFiles:=
 
 ifeq ($(ArchType),super)
-    SECURITY_ServerFiles_gsec:= $(SECURITY_ServerFiles_gsec) gsec.cpp 
-    SECURITY_ServerFiles_gstat:= $(SECURITY_ServerFiles_gstat) dba.epp ppg.cpp 
-    SECURITY_ServerFiles_common:= $(SECURITY_ServerFiles_common) cmd_util.cpp
+    SECURITY_ServerFiles:= $(SECURITY_ServerFiles) gsec.cpp dba.epp ppg.cpp cmd_util.cpp
 endif
 
-SECURITY_Files_gsec = $(SECURITY_ClientFiles_gsec) $(SECURITY_ServerFiles_gsec)
-SECURITY_Files_gstat = $(SECURITY_ServerFiles_gstat)
-SECURITY_Files_common = $(SECURITY_ServerFiles_common)
-SECURITY_Sources_gsec = $(addprefix utilities/gsec/, $(SECURITY_Files_gsec))
-SECURITY_Sources_gstat = $(addprefix utilities/gstat/, $(SECURITY_Files_gstat))
-SECURITY_Sources_common = $(addprefix utilities/common/, $(SECURITY_Files_common))
+SECURITY_Files = $(SECURITY_ClientFiles) $(SECURITY_ServerFiles)
 
-SECURITY_Sources = $(SECURITY_Sources_gsec) $(SECURITY_Sources_gstat) $(SECURITY_Sources_common)
+SECURITY_Sources = $(addprefix utilities/, $(SECURITY_Files))
 SECURITY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_Sources))))
 
 #________________________________________________________________________
@@ -196,7 +200,7 @@ FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Source
 #
 # common/classes
 
-FBCLASSES_ClientFiles=alloc.cpp locks.cpp fb_string.cpp
+FBCLASSES_ClientFiles=alloc.cpp locks.cpp
 FBCLASSES_ServerFiles=
 
 FBCLASSES_Files= $(FBCLASSES_ClientFiles) $(FBCLASSES_ServerFiles)
@@ -220,7 +224,7 @@ FBCONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCONFIG_So
 #
 # common
 
-FBCOMMON_ClientFiles = fb_exception.cpp utils.cpp
+FBCOMMON_ClientFiles = fb_exception.cpp
 FBCOMMON_ServerFiles = 
 
 FBCOMMON_Files = $(FBCOMMON_ClientFiles) $(FBCOMMON_ServerFiles)
@@ -234,7 +238,7 @@ FBCOMMON_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_So
 # Platform Manager
 
 # just in case if make.platform defined some files
-OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp guid.cpp isc_ipc.cpp
+OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp
 
 OS_SPECIFIC_Sources = $(addprefix $(PLATFORM_PATH)/, $(OS_SPECIFIC_Files))
 OS_SPECIFIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(OS_SPECIFIC_Sources))))
@@ -251,6 +255,7 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(DSQL_Objects) \
                 $(LOCK_Objects) \
                 $(INTERFACE_Objects) \
+                $(WAL_Objects) \
                 $(GPRELIB_Objects) \
                 $(SECURITY_Objects) \
                 $(FBUTIL_Objects) \
@@ -281,6 +286,7 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(DSQL_Objects) \
                 $(LOCK_Objects) \
                 $(INTERFACE_Objects) \
+                $(WAL_Objects) \
                 $(GPRELIB_Objects) \
 				$(FBCONFIG_Objects)
 
@@ -293,5 +299,5 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
 #
 # blrtable builder
 
-BLRTABLE_Sources = misc/blrtable.cpp
+BLRTABLE_Sources = jrd/blrtable.cpp
 BLRTABLE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BLRTABLE_Sources))))

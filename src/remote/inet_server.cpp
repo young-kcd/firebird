@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Remote Server
- *	MODULE:		inet_server.cpp
+ *	MODULE:		inet_server.c
  *	DESCRIPTION:	Internet remote server.
  *
  * The contents of this file are subject to the Interbase Public
@@ -32,7 +32,7 @@
  *
  */
 /*
-$Id: inet_server.cpp,v 1.35 2004-03-25 23:12:50 skidder Exp $
+$Id: inet_server.cpp,v 1.26 2003-06-06 09:16:54 alexpeshkoff Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -79,6 +79,10 @@ $Id: inet_server.cpp,v 1.35 2004-03-25 23:12:50 skidder Exp $
 #endif
 
 
+#ifdef WINDOWS_ROUTER
+#define MAX_ARGS	6
+#endif /* WINDOWS_ROUTER */
+
 #ifdef VMS
 #include <descrip.h>
 #endif
@@ -88,8 +92,7 @@ $Id: inet_server.cpp,v 1.35 2004-03-25 23:12:50 skidder Exp $
 #include <unistd.h>
 #endif
 #include <errno.h>
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/jrd_pwd.h"
 #endif
 
@@ -114,8 +117,23 @@ $Id: inet_server.cpp,v 1.35 2004-03-25 23:12:50 skidder Exp $
 #define sigvector	sigvec
 #endif
 
+#ifndef NBBY
+#define	NBBY		8
+#endif
+
 #ifndef SV_INTERRUPT
 #define SV_INTERRUPT	0
+#endif
+
+#ifndef NFDBITS
+#define NFDBITS		(sizeof(SLONG) * NBBY)
+
+#if !(defined DARWIN)
+#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
+#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
+#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
+#define FD_ZERO(p)	memset((SCHAR *)(p), 0, sizeof(*(p)))
+#endif
 #endif
 
 #ifdef SUPERSERVER
@@ -129,23 +147,32 @@ $Id: inet_server.cpp,v 1.35 2004-03-25 23:12:50 skidder Exp $
 #endif
 
 
-#ifdef VMS
+extern "C" {
+
+
 static int assign(SCHAR *);
-#endif
-//static void name_process(UCHAR *);
-static void signal_handler(int);
+static void name_process(UCHAR *);
+static void signal_handler(void);
 #ifdef SUPERSERVER
-static void signal_sigpipe_handler(int);
+static void signal_sigpipe_handler(void);
 #endif
-static void set_signal(int, void (*)(int));
+static void set_signal(int, FPTR_VOID);
+
+#ifdef WINDOWS_ROUTER
+static int atov(UCHAR *, UCHAR **, SSHORT);
+#endif /* WINDOWS_ROUTER */
 
 static TEXT protocol[128];
 static int INET_SERVER_start = 0;
 static USHORT INET_SERVER_flag = 0;
 
-extern "C" {
-
-int CLIB_ROUTINE server_main( int argc, char** argv)
+#ifdef WINDOWS_ROUTER
+int PASCAL WinMain(
+				   HINSTANCE hInstance,
+				   HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
+#else /* WINDOWS_ROUTER */
+int CLIB_ROUTINE main( int argc, char **argv)
+#endif							/* WINDOWS_ROUTER */
 {
 /**************************************
  *
@@ -158,40 +185,45 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
  *
  **************************************/
 	int n, clients;
-	rem_port* port;
-	int child, channel;
-	TEXT *p, c;
+	PORT port;
+	int child, debug, channel, standalone, multi_threaded, multi_client;
+	TEXT *p, **end, c;
+	int done = FALSE;
 #if !(defined VMS)
-	int mask;
+	fd_set mask;
 #endif
 
-// 01 Sept 2003, Nickolay Samofatov
-// In GCC version 3.1-3.3 we need to install special error handler
-// in order to get meaningful terminate() error message on stderr. 
-// In GCC 3.4 or later this is the default.
-#if __GNUC__ == 3 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 4
-    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
-#endif
+#ifdef WINDOWS_ROUTER
+/*
+ *	Construct an argc, argv so we can use the old parse code.
+ */
+	int argc;
+	char **argv, *argv2[MAX_ARGS];
+
+	argv = argv2;
+	argv[0] = "IB_server";
+	argc = 1 + atov(lpszCmdLine, argv + 1, MAX_ARGS - 1);
+
+#endif /* WINDOWS_ROUTER */
+
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
 #endif
 
-	const TEXT* const* const end = argc + argv;
+	end = argc + argv;
 	argv++;
-	bool debug = false, standalone = false;
-	INET_SERVER_flag = 0;
+	debug = standalone = INET_SERVER_flag = FALSE;
 	channel = 0;
 	protocol[0] = 0;
-	bool multi_client = false, multi_threaded = false;
+	multi_client = multi_threaded = FALSE;
 
 #ifdef SUPERSERVER
 	INET_SERVER_flag |= SRVR_multi_client;
-	multi_client = multi_threaded = standalone = true;
+	multi_client = multi_threaded = standalone = TRUE;
 #endif
 
 	clients = 0;
-	bool done = false;
 
 	while (argv < end) {
 		p = *argv++;
@@ -200,7 +232,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				switch (UPPER(c)) {
 				case 'D':
 					INET_SERVER_flag |= SRVR_debug;
-					debug = standalone = true;
+					debug = standalone = TRUE;
 #ifdef NEVERDEF
 #ifdef SUPERSERVER
 					free_map_debug = 1;
@@ -214,24 +246,24 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 					if (argv < end)
 						if (clients = atoi(*argv))
 							argv++;
-					multi_client = standalone = true;
+					multi_client = standalone = TRUE;
 					break;
 
 				case 'S':
-					standalone = true;
+					standalone = TRUE;
 					break;
 
 
 				case 'I':
-					standalone = false;
+					standalone = FALSE;
 					break;
 
 				case 'T':
-					multi_threaded = true;
+					multi_threaded = TRUE;
 					break;
 
 				case 'U':
-					multi_threaded = false;
+					multi_threaded = FALSE;
 					break;
 #endif /* SUPERSERVER */
 
@@ -241,7 +273,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 					else
 						argv++;	/* donot skip next argument if this one 
 								   is invalid */
-					done = true;
+					done = TRUE;
 					break;
 
 				case 'P':
@@ -306,7 +338,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				}
 			gds__log("INET_SERVER/main: gds_inet_server restarted");
 		}
-		set_signal(SIGUSR1, SIG_DFL);
+		set_signal(SIGUSR1, (void(*)()) SIG_DFL);
 	}
 #endif
 
@@ -324,8 +356,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 			if (strcmp(user_name, "root") &&
 				strcmp(user_name, FIREBIRD_USER_NAME) &&
 				strcmp(user_name, INTERBASE_USER_NAME) &&
-				strcmp(user_name, INTERBASE_USER_SHORT))
-			{
+				strcmp(user_name, INTERBASE_USER_SHORT)) {
 				/* invalid user -- bail out */
 				ib_fprintf(ib_stderr,
 						   "%s: Invalid user (must be %s, %s, %s or root).\n",
@@ -342,11 +373,11 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		}
 
 		if (!debug) {
-			mask = 0; // FD_ZERO(&mask);
-			mask |= 1 << 2; // FD_SET(2, &mask);
-			divorce_terminal(mask);
+			FD_ZERO(&mask);
+			FD_SET(2, &mask);
+			divorce_terminal((int) &mask);
 		}
-		{ // scope block
+		{
 			ISC_STATUS_ARRAY status_vector;
 			THREAD_ENTER;
 			port = INET_connect(protocol, 0, status_vector, INET_SERVER_flag,
@@ -356,7 +387,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				gds__print_status(status_vector);
 				exit(STARTUP_ERROR);
 			}
-		} // end scope block
+		}
 	}
 	else {
 #ifdef VMS
@@ -383,7 +414,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		gds__log(err_buf);
 	}
 
-/* Server tries to attach to security.fdb to make sure everything is OK
+/* Server tries to attash to security.fdb to make sure everything is OK
    This code fixes bug# 8429 + all other bug of that kind - from 
    now on the server exits if it cannot attach to the database
    (wrong or no license, not enough memory, etc.
@@ -413,7 +444,12 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	if (multi_threaded)
 		SRVR_multi_thread(port, INET_SERVER_flag);
 	else
+#ifdef WINDOWS_ROUTER
+		SRVR_WinMain(port, INET_SERVER_flag, hInstance, hPrevInstance,
+					 nCmdShow);
+#else
 		SRVR_main(port, INET_SERVER_flag);
+#endif
 
 #ifdef DEBUG_GDS_ALLOC
 /* In Debug mode - this will report all server-side memory leaks
@@ -433,7 +469,59 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	exit(FINI_OK);
 }
 
+
+#ifdef WINDOWS_ROUTER
+static int atov( UCHAR * str, UCHAR ** vec, SSHORT len)
+{
+/**************************************
+ *
+ *	a t o v
+ *
+ **************************************
+ *
+ * Functional description
+ *	Take a string and convert it to a vector.
+ *	White space delineates, but things in quotes are
+ *	kept together.
+ *
+ **************************************/
+	int i = 0, qt = 0, qq;
+	char *p1, *p2;
+
+	vec[0] = str;
+	for (p1 = p2 = str; i < len; i++) {
+		while (*p1 == ' ' || *p1 == '\t')
+			p1++;
+		while (qt || (*p1 != ' ' && *p1 != '\t')) {
+			qq = qt;
+			if (*p1 == '\'')
+				if (!qt)
+					qt = -1;
+				else if (qt == -1)
+					qt = 0;
+			if (*p1 == '"')
+				if (!qt)
+					qt = 1;
+				else if (qt == 1)
+					qt = 0;
+			if (*p1 == '\0' || *p1 == '\n') {
+				*p2++ = '\0';
+				vec[++i] = 0;
+				return i;
+			}
+			if (qq == qt)
+				*p2++ = *p1;
+			p1++;
+		}
+		p1++;
+		*p2++ = '\0';
+		vec[i + 1] = p2;
+	}
+	*p2 = '\0';
+	vec[i] = 0;
+	return i - 1;
 }
+#endif /* WINDOWS_ROUTER */
 
 
 #ifdef VMS
@@ -469,7 +557,7 @@ static int assign( SCHAR * string)
 
 
 #if !(defined VMS)
-static void set_signal( int signal_number, void (*handler) (int))
+static void set_signal( int signal_number, void (*handler) (void))
 {
 /**************************************
  *
@@ -481,17 +569,33 @@ static void set_signal( int signal_number, void (*handler) (int))
  *	Establish signal handler.
  *
  **************************************/
+#ifdef SYSV_SIGNALS
+	sigset(signal_number, handler);
+#else
+
+#ifndef HAVE_SIGACTION
+	struct sigvec vec;
+	struct sigvec old_vec;
+
+	vec.sv_handler = handler;
+	vec.sv_mask = 0;
+	vec.sv_flags = SV_INTERRUPT;
+	sigvector(signal_number, &vec, &old_vec);
+#else
 	struct sigaction vec, old_vec;
 
-	vec.sa_handler = handler;
-	sigemptyset(&vec.sa_mask);
+	vec.sa_handler = (SIG_FPTR) handler;
+	memset(&vec.sa_mask, 0, sizeof(vec.sa_mask));
 	vec.sa_flags = 0;
 	sigaction(signal_number, &vec, &old_vec);
+#endif
+
+#endif
 }
 #endif
 
 
-static void signal_handler(int)
+static void signal_handler(void)
 {
 /**************************************
  *
@@ -508,7 +612,7 @@ static void signal_handler(int)
 }
 
 #if (defined SUPERSERVER && defined UNIX )
-static void signal_sigpipe_handler(int)
+static void signal_sigpipe_handler(void)
 {
 /****************************************************
  *
@@ -528,3 +632,4 @@ static void signal_sigpipe_handler(int)
 #endif
 
 
+} // extern "C"

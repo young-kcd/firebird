@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Lock Manager
- *	MODULE:		driver.cpp
+ *	MODULE:		driver.c
  *	DESCRIPTION:	Stand alone test driver
  *
  * The contents of this file are subject to the Interbase Public
@@ -25,8 +25,7 @@
 #include "../jrd/ib_stdio.h"
 
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/isc.h"
 #include "../lock/lock.h"
 
@@ -34,7 +33,7 @@
 #include <process.h>
 #endif
 
-static int ast(void*);
+static void ast(int);
 static int lookup_agg(UCHAR *);
 static int lookup_lock(UCHAR *);
 static void print_help(void);
@@ -85,10 +84,10 @@ void main( int argc, char **argv)
 	ib_printf("pid = %d\n\n", getpid());
 	ib_printf("\n");
 
-	if (LOCK_init(status_vector, true,
+	if (LOCK_init(status_vector, TRUE,
 				  (SLONG) getpid(), 1, &lck_owner_handle)) {
 		ib_printf("LOCK_init failed\n");
-		isc_print_status(status_vector);
+		gds__print_status(status_vector);
 		exit(0);
 	}
 
@@ -107,7 +106,7 @@ void main( int argc, char **argv)
 					  NULL, NULL,	/* AST and argument */
 					  0, wait, status_vector, lck_owner_handle);
 
-	while (true) {
+	while (TRUE) {
 		ib_printf("Request: ");
 		status = ib_scanf("%s%s", op, arg);
 		if (status == EOF)
@@ -176,25 +175,17 @@ void main( int argc, char **argv)
 				ib_printf("bad lock\n");
 				continue;
 			}
-			if (!LOCK_convert(lock, type, wait, NULL, 0, status_vector))
-			{
+			if (!LOCK_convert(lock, type, wait, NULL, 0, status_vector)) {
 				ib_printf("*** CONVERSION FAILED: status_vector[1] = %d",
 						  status_vector[1]);
-				switch (status_vector[1])
-				{
-				case isc_lock_timeout:
-					ib_printf(" (isc_lock_timeout)\n");
-					break;
-				case isc_lock_conflict:
-					ib_printf(" (isc_lock_conflict)\n");
-					break;
-				case isc_deadlock:
-					ib_printf(" (isc_deadlock)\n");
-					break;
-				default:
+				if (status_vector[1] == gds__lock_timeout)
+					ib_printf(" (gds__lock_timeout)\n");
+				else if (status_vector[1] == gds__lock_conflict)
+					ib_printf(" (gds__lock_conflict)\n");
+				else if (status_vector[1] == gds__deadlock)
+					ib_printf(" (gds__deadlock)\n");
+				else
 					ib_printf("\n");
-					break;
-				}
 			}
 			continue;
 		}
@@ -215,12 +206,12 @@ void main( int argc, char **argv)
 			else {
 				ib_printf("*** LOCK REJECTED: status_vector[1] = %d",
 						  status_vector[1]);
-				if (status_vector[1] == isc_lock_timeout)
-					ib_printf(" (isc_lock_timeout)\n");
-				else if (status_vector[1] == isc_lock_conflict)
-					ib_printf(" (isc_lock_conflict)\n");
-				else if (status_vector[1] == isc_deadlock)
-					ib_printf(" (isc_deadlock)\n");
+				if (status_vector[1] == gds__lock_timeout)
+					ib_printf(" (gds__lock_timeout)\n");
+				else if (status_vector[1] == gds__lock_conflict)
+					ib_printf(" (gds__lock_conflict)\n");
+				else if (status_vector[1] == gds__deadlock)
+					ib_printf(" (gds__deadlock)\n");
 				else
 					ib_printf("\n");
 			}
@@ -234,7 +225,7 @@ void main( int argc, char **argv)
 }
 
 
-static int ast(void* slot_void)
+static void ast( int slot)
 {
 /**************************************
  *
@@ -248,8 +239,6 @@ static int ast(void* slot_void)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	int sw_release_use = sw_release;
-	
-	const int slot = (int)(IPTR) slot_void; // static cast
 
 	ib_printf("*** blocking AST for lock# %d ", slot);
 
@@ -261,19 +250,18 @@ static int ast(void* slot_void)
 
 	if (sw_release_use == 1) {
 		ib_printf("-- ignored ***\n");
-		return 0;
+		return;
 	}
 
 	if (sw_release_use > 2 && levels[slot] == LCK_EX) {
 		LOCK_convert(locks[slot], LCK_SR, wait, NULL, 0, status_vector);
 		levels[slot] = LCK_SR;
 		ib_printf("-- down graded to SR ***\n");
-		return 0;
+		return;
 	}
 
 	LOCK_deq(locks[slot]);
 	ib_printf("-- released ***\n");
-	return 0;
 }
 
 
@@ -288,8 +276,9 @@ static lookup_agg( UCHAR * string)
  * Functional description
  *
  **************************************/
+	struct tagg *ptr;
 
-	for (tagg* ptr = aggs; ptr->tagg_string; ptr++)
+	for (ptr = aggs; ptr->tagg_string; ptr++)
 		if (strcmp(ptr->tagg_string, string) == 0)
 			return ptr->tagg_code;
 
@@ -308,8 +297,9 @@ static lookup_lock( UCHAR * string)
  * Functional description
  *
  **************************************/
+	struct tbl *ptr;
 
-	for (tbl* ptr = types; ptr->tbl_string; ptr++)
+	for (ptr = types; ptr->tbl_string; ptr++)
 		if (strcmp(ptr->tbl_string, string) == 0)
 			return ptr->tbl_code;
 

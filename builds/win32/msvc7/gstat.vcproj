@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding = "Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="7.00"
 	Name="gstat"
 	SccProjectName=""
 	SccLocalPath="">
@@ -20,14 +20,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="_DEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT,DEV_BUILD"
-				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gstat/gstat.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gstat/"
 				ObjectFile="..\..\..\temp\debug\gstat/"
@@ -64,13 +61,7 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
 				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -82,7 +73,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -92,16 +83,13 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT"
-				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gstat/gstat.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gstat/"
 				ObjectFile="..\..\..\temp\release\gstat/"
 				ProgramDataBaseFileName="..\..\..\temp\release\gstat/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -112,7 +100,7 @@
 				OutputFile="release/firebird/bin/gstat.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\release\gstat/gstat.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -130,23 +118,15 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
 				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
-	<References>
-	</References>
 	<Files>
 		<Filter
 			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
+				RelativePath="..\..\..\gen\utilities\dba.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\enc.cpp">
@@ -155,20 +135,14 @@
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
+				RelativePath="..\..\..\src\utilities\ppg.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\jrd\btn.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\enc_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\guid.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\ppg_proto.h">
@@ -191,16 +165,6 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="JRD files"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\jrd\btn.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
 			</File>
 		</Filter>
 	</Files>

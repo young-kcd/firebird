@@ -22,7 +22,7 @@
 #ifndef AUTOCONFIG_H
 #define AUTOCONFIG_H
 
-//#pragma warning(disable:4099)	// class/struct mixups
+#pragma warning(disable:4099)	// class/struct mixups
 #pragma warning(disable:4251)	// needs to have dll-interface
 #pragma warning(disable:4291)	// no matching op. delete (there are)
 #pragma warning(disable:4355)	// 'this' used in base member initializer list
@@ -34,7 +34,7 @@
 #pragma warning(disable:4018)  // signed/unsigned mismatch
 #pragma warning(disable:4100)  // unreferenced formal parameter
 #pragma warning(disable:4127)  // conditional expression is constant
-//#pragma warning(disable:4131)  // uses old-style declarator
+#pragma warning(disable:4131)  // uses old-style declarator
 #pragma warning(disable:4146)  // unary minus operator applied to unsigned type, result still unsigned
 #pragma warning(disable:4189)  // local variable is initialized but not referenced
 #pragma warning(disable:4211)  // nonstandard extension used : redefined extern to static
@@ -97,8 +97,6 @@
 #define HAVE_STDLIB_H
 #define HAVE_STRING_H
 #define HAVE_SIGNAL_H
-#undef HAVE_SYS_SIGNAL_H
-#undef HAVE_SYS_SIGINFO_H
 #undef HAVE_EDITLINE_H
 #undef HAVE_TERMIO_H
 #undef HAVE_TERMIOS_H
@@ -139,8 +137,6 @@
 #undef HAVE_SIGACTION
 #undef HAVE_SETITIMER
 #define HAVE_SNPRINTF
-#define vsnprintf _vsnprintf
-#define HAVE_VSNPRINTF
 #define HAVE_SWAB
 #define HAVE__SWAB
 #undef HAVE_MMAP
@@ -164,7 +160,6 @@
 #undef HAVE_TCGETATTR
 #define HAVE_STRDUP
 #undef HAVE_MKSTEMP
-#undef HAVE_LLRINT
 
 
 /* Types */
@@ -211,9 +206,6 @@
 /* Support databases on Raw Devices (UNIX only) */
 #undef SUPPORT_RAW_DEVICES
 
-/* Support for ISO syntax for thread-local data */
-#undef HAVE___THREAD
-
 /* Inet service name and port */
 #define FB_SERVICE_NAME "gds_db"
 #define FB_SERVICE_PORT 3050
@@ -249,9 +241,5 @@
 #undef SINIXZ
 
 #define FB_PREFIX "c:\\Program Files\\Firebird\\"
-
-#ifndef HAVE_SOCKLEN_T
-typedef int socklen_t;
-#endif
 
 #endif

@@ -1,31 +1,33 @@
 /*
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *	PROGRAM:	Client/Server Common Code
+ *	MODULE:		config.h
+ *	DESCRIPTION:	Configuration manager (public interface)
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  The Original Code was created by Dmitry Yemanov
- *  for the Firebird Open Source RDBMS project.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Copyright (c) 2002 Dmitry Yemanov <dimitr@users.sf.net>
- *  and all contributors signed below.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
+ * Created by: Dmitry Yemanov <yemanov@yandex.ru>
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
-#ifndef COMMON_CONFIG_H
-#define COMMON_CONFIG_H
+#ifndef CONFIG_H
+#define CONFIG_H
 
 #include "fb_string.h"
 #include "fb_vector.h"
-#include "../jrd/os/path_utils.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -102,9 +104,7 @@ class Config
 		KEY_EXTERNAL_FILE_ACCESS,					// 37
 		KEY_DATABASE_ACCESS,						// 38
 		KEY_UDF_ACCESS,								// 39
-		KEY_TEMP_DIRECTORIES,						// 40
- 		KEY_BUGCHECK_ABORT,							// 41
-		KEY_TRACE_DSQL								// 42
+		KEY_TEMP_DIRECTORIES						// 40
 	};
 
 public:
@@ -247,7 +247,7 @@ public:
 	/*
 		Service port for INET
 	*/
-	static unsigned short getRemoteServicePort();
+	static int getRemoteServicePort();
 
 	/*
 		Pipe name for WNET
@@ -313,26 +313,6 @@ public:
 		Temporary directories list
 	*/
 	static const char *getTempDirectories();
-
-	/*
-		DSQL trace bitmask
-	*/
-	static int getTraceDSQL();
-
- 	/*
- 		Abort on BUGCHECK and structured exceptions
- 	*/
- 	static bool getBugcheckAbort();
 };
 
-namespace Firebird {
-
-// Add appropriate file prefix.
-inline void Prefix(PathName& result, const PathName& file)
-{
-	PathUtils::concatPath(result, Config::getRootDirectory(), file);
-}
-
-} //namespace Firebird
-
-#endif // COMMON_CONFIG_H
+#endif // CONFIG_H

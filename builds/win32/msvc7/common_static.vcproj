@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding = "Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="7.00"
 	Name="common_static"
 	SccProjectName=""
 	SccLocalPath="">
@@ -31,7 +31,6 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER,BOOT_BUILD"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\common_static/common_static.pch"
 				AssemblerListingLocation=".\..\..\..\temp\release\common_static/"
 				ObjectFile=".\..\..\..\temp\release\common_static/"
@@ -59,12 +58,6 @@
 				Culture="1053"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
@@ -81,7 +74,6 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD,SUPERSERVER,BOOT_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\debug\common_static/common_static.pch"
 				AssemblerListingLocation=".\..\..\..\temp\debug\common_static/"
@@ -111,16 +103,8 @@
 				Culture="1053"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
-	<References>
-	</References>
 	<Files>
 		<Filter
 			Name="MEMORY files"
@@ -159,12 +143,6 @@
 			Name="OTHER files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\db_alias.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\fb_string.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp">
 			</File>
 			<File
@@ -194,9 +172,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\config_root.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\db_alias.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\config\dir_list.h">

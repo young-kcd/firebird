@@ -24,8 +24,8 @@
  *   for automatically created triggers that aren't system triggers.
  */
 
-#ifndef JRD_CONSTANTS_H
-#define JRD_CONSTANTS_H
+#ifndef _JRD_CONSTANTS_H_
+#define _JRD_CONSTANTS_H_
 
 /* BLOb Subtype definitions */
 
@@ -36,7 +36,7 @@
 
 #define BLOB_untyped	0
 
-/* InterBase defined BLOB subtypes */
+/* InterBase defined BLOb subtypes */
 
 #define BLOB_text	1
 #define BLOB_blr	2
@@ -46,7 +46,6 @@
 #define BLOB_format	6
 #define BLOB_tra	7
 #define BLOB_extfile	8
-#define BLOB_max_predefined_subtype 9
 
 
 
@@ -55,37 +54,22 @@
 
 #define	MAX_COLUMN_SIZE	32767	/* Bytes */
 
+
+
+
 /* Misc constant values */
 
 #define USERNAME_LENGTH		31	/* Bytes */
-
-const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
-const size_t MAX_SQL_IDENTIFIER_LEN = 31;
-typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
-
-
-const char* const PRIMARY_KEY		= "PRIMARY KEY";
-const char* const FOREIGN_KEY		= "FOREIGN KEY";
-const char* const UNIQUE_CNSTRT		= "UNIQUE";
-const char* const CHECK_CNSTRT		= "CHECK";
-const char* const NOT_NULL_CNSTRT	= "NOT NULL";
-
 
 /* literal strings in rdb$ref_constraints to be used to identify
    the cascade actions for referential constraints. Used
    by isql/show and isql/extract for now. */
 
-const char* const RI_ACTION_CASCADE = "CASCADE";
-const char* const RI_ACTION_NULL    = "SET NULL";
-const char* const RI_ACTION_DEFAULT = "SET DEFAULT";
-const char* const RI_ACTION_NONE    = "NO ACTION";
-const char* const RI_RESTRICT       = "RESTRICT";
-
-const char* const IMPLICIT_DOMAIN_PREFIX = "RDB$";
-const int IMPLICIT_DOMAIN_PREFIX_LEN = 4;
-
-const char* const SQL_SECCLASS_PREFIX = "SQL$";
-const int SQL_SECCLASS_PREFIX_LEN = 4;
+#define RI_ACTION_CASCADE "CASCADE"
+#define RI_ACTION_NULL    "SET NULL"
+#define RI_ACTION_DEFAULT "SET DEFAULT"
+#define RI_ACTION_NONE    "NO ACTION"
+#define RI_RESTRICT       "RESTRICT"
 
 
 /******************************************/
@@ -107,19 +91,4 @@ enum frb_sysflag {
 
 #define MAX_UDF_ARGUMENTS	10
 
-// Maximum length of single line returned from pretty printer
-#define PRETTY_BUFFER_SIZE 1024
-
-#define MAX_INDEX_SEGMENTS 16
-
-// Maximum index key length
-// AB: If the maximum key-size will change, don't forget dyn.h and dba.epp 
-// which cannot use these defines.
-#define MAX_KEY				4096	// Maximum page size possible divide by 4 (16384 / 4)
-#define MAX_KEY_PRE_ODS11	255		// Max key-size before ODS11
-
-#define SQL_MATCH_1_CHAR	'_'	/* Not translatable */
-#define SQL_MATCH_ANY_CHARS	'%'	/* Not translatable */
-
-#endif // JRD_CONSTANTS_H
-
+#endif /* _JRD_CONSTANTS_H_ */

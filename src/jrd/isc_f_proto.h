@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		isc_f_proto.h
- *	DESCRIPTION:	Prototype header file for isc_file.cpp
+ *	DESCRIPTION:	Prototype header file for isc_file.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,32 +24,28 @@
  *
  */
 
-#ifndef JRD_ISC_FILE_PROTO_H
-#define JRD_ISC_FILE_PROTO_H
+#ifndef _JRD_ISC_FILE_PROTO_H_
+#define _JRD_ISC_FILE_PROTO_H_
 
-#include "fb_string.h"
-
-#ifndef NO_NFS
-bool		ISC_analyze_nfs(TEXT*, TEXT*);
+#ifdef __cplusplus
+extern "C" {
 #endif
-int			ISC_analyze_pclan(TEXT*, TEXT*);
-int			ISC_analyze_tcp(TEXT*, TEXT*);
-int			ISC_analyze_xnet(TEXT*, TEXT*);
-bool		ISC_check_if_remote(const Firebird::PathName&, bool);
-int			ISC_expand_filename(const Firebird::PathName&, Firebird::PathName&);
-// Temporary hack to make old files happy
-inline int	ISC_expand_filename(const TEXT* unexp, USHORT len, TEXT* exp) {
-	Firebird::PathName pn(unexp, len ? len : strlen(unexp));
-	const int rc = ISC_expand_filename(pn, pn);
-	strcpy(exp, pn.c_str());
-	return rc;
-}
-int			ISC_expand_logical(const TEXT*, USHORT, TEXT*);
-int			ISC_expand_share(const TEXT*, TEXT*);
-int			ISC_file_lock(SSHORT);
-int			ISC_file_unlock(SSHORT);
-int			ISC_strip_filename(TEXT*);
-bool		ISC_verify_database_access(const Firebird::PathName&);
 
-#endif // JRD_ISC_FILE_PROTO_H
+extern int ISC_analyze_nfs(TEXT *, TEXT *);
+extern int ISC_analyze_pclan(TEXT *, TEXT *);
+extern int DLL_EXPORT ISC_analyze_tcp(TEXT *, TEXT *);
+extern int ISC_analyze_xnet(TEXT *, TEXT *);
+extern BOOLEAN DLL_EXPORT ISC_check_if_remote(TEXT *, BOOLEAN);
+extern int ISC_expand_filename(TEXT *, USHORT, TEXT *);
+extern int ISC_expand_logical(TEXT *, USHORT, TEXT *);
+extern int ISC_expand_share(TEXT *, TEXT *);
+extern int ISC_file_lock(SSHORT);
+extern int ISC_file_unlock(SSHORT);
+extern int ISC_strip_filename(TEXT *);
+extern bool ISC_verify_database_access(TEXT *);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _JRD_ISC_FILE_PROTO_H_ */

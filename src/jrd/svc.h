@@ -35,19 +35,24 @@
 #include "../jrd/svc_proto.h"
 #include "../jrd/isc_s_proto.h"
 
+#ifndef JRD_IBASE_H
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"		/* needed for the C++ version of SVC_STATUS_ARG */
+#endif
+
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
-void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
 
-namespace Jrd {
+extern "C" {
+
 
 #define SERVICE_VERSION		2
 
 #define SVC_STDOUT_BUFFER_SIZE	1024
 
 /* Flag of capabilities supported by the server */
-//#define WAL_SUPPORT					  0x1L	/* Write Ahead Log */
+#define WAL_SUPPORT					  0x1L	/* Write Ahead Log */
 #define MULTI_CLIENT_SUPPORT		  0x2L	/* SuperServer model (vs. multi-inet) */
 #define REMOTE_HOP_SUPPORT			  0x4L	/* Server can connect to other server */
 #define NO_SVR_STATS_SUPPORT		  0x8L	/* Does not support statistics */
@@ -92,15 +97,39 @@ namespace Jrd {
 #define SVC_PUTSPECIFIC_DATA	/* nothing */
 #endif
 
+/* Macro used to signify that the service started has done basic
+ * initialization and can be considered a successful startup
+ */
+#ifndef SUPERSERVER
 
-struct serv_entry; // forward decl.
+#define SVC_STARTED(service)
+
+#else /* SUPERSERVER */
+
+#define SVC_STARTED(service)	{{EVENT evnt_ptr = service->svc_start_event; \
+    				  if (!(service->svc_flags & SVC_evnt_fired)) { \
+				      service->svc_flags |= SVC_evnt_fired; \
+			   	      ISC_event_post (evnt_ptr);}}}
+
+
+#endif /* SUPERSERVER */
+
+void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value);
+
+#define CK_SPACE_FOR_NUMERIC 	{{if ((info + 1 + sizeof (ULONG)) > end) \
+    				      { \
+				      if (info < end) \
+					  *info++ = isc_info_truncated; \
+				      THREAD_ENTER; \
+				      return 0; \
+				      }}}
 
 /* Service manager block */
-class Service : public pool_alloc<type_svc>
+class svc : public pool_alloc<type_svc>
 {
 public:
 	SLONG	svc_handle;			/* "handle" of process/thread running service */
-	ISC_STATUS*	svc_status;		/* status vector for svc_handle */
+	ISC_STATUS*	svc_status;			/* status vector for svc_handle */
 	void*	svc_input;			/* input to service */
 	void*	svc_output;			/* output from service */
 	ULONG	svc_stdout_head;
@@ -108,22 +137,32 @@ public:
 	UCHAR*	svc_stdout;
 	TEXT**	svc_argv;
 	ULONG	svc_argc;
-	event_t	svc_start_event[1];	/* fired once service has started successfully */
-	serv_entry*	svc_service;
+	EVENT_T	svc_start_event[1];	/* fired once service has started successfully */
+	const struct serv*	svc_service;
 	UCHAR*	svc_resp_buf;
-	const UCHAR*	svc_resp_ptr;
+	UCHAR*	svc_resp_ptr;
 	USHORT	svc_resp_buf_len;
 	USHORT	svc_resp_len;
 	USHORT	svc_flags;
 	USHORT	svc_user_flag;
 	USHORT	svc_spb_version;
-	bool	svc_do_shutdown;
+	BOOLEAN	svc_do_shutdown;
 	TEXT	svc_username[33];
 	TEXT	svc_enc_password[MAX_PASSWORD_ENC_LENGTH];
 	TEXT	svc_reserved[1];
 	TEXT*	svc_switches;
-	void	svc_started();
 };
+typedef svc *SVC;
+
+typedef struct serv
+{
+	USHORT		serv_action;
+	const TEXT*	serv_name;
+	const TEXT*	serv_std_switches;
+	const TEXT*	serv_executable;
+	const void (*serv_thd) ();
+	BOOLEAN*	in_use;
+} *SERV;
 
 /* Bitmask values for the svc_flags variable */
 
@@ -136,43 +175,6 @@ public:
 #define SVC_evnt_fired	64
 
 
-// Method used to signify that the service started has done basic
-// initialization and can be considered a successful startup.
+} /* extern "C" */
 
-#ifndef SUPERSERVER
-
-inline void Service::svc_started()
-{
-	// null definition, no overhead.
-}
-
-#else /* SUPERSERVER */
-
-inline void Service::svc_started()
-{
-	event_t* evnt_ptr = svc_start_event;
-	if (!(svc_flags & SVC_evnt_fired)) {
-		svc_flags |= SVC_evnt_fired;
-		ISC_event_post(evnt_ptr);
-	}
-}
-
-#endif /* SUPERSERVER */
-
-typedef int (*pfn_svc_main) (Service*);
-typedef int (*pfn_svc_output)(Service*, const UCHAR*);
-
-struct serv_entry
-{
-	USHORT			serv_action;
-	const TEXT*		serv_name;
-	const TEXT*		serv_std_switches;
-	const TEXT*		serv_executable;
-	pfn_svc_main	serv_thd;
-	bool*			serv_in_use;
-};
-
-} //namespace Jrd
-
-#endif // JRD_SVC_H
-
+#endif /* JRD_SVC_H */

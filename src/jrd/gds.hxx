@@ -163,7 +163,6 @@ extern "C" {
   GDS_STATUS GDS_EXPORT isc_transaction_info  (long*, gds_tr_handle*, short, char*, short, char*);
   GDS_STATUS GDS_EXPORT isc_unwind_request  (long*, gds_tr_handle*, short);
   GDS_STATUS GDS_EXPORT isc_interprete  (char*, long**);
-  GDS_STATUS GDS_EXPORT isc_interprete_cpp(char* const buffer, const long**);
   GDS_STATUS GDS_EXPORT isc_sql_interprete  (short, char*, short);
   GDS_STATUS GDS_EXPORT isc_print_sql_error  (long, long*);
   GDS_STATUS GDS_EXPORT isc_print_status  (long*);
@@ -193,6 +192,7 @@ extern "C" {
   GDS_STATUS GDS_EXPORT isc_dsql_release (long*, char*);
   GDS_STATUS GDS_EXPORT isc_execute (long*, gds_tr_handle*, char*, SQLDA*);
   GDS_STATUS GDS_EXPORT isc_execute_immediate (long*, gds_db_handle*, gds_tr_handle*, short*, char*);
+  GDS_STATUS GDS_EXPORT isc_array_gen_sdl (long*, ISC_ARRAY_DESC*, short*, char*, char*);
   GDS_STATUS GDS_EXPORT isc_array_get_slice (long*, long*, long*, GDS_QUAD*, ISC_ARRAY_DESC*, void*, long*);
   GDS_STATUS GDS_EXPORT isc_array_lookup_bounds (long*, long*, long*, char*, char*, ISC_ARRAY_DESC*);
   GDS_STATUS GDS_EXPORT isc_array_lookup_desc (long*, long*, long*, char*, char*, ISC_ARRAY_DESC*);
@@ -262,10 +262,10 @@ extern "C" {
     void     GDS_EXPORT isc_vtof (char*, char*, short);
     void     GDS_EXPORT isc_vtov (char*, char*, short);
     void     GDS_EXPORT isc_version (gds_db_handle*, gds_callback, long);
-  GDS_STATUS GDS_EXPORT isc_vax_integer (const char*, short);
+  GDS_STATUS GDS_EXPORT isc_vax_integer (char*, short);
     void     GDS_EXPORT isc_set_debug (long);
-  GDS_STATUS GDS_EXPORT isc_encode_date (const void*, GDS_QUAD*);
-  GDS_STATUS GDS_EXPORT isc_decode_date (const GDS_QUAD*, void*);
+  GDS_STATUS GDS_EXPORT isc_encode_date (void*, GDS_QUAD*);
+  GDS_STATUS GDS_EXPORT isc_decode_date (GDS_QUAD*, void*);
   GDS_STATUS GDS_EXPORT isc_free (long*);
     void     GDS_EXPORT isc_extend_dpb (char**, short*, char*, char*);
     }
@@ -967,43 +967,43 @@ const char gds_dyn_generator_id            = 96;
 
 /* Array slice description language (SDL) */
 
-const unsigned char gds_sdl_version1        = 1;
-const unsigned char gds_sdl_eoc             = 0xFF;
-const unsigned char gds_sdl_relation        = 2;
-const unsigned char gds_sdl_rid             = 3;
-const unsigned char gds_sdl_field           = 4;
-const unsigned char gds_sdl_fid             = 5;
-const unsigned char gds_sdl_struct          = 6;
-const unsigned char gds_sdl_variable        = 7;
-const unsigned char gds_sdl_scalar          = 8;
-const unsigned char gds_sdl_tiny_integer    = 9;
-const unsigned char gds_sdl_short_integer   = 10;
-const unsigned char gds_sdl_long_integer    = 11;
-const unsigned char gds_sdl_literal         = 12;
-const unsigned char gds_sdl_add             = 13;
-const unsigned char gds_sdl_subtract        = 14;
-const unsigned char gds_sdl_multiply        = 15;
-const unsigned char gds_sdl_divide          = 16;
-const unsigned char gds_sdl_negate          = 17;
-const unsigned char gds_sdl_eql             = 18;
-const unsigned char gds_sdl_neq             = 19;
-const unsigned char gds_sdl_gtr             = 20;
-const unsigned char gds_sdl_geq             = 21;
-const unsigned char gds_sdl_lss             = 22;
-const unsigned char gds_sdl_leq             = 23;
-const unsigned char gds_sdl_and             = 24;
-const unsigned char gds_sdl_or              = 25;
-const unsigned char gds_sdl_not             = 26;
-const unsigned char gds_sdl_while           = 27;
-const unsigned char gds_sdl_assignment      = 28;
-const unsigned char gds_sdl_label           = 29;
-const unsigned char gds_sdl_leave           = 30;
-const unsigned char gds_sdl_begin           = 31;
-const unsigned char gds_sdl_end             = 32;
-const unsigned char gds_sdl_do3             = 33;
-const unsigned char gds_sdl_do2             = 34;
-const unsigned char gds_sdl_do1             = 35;
-const unsigned char gds_sdl_element         = 36;
+const char gds_sdl_version1                = 1;
+const char gds_sdl_eoc                     = -1;
+const char gds_sdl_relation                = 2;
+const char gds_sdl_rid                     = 3;
+const char gds_sdl_field                   = 4;
+const char gds_sdl_fid                     = 5;
+const char gds_sdl_struct                  = 6;
+const char gds_sdl_variable                = 7;
+const char gds_sdl_scalar                  = 8;
+const char gds_sdl_tiny_integer            = 9;
+const char gds_sdl_short_integer           = 10;
+const char gds_sdl_long_integer            = 11;
+const char gds_sdl_literal                 = 12;
+const char gds_sdl_add                     = 13;
+const char gds_sdl_subtract                = 14;
+const char gds_sdl_multiply                = 15;
+const char gds_sdl_divide                  = 16;
+const char gds_sdl_negate                  = 17;
+const char gds_sdl_eql                     = 18;
+const char gds_sdl_neq                     = 19;
+const char gds_sdl_gtr                     = 20;
+const char gds_sdl_geq                     = 21;
+const char gds_sdl_lss                     = 22;
+const char gds_sdl_leq                     = 23;
+const char gds_sdl_and                     = 24;
+const char gds_sdl_or                      = 25;
+const char gds_sdl_not                     = 26;
+const char gds_sdl_while                   = 27;
+const char gds_sdl_assignment              = 28;
+const char gds_sdl_label                   = 29;
+const char gds_sdl_leave                   = 30;
+const char gds_sdl_begin                   = 31;
+const char gds_sdl_end                     = 32;
+const char gds_sdl_do3                     = 33;
+const char gds_sdl_do2                     = 34;
+const char gds_sdl_do1                     = 35;
+const char gds_sdl_element                 = 36;
 
 const short SQL_TEXT                        = 452;
 const short SQL_VARYING                     = 448;
@@ -1013,4 +1013,68 @@ const short SQL_FLOAT                       = 482;
 const short SQL_DOUBLE                      = 480;
 const short SQL_DATE                        = 510;
 const short SQL_BLOB                        = 520;
+
+/* Forms Package definitions */
+
+/* Map definition block definitions */
+
+const char PYXIS_MAP_VERSION1              = 1;
+const char PYXIS_MAP_FIELD2                = 2;
+const char PYXIS_MAP_FIELD1                = 3;
+const char PYXIS_MAP_MESSAGE               = 4;
+const char PYXIS_MAP_TERMINATOR            = 5;
+const char PYXIS_MAP_TERMINATING_FIELD     = 6;
+const char PYXIS_MAP_OPAQUE                = 7;
+const char PYXIS_MAP_TRANSPARENT           = 8;
+const char PYXIS_MAP_TAG                   = 9;
+const char PYXIS_MAP_SUB_FORM              = 10;
+const char PYXIS_MAP_ITEM_INDEX            = 11;
+const char PYXIS_MAP_SUB_FIELD             = 12;
+const char PYXIS_MAP_END                   = -1;
+
+/* Field option flags for display options */
+
+const char PYXIS_OPT_DISPLAY               = 1;
+const char PYXIS_OPT_UPDATE                = 2;
+const char PYXIS_OPT_WAKEUP                = 4;
+const char PYXIS_OPT_POSITION              = 8;
+
+/* Field option values following display */
+
+const char PYXIS_OPT_NULL                  = 1;
+const char PYXIS_OPT_DEFAULT               = 2;
+const char PYXIS_OPT_INITIAL               = 3;
+const char PYXIS_OPT_USER_DATA             = 4;
+
+/* Pseudo key definitions */
+
+const char PYXIS_KEY_DELETE                = 127;
+const char PYXIS_KEY_UP                    = 128;
+const char PYXIS_KEY_DOWN                  = 129;
+const char PYXIS_KEY_RIGHT                 = 130;
+const char PYXIS_KEY_LEFT                  = 131;
+const char PYXIS_KEY_PF1                   = 132;
+const char PYXIS_KEY_PF2                   = 133;
+const char PYXIS_KEY_PF3                   = 134;
+const char PYXIS_KEY_PF4                   = 135;
+const char PYXIS_KEY_PF5                   = 136;
+const char PYXIS_KEY_PF6                   = 137;
+const char PYXIS_KEY_PF7                   = 138;
+const char PYXIS_KEY_PF8                   = 139;
+const char PYXIS_KEY_PF9                   = 140;
+const char PYXIS_KEY_ENTER                 = 141;
+const char PYXIS_KEY_SCROLL_TOP            = 146;
+const char PYXIS_KEY_SCROLL_BOTTOM         = 147;
+
+/* Menu definition stuff */
+
+const char PYXIS_MENU_VERSION1             = 1;
+const char PYXIS_MENU_LABEL                = 2;
+const char PYXIS_MENU_ENTREE               = 3;
+const char PYXIS_MENU_OPAQUE               = 4;
+const char PYXIS_MENU_TRANSPARENT          = 5;
+const char PYXIS_MENU_HORIZONTAL           = 6;
+const char PYXIS_MENU_VERTICAL             = 7;
+const char PYXIS_MENU_END                  = -1;
+
 

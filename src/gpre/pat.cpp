@@ -24,48 +24,51 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.22 2004-01-28 07:50:27 robocop Exp $
+//	$Id: pat.cpp,v 1.8 2003-04-01 11:49:30 brodsom Exp $
 //
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../gpre/gpre.h"
+#include "../gpre/form.h"
 #include "../gpre/pat.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/pat_proto.h"
 #include "../gpre/lang_proto.h"
 
 
-extern const TEXT* ident_pattern;
+extern "C" {
+
+
+extern TEXT *ident_pattern;
 
 typedef enum {
 	NL,
-	RH, RL, RT, RI, RS,			// Request handle, level, transaction, ident, length 
-	DH, DF,						// Database handle, filename 
-	TH,							// Transaction handle 
-	BH, BI,						// Blob handle, blob_ident 
-	FH,							// Form handle 
-	V1, V2,						// Status vectors 
-	I1, I2,						// Identifier numbers 
-	RF, RE,						// OS- and language-dependent REF and REF-end character 
-	VF, VE,						// OS- and language-dependent VAL and VAL-end character 
+	RH, RL, RT, RI, RS,			/* Request handle, level, transaction, ident, length */
+	DH, DF,						/* Database handle, filename */
+	TH,							/* Transaction handle */
+	BH, BI,						/* Blob handle, blob_ident */
+	FH,							/* Form handle */
+	V1, V2,						/* Status vectors */
+	I1, I2,						/* Identifier numbers */
+	RF, RE,						/* OS- and language-dependent REF and REF-end character */
+	VF, VE,						/* OS- and language-dependent VAL and VAL-end character */
 	S1, S2, S3, S4, S5, S6, S7,
-	// Arbitrary strings 
-	N1, N2, N3, N4,				// Arbitrary number (SSHORT)
-	L1, L2,						// Arbitrary number (SLONG)
-	PN, PL, PI,					// Port number, port length, port ident 
-	QN, QL, QI,					// Second port number, port length, port ident 
-	IF, EL, EN,					// If, else, end 
-	FR							// Field reference 
+	/* Arbitrary strings */
+	N1, N2, N3, N4,				/* Arbitrary number (SSHORT) */
+	L1, L2,						/* Arbitrary number (SLONG) */
+	PN, PL, PI,					/* Port number, port length, port ident */
+	QN, QL, QI,					/* Second port number, port length, port ident */
+	IF, EL, EN,					/* If, else, end */
+	FR							/* Field reference */
 } PAT_T;
 
-static const struct ops {
+static struct ops {
 	PAT_T ops_type;
 	TEXT ops_string[3];
-} operators[] =
-	{
-		{ RH, "RH" },
+} operators[] = {
+	{ RH, "RH" },
 		{ RL, "RL" },
 		{ RT, "RT" },
 		{ RI, "RI" },
@@ -107,8 +110,7 @@ static const struct ops {
 		{ VF, "VF" },
 		{ VE, "VE" },
 		{ FR, "FR" },
-		{ NL, "" }
-	};
+		{ NL, "" } };
 
 
 //____________________________________________________________
@@ -116,81 +118,78 @@ static const struct ops {
 //		Expand a pattern.
 //  
 
-void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
+void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 {
-	TEXT buffer[512], temp1[16], temp2[16];
+	struct ops *operator_;
+	TEXT buffer[512], c, *p, temp1[16], temp2[16];
+	USHORT sw_ident, sw_gen, n;
 	SSHORT value;				/* value needs to be signed since some of the
 								   values printed out are signed.  */
 	SLONG long_value;
-	TEXT* q;
+	BOOLEAN long_flag, handle_flag;
+	REF reference;
+	TEXT *string, *ref, *refend, *val, *valend, *q;
 
-	// CVC: kudos to the programmer that had chosen variables with the same
-	// names that structs in gpre.h and with type char* if not enough.
-	// Renamed ref to lang_ref and val to lang_val.
-	const TEXT* lang_ref = "";
-	const TEXT* refend = "";
-	const TEXT* lang_val = "";
-	const TEXT* valend = "";
+	ref = "";
+	refend = "";
+	val = "";
+	valend = "";
 
 	if ((sw_language == lang_c) || (isLangCpp(sw_language))) {
-		lang_ref = "&";
+		ref = "&";
 		refend = "";
 	}
 	else if (sw_language == lang_pascal) {
-		lang_ref = "%%REF ";
+		ref = "%%REF ";
 		refend = "";
 	}
 	else if (sw_language == lang_cobol) {
-		lang_ref = "BY REFERENCE ";
+		ref = "BY REFERENCE ";
 		refend = "";
-		lang_val = "BY VALUE ";
+		val = "BY VALUE ";
 		valend = "";
 	}
 	else if (sw_language == lang_fortran) {
 #ifdef VMS
-		lang_ref = "%REF(";
+		ref = "%REF(";
 		refend = ")";
-		lang_val = "%VAL(";
+		val = "%VAL(";
 		valend = ")";
 #endif
 #if (defined AIX || defined AIX_PPC)
-		lang_ref = "%REF(";
+		ref = "%REF(";
 		refend = ")";
-		lang_val = "%VAL(";
+		val = "%VAL(";
 		valend = ")";
 #endif
 	}
 
-	TEXT* p = buffer;
+	p = buffer;
 	*p++ = '\n';
-	bool sw_gen = true;
-	for (USHORT n = column; n; --n)
+	sw_gen = TRUE;
+	for (n = column; n; --n)
 		*p++ = ' ';
 
-	TEXT c;
 	while (c = *pattern++) {
 		if (c != '%') {
 			if (sw_gen) {
 				*p++ = c;
 				if ((c == '\n') && (*pattern))
-					for (USHORT n = column; n; --n)
+					for (n = column; n; --n)
 						*p++ = ' ';
 			}
 			continue;
 		}
-		bool sw_ident = false;
-		const TEXT* string = NULL;
-		const ref* reference = NULL;
-		bool handle_flag = false, long_flag = false;
-		const ops* oper_iter;
-		for (oper_iter = operators; oper_iter->ops_type != NL; oper_iter++)
-			if (oper_iter->ops_string[0] == pattern[0] &&
-				oper_iter->ops_string[1] == pattern[1])
-		{
+		sw_ident = FALSE;
+		string = NULL;
+		reference = NULL;
+		handle_flag = long_flag = FALSE;
+		for (operator_ = operators; operator_->ops_type != NL; operator_++)
+			if (operator_->ops_string[0] == pattern[0] &&
+				operator_->ops_string[1] == pattern[1])
 				break;
-		}
 		pattern += 2;
-		switch (oper_iter->ops_type) {
+		switch (operator_->ops_type) {
 		case IF:
 			sw_gen = args->pat_condition;
 			continue;
@@ -200,11 +199,11 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			continue;
 
 		case EN:
-			sw_gen = true;
+			sw_gen = TRUE;
 			continue;
 
 		case RH:
-			handle_flag = true;
+			handle_flag = TRUE;
 			string = args->pat_request->req_handle;
 			break;
 
@@ -217,17 +216,17 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			break;
 
 		case RT:
-			handle_flag = true;
+			handle_flag = TRUE;
 			string = args->pat_request->req_trans;
 			break;
 
 		case RI:
 			value = args->pat_request->req_ident;
-			sw_ident = true;
+			sw_ident = TRUE;
 			break;
 
 		case DH:
-			handle_flag = true;
+			handle_flag = TRUE;
 			string = args->pat_database->dbb_name->sym_string;
 			break;
 
@@ -245,7 +244,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 
 		case PI:
 			value = args->pat_port->por_ident;
-			sw_ident = true;
+			sw_ident = TRUE;
 			break;
 
 		case QN:
@@ -258,22 +257,22 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 
 		case QI:
 			value = args->pat_port2->por_ident;
-			sw_ident = true;
+			sw_ident = TRUE;
 			break;
 
 		case BH:
 			value = args->pat_blob->blb_ident;
-			sw_ident = true;
+			sw_ident = TRUE;
 			break;
 
 		case I1:
 			value = args->pat_ident1;
-			sw_ident = true;
+			sw_ident = TRUE;
 			break;
 
 		case I2:
 			value = args->pat_ident2;
-			sw_ident = true;
+			sw_ident = TRUE;
 			break;
 
 		case S1:
@@ -330,16 +329,16 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 
 		case L1:
 			long_value = args->pat_long1;
-			long_flag = true;
+			long_flag = TRUE;
 			break;
 
 		case L2:
 			long_value = args->pat_long2;
-			long_flag = true;
+			long_flag = TRUE;
 			break;
 
 		case RF:
-			string = lang_ref;
+			string = ref;
 			break;
 
 		case RE:
@@ -347,7 +346,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			break;
 
 		case VF:
-			string = lang_val;
+			string = val;
 			break;
 
 		case VE:
@@ -361,7 +360,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		default:
 			sprintf(buffer, "Unknown substitution \"%c%c\"", pattern[-2],
 					pattern[-1]);
-			CPR_error(buffer);
+			IBERROR(buffer);
 			continue;
 		}
 		if (!sw_gen)
@@ -405,7 +404,6 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 	}
 
 	*p = 0;
-#if (defined GPRE_ADA || defined GPRE_COBOL || defined GPRE_FORTRAN) && !defined(BOOT_BUILD)
 	switch (sw_language) {
 #ifdef GPRE_ADA
 		/*  Ada lines can be up to 120 characters long.  ADA_print_buffer
@@ -421,7 +419,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		   handles this problem and ensures that GPRE output is <= 72 characters.
 		 */
 	case lang_cobol:
-		COB_print_buffer(buffer, true);
+		COB_print_buffer(buffer, TRUE);
 		break;
 #endif
 
@@ -439,9 +437,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		ib_fprintf(out_file, buffer);
 		break;
 	}
-#else
-	ib_fprintf(out_file, buffer);
-#endif
-
 }
 
+
+} // extern "C"

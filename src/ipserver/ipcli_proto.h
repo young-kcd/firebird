@@ -1,7 +1,7 @@
 /*
  * PROGRAM: JRD Access Method
  * MODULE: ipcli_proto.h
- * DESCRIPTION: Prototype header file for ipclient.cpp
+ * DESCRIPTION: Prototype header file for ipclient.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -22,19 +22,18 @@
  */
 
 
-#ifndef IPCLI_PROTO_H
-#define IPCLI_PROTO_H
+#ifndef _IPCLI_PROTO_H_
+#define _IPCLI_PROTO_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void IPC_process_event(DWORD, DWORD, LPVOID);
-void IPC_release_all(void);
+extern void IPC_process_event(DWORD, DWORD, LPVOID);
+extern void IPC_release_all(void);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* IPCLI_PROTO_H */
-
+#endif /* _IPCLI_PROTO_H_ */

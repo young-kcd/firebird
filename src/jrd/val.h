@@ -50,39 +50,28 @@
 #endif
 
 #ifndef REQUESTER
-
-namespace Jrd {
-
-class ArrayField;
-class blb;
-class jrd_req;
-class jrd_tra;
-class Symbol;
-
-
-class Format : public pool_alloc<type_fmt>
+class fmt : public pool_alloc<type_fmt>
 {
 public:
-	Format(MemoryPool& p, int len)
+	fmt(MemoryPool& p, int len)
 	:	fmt_desc(len, p, type_fmt)
 	{
 	}
-	static Format* newFormat(MemoryPool& p, int len = 0)
-	{ 
-		return FB_NEW(p) Format(p, len); 
-	}
+	static fmt* newFmt(MemoryPool& p, int len = 0)
+		{ return FB_NEW(p) fmt(p, len); }
 
 	USHORT fmt_length;
 	USHORT fmt_count;
 	USHORT fmt_version;
 	Firebird::vector<dsc> fmt_desc;
 	typedef Firebird::vector<dsc>::iterator fmt_desc_iterator;
-	typedef Firebird::vector<dsc>::const_iterator fmt_desc_const_iterator;
 };
+typedef fmt *FMT;
 #endif /* REQUESTER */
 
 #define MAX_FORMAT_SIZE		65535
 
+typedef vary VARY;
 
 /* A macro to define a local vary stack variable of a given length
    Usage:  VARY_STR(5)	my_var;        */
@@ -92,119 +81,101 @@ public:
 #ifndef REQUESTER
 /* Function definition block */
 
-typedef enum {
+typedef ENUM {
 		FUN_value,
 		FUN_reference,
-		FUN_descriptor,
-		FUN_blob_struct,
-		FUN_scalar_array
-} FUN_T;
+		FUN_descriptor, FUN_blob_struct, FUN_scalar_array} FUN_T;
 
 struct fun_repeat {
 	DSC fun_desc;			/* Datatype info */
 	FUN_T fun_mechanism;	/* Passing mechanism */
 };
 
-
-class UserFunction : public pool_alloc_rpt<fun_repeat, type_fun>
+class fun : public pool_alloc_rpt<fun_repeat, type_fun>
 {
     public:
-	Firebird::string fun_exception_message;	/* message containing the exception error message */
-	UserFunction*	fun_homonym;	/* Homonym functions */
-	Symbol*		fun_symbol;			/* Symbol block */
-	int (*fun_entrypoint) ();		/* Function entrypoint */
-	USHORT		fun_count;			/* Number of arguments (including return) */
-	USHORT		fun_args;			/* Number of input arguments */
-	USHORT		fun_return_arg;		/* Return argument */
-	USHORT		fun_type;			/* Type of function */
-	ULONG		fun_temp_length;	/* Temporary space required */
+	STR fun_exception_message;	/* message containing the exception error message */
+	struct fun *fun_homonym;	/* Homonym functions */
+	struct sym *fun_symbol;		/* Symbol block */
+	int (*fun_entrypoint) ();	/* Function entrypoint */
+	USHORT fun_count;			/* Number of arguments (including return) */
+	USHORT fun_args;			/* Number of input arguments */
+	USHORT fun_return_arg;		/* Return argument */
+	USHORT fun_type;			/* Type of function */
+	ULONG fun_temp_length;		/* Temporary space required */
     fun_repeat fun_rpt[1];
-    public:
-	UserFunction(MemoryPool& p) : fun_exception_message(p) { }
 };
+typedef fun *FUN;
 
-// Those two defines seems an intention to do something that wasn't completed.
 #define FUN_value	0
 #define FUN_boolean	1
 
 /* Blob passing structure */
-// CVC: Moved to fun.epp where it belongs.
 
-/* Scalar array descriptor, "external side" seen by UDF's */
+typedef struct blob {
+	SSHORT(*blob_get_segment) ();
+	int *blob_handle;
+	SLONG blob_number_segments;
+	SLONG blob_max_segment;
+	SLONG blob_total_length;
+	void (*blob_put_segment) ();
+	  SLONG(*blob_seek) ();
+} *BLOB;
 
-struct scalar_array_desc {
+/* Scalar array descriptor */
+
+typedef struct sad {
 	DSC sad_desc;
 	SLONG sad_dimensions;
 	struct sad_repeat {
 		SLONG sad_lower;
 		SLONG sad_upper;
 	} sad_rpt[1];
-};
-
+} *SAD;
 #endif /* REQUESTER */
 
+/* Array description */
 
-/* Array description, "internal side" used by the engine. */
-// Renamed internal_array_desc to end the confusion.
-
-struct internal_array_desc {
-	UCHAR iad_version;			/* Array descriptor version number */
-	UCHAR iad_dimensions;		/* Dimensions of array */
-	USHORT iad_struct_count;	/* Number of struct elements */
-	USHORT iad_element_length;	/* Length of array element */
-	USHORT iad_length;			/* Length of array descriptor */
-	SLONG iad_count;			/* Total number of elements */
-	SLONG iad_total_length;		/* Total length of array */
-	struct iad_repeat {
-		DSC iad_desc;			/* Element descriptor */
-		SLONG iad_length;		/* Length of "vector" element */
-		SLONG iad_lower;		/* Lower bound */
-		SLONG iad_upper;		/* Upper bound */
+typedef struct ads {
+	UCHAR ads_version;			/* Array descriptor version number */
+	UCHAR ads_dimensions;		/* Dimensions of array */
+	USHORT ads_struct_count;	/* Number of struct elements */
+	USHORT ads_element_length;	/* Length of array element */
+	USHORT ads_length;			/* Length of array descriptor */
+	SLONG ads_count;			/* Total number of elements */
+	SLONG ads_total_length;		/* Total length of array */
+	struct ads_repeat {
+		DSC ads_desc;			/* Element descriptor */
+		SLONG ads_length;		/* Length of "vector" element */
+		SLONG ads_lower;		/* Lower bound */
+		SLONG ads_upper;		/* Upper bound */
 	};
-	iad_repeat iad_rpt[1];
-};
+	struct ads_repeat ads_rpt[1];
+} *ADS;
 
-#define IAD_VERSION_1	1
-
-/*
-inline int IAD_LEN(int count)
-{
-	if (!count)
-		count = 1;
-	return sizeof (internal_array_desc) + 
-		(count - 1) * sizeof (internal_array_desc::iad_repeat);
-}
-*/
-#define IAD_LEN(count)	(sizeof (internal_array_desc) + \
-	(count ? count - 1: count) * sizeof (internal_array_desc::iad_repeat))
+#define ADS_VERSION_1	1
+#ifdef __cplusplus
+#define ADS_LEN(count)	(sizeof (struct ads) + (count - 1) * sizeof (struct ads::ads_repeat))
+#else
+#define ADS_LEN(count)	(sizeof (struct ads) + (count - 1) * sizeof (struct ads_repeat))
+#endif
 
 #ifndef REQUESTER
-
-// Sorry for the clumsy name, but in blk.h this is referred as array description.
-// Since we already have Scalar Array Descriptor and Array Description [Slice],
-// it was too confusing. Therefore, it was renamed ArrayField, since ultimately,
-// it represents an array field the user can manipulate.
-// There was also confusion for the casual reader due to the presence of
-// the structure "slice" in sdl.h that was renamed array_slice.
-
-class ArrayField : public pool_alloc_rpt<internal_array_desc::iad_repeat, type_arr>
+class arr : public pool_alloc_rpt<ads::ads_repeat, type_arr>
 {
     public:
-	UCHAR*				arr_data;			/* Data block, if allocated */
-	blb*				arr_blob;			/* Blob for data access */
-	jrd_tra*			arr_transaction;	/* Parent transaction block */
-	ArrayField*			arr_next;			/* Next array in transaction */
-	jrd_req*			arr_request;		/* request */
-	SLONG				arr_effective_length;	/* Length of array instance */
-	USHORT				arr_desc_length;	/* Length of array descriptor */
-	internal_array_desc	arr_desc;			/* Array descriptor */
-	ULONG				arr_temp_id;		// Temporary ID for open array inside the transaction
+	UCHAR*		arr_data;			/* Data block, if allocated */
+	class blb*	arr_blob;		/* Blob for data access */
+	struct jrd_tra* arr_transaction;	/* Parent transaction block */
+	struct arr* arr_next;		/* Next array in transaction */
+	struct jrd_req* arr_request;	/* request */
+	SLONG		arr_effective_length;	/* Length of array instance */
+	USHORT		arr_desc_length;		/* Length of array descriptor */
+	struct ads	arr_desc;		/* Array descriptor */
 };
-
+typedef arr *ARR;
 
 #endif /* REQUESTER */
 
-} //namespace Jrd
 
 #endif /* JRD_VAL_H */
-

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		dbg.cpp
+ *	MODULE:		dbg.c
  *	DESCRIPTION:	Debugging routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -42,7 +42,6 @@
 #include "../jrd/cch_proto.h"
 #include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/constants.h"
 
 #ifdef SUPERSERVER
 #include "../jrd/thd_proto.h"
@@ -53,12 +52,14 @@
 /* Given pointer a field in the block, find the block */
 #define BLOCK(fld_ptr, type, fld) (type)((SCHAR*) fld_ptr - OFFSET (type, fld))
 
+extern "C" {
+
 
 #ifndef DEBUG
 int debug;
 #endif
 
-extern int *dbt_blocks[], dbt_window[], dbt_record_param[];
+extern int *dbt_blocks[], dbt_window[], dbt_rpb[];
 extern SLONG gds_delta_alloc, gds_max_alloc;
 
 typedef int (*DBG_PFN_V) ();
@@ -71,9 +72,9 @@ int (*dbg_eval) (int) = DBG_eval;
 int (*dbg_open) () = DBG_open;
 int (*dbg_close) () = DBG_close;
 int (*dbg_pool) (JrdMemoryPool*) = DBG_pool;
-int (*dbg_pretty) (const jrd_nod*, int) = DBG_pretty;
+int (*dbg_pretty) (jrd_nod *, int) = DBG_pretty;
 int (*dbg_window) (int *) = DBG_window;
-int (*dbg_rpb) (record_param*) = DBG_rpb;
+int (*dbg_rpb) (rpb *) = DBG_rpb;
 static int (*dbg_bdbs) () = DBG_bdbs;
 int (*dbg_examine) (int *) = DBG_examine;
 int (*dbg_check) (int) = DBG_check;
@@ -95,13 +96,13 @@ static void go_column(int);
 static void prt_dsc(DSC *, int);
 static int prt_fields(SCHAR *, int *);
 static int prt_que(SCHAR *, QUE);
-static int rsb_pretty(const RecordSource*, int);
+static int rsb_pretty(RSB, int);
 
 /* Pick up node names */
 
 #define NODE(type, name, keyword) "name",
 
-static const TEXT* node_names[] = {
+static TEXT *node_names[] = {
 #include "../jrd/nod.h"
 	0
 };
@@ -109,8 +110,7 @@ static const TEXT* node_names[] = {
 
 /* rsb types */
 
-static const TEXT* rsb_names[] =
-{
+static TEXT *rsb_names[] = {
 	"boolean",
 	"cross",
 	"dbkey",
@@ -145,7 +145,8 @@ int DBG_all(void)
  *	Print all known blocks.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+
+	DBB dbb = GET_DBB;
 
 	if (!dbg_file) {
 		dbg_file = ib_fopen("tt:", "w");
@@ -155,8 +156,8 @@ int DBG_all(void)
 	{
 		return TRUE;
 	}
-	Database::pool_vec_type::iterator itr;
-	Database::pool_vec_type::iterator end = dbb->dbb_pools.end();
+	dbb::pool_vec_type::iterator itr;
+	dbb::pool_vec_type::iterator end = dbb->dbb_pools.end();
 	for (itr = dbb->dbb_pools.begin(); itr < end; ++itr) {
 		DBG_pool(*itr);
 	}
@@ -176,14 +177,18 @@ int DBG_analyze(int pool_id)
  *	Analyze pool by block type and sub-type.
  *
  **************************************/
+	DBB dbb;
 	HNK hunk;
 	BLK block;
+	VEC vector;
+	PLB pool;
 	SCHAR *hunk_end;
 	SSHORT type;
 	SLONG length;
 	SLONG total_length = 0;
 	TEXT **fields;
-	SqlIdentifier name_padded;
+	TEXT *node_name;
+	TEXT name_padded[32];
 	int pool_type;
 	int i;
 	struct {
@@ -191,10 +196,9 @@ int DBG_analyze(int pool_id)
 		SLONG sum_length;
 	} blocks[type_MAX], nodes[nod_MAX], *p, *end;
 
-	Database* dbb = GET_DBB;
+	dbb = GET_DBB;
 
-	VEC vector = dbb->dbb_pools;
-	if (!vector)
+	if (!(vector = dbb->dbb_pools))
 		return TRUE;
 
 	for (p = blocks, end = p + (int) type_MAX; p < end; p++) {
@@ -207,13 +211,11 @@ int DBG_analyze(int pool_id)
 		p->sum_length = 0;
 	}
 
-	PLB pool = (PLB) vector->vec_object[pool_id];
-	if (pool) {
+	if (pool = (PLB) vector->vec_object[pool_id]) {
 		for (hunk = pool->plb_hunks; hunk; hunk = hunk->hnk_next) {
 			hunk_end = ((char*)hunk->hnk_address) + hunk->hnk_length;
 			for (block = (BLK) hunk->hnk_address; block != (BLK) hunk_end;
-				 block = (BLK) ((SCHAR *) block + length))
-			{
+				 block = (BLK) ((SCHAR *) block + length)) {
 				type = block->blk_type;
 				length = block->blk_length << SHIFT;
 				total_length += length;
@@ -225,7 +227,7 @@ int DBG_analyze(int pool_id)
 				p->sum_count++;
 				p->sum_length += length;
 				if (type == (SSHORT) type_nod) {
-					p = nodes + (int) ((jrd_nod*) block)->nod_type;
+					p = nodes + (int) ((JRD_NOD) block)->nod_type;
 					p->sum_count++;
 					p->sum_length += length;
 				}
@@ -241,10 +243,9 @@ int DBG_analyze(int pool_id)
 	}
 	else {
 		for (p = blocks, end = p + (int) type_MAX, type = 0; p < end;
-			 p++, type++)
-		{
+			 p++, type++) {
 			if (p->sum_count)
-				fields = reinterpret_cast<char**>(dbt_blocks[type]);
+				fields = reinterpret_cast < char **>(dbt_blocks[type]);
 			if (!strcmp(*fields, "TRANSACTION") && p->sum_count) {
 				pool_type = 2;
 				trans_pool_mem += (total_length / 1024);
@@ -271,8 +272,8 @@ int DBG_analyze(int pool_id)
 
 	for (p = blocks, end = p + (int) type_MAX, type = 0; p < end; p++, type++)
 		if (p->sum_count) {
-			fields = reinterpret_cast<char**>(dbt_blocks[type]);
-			for (i = 0; i < MAX_SQL_IDENTIFIER_LEN; name_padded[i++] = ' ');
+			fields = reinterpret_cast < char **>(dbt_blocks[type]);
+			for (i = 0; i < 31; name_padded[i++] = ' ');
 			name_padded[i] = '\0';
 			for (i = 0; (*fields)[i]; i++)
 				name_padded[i] = (*fields)[i];
@@ -284,7 +285,7 @@ int DBG_analyze(int pool_id)
 
 	for (p = nodes, end = p + (int) nod_MAX, type = 0; p < end; p++, type++)
 		if (p->sum_count) {
-			const TEXT* node_name = node_names[type];
+			node_name = node_names[type];
 			for (i = 0; i < 31; name_padded[i++] = ' ');
 			name_padded[i] = '\0';
 			for (i = 0; node_name[i]; i++)
@@ -308,11 +309,14 @@ int DBG_bdbs(void)
  * Functional description
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	DBB dbb;
+	BCB bcb;
 
-	BufferControl* bcb = dbb->dbb_bcb;
+	dbb = GET_DBB;
+
+	bcb = dbb->dbb_bcb;
 	for (unsigned int i = 0; i < bcb->bcb_count; i++)
-		DBG_block(bcb->bcb_rpt[i].bcb_bdb);
+		DBG_block(reinterpret_cast < blk * >(bcb->bcb_rpt[i].bcb_bdb));
 
 	return TRUE;
 }
@@ -329,18 +333,21 @@ int DBG_precedence(void)
  * Functional description
  *
  **************************************/
+	DBB dbb;
+	BCB bcb;
+	BDB bdb;
 	QUE que;
-	Precedence* precedence;
-	BufferDesc* hi_bdb;
-	BufferDesc* lo_bdb;
+	PRE precedence;
+	BDB hi_bdb;
+	BDB lo_bdb;
 
-	Database* dbb = GET_DBB;
+	dbb = GET_DBB;
 
-	BufferControl* bcb = dbb->dbb_bcb;
+	bcb = dbb->dbb_bcb;
 	for (unsigned int i = 0; i < bcb->bcb_count; i++) {
-		const BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
+		bdb = bcb->bcb_rpt[i].bcb_bdb;
 		if (bdb->bdb_flags || bdb->bdb_ast_flags) {
-			ib_fprintf(dbg_file, "BufferDesc %d:\tpage %"SLONGFORMAT"", i, bdb->bdb_page);
+			ib_fprintf(dbg_file, "BDB %d:\tpage %"SLONGFORMAT"", i, bdb->bdb_page);
 			if (bdb->bdb_flags & BDB_dirty)
 				ib_fprintf(dbg_file, ", dirty");
 			if (bdb->bdb_ast_flags & BDB_blocking)
@@ -353,6 +360,8 @@ int DBG_precedence(void)
 				ib_fprintf(dbg_file, ", must_write");
 			if (bdb->bdb_flags & BDB_faked)
 				ib_fprintf(dbg_file, ", faked");
+			if (bdb->bdb_flags & BDB_journal)
+				ib_fprintf(dbg_file, ", journal");
 			if (bdb->bdb_flags & BDB_system_dirty)
 				ib_fprintf(dbg_file, ", system_dirty");
 			if (bdb->bdb_flags & BDB_io_error)
@@ -371,9 +380,8 @@ int DBG_precedence(void)
 			if (QUE_NOT_EMPTY(bdb->bdb_higher)) {
 				ib_fprintf(dbg_file, "\tdirect higher precedence pages:");
 				for (que = bdb->bdb_higher.que_forward;
-					 que != &bdb->bdb_higher; que = que->que_forward)
-				{
-					precedence = BLOCK(que, Precedence*, pre_higher);
+					 que != &bdb->bdb_higher; que = que->que_forward) {
+					precedence = BLOCK(que, PRE, pre_higher);
 					hi_bdb = precedence->pre_hi;
 					ib_fprintf(dbg_file, " %"SLONGFORMAT"", hi_bdb->bdb_page);
 					if (precedence->pre_flags & PRE_cleared)
@@ -384,9 +392,8 @@ int DBG_precedence(void)
 			if (QUE_NOT_EMPTY(bdb->bdb_lower)) {
 				ib_fprintf(dbg_file, "\tdirect lower precedence pages:");
 				for (que = bdb->bdb_lower.que_forward; que != &bdb->bdb_lower;
-					 que = que->que_forward)
-				{
-					precedence = BLOCK(que, Precedence*, pre_lower);
+					 que = que->que_forward) {
+					precedence = BLOCK(que, PRE, pre_lower);
 					lo_bdb = precedence->pre_low;
 					ib_fprintf(dbg_file, " %"SLONGFORMAT"", lo_bdb->bdb_page);
 					if (precedence->pre_flags & PRE_cleared)
@@ -426,8 +433,7 @@ int DBG_block(BLK block)
 	}
 
 	if (block->blk_type <= (SCHAR) type_MIN
-		|| block->blk_type >= (SCHAR) type_MAX)
-	{
+		|| block->blk_type >= (SCHAR) type_MAX) {
 		ib_fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n", block,
 				   block->blk_type);
 		return FALSE;
@@ -444,9 +450,9 @@ int DBG_block(BLK block)
 			   block->blk_length);
 	if (block->blk_type == (SCHAR) type_nod)
 		ib_fprintf(dbg_file, " -- %s",
-				   node_names[(int) ((jrd_nod*) block)->nod_type]);
+				   node_names[(int) ((JRD_NOD) block)->nod_type]);
 
-	prt_fields(reinterpret_cast<char*>(block), fields);
+	prt_fields(reinterpret_cast < char *>(block), fields);
 
 	switch ((enum blk_t) block->blk_type) {
 	case type_vec:
@@ -480,37 +486,36 @@ int DBG_block(BLK block)
 		break;
 
 	case type_bcb:
-		prt_que("Empty", &BLOCK(BufferControl*)->bcb_empty);
-		for (i = 0; i < BLOCK(BufferControl*)->bcb_count; i++) {
+		prt_que("Empty", &BLOCK(BCB)->bcb_empty);
+		for (i = 0; i < BLOCK(BCB)->bcb_count; i++) {
 			sprintf(s, "mod %d", i);
-			prt_que(s, &BLOCK(BufferControl*)->bcb_rpt[i].bcb_page_mod);
+			prt_que(s, &BLOCK(BCB)->bcb_rpt[i].bcb_page_mod);
 		}
 		break;
 
 	case type_bdb:
 		ib_fprintf(dbg_file,
 				   "\tUse count: %d, page: %d, flags: %x, ast flags: %x\n",
-				   ((BufferDesc*) block)->bdb_use_count, ((BufferDesc*) block)->bdb_page,
-				   ((BufferDesc*) block)->bdb_flags, ((BufferDesc*) block)->bdb_ast_flags);
+				   ((BDB) block)->bdb_use_count, ((BDB) block)->bdb_page,
+				   ((BDB) block)->bdb_flags, ((BDB) block)->bdb_ast_flags);
 		ib_fprintf(dbg_file,
 				   "\tParent: %X, left: %X, right: %X, dirty mask: %X\n",
-				   ((BufferDesc*) block)->bdb_parent, ((BufferDesc*) block)->bdb_left,
-				   ((BufferDesc*) block)->bdb_right, ((BufferDesc*) block)->bdb_transactions);
-		prt_que("Que", &BLOCK(BufferDesc*)->bdb_que);
-		prt_que("Higher", &BLOCK(BufferDesc*)->bdb_higher);
-		prt_que("Lower", &BLOCK(BufferDesc*)->bdb_lower);
+				   ((BDB) block)->bdb_parent, ((BDB) block)->bdb_left,
+				   ((BDB) block)->bdb_right, ((BDB) block)->bdb_transactions);
+		prt_que("Que", &BLOCK(BDB)->bdb_que);
+		prt_que("Higher", &BLOCK(BDB)->bdb_higher);
+		prt_que("Lower", &BLOCK(BDB)->bdb_lower);
 		break;
 
 	case type_pre:
-		prt_que("Higher", &BLOCK(Precedence*)->pre_higher);
-		prt_que("Lower", &BLOCK(Precedence*)->pre_lower);
+		prt_que("Higher", &BLOCK(PRE)->pre_higher);
+		prt_que("Lower", &BLOCK(PRE)->pre_lower);
 		break;
 
 	case type_fmt:
 		ib_fprintf(dbg_file, "\t");
-		for (i = 0, desc = BLOCK(Format*)->fmt_desc;
-			 i < BLOCK(Format*)->fmt_count; desc++, i++)
-		{
+		for (i = 0, desc = BLOCK(FMT)->fmt_desc;
+			 i < BLOCK(FMT)->fmt_count; desc++, i++) {
 			prt_dsc(desc, (i % 4) * 20);
 			if (i % 4 == 3)
 				ib_fprintf(dbg_file, "\n\t");
@@ -537,19 +542,25 @@ int DBG_check(int pool_id)
  *	Check pool for integrity.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	DBB dbb;
+	HNK hunk;
+	BLK block;
+	VEC vector;
+	PLB pool;
+	SCHAR *hunk_end;
+	USHORT corrupt;
 
-	int corrupt = 0;
+	dbb = GET_DBB;
 
-	VEC vector = dbb->dbb_pools;
-	if (!vector)
+	corrupt = 0;
+
+	if (!(vector = dbb->dbb_pools))
 		return corrupt;
 
-	PLB pool = (PLB) vector->vec_object[pool_id];
-	if (pool) {
-		for (HNK hunk = pool->plb_hunks; hunk; hunk = hunk->hnk_next) {
-			const char* hunk_end = ((char*)hunk->hnk_address) + hunk->hnk_length;
-			for (blk* block = (BLK) hunk->hnk_address; block != (const BLK) hunk_end;
+	if ( (pool = (PLB) vector->vec_object[pool_id]) ) {
+		for (hunk = pool->plb_hunks; hunk; hunk = hunk->hnk_next) {
+			hunk_end = ((char*)hunk->hnk_address) + hunk->hnk_length;
+			for (block = (BLK) hunk->hnk_address; block != (BLK) hunk_end;
 				 block =
 				 (BLK) ((SCHAR *) block + (block->blk_length << SHIFT))) {
 				if (block->blk_pool_id != (UCHAR) pool_id) {
@@ -559,8 +570,7 @@ int DBG_check(int pool_id)
 					break;
 				}
 				if (block->blk_type <= (SCHAR) type_MIN
-					|| block->blk_type >= (SCHAR) type_MAX)
-				{
+					|| block->blk_type >= (SCHAR) type_MAX) {
 					ib_fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n",
 							   block, block->blk_type);
 					++corrupt;
@@ -594,6 +604,7 @@ int DBG_close(void)
  *	Close the debugging file.
  *
  **************************************/
+
 	ib_fprintf(dbg_file, "\014\014");
 	ib_fclose(dbg_file);
 	dbg_file = ib_stdout;
@@ -613,6 +624,7 @@ int DBG_eval(int n)
  *	Examine a value.
  *
  **************************************/
+
 	ib_fprintf(dbg_file, "octal = %X, decimal = %d, hex = %x\n", n, n, n);
 	return TRUE;
 }
@@ -630,6 +642,7 @@ int DBG_examine(int *n)
  *	Examine a value.
  *
  **************************************/
+
 	ib_fprintf(dbg_file, "octal = %X, decimal = %d, hex = %x\n", *n, *n, *n);
 	return TRUE;
 }
@@ -692,7 +705,7 @@ int DBG_pool(JrdMemoryPool *pool)
 }
 
 
-int DBG_pretty(const jrd_nod* node, int column)
+int DBG_pretty(JRD_NOD node, int column)
 {
 /**************************************
  *
@@ -704,12 +717,17 @@ int DBG_pretty(const jrd_nod* node, int column)
  *	Pretty print a node tree.
  *
  **************************************/
+	RSE rse;
+	JRD_REL relation;
+	JRD_PRC procedure;
+	JRD_NOD *ptr, *end;
+	IRB retrieval;
 	int i;
 
 #define NODE(struct)	((struct) node)
 
 	if (node && node->blk_type == (SCHAR) type_rsb)
-		return rsb_pretty(reinterpret_cast<const RecordSource*>(node), column);
+		return rsb_pretty(reinterpret_cast < Rsb * >(node), column);
 
 	ib_fprintf(dbg_file, "%8X\t", node);
 	for (i = 0; i < column; i++)
@@ -725,32 +743,22 @@ int DBG_pretty(const jrd_nod* node, int column)
 			   node->nod_impure);
 	column += 4;
 
-	const jrd_rel* relation;
-	const jrd_prc* procedure;
-	const jrd_nod* const* ptr;
-	const jrd_nod* const* end;
-	const IndexRetrieval* retrieval;
-
 	switch (node->nod_type) {
 	case nod_rse:
-		{
-			const RecordSelExpr* recse = (RecordSelExpr*) node;
-			ib_fprintf(dbg_file, "\n");
-			if (recse->rse_rsb)
-				DBG_pretty(reinterpret_cast<const jrd_nod*>(recse->rse_rsb), column);
-			else {
-				DBG_pretty(recse->rse_first, column);
-				DBG_pretty(recse->rse_boolean, column);
-				DBG_pretty(recse->rse_sorted, column);
-				DBG_pretty(recse->rse_projection, column);
-				for (ptr = recse->rse_relation, end = ptr + recse->rse_count;
-					 ptr < end; ptr++)
-				{
-					DBG_pretty(*ptr, column);
-				}
-			}
-			break;
+		rse = (RSE) node;
+		ib_fprintf(dbg_file, "\n");
+		if (rse->rse_rsb)
+			DBG_pretty(reinterpret_cast < jrd_nod * >(rse->rse_rsb), column);
+		else {
+			DBG_pretty(rse->rse_first, column);
+			DBG_pretty(rse->rse_boolean, column);
+			DBG_pretty(rse->rse_sorted, column);
+			DBG_pretty(rse->rse_projection, column);
+			for (ptr = rse->rse_relation, end = ptr + rse->rse_count;
+				 ptr < end; ptr++)
+				DBG_pretty(*ptr, column);
 		}
+		break;
 
 	case nod_argument:
 		ib_fprintf(dbg_file, ", id: %d, message: %X\n",
@@ -780,42 +788,36 @@ int DBG_pretty(const jrd_nod* node, int column)
 		return TRUE;
 
 	case nod_index:
-		retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
+		retrieval = (IRB) node->nod_arg[e_idx_retrieval];
 		ib_fprintf(dbg_file, ", id: %d\n", retrieval->irb_index);
 		for (ptr = retrieval->irb_value, end =
 			 ptr + retrieval->irb_lower_count; ptr < end; ptr++)
-		{
 			DBG_pretty(*ptr, column);
-		}
 		for (end = ptr + retrieval->irb_upper_count; ptr < end; ptr++)
 			DBG_pretty(*ptr, column);
 		return TRUE;
 
 	case nod_relation:
-		relation = (jrd_rel*) node->nod_arg[e_rel_relation];
+		relation = (JRD_REL) node->nod_arg[e_rel_relation];
 		ib_fprintf(dbg_file, ", stream: %d, %s (%X)\n",
 				   node->nod_arg[e_rel_stream], relation->rel_name, relation);
 		return TRUE;
 
 	case nod_procedure:
-		{
-			const SSHORT procedure_id = (SSHORT)(SLONG) node->nod_arg[e_prc_procedure];
-			ib_fprintf(dbg_file, ", stream: %d, prc_id: %d\n",
-					   node->nod_arg[e_prc_stream], procedure_id);
-			if (node->nod_arg[e_prc_inputs])
-				DBG_pretty(node->nod_arg[e_prc_inputs], column);
-			return TRUE;
-		}
+		SSHORT procedure_id = (SSHORT) node->nod_arg[e_prc_procedure];
+		ib_fprintf(dbg_file, ", stream: %d, prc_id: %d\n",
+				   node->nod_arg[e_prc_stream], procedure_id);
+		if (node->nod_arg[e_prc_inputs])
+			DBG_pretty(node->nod_arg[e_prc_inputs], column);
+		return TRUE;
 
 	case nod_exec_proc:
-		procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
+		procedure = (JRD_PRC) node->nod_arg[e_esp_procedure];
 		ib_fprintf(dbg_file, ", name: %s (%X)\n",
 				   procedure->prc_name->str_data, procedure);
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;
 			 ptr++)
-		{
 			DBG_pretty(*ptr, column);
-		}
 		return TRUE;
 
 	case nod_union:
@@ -845,19 +847,18 @@ int DBG_pretty(const jrd_nod* node, int column)
 		ib_fprintf(dbg_file, "\n");
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;
 			 ptr++)
-		{
 			DBG_pretty(*ptr, column);
-		}
 	}
 
-	if (node->nod_type == nod_for && node->nod_arg[e_for_rsb]) {
-		rsb_pretty(reinterpret_cast<const RecordSource*>(node->nod_arg[e_for_rsb]),
+	if (node->nod_type == nod_for && node->nod_arg[e_for_rsb])
+		rsb_pretty(reinterpret_cast < Rsb * >(node->nod_arg[e_for_rsb]),
 				   column);
-		return TRUE;
-	}
+	return TRUE;
+
     return FALSE;
 }
 
+extern "C"
 int DBG_supervisor(int arg)
 {
 /**************************************
@@ -869,6 +870,7 @@ int DBG_supervisor(int arg)
  * Functional description
  *
  **************************************/
+
 	prior_frame = (int *) *(&arg - 2);
 
 	debug = 0;
@@ -885,7 +887,7 @@ int DBG_supervisor(int arg)
 }
 
 
-int DBG_rpb(record_param* rpb)
+int DBG_rpb(RPB * rpb)
 {
 /**************************************
  *
@@ -897,14 +899,15 @@ int DBG_rpb(record_param* rpb)
  *	Print a record paramter block
  *
  **************************************/
+
 	ib_fprintf(dbg_file, "\n%X\tRECORD PARAMETER BLOCK", rpb);
-	prt_fields(reinterpret_cast<char*>(rpb), dbt_record_param);
-	DBG_window(reinterpret_cast<int*>(&rpb->rpb_window));
+	prt_fields(reinterpret_cast < char *>(rpb), dbt_rpb);
+	DBG_window(reinterpret_cast < int *>(&rpb->rpb_window));
 	return TRUE;
 }
 
 
-int DBG_smb(SortMap* smb, int column)
+int DBG_smb(SMB smb, int column)
 {
 /**************************************
  *
@@ -913,13 +916,15 @@ int DBG_smb(SortMap* smb, int column)
  **************************************
  *
  * Functional description
- *	Pretty print an SortMap (Sort Memory Block)
+ *	Pretty print an smb (Sort Memory Block)
  *
  **************************************/
+
+	smb::smb_repeat * ptr;
 	int i;
 
 	go_column(column);
-	ib_fprintf(dbg_file, "SortMap\n");
+	ib_fprintf(dbg_file, "SMB\n");
 	go_column(column);
 	ib_fprintf(dbg_file,
 			   "keys = %d, count = %d length = %d, key_length = %d\n",
@@ -937,7 +942,7 @@ int DBG_smb(SortMap* smb, int column)
 				   smb->smb_key_desc[i].skd_vary_offset);
 	}
 	for (i = 0; i < smb->smb_count; i++) {
-		smb_repeat* ptr = &smb->smb_rpt[i];
+		ptr = &smb->smb_rpt[i];
 		go_column(column + 2);
 		ib_fprintf(dbg_file, "fld [%d] flag = %d stream = %d field = %d\n",
 				   i, ptr->smb_flag_offset, ptr->smb_stream,
@@ -961,16 +966,19 @@ int DBG_verify(void)
  *	Verify integrity of all pools.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	DBB dbb;
+	VEC vector;
+	int i;
+
+	dbb = GET_DBB;
 
 	if (!dbg_file)
 		dbg_file = ib_fopen("tt:", "w");
 
-	VEC vector;
 	if (!dbb || !(vector = dbb->dbb_pools))
 		return TRUE;
 
-	for (int i = 0; i < vector->vec_count; i++)
+	for (i = 0; i < vector->vec_count; i++)
 		DBG_check(i);
 
 	return TRUE;
@@ -990,7 +998,7 @@ int DBG_window(int *window)
  *
  **************************************/
 	ib_fprintf(dbg_file, "\n%X\tWINDOW", window);
-	prt_fields(reinterpret_cast<char*>(window), dbt_window);
+	prt_fields(reinterpret_cast < char *>(window), dbt_window);
 	return TRUE;
 }
 
@@ -1007,7 +1015,17 @@ int DBG_memory(void)
  *	Print memory usage
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	DBB dbb;
+	VEC vector;
+	PLB pool;
+	int pool_id;
+	int trans_pools = 0;
+	int req_pools = 0;
+	int other_pools = 0;
+	int pool_type;
+
+
+	dbb = GET_DBB;
 
 	ib_fprintf(dbg_file, "MEMORY UTILIZATION for database\n\n");
 #ifdef V4_THREADING
@@ -1019,17 +1037,12 @@ int DBG_memory(void)
 	req_pool_mem = 0;
 	trans_pool_mem = 0;
 	other_pool_mem = 0;
-	int trans_pools = 0;
-	int req_pools = 0;
-	int other_pools = 0;
-
-	
-	VEC vector = dbb->dbb_pools;
-	for (int pool_id = 0; pool_id < vector->vec_count; pool_id++) {
-		PLB pool = (PLB) vector->vec_object[pool_id];
+	vector = dbb->dbb_pools;
+	for (pool_id = 0; pool_id < vector->vec_count; pool_id++) {
+		pool = (PLB) vector->vec_object[pool_id];
 		if (!pool)
 			continue;
-		const int pool_type = DBG_analyze(pool_id);
+		pool_type = DBG_analyze(pool_id);
 		switch (pool_type) {
 		case 1:
 			break;
@@ -1084,6 +1097,7 @@ static void go_column(int column)
  *	Utility function to print a bunch of spaces.
  *
  **************************************/
+
 	while (column-- > 0)
 		ib_fprintf(dbg_file, " ");
 }
@@ -1120,10 +1134,10 @@ static int prt_fields(SCHAR * block, int *fields)
  *	Print structured block.
  *
  **************************************/
-	int length, offset;
+	int length, column, offset;
 	TEXT *string, *ptr, *p, s[80];
 
-	int column = 99;
+	column = 99;
 
 	while ( (string = (TEXT *) * fields++) ) {
 		offset = *fields++;
@@ -1169,13 +1183,14 @@ static int prt_que(SCHAR * string, QUE que)
  *	Print a formatted que entry.
  *
  **************************************/
+
 	ib_fprintf(dbg_file, "\t%X %s forward: %X, backward: %X\n",
 			   que, string, que->que_forward, que->que_backward);
 	return TRUE;
 }
 
 
-static int rsb_pretty(const RecordSource* rsb, int column)
+static int rsb_pretty(RSB rsb, int column)
 {
 /**************************************
  *
@@ -1187,8 +1202,12 @@ static int rsb_pretty(const RecordSource* rsb, int column)
  *	Pretty print an rsb tree.
  *
  **************************************/
+	JRD_REL relation;
+	RSB *ptr, *end;
+	USHORT i;
+
 	ib_fprintf(dbg_file, "%X\t", rsb);
-	for (int i = 0; i < column; i++)
+	for (i = 0; i < column; i++)
 		ib_putc(' ', dbg_file);
 
 	if (rsb == NULL)
@@ -1201,44 +1220,32 @@ static int rsb_pretty(const RecordSource* rsb, int column)
 			   rsb_names[(int) rsb->rsb_type], rsb->rsb_impure,
 			   rsb->rsb_stream);
 
-	jrd_rel* relation = rsb->rsb_relation;
-	if (relation) {
+	if ( (relation = rsb->rsb_relation) )
 		ib_fprintf(dbg_file, " %s", relation->rel_name);
-	}
 
 	column += 4;
 
 	ib_fprintf(dbg_file, "\n");
 
-	const RecordSource* const* ptr = rsb->rsb_arg;
-	if (rsb->rsb_type == rsb_merge) {
-		for (const RecordSource* const* const end = ptr + rsb->rsb_count * 2; ptr < end;
+	if (rsb->rsb_type == rsb_merge)
+		for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count * 2; ptr < end;
 			 ptr += 2)
-		{
-			DBG_pretty(reinterpret_cast<jrd_nod*>(*ptr), column);
-		}
-	}
-	else if (rsb->rsb_type != rsb_left_cross) {
-		for (const RecordSource* const* const end = ptr + rsb->rsb_count; ptr < end; ptr++)
-		{
-			DBG_pretty(reinterpret_cast<jrd_nod*>(*ptr), column);
-		}
-	}
-	else {
-		for (const RecordSource* const* const end = ptr + rsb->rsb_count + 1; ptr < end;
+			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
+	else if (rsb->rsb_type != rsb_left_cross)
+		for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count; ptr < end; ptr++)
+			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
+	else
+		for (ptr = rsb->rsb_arg, end = ptr + rsb->rsb_count + 1; ptr < end;
 			 ptr++)
-		{
-			DBG_pretty(reinterpret_cast<jrd_nod*>(*ptr), column);
-		}
-	}
+			DBG_pretty(reinterpret_cast < jrd_nod * >(*ptr), column);
 
 	if (rsb->rsb_next)
-		DBG_pretty(reinterpret_cast<jrd_nod*>(rsb->rsb_next), column);
+		DBG_pretty(reinterpret_cast < jrd_nod * >(rsb->rsb_next), column);
 	return TRUE;
 }
 
 
-void yyerror(const char* string)
+void yyerror(const char *string)
 {
 /**************************************
  *
@@ -1250,6 +1257,7 @@ void yyerror(const char* string)
  *	YACC error function.  Boring.
  *
  **************************************/
+
 	ib_fprintf(dbg_file, "%s\n", string);
 }
 
@@ -1266,6 +1274,9 @@ int yywrap(void)
  *	Wrapup function for YACC.
  *
  **************************************/
+
 	return (1);
 }
 
+
+} // extern "C"

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Lock Manager
- *	MODULE:		manager.cpp
+ *	MODULE:		manager.c
  *	DESCRIPTION:	Lock manager process
  *
  * The contents of this file are subject to the Interbase Public
@@ -61,15 +61,13 @@ int main( int argc, char **argv)
 	status_vector[1] = 0;
 	owner_handle = 0;
 	if (!LOCK_init
-		(status_vector, true, getpid(), Jrd::LCK_OWNER_process,
+		(status_vector, TRUE, getpid(), LCK_OWNER_process,
 		 &owner_handle))
-	{
 #ifdef MANAGER_PROCESS
 			LOCK_manager(owner_handle);
 #else
 			;
 #endif
-	}
 
 	LOCK_fini(status_vector, &owner_handle);
 }

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	DUDLEY (ddl compiler)
- *	MODULE:		extract.epp
+ *	MODULE:		extract.e
  *	DESCRIPTION:	definition extract routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -24,95 +24,107 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../dudley/ddl.h"
 #include "../jrd/acl.h"
 #include "../jrd/flags.h"
 #include "../jrd/obj.h"
+#include "../wal/wal.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/extra_proto.h"
 #include "../jrd/gds_proto.h"
 
 DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME DB_file_name;
 
-static const char* const FOPEN_WRITE_TYPE	= "w";
+#ifndef FOPEN_WRITE_TYPE
+#define FOPEN_WRITE_TYPE	"w"
+#endif
 
-inline bool blob_null(const ISC_QUAD id)
-{
-	return !id.gds_quad_low && !id.gds_quad_high;
-}
+#define BLOB_NULL(id)	(!id.gds_quad_low && !id.gds_quad_high)
 
-struct view {
-	view *view_next;
+typedef struct view {
+	struct view *view_next;
 	TEXT view_name[1];
-};
+} *VIEW;
 
 static void binary_to_ascii(SLONG, SSHORT, TEXT *);
-static void decompile_blr_literal(const SCHAR*);
+static void decompile_blr_literal(SCHAR *);
 static void extract_acls(void);
-static void extract_computed(const TEXT*, bool);
-static void extract_database(const TEXT*);
+static void extract_computed(TEXT *, BOOLEAN);
+static void extract_database(TEXT *);
 static void extract_fields(void);
 static void extract_filters(void);
 static void extract_functions(void);
-static void extract_func_args(const TEXT *);
+static void extract_func_args(TEXT *);
 static void extract_generators(void);
-static void extract_grants(const TEXT *);
+static void extract_grants(TEXT *);
 static void extract_indexes(void);
 static void extract_relations(void);
-static void extract_rfr(const TEXT*);
+static void extract_rfr(TEXT *);
 static void extract_security(void);
 static void extract_triggers(void);
-static void extract_trig_msgs(const TEXT *);
-static void extract_view(const TEXT*, ISC_QUAD*, ISC_QUAD*, bool, bool, bool, bool*);
+static void extract_trig_msgs(TEXT *);
+static void extract_view(TEXT *, SLONG *, SLONG *, USHORT, USHORT, USHORT,
+						 BOOLEAN *);
 static void extract_views(void);
-static void field_attributes(ISC_QUAD*, const TEXT*, ISC_QUAD*, const TEXT*, SSHORT);
-static void format_acl(const SCHAR *);
-static char name_trunc(const TEXT *, TEXT *);
-static void print_blob(ISC_QUAD*, TEXT);
+static void field_attributes(SLONG *, TEXT *, SLONG *, TEXT *, SSHORT);
+static void format_acl(SCHAR *);
+static int name_trunc(TEXT *, TEXT *);
+static void print_blob(SLONG *, TEXT);
 static void put_comment(USHORT);
-static void put_error(USHORT, const TEXT*);
+static void put_error(USHORT, TEXT *);
 static void set_capabilities(void);
-static void type_scalar(USHORT, SSHORT, USHORT, SSHORT, USHORT, const TEXT*);
-static void view_fields(const TEXT*);
-static void wal_info(const UCHAR*, SSHORT*, SLONG*, SLONG*, SLONG*);
+static void type_scalar(USHORT, SSHORT, USHORT, SSHORT, USHORT, TEXT *);
+static void view_fields(TEXT *);
+static void wal_info(UCHAR *, SSHORT *, SLONG *, SLONG *, SLONG *);
 
-static IB_FILE* output_file;
-static const SCHAR db_items[] = { isc_info_page_size };
-static const SCHAR db_info[] = {
-	isc_info_num_wal_buffers, isc_info_wal_buffer_size,
-	isc_info_wal_ckpt_length, isc_info_wal_grpc_wait_usecs
+static IB_FILE *output_file;
+static SCHAR db_items[] = { gds_info_page_size };
+static SCHAR db_info[] =
+	{ gds_info_num_wal_buffers, gds_info_wal_buffer_size,
+	gds_info_wal_ckpt_length, gds_info_wal_grpc_wait_usecs
 };
-static const TEXT acl_privs[] = "?CGDRWP???";
+static TEXT acl_privs[] = "?CGDRWP???";
+
+#ifdef NOT_USED_OR_REPLACED
+static TEXT *acl_ids[] = {
+	"?",
+	"group",
+	"user",
+	"person",
+	"project",
+	"organization",
+	"node",
+	"view"
+};
+#endif
 
 static SLONG EXT_capabilities;
 
-enum EXT_flags {
-	EXT_security = 1,
-	EXT_files = 2,
-	EXT_external = 4,
-	EXT_idx_inactive = 8,
-	EXT_triggers = 16,	// Obsolete - 1996-Aug-05
-	EXT_context_name = 32,
-	EXT_db_description = 64,
-	EXT_v3 = 128,	// rdb$dependencies, rdb$functions, rdb$filters, rdb$user_privileges
-					// rdb$triggers, rdb$types, rdb$indices.rdb$index_type
-					// rdb$fields.rdb$dimensions, rdb$files.rdb$shadow_number
-					// rdb$generators
-	EXT_v4 = 256
-};
+#define	EXT_security		1
+#define EXT_files		2
+#define EXT_external		4
+#define EXT_idx_inactive 	8
+#define EXT_triggers		16	/* Obsolete - 1996-Aug-05 */
+#define EXT_context_name	32
+#define EXT_db_description	64
+#define EXT_v3			128		/* rdb$dependencies, rdb$functions, rdb$filters, rdb$user_privileges */
+					/* rdb$triggers, rdb$types, rdb$indices.rdb$index_type */
+					/* rdb$fields.rdb$dimensions, rdb$files.rdb$shadow_number */
+					/* rdb$generators */
+
+#define EXT_v4			256
 
 /* table used to determine capabilities, checking for specific 
    fields in system relations */
 
-struct rfr_tab_t {
+typedef struct rfr_tab_t {
 	TEXT *relation;
 	TEXT *field;
 	int bit_mask;
-};
+} *RFR_TAB;
 
-static const rfr_tab_t rfr_table[] = {
+static struct rfr_tab_t rfr_table[] = {
 	{ "RDB$INDICES", "RDB$INDEX_INACTIVE", EXT_idx_inactive },
 /* Obsolete - 1996-Aug-05 David Schnepper 
 	{ "RDB$RELATIONS",	"RDB$STORE_TRIGGER",	EXT_triggers },
@@ -162,7 +174,7 @@ void DDL_ext(void)
    to ib_stdout, not to the output_file */
 	if (DDL_version) {
 		DDL_msg_put(249, DB_file_name, NULL, NULL, NULL, NULL);	/* msg 249: Version(s) for database \"%s\" */
-		isc_version(&DB, NULL, NULL);
+		gds__version(&DB, NULL, NULL);
 	}
 
 	START_TRANSACTION;
@@ -206,9 +218,9 @@ static void binary_to_ascii(SLONG value, SSHORT scale, TEXT * buffer)
  *	return it in the user supplied buffer;
  *
  **************************************/
-	TEXT *q, temp[32];
+	TEXT *p, *q, temp[32];
 
-	TEXT *p = buffer;
+	p = buffer;
 
 /* Handle non-negative scale factor in straightforward manner */
 
@@ -245,7 +257,7 @@ static void binary_to_ascii(SLONG value, SSHORT scale, TEXT * buffer)
 }
 
 
-static void decompile_blr_literal(const SCHAR* string)
+static void decompile_blr_literal(SCHAR * string)
 {
 /**************************************
  *
@@ -258,23 +270,23 @@ static void decompile_blr_literal(const SCHAR* string)
  *	and write it to the output file.
  *
  **************************************/
-	SCHAR scale;
-	TEXT buffer[256];
+	SCHAR *p, scale;
+	TEXT *b, buffer[256];
 	SSHORT size;
 	SLONG value;
 
-	const UCHAR* p = reinterpret_cast<const UCHAR*>(string);
+	p = string;
 
 	if ((*p++ != blr_version4) || (*p++ != blr_literal)) {
 		put_comment(250);		/* msg 250: **** unable to decompile missing value *** */
 		return;
 	}
 
-	TEXT* b = buffer;
+	b = buffer;
 
 	switch (*p++) {
 	case (blr_text):
-		size = gds__vax_integer(p, 2);
+		size = gds__vax_integer((UCHAR*) p, 2);
 		p += 2;
 		*b++ = '"';
 		while (size--)
@@ -285,18 +297,18 @@ static void decompile_blr_literal(const SCHAR* string)
 
 	case (blr_long):
 		scale = *p++;
-		value = gds__vax_integer(p, 4);
+		value = gds__vax_integer((UCHAR*) p, 4);
 		binary_to_ascii(value, scale, buffer);
 		break;
 
 	case (blr_short):
 		scale = *p++;
-		value = gds__vax_integer(p, 2);
+		value = gds__vax_integer((UCHAR*) p, 2);
 		binary_to_ascii(value, scale, buffer);
 		break;
 
 	default:
-		gds__msg_format(NULL, DDL_MSG_FAC, 250, sizeof(buffer), buffer,
+		gds__msg_format(NULL_PTR, DDL_MSG_FAC, 250, sizeof(buffer), buffer,
 						NULL, NULL, NULL, NULL, NULL);
 		/* msg 250: **** unable to decompile missing value *** */
 	}
@@ -322,75 +334,71 @@ static void extract_acls(void)
  *	statement.
  *
  **************************************/
+	BOOLEAN first;
 	TEXT s[32], *relname;
+	USHORT count;
 
-	bool first = true;
+	first = TRUE;
     
     FOR S IN RDB$SECURITY_CLASSES 
         if (first) {
             put_comment(251);       /* msg 251: \n\n\tSecurity Class Definitions / GRANT statements\t */
-            first = false;
+            first = FALSE;
         } 
-	    USHORT count = 0;
-
-	    /* if there's any rdb$user_privileges entry then we can use GRANT statement */
-	    /* resort to parsing rdb$security_class for SQL$<relation-name> instead of
-	       just checking for rdb$security_classes.rdb$relation_name since it's
-	       possible that the security class was used on some other relation than
-	       the one GRANTed ON */
-
-		// CVC: it's not clear how this works. Any relation with len(name) > 27
-		// will have its name truncated and any pair of relations whose first 27
-		// characters are the same will have a conflict, hence the latest to be
-		// defined or changed WRT rights will stomp over the other's settings, so
-		// both relations become tied to the same security class.
-
-	    if (EXT_capabilities & EXT_v3) {
-	        if (strncmp(S.RDB$SECURITY_CLASS, "SQL$", 4) == 0) {
-	            strcpy(s, S.RDB$SECURITY_CLASS);
-	            relname = &s[4];
-	            if (EXT_capabilities & EXT_v4) {
-	                FOR U IN RDB$USER_PRIVILEGES WITH
-	                    U.RDB$RELATION_NAME = relname AND
-	                    U.RDB$OBJECT_TYPE = obj_relation
-	                    count++;
-	                END_FOR;
-	            }
-	            else {
-	                FOR U IN RDB$USER_PRIVILEGES WITH U.RDB$RELATION_NAME = relname
-	                    count++;
-	                END_FOR;
-	            }
-
-	            /* if there's no rdb$user_privileges entry, but we still find a
-	               SQL$ security class, that's the relation owner's privilege list.
-	               Ignore this as the new database created will have a new owner
-	               and should start fresh with no security class defined for
-	               owner */
-
-	            if (!count)
-	                continue;
-	        }
-	    }
-	    if (count)
-	        extract_grants(relname);
-	    else {
-	        ib_fprintf(output_file, "\ndefine security_class %s",
-	                   S.RDB$SECURITY_CLASS);
-	        if (!blob_null(S.RDB$DESCRIPTION)) {
-	            ib_fprintf(output_file, "\n\t{");
-	            print_blob(&S.RDB$DESCRIPTION, 'u');
-	            ib_fprintf(output_file, "}");
-	        }
-	        if (!blob_null(S.RDB$ACL))
-	            print_blob(&S.RDB$ACL, 'a');
-	        ib_fprintf(output_file, ";\n");
-	    }
+    count = 0;
+	
+    /* if there's any rdb$user_privileges entry then we can use GRANT statement */
+    /* resort to parsing rdb$security_class for SQL$<relation-name> instead of
+       just checking for rdb$security_classes.rdb$relation_name since it's
+       possible that the security class was used on some other relation than
+       the one GRANTed ON */
+	
+    if (EXT_capabilities & EXT_v3) {
+        if (strncmp(S.RDB$SECURITY_CLASS, "SQL$", 4) == 0) {
+            strcpy(s, S.RDB$SECURITY_CLASS);
+            relname = &s[4];
+            if (EXT_capabilities & EXT_v4) {
+                FOR U IN RDB$USER_PRIVILEGES WITH 
+                    U.RDB$RELATION_NAME = relname AND 
+                    U.RDB$OBJECT_TYPE = obj_relation 
+                    count++;
+                END_FOR;
+            }
+            else {
+                FOR U IN RDB$USER_PRIVILEGES WITH U.RDB$RELATION_NAME = relname 
+                    count++;
+                END_FOR;
+            }
+            
+            /* if there's no rdb$user_privileges entry, but we still find a
+               SQL$ security class, that's the relation owner's privilege list.
+               Ignore this as the new database created will have a new owner
+               and should start fresh with no security class defined for
+               owner */
+            
+            if (!count)
+                continue;
+        }
+    }
+    if (count)
+        extract_grants(relname);
+    else {
+        ib_fprintf(output_file, "\ndefine security_class %s",
+                   S.RDB$SECURITY_CLASS);
+        if (!BLOB_NULL(S.RDB$DESCRIPTION)) {
+            ib_fprintf(output_file, "\n\t{");
+            print_blob((SLONG*) &S.RDB$DESCRIPTION, 'u');
+            ib_fprintf(output_file, "}");
+        }
+        if (!BLOB_NULL(S.RDB$ACL))
+            print_blob((SLONG*) &S.RDB$ACL, 'a');
+        ib_fprintf(output_file, ";\n");
+    }
     END_FOR;
 }
 
 
-static void extract_computed(const TEXT * relation_name, bool first)
+static void extract_computed(TEXT * relation_name, BOOLEAN first)
 {
 /**************************************
  *
@@ -423,7 +431,7 @@ static void extract_computed(const TEXT * relation_name, bool first)
         if (!first)
             ib_fprintf(output_file, ",\n");
         
-        first = false;
+        first = FALSE;
         name_trunc(RFR.RDB$FIELD_NAME, s);
         if (F.RDB$COMPUTED_SOURCE.NULL) {
             put_error(252, s);      /* msg 252: **** field %s can not be extracted, computed source missing ***  */
@@ -448,19 +456,19 @@ static void extract_computed(const TEXT * relation_name, bool first)
         }
         ib_fprintf(output_file, " computed by (");
         
-        print_blob(&F.RDB$COMPUTED_SOURCE, 'u');
+        print_blob((SLONG*) &F.RDB$COMPUTED_SOURCE, 'u');
         ib_fprintf(output_file, ")");
         if (!RFR.RDB$FIELD_POSITION.NULL)
             ib_fprintf(output_file, "\tposition %d", RFR.RDB$FIELD_POSITION);
-        field_attributes(&RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
-                         &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
+        field_attributes((SLONG*) &RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
+                         (SLONG*) &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
                          RFR.RDB$SYSTEM_FLAG);
         
     END_FOR;
 }
 
 
-static void extract_database(const TEXT * DB_file_name)
+static void extract_database(TEXT * DB_file_name)
 {
 /**************************************
  *
@@ -473,18 +481,25 @@ static void extract_database(const TEXT * DB_file_name)
  *	and write it to the output file.
  *
  **************************************/
-	const int OneK = 1024;
-	TEXT s[32], buffer[256];
+	TEXT s[32], buffer[256], *d;
+	SSHORT length, any_shadows;
 	SLONG page_size;
 	ISC_STATUS_ARRAY status_vector;
+	BOOLEAN first_time;
+	SSHORT need_close;
+	SCHAR db_info_buffer[64];
+	SSHORT num_buf;
+	SLONG buf_size;
+	SLONG chkpt_len;
+	SLONG grp_commit;
 
 	ib_fprintf(output_file, "define database \"%s\"", DB_file_name);
 
 	if (EXT_capabilities & EXT_security) {
 	       FOR D IN RDB$DATABASE 
-               if (!blob_null(D.RDB$DESCRIPTION)) {
+               if (!BLOB_NULL(D.RDB$DESCRIPTION)) {
                    ib_fprintf(output_file, "\n\t{");
-                   print_blob(&D.RDB$DESCRIPTION, 'u');
+                   print_blob((SLONG*) &D.RDB$DESCRIPTION, 'u');
                    ib_fprintf(output_file, "}");
                } 
                if (!D.RDB$SECURITY_CLASS.NULL) {
@@ -496,31 +511,31 @@ static void extract_database(const TEXT * DB_file_name)
 	}
 	else if (EXT_capabilities & EXT_db_description)
         FOR D IN RDB$DATABASE 
-            if (!blob_null(D.RDB$DESCRIPTION)) {
+            if (!BLOB_NULL(D.RDB$DESCRIPTION)) {
                 ib_fprintf(output_file, "\n\t{");
-                print_blob(&D.RDB$DESCRIPTION, 'u');
+                print_blob((SLONG*) &D.RDB$DESCRIPTION, 'u');
                 ib_fprintf(output_file, "}");
             } 
         END_FOR;
 
-		if (isc_database_info(status_vector, &DB, sizeof(db_items),
+		if (gds__database_info(status_vector,
+							   GDS_REF(DB),
+							   sizeof(db_items),
 							   db_items, sizeof(buffer), buffer)) {
-			put_error(254, 0);	
-			/* msg 254: ***isc_database_info failed*** */
+			put_error(254, 0);	/* msg 254: ***gds__database_info failed*** */
 			gds__print_status(status_vector);
 		}
 
-        TEXT* d = buffer;
-        if (*d++ == isc_info_page_size) {
-            SSHORT length = gds__vax_integer(reinterpret_cast<const UCHAR*>(d), 2);
+        d = buffer;
+        if (*d++ == gds_info_page_size) {
+            length = gds__vax_integer((UCHAR*) d, 2);
             d += 2;
-            page_size = gds__vax_integer(reinterpret_cast<const UCHAR*>(d), length);
+            page_size = gds__vax_integer((UCHAR*) d, length);
             if (page_size)
                 ib_fprintf(output_file, "\n\tpage_size %"SLONGFORMAT, page_size);
         }
         
         if (EXT_capabilities & EXT_files)
-		{
             if (EXT_capabilities & EXT_v3) {
                 FOR F IN RDB$FILES WITH F.RDB$SHADOW_NUMBER MISSING OR 
                     F.RDB$SHADOW_NUMBER EQ 0 
@@ -529,26 +544,23 @@ static void extract_database(const TEXT * DB_file_name)
                                buffer, F.RDB$FILE_START);
                 END_FOR;
             }
-            else {
-                FOR F IN RDB$FILES
-					name_trunc(F.RDB$FILE_NAME, buffer);
+            else
+                FOR F IN RDB$FILES name_trunc(F.RDB$FILE_NAME, buffer);
                     ib_fprintf(output_file, "\n\tfile \"%s\" starting at page %ld",
                                buffer, F.RDB$FILE_START);
                 END_FOR;
-			}
-		}
 
 /* print log info. */
 
 		if (EXT_capabilities & EXT_v4) {
-			bool first_time = true;
-			bool need_close = false;
+			first_time = TRUE;
+			need_close = 0;
 
 	       FOR F IN RDB$LOG_FILES if (F.RDB$FILE_FLAGS & LOG_overflow)
 	             continue;
 	
 	       if (first_time) {
-	           first_time = false;
+	           first_time = FALSE;
 	           ib_fprintf(output_file, "\n\tlogfile");
 	
 	           if (F.RDB$FILE_FLAGS & LOG_default)
@@ -556,7 +568,7 @@ static void extract_database(const TEXT * DB_file_name)
 	           else if (F.RDB$FILE_FLAGS & LOG_serial)
 	               ib_fprintf(output_file, " base_name");
 	           else {
-	               need_close = true;
+	               need_close = 1;
 	               ib_fprintf(output_file, "\n\t\t(");
 	           }
 	
@@ -593,17 +605,20 @@ static void extract_database(const TEXT * DB_file_name)
 	                      F.RDB$FILE_PARTITIONS);
 	       END_FOR;
 
-			SCHAR db_info_buffer[64];
-			if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
+			if (gds__database_info(gds_status,
+								   GDS_REF(DB),
+								   sizeof(db_info),
+								   db_info,
 								   sizeof(db_info_buffer), db_info_buffer)) {
-				put_error(254, 0);	/* msg 254: ***isc_database_info failed*** */
+				put_error(254, 0);	/* msg 254: ***gds__database_info failed*** */
 				gds__print_status(status_vector);
 			}
 
-            SSHORT num_buf = 0;
-			SLONG buf_size = 0, chkpt_len = 0, grp_commit= 0;
-			wal_info(reinterpret_cast<const UCHAR*>(db_info_buffer), &num_buf,
-					&buf_size, &chkpt_len, &grp_commit);
+			buf_size = chkpt_len = grp_commit = 0;
+			num_buf = 0;
+
+			wal_info((UCHAR*) db_info_buffer, &num_buf, &buf_size, &chkpt_len,
+					 &grp_commit);
 
 			if (num_buf)
 				ib_fprintf(output_file, "\n\tnum_log_buffers %d", num_buf);
@@ -620,20 +635,20 @@ static void extract_database(const TEXT * DB_file_name)
 	ib_fprintf(output_file, ";\n");
 
 	if (EXT_capabilities & EXT_v3) {
-		bool any_shadows = false;
+		any_shadows = FALSE;
 
-			FOR F IN RDB$FILES WITH F.RDB$SHADOW_NUMBER GT 0
-				SORTED BY F.RDB$SHADOW_NUMBER, F.RDB$FILE_START
-				name_trunc(F.RDB$FILE_NAME, buffer);
-				if (F.RDB$FILE_START)
-					ib_fprintf(output_file, "\n\tfile \"%s\" starting at page %ld",
-							   buffer, F.RDB$FILE_START);
-				else
-					ib_fprintf(output_file, "%s\ndefine shadow %d \"%s\"",
-							   (any_shadows) ? ";\n" : "", F.RDB$SHADOW_NUMBER,
-							   buffer);
-				any_shadows = true;
-			END_FOR;
+	       FOR F IN RDB$FILES WITH F.RDB$SHADOW_NUMBER GT 0
+	           SORTED BY F.RDB$SHADOW_NUMBER, F.RDB$FILE_START
+	           name_trunc(F.RDB$FILE_NAME, buffer);
+	           if (F.RDB$FILE_START)
+                   ib_fprintf(output_file, "\n\tfile \"%s\" starting at page %ld",
+                              buffer, F.RDB$FILE_START);
+               else
+                   ib_fprintf(output_file, "%s\ndefine shadow %d \"%s\"",
+                              (any_shadows) ? ";\n" : "", F.RDB$SHADOW_NUMBER,
+                              buffer);
+               any_shadows = TRUE;
+	       END_FOR;
 
 		if (any_shadows)
 			ib_fprintf(output_file, ";\n");
@@ -654,16 +669,17 @@ static void extract_fields(void)
  *	and write them to the output file.
  *
  **************************************/
+	BOOLEAN first;
 	TEXT s[32];
 
-	bool first = true;
+	first = TRUE;
     FOR F IN RDB$FIELDS WITH
         (F.RDB$SYSTEM_FLAG NE 1 OR F.RDB$SYSTEM_FLAG MISSING) AND
         F.RDB$COMPUTED_BLR MISSING SORTED BY F.RDB$FIELD_NAME 
 
         if (first) {
             put_comment(255);       /*msg 255: \n\n\tGlobal Field Definitions\t */
-            first = false;
+            first = FALSE;
         } 
         name_trunc(F.RDB$FIELD_NAME, s);
         ib_fprintf(output_file, "define field %s", s);
@@ -672,22 +688,14 @@ static void extract_fields(void)
             if (F.RDB$SEGMENT_LENGTH)
                 ib_fprintf(output_file, " segment_length %u",
                            (USHORT) F.RDB$SEGMENT_LENGTH);
-            switch (F.RDB$FIELD_SUB_TYPE)
-            {
-            case 1:
+            if (F.RDB$FIELD_SUB_TYPE == 1)
                 ib_fprintf(output_file, " sub_type text");
-                break;
-            case 2:
+            else if (F.RDB$FIELD_SUB_TYPE == 2)
                 ib_fprintf(output_file, " sub_type BLR");
-                break;
-            case 3:
+            else if (F.RDB$FIELD_SUB_TYPE == 3)
                 ib_fprintf(output_file, " sub_type ACL");
-                break;
-            default:
-            	if (F.RDB$FIELD_SUB_TYPE)
-                	ib_fprintf(output_file, " sub_type %d", F.RDB$FIELD_SUB_TYPE);
-                break;
-            }
+            else if (F.RDB$FIELD_SUB_TYPE)
+                ib_fprintf(output_file, " sub_type %d", F.RDB$FIELD_SUB_TYPE);
         }
         else {
             strcpy(s, F.RDB$FIELD_NAME);
@@ -708,24 +716,24 @@ static void extract_fields(void)
             
         }
         
-        if (!blob_null(F.RDB$VALIDATION_SOURCE)) {
+        if (!BLOB_NULL(F.RDB$VALIDATION_SOURCE)) {
             ib_fprintf(output_file, "\n\tvalid if (");
-            print_blob(&F.RDB$VALIDATION_SOURCE, 'u');
+            print_blob((SLONG*) &F.RDB$VALIDATION_SOURCE, 'u');
             ib_fprintf(output_file, ")");
         }
         
-        if (!blob_null(F.RDB$MISSING_VALUE)) {
+        if (!BLOB_NULL(F.RDB$MISSING_VALUE)) {
             ib_fprintf(output_file, "\n\tmissing_value is ");
-            print_blob(&F.RDB$MISSING_VALUE, 'm');
+            print_blob((SLONG*) &F.RDB$MISSING_VALUE, 'm');
         }
         
         /*
-          if (!blob_null (F.RDB$DEFAULT_VALUE))
+          if (!BLOB_NULL (F.RDB$DEFAULT_VALUE))
           default_value (&F.RDB$DEFAULT_VALUE);
         */
         
-        field_attributes(&F.RDB$DESCRIPTION, F.RDB$QUERY_NAME,
-                         &F.RDB$QUERY_HEADER, F.RDB$EDIT_STRING,
+        field_attributes((SLONG*) &F.RDB$DESCRIPTION, F.RDB$QUERY_NAME,
+                         (SLONG*) &F.RDB$QUERY_HEADER, F.RDB$EDIT_STRING,
                          F.RDB$SYSTEM_FLAG);
         ib_fprintf(output_file, ";\n");
         
@@ -746,30 +754,31 @@ static void extract_filters(void)
  *	and write them to the output file.
  *
  **************************************/
+	BOOLEAN first;
 	TEXT s[32];
 
-	bool first = true;
+	first = TRUE;
 
-	FOR F IN RDB$FILTERS SORTED BY F.RDB$FUNCTION_NAME
-		if (first) {
-		   put_comment(256);       /* msg 256: \n\n\tFilter Definitions\t */
-		   first = false;
-		}
-		name_trunc(F.RDB$FUNCTION_NAME, s);
-		ib_fprintf(output_file, "\ndefine filter %s", s);
-		ib_fprintf(output_file, "\n\tinput_type %d", F.RDB$INPUT_SUB_TYPE);
-		ib_fprintf(output_file, "\n\toutput_type %d", F.RDB$OUTPUT_SUB_TYPE);
-		if (!F.RDB$MODULE_NAME.NULL && name_trunc(F.RDB$MODULE_NAME, s))
-		   ib_fprintf(output_file, "\n\tmodule_name '%s'", s);
-		name_trunc(F.RDB$ENTRYPOINT, s);
-		ib_fprintf(output_file, "\n\tentry_point '%s'", s);
-		if (!blob_null(F.RDB$DESCRIPTION)) {
-		   ib_fprintf(output_file, "\n\t{");
-		   print_blob(&F.RDB$DESCRIPTION, 'u');
-		   ib_fprintf(output_file, "}");
-		}
-		ib_fprintf(output_file, ";\n");
-	END_FOR;
+	   FOR F IN RDB$FILTERS SORTED BY F.RDB$FUNCTION_NAME 
+           if (first) {
+               put_comment(256);       /* msg 256: \n\n\tFilter Definitions\t */
+               first = FALSE;
+           } 
+           name_trunc(F.RDB$FUNCTION_NAME, s);
+           ib_fprintf(output_file, "\ndefine filter %s", s);
+           ib_fprintf(output_file, "\n\tinput_type %d", F.RDB$INPUT_SUB_TYPE);
+           ib_fprintf(output_file, "\n\toutput_type %d", F.RDB$OUTPUT_SUB_TYPE);
+           if (!F.RDB$MODULE_NAME.NULL && name_trunc(F.RDB$MODULE_NAME, s))
+               ib_fprintf(output_file, "\n\tmodule_name '%s'", s);
+           name_trunc(F.RDB$ENTRYPOINT, s);
+           ib_fprintf(output_file, "\n\tentry_point '%s'", s);
+           if (!BLOB_NULL(F.RDB$DESCRIPTION)) {
+               ib_fprintf(output_file, "\n\t{");
+               print_blob((SLONG*) &F.RDB$DESCRIPTION, 'u');
+               ib_fprintf(output_file, "}");
+           }
+           ib_fprintf(output_file, ";\n");
+	   END_FOR;
 }
 
 
@@ -786,37 +795,38 @@ static void extract_functions(void)
  *	and write them to the output file.
  *
  **************************************/
+	BOOLEAN first;
 	TEXT s[32];
 
-	bool first = true;
+	first = TRUE;
 
-	FOR FUNC IN RDB$FUNCTIONS SORTED BY FUNC.RDB$FUNCTION_NAME
-		if (first) {
-		   put_comment(257);       /* msg 257: \n\n\tFunction Definitions\t */
-		   first = false;
-		}
-		name_trunc(FUNC.RDB$FUNCTION_NAME, s);
-		ib_fprintf(output_file, "\ndefine function %s", s);
-		if (!FUNC.RDB$QUERY_NAME.NULL && name_trunc(FUNC.RDB$QUERY_NAME, s))
-			ib_fprintf(output_file, "\n\tquery_name %s", s);
-		if (!FUNC.RDB$MODULE_NAME.NULL && name_trunc(FUNC.RDB$MODULE_NAME, s))
-			ib_fprintf(output_file, "\n\tmodule_name '%s'", s);
-		name_trunc(FUNC.RDB$ENTRYPOINT, s);
-		ib_fprintf(output_file, "\n\tentry_point '%s'", s);
-		if (!blob_null(FUNC.RDB$DESCRIPTION)) {
-			ib_fprintf(output_file, "\n\t{");
-			print_blob(&FUNC.RDB$DESCRIPTION, 'u');
-			ib_fprintf(output_file, "}");
-		}
-
-		extract_func_args(FUNC.RDB$FUNCTION_NAME);
-
-		ib_fprintf(output_file, ";\n");
-	END_FOR;
+	   FOR FUNC IN RDB$FUNCTIONS SORTED BY FUNC.RDB$FUNCTION_NAME 
+           if (first) {
+               put_comment(257);       /* msg 257: \n\n\tFunction Definitions\t */
+               first = FALSE;
+           } 
+           name_trunc(FUNC.RDB$FUNCTION_NAME, s);
+           ib_fprintf(output_file, "\ndefine function %s", s);
+           if (!FUNC.RDB$QUERY_NAME.NULL && name_trunc(FUNC.RDB$QUERY_NAME, s))
+               ib_fprintf(output_file, "\n\tquery_name %s", s);
+           if (!FUNC.RDB$MODULE_NAME.NULL && name_trunc(FUNC.RDB$MODULE_NAME, s))
+               ib_fprintf(output_file, "\n\tmodule_name '%s'", s);
+           name_trunc(FUNC.RDB$ENTRYPOINT, s);
+           ib_fprintf(output_file, "\n\tentry_point '%s'", s);
+           if (!BLOB_NULL(FUNC.RDB$DESCRIPTION)) {
+               ib_fprintf(output_file, "\n\t{");
+               print_blob((SLONG*) &FUNC.RDB$DESCRIPTION, 'u');
+               ib_fprintf(output_file, "}");
+           }
+	
+           extract_func_args(FUNC.RDB$FUNCTION_NAME);
+	
+           ib_fprintf(output_file, ";\n");
+	   END_FOR;
 }
 
 
-static void extract_func_args(const TEXT * function_name)
+static void extract_func_args(TEXT * function_name)
 {
 /**************************************
  *
@@ -829,8 +839,11 @@ static void extract_func_args(const TEXT * function_name)
  *	and write them to the output file.
  *
  **************************************/
-	bool first = true;
-	const TEXT* p = "";
+	BOOLEAN first;
+	TEXT* p;
+
+	first = TRUE;
+	p = "";
 
     FOR FARG IN RDB$FUNCTION_ARGUMENTS
         WITH FARG.RDB$FUNCTION_NAME = function_name
@@ -839,7 +852,7 @@ static void extract_func_args(const TEXT * function_name)
 
         if (first) {
             p = ",";
-            first = false;
+            first = FALSE;
         }
         
         ib_fprintf(output_file, "\t\t");
@@ -884,16 +897,17 @@ static void extract_generators(void)
  *	Get generator definitions from rdb$generators.
  *
  **************************************/
+	BOOLEAN first;
 	TEXT s[32];
 
-	bool first = true;
+	first = TRUE;
     
     FOR G IN RDB$GENERATORS WITH
         (G.RDB$SYSTEM_FLAG NE 1 OR G.RDB$SYSTEM_FLAG MISSING)
         SORTED BY G.RDB$GENERATOR_NAME 
         if (first) {
             put_comment(290);       /* msg 290: \n\n\tGenerator Definitions\t */
-            first = false;
+            first = FALSE;
         } 
         name_trunc(G.RDB$GENERATOR_NAME, s);
         ib_fprintf(output_file, "\ndefine generator %s;", s);	
@@ -901,7 +915,7 @@ static void extract_generators(void)
 }
 
 
-static void extract_grants(const TEXT * relname)
+static void extract_grants(TEXT * relname)
 {
 /**************************************
  *
@@ -1023,9 +1037,10 @@ static void extract_indexes(void)
  *	and write them to the output file.
  *
  **************************************/
-	TEXT index[32], relation[32], field[32];
-	const TEXT* p = "";
-	bool first = true;
+	TEXT index[32], relation[32], field[32], *p;
+	BOOLEAN first;
+
+	first = TRUE;
 
 /* this query gets all IDX which donot have the systemflag set and
    further sorts them by realtion name and index name */
@@ -1035,7 +1050,7 @@ static void extract_indexes(void)
         SORTED BY I.RDB$RELATION_NAME, I.RDB$INDEX_NAME 
         if (first) {
             put_comment(291);       /* msg 291: \n\n\tIndex Definitions\t */
-            first = false;
+            first = FALSE;
         } 
         if (!I.RDB$UNIQUE_FLAG.NULL && I.RDB$UNIQUE_FLAG == 1)
             p = "unique";
@@ -1046,9 +1061,9 @@ static void extract_indexes(void)
         ib_fprintf(output_file, "\ndefine index %s for %s %s",
                    index, relation, p);
         
-        if (!blob_null(I.RDB$DESCRIPTION)) {
+        if (!BLOB_NULL(I.RDB$DESCRIPTION)) {
             ib_fprintf(output_file, "\n\t{");
-               print_blob(&I.RDB$DESCRIPTION, 'u');
+               print_blob((SLONG*) &I.RDB$DESCRIPTION, 'u');
                ib_fprintf(output_file, "}");
         }
         
@@ -1060,7 +1075,7 @@ static void extract_indexes(void)
         
         if (EXT_capabilities & EXT_v3)
             FOR ACT IN RDB$INDICES WITH ACT.RDB$INDEX_NAME = index
-                   if (ACT.RDB$INDEX_TYPE)
+                   if (ACT.RDB$INDEX_TYPE == IDX_type_descend)
                        ib_fprintf(output_file, "\ndescending");
         END_FOR;
         
@@ -1094,9 +1109,10 @@ static void extract_relations(void)
  *	and write them to the output file.
  *
  **************************************/
+	BOOLEAN first;
 	TEXT s[256];
 
-	bool first = true;
+	first = TRUE;
 
 	if (EXT_capabilities & EXT_external) {
         FOR R IN RDB$RELATIONS WITH
@@ -1104,7 +1120,7 @@ static void extract_relations(void)
             R.RDB$VIEW_BLR MISSING SORTED BY R.RDB$RELATION_NAME 
             if (first) {
                 put_comment(258);   /* msg 258: \n\n\tRelation Definitions\t */
-                first = false;
+                first = FALSE;
             } 
             name_trunc(R.RDB$RELATION_NAME, s);
             ib_fprintf(output_file, "\ndefine relation %s", s);
@@ -1114,9 +1130,9 @@ static void extract_relations(void)
             
             if (R.RDB$SYSTEM_FLAG)
                 ib_fprintf(output_file, "\n\tsystem_flag %d", R.RDB$SYSTEM_FLAG);
-            if (!blob_null(R.RDB$DESCRIPTION)) {
+            if (!BLOB_NULL(R.RDB$DESCRIPTION)) {
                 ib_fprintf(output_file, "\n\t{");
-                print_blob(&R.RDB$DESCRIPTION, 'u');
+                print_blob((SLONG*) &R.RDB$DESCRIPTION, 'u');
                 ib_fprintf(output_file, "}");
             }
             extract_rfr(R.RDB$RELATION_NAME);
@@ -1129,16 +1145,16 @@ static void extract_relations(void)
             R.RDB$VIEW_BLR MISSING SORTED BY R.RDB$RELATION_NAME 
             if (first) {
                 put_comment(258);   /* msg 258: \n\n\tRelation Definitions\t */
-                first = false;
+                first = FALSE;
             } 
             name_trunc(R.RDB$RELATION_NAME, s);
             ib_fprintf(output_file, "\ndefine relation %s", s);
             
             if (R.RDB$SYSTEM_FLAG)
                 ib_fprintf(output_file, "\n\tsystem_flag %d", R.RDB$SYSTEM_FLAG);
-            if (!blob_null(R.RDB$DESCRIPTION)) {
+            if (!BLOB_NULL(R.RDB$DESCRIPTION)) {
                 ib_fprintf(output_file, "\n\t{");
-                print_blob(&R.RDB$DESCRIPTION, 'u');
+                print_blob((SLONG*) &R.RDB$DESCRIPTION, 'u');
                 ib_fprintf(output_file, "}");
             }
             extract_rfr(R.RDB$RELATION_NAME);
@@ -1149,7 +1165,7 @@ static void extract_relations(void)
 }
 
 
-static void extract_rfr(const TEXT * relation_name)
+static void extract_rfr(TEXT * relation_name)
 {
 /**************************************
  *
@@ -1162,10 +1178,11 @@ static void extract_rfr(const TEXT * relation_name)
  *	and write them to the output file.
  *
  **************************************/
-	TEXT s[32];
+	BOOLEAN first;
+	TEXT s[32], *p;
 
-	bool first = true;
-	const TEXT* p = "";
+	first = TRUE;
+	p = "";
 
 	FOR RFR IN RDB$RELATION_FIELDS CROSS F IN RDB$FIELDS
         WITH RFR.RDB$RELATION_NAME = relation_name
@@ -1176,7 +1193,7 @@ static void extract_rfr(const TEXT * relation_name)
         ib_fprintf(output_file, "%s\n", p);
         if (first) {
             p = ",";
-            first = false;
+            first = FALSE;
         }
         
         name_trunc(RFR.RDB$FIELD_NAME, s);
@@ -1189,8 +1206,8 @@ static void extract_rfr(const TEXT * relation_name)
         if (!RFR.RDB$FIELD_POSITION.NULL)
             ib_fprintf(output_file, "\tposition %d", RFR.RDB$FIELD_POSITION);
         
-        field_attributes(&RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
-                         &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
+        field_attributes((SLONG*) &RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
+                         (SLONG*) &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
                          RFR.RDB$SYSTEM_FLAG);
     END_FOR;
 
@@ -1211,80 +1228,82 @@ static void extract_security(void)
  *	relations, views, and fields.
  *
  **************************************/
-	TEXT r[32], s[32], f[32], rel1[32], rel2[32];
+	BOOLEAN first, first_field;
+	TEXT r[32], s[32], f[32], *p, rel1[32], rel2[32];
+	TEXT modify;
+	USHORT count;
 
-	bool first = true;
+	first = TRUE;
 
     FOR R IN RDB$RELATIONS 
-		bool first_field = true;
-		bool modify = false;
-		name_trunc(R.RDB$RELATION_NAME, r);
-		const TEXT* p = (R.RDB$VIEW_BLR.NULL) ? "relation" : "view";
-		if (!R.RDB$SECURITY_CLASS.NULL && name_trunc(R.RDB$SECURITY_CLASS, s))
-		{
-			/* skip modify relation/view add security class if we have just a stub -
-			   i.e. security_class is 'SQL$..' and has no rdb$user_privilege entry and
-			   relation_name matches 'SQL$relation_name'  */
-			/* doesn't hurt to extract even if redundant with GRANT statement - i.e.
-			   security_class is 'SQL$..' and has rdb$user_privilege entries */
-			/* extract if security_class is 'SQL$..' but relation_name doesn't match
-			   'SQL$relation_name' */
-			/* extract if security_class doesn't start with 'SQL$' */
+        first_field = TRUE;
+        modify = FALSE;
+        name_trunc(R.RDB$RELATION_NAME, r);
+        p = (R.RDB$VIEW_BLR.NULL) ? (TEXT*) "relation" : (TEXT*) "view";
+        if (!R.RDB$SECURITY_CLASS.NULL && name_trunc(R.RDB$SECURITY_CLASS, s)) {
+            /* skip modify relation/view add security class if we have just a stub -
+               i.e. security_class is 'SQL$..' and has no rdb$user_privilege entry and
+               relation_name matches 'SQL$relation_name'  */
+            /* doesn't hurt to extract even if redundant with GRANT statement - i.e. 
+               security_class is 'SQL$..' and has rdb$user_privilege entries */
+            /* extract if security_class is 'SQL$..' but relation_name doesn't match
+               'SQL$relation_name' */
+            /* extract if security_class doesn't start with 'SQL$' */
 	
-			if (EXT_capabilities & EXT_v3) {
-				if (strncmp(R.RDB$SECURITY_CLASS, "SQL$", 4) == 0) {
-					int count = 0;
-					name_trunc(&R.RDB$SECURITY_CLASS[4], rel1);
-					name_trunc(R.RDB$RELATION_NAME, rel2);
-					if (strcmp(rel1, rel2) == 0) {
-						FOR U IN RDB$USER_PRIVILEGES
-						WITH U.RDB$RELATION_NAME EQ R.RDB$RELATION_NAME
-							count++;
-						END_FOR;
-					}
-					else
-						count = 1;
-					if (!count)
-						continue;
-				}
-			}
+            if (EXT_capabilities & EXT_v3) {
+                if (strncmp(R.RDB$SECURITY_CLASS, "SQL$", 4) == 0) {
+                    count = 0;
+	               name_trunc(&R.RDB$SECURITY_CLASS[4], rel1);
+	               name_trunc(R.RDB$RELATION_NAME, rel2);
+	               if (strcmp(rel1, rel2) == 0) {
+	                   FOR U IN RDB$USER_PRIVILEGES
+	                       WITH U.RDB$RELATION_NAME EQ R.RDB$RELATION_NAME
+	                       count++;
+	                   END_FOR;
+	               }
+	               else
+	                   count = 1;
+	               if (!count)
+	                   continue;
+                }
+            }
             
             if (first) {
 	           put_comment(259);   /* msg 259: \n\tAdd Security Classes to Defined Objects\t\n  */
-	           first = false;
+	           first = FALSE;
             }
             
 	       ib_fprintf(output_file, "\nmodify %s %s\n\tsecurity_class %s", p, r,
 	                  s);
-	       modify = true;
+	       modify = TRUE;
         }
         
-		FOR RFR IN RDB$RELATION_FIELDS
-			WITH RFR.RDB$RELATION_NAME EQ R.RDB$RELATION_NAME AND
-			RFR.RDB$SECURITY_CLASS NOT MISSING
-			name_trunc(RFR.RDB$FIELD_NAME, f);
-			if (name_trunc(RFR.RDB$SECURITY_CLASS, s)) {
-				if (first) {
-			    	put_comment(259);   /* msg 259: \n\tAdd Security Classes to Defined Objects\t\n  */
-					first = false;
-				}
-
-				if (!modify) {
-					ib_fprintf(output_file, "\nmodify %s %s", p, r);
-					modify = true;
-				}
-
-				if (!first_field)
-					ib_fprintf(output_file, ",");
-				first_field = false;
-				ib_fprintf(output_file, "\n    modify field %s security_class %s", f,
-			               s);
-			}
-
-		END_FOR;
-		if (modify)
-			ib_fprintf(output_file, ";\n");
-	END_FOR;
+        FOR RFR IN RDB$RELATION_FIELDS
+            WITH RFR.RDB$RELATION_NAME EQ R.RDB$RELATION_NAME AND
+            RFR.RDB$SECURITY_CLASS NOT MISSING 
+            name_trunc(RFR.RDB$FIELD_NAME, f);
+            if (name_trunc(RFR.RDB$SECURITY_CLASS, s)) {
+                if (first) {
+                    put_comment(259);   /* msg 259: \n\tAdd Security Classes to Defined Objects\t\n  */
+                    first = FALSE;
+                }
+                
+                if (!modify) {
+	           ib_fprintf(output_file, "\nmodify %s %s", p, r);
+	           modify = TRUE;
+                }
+	
+                if (!first_field)
+                    ib_fprintf(output_file, ",");
+                first_field = FALSE;
+                ib_fprintf(output_file, "\n    modify field %s security_class %s", f,
+                           s);
+            }
+            
+        END_FOR;
+        if (modify)
+            ib_fprintf(output_file, ";\n");	
+    END_FOR;
 }
 
 
@@ -1301,16 +1320,17 @@ static void extract_triggers(void)
  *	rdb$triggers for each relation.
  *
  **************************************/
+	BOOLEAN first;
 	TEXT s[32], st[32];
 
-	bool first = true;
+	first = TRUE;
 
     FOR T IN RDB$TRIGGERS WITH
         (T.RDB$SYSTEM_FLAG NE 1 OR T.RDB$SYSTEM_FLAG MISSING)
         SORTED BY T.RDB$TRIGGER_NAME 
         if (first) {
             put_comment(260);       /* msg 260: \n\n\tTrigger Definitions\t */
-            first = false;
+            first = FALSE;
         } 
         name_trunc(T.RDB$TRIGGER_NAME, st);
         ib_fprintf(output_file, "\n\ndefine trigger %s", st);
@@ -1355,12 +1375,12 @@ static void extract_triggers(void)
             /* msg 262: **** trigger source for trigger %s must be recreated **** */
         }
         else {
-            print_blob(&T.RDB$TRIGGER_SOURCE, 'u');
+            print_blob((SLONG*) &T.RDB$TRIGGER_SOURCE, 'u');
         }
         ib_fprintf(output_file, "\n\tend_trigger");
-        if (!blob_null(T.RDB$DESCRIPTION)) {
+        if (!BLOB_NULL(T.RDB$DESCRIPTION)) {
             ib_fprintf(output_file, "\n\t{");
-            print_blob(&T.RDB$DESCRIPTION, 'u');
+            print_blob((SLONG*) &T.RDB$DESCRIPTION, 'u');
             ib_fprintf(output_file, "}");
         }
         extract_trig_msgs(T.RDB$TRIGGER_NAME);
@@ -1370,7 +1390,7 @@ static void extract_triggers(void)
 }
 
 
-static void extract_trig_msgs(const TEXT * trigger_name)
+static void extract_trig_msgs(TEXT * trigger_name)
 {
 /**************************************
  *
@@ -1383,12 +1403,16 @@ static void extract_trig_msgs(const TEXT * trigger_name)
  *	and write them to the output file.
  *
  **************************************/
-	bool first = true;
-	const TEXT* p = " ";
+	BOOLEAN first;
+	TEXT* p;
+	TEXT quote_char;
+
+	first = TRUE;
+	p = " ";
 
 /* delimit message with single quote by default */
 
-	TEXT quote_char = 39;
+	quote_char = 39;
 
     FOR TM IN RDB$TRIGGER_MESSAGES
         WITH TM.RDB$TRIGGER_NAME = trigger_name
@@ -1399,7 +1423,7 @@ static void extract_trig_msgs(const TEXT * trigger_name)
         ib_fprintf(output_file, "%s\n", p);
         if (first) {
             p = ",";
-            first = false;
+            first = FALSE;
         }
         ib_fprintf(output_file, "\tmessage ");
         ib_fprintf(output_file, " %d: ", TM.RDB$MESSAGE_NUMBER);
@@ -1409,13 +1433,11 @@ static void extract_trig_msgs(const TEXT * trigger_name)
 } 
 
 
-static void extract_view(const TEXT * rel_name,
-						 ISC_QUAD* source,
-						 ISC_QUAD* description,
-						 bool source_null,
-						 bool desc_null,
-						 bool system_flag,
-						 bool * first)
+static void extract_view(TEXT * rel_name,
+						 SLONG * source,
+						 SLONG * description,
+						 USHORT source_null,
+                         USHORT desc_null, USHORT system_flag, BOOLEAN * first)
 {
 /**************************************
  *
@@ -1431,7 +1453,7 @@ static void extract_view(const TEXT * rel_name,
 	TEXT s[32];
 
 	if (*first) {
-		*first = false;
+		*first = FALSE;
 		put_comment(266);		/* msg 266: \n\n\tView Definitions\t */
 	}
 
@@ -1471,44 +1493,44 @@ static void extract_views(void)
  *	and write it to the output file.
  *
  **************************************/
-	bool source_null;
-	bool desc_null;
-	TEXT s[32];
+	BOOLEAN first;
+	USHORT source_null, desc_null, did_any, do_this_one;
+	VIEW view_list, view, *view_ptr;
+	TEXT s[32], *view_name;
 
-	bool first = true;
+	first = TRUE;
 
 	if (!(EXT_capabilities & EXT_v3)) {
 		/* In V2 we have no choice but to output views in the order they appear */
 
-		FOR V IN RDB$RELATIONS WITH
-			(V.RDB$SYSTEM_FLAG NE 1 OR V.RDB$SYSTEM_FLAG MISSING) AND
-			V.RDB$VIEW_BLR NOT MISSING
-			SORTED BY V.RDB$RELATION_NAME
-			source_null = (V.RDB$VIEW_SOURCE.NULL);
-			desc_null = (blob_null(V.RDB$DESCRIPTION));
-			extract_view(V.RDB$RELATION_NAME, &V.RDB$VIEW_SOURCE,
-						 &V.RDB$DESCRIPTION, source_null, desc_null,
-						 (V.RDB$SYSTEM_FLAG), &first);
+        FOR V IN RDB$RELATIONS WITH
+            (V.RDB$SYSTEM_FLAG NE 1 OR V.RDB$SYSTEM_FLAG MISSING) AND
+            V.RDB$VIEW_BLR NOT MISSING
+            SORTED BY V.RDB$RELATION_NAME
+            source_null = V.RDB$VIEW_SOURCE.NULL ? TRUE : FALSE;
+            desc_null = BLOB_NULL(V.RDB$DESCRIPTION) ? TRUE : FALSE;
+	        extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
+                         (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
+                         V.RDB$SYSTEM_FLAG, &first);
 	
-		END_FOR;
+	    END_FOR;
 		return;
 	}
 
-// In V3 there are dependencies that can help us to output the views in
-// the correct order.  But first let's just save the names of the views.
+/* In V3 there are dependencies that can help us to output the views in
+   the correct order.  But first let's just save the names of the views. */
 
-	view* view_list = NULL;
+	view_list = NULL;
 
-	FOR V IN RDB$RELATIONS WITH
-		(V.RDB$SYSTEM_FLAG NE 1 OR V.RDB$SYSTEM_FLAG MISSING) AND
-		V.RDB$VIEW_BLR NOT MISSING
-		SORTED BY DESC V.RDB$RELATION_NAME
-		name_trunc(V.RDB$RELATION_NAME, s);
-		view* viewp = (view*) DDL_alloc(sizeof(view) + strlen(s));
-		strcpy(viewp->view_name, s);
-		viewp->view_next = view_list;
-		view_list = viewp;
-
+    FOR V IN RDB$RELATIONS WITH
+        (V.RDB$SYSTEM_FLAG NE 1 OR V.RDB$SYSTEM_FLAG MISSING) AND
+        V.RDB$VIEW_BLR NOT MISSING
+        SORTED BY DESC V.RDB$RELATION_NAME name_trunc(V.RDB$RELATION_NAME, s);
+        view = (VIEW) DDL_alloc(sizeof(struct view) + strlen(s));
+        strcpy(view->view_name, s);
+        view->view_next = view_list;
+        view_list = view;
+        
 	END_FOR;
 
 	if (!view_list)
@@ -1519,68 +1541,66 @@ static void extract_views(void)
    still in the list, dump it out and remove it from the list.  Continue
    going through the list until nothing more can be done. */
 
-	bool did_any;
 	do {
-		did_any = false;
-		for (view **view_ptr = &view_list; *view_ptr;) {
-			bool do_this_one = true;
-			const TEXT* view_name = (*view_ptr)->view_name;
-
-			// fields of rdb$dependencies have been renamed for V4.0
-			// This means if we are extracting a pre V3 definition, views
-			// will not be spit out in the optimal order. */
+		for (did_any = FALSE, view_ptr = &view_list; *view_ptr;) {
+			do_this_one = TRUE;
+			view_name = (*view_ptr)->view_name;
+            
+			/* fields of rdb$dependencies have been renamed for V4.0
+			   This means if we are extracting a pre V3 definition, views
+			   will not be spit out in the optimal order. */
 
 			if (EXT_capabilities & EXT_v4) {
-				FOR D IN RDB$DEPENDENCIES WITH
-					D.RDB$DEPENDENT_NAME EQ view_name AND
-					D.RDB$DEPENDENT_TYPE EQ 0 AND
-					D.RDB$DEPENDED_ON_TYPE EQ 0
-					name_trunc(D.RDB$DEPENDED_ON_NAME, s);
-					for (view* viewp = view_list; viewp; viewp = viewp->view_next)
-						if (!strcmp(s, viewp->view_name)) {
-							do_this_one = false;
-							break;
-						}
-				END_FOR;
+                FOR D IN RDB$DEPENDENCIES WITH
+                    D.RDB$DEPENDENT_NAME EQ view_name AND
+                    D.RDB$DEPENDENT_TYPE EQ 0 AND
+                    D.RDB$DEPENDED_ON_TYPE EQ 0
+                    name_trunc(D.RDB$DEPENDED_ON_NAME, s);
+                    for (view = view_list; view; view = view->view_next)
+                        if (!strcmp(s, view->view_name)) {
+                            do_this_one = FALSE;
+                            break;
+                        }
+                END_FOR;
 			}
 			if (do_this_one) {
-				FOR V IN RDB$RELATIONS WITH
-					V.RDB$RELATION_NAME EQ view_name
-					source_null = (V.RDB$VIEW_SOURCE.NULL);
-					desc_null = (blob_null(V.RDB$DESCRIPTION));
-					extract_view(V.RDB$RELATION_NAME, &V.RDB$VIEW_SOURCE,
-								 &V.RDB$DESCRIPTION, source_null, desc_null,
-								 (V.RDB$SYSTEM_FLAG), &first);
+                FOR V IN RDB$RELATIONS WITH
+                    V.RDB$RELATION_NAME EQ view_name
+                    source_null = V.RDB$VIEW_SOURCE.NULL ? TRUE : FALSE;
+                    desc_null = BLOB_NULL(V.RDB$DESCRIPTION) ? TRUE : FALSE;
+                    extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
+                                 (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
+                                 V.RDB$SYSTEM_FLAG, &first);
 	
-				END_FOR;
-				did_any = true;
+	            END_FOR;
+				did_any = TRUE;
 				*view_ptr = (*view_ptr)->view_next;
 			}
 			else
 				view_ptr = &(*view_ptr)->view_next;
 		}
 	} while (did_any);
-
-	// If any views remain, we can't figure out an order so just dump them 
-
-	for (view* viewp = view_list; viewp; viewp = viewp->view_next) {
-		FOR V IN RDB$RELATIONS WITH
-			V.RDB$RELATION_NAME EQ viewp->view_name
-			source_null = (V.RDB$VIEW_SOURCE.NULL);
-			desc_null = (blob_null(V.RDB$DESCRIPTION));
-			extract_view(V.RDB$RELATION_NAME, &V.RDB$VIEW_SOURCE,
-						 &V.RDB$DESCRIPTION, source_null, desc_null,
-						 (V.RDB$SYSTEM_FLAG), &first);
+    
+    /* If any views remain, we can't figure out an order so just dump them */
+    
+	for (view = view_list; view; view = view->view_next) {
+        FOR V IN RDB$RELATIONS WITH
+            V.RDB$RELATION_NAME EQ view->view_name
+            source_null = V.RDB$VIEW_SOURCE.NULL ? TRUE : FALSE;
+            desc_null = BLOB_NULL(V.RDB$DESCRIPTION) ? TRUE : FALSE;
+	         extract_view(V.RDB$RELATION_NAME, (SLONG*) &V.RDB$VIEW_SOURCE,
+                          (SLONG*) &V.RDB$DESCRIPTION, source_null, desc_null,
+                          V.RDB$SYSTEM_FLAG, &first);
 	
-		END_FOR;
+        END_FOR;
 	}
 }
 
 
-static void field_attributes(ISC_QUAD* descr,
-							 const TEXT* query_name,
-							 ISC_QUAD* query_header,
-							 const TEXT* edit_string, SSHORT system_flag)
+static void field_attributes(SLONG * descr,
+							 TEXT * query_name,
+							 SLONG * query_header,
+							 TEXT * edit_string, SSHORT system_flag)
 {
 /**************************************
  *
@@ -1594,7 +1614,7 @@ static void field_attributes(ISC_QUAD* descr,
  **************************************/
 	TEXT s[256];
 
-	if (descr && (descr->gds_quad_low || descr->gds_quad_high)) {
+	if (descr && (descr[0] || descr[1])) {
 		ib_fprintf(output_file, "\n\t{");
 		print_blob(descr, 'u');
 		ib_fprintf(output_file, "}");
@@ -1606,8 +1626,7 @@ static void field_attributes(ISC_QUAD* descr,
 	if (query_name && name_trunc(query_name, s))
 		ib_fprintf(output_file, "\n\tquery_name %s", s);
 
-	if (query_header && (query_header->gds_quad_low || query_header->gds_quad_high))
-	{
+	if (query_header && (query_header[0] || query_header[1])) {
 		ib_fprintf(output_file, "\n\tquery_header ");
 		print_blob(query_header, 'h');
 	}
@@ -1620,7 +1639,7 @@ static void field_attributes(ISC_QUAD* descr,
 }
 
 
-static void format_acl(const SCHAR * string)
+static void format_acl(SCHAR * string)
 {
 /**************************************
  *
@@ -1632,13 +1651,14 @@ static void format_acl(const SCHAR * string)
  * 	Format an access control list.
  *
  **************************************/
-	SCHAR c;
-	TEXT view_name[32], group[32], user[32], person[41],
+	SCHAR *p, c;
+	TEXT view[32], group[32], user[32], person[41],
 		project[41], organization[41], node[41], temp[40];
+	BOOLEAN first;
 	int l;
 
-	const SCHAR* p = string;
-	bool first = true;
+	p = string;
+	first = TRUE;
 
 	if (*p++ != ACL_version)
 		put_comment(268);		/* msg 268: ***** ACL not understood ***** */
@@ -1648,20 +1668,20 @@ static void format_acl(const SCHAR * string)
 	while (*p)
 		switch (*p++) {
 		case ACL_id_list:
-			*view_name = *user = *group = '\0';
-			*person = *project = *organization = *node = '\0';
+			*view = *user = *group = FALSE;
+			*person = *project = *organization = *node = FALSE;
 			if (!first)
 				ib_fprintf(output_file, ",\n");
 			else
-				first = false;
+				first = FALSE;
 
 			ib_fputc('\t', output_file);
 			while (c = *p++) {
 				switch (c) {
 				case id_view:
 					l = *p++;
-					strncpy(view_name, p, l);
-					view_name[l] = 0;
+					strncpy(view, p, l);
+					view[l] = 0;
 					break;
 
 				case id_group:
@@ -1713,8 +1733,8 @@ static void format_acl(const SCHAR * string)
    Those are operating system dependant.  Otherwise, its an Apollo identifier.
 */
 
-			if (*view_name)
-				ib_fprintf(output_file, "view %s ", view_name);
+			if (*view)
+				ib_fprintf(output_file, "view %s ", view);
 			else
 				ib_fprintf(output_file, "<%s,%s> ",
 						   (*group) ? group : (TEXT *) "*",
@@ -1723,13 +1743,13 @@ static void format_acl(const SCHAR * string)
 
 		case ACL_priv_list:
 			while (c = *p++)
-				ib_fputc(acl_privs[static_cast<UCHAR>(c)], output_file);
+				ib_fputc(acl_privs[c], output_file);
 			break;
 		}
 }
 
 
-static char name_trunc(const TEXT * in, TEXT * out)
+static int name_trunc(TEXT * in, TEXT * out)
 {
 /**************************************
  *
@@ -1743,10 +1763,12 @@ static char name_trunc(const TEXT * in, TEXT * out)
  *	trailing blanks.
  *
  **************************************/
-	if (!in || *in == ' ')
-		return 0;
+	TEXT *start;
 
-	TEXT* start = out;
+	if (!in || *in == ' ')
+		return NULL;
+
+	start = out;
 
 	while (*in && *in != ' ')
 		*out++ = *in++;
@@ -1757,7 +1779,7 @@ static char name_trunc(const TEXT * in, TEXT * out)
 }
 
 
-static void print_blob(ISC_QUAD* blob_id, TEXT type)
+static void print_blob(SLONG * blob_id, TEXT type)
 {
 /**************************************
  *
@@ -1775,38 +1797,39 @@ static void print_blob(ISC_QUAD* blob_id, TEXT type)
  *	for acls. 
  *
  **************************************/
+	BOOLEAN first;
 	TEXT buffer[4096];
 	SCHAR blr_buffer[2048], *p, *q;
 	SSHORT length;
 	ISC_STATUS_ARRAY status_vector;
 	ISC_STATUS status;
+	FRBRD *blob;
 	UCHAR bpb_buffer[20], *bpb, *r;
 
-	FRBRD* blob = NULL;
-	// This logic was never finished: bpb_length (6th param) is always zero,
-	// so this call might be reduced to isc_open_blob().
+	blob = NULL;
 	bpb = r = bpb_buffer;
 
-	if (isc_open_blob2(status_vector, &DB, &gds_trans, &blob,
-						blob_id, (USHORT) (r - bpb),
-						bpb))
-	{
+	if (gds__open_blob2(status_vector,
+						GDS_REF(DB),
+						GDS_REF(gds_trans),
+						GDS_REF(blob),
+						(GDS__QUAD*) GDS_VAL(blob_id), (USHORT) (r - bpb), (SCHAR*) bpb)) {
 		gds__print_status(status_vector);
-		DDL_err(269, NULL, NULL, NULL, NULL, NULL);	
-		/* msg 269: isc_open_blob failed */
+		DDL_err(269, NULL, NULL, NULL, NULL, NULL);	/* msg 269: gds__open_blob failed */
 		return;
 	}
 
-	bool first = true;
+	first = TRUE;
 	if (type == 'm' || type == 'a') {
 		p = blr_buffer;
 		*blr_buffer = 0;
 	}
 
-	while (!(status = isc_get_segment(status_vector, &blob, (USHORT*) &length,
+	while (!(status = gds__get_segment(status_vector,
+									   GDS_REF(blob),
+									   (USHORT*) GDS_REF(length),
 									   (USHORT) (sizeof(buffer) - 1),
-									   buffer)) || status == isc_segment)
-	{
+									   buffer)) || status == gds_segment) {
 		buffer[length] = 0;
 		switch (type) {
 		case 'h':
@@ -1818,12 +1841,12 @@ static void print_blob(ISC_QUAD* blob_id, TEXT type)
 					p = q + 1;
 				} while (q = (SCHAR *) strchr(p, '\n'));
 				ib_fprintf(output_file, "\"%s\"", p);
-				first = false;
+				first = FALSE;
 				break;
 			}
 			if (!first)
 				ib_fprintf(output_file, " / ");
-			first = false;
+			first = FALSE;
 			ib_fprintf(output_file, "\"%s\"", buffer);
 			break;
 
@@ -1844,15 +1867,15 @@ static void print_blob(ISC_QUAD* blob_id, TEXT type)
 		}
 	}
 
-	if (status_vector[1] != isc_segstr_eof) {
+	if (status_vector[1] != gds_segstr_eof) {
 		gds__print_status(status_vector);
-		DDL_err(271, NULL, NULL, NULL, NULL, NULL);	/* msg 271: isc_get_segment failed  */
+		DDL_err(271, NULL, NULL, NULL, NULL, NULL);	/* msg 271: gds__get_segment failed  */
 		return;
 	}
 
-	if (isc_close_blob(status_vector, &blob)) {
+	if (gds__close_blob(status_vector, GDS_REF(blob))) {
 		gds__print_status(status_vector);
-		DDL_err(272, NULL, NULL, NULL, NULL, NULL);	/* msg 272: isc_close_blob failed */
+		DDL_err(272, NULL, NULL, NULL, NULL, NULL);	/* msg 272: gds__close_blob failed */
 		return;
 	}
 
@@ -1880,13 +1903,13 @@ static void put_comment(USHORT number)
  **************************************/
 	TEXT message[256];
 
-	gds__msg_format(NULL, DDL_MSG_FAC, number, sizeof(message), message,
+	gds__msg_format(NULL_PTR, DDL_MSG_FAC, number, sizeof(message), message,
 					NULL, NULL, NULL, NULL, NULL);
 	ib_fprintf(output_file, "%s\n\n", message);
 }
 
 
-static void put_error(USHORT number, const TEXT * arg1)
+static void put_error(USHORT number, TEXT * arg1)
 {
 /**************************************
  *
@@ -1902,7 +1925,7 @@ static void put_error(USHORT number, const TEXT * arg1)
  **************************************/
 	TEXT message[256];
 
-	gds__msg_format(NULL, DDL_MSG_FAC, number, sizeof(message), message,
+	gds__msg_format(NULL_PTR, DDL_MSG_FAC, number, sizeof(message), message,
 					arg1, NULL, NULL, NULL, NULL);
 	ib_fprintf(output_file, "%s\n\n", message);
 	ib_printf("%s\n", message);
@@ -1923,28 +1946,31 @@ static void set_capabilities(void)
  *	unpleasantness later.
  *
  **************************************/
-	FRBRD* req = NULL;
+	FRBRD *req;
+	RFR_TAB rel_field_table;
+
+	req = NULL;
 
 /* Look for desireable fields in system relations */
 
-	for (const rfr_tab_t* rel_field_table = rfr_table; rel_field_table->relation;
-		rel_field_table++)
-	{
-		FOR(REQUEST_HANDLE req) x IN RDB$RELATION_FIELDS
-		WITH x.RDB$RELATION_NAME = rel_field_table->relation
-		AND x.RDB$FIELD_NAME = rel_field_table->field
-			EXT_capabilities |= rel_field_table->bit_mask;
-		END_FOR;
+	for (rel_field_table = rfr_table; rel_field_table->relation;
+		 rel_field_table++) {
+	       FOR(REQUEST_HANDLE req) x IN RDB$RELATION_FIELDS WITH x.
+	           RDB$RELATION_NAME =
+	           rel_field_table->relation AND x.RDB$FIELD_NAME =
+	           rel_field_table->field EXT_capabilities |=
+	           rel_field_table->bit_mask;
+	       END_FOR;
 	}
 
-	isc_release_request(gds_status, &req);
+	gds__release_request(gds_status, GDS_REF(req));
 }
 
 
 static void type_scalar(USHORT dtype,
 						SSHORT scale,
 						USHORT length,
-						SSHORT subtype, USHORT dim, const TEXT * field_name)
+						SSHORT subtype, USHORT dim, TEXT * field_name)
 {
 /**************************************
  *
@@ -1957,6 +1983,8 @@ static void type_scalar(USHORT dtype,
  *	non-blob type field.
  *
  **************************************/
+	TEXT c;
+
 	switch (dtype) {
 	case blr_cstring:
 		ib_fprintf(output_file, " cstring [%d]", length);
@@ -2012,7 +2040,7 @@ static void type_scalar(USHORT dtype,
 	}
 
 	if (dim) {
-		TEXT c = '(';
+		c = '(';
         FOR D IN RDB$FIELD_DIMENSIONS WITH 
             D.RDB$FIELD_NAME EQ field_name 
             SORTED BY D.RDB$DIMENSION 
@@ -2029,18 +2057,16 @@ static void type_scalar(USHORT dtype,
 	if (scale)
 		ib_fprintf(output_file, " scale %d", scale);
 
-	if (subtype && (dtype == blr_text || dtype == blr_varying
-			|| dtype == blr_cstring))
-	{
-		if (subtype == 1)
+	if (subtype
+		&& (dtype == blr_text || dtype == blr_varying
+			|| dtype == blr_cstring)) if (subtype == 1)
 			ib_fprintf(output_file, " sub_type fixed");
 		else
 			ib_fprintf(output_file, " sub_type %d", subtype);
-	}
 }
 
 
-static void view_fields(const TEXT * view_name)
+static void view_fields(TEXT * view_name)
 {
 /**************************************
  *
@@ -2053,9 +2079,10 @@ static void view_fields(const TEXT * view_name)
  *	such oddities as context variables.
  *
  **************************************/
+	BOOLEAN first;
 	TEXT s[32], context[32], temp[32];
 
-	bool first = true;
+	first = TRUE;
 	context[0] = 0;
 
     FOR RFR IN RDB$RELATION_FIELDS CROSS
@@ -2068,7 +2095,7 @@ static void view_fields(const TEXT * view_name)
         if (!first)
             ib_fprintf(output_file, ",\n");
         else
-            first = false;
+            first = FALSE;
         name_trunc(RFR.RDB$FIELD_NAME, s);
         if (EXT_capabilities & EXT_context_name) {
             FOR VR2 IN RDB$VIEW_RELATIONS WITH
@@ -2085,8 +2112,8 @@ static void view_fields(const TEXT * view_name)
             if (!RFR.RDB$FIELD_POSITION.NULL)
                 ib_fprintf(output_file, "\tposition %d", RFR.RDB$FIELD_POSITION);
             
-            field_attributes(&RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
-                             &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
+            field_attributes((SLONG*) &RFR.RDB$DESCRIPTION, RFR.RDB$QUERY_NAME,
+                             (SLONG*) &RFR.RDB$QUERY_HEADER, RFR.RDB$EDIT_STRING,
                              RFR.RDB$SYSTEM_FLAG);
         }            
 	END_FOR;
@@ -2095,9 +2122,9 @@ static void view_fields(const TEXT * view_name)
 }
 
 
-static void wal_info(const UCHAR* db_info_buffer,
-					 SSHORT* num_buf,
-					 SLONG* buf_size, SLONG* chkpt_len, SLONG* grp_commit)
+static void wal_info(UCHAR * db_info_buffer,
+					 SSHORT * num_buf,
+					 SLONG * buf_size, SLONG * chkpt_len, SLONG * grp_commit)
 {
 /**************************************
  *
@@ -2109,25 +2136,28 @@ static void wal_info(const UCHAR* db_info_buffer,
  *
  **************************************/
 	UCHAR item;
-	const UCHAR* p = db_info_buffer;
+	UCHAR* p;
+	SLONG length;
 
-	while ((item = *p++) != isc_info_end) {
-		USHORT length = gds__vax_integer(p, 2);
+	p = db_info_buffer;
+
+	while ((item = *p++) != gds_info_end) {
+		length = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item) {
-		case isc_info_num_wal_buffers:
+		case gds_info_num_wal_buffers:
 			*num_buf = gds__vax_integer(p, length);
 			break;
 
-		case isc_info_wal_buffer_size:
+		case gds_info_wal_buffer_size:
 			*buf_size = gds__vax_integer(p, length);
 			break;
 
-		case isc_info_wal_ckpt_length:
+		case gds_info_wal_ckpt_length:
 			*chkpt_len = gds__vax_integer(p, length);
 			break;
 
-		case isc_info_wal_grpc_wait_usecs:
+		case gds_info_wal_grpc_wait_usecs:
 			*grp_commit = gds__vax_integer(p, length);
 			break;
 
@@ -2137,4 +2167,3 @@ static void wal_info(const UCHAR* db_info_buffer,
 		p += length;
 	}
 }
-

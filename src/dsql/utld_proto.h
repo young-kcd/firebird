@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		utld_proto.h
- *	DESCRIPTION:	Prototype Header file for utld.cpp
+ *	DESCRIPTION:	Prototype Header file for utld.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,13 +24,22 @@
  *
  */
 
-#ifndef DSQL_UTLD_PROTO_H
-#define DSQL_UTLD_PROTO_H
+#ifndef _DSQL_UTLD_PROTO_H_
+#define _DSQL_UTLD_PROTO_H_
 
-ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS*, USHORT, SCHAR*, XSQLDA*, USHORT*);
-ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS*, sqlda_sup* const, USHORT*, USHORT*,
-	USHORT*, USHORT, XSQLDA*, const USHORT);
-void		UTLD_save_status_strings(ISC_STATUS*);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif //  DSQL_UTLD_PROTO_H
+extern ISC_STATUS DLL_EXPORT UTLD_parse_sql_info(ISC_STATUS *, USHORT, SCHAR *,
+											 XSQLDA *, USHORT *);
+extern ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS *, struct dasup *, USHORT *,
+										  USHORT *, USHORT *, USHORT,
+										  XSQLDA *, USHORT);
+extern void DLL_EXPORT UTLD_save_status_strings(ISC_STATUS *);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /*  _DSQL_UTLD_PROTO_H_  */

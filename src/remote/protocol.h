@@ -32,10 +32,10 @@
  *
  */
 /*
-$Id: protocol.h,v 1.19 2004-02-24 05:34:40 robocop Exp $
+$Id: protocol.h,v 1.12 2003-06-08 18:12:13 dimitr Exp $
 */
-#ifndef REMOTE_PROTOCOL_H
-#define REMOTE_PROTOCOL_H
+#ifndef _REMOTE_PROTOCOL_H_
+#define _REMOTE_PROTOCOL_H_
 
 // dimitr: ask for asymmetric protocols only.
 // Comment it out to return back to FB 1.0 behaviour.
@@ -150,7 +150,7 @@ typedef enum
 
 typedef USHORT OBJCT;
 #define MAX_OBJCT_HANDLES	65000
-
+
 /* Operation (packet) types */
 
 typedef enum
@@ -277,19 +277,6 @@ typedef struct cstring
 	UCHAR*	cstr_address;
 } CSTRING;
 
-// CVC: Only used in p_blob, p_sgmt & p_ddl, to validate constness.
-// We want to ensure our original bpb is not overwritten.
-// In turn, p_blob is used only to create and open a blob, so it's correct
-// to demand that those functions do not change the bpb.
-// We want to ensure our incoming segment to be stored isn't overwritten,
-// in the case of send/batch commands.
-typedef struct cstring_const
-{
-	USHORT	cstr_length;
-	USHORT	cstr_allocated;
-	const UCHAR*	cstr_address;
-} CSTRING_CONST;
-
 
 #ifdef DEBUG_XDR_MEMORY
 
@@ -386,7 +373,7 @@ typedef struct p_resp
 } P_RESP;
 
 #define p_resp_partner	p_resp_blob_id.bid_number
-
+
 /* Attach and create database */
 
 typedef struct p_atch
@@ -449,13 +436,13 @@ typedef struct p_trrq {
 typedef struct p_blob {
     OBJCT	p_blob_transaction;	/* Transaction */
     struct bid	p_blob_id;		/* Blob id for open */
-    CSTRING_CONST	p_blob_bpb;		/* Blob parameter block */
+    CSTRING	p_blob_bpb;		/* Blob parameter block */
 } P_BLOB;
 
 typedef struct p_sgmt {
     OBJCT	p_sgmt_blob;		/* Blob handle id */
     USHORT	p_sgmt_length;		/* Length of segment */
-    CSTRING_CONST	p_sgmt_segment;		/* Data segment */
+    CSTRING	p_sgmt_segment;		/* Data segment */
 } P_SGMT;
 
 typedef struct p_seek {
@@ -479,7 +466,7 @@ typedef struct p_info {
 typedef struct p_event {
     OBJCT	p_event_database;	/* Database object id */
     CSTRING	p_event_items;		/* Event description block */
-    FPTR_EVENT_CALLBACK p_event_ast;		/* Address of ast routine */
+    SLONG	p_event_ast;		/* Address of ast routine */
     SLONG	p_event_arg;		/* Argument to ast routine */
     SLONG	p_event_rid;		/* Client side id of remote event */
 } P_EVENT;
@@ -506,7 +493,7 @@ typedef struct p_req {
 typedef struct p_ddl {
      OBJCT	p_ddl_database;		/* Database object id */
      OBJCT	p_ddl_transaction;	/* Transaction */
-     CSTRING_CONST	p_ddl_blr;		/* Request blr */
+     CSTRING	p_ddl_blr;		/* Request blr */
 } P_DDL;
 
 /* Slice Operation */
@@ -516,16 +503,16 @@ typedef struct p_slc {
     struct bid	p_slc_id;		/* Slice id */
     CSTRING	p_slc_sdl;		/* Slice description language */
     CSTRING	p_slc_parameters;	/* Slice parameters */
-    lstring	p_slc_slice;		/* Slice proper */
+    LSTRING	p_slc_slice;		/* Slice proper */
     ULONG	p_slc_length;		/* Number of elements */
 } P_SLC;
 
 /* Response to get_slice */
 
 typedef struct p_slr {
-    lstring	p_slr_slice;		/* Slice proper */
+    LSTRING	p_slr_slice;		/* Slice proper */
     ULONG	p_slr_length;		/* Total length of slice */
-    UCHAR	*p_slr_sdl;			/* *** not transfered *** */
+    UCHAR	*p_slr_sdl;		/* *** not transfered *** */
     USHORT	p_slr_sdl_length;	/* *** not transfered *** */
 } P_SLR;
  
@@ -566,7 +553,7 @@ typedef struct p_sqlcur {
     CSTRING	p_sqlcur_cursor_name;	/* cursor name */
     USHORT	p_sqlcur_type;		/* type of cursor */
 } P_SQLCUR;
-
+
 /* Generalize packet (sic!) */
 
 typedef struct packet {
@@ -603,5 +590,4 @@ typedef struct packet {
     P_TRRQ	p_trrq;		/* Transact request packet */
 } PACKET;
 
-#endif // REMOTE_PROTOCOL_H
-
+#endif /* _REMOTE_PROTOCOL_H_ */

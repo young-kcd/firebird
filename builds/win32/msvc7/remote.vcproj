@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding = "Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="7.00"
 	Name="remote"
 	SccProjectName=""
 	SccLocalPath="">
@@ -20,14 +20,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,SERVER_SHUTDOWN,WIN32,_X86_,DEV_BUILD"
-				ExceptionHandling="FALSE"
+				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,SERVER_SHUTDOWN,IPSERVER,WIN32,_X86_,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\remote_ss/remote.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\remote_ss/"
 				ObjectFile="..\..\..\temp\debug\remote_ss/"
@@ -56,12 +53,6 @@
 				Culture="1053"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -73,7 +64,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -82,17 +73,14 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,SERVER_SHUTDOWN,WIN32,_X86_"
-				ExceptionHandling="FALSE"
+				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,SERVER_SHUTDOWN,IPSERVER,WIN32,_X86_"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\remote_ss/remote.pch"
 				AssemblerListingLocation="..\..\..\temp\release\remote_ss/"
 				ObjectFile="..\..\..\temp\release\remote_ss/"
 				ProgramDataBaseFileName="..\..\..\temp\release\remote_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -114,16 +102,8 @@
 				Culture="1053"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
-	<References>
-	</References>
 	<Files>
 		<Filter
 			Name="REMOTE files"
@@ -132,13 +112,13 @@
 				RelativePath="..\..\..\src\remote\allr.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\chop.cpp">
+				RelativePath="..\..\..\src\remote\chop.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\cntl.cpp">
+				RelativePath="..\..\..\src\remote\cntl.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\ibconfig.cpp">
+				RelativePath="..\..\..\src\remote\ibconfig.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\inet.cpp">
@@ -153,7 +133,7 @@
 				RelativePath="..\..\..\src\remote\parser.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\property.cpp">
+				RelativePath="..\..\..\src\remote\property.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\protocol.cpp">
@@ -165,13 +145,13 @@
 				RelativePath="..\..\..\src\remote\server.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\srvr_w32.cpp">
+				RelativePath="..\..\..\src\remote\srvr_w32.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\window.cpp">
+				RelativePath="..\..\..\src\remote\window.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\wnet.cpp">
+				RelativePath="..\..\..\src\remote\wnet.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xdr.cpp">
@@ -208,7 +188,7 @@
 				RelativePath="..\..\..\src\remote\spxnet32_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\wnet_proto.h">
+				RelativePath="..\..\..\src\remote\wnet_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xdr.h">

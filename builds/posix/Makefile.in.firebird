@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.51 2004-03-25 23:12:31 skidder Exp $
+#  $Id: Makefile.in.firebird,v 1.37.2.12 2003-12-15 04:32:43 skywalker Exp $
 #
 
 ROOT=..
@@ -131,6 +131,7 @@ export DYLD_FRAMEWORK_PATH
 .PHONY: all firebird firebird_boot firebird_basic 
 .PHONY: firebird_embedded firebird_server classic_programs super_programs
 .PHONY: firebird_super firebird_classic
+.PHONY: extlib
 
 
 # The main targets are firebird_embedded or firebird_server
@@ -139,10 +140,10 @@ export DYLD_FRAMEWORK_PATH
 # either _classic or _super.
 
 
-firebird : firebird_@FIREBIRD_ARCH_TYPE@
+firebird : firebird_@FIREBIRD_ARCH_TYPE@ $(PLATFORM_POSTBUILD_TARGET)
 
-firebird_classic firebird_embedded: firebird_basic classic_targets
-firebird_super firebird_server: firebird_basic super_targets
+firebird_classic firebird_embedded: firebird_basic classic_targets extlib
+firebird_super firebird_server: firebird_basic super_targets extlib
 
 
 
@@ -171,11 +172,11 @@ firebird_boot: updateBuildNum boot_phase1 boot_phase2
 
 updateBuildNum : jrd/build_no.h $(GEN_ROOT)/Make.Version
 
-jrd/build_no.h : $(SRC_ROOT)/misc/writeBuildNum.sh
+jrd/build_no.h : misc/writeBuildNum.sh
 	(cd ..; ./src/misc/writeBuildNum.sh rebuildHeader)
 
-$(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
-	$(SRC_ROOT)/misc/writeBuildNum.sh createMakeVersion $@
+$(GEN_ROOT)/Make.Version : misc/writeBuildNum.sh
+	misc/writeBuildNum.sh createMakeVersion $@
 
 
 # 
@@ -299,9 +300,9 @@ security.fdb: gdef isql 		# build the security database
 # database earlier, then perhaps we could build the jrdlib in one step and
 # include the security bits and pieces.
 
-.PHONY: ref_databases msgs msgs_intl generated_headers intl extlib includes
+.PHONY: ref_databases msgs msgs_intl generated_headers intl includes
 
-basic_targets: ref_databases msgs msgs_intl generated_headers intl extlib includes examples_cp \
+basic_targets: ref_databases msgs msgs_intl generated_headers intl includes examples \
 		otherfiles
 
 # hack to make code regeneration work
@@ -324,8 +325,9 @@ extlib:                # external programs than can be called
 includes:	include_generic 
 
                        # examples still need a good makefile to ship with them
-examples_cp:
-	$(MAKE) -f Makefile.examples -C $(GEN_ROOT)/examples/
+examples:
+	$(MAKE) -C ../gen/v5_examples -f ../Makefile.v5_examples
+#	$(MAKE) -f $(GEN_ROOT)/Makefile.v5_examples
 
 otherfiles: misc_files
 
@@ -335,8 +337,9 @@ otherfiles: misc_files
 .PHONY: libfbembed inet_server embed_gfix embed_gbak embed_isql 
 .PHONY: embed_gpre embed_util
 
-classic_targets: libfbembed inet_server embed_gfix embed_gbak embed_isql \
-	embed_gpre embed_util embed_gdef embed_qli embed_fbudf libfbclient
+classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server \
+	embed_gfix embed_gbak embed_isql embed_gpre embed_util embed_gdef \
+	embed_qli libfbclient $(PLAT_CLASSIC_POST_TARGET)
 
 libfbembed:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbembed $@
@@ -365,16 +368,18 @@ embed_gdef:
 embed_qli:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.qli
 
-embed_fbudf:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.fbudf
 
 #_ Firebird Server Targets (super and super client)__________________________
 
-.PHONY: fbserver 
-.PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util client_fbudf
+.PHONY: libfbserver fbserver 
+.PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util
 
-super_targets: fbserver libfbclient client_gfix client_gbak \
-			client_isql client_gpre client_util client_fbudf client_gdef client_qli 
+super_targets: $(PLAT_SUPER_PRE_TARGET) libfbserver fbserver libfbclient \
+		client_gfix client_gbak client_isql client_gpre client_util \
+		client_qli client_gdef $(PLAT_SUPER_POST_TARGET)
+
+libfbserver:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbserver $@
 
 fbserver:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.fbserver $@
@@ -397,8 +402,8 @@ client_isql:
 client_util:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.client.util	
 
-client_fbudf:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.fbudf
+client_qli:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.client.qli
 
 # Not sure we need this target in super - problems with WAL includes
 # MOD 04-Oct-2002
@@ -406,8 +411,7 @@ client_fbudf:
 client_gdef:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gdef
 
-client_qli:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.qli
+
 
 
 #sysdba_user gstat:			# add sysdba user and build gstat program
@@ -496,11 +500,10 @@ rebuild_codes :
 MiscFiles =  firebird.conf
 INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(MiscFiles))
 
-
 misc_files : $(INSTALL_MiscFiles)
 
 
-$(FIREBIRD)/misc/% :: $(BLD_ROOT)/install/misc/%
+$(FIREBIRD)/misc/% :: $(SRC_ROOT)/install/misc/%
 	$(CP) $^ $@
 
 
@@ -528,10 +531,10 @@ clean_dbs:
 
 
 clean_objects:
-	$(RM) `find $(GEN_ROOT)/ -type f -name '*.o' -print`
+	$(RM) `find $(TMP_ROOT)/ -type f -name '*.o' -print`
 
 clean_extern_objects:
-	$(RM) `find $(SRC_ROOT)/extern/ -type f -name '*.o' -print`
+	$(RM) `find $(TMP_ROOT)/extern/ -type f -name '*.o' -print`
 
 # Clear out dependancies files created by the gcc compiler
 # since when .o and other files are deleted the dependant 
@@ -539,7 +542,7 @@ clean_extern_objects:
 # MOD 10-July-2002
 
 clean_dependancies:
-	$(RM) -f `find $(GEN_ROOT)/ -type f -name '*.d' -print`
+	$(RM) -f `find $(TMP_ROOT)/ -type f -name '*.d' -print`
 
 # delete only all of the files of type regular file in $FIREBIRD
 # leave the directories to make dependacies work still
@@ -547,6 +550,7 @@ clean_dependancies:
 
 clean_build:
 	$(RM) `find $(GEN_ROOT)/firebird -type f -print`
+	$(RM) `find $(GEN_ROOT)/firebird -type l -print`
 #	$(RM) $(GDSLIB_OBJECTS) $(GDSLIB_PHASE3_OBJECTS)
 
 # 
@@ -559,3 +563,9 @@ clean_gpre_gen:
 
 #___________________________________________________________________________
 # 
+
+
+#___________________________________________________________________________
+# 
+# Extra, platform specific, targets
+@POSTFIX_INCLUDE@

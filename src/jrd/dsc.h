@@ -26,13 +26,17 @@
 #ifndef JRD_DSC_H
 #define JRD_DSC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Descriptor format */
 
 /* WARNING !
    This run-time structure is stored in RDB$FORMATS.RDB$DESCRIPTORS.
    Any modification to this structure is tantamount to an ODS change.
-   See MET_format() and make_format() in MET.EPP for enlightenment.
+   See MET_format() and make_format() in MET.E for enlightenment.
 */
 
 typedef struct dsc
@@ -51,7 +55,7 @@ typedef struct dsc
 	USHORT	dsc_length;
 	SSHORT	dsc_sub_type;
 	USHORT	dsc_flags;
-	UCHAR*	dsc_address; // Used either as offset in a message or as a pointer
+	UCHAR*	dsc_address;
 } DSC;
 
 /* values for dsc_flags */
@@ -96,9 +100,8 @@ typedef struct alt_dsc {
 /* Note that dtype_null actually means that we do not yet know the
    dtype for this descriptor.  A nice cleanup item would be to globally
    change it to dtype_unknown.  --chrisj 1999-02-17 */
-// Name changed on 2003.12.17 by CVC.
 
-#define dtype_unknown	0
+#define dtype_null	0
 #define dtype_text	1
 #define dtype_cstring	2
 #define dtype_varying	3
@@ -181,8 +184,6 @@ typedef struct alt_dsc {
 				  ((d) <= dtype_d_float)) || \
 				 ((d)  == dtype_int64))
 
-#define NUMERIC_SCALE(desc)	((DTYPE_IS_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
-
 /* Macros defining what operations are legal on data types */
 #define DTYPE_CAN_NEGATE(d)	DTYPE_IS_NUMERIC(d)
 #define DTYPE_CAN_AVERAGE(d)	DTYPE_IS_NUMERIC(d)
@@ -193,5 +194,8 @@ typedef struct alt_dsc {
 #define ISC_TIME_SECONDS_PRECISION		10000L
 #define ISC_TIME_SECONDS_PRECISION_SCALE	(-4)
 
-#endif /* JRD_DSC_H */
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* JRD_DSC_H */

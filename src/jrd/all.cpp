@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		all.cpp
+ *	MODULE:		all.c
  *	DESCRIPTION:	Internal block allocator
  *
  * The contents of this file are subject to the Interbase Public
@@ -21,54 +21,30 @@
  * Contributor(s): ______________________________________.
  */
 
+#ifdef SHLIB_DEFS
+#define LOCAL_SHLIB_DEFS
+#endif
+
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/common.h"
 #include "../jrd/ib_stdio.h"
 
-#include "gen/iberror.h"
-//#include "../jrd/common.h"
-//#include "../jrd/isc.h"
-#include "../jrd/jrd.h"
-//#include "../jrd/lck.h"
-//#include "../jrd/ods.h"
-//#include "../jrd/cch.h"
-#include "../jrd/all.h"
-//#include "../jrd/os/pio.h"
-//#include "../jrd/pag.h"
-//#include "../jrd/val.h"
-//#include "../jrd/exe.h"
-//#include "../jrd/req.h"
-//#include "../jrd/lls.h"
-//#include "../jrd/rse.h"
-//#include "../jrd/sbm.h"
-#include "../jrd/tra.h"
-//#include "../jrd/sqz.h"
-//#include "../jrd/blb.h"
-//#include "../jrd/btr.h"
-//#include "../jrd/scl.h"
-//#include "../jrd/ext.h"
-//#include "../jrd/met.h"
-//#include "../jrd/sdw.h"
-//#include "../jrd/log.h"
-//#include "../jrd/intl.h"
-//#include "../jrd/intl_classes.h"
-//#include "../jrd/fil.h"
-//#include "../jrd/tpc.h"
-//#include "../jrd/rng.h"
-//#include "../jrd/svc.h"
-//#include "../jrd/blob_filter.h"
+#include "gen/codes.h"
 
-
+#include "../jrd/everything.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
-//#include "../jrd/gds_proto.h"
-//#include "../jrd/mov_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/mov_proto.h"
 #include "../jrd/thd_proto.h"
 
 #include <algorithm>
 
-using namespace Jrd;
+#ifdef SHLIB_DEFS
+#define strlen		(*_libgds_strlen)
+
+extern int strlen();
+#endif
 
 #define PERM_EXTEND_SIZE        (16 * 1024)
 #define CACH_EXTEND_SIZE        (16 * 1024)
@@ -95,15 +71,17 @@ void ALL_check_memory()
  *	executed.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+
+	Firebird::vector<JrdMemoryPool*>::iterator itr;
+
+	DBB Dbb = GET_DBB;
 
 #ifdef V4_THREADING
 	V4_RW_LOCK_LOCK(dbb->dbb_rw_locks + DBB_WLCK_pools, WLCK_read);
 #endif
 
 	// walk through all the pools in the database
-	Firebird::vector<JrdMemoryPool*>::iterator itr;
-	for (itr = dbb->dbb_pools.begin(); itr < dbb->dbb_pools.end(); ++itr)
+	for (itr = Dbb->dbb_pools.begin(); itr < Dbb->dbb_pools.end(); ++itr)
 	{
 		JrdMemoryPool* pool = *itr;
 		if (pool) {
@@ -119,45 +97,49 @@ void ALL_check_memory()
 #endif /* DEV_BUILD */
 
 
-JrdMemoryPool *JrdMemoryPool::createDbPool(Firebird::MemoryStats &stats) {
-	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(
-		sizeof(JrdMemoryPool), NULL, stats);
+JrdMemoryPool *JrdMemoryPool::createPool(int *cur_mem, int *max_mem) {
+	DBB dbb = GET_DBB;
+	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
+		cur_mem, max_mem);
 	result->plb_buckets = NULL;
 	result->plb_segments = NULL;
 	result->plb_dccs = NULL;
+	new (&result->lls_cache) BlockCache<lls> (*result);
+	if (dbb) dbb->dbb_pools.push_back(result);
 	return result;
 }
 
 JrdMemoryPool *JrdMemoryPool::createPool() {
-    Database* dbb = GET_DBB;
-	fb_assert(dbb);
-		
+    DBB dbb = GET_DBB;
 #ifdef SUPERSERVER
-	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
-		dbb->dbb_permanent,	dbb->dbb_memory_stats);
+	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
+		(int*)&dbb->dbb_current_memory, (int*)&dbb->dbb_max_memory);
 #else
-	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool), dbb->dbb_permanent);
+	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool));
 #endif
 	result->plb_buckets = NULL;
 	result->plb_segments = NULL;
 	result->plb_dccs = NULL;
-	dbb->dbb_pools.push_back(result);
+	new (&result->lls_cache) BlockCache<lls> (*result);
+	if (dbb) dbb->dbb_pools.push_back(result);
 	return result;
 }
 
 void JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
-	Database* dbb = GET_DBB;
-	Database::pool_vec_type::iterator itr =
+	DBB dbb = GET_DBB;
+	dbb::pool_vec_type::iterator itr =
 		std::find(dbb->dbb_pools.begin(), dbb->dbb_pools.end(), pool);
 	if (itr != dbb->dbb_pools.end()) dbb->dbb_pools.erase(itr);
+	pool->lls_cache.~BlockCache<lls>();
 	MemoryPool::deletePool(pool);
 }
 
 void JrdMemoryPool::noDbbDeletePool(JrdMemoryPool* pool) {
+	pool->lls_cache.~BlockCache<lls>();
 	MemoryPool::deletePool(pool);
 }
 
-TEXT* ALL_cstring(const Firebird::string& in_string)
+TEXT* ALL_cstring(TEXT* in_string)
 {
 /**************************************
  *
@@ -171,10 +153,14 @@ TEXT* ALL_cstring(const Firebird::string& in_string)
  *	return to the user or where ever.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	TDBB tdbb;
+	JrdMemoryPool *pool;
+	TEXT *p;
+	size_t length;
 
-	JrdMemoryPool* pool = tdbb->tdbb_default;
-	if (!pool) {
+	tdbb = GET_THREAD_DATA;
+
+	if (!(pool = tdbb->tdbb_default)) {
 		if (tdbb->tdbb_transaction)
 			pool = tdbb->tdbb_transaction->tra_pool;
 		else if (tdbb->tdbb_request)
@@ -186,8 +172,9 @@ TEXT* ALL_cstring(const Firebird::string& in_string)
 			return NULL;
 	}
 
-	TEXT* p = FB_NEW(*pool) TEXT[in_string.length()];
-	strcpy(p, in_string.c_str());
+	length = strlen(in_string);
+	p = FB_NEW(*pool) TEXT[length+1];
+	strcpy(p,in_string);	
 	return p;
 }
 
@@ -206,11 +193,13 @@ void ALL_fini(void)
  *	its own behalf.  It is assumed that mutexes will
  *	have been locked before entry.
  *	Call gds__free explicitly instead of ALL_free
- *	because it references the Database block which gets
+ *	because it references the dbb block which gets
  *	released at the top of this routine.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	DBB dbb;
+
+	dbb = GET_DBB;
 
 	/* Don't know if we even need to do this, so it is commented out */
 	//delete dbb;
@@ -232,19 +221,76 @@ void ALL_init(void)
  *	have been locked before entry.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
-	Database* dbb = tdbb->tdbb_database;
+	TDBB tdbb;
+	DBB dbb;
+	JrdMemoryPool* pool;
 
-	JrdMemoryPool* pool = tdbb->tdbb_default = dbb->dbb_permanent;
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
+
+	pool = tdbb->tdbb_default = dbb->dbb_permanent;
 //	dbb->dbb_permanent->setExtendSize(PERM_EXTEND_SIZE);
 	dbb->dbb_pools[0] = pool;
 	dbb->dbb_bufferpool = JrdMemoryPool::createPool();
 //	FB_NEW(*pool) JrdMemoryPool(CACH_EXTEND_SIZE);
 }
 
+void JrdMemoryPool::ALL_push(BLK object, LLS * stack)
+{
+/**************************************
+ *
+ *	A L L _ p u s h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Push an object on an LLS stack.
+ *
+ **************************************/
+	TDBB tdbb;
+	LLS node;
+	JrdMemoryPool* pool;
+
+	tdbb = GET_THREAD_DATA;
+
+	pool = tdbb->tdbb_default;
+	node = pool->lls_cache.newBlock();
+	node->lls_object = object;
+	node->lls_next = *stack;
+	*stack = node;
+}
+
+
+BLK JrdMemoryPool::ALL_pop(LLS *stack)
+{
+/**************************************
+ *
+ *	A L L _ p o p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Pop an object off a linked list stack.  Save the node for
+ *	further use.
+ *
+ **************************************/
+	LLS node;
+	JrdMemoryPool* pool;
+	BLK object;
+
+	node = *stack;
+	*stack = node->lls_next;
+	object = node->lls_object;
+
+	pool = (JrdMemoryPool*)MemoryPool::blk_pool(node);
+	pool->lls_cache.returnBlock(node);
+
+	return object;
+}
+
 
 #ifdef SUPERSERVER
-void ALL_print_memory_pool_info(IB_FILE* fptr, Database* databases)
+void ALL_print_memory_pool_info(IB_FILE* fptr, DBB databases)
 {
 #ifdef NOT_USED_OR_REPLACED
 /***********************************************************
@@ -255,14 +301,14 @@ void ALL_print_memory_pool_info(IB_FILE* fptr, Database* databases)
  *
  * Functional description
  *	Print the different block types allocated in the pool.
- *	Walk the Database's to print out pool info of every database
+ *	Walk the dbb's to print out pool info of every database
  *
  **************************************/
-	Database* dbb;
+	DBB dbb;
 	STR string;
 	VEC vector;
 	HNK hnk;
-	Attachment* att;
+	ATT att;
 	int i, j, k, col;
 
 	ib_fprintf(fptr, "\n\tALL_xx block types\n");

@@ -1,47 +1,39 @@
 /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * You may obtain a copy of the Licence at
- * http://www.gnu.org/licences/lgpl.html
- * 
- * As a special exception this file can also be included in modules
- * with other source code as long as that source code has been 
- * released under an Open Source Initiative certificed licence.  
- * More information about OSI certification can be found at: 
- * http://www.opensource.org 
- * 
- * This module is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public Licence for more details.
- * 
- * This module was created by members of the firebird development 
- * team.  All individual contributions remain the Copyright (C) of 
- * those individuals and all rights are reserved.  Contributors to 
- * this file are either listed below or can be obtained from a CVS 
- * history command.
+ *	PROGRAM:	Client/Server Common Code
+ *	MODULE:		config_file.cpp
+ *	DESCRIPTION:	Configuration manager (file handling)
  *
- *  Created by:  Mark O'Donohue <skywalker@users.sourceforge.net>
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  Contributor(s):
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
+ *
+ * Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
 #include "firebird.h"
 
-#include "../../common/classes/alloc.h"
-#include "../../common/classes/auto.h"
 #include "../../common/config/config_file.h"
 #include "../jrd/os/fbsyslog.h"
-#include "../jrd/ib_stdio.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
-//#include <fstream>
-//#include <iostream>
+#include <fstream>
+#include <iostream>
 
 // Invalid or missing CONF_FILE may lead to severe errors
 // in applications. That's why for regular SERVER builds
@@ -55,8 +47,62 @@
 #undef INFORM_ON_NO_CONF
 #endif
 
-// config_file works with OS case-sensitivity
-typedef Firebird::PathName string;
+typedef Firebird::string string;
+
+/******************************************************************************
+ *
+ *	Allow case-insensitive comparison
+ */
+
+bool ConfigFile::key_compare::operator()(const string& x, const string& y) const
+{
+	return Firebird::PathName(x) < Firebird::PathName(y);
+}
+
+/******************************************************************************
+ *
+ *	Strip leading spaces
+ */
+
+void ConfigFile::stripLeadingWhiteSpace(string& s)
+{
+	if (!s.size())
+	{
+		return;
+	}
+
+	const string::size_type startPos = s.find_first_not_of(" \t\r");
+	if (startPos == string::npos)
+	{
+		s.erase();	// nothing but air
+	}
+	else if (startPos)
+	{
+		s = s.substr(startPos);
+	}
+}
+
+/******************************************************************************
+ *
+ *	Strip trailing spaces
+ */
+
+void ConfigFile::stripTrailingWhiteSpace(string& s)
+{
+	if (!s.size())
+	{
+		return;
+	}
+
+	string::size_type endPos = s.find_last_not_of(" \t\r");
+	if (endPos != string::npos)
+	{
+		// Note that endPos is the index to the last non-ws char
+		// why we have to inc. it
+		++endPos;
+		s = s.substr(0, endPos);
+	}
+}
 
 /******************************************************************************
  *
@@ -98,8 +144,16 @@ string ConfigFile::getString(const string& key)
 {
     checkLoadConfig();
 
-    int pos;
-    return parameters.find(key, pos) ? parameters[pos].second : string();
+    mymap_t::iterator lookup;
+
+    lookup = parameters.find(key);
+
+    if (lookup != parameters.end())
+    {
+    	return lookup->second;
+    }
+
+    return string();
 }
 
 /******************************************************************************
@@ -109,7 +163,7 @@ string ConfigFile::getString(const string& key)
 
 string ConfigFile::parseKeyFrom(const string& inputLine, string::size_type& endPos)
 {
-    endPos = inputLine.find_first_of("=");
+    endPos = inputLine.find_first_of("=\t");
     if (endPos == string::npos)
     {
         return inputLine;
@@ -137,7 +191,7 @@ string ConfigFile::parseValueFrom(string inputLine, string::size_type initialPos
         return string();
     }
 
-    inputLine.rtrim(" \t\r");
+    stripTrailingWhiteSpace(inputLine);
     return inputLine.substr(startPos);
 }
 
@@ -159,54 +213,44 @@ void ConfigFile::checkLoadConfig()
  *	Load file immediately
  */
 
-namespace {
-	class FileClose
-	{
-public:
-		static void clear(IB_FILE *f)
-		{
-			if (f) {
-				ib_fclose(f);
-			}
-		}
-	};
-}
-
 void ConfigFile::loadConfig()
 {
 	isLoadedFlg = true;
 
 	parameters.clear();
 
-	Firebird::AutoPtr<IB_FILE, FileClose> ifile(fopen(configFile.c_str(), "rt"));
+    std::ifstream configFileStream(configFile.c_str());
 	
 #ifdef EXIT_ON_NO_CONF
 	int BadLinesCount = 0;
 #endif
-    if (!ifile)
+    if (!configFileStream)
     {
         // config file does not exist
+#ifdef INFORM_ON_NO_CONF
+		string Msg = "Missing configuration file: " + configFile;
 #ifdef EXIT_ON_NO_CONF
 		if (fExitOnError)
-		{
-			Firebird::string Msg = "Missing configuration file: " + 
-				configFile.ToString() + ", exiting";
-			Firebird::Syslog::Record(fExitOnError ? 
+			Msg += ", exiting";
+#endif
+		Firebird::Syslog::Record(fExitOnError ? 
 				Firebird::Syslog::Error :
 				Firebird::Syslog::Warning, Msg);
+#ifdef EXIT_ON_NO_CONF
+		if (fExitOnError)
 			exit(1);
-		}
-#endif //EXIT_ON_NO_CONF
+#endif
+#endif //INFORM_ON_NO_CONF
 		return;
     }
     string inputLine;
 
-    while (!feof(ifile))
+    while (!configFileStream.eof())
     {
-		inputLine.LoadFromFile(ifile);
+		std::getline(configFileStream, inputLine);
 
 		stripComments(inputLine);
-		inputLine.ltrim(" \t\r");
+		stripLeadingWhiteSpace(inputLine);
 		
 		if (!inputLine.size())
 		{
@@ -215,8 +259,8 @@ void ConfigFile::loadConfig()
 
         if (inputLine.find('=') == string::npos)
         {
-			Firebird::string Msg = (configFile + ": illegal line \"" +
-				inputLine + "\"").ToString();
+            string Msg = configFile + ": illegal line \"" +
+				inputLine + "\"";
 			Firebird::Syslog::Record(fExitOnError ? 
 					Firebird::Syslog::Error :
 					Firebird::Syslog::Warning, Msg);
@@ -229,11 +273,13 @@ void ConfigFile::loadConfig()
         string::size_type endPos;
 
         string key   = parseKeyFrom(inputLine, endPos);
-		key.rtrim(" \t\r");
+		stripTrailingWhiteSpace(key);
 		// TODO: here we must check for correct parameter spelling !
         string value = parseValueFrom(inputLine, endPos);
 
-		parameters.add(Parameter(getPool(), key, value));
+		// parameters.insert(pair<string, string>(key, value));
+		// Just to display yet another template function
+        parameters.insert(std::make_pair(key, value));
     }
 #ifdef EXIT_ON_NO_CONF
 	if (BadLinesCount && fExitOnError) {

@@ -40,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\release\engine_es"
 # PROP Intermediate_Dir "..\..\..\temp\release\engine_es"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GX /GR /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /GR /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "EMBEDDED" /YX /FD /EHc- /c
+# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "EMBEDDED" /YX /FD /EHc- /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -63,8 +63,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\debug\engine_es"
 # PROP Intermediate_Dir "..\..\..\temp\debug\engine_es"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /GR /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /GR /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "DEV_BUILD" /D "EMBEDDED" /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /D "DEV_BUILD" /D "EMBEDDED" /FD /GZ /c
 # SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
@@ -86,6 +86,10 @@ LIB32=link.exe -lib
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\ail.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\all.cpp
 # End Source File
 # Begin Source File
@@ -99,10 +103,6 @@ SOURCE=..\..\..\src\jrd\blb.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\blob_filter.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\btn.cpp
 # End Source File
 # Begin Source File
 
@@ -212,7 +212,7 @@ SOURCE=..\..\..\src\jrd\exe.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\execute_statement.cpp
+SOURCE=..\..\..\src\jrd\ExecuteStatement.cpp
 # End Source File
 # Begin Source File
 
@@ -241,10 +241,6 @@ SOURCE=..\..\..\src\jrd\gds.cpp
 # Begin Source File
 
 SOURCE=..\..\..\gen\jrd\grant.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\os\win32\guid.cpp
 # End Source File
 # Begin Source File
 
@@ -293,7 +289,7 @@ SOURCE=..\..\..\src\jrd\isc_file.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\isc_ipc.cpp
+SOURCE=..\..\..\src\jrd\isc_ipc.cpp
 # End Source File
 # Begin Source File
 
@@ -314,6 +310,10 @@ SOURCE=..\..\..\src\jrd\jrd.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\jrn.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\lck.cpp
 # End Source File
 # Begin Source File
@@ -327,6 +327,10 @@ SOURCE=..\..\..\src\jrd\log.cpp
 # Begin Source File
 
 SOURCE=..\..\..\gen\jrd\met.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\misc.cpp
 # End Source File
 # Begin Source File
 
@@ -347,11 +351,11 @@ SOURCE=..\..\..\src\jrd\nav.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\nbak.cpp
+SOURCE=..\..\..\src\jrd\nodebug.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\nodebug.cpp
+SOURCE=..\..\..\src\jrd\old.cpp
 # End Source File
 # Begin Source File
 
@@ -385,6 +389,10 @@ SOURCE=..\..\..\src\jrd\plugin_manager.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\pwd.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rec.cpp
 # End Source File
 # Begin Source File
 
@@ -502,7 +510,7 @@ SOURCE=..\..\..\src\jrd\why.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\winnt.cpp
+SOURCE=..\..\..\src\jrd\winnt.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -515,6 +523,10 @@ SOURCE=..\..\..\src\jrd\acl.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\aif_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ail_proto.h
 # End Source File
 # Begin Source File
 
@@ -619,10 +631,6 @@ SOURCE=..\..\..\src\jrd\cvt2_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\cvt_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\db_alias.h
 # End Source File
 # Begin Source File
 
@@ -734,7 +742,7 @@ SOURCE=..\..\..\src\jrd\exe_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\execute_statement.h
+SOURCE=..\..\..\src\jrd\ExecuteStatement.h
 # End Source File
 # Begin Source File
 
@@ -803,10 +811,6 @@ SOURCE=..\..\..\src\jrd\gdsold.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\grant_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\os\guid.h
 # End Source File
 # Begin Source File
 
@@ -894,7 +898,7 @@ SOURCE=..\..\..\src\jrd\isc_f_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\isc_i_proto.h
+SOURCE=..\..\..\src\jrd\isc_i_proto.h
 # End Source File
 # Begin Source File
 
@@ -923,6 +927,14 @@ SOURCE=..\..\..\src\jrd\jrd_pwd.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\jrd_time.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\jrn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\jrn_proto.h
 # End Source File
 # Begin Source File
 
@@ -998,7 +1010,15 @@ SOURCE=..\..\..\src\jrd\met_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\misc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\misc_func_ids.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\misc_proto.h
 # End Source File
 # Begin Source File
 
@@ -1050,6 +1070,14 @@ SOURCE=..\..\..\src\jrd\ods.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\old.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\old_proto.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\opt_proto.h
 # End Source File
 # Begin Source File
@@ -1078,11 +1106,11 @@ SOURCE=..\..\..\src\jrd\perf_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\pio.h
+SOURCE=..\..\..\src\jrd\pio.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\pio_proto.h
+SOURCE=..\..\..\src\jrd\pio_proto.h
 # End Source File
 # Begin Source File
 
@@ -1107,6 +1135,18 @@ SOURCE=..\..\..\src\jrd\quad_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\que.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rdb.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rdb_codes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rdbcodes.h
 # End Source File
 # Begin Source File
 
@@ -1234,7 +1274,7 @@ SOURCE=..\..\..\src\jrd\syidef.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\sym.h
+SOURCE=..\..\..\src\jrd\sym_proto.h
 # End Source File
 # Begin Source File
 

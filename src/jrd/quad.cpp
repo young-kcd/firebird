@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Access Method
- *      MODULE:         quad.cpp
+ *      MODULE:         quad.c
  *      DESCRIPTION:    Quad arithmetic simulation
  *
  * The contents of this file are subject to the Interbase Public
@@ -31,8 +31,14 @@
 #define HIGH_WORD       0
 #endif
 
+extern "C" {
 
-SQUAD QUAD_add(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
+
+#pragma FB_COMPILER_MESSAGE("Fix this! Ugly function pointer cast!")
+typedef void (*pfn_quad_private_cludge) (int, int);
+
+
+SQUAD QUAD_add(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
 {
 /**************************************
  *
@@ -45,7 +51,7 @@ SQUAD QUAD_add(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
  *
  **************************************/
 
-	(*err) (isc_badblk, 0);	/* not really badblk, but internal error */
+	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };
@@ -53,7 +59,7 @@ SQUAD QUAD_add(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
 }
 
 
-SSHORT QUAD_compare(const SQUAD* arg1, const SQUAD* arg2)
+SSHORT QUAD_compare(SQUAD * arg1, SQUAD * arg2)
 {
 /**************************************
  *
@@ -78,7 +84,7 @@ SSHORT QUAD_compare(const SQUAD* arg1, const SQUAD* arg2)
 }
 
 
-SQUAD QUAD_from_double(const double* d, FPTR_ERROR err)
+SQUAD QUAD_from_double(double *d, FPTR_VOID err)
 {
 /**************************************
  *
@@ -91,7 +97,7 @@ SQUAD QUAD_from_double(const double* d, FPTR_ERROR err)
  *
  **************************************/
 
-	(*err) (isc_badblk, 0);	/* not really badblk, but internal error */
+	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* BUGCHECK (190); *//* msg 190 conversion not supported for */
 	/* specified data types */
 
@@ -101,7 +107,7 @@ SQUAD QUAD_from_double(const double* d, FPTR_ERROR err)
 }
 
 
-SQUAD QUAD_multiply(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
+SQUAD QUAD_multiply(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
 {
 /**************************************
  *
@@ -114,7 +120,7 @@ SQUAD QUAD_multiply(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
  *
  **************************************/
 
-	(*err) (isc_badblk, 0);	/* not really badblk, but internal error */
+	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };
@@ -122,7 +128,7 @@ SQUAD QUAD_multiply(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
 }
 
 
-SQUAD QUAD_negate(const SQUAD* arg1, FPTR_ERROR err)
+SQUAD QUAD_negate(SQUAD * arg1, FPTR_VOID err)
 {
 /**************************************
  *
@@ -135,7 +141,7 @@ SQUAD QUAD_negate(const SQUAD* arg1, FPTR_ERROR err)
  *
  **************************************/
 
-	(*err) (isc_badblk, 0);	/* not really badblk, but internal error */
+	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };
@@ -143,7 +149,7 @@ SQUAD QUAD_negate(const SQUAD* arg1, FPTR_ERROR err)
 }
 
 
-SQUAD QUAD_subtract(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
+SQUAD QUAD_subtract(SQUAD * arg1, SQUAD * arg2, FPTR_VOID err)
 {
 /**************************************
  *
@@ -156,11 +162,12 @@ SQUAD QUAD_subtract(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
  *
  **************************************/
 
-	(*err) (isc_badblk, 0);	/* not really badblk, but internal error */
+	reinterpret_cast < pfn_quad_private_cludge > (err) (gds_badblk, 0);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };
 	return temp;				/* Added to remove compiler warnings */
 }
 
+}	// extern "C"
 

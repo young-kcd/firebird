@@ -24,17 +24,16 @@
 #ifndef JRD_SCL_H
 #define JRD_SCL_H
 
-namespace Jrd {
-
 /* Security class definition */
 
-class SecurityClass : public pool_alloc_rpt<SCHAR, type_scl>
+class scl : public pool_alloc_rpt<SCHAR, type_scl>
 {
     public:
-	SecurityClass* scl_next;	/* Next security class in system */
+	scl *scl_next;		/* Next security class in system */
 	USHORT scl_flags;			/* Access permissions */
 	TEXT scl_name[2];
 };
+typedef scl *SCL;
 
 #define SCL_read		1		/* Read access */
 #define SCL_write		2		/* Write access */
@@ -55,7 +54,7 @@ class SecurityClass : public pool_alloc_rpt<SCHAR, type_scl>
 
 /* information about the user */
 
-class UserId : public pool_alloc_rpt<SCHAR, type_usr>
+class usr : public pool_alloc_rpt<SCHAR, type_usr>
 {
     public:
 	TEXT *usr_user_name;		/* User name */
@@ -69,6 +68,7 @@ class UserId : public pool_alloc_rpt<SCHAR, type_usr>
 	USHORT usr_flags;			/* Misc. crud */
 	TEXT usr_data[2];
 };
+typedef usr *USR;
 
 #define USR_locksmith	1		/* User has great karma */
 #define USR_dba		2			/* User has DBA privileges */
@@ -85,7 +85,4 @@ class UserId : public pool_alloc_rpt<SCHAR, type_usr>
 #define object_procedure "PROCEDURE"
 #define object_column "COLUMN"
 
-} //namespace Jrd
-
-#endif // JRD_SCL_H
-
+#endif /* JRD_SCL_H */

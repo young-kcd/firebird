@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		hsh_proto.h
- *	DESCRIPTION:	Prototype Header file for hsh.cpp
+ *	DESCRIPTION:	Prototype Header file for hsh.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,13 +24,20 @@
 #ifndef DSQL_HSH_PROTO_H
 #define DSQL_HSH_PROTO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void HSHD_fini(void);
-void HSHD_finish(const void*);
+void HSHD_finish(void *);
 void HSHD_init(void);
-void HSHD_insert(dsql_sym*);
-DSQL_SYM HSHD_lookup(const void*, const TEXT*, SSHORT, SYM_TYPE, USHORT);
-void HSHD_remove(dsql_sym*);
-void HSHD_set_flag(const void *, const TEXT*, SSHORT, SYM_TYPE, SSHORT);
+void HSHD_insert(struct sym *);
+SYM HSHD_lookup(void *, TEXT *, SSHORT, SYM_TYPE, USHORT);
+void HSHD_remove(struct sym *);
+void HSHD_set_flag(void *, TEXT *, SSHORT, SYM_TYPE, SSHORT);
 
-#endif //DSQL_HSH_PROTO_H
+#ifdef __cplusplus
+}	/* extern "C" */
+#endif
 
+#endif /*DSQL_HSH_PROTO_H*/

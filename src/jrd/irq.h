@@ -24,8 +24,8 @@
  *	new MET_lookup_generator_id().
  */
 
-#ifndef JRD_IRQ_H
-#define JRD_IRQ_H
+#ifndef _JRD_IRQ_H_
+#define _JRD_IRQ_H_
 
 #define REQUEST(irt) (*dbb->dbb_internal)[irt]
 
@@ -108,8 +108,7 @@
 #define irq_r_gen_id_num	72	/* lookup generator by ID. */
 #define irq_verify_role_name	73	/* ensure role exists in roles & user_privileges. */
 #define irq_l_relation_defsec	74	/* check the default sec class name against rel. */
-#define irq_m_index_seg		75	/* modify per-segment index selectivity */
 
-#define irq_MAX		76
+#define irq_MAX		75
 
-#endif /* JRD_IRQ_H */
+#endif /* _JRD_IRQ_H_ */

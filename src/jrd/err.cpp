@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		err.cpp
+ *	MODULE:		err.c
  *	DESCRIPTION:	Bug check routine
  *
  * The contents of this file are subject to the Interbase Public
@@ -31,17 +31,17 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "gen/iberror.h"
+#include "../jrd/ibsetjmp.h"
+#include "gen/codes.h"
 #include "../jrd/iberr.h"
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 #include "../jrd/jrd.h"
-#include "../jrd/os/pio.h"
+#include "../jrd/pio.h"
 #include "../jrd/val.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "../jrd/req.h"
-#include "../jrd/rse.h"
 #include "../jrd/tra.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
@@ -51,19 +51,23 @@
 #include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../common/config/config.h"
-
-using namespace Jrd;
 
 #define JRD_FAILURE_SPACE	2048
 #define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
 
 
+extern "C" {
+
+
+static TEXT* jrd_failures = NULL;
+static TEXT* jrd_failures_ptr = NULL;
+
+static void cleanup(void *);
 static void internal_error(ISC_STATUS, int);
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void ERR_bugcheck(int number)
+void DLL_EXPORT ERR_bugcheck(int number)
 {
 /**************************************
  *
@@ -75,18 +79,20 @@ void ERR_bugcheck(int number)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	DBB dbb;
+
+	dbb = GET_DBB;
 	dbb->dbb_flags |= DBB_bugcheck;
 
 	CCH_shutdown_database(dbb);
 
-	internal_error(isc_bug_check, number);
+	internal_error(gds_bug_check, number);
 }
 #endif
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void ERR_bugcheck_msg(const TEXT* msg)
+void DLL_EXPORT ERR_bugcheck_msg(const TEXT* msg)
 {
 /**************************************
  *
@@ -98,20 +104,22 @@ void ERR_bugcheck_msg(const TEXT* msg)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	Database* dbb = GET_DBB;
+	DBB dbb;
+
+	dbb = GET_DBB;
 
 	dbb->dbb_flags |= DBB_bugcheck;
 	DEBUG;
 
 	CCH_shutdown_database(dbb);
 
-	ERR_post(isc_bug_check, isc_arg_string, ERR_cstring(msg), 0);
+	ERR_post(gds_bug_check, gds_arg_string, ERR_cstring(msg), 0);
 }
 #endif
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void ERR_corrupt(int number)
+void DLL_EXPORT ERR_corrupt(int number)
 {
 /**************************************
  *
@@ -124,16 +132,12 @@ void ERR_corrupt(int number)
  *
  **************************************/
 
-	internal_error(isc_db_corrupt, number);
+	internal_error(gds_db_corrupt, number);
 }
 #endif
 
-const TEXT* ERR_cstring(const Firebird::string& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
 
-const TEXT* ERR_cstring(const TEXT* in_string)
+const TEXT* DLL_EXPORT ERR_cstring(const TEXT* in_string)
 {
 /**************************************
  *
@@ -150,14 +154,15 @@ const TEXT* ERR_cstring(const TEXT* in_string)
  *	is independent of the JRD allocator mechanism.
  *
  **************************************/
-	return Firebird::status_string(in_string);
+
+	return ERR_string(in_string, strlen(in_string));
 }
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void ERR_duplicate_error(IDX_E	code,
-						jrd_rel*		relation,
-						USHORT index_number)
+void DLL_EXPORT ERR_duplicate_error(IDX_E	code,
+									JRD_REL		relation,
+									USHORT index_number)
 {
 /**************************************
  *
@@ -169,12 +174,12 @@ void ERR_duplicate_error(IDX_E	code,
  *	Duplicate error during index update.
  *
  **************************************/
-	SqlIdentifier index;
-	SqlIdentifier constraint;
+	TEXT  index[32];
+	TEXT  constraint[32];
 	const TEXT* index_name;
 	const TEXT* constraint_name;
 
-	thread_db* tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
 	MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
 	if (index[0]) {
@@ -190,8 +195,8 @@ void ERR_duplicate_error(IDX_E	code,
 
 	switch (code) {
 	case idx_e_keytoobig:
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_keytoobig,
-				 isc_arg_string, ERR_cstring(index_name), 0);
+		ERR_post(gds_imp_exc, gds_arg_gds, gds_keytoobig,
+				 gds_arg_string, ERR_cstring(index_name), 0);
 		break;
 
 	case idx_e_conversion:
@@ -199,25 +204,25 @@ void ERR_duplicate_error(IDX_E	code,
 		break;
 
 	case idx_e_foreign:
-		ERR_post(isc_foreign_key,
-				 isc_arg_string, ERR_cstring(constraint_name),
-				 isc_arg_string, relation->rel_name, 0);
+		ERR_post(gds_foreign_key,
+				 gds_arg_string, ERR_cstring(constraint_name),
+				 gds_arg_string, relation->rel_name, 0);
 		break;
 
 	default:
 		if (constraint[0])
-			ERR_post(isc_unique_key_violation,
-					 isc_arg_string, ERR_cstring(constraint_name),
-					 isc_arg_string, relation->rel_name, 0);
+			ERR_post(gds_unique_key_violation,
+					 gds_arg_string, ERR_cstring(constraint_name),
+					 gds_arg_string, relation->rel_name, 0);
 		else
-			ERR_post(isc_no_dup, isc_arg_string, ERR_cstring(index_name), 0);
+			ERR_post(gds_no_dup, gds_arg_string, ERR_cstring(index_name), 0);
 	}
 }
 #endif
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void ERR_error(int number)
+void DLL_EXPORT ERR_error(int number)
 {
 /**************************************
  *
@@ -236,13 +241,13 @@ void ERR_error(int number)
 	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) <
 		1) sprintf(errmsg, "error code %d", number);
 
-	ERR_post(isc_random, isc_arg_string, ERR_cstring(errmsg), 0);
+	ERR_post(gds_random, gds_arg_string, ERR_cstring(errmsg), 0);
 }
 #endif
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void ERR_error_msg(const TEXT* msg)
+void DLL_EXPORT ERR_error_msg(const TEXT* msg)
 {
 /**************************************
  *
@@ -257,13 +262,13 @@ void ERR_error_msg(const TEXT* msg)
  **************************************/
 
 	DEBUG;
-	ERR_post(isc_random, isc_arg_string, ERR_cstring(msg), 0);
+	ERR_post(gds_random, gds_arg_string, ERR_cstring(msg), 0);
 }
 #endif
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void ERR_log(int facility, int number, const TEXT* message)
+void DLL_EXPORT ERR_log(int facility, int number, const TEXT* message)
 {
 /**************************************
  *
@@ -276,7 +281,8 @@ void ERR_log(int facility, int number, const TEXT* message)
  *
  **************************************/
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
-	thread_db* tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
+	UCHAR *dbname = 0;
 
 	DEBUG;
 	if (message)
@@ -288,15 +294,19 @@ void ERR_log(int facility, int number, const TEXT* message)
 
 	sprintf(errmsg + strlen(errmsg), " (%d)", number);
 
-	gds__log("Database: %s\n\t%s", (tdbb && tdbb->tdbb_attachment) ?
-		tdbb->tdbb_attachment->att_filename.c_str() : "",
-		errmsg, 0);
+	if (tdbb && tdbb->tdbb_attachment)
+	{
+		dbname = ((tdbb->tdbb_attachment->att_filename) ?
+			tdbb->tdbb_attachment->att_filename->str_data : NULL);
+	}
+
+	gds__log("Database: %s\n\t%s", (dbname) ? reinterpret_cast<SCHAR*>(dbname) : "", errmsg, 0);
 }
 #endif
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-bool ERR_post_warning(ISC_STATUS status, ...)
+BOOLEAN DLL_EXPORT ERR_post_warning(ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -310,20 +320,19 @@ bool ERR_post_warning(ISC_STATUS status, ...)
  **************************************/
 	va_list args;
 	int type, len;
-	ISC_STATUS* q;
+	ISC_STATUS *status_vector, *q;
 	int indx = 0, warning_indx = 0;
-	ISC_STATUS* status_vector;
 
 	VA_START(args, status);
-	status_vector = ((thread_db*) GET_THREAD_DATA)->tdbb_status_vector;
+	status_vector = ((TDBB) GET_THREAD_DATA)->tdbb_status_vector;
 
-	if (status_vector[0] != isc_arg_gds ||
-		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != isc_arg_warning)) {
+	if (status_vector[0] != gds_arg_gds ||
+		(status_vector[0] == gds_arg_gds && status_vector[1] == 0 &&
+		 status_vector[2] != gds_arg_warning)) {
 		/* this is a blank status vector */
-		status_vector[0] = isc_arg_gds;
+		status_vector[0] = gds_arg_gds;
 		status_vector[1] = 0;
-		status_vector[2] = isc_arg_end;
+		status_vector[2] = gds_arg_end;
 		indx = 2;
 	}
 	else {
@@ -335,60 +344,58 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 
 /* stuff the warning */
 	if (indx + 3 < ISC_STATUS_LENGTH) {
-		status_vector[indx++] = isc_arg_warning;
+		status_vector[indx++] = gds_arg_warning;
 		status_vector[indx++] = status;
 		while ((type = va_arg(args, int)) && (indx + 3 < ISC_STATUS_LENGTH))
 			switch (status_vector[indx++] = type) {
-			case isc_arg_warning:
+			case gds_arg_warning:
 				status_vector[indx++] = (ISC_STATUS) va_arg(args, ISC_STATUS);
 				break;
 
-			case isc_arg_string:
-				q = reinterpret_cast<ISC_STATUS*>(va_arg(args, TEXT*));
+			case gds_arg_string:
+				q = reinterpret_cast < ISC_STATUS * >(va_arg(args, TEXT *));
 				if (strlen((TEXT *) q) >= MAX_ERRSTR_LEN) {
-					status_vector[(indx - 1)] = isc_arg_cstring;
+					status_vector[(indx - 1)] = gds_arg_cstring;
 					status_vector[indx++] = MAX_ERRSTR_LEN;
 				}
-				// TEXT* forced to platform's int and stored as ISC_STATUS !!!
-				status_vector[indx++] = (ISC_STATUS)(U_IPTR) q;
+				status_vector[indx++] = reinterpret_cast < ISC_STATUS > (q);
 				break;
 
-			case isc_arg_interpreted:
+			case gds_arg_interpreted:
 				status_vector[indx++] = va_arg(args, ISC_STATUS);
 				break;
 
-			case isc_arg_cstring:
+			case gds_arg_cstring:
 				len = va_arg(args, int);
 				status_vector[indx++] =
 					(ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
-				// TEXT* forced to platform's int and stored as ISC_STATUS !!!
-				status_vector[indx++] = (ISC_STATUS) (U_IPTR) va_arg(args, TEXT*);
+				status_vector[indx++] = (ISC_STATUS) va_arg(args, TEXT *);
 				break;
 
-			case isc_arg_number:
+			case gds_arg_number:
 				status_vector[indx++] = (ISC_STATUS) va_arg(args, SLONG);
 				break;
 
-			case isc_arg_vms:
-			case isc_arg_unix:
-			case isc_arg_win32:
+			case gds_arg_vms:
+			case gds_arg_unix:
+			case gds_arg_win32:
 			default:
 				status_vector[indx++] = (ISC_STATUS) va_arg(args, int);
 				break;
 			}
-		status_vector[indx] = isc_arg_end;
-		return true;
+		status_vector[indx] = gds_arg_end;
+		return TRUE;
 	}
 	else {
 		/* not enough free space */
-		return false;
+		return FALSE;
 	}
 }
 #endif
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void ERR_post(ISC_STATUS status, ...)
+void DLL_EXPORT ERR_post(ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -400,11 +407,12 @@ void ERR_post(ISC_STATUS status, ...)
  *	Create a status vector and return to the user.
  *
  **************************************/
+	ISC_STATUS *status_vector;
 	ISC_STATUS_ARRAY tmp_status, warning_status;
 	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
 	int warning_count = 0, warning_indx = 0;
 
-	ISC_STATUS* status_vector = ((thread_db*) GET_THREAD_DATA)->tdbb_status_vector;
+	status_vector = ((TDBB) GET_THREAD_DATA)->tdbb_status_vector;
 
 /* stuff the status into temp buffer */
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
@@ -412,11 +420,11 @@ void ERR_post(ISC_STATUS status, ...)
 
 /* calculate length of the status */
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
-	fb_assert(warning_indx == 0);
+	assert(warning_indx == 0);
 
-	if (status_vector[0] != isc_arg_gds ||
-		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != isc_arg_warning)) {
+	if (status_vector[0] != gds_arg_gds ||
+		(status_vector[0] == gds_arg_gds && status_vector[1] == 0 &&
+		 status_vector[2] != gds_arg_warning)) {
 		/* this is a blank status vector just stuff the status */
 		MOVE_FASTER(tmp_status, status_vector,
 					sizeof(ISC_STATUS) * tmp_status_len);
@@ -430,14 +438,14 @@ void ERR_post(ISC_STATUS status, ...)
 
 /* check for duplicated error code */
 	for (i = 0; i < ISC_STATUS_LENGTH; i++) {
-		if (status_vector[i] == isc_arg_end && i == status_len)
+		if (status_vector[i] == gds_arg_end && i == status_len)
 			break;				/* end of argument list */
 
 		if (i && i == warning_indx)
 			break;				/* vector has no more errors */
 
 		if (status_vector[i] == tmp_status[1] && i &&
-			status_vector[i - 1] != isc_arg_warning &&
+			status_vector[i - 1] != gds_arg_warning &&
 			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 			(memcmp(&status_vector[i], &tmp_status[1],
 					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0)) {
@@ -478,7 +486,7 @@ void ERR_post(ISC_STATUS status, ...)
 
 
 #if ( !defined( REQUESTER) && !defined(SUPERCLIENT))
-void ERR_punt(void)
+void DLL_EXPORT ERR_punt(void)
 {
 /**************************************
  *
@@ -491,24 +499,26 @@ void ERR_punt(void)
  *
  **************************************/
 
-	thread_db* tdbb = GET_THREAD_DATA;
-	Database* dbb = tdbb->tdbb_database;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
+
+	UCHAR* dbname;
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
-		gds__log_status(tdbb->tdbb_attachment->att_filename ?
-			tdbb->tdbb_attachment->att_filename.c_str() : NULL,
-			tdbb->tdbb_status_vector);
- 		if (Config::getBugcheckAbort())
-			abort();
+		dbname = ((tdbb->tdbb_attachment->att_filename) ?
+			tdbb->tdbb_attachment->att_filename->str_data : NULL);
+		gds__log_status(reinterpret_cast<char*>(dbname), tdbb->tdbb_status_vector);
 	}
 
-	Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+#pragma FB_COMPILER_MESSAGE("FIXME! C functions can not throw! FIXME!")
+
+	Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 }
 #endif
 
 
-const TEXT* ERR_string(const TEXT* in_string, int length)
+const TEXT* DLL_EXPORT ERR_string(const TEXT* in_string, int length)
 {
 /**************************************
  *
@@ -525,12 +535,48 @@ const TEXT* ERR_string(const TEXT* in_string, int length)
  *	is independent of the JRD allocator mechanism.
  *
  **************************************/
-	return Firebird::status_nstring(in_string, length);
+
+	if (!jrd_failures)
+	{
+		jrd_failures = (TEXT *) ALLOC_LIB_MEMORY((SLONG) JRD_FAILURE_SPACE);
+		/* FREE: apparently never freed */
+		if (!jrd_failures)		/* NOMEM: return a literal */
+			return (TEXT *) JRD_FAILURE_UNKNOWN;
+#ifdef DEBUG_GDS_ALLOC
+		/* This structure does not always get freed before
+		 * process exit
+		 */
+		gds_alloc_flag_unfreed((void *) jrd_failures);
+#endif
+		jrd_failures_ptr = jrd_failures;
+
+#pragma FB_COMPILER_MESSAGE("Fix! Can we change the API to take the real type?")
+		// ugly but currently necessary cast
+		gds__register_cleanup(cleanup, 0);
+	}
+
+/* If there isn't any more room in the buffer, start at the beginning again */
+
+	if (jrd_failures_ptr + length + 1 > jrd_failures + JRD_FAILURE_SPACE)
+	{
+		jrd_failures_ptr = jrd_failures;
+	}
+
+	TEXT* new_string = jrd_failures_ptr;
+
+	while (length-- &&
+		(jrd_failures_ptr < jrd_failures + JRD_FAILURE_SPACE - 1))
+	{
+		*jrd_failures_ptr++ = *in_string++;
+	}
+	*jrd_failures_ptr++ = 0;
+
+	return new_string;
 }
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
-void ERR_warning(ISC_STATUS status, ...)
+void DLL_EXPORT ERR_warning(ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -546,13 +592,35 @@ void ERR_warning(ISC_STATUS status, ...)
  *	that subsequent errors can supersede this one.
  *
  **************************************/
-	thread_db* tdbb = GET_THREAD_DATA;
+	TDBB tdbb;
+
+	tdbb = GET_THREAD_DATA;
 
 	STUFF_STATUS(tdbb->tdbb_status_vector, status);
 	DEBUG;
 	tdbb->tdbb_request->req_flags |= req_warning;
 }
 #endif
+
+
+static void cleanup(void *arg)
+{
+/**************************************
+ *
+ *	c l e a n u p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Exit handler for image exit.
+ *
+ **************************************/
+
+	if (jrd_failures)
+		FREE_LIB_MEMORY(jrd_failures);
+
+	jrd_failures = NULL;
+}
 
 
 #if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
@@ -576,7 +644,8 @@ static void internal_error(ISC_STATUS status, int number)
 
 	sprintf(errmsg + strlen(errmsg), " (%d)", number);
 
-	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), 0);
+	ERR_post(status, gds_arg_string, ERR_cstring(errmsg), 0);
 }
 #endif
 
+} /* extern "C" */

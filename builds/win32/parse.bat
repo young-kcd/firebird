@@ -2,12 +2,6 @@
 @echo off
 
 @echo.
-
-@call setenvvar.bat
-@if errorlevel 1 (goto :END)
-
-@echo Generating parser.cpp and dsql.tab.h
-
 @set PARSER=
 @set SED=
 @call :CHECKTOOLS

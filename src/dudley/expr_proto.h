@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		expr_proto.h
- *	DESCRIPTION:	Prototype header file for expr.cpp
+ *	DESCRIPTION:	Prototype header file for expr.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,13 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DUDLEY_EXPR_PROTO_H
-#define DUDLEY_EXPR_PROTO_H
+#ifndef _DUDLEY_EXPR_PROTO_H_
+#define _DUDLEY_EXPR_PROTO_H_
 
-DUDLEY_NOD	EXPR_boolean(USHORT*);
-DUDLEY_NOD	EXPR_rse(bool);
-DUDLEY_NOD	EXPR_statement(void);
-DUDLEY_NOD	EXPR_value(USHORT*, bool*);
+extern DUDLEY_NOD EXPR_boolean(USHORT *);
+extern DUDLEY_NOD EXPR_rse(USHORT);
+extern DUDLEY_NOD EXPR_statement(void);
+extern DUDLEY_NOD EXPR_value(USHORT *, USHORT *);
 
-#endif // DUDLEY_EXPR_PROTO_H
-
+#endif /* _DUDLEY_EXPR_PROTO_H_ */

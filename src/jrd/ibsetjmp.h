@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_IBSETJMP_H
-#define JRD_IBSETJMP_H
+#ifndef _JRD_IBSETJMP_H_
+#define _JRD_IBSETJMP_H_
 
 
 #ifdef HAVE_SETJMP_H
@@ -46,13 +46,11 @@
 #define START_CHECK_FOR_EXCEPTIONS(err)	{ \
 					SIGJMP_BUF	sigenv; \
 					int		sig; \
-					if (!Config::getBugcheckAbort()) { \
-						memcpy(&tdbb->tdbb_sigsetjmp, &sigenv, sizeof sigenv); \
-						if (sig = SIGSETJMP (sigenv, 1)) \
-					    	ISC_exception_post(sig, err); \
-						ISC_sync_signals_set(); \
-					}
-#define END_CHECK_FOR_EXCEPTIONS(err)   if (!Config::getBugcheckAbort()) ISC_sync_signals_reset(); }
+					memcpy(&tdbb->tdbb_sigsetjmp, &sigenv, sizeof sigenv); \
+					if (sig = SIGSETJMP (sigenv, 1)) \
+					    ISC_exception_post(sig, err); \
+					ISC_sync_signals_set();
+#define END_CHECK_FOR_EXCEPTIONS(err)   ISC_sync_signals_reset(); }
 #endif /* SUPER_SERVER */
 
 #endif /* UNIX */
@@ -75,4 +73,4 @@
 #endif
 
 
-#endif /* JRD_IBSETJMP_H */
+#endif /* _JRD_IBSETJMP_H_ */

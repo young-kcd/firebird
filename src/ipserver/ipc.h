@@ -139,8 +139,6 @@ typedef struct bid {
 
 /* Block types */
 
-struct blk;
-
 #ifndef INCLUDE_FB_BLK
 #include "../include/old_fb_blk.h"
 #endif
@@ -173,7 +171,7 @@ typedef struct ipm {
 
 typedef struct icc
 {
-	blk			icc_header;
+	struct blk	icc_header;
 	struct icc*	icc_next;			/* pointer to next thread */
 	struct idb*	icc_databases;		/* linked list of attachments */
 	struct ipm*	icc_ipm;			/* pointer back to ipm */
@@ -202,7 +200,7 @@ typedef struct icc
 
 typedef struct idb
 {
-	blk						idb_header;
+	struct blk				idb_header;
 	struct icc*				idb_thread;			/* back pointer to thread */
 	FRBRD*					idb_handle;			/* database handle */
 	struct itr*				idb_transactions;	/* linked list of transactions */
@@ -223,7 +221,7 @@ typedef struct idb
 
 typedef struct itr
 {
-	blk			itr_header;
+	struct blk	itr_header;
 	struct idb*	itr_idb;
 	struct itr*	itr_next;
 	struct ibl*	itr_blobs;
@@ -237,7 +235,7 @@ typedef struct itr
 
 typedef struct ibl
 {
-	blk			ibl_header;
+	struct blk	ibl_header;
 	struct idb*	ibl_idb;
 	struct itr*	ibl_itr;
 	struct ibl*	ibl_next;
@@ -259,7 +257,7 @@ typedef struct ibl
 /* request block */
 
 typedef struct irq {
-	blk			irq_header;
+	struct blk irq_header;
 	struct idb *irq_idb;
 	struct tra *irq_itr;
 	struct irq *irq_next;
@@ -270,11 +268,11 @@ typedef struct irq {
 /* event structure */
 
 typedef struct ivnt {
-	blk			ivnt_header;
+	struct blk ivnt_header;
 	struct ivnt *ivnt_next;
 	struct idb *ivnt_idb;
-	FPTR_EVENT_CALLBACK ivnt_ast;
-	void* ivnt_arg;
+	void (*ivnt_ast) ();
+	void *ivnt_arg;
 	HWND ivnt_window;
 	SLONG ivnt_id;
 	SLONG ivnt_handle;
@@ -283,7 +281,7 @@ typedef struct ivnt {
 /* remote SQL request */
 
 typedef struct ipserver_isr {
-	blk		isr_header;
+	struct blk isr_header;
 	struct ipserver_isr *isr_next;
 	struct idb *isr_idb;
 	struct itr *isr_itr;
@@ -341,7 +339,7 @@ typedef struct {
 	ULONG ips_com_curr;			/* current mapped offset of comm buffer */
 	ULONG ips_flags;			/* flags */
 	UCHAR *ips_cl_addr;			/* address of client buffer */
-	const UCHAR* ips_sv_addr;			/* address of server buffer */
+	UCHAR *ips_sv_addr;			/* address of server buffer */
 	UCHAR *ips_sv_buffer;		/* allocated local buffer */
 } ips_string;
 
@@ -524,8 +522,8 @@ typedef struct {
 	UCHAR *ips_db_handle;		/* database handle */
 	ULONG ips_event_id;			/* returned event id */
 	HWND ips_event_hwnd;		/* window handle to return to */
-	FPTR_EVENT_CALLBACK ips_ast;	/* ast address */
-	UCHAR* ips_arg;				/* ast arg */
+	UCHAR *ips_ast;				/* ast address */
+	UCHAR *ips_arg;				/* ast arg */
 } ips_que_events;
 
 #define	IPS_QUEUE_EVENT		0	/* use controller 0 for event */
@@ -649,7 +647,7 @@ typedef struct eventq {
 	struct eventq *evq_next;	/* next event */
 	SLONG evq_id;				/* event ID */
 	USHORT evq_length;			/* event length */
-	UCHAR evq_string[1];			/* event string */
+	TEXT evq_string[1];			/* event string */
 } *EVENTQ;
 
 /* interprocess database thread structure */

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		inuse.cpp
+ *	MODULE:		inuse.c
  *	DESCRIPTION:	Keep track of objects that are in use
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,7 +22,6 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/jrd.h"
 #include "../jrd/gds_proto.h"
@@ -34,10 +33,10 @@ static void init(void);
 
 static IUO free_list = NULL;
 static MUTX_T inuse_mutex[1];
-static bool initialized = false;
+static BOOLEAN initialized = FALSE;
 
 
-bool INUSE_cleanup(IUO inuse, void (*cleanup_routine) ())
+BOOLEAN INUSE_cleanup(IUO inuse, void (*cleanup_routine) ())
 {
 /**************************************
  *
@@ -48,29 +47,32 @@ bool INUSE_cleanup(IUO inuse, void (*cleanup_routine) ())
  * Functional description
  *	Cleanup an in-use structure.  If any
  *	objects are found to be non-NULL,
- *	call the cleanup routine.  Return true
+ *	call the cleanup routine.  Return TRUE
  *	if there was something to do.
  *
  **************************************/
-	bool needed_cleaning = false;
-	IUO secondary_inuse = inuse->iuo_next;
+	void **ptr, **end;
+	BOOLEAN needed_cleaning;
+	IUO secondary_inuse;
+
+	needed_cleaning = FALSE;
+	secondary_inuse = inuse->iuo_next;
 	do {
-		void** ptr = inuse->iuo_object;
-		for (const void* const* const end = ptr + inuse->iuo_in_use_count;
-			ptr < end; ptr++)
-		{
+		ptr = inuse->iuo_object;
+		for (end = ptr + inuse->iuo_in_use_count; ptr < end; ptr++)
 			if (*ptr) {
 				reinterpret_cast <
 					void (*) (void *) >(*cleanup_routine) (*ptr);
-				needed_cleaning = true;
+				needed_cleaning = TRUE;
 			}
-		}
 		inuse->iuo_in_use_count = 0;
 	} while (inuse = inuse->iuo_next);
 
 	if (secondary_inuse) {
-		IUO* secondary_end_ptr = &secondary_inuse->iuo_next;
-		while (*secondary_end_ptr)
+		IUO *secondary_end_ptr;
+
+		for (secondary_end_ptr = &secondary_inuse->iuo_next;
+			 *secondary_end_ptr;)
 			secondary_end_ptr = &(*secondary_end_ptr)->iuo_next;
 		THD_MUTEX_LOCK(inuse_mutex);
 		*secondary_end_ptr = free_list;
@@ -103,7 +105,7 @@ void INUSE_clear(IUO inuse)
 }
 
 
-bool INUSE_insert(IUO inuse, void *new_object, bool dup_flag)
+BOOLEAN INUSE_insert(IUO inuse, void *new_object, BOOLEAN dup_flag)
 {
 /**************************************
  *
@@ -113,36 +115,35 @@ bool INUSE_insert(IUO inuse, void *new_object, bool dup_flag)
  *
  * Functional description
  *	Insert an object into an in-use structure.
- *	If dup_flag is true, then duplicate entries
- *	are permitted.  If it is false, then a
+ *	If dup_flag is TRUE, then duplicate entries
+ *	are permitted.  If it is FALSE, then a
  *	duplicate entry will not be inserted.
- *	Return true if the object was inserted.
+ *	Return TRUE if the object was inserted.
  *
  **************************************/
- 	// "end" moves backwards in this loop.
-	void** ptr = inuse->iuo_object;
-	for (const void* const* end = ptr + inuse->iuo_in_use_count;
-		ptr < end; ptr++)
-	{
+	void **ptr, **end;
+
+	ptr = inuse->iuo_object;
+	for (end = ptr + inuse->iuo_in_use_count; ptr < end; ptr++)
 		if (!*ptr) {
 			if (!dup_flag)
 				while (ptr < --end)
 					if (*end == new_object)
-						return false;
+						return FALSE;
 			*ptr = new_object;
-			return true;
+			return TRUE;
 		}
 		else if (!dup_flag && *ptr == new_object)
-			return false;
-	}
+			return FALSE;
 
 	if (inuse->iuo_in_use_count >= FB_NELEM(inuse->iuo_object)) {
+		IUO new_inuse;
+
 #ifdef DEV_BUILD
 		gds__log("in-use block overflow. secondary block allocated.");
 #endif
 		THD_MUTEX_LOCK(inuse_mutex);
-		IUO new_inuse = free_list;
-		if (new_inuse) {
+		if (new_inuse = free_list) {
 			free_list = new_inuse->iuo_next;
 			THD_MUTEX_UNLOCK(inuse_mutex);
 		}
@@ -152,7 +153,7 @@ bool INUSE_insert(IUO inuse, void *new_object, bool dup_flag)
 			/* FREE: at process exit, by cleanup handler cleanup() in this module */
 			if (!new_inuse) {	/* NOMEM: */
 				DEV_REPORT("INUSE_insert: out of memory");
-				return false;	/* error handling too difficult */
+				return FALSE;	/* error handling too difficult */
 			}
 		}
 		INUSE_clear(new_inuse);
@@ -162,11 +163,11 @@ bool INUSE_insert(IUO inuse, void *new_object, bool dup_flag)
 
 	inuse->iuo_object[inuse->iuo_in_use_count++] = new_object;
 
-	return true;
+	return TRUE;
 }
 
 
-bool INUSE_remove(IUO inuse, void* old_object, bool dup_flag)
+BOOLEAN INUSE_remove(IUO inuse, void *old_object, BOOLEAN dup_flag)
 {
 /**************************************
  *
@@ -176,27 +177,26 @@ bool INUSE_remove(IUO inuse, void* old_object, bool dup_flag)
  *
  * Functional description
  *	Remove an object from an in-use structure.
- *	If dup_flag is true, remove every occurrence
+ *	If dup_flag is TRUE, remove every occurrence
  *	of the object.  Otherwise, only remove the
- *	first.  Return true if an object was removed.
+ *	first.  Return TRUE if an object was removed.
  *
  **************************************/
-	bool removed = false;
+	void **ptr, **end;
+	BOOLEAN removed;
+
+	removed = FALSE;
 	do {
-	    // "end" moves backwards here
-		void** ptr = inuse->iuo_object;
-		for (const void* const* end = ptr + inuse->iuo_in_use_count;
-			ptr < end; ptr++)
-		{
+		ptr = inuse->iuo_object;
+		for (end = ptr + inuse->iuo_in_use_count; ptr < end; ptr++)
 			if (*ptr == old_object) {
 				*ptr = NULL;
 				if (ptr + 1 == end)
 					while (!*(--end) && --inuse->iuo_in_use_count);
 				if (!dup_flag)
-					return true;
-				removed = true;
+					return TRUE;
+				removed = TRUE;
 			}
-		}
 	} while (inuse = inuse->iuo_next);
 
 	return removed;
@@ -214,15 +214,17 @@ static void cleanup(void *arg)
  * Functional description
  *
  **************************************/
+	IUO iuo;
+
 	THD_MUTEX_DESTROY(inuse_mutex);
 
 	while (free_list) {
-		IUO iuo = free_list;
+		iuo = free_list;
 		free_list = iuo->iuo_next;
 		gds__free(iuo);
 	}
 
-	initialized = false;
+	initialized = FALSE;
 }
 
 
@@ -244,7 +246,7 @@ static void init(void)
 		if (!initialized) {
 			THD_MUTEX_INIT(inuse_mutex);
 			gds__register_cleanup(cleanup, 0);
-			initialized = true;
+			initialized = TRUE;
 		}
 		THD_GLOBAL_MUTEX_UNLOCK;
 	}

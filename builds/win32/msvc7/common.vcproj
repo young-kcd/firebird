@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding = "Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="7.00"
 	Name="common"
 	SccProjectName=""
 	SccLocalPath="">
@@ -20,7 +20,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
+				AdditionalOptions="/EHc- "
 				Optimization="4"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
@@ -30,16 +30,13 @@
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER"
-				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\common_ss/common.pch"
 				AssemblerListingLocation="..\..\..\temp\release\common_ss/"
 				ObjectFile="..\..\..\temp\release\common_ss/"
 				ProgramDataBaseFileName="..\..\..\temp\release\common_ss/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -61,12 +58,6 @@
 				Culture="1053"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
@@ -78,14 +69,11 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD,SUPERSERVER"
-				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\debug\common_ss/common.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\common_ss/"
@@ -115,16 +103,8 @@
 				Culture="1053"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
-	<References>
-	</References>
 	<Files>
 		<Filter
 			Name="MEMORY files"
@@ -163,12 +143,6 @@
 			Name="OTHER files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\db_alias.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\fb_string.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp">
 			</File>
 			<File
@@ -176,9 +150,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\utils.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -203,16 +174,10 @@
 				RelativePath="..\..\..\src\jrd\os\config_root.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\db_alias.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\config\dir_list.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\fbsyslog.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\utils_proto.h">
 			</File>
 		</Filter>
 	</Files>

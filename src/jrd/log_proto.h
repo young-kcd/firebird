@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		log_proto.h		
- *	DESCRIPTION:	Prototype Header file for log.cpp
+ *	DESCRIPTION:	Prototype Header file for log.c 
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,17 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_LOG_PROTO_H
-#define JRD_LOG_PROTO_H
+#ifndef _JRD_LOG_PROTO_H_
+#define _JRD_LOG_PROTO_H_
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 
-void	LOG_call(enum log_t, ...);
-void	LOG_disable(void);
-void	LOG_enable(const TEXT*, USHORT);
-void	LOG_fini(void);
-void	LOG_init(const TEXT*, USHORT);
+extern void LOG_call(enum log_t, ...);
+extern void LOG_disable(void);
+extern void LOG_enable(TEXT *, USHORT);
+extern void LOG_fini(void);
+extern void LOG_init(TEXT *, USHORT);
 
 #endif /* REPLAY_OSRI_API_CALLS_SUBSYSTEM */
 
-#endif // JRD_LOG_PROTO_H
+#endif /* _JRD_LOG_PROTO_H_ */

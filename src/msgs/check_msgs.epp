@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Interbase Message Facility
- *	MODULE:		check_messages.epp
+ *	MODULE:		check_messages.e
  *	DESCRIPTION:	Check whether any messages have been updated
  *
  * The contents of this file are subject to the Interbase Public
@@ -44,8 +44,7 @@
 #endif
 
 #include "../jrd/common.h"
-#include "../jrd/y_ref.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/gds_proto.h"
 
 DATABASE DB = "msg.fdb";
@@ -69,24 +68,21 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *
  **************************************/
 	TEXT *p, **end_args, db_file[256];
-	bool flag_jrd;
-	bool flag_msg;
-	bool flag_loc;
-	bool do_locales = false;
-	bool sw_bad;
+	USHORT flag_jrd, flag_msg, flag_loc, sw_bad, do_locales;
 	IB_FILE *ind_jrd, *ind_msg, *ind_loc;
 	ISC_TIMESTAMP date_jrd, date_msg, date_loc;
 	struct stat file_stat;
 
 	strcpy(db_file, "msg.fdb");
+	do_locales = FALSE;
 
 	end_args = argv + argc;
 
 	for (++argv; argv < end_args;) {
 		p = *argv++;
-		sw_bad = false;
+		sw_bad = FALSE;
 		if (*p != '-')
-			sw_bad = true;
+			sw_bad = TRUE;
 		else
 			switch (UPPER(p[1])) {
 			case 'D':
@@ -94,11 +90,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				break;
 
 			case 'L':
-				do_locales = true;
+				do_locales = TRUE;
 				break;
 
 			default:
-				sw_bad = true;
+				sw_bad = TRUE;
 			}
 		if (sw_bad) {
 			ib_printf("Invalid option \"%s\".  Valid options are:\n", p);
@@ -108,30 +104,30 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		}
 	}
 
-	flag_jrd = flag_msg = true;
+	flag_jrd = flag_msg = TRUE;
 
 	if (ind_jrd = ib_fopen(INCLUDE_INDICATOR, "r")) {
 		if (!fstat(ib_fileno(ind_jrd), &file_stat)) {
-			isc_encode_date(localtime(&file_stat.st_mtime), (ISC_QUAD*) &date_jrd);
-			flag_jrd = false;
+			gds__encode_date(localtime(&file_stat.st_mtime), (GDS__QUAD*) &date_jrd);
+			flag_jrd = FALSE;
 		}
 		ib_fclose(ind_jrd);
 	}
 
 	if (ind_msg = ib_fopen(MESSAGE_INDICATOR, "r")) {
 		if (!fstat(ib_fileno(ind_msg), &file_stat)) {
-			isc_encode_date(localtime(&file_stat.st_mtime), (ISC_QUAD*) &date_msg);
-			flag_msg = false;
+			gds__encode_date(localtime(&file_stat.st_mtime), (GDS__QUAD*) &date_msg);
+			flag_msg = FALSE;
 		}
 		ib_fclose(ind_msg);
 	}
 
 	if (do_locales) {
-		flag_loc = true;
+		flag_loc = TRUE;
 		if (ind_loc = ib_fopen(LOCALE_INDICATOR, "r")) {
 			if (!fstat(ib_fileno(ind_loc), &file_stat)) {
-				isc_encode_date(localtime(&file_stat.st_mtime),(ISC_QUAD*)  &date_loc);
-				flag_loc = false;
+				gds__encode_date(localtime(&file_stat.st_mtime),(GDS__QUAD*)  &date_loc);
+				flag_loc = FALSE;
 			}
 /* Earlier the following ib_fclose was closing ind_msg again, due to which 
    check_messages was crashing with SEGV signal - */
@@ -146,7 +142,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		FOR FIRST 1 X IN FACILITIES WITH
 			X.FACILITY EQ "JRD" AND X.LAST_CHANGE GE date_jrd 
 
-            flag_jrd = true;
+            flag_jrd = TRUE;
 		END_FOR;
 	}
 
@@ -154,7 +150,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		FOR FIRST 1 X IN FACILITIES WITH
 			X.LAST_CHANGE GE date_msg 
 
-            flag_msg = true;
+            flag_msg = TRUE;
 		END_FOR;
 	}
 
@@ -162,7 +158,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		FOR FIRST 1 T IN TRANSMSGS WITH
 			T.TRANS_DATE GE date_loc 
 
-            flag_loc = true;
+            flag_loc = TRUE;
 		END_FOR;
 	}
 

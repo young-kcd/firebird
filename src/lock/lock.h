@@ -39,8 +39,8 @@
  *
  */
 
-#ifndef ISC_LOCK_LOCK_H
-#define ISC_LOCK_LOCK_H
+#ifndef _ISC_LOCK_LOCK_H_
+#define _ISC_LOCK_LOCK_H_
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -50,6 +50,14 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
+#endif
+
+#ifdef WIN_NT
+#include <windows.h>
+#ifdef TEXT
+#undef TEXT
+#define TEXT            SCHAR
+#endif
 #endif
 
 #include "../jrd/common.h"
@@ -191,10 +199,10 @@ typedef struct lhb {
 	UCHAR lhb_version;			/* Version of lock table */
 	PTR lhb_secondary;			/* Secondary lock header block */
 	PTR lhb_active_owner;		/* Active owner, if any */
-	srq lhb_owners;				/* Que of active owners */
-	srq lhb_free_owners;		/* Free owners blocks */
-	srq lhb_free_locks;			/* Free lock blocks */
-	srq lhb_free_requests;		/* Free lock requests */
+	struct srq lhb_owners;		/* Que of active owners */
+	struct srq lhb_free_owners;	/* Free owners blocks */
+	struct srq lhb_free_locks;	/* Free lock blocks */
+	struct srq lhb_free_requests;	/* Free lock requests */
 	SLONG lhb_length;			/* Size of lock table */
 	SLONG lhb_used;				/* Bytes of lock table in use */
 	USHORT lhb_hash_slots;		/* Number of hash slots allocated */
@@ -229,8 +237,8 @@ typedef struct lhb {
 	ULONG lhb_deadlocks;
 	ULONG lhb_wait_time;
 	ULONG lhb_reserved[2];		/* For future use */
-	srq lhb_data[LCK_MAX_SERIES];
-	srq lhb_hash[1];			/* Hash table */
+	struct srq lhb_data[LCK_MAX_SERIES];
+	struct srq lhb_hash[1];		/* Hash table */
 } *LHB;
 
 #define LHB_lock_ordering       1	/* Lock ordering is enabled */
@@ -259,9 +267,9 @@ typedef struct lbl
 	UCHAR lbl_state;			/* High state granted */
 	UCHAR lbl_size;				/* Key bytes allocated */
 	UCHAR lbl_length;			/* Key bytes used */
-	srq lbl_requests;			/* Requests granted */
-	srq lbl_lhb_hash;			/* Collision que for hash table */
-	srq lbl_lhb_data;			/* Lock data que by series */
+	struct srq lbl_requests;	/* Requests granted */
+	struct srq lbl_lhb_hash;	/* Collision que for hash table */
+	struct srq lbl_lhb_data;	/* Lock data que by series */
 	SLONG lbl_data;				/* user data */
 	PTR lbl_parent;				/* Parent */
 	UCHAR lbl_series;			/* Lock series */
@@ -283,11 +291,11 @@ typedef struct lrq {
 	PTR lrq_owner;				/* Owner making request */
 	PTR lrq_lock;				/* Lock requested */
 	SLONG lrq_data;				/* Lock data requested */
-	srq lrq_own_requests;		/* Locks granted for owner */
-	srq lrq_lbl_requests;		/* Que of requests (active, pending) */
-	srq lrq_own_blocks;			/* Owner block que */
+	struct srq lrq_own_requests;	/* Locks granted for owner */
+	struct srq lrq_lbl_requests;	/* Que of requests (active, pending) */
+	struct srq lrq_own_blocks;	/* Owner block que */
 	lock_ast_t lrq_ast_routine;	/* Block ast routine */
-	void* lrq_ast_argument;		/* Ast argument */
+	void *lrq_ast_argument;		/* Ast argument */
 } *LRQ;
 
 #define LRQ_blocking    1		/* Request is blocking */
@@ -310,9 +318,9 @@ typedef struct own
 	ULONG own_owner_id;			/* Owner ID */
 	UATOM own_ast_flags;		/* flags shared by main and ast codes */
 	UATOM own_ast_hung_flags;	/* unprotected - OWN_hung flag */
-	srq own_lhb_owners;			/* Owner que */
-	srq own_requests;			/* Lock requests granted */
-	srq own_blocks;				/* Lock requests blocking */
+	struct srq own_lhb_owners;	/* Owner que */
+	struct srq own_requests;	/* Lock requests granted */
+	struct srq own_blocks;		/* Lock requests blocking */
 	PTR own_pending_request;	/* Request we're waiting on */
 	int own_process_id;			/* Owner's process ID */
 	int own_process_uid;		/* Owner's process UID */
@@ -325,11 +333,11 @@ typedef struct own
 #endif
 #endif							/* WIN_NT */
 #ifdef SOLARIS_MT
-	event_t own_blocking[1];	/* Blocking event block */
-	event_t own_stall[1];		/* Owner is stalling for other owner */
+	EVENT_T own_blocking[1];	/* Blocking event block */
+	EVENT_T own_stall[1];		/* Owner is stalling for other owner */
 #endif
 #if !(defined WIN_NT) || (defined WIN_NT && !defined SUPERSERVER)
-	event_t own_wakeup[1];		/* Wakeup event block */
+	EVENT_T own_wakeup[1];		/* Wakeup event block */
 #endif
 	USHORT own_semaphore;		/* Owner semaphore -- see note below */
 	USHORT own_flags;			/* Misc stuff */
@@ -358,13 +366,11 @@ typedef struct own
    likely historical - a flag bit could be used for this instead. */
 
 /* Semaphore mask block */
-// How can this thing use type_smb if this is unrelated?
-// There was a clash between this smb and rse's smb (Sort Map Block).
 
-struct semaphore_mask {
+typedef struct smb {
 	UCHAR smb_type;				/* memory tag - always type_smb */
 	ULONG smb_mask[1];			/* Mask of available semaphores */
-};
+} *SMB;
 
 /* Lock manager history block */
 
@@ -399,5 +405,4 @@ typedef struct his {
 #define his_del_owner   19
 #define his_MAX         his_del_owner
 
-#endif // ISC_LOCK_LOCK_H
-
+#endif /* _ISC_LOCK_LOCK_H_ */

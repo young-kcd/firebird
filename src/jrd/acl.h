@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_ACL_H
-#define JRD_ACL_H
+#ifndef _JRD_ACL_H_
+#define _JRD_ACL_H_
 
 #define ACL_version	1
 
@@ -80,5 +80,4 @@
 #define TDR_TRANSACTION_ID	3
 #define TDR_REMOTE_SITE		4
 
-#endif /* JRD_ACL_H */
-
+#endif /* _JRD_ACL_H_ */

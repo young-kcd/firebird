@@ -25,8 +25,8 @@
  *                            implemented ROWS_AFFECTED system variable
  */
 
-#ifndef JRD_REQ_H
-#define JRD_REQ_H
+#ifndef _JRD_REQ_H_
+#define _JRD_REQ_H_
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
@@ -35,32 +35,16 @@
 
 #include <vector>
 
-namespace Jrd {
-
-class Lock;
-class Format;
-class jrd_rel;
-class jrd_prc;
-class Record;
-class jrd_nod;
-class SaveRecordParam;
-class vec;
-class jrd_tra;
-class Savepoint;
-class RefreshRange;
-class RecordSource;
-
 /* record parameter block */
 
-struct record_param {
-	record_param() : rpb_window(-1) {}
+typedef struct rpb {
 	SLONG rpb_number;			/* record number in relation */
-	SLONG rpb_transaction_nr;	/* transaction number */
-	jrd_rel*	rpb_relation;	/* relation of record */
-	Record*		rpb_record;		/* final record block */
-	Record*		rpb_prior;		/* prior record block if this is a delta record */
-	SaveRecordParam*	rpb_copy;		/* record_param copy for singleton verification */
-	Record*		rpb_undo;		/* our first version of data if this is a second modification */
+	SLONG rpb_transaction;		/* transaction number */
+	struct jrd_rel *rpb_relation;	/* relation of record */
+	class rec *rpb_record;		/* final record block */
+	class rec *rpb_prior;		/* prior record block if this is a delta record */
+	struct srpb *rpb_copy;		/* rpb copy for singleton verification */
+	class rec *rpb_undo;		/* our first version of data if this is a second modification */
 	USHORT rpb_format_number;	/* format number in relation */
 
 	SLONG rpb_page;				/* page number */
@@ -72,13 +56,13 @@ struct record_param {
 	SLONG rpb_b_page;			/* back page */
 	USHORT rpb_b_line;			/* back line */
 
-	UCHAR*	rpb_address;		/* address of record sans header */
+	UCHAR *rpb_address;			/* address of record sans header */
 	USHORT rpb_length;			/* length of record */
 	USHORT rpb_flags;			/* record ODS flags replica */
 	USHORT rpb_stream_flags;	/* stream flags */
 	SSHORT rpb_org_scans;		/* relation scan count at stream open */
 	struct win rpb_window;
-};
+} RPB;
 
 /* Record flags must be an exact replica of ODS record header flags */
 
@@ -96,9 +80,9 @@ struct record_param {
 #define RPB_s_refetch	0x1		/* re-fetch required due to sort */
 #define RPB_s_update	0x2		/* input stream fetched for update */
 
-#define SET_NULL(record, id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
-#define CLEAR_NULL(record, id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
-#define TEST_NULL(record, id)	record->rec_data [id >> 3] &   (1 << (id & 7))
+#define SET_NULL(record,id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
+#define CLEAR_NULL(record,id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
+#define TEST_NULL(record,id)	record->rec_data [id >> 3] &   (1 << (id & 7))
 
 #define MAX_DIFFERENCES		1024	/* Max length of generated Differences string 
 									   between two records */
@@ -111,67 +95,62 @@ struct record_param {
 
 /* Record block (holds data, remember data?) */
 
-class Record : public pool_alloc_rpt<SCHAR, type_rec>
+class rec : public pool_alloc_rpt<SCHAR, type_rec>
 {
-public:
-	MemoryPool& rec_pool;		// pool where record to be expanded
-	Record(MemoryPool& p) : rec_pool(p), rec_precedence(p) { }
-	const Format* rec_format;	/* what the data looks like */
-	PageStack rec_precedence;	/* stack of higher precedence pages */
+    public:
+	struct fmt *rec_format;		/* what the data looks like */
+	struct lls *rec_precedence;	/* stack of higher precedence pages */
 	USHORT rec_length;			/* how much there is */
-	const Format* rec_fmt_bk;   // backup format to cope with Borland's ill null signaling
+	struct fmt *rec_fmt_bk;
 	UCHAR rec_flags;			/* misc record flags */
-	SLONG rec_number;			/* original record_param number - used for undoing multiple updates */
+	SLONG rec_number;			/* original rpb number - used for undoing multiple updates */
 	double rec_dummy;			/* this is to force next field to a double boundary */
 	UCHAR rec_data[1];			/* THIS VARIABLE MUST BE ALIGNED ON A DOUBLE BOUNDARY */
 };
+typedef rec *REC;
 
 #define REC_same_tx	1			/* record inserted/updated and deleted by same tx */
 #define REC_gc_active	2		/* relation garbage collect record block in use */
 #define REC_new_version 4		/* savepoint created new record version and deleted it */
 
-/* save record_param block */
+/* save rpb block */
 
-class SaveRecordParam : public pool_alloc<type_srpb>
+class srpb : public pool_alloc<type_srpb>
 {
     public:
-	record_param srpb_rpb[1];		/* record parameter blocks */
+	struct rpb srpb_rpb[1];		/* record parameter blocks */
 };
-
+typedef srpb *SRPB;
 
 /* request block */
 
-class jrd_req : public pool_alloc_rpt<record_param, type_req>
+class jrd_req : public pool_alloc_rpt<rpb, type_req>
 {
 public:
-	jrd_req(JrdMemoryPool* pool) :
-		req_external(*pool), req_access(*pool), req_resources(*pool),
-		req_fors(*pool), req_invariants(*pool) { };
-	Attachment*	req_attachment;		// database attachment
+	ATT			req_attachment;		// database attachment
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number
 	ULONG		req_impure_size;	// size of impure area
 	JrdMemoryPool* req_pool;
-	vec*		req_sub_requests;	// vector of sub-requests
-	jrd_tra*	req_transaction;
-	jrd_req*	req_request;		/* next request in Database */
-	ExternalAccessList req_external;	/* Access to procedures/triggers to be checked */
-	AccessItemList req_access;		/* Access items to be checked */
-	vec*		req_variables;		/* Vector of variables, if any */
-	ResourceList req_resources;		/* Resources (relations and indices) */
-	jrd_nod*	req_message;		/* Current message for send/receive */
+	struct vec*	req_sub_requests;	// vector of sub-requests
+	struct jrd_tra* req_transaction;
+	jrd_req*		req_request;	/* next request in dbb */
+	struct acc*	req_access;		/* Access items to be checked */
+	struct vec*	req_variables;	/* Vector of variables, if any */
+	class Rsc*	req_resources;	/* Resources (relations and indices) */
+	struct jrd_nod*	req_message;	/* Current message for send/receive */
 #ifdef SCROLLABLE_CURSORS
-	jrd_nod*	req_async_message;	/* Asynchronous message (used in scrolling) */
+	struct jrd_nod *req_async_message;	/* Asynchronous message (used in scrolling) */
 #endif
-	vec*		req_refresh_ranges;	/* Vector of refresh_ranges */
-	RefreshRange*	req_begin_ranges;	/* Vector of refresh_ranges */
-	jrd_prc*	req_procedure;		/* procedure, if any */
-	const TEXT*	req_trg_name;		/* name of request (trigger), if any */
-	USHORT		req_length;			/* message length for send/receive */
-	USHORT		req_nmsgs;			/* number of message types */
-	USHORT		req_mmsg;			/* highest message type */
-	USHORT		req_msend;			/* longest send message */
-	USHORT		req_mreceive;		/* longest receive message */
+	struct vec*	req_refresh_ranges;	/* Vector of refresh_ranges */
+	struct rng*	req_begin_ranges;	/* Vector of refresh_ranges */
+	struct jrd_prc*	req_procedure;		/* procedure, if any */
+	TEXT*		req_trg_name;		/* name of request (trigger), if any */
+	USHORT req_length;			/* message length for send/receive */
+	USHORT req_nmsgs;			/* number of message types */
+	USHORT req_mmsg;			/* highest message type */
+	USHORT req_msend;			/* longest send message */
+	USHORT req_mreceive;		/* longest receive message */
 
 	ULONG req_records_selected;	/* count of records selected by request (meeting selection criteria) */
 	ULONG req_records_inserted;	/* count of records inserted by request */
@@ -180,28 +159,27 @@ public:
 
 	ULONG req_records_affected; /* count of records affected by the last statement */
 
-	USHORT req_view_flags;			/* special flags for virtual ops on views */
-	jrd_rel* 	req_top_view_store;	/* the top view in store(), if any */
-	jrd_rel*	req_top_view_modify;/* the top view in modify(), if any */
-	jrd_rel*	req_top_view_erase;	/* the top view in erase(), if any */
+	USHORT req_view_flags;		/* special flags for virtual ops on views */
+	struct jrd_rel* req_top_view_store;	/* the top view in store(), if any */
+	struct jrd_rel* req_top_view_modify;	/* the top view in modify(), if any */
+	struct jrd_rel* req_top_view_erase;	/* the top view in erase(), if any */
 
-	jrd_nod*	req_top_node;		/* top of execution tree */
-	jrd_nod*	req_next;			/* next node for execution */
-	Firebird::Array<RecordSource*> req_fors;	/* Vector of for loops, if any */
-	vec* 		req_cursors;		/* Vector of named cursors, if any */
-	Firebird::Array<jrd_nod*> req_invariants;	/* Vector of invariant nodes, if any */
-	USHORT		req_label;			/* label for leave */
-	ULONG		req_flags;			/* misc request flags */
-	Savepoint*	req_proc_sav_point;	/* procedure savepoint list */
-	time_t		req_timestamp;		/* Start time of request */
+	struct jrd_nod* req_top_node;	/* top of execution tree */
+	struct jrd_nod* req_next;		/* next node for execution */
+	struct vec* req_fors;		/* Vector of for loops, if any */
+	struct vec* req_invariants;	/* Vector of invariant nodes, if any */
+	USHORT req_label;			/* label for leave */
+	ULONG req_flags;			/* misc request flags */
+	struct sav *req_proc_sav_point;	/* procedure savepoint list */
+	ULONG req_timestamp;		/* Start time of request */
 
-	enum req_ta {
+	ENUM req_ta {
 		req_trigger_insert = 1,
 		req_trigger_update = 2,
 		req_trigger_delete = 3
-	} req_trigger_action;			/* action that caused trigger to fire */
+	} req_trigger_action;		/* action that caused trigger to fire */
 
-	enum req_s {
+	ENUM req_s {
 		req_evaluate,
 		req_return,
 		req_receive,
@@ -209,21 +187,15 @@ public:
 		req_proceed,
 		req_sync,
 		req_unwind
-	} req_operation;				/* operation for next node */
+	} req_operation;	/* operation for next node */
 
-    StatusXcp req_last_xcp;			/* last known exception */
+    struct xcp_repeat req_last_xcp;	/* last known exception */
 
-	record_param req_rpb[1];		/* record parameter blocks */
+	rpb req_rpb[1];		/* record parameter blocks */
 };
+typedef jrd_req *JRD_REQ;
 
-// Size of request without rpb items at the tail. Used to calculate impure area size
-//
-// 24-Mar-2004, Nickolay Samofatov.
-// Note it may be not accurate on 64-bit RISC targets with 32-bit pointers due to 
-// alignment quirks, but from quick glance on code it looks like it should not be
-// causing problems. Good fix for this kludgy behavior is to use some C++ means 
-// to manage impure area and array of record parameter blocks
-const size_t REQ_SIZE = sizeof (jrd_req) - sizeof (jrd_req::blk_repeat_type);
+#define REQ_SIZE	(sizeof (struct jrd_req) - sizeof (((JRD_REQ) 0)->req_rpb[0]))
 
 /* Flags for req_flags */
 #define req_active				0x1L
@@ -274,20 +246,56 @@ enum {
 };
 
 
-/* Index lock block */
+/* Resources */
 
-class IndexLock : public pool_alloc<type_idl>
+/* TMN: Had to remove this enum from bein nested in struct rsc since we now use C++,
+ * but this enum is used in the C API. Can you say "legacy"? :-(
+ */
+enum rsc_s {
+	rsc_relation,
+	rsc_procedure,
+	rsc_index
+};
+
+class Rsc : public pool_alloc<type_rsc>
 {
     public:
-	IndexLock*	idl_next;		/* Next index lock block for relation */
-	Lock*		idl_lock;		/* Lock block */
-	jrd_rel*	idl_relation;	/* Parent relation */
+	class Rsc *rsc_next;		/* Next resource in request */
+	struct jrd_rel *rsc_rel;		/* Relation block */
+	struct jrd_prc *rsc_prc;		/* Relation block */
+	USHORT rsc_id;				/* Id of parent */
+	enum rsc_s rsc_type;
+};
+typedef Rsc *RSC;
+
+/* Index lock block */
+
+class idl : public pool_alloc<type_idl>
+{
+    public:
+	struct idl*	idl_next;		/* Next index lock block for relation */
+	struct lck*	idl_lock;		/* Lock block */
+	struct jrd_rel*	idl_relation;	/* Parent relation */
 	USHORT		idl_id;			/* Index id */
 	USHORT		idl_count;		/* Use count */
 };
+typedef idl *IDL;
 
 
-} //namespace Jrd
+/* Access items */
 
-#endif // JRD_REQ_H
+class acc : public pool_alloc<type_acc>
+{
+    public:
+	struct acc*	acc_next;
+	TEXT*		acc_security_name;	/* WRITTEN into by SCL_get_class() */
+	SLONG	acc_view_id;
+	const TEXT*	acc_trg_name;
+	const TEXT*	acc_prc_name;
+	const TEXT*	acc_name;
+	const TEXT*	acc_type;
+	USHORT		acc_mask;
+};
+typedef acc *ACC;
 
+#endif /* _JRD_REQ_H_ */

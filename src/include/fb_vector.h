@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef INCLUDE_FB_VECTOR_H
-#define INCLUDE_FB_VECTOR_H
+#ifndef FB_VECTOR_H
+#define FB_VECTOR_H
  
 #include "../include/fb_types.h"
 #include "../common/classes/alloc.h"
@@ -22,14 +22,13 @@ namespace Firebird
 	{
 	public:
 		vector(int len) : std::vector<T, Firebird::allocator<T> >(len) {}
-		vector(int len, MemoryPool& p, SSHORT type = 0)
+		vector(int len, MemoryPool &p, SSHORT type = 0)
 			: std::vector<T, Firebird::allocator<T> >(len, T(),
 				Firebird::allocator<T>(p, type)) {}
-		vector(MemoryPool& p, SSHORT type = 0)
+		vector(MemoryPool &p, SSHORT type = 0)
 			: std::vector<T, Firebird::allocator<T> >(
 					Firebird::allocator<T>(p, type) ) {}
 	};
 };
 
-#endif	// INCLUDE_FB_VECTOR_H
-
+#endif	// FB_VECTOR_H

@@ -3,395 +3,349 @@
  *	MODULE:		intl_classes.h
  *	DESCRIPTION:	International text handling definitions
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * You may obtain a copy of the Licence at
- * http://www.gnu.org/licences/lgpl.html
- * 
- * As a special exception this file can also be included in modules
- * with other source code as long as that source code has been 
- * released under an Open Source Initiative certificed licence.  
- * More information about OSI certification can be found at: 
- * http://www.opensource.org 
- * 
- * This module is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public Licence for more details.
- * 
- * This module was created by members of the firebird development 
- * team.  All individual contributions remain the Copyright (C) of 
- * those individuals and all rights are reserved.  Contributors to 
- * this file are either listed below or can be obtained from a CVS 
- * history command.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  Created by: Nickolay Samofatov <skidder@bssys.com>
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Contributor(s):
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_INTL_CLASSES_H
-#define JRD_INTL_CLASSES_H
+#ifndef _JRD_INTL_CLASSES_H_
+#define _JRD_INTL_CLASSES_H_
 
-#include "firebird.h"
-#include "../jrd/jrd.h"
-#include "../jrd/constants.h"
-#include "../jrd/intlobj.h"
+#include "../common/classes/alloc.h"
 
-namespace Jrd {
+typedef unsigned short CHARSET_ID;
+typedef unsigned short COLLATE_ID;
+typedef unsigned short TTYPE_ID;
+typedef unsigned short UCS2_CHAR;
+typedef unsigned char NCHAR;
+typedef unsigned char MBCHAR;
+typedef class tdbb *TDBB;
+typedef signed char ASCII;
+typedef unsigned char BYTE;
+typedef unsigned short (*FPTR_SHORT) ();
+
+enum intl_object_types
+{
+	type_texttype = 54,
+	type_charset = 55,
+	type_csconvert = 56
+};
 
 class TextType
 {
 public:
-	//typedef bool   (*FPTR_CONTAINS)(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp);
-	//typedef void*  (*FPTR_CONTAINS_CREATE)(thread_db* tdbb, TextType ttype, const UCHAR* p, SSHORT lp);
-	//typedef void   (*FPTR_CONTAINS_DESTROY)(void* object);
-	//typedef void   (*FPTR_CONTAINS_RESET)(void* object);
-	//typedef bool   (*FPTR_CONTAINS_PROCESS)(thread_db* tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
-	//typedef bool   (*FPTR_CONTAINS_RESULT)(void* object);
+	TextType(unsigned short type, const char *name, CHARSET_ID cs_id,
+					short country, unsigned char bpc) :
+    		texttype_type(type),
+    		texttype_name(name),
+    		texttype_character_set(cs_id),
+    		texttype_country(country),
+    		texttype_bytes_per_char(bpc)
+		{}
 
-	//typedef bool   (*FPTR_LIKE)(thread_db* tdbb, TextType ttype, const UCHAR* s, SSHORT ls, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
-	//typedef void*  (*FPTR_LIKE_CREATE)(thread_db* tdbb, TextType ttype, const UCHAR* p, SSHORT lp, UCS2_CHAR escape);
-	//typedef void   (*FPTR_LIKE_DESTROY)(void* object);
-	//typedef void   (*FPTR_LIKE_RESET)(void* object);
-	//typedef bool   (*FPTR_LIKE_PROCESS)(thread_db* tdbb, TextType ttype, void* object, const UCHAR* s, SSHORT ls);
-	//typedef bool   (*FPTR_LIKE_RESULT)(void* object);
+	// texttype_fn_init
+	//static texttype *alloc(MemoryPool &, short parm1, short parm2);
+	virtual unsigned short key_length(unsigned short) = 0;
+	virtual unsigned short string_to_key(unsigned short,
+										 unsigned char*,
+										 unsigned short,
+										 unsigned char*,
+										 unsigned short) = 0;
+	virtual short compare(unsigned short,
+						  unsigned char*,
+						  unsigned short,
+						  unsigned char*) = 0;
+	virtual unsigned short to_upper(unsigned short) = 0;
+	virtual unsigned short to_lower(unsigned short) = 0;
+	virtual short str_to_upper(unsigned short,
+							   unsigned char*,
+							   unsigned short,
+							   unsigned char*) = 0;
+	/* SD: to_wc returns estimated or real length of the result string in bytes that is rather strange */
+	virtual unsigned short to_wc(UCS2_CHAR*,	// destination buffer
+				     unsigned short,	// length of the destination buffer in bytes
+				     unsigned char*,	// source buffer
+				     unsigned short,	// length of source buffer in bytes
+				     short*,		// variable to return error code
+				     unsigned short*) = 0;	// variable to return offset of the first
+							// unprocessed char
+	virtual unsigned short contains(TDBB, unsigned char*,
+									unsigned short,
+									unsigned char*,
+									unsigned short) = 0;
+	virtual unsigned short like(TDBB, unsigned char*,
+								short,
+								unsigned char*,
+								short,
+								short) = 0;
+	virtual unsigned short matches(TDBB, unsigned char*, short,
+								   unsigned char*, short) = 0;
+	virtual unsigned short sleuth_check(TDBB, unsigned short,
+										unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short) = 0;
+	virtual unsigned short sleuth_merge(TDBB, unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short) = 0;
+	virtual unsigned short mbtowc(UCS2_CHAR*, unsigned char*, unsigned short) = 0;
+	//virtual short get_wchar(unsigned short*, unsigned char*, unsigned short) = 0;
 
-	TextType(texttype *_tt) : tt(_tt) {}
+	//unsigned short getVersion() { return texttype_version; }
+	//unsigned short getFlags() { return texttype_flags; }
+	unsigned short getType() { return texttype_type; }
+	const signed char *getName() { return (const signed char*)texttype_name; }
+	CHARSET_ID getCharSet() { return texttype_character_set; }
+	short getCountry() { return texttype_country; }
+	unsigned char getBytesPerChar() { return texttype_bytes_per_char; }
 
-	// copy constructor
-	TextType(const TextType& obj) : tt(obj.tt) {}
-
-	USHORT key_length(USHORT a) {
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_key_length);
-		return (*tt->texttype_fn_key_length)(tt, a);
-	}
-
-	USHORT string_to_key(USHORT a,
-						 const UCHAR* b,
-						 USHORT c,
-						 UCHAR* d,
-						 USHORT e)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_string_to_key);
-		return (*tt->texttype_fn_string_to_key)(tt, a, b, c, d, e);
-	}
-	
-	SSHORT compare(USHORT a,
-				   UCHAR* b,
-				   USHORT c,
-				   UCHAR* d)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_compare);
-		return (*tt->texttype_fn_compare)(tt, a, b, c, d);
-	}
-	
-	USHORT to_upper(USHORT a)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_to_upper);
-		return (*tt->texttype_fn_to_upper)(tt, a);
-	}
-	
-	USHORT to_lower(USHORT a)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_to_lower);
-		return (*tt->texttype_fn_to_lower)(tt, a);
-	}
-	
-	SSHORT str_to_upper(USHORT a,
-						const UCHAR* b,
-						USHORT c,
-						UCHAR* d)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_str_to_upper);
-		return (*tt->texttype_fn_str_to_upper)(tt, a, b, c, d);
-	}
-	
-	USHORT to_wc(UCS2_CHAR* a,
-				 USHORT b,
-				 const UCHAR* c,
-				 USHORT d,
-				 SSHORT* e,
-				 USHORT* f)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_to_wc);
-		return (*tt->texttype_fn_to_wc)(tt, a, b, c, d, e, f);
-	}
-									
-	USHORT mbtowc(UCS2_CHAR* a, const UCHAR* b, USHORT c)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_mbtowc);
-		return (*tt->texttype_fn_mbtowc)(tt, a, b, c);
-	}
-
-	bool like(thread_db* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl, SSHORT escape)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_like);
-		return //reinterpret_cast<FPTR_LIKE>
-			(tt->texttype_fn_like)(tdbb, tt, s, sl, p, pl, escape);
-	}
-	
-	void *like_create(thread_db* tdbb, const UCHAR* p, SSHORT pl, SSHORT escape)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_like_create);
-		return //reinterpret_cast<FPTR_LIKE_CREATE>
-			(tt->texttype_fn_like_create)(tdbb, *this, p, pl, escape);
-	}
-	
-	void like_reset(void* object)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_like_reset);
-		//reinterpret_cast<FPTR_LIKE_RESET>
-			(tt->texttype_fn_like_reset)(object);
-	}
-	
-	bool like_result(void* object)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_like_result);
-		return //reinterpret_cast<FPTR_LIKE_RESULT>
-			(tt->texttype_fn_like_result)(object);
-	}
-	
-	void like_destroy(void* object)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_like_destroy);
-		//reinterpret_cast<FPTR_LIKE_DESTROY>
-			(tt->texttype_fn_like_destroy)(object);
-	}
-	
-	bool like_process(thread_db* tdbb, void* object, const UCHAR* s, SSHORT sl)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_like_process);
-		return //reinterpret_cast<FPTR_LIKE_PROCESS>
-			(tt->texttype_fn_like_process)(tdbb, tt, object, s, sl);
-	}
-	
-	bool contains(thread_db* tdbb, const UCHAR* s, SSHORT sl, const UCHAR* p, SSHORT pl)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_contains);
-		return //reinterpret_cast<FPTR_CONTAINS>
-			(tt->texttype_fn_contains)(tdbb, tt, s, sl, p, pl);
-	}
-	
-	void *contains_create(thread_db* tdbb, const UCHAR* p, SSHORT pl)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_contains_create);
-		return //reinterpret_cast<FPTR_CONTAINS_CREATE>
-			(tt->texttype_fn_contains_create)(tdbb, tt, p, pl);
-	}
-	
-	void contains_reset(void* object)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_contains_reset);
-		//reinterpret_cast<FPTR_CONTAINS_RESET>
-			(tt->texttype_fn_contains_reset)(object);
-	}
-	
-	bool contains_result(void* object)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_contains_result);
-		return //reinterpret_cast<FPTR_CONTAINS_RESULT>
-			(tt->texttype_fn_contains_result)(object);
-	}
-	
-	void contains_destroy(void* object)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_contains_destroy);
-		//reinterpret_cast<FPTR_CONTAINS_DESTROY>
-			(tt->texttype_fn_contains_destroy)(object);
-	}
-	
-	bool contains_process(thread_db* tdbb, void* object, const UCHAR* s, SSHORT sl)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_contains_process);
-		return //reinterpret_cast<FPTR_CONTAINS_PROCESS>
-			(tt->texttype_fn_contains_process)(tdbb, tt, object, s, sl);
-	}
-	
-	USHORT matches(thread_db* tdbb, const UCHAR* a, SSHORT b, const UCHAR* c, SSHORT d)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_matches);
-		return (*(//reinterpret_cast<
-				//	USHORT (*)(thread_db*, TextType, const UCHAR*, short, const UCHAR*, short)>
-						(tt->texttype_fn_matches)))
-							(tdbb, tt, a, b, c, d);
-	}
-
-	USHORT sleuth_check(thread_db* tdbb, USHORT a,
-								const UCHAR* b,
-								USHORT c,
-								const UCHAR* d,
-								USHORT e)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_sleuth_check);
-		return (*(//reinterpret_cast<
-				//	USHORT(*)(thread_db*, TextType, USHORT, const UCHAR*, USHORT, const UCHAR*, USHORT)>
-						(tt->texttype_fn_sleuth_check)))
-							(tdbb, tt, a, b, c, d, e);
-	}
-	
-	USHORT sleuth_merge(thread_db* tdbb, const UCHAR* a,
-								USHORT b,
-								const UCHAR* c,
-								USHORT d,
-								UCHAR* e,
-								USHORT f)
-	{
-		fb_assert(tt);
-		fb_assert(tt->texttype_fn_sleuth_merge);
-		return (*(//reinterpret_cast<
-				//	USHORT(*)(thread_db*, TextType, const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT)>
-						(tt->texttype_fn_sleuth_merge)))
-							(tdbb, tt, a, b, c, d, e, f);
-	}
-
-
-	USHORT getType() const
-	{
-		fb_assert(tt);
-		return tt->texttype_type; 
-	}
-
-	const char *getName() const
-	{ 
-		fb_assert(tt);
-		return tt->texttype_name; 
-	}
-
-	CHARSET_ID getCharSet() const
-	{ 
-		fb_assert(tt);
-		return tt->texttype_character_set; 
-	}
-
-	SSHORT getCountry() const
-	{ 
-		fb_assert(tt);
-		return tt->texttype_country; 
-	}
-
-	UCHAR getBytesPerChar() const
-	{ 
-		fb_assert(tt);
-		return tt->texttype_bytes_per_char; 
-	}
-
-	texttype* getStruct() const { return tt; }
-
-private:
-	texttype* tt;
+protected:
+	unsigned short texttype_type;		/* Interpretation ID */
+	const char *texttype_name;
+	CHARSET_ID texttype_character_set;	/* ID of base character set */
+	short texttype_country;	/* ID of base country values */
+	unsigned char texttype_bytes_per_char;	/* max bytes per character */
 };
 
-static inline bool operator ==(const TextType& tt1, const TextType& tt2) {
-	return tt1.getStruct() == tt2.getStruct();
-}
-
-static inline bool operator !=(const TextType& tt1, const TextType& tt2)
+class TextTypeNC : public TextType
 {
-	return tt1.getStruct() != tt2.getStruct();
-}
+public:
+	TextTypeNC(unsigned short type, const char *name, CHARSET_ID cs_id,
+					short country, unsigned char bpc) :
+    		TextType(type, name, cs_id, country, bpc)
+		{}
+
+	unsigned short to_wc(UCS2_CHAR*,	// destination buffer
+			     unsigned short,	// length of the destination buffer in bytes
+			     unsigned char*,	// source buffer
+			     unsigned short,	// length of source buffer in bytes
+			     short*,		// variable to return error code
+			     unsigned short*);	// variable to return offset of the first
+						// unprocessed char
+	unsigned short contains(TDBB, unsigned char*,
+									unsigned short,
+									unsigned char*,
+									unsigned short);
+	unsigned short like(TDBB, unsigned char*,
+								short,
+								unsigned char*,
+								short,
+								short);
+	unsigned short matches(TDBB, unsigned char*, short,
+								   unsigned char*, short);
+	unsigned short sleuth_check(TDBB, unsigned short,
+										unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short);
+	unsigned short sleuth_merge(TDBB, unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short);
+	unsigned short mbtowc(UCS2_CHAR*, unsigned char*, unsigned short);
+};
+
+class TextTypeWC : public TextType
+{
+public:
+	TextTypeWC(unsigned short type, const char *name, CHARSET_ID cs_id,
+					short country, unsigned char bpc) :
+    		TextType(type, name, cs_id, country, bpc)
+		{}
+
+	unsigned short to_wc(UCS2_CHAR*,	// destination buffer
+			     unsigned short,	// length of the destination buffer in bytes
+			     unsigned char*,	// source buffer
+			     unsigned short,	// length of source buffer in bytes
+			     short*,		// variable to return error code
+			     unsigned short*);	// variable to return offset of the first
+						// unprocessed char
+	unsigned short contains(TDBB, unsigned char*,
+									unsigned short,
+									unsigned char*,
+									unsigned short);
+	unsigned short like(TDBB, unsigned char*,
+								short,
+								unsigned char*,
+								short,
+								short);
+	unsigned short matches(TDBB, unsigned char*, short,
+								   unsigned char*, short);
+	unsigned short sleuth_check(TDBB, unsigned short,
+										unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short);
+	unsigned short sleuth_merge(TDBB, unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short);
+	unsigned short mbtowc(UCS2_CHAR*, unsigned char*, unsigned short);
+};
+
+class TextTypeMB : public TextType
+{
+public:
+	TextTypeMB(unsigned short type, const char *name, CHARSET_ID cs_id,
+					short country, unsigned char bpc) :
+    		TextType(type, name, cs_id, country, bpc)
+		{}
+
+	unsigned short contains(TDBB, unsigned char*,
+									unsigned short,
+									unsigned char*,
+									unsigned short);
+	unsigned short like(TDBB, unsigned char*,
+								short,
+								unsigned char*,
+								short,
+								short);
+	unsigned short matches(TDBB, unsigned char*, short,
+								   unsigned char*, short);
+	unsigned short sleuth_check(TDBB, unsigned short,
+										unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short);
+	unsigned short sleuth_merge(TDBB, unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short,
+										unsigned char*,
+										unsigned short);
+	unsigned short mbtowc(UCS2_CHAR*, unsigned char*, unsigned short);
+};
+
+#define TEXTTYPE_init               1	/* object has been init'ed */
+#define TEXTTYPE_reverse_secondary  2	/* Reverse order of secondary keys */
+#define TEXTTYPE_ignore_specials    4	/* Do not put special values in keys */
+#define TEXTTYPE_expand_before      8	/* Expansion weights before litagure */
+
 
 class CsConvert
 { 
 public:
-	CsConvert(csconvert* _cnvt) : cnvt(_cnvt) {}
-	CsConvert(const CsConvert& obj) : cnvt(obj.cnvt) {}
+	CsConvert(short id, const char *name, CHARSET_ID from, CHARSET_ID to) :
+			csconvert_id(id),
+			csconvert_name(name),
+			csconvert_from(from),
+			csconvert_to(to)
+		{}
 
-	// CVC: Beware of this can of worms: csconvert_convert gets assigned
-	// different functions that not necessarily take the same argument. Typically,
-	// the src pointer and the dest pointer use different types.
-	// How does this work without crashing is a miracle of IT.
-	USHORT convert(UCHAR* a,
-				   USHORT b,
-				   const UCHAR* c,
-				   USHORT d,
-				   SSHORT* e,
-				   USHORT* f)
-	{
-		fb_assert(cnvt != NULL);
-		return (*cnvt->csconvert_convert)(cnvt, a, b, c, d, e, f);
-	}
+	virtual unsigned short convert(unsigned char*,
+								   unsigned short,
+								   unsigned char*,
+								   unsigned short,
+								   short*,
+								   unsigned short*) = 0;
 
-	SSHORT getId() const { fb_assert(cnvt); return cnvt->csconvert_id; }
-	const char* getName() const { fb_assert(cnvt); return cnvt->csconvert_name; }
-	CHARSET_ID getFromCS() const { fb_assert(cnvt); return cnvt->csconvert_from; }
-	CHARSET_ID getToCS() const { fb_assert(cnvt); return cnvt->csconvert_to; }
+	//unsigned short getVersion() { return csconvert_version; }
+	//unsigned short getFlags() { return csconvert_flags; }
+	short getId() { return csconvert_id; }
+	const signed char *getName() { return (const signed char*)csconvert_name; }
+	CHARSET_ID getFromCS() { return csconvert_from; }
+	CHARSET_ID getToCS() { return csconvert_to; }
 
-	csconvert* getStruct() const { return cnvt; }
-
-private:
-	csconvert* cnvt;
+protected:
+	short csconvert_id;
+	const char *csconvert_name;
+	CHARSET_ID csconvert_from;
+	CHARSET_ID csconvert_to;
 };
 
-static inline bool operator ==(const CsConvert& cv1, const CsConvert& cv2)
-{
-	return cv1.getStruct() == cv2.getStruct();
-}
+/* values for csconvert_flags */
 
-static inline bool operator !=(const CsConvert& cv1, const CsConvert& cv2)
-{
-	return cv1.getStruct() != cv2.getStruct();
-}
+#define CONVERTTYPE_init	1	/* object has been init'ed */
+
+/* Conversion error codes */
+
+#define	CS_TRUNCATION_ERROR	1	/* output buffer too small  */
+#define	CS_CONVERT_ERROR	2	/* can't remap a character      */
+#define	CS_BAD_INPUT		3	/* input string detected as bad */
+
+#define	CS_CANT_MAP		0		/* Flag table entries that don't map */
+
+
+
+
 
 class CharSet
 {
 public:
-	CharSet(charset* _cs) : cs(_cs) {}
-	CharSet(const CharSet &obj) : cs(obj.cs) {};
+	CharSet(CHARSET_ID id, const char *name, unsigned char mnBpc, unsigned char mxBpc,
+			unsigned char spLen, const char *spc) :
+		charset_id(id),
+		charset_name(name),
+		charset_min_bytes_per_char(mnBpc),
+		charset_max_bytes_per_char(mxBpc),
+		charset_space_length(spLen),
+		charset_space_character(spc),
+		charset_to_unicode(0),
+		charset_from_unicode(0)
+	{}
 
-	CHARSET_ID getId() const { fb_assert(cs); return cs->charset_id; }
-	const char* getName() const { fb_assert(cs); return cs->charset_name; }
-	UCHAR minBytesPerChar() const { fb_assert(cs); return cs->charset_min_bytes_per_char; }
-	UCHAR maxBytesPerChar() const { fb_assert(cs); return cs->charset_max_bytes_per_char; }
-	UCHAR getSpaceLength() const { fb_assert(cs); return cs->charset_space_length; }
-	const UCHAR* getSpace() const { fb_assert(cs); return cs->charset_space_character; }
+	virtual ~CharSet()
+		{ delete charset_to_unicode; delete charset_from_unicode; }
 
-	CsConvert getConvToUnicode() { fb_assert(cs); return &cs->charset_to_unicode; }
+	//unsigned short getVersion() { return charset_version; }
+	//unsigned short getFlags() { return charset_flags; }
+	CHARSET_ID getId() { return charset_id; }
+	const signed char *getName() { return (const signed char*)charset_name; }
+	unsigned char minBytesPerChar() { return charset_min_bytes_per_char; }
+	unsigned char maxBytesPerChar() { return charset_max_bytes_per_char; }
+	unsigned char getSpaceLength() { return charset_space_length; }
+	const unsigned char *getSpace() { return (const unsigned char*)charset_space_character; }
 
-	CsConvert getConvFromUnicode() { fb_assert(cs); return &cs->charset_from_unicode; }
+	CsConvert *getConvToUnicode() { return charset_to_unicode; }
+	CsConvert *getConvFromUnicode() { return charset_from_unicode; }
+	
+protected:
+	CHARSET_ID charset_id;
+	const char *charset_name;
+	unsigned char charset_min_bytes_per_char;
+	unsigned char charset_max_bytes_per_char;
+	unsigned char charset_space_length;
+	const char *charset_space_character;
 
-	charset* getStruct() const { return cs; }
+	CsConvert *charset_to_unicode;
+	CsConvert *charset_from_unicode;
 
-private:
-	charset* cs;
+/* These need to be moved elsewhere.  They don't belong in this interface
+	VEC charset_converters;
+	VEC charset_collations;
+*/
 };
 
-static inline bool operator ==(const CharSet& cs1, const CharSet& cs2)
-{
-	return cs1.getStruct() == cs2.getStruct();
-}
+/* values for charset_flags */
 
-static inline bool operator !=(const CharSet& cs1, const CharSet& cs2)
-{
-	return cs1.getStruct() != cs2.getStruct();
-}
+#define	CHARSET_init	1
+#define CHARSET_narrow	2
+#define CHARSET_multi	4
+#define CHARSET_wide	8
 
-} //namespace Jrd
 
-#endif /* JRD_INTL_CLASSES_H */
+typedef CharSet *(*CharSetAllocFunc)(MemoryPool&, CHARSET_ID, CHARSET_ID);
+typedef TextType *(*TextTypeAllocFunc)(MemoryPool&, CHARSET_ID, CHARSET_ID);
+typedef CsConvert *(*CsConvertAllocFunc)(MemoryPool&, CHARSET_ID, CHARSET_ID);
 
+#endif /* _JRD_INTL_CLASSES_H_ */

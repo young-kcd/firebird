@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		llio_proto.h
- *	DESCRIPTION:	Prototype header file for llio.cpp
+ *	DESCRIPTION:	Prototype header file for llio.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,18 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_LLIO_PROTO_H
-#define JRD_LLIO_PROTO_H
+#ifndef _JRD_LLIO_PROTO_H_
+#define _JRD_LLIO_PROTO_H_
 
-int LLIO_allocate_file_space(ISC_STATUS*, const TEXT*, SLONG, UCHAR, bool);
-int LLIO_close(ISC_STATUS *, SLONG);
-int LLIO_open(ISC_STATUS*, const TEXT*, USHORT, bool, SLONG*);
-int LLIO_read(ISC_STATUS*, SLONG, const TEXT*, SLONG, USHORT, UCHAR*, SLONG,
-					 SLONG*);
-int LLIO_seek(ISC_STATUS*, SLONG, const TEXT*, SLONG, USHORT);
-int LLIO_sync(ISC_STATUS *, SLONG);
-int LLIO_write(ISC_STATUS*, SLONG, const TEXT*, SLONG, USHORT, const UCHAR*, SLONG,
-					  SLONG*);
+extern int LLIO_allocate_file_space(ISC_STATUS *, TEXT *, SLONG, UCHAR, USHORT);
+extern int LLIO_close(ISC_STATUS *, SLONG);
+extern int LLIO_open(ISC_STATUS *, TEXT *, USHORT, USHORT, SLONG *);
+extern int LLIO_read(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
+					 SLONG *);
+extern int LLIO_seek(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT);
+extern int LLIO_sync(ISC_STATUS *, SLONG);
+extern int LLIO_write(ISC_STATUS *, SLONG, TEXT *, SLONG, USHORT, UCHAR *, SLONG,
+					  SLONG *);
 
-#endif // JRD_LLIO_PROTO_H
-
+#endif /* _JRD_LLIO_PROTO_H_ */

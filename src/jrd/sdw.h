@@ -21,24 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_SDW_H
-#define JRD_SDW_H
+#ifndef _JRD_SDW_H_
+#define _JRD_SDW_H_
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
-namespace Jrd {
-
 /* Shadowing block */
 
-class Shadow : public pool_alloc<type_sdw>
+class sdw : public pool_alloc<type_sdw>
 {
     public:
-	Shadow* sdw_next;				// next in linked list
-	class jrd_file* sdw_file;	// Stack of shadow files
-	USHORT sdw_number;			// number of shadow
+	struct sdw *sdw_next;		/* next in linked list */
+	struct fil *sdw_file;		/* Stack of shadow files */
+	USHORT sdw_number;			/* number of shadow */
 	USHORT sdw_flags;
 };
+typedef sdw *SDW;
 
 #define SDW_dumped	1			/* bit set when file has been copied */
 #define SDW_shutdown	2		/* stop shadowing on next cache flush */
@@ -56,7 +55,4 @@ class Shadow : public pool_alloc<type_sdw>
 #define SDW_INVALID	(SDW_shutdown | SDW_delete | SDW_rollover | SDW_conditional)
 #define SDW_IGNORE	(SDW_shutdown | SDW_delete)
 
-} //namespace Jrd
-
-#endif // JRD_SDW_H
-
+#endif /* _JRD_SDW_H_ */

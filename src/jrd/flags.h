@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_FLAGS_H
-#define JRD_FLAGS_H
+#ifndef _JRD_FLAGS_H_
+#define _JRD_FLAGS_H_
 
 /* flags for RDB$FILE_FLAGS */
 
@@ -31,11 +31,6 @@
 #define FILE_manual	4
 #define FILE_cache	8
 #define FILE_conditional 16
-/* Flags for backup difference files */
-// File is difference
-#define FILE_difference 32
-// Actively used for backup purposes (ALTER DATABASE BEGIN BACKUP issued)
-#define FILE_backing_up 64
 
 /* flags for RDB$LOG_FILES */
 
@@ -53,4 +48,4 @@
 #define TRG_sql		0x1
 #define TRG_ignore_perm	0x2		/* trigger ignores permissions checks */
 
-#endif /* JRD_FLAGS_H */
+#endif /* _JRD_FLAGS_H_ */

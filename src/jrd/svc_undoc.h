@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef SVC_UNDOC_H
-#define SVC_UNDOC_H
+#ifndef _SVC_UNDOC_H
+#define _SVC_UNDOC_H
 
 /* Service Action Flags */
 #define isc_action_svc_lock_stats     13	/* Retrieves lock manager statistics */
@@ -91,5 +91,4 @@
 #define isc_spb_lck_wait		0x04
 #define isc_spb_lck_stats		0x08
 
-#endif	/* SVC_UNDOC_H */
-
+#endif	/* _SVC_UNDOC_H */
