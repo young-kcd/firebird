@@ -81,7 +81,6 @@ static CONST VERB verbs[] = {
 	PAIR(nod_loop, blr_loop, 1, 1, STATEMENT, STATEMENT),
 	PAIR(nod_message, blr_message, 0, 0, STATEMENT, OTHER),
 	PAIR(nod_modify, blr_modify, 0, 0, STATEMENT, STATEMENT),
-	PAIR(nod_writelock, blr_writelock, e_writelock_length, 0, STATEMENT, OTHER),
 	PAIR(nod_user_savepoint, blr_user_savepoint, e_sav_length, 0, STATEMENT, OTHER),
 	PAIR(nod_undo_savepoint, blr_undo_savepoint, e_sav_length, 0, STATEMENT, OTHER),
 	PAIR(nod_receive, blr_receive, e_send_length, 1, STATEMENT, STATEMENT),

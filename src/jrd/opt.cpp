@@ -688,6 +688,9 @@ RSB OPT_compile(TDBB tdbb,
 #endif
 		ERR_punt();
 	}
+	
+	if (rse->rse_writelock)
+		rsb->rsb_flags |= rsb_writelock;
 
 	return rsb;
 }

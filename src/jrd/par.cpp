@@ -34,7 +34,7 @@
  *
  */
 /*
-$Id: par.cpp,v 1.23 2002-11-17 00:10:49 hippoman Exp $
+$Id: par.cpp,v 1.24 2002-11-18 20:27:24 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2066,6 +2066,10 @@ static JRD_NOD par_rse(TDBB tdbb, CSB * csb, SSHORT rse_op)
 		case blr_plan:
 			rse->rse_plan = par_plan(tdbb, csb);
 			break;
+			
+		case blr_writelock:
+			rse->rse_writelock = TRUE;
+			break;
 
 #ifdef SCROLLABLE_CURSORS
 			/* if a receive is seen here, then it is intended to be an asynchronous 
@@ -2405,14 +2409,6 @@ static JRD_NOD parse(TDBB tdbb, register CSB * csb, USHORT expected)
 			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
 		break;
 	
-	case blr_writelock:
-		n = BLR_BYTE;
-		if (n >= (*csb)->csb_count)
-			error(*csb, gds_ctxnotdef, 0);
-		node->nod_arg[e_writelock_stream] =
-			(JRD_NOD) (SLONG) (*csb)->csb_rpt[n].csb_stream;
-		break;
-
 	case blr_modify:
 		node = par_modify(tdbb, csb);
 		break;

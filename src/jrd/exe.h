@@ -100,6 +100,7 @@ public:
 	USHORT	nod_count;			/* Number of arguments */
 	USHORT	rse_count;
 	USHORT	rse_jointype;		/* inner, left, right, full */
+	BOOLEAN rse_writelock;
 	struct rsb *rse_rsb;
 	nod*	rse_first;
     nod*	rse_skip;
@@ -259,9 +260,6 @@ typedef struct iasb {
 #define	e_erase_stream		2
 #define e_erase_rsb		3
 #define	e_erase_length		4
-
-#define e_writelock_stream  0
-#define e_writelock_length  1
 
 /* used for both nod_user_savepoint and nod_undo_savepoint */
 #define e_sav_name			0

@@ -32,12 +32,12 @@ extern "C" {
 
 extern void VIO_backout(TDBB, struct rpb *, struct tra *);
 extern int VIO_chase_record_version(TDBB, struct rpb *, class Rsb *,
-									struct tra *, struct blk *);
+									struct tra *, struct blk *, BOOLEAN);
 #ifdef PC_ENGINE
 extern int VIO_check_if_updated(TDBB, struct rpb *);
 #endif
 extern void VIO_data(TDBB, register struct rpb *, struct blk *);
-extern BOOLEAN VIO_erase(TDBB, struct rpb *, struct tra *);
+extern void VIO_erase(TDBB, struct rpb *, struct tra *);
 #ifdef GARBAGE_THREAD
 extern void VIO_fini(TDBB);
 #endif
@@ -51,7 +51,8 @@ extern int VIO_get_current(TDBB, struct rpb *, struct tra *, struct blk *,
 extern void VIO_init(TDBB);
 #endif
 extern void VIO_merge_proc_sav_points(TDBB, struct tra *, struct sav **);
-extern BOOLEAN VIO_modify(TDBB, struct rpb *, struct rpb *, struct tra *);
+extern BOOLEAN VIO_writelock(TDBB, struct rpb *, struct tra *);
+extern void VIO_modify(TDBB, struct rpb *, struct rpb *, struct tra *);
 extern BOOLEAN VIO_next_record(TDBB, struct rpb *, class Rsb *, struct tra *,
 							   struct blk *, BOOLEAN, BOOLEAN);
 extern struct rec *VIO_record(TDBB, register struct rpb *, struct fmt *,

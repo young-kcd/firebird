@@ -40,7 +40,7 @@
  *
  */
 /*
-$Id: cmp.cpp,v 1.22 2002-11-17 00:10:48 hippoman Exp $
+$Id: cmp.cpp,v 1.23 2002-11-18 20:27:23 skidder Exp $
 */
 
 #include "firebird.h"
@@ -2411,10 +2411,6 @@ static JRD_NOD copy(
 		args = e_erase_length;
 		break;
 
-	case nod_writelock:
-		args = e_writelock_length;
-		break;
-
 	case nod_user_savepoint:
 	case nod_undo_savepoint:
 		args = e_sav_length;
@@ -2526,6 +2522,7 @@ static JRD_NOD copy(
 			for (end = arg1 + old_rse->rse_count; arg1 < end; arg1++, arg2++)
 				*arg2 = copy(tdbb, csb, *arg1, remap, field_id, remap_fld);
 			new_rse->rse_jointype = old_rse->rse_jointype;
+			new_rse->rse_writelock = old_rse->rse_writelock;
 			new_rse->rse_first =
 				copy(tdbb, csb, old_rse->rse_first, remap, field_id,
 					 remap_fld);
@@ -3184,11 +3181,6 @@ static JRD_NOD pass1(
 		pass1_erase(tdbb, csb, node);
 		break;
 
-	/* Add update privilege handling code for writelock here if needed
-	case nod_writelock:
-		break;
-	*/
-
 	case nod_exec_proc:
 		procedure = (JRD_PRC) node->nod_arg[e_esp_procedure];
 		post_procedure_access(tdbb, *csb, procedure);
@@ -3638,6 +3630,7 @@ static RSE pass1_rse(
 	USHORT count;
 	LLS stack, temp;
 	JRD_NOD *arg, *end, boolean, sort, project, first, skip, plan;
+	BOOLEAN writelock;
 #ifdef SCROLLABLE_CURSORS
 	JRD_NOD async_message;
 #endif
@@ -3665,6 +3658,7 @@ static RSE pass1_rse(
 	first = rse->rse_first;
 	skip = rse->rse_skip;
 	plan = rse->rse_plan;
+	writelock = rse->rse_writelock;
 #ifdef SCROLLABLE_CURSORS
 	async_message = rse->rse_async_message;
 #endif
@@ -3729,6 +3723,8 @@ static RSE pass1_rse(
 
 	if (plan)
 		rse->rse_plan = plan;
+	
+	rse->rse_writelock = writelock;
 
 #ifdef SCROLLABLE_CURSORS
 	if (async_message) {

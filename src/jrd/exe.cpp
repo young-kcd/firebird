@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.31 2002-11-17 00:10:48 hippoman Exp $
+$Id: exe.cpp,v 1.32 2002-11-18 20:27:23 skidder Exp $
 */
 
 #include "firebird.h"
@@ -132,7 +132,6 @@ static void execute_procedure(TDBB, JRD_NOD);
 static JRD_REQ execute_triggers(TDBB, TRIG_VEC *, REC, REC);
 static JRD_NOD looper(TDBB, JRD_REQ, JRD_NOD);
 static JRD_NOD modify(TDBB, register JRD_NOD, SSHORT);
-static void writelock(TDBB, register JRD_NOD);
 static JRD_NOD receive_msg(TDBB, register JRD_NOD);
 static void release_blobs(TDBB, JRD_REQ);
 static void release_proc_save_points(JRD_REQ);
@@ -1165,7 +1164,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 									   transaction,
 									   reinterpret_cast <
 									   blk *
-									   >(tdbb->tdbb_default))))
+									   >(tdbb->tdbb_default),FALSE)))
 				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
 		VIO_data(tdbb, rpb,
 				 reinterpret_cast < blk * >(tdbb->tdbb_request->req_pool));
@@ -1222,17 +1221,7 @@ static JRD_NOD erase(TDBB tdbb, JRD_NOD node, SSHORT which_trig)
 	if (relation->rel_file)
 		EXT_erase(rpb, reinterpret_cast < int *>(transaction));
 	else if (!relation->rel_view_rse)
-		// Repeat it as many times as underlying record modifies
-		while (TRUE) {
-			if (VIO_erase(tdbb, rpb, transaction)) break;
-			if ( !(transaction->tra_flags & TRA_read_committed) ||
-			       (transaction->tra_flags & TRA_rec_version) ||
-				   (transaction->tra_flags & TRA_nowait) )
-			{
-				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-			}			  
-			rpb->rpb_stream_flags |= RPB_s_refetch;
-		}
+		VIO_erase(tdbb, rpb, transaction);
 		
 
 /* Handle post operation trigger */
@@ -1942,12 +1931,6 @@ static JRD_NOD looper(TDBB tdbb, JRD_REQ request, JRD_NOD in_node)
 			}
 			break;
 		
-		case nod_writelock:
-			writelock(tdbb, node);
-			node = node->nod_parent;
-			request->req_operation = req::req_return;
-			break;
-
 		case nod_exec_proc:
 			if (request->req_operation == req::req_unwind) {
 				node = node->nod_parent;
@@ -2759,7 +2742,7 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 									   org_rpb,
 									   NULL,
 									   transaction,
-									   reinterpret_cast<BLK>(tdbb->tdbb_default))))
+									   reinterpret_cast<BLK>(tdbb->tdbb_default),FALSE)))
 		{
 				ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
 		}
@@ -2847,17 +2830,7 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 			JRD_REL bad_relation;
 			IDX_E error_code;
 
-			// Repeat it as many times as underlying record modifies
-			while (TRUE) {
-				if (VIO_modify(tdbb, org_rpb, new_rpb, transaction)) break;
-				if ( !(transaction->tra_flags & TRA_read_committed) ||
-				       (transaction->tra_flags & TRA_rec_version) ||
-					   (transaction->tra_flags & TRA_nowait) )
-				{
-					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-				}			  
-				org_rpb->rpb_stream_flags |= RPB_s_refetch;
-			}
+			VIO_modify(tdbb, org_rpb, new_rpb, transaction);
 
 			error_code = IDX_modify(tdbb,
 									org_rpb,
@@ -3019,169 +2992,6 @@ static JRD_NOD modify(TDBB tdbb, register JRD_NOD node, SSHORT which_trig)
 
 	return node->nod_arg[e_mod_statement];
 }
-
-static void writelock(TDBB tdbb, register JRD_NOD node)
-{
-/**************************************
- *
- *	w r i t e l o c k
- *
- **************************************
- *
- * Functional description
- *	Set write lock by making record owned by this transaction.
- *  Current implementation is absolutely not perfect.
- *  It basically works as modify, but doesn't call triggers
- *  better implementation would require modification in VIO code
- *
- **************************************/ 
-	DBB dbb;
-	register JRD_REQ request, trigger;
-//	STA impure;
-	FMT org_format, new_format;
-	SSHORT org_stream;
-	REC org_record, new_record;
-	RPB *org_rpb;
-	rpb new_rpb;
-	JRD_REL relation;
-	JRD_TRA transaction;
-
-	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
-	BLKCHK(node, type_nod);
-
-	request = tdbb->tdbb_request;
-	transaction = request->req_transaction;
-
-//	impure = (STA) ((SCHAR *) request + node->nod_impure);
-
-	org_stream = (USHORT) node->nod_arg[e_writelock_stream];
-	org_rpb = &request->req_rpb[org_stream];
-	relation = org_rpb->rpb_relation;
-
-/* If the stream was sorted, the various fields in the rpb are
-   probably junk.  Just to make sure that everything is cool,
-   refetch and release the record. */
-
-	if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
-		SLONG tid_fetch;
-
-		tid_fetch = org_rpb->rpb_transaction;
-		if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
-			(!VIO_chase_record_version(tdbb,
-									   org_rpb,
-									   NULL,
-									   transaction,
-									   reinterpret_cast<BLK>(tdbb->tdbb_default))))
-		{
-			ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
-		}
-		VIO_data(tdbb, org_rpb,
-				 reinterpret_cast<BLK>(tdbb->tdbb_request->req_pool));
-
-		/* If record is present, and the transaction is read committed,
-		 * make sure the record has not been updated.  Also, punt after
-		 * VIO_data () call which will release the page.
-		 */
-
-		if ((transaction->tra_flags & TRA_read_committed) &&
-			(tid_fetch != org_rpb->rpb_transaction))
-		{
-			ERR_post(gds_deadlock, gds_arg_gds, gds_update_conflict, 0);
-		}
-
-		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
-	}
-	
-	memset(&new_rpb,0,sizeof(new_rpb));
-
-	new_rpb.rpb_relation = relation;
-	new_format = MET_current(tdbb, relation);
-	new_record = VIO_record(tdbb, &new_rpb, new_format, tdbb->tdbb_default);
-	new_rpb.rpb_address = new_record->rec_data;
-	new_rpb.rpb_length = new_format->fmt_length;
-	new_rpb.rpb_format_number = new_format->fmt_version;
-
-	if (!(org_record = org_rpb->rpb_record)) {
-		org_record =
-			VIO_record(tdbb, org_rpb, new_format, tdbb->tdbb_default);
-		org_format = org_record->rec_format;
-		org_rpb->rpb_address = org_record->rec_data;
-		org_rpb->rpb_length = org_format->fmt_length;
-		org_rpb->rpb_format_number = org_format->fmt_version;
-	}
-	else
-		org_format = org_record->rec_format;
-
-/* Copy the original record to the new record.  If the format hasn't changed,
-   this is a simple move.  If the format has changed, each field must be
-   fetched and moved separately, remembering to set the missing flag. */
-
-	if (new_format->fmt_version == org_format->fmt_version)
-		MOVE_FASTER(org_record->rec_data, new_rpb.rpb_address,
-					new_rpb.rpb_length);
-	else {
-		SSHORT i;
-		DSC org_desc, new_desc;
-
-		for (i = 0; i < new_format->fmt_count; i++) {
-			/* In order to "map a null to a default" value (in EVL_field()), 
-			 * the relation block is referenced. 
-			 * Reference: Bug 10116, 10424 
-			 */
-			CLEAR_NULL(new_record, i);
-			if (EVL_field(new_rpb.rpb_relation, new_record, i, &new_desc)) {
-				if (EVL_field
-					(org_rpb->rpb_relation, org_record, i,
-					 &org_desc)) MOV_move(&org_desc, &new_desc);
-				else {
-					SET_NULL(new_record, i);
-					if (new_desc.dsc_dtype) {
-						UCHAR *p;
-						USHORT n;
-
-						p = new_desc.dsc_address;
-						n = new_desc.dsc_length;
-						do
-							*p++ = 0;
-						while (--n);
-					}
-				}				/* if (org_record) */
-			}					/* if (new_record) */
-		}						/* for (fmt_count) */
-	}
-	
-	if (!relation->rel_view_rse && !relation->rel_file)
-	{
-		SSHORT bad_index;
-		JRD_REL bad_relation;
-		IDX_E error_code;
-		
-		RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
-		
-		// Repeat it as many times as underlying record modifies
-		while (TRUE) {
-			if (VIO_modify(tdbb, org_rpb, &new_rpb, transaction)) break;
-			if ( !(transaction->tra_flags & TRA_read_committed) ||
-			       (transaction->tra_flags & TRA_rec_version) ||
-				   (transaction->tra_flags & TRA_nowait) )
-			{
-				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
-			}			  
-			org_rpb->rpb_stream_flags |= RPB_s_refetch;
-		}
-		error_code = IDX_modify(tdbb,
-								org_rpb,
-								&new_rpb,
-								transaction,
-								&bad_relation,
-								reinterpret_cast<USHORT*>(&bad_index));
-		if (error_code) {
-			ERR_duplicate_error(error_code, bad_relation, bad_index);
-		}
-	}
-}
-
 
 static JRD_NOD receive_msg(TDBB tdbb, register JRD_NOD node)
 {

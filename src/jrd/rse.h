@@ -90,7 +90,8 @@ typedef Rsb *RSB;
 #define rsb_singular            1	/* singleton select, expect 0 or 1 records */
 #define rsb_stream_type         2	/* rsb is for stream type request */
 #define rsb_descending          4	/* an ascending index is being used for a descending sort or vice versa */
-#define rsb_project		8		/* projection on this stream is requested */
+#define rsb_project				8	/* projection on this stream is requested */
+#define rsb_writelock  		   16   /* records should be locked for writing */
 
 /* Special argument positions within the RSB */
 

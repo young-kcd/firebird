@@ -102,7 +102,12 @@ static void list_staying(TDBB, RPB *, LLS *);
 #ifdef GARBAGE_THREAD
 static void notify_garbage_collector(TDBB, RPB *);
 #endif
-static BOOLEAN prepare_update(TDBB, JRD_TRA, SLONG, RPB *, RPB *, RPB *, LLS *);
+
+#define PREPARE_OK       0
+#define PREPARE_CONFLICT 1
+#define PREPARE_DELETE   2
+static int prepare_update(TDBB, JRD_TRA, SLONG, RPB *, RPB *, RPB *, LLS *, BOOLEAN);
+
 static BOOLEAN purge(TDBB, RPB *);
 static REC replace_gc_record(JRD_REL, REC *, USHORT);
 static void replace_record(TDBB, RPB *, LLS *, JRD_TRA);
@@ -392,9 +397,8 @@ void VIO_backout(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 }
 
 
-int VIO_chase_record_version(
-							 TDBB tdbb,
-							 RPB * rpb, RSB rsb, JRD_TRA transaction, BLK pool)
+int VIO_chase_record_version(TDBB tdbb, RPB * rpb, RSB rsb, JRD_TRA transaction, 
+							 BLK pool, BOOLEAN writelock)
 {
 /**************************************
  *
@@ -497,7 +501,7 @@ int VIO_chase_record_version(
 		 * option, wait for reads also!
 		 */
 		if ((transaction->tra_flags & TRA_read_committed) &&
-			(!(transaction->tra_flags & TRA_rec_version))) {
+			(!(transaction->tra_flags & TRA_rec_version) || writelock)) {
 			if (state == tra_limbo) {
 				CCH_RELEASE(tdbb, &rpb->rpb_window);
 				state =
@@ -1039,7 +1043,7 @@ void VIO_data(TDBB tdbb, register RPB * rpb, BLK pool)
 }
 
 
-BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
+void VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -1052,8 +1056,7 @@ BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
  *
  *	This routine is entered with an inactive
  *	RPB and leaves having created an erased
- *	stub. Returns FALSE if record was modified by 
- *  another user 
+ *	stub. 
  *
  **************************************/
 	JRD_REL relation, r2;
@@ -1098,7 +1101,7 @@ BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 										NULL,
 										transaction,
 										reinterpret_cast<blk*>(
-											tdbb->tdbb_default))))
+											tdbb->tdbb_default),FALSE)))
 		{
 			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
@@ -1127,7 +1130,7 @@ BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 	if (transaction->tra_flags & TRA_system)
 	{
 		VIO_backout(tdbb, rpb, transaction);
-		return TRUE;
+		return;
 	}
 
 	transaction->tra_flags |= TRA_write;
@@ -1316,8 +1319,8 @@ BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 	{
 		/* Update stub didn't find one page -- do a long, hard update */
 		stack = NULL;
-		if (!prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0, &stack))
-			return FALSE;
+		if (prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0, &stack, FALSE))
+			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 
 		/* Old record was restored and re-fetched for write.  Now replace it.  */
 
@@ -1364,7 +1367,6 @@ BOOLEAN VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 		transaction->tra_flags |= TRA_perform_autocommit;
 	}
 	
-	return TRUE;
 }
 
 
@@ -1610,7 +1612,7 @@ int VIO_get(TDBB tdbb, RPB * rpb, RSB rsb, JRD_TRA transaction, BLK pool)
 	lock_type = (rpb->rpb_stream_flags & RPB_s_update) ? LCK_write : LCK_read;
 
 	if (!DPM_get(tdbb, rpb, lock_type) ||
-		!VIO_chase_record_version(tdbb, rpb, rsb, transaction, pool))
+		!VIO_chase_record_version(tdbb, rpb, rsb, transaction, pool, FALSE))
 		return FALSE;
 
 #ifdef PC_ENGINE
@@ -1884,7 +1886,7 @@ void VIO_init(TDBB tdbb)
 #endif
 
 
-BOOLEAN VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
+void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 {
 /**************************************
  *
@@ -1933,7 +1935,7 @@ BOOLEAN VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 			(!VIO_chase_record_version
 			 (tdbb, org_rpb, NULL, transaction,
 			  reinterpret_cast <
-			  blk * >(tdbb->tdbb_default))))
+			  blk * >(tdbb->tdbb_default), FALSE)))
 		{
 			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 		}
@@ -1962,7 +1964,7 @@ BOOLEAN VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 
 	if (transaction->tra_flags & TRA_system) {
 		update_in_place(tdbb, transaction, org_rpb, new_rpb);
-		return TRUE;
+		return;
 	}
 
 /* If we're about to modify a system relation, check to make sure
@@ -2058,13 +2060,13 @@ BOOLEAN VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 			(transaction->tra_save_point->sav_verb_count))
 				verb_post(tdbb, transaction, org_rpb, org_rpb->rpb_undo,
 						  new_rpb, FALSE, FALSE);
-		return TRUE;
+		return;
 	}
 
 	stack = NULL;
-	if (!prepare_update(tdbb, transaction, org_rpb->rpb_transaction, org_rpb,
-				   &temp, new_rpb, &stack))
-		return FALSE;
+	if (prepare_update(tdbb, transaction, org_rpb->rpb_transaction, org_rpb,
+				   &temp, new_rpb, &stack, FALSE))
+		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 
 /* Old record was restored and re-fetched for write.  Now replace it.  */
 
@@ -2088,7 +2090,124 @@ BOOLEAN VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 
 	if (transaction->tra_flags & TRA_autocommit)
 		transaction->tra_flags |= TRA_perform_autocommit;
-	return TRUE;
+}
+
+
+BOOLEAN VIO_writelock(TDBB tdbb, RPB * org_rpb, JRD_TRA transaction)
+{
+/**************************************
+ *
+ *	V I O _ w r i t e l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Modify record to make record owned by this transaction
+ *
+ **************************************/
+	JRD_REL relation;
+	RPB temp;
+	DSC desc1, desc2;
+	LLS stack;
+	USHORT id;
+	SLONG tid_fetch;
+
+	SET_TDBB(tdbb);
+
+#ifdef VIO_DEBUG
+	if (debug_flag > DEBUG_WRITES)
+		ib_printf("VIO_writelock (org_rpb %"SLONGFORMAT", transaction %d)\n",
+				  org_rpb->rpb_number, transaction ? transaction->tra_number : 0);
+	if (debug_flag > DEBUG_WRITES_INFO)
+		ib_printf
+			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
+			 org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction,
+			 org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,
+			 org_rpb->rpb_f_page, org_rpb->rpb_f_line);
+#endif
+
+	if (transaction->tra_flags & TRA_system) {
+		// Explicit locks are not needed in system transactions
+		return TRUE;
+	}
+	
+	transaction->tra_flags |= TRA_write;
+	
+	REC org_record;
+	if (!(org_record = org_rpb->rpb_record)) {
+		org_record =
+			VIO_record(tdbb, org_rpb, NULL, tdbb->tdbb_default);
+		org_rpb->rpb_address = org_record->rec_data;
+		org_rpb->rpb_length = org_record->rec_format->fmt_length;
+		org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
+	}
+
+    // Repeat as many times as underlying record modifies
+	while(TRUE) {
+
+		/* Refetch and release the record if it is needed */
+		if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
+			tid_fetch = org_rpb->rpb_transaction;
+			if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
+				(!VIO_chase_record_version
+				 (tdbb, org_rpb, NULL, transaction,
+				  reinterpret_cast <
+				  blk * >(tdbb->tdbb_default),TRUE)))
+			{
+				return FALSE;
+			}
+			VIO_data(tdbb, org_rpb,
+					 reinterpret_cast < blk * >(tdbb->tdbb_request->req_pool));
+
+			org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
+		}
+
+		relation = org_rpb->rpb_relation;
+
+
+		if (org_rpb->rpb_transaction == transaction->tra_number) {
+			// We already own this record. No writelock required
+			return TRUE;
+		}
+
+		stack = NULL;
+		switch (prepare_update(tdbb, transaction, org_rpb->rpb_transaction, org_rpb,
+				   &temp, 0, &stack, TRUE))
+		{
+			case PREPARE_CONFLICT:
+				// Do not spin wait if we have nowait transaction
+				if (transaction->tra_flags & TRA_nowait)
+					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+				continue;
+			case PREPARE_DELETE:
+				return FALSE;
+		}
+
+		/* Old record was restored and re-fetched for write.  Now replace it.  */
+
+		org_rpb->rpb_transaction = transaction->tra_number;
+		org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
+		org_rpb->rpb_b_page = temp.rpb_page;
+		org_rpb->rpb_b_line = temp.rpb_line;
+		org_rpb->rpb_address = org_record->rec_data;
+		org_rpb->rpb_length = org_record->rec_format->fmt_length;
+		org_rpb->rpb_flags |= rpb_delta;
+
+		replace_record(tdbb, org_rpb, &stack, transaction);
+
+		if (!(transaction->tra_flags & TRA_system) &&
+			(transaction->tra_save_point))
+		{
+			verb_post(tdbb, transaction, org_rpb, 0, 0, FALSE, FALSE);
+		}
+
+		/* for an autocommit transaction, mark a commit as necessary */
+
+		if (transaction->tra_flags & TRA_autocommit)
+			transaction->tra_flags |= TRA_perform_autocommit;
+		
+		return TRUE;
+	}
 }
 
 
@@ -2134,7 +2253,7 @@ BOOLEAN VIO_next_record(TDBB tdbb,
 	do
 		if (!DPM_next(tdbb, rpb, lock_type, backwards, onepage))
 			return FALSE;
-	while (!VIO_chase_record_version(tdbb, rpb, rsb, transaction, pool));
+	while (!VIO_chase_record_version(tdbb, rpb, rsb, transaction, pool, FALSE));
 
 #ifdef PC_ENGINE
 	if (rsb && rsb->rsb_flags & rsb_stream_type)
@@ -3739,13 +3858,14 @@ static void notify_garbage_collector(TDBB tdbb, RPB * rpb)
 #endif
 
 
-static BOOLEAN prepare_update(	TDBB	tdbb,
+static int prepare_update(	TDBB	tdbb,
 							JRD_TRA		transaction,
 							SLONG	commit_tid_read,
 							RPB*	rpb,
 							RPB*	temp,
 							RPB*	new_rpb,
-							LLS*	stack)
+							LLS*	stack,
+							BOOLEAN writelock)
 {
 /**************************************
  *
@@ -3832,6 +3952,11 @@ static BOOLEAN prepare_update(	TDBB	tdbb,
 			new_rpb->rpb_flags |= rpb_delta;
 		}
 	}
+	
+	if (writelock) {
+	  temp->rpb_address = differences;
+	  temp->rpb_length = SQZ_no_differences((SCHAR*) differences, temp->rpb_length);
+	}
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
@@ -3874,7 +3999,7 @@ static BOOLEAN prepare_update(	TDBB	tdbb,
 					BUGCHECK(291);	/* msg 291 cannot find record back version */
 				}
 				delete_(tdbb, temp, (SLONG) 0, 0);
-				ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+				return PREPARE_DELETE;
 			}
 		}
 
@@ -3922,6 +4047,7 @@ static BOOLEAN prepare_update(	TDBB	tdbb,
 						BUGCHECK(291);	/* msg 291 cannot find record back version */
 					delete_(tdbb, temp, (SLONG) 0, 0);
 				}
+				if (writelock) return PREPARE_DELETE;
 				IBERROR(188);	/* msg 188 cannot update erased record */
 			}
 
@@ -3937,7 +4063,7 @@ static BOOLEAN prepare_update(	TDBB	tdbb,
 				if (!DPM_fetch(tdbb, temp, LCK_write))
 					BUGCHECK(291);	/* msg 291 cannot find record back version */
 				delete_(tdbb, temp, (SLONG) 0, 0);
-				return FALSE;
+				return PREPARE_CONFLICT;
 			}
 
 			/*
@@ -3991,7 +4117,7 @@ static BOOLEAN prepare_update(	TDBB	tdbb,
 				continue;
 			}
 			LLS_PUSH((BLK) temp->rpb_page, stack);
-			return TRUE;
+			return PREPARE_OK;
 
 		case tra_active:
 		case tra_limbo:
@@ -4051,10 +4177,11 @@ static BOOLEAN prepare_update(	TDBB	tdbb,
 			}
 			switch (state) {
 			case tra_committed:
-				return FALSE;
-
+				// We need to loop waiting in read committed transactions only
+				if (!(transaction->tra_flags & TRA_read_committed))
+					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
 			case tra_active:
-				ERR_post(isc_deadlock, 0);
+				return PREPARE_CONFLICT;
 
 			case tra_limbo:
 				ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, 0);
@@ -4085,7 +4212,7 @@ static BOOLEAN prepare_update(	TDBB	tdbb,
 			VIO_backout(tdbb, rpb, transaction);
 		}
 	}
-	return TRUE;
+	return PREPARE_OK;
 }
 
 

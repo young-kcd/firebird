@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.15 2002-11-17 00:00:39 hippoman Exp $
+$Id: gen.cpp,v 1.16 2002-11-18 20:27:21 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1656,11 +1656,6 @@ static void gen_for_select( DSQL_REQ request, DSQL_NOD for_select)
 			context = (DSQL_CTX) item->nod_arg[e_rel_context];
 	}
 	
-	if (rse->nod_arg[e_rse_lock] && context) {
-		STUFF(blr_writelock);
-		STUFF(context->ctx_context);
-	}	
-	
 	list = rse->nod_arg[e_rse_items];
 	list_to = for_select->nod_arg[e_flp_into];
 	if (list->nod_count != list_to->nod_count)
@@ -2039,6 +2034,9 @@ static void gen_rse( DSQL_REQ request, DSQL_NOD rse)
 		GEN_expr(request, list);
 	}
 
+	if (rse->nod_arg[e_rse_lock])
+		STUFF(blr_writelock);
+	
 	if ((node = rse->nod_arg[e_rse_first]) != NULL) {
 		STUFF(blr_first);
 		GEN_expr(request, node);
@@ -2290,9 +2288,7 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 
 /* Save DBKEYs for possible update later */
 
-	/* these variables are used by FOR UPDATE statement handling lower */
 	list = rse->nod_arg[e_rse_streams];
-	context = NULL;
 
 	if (!rse->nod_arg[e_rse_reduced]) {
 		for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end;
@@ -2375,7 +2371,8 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 	STUFF(blr_for);
 	if (!(request->req_dbb->dbb_flags & DBB_v3))
 		STUFF(blr_stall);
-	gen_rse(request, rse);
+	gen_rse(request, rse);	
+	
 	STUFF(blr_send);
 	STUFF(message->msg_number);
 	STUFF(blr_begin);
@@ -2383,11 +2380,6 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
 /* Build body of FOR loop */
 
 	/* Add invalid usage here */
-	
-	if (rse->nod_arg[e_rse_lock] && list->nod_count==1 && context) {
-		STUFF(blr_writelock);
-		STUFF(context->ctx_context);
-	}	
 	
 	STUFF(blr_assignment);
 	constant = 1;

@@ -51,8 +51,8 @@ static CONST UCHAR blr_table4 [] = {
 /*161*/	(UCHAR) nod_current_timestamp, (UCHAR) nod_current_time, 
 /*163*/	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, (UCHAR) nod_current_role, 
 /*175*/	 0, (UCHAR) nod_exec_sql, (UCHAR) nod_internal_info, 
-/*178*/	 0, (UCHAR) nod_writelock, (UCHAR) nod_user_savepoint, 
-/*181*/	(UCHAR) nod_undo_savepoint,  0};
+/*178*/	 0,  0, (UCHAR) nod_user_savepoint, (UCHAR) nod_undo_savepoint, 
+/*182*/	 0};
 static CONST UCHAR blr_table [] = {
 	 0, (UCHAR) nod_assignment, (UCHAR) nod_list, (UCHAR) nod_dcl_variable, 
 /*  4*/	(UCHAR) nod_message, (UCHAR) nod_erase, (UCHAR) nod_for, 
@@ -106,8 +106,8 @@ static CONST UCHAR blr_table [] = {
 /*161*/	(UCHAR) nod_current_timestamp, (UCHAR) nod_current_time, 
 /*163*/	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, (UCHAR) nod_current_role, 
 /*175*/	 0, (UCHAR) nod_exec_sql, (UCHAR) nod_internal_info, 
-/*178*/	 0, (UCHAR) nod_writelock, (UCHAR) nod_user_savepoint, 
-/*181*/	(UCHAR) nod_undo_savepoint,  0};
+/*178*/	 0,  0, (UCHAR) nod_user_savepoint, (UCHAR) nod_undo_savepoint, 
+/*182*/	 0};
 static CONST SCHAR length_table [] = {
 	 0, e_asgn_length, 0, e_dcl_length, 0, e_erase_length, 
 /*  6*/	e_for_length, e_for_length, e_if_length, 1, 0, 1, e_send_length, 
@@ -132,8 +132,8 @@ static CONST SCHAR length_table [] = {
 /*154*/	1, 1, e_seek_length, e_find_dbkey_length, e_any_length, 
 /*159*/	e_extract_length, e_current_date_length, e_current_timestamp_length, 
 /*162*/	e_current_time_length,  0,  0,  0,  0,  0,  0,  0, 
-/*170*/	 0,  0,  0,  0, 1,  0, 1, 1,  0, e_writelock_length, 
-/*180*/	e_sav_length, e_sav_length,  0};
+/*170*/	 0,  0,  0,  0, 1,  0, 1, 1,  0,  0, e_sav_length, 
+/*181*/	e_sav_length,  0};
 static CONST SCHAR count_table [] = {
 	 0, 2, 0, 0, 0, 0, 3, 3, 3, 1, 0, 1, 1, 0, 1, e_sto_length - 1, 
 /* 16*/	 0, 1, 0, e_sto_length - 1, 1, 0, 0, 0, 0, 0, 0, 2, 
@@ -146,7 +146,7 @@ static CONST SCHAR count_table [] = {
 /*125*/	2, 4, 0, 0, e_blk_length, 1, 1, 1, 0, 0, 0, 1, 1, 0, 
 /*139*/	1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 
 /*156*/	2, 2, 1, e_extract_count, 0, 0, 0,  0,  0,  0,  0, 
-/*167*/	 0,  0,  0,  0,  0,  0,  0, 0,  0, 1, 1,  0, 0, 0, 
+/*167*/	 0,  0,  0,  0,  0,  0,  0, 0,  0, 1, 1,  0,  0, 0, 
 /*181*/	0,  0};
 static CONST SCHAR type_table [] = {
 	 0, STATEMENT, STATEMENT, STATEMENT, STATEMENT, STATEMENT, 
@@ -173,7 +173,7 @@ static CONST SCHAR type_table [] = {
 /*149*/	STATEMENT, STATEMENT, BOOL, BOOL, VALUE, VALUE, STATEMENT, 
 /*156*/	STATEMENT, STATEMENT, BOOL, VALUE, VALUE, VALUE, VALUE, 
 /*163*/	 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, VALUE, 
-/*175*/	 0, STATEMENT, VALUE,  0, STATEMENT, STATEMENT, STATEMENT, 
+/*175*/	 0, STATEMENT, VALUE,  0,  0, STATEMENT, STATEMENT, 
 /*182*/	 0};
 static CONST SCHAR sub_type_table [] = {
 	 0, VALUE, STATEMENT, OTHER, OTHER, OTHER, STATEMENT, 
@@ -199,4 +199,4 @@ static CONST SCHAR sub_type_table [] = {
 /*152*/	TYPE_RSE, OTHER, VALUE, STATEMENT, VALUE, STATEMENT, 
 /*158*/	TYPE_RSE, VALUE, OTHER, OTHER, OTHER,  0,  0,  0,  0, 
 /*167*/	 0,  0,  0,  0,  0,  0,  0, VALUE,  0, VALUE, VALUE, 
-/*178*/	 0, OTHER, OTHER, OTHER,  0};
+/*178*/	 0,  0, OTHER, OTHER,  0};

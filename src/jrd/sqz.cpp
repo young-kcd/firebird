@@ -250,6 +250,29 @@ SCHAR* SQZ_decompress(const SCHAR*	input,
 }
 
 
+USHORT SQZ_no_differences(SCHAR*	out,
+						  int	length)
+{
+/**************************************
+ *
+ *	S Q Z _ n o _ d i f f e r e n c e s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Denerates differences record marking that there are no differences
+ *
+ **************************************/
+	SCHAR *temp = out;
+	while (length > 127) {
+	  *temp++ = -127;
+	  length-=127;
+	}
+	if (length)
+	  *temp++ = -length;
+	return temp-out;
+}
+
 USHORT SQZ_differences(SCHAR*	rec1,
 					   USHORT	length1,
 					   SCHAR*	rec2,

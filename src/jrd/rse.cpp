@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.14 2002-11-17 15:55:39 dimitr Exp $
+ * $Id: rse.cpp,v 1.15 2002-11-18 20:27:24 skidder Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -49,6 +49,7 @@
 #include "../jrd/btr.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
+#include "../jrd/tra.h"
 #include "gen/codes.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
@@ -445,9 +446,29 @@ BOOLEAN RSE_get_record(TDBB tdbb, RSB rsb, RSE_GET_MODE mode)
 	count = (request->req_flags & req_count_records) != 0;
 	request->req_flags &= ~req_count_records;
 
-	if ( (result = get_record(tdbb, rsb, NULL, mode)) )
+	while ( (result = get_record(tdbb, rsb, NULL, mode)) ) {
+	
+		if (rsb->rsb_flags & rsb_writelock) {
+			// Lock record if we were asked for it
+			JRD_TRA transaction = request->req_transaction;
+
+			RPB* org_rpb = request->req_rpb + rsb->rsb_stream;
+			JRD_REL relation = org_rpb->rpb_relation;
+
+			if (!relation->rel_view_rse && !relation->rel_file) 
+			{
+				RLCK_reserve_relation(tdbb, transaction, relation, TRUE, TRUE);
+				
+				// Fetch next record if current was deleted before being locked
+				if (!VIO_writelock(tdbb, org_rpb, transaction)) 
+					continue;
+			}
+		}
+		
 		if (count)
 			request->req_records_selected++;
+		break;
+	}
 
 /* reset the flag to whatever it was */
 
