@@ -3310,7 +3310,7 @@ static void get_trigger_dependencies( DeferredWork* work)
 	bid blob_id;
 	blob_id.clear();
 
-	int type = 0;
+	UCHAR type = 0;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_c_trigger, IRQ_REQUESTS);
 
@@ -3320,7 +3320,7 @@ static void get_trigger_dependencies( DeferredWork* work)
         if (!REQUEST(irq_c_trigger))
             REQUEST(irq_c_trigger) = handle;
 		blob_id = X.RDB$TRIGGER_BLR;
-		type = X.RDB$TRIGGER_TYPE;
+		type = (UCHAR) X.RDB$TRIGGER_TYPE;
 		relation = MET_lookup_relation(tdbb, X.RDB$RELATION_NAME);
 
 	END_FOR;
