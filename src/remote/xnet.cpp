@@ -490,7 +490,9 @@ PORT XNET_connect(TEXT * name,
 	ULONG number;
 	USHORT mapped_area, mapped_position;
 	TEXT name_buffer[128];
+#ifdef WIN_NT
 	DWORD last_error;
+#endif
 	FILE_ID file_handle;
 	CADDR_T mapped_address;
 	PID_T client_pid;

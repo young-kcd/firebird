@@ -76,7 +76,7 @@ USHORT class_, USHORT base_level, UCHAR * version, UCHAR * id, ULONG mask)
 			l = strlen((char *) (p = version));
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
-			if ((*out++ = (UCHAR) l) != NULL)
+			if ((*out++ = (UCHAR) l) != 0)
 				do
 					*out++ = *p++;
 				while (--l);
@@ -86,7 +86,7 @@ USHORT class_, USHORT base_level, UCHAR * version, UCHAR * id, ULONG mask)
 			l = strlen((SCHAR *) (p = id));
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
-			if ((*out++ = (UCHAR) l) != NULL)
+			if ((*out++ = (UCHAR) l) != 0)
 				do
 					*out++ = *p++;
 				while (--l);

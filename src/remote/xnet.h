@@ -26,7 +26,7 @@
 
 #ifndef WIN_NT
 #include <sys/types.h>
-typedef short DWORD;
+//typedef short DWORD;
 #define PID_T	pid_t
 #define CADDR_T	caddr_t
 #define FILE_ID	int

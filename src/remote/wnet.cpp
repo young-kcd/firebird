@@ -1848,7 +1848,7 @@ static void wnet_make_file_name( TEXT * name, DWORD number)
 	TEXT *p, *q, temp[32];
 	USHORT len, length;
 
-	sprintf(temp, "%d", number);
+	sprintf(temp, "%lu", number);
 
 	if ((length = strlen(temp)) < 8) {
 		strcpy(name, temp);
