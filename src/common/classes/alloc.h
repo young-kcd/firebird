@@ -30,6 +30,7 @@
 #include "../../include/fb_types.h"
 #include "../../include/firebird.h"
 #include "../jrd/common.h"
+#include "../jrd/ib_stdio.h"
 #include "tree.h"
 #include "locks.h"
 
@@ -85,16 +86,19 @@ struct PendingFreeBlock {
 // 2. Multi-threaded server with single process (SUPERSERVER)
 class MemoryPool {
 private:
-	typedef BePlusTree<BlockInfo, BlockInfo, MemoryPool, 
+	class InternalAllocator {
+	public:
+		 void* alloc(size_t size);
+		 void free(void* block);
+	};
+	typedef BePlusTree<BlockInfo, BlockInfo, InternalAllocator, 
 		DefaultKeyValue<BlockInfo>, BlockInfo> FreeBlocksTree;
 	FreeBlocksTree freeBlocks; // B+ tree ordered by (length,address)
 	MemoryExtent *extents; // Linked list of all memory extents
 
 	Vector<void*,2> spareLeafs;
 	Vector<void*,MAX_TREE_DEPTH+1> spareNodes;
-	bool internalAlloc;
 	bool needSpare;
-	bool updatingSpare;
 	PendingFreeBlock *pendingFree;
 #ifdef SUPERSERVER
 	Spinlock lock;
@@ -106,11 +110,9 @@ private:
 	
 	// Do not allow to create and destroy pool directly from outside
 	MemoryPool(void *first_extent, void *root_page, bool _locking) : 
-		freeBlocks(this, root_page),
+		freeBlocks((InternalAllocator*)this, root_page),
 		extents((MemoryExtent *)first_extent), 
-		internalAlloc(false),
 		needSpare(false),
-		updatingSpare(false),
 		pendingFree(NULL),
 		locking(_locking)
 	{
@@ -130,6 +132,14 @@ private:
 	void addFreeBlock(MemoryBlock *blk);
 		
 	void removeFreeBlock(MemoryBlock *blk);
+	
+	// int_XXX functions do all the stuff except locking and exceptions
+	void* int_alloc(size_t size, SSHORT type = 0
+#ifdef DEBUG_GDS_ALLOC
+		, char *file = NULL, int line = 0
+#endif
+	);
+
 public:
 	static MemoryPool* createPool(bool locking = false);
 	
@@ -147,6 +157,8 @@ public:
 	
 	void verify_pool();
 
+	void print_pool(IB_FILE *, bool = false);
+	
 	static void globalFree(void *block) {
 		((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->pool->free(block);
 	}
@@ -162,7 +174,7 @@ public:
 #endif
 		);
 		memset(result,size,0);
-		return result;
+		return result;	
 	}
 };
 

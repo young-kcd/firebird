@@ -312,9 +312,10 @@ void testAllocator() {
 	} while (bigItems.getNext());
 	printf(" DONE\n");
 	pool->verify_pool();
+	pool->print_pool(stdout,true);
+	MemoryPool::deletePool(pool);
 //  TODO:
 //	Test critically low memory conditions
-	MemoryPool::deletePool(pool);
 }
 
 int main() {

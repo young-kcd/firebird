@@ -32,11 +32,19 @@
 
 #define FB_MAX(M,N) ((M)>(N)?(M):(N))
 
+#define FREE_PATTERN 0xDEADBEEF
+#define ALLOC_PATTERN 0xFEEDABED
+#ifdef DEBUG_GDS_ALLOC
+#define PATTERN_FILL(ptr,size,pattern) for (int _i=0;_i< size>>2;_i++) ((int*)(ptr))[_i]=(pattern)
+#else
+#define PATTERN_FILL(ptr,size,pattern) ((void)0)
+#endif
+
 // TODO (in order of importance):
 // 1. local pool locking +
 // 2. line number debug info +
-// 3. debug alloc/free pattern
-// 4. print pool contents function
+// 3. debug alloc/free pattern +
+// 4. print pool contents function +
 //---- Not needed for current codebase
 // 5. Pool size limit
 // 6. allocation source
@@ -67,37 +75,34 @@ MemoryPool* MemoryPool::getProcessPool() {
 }
 
 void MemoryPool::updateSpare() {
-	updatingSpare = true; // This is to prevent re-enterance
 	do {
-		try {
-			do {
-				needSpare = false;
-				while (spareLeafs.getCount() < spareLeafs.getCapacity())
-					spareLeafs.add(alloc(sizeof(FreeBlocksTree::ItemList), TYPE_LEAFPAGE));
-				while (spareNodes.getCount() <= freeBlocks.level)
-					spareNodes.add(alloc(sizeof(FreeBlocksTree::NodeList), TYPE_TREEPAGE));
-				break;
-			} while (needSpare);
-			// Great, if we were able to restore free blocks tree operations after critically low
-			// memory condition then try to add pending free blocks to our tree
-			while (pendingFree) {
-				PendingFreeBlock *temp = pendingFree;
-				pendingFree = temp->next;
-				MemoryBlock *blk = (MemoryBlock*)((char*)temp-MEM_ALIGN(sizeof(MemoryBlock)));
-				BlockInfo info = {
-					blk,
-					blk->length
-				};
-				internalAlloc = true;
-				freeBlocks.add(info); // We should be able to do this because we had all needed spare blocks
-				internalAlloc = false;
+		do {
+			needSpare = false;
+			while (spareLeafs.getCount() < spareLeafs.getCapacity()) {
+				void* temp = int_alloc(sizeof(FreeBlocksTree::ItemList), TYPE_LEAFPAGE);
+				if (!temp) return;
+				spareLeafs.add(temp);
 			}
-		} catch(...) {
-			// We can always recover after this
+			while (spareNodes.getCount() <= freeBlocks.level) {
+				void* temp = int_alloc(sizeof(FreeBlocksTree::NodeList), TYPE_TREEPAGE);
+				if (!temp) return;
+				spareNodes.add(temp);
+			}
 			break;
+		} while (needSpare);
+		// Great, if we were able to restore free blocks tree operations after critically low
+		// memory condition then try to add pending free blocks to our tree
+		while (pendingFree) {
+			PendingFreeBlock *temp = pendingFree;
+			pendingFree = temp->next;
+			MemoryBlock *blk = (MemoryBlock*)((char*)temp-MEM_ALIGN(sizeof(MemoryBlock)));
+			BlockInfo info = {
+				blk,
+				blk->length
+			};
+			freeBlocks.add(info); // We should be able to do this because we had all needed spare blocks
 		}
 	} while (needSpare);
-	updatingSpare = false;
 }
 
 void* MemoryPool::external_alloc(size_t size) {
@@ -109,6 +114,23 @@ void MemoryPool::external_free(void *blk) {
 	::free(blk);
 }
 
+void* MemoryPool::alloc(size_t size, SSHORT type
+#ifdef DEBUG_GDS_ALLOC
+	, char* file, int line
+#endif
+) {
+	if (locking) lock.enter();
+	void* result = int_alloc(size, type
+#ifdef DEBUG_GDS_ALLOC
+		, file, line
+#endif
+	);
+	if (needSpare) updateSpare();
+	if (locking) lock.leave();
+	if (!result) pool_out_of_memory();
+	return result;
+}
+
 void MemoryPool::verify_pool() {
 	if (locking) lock.enter();
 	assert (!pendingFree || needSpare); // needSpare flag should be set if we are in 
@@ -117,7 +139,7 @@ void MemoryPool::verify_pool() {
 	for (MemoryExtent *extent = extents; extent; extent=extent->next) {
 		MemoryBlock *prev = NULL;
 		for (MemoryBlock *blk = (MemoryBlock *)((char*)extent+MEM_ALIGN(sizeof(MemoryExtent))); 
-			!blk->last; 
+			; 
 			blk = (MemoryBlock *)((char*)blk+MEM_ALIGN(sizeof(MemoryBlock))+blk->length))
 		{
 #ifndef NDEBUG
@@ -139,6 +161,41 @@ void MemoryPool::verify_pool() {
 				assert(!foundTree && !foundPending); // Block is not free. Should not be in free lists
 #endif
 			prev = blk;
+			if (blk->last) break;
+		}
+	}
+	if (locking) lock.leave();
+}
+
+void MemoryPool::print_pool(IB_FILE *file, bool used_only) {
+	if (locking) lock.enter();
+	for (MemoryExtent *extent = extents; extent; extent=extent->next) {
+		if (!used_only)
+			ib_fprintf(file, "EXTENT %p:\n", extent);
+		for (MemoryBlock *blk = (MemoryBlock *)((char*)extent+MEM_ALIGN(sizeof(MemoryExtent))); 
+			; 
+			blk = (MemoryBlock *)((char*)blk+MEM_ALIGN(sizeof(MemoryBlock))+blk->length))
+		{
+			void *mem = (char*)blk + MEM_ALIGN(sizeof(MemoryBlock));
+			if (blk->used && (blk->type>0 || !used_only)) {
+#ifdef DEBUG_GDS_ALLOC
+				if (blk->type)
+					ib_fprintf(file, "Block %p: size=%d allocated at %s:%d\n", 
+						mem, blk->length, blk->file, blk->line);
+				else
+					ib_fprintf(file, "Typed block %p: type=%d size=%d allocated at %s:%d\n", 
+						mem, blk->type, blk->length, blk->file, blk->line);
+#else
+				if (blk->type)
+					ib_fprintf(file, "Typed block %p: type=%d size=%d\n", mem, blk->type, blk->length);
+				else
+					ib_fprintf(file, "Block %p: size=%d\n", mem, blk->length);
+#endif
+			} else {
+				if (!used_only) 
+					ib_fprintf(file, "Free block %p: size=%d\n", mem, blk->length);
+			}
+			if (blk->last) break;
 		}
 	}
 	if (locking) lock.leave();
@@ -223,33 +280,41 @@ void MemoryPool::deletePool(MemoryPool* pool) {
 	}
 }
 
-void* MemoryPool::alloc(size_t size, SSHORT type
+void* MemoryPool::InternalAllocator::alloc(size_t size) {
+	if (size == sizeof(FreeBlocksTree::ItemList))
+		// This condition is to handle case when nodelist and itemlist have equal size
+		if (sizeof(FreeBlocksTree::ItemList)!=sizeof(FreeBlocksTree::NodeList) || 
+			((MemoryPool*)this)->spareLeafs.getCount()) 
+		{
+			if (!((MemoryPool*)this)->spareLeafs.getCount()) pool_out_of_memory();
+			void *temp = ((MemoryPool*)this)->spareLeafs[((MemoryPool*)this)->spareLeafs.getCount()-1];
+			((MemoryPool*)this)->spareLeafs.shrink(((MemoryPool*)this)->spareLeafs.getCount()-1);
+			((MemoryPool*)this)->needSpare = true;
+			return temp;
+		}
+	if (size == sizeof(FreeBlocksTree::NodeList)) {
+		if (!((MemoryPool*)this)->spareNodes.getCount()) pool_out_of_memory();
+		void *temp = ((MemoryPool*)this)->spareNodes[((MemoryPool*)this)->spareNodes.getCount()-1];
+		((MemoryPool*)this)->spareNodes.shrink(((MemoryPool*)this)->spareNodes.getCount()-1);
+		((MemoryPool*)this)->needSpare = true;
+		return temp;
+	}
+	assert(false);
+}
+
+void MemoryPool::InternalAllocator::free(void* block) {
+	((PendingFreeBlock*)block)->next = ((MemoryPool*)this)->pendingFree;
+	((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->used = false;
+	((MemoryPool*)this)->pendingFree = (PendingFreeBlock*)block;
+	((MemoryPool*)this)->needSpare = true;
+	return;
+}
+
+void* MemoryPool::int_alloc(size_t size, SSHORT type
 #ifdef DEBUG_GDS_ALLOC
 	, char* file, int line
 #endif
 ) {
-	if (internalAlloc) {
-		if (size == sizeof(FreeBlocksTree::ItemList))
-			// This condition is to handle case when nodelist and itemlist have equal size
-			if (sizeof(FreeBlocksTree::ItemList)!=sizeof(FreeBlocksTree::NodeList) || 
-				spareLeafs.getCount()) 
-			{
-				if (!spareLeafs.getCount()) pool_out_of_memory();
-				void *temp = spareLeafs[spareLeafs.getCount()-1];
-				spareLeafs.shrink(spareLeafs.getCount()-1);
-				needSpare = true;
-				return temp;
-			}
-		if (size == sizeof(FreeBlocksTree::NodeList)) {
-			if (!spareNodes.getCount()) pool_out_of_memory();
-			void *temp = spareNodes[spareNodes.getCount()-1];
-			spareNodes.shrink(spareNodes.getCount()-1);
-			needSpare = true;
-			return temp;
-		}
-		assert(false);
-	}
-	if (locking) lock.enter();
 	// Lookup a block greater or equal than size in freeBlocks tree
 	size = MEM_ALIGN(size);
 	BlockInfo temp = {NULL, size};
@@ -266,9 +331,7 @@ void* MemoryPool::alloc(size_t size, SSHORT type
 			current->block->line = line;
 #endif
 			result = (char *)current->block + MEM_ALIGN(sizeof(MemoryBlock));
-			internalAlloc = true;
 			freeBlocks.fastRemove();
-			internalAlloc = false;
 		} else {
 			// Cut a piece at the end of block in hope to avoid structural
 			// modification of free blocks tree
@@ -300,11 +363,9 @@ void* MemoryPool::alloc(size_t size, SSHORT type
 				assert(res);
 				assert(&freeBlocks.current()==current);
 #endif
-				internalAlloc = true;
 				MemoryBlock *block = current->block;
 				freeBlocks.fastRemove();
 				addFreeBlock(block);
-				internalAlloc = false;
 			}
 			result = (char*)blk+MEM_ALIGN(sizeof(MemoryBlock));
 		}
@@ -328,7 +389,7 @@ void* MemoryPool::alloc(size_t size, SSHORT type
 						prev->next = itr->next;
 					else
 						pendingFree = itr->next;						
-					if (locking) lock.leave();
+					PATTERN_FILL(itr,size,ALLOC_PATTERN);
 					return itr;
 				} else {
 					// Cut a piece at the end of block
@@ -350,8 +411,9 @@ void* MemoryPool::alloc(size_t size, SSHORT type
 					blk->prev = temp;
 					if (!blk->last)
 						((MemoryBlock *)((char*)blk + MEM_ALIGN(sizeof(MemoryBlock)) + blk->length))->prev = blk;
-					if (locking) lock.leave();
-					return (char *)blk + MEM_ALIGN(sizeof(MemoryBlock));
+					result = (char *)blk + MEM_ALIGN(sizeof(MemoryBlock));
+					PATTERN_FILL(result,size,ALLOC_PATTERN);
+					return result;
 				}
 			}
 			prev = itr;
@@ -361,8 +423,7 @@ void* MemoryPool::alloc(size_t size, SSHORT type
 		size_t alloc_size = FB_MAX(MEM_ALIGN(sizeof(MemoryExtent))+MEM_ALIGN(sizeof(MemoryBlock))+size, MIN_EXTENT_SIZE);
 		MemoryExtent* extent = (MemoryExtent *)external_alloc(alloc_size);
 		if (!extent) {
-			if (locking) lock.leave();
-			pool_out_of_memory();
+			return NULL;
 		}
 		extent->next = extents;
 		extents = extent;
@@ -392,15 +453,12 @@ void* MemoryPool::alloc(size_t size, SSHORT type
 			rest->length = alloc_size - MEM_ALIGN(sizeof(MemoryExtent)) - 
 				MEM_ALIGN(sizeof(MemoryBlock)) - size - MEM_ALIGN(sizeof(MemoryBlock));
 			rest->prev = blk;
-			internalAlloc = true;
 			addFreeBlock(rest);
-			internalAlloc = false;
 		}
 		result = (char*)blk+MEM_ALIGN(sizeof(MemoryBlock));
 	}
-	if (locking) lock.leave();
 	// Grow spare blocks pool if necessary
-	if (needSpare && !updatingSpare) updateSpare();
+	PATTERN_FILL(result,size,ALLOC_PATTERN);
 	return result;
 }
 
@@ -444,14 +502,6 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk) {
 }
 
 void MemoryPool::free(void *block) {
-	if (internalAlloc) {
-		((PendingFreeBlock*)block)->next = pendingFree;
-		((MemoryBlock*)((char*)block-MEM_ALIGN(sizeof(MemoryBlock))))->used = false;
-		pendingFree = (PendingFreeBlock*)block;
-		needSpare = true;
-		return;
-	}
-	internalAlloc = true;
 	if (locking) lock.enter();
 	MemoryBlock *blk = (MemoryBlock *)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))), *prev;
 	// Try to merge block with preceding free block
@@ -477,6 +527,7 @@ void MemoryPool::free(void *block) {
 			}
 		}
 		addFreeBlock(prev);
+		PATTERN_FILL((char*)prev+MEM_ALIGN(sizeof(MemoryBlock)),prev->length,FREE_PATTERN);
 	} else {	
 		MemoryBlock *next;
 		// Mark block as free
@@ -492,10 +543,10 @@ void MemoryPool::free(void *block) {
 				((MemoryBlock *)((char *)next+MEM_ALIGN(sizeof(MemoryBlock))+next->length))->prev = blk;
 		}
 		addFreeBlock(blk);
+		PATTERN_FILL((char*)blk+MEM_ALIGN(sizeof(MemoryBlock)),blk->length,FREE_PATTERN);
 	}
+	if (needSpare) updateSpare();
 	if (locking) lock.leave();
-	internalAlloc = false;
-	if (needSpare && !updatingSpare) updateSpare();
 }
 
 } /* namespace Firebird */
