@@ -1971,7 +1971,7 @@ static int thread_start(
 	if (rval = thr_sigsetmask(SIG_SETMASK, &new_mask, &orig_mask))
 		return rval;
 #if (defined SUPERCLIENT || defined SUPERSERVER)
-	rval = thr_create(NULL, 0, (void* (*)(void*) )routine, arg, THR_DETACHED| THR_NEWLWP, &thread_id);
+	rval = thr_create(NULL, 0, (void* (*)(void*) )routine, arg, THR_DETACHED| THR_NEW_LWP, &thread_id);
 #else
 	rval =
 		thr_create(NULL, 0, (void* (*)(void*) ) routine, arg, (THR_BOUND | THR_DETACHED),
