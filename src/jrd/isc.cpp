@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.23 2002-12-10 11:53:49 eku Exp $
+$Id: isc.cpp,v 1.24 2002-12-11 16:31:15 skidder Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -557,6 +557,7 @@ void DLL_EXPORT ISC_get_config(TEXT * config_file, IPCCFG config_table)
 /* The master configuration options are in memory, now for
    this request for option values mark each one as not found
    and search the memory table for each one. */
+    if (!config_table) return;
 
 	for (h = config_table; h->ipccfg_keyword; h++)
 	{

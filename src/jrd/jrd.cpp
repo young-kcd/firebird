@@ -5578,6 +5578,10 @@ static DBB init(TDBB	tdbb,
 			gds__register_cleanup(cleanup, 0);
 			initialized = TRUE;
 			JRD_cache_default = Config::getDefaultDbCachePages();
+			// 11 Dec 2002 Nickolay Samofatov. This is a temporary hack to make old  //
+			// configuration manager generate default directories parameters         //
+			ISC_get_config(LOCK_HEADER, NULL);
+			///////////////////////////////////////////////////////////////////////////
 			if (JRD_cache_default < MIN_PAGE_BUFFERS)
 				JRD_cache_default = MIN_PAGE_BUFFERS;
 			if (JRD_cache_default > MAX_PAGE_BUFFERS)
