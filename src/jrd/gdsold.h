@@ -23,6 +23,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" define
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" (MAC_AUX) port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Cray" port
  *
  */
 
@@ -898,10 +899,6 @@ const char gds_info_forced_writes = 52;
 #define gds__info_db_impl_isc_hp_ux68K     40
 #define gds__info_db_impl_isc_sgi          41
 #define gds__info_db_impl_isc_sco_unix     42
-#define gds__info_db_impl_isc_cray         43
-#define gds__info_db_impl_isc_imp          44
-#define gds__info_db_impl_isc_delta        45
-#define gds__info_db_impl_isc_next         46
 #define gds__info_db_impl_isc_dos          47
 #define gds__info_db_impl_isc_winnt        48
 
@@ -945,10 +942,6 @@ const char gds_info_db_impl_isc_hp_mpexl = 39;
 const char gds_info_db_impl_isc_hp_ux68K = 40;
 const char gds_info_db_impl_isc_sgi = 41;
 const char gds_info_db_impl_isc_sco_unix = 42;
-const char gds_info_db_impl_isc_cray = 43;
-const char gds_info_db_impl_isc_imp = 44;
-const char gds_info_db_impl_isc_delta = 45;
-const char gds_info_db_impl_isc_next = 46;
 const char gds_info_db_impl_isc_dos = 47;
 const char gds_info_db_impl_isc_winnt = 48;
 

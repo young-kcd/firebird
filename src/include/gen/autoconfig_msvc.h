@@ -6,6 +6,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NCR3000" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "NeXT" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Cray" port
  */
 
 #ifndef AUTOCONFIG_H
@@ -79,7 +80,6 @@
 #undef DECOSF
 #undef sgi
 #undef mpexl
-#undef _CRAY
 #undef UNIXWARE
 
 #endif

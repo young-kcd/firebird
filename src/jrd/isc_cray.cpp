@@ -1,5 +1,6 @@
 #error This file is only renamed from .c to .cpp and indented.
 #error It still has old K&R style function arguments.
+#error The Cray port is obsolete!
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		isc_cray.c

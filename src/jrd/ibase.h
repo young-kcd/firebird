@@ -22,11 +22,12 @@
  * FSG 16.03.2001
  */
 /*
-$Id: ibase.h,v 1.6 2002-02-16 02:49:56 seanleyne Exp $
+$Id: ibase.h,v 1.7 2002-02-16 04:04:45 seanleyne Exp $
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "EPSON" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "XENIX" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "MAC" (MAC_AUX) port
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Cray" port
  *
  */
 
@@ -1526,10 +1527,6 @@ ISC_STATUS ISC_EXPORT isc_suspend_window(ISC_STATUS ISC_FAR*,
 #define isc_info_db_impl_isc_hp_ux68K     40
 #define isc_info_db_impl_isc_sgi          41
 #define isc_info_db_impl_isc_sco_unix     42
-#define isc_info_db_impl_isc_cray         43
-#define isc_info_db_impl_isc_imp          44
-#define isc_info_db_impl_isc_delta        45
-#define isc_info_db_impl_isc_next         46
 #define isc_info_db_impl_isc_dos          47
 #define isc_info_db_impl_isc_winnt        48
 
