@@ -1,3 +1,17 @@
+2003-08-01 22:12  skidder
+
+	* firebird2/src/extlib/ib_udf.c:
+	
+	Fix bugs in ib_udf functions rtrim, ltrim and log. Found and fixed
+	by Paul Vinkenoog
+
+2003-08-01 22:08  skidder
+
+	* firebird2/src/extlib/ib_udf.c:
+	
+	Fix bugs in ib_udf functions rtrim, ltrim and log. Found and fixed
+	by Paul Vinkenoog
+
 2003-07-31 17:33  dimitr
 
 	* firebird2/src/burp/: burp.h, burp.h:
