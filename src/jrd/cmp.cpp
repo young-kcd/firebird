@@ -40,7 +40,7 @@
  *
  */
 /*
-$Id: cmp.cpp,v 1.24 2002-11-20 23:16:37 hippoman Exp $
+$Id: cmp.cpp,v 1.25 2002-11-23 17:58:29 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -126,7 +126,7 @@ rel_MAX} RIDS;
 #define MAX_RECURSION		128
 #endif
 
-#define MAX_REQUEST_SIZE	262144
+#define MAX_REQUEST_SIZE	1048576
 
 #ifdef SHLIB_DEFS
 #undef access
