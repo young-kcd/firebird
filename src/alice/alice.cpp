@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.7 2001-12-25 07:57:04 tamlin Exp $
+//	$Id: alice.cpp,v 1.8 2001-12-25 08:01:58 tamlin Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -405,9 +405,6 @@ int DLL_EXPORT ALICE_gfix(	int			argc,
 
 		if (table->in_sw_value & (sw_set_db_dialect)) {
 			if (--argc <= 0) {
-				// TMN: Error in use of error-code. Either the following
-				// comment is right, or the one 16 lines above, but
-				// not both.
 				ALICE_error(113);	/* msg 113: dialect info is required XXX */
 			}
 
