@@ -1,3 +1,52 @@
+2003-03-04 23:00  hippoman
+
+	* firebird2/builds/win32/msvc7/: remote.vcproj,
+	remote_classic.vcproj:
+	
+	Fixed MSVC7 build, added IPSERVER define
+
+2003-03-04 04:40  brodsom
+
+	* firebird2/src/: dudley/trn.cpp, jrd/dsc.cpp, jrd/gdsassert.h,
+	jrd/isc_sync.cpp, jrd/perf.cpp, jrd/sch.cpp, jrd/status.cpp,
+	jrd/utl.cpp, remote/interface.cpp, remote/parser.cpp,
+	remote/protocol.cpp, remote/server.cpp:
+	
+	Return fb_assert to assert (rollback)
+
+2003-03-04 02:33  brodsom
+
+	* firebird2/src/jrd/: ExecuteStatement.h, ExecuteStatement.cpp:
+	
+	Add brackets in cpp and empty line at end of .h (gcc warnings)
+
+2003-03-04 01:38  brodsom
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Add condition to ifdef
+
+2003-03-04 01:09  brodsom
+
+	* firebird2/src/: intlcpp/cv_jis.cpp, intl/cv_jis.c:
+	
+	Put vars and functions inside the same ifdef for which is used
+	(NOT_USED_OR_REPLACED for unused)
+
+2003-03-04 01:02  brodsom
+
+	* firebird2/src/: isql/isql.epp, jrd/gds.cpp, lock/lock.cpp,
+	msgs/change_msgs.epp:
+	
+	Put vars and functions inside the same ifdef for which is used
+	(NOT_USED_OR_REPLACED for unused)
+
+2003-03-04 01:00  brodsom
+
+	* firebird2/src/burp/: restore.epp, backup.epp:
+	
+	Put unused vars and functions inside NOT_USED_OR_REPLACED ifdef
+
 2003-03-03 20:14  dimitr
 
 	* firebird2/src/jrd/dyn_def.epp:
