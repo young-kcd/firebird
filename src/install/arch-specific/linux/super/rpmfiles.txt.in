@@ -1,6 +1,6 @@
 @prefix@
 
-@libdir@/libfbclient.so.1.5.0
+@libdir@/libfbclient.so.@FIREBIRD_VERSION@
 @libdir@/libfbclient.so.1
 @libdir@/libfbclient.so
 @libdir@/libib_util.so
