@@ -5,13 +5,14 @@
 :MAIN
 @echo.
 @echo Preprocessing files required to do a boot-build...
-@preprocess.bat BOOT
+@call build_boot.bat BOOT
+@call preprocess.bat BOOT
 @echo.
 @echo Making necessary boot-build executables...
-@build_boot.bat
+@call build_boot.bat
 @echo.
 @echo Preprocessing the entire source tree...
-@preprocess.bat
+@call preprocess.bat
 @goto :EOF
 
 :END
