@@ -303,7 +303,7 @@ void MemoryPool::deletePool(MemoryPool* pool) {
 		temp = next;
 	}
 #ifdef SUPERSERVER
-	pool->lock.~SpinLock();
+	pool->lock.~Spinlock();
 #else
 	pool->lock.~SharedSpinlock();
 #endif
