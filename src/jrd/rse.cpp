@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.56 2004-03-07 09:48:56 dimitr Exp $
+ * $Id: rse.cpp,v 1.57 2004-03-07 11:52:05 alexpeshkoff Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -3357,20 +3357,22 @@ static void pop_rpbs(jrd_req* request, Rsb* rsb)
 		break;
 
 	case rsb_sort:
-		streams.grow(request->req_count);
-		memset(streams.begin(), 0, request->req_count * sizeof(UCHAR));
-		map = (smb*) rsb->rsb_arg[0];
-		end_item = map->smb_rpt + map->smb_count;
-		for (item = map->smb_rpt; item < end_item; item++)
 		{
-			streams[item->smb_stream] = 1;
-		}
-		for (int i = 0; i < request->req_count; i++)
-		{
-			if (streams[i])
+			streams.grow(request->req_count);
+			memset(streams.begin(), 0, request->req_count * sizeof(UCHAR));
+			map = (smb*) rsb->rsb_arg[0];
+			end_item = map->smb_rpt + map->smb_count;
+			for (item = map->smb_rpt; item < end_item; item++)
 			{
-				rpb = request->req_rpb + i;
-				restore_record(rpb);
+				streams[item->smb_stream] = 1;
+			}
+			for (int i = 0; i < request->req_count; i++)
+			{
+				if (streams[i])
+				{
+					rpb = request->req_rpb + i;
+					restore_record(rpb);
+				}
 			}
 		}
 		break;
@@ -3470,20 +3472,22 @@ static void push_rpbs(TDBB tdbb, jrd_req* request, Rsb* rsb)
 		break;
 
 	case rsb_sort:
-		streams.grow(request->req_count);
-		memset(streams.begin(), 0, request->req_count * sizeof(UCHAR));
-		map = (smb*) rsb->rsb_arg[0];
-		end_item = map->smb_rpt + map->smb_count;
-		for (item = map->smb_rpt; item < end_item; item++)
 		{
-			streams[item->smb_stream] = 1;
-		}
-		for (int i = 0; i < request->req_count; i++)
-		{
-			if (streams[i])
+			streams.grow(request->req_count);
+			memset(streams.begin(), 0, request->req_count * sizeof(UCHAR));
+			map = (smb*) rsb->rsb_arg[0];
+			end_item = map->smb_rpt + map->smb_count;
+			for (item = map->smb_rpt; item < end_item; item++)
 			{
-				rpb = request->req_rpb + i;
-				save_record(tdbb, rpb);
+				streams[item->smb_stream] = 1;
+			}
+			for (int i = 0; i < request->req_count; i++)
+			{
+				if (streams[i])
+				{
+					rpb = request->req_rpb + i;
+					save_record(tdbb, rpb);
+				}
 			}
 		}
 		break;
