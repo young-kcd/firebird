@@ -113,11 +113,11 @@ SOURCE=..\..\..\src\intl\cs_narrow.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_unicode.c
+SOURCE=..\..\..\src\intl\cs_unicode_ucs2.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\cs_utffss.c
+SOURCE=..\..\..\src\intl\cs_unicode_fss.c
 # End Source File
 # Begin Source File
 
@@ -165,11 +165,11 @@ SOURCE=..\..\..\src\intl\lc_ksc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_latin1.c
+SOURCE=..\..\..\src\intl\lc_iso8859_1.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_latin2.c
+SOURCE=..\..\..\src\intl\lc_iso8859_2.c
 # End Source File
 # Begin Source File
 
@@ -177,7 +177,7 @@ SOURCE=..\..\..\src\intl\lc_narrow.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\lc_unicode.c
+SOURCE=..\..\..\src\intl\lc_unicode_ucs2.c
 # End Source File
 # Begin Source File
 
@@ -393,11 +393,11 @@ SOURCE=..\..\..\src\intl\charsets\cs_ksc5601.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\charsets\cs_latin1.h
+SOURCE=..\..\..\src\intl\charsets\cs_iso8859_1.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\intl\charsets\cs_latin2.h
+SOURCE=..\..\..\src\intl\charsets\cs_iso8859_2.h
 # End Source File
 # Begin Source File
 
