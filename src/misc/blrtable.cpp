@@ -31,6 +31,7 @@
 #define NODE(type, name, keyword) type,
 enum {
 #include "../jrd/nod.h"
+	nodeMAX
 };
 
 /* NOTE: length == 0 implies the node will not be created

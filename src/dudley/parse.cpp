@@ -71,7 +71,7 @@ typedef enum {
 	obj_type,
 	obj_filter,
 	obj_shadow,
-	obj_generator,
+	obj_generator
 } OBJ_T;
 
 /* this table translates between the two types of types */

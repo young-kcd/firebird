@@ -647,7 +647,7 @@ enum nod_val_pos {
 
 	s_mod_old_ctx = 0,
 	s_mod_new_ctx,
-	s_mod_action,
+	s_mod_action
 };
 
 #endif // DUDLEY_DDL_H

@@ -88,7 +88,7 @@ enum literal_string_type
 	SINGLE_QUOTED_STRING	= 1,
 	DOUBLE_QUOTED_STRING	= 2,
 	NO_MORE_STRING			= 3,
-	INCOMPLETE_STRING		= 4,
+	INCOMPLETE_STRING		= 4
 };
 
 #define	KW_ROLE			"ROLE"
