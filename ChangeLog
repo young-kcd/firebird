@@ -1,3 +1,21 @@
+2004-03-02 21:23  skidder
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	Be slightly more portable
+
+2004-03-02 09:43  eku
+
+	* firebird2/src/common/classes/alloc.cpp:
+	
+	Fixed compilation issues (missing include files, wrong defines).
+
+2004-03-02 09:42  eku
+
+	* firebird2/src/common/fb_exception.cpp:
+	
+	Fixed compilation on systems without snprintf
+
 2004-03-01 18:14  alexpeshkoff
 
 	* firebird2/src/jrd/gds.cpp:
