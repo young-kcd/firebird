@@ -195,9 +195,6 @@
 				RelativePath="..\..\..\src\jrd\llio.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\misc.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\status.cpp">
 			</File>
 		</Filter>

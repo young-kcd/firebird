@@ -330,10 +330,6 @@ SOURCE=..\..\..\gen\jrd\met.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\misc.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\mov.cpp
 # End Source File
 # Begin Source File
@@ -1002,15 +998,7 @@ SOURCE=..\..\..\src\jrd\met_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\misc.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\misc_func_ids.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\misc_proto.h
 # End Source File
 # Begin Source File
 

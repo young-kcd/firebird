@@ -166,10 +166,6 @@ SOURCE=..\..\..\src\jrd\llio.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\misc.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\status.cpp
 # End Source File
 # Begin Source File

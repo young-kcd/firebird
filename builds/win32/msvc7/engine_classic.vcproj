@@ -295,9 +295,6 @@
 				RelativePath="..\..\..\gen\jrd\met.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\misc.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\mov.cpp">
 			</File>
 			<File
@@ -800,13 +797,7 @@
 				RelativePath="..\..\..\src\jrd\met_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\misc.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\misc_func_ids.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\misc_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\mov_proto.h">
