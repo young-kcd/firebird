@@ -1,3 +1,51 @@
+2003-07-16 21:40  brodsom
+
+	* firebird2/doc/README.build.msvc.html:
+	
+	Update
+
+2003-07-16 21:14  brodsom
+
+	* firebird2/builds/win32/make_all.bat:
+	
+	Remove examples stuff from make_all
+
+2003-07-16 21:06  brodsom
+
+	* firebird2/builds/win32/make_examples.bat:
+	
+	Remove commented sed commands
+
+2003-07-16 20:54  brodsom
+
+	* firebird2/examples/build_win32/: clean_all.bat,
+	clean_empbuild.bat, make_all.bat, make_empbuild.bat:
+	
+	Remove make_empbuild from user examples, the datbases are included
+	in the examples.
+
+2003-07-16 20:49  brodsom
+
+	* firebird2/examples/empbuild/: intlbld.e, intldml.sql:
+	
+	Use isql option to set character set from command line, to connect
+	with a command line specified database with non default charset.
+
+2003-07-16 20:48  brodsom
+
+	* firebird2/src/isql/: isql.epp, isql.h:
+	
+	Add an option to isql to set character set from command line,
+	needed to connect with a command line specified database with non
+	default charset.
+
+2003-07-16 20:45  brodsom
+
+	* firebird2/builds/win32/: msvc6/Firebird2.dsw, msvc6/empbuild.dsp,
+	msvc6/intlbld.dsp, make_all.bat, make_boot.bat, make_examples.bat:
+	
+	Adding the make_examples to build employee.fdb and intlemp.fdb
+
 2003-07-15 21:40  skidder
 
 	* firebird2/doc/fb2-todo.txt:
