@@ -95,35 +95,33 @@ static const char* GUARD_FILE	= "isc_guard1.%s";
 #ifdef UNIX
 static const char* WORKFILE		= "/tmp/";
 static const char* MSG_FILE		= "firebird.msg";
-static const char* MSG_FILE_LANG= "intl/%.10s.msg";
+static const char MSG_FILE_LANG[]= "intl/%.10s.msg";
 const int LOCALE_MAX	= 10;
 static const char* LOGFILE		= "firebird.log";
 #define TEMP_PATTERN	"_XXXXXX"
 #elif defined(WIN_NT)
 static const char* WORKFILE		= "c:\\temp\\";
 static const char* MSG_FILE		= "firebird.msg";
-static const char* MSG_FILE_LANG= "intl/%.8s.msg";
+static const char MSG_FILE_LANG[]= "intl/%.8s.msg";
 const int LOCALE_MAX	= 6;
 static const char* LOGFILE		= "firebird.log";
 #define TEMP_PATTERN	"XXXXXX"
 #elif defined(VMS)
 static const char* WORKFILE		= "SYS$SCRATCH:";
 static const char* MSG_FILE		= "[sysmsg]firebird_msg.dat";
-static const char* MSG_FILE_LANG= "[sysmsg]firebird_%.10s.dat";
+static const char MSG_FILE_LANG[]= "[sysmsg]firebird_%.10s.dat";
 const int LOCALE_MAX	= 10;
 static const char* LOGFILE		= "[syserr]firebird.log";
 #define TEMP_PATTERN	"_XXXXXX"
 
-static const char* ISC_LOGICAL	= "interbase:";
-static const char* ISC_LOGICAL_LOCK	= "interbase_lock:";
+static const char ISC_LOGICAL[]	= "interbase:";
+static const char ISC_LOGICAL_LOCK[]	= "interbase_lock:";
 
 struct isc_vms_prefix
 {
-	TEXT*	isc_prefix;
-	TEXT*	vms_prefix;
+	const TEXT*	isc_prefix;
+	const TEXT*	vms_prefix;
 };
-
-typedef struct isc_vms_prefix *ISC_VMS_PREFIX;
 
 static struct isc_vms_prefix trans_prefix[] =
 {
@@ -139,7 +137,7 @@ static struct isc_vms_prefix trans_prefix[] =
 #else
 static const char* WORKFILE		= "/tmp/";
 static const char* MSG_FILE		= "firebird.msg";
-static const char* MSG_FILE_LANG= "intl/%.10s.msg";
+static const char MSG_FILE_LANG[]= "intl/%.10s.msg";
 const int LOCALE_MAX	= 10;
 static const char* LOGFILE		= "firebird.log";
 #define TEMP_PATTERN	"_XXXXXX"
