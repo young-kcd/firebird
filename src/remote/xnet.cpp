@@ -2265,7 +2265,7 @@ static bool_t xnet_fork(ULONG client_pid, USHORT flag, ULONG* forken_pid)
 							  NULL,
 							  TRUE,
 							  (flag & SRVR_high_priority ? HIGH_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS)
-								|DETACHED_PROCESS | CREATE_SUSPENDED | STARTF_FORCEOFFFEEDBACK,
+								| DETACHED_PROCESS | CREATE_SUSPENDED | STARTF_FORCEOFFFEEDBACK,
 							  NULL, NULL, &start_crud, &pi);
 
 	// Child process ID (forken_pid) used as map number

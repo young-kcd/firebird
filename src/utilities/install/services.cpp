@@ -59,10 +59,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
  *	Install a service in the service control panel.
  *
  **************************************/
-	SC_HANDLE service;
 	TEXT path_name[MAXPATHLEN];
-	DWORD errnum;
-	DWORD dwServiceType;
 
 	// No check made on directory length?
 	strcpy(path_name, directory);
@@ -77,7 +74,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	strcat(path_name, ".exe");
 	strcat(path_name, RUNAS_SERVICE);
 
-	dwServiceType = SERVICE_WIN32_OWN_PROCESS;
+	const DWORD dwServiceType = SERVICE_WIN32_OWN_PROCESS;
 	if (nt_user_name != 0)
 	{
 		if (nt_user_password == 0)
@@ -87,7 +84,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	//else
 	//	dwServiceType |= SERVICE_INTERACTIVE_PROCESS;
 
-	service = CreateService(manager,
+	SC_HANDLE service = CreateService(manager,
 							service_name,
 							display_name,
 							SERVICE_ALL_ACCESS,
@@ -100,7 +97,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 
 	if (service == NULL)
 	{
-		errnum = GetLastError();
+		DWORD errnum = GetLastError();
 		if (errnum == ERROR_DUP_NAME || errnum == ERROR_SERVICE_EXISTS)
 			return IB_SERVICE_ALREADY_DEFINED;
 		else
@@ -183,13 +180,12 @@ USHORT SERVICES_start(SC_HANDLE manager,
  *
  **************************************/
 	SERVICE_STATUS service_status;
-	const TEXT* mode;
-	DWORD errnum;
 
 	SC_HANDLE service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
+	const TEXT* mode;
 	switch (sw_mode)
 	{
 		case DEFAULT_PRIORITY:
@@ -205,7 +201,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
 
 	if (!StartService(service, (mode) ? 1 : 0, &mode))
 	{
-		errnum = GetLastError();
+		DWORD errnum = GetLastError();
 		CloseServiceHandle(service);
 		if (errnum == ERROR_SERVICE_ALREADY_RUNNING)
 			return FB_SUCCESS;
@@ -246,17 +242,15 @@ USHORT SERVICES_stop(SC_HANDLE manager,
  *	Start a running service.
  *
  **************************************/
-	SC_HANDLE service;
 	SERVICE_STATUS service_status;
-	DWORD errnum;
 
-	service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
+	SC_HANDLE service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
 	if (!ControlService(service, SERVICE_CONTROL_STOP, &service_status))
 	{
-		errnum = GetLastError();
+		DWORD errnum = GetLastError();
 		CloseServiceHandle(service);
 		if (errnum == ERROR_SERVICE_NOT_ACTIVE)
 			return FB_SUCCESS;
@@ -357,39 +351,29 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 
 	LSA_OBJECT_ATTRIBUTES ObjectAttributes;
 	LSA_HANDLE PolicyHandle;
-	PSID pSid;
-	DWORD cbSid;
-	TEXT *pDomain;
-	DWORD cchDomain;
-	SID_NAME_USE peUse;
-	LSA_UNICODE_STRING PrivilegeString;
-	PLSA_UNICODE_STRING UserRights;
-	ULONG CountOfRights = 0;
-	ULONG i;
 
-	NTSTATUS lsaErr;
-	
 	// Open the policy on the local machine.
 	ZeroMemory(&ObjectAttributes, sizeof(ObjectAttributes));
-	if ((lsaErr = LsaOpenPolicy(NULL, &ObjectAttributes,
-		POLICY_CREATE_ACCOUNT | POLICY_LOOKUP_NAMES, &PolicyHandle))
-			!= (NTSTATUS)0)
-	{
+	NTSTATUS lsaErr = LsaOpenPolicy(NULL, &ObjectAttributes,
+		POLICY_CREATE_ACCOUNT | POLICY_LOOKUP_NAMES, &PolicyHandle);
+	if (lsaErr != (NTSTATUS) 0)
 		return (*err_handler)(LsaNtStatusToWinError(lsaErr), "LsaOpenPolicy", NULL);
-	}
 
 	// Obtain the SID of the user/group.
 	// First, dummy call to LookupAccountName to get the required buffer sizes.
+	DWORD cbSid;
+	DWORD cchDomain;
 	cbSid = cchDomain = 0;
+	SID_NAME_USE peUse;
 	LookupAccountName(NULL, account, NULL, &cbSid, NULL, &cchDomain, &peUse);
-	pSid = (PSID)LocalAlloc(LMEM_ZEROINIT, cbSid);
+	PSID pSid = (PSID)LocalAlloc(LMEM_ZEROINIT, cbSid);
 	if (pSid == 0)
 	{	
 		DWORD err = GetLastError();
 		LsaClose(PolicyHandle);
 		return (*err_handler)(err, "LocalAlloc(Sid)", NULL);
 	}
-	pDomain = (LPTSTR)LocalAlloc(LMEM_ZEROINIT, cchDomain);
+	TEXT* pDomain = (LPTSTR)LocalAlloc(LMEM_ZEROINIT, cchDomain);
 	if (pDomain == 0)
 	{
 		DWORD err = GetLastError();
@@ -408,14 +392,18 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 		return (*err_handler)(err, "LookupAccountName", NULL);
 	}
 	
+	PLSA_UNICODE_STRING UserRights;
+	ULONG CountOfRights = 0;
 	LsaEnumerateAccountRights(PolicyHandle, pSid, &UserRights, &CountOfRights);
 	// Check if the seServiceLogonRight is already granted
+	ULONG i;
 	for (i = 0; i < CountOfRights; i++)
 	{
 		if (wcscmp(UserRights[i].Buffer, L"SeServiceLogonRight") == 0)
 			break;
 	}
 	LsaFreeMemory(UserRights); // Don't leak
+	LSA_UNICODE_STRING PrivilegeString;
 	if (CountOfRights == 0 || i == CountOfRights)
 	{
 		// Grant the SeServiceLogonRight to users represented by pSid.
@@ -472,9 +460,7 @@ USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
  *********************************************************/
 
 	PACL pOldDACL = NULL;
-	PACL pNewDACL = NULL;
 	PSECURITY_DESCRIPTOR pSD = NULL;
-	EXPLICIT_ACCESS ea;
 
 	// Get Security Information on the service. Will of course fail if we're
 	// not allowed to do this. Administrators should be allowed, by default.
@@ -489,8 +475,9 @@ USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
 	}
 
 	// Initialize an EXPLICIT_ACCESS structure.
+	EXPLICIT_ACCESS ea;
 	ZeroMemory(&ea, sizeof(ea));
-	ea.grfAccessPermissions = GENERIC_READ|GENERIC_EXECUTE;
+	ea.grfAccessPermissions = GENERIC_READ | GENERIC_EXECUTE;
 	ea.grfAccessMode = SET_ACCESS;
 	ea.grfInheritance = NO_INHERITANCE;
 	ea.Trustee.MultipleTrusteeOperation = NO_MULTIPLE_TRUSTEE;
@@ -499,6 +486,7 @@ USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
 	ea.Trustee.ptstrName = account;
 
 	// Create a new DACL, adding this right to whatever exists.
+	PACL pNewDACL = NULL;
 	if (SetEntriesInAcl(1, &ea, pOldDACL, &pNewDACL) != ERROR_SUCCESS)
 	{
 		DWORD err = GetLastError();

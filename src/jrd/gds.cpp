@@ -2438,7 +2438,7 @@ void* API_ROUTINE gds__temp_file(
 		result = (void*)_sopen(file_name, _O_CREAT | _O_TRUNC | _O_RDWR | 
 			_O_BINARY | _O_SHORT_LIVED | _O_NOINHERIT | _O_EXCL |
 			(expanded_string && !unlink_flag ? 0 : _O_TEMPORARY),
-			_SH_DENYRW, _S_IREAD|_S_IWRITE);
+			_SH_DENYRW, _S_IREAD | _S_IWRITE);
 		if ((int)result != -1 || (errno != EACCES && errno != EEXIST))
 			break;
 		randomness++;
@@ -2463,7 +2463,7 @@ void* API_ROUTINE gds__temp_file(
 		return (void *)-1;
 
 	do {
-		result = (void *)open(file_name, O_RDWR | O_EXCL| O_CREAT);
+		result = (void *)open(file_name, O_RDWR | O_EXCL | O_CREAT);
 	} while (result == (void *)-1 && errno == EINTR);
 #endif
 	if (result == (void *)-1)

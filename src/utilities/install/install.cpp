@@ -660,7 +660,7 @@ USHORT IncrementSharedCount(const TEXT* filename,
 
 	HKEY hkey;
 	LONG status = RegCreateKeyEx(HKEY_LOCAL_MACHINE, SHARED_KEY,
-		0, "", REG_OPTION_NON_VOLATILE, KEY_READ|KEY_WRITE, 0, &hkey, 0);
+		0, "", REG_OPTION_NON_VOLATILE, KEY_READ | KEY_WRITE, 0, &hkey, 0);
 	if (status != ERROR_SUCCESS)
 		return (*err_handler) (status, "RegCreateKeyEx");
 
@@ -710,7 +710,7 @@ USHORT DecrementSharedCount(const TEXT* filename, bool sw_force,
 	HKEY hkey;
 	DWORD disp;
 	LONG status = RegCreateKeyEx(HKEY_LOCAL_MACHINE, SHARED_KEY,
-		0, "", REG_OPTION_NON_VOLATILE, KEY_READ|KEY_WRITE, NULL, &hkey, &disp);
+		0, "", REG_OPTION_NON_VOLATILE, KEY_READ | KEY_WRITE, NULL, &hkey, &disp);
 	if (status != ERROR_SUCCESS)
 		return (*err_handler) (status, "RegCreateKeyEx");
 

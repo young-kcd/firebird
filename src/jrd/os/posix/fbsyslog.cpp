@@ -24,7 +24,8 @@
 #include <syslog.h>
 
 namespace Firebird {
-void Syslog::Record(Severity level, string Msg) {
+void Syslog::Record(Severity level, string Msg)
+{
 	int priority = LOG_ERR;
 	switch (level) {
 	case Warning:
@@ -35,6 +36,7 @@ void Syslog::Record(Severity level, string Msg) {
 		priority = LOG_ERR;
 		break;
 	}
-	syslog(priority|LOG_LOCAL3, "%s (%m)", Msg.c_str());
+	syslog(priority | LOG_LOCAL3, "%s (%m)", Msg.c_str());
 }
 } // namespace Firebird
+
