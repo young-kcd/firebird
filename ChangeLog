@@ -1,3 +1,56 @@
+2003-02-24 21:54  hippoman
+
+	* firebird2/src/jrd/shrinit.cpp:
+	
+	* Changed datatype of DSQL_debug to match the DSQL definition..
+
+2003-02-24 16:37  dimitr
+
+	* firebird2/src/jrd/met.epp:
+	
+	Fixed error in the previous commit.
+
+2003-02-24 16:19  dimitr
+
+	* firebird2/src/jrd/met.epp:
+	
+	Fixed one more problem with the metadata cache.
+
+2003-02-24 14:53  dimitr
+
+	* firebird2/src/jrd/vio.cpp:
+	
+	1) Some cleanup.  2) Problem with the GC thread during detaching
+	seems to be fixed.
+
+2003-02-24 14:16  dimitr
+
+	* firebird2/src/jrd/os/win32/config_root.cpp:
+	
+	Fixed problem with lack of trailing backslash in the registry key.
+
+2003-02-24 10:52  eku
+
+	* firebird2/builds/posix/: Makefile.in.firebird, Makefile.in.jrd:
+	
+	Since PYXIS support has gone some time ago, remove it from the
+	Makefiles as well.
+
+2003-02-24 10:37  dimitr
+
+	* firebird2/src/dsql/: parse.cpp, parse.y:
+	
+	Cleanup.
+
+2003-02-24 00:40  arnobrinkman
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	sub-selects inside a set-clause from an UPDATE didn't use an index
+	when there was one.  From now indices are used whenever possible
+	with sub-selects inside the set-clause.  Pointed by Nickolay
+	Samofatov.
+
 2003-02-23 11:23  dimitr
 
 	* firebird2/src/jrd/opt.cpp:
