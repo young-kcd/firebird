@@ -178,9 +178,6 @@
 				RelativePath="..\..\..\src\gpre\msc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\noform.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\gpre\par.cpp">
 			</File>
 			<File
@@ -247,15 +244,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\exp_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\gpre\form.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\gpre\form__proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\gpre\form_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\gpre.h">

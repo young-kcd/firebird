@@ -51,10 +51,5 @@ BLKDEF (type_map, map, 0)
 BLKDEF (type_qpr, qpr, 0)
 BLKDEF (type_qfn, qfn, 0)
 BLKDEF (type_qfl, qfl, 0)
-#ifdef PYXIS
-BLKDEF (type_frm, frm, 1)
-BLKDEF (type_ffl, ffl, 1)
-BLKDEF (type_men, men, 1)
-#endif
 BLKDEF (type_fun, fun, sizeof (((FUN) NULL)->fun_arg[0]))
 BLKDEF (type_rlb, rlb, 0)				/* Request language block */

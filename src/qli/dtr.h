@@ -67,16 +67,13 @@ typedef struct vcl {
     ULONG	vcl_count;
     SLONG	vcl_long[1];
 } *VCL;
-
+
 /* Database block */
 
 typedef struct dbb {
     struct blk	dbb_header;
     struct dbb	*dbb_next;		/* Next database in system */
     struct qli_rel	*dbb_relations;		/* Linked list of relations */
-#ifdef PYXIS
-    struct frm	*dbb_forms;		/* Known forms in database */
-#endif
     struct fun	*dbb_functions;		/* Known functions in database */
     FRBRD	*dbb_handle;		/* database handle */
     FRBRD	*dbb_transaction;	/* transaction handle */
@@ -107,9 +104,6 @@ typedef struct dbb {
 #define DBB_procedures	1		/* Procedures relation found */
 #define DBB_active	2		/* Database is active in request */
 #define DBB_updates	8		/* Updates in current transaction */
-#ifdef PYXIS
-#define DBB_form_init	16		/* Forms are initialize for database */
-#endif
 #define DBB_prepared	32		/* User transaction has been prepared */
 
 /* Bits in dbb_capabilities */
@@ -326,17 +320,12 @@ typedef enum nod_t {
     nod_report_loop,
     nod_repeat,
     nod_if,
-#ifdef PYXIS
-    nod_form_for,
-    nod_form_update,
-#endif
     nod_output,
     nod_declare,
     nod_variable,
     nod_abort,
     nod_label,
     nod_leave,
-    nod_menu,
     nod_sync,
     nod_commit_retaining,
 
@@ -345,7 +334,6 @@ typedef enum nod_t {
     nod_rse,
     nod_union,
     nod_aggregate,
-    nod_form,
 
     nod_print_item,
     nod_star,			/* Bunch of items */
@@ -377,9 +365,6 @@ typedef enum nod_t {
 
     nod_reference,
     nod_field,
-#ifdef PYXIS
-    nod_form_field,
-#endif
     nod_prompt,
     nod_prompt2,
     nod_edit_blob,
@@ -494,9 +479,6 @@ EXTERN CON	QLI_matching_language;
 
 EXTERN USHORT	QLI_eof, QLI_blr, QLI_skip_line, QLI_statistics, QLI_semi;
 EXTERN USHORT	QLI_abort, QLI_echo, QLI_trace;
-#ifdef PYXIS
-EXTERN USHORT	QLI_form, QLI_form_mode;
-#endif
 EXTERN USHORT	QLI_count;
 #ifdef DEV_BUILD
 EXTERN USHORT	QLI_explain;

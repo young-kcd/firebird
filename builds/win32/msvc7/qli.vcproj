@@ -168,9 +168,6 @@
 				RelativePath="..\..\..\src\qli\mov.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\qli\noform.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\qli\parse.cpp">
 			</File>
 			<File
@@ -286,12 +283,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\qli\expan_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\qli\form.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\qli\form_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\qli\forma_proto.h">

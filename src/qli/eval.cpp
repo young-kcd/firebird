@@ -31,7 +31,6 @@
 #include "../qli/err_proto.h"
 #include "../qli/eval_proto.h"
 #include "../qli/exe_proto.h"
-#include "../qli/form_proto.h"
 #include "../qli/lex_proto.h"
 #include "../qli/mov_proto.h"
 #include "../qli/picst_proto.h"
@@ -42,9 +41,6 @@ typedef vary VARY;
 
 
 extern USHORT QLI_prompt_count, QLI_reprompt;
-#ifdef PYXIS
-extern USHORT sw_forms;
-#endif
 static SLONG execute_any(QLI_NOD);
 static DSC *execute_concatenate(QLI_NOD, DSC *, DSC *);
 static DSC *execute_edit(QLI_NOD);
@@ -537,10 +533,6 @@ DSC *EVAL_value(QLI_NOD node)
 				 desc->dsc_length);
 		desc->dsc_length = p - desc->dsc_address;
 		return desc;
-#ifdef PYXIS
-	case nod_form_field:
-		return FORM_get_field(node);
-#endif
 	case nod_user_name:
 		IBERROR(31);			// Msg31 user name is supported only in RSEs temporarily 
 
@@ -722,10 +714,7 @@ static DSC *execute_prompt( QLI_NOD node)
 	USHORT reprompt;
 	VARY *data;
 	int length, l;
-#ifdef PYXIS
-	if (sw_forms)
-		FORM_reset();
-#endif
+
 	ERRQ_pending();
 	reprompt = QLI_reprompt;
 	desc = &node->nod_desc;

@@ -40,12 +40,6 @@ define field MAX_NUMBER short;
 define field MODULE varying [32];
 define field NUMBER short;
 define field OLD_SEQUENCE short;
-define field PYXIS$FORM blob segment_length 80
-	system_flag 3;
-define field PYXIS$FORM_NAME char [31]
-	system_flag 3;
-define field PYXIS$FORM_TYPE char [16]
-	system_flag 3;
 define field QLI$PROCEDURE blob segment_length 80 sub_type text
 	system_flag 2;
 define field QLI$PROCEDURE_NAME char [31]
@@ -107,15 +101,6 @@ define relation MESSAGES
     SYMBOL,
     TRANS_NOTES,
     CODE computed by (fac_code * 10000 + number)	position 0;
-
-define relation PYXIS$FORMS
-	system_flag 3
-    PYXIS$FORM_NAME	position 1
-	system_flag 3,
-    PYXIS$FORM_TYPE	position 2
-	system_flag 3,
-    PYXIS$FORM	position 3
-	system_flag 3;
 
 define relation QLI$PROCEDURES
 	system_flag 2
@@ -194,10 +179,6 @@ define index UNIQUE_LOCALES for LOCALES unique
 define index MSG_1 for MESSAGES unique
 	FAC_CODE,
 	NUMBER;
-
-define index PYXIS$INDEX for PYXIS$FORMS unique
-inactive
-	PYXIS$FORM_NAME;
 
 define index SYM1 for SYMBOLS 
 	CLASS,

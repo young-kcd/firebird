@@ -72,9 +72,6 @@ typedef enum {
     CTX_RELATION,
     CTX_VARIABLE,
     CTX_AGGREGATE,
-#ifdef PYXIS
-    CTX_FORM,
-#endif
     CTX_UNION,
     CTX_STREAM
 } CTX_T;

@@ -43,7 +43,6 @@
 #include "../qli/compi_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/exe_proto.h"
-#include "../qli/form_proto.h"
 #include "../qli/expan_proto.h"
 #include "../qli/gener_proto.h"
 #include "../qli/help_proto.h"
@@ -75,9 +74,6 @@ TEXT *QLI_error;
 bool sw_verify;
 bool sw_trace;
 USHORT sw_buffers;
-#ifdef PYXIS
-USHORT sw_forms;
-#endif
 USHORT QLI_lines = 60, QLI_prompt_count, QLI_reprompt, QLI_name_columns = 0;
 
 /* Let's define the default number of columns on a machine by machine basis */
@@ -311,15 +307,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 		temp = QLI_default_pool = ALLQ_pool();
 		flush_flag = process_statement(flush_flag);
 		ERRQ_pending();
-#ifdef PYXIS
-		if (sw_forms)
-			FORM_reset();
-#endif
 		ALLQ_rlpool(temp);
 	}
-#ifdef PYXIS
-	FORM_fini();
-#endif
 	HELP_fini();
 	MET_shutdown();
 	LEX_fini();

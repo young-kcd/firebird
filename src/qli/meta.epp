@@ -33,7 +33,6 @@
 #include "../qli/reqs.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
-#include "../qli/form_proto.h"
 #include "../qli/gener_proto.h"
 #include "../qli/hsh_proto.h"
 #include "../qli/meta_proto.h"
@@ -934,12 +933,6 @@ void MET_finish( DBB dbb)
 		ALL_release((FRB) function);
 	}
 
-// Get rid of any forms 
-#ifdef PYXIS
-	if (dbb->dbb_forms) {
-		FORM_finish(dbb);
-	}
-#endif
 /* Finally, actually close down database connection. */
 
 	detach(status_vector, dbb);

@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.19 2003-09-10 11:48:08 robocop Exp $
+$Id: gener.cpp,v 1.20 2003-09-11 02:15:09 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -930,9 +930,6 @@ static void gen_expression( QLI_NOD node, QLI_REQ request)
 
 	case nod_prompt:
 	case nod_variable:
-#ifdef PYXIS
-	case nod_form_field:
-#endif
 		if (node->nod_export)
 			gen_parameter(node->nod_export, request);
 		return;
@@ -1760,16 +1757,6 @@ static void gen_statement( QLI_NOD node, QLI_REQ request)
 	case nod_if:
 		gen_if(node, request);
 		return;
-#ifdef PYXIS
-	case nod_form_for:
-		gen_statement(node->nod_arg[e_ffr_statement], request);
-		return;
-
-	case nod_form_update:
-		if (node->nod_arg[e_fup_tag])
-			gen_expression(node->nod_arg[e_fup_tag], 0);
-		return;
-#endif
 
 	default:
 		BUGCHECK(354);			/* Msg354 gen_statement: not yet implemented */

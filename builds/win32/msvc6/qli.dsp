@@ -181,10 +181,6 @@ SOURCE=..\..\..\src\qli\mov.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\qli\noform.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\qli\parse.cpp
 # End Source File
 # Begin Source File
@@ -290,14 +286,6 @@ SOURCE=..\..\..\src\qli\exe_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\qli\expan_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\qli\form.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\qli\form_proto.h
 # End Source File
 # Begin Source File
 

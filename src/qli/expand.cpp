@@ -28,13 +28,11 @@
 #include "../qli/compile.h"
 #include "../qli/exe.h"
 #include "../qli/report.h"
-#include "../qli/form.h"
 #include "../qli/all_proto.h"
 #include "../qli/comma_proto.h"
 #include "../qli/compi_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/expan_proto.h"
-#include "../qli/form_proto.h"
 #include "../qli/help_proto.h"
 #include "../qli/meta_proto.h"
 #include "../qli/show_proto.h"
@@ -59,22 +57,11 @@ static QLI_NOD expand_erase(SYN, LLS, LLS);
 static QLI_NOD expand_expression(SYN, LLS);
 static QLI_NOD expand_field(SYN, LLS, SYN);
 static QLI_NOD expand_for(SYN, LLS, LLS);
-#ifdef PYXIS
-static FRM expand_form(SYN, QLI_REL);
-static QLI_NOD expand_form_for(SYN, LLS, LLS);
-static QLI_NOD expand_form_update(SYN, LLS, LLS);
-#endif
 static QLI_NOD expand_function(SYN, LLS);
 static QLI_NOD expand_group_by(SYN, LLS, QLI_CTX);
-#ifdef PYXIS
-static QLI_NOD expand_menu(SYN, LLS, LLS);
-#endif
 static QLI_NOD expand_modify(SYN, LLS, LLS);
 static QLI_NOD expand_output(SYN, LLS, PRT *);
 static QLI_NOD expand_print(SYN, LLS, LLS);
-#ifdef PYXIS
-static QLI_NOD expand_print_form(SYN, LLS, LLS);
-#endif
 static ITM expand_print_item(SYN, LLS);
 static QLI_NOD expand_print_list(SYN, LLS);
 static QLI_NOD expand_report(SYN, LLS, LLS);
@@ -92,10 +79,6 @@ static bool invalid_nod_field(QLI_NOD, QLI_NOD);
 static bool invalid_syn_field(SYN, SYN);
 static QLI_NOD make_and(QLI_NOD, QLI_NOD);
 static QLI_NOD make_assignment(QLI_NOD, QLI_NOD, LLS);
-#ifdef PYXIS
-static QLI_NOD make_form_body(LLS, LLS, SYN);
-static QLI_NOD make_form_field(FRM, FFL);
-#endif
 static QLI_NOD make_field(QLI_FLD, QLI_CTX);
 static QLI_NOD make_list(LLS);
 static QLI_NOD make_node(NOD_T, USHORT);
@@ -103,9 +86,6 @@ static QLI_NOD negate(QLI_NOD);
 static QLI_NOD possible_literal(SYN, LLS, bool);
 static QLI_NOD post_map(QLI_NOD, QLI_CTX);
 static QLI_FLD resolve(SYN, LLS, QLI_CTX *);
-#ifdef PYXIS
-static QLI_FLD resolve_name(SYM, LLS, QLI_CTX *);
-#endif
 static void resolve_really(QLI_FLD, SYN);
 
 static LLS output_stack;
@@ -124,9 +104,6 @@ QLI_NOD EXP_expand( SYN node)
  *
  **************************************/
 	QLI_NOD expanded, output;
-#ifdef PYXIS
-	NAM name;
-#endif
 	QLI_CTX context;
 	LLS right, left;
 
@@ -189,12 +166,6 @@ QLI_NOD EXP_expand( SYN node)
 	case nod_edit_proc:
 		CMD_edit_proc(node);
 		return NULL;
-#ifdef PYXIS
-	case nod_edit_form:
-		name = (NAM) node->syn_arg[1];
-		FORM_edit((DBB)node->syn_arg[0], name->nam_string);
-		return NULL;
-#endif
 	case nod_extract:
 		node->syn_arg[1] = (SYN) expand_output(node->syn_arg[1], 0, 0);
 		CMD_extract(node);
@@ -1059,11 +1030,8 @@ static QLI_NOD expand_field( SYN input, LLS stack, SYN subs)
 	LLS save_stack;
 
 	if (!(field = resolve(input, stack, &context)) ||
-		(subs && (
-#ifdef PYXIS
-		context->ctx_type == CTX_FORM || 
-#endif
-		context->ctx_variable))) {
+		(subs && (context->ctx_variable)))
+	{
 		p = s;
 		for (i = 0; i < input->syn_count; i++) {
 			name = (NAM) input->syn_arg[i];
@@ -1080,10 +1048,6 @@ static QLI_NOD expand_field( SYN input, LLS stack, SYN subs)
 		else
 			ERRQ_print_error(142, s, NULL, NULL, NULL, NULL);	/* Msg142 "%s" is undefined or used out of context */
 	}
-#ifdef PYXIS
-	if (context->ctx_type == CTX_FORM)
-		return make_form_field(context->ctx_form, (FFL) field);
-#endif
 	node = make_field(field, context);
 	if (subs)
 		node->nod_arg[e_fld_subs] = expand_expression(subs, stack);
@@ -1145,176 +1109,6 @@ static QLI_NOD expand_for( SYN input, LLS right, LLS left)
 	return node;
 }
 
-
-#ifdef PYXIS
-static FRM expand_form( SYN input, QLI_REL relation)
-{
-/**************************************
- *
- *	e x p a n d _ f o r m
- *
- **************************************
- *
- * Functional description
- *	Lookup form name.  If there isn't a form name and a relation
- *	has been given, use the relation name.
- *
- **************************************/
-	DBB database;
-	NAM name;
-	FRM form;
-	TEXT *string;
-
-// Figure out form name 
-
-	if (input && (name = (NAM) input->syn_arg[s_frm_form]))
-		string = name->nam_string;
-	else if (relation)
-		string = relation->rel_symbol->sym_string;
-	else
-		IBERROR(143);			// Msg143 no default form name 
-
-// Now figure out which database to look in 
-
-	database = NULL;
-
-	if (input)
-		database = (DBB) input->syn_arg[s_frm_database];
-
-	if (!database && relation)
-		database = relation->rel_database;
-
-// Look for form either in explicit or any database 
-
-	if (database) {
-		if (form = FORM_lookup_form(database, string))
-			return form;
-	}
-	else {
-		for (database = QLI_databases; database;
-			 database = database->dbb_next) if (form =
-												FORM_lookup_form(database,
-																 string))
-					return form;
-		ERRQ_print_error(144, string, NULL, NULL, NULL, NULL);	// Msg144 No database for form 
-	}
-
-/* Form doesn't exist, try to make up a default */
-
-	if (relation &&
-		!(input && input->syn_arg[s_frm_form]) &&
-		(form = FORM_default_form(database, string)))
-		return form;
-
-	ERRQ_print_error(145, string, database->dbb_filename, NULL, NULL, NULL);	// Msg145 form is not defined in database 
-	return NULL;
-}
-#endif
-#ifdef PYXIS
-static QLI_NOD expand_form_for( SYN input, LLS right, LLS left)
-{
-/**************************************
- *
- *	e x p a n d _ f o r m _ f o r
- *
- **************************************
- *
- * Functional description
- *	Expand a form invocation.  This involve augmenting both the
- *	right and left context stacks.
- *
- **************************************/
-	SYN form_name;
-	SYM symbol;
-	QLI_CTX context, secondary;
-	FRM form;
-	QLI_NOD node;
-	NAM ctx_name;
-
-	form_name = input->syn_arg[s_ffr_form];
-	context = (QLI_CTX) ALLOCD(type_ctx);
-	context->ctx_type = CTX_FORM;
-	context->ctx_form = form = expand_form(form_name, 0);
-	LLS_PUSH(context, &left);
-
-	if (ctx_name = (NAM) form_name->syn_arg[s_frm_context]) {
-		context->ctx_symbol = symbol = (SYM) ALLOCDV(type_sym, 0);
-		symbol->sym_string = ctx_name->nam_string;
-		symbol->sym_length = ctx_name->nam_length;
-		symbol->sym_type = SYM_form;
-	}
-
-	secondary = (QLI_CTX) ALLOCD(type_ctx);
-	secondary->ctx_type = CTX_FORM;
-	secondary->ctx_primary = context;
-	LLS_PUSH(secondary, &right);
-
-	node = MAKE_NODE(input->syn_type, e_ffr_count);
-	node->nod_arg[e_ffr_form] = (QLI_NOD) form;
-	node->nod_arg[e_ffr_statement] =
-		expand_statement(input->syn_arg[s_ffr_statement], right, left);
-
-	return node;
-}
-#endif
-#ifdef PYXIS
-static QLI_NOD expand_form_update( SYN input, LLS right, LLS left)
-{
-/**************************************
- *
- *	e x p a n d _ f o r m _ u p d a t e
- *
- **************************************
- *
- * Functional description
- *	Expand a "form update" statement.
- *
- **************************************/
-	FRM form;
-	FFL field;
-	LLS stack;
-	QLI_CTX context;
-	NAM name;
-	SYN list, *ptr, *end;
-	QLI_NOD node;
-
-/* Find form context.  If there isn't one, punt */
-
-	for (stack = left; stack; stack = stack->lls_next) {
-		context = (QLI_CTX) stack->lls_object;
-		if (context->ctx_type == CTX_FORM)
-			break;
-	}
-
-	if (!stack)
-		IBERROR(146);			// Msg146 no context for form ACCEPT statement 
-
-	form = context->ctx_form;
-	stack = NULL;
-
-	if (list = input->syn_arg[0])
-		for (ptr = list->syn_arg, end = ptr + list->syn_count; ptr < end;
-			 ptr++) {
-			name = (NAM) * ptr;
-			if (!(field = FORM_lookup_field(form, name->nam_string)))
-				ERRQ_print_error(147, name->nam_string, form->frm_name, NULL,
-								 NULL, NULL);	// Msg147 field is not defined in form 
-			LLS_PUSH(field, &stack);
-		}
-
-	node = MAKE_NODE(input->syn_type, e_fup_count);
-	node->nod_arg[e_fup_form] = (QLI_NOD) form;
-
-	if (stack)
-		node->nod_arg[e_fup_fields] = make_list(stack);
-
-	if (input->syn_arg[1])
-		node->nod_arg[e_fup_tag] =
-			expand_expression(input->syn_arg[1], right);
-
-	return node;
-}
-#endif
 
 static QLI_NOD expand_function( SYN input, LLS stack)
 {
@@ -1411,32 +1205,6 @@ static QLI_NOD expand_group_by( SYN input, LLS stack, QLI_CTX context)
 }
 
 
-static QLI_NOD expand_menu( SYN input, LLS right, LLS left)
-{
-/**************************************
- *
- *	e x p a n d _ m e n u
- *
- **************************************
- *
- * Functional description
- *	Expand menu statement.
- *
- **************************************/
-	QLI_NOD node;
-
-	node = MAKE_NODE(input->syn_type, e_men_count);
-	node->nod_arg[e_men_string] =
-		expand_expression(input->syn_arg[s_men_string], 0);
-	node->nod_arg[e_men_labels] =
-		expand_expression(input->syn_arg[s_men_labels], 0);
-	node->nod_arg[e_men_statements] =
-		expand_statement(input->syn_arg[s_men_statements], left, right);
-
-	return node;
-}
-
-
 static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 {
 /**************************************
@@ -1450,9 +1218,6 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
  *
  **************************************/
 	QLI_NOD node, loop, list, *ptr;
-#ifdef PYXIS
-	SYN value;
-#endif
 	SYN syn_list, *syn_ptr;
 	LLS contexts;
 	QLI_CTX new_context, context;
@@ -1511,11 +1276,6 @@ static QLI_NOD expand_modify( SYN input, LLS right, LLS left)
 	if (input->syn_arg[s_mod_statement])
 		node->nod_arg[e_mod_statement] =
 			expand_statement(input->syn_arg[s_mod_statement], right, left);
-#ifdef PYXIS
-	else if ((value = input->syn_arg[s_mod_form]) ||
-			 (QLI_form_mode && !input->syn_arg[s_mod_list]))
-		node->nod_arg[e_mod_statement] = make_form_body(right, left, value);
-#endif
 	else if (syn_list = input->syn_arg[s_mod_list]) {
 		node->nod_arg[e_mod_statement] = list =
 			MAKE_NODE(nod_list, syn_list->syn_count);
@@ -1599,15 +1359,6 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 
 	syn_rse = input->syn_arg[s_prt_rse];
 
-// Check to see if form mode is appropriate 
-#ifdef PYXIS
-	if (input->syn_arg[s_prt_form] ||
-		(QLI_form_mode &&
-		 !input->syn_arg[s_prt_list] &&
-		 !input->syn_arg[s_prt_output] &&
-		 !(syn_rse && syn_rse->syn_count != 1)))
-			return expand_print_form(input, right, left);
-#endif
 	loop = NULL;
 	items = NULL;
 	rse = NULL;
@@ -1721,55 +1472,6 @@ static QLI_NOD expand_print( SYN input, LLS right, LLS left)
 	return node;
 }
 
-#ifdef PYXIS
-static QLI_NOD expand_print_form( SYN input, LLS right, LLS left)
-{
-/**************************************
- *
- *	e x p a n d _ p r i n t _ f o r m
- *
- **************************************
- *
- * Functional description
- *	Expand a PRINT ... USING FORM <form> statement.
- *
- **************************************/
-	SYN syn_rse;
-	QLI_NOD node, loop, rse;
-	LLS new_right;
-
-	loop = rse = NULL;
-	new_right = right;
-
-/* If a record select expression is present, expand it and build a FOR
-   statement. */
-
-	if (syn_rse = input->syn_arg[s_prt_rse]) {
-		loop = MAKE_NODE(nod_for, e_for_count);
-		loop->nod_arg[e_for_rse] = rse = expand_rse(syn_rse, &new_right);
-	}
-
-
-/* If no print object showed up, complain! */
-
-	if (!new_right)
-		IBERROR(151);			// Msg151 No items in print list 
-
-	node = make_form_body(new_right, 0, input->syn_arg[s_prt_form]);
-
-/* If a FOR loop was generated, splice it in here. */
-
-	if (loop) {
-		loop->nod_arg[e_for_statement] = node;
-		node = loop;
-		if (input->syn_arg[s_prt_order])
-			rse->nod_arg[e_rse_sort] =
-				expand_sort(input->syn_arg[s_prt_order], new_right, 0);
-	}
-
-	return node;
-}
-#endif
 
 static ITM expand_print_item( SYN syn_item, LLS right)
 {
@@ -2274,15 +1976,6 @@ static QLI_NOD expand_statement( SYN input, LLS right, LLS left)
 	case nod_erase:
 		routine = expand_erase;
 		break;
-#ifdef PYXIS
-	case nod_form_for:
-		routine = expand_form_for;
-		break;
-
-	case nod_form_update:
-		routine = expand_form_update;
-		break;
-#endif
 	case nod_for:
 		routine = expand_for;
 		break;
@@ -2299,10 +1992,6 @@ static QLI_NOD expand_statement( SYN input, LLS right, LLS left)
 		else
 			node->nod_count = 2;
 		return node;
-
-	case nod_menu:
-		routine = expand_menu;
-		break;
 
 	case nod_modify:
 		routine = expand_modify;
@@ -2380,9 +2069,6 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
  *
  **************************************/
 	QLI_NOD node, assignment, loop;
-#ifdef PYXIS
-	SYN sub;
-#endif
 	SYN rel_node;
 	QLI_REL relation;
 	QLI_FLD field;
@@ -2441,10 +2127,6 @@ static QLI_NOD expand_store( SYN input, LLS right, LLS left)
 		node->nod_arg[e_sto_statement] =
 			expand_statement(input->syn_arg[s_sto_statement], right, left);
 	}
-#ifdef PYXIS
-	else if ((sub = input->syn_arg[s_sto_form]) || QLI_form_mode)
-		node->nod_arg[e_sto_statement] = make_form_body(0, left, sub);
-#endif
 	else {
 		stack = NULL;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
@@ -2975,112 +2657,6 @@ static QLI_NOD make_assignment( QLI_NOD target, QLI_NOD initial, LLS right)
 	return assignment;
 }
 
-#ifdef PYXIS
-static QLI_NOD make_form_body( LLS right, LLS left, SYN form_node)
-{
-/**************************************
- *
- *	m a k e _ f o r m _ b o d y
- *
- **************************************
- *
- * Functional description
- *	Build the form body for a form STORE, MODIFY, or PRINT.
- *
- **************************************/
-	QLI_CTX tmp_context;
-	FFL ffl;
-	QLI_FLD field, initial;
-	FRM form;
-	LLS stack, fields;
-	QLI_NOD node, assignment;
-	QLI_REL relation;
-
-	tmp_context = right ? (QLI_CTX) right->lls_object : (QLI_CTX) left->lls_object;
-	if (right)
-		tmp_context = (QLI_CTX) right->lls_object;
-	else
-		tmp_context = (QLI_CTX) left->lls_object;
-
-	relation = tmp_context->ctx_relation;
-	form = expand_form(form_node, relation);
-
-// Get stack of database fields and form fields 
-
-	stack = fields = NULL;
-
-	if (right)
-		for (ffl = form->frm_fields; ffl; ffl = ffl->ffl_next)
-			if (field = resolve_name(ffl->ffl_symbol, right, &tmp_context)) {
-				assignment = MAKE_NODE(nod_assign, e_asn_count);
-				assignment->nod_arg[e_asn_from] =
-					make_field(field, tmp_context);
-				assignment->nod_arg[e_asn_to] = make_form_field(form, ffl);
-				LLS_PUSH(assignment, &stack);
-			}
-
-// Build form update 
-
-	node = MAKE_NODE(nod_form_update, e_fup_count);
-	node->nod_count = 0;
-	node->nod_arg[e_fup_form] = (QLI_NOD) form;
-	LLS_PUSH(node, &stack);
-
-/* Unless this is a print, be prepared to update fields */
-
-	if (left) {
-		for (ffl = form->frm_fields; ffl; ffl = ffl->ffl_next)
-			if ((field = resolve_name(ffl->ffl_symbol, left, &tmp_context)) &&
-				!(field->fld_flags & FLD_computed)) {
-				assignment = MAKE_NODE(nod_assign, e_asn_count);
-				assignment->nod_arg[e_asn_to] =
-					make_field(field, tmp_context);
-				assignment->nod_arg[e_asn_from] = make_form_field(form, ffl);
-				if (right) {
-					initial =
-						resolve_name(ffl->ffl_symbol, right, &tmp_context);
-					assignment->nod_arg[e_asn_initial] =
-						make_field(initial, tmp_context);
-				}
-				if (field->fld_validation)
-					assignment->nod_arg[e_asn_valid] =
-						expand_expression(field->fld_validation, left);
-				LLS_PUSH(ffl, &fields);
-				LLS_PUSH(assignment, &stack);
-			}
-		node->nod_arg[e_fup_fields] = make_list(fields);
-	}
-
-	node = MAKE_NODE(nod_form_for, e_ffr_count);
-	node->nod_arg[e_ffr_form] = (QLI_NOD) form;
-	node->nod_arg[e_ffr_statement] = make_list(stack);
-
-	return node;
-}
-#endif
-#ifdef PYXIS
-static QLI_NOD make_form_field( FRM form, FFL field)
-{
-/**************************************
- *
- *	m a k e _ f o r m _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Generate a form field node.
- *
- **************************************/
-	QLI_NOD node;
-
-	node = MAKE_NODE(nod_form_field, e_ffl_count);
-	node->nod_count = 0;
-	node->nod_arg[e_ffl_form] = (QLI_NOD) form;
-	node->nod_arg[e_ffl_field] = (QLI_NOD) field;
-
-	return node;
-}
-#endif
 
 static QLI_NOD make_field( QLI_FLD field, QLI_CTX context)
 {
@@ -3302,10 +2878,6 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 	QLI_CTX context;
 	QLI_REL relation;
 	QLI_FLD field;
-#ifdef PYXIS
-	FRM form;
-	FFL ffield;
-#endif
 
 /* Look thru context stack looking for a context that will resolve
    all name segments.  If the context is a secondary context, require
@@ -3320,28 +2892,6 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 		name = *--ptr;
 
 		switch (context->ctx_type) {
-#ifdef PYXIS
-		case CTX_FORM:
-			if (context->ctx_primary)
-				*out_context = context = context->ctx_primary;
-			form = context->ctx_form;
-			for (ffield = form->frm_fields; ffield; ffield = ffield->ffl_next)
-				if (compare_names(name, ffield->ffl_symbol)) {
-					if (ptr == base)
-						return (QLI_FLD) ffield;
-					name = *--ptr;
-
-					if (compare_names(name, form->frm_symbol))
-						if (ptr == base)
-							return (QLI_FLD) ffield;
-
-					if (compare_names(name, context->ctx_symbol))
-						if (ptr == base)
-							return (QLI_FLD) ffield;
-					break;
-				}
-			break;
-#endif
 		case CTX_VARIABLE:
 			if (ptr == base)
 				for (field = context->ctx_variable; field;
@@ -3392,73 +2942,6 @@ static QLI_FLD resolve( SYN node, LLS stack, QLI_CTX * out_context)
 }
 
 
-#ifdef PYXIS
-static QLI_FLD resolve_name( SYM name, LLS stack, QLI_CTX * out_context)
-{
-/**************************************
- *
- *	r e s o l v e _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Resolve a field node against a context stack.  Return both the
- *	field block (by value)  and the corresponding context block (by
- *	reference).  Return NULL if field can't be resolved.
- *
- **************************************/
-	QLI_CTX context;
-	QLI_REL relation;
-	QLI_FLD field;
-	FRM form;
-	FFL ffield;
-/* Look thru context stack looking for a context that will resolve
-   all name segments.  If the context is a secondary context, require
-   that the context name be given explicitly (used for special STORE
-   context). */
-
-
-	for (; stack; stack = stack->lls_next) {
-		*out_context = context = (QLI_CTX) stack->lls_object;
-		switch (context->ctx_type) {
-		case CTX_FORM:
-			if (context->ctx_primary)
-				*out_context = context = context->ctx_primary;
-			form = context->ctx_form;
-			for (ffield = form->frm_fields; ffield; ffield = ffield->ffl_next)
-				if (compare_symbols(name, ffield->ffl_symbol))
-					return (QLI_FLD) ffield;
-			break;
-		case CTX_VARIABLE:
-			for (field = context->ctx_variable; field;
-				 field = field->fld_next)
-			{
-				if (compare_symbols(name, field->fld_name)
-					|| compare_symbols(name, field->fld_query_name))
-				{
-					return field;
-				}
-			break;
-
-		case CTX_RELATION:
-			relation = context->ctx_relation;
-
-			for (field = relation->rel_fields; field; field = field->fld_next)
-				if (compare_symbols(name, field->fld_name) ||
-					compare_symbols(name, field->fld_query_name))
-				{
-					return field;
-				}
-
-			break;
-		}
-	}
-
-/* We didn't resolve all name segments.  Let somebody else worry about it. */
-
-	return NULL;
-}
-#endif
 
 static void resolve_really( QLI_FLD variable, SYN field_node)
 {

@@ -170,10 +170,6 @@ SOURCE=..\..\..\src\gpre\msc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\gpre\noform.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\gpre\par.cpp
 # End Source File
 # Begin Source File
@@ -239,18 +235,6 @@ SOURCE=..\..\..\src\gpre\dyntable.h
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\exp_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\gpre\form.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\gpre\form__proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\gpre\form_proto.h
 # End Source File
 # Begin Source File
 
