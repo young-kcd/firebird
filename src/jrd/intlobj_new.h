@@ -55,6 +55,10 @@ struct csconvert;
 #define INTL_BAD_KEY_LENGTH ((USHORT)(-1))
 #define INTL_BAD_STR_LENGTH ((ULONG)(-1))
 
+#define INTL_COMPARE_GREAT         1
+#define INTL_COMPARE_EQUAL         2
+#define INTL_COMPARE_GREAT_EQUAL   3
+
 /* Returned value of INTL_BAD_KEY_LENGTH means that proposed key is too long */
 typedef USHORT (*pfn_INTL_keylength) (
 	texttype* tt, 
@@ -71,14 +75,23 @@ typedef USHORT (*pfn_INTL_str2key) (
 	INTL_BOOL partial
 );
 
-/* Compare two potentially long strings using the same rules as in str2key transformation.
-   Return TRUE if str1 > str2 */
-typedef INTL_BOOL (*pfn_INTL_greater) (
+/* Compare two potentially long strings. This routine should complement str2key and canonical:
+   s1 >  s2 <==> str2key(s1) > str2key(s2)
+   s1 =  s2 <==> canonical(padded_s1) == canonical(padded_s2)
+   s1 >= s2 <==> str2key(s1) > str2key(s2) || canonical(padded_s1) == canonical(padded_s2)
+
+   Note that in general case both conditions below may be FALSE because sorting and equality 
+   comparisons are only loosely coupled:
+   (s1 > s2) && !(s2 > s1) ==> (s1 = s2)
+   (s1 = s2) ==> (s1 > s2) && !(s2 > s1)
+*/
+typedef INTL_BOOL (*pfn_INTL_compare) (
 	texttype* tt, 
 	ULONG len1, 
 	const UCHAR* str1, 
 	ULONG len2, 
 	const UCHAR* str2,
+	USHORT operation,
 	INTL_BOOL* error_flag
 );
 
@@ -122,8 +135,8 @@ typedef struct texttype {
 	/* If not set string itself is used as a key */
 	pfn_INTL_str2key	texttype_fn_string_to_key;
 
-	/* If not set string is assumed to be binary-comparable for sorting purposes */
-	pfn_INTL_greater	texttype_fn_greater;
+	/* If not set string is assumed to be binary-comparable both for sorting and equality purposes */
+	pfn_INTL_compare	texttype_fn_compare;
 
 	/* If not set string is converted to Unicode and then uppercased via default case folding table */
 	pfn_INTL_str2case	texttype_fn_str_to_upper;	/* Convert string to uppercase */
