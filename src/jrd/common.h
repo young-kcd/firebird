@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.73.2.1 2003-10-10 23:17:10 skidder Exp $
+$Id: common.h,v 1.73.2.2 2003-10-12 14:23:14 skidder Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -121,7 +121,7 @@ $Id: common.h,v 1.73.2.1 2003-10-10 23:17:10 skidder Exp $
 #endif /* i386 */
 
 #ifdef sparc
-#define IMPLEMENTATION  isc_info_db_impl_linux_sparc /* 20  */
+#define IMPLEMENTATION  isc_info_db_impl_linux_sparc /* 65  */
 #endif /* sparc */
 
 #define MEMMOVE(from,to,length)		memmove ((void *)to, (void *)from, (size_t) length)
