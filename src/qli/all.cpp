@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.4 2001-12-24 02:50:53 tamlin Exp $
+$Id: all.cpp,v 1.5 2002-04-04 05:41:45 bellardo Exp $
 */
 
 /***************************************************
@@ -41,7 +41,7 @@ $Id: all.cpp,v 1.4 2001-12-24 02:50:53 tamlin Exp $
    - THANK YOU
 ***************************************************/
 
-#include "firebird.h"
+//#include "firebird.h"
 #include <string.h>
 #include "../qli/everything.h"
 #include "../qli/all_proto.h"
