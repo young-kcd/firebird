@@ -1,7 +1,7 @@
 @echo off
 
 :	PROGRAM:	Class library integrity tests
-:	MODULE:		string_test.cpp
+:	MODULE:		string_test.cmd
 :	DESCRIPTION:	test class Firebird::string
 :
 :  The contents of this file are subject to the Initial
