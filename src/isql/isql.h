@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: isql.h,v 1.8 2003-04-03 09:26:18 brodsom Exp $
+ * $Id: isql.h,v 1.9 2003-07-06 07:04:01 dimitr Exp $
  * Revision 1.2  2000/11/18 16:49:24  fsg
  * Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
  * Fixed Bug #122563 in extract.e get_procedure_args
@@ -275,25 +275,25 @@ typedef struct sqltypes {
 
 #ifdef VMS
 #include <descrip.h>
-#define SCRATCH		"Fb_query"
 #define LIB$_INPSTRTRU	0x15821c
 #endif
 
 #ifdef UNIX
-#ifdef SMALL_FILE_NAMES
-#define SCRATCH		"Fb_q"
-#else
-#define SCRATCH		"Fb_query"
-#endif
 #define UNIX_LINE	1
 #endif
 
 #if (defined WIN_NT)
 #include <io.h>
-#define SCRATCH		"Fb"
 #define UNIX_LINE	1
 #define PC_FILE_SEEK
 #endif
+
+#ifdef SMALL_FILE_NAMES
+#define SCRATCH		"fb_q"
+#else
+#define SCRATCH		"fb_query_"
+#endif
+
 
 #ifndef	STDERROUT
 #define	STDERROUT(st,l)	{ ib_fprintf (Errfp, "%s", st);\

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.27 2003-05-11 19:38:11 skidder Exp $
+ * $Id: rse.cpp,v 1.28 2003-07-06 07:04:02 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -127,9 +127,7 @@ static void write_merge_block(TDBB, MFB, ULONG);
 
 #ifdef SMALL_FILE_NAMES
 #define SCRATCH         "fb_m"
-#endif
-
-#ifndef SCRATCH
+#else
 #define SCRATCH         "fb_merge_"
 #endif
 

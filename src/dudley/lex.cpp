@@ -44,16 +44,10 @@
 #include <unistd.h>
 #endif
 
-#if defined(WIN_NT)
-#define SCRATCH		"Fb"
-#endif
-
-#ifndef SCRATCH
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH		"Fb_q"
+#define SCRATCH		"fb_q"
 #else
-#define SCRATCH		"Fb_query_"
-#endif
+#define SCRATCH		"fb_query_"
 #endif
 
 extern TEXT *DDL_prompt;

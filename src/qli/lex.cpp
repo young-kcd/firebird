@@ -50,24 +50,23 @@
 
 #ifdef VMS
 #include <descrip.h>
-#define SCRATCH		"Fb_query"
 #define LIB$_INPSTRTRU	0x15821c
 #endif
 
 #ifdef UNIX
-#ifdef SMALL_FILE_NAMES
-#define SCRATCH		"Fb_q"
-#else
-#define SCRATCH		"Fb_query"
-#endif
 #define UNIX_LINE	1
 #endif
 
 #if (defined WIN_NT)
 #include <io.h>
-#define SCRATCH		"Fb"
 #define UNIX_LINE	1
 #define PC_FILE_SEEK
+#endif
+
+#ifdef SMALL_FILE_NAMES
+#define SCRATCH		"fb_q"
+#else
+#define SCRATCH		"fb_query_"
 #endif
 
 #ifndef FOPEN_INPUT_TYPE

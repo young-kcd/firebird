@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.25 2003-07-02 12:57:41 brodsom Exp $
+//  $Id: gpre.cpp,v 1.26 2003-07-06 07:04:01 dimitr Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.25 2003-07-02 12:57:41 brodsom Exp $
+//	$Id: gpre.cpp,v 1.26 2003-07-06 07:04:01 dimitr Exp $
 //
 
 #define GPRE_MAIN
@@ -79,16 +79,10 @@ extern int lib$get_foreign();
 
 extern "C" {
 
-#if defined(WIN_NT)
-#define SCRATCH			"Fb"
-#endif
-
-#ifndef SCRATCH
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH			"Fb_q"
+#define SCRATCH		"fb_q"
 #else
-#define SCRATCH			"Fb_query_"
-#endif
+#define SCRATCH		"fb_query_"
 #endif
 
 #ifndef FOPEN_READ_TYPE

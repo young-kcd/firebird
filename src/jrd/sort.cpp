@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.37 2003-05-14 12:32:02 eku Exp $
+ * $Id: sort.cpp,v 1.38 2003-07-06 07:04:03 dimitr Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -162,9 +162,7 @@ IB_FILE *trace_file = NULL;
 
 #ifdef SMALL_FILE_NAMES
 #define SCRATCH         "fb_s"
-#endif
-
-#ifndef SCRATCH
+#else
 #define SCRATCH         "fb_sort_"
 #endif
 
