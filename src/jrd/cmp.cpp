@@ -39,9 +39,6 @@
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
-/*
-$Id: cmp.cpp,v 1.29 2002-12-04 18:39:14 arnobrinkman Exp $
-*/
 
 #include "firebird.h"
 #include "../jrd/ibsetjmp.h"
