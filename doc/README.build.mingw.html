@@ -21,10 +21,10 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>1.-TODO</h3>
 <ul>
-<li>Build of fb_util.dll</li>
-<li>Analyze thread issue in blocking thread (classic server).
 <li>Support for ms SEH (superserver).</li>
-<li>Installer definition</li>
+<li>Executable size problem. The executables are too great.</li>
+<li>DLL entrypoint definition. The fbclient.dll have a lot of unneeded entrypoints.</li>
+<li>Installer definition.</li>
 </ul>
 
 <h3>2.-INSTALLING MSYS and MINGW</h3>
@@ -32,40 +32,35 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <p>The following packages from http://www.mingw.org are needed</p>
 <p>MinGW
 <ul>
-<li>MinGW-2.0.0-3.exe</li>
-<li>MinGW_win32api-2.3.tar.gz</li>
-<li>mingw-runtime-3.0.tar.gz</li>
+<li>MinGW-3.1.0-1.exe</li>
 <li>bison-1.875.0-2003.02.10-1.exe</li>
 </ul>
 </p>
 <p>MSYS
 <ul>
-<li>MSYS-1.0.8.exe</li>
+<li>MSYS-1.0.9.exe</li>
 <li>msysDTK-1.0.1.exe</li>
 </ul>
 </p>
 <p>STEPS TO INSTALL
 <ol>
-<li>run MinGW-2.0.0-3.exe</li>
-<li>uncompress w32api-2.3.tar.gz in the mingw directory (default c:\mingw)</li>
-<li>uncompress mingw-runtime-3.0.tar.gz in the mingw directory (default c:\mingw)</li>
-<li>uncompress gcc-3.2.3-20030504-1.tar.gz in the mingw directory (default c:\mingw)</li>
-<li>run bison-1.875.0-2003.02.10-1.exe. You must give the program the mingw installation directory</li>
-<li>run MSYS-1.0.8.exe. First you must select your installation directory, then, in a command window, you must awswer some questions<br>continue postinstall [yes]<br>mingw directory:[your mingw directory]</li>
-<li>run msysDTK-1.0.1.exe. The installation directory must be the same that you select for MSYS.</li>
+<li>run MinGW-3.1.0-1.exe. You must select the installation directory (default to c:\MINGW)</li>
+<li>run bison-1.875.0-2003.02.10-1.exe. You must give the program the mingw installation directory </li>
+<li>run MSYS-1.0.9.exe. First you must select your installation directory (default to c:\msys\1.0), then, in a command window, you must awswer some questions:<br><br>
+Do you wish to continue with the post install? [yn] ANSWER y<br>
+Do you have mingw installed? [yn] ANSWER y<br>
+Where is your mingw installation? ANSWER your mingw directory<br><br>
+</li>
+<li>run msysDTK-1.0.1.exe. You must the msys installation directory as the installation directory for msysDTK (default to c:\msys\1.0).</li>
 </ol>
 </p>
+<h3>3.- PATCHES TO MINGW headers</h3>
 
-<h3>3.- PATCHES TO BUILD FILES</h3>
-
-<ul>
-<li>The lib_fbudf target in Make.in.extlib cannot be built yet, so it must be removed.<br>
-Edit the file Makefile.in.extlib in the builds/posix directory and change the line <br>
-all: lib_ib_udf lib_ib_util lib_fb_util<br>
-to<br>
-all: lib_ib_udf lib_ib_util <br>
-</li>
-</ul>
+<p>There are an error in the gcc 3.2.3 headers delivered with MINGW.<p>
+<p>You should edit <mingw installdir>/include/c++/3.2.3/cstdio and comment the following lines<br><br>
+&nbsp;&nbsp;&nbsp;using ::vsnprintf;<br>
+&nbsp;&nbsp;&nbsp;using __gnu_cxx::vsnprintf;<br>
+</p>
 
 <h3>4.- BUILD PROCESS</h3>
 
