@@ -222,7 +222,7 @@ private:
 	BePlusTree(Allocator *_pool, void *rootPage) : 	pool(_pool), level(0), 
 		curr(new(rootPage) ItemList()), root(rootPage),	curPos(0)/*, count(0)*/  {};
 		
-	class NodeList;
+	class NodeList ;
 		
     class ItemList : public SortedVector<Value,LeafCount,Key,KeyOfValue,Cmp> {
 	public:
@@ -236,7 +236,9 @@ private:
 			items->next = this;
 		}
 		// Create first item in the linked list
-		ItemList() : parent(NULL), next(NULL), prev(NULL) {}
+		ItemList() : parent(NULL), next(NULL), prev(NULL) {};
+                friend class BePlusTree;
+                friend class BePlusTree::NodeList;
 	};
 	
     class NodeList : public SortedVector<void*,NodeCount,Key,NodeList,Cmp> {
@@ -257,7 +259,7 @@ private:
 		static const Key& generate(void *sender, void *item) { 
 			for (int lev = ((NodeList *)sender)->level; lev > 0; lev--)
 				item = *((NodeList *)item)->begin();
-			return KeyOfValue::generate(item,*((ItemList *)item)->begin());
+			return KeyOfValue::generate(item,*((BePlusTree::ItemList *)item)->begin());
 		}
 		static void setNodeParentAndLevel(void *node, int level, NodeList *parent) {
 			if (level) {
@@ -284,6 +286,7 @@ private:
 	void _removePage(int level, void *node);
 	
 	friend class MemoryPool;
+        friend class NodeList;
 };
 
 /************************ BePlusTree implementation ******************/
@@ -619,7 +622,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		throw;
 	}
 	return true;
-};
+}
 
 }; /* namespace Firebird */
 

@@ -18,7 +18,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86,v 1.18 2003-06-20 17:55:29 kkuznetsov Exp $
+# $Id: prefix.solx86gcc,v 1.1 2003-06-20 17:55:29 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -26,8 +26,8 @@
 
 #FirebirdInstallPrefix = @prefix@
 
-WARNINGS=+w2
-COMM_SOLX_FLAGS:=   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS  -KPIC -features=no%conststrings
+WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
+COMM_SOLX_FLAGS:=   -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS  -fwritable-strings
 
 #SFIO= /export/home/interbase/SfIO
 #SfIO is a pretty portable stdIO 
@@ -48,10 +48,10 @@ ifdef SFIO
 COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS)  $(SFIO_FLAGS) $(SFIO_LDFLAGS)
 endif
 
-COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) -I$(STLPort) -KPIC -pentium
+COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) -I$(STLPort)
 
-PROD_FLAGS=-DNDEBUG +w $(COMM_SOLX_FLAGS) -O2  
-DEV_FLAGS=$(COMM_SOLX_FLAGS) -g  $(WARNINGS)  
+PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2  -m486  -MMD -p -fPIC
+DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb  $(WARNINGS)  -MMD -p -fPIC
 
 OS_ServerFiles=inet_server.cpp
 
