@@ -45,7 +45,7 @@ extern void IDX_garbage_collect(TDBB, struct rpb *, struct lls *,
 								struct lls *);
 extern enum idx_e IDX_modify(struct tdbb *, struct rpb *, struct rpb *,
 							 struct jrd_tra *, struct jrd_rel **, USHORT *);
-extern enum idx_e IDX_modify_check_constraint(struct rpb *, struct rpb *,
+extern enum idx_e IDX_modify_check_constraints(TDBB, struct rpb *, struct rpb *,
 											  struct jrd_tra *, struct jrd_rel **,
 											  USHORT *);
 extern float IDX_statistics(TDBB, struct jrd_rel *, USHORT);
