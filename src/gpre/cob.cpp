@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.21 2003-03-27 17:15:46 brodsom Exp $
+//	$Id: cob.cpp,v 1.22 2003-04-03 08:52:45 brodsom Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -312,8 +312,9 @@ extern DBB isc_databases;
 extern GPRE_REQ requests;
 extern IB_FILE *out_file;
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void	align(int column);
+#endif
 static void	asgn_from (ACT, REF);
 static void	asgn_to (ACT, REF);
 static void	asgn_to_proc (REF);
@@ -413,7 +414,9 @@ static TEXT	*make_name_formatted (TEXT *, TEXT *, SYM);
 static void	make_port (POR);
 static void	make_ready (DBB, TEXT *, TEXT *, GPRE_REQ, USHORT);
 static void	printa (TEXT *, BOOLEAN, TEXT *, ...) ATTRIBUTE_FORMAT(3,4);
+#ifdef NOT_USED_OR_REPLACED
 static void	printb (TEXT *, ... ) ATTRIBUTE_FORMAT(1,2);
+#endif
 static TEXT	*request_trans (ACT, GPRE_REQ);
 static void	set_sqlcode (ACT);
 static TEXT	*status_vector (ACT);
@@ -980,6 +983,7 @@ void COB_print_buffer( TEXT * output_buffer, BOOLEAN function_call)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
 //  
 //       Align output to a specific column for output.  If the
@@ -1001,7 +1005,7 @@ static void align( int column)
 	for (i = column % 8; i; --i)
 		ib_putc(' ', out_file);
 }
-
+#endif
 
 
 //____________________________________________________________
@@ -5254,6 +5258,7 @@ static void printa( TEXT * column, BOOLEAN call, TEXT * string, ...)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
 //  
 //		Print a fixed string at a particular column.
@@ -5266,7 +5271,7 @@ static void printb( TEXT * string, ...)
 	VA_START(ptr, string);
 	ib_vfprintf(out_file, string, ptr);
 }
-
+#endif
 
 //____________________________________________________________
 //  
