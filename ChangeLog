@@ -1,3 +1,16 @@
+2004-10-15 13:02  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/i18n_readme.txt
+	(1.1.2.2):
+	
+	Add instructions for i18n of the Win32 installer.
+
+2004-10-15 07:55  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.52.2.16):
+	
+	Backported bugfix related to naturally updatable views.
+
 2004-10-14 18:56  alexpeshkoff
 
 	* firebird2/src/jrd/ExecuteStatement.cpp (1.14.2.5):
