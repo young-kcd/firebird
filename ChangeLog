@@ -1,3 +1,9 @@
+2005-01-31 08:28  robocop
+
+	* firebird2/src/jrd/dyn_del.epp (1.43):
+	
+	Fix SF Bug #1111570 by changing the deletion order in sys tables.
+
 2005-01-30 12:44  alexpeshkoff
 
 	* firebird2/src/common/classes/: string_test.cmd (1.2),
