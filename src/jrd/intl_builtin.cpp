@@ -1288,13 +1288,13 @@ CsConvertAllocFunc INTL_csconvert_alloc_func(short from, short to)
 	return NULL;
 }
 
+#if 0
 //========================================================================================
 //========================================================================================
 //========================================================================================
 //========================================================================================
 //
 // JMB: absolete code - to be removed later
-/*
 #define TEXTTYPE_RETURN         return (0)
 
 #define FAMILY_INTERNAL(id_number, name, charset, country) \
@@ -1585,4 +1585,4 @@ static USHORT cvt_ascii_utf_init(
 						(FPTR_SHORT) cvt_utffss_to_ascii, NULL, NULL);
 	CONVERT_RETURN;
 }
-*/
+#endif
