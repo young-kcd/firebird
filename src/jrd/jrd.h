@@ -41,6 +41,7 @@
 
 #include "../include/fb_vector.h"
 #include "fb_string.h"
+#include "../common/classes/objects_array.h"
 
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
@@ -596,19 +597,22 @@ typedef struct frgn {
 } *FRGN;
 
 // Relation trigger definition
-struct trig {
-    str*		blr; // BLR code
-	jrd_req*	request; // Compiled request. Gets filled on first invocation
+class Trigger {
+public:
+	Firebird::HalfStaticArray<UCHAR, 128> blr;	// BLR code
+	jrd_req*	request;		// Compiled request. Gets filled on first invocation
 	bool		compile_in_progress;
 	bool		sys_trigger;
-	USHORT		flags; // Flags as they are in RDB$TRIGGERS table
-	jrd_rel*	relation; // Trigger parent relation
-	str*		name; // Trigger name
-	void compile(thread_db*); // Ensure that trigger is compiled
-	void release(thread_db*); // Try to free trigger request
+	USHORT		flags;			// Flags as they are in RDB$TRIGGERS table
+	jrd_rel*	relation;		// Trigger parent relation
+	Firebird::string	name;	// Trigger name
+	void compile(thread_db*);	// Ensure that trigger is compiled
+	void release(thread_db*);	// Try to free trigger request
+
+	Trigger(MemoryPool& p) : blr(p), name(p) { }
 };
 
-typedef Firebird::vector<trig> trig_vec;
+typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
 
 /* Relation block; one is created for each relation referenced

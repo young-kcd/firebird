@@ -222,7 +222,7 @@ static REC_MUTX_T databases_rec_mutex;
 #define TEXT    SCHAR
 #endif	// WIN_NT
 
-void Jrd::trig::compile(thread_db* tdbb)
+void Jrd::Trigger::compile(thread_db* tdbb)
 {
 	if (!request && !compile_in_progress)
 	{
@@ -235,7 +235,7 @@ void Jrd::trig::compile(thread_db* tdbb)
 		tdbb->tdbb_default = new_pool;
 		// Trigger request is not compiled yet. Lets do it now
 		try {
-			PAR_blr(tdbb, relation, blr->str_data,  NULL, NULL, &request, true,
+			PAR_blr(tdbb, relation, blr.begin(),  NULL, NULL, &request, true,
 					(USHORT)(flags & TRG_ignore_perm ? csb_ignore_perm : 0));
 			tdbb->tdbb_default = old_pool;
 		}
@@ -253,20 +253,26 @@ void Jrd::trig::compile(thread_db* tdbb)
 		}
 		tdbb->tdbb_default = old_pool;
 		
-		if (name)
-			request->req_trg_name = (const TEXT*)name->str_data;
+		if (name) 
+		{
+			request->req_trg_name = name.c_str();
+		}
 		if (sys_trigger)
+		{
 			request->req_flags |= req_sys_trigger;
+		}
 		if (flags & TRG_ignore_perm)
+		{
 			request->req_flags |= req_ignore_perm;
+		}
 
 		compile_in_progress = false;
 	}
 }
 
-void Jrd::trig::release(thread_db* tdbb)
+void Jrd::Trigger::release(thread_db* tdbb)
 {
-	if (!blr //sys_trigger
+	if (blr.getCount() == 0 //sys_trigger
 				|| !request || CMP_clone_is_active(request))
 	{
 		return; // FALSE;

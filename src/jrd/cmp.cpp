@@ -236,6 +236,31 @@ jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	return clone;
 }
 
+inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, trig_vec* vec)
+/**************************************
+ *
+ *	t r i g g e r s _ e x t e r n a l _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Invoke build_external_access for triggers in vector
+ *
+ **************************************/
+{
+	if (vec) {
+		for (int i = 0; i < vec->getCount(); i++)
+		{
+			Trigger& t = (*vec)[i];
+			t.compile(tdbb);
+			if (t.request)
+			{
+				build_external_access(tdbb, list, t.request);
+			}
+		}
+	}
+}
+
 static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request) 
 {
 /**************************************
@@ -282,25 +307,8 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 			default:
 				continue; // should never happen, silence the compiler
 			}
-			trig_vec::iterator ptr;
-			if (vec1) {
-				ptr = vec1->begin();
-				for (const trig_vec::const_iterator end = vec1->end(); ptr < end; ptr++)
-				{
-					ptr->compile(tdbb);
-					if (ptr->request)
-						build_external_access(tdbb, list, ptr->request);
-				}
-			}
-			if (vec2) {
-				ptr = vec2->begin();
-				for (const trig_vec::const_iterator end = vec2->end(); ptr < end; ptr++)
-				{
-					ptr->compile(tdbb);
-					if (ptr->request)
-						build_external_access(tdbb, list, ptr->request);
-				}
-			}
+			triggers_external_access(tdbb, list, vec1);
+			triggers_external_access(tdbb, list, vec2);
 		}
 	}
 }
@@ -321,15 +329,17 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 		return;
 	}
 
-	trig_vec::iterator ptr = triggers->begin();
-	for (const trig_vec::const_iterator end = triggers->end(); ptr < end; ptr++)
+	for (int i = 0; i < triggers->getCount(); i++)
 	{
-		ptr->compile(tdbb);
-		if (!ptr->request) continue;
+		Trigger& t = (*triggers)[i];
+		t.compile(tdbb);
+		if (!t.request) 
+		{
+			continue;
+		}
 
-
-		for (const AccessItem* access = ptr->request->req_access.begin();
-			 access < ptr->request->req_access.end(); access++)
+		for (const AccessItem* access = t.request->req_access.begin();
+			 access < t.request->req_access.end(); access++)
 		{
 			// If this is not a system relation, we don't post access check if:
 			//
@@ -359,7 +369,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 			SCL_check_access(sec_class,
 							(access->acc_view_id) ? access->acc_view_id : 
 								(view ? view->rel_id : 0),
-							ptr->request->req_trg_name, 0, access->acc_mask,
+							t.request->req_trg_name, 0, access->acc_mask,
 							access->acc_type, access->acc_name);
 		}
 	}

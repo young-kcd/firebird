@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.110 2004-04-18 14:22:27 alexpeshkoff Exp $
+$Id: met.epp,v 1.111 2004-04-19 15:29:29 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -144,7 +144,7 @@ static bool par_messages(thread_db*, const UCHAR*, USHORT, jrd_prc*, CompilerScr
 static bool resolve_charset_and_collation(thread_db*, SSHORT*, const UCHAR*,
 											 const UCHAR*);
 static str* save_name(thread_db*, const TEXT*);
-static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, STR,
+static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, blb*,
 	const TEXT*, bool, USHORT);
 static void store_dependencies(thread_db*, CompilerScratch*, const TEXT*, USHORT);
 static bool verify_TRG_ignore_perm(thread_db*, const TEXT*);
@@ -154,13 +154,14 @@ static bool verify_TRG_ignore_perm(thread_db*, const TEXT*);
 // Decompile all triggers from vector
 static void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
 {
-	if (!vector) {
+	if (!vector) 
+	{
 		return;
 	}
 			
-	trig_vec::iterator ptr = vector->begin();
-	for (const trig_vec::const_iterator end = vector->end(); ptr < end; ptr++) {
-		ptr->release(tdbb);
+	for (int i = 0; i<vector->getCount(); i++) 
+	{
+		(*vector)[i].release(tdbb);
 	}
 }
 
@@ -180,16 +181,21 @@ static void inc_int_use_count(jrd_req* req) {
 }
 
 // Increment int_use_count for all procedures used by triggers
-static void post_used_procedures(thread_db* tdbb, trig_vec* vector)
+static void post_used_procedures(trig_vec* vector)
 {
-	if (!vector) {
+	if (!vector) 
+	{
 		return;
 	}
-
-	trig_vec::iterator ptr = vector->begin();
-	for (const trig_vec::const_iterator end = vector->end(); ptr < end; ptr++)
-		if (ptr->request && !CMP_clone_is_active(ptr->request))
-			inc_int_use_count(ptr->request);
+			
+	for (int i = 0; i<vector->getCount(); i++) 
+	{
+		jrd_req* r = (*vector)[i].request;
+		if (r && !CMP_clone_is_active(r))
+		{
+			inc_int_use_count(r);
+		}
+	}
 }
 
 void MET_update_partners(thread_db* tdbb)
@@ -479,12 +485,12 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 		if (!relation) {
 			continue;
 		}
-		post_used_procedures(tdbb, relation->rel_pre_store);
-		post_used_procedures(tdbb, relation->rel_post_store);
-		post_used_procedures(tdbb, relation->rel_pre_erase);
-		post_used_procedures(tdbb, relation->rel_post_erase);
-		post_used_procedures(tdbb, relation->rel_pre_modify);
-		post_used_procedures(tdbb, relation->rel_post_modify);
+		post_used_procedures(relation->rel_pre_store);
+		post_used_procedures(relation->rel_post_store);
+		post_used_procedures(relation->rel_pre_erase);
+		post_used_procedures(relation->rel_post_erase);
+		post_used_procedures(relation->rel_pre_modify);
+		post_used_procedures(relation->rel_post_modify);
 	}
 
 	jrd_prc* procedure;
@@ -3758,10 +3764,7 @@ static void get_trigger(
 
 	Database* dbb = tdbb->tdbb_database;
 	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
-	SLONG length = blob->blb_length + 10;
-	STR blr = FB_NEW_RPT(*dbb->dbb_permanent,length) str();
-	BLB_get_data(tdbb, blob, blr->str_data, length);
-	save_trigger_data(tdbb, ptr, relation, NULL, blr, name, sys_trigger, flags);
+	save_trigger_data(tdbb, ptr, relation, NULL, blob, name, sys_trigger, flags);
 }
 
 
@@ -4064,35 +4067,31 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
  *
  **************************************/
 	trig_vec* vector = *vector_ptr;
-	if (!vector) {
+	if (!vector) 
+	{
 		return;
 	}
 
 	SET_TDBB(tdbb);
 
 	*vector_ptr = NULL;
+	int i;
 
-	trig_vec::iterator ptr, end;
-	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
+	for (i = 0; i<vector->getCount(); i++) 
 	{
-		if (ptr->request && CMP_clone_is_active(ptr->request))
+		jrd_req* r = (*vector)[i].request;
+		if (r && CMP_clone_is_active(r))
 		{
 			return;
 		}
 	}
 
-	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++)
+	for (i = 0; i<vector->getCount(); i++) 
 	{
-		if (ptr->request) {
-		  CMP_release(tdbb, ptr->request);
-		}
-		else {
-			if (ptr->name) {
-				delete ptr->name;
-			}
-		}
-		if (ptr->blr) {
-		  delete ptr->blr;
+		jrd_req* r = (*vector)[i].request;
+		if (r) 
+		{
+			CMP_release(tdbb, r);
 		}
 	}
 
@@ -4241,7 +4240,7 @@ static str* save_name(thread_db* tdbb, const TEXT* name)
 
 
 static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation,
-							jrd_req* request, STR blr,
+							jrd_req* request, blb* blrBlob,
 							  const TEXT* name, bool sys_trigger, USHORT flags)
 {
 /**************************************
@@ -4254,25 +4253,23 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
  *      Save trigger data to passed vector
  *
  **************************************/
-	const USHORT n = (*ptr) ? (*ptr)->size() : 0;
 	trig_vec* vector = *ptr;
 
 	if (!vector) {
 		vector = FB_NEW(*tdbb->tdbb_database->dbb_permanent) 
-		  trig_vec(n + 1, *tdbb->tdbb_database->dbb_permanent);
+			trig_vec(*tdbb->tdbb_database->dbb_permanent);
 		*ptr = vector;
 	}
-	else {
-		vector->resize(n + 1);
-	}
 
-	trig& t = (*vector)[n];
-	t.blr = blr;
-	if (name) {
-		t.name = save_name(tdbb, name);
+	Trigger& t = vector->add();
+	if (blrBlob) 
+	{
+		int length = blrBlob->blb_length + 10;
+		UCHAR* ptr = t.blr.getBuffer(length);
+		BLB_get_data(tdbb, blrBlob, ptr, length);
 	}
-	else {
-		t.name = NULL;
+	if (name) {
+		t.name = name;
 	}
 	t.flags = flags;
 	t.compile_in_progress = false;
