@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.123 2004-11-12 05:32:13 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.124 2004-11-14 21:08:32 skidder Exp $ 
  */
 
 /*
@@ -954,8 +954,12 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			case nod_current_time:
 				impure->vlu_desc.dsc_dtype = dtype_sql_time;
 				impure->vlu_desc.dsc_length = type_lengths[dtype_sql_time];
+				// Note, in SQL standard CURRENT_TIME and CURRENT_TIMESTAMP
+				// have a seconds precision parameter. For CURRENT_TIME it is
+				// zero by default (i.e. return whole seconds) and we hardcode
+				// it here for the moment
 				*(ULONG *) impure->vlu_desc.dsc_address =
-					enc_times.timestamp_time;
+					Firebird::TimeStamp::round_time(enc_times.timestamp_time, 0);
 				break;
 			case nod_current_date:
 				impure->vlu_desc.dsc_dtype = dtype_sql_date;
