@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		kanji_proto.h
- *	DESCRIPTION:	Prototype header file for kanji.c
+ *	DESCRIPTION:	Prototype header file for kanji.cpp
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -36,3 +36,4 @@ USHORT KANJI_sjis2euc5(UCHAR *, USHORT, UCHAR *, USHORT, USHORT *,
 USHORT KANJI_sjis_len(UCHAR *, USHORT, USHORT *);
 
 #endif // JRD_KANJI_PROTO_H
+

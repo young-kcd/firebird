@@ -32,3 +32,4 @@
 #define KANJI_MASK	0x80
 
 #endif // JRD_KANJI_H
+
