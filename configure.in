@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.34 2005-01-26 14:50:29 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.141.2.35 2005-02-01 09:01:24 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -398,7 +398,7 @@ if test "$PLATFORM" = "solx86" -o "$PLATFORM" = "SOLARIS"; then
   AC_CHECK_LIB(nsl, gethostname, XE_APPEND(-lnsl,LIBS))
   AC_CHECK_LIB(thread, thr_create, XE_PREPEND(-lthread,LIBS))
   if test "$EDITLINE_FLG" = "Y"; then
-  	AC_CHECK_LIB(termcap, main)
+  	AC_CHECK_LIB(termcap, main, XE_APPEND(-ltermcap,EDITLINE_A))
   fi
   
 fi

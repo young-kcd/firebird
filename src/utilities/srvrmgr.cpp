@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.13.2.5 2005-01-26 14:50:39 kkuznetsov Exp $
+ * $Id: srvrmgr.cpp,v 1.13.2.6 2005-02-01 09:01:55 kkuznetsov Exp $
  */
 
 #include "firebird.h"
@@ -492,7 +492,7 @@ static BOOLEAN start_server( IBMGR_DATA * data)
 		argv[1] = "-s";
 	else
 		argv[1] = "-f";
-	argv[2] = "\0";
+	argv[2] = NULL;
 
 
 #ifdef DEBUG
