@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.34 2004-10-04 08:15:00 robocop Exp $
+ *  $Id: nbackup.cpp,v 1.35 2004-11-04 18:29:22 skidder Exp $
  *
  */
  
@@ -908,69 +908,100 @@ int main( int argc, char *argv[] )
 #endif
 	bool matched = false;
 	// Do not constify. GCC 3.4.0 chokes on minus below in this case
-	char** end = argv + argc;
+	char **end = argv + argc, **argp;
 
 	char *username = NULL, *password = NULL;
 	
 	try {
+		// Read global command line parameters
+		for (argp = argv + 1; argp < end; argp++) {
+			// Ignore unrecognized options for the moment
+			if (**argp != '-')
+				continue;
+
+			switch (UPPER((*argp)[1])) {
+			case 'U':
+				if (++argp >= end)
+					usage();
+				username = *argp;
+				break;
+
+			case 'P':
+				if (++argp >= end)
+					usage();
+				password = *argp;
+				break;
+			default:
+				break;
+			}
+		}
 	
-	while (++argv < end)
-		if (**argv == '-') {
-			switch (UPPER((*argv)[1])) {
+		// Read global command line parameters
+		for (argp = argv + 1; argp < end; argp++) {
+			// We must recognize all parameters here
+			if (**argp != '-') {
+				fprintf(stderr, "Unrecognized parameter %s.\n", *argp);
+				usage();
+			}
+
+			switch (UPPER((*argp)[1])) {
+			case 'U':
+			case 'P':
+				// Skip parameters recognized earlier
+				argp++;
+				break;
 
 			case 'F':
-				if (++argv >= end)
+				if (++argp >= end) {
+					fprintf(stderr, "Missing parameter for switch %s.\n", argp[-1]);
 					usage();
-				nbackup(*argv, username, password).fixup_database();
+				}
+				nbackup(*argp, username, password).fixup_database();
 				matched = true;
 				break;
 
 			case 'L':
-				if (++argv >= end)
+				if (++argp >= end) {
+					fprintf(stderr, "Missing parameter for switch %s.\n", argp[-1]);
 					usage();
-				nbackup(*argv, username, password).lock_database();
+				}
+				nbackup(*argp, username, password).lock_database();
 				matched = true;
 				break;
 
 			case 'N':
-				if (++argv >= end)
+				if (++argp >= end) {
+					fprintf(stderr, "Missing parameter for switch %s.\n", argp[-1]);
 					usage();
-				nbackup(*argv, username, password).unlock_database();
+				}
+				nbackup(*argp, username, password).unlock_database();
 				matched = true;
-				break;
-
-			case 'U':
-				if (++argv >= end)
-					usage();
-				username = *argv;
-				break;
-
-			case 'P':
-				if (++argv >= end)
-					usage();
-				password = *argv;
 				break;
 
 			case 'B': {
-				if (++argv >= end)
-					usage();
-				int level = atoi(*argv);
-				if (++argv >= end)
-					usage();
-				nbackup(*argv, username, password).backup_database(level, argv + 1 >= end ? NULL : argv[1]);
+					if (++argp >= end) {
+						fprintf(stderr, "Missing parameter for switch %s.\n", argp[-1]);
+						usage();
+					}
+					int level = atoi(*argp);
+					if (++argp >= end)
+						usage();
+					nbackup(*argp, username, password).backup_database(level, argp + 1 >= end ? NULL : argp[1]);
+					matched = true;
 				}
-				matched = true;
 				break;
 
 			case 'R':
-				if (++argv >= end)
+				if (++argp >= end) {
+					fprintf(stderr, "Missing parameter for switch %s.\n", argp[-1]);
 					usage();
-				nbackup(*argv, username, password).restore_database(end - argv - 1, argv + 1);
+				}
+				nbackup(*argp, username, password).restore_database(end - argp - 1, argp + 1);
 				matched = true;
 				break;
 
 			default:
-				fprintf(stderr, "Unknown switch %s.\n", *argv);
+				fprintf(stderr, "Unknown switch %s.\n", *argp);
 				usage();
 				break;
 			}
