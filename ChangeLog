@@ -1,3 +1,20 @@
+2003-01-29 16:29  skidder
+
+	* firebird2/configure.in:
+	
+	Change package prefix
+
+2003-01-29 11:16  eku
+
+	* firebird2/src/common/classes/locks.h:
+	
+	Dmitry Yemanov: Right now locks.h is used by the memory manager
+	only. In its internals you can find that SS uses Spinlock class
+	whilst CS uses SharedSpinlock (which is just a dummy now). So I
+	think everything except SharedSpinlock should be #ifdef'ed with
+	SUPERSERVER in locks.h. The only doubt I have is a SOLARIS check
+	there (is it related to SS or CS?).
+
 2003-01-28 17:03  dimitr
 
 	* firebird2/src/utilities/: install_nt.h, install_svc.cpp:
