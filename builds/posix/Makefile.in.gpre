@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.gpre,v 1.7 2003-03-27 11:21:45 aafemt Exp $
+#  $Id: Makefile.in.gpre,v 1.8 2003-07-08 01:05:22 brodsom Exp $
 #
 ROOT=../..
 
@@ -100,7 +100,7 @@ $(GPRE):$(GPRECommon_Objects) $(GPRE_Objects) $(LIBGDS_DEP)
 
 
 # gpre_meta needs a special boot build since there is no database.
-$(SRC)/gpre_meta.cpp:  $(SRC)/gpre_meta.epp
+$(SRC_ROOT)/gpre_meta.cpp:  $(SRC_ROOT)/gpre_meta.epp
 	$(GPRE_BOOT) -lang_internal $(GPRE_FLAGS) $< $@
 
 

@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.example5,v 1.6 2003-04-10 06:34:23 eku Exp $
+#   $Id: Makefile.in.example5,v 1.7 2003-07-08 01:05:22 brodsom Exp $
 # 
 
 ROOT=../..
@@ -138,14 +138,14 @@ nt_examples:
 
 employee.fdb:	empbuild$(EXEC_EXT) $(INPUT_FILES)
 	-$(RM) employee.fdb
-#	$(CP) $(SOURCE)/examples/empddl.sql .
-#	$(CP) $(SOURCE)/examples/indexoff.sql .
-#	$(CP) $(SOURCE)/examples/indexon.sql .
-#	$(CP) $(SOURCE)/examples/empdml.sql .
-#	$(CP) $(SOURCE)/examples/lang.inp .
-#	$(CP) $(SOURCE)/examples/proj.inp .
-#	$(CP) $(SOURCE)/examples/job.inp .
-#	$(CP) $(SOURCE)/examples/qtr.inp .
+#	$(CP) $(SRC_ROOT)/examples/empddl.sql .
+#	$(CP) $(SRC_ROOT)/examples/indexoff.sql .
+#	$(CP) $(SRC_ROOT)/examples/indexon.sql .
+#	$(CP) $(SRC_ROOT)/examples/empdml.sql .
+#	$(CP) $(SRC_ROOT)/examples/lang.inp .
+#	$(CP) $(SRC_ROOT)/examples/proj.inp .
+#	$(CP) $(SRC_ROOT)/examples/job.inp .
+#	$(CP) $(SRC_ROOT)/examples/qtr.inp .
 	./empbuild employee.fdb
 	-$(CHMOD_6) employee.fdb
 
@@ -171,11 +171,11 @@ empbuild.fdb : empddl.sql empbld.sql
 
 intlemp.fdb:	intlbld$(EXEC_EXT) $(INTL_FILES)
 	-$(RM) intlemp.fdb
-#	$(CP) $(SOURCE)/examples/intlddl.sql .
-#	$(CP) $(SOURCE)/examples/indexoff.sql .
-#	$(CP) $(SOURCE)/examples/indexon.sql .
-#	$(CP) $(SOURCE)/examples/intldml.sql .
-#	$(CP) $(SOURCE)/examples/lang.inp .
+#	$(CP) $(SRC_ROOT)/examples/intlddl.sql .
+#	$(CP) $(SRC_ROOT)/examples/indexoff.sql .
+#	$(CP) $(SRC_ROOT)/examples/indexon.sql .
+#	$(CP) $(SRC_ROOT)/examples/intldml.sql .
+#	$(CP) $(SRC_ROOT)/examples/lang.inp .
 	./intlbld intlemp.fdb
 	-$(CHMOD_6) intlemp.fdb
 

@@ -29,7 +29,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.codes,v 1.6 2003-07-06 01:51:48 brodsom Exp $
+#  $Id: Makefile.in.codes,v 1.7 2003-07-08 01:05:22 brodsom Exp $
 #
 ROOT=..
 ObjModuleName=codes
@@ -68,7 +68,7 @@ generated_headers: build_codes include/gen/ids.h
 build_codes: $(BIN)/codes msg.fdb
 	$(BIN)/codes include/gen
 
-$(SRC)/jrd/codes.cpp: $(SRC)/jrd/codes.epp
+$(SRC_ROOT)/jrd/codes.cpp: $(SRC_ROOT)/jrd/codes.epp
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
 $(BIN)/codes: $(CODES_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)

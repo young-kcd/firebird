@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.18 2003-05-25 00:07:30 skidder Exp $
+#   $Id: make.rules,v 1.19 2003-07-08 01:05:22 brodsom Exp $
 #
 
 #____________________________________________________________________________
@@ -177,11 +177,11 @@ DSQL_GPRE_FLAGS =  -lang_internal -r -m -z -n
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
 
-$(SRC)/jrd/%.cpp:: $(SRC)/jrd/%.epp 
+$(SRC_ROOT)/jrd/%.cpp:: $(SRC_ROOT)/jrd/%.epp 
 	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
 
 
-$(SRC)/dsql/%.cpp:: $(SRC)/dsql/%.epp 
+$(SRC_ROOT)/dsql/%.cpp:: $(SRC_ROOT)/dsql/%.epp 
 	$(GPRE_CURRENT) $(DSQL_GPRE_FLAGS) $< $@
 
 
@@ -201,11 +201,11 @@ $(SRC)/dsql/%.cpp:: $(SRC)/dsql/%.epp
 #
 
 
-$(OBJ)/%.o:: $(SRC)/%.c 
+$(OBJ)/%.o:: $(SRC_ROOT)/%.c 
 	$(CC) $(CXXFLAGS) -c $(firstword $<) -o $@
 	@$(move-dep)
 
-$(OBJ)/%.o: $(SRC)/%.cpp 
+$(OBJ)/%.o: $(SRC_ROOT)/%.cpp 
 	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
 	@$(move-dep)
 
@@ -213,14 +213,14 @@ $(GEN_ROOT)/%.o: $(SRC_ROOT)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
 	@$(move-dep)
 
-$(OBJ)/%.lo: $(SRC)/%.cpp 
+$(OBJ)/%.lo: $(SRC_ROOT)/%.cpp 
 	@$(move-dep)
 
 #$(OBJ)/%
 #.epp.cpp:
 #	$(GPRE_STATIC) $(GPRE_FLAGS) $<
 
-$(OBJ)/%.o: $(DEP)/%.d
+$(OBJ)/%.o: $(OBJ)/%.d
 
 .SUFFIXES: .epp .e
 
@@ -228,17 +228,17 @@ $(OBJ)/%.o: $(DEP)/%.d
 # since the .d file was just created then it will force a compile of the
 # .cpp files
 
-$(DEP)/%.d:: $(SRC)/%.c
+$(OBJ)/%.d:: $(SRC_ROOT)/%.c
 	@$(ECHO) "need to rebuild $^"
 	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
 #	$(TOUCH) $^
 
-$(DEP)/%.d:: $(SRC)/%.epp
+$(OBJ)/%.d:: $(SRC_ROOT)/%.epp
 	@$(ECHO) "need to rebuild $^"
 	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
 #	$(TOUCH) $^
 
-$(DEP)/%.d:: $(SRC)/%.cpp
+$(OBJ)/%.d:: $(SRC_ROOT)/%.cpp
 	@$(ECHO) "need to rebuild $^"
 	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
 #	$(TOUCH) $^

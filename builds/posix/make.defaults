@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.23 2003-05-25 00:04:15 skidder Exp $
+#   $Id: make.defaults,v 1.24 2003-07-08 01:05:22 brodsom Exp $
 # 
 
 
@@ -41,10 +41,9 @@
 
 #_____________________________________________________________________________
 
+TMP_ROOT=$(ROOT)/temp
 GEN_ROOT=$(ROOT)/gen
 SRC_ROOT=$(ROOT)/src
-
-MAKE_ROOT=$(GEN_ROOT)
 
 FIREBIRD=$(GEN_ROOT)/firebird
 INTERBASE=$(FIREBIRD)
@@ -63,20 +62,12 @@ RealSrcRootPath = $(shell cd $(SRC_ROOT); pwd)
 #ModuleName:=$(notdir $(CURDIR))
 ModuleName:=$(subst $(RealSrcRootPath)/,,$(CURDIR))
 
-SRC=$(SRC_ROOT)
-#SRC=$(SRC_ROOT)/$(ModuleName)
-
-OBJ=$(GEN_ROOT)/$(ObjModuleName)
-DEP=$(OBJ)
+OBJ=$(TMP_ROOT)/$(ObjModuleName)
 
 GEN_SRC=$(OBJ)
 
   # This one is not so widely used at the momement.
   # but I would like it to become so.
-
-
-# I would like to remove this one.
-SOURCE=$(ROOT)/src
 
 #RealFirebirdPath = $(shell cd $(FIREBIRD); pwd)
 RealFirebirdPath = @NEW_FIREBIRD_DIR@

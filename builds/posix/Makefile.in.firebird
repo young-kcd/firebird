@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.36 2003-04-10 06:34:24 eku Exp $
+#  $Id: Makefile.in.firebird,v 1.37 2003-07-08 01:05:22 brodsom Exp $
 #
 
 ROOT=..
@@ -169,12 +169,12 @@ firebird_boot: updateBuildNum boot_phase1 boot_phase2
 
 .PHONY: updateBuildNum external_libraries
 
-updateBuildNum : jrd/build_no.h $(MAKE_ROOT)/Make.Version
+updateBuildNum : jrd/build_no.h $(GEN_ROOT)/Make.Version
 
 jrd/build_no.h : misc/writeBuildNum.sh
 	(cd ..; ./src/misc/writeBuildNum.sh rebuildHeader)
 
-$(MAKE_ROOT)/Make.Version : misc/writeBuildNum.sh
+$(GEN_ROOT)/Make.Version : misc/writeBuildNum.sh
 	misc/writeBuildNum.sh createMakeVersion $@
 
 
@@ -191,7 +191,7 @@ endif
 external_libraries: $(EXTERNAL_LIBRARIES)
 
 $(LIBEDITLINE_A): 
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.extern.editline
+	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
 
 
 #---------------------------------------------------------------------------
@@ -221,20 +221,20 @@ boot_phase1_build: libfbcommon gpre_boot libfbstatic gpre_static @MANAGER_PROCES
 
 
 libfbcommon:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.libfbcommon $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbcommon $@
 
 gpre_boot:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.boot.gpre $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.boot.gpre $@
 
 libfbstatic:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.libfbstatic $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbstatic $@
 
 gpre_static:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.static.gpre $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gpre $@
 
                              # The lock manager for classic (embedded) 
 lock_mgr :
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.lockmgr $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.lockmgr $@
 
 
 
@@ -264,19 +264,19 @@ $(ISC_GDB):
 boot_phase2_build: create_db empty_db gbak_static isql_static
 
 create_db:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.util $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $@
 
 gbak_static: @MANAGER_PROCESS_TARGET@
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.static.gbak $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gbak $@
 
 isql_static: 
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.static.isql $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.static.isql $@
 
 empty_db :
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.refDatabases $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.refDatabases $@
 
 ref_databases : gbak_static
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.refDatabases $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.refDatabases $@
 
 
 security.fdb: gdef isql 		# build the security database
@@ -306,19 +306,19 @@ basic_targets: ref_databases msgs msgs_intl generated_headers intl extlib includ
 
 # hack to make code regeneration work
 generated_headers :
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.codes $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.codes $@
 
 msgs:                  # messages file for user $(FIREBIRD)/firebird.msg
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.msgs $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.msgs $@
 
 msgs_intl:             # international version of msgs file
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.msgs $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.msgs $@
 
 intl:                  # international lang components $(FIREBIRD)/intl/
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.intl
+	$(MAKE) -f $(GEN_ROOT)/Makefile.intl
 
 extlib:                # external programs than can be called
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.extlib
+	$(MAKE) -f $(GEN_ROOT)/Makefile.extlib
 
                        # distribution header include files
 includes:	include_generic 
@@ -326,7 +326,7 @@ includes:	include_generic
                        # examples still need a good makefile to ship with them
 examples:
 	$(MAKE) -C ../gen/v5_examples -f ../Makefile.v5_examples
-#	$(MAKE) -f $(MAKE_ROOT)/Makefile.v5_examples
+#	$(MAKE) -f $(GEN_ROOT)/Makefile.v5_examples
 
 otherfiles: misc_files script_files
 
@@ -340,31 +340,31 @@ classic_targets: libfbembed inet_server embed_gfix embed_gbak embed_isql \
 	embed_gpre embed_util embed_gdef embed_qli
 
 libfbembed:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.libfbembed $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbembed $@
 
 inet_server:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.inet_server
+	$(MAKE) -f $(GEN_ROOT)/Makefile.inet_server
 
 embed_gfix:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.gfix
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.gfix
 
 embed_gbak:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.gbak
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.gbak
 
 embed_isql:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.isql
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.isql
 
 embed_gpre:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.gpre
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.gpre
 
 embed_util:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.util	
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util	
 
 embed_gdef:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.gdef
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.gdef
 
 embed_qli:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.embed.qli
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.qli
 
 
 #_ Firebird Server Targets (super and super client)__________________________
@@ -376,34 +376,34 @@ super_targets: libfbserver fbserver libfbclient client_gfix client_gbak \
 			client_isql client_gpre client_util # client_gdef
 
 libfbserver:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.libfbserver $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbserver $@
 
 fbserver:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.fbserver $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.fbserver $@
 
 libfbclient:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.libfbclient $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbclient $@
 
 client_gfix:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.client.gfix
+	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gfix
 
 client_gbak:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.client.gbak
+	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gbak
 
 client_gpre:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.client.gpre
+	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gpre
 
 client_isql:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.client.isql
+	$(MAKE) -f $(GEN_ROOT)/Makefile.client.isql
 
 client_util:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.client.util	
+	$(MAKE) -f $(GEN_ROOT)/Makefile.client.util	
 
 # Not sure we need this target in super - problems with WAL includes
 # MOD 04-Oct-2002
 
 client_gdef:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.client.gdef
+	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gdef
 
 
 
@@ -536,7 +536,7 @@ $(BIN)/% :: $(SRC_ROOT)/install/misc/%
 .PHONY: install package packages dist
 
 install package packages dist:
-	$(MAKE) -f $(MAKE_ROOT)/Makefile.install $@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.install $@
 
 
 #___________________________________________________________________________

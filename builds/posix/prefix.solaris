@@ -33,7 +33,7 @@ LOCAL_LDFLAGS=@LDFLAGS@
 
 # if we keep sfio this needs to be set by configure (or move in to extern directory)
 # must use full sfio not stdio emulation to get file handle number fix
-#SFIO_DIR=$(SRC)/../../../sfio/sfio_2002
+#SFIO_DIR=$(SRC_ROOT)/../../../sfio/sfio_2002
 #SFIO_DIR=/data01/fb-dev/sfio/sfio_2002
 #SFIO_FLAGS= -DSFIO -I$(SFIO_DIR)/include
 #SFIO_LDFLAGS= -L$(SFIO)/lib

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.v5_examples,v 1.8 2003-04-08 10:09:05 aafemt Exp $
+#  $Id: Makefile.in.v5_examples,v 1.9 2003-07-08 01:05:22 brodsom Exp $
 #
 ROOT=../..
 ObjModuleName=v5_examples
@@ -52,7 +52,7 @@ export PATH
 GPRE_FLAGS=	-r -m -z -n
 
 EXAMPLES_DEST=	$(FIREBIRD)/examples/v5/
-EXAMPLES_SRC=	$(SRC)/v5_examples/
+EXAMPLES_SRC=	$(SRC_ROOT)/v5_examples/
 
 
 EMPBLD_Objects=	empbuild.o
@@ -138,11 +138,11 @@ empbuild.fdb : $(EXAMPLES_SRC)empddl.sql $(EXAMPLES_SRC)empbld.sql
 
 intlemp.fdb:	intlbld$(EXEC_EXT) $(INTL_FILES)
 	-$(RM) intlemp.fdb
-#	$(CP) $(SOURCE)/examples/intlddl.sql .
-#	$(CP) $(SOURCE)/examples/indexoff.sql .
-#	$(CP) $(SOURCE)/examples/indexon.sql .
-#	$(CP) $(SOURCE)/examples/intldml.sql .
-#	$(CP) $(SOURCE)/examples/lang.inp .
+#	$(CP) $(SRC_ROOT)/examples/intlddl.sql .
+#	$(CP) $(SRC_ROOT)/examples/indexoff.sql .
+#	$(CP) $(SRC_ROOT)/examples/indexon.sql .
+#	$(CP) $(SRC_ROOT)/examples/intldml.sql .
+#	$(CP) $(SRC_ROOT)/examples/lang.inp .
 	./intlbld intlemp.fdb
 	-$(CHMOD_6) intlemp.fdb
 
@@ -164,11 +164,11 @@ intlbld.c:	intlbuild.fdb intlbld.e
 
 
 
-%.sql:: $(SRC)/v5_examples/%.sql
+%.sql:: $(SRC_ROOT)/v5_examples/%.sql
 	$(CP) $^ $@
 
-%.inp:: $(SRC)/v5_examples/%.inp
+%.inp:: $(SRC_ROOT)/v5_examples/%.inp
 	$(CP) $^ $@
 
-%.e:: $(SRC)/v5_examples/%.e
+%.e:: $(SRC_ROOT)/v5_examples/%.e
 	$(CP) $^ $@

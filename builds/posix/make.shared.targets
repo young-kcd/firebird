@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: make.shared.targets,v 1.12 2003-07-02 19:02:49 brodsom Exp $
+#  $Id: make.shared.targets,v 1.13 2003-07-08 01:05:22 brodsom Exp $
 #
 
 
@@ -44,23 +44,21 @@
 # The intermediate files dsql.tab.c dsql.tab.h and parse.cpp are generated 
 # and are also stored in the CVS tree. MOD 7-Oct-2002
 
-$(SRC)/dsql/parse.cpp: $(SRC)/dsql/parse.y $(SRC)/dsql/parse.sed
+$(SRC_ROOT)/dsql/parse.cpp: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/parse.sed
 	$(YACC) -l -d $<
-	$(MV) $(SRC)/y.tab.c $(SRC)/dsql/dsql.tab.c
-	$(MV) $(SRC)/y.tab.h $(SRC)/dsql/dsql.tab.h
-	sed -e 's/\\r//g' $(SRC)/dsql/parse.sed > $(SRC)/dsql/parse2.sed
-	sed -f $(SRC)/dsql/parse2.sed <$(SRC)/dsql/dsql.tab.c > $@  
-	-$(RM) $(SRC)/dsql/parse2.sed
+	$(MV) $(SRC_ROOT)/y.tab.c $(SRC_ROOT)/dsql/dsql.tab.c
+	$(MV) $(SRC_ROOT)/y.tab.h $(SRC_ROOT)/dsql/dsql.tab.h
+	sed -e 's/\\r//g' $(SRC_ROOT)/dsql/parse.sed > $(SRC_ROOT)/dsql/parse2.sed
+	sed -f $(SRC_ROOT)/dsql/parse2.sed <$(SRC_ROOT)/dsql/dsql.tab.c > $@  
+	-$(RM) $(SRC_ROOT)/dsql/parse2.sed
 
 
 
 
 # gpre_meta needs a special boot build since there is no database.
 
-$(SRC)/gpre/gpre_meta.cpp:  $(SRC)/gpre/gpre_meta.epp
+$(SRC_ROOT)/gpre/gpre_meta.cpp:  $(SRC_ROOT)/gpre/gpre_meta.epp
 	$(GPRE_BOOT) -lang_internal $(GPRE_FLAGS) $< $@
-
-
 
 
 buildb: security.fdb yachts.lnk help.fdb
@@ -77,17 +75,17 @@ help.fdb:
 
 
 # These need to change to $(GEN_SRC) at some stage
-$(SRC)/dudley/exe.cpp $(SRC)/dudley/extract.epp:      yachts.lnk
+$(SRC_ROOT)/dudley/exe.cpp $(SRC_ROOT)/dudley/extract.epp:      yachts.lnk
 
-$(SRC)/qli/meta.cpp $(SRC)/qli/proc.cpp $(SRC)/qli/show.cpp: yachts.lnk
-$(SRC)/qli/help.cpp:        help.fdb
+$(SRC_ROOT)/qli/meta.cpp $(SRC_ROOT)/qli/proc.cpp $(SRC_ROOT)/qli/show.cpp: yachts.lnk
+$(SRC_ROOT)/qli/help.cpp:        help.fdb
 
 # Explicit dependence on generated header
-$(OBJ)/jrd/par.o:	$(SRC)/include/gen/blrtable.h
+$(OBJ)/jrd/par.o:	$(SRC_ROOT)/include/gen/blrtable.h
 
 # Rebuild blrtable.h
-$(SRC)/include/gen/blrtable.h: $(BLRTABLE)
-	$(BLRTABLE) > $(SRC)/include/gen/blrtable.h
+$(SRC_ROOT)/include/gen/blrtable.h: $(BLRTABLE)
+	$(BLRTABLE) > $(SRC_ROOT)/include/gen/blrtable.h
 
 $(BLRTABLE): $(BLRTABLE_Objects)
 	$(CXX) $(LINK_OPTS) $(BLRTABLE_Objects) -o $@ -L $(LIB) -lfbcommon $(LINK_LIBS)
