@@ -1,3 +1,35 @@
+2003-04-12 19:06  alexpeshkoff
+
+	* firebird2/src/jrd/: dls.cpp, dls_proto.h, isc.cpp:
+	
+	New UdfAccess implementation - related cleanup
+
+2003-04-12 18:34  alexpeshkoff
+
+	* firebird2/src/: common/config/config.cpp, common/config/config.h,
+	jrd/flu.cpp:
+	
+	Restrict UDF access via UdfAccess entry in firebird.conf
+
+2003-04-12 12:35  alexpeshkoff
+
+	* firebird2/src/jrd/: ExecuteStatement.cpp, ExecuteStatement.h:
+	
+	Fixed problems with SQLDA > 32K
+
+2003-04-12 12:24  alexpeshkoff
+
+	* firebird2/src/common/config/dir_list.cpp:
+	
+	Directory access restrictions don't apply now to BOOT_BUILD
+
+2003-04-12 12:04  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp:
+	
+	Any database, mentioned in aliases.conf, may be accessed regardless
+	of DatabaseAccess parameter in firebird.conf.
+
 2003-04-11 12:32  paul_reeves
 
 	* firebird2/builds/win32/: blrtable.bat, build_all.bat,
