@@ -1,4 +1,84 @@
   **************
+  * v1.5 RC 9
+  **************
+
+    * Various installation fixes and improvements.
+      Contributor(s):
+        Mark O'Donohue <mark.odonohue at cytopia.com.au>
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+        Nickolay Samofatov <skidder at bssys.com>
+        Paul Reeves <preeves at ibphoenix.com>
+        Olivier Mascia <om at tipgroup.com>
+
+    * Fixed RC8 bug.
+        Streamed blobs are restored incorrectly.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC8 bug.
+        Restored support for new BLR codes in the built-in BLR blob filter.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC8 bug.
+        Server crashes or wrong results related to views/SPs referenced from different contexts.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Upgraded examples.
+        Example database and scripts are upgraded to SQL dialect 3.
+      Contributor(s):
+        Helen Borrie <helebor at tpg.com.au>
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC8 bug.
+        Record format is not updated properly in some cases.
+      Contributor(s):
+        Eugeny Kilin <john at citycard.izhnet.ru>
+
+    * Improved win32 installation utilities.
+        Link instreg, instsvc and instclient with C/C++ runtime statically to avoid dependencies from MS libraries.
+      Contributor(s):
+        Olivier Mascia <om at tipgroup.com>
+
+    * Fixed RC8 bug.
+        Changed isc_get_client_version() API to return ISC (i.e. compatibility) version info.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed unregistered bug.
+        Possibility of SEGV in ISQL when exiting w/o connect or create database.
+      Contributor(s):
+        Alexander Peshkoff <peshkoff at hotmail.ru>
+
+    * Fixed RC8 bug.
+        Fixed a couple of threading issues in the client library.
+      Contributor(s):
+        Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed RC8 bug.
+        Computed fields evaluate to NULL in triggers.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC8 bug.
+        Restored valid user permissions for the security database.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Fixed bug SF #211781.
+        Win32: Server don't close thread handles.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC8 bug.
+        Fixed instclient.exe to generate correct file version info for gds32.
+      Contributor(s):
+        Olivier Mascia <om at tipgroup.com>
+
+  **************
   * v1.5 RC 8
   **************
 
