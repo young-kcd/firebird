@@ -1,3 +1,49 @@
+2002-11-22 16:27  skidder
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	Fixed nulls first/last and collation handling in "order by" clause
+	of unions
+
+2002-11-22 15:31  eku
+
+	* firebird2/configure.in:
+	
+	Added default rule for currently unsupported systems.
+
+2002-11-22 15:09  dimitr
+
+	* firebird2/: src/include/fb_types.h, configure.in:
+	
+	Cleanup by Dimitry Sibiryakov.
+
+2002-11-22 13:47  dimitr
+
+	* firebird2/src/jrd/grant.epp:
+	
+	Fixed another porting bug in grant/revoke code.
+
+2002-11-22 12:20  dimitr
+
+	* firebird2/builds/win32/msvc6/: dsql_server.dsp,
+	dsql_server_classic.dsp, engine.dsp, engine_classic.dsp,
+	fb_lock_print.dsp, fbclient.dsp:
+	
+	Updated project files.
+
+2002-11-22 10:02  dimitr
+
+	* firebird2/src/common/config/config_file.cpp:
+	
+	Applied patch for config_file.cpp. Thanks to Pirtea Calin Iancu.
+
+2002-11-22 09:48  dimitr
+
+	* firebird2/src/jrd/: thd.cpp, thd_win32.cpp:
+	
+	Merged contents of thd_win32.cpp into thd.cpp. Thanks to Dimitry
+	Sibiryakov.
+
 2002-11-22 00:02  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp:
