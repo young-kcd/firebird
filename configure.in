@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.17 2003-12-02 21:57:58 bellardo Exp $
+dnl $Id: configure.in,v 1.141.2.18 2003-12-14 03:57:24 skywalker Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -720,18 +720,19 @@ case "$PLATFORM" in
                      gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
                      gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
-                     gen/firebird/misc/firebird.xinetd:src/install/arch-specific/linux/misc/firebird.xinetd.in
-                     gen/firebird/misc/firebird.init.d.generic:src/install/arch-specific/linux/misc/firebird.init.d.generic.in
-                     gen/firebird/misc/firebird.init.d.mandrake:src/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
-                     gen/firebird/misc/firebird.init.d.suse:src/install/arch-specific/linux/misc/firebird.init.d.suse.in
-                     gen/firebird/misc/firebird.init.d.debian:src/install/arch-specific/linux/misc/firebird.init.d.debian.in
-                     gen/firebird/misc/firebird.init.d.gentoo:src/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
-                     gen/firebird/misc/rc.config.firebird:src/install/arch-specific/linux/misc/rc.config.firebird.in
-                     gen/firebird/bin/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
-                     gen/firebird/bin/CSchangeRunUser.sh:src/install/misc/CSchangeRunUser.sh.in
-                     gen/firebird/bin/CSrestoreRootRunUser.sh:src/install/misc/CSrestoreRootRunUser.sh.in
-                     gen/firebird/bin/SSchangeRunUser.sh:src/install/misc/SSchangeRunUser.sh.in
-                     gen/firebird/bin/SSrestoreRootRunUser.sh:src/install/misc/SSrestoreRootRunUser.sh.in
+                     gen/install/misc/firebird.conf:src/install/misc/firebird.conf
+                     gen/install/misc/firebird.xinetd:src/install/arch-specific/linux/misc/firebird.xinetd.in
+                     gen/install/misc/firebird.init.d.generic:src/install/arch-specific/linux/misc/firebird.init.d.generic.in
+                     gen/install/misc/firebird.init.d.mandrake:src/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+                     gen/install/misc/firebird.init.d.suse:src/install/arch-specific/linux/misc/firebird.init.d.suse.in
+                     gen/install/misc/firebird.init.d.debian:src/install/arch-specific/linux/misc/firebird.init.d.debian.in
+                     gen/install/misc/firebird.init.d.gentoo:src/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
+                     gen/install/misc/rc.config.firebird:src/install/arch-specific/linux/misc/rc.config.firebird.in
+                     gen/install/bin/changeDBAPassword.sh:src/install/arch-specific/linux/misc/changeDBAPassword.sh.in
+                     gen/install/bin/CSchangeRunUser.sh:src/install/misc/CSchangeRunUser.sh.in
+                     gen/install/bin/CSrestoreRootRunUser.sh:src/install/misc/CSrestoreRootRunUser.sh.in
+                     gen/install/bin/SSchangeRunUser.sh:src/install/misc/SSchangeRunUser.sh.in
+                     gen/install/bin/SSrestoreRootRunUser.sh:src/install/misc/SSrestoreRootRunUser.sh.in
       ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
     ;;
 
