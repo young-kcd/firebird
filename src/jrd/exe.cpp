@@ -1255,7 +1255,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		jrd_rel* bad_relation = 0;
 		USHORT bad_index;
 
-		IDX_E error_code =
+		const IDX_E error_code =
 			IDX_erase(tdbb, rpb, transaction, &bad_relation, &bad_index);
 
 		if (error_code) {
@@ -3015,7 +3015,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 			VIO_modify(tdbb, org_rpb, new_rpb, transaction);
 
-			IDX_E error_code = IDX_modify(tdbb,
+			const IDX_E error_code = IDX_modify(tdbb,
 										  org_rpb,
 										  new_rpb,
 										  transaction,
@@ -3931,7 +3931,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			jrd_rel* bad_relation = 0;
 
 			VIO_store(tdbb, rpb, transaction);
-			IDX_E error_code = IDX_store(tdbb,
+			const IDX_E error_code = IDX_store(tdbb,
 										 rpb,
 										 transaction,
 										 &bad_relation,
