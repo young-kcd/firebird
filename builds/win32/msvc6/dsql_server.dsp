@@ -127,6 +127,15 @@ SOURCE=..\..\..\src\dsql\ddl.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\dsql\dsql.cpp
+
+!IF  "$(CFG)" == "dsql_server - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "dsql_server - Win32 Release"
+
+# SUBTRACT CPP /Og
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

@@ -481,6 +481,15 @@ SOURCE=..\..\..\src\jrd\vio.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\why.cpp
+
+!IF  "$(CFG)" == "engine_classic - Win32 Release"
+
+# SUBTRACT CPP /Og
+
+!ELSEIF  "$(CFG)" == "engine_classic - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
