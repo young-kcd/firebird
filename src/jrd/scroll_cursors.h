@@ -33,38 +33,38 @@
 */
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS GDS_EXPORT isc_dsql_fetch2(ISC_STATUS ISC_FAR *,
-									  isc_stmt_handle ISC_FAR *,
+ISC_STATUS GDS_EXPORT isc_dsql_fetch2(ISC_STATUS *,
+									  isc_stmt_handle *,
 									  unsigned short,
-									  XSQLDA ISC_FAR *,
+									  XSQLDA *,
 									  unsigned short, signed long);
 #endif
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS GDS_EXPORT isc_dsql_fetch2_m(ISC_STATUS ISC_FAR *,
-										isc_stmt_handle ISC_FAR *,
+ISC_STATUS GDS_EXPORT isc_dsql_fetch2_m(ISC_STATUS *,
+										isc_stmt_handle *,
 										unsigned short,
-										char ISC_FAR *,
+										char *,
 										unsigned short,
 										unsigned short,
-										char ISC_FAR *,
+										char *,
 										unsigned short, signed long);
 #endif
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS GDS_EXPORT isc_embed_dsql_fetch2(ISC_STATUS ISC_FAR *,
-											char ISC_FAR *,
+ISC_STATUS GDS_EXPORT isc_embed_dsql_fetch2(ISC_STATUS *,
+											char *,
 											unsigned short,
-											XSQLDA ISC_FAR *,
+											XSQLDA *,
 											unsigned short, signed long);
 #endif
 
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS GDS_EXPORT isc_receive2(ISC_STATUS ISC_FAR *,
-								   isc_req_handle ISC_FAR *,
+ISC_STATUS GDS_EXPORT isc_receive2(ISC_STATUS *,
+								   isc_req_handle *,
 								   short,
 								   short,
-								   void ISC_FAR *,
+								   void *,
 								   short, unsigned short, unsigned long);
 #endif
 
