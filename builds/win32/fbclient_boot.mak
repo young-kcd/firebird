@@ -21,6 +21,10 @@ CLEAN :
 	-@erase "$(INTDIR)\array.sbr"
 	-@erase "$(INTDIR)\blob.obj"
 	-@erase "$(INTDIR)\blob.sbr"
+	-@erase "$(INTDIR)\config_file.obj"
+	-@erase "$(INTDIR)\config_file.sbr"
+	-@erase "$(INTDIR)\config_root.obj"
+	-@erase "$(INTDIR)\config_root.sbr"
 	-@erase "$(INTDIR)\cvt.obj"
 	-@erase "$(INTDIR)\cvt.sbr"
 	-@erase "$(INTDIR)\dls.obj"
@@ -136,6 +140,8 @@ BSC32_SBRS= \
 	"$(INTDIR)\wnet.sbr" \
 	"$(INTDIR)\xdr.sbr" \
 	"$(INTDIR)\xnet.sbr" \
+	"$(INTDIR)\config_file.sbr" \
+	"$(INTDIR)\config_root.sbr" \
 
 "$(OUTDIR)\fbclient.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
     $(BSC32) @<<
@@ -184,6 +190,8 @@ LINK32_OBJS= \
 	"$(INTDIR)\wnet.obj" \
 	"$(INTDIR)\xdr.obj" \
 	"$(INTDIR)\xnet.obj" \
+	"$(INTDIR)\config_file.obj" \
+	"$(INTDIR)\config_root.obj" \
 	"$(INTDIR)\version.res" \
 	".\temp\common.lib"
 
@@ -444,6 +452,18 @@ SOURCE=..\..\src\remote\xdr.cpp
 SOURCE=..\..\src\remote\xnet.cpp
 
 "$(INTDIR)\xnet.obj"	"$(INTDIR)\xnet.sbr" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\src\common\config\config_file.cpp
+
+"$(INTDIR)\config_file.obj"	"$(INTDIR)\config_file.sbr" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\src\jrd\os\win32\config_root.cpp
+
+"$(INTDIR)\config_root.obj"	"$(INTDIR)\config_root.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
