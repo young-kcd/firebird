@@ -131,7 +131,7 @@ goto :EOF
 :: Error gpre_boot
 :gpre_boot2
 echo.
-echo Error building gpre_boot see boot1.log
+echo Error building gpre_boot, see boot1.log
 echo.
 set ERRLEV=1
 goto :EOF
@@ -166,7 +166,7 @@ if errorlevel 1 goto :gpre_static2
 :: ERROR gpre_static
 :gpre_static2
 echo.
-echo Error building gpre_static see boot2.log
+echo Error building gpre_static, see boot2.log
 echo.
 set ERRLEV=1
 goto :EOF
@@ -187,7 +187,7 @@ if errorlevel 1 goto :msgs2
 @goto :EOF
 :msgs2
 echo.
-echo Error building build_msg see boot3.log
+echo Error building build_msg, see boot3.log
 echo.
 set ERRLEV=1
 goto :EOF
@@ -207,7 +207,7 @@ if errorlevel 1 goto :codes2
 @goto :EOF
 :codes2
 echo.
-echo Error building codes see boot4.log
+echo Error building codes, see boot4.log
 echo.
 set ERRLEV=1
 goto :EOF
