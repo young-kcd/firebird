@@ -1320,7 +1320,7 @@ static void string_to_date( TEXT * string, USHORT length, SLONG date[2])
  **************************************/
 	TEXT c, *p, temp[15], *t, *end, **month_ptr, *m;
 	USHORT n, month_position, i, components[7], precision, year;
-	SLONG clock;
+	time_t clock;
 	struct tm times, times2, *today;
 
 	if (!length) {
@@ -1484,7 +1484,7 @@ static void string_to_time( TEXT * string, USHORT length, SLONG date[2])
  **************************************/
 	TEXT c, *p, temp[15], *t, *end;
 	USHORT n, i, components[7], precision;
-	SLONG clock;
+	time_t clock;
 	struct tm times, *today;
 	if (!length) {
 		date[0] = date[1] = 0;

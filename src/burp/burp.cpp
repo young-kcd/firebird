@@ -454,7 +454,7 @@ int DLL_EXPORT BURP_gbak(int		argc,
 	IN_SW_TAB in_sw_tab;
 	FIL file, file_list, next_file;
 	int temp, result;
-	SLONG clock;
+	time_t clock;
 	SLONG redir_in, redir_out, redir_err;
 	volatile SSHORT action = QUIT;
 	USHORT					sw_replace;
