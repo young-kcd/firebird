@@ -98,24 +98,24 @@ namespace internal
 	} VVARY;
 
 	/*
-	short get_varchar_len(char* vchar) 
+	inline short get_varchar_len(char* vchar) 
 	{
 		return  static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
 	}
 	*/
 
-	short get_varchar_len(unsigned char* vchar) 
+	inline short get_varchar_len(unsigned char* vchar) 
 	{
 		return  static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
 	}
 
-	void set_varchar_len(char* vchar, short len)
+	inline void set_varchar_len(char* vchar, short len)
 	{
 		vchar[1] = static_cast<char>(len >> 8);
 		vchar[0] = static_cast<char>(len);
 	}
 	
-	void set_varchar_len(unsigned char* vchar, short len)
+	inline void set_varchar_len(unsigned char* vchar, short len)
 	{
 		vchar[1] = static_cast<unsigned char>(len >> 8);
 		vchar[0] = static_cast<unsigned char>(len);
