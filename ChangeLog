@@ -1,3 +1,35 @@
+2005-03-11 16:19  kkuznetsov
+
+	* firebird2/builds/install/arch-specific/solx86gcc/: CS/pkginfo.in
+	(1.1), CS/postinstall.in (1.1), CS/postremove.in (1.1),
+	CS/preinstall.in (1.1), CS/prototype.in (1.1), LIBGCC/pkginfolg.in
+	(1.1), LIBGCC/prototypelg.in (1.1), SS/pkginfo.in (1.1),
+	SS/postinstall.in (1.1), SS/postremove.in (1.1), SS/preinstall.in
+	(1.1), SS/prototype.in (1.1):
+	
+	Solaris packaging system next parts (incomplete)
+
+2005-03-11 16:00  kkuznetsov
+
+	* firebird2/configure.in (1.216):
+	
+	Solaris install system
+
+2005-03-11 15:54  kkuznetsov
+
+	* firebird2/builds/install/: arch-specific/solx86gcc/Makefile.in
+	(1.2), misc/aliases.conf.in (1.1), misc/firebird.init.d.Solaris.in
+	(1.1):
+	
+	Solaris install system parts incomplete
+
+2005-03-11 09:34  dimitr
+
+	* firebird2/src/jrd/: evl.cpp (1.133), exe.cpp (1.141), req.h
+	(1.46):
+	
+	Removed unused crap.
+
 2005-03-11 01:34  robocop
 
 	* firebird2/doc/WhatsNew (1.60):
