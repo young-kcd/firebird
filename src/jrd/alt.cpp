@@ -54,6 +54,8 @@
 
 #include "../jrd/gdsold.h"
 
+#include "../jrd/event.h"
+
 typedef struct teb {
 	FRBRD **teb_database;
 	int teb_tpb_length;
@@ -120,7 +122,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR ** event_buffer,
 
 /* initialize the block with event names and counts */
 
-	*p++ = 1;
+	*p++ = EPB_version1;
 
 	VA_START(ptr, count);
 
@@ -204,7 +206,7 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR ** event_buffer,
 	gds_alloc_flag_unfreed((void *) *result_buffer);
 #endif /* DEBUG_GDS_ALLOC */
 
-	*p++ = 1;
+	*p++ = EPB_version1;
 
 	nb = name_buffer;
 

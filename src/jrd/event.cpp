@@ -98,16 +98,12 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse);
 static SLONG create_process(void);
 static void delete_event(EVNT);
 static void delete_process(SLONG);
-static void delete_request(JRD_REQ);
+static void delete_request(REQ);
 static void delete_session(SLONG);
 static AST_TYPE deliver(void);
-static void deliver_request(JRD_REQ);
+static void deliver_request(REQ);
 static void exit_handler(void *);
-#ifdef EVENTS_WILDCARDING
-static EVNT	find_event(USHORT, TEXT *, EVNT, BOOLEAN, EVNT);
-#else /* EVENTS_WILDCARDING */
 static EVNT find_event(USHORT, TEXT *, EVNT);
-#endif /* EVENTS_WILDCARDING */
 static void free_global(FRB);
 static RINT historical_interest(SES, SLONG);
 static void init(void *, SH_MEM, int);
@@ -119,7 +115,7 @@ static void probe_processes(void);
 static void punt(TEXT *);
 static void release(void);
 static void remove_que(SRQ *);
-static BOOLEAN request_completed(JRD_REQ);
+static BOOLEAN request_completed(REQ);
 static STATUS return_ok(STATUS *);
 static void THREAD_ROUTINE watcher_thread(void *);
 
@@ -135,65 +131,6 @@ static SH_MEM_T EVENT_data;
 static MTX_T event_mutex[1];
 #endif
 
-/* Wildcard characters */
-
-#define MATCH_ONE '?'
-#define MATCH_ANY '*'
-
-
-#ifdef EVENTS_WILDCARDING
-USHORT MATCHESNAME(TEXT	* p1, SSHORT l1_bytes, TEXT	* p2, SSHORT l2_bytes)
-{
-/**************************************
- *
- *	MATCHESNAME
- *
- **************************************
- *
- * Functional description
- *	A simplified version of EVL_??_matches.
- *  Used for events wildcarding.
- *
- **************************************/
-	TEXT c;
-	SSHORT l1, l2;
-
-	assert(p1 != NULL);
-	assert(p2 != NULL);
-	assert((l1_bytes % sizeof (TEXT)) == 0);
-	assert((l2_bytes % sizeof (TEXT)) == 0);
-
-	l1 = l1_bytes / sizeof (TEXT);
-	l2 = l2_bytes / sizeof (TEXT);
-
-	while (l2-- > 0) {
-		c = *p2++;
-		if (c == (TEXT) MATCH_ANY) {
-			while ((l2 > 0) && (*p2 == (TEXT) MATCH_ANY)) {
-				l2--;
-				p2++;
-			}
-			if (l2 == 0)
-				return TRUE;
-			while (l1)
-				if (MATCHESNAME(p1++, 
-								l1-- * sizeof (TEXT),
-								p2, 
-								l2 * sizeof (TEXT)))
-					return TRUE;
-			return FALSE;
-		}
-		if (l1-- == 0)
-			return FALSE;
-		if ((c != (TEXT) MATCH_ONE && c != *p1))
-			return FALSE;
-		p1++;
-	}
-
-	return (l1) ? FALSE : TRUE;
-}
-#endif /* EVENTS_WILDCARDING */
-
 
 void EVENT_cancel(SLONG request_id)
 {
@@ -208,7 +145,7 @@ void EVENT_cancel(SLONG request_id)
  *
  **************************************/
 	PRB process;
-	JRD_REQ request;
+	REQ request;
 	SES session;
 	SRQ *que, *que2;
 
@@ -222,7 +159,7 @@ void EVENT_cancel(SLONG request_id)
 	QUE_LOOP(process->prb_sessions, que2) {
 		session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
 		QUE_LOOP(session->ses_requests, que) {
-			request = (JRD_REQ) ((UCHAR *) que - OFFSET(JRD_REQ, req_requests));
+			request = (REQ) ((UCHAR *) que - OFFSET(REQ, req_requests));
 			if (request->req_request_id == request_id) {
 				delete_request(request);
 				RELEASE;
@@ -295,6 +232,53 @@ void EVENT_delete_session(SLONG session_id)
 
 	ACQUIRE;
 	delete_session(session_id);
+	RELEASE;
+}
+
+
+void EVENT_deliver()
+{
+/**************************************
+ *
+ *	E V E N T _ d e l i v e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post an event (step 2).
+ *
+ *  This code was primarily located in
+ *  EVENT_post (see above). This
+ *  routine is called by DFW_perform_post_commit_work
+ *  once all pending events are prepared
+ *  for delivery with EVENT_post.
+ *
+ **************************************/
+	SRQ	*que;
+
+	/* If we're not initialized, do so now */
+
+	if (!EVENT_header)
+    	return;
+
+	ACQUIRE;
+
+	/* Deliver requests for posted events */
+
+	bool flag = true;
+
+	while (flag) {
+		flag = false;
+		QUE_LOOP (EVENT_header->evh_processes, que)	{
+			PRB process = (PRB) ((UCHAR*) que - OFFSET (PRB, prb_processes));
+			if (process->prb_flags & PRB_wakeup) {
+				post_process(process);
+				flag = true;
+				break;
+			}
+		}
+	}
+
 	RELEASE;
 }
 
@@ -392,55 +376,26 @@ int EVENT_post(STATUS * status_vector,
  *	Post an event.
  *
  **************************************/
-	JRD_REQ request;
+	REQ request;
 	SRQ *que;
 	PRB process;
 	EVNT event, parent;
 	RINT interest;
-	USHORT flag;
-#ifdef EVENTS_WILDCARDING
-	APE act, act_new;
-#endif /* EVENTS_WILDCARDING */
 
 /* If we're not initialized, do so now */
 
 	if (!EVENT_header && !EVENT_init(status_vector, FALSE))
 		return status_vector[1];
 
-#ifdef EVENTS_WILDCARDING
-	event = NULL;
-#endif /* EVENTS_WILDCARDING */
-
 	ACQUIRE;
 
-#ifdef EVENTS_WILDCARDING
-	while ((parent = find_event (major_length, major_code, NULL, FALSE, NULL)) &&
-		(event = find_event (minor_length, minor_code, parent, TRUE, event))) {
-#else /* EVENTS_WILDCARDING */
 	if ((parent = find_event(major_length, major_code, 0)) &&
 		(event = find_event(minor_length, minor_code, parent))) {
-#endif /* EVENTS_WILDCARDING */
 		event->evnt_count += count;
 		QUE_LOOP(event->evnt_interests, que) {
 			interest = (RINT) ((UCHAR *) que - OFFSET(RINT, rint_interests));
 			if (interest->rint_request) {
-				request = (JRD_REQ) ABS_PTR(interest->rint_request);
-
-#ifdef EVENTS_WILDCARDING
-				/* Allocate and fill the APE block, link it to the interest */
-
-				act_new = (APE) alloc_global (type_ape, (SLONG) sizeof (struct ape) + minor_length, FALSE);
-				act_new->ape_next = NULL;
-				act_new->ape_count = count;
-				act_new->ape_length = minor_length;
-				memcpy (act_new->ape_name, minor_code, minor_length);
-				if (!interest->rint_apes)
-					interest->rint_apes = (PTR) act_new;
-				act = (APE) interest->rint_apes;
-				while (act->ape_next)
-					act = (APE) act->ape_next;
-				act->ape_next = (act == act_new) ? NULL : act_new;
-#endif /* EVENTS_WILDCARDING */
+				request = (REQ) ABS_PTR(interest->rint_request);
 
 				if (interest->rint_count <= event->evnt_count) {
 					process = (PRB) ABS_PTR(request->req_process);
@@ -448,76 +403,12 @@ int EVENT_post(STATUS * status_vector,
 				}
 			}
 		}
-#ifndef EVENTS_WILDCARDING
-		for (flag = TRUE; flag;) {
-			flag = FALSE;
-			QUE_LOOP(EVENT_header->evh_processes, que) {
-				process = (PRB) ((UCHAR *) que - OFFSET(PRB, prb_processes));
-				if (process->prb_flags & PRB_wakeup) {
-					post_process(process);
-					flag = TRUE;
-					break;
-				}
-			}
-		}
-#endif /* EVENTS_WILDCARDING */
 	}
 
 	RELEASE;
 
 	return return_ok(status_vector);
 }
-
-
-#ifdef EVENTS_WILDCARDING
-void EVENT_post_finalize()
-{
-/**************************************
- *
- *	E V E N T _ p o s t _ f i n a l i z e
- *
- **************************************
- *
- * Functional description
- *	Post an event (step 2).
- *
- *  This code was primarily located in
- *  EVENT_post (see above), but with
- *  introduction of wildcarding it has
- *  been implemented as standalone. This
- *  routine is called by DFW_perform_post_commit_work
- *  once all pending events are prepared
- *  for delivery with EVENT_post.
- *
- **************************************/
-	SRQ	*que;
-	PRB	process;
-	USHORT flag = TRUE;
-
-	/* If we're not initialized, do so now */
-
-	if (!EVENT_header)
-    	return;
-
-	ACQUIRE;
-
-	/* Deliver requests for posted events */
-
-	while (flag) {
-		flag = FALSE;
-		QUE_LOOP (EVENT_header->evh_processes, que)	{
-			process = (PRB) ((UCHAR*) que - OFFSET (PRB, prb_processes));
-			if (process->prb_flags & PRB_wakeup) {
-				post_process (process);
-				flag = TRUE;
-				break;
-			}
-		}
-	}
-
-	RELEASE;
-}
-#endif /* EVENTS_WILDCARDING */
 
 
 SLONG EVENT_que(STATUS * status_vector,
@@ -539,7 +430,7 @@ SLONG EVENT_que(STATUS * status_vector,
 	UCHAR *p, *end, *find_end;
 	USHORT count, flag, len;
 	SES session;
-	JRD_REQ request;
+	REQ request;
 	EVNT event, parent;
 	RINT interest, prior;
 	PTR *ptr, *ptr2;
@@ -548,7 +439,7 @@ SLONG EVENT_que(STATUS * status_vector,
 /* Allocate request block */
 
 	ACQUIRE;
-	request = (JRD_REQ) alloc_global(type_req, (SLONG) sizeof(struct jrd_req), FALSE);
+	request = (REQ) alloc_global(type_req, sizeof(struct req), FALSE);
 	session = (SES) ABS_PTR(session_id);
 	insert_tail(&session->ses_requests, &request->req_requests);
 	request->req_session = session_id;
@@ -561,13 +452,9 @@ SLONG EVENT_que(STATUS * status_vector,
 
 /* Find parent block */
 
-#ifdef EVENTS_WILDCARDING
-	if (!(parent = find_event(string_length, string, NULL, FALSE, NULL))) {
-#else /* EVENTS_WILDCARDING */
 	if (!(parent = find_event(string_length, string, 0))) {
-#endif /* EVENTS_WILDCARDING */
 		parent = make_event(string_length, string, 0);
-		request = (JRD_REQ) ABS_PTR(request_offset);
+		request = (REQ) ABS_PTR(request_offset);
 		session = (SES) ABS_PTR(session_id);
 	}
 
@@ -581,27 +468,20 @@ SLONG EVENT_que(STATUS * status_vector,
 	end = events + events_length;
 	flag = FALSE;
 
-#ifdef EVENTS_WILDCARDING
-	while (p < end && *p) { /* Ignore the detailed part of EPB */
-#else /* EVENTS_WILDCARDING */
 	while (p < end) {
-#endif /* EVENTS_WILDCARDING */
+
 		count = *p++;
 
 		/* The data in the event block may have trailing blanks.  Strip them off. */
 
 		for (find_end = p + count; --find_end >= p && *find_end == ' ';);
 		len = find_end - p + 1;
-#ifdef EVENTS_WILDCARDING
-		if (!(event = find_event(len, reinterpret_cast < char *>(p), parent, FALSE, NULL)))
-#else /* EVENTS_WILDCARDING */
 		if (!(event = find_event(len, reinterpret_cast < char *>(p), parent))) {
-#endif /* EVENTS_WILDCARDING */
 			event =
 				make_event(len, reinterpret_cast < char *>(p), parent_offset);
 			parent = (EVNT) ABS_PTR(parent_offset);
 			session = (SES) ABS_PTR(session_id);
-			request = (JRD_REQ) ABS_PTR(request_offset);
+			request = (REQ) ABS_PTR(request_offset);
 			ptr = (PTR *) ABS_PTR(ptr_offset);
 		}
 		p += count;
@@ -624,13 +504,10 @@ SLONG EVENT_que(STATUS * status_vector,
 			interest->rint_event = event_offset;
 
 			parent = (EVNT) ABS_PTR(parent_offset);
-			request = (JRD_REQ) ABS_PTR(request_offset);
+			request = (REQ) ABS_PTR(request_offset);
 			ptr = (PTR *) ABS_PTR(ptr_offset);
 			session = (SES) ABS_PTR(session_id);
 		}
-#ifdef EVENTS_WILDCARDING
-		interest->rint_apes = NULL;
-#endif /* EVENTS_WILDCARDING */
 		*ptr = REL_PTR(interest);
 		ptr = &interest->rint_next;
 		ptr_offset = REL_PTR(ptr);
@@ -704,7 +581,7 @@ static EVH acquire(void)
 
 		post_process(process);
 
-		while (1) {
+		while (true) {
 			RELEASE;
 			Sleep(3);
 			ACQUIRE;
@@ -785,7 +662,7 @@ static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 		event = process->prb_event;
 		post_process(process);
 
-		while (1) {
+		while (true) {
 			RELEASE;
 			THREAD_EXIT;
 			Sleep(3);
@@ -995,7 +872,7 @@ static void delete_process(SLONG process_offset)
 }
 
 
-static void delete_request(JRD_REQ request)
+static void delete_request(REQ request)
 {
 /**************************************
  *
@@ -1009,26 +886,12 @@ static void delete_request(JRD_REQ request)
  **************************************/
 	SES session;
 	RINT interest;
-#ifdef EVENTS_WILDCARDING
-	APE act1, act2;
-#endif /* EVENTS_WILDCARDING */
 	
 	session = (SES) ABS_PTR(request->req_session);
 
 	while (request->req_interests) {
 		interest = (RINT) ABS_PTR(request->req_interests);
 
-#ifdef EVENTS_WILDCARDING
-		/* Free all APE blocks associated with the request */	
-		act1 = (APE) interest->rint_apes;
-		while (act1) {
-			act2 = (APE) act1->ape_next;
-			free_global((FRB) act1);
-			act1 = act2;
-		}
-		interest->rint_apes = NULL;
-#endif /* EVENTS_WILDCARDING */
-	
 		request->req_interests = interest->rint_next;
 		if (historical_interest(session, interest->rint_event)) {
 			remove_que(&interest->rint_interests);
@@ -1060,7 +923,7 @@ static void delete_session(SLONG session_id)
  **************************************/
 	SES session;
 	SRQ requests;
-	JRD_REQ request;
+	REQ request;
 	EVNT event;
 	RINT interest;
 #ifdef MULTI_THREAD
@@ -1098,7 +961,7 @@ static void delete_session(SLONG session_id)
 	while (!QUE_EMPTY(session->ses_requests)) {
 		requests = session->ses_requests;
 		request =
-			(JRD_REQ) ((UCHAR *) QUE_NEXT(requests) - OFFSET(JRD_REQ, req_requests));
+			(REQ) ((UCHAR *) QUE_NEXT(requests) - OFFSET(REQ, req_requests));
 		delete_request(request);
 	}
 
@@ -1132,7 +995,7 @@ static AST_TYPE deliver(void)
  *
  **************************************/
 	PRB process;
-	JRD_REQ request;
+	REQ request;
 	SES session;
 	SRQ *que, *que2;
 	USHORT flag;
@@ -1157,7 +1020,7 @@ static AST_TYPE deliver(void)
 		for (flag = TRUE; flag;) {
 			flag = FALSE;
 			QUE_LOOP(session->ses_requests, que) {
-				request = (JRD_REQ) ((UCHAR *) que - OFFSET(JRD_REQ, req_requests));
+				request = (REQ) ((UCHAR *) que - OFFSET(REQ, req_requests));
 				if (request_completed(request)) {
 					deliver_request(request);
 					process = (PRB) ABS_PTR(EVENT_process_offset);
@@ -1177,7 +1040,7 @@ static AST_TYPE deliver(void)
 }
 
 
-static void deliver_request(JRD_REQ request)
+static void deliver_request(REQ request)
 {
 /**************************************
  *
@@ -1192,12 +1055,7 @@ static void deliver_request(JRD_REQ request)
  **************************************/
 	void (*ast) ();
 	void *arg;
-#ifdef EVENTS_WILDCARDING
-	SLONG count, index, length;
-	APE act;
-#else /* EVENTS_WILDCARDING */
 	SLONG count;
-#endif /* EVENTS_WILDCARDING */
 	RINT interest;
 	PTR next;
 	EVNT event;
@@ -1207,7 +1065,7 @@ static void deliver_request(JRD_REQ request)
 	arg = request->req_ast_arg;
 	p = event_buffer = buffer;
 	end = buffer + sizeof(buffer);
-	*p++ = 1;
+	*p++ = EPB_version1;
 
 /* Loop thru interest block picking up event name, counts, and unlinking
    stuff */
@@ -1243,36 +1101,6 @@ static void deliver_request(JRD_REQ request)
 		*p++ = (UCHAR) (count >> 16);
 		*p++ = (UCHAR) (count >> 24);
 	}
-
-#ifdef EVENTS_WILDCARDING
-	/* Collect information about actually posted events to construct
-	   the detailed part of EPB */
-
-	length = (SLONG) (p - event_buffer);
-	*p++ = 0;
-	end = p;
-	p += sizeof(USHORT);
-
-	for (next = request->req_interests, index = 0;
-		 next && (interest = (RINT) ABS_PTR (next));
-		 next = interest->rint_next, index++) {
-		act = interest->rint_apes;
-		while (act)	{
-/*			if (!act->ape_count)
-				continue; */
-			*p++ = index;
-			*p++ = act->ape_length;
-			memcpy(p, act->ape_name, act->ape_length);
-			p += act->ape_length;
-			*p++ = act->ape_count;
-			*p++ = act->ape_count >> 8;
-			act = act->ape_next;
-		}
-	}
-	length = p - event_buffer - length;
-	*end++ = length;
-	*end++ = length >> 8;
-#endif /* EVENTS_WILDCARDING */
 
 	delete_request(request);
 	RELEASE;
@@ -1321,45 +1149,6 @@ static void exit_handler(void *arg)
 }
 
 
-#ifdef EVENTS_WILDCARDING
-static EVNT find_event(USHORT length,
-					   TEXT * string,
-					   EVNT parent,
-					   BOOLEAN match,
-					   EVNT start)
-{
-/**************************************
- *
- *	f i n d _ e v e n t
- *
- **************************************
- *
- * Functional description
- *	Lookup an event.
- *
- **************************************/
-	EVNT event, prev_event;
-	SRQ	*que, *prev_que;
-	PTR	parent_offset;
-
-	parent_offset = (parent) ? REL_PTR (parent) : 0;
-
-	QUE_LOOP (EVENT_header->evh_events, que) {
-		event = (EVNT) ((UCHAR*) que - OFFSET (EVNT, evnt_events));
-		prev_que = (SRQ*) QUE_PREV ((*que));
-		prev_event = (EVNT) ((UCHAR*) prev_que - OFFSET (EVNT, evnt_events));
-		if (match && start && start != prev_event)
-			continue;
-		start = NULL;
-		if (event->evnt_parent == parent_offset &&
-			(match ? MATCHESNAME (string, length, event->evnt_name, event->evnt_length) :
-			(event->evnt_length == length && !memcmp (string, event->evnt_name, length))))
-		return event;
-	}
-
-	return NULL;
-}
-#else /* EVENTS_WILDCARDING */
 static EVNT find_event(USHORT length, TEXT * string, EVNT parent)
 {
 /**************************************
@@ -1387,7 +1176,6 @@ static EVNT find_event(USHORT length, TEXT * string, EVNT parent)
 
 	return NULL;
 }
-#endif /* EVENTS_WILDCARDING */
 
 
 static void free_global(FRB block)
@@ -1743,7 +1531,7 @@ static void remove_que(SRQ * node)
 }
 
 
-static BOOLEAN request_completed(JRD_REQ request)
+static BOOLEAN request_completed(REQ request)
 {
 /**************************************
  *
@@ -1871,7 +1659,7 @@ static void THREAD_ROUTINE watcher_thread(void *dummy)
 			process->prb_flags |= PRB_remap_over;
 			process->prb_flags &= ~PRB_remap;
 			RELEASE;
-			while (1) {
+			while (true) {
 				Sleep(3);
 				ACQUIRE;
 				process = (PRB) ABS_PTR(EVENT_process_offset);

@@ -611,6 +611,8 @@ void DFW_perform_post_commit_work(JRD_TRA transaction)
 	if (!transaction->tra_deferred_work)
 		return;
 
+	bool pending_events = false;
+
 	dbb = GET_DBB;
 	lock = dbb->dbb_lock;
 
@@ -625,6 +627,7 @@ void DFW_perform_post_commit_work(JRD_TRA transaction)
 						work->dfw_count);
 			*ptr = work->dfw_next;
 			delete work;
+			pending_events = true;
 		}
 		else if (work->dfw_type == dfw_delete_shadow)
 		{
@@ -637,10 +640,8 @@ void DFW_perform_post_commit_work(JRD_TRA transaction)
 			ptr = &(*ptr)->dfw_next;
 		}
 
-#ifdef EVENTS_WILDCARDING
-	/* Deliver all pending events */
-	EVENT_post_finalize();
-#endif /* EVENTS_WILDCARDING */
+	if (pending_events)
+		EVENT_deliver();
 }
 
 

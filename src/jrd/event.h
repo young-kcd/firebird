@@ -84,8 +84,7 @@ typedef struct evh {
 #define type_req	5			/* Request block */
 #define type_evnt	6			/* Event */
 #define type_ses	7			/* Session */
-#define type_ape	8			/* Actually posted event block */
-#define type_max	9
+#define type_max	8
 
 typedef struct hdr
 {
@@ -150,7 +149,7 @@ typedef struct evnt {
 
 /* Request block */
 
-typedef struct jrd_req {
+typedef struct req {
 	HDR req_header;
 	SRQ req_requests;			/* Request que owned by session block */
 	PTR req_process;			/* Parent process block */
@@ -159,7 +158,7 @@ typedef struct jrd_req {
 	void (*req_ast) ();			/* Asynchronous routine */
 	void *req_ast_arg;			/* Argument for ast */
 	SLONG req_request_id;		/* Request id, dummy */
-} *JRD_REQ;
+} *REQ;
 
 /* Request interest block */
 
@@ -170,20 +169,8 @@ typedef struct rint {
 	PTR rint_request;			/* Request of interest */
 	PTR rint_next;				/* Next interest of request */
 	SLONG rint_count;			/* Threshhold count */
-#ifdef EVENTS_WILDCARDING
-	PTR	rint_apes;				/* List of actually posted events */
-#endif /* EVENTS_WILDCARDING */
 } *RINT;
 
-/* Actually posted event block */
-
-#ifdef EVENTS_WILDCARDING
-typedef struct ape {
-	PTR	ape_next;				/* Next actually posted event block */
-	USHORT ape_count;			/* Current actually posted event count */
-	USHORT ape_length;			/* Length of actually posted event name */
-	TEXT ape_name[1];			/* Actually posted event name */
-} *APE;
-#endif /* EVENTS_WILDCARDING */
+#define EPB_version1 1
 
 #endif /* _JRD_EVENT_H_ */
