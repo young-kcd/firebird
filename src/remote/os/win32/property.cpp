@@ -291,7 +291,7 @@ static char *MakeVersionString(char *pchBuf, int nLen,
  *               is based on the flag set in usServerFlagMask.
  *****************************************************************************/
 	char* p = pchBuf;
-	const char const* end = p + nLen;
+	const char* const end = p + nLen;
 
 	if (usServerFlagMask & SRVR_inet) {
 		p += LoadString(hInstance, IDS_TCP, p, end - p);
