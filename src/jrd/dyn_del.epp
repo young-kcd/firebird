@@ -912,11 +912,12 @@ void DYN_delete_procedure( GBL gbl, UCHAR ** ptr)
             DYN_REQUEST(drq_e_prcs) = request;
 		}
 
+		ERASE P;
+
 		if (!P.RDB$SECURITY_CLASS.NULL) {
 			delete_security_class2(gbl, P.RDB$SECURITY_CLASS);
 		}
 
-		ERASE P;
 		found = TRUE;
 	END_FOR;
 
@@ -1073,11 +1074,11 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
         if (!DYN_REQUEST(drq_e_rel_flds))
 			  DYN_REQUEST(drq_e_rel_flds) = request;
 
+		ERASE RFR;
+
 		if (!RFR.RDB$SECURITY_CLASS.NULL
 			&& !strncmp(RFR.RDB$SECURITY_CLASS, "SQL$", 4))
 			delete_security_class2(gbl, RFR.RDB$SECURITY_CLASS);
-
-		ERASE RFR;
 
 		delete_gfield_for_lfield(gbl, RFR.RDB$FIELD_SOURCE);
 
@@ -1109,13 +1110,13 @@ void DYN_delete_relation( GBL gbl, UCHAR ** ptr, TEXT * relation)
         if (!DYN_REQUEST(drq_e_relation))
             DYN_REQUEST(drq_e_relation) = request;
 
+		ERASE R;
+
 		if (!R.RDB$SECURITY_CLASS.NULL
 			&& !strncmp(R.RDB$SECURITY_CLASS, "SQL$", 4))
 			delete_security_class2(gbl, R.RDB$SECURITY_CLASS);
 
-		ERASE R;
 		found = TRUE;
-
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_e_relation))
