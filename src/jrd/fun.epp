@@ -25,9 +25,11 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2003.07.31 Fred Polizo, Jr. - Made FUN_evaluate() correctly determine
+ * the length of string types containing binary data (char. set octets).
  */
 /*
-$Id: fun.epp,v 1.22 2003-06-30 12:48:09 alexpeshkoff Exp $
+$Id: fun.epp,v 1.23 2003-08-04 10:20:19 skidder Exp $
 */
 
 #include "firebird.h"
@@ -537,11 +539,27 @@ void DLL_EXPORT FUN_evaluate(FUN function, JRD_NOD node, VLU value)
 					break;
 
 				case dtype_text:
+                    temp_desc = value->vlu_desc;
+                    temp_desc.dsc_address = temp_ptr;
+                    MOV_move(&temp_desc, &value->vlu_desc);
+                    break;
+                                       
 				case dtype_cstring:
+                    /* For the ttype_binary char. set, this will truncate
+                     * the string after the first zero octet copied.
+                     */
+                    temp_desc = value->vlu_desc;
+                    temp_desc.dsc_address = temp_ptr;
+                    temp_desc.dsc_length =
+                        strlen(reinterpret_cast<char *>(temp_ptr)) + 1;
+                    MOV_move(&temp_desc, &value->vlu_desc);
+                    break;
+                                       
 				case dtype_varying:
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
-					temp_desc.dsc_length = strlen((char*)temp_ptr) + 1;
+                    temp_desc.dsc_length =
+                        reinterpret_cast<VARY *>(temp_ptr)->vary_length + sizeof(USHORT);
 					MOV_move(&temp_desc, &value->vlu_desc);
 					break;
 
