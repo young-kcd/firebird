@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32 2003-07-06 08:14:44 dimitr Exp $
+  $Id: isql.epp,v 1.33 2003-07-16 18:48:57 brodsom Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -5433,7 +5433,9 @@ static SSHORT parse_arg(
 				else
 					ret = ERR;
 			}
-			else if (c == 'C') {	/* number of cache buffers */
+			// number of cache buffers
+			else if (c == 'C' 
+				&& (!s[2] || UPPER(s[2])== 'A')) {
 				if ((s = argv[++i]) && *s) {
 					STRARGCPY(Numbufs, s);
 					global_numbufs = TRUE;
@@ -5441,7 +5443,19 @@ static SSHORT parse_arg(
 				else
 					ret = ERR;
 			}
-
+			// conection character set
+			else if (c == 'C' && UPPER(s[2]) == 'H'){
+				if ((s = argv[++i]) && *s) {
+					STRARGCPY(Charset, s);
+					lgth = strlen(Charset);
+					if (lgth <= MAXCHARSET_LENGTH)
+						strcpy(ISQL_charset, Charset);
+					else
+						strncpy(ISQL_charset, Charset, MAXCHARSET_LENGTH);
+				}
+				else
+					ret = ERR;
+			}
 			else if (c == 'Q')
 				/* Quiet flag */
 				Quiet = TRUE;
