@@ -123,7 +123,7 @@ TOK LEX_filename(void)
  *
  **************************************/
 	TOK token;
-	SSHORT c, length;
+	SSHORT c;
 	TEXT *p;
 
 	token = &DDL_token;
@@ -237,7 +237,7 @@ void LEX_init( void *file)
  *	scratch trace file to keep all input.
  *
  **************************************/
-	TEXT *p, *end;
+	TEXT *p;
 
 #if !(defined WIN_NT)
 	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, 0);

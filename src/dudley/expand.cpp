@@ -76,7 +76,7 @@ void EXP_actions(void)
  *	them in appropriate context.
  *   
  **************************************/
-	ACT action, temp, stack;
+	ACT action;
 
 	if (!DDL_actions)
 		return;
@@ -366,7 +366,6 @@ static void expand_trigger( DUDLEY_TRG trigger)
 	LLS contexts, update;
 	DUDLEY_CTX old, new_ctx;
 	DUDLEY_REL relation;
-	USHORT old_id;
 
 	context_id = 2;
 	old = new_ctx = NULL;

@@ -121,8 +121,8 @@ DUDLEY_NOD EXPR_rse(USHORT view_flag)
  *	Parse a record selection expression.
  *
  **************************************/
-	DUDLEY_NOD node, boolean, field_name, a_boolean, temp;
-	LLS stack, field_stack;
+	DUDLEY_NOD node, boolean, field_name, a_boolean;
+	LLS stack;
 	DUDLEY_CTX context;
 	SYM field_sym;
 
@@ -214,7 +214,7 @@ DUDLEY_NOD EXPR_statement(void)
  *
  **************************************/
 	LLS stack;
-	DUDLEY_NOD node, list;
+	DUDLEY_NOD node;
 	int number;
 
 	if (MATCH(KW_BEGIN)) {
@@ -307,7 +307,6 @@ DUDLEY_NOD EXPR_value(USHORT * paren_count, USHORT * bool_flag)
  *
  **************************************/
 	DUDLEY_NOD node, arg;
-	enum nod_t operatr;
 	USHORT local_count, local_flag;
 
 	if (!paren_count) {
@@ -659,9 +658,8 @@ static CON parse_literal(void)
  *
  **************************************/
 	CON constant;
-	USHORT l, scale;
-	TEXT *p, *q, c;
-	SLONG *number;
+	USHORT l;
+	TEXT *p, *q;
 
 	q = DDL_token.tok_string;
 	l = DDL_token.tok_length;
@@ -783,7 +781,6 @@ static DUDLEY_NOD parse_primitive_value( USHORT * paren_count, USHORT * bool_fla
  **************************************/
 	DUDLEY_NOD node, sub;
 	CON constant;
-	SYM symbol;
 	TEXT *p;
 	USHORT local_count;
 
@@ -882,7 +879,6 @@ static DUDLEY_CTX parse_relation(void)
  **************************************/
 	SYM symbol;
 	DUDLEY_CTX context;
-	TEXT s[128];
 
 	context = (DUDLEY_CTX) DDL_alloc(CTX_LEN);
 	context->ctx_name = symbol = PARSE_symbol(tok_ident);
@@ -911,8 +907,7 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
  *
  **************************************/
 	DUDLEY_NOD node, expr1, expr2, or_node;
-	LLS stack;
-	USHORT count, negation;
+	USHORT negation;
 	enum nod_t operatr, *rel_ops;
 	USHORT local_flag;
 
@@ -1078,7 +1073,6 @@ static DUDLEY_NOD parse_sort(void)
  *	Parse a sort list.
  *
  **************************************/
-	DUDLEY_NOD node, *ptr;
 	LLS stack;
 	SSHORT direction;
 
