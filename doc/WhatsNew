@@ -33,6 +33,7 @@
         3) Implemented REVOKE ADMIN OPTION FROM statement
       See also:
         /doc/sql.extentions/README.sequence_generators
+        /doc/sql.extentions/README.ddl.txt
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -63,12 +64,16 @@
     * ISQL improvement:
         Command line switch -b to bail out on error when used in non-interactive mode.
         Also, return an error code to the operating system.
+      See also:
+        /doc/README.isql_enhancements.txt
       Contributor(s):
         Damyan Ivanov <divanov at creditreform.bg>
         Claudio Valderrama <cvalde at usa.net>
 
     * Context variables
         Added support for context variables via RDB$GET_CONTEXT and RDB$SET_CONTEXT system functions
+      See also:
+        /doc/sql.extentions/README.context_variables2
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
@@ -84,7 +89,7 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * ODS change
-        Enlarged exception messages from 80 to 1023 bytes
+        Enlarged exception messages from 80 to 1021 bytes
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -108,7 +113,7 @@
         2) Ability for users to modify their own passwords
         3) Rejected any remote (non-embedded) access to security.fdb
         4) Use Services API in GSEC
-        5) Protect from attempts to brut-force accounts/passwords
+        5) Protect from attempts to brute-force accounts/passwords
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -180,7 +185,7 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * WNET protocol changes
-        WNET (aka NetBEUI) protocol no longer performs client impresonation
+        WNET (aka NetBEUI) protocol no longer performs client impersonation
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -264,6 +269,8 @@
 
     * UDF improvement
         Ability to signal SQL NULL via a NULL pointer
+      See also:
+        /doc/sql.extentions/README.ddl.txt
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
@@ -374,6 +381,8 @@
         1) Fixed bug SF #910430 - ISQL and database dialect
         2) Add SET HEADING ON/OFF option
         3) Add -M2 command-line option to send output of statistics and plans to the same file than the rest of the output
+      See also:
+        /doc/README.isql_enhancements.txt
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
@@ -403,7 +412,7 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * User-defined plans improvements
-        1) Propagare plan fragments to nested levels of joins, thus allowing to manually optimize complex outer joins
+        1) Propagate plan fragments to nested levels of joins, thus allowing to manually optimize complex outer joins
         2) Check the user-supplied plan for correctness in outer joins
         3) Added short-circuit optimization for user-supplied plans
       Contributor(s):
@@ -431,6 +440,8 @@
 
     * New database shutdown modes are introduced
         Single-user and full shutdown modes are implemented
+      See also:
+        /doc/README.shutdown_modes.txt
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
@@ -446,10 +457,14 @@
 
     * Implemented EXECUTE BLOCK statement
         It is now possible to use dynamic PSQL with this statement
+      See also:
+        /doc/sql.extentions/README.execute_block
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Implemented support for default parameters for stored procedures
+      See also:
+        /doc/sql.extentions/README.default_parameters
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -555,7 +570,7 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Further optimizer improvements
-        1) MERGE PLAN is may now be generated for joins using equality comparsion on expressions
+        1) MERGE PLAN may now be generated for joins using equality comparsion on expressions
         2) Better logic regarding unique indices handling
         3) Improved logic for OR expressions
       Contributor(s):
@@ -618,6 +633,8 @@
 
     * Derived tables support
         Implemented support for derived tables in DSQL (subqueries in FROM clause) as defined by SQL200X
+      See also:
+        /doc/sql.extentions/README.derived_tables.txt
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
@@ -633,17 +650,19 @@
 
     * New backup technology
         Implemented fast on-line physical incremental backup facilities
+      See also:
+        /doc/README.nbackup.txt
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Generic cleanup.
-        Various cleaning and tidying up of code, warnings removal, 64-bitness cleanup, numerious minor bugfixes
+        Various cleaning and tidying up of code, warnings removal, 64-bitness cleanup, numerous minor bugfixes
       Contributor(s):
         Blas Rodriguez Somoza <blas at puertareal.com>
         Dmitry Yemanov <yemanov at yandex.ru>
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Generic cleanup
-        Large amount of ongoing code cleanup and style standartization. In particular, broken WAL and journalling code is fully cleaned out
+        Large amount of ongoing code cleanup and style standardization. In particular, broken WAL and journalling code is fully cleaned out
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
