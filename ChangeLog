@@ -1,3 +1,9 @@
+2004-09-13 07:22  skidder
+
+	* firebird2/src/jrd/val.h (1.10.2.2):
+	
+	Backport fix to B1_5_Release as it is needed to get into 1.5.2
+
 2004-08-30 17:56  skidder
 
 	* firebird2/src/extlib/ib_udf.sql (1.4.2.1):
