@@ -8,17 +8,11 @@
 # Firebird/interbase database server daemon 
 
 
-# This init script contains functions specific for redhat
-# and mandrake init scripts.
 
-# Source function library.
-. /etc/rc.d/init.d/functions
-
-
-: ${FIREBIRD:=@prefix@}
-: ${ISC_USER:=SYSDBA}
-: ${ISC_PASSWORD:=masterke}
-: ${FBRunUser:=firebird}
+INTERBASE=/usr/local/firebird
+ISC_USER=SYSDBA
+ISC_PASSWORD=masterkey
+FBRunUser=firebird
 # WARNING: in a real-world installation, you should not put the 
 # SYSDBA password in a publicly-readable file. 
 # Eventually this file should not need to contain any passwords.
@@ -26,14 +20,13 @@
 # the server. 
 
 
-export FIREBIRD 
+export INTERBASE 
 export ISC_USER
 export ISC_PASSWORD
 
 
 # Check the file is there and is executable.
-MANAGER=$FIREBIRD/bin/fbmgr
-[ -x $MANAGER ] || exit 0
+[ -x $INTERBASE/bin/fbmgr ] || exit 0
 
 
 
@@ -41,17 +34,17 @@ MANAGER=$FIREBIRD/bin/fbmgr
 case "$1" in
   start)
 	echo -n "Starting Firebird server: "
-	daemon --user $FBRunUser $MANAGER -start -forever
+        echo '$INTERBASE/bin/fbmgr -start -forever' | su $FBRunUser
 	RETVAL=$?
 	;;
   stop)
 	echo -n "Stopping Firebird server: "
-	$MANAGER -shut
+        $INTERBASE/bin/fbmgr -shut
 	RETVAL=$?
+#	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/identd
 	;;
   status)
-	status fbserver
-	RETVAL=$?
+	RETVAL=0
 	;;
   restart|reload)
 	$0 stop

@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 #
 #  This library is part of the FirebirdSQL project
 #
@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: tarinstall.sh.in,v 1.1.2.1 2003-09-12 06:20:04 alexpeshkoff Exp $
+#   $Id: tarinstall.sh.in,v 1.1.2.2 2003-10-09 16:46:41 alexpeshkoff Exp $
 # 
 
 # THe way this works is that the buildroot file is stored relative to the root

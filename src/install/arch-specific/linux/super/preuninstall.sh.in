@@ -12,8 +12,29 @@ stopServerIfRunning() {
 
     if [ ! -z "$checkString" ] 
       then
-        /etc/rc.d/init.d/firebird stop
+        InitFile=/etc/init.d/firebird
+        if [ ! -x $InitFile ]
+          then
+            InitFile=/etc/rc.d/init.d/firebird
+        fi
+        if [ ! -x $InitFile ]
+          then
+            InitFile=/usr/sbin/rcfirebird
+        fi
+       
+        if [ -x $InitFile ]
+          then
+            $InitFile stop
+        fi
     fi
+
+# Stop lock manager if it is the only thing running.
+
+    for i in `ps -ef | grep "gds_lock_mgr" | grep -v "grep" | cut -d' ' -f3`
+     do
+        kill $i
+     done
+
 }
 
 
@@ -22,15 +43,12 @@ stopServerIfRunning() {
 
 
 
-    IBRootDir=@prefix@
+    IBRootDir=/usr/local/firebird
     IBBin=$IBRootDir/bin
-    SecurityDatabase=isc4.gdb
+    SecurityDatabase=security.fdb
 
 
     stopServerIfRunning
-
-    /sbin/chkconfig --del firebird
-
 
     cd $IBRootDir
     if [ -f $SecurityDatabase ] 
