@@ -670,6 +670,8 @@ extern FILE    *redirected_output;
 
 #else // PROD_BUILD
 
+#define	ASSERT_FILENAME
+#define	ASSERT_BLKCHK_MSG
 #define DEV_BLKCHK(blk, typ)
 #define _assert(ex)
 #undef assert
