@@ -2579,7 +2579,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 			}
 
 			header->hdr_flags |= hdr_active_shadow;
-			header->pag_checksum = CCH_checksum(bdb);
+			header->hdr_header.pag_checksum = CCH_checksum(bdb);
 		}
 
 /* This condition makes sure that PIO_write is performed in case of

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.82 2004-06-22 20:13:08 skidder Exp $
+$Id: blb.cpp,v 1.83 2004-07-10 03:20:08 robocop Exp $
 */
 
 #include "firebird.h"
@@ -264,7 +264,7 @@ blb* BLB_create2(thread_db* tdbb,
 /* Set up for a "small" blob -- a blob that fits on an ordinary data page */
 
 	blob_page* page = (blob_page*) blob->blb_data;
-	page->pag_type = pag_blob;
+	page->blp_header.pag_type = pag_blob;
 	blob->blb_segment = (UCHAR *) page->blp_page;
 
 /* Format blob id and return blob handle */
@@ -2212,8 +2212,8 @@ static void insert_page(thread_db* tdbb, blb* blob)
 
 		blob->blb_level = 2;
 		page = (blob_page*) DPM_allocate(tdbb, &window);
-		page->pag_flags = Ods::blp_pointers;
-		page->pag_type = pag_blob;
+		page->blp_header.pag_flags = Ods::blp_pointers;
+		page->blp_header.pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
 		page->blp_length = vector->count() << SHIFTLONG;
 		MOVE_FASTER(vector->memPtr(), page->blp_page, page->blp_length);
@@ -2234,8 +2234,8 @@ static void insert_page(thread_db* tdbb, blb* blob)
 	}
 	else {
 		page = (blob_page*) DPM_allocate(tdbb, &window);
-		page->pag_flags = Ods::blp_pointers;
-		page->pag_type = pag_blob;
+		page->blp_header.pag_flags = Ods::blp_pointers;
+		page->blp_header.pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
 		vector->resize(l + 1);
 		(*vector)[l] = window.win_page;

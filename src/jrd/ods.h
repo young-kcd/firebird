@@ -175,9 +175,9 @@ typedef pag *PAG;
 
 /* Blob page */
 
-struct blob_page : public pag
+struct blob_page
 {
-	//pag blp_header;
+	pag blp_header;
 	SLONG blp_lead_page;		/* First page of blob (for redundancy only) */
 	SLONG blp_sequence;			/* Sequence within blob */
 	USHORT blp_length;			/* Bytes on page */
@@ -204,9 +204,9 @@ struct btree_nod
 const int BTN_SIZE	= 6;
 
 // B-tree page ("bucket")
-struct btree_page : public pag
+struct btree_page
 {
-	//pag btr_header;
+	pag btr_header;
 	SLONG btr_sibling;			// right sibling page
 	SLONG btr_left_sibling;		// left sibling page
 	SLONG btr_prefix_total;		// sum of all prefixes on page
@@ -260,9 +260,9 @@ const SCHAR BTR_FLAG_COPY_MASK = (btr_descending | btr_all_record_number | btr_l
 
 /* Data Page */
 
-struct data_page : public pag
+struct data_page
 {
-	// pag dpg_header;
+	pag dpg_header;
 	SLONG dpg_sequence;			/* Sequence number in relation */
 	USHORT dpg_relation;		/* Relation id */
 	USHORT dpg_count;			/* Number of record segments on page */
@@ -282,9 +282,9 @@ const SCHAR dpg_large	= 4;		/* Large object is on page */
 
 /* Index root page */
 
-struct index_root_page : public pag
+struct index_root_page
 {
-	//pag irt_header;
+	pag irt_header;
 	USHORT irt_relation;		/* relation id (for consistency) */
 	USHORT irt_count;			/* Number of indices */
 	struct irt_repeat {
@@ -325,9 +325,9 @@ const SLONG END_BUCKET		= -2;
 
 /* Header page */
 
-struct header_page : public pag
+struct header_page
 {
-	//pag hdr_header;
+	pag hdr_header;
 	USHORT hdr_page_size;		/* Page size of database */
 	USHORT hdr_ods_version;		/* Version of on-disk structure */
 	SLONG hdr_PAGES;			/* Page number of PAGES relation */
@@ -411,9 +411,9 @@ typedef sfd SFD;
 
 /* Page Inventory Page */
 
-struct page_inv_page : public pag
+struct page_inv_page
 {
-	//pag pip_header;
+	pag pip_header;
 	SLONG pip_min;				/* Lowest (possible) free page */
 	UCHAR pip_bits[1];
 };
@@ -421,9 +421,9 @@ struct page_inv_page : public pag
 
 /* Pointer Page */
 
-struct pointer_page : public pag
+struct pointer_page
 {
-	//pag ppg_header;
+	pag ppg_header;
 	SLONG ppg_sequence;			/* Sequence number in relation */
 	SLONG ppg_next;				/* Next pointer page in relation */
 	USHORT ppg_count;			/* Number of slots active */
@@ -438,9 +438,9 @@ const USHORT ppg_eof		= 1;			/* Last pointer page in relation */
 
 /* Transaction Inventory Page */
 
-struct tx_inv_page : public pag
+struct tx_inv_page
 {
-	//pag tip_header;
+	pag tip_header;
 	SLONG tip_next;				/* Next transaction inventory page */
 	UCHAR tip_transactions[1];
 };
@@ -448,9 +448,9 @@ struct tx_inv_page : public pag
 
 /* Generator Page */
 
-struct generator_page : public pag
+struct generator_page
 {
-	//pag gpg_header;
+	pag gpg_header;
 	SLONG gpg_sequence;			/* Sequence number */
 	SLONG gpg_waste1;			/* overhead carried for backward compatibility */
 	USHORT gpg_waste2;			/* overhead carried for backward compatibility */
@@ -535,9 +535,9 @@ struct ctrl_pt {
 	SSHORT cp_fn_length;
 };
 
-struct log_info_page : public pag
+struct log_info_page
 {
-	//pag log_header;
+	pag log_header;
 	SLONG log_flags;			/* flags, OBSOLETE      */
 	ctrl_pt log_cp_1;			/* control point 1      */
 	ctrl_pt log_cp_2;			/* control point 2      */

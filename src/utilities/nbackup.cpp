@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.29 2004-06-30 01:45:18 skidder Exp $
+ *  $Id: nbackup.cpp,v 1.30 2004-07-10 03:20:29 robocop Exp $
  *
  */
  
@@ -254,7 +254,7 @@ void nbackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 			&file == &backup ? bakname.c_str() : "unknown");
 	}
 #else
-	if (lseek(file, pos, SEEK_SET) == (off_t)-1)
+	if (lseek(file, pos, SEEK_SET) == (off_t) - 1)
 		b_error::raise("IO error (%d) seeking file: %s", 
 			errno,
 			&file == &dbase ? dbname.c_str() :
@@ -535,7 +535,7 @@ void nbackup::backup_database(int level, const char* fname)
 			PathUtils::splitLastComponent(begin, fil, database);
 			char temp[MAXPATHLEN];
 			SNPRINTF(temp, sizeof(temp), "%s-%d-%04d%02d%02d-%02d%02d", fil.c_str(), level,
-				today->tm_year + 1900, today->tm_mon+1, today->tm_mday,
+				today->tm_year + 1900, today->tm_mon + 1, today->tm_mday,
 				today->tm_hour, today->tm_min);
 			temp[sizeof(temp) - 1] = 0;
 			bakname = temp;
@@ -586,7 +586,7 @@ void nbackup::backup_database(int level, const char* fname)
 				if (p[1] != sizeof(FB_GUID))
 					break;
 				memcpy(&backup_guid, p + 2, sizeof(FB_GUID));
-				guid_found = 1;
+				guid_found = true;
 				break;
 			case Ods::HDR_difference_file:
 				p += p[1] + 2;
@@ -600,7 +600,7 @@ void nbackup::backup_database(int level, const char* fname)
 	
 	
 		// Write data to backup file
-		ULONG backup_scn = header.pag_scn - 1;
+		ULONG backup_scn = header.hdr_header.pag_scn - 1;
 		if (level) {
 			inc_header bh;
 			memcpy(bh.signature, backup_signature, sizeof(backup_signature));
@@ -628,8 +628,8 @@ void nbackup::backup_database(int level, const char* fname)
 			}
 			else
 				write_file(backup, page_buff, header.hdr_page_size);
-			size_t bytesDone;
-			if ((bytesDone = read_file(dbase, page_buff, header.hdr_page_size)) == 0)
+			const size_t bytesDone = read_file(dbase, page_buff, header.hdr_page_size);
+			if (bytesDone == 0)
 				break;
 			if (bytesDone != header.hdr_page_size)
 				b_error::raise("Database file size is not a multiply of page size");
@@ -786,8 +786,8 @@ void nbackup::restore_database(int filecount, const char* const* files)
 				prev_guid = bakheader.backup_guid;
 				while (true) {
 					ULONG pageNum;
-					size_t bytesDone;
-					if ((bytesDone = read_file(backup, &pageNum, sizeof(pageNum))) == 0)
+					const size_t bytesDone = read_file(backup, &pageNum, sizeof(pageNum));
+					if (bytesDone == 0)
 						break;					
 					if (bytesDone != sizeof(pageNum) || 
 						read_file(backup, page_buffer, bakheader.page_size) != bakheader.page_size) 
@@ -837,7 +837,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 						if (p[1] != sizeof(FB_GUID))
 							break;
 						memcpy(&prev_guid, p + 2, sizeof(FB_GUID));
-						guid_found = 1;
+						guid_found = true;
 						break;
 					case Ods::HDR_difference_file:
 						p += p[1] + 2;

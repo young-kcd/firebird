@@ -444,7 +444,7 @@ int DPM_compress( thread_db* tdbb, data_page* page)
 	MOVE_FASTER(temp_page + space,
 				(UCHAR *) page + space, dbb->dbb_page_size - space);
 
-	if (page->pag_type != pag_data) {
+	if (page->dpg_header.pag_type != pag_data) {
 		BUGCHECK(251);			/* msg 251 damaged data page */
 	}
 
@@ -476,9 +476,9 @@ void DPM_create_relation( thread_db* tdbb, jrd_rel* relation)
 /* Allocate first pointer page */
 	WIN window(-1);
 	pointer_page* page = (pointer_page*) DPM_allocate(tdbb, &window);
-	page->pag_type = pag_pointer;
+	page->ppg_header.pag_type = pag_pointer;
 	page->ppg_relation = relation->rel_id;
-	page->pag_flags = ppg_eof;
+	page->ppg_header.pag_flags = ppg_eof;
 	CCH_RELEASE(tdbb, &window);
 
 /* If this is relation 0 (RDB$PAGES), update the header */
@@ -504,7 +504,7 @@ void DPM_create_relation( thread_db* tdbb, jrd_rel* relation)
 /* Create an index root page */
 	WIN root_window(-1);
 	index_root_page* root = (index_root_page*) DPM_allocate(tdbb, &root_window);
-	root->pag_type = pag_root;
+	root->irt_header.pag_type = pag_root;
 	root->irt_relation = relation->rel_id;
 /*root->irt_count = 0;*/
 	CCH_RELEASE(tdbb, &root_window);
@@ -557,7 +557,7 @@ SLONG DPM_data_pages(thread_db* tdbb, jrd_rel* relation)
 					pages++;
 				}
 			}
-			if (ppage->pag_flags & ppg_eof) {
+			if (ppage->ppg_header.pag_flags & ppg_eof) {
 				break;
 			}
 			CCH_RELEASE(tdbb, &window);
@@ -658,9 +658,9 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 /* If the page is not empty and used to be marked as full, change the
    state of both the page and the appropriate pointer page. */
 
-	if (count && (page->pag_flags & dpg_full)) {
+	if (count && (page->dpg_header.pag_flags & dpg_full)) {
 		DEBUG 
-		page->pag_flags &= ~dpg_full;
+		page->dpg_header.pag_flags &= ~dpg_full;
 		mark_full(tdbb, rpb);
 
 #ifdef VIO_DEBUG
@@ -670,7 +670,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 		return;
 	}
 
-	const UCHAR flags = page->pag_flags;
+	const UCHAR flags = page->dpg_header.pag_flags;
 	CCH_RELEASE(tdbb, window);
 
 /* If the page is non-empty, we're done. */
@@ -833,7 +833,7 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
 			}
 			PAG_release_page(*page, 0);
 		}
-		const UCHAR pag_flags = ppage->pag_flags;
+		const UCHAR pag_flags = ppage->ppg_header.pag_flags;
 		CCH_RELEASE_TAIL(tdbb, &window);
 		PAG_release_page(window.win_page, 0);
 		if (pag_flags & ppg_eof)
@@ -1088,7 +1088,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 			(sequence >= vector->count()) || !((*vector)[sequence]))
 		{
 			generator_page* page = (generator_page*) DPM_allocate(tdbb, &window);
-			page->pag_type = pag_ids;
+			page->gpg_header.pag_type = pag_ids;
 			page->gpg_sequence = sequence;
 			CCH_must_write(&window);
 			CCH_RELEASE(tdbb, &window);
@@ -1603,7 +1603,7 @@ bool DPM_next(thread_db* tdbb,
 			}
 		}
 
-		const SSHORT flags = ppage->pag_flags;
+		const SSHORT flags = ppage->ppg_header.pag_flags;
 		if (backwards) {
 			pp_sequence--;
 			slot = ppage->ppg_count - 1;
@@ -1978,8 +1978,8 @@ SLONG DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	}
 
 	data_page* page = (data_page*) rpb.rpb_window.win_buffer;
-	if (blob->blb_level && !(page->pag_flags & dpg_large)) {
-		page->pag_flags |= dpg_large;
+	if (blob->blb_level && !(page->dpg_header.pag_flags & dpg_large)) {
+		page->dpg_header.pag_flags |= dpg_large;
 		mark_full(tdbb, &rpb);
 	}
 	else {
@@ -2524,10 +2524,10 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 			slot = ppage->ppg_count;
 			break;
 		}
-		if (ppage->pag_flags & ppg_eof) {
+		if (ppage->ppg_header.pag_flags & ppg_eof) {
 			ppage = (pointer_page*) DPM_allocate(tdbb, &new_pp_window);
-			ppage->pag_type = pag_pointer;
-			ppage->pag_flags |= ppg_eof;
+			ppage->ppg_header.pag_type = pag_pointer;
+			ppage->ppg_header.pag_flags |= ppg_eof;
 			ppage->ppg_relation = relation->rel_id;
 			ppage->ppg_sequence = ++pp_sequence;
 			slot = 0;
@@ -2546,7 +2546,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 
 			ppage = (pointer_page*) pp_window.win_buffer;
 			CCH_MARK(tdbb, &pp_window);
-			ppage->pag_flags &= ~ppg_eof;
+			ppage->ppg_header.pag_flags &= ~ppg_eof;
 			ppage->ppg_next = new_pp_window.win_page;
 			ppage =
 				(pointer_page*) CCH_HANDOFF(tdbb, &pp_window, new_pp_window.win_page,
@@ -2580,7 +2580,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 	CCH_MARK(tdbb, window);
 	dpage->dpg_sequence = (SLONG) pp_sequence *dbb->dbb_dp_per_pp + slot;
 	dpage->dpg_relation = relation->rel_id;
-	dpage->pag_type = pag_data;
+	dpage->dpg_header.pag_type = pag_data;
 	relation->rel_data_space = pp_sequence;
 
 	CCH_RELEASE(tdbb, window);
@@ -2676,7 +2676,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 
 	if (aligned_size > (int) dbb->dbb_page_size - used) {
 		CCH_MARK(tdbb, &rpb->rpb_window);
-		page->pag_flags |= dpg_full;
+		page->dpg_header.pag_flags |= dpg_full;
 		mark_full(tdbb, rpb);
 		return NULL;
 	}
@@ -2896,7 +2896,7 @@ static RHD locate_space(
 				ppage = (pointer_page*) CCH_FETCH(tdbb, window, LCK_read, pag_pointer);
 			}
 		}
-		const UCHAR flags = ppage->pag_flags;
+		const UCHAR flags = ppage->ppg_header.pag_flags;
 		CCH_RELEASE(tdbb, window);
 		if (flags & ppg_eof) {
 			break;
@@ -3006,7 +3006,7 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
 	} while (!dpage);
 
 
-	const UCHAR flags = dpage->pag_flags;
+	const UCHAR flags = dpage->dpg_header.pag_flags;
 	CCH_RELEASE(tdbb, &rpb->rpb_window);
 
 	CCH_precedence(tdbb, &pp_window, rpb->rpb_window.win_page);
@@ -3101,8 +3101,8 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 		/* Allocate and format data page and fragment header */
 
 		data_page* page = (data_page*) DPM_allocate(tdbb, &rpb->rpb_window);
-		page->pag_type = pag_data;
-		page->pag_flags = dpg_orphan | dpg_full;
+		page->dpg_header.pag_type = pag_data;
+		page->dpg_header.pag_flags = dpg_orphan | dpg_full;
 		page->dpg_relation = rpb->rpb_relation->rel_id;
 		page->dpg_count = 1;
 		rhdf* header = (RHDF) & page->dpg_rpt[1];
@@ -3211,8 +3211,8 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 	}
 #endif
 
-	if (!(page->pag_flags & dpg_large)) {
-		page->pag_flags |= dpg_large;
+	if (!(page->dpg_header.pag_flags & dpg_large)) {
+		page->dpg_header.pag_flags |= dpg_large;
 		mark_full(tdbb, rpb);
 	}
 	else {

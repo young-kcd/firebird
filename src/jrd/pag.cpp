@@ -380,7 +380,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 
 	WIN window(next->fil_min_page);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
-	header->pag_type = pag_header;
+	header->hdr_header.pag_type = pag_header;
 	header->hdr_sequence = sequence;
 	header->hdr_page_size = dbb->dbb_page_size;
 	header->hdr_data[0] = HDR_end;
@@ -399,7 +399,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
     		header->hdr_flags |= hdr_SQL_dialect_3;
 #endif
 
-	header->pag_checksum = CCH_checksum(window.win_bdb);
+	header->hdr_header.pag_checksum = CCH_checksum(window.win_bdb);
 	PIO_write(dbb->dbb_file, window.win_bdb, window.win_buffer,
 			  tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
@@ -430,7 +430,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 					  (UCHAR *) & start, CLUMP_REPLACE, 1);
 	}
 
-	header->pag_checksum = CCH_checksum(window.win_bdb);
+	header->hdr_header.pag_checksum = CCH_checksum(window.win_bdb);
 	PIO_write(dbb->dbb_file, window.win_bdb, window.win_buffer,
 			  tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
@@ -653,7 +653,7 @@ PAG PAG_allocate(WIN * window)
    than returning it, format it as a page inventory page, and recurse. */
 
 	page_inv_page* new_pip_page = (page_inv_page*) new_page;
-	new_pip_page->pag_type = pag_pages;
+	new_pip_page->pip_header.pag_type = pag_pages;
 	// CVC: If some tips on web sites are true, this can be improved by
 	// a pointer to ULONG setting memory to 0xffffffff.
 	const UCHAR* end = (UCHAR *) new_pip_page + dbb->dbb_page_size;
@@ -808,10 +808,10 @@ void PAG_format_header(void)
 
 	WIN window(HEADER_PAGE);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
-	header->pag_scn = 0;
+	header->hdr_header.pag_scn = 0;
 	MOV_time_stamp(reinterpret_cast <
 				   ISC_TIMESTAMP * >(header->hdr_creation_date));
-	header->pag_type = pag_header;
+	header->hdr_header.pag_type = pag_header;
 	header->hdr_page_size = dbb->dbb_page_size;
 	header->hdr_ods_version = ODS_VERSION;
 	header->hdr_implementation = CLASS;
@@ -856,7 +856,7 @@ void PAG_format_log(void)
 
 	WIN window(LOG_PAGE);
 	log_info_page* logp = (log_info_page*) CCH_fake(tdbb, &window, 1);
-	logp->pag_type = pag_log;
+	logp->log_header.pag_type = pag_log;
 
 	CCH_RELEASE(tdbb, &window);
 }
@@ -886,7 +886,7 @@ void PAG_format_pip(void)
 	dbb->dbb_pcontrol->pgc_pip = 1;
 	page_inv_page* pages = (page_inv_page*) CCH_fake(tdbb, &window, 1);
 
-	pages->pag_type = pag_pages;
+	pages->pip_header.pag_type = pag_pages;
 	pages->pip_min = 4;
 	UCHAR* p = pages->pip_bits;
 	int i = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
@@ -987,7 +987,7 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
 	header_page* header = (header_page*) temp_page;
 	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
 
-	if (header->pag_type != pag_header || header->hdr_sequence) {
+	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence) {
 		ERR_post(isc_bad_db_format,
 				 isc_arg_cstring, file_length, ERR_string(file_name,
 														  file_length), 0);
@@ -1796,7 +1796,7 @@ static void find_clump_space(
 	UCHAR* p;
 	if (page_num == HEADER_PAGE) {
 		new_header = (header_page*) new_page;
-		new_header->pag_type = pag_header;
+		new_header->hdr_header.pag_type = pag_header;
 		new_header->hdr_end = HDR_SIZE;
 		new_header->hdr_page_size = dbb->dbb_page_size;
 		new_header->hdr_data[0] = HDR_end;
@@ -1806,7 +1806,7 @@ static void find_clump_space(
 	}
 	else {
 		new_logp = (log_info_page*) new_page;
-		new_logp->pag_type = pag_log;
+		new_logp->log_header.pag_type = pag_log;
 		new_logp->log_data[0] = LOG_end;
 		new_logp->log_end = LIP_SIZE;
 		next_page = new_window.win_page;

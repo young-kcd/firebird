@@ -81,7 +81,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
  *
  **************************************/
 	const bool leafPage = (page->btr_level == 0);
-	const SCHAR flags = page->pag_flags;
+	const SCHAR flags = page->btr_header.pag_flags;
 
 	IndexNode node, previousNode;
 	pointer = readNode(&node, pointer, flags, leafPage);
@@ -327,7 +327,7 @@ UCHAR* getPointerFirstNode(btree_page* page, IndexJumpInfo* jumpInfo)
  *  node is returned.
  *
  **************************************/
-	if (page->pag_flags & btr_jump_info) {
+	if (page->btr_header.pag_flags & btr_jump_info) {
 		if (jumpInfo) {
 			UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
 			return readJumpInfo(jumpInfo, pointer);

@@ -84,11 +84,11 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 
 
 	if (page == HEADER_PAGE) {
-		FPRINTF(outfile, "\tFlags\t\t\t%d\n", header->pag_flags);
+		FPRINTF(outfile, "\tFlags\t\t\t%d\n", header->hdr_header.pag_flags);
 		FPRINTF(outfile, "\tChecksum\t\t%d\n",
-				header->pag_checksum);
+				header->hdr_header.pag_checksum);
 		FPRINTF(outfile, "\tGeneration\t\t%"ULONGFORMAT"\n",
-				header->pag_generation);
+				header->hdr_header.pag_generation);
 		FPRINTF(outfile, "\tPage size\t\t%d\n", header->hdr_page_size);
 		FPRINTF(outfile, "\tODS version\t\t%d.%d\n", header->hdr_ods_version,
 				header->hdr_ods_minor);

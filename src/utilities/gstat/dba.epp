@@ -1054,7 +1054,7 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
  **************************************/
 	tdba* tddba = tdba::getSpecific();
 
-	if (page->pag_type != pag_data)
+	if (page->dpg_header.pag_type != pag_data)
 		return false;
 
 	if (sw_record) {
@@ -1126,7 +1126,7 @@ static ULONG analyze_fragments(const dba_rel* relation, const rhdf* header)
 		const SLONG f_page = header->rhdf_f_page;
 		const USHORT f_line = header->rhdf_f_line;
 		const data_page* page = (const data_page*) db_read(f_page);
-		if (page->pag_type != pag_data ||
+		if (page->dpg_header.pag_type != pag_data ||
 			page->dpg_relation != relation->rel_id ||
 			page->dpg_count <= f_line)
 		{
@@ -1177,7 +1177,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 	while (bucket->btr_level) 
 	{
 		pointer = BTreeNode::getPointerFirstNode(const_cast<btree_page*>(bucket));
-		BTreeNode::readNode(&node, pointer, bucket->pag_flags, false);
+		BTreeNode::readNode(&node, pointer, bucket->btr_header.pag_flags, false);
 		bucket = (const btree_page*) db_read(node.pageNumber);
 	}
 
@@ -1197,7 +1197,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 		while (true)
 		{
 			pointer = BTreeNode::readNode(&node, pointer, 
-				bucket->pag_flags, true);
+				bucket->btr_header.pag_flags, true);
 
 			if (node.isEndBucket || node.isEndLevel) {
 				break;
@@ -1258,7 +1258,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 		number = page;
 		page = bucket->btr_sibling;
 		bucket = (const btree_page*) db_read(page);
-		if (bucket->pag_type != pag_index) {
+		if (bucket->btr_header.pag_type != pag_index) {
 			dba_print(19, (const TEXT*)(IPTR) page, (const TEXT*)(IPTR) number, 0, 0, 0);
 			// mag 19: "    Expected b-tree bucket on page %ld from %ld"
 			break;
@@ -1286,7 +1286,7 @@ static ULONG analyze_versions( dba_rel* relation, const rhdf* header)
 
 	while (b_page) {
 		const data_page* page = (const data_page*) db_read(b_page);
-		if (page->pag_type != pag_data ||
+		if (page->dpg_header.pag_type != pag_data ||
 			page->dpg_relation != relation->rel_id ||
 			page->dpg_count <= b_line)
 		{

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbak.cpp,v 1.40 2004-06-30 01:38:57 skidder Exp $
+ *  $Id: nbak.cpp,v 1.41 2004-07-10 03:20:08 robocop Exp $
  *
  */
 
@@ -572,7 +572,7 @@ void BackupManager::begin_backup()
 		// This number may be smaller than actual because some pages may be not flushed to
 		// disk yet. This is not a problem as it can cause only a slight performance degradation
 		backup_pages = header->hdr_backup_pages = PIO_act_alloc(database);
-		const ULONG adjusted_scn = ++header->pag_scn; // Generate new SCN
+		const ULONG adjusted_scn = ++header->hdr_header.pag_scn; // Generate new SCN
 		PAG_replace_entry_first(header, Ods::HDR_backup_guid, sizeof(guid), 
 			reinterpret_cast<const UCHAR*>(&guid));
 
@@ -668,7 +668,7 @@ void BackupManager::end_backup(bool recover) {
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		NBAK_TRACE(("New state is getting to become after fetches %d", backup_state));
 		// Generate new SCN
-		header->pag_scn = current_scn;
+		header->hdr_header.pag_scn = current_scn;
 		NBAK_TRACE(("new SCN=%d is getting written to header", adjusted_scn));
 		// Adjust state
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | backup_state;
@@ -755,7 +755,7 @@ void BackupManager::end_backup(bool recover) {
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | backup_state;
 		NBAK_TRACE(("Set state %d in header page", backup_state));
 		// Generate new SCN
-		header->pag_scn = ++current_scn;
+		header->hdr_header.pag_scn = ++current_scn;
 		NBAK_TRACE(("new SCN=%d is getting written to header"));
 		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
@@ -1066,7 +1066,7 @@ bool BackupManager::actualize_state() throw() {
 	BufferDesc temp_bdb;
 	temp_bdb.bdb_page = HEADER_PAGE;
 	temp_bdb.bdb_dbb = database;
-	temp_bdb.bdb_buffer = header;
+	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(header);
 	jrd_file* file = database->dbb_file;
 	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status)) {
 		if (!CCH_rollover_to_shadow(database, file, false)) {
@@ -1087,8 +1087,8 @@ bool BackupManager::actualize_state() throw() {
 	NBAK_TRACE(("backup state read from header is %d", new_backup_state));
 	// Check is we missed lock/unlock cycle and need to invalidate
 	// our allocation table and file handle 
-	const bool missed_cycle = (header->pag_scn - current_scn) > 1;
-	current_scn = header->pag_scn;
+	const bool missed_cycle = (header->hdr_header.pag_scn - current_scn) > 1;
+	current_scn = header->hdr_header.pag_scn;
 	backup_pages = header->hdr_backup_pages;
 
 	// Read difference file name from header clumplets

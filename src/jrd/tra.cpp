@@ -452,7 +452,7 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence, WIN * precedence_window)
 /* Allocate and format new page */
 	WIN window(-1);
 	tx_inv_page* tip = (tx_inv_page*) DPM_allocate(tdbb, &window);
-	tip->pag_type = pag_transactions;
+	tip->tip_header.pag_type = pag_transactions;
 
 	CCH_must_write(&window);
 	CCH_RELEASE(tdbb, &window);

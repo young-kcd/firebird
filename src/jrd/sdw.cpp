@@ -192,7 +192,7 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
 /* create the header using the spare_buffer */
 
 	header_page* header = (header_page*) spare_page;
-	header->pag_type = pag_header;
+	header->hdr_header.pag_type = pag_header;
 	header->hdr_sequence = sequence;
 	header->hdr_page_size = dbb->dbb_page_size;
 	header->hdr_data[0] = HDR_end;
@@ -204,10 +204,10 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
 	temp_bdb.bdb_page = next->fil_min_page;
 	temp_bdb.bdb_dbb = dbb;
 	temp_bdb.bdb_buffer = (PAG) header;
-	header->pag_checksum = CCH_checksum(&temp_bdb);
+	header->hdr_header.pag_checksum = CCH_checksum(&temp_bdb);
 	if (!PIO_write(	shadow_file,
 					&temp_bdb,
-					header,
+					reinterpret_cast<Ods::pag*>(header),
 					0))
 	{
 		if (spare_buffer)
@@ -251,10 +251,10 @@ else
 							 (UCHAR *) & start);
 		file->fil_fudge = 0;
 		temp_bdb.bdb_page = file->fil_min_page;
-		header->pag_checksum = CCH_checksum(&temp_bdb);
+		header->hdr_header.pag_checksum = CCH_checksum(&temp_bdb);
 		if (!PIO_write(	shadow_file,
 						&temp_bdb,
-						header,
+						reinterpret_cast<Ods::pag*>(header),
 						0))
 		{
 			if (spare_buffer)
