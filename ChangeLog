@@ -1,3 +1,122 @@
+2003-09-10 21:48  brodsom
+
+	* firebird2/src/gpre/: lang_proto.h, par.cpp, pas.cpp, pat.cpp,
+	pretty.cpp, sqe.cpp, sqe_proto.h, sql.cpp, sql_proto.h, ada.cpp,
+	c_cxx.cpp, cmd.cpp, cme.cpp, cmp.cpp, cob.cpp, exp.cpp, ftn.cpp,
+	gpre.cpp, gpre.h, gpre_meta.epp, gpre_meta_boot.cpp, hsh.cpp:
+	
+	-BOOLEAN cleaning -Remove pfn_SQE_list_cb function casts
+
+2003-09-10 19:50  brodsom
+
+	* firebird2/src/: jrd/ail.cpp, jrd/alt.cpp, jrd/cch.cpp,
+	jrd/rec.cpp, qli/all.cpp, qli/dtr.cpp, qli/exe.cpp, qli/expand.cpp,
+	qli/hsh.cpp, qli/lex.cpp, qli/lex_proto.h, qli/meta.epp,
+	qli/mov.cpp, qli/parse.cpp, qli/picstr.cpp, qli/proc.epp,
+	qli/proc_proto.h, qli/report.cpp, utilities/gsec/gsec.cpp,
+	utilities/gsec/gsec.h, wal/driver.cpp, wal/wal.cpp,
+	wal/wal_proto.h, wal/walc.cpp, wal/walc_proto.h, wal/walf.cpp,
+	wal/walf_proto.h, wal/walr.cpp, wal/walr_proto.h, wal/walw.cpp:
+	
+	BOOLEAN cleaning
+
+2003-09-10 19:48  brodsom
+
+	* firebird2/src/isql/: extract.epp, show.epp:
+	
+	extern C cleaning
+
+2003-09-10 19:46  brodsom
+
+	* firebird2/src/: alice/alice.cpp, alice/alice.h, alice/exe.cpp,
+	alice/tdr.cpp, alice/tdr_proto.h, burp/burp.cpp, burp/mvol.cpp,
+	burp/spit.cpp, dudley/ddl.cpp, dudley/ddl.h, dudley/ddl_proto.h,
+	dudley/exe.epp, dudley/exe_proto.h, dudley/expr.cpp,
+	dudley/expr_proto.h, dudley/extract.epp, dudley/lex.cpp,
+	dudley/parse.cpp, dudley/parse_proto.h, dudley/trn.cpp,
+	journal/rebuild.epp, journal/server.epp, journal/archive.cpp:
+	
+	BOOLEAN cleaning
+
+2003-09-10 19:29  dimitr
+
+	* firebird2/doc/: WhatsNew, WhatsNew:
+	
+	no message
+
+2003-09-10 19:20  dimitr
+
+	* firebird2/doc/WhatsNew:
+	
+	Added recent RC6 changes
+
+2003-09-10 17:31  skidder
+
+	* firebird2/src/jrd/dyn.epp:
+	
+	Make engine compile after recent cleanup
+
+2003-09-10 17:09  skidder
+
+	* firebird2/src/jrd/os/posix/guid.cpp:
+	
+	Fix license of file that I created
+
+2003-09-10 15:33  epocman
+
+	* firebird2/src/: iscguard/cntl_guard.cpp, iscguard/iscguard.cpp,
+	utilities/install_reg.cpp, utilities/install_svc.cpp,
+	utilities/servi_proto.h, utilities/services.cpp:
+	
+	Back-port from HEAD to 1.5 of recent security enhancement running
+	as a service under a specific account in Win32.
+
+2003-09-10 15:26  epocman
+
+	* firebird2/src/utilities/install/install_svc.cpp:
+	
+	When run as a specific user, stopping engine service stops
+	guardian, like with FB 1.0x LocalSystem.
+
+2003-09-10 15:24  dimitr
+
+	* firebird2/src/: jrd/opt.cpp, dsql/dsql.cpp:
+	
+	PLAN enhancements. The DSQL part of this change will follow.
+
+2003-09-10 15:20  epocman
+
+	* firebird2/src/iscguard/: cntl_guard.cpp, iscguard.cpp:
+	
+	Code cleanup per Claudio request
+
+2003-09-10 14:52  dimitr
+
+	* firebird2/src/jrd/: intlnames.h, intlnames.h:
+	
+	Applied Peter's patch
+
+2003-09-10 14:01  dimitr
+
+	* firebird2/src/remote/: xnet.cpp, os/win32/property.cpp:
+	
+	Cleanup
+
+2003-09-10 13:48  robocop
+
+	* firebird2/src/qli/: all.cpp, command.cpp, compile.cpp, dtr.cpp,
+	eval.cpp, expand.cpp, format.cpp, gener.cpp, help.epp, lex.cpp,
+	meta.epp, mov.cpp, parse.cpp, picstr.cpp, proc.epp, report.cpp,
+	show.epp:
+	
+	C comments to C++ comments
+
+2003-09-10 13:43  robocop
+
+	* firebird2/src/lock/print.cpp:
+	
+	cleanup, hopefully right
+
 2003-09-09 21:00  skidder
 
 	* firebird2/builds/win32/msvc7/: Firebird2.sln, fbclient.vcproj,
