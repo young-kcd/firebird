@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_PAT_PROTO_H_
-#define _GPRE_PAT_PROTO_H_
+#ifndef GPRE_PAT_PROTO_H
+#define GPRE_PAT_PROTO_H
 
 extern void PATTERN_expand(USHORT, TEXT *, PAT *);
 
-#endif /* _GPRE_PAT_PROTO_H_ */
+#endif /* GPRE_PAT_PROTO_H */

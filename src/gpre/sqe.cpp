@@ -37,7 +37,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sqe.cpp,v 1.14 2003-09-06 00:52:10 brodsom Exp $
+//	$Id: sqe.cpp,v 1.15 2003-09-08 11:27:51 robocop Exp $
 //
 #include "firebird.h"
 #include <stdio.h>
@@ -93,7 +93,7 @@ static GPRE_CTX par_join_clause(GPRE_REQ, GPRE_CTX);
 static NOD_T par_join_type(void);
 static GPRE_NOD par_multiply(GPRE_REQ, BOOLEAN, USHORT *, USHORT *);
 static GPRE_NOD par_not(GPRE_REQ, USHORT *);
-static void par_order(GPRE_REQ, RSE, SSHORT, USHORT);
+static void par_order(GPRE_REQ, RSE, bool, bool);
 static GPRE_NOD par_plan(GPRE_REQ);
 static GPRE_NOD par_plan_item(GPRE_REQ, BOOLEAN);
 static GPRE_NOD par_primitive_value(GPRE_REQ, BOOLEAN, USHORT *, USHORT *);
@@ -127,7 +127,8 @@ struct ops {
 	enum nod_t rel_negation;
 };
 
-static ops rel_ops[] = {
+static const ops rel_ops[] =
+{
 	{ nod_eq, KW_EQ, nod_ne },
 	{ nod_eq, KW_EQUALS, nod_ne },
 	{ nod_ne, KW_NE, nod_eq },
@@ -140,18 +141,22 @@ static ops rel_ops[] = {
 	{ nod_matches, KW_MATCHES, nod_any },
 	{ nod_any, KW_none, nod_any },
 	{ nod_ansi_any, KW_none, nod_ansi_any },
-	{ nod_ansi_all, KW_none, nod_ansi_all }};
+	{ nod_ansi_all, KW_none, nod_ansi_all }
+};
+
 #ifdef NOT_USED_OR_REPLACED
-static ops scalar_stat_ops[] = {
+static const ops scalar_stat_ops[] = {
 	{ nod_count, KW_COUNT, nod_any },
 	{ nod_max, KW_MAX, nod_any },
 	{ nod_min, KW_MIN, nod_any },
 	{ nod_total, KW_TOTAL, nod_any },
 	{ nod_total, KW_SUM, nod_any },
 	{ nod_average, KW_AVERAGE, nod_any },
-	{ nod_via, KW_none, nod_any}};
+	{ nod_via, KW_none, nod_any}
+};
 #endif
-static ops stat_ops[] = {
+
+static const ops stat_ops[] = {
 	{ nod_agg_count, KW_COUNT, nod_any },
 	{ nod_agg_max, KW_MAX, nod_any },
 	{ nod_agg_min, KW_MIN, nod_any },
@@ -160,9 +165,10 @@ static ops stat_ops[] = {
 	{ nod_agg_average, KW_AVERAGE, nod_any },
 	{ nod_any, KW_none, nod_any },
 	{ nod_ansi_any, KW_none, nod_ansi_any },
-	{ nod_ansi_all, KW_none, nod_ansi_all }};
+	{ nod_ansi_all, KW_none, nod_ansi_all }
+};
 
-static NOD_T relationals[] = {
+static const NOD_T relationals[] = {
 	nod_eq, nod_ne, nod_gt, nod_ge, nod_le, nod_lt, nod_containing,
 	nod_starting, nod_matches, nod_any, nod_missing, nod_between, nod_like,
 	nod_and, nod_or, nod_not, nod_ansi_any, nod_ansi_all, (NOD_T) 0
@@ -224,10 +230,10 @@ GPRE_CTX SQE_context(GPRE_REQ request)
 	SQL_relation_name(r_name, db_name, owner_name);
 
 	if (!(context->ctx_relation =
-		  SQL_relation(request, r_name, db_name, owner_name, FALSE))) {
+		  SQL_relation(request, r_name, db_name, owner_name, false))) {
 		/* check for a procedure */
 		if (procedure = context->ctx_procedure =
-			SQL_procedure(request, r_name, db_name, owner_name, FALSE)) {
+			SQL_procedure(request, r_name, db_name, owner_name, false)) {
 			if (procedure->prc_inputs) {
 				if (!MATCH(KW_LEFT_PAREN))
 					SYNTAX_ERROR("( <procedure input parameters> )");
@@ -758,12 +764,12 @@ REF SQE_parameter(GPRE_REQ request, BOOLEAN aster_ok)
 			break;
 		}
 
-	reference->ref_value = PAR_native_value(FALSE, FALSE);
+	reference->ref_value = PAR_native_value(false, false);
 
 	MATCH(KW_INDICATOR);
 
 	if (MATCH(KW_COLON))
-		reference->ref_null_value = PAR_native_value(FALSE, FALSE);
+		reference->ref_null_value = PAR_native_value(false, false);
 
 	return reference;
 }
@@ -1024,7 +1030,7 @@ BOOLEAN SQE_resolve(GPRE_NOD node, GPRE_REQ request, rse* selection)
 //		Parse a SELECT (sans keyword) expression.
 //  
 
-RSE SQE_select(GPRE_REQ request, USHORT view_flag)
+RSE SQE_select(GPRE_REQ request, bool view_flag)
 {
 	RSE select, rse1, rse2;
 	GPRE_NOD node;
@@ -1139,7 +1145,7 @@ GPRE_NOD SQE_value(GPRE_REQ request,
 		return node;
 	}
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_PLUS))
 			operator_ = nod_plus;
 		else if (MATCH(KW_MINUS))
@@ -1204,12 +1210,12 @@ REF SQE_variable(GPRE_REQ request, BOOLEAN aster_ok)
 			break;
 		}
 
-	reference->ref_value = PAR_native_value(FALSE, FALSE);
+	reference->ref_value = PAR_native_value(false, false);
 
 	MATCH(KW_INDICATOR);
 
 	if (MATCH(KW_COLON))
-		reference->ref_null_value = PAR_native_value(FALSE, FALSE);
+		reference->ref_null_value = PAR_native_value(false, false);
 
 	return reference;
 }
@@ -1884,7 +1890,7 @@ static GPRE_NOD par_in( GPRE_REQ request, GPRE_NOD value)
 		node = implicit_any(request, value, nod_eq, nod_ansi_any);
 	else {
 		node = NULL;
-		while (TRUE) {
+		while (true) {
 			value2 = par_primitive_value(request, FALSE, 0, 0);
 			if (value2->nod_type == nod_value) {
 				ref2 = (REF) value2->nod_arg[0];
@@ -2032,7 +2038,7 @@ static GPRE_NOD par_multiply(
 	if (KEYWORD(KW_COLLATE))
 		return par_collate(request, node);
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_ASTERISK))
 			operator_ = nod_times;
 		else if (MATCH(KW_SLASH))
@@ -2113,7 +2119,7 @@ static GPRE_NOD par_not( GPRE_REQ request, USHORT * paren_count)
 
 static void par_order(
 					  GPRE_REQ request,
-					  RSE select, SSHORT union_f, USHORT view_flag)
+					  RSE select, bool union_f, bool view_flag)
 {
 	GPRE_NOD sort, *ptr, values;
 	LLS items, directions;
@@ -2144,10 +2150,10 @@ static void par_order(
 	count = direction = 0;
 	values = select->rse_fields;
 
-	while (TRUE) {
+	while (true) {
 		direction = FALSE;
 		if (token.tok_type == tok_number) {
-			i = EXP_USHORT_ordinal(FALSE);
+			i = EXP_USHORT_ordinal(false);
 			if (i < 1 || i > values->nod_count)
 				SYNTAX_ERROR("<ordinal column position>");
 			sort = values->nod_arg[i - 1];
@@ -2361,7 +2367,6 @@ static GPRE_NOD par_primitive_value(
 {
 	GPRE_NOD node, node_arg;
 	REF reference;
-	ops *op;
 	map* tmp_map;
 	USHORT distinct, local_count;
 	ACT action;
@@ -2421,7 +2426,7 @@ static GPRE_NOD par_primitive_value(
 //  ORDER clause.  In this case, post only the complete expression, and not
 //  the sub-expressions. 
 
-	for (op = stat_ops; (int) op->rel_kw != (int) KW_none; op++) {
+	for (const ops *op = stat_ops; (int) op->rel_kw != (int) KW_none; op++) {
 		MATCH(KW_ALL);
 		if (MATCH(op->rel_kw)) {
 			if (request && (request->req_in_aggregate ||
@@ -2539,10 +2544,8 @@ static GPRE_NOD par_relational( GPRE_REQ request, USHORT * paren_count)
 {
 	GPRE_NOD node, expr1, expr2;
 	REF ref_value;
-	ops *op;
 	int negation;
 	USHORT local_flag;
-	NOD_T *relational_ops;
 
 	assert_IS_REQ(request);
 
@@ -2553,10 +2556,14 @@ static GPRE_NOD par_relational( GPRE_REQ request, USHORT * paren_count)
 	if (KEYWORD(KW_RIGHT_PAREN))
 		return expr1;
 	if (KEYWORD(KW_SEMI_COLON))
-		for (relational_ops = relationals; *relational_ops != (NOD_T) 0;
+	{
+		for (const NOD_T* relational_ops = relationals; *relational_ops != (NOD_T) 0;
 			 relational_ops++)
+		{
 			if (expr1->nod_type == *relational_ops)
 				return expr1;
+		}
+	}
 
 	if (MATCH(KW_NOT))
 		negation = TRUE;
@@ -2602,15 +2609,16 @@ static GPRE_NOD par_relational( GPRE_REQ request, USHORT * paren_count)
 	}
 	else {
 		node = NULL;
-		for (op = rel_ops; (int) op->rel_kw != (int) KW_none; op++)
+		for (const ops* op = rel_ops; (int) op->rel_kw != (int) KW_none; op++)
 			if (MATCH(op->rel_kw))
 				break;
 		if ((int) op->rel_kw == (int) KW_none) {
-			for (relational_ops = relationals; *relational_ops != (NOD_T) 0;
-				 relational_ops++)
-
+			for (const NOD_T* relational_ops = relationals;
+				*relational_ops != (NOD_T) 0; relational_ops++)
+			{
 				if (expr1->nod_type == *relational_ops)
 					return expr1;
+			}
 			SYNTAX_ERROR("<relational operator>");
 		}
 		if ((int) op->rel_kw == (int) KW_STARTING)
@@ -2907,7 +2915,7 @@ static GPRE_NOD par_subscript( GPRE_REQ request)
 	if (!MATCH(KW_COLON))
 		SYNTAX_ERROR("<colon>");
 
-	reference->ref_value = PAR_native_value(FALSE, FALSE);
+	reference->ref_value = PAR_native_value(false, false);
 
 	if (request) {
 		reference->ref_next = request->req_values;

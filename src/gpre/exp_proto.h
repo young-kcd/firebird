@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_EXP_PROTO_H_
-#define _GPRE_EXP_PROTO_H_
+#ifndef GPRE_EXP_PROTO_H
+#define GPRE_EXP_PROTO_H
 
 extern GPRE_NOD EXP_array(GPRE_REQ, GPRE_FLD, SSHORT, SSHORT);
 extern GPRE_FLD EXP_cast(GPRE_FLD);
@@ -44,7 +44,8 @@ extern SLONG EXP_SLONG_ordinal(USHORT);
 extern SINT64 EXP_SINT64_ordinal(USHORT);
 extern SSHORT EXP_SSHORT_ordinal(USHORT);
 extern ULONG EXP_ULONG_ordinal(USHORT);
-extern USHORT EXP_USHORT_ordinal(USHORT);
-extern USHORT EXP_pos_USHORT_ordinal(USHORT);
+extern USHORT EXP_USHORT_ordinal(bool);
+extern USHORT EXP_pos_USHORT_ordinal(bool);
 
-#endif /* _GPRE_EXP_PROTO_H_ */
+#endif /* GPRE_EXP_PROTO_H */
+

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_GPRE_PROTO_H_
-#define _GPRE_GPRE_PROTO_H_
+#ifndef GPRE_GPRE_PROTO_H
+#define GPRE_GPRE_PROTO_H
 
 #include "../gpre/parse.h"
 
@@ -32,9 +32,9 @@ extern void CPR_assert(TEXT *, int);
 #endif
 extern void CPR_bugcheck(TEXT *);
 extern void CPR_end_text(TXT);
-extern int CPR_error(TEXT *);
+extern int CPR_error(const TEXT*);
 extern void CPR_exit(int);
-extern void CPR_warn(TEXT *);
+extern void CPR_warn(const TEXT*);
 extern TOK CPR_eol_token(void);
 extern void CPR_get_text(TEXT *, TXT);
 extern void CPR_raw_read(void);
@@ -42,4 +42,4 @@ extern void CPR_s_error(TEXT *);
 extern TXT CPR_start_text(void);
 extern TOK CPR_token(void);
 
-#endif /* _GPRE_GPRE_PROTO_H_ */
+#endif /* GPRE_GPRE_PROTO_H */

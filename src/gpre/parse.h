@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_PARSE_H_
-#define _GPRE_PARSE_H_
+#ifndef GPRE_PARSE_H
+#define GPRE_PARSE_H
 
 typedef enum kwwords {
 	KW_none = 0,
@@ -72,4 +72,4 @@ EXTERN tok token;
 
 #undef EXTERN
 
-#endif /* _GPRE_PARSE_H_ */
+#endif /* GPRE_PARSE_H */

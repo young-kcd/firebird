@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_JRDME_PROTO_H_
-#define _GPRE_JRDME_PROTO_H_
+#ifndef GPRE_JRDME_PROTO_H
+#define GPRE_JRDME_PROTO_H
 
 extern void JRDMET_init(DBB);
 
-#endif /* _GPRE_JRDME_PROTO_H_ */
+#endif /* GPRE_JRDME_PROTO_H */

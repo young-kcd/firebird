@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_HSH_PROTO_H_
-#define _GPRE_HSH_PROTO_H_
+#ifndef GPRE_HSH_PROTO_H
+#define GPRE_HSH_PROTO_H
 
 extern void HSH_fini(void);
 extern void HSH_init(void);
@@ -31,4 +31,4 @@ extern SYM HSH_lookup(SCHAR *);
 extern SYM HSH_lookup2(SCHAR *);
 extern void HSH_remove(SYM);
 
-#endif /* _GPRE_HSH_PROTO_H_ */
+#endif /* GPRE_HSH_PROTO_H */

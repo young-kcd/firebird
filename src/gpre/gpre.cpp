@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.30 2003-09-06 00:52:10 brodsom Exp $
+//  $Id: gpre.cpp,v 1.31 2003-09-08 11:27:51 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,6 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.30 2003-09-06 00:52:10 brodsom Exp $
 //
 
 #define GPRE_MAIN
@@ -101,7 +100,7 @@ static BOOLEAN		file_rename(TEXT *, TEXT *, TEXT *);
 static void			finish_based(ACT);
 #endif
 static int			get_char(IB_FILE *);
-static BOOLEAN		get_switches(int, TEXT **, IN_SW_TAB, SW_TAB, TEXT **);
+static BOOLEAN		get_switches(int, TEXT **, const in_sw_tab_t*, SW_TAB, TEXT **);
 static TOK			get_token();
 static int			nextchar();
 static SLONG		pass1(TEXT*);
@@ -153,7 +152,7 @@ bool isLangCpp(LANG_T lang) {
  * the default extensions for DML and host languages.
  */
 
-typedef struct ext_table_t
+struct ext_table_t
 {
 	lang_t			ext_language;
 	gpre_cmd_switch	ext_in_sw;
@@ -162,7 +161,7 @@ typedef struct ext_table_t
 };
 
 
-static ext_table_t dml_ext_table[] =
+static const ext_table_t dml_ext_table[] =
 {
 	{ lang_c, IN_SW_GPRE_C, ".e", ".c" },
 
@@ -256,7 +255,7 @@ int main(int argc, char* argv[])
 	TEXT	spare_file_name[256];
 	TEXT	spare_out_file_name[256];
 	BOOLEAN renamed, explicit_;
-	ext_table_t* ext_tab;
+	const ext_table_t* ext_tab;
 	sw_tab_t sw_table[IN_SW_GPRE_COUNT];
 #ifdef VMS
 	IB_FILE *temp;
@@ -452,7 +451,7 @@ int main(int argc, char* argv[])
 //  adding in the language switch in case we inferred it rather than parsing it.
 //  
 
-	ext_table_t* src_ext_tab = dml_ext_table;
+	const ext_table_t* src_ext_tab = dml_ext_table;
 
 	while (src_ext_tab->ext_language != sw_language) {
 		++src_ext_tab;
@@ -812,7 +811,7 @@ int main(int argc, char* argv[])
 //  
 
 	if (!sw_standard_out) {
-		ext_table_t* out_src_ext_tab = src_ext_tab;
+		const ext_table_t* out_src_ext_tab = src_ext_tab;
 		if (use_lang_internal_gxx_output) {
 			out_src_ext_tab = dml_ext_table;
     		while (out_src_ext_tab->ext_language != lang_internal_cxx) {
@@ -969,7 +968,7 @@ void CPR_end_text( TXT text)
 //		Issue an error message.
 //  
 
-int CPR_error( TEXT * string)
+int CPR_error(const TEXT* string)
 {
 
 	ib_fprintf(ib_stderr, "(E) %s:%d: %s\n", file_name, line + 1, string);
@@ -1011,7 +1010,7 @@ void CPR_exit( int stat)
 //		Issue an warning message.
 //  
 
-void CPR_warn( TEXT * string)
+void CPR_warn(const TEXT* string)
 {
 
 	ib_fprintf(ib_stderr, "(W) %s:%d: %s\n", file_name, line + 1, string);
@@ -1669,12 +1668,12 @@ static int get_char( IB_FILE * file)
 
 static BOOLEAN get_switches(int			argc,
 							TEXT**		argv,
-							IN_SW_TAB	in_sw_table,
+							const in_sw_tab_t*	in_sw_table,
 							SW_TAB		sw_table,
 							TEXT**		file_array)
 {
 	TEXT *p, *q, *string;
-	IN_SW_TAB in_sw_table_iterator;
+	const in_sw_tab_t* in_sw_table_iterator;
 	SW_TAB sw_table_iterator;
 	USHORT in_sw;
 
@@ -2662,7 +2661,7 @@ static void pass2( SLONG start_position)
 
 static void print_switches()
 {
-	IN_SW_TAB in_sw_table_iterator;
+	const in_sw_tab_t* in_sw_table_iterator;
 
 	ib_fprintf(ib_stderr, "\tlegal switches are:\n");
 	for (in_sw_table_iterator = gpre_in_sw_table;

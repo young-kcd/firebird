@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.17 2003-09-06 00:52:10 brodsom Exp $
+//	$Id: sql.cpp,v 1.18 2003-09-08 11:27:51 robocop Exp $
 //
 
 #include "firebird.h"
@@ -57,9 +57,9 @@
 #define DEFAULT_BLOB_SEGMENT_LENGTH	80	/* bytes */
 
 extern ACT cur_routine;
-extern TEXT *database_name;
+extern TEXT* database_name;
 
-TEXT *module_lc_ctype = NULL;
+TEXT* module_lc_ctype = NULL;
 
 static ACT act_alter(void);
 static ACT act_alter_database(void);
@@ -72,7 +72,7 @@ static ACT act_create(void);
 static ACT act_create_database(void);
 static ACT act_create_domain(void);
 static ACT act_create_generator(void);
-static ACT act_create_index(SSHORT, BOOLEAN);
+static ACT act_create_index(bool, bool);
 static ACT act_create_shadow(void);
 static ACT act_create_table(void);
 static ACT act_create_view(void);
@@ -91,14 +91,14 @@ static ACT act_fetch(void);
 static ACT act_grant_revoke(enum act_t);
 static ACT act_include(void);
 static ACT act_insert(void);
-static ACT act_insert_blob(TEXT *);
+static ACT act_insert_blob(const TEXT *);
 static ACT act_lock(void);
 static ACT act_openclose(enum act_t);
 static ACT act_open_blob(ACT_T, SYM);
 static ACT act_prepare(void);
 static ACT act_procedure(void);
 static ACT act_select(void);
-static ACT act_set(TEXT*);
+static ACT act_set(const TEXT*);
 static ACT act_set_dialect(void);
 static ACT act_set_generator(void);
 static ACT act_set_names(void);
@@ -107,42 +107,43 @@ static ACT act_set_transaction(void);
 static ACT act_transaction(enum act_t);
 static ACT act_update(void);
 static ACT act_whenever(void);
-static BOOLEAN check_filename(TEXT *);
-static void connect_opts(TEXT **, TEXT **, TEXT **, TEXT **, USHORT *);
+
+static bool		check_filename(const TEXT *);
+static void		connect_opts(TEXT **, TEXT **, TEXT **, TEXT **, USHORT *);
 #ifdef FLINT_CACHE
-static FIL define_cache(void);
+static FIL		define_cache(void);
 #endif
-static FIL define_file(void);
-static FIL define_log_file(BOOLEAN);
-static DBB dup_dbb(DBB);
-static void error(TEXT *, TEXT *);
-static TEXT *extract_string(BOOLEAN);
-static SWE gen_whenever(void);
-static void into(GPRE_REQ, GPRE_NOD, GPRE_NOD);
-static GPRE_FLD make_field(GPRE_REL);
-static IND make_index(GPRE_REQ, TEXT *);
-static GPRE_REL make_relation(GPRE_REQ, TEXT *);
-static void pair(GPRE_NOD, GPRE_NOD);
-static void par_array(GPRE_FLD);
-static SSHORT par_char_set(void);
-static void par_computed(GPRE_REQ, GPRE_FLD);
+static FIL		define_file(void);
+static FIL		define_log_file(bool);
+static dbb*		dup_dbb(const dbb*);
+static void		error(const TEXT *, const TEXT *);
+static TEXT		*extract_string(bool);
+static SWE		gen_whenever(void);
+static void		into(GPRE_REQ, GPRE_NOD, GPRE_NOD);
+static GPRE_FLD	make_field(GPRE_REL);
+static IND		make_index(GPRE_REQ, TEXT *);
+static GPRE_REL make_relation(GPRE_REQ, const TEXT *);
+static void		pair(GPRE_NOD, GPRE_NOD);
+static void		par_array(GPRE_FLD);
+static SSHORT	par_char_set(void);
+static void		par_computed(GPRE_REQ, GPRE_FLD);
 static GPRE_REQ par_cursor(SYM *);
-static DYN par_dynamic_cursor(void);
+static DYN		par_dynamic_cursor(void);
 static GPRE_FLD par_field(GPRE_REQ, GPRE_REL);
-static CNSTRT par_field_constraint(GPRE_REQ, GPRE_FLD, GPRE_REL);
-static void par_fkey_extension(CNSTRT);
-static BOOLEAN par_into(DYN);
-static void par_options(TEXT **);
-static int par_page_size(void);
+static CNSTRT	par_field_constraint(GPRE_REQ, GPRE_FLD, GPRE_REL);
+static void		par_fkey_extension(CNSTRT);
+static bool		par_into(DYN);
+static void		par_options(TEXT **);
+static int		par_page_size(void);
 static GPRE_REL par_relation(GPRE_REQ);
-static DYN par_statement(void);
-static CNSTRT par_table_constraint(GPRE_REQ, GPRE_REL);
-static BOOLEAN par_transaction_modes(GPRE_TRA, BOOLEAN);
-static BOOLEAN par_using(DYN);
-static USHORT resolve_dtypes(KWWORDS, BOOLEAN);
-static BOOLEAN tail_database(enum act_t, DBB);
-static void to_upcase(TEXT *, TEXT *);
-static void dialect1_bad_type(USHORT);
+static DYN		par_statement(void);
+static CNSTRT	par_table_constraint(GPRE_REQ, GPRE_REL);
+static bool		par_transaction_modes(GPRE_TRA, bool);
+static bool		par_using(DYN);
+static USHORT	resolve_dtypes(KWWORDS, bool);
+static bool		tail_database(enum act_t, DBB);
+static void		to_upcase(const TEXT *, TEXT *);
+static void		dialect1_bad_type(USHORT);
 
 static SWE whenever[SWE_max], whenever_list;
 
@@ -158,7 +159,7 @@ static SWE whenever[SWE_max], whenever_list;
 //		Parse and return a sequel action.
 //  
 
-ACT SQL_action(TEXT * base_directory)
+ACT SQL_action(const TEXT*  base_directory)
 {
 	ACT action;
 	enum kwwords keyword;
@@ -231,7 +232,7 @@ ACT SQL_action(TEXT * base_directory)
 		break;
 
 	case KW_DATABASE:
-		action = PAR_database((USHORT) TRUE, base_directory);
+		action = PAR_database(true, base_directory);
 		break;
 
 	case KW_DROP:
@@ -471,8 +472,6 @@ void SQL_init(void)
 
 void SQL_par_field_collate( GPRE_REQ request, GPRE_FLD field)
 {
-	SYM symbol;
-
 	if (MATCH(KW_COLLATE)) {
 
 		if ((field->fld_dtype != dtype_text) &&
@@ -481,7 +480,8 @@ void SQL_par_field_collate( GPRE_REQ request, GPRE_FLD field)
 				PAR_error("COLLATE applies only to character columns");
 		if (token.tok_type != tok_ident)
 			SYNTAX_ERROR("<collation name>");
-		if (!(symbol = MSC_find_symbol(token.tok_symbol, SYM_collate)))
+		SYM symbol = MSC_find_symbol(token.tok_symbol, SYM_collate);
+		if (!symbol)
 			PAR_error("The named COLLATION was not found");
 		field->fld_collate = (INTLSYM) symbol->sym_object;
 
@@ -517,7 +517,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 	enum kwwords keyword;
 	SYM symbol;
 	char s[ERROR_LENGTH];
-	BOOLEAN sql_date = FALSE;
+	bool sql_date = false;
 
 	switch (keyword = token.tok_keyword) {
 	case KW_SMALLINT:
@@ -562,7 +562,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 		else
 			SYNTAX_ERROR("<data type>");
 		keyword = KW_DATE;
-		sql_date = TRUE;
+		sql_date = true;
 		break;
 
 	case KW_COMPUTED:
@@ -605,7 +605,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 
 	case KW_FLOAT:
 		if (MATCH(KW_LEFT_PAREN)) {
-			l = EXP_USHORT_ordinal(TRUE);
+			l = EXP_USHORT_ordinal(true);
 			EXP_match_paren();
 			if (l < 17)
 				field->fld_dtype = dtype_float;
@@ -642,7 +642,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 		field->fld_flags |= FLD_national;
 		field->fld_dtype = dtype_text;
 		if (MATCH(KW_LEFT_PAREN)) {
-			field->fld_char_length = EXP_pos_USHORT_ordinal(TRUE);
+			field->fld_char_length = EXP_pos_USHORT_ordinal(true);
 			EXP_match_paren();
 		}
 		else
@@ -659,7 +659,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 		if (MATCH(KW_VARYING)) {
 			field->fld_dtype = dtype_varying;
 			EXP_left_paren(0);
-			field->fld_char_length = EXP_pos_USHORT_ordinal(TRUE);
+			field->fld_char_length = EXP_pos_USHORT_ordinal(true);
 			EXP_match_paren();
 			break;
 		}
@@ -671,7 +671,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 		else
 			field->fld_dtype = dtype_text;
 		if (MATCH(KW_LEFT_PAREN)) {
-			field->fld_char_length = EXP_pos_USHORT_ordinal(TRUE);
+			field->fld_char_length = EXP_pos_USHORT_ordinal(true);
 			EXP_match_paren();
 		}
 		else
@@ -681,7 +681,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 	case KW_VARCHAR:
 		field->fld_dtype = dtype_varying;
 		EXP_left_paren(0);
-		field->fld_char_length = EXP_pos_USHORT_ordinal(TRUE);
+		field->fld_char_length = EXP_pos_USHORT_ordinal(true);
 		EXP_match_paren();
 		break;
 
@@ -693,7 +693,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 		field->fld_precision = 9;
 		field->fld_sub_type = (keyword == KW_NUMERIC) ? 1 : 2;
 		if (MATCH(KW_LEFT_PAREN)) {
-			p = EXP_USHORT_ordinal(TRUE);
+			p = EXP_USHORT_ordinal(true);
 			if ((p <= 0) || (p > 18))
 				PAR_error("Precision must be from 1 to 18");
 
@@ -707,7 +707,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 			}
 
 			if (MATCH(KW_COMMA)) {
-				q = EXP_USHORT_ordinal(TRUE);
+				q = EXP_USHORT_ordinal(true);
 
 				if (q > p)
 					PAR_error("Scale can not be greater than precision");
@@ -725,7 +725,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 			if (MATCH(KW_COMMA))
 				field->fld_sub_type = EXP_SSHORT_ordinal(TRUE);
 			else {
-				field->fld_seg_length = EXP_USHORT_ordinal(TRUE);
+				field->fld_seg_length = EXP_USHORT_ordinal(true);
 				if (MATCH(KW_COMMA))
 					field->fld_sub_type = EXP_SSHORT_ordinal(TRUE);
 			}
@@ -737,7 +737,7 @@ void SQL_par_field_dtype( GPRE_REQ request, GPRE_FLD field, BOOLEAN udf)
 			}
 			if (MATCH(KW_SEGMENT)) {
 				MATCH(KW_SIZE);
-				field->fld_seg_length = EXP_USHORT_ordinal(TRUE);
+				field->fld_seg_length = EXP_USHORT_ordinal(true);
 			}
 		}
 		break;
@@ -817,20 +817,21 @@ PAR_error("CHARACTER SET applies only to character columns");
 
 GPRE_PRC SQL_procedure(GPRE_REQ request,
 				  TEXT * prc_string,
-				  TEXT * db_string, TEXT * owner_string, BOOLEAN err_flag)
+				  TEXT * db_string, 
+				  TEXT * owner_string, 
+				  bool err_flag)
 {
 	DBB db;
-	GPRE_PRC procedure, tmp_procedure;
-	SYM symbol;
 	SCHAR s[ERROR_LENGTH];
 
-	procedure = NULL;
+	GPRE_PRC procedure = NULL;
 
 	if (db_string && db_string[0]) {
-		/* a database was specified for the procedure
-		   search the known symbols for the database name */
+		// a database was specified for the procedure
+		// search the known symbols for the database name
 
-		if (!(symbol = MSC_find_symbol(HSH_lookup(db_string), SYM_database)))
+		SYM symbol = MSC_find_symbol(HSH_lookup(db_string), SYM_database);
+		if (!symbol)
 			PAR_error("Unknown database specifier.");
 		if (request->req_database) {
 			if ((DBB) symbol->sym_object != request->req_database)
@@ -845,15 +846,17 @@ GPRE_PRC SQL_procedure(GPRE_REQ request,
 			MET_get_procedure(request->req_database, prc_string,
 							  owner_string);
 	else {
-		/* no database was specified, check the metadata for all the databases
-		   for the existence of the procedure */
+		// no database was specified, check the metadata for all the databases
+		//   for the existence of the procedure
 
-		procedure = NULL;
+		procedure = NULL; // redundant
 		for (db = isc_databases; db; db = db->dbb_next)
-			if (tmp_procedure =
-				MET_get_procedure(db, prc_string,
-								  owner_string)) if (procedure) {
-					/* relation was found in more than one database */
+		{
+			GPRE_PRC tmp_procedure =
+				MET_get_procedure(db, prc_string, owner_string);
+			if (tmp_procedure) {
+				if (procedure) {
+					// relation was found in more than one database
 
 					sprintf(s, "PROCEDURE %s is ambiguous", prc_string);
 					PAR_error(s);
@@ -862,6 +865,8 @@ GPRE_PRC SQL_procedure(GPRE_REQ request,
 					procedure = tmp_procedure;
 					request->req_database = db;
 				}
+			}
+		}
 	}
 
 	if (!procedure) {
@@ -887,20 +892,21 @@ GPRE_PRC SQL_procedure(GPRE_REQ request,
 
 GPRE_REL SQL_relation(GPRE_REQ request,
 				 TEXT * rel_string,
-				 TEXT * db_string, TEXT * owner_string, BOOLEAN err_flag)
+				 TEXT * db_string, 
+				 TEXT * owner_string, 
+				 bool err_flag)
 {
 	DBB db;
-	GPRE_REL relation, tmp_relation;
-	SYM symbol;
 	SCHAR s[ERROR_LENGTH];
 
-	relation = NULL;
+	GPRE_REL relation = NULL;
 
 	if (db_string && db_string[0]) {
 		/* a database was specified for the relation,
 		   search the known symbols for the database name */
 
-		if (!(symbol = MSC_find_symbol(HSH_lookup(db_string), SYM_database)))
+		SYM symbol = MSC_find_symbol(HSH_lookup(db_string), SYM_database);
+		if (!symbol)
 			PAR_error("Unknown database specifier.");
 		if (request->req_database) {
 			if ((DBB) symbol->sym_object != request->req_database)
@@ -919,7 +925,9 @@ GPRE_REL SQL_relation(GPRE_REQ request,
 
 		relation = NULL;
 		for (db = isc_databases; db; db = db->dbb_next)
-			if (tmp_relation = MET_get_relation(db, rel_string, owner_string))
+		{
+			GPRE_REL tmp_relation = MET_get_relation(db, rel_string, owner_string);
+			if (tmp_relation) {
 				if (relation) {
 					/* relation was found in more than one database */
 
@@ -930,6 +938,8 @@ GPRE_REL SQL_relation(GPRE_REQ request,
 					relation = tmp_relation;
 					request->req_database = db;
 				}
+			}
+		}
 	}
 
 	if (!relation) {
@@ -953,16 +963,14 @@ GPRE_REL SQL_relation(GPRE_REQ request,
 
 void SQL_relation_name( TEXT * r_name, TEXT * db_name, TEXT * owner_name)
 {
-	SYM symbol;
-	TEXT *t_str;
-
 	db_name[0] = 0;
 	owner_name[0] = 0;
 
-	t_str = (TEXT *) ALLOC(NAME_SIZE + 1);
+	TEXT* t_str = (TEXT*) ALLOC(NAME_SIZE + 1);
 	SQL_resolve_identifier("<Table name>", t_str);
 
-	if (symbol = MSC_find_symbol(token.tok_symbol, SYM_database)) {
+	SYM symbol = MSC_find_symbol(token.tok_symbol, SYM_database);
+	if (symbol) {
 		strcpy(db_name, symbol->sym_name);
 		ADVANCE_TOKEN;
 		if (!MATCH(KW_DOT))
@@ -991,10 +999,10 @@ void SQL_relation_name( TEXT * r_name, TEXT * db_name, TEXT * owner_name)
 
 //____________________________________________________________
 //  
-//		Extract SQL va
+//		Extract SQL var
 //  
 
-TEXT *SQL_var_or_string(BOOLEAN string_only)
+TEXT *SQL_var_or_string(bool string_only)
 {
 
 	if ((!SINGLE_QUOTED(token.tok_type) && sw_sql_dialect == 3) ||
@@ -1004,7 +1012,7 @@ TEXT *SQL_var_or_string(BOOLEAN string_only)
 		if (!MATCH(KW_COLON))
 			SYNTAX_ERROR("<colon> or <quoted string>");
 	}
-	return PAR_native_value(FALSE, FALSE);
+	return PAR_native_value(false, false);
 }
 
 
@@ -1053,13 +1061,7 @@ static ACT act_alter(void)
 
 static ACT act_alter_database(void)
 {
-	ACT action;
-	GPRE_REQ request;
-	DBB database;
-	FIL file;
-	SSHORT logdefined;
-
-	request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
 	else
@@ -1067,15 +1069,16 @@ static ACT act_alter_database(void)
 
 	ADVANCE_TOKEN;
 
-//  create action block 
-
-	action = MAKE_ACTION(request, ACT_alter_database);
+	//  create action block 
+	ACT action = MAKE_ACTION(request, ACT_alter_database);
 	action->act_whenever = gen_whenever();
-	database = (DBB) ALLOC(DBB_LEN);
+	DBB database = (DBB) ALLOC(DBB_LEN);
 	database->dbb_grp_cmt_wait = -1;
 	action->act_object = (REF) database;
 
-	while (TRUE) {
+	bool logdefined = false;	// this var was undefined
+
+	while (true) {
 		if (MATCH(KW_DROP)) {
 			if (MATCH(KW_LOG_FILE))
 				database->dbb_flags |= DBB_drop_log;
@@ -1094,7 +1097,7 @@ static ACT act_alter_database(void)
 		else if (MATCH(KW_ADD)) {
 			if (MATCH(KW_FILE)) {
 				do {
-					file = define_file();
+					FIL file = define_file();
 					file->fil_next = database->dbb_files;
 					database->dbb_files = file;
 				}
@@ -1103,12 +1106,12 @@ static ACT act_alter_database(void)
 			else if (MATCH(KW_LOG_FILE)) {
 				if (logdefined)
 					PAR_error("log redefinition");
-				logdefined = TRUE;
+				logdefined = true;
 				if (MATCH(KW_LEFT_PAREN)) {
-					while (TRUE) {
-						file = define_log_file(FALSE);
-						file->fil_next = database->dbb_logfiles;
-						database->dbb_logfiles = file;
+					while (true) {
+						FIL logfile = define_log_file(false);
+						logfile->fil_next = database->dbb_logfiles;
+						database->dbb_logfiles = logfile;
 						if (!MATCH(KW_COMMA)) {
 							EXP_match_paren();
 							break;
@@ -1116,7 +1119,7 @@ static ACT act_alter_database(void)
 					}
 
 					if (MATCH(KW_OVERFLOW))
-						database->dbb_overflow = define_log_file(TRUE);
+						database->dbb_overflow = define_log_file(true);
 					else
 						PAR_error
 							("Overflow log specification required for this configuration");
@@ -1124,7 +1127,7 @@ static ACT act_alter_database(void)
 				}
 				else if (MATCH(KW_BASE_NAME)) {
 					database->dbb_flags |= DBB_log_serial;
-					database->dbb_logfiles = file = define_log_file(TRUE);
+					database->dbb_logfiles = define_log_file(true);
 				}
 				else
 					database->dbb_flags |= DBB_log_default;
@@ -1135,7 +1138,7 @@ static ACT act_alter_database(void)
 #endif /* FLINT_CACHE */
 		}
 		else if (MATCH(KW_SET)) {
-			while (TRUE) {
+			while (true) {
 				if (MATCH(KW_CHECK_POINT_LEN)) {
 					MATCH(KW_EQUALS);
 					database->dbb_chkptlen = EXP_ULONG_ordinal(TRUE);
@@ -1143,12 +1146,12 @@ static ACT act_alter_database(void)
 				}
 				else if (MATCH(KW_NUM_LOG_BUFS)) {
 					MATCH(KW_EQUALS);
-					database->dbb_numbufs = EXP_USHORT_ordinal(TRUE);
+					database->dbb_numbufs = EXP_USHORT_ordinal(true);
 					MATCH(KW_COMMA);
 				}
 				else if (MATCH(KW_LOG_BUF_SIZE)) {
 					MATCH(KW_EQUALS);
-					database->dbb_bufsize = EXP_USHORT_ordinal(TRUE);
+					database->dbb_bufsize = EXP_USHORT_ordinal(true);
 					MATCH(KW_COMMA);
 				}
 				else if (MATCH(KW_GROUP_COMMIT_WAIT)) {
@@ -1174,16 +1177,9 @@ static ACT act_alter_database(void)
 
 static ACT act_alter_domain(void)
 {
-	ACT action;
-	GPRE_REQ request;
-	GPRE_FLD field;
-	CNSTRT * cnstrt_ptr;
-	CNSTRT cnstrt_str;
-	GPRE_NOD literal_node;
-
 //  create request block 
 
-	request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
 	else
@@ -1191,11 +1187,11 @@ static ACT act_alter_domain(void)
 
 //  create action block 
 
-	action = MAKE_ACTION(request, ACT_alter_domain);
+	ACT action = MAKE_ACTION(request, ACT_alter_domain);
 
 	ADVANCE_TOKEN;
-	field = make_field(0);
-	cnstrt_ptr = &field->fld_constraints;
+	GPRE_FLD field = make_field(0);
+	cnstrt** cnstrt_ptr = &field->fld_constraints;
 
 //  Check if default value was specified 
 
@@ -1217,7 +1213,7 @@ static ACT act_alter_domain(void)
 					if (token.tok_type != tok_number)
 						SYNTAX_ERROR("<number>");
 
-					literal_node = EXP_literal();
+					GPRE_NOD literal_node = EXP_literal();
 					field->fld_default_value = MSC_unary(nod_negate,
 														 literal_node);
 				}
@@ -1229,7 +1225,7 @@ static ACT act_alter_domain(void)
 		else if (MATCH(KW_ADD)) {
 			MATCH(KW_CONSTRAINT);
 			if (token.tok_keyword == KW_CHECK) {
-				cnstrt_str = par_field_constraint(request, field, 0);
+				cnstrt* cnstrt_str = par_field_constraint(request, field, 0);
 				*cnstrt_ptr = cnstrt_str;
 				cnstrt_ptr = &cnstrt_str->cnstrt_next;
 			}
@@ -1238,7 +1234,7 @@ static ACT act_alter_domain(void)
 		}
 		else if (MATCH(KW_DROP)) {
 			if (MATCH(KW_CONSTRAINT)) {
-				cnstrt_str = (CNSTRT) ALLOC(CNSTRT_LEN);
+				cnstrt* cnstrt_str = (cnstrt*) ALLOC(CNSTRT_LEN);
 				cnstrt_str->cnstrt_flags |= CNSTRT_delete;
 				*cnstrt_ptr = cnstrt_str;
 				cnstrt_ptr = &cnstrt_str->cnstrt_next;
@@ -1268,14 +1264,11 @@ static ACT act_alter_domain(void)
 
 static ACT act_alter_index(void)
 {
-	ACT action;
-	GPRE_REQ request;
-	IND index;
 	SCHAR i_name[NAME_SIZE + 1];
 
 //  create request block 
 
-	request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
 
 	if (token.tok_length > NAME_SIZE)
 		PAR_error("Index name too long");
@@ -1284,7 +1277,7 @@ static ACT act_alter_index(void)
 
 	ADVANCE_TOKEN;
 
-	index = make_index(request, i_name);
+	IND index = make_index(request, i_name);
 
 	if (MATCH(KW_ACTIVE))
 		index->ind_flags |= IND_active;
@@ -1293,7 +1286,7 @@ static ACT act_alter_index(void)
 	else
 		PAR_error("Unsupported ALTER INDEX option");
 
-	action = MAKE_ACTION(request, ACT_alter_index);
+	ACT action = MAKE_ACTION(request, ACT_alter_index);
 	action->act_object = (REF) index;
 	action->act_whenever = gen_whenever();
 
@@ -1308,21 +1301,16 @@ static ACT act_alter_index(void)
 
 static ACT act_alter_table(void)
 {
-	ACT action;
-	GPRE_FLD field, *ptr;
-	GPRE_REQ request;
-	GPRE_REL relation;
-	CNSTRT cnstrt_str;
-	CNSTRT *cnstrt_ptr;
+	GPRE_FLD field;
 	GPRE_CTX context;
 
 //  create request block 
 
-	request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
 
 //  get table name and create relation block 
 
-	relation = par_relation(request);
+	GPRE_REL relation = par_relation(request);
 
 //  CHECK Constraints require the context to be set to the
 //  current relation 
@@ -1338,14 +1326,15 @@ static ACT act_alter_table(void)
 
 //  create action block 
 
-	action = MAKE_ACTION(request, ACT_alter_table);
+	ACT action = MAKE_ACTION(request, ACT_alter_table);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) relation;
 
 //  parse action list and create corresponding field blocks 
 
-	ptr = &relation->rel_fields;
-	cnstrt_ptr = &relation->rel_constraints;
+	GPRE_FLD* ptr = &relation->rel_fields;
+	cnstrt** cnstrt_ptr = &relation->rel_constraints;
+	cnstrt* cnstrt_str;
 
 	while (!END_OF_COMMAND) {
 		if (MATCH(KW_ADD)) {
@@ -1373,7 +1362,7 @@ static ACT act_alter_table(void)
 				cnstrt_str->cnstrt_flags |= CNSTRT_delete;
 				cnstrt_str->cnstrt_name = (STR) ALLOC(NAME_SIZE + 1);
 				SQL_resolve_identifier("<constraint name>",
-									   (TEXT *) cnstrt_str->cnstrt_name);
+									   cnstrt_str->cnstrt_name->str_string);
 				if (token.tok_length > NAME_SIZE)
 					PAR_error("Constraint name too long");
 				*cnstrt_ptr = cnstrt_str;
@@ -1435,46 +1424,36 @@ static ACT act_comment(void)
 
 static ACT act_connect(void)
 {
-	ACT action;
-	GPRE_REQ request;
-	SYM symbol;
-	RDY ready;
-	DBB db;
-	BOOLEAN need_handle;
-	USHORT default_buffers, buffers = 0;
-	TEXT *user = NULL, *password = NULL, *sql_role = NULL;
-	TEXT *lc_messages = NULL;
-
-	action = MAKE_ACTION(0, ACT_ready);
+	ACT action = MAKE_ACTION(0, ACT_ready);
 	action->act_whenever = gen_whenever();
-	need_handle = FALSE;
-	default_buffers = 0;
+	bool need_handle = false;
+	const USHORT default_buffers = 0; // useless?
 
 	MATCH(KW_TO);
 
 	if (!MATCH(KW_ALL) && !MATCH(KW_DEFAULT))
-		while (TRUE) {
-			ready = (RDY) ALLOC(RDY_LEN);
-			ready->rdy_next = (RDY) action->act_object;
+		while (true) {
+			rdy* ready = (rdy*) ALLOC(RDY_LEN);
+			ready->rdy_next = (rdy*) action->act_object;
 			action->act_object = (REF) ready;
 
-			if (!(symbol = token.tok_symbol)
-				|| symbol->sym_type != SYM_database) {
-				ready->rdy_filename = SQL_var_or_string(FALSE);
+			SYM symbol = token.tok_symbol;
+			if (!symbol || symbol->sym_type != SYM_database) {
+				ready->rdy_filename = SQL_var_or_string(false);
 				if (MATCH(KW_AS))
-					need_handle = TRUE;
+					need_handle = true;
 			}
 
-			if (!(symbol = token.tok_symbol)
-				|| symbol->sym_type != SYM_database) {
+			symbol = token.tok_symbol;
+			if (!symbol || symbol->sym_type != SYM_database) {
 				if (!isc_databases || isc_databases->dbb_next || need_handle) {
-					need_handle = FALSE;
+					need_handle = false;
 					SYNTAX_ERROR("<database handle>");
 				}
 				ready->rdy_database = dup_dbb(isc_databases);
 			}
 
-			need_handle = FALSE;
+			need_handle = false;
 			if (!ready->rdy_database) {
 				ready->rdy_database = dup_dbb((DBB) symbol->sym_object);
 				ADVANCE_TOKEN;
@@ -1482,13 +1461,13 @@ static ACT act_connect(void)
 
 			/* pick up the possible parameters, in any order */
 
-			buffers = 0;
-			db = ready->rdy_database;
+			USHORT buffers = 0;
+			dbb* db = ready->rdy_database;
 			connect_opts(&db->dbb_r_user, &db->dbb_r_password,
 						 &db->dbb_r_sql_role, &db->dbb_r_lc_messages,
 						 &buffers);
 
-			request = NULL;
+			GPRE_REQ request = NULL;
 			if (buffers)
 				request = PAR_set_up_dpb_info(ready, action, buffers);
 
@@ -1522,20 +1501,30 @@ static ACT act_connect(void)
 
 //  No explicit databases -- pick up all known 
 
+	TEXT* lc_messages = NULL;
+	TEXT *user = NULL, *password = NULL, *sql_role = NULL;
+	// The original logic suggests that "buffers" should be shared between the
+	// two sections of code. However, if the loop above executes, action->act_object
+	// is not null and therefore, the function returns before this point.
+	// Furthermore, connect_opts() below refills the values.
+	USHORT buffers = 0;
+
 	connect_opts(&user, &password, &sql_role, &lc_messages, &buffers);
 
-	for (db = isc_databases; db; db = db->dbb_next)
-		if (db->dbb_runtime || !(db->dbb_flags & DBB_sqlca)) {
-			ready = (RDY) ALLOC(RDY_LEN);
-			ready->rdy_next = (RDY) action->act_object;
+	for (const dbb* db_iter = isc_databases; db_iter; db_iter = db_iter->dbb_next)
+		if (db_iter->dbb_runtime || !(db_iter->dbb_flags & DBB_sqlca)) {
+			rdy* ready = (rdy*) ALLOC(RDY_LEN);
+			ready->rdy_next = (rdy*) action->act_object;
 			action->act_object = (REF) ready;
-			ready->rdy_database = dup_dbb(db);
+			ready->rdy_database = dup_dbb(db_iter);
 		}
 
 	if (!action->act_object)
 		PAR_error("no database available to CONNECT");
 	else
-		for (ready = (RDY) action->act_object; ready; ready = ready->rdy_next) {
+		for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next)
+		{
+		    GPRE_REQ request;
 			if (buffers)
 				request = PAR_set_up_dpb_info(ready, action, buffers);
 			else
@@ -1545,7 +1534,7 @@ static ACT act_connect(void)
 			   make sure that we generate variables for the request so that the 
 			   dpb can be extended at runtime */
 
-			db = ready->rdy_database;
+			dbb* db = ready->rdy_database;
 			if (user || password || lc_messages || db->dbb_r_lc_ctype) {
 				db->dbb_r_user = user;
 				db->dbb_r_password = password;
@@ -1577,9 +1566,6 @@ static ACT act_connect(void)
 
 static ACT act_create(void)
 {
-	BOOLEAN descending;
-	BOOLEAN unique;
-
 	if (MATCH(KW_DATABASE) || MATCH(KW_SCHEMA))
 		return act_create_database();
 
@@ -1609,15 +1595,15 @@ static ACT act_create(void)
 
 	if (KEYWORD(KW_UNIQUE) || KEYWORD(KW_ASCENDING) ||
 		KEYWORD(KW_DESCENDING) || KEYWORD(KW_INDEX)) {
-		descending = FALSE;
-		unique = FALSE;
-		while (TRUE) {
+		bool descending = false;
+		bool unique = false;
+		while (true) {
 			if (MATCH(KW_UNIQUE))
-				unique = TRUE;
+				unique = true;
 			else if (MATCH(KW_ASCENDING))
-				descending = FALSE;
+				descending = false;
 			else if (MATCH(KW_DESCENDING))
-				descending = TRUE;
+				descending = true;
 			else if (MATCH(KW_INDEX))
 				return act_create_index(unique, descending);
 			else
@@ -1637,13 +1623,7 @@ static ACT act_create(void)
 
 static ACT act_create_database(void)
 {
-	ACT action;
-	SYM symbol;
-	DBB db;
-	MDBB mdb;
-	GPRE_REQ request;
-	SCHAR *string;
-	BOOLEAN dummy, extend_dpb;
+	bool dummy;
 
 	if (isc_databases && isc_databases->dbb_next)
 		PAR_error
@@ -1652,12 +1632,12 @@ static ACT act_create_database(void)
 	if (!isc_databases) {
 		/* generate a dummy db */
 
-		dummy = TRUE;
+		dummy = true;
 		isc_databases = (DBB) MSC_alloc_permanent(DBB_LEN);
 
 		/* allocate symbol block */
 
-		symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
+		SYM symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
 
 		/* make it the default database */
 
@@ -1672,13 +1652,15 @@ static ACT act_create_database(void)
 		isc_databases->dbb_c_lc_ctype = module_lc_ctype;
 	}
 	else
-		dummy = FALSE;
+		dummy = false;
 
 //  get database name 
 
+	DBB db = NULL;
 	if (QUOTED(token.tok_type)) {
 		db = dup_dbb(isc_databases);
-		db->dbb_filename = string = (TEXT *) ALLOC(token.tok_length + 1);
+		TEXT* string = (TEXT*) ALLOC(token.tok_length + 1);
+		db->dbb_filename = string;
 		COPY(token.tok_string, token.tok_length, string);
 		if (!isc_databases->dbb_filename)
 			isc_databases->dbb_filename = string;
@@ -1689,16 +1671,16 @@ static ACT act_create_database(void)
 
 //  Create a request for generating DYN to add files to database. 
 
-//  request = MAKE_REQUEST (REQ_create_database); 
-	request = MAKE_REQUEST(REQ_ddl);
+//  GPRE_REQ request = MAKE_REQUEST (REQ_create_database); 
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
 	request->req_flags |= REQ_sql_database_dyn;
 	request->req_database = db;
 
 //  create action block 
 
-	action = MAKE_ACTION(request, ACT_create_database);
+	ACT action = MAKE_ACTION(request, ACT_create_database);
 
-	mdb = (MDBB) ALLOC(sizeof(mdbb));
+	mdbb* mdb = (mdbb*) ALLOC(sizeof(mdbb));
 	mdb->mdbb_database = db;
 	action->act_object = (REF) mdb;
 	action->act_whenever = gen_whenever();
@@ -1712,7 +1694,7 @@ static ACT act_create_database(void)
 
 //  Get optional specifications 
 
-	extend_dpb = tail_database(ACT_create_database, db);
+	bool extend_dpb = tail_database(ACT_create_database, db);
 
 //  Create a request to generate dpb 
 
@@ -1736,16 +1718,9 @@ static ACT act_create_database(void)
 
 static ACT act_create_domain(void)
 {
-	ACT action;
-	GPRE_REQ request;
-	GPRE_FLD field;
-	CNSTRT *cnstrt_ptr;
-	int in_constraints;
-	GPRE_NOD literal_node;
-
 //  create request block 
 
-	request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
 	else
@@ -1753,9 +1728,9 @@ static ACT act_create_domain(void)
 
 //  create action block 
 
-	action = MAKE_ACTION(request, ACT_create_domain);
+	ACT action = MAKE_ACTION(request, ACT_create_domain);
 
-	field = make_field(0);
+	GPRE_FLD field = make_field(0);
 	MATCH(KW_AS);
 	SQL_par_field_dtype(request, field, FALSE);
 
@@ -1774,7 +1749,7 @@ static ACT act_create_domain(void)
 				if (token.tok_type != tok_number)
 					SYNTAX_ERROR("<number>");
 
-				literal_node = EXP_literal();
+				GPRE_NOD literal_node = EXP_literal();
 				field->fld_default_value = MSC_unary(nod_negate,
 													 literal_node);
 			}
@@ -1787,8 +1762,8 @@ static ACT act_create_domain(void)
 
 //  Check for any column level constraints 
 
-	cnstrt_ptr = &field->fld_constraints;
-	in_constraints = TRUE;
+	cnstrt** cnstrt_ptr = &field->fld_constraints;
+	bool in_constraints = true;
 
 	while (in_constraints) {
 		switch (token.tok_keyword) {
@@ -1800,7 +1775,7 @@ static ACT act_create_domain(void)
 			break;
 
 		default:
-			in_constraints = FALSE;
+			in_constraints = false;
 			break;
 		}
 	}
@@ -1822,16 +1797,10 @@ static ACT act_create_domain(void)
 
 static ACT act_create_generator(void)
 {
-
-	ACT action;
-	TEXT *generator_name;
-	GPRE_REQ request;
-
-
-	generator_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+	TEXT* generator_name = (TEXT*) ALLOC(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", generator_name);
 
-	request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
 	else
@@ -1842,7 +1811,7 @@ static ACT act_create_generator(void)
 
 
 //  create action block 
-	action = MAKE_ACTION(request, ACT_create_generator);
+	ACT action = MAKE_ACTION(request, ACT_create_generator);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) generator_name;
 
@@ -1856,25 +1825,18 @@ static ACT act_create_generator(void)
 //		Handle an SQL create index statement.
 //  
 
-static ACT act_create_index( SSHORT dups, BOOLEAN descending)
+static ACT act_create_index( bool dups, bool descending)
 {
-	ACT action;
-	GPRE_FLD *ptr;
-	IND index;
-	GPRE_REQ request;
-	GPRE_REL relation;
-	SCHAR i_name[NAME_SIZE + 1];
-
 //  create request block 
 
-	request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
 
 //  get index and table names and create index and relation blocks 
 
 	if (token.tok_length > NAME_SIZE)
 		PAR_error("Index name too long");
 
-
+	SCHAR i_name[NAME_SIZE + 1];
 	SQL_resolve_identifier("<column name>", i_name);
 
 	ADVANCE_TOKEN;
@@ -1882,22 +1844,23 @@ static ACT act_create_index( SSHORT dups, BOOLEAN descending)
 	if (!MATCH(KW_ON))
 		SYNTAX_ERROR("ON");
 
-	relation = par_relation(request);
-	index = make_index(request, i_name);
+	GPRE_REL relation = par_relation(request);
+
+	IND index = make_index(request, i_name);
 	index->ind_relation = relation;
-	index->ind_flags |= (dups) ? IND_dup_flag : 0;
-	index->ind_flags |= (descending) ? IND_descend : 0;
+	index->ind_flags |= dups ? IND_dup_flag : 0;
+	index->ind_flags |= descending ? IND_descend : 0;
 
 //  create action block 
 
-	action = MAKE_ACTION(request, ACT_create_index);
+	ACT action = MAKE_ACTION(request, ACT_create_index);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) index;
 
 //  parse field list and create corresponding field blocks 
 
 	EXP_left_paren(0);
-	ptr = &index->ind_fields;
+	GPRE_FLD *ptr = &index->ind_fields;
 
 	for (;;) {
 		*ptr = make_field(relation);
@@ -1919,24 +1882,17 @@ static ACT act_create_index( SSHORT dups, BOOLEAN descending)
 
 static ACT act_create_shadow(void)
 {
-
-	ACT action;
-	GPRE_REQ request;
-	FIL file_list, file;
-	SLONG shadow_number;
-	USHORT file_flags = 0;
-	SLONG length;
-	TEXT err_string[1024];
-
-	request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
 	else
 		PAR_error("Can only CREATE SHADOW in context of single database");
 
-	action = MAKE_ACTION(request, ACT_create_shadow);
+	ACT action = MAKE_ACTION(request, ACT_create_shadow);
 	action->act_whenever = gen_whenever();
-	shadow_number = EXP_USHORT_ordinal((USHORT) TRUE);
+	SLONG shadow_number = EXP_USHORT_ordinal(true);
+
+	USHORT file_flags = 0;
 
 	if (!RANGE_POSITIVE_SHORT_INTEGER(shadow_number))
 		PAR_error("Shadow number out of range");
@@ -1949,15 +1905,19 @@ static ACT act_create_shadow(void)
 	if (MATCH(KW_CONDITIONAL))
 		file_flags |= FIL_conditional;
 
+	FIL file_list, file;
 	file_list = file = define_file();
 	if (file->fil_start)
 		PAR_error("Can not specify file start for first file");
-	length = file->fil_length;
+
+	SLONG length = file->fil_length;
 	file->fil_flags = file_flags;
 	file->fil_shadow_number = (SSHORT) shadow_number;
+
 	while (MATCH(KW_FILE)) {
 		file = define_file();
 		if (!length && !file->fil_start) {
+			TEXT err_string[1024];
 			sprintf(err_string,
 					"Preceding file did not specify length, so %s must include starting page number",
 					file->fil_name);
@@ -1980,22 +1940,15 @@ static ACT act_create_shadow(void)
 
 static ACT act_create_table(void)
 {
-	ACT action;
-	GPRE_FLD *ptr;
-	GPRE_REQ request;
-	GPRE_REL relation;
-	cnstrt** constraint_ptr;
-	GPRE_CTX context;
-	TEXT *string;
-
-	request = MAKE_REQUEST(REQ_ddl);
-	relation = par_relation(request);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REL relation = par_relation(request);
 
 	if (MATCH(KW_EXTERNAL)) {
+		TEXT* string = NULL;
 		MATCH(KW_FILE);
 		if (QUOTED(token.tok_type)) {
-			relation->rel_ext_file = string =
-				(TEXT *) ALLOC(token.tok_length + 1);
+			string = (TEXT*) ALLOC(token.tok_length + 1);
+			relation->rel_ext_file = string;
 			COPY(token.tok_string, token.tok_length, string);
 			ADVANCE_TOKEN;
 		}
@@ -2009,7 +1962,8 @@ static ACT act_create_table(void)
 //  CHECK Constraints require the context to be set to the
 //  current relation 
 
-	request->req_contexts = context = MAKE_CONTEXT(request);
+	GPRE_CTX context = MAKE_CONTEXT(request);
+	request->req_contexts = context;
 	context->ctx_relation = relation;
 
 //  Reserve context 1 for relation on which constraint is
@@ -2019,13 +1973,13 @@ static ACT act_create_table(void)
 
 //  create action block 
 
-	action = MAKE_ACTION(request, ACT_create_table);
+	ACT action = MAKE_ACTION(request, ACT_create_table);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) relation;
 
 	EXP_left_paren(0);
-	ptr = &relation->rel_fields;
-	constraint_ptr = &relation->rel_constraints;
+	GPRE_FLD *ptr = &relation->rel_fields;
+	cnstrt** cnstrt_ptr = &relation->rel_constraints;
 
 	for (;;) {
 		switch (token.tok_keyword) {
@@ -2034,8 +1988,8 @@ static ACT act_create_table(void)
 		case KW_UNIQUE:
 		case KW_FOREIGN:
 		case KW_CHECK:
-			*constraint_ptr = par_table_constraint(request, relation);
-			constraint_ptr = &(*constraint_ptr)->cnstrt_next;
+			*cnstrt_ptr = par_table_constraint(request, relation);
+			cnstrt_ptr = &(*cnstrt_ptr)->cnstrt_next;
 			break;
 
 		default:
@@ -2060,25 +2014,19 @@ static ACT act_create_table(void)
 
 static ACT act_create_view(void)
 {
-	ACT action;
-	GPRE_FLD *ptr;
-	GPRE_REQ request;
-	GPRE_REL relation;
-	RSE select;
-
-	request = MAKE_REQUEST(REQ_ddl);
-	relation = par_relation(request);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REL relation = par_relation(request);
 
 //  create action block 
 
-	action = MAKE_ACTION(request, ACT_create_view);
+	ACT action = MAKE_ACTION(request, ACT_create_view);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) relation;
 
 //  if field list is present parse it and create corresponding field blocks 
 
 	if (MATCH(KW_LEFT_PAREN)) {
-		ptr = &relation->rel_fields;
+		GPRE_FLD *ptr = &relation->rel_fields;
 		for (;;) {
 			*ptr = make_field(relation);
 			ptr = &(*ptr)->fld_next;
@@ -2103,7 +2051,8 @@ static ACT act_create_view(void)
 
 //  parse the view SELECT 
 
-	relation->rel_view_rse = select = SQE_select(request, TRUE);
+	RSE select = SQE_select(request, true);
+	relation->rel_view_rse = select;
 	EXP_rse_cleanup(select);
 
 	if (MATCH(KW_WITH)) {
@@ -2129,9 +2078,6 @@ static ACT act_create_view(void)
 
 static ACT act_d_section( enum act_t type)
 {
-	ACT action;
-	SYM symbol;
-
 	if (!MATCH(KW_DECLARE))
 		SYNTAX_ERROR("DECLARE SECTION");
 
@@ -2140,11 +2086,11 @@ static ACT act_d_section( enum act_t type)
 
 	MATCH(KW_SEMI_COLON);
 
-	action = (ACT) ALLOC(ACT_LEN);
+	ACT action = (ACT) ALLOC(ACT_LEN);
 	action->act_type = type;
 
 	if (type == ACT_b_declare)
-		cur_routine = action;
+		cur_routine = action; // Hmm, global var.
 
 	if (!isc_databases) {
 		/* allocate database block and link to db chain */
@@ -2153,7 +2099,7 @@ static ACT act_d_section( enum act_t type)
 
 		/* allocate symbol block */
 
-		symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
+		SYM symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
 
 		/* make it a database, specifically this one */
 
@@ -2183,7 +2129,8 @@ static ACT act_d_section( enum act_t type)
 			SYNTAX_ERROR("NAMES ARE");
 		if (!MATCH(KW_ARE))
 			SYNTAX_ERROR("NAMES ARE");
-		if (!(symbol = MSC_find_symbol(token.tok_symbol, SYM_charset)))
+		SYM symbol = MSC_find_symbol(token.tok_symbol, SYM_charset);
+		if (!symbol)
 			PAR_error("The named CHARACTER SET was not found");
 		if (module_lc_ctype && !strcmp(module_lc_ctype, symbol->sym_string))
 			PAR_error("Duplicate specification of module CHARACTER SET.");
@@ -2203,18 +2150,8 @@ static ACT act_d_section( enum act_t type)
 
 static ACT act_declare(void)
 {
-	DBB db;
-	GPRE_REQ request;
-	ACT action;
-	SYM symbol;
-	DYN statement;
-	TEXT t_str[132];
-	BOOLEAN delimited = FALSE;
-#ifdef SCROLLABLE_CURSORS
-	BOOLEAN scroll = FALSE;
-#endif
-
-	db = NULL;
+	ACT action = NULL;
+	DBB db = NULL;
 
 	if (token.tok_symbol && (token.tok_symbol->sym_type == SYM_database)) {
 		/* must be a database specifier in a DECLARE TABLE statement */
@@ -2223,7 +2160,7 @@ static ACT act_declare(void)
 		ADVANCE_TOKEN;
 		if (!MATCH(KW_DOT))
 			SYNTAX_ERROR(". (period)");
-		symbol = PAR_symbol(SYM_dummy);
+		SYM symbol = PAR_symbol(SYM_dummy);
 		if (token.tok_keyword != KW_TABLE)
 			SYNTAX_ERROR("TABLE");
 		return (act_declare_table(symbol, db));
@@ -2243,12 +2180,18 @@ static ACT act_declare(void)
 		break;
 	}
 
+	bool delimited = false;
+#ifdef SCROLLABLE_CURSORS
+	bool scroll = false;
+#endif
+
+	TEXT t_str[132];  // CVC: is it always enough?
 	SQL_resolve_identifier("<Cursor Name>", t_str);
 	if (token.tok_type == tok_dblquoted)
-		delimited = TRUE;
+		delimited = true;
 	else {
-		SYM symb;
-		if ((symb = HSH_lookup2(token.tok_string)) &&
+		SYM symb = HSH_lookup2(token.tok_string);
+		if (symb &&
 			(symb->sym_type == SYM_cursor ||
 			 symb->sym_type == SYM_delimited_cursor)) {
 			char s[64];
@@ -2256,7 +2199,9 @@ static ACT act_declare(void)
 			PAR_error(s);
 		}
 	}
-	symbol = PAR_symbol(SYM_cursor);
+
+
+	SYM symbol = PAR_symbol(SYM_cursor);
 
 	switch (token.tok_keyword) {
 	case KW_TABLE:
@@ -2265,7 +2210,7 @@ static ACT act_declare(void)
 #ifdef SCROLLABLE_CURSORS
 	case KW_SCROLL:
 		ADVANCE_TOKEN;
-		scroll = TRUE;
+		scroll = true;
 		if (token.tok_keyword != KW_CURSOR)
 			SYNTAX_ERROR("CURSOR");
 #endif
@@ -2274,7 +2219,7 @@ static ACT act_declare(void)
 		if (!MATCH(KW_FOR))
 			SYNTAX_ERROR("FOR");
 		if (MATCH(KW_SELECT)) {
-			request = MAKE_REQUEST(REQ_cursor);
+			GPRE_REQ request = MAKE_REQUEST(REQ_cursor);
 			request->req_flags |= REQ_sql_cursor | REQ_sql_declare_cursor;
 #ifdef SCROLLABLE_CURSORS
 			if (scroll)
@@ -2285,7 +2230,7 @@ static ACT act_declare(void)
 			action->act_object = (REF) symbol;
 			symbol->sym_type =
 				(delimited) ? SYM_delimited_cursor : SYM_cursor;
-			request->req_rse = SQE_select(request, FALSE);
+			request->req_rse = SQE_select(request, false);
 			if (MATCH(KW_FOR)) {
 				if (!MATCH(KW_UPDATE))
 					SYNTAX_ERROR("UPDATE");
@@ -2309,7 +2254,7 @@ static ACT act_declare(void)
 				(delimited) ? SYM_delimited_cursor : SYM_cursor;
 		}
 		else {
-			statement = par_statement();
+			DYN statement = par_statement();
 			symbol->sym_object = (GPRE_CTX) statement;
 			if (MATCH(KW_FOR)) {
 				if (!MATCH(KW_UPDATE))
@@ -2351,12 +2296,7 @@ static ACT act_declare(void)
 
 static ACT act_declare_filter(void)
 {
-	ACT action;
-	GPRE_REQ request;
-	FLTR filter;
-	SLONG input_type, output_type;
-
-	request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
 
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
@@ -2364,8 +2304,8 @@ static ACT act_declare_filter(void)
 		PAR_error("Can only DECLARE FILTER in context of single database");
 
 	ADVANCE_TOKEN;
-	filter = (FLTR) ALLOC(FLTR_LEN);
-	filter->fltr_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+	FLTR filter = (FLTR) ALLOC(FLTR_LEN);
+	filter->fltr_name = (TEXT*) ALLOC(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", filter->fltr_name);
 	if (token.tok_length > NAME_SIZE)
 		PAR_error("Filter name too long");
@@ -2373,9 +2313,11 @@ static ACT act_declare_filter(void)
 	ADVANCE_TOKEN;
 
 //  create action block 
-	action = MAKE_ACTION(request, ACT_declare_filter);
+	ACT action = MAKE_ACTION(request, ACT_declare_filter);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) filter;
+
+	SLONG input_type, output_type;
 
 	if (MATCH(KW_INPUT_TYPE))
 		input_type = EXP_SSHORT_ordinal((USHORT) TRUE);
@@ -2395,12 +2337,12 @@ static ACT act_declare_filter(void)
 	filter->fltr_output_type = (SSHORT) output_type;
 
 	if (MATCH(KW_ENTRY_POINT))
-		filter->fltr_entry_point = extract_string(TRUE);
+		filter->fltr_entry_point = extract_string(true);
 	else
 		SYNTAX_ERROR("ENTRY_POINT");
 
 	if (MATCH(KW_MODULE_NAME))
-		filter->fltr_module_name = extract_string(TRUE);
+		filter->fltr_module_name = extract_string(true);
 	else
 		SYNTAX_ERROR("MODULE_NAME");
 
@@ -2415,21 +2357,14 @@ static ACT act_declare_filter(void)
 
 static ACT act_declare_table( SYM symbol, DBB db)
 {
-	ACT action;
-	GPRE_FLD field, dbkey, *ptr;
-	GPRE_REL relation, tmp_relation;
-	SYM old_symbol, tmp_symbol;
-	USHORT count;
-	GPRE_REQ request;
+//  create a local request block
 
-//  create a local request block 
-
-	request = (GPRE_REQ) ALLOC(REQ_LEN);
+	GPRE_REQ request = (GPRE_REQ) ALLOC(REQ_LEN);
 	request->req_type = REQ_ddl;
 
 //  create relation block 
 
-	relation = make_relation(0, symbol->sym_string);
+	GPRE_REL relation = make_relation(0, symbol->sym_string);
 
 	if (!db)
 		db = relation->rel_database;
@@ -2438,28 +2373,33 @@ static ACT act_declare_table( SYM symbol, DBB db)
 
 	relation->rel_next = db->dbb_relations;
 	db->dbb_relations = relation;
-	relation->rel_dbkey = dbkey =
-		MET_make_field("rdb$db_key", dtype_text, 8, FALSE);
+	GPRE_FLD dbkey = MET_make_field("rdb$db_key", dtype_text, 8, FALSE);
+	relation->rel_dbkey = dbkey;
 	dbkey->fld_flags |= FLD_dbkey | FLD_text | FLD_charset;
 	dbkey->fld_ttype = ttype_binary;
 
 //  if relation name already in incore metadata, remove it & its fields 
 
-	old_symbol = HSH_lookup(relation->rel_symbol->sym_string);
+	SYM old_symbol = HSH_lookup(relation->rel_symbol->sym_string);
 
-	while (old_symbol)
+	while (old_symbol) 
+	{
 		if (old_symbol->sym_type == SYM_relation) {
-			tmp_relation = (GPRE_REL) old_symbol->sym_object;
+			GPRE_REL tmp_relation = (GPRE_REL) old_symbol->sym_object;
 			if (tmp_relation->rel_meta)
 				PAR_error("Multiple DECLARE TABLE statements for table");
-			tmp_symbol = old_symbol->sym_homonym;
+			SYM tmp_symbol = old_symbol->sym_homonym;
 			HSH_remove(old_symbol);
-			for (field = tmp_relation->rel_fields; field;
-				 field = field->fld_next) HSH_remove(field->fld_symbol);
+			for (GPRE_FLD field = tmp_relation->rel_fields; field;
+				field = field->fld_next)
+			{
+				 HSH_remove(field->fld_symbol);
+			}
 			old_symbol = tmp_symbol;
 		}
 		else
 			old_symbol = old_symbol->sym_homonym;
+	}
 
 //  add new symbol to incore metadata 
 
@@ -2467,7 +2407,7 @@ static ACT act_declare_table( SYM symbol, DBB db)
 
 //  create action block 
 
-	action = (ACT) ALLOC(ACT_LEN);
+	ACT action = (ACT) ALLOC(ACT_LEN);
 	action->act_type = ACT_noop;
 	action->act_object = (REF) relation;
 
@@ -2476,11 +2416,12 @@ static ACT act_declare_table( SYM symbol, DBB db)
 
 	ADVANCE_TOKEN;
 	EXP_left_paren(0);
-	count = 0;
-	ptr = &relation->rel_fields;
+	USHORT count = 0;
+	GPRE_FLD* ptr = &relation->rel_fields;
 
 	for (;;) {
-		*ptr = field = par_field(request, relation);
+		GPRE_FLD field = par_field(request, relation);
+		*ptr = field;
 		ptr = &field->fld_next;
 		HSH_insert(field->fld_symbol);
 		field->fld_position = count++;
@@ -2504,13 +2445,9 @@ static ACT act_declare_table( SYM symbol, DBB db)
 
 static ACT act_declare_udf(void)
 {
-	ACT action;
-	GPRE_REQ request;
-	DECL_UDF udf_declaration;
-	GPRE_FLD *ptr, field;
 	SLONG return_parameter;
 
-	request = MAKE_REQUEST(REQ_ddl);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
 
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
@@ -2518,30 +2455,30 @@ static ACT act_declare_udf(void)
 		PAR_error
 			("Can only DECLARE EXTERNAL FUNCTION in context of single database");
 
-	udf_declaration = (DECL_UDF) ALLOC(DECL_UDF_LEN);
-	udf_declaration->decl_udf_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+	DECL_UDF udf_declaration = (DECL_UDF) ALLOC(DECL_UDF_LEN);
+	udf_declaration->decl_udf_name = (TEXT*) ALLOC(NAME_SIZE + 1);
 	SQL_resolve_identifier("<identifier>", udf_declaration->decl_udf_name);
 	if (token.tok_length > NAME_SIZE)
 		PAR_error("external function name too long");
 	ADVANCE_TOKEN;
 
 //  create action block 
-	action = MAKE_ACTION(request, ACT_declare_udf);
+	ACT action = MAKE_ACTION(request, ACT_declare_udf);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) udf_declaration;
 
-	ptr = &udf_declaration->decl_udf_arg_list;
-	while (TRUE) {
+	GPRE_FLD *ptr = &udf_declaration->decl_udf_arg_list;
+	while (true) {
 		if (MATCH(KW_RETURNS)) {
 			if (MATCH(KW_PARAMETER)) {
-				return_parameter = EXP_pos_USHORT_ordinal((USHORT) TRUE);
+				return_parameter = EXP_pos_USHORT_ordinal(true);
 				if (return_parameter > 10)
 					PAR_error("return parameter not in range");
 				assert(return_parameter <= MAX_SSHORT);
 				udf_declaration->decl_udf_return_parameter = (SSHORT) return_parameter;
 			}
 			else {
-				field = (GPRE_FLD) ALLOC(FLD_LEN);
+				GPRE_FLD field = (GPRE_FLD) ALLOC(FLD_LEN);
 				field->fld_flags |= (FLD_meta | FLD_meta_cstring);
 				SQL_par_field_dtype(request, field, TRUE);
 				SQL_adjust_field_dtype(field);
@@ -2555,7 +2492,7 @@ static ACT act_declare_udf(void)
 			break;
 		}
 		else {
-			field = (GPRE_FLD) ALLOC(FLD_LEN);
+			GPRE_FLD field = (GPRE_FLD) ALLOC(FLD_LEN);
 			field->fld_flags |= (FLD_meta | FLD_meta_cstring);
 			SQL_par_field_dtype(request, field, TRUE);
 			SQL_adjust_field_dtype(field);
@@ -2566,12 +2503,12 @@ static ACT act_declare_udf(void)
 	}
 
 	if (MATCH(KW_ENTRY_POINT))
-		udf_declaration->decl_udf_entry_point = extract_string(TRUE);
+		udf_declaration->decl_udf_entry_point = extract_string(true);
 	else
 		SYNTAX_ERROR("ENTRY_POINT");
 
 	if (MATCH(KW_MODULE_NAME))
-		udf_declaration->decl_udf_module_name = extract_string(TRUE);
+		udf_declaration->decl_udf_module_name = extract_string(true);
 	else
 		SYNTAX_ERROR("MODULE_NAME");
 
@@ -2588,17 +2525,7 @@ static ACT act_declare_udf(void)
 
 static ACT act_delete(void)
 {
-	ACT action;
-	GPRE_REQ request;
-	GPRE_REL relation;
-	rse* selection;
-	GPRE_CTX context;
-	UPD update;
-	SYM alias;
-	TEXT *transaction, r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
-		owner_name[NAME_SIZE + 1], *str_1, *str_2;
-	SSHORT where, i, trans_nm_len;
-	SSHORT hsh_rm = 0;
+	TEXT* transaction;
 
 	par_options(&transaction);
 
@@ -2608,24 +2535,26 @@ static ACT act_delete(void)
 //  First comes the relation.  Unfortunately, there is no way to identify
 //  its database until the cursor is known.  Sigh.  Save the token. 
 
+	TEXT r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1], owner_name[NAME_SIZE + 1];
 	SQL_relation_name(r_name, db_name, owner_name);
 
 //  Parse the optional alias (context variable) 
 
-	alias = (token.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
+	SYM alias = (token.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
 
 //  Now the moment of truth.  If the next few tokens are WHERE CURRENT OF
 //  then this is a sub-action of an existing request.  If not, then it is
 //  a free standing request 
 
-	request = MAKE_REQUEST(REQ_mass_update);
-	update = (UPD) ALLOC(UPD_LEN);
+	GPRE_REQ request = MAKE_REQUEST(REQ_mass_update);
+	UPD update = (UPD) ALLOC(UPD_LEN);
 
-	if ((where = MATCH(KW_WITH)) && MATCH(KW_CURRENT)) {
+	SSHORT where = MATCH(KW_WITH);
+	if (where && MATCH(KW_CURRENT)) {
 		if (!MATCH(KW_OF))
 			SYNTAX_ERROR("OF <cursor>");
 		requests = request->req_next;
-		cur_routine->act_object = (REF) request->req_routine;
+		cur_routine->act_object = (REF) request->req_routine; // Beware global var
 		FREE((UCHAR *) request);
 		request = par_cursor(NULL);
 		if ((transaction || request->req_trans) &&
@@ -2635,17 +2564,19 @@ static ACT act_delete(void)
 				PAR_error("different transaction for select and delete");
 			else {				/* does not specify transaction clause in      */
 				/*   "delete ... where cuurent of cursor" stmt */
-				trans_nm_len = strlen(request->req_trans);
-				str_2 = transaction = (SCHAR *) ALLOC(trans_nm_len + 1);
-				str_1 = request->req_trans;
-				do
+				SSHORT trans_nm_len = strlen(request->req_trans);
+				SCHAR* str_2 = transaction = (SCHAR*) ALLOC(trans_nm_len + 1);
+				const SCHAR* str_1 = request->req_trans;
+				do {
 					*str_2++ = *str_1++;
-				while (--trans_nm_len);
+				} while (--trans_nm_len);
 			}
 		}
 		request->req_trans = transaction;
-		relation = SQL_relation(request, r_name, db_name, owner_name, TRUE);
-		selection = request->req_rse;
+		GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
+		rse* selection = request->req_rse;
+		GPRE_CTX context = NULL;
+		SSHORT i;
 		for (i = 0; i < selection->rse_count; i++) {
 			context = selection->rse_context[i];
 			if (context->ctx_relation == relation)
@@ -2655,7 +2586,8 @@ static ACT act_delete(void)
 			PAR_error("table not in request");
 		update->upd_request = request;
 		update->upd_source = context;
-		action = MAKE_ACTION(request, ACT_erase);
+
+		ACT action = MAKE_ACTION(request, ACT_erase);
 		action->act_object = (REF) update;
 		action->act_whenever = gen_whenever();
 		return action;
@@ -2667,27 +2599,31 @@ static ACT act_delete(void)
 //  Neat.  Take the pieces and build a complete request.  Start by
 //  figuring out what database is involved.  
 
-	relation = SQL_relation(request, r_name, db_name, owner_name, TRUE);
+	GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
 
-	request->req_rse = selection = (rse*) ALLOC(RSE_LEN(1));
+	rse* selection = (rse*) ALLOC(RSE_LEN(1));
+	request->req_rse = selection;
 	selection->rse_count = 1;
-	selection->rse_context[0] = context = MAKE_CONTEXT(request);
+	GPRE_CTX context = MAKE_CONTEXT(request);
+	selection->rse_context[0] = context;
 	context->ctx_relation = relation;
 
+	bool hsh_rm = false;
 	if (alias && !token.tok_symbol) {
 		alias->sym_type = SYM_context;
 		alias->sym_object = context;
 		context->ctx_symbol = alias;
 		token.tok_symbol = alias;
 		HSH_insert(alias);
-		hsh_rm = 1;
+		hsh_rm = true;
 	}
 
 	if (where)
 		selection->rse_boolean = SQE_boolean(request, 0);
 
 	request->req_node = MAKE_NODE(nod_erase, 0);
-	action = MAKE_ACTION(request, ACT_loop);
+
+	ACT action = MAKE_ACTION(request, ACT_loop);
 	action->act_whenever = gen_whenever();
 
 	if (hsh_rm)
@@ -2705,18 +2641,16 @@ static ACT act_delete(void)
 
 static ACT act_describe(void)
 {
-	DYN statement;
-	ACT action;
-	BOOLEAN in_sqlda;
+	bool in_sqlda;
 
 	if (MATCH(KW_INPUT))
-		in_sqlda = TRUE;
+		in_sqlda = true;
 	else {
 		MATCH(KW_OUTPUT);
-		in_sqlda = FALSE;
+		in_sqlda = false;
 	}
 
-	statement = par_statement();
+	DYN statement = par_statement();
 
 	if (!MATCH(KW_INTO)) {
 		/* check for SQL2 syntax 
@@ -2728,8 +2662,8 @@ static ACT act_describe(void)
 	else if (MATCH(KW_SQL) && !MATCH(KW_DESCRIPTOR))
 		SYNTAX_ERROR("INTO SQL DESCRIPTOR sqlda");
 
-	statement->dyn_sqlda = PAR_native_value(FALSE, FALSE);
-	action = (ACT) ALLOC(ACT_LEN);
+	statement->dyn_sqlda = PAR_native_value(false, false);
+	ACT action = (ACT) ALLOC(ACT_LEN);
 	if (in_sqlda)
 		action->act_type = ACT_dyn_describe_input;
 	else
@@ -2748,28 +2682,23 @@ static ACT act_describe(void)
 
 static ACT act_disconnect(void)
 {
-	ACT action;
-	SYM symbol;
-	RDY ready;
-	USHORT all;
-
-	action = MAKE_ACTION(0, ACT_disconnect);
+	ACT action = MAKE_ACTION(0, ACT_disconnect);
 	action->act_whenever = gen_whenever();
-	all = MATCH(KW_ALL) || MATCH(KW_DEFAULT);
+	USHORT all = MATCH(KW_ALL) || MATCH(KW_DEFAULT);
 
 	if (!all) {
 		if (MATCH(KW_CURRENT))
 			PAR_error("DISCONNECT CURRENT not supported");
-		if (!
-			((symbol = token.tok_symbol)
-			 && (symbol->sym_type ==
-				 SYM_database)))
-SYNTAX_ERROR("ALL, DEFAULT, or <database handle>");
-		while (TRUE) {
-			if ((symbol = token.tok_symbol)
-				&& (symbol->sym_type == SYM_database)) {
-				ready = (RDY) ALLOC(RDY_LEN);
-				ready->rdy_next = (RDY) action->act_object;
+		SYM test_symbol = token.tok_symbol;
+		if (!(test_symbol && test_symbol->sym_type == SYM_database))
+		{
+			SYNTAX_ERROR("ALL, DEFAULT, or <database handle>");
+		}
+		while (true) {
+			SYM symbol = token.tok_symbol;
+			if (symbol && symbol->sym_type == SYM_database) {
+				rdy* ready = (rdy*) ALLOC(RDY_LEN);
+				ready->rdy_next = (rdy*) action->act_object;
 				action->act_object = (REF) ready;
 				ready->rdy_database = (DBB) symbol->sym_object;
 				ADVANCE_TOKEN;
@@ -2794,18 +2723,16 @@ SYNTAX_ERROR("ALL, DEFAULT, or <database handle>");
 
 static ACT act_drop(void)
 {
-	ACT action;
-	DBB db;
-	IND index;
-	GPRE_REQ request;
-	GPRE_REL relation;
-	SYM symbol;
-	SCHAR *db_string;
-	TEXT *identifier_name;
-	SLONG num;
+	ACT action = NULL;
+	dbb* db = NULL;
+	GPRE_REQ request = NULL;
+	GPRE_REL relation = NULL;
+	SCHAR* db_string;
+	TEXT* identifier_name;
 
 	switch (token.tok_keyword) {
 	case KW_DATABASE:
+		{
 		PAR_error("DROP DATABASE not supported");
 
 		request = MAKE_REQUEST(REQ_ddl);
@@ -2813,9 +2740,9 @@ static ACT act_drop(void)
 		if (!QUOTED(token.tok_type))
 			SYNTAX_ERROR("<quoted database name>");
 		db = (DBB) ALLOC(DBB_LEN);
-		db->dbb_filename = db_string = (TEXT *) ALLOC(token.tok_length + 1);
+		db->dbb_filename = db_string = (TEXT*) ALLOC(token.tok_length + 1);
 		COPY(token.tok_string, token.tok_length, db_string);
-		symbol = PAR_symbol(SYM_dummy);
+		SYM symbol = PAR_symbol(SYM_dummy);
 		db->dbb_name = symbol;
 		symbol->sym_type = SYM_database;
 		symbol->sym_object = (GPRE_CTX) db;
@@ -2823,6 +2750,7 @@ static ACT act_drop(void)
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) db;
 		ADVANCE_TOKEN;
+		}
 		return action;
 
 	case KW_DOMAIN:
@@ -2832,7 +2760,7 @@ static ACT act_drop(void)
 		else
 			PAR_error("Can only DROP DOMAIN in context of single database");
 		ADVANCE_TOKEN;
-		identifier_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+		identifier_name = (TEXT*) ALLOC(NAME_SIZE + 1);
 		SQL_resolve_identifier("<identifier>", identifier_name);
 		action = MAKE_ACTION(request, ACT_drop_domain);
 		action->act_whenever = gen_whenever();
@@ -2847,7 +2775,7 @@ static ACT act_drop(void)
 		else
 			PAR_error("Can only DROP FILTER in context of single database");
 		ADVANCE_TOKEN;
-		identifier_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+		identifier_name = (TEXT*) ALLOC(NAME_SIZE + 1);
 		SQL_resolve_identifier("<identifier>", identifier_name);
 		action = MAKE_ACTION(request, ACT_drop_filter);
 		action->act_whenever = gen_whenever();
@@ -2867,7 +2795,7 @@ static ACT act_drop(void)
 			PAR_error
 				("Can only DROP EXTERNAL FUNCTION in context of a single database");
 
-		identifier_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+		identifier_name = (TEXT*) ALLOC(NAME_SIZE + 1);
 		SQL_resolve_identifier("<identifier>", identifier_name);
 		action = MAKE_ACTION(request, ACT_drop_udf);
 		action->act_whenever = gen_whenever();
@@ -2876,15 +2804,17 @@ static ACT act_drop(void)
 		return action;
 
 	case KW_INDEX:
+		{
 		request = MAKE_REQUEST(REQ_ddl);
 		ADVANCE_TOKEN;
-		identifier_name = (TEXT *) ALLOC(NAME_SIZE + 1);
+		identifier_name = (TEXT*) ALLOC(NAME_SIZE + 1);
 		SQL_resolve_identifier("<identifier>", identifier_name);
-		index = make_index(request, token.tok_string);
+		IND index = make_index(request, token.tok_string);
 		action = MAKE_ACTION(request, ACT_drop_index);
 		action->act_whenever = gen_whenever();
 		action->act_object = (REF) index;
 		ADVANCE_TOKEN;
+		}
 		return action;
 
 	case KW_STOGROUP:
@@ -2897,6 +2827,7 @@ static ACT act_drop(void)
 		PAR_error("DROP SYNONYM request not allowed");
 
 	case KW_SHADOW:
+		{
 		request = MAKE_REQUEST(REQ_ddl);
 		if (isc_databases && !isc_databases->dbb_next)
 			request->req_database = isc_databases;
@@ -2905,10 +2836,11 @@ static ACT act_drop(void)
 		ADVANCE_TOKEN;
 		action = MAKE_ACTION(request, ACT_drop_shadow);
 		action->act_whenever = gen_whenever();
-		num = EXP_USHORT_ordinal(TRUE);
+		SLONG num = EXP_USHORT_ordinal(true);
 		if (!RANGE_POSITIVE_SHORT_INTEGER(num))
 			PAR_error("Shadow number out of range");
 		action->act_object = (REF) num;
+		}
 		return action;
 
 	case KW_TABLE:
@@ -2932,7 +2864,7 @@ static ACT act_drop(void)
 	default:
 		PAR_error("Invalid DROP request");
 	}
-	return NULL;				/* silence compiler */
+	return NULL;				// silence compiler 
 }
 
 
@@ -2943,12 +2875,12 @@ static ACT act_drop(void)
 
 static ACT act_event(void)
 {
-	ACT action;
+	ACT action = NULL;
 
 	if (MATCH(KW_INIT))
-		action = PAR_event_init((USHORT) TRUE);
+		action = PAR_event_init(true);
 	else if (MATCH(KW_WAIT))
-		action = PAR_event_wait((USHORT) TRUE);
+		action = PAR_event_wait(true);
 	else
 		SYNTAX_ERROR("INIT or WAIT");
 	action->act_whenever = gen_whenever();
@@ -2964,10 +2896,6 @@ static ACT act_event(void)
 
 static ACT act_execute(void)
 {
-	DYN statement;
-	ACT action;
-	TEXT *transaction, s[ERROR_LENGTH];
-
 	if (MATCH(KW_PROCEDURE))
 		return act_procedure();
 
@@ -2975,12 +2903,13 @@ static ACT act_execute(void)
 
 	if (MATCH(KW_IMMEDIATE)) {
 		if (isc_databases && isc_databases->dbb_next) {
+			TEXT s[ERROR_LENGTH];
 			sprintf(s,
 					"Executing dynamic SQL statement in context of database %s",
 					isc_databases->dbb_name->sym_string);
 			CPR_warn(s);
 		}
-		statement = (DYN) ALLOC(DYN_LEN);
+		DYN statement = (DYN) ALLOC(DYN_LEN);
 		par_options(&statement->dyn_trans);
 
 		switch (sw_sql_dialect) {
@@ -2994,13 +2923,14 @@ static ACT act_execute(void)
 				SYNTAX_ERROR(": <string expression>");
 			break;
 		}
-		statement->dyn_string = PAR_native_value(FALSE, FALSE);
+		statement->dyn_string = PAR_native_value(false, false);
 		par_using(statement);
 		if (statement->dyn_using)
 			PAR_error("Using host-variable list not supported.");
 		par_into(statement);
 		statement->dyn_database = isc_databases;
-		action = (ACT) ALLOC(ACT_LEN);
+
+		ACT action = (ACT) ALLOC(ACT_LEN);
 		action->act_type = ACT_dyn_immediate;
 		action->act_object = (REF) statement;
 		action->act_whenever = gen_whenever();
@@ -3009,8 +2939,9 @@ static ACT act_execute(void)
 
 //  Ordinary form of EXECUTE 
 
+	TEXT* transaction;
 	par_options(&transaction);
-	statement = par_statement();
+	DYN statement = par_statement();
 	statement->dyn_trans = transaction;
 
 	par_using(statement);
@@ -3018,7 +2949,7 @@ static ACT act_execute(void)
 		PAR_error("Using host-variable list not supported.");
 	par_into(statement);
 
-	action = (ACT) ALLOC(ACT_LEN);
+	ACT action = (ACT) ALLOC(ACT_LEN);
 	action->act_type = ACT_dyn_execute;
 	action->act_object = (REF) statement;
 	action->act_whenever = gen_whenever();
@@ -3034,22 +2965,11 @@ static ACT act_execute(void)
 
 static ACT act_fetch(void)
 {
-	GPRE_REQ request;
-	ACT action;
-	RSE select;
-	DYN statement, cursor;
-#ifdef SCROLLABLE_CURSORS
-	USHORT direction;
-	REF reference;
-	VAL value;
-	TEXT *direction_string, *offset_string, *string;
-	GPRE_NOD offset_node = NULL;
-#endif
-
 //  Handle dynamic SQL statement, if appropriate 
 
-	if (cursor = par_dynamic_cursor()) {
-		statement = (DYN) ALLOC(DYN_LEN);
+	DYN cursor = par_dynamic_cursor();
+	if (cursor) {
+		DYN statement = (DYN) ALLOC(DYN_LEN);
 		statement->dyn_statement_name = cursor->dyn_statement_name;
 		statement->dyn_cursor_name = cursor->dyn_cursor_name;
 		if (MATCH(KW_USING) || MATCH(KW_INTO)) {
@@ -3061,7 +2981,7 @@ static ACT act_fetch(void)
 // there are more in this file.
 //
 			if (MATCH(KW_DESCRIPTOR))
-				statement->dyn_sqlda = PAR_native_value(FALSE, FALSE);
+				statement->dyn_sqlda = PAR_native_value(false, false);
 			else
 				statement->dyn_using =
 					(GPRE_NOD) SQE_list(reinterpret_cast < pfn_SQE_list_cb >
@@ -3069,7 +2989,7 @@ static ACT act_fetch(void)
 			if (statement->dyn_using)
 				PAR_error("Using host-variable list not supported.");
 		}
-		action = (ACT) ALLOC(ACT_LEN);
+		ACT action = (ACT) ALLOC(ACT_LEN);
 		action->act_type = ACT_dyn_fetch;
 		action->act_object = (REF) statement;
 		action->act_whenever = gen_whenever();
@@ -3081,7 +3001,9 @@ static ACT act_fetch(void)
 #ifdef SCROLLABLE_CURSORS
 //  parse the fetch orientation 
 
-	direction = blr_forward;
+	USHORT direction = blr_forward;
+	TEXT* direction_string = NULL;
+	GPRE_NOD offset_node = NULL;
 
 	if (!MATCH(KW_NEXT)) {
 		if (MATCH(KW_PRIOR)) {
@@ -3113,7 +3035,7 @@ static ACT act_fetch(void)
 	MATCH(KW_FROM);
 #endif
 
-	request = par_cursor(NULL);
+	GPRE_REQ request = par_cursor(NULL);
 
 #ifdef SCROLLABLE_CURSORS
 //  if scrolling is required, set up the offset and direction parameters 
@@ -3126,34 +3048,40 @@ static ACT act_fetch(void)
 			PAR_error
 				("Must use SCROLL modifier for DECLARE CURSOR to enable scrolling.");
 
-		/* create a literal for the direction parameter */
+		// create a literal for the direction parameter
 
-		if (!(reference = request->req_avalues))
+		REF reference = request->req_avalues;
+		if (!reference)
 			reference = request->req_avalues = (REF) ALLOC(REF_LEN);
 
-		if (!(value = reference->ref_values))
+		VAL value = reference->ref_values;
+		if (!value)
 			reference->ref_values = value = (VAL) ALLOC(VAL_LEN);
 		else {
-			while (value->val_next)
+			while (value->val_next) {
 				value = value->val_next;
+			}
 			value->val_next = (VAL) ALLOC(VAL_LEN);
 			value = value->val_next;
 		}
 
-		value->val_value = string = (TEXT *) ALLOC(2);
+		TEXT* string = (TEXT*) ALLOC(2);
+		value->val_value = string;
 		COPY(direction_string, 1, string);
 
-		/* create a reference to the offset variable or literal */
+		// create a reference to the offset variable or literal
 
 		if (!reference->ref_next)
 			reference->ref_next = (REF) ALLOC(REF_LEN);
 		reference = reference->ref_next;
 
-		if (!(value = reference->ref_values))
+		value = reference->ref_values;
+		if (!value)
 			reference->ref_values = value = (VAL) ALLOC(VAL_LEN);
 		else {
-			while (value->val_next)
+			while (value->val_next) {
 				value = value->val_next;
+			}
 			value->val_next = (VAL) ALLOC(VAL_LEN);
 			value = value->val_next;
 		}
@@ -3161,8 +3089,9 @@ static ACT act_fetch(void)
 		if (offset_node)
 			value->val_value = ((REF) offset_node->nod_arg[0])->ref_value;
 		else {
-			offset_string = "1";
-			value->val_value = string = (TEXT *) ALLOC(2);
+			TEXT* offset_string = "1";
+			string = (TEXT*) ALLOC(2);
+			value->val_value = string;
 			COPY(offset_string, 1, string);
 		}
 	}
@@ -3171,7 +3100,7 @@ static ACT act_fetch(void)
 	if (request->req_flags & REQ_sql_blob_create)
 		PAR_error("Fetching from a blob being created is not allowed.");
 
-	action = MAKE_ACTION(request, ACT_fetch);
+	ACT action = MAKE_ACTION(request, ACT_fetch);
 	action->act_whenever = gen_whenever();
 
 	if (request->req_flags & REQ_sql_blob_open) {
@@ -3184,7 +3113,7 @@ static ACT act_fetch(void)
 		action->act_object =
 			(REF) SQE_list(reinterpret_cast < pfn_SQE_list_cb >
 						   (SQE_variable), request, FALSE);
-		select = request->req_rse;
+		RSE select = request->req_rse;
 		into(request, select->rse_fields, (GPRE_NOD) action->act_object);
 	}
 
@@ -3201,30 +3130,12 @@ static ACT act_fetch(void)
 
 static ACT act_grant_revoke( enum act_t type)
 {
-	GPRE_REQ request;
-	ACT action;
-	USN user, usernames;
-	PRV priv_block, last_priv_block;
-	GPRE_REL relation;
-	GPRE_PRC procedure;
-	USHORT user_dyn;
-	SCHAR col_name[NAME_SIZE + 1], r_name[NAME_SIZE + 1],
-		db_name[NAME_SIZE + 1], owner_name[NAME_SIZE + 1];
-	LLS *fields;
-	STR field_name, relation_name;
-	BOOLEAN first;
-	BOOLEAN grant_option_legal = TRUE;
-	BOOLEAN execute_priv = FALSE;
-	SCHAR s[ERROR_LENGTH];
-
-	request = MAKE_REQUEST(REQ_ddl);
-
-	priv_block = MAKE_PRIVILEGE_BLOCK();
-	fields = &priv_block->prv_fields;
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
+	PRV priv_block = MAKE_PRIVILEGE_BLOCK();
 
 //  if it is revoke action, parse the optional grant option for 
 
-	if (type == ACT_dyn_revoke)
+	if (type == ACT_dyn_revoke) {
 		if (MATCH(KW_GRANT)) {
 			if (!MATCH(KW_OPTION))
 				SYNTAX_ERROR("OPTION");
@@ -3232,6 +3143,9 @@ static ACT act_grant_revoke( enum act_t type)
 				SYNTAX_ERROR("FOR");
 			priv_block->prv_privileges |= PRV_grant_option;
 		}
+	}
+
+	bool execute_priv = false;
 
 	if (MATCH(KW_ALL)) {
 		MATCH(KW_PRIVILEGES);	/*  Keyword 'privileges' is optional  */
@@ -3239,10 +3153,11 @@ static ACT act_grant_revoke( enum act_t type)
 	}
 	else if (MATCH(KW_EXECUTE)) {
 		priv_block->prv_privileges |= PRV_execute;
-		execute_priv = TRUE;
+		execute_priv = true;
 	}
-	else
-		while (TRUE) {
+	else {
+		LLS *fields = &priv_block->prv_fields;
+		while (true) {
 			if (MATCH(KW_SELECT))
 				priv_block->prv_privileges |= PRV_select;
 			else if (MATCH(KW_INSERT))
@@ -3252,9 +3167,10 @@ static ACT act_grant_revoke( enum act_t type)
 			else if (MATCH(KW_UPDATE)) {
 				priv_block->prv_privileges |= PRV_update;
 				if (MATCH(KW_LEFT_PAREN)) {
+					SCHAR col_name[NAME_SIZE + 1];
 					do {
 						SQL_resolve_identifier("<column name>", col_name);
-						field_name = (STR) MAKE_STRING(col_name);
+						STR field_name = (STR) MAKE_STRING(col_name);
 						PUSH((GPRE_NOD) field_name, fields);
 						fields = &(*fields)->lls_next;
 						CPR_token();
@@ -3268,23 +3184,27 @@ static ACT act_grant_revoke( enum act_t type)
 			if (!MATCH(KW_COMMA))
 				break;
 		}
+	}
 
 	if (!MATCH(KW_ON))
 		SYNTAX_ERROR("ON");
+
+	STR relation_name = NULL;
+	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1], owner_name[NAME_SIZE + 1];
 
 	if (execute_priv) {
 		if (!MATCH(KW_PROCEDURE))
 			SYNTAX_ERROR("PROCEDURE");
 		SQL_relation_name(r_name, db_name, owner_name);
-		procedure = SQL_procedure(request, r_name, db_name, owner_name, TRUE);
+		GPRE_PRC procedure = SQL_procedure(request, r_name, db_name, owner_name, true);
 		relation_name = (STR) MAKE_STRING(r_name);
 		priv_block->prv_relation = relation_name;
 		priv_block->prv_object_dyn = gds_dyn_prc_name;
 	}
 	else {
-		MATCH(KW_TABLE);		/* filler word */
+		MATCH(KW_TABLE);		// filler word 
 		SQL_relation_name(r_name, db_name, owner_name);
-		relation = SQL_relation(request, r_name, db_name, owner_name, TRUE);
+		GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
 		relation_name = (STR) MAKE_STRING(r_name);
 		priv_block->prv_relation = relation_name;
 		priv_block->prv_object_dyn = gds_dyn_rel_name;
@@ -3300,15 +3220,19 @@ static ACT act_grant_revoke( enum act_t type)
 			SYNTAX_ERROR("FROM");
 	}
 
-	usernames = 0;
-	user = 0;
-	while (TRUE) {
+	bool grant_option_legal = true;
+	USN usernames = 0;
+	USN user = 0;
+	USHORT user_dyn = 0;
+	SCHAR s[ERROR_LENGTH];
+
+	while (true) {
 		if (MATCH(KW_PROCEDURE)) {
 			SQL_relation_name(r_name, db_name, owner_name);
-			procedure =
-				SQL_procedure(request, r_name, db_name, owner_name, TRUE);
+			GPRE_PRC procedure =
+				SQL_procedure(request, r_name, db_name, owner_name, true);
 			user_dyn = gds_dyn_grant_proc;
-			grant_option_legal = FALSE;
+			grant_option_legal = false;
 		}
 		else if (MATCH(KW_TRIGGER)) {
 			SQL_relation_name(r_name, db_name, owner_name);
@@ -3317,18 +3241,18 @@ static ACT act_grant_revoke( enum act_t type)
 				PAR_error(s);
 			}
 			user_dyn = gds_dyn_grant_trig;
-			grant_option_legal = FALSE;
+			grant_option_legal = false;
 		}
 		else if (MATCH(KW_VIEW)) {
 			SQL_relation_name(r_name, db_name, owner_name);
 			if (!MET_get_view_relation
-				(request, r_name, (char *) relation_name, 0)) {
+				(request, r_name, relation_name->str_string, 0)) {
 				sprintf(s, "VIEW %s not defined on table %s", r_name,
 						relation_name->str_string);
 				PAR_error(s);
 			}
 			user_dyn = gds_dyn_grant_view;
-			grant_option_legal = FALSE;
+			grant_option_legal = false;
 		}
 		else if (MATCH(KW_PUBLIC)) {
 			strcpy(r_name, "PUBLIC");
@@ -3370,11 +3294,11 @@ static ACT act_grant_revoke( enum act_t type)
 
 //  create action block 
 
-	action = MAKE_ACTION(request, type);
+	ACT action = MAKE_ACTION(request, type);
 	action->act_next = 0;
 
-	last_priv_block = priv_block;
-	first = TRUE;
+	PRV last_priv_block = priv_block;
+	bool first = true;
 
 	for (user = usernames; user; user = user->usn_next) {
 		/* create and fill privilege block */
@@ -3388,7 +3312,7 @@ static ACT act_grant_revoke( enum act_t type)
 		priv_block->prv_fields = last_priv_block->prv_fields;
 		if (first) {
 			action->act_object = (REF) priv_block;
-			first = FALSE;
+			first = false;
 		}
 		else
 			last_priv_block->prv_next = priv_block;
@@ -3407,15 +3331,12 @@ static ACT act_grant_revoke( enum act_t type)
 
 static ACT act_include(void)
 {
-	ACT action;
-	SYM symbol;
-
 	ADVANCE_TOKEN;
 	MATCH(KW_SEMI_COLON);
 
-	action = (ACT) ALLOC(ACT_LEN);
+	ACT action = (ACT) ALLOC(ACT_LEN);
 	action->act_type = ACT_b_declare;
-	cur_routine = action;
+	cur_routine = action; // Hmm, global var
 
 	if (!isc_databases) {
 		/* allocate database block and link to db chain */
@@ -3424,7 +3345,7 @@ static ACT act_include(void)
 
 		/* allocate symbol block */
 
-		symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
+		SYM symbol = (SYM) MSC_alloc_permanent(SYM_LEN);
 
 		/* make it a database, specifically this one */
 
@@ -3458,14 +3379,7 @@ static ACT act_include(void)
 
 static ACT act_insert(void)
 {
-	GPRE_REQ request;
-	ACT action;
-	GPRE_CTX context;
-	LLS fields, values;
-	RSE select;
-	GPRE_NOD node, store, assignment, list, select_list, *ptr, *ptr2;
-	TEXT *transaction;
-	int count, count2, i;
+	TEXT* transaction = NULL;
 
 	par_options(&transaction);
 
@@ -3475,23 +3389,24 @@ static ACT act_insert(void)
 	if (!MATCH(KW_INTO))
 		SYNTAX_ERROR("INTO");
 
-	request = MAKE_REQUEST(REQ_insert);
+	GPRE_REQ request = MAKE_REQUEST(REQ_insert);
 	request->req_trans = transaction;
-	context = SQE_context(request);
-	count = count2 = 0;
-	fields = values = NULL;
+	GPRE_CTX context = SQE_context(request);
+
+	int count = 0, count2 = 0;
+	LLS fields = NULL;
 
 //  Pick up a field list 
 
 	if (!MATCH(KW_LEFT_PAREN)) {
-		list = MET_fields(context);
+		GPRE_NOD list = MET_fields(context);
 		count = list->nod_count;
-		for (i = 0; i < count; i++)
+		for (int i = 0; i < count; i++)
 			PUSH(list->nod_arg[i], &fields);
 	}
 	else {
 		do {
-			node = SQE_field(request, FALSE);
+			GPRE_NOD node = SQE_field(request, FALSE);
 			if (node->nod_type == nod_array) {
 				node->nod_type = nod_field;
 
@@ -3523,6 +3438,7 @@ static ACT act_insert(void)
 		EXP_match_paren();
 	}
 
+	LLS values = NULL;
 	if (MATCH(KW_VALUES)) {
 		/* Now pick up a value list */
 
@@ -3543,11 +3459,12 @@ static ACT act_insert(void)
 		if (count != count2)
 			PAR_error("count of values doesn't match count of columns");
 
-		request->req_node = list = MAKE_NODE(nod_list, (SSHORT) count);
-		ptr = &list->nod_arg[count];
+		GPRE_NOD vlist = MAKE_NODE(nod_list, (SSHORT) count);
+		request->req_node = vlist;
+		GPRE_NOD* ptr = &vlist->nod_arg[count];
 
 		while (values) {
-			assignment = MAKE_NODE(nod_assignment, 2);
+			GPRE_NOD assignment = MAKE_NODE(nod_assignment, 2);
 			assignment->nod_arg[0] = (GPRE_NOD) POP(&values);
 			assignment->nod_arg[1] = (GPRE_NOD) POP(&fields);
 			pair(assignment->nod_arg[0], assignment->nod_arg[1]);
@@ -3556,7 +3473,7 @@ static ACT act_insert(void)
 
 		if (context->ctx_symbol)
 			HSH_remove(context->ctx_symbol);
-		action = MAKE_ACTION(request, ACT_insert);
+		ACT action = MAKE_ACTION(request, ACT_insert);
 		action->act_whenever = gen_whenever();
 		return action;
 	}
@@ -3571,36 +3488,38 @@ static ACT act_insert(void)
 	request->req_type = REQ_mass_update;
 	request->req_contexts = NULL;
 	request->req_update = context;
-	request->req_rse = select = SQE_select(request, FALSE);
+	RSE select = SQE_select(request, false);
+	request->req_rse = select;
 	context->ctx_next = request->req_contexts;
 	request->req_contexts = context;
 
 //  Build an assignment list from select expressions into target list 
 
-	select_list = select->rse_fields;
+	GPRE_NOD select_list = select->rse_fields;
 
 	if (count != select_list->nod_count)
 		PAR_error("count of values doesn't match count of columns");
 
-	request->req_node = list = MAKE_NODE(nod_list, (SSHORT) count);
-	ptr = &list->nod_arg[count];
-	ptr2 = &select_list->nod_arg[count];
+	GPRE_NOD alist = MAKE_NODE(nod_list, (SSHORT) count);
+	request->req_node = alist;
+	GPRE_NOD* ptr = &alist->nod_arg[count];
+	GPRE_NOD* ptr2 = &select_list->nod_arg[count];
 
 	while (fields) {
-		assignment = MAKE_NODE(nod_assignment, 2);
+		GPRE_NOD assignment = MAKE_NODE(nod_assignment, 2);
 		assignment->nod_arg[0] = *--ptr2;
 		assignment->nod_arg[1] = (GPRE_NOD) POP(&fields);
 		pair(assignment->nod_arg[0], assignment->nod_arg[1]);
 		*--ptr = assignment;
 	}
 
-	store = MSC_binary(nod_store, (GPRE_NOD) context, list);
+	GPRE_NOD store = MSC_binary(nod_store, (GPRE_NOD) context, alist);
 	request->req_node = store;
 	EXP_rse_cleanup(select);
 	if (context->ctx_symbol)
 		HSH_remove(context->ctx_symbol);
 
-	action = MAKE_ACTION(request, ACT_loop);
+	ACT action = MAKE_ACTION(request, ACT_loop);
 	action->act_whenever = gen_whenever();
 
 	return action;
@@ -3612,22 +3531,22 @@ static ACT act_insert(void)
 //		Process SQL INSERT statement.
 //  
 
-static ACT act_insert_blob( TEXT * transaction)
+// Do I miss anything here? The parameter is not used!
+// TEXT is supposedly to be transaction.
+static ACT act_insert_blob(const TEXT* transaction)
 {
-	GPRE_REQ request;
-	ACT action;
-	DYN statement, cursor;
-
 //  Handle dynamic SQL statement, if appropriate 
 
-	if (cursor = par_dynamic_cursor()) {
-		statement = (DYN) ALLOC(DYN_LEN);
+	DYN cursor = par_dynamic_cursor();
+	if (cursor) {
+		DYN statement = (DYN) ALLOC(DYN_LEN);
 		statement->dyn_statement_name = cursor->dyn_statement_name;
 		statement->dyn_cursor_name = cursor->dyn_cursor_name;
 		par_using(statement);
 		if (statement->dyn_using)
 			PAR_error("Using host-variable list not supported.");
-		action = (ACT) ALLOC(ACT_LEN);
+
+		ACT action = (ACT) ALLOC(ACT_LEN);
 		action->act_type = ACT_dyn_insert;
 		action->act_object = (REF) statement;
 		action->act_whenever = gen_whenever();
@@ -3636,10 +3555,11 @@ static ACT act_insert_blob( TEXT * transaction)
 
 //  Statement is static SQL 
 
-	request = par_cursor(NULL);
+	GPRE_REQ request = par_cursor(NULL);
 	if (request->req_flags & REQ_sql_blob_open)
 		PAR_error("Inserting into a blob being opened is not allowed.");
-	action = MAKE_ACTION(request, ACT_put_segment);
+
+	ACT action = MAKE_ACTION(request, ACT_put_segment);
 	action->act_whenever = gen_whenever();
 
 	if (!MATCH(KW_VALUES))
@@ -3676,24 +3596,19 @@ static ACT act_lock(void)
 
 static ACT act_openclose( enum act_t type)
 {
-	ACT action;
-	GPRE_REQ request;
-	DYN statement, cursor;
-	SYM symbol;
-	OPN open;
-	REF using_;
-	TEXT *transaction;
+	TEXT* transaction = 0;
 
 	if (type == ACT_open)
 		par_options(&transaction);
 
 //  Handle dynamic SQL statement, if appropriate 
 
-	if (cursor = par_dynamic_cursor()) {
-		statement = (DYN) ALLOC(DYN_LEN);
+	DYN cursor = par_dynamic_cursor();
+	if (cursor) {
+		DYN statement = (DYN) ALLOC(DYN_LEN);
 		statement->dyn_statement_name = cursor->dyn_statement_name;
 		statement->dyn_cursor_name = cursor->dyn_cursor_name;
-		action = (ACT) ALLOC(ACT_LEN);
+		ACT action = (ACT) ALLOC(ACT_LEN);
 		action->act_object = (REF) statement;
 		action->act_whenever = gen_whenever();
 		if (type == ACT_open) {
@@ -3711,11 +3626,12 @@ static ACT act_openclose( enum act_t type)
 
 //  Statement is static SQL 
 
-	request = par_cursor(&symbol);
+	SYM symbol = NULL;
+	GPRE_REQ request = par_cursor(&symbol);
 
-	action = MAKE_ACTION(request, type);
+	ACT action = MAKE_ACTION(request, type);
 	if (type == ACT_open) {
-		open = (OPN) ALLOC(OPN_LEN);
+		OPN open = (OPN) ALLOC(OPN_LEN);
 		open->opn_trans = transaction;
 		open->opn_cursor = symbol;
 		action->act_object = (REF) open;
@@ -3728,11 +3644,12 @@ static ACT act_openclose( enum act_t type)
 			}
 			else if (!MATCH(KW_INTO))
 				SYNTAX_ERROR("INTO");
-			open->opn_using = using_ = SQE_variable(0, FALSE);
-			using_->ref_next = request->req_blobs->blb_reference;
-			request->req_blobs->blb_reference = using_;
-			using_->ref_context = request->req_contexts;
-			using_->ref_field = request->req_references->ref_field;
+			REF opn_using = SQE_variable(0, FALSE);
+			open->opn_using = opn_using;
+			opn_using->ref_next = request->req_blobs->blb_reference;
+			request->req_blobs->blb_reference = opn_using;
+			opn_using->ref_context = request->req_contexts;
+			opn_using->ref_field = request->req_references->ref_field;
 		}
 	}
 	else
@@ -3756,24 +3673,12 @@ static ACT act_openclose( enum act_t type)
 
 static ACT act_open_blob( ACT_T act_op, SYM symbol)
 {
-	TOK f_token;
-	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
-		owner_name[NAME_SIZE + 1];
-	GPRE_REQ request;
-	GPRE_REL relation;
-	GPRE_FLD field;
-	REF reference;
-	BLB blob;
-	GPRE_CTX context;
-	SCHAR s[128];
-	ACT action;
-
 	if (!MATCH(KW_BLOB))
 		SYNTAX_ERROR("BLOB");
 
 //  if the token isn't an identifier, complain 
 
-	f_token = (TOK) ALLOC(TOK_LEN);
+	TOK f_token = (TOK) ALLOC(TOK_LEN);
 	f_token->tok_length = token.tok_length;
 
 	SQL_resolve_identifier("<column_name>", f_token->tok_string);
@@ -3786,14 +3691,18 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 	else if (!MATCH(KW_INTO))
 		SYNTAX_ERROR("INTO");
 
-	request = MAKE_REQUEST(REQ_cursor);
+	GPRE_REQ request = MAKE_REQUEST(REQ_cursor);
 	request->req_flags =
 		(act_op == ACT_blob_open) ? REQ_sql_blob_open : REQ_sql_blob_create;
 
+	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1], owner_name[NAME_SIZE + 1];
 	SQL_relation_name(r_name, db_name, owner_name);
-	relation = SQL_relation(request, r_name, db_name, owner_name, TRUE);
 
-	if (!(field = MET_field(relation, f_token->tok_string))) {
+
+	SCHAR s[128];
+	GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
+	GPRE_FLD field = MET_field(relation, f_token->tok_string);
+	if (!field) {
 		sprintf(s, "column \"%s\" not in context", f_token->tok_string);
 		PAR_error(s);
 	}
@@ -3809,13 +3718,13 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 		PAR_error(s);
 	}
 
-	reference = MAKE_REFERENCE(0);
+	REF reference = MAKE_REFERENCE(0);
 	reference->ref_field = field;
 
-	context = MAKE_CONTEXT(request);
+	GPRE_CTX context = MAKE_CONTEXT(request);
 	context->ctx_relation = relation;
 
-	blob = (BLB) ALLOC(BLB_LEN);
+	BLB blob = (BLB) ALLOC(BLB_LEN);
 	blob->blb_symbol = symbol;
 	blob->blb_request = request;
 	blob->blb_next = request->req_blobs;
@@ -3900,14 +3809,14 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 	}
 
 	if (MATCH(KW_MAX_SEGMENT))
-		blob->blb_seg_length = EXP_USHORT_ordinal(TRUE);
+		blob->blb_seg_length = EXP_USHORT_ordinal(true);
 	else
 		blob->blb_seg_length = field->fld_seg_length;
 
 	if (!blob->blb_seg_length)
 		blob->blb_seg_length = 512;
 
-	action = MAKE_ACTION(request, ACT_cursor);
+	ACT action = MAKE_ACTION(request, ACT_cursor);
 	action->act_object = (REF) blob;
 
 	return action;
@@ -3921,27 +3830,25 @@ static ACT act_open_blob( ACT_T act_op, SYM symbol)
 
 static ACT act_prepare(void)
 {
-	DYN statement;
-	ACT action;
-	TEXT s[ERROR_LENGTH];
-	TEXT *transaction;
-
 	if (isc_databases && isc_databases->dbb_next) {
+		TEXT s[ERROR_LENGTH];
 		sprintf(s,
 				"Executing dynamic SQL statement in context of database %s",
 				isc_databases->dbb_name->sym_string);
 		CPR_warn(s);
 	}
 
+	TEXT* transaction = NULL;
 	par_options(&transaction);
-	statement = par_statement();
+
+	DYN statement = par_statement();
 	statement->dyn_database = isc_databases;
 	statement->dyn_trans = transaction;
 
 	if (MATCH(KW_INTO)) {
 		if (MATCH(KW_SQL) && !MATCH(KW_DESCRIPTOR))
 			SYNTAX_ERROR("INTO SQL DESCRIPTOR sqlda");
-		statement->dyn_sqlda = PAR_native_value(FALSE, FALSE);
+		statement->dyn_sqlda = PAR_native_value(false, false);
 	}
 
 	if (!MATCH(KW_FROM))
@@ -3959,8 +3866,9 @@ static ACT act_prepare(void)
 		break;
 	}
 
-	statement->dyn_string = PAR_native_value(FALSE, FALSE);
-	action = (ACT) ALLOC(ACT_LEN);
+	statement->dyn_string = PAR_native_value(false, false);
+
+	ACT action = (ACT) ALLOC(ACT_LEN);
 	action->act_type = ACT_dyn_prepare;
 	action->act_object = (REF) statement;
 	action->act_whenever = gen_whenever();
@@ -3977,36 +3885,30 @@ static ACT act_prepare(void)
 
 static ACT act_procedure(void)
 {
-	GPRE_PRC procedure;
-	GPRE_REQ request;
-	ACT action;
-	REF reference, *ref_ptr;
-	GPRE_FLD field;
-	SSHORT inputs, outputs;
-	LLS values;
-	GPRE_NOD list, *ptr;
+	GPRE_REQ request = MAKE_REQUEST(REQ_procedure);
+	par_options(&request->req_trans);
+
 	SCHAR p_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
 		owner_name[NAME_SIZE + 1];
-	BOOLEAN paren;
 
-	request = MAKE_REQUEST(REQ_procedure);
-	par_options(&request->req_trans);
 	SQL_relation_name(p_name, db_name, owner_name);
-	procedure = SQL_procedure(request, p_name, db_name, owner_name, TRUE);
-	inputs = outputs = 0;
-	values = NULL;
+	GPRE_PRC procedure = SQL_procedure(request, p_name, db_name, owner_name, true);
+	
+	LLS values = NULL;
 
+	SSHORT inputs = 0;
 	if (!KEYWORD(KW_RETURNING) && !KEYWORD(KW_SEMI_COLON)) {
-		/* parse input references */
+		// parse input references
 
-		paren = MATCH(KW_LEFT_PAREN);
-		field = procedure->prc_inputs;
-		ref_ptr = &request->req_values;
+		BOOLEAN paren = MATCH(KW_LEFT_PAREN);
+		GPRE_FLD field = procedure->prc_inputs;
+		REF *ref_ptr = &request->req_values;
 		do {
 			if (MATCH(KW_NULL))
 				PUSH(MAKE_NODE(nod_null, 0), &values);
 			else {
-				*ref_ptr = reference = SQE_parameter(request, FALSE);
+				REF reference = SQE_parameter(request, FALSE);
+				*ref_ptr = reference;
 				reference->ref_field = field;
 				PUSH(MSC_unary(nod_value, (GPRE_NOD) reference), &values);
 				ref_ptr = &reference->ref_next;
@@ -4019,14 +3921,16 @@ static ACT act_procedure(void)
 			EXP_match_paren();
 	}
 
+	SSHORT outputs = 0;
 	if (MATCH(KW_RETURNING)) {
 		/* parse output references */
 
-		paren = MATCH(KW_LEFT_PAREN);
-		field = procedure->prc_outputs;
-		ref_ptr = &request->req_references;
+		BOOLEAN paren = MATCH(KW_LEFT_PAREN);
+		GPRE_FLD field = procedure->prc_outputs;
+		REF *ref_ptr = &request->req_references;
 		do {
-			*ref_ptr = reference = SQE_variable(request, FALSE);
+			REF reference = SQE_variable(request, FALSE);
+			*ref_ptr = reference;
 			if (reference->ref_field = field)
 				field = field->fld_next;
 			ref_ptr = &reference->ref_next;
@@ -4041,12 +3945,13 @@ static ACT act_procedure(void)
 	if (procedure->prc_out_count != outputs)
 		PAR_error("count of output values doesn't match count of parameters");
 
-	request->req_node = list = MAKE_NODE(nod_list, inputs);
-	ptr = &list->nod_arg[inputs];
+	GPRE_NOD list = MAKE_NODE(nod_list, inputs);
+	request->req_node = list;
+	GPRE_NOD *ptr = &list->nod_arg[inputs];
 	while (values)
 		*--ptr = (GPRE_NOD) POP(&values);
 
-	action = MAKE_ACTION(request, ACT_procedure);
+	ACT action = MAKE_ACTION(request, ACT_procedure);
 	action->act_object = (REF) procedure;
 	action->act_whenever = gen_whenever();
 
@@ -4061,16 +3966,13 @@ static ACT act_procedure(void)
 
 static ACT act_select(void)
 {
-	GPRE_REQ request;
-	ACT action;
-	RSE select;
-	TEXT s[ERROR_LENGTH];
-
-	request = MAKE_REQUEST(REQ_for);
+	GPRE_REQ request = MAKE_REQUEST(REQ_for);
 	par_options(&request->req_trans);
-	request->req_rse = select = SQE_select(request, FALSE);
+	RSE select = SQE_select(request, false);
+	request->req_rse = select;
 
 	if (!MATCH(KW_SEMI_COLON)) {
+		TEXT s[ERROR_LENGTH];
 		sprintf(s, "Expected ';', got %s.", token.tok_string);
 		CPR_warn(s);
 	}
@@ -4078,7 +3980,7 @@ static ACT act_select(void)
 	if (select->rse_into)
 		into(request, select->rse_fields, select->rse_into);
 
-	action = MAKE_ACTION(request, ACT_select);
+	ACT action = MAKE_ACTION(request, ACT_select);
 	action->act_object = (REF) select->rse_into;
 	action->act_whenever = gen_whenever();
 	EXP_rse_cleanup(select);
@@ -4091,7 +3993,7 @@ static ACT act_select(void)
 //		Parse a SET <something>
 //  
 
-static ACT act_set(TEXT* base_directory)
+static ACT act_set(const TEXT* base_directory)
 {
 
 	if (MATCH(KW_TRANSACTION))
@@ -4104,7 +4006,7 @@ static ACT act_set(TEXT* base_directory)
 		return act_set_statistics();
 
 	if (MATCH(KW_SCHEMA) || MATCH(KW_DATABASE))
-		return PAR_database((USHORT) TRUE, base_directory);
+		return PAR_database(true, base_directory);
 
 	if (MATCH(KW_GENERATOR))
 		return act_set_generator();
@@ -4127,13 +4029,10 @@ static ACT act_set(TEXT* base_directory)
 
 static ACT act_set_dialect(void)
 {
-	ACT action;
-	USHORT dialect;
-
-	action = (ACT) ALLOC(ACT_LEN);
+	ACT action = (ACT) ALLOC(ACT_LEN);
 	action->act_type = ACT_sql_dialect;
 
-	dialect = EXP_USHORT_ordinal(0 /*FALSE*/);
+	USHORT dialect = EXP_USHORT_ordinal(false);
 	if ((dialect < 1) || (dialect > 3))
 		SYNTAX_ERROR("SQL DIALECT 1,2 or 3");
 
@@ -4173,15 +4072,8 @@ static ACT act_set_dialect(void)
 
 static ACT act_set_generator(void)
 {
-	ACT action;
-	SGEN setgen;
-	GPRE_REQ request;
-	SCHAR s[128];
-
-	request = MAKE_REQUEST(REQ_set_generator);
-	action = (ACT) MAKE_ACTION(request, ACT_s_start);
-	setgen = (SGEN) ALLOC(SGEN_LEN);
-
+	GPRE_REQ request = MAKE_REQUEST(REQ_set_generator);
+	
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
 	else
@@ -4190,9 +4082,11 @@ static ACT act_set_generator(void)
 	if (token.tok_length > NAME_SIZE)
 		PAR_error("Generator name too long");
 
-	setgen->sgen_name = (TEXT *) ALLOC(token.tok_length + 1);
+	SGEN setgen = (SGEN) ALLOC(SGEN_LEN);
+	setgen->sgen_name = (TEXT*) ALLOC(token.tok_length + 1);
 	SQL_resolve_identifier("<identifier>", setgen->sgen_name);
 	if (!MET_generator(setgen->sgen_name, request->req_database)) {
+		SCHAR s[128];
 		sprintf(s, "generator %s not found", token.tok_string);
 		PAR_error(s);
 	}
@@ -4208,6 +4102,8 @@ static ACT act_set_generator(void)
 		setgen->sgen_int64value = EXP_SINT64_ordinal(TRUE);
 		setgen->sgen_dialect = SQL_DIALECT_V5 + 1;
 	}
+
+	ACT action = (ACT) MAKE_ACTION(request, ACT_s_start);
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) setgen;
 	return action;
@@ -4221,28 +4117,24 @@ static ACT act_set_generator(void)
 
 static ACT act_set_names(void)
 {
-	ACT action;
-	TEXT *value;
-	DBB db;
-	char buffer[256];
-
 	if (sw_auto)
 		CPR_warn("SET NAMES requires -manual switch to gpre.");
 
-	action = (ACT) ALLOC(ACT_LEN);
+	ACT action = (ACT) ALLOC(ACT_LEN);
 	action->act_type = ACT_noop;
 
 	if (MATCH(KW_COLON)) {
 		/* User is specifying a host variable or string as
 		 * the character set.  Make this the run-time set.
 		 */
-		value = PAR_native_value(FALSE, FALSE);
-		for (db = isc_databases; db; db = db->dbb_next) {
+		TEXT* value = PAR_native_value(false, false);
+		for (dbb* db = isc_databases; db; db = db->dbb_next) {
 			if (db->dbb_r_lc_ctype) {
+				char buffer[256];
 				sprintf(buffer,
 						"Supersedes runtime character set for database %s",
-						(db->dbb_filename) ? db->dbb_filename : db->dbb_name->
-						sym_string);
+						(db->dbb_filename) ?
+							db->dbb_filename : db->dbb_name->sym_string);
 				CPR_warn(buffer);
 			}
 			db->dbb_r_lc_ctype = value;
@@ -4252,7 +4144,7 @@ static ACT act_set_names(void)
 		/* User is specifying the name of a character set */
 		/* Make this the compile time character set */
 
-		value = (TEXT *) ALLOC(token.tok_length + 1);
+		TEXT* value = (TEXT*) ALLOC(token.tok_length + 1);
 		COPY(token.tok_string, token.tok_length, value);
 		value[token.tok_length] = '\0';
 
@@ -4263,11 +4155,12 @@ static ACT act_set_names(void)
 			PAR_error("Duplicate declaration of module CHARACTER SET");
 
 		module_lc_ctype = value;
-		for (db = isc_databases; db; db = db->dbb_next) {
+		for (dbb* db = isc_databases; db; db = db->dbb_next) {
 			if (db->dbb_c_lc_ctype) {
+				char buffer[256];
 				sprintf(buffer, "Supersedes character set for database %s",
-						(db->dbb_filename) ? db->dbb_filename : db->dbb_name->
-						sym_string);
+						(db->dbb_filename) ?
+							db->dbb_filename : db->dbb_name->sym_string);
 				CPR_warn(buffer);
 			}
 
@@ -4298,13 +4191,8 @@ static ACT act_set_names(void)
 
 static ACT act_set_statistics(void)
 {
-	ACT action;
-	STS stats;
-	GPRE_REQ request;
-
-	request = MAKE_REQUEST(REQ_ddl);
-	action = (ACT) MAKE_ACTION(request, ACT_statistics);
-	stats = (STS) ALLOC(STS_LEN);
+	GPRE_REQ request = MAKE_REQUEST(REQ_ddl);
+	STS stats = (STS) ALLOC(STS_LEN);
 
 	if (isc_databases && !isc_databases->dbb_next)
 		request->req_database = isc_databases;
@@ -4314,7 +4202,7 @@ static ACT act_set_statistics(void)
 	if (MATCH(KW_INDEX)) {
 		stats->sts_flags = STS_index;
 		stats->sts_name = (STR) ALLOC(NAME_SIZE + 1);
-		SQL_resolve_identifier("<index name>", (TEXT *) stats->sts_name);
+		SQL_resolve_identifier("<index name>", stats->sts_name->str_string);
 		if (token.tok_length > NAME_SIZE)
 			PAR_error("Index name too long");
 		ADVANCE_TOKEN;
@@ -4322,6 +4210,7 @@ static ACT act_set_statistics(void)
 	else
 		SYNTAX_ERROR("INDEX");
 
+	ACT action = (ACT) MAKE_ACTION(request, ACT_statistics);
 	action->act_object = (REF) stats;
 	return action;
 }
@@ -4334,29 +4223,23 @@ static ACT act_set_statistics(void)
 
 static ACT act_set_transaction(void)
 {
-	ACT action;
-	GPRE_TRA trans;
-
-	action = (ACT) ALLOC(ACT_LEN);
-	action->act_type = ACT_start;
-
-	trans = (GPRE_TRA) ALLOC(TRA_LEN);
+	GPRE_TRA trans = (GPRE_TRA) ALLOC(TRA_LEN);
 
 	if (MATCH(KW_NAME))
-		trans->tra_handle = PAR_native_value(FALSE, TRUE);
+		trans->tra_handle = PAR_native_value(false, true);
 
 //  Get all the transaction parameters 
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_ISOLATION)) {
 			MATCH(KW_LEVEL);
-			if (!par_transaction_modes(trans, TRUE))
+			if (!par_transaction_modes(trans, true))
 				SYNTAX_ERROR("SNAPSHOT");
 
 			continue;
 		}
 
-		if (par_transaction_modes(trans, FALSE))
+		if (par_transaction_modes(trans, false))
 			continue;
 
 		if (MATCH(KW_NO)) {
@@ -4389,7 +4272,7 @@ static ACT act_set_transaction(void)
 
 	if (MATCH(KW_RESERVING)) {
 		trans->tra_flags |= TRA_rrl;
-		PAR_reserving(trans->tra_flags, 1);
+		PAR_reserving(trans->tra_flags, true);
 	}
 	else if (MATCH(KW_USING)) {
 		trans->tra_flags |= TRA_inc;
@@ -4397,6 +4280,9 @@ static ACT act_set_transaction(void)
 	}
 
 	CMP_t_start(trans);
+
+	ACT action = (ACT) ALLOC(ACT_LEN);
+	action->act_type = ACT_start;
 	action->act_object = (REF) trans;
 	action->act_whenever = gen_whenever();
 
@@ -4411,12 +4297,12 @@ static ACT act_set_transaction(void)
 
 static ACT act_transaction( enum act_t type)
 {
-	ACT action;
-	TEXT *transaction;
+	TEXT* transaction = NULL;
 
 	par_options(&transaction);
 	MATCH(KW_WORK);
-	action = (ACT) ALLOC(ACT_LEN);
+
+	ACT action = (ACT) ALLOC(ACT_LEN);
 	action->act_type = type;
 	action->act_whenever = gen_whenever();
 	action->act_object = (REF) transaction;
@@ -4448,41 +4334,30 @@ static ACT act_transaction( enum act_t type)
 
 static ACT act_update(void)
 {
-	ACT action, slice_action;
-	GPRE_REQ request, slice_request;
-	GPRE_REL relation;
-	rse* selection;
-	GPRE_CTX input_context, update_context;
-	GPRE_NOD set_list, *end_list, set_item, modify, *ptr;
-	UPD update;
-	LLS stack;
-	SYM alias;
-	REF field_ref, req_ref;
-	SLC slice;
-	SCHAR *transaction, r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1],
-		owner_name[NAME_SIZE + 1], *str_1, *str_2;
-	SSHORT where, count, i, found = FALSE, trans_nm_len;
+	TEXT* transaction = NULL;
 
 	par_options(&transaction);
 
 //  First comes the relation.  Unfortunately, there is no way to identify
 //  its database until the cursor is known.  Sigh.  Save the token. 
 
+	SCHAR r_name[NAME_SIZE + 1], db_name[NAME_SIZE + 1], owner_name[NAME_SIZE + 1];
 	SQL_relation_name(r_name, db_name, owner_name);
 
 //  Parse the optional alias (context variable) 
 
-	alias = (token.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
+	SYM alias = (token.tok_symbol) ? NULL : PAR_symbol(SYM_dummy);
 
 //  Now we need the SET list list.  Do this thru a linked list stack 
 
 	if (!MATCH(KW_SET))
 		SYNTAX_ERROR("SET");
 
-	request = MAKE_REQUEST(REQ_mass_update);
-	relation = SQL_relation(request, r_name, db_name, owner_name, TRUE);
-	input_context = MAKE_CONTEXT(request);
+	GPRE_REQ request = MAKE_REQUEST(REQ_mass_update);
+	GPRE_REL relation = SQL_relation(request, r_name, db_name, owner_name, true);
+	GPRE_CTX input_context = MAKE_CONTEXT(request);
 	input_context->ctx_relation = relation;
+
 	if (alias) {
 		alias->sym_type = SYM_context;
 		alias->sym_object = input_context;
@@ -4490,11 +4365,11 @@ static ACT act_update(void)
 		token.tok_symbol = HSH_lookup(token.tok_string);
 	}
 
-	stack = NULL;
-	count = 0;
+	LLS stack = NULL;
+	SSHORT count = 0;
 
 	do {
-		set_item = MAKE_NODE(nod_assignment, 2);
+		GPRE_NOD set_item = MAKE_NODE(nod_assignment, 2);
 		set_item->nod_arg[1] = SQE_field(NULL, FALSE);
 		if (!MATCH(KW_EQUALS))
 			SYNTAX_ERROR("assignment operator");
@@ -4506,8 +4381,9 @@ static ACT act_update(void)
 		count++;
 	} while (MATCH(KW_COMMA));
 
-	set_list = MAKE_NODE(nod_list, count);
-	ptr = end_list = set_list->nod_arg + count;
+	GPRE_NOD set_list = MAKE_NODE(nod_list, count);
+	GPRE_NOD* end_list = set_list->nod_arg + count;
+	GPRE_NOD* ptr = end_list;
 
 	while (stack)
 		*--ptr = (GPRE_NOD) POP(&stack);
@@ -4516,14 +4392,15 @@ static ACT act_update(void)
 //  then this is a sub-action of an existing request.  If not, then it is
 //  a free standing request 
 
-	if ((where = MATCH(KW_WITH)) && MATCH(KW_CURRENT)) {
+	SSHORT where = MATCH(KW_WITH);
+	if (where && MATCH(KW_CURRENT)) {
 		if (!MATCH(KW_OF))
 			SYNTAX_ERROR("OF cursor");
 
 		/* Allocate update block, flush old request block, then
 		   find the right request block, and the target relation */
 
-		update = (UPD) ALLOC(UPD_LEN);
+		UPD update = (UPD) ALLOC(UPD_LEN);
 		update->upd_references = request->req_values;
 		MSC_free_request(request);
 
@@ -4537,27 +4414,28 @@ static ACT act_update(void)
 				PAR_error("different transaction for select and update");
 			else {				/* does not specify transaction clause in      */
 				/*   "update ... where cuurent of cursor" stmt */
-				trans_nm_len = strlen(request->req_trans);
-				str_2 = transaction = (SCHAR *) ALLOC(trans_nm_len + 1);
-				str_1 = request->req_trans;
+				SSHORT trans_nm_len = strlen(request->req_trans);
+				SCHAR* str_2 = transaction = (SCHAR *) ALLOC(trans_nm_len + 1);
+				const SCHAR* str_1 = request->req_trans;
 				do
 					*str_2++ = *str_1++;
 				while (--trans_nm_len);
 			}
 		}
 		request->req_trans = transaction;
-		relation = SQL_relation(request, r_name, db_name, owner_name, TRUE);
+		relation = SQL_relation(request, r_name, db_name, owner_name, true);
 
 		/* Given the target relation, find the input context for the modify */
 
-		selection = request->req_rse;
-		for (i = 0; i < selection->rse_count; i++) {
-			input_context = selection->rse_context[i];
+		RSE rse = request->req_rse;
+		SSHORT i;
+		for (i = 0; i < rse->rse_count; i++) {
+			input_context = rse->rse_context[i];
 			if (input_context->ctx_relation == relation)
 				break;
 		}
 
-		if (i == selection->rse_count)
+		if (i == rse->rse_count)
 			PAR_error("table not in request");
 
 		/* Resolve input fields first */
@@ -4569,18 +4447,19 @@ static ACT act_update(void)
 		}
 
 		for (ptr = set_list->nod_arg; ptr < end_list; ptr++) {
-			set_item = *ptr;
+			GPRE_NOD set_item = *ptr;
 			SQE_resolve(set_item->nod_arg[0], request, 0);
 			pair(set_item->nod_arg[0], set_item->nod_arg[1]);
 		}
 
 		update->upd_request = request;
 		update->upd_source = input_context;
-		update->upd_update = update_context = MAKE_CONTEXT(request);
+		GPRE_CTX update_context = MAKE_CONTEXT(request);
+		update->upd_update = update_context;
 		update_context->ctx_relation = relation;
 		update->upd_assignments = set_list;
 
-		action = MAKE_ACTION(request, ACT_update);
+		ACT action = MAKE_ACTION(request, ACT_update);
 
 		/* Resolve update fields next */
 
@@ -4588,14 +4467,17 @@ static ACT act_update(void)
 			alias->sym_object = update_context;
 
 		for (ptr = set_list->nod_arg; ptr < end_list; ptr++) {
-			set_item = *ptr;
+			GPRE_NOD set_item = *ptr;
 			SQE_resolve(set_item->nod_arg[1], request, 0);
-			field_ref = (REF) ((set_item->nod_arg[1])->nod_arg[0]);
-			if ((slice_action = (ACT) field_ref->ref_slice) &&
+			REF field_ref = (REF) ((set_item->nod_arg[1])->nod_arg[0]);
+
+			SLC slice = NULL;
+			ACT slice_action = (ACT) field_ref->ref_slice;
+			if (slice_action &&
 				(slice = (SLC) slice_action->act_object)) {
 				/* These requests got lost in freeing the main request  */
 
-				slice_request = slice_action->act_request;
+				GPRE_REQ slice_request = slice_action->act_request;
 				slice_request->req_next = requests;
 				requests = slice_request;
 				slice->slc_field_ref = field_ref;
@@ -4607,12 +4489,12 @@ static ACT act_update(void)
 				   This is required to receive the handle for the
 				   array being updated */
 
-				found = FALSE;
-				for (req_ref = request->req_references; req_ref;
+				bool found = false;
+				for (REF req_ref = request->req_references; req_ref;
 					 req_ref = req_ref->ref_next) {
 					if (req_ref == field_ref) {
 						set_item->nod_arg[1]->nod_arg[0] = (GPRE_NOD) req_ref;
-						found = TRUE;
+						found = true;
 						break;
 					}
 					if ((req_ref->ref_field == field_ref->ref_field) &&
@@ -4643,37 +4525,41 @@ static ACT act_update(void)
 
 //  Generate record select expression, then resolve input values 
 
-	request->req_rse = selection = (rse*) ALLOC(RSE_LEN(1));
-	selection->rse_count = 1;
-	selection->rse_context[0] = input_context;
+	RSE rse = (RSE) ALLOC(RSE_LEN(1));
+	request->req_rse = rse;
+	rse->rse_count = 1;
+	rse->rse_context[0] = input_context;
 
 	if (!alias && !token.tok_symbol)
 		/* may have a relation name put parser didn't know it when it parsed it */
 		token.tok_symbol = HSH_lookup(token.tok_string);
 
 	for (ptr = set_list->nod_arg; ptr < end_list; ptr++) {
-		set_item = *ptr;
-		SQE_resolve(set_item->nod_arg[0], request, selection);
+		GPRE_NOD set_item = *ptr;
+		SQE_resolve(set_item->nod_arg[0], request, rse);
 	}
 
 //  Process boolean, if any 
 
 	if (where)
-		selection->rse_boolean = SQE_boolean(request, 0);
+		rse->rse_boolean = SQE_boolean(request, 0);
 
 //  Resolve update fields to update context 
 
-	request->req_update = update_context = MAKE_CONTEXT(request);
+	GPRE_CTX update_context = MAKE_CONTEXT(request);
+	request->req_update = update_context;
 	update_context->ctx_relation = relation;
 
 	if (alias)
 		alias->sym_object = update_context;
 
 	for (ptr = set_list->nod_arg; ptr < end_list; ptr++) {
-		set_item = *ptr;
+		GPRE_NOD set_item = *ptr;
 		SQE_resolve(set_item->nod_arg[1], request, 0);
-		field_ref = (REF) ((set_item->nod_arg[1])->nod_arg[0]);
-		if (slice_action = (ACT) field_ref->ref_slice) {
+		REF field_ref = (REF) ((set_item->nod_arg[1])->nod_arg[0]);
+
+		ACT slice_action = (ACT) field_ref->ref_slice;
+		if (slice_action) {
 			/* Slices not allowed in searched updates  */
 
 			PAR_error("Updates of slices not allowed in searched updates");
@@ -4683,17 +4569,16 @@ static ACT act_update(void)
 		   nor the field to which it is being assigned (nod_arg[1]) may
 		   be of a data type added in V6. */
 		if (SQL_DIALECT_V5 == sw_sql_dialect) {
-			USHORT field_dtype;
-			int arg_num;
-			for (arg_num = 0; arg_num <= 1; arg_num++)
+			for (int arg_num = 0; arg_num <= 1; arg_num++)
 				if (nod_field == set_item->nod_arg[arg_num]->nod_type) {
-					field_dtype =
+					USHORT field_dtype =
 						((REF)
 						 (set_item->nod_arg[arg_num]->
 						  nod_arg[0]))->ref_field->fld_dtype;
 					if ((dtype_sql_date == field_dtype)
 						|| (dtype_sql_time == field_dtype)
-						|| (dtype_int64 == field_dtype)) {
+						|| (dtype_int64 == field_dtype))
+					{
 						dialect1_bad_type(field_dtype);
 					}
 				}
@@ -4702,10 +4587,11 @@ static ACT act_update(void)
 		pair(set_item->nod_arg[0], set_item->nod_arg[1]);
 	}
 
-	request->req_node = modify = MAKE_NODE(nod_modify, 1);
+	GPRE_NOD modify = MAKE_NODE(nod_modify, 1);
+	request->req_node = modify;
 	modify->nod_arg[0] = set_list;
 
-	action = MAKE_ACTION(request, ACT_loop);
+	ACT action = MAKE_ACTION(request, ACT_loop);
 	action->act_whenever = gen_whenever();
 
 	if (alias)
@@ -4723,15 +4609,11 @@ static ACT act_update(void)
 
 static ACT act_whenever(void)
 {
-	USHORT condition, l;
-	TEXT *p, *q;
-	SWE label;
-	ACT action;
-
-	whenever_list = NULL;
+	whenever_list = NULL; // global var
 
 //  Pick up condition 
 
+	USHORT condition;
 	if (MATCH(KW_SQLERROR))
 		condition = SWE_error;
 	else if (MATCH(KW_SQLWARNING))
@@ -4743,16 +4625,18 @@ static ACT act_whenever(void)
 
 //  Pick up action 
 
+	swe* label;
 	if (MATCH(KW_CONTINUE))
 		label = NULL;
 	else if ((MATCH(KW_GO) && MATCH(KW_TO)) || MATCH(KW_GOTO)) {
 		MATCH(KW_COLON);
-		l = token.tok_length;
-		label = (SWE) ALLOC(sizeof(swe) + l);
+		USHORT l = token.tok_length;
+		label = (swe*) ALLOC(sizeof(swe) + l);
 		label->swe_condition = condition;
-		if (label->swe_length = l) {
-			p = label->swe_label;
-			q = token.tok_string;
+		label->swe_length = l;
+		if (label->swe_length) {
+			TEXT* p = label->swe_label;
+			const TEXT* q = token.tok_string;
 			do
 				*p++ = *q++;
 			while (--l);
@@ -4767,7 +4651,7 @@ static ACT act_whenever(void)
 
 	whenever[condition] = label;
 
-	action = (ACT) ALLOC(ACT_LEN);
+	ACT action = (ACT) ALLOC(ACT_LEN);
 	action->act_type = ACT_noop;
 
 	MATCH(KW_SEMI_COLON);
@@ -4781,23 +4665,25 @@ static ACT act_whenever(void)
 //		Decnet node name.
 //  
 
-static BOOLEAN check_filename( TEXT * name)
+static bool check_filename(const TEXT * name)
 {
-	USHORT l;
-	TEXT *p, file_name[256];
+	USHORT l = strlen(name);
+	if (!l)
+		return true;
 
-	if (!(l = strlen(name)))
-		return TRUE;
-
-	for (p = name; *p; p++)
+	for (const TEXT* p = name; *p; p++)
+	{
 		if (p[0] == ':' && p[1] == ':')
-			return FALSE;
+			return false;
+	}
 
-	l = MIN(l, sizeof(file_name) - 1);
-	strncpy(file_name, name, l);
-	file_name[l] = '\0';
+	// CVC: what's this crap? It's totally useless! Maybe a copy/paste?
+	//TEXT file_name[256];
+	//l = MIN(l, sizeof(file_name) - 1);
+	//strncpy(file_name, name, l);
+	//file_name[l] = '\0';
 
-	return TRUE;
+	return true;
 }
 
 
@@ -4810,10 +4696,9 @@ static void connect_opts(
 						 TEXT ** user,
 						 TEXT ** password,
 						 TEXT ** sql_role,
-						 TEXT ** lc_messages, USHORT * buffers)
+						 TEXT ** lc_messages,
+						 USHORT * buffers)
 {
-	TEXT *s;
-
 	for (;;) {
 		if (MATCH(KW_CACHE)) {
 			*buffers = atoi(token.tok_string);
@@ -4821,13 +4706,14 @@ static void connect_opts(
 			MATCH(KW_BUFFERS);
 		}
 		else if (MATCH(KW_USER))
-			*user = SQL_var_or_string(FALSE);
+			*user = SQL_var_or_string(false);
 		else if (MATCH(KW_PASSWORD))
-			*password = SQL_var_or_string(FALSE);
+			*password = SQL_var_or_string(false);
 		else if (MATCH(KW_ROLE)) {
 			if (token.tok_type == tok_ident) {
-				s = (TEXT *) ALLOC(token.tok_length + 3);
-											   /** extra bytes for quotes and NULL **/
+				// reserve extra bytes for quotes and NULL
+				TEXT* s = (TEXT*) ALLOC(token.tok_length + 3);
+											   
 				SQL_resolve_identifier("<Role Name>", s);
 				s[0] = '\"';
 				strcpy(s + 1, token.tok_string);
@@ -4835,10 +4721,10 @@ static void connect_opts(
 				*sql_role = s;
 			}
 			else
-				*sql_role = SQL_var_or_string(FALSE);
+				*sql_role = SQL_var_or_string(false);
 		}
 		else if (MATCH(KW_LC_MESSAGES))
-			*lc_messages = SQL_var_or_string(FALSE);
+			*lc_messages = SQL_var_or_string(false);
 		else
 			break;
 	}
@@ -4853,13 +4739,10 @@ static void connect_opts(
 
 static FIL define_cache(void)
 {
-	FIL file;
-	TEXT *string;
-	TEXT err_string[256];
-
-	file = (FIL) ALLOC(sizeof(fil));
+	FIL file = (FIL) ALLOC(sizeof(fil));
 	if (QUOTED(token.tok_type)) {
-		file->fil_name = string = (TEXT *) ALLOC(token.tok_length + 1);
+		TEXT* string = (TEXT*) ALLOC(token.tok_length + 1);
+		file->fil_name = string;
 		COPY(token.tok_string, token.tok_length, string);
 		ADVANCE_TOKEN;
 	}
@@ -4871,6 +4754,7 @@ static FIL define_cache(void)
 	if (MATCH(KW_LENGTH)) {
 		file->fil_length = EXP_ULONG_ordinal(TRUE);
 		if (file->fil_length < MIN_CACHE_BUFFERS) {
+			TEXT err_string[256];
 			sprintf(err_string, "Minimum of %d cache pages required",
 					MIN_CACHE_BUFFERS);
 			PAR_error(err_string);
@@ -4878,7 +4762,7 @@ static FIL define_cache(void)
 		MATCH(KW_PAGES);
 	}
 	else
-		file->fil_length = DEF_CACHE_BUFFERS;	/* default cache buffers */
+		file->fil_length = DEF_CACHE_BUFFERS;	// default cache buffers
 
 	return file;
 }
@@ -4891,12 +4775,10 @@ static FIL define_cache(void)
 
 static FIL define_file(void)
 {
-	FIL file;
-	TEXT *string;
-
-	file = (FIL) ALLOC(sizeof(fil));
+	FIL file = (FIL) ALLOC(sizeof(fil));
 	if (QUOTED(token.tok_type)) {
-		file->fil_name = string = (TEXT *) ALLOC(token.tok_length + 1);
+		TEXT* string = (TEXT*) ALLOC(token.tok_length + 1);
+		file->fil_name = string;
 		COPY(token.tok_string, token.tok_length, string);
 		token.tok_length += 2;
 		ADVANCE_TOKEN;
@@ -4907,7 +4789,7 @@ static FIL define_file(void)
 	if (!check_filename(file->fil_name))
 		PAR_error("node name not permitted");	/* A node name is not permitted in a shadow or secondary file name */
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_LENGTH)) {
 			MATCH(KW_EQUALS);
 			file->fil_length = EXP_ULONG_ordinal(TRUE);
@@ -4932,15 +4814,12 @@ static FIL define_file(void)
 //		define a log file 
 //  
 
-static FIL define_log_file( BOOLEAN log_serial)
+static FIL define_log_file(bool log_serial)
 {
-	FIL file;
-	TEXT *string;
-	TEXT err_string[256];
-
-	file = (FIL) ALLOC(sizeof(fil));
+	FIL file = (FIL) ALLOC(sizeof(fil));
 	if (QUOTED(token.tok_type)) {
-		file->fil_name = string = (TEXT *) ALLOC(token.tok_length + 1);
+		TEXT* string = (TEXT*) ALLOC(token.tok_length + 1);
+		file->fil_name = string;
 		COPY(token.tok_string, token.tok_length, string);
 		ADVANCE_TOKEN;
 	}
@@ -4950,7 +4829,7 @@ static FIL define_log_file( BOOLEAN log_serial)
 	if (!check_filename(file->fil_name))
 		PAR_error("node name not permitted");	/* A node name is not permitted in a shadow or secondary file name */
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_SIZE)) {
 			MATCH(KW_EQUALS);
 			file->fil_length = EXP_ULONG_ordinal(TRUE);
@@ -4969,6 +4848,7 @@ static FIL define_log_file( BOOLEAN log_serial)
 			break;
 	}
 
+	TEXT err_string[256];
 	if (file->fil_partitions) {
 		if (!file->fil_length) {
 			sprintf(err_string,
@@ -4997,7 +4877,7 @@ static FIL define_log_file( BOOLEAN log_serial)
 }
 
 
-static DBB dup_dbb( DBB db)
+static dbb* dup_dbb(const dbb* db)
 {
 
 // ****************************************
@@ -5011,12 +4891,11 @@ static DBB dup_dbb( DBB db)
 //		is freed in gpre.
 //  
 // *************************************
-	DBB newdb;
-
 	if (!db)
 		return NULL;
-	newdb = (DBB) ALLOC(DBB_LEN);
-	memcpy((SCHAR *) newdb, (SCHAR *) db, (size_t) DBB_LEN);
+	dbb* newdb = (dbb*) ALLOC(DBB_LEN);
+	// CVC: the casts here should be tested and removed.
+	memcpy((SCHAR*) newdb, (const SCHAR*) db, DBB_LEN);
 
 	return newdb;
 }
@@ -5027,11 +4906,11 @@ static DBB dup_dbb( DBB db)
 //       Report an error with parameter
 //  
 
-static void error( TEXT * string, TEXT * string2)
+static void error(const TEXT * format, const TEXT * string2)
 {
 	TEXT buffer[256];
 
-	sprintf(buffer, string, string2);
+	sprintf(buffer, format, string2);
 	PAR_error(buffer);
 }
 
@@ -5042,10 +4921,8 @@ static void error( TEXT * string, TEXT * string2)
 //		token.
 //  
 
-static TEXT *extract_string( BOOLEAN advance_token)
+static TEXT *extract_string(bool advance_token)
 {
-	TEXT *string = NULL;
-
 	switch (sw_sql_dialect) {
 	case 1:
 		if (!QUOTED(token.tok_type))
@@ -5058,7 +4935,7 @@ static TEXT *extract_string( BOOLEAN advance_token)
 		break;
 	}
 
-	string = (TEXT *) ALLOC(token.tok_length + 1);
+	TEXT* string = (TEXT*) ALLOC(token.tok_length + 1);
 	COPY(token.tok_string, token.tok_length, string);
 	if (advance_token)
 		ADVANCE_TOKEN;
@@ -5075,30 +4952,30 @@ static TEXT *extract_string( BOOLEAN advance_token)
 
 static SWE gen_whenever(void)
 {
-	SWE label, prior, proto;
-	USHORT i, l;
-	TEXT *p, *q;
-
 	if (whenever_list)
 		return whenever_list;
 
-	whenever_list = label = NULL;
+	whenever_list = NULL; // redundant
+	swe* label = NULL;
 
-	for (i = 0; i < SWE_max; i++)
-		if (proto = whenever[i]) {
-			prior = label;
-			l = proto->swe_length;
-			label = (SWE) ALLOC(sizeof(swe) + l);
+	for (USHORT i = 0; i < SWE_max; i++)
+	{
+	    const swe* proto = whenever[i];
+		if (proto) {
+			swe* prior = label;
+			USHORT l = proto->swe_length;
+			label = (swe*) ALLOC(sizeof(swe) + l);
 			label->swe_next = prior;
 			label->swe_condition = proto->swe_condition;
 			if (l) {
-				p = label->swe_label;
-				q = proto->swe_label;
+				TEXT* p = label->swe_label;
+				const TEXT* q = proto->swe_label;
 				do
 					*p++ = *q++;
 				while (--l);
 			}
 		}
+	}
 
 	return label;
 }
@@ -5112,12 +4989,6 @@ static SWE gen_whenever(void)
 
 static void into( GPRE_REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
 {
-	REF var_ref, field_ref, reference;
-	GPRE_NOD *var_ptr, *fld_ptr, *end;
-	GPRE_FLD field;
-	GPRE_REQ slice_req;
-	SSHORT found = FALSE;
-
 	if (!var_list)
 		PAR_error("INTO list is required");
 
@@ -5125,30 +4996,36 @@ static void into( GPRE_REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
 		PAR_error
 			("column count and number of INTO list host-variables unequal");
 
-	var_ptr = var_list->nod_arg;
-	fld_ptr = field_list->nod_arg;
+	GPRE_NOD* var_ptr = var_list->nod_arg;
+	GPRE_NOD* fld_ptr = field_list->nod_arg;
 
-	for (end = fld_ptr + var_list->nod_count; fld_ptr < end;
-		 fld_ptr++, var_ptr++) {
-		var_ref = (REF) * var_ptr;
+	for (GPRE_NOD* end = fld_ptr + var_list->nod_count; fld_ptr < end;
+		 fld_ptr++, var_ptr++)
+	{
+		REF var_ref = (REF) *var_ptr;
+		REF field_ref = NULL;
+		GPRE_REQ slice_req = NULL;
 		if (((*fld_ptr)->nod_type == nod_field)
-			|| ((*fld_ptr)->nod_type == nod_array)) {
+			|| ((*fld_ptr)->nod_type == nod_array))
+		{
 			field_ref = (REF) (*fld_ptr)->nod_arg[0];
 			slice_req = (GPRE_REQ) (*fld_ptr)->nod_arg[2];
 		}
-		else
-			field_ref = 0;
+
+		REF reference = NULL;
+		GPRE_FLD field;
 		if (field_ref && slice_req && (field = field_ref->ref_field)
-			&& field->fld_array) {
+			&& field->fld_array)
+		{
 			EXP_post_array(field_ref);
 
 			/* If field ref not posted yet, post it   */
 
-			found = FALSE;
+			bool found = false;
 			for (reference = request->req_references; reference;
 				 reference = reference->ref_next) {
 				if (reference == field_ref) {
-					found = TRUE;
+					found = true;
 					break;
 				}
 			}
@@ -5173,11 +5050,10 @@ static void into( GPRE_REQ request, GPRE_NOD field_list, GPRE_NOD var_list)
 
 static GPRE_FLD make_field( GPRE_REL relation)
 {
-	GPRE_FLD field;
 	char s[ERROR_LENGTH];
 
 	SQL_resolve_identifier("<column name>", s);
-	field = MET_make_field(s, 0, 0, TRUE);
+	GPRE_FLD field = MET_make_field(s, 0, 0, TRUE);
 	field->fld_relation = relation;
 	field->fld_flags |= FLD_meta;
 	ADVANCE_TOKEN;
@@ -5193,7 +5069,7 @@ static GPRE_FLD make_field( GPRE_REL relation)
 
 static IND make_index( GPRE_REQ request, TEXT * string)
 {
-	IND index;
+	IND index = NULL;
 	TEXT s[ERROR_LENGTH];
 
 	if ((isc_databases) && (!(isc_databases->dbb_next))) {
@@ -5215,9 +5091,9 @@ static IND make_index( GPRE_REQ request, TEXT * string)
 //		Create relation for a metadata request.
 //  
 
-static GPRE_REL make_relation( GPRE_REQ request, TEXT * relation_name)
+static GPRE_REL make_relation( GPRE_REQ request, const TEXT * relation_name)
 {
-	GPRE_REL relation;
+	GPRE_REL relation = NULL;
 	TEXT r[ERROR_LENGTH];
 
 	if (isc_databases && !isc_databases->dbb_next) {
@@ -5249,9 +5125,7 @@ static GPRE_REL make_relation( GPRE_REQ request, TEXT * relation_name)
 
 static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 {
-	GPRE_NOD *ptr, *end_ptr;
 	REF ref1, ref2;
-	MEL element;
 
 	if (field_expr->nod_type != nod_field)
 		return;
@@ -5277,8 +5151,10 @@ static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 		return;
 
 	case nod_map_ref:
-		element = (MEL) expr->nod_arg[0];
+		{
+		MEL element = (MEL) expr->nod_arg[0];
 		pair(element->mel_expr, field_expr);
+		}
 		return;
 
 	case nod_field:
@@ -5286,8 +5162,8 @@ static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 		return;
 	}
 
-	ptr = expr->nod_arg;
-	end_ptr = ptr + expr->nod_count;
+	GPRE_NOD* ptr = expr->nod_arg;
+	GPRE_NOD* end_ptr = ptr + expr->nod_count;
 
 	for (; ptr < end_ptr; ptr++)
 		pair(*ptr, field_expr);
@@ -5301,16 +5177,15 @@ static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 
 static void par_array( GPRE_FLD field)
 {
-	SLONG rangeh, rangel;
 	SSHORT i = 0;
-	ARY array_info;
 
 //  Pick up ranges 
 
-	array_info = field->fld_array_info;
+	ARY array_info = field->fld_array_info;
 
-	while (TRUE) {
-		rangel = EXP_SSHORT_ordinal(TRUE);
+	while (true) {
+		SLONG rangel = EXP_SSHORT_ordinal(TRUE);
+		SLONG rangeh;
 		if (MATCH(KW_COLON))
 			rangeh = EXP_SSHORT_ordinal(TRUE);
 		else {
@@ -5351,8 +5226,6 @@ static void par_array( GPRE_FLD field)
 
 static SSHORT par_char_set(void)
 {
-	SYM symbol;
-
 	if (!MATCH(KW_CHAR))
 		SYNTAX_ERROR("CHARACTER SET");
 
@@ -5362,7 +5235,8 @@ static SSHORT par_char_set(void)
 	if (token.tok_type != tok_ident)
 		SYNTAX_ERROR("<character set name>");
 
-	if (!(symbol = MSC_find_symbol(token.tok_symbol, SYM_charset)))
+	SYM symbol = MSC_find_symbol(token.tok_symbol, SYM_charset);
+	if (!symbol)
 		PAR_error("The named CHARACTER SET was not found");
 
 	ADVANCE_TOKEN;
@@ -5378,9 +5252,6 @@ static SSHORT par_char_set(void)
 
 static void par_computed( GPRE_REQ request, GPRE_FLD field)
 {
-	CMPF cmp;
-	gpre_fld save_fld;
-
 	MATCH(KW_BY);
 
 //  If field size has been specified, save it.  Then NULL it
@@ -5390,10 +5261,10 @@ static void par_computed( GPRE_REQ request, GPRE_FLD field)
 //  The user specified values will be restored to override calculated
 //  values.
 //  
+	// Don't move this initialization below.
+	const gpre_fld save_fld = *field;
 
-	save_fld = *field;
-
-	cmp = (CMPF) ALLOC(CMPF_LEN);
+	CMPF cmp = (CMPF) ALLOC(CMPF_LEN);
 	cmp->cmpf_text = CPR_start_text();
 	cmp->cmpf_boolean = SQE_value(request, FALSE, 0, 0);
 	CPR_end_text(cmp->cmpf_text);
@@ -5427,9 +5298,6 @@ static void par_computed( GPRE_REQ request, GPRE_FLD field)
 
 static GPRE_REQ par_cursor( SYM * symbol_ptr)
 {
-	SYM symbol;
-	TEXT t_cur[128];
-
 // ** 
 //   par_cursor() is called to use a previously declared cursor.
 //   tok_symbol == NULL means one of the two things.
@@ -5446,8 +5314,10 @@ static GPRE_REQ par_cursor( SYM * symbol_ptr)
 //   it still cannot be located, Its an error
 //*  
 
+	TEXT t_cur[128];
 	SQL_resolve_identifier("<cursor name>", t_cur);
-	token.tok_symbol = symbol = HSH_lookup(token.tok_string);
+	SYM symbol = HSH_lookup(token.tok_string);
+	token.tok_symbol = symbol;
 	if (symbol && symbol->sym_type == SYM_keyword)
 		token.tok_keyword = (KWWORDS) symbol->sym_keyword;
 	else
@@ -5462,10 +5332,13 @@ static GPRE_REQ par_cursor( SYM * symbol_ptr)
 			*symbol_ptr = symbol;
 		return (GPRE_REQ) symbol->sym_object;
 	}
-	else if (symbol = MSC_find_symbol(token.tok_symbol, SYM_dyn_cursor))
-		PAR_error("DSQL cursors require DSQL update & delete statements");
+	else {
+		symbol = MSC_find_symbol(token.tok_symbol, SYM_dyn_cursor);
+		if (symbol)
+			PAR_error("DSQL cursors require DSQL update & delete statements");
+	}
 	SYNTAX_ERROR("<cursor name>");
-	return NULL;				/* silence compiler */
+	return NULL;				// silence compiler
 }
 
 
@@ -5476,10 +5349,10 @@ static GPRE_REQ par_cursor( SYM * symbol_ptr)
 
 static DYN par_dynamic_cursor(void)
 {
-	SYM symbol;
-	TEXT t_cur[128];
+	SYM symbol = NULL;
 
 	if (token.tok_symbol == NULL) {
+		TEXT t_cur[128];
 		SQL_resolve_identifier("<cursor name>", t_cur);
 		token.tok_symbol = symbol = HSH_lookup(token.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
@@ -5504,13 +5377,7 @@ static DYN par_dynamic_cursor(void)
 
 static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 {
-	GPRE_FLD field;
-// *IND		index; 
-	cnstrt** constraint_ref;
-	int in_constraints;
-	GPRE_NOD literal_node;
-
-	field = make_field(relation);
+	GPRE_FLD field = make_field(relation);
 
 	SQL_par_field_dtype(request, field, FALSE);
 
@@ -5546,9 +5413,8 @@ static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 				if (token.tok_type != tok_number)
 					SYNTAX_ERROR("<number>");
 
-				literal_node = EXP_literal();
-				field->fld_default_value = MSC_unary(nod_negate,
-													 literal_node);
+				GPRE_NOD literal_node = EXP_literal();
+				field->fld_default_value = MSC_unary(nod_negate, literal_node);
 			}
 			else if ((field->fld_default_value = EXP_literal()) == NULL)
 				SYNTAX_ERROR("<constant>");
@@ -5559,8 +5425,8 @@ static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 
 //  Check for any column level constraints 
 
-	constraint_ref = &field->fld_constraints;
-	in_constraints = TRUE;
+	cnstrt** constraint_ref = &field->fld_constraints;
+	bool in_constraints = true;
 
 	while (in_constraints) {
 		switch (token.tok_keyword) {
@@ -5575,7 +5441,7 @@ static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 			break;
 
 		default:
-			in_constraints = FALSE;
+			in_constraints = false;
 			break;
 		}
 	}
@@ -5612,14 +5478,15 @@ static GPRE_FLD par_field( GPRE_REQ request, GPRE_REL relation)
 static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_REL relation)
 {
 	enum kwwords keyword;
-	cnstrt* new_constraint = (cnstrt*) ALLOC(CNSTRT_LEN);
 	STR field_name;
+
+	cnstrt* new_constraint = (cnstrt*) ALLOC(CNSTRT_LEN);
 
 	if (token.tok_keyword == KW_CONSTRAINT) {
 		ADVANCE_TOKEN;
 		new_constraint->cnstrt_name = (STR) ALLOC(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
-							   (TEXT *) new_constraint->cnstrt_name);
+							   new_constraint->cnstrt_name->str_string);
 		if (token.tok_length > NAME_SIZE)
 			PAR_error("Constraint name too long");
 		ADVANCE_TOKEN;
@@ -5652,7 +5519,7 @@ static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_R
 		/* Set field for PRIMARY KEY or FOREIGN KEY or UNIQUE constraint  */
 
 		field_name = (STR) ALLOC(NAME_SIZE + 1);
-		strcpy((char *) field_name, for_field->fld_symbol->sym_string);
+		strcpy(field_name->str_string, for_field->fld_symbol->sym_string);
 		PUSH((GPRE_NOD) field_name, &new_constraint->cnstrt_fields);
 
 		if (keyword == KW_REFERENCES) {
@@ -5660,7 +5527,7 @@ static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_R
 
 			new_constraint->cnstrt_referred_rel = (STR) ALLOC(NAME_SIZE + 1);
 			SQL_resolve_identifier("referred <table name>",
-								   (TEXT *) new_constraint->cnstrt_referred_rel);
+								   new_constraint->cnstrt_referred_rel->str_string);
 			if (token.tok_length > NAME_SIZE)
 				PAR_error("Referred table name too long");
 			ADVANCE_TOKEN;
@@ -5669,7 +5536,7 @@ static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_R
 				/* Field specified for referred relation  */
 
 				field_name = (STR) ALLOC(NAME_SIZE + 1);
-				SQL_resolve_identifier("<column name>", (TEXT *) field_name);
+				SQL_resolve_identifier("<column name>", field_name->str_string);
 				PUSH((GPRE_NOD) field_name, &new_constraint->cnstrt_referred_fields);
 				CPR_token();
 				EXP_match_paren();
@@ -5705,22 +5572,22 @@ static CNSTRT par_field_constraint( GPRE_REQ request, GPRE_FLD for_field, GPRE_R
 //____________________________________________________________
 //  
 //		Parse the INTO clause for a dynamic SQL statement.
-//  
+//      Nobody uses its returned value currently.
 
-static BOOLEAN par_into( DYN statement)
+static bool par_into( DYN statement)
 {
 
 	if (!MATCH(KW_INTO))
-		return FALSE;
+		return false;
 
 	MATCH(KW_SQL);				/* "SQL" keyword is optional for backward compatibility */
 
 	if (!MATCH(KW_DESCRIPTOR))
 		SYNTAX_ERROR("DESCRIPTOR");
 
-	statement->dyn_sqlda2 = PAR_native_value(FALSE, FALSE);
+	statement->dyn_sqlda2 = PAR_native_value(false, false);
 
-	return TRUE;
+	return true;
 }
 
 
@@ -5737,7 +5604,7 @@ static void par_options( TEXT ** transaction)
 	if (!MATCH(KW_TRANSACTION))
 		return;
 
-	*transaction = PAR_native_value(FALSE, TRUE);
+	*transaction = PAR_native_value(false, true);
 }
 
 
@@ -5752,7 +5619,7 @@ static int par_page_size(void)
 	int n1, n2;
 
 	MATCH(KW_EQUALS);
-	n2 = n1 = EXP_USHORT_ordinal(FALSE);
+	n2 = n1 = EXP_USHORT_ordinal(false);
 
 	if (n1 <= 1024)
 		n2 = 1024;
@@ -5765,6 +5632,8 @@ static int par_page_size(void)
 	else
 		SYNTAX_ERROR("<page size> in range 1024 to 8096");
 	ADVANCE_TOKEN;
+
+#pragma FB_COMPILER_MESSAGE("Shouldn't we allow here 16K pages?!")
 
 	return n2;
 }
@@ -5794,9 +5663,7 @@ static GPRE_REL par_relation( GPRE_REQ request)
 
 static DYN par_statement(void)
 {
-	DYN statement;
-
-	statement = (DYN) ALLOC(DYN_LEN);
+	DYN statement = (DYN) ALLOC(DYN_LEN);
 	statement->dyn_statement_name = PAR_symbol(SYM_dummy);
 	statement->dyn_database = isc_databases;
 
@@ -5810,7 +5677,7 @@ static DYN par_statement(void)
 //		or ALTER TABLE statements.
 //  
 
-static void par_fkey_extension(CNSTRT cnstrt_val)
+static void par_fkey_extension(cnstrt* cnstrt_val)
 {
 	enum kwwords keyword;
 
@@ -5821,8 +5688,8 @@ static void par_fkey_extension(CNSTRT cnstrt_val)
 //   [ON UPDATE { NO ACTION | CASCADE | SET DEFAULT | SET NULL } ]
 //  
 
-	assert(token.tok_keyword == KW_ON)
-		assert(cnstrt_val != NULL);
+	assert(token.tok_keyword == KW_ON);
+	assert(cnstrt_val != NULL);
 
 	ADVANCE_TOKEN;
 
@@ -5903,16 +5770,16 @@ static void par_fkey_extension(CNSTRT cnstrt_val)
 static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 {
 	enum kwwords keyword;
-	cnstrt* constraint = (cnstrt*) ALLOC(CNSTRT_LEN);
 	LLS *fields;
-	STR field_name;
 	USHORT num_for_key_flds = 0, num_prim_key_flds = 0;
+
+	cnstrt* constraint = (cnstrt*) ALLOC(CNSTRT_LEN);
 
 	if (token.tok_keyword == KW_CONSTRAINT) {
 		ADVANCE_TOKEN;
 		constraint->cnstrt_name = (STR) ALLOC(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
-							   (TEXT *) constraint->cnstrt_name);
+							   constraint->cnstrt_name->str_string);
 		if (token.tok_length > NAME_SIZE)
 			PAR_error("Constraint name too long");
 		ADVANCE_TOKEN;
@@ -5943,8 +5810,8 @@ static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 
 		fields = &constraint->cnstrt_fields;
 		do {
-			field_name = (STR) ALLOC(NAME_SIZE + 1);
-			SQL_resolve_identifier("<column name>", (TEXT *) field_name);
+			STR field_name = (STR) ALLOC(NAME_SIZE + 1);
+			SQL_resolve_identifier("<column name>", field_name->str_string);
 			PUSH((GPRE_NOD) field_name, fields);
 			fields = &(*fields)->lls_next;
 			++num_for_key_flds;
@@ -5963,7 +5830,7 @@ static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 
 			constraint->cnstrt_referred_rel = (STR) ALLOC(NAME_SIZE + 1);
 			SQL_resolve_identifier("referred <table name>",
-								   (TEXT *) constraint->cnstrt_referred_rel);
+								   constraint->cnstrt_referred_rel->str_string);
 			if (token.tok_length > NAME_SIZE)
 				PAR_error("Referred table name too long");
 			ADVANCE_TOKEN;
@@ -5975,9 +5842,9 @@ static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 
 				fields = &constraint->cnstrt_referred_fields;
 				do {
-					field_name = (STR) ALLOC(NAME_SIZE + 1);
+					STR field_name = (STR) ALLOC(NAME_SIZE + 1);
 					SQL_resolve_identifier("<column name>",
-										   (TEXT *) field_name);
+										   field_name->str_string);
 					PUSH((GPRE_NOD) field_name, fields);
 					fields = &(*fields)->lls_next;
 					++num_prim_key_flds;
@@ -6025,10 +5892,10 @@ static CNSTRT par_table_constraint( GPRE_REQ request, GPRE_REL relation)
 //  
 //		Parse the isolation level part.
 //		If expect_iso is true, an isolation level is required.
-//		Returns TRUE if found a match else FALSE.
+//		Returns true if found a match else false.
 //  
 
-static BOOLEAN par_transaction_modes( GPRE_TRA trans, BOOLEAN expect_iso)
+static bool par_transaction_modes( GPRE_TRA trans, bool expect_iso)
 {
 
 	if (MATCH(KW_READ)) {
@@ -6037,13 +5904,13 @@ static BOOLEAN par_transaction_modes( GPRE_TRA trans, BOOLEAN expect_iso)
 				SYNTAX_ERROR("SNAPSHOT");
 
 			trans->tra_flags |= TRA_ro;
-			return TRUE;
+			return true;
 		}
 		else if (MATCH(KW_WRITE)) {
 			if (expect_iso)
 				SYNTAX_ERROR("SNAPSHOT");
 
-			return TRUE;
+			return true;
 		}
 
 		if (!(MATCH(KW_COMMITTED) || MATCH(KW_UNCOMMITTED)))
@@ -6053,10 +5920,10 @@ static BOOLEAN par_transaction_modes( GPRE_TRA trans, BOOLEAN expect_iso)
 
 		if (MATCH(KW_NO)) {
 			if (MATCH(KW_VERSION))
-				return TRUE;
+				return true;
 			else if (MATCH(KW_WAIT)) {
 				trans->tra_flags |= TRA_nw;
-				return TRUE;
+				return true;
 			}
 			else
 				SYNTAX_ERROR("WAIT or VERSION");
@@ -6065,19 +5932,19 @@ static BOOLEAN par_transaction_modes( GPRE_TRA trans, BOOLEAN expect_iso)
 		if (MATCH(KW_VERSION))
 			trans->tra_flags |= TRA_rec_version;
 
-		return TRUE;
+		return true;
 	}
 	else if (MATCH(KW_SNAPSHOT)) {
 		if (MATCH(KW_TABLE)) {
 			trans->tra_flags |= TRA_con;
 
 			MATCH(KW_STABILITY);
-			return TRUE;
+			return true;
 		}
 		else
-			return TRUE;
+			return true;
 	}
-	return FALSE;
+	return false;
 }
 
 
@@ -6086,22 +5953,22 @@ static BOOLEAN par_transaction_modes( GPRE_TRA trans, BOOLEAN expect_iso)
 //		Parse the USING clause for a dynamic SQL statement.
 //  
 
-static BOOLEAN par_using( DYN statement)
+static bool par_using( DYN statement)
 {
 
 	if (!MATCH(KW_USING))
-		return FALSE;
+		return false;
 
 	MATCH(KW_SQL);				/* keyword "SQL" is optional for backward compatibility */
 
 	if (MATCH(KW_DESCRIPTOR))
-		statement->dyn_sqlda = PAR_native_value(FALSE, FALSE);
+		statement->dyn_sqlda = PAR_native_value(false, false);
 	else
 		statement->dyn_using =
 			(GPRE_NOD) SQE_list(reinterpret_cast < pfn_SQE_list_cb >
 						   (SQE_variable), 0, FALSE);
 
-	return TRUE;
+	return true;
 }
 
 
@@ -6110,7 +5977,7 @@ static BOOLEAN par_using( DYN statement)
 //		Figure out the correct dtypes
 //  
 
-static USHORT resolve_dtypes( KWWORDS typ, BOOLEAN sql_date)
+static USHORT resolve_dtypes( KWWORDS typ, bool sql_date)
 {
 	TEXT err_mesg[128];
 
@@ -6187,19 +6054,17 @@ static USHORT resolve_dtypes( KWWORDS typ, BOOLEAN sql_date)
 //		Parse the tail of a CREATE DATABASE statement.
 //  
 
-static BOOLEAN tail_database( enum act_t action_type, DBB database)
+static bool tail_database( enum act_t action_type, DBB database)
 {
-	FIL file;
-	TEXT *string;
-	BOOLEAN extend_dpb, logdefined;
+	TEXT* string = NULL;
 
 //  parse options for the database parameter block 
 
-	logdefined = FALSE;
-	extend_dpb = FALSE;
+	bool logdefined = false;
+	bool extend_dpb = false;
 	database->dbb_grp_cmt_wait = -1;
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_LENGTH)) {
 			database->dbb_length = EXP_ULONG_ordinal(TRUE);
 			MATCH(KW_PAGES);
@@ -6207,7 +6072,7 @@ static BOOLEAN tail_database( enum act_t action_type, DBB database)
 		else if (MATCH(KW_USER)) {
 			if (QUOTED(token.tok_type)) {
 				database->dbb_c_user = string =
-					(TEXT *) ALLOC(token.tok_length + 1);
+					(TEXT*) ALLOC(token.tok_length + 1);
 				COPY(token.tok_string, token.tok_length, string);
 
 				string[token.tok_length - 2] = '\0';
@@ -6225,8 +6090,8 @@ static BOOLEAN tail_database( enum act_t action_type, DBB database)
 		/** Should I bother about dialects here ?? **/
 				if (QUOTED(token.tok_type))
 					SYNTAX_ERROR("<host variable>");
-				database->dbb_r_user = PAR_native_value(FALSE, FALSE);
-				extend_dpb = TRUE;
+				database->dbb_r_user = PAR_native_value(false, false);
+				extend_dpb = true;
 			}
 			else
 				SYNTAX_ERROR("<quoted string>");
@@ -6235,7 +6100,7 @@ static BOOLEAN tail_database( enum act_t action_type, DBB database)
 		else if (MATCH(KW_PASSWORD)) {
 			if (QUOTED(token.tok_type)) {
 				database->dbb_c_password = string =
-					(TEXT *) ALLOC(token.tok_length + 1);
+					(TEXT*) ALLOC(token.tok_length + 1);
 				COPY(token.tok_string, token.tok_length, string);
 				string[token.tok_length] = '\0';
 				ADVANCE_TOKEN;
@@ -6251,8 +6116,8 @@ static BOOLEAN tail_database( enum act_t action_type, DBB database)
 					SYNTAX_ERROR("<colon> or <quoted string>");
 				if (QUOTED(token.tok_type))
 					SYNTAX_ERROR("<host variable>");
-				database->dbb_r_password = PAR_native_value(FALSE, FALSE);
-				extend_dpb = TRUE;
+				database->dbb_r_password = PAR_native_value(false, false);
+				extend_dpb = true;
 			}
 			else
 				SYNTAX_ERROR("<quoted string>");
@@ -6260,7 +6125,7 @@ static BOOLEAN tail_database( enum act_t action_type, DBB database)
 		else if (MATCH(KW_DEFAULT)) {
 			if (!MATCH(KW_CHAR) || !MATCH(KW_SET))
 				SYNTAX_ERROR("CHARACTER SET");
-			database->dbb_def_charset = PAR_native_value(FALSE, FALSE);
+			database->dbb_def_charset = PAR_native_value(false, false);
 		}
 		else
 			break;
@@ -6270,15 +6135,15 @@ static BOOLEAN tail_database( enum act_t action_type, DBB database)
 		if (MATCH(KW_CASCADE))
 			database->dbb_flags |= DBB_cascade;
 		/* TMN: ERROR ERROR we cant return _nothing* from a function returning */
-		/* a BOOLEAN. I changed this to FALSE to falg an error, but we have to */
+		/* a bool. I changed this to false to flag an error, but we have to */
 		/* look into this. */
-		return FALSE;
+		return false;
 		/* return; */
 	}
 
 //  parse add/drop items 
 
-	while (TRUE) {
+	while (true) {
 		MATCH(KW_ADD);
 		if (MATCH(KW_DROP)) {
 			if (MATCH(KW_LOG_FILE))
@@ -6309,7 +6174,7 @@ static BOOLEAN tail_database( enum act_t action_type, DBB database)
 // database->dbb_security_class = PARSE_symbol (tok_ident); 
 //***
 		else if (MATCH(KW_FILE)) {
-			file = define_file();
+			FIL file = define_file();
 			file->fil_next = database->dbb_files;
 			database->dbb_files = file;
 		}
@@ -6324,11 +6189,11 @@ static BOOLEAN tail_database( enum act_t action_type, DBB database)
 		}
 		else if (MATCH(KW_NUM_LOG_BUFS)) {
 			MATCH(KW_EQUALS);
-			database->dbb_numbufs = EXP_USHORT_ordinal(TRUE);
+			database->dbb_numbufs = EXP_USHORT_ordinal(true);
 		}
 		else if (MATCH(KW_LOG_BUF_SIZE)) {
 			MATCH(KW_EQUALS);
-			database->dbb_bufsize = EXP_USHORT_ordinal(TRUE);
+			database->dbb_bufsize = EXP_USHORT_ordinal(true);
 		}
 		else if (MATCH(KW_GROUP_COMMIT_WAIT)) {
 			MATCH(KW_EQUALS);
@@ -6337,12 +6202,12 @@ static BOOLEAN tail_database( enum act_t action_type, DBB database)
 		else if (MATCH(KW_LOG_FILE)) {
 			if (logdefined)
 				PAR_error("log redefinition");
-			logdefined = TRUE;
+			logdefined = true;
 			if (MATCH(KW_LEFT_PAREN)) {
-				while (TRUE) {
-					file = define_log_file(FALSE);
-					file->fil_next = database->dbb_logfiles;
-					database->dbb_logfiles = file;
+				while (true) {
+					FIL logfile = define_log_file(false);
+					logfile->fil_next = database->dbb_logfiles;
+					database->dbb_logfiles = logfile;
 					if (!MATCH(KW_COMMA)) {
 						EXP_match_paren();
 						break;
@@ -6350,14 +6215,14 @@ static BOOLEAN tail_database( enum act_t action_type, DBB database)
 				}
 
 				if (MATCH(KW_OVERFLOW))
-					database->dbb_overflow = define_log_file(TRUE);
+					database->dbb_overflow = define_log_file(true);
 				else
 					PAR_error
 						("Overflow log specification required for this configuration");
 			}
 			else if (MATCH(KW_BASE_NAME)) {
 				database->dbb_flags |= DBB_log_serial;
-				database->dbb_logfiles = file = define_log_file(TRUE);
+				database->dbb_logfiles = define_log_file(true);
 			}
 			else
 				database->dbb_flags |= DBB_log_default;
@@ -6379,12 +6244,11 @@ static BOOLEAN tail_database( enum act_t action_type, DBB database)
 //		Upcase a string into another string.
 //  
 
-static void to_upcase( TEXT * p, TEXT * q)
+static void to_upcase(const TEXT * p, TEXT * q)
 {
 	UCHAR c;
-	USHORT l;
+	USHORT l = 0;
 
-	l = 0;
 	while ((c = *p++) && (++l <= NAME_SIZE)) {
 		*q++ = UPPER(c);
 	}
@@ -6396,6 +6260,7 @@ static void to_upcase( TEXT * p, TEXT * q)
 //  
 //  
 
+// The first param should be const probably.
 void SQL_resolve_identifier( TEXT * err_mesg, TEXT * str)
 {
 
@@ -6428,7 +6293,7 @@ void SQL_resolve_identifier( TEXT * err_mesg, TEXT * str)
 static void dialect1_bad_type(USHORT field_dtype)
 {
 	char buffer[200];
-	char *s;
+	char *s = NULL;
 
 	switch (field_dtype) {
 	case dtype_sql_date:
@@ -6446,3 +6311,4 @@ static void dialect1_bad_type(USHORT field_dtype)
 			s);
 	PAR_error(buffer);
 }
+

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_MSC_PROTO_H_
-#define _GPRE_MSC_PROTO_H_
+#ifndef GPRE_MSC_PROTO_H
+#define GPRE_MSC_PROTO_H
 
 #include "../gpre/parse.h"
 
@@ -31,8 +31,8 @@ extern UCHAR *MSC_alloc(int);
 extern UCHAR *MSC_alloc_permanent(int);
 extern GPRE_NOD MSC_binary(NOD_T, GPRE_NOD, GPRE_NOD);
 extern GPRE_CTX MSC_context(GPRE_REQ);
-extern void MSC_copy(char *, int, char *);
-extern void MSC_copy_cat(char *, int, char *, int, char *);
+extern void MSC_copy(const char*, int, char*);
+extern void MSC_copy_cat(const char*, int, const char*, int, char*);
 extern SYM MSC_find_symbol(SYM, enum sym_t);
 extern void MSC_free(UCHAR *);
 extern void MSC_free_request(GPRE_REQ);
@@ -52,4 +52,4 @@ extern SYM MSC_symbol(enum sym_t, TEXT *, USHORT, GPRE_CTX);
 extern GPRE_NOD MSC_unary(NOD_T, GPRE_NOD);
 extern USN MSC_username(SCHAR *, USHORT);
 
-#endif /* _GPRE_MSC_PROTO_H_ */
+#endif /* GPRE_MSC_PROTO_H */

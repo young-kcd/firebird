@@ -25,10 +25,9 @@
 //
 //____________________________________________________________
 //
-//	$Id: msc.cpp,v 1.9 2003-09-06 00:52:10 brodsom Exp $
+//	$Id: msc.cpp,v 1.10 2003-09-08 11:27:51 robocop Exp $
 //
 //  
-//$Id: msc.cpp,v 1.9 2003-09-06 00:52:10 brodsom Exp $
 //  
 
 // ***************************************************
@@ -213,7 +212,7 @@ GPRE_CTX MSC_context(GPRE_REQ request)
 //		Copy one string into another.
 //  
 
-void MSC_copy( char *from, int length, char *to)
+void MSC_copy(const char* from, int length, char* to)
 {
 
 	if (length)
@@ -229,7 +228,8 @@ void MSC_copy( char *from, int length, char *to)
 //		Copy two strings into another.
 //  
 
-void MSC_copy_cat( char *from1, int length1, char *from2, int length2, char *to)
+void MSC_copy_cat(const char* from1, int length1, const char* from2, int length2,
+	char* to)
 {
 
 	if (length1)

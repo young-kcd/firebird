@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.26 2003-09-06 00:52:10 brodsom Exp $
+//  $Id: par.cpp,v 1.27 2003-09-08 11:27:51 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -37,7 +37,6 @@
 //
 //____________________________________________________________
 //
-//	$Id: par.cpp,v 1.26 2003-09-06 00:52:10 brodsom Exp $
 //
 
 #include "firebird.h"
@@ -250,7 +249,7 @@ ACT PAR_action(TEXT* base_dir)
 			return par_window_create();
 #endif
 		case KW_DATABASE:
-			return PAR_database(FALSE, base_dir);
+			return PAR_database(false, base_dir);
 #ifdef PYXIS
 		case KW_DELETE_WINDOW:
 			return par_window_delete();
@@ -290,9 +289,9 @@ ACT PAR_action(TEXT* base_dir)
 		case KW_ERASE:
 			return cur_statement = par_erase();
 		case KW_EVENT_INIT:
-			return cur_statement = PAR_event_init(FALSE);
+			return cur_statement = PAR_event_init(false);
 		case KW_EVENT_WAIT:
-			return cur_statement = PAR_event_wait(FALSE);
+			return cur_statement = PAR_event_wait(false);
 		case KW_FETCH:
 			return cur_statement = par_fetch();
 		case KW_FINISH:
@@ -525,14 +524,13 @@ SSHORT PAR_blob_subtype(DBB db)
 //		an action block.
 //  
 
-ACT PAR_database(USHORT sql, TEXT* base_directory)
+ACT PAR_database(bool sql, const TEXT* base_directory)
 {
-	ACT action;
 	SYM symbol;
 	DBB db, *db_ptr;
 	TEXT s[256], *string;
 
-	action = MAKE_ACTION(0, ACT_database);
+	ACT action = MAKE_ACTION(0, ACT_database);
 	db = (DBB) ALLOC(DBB_LEN);
 
 //  Get handle name token, make symbol for handle, and
@@ -631,23 +629,23 @@ ACT PAR_database(USHORT sql, TEXT* base_directory)
 
 	if (MATCH(KW_RUNTIME)) {
 		if (MATCH(KW_FILENAME))
-			db->dbb_runtime = sql ? SQL_var_or_string((USHORT) FALSE)
-				: PAR_native_value(FALSE, FALSE);
+			db->dbb_runtime = sql ? SQL_var_or_string(false)
+				: PAR_native_value(false, false);
 		else if (MATCH(KW_PASSWORD))
-			db->dbb_r_password = sql ? SQL_var_or_string((USHORT) FALSE)
-				: PAR_native_value(FALSE, FALSE);
+			db->dbb_r_password = sql ? SQL_var_or_string(false)
+				: PAR_native_value(false, false);
 		else if (MATCH(KW_USER))
-			db->dbb_r_user = sql ? SQL_var_or_string((USHORT) FALSE)
-				: PAR_native_value(FALSE, FALSE);
+			db->dbb_r_user = sql ? SQL_var_or_string(false)
+				: PAR_native_value(false, false);
 		else if (MATCH(KW_LC_MESSAGES))
-			db->dbb_r_lc_messages = sql ? SQL_var_or_string((USHORT) FALSE)
-				: PAR_native_value(FALSE, FALSE);
+			db->dbb_r_lc_messages = sql ? SQL_var_or_string(false)
+				: PAR_native_value(false, false);
 		else if (!sql && MATCH(KW_LC_CTYPE))
-			db->dbb_r_lc_ctype = sql ? SQL_var_or_string((USHORT) FALSE)
-				: PAR_native_value(FALSE, FALSE);
+			db->dbb_r_lc_ctype = sql ? SQL_var_or_string(false)
+				: PAR_native_value(false, false);
 		else
-			db->dbb_runtime = sql ? SQL_var_or_string((USHORT) FALSE)
-				: PAR_native_value(FALSE, FALSE);
+			db->dbb_runtime = sql ? SQL_var_or_string(false)
+				: PAR_native_value(false, false);
 	}
 
 	if ((sw_language == lang_ada) && (KEYWORD(KW_HANDLES))) {
@@ -729,7 +727,7 @@ BOOLEAN PAR_end()
 //		Report an error during parse and unwind.
 //  
 
-void PAR_error( TEXT * string)
+void PAR_error(const TEXT* string)
 {
 
 	IBERROR(string);
@@ -743,7 +741,7 @@ void PAR_error( TEXT * string)
 //		to wait on a number of named events.
 //  
 
-ACT PAR_event_init( USHORT sql)
+ACT PAR_event_init(bool sql)
 {
 	GPRE_NOD init, event_list, node, *ptr;
 	ACT action;
@@ -782,7 +780,7 @@ ACT PAR_event_init( USHORT sql)
 //  eat any number of event strings until a right paren is found,
 //  pushing the events onto a stack 
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_RIGHT_PAREN))
 			break;
 
@@ -796,9 +794,9 @@ ACT PAR_event_init( USHORT sql)
 		else {
 			node = MAKE_NODE(nod_null, 1);
 			if (sql)
-				node->nod_arg[0] = (GPRE_NOD) SQL_var_or_string((USHORT) FALSE);
+				node->nod_arg[0] = (GPRE_NOD) SQL_var_or_string(false);
 			else
-				node->nod_arg[0] = (GPRE_NOD) PAR_native_value(FALSE, FALSE);
+				node->nod_arg[0] = (GPRE_NOD) PAR_native_value(false, false);
 		}
 		PUSH(node, &stack);
 		count++;
@@ -827,7 +825,7 @@ ACT PAR_event_init( USHORT sql)
 //		to wait on a number of named events.
 //  
 
-ACT PAR_event_wait(USHORT sql)
+ACT PAR_event_wait(bool sql)
 {
 	ACT action;
 	char req_name[132];
@@ -933,7 +931,7 @@ void PAR_init()
 //		Parse a native expression as a string.
 //  
 
-TEXT *PAR_native_value(USHORT array_ref, USHORT handle_ref)
+TEXT *PAR_native_value(bool array_ref, bool handle_ref)
 {
 	SCHAR *s2, buffer[512];
 	SCHAR *string, *s1;
@@ -945,7 +943,7 @@ TEXT *PAR_native_value(USHORT array_ref, USHORT handle_ref)
 
 	string = buffer;
 
-	while (TRUE) {
+	while (true) {
 	/** PAR_native_values copies the string constants. These are 
 	passed to api calls. Make sure to enclose these with
 	double quotes.
@@ -1082,14 +1080,14 @@ GPRE_FLD PAR_null_field()
 //  	TPB just hangs off the end of the transaction block.
 //  
 
-void PAR_reserving( USHORT flags, SSHORT parse_sql)
+void PAR_reserving( USHORT flags, bool parse_sql)
 {
 	RRL lock_block;
 	GPRE_REL relation;
 	DBB database;
 	USHORT lock_level, lock_mode;
 
-	while (TRUE) {
+	while (true) {
 		/* find a relation name, or maybe a list of them */
 
 		if ((!parse_sql) && terminator())
@@ -1129,20 +1127,20 @@ void PAR_reserving( USHORT flags, SSHORT parse_sql)
 		else
 			MATCH(KW_READ);
 
-		for (database = isc_databases; database;
-			 database = database->dbb_next) for (lock_block =
-												 database->dbb_rrls;
-												 lock_block;
-												 lock_block =
-												 lock_block->
-												 rrl_next) if (!lock_block->
-															   rrl_lock_level)
+		for (database = isc_databases; database; database = database->dbb_next)
+		{
+			for (lock_block = database->dbb_rrls; lock_block;
+				lock_block = lock_block->rrl_next)
+			{
+				if (!lock_block->rrl_lock_level)
 				{
 					assert(lock_level <= MAX_UCHAR);
 					assert(lock_mode <= MAX_UCHAR);
 					lock_block->rrl_lock_level = (UCHAR) lock_level;
 					lock_block->rrl_lock_mode = (UCHAR) lock_mode;
 				}
+			}
+		}
 		if (!(MATCH(KW_COMMA)))
 			break;
 	}
@@ -1216,7 +1214,7 @@ void PAR_using_db()
 	DBB db;
 	SYM symbol;
 
-	while (TRUE) {
+	while (true) {
 		if ((symbol = MSC_find_symbol(token.tok_symbol, SYM_database))) {
 			db = (DBB) symbol->sym_object;
 			db->dbb_flags |= DBB_in_trans;
@@ -1511,7 +1509,7 @@ static ACT par_based()
 	case lang_c:
 	case lang_cxx:
 		do {
-			PUSH((GPRE_NOD) PAR_native_value(FALSE, FALSE),
+			PUSH((GPRE_NOD) PAR_native_value(false, false),
 				 &based_on->bas_variables);
 		} while (MATCH(KW_COMMA));
 		/* 
@@ -1738,7 +1736,7 @@ static ACT par_derived_from()
 	based_on->bas_variables = (LLS) ALLOC(LLS_LEN);;
 	based_on->bas_variables->lls_next = NULL;
 	based_on->bas_variables->lls_object =
-		(GPRE_NOD) PAR_native_value(FALSE, FALSE);
+		(GPRE_NOD) PAR_native_value(false, false);
 
 	strcpy(based_on->bas_terminator, token.tok_string);
 	ADVANCE_TOKEN;
@@ -2243,7 +2241,7 @@ static ACT par_finish()
 	action = MAKE_ACTION(0, ACT_finish);
 
 	if (!terminator())
-		while (TRUE) {
+		while (true) {
 			if ((symbol = token.tok_symbol)
 				&& (symbol->sym_type == SYM_database)) {
 				ready = (RDY) ALLOC(RDY_LEN);
@@ -2631,7 +2629,7 @@ static ACT par_menu_case()
 			else if (MATCH(KW_TRANSPARENT))
 				request->req_flags |= REQ_transparent;
 			else if (MATCH(KW_MENU_HANDLE)) {
-				request->req_handle = PAR_native_value(FALSE, TRUE);
+				request->req_handle = PAR_native_value(false, true);
 				request->req_flags |= REQ_exp_hand;
 			}
 			else
@@ -2745,10 +2743,8 @@ static ACT par_menu_entree_att()
 static ACT par_menu_for()
 {
 	SYM symbol;
-	ACT action;
 	GPRE_REQ request;
 	GPRE_CTX context;
-	MENU menu;
 
 	sw_pyxis = TRUE;
 	request = MAKE_REQUEST(REQ_menu);
@@ -2757,7 +2753,7 @@ static ACT par_menu_for()
 	if (MATCH(KW_LEFT_PAREN)) {
 		for (;;)
 			if (MATCH(KW_MENU_HANDLE)) {
-				request->req_handle = PAR_native_value(FALSE, TRUE);
+				request->req_handle = PAR_native_value(false, true);
 				request->req_flags |= REQ_exp_hand;
 			}
 			else
@@ -2776,10 +2772,10 @@ static ACT par_menu_for()
 	HSH_insert(symbol);
 	PUSH((GPRE_NOD) request, &cur_menu);
 
-	action = MAKE_ACTION(request, ACT_menu_for);
-	menu = (MENU) ALLOC(sizeof(menu));
-	action->act_object = (REF) menu;
-	menu->menu_request = request;
+	ACT action = MAKE_ACTION(request, ACT_menu_for);
+	MENU a_menu = (MENU) ALLOC(sizeof(menu));
+	action->act_object = (REF) a_menu;
+	a_menu->menu_request = request;
 
 	return action;
 }
@@ -2794,7 +2790,6 @@ static ACT par_menu_item_for( SYM symbol, GPRE_CTX context, ACT_T type)
 {
 	ACT action;
 	GPRE_REQ request, parent;
-	ENTREE entree;
 
 	sw_pyxis = TRUE;
 	symbol->sym_type = SYM_menu_map;
@@ -2812,9 +2807,9 @@ static ACT par_menu_item_for( SYM symbol, GPRE_CTX context, ACT_T type)
 	action = MAKE_ACTION(request, type);
 	PUSH((GPRE_NOD) action, (LLS *) & cur_item);
 
-	entree = (ENTREE) ALLOC(sizeof(entree));
-	action->act_object = (REF) entree;
-	entree->entree_request = parent;
+	ENTREE a_entree = (ENTREE) ALLOC(sizeof(entree));
+	action->act_object = (REF) a_entree;
+	a_entree->entree_request = parent;
 
 	return action;
 }
@@ -3032,17 +3027,17 @@ static BOOLEAN par_options( GPRE_REQ request, BOOLEAN flag)
 	if (!MATCH(KW_LEFT_PAREN))
 		return TRUE;
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_RIGHT_PAREN))
 			return TRUE;
 		if (MATCH(KW_REQUEST_HANDLE)) {
-			request->req_handle = PAR_native_value(FALSE, TRUE);
+			request->req_handle = PAR_native_value(false, true);
 			request->req_flags |= REQ_exp_hand;
 		}
 		else if (MATCH(KW_TRANSACTION_HANDLE))
-			request->req_trans = PAR_native_value(FALSE, TRUE);
+			request->req_trans = PAR_native_value(false, true);
 		else if (MATCH(KW_LEVEL))
-			request->req_request_level = PAR_native_value(FALSE, FALSE);
+			request->req_request_level = PAR_native_value(false, false);
 		else {
 			if (!flag)
 				SYNTAX_ERROR("request option");
@@ -3151,7 +3146,7 @@ static ACT par_ready()
 		action->act_object = (REF) ready;
 
 		if (!(symbol = token.tok_symbol) || symbol->sym_type != SYM_database) {
-			ready->rdy_filename = PAR_native_value(FALSE, FALSE);
+			ready->rdy_filename = PAR_native_value(false, false);
 			if (MATCH(KW_AS))
 				need_handle = TRUE;
 		}
@@ -3182,13 +3177,13 @@ static ACT par_ready()
 				MATCH(KW_BUFFERS);
 			}
 			else if (MATCH(KW_USER))
-				db->dbb_r_user = PAR_native_value(FALSE, FALSE);
+				db->dbb_r_user = PAR_native_value(false, false);
 			else if (MATCH(KW_PASSWORD))
-				db->dbb_r_password = PAR_native_value(FALSE, FALSE);
+				db->dbb_r_password = PAR_native_value(false, false);
 			else if (MATCH(KW_LC_MESSAGES))
-				db->dbb_r_lc_messages = PAR_native_value(FALSE, FALSE);
+				db->dbb_r_lc_messages = PAR_native_value(false, false);
 			else if (MATCH(KW_LC_CTYPE)) {
-				db->dbb_r_lc_ctype = PAR_native_value(FALSE, FALSE);
+				db->dbb_r_lc_ctype = PAR_native_value(false, false);
 				db->dbb_know_subtype = 2;
 			}
 			else
@@ -3566,7 +3561,7 @@ static ACT par_start_transaction()
 //  get the transaction handle  
 
 	if (!token.tok_symbol)
-		trans->tra_handle = PAR_native_value(FALSE, TRUE);
+		trans->tra_handle = PAR_native_value(false, true);
 
 //  loop reading the various transaction options 
 
@@ -3612,7 +3607,7 @@ static ACT par_start_transaction()
 
 	if (MATCH(KW_RESERVING)) {
 		trans->tra_flags |= TRA_rrl;
-		PAR_reserving(trans->tra_flags, 0);
+		PAR_reserving(trans->tra_flags, false);
 	}
 	else if (MATCH(KW_USING)) {
 		trans->tra_flags |= TRA_inc;
@@ -3669,7 +3664,7 @@ static ACT par_trans( ACT_T act_op)
 		}
 		else
 			MATCH(KW_TRANSACTION_HANDLE);
-		action->act_object = (REF) PAR_native_value(FALSE, TRUE);
+		action->act_object = (REF) PAR_native_value(false, true);
 		if (parens)
 			EXP_match_paren();
 	}

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.10 2003-09-06 00:52:10 brodsom Exp $
+//	$Id: pat.cpp,v 1.11 2003-09-08 11:27:51 robocop Exp $
 //
 
 #include "firebird.h"
@@ -64,8 +64,9 @@ typedef enum {
 static struct ops {
 	PAT_T ops_type;
 	TEXT ops_string[3];
-} operators[] = {
-	{ RH, "RH" },
+} operators[] =
+	{
+		{ RH, "RH" },
 		{ RL, "RL" },
 		{ RT, "RT" },
 		{ RI, "RI" },
@@ -107,7 +108,8 @@ static struct ops {
 		{ VF, "VF" },
 		{ VE, "VE" },
 		{ FR, "FR" },
-		{ NL, "" } };
+		{ NL, "" }
+	};
 
 
 //____________________________________________________________
@@ -117,7 +119,6 @@ static struct ops {
 
 void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 {
-	ops* operator_;
 	TEXT buffer[512], c, *p, temp1[16], temp2[16];
 	USHORT sw_ident, sw_gen, n;
 	SSHORT value;				/* value needs to be signed since some of the
@@ -181,12 +182,13 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 		string = NULL;
 		reference = NULL;
 		handle_flag = long_flag = FALSE;
-		for (operator_ = operators; operator_->ops_type != NL; operator_++)
-			if (operator_->ops_string[0] == pattern[0] &&
-				operator_->ops_string[1] == pattern[1])
+		ops* oper_iter;
+		for (oper_iter = operators; oper_iter->ops_type != NL; oper_iter++)
+			if (oper_iter->ops_string[0] == pattern[0] &&
+				oper_iter->ops_string[1] == pattern[1])
 				break;
 		pattern += 2;
-		switch (operator_->ops_type) {
+		switch (oper_iter->ops_type) {
 		case IF:
 			sw_gen = args->pat_condition;
 			continue;

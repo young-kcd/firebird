@@ -21,25 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_PAR_PROTO_H_
-#define _GPRE_PAR_PROTO_H_
+#ifndef GPRE_PAR_PROTO_H
+#define GPRE_PAR_PROTO_H
 
 extern ACT PAR_action(TEXT*);
 extern SSHORT PAR_blob_subtype(DBB);
-extern ACT PAR_database(USHORT, TEXT*);
+extern ACT PAR_database(bool, const TEXT*);
 extern BOOLEAN PAR_end(void);
-extern void PAR_error(TEXT *);
-extern ACT PAR_event_init(USHORT);
-extern ACT PAR_event_wait(USHORT);
+extern void PAR_error(const TEXT *);
+extern ACT PAR_event_init(bool);
+extern ACT PAR_event_wait(bool);
 extern void PAR_fini(void);
 extern TOK PAR_get_token(void);
 extern void PAR_init(void);
-extern TEXT *PAR_native_value(USHORT, USHORT);
+extern TEXT *PAR_native_value(bool, bool);
 extern GPRE_FLD PAR_null_field(void);
-extern void PAR_reserving(USHORT, SSHORT);
+extern void PAR_reserving(USHORT, bool);
 extern GPRE_REQ PAR_set_up_dpb_info(RDY, ACT, USHORT);
 extern SYM PAR_symbol(enum sym_t);
 extern void PAR_unwind(void);
 extern void PAR_using_db(void);
 
-#endif /* _GPRE_PAR_PROTO_H_ */
+#endif /* GPRE_PAR_PROTO_H */

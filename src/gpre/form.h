@@ -22,8 +22,8 @@
  */
 #ifdef PYXIS
 
-#ifndef _GPRE_FORM_H_
-#define _GPRE_FORM_H_
+#ifndef GPRE_FORM_H
+#define GPRE_FORM_H
 
 /* Form instance */
 
@@ -77,6 +77,6 @@ typedef struct menu {
 #define		menu_entree_value	menu_entree.entree_value
 #define		menu_entree_entree	menu_entree.entree_entree
 
-#endif /* _GPRE_FORM_H_ */
+#endif /* GPRE_FORM_H */
 
-#endif
+#endif /* PYXIS */

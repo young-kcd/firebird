@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_LANG_PROTO_H_
-#define _GPRE_LANG_PROTO_H_
+#ifndef GPRE_LANG_PROTO_H
+#define GPRE_LANG_PROTO_H
 
 extern void ADA_action(ACT, int);
 extern void ADA_print_buffer(TEXT *, int);
@@ -39,4 +39,4 @@ extern void INT_CXX_action(ACT, int);
 extern void PAS_action(ACT, int);
 extern int PLI_action(ACT, int);
 
-#endif /* _GPRE_LANG_PROTO_H_ */
+#endif /* GPRE_LANG_PROTO_H */

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_CMP_PROTO_H_
-#define _GPRE_CMP_PROTO_H_
+#ifndef GPRE_CMP_PROTO_H
+#define GPRE_CMP_PROTO_H
 
 #include "../gpre/form.h"
 
@@ -37,4 +37,4 @@ extern USHORT CMP_next_ident(void);
 extern void CMP_stuff_symbol(GPRE_REQ, SYM);
 extern void CMP_t_start(GPRE_TRA);
 
-#endif /* _GPRE_CMP_PROTO_H_ */
+#endif /* GPRE_CMP_PROTO_H */

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.37 2003-09-06 00:52:10 brodsom Exp $
+ * $Id: gpre.h,v 1.38 2003-09-08 11:27:51 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -56,8 +56,8 @@
  *
  */
 
-#ifndef _GPRE_GPRE_H_
-#define _GPRE_GPRE_H_
+#ifndef GPRE_GPRE_H
+#define GPRE_GPRE_H
 
 #include <stddef.h>				// offsetof
 
@@ -1544,5 +1544,5 @@ EXTERN USHORT ada_flags;
 #define assert_IS_NOD(x) assert(!(x) || ((x)->nod_type >= 1 && (x)->nod_type < nod_LASTNOD))
 #define assert_IS_ACT(x) assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
 
-#endif /* _GPRE_GPRE_H_ */
+#endif /* GPRE_GPRE_H */
 

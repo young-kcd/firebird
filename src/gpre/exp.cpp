@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: exp.cpp,v 1.15 2003-09-05 14:55:59 brodsom Exp $
+//	$Id: exp.cpp,v 1.16 2003-09-08 11:27:51 robocop Exp $
 //
 
 #include "firebird.h"
@@ -168,7 +168,7 @@ GPRE_FLD EXP_cast(GPRE_FLD field)
 		}
 		if (!MATCH(KW_L_BRCKET) && !MATCH(KW_LT))
 			SYNTAX_ERROR("left bracket or <");
-		cast->fld_length += EXP_pos_USHORT_ordinal(TRUE);
+		cast->fld_length += EXP_pos_USHORT_ordinal(true);
 		if (!MATCH(KW_R_BRCKET) && !MATCH(KW_GT))
 			SYNTAX_ERROR("right bracket or >");
 		break;
@@ -616,14 +616,12 @@ ULONG EXP_ULONG_ordinal(USHORT advance_flag)
 //		Parse and convert to binary a numeric token.
 //  
 
-USHORT EXP_USHORT_ordinal(USHORT advance_flag)
+USHORT EXP_USHORT_ordinal(bool advance_flag)
 {
-	ULONG n;
-
 	if (token.tok_type != tok_number)
 		SYNTAX_ERROR("<unsigned number>");
 
-	n = atoi(token.tok_string);
+	ULONG n = atoi(token.tok_string);
 	if (n > MAX_USHORT)
 		PAR_error("Numeric value out of range");
 
@@ -640,11 +638,9 @@ USHORT EXP_USHORT_ordinal(USHORT advance_flag)
 //		Which must be non-zero.
 //  
 
-USHORT EXP_pos_USHORT_ordinal(USHORT advance_flag)
+USHORT EXP_pos_USHORT_ordinal(bool advance_flag)
 {
-	USHORT n;
-
-	n = EXP_USHORT_ordinal(advance_flag);
+	USHORT n = EXP_USHORT_ordinal(advance_flag);
 	if (n == 0)
 		PAR_error("Expected positive value");
 
@@ -927,13 +923,13 @@ RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 
 	direction = FALSE;
 	insensitive = FALSE;
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_SORTED)) {
 			MATCH(KW_BY);
 			items = NULL;
 			direction = 0;
 			count = 0;
-			while (TRUE) {
+			while (true) {
 				if (MATCH(KW_ASCENDING)) {
 					direction = FALSE;
 					continue;
@@ -980,7 +976,7 @@ RSE EXP_rse(GPRE_REQ request, SYM initial_symbol)
 			MATCH(KW_TO);
 			items = NULL;
 			count = 0;
-			while (TRUE) {
+			while (true) {
 				item = par_value(request, 0);
 				count++;
 				PUSH(item, &items);
@@ -1059,7 +1055,7 @@ GPRE_NOD EXP_subscript(GPRE_REQ request)
 		return node;
 	}
 
-	reference->ref_value = PAR_native_value(TRUE, FALSE);
+	reference->ref_value = PAR_native_value(true, false);
 
 	if (request) {
 		reference->ref_next = request->req_values;
@@ -1449,7 +1445,7 @@ static GPRE_NOD par_multiply( GPRE_REQ request, GPRE_FLD field)
 
 	node = par_primitive_value(request, field);
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_ASTERISK))
 			operator_ = nod_times;
 		else if (MATCH(KW_SLASH))
@@ -1489,7 +1485,7 @@ static GPRE_NOD par_native_value( GPRE_REQ request, GPRE_FLD field)
 //  to be exported to the database system, make sure there is a reference
 //  field. 
 
-	reference->ref_value = PAR_native_value(FALSE, FALSE);
+	reference->ref_value = PAR_native_value(false, false);
 
 	if (!field) {
 		sprintf(s, "no reference field for %s", reference->ref_value);
@@ -1774,7 +1770,7 @@ static GPRE_NOD par_value( GPRE_REQ request, GPRE_FLD field)
 
 	node = par_multiply(request, field);
 
-	while (TRUE) {
+	while (true) {
 		if (MATCH(KW_PLUS))
 			operator_ = nod_plus;
 		else if (MATCH(KW_MINUS))
@@ -1785,3 +1781,4 @@ static GPRE_NOD par_value( GPRE_REQ request, GPRE_FLD field)
 		node = MSC_binary(operator_, arg, par_value(request, field));
 	}
 }
+

@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _GPRE_SQE_PROTO_H_
-#define _GPRE_SQE_PROTO_H_
+#ifndef GPRE_SQE_PROTO_H
+#define GPRE_SQE_PROTO_H
 
 typedef GPRE_NOD(*pfn_SQE_list_cb) (GPRE_REQ, BOOLEAN, USHORT *, USHORT *);
 
@@ -34,8 +34,9 @@ extern REF SQE_parameter(GPRE_REQ, BOOLEAN);
 extern void SQE_post_field(GPRE_NOD, GPRE_FLD);
 extern REF SQE_post_reference(GPRE_REQ, GPRE_FLD, GPRE_CTX, GPRE_NOD);
 extern BOOLEAN SQE_resolve(GPRE_NOD, GPRE_REQ, RSE);
-extern RSE SQE_select(GPRE_REQ, USHORT);
+extern RSE SQE_select(GPRE_REQ, bool);
 extern GPRE_NOD SQE_value(GPRE_REQ, BOOLEAN, USHORT *, USHORT *);
 extern REF SQE_variable(GPRE_REQ, BOOLEAN);
 
-#endif /* _GPRE_SQE_PROTO_H_ */
+#endif /* GPRE_SQE_PROTO_H */
+
