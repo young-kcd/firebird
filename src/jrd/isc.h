@@ -28,9 +28,7 @@
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
-/*
-$Id: isc.h,v 1.6 2003-03-23 16:50:52 alexpeshkoff Exp $
-*/
+
 #ifndef _JRD_ISC_H_
 #define _JRD_ISC_H_
 
@@ -43,102 +41,6 @@ extern "C" {
 
 #define ISC_SEM_REMOVE    1
 #define ISC_MEM_REMOVE    2
-
-/* Defines for tokens in config file */
-
-#define	ISCCFG_LOCKMEM		"V4_LOCK_MEM_SIZE"
-#define	ISCCFG_LOCKMEM_DEF	98304
-
-#define ISCCFG_LOCKSEM		"V4_LOCK_SEM_COUNT"
-#ifdef SINIXZ
-#define ISCCFG_LOCKSEM_DEF	25
-#else
-#define ISCCFG_LOCKSEM_DEF	32
-#endif
-
-#define ISCCFG_LOCKSIG		"V4_LOCK_SIGNAL"
-#define ISCCFG_LOCKSIG_DEF	16
-
-#define ISCCFG_EVNTMEM		"V4_EVENT_MEM_SIZE"
-#define ISCCFG_EVNTMEM_DEF	32768
-
-#define ISCCFG_DBCACHE		"DATABASE_CACHE_PAGES"
-#ifdef SUPERSERVER
-#define ISCCFG_DBCACHE_DEF	2048
-#endif
-#ifndef ISCCFG_DBCACHE_DEF
-#define ISCCFG_DBCACHE_DEF	75
-#endif
-
-#define ISCCFG_PRIORITY		"SERVER_PRIORITY_CLASS"
-#define ISCCFG_PRIORITY_DEF	1
-
-#define ISCCFG_IPCMAP		"SERVER_CLIENT_MAPPING"
-#define ISCCFG_IPCMAP_DEF	4096
-
-#define ISCCFG_MEMMIN		"SERVER_WORKING_SIZE_MIN"
-#define ISCCFG_MEMMIN_DEF	0
-
-#define ISCCFG_MEMMAX		"SERVER_WORKING_SIZE_MAX"
-#define ISCCFG_MEMMAX_DEF	0
-
-#define	ISCCFG_LOCKORDER	"V4_LOCK_GRANT_ORDER"
-#define	ISCCFG_LOCKORDER_DEF	1
-
-#define	ISCCFG_ANYLOCKMEM	"ANY_LOCK_MEM_SIZE"
-#define	ISCCFG_ANYLOCKMEM_DEF	98304
-
-#define ISCCFG_ANYLOCKSEM	"ANY_LOCK_SEM_COUNT"
-#define ISCCFG_ANYLOCKSEM_DEF	32
-
-#define ISCCFG_ANYLOCKSIG	"ANY_LOCK_SIGNAL"
-#define ISCCFG_ANYLOCKSIG_DEF	16
-
-#define ISCCFG_ANYEVNTMEM	"ANY_EVENT_MEM_SIZE"
-#define ISCCFG_ANYEVNTMEM_DEF	32768
-
-#define ISCCFG_LOCKHASH		"LOCK_HASH_SLOTS"
-#define ISCCFG_LOCKHASH_DEF	101
-
-#define ISCCFG_DEADLOCK		"DEADLOCK_TIMEOUT"
-#define ISCCFG_DEADLOCK_DEF	10
-
-#define ISCCFG_LOCKSPIN		"LOCK_ACQUIRE_SPINS"
-#define ISCCFG_LOCKSPIN_DEF	0
-
-#define ISCCFG_CONN_TIMEOUT	"CONNECTION_TIMEOUT"
-#define ISCCFG_CONN_TIMEOUT_DEF	180	/* seconds */
-
-#define ISCCFG_DUMMY_INTRVL	"DUMMY_PACKET_INTERVAL"
-#define ISCCFG_DUMMY_INTRVL_DEF	60	/* seconds */
-
-#define ISCCFG_TMPDIR		"TMP_DIRECTORY"
-
-#define ISCCFG_EXT_FUNC_DIR	"EXTERNAL_FUNCTION_DIRECTORY"
-
-#define ISCCFG_TRACE_POOLS	"TRACE_MEMORY_POOLS"	/* Internal Use only */
-#define ISCCFG_TRACE_POOLS_DEF	0	/* Off -  Internal Use only */
-
-#define ISCCFG_REMOTE_BUFFER	"TCP_REMOTE_BUFFER"
-#define ISCCFG_REMOTE_BUFFER_DEF	8192	/* xdr buffer size */
-
-#ifdef SET_TCP_NO_DELAY
-#define ISCCFG_NO_NAGLE	"TCP_NO_NAGLE"
-#define ISCCFG_NO_NAGLE_DEF	0	/*Disable Nagle Algorithm */
-#endif
-
-#ifdef WIN_NT
-#define ISCCFG_CPU_AFFINITY_TAG		"CPU_AFFINITY"
-#define ISCCFG_CPU_AFFINITY_DEF		1	/* bit 0 set, only first CPU */
-#endif
-
-
-typedef struct cfgtbl {
-	TEXT *cfgtbl_keyword;
-	UCHAR cfgtbl_key;
-	ULONG cfgtbl_value;
-	ULONG cfgtbl_def_value;
-} CFGTBL;
 
 /* InterBase platform-specific synchronization data structures */
 

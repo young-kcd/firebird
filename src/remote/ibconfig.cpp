@@ -360,28 +360,8 @@ BOOL ReadIBSettings(HWND hDlg)
 	if (pdwStatus[1])
 		PrintCfgStatus(pdwStatus, IDS_CFGREAD_FAILED, hDlg);
 	else {
-		char *pchTmp = pchResBuf;
-		short key;
-		ULONG ulConfigInfo;
-
-		if (*pchTmp++ == isc_info_svc_get_config) {
-			while (key = *pchTmp++) {
-				ulConfigInfo = (ULONG) isc_vax_integer(pchTmp, sizeof(ULONG));
-				pchTmp += sizeof(ULONG);
-				switch (key) {
-				case ISCCFG_IPCMAP_KEY:
-					lMapSize = ulConfigInfo;
-					break;
-				case ISCCFG_DBCACHE_KEY:
-					lCachePages = ulConfigInfo;
-					break;
-				}
-			}
-		}
-		else {
-			lMapSize = Config::getIpcMapSize();
-			lCachePages = Config::getDefaultDbCachePages();
-		}
+		lMapSize = Config::getIpcMapSize();
+		lCachePages = Config::getDefaultDbCachePages();
 		bSuccess = TRUE;
 	}
 
@@ -532,6 +512,7 @@ BOOL WriteIBSettings(HWND hDlg)
 	pchPtr += sizeof(USHORT);
 
 // Fill in all the records
+/*
 	*pchPtr++ = ISCCFG_IPCMAP_KEY;
 	*pchPtr++ = sizeof(long);
 	*(ULONG *) pchPtr = isc_vax_integer((SCHAR *) & lMapSize, sizeof(long));
@@ -542,7 +523,7 @@ BOOL WriteIBSettings(HWND hDlg)
 	*(ULONG *) pchPtr =
 		isc_vax_integer((SCHAR *) & lCachePages, sizeof(long));
 	pchPtr += sizeof(long);
-
+*/
 	*psLen = pchPtr - pchSendBuf - sizeof(short) - sizeof(char);
 	*psLen = (short) isc_vax_integer((SCHAR *) psLen, sizeof(short));
 // Query service with set_config

@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.39 2003-06-05 10:12:45 aafemt Exp $
+$Id: ibase.h,v 1.40 2003-07-04 15:17:46 dimitr Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -1931,38 +1931,7 @@ enum info_db_provider
 /* Server configuration key values */
 /***********************************/
 
-#define	ISCCFG_LOCKMEM_KEY	0
-#define ISCCFG_LOCKSEM_KEY	1
-#define ISCCFG_LOCKSIG_KEY	2
-#define ISCCFG_EVNTMEM_KEY	3
-#define ISCCFG_DBCACHE_KEY	4
-#define ISCCFG_PRIORITY_KEY	5
-#define ISCCFG_IPCMAP_KEY	6
-#define ISCCFG_MEMMIN_KEY	7
-#define ISCCFG_MEMMAX_KEY	8
-#define	ISCCFG_LOCKORDER_KEY	9
-#define	ISCCFG_ANYLOCKMEM_KEY	10
-#define ISCCFG_ANYLOCKSEM_KEY	11
-#define ISCCFG_ANYLOCKSIG_KEY	12
-#define ISCCFG_ANYEVNTMEM_KEY	13
-#define ISCCFG_LOCKHASH_KEY	14
-#define ISCCFG_DEADLOCK_KEY	15
-#define ISCCFG_LOCKSPIN_KEY	16
-#define ISCCFG_CONN_TIMEOUT_KEY 17
-#define ISCCFG_DUMMY_INTRVL_KEY 18
-#define ISCCFG_TRACE_POOLS_KEY  19	/* Internal Use only */
-#define ISCCFG_REMOTE_BUFFER_KEY	20
-
-#ifdef SET_TCP_NO_DELAY
-#define ISCCFG_NO_NAGLE_KEY	21
-#endif
-
-#ifdef WIN_NT
-#if defined SET_TCP_NO_DELAY
-#error Currently unsupported configuration
-#endif
-#define ISCCFG_CPU_AFFINITY_KEY	21
-#endif
+/* Not available in Firebird 1.5 */
 
 
 /**********************************************/
