@@ -28,7 +28,7 @@
 #include <new>
 
 // Size in bytes, must be aligned according to ALLOC_ALIGNMENT
-#define MIN_EXTENT_SIZE  100000
+#define MIN_EXTENT_SIZE  16384
 
 #define FB_MAX(M,N) ((M)>(N)?(M):(N))
 
