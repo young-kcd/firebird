@@ -45,6 +45,7 @@ static int	addqtr (void);
 
 static TEXT	Db_name[128];
 static FILE	*Fp;
+EXEC SQL SET SQL DIALECT 3;
 
 EXEC SQL INCLUDE SQLCA;
 

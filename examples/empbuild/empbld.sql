@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-set sql dialect 1;
+set sql dialect 3;
 /* create database 'employee.fdb'; */
 create database 'empbuild.fdb';
 show version;

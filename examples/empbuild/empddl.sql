@@ -244,6 +244,7 @@ SET TERM !! ;
 CREATE TRIGGER set_emp_no FOR employee
 BEFORE INSERT AS
 BEGIN
+    if (new.emp_no is null) then
     new.emp_no = gen_id(emp_no_gen, 1);
 END !!
 
@@ -396,6 +397,7 @@ SET TERM !! ;
 CREATE TRIGGER set_cust_no FOR customer
 BEFORE INSERT AS
 BEGIN
+    if (new.cust_no is null) then
     new.cust_no = gen_id(cust_no_gen, 1);
 END !!
 
