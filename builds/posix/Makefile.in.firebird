@@ -28,14 +28,14 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.6 2002-09-10 18:22:03 skidder Exp $
+#  $Id: Makefile.in.firebird,v 1.7 2002-09-19 15:25:38 skidder Exp $
 #
 
 ROOT=..
 
+include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.defaults
-include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

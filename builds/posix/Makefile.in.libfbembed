@@ -29,15 +29,15 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+#  $Id: Makefile.in.libfbembed,v 1.2 2002-09-19 15:25:38 skidder Exp $
 #
 ROOT=..
 ObjModuleName=libfbembed
 ArchType=classic
 
+include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.defaults
-include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@

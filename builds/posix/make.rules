@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.4 2002-09-10 06:08:56 eku Exp $
+#   $Id: make.rules,v 1.5 2002-09-19 15:25:38 skidder Exp $
 #
 
 #____________________________________________________________________________
@@ -88,7 +88,13 @@ export FIREBIRD
 # I would like to remove this one.
 SOURCE=$(ROOT)/src
 
-CFLAGS:= $(CFLAGS) -g -pipe -MMD -p -fPIC -Wall -I$(ROOT)/src -I$(ROOT)/src/include
+CFLAGS:= $(CFLAGS) -g -pipe -MMD -p -fPIC -I$(ROOT)/src -I$(ROOT)/src/include
+
+ifeq ($(IsProdTypeBuild),Y)
+  CFLAGS:= $(CFLAGS) $(PROD_FLAGS) $(SUPER_FLAG) -DPROD_BUILD
+else
+  CFLAGS:= $(CFLAGS) $(DEV_FLAGS) $(SUPER_FLAG) -DDEV_BUILD
+endif
 
 CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
 
@@ -170,14 +176,6 @@ STATICLINK_LIBS = @LIBS@
 #STATIC_LINK_OPTIONS= -static
 #STATIC_LINK_LIBS= -lm -lc -mieee-fp -ldl -lcrypt
 #SHLIB_LINK_OPTIONS = -shared
-
-
-ifeq ($(IsProdTypeBuild),Y)
-    CXXFLAGS:=		-O3 -DPROD_BUILD  $(CXXFLAGS)
-
-else
-    CXXFLAGS:=		-ggdb -DDEV_BUILD $(CXXFLAGS)
-endif
 
 
 # Here we have definitions for using the preprocessor.
