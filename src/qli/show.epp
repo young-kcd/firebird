@@ -465,21 +465,15 @@ static void display_blob(
 
 	FRBRD *blob = NULL;
 
-	if (gds__open_blob2(status_vector,
-						GDS_REF(dbb->dbb_handle),
-						GDS_REF(dbb->dbb_meta_trans),
-						GDS_REF(blob),
-						(GDS__QUAD*) GDS_VAL(blob_id),
-						bpb_length,
-						(char*) GDS_VAL(bpb)))
+	if (gds__open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_meta_trans,
+						&blob, (GDS__QUAD*) blob_id, bpb_length, (char*) bpb))
 			ERRQ_database_error(dbb, status_vector);
 
 	const USHORT buffer_length = sizeof(buffer) - 1;
 	for (;;) {
 		USHORT length;
-		ISC_STATUS status = gds__get_segment(status_vector,
-								  GDS_REF(blob),
-								  GDS_REF(length), buffer_length, buffer);
+		ISC_STATUS status = gds__get_segment(status_vector, &blob,
+								  &length, buffer_length, buffer);
 		if (status && status != gds_segment)
 			break;
 		buffer[length--] = 0;
@@ -499,7 +493,7 @@ static void display_blob(
 			ib_printf("%s%s\n", prefix, buffer);
 	}
 
-	gds__close_blob(status_vector, GDS_REF(blob));
+	gds__close_blob(status_vector, &blob);
 }
 
 
@@ -808,12 +802,9 @@ static void show_dbb_parameters( DBB database)
 	if (!database)
 		return;
 
-	if (gds__database_info(status_vector,
-						   GDS_REF(database->dbb_handle),
-						   sizeof(db_items),
-						   const_cast<char*>(db_items),
-						   sizeof(buffer),
-						   (char*) buffer))
+	if (gds__database_info(status_vector, &database->dbb_handle,
+						   sizeof(db_items), const_cast<char*>(db_items),
+						   sizeof(buffer), (char*) buffer))
 			ERRQ_database_error(database, status_vector);
 
 	SLONG page_size = 0, allocation = 0;
