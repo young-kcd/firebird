@@ -24,16 +24,16 @@
 #ifndef _QLI_ALL_PROTO_H_
 #define _QLI_ALL_PROTO_H_
 
-extern struct blk	*ALLQ_alloc (struct plb *, UCHAR, int);
-extern struct blk	*ALLQ_extend (struct blk **, int);
-extern void		ALLQ_fini (void);
-extern void		ALLQ_free (SCHAR *);
-extern void		ALLQ_init (void);
-extern SCHAR		*ALLQ_malloc (SLONG);
-extern struct plb	*ALLQ_pool (void);
-extern void		ALLQ_push (struct blk *, struct lls **);
-extern struct blk	*ALLQ_pop (struct lls **);
-extern void		ALLQ_release (struct frb *);
-extern void		ALLQ_rlpool (struct plb *);
+extern blk*		ALLQ_alloc(plb*, UCHAR, int);
+extern blk*		ALLQ_extend(blk**, int);
+extern void		ALLQ_fini(void);
+extern void		ALLQ_free(SCHAR*);
+extern void		ALLQ_init(void);
+extern SCHAR*	ALLQ_malloc(SLONG);
+extern plb*		ALLQ_pool(void);
+extern void		ALLQ_push(blk*, lls**);
+extern blk*		ALLQ_pop(lls**);
+extern void		ALLQ_release(frb*);
+extern void		ALLQ_rlpool(plb*);
 
 #endif /* _QLI_ALL_PROTO_H_ */

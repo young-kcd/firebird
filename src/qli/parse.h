@@ -48,14 +48,14 @@ typedef enum tok_t {
 } TOK_T;
 
 typedef struct tok {
-    struct blk	tok_header;
+    blk		tok_header;
     TOK_T 	tok_type;	/* type of token */
-    struct sym	*tok_symbol;	/* hash block if recognized */
+    sym*	tok_symbol;		/* hash block if recognized */
     KWWORDS	tok_keyword;	/* keyword number, if recognized */
     SLONG	tok_position;	/* byte number in input stream */
     USHORT	tok_length;
-    struct tok	*tok_next;
-    struct tok	*tok_prior;
+    tok*	tok_next;
+    tok*	tok_prior;
     TEXT	tok_string [2];
 } *TOK ; 
 
@@ -70,9 +70,9 @@ enum line_t {
 };
 
 typedef struct line {
-    struct blk	line_header;
-    struct line	*line_next;
-    struct dbb	*line_database;
+    blk		line_header;
+    line*	line_next;
+    dbb*	line_database;
     USHORT	line_size;
     USHORT	line_length;
     TEXT	*line_ptr;

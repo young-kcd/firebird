@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.19 2003-09-15 16:30:34 brodsom Exp $
+$Id: all.cpp,v 1.20 2003-09-19 10:26:46 aafemt Exp $
 */
 
 /***************************************************
@@ -54,7 +54,7 @@ $Id: all.cpp,v 1.19 2003-09-15 16:30:34 brodsom Exp $
 #include "../jrd/gds_proto.h"
 
 
-#define BLKDEF(type, root, tail) { sizeof (struct root), tail },
+#define BLKDEF(type, root, tail) { sizeof(root), tail },
 
 static struct {
 	SSHORT typ_root_length;
@@ -62,7 +62,7 @@ static struct {
 } block_sizes[] = {
 	{0, 0},
 #include "../qli/blk.h"
-0};
+};
 
 #undef BLKDEF
 
@@ -138,7 +138,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
    the entire free block as our block (a little extra won't hurt). */
 
 	free = *best;
-	if (best_tail > sizeof(struct frb)) {
+	if (best_tail > sizeof(frb)) {
 		l = free->frb_header.blk_length - size;
 		block = (FRB) ((SCHAR *) free + l);
 		free->frb_header.blk_length -= size;
@@ -153,8 +153,8 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 	block->frb_header.blk_pool_id = pool->plb_pool_id;
 	block->frb_header.blk_length = size;
 
-	if (size -= sizeof(struct blk))
-		memset((SCHAR *) block + sizeof(struct blk), 0, size);
+	if (size -= sizeof(blk))
+		memset((SCHAR *) block + sizeof(blk), 0, size);
 
 	return (BLK) block;
 }
@@ -178,9 +178,9 @@ BLK ALLQ_extend(BLK * pointer, int size)
 	block = *pointer;
 	new_blk = (BLK) ALLQ_alloc((PLB) pools->vec_object[block->blk_pool_id],
 						   block->blk_type, size);
-	length = MIN(block->blk_length, new_blk->blk_length) - sizeof(struct blk);
-	MOVQ_fast((SCHAR *) block + sizeof(struct blk),
-			  (SCHAR *) new_blk + sizeof(struct blk), length);
+	length = MIN(block->blk_length, new_blk->blk_length) - sizeof(blk);
+	MOVQ_fast((SCHAR *) block + sizeof(blk),
+			  (SCHAR *) new_blk + sizeof(blk), length);
 	ALLQ_release((FRB) block);
 
 	if (new_blk->blk_type == (SCHAR) type_vec)
@@ -302,7 +302,7 @@ PLB ALLQ_pool(void)
  *	In SHORT, by mirrors.
  *
  **************************************/
-	struct plb temp_pool;
+	plb temp_pool;
 	PLB pool;
 	int pool_id;
 
@@ -500,9 +500,7 @@ static void extend_pool( PLB pool, USHORT count)
 	BLK block;
 	SLONG size;
 
-	size =
-		(count + sizeof(struct hnk) + MIN_ALLOCATION - 1) & ~(MIN_ALLOCATION -
-															  1);
+	size = (count + sizeof(hnk) + MIN_ALLOCATION - 1) & ~(MIN_ALLOCATION - 1);
 
 	if ((USHORT) size < count)
 		IBERROR(481);			// msg 481 unsuccessful attempt to extend pool beyond 64KB 

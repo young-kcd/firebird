@@ -24,16 +24,16 @@
 #ifndef _QLI_COMMA_PROTO_H_
 #define _QLI_COMMA_PROTO_H_
 
-extern int	CMD_check_ready (void);
-extern void	CMD_copy_procedure (struct syn *);
-extern void	CMD_define_procedure (struct syn *);
-extern void	CMD_delete_proc (struct syn *);
-extern void	CMD_edit_proc (struct syn *);
-extern void	CMD_extract (struct syn *);
-extern void	CMD_finish (struct syn *);
-extern void	CMD_rename_proc (struct syn *);
-extern void	CMD_set (struct syn *);
-extern void	CMD_shell (struct syn *);
-extern void	CMD_transaction (struct syn *);
+extern int	CMD_check_ready(void);
+extern void	CMD_copy_procedure(syn*);
+extern void	CMD_define_procedure(syn*);
+extern void	CMD_delete_proc(syn*);
+extern void	CMD_edit_proc(syn*);
+extern void	CMD_extract(syn*);
+extern void	CMD_finish(syn*);
+extern void	CMD_rename_proc(syn*);
+extern void	CMD_set(syn*);
+extern void	CMD_shell(syn*);
+extern void	CMD_transaction(syn*);
 
 #endif /* _QLI_COMMA_PROTO_H_ */

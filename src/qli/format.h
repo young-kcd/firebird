@@ -27,9 +27,9 @@
 /* Logical column block */
 
 typedef struct col {
-    struct blk	col_header;
-    struct col	*col_next;		/* Next logical column */
-    struct qli_nod	*col_expression;	/* Definitive expression */
+    blk		col_header;
+    col*	col_next;		/* Next logical column */
+    struct qli_nod*	col_expression;	/* Definitive expression */
     TEXT	*col_head;		/* Column header */
     USHORT	col_column;		/* Starting column number */
     USHORT	col_print_length;	/* Max print length */
@@ -80,7 +80,7 @@ typedef enum pic_t {
 /* Picture string handling block */
 
 typedef struct pics {
-    struct blk	pic_header;
+    blk		pic_header;
     USHORT	pic_print_length;	/* Print length of picture string */
     TEXT	*pic_string;		/* Address of string */
     TEXT	*pic_pointer;		/* Address of string */
@@ -109,7 +109,7 @@ typedef struct pics {
     USHORT	pic_minutes;		/* minutes */
     USHORT	pic_seconds;		/* seconds */
     USHORT	pic_meridian;		/* AM/PM indicator */
-    struct pics	*pic_missing;		/* missing value edit string */
+    pics*	pic_missing;		/* missing value edit string */
 } *PICS;
 
 #define PIC_suppress_blanks	1	/* Suppress leading blanks */

@@ -27,44 +27,34 @@
 /* Name nodes -- used to hold names between parse and compilation */
 
 typedef struct nam {
-    struct blk	nam_header;
-    struct sym	*nam_symbol;		/* Symbol pointer, if any */
+    blk		nam_header;
+    sym*	nam_symbol;		/* Symbol pointer, if any */
     USHORT	nam_length;		/* Length of name */
-    TEXT	nam_string [1];		/* Actual name string */
+    TEXT	nam_string[1];	/* Actual name string */
 } *NAM;
-
-/* Syntax nodes */
-
-typedef struct syn {
-    struct blk	syn_header;
-    NOD_T	syn_type;		/* Type of node */
-    USHORT	syn_flags;
-    USHORT	syn_count;		/* Number of arguments */
-    struct syn	*syn_arg[1];
-} *SYN;
 
 /* Qualified procedure node -- used to hold qualified procedure names */
 
 typedef struct qpr {
-    struct blk  qpr_header;
-    struct dbb	*qpr_database;	/* database block */
-    struct nam	*qpr_name;	/* name block */	
+    blk  qpr_header;
+    dbb* qpr_database;		/* database block */
+    nam* qpr_name;			/* name block */	
 } *QPR;
 
 /* Qualified function node -- used to hold qualified function names */
 
 typedef struct qfn {
-    struct blk  qfn_header;
-    struct dbb	*qfn_database;	/* database block */
-    struct nam	*qfn_name;	/* name block */	
+    blk  qfn_header;
+    dbb* qfn_database;		/* database block */
+    nam* qfn_name;			/* name block */	
 } *QFN;
 
 /* Qualified filter node -- used to hold qualified filter names */
 
 typedef struct qfl {
-    struct blk  qfl_header;
-    struct dbb	*qfl_database;	/* database block */
-    struct nam	*qfl_name;	/* name block */	
+    blk  qfl_header;
+    dbb* qfl_database;		/* database block */
+    nam* qfl_name;			/* name block */	
 } *QFL;
 
 /* SHOW options */

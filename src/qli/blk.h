@@ -30,7 +30,7 @@ BLKDEF (type_rel, qli_rel, 0)
 BLKDEF (type_fld, qli_fld, 1)
 BLKDEF (type_vcl, vcl, sizeof (((VCL) NULL)->vcl_long[0]))
 BLKDEF (type_req, qli_req, 0)				/* Request block */
-BLKDEF (type_nod, qli_nod, sizeof (((QLI_NOD) NULL)->nod_arg[0]))
+BLKDEF (type_nod, qli_nod, sizeof(qli_nod*)) // sizeof (((QLI_NOD) NULL)->nod_arg[0]))
 BLKDEF (type_syn, qli_nod, sizeof (((SYN) NULL)->syn_arg[0]))
 BLKDEF (type_lls, lls, 0)				/* linked list stack */
 BLKDEF (type_str, str, 1)				/* random string block */
@@ -51,5 +51,5 @@ BLKDEF (type_map, map, 0)
 BLKDEF (type_qpr, qpr, 0)
 BLKDEF (type_qfn, qfn, 0)
 BLKDEF (type_qfl, qfl, 0)
-BLKDEF (type_fun, fun, sizeof (((FUN) NULL)->fun_arg[0]))
+BLKDEF (type_fun, fun, sizeof(DSC)) // sizeof (((FUN) NULL)->fun_arg[0]))
 BLKDEF (type_rlb, rlb, 0)				/* Request language block */

@@ -39,6 +39,7 @@
 #include "../jrd/perf.h"
 #include "../jrd/license.h"
 #include "../jrd/gds.h"
+#include "../qli/exe.h"
 #include "../qli/all_proto.h"
 #include "../qli/compi_proto.h"
 #include "../qli/err_proto.h"
@@ -92,16 +93,16 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
 static void CLIB_ROUTINE signal_quit(void);
 static bool yes_no(USHORT, TEXT *);
 
-typedef struct answer_t {
+struct answer_t {
 	TEXT answer[30];
 	bool value;
-} *ANS;
+};
 
 static int yes_no_loaded = 0;
-static struct answer_t answer_table[] = {
-	{ "", false },					// NO   
-	{ "", true },					// YES  
-	{ NULL, false }
+static answer_t answer_table[] = {
+	{ "NO", false },					// NO   
+	{ "YES", true },					// YES  
+	{ "", false }
 };
 
 
@@ -622,7 +623,7 @@ static bool yes_no(USHORT number, TEXT * arg1)
  *
  **************************************/
 	TEXT buffer[256], prompt[256], *p, *q;
-	ANS response;
+	answer_t* response;
 
 	ERRQ_msg_format(number, sizeof(prompt), prompt, arg1, NULL, NULL, NULL,
 					NULL);
@@ -638,7 +639,7 @@ static bool yes_no(USHORT number, TEXT * arg1)
 		buffer[0] = 0;
 		if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 			return true;
-		for (response = answer_table; (TEXT *) response->answer; response++) {
+		for (response = answer_table; *response->answer != '\0'; response++) {
 			p = buffer;
 			while (*p == ' ')
 				p++;

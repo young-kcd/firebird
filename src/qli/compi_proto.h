@@ -24,9 +24,9 @@
 #ifndef QLI_COMPI_PROTO_H
 #define QLI_COMPI_PROTO_H
 
-extern struct qli_nod	*CMPQ_compile (struct qli_nod *);
-extern void		CMP_alloc_temp (struct qli_nod *);
-extern int		CMP_node_match (struct qli_nod *, struct qli_nod *);
+extern qli_nod*	CMPQ_compile(qli_nod*);
+extern void		CMP_alloc_temp(qli_nod*);
+extern int		CMP_node_match(qli_nod*, qli_nod*);
 
 #endif /* QLI_COMPI_PROTO_H */
 

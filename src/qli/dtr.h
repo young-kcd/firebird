@@ -56,210 +56,6 @@ enum blk_t
 #include "../include/old_fb_blk.h"
 #endif
 
-typedef struct vec {
-    struct blk	vec_header;
-    ULONG	vec_count;
-    struct blk	*vec_object[1];
-} *VEC;
-
-typedef struct vcl {
-    struct blk	vcl_header;
-    ULONG	vcl_count;
-    SLONG	vcl_long[1];
-} *VCL;
-
-/* Database block */
-
-typedef struct dbb {
-    struct blk	dbb_header;
-    struct dbb	*dbb_next;		/* Next database in system */
-    struct qli_rel	*dbb_relations;		/* Linked list of relations */
-    struct fun	*dbb_functions;		/* Known functions in database */
-    FRBRD	*dbb_handle;		/* database handle */
-    FRBRD	*dbb_transaction;	/* transaction handle */
-    FRBRD	*dbb_proc_trans;	/* procedure transaction */
-    FRBRD	*dbb_meta_trans;	/* metadata update transaction */
-    FRBRD	*dbb_field_request;	/* "get fields" request handle */
-    struct sym	*dbb_symbol;		/* Database variable */
-    struct con	*dbb_user;		/* user name */
-    struct con	*dbb_password;		/* password */
-    USHORT	dbb_filename_length;	/* Length of filename */
-    FRBRD	*dbb_lookup_blob;	/* Request to look up blob */
-    FRBRD	*dbb_store_blob;	/* Request to store blob */
-    FRBRD	*dbb_edit_blob;
-    FRBRD	*dbb_edit_store;
-    FRBRD	*dbb_scan_blobs;
-    FRBRD	*dbb_delete_blob;
-    USHORT	dbb_flags;
-    USHORT	dbb_type;		/* Friend or foe? */
-    USHORT	dbb_pagesize;		/* For SQL metadata */
-    ULONG	dbb_capabilities;	/* Special characteristics to look out for */
-    int		*dbb_statistics;	/* Statistics memory */
-    FRBRD	*dbb_requests [96];	/* Misc meta-data requests */
-    TEXT	dbb_filename [2];	/* Filename of database */
-} *DBB;
-
-/* Bits in dbb_flags */
-
-#define DBB_procedures	1		/* Procedures relation found */
-#define DBB_active	2		/* Database is active in request */
-#define DBB_updates	8		/* Updates in current transaction */
-#define DBB_prepared	32		/* User transaction has been prepared */
-
-/* Bits in dbb_capabilities */
-
-#define DBB_cap_extern_file	1	/* supports the concept of external files */
-#define DBB_cap_files		2	/* uses the Interbase concept of multi-file */
-#define DBB_cap_security	4	/* InterBase style security classes */
-/* #define DBB_cap_triggers	8	-- OBSOLETE: triggers (old style) */
-#define DBB_cap_idx_inactive	16	/* Interbase index inactive flag */
-#define DBB_cap_multi_trans	32	/* Database supports multiple transactions */
-#define DBB_cap_single_trans	64	/* Database supports only a single transaction */
-#define DBB_cap_dudley		128	/* We're authorized for meta-data updates */
-#define DBB_cap_functions	256	/* The DBMS knows about function */
-#define DBB_cap_new_triggers	512	/* triggers (new V3 style) */
-#define DBB_cap_shadowing	1024	/* Database supports shadowing */
-#define DBB_cap_types		2048	/* Database has RDB$TYPES relation */
-#define DBB_cap_dimensions	4096	/* Database supports arrays -- What a database! */ 
-#define DBB_cap_external_type	8192	/* Database supports external datatypes */
-#define DBB_cap_rfr_sys_flag	16384  	/* Database hasn't forgotten about the system flag */
-#define DBB_cap_filters		32768	/* Database supports filters */
-#define DBB_cap_index_type	65536	/* Database has too damn much stuff */
-/* Relation block */
-
-typedef struct qli_rel {
-    struct blk	rel_header;
-    struct qli_rel	*rel_next;		/* Next relation in database */
-    struct dbb	*rel_database;		/* Parent database */
-    struct sym	*rel_symbol;		/* Hash symbol for relation */
-    struct qli_fld	*rel_fields;		/* Field block */
-    struct frm	*rel_form;		/* Default for for relation */
-    USHORT	rel_id;			/* Relation id */
-    USHORT	rel_flags;		/* Misc flags */
-    USHORT	rel_system_flag;	/* System flag */
-    USHORT	rel_max_field_pos;	/* highest used field position */
-} *QLI_REL;
-
-#define REL_fields	1		/* Fields have been fetched */
-#define REL_system	2		/* Relation is system relation */
-#define REL_view	4		/* Relation is a view */
-
-/* Field block */
-
-typedef struct qli_fld {
-    struct blk	fld_header;
-    struct qli_fld	*fld_next;		/* Next field in relation */
-    struct qli_rel	*fld_relation;		/* Parent relation */
-    struct sym	*fld_name;		/* Field name */
-    struct sym	*fld_query_name;	/* Field query name */
-    struct ffl	*fld_form;		/* Field form, if known */
-    struct sym	*fld_based;		/* Name of global field, if we care */
-    TEXT	*fld_edit_string;	/* Edit string, if any */
-    TEXT	*fld_query_header;	/* Query header, if any */
-    USHORT	fld_flags;
-    USHORT	fld_id;			/* Field in in database */
-    USHORT	fld_dtype;		/* Data type of field */
-    FLD_LENGTH	fld_length;		/* Length of field */
-    USHORT	fld_segment_length;	/* Segment length for blobs */
-    SSHORT	fld_scale;		/* Scale factor of field */
-    struct syn	*fld_validation;	/* Validation expression */
-    struct syn	*fld_computed;		/* Computed by expression */
-    struct con  *fld_missing;		/* Missing value defined in system relation */
-    SSHORT	fld_sub_type;		/* Subtype for blobs and text */
-    SSHORT	fld_sub_type_missing;	/* Subtype missing flag */
-    USHORT	fld_system_flag;	/* System flag */
-    double	fld_dummy;		/* Force fld_data to a nice boundary word boundary */
-    UCHAR	fld_data [1];
-} *QLI_FLD;
-
-#define FLD_computed	1
-#define FLD_drop	2
-#define FLD_modify	4
-#define FLD_missing	8
-#define FLD_not_null	16
-#define FLD_add		32
-#define FLD_unique	64
-#define FLD_array	128
-
-/* Privileges for SQL metadata */
-
-#define PRV_select	1
-#define PRV_insert	2
-#define PRV_delete	4
-#define PRV_update	8
-#define PRV_all		PRV_select + PRV_insert + PRV_delete + PRV_update
-#define PRV_grant_option	16
-
-#define LLS_PUSH(object,stack)		ALLQ_push ((BLK) object, stack)
-#define LLS_POP(stack)			ALLQ_pop (stack)
-
-typedef struct lls {
-    struct blk	lls_header;
-    struct blk	*lls_object;
-    struct lls	*lls_next;
-} *LLS;
-
-/* Random string block -- jack of all kludges */
-
-typedef struct str {
-    struct blk	str_header;
-    USHORT	str_length;
-    USHORT	str_fluff;
-    TEXT	str_data[2];
-} *STR;
-
-/* Symbol types */
-
-typedef enum sym_t {
-    SYM_keyword,
-    SYM_context,
-    SYM_database,
-    SYM_relation,
-    SYM_field,
-    SYM_stream,
-    SYM_cursor,
-    SYM_form,
-    SYM_function
-} SYM_T;
-
-typedef struct sym {
-    struct blk	sym_header;
-    TEXT	*sym_string;	/* address of asciz string */
-    USHORT	sym_length;	/* length of string (exc. term.) */
-    SYM_T	sym_type;	/* symbol type */
-    USHORT	sym_keyword;	/* keyword number, if keyword */
-    struct blk	*sym_object;	/* general pointer to object */
-    struct sym	*sym_collision;	/* collision pointer */
-    struct sym	*sym_homonym;	/* homonym pointer */
-    TEXT	sym_name[2];	/* space for name, if necessary */
-} *SYM ;
-
-/* Free block */
-
-typedef struct frb {
-    struct blk	frb_header;
-    struct frb	*frb_next;	/* Next free block in pool */
-} *FRB;
-
-/* Hunk blocks */
-
-typedef struct hnk {
-    struct blk	hnk_header;
-    SCHAR	*hnk_address;	/* start of memory hunk */
-    int		hnk_length;	/* length of memory hunk */
-    struct hnk	*hnk_next;	/* next memory hunk in structure */
-} *HNK;
-
-/* Pool block */
-
-typedef struct plb {
-    struct blk	plb_header;
-    USHORT	plb_pool_id;	/* pool id */
-    FRB		plb_free;	/* first free block */
-    HNK		plb_hunks;	/* first hunk block */
-    LLS		plb_lls;	/* avaiable linked list stack nodes */
-} *PLB;
-
 typedef enum nod_t {
 
 /* Commands, not executed. */
@@ -431,6 +227,226 @@ typedef enum nod_t {
 
 } NOD_T;
 
+typedef struct vec {
+    blk		vec_header;
+    ULONG	vec_count;
+    blk*	vec_object[1];
+} *VEC;
+
+typedef struct vcl {
+    blk		vcl_header;
+    ULONG	vcl_count;
+    SLONG	vcl_long[1];
+} *VCL;
+
+/* Constant block */
+
+typedef struct con {
+    blk		con_header;
+    DSC		con_desc;
+    UCHAR	con_data[1];
+} *CON;
+
+/* Symbol types */
+
+typedef enum sym_t {
+    SYM_keyword,
+    SYM_context,
+    SYM_database,
+    SYM_relation,
+    SYM_field,
+    SYM_stream,
+    SYM_cursor,
+    SYM_form,
+    SYM_function
+} SYM_T;
+
+typedef struct sym {
+    blk		sym_header;
+    TEXT	*sym_string;	/* address of asciz string */
+    USHORT	sym_length;	/* length of string (exc. term.) */
+    SYM_T	sym_type;	/* symbol type */
+    USHORT	sym_keyword;	/* keyword number, if keyword */
+    blk*	sym_object;		/* general pointer to object */
+    sym*	sym_collision;	/* collision pointer */
+    sym*	sym_homonym;	/* homonym pointer */
+    TEXT	sym_name[2];	/* space for name, if necessary */
+} *SYM ;
+
+/* Syntax nodes (moved from compile.h because of cross-references) */
+
+typedef struct syn {
+    blk		syn_header;
+    NOD_T	syn_type;		/* Type of node */
+    USHORT	syn_flags;
+    USHORT	syn_count;		/* Number of arguments */
+    syn*	syn_arg[1];
+} *SYN;
+
+/* Database block */
+
+typedef struct dbb {
+    blk		dbb_header;
+    dbb*	dbb_next;			/* Next database in system */
+    struct qli_rel	*dbb_relations;		/* Linked list of relations */
+    struct fun	*dbb_functions;		/* Known functions in database */
+    FRBRD	*dbb_handle;		/* database handle */
+    FRBRD	*dbb_transaction;	/* transaction handle */
+    FRBRD	*dbb_proc_trans;	/* procedure transaction */
+    FRBRD	*dbb_meta_trans;	/* metadata update transaction */
+    FRBRD	*dbb_field_request;	/* "get fields" request handle */
+    sym*	dbb_symbol;			/* Database variable */
+    con*	dbb_user;			/* user name */
+    con*	dbb_password;		/* password */
+    USHORT	dbb_filename_length;	/* Length of filename */
+    FRBRD	*dbb_lookup_blob;	/* Request to look up blob */
+    FRBRD	*dbb_store_blob;	/* Request to store blob */
+    FRBRD	*dbb_edit_blob;
+    FRBRD	*dbb_edit_store;
+    FRBRD	*dbb_scan_blobs;
+    FRBRD	*dbb_delete_blob;
+    USHORT	dbb_flags;
+    USHORT	dbb_type;		/* Friend or foe? */
+    USHORT	dbb_pagesize;		/* For SQL metadata */
+    ULONG	dbb_capabilities;	/* Special characteristics to look out for */
+    int		*dbb_statistics;	/* Statistics memory */
+    FRBRD	*dbb_requests [96];	/* Misc meta-data requests */
+    TEXT	dbb_filename [2];	/* Filename of database */
+} *DBB;
+
+/* Bits in dbb_flags */
+
+#define DBB_procedures	1		/* Procedures relation found */
+#define DBB_active	2		/* Database is active in request */
+#define DBB_updates	8		/* Updates in current transaction */
+#define DBB_prepared	32		/* User transaction has been prepared */
+
+/* Bits in dbb_capabilities */
+
+#define DBB_cap_extern_file	1	/* supports the concept of external files */
+#define DBB_cap_files		2	/* uses the Interbase concept of multi-file */
+#define DBB_cap_security	4	/* InterBase style security classes */
+/* #define DBB_cap_triggers	8	-- OBSOLETE: triggers (old style) */
+#define DBB_cap_idx_inactive	16	/* Interbase index inactive flag */
+#define DBB_cap_multi_trans	32	/* Database supports multiple transactions */
+#define DBB_cap_single_trans	64	/* Database supports only a single transaction */
+#define DBB_cap_dudley		128	/* We're authorized for meta-data updates */
+#define DBB_cap_functions	256	/* The DBMS knows about function */
+#define DBB_cap_new_triggers	512	/* triggers (new V3 style) */
+#define DBB_cap_shadowing	1024	/* Database supports shadowing */
+#define DBB_cap_types		2048	/* Database has RDB$TYPES relation */
+#define DBB_cap_dimensions	4096	/* Database supports arrays -- What a database! */ 
+#define DBB_cap_external_type	8192	/* Database supports external datatypes */
+#define DBB_cap_rfr_sys_flag	16384  	/* Database hasn't forgotten about the system flag */
+#define DBB_cap_filters		32768	/* Database supports filters */
+#define DBB_cap_index_type	65536	/* Database has too damn much stuff */
+/* Relation block */
+
+typedef struct qli_rel {
+    blk		rel_header;
+    qli_rel* rel_next;		/* Next relation in database */
+    dbb*	rel_database;		/* Parent database */
+    sym*	rel_symbol;		/* Hash symbol for relation */
+    struct qli_fld	*rel_fields;		/* Field block */
+    USHORT	rel_id;			/* Relation id */
+    USHORT	rel_flags;		/* Misc flags */
+    USHORT	rel_system_flag;	/* System flag */
+    USHORT	rel_max_field_pos;	/* highest used field position */
+} *QLI_REL;
+
+#define REL_fields	1		/* Fields have been fetched */
+#define REL_system	2		/* Relation is system relation */
+#define REL_view	4		/* Relation is a view */
+
+/* Field block */
+
+typedef struct qli_fld {
+    blk		fld_header;
+    qli_fld* fld_next;			/* Next field in relation */
+    qli_rel* fld_relation;		/* Parent relation */
+    sym*	fld_name;			/* Field name */
+    sym*	fld_query_name;		/* Field query name */
+    sym*	fld_based;			/* Name of global field, if we care */
+    TEXT	*fld_edit_string;	/* Edit string, if any */
+    TEXT	*fld_query_header;	/* Query header, if any */
+    USHORT	fld_flags;
+    USHORT	fld_id;			/* Field in in database */
+    USHORT	fld_dtype;		/* Data type of field */
+    FLD_LENGTH	fld_length;		/* Length of field */
+    USHORT	fld_segment_length;	/* Segment length for blobs */
+    SSHORT	fld_scale;			/* Scale factor of field */
+    syn*	fld_validation;		/* Validation expression */
+    syn*	fld_computed;		/* Computed by expression */
+    con*	fld_missing;		/* Missing value defined in system relation */
+    SSHORT	fld_sub_type;		/* Subtype for blobs and text */
+    SSHORT	fld_sub_type_missing;	/* Subtype missing flag */
+    USHORT	fld_system_flag;	/* System flag */
+    double	fld_dummy;		/* Force fld_data to a nice boundary word boundary */
+    UCHAR	fld_data [1];
+} *QLI_FLD;
+
+#define FLD_computed	1
+#define FLD_drop	2
+#define FLD_modify	4
+#define FLD_missing	8
+#define FLD_not_null	16
+#define FLD_add		32
+#define FLD_unique	64
+#define FLD_array	128
+
+/* Privileges for SQL metadata */
+
+#define PRV_select	1
+#define PRV_insert	2
+#define PRV_delete	4
+#define PRV_update	8
+#define PRV_all		PRV_select + PRV_insert + PRV_delete + PRV_update
+#define PRV_grant_option	16
+
+#define LLS_PUSH(object,stack)		ALLQ_push ((BLK) object, stack)
+#define LLS_POP(stack)			ALLQ_pop (stack)
+
+typedef struct lls {
+    blk	lls_header;
+    blk* lls_object;
+    lls* lls_next;
+} *LLS;
+
+/* Random string block -- jack of all kludges */
+
+typedef struct str {
+    blk		str_header;
+    USHORT	str_length;
+    USHORT	str_fluff;
+    TEXT	str_data[2];
+} *STR;
+
+/* Free block */
+
+typedef struct frb {
+    blk		frb_header;
+    frb*	frb_next;	/* Next free block in pool */
+} *FRB;
+
+/* Hunk blocks */
+
+typedef struct hnk {
+    blk		hnk_header;
+    SCHAR	*hnk_address;	/* start of memory hunk */
+    int		hnk_length;	/* length of memory hunk */
+    hnk*	hnk_next;	/* next memory hunk in structure */
+} *HNK;
+
+/* Pool block */
+
+typedef struct plb {
+    blk		plb_header;
+    USHORT	plb_pool_id;	/* pool id */
+    frb*	plb_free;		/* first free block */
+    hnk*	plb_hunks;		/* first hunk block */
+    lls*	plb_lls;		/* avaiable linked list stack nodes */
+} *PLB;
+
 /* Equivalence label dsc_missing to field dsc_flags in the dsc structure */
 
 #define dsc_missing	dsc_flags
@@ -440,25 +456,18 @@ typedef enum nod_t {
 #define DSC_missing	1
 #define DSC_initial	2
 
-/* Constant block */
-
-typedef struct con {
-    struct blk	con_header;
-    DSC		con_desc;
-    UCHAR	con_data[1];
-} *CON;
-
 /* Function description */
 
 typedef struct fun {
-    struct blk	fun_header;
-    struct fun	*fun_next;		/* Next function in database */
-    DBB		fun_database;
-    SYM		fun_symbol;		/* Associated symbol block */
-    SYM		fun_query_name;
+    blk		fun_header;
+    fun*	fun_next;		/* Next function in database */
+    dbb*	fun_database;
+    sym*	fun_symbol;		/* Associated symbol block */
+    sym*	fun_query_name;
     DSC		fun_return;		/* Return descriptor */
     USHORT	fun_args;		/* Number of arguments */
-    DSC		fun_arg [1];		/* Data type of arguments */
+    DSC		fun_arg[1];		/* Data type of arguments
+							   If you change this change blk.h too */
 } *FUN;
 
 /* Program wide globals */

@@ -27,8 +27,8 @@
 /* Control break block */
 
 typedef struct brk {
-    struct blk	brk_header;
-    struct brk	*brk_next;		/* Next break */
+    blk		brk_header;
+    brk*	brk_next;		/* Next break */
     SYN		brk_field;		/* Field expression for break */
     SYN		brk_line;		/* Print line */
     LLS		brk_statisticals;	/* Statistical expressions */
@@ -37,8 +37,8 @@ typedef struct brk {
 /* Report block */
 
 typedef struct rpt {
-    struct blk	rpt_hdr;
-    struct qli_nod	*rpt_detail_line;	/* Detail line print list */
+    blk		rpt_hdr;
+    qli_nod*	rpt_detail_line;	/* Detail line print list */
     BRK		rpt_top_page;		/* Top of page print list */
     BRK		rpt_bottom_page;	/* Bottom of page print list */
     BRK		rpt_top_rpt;		/* Top of report print list */

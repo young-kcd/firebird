@@ -27,7 +27,7 @@
 /* Request Language Block  -- used for BLR, DYN, SDL, etc. */
 
 typedef struct rlb {
-    struct blk	rlb_header;
+    blk		rlb_header;
     UCHAR	*rlb_data;		/* Pointer to end of BLR/DYN/SDL */
     UCHAR	*rlb_base;		/* Pointer to start of buffer */
     UCHAR	*rlb_limit;		/* Upper limit of string */
@@ -47,11 +47,11 @@ typedef struct rlb {
 /* Request block */
 
 typedef struct qli_req {
-    struct blk	req_header;
-    struct qli_req	*req_next;		/* Next request in statement */
-    struct dbb	*req_database;		/* Database for request */
+    blk		req_header;
+    qli_req*	req_next;		/* Next request in statement */
+    dbb*	req_database;		/* Database for request */
     FRBRD		*req_handle;		/* Database request handle */
-    struct rlb	*req_blr;
+    rlb*	req_blr;
     struct qli_msg	*req_messages;		/* Messages associated with request */
     struct qli_msg	*req_receive;		/* Current receive message, if any  */
     struct qli_msg	*req_send;		/* Current send message, if any  */
@@ -77,20 +77,19 @@ typedef enum {
 } CTX_T;
 
 typedef struct qli_ctx {
-    struct blk	ctx_header;
+    blk		ctx_header;
     CTX_T	ctx_type;		/* Type of context */
-    struct qli_ctx	*ctx_source;		/* Source context for MODIFY */
-    struct qli_ctx	*ctx_primary;		/* Primary context */
-    struct sym	*ctx_symbol;		/* Context symbol, if any */
+    qli_ctx*	ctx_source;		/* Source context for MODIFY */
+    qli_ctx*	ctx_primary;		/* Primary context */
+    sym*	ctx_symbol;		/* Context symbol, if any */
     struct qli_rel	*ctx_relation;		/* Relation of context */
-    struct qli_nod	*ctx_stream;		/* Stream of context */
-    struct frm	*ctx_form;		/* Form block, if any */
+    struct qli_nod*	ctx_stream;		/* Stream of context */
     struct qli_fld	*ctx_variable;		/* Variable reference */
-    struct qli_req	*ctx_request;		/* Request block */
+    qli_req*	ctx_request;		/* Request block */
     struct qli_msg	*ctx_message;		/* Message for data */
-    struct qli_nod	*ctx_rse;		/* RSE node for root context */
-    struct qli_nod	*ctx_sub_rse;		/* RSE node aggregate */
-    struct qli_ctx	*ctx_parent;		/* Parent context for map */
+    struct qli_nod*	ctx_rse;		/* RSE node for root context */
+    struct qli_nod*	ctx_sub_rse;		/* RSE node aggregate */
+    qli_ctx*	ctx_parent;		/* Parent context for map */
     struct map	*ctx_map;		/* Map items, if any */
     USHORT	ctx_context;		/* Context in request */
 } *QLI_CTX;
@@ -98,18 +97,18 @@ typedef struct qli_ctx {
 /* Aggregate/union map block */
 
 typedef struct map {
-    struct blk	map_header;
-    struct map	*map_next;		/* Next map in item */
-    struct qli_nod	*map_node;		/* Value for map item */
+    blk		map_header;
+    map*	map_next;			/* Next map in item */
+    struct qli_nod*	map_node;		/* Value for map item */
     USHORT	map_position;		/* Position in map */
 } *MAP;
 
 /* Message block */                                       
 
 typedef struct qli_msg {
-    struct blk	msg_header;
-    struct qli_req	*msg_request;		/* Parent request */
-    struct qli_ctx	*msg_context;		/* Contexts in message */
+    blk		msg_header;
+    qli_req*	msg_request;		/* Parent request */
+    qli_ctx*	msg_context;		/* Contexts in message */
     struct qli_msg	*msg_next;		/* Next message in request */
     struct par	*msg_parameters;	/* Field instances */
     USHORT	msg_number;		/* Message number */
@@ -121,14 +120,14 @@ typedef struct qli_msg {
 /* Field Instance */
 
 typedef struct par {
-    struct blk	par_header;
+    blk		par_header;
     DSC		par_desc;		/* Value descriptor */
-    struct par	*par_next;		/* Next par block in context */
-    struct qli_msg	*par_message;		/* Parent message */
-    struct qli_nod	*par_value;		/* Value */
+    par*	par_next;		/* Next par block in context */
+    qli_msg*	par_message;		/* Parent message */
+    struct qli_nod*	par_value;		/* Value */
     USHORT	par_parameter;		/* Parameter number */
-    USHORT	par_offset;		/* Offset of parameter in message */
-    struct par	*par_missing;		/* Parameter block for missing value */
+    USHORT	par_offset;			/* Offset of parameter in message */
+    par*	par_missing;		/* Parameter block for missing value */
 } *PAR;
 
 /* Print item block */
@@ -146,8 +145,8 @@ typedef enum itm_t
 } ITM_T;
 
 typedef struct itm {
-    struct blk	itm_header;
-    struct qli_nod	*itm_value;
+    blk		itm_header;
+    struct qli_nod*	itm_value;
     TEXT	*itm_edit_string;
     struct pics	*itm_picture;			/* picture string block */
     TEXT	*itm_query_header;
@@ -172,7 +171,7 @@ typedef struct itm {
 /* Print Control Block */
 
 typedef struct prt {
-    struct blk	prt_header;
+    blk		prt_header;
     struct file	*prt_file;		/* IB_FILE pointer */
     struct rpt	*prt_report;		/* Report block (if report) */
     int		(*prt_new_page)();	/* New page routine, if any */
@@ -184,14 +183,14 @@ typedef struct prt {
 /* General node blocks */
 
 typedef struct qli_nod {
-    struct blk	nod_header;
+    blk		nod_header;
     NOD_T	nod_type;		/* Type of node */
     DSC		nod_desc;		/* Descriptor */
     PAR		nod_import;		/* To pass random value */
     PAR		nod_export;		/* To pass random value */
     SSHORT	nod_count;		/* Number of arguments */
     UCHAR	nod_flags;
-    struct qli_nod	*nod_arg[1];
+    qli_nod* nod_arg[1];	/* If you change this change blk.h too */
 } *QLI_NOD;
 
 #define NOD_local	1		/* locally computed expression */
