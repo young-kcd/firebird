@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.91 2004-10-27 00:20:59 skidder Exp $
+$Id: ibase.h,v 1.92 2004-10-27 09:24:54 aafemt Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -53,7 +53,7 @@ $Id: ibase.h,v 1.91 2004-10-27 00:20:59 skidder Exp $
 
 #define ISC_FAR
 
-#if _MSC_VER >= 1300
+#if defined _MSC_VER && _MSC_VER >= 1300
 #define FB_API_DEPRECATED __declspec(deprecated)
 #elif __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 2)
 #define FB_API_DEPRECATED __attribute__((__deprecated__))
