@@ -78,7 +78,7 @@ extern "C" {
 #endif
 
 
-static void io_error(EXT, TEXT *, STATUS, SLONG);
+//static void io_error(EXT, TEXT *, STATUS, SLONG);
 
 
 void EXT_close(RSB rsb)

@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.22 2003-02-27 16:04:53 brodsom Exp $
+//  $Id: gpre.cpp,v 1.23 2003-03-01 19:07:47 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.22 2003-02-27 16:04:53 brodsom Exp $
+//	$Id: gpre.cpp,v 1.23 2003-03-01 19:07:47 brodsom Exp $
 //
 
 #define GPRE_MAIN
@@ -110,7 +110,7 @@ static SLONG		pass1();
 static void			pass2(SLONG);
 static void			print_switches();
 static void			remember_label(TEXT *);
-static IB_FILE*		reposition_file(IB_FILE *, SLONG);
+//static IB_FILE*		reposition_file(IB_FILE *, SLONG);
 static void			return_char(SSHORT);
 static SSHORT		skip_white();
 
@@ -130,7 +130,7 @@ static TEXT input_buffer[512], *input_char;
 
 static DBB sw_databases;
 static USHORT sw_first;
-static jmp_buf fatal_env;
+//static jmp_buf fatal_env;
 struct tok prior_token;
 static TEXT *comment_start, *comment_stop;
 

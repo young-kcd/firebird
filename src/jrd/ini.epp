@@ -70,7 +70,7 @@ static void add_new_triggers(USHORT, USHORT);
 static void add_relation_fields(USHORT);
 static void add_security_to_sys_rel(TDBB, TEXT*, TEXT*, TEXT*, SSHORT);
 static void add_trigger(TEXT*, BLK*, BLK*);
-static void add_user_priv(TDBB, TEXT*, TEXT*, TEXT*, TEXT);
+//static void add_user_priv(TDBB, TEXT*, TEXT*, TEXT*, TEXT);
 static void modify_relation_field(TDBB, const UCHAR*, const UCHAR*, BLK*);
 static void store_generator(TDBB, const GEN*, BLK*);
 static void store_global_field(TDBB, GFLD*, BLK*);

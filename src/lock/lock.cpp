@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.34 2003-03-01 17:43:55 brodsom Exp $
+$Id: lock.cpp,v 1.35 2003-03-01 19:10:43 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -237,7 +237,7 @@ static void lock_initialize(void *, SH_MEM, int);
 static void insert_data_que(LBL);
 static void insert_tail(SRQ, SRQ);
 static USHORT lock_state(LBL);
-static void port_waker(PTR *);
+//static void port_waker(PTR *);
 static void post_blockage(LRQ, LBL, BOOLEAN);
 static void post_history(USHORT, PTR, PTR, PTR, BOOLEAN);
 static void post_pending(LBL);
@@ -261,11 +261,11 @@ static void validate_shb(PTR);
 static void validate_owner(PTR, USHORT);
 static void validate_lock(PTR, USHORT, PTR);
 static void validate_request(PTR, USHORT, USHORT);
-static void validate_block(PTR);
+//static void validate_block(PTR);
 #endif
 
 static USHORT wait_for_request(LRQ, SSHORT, STATUS *);
-static void wakeup_action(PTR *);
+//static void wakeup_action(PTR *);
 
 static struct own LOCK_process_owner;	/* Place holder */
 static SSHORT LOCK_bugcheck = 0;

@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.55 2003-03-01 17:51:59 brodsom Exp $
+$Id: inet.cpp,v 1.56 2003-03-01 19:11:32 brodsom Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -376,7 +376,7 @@ static PORT		inet_try_connect(	PACKET*,
 									SSHORT);
 static bool_t	inet_write(XDR *, int);
 static void		inet_zero(SCHAR *, int);
-static int		initWSA(PORT);
+//static int		initWSA(PORT);
 #if !(defined WIN_NT)
 static int		parse_hosts(TEXT *, TEXT *, TEXT *);
 static int		parse_line(TEXT *, TEXT *, TEXT *, TEXT *);

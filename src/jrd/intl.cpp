@@ -155,22 +155,22 @@ extern CsConvertAllocFunc INTL_csconvert_alloc_func(short, short);
 static BOOLEAN all_spaces(TDBB, CHARSET_ID, BYTE *, USHORT, USHORT);
 static void dump_hex(UCHAR *, USHORT);
 static void dump_latin(UCHAR *, USHORT);
-static void finish_texttype_init(TextType*, FPTR_VOID, STATUS *);
-static SSHORT internal_str_to_upper(TextType*, USHORT, UCHAR *, USHORT,
-									UCHAR *);
-static USHORT internal_string_to_key(TextType*, USHORT, UCHAR *, USHORT,
-									 UCHAR *, USHORT);
-static USHORT mb_to_wc(CsConvert*, UCS2_CHAR *, USHORT, MBCHAR *, USHORT, SSHORT *,
-					   USHORT *);
+//static void finish_texttype_init(TextType*, FPTR_VOID, STATUS *);
+//static SSHORT internal_str_to_upper(TextType*, USHORT, UCHAR *, USHORT,
+//									UCHAR *);
+//static USHORT internal_string_to_key(TextType*, USHORT, UCHAR *, USHORT,
+//									 UCHAR *, USHORT);
+//static USHORT mb_to_wc(CsConvert*, UCS2_CHAR *, USHORT, MBCHAR *, USHORT, SSHORT *,
+//					   USHORT *);
 static USHORT nc_to_wc(CsConvert*, UCS2_CHAR *, USHORT, UCHAR *, USHORT, SSHORT *,
 					   USHORT *);
 static void pad_spaces(TDBB, CHARSET_ID, BYTE *, USHORT);
-static USHORT wc_to_mb(CsConvert*, MBCHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
-					   USHORT *);
-static USHORT wc_to_nc(CsConvert*, NCHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
-					   USHORT *);
-static USHORT wc_to_wc(CsConvert*, UCS2_CHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
-					   USHORT *);
+//static USHORT wc_to_mb(CsConvert*, MBCHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
+//					   USHORT *);
+//static USHORT wc_to_nc(CsConvert*, NCHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
+//					   USHORT *);
+//static USHORT wc_to_wc(CsConvert*, UCS2_CHAR *, USHORT, UCS2_CHAR *, USHORT, SSHORT *,
+//					   USHORT *);
 					   
 static CharSetContainer *internal_charset_container_lookup(TDBB, SSHORT, STATUS *);
 static void* search_out_alloc_func(const char *, CHARSET_ID, CHARSET_ID);
