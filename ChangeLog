@@ -1,3 +1,33 @@
+2003-04-25 19:15  alexpeshkoff
+
+	* firebird2/src/jrd/exe.cpp:
+	
+	Fixed 2 bugs, which caused server to crash
+
+2003-04-25 16:49  alexpeshkoff
+
+	* firebird2/: src/jrd/exe.cpp, src/jrd/rpb_chain.cpp,
+	src/jrd/rpb_chain.h, src/jrd/tra.cpp, src/jrd/tra.h,
+	builds/win32/msvc6/common.dsp,
+	builds/win32/msvc6/common_classic.dsp,
+	builds/win32/msvc6/engine.dsp,
+	builds/win32/msvc6/engine_classic.dsp,
+	builds/win32/msvc6/engine_embed.dsp:
+	
+	Fixed bug with wrong rpb contents after pre-triggers execution
+
+2003-04-25 16:47  alexpeshkoff
+
+	* firebird2/src/common/classes/array.h:
+	
+	Added dynamic arrays support
+
+2003-04-25 15:25  alexpeshkoff
+
+	* firebird2/src/jrd/ExecuteStatement.cpp:
+	
+	Minor cleanup
+
 2003-04-24 07:46  dimitr
 
 	* firebird2/src/jrd/exe.cpp:
