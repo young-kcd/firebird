@@ -24,10 +24,12 @@
  */
 
 #include "firebird.h"
+#include "../../jrd/ib_stdio.h"
 
 #include "../../common/config/config_file.h"
 #include "../../common/classes/auto.h"
 #include "../jrd/os/fbsyslog.h"
+
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -282,6 +284,9 @@ void ConfigFile::loadConfig()
 		prevCR = false;
 		do {
 			bytesRead = fread(buffer, 1, sizeof(buffer), ifile);
+			if (errno!=0) {
+			   Firebird::Syslog::Record(Firebird::Syslog::Error, strerror(errno));
+			}
 			for (int pos = 0; pos < bytesRead; pos++) {
 				switch(buffer[pos]) {
 					case '\n':
