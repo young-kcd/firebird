@@ -214,6 +214,9 @@ static const TEXT *const months[] = {
 #include "../jrd/quad.cpp"
 #endif
 
+static const double eps_double = 1e-14;
+static const double eps_float  = 1e-5;
+
 #pragma FB_COMPILER_MESSAGE("Fix this! Ugly function pointer cast!")
 typedef void (*pfn_cvt_private_cludge) (int, int);
 typedef void (*pfn_cvt_private_cludge2) (int, int, ...);
@@ -518,7 +521,7 @@ SLONG CVT_get_long(DSC * desc, SSHORT scale, FPTR_VOID err)
  **************************************/
 	SLONG value, high, fraction;
 
-	double d;
+	double d, eps;
 	SINT64 val64;
 	USHORT length;
 	TEXT buffer[50];			/* long enough to represent largest long in ASCII */
@@ -589,25 +592,31 @@ SLONG CVT_get_long(DSC * desc, SSHORT scale, FPTR_VOID err)
 	case dtype_d_float:
 #endif
 		if (desc->dsc_dtype == dtype_real)
-			d = *((float *) p);
+		{
+			d = *((float*) p);
+			eps = eps_float;
+		}
 		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
-			d = *((double *) p);
+		{
+			d = *((double*) p);
+			eps = eps_double;
+		}
 #ifdef VMS
-		else
-			d = CNVT_TO_DFLT((double *) p);
+		else 
+		{
+			d = CNVT_TO_DFLT((double*) p);
+			eps = eps_double;
+		}
 #endif
 		if (scale > 0)
-			do
-				d /= 10.;
-			while (--scale);
+			d /= power_of_ten(scale);
 		else if (scale < 0)
-			do
-				d *= 10.;
-			while (++scale);
+			d *= power_of_ten(-scale);
+
 		if (d > 0)
-			d += 0.5;
+			d += 0.5 + eps;
 		else
-			d -= 0.5;
+			d -= 0.5 + eps;
 
 		/* make sure the cast will succeed - different machines 
 		   do different things if the value is larger than a long
@@ -974,7 +983,7 @@ SINT64 CVT_get_int64(DSC * desc, SSHORT scale, FPTR_VOID err)
  **************************************/
 	SINT64 value;
 	SLONG fraction;
-	double d;
+	double d, eps;
 	USHORT length;
 	TEXT buffer[50];			/* long enough to represent largest SINT64 in ASCII */
 
@@ -1009,25 +1018,31 @@ SINT64 CVT_get_int64(DSC * desc, SSHORT scale, FPTR_VOID err)
 	case dtype_d_float:
 #endif
 		if (desc->dsc_dtype == dtype_real)
-			d = *((float *) p);
+		{
+			d = *((float*) p);
+			eps = eps_float;
+		}
 		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
-			d = *((double *) p);
+		{
+			d = *((double*) p);
+			eps = eps_double;
+		}
 #ifdef VMS
-		else
-			d = CNVT_TO_DFLT((double *) p);
+		else 
+		{
+			d = CNVT_TO_DFLT((double*) p);
+			eps = eps_double;
+		}
 #endif
 		if (scale > 0)
-			do
-				d /= 10.;
-			while (--scale);
+			d /= power_of_ten(scale);
 		else if (scale < 0)
-			do
-				d *= 10.;
-			while (++scale);
+			d *= power_of_ten(-scale);
+
 		if (d > 0)
-			d += 0.5;
+			d += 0.5 + eps;
 		else
-			d -= 0.5;
+			d -= 0.5 + eps;
 
 		/* make sure the cast will succeed - different machines 
 		   do different things if the value is larger than a quad
