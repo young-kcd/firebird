@@ -126,7 +126,7 @@ static USHORT server_flag;
 
 static const SERVICE_TABLE_ENTRY service_table[] =
 {
-	{(TEXT*) REMOTE_SERVICE, CNTL_main_thread},
+	{const_cast<TEXT*>(REMOTE_SERVICE), CNTL_main_thread},
 	{NULL, NULL}
 };
 
