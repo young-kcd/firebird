@@ -109,11 +109,11 @@ SSHORT SECURITY_exec_line(STATUS * isc_status,
 	SCHAR encrypted1[MAX_PASSWORD_LENGTH + 2];
 	SCHAR encrypted2[MAX_PASSWORD_LENGTH + 2];
 	STATUS tmp_status[ISC_STATUS_LENGTH];
-	FRBRD *gds__trans;
+	FRBRD *gds_trans;
 	BOOLEAN found;
 	SSHORT ret = 0;
 
-	gds__trans = NULL;
+	gds_trans = NULL;
 	START_TRANSACTION
 	ON_ERROR
 		return GsecMsg75;		/* gsec error */
@@ -329,7 +329,7 @@ SSHORT SECURITY_exec_line(STATUS * isc_status,
    overwriting the error status which the caller wants to see */
 
 	if (ret)
-		isc_rollback_transaction(tmp_status, &gds__trans);
+		isc_rollback_transaction(tmp_status, &gds_trans);
 	else {
 		COMMIT
 		ON_ERROR
