@@ -1574,6 +1574,14 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 	rdb->rdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
 
+	if (dialect > 10)
+	{
+		// dimitr: adjust dialect received after
+		//		   a multi-hop transmission to be
+		//		   redirected in its original value.
+		dialect /= 10;
+	}
+
 	try
 	{
 		/* bag it if the protocol doesn't support it... */
@@ -2188,6 +2196,14 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 	}
 	rdb->rdb_status_vector = user_status;
 	tdrdb->trdb_database = rdb;
+
+	if (dialect > 10)
+	{
+		// dimitr: adjust dialect received after
+		//		   a multi-hop transmission to be
+		//		   redirected in its original value.
+		dialect /= 10;
+	}
 
 	try
 	{
