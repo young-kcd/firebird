@@ -1231,16 +1231,15 @@ column_constraint_def : constraint_name_opt column_constraint
 column_constraint : NOT KW_NULL 
                         { $$ = make_node (nod_null, (int) 1, NULL); }
                   | REFERENCES simple_table_name column_parens_opt
-			referential_trigger_action
+			referential_trigger_action constraint_index_opt
                         { $$ = make_node (nod_foreign, e_for_count,
-                        make_node (nod_list, (int) 1, g_field_name), $2, $3, $4); }
+                        make_node (nod_list, (int) 1, g_field_name), $2, $3, $4, $5); }
 
                   | check_constraint
-
-                  | UNIQUE
-                        { $$ = make_node (nod_unique, (int) 0, NULL); }
-                  | PRIMARY KEY
-                        { $$ = make_node (nod_primary, (int) 0, NULL); }
+                  | UNIQUE constraint_index_opt
+                        { $$ = make_node (nod_unique, 2, NULL, $2); }
+                  | PRIMARY KEY constraint_index_opt
+                        { $$ = make_node (nod_primary, e_pri_count, NULL, $3); }
 		;
                     
 

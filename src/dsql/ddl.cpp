@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.15 2002-09-05 11:48:40 dimitr Exp $
+ * $Id: ddl.cpp,v 1.16 2002-09-06 07:51:29 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -1986,15 +1986,37 @@ static void define_field(
 						request->append_uchar(gds_dyn_end);	/* For field definition  */
 						cnstrt_flag = TRUE;
 					}
-					request->append_cstring(gds_dyn_rel_constraint,
-								reinterpret_cast<char*>((string) ? string->str_data : NULL));
-					if (node1->nod_type == nod_primary) {
-						request->append_uchar(gds_dyn_def_primary_key);
-					} else if (node1->nod_type == nod_unique) {
-						request->append_uchar(gds_dyn_def_unique);
+
+					SCHAR *constraint_name =
+						reinterpret_cast<SCHAR*>(string ? string->str_data : 0);
+					request->append_cstring(gds_dyn_rel_constraint, constraint_name);
+
+					NOD index = node1->nod_arg[e_pri_index];
+					assert(index);
+
+					SCHAR *index_name = constraint_name;
+					string = (STR) index->nod_arg[e_idx_name];
+					if (string)
+					{
+						index_name = reinterpret_cast<char*>(string->str_data);
 					}
-					request->append_ushort(0);	/* So index name is generated   */
+
+					if (node1->nod_type == nod_primary)
+					{
+						request->append_cstring(gds_dyn_def_primary_key, index_name);
+					}
+					else if (node1->nod_type == nod_unique)
+					{
+						request->append_cstring(gds_dyn_def_unique, index_name);
+					}
+
 					request->append_number(gds_dyn_idx_unique, 1);
+
+					if (index->nod_arg[e_idx_asc_dsc])
+					{
+						request->append_number(gds_dyn_idx_type, 1);
+					}
+
 					request->append_cstring(gds_dyn_fld_name, field->fld_name);
 					request->append_uchar(gds_dyn_end);
 				}
@@ -2003,9 +2025,10 @@ static void define_field(
 						request->append_uchar(gds_dyn_end);	/* For field definition  */
 						cnstrt_flag = TRUE;
 					}
-					request->append_cstring(gds_dyn_rel_constraint,
-								reinterpret_cast<char*>((string) ? string->str_data : NULL));
-					foreign_key(request, node1, 0);
+					SCHAR *constraint_name =
+						reinterpret_cast<SCHAR*>(string ? string->str_data : 0);
+					request->append_cstring(gds_dyn_rel_constraint, constraint_name);
+					foreign_key(request, node1, constraint_name);
 				}
 				else if (node1->nod_type == nod_def_constraint) {
 					if (cnstrt_flag == FALSE) {
