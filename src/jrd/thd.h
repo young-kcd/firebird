@@ -26,7 +26,7 @@
  *
  */
 /*
-$Id: thd.h,v 1.16 2003-10-29 07:00:04 stryqx Exp $
+$Id: thd.h,v 1.17 2003-10-30 09:49:40 eku Exp $
 */
 
 #ifndef JRD_THD_H
@@ -40,37 +40,23 @@ $Id: thd.h,v 1.16 2003-10-29 07:00:04 stryqx Exp $
 #define THD_RWLOCK_STRUCT	rwlock_t
 #endif
 #endif
+ 
 
-/* RITTER - changed HP10 to HPUX in the line below */
-#if (defined(HPUX) && defined(SUPERSERVER))
+#ifdef HAVE_POSIX_THREADS
+#ifdef SUPERSERVER
 #define POSIX_THREADS		1
 #endif
-
-#if (defined(LINUX) && defined(SUPERSERVER))
-#define POSIX_THREADS           1
-#endif
-
-#if (defined(FREEBSD) && defined(SUPERSERVER))
-#define POSIX_THREADS           1
-#endif
-
+#ifdef SUPERCLIENT
+#if defined(LINUX) || defined(FREEBSD)
 /* The following ifdef was added to build thread safe gds shared
    library on linux platform. It seems the gdslib works now (20020220)
    with thread enabled applications. Anyway, more tests should be 
    done as I don't have deep knowledge of the interbase/firebird 
    engine and this change may imply side effect I haven't known 
-   about yet. Tomas Nejedlik (tomas@nejedlik.cz)
-*/
-#if (defined(LINUX) && defined(SUPERCLIENT))
-#define POSIX_THREADS           1
+   about yet. Tomas Nejedlik (tomas@nejedlik.cz) */
+#define POSIX_THREADS		1
 #endif
-
-#if (defined(FREEBSD) && defined(SUPERCLIENT))
-#define POSIX_THREADS           1
 #endif
-
-#if (defined(DARWIN) && defined(SUPERSERVER))
-#define POSIX_THREADS           1
 #endif
 
 #ifdef VMS
@@ -118,13 +104,16 @@ struct IB_RTL_CRITICAL_SECTION
 #define THD_COND_STRUCT		pthread_cond_t
 
 #ifndef PTHREAD_PROCESS_SHARED
-#define PTHREAD_PROCESS_SHARED 1
+#define PTHREAD_PROCESS_SHARED	1
 #endif
 
 #ifndef PTHREAD_CREATE_DETACHED
-#define PTHREAD_CREATE_DETACHED 1
+#define PTHREAD_CREATE_DETACHED	1
 #endif
 
+#ifdef HAVE_PTHREAD_KEYCREATE
+#define pthread_key_create	pthread_keycreate
+#endif
 #endif
 
 #ifndef THD_MUTEX_STRUCT
@@ -176,13 +165,13 @@ struct IB_RTL_CRITICAL_SECTION
 
 /* Thread option flags */
 
-#define THREAD_ast		1		/* Thread can/should run at ast level */
+#define THREAD_ast		1	/* Thread can/should run at ast level */
 #define THREAD_blast		2	/* Blow away thread during exit handler */
-#define THREAD_wait		4		/* Somebody will wait for thread exit */
+#define THREAD_wait		4	/* Somebody will wait for thread exit */
 
 /* Thread quanta */
 
-#define QUANTUM			100		/* Default quantum */
+#define QUANTUM			100	/* Default quantum */
 #define SWEEP_QUANTUM		10	/* Make sweeps less disruptive */
 
 
@@ -190,7 +179,7 @@ struct IB_RTL_CRITICAL_SECTION
 
 typedef struct thdd {
 	void *thdd_prior_context;
-	ULONG thdd_type;			/* what kind of structrue this is */
+	ULONG thdd_type;		/* what kind of structrue this is */
 } *THDD;
 
 /* Thread structure types */

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.170 2003-10-30 08:03:17 eku Exp $
+dnl $Id: configure.in,v 1.171 2003-10-30 09:49:38 eku Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -19,17 +19,14 @@ define([XE_PREPEND],[[$2]="[$1] $[$2]"])
 dnl ############################# ADD TESTS BELOW ##############################
 
 AC_CANONICAL_SYSTEM
-
-case "$target_cpu" in
-  powerpc) AC_DEFINE(PowerPC, 1, [Define this if CPU is PowerPC]) ;;
-esac
-
 CPU_TYPE=$host_cpu dnl EKU: Should this be target_cpu ???
 AC_SUBST(CPU_TYPE)
+
 
 dnl EKU: set appropiate defaults for each platform
 dnl      LOCK_MANAGER_FLG : build lock manager (CS only)
 dnl      EDITLINE_FLG     : support fancy command line editing in isql
+dnl      SHRLIB_EXT       : suffix of shared library files
 
 case "$target" in
   *-*-darwin*)
@@ -129,22 +126,8 @@ esac
 
 AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(PLATFORM)
+AC_SUBST(SHRLIB_EXT)
 AC_DEFINE(CASE_SENSITIVITY, false, [Define this if paths are case sensitive])
-
-
-AC_PROG_AWK
-AC_PROG_CC  dnl EKU: C++ programs should not use CC, but at the moment all
-            dnl makefiles use $(CC) to link objects. This has to be changed!
-AC_PROG_CXX
-AC_PROG_CPP
-AC_PROG_INSTALL
-AC_PROG_LN_S
-dnl EKU: AC_PROG_RANLIB has been superseded by AC_PROG_LIBTOOL
-AC_LIBTOOL_DLOPEN
-AC_LIBTOOL_WIN32_DLL
-AC_PROG_MAKE_SET
-AC_PROG_LIBTOOL
-AC_PROG_YACC
 
 
 dnl Some controllable options
@@ -219,8 +202,6 @@ AC_ARG_WITH(editline,
    esac])
 AC_SUBST(EDITLINE_FLG)
 
-AC_SUBST(SHRLIB_EXT)
-
 FB_SERVICE_NAME=gds_db
 FB_SERVICE_PORT=3050
 FB_IPC_NAME=FirebirdIPI
@@ -277,6 +258,24 @@ AC_ARG_WITH(gpre-pascal,
 AC_SUBST(GPRE_LANGUAGE_MODULES)
 
 
+
+dnl Checks for programs.
+AC_PROG_AWK
+AC_PROG_CC  dnl EKU: C++ programs should not use CC, but at the moment all
+            dnl makefiles use $(CC) to link objects. This has to be changed!
+AC_PROG_GCC_TRADITIONAL
+AC_PROG_CXX
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+dnl EKU: AC_PROG_RANLIB has been superseded by AC_PROG_LIBTOOL
+AC_LIBTOOL_DLOPEN
+AC_LIBTOOL_WIN32_DLL
+AC_PROG_MAKE_SET
+AC_PROG_LIBTOOL
+AC_PROG_YACC
+
+
 dnl Check for system header files
 AC_HEADER_DIRENT
 AC_HEADER_STDC
@@ -310,6 +309,20 @@ if test "$EDITLINE_FLG" = "Y"; then
   AC_DEFINE(HAVE_EDITLINE_H, 1, [Define this if internal editline.h is in use])
 fi
 AC_CHECK_HEADERS(unistd.h)
+if test "$ac_cv_header_unistd_h" = "yes"; then
+  AC_MSG_CHECKING(if POSIX threads are available)
+  AC_TRY_RUN([#include <unistd.h>
+    main () { 
+#if defined(_POSIX_THREADS) && _POSIX_THREADS >= 200112L
+    exit(0);
+#else
+    exit(1);
+#endif
+  }],
+  [AC_DEFINE(HAVE_POSIX_THREADS, 1,
+     [Define this if POXIS threads are available])
+   AC_MSG_RESULT(yes)])
+fi
 AC_CHECK_HEADERS(varargs.h)
 AC_CHECK_HEADERS(crypt.h)
 AC_CHECK_HEADERS(netinet/in.h rpc/rpc.h netconfig.h)
@@ -318,6 +331,7 @@ AC_CHECK_HEADERS(aio.h)
 AC_CHECK_HEADERS(mntent.h mnttab.h sys/mntent.h sys/mnttab.h)
 AC_CHECK_HEADERS(sys/ipc.h sys/file.h)
 AC_CHECK_HEADERS(socket.h sys/socket.h sys/sockio.h winsock2.h)
+
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
@@ -395,12 +409,16 @@ if test "$ac_cv_func_getmntent" = "yes"; then
 fi
 AC_CHECK_FUNCS(tcgetattr strdup)
 AC_CHECK_FUNCS(mkstemp)
+AC_CHECK_FUNCS(pthread_keycreate pthread_key_create)
 
 
-dnl Check for other things
+# Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
 AC_C_VOLATILE 
 AC_TYPE_SIGNAL
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
+AC_TYPE_UID_T
 AC_SYS_LARGEFILE
 if test "$ac_cv_sys_file_offset_bits" = "no"; then
   AC_MSG_CHECKING(for native large file support)
@@ -408,7 +426,8 @@ if test "$ac_cv_sys_file_offset_bits" = "no"; then
     main () { 
     exit(!(sizeof(off_t) == 8));
   }],
-  [ac_cv_sys_file_offset_bits=64; AC_DEFINE(_FILE_OFFSET_BITS,64) AC_MSG_RESULT(yes)],
+  [ac_cv_sys_file_offset_bits=64; AC_DEFINE(_FILE_OFFSET_BITS,64)
+   AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)])
 fi
 
@@ -466,6 +485,7 @@ dnl      netware_386   ((n+1) & ~1)              -> even
 dnl      all others    ((n + b - 1) & ~(b - 1))  -> multiple of b
 dnl
 dnl      volunters are welcome!
+
 
 
 dnl EKU: Add any platform specific tests below

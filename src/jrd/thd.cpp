@@ -346,11 +346,11 @@ void THD_init(void)
    pthread_once. This function makes sure that init() routine
    will be called only once by the first thread to call pthread_once.
 */
-#ifdef HP10
+#ifndef PTHREAD_ONCE_INIT
 	static pthread_once_t once = pthread_once_init;
 #else
 	static pthread_once_t once = PTHREAD_ONCE_INIT;
-#endif /* HP10 */
+#endif
 
 	pthread_once(&once, init);
 
@@ -381,11 +381,11 @@ void THD_init_data(void)
    pthread_once. This function makes sure that init_tkey() routine
    will be called only once by the first thread to call pthread_once.
 */
-#ifdef HP10
+#ifndef PTHREAD_ONCE_INIT
 	static pthread_once_t once = pthread_once_init;
 #else
 	static pthread_once_t once = PTHREAD_ONCE_INIT;
-#endif /* HP10 */
+#endif
 
 	pthread_once(&once, init_tkey);
 
@@ -1669,16 +1669,8 @@ static void init(void)
 	THD_mutex_init(&ib_mutex);
 
 #ifdef POSIX_THREADS
-#ifdef HP10
-
-	pthread_keycreate(&specific_key, NULL);
-
-#else
-
 	pthread_key_create(&specific_key, NULL);
-
-#endif /* HP10 */
-#endif /* POSIX_THREADS */
+#endif
 
 #ifdef SOLARIS_MT
 	if (thr_keycreate(&specific_key, NULL)) {
@@ -1737,16 +1729,8 @@ static void init_tkey(void)
 #ifdef ANY_THREADING
 
 #ifdef POSIX_THREADS
-#ifdef HP10
-
-	pthread_keycreate(&t_key, NULL);
-
-#else
-
 	pthread_key_create(&t_key, NULL);
-
-#endif /* HP10 */
-#endif /* POSIX_THREADS */
+#endif
 
 #ifdef SOLARIS_MT
 	thr_keycreate(&t_key, NULL);

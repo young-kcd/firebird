@@ -181,17 +181,16 @@ static void		error(ISC_STATUS *, TEXT *, ISC_STATUS);
 
 #ifdef UNIX
 static SLONG	find_key(ISC_STATUS *, TEXT *);
-#endif
-#if defined(UNIX) && !defined(POSIX_THREADS) && !defined(SOLARIS_MT)
+#if !(defined(POSIX_THREADS) || defined(SOLARIS_MT))
 static void		alarm_handler(void* arg);
 static SLONG	open_semaphores(ISC_STATUS *, SLONG, int&);
 static SLONG	create_semaphores(ISC_STATUS *, SLONG, int);
 static BOOLEAN	semaphore_wait_isc_sync(int, int, int *);
 #endif
-
-#if defined(UNIX) && defined(SUPERSERVER)
+#ifdef SUPERSERVER
 static void		longjmp_sig_handler(int);
-#endif // UNIX && SUPERSERVER
+#endif
+#endif // UNIX
 
 #ifdef VMS
 static int event_test(WAIT *);
@@ -574,32 +573,19 @@ int ISC_event_init(EVENT event, int semid, int semnum)
 		/* Prepare an Inter-Process event block */
 		event->event_semid = semid;
 
-		/* NOTE: HP's Posix threads implementation does not support thread
-		   synchronization in different processes. Thus the following
-		   fragment is just a temp. decision we could be use for super-
-		   server (until we are to implement local IPC using shared
-		   memory in which case we need interprocess thread sync.
-		 */
-#ifdef HP10
-		pthread_mutex_init(event->event_mutex, pthread_mutexattr_default);
-		pthread_cond_init(event->event_semnum, pthread_condattr_default);
-#else
-/* RITTER - added HP11 to the preprocessor condition below */
-#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
-		pthread_mutex_init(event->event_mutex, NULL);
-		pthread_cond_init(event->event_semnum, NULL);
-#else
 		pthread_mutexattr_init(&mattr);
+#if _POSIX_THREAD_PROCESS_SHARED >= 200112L
 		pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
+#endif
 		pthread_mutex_init(event->event_mutex, &mattr);
 		pthread_mutexattr_destroy(&mattr);
 
 		pthread_condattr_init(&cattr);
+#if _POSIX_THREAD_PROCESS_SHARED >= 200112L
 		pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED);
+#endif
 		pthread_cond_init(event->event_semnum, &cattr);
 		pthread_condattr_destroy(&cattr);
-#endif
-#endif
 	}
 
 	return TRUE;
@@ -702,35 +688,37 @@ int ISC_event_wait(
 		   The mutex is reacquired before the call returns.
 		 */
 		if (micro_seconds > 0)
+		{
 			ret =
 				pthread_cond_timedwait((*events)->event_semnum,
 									   (*events)->event_mutex, &timer);
+
+#ifdef HP10
+			if ((ret == -1) && (errno == EAGAIN))
+#else
+/* RITTER - added HP11 to the preprocessor condition below */
+#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
+			if (ret == ETIMEDOUT)
+#else
+			if (ret == ETIME)
+#endif
+#endif
+			{
+
+				/* The timer expired - see if the event occured and return
+				   FB_SUCCESS or FB_FAILURE accordingly. */
+
+				if (ISC_event_blocked(count, events, values))
+					ret = FB_FAILURE;
+				else
+					ret = FB_SUCCESS;
+				break;
+			}
+		}
 		else
 			ret =
 				pthread_cond_wait((*events)->event_semnum,
 								  (*events)->event_mutex);
-
-#ifdef HP10
-		if (micro_seconds > 0 && (ret == -1) && (errno == EAGAIN))
-#else
-/* RITTER - added HP11 to the preprocessor condition below */
-#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
-		if (micro_seconds > 0 && (ret == ETIMEDOUT))
-#else
-		if (micro_seconds > 0 && (ret == ETIME))
-#endif
-#endif
-		{
-
-			/* The timer expired - see if the event occured and return
-			   FB_SUCCESS or FB_FAILURE accordingly. */
-
-			if (ISC_event_blocked(count, events, values))
-				ret = FB_FAILURE;
-			else
-				ret = FB_SUCCESS;
-			break;
-		}
 	}
 	pthread_mutex_unlock((*events)->event_mutex);
 	return ret;
@@ -3154,41 +3142,21 @@ int ISC_mutex_init(MTX mutex, SLONG semaphore)
  *
  **************************************/
 	int state;
-
-/* RITTER - replaced HP10 with HPUX in the line below */
-#if (!defined HPUX && !defined LINUX && !defined DARWIN && !defined FREEBSD)
-
 	pthread_mutexattr_t mattr;
 
 	state = pthread_mutexattr_init(&mattr);
-	if (state)
-		return state;
-	pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
-	state = pthread_mutex_init(mutex->mtx_mutex, &mattr);
-	pthread_mutexattr_destroy(&mattr);
+	if (state == 0)
+#if _POSIX_THREAD_PROCESS_SHARED >= 200112L
+		pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
+#endif
+		state = pthread_mutex_init(mutex->mtx_mutex, &mattr);
+		pthread_mutexattr_destroy(&mattr);
+	}
+#ifdef HP10
+	if (state != 0)
+    		state = errno;
+#endif
 	return state;
-
-#else
-
-/* NOTE: HP's Posix threads implementation does not support thread
-	 synchronization in different processes. Thus the following
-	 fragment is just a temp. decision we could be use for super-
-	 server (until we are to implement local IPC using shared
-	 memory in which case we need interprocess thread sync.
-*/
-/* RITTER - added HP11 */
-#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
-	return pthread_mutex_init(mutex->mtx_mutex, NULL);
-#else
-	state = pthread_mutex_init(mutex->mtx_mutex, pthread_mutexattr_default);
-	if (!state)
-		return 0;
-	assert(state == -1);		/* if state is not 0, it should be -1 */
-	return errno;
-
-#endif /* linux */
-#endif /* HP10 */
-
 }
 
 
