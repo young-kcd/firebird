@@ -11,6 +11,7 @@ ALL : "$(OUTDIR)\common.lib"
 
 CLEAN :
 	-@erase "$(INTDIR)\alloc.obj"
+	-@erase "$(INTDIR)\fbsyslog.obj"
 	-@erase "$(INTDIR)\config.obj"
 	-@erase "$(INTDIR)\config_file.obj"
 	-@erase "$(INTDIR)\config_root.obj"
@@ -36,6 +37,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\locks.obj" \
 	"$(INTDIR)\fb_exception.obj" \
 	"$(INTDIR)\config.obj" \
+	"$(INTDIR)\fbsyslog.obj" \
 	"$(INTDIR)\config_file.obj" \
 	"$(INTDIR)\config_root.obj" \
 	"$(INTDIR)\mod_loader.obj" \
@@ -116,6 +118,12 @@ SOURCE=..\..\src\jrd\os\win32\config_root.cpp
 SOURCE=..\..\src\jrd\os\win32\mod_loader.cpp
 
 "$(INTDIR)\mod_loader.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\src\jrd\os\win32\fbsyslog.cpp
+
+"$(INTDIR)\fbsyslog.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
