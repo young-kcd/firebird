@@ -5065,7 +5065,8 @@ void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 		}
 		delete garbage.bm;
 
-		array.remove(0U);
+		// Need to cast zero to exact type because literal zero means null pointer
+		array.remove(static_cast<size_t>(0));
 	}
 }
 
