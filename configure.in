@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.15 2003-11-13 01:12:50 bellardo Exp $
+dnl $Id: configure.in,v 1.141.2.16 2003-11-13 04:57:06 tmcsys Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -608,6 +608,7 @@ mkdir -p temp/libfbserver/wal
 mkdir -p temp/libfbserver/common/classes
 mkdir -p temp/libfbserver/common/config
 mkdir -p temp/libfbserver/jrd/os/posix
+mkdir -p temp/libfbserver/jrd/os/darwin
 mkdir -p temp/libfbserver/jrd/os/win32
 mkdir -p temp/fbserver/remote
 mkdir -p temp/fbserver/ipserver
