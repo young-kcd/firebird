@@ -5,7 +5,7 @@
 @if errorlevel 1 (goto :END)
 
 :: verify that prepare was run before
-@if not exist %ROOT_PATH%\builds\win32\dbs\metadata.fdb (goto :HELP_PREP & goto :END)
+@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP_PREP & goto :END)
 
 :: verify that boot was run before
 @if not exist %ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :END)
@@ -68,8 +68,8 @@ if "%VS_VER%"=="msvc6" (
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\intl\* %ROOT_PATH%\output\intl >nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\udf\* %ROOT_PATH%\output\udf >nul
 
-@copy %ROOT_PATH%\gen\SECURITY.FDB %ROOT_PATH%\output\security.fdb >nul
-@copy %ROOT_PATH%\gen\HELP.fdb %ROOT_PATH%\output\help\help.fdb >nul
+@copy %ROOT_PATH%\gen\dbs\SECURITY.FDB %ROOT_PATH%\output\security.fdb >nul
+@copy %ROOT_PATH%\gen\dbs\HELP.fdb %ROOT_PATH%\output\help\help.fdb >nul
 @copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg >nul
 
 @copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt >nul

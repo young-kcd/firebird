@@ -11,7 +11,7 @@
 @if errorlevel 1 (goto :END)
 
 :: verify that prepare was run before
-@if not exist %ROOT_PATH%\builds\win32\dbs\metadata.fdb (goto :HELP & goto :END)
+@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP & goto :END)
 
 ::===========
 :MAIN
@@ -20,24 +20,29 @@
 @del %ROOT_PATH%\src\include\gen\autoconfig.h 2> nul
 @copy %ROOT_PATH%\src\include\gen\autoconfig_msvc.h %ROOT_PATH%\src\include\gen\autoconfig.h > nul
 @echo Creating directories
-@rmdir /s /q %ROOT_PATH%\gen 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\alice 2>nul
 @mkdir %ROOT_PATH%\gen\alice 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\burp 2>nul
 @mkdir %ROOT_PATH%\gen\burp 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\dsql 2>nul
 @mkdir %ROOT_PATH%\gen\dsql 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\dudley 2>nul
 @mkdir %ROOT_PATH%\gen\dudley 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\gpre 2>nul
 @mkdir %ROOT_PATH%\gen\gpre 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\isql 2>nul
 @mkdir %ROOT_PATH%\gen\isql 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\jrd 2>nul
 @mkdir %ROOT_PATH%\gen\jrd 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\msgs 2>nul
 @mkdir %ROOT_PATH%\gen\msgs 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\qli 2>nul
 @mkdir %ROOT_PATH%\gen\qli 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\utilities 2>nul
 @mkdir %ROOT_PATH%\gen\utilities 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\v5_examples 2>nul
 @mkdir %ROOT_PATH%\gen\v5_examples 2>nul
 
-::provisional, copy all fdbs to the same directory to be used from preprocess
-copy %ROOT_PATH%\builds\win32\dbs\metadata.fdb   %ROOT_PATH%\gen\yachts.lnk > nul
-copy %ROOT_PATH%\builds\win32\dbs\jrd\security.fdb   %ROOT_PATH%\gen\security.fdb > nul
-copy %ROOT_PATH%\builds\win32\dbs\msgs\msg.fdb   %ROOT_PATH%\gen\msg.fdb > nul
-copy %ROOT_PATH%\builds\win32\dbs\qli\help.fdb   %ROOT_PATH%\gen\help.fdb > nul
 ::=======
 @call :gpre_boot
 ::=======
@@ -52,7 +57,7 @@ copy %ROOT_PATH%\builds\win32\dbs\qli\help.fdb   %ROOT_PATH%\gen\help.fdb > nul
 @call :msgs
 ::=======
 @echo Building message file and codes header...
-@%ROOT_PATH%\gen\build_msg -f %DB_PATH%/gen/firebird.msg -D %DB_PATH%/gen/msg.fdb
+@%ROOT_PATH%\gen\build_msg -f %DB_PATH%/gen/firebird.msg -D %DB_PATH%/gen/dbs/msg.fdb
 @%ROOT_PATH%\gen\codes %ROOT_PATH%\src\include\gen
 ::=======
 @echo Building BLR Table

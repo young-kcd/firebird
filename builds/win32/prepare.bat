@@ -25,16 +25,15 @@ if "%FIREBIRD%"=="" (goto :HELP & goto :EOF)
 @call setenvvar.bat
 @if errorlevel 1 (goto :END)
 
-@md dbs 2>nul
 @echo Creating databases
 
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\metadata.gbak localhost:%DB_PATH%\builds\win32\dbs\metadata.fdb
-@md %ROOT_PATH%\builds\win32\dbs\jrd 2>nul
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\security.gbak localhost:%DB_PATH%\builds\win32\dbs\jrd\security.fdb
-@md %ROOT_PATH%\builds\win32\dbs\msgs  2>nul
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\msgs\msg.gbak localhost:%DB_PATH%\builds\win32\dbs\msgs\msg.fdb
-@md %ROOT_PATH%\builds\win32\dbs\qli 2>nul
-@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\help.gbak localhost:%DB_PATH%\builds\win32\dbs\qli\help.fdb
+@rmdir /s /q %ROOT_PATH%\gen 2>nul
+@mkdir %ROOT_PATH%\gen\dbs 2>nul
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\metadata.gbak localhost:%DB_PATH%\gen\dbs\metadata.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\security.gbak localhost:%DB_PATH%\gen\dbs\security.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\msgs\msg.gbak localhost:%DB_PATH%\gen\dbs\msg.fdb
+@"%FIREBIRD%\bin\gbak" -r %ROOT_PATH%\src\misc\help.gbak localhost:%DB_PATH%\gen\dbs\help.fdb
+@copy %ROOT_PATH%\gen\dbs\metadata.fdb %ROOT_PATH%\gen\dbs\yachts.lnk
 
 @echo.
 @echo Completed Preparations for build

@@ -33,12 +33,12 @@
 
 ::===========
 :GPRE_M
-@%GPRE% -n -m -raw %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/
+@%GPRE% -n -m -raw %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/dbs/
 @goto :EOF
 
 ::===========
 :GPRE_GDS
-@%GPRE% -n -gds -raw -ids %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/
+@%GPRE% -n -gds -raw -ids %ROOT_PATH%\src\%1\%2.epp %ROOT_PATH%\gen\%1\%2.cpp -b localhost:%DB_PATH%/gen/dbs/
 goto :EOF
 
 ::===========

@@ -142,7 +142,7 @@ copy %ROOT_PATH%\src\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
 :: Next time it will have the .fdb file extension
 ::===============================================
 if not exist %ROOT_PATH%\output\help\help.fdb (
-	copy %ROOT_PATH%\gen\help.fdb %ROOT_PATH%\output\help\help.fdb
+	copy %ROOT_PATH%\gen\dbs\help.fdb %ROOT_PATH%\output\help\help.fdb > nul
 )
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not copy qli help database ) & (goto :EOF))
 @goto :EOF

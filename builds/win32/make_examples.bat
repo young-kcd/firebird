@@ -6,7 +6,7 @@
 @if errorlevel 1 (goto :END)
 
 :: verify that prepare was run before
-@if not exist %ROOT_PATH%\builds\win32\dbs\metadata.fdb (goto :HELP_PREP & goto :END)
+@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP_PREP & goto :END)
 
 :: verify that boot was run before
 @if not exist %ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :END)
