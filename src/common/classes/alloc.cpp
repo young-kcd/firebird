@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  $Id: alloc.cpp,v 1.58 2004-08-10 04:10:47 skidder Exp $
+ *  $Id: alloc.cpp,v 1.59 2004-08-18 23:39:43 skidder Exp $
  *
  */
 
@@ -1046,6 +1046,10 @@ void MemoryPool::deletePool(MemoryPool* pool)
 {
 #ifdef USE_VALGRIND
 	VALGRIND_DESTROY_MEMPOOL(pool);
+
+	// Do not forget to discard stack traces for delayed free blocks
+	for (size_t i = 0; i < pool->delayedFreeCount; i++)
+		VALGRIND_DISCARD(pool->delayedFreeHandles[i]);
 #endif
 
 	// Adjust usage
