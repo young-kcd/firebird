@@ -1,3 +1,66 @@
+2002-12-29 23:26  arnobrinkman
+
+	* firebird2/src/dsql/dsql.cpp:
+	
+	bugfix: PLAN wasn't correctly returned. bug probable introduced by
+	c to c++ port.
+
+2002-12-29 16:34  nmcc
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	Put back useful comment lost in code cleanup.
+
+2002-12-29 16:29  nmcc
+
+	* firebird2/src/jrd/ib_stdio.h:
+	
+	Avoid ib_stdio on all Solaris platforms.
+
+2002-12-29 16:23  nmcc
+
+	* firebird2/src/jrd/common.h:
+	
+	Remove test for HP10 from middle of sun/Solaris block.
+
+2002-12-29 15:59  nmcc
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	Do not replace users exisiting LD_LIBRARY_PATH
+
+2002-12-29 15:18  nmcc
+
+	* firebird2/builds/posix/Makefile.in.refDatabases:
+	
+	Remove any existing link otherwise ln fails on Solaris.
+
+2002-12-29 15:15  nmcc
+
+	* firebird2/configure.in:
+	
+	Update Solaris Sparc options.
+
+2002-12-29 14:28  nmcc
+
+	* firebird2/src/jrd/why.cpp:
+	
+	Add Solaris to list not supporting V3 databases via bridge code.
+
+2002-12-29 02:45  nmcc
+
+	* firebird2/src/burp/restore.epp:
+	
+	Fix new compiler error in sparc specific code.
+
+2002-12-29 02:38  nmcc
+
+	* firebird2/builds/posix/: Makefile.in.extlib, make.rules,
+	prefix.darwin, prefix.freebsd, prefix.linux, prefix.mingw,
+	prefix.sinixz:
+	
+	Move platform specific ld option to platform makefiles.
+
 2002-12-28 01:20  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp:
