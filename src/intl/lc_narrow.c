@@ -24,13 +24,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen);
-USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar,
-							   USHORT partial);
-SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, BYTE *s1, USHORT l2, BYTE *s2);
-
-
+#include "lc_narrow.h"
 
 /*
  * Generic base for InterBase 4.0 Language Driver

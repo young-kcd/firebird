@@ -30,15 +30,8 @@
 #define	GB2(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
 			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 2nd-byte */
 
-extern USHORT famasc_key_length();
-extern USHORT famasc_string_to_key();
-extern SSHORT famasc_compare();
-extern USHORT famasc_to_upper();
-extern USHORT famasc_to_lower();
-extern SSHORT famasc_str_to_upper();
-extern USHORT CVGB_gb2312_byte2short();
-extern SSHORT CVGB_gb2312_mbtowc();
-
+#include "lc_ascii.h"
+#include "cv_gb2312.h"
 
 #define FAMILY_MULTIBYTE(id_number, name, charset, country) \
 	cache->texttype_version =		IB_LANGDRV_VERSION; \

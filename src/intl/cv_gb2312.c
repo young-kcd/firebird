@@ -23,14 +23,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-/* These macros have a duplicate in lc_gb2312.c */
-#define	GB1(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
-			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 1st-byte */
-#define	GB2(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
-			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 2nd-byte */
-
-
+#include "../intl/cv_gb2312.h"
 
 USHORT CVGB_gb2312_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *src_ptr, USHORT src_len,
 							  SSHORT *err_code, USHORT *err_position)

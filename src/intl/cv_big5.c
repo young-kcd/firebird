@@ -23,14 +23,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-/* These macros have a duplicate in lc_big5.c */
-#define	BIG51(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
-			 (UCHAR)((uc)&0xff)<=0xfe)	/* BIG-5 1st-byte */
-#define	BIG52(uc)	((UCHAR)((uc)&0xff)>=0x40 && \
-			 (UCHAR)((uc)&0xff)<=0xfe)	/* BIG-5 2nd-byte */
-
-
+#include "../intl/cv_big5.h"
 
 USHORT CVBIG5_big5_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *src_ptr
 							, USHORT src_len, SSHORT *err_code, USHORT *err_position)

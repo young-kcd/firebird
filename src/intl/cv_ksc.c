@@ -23,20 +23,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-
-
-
-/*
-*	KSC-5601 -> unicode
-*	% KSC-5601 is same to EUC cs1(codeset 1). Then converting 
-*	KSC-5601 to EUC is not needed.
-*/
-
-/* These macros have a duplicate in lc_ksc.c */
-#define	KSC1(uc)	((uc) & 0x80)
-#define	KSC2(uc)	((uc) >= 0x41)
-
+#include "cv_ksc.h"
 
 USHORT CVKSC_ksc_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *ksc_str
 							, USHORT ksc_len, SSHORT *err_code, USHORT *err_position)

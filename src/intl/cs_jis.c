@@ -23,14 +23,8 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-extern USHORT CV_wc_to_wc();
-extern USHORT CVJIS_sjis_to_unicode();
-extern USHORT CVJIS_unicode_to_sjis();
-extern USHORT CVJIS_eucj_to_unicode();
-extern USHORT CVJIS_unicode_to_eucj();
-
-
+#include "cv_jis.h"
+#include "cv_narrow.h"
 
 CHARSET_ENTRY(CS_jis_0208_1990)
 {

@@ -23,22 +23,9 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-/* These macros have a duplicate in cv_big5.c */
-#define	BIG51(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
-			 (UCHAR)((uc)&0xff)<=0xfe)	/* BIG-5 1st-byte */
-#define	BIG52(uc)	((UCHAR)((uc)&0xff)>=0x40 && \
-			 (UCHAR)((uc)&0xff)<=0xfe)	/* BIG-5 2nd-byte */
-
-extern USHORT famasc_key_length();
-extern USHORT famasc_string_to_key();
-extern SSHORT famasc_compare();
-STATIC USHORT big5_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
-STATIC USHORT big5_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
-STATIC SSHORT big5_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
-extern USHORT CVBIG5_big5_byte2short();
-extern SSHORT CVBIG5_big5_mbtowc();
-
+#include "lc_ascii.h"
+#include "cv_big5.h"
+#include "lc_big5.h"
 
 #define FAMILY_MULTIBYTE(id_number, name, charset, country) \
 	cache->texttype_version =		IB_LANGDRV_VERSION; \

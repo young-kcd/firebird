@@ -23,17 +23,10 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
+#include "lc_ascii.h"
+#include "cv_ksc.h"
 
 #define		ASCII_SPACE	32
-
-extern USHORT famasc_key_length();
-extern USHORT famasc_string_to_key();
-extern SSHORT famasc_compare();
-extern USHORT famasc_to_upper();
-extern USHORT famasc_to_lower();
-extern SSHORT famasc_str_to_upper();
-extern USHORT CVKSC_ksc_byte2short();
-extern SSHORT CVKSC_ksc_mbtowc();
 
 STATIC USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, BYTE *pInChar, USHORT iOutLen, BYTE *pOutChar);
 STATIC USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);

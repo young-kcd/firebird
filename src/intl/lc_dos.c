@@ -23,15 +23,8 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-extern USHORT LC_NARROW_key_length();
-extern USHORT LC_NARROW_string_to_key();
-extern SSHORT LC_NARROW_compare();
-
-STATIC USHORT fam1_to_upper(TEXTTYPE obj, BYTE ch);
-STATIC SSHORT fam1_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
-STATIC USHORT fam1_to_lower(TEXTTYPE obj, BYTE ch);
-SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR *wc, UCHAR *ptr, USHORT count);
+#include "lc_dos.h"
+#include "lc_narrow.h"
 
 #define FAMILY1(id_number, name, charset, country) \
 	cache->texttype_version =		IB_LANGDRV_VERSION; \

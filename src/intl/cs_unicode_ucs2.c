@@ -23,11 +23,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-
-extern USHORT CV_wc_copy();
-
-
+#include "cv_narrow.h"
 
 CHARSET_ENTRY(CS_unicode_ucs2)
 {

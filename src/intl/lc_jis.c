@@ -25,20 +25,12 @@
 #include "../intl/ldcommon.h"
 #include "../intl/kanji.h"
 
-extern USHORT famasc_key_length();
-extern USHORT famasc_string_to_key();
-extern SSHORT famasc_compare();
-extern USHORT famasc_to_upper();
-extern USHORT famasc_to_lower();
-extern SSHORT famasc_str_to_upper();
+#include "lc_ascii.h"
+#include "cv_jis.h"
+
 STATIC USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
 STATIC USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
 STATIC SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, BYTE *pStr, USHORT iOutLen, BYTE *pOutStr);
-extern USHORT CVJIS_sjis_byte2short();
-extern USHORT CVJIS_euc_byte2short();
-extern SSHORT CVJIS_sjis_mbtowc();
-extern SSHORT CVJIS_euc_mbtowc();
-
 
 #define FAMILY_MULTIBYTE(id_number, name, charset, country) \
 	cache->texttype_version =		IB_LANGDRV_VERSION; \

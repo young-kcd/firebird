@@ -23,10 +23,8 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-extern USHORT CVGB_gb2312_to_unicode();
-extern USHORT CVGB_unicode_to_gb2312();
-extern USHORT CVGB_check_gb2312();
+#include "../intl/cv_gb2312.h"
+#include "../intl/cv_narrow.h"
 
 CHARSET_ENTRY(CS_gb_2312)
 {

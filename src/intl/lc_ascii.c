@@ -23,14 +23,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-extern USHORT famasc_key_length();
-extern USHORT famasc_string_to_key();
-extern SSHORT famasc_compare();
-extern USHORT famasc_to_upper();
-extern SSHORT famasc_str_to_upper();
-extern USHORT famasc_to_lower();
-extern SSHORT LC_DOS_nc_mbtowc();
+#include "lc_ascii.h"
 
 #define FAMILY_ASCII(id_number, name, charset, country) \
 	cache->texttype_version =		IB_LANGDRV_VERSION; \

@@ -23,8 +23,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-
+#include "cv_narrow.h"
 
 void CV_convert_init(CSCONVERT csptr, SSHORT to_cs, SSHORT from_cs,
 		FPTR_SHORT cvt_fn, const void *datatable, const void *datatable2)

@@ -23,25 +23,9 @@
 
  /* Note: all routines have cousins in jrd/intl.c */
 
-#include "firebird.h"
-#include "../intl/ldcommon.h"
-#include "cv_narrow.h"
-#include "cs_unicode_fss.h"
+USHORT CS_UTFFSS_unicode_to_fss(CSCONVERT obj, MBCHAR *fss_str, USHORT fss_len, UNICODE *unicode_str,
+								USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
 
-CHARSET_ENTRY(CS_unicode_fss)
-{
-	csptr->charset_version = 40;
-	csptr->charset_id = CS_UNICODE_FSS;
-	csptr->charset_name = (ASCII *) "UNICODE_FSS";
-	csptr->charset_flags = 0;
-	csptr->charset_min_bytes_per_char = 1;
-	csptr->charset_max_bytes_per_char = 3;
-	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (BYTE *) " ";	/* 0x20 */
-	csptr->charset_well_formed = (FPTR_SHORT) NULL;
-	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_UNICODE_FSS,
-					CS_UTFFSS_fss_to_unicode, NULL, NULL);
-	CV_convert_init(&csptr->charset_from_unicode, CS_UNICODE_FSS,
-					CS_UNICODE_UCS2, CS_UTFFSS_unicode_to_fss, NULL, NULL);
-	CHARSET_RETURN;
-}
+USHORT CS_UTFFSS_fss_to_unicode(CSCONVERT obj, UNICODE *dest_ptr, USHORT dest_len, NCHAR *src_ptr
+					, USHORT src_len,	SSHORT *err_code, USHORT *err_position);
+SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);

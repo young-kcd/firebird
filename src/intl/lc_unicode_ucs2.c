@@ -23,15 +23,9 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
+#include "lc_ascii.h"
+#include "cv_unicode_fss.h"
 
-extern USHORT famasc_key_length();
-extern USHORT famasc_string_to_key();
-extern SSHORT famasc_compare();
-extern USHORT famasc_to_upper();
-extern USHORT famasc_to_lower();
-extern SSHORT famasc_str_to_upper();
-extern USHORT CS_UTFFSS_fss_to_unicode();
-extern SSHORT CS_UTFFSS_fss_mbtowc();
 STATIC SSHORT wc_mbtowc(TEXTTYPE *obj, UCS2_CHAR *wc, NCHAR *p, USHORT n);
 
 #define FAMILY_UNICODE_WIDE_BIN(id_number, name, charset, country) \

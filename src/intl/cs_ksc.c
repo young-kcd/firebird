@@ -23,10 +23,8 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-extern USHORT CVKSC_ksc_to_unicode();
-extern USHORT CVKSC_unicode_to_ksc();
-extern USHORT CVKSC_check_ksc();
+#include "cv_ksc.h"
+#include "cv_narrow.h"
 
 CHARSET_ENTRY(CS_ksc_5601)
 {

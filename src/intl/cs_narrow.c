@@ -23,11 +23,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-
-extern USHORT CV_nc_to_unicode();
-extern USHORT CV_unicode_to_nc();
-
-
+#include "cv_narrow.h"
 
 static void common_8bit_init(CHARSET csptr, SSHORT id, const ASCII *name, const USHORT *to_unicode_tbl,
 							 const UCHAR *from_unicode_tbl1, const USHORT *from_unicode_tbl2)

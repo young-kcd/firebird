@@ -25,7 +25,8 @@
 #include "../intl/ldcommon.h"
 #include "../intl/charsets/cs_sjis.h"
 #include "../intl/kanji.h"
-
+#include "cv_jis.h"
+#include "cv_narrow.h"
 
 USHORT CVJIS_eucj_to_unicode(CSCONVERT obj, UCS2_CHAR *dest_ptr, USHORT dest_len, UCHAR *src_ptr
 							, USHORT src_len, SSHORT *err_code, USHORT *err_position)
