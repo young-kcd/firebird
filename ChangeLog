@@ -1,3 +1,9 @@
+2003-05-28 05:33  paul_reeves
+
+	* firebird2/builds/win32/prepare.bat:
+	
+	Fix typo
+
 2003-05-27 17:44  dimitr
 
 	* firebird2/src/jrd/: exe.cpp, ExecuteStatement.cpp:
