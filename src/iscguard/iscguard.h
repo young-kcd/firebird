@@ -35,15 +35,6 @@
 #define NORMAL_EXIT	0
 #define CRASHED		-1
 
-#ifdef VMS
-/* also defined in common.h, if this is changed remember to change common.h */
-#define STARTUP_ERROR   46
-#else /* if not VMS */
-/* also defined in common.h, if this is changed remember to change common.h */
-#define STARTUP_ERROR   2
-#endif /* VMS */
-#define args             args
-
 typedef void (*FPTR_VOID) ();
 
 struct log_info {
