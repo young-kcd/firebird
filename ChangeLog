@@ -1,3 +1,10 @@
+2004-03-04 22:38  skidder
+
+	* firebird2/src/utilities/gstat/dba.epp:
+	
+	Fix problem with gstat used over Services API in SS builds
+	introduced during my EH cleanup. Noted by Arno Brinkman
+
 2004-03-02 21:23  skidder
 
 	* firebird2/src/common/classes/alloc.cpp:
