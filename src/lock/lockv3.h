@@ -25,6 +25,8 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "IMP" port
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "M88K" port
  *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ *
  */
 
 #include <stdio.h>
@@ -67,10 +69,6 @@ union semun {
 
 #ifndef EXTEND_SIZE
 #define EXTEND_SIZE	32768
-#endif
-
-#ifdef UNIXWARE
-#define SEMAPHORES      10
 #endif
 
 #ifdef sgi

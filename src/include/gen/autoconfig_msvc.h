@@ -6,6 +6,8 @@
  *
  * 2002-02-23 Sean Leyne - Code Cleanup, removed old Win3.1 port (Windows_Only)
  *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ *
  */
 
 #ifndef AUTOCONFIG_H
@@ -143,7 +145,6 @@
 #undef DECOSF
 #undef sgi
 #undef mpexl
-#undef UNIXWARE
 #undef SINIXZ
 
 #endif

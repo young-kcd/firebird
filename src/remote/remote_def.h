@@ -59,10 +59,6 @@
 #define ARCHITECTURE		arch_hpux
 #endif
 
-#ifdef UNIXWARE
-#define ARCHITECTURE		arch_unixware
-#endif
-
 #ifdef NETWARE_386
 #define ARCHITECTURE            arch_msdos
 #endif

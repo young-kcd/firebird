@@ -27,9 +27,10 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.7 2002-10-28 04:42:53 seanleyne Exp $
+//	$Id: cob.cpp,v 1.8 2002-10-28 04:57:01 seanleyne Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
+// 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
 //
 //
 
@@ -37,9 +38,6 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
-#ifdef UNIXWARE
-#include <sys/fcntl.h>
-#endif
 #include "../jrd/gds.h"
 #include "../gpre/gpre.h"
 #include "../gpre/form.h"
@@ -150,9 +148,6 @@
 #endif
 /* RITTER - added HP11 to the line below */
 #if (defined HP700 || defined HP10 || defined HP11)
-#define MICROFOCUS
-#endif
-#ifdef UNIXWARE
 #define MICROFOCUS
 #endif
 

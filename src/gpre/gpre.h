@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.9 2002-06-29 16:50:35 skywalker Exp $
+ * $Id: gpre.h,v 1.10 2002-10-28 04:57:01 seanleyne Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -44,6 +44,8 @@
  *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                         - "IMP" and "HP9000 s300"
+ *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  *
  */
 
@@ -108,10 +110,6 @@ extern "C" {
 #define FORTRAN		1
 #define COBOL		1
 #define EITHER_CASE	1
-#endif
-
-#ifdef UNIXWARE
-#define COBOL		1
 #endif
 
 

@@ -25,6 +25,7 @@
  *                          - HP9000 s300 and Apollo
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  *
  */
 
@@ -157,10 +158,6 @@ static BOOLEAN find_type(SLONG, WIN *, PAG *, USHORT, USHORT, UCHAR **,
 
 #ifdef AIX_PPC
 #define CLASS		10
-#endif
-
-#ifdef UNIXWARE
-#define CLASS		2
 #endif
 
 #ifdef DGUX

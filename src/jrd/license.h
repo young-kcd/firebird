@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: license.h,v 1.17 2002-10-28 04:42:54 seanleyne Exp $
+ * $Id: license.h,v 1.18 2002-10-28 04:57:01 seanleyne Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -44,6 +44,7 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "HP9000 s300" port
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  *
  */
 
@@ -157,10 +158,6 @@
 
 #ifdef DECOSF
 #define	FB_PLATFORM	"AO"		/* Alpha OSF-1 */
-#endif
-
-#ifdef UNIXWARE
-#define	FB_PLATFORM	"UW"		/* Unixware */
 #endif
 
 #ifdef LINUX

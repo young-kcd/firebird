@@ -26,10 +26,11 @@
  * 2002-02-23 Sean Leyne - Code Cleanup, removed old M88K and NCR3000 port
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  *
  */
 
- /* $Id: head.cpp,v 1.12 2002-10-28 03:47:46 seanleyne Exp $ */
+ /* $Id: head.cpp,v 1.13 2002-10-28 04:57:02 seanleyne Exp $ */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -76,10 +77,6 @@
 
 #if (defined SCO_UNIX || defined SINIXZ)
 #include <fcntl.h>
-#endif
-
-#ifdef UNIXWARE
-#include <sys/fcntl.h>
 #endif
 
 #ifdef GDS_PIPE

@@ -19,6 +19,9 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ *
  */
 
 #include "firebird.h"
@@ -50,10 +53,6 @@
 #define BSD_SOCKETS
 #define EINTR           0
 #undef PC_PLATFORM
-#endif
-
-#ifdef UNIXWARE
-#define GETWD           getcwd
 #endif
 
 #ifdef BSD_SOCKETS

@@ -26,19 +26,21 @@
  *                         conditionals, as the engine now fully supports
  *                         readonly databases.
  *
+ * 2001.11.20  Ann Harrison - make 64bitio.h conditional on not windows.
+ *
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - MAC ("MAC", "MAC_AUX" and "MAC_CP" defines)
  *                          - EPSON, XENIX, DELTA, IMP, NCR3000, M88K
  *                          - NT Power PC and HP9000 s300
  *
- * 2001.11.20  Ann Harrison - make 64bitio.h conditional on not windows.
  * 2002.04.16  Paul Beach - HP10 and unistd.h
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  *
  */
 /*
-$Id: common.h,v 1.37 2002-10-28 04:42:53 seanleyne Exp $
+$Id: common.h,v 1.38 2002-10-28 04:57:01 seanleyne Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -853,29 +855,6 @@ typedef unsigned long DWORD;
 
 typedef RETSIGTYPE (CLIB_ROUTINE * SIG_FPTR) ();
 #endif /* NETWARE_386 */
-
-
-#ifdef UNIXWARE
-#define KILLER_SIGNALS
-#define NO_PYXIS
-#define I386            1
-#define UNIX            1
-#define CURSES_KEYPAD   1
-#define IMPLEMENTATION  isc_info_db_impl_unixware,	/* 49 */
-#define                 IEEE
-
-#ifndef MAXPATHLEN
-#define MAXPATHLEN      1024
-#endif
-
-#define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
-#define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
-#define MOVE_CLEAR(to,length)           memset (to, 0, (int) (length))
-#define setreuid(ruid,euid)     setuid (euid)
-#define setregid(rgid,egid)     setgid (egid)
-
-typedef RETSIGTYPE (*SIG_FPTR) ();
-#endif /* UNIXWARE */
 
 
 #ifdef UNIX

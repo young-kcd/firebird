@@ -24,9 +24,11 @@
  * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
  *                          - EPSON, DELTA, IMP, NCR3000 and M88K
  *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ *
  */
 
- /* $Id: isc_ipc.cpp,v 1.23 2002-10-24 14:52:10 dimitr Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.24 2002-10-28 04:57:01 seanleyne Exp $ */
 
 #ifdef SHLIB_DEFS
 #define LOCAL_SHLIB_DEFS
@@ -85,10 +87,6 @@ typedef struct sig {
 
 #if (defined AIX || defined AIX_PPC)
 #define GT_32_SIGNALS
-#endif
-
-#ifdef UNIXWARE
-#define HANDLER_ADDR_ARG
 #endif
 
 #ifdef SCO_EV

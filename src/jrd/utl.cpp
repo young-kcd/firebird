@@ -27,6 +27,7 @@
  * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
  *
  */
 
@@ -250,7 +251,7 @@ static const TEXT *const impl_implementation[] = {
     NULL, // "Firebird/NeXT",       /* 46 */
     NULL, // "Firebird/DOS",		/* 47 */
     NULL, // "Firebird/m88k",       /* 48 */
-    "Firebird/UNIXWARE",	/* 49 */
+    NULL, // "Firebird/UNIXWARE",	/* 49 */
     "Firebird/x86/Windows NT",	/* 50 */
     NULL, // "Firebird/epson",      /* 51 */
     "Firebird/DEC/OSF",	/* 52 */

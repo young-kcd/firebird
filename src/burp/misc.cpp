@@ -19,15 +19,14 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ *
+ * 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
+ *
  */
 
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#ifdef UNIXWARE
-#include <sys/fcntl.h>
-#endif
-
 #include "../burp/burp.h"
 #include "../burp/burp_proto.h"
 #include "../burp/misc_proto.h"
