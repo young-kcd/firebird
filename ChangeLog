@@ -1,3 +1,15 @@
+2004-06-07 18:10  hvlad
+
+	* firebird2/src/jrd/tra.cpp (1.79):
+	
+	TRA_sweep don't release it's temp_lock in case of database shutdown
+
+2004-06-07 08:50  kkuznetsov
+
+	* firebird2/src/jrd/: utl.cpp (1.69), why.cpp (1.76):
+	
+	Minor corrections after prototype changes
+
 2004-06-06 07:25  robocop
 
 	* firebird2/src/: isql/isql.epp (1.87), qli/help.epp (1.22):
