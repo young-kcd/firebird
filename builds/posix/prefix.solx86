@@ -18,12 +18,13 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86,v 1.13 2002-12-05 16:15:05 kkuznetsov Exp $
+# $Id: prefix.solx86,v 1.14 2002-12-07 13:50:29 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
+#FirebirdInstallPrefix = @prefix@
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch
 COMM_SOLX_FLAGS:=  -DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -DEXACT_NUMERICS  -fwritable-strings
@@ -51,3 +52,4 @@ GPRECommon_Sources= $(GPRECOMMON_Files)
 LIB_LINK_OPTIONS:= -G 
 LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
+#LINK_OPTS:= $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib  $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
