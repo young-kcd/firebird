@@ -5263,7 +5263,7 @@ static DSQL_NOD pass1_simple_case( DSQL_REQ request, DSQL_NOD input, USHORT proc
 	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++, i++) {
 		node1->nod_arg[i] = *ptr;
 	}
-	MAKE_desc_from_list(&node1->nod_desc, node1);
+	MAKE_desc_from_list(&node1->nod_desc, node1, "CASE");
 	/* Set parameter describe information */
 	set_parameter_type(node->nod_arg[e_simple_case_case_operand], node1, FALSE);
 	for (ptr = node->nod_arg[e_simple_case_when_operands]->nod_arg, 
@@ -5549,11 +5549,13 @@ static DSQL_NOD pass1_union( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order_li
 			// descriptor flags are copied onto items->nod_arg[]->nod_desc.
 			// Bug 65584.
 			// -Sudesh 07/28/1999.
-			if (nod1->nod_arg[j]->nod_desc.dsc_flags & DSC_nullable) {
-				items->nod_arg[j]->nod_desc.dsc_flags |= DSC_nullable;
+			if (i > 0) {
+				if (nod1->nod_arg[j]->nod_desc.dsc_flags & DSC_nullable) {
+					items->nod_arg[j]->nod_desc.dsc_flags |= DSC_nullable;
+				}
 			}
 		}
-		MAKE_desc_from_list(&desc, tmp_list);
+		MAKE_desc_from_list(&desc, tmp_list, "UNION");
 		for (i = 0; i < union_node->nod_count; i++) {
 			pass1_union_auto_cast(union_node->nod_arg[i], desc, j);
 		}
