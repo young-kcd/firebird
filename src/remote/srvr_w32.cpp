@@ -162,18 +162,26 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
  *      pipes and/or TCP/IP sockets.
  *
  **************************************/
+	STATUS status_vector[ISC_STATUS_LENGTH];
 	HANDLE connection_handle;
+	PORT port;
 	int nReturnValue = 0;
 
 	hInst = hThisInst;
 
+#ifdef SUPERSERVER
+	server_flag = SRVR_multi_client;
+#else
+	server_flag = 0;
+#endif
+
+#ifdef SUPERSERVER
 	if (ISC_is_WinNT()) {	/* True - NT, False - Win95 */
-		
+
 		/* CVC: This operating system call doesn't exist for W9x. */
 		typedef BOOL (__stdcall *PSetProcessAffinityMask)(HANDLE, DWORD);
 		PSetProcessAffinityMask SetProcessAffinityMask;
 
-		server_flag = (SRVR_multi_client);
 		SetProcessAffinityMask = (PSetProcessAffinityMask)
 			GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "SetProcessAffinityMask");
 		if (SetProcessAffinityMask) {
@@ -183,35 +191,57 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 				static_cast<DWORD>(g_CPU_affinity_mask));
 		}
 	}
-	else
-		server_flag = (SRVR_multi_client | SRVR_non_service);
+	else {
+		server_flag |= SRVR_non_service;
+	}
+#endif
 
-	gds__thread_enable(-1);
+	if (server_flag & SRVR_multi_client) {
+		gds__thread_enable(-1);
+	}
 
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
 
 	connection_handle = parse_args(lpszArgs, &server_flag);
 
-	if (ISC_is_WinNT())		/* True - NT, False - Win95 */
-		server_flag |= (SRVR_inet | SRVR_pipe);
-	else
-		server_flag |= SRVR_inet;
+	if ((server_flag & SRVR_multi_client) ||
+		!(server_flag & (SRVR_inet | SRVR_pipe | SRVR_ipc | SRVR_xnet))) {
 
-	server_flag |= SRVR_ipc;
+		if (ISC_is_WinNT())		/* True - NT, False - Win95 */
+			server_flag |= SRVR_pipe;
+		server_flag |= SRVR_inet;
+#ifdef SUPERSERVER
+		server_flag |= SRVR_ipc;
+#endif
+		server_flag |= SRVR_listener;
+	}
 
 /* CVC: Honor -b for SS on Win32. */
 #ifdef SUPERSERVER
-	if (server_flag & SRVR_high_priority)
+	if (server_flag & SRVR_high_priority) {
 		SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	}
 #endif
 
 /* Initialize the service and
    Setup sig_mutex for the process
 */
 	ISC_signal_init();
+#ifdef SUPERSERVER
 	ISC_enter();
-	if (!(server_flag & SRVR_non_service)) {
+#endif
+
+	if (connection_handle != INVALID_HANDLE_VALUE) {
+		THREAD_ENTER;
+		if (server_flag & SRVR_inet)
+			port = INET_reconnect(connection_handle, 0, status_vector);
+		else if (server_flag & SRVR_pipe)
+			port = WNET_reconnect(connection_handle, 0, status_vector);
+		THREAD_EXIT;
+		service_connection(port);
+	}
+	else if (!(server_flag & SRVR_non_service)) {
 		CNTL_init((FPTR_VOID) start_connections_thread, REMOTE_SERVICE);
 		if (!StartServiceCtrlDispatcher(service_table)) {
 			if (GetLastError() != ERROR_CALL_NOT_IMPLEMENTED) {
@@ -221,32 +251,34 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		}
 	}
 	else {
-		if ((server_flag & SRVR_inet) &&
-			((server_flag & SRVR_pipe) || (server_flag & SRVR_non_service))) {
+		if (server_flag & SRVR_inet) {
 			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
 							  (inet_connect_wait_thread), 0, THREAD_medium, 0,
 							  0);
 		}
-
-		if ((server_flag & SRVR_pipe) && (server_flag & SRVR_non_service)) {
+		if (server_flag & SRVR_pipe) {
 			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
 							  (wnet_connect_wait_thread), 0, THREAD_medium, 0,
 							  0);
 		}
-
+#ifdef XNET
+		if (server_flag & SRVR_xnet) {
+			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+							  (xnet_connect_wait_thread), 0, THREAD_medium, 0,
+							  0);
+		}
+#endif
 		/* No need to waste a thread if we are running as a window.  Just start
 		 * the ipc communication
 		 */
-		if (server_flag & SRVR_non_service) {
-			nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
-		}
+		nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
 	}
 
 	return nReturnValue;
 }
 
 
-#ifdef  XNET
+#ifdef XNET
 ULONG SRVR_xnet_start_thread(ULONG client_pid)
 {
 /**************************************
@@ -441,7 +473,20 @@ static void THREAD_ROUTINE start_connections_thread( int flag)
  **************************************/
 	HANDLE ipc_thread_handle = 0;
 
-#ifndef XNET
+	if (server_flag & SRVR_inet) {
+		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+						  (inet_connect_wait_thread), 0, THREAD_medium, 0, 0);
+	}
+	if (server_flag & SRVR_pipe) {
+		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+						  (wnet_connect_wait_thread), 0, THREAD_medium, 0, 0);
+	}
+#ifdef XNET
+	if (server_flag & SRVR_xnet) {
+		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
+						  (xnet_connect_wait_thread), 0, THREAD_medium, 0, 0);
+	}
+#else
 	if (server_flag & SRVR_ipc) {
 		const int bFailed =
 			gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
@@ -465,15 +510,6 @@ static void THREAD_ROUTINE start_connections_thread( int flag)
 		}
 	}
 #endif /* XNET */
-
-	if (server_flag & SRVR_inet) {
-		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
-						  (inet_connect_wait_thread), 0, THREAD_medium, 0, 0);
-	}
-	if (server_flag & SRVR_pipe) {
-		gds__thread_start(reinterpret_cast < FPTR_INT_VOID_PTR >
-						  (wnet_connect_wait_thread), 0, THREAD_medium, 0, 0);
-	}
 }
 
 
@@ -494,7 +530,7 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
  *      INVALID_HANDLE_VALUE otherwise.
  *
  **************************************/
-	TEXT *p, c;
+	TEXT *p, c, port[32];
 	HANDLE connection_handle;
 
 	connection_handle = INVALID_HANDLE_VALUE;
@@ -513,11 +549,30 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					break;
 
 				case 'D':
-					*pserver_flag |= SRVR_debug | SRVR_non_service;
+					*pserver_flag |= (SRVR_debug | SRVR_non_service);
+					break;
+
+#ifndef SUPERSERVER
+				case 'H':
+					while (*p && *p == ' ')
+						p++;
+					if (*p) {
+						char *pp = port;
+						while (*p && *p != ' ') {
+							*pp++ = *p++;
+						}
+						*pp++ = '\0';
+						connection_handle = (HANDLE) atol(port);
+					}
+					break;
+#endif
+
+				case 'I':
+					*pserver_flag |= SRVR_inet;
 					break;
 
 				case 'N':
-					*pserver_flag |= SRVR_no_icon;
+					*pserver_flag |= SRVR_pipe;
 					break;
 
 #ifdef  XNET
@@ -551,7 +606,7 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					break;
 
 				case 'Z':
-					ib_printf("Interbase remote server version %s\n",
+					ib_printf("Firebird remote server version %s\n",
 							  GDS_VERSION);
 					exit(FINI_OK);
 
