@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.5 2002-04-04 05:37:31 bellardo Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.6 2002-08-11 05:49:12 dimitr Exp $
  */
 
 #include "firebird.h"
@@ -983,6 +983,7 @@ void DLL_EXPORT ERR_bugcheck(int number)
 }
 BOOLEAN DLL_EXPORT ERR_post(STATUS status, ...)
 {
+	return TRUE;
 }
 
 }
