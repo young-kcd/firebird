@@ -56,7 +56,10 @@ int		API_ROUTINE gds__thread_wait(int (*)(), SLONG);
 struct thread;
 
 void	SCH_abort(void);
+
+extern "C" 
 void	SCH_ast(enum ast_t);
+
 thread*	SCH_current_thread(void);
 void	SCH_enter(void);
 void	SCH_exit(void);

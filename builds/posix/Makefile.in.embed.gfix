@@ -42,7 +42,7 @@ include     $(ROOT)/gen/make.shared.variables
 GFIX_Files = alice_meta.epp \
 			 alice.cpp all.cpp exe.cpp tdr.cpp 
 
-GFIX_Other_Sources += jrd/isc.cpp jrd/thd.cpp \
+GFIX_Other_Sources += jrd/isc.cpp jrd/ThreadData.cpp \
 common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
 
 GFIX_Sources = $(addprefix alice/, $(GFIX_Files)) $(GFIX_Other_Sources)

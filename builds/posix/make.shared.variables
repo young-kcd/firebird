@@ -19,7 +19,7 @@ WHY_Sources = why.cpp
 JRD_ClientFiles = alt.cpp cvt.cpp dsc.cpp dls.cpp \
 		enc.cpp gds.cpp isc.cpp isc_file.cpp \
 		isc_sync.cpp perf.cpp sch.cpp sdl.cpp status.cpp \
-		thd.cpp utl.cpp \
+		ThreadData.cpp utl.cpp \
         $(WHY_Sources)
 
 # These are in the win32 release but not unix one for super? 
@@ -42,7 +42,7 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
 		rng.cpp rpb_chain.cpp rse.cpp \
 		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
 		svc.cpp sym.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
-		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module)
+		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module) ThreadData.cpp thd.cpp
 
 
 JRD_Files = $(JRD_ClientFiles) $(JRD_ServerFiles)

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gfix,v 1.11 2005-02-05 10:30:48 fsg Exp $
+#  $Id: Makefile.in.client.gfix,v 1.12 2005-03-01 15:49:09 kkuznetsov Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -40,7 +40,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-GFIX_Other_Sources = jrd/isc.cpp jrd/thd.cpp \
+GFIX_Other_Sources = jrd/isc.cpp jrd/ThreadData.cpp \
 common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
 
 GFIX_Files = alice_meta.epp alice.cpp all.cpp exe.cpp tdr.cpp
