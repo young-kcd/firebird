@@ -1,3 +1,82 @@
+2002-10-30 15:49  kkuznetsov
+
+	* firebird2/configure.in:
+	
+	Add search for SFIO library
+
+2002-10-30 15:47  kkuznetsov
+
+	* firebird2/src/common/memory/memory_pool.cpp:
+	
+	And link mmap_anon hear
+
+2002-10-30 15:46  kkuznetsov
+
+	* firebird2/src/jrd/: gds.cpp, gds_proto.h:
+	
+	Reincarnated mmap_anon for solarises pre 2.8
+
+2002-10-30 07:40  seanleyne
+
+	* firebird2/: builds/win32/msvc6/fbserver.dsp, src/alice/alice.cpp,
+	src/burp/burp.cpp, src/burp/burp.h, src/burp/canonical.cpp,
+	src/burp/mvol.cpp, src/common/memory/memory_pool.cpp,
+	src/dsql/dsql.cpp, src/dsql/errd.cpp, src/dsql/user_dsql.cpp,
+	src/dsql/utld.cpp, src/dudley/lex.cpp,
+	src/include/gen/autoconfig_msvc.h, src/intl/ld.h,
+	src/ipserver/ipclient.cpp, src/journal/archive.cpp,
+	src/journal/console.cpp, src/journal/gjrn.cpp,
+	src/journal/rebuild.e, src/journal/server.e, src/jrd/ail.cpp,
+	src/jrd/ail.h, src/jrd/all_old.h, src/jrd/alt.cpp, src/jrd/btr.cpp,
+	src/jrd/cch.cpp, src/jrd/cmp.cpp, src/jrd/common.h,
+	src/jrd/dpm.epp, src/jrd/dyn_def.epp, src/jrd/enc.cpp,
+	src/jrd/err.cpp, src/jrd/event.cpp, src/jrd/ext.cpp, src/jrd/fil.h,
+	src/jrd/file_params.h, src/jrd/fun.epp, src/jrd/gds.cpp,
+	src/jrd/gds_proto.h, src/jrd/grant.epp, src/jrd/iberr.h,
+	src/jrd/intl.cpp, src/jrd/isc.cpp, src/jrd/isc.h,
+	src/jrd/isc_file.cpp, src/jrd/isc_ipc.cpp, src/jrd/isc_s_proto.h,
+	src/jrd/isc_sync.cpp, src/jrd/jio.cpp, src/jrd/jrd.cpp,
+	src/jrd/jrd.h, src/jrd/jrd_time.h, src/jrd/jrn.cpp,
+	src/jrd/lck.cpp, src/jrd/license.h, src/jrd/llio.cpp,
+	src/jrd/met.epp, src/jrd/misc.cpp, src/jrd/misc.h,
+	src/jrd/netware.cpp, src/jrd/nlm_thd.h, src/jrd/ods.h,
+	src/jrd/opt.cpp, src/jrd/pag.cpp, src/jrd/par.cpp, src/jrd/perf.h,
+	src/jrd/pio.h, src/jrd/pwd.h, src/jrd/rse.cpp, src/jrd/sbm.h,
+	src/jrd/sch.cpp, src/jrd/sort.cpp, src/jrd/status.cpp,
+	src/jrd/svc.cpp, src/jrd/thd.cpp, src/jrd/thd.h, src/jrd/time.h,
+	src/jrd/utl.cpp, src/jrd/val.h, src/jrd/vio.cpp, src/jrd/why.c,
+	src/jrd/y-valve.cpp, src/lock/lock.cpp, src/lock/lock.h,
+	src/lock/print.cpp, src/pipe/head.cpp, src/remote/divorce.cpp,
+	src/remote/inet.cpp, src/remote/inet_server.cpp,
+	src/remote/interface.cpp, src/remote/remote.h,
+	src/remote/remote_def.h, src/remote/server.cpp, src/remote/xdr.cpp,
+	src/remote/xdr.h, src/remote/xnet.cpp, src/utilities/dba.epp,
+	src/utilities/dba_full.epp, src/utilities/drop.cpp,
+	src/utilities/ibmgr.cpp, src/utilities/sbc_print.cpp,
+	src/wal/wal.cpp, src/wal/wal_prnt.cpp, src/wal/wal_proto.h,
+	src/wal/walc.cpp, src/wal/walw.cpp, src/wal/wstat_proto.h,
+	src/wal/wstatus.cpp:
+	
+	Removed obsolete "Netware" port
+
+2002-10-30 06:04  seanleyne
+
+	* firebird2/: builds/win32/msvc6/fbclient.dsp,
+	builds/win32/msvc6/fbserver.dsp, builds/win32/msvc6/remote.dsp,
+	src/jrd/alt.cpp, src/jrd/doserr.h, src/jrd/ibase.h,
+	src/jrd/isc_f_proto.h, src/jrd/isc_file.cpp,
+	src/remote/depends.mak, src/remote/dllshell.cpp,
+	src/remote/interface.cpp, src/remote/makefile.mak,
+	src/remote/neterr.h, src/remote/netwcon.cpp, src/remote/nlmtst.def,
+	src/remote/nwserv.cpp, src/remote/property.cpp,
+	src/remote/remote.def, src/remote/remote_def.h,
+	src/remote/spxesr.cpp, src/remote/spxne_proto.h,
+	src/remote/spxnet.cpp, src/remote/spxnet32.cpp,
+	src/remote/spxnet32_proto.h, src/remote/spxwi_proto.h,
+	src/remote/spxwin.cpp, src/remote/spxwin.h:
+	
+	Removed support for obsolete IPX/SPX Protocol
+
 2002-10-29 21:20  skidder
 
 	* firebird2/: configure.in, builds/posix/Makefile.in.codes,
