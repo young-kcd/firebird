@@ -1,3 +1,23 @@
+2002-10-10 14:52  dimitr
+
+	* firebird2/src/dsql/preparse.cpp:
+	
+	Commented out because MSVC doesn't understand such a preprocessor
+	directive.
+
+2002-10-10 08:48  eku
+
+	* firebird2/configure.in:
+	
+	Compilation of the editline library depends on configure switches.
+
+2002-10-10 08:47  eku
+
+	* firebird2/builds/posix/Makefile.in.firebird:
+	
+	Compilation of the editline library depends on configure switches. 
+	Added qli to the CS targets (needed by TCS).
+
 2002-10-09 14:32  skidder
 
 	* firebird2/doc/WhatsNew:
