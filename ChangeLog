@@ -1,3 +1,35 @@
+2005-01-07 13:17  dimitr
+
+	* firebird2/doc/WhatsNew (1.50):
+	
+	no message
+
+2005-01-07 10:29  dimitr
+
+	* firebird2/doc/WhatsNew (1.49):
+	
+	no message
+
+2005-01-07 05:00  robocop
+
+	* firebird2/src/gpre/: c_cxx.cpp (1.63), gpre.cpp (1.72), gpre.h
+	(1.77), par.cpp (1.58), pat.cpp (1.26), sqe.cpp (1.37), sql.cpp
+	(1.56):
+	
+	Fixing more inconsistencies.
+
+2005-01-07 04:56  robocop
+
+	* firebird2/doc/sql.extensions/README.cursors (1.2):
+	
+	Misc.
+
+2005-01-07 03:56  robocop
+
+	* firebird2/doc/WhatsNew (1.48):
+	
+	Maybe it's just me, but I prefer my name well spelled.	:-)
+
 2005-01-06 19:32  dimitr
 
 	* firebird2/doc/sql.extensions/: README.cursors (1.1),
