@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.45 2003-10-06 09:48:43 robocop Exp $
+ * $Id: gpre.h,v 1.46 2003-10-07 09:58:26 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -64,6 +64,7 @@
 #include "../jrd/ib_stdio.h"
 #include "../jrd/common.h"
 #include "../jrd/y_ref.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun
@@ -173,7 +174,7 @@ typedef struct adl {
 	adl* adl_next;				/* Next declared array identifier */
 } *ADL;
 
-#define ADL_LEN sizeof(adl)
+const size_t ADL_LEN = sizeof(adl);
 
 
 /* database block data, for generating block data section in fussy fortran */
@@ -198,7 +199,7 @@ typedef struct dim {
 	dim* dim_previous;			/* Information for dimension i-1 */
 } *DIM;
 
-#define DIM_LEN sizeof(dim)
+const size_t DIM_LEN = sizeof(dim);
 
 
 typedef struct fil {
@@ -215,7 +216,7 @@ typedef struct fil {
 #define FIL_raw			2		/* On raw device */
 #define FIL_conditional		4	/* Conditional shadow */
 
-#define FIL_LEN sizeof(fil)
+const size_t FIL_LEN = sizeof(fil);
 
 
 /* filter block */
@@ -228,7 +229,7 @@ typedef struct fltr {
 	SSHORT fltr_output_type;
 } *FLTR;
 
-#define FLTR_LEN sizeof(fltr)
+const size_t FLTR_LEN = sizeof(fltr);
 
 
 /* General Syntax node, produced by parser */
@@ -279,14 +280,19 @@ typedef struct gpre_nod {
 #define nod_arg1 nod_arg[1]
 #define nod_arg2 nod_arg[2]
 
-#define NOD_LEN(cnt) (sizeof(gpre_nod) + (cnt - 1) * sizeof(gpre_nod*))
+inline size_t NOD_LEN(const size_t cnt)
+{
+	fb_assert(cnt != 0);
+	return sizeof(gpre_nod) + (cnt - 1) * sizeof(gpre_nod*);
+}
+//#define NOD_LEN(cnt) (sizeof(gpre_nod) + (cnt - 1) * sizeof(gpre_nod*))
 
 
 typedef struct sdt {
 	USHORT sdt_dialect;			/* Dialect  value as specified by SET stmt */
 } *SDT;
 
-#define SDT_LEN sizeof(sdt)
+const size_t SDT_LEN = sizeof(sdt);
 
 
 /* Set generator block */
@@ -298,7 +304,7 @@ typedef struct sgen {
 	SINT64 sgen_int64value;
 } *SGEN;
 
-#define SGEN_LEN sizeof(sgen)
+const size_t SGEN_LEN = sizeof(sgen);
 
 
 /* STRing block - holds a null terminated string */
@@ -307,7 +313,10 @@ typedef struct str {
 	TEXT str_string[1];			/* pretty simple, no? */
 } *STR;
 
-#define STR_LEN(size)	(sizeof(str) + size)
+inline size_t STR_LEN(const size_t size)
+{
+	return sizeof(str) + size;
+}
 
 
 /* SQL WHENEVER BLOCK */
@@ -332,7 +341,7 @@ typedef struct txt {
 	USHORT txt_length;
 } *TXT;
 
-#define TXT_LEN sizeof(txt)
+const size_t TXT_LEN = sizeof(txt);
 
 
 /* User name -- used for SQL GRANT/REVOKE */
@@ -344,7 +353,7 @@ typedef struct usn {
 								   i.e. gds__dyn_grant_user/view/proc/trig */
 } *USN;
 
-#define USN_LEN sizeof(usn)
+const size_t USN_LEN = sizeof(usn);
 
 
 /* value block, used to store a set of values */
@@ -354,12 +363,14 @@ typedef struct val {
 	TEXT *val_value;			/* value */
 } *VAL;
 
-#define VAL_LEN sizeof(val)
+const size_t VAL_LEN = sizeof(val);
 
 
 /* Array information block.  Used to hold info about an array field.
    Note: the dimension (DIM) block used to hold dimension information.
    The preferred mechanism is the repeating tail on the array block. */
+
+#define MAX_ARRAY_DIMENSIONS 16
 
 typedef struct ary {
 	USHORT ary_dtype;			/* data type of array */
@@ -371,11 +382,13 @@ typedef struct ary {
 	struct ary_repeat {
 		SLONG ary_lower;
 		SLONG ary_upper;
-	} ary_rpt[16];
+	} ary_rpt[MAX_ARRAY_DIMENSIONS];
 } *ARY;
 
-#define ARY_LEN(count) (sizeof(ary))
-#define MAX_ARRAY_DIMENSIONS 16
+// CVC: The count is ignored, the array is hardcoded at 16.
+const size_t ARY_LEN = sizeof(ary);
+//#define ARY_LEN(count) (sizeof(ary))
+
 
 
 /* Trigger block */
@@ -391,7 +404,7 @@ typedef struct gpre_trg {
 	str* trg_message;			/* Message the trigger prints */
 } *GPRE_TRG;
 
-#define TRG_LEN sizeof(gpre_trg)
+const size_t TRG_LEN = sizeof(gpre_trg);
 
 #define PRE_STORE_TRIGGER	1
 #define POST_STORE_TRIGGER	2
@@ -408,7 +421,7 @@ typedef struct lls {
 	lls* lls_next;				/* next item on stack */
 } *LLS;
 
-#define LLS_LEN sizeof(lls)
+const size_t LLS_LEN = sizeof(lls);
 
 
 /* Constraint block, used to hold information about integrity constraints */
@@ -428,7 +441,8 @@ typedef struct cnstrt {
 	USHORT cnstrt_flags;		/* see below */
 } *CNSTRT;
 
-#define CNSTRT_LEN sizeof(cnstrt)
+const size_t CNSTRT_LEN = sizeof(cnstrt);
+
 
 /* Values for cnstrt_fkey_def_type */
 
@@ -475,7 +489,7 @@ typedef struct prv {
 	prv* prv_next;				/* next grant/revoke block (with different user) */
 } *PRV;
 
-#define PRV_LEN (sizeof(prv))
+const size_t PRV_LEN = sizeof(prv);
 
 #define PRV_no_privs	0		/* no privileges being granted or revoked */
 #define PRV_select	1			/* select privilege being granted or revoked */
@@ -495,7 +509,7 @@ typedef struct sts {
 	USHORT sts_flags;			/* Miscellaneous flags */
 } *STS;
 
-#define STS_LEN		sizeof(sts)
+const size_t STS_LEN = sizeof(sts);
 #define STS_index	1			/* Object is an index */
 
 
@@ -506,9 +520,10 @@ typedef struct cmpf {
 	gpre_nod* cmpf_boolean;		/* expression, for computed field */
 } *CMPF;
 
-#define CMPF_LEN sizeof(cmpf)
+const size_t CMPF_LEN = sizeof(cmpf);
 
 /***************** end of tree top **********************/
+
 
 // Forward declarations
 
@@ -654,7 +669,7 @@ typedef struct act {
 #define ACT_main	32			/* action is the main routine in the program/module */
 #define ACT_back_token	128		/* end of action marked by prior token */
 
-#define ACT_LEN sizeof(act)
+const size_t ACT_LEN = sizeof(act);
 
 
 /* Symbol block, also used for hash table */
@@ -695,7 +710,7 @@ typedef struct sym {
 	SCHAR sym_name[1];			/* space for name, if necessary */
 } *SYM;
 
-#define SYM_LEN sizeof(sym)
+const size_t SYM_LEN = sizeof(sym);
 
 
 /* Blob block.  Used for blob calls */
@@ -735,7 +750,7 @@ public:
 };
 typedef blb* BLB;
 
-#define BLB_LEN sizeof(blb)
+const size_t BLB_LEN = sizeof(blb);
 
 #define BLB_create		1
 #define BLB_symbol_released	2
@@ -750,7 +765,8 @@ typedef struct rrl {
 	gpre_rel* rrl_relation;		/* relation block */
 } *RRL;
 
-#define RRL_LEN sizeof(rrl)
+const size_t RRL_LEN = sizeof(rrl);
+
 
 struct tpb; // forward declaration
 
@@ -818,7 +834,7 @@ typedef struct dbb {
 	fil* dbb_files;
 } *DBB;
 
-#define DBB_LEN 	sizeof(dbb)
+const size_t DBB_LEN = sizeof(dbb);
 
 #define DBB_no_arrays		1
 #define DBB_sqlca		2		/* Created as default for a sqlca */
@@ -846,7 +862,10 @@ typedef struct tpb {
 	UCHAR tpb_string[1];		/* actual TPB */
 } *TPB;
 
-#define TPB_LEN(tpb_string) (sizeof(tpb) + tpb_string)
+inline size_t TPB_LEN(const size_t tpb_string_len)
+{
+	return sizeof(tpb) + tpb_string_len;
+}
 
 
 /* Procedure structure */
@@ -864,7 +883,7 @@ typedef struct gpre_prc {
 	SSHORT prc_flags;			/* procedure flags */
 } *GPRE_PRC;
 
-#define PRC_LEN sizeof(gpre_prc)
+const size_t PRC_LEN = sizeof(gpre_prc);
 #define PRC_scanned	1
 
 
@@ -907,9 +926,13 @@ typedef struct gpre_rse {
 } *GPRE_RSE;
 
 
-inline size_t RSE_LEN(size_t nItems)
+inline size_t RSE_LEN(const size_t cnt)
 {
-	return offsetof(gpre_rse, rse_context) + nItems * sizeof(int*);
+	fb_assert(cnt != 0);
+	return sizeof(gpre_rse) + (cnt - 1) * sizeof (int*);
+	// CVC: The statement below avoids problem with cnt==0 but at the
+	// cost of a possible run-time memory error.
+	//return offsetof(gpre_rse, rse_context) + nItems * sizeof(int*);
 }
 
 //#define RSE_LEN(cnt) (sizeof(gpre_rse) + (cnt - 1) * sizeof (int *))
@@ -936,7 +959,7 @@ typedef struct gpre_rel {
 	USHORT rel_flags;
 } *GPRE_REL;
 
-#define REL_LEN sizeof(gpre_rel)
+const size_t REL_LEN = sizeof(gpre_rel);
 
 #define REL_view_check	1		/* View created with check option */
 
@@ -950,7 +973,8 @@ typedef struct ind {
 	USHORT ind_flags;			/* Miscellaneous flags */
 } *IND;
 
-#define IND_LEN		sizeof(ind)
+const size_t IND_LEN = sizeof(ind);
+
 #define IND_dup_flag	1		/* if false, duplicates not allowed */
 #define IND_meta	2			/* if true, created for a metadata operation */
 #define IND_descend	4			/* if true, a descending-order index */
@@ -974,7 +998,7 @@ typedef struct intlsym {		/* International symbol */
 	TEXT intlsym_name[2];
 } *INTLSYM;
 
-#define INTLSYM_LEN		sizeof(intlsym)
+const size_t INTLSYM_LEN = sizeof(intlsym);
 
 /* values used in intlsym_type */
 
@@ -1024,7 +1048,7 @@ typedef struct gpre_fld {
 	SSHORT fld_ttype;			/* ID of text type's implementation */
 } *GPRE_FLD;
 
-#define FLD_LEN		sizeof(gpre_fld)
+const size_t FLD_LEN = sizeof(gpre_fld);
 
 #define FLD_blob	 1
 #define FLD_text	 2
@@ -1056,7 +1080,7 @@ typedef struct por {
 	USHORT por_count;			/* number of items in port */
 } *POR;
 
-#define POR_LEN (sizeof(por))
+const size_t POR_LEN = sizeof(por);
 
 
 /* Slice description block */
@@ -1074,7 +1098,12 @@ typedef struct slc {
 	} slc_rpt[1];
 } *SLC;
 
-#define SLC_LEN(count)	(sizeof(slc) + sizeof(slc::slc_repeat) * (count - 1))
+inline size_t SLC_LEN(const size_t count)
+{
+	fb_assert(count != 0);
+	return sizeof(slc) + sizeof(slc::slc_repeat) * (count - 1);
+}
+//#define SLC_LEN(count)	(sizeof(slc) + sizeof(slc::slc_repeat) * (count - 1))
 
 
 /* Request block, corresponds to a single JRD request */
@@ -1165,7 +1194,7 @@ typedef struct gpre_req {
 #endif
 #define REQ_blr_version4       262144	/* request must generate blr_version4 */
 
-#define REQ_LEN sizeof(gpre_req)
+const size_t REQ_LEN = sizeof(gpre_req);
 
 
 /* Context block, used to define context symbols, etc. */
@@ -1183,7 +1212,7 @@ typedef struct gpre_ctx {
 	gpre_rse* ctx_stream;			/* stream for context */
 } *GPRE_CTX;
 
-#define CTX_LEN sizeof(gpre_ctx)
+const size_t CTX_LEN = sizeof(gpre_ctx);
 
 
 /* Field reference */
@@ -1226,7 +1255,7 @@ typedef struct ref {
 #define REF_sql_time	256		/* Reference is to a time constant */
 #define REF_timestamp  	512		/* Reference is to a timestamp constant */
 
-#define REF_LEN sizeof(ref)
+const size_t REF_LEN = sizeof(ref);
 
 
 /**************** start of tree roots *****************/
@@ -1243,7 +1272,7 @@ typedef struct bas {
 	char bas_terminator[2];		/* terminating character */
 } *BAS;
 
-#define BAS_LEN		(sizeof(bas))
+const size_t BAS_LEN = sizeof(bas);
 
 #define BAS_segment	1			/* Based on a blob segment length */
 #define BAS_ambiguous	2		/* Ambiguous reference to segment */
@@ -1262,7 +1291,7 @@ typedef struct decl_udf {
 } *DECL_UDF;
 
 
-#define DECL_UDF_LEN sizeof(decl_udf)
+const size_t DECL_UDF_LEN = sizeof(decl_udf);
 
 
 /* Dynamic statement block, used for dynamic SQL */
@@ -1278,7 +1307,7 @@ typedef struct dyn {
 	gpre_nod* dyn_using;		/* dependent on action type */
 } *DYN;
 
-#define DYN_LEN sizeof(dyn)
+const size_t DYN_LEN = sizeof(dyn);
 
 
 /* Start transaction block */
@@ -1291,7 +1320,7 @@ typedef struct gpre_tra {
 	int tra_db_count;			/* number of db's and TPB's */
 } *GPRE_TRA;
 
-#define TRA_LEN	sizeof(gpre_tra)
+const size_t TRA_LEN = sizeof(gpre_tra);
 
 
 /* values for tra_flags */
@@ -1326,7 +1355,7 @@ typedef struct opn {
 	ref* opn_using;				/* Using variables */
 } *OPN;
 
-#define OPN_LEN (sizeof(opn))
+const size_t OPN_LEN = sizeof(opn);
 
 
 /* Ready block */
@@ -1339,7 +1368,7 @@ typedef struct rdy {
 	TEXT *rdy_filename;
 } *RDY;
 
-#define RDY_LEN sizeof(rdy)
+const size_t RDY_LEN = sizeof(rdy);
 
 
 /* Enumerated field type block */
@@ -1350,7 +1379,7 @@ typedef struct typ {
 	SSHORT typ_value;			/* Value of type */
 } *TYP;
 
-#define TYP_LEN sizeof(typ)
+const size_t TYP_LEN = sizeof(typ);
 
 
 /* User Defined Function */
@@ -1371,7 +1400,7 @@ typedef struct udf {
 	TEXT udf_function[1];		/* Function name */
 } *UDF;
 
-#define UDF_LEN (sizeof(udf))
+const size_t UDF_LEN = sizeof(udf);
 
 #define	UDF_value	0
 #define UDF_boolean	1
@@ -1393,7 +1422,7 @@ typedef struct upd {
 	ref* upd_array_references;	/* array references under modify */
 } *UPD;
 
-#define UPD_LEN sizeof(upd)
+const size_t UPD_LEN = sizeof(upd);
 
 
 #include "../jrd/dsc.h"

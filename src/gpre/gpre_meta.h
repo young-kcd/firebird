@@ -24,29 +24,29 @@
 #ifndef GPRE_GPRE_META_H
 #define GPRE_GPRE_META_H
 
-GPRE_FLD	MET_context_field(GPRE_CTX, char*);
+GPRE_FLD	MET_context_field(GPRE_CTX, const char*);
 bool		MET_database(DBB, bool);
-bool		MET_domain_lookup(GPRE_REQ, GPRE_FLD, char*);
-GPRE_FLD	MET_field(GPRE_REL, char*);
+bool		MET_domain_lookup(GPRE_REQ, GPRE_FLD, const char*);
+GPRE_FLD	MET_field(GPRE_REL, const char*);
 GPRE_NOD	MET_fields(GPRE_CTX);
 void		MET_fini(DBB);
 const SCHAR*		MET_generator(const TEXT*, DBB);
-bool		MET_get_column_default(GPRE_REL, TEXT*, TEXT*, USHORT);
+bool		MET_get_column_default(GPRE_REL, const TEXT*, TEXT*, USHORT);
 bool		MET_get_domain_default(DBB, const TEXT*, TEXT*, USHORT);
 USHORT		MET_get_dtype(USHORT, USHORT, USHORT*);
-LLS			MET_get_primary_key(DBB, TEXT*);
-GPRE_PRC	MET_get_procedure(DBB, TEXT*, TEXT*);
-GPRE_REL	MET_get_relation(DBB, TEXT*, TEXT*);
+LLS			MET_get_primary_key(DBB, const TEXT*);
+GPRE_PRC	MET_get_procedure(DBB, const TEXT*, const TEXT*);
+GPRE_REL	MET_get_relation(DBB, const TEXT*, const TEXT*);
 INTLSYM		MET_get_text_subtype(SSHORT);
-UDF			MET_get_udf(DBB, TEXT*);
+UDF			MET_get_udf(DBB, const TEXT*);
 GPRE_REL	MET_get_view_relation(GPRE_REQ, const char*, const char*, USHORT);
 IND			MET_index(DBB, TEXT*);
 void		MET_load_hash_table(DBB);
-GPRE_FLD	MET_make_field(SCHAR*, SSHORT, SSHORT, bool);
-IND			MET_make_index(SCHAR*);
-GPRE_REL	MET_make_relation(SCHAR*);
-bool		MET_type(GPRE_FLD, TEXT*, SSHORT*);
-bool		MET_trigger_exists(DBB, TEXT*);
+GPRE_FLD	MET_make_field(const SCHAR*, SSHORT, SSHORT, bool);
+IND			MET_make_index(const SCHAR*);
+GPRE_REL	MET_make_relation(const SCHAR*);
+bool		MET_type(GPRE_FLD, const TEXT*, SSHORT*);
+bool		MET_trigger_exists(DBB, const TEXT*);
 
 #endif // GPRE_GPRE_META_H
 

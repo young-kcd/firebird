@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.25 2003-10-06 09:48:44 robocop Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.26 2003-10-07 09:58:26 robocop Exp $
  */
 
 #include "firebird.h"
@@ -62,10 +62,10 @@ static SCHAR db_version_info[] = { gds__info_base_level };
 #endif
 #ifdef NOT_USED_OR_REPLACED
 static SLONG array_size(GPRE_FLD);
-static void get_array(DBB, TEXT *, GPRE_FLD);
-static int get_intl_char_subtype(SSHORT *, UCHAR *, USHORT, DBB);
-static int resolve_charset_and_collation(SSHORT *, UCHAR *, UCHAR *);
-static int symbol_length(TEXT*);
+static void get_array(DBB, const TEXT*, GPRE_FLD);
+static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, DBB);
+static bool resolve_charset_and_collation(SSHORT*, const UCHAR*, const UCHAR*);
+static int symbol_length(const TEXT*);
 static int upcase(const TEXT*, TEXT*);
 #endif
 
@@ -75,11 +75,8 @@ static int upcase(const TEXT*, TEXT*);
  *		If found, return field block.  If not, return NULL.
  */  
 
-GPRE_FLD MET_context_field( GPRE_CTX context, char *string)
+GPRE_FLD MET_context_field( GPRE_CTX context, const char* string)
 {
-	SYM symbol;
-	GPRE_PRC procedure;
-	GPRE_FLD field;
 	SCHAR name[NAME_SIZE];
 
 	if (context->ctx_relation) {
@@ -91,14 +88,14 @@ GPRE_FLD MET_context_field( GPRE_CTX context, char *string)
 	}
 
 	strcpy(name, string);
-	procedure = context->ctx_procedure;
+	GPRE_PRC procedure = context->ctx_procedure;
 
 /*  At this point the procedure should have been scanned, so all
  *  its fields are in the symbol table.
  */
 
-	field = NULL;
-	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym) {
+	GPRE_FLD field = NULL;
+	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym) {
 		if (symbol->sym_type == SYM_field &&
 			(field = (GPRE_FLD) symbol->sym_object) &&
 			field->fld_procedure == procedure)
@@ -150,11 +147,9 @@ bool MET_database(DBB db,
 
 bool MET_domain_lookup(GPRE_REQ request,
 					   GPRE_FLD field, 
-					   char *string)
+					   const char* string)
 {
-	SYM symbol;
 	SCHAR name[NAME_SIZE];
-	GPRE_FLD d_field;
 
 	strcpy(name, string);
 
@@ -163,9 +158,12 @@ bool MET_domain_lookup(GPRE_REQ request,
  *  database.
  */
 
-	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
+		GPRE_FLD d_field;
 		if ((symbol->sym_type == SYM_field) &&
-			((d_field = (GPRE_FLD) symbol->sym_object) && (d_field != field))) {
+			((d_field = (GPRE_FLD) symbol->sym_object) && (d_field != field))) 
+		{
 			field->fld_length = d_field->fld_length;
 			field->fld_scale = d_field->fld_scale;
 			field->fld_sub_type = d_field->fld_sub_type;
@@ -176,6 +174,7 @@ bool MET_domain_lookup(GPRE_REQ request,
 			field->fld_char_length = d_field->fld_char_length;
 			return true;
 		}
+	}
 
 	if (!request)
 		return false;
@@ -195,7 +194,6 @@ bool MET_get_domain_default(DBB db,
 							TEXT* buffer,
 							USHORT buff_length)
 {
-
 	assert(0);
 	return false;
 }
@@ -214,8 +212,8 @@ bool MET_get_domain_default(DBB db,
  */  
 
 bool MET_get_column_default(GPRE_REL relation,
-							TEXT * column_name,
-							TEXT * buffer,
+							const TEXT* column_name,
+							TEXT* buffer,
 							USHORT buff_length)
 {
 	assert(0);
@@ -230,7 +228,7 @@ bool MET_get_column_default(GPRE_REL relation,
  *		of the fields.
  */  
 
-LLS MET_get_primary_key(DBB db, TEXT * relation_name)
+LLS MET_get_primary_key(DBB db, const TEXT* relation_name)
 {
 	SCHAR name[NAME_SIZE];
 
@@ -244,7 +242,7 @@ LLS MET_get_primary_key(DBB db, TEXT * relation_name)
 
 	assert(db->dbb_transaction == NULL);
 	assert(0);
-	return FALSE;
+	return 0;
 }
 
 
@@ -254,26 +252,30 @@ LLS MET_get_primary_key(DBB db, TEXT * relation_name)
  *		If found, return field block.  If not, return NULL.
  */  
 
-GPRE_FLD MET_field(GPRE_REL relation, char *string)
+GPRE_FLD MET_field(GPRE_REL relation, const char* string)
 {
-	SYM symbol;
 	GPRE_FLD field;
 	SCHAR name[NAME_SIZE];
-	SSHORT length;
 
 	strcpy(name, string);
-	length = strlen(name);
+	//const SSHORT length = strlen(name);
 
 /*  Lookup field.  If we find it, nifty.  If not, look it up in the
  *  database.
  */
 
-	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_keyword &&
-			symbol->sym_keyword == (int) KW_DBKEY) return relation->rel_dbkey;
+			symbol->sym_keyword == (int) KW_DBKEY)
+		{
+			return relation->rel_dbkey;
+		}
 		else if (symbol->sym_type == SYM_field &&
 				 (field = (GPRE_FLD) symbol->sym_object) &&
-				 field->fld_relation == relation) return field;
+				 field->fld_relation == relation)
+		{
+			return field;
+		}
 
 	if (sw_language == lang_internal)
 		return NULL;
@@ -292,37 +294,37 @@ GPRE_NOD MET_fields(GPRE_CTX context)
 	GPRE_FLD field;
 	GPRE_NOD node, field_node;
 	REF reference;
-	GPRE_PRC procedure;
-	GPRE_REL relation;
-	int count;
 
-	if (procedure = context->ctx_procedure) {
+	GPRE_PRC procedure = context->ctx_procedure;
+	if (procedure) {
 		node = MAKE_NODE(nod_list, procedure->prc_out_count);
-		count = 0;
+		//int count = 0;
 		for (field = procedure->prc_outputs; field; field = field->fld_next) {
 			reference = (REF) ALLOC(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
 			field_node = MSC_unary(nod_field, (GPRE_NOD)reference);
 			node->nod_arg[field->fld_position] = field_node;
-			count++;
+			//count++;
 		}
 		return node;
 	}
 
-	relation = context->ctx_relation;
+	GPRE_REL relation = context->ctx_relation;
 	if (relation->rel_meta) {
-		for (count = 0, field = relation->rel_fields; field;
-			 field = field->fld_next) count++;
+		int count = 0;
+		for (field = relation->rel_fields; field; field = field->fld_next) {
+			count++;
+		}
 		node = MAKE_NODE(nod_list, count);
-		count = 0;
+		//count = 0;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
 			reference = (REF) ALLOC(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
 			field_node = MSC_unary(nod_field, (GPRE_NOD)reference);
 			node->nod_arg[field->fld_position] = field_node;
-			count++;
+			//count++;
 		}
 		return node;
 	}
@@ -373,11 +375,11 @@ const SCHAR* MET_generator(const TEXT* string, DBB db)
  *		Compute internal datatype and length based on system relation field values.
  */  
 
-USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT * length)
+USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 {
-	USHORT l, dtype;
+	USHORT dtype;
 
-	l = *length;
+	USHORT l = *length;
 
 	switch (blr_dtype) {
 	case blr_varying:
@@ -464,17 +466,15 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT * length)
  *		This function has been cloned into MET_get_udf
  */  
 
-GPRE_PRC MET_get_procedure(DBB db, TEXT * string, TEXT * owner_name)
+GPRE_PRC MET_get_procedure(DBB db, const TEXT* string, const TEXT* owner_name)
 {
-	SYM symbol;
-	GPRE_PRC procedure;
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
 
 	strcpy(name, string);
 	strcpy(owner, owner_name);
-	procedure = NULL;
+	GPRE_PRC procedure = NULL;
 
-	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_procedure &&
 			(procedure = (GPRE_PRC) symbol->sym_object) &&
 			procedure->prc_database == db &&
@@ -502,16 +502,15 @@ GPRE_PRC MET_get_procedure(DBB db, TEXT * string, TEXT * owner_name)
  *		Return a relation block (if name is found) or NULL.
  */  
 
-GPRE_REL MET_get_relation(DBB db, TEXT * string, TEXT * owner_name)
+GPRE_REL MET_get_relation(DBB db, const TEXT* string, const TEXT* owner_name)
 {
-	SYM symbol;
 	GPRE_REL relation;
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
-
+	
 	strcpy(name, string);
 	strcpy(owner, owner_name);
 
-	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_relation &&
 			(relation = (GPRE_REL) symbol->sym_object) &&
 			relation->rel_database == db &&
@@ -533,9 +532,7 @@ GPRE_REL MET_get_relation(DBB db, TEXT * string, TEXT * owner_name)
 
 INTLSYM MET_get_text_subtype(SSHORT ttype)
 {
-	INTLSYM p;
-
-	for (p = text_subtypes; p; p = p->intlsym_next)
+	for (INTLSYM p = text_subtypes; p; p = p->intlsym_next)
 		if (p->intlsym_ttype == ttype)
 			return p;
 
@@ -551,15 +548,13 @@ INTLSYM MET_get_text_subtype(SSHORT ttype)
  *		This function was cloned from MET_get_procedure
  */  
 
-UDF MET_get_udf(DBB db, TEXT * string)
+UDF MET_get_udf(DBB db, const TEXT* string)
 {
-	SYM symbol;
-	UDF udf_val;
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
-	udf_val = NULL;
-	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	UDF udf_val = NULL;
+	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_udf &&
 			(udf_val = (UDF) symbol->sym_object) && udf_val->udf_database == db)
 		{
@@ -596,17 +591,15 @@ GPRE_REL MET_get_view_relation(GPRE_REQ request,
  *		Return an index block (if name is found) or NULL.
  */  
 
-IND MET_index(DBB db, TEXT * string)
+IND MET_index(DBB db, const TEXT* string)
 {
-	SYM symbol;
 	IND index;
 	SCHAR name[NAME_SIZE];
-	SSHORT length;
 
 	strcpy(name, string);
-	length = strlen(name);
+	//const SSHORT length = strlen(name);
 
-	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_index &&
 			(index = (IND) symbol->sym_object) &&
 			index->ind_relation->rel_database == db)
@@ -646,19 +639,17 @@ void MET_load_hash_table( DBB db)
  *		Make a field symbol.
  */  
 
-GPRE_FLD MET_make_field(SCHAR * name,
+GPRE_FLD MET_make_field(const SCHAR* name,
 						SSHORT dtype,
 						SSHORT length,
 						bool insert_flag)
 {
-	GPRE_FLD field;
-	SYM symbol;
-
-	field = (GPRE_FLD) ALLOC(FLD_LEN);
+	GPRE_FLD field = (GPRE_FLD) ALLOC(FLD_LEN);
 	field->fld_length = length;
 	field->fld_dtype = dtype;
-	field->fld_symbol = symbol =
-		MSC_symbol(SYM_field, name, strlen(name), (GPRE_CTX)field);
+	SYM symbol = MSC_symbol(SYM_field, name, strlen(name), (GPRE_CTX)field);
+	field->fld_symbol = symbol;
+
 	if (insert_flag)
 		HSH_insert(symbol);
 
@@ -671,11 +662,9 @@ GPRE_FLD MET_make_field(SCHAR * name,
  *		Make an index symbol.
  */  
 
-IND MET_make_index(SCHAR * name)
+IND MET_make_index(const SCHAR* name)
 {
-	IND index;
-
-	index = (IND) ALLOC(IND_LEN);
+	IND index = (IND) ALLOC(IND_LEN);
 	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (GPRE_CTX)index);
 
 	return index;
@@ -687,11 +676,9 @@ IND MET_make_index(SCHAR * name)
  *		Make an relation symbol.
  */  
 
-GPRE_REL MET_make_relation(SCHAR * name)
+GPRE_REL MET_make_relation(const SCHAR* name)
 {
-	GPRE_REL relation;
-
-	relation = (GPRE_REL) ALLOC(REL_LEN);
+	GPRE_REL relation = (GPRE_REL) ALLOC(REL_LEN);
 	relation->rel_symbol =
 		MSC_symbol(SYM_relation, name, strlen(name), (GPRE_CTX)relation);
 
@@ -705,13 +692,12 @@ GPRE_REL MET_make_relation(SCHAR * name)
  */  
 
 bool MET_type(GPRE_FLD field,
-			  TEXT * string,
-			  SSHORT * ptr)
+			  const TEXT* string,
+			  SSHORT* ptr)
 {
-	SYM symbol;
 	TYP type;
 
-	for (symbol = HSH_lookup(string); symbol; symbol = symbol->sym_homonym)
+	for (SYM symbol = HSH_lookup(string); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_type &&
 			(type = (TYP) symbol->sym_object) &&
 			(!type->typ_field || type->typ_field == field))
@@ -734,11 +720,11 @@ bool MET_type(GPRE_FLD field,
  */  
 
 bool MET_trigger_exists(DBB db,
-						TEXT * trigger_name)
+						const TEXT* trigger_name)
 {
-	SCHAR name[NAME_SIZE];
+	//SCHAR name[NAME_SIZE];
 
-	strcpy(name, trigger_name);
+	//strcpy(name, trigger_name);
 
 	assert(0);
 	return false;
@@ -752,15 +738,14 @@ bool MET_trigger_exists(DBB db,
 
 static SLONG array_size( GPRE_FLD field)
 {
-	ARY array_block;
-	DIM dimension;
-	SLONG count;
-
-	array_block = field->fld_array_info;
-	count = field->fld_array->fld_length;
-	for (dimension = array_block->ary_dimension; dimension;
-		 dimension = dimension->dim_next) count =
+	ARY array_block = field->fld_array_info;
+	SLONG count = field->fld_array->fld_length;
+	for (DIM dimension = array_block->ary_dimension; dimension;
+		 dimension = dimension->dim_next) 
+	{
+		count =
 			count * (dimension->dim_upper - dimension->dim_lower + 1);
+	}
 
 	return count;
 }
@@ -771,7 +756,7 @@ static SLONG array_size( GPRE_FLD field)
  *		See if field is array.
  */  
 
-static void get_array( DBB db, TEXT * field_name, GPRE_FLD field)
+static void get_array( DBB db, const TEXT* field_name, GPRE_FLD field)
 {
 	assert(0);
 	return;
@@ -792,12 +777,12 @@ static void get_array( DBB db, TEXT * field_name, GPRE_FLD field)
  *		(in which case c) and d) are not tried).
  *  
  *  Return:
- *		1 if no errors (and *id is set).
- *		0 if the name could not be resolved.
+ *		true if no errors (and *id is set).
+ *		false if the name could not be resolved.
  */  
 
-static int get_intl_char_subtype(SSHORT * id,
-								 UCHAR * name,
+static bool get_intl_char_subtype(SSHORT* id,
+								 const UCHAR* name,
 								 USHORT length,
 								 DBB db)
 {
@@ -806,7 +791,7 @@ static int get_intl_char_subtype(SSHORT * id,
 	assert(db != NULL);
 
 	assert(0);
-	return (0);
+	return false;
 }
 
 
@@ -831,20 +816,20 @@ static int get_intl_char_subtype(SSHORT * id,
  *			Set to subtype specified by this name.
  *  
  *  Return:
- *		1 if no errors (and *id is set).
- *		0 if either name not found.
+ *		true if no errors (and *id is set).
+ *		false if either name not found.
  *		  or if names found, but the collation isn't for the specified
  *		  character set.
  */  
 
-static int resolve_charset_and_collation(
-										 SSHORT * id,
-										 UCHAR * charset, UCHAR * collation)
+static bool resolve_charset_and_collation(
+										 SSHORT* id,
+										 const UCHAR* charset, const UCHAR* collation)
 {
 	assert(id != NULL);
 
 	assert(0);
-	return (0);
+	return (false);
 }
 
 
@@ -855,7 +840,7 @@ static int resolve_charset_and_collation(
 
 static int symbol_length(const TEXT* string)
 {
-	size_t len = strlen(string);
+	const size_t len = strlen(string);
 
 	const TEXT* p = string + (len - 1);
 
@@ -875,10 +860,10 @@ static int symbol_length(const TEXT* string)
 
 static int upcase(const TEXT* from, TEXT* to)
 {
-	TEXT *p, *end, c;
+	TEXT c;
 
-	p = to;
-	end = to + NAME_SIZE;
+	TEXT* p = to;
+	TEXT* const end = to + NAME_SIZE;
 
 	while (p < end && (c = *from++)) {
 		*p++ = UPPER(c);
@@ -890,10 +875,10 @@ static int upcase(const TEXT* from, TEXT* to)
 }
 #endif // NOT_USED_OR_REPLACED
 
-ISC_STATUS API_ROUTINE isc_print_blr(SCHAR * blr,
-          void (*callback) (), void *callback_argument, SSHORT language)
+ISC_STATUS API_ROUTINE isc_print_blr(SCHAR* blr,
+          void (*callback) (), void* callback_argument, SSHORT language)
 {
-        return gds__print_blr((UCHAR *) blr, 
+        return gds__print_blr((UCHAR*) blr, 
 							  reinterpret_cast<FPTR_PRINT_CALLBACK>(callback),
                               callback_argument, language);
 }
