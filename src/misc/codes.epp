@@ -32,6 +32,11 @@
 #include "../jrd/gds.h"
 #include "../jrd/msg_encode.h"
 
+// needed for unlink in MinGW 3.0 rc2
+#ifdef MINGW
+#include <io.h>
+#endif
+
 /* The MSG.GDB database is found under the /msgs component subdirectory. 
    Use links or logicals to point it there, thanks!   AMG */
 

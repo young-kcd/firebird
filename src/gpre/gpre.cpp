@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.26 2003-07-06 07:04:01 dimitr Exp $
+//  $Id: gpre.cpp,v 1.27 2003-07-14 16:53:39 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.26 2003-07-06 07:04:01 dimitr Exp $
+//	$Id: gpre.cpp,v 1.27 2003-07-14 16:53:39 brodsom Exp $
 //
 
 #define GPRE_MAIN
@@ -76,6 +76,10 @@ extern int lib$get_foreign();
 } // extern "C"
 #endif
 
+// needed for unlink in MinGW 3.0 rc2
+#ifdef MINGW 
+#include <io.h>
+#endif
 
 extern "C" {
 
@@ -988,25 +992,16 @@ void CPR_exit( int stat)
 
 	if (trace_file_name[0])
 	 {
-
 		if (trace_file)
-
 			ib_fclose(trace_file);
-
 		unlink(trace_file_name);
-
 	}
 
 #else
-
 	if (trace_file)
-
 		ib_fclose(trace_file);
-
 	if (trace_file_name[0])
-
 		unlink(trace_file_name);
-
 #endif
 
 	exit(stat);

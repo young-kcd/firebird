@@ -113,6 +113,11 @@
 #include <unistd.h>
 #endif
 
+// needed for unlink in MinGW 3.0 rc2
+#ifdef MINGW
+#include <io.h>
+#endif
+
 #include "gen/codes.h"
 
 /* Pick up system relation ids */
