@@ -5,9 +5,9 @@
         <key>CFBundleDevelopmentRegion</key>
         <string>English</string>
         <key>CFBundleExecutable</key>
-        <string>Firebird2</string>
+        <string>Firebird</string>
         <key>CFBundleIdentifier</key>
-        <string>com.firebird.Firebird2</string>
+        <string>com.firebirdsql.Firebird</string>
         <key>CFBundleInfoDictionaryVersion</key>
         <string>__VERSION__</string>
         <key>CFBundlePackageType</key>
