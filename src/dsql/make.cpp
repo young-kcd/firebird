@@ -1111,13 +1111,12 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 	//  (ISO/ANSI SQL:200n WG3:DRS-013 H2-2002-358 August, 2002) 
 	//  
 	//  If any datatype has a character type then :
-	//  - all types should be a character type else throw a error.
+	//  - the output will always be a character type except unconvertable types.
 	//    (dtype_text, dtype_cstring, dtype_varying, dtype_blob sub_type TEXT)
 	//  !!  Currently engine cannot convert string to BLOB therefor BLOB isn't allowed. !!
 	//  - first character-set and collation are used as output descriptor.
-	//  - if any type has datatype VARCHAR then output should be VARCHAR else 
-	//    CHAR and with the maximum length used from the given list.
-	//  (dtype_text, dtype_cstring, dtype_varying)
+	//  - if all types have datatype CHAR then output should be CHAR else 
+	//    VARCHAR and with the maximum length used from the given list.
 	//  
 	//  If all of the datatypes are EXACT numeric then the output descriptor 
 	//  shall be EXACT numeric with the maximum scale and the maximum precision 
@@ -1146,9 +1145,10 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 	USHORT max_length = 0, max_dtype_length = 0, maxtextlength = 0;
 	SSHORT max_sub_type = 0, first_sub_type, ttype = ttype_ascii; // default type if all nodes are nod_null.
 	bool firstarg = true, all_same_sub_type = true;
-	bool all_numeric = true, any_approx = false, all_blob = true;
+	bool all_numeric = true, any_numeric = false, any_approx = false;
 	bool all_text = true, any_text = false, any_varying = false;
-	bool all_date = true, all_time = true, all_timestamp = true;
+	bool all_date = true, all_time = true, all_timestamp = true, any_datetime = false;
+	bool all_blob = true, any_blob = false, any_text_blob = false;
 
 	// Walk through arguments list.
 	DSQL_NOD *arg, *end, tnod;
@@ -1185,6 +1185,7 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 
 		// numeric datatypes :
 		if (DTYPE_IS_NUMERIC(desc1.dsc_dtype)) {
+			any_numeric = true;
 			// Is there any approximate numeric?
 			if (DTYPE_IS_APPROX(desc1.dsc_dtype)) {
 				any_approx = true;
@@ -1246,16 +1247,16 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 			any_text = true;
 		}
 		else {
-		// Code below isn't used anymore, but could be helpfull in the future.
 			// Get max needed-length for not text types suchs as int64,timestamp etc..
-			//cnvlength = DSC_convert_to_text_length(desc1.dsc_dtype);
-			//if (cnvlength > maxtextlength) {
-			//	maxtextlength = cnvlength;
-			//}
+			USHORT cnvlength = DSC_convert_to_text_length(desc1.dsc_dtype);
+			if (cnvlength > maxtextlength) {
+				maxtextlength = cnvlength;
+			}
 			all_text = false;
 		}
 
 		if (DTYPE_IS_DATE(desc1.dsc_dtype)) {
+			any_datetime = true;
 			if (desc1.dsc_dtype == dtype_sql_date) {
 				all_time = false;
 				all_timestamp = false;
@@ -1276,13 +1277,14 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 		}
 
 		if (desc1.dsc_dtype == dtype_blob) {
+			any_blob = true;
 			if (desc1.dsc_sub_type = 1) {
 				// TEXT BLOB
-				if (!any_text) {
+				if (!any_text_blob) {
 					// Save first characterset and collation
 					ttype = desc1.dsc_scale;
 				}
-				any_text = true;
+				any_text_blob = true;
 			}
 		}
 		else {
@@ -1299,8 +1301,12 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 
 	desc->dsc_flags = DSC_nullable;
 	// If all of the arguments are from type text use a text type.
-	if (all_text) {
-		if (any_varying) {
+	// Firebird behaves a little bit different than standard here, because
+	// any datatype (except BLOB) can be converted to a character-type we
+	// allow to use numeric and datetime types together with a 
+	// character-type, but output will always be varying !
+	if (all_text || (any_text && (any_numeric || any_datetime))) {
+		if (any_varying || (any_text && (any_numeric || any_datetime))) {
 			desc->dsc_dtype = dtype_varying;
 			maxtextlength += sizeof(USHORT);
 		}
@@ -1364,12 +1370,10 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 	// datatypes aren't comparable.
 	// Let's try to give a usefull error message.
 	ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-		gds_arg_gds, gds_dsql_command_err,
-		gds_arg_gds, gds_dsql_no_relation_alias,
+		gds_arg_gds, gds_dsql_datatypes_not_comparable,
+		gds_arg_string, "",
 		gds_arg_string, expression_name, 0);
 	// "Datatypes %sare not comparable in expression %s"
-
-#pragma FB_COMPILER_MESSAGE("TODO: AB: Don't forget to change to new error message !!!")
 }
 
 

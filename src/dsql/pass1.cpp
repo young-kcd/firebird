@@ -1557,7 +1557,9 @@ static BOOLEAN aggregate_found2(DSQL_REQ request, DSQL_NOD node, USHORT * curren
 					else {
 						*deepest_level = ldeepest_level;
 					}
-					if ((ldeepest_level == 0) || (ldeepest_level == request->req_scope_level)) {
+					// If the deepest_value is the same as the current scope_level
+					// this an aggregate that belongs to the current context.
+					if (*deepest_level == request->req_scope_level) {
 						aggregate = TRUE;
 					}
 					else {
