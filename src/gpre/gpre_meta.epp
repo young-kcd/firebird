@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta.epp,v 1.47 2004-10-23 00:54:26 robocop Exp $
+ *	$Id: gpre_meta.epp,v 1.48 2004-11-10 04:18:58 robocop Exp $
  */
 
 #include "firebird.h"
@@ -64,7 +64,7 @@ static void get_array(dbb*, const TEXT*, gpre_fld*);
 static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, dbb*);
 static bool resolve_charset_and_collation(SSHORT*, const UCHAR*, const UCHAR*);
 #ifdef NOT_USED_OR_REPLACED
-static int upcase(const TEXT*, TEXT*);
+static int upcase(const TEXT*, TEXT* const);
 #endif
 
 /*____________________________________________________________
@@ -1745,8 +1745,9 @@ void MET_load_hash_table(dbb* database)
 		p = DBB.RDB$CHARACTER_SET_NAME;
 		length = fb_utils::name_length(p);
 		p[length] = 0;
-		database->dbb_def_charset = (TEXT*) MSC_alloc(length + 1);
-		strcpy(database->dbb_def_charset, p);
+		TEXT* s = (TEXT*) MSC_alloc(length + 1);
+		strcpy(s, p);
+		database->dbb_def_charset = s;
 		if (!MSC_find_symbol(HSH_lookup(database->dbb_def_charset), SYM_charset))
 			CPR_warn("Default character set for database is not known");
 	END_FOR
@@ -2220,7 +2221,7 @@ static bool resolve_charset_and_collation(
  *		length of string.
  */
 
-static int upcase(const TEXT* from, TEXT* to)
+static int upcase(const TEXT* from, TEXT* const to)
 {
 	TEXT* p = to;
 	const TEXT* const end = to + NAME_SIZE;

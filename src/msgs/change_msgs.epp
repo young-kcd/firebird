@@ -44,15 +44,15 @@ const char UPPER_A	= 'A';
 const char LOWER_Z	= 'z';
 const char UPPER_Z	= 'Z';
 
-static void ascii_str_upper(UCHAR *);
-static void explicit_print(TEXT *);
+static void ascii_str_upper(char*);
+static void explicit_print(const TEXT*);
 static bool get_sql_class(UCHAR *);
 static bool get_sql_subclass(UCHAR *);
 #ifdef NOT_USED_OR_REPLACED
 static bool get_symbol(UCHAR *);
 #endif
 static bool mustget(SCHAR *);
-static int translate(SCHAR *, SCHAR *, SSHORT);
+static bool translate(const SCHAR*, SCHAR*, SSHORT);
 
 
 int main( int argc, char **argv)
@@ -94,7 +94,7 @@ int main( int argc, char **argv)
 			break;
 		count = 0;
 		msg_number = 0;
-		ascii_str_upper((UCHAR*) facility);
+		ascii_str_upper(facility);
 		FOR X IN FACILITIES WITH X.FACILITY = facility
 			count++;
 			for (;;) {
@@ -167,7 +167,8 @@ int main( int argc, char **argv)
 								strcpy(Y.ROUTINE, routine);
 							if (text[0])
 								while (!translate
-									   (text, Y.TEXT, sizeof(Y.TEXT))) {
+									   (text, Y.TEXT, sizeof(Y.TEXT)))
+								{
 									printf
 										("Message too long: max length: %d\n",
 										 sizeof(Y.TEXT));
@@ -212,7 +213,7 @@ int main( int argc, char **argv)
 }
 
 
-static void ascii_str_upper( UCHAR * str)
+static void ascii_str_upper( char* str)
 {
 /**************************************
  *
@@ -235,7 +236,7 @@ static void ascii_str_upper( UCHAR * str)
 }
 
 
-static void explicit_print( TEXT * string)
+static void explicit_print( const TEXT* string)
 {
 /**************************************
  *
@@ -249,9 +250,7 @@ static void explicit_print( TEXT * string)
  *      to make changing messages easy
  *
  **************************************/
-	TEXT *p;
-
-	p = string;
+	const TEXT* p = string;
 
 	while (*p) {
 		switch (*p) {
@@ -311,12 +310,10 @@ static bool get_sql_class( UCHAR * sql_class)
  *	return true if we get one, otherwise false
  *
  **************************************/
-	SSHORT length;
-
-	while (1) {
+	while (true) {
 		printf("   SQLCLASS: ");
 		gets((char*) sql_class);
-		length = strlen((char*) sql_class);
+		const SSHORT length = strlen((char*) sql_class);
 		if (!length)
 			break;
 
@@ -343,12 +340,10 @@ static bool get_sql_subclass( UCHAR * sql_sub_class)
  *	return true if we get one, otherwise false
  *
  **************************************/
-	SSHORT length;
-
-	while (1) {
+	while (true) {
 		printf("SQLSUBCLASS: ");
 		gets((char*) sql_sub_class);
-		length = strlen((char*) sql_sub_class);
+		const SSHORT length = strlen((char*) sql_sub_class);
 		if (!length)
 			break;
 
@@ -405,7 +400,7 @@ static bool mustget( SCHAR * s)
 }
 
 
-static int translate( SCHAR * source, SCHAR * target, SSHORT length)
+static bool translate( const SCHAR* source, SCHAR* target, SSHORT length)
 {
 /**************************************
  *
@@ -418,14 +413,12 @@ static int translate( SCHAR * source, SCHAR * target, SSHORT length)
  *	ascii, returns length ok?
  *
  **************************************/
-	SCHAR *p, *q;
-
-	p = target;
-	q = source;
+	SCHAR* p = target;
+	const SCHAR* q = source;
 
 	while (*q) {
 		if (!--length)
-			return 0;
+			return false;
 		if (*q == '\\') {
 			*q++;
 			switch (*q) {
@@ -472,5 +465,6 @@ static int translate( SCHAR * source, SCHAR * target, SSHORT length)
 	}
 	*p = 0;
 
-	return 1;
+	return true;
 }
+

@@ -502,11 +502,11 @@ static bool check_filename(SYM name,
 	if (!l)
 		return true;
 	l = MIN(l, sizeof(file_name) - 1);
-	TEXT* p = file_name;
-	for (const TEXT* q = name->sym_string; l--; *p++ = *q++);
-	*p = 0;
+	TEXT* pp = file_name;
+	for (const TEXT* q = name->sym_string; l--; *pp++ = *q++);
+	*pp = 0;
 
-	for (p = file_name; *p; p++)
+	for (const TEXT* p = file_name; *p; p++)
 		if (p[0] == ':' && p[1] == ':')
 			if (!decnet_flag)
 				return false;
@@ -3589,7 +3589,7 @@ static SCE parse_identifier(void)
  *
  **************************************/
 	TEXT* idents[10];
-	TEXT**s;
+	TEXT** s;
 	const TEXT* const* end;
 	TEXT strings[256];
 

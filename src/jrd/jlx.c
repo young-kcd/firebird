@@ -65,7 +65,8 @@ static int yylex(void)
  *
  **************************************/
 	SYMB symbol;
-	SCHAR *p, *q;
+	SCHAR *p;
+	const char* q;
 	SCHAR string[31];
 	SSHORT c;
 	SLONG number;
@@ -129,3 +130,4 @@ static int yylex(void)
 
 	return c;
 }
+

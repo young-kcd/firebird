@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	UNIX resource removal program
- *	MODULE:		drop.c
+ *	MODULE:		drop.cpp
  *	DESCRIPTION:	Drop shared memory and semaphores
  *
  * The contents of this file are subject to the Interbase Public
@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: drop.cpp,v 1.28 2004-05-17 10:15:52 brodsom Exp $
+ * $Id: drop.cpp,v 1.29 2004-11-10 04:26:41 robocop Exp $
  *
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "DELTA" port
  * 2002.10.27 Sean Leyne - Completed removal of obsolete "IMP" port
@@ -91,7 +91,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	Drop Lock Table and associated semaphores.	
  *
  **************************************/
-	SCHAR **end, *p;
 	bool sw_lockmngr = false;
 	bool sw_events = false;
 	bool sw_version = false;
@@ -101,10 +100,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	orig_argc = argc;
 	orig_argv = argv;
 
-	end = argv + argc;
+	SCHAR** const end = argv + argc;
 	while (++argv < end)
 		if (**argv == '-')
-			for (p = *argv + 1; *p; p++)
+			for (const char* p = *argv + 1; *p; p++)
 				switch (UPPER(*p)) {
 
 				case 'E':
@@ -215,7 +214,6 @@ static void remove_resource(
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	SH_MEM_T shmem_data;
-	SLONG key, shmid, semid;
 	TEXT expanded_filename[MAXPATHLEN];
 	pid_t pid;
 
@@ -238,18 +236,21 @@ static void remove_resource(
 	shmem_data.sh_mem_semaphores = sem_count;
 	if (!ISC_map_file
 		(status_vector, expanded_filename, dummy_init, 0, shm_length,
-		 &shmem_data)) {
+		 &shmem_data))
+	{
 		printf("\n***Unable to access %s resources:\n", label);
 		gds__print_status(status_vector);
 		return;
 	}
 
-	if ((key = get_key(expanded_filename)) == -1) {
+	const SLONG key = get_key(expanded_filename);
+	if (key == -1) {
 		printf("\n***Unable to get the key value of the %s file.\n",
 				  label);
 		return;
 	}
 
+	SLONG shmid, semid;
 	if ((shmid = shm_exclusive(key, shmem_data.sh_mem_length_mapped)) == -1 ||
 		(semid = sem_exclusive(key, sem_count)) == -1) 
 	{
@@ -288,12 +289,11 @@ static void remove_resource(
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	SLONG length, key, semid;
 	TEXT expanded_filename[MAXPATHLEN];
 	int pid;
-	#ifdef DARWIN
+#ifdef DARWIN
 	union  semun semctlArg;
-	#endif
+#endif
 
 #ifdef MANAGER_PROCESS
 /* Shutdown lock manager process so that shared memory
@@ -314,23 +314,25 @@ static void remove_resource(
 
 	gds__prefix_lock(expanded_filename, filename);
 
-	if ((key = get_key(expanded_filename)) == -1) {
+	const SLONG key = get_key(expanded_filename);
+	if (key == -1) {
 		printf("\n***Unable to get the key value of the %s file.\n",
 				  label);
 		return;
 	}
 
-	if ((semid = sem_exclusive(key, sem_count)) == -1) {
+	const SLONG semid = sem_exclusive(key, sem_count);
+	if (semid == -1) {
 		printf("\n***Semaphores for %s are currently in use.\n", label);
 		return;
 	}
 
-	#ifdef DARWIN
+#ifdef DARWIN
 	semctlArg.val = 0;
 	if (semctl(semid, sem_count, IPC_RMID, semctlArg) == -1)
-	#else
+#else
 	if (semctl(semid, sem_count, IPC_RMID, 0) == -1)
-	#endif
+#endif
 		printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
 				  label, errno);
 	else
@@ -381,12 +383,14 @@ static int shm_exclusive( SLONG key, SLONG length)
  *	if so, -1 otherwise.
  *
  **************************************/
-	int id;
 	struct shmid_ds buf;
 
-	if ((id = shmget(key, (int) length, IPC_ALLOC)) == -1 ||
+	const int id = shmget(key, (int) length, IPC_ALLOC);
+	if (id == -1 ||
 		shmctl(id, IPC_STAT, &buf) == -1 || buf.shm_nattch != 1)
+	{
 		return -1;
+	}
 
 	return id;
 }
@@ -425,3 +429,4 @@ static void shut_manager(const TEXT* label)
 	}
 }
 #endif
+

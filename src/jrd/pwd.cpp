@@ -291,7 +291,7 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 
 	if (!isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0))
 	{
-		while (1)
+		while (true)
 		{
 			isc_receive(status, &lookup_req, 1, sizeof(user), &user, 0);
 			if (!user.flag || status[1])
@@ -323,9 +323,6 @@ bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * 
 bool SecurityDatabase::prepare()
 {
 	TEXT user_info_name[MAXPATHLEN];
-	SCHAR* dpb;
-	SCHAR dpb_buffer[256];
-	SSHORT dpb_len;
 
 	if (lookup_db)
 	{
@@ -342,8 +339,8 @@ bool SecurityDatabase::prepare()
 	getPath(user_info_name);
 
 	// Perhaps build up a dpb
-
-	dpb = dpb_buffer;
+	SCHAR dpb_buffer[256];
+	char* dpb = dpb_buffer;
 
 	*dpb++ = isc_dpb_version1;
 
@@ -369,7 +366,8 @@ bool SecurityDatabase::prepare()
 	*dpb++ = 1;						// Parameter value length
 	*dpb++ = TRUE;					// Parameter value
 
-	dpb_len = dpb - dpb_buffer;
+	const SSHORT dpb_len = dpb - dpb_buffer;
+	fb_assert(dpb_len <= sizeof(dpb_buffer));
 	
 	// Temporarily disable security checks for this thread
 	JRD_thread_security_disable(true);

@@ -862,7 +862,7 @@ static int cmdline_isql( HINSTANCE hInstance, LPSTR pCmdLine)
 	SCHAR inputfilename[MAXPATHLEN];	// input file name 
 	SCHAR outputfilename[MAXPATHLEN];	// output file name 
 	SCHAR arg[MAXPATHLEN];		// current argument 
-	SCHAR *cp;					// command line cursor 
+	const SCHAR *cp;			// command line cursor
 	SCHAR *ap;					// current argument cursor 
 
 // create default input and output files 

@@ -393,7 +393,7 @@ void LEX_flush(void)
 
 
 #if defined(UNIX) || defined(WIN_NT)
-bool LEX_get_line(TEXT * prompt,
+bool LEX_get_line(const TEXT* prompt,
 				  TEXT * buffer,
 				  int size)
 {
@@ -468,7 +468,7 @@ bool LEX_get_line(TEXT * prompt,
 
 
 #ifdef VMS
-bool LEX_get_line(TEXT * prompt,
+bool LEX_get_line(const TEXT* prompt,
 				  TEXT * buffer,
 				  int size)
 {
@@ -502,7 +502,7 @@ bool LEX_get_line(TEXT * prompt,
 		prompt_desc.dsc$b_class = DSC$K_CLASS_S;
 		prompt_desc.dsc$b_dtype = DSC$K_DTYPE_T;
 		prompt_desc.dsc$w_length = strlen(prompt);
-		prompt_desc.dsc$a_pointer = prompt;
+		prompt_desc.dsc$a_pointer = const_cast<TEXT*>(prompt); // safe cast
 		status = lib$get_input(&line_desc, &prompt_desc, &length);
 	}
 	else
@@ -1031,7 +1031,9 @@ static void next_line(const bool eof_ok)
 
 			if ((p = QLI_line->line_ptr) != QLI_line->line_data
 				&& p[-1] == '\n' && *p)
+			{
 				flag = true;
+			}
 			else {
 				// Initialize line block for retrieval
 

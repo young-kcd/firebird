@@ -33,7 +33,7 @@
 #include "../dudley/lex_proto.h"
 #include "../dudley/parse_proto.h"
 
-static CON make_numeric_constant(TEXT *, USHORT);
+static CON make_numeric_constant(const TEXT*, USHORT);
 static DUDLEY_NOD parse_add(USHORT *, bool *);
 static DUDLEY_NOD parse_and(USHORT *);
 static DUDLEY_NOD parse_field(void);
@@ -332,7 +332,7 @@ DUDLEY_NOD EXPR_value(USHORT * paren_count,
 }
 
 
-static CON make_numeric_constant( TEXT * string, USHORT length)
+static CON make_numeric_constant( const TEXT* string, USHORT length)
 {
 /**************************************
  *
@@ -350,22 +350,21 @@ static CON make_numeric_constant( TEXT * string, USHORT length)
  *      more pain than gain.
  *
  **************************************/
-	CON constant;
-	TEXT *p, *q, c;
-	USHORT scale, l, fraction;
+	USHORT fraction;
 	SLONG *number;
 
-	p = string;
-	l = length;
+	const TEXT* p = string;
+	USHORT l = length;
 
-	constant = (CON) DDL_alloc(sizeof(con) + sizeof(SLONG));
+	CON constant = (CON) DDL_alloc(sizeof(con) + sizeof(SLONG));
 	constant->con_desc.dsc_dtype = dtype_long;
 	constant->con_desc.dsc_length = sizeof(SLONG);
 	number = (SLONG *) constant->con_data;
 	constant->con_desc.dsc_address = (UCHAR*) (IPTR) number;
-	scale = 0;
+	USHORT scale = 0;
 
 	do {
+		TEXT c;
 		if ((c = *p++) == '.')
 			scale = 1;
 		else {
@@ -397,7 +396,7 @@ static CON make_numeric_constant( TEXT * string, USHORT length)
 		constant->con_desc.dsc_ttype() = ttype_ascii;
 		constant->con_desc.dsc_length = length;
 		constant->con_desc.dsc_address = constant->con_data;
-		q = (TEXT *) constant->con_desc.dsc_address;
+		TEXT* q = (TEXT *) constant->con_desc.dsc_address;
 		p = string;
 		*q++ = ' ';
 
@@ -659,11 +658,9 @@ static CON parse_literal(void)
  *
  **************************************/
 	CON constant;
-	USHORT l;
-	TEXT *p, *q;
 
-	q = dudleyGlob.DDL_token.tok_string;
-	l = dudleyGlob.DDL_token.tok_length;
+	const TEXT* q = dudleyGlob.DDL_token.tok_string;
+	USHORT l = dudleyGlob.DDL_token.tok_length;
 
 	if (dudleyGlob.DDL_token.tok_type == tok_quoted) {
 		q++;
@@ -671,7 +668,7 @@ static CON parse_literal(void)
 		constant = (CON) DDL_alloc(sizeof(con) + l);
 		constant->con_desc.dsc_dtype = dtype_text;
 		constant->con_desc.dsc_ttype() = ttype_ascii;
-		p = (TEXT *) constant->con_data;
+		TEXT* p = (TEXT *) constant->con_data;
 		constant->con_desc.dsc_address = (UCHAR*) p;
 		if (constant->con_desc.dsc_length = l)
 			do
@@ -786,13 +783,14 @@ static DUDLEY_NOD parse_primitive_value(USHORT * paren_count,
  **************************************/
 	DUDLEY_NOD node, sub;
 	CON constant;
-	TEXT *p;
 	USHORT local_count;
 
 	if (!paren_count) {
 		local_count = 0;
 		paren_count = &local_count;
 	}
+
+	TEXT *p;
 
 	switch (PARSE_keyword()) {
 	case KW_LEFT_PAREN:

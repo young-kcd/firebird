@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.73 2004-10-25 03:52:20 skidder Exp $
+//	$Id: alice.cpp,v 1.74 2004-11-10 04:14:26 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -266,7 +266,7 @@ int common_main(int			argc,
 	bool error = false;
 	ULONG switches = 0;
 	tdgbl->ALICE_data.ua_shutdown_delay = 0;
-	TEXT* database = NULL;
+	const TEXT* database = NULL;
 	TEXT	string[512];
 	
 	argv++;

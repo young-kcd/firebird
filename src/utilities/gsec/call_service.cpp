@@ -83,6 +83,7 @@ static void stuffSpb2(char*& spb, char param, const TEXT* value)
 	spb += l;
 }
 
+
 isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 							  const TEXT* username,
 							  const TEXT* password, 
@@ -133,6 +134,7 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 	return attachRemoteServiceManager(status, username, password, service);
 }
 
+
 isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 							  const TEXT* username,
 							  const TEXT* password, 
@@ -163,6 +165,7 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 		stuffSpb(spb, isc_spb_password, password);
 	}
 
+	fb_assert(spb - spb_buffer <= sizeof(spb_buffer));
 	isc_svc_handle svc_handle = 0;
 	isc_service_attach(status, 
 		static_cast<USHORT>(strlen(service)),
@@ -198,9 +201,10 @@ static void userInfoToSpb(char*& spb,
 		stuffSpb2(spb, isc_spb_sec_middlename, userInfo.middle_name);
 	}
 	if (userInfo.last_name_entered) {
-		stuffSpb2(spb, isc_spb_sec_lastname, userInfo.middle_name);
+		stuffSpb2(spb, isc_spb_sec_lastname, userInfo.last_name);
 	}
 }
+
 
 void callRemoteServiceManager(ISC_STATUS* status, 
 							  isc_svc_handle handle, 
@@ -261,6 +265,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		return;
 	}
 
+	fb_assert(spb - spb_buffer <= sizeof(spb_buffer));
 	isc_service_start(status, &handle, 0, 
 		static_cast<USHORT>(spb - spb_buffer), spb_buffer);
 	if (status[1] || userInfo.operation != DIS_OPER || !outputFunction)
@@ -342,11 +347,13 @@ void getSecurityDatabasePath(const TEXT* server, TEXT* buffer, size_t bufSize)
 	TEXT filenameBuffer[MAXPATHLEN];
 	SecurityDatabase::getPath(filenameBuffer);
 	strncpy(buffer, filenameBuffer, bufSize);
+	buffer[bufSize - 1] = 0;
 }
+
 
 static void parseString2(const char*& p, char* buffer, size_t bufSize, int& loop)
 {
-	size_t len = static_cast<size_t>(isc_vax_integer(p, sizeof(USHORT)));
+	const size_t len = static_cast<size_t>(isc_vax_integer(p, sizeof(USHORT)));
 
 	size_t len2 = len + sizeof(ISC_USHORT) + 1;
 	if (len2 > loop)
@@ -363,11 +370,12 @@ static void parseString2(const char*& p, char* buffer, size_t bufSize, int& loop
 	p += len;
 }
 
+
 static void parseLong(const char*& p, int& ul, int& loop)
 {
 	ul = isc_vax_integer(p, sizeof(ULONG));
 	
-	size_t len2 = sizeof(ULONG) + 1;
+	const size_t len2 = sizeof(ULONG) + 1;
 	if (len2 > loop)
 	{
 		throw loop;
@@ -376,6 +384,7 @@ static void parseLong(const char*& p, int& ul, int& loop)
 
 	p += sizeof(ULONG);
 }
+
 
 static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 					   internal_user_data& uData,

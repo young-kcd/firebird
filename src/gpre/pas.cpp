@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.44 2004-11-08 03:29:16 robocop Exp $
+//	$Id: pas.cpp,v 1.45 2004-11-10 04:18:58 robocop Exp $
 //
 
 #include "firebird.h"
@@ -3219,13 +3219,13 @@ static void gen_t_start( const act* action, int column)
 
 static void gen_tpb( tpb* tpb_val, int column)
 {
-	TEXT *text, buffer[80], c;
+	TEXT buffer[80], c;
 
 	printa(column, "gds__tpb_%d\t: %s [1..%d] of char := %s",
 		   tpb_val->tpb_ident, PACKED_ARRAY, tpb_val->tpb_length, OPEN_BRACKET);
 
 	int length = tpb_val->tpb_length;
-	text = (TEXT *) tpb_val->tpb_string;
+	const TEXT* text = (TEXT *) tpb_val->tpb_string;
 	TEXT* p = buffer;
 
 	while (--length) {

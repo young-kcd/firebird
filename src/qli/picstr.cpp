@@ -574,16 +574,16 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 	isc_decode_date((ISC_QUAD*) date, &times);
 	TEXT* p = temp;
 
-	TEXT* nmonth = p;
+	const TEXT* nmonth = p;
 	p = cvt_to_ascii((SLONG) times.tm_mon + 1, p, picture->pic_nmonths);
 
-	TEXT* day = p;
+	const TEXT* day = p;
 	p = cvt_to_ascii((SLONG) times.tm_mday, p, picture->pic_days);
 
-	TEXT* year = p;
+	const TEXT* year = p;
 	p = cvt_to_ascii((SLONG) times.tm_year + 1900, p, picture->pic_years);
 
-	TEXT* julians = p;
+	const TEXT* julians = p;
 	p = cvt_to_ascii((SLONG) times.tm_yday + 1, p, picture->pic_julians);
 
 	const TEXT* meridian = "";
@@ -705,9 +705,8 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
  *	output pointer.
  *
  **************************************/
-	TEXT c, d, e, *p, temp[512];
+	TEXT temp[512];
 	bool negative = false;
-	bool is_signed = false;
 	USHORT l, width, decimal_digits, w_digits, f_digits;
 
 #ifdef VMS
@@ -750,7 +749,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 		sprintf(temp, "%.*f", f_digits, number);
 		w_digits = strlen(temp);
 		if (f_digits) {
-			p = temp + w_digits;	// find the end
+			TEXT* p = temp + w_digits;	// find the end
 			w_digits = w_digits - (f_digits + 1);
 			while (*--p == '0')
 				--f_digits;
@@ -786,7 +785,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
    THAT RELATED TO 'hack_for_vms_flag' MAY BE DELETED. */
 
 	if (hack_for_vms_flag) {
-		p = temp;
+		TEXT* p = temp;
 		while (*p != '.')
 			++p;
 		while (*p = *(p + 1))
@@ -800,7 +799,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
    digits one to the left. */
 
 	if (hack_for_nt_flag) {
-		p = temp;
+		TEXT* p = temp;
 		while (*p != 'e' && *p != 'E')
 			++p;
 		p += 2;
@@ -810,7 +809,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 	}
 #endif
 
-	p = temp;
+	TEXT* p = temp;
 	picture->pic_pointer = picture->pic_string;
 	picture->pic_count = 0;
 	TEXT* out = *output;
@@ -818,8 +817,11 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 	for (l = picture->pic_length - picture->pic_print_length; l > 0; --l)
 		*out++ = ' ';
 
+	bool is_signed = false;
+	
 	for (;;) {
-		c = e = generate(picture);
+		const TEXT e = generate(picture);
+		TEXT c = e;
 		if (!c || c == '?')
 			break;
 		c = UPPER(c);
@@ -848,15 +850,17 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 
 		case '9':
 		case 'Z':
+			{
 			if (!(*p) || *p > '9' || *p < '0')
 				break;
-			d = *p++;
+			TEXT d = *p++;
 			if (c == '9' && d == ' ')
 				d = '0';
 			else if (c == 'Z' && d == '0')
 				d = ' ';
 			*out++ = d;
 			break;
+			}
 
 		case '.':
 			*out++ = (*p == c) ? *p++ : c;
@@ -960,7 +964,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 
 	picture->pic_pointer = picture->pic_string;
 	bool hex_overflow = false;
-	TEXT* hex;
+	const TEXT* hex = 0;
 	if (picture->pic_hex_digits) {
 		hex = p;
 		p += picture->pic_hex_digits;
@@ -983,11 +987,11 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 	const SLONG n = (number + 0.5 < 1) ? 0 : 1;
 
 	TEXT float_char;
-	TEXT c, d;
+	TEXT d;
 	bool signif = false;
 
 	for (;;) {
-		c = generate(picture);
+		TEXT c = generate(picture);
 		if (!c || c == '?')
 			break;
 

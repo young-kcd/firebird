@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.51 2004-11-08 03:29:16 robocop Exp $
+//	$Id: cob.cpp,v 1.52 2004-11-10 04:18:58 robocop Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -703,7 +703,7 @@ void COB_name_init(bool ansi)
 void COB_print_buffer(TEXT* output_bufferL,
 					  bool function_call)
 {
-	TEXT s[80], *p;
+	TEXT s[80];
 	bool open_quote = false;
 	bool single_quote = false;
 	bool save_open_quote;
@@ -715,7 +715,7 @@ void COB_print_buffer(TEXT* output_bufferL,
 	else
 		max_line = 79;
 
-	p = s;
+	TEXT* p = s;
 
 	for (const TEXT* q = output_bufferL; *q; q++) {
 		*p++ = *q;
@@ -1650,7 +1650,7 @@ static void gen_database( const act* action)
 {
 	DBB db;
 	gpre_req* request;
-	TEXT fname[80], *s, s1[40];
+	TEXT fname[80], s1[40];
 	USHORT count;
 	tpb* tpb_iterator;
 	gpre_port* port;
@@ -1722,8 +1722,8 @@ static void gen_database( const act* action)
 		else if (local_act->act_type == ACT_ready) {
 			for (ready = (rdy*) local_act->act_object; ready; ready = ready->rdy_next)
 			{
-				if ((s = ready->rdy_filename) && ((*s == '\'')
-												  || (*s == '\'')))
+				TEXT* s = ready->rdy_filename;
+				if (s && ((*s == '\'') || (*s == '\'')))
 				{
 					strcpy(fname, ++s);
 					s = fname + strlen(fname) - 1;

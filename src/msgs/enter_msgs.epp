@@ -42,12 +42,12 @@
 
 DATABASE DB = "msg.fdb";
 
-static void ascii_str_upper(UCHAR *);
+static void ascii_str_upper(UCHAR*);
 static bool get_sql_class(UCHAR *);
 static bool get_sql_code(SSHORT *);
 static bool get_sql_subclass(UCHAR *);
-static int store_sql_msg(void);
-static int translate(UCHAR *, UCHAR *, SSHORT);
+static bool store_sql_msg(void);
+static bool translate(const UCHAR*, UCHAR*, SSHORT);
 static bool get_symbol( UCHAR *);
 
 const int FAC_SQL_POSITIVE	= 14;
@@ -116,7 +116,8 @@ int main( int argc, char **argv)
 		FOR X IN FACILITIES WITH X.FACILITY = facility
 			count++;
 			if (X.FAC_CODE == FAC_SQL_POSITIVE
-				|| X.FAC_CODE == FAC_SQL_NEGATIVE) {
+				|| X.FAC_CODE == FAC_SQL_NEGATIVE)
+			{
 				if (!store_sql_msg())
 					break;
 			}
@@ -258,12 +259,10 @@ static bool get_sql_class( UCHAR * sql_class)
  *	return true if we get one, otherwise false
  *
  **************************************/
-	SSHORT length;
-
-	while (1) {
+	while (true) {
 		printf(" SQLCLASS: ");
 		gets((char*) sql_class);
-		length = strlen((char*) sql_class);
+		const SSHORT length = strlen((char*) sql_class);
 		if (length == 0 || !isalnum(sql_class[0]))
 			break;
 
@@ -292,17 +291,16 @@ static bool get_sql_code( SSHORT * sql_code)
  *
  **************************************/
 	UCHAR nstring[32];
-	UCHAR *p;
 	SSHORT sign;
 	SSHORT sql_num;
-	SSHORT srch_num, got_it;
+	SSHORT srch_num;
 	bool ret = false;
 
-	while (1) {
+	while (true) {
 		printf(" SQLCODE: ");
 		if (!gets((char*) nstring))
 			break;
-		p = nstring;
+		const UCHAR* p = nstring;
 		sign = 1;
 		sql_num = 0;
 
@@ -336,13 +334,13 @@ static bool get_sql_code( SSHORT * sql_code)
 
 /* make sure that the SQL code is in the SQLERR facility */
 	if (ret) {
-		got_it = 0;
+		bool got_it = false;
 		if (sql_num < 0) {
 			srch_num = 1000 + sql_num;
 			FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_NEGATIVE
 				AND M.NUMBER = srch_num 
 
-                got_it = 1;
+                got_it = true;
 			END_FOR;
 		}
 		else {
@@ -350,7 +348,7 @@ static bool get_sql_code( SSHORT * sql_code)
 			FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_POSITIVE
 				AND M.NUMBER = srch_num 
 
-                got_it = 1;
+                got_it = true;
 			END_FOR;
 		}
 		if (!got_it) {
@@ -376,12 +374,10 @@ static bool get_sql_subclass( UCHAR * sql_sub_class)
  *	return true if we get one, otherwise false
  *
  **************************************/
-	SSHORT length;
-
-	while (1) {
+	while (true) {
 		printf(" SQLSUBCLASS: ");
 		gets((char*) sql_sub_class);
-		length = strlen((char*) sql_sub_class);
+		const SSHORT length = strlen((char*) sql_sub_class);
 		if (length == 0 || !isalnum(sql_sub_class[0]))
 			break;
 
@@ -423,7 +419,7 @@ static bool get_symbol( UCHAR * symbol)
 }
 
 
-static int store_sql_msg(void)
+static bool store_sql_msg(void)
 {
 /**************************************
  *
@@ -465,16 +461,16 @@ static int store_sql_msg(void)
 			if (!translate(text, (UCHAR*) Y.TEXT, sizeof(Y.TEXT))) {
 				printf("Message too long: max length: %d\n",
 						  sizeof(Y.TEXT));
-				return 0;
+				return false;
 			}
 		END_STORE;
 	}
 
-	return 1;
+	return true;
 }
 
 
-static int translate( UCHAR * source, UCHAR * target, SSHORT length)
+static bool translate( const UCHAR* source, UCHAR* target, SSHORT length)
 {
 /**************************************
  *
@@ -486,14 +482,12 @@ static int translate( UCHAR * source, UCHAR * target, SSHORT length)
  * 	make explicit escape sequences into
  *	ascii, returns length ok?
  **************************************/
-	UCHAR *p, *q;
-
-	p = target;
-	q = source;
+	UCHAR* p = target;
+	const UCHAR* q = source;
 
 	while (*q) {
 		if (!--length)
-			return 0;
+			return false;
 		if (*q == '\\') {
 			*q++;
 			switch (*q) {
@@ -539,5 +533,6 @@ static int translate( UCHAR * source, UCHAR * target, SSHORT length)
 			*p++ = *q++;
 	}
 	*p = 0;
-	return 1;
+	return true;
 }
+

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		Analyse.c
+ *	MODULE:		Analyse.cpp
  *	DESCRIPTION:	I/O trace analysis
  *
  * The contents of this file are subject to the Interbase Public
@@ -47,11 +47,13 @@
 #include "jrd.h"
 #include "ods.h"
 
-static void analyse(int, SCHAR *, PAG, int);
+static void analyse(int, const SCHAR*, const pag*, int);
 static SLONG get_long(void);
+#ifdef VMS
 static void db_error(int);
-static void db_open(UCHAR *, USHORT);
+static void db_open(const UCHAR*, USHORT);
 static PAG db_read(SLONG);
+#endif
 
 static FILE *trace;
 static int file;
@@ -87,17 +89,13 @@ void main( int argc, char **argv)
  *	Replay all I/O to compute overhead of I/O system.
  *
  **************************************/
-	SSHORT event;
-	bool detail;
-	USHORT *r, *w;
-	PAG *page;
-	SLONG reads, writes, n, cpu, elapsed, system, length, sequence;
-	SCHAR string[128], *p, *end;
+	SLONG reads, writes, n, length;
+	SCHAR string[128], *p;
 	struct tms after, before;
 
-	detail = true;
-	sequence = 0;
+	bool detail = true;
 
+	char** end;
 	for (end = argv + argc, ++argv; argv < end; argv++) {
 		p = *argv;
 		if (*p++ == '-')
@@ -112,9 +110,12 @@ void main( int argc, char **argv)
 	reads = writes = 0;
 	trace = fopen("trace.log", "r");
 	page_size = 1024;
+	SLONG sequence = 0;
 
-	elapsed = times(&before);
+	SLONG elapsed = times(&before);
 
+	const pag* page;
+	SSHORT event;
 	while ((event = getc(trace)) != trace_close && event != EOF)
 		switch (event) {
 		case trace_open:
@@ -154,8 +155,8 @@ void main( int argc, char **argv)
 		}
 
 	elapsed = times(&after) - elapsed;
-	cpu = after.tms_utime - before.tms_utime;
-	system = after.tms_stime - before.tms_stime;
+	const SLONG cpu = after.tms_utime - before.tms_utime;
+	const SLONG system = after.tms_stime - before.tms_stime;
 
 	printf
 		("File: %s:\n elapsed = %d.%.2d, cpu = %d.%.2d, system = %d.%.2d, reads = %d, writes = %d\n",
@@ -165,17 +166,20 @@ void main( int argc, char **argv)
 
 	printf("High activity pages:\n");
 
+	const USHORT *r, *w;
 	for (r = read_counts, w = write_counts, n = 0; n < MAX_PAGES;
 		 n++, r++, w++)
+	{
 		if (*r > 1 || *w > 1) {
 			sprintf(string, "  Read: %d, write: %d", *r, *w);
 			if (page = db_read(n))
 				analyse(n, string, page, 0);
 		}
+	}
 }
 
 
-static void analyse( int number, SCHAR * string, PAG page, int sequence)
+static void analyse( int number, const SCHAR* string, const pag* page, int sequence)
 {
 /**************************************
  *
@@ -258,10 +262,9 @@ static SLONG get_long(void)
 		SSHORT i;
 		SCHAR c;
 	} value;
-	SLONG n, i, x;
-	SCHAR *p;
+	SLONG i, x;
 
-	p = (SCHAR *) & value.l;
+	SCHAR* p = (SCHAR *) & value.l;
 	x = i = getc(trace);
 
 	while (--i >= 0)
@@ -294,7 +297,7 @@ static void db_error( int status)
 }
 
 
-static void db_open( UCHAR * file_name, USHORT file_length)
+static void db_open( const UCHAR* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -339,3 +342,4 @@ static PAG db_read( SLONG page_number)
 	return global_buffer;
 }
 #endif
+

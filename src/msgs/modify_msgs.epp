@@ -33,7 +33,7 @@
 
 DATABASE DB = "msg.fdb";
 
-static void explicit_print(TEXT *);
+static void explicit_print(const TEXT*);
 
 
 int main( int argc, char **argv)
@@ -50,7 +50,6 @@ int main( int argc, char **argv)
  **************************************/
 	SCHAR facility[20], newtext[256];
 	SCHAR innumber[4];
-	SCHAR *p, *q;
 	SSHORT number;
 
 	printf("\nHit Ctrl-D (or Ctrl-Z) at prompt to exit level\n");
@@ -78,8 +77,8 @@ int main( int argc, char **argv)
 
 				MODIFY X USING
 
-					p = X.TEXT;
-					q = newtext;
+					SCHAR* p = X.TEXT;
+					const SCHAR* q = newtext;
 
 					/* translate scape sequences to single bytes */
 					while (*q) {
@@ -140,7 +139,7 @@ int main( int argc, char **argv)
 }
 
 
-static void explicit_print( TEXT * string)
+static void explicit_print( const TEXT* string)
 {
 /**************************************
  *
@@ -154,9 +153,7 @@ static void explicit_print( TEXT * string)
  *      to make changing messages easy
  *
  **************************************/
-	TEXT *p;
-
-	p = string;
+	const TEXT* p = string;
 
 	while (*p) {
 		switch (*p) {
@@ -201,3 +198,4 @@ static void explicit_print( TEXT * string)
 		*p++;
 	}
 }
+

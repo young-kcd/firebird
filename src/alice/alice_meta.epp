@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.43 2004-10-07 08:21:15 robocop Exp $
+ *	$Id: alice_meta.epp,v 1.44 2004-11-10 04:14:26 robocop Exp $
  */
 
 #include "firebird.h"
@@ -493,7 +493,7 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 	ISC_STATUS status;
 
 	TEXT* ptr = buffer;
-	TEXT* const end = buffer + buffer_length;
+	const TEXT* const end = buffer + buffer_length;
 	for (;;) {
 		if (ptr >= end)
 			break;

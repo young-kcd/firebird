@@ -29,13 +29,13 @@ DATABASE DB = "msg.fdb";
 
 FILE *output;
 
-static bool check_option(SCHAR *, SSHORT *, SCHAR **);
-static int define_format(SCHAR *, SCHAR *);
-static int gen(const char*, const char*);
-static int process_line(FILE *, SCHAR *);
-static int put_error(FILE *, SCHAR **, SCHAR *, SSHORT);
-static int put_symbol(FILE *, SCHAR *, SCHAR *, SLONG, SSHORT);
-static int put_symbols(FILE *, SCHAR **, SCHAR *, SSHORT);
+static bool check_option(const SCHAR*, SSHORT *, SCHAR **);
+static void define_format(const SCHAR*, SCHAR*);
+static void gen(const char*, const char*);
+static void process_line(FILE *, const SCHAR*);
+static void put_error(FILE *, SCHAR **, const SCHAR*, SSHORT);
+static void put_symbol(FILE *, const SCHAR*, const SCHAR*, SLONG, SSHORT);
+static void put_symbols(FILE *, SCHAR **, const SCHAR*, SSHORT);
 
 const SSHORT OPT_byte		= 1;
 const SSHORT OPT_signed		= 2;
@@ -57,12 +57,13 @@ void main( int argc, char **argv)
  *	Generate include files.
  *
  **************************************/
-	SCHAR **end, *file, *db_name;
+	const char *file, *db_name;
 	bool sw_all = false;
 
 	file = db_name = 0;
 	const char* language = "C";
 
+	char** end;
 	for (end = argv + argc, ++argv; argv < end;) {
 		const char* p = *argv++;
 		if (*p == '-')
@@ -108,7 +109,7 @@ void main( int argc, char **argv)
 
 
 static bool check_option(
-						SCHAR * string,
+						const SCHAR* string,
 						SSHORT * option_ptr, SCHAR ** format_ptr)
 {
 /**************************************
@@ -151,7 +152,7 @@ static bool check_option(
 }
 
 
-static int define_format( SCHAR * name, SCHAR * format)
+static void define_format( const SCHAR* name, SCHAR * format)
 {
 /**************************************
  *
@@ -163,7 +164,7 @@ static int define_format( SCHAR * name, SCHAR * format)
  *	Define named format.
  *
  **************************************/
-	SCHAR **ptr, *p;
+	SCHAR **ptr;
 
 	if (!name) {
 		printf("Format redefined\n");
@@ -192,7 +193,7 @@ static int define_format( SCHAR * name, SCHAR * format)
 }
 
 
-static int gen( const char* language, const char* filename)
+static void gen( const char* language, const char* filename)
 {
 /**************************************
  *
@@ -204,8 +205,6 @@ static int gen( const char* language, const char* filename)
  *	Generate an include file for a single language.
  *
  **************************************/
-	SCHAR *end;
-
 	format_ptr = format_buffer;
 	formats[0] = NULL;
 	defaults = 0;
@@ -219,7 +218,7 @@ static int gen( const char* language, const char* filename)
 		}
 		printf("Generating %s for %s\n", filename, X.LANGUAGE);
 		FOR Y IN X.TEMPLATE
-			end = Y.SEGMENT + Y.LENGTH;
+			SCHAR* end = Y.SEGMENT + Y.LENGTH;
 			*end = 0;
 			if (Y.LENGTH && end[-1] == '\n')
 				end[-1] = 0;
@@ -230,7 +229,7 @@ static int gen( const char* language, const char* filename)
 }
 
 
-static int process_line( FILE * file, SCHAR * line_ptr)
+static void process_line( FILE * file, const SCHAR* line_ptr)
 {
 /**************************************
  *
@@ -242,10 +241,9 @@ static int process_line( FILE * file, SCHAR * line_ptr)
  *	Process an output line.
  *
  **************************************/
-	SCHAR *line, c, *p, *q, **word, *words[10], stuff[512], *format;
-	SSHORT options;
+	SCHAR c, *words[10], stuff[512];
 
-	line = line_ptr;
+	const SCHAR* line = line_ptr;
 
 /* If the line doesn't start with a $, just copy it */
 
@@ -254,10 +252,10 @@ static int process_line( FILE * file, SCHAR * line_ptr)
 		return;
 	}
 
-	p = stuff;
-	format = 0;
-	options = defaults;
-	word = words;
+	SCHAR* p = stuff;
+	SCHAR* format = 0;
+	SSHORT options = defaults;
+	SCHAR** word = words;
 	++line;
 
 	while (*line) {
@@ -312,9 +310,9 @@ static int process_line( FILE * file, SCHAR * line_ptr)
 }
 
 
-static int put_error(
+static void put_error(
 					 FILE * file,
-					 SCHAR ** words, SCHAR * format, SSHORT options)
+					 SCHAR ** words, const SCHAR* format, SSHORT options)
 {
 /**************************************
  *
@@ -326,11 +324,9 @@ static int put_error(
  *	Error codes to a file.
  *
  **************************************/
-	SCHAR *option, symbol[64];
-	SSHORT count;
+	SCHAR symbol[64];
 
-	option = words[0];
-	count = 0;
+	const SCHAR* option = words[0];
 	options &= ~(OPT_byte | OPT_signed);
 
 	if (!option || !strcmp(option, "MAJOR") || !strcmp(option, "MINOR"))
@@ -343,10 +339,10 @@ static int put_error(
 }
 
 
-static int put_symbol(
+static void put_symbol(
 					  FILE * file,
-					  SCHAR * format,
-					  SCHAR * symbol, SLONG value, SSHORT options)
+					  const SCHAR* format,
+					  const SCHAR* symbol, SLONG value, SSHORT options)
 {
 /**************************************
  *
@@ -358,7 +354,7 @@ static int put_symbol(
  *	Write out a symbol.
  *
  **************************************/
-	SCHAR *p, buffer[64];
+	SCHAR buffer[64];
 
 	if (!format) {
 		printf("No format for symbol\n");
@@ -375,6 +371,7 @@ static int put_symbol(
 		value = (SCHAR) value;
 
 	if (options & OPT_sans_dollar) {
+		SCHAR* p;
 		for (p = buffer; *symbol; symbol++)
 			if (*symbol != '$')
 				*p++ = *symbol;
@@ -386,9 +383,9 @@ static int put_symbol(
 }
 
 
-static int put_symbols(
+static void put_symbols(
 					   FILE * file,
-					   SCHAR ** words, SCHAR * format, SSHORT options)
+					   SCHAR ** words, const SCHAR* format, SSHORT options)
 {
 /**************************************
  *
@@ -400,9 +397,7 @@ static int put_symbols(
  *	Dump symbols to a file.
  *
  **************************************/
-	SSHORT count;
-
-	count = 0;
+	int count = 0;
 
 	if (words[1] && strcmp(words[1], "*")) {
 		FOR X IN SYMBOLS WITH X.CLASS EQ words[0] AND X.TYPE EQ words[1] SORTED BY X.SEQUENCE
@@ -421,3 +416,4 @@ static int put_symbols(
 			printf("No symbols found for %s\n", words[0]);
 	}
 }
+

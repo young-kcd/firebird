@@ -264,7 +264,7 @@ USHORT SQZ_no_differences(SCHAR* const out,
 	SCHAR* temp = out;
 	while (length > 127) {
 	  *temp++ = -127;
-	  length-=127;
+	  length -= 127;
 	}
 	if (length) {
 	  *temp++ = -length;
@@ -298,10 +298,11 @@ USHORT SQZ_differences(const SCHAR*	rec1,
  *	Return the total length of the differences string.  
  *
  **************************************/
-	SCHAR *p, *yellow;
-	SLONG l;					/* This could be more than 32K since the Old and New records 
-								   could be the same for more than 32K characters. 
-								   MAX record size is currently 64K. Hence it is defined as a SLONG */
+	SCHAR *p;
+	// SLONG l; Moved to the proper scope. Comment immediately below still applies.
+	/* This "l" could be more than 32K since the Old and New records
+	could be the same for more than 32K characters.
+	MAX record size is currently 64K. Hence it is defined as a SLONG */
 
 #define STUFF(val)	if (out < end) *out++ = val; else return 32000;
 /* WHY IS THIS RETURNING 32000 ??? 
@@ -330,7 +331,7 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 			/* cast this to LONG to take care of OS/2 pointer arithmetic
 			   when rec1 is at the end of a segment, to avoid wrapping around */
 
-			yellow = (SCHAR *) MIN((U_IPTR) end1, ((U_IPTR) rec1 + 127)) - 1;
+			const SCHAR* yellow = (SCHAR *) MIN((U_IPTR) end1, ((U_IPTR) rec1 + 127)) - 1;
 			while (rec1 <= yellow &&
 				   (rec1[0] != rec2[0] ||
 					(rec1[1] != rec2[1] && rec1 < yellow)))
@@ -345,7 +346,7 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 		{
 			;
 		}
-		l = p - rec2;
+		SLONG l = p - rec2;
 		while (l < -127)
 		{
 			STUFF(-127);
@@ -364,7 +365,7 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 		/* cast this to LONG to take care of OS/2 pointer arithmetic
 		   when rec1 is at the end of a segment, to avoid wrapping around */
 
-		yellow = (SCHAR *) MIN((U_IPTR) end2, ((U_IPTR) rec2 + 127));
+		const SCHAR* yellow = (SCHAR *) MIN((U_IPTR) end2, ((U_IPTR) rec2 + 127));
 		while (rec2 < yellow)
 		{
 			STUFF(*rec2++);

@@ -190,7 +190,7 @@ static processing_state end_trans();
 static processing_state escape(const TEXT*);
 static processing_state frontend(const TEXT*);
 static void frontend_free_parms(TEXT*[], TEXT*[]);
-static processing_state get_statement(TEXT*, USHORT, const TEXT*);
+static processing_state get_statement(TEXT* const, USHORT, const TEXT*);
 static bool get_numeric(const UCHAR*, USHORT, SSHORT*, SINT64*);
 static void get_str(const TEXT* const, const TEXT**, const TEXT**,
 	literal_string_type*);
@@ -2440,7 +2440,7 @@ static processing_state create_db(const TEXT* statement,
 	strcpy(local_statement, statement);
 	
 	TEXT quote = DBL_QUOTE;
-	TEXT* p = NULL;
+	const TEXT* p = NULL;
 
 // If there is a user parameter, we will set it into the create stmt. 
 #if defined (WIN95)
@@ -2720,7 +2720,7 @@ static void do_isql()
 */
 
 	TEXT statement[MAX_USHORT];
-	int ret;
+	processing_state ret;
 	
 	bool done = false;
 	while (!done) {
@@ -3684,7 +3684,7 @@ static processing_state do_set_command(const TEXT* parm,
 }
 
 
-static processing_state get_statement(TEXT* statement,
+static processing_state get_statement(TEXT* const statement,
 							USHORT bufsize,
 							const TEXT* statement_prompt)
 {

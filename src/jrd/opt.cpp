@@ -282,7 +282,7 @@ bool OPT_access_path(const jrd_req* request,
  **************************************/
 	DEV_BLKCHK(request, type_req);
 
-	SCHAR* begin = buffer;
+	const SCHAR* const begin = buffer;
 
 /* loop through all RSEs in the request, 
    and describe the rsb tree for that rsb */

@@ -1093,14 +1093,13 @@ static void gen_dyn_cxx(void *user_arg, SSHORT offset, const char* string)
 	fb_assert(strlen(string) < sizeof(temp));
 	strcpy(temp, string);
 
-	SCHAR *p, *q, *r;
-
-	q = p = temp;
+	char* q = temp;
+	const char* p = q;
 
 	fprintf(output_file, "    ");
 	for (; *q; *q++) {
 		if ((*q == '$') || (*q == '_')) {
-			r = q;
+			const char* r = q;
 			if ((*--r == '_') && (*--r == 's') && (*--r == 'd')
 				&& (*--r == 'g'))
 			{

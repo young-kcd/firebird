@@ -55,8 +55,8 @@ const char* TARGET	= "help/help.fdb";
 DATABASE HELP_DB = STATIC "help.fdb" RUNTIME target;
 
 static int additional_topics(const TEXT*, const TEXT*, const TEXT*);
-static void print_more(USHORT, USHORT, TEXT**, USHORT*, const TEXT*, bool);
-static void print_topic(USHORT, USHORT, TEXT**, USHORT*, const TEXT*, bool);
+static void print_more(USHORT, USHORT, const TEXT**, USHORT*, const TEXT*, bool);
+static void print_topic(USHORT, USHORT, const TEXT**, USHORT*, const TEXT*, bool);
 static const TEXT* strip(const TEXT*);
 
 
@@ -103,14 +103,16 @@ void HELP_help( qli_syntax* node)
 	}
 
 	USHORT max_level = 0;
-	TEXT* topics[16];
-	TEXT** topic = topics;
-	*topic++ = "QLI"; // to be reviewed later; requires several changes.
+	const TEXT* topics[16];
+	const TEXT** topic = topics;
+	*topic++ = "QLI";
 
 	NAM *ptr, *end;
 	for (ptr = (NAM *) node->syn_arg, end = ptr + node->syn_count; ptr < end;
 		 ptr++)
+	{
 		*topic++ = (*ptr)->nam_string;
+	}
 
 	print_topic(0, node->syn_count, topics, &max_level, "", false);
 
@@ -179,7 +181,7 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
 static void print_more(
 					   USHORT level,
 					   USHORT depth,
-					   TEXT ** topics,
+					   const TEXT** topics,
 					   USHORT * max_level,
 					   const TEXT* parent,
 					   bool error_flag) // unused
@@ -205,8 +207,8 @@ static void print_more(
 		return;
 
 // Upcase the response and zap the blanks
-	TEXT *p;
-	topics[1] = p = topic;
+	TEXT* p = topic;
+	topics[1] = p;
 
 	for (const TEXT* q = buffer; *q && *q != '\n'; q++)
 		if (*q != ' ')
@@ -224,7 +226,7 @@ static void print_more(
 static void print_topic(
 						USHORT level,
 						USHORT depth,
-						TEXT ** topics,
+						const TEXT** topics,
 						USHORT* max_level, const TEXT* parent, bool error_flag)
 {
 /**************************************

@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		mem.c
+ *	MODULE:		mem.cpp
  *	DESCRIPTION:	UNIX memory slopping routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -25,7 +25,7 @@
 #include "../jrd/common.h"
 
 
-int memcmp(UCHAR * s1, UCHAR * s2, int n)
+int memcmp(const UCHAR* s1, const UCHAR* s2, int n)
 {
 /**************************************
  *
@@ -36,7 +36,7 @@ int memcmp(UCHAR * s1, UCHAR * s2, int n)
  * Functional description
  *
  **************************************/
-	UCHAR *from, *to, *end;
+	const UCHAR *from, *to, *end;
 
 	for (from = s2, to = s1, end = to + n; to < end; to++, from++)
 		if (*to != *from)
@@ -46,7 +46,7 @@ int memcmp(UCHAR * s1, UCHAR * s2, int n)
 }
 
 
-int memcpy(SCHAR * s1, SCHAR * s2, int n)
+int memcpy(SCHAR* s1, const SCHAR* s2, int n)
 {
 /**************************************
  *
@@ -57,14 +57,15 @@ int memcpy(SCHAR * s1, SCHAR * s2, int n)
  * Functional description
  *
  **************************************/
-	SCHAR *from, *to, *end;
+	const SCHAR *from, *end;
+	SCHAR* to;
 
 	for (from = s2, to = s1, end = to + n; to < end;)
 		*to++ = *from++;
 }
 
 
-int memset(SCHAR * s, int c, int n)
+int memset(SCHAR* s, int c, int n)
 {
 /**************************************
  *
@@ -76,8 +77,10 @@ int memset(SCHAR * s, int c, int n)
  *	Propogate a character.
  *
  **************************************/
-	SCHAR *p, *end;
+	SCHAR *p;
+	const SCHAR *end;
 
 	for (p = s, end = p + n; p < end;)
 		*p++ = c;
 }
+

@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.57 2004-11-08 03:29:08 robocop Exp $
+//	$Id: c_cxx.cpp,v 1.58 2004-11-10 04:18:57 robocop Exp $
 //
 
 #include "firebird.h"
@@ -2703,7 +2703,7 @@ static void gen_raw(const UCHAR* blr, int request_length)
 	TEXT buffer[80];
 
 	TEXT* p = buffer;
-	TEXT* limit = buffer + 60;
+	const TEXT* const limit = buffer + 60;
 
 	for (int count = request_length; count; count--) {
 		const TEXT c = *blr++;
@@ -3412,7 +3412,7 @@ static void gen_tpb(tpb* tpb_buffer, int column)
 		p++;
 
 	SSHORT tpb_length = tpb_buffer->tpb_length;
-	TEXT* text = (TEXT*) tpb_buffer->tpb_string;
+	const TEXT* text = (TEXT*) tpb_buffer->tpb_string;
 
 	while (--tpb_length >= 0) {
 		const TEXT c = *text++;

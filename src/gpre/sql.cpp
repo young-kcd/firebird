@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: sql.cpp,v 1.49 2004-10-30 05:30:08 robocop Exp $
+//	$Id: sql.cpp,v 1.50 2004-11-10 04:18:58 robocop Exp $
 //
 
 #include "firebird.h"
@@ -102,7 +102,8 @@ static act* act_update(void);
 static act* act_whenever(void);
 
 static bool		check_filename(const TEXT *);
-static void		connect_opts(TEXT **, TEXT **, TEXT **, TEXT **, USHORT *);
+static void		connect_opts(const TEXT**, const TEXT**, const TEXT**,
+	const TEXT**, USHORT*);
 #ifdef FLINT_CACHE
 static FIL		define_cache(void);
 #endif
@@ -1508,8 +1509,8 @@ static act* act_connect(void)
 
 //  No explicit databases -- pick up all known 
 
-	TEXT* lc_messages = NULL;
-	TEXT *user = NULL, *password = NULL, *sql_role = NULL;
+	const TEXT* lc_messages = NULL;
+	const TEXT *user = NULL, *password = NULL, *sql_role = NULL;
 	// The original logic suggests that "buffers" should be shared between the
 	// two sections of code. However, if the loop above executes, action->act_object
 	// is not null and therefore, the function returns before this point.
@@ -2740,7 +2741,6 @@ static act* act_drop(void)
 	dbb* db = NULL;
 	gpre_req* request = NULL;
 	gpre_rel* relation = NULL;
-	SCHAR* db_string;
 	TEXT* identifier_name; // it's not deallocated.
 
 	switch (gpreGlob.token_global.tok_keyword) {
@@ -2753,7 +2753,8 @@ static act* act_drop(void)
 		if (!isQuoted(gpreGlob.token_global.tok_type))
 			CPR_s_error("<quoted database name>");
 		db = (DBB) MSC_alloc(DBB_LEN);
-		db->dbb_filename = db_string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
+		SCHAR* db_string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
+		db->dbb_filename = db_string;
 		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, db_string);
 		gpre_sym* symbol = PAR_symbol(SYM_dummy);
 		db->dbb_name = symbol;
@@ -4710,11 +4711,11 @@ static bool check_filename(const TEXT * name)
 //  
 
 static void connect_opts(
-						 TEXT ** user,
-						 TEXT ** password,
-						 TEXT ** sql_role,
-						 TEXT ** lc_messages,
-						 USHORT * buffers)
+						 const TEXT** user,
+						 const TEXT** password,
+						 const TEXT** sql_role,
+						 const TEXT** lc_messages,
+						 USHORT* buffers)
 {
 	for (;;) {
 		if (MSC_match(KW_CACHE)) {

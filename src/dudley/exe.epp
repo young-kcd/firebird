@@ -2957,13 +2957,11 @@ static SYM get_symbol( enum sym_t type, TEXT * string, DUDLEY_CTX object)
  *
  **************************************/
 	TEXT *p;
-	USHORT l;
-	SYM symbol;
 
 	for (p = string; *p && *p != ' '; p++);
 
-	l = p - string;
-	symbol = (SYM) DDL_alloc(SYM_LEN + l);
+	USHORT l = p - string;
+	SYM symbol = (SYM) DDL_alloc(SYM_LEN + l);
 	symbol->sym_object = object;
 	symbol->sym_type = type;
 	symbol->sym_string = p = symbol->sym_name;
@@ -3636,13 +3634,14 @@ static void modify_trigger( DUDLEY_TRG trigger)
  **************************************/
 	bool if_any = false;
 	DUDLEY_REL relation;
-	TEXT buffer[32], *p, *q;
+	TEXT buffer[32];
 
 	FOR FIRST 1 X IN RDB$TRIGGERS WITH
 		X.RDB$TRIGGER_NAME EQ trigger->trg_name->sym_string
 		MODIFY X USING 
 			if (relation = trigger->trg_relation) {
-				for (p = buffer, q = X.RDB$RELATION_NAME; *q && *q != ' ';)
+				TEXT* p = buffer;
+				for (const TEXT* q = X.RDB$RELATION_NAME; *q && *q != ' ';)
 					*p++ = *q++;
 				*p = 0;
 				if (strcmp(relation->rel_name->sym_string, buffer))

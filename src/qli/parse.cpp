@@ -1261,7 +1261,8 @@ static qli_syntax* parse_drop(void)
 	NOD_T type;
 	DBB database;
 	SSHORT l;
-	TEXT *p, *q;
+	TEXT* p;
+	const TEXT* q;
 
 	PAR_real_token();
 

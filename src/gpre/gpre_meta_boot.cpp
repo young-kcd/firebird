@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.45 2004-10-23 00:54:26 robocop Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.46 2004-11-10 04:18:58 robocop Exp $
  */
 
 #include "firebird.h"
@@ -60,7 +60,7 @@ static SLONG array_size(gpre_fld*);
 static void get_array(DBB, const TEXT*, gpre_fld*);
 static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, DBB);
 static bool resolve_charset_and_collation(SSHORT*, const UCHAR*, const UCHAR*);
-static int upcase(const TEXT*, TEXT*);
+static int upcase(const TEXT*, TEXT* const);
 #endif
 
 /*____________________________________________________________
@@ -834,12 +834,12 @@ static bool resolve_charset_and_collation(
  *		length of string.
  */
 
-static int upcase(const TEXT* from, TEXT* to)
+static int upcase(const TEXT* from, TEXT* const to)
 {
 	TEXT c;
 
 	TEXT* p = to;
-	TEXT* const end = to + NAME_SIZE;
+	const TEXT* const end = to + NAME_SIZE;
 
 	while (p < end && (c = *from++)) {
 		*p++ = UPPER(c);

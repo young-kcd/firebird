@@ -177,7 +177,6 @@ int DBG_analyze(int pool_id)
  **************************************/
 	HNK hunk;
 	BLK block;
-	SCHAR *hunk_end;
 	SSHORT type;
 	SLONG length;
 	SLONG total_length = 0;
@@ -209,8 +208,8 @@ int DBG_analyze(int pool_id)
 	PLB pool = (PLB) vector->vec_object[pool_id];
 	if (pool) {
 		for (hunk = pool->plb_hunks; hunk; hunk = hunk->hnk_next) {
-			hunk_end = ((char*)hunk->hnk_address) + hunk->hnk_length;
-			for (block = (BLK) hunk->hnk_address; block != (BLK) hunk_end;
+			const char* hunk_end = ((char*)hunk->hnk_address) + hunk->hnk_length;
+			for (block = (BLK) hunk->hnk_address; block != (const BLK) hunk_end;
 				 block = (BLK) ((SCHAR *) block + length))
 			{
 				type = block->blk_type;

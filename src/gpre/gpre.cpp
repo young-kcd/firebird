@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.65 2004-10-30 05:30:08 robocop Exp $
+//  $Id: gpre.cpp,v 1.66 2004-11-10 04:18:58 robocop Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -254,7 +254,6 @@ int main(int argc, char* argv[])
 {
 	gpre_sym* symbol;
 	int i;
-	TEXT*	p;
 	TEXT	spare_file_name[256];
 	TEXT	spare_out_file_name[256];
 	bool renamed;
@@ -845,6 +844,7 @@ int main(int argc, char* argv[])
 		}
 
 		if (renamed) {
+			TEXT* p;
 			for (p = out_file_name; *p; p++);
 #ifdef VMS
 			while (p != out_file_name && *p != '.' && *p != ']')
@@ -1979,7 +1979,6 @@ static TOK get_token()
 {
 	SSHORT next;
 	USHORT peek;
-	TEXT *p, *end;
 
 //  Save the information from the previous token 
 
@@ -2028,8 +2027,8 @@ static TOK get_token()
 #endif
 //  Get token rolling 
 
-	p = gpreGlob.token_global.tok_string;
-	end = p + sizeof(gpreGlob.token_global.tok_string);
+	TEXT* p = gpreGlob.token_global.tok_string;
+	const TEXT* const end = p + sizeof(gpreGlob.token_global.tok_string);
 	*p++ = (TEXT) c;
 
 	if (c == EOF) {

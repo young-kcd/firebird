@@ -744,7 +744,7 @@ void EXE_send(thread_db*		tdbb,
 			  jrd_req*		request,
 			  USHORT	msg,
 			  USHORT	length,
-			  UCHAR*	buffer)
+			  const UCHAR*	buffer)
 {
 /**************************************
  *
@@ -1463,7 +1463,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		EXE_start(tdbb, proc_request, transaction);
 		if (in_message) {
 			EXE_send(tdbb, proc_request, 0, in_msg_length,
-					 reinterpret_cast<UCHAR*>(in_msg));
+					 reinterpret_cast<const UCHAR*>(in_msg));
 		}
 
 		EXE_receive(tdbb, proc_request, 1, out_msg_length,

@@ -271,7 +271,7 @@ int common_main(int argc,
 		*dpb++ = isc_dpb_version1;
 		*dpb++ = isc_dpb_gsec_attach;
 		*dpb++ = 1;	// size of parameter
-		*dpb++ = 1; // not 0 - ues, we are gsec
+		*dpb++ = 1; // not 0 - yes, we are gsec
 
 		if (user_data->dba_user_name_entered) {
 			*dpb++ = isc_dpb_user_name;

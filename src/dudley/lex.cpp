@@ -115,10 +115,9 @@ TOK LEX_filename(void)
  **************************************/
 	TOK token;
 	SSHORT c;
-	TEXT *p;
 
 	token = &dudleyGlob.DDL_token;
-	p = token->tok_string;
+	TEXT* p = token->tok_string;
 	*p++ = c = skip_white();
 
 	if (dudleyGlob.DDL_eof) {
@@ -263,7 +262,7 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 	ISC_STATUS_ARRAY status_vector;
 	int length;
 	SSHORT l, c;
-	TEXT buffer[1024], *p;
+	TEXT buffer[1024];
 
 	start = text->txt_position;
 	length = text->txt_length;
@@ -275,7 +274,7 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 	}
 
 	while (length) {
-		p = buffer;
+		TEXT* p = buffer;
 		while (length) {
 			--length;
 			*p++ = c = getc(trace_file);
@@ -417,11 +416,10 @@ static int nextchar(void)
  *
  **************************************/
 	SSHORT c;
-	SCHAR *end;
 
 /* mark the end of the buffer */
 
-	end = DDL_buffer + sizeof(DDL_buffer);
+	const char* const end = DDL_buffer + sizeof(DDL_buffer);
 
 /* If there isn't anything floating around, get a new line */
 

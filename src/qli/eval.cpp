@@ -674,7 +674,7 @@ static DSC *execute_edit( qli_nod* node)
 	if (!desc)
 		id->gds_quad_low = id->gds_quad_high = 0;
 
-	TEXT* field_name = (TEXT *) node->nod_arg[e_edt_name];
+	const TEXT* field_name = (TEXT *) node->nod_arg[e_edt_name];
 	BLOB_edit(id, dbb->dbb_handle, dbb->dbb_transaction, field_name);
 
 	node->nod_desc.dsc_missing = isNullBlob(id) ? DSC_missing : 0;

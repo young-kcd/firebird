@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.73 2004-11-08 03:29:16 robocop Exp $
+ * $Id: gpre.h,v 1.74 2004-11-10 04:18:58 robocop Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -766,14 +766,14 @@ typedef struct dbb {
 	const TEXT* dbb_c_user;		/* compiletime user name */
 	const TEXT* dbb_c_password;	/* compiletime password */
 	const TEXT* dbb_c_sql_role;	/* compiletime SQL role */
-	TEXT *dbb_r_user;			/* runtime user name */
-	TEXT *dbb_r_password;		/* runtime password */
-	TEXT *dbb_r_sql_role;		/* runtime SQL role */
-	TEXT *dbb_c_lc_messages;	/* compiletime user natural language */
+	const TEXT* dbb_r_user;		/* runtime user name */
+	const TEXT* dbb_r_password;	/* runtime password */
+	const TEXT* dbb_r_sql_role;	/* runtime SQL role */
+	const TEXT* dbb_c_lc_messages;	/* compiletime user natural language */
 	const TEXT* dbb_c_lc_ctype;	/* compiletime user character set */
-	TEXT *dbb_r_lc_messages;	/* runtime user natural language */
-	TEXT *dbb_r_lc_ctype;		/* runtime user character set */
-	TEXT *dbb_def_charset;		/* charset for CREATE DATABASE */
+	const TEXT* dbb_r_lc_messages;	/* runtime user natural language */
+	const TEXT* dbb_r_lc_ctype;	/* runtime user character set */
+	const TEXT* dbb_def_charset;	/* charset for CREATE DATABASE */
 	SSHORT dbb_know_subtype;	/* Use an charset subtype id on messages */
 	SSHORT dbb_char_subtype;	/* subtype to use for all SCHAR messages */
 	FB_API_HANDLE dbb_field_request;

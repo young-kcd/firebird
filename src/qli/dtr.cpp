@@ -120,7 +120,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	}
 #endif
 
-	TEXT* application_file = NULL;
+	const TEXT* application_file = NULL;
 	ALLQ_init();
 	LEX_init();
 	bool version_flag = false, flush_flag = false;

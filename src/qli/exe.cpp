@@ -301,8 +301,9 @@ file* EXEC_open_output(qli_nod* node)
 #else
 	TEXT* argv[20];
 	TEXT** arg = argv;
+	TEXT** const end = argv + FB_NELEM(argv) - 1; // The last element should be NULL
 	TEXT* pp = filename;
-	while (*pp) {
+	while (*pp && arg < end) {
 		*arg++ = pp;
 		while (*pp && *pp != ' ')
 			pp++;

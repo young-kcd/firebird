@@ -3941,7 +3941,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 									  isc_sql_dialect_datatype_unsupport,
 									  isc_arg_number, request->req_client_dialect,
 									  isc_arg_string,
-									  DSC_dtype_tostring(static_cast < UCHAR >
+									  DSC_dtype_tostring(static_cast<UCHAR>
 														 (field->fld_dtype)), 0);
 							return NULL;
 					}
@@ -3966,7 +3966,8 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input, const bool lis
 				if (qualifier) {
 					if (context->ctx_alias) {
 						if (strcmp(reinterpret_cast<const char*>(qualifier->str_data),
-								reinterpret_cast<const char*>(context->ctx_alias))) {
+								reinterpret_cast<const char*>(context->ctx_alias)))
+						{
 							continue;
 						}
 					}
@@ -4440,7 +4441,7 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_map:
 			{
 				const dsql_map* map =
-					reinterpret_cast <dsql_map*>(node->nod_arg[e_map_map]);
+					reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
 				found |= pass1_found_field(map->map_node, check_scope_level, 
 					match_type, field);
 				break;
@@ -5036,7 +5037,8 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 				context->ctx_relation)
 			{
 				if (relation = pass1_base_table(request, context->ctx_relation, 
-						(dsql_str*) *arg)) {
+						(dsql_str*) *arg))
+				{
 					break;
 				}
 			}
@@ -5103,7 +5105,7 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 	USHORT alias_length = alias_list->nod_count;
 	for (arg = alias_list->nod_arg; arg < end; arg++) {
 		DEV_BLKCHK(*arg, dsql_type_str);
-		alias_length += static_cast < USHORT > (((dsql_str*) *arg)->str_length);
+		alias_length += static_cast<USHORT>(((dsql_str*) *arg)->str_length);
 	}
 
 	dsql_str* alias = FB_NEW_RPT(*tdsql->getDefaultPool(), alias_length) dsql_str;

@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.24 2004-05-24 17:13:37 brodsom Exp $
+//	$Id: pat.cpp,v 1.25 2004-11-10 04:18:58 robocop Exp $
 //
 
 #include "firebird.h"
@@ -120,7 +120,6 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 	SSHORT value;				/* value needs to be signed since some of the
 								   values printed out are signed.  */
 	SLONG long_value;
-	TEXT* q;
 
 	// CVC: kudos to the programmer that had chosen variables with the same
 	// names that structs in gpre.h and with type char* if not enough.
@@ -366,8 +365,10 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			continue;
 		if (string) {
 			if (handle_flag && (gpreGlob.sw_language == lang_ada))
-				for (q = gpreGlob.ada_package; *q;)
+			{
+				for (const TEXT* q = gpreGlob.ada_package; *q;)
 					*p++ = *q++;
+			}
 			while (*string)
 				*p++ = *string++;
 			continue;

@@ -199,8 +199,8 @@ void LOG_call(enum log_t call_type, ...)
  **************************************/
 	SSHORT number;
 	SLONG long_number;
-	SCHAR *pointer;
-	SLONG *long_pointer;
+	const SCHAR *pointer;
+	const SLONG *long_pointer;
 	va_list ptr;
 
 	Database* dbb = GET_DBB();

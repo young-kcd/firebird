@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: par.cpp,v 1.54 2004-10-30 05:36:08 robocop Exp $
+//  $Id: par.cpp,v 1.55 2004-11-10 04:18:58 robocop Exp $
 //  Revision 1.2  2000/11/27 09:26:13  fsg
 //  Fixed bugs in gpre to handle PYXIS forms
 //  and allow edit.e and fred.e to go through
@@ -435,7 +435,7 @@ SSHORT PAR_blob_subtype(DBB db)
 
 act* PAR_database(bool sql, const TEXT* base_directory)
 {
-	TEXT s[MAXPATHLEN << 1], *string;
+	TEXT s[MAXPATHLEN << 1];
 
 	act* action = MSC_action(0, ACT_database);
 	DBB db = (DBB) MSC_alloc(DBB_LEN);
@@ -459,6 +459,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 	MSC_match(KW_COMPILETIME);
 
 //  parse the compiletime options 
+	TEXT* string;
 
 	for (;;) {
 		if (MSC_match(KW_FILENAME) && (!isQuoted(gpreGlob.token_global.tok_type)))

@@ -3518,7 +3518,6 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
  *
  **************************************/
 
-	SCHAR b1, b2;
 	BufferDesc *p1, *p2;
 	BufferDesc* p = *bdb;
 
@@ -3538,7 +3537,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
 			if (comp < 0)
 			{
 				p1 = p->bdb_right;
-				b1 = p1->bdb_balance;
+				const SCHAR b1 = p1->bdb_balance;
 
 				if ((b1 == 0) || (b1 == -comp))
 				{
@@ -3572,7 +3571,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
 					// double RL or LR rotation
 
 					p2 = p1->bdb_left; 
-					b2 = p2->bdb_balance;
+					const SCHAR b2 = p2->bdb_balance;
 
 					if ( (p1->bdb_left = p2->bdb_right) )
 					{
@@ -3616,7 +3615,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
 			else
 			{
 				p1 = p->bdb_left;
-				b1 = p1->bdb_balance;
+				const SCHAR b1 = p1->bdb_balance;
 
 				if ((b1 == 0) || (b1 == -comp))
 				{
@@ -3650,7 +3649,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SCHAR comp)
 					// double RL or LR rotation
 
 					p2 = p1->bdb_right;
-					b2 = p2->bdb_balance;
+					const SCHAR b2 = p2->bdb_balance;
 
 					if ( (p1->bdb_right = p2->bdb_left) )
 					{
@@ -5587,7 +5586,7 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 		return;
 	}
 
-	SCHAR* next_buffer = prefetch->prf_io_buffer;
+	const SCHAR* next_buffer = prefetch->prf_io_buffer;
 	BufferDesc** next_bdb = prefetch->prf_bdbs;
 
 	for (USHORT i = 0; i < prefetch->prf_max_prefetch; i++) {

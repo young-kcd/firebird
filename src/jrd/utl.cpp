@@ -1704,7 +1704,7 @@ int API_ROUTINE BLOB_get(BSTREAM* bstream)
 	if (!bstream->bstr_buffer)
 		return EOF;
 
-	while (1) {
+	while (true) {
 		if (--bstream->bstr_cnt >= 0)
 			return *bstream->bstr_ptr++ & 0377;
 

@@ -414,7 +414,7 @@ public:
 		add_byte(word);
 		add_byte(word >> 8);
 	}
-} ;
+};
 
 typedef str* STR;
 /* Symbol block, also used for hash table */
