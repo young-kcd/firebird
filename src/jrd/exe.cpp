@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: exe.cpp,v 1.27 2002-11-11 19:42:45 hippoman Exp $
+$Id: exe.cpp,v 1.28 2002-11-13 15:57:29 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -2259,7 +2259,8 @@ static JRD_NOD looper(TDBB tdbb, REQ request, JRD_NOD in_node)
 				break;
 
 			case req::req_unwind:
-				if (request->req_label == (USHORT) node->nod_arg[e_lbl_label]) {
+				if ((request->req_label == (USHORT) node->nod_arg[e_lbl_label]) &&
+							(request->req_flags & req_leave)) {
 					request->req_flags &= ~req_leave;
 					request->req_operation = req::req_return;
 				}
