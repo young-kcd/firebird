@@ -1,3 +1,55 @@
+2002-11-25 21:29  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp:
+	
+	bugfix: allow use of other outer-references in a aggregated
+	sub-select
+
+2002-11-25 17:25  dimitr
+
+	* firebird2/src/jrd/: isc.cpp, isc_proto.h:
+	
+	Merged isc_win32.cpp into isc.cpp. By Dimitry Sibiryakov.
+
+2002-11-25 17:14  kkuznetsov
+
+	* firebird2/src/msgs/: change_msgs.epp, enter_msgs.epp,
+	modify_msgs.epp:
+	
+	Fix compile error on Solaris X86
+
+2002-11-25 16:28  kkuznetsov
+
+	* firebird2/src/burp/backup.epp:
+	
+	[no log message]
+
+2002-11-25 16:23  kkuznetsov
+
+	* firebird2/src/burp/backup.epp:
+	
+	Fix compile error on SOLX86
+
+2002-11-25 11:24  dimitr
+
+	* firebird2/src/jrd/blb.cpp:
+	
+	Cleanup.
+
+2002-11-25 11:23  dimitr
+
+	* firebird2/src/jrd/cmp.cpp:
+	
+	Since an impure area is dynamically allocated out of the request
+	memory pool, I cannot see any reason to limit request size.
+
+2002-11-25 08:46  eku
+
+	* firebird2/src/ipserver/ipc.h:
+	
+	Undone mistaken replacement of ISC_STATUS_LENGTH. Thanks to Claudio
+	Valderr.
+
 2002-11-24 18:53  skidder
 
 	* firebird2/builds/posix/prefix.linux:
