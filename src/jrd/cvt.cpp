@@ -1381,7 +1381,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				if (tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
 					tdbb->tdbb_request)
 				{
-					fb_assert(!request->req_timestamp.isEmpty());
+					fb_assert(!tdbb->tdbb_request->req_timestamp.isEmpty());
 					cur_date = tdbb->tdbb_request->req_timestamp.value().timestamp_date;
 				}
 				else
