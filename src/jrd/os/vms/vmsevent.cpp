@@ -91,7 +91,8 @@ static SES sessions;
 static EVNT parent_events;
 static SLONG request_id;
 static POKE pokes;
-static USHORT thread_started, delivery_flag;
+static bool thread_started;
+static bool delivery_flag;
 
 static UCHAR *alloc(USHORT);
 static void blocking_ast(EVNT);
@@ -100,14 +101,13 @@ static void delete_request(VMS_REQ);
 static void deliver(EVNT);
 static void deliver_request(VMS_REQ);
 static void delivery_thread(void);
-static int delivery_wait(void);
 static ISC_STATUS error(ISC_STATUS *, TEXT *, ISC_STATUS);
 static EVNT find_event(USHORT, TEXT *, EVNT);
 static void free(SCHAR *);
 static RINT historical_interest(SES, EVNT);
 static EVNT make_event(USHORT, TEXT *, EVNT);
 static void poke_ast(POKE);
-static BOOLEAN request_completed(VMS_REQ);
+static bool request_completed(VMS_REQ);
 static int return_ok(ISC_STATUS *);
 
 
@@ -153,7 +153,7 @@ SLONG EVENT_create_session(ISC_STATUS status_vector)
 
 	session = (SES) alloc(sizeof(struct ses));
 	if (!session) {
-		assert(FALSE);			/* No error handling */
+		assert(false);			/* No error handling */
 		return 0L;
 	}
 	session->ses_next = sessions;
@@ -325,7 +325,9 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 				USHORT string_length,
 				TEXT * string,
 				USHORT events_length,
-				UCHAR * events, void (*ast_routine) (), void *ast_arg)
+				UCHAR * events,
+				void (*ast_routine) (),
+				void *ast_arg)
 {
 /**************************************
  *
@@ -339,7 +341,9 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
  **************************************/
 	SES session;
 	UCHAR *p, *end, *find_end;
-	USHORT count, flag, len;
+	USHORT count;
+	bool flag;
+	USHORT len;
 	VMS_REQ request, next;
 	EVNT event, parent;
 	RINT interest, *ptr, *ptr2;
@@ -348,7 +352,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 	session = (SES) session_id;
 
 	if (!thread_started) {
-		thread_started = TRUE;
+		thread_started = true;
 		gds__thread_start(delivery_thread, 0, THREAD_high, THREAD_ast);
 	}
 
@@ -388,7 +392,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 	ptr = &request->req_interests;
 	p = events + 1;
 	end = events + events_length;
-	flag = FALSE;
+	flag = false;
 
 	while (p < end) {
 		count = *p++;
@@ -422,7 +426,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 		interest->rint_count = gds__vax_integer(p, 4);
 		p += 4;
 		if (interest->rint_count <= event->evnt_count)
-			flag = TRUE;
+			flag = true;
 	}
 
 	if (flag)
@@ -613,10 +617,12 @@ static void deliver(EVNT event)
 	event->evnt_count = event->evnt_lksb.lksb_value[0];
 
 	for (interest = event->evnt_interests; interest;
-		 interest = interest->rint_evnt_interests) if (request =
-													   interest->rint_request)
-				if (request->req_ast && request_completed(request))
-				delivery_flag = TRUE;
+		 interest = interest->rint_evnt_interests) 
+	{
+		if (request = interest->rint_request)
+			if (request->req_ast && request_completed(request))
+				delivery_flag = true;
+	}
 
 	gds__completion_ast();
 }
@@ -701,39 +707,28 @@ static void delivery_thread(void)
 	SES session;
 
 	for (;;) {
-		delivery_flag = FALSE;
+		delivery_flag = false;
 		for (session = sessions; session; session = session->ses_next)
 			for (request = session->ses_requests; request;
 				 request = request->req_next)
-					if (request->req_ast && request_completed(request)) {
+			{
+				if (request->req_ast && request_completed(request)) 
+				{
 					deliver_request(request);
 					request->req_ast = NULL;
 				}
-		gds__thread_wait(delivery_wait, 0);
+			}
+		if (delivery_flag)
+			gds__thread_wait(TRUE, 0);
+		else
+			gds__thread_wait(FALSE, 0);
 	}
 }
 
-
-static int delivery_wait(void)
+static ISC_STATUS error(ISC_STATUS * status_vector,
+						TEXT * string,
+						ISC_STATUS status)
 {
-/**************************************
- *
- *	d e l i v e r y _ w a i t
- *
- **************************************
- *
- * Functional description
- *	See if the deliver thread should wake up.
- *
- **************************************/
-
-	return delivery_flag;
-}
-
-
-static ISC_STATUS error(ISC_STATUS * status_vector;
-					TEXT * string;
-					ISC_STATUS status; {
 /**************************************
  *
  *	e r r o r
@@ -745,18 +740,20 @@ static ISC_STATUS error(ISC_STATUS * status_vector;
  *
  **************************************/
 
-					*status_vector++ = gds_arg_gds;
-					*status_vector++ = gds__sys_request;
-					*status_vector++ = gds_arg_string;
-					*status_vector++ = (ISC_STATUS) string;
-					*status_vector++ = gds_arg_vms;
-					*status_vector++ = status; *status_vector++ = gds_arg_end;
-					return gds__sys_request;
-					}
+	*status_vector++ = gds_arg_gds;
+	*status_vector++ = gds__sys_request;
+	*status_vector++ = gds_arg_string;
+	*status_vector++ = (ISC_STATUS) string;
+	*status_vector++ = gds_arg_vms;
+	*status_vector++ = status; *status_vector++ = gds_arg_end;
+	return gds__sys_request;
+}
 
 
-					static EVNT find_event(USHORT length,
-										   TEXT * string, EVNT parent) {
+static EVNT find_event(USHORT length,
+					   TEXT * string,
+					   EVNT parent) 
+{
 /**************************************
  *
  *	f i n d _ e v e n t
@@ -767,15 +764,19 @@ static ISC_STATUS error(ISC_STATUS * status_vector;
  *	Lookup an event.
  *
  **************************************/
-					EVNT event;
-					event = (parent) ? parent->evnt_offspring : parent_events;
-					for (; event; event = event->evnt_next)
-					if (event->evnt_length == length &&
-						!strncmp(string, event->evnt_name, length))
-					return event; return NULL;}
+	EVNT event;
+	event = (parent) ? parent->evnt_offspring : parent_events;
+	for (; event; event = event->evnt_next)
+		if (event->evnt_length == length &&
+			!strncmp(string, event->evnt_name, length))
+		{
+			return event;
+		}
+	return NULL;
+}
 
 
-					static void free(SCHAR * block) {
+static void free(SCHAR * block) {
 /**************************************
  *
  *	f r e e
@@ -787,10 +788,13 @@ static ISC_STATUS error(ISC_STATUS * status_vector;
  *
  **************************************/
 
-					gds__free(block);}
+	gds__free(block);
+}
 
 
-					static RINT historical_interest(SES session, EVNT event) {
+static RINT historical_interest(SES session,
+								EVNT event) 
+{
 /**************************************
  *
  *	h i s t o r i c a l _ i n t e r e s t
@@ -801,15 +805,21 @@ static ISC_STATUS error(ISC_STATUS * status_vector;
  *	Find a historical interest, if any, of an event with a session.
  *
  **************************************/
-					RINT interest, *ptr;
-					for (ptr = &session->ses_interests; interest = *ptr;
-						 ptr = &(*ptr)->rint_req_interests)
-					if (interest->rint_event == event)
-					return interest; return NULL;}
+	RINT interest, *ptr;
+	for (ptr = &session->ses_interests; interest = *ptr;
+		 ptr = &(*ptr)->rint_req_interests)
+	{
+		if (interest->rint_event == event)
+			return interest; 
+	}
+	return NULL;
+}
 
 
-					static EVNT make_event(USHORT length,
-										   TEXT * string, EVNT parent) {
+static EVNT make_event(USHORT length,
+					   TEXT * string,
+					   EVNT parent) 
+{
 /**************************************
  *
  *	m a k e _ e v e n t
@@ -820,69 +830,71 @@ static ISC_STATUS error(ISC_STATUS * status_vector;
  *	Allocate an link in an event.
  *
  **************************************/
-					EVNT event, *ptr;
-					LKSB * lksb;
-					SLONG parent_id;
-					int status;
-					struct dsc$descriptor desc;
-					event = (EVNT) alloc(sizeof(struct evnt) + length);
-					if (!event) return NULL; if (parent) {
-					ptr = &parent->evnt_offspring;
-					parent_id = parent->evnt_lksb.lksb_lock_id;}
-					else
-					{
-					ptr = &parent_events; parent_id = 0;}
+	EVNT event, *ptr;
+	LKSB * lksb;
+	SLONG parent_id;
+	int status;
+	struct dsc$descriptor desc;
+	event = (EVNT) alloc(sizeof(struct evnt) + length);
+	if (!event) return NULL; if (parent) {
+	ptr = &parent->evnt_offspring;
+	parent_id = parent->evnt_lksb.lksb_lock_id;}
+	else
+	{
+	ptr = &parent_events; parent_id = 0;}
 
-					event->evnt_next = *ptr;
-					*ptr = event;
-					event->evnt_parent = parent;
-					event->evnt_length = length;
-					strncpy(event->evnt_name, string, length);
+	event->evnt_next = *ptr;
+	*ptr = event;
+	event->evnt_parent = parent;
+	event->evnt_length = length;
+	strncpy(event->evnt_name, string, length);
 /* Request VMS lock on event */
-					ISC_make_desc(string, &desc, length);
-					lksb = &event->evnt_lksb; status = sys$enqw(0,	/* event flag */
-																LCK$K_PRMODE,	/* lock mode */
-																lksb,	/* Lock status block */
-																LCK$M_SYSTEM | LCK$M_VALBLK,	/* flags */
-																&desc,	/* resource name */
-																parent_id,	/* parent id */
-																0,	/* ast address */
-																event,	/* ast argument */
-																blocking_ast,	/* blocking ast */
-																0,	/* access mode */
-																0);
-					event->evnt_count = lksb->lksb_value[0];
+	ISC_make_desc(string, &desc, length);
+	lksb = &event->evnt_lksb; status = sys$enqw(0,	/* event flag */
+												LCK$K_PRMODE,	/* lock mode */
+												lksb,	/* Lock status block */
+												LCK$M_SYSTEM | LCK$M_VALBLK,	/* flags */
+												&desc,	/* resource name */
+												parent_id,	/* parent id */
+												0,	/* ast address */
+												event,	/* ast argument */
+												blocking_ast,	/* blocking ast */
+												0,	/* access mode */
+												0);
+	event->evnt_count = lksb->lksb_value[0];
 /* If the lock block is invalid, clean it up immediately */
-					if ((status & 1) &&
-						event->evnt_lksb.lksb_status == SS$_VALNOTVALID) {
-					status = sys$enqw(0,	/* event flag */
-									  LCK$K_PWMODE,	/* lock mode */
-									  lksb,	/* Lock status block */
-									  LCK$M_CONVERT,	/* flags */
-									  0,	/* resource name */
-									  0,	/* parent id */
-									  0,	/* ast address */
-									  event,	/* ast argument */
-									  blocking_ast,	/* blocking ast */
-									  0,	/* access mode */
-									  0);
-					event->evnt_count = lksb->lksb_value[0] = 0;
-					status = sys$enqw(0,	/* event flag */
-									  LCK$K_PRMODE,	/* lock mode */
-									  lksb,	/* Lock status block */
-									  LCK$M_CONVERT | LCK$M_VALBLK,	/* flags */
-									  0,	/* resource name */
-									  0,	/* parent id */
-									  0,	/* ast address */
-									  event,	/* ast argument */
-									  blocking_ast,	/* blocking ast */
-									  0,	/* access mode */
-									  0);}
+	if ((status & 1) &&
+		event->evnt_lksb.lksb_status == SS$_VALNOTVALID) {
+	status = sys$enqw(0,	/* event flag */
+					  LCK$K_PWMODE,	/* lock mode */
+					  lksb,	/* Lock status block */
+					  LCK$M_CONVERT,	/* flags */
+					  0,	/* resource name */
+					  0,	/* parent id */
+					  0,	/* ast address */
+					  event,	/* ast argument */
+					  blocking_ast,	/* blocking ast */
+					  0,	/* access mode */
+					  0);
+	event->evnt_count = lksb->lksb_value[0] = 0;
+	status = sys$enqw(0,	/* event flag */
+					  LCK$K_PRMODE,	/* lock mode */
+					  lksb,	/* Lock status block */
+					  LCK$M_CONVERT | LCK$M_VALBLK,	/* flags */
+					  0,	/* resource name */
+					  0,	/* parent id */
+					  0,	/* ast address */
+					  event,	/* ast argument */
+					  blocking_ast,	/* blocking ast */
+					  0,	/* access mode */
+					  0);}
 
-					return event;}
+	return event;
+}
 
 
-					static void poke_ast(POKE poke) {
+static void poke_ast(POKE poke) 
+{
 /**************************************
  *
  *	p o k e _ a s t
@@ -894,17 +906,18 @@ static ISC_STATUS error(ISC_STATUS * status_vector;
  *	and deque the lock.
  *
  **************************************/
-					int status;
-					LKSB * lksb;
-					lksb = &poke->poke_lksb;
-					lksb->lksb_value[0] += poke->poke_value;
-					status =
-					sys$deq(lksb->lksb_lock_id, lksb->lksb_value, 0, 0);
-					status = sys$deq(poke->poke_parent_id, 0, 0, 0);
-					--poke->poke_use_count;}
+	int status;
+	LKSB * lksb;
+	lksb = &poke->poke_lksb;
+	lksb->lksb_value[0] += poke->poke_value;
+	status = sys$deq(lksb->lksb_lock_id, lksb->lksb_value, 0, 0);
+	status = sys$deq(poke->poke_parent_id, 0, 0, 0);
+	--poke->poke_use_count;
+}
 
 
-					static BOOLEAN request_completed(VMS_REQ request) {
+static bool request_completed(VMS_REQ request)
+{
 /**************************************
  *
  *	r e q u e s t _ c o m p l e t e d
@@ -915,18 +928,22 @@ static ISC_STATUS error(ISC_STATUS * status_vector;
  *	See if request is completed.
  *
  **************************************/
-					RINT interest;
-					EVNT event;
-					for (interest = request->req_interests; interest;
-						 interest = interest->rint_req_interests) {
-					event = interest->rint_event;
-					if (interest->rint_count <=
-						event->evnt_count) return TRUE;}
+	RINT interest;
+	EVNT event;
+	for (interest = request->req_interests; interest;
+		 interest = interest->rint_req_interests) 
+	{
+		event = interest->rint_event;
+		if (interest->rint_count <= event->evnt_count) 
+			return true;
+	}
 
-					return FALSE;}
+	return false;
+}
 
 
-					static int return_ok(ISC_STATUS * status_vector) {
+static int return_ok(ISC_STATUS * status_vector)
+{
 /**************************************
  *
  *	r e t u r n _ o k
@@ -938,6 +955,8 @@ static ISC_STATUS error(ISC_STATUS * status_vector;
  *
  **************************************/
 
-					*status_vector++ = gds_arg_gds;
-					*status_vector++ = 0;
-					*status_vector = gds_arg_end; return 0;}
+	*status_vector++ = gds_arg_gds;
+	*status_vector++ = 0;
+	*status_vector = gds_arg_end; 
+	return 0;
+}

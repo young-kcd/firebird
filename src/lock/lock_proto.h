@@ -38,7 +38,7 @@ SLONG	LOCK_query_data(SLONG, USHORT, USHORT);
 SLONG	LOCK_read_data(SLONG);
 SLONG	LOCK_read_data2(SLONG, USHORT, UCHAR *, USHORT, SLONG);
 void	LOCK_re_post(int (*)(void *), void *, SLONG);
-BOOLEAN	LOCK_shut_manager(void);
+bool	LOCK_shut_manager(void);
 SLONG	LOCK_write_data(SLONG, SLONG);
 
 #endif /* _LOCK_LOCK_PROTO_H_ */

@@ -80,7 +80,7 @@ static void prt_lock_activity(OUTFILE, LHB, USHORT, USHORT, USHORT);
 static void prt_lock_init(void);
 static void prt_history(OUTFILE, LHB, PTR, SCHAR *);
 static void prt_lock(OUTFILE, LHB, LBL, USHORT);
-static void prt_owner(OUTFILE, LHB, OWN, BOOLEAN, BOOLEAN);
+static void prt_owner(OUTFILE, LHB, OWN, bool, bool);
 static void prt_owner_wait_cycle(OUTFILE, LHB, OWN, USHORT, struct waitque *);
 static void prt_request(OUTFILE, LHB, LRQ);
 static void prt_que(OUTFILE, LHB, SCHAR *, SRQ, USHORT);
@@ -123,11 +123,15 @@ void CLIB_ROUTINE main( int argc, char *argv[])
  *	to ib_stdout.
  *
  **************************************/
-	BOOLEAN sw_requests, sw_owners, sw_locks, sw_history, sw_nobridge;
+	bool sw_requests;
+	bool sw_owners;
+	bool sw_locks;
+	bool sw_history;
+	bool sw_nobridge;
 	USHORT sw_series, sw_interactive, sw_intervals, sw_seconds;
-	BOOLEAN sw_consistency;
-	BOOLEAN sw_waitlist;
-	BOOLEAN sw_file;
+	bool sw_consistency;
+	bool sw_waitlist;
+	bool sw_file;
 	LHB LOCK_header, header = NULL;
 	SLONG LOCK_size_mapped = DEFAULT_SIZE;
 	int orig_argc;
@@ -188,11 +192,11 @@ void CLIB_ROUTINE main( int argc, char *argv[])
 /* Handle switches, etc. */
 
 	argv++;
-	sw_consistency = FALSE;
-	sw_waitlist = FALSE;
-	sw_file = FALSE;
-	sw_requests = sw_locks = sw_history = sw_nobridge = FALSE;
-	sw_owners = TRUE;
+	sw_consistency = false;
+	sw_waitlist = false;
+	sw_file = false;
+	sw_requests = sw_locks = sw_history = sw_nobridge = false;
+	sw_owners = true;
 	sw_series = sw_interactive = sw_intervals = sw_seconds = 0;
 
 	while (--argc) {
@@ -206,31 +210,31 @@ void CLIB_ROUTINE main( int argc, char *argv[])
 			switch (c) {
 			case 'o':
 			case 'p':
-				sw_owners = TRUE;
+				sw_owners = true;
 				break;
 
 			case 'c':
-				sw_nobridge = TRUE;
-				sw_consistency = TRUE;
+				sw_nobridge = true;
+				sw_consistency = true;
 				break;
 
 			case 'l':
-				sw_locks = TRUE;
+				sw_locks = true;
 				break;
 
 			case 'r':
-				sw_requests = TRUE;
+				sw_requests = true;
 				break;
 
 			case 'a':
-				sw_locks = TRUE;
-				sw_owners = TRUE;
-				sw_requests = TRUE;
-				sw_history = TRUE;
+				sw_locks = true;
+				sw_owners = true;
+				sw_requests = true;
+				sw_history = true;
 				break;
 
 			case 'h':
-				sw_history = TRUE;
+				sw_history = true;
 				break;
 
 			case 's':
@@ -245,7 +249,7 @@ void CLIB_ROUTINE main( int argc, char *argv[])
 				break;
 
 			case 'n':
-				sw_nobridge = TRUE;
+				sw_nobridge = true;
 				break;
 
 			case 'i':
@@ -277,7 +281,7 @@ void CLIB_ROUTINE main( int argc, char *argv[])
 					sw_interactive =
 						(SW_I_ACQUIRE | SW_I_OPERATION | SW_I_TYPE |
 						 SW_I_WAIT);
-				sw_nobridge = TRUE;
+				sw_nobridge = true;
 				sw_seconds = sw_intervals = 1;
 				if (argc > 1) {
 					sw_seconds = atoi(*argv++);
@@ -296,13 +300,13 @@ void CLIB_ROUTINE main( int argc, char *argv[])
 				break;
 
 			case 'w':
-				sw_nobridge = TRUE;
-				sw_waitlist = TRUE;
+				sw_nobridge = true;
+				sw_waitlist = true;
 				break;
 
 			case 'f':
-				sw_nobridge = TRUE;
-				sw_file = TRUE;
+				sw_nobridge = true;
+				sw_file = true;
 				if (argc > 1) {
 					lock_file = *argv++;
 					--argc;
@@ -358,8 +362,8 @@ void CLIB_ROUTINE main( int argc, char *argv[])
 		&& LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped) {
 		length = LOCK_header->lhb_length;
 #if (!(defined UNIX) || (defined HAVE_MMAP))
-		LOCK_header =
-			(LHB) ISC_remap_file(status_vector, &shmem_data, length, FALSE);
+		LOCK_header = (LHB) ISC_remap_file(status_vector, &shmem_data, length,
+										   FALSE);
 #endif
 	}
 
@@ -832,7 +836,7 @@ static void prt_history(
 
 	FPRINTF(outfile, "%s:\n", title);
 
-	for (history = (HIS) ABS_PTR(history_header); TRUE;
+	for (history = (HIS) ABS_PTR(history_header); true;
 		 history = (HIS) ABS_PTR(history->his_next)) {
 		if (history->his_operation)
 			FPRINTF(outfile,
@@ -920,10 +924,11 @@ static void prt_lock(
 }
 
 
-static void prt_owner(
-					  OUTFILE outfile,
+static void prt_owner(OUTFILE outfile,
 					  LHB LOCK_header,
-					  OWN owner, BOOLEAN sw_requests, BOOLEAN sw_waitlist)
+					  OWN owner,
+					  bool sw_requests,
+					  bool sw_waitlist)
 {
 /**************************************
  *
@@ -1043,7 +1048,7 @@ static void prt_owner_wait_cycle(
 		LRQ owner_request;
 		LBL lock;
 		USHORT counter;
-		BOOLEAN owner_conversion;
+		bool owner_conversion;
 
 		if (waiters->waitque_depth > FB_NELEM(waiters->waitque_entry)) {
 			FPRINTF(outfile, "Dependency too deep\n");
@@ -1055,8 +1060,7 @@ static void prt_owner_wait_cycle(
 		FPRINTF(outfile, "\n");
 		owner_request = (LRQ) ABS_PTR(owner->own_pending_request);
 		assert(owner_request->lrq_type == type_lrq);
-		owner_conversion =
-			(owner_request->lrq_state > LCK_null) ? TRUE : FALSE;
+		owner_conversion = (owner_request->lrq_state > LCK_null) ? true : false;
 
 		lock = (LBL) ABS_PTR(owner_request->lrq_lock);
 		assert(lock->lbl_type == type_lbl);
@@ -1079,8 +1083,7 @@ static void prt_owner_wait_cycle(
 			assert(lock_request->lrq_type == type_lrq);
 
 
-			if (LOCK_header->lhb_flags & LHB_lock_ordering
-				&& !owner_conversion) {
+			if (LOCK_header->lhb_flags & LHB_lock_ordering && !owner_conversion) {
 
 				/* Requests AFTER our request can't block us */
 				if (owner_request == lock_request)

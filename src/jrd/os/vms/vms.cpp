@@ -58,12 +58,12 @@ extern "C" {
 
 extern gds__completion_ast();
 
-static BOOLEAN extend_file(FIL, ISC_STATUS *);
+static bool extend_file(FIL, ISC_STATUS *);
 static FIL seek_file(FIL, BDB, int *);
 static FIL setup_file(DBB, TEXT *, USHORT, USHORT, struct NAM *);
 static void setup_trace(FIL, SSHORT);
 static void trace_event(FIL, SSHORT, SCHAR *, SSHORT);
-static BOOLEAN vms_io_error(ISC_STATUS *, TEXT *, ISC_STATUS, int, FIL);
+static bool vms_io_error(ISC_STATUS *, TEXT *, ISC_STATUS, int, FIL);
 
 #define DVI$_DEVLOCKNAM		240
 
@@ -671,7 +671,7 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS * status_vector)
 }
 
 
-static BOOLEAN extend_file(FIL file, ISC_STATUS * status_vector)
+static bool extend_file(FIL file, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -757,7 +757,7 @@ static BOOLEAN extend_file(FIL file, ISC_STATUS * status_vector)
 		return vms_io_error(status_vector, "QIO IO$_MODIFY",
 							isc_io_access_err, status, file);
 
-	return TRUE;
+	return true;
 }
 
 
@@ -930,7 +930,7 @@ static void trace_event(FIL file, SSHORT type, SCHAR * ptr, SSHORT length)
 #endif
 
 
-static BOOLEAN vms_io_error(
+static bool vms_io_error(
 							ISC_STATUS * status_vector,
 							TEXT * string,
 							ISC_STATUS operation, int code, FIL file)
@@ -959,7 +959,7 @@ static BOOLEAN vms_io_error(
 	*status_vector++ = code;
 	*status_vector++ = gds_arg_end;
 
-	return FALSE;
+	return false;
 }
 
 

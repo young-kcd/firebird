@@ -55,7 +55,7 @@ typedef struct map_msg {
 extern double MTH$CVT_D_G(), MTH$CVT_G_D();
 
 static void bugcheck(int);
-static BOOLEAN check_message(UCHAR **);
+static bool check_message(UCHAR **);
 static MAP_MSG rebuild_message(UCHAR **, UCHAR **);
 static int translate_status(ISC_STATUS *, ISC_STATUS *, SCHAR **);
 
@@ -394,7 +394,8 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
  **************************************/
 	ISC_STATUS code, number, length, gds_index, *tmp;
 	ISC_STATUS_ARRAY temp;
-	USHORT shift, flag;
+	USHORT shift;
+	bool flag;
 	SCHAR msgbuff[WRKBUF_SIZ], *p, *q, *pw1, *pw2, flags[4], part;
 	struct dsc$descriptor_s desc, *dsc_ptr;
 //	static const SCHAR * const messages[] = {
@@ -432,7 +433,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 		return gds__random;
 	}
 
-	flag = FALSE;
+	flag = false;
 	vms_status = vms_status + 3;
 
 	if (*p == '%')
@@ -455,7 +456,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 				BUGCHECK(235);	/* msg 235 Unimplemented conversion, FAO directive X,U */
 			*tmp++ = gds_arg_number;
 			number = *tmp++ = *vms_status++;
-			flag = (number == 1) ? FALSE : TRUE;
+			flag = (number == 1) ? false : true;
 			sprintf(pw2, "%%x%x", number);
 			while (*pw2)
 				++pw2;
@@ -524,7 +525,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 	p = messages[gds_index];
 	tmp = temp;
 	gds_status = gds_status + 2;
-	flag = FALSE;
+	flag = false;
 
 	while (*p) {
 		if (*p++ != '%')
@@ -533,7 +534,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 		case 's':
 			*gds_status++ = gds_arg_cstring;
 			if (*tmp++ != gds_arg_cstring || flag) {
-				flag = TRUE;
+				flag = true;
 				*gds_status++ = 3;
 				*gds_status++ = pw2;
 				sprintf(pw2, "<?>");
@@ -548,7 +549,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 		case 'd':
 			*gds_status++ = gds_arg_number;
 			if (*tmp++ != gds_arg_number || flag) {
-				flag = TRUE;
+				flag = true;
 				*gds_status++ = -1;
 				break;
 			}
@@ -632,7 +633,7 @@ static void bugcheck(int number)
 }
 
 
-static BOOLEAN check_message(UCHAR ** org_ptr)
+static bool check_message(UCHAR ** org_ptr)
 {
 /**************************************
  *
@@ -642,7 +643,7 @@ static BOOLEAN check_message(UCHAR ** org_ptr)
  *
  * Functional description
  *	Parse a blr message.  If the message contains a non-Rdb data type,
- *	return TRUE.  Otherwise update the blr pointer and return FALSE.
+ *	return true.  Otherwise update the blr pointer and return false.
  *
  **************************************/
 	UCHAR *org, dtype;
@@ -659,7 +660,7 @@ static BOOLEAN check_message(UCHAR ** org_ptr)
 		case blr_timestamp:
 		case blr_cstring:
 		case blr_d_float:
-			return TRUE;
+			return true;
 
 		case blr_text:
 		case blr_varying:
@@ -673,7 +674,7 @@ static BOOLEAN check_message(UCHAR ** org_ptr)
 
 	*org_ptr = org;
 
-	return FALSE;
+	return false;
 }
 
 

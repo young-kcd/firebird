@@ -46,7 +46,7 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
  * 2001.10.01 Claudio Valderrama: enable explicit GRANT...to ROLE role_name.
  * 2001.10.06 Claudio Valderrama: Honor explicit USER keyword in GRANTs and REVOKEs.
  * 2002.07.05 Mark O'Donohue: change keyword DEBUG to KW_DEBUG to avoid
- *            clashes with normal DEBUG macro.
+ *			clashes with normal DEBUG macro.
  * 2002.07.30 Arno Brinkman:  
  * 2002.07.30 	Let IN predicate handle value_expressions
  * 2002.07.30 	tokens CASE, NULLIF, COALESCE added
@@ -61,8 +61,8 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
  * 2002.08.31 Dmitry Yemanov: allowed user-defined index names for PK/FK/UK constraints
  * 2002.09.01 Dmitry Yemanov: RECREATE VIEW
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
- *                            exception handling in SPs/triggers,
- *                            implemented ROWS_AFFECTED system variable
+ *							exception handling in SPs/triggers,
+ *							implemented ROWS_AFFECTED system variable
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2002.12.03 Dmitry Yemanov: Implemented ORDER BY clause in subqueries.
@@ -75,7 +75,7 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
  * 2003.06.13 Nickolay Samofatov: Make INSERTING/UPDATING/DELETING non-reserved keywords
  * 2003.07.01 Blas Rodriguez Somoza: Change DEBUG and IN to avoid conflicts in win32 build/bison
  * 2003.08.11 Arno Brinkman: Changed GROUP BY to support all expressions and added "AS" support
- *                           with table alias. Also removed group_by_function and ordinal.
+ *						   with table alias. Also removed group_by_function and ordinal.
  * 2003.08.14 Arno Brinkman: Added support for derived tables.
  */
 
@@ -130,8 +130,8 @@ static void	yyerror (TEXT *);
 #define NEGATIVE		1
 #define UNSIGNED		2
 
-#define MIN_CACHE_BUFFERS       250
-#define DEF_CACHE_BUFFERS       1000
+#define MIN_CACHE_BUFFERS	   250
+#define DEF_CACHE_BUFFERS	   1000
 
 /* Fix 69th procedure problem - solution from Oleg Loa */
 #define YYSTACKSIZE		2048
@@ -166,16 +166,16 @@ static void	yyerror (TEXT *);
 
 #define MAX_TOKEN_LEN   256
 #define CHECK_BOUND(to)\
-    {\
-    if ((to - string) >= MAX_TOKEN_LEN)        \
+	{\
+	if ((to - string) >= MAX_TOKEN_LEN)		\
 	yyabandon (-104, isc_token_too_long); \
-    }
+	}
 #define CHECK_COPY_INCR(to,ch){CHECK_BOUND(to); *to++=ch;}
 
 
 static TEXT	*lex_position (void);
 #ifdef NOT_USED_OR_REPLACED
-static BOOLEAN	long_int (DSQL_NOD, SLONG *);
+static bool		long_int(DSQL_NOD, SLONG *);
 #endif
 static DSQL_FLD	make_field (DSQL_NOD);
 static FIL	make_file (void);
@@ -185,7 +185,7 @@ static DSQL_NOD	make_parameter (void);
 static DSQL_NOD	make_flag_node (NOD_TYPE, SSHORT, int, ...);
 static void	prepare_console_debug (int, int  *);
 #ifdef NOT_USED_OR_REPLACED
-static BOOLEAN	short_int (DSQL_NOD, SLONG *, SSHORT);
+static bool	short_int(DSQL_NOD, SLONG *, SSHORT);
 #endif
 static void	stack_nodes (DSQL_NOD, DLLS *);
 inline static int	yylex (USHORT, USHORT, USHORT, BOOLEAN *);
@@ -195,7 +195,7 @@ static void	check_log_file_attrs (void);
 struct LexerState {
 	/* This is, in fact, parser state. Not used in lexer itself */
 	DSQL_FLD g_field;
-    FIL	g_file;
+	FIL	g_file;
 	DSQL_NOD g_field_name;
 	SSHORT log_defined, cache_defined;
 	int dsql_debug;
@@ -5164,9 +5164,9 @@ void LEX_dsql_init (void)
 
 
 void LEX_string (
-    TEXT	*string,
-    USHORT	length,
-    SSHORT	character_set)
+	TEXT	*string,
+	USHORT	length,
+	SSHORT	character_set)
 {
 /**************************************
  *
@@ -5179,12 +5179,12 @@ void LEX_string (
  *
  **************************************/
 
-    lex.line_start = lex.ptr = string;
-    lex.end = string + length;
-    lex.lines = 1;
-    lex.att_charset = character_set;
-    lex.line_start_bk = lex.line_start;
-    lex.lines_bk = lex.lines;
+	lex.line_start = lex.ptr = string;
+	lex.end = string + length;
+	lex.lines = 1;
+	lex.att_charset = character_set;
+	lex.line_start_bk = lex.line_start;
+	lex.lines_bk = lex.lines;
 	lex.param_number = 1;
 	lex.prev_keyword = -1;
 	lex.prev_prev_keyword = -1;
@@ -5192,8 +5192,8 @@ void LEX_string (
 	lex.first_detection = false;
 	lex.brace_analysis = false;
 #ifdef DEV_BUILD
-    if (DSQL_debug & 32)
-        printf("%.*s\n", (int)length, string);
+	if (DSQL_debug & 32)
+		printf("%.*s\n", (int)length, string);
 #endif
 }
 
@@ -5211,23 +5211,23 @@ static void check_log_file_attrs (void)
  *
  *********************************************/
 
-    if (lex.g_file->fil_partitions) {
-        if (!lex.g_file->fil_length) {
-            yyabandon (-261, isc_log_length_spec);
-            /* Total length of a partitioned log must be specified */
-        }
-        
-        if (PARTITION_SIZE (OneK * lex.g_file->fil_length, lex.g_file->fil_partitions) <
-            (OneK*MIN_LOG_LENGTH)) {
-            yyabandon (-239, isc_partition_too_small);
-            /* Log partition size too small */
-        }
-    }
-    else {
-        if ((lex.g_file->fil_length) && (lex.g_file->fil_length < MIN_LOG_LENGTH)) {
-            yyabandon (-239, isc_log_too_small);   /* Log size too small */
-        }
-    }     
+	if (lex.g_file->fil_partitions) {
+		if (!lex.g_file->fil_length) {
+			yyabandon (-261, isc_log_length_spec);
+			/* Total length of a partitioned log must be specified */
+		}
+		
+		if (PARTITION_SIZE (OneK * lex.g_file->fil_length, lex.g_file->fil_partitions) <
+			(OneK*MIN_LOG_LENGTH)) {
+			yyabandon (-239, isc_partition_too_small);
+			/* Log partition size too small */
+		}
+	}
+	else {
+		if ((lex.g_file->fil_length) && (lex.g_file->fil_length < MIN_LOG_LENGTH)) {
+			yyabandon (-239, isc_log_too_small);   /* Log size too small */
+		}
+	}	 
 }
 
 
@@ -5245,14 +5245,13 @@ static TEXT *lex_position (void)
  *
  **************************************/
 
-return lex.ptr;
+	return lex.ptr;
 }
 
 
 #ifdef NOT_USED_OR_REPLACED
-static BOOLEAN long_int (
-    DSQL_NOD		string,
-    SLONG	*long_value)
+static bool long_int(DSQL_NOD string,
+					 SLONG *long_value)
 {
 /*************************************
  *
@@ -5269,18 +5268,17 @@ static BOOLEAN long_int (
 	for (const char* p = ((STR) string)->str_data; classes [*p] & CHR_DIGIT; p++)
 	{
 		if (!(classes [*p] & CHR_DIGIT)) {
-			return FALSE;
+			return false;
 		}
 	}
 
 	*long_value = atol ((char *)((STR) string)->str_data);
 
-	return TRUE;
+	return true;
 }
 #endif
 
-static DSQL_FLD make_field (
-    DSQL_NOD		field_name)
+static DSQL_FLD make_field (DSQL_NOD field_name)
 {
 /**************************************
  *
@@ -5292,23 +5290,23 @@ static DSQL_FLD make_field (
  *	Make a field block of given name.
  *
  **************************************/
-DSQL_FLD	field;
-STR	string;
-TSQL    tdsql;
+	DSQL_FLD	field;
+	STR	string;
+	TSQL	tdsql;
 
-tdsql = GET_THREAD_DATA;
-       
-if (field_name == NULL)
-   {
-    field = FB_NEW_RPT(*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) dsql_fld;
-    strcpy (field->fld_name, (TEXT*) INTERNAL_FIELD_NAME);
-    return field;
-   }
-string = (STR) field_name->nod_arg [1];
-field = FB_NEW_RPT(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) dsql_fld;
-strcpy (field->fld_name, (TEXT*) string->str_data);
+	tdsql = GET_THREAD_DATA;
 
-return field;
+	if (field_name == NULL)
+	{
+		field = FB_NEW_RPT(*tdsql->tsql_default, sizeof (INTERNAL_FIELD_NAME)) dsql_fld;
+		strcpy (field->fld_name, (TEXT*) INTERNAL_FIELD_NAME);
+		return field;
+	}
+	string = (STR) field_name->nod_arg [1];
+	field = FB_NEW_RPT(*tdsql->tsql_default, strlen ((SCHAR*) string->str_data)) dsql_fld;
+	strcpy (field->fld_name, (TEXT*) string->str_data);
+
+	return field;
 }
 
 
@@ -5324,19 +5322,18 @@ static FIL make_file (void)
  *	Make a file block
  *
  **************************************/
-FIL	temp_file;
-TSQL    tdsql;
+	FIL	temp_file;
+	TSQL	tdsql;
 
-tdsql = GET_THREAD_DATA;
-       
-temp_file = FB_NEW(*tdsql->tsql_default) fil;
+	tdsql = GET_THREAD_DATA;
+		   
+	temp_file = FB_NEW(*tdsql->tsql_default) fil;
 
-return temp_file;
+	return temp_file;
 }
 
 
-static DSQL_NOD make_list (
-    DSQL_NOD		node)
+static DSQL_NOD make_list (DSQL_NOD node)
 {
 /**************************************
  *
@@ -5348,33 +5345,33 @@ static DSQL_NOD make_list (
  *	Collapse nested list nodes into single list.
  *
  **************************************/
-DSQL_NOD	*ptr;
-DLLS	stack, temp;
-USHORT	l;
-DSQL_NOD	old;
-TSQL    tdsql;
+	DSQL_NOD	*ptr;
+	DLLS	stack, temp;
+	USHORT	l;
+	DSQL_NOD	old;
+	TSQL	tdsql;
 
-tdsql = GET_THREAD_DATA;
+	tdsql = GET_THREAD_DATA;
 
-if (!node)
-    return node;
+	if (!node)
+		return node;
 
-stack = 0;
-stack_nodes (node, &stack);
-for (l = 0, temp = stack; temp; temp = temp->lls_next)
-    l++;
+	stack = 0;
+	stack_nodes (node, &stack);
+	for (l = 0, temp = stack; temp; temp = temp->lls_next)
+		l++;
 
-old  = node;
-node = FB_NEW_RPT(*tdsql->tsql_default, l) dsql_nod;
-node->nod_count = l;
-node->nod_type  = nod_list;
-node->nod_flags = old->nod_flags;
-ptr = node->nod_arg + node->nod_count;
+	old  = node;
+	node = FB_NEW_RPT(*tdsql->tsql_default, l) dsql_nod;
+	node->nod_count = l;
+	node->nod_type  = nod_list;
+	node->nod_flags = old->nod_flags;
+	ptr = node->nod_arg + node->nod_count;
 
-while (stack)
-    *--ptr = (DSQL_NOD) LLS_POP (&stack);
+	while (stack)
+		*--ptr = (DSQL_NOD) LLS_POP (&stack);
 
-return node;
+	return node;
 }
 
 
@@ -5391,26 +5388,25 @@ static DSQL_NOD make_parameter (void)
  *	Any change should also be made to function below
  *
  **************************************/
-DSQL_NOD	node;
-TSQL    tdsql;
+	DSQL_NOD	node;
+	TSQL	tdsql;
 
-tdsql = GET_THREAD_DATA;
+	tdsql = GET_THREAD_DATA;
 
-node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
-node->nod_type = nod_parameter;
-node->nod_line = (USHORT) lex.lines_bk;
-node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
-node->nod_count = 1;
-node->nod_arg[0] = (DSQL_NOD)(ULONG) lex.param_number++;
+	node = FB_NEW_RPT(*tdsql->tsql_default, 1) dsql_nod;
+	node->nod_type = nod_parameter;
+	node->nod_line = (USHORT) lex.lines_bk;
+	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
+	node->nod_count = 1;
+	node->nod_arg[0] = (DSQL_NOD)(ULONG) lex.param_number++;
 
-return node;
+	return node;
 }
 
 
-static DSQL_NOD make_node (
-    NOD_TYPE	type,
-    int		count,
-    ...)
+static DSQL_NOD make_node (NOD_TYPE	type,
+						   int count,
+						   ...)
 {
 /**************************************
  *
@@ -5423,32 +5419,31 @@ static DSQL_NOD make_node (
  *	Any change should also be made to function below
  *
  **************************************/
-DSQL_NOD	node, *p;
-va_list	ptr;
-TSQL    tdsql;
+	DSQL_NOD	node, *p;
+	va_list	ptr;
+	TSQL	tdsql;
 
-tdsql = GET_THREAD_DATA;
+	tdsql = GET_THREAD_DATA;
 
-node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
-node->nod_type = type;
-node->nod_line = (USHORT) lex.lines_bk;
-node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
-node->nod_count = count;
-p = node->nod_arg;
-VA_START (ptr, count);
+	node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
+	node->nod_type = type;
+	node->nod_line = (USHORT) lex.lines_bk;
+	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
+	node->nod_count = count;
+	p = node->nod_arg;
+	VA_START (ptr, count);
 
-while (--count >= 0)
-    *p++ = va_arg (ptr, DSQL_NOD);
+	while (--count >= 0)
+		*p++ = va_arg (ptr, DSQL_NOD);
 
-return node;
+	return node;
 }
 
 
-static DSQL_NOD make_flag_node (
-    NOD_TYPE	type,
-    SSHORT	flag,
-    int		count,
-    ...)
+static DSQL_NOD make_flag_node (NOD_TYPE	type,
+								SSHORT	flag,
+								int		count,
+								...)
 {
 /**************************************
  *
@@ -5460,25 +5455,25 @@ static DSQL_NOD make_flag_node (
  *	Make a node of given type. Set flag field
  *
  **************************************/
-DSQL_NOD	node, *p;
-va_list	ptr;
-TSQL    tdsql;
+	DSQL_NOD	node, *p;
+	va_list	ptr;
+	TSQL	tdsql;
 
-tdsql = GET_THREAD_DATA;
+	tdsql = GET_THREAD_DATA;
 
-node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
-node->nod_type = type;
-node->nod_flags = flag;
-node->nod_line = (USHORT) lex.lines_bk;
-node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
-node->nod_count = count;
-p = node->nod_arg;
-VA_START (ptr, count);
+	node = FB_NEW_RPT(*tdsql->tsql_default, count) dsql_nod;
+	node->nod_type = type;
+	node->nod_flags = flag;
+	node->nod_line = (USHORT) lex.lines_bk;
+	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
+	node->nod_count = count;
+	p = node->nod_arg;
+	VA_START (ptr, count);
 
-while (--count >= 0)
-    *p++ = va_arg (ptr, DSQL_NOD);
+	while (--count >= 0)
+		*p++ = va_arg (ptr, DSQL_NOD);
 
-return node;
+	return node;
 }
 
 
@@ -5497,35 +5492,34 @@ static void prepare_console_debug (int level, int *yydeb)
  *
  *************************************/
 #if defined(DEV_BUILD)
-    DSQL_debug = level;
+	DSQL_debug = level;
 #endif
-    if (level >> 8)
-        *yydeb = level >> 8;
-    /* CVC: I added this code form Mike Nordell to see the output from internal
-       operations that's generated in DEV build when DEBUG <n> is typed into isql.exe.
-       When n>0, the output console is activated; otherwise it's closed. */
+	if (level >> 8)
+		*yydeb = level >> 8;
+	/* CVC: I added this code form Mike Nordell to see the output from internal
+	   operations that's generated in DEV build when DEBUG <n> is typed into isql.exe.
+	   When n>0, the output console is activated; otherwise it's closed. */
 #if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
-static FILE* redirected_output;
-    if (level > 0) {
-        /* Console debug code inside this scope */
-        if (AllocConsole()) {
-    		redirected_output = freopen("CONOUT$", "wt", stdout);
-    		printf("DebugConsole - Yes, it's working.\n");
-        }
-    }
-    else if (level <= 0 && redirected_output) {
-        fclose (redirected_output);
-        redirected_output = 0;
-        FreeConsole();
-    }
+	static FILE* redirected_output;
+	if (level > 0) {
+		/* Console debug code inside this scope */
+		if (AllocConsole()) {
+			redirected_output = freopen("CONOUT$", "wt", stdout);
+			printf("DebugConsole - Yes, it's working.\n");
+		}
+	}
+	else if (level <= 0 && redirected_output) {
+		fclose (redirected_output);
+		redirected_output = 0;
+		FreeConsole();
+	}
 #endif
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static BOOLEAN short_int (
-    DSQL_NOD		string,
-    SLONG	*long_value,
-    SSHORT	range)
+static bool short_int(DSQL_NOD string,
+					  SLONG *long_value,
+					  SSHORT range)
 {
 /*************************************
  *
@@ -5540,20 +5534,20 @@ static BOOLEAN short_int (
  *************************************/
 
 	if (((STR) string)->str_length > 5) {
-		return FALSE;
+		return false;
 	}
 
 	for (char* p = ((STR) string)->str_data; classes [*p] & CHR_DIGIT; p++)
 	{
 		if (!(classes [*p] & CHR_DIGIT)) {
-			return FALSE;
+			return false;
 		}
 	}
 
 	/* there are 5 or fewer digits, it's value may still be greater
 	 * than 32767... */
 
-	SCHAR buf[10];    
+	SCHAR buf[10];	
 	buf [0] = ((STR) string)->str_data[0];
 	buf [1] = ((STR) string)->str_data[1];
 	buf [2] = ((STR) string)->str_data[2];
@@ -5563,27 +5557,26 @@ static BOOLEAN short_int (
 
 	*long_value = atoi (buf);
 
-	BOOLEAN return_value;
+	bool return_value;
 
 	switch (range) 
 	{
 		case POSITIVE:
-			return_value = *long_value > SHRT_POS_MAX;		
+			return_value = *long_value > SHRT_POS_MAX;
 			break;
 		case NEGATIVE:
 			return_value = *long_value > SHRT_NEG_MAX;
 			break;
 		case UNSIGNED:
-			return_value = *long_value > SHRT_UNSIGNED_MAX;		
+			return_value = *long_value > SHRT_UNSIGNED_MAX;
 			break;
 	}
 	return !return_value;
 }
 #endif
 
-static void stack_nodes (
-    DSQL_NOD		node,
-    DLLS		*stack)
+static void stack_nodes (DSQL_NOD	node,
+						 DLLS		*stack)
 {
 /**************************************
  *
@@ -5595,78 +5588,78 @@ static void stack_nodes (
  *	Assist in turning a tree of misc nodes into a clean list.
  *
  **************************************/
-DSQL_NOD	*ptr, *end;
-DSQL_NOD     curr_node, next_node, start_chain, end_chain, save_link;
+	DSQL_NOD	*ptr, *end;
+	DSQL_NOD	 curr_node, next_node, start_chain, end_chain, save_link;
 
-if (node->nod_type != nod_list)
-    {
-    LLS_PUSH (node, stack);
-    return;
-    }
+	if (node->nod_type != nod_list)
+		{
+		LLS_PUSH (node, stack);
+		return;
+		}
 
-/* To take care of cases where long lists of nodes are in a chain
-   of list nodes with exactly one entry, this algorithm will look
-   for a pattern of repeated list nodes with two entries, the first
-   being a list node and the second being a non-list node.   Such
-   a list will be reverse linked, and then re-reversed, stacking the
-   non-list nodes in the process.   The purpose of this is to avoid
-   massive recursion of this function. */
+	/* To take care of cases where long lists of nodes are in a chain
+	   of list nodes with exactly one entry, this algorithm will look
+	   for a pattern of repeated list nodes with two entries, the first
+	   being a list node and the second being a non-list node.   Such
+	   a list will be reverse linked, and then re-reversed, stacking the
+	   non-list nodes in the process.   The purpose of this is to avoid
+	   massive recursion of this function. */
 
-start_chain = node;
-end_chain = NULL;
-curr_node = node;
-next_node = node->nod_arg[0];
-while ( curr_node->nod_count == 2 &&
-        curr_node->nod_arg[0]->nod_type == nod_list &&
-        curr_node->nod_arg[1]->nod_type != nod_list &&
-        next_node->nod_arg[0]->nod_type == nod_list &&
-        next_node->nod_arg[1]->nod_type != nod_list)
-    {
+	start_chain = node;
+	end_chain = NULL;
+	curr_node = node;
+	next_node = node->nod_arg[0];
+	while ( curr_node->nod_count == 2 &&
+			curr_node->nod_arg[0]->nod_type == nod_list &&
+			curr_node->nod_arg[1]->nod_type != nod_list &&
+			next_node->nod_arg[0]->nod_type == nod_list &&
+			next_node->nod_arg[1]->nod_type != nod_list)
+		{
 
-    /* pattern was found so reverse the links and go to next node */
+		/* pattern was found so reverse the links and go to next node */
 
-    save_link = next_node->nod_arg[0];
-    next_node->nod_arg[0] = curr_node;
-    curr_node = next_node;
-    next_node = save_link;
-    end_chain = curr_node;
-    }
+		save_link = next_node->nod_arg[0];
+		next_node->nod_arg[0] = curr_node;
+		curr_node = next_node;
+		next_node = save_link;
+		end_chain = curr_node;
+		}
 
-/* see if any chain was found */
+	/* see if any chain was found */
 
-if ( end_chain)
-    {
+	if ( end_chain)
+		{
 
-    /* first, handle the rest of the nodes */
-    /* note that next_node still points to the first non-pattern node */
+		/* first, handle the rest of the nodes */
+		/* note that next_node still points to the first non-pattern node */
 
-    stack_nodes( next_node, stack);
+		stack_nodes( next_node, stack);
 
-    /* stack the non-list nodes and reverse the chain on the way back */
-    
-    curr_node = end_chain;
-    while ( TRUE)
-        {
-        LLS_PUSH( curr_node->nod_arg[1], stack);
-        if ( curr_node == start_chain)
-            break;
-        save_link = curr_node->nod_arg[0];
-        curr_node->nod_arg[0] = next_node;
-        next_node = curr_node;
-        curr_node = save_link;
-        }
-    return;
-    }
+		/* stack the non-list nodes and reverse the chain on the way back */
+		
+		curr_node = end_chain;
+		while (true)
+			{
+			LLS_PUSH( curr_node->nod_arg[1], stack);
+			if ( curr_node == start_chain)
+				break;
+			save_link = curr_node->nod_arg[0];
+			curr_node->nod_arg[0] = next_node;
+			next_node = curr_node;
+			curr_node = save_link;
+			}
+		return;
+		}
 
-for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++)
-    stack_nodes (*ptr, stack);
+	for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++)
+		stack_nodes (*ptr, stack);
 }
 
 inline static int yylex (
-    USHORT	client_dialect,
-    USHORT	db_dialect,
-    USHORT	parser_version,
-    BOOLEAN	*stmt_ambiguous)
+	USHORT	client_dialect,
+	USHORT	db_dialect,
+	USHORT	parser_version,
+	BOOLEAN	*stmt_ambiguous)
 {
 	int temp = lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 	lex.prev_prev_keyword = lex.prev_keyword;
@@ -5675,10 +5668,10 @@ inline static int yylex (
 }
 
 int LexerState::yylex (
-    USHORT	client_dialect,
-    USHORT	db_dialect,
-    USHORT	parser_version,
-    BOOLEAN	*stmt_ambiguous)
+	USHORT	client_dialect,
+	USHORT	db_dialect,
+	USHORT	parser_version,
+	BOOLEAN	*stmt_ambiguous)
 {
 /**************************************
  *
@@ -5689,179 +5682,179 @@ int LexerState::yylex (
  * Functional description: lexer.
  *
  **************************************/
-UCHAR	tok_class;
-char  string[MAX_TOKEN_LEN];
-char* p;
-char* buffer;
-char* buffer_end;
-char* new_buffer;
-SYM	sym;
-SSHORT	c;
-USHORT	buffer_len;
+	UCHAR	tok_class;
+	char  string[MAX_TOKEN_LEN];
+	char* p;
+	char* buffer;
+	char* buffer_end;
+	char* new_buffer;
+	SYM	sym;
+	SSHORT	c;
+	USHORT	buffer_len;
 
-STR	delimited_id_str;
+	STR delimited_id_str;
 
-/* Find end of white space and skip comments */
+	/* Find end of white space and skip comments */
 
-for (;;)
-    {
-    if (ptr >= end)
-	return -1;
-    
-    c = *ptr++;
-
-	/* Process comments */
-    
-    if (c == '\n') {
-	lines++;
-	line_start = ptr;
-	continue;
-    }
-
-    if ((c == '-') && (*ptr == '-')) {
-		
-		/* single-line */
-		
-		ptr++;
-		while (ptr < end) {
-			if ((c = *ptr++) == '\n') {
-				lines++;
-				line_start = ptr /* + 1*/; /* CVC: +1 left out. */
-				break;
-			}
-	    }
+	for (;;)
+	{
 		if (ptr >= end)
 			return -1;
-		continue;
-	}
-    else if ((c == '/') && (*ptr == '*')) {
-		
-		/* multi-line */
-		
-		ptr++;
-		while (ptr < end) {
-			if ((c = *ptr++) == '*') {
-				if (*ptr == '/')
+
+		c = *ptr++;
+
+		/* Process comments */
+
+		if (c == '\n') {
+			lines++;
+			line_start = ptr;
+			continue;
+		}
+
+		if ((c == '-') && (*ptr == '-')) {
+			
+			/* single-line */
+			
+			ptr++;
+			while (ptr < end) {
+				if ((c = *ptr++) == '\n') {
+					lines++;
+					line_start = ptr /* + 1*/; /* CVC: +1 left out. */
 					break;
+				}
 			}
-			if (c == '\n') {
-				lines++;
-				line_start = ptr /* + 1*/; /* CVC: +1 left out. */
+			if (ptr >= end)
+				return -1;
+			continue;
+		}
+		else if ((c == '/') && (*ptr == '*')) {
+			
+			/* multi-line */
+			
+			ptr++;
+			while (ptr < end) {
+				if ((c = *ptr++) == '*') {
+					if (*ptr == '/')
+						break;
+				}
+				if (c == '\n') {
+					lines++;
+					line_start = ptr /* + 1*/; /* CVC: +1 left out. */
 
+				}
 			}
-	    }
+			if (ptr >= end)
+				return -1;
+			ptr++;
+			continue;
+		}
+
+		tok_class = classes [c];
+
+		if (!(tok_class & CHR_WHITE))
+		break;
+		}
+
+	/* Depending on tok_class of token, parse token */
+
+	last_token = ptr - 1;
+
+	if (tok_class & CHR_INTRODUCER)
+		{
+		/* The Introducer (_) is skipped, all other idents are copied
+		 * to become the name of the character set
+		 */
+		p = string;
+		for (; ptr < end && classes [*ptr] & CHR_IDENT; ptr++)
+		{
 		if (ptr >= end)
 			return -1;
-		ptr++;
-		continue;
-	}
-
-    tok_class = classes [c];
-
-    if (!(tok_class & CHR_WHITE))
-	break;
-    }
-
-/* Depending on tok_class of token, parse token */
-
-last_token = ptr - 1;
-
-if (tok_class & CHR_INTRODUCER)
-    {
-    /* The Introducer (_) is skipped, all other idents are copied
-     * to become the name of the character set
-     */
-    p = string;
-    for (; ptr < end && classes [*ptr] & CHR_IDENT; ptr++)
-	{
-	if (ptr >= end)
-	    return -1;
-	CHECK_COPY_INCR(p, UPPER7(*ptr));
-	}
-    
-    CHECK_BOUND(p);
-    *p = 0;
-
-    /* make a string value to hold the name, the name 
-     * is resolved in pass1_constant */
-
-    yylval = (DSQL_NOD) (MAKE_string(string, p - string))->str_data;
-
-    return INTRODUCER;
-    }
-
-/* parse a quoted string, being sure to look for double quotes */
-
-if (tok_class & CHR_QUOTE)
-    {
-    buffer = string;
-    buffer_len = sizeof (string);
-    buffer_end = buffer + buffer_len - 1;
-    for (p = buffer; ; p++)
-	{
-	if (ptr >= end)
-	    {
-	    if (buffer != string)
-       		gds__free (buffer);
-	    return -1;
-	    }
-	/* *ptr is quote - if next != quote we're at the end */
-	if ((*ptr == c) && ((++ptr == end) || (*ptr != c)))
-	    break;
-        if (p > buffer_end)
-	    {
-	    new_buffer = (char*)gds__alloc (2 * buffer_len);
-	    /* FREE: at outer block */
-	    if (!new_buffer)		/* NOMEM: */
-		{
-		if (buffer != string)
-		    gds__free (buffer);
-		return -1;
+		CHECK_COPY_INCR(p, UPPER7(*ptr));
 		}
-            memcpy (new_buffer, buffer, buffer_len);
-	    if (buffer != string)
-        	gds__free (buffer);
-	    buffer = new_buffer;
-	    p = buffer + buffer_len;
-	    buffer_len = 2 * buffer_len;
-	    buffer_end = buffer + buffer_len - 1;
-	    }
-	*p = *ptr++;
-	}
-    if (c == '"')
-	{
-	*stmt_ambiguous = TRUE; /* string delimited by double quotes could be
-				**   either a string constant or a SQL delimited
-				**   identifier, therefore marks the SQL
-				**   statement as ambiguous  */
-	if (client_dialect == SQL_DIALECT_V6_TRANSITION)
-	    {
-	    if (buffer != string)
-		gds__free (buffer);
-	    yyabandon (-104, isc_invalid_string_constant);
-	    }
-	else if (client_dialect >= SQL_DIALECT_V6)
-	    {
-	    if ((p - buffer) >= MAX_TOKEN_LEN)
-		{
-		if (buffer != string)
-		    gds__free (buffer);
-		yyabandon (-104, isc_token_too_long);
+		
+		CHECK_BOUND(p);
+		*p = 0;
+
+		/* make a string value to hold the name, the name 
+		 * is resolved in pass1_constant */
+
+		yylval = (DSQL_NOD) (MAKE_string(string, p - string))->str_data;
+
+		return INTRODUCER;
 		}
-	    yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
-	    delimited_id_str = (STR) yylval;
-	    delimited_id_str->str_flags |= STR_delimited_id;
-	    if (buffer != string)
+
+	/* parse a quoted string, being sure to look for double quotes */
+
+	if (tok_class & CHR_QUOTE)
+		{
+		buffer = string;
+		buffer_len = sizeof (string);
+		buffer_end = buffer + buffer_len - 1;
+		for (p = buffer; ; p++)
+		{
+		if (ptr >= end)
+			{
+			if (buffer != string)
+				gds__free (buffer);
+			return -1;
+			}
+		/* *ptr is quote - if next != quote we're at the end */
+		if ((*ptr == c) && ((++ptr == end) || (*ptr != c)))
+			break;
+			if (p > buffer_end)
+			{
+			new_buffer = (char*)gds__alloc (2 * buffer_len);
+			/* FREE: at outer block */
+			if (!new_buffer)		/* NOMEM: */
+			{
+			if (buffer != string)
+				gds__free (buffer);
+			return -1;
+			}
+				memcpy (new_buffer, buffer, buffer_len);
+			if (buffer != string)
+				gds__free (buffer);
+			buffer = new_buffer;
+			p = buffer + buffer_len;
+			buffer_len = 2 * buffer_len;
+			buffer_end = buffer + buffer_len - 1;
+			}
+		*p = *ptr++;
+		}
+		if (c == '"')
+		{
+		*stmt_ambiguous = TRUE; /* string delimited by double quotes could be
+					**   either a string constant or a SQL delimited
+					**   identifier, therefore marks the SQL
+					**   statement as ambiguous  */
+		if (client_dialect == SQL_DIALECT_V6_TRANSITION)
+			{
+			if (buffer != string)
+			gds__free (buffer);
+			yyabandon (-104, isc_invalid_string_constant);
+			}
+		else if (client_dialect >= SQL_DIALECT_V6)
+			{
+			if ((p - buffer) >= MAX_TOKEN_LEN)
+			{
+			if (buffer != string)
+				gds__free (buffer);
+			yyabandon (-104, isc_token_too_long);
+			}
+			yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
+			delimited_id_str = (STR) yylval;
+			delimited_id_str->str_flags |= STR_delimited_id;
+			if (buffer != string)
+			gds__free (buffer);
+			return SYMBOL;
+			}
+		}
+		yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
+		if (buffer != string)
 		gds__free (buffer);
-	    return SYMBOL;
-	    }
-	}
-    yylval = (DSQL_NOD) MAKE_string(buffer, p - buffer);
-    if (buffer != string)
-	gds__free (buffer);
-    return STRING;
-    }
-                                                 
+		return STRING;
+		}
+												 
 /* 
  * Check for a numeric constant, which starts either with a digit or with
  * a decimal point followed by a digit.
@@ -5888,344 +5881,344 @@ if (tok_class & CHR_QUOTE)
  *   ptr points to the next character.
  */
 
-assert(ptr <= end);
+	assert(ptr <= end);
 
-if ((tok_class & CHR_DIGIT) ||
-    ((c == '.') && (ptr < end) && (classes [*ptr] & CHR_DIGIT)))
-    {
-    /* The following variables are used to recognize kinds of numbers. */
-
-    BOOLEAN have_error     = FALSE;	/* syntax error or value too large */
-    BOOLEAN have_digit     = FALSE;	/* we've seen a digit              */
-    BOOLEAN have_decimal   = FALSE;	/* we've seen a '.'                */
-    BOOLEAN have_exp       = FALSE;	/* digit ... [eE]                  */
-    BOOLEAN have_exp_sign  = FALSE; /* digit ... [eE] {+-]             */
-    BOOLEAN have_exp_digit = FALSE; /* digit ... [eE] ... digit        */
-    UINT64	number         = 0;
-    UINT64	limit_by_10    = MAX_SINT64 / 10;
-
-    for (--ptr ; ptr < end ; ptr++)
-      {
-	c = *ptr;
-	if (have_exp_digit && (! (classes [c]  & CHR_DIGIT)))
-	  /* First non-digit after exponent and digit terminates
-	     the token. */
-	    break;
-	else if (have_exp_sign && (! (classes [c]  & CHR_DIGIT)))
-	    {
-	    /* only digits can be accepted after "1E-" */
-	      have_error = TRUE;
-	      break;
-	    }
-	else if (have_exp)
-	    {
-	    /* We've seen e or E, but nothing beyond that. */
-	    if ( ('-' == c) || ('+' == c) )
-		have_exp_sign = TRUE;
-	    else if ( classes [c]  & CHR_DIGIT )
-		/* We have a digit: we haven't seen a sign yet,
-		   but it's too late now. */
-		have_exp_digit = have_exp_sign  = TRUE;
-	    else
-		{
-		/* end of the token */
-		have_error = TRUE;
-		break;
-		}
-	    }
-	else if ('.' == c)
-	    {
-	    if (!have_decimal)
-		have_decimal = TRUE;
-	    else
-		{
-		have_error = TRUE;
-		break;
-		}
-	    }
-	else if (classes [c] & CHR_DIGIT)
-	  {
-	    /* Before computing the next value, make sure there will be
-	       no overflow.  */
-
-	    have_digit = TRUE;
-
-	    if (number >= limit_by_10)
-		/* possibility of an overflow */
-		if ((number > limit_by_10) || (c > '8'))
-		    {
-		    have_error = TRUE;
-		    break;
-		    }
-	    number = number * 10 + (c - '0');
-	  }
-	else if ( (('E' == c) || ('e' == c)) && have_digit )
-	    have_exp = TRUE;
-	else
-	    /* Unexpected character: this is the end of the number. */
-	    break;
-      }
-
-    /* We're done scanning the characters: now return the right kind
-       of number token, if any fits the bill. */
-
-    if (!have_error)
+	if ((tok_class & CHR_DIGIT) ||
+		((c == '.') && (ptr < end) && (classes [*ptr] & CHR_DIGIT)))
 	{
-	assert(have_digit);
+		/* The following variables are used to recognize kinds of numbers. */
 
-	if (have_exp_digit)
-	    {
-	    yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
-	    last_token_bk = last_token;
-	    line_start_bk = line_start;
-	    lines_bk = lines;
+		bool have_error	 = false;	/* syntax error or value too large */
+		bool have_digit	 = false;	/* we've seen a digit			  */
+		bool have_decimal   = false;	/* we've seen a '.'				*/
+		bool have_exp	   = false;	/* digit ... [eE]				  */
+		bool have_exp_sign  = false; /* digit ... [eE] {+-]			 */
+		bool have_exp_digit = false; /* digit ... [eE] ... digit		*/
+		UINT64	number		 = 0;
+		UINT64	limit_by_10	= MAX_SINT64 / 10;
 
-	    return FLOAT_NUMBER;
-	    }
-	else if (!have_exp)
-	    {
-
-	    /* We should return some kind (scaled-) integer type
-	       except perhaps in dialect 1. */
-
-	    if (!have_decimal && (number <= MAX_SLONG))
+		for (--ptr ; ptr < end ; ptr++)
 		{
-		yylval = (DSQL_NOD) (ULONG) number;
-		return NUMBER;
-		}
-	    else
-		{
-		/* We have either a decimal point with no exponent
-		   or a string of digits whose value exceeds MAX_SLONG:
-		   the returned type depends on the client dialect,
-		   so warn of the difference if the client dialect is
-		   SQL_DIALECT_V6_TRANSITION.
-		*/
-
-		if (SQL_DIALECT_V6_TRANSITION == client_dialect)
-		    {
-		    /* Issue a warning about the ambiguity of the numeric
-		     * numeric literal.  There are multiple calls because
-		     * the message text exceeds the 119-character limit
-		     * of our message database.
-		     */
-		    ERRD_post_warning( isc_dsql_warning_number_ambiguous,
-				       gds_arg_string,
-				       ERR_string( last_token,
-						   ptr - last_token ),
-				       gds_arg_end );
-		    ERRD_post_warning( isc_dsql_warning_number_ambiguous1,
-				       gds_arg_end );
-		    }
-
-		yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
-
-		last_token_bk = last_token;
-		line_start_bk = line_start;
-		lines_bk = lines;
-
-		if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-		    return FLOAT_NUMBER;
-		else if (have_decimal)
-		    return SCALEDINT;
-		else
-		    return NUMBER64BIT;
-		}
-	    } /* else if (!have_exp) */
-	} /* if (!have_error) */
-
-    /* we got some kind of error or overflow, so don't recognize this
-     * as a number: just pass it through to the next part of the lexer.
-     */
-    }
-
-/* Restore the status quo ante, before we started our unsuccessful
-   attempt to recognize a number. */
-ptr = last_token;
-c   = *ptr++;
-/* We never touched tok_class, so it doesn't need to be restored. */
-
-/* end of number-recognition code */
-
-
-if (tok_class & CHR_LETTER)
-{
-    p = string;
-    CHECK_COPY_INCR(p, UPPER (c));
-    for (; ptr < end && classes [*ptr] & CHR_IDENT; ptr++)
-        {
-	if (ptr >= end)
-	    return -1;
-	CHECK_COPY_INCR(p, UPPER (*ptr));
-        }
-
-    CHECK_BOUND(p);
-    *p = 0;
-    sym = HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
-    if (sym)
-	{
-	/* 13 June 2003. Nickolay Samofatov
-	 * Detect INSERTING/UPDATING/DELETING as non-reserved keywords.
-	 * We need to help parser from lexer because our grammar is not LARL(1) in this case
-	 */
-		if (prev_keyword == '(' && !brace_analysis &&
-			(sym->sym_keyword == INSERTING ||
-			 sym->sym_keyword == UPDATING ||
-			 sym->sym_keyword == DELETING
-			) &&
-			/* Produce special_trigger_action_predicate only where we can handle it -
-			  in search conditions */
-			(prev_prev_keyword=='(' || prev_prev_keyword==NOT || prev_prev_keyword==AND || 
-			 prev_prev_keyword==OR || prev_prev_keyword==ON || prev_prev_keyword==HAVING || 
-			 prev_prev_keyword==WHERE || prev_prev_keyword==WHEN) ) 
-		{			
-			LexerState savedState = lex;
-			int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
-			lex = savedState;
-			if (nextToken==OR || nextToken==AND) {
-				switch(sym->sym_keyword) {
-				case INSERTING:
-					yylval = (DSQL_NOD) sym->sym_object;
-					return KW_INSERTING;
-				case UPDATING:
-					yylval = (DSQL_NOD) sym->sym_object;
-					return KW_UPDATING;
-				case DELETING:
-					yylval = (DSQL_NOD) sym->sym_object;
-					return KW_DELETING;
+			c = *ptr;
+			if (have_exp_digit && (! (classes [c]  & CHR_DIGIT)))
+				/* First non-digit after exponent and digit terminates
+				 the token. */
+				break;
+			else if (have_exp_sign && (! (classes [c]  & CHR_DIGIT)))
+			{
+				/* only digits can be accepted after "1E-" */
+				have_error = true;
+				break;
+			}
+			else if (have_exp)
+			{
+				/* We've seen e or E, but nothing beyond that. */
+				if ( ('-' == c) || ('+' == c) )
+					have_exp_sign = true;
+				else if ( classes [c]  & CHR_DIGIT )
+					/* We have a digit: we haven't seen a sign yet,
+					but it's too late now. */
+					have_exp_digit = have_exp_sign  = true;
+				else
+				{
+					/* end of the token */
+					have_error = true;
+					break;
 				}
 			}
-		}
-	/* 23 May 2003. Nickolay Samofatov
-	 * Detect FIRST/SKIP as non-reserved keywords
-	 * 1. We detect FIRST or SKIP as keywords if they appear just after SELECT and
-	 *   immediately before parameter mark ('?'), opening brace ('(') or number
-	 * 2. We detect SKIP as a part of FIRST/SKIP clause the same way
-	 * 3. We detect FIRST if we are explicitly asked for (such as in NULLS FIRST/LAST clause)
-	 * 4. In all other cases we return them as SYMBOL
-	 */
-		if ((sym->sym_keyword == FIRST && !first_detection) || sym->sym_keyword == SKIP) {
-			if (prev_keyword == SELECT || limit_clause) {
-				LexerState savedState = lex;
-				int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
-				lex = savedState;
-				if (nextToken != NUMBER && nextToken != '?' && nextToken != '(') {
-					yylval = (DSQL_NOD) MAKE_string(string, p - string);
-					last_token_bk = last_token;
-					line_start_bk = line_start;
-					lines_bk = lines;
-					return SYMBOL;
-				} else {
-					yylval = (DSQL_NOD) sym->sym_object;
-					last_token_bk = last_token;
-					line_start_bk = line_start;
-					lines_bk = lines;
-					return sym->sym_keyword;
+			else if ('.' == c)
+			{
+				if (!have_decimal)
+					have_decimal = true;
+				else
+				{
+					have_error = true;
+					break;
 				}
-			} /* else fall down and return token as SYMBOL */
-		} else {
-			yylval = (DSQL_NOD) sym->sym_object;
-			last_token_bk = last_token;
-			line_start_bk = line_start;
-			lines_bk = lines;
-			return sym->sym_keyword;
+			}
+			else if (classes [c] & CHR_DIGIT)
+			{
+				/* Before computing the next value, make sure there will be
+				   no overflow.  */
+
+				have_digit = true;
+
+				if (number >= limit_by_10)
+				/* possibility of an overflow */
+					if ((number > limit_by_10) || (c > '8'))
+					{
+						have_error = true;
+						break;
+					}
+				number = number * 10 + (c - '0');
+			}
+			else if ( (('E' == c) || ('e' == c)) && have_digit )
+				have_exp = true;
+			else
+				/* Unexpected character: this is the end of the number. */
+				break;
 		}
-	}
-    yylval = (DSQL_NOD) MAKE_string(string, p - string);
-    last_token_bk = last_token;
-    line_start_bk = line_start;
-    lines_bk = lines;
-	return SYMBOL;
-}
 
-/* Must be punctuation -- test for double character punctuation */
+		/* We're done scanning the characters: now return the right kind
+		   of number token, if any fits the bill. */
 
-if (last_token + 1 < end)
-    {
-    sym = HSHD_lookup (NULL, last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
-    if (sym)
-	{
-	++ptr;
-	return sym->sym_keyword;
-	}
-    }
-	
-/* We need to swallow braces around INSERTING/UPDATING/DELETING keywords */
-/* This algorithm is not perfect, but it is ok for now. 
-  It should be dropped when BOOLEAN datatype is introduced in Firebird */
-if ( c == '(' && !brace_analysis && 
-	/* 1) We need to swallow braces in all boolean expressions
-	   2) We may swallow braces in ordinary expressions 
-	   3) We should not swallow braces after special tokens 
-	     like IF, FIRST, SKIP, VALUES and 30 more other	   
-	*/
-	(prev_keyword=='(' || prev_keyword==NOT || prev_keyword==AND || prev_keyword==OR ||
-	 prev_keyword==ON || prev_keyword==HAVING || prev_keyword==WHERE || prev_keyword==WHEN) ) 
-{
-	LexerState savedState = lex;	
-	brace_analysis = true;
-	int openCount = 0;
-	int nextToken;
-	do {
-		openCount++;
-		nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
-	} while (nextToken == '(');
-	DSQL_NOD temp_val = yylval;
-	if (nextToken == INSERTING || nextToken == UPDATING || nextToken == DELETING)
-	{
-		/* Skip closing braces. */
-		while ( openCount &&
-				yylex(client_dialect,db_dialect,
-					  parser_version,stmt_ambiguous) == ')')
+		if (!have_error)
 		{
-			openCount--;
+			assert(have_digit);
+
+			if (have_exp_digit)
+				{
+				yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
+				last_token_bk = last_token;
+				line_start_bk = line_start;
+				lines_bk = lines;
+
+				return FLOAT_NUMBER;
+				}
+			else if (!have_exp)
+				{
+
+				/* We should return some kind (scaled-) integer type
+				   except perhaps in dialect 1. */
+
+				if (!have_decimal && (number <= MAX_SLONG))
+				{
+				yylval = (DSQL_NOD) (ULONG) number;
+				return NUMBER;
+				}
+				else
+				{
+				/* We have either a decimal point with no exponent
+				   or a string of digits whose value exceeds MAX_SLONG:
+				   the returned type depends on the client dialect,
+				   so warn of the difference if the client dialect is
+				   SQL_DIALECT_V6_TRANSITION.
+				*/
+
+				if (SQL_DIALECT_V6_TRANSITION == client_dialect)
+					{
+					/* Issue a warning about the ambiguity of the numeric
+					 * numeric literal.  There are multiple calls because
+					 * the message text exceeds the 119-character limit
+					 * of our message database.
+					 */
+					ERRD_post_warning( isc_dsql_warning_number_ambiguous,
+							   gds_arg_string,
+							   ERR_string( last_token,
+								   ptr - last_token ),
+							   gds_arg_end );
+					ERRD_post_warning( isc_dsql_warning_number_ambiguous1,
+							   gds_arg_end );
+					}
+
+				yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
+
+				last_token_bk = last_token;
+				line_start_bk = line_start;
+				lines_bk = lines;
+
+				if (client_dialect < SQL_DIALECT_V6_TRANSITION)
+					return FLOAT_NUMBER;
+				else if (have_decimal)
+					return SCALEDINT;
+				else
+					return NUMBER64BIT;
+				}
+			} /* else if (!have_exp) */
+		} /* if (!have_error) */
+
+		/* we got some kind of error or overflow, so don't recognize this
+		 * as a number: just pass it through to the next part of the lexer.
+		 */
+	}
+
+	/* Restore the status quo ante, before we started our unsuccessful
+	   attempt to recognize a number. */
+	ptr = last_token;
+	c   = *ptr++;
+	/* We never touched tok_class, so it doesn't need to be restored. */
+
+	/* end of number-recognition code */
+
+
+	if (tok_class & CHR_LETTER)
+	{
+		p = string;
+		CHECK_COPY_INCR(p, UPPER (c));
+		for (; ptr < end && classes [*ptr] & CHR_IDENT; ptr++)
+		{
+			if (ptr >= end)
+				return -1;
+			CHECK_COPY_INCR(p, UPPER (*ptr));
 		}
-		if (openCount) {
-			/* Not enough closing braces. Restore status quo. */
-			lex = savedState;
-		}
-		else {
-			/* Cool! We successfully swallowed braces ! */
-			brace_analysis = false;
-			yylval = temp_val;
-			/* Check if we need to handle LR(2) grammar case */
-			if (prev_keyword == '(' &&
+
+		CHECK_BOUND(p);
+		*p = 0;
+		sym = HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
+		if (sym)
+		{
+		/* 13 June 2003. Nickolay Samofatov
+		 * Detect INSERTING/UPDATING/DELETING as non-reserved keywords.
+		 * We need to help parser from lexer because our grammar is not LARL(1) in this case
+		 */
+			if (prev_keyword == '(' && !brace_analysis &&
+				(sym->sym_keyword == INSERTING ||
+				 sym->sym_keyword == UPDATING ||
+				 sym->sym_keyword == DELETING
+				) &&
 				/* Produce special_trigger_action_predicate only where we can handle it -
 				  in search conditions */
 				(prev_prev_keyword=='(' || prev_prev_keyword==NOT || prev_prev_keyword==AND || 
 				 prev_prev_keyword==OR || prev_prev_keyword==ON || prev_prev_keyword==HAVING || 
 				 prev_prev_keyword==WHERE || prev_prev_keyword==WHEN) ) 
 			{			
-				savedState = lex;
-				int token = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+				LexerState savedState = lex;
+				int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
 				lex = savedState;
-				if (token==OR || token==AND) {
-					switch(nextToken) {
+				if (nextToken==OR || nextToken==AND) {
+					switch(sym->sym_keyword) {
 					case INSERTING:
+						yylval = (DSQL_NOD) sym->sym_object;
 						return KW_INSERTING;
 					case UPDATING:
+						yylval = (DSQL_NOD) sym->sym_object;
 						return KW_UPDATING;
 					case DELETING:
+						yylval = (DSQL_NOD) sym->sym_object;
 						return KW_DELETING;
 					}
 				}
 			}
-			return nextToken;
+		/* 23 May 2003. Nickolay Samofatov
+		 * Detect FIRST/SKIP as non-reserved keywords
+		 * 1. We detect FIRST or SKIP as keywords if they appear just after SELECT and
+		 *   immediately before parameter mark ('?'), opening brace ('(') or number
+		 * 2. We detect SKIP as a part of FIRST/SKIP clause the same way
+		 * 3. We detect FIRST if we are explicitly asked for (such as in NULLS FIRST/LAST clause)
+		 * 4. In all other cases we return them as SYMBOL
+		 */
+			if ((sym->sym_keyword == FIRST && !first_detection) || sym->sym_keyword == SKIP) {
+				if (prev_keyword == SELECT || limit_clause) {
+					LexerState savedState = lex;
+					int nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+					lex = savedState;
+					if (nextToken != NUMBER && nextToken != '?' && nextToken != '(') {
+						yylval = (DSQL_NOD) MAKE_string(string, p - string);
+						last_token_bk = last_token;
+						line_start_bk = line_start;
+						lines_bk = lines;
+						return SYMBOL;
+					} else {
+						yylval = (DSQL_NOD) sym->sym_object;
+						last_token_bk = last_token;
+						line_start_bk = line_start;
+						lines_bk = lines;
+						return sym->sym_keyword;
+					}
+				} /* else fall down and return token as SYMBOL */
+			} else {
+				yylval = (DSQL_NOD) sym->sym_object;
+				last_token_bk = last_token;
+				line_start_bk = line_start;
+				lines_bk = lines;
+				return sym->sym_keyword;
+			}
 		}
-	} else {
-		/* Restore status quo. */
-		lex = savedState;
+		yylval = (DSQL_NOD) MAKE_string(string, p - string);
+		last_token_bk = last_token;
+		line_start_bk = line_start;
+		lines_bk = lines;
+		return SYMBOL;
 	}
-}
 
-/* Single character punctuation are simply passed on */
+	/* Must be punctuation -- test for double character punctuation */
 
-return c;
+	if (last_token + 1 < end)
+	{
+		sym = HSHD_lookup (NULL, last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
+		if (sym)
+		{
+			++ptr;
+			return sym->sym_keyword;
+		}
+	}
+		
+	/* We need to swallow braces around INSERTING/UPDATING/DELETING keywords */
+	/* This algorithm is not perfect, but it is ok for now. 
+	  It should be dropped when BOOLEAN datatype is introduced in Firebird */
+	if ( c == '(' && !brace_analysis && 
+		/* 1) We need to swallow braces in all boolean expressions
+		   2) We may swallow braces in ordinary expressions 
+		   3) We should not swallow braces after special tokens 
+			 like IF, FIRST, SKIP, VALUES and 30 more other	   
+		*/
+		(prev_keyword=='(' || prev_keyword==NOT || prev_keyword==AND || prev_keyword==OR ||
+		 prev_keyword==ON || prev_keyword==HAVING || prev_keyword==WHERE || prev_keyword==WHEN) ) 
+	{
+		LexerState savedState = lex;	
+		brace_analysis = true;
+		int openCount = 0;
+		int nextToken;
+		do {
+			openCount++;
+			nextToken = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+		} while (nextToken == '(');
+		DSQL_NOD temp_val = yylval;
+		if (nextToken == INSERTING || nextToken == UPDATING || nextToken == DELETING)
+		{
+			/* Skip closing braces. */
+			while ( openCount &&
+					yylex(client_dialect,db_dialect,
+						  parser_version,stmt_ambiguous) == ')')
+			{
+				openCount--;
+			}
+			if (openCount) {
+				/* Not enough closing braces. Restore status quo. */
+				lex = savedState;
+			}
+			else {
+				/* Cool! We successfully swallowed braces ! */
+				brace_analysis = false;
+				yylval = temp_val;
+				/* Check if we need to handle LR(2) grammar case */
+				if (prev_keyword == '(' &&
+					/* Produce special_trigger_action_predicate only where we can handle it -
+					  in search conditions */
+					(prev_prev_keyword=='(' || prev_prev_keyword==NOT || prev_prev_keyword==AND || 
+					 prev_prev_keyword==OR || prev_prev_keyword==ON || prev_prev_keyword==HAVING || 
+					 prev_prev_keyword==WHERE || prev_prev_keyword==WHEN) ) 
+				{			
+					savedState = lex;
+					int token = yylex(client_dialect,db_dialect,parser_version,stmt_ambiguous);
+					lex = savedState;
+					if (token==OR || token==AND) {
+						switch(nextToken) {
+						case INSERTING:
+							return KW_INSERTING;
+						case UPDATING:
+							return KW_UPDATING;
+						case DELETING:
+							return KW_DELETING;
+						}
+					}
+				}
+				return nextToken;
+			}
+		} else {
+			/* Restore status quo. */
+			lex = savedState;
+		}
+	}
+
+	/* Single character punctuation are simply passed on */
+
+	return c;
 }
 
 
 static void yyerror (
-    TEXT	*error_string)
+	TEXT	*error_string)
 {
 /**************************************
  *
@@ -6238,27 +6231,25 @@ static void yyerror (
  *
  **************************************/
 
-if (DSQL_yychar < 1)
-    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104,
-	gds_arg_gds, gds_command_end_err,    /* Unexpected end of command */
-	0);
-else
-    {
-    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104,
- 	gds_arg_gds, gds_dsql_token_unk_err, 
-	gds_arg_number, (SLONG) lex.lines, 
-	gds_arg_number, (SLONG) (lex.last_token - lex.line_start + 1), /*CVC: +1*/
-	    /* Token unknown - line %d, char %d */
- 	gds_arg_gds, gds_random, 
-	gds_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token,
- 	0);
-    }
+	if (DSQL_yychar < 1)
+		ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104,
+		gds_arg_gds, gds_command_end_err,	/* Unexpected end of command */
+		0);
+	else
+	{
+		ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104,
+		gds_arg_gds, gds_dsql_token_unk_err, 
+		gds_arg_number, (SLONG) lex.lines, 
+		gds_arg_number, (SLONG) (lex.last_token - lex.line_start + 1), /*CVC: +1*/
+			/* Token unknown - line %d, char %d */
+		gds_arg_gds, gds_random, 
+		gds_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token, 0);
+	}
 }
 
 
-static void yyabandon (
-    SSHORT      sql_code,
-    ISC_STATUS      error_symbol)
+static void yyabandon (SSHORT		sql_code,
+					   ISC_STATUS	error_symbol)
 {
 /**************************************
  *
@@ -6271,8 +6262,8 @@ static void yyabandon (
  *
  **************************************/
 
-ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) sql_code, 
-	gds_arg_gds, error_symbol, 0);
+	ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) sql_code, 
+		gds_arg_gds, error_symbol, 0);
 }
 #define YYABORT goto yyabort
 #define YYREJECT goto yyabort
@@ -6610,7 +6601,7 @@ case 84:
 break;
 case 85:
 { yyval = make_node (nod_udf_param, (int) e_udf_param_count,
-				              yyvsp[-1], NULL); }
+							  yyvsp[-1], NULL); }
 break;
 case 86:
 { yyval = make_node (nod_udf_param, (int) e_udf_param_count,
@@ -6637,7 +6628,7 @@ case 92:
 break;
 case 93:
 { yyval = make_node (nod_udf_return_value, (int) 2, 
-		  		NULL, MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG));}
+				NULL, MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG));}
 break;
 case 94:
 { yyval = make_node (nod_def_filter, (int) e_filter_count, 
@@ -6716,7 +6707,7 @@ case 118:
 break;
 case 119:
 { yyval = make_node (nod_def_shadow, (int) e_shadow_count,
-			     yyvsp[-5], yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], make_list (yyvsp[0])); }
+				 yyvsp[-5], yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], make_list (yyvsp[0])); }
 break;
 case 120:
 { yyval = MAKE_constant ((STR) 1, CONSTANT_SLONG); }
@@ -6747,7 +6738,7 @@ case 130:
 break;
 case 131:
 { yyval = make_node (nod_def_domain, (int) e_dom_count,
-                                          yyvsp[-7], yyvsp[-3], yyvsp[-2], make_list (yyvsp[-1]), yyvsp[0]); }
+										  yyvsp[-7], yyvsp[-3], yyvsp[-2], make_list (yyvsp[-1]), yyvsp[0]); }
 break;
 case 132:
 { yyval = NULL; }
@@ -6842,27 +6833,27 @@ case 172:
 break;
 case 173:
 { if (lex.log_defined)
-			    yyabandon (-260, isc_log_redef);  /* Log redefined */
+				yyabandon (-260, isc_log_redef);  /* Log redefined */
 			  lex.log_defined = TRUE;
 			  yyval = yyvsp[0]; }
 break;
 case 174:
 { if (lex.log_defined)
-			    yyabandon (-260, isc_log_redef);
+				yyabandon (-260, isc_log_redef);
 			  lex.log_defined = TRUE;
 			  yyval = yyvsp[0]; }
 break;
 case 175:
 { lex.g_file->fil_flags |= LOG_serial | LOG_overflow; 
 			  if (lex.g_file->fil_partitions)
-			      yyabandon (-261, isc_partition_not_supp);
+				  yyabandon (-261, isc_partition_not_supp);
 			/* Partitions not supported in series of log file specification */
 			 yyval = make_node (nod_list, 2, yyvsp[-3], yyvsp[0]); }
 break;
 case 176:
 { lex.g_file->fil_flags |= LOG_serial;
 			  if (lex.g_file->fil_partitions)
-			      yyabandon (-261, isc_partition_not_supp);
+				  yyabandon (-261, isc_partition_not_supp);
 			  yyval = yyvsp[0]; }
 break;
 case 177:
@@ -6881,9 +6872,9 @@ case 180:
 break;
 case 181:
 { 
-		         check_log_file_attrs(); 
+				 check_log_file_attrs(); 
 			 yyval = (DSQL_NOD) make_node (nod_log_file_desc, (int) 1,
-                                                (DSQL_NOD) lex.g_file); }
+												(DSQL_NOD) lex.g_file); }
 break;
 case 182:
 { lex.g_file = make_file();
@@ -6927,11 +6918,11 @@ case 208:
 break;
 case 209:
 { yyval = make_node (nod_def_field, (int) e_dfl_count, 
-				    yyvsp[-2], NULL, NULL, NULL, NULL, NULL, yyvsp[0]); }
+					yyvsp[-2], NULL, NULL, NULL, NULL, NULL, yyvsp[0]); }
 break;
 case 210:
 { yyval = make_node (nod_def_field, (int) e_dfl_count, 
-				    yyvsp[-1], NULL, NULL, NULL, NULL, NULL, yyvsp[0]); }
+					yyvsp[-1], NULL, NULL, NULL, NULL, NULL, yyvsp[0]); }
 break;
 case 211:
 { 
@@ -6943,7 +6934,7 @@ case 214:
 break;
 case 215:
 { yyval = make_node (nod_def_domain, (int) e_dom_count,
-                                            yyvsp[-1], NULL, NULL, NULL, NULL); }
+											yyvsp[-1], NULL, NULL, NULL, NULL); }
 break;
 case 216:
 { yyval = yyvsp[0]; }
@@ -6996,7 +6987,7 @@ case 235:
 break;
 case 236:
 { yyval = make_node (nod_foreign, e_for_count,
-                        make_node (nod_list, (int) 1, lex.g_field_name), yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0]); }
+						make_node (nod_list, (int) 1, lex.g_field_name), yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0]); }
 break;
 case 238:
 { yyval = make_node (nod_unique, 2, NULL, yyvsp[0]); }
@@ -7021,7 +7012,7 @@ case 248:
 break;
 case 249:
 { yyval = make_node (nod_foreign, e_for_count, yyvsp[-5], yyvsp[-3], 
-			         yyvsp[-2], yyvsp[-1], yyvsp[0]); }
+					 yyvsp[-2], yyvsp[-1], yyvsp[0]); }
 break;
 case 250:
 { yyval = make_node (nod_def_index, (int) e_idx_count, 
@@ -7076,22 +7067,22 @@ break;
 case 264:
 { yyval = make_node (nod_def_procedure,
 						  (int) e_prc_count, 
-					          yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
+							  yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 265:
 { yyval = make_node (nod_redef_procedure,
 						  (int) e_prc_count, 
-					          yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
+							  yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 266:
 { yyval = make_node (nod_replace_procedure,
 						  (int) e_prc_count, 
-					          yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
+							  yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 267:
 { yyval = make_node (nod_mod_procedure,
 						  (int) e_prc_count, 
-					          yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
+							  yyvsp[-7], yyvsp[-6], yyvsp[-5], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
 break;
 case 268:
 { yyval = make_list (yyvsp[-1]); }
@@ -7321,8 +7312,8 @@ case 369:
 break;
 case 370:
 { yyval = (DSQL_NOD) MAKE_string(lex.beginning, 
-			       (lex_position() == lex.end) ?
-			       lex_position()-lex.beginning : lex.last_token-lex.beginning);}
+				   (lex_position() == lex.end) ?
+				   lex_position()-lex.beginning : lex.last_token-lex.beginning);}
 break;
 case 371:
 { lex.beginning = lex.last_token; }
@@ -7442,11 +7433,11 @@ case 406:
 break;
 case 407:
 { yyval = make_node (nod_mod_domain, (int) e_alt_count,
-                                          yyvsp[-1], make_list (yyvsp[0])); }
+										  yyvsp[-1], make_list (yyvsp[0])); }
 break;
 case 408:
 { yyval = make_node (nod_mod_index, 
-				     (int) e_mod_idx_count, yyvsp[0]); }
+					 (int) e_mod_idx_count, yyvsp[0]); }
 break;
 case 409:
 { yyval = yyvsp[0]; }
@@ -7461,7 +7452,7 @@ case 412:
 break;
 case 413:
 { yyval = make_node (nod_def_default, (int) e_dft_count,
-					    yyvsp[-1], yyvsp[0]); }
+						yyvsp[-1], yyvsp[0]); }
 break;
 case 414:
 { yyval = yyvsp[0]; }
@@ -7521,7 +7512,7 @@ case 455:
 break;
 case 456:
 { yyval = make_node (nod_def_domain, (int) e_dom_count,
-                                        	    yyvsp[-1], NULL, NULL, NULL, NULL); }
+												yyvsp[-1], NULL, NULL, NULL, NULL); }
 break;
 case 457:
 { lex.g_field_name = yyvsp[0];
@@ -7629,26 +7620,26 @@ case 493:
 break;
 case 498:
 { lex.g_field->fld_ranges = make_list (yyvsp[-1]);
-		      lex.g_field->fld_dimensions = lex.g_field->fld_ranges->nod_count / 2;
-		      lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
-		      yyval = yyvsp[-3]; }
+			  lex.g_field->fld_dimensions = lex.g_field->fld_ranges->nod_count / 2;
+			  lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
+			  yyval = yyvsp[-3]; }
 break;
 case 499:
 { lex.g_field->fld_ranges = make_list (yyvsp[-2]);
-		      lex.g_field->fld_dimensions = lex.g_field->fld_ranges->nod_count / 2;
-		      lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
-		      yyval = yyvsp[-4]; }
+			  lex.g_field->fld_dimensions = lex.g_field->fld_ranges->nod_count / 2;
+			  lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
+			  yyval = yyvsp[-4]; }
 break;
 case 501:
 { yyval = make_node (nod_list, (int) 2, yyvsp[-2], yyvsp[0]); }
 break;
 case 502:
 { if ((SLONG) yyvsp[0] < 1)
-		     		yyval = make_node (nod_list, (int) 2, 
+			 		yyval = make_node (nod_list, (int) 2, 
 					MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG), 
 					MAKE_constant ((STR) 1, CONSTANT_SLONG)); 
-		          else
-		     		yyval = make_node (nod_list, (int) 2, 
+				  else
+			 		yyval = make_node (nod_list, (int) 2, 
 			   		MAKE_constant ((STR) 1, CONSTANT_SLONG), 
 					MAKE_constant ((STR) yyvsp[0], CONSTANT_SLONG) ); }
 break;
@@ -7660,17 +7651,17 @@ break;
 case 509:
 { 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-				    gds_arg_number, client_dialect,
-				    gds_arg_string, "BIGINT",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
+					gds_arg_number, client_dialect,
+					gds_arg_string, "BIGINT",
+					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-				    gds_arg_number, db_dialect,
-				    gds_arg_string, "BIGINT",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					gds_arg_number, db_dialect,
+					gds_arg_string, "BIGINT",
+					0);
 			lex.g_field->fld_dtype = dtype_int64; 
 			lex.g_field->fld_length = sizeof (SINT64); 
 			}
@@ -7691,36 +7682,36 @@ case 512:
 { 
 			*stmt_ambiguous = TRUE;
 			if (client_dialect <= SQL_DIALECT_V5)
-			    {
-			    /* Post warning saying that DATE is equivalent to TIMESTAMP */
-		            ERRD_post_warning (isc_sqlwarn, gds_arg_number, (SLONG) 301, 
-                                               isc_arg_warning, isc_dtype_renamed, 0);
-			    lex.g_field->fld_dtype = dtype_timestamp; 
-			    lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
-			    }
+				{
+				/* Post warning saying that DATE is equivalent to TIMESTAMP */
+					ERRD_post_warning (isc_sqlwarn, gds_arg_number, (SLONG) 301, 
+											   isc_arg_warning, isc_dtype_renamed, 0);
+				lex.g_field->fld_dtype = dtype_timestamp; 
+				lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
+				}
 			else if (client_dialect == SQL_DIALECT_V6_TRANSITION)
-			    yyabandon (-104, isc_transitional_date);
+				yyabandon (-104, isc_transitional_date);
 			else
-			    {
-			    lex.g_field->fld_dtype = dtype_sql_date; 
-			    lex.g_field->fld_length = sizeof (ULONG);
-			    }
+				{
+				lex.g_field->fld_dtype = dtype_sql_date; 
+				lex.g_field->fld_length = sizeof (ULONG);
+				}
 			}
 break;
 case 513:
 { 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-				    gds_arg_number, client_dialect,
-				    gds_arg_string, "TIME",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
+					gds_arg_number, client_dialect,
+					gds_arg_string, "TIME",
+					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-				    gds_arg_number, db_dialect,
-				    gds_arg_string, "TIME",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					gds_arg_number, db_dialect,
+					gds_arg_string, "TIME",
+					0);
 			lex.g_field->fld_dtype = dtype_sql_time; 
 			lex.g_field->fld_length = sizeof (SLONG);
 			}
@@ -7844,122 +7835,122 @@ break;
 case 544:
 {
 			lex.g_field->fld_dtype = dtype_long; 
-		    	lex.g_field->fld_length = sizeof (SLONG); 
+				lex.g_field->fld_length = sizeof (SLONG); 
 			lex.g_field->fld_precision = 9;
-		    	}
+				}
 break;
 case 545:
-{         
+{		 
 			if ( ((SLONG) yyvsp[-1] < 1) || ((SLONG) yyvsp[-1] > 18) )
-			    yyabandon (-842, isc_precision_err);
+				yyabandon (-842, isc_precision_err);
 				/* Precision most be between 1 and 18. */ 
 			if ((SLONG) yyvsp[-1] > 9)
-			    {
-			    if ( ( (client_dialect <= SQL_DIALECT_V5) &&
-				   (db_dialect     >  SQL_DIALECT_V5) ) ||
+				{
+				if ( ( (client_dialect <= SQL_DIALECT_V5) &&
+				   (db_dialect	 >  SQL_DIALECT_V5) ) ||
 				 ( (client_dialect >  SQL_DIALECT_V5) &&
-				   (db_dialect     <= SQL_DIALECT_V5) ) )
-			        ERRD_post (gds_sqlerr,
+				   (db_dialect	 <= SQL_DIALECT_V5) ) )
+					ERRD_post (gds_sqlerr,
 					   gds_arg_number, (SLONG) -817,
 					   gds_arg_gds,
 					   isc_ddl_not_allowed_by_db_sql_dial,
 					   gds_arg_number, (SLONG) db_dialect,
 					   0);
-			    if (client_dialect <= SQL_DIALECT_V5)
-			        {
+				if (client_dialect <= SQL_DIALECT_V5)
+					{
 				lex.g_field->fld_dtype = dtype_double;
 				lex.g_field->fld_length = sizeof (double);
-			        }
-			    else
-			        {
+					}
+				else
+					{
 				if (client_dialect == SQL_DIALECT_V6_TRANSITION)
-				    {
-				    ERRD_post_warning (
+					{
+					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous,
 					gds_arg_end );
-				    ERRD_post_warning (
+					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous1,
 					gds_arg_end );
-				    ERRD_post_warning (
+					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous2,
 					gds_arg_end );
 
-				    }
+					}
 				lex.g_field->fld_dtype = dtype_int64;
 				lex.g_field->fld_length = sizeof (SINT64);
-			        }
-			    }
+					}
+				}
 			else 
-			    if ((SLONG) yyvsp[-1] < 5)
-			    	{
-			    	lex.g_field->fld_dtype = dtype_short; 
-			    	lex.g_field->fld_length = sizeof (SSHORT); 
-			    	}
-			    else
-			    	{
-			    	lex.g_field->fld_dtype = dtype_long; 
-			    	lex.g_field->fld_length = sizeof (SLONG); 
-			    	}
+				if ((SLONG) yyvsp[-1] < 5)
+					{
+					lex.g_field->fld_dtype = dtype_short; 
+					lex.g_field->fld_length = sizeof (SSHORT); 
+					}
+				else
+					{
+					lex.g_field->fld_dtype = dtype_long; 
+					lex.g_field->fld_length = sizeof (SLONG); 
+					}
 			lex.g_field->fld_precision = (USHORT)(ULONG) yyvsp[-1];
 			}
 break;
 case 546:
 { 
 			if ( ((SLONG) yyvsp[-3] < 1) || ((SLONG) yyvsp[-3] > 18) )
-			    yyabandon (-842, isc_precision_err);
+				yyabandon (-842, isc_precision_err);
 				/* Precision should be between 1 and 18 */ 
 			if (((SLONG) yyvsp[-1] > (SLONG) yyvsp[-3]) || ((SLONG) yyvsp[-1] < 0))
-			    yyabandon (-842, isc_scale_nogt);
+				yyabandon (-842, isc_scale_nogt);
 				/* Scale must be between 0 and precision */
 			if ((SLONG) yyvsp[-3] > 9)
-			    {
-			    if ( ( (client_dialect <= SQL_DIALECT_V5) &&
-				   (db_dialect     >  SQL_DIALECT_V5) ) ||
+				{
+				if ( ( (client_dialect <= SQL_DIALECT_V5) &&
+				   (db_dialect	 >  SQL_DIALECT_V5) ) ||
 				 ( (client_dialect >  SQL_DIALECT_V5) &&
-				   (db_dialect     <= SQL_DIALECT_V5) ) )
-			        ERRD_post (gds_sqlerr,
+				   (db_dialect	 <= SQL_DIALECT_V5) ) )
+					ERRD_post (gds_sqlerr,
 					   gds_arg_number, (SLONG) -817,
 					   gds_arg_gds,
 					   isc_ddl_not_allowed_by_db_sql_dial,
 					   gds_arg_number, (SLONG) db_dialect,
 					   0);
-			    if (client_dialect <= SQL_DIALECT_V5)
-			        {
+				if (client_dialect <= SQL_DIALECT_V5)
+					{
 				lex.g_field->fld_dtype = dtype_double;
 				lex.g_field->fld_length = sizeof (double); 
-			        }
-			    else
-			        {
+					}
+				else
+					{
 				if (client_dialect == SQL_DIALECT_V6_TRANSITION)
 				  {
-				    ERRD_post_warning (
+					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous,
 					gds_arg_end );
-				    ERRD_post_warning (
+					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous1,
 					gds_arg_end );
-				    ERRD_post_warning (
+					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous2,
 					gds_arg_end );
 				  }
 				  /* client_dialect >= SQL_DIALECT_V6 */
 				lex.g_field->fld_dtype = dtype_int64;
 				lex.g_field->fld_length = sizeof (SINT64);
-			        }
-			    }
+					}
+				}
 			else
-			    {
-			    if ((SLONG) yyvsp[-3] < 5)
-			    	{
-			    	lex.g_field->fld_dtype = dtype_short; 
-			    	lex.g_field->fld_length = sizeof (SSHORT); 
-			    	}
-			    else
-			    	{
-			    	lex.g_field->fld_dtype = dtype_long; 
-			    	lex.g_field->fld_length = sizeof (SLONG); 
-			    	}
-			    }
+				{
+				if ((SLONG) yyvsp[-3] < 5)
+					{
+					lex.g_field->fld_dtype = dtype_short; 
+					lex.g_field->fld_length = sizeof (SSHORT); 
+					}
+				else
+					{
+					lex.g_field->fld_dtype = dtype_long; 
+					lex.g_field->fld_length = sizeof (SLONG); 
+					}
+				}
 			lex.g_field->fld_precision = (USHORT)(ULONG) yyvsp[-3];
 			lex.g_field->fld_scale = - (SSHORT)(SLONG) yyvsp[-1];
 			}
@@ -7967,15 +7958,15 @@ break;
 case 549:
 { 
 			if ((SLONG) yyvsp[0] > 7)
-			    {
-			    lex.g_field->fld_dtype = dtype_double;
-			    lex.g_field->fld_length = sizeof (double); 
-			    }
+				{
+				lex.g_field->fld_dtype = dtype_double;
+				lex.g_field->fld_length = sizeof (double); 
+				}
 			else
-			    {
-			    lex.g_field->fld_dtype = dtype_real; 
-			    lex.g_field->fld_length = sizeof (float);
-			    }
+				{
+				lex.g_field->fld_dtype = dtype_real; 
+				lex.g_field->fld_length = sizeof (float);
+				}
 			}
 break;
 case 550:
@@ -8011,14 +8002,14 @@ break;
 case 559:
 {
 			  yyval = make_node (nod_set_generator2,e_gen_id_count,yyvsp[-2],
-				       MAKE_constant((STR)yyvsp[0], CONSTANT_SINT64));
+					   MAKE_constant((STR)yyvsp[0], CONSTANT_SINT64));
 			}
 break;
 case 560:
 {
 			  yyval = make_node (nod_set_generator2, e_gen_id_count, yyvsp[-3],
 					  make_node(nod_negate, 1,
-						    MAKE_constant((STR)yyvsp[0], CONSTANT_SINT64)));
+							MAKE_constant((STR)yyvsp[0], CONSTANT_SINT64)));
 			}
 break;
 case 564:
@@ -8437,7 +8428,7 @@ case 738:
 break;
 case 739:
 { yyval = make_node (nod_update, e_upd_count,
-			  	yyvsp[-3], make_list (yyvsp[-1]), NULL, yyvsp[0]); }
+				yyvsp[-3], make_list (yyvsp[-1]), NULL, yyvsp[0]); }
 break;
 case 741:
 { yyval = make_node (nod_list, 2, yyvsp[-2], yyvsp[0]); }
@@ -8718,9 +8709,9 @@ break;
 case 863:
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-			      yyval = make_node (nod_add2, 2, yyvsp[-2], yyvsp[0]);
+				  yyval = make_node (nod_add2, 2, yyvsp[-2], yyvsp[0]);
 			  else
-			      yyval = make_node (nod_add, 2, yyvsp[-2], yyvsp[0]);
+				  yyval = make_node (nod_add, 2, yyvsp[-2], yyvsp[0]);
 			}
 break;
 case 864:
@@ -8732,25 +8723,25 @@ break;
 case 866:
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-			      yyval = make_node (nod_subtract2, 2, yyvsp[-2], yyvsp[0]);
+				  yyval = make_node (nod_subtract2, 2, yyvsp[-2], yyvsp[0]);
 			  else 
-			      yyval = make_node (nod_subtract, 2, yyvsp[-2], yyvsp[0]);
+				  yyval = make_node (nod_subtract, 2, yyvsp[-2], yyvsp[0]);
 			}
 break;
 case 867:
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-			       yyval = make_node (nod_multiply2, 2, yyvsp[-2], yyvsp[0]);
+				   yyval = make_node (nod_multiply2, 2, yyvsp[-2], yyvsp[0]);
 			  else
-			       yyval = make_node (nod_multiply, 2, yyvsp[-2], yyvsp[0]);
+				   yyval = make_node (nod_multiply, 2, yyvsp[-2], yyvsp[0]);
 			}
 break;
 case 868:
 {
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-			      yyval = make_node (nod_divide2, 2, yyvsp[-2], yyvsp[0]);
+				  yyval = make_node (nod_divide2, 2, yyvsp[-2], yyvsp[0]);
 			  else
-			      yyval = make_node (nod_divide, 2, yyvsp[-2], yyvsp[0]);
+				  yyval = make_node (nod_divide, 2, yyvsp[-2], yyvsp[0]);
 			}
 break;
 case 869:
@@ -8768,7 +8759,7 @@ break;
 case 876:
 { 
 			  yyval = make_node (nod_dom_value, 0, NULL);
-                        }
+						}
 break;
 case 877:
 { yyval = yyvsp[0]; }
@@ -8776,34 +8767,34 @@ break;
 case 878:
 { 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-				    gds_arg_number, client_dialect,
-				    gds_arg_string, "DATE",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
+					gds_arg_number, client_dialect,
+					gds_arg_string, "DATE",
+					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-				    gds_arg_number, db_dialect,
-				    gds_arg_string, "DATE",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					gds_arg_number, db_dialect,
+					gds_arg_string, "DATE",
+					0);
 			yyval = make_node (nod_current_date, 0, NULL);
 			}
 break;
 case 879:
 { 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-				    gds_arg_number, client_dialect,
-				    gds_arg_string, "TIME",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
+					gds_arg_number, client_dialect,
+					gds_arg_string, "TIME",
+					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-				    gds_arg_number, db_dialect,
-				    gds_arg_string, "TIME",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					gds_arg_number, db_dialect,
+					gds_arg_string, "TIME",
+					0);
 			yyval = make_node (nod_current_time, 0, NULL);
 			}
 break;
@@ -8840,34 +8831,34 @@ break;
 case 893:
 { 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-				    gds_arg_number, client_dialect,
-				    gds_arg_string, "DATE",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
+					gds_arg_number, client_dialect,
+					gds_arg_string, "DATE",
+					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-				    gds_arg_number, db_dialect,
-				    gds_arg_string, "DATE",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					gds_arg_number, db_dialect,
+					gds_arg_string, "DATE",
+					0);
 			yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_DATE);
 			}
 break;
 case 894:
 {
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-				    gds_arg_number, client_dialect,
-				    gds_arg_string, "TIME",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
+					gds_arg_number, client_dialect,
+					gds_arg_string, "TIME",
+					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-			    ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-				    gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-				    gds_arg_number, db_dialect,
-				    gds_arg_string, "TIME",
-				    0);
+				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
+					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					gds_arg_number, db_dialect,
+					gds_arg_string, "TIME",
+					0);
 			yyval = MAKE_constant ((STR) yyvsp[0], CONSTANT_TIME); 
 			}
 break;
@@ -8918,25 +8909,25 @@ case 908:
 break;
 case 909:
 { if ((SLONG) yyvsp[0] > SHRT_POS_MAX)
-			    yyabandon (-842, isc_expec_short);
+				yyabandon (-842, isc_expec_short);
 				/* Short integer expected */
 			  yyval = yyvsp[0];}
 break;
 case 910:
 { if ((SLONG) yyvsp[0] > SHRT_NEG_MAX)
-			    yyabandon (-842, isc_expec_short);
+				yyabandon (-842, isc_expec_short);
 				/* Short integer expected */
 			  yyval = yyvsp[0];}
 break;
 case 911:
 { if ((SLONG) yyvsp[0] == 0)
-			    yyabandon (-842, isc_expec_positive);
+				yyabandon (-842, isc_expec_positive);
 				/* Positive number expected */
 			  yyval = yyvsp[0];}
 break;
 case 912:
 { if ((SLONG) yyvsp[0] > SHRT_UNSIGNED_MAX)
-			    yyabandon (-842, isc_expec_ushort);
+				yyabandon (-842, isc_expec_ushort);
 				/* Unsigned short integer expected */
 			  yyval = yyvsp[0];}
 break;
@@ -8954,41 +8945,41 @@ case 921:
 break;
 case 922:
 { yyval = make_flag_node (nod_agg_count,
-                                       NOD_AGG_DISTINCT, 1, yyvsp[-1]); }
+									   NOD_AGG_DISTINCT, 1, yyvsp[-1]); }
 break;
 case 923:
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-			      yyval = make_node (nod_agg_total2, 1, yyvsp[-1]);
+				  yyval = make_node (nod_agg_total2, 1, yyvsp[-1]);
 			  else
-			      yyval = make_node (nod_agg_total, 1, yyvsp[-1]);
+				  yyval = make_node (nod_agg_total, 1, yyvsp[-1]);
 			}
 break;
 case 924:
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-			      yyval = make_flag_node (nod_agg_total2,
+				  yyval = make_flag_node (nod_agg_total2,
 						   NOD_AGG_DISTINCT, 1, yyvsp[-1]);
 			  else
-			      yyval = make_flag_node (nod_agg_total,
+				  yyval = make_flag_node (nod_agg_total,
 						   NOD_AGG_DISTINCT, 1, yyvsp[-1]);
 			}
 break;
 case 925:
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-			      yyval = make_node (nod_agg_average2, 1, yyvsp[-1]);
+				  yyval = make_node (nod_agg_average2, 1, yyvsp[-1]);
 			  else
-			      yyval = make_node (nod_agg_average, 1, yyvsp[-1]);
+				  yyval = make_node (nod_agg_average, 1, yyvsp[-1]);
 			}
 break;
 case 926:
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-			      yyval = make_flag_node (nod_agg_average2,
+				  yyval = make_flag_node (nod_agg_average2,
 						   NOD_AGG_DISTINCT, 1, yyvsp[-1]);
 			  else
-			      yyval = make_flag_node (nod_agg_average,
+				  yyval = make_flag_node (nod_agg_average,
 						   NOD_AGG_DISTINCT, 1, yyvsp[-1]);
 			}
 break;
@@ -9007,7 +8998,7 @@ break;
 case 931:
 { 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-			      yyval = make_node (nod_gen_id2, 2, yyvsp[-3], yyvsp[-1]);
+				  yyval = make_node (nod_gen_id2, 2, yyvsp[-3], yyvsp[-1]);
 			  else
 				  yyval = make_node (nod_gen_id, 2, yyvsp[-3], yyvsp[-1]);
 			}

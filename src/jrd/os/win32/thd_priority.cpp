@@ -49,9 +49,9 @@ MUTX_T ThreadPriorityScheduler::mutex;
 MemoryPool * ThreadPriorityScheduler::pool = 0;
 ThreadPriorityScheduler * ThreadPriorityScheduler::chain = 0;
 ThreadPriorityScheduler * ThreadPriorityScheduler::news = 0;
-BOOLEAN ThreadPriorityScheduler::initialized = FALSE;
+bool ThreadPriorityScheduler::initialized = false;
 DWORD ThreadPriorityScheduler::specific_key = (DWORD) -1;
-BOOLEAN ThreadPriorityScheduler::shutdown = FALSE;
+bool ThreadPriorityScheduler::shutdown = false;
 
 //____________________________________________________________
 //
@@ -60,8 +60,8 @@ BOOLEAN ThreadPriorityScheduler::shutdown = FALSE;
 void ThreadPriorityScheduler::Cleanup(void) {
 	if (initialized)
 	{
-		initialized = FALSE;
-		shutdown = TRUE;
+		initialized = false;
+		shutdown = true;
 	}
 }
 
@@ -102,7 +102,7 @@ void ThreadPriorityScheduler::Init(void)
 	if (initialized)
 		return;
 
-	initialized = TRUE;
+	initialized = true;
 	specific_key = TlsAlloc();
 
 	// memory pool for thps allocation
@@ -224,8 +224,8 @@ void ThreadPriorityScheduler::Exit(void) {
 //
 // Check whether current thread has high priority
 //
-BOOLEAN ThreadPriorityScheduler::Boosted(void) {
-	return InternalGet()->flags & THPS_BOOSTED ? TRUE : FALSE;
+bool ThreadPriorityScheduler::Boosted(void) {
+	return InternalGet()->flags & THPS_BOOSTED ? true : false;
 }
 
 //____________________________________________________________

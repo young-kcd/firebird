@@ -125,12 +125,12 @@ static ISC_STATUS	error();
 static void		execute_blob(DSQL_REQ, USHORT, UCHAR*, USHORT, UCHAR*,
 						 USHORT, UCHAR*, USHORT, UCHAR*);
 static ISC_STATUS	execute_request(DSQL_REQ, FRBRD**, USHORT, UCHAR*, USHORT, UCHAR*,
-							  USHORT, UCHAR*, USHORT, UCHAR*, USHORT);
+							  USHORT, UCHAR*, USHORT, UCHAR*, bool);
 static SSHORT	filter_sub_type(DSQL_REQ, DSQL_NOD);
-static BOOLEAN	get_indices(SSHORT*, SCHAR**, SSHORT*, SCHAR**);
+static bool		get_indices(SSHORT*, SCHAR**, SSHORT*, SCHAR**);
 static USHORT	get_plan_info(DSQL_REQ, SSHORT, SCHAR**);
 static USHORT	get_request_info(DSQL_REQ, SSHORT, SCHAR*);
-static BOOLEAN	get_rsb_item(SSHORT*, SCHAR**, SSHORT*, SCHAR**, USHORT*,
+static bool		get_rsb_item(SSHORT*, SCHAR**, SSHORT*, SCHAR**, USHORT*,
 							USHORT*);
 static DBB		init(FRBRD**);
 static void		map_in_out(DSQL_REQ, DSQL_MSG, USHORT, UCHAR*, USHORT, UCHAR*);
@@ -139,7 +139,7 @@ static USHORT	parse_blr(USHORT, UCHAR*, USHORT, PAR);
 static DSQL_REQ		prepare(DSQL_REQ, USHORT, TEXT*, USHORT, USHORT);
 static void		punt(void);
 static UCHAR*	put_item(UCHAR, USHORT, UCHAR*, UCHAR*, UCHAR*);
-static void		release_request(DSQL_REQ, USHORT);
+static void		release_request(DSQL_REQ, bool);
 static ISC_STATUS	return_success(void);
 static UCHAR*	var_info(DSQL_MSG, const UCHAR*, const UCHAR*, UCHAR*, UCHAR*, USHORT);
 
@@ -170,7 +170,7 @@ static const UCHAR sql_records_info[] = {
 #ifdef	ANY_THREADING
 static MUTX_T databases_mutex;
 static MUTX_T cursors_mutex;
-static USHORT mutex_inited = 0;
+static bool mutex_inited = false;
 #endif
 
 
@@ -537,7 +537,7 @@ ISC_STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(ISC_STATUS*		user_status,
 	OPN open_cursor;
 	ISC_STATUS_ARRAY local_status;
 	struct tsql thd_context, *tdsql;
-	USHORT singleton;
+	bool singleton;
 	ISC_STATUS sing_status;
 
 	SET_THREAD_DATA;
@@ -584,25 +584,17 @@ ISC_STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(ISC_STATUS*		user_status,
 /* A select with a non zero output length is a singleton select */
 
 		if (request->req_type == REQ_SELECT && out_msg_length != 0) {
-			singleton = TRUE;
+			singleton = true;
 		} else {
-			singleton = FALSE;
+			singleton = false;
 		}
 
 		if (request->req_type != REQ_EMBED_SELECT)
 		{
-			sing_status =
-				execute_request(request,
-								trans_handle,
-								in_blr_length,
-								in_blr,
-								in_msg_length,
-								in_msg,
-								out_blr_length,
-								out_blr,
-								out_msg_length,
-								out_msg,
-								singleton);
+			sing_status = execute_request(request, trans_handle, in_blr_length,
+										  in_blr, in_msg_length, in_msg,
+										  out_blr_length, out_blr,
+										  out_msg_length, out_msg, singleton);
 		}
 
 /* If the output message length is zero on a REQ_SELECT then we must
@@ -753,23 +745,15 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 					gds_arg_string, string, gds_arg_end);
 			}
 
-			execute_request(request,
-					trans_handle,
-					in_blr_length,
-					in_blr,
-					in_msg_length,
-					in_msg,
-					out_blr_length,
-					out_blr,
-					out_msg_length,
-					out_msg,
-					FALSE);
+			execute_request(request, trans_handle, in_blr_length, in_blr,
+							in_msg_length, in_msg, out_blr_length, out_blr,
+							out_msg_length,	out_msg, false);
 
-			release_request(request, TRUE);
+			release_request(request, true);
 		}	// try
 		catch (const std::exception&) {
 			status = error();
-			release_request(request, TRUE);
+			release_request(request, true);
 			RESTORE_THREAD_DATA;
 			return status;
 		}
@@ -1219,7 +1203,7 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 		if (option & DSQL_drop) {
 		/* Release everything associate with the request. */
 
-			release_request(request, TRUE);
+			release_request(request, true);
 			*req_handle = NULL;
 		}
 		else if (option & DSQL_close) {
@@ -1459,7 +1443,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 /* Now that we know that the new request exists, zap the old one. */
 
 			tdsql->tsql_default = old_request->req_pool;
-			release_request(old_request, TRUE);
+			release_request(old_request, true);
 			tdsql->tsql_default = NULL;
 
 /* The request was sucessfully prepared, and the old request was
@@ -1479,7 +1463,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 		}	// try
 		catch(const std::exception&) {
 			status = error();
-			release_request(request, TRUE);
+			release_request(request, true);
 			RESTORE_THREAD_DATA;
 			return status;
 		}
@@ -1722,19 +1706,20 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 			}
 			else if (item == isc_info_sql_batch_fetch) {
 				if (request->req_flags & REQ_no_batch)
-					number = FALSE;
+					number = 0;
 				else
-					number = TRUE;
+					number = 1;
 				length = convert((SLONG) number, buffer);
 				if (!(info = put_item(item, length, buffer, info, end_info))) {
 					return return_success();
 				}
 			}
 			else if (item == gds_info_sql_records) {
-				length =
-					get_request_info(request, (SSHORT) sizeof(buffer), reinterpret_cast<SCHAR*>(buffer));
-				if (length
-					&& !(info = put_item(item, length, buffer, info, end_info))) {
+				length = get_request_info(request, (SSHORT) sizeof(buffer),
+										  reinterpret_cast<SCHAR*>(buffer));
+				if (length && !(info = put_item(item, length, buffer, info, 
+												end_info))) 
+				{
 					return return_success();
 				}
 			}
@@ -2861,16 +2846,16 @@ static void execute_blob(	DSQL_REQ		request,
 
  **/
 static ISC_STATUS execute_request(DSQL_REQ			request,
-							  WHY_TRA*			trans_handle,
-							  USHORT			in_blr_length,
-							  UCHAR*			in_blr,
-							  USHORT			in_msg_length,
-							  UCHAR*			in_msg,
-							  USHORT			out_blr_length,
-							  UCHAR*			out_blr,
-							  USHORT			out_msg_length,
-							  UCHAR*			out_msg,
-							  USHORT			singleton)
+								  WHY_TRA*			trans_handle,
+								  USHORT			in_blr_length,
+								  UCHAR*			in_blr,
+								  USHORT			in_msg_length,
+								  UCHAR*			in_msg,
+								  USHORT			out_blr_length,
+								  UCHAR*			out_blr,
+								  USHORT			out_msg_length,
+								  UCHAR*			out_msg,
+								  bool				singleton)
 {
 	DSQL_MSG message;
 	USHORT use_msg_length;
@@ -3002,7 +2987,7 @@ static ISC_STATUS execute_request(DSQL_REQ			request,
 
 	default:
 		/* Catch invalid request types */
-		assert(FALSE);
+		assert(false);
 		/* Fall into ... */
 
 	case REQ_SELECT:
@@ -3203,7 +3188,7 @@ static SSHORT filter_sub_type( DSQL_REQ request, DSQL_NOD node)
   
     @brief	Retrieve the indices from the index tree in
  	the request info buffer, and print them out
- 	in the plan buffer.
+ 	in the plan buffer. Return false on success and true on failure
  
 
     @param explain_length_ptr
@@ -3212,7 +3197,7 @@ static SSHORT filter_sub_type( DSQL_REQ request, DSQL_NOD node)
     @param plan_ptr
 
  **/
-static BOOLEAN get_indices(
+static bool get_indices(
 						   SSHORT * explain_length_ptr,
 						   SCHAR ** explain_ptr,
 						   SSHORT * plan_length_ptr, SCHAR ** plan_ptr)
@@ -3234,9 +3219,9 @@ static BOOLEAN get_indices(
 	case gds_info_rsb_and:
 	case gds_info_rsb_or:
 		if (get_indices(&explain_length, &explain, &plan_length, &plan))
-			return FB_FAILURE;
+			return true;
 		if (get_indices(&explain_length, &explain, &plan_length, &plan))
-			return FB_FAILURE;
+			return true;
 		break;
 
 	case gds_info_rsb_dbkey:
@@ -3250,21 +3235,21 @@ static BOOLEAN get_indices(
 
 		if (plan[-1] != '(' && plan[-1] != ' ') {
 			if (--plan_length < 0)
-				return FB_FAILURE;
+				return true;
 			*plan++ = ',';
 		}
 
 		/* now put out the index name */
 
 		if ((plan_length -= length) < 0)
-			return FB_FAILURE;
+			return true;
 		explain_length -= length;
 		while (length--)
 			*plan++ = *explain++;
 		break;
 
 	default:
-		return FB_FAILURE;
+		return true;
 	}
 
 	*explain_length_ptr = explain_length;
@@ -3272,7 +3257,7 @@ static BOOLEAN get_indices(
 	*plan_length_ptr = plan_length;
 	*plan_ptr = plan;
 
-	return FB_SUCCESS;
+	return false;
 }
 
 
@@ -3466,7 +3451,8 @@ static USHORT get_request_info(
  	get_rsb_item
   
     @brief	Use recursion to print out a reverse-polish
- 	access plan of joins and join types.
+ 	access plan of joins and join types. Return true on failure
+ 	and false if succeed
  
 
     @param explain_length_ptr
@@ -3477,7 +3463,7 @@ static USHORT get_request_info(
     @param level_ptr
 
  **/
-static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
+static bool get_rsb_item(SSHORT*		explain_length_ptr,
 							SCHAR **	explain_ptr,
 							SSHORT*		plan_length_ptr,
 							SCHAR**		plan_ptr,
@@ -3502,7 +3488,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 			p = "\nPLAN ";
 			if ((plan_length -= strlen(p)) < 0)
-				return FB_FAILURE;
+				return true;
 			while (*p)
 				*plan++ = *p++;
 		}
@@ -3524,7 +3510,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 		if (!*parent_join_count) {
 			if (--plan_length < 0)
-				return FB_FAILURE;
+				return true;
 			*plan++ = '(';
 		}
 
@@ -3532,7 +3518,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 		if (plan[-1] != '(') {
 			if (--plan_length < 0)
-				return FB_FAILURE;
+				return true;
 			*plan++ = ',';
 		}
 
@@ -3541,7 +3527,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 		explain_length--;
 		explain_length -= (length = (UCHAR) * explain++);
 		if ((plan_length -= length) < 0)
-			return FB_FAILURE;
+			return true;
 		while (length--)
 			*plan++ = *explain++;
 		break;
@@ -3564,10 +3550,12 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 			union_level = *level_ptr;
 			union_join_count = 0;
-			while (TRUE) {
-				if (get_rsb_item
-					(&explain_length, &explain, &plan_length, &plan,
-					 &union_join_count, &union_level)) return FB_FAILURE;
+			while (true) {
+				if (get_rsb_item(&explain_length, &explain, &plan_length, &plan,
+								 &union_join_count, &union_level)) 
+				{
+					return true;
+				}
 				if (union_level == *level_ptr)
 					break;
 			}
@@ -3578,10 +3566,12 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 			while (union_count) {
 				union_join_count = 0;
 				union_level = 0;
-				while (TRUE) {
-					if (get_rsb_item
-						(&explain_length, &explain, &plan_length, &plan,
-						 &union_join_count, &union_level)) return FB_FAILURE;
+				while (true) {
+					if (get_rsb_item(&explain_length, &explain, &plan_length,
+									 &plan, &union_join_count, &union_level)) 
+					{
+						return true;
+					}
 					if (!union_level)
 						break;
 				}
@@ -3598,7 +3588,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 			if (*parent_join_count && plan[-1] != '(') {
 				if (--plan_length < 0)
-					return FB_FAILURE;
+					return true;
 				*plan++ = ',';
 			}
 
@@ -3613,7 +3603,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
             }
 
 			if ((plan_length -= strlen(p)) < 0)
-				return FB_FAILURE;
+				return true;
 			while (*p)
 				*plan++ = *p++;
 
@@ -3624,18 +3614,20 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 			while (join_count) {
 				if (get_rsb_item(&explain_length, &explain, &plan_length,
 								 &plan, &join_count, level_ptr))
-					return FB_FAILURE;
-                /* CVC: Here's the additional stop condition. */
-                if (!*level_ptr) {
-                    break;
-                }
-            }
+				{
+					return true;
+				}
+				/* CVC: Here's the additional stop condition. */
+				if (!*level_ptr) {
+					break;
+				}
+			}
 
 
 			/* put out the final parenthesis for the join */
 
 			if (--plan_length < 0)
-				return FB_FAILURE;
+				return true;
 			else
 				*plan++ = ')';
 
@@ -3651,14 +3643,17 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 		case gds_info_rsb_ext_sequential:
 		case gds_info_rsb_ext_indexed:
 			if (rsb_type == gds_info_rsb_indexed ||
-				rsb_type == gds_info_rsb_ext_indexed) p = " INDEX (";
+				rsb_type == gds_info_rsb_ext_indexed) 
+			{
+				p = " INDEX (";
+			}
 			else if (rsb_type == gds_info_rsb_navigate)
 				p = " ORDER ";
 			else
 				p = " NATURAL";
 
 			if ((plan_length -= strlen(p)) < 0)
-				return FB_FAILURE;
+				return true;
 			while (*p)
 				*plan++ = *p++;
 
@@ -3667,15 +3662,14 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 			if (rsb_type == gds_info_rsb_indexed ||
 				rsb_type == gds_info_rsb_navigate ||
 				rsb_type == gds_info_rsb_ext_indexed) {
-				if (get_indices
-					(&explain_length, &explain, &plan_length,
-					 &plan)) return FB_FAILURE;
+				if (get_indices(&explain_length, &explain, &plan_length, &plan))
+					return true;
 			}
 
 			if (rsb_type == gds_info_rsb_indexed ||
 				rsb_type == gds_info_rsb_ext_indexed) {
 				if (--plan_length < 0)
-					return FB_FAILURE;
+					return true;
 				*plan++ = ')';
 			}
 
@@ -3683,7 +3677,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 
 			if (!*parent_join_count)
 				if (--plan_length < 0)
-					return FB_FAILURE;
+					return true;
 				else
 					*plan++ = ')';
 
@@ -3703,20 +3697,23 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 			if (explain_length > 2 &&
 				(explain[0] == gds_info_rsb_begin) &&
 				(explain[1] == gds_info_rsb_type) &&
-				(explain[2] == gds_info_rsb_union)) break;
+				(explain[2] == gds_info_rsb_union))
+			{
+				break;
+			}
 
 			/* if this isn't the first item in the list, put out a comma */
 
 			if (*parent_join_count && plan[-1] != '(') {
 				if (--plan_length < 0)
-					return FB_FAILURE;
+					return true;
 				*plan++ = ',';
 			}
 
 			p = "SORT (";
 
 			if ((plan_length -= strlen(p)) < 0)
-				return FB_FAILURE;
+				return true;
 			while (*p)
 				*plan++ = *p++;
 
@@ -3727,13 +3724,13 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 			while (explain_length > 0 && plan_length > 0) {
 				if (get_rsb_item(&explain_length, &explain, &plan_length,
 								 &plan, parent_join_count, level_ptr))
-					return FB_FAILURE;
+					return true;
 				if (*level_ptr == save_level)
 					break;
 			}
 
 			if (--plan_length < 0)
-				return FB_FAILURE;
+				return true;
 			*plan++ = ')';
 			break;
 
@@ -3751,7 +3748,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
 	*plan_length_ptr = plan_length;
 	*plan_ptr = plan;
 
-	return FB_SUCCESS;
+	return false;
 }
 
 
@@ -3770,7 +3767,7 @@ static DBB init(FRBRD** db_handle)
 
 #ifdef ANY_THREADING
 	if (!mutex_inited) {
-		mutex_inited = TRUE;
+		mutex_inited = true;
 		THD_MUTEX_INIT(&databases_mutex);
 		THD_MUTEX_INIT(&cursors_mutex);
 	}
@@ -3822,10 +3819,7 @@ static DBB init(FRBRD** db_handle)
 	ISC_STATUS_ARRAY user_status;
 
 	THREAD_EXIT;
-	gds__database_cleanup(user_status,
-						  db_handle,
-						  cleanup_database,
-						  (SLONG) FALSE);
+	gds__database_cleanup(user_status, db_handle, cleanup_database, (SLONG) 0);
 	THREAD_ENTER;
 
 /* Determine if the database is V3 or V4 */
@@ -4540,7 +4534,7 @@ static UCHAR* put_item(	UCHAR	item,
     @param top_level
 
  **/
-static void release_request(DSQL_REQ request, USHORT top_level)
+static void release_request(DSQL_REQ request, bool top_level)
 {
 
 	ISC_STATUS_ARRAY status_vector;
@@ -4555,7 +4549,7 @@ static void release_request(DSQL_REQ request, USHORT top_level)
 		child->req_parent = NULL;
 		DsqlMemoryPool *save_default = tdsql->tsql_default;
 		tdsql->tsql_default = child->req_pool;
-		release_request(child, FALSE);
+		release_request(child, false);
 		tdsql->tsql_default = save_default;
 	}
 

@@ -48,18 +48,18 @@
 static struct FAB fab;
 static struct RAB rab;
 
-static BOOLEAN check_sort(NOD, IDX *, USHORT);
-static BOOLEAN compare(UCHAR *, UCHAR *, USHORT);
+static bool check_sort(NOD, IDX *, USHORT);
+static bool compare(UCHAR *, UCHAR *, USHORT);
 static int compare_segment(NOD, UCHAR *, DSC *);
 static int connect(EXT, USHORT);
 static void disconnect(EXT);
 static void expand_format(FMT, FMT);
 static SLONG find_field(FMT, USHORT, USHORT, USHORT);
-static int get_dbkey(RSB);
-static int get_indexed(RSB);
+static bool get_dbkey(RSB);
+static bool get_indexed(RSB);
 static USHORT get_key_segment(NOD, UCHAR *, DSC *);
-static BOOLEAN get_sequential(RSB);
-static BOOLEAN match_index(FMT, struct XABKEY *, IDX *);
+static bool get_sequential(RSB);
+static bool match_index(FMT, struct XABKEY *, IDX *);
 static int open_indexed(RSB);
 static int open_sequential(RSB);
 static void position_by_rfa(EXT, USHORT *);
@@ -313,17 +313,26 @@ int EXT_get(RSB rsb)
 		return FALSE;
 
 	switch (rsb->rsb_type) {
-	case rsb_ext_sequential:
-		return get_sequential(rsb);
-
-	case rsb_ext_indexed:
-		return get_indexed(rsb);
-
-	case rsb_ext_dbkey:
-		return get_dbkey(rsb);
-
-	default:
-		IBERROR(181);			/* msg 181 external access type not implemented */
+		case rsb_ext_sequential:
+			if (get_sequential(rsb))
+				return TRUE;
+			else 
+				return FALSE;
+	
+		case rsb_ext_indexed:
+			if (get_indexed(rsb))
+				return TRUE
+			else
+				return FALSE;
+	
+		case rsb_ext_dbkey:
+			if (get_dbkey(rsb))
+				return TRUE
+			else
+				return FALSE
+	
+		default:
+			IBERROR(181);			/* msg 181 external access type not implemented */
 	}
 }
 
@@ -641,7 +650,7 @@ void EXT_trans_start(TRA transaction)
 }
 
 
-static BOOLEAN check_sort(NOD sort, IDX * index, USHORT stream)
+static bool check_sort(NOD sort, IDX * index, USHORT stream)
 {
 /**************************************
  *
@@ -661,7 +670,7 @@ static BOOLEAN check_sort(NOD sort, IDX * index, USHORT stream)
    index segments, we obviously can optimize anything */
 
 	if (!sort || sort->nod_count > index->idx_count)
-		return FALSE;
+		return false;
 
 /* For each sort key, make sure the key matches the index segment,
    and that the sort is ascending */
@@ -672,14 +681,17 @@ static BOOLEAN check_sort(NOD sort, IDX * index, USHORT stream)
 		if (field->nod_type != nod_field ||
 			(USHORT) field->nod_arg[e_fld_stream] != stream ||
 			(USHORT) field->nod_arg[e_fld_id] != tail->idx_field ||
-			ptr[sort->nod_count]) return FALSE;
+			ptr[sort->nod_count])
+		{
+			return false;
+		}
 	}
 
-	return TRUE;
+	return true;
 }
 
 
-static BOOLEAN compare(UCHAR * string1, UCHAR * string2, USHORT length)
+static bool compare(UCHAR * string1, UCHAR * string2, USHORT length)
 {
 /**************************************
  *
@@ -694,10 +706,10 @@ static BOOLEAN compare(UCHAR * string1, UCHAR * string2, USHORT length)
 
 	do
 		if (*string1++ != *string2++)
-			return 1;
+			return true;
 	while (--length);
 
-	return 0;
+	return false;
 }
 
 
@@ -862,7 +874,7 @@ static SLONG find_field(
 }
 
 
-static get_dbkey(RSB rsb)
+static bool get_dbkey(RSB rsb)
 {
 /**************************************
  *
@@ -903,7 +915,7 @@ static get_dbkey(RSB rsb)
 /* If this isn't the first time thru its the last time thru */
 
 	if (!(impure->irsb_flags & irsb_first))
-		return FALSE;
+		return false;
 
 /* Evaluate expression */
 
@@ -922,18 +934,18 @@ static get_dbkey(RSB rsb)
 	file->ext_flags &= ~EXT_eof;
 
 	if (status == RMS$_EOF)
-		return FALSE;
+		return false;
 
 	sys$free(&rab);
 	set_flags(relation, record);
 	MOVE_FAST(rab.rab$w_rfa, &rpb->rpb_ext_dbkey, sizeof(rab.rab$w_rfa));
 	MOVE_FAST(rab.rab$w_rfa, file->ext_dbkey, sizeof(rab.rab$w_rfa));
 
-	return TRUE;
+	return true;
 }
 
 
-static get_indexed(RSB rsb)
+static bool get_indexed(RSB rsb)
 {
 /**************************************
  *
@@ -999,7 +1011,7 @@ static get_indexed(RSB rsb)
 			status = sys$find(&rab);
 			file->ext_flags &= ~EXT_eof;
 			if (status == RMS$_EOF || status == RMS$_RNF)
-				return FALSE;
+				return false;
 			if (!(status & 1))
 				ERR_post(isc_io_error,
 						 gds_arg_string, "sys$find",
@@ -1012,7 +1024,7 @@ static get_indexed(RSB rsb)
    EOF, we're done */
 
 	if (!get_sequential(rsb))
-		return FALSE;
+		return false;
 
 /* Check record against upper bound.  If we pass it, we're done.
    Note: this code ignores issues of inclusive/exclusive upper
@@ -1029,10 +1041,10 @@ static get_indexed(RSB rsb)
 		if (result < 0)
 			break;
 		if (result > 0)
-			return FALSE;
+			return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1062,7 +1074,7 @@ static USHORT get_key_segment(NOD node, UCHAR * buffer, DSC * target)
 }
 
 
-static BOOLEAN get_sequential(RSB rsb)
+static bool get_sequential(RSB rsb)
 {
 /**************************************
  *
@@ -1106,7 +1118,9 @@ static BOOLEAN get_sequential(RSB rsb)
 	if (rpb->rpb_ext_isi == file->ext_isi &&
 		!(impure->irsb_flags & irsb_first) &&
 		compare(file->ext_dbkey, &rpb->rpb_ext_dbkey, sizeof(rab.rab$w_rfa)))
+	{
 		position_by_rfa(file, &rpb->rpb_ext_dbkey);
+	}
 
 	rab.rab$b_rac = RAB$C_SEQ;
 	status = sys$get(&rab);
@@ -1114,7 +1128,7 @@ static BOOLEAN get_sequential(RSB rsb)
 	file->ext_flags &= ~EXT_eof;
 
 	if (status == RMS$_EOF)
-		return FALSE;
+		return false;
 
 	if (!(status & 1))
 		ERR_post(isc_io_error,
@@ -1133,11 +1147,11 @@ static BOOLEAN get_sequential(RSB rsb)
 	if (rpb->rpb_ext_isi == file->ext_isi)
 		MOVE_FAST(rab.rab$w_rfa, file->ext_dbkey, sizeof(rab.rab$w_rfa));
 
-	return TRUE;
+	return true;
 }
 
 
-static BOOLEAN match_index(FMT format, struct XABKEY *xab, IDX * idx)
+static bool match_index(FMT format, struct XABKEY *xab, IDX * idx)
 {
 /**************************************
  *
@@ -1147,8 +1161,8 @@ static BOOLEAN match_index(FMT format, struct XABKEY *xab, IDX * idx)
  *
  * Functional description
  *	Try to match RMS key against fields.  If success, build
- *	internal index description and return TRUE.  Otherwise
- *	return FALSE.
+ *	internal index description and return true.  Otherwise
+ *	return false.
  *
  **************************************/
 	int n, dtype;
@@ -1163,7 +1177,7 @@ static BOOLEAN match_index(FMT format, struct XABKEY *xab, IDX * idx)
 
 	for (; size < end; size++, position++, tail++) {
 		if ((n = find_field(format, xab->xab$b_dtp, *position, *size)) < 0)
-			return FALSE;
+			return false;
 		tail->idx_field = n;
 		tail->idx_itype = xab->xab$b_dtp;
 	}
@@ -1173,7 +1187,7 @@ static BOOLEAN match_index(FMT format, struct XABKEY *xab, IDX * idx)
 	idx->idx_flags = 0;
 	idx->idx_id = xab->xab$b_ref;
 
-	return TRUE;
+	return true;
 }
 
 

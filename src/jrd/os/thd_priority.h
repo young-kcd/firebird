@@ -51,9 +51,9 @@ private:
 	static MemoryPool * pool;		// where we should place our thps
 	static ThreadPriorityScheduler * chain;	// where starts thps chain
 	static ThreadPriorityScheduler * news;	// where starts new thps chain
-	static BOOLEAN initialized;
+	static bool initialized;
 	static DWORD specific_key;		// for thread LS access
-	static BOOLEAN shutdown;		// server shutting down
+	static bool shutdown;		// server shutting down
 
 	ThreadPriorityScheduler * next;			// next thread in list
 	union {
@@ -77,7 +77,7 @@ public:
 	static void Exit(void);
 	static thdd *Get(void);
 	static void Set(thdd *val);
-	static BOOLEAN Boosted(void);
+	static bool Boosted(void);
 	static void Cleanup(void);
 	static void Init(void);
 	static void Attach(HANDLE tHandle, DWORD thread_id, int &p);
@@ -109,7 +109,7 @@ public:
 #define THPS_INIT()
 #define THPS_FINI()
 #define THPS_ATTACH(handle, thread_id, priority)
-#define THPS_BOOSTDONE() FALSE
+#define THPS_BOOSTDONE() false
 
 #endif // THREAD_PSCHED
 

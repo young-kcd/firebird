@@ -1958,7 +1958,7 @@ static void explode_asterisk(DSQL_REQ request, DSQL_NOD node, DSQL_NOD aggregate
 			DSQL_NOD derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
 			derived_field->nod_arg[e_derived_field_value] = select_item->nod_arg[e_derived_field_value];
 			derived_field->nod_arg[e_derived_field_name] = select_item->nod_arg[e_derived_field_name];
-			derived_field->nod_arg[e_derived_field_scope] = (DSQL_NOD) request->req_scope_level;
+			derived_field->nod_arg[e_derived_field_scope] = (DSQL_NOD)(ULONG) request->req_scope_level;
 			derived_field->nod_desc = select_item->nod_desc;
 			LLS_PUSH(derived_field, stack);
 		}
@@ -3424,7 +3424,7 @@ static DSQL_NOD pass1_derived_table(DSQL_REQ request, DSQL_NOD input)
 			derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
 			derived_field->nod_arg[e_derived_field_value] = select_item;
 			derived_field->nod_arg[e_derived_field_name] = list->nod_arg[count];
-			derived_field->nod_arg[e_derived_field_scope] = (DSQL_NOD) request->req_scope_level;
+			derived_field->nod_arg[e_derived_field_scope] = (DSQL_NOD)(ULONG) request->req_scope_level;
 			derived_field->nod_desc = select_item->nod_desc;
 
 			rse->nod_arg[e_rse_items]->nod_arg[count] = derived_field;
@@ -4537,7 +4537,7 @@ static DSQL_NOD pass1_make_derived_field(DSQL_REQ request, TSQL tdsql, DSQL_NOD 
 				DSQL_NOD derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
 				derived_field->nod_arg[e_derived_field_value] = select_item;
 				derived_field->nod_arg[e_derived_field_name] = (DSQL_NOD) alias;
-				derived_field->nod_arg[e_derived_field_scope] = (DSQL_NOD) request->req_scope_level;
+				derived_field->nod_arg[e_derived_field_scope] = (DSQL_NOD)(ULONG) request->req_scope_level;
 				derived_field->nod_desc = select_item->nod_desc;
 				return derived_field;
 			}
@@ -4555,7 +4555,7 @@ static DSQL_NOD pass1_make_derived_field(DSQL_REQ request, TSQL tdsql, DSQL_NOD 
 				DSQL_NOD derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
 				derived_field->nod_arg[e_derived_field_value] = select_item->nod_arg[e_alias_value];
 				derived_field->nod_arg[e_derived_field_name] = (DSQL_NOD) alias;
-				derived_field->nod_arg[e_derived_field_scope] = (DSQL_NOD) request->req_scope_level;
+				derived_field->nod_arg[e_derived_field_scope] = (DSQL_NOD)(ULONG) request->req_scope_level;
 				derived_field->nod_desc = select_item->nod_desc;
 				return derived_field;
 			}
@@ -4570,7 +4570,7 @@ static DSQL_NOD pass1_make_derived_field(DSQL_REQ request, TSQL tdsql, DSQL_NOD 
 				// with orginal map.
 				if (derived_field->nod_type == nod_derived_field) {
 					derived_field->nod_arg[e_derived_field_value] = select_item;
-					derived_field->nod_arg[e_derived_field_scope] = (DSQL_NOD) request->req_scope_level;
+					derived_field->nod_arg[e_derived_field_scope] = (DSQL_NOD)(ULONG) request->req_scope_level;
 					derived_field->nod_desc = select_item->nod_desc;
 					return derived_field;
 				}

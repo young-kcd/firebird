@@ -101,13 +101,13 @@ static void		init(FRBRD**);
 static NAME		insert_name(SCHAR*, NAME *, STMT);
 static USHORT	name_length(SCHAR *);
 static void		remove_name(NAME, NAME *);
-static BOOLEAN	scompare(SCHAR*, USHORT, SCHAR*, USHORT);
+static bool		scompare(SCHAR*, USHORT, SCHAR*, USHORT);
 
 /* declare the private data */
 
 #pragma FB_COMPILER_MESSAGE("Dragons ahead. Static data. Not thread safe!")
 
-static BOOLEAN	init_flag		= FALSE;	/* whether we've been initialized */
+static bool		init_flag		= false;	/* whether we've been initialized */
 static ERR		UDSQL_error		= NULL;
 static STMT		statements		= NULL;
 static NAME		statement_names	= NULL;
@@ -1339,7 +1339,7 @@ static void cleanup(void* arg)
 		return;
 	}
 
-	init_flag = FALSE;
+	init_flag = false;
 
 	gds__free(UDSQL_error);
 	UDSQL_error = NULL;
@@ -1500,7 +1500,7 @@ static void init(FRBRD** db_handle)
 		if (!UDSQL_error) {		// NOMEM:
 			return;				// Don't set the init_flag
 		}
-		init_flag = TRUE;
+		init_flag = true;
 		gds__register_cleanup(cleanup, 0);
 	}
 
@@ -1527,10 +1527,7 @@ static void init(FRBRD** db_handle)
 	dbb->dbb_database_handle = *db_handle;
 
 	ISC_STATUS_ARRAY local_status;
-	gds__database_cleanup(local_status,
-						  db_handle,
-						  cleanup_database,
-						  (SLONG) FALSE);
+	gds__database_cleanup(local_status, db_handle, cleanup_database, (SLONG) 0);
 }
 
 
@@ -1671,10 +1668,10 @@ static void remove_name(NAME name, NAME* list_ptr)
 }
 
 
-static BOOLEAN scompare(SCHAR*	string1,
-						USHORT	length1,
-						SCHAR*	string2,
-						USHORT	length2)
+static bool scompare(SCHAR* string1,
+					 USHORT length1,
+					 SCHAR* string2,
+					 USHORT length2)
 {
 /**************************************
  *
@@ -1688,7 +1685,7 @@ static BOOLEAN scompare(SCHAR*	string1,
  **************************************/
 
 	if (length1 != length2) {
-		return FALSE;
+		return false;
 	}
 
 	SCHAR c1, c2;
@@ -1698,11 +1695,11 @@ static BOOLEAN scompare(SCHAR*	string1,
 		c2 = *string2++;
 		if (c1 != c2 && UPPER7(c1) != UPPER7(c2))
 		{
-			return FALSE;
+			return false;
 		}
 	}
 
-	return TRUE;
+	return true;
 }
 
 

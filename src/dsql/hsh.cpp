@@ -40,8 +40,8 @@ extern "C" {
 ASSERT_FILENAME
 #define HASH_SIZE 211
 static SSHORT hash(SCHAR *, USHORT);
-static BOOLEAN remove_symbol(struct sym **, struct sym *);
-static BOOLEAN scompare(TEXT *, USHORT, TEXT *, USHORT);
+static bool remove_symbol(struct sym **, struct sym *);
+static bool scompare(TEXT *, USHORT, TEXT *, USHORT);
 
 static SYM *hash_table;
 
@@ -240,7 +240,8 @@ void HSHD_insert(SYM symbol)
 	for (old = hash_table[h]; old; old = old->sym_collision)
 		if ((!database || (database == old->sym_dbb)) &&
 			scompare(symbol->sym_string, symbol->sym_length, old->sym_string,
-					 old->sym_length)) {
+					 old->sym_length)) 
+		{
 			symbol->sym_homonym = old->sym_homonym;
 			old->sym_homonym = symbol;
 			UNLOCK_HASH;
@@ -327,11 +328,13 @@ void HSHD_remove( SYM symbol)
 	h = hash(symbol->sym_string, symbol->sym_length);
 
 	for (collision = &hash_table[h]; *collision;
-		 collision =
-		 &(*collision)->sym_collision) if (remove_symbol(collision, symbol)) {
+		 collision = &(*collision)->sym_collision)
+	{
+		if (remove_symbol(collision, symbol)) {
 			UNLOCK_HASH;
 			return;
 		}
+	}
 
 	UNLOCK_HASH;
 	IBERROR(-1, "HSHD_remove failed");
@@ -462,7 +465,7 @@ static SSHORT hash(SCHAR * string, USHORT length)
     @param symbol
 
  **/
-static BOOLEAN remove_symbol( SYM * collision, SYM symbol)
+static bool remove_symbol( SYM * collision, SYM symbol)
 {
 	SYM *ptr, homonym;
 
@@ -474,16 +477,16 @@ static BOOLEAN remove_symbol( SYM * collision, SYM symbol)
 		else
 			*collision = symbol->sym_collision;
 
-		return TRUE;
+		return true;
 	}
 
 	for (ptr = &(*collision)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
 		if (symbol == *ptr) {
 			*ptr = symbol->sym_homonym;
-			return TRUE;
+			return true;
 		}
 
-	return FALSE;
+	return false;
 }
 
 
@@ -504,20 +507,20 @@ static BOOLEAN remove_symbol( SYM * collision, SYM symbol)
     @param length2
 
  **/
-static BOOLEAN scompare(TEXT * string1,
+static bool scompare(TEXT * string1,
 						USHORT length1,
 						TEXT * string2, USHORT length2)
 {
 
 	if (length1 != length2)
-		return FALSE;
+		return false;
 
 	while (length1--) {
 		if ((*string1++) != (*string2++))
-			return FALSE;
+			return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 

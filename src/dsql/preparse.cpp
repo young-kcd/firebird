@@ -60,7 +60,7 @@ extern "C" {
 
 static void generate_error(ISC_STATUS *, SCHAR *, SSHORT, SSHORT);
 static SSHORT get_next_token(SCHAR **, SCHAR *, SCHAR *, USHORT *);
-static SSHORT get_token(ISC_STATUS *, SSHORT, BOOLEAN, SCHAR **, SCHAR *,
+static SSHORT get_token(ISC_STATUS *, SSHORT, bool, SCHAR **, SCHAR *,
 						SCHAR *, USHORT *);
 
 typedef struct pp_table {
@@ -111,18 +111,21 @@ static const PP_TABLE pp_symbols[] = {
     @param dialect
 
  **/
-int DLL_EXPORT PREPARSE_execute(
-								ISC_STATUS * user_status,
+int DLL_EXPORT PREPARSE_execute(ISC_STATUS * user_status,
 								FRBRD ** db_handle,
 								FRBRD ** trans_handle,
-USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
+								USHORT stmt_length,
+								SCHAR * stmt,
+								BOOLEAN * stmt_eaten,
+								USHORT dialect)
 {
 	TEXT file_name[MAX_TOKEN_SIZE + 1];
 	SCHAR *token, *dpb_array, *dpb, *ch, *stmt_end;
 	SLONG page_size = 0;
 	USHORT dpb_len = 0, token_length;
 	SSHORT i, l, result;
-	BOOLEAN matched, get_out;
+	bool matched;
+	bool get_out;
 	ISC_STATUS_ARRAY temp_status;
 	FRBRD *temp_db_handle = NULL;
 
@@ -139,26 +142,29 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 		stmt_length = strlen(stmt);
 	stmt_end = stmt + stmt_length;
 
-	if (get_token(user_status, SYMBOL, FALSE, &stmt, stmt_end, token,
+	if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token,
 				  &token_length) ||
 		token_length != pp_symbols[PP_CREATE].length ||
-		strcmp(token, pp_symbols[PP_CREATE].symbol)) {
+		strcmp(token, pp_symbols[PP_CREATE].symbol)) 
+	{
 		gds__free((SLONG *) token);
 		return FALSE;
 	}
 
-	if (get_token(user_status, SYMBOL, FALSE, &stmt, stmt_end, token,
+	if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token,
 				  &token_length) ||
 		(token_length != pp_symbols[PP_DATABASE].length &&
 		 token_length != pp_symbols[PP_SCHEMA].length) ||
 		(strcmp(token, pp_symbols[PP_DATABASE].symbol) &&
-		 strcmp(token, pp_symbols[PP_SCHEMA].symbol))) {
+		 strcmp(token, pp_symbols[PP_SCHEMA].symbol))) 
+	{
 		gds__free((SLONG *) token);
 		return FALSE;
 	}
 
-	if (get_token(user_status, STRING, FALSE, &stmt, stmt_end, token,
-				  &token_length)) {
+	if (get_token(user_status, STRING, false, &stmt, stmt_end, token,
+				  &token_length))
+	{
 		gds__free((SLONG *) token);
 		return TRUE;
 	}
@@ -191,33 +197,35 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 		else if (result < 0)
 			break;
 
-		matched = FALSE;
+		matched = false;
 		for (i = 3; pp_symbols[i].length && !matched; i++) {
 			if (token_length == pp_symbols[i].length &&
 				!strcmp(token, pp_symbols[i].symbol)) {
 
-				get_out = FALSE;
+				get_out = false;
 				switch (pp_symbols[i].code) {
 				case PP_PAGE_SIZE:
 				case PP_PAGESIZE:
-					if (get_token(user_status, '=', TRUE, &stmt, stmt_end,
+					if (get_token(user_status, '=', true, &stmt, stmt_end,
 								  token, &token_length) ||
-						get_token(user_status, NUMERIC, FALSE, &stmt,
-								  stmt_end, token, &token_length)) {
-						get_out = TRUE;
+						get_token(user_status, NUMERIC, false, &stmt,
+								  stmt_end, token, &token_length))
+					{
+						get_out = true;
 						break;
 					}
 					page_size = atol(token);
 					STUFF_DPB(gds_dpb_page_size);
 					STUFF_DPB(4);
 					STUFF_DPB_INT(page_size);
-					matched = TRUE;
+					matched = true;
 					break;
 
 				case PP_USER:
-					if (get_token(user_status, STRING, FALSE, &stmt, stmt_end,
-								  token, &token_length)) {
-						get_out = TRUE;
+					if (get_token(user_status, STRING, false, &stmt, stmt_end,
+								  token, &token_length))
+					{
+						get_out = true;
 						break;
 					}
 
@@ -227,13 +235,14 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 					ch = token;
 					while (*ch)
 						STUFF_DPB(*ch++);
-					matched = TRUE;
+					matched = true;
 					break;
 
 				case PP_PASSWORD:
-					if (get_token(user_status, STRING, FALSE, &stmt, stmt_end,
-								  token, &token_length)) {
-						get_out = TRUE;
+					if (get_token(user_status, STRING, false, &stmt, stmt_end,
+								  token, &token_length))
+					{
+						get_out = true;
 						break;
 					}
 
@@ -243,17 +252,18 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 					ch = token;
 					while (*ch)
 						STUFF_DPB(*ch++);
-					matched = TRUE;
+					matched = true;
 					break;
 
 				case PP_SET:
-					if (get_token(user_status, SYMBOL, FALSE, &stmt, stmt_end,
+					if (get_token(user_status, SYMBOL, false, &stmt, stmt_end,
 								  token, &token_length) ||
 						token_length != pp_symbols[PP_NAMES].length ||
 						strcmp(token, pp_symbols[PP_NAMES].symbol) ||
-						get_token(user_status, STRING, FALSE, &stmt, stmt_end,
-								  token, &token_length)) {
-						get_out = TRUE;
+						get_token(user_status, STRING, false, &stmt, stmt_end,
+								  token, &token_length))
+					{
+						get_out = true;
 						break;
 					}
 
@@ -263,26 +273,27 @@ USHORT stmt_length, SCHAR * stmt, BOOLEAN * stmt_eaten, USHORT dialect)
 					ch = token;
 					while (*ch)
 						STUFF_DPB(*ch++);
-					matched = TRUE;
+					matched = true;
 					break;
 
 				case PP_LENGTH:
 					/* Skip a token for value */
 
-					if (get_token(user_status, '=', TRUE, &stmt, stmt_end,
+					if (get_token(user_status, '=', true, &stmt, stmt_end,
 								  token, &token_length) ||
-						get_token(user_status, NUMERIC, FALSE, &stmt,
-								  stmt_end, token, &token_length)) {
-						get_out = TRUE;
+						get_token(user_status, NUMERIC, false, &stmt,
+								  stmt_end, token, &token_length))
+					{
+						get_out = true;
 						break;
 					}
 
-					matched = TRUE;
+					matched = true;
 					break;
 
 				case PP_PAGE:
 				case PP_PAGES:
-					matched = TRUE;
+					matched = true;
 					break;
 				}
 
@@ -531,12 +542,13 @@ static SSHORT get_next_token(
     @param token_length
 
  **/
-static SSHORT get_token(
-						ISC_STATUS * status,
+static SSHORT get_token(ISC_STATUS * status,
 						SSHORT token_type,
-						BOOLEAN optional,
+						bool optional,
 						SCHAR ** stmt,
-SCHAR * stmt_end, SCHAR * token, USHORT * token_length)
+						SCHAR * stmt_end,
+						SCHAR * token,
+						USHORT * token_length)
 {
 	SSHORT result;
 	SCHAR *temp_stmt;
