@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.103 2004-01-28 11:14:52 aafemt Exp $
+$Id: common.h,v 1.104 2004-02-27 09:32:50 eku Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -164,6 +164,7 @@ int connect(int s, struct sockaddr *name, int namelen);
 int send(int s, void *msg, int len, int flags);
 int recv(int s, void *buf, int len, int flags);
 int strcasecmp(const char *s1, const char *s2);
+int strncasecmp(const char *s1, const char *s2, size_t n);
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *execptfds, struct timeval *timeout);
 int getsockopt(int s, int level, int optname, char *optval, int *optlen);
 int setsockopt(int s, int level, int optname, char *optval, int optlen);
