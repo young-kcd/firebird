@@ -35,7 +35,7 @@
  * 2002-09-16 Nickolay Samofatov - Deferred trigger compilation changes
  */
 /*
-$Id: met.epp,v 1.23 2002-09-30 18:24:56 skidder Exp $
+$Id: met.epp,v 1.24 2002-09-30 19:19:30 skidder Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -264,7 +264,8 @@ void MET_clear_cache(TDBB tdbb)
 			for (ptr = procedures->begin(), end = procedures->end();
 					ptr < end; ptr++) 
 			{
-				if ( (procedure = PRC(*ptr)) && (procedure->prc_use_count == 0) ) 
+				if ( (procedure = PRC(*ptr)) && (procedure->prc_use_count == 0) && 
+					!(procedure->prc_flags & PRC_obsolete)) 
 				{
 					CMP_release(tdbb, procedure->prc_request);
 					procedure->prc_flags &= ~PRC_being_altered;
