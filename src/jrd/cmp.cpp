@@ -2136,11 +2136,14 @@ void DLL_EXPORT CMP_release(TDBB tdbb, JRD_REQ request)
 			case rsc_index:
 				{
 					relation = resource->rsc_rel;
-					if ( (index =
-						CMP_get_index_lock(tdbb, relation,
-										   resource->
-										   rsc_id)) ) if (!--index->idl_count)
-								LCK_release(tdbb, index->idl_lock);
+					if ( (index = CMP_get_index_lock(tdbb, relation,
+													 resource->rsc_id)) )
+					{
+						if (index->idl_count)
+							--index->idl_count;
+						if (!index->idl_count)
+							LCK_release(tdbb, index->idl_lock);
+					}
 					break;
 				}
 			case rsc_procedure:
