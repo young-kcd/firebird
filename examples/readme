@@ -17,22 +17,20 @@
  * Contributor(s): ______________________________________.
  */
 The following example programs demonstrate a number of useful features of
-the InterBase programming interface.  Only the api<n>.c programs are 
-available on Windows 3.1 clients (except api9f.c and api16.c).  
-All others are available on all platforms.
+the Firebird programming interface.
 
 Note that the following environment variables need to be set before running
-the examples (before loading Windows for the InterBase Client for Windows):
+the examples:
 
 ISC_USER     - A valid username on the server.
 ISC_PASSWORD - The password for the above user.
 ISC_DATABASE - The path to the employee.gdb example database, including
 	       server name.  For example, to connect to the NT server
 	       named "NTserver" via NetBEUI:
-		ISC_DATABASE=\\NTserver\c:\ibserver\examples
-	       
-	       This assumes that InterBase was installed to the
-	       default directory on the server, c:\ibserver.
+		ISC_DATABASE=\\NTserver\c:\firebird\examples
+
+	       This assumes that Firebird was installed to the
+	       firebird directory on the c: drive.
 
 In addition, a guest account should be created with the username "guest"
 and password "guest" before running api15 and winevent.
@@ -44,15 +42,15 @@ Program     Description
 stat1.e     Illustrates a simple update to an existing table, commit, rollback.
 
 stat2.e     Illustrates singleton select.
- 
+
 stat3.e     Illustrates a simple cursor -- declare/open/close/fetch.
- 
+
 stat4.e     Show 'declare table' and 'create table'.
- 
+
 stat5.e     Demonstrate 'update where current of'.
- 
+
 stat6.e     Select an array.
- 
+
 stat7.e     Illustrate blob cursor for select.
 
 stat8.e     Illustrate blob cursor for insert.
@@ -89,18 +87,18 @@ VARY struct is used by dyn3.e, dynfull.e.
 ^L
 
 API Interface
- 
+
 Program     Description
 ---------   ------------------------------------------------------------------
 api1.c      Execute 'create dabatabase' statement as a static string.
             Demonstrates zero database handle.
- 
+
 api2.c      'Execute immediate', and 'prepare' and 'execute'.
- 
+
 api3.c      Dynamic cursor for select with output SQLDA allocated.
- 
+
 api4.c      Execute an update query with parameter markers and input SQLDA.
- 
+
 api5.c      Demonstrate dynamic reallocation of SQLDA and 'describe' statement.
 
 apifull.c   A full_dsql program (process unknown statements).
