@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.136 2003-06-13 01:17:49 skywalker Exp $
+dnl $Id: configure.in,v 1.137 2003-06-15 05:57:47 stryqx Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -43,7 +43,7 @@ case "$target" in
 
   *-*-freebsd*)
     MAKEFILE_PREFIX=freebsd 
-    LATFORM=FREEBSD
+    PLATFORM=FREEBSD
     AC_DEFINE(FREEBSD)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=N
