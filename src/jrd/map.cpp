@@ -398,7 +398,7 @@ int MAP_status_to_gds(ISC_STATUS * vms_status, ISC_STATUS * gds_status)
 	SCHAR msgbuff[WRKBUF_SIZ], *p, *q, *pw1, *pw2, flags[4], part;
 	struct dsc$descriptor_s desc, *dsc_ptr;
 	static SCHAR *messages[] = {
-#include "../jrd/msgs.h"
+#include "gen/msgs.h"
 		0
 	};
 
