@@ -61,7 +61,7 @@ bool getRootFromRegistry(string& root)
 	return false;
 }
 
-}
+} // namespace
 
 void ConfigRoot::osConfigRoot()
 {

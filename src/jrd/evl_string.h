@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: evl_string.h,v 1.12 2004-05-12 19:37:17 brodsom Exp $
+ *  $Id: evl_string.h,v 1.13 2004-06-13 23:42:20 brodsom Exp $
  *
  */
 
@@ -531,6 +531,6 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 	return true;
 }
 
-}
+} // namespace Firebird
 
 #endif // JRD_EVL_STRING_H

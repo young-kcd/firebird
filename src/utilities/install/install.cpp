@@ -52,7 +52,7 @@ namespace {
 	USHORT DecrementSharedCount(const TEXT* gds32, bool sw_force,
 		USHORT(*err_handler)(ULONG, const TEXT *));
 
-};
+} // namespace
 
 //
 //	--- Public Functions ---
@@ -750,7 +750,7 @@ USHORT DecrementSharedCount(const TEXT* filename, bool sw_force,
 	}
 }
 
-};	// namespace { }
+}	// namespace { }
 
 //
 // EOF

@@ -83,7 +83,7 @@ void SyslogAccess::Record(WORD wType, Firebird::string Msg) {
 }
 
 class SyslogAccess iSyslogAccess;
-}
+} // namespace
 
 namespace Firebird {
 	void Syslog::Record(Severity level, Firebird::string Msg) {
@@ -99,4 +99,4 @@ namespace Firebird {
 	}
 	iSyslogAccess.Record(wType, Msg);
 }
-}
+} // namespace Firebird

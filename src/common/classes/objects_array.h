@@ -193,6 +193,7 @@ namespace Firebird
 			return inherited::find(item, pos);
 		}
 	};
-}
+
+} // namespace Firebird
 
 #endif	// CLASSES_OBJECTS_ARRAY_H

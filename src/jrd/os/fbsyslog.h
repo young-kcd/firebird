@@ -31,6 +31,7 @@ public:
 	enum Severity {Warning, Error};
 	static void Record(Severity, string);
 };
-}
+} // namespace Firebird
+
 #endif  // FIREBIRD_SYSLOG_H
 

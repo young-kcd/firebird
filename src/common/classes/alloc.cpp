@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: alloc.cpp,v 1.51 2004-05-13 14:04:51 kkuznetsov Exp $
+ *  $Id: alloc.cpp,v 1.52 2004-06-13 23:38:13 brodsom Exp $
  *
  */
 
@@ -164,7 +164,7 @@ Firebird::Vector<void*, MAP_CACHE_SIZE> extents_cache;
 Mutex cache_mutex;
 #endif
 
-}
+} // namespace
 
 namespace Firebird {
 
@@ -1236,7 +1236,7 @@ void MemoryPool::deallocate(void *block)
 	lock.leave();
 }
 
-} /* namespace Firebird */
+} // namespace Firebird
 
 /******************************** Global functions *****************************/
 

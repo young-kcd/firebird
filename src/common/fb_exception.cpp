@@ -29,7 +29,7 @@ private:
 	Firebird::Mutex buffer_lock;
 };
 
-}
+} // namespace
 
 namespace Firebird {
 

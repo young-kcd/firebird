@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.19 2004-05-03 17:05:56 skidder Exp $
+ *  $Id: rwlock.h,v 1.20 2004-06-13 23:38:13 brodsom Exp $
  *
  */
 
@@ -157,7 +157,7 @@ public:
 };
 
 
-}
+} // namespace Firebird
 
 #else
 
@@ -338,7 +338,7 @@ public:
 	void endWrite() { }
 };
 
-}
+} // namespace Firebird
 
 #endif /*MULTI_THREAD*/
 
@@ -368,7 +368,7 @@ private:
 	RWLock *lock;
 };
 
-}
+} // namespace Firebird
 
 #endif // #ifndef CLASSES_RWLOCK_H
 

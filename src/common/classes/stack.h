@@ -533,7 +533,8 @@ namespace Firebird {
 			return AutoStorage::getPool();
 		}
 	};
-}
+
+} // namespace Firebird
 
 #endif // CLASSES_STACK_H
 

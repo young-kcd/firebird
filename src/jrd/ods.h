@@ -573,7 +573,7 @@ const UCHAR LOG_end			= HDR_end;
 //const int LOG_grp_cmt_wait	8	/* Group commit wait time */
 const int LOG_max			= 8;	/* Maximum LOG_clump value */
 
-} //namespace Jrd
+} //namespace Ods
 
 #endif // JRD_ODS_H
 

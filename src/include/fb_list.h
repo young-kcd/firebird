@@ -11,6 +11,6 @@ namespace Firebird
 	class list : public std::list<T, Firebird::allocator<T> >
 	{
 	};
-};
+} // namespace
 
 #endif	// FB_LIST_H

@@ -162,7 +162,7 @@ void ConfigFile::checkLoadConfig()
 namespace {
 	class FileClose
 	{
-public:
+	public:
 		static void clear(FILE *f)
 		{
 			if (f) {
@@ -170,7 +170,7 @@ public:
 			}
 		}
 	};
-}
+} // namespace
 
 void ConfigFile::loadConfig()
 {

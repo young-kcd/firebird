@@ -88,7 +88,7 @@ namespace {
 
 		return fopen(filename, mode);
 	}
-}
+} // namespace
 
 #ifdef WIN_NT
 static const char* FOPEN_TYPE		= "a+b";

@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: semaphore.h,v 1.12 2004-05-24 11:23:38 kkuznetsov Exp $
+ *  $Id: semaphore.h,v 1.13 2004-06-13 23:38:14 brodsom Exp $
  *
  */
 
@@ -76,7 +76,7 @@ public:
 };
 
 
-}
+} // namespace Firebird
 
 #else
 
@@ -240,7 +240,7 @@ public:
 	}
 };
 
-}
+} // namespace Firebird
 
 
 #else
@@ -319,7 +319,7 @@ public:
 	}
 };
 
-}
+} // namespace Firebird
 
 #endif /*Solaris*/
 #endif /*MULTI_THREAD*/

@@ -37,4 +37,4 @@ void Syslog::Record(Severity level, string Msg) {
 	}
 	syslog(priority|LOG_LOCAL3, "%s (%m)", Msg.c_str());
 }
-}
+} // namespace Firebird

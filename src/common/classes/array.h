@@ -266,7 +266,7 @@ public:
 		Array<T, InlineStorage<T, InlineCapacity> > (InitialCapacity) {}
 };
 
-}	// Firebird
+}	// namespace Firebird
 
 #endif // CLASSES_ARRAY_H
 

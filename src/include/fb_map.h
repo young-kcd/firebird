@@ -21,6 +21,6 @@ namespace Firebird
 		public std::map<A, B, std::less<A>, Firebird::allocator<std::pair<A,B> > >
 	{
 	};
-};
+} // namespace
 
 #endif	// FB_MAP_H

@@ -47,7 +47,7 @@ namespace {
 		}
 		return 0;
 	}
-}
+} // namespace
 #define STRNCASECMP StringIgnoreCaseCompare
 #endif // HAVE_STRICMP
 #endif // HAVE_STRCASECMP
@@ -72,7 +72,7 @@ namespace {
 			return m[c >> 3] & (1 << (c & 7));
 		}
 	};
-}
+} // namespace
 
 namespace Firebird {
 	const AbstractString::size_type AbstractString::npos = ~0;

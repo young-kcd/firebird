@@ -502,7 +502,7 @@ namespace internal
 		}
 		return v;
 	}
-}
+} // namespace internal
 
 FBUDF_API ISC_TIMESTAMP* addMilliSecond(ISC_TIMESTAMP* v, int& nmseconds)
 {
