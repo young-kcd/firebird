@@ -2,26 +2,20 @@
   * v1.5.1
   **************
 
-    * Fixed the reported events issue.  Let's try to wake up the
-        parent port when the child one is getting disconnected.
-        It allows to close all broken connections ASAP.
+    * Fixed unregistered bug.
+        Fix 100% CPU consumption possible when events are used
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
-    * Fix QLI bug
+    * Fixed v1.5 bug.
+        Fix QLI crash when variables are used
       Contributor(s):
         Vladimir Tsvigun <praktik at hm.ukrtel.net>
 
-    *   Import (unmodified) libedit-2.6.9 to provide line editing
-        capabilities for isql
+    * Fixed v1.5 bug.
+        Import (unmodified) libedit-2.6.9 to provide line editing capabilities for isql. This fixes crashes while long lines are entered
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
-
-    * Fixed v1.5.1 bug.
-        Fix bug introduced in first prerelease of 1.5.1 which
-        caused a slow MERGE of some specific query.
-      Contributor(s):
-        Arno Brinkman <firebird at abvisie.nl>
 
     * Fixed optimiser bug.
         Fix bug with FULL JOIN and IS NULL in where clause.
@@ -29,13 +23,12 @@
         Arno Brinkman <firebird at abvisie.nl>
 
     * Fixed v1.5 bug.
-	Fix memory leak in cpl applet.
+        Fix memory leak in cpl applet.
       Contributor(s):
         Paul Reeves <preeves at ibphoenix.com>
 
     * Fixed v1.5 bug.
-        Fixed problem with system log overflow in case of missing
-        aliases.conf
+        Fixed problem with system log overflow in case of missing aliases.conf
       Contributor(s):
         Alexander Peshkoff <peshkoff at hotmail.ru>
 
