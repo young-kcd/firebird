@@ -29,7 +29,7 @@
 #include "firebird.h"
 
 #include "../common/config/config.h"
-#include "../common/classes/alloc.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/sort_mem.h"

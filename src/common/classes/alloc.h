@@ -90,7 +90,7 @@ struct PendingFreeBlock {
 // MemoryPool inheritance looks weird because we cannot use
 // any pointers to functions in shared memory. VMT usage in
 // MemoryPool and its descendants is prohibited
-class FB_DLL_EXPORT MemoryPool {
+class MemoryPool {
 private:
 	class InternalAllocator {
 	public:
@@ -221,17 +221,6 @@ public:
 using Firebird::MemoryPool;
 
 MemoryPool* getDefaultMemoryPool();
-
-extern "C" {
-#ifdef DEBUG_GDS_ALLOC
-void* API_ROUTINE gds__alloc_debug(SLONG size_request,
-                                   TEXT* filename,
-                                   ULONG lineno);
-#else
-void* API_ROUTINE gds__alloc(SLONG size_request);
-#endif
-ULONG API_ROUTINE gds__free(void* blk);
-};
 
 // Global versions of operator new() for compatibility with crappy libraries
 void* operator new(size_t);

@@ -415,6 +415,27 @@ static MUTX_T	alloc_mutex;
 SLONG gds_delta_alloc = 0, gds_max_alloc = 0;	/* Used in DBG_memory */
 #endif
 
+#ifdef DEBUG_GDS_ALLOC
+void* API_ROUTINE gds__alloc_debug(SLONG size_request,
+                                   TEXT* filename,
+                                   ULONG lineno)
+{
+	return getDefaultMemoryPool()->allocate(size_request, 0, filename, lineno);
+//	return getDefaultMemoryPool()->calloc(size_request, 0, filename, lineno);
+}
+#else
+void* API_ROUTINE gds__alloc(SLONG size_request)
+{
+	return getDefaultMemoryPool()->allocate(size_request);
+//	return getDefaultMemoryPool()->calloc(size_request);
+}
+#endif
+
+ULONG API_ROUTINE gds__free(void* blk) {
+	getDefaultMemoryPool()->deallocate(blk);
+	return 0;
+}
+
 #ifdef UNIX
 static SLONG gds_pid = 0;
 #endif

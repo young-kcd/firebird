@@ -117,6 +117,10 @@ SOURCE=..\..\..\src\alice\tdr.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\alloc.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\isc.cpp
 # End Source File
 # End Group
