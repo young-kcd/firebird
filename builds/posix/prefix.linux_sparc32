@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux_sparc32,v 1.4 2004-03-25 23:12:32 skidder Exp $
+#$Id: prefix.linux_sparc32,v 1.5 2004-12-28 20:57:46 skidder Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
 PROD_FLAGS=-m32 -mcpu=ultrasparc -mtune=ultrasparc -O3 -DNDEBUG -DLINUX -pipe -MMD -fPIC -Dsparc
@@ -26,4 +26,4 @@ OS_ServerFiles=inet_server.cpp
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
 CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
-Physical_IO_Module=unix.cpp
+Physical_IO_Module=os/posix/unix.cpp
