@@ -39,7 +39,7 @@
  *
  */
 /*
-$Id: why.c,v 1.26 2002-11-17 00:10:49 hippoman Exp $
+$Id: why.c,v 1.27 2002-11-18 10:13:20 eku Exp $
 */
 
 #include "firebird.h"
@@ -618,11 +618,11 @@ static CONST_IMAGE IMAGE images[] =
 	{"GDSRDB", "GDSRDB"},			/* Rdb Interface */
 #endif
 
-#ifndef SINIX-Z
+#ifndef SINIXZ
 	{"GDS_A", GDS_A_PATH},
 	{"GDS_B", GDS_B_PATH},
 	{"GDS_C", GDS_C_PATH},
-    {"GDS_D", GDS_D_PATH},
+	{"GDS_D", GDS_D_PATH},
 #endif
 #ifdef IPSERV
 #ifndef XNET
