@@ -170,7 +170,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	if (ISC_is_WinNT()) {	/* True - NT, False - Win95 */
 		
 		/* CVC: This operating system call doesn't exist for W9x. */
-		typedef BOOL (*PSetProcessAffinityMask)(HANDLE, DWORD);
+		typedef BOOL (__stdcall *PSetProcessAffinityMask)(HANDLE, DWORD);
 		PSetProcessAffinityMask SetProcessAffinityMask;
 
 		server_flag = (SRVR_multi_client);
