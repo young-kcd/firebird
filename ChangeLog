@@ -1,3 +1,43 @@
+2004-05-16 04:53  brodsom
+
+	* firebird2/src/intl/: langdrv.h (1.10), ld.h (1.23),
+	collations/xx88592hun.h (1.3):
+	
+	Macro cleaning
+
+2004-05-16 04:52  brodsom
+
+	* firebird2/src/intl/countries.h (1.2):
+	
+	Remove unused header
+
+2004-05-16 03:46  brodsom
+
+	* firebird2/examples/empbuild/empbuild.e (1.4):
+	
+	c++ comment in c source
+
+2004-05-16 03:40  brodsom
+
+	* firebird2/src/: jrd/os/vms/extvms.cpp (1.20), jrd/os/vms/lnmdef.h
+	(1.2), jrd/os/vms/map.cpp (1.11), jrd/os/vms/mblr.cpp (1.6),
+	jrd/os/vms/mblr.h (1.3), jrd/os/vms/rdb.cpp (1.13),
+	jrd/os/vms/rdb.h (1.3), jrd/os/vms/rdbint.cpp (1.12),
+	jrd/os/vms/syidef.h (1.2), jrd/os/vms/vms.cpp (1.17),
+	jrd/os/vms/vms.h (1.3), jrd/os/vms/vmsevent.cpp (1.13),
+	jrd/os/vms/vmslock.cpp (1.8), jrd/os/vms/vmsthread.cpp (1.3),
+	qli/all.cpp (1.27), qli/command.cpp (1.22), qli/compile.cpp (1.23),
+	qli/compile.h (1.7), qli/dtr.cpp (1.35), qli/dtr.h (1.18),
+	qli/err.cpp (1.16), qli/eval.cpp (1.41), qli/exe.cpp (1.44),
+	qli/exe.h (1.22), qli/expand.cpp (1.27), qli/format.cpp (1.29),
+	qli/format.h (1.12), qli/gener.cpp (1.35), qli/help.epp (1.19),
+	qli/hsh.cpp (1.15), qli/lex.cpp (1.30), qli/meta.epp (1.45),
+	qli/mov.cpp (1.34), qli/parse.cpp (1.32), qli/parse.h (1.9),
+	qli/picstr.cpp (1.23), qli/proc.epp (1.27), qli/reqs.h (1.4),
+	qli/show.epp (1.34), remote/os/vms/chuser.cpp (1.4):
+	
+	Macro cleaning
+
 2004-05-15 03:22  brodsom
 
 	* firebird2/src/: include/gen/ids.h (1.7), misc/ids.m (1.2):
