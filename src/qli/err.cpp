@@ -200,8 +200,11 @@ void ERRQ_msg_format(
 
 void ERRQ_msg_partial(
 					  USHORT number,
-					  TEXT * arg1,
-					  TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+					  const TEXT * arg1,
+					  const TEXT * arg2,
+					  const TEXT * arg3,
+					  const TEXT * arg4,
+					  const TEXT * arg5)
 {
 /**************************************
  *
@@ -222,8 +225,11 @@ void ERRQ_msg_partial(
 
 void ERRQ_msg_put(
 				  USHORT number,
-				  TEXT * arg1,
-				  TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
+				  const TEXT * arg1,
+				  const TEXT * arg2,
+				  const TEXT * arg3,
+				  const TEXT * arg4,
+				  const TEXT * arg5)
 {
 /**************************************
  *
@@ -233,6 +239,7 @@ void ERRQ_msg_put(
  *
  * Functional description
  *	Retrieve a message from the error file, format it, and print it
+ * It's same outcome than ERRQ_msg_partial but with a newline at the end.
  *
  **************************************/
 
