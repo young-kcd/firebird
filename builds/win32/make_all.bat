@@ -34,7 +34,7 @@
 :RELEASE
 @echo Building release
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "fbserver - Win32 Release" "fbguard - Win32 Release" "fb_lock_print - Win32 Release" "fb_inet_server - Win32 Release" "gbak - Win32 Release" "nbackup - Win32 Release" "gpre - Win32 Release" "gsplit - Win32 Release" "gdef - Win32 Release" "gfix - Win32 Release" "gsec - Win32 Release" "gstat - Win32 Release" "instreg - Win32 Release" "instsvc - Win32 Release" "isql - Win32 Release" "qli - Win32 Release" "gds32 - Win32 Release" "fbclient - Win32 Release" "fbudf - Win32 Release" "ib_udf - Win32 Release" "ib_util - Win32 Release" "intl - Win32 Release" "intlcpp - Win32 Release" %CLEAN% /OUT all.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "fbserver - Win32 Release" "fbguard - Win32 Release" "fb_lock_print - Win32 Release" "fb_inet_server - Win32 Release" "gbak - Win32 Release" "gpre - Win32 Release" "gsplit - Win32 Release" "gdef - Win32 Release" "gfix - Win32 Release" "gsec - Win32 Release" "gstat - Win32 Release" "instreg - Win32 Release" "instsvc - Win32 Release" "isql - Win32 Release" "qli - Win32 Release" "gds32 - Win32 Release" "fbclient - Win32 Release" "ib_udf - Win32 Release" "ib_util - Win32 Release" "intl - Win32 Release" "intlcpp - Win32 Release" %CLEAN% /OUT all.log
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% release /OUT all.log
 )
@@ -44,7 +44,7 @@ if "%VS_VER%"=="msvc6" (
 :DEBUG
 @echo Building debug
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "fbserver - Win32 Debug" "fbguard - Win32 Debug" "fb_lock_print - Win32 Debug" "fb_inet_server - Win32 Debug" "gbak - Win32 Debug" "nbackup - Win32 Debug" "gpre - Win32 Debug" "gsplit - Win32 Debug" "gdef - Win32 Debug" "gfix - Win32 Debug" "gsec - Win32 Debug" "gstat - Win32 Debug" "instreg - Win32 Debug" "instsvc - Win32 Debug" "isql - Win32 Debug" "qli - Win32 Debug" "gds32 - Win32 Debug" "fbclient - Win32 Debug" "fbudf - Win32 Debug" "ib_udf - Win32 Debug" "ib_util - Win32 Debug" "intl - Win32 Debug" "intlcpp - Win32 Debug" %CLEAN% /OUT all.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "fbserver - Win32 Debug" "fbguard - Win32 Debug" "fb_lock_print - Win32 Debug" "fb_inet_server - Win32 Debug" "gbak - Win32 Debug" "gpre - Win32 Debug" "gsplit - Win32 Debug" "gdef - Win32 Debug" "gfix - Win32 Debug" "gsec - Win32 Debug" "gstat - Win32 Debug" "instreg - Win32 Debug" "instsvc - Win32 Debug" "isql - Win32 Debug" "qli - Win32 Debug" "gds32 - Win32 Debug" "fbclient - Win32 Debug" "ib_udf - Win32 Debug" "ib_util - Win32 Debug" "intl - Win32 Debug" "intlcpp - Win32 Debug" %CLEAN% /OUT all.log
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% debug /OUT all.log
 )
@@ -64,52 +64,19 @@ if "%VS_VER%"=="msvc6" (
 @mkdir %ROOT_PATH%\output\doc
 @mkdir %ROOT_PATH%\output\include
 @mkdir %ROOT_PATH%\output\lib
-::
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\* %ROOT_PATH%\output\bin >nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\intl\* %ROOT_PATH%\output\intl >nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\udf\* %ROOT_PATH%\output\udf >nul
-:: Firebird.conf, etc
-@copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output > nul
-@copy %ROOT_PATH%\builds\install\misc\firebird.conf %ROOT_PATH%\output >nul
-:: DATABASES
+
 @copy %ROOT_PATH%\gen\dbs\SECURITY.FDB %ROOT_PATH%\output\security.fdb >nul
 @copy %ROOT_PATH%\gen\dbs\HELP.fdb %ROOT_PATH%\output\help\help.fdb >nul
 @copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output\firebird.msg >nul
-@copy %ROOT_PATH%\builds\misc\security.gbak %ROOT_PATH%\output\security.fbk > nul
-:: LIB
-@copy %ROOT_PATH%\temp\%DBG_DIR%\gds32\gds32.lib %ROOT_PATH%\output\lib\gds32_ms.lib >nul
-@copy %ROOT_PATH%\temp\%DBG_DIR%\fbclient\fbclient.lib %ROOT_PATH%\output\lib\fbclient_ms.lib >nul
-:: DOCS
+
 @copy %ROOT_PATH%\ChangeLog %ROOT_PATH%\output\doc\ChangeLog.txt >nul
 @copy %ROOT_PATH%\doc\WhatsNew %ROOT_PATH%\output\doc\WhatsNew.txt >nul
-:: HEADERS
-:: build headers
-copy %ROOT_PATH%\src\misc\gds_header.txt %ROOT_PATH%\output\include\gds.tmp > nul
-type %ROOT_PATH%\src\include\fb_types.h >> %ROOT_PATH%\output\include\gds.tmp
-type %ROOT_PATH%\src\jrd\ibase.h >> %ROOT_PATH%\output\include\gds.tmp
-type %ROOT_PATH%\src\jrd\blr.h >> %ROOT_PATH%\output\include\gds.tmp
-type %ROOT_PATH%\src\include\gen\iberror.h >> %ROOT_PATH%\output\include\gds.tmp
-type %ROOT_PATH%\src\jrd\gdsold.h >> %ROOT_PATH%\output\include\gds.tmp
-type %ROOT_PATH%\src\include\gen\codes.h >> %ROOT_PATH%\output\include\gds.tmp
-sed -f %ROOT_PATH%\src\misc\headers.sed < %ROOT_PATH%\output\include\gds.tmp > %ROOT_PATH%\output\include\gds.h
-del %ROOT_PATH%\output\include\gds.tmp > nul
-
-copy %ROOT_PATH%\src\misc\ibase_header.txt %ROOT_PATH%\output\include\ibase.tmp > nul
-type %ROOT_PATH%\src\include\fb_types.h >> %ROOT_PATH%\output\include\ibase.tmp
-type %ROOT_PATH%\src\jrd\ibase.h >> %ROOT_PATH%\output\include\ibase.tmp 
-type %ROOT_PATH%\src\jrd\blr.h >> %ROOT_PATH%\output\include\ibase.tmp
-type %ROOT_PATH%\src\include\gen\iberror.h >> %ROOT_PATH%\output\include\ibase.tmp
-sed -f %ROOT_PATH%\src\misc\headers.sed < %ROOT_PATH%\output\include\ibase.tmp > %ROOT_PATH%\output\include\ibase.h
-del %ROOT_PATH%\output\include\ibase.tmp > nul
-
-copy %ROOT_PATH%\src\extlib\ib_util.h %ROOT_PATH%\output\include > nul
-copy %ROOT_PATH%\src\jrd\perf.h %ROOT_PATH%\output\include >nul
-copy %ROOT_PATH%\src\jrd\blr.h %ROOT_PATH%\output\include > nul
-copy %ROOT_PATH%\src\include\gen\iberror.h %ROOT_PATH%\output\include > nul
-:: UDF
-copy %ROOT_PATH%\src\extlib\ib_udf.sql %ROOT_PATH%\output\udf > nul
-copy %ROOT_PATH%\src\extlib\fbudf\fbudf.sql %ROOT_PATH%\output\udf > nul
-:: Examples
+@copy %ROOT_PATH%\src\jrd\ibase.h %ROOT_PATH%\output\include >nul
+@copy %ROOT_PATH%\src\include\gen\iberror.h %ROOT_PATH%\output\include >nul
+@copy %ROOT_PATH%\src\install\misc\firebird.conf %ROOT_PATH%\output >nul
 @copy install_super.bat %ROOT_PATH%\output\bin >nul
 @copy install_classic.bat %ROOT_PATH%\output\bin >nul
 @copy uninstall.bat %ROOT_PATH%\output\bin >nul
