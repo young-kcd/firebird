@@ -3298,6 +3298,7 @@ static void find_index_relationship_streams(thread_db* tdbb,
 				if (candidate->dependentFromStreams.getCount() >= 1) {
 					indexed_relationship = true;
 				}
+				delete candidate;
 				delete optimizerRetrieval;
 			}
 			else {
@@ -4534,7 +4535,8 @@ static RecordSource* gen_outer(thread_db* tdbb,
 			gen_retrieval(tdbb,
 			              opt,
 			              stream_i.stream_num,
-			              sort_clause,
+			              NULL, // AB: the sort clause for the inner stream of an
+						        // OUTER JOIN is never usefull for index retrieval.
 			              project_clause,
 			              bOuter,
 			              true,
@@ -4739,28 +4741,17 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 	Database* dbb = tdbb->tdbb_database;
 	const bool ods11orHigher = (dbb->dbb_ods_version >= ODS_VERSION11);
-	if (ods11orHigher) {
+	if (ods11orHigher && !relation->rel_file) {
 		// For ODS11 and higher databases we can use new calculations
-
-		InversionCandidate* inversionNew = NULL;
+		InversionCandidate* candidate = NULL;
 		OptimizerRetrieval* optimizerRetrieval = FB_NEW(*tdbb->getDefaultPool()) 
 			OptimizerRetrieval(*tdbb->getDefaultPool(), opt, stream, outer_flag, inner_flag, sort_ptr);
-		if (relation->rel_file) {
-			rsb = EXT_optimize(opt, stream, sort_ptr ? sort_ptr : project_ptr);
+		candidate = optimizerRetrieval->getInversion(&rsb);
+		if (candidate && candidate->inversion) {
+			inversion = candidate->inversion;			
 		}
-		else {
-			inversionNew = optimizerRetrieval->getInversion(&rsb);
-		}
+		delete candidate;
 		delete optimizerRetrieval;
-
-		if (inversionNew && inversionNew->inversion) {
-			inversion = inversionNew->inversion;
-			delete inversionNew;
-		}
-		else {
-			inversion = NULL;
-		}
-
 	}
 	else if (relation->rel_file) {
 		// External

@@ -1369,7 +1369,11 @@ InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
  *
  **************************************
  *
- * Functional description
+ * Return an inversionCandidate which 
+ * contains a created inversion when a
+ * index could be used.
+ * This function should always return 
+ * an InversionCandidate;
  *
  **************************************/
 	createIndexScanNodes = true;
@@ -2478,6 +2482,7 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		innerStreams[i]->baseIndexes = candidate->indexes;
 		innerStreams[i]->baseUnique = candidate->unique;
 		innerStreams[i]->baseConjunctionMatches = candidate->matches.getCount();
+		delete candidate;
 		delete optimizerRetrieval;
 
 		csb_tail->csb_flags &= ~csb_active;
@@ -2577,15 +2582,15 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	// Create the optimizer retrieval generation class and calculate
 	// which indexes will be used and the total estimated 
 	// selectivity will be returned.
-	InversionCandidate* inversionNew = NULL;
+	InversionCandidate* candidate = NULL;
 	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool) 
 		OptimizerRetrieval(pool, optimizer, stream, false, false, NULL);
-	inversionNew = optimizerRetrieval->getCost();
-	double selectivity = inversionNew->selectivity;
-	if (inversionNew->indexes) {
+	candidate = optimizerRetrieval->getCost();
+	double selectivity = candidate->selectivity;
+	if (candidate->indexes) {
 		const double nodesPerPage = ((double)database->dbb_page_size / 10);
 		const double indexCost = 2 + ((cardinality * selectivity) / nodesPerPage);
-		*cost = (cardinality * selectivity) + (inversionNew->indexes * indexCost);
+		*cost = (cardinality * selectivity) + (candidate->indexes * indexCost);
 	}
 	else {
 		*cost = cardinality;
@@ -2593,15 +2598,15 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 
 	cardinality *= selectivity;
 
-	if (inversionNew->unique) {
+	if (candidate->unique) {
 		*resulting_cardinality = cardinality;
 	}
 	else {
 		*resulting_cardinality = MAX(cardinality, 1.0);
 	}
 
-	const bool useIndexRetrieval = (inversionNew->indexes >= 1);
-	delete inversionNew;
+	const bool useIndexRetrieval = (candidate->indexes >= 1);
+	delete candidate;
 	delete optimizerRetrieval;
 
 	return useIndexRetrieval;
@@ -2864,6 +2869,7 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 		baseStream->indexedRelationships.insert(index, indexRelationship);
 		testStream->previousExpectedStreams.add(baseStream->stream);
 	}
+	delete candidate;
 	delete optimizerRetrieval;
 
 	csb_tail->csb_flags &= ~csb_active;
