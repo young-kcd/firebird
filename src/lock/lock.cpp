@@ -33,11 +33,13 @@
  *  - detect deadlocks instantly in most cases (if blocking owner 
  *     dies during AST processing deadlock scan timeout still applies)
  * 2003.04.29 Nickolay Samofatov - fix broken lock table resizing code in CS builds
+ * 2003.08.11 Nickolay Samofatov - finally and correctly fix Windows CS lock-ups. 
+ *            Roll back earlier workarounds on this subject.
  *
  */
 
 /*
-$Id: lock.cpp,v 1.56.2.2 2003-07-30 14:51:41 skidder Exp $
+$Id: lock.cpp,v 1.56.2.3 2003-08-11 21:07:34 skidder Exp $
 */
 
 #include "firebird.h"
@@ -829,7 +831,7 @@ int LOCK_init(
 	owner = (OWN) ABS_PTR(*owner_handle);
 	wakeup_event[0] = owner->own_wakeup_hndl;
 	blocking_event[0] =
-		ISC_make_signal(TRUE, TRUE/*FALSE*/, LOCK_pid, LOCK_block_signal);
+		ISC_make_signal(TRUE, FALSE, LOCK_pid, LOCK_block_signal);
 	owner->own_blocking_hndl = blocking_event[0];
 	AST_ALLOC;
 	if (gds__thread_start
@@ -1465,7 +1467,7 @@ static void acquire( PTR owner_offset)
 	LOCK_post_manager = FALSE;
 #endif
 
-#ifdef USE_BLOCKING_SIGNALS
+#ifndef SUPERSERVER
 	if (LOCK_owner) {
 		LOCK_owner->own_ast_hung_flags &= ~OWN_hung;	/* Can't be hung by OS if we got here */
 	}
@@ -1915,17 +1917,10 @@ static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
 	AST_INIT;					/* Check into scheduler as AST thread */
 
 	while (TRUE) {
-		do {
-			ret = WaitForSingleObject(blocking_event[0], 10);
-		} while (ret==WAIT_TIMEOUT && !(LOCK_owner->own_ast_flags & OWN_signaled));
-#ifdef DEV_BUILD
-		if (ret == WAIT_TIMEOUT && WaitForSingleObject(blocking_event[0], 100)==WAIT_TIMEOUT)
-			gds__log("Windows bug: missing blocking event detected");
-#endif
-		ResetEvent(blocking_event[0]);
+		ret = WaitForSingleObject(blocking_event[0], INFINITE);
 		AST_ENTER;
 		owner = (OWN) ABS_PTR(*owner_offset_ptr);
-		if (!*owner_offset_ptr ||
+		if ((ret != WAIT_OBJECT_0 && ret != WAIT_ABANDONED) || !*owner_offset_ptr ||
 			owner->own_process_id != LOCK_pid || owner->own_owner_id == 0)
 			break;
 		blocking_action(*owner_offset_ptr);
@@ -3157,9 +3152,15 @@ static void init_owner_block(
 	owner->own_acquire_realtime = 0;
 	owner->own_semaphore = 0;
 
+#if defined(WIN_NT) && !defined(SUPERSERVER)
+	// Skidder: This Win32 EVENT is deleted when our process is closing
+	if (new_block != OWN_BLOCK_dummy)
+		owner->own_wakeup_hndl =
+			ISC_make_signal(TRUE, TRUE, LOCK_pid, LOCK_wakeup_signal);
+#endif
 	if (new_block == OWN_BLOCK_new)
 	{
-#ifdef WIN_NT
+#if defined WIN_NT && defined SUPERSERVER
 		// TMN: This Win32 EVENT is never deleted!
 		owner->own_wakeup_hndl =
 			ISC_make_signal(TRUE, TRUE, LOCK_pid, LOCK_wakeup_signal);
@@ -4148,15 +4149,6 @@ static void shutdown_blocking_thread( ISC_STATUS * status_vector)
 	WaitForSingleObject(blocking_action_thread_handle, 10*1000 /* Give it 10 seconds for clean shutdown */);
 	CloseHandle(blocking_action_thread_handle);
 	CloseHandle(blocking_event[0]);
-/*
-In MINGW during the build when making empbuild.fdb , there is a semop failed (acquire)
-if this CloseHandle is enabled. 
-Across the build the CloseHandle return failed with 
-GetLastError value 6 (Invalid Handle) To be tested with Classic win32(msvc)
-*/
-#if !defined(MINGW)
-	CloseHandle(wakeup_event[0]);
-#endif
 #endif
 
 #ifdef SOLARIS_MT
@@ -5062,40 +5054,15 @@ static USHORT wait_for_request(
 		ret =
 			WaitForSingleObject(owner->own_wakeup_hndl,
 								(timeout - current_time) * 1000);
-		if (ret == WAIT_OBJECT_0 || ret == WAIT_ABANDONED)
-			ret = FB_SUCCESS;
-		else					/* if (ret == WAIT_TIMEOUT) */
-			ret = FB_FAILURE;
 		THREAD_ENTER;
 #else
-		for (int i=(timeout - current_time) * 100; i>0; i--) {
-			// Check for timeout every 16 cycles.
-			// This is 160 ms normally, but may be significanltly
-			// more if system is loaded heavily
-			if (!(i & 0x0F)) {
-				if (GET_TIME > timeout) {
-					ret = FB_FAILURE;
-					break;
-				}
-			}
-			ret = WaitForSingleObject(wakeup_event[0], 10);
-			if (ret == WAIT_OBJECT_0 || ret == WAIT_ABANDONED) {
-				ret = FB_SUCCESS;
-				break;
-			} else {
-				if (LOCK_owner->own_flags & OWN_wakeup) {
-#ifdef DEV_BUILD
-					if (WaitForSingleObject(wakeup_event[0], 100)==WAIT_TIMEOUT)
-						gds__log("Windows bug: missing wakeup event detected");
-#endif
-					ret = FB_SUCCESS;
-					break;
-				}
-				ret = FB_FAILURE;
-			}
-		}
+		ret = WaitForSingleObject(wakeup_event[0], (timeout - current_time) * 1000);
 #endif
 		AST_DISABLE;
+		if (ret == WAIT_OBJECT_0 || ret == WAIT_ABANDONED)
+			ret = FB_SUCCESS;
+		else /* if (ret == WAIT_TIMEOUT) */
+			ret = FB_FAILURE;
 #endif
 
 #endif
