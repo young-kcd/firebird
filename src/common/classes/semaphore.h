@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: semaphore.h,v 1.11 2004-05-23 06:07:46 robocop Exp $
+ *  $Id: semaphore.h,v 1.12 2004-05-24 11:23:38 kkuznetsov Exp $
  *
  */
 
@@ -84,8 +84,10 @@ public:
 
 #ifdef SOLARIS
 /* This is dummy, untested implementation of FB::Semaphore
- on Solaris using conditional vfariable protected by mutex.
- 
+ on Solaris using conditional variable protected by mutex.
+ I'll review it later
+ Konstantin
+ thank's to Claudio ...
 */ 
 #include <thread.h>
 #include <synch.h>
@@ -226,7 +228,7 @@ public:
 
 			if (mutex_lock(&mu) != 0) {
 			
-				if (cond_signal(&cv) != 0) {
+				if (cond_broadcast(&cv) != 0) {
 					system_call_failed::raise("cond_sinal");
 				}
 
