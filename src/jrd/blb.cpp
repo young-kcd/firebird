@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.64 2004-03-30 08:34:14 robocop Exp $
+$Id: blb.cpp,v 1.65 2004-04-01 15:11:10 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -1543,39 +1543,25 @@ void BLB_scalar(thread_db*		tdbb,
 	internal_array_desc* array_desc = (internal_array_desc*) stuff;
 	blb* blob = BLB_get_array(tdbb, transaction, blob_id, array_desc);
 
-/* Get someplace to put data.  If the local buffer isn't large enough,
-   allocate one that is. */
-	double temp[64];
-	UCHAR* const temp_ptr = reinterpret_cast<UCHAR*>(temp);
-
-	str* temp_str = 0;
+// Get someplace to put data.
+// We need DOUBLE_ALIGNed buffer, that's why some tricks
+	Firebird::HalfStaticArray<double, 64> temp;
 	dsc desc = array_desc->iad_rpt[0].iad_desc;
-	if (desc.dsc_length <= sizeof(temp)) {
-		desc.dsc_address = temp_ptr;
-	}
-	else {
-		temp_str =
-			FB_NEW_RPT(*tdbb->tdbb_default, desc.dsc_length + DOUBLE_ALIGN - 1) str;
-		desc.dsc_address =
-			(UCHAR *) FB_ALIGN((U_IPTR) temp_str->str_data, DOUBLE_ALIGN);
-	}
+	desc.dsc_address = reinterpret_cast<UCHAR*>
+		(temp.getBuffer((desc.dsc_length / sizeof(double)) + 
+			(desc.dsc_length % sizeof(double) ? 1 : 0)));
 
 	const SLONG number =
 		SDL_compute_subscript(tdbb->tdbb_status_vector, array_desc, count,
 							  subscripts);
-
 	if (number < 0) {
 		BLB_close(tdbb, blob);
-		if (desc.dsc_address != temp_ptr) {
-			delete temp_str;
-		}
 		ERR_punt();
 	}
 
 	const SLONG offset = number * array_desc->iad_element_length;
 	BLB_lseek(blob, 0, offset + (SLONG) array_desc->iad_length);
-	BLB_get_segment(tdbb, blob, temp_ptr,
-					desc.dsc_length);
+	BLB_get_segment(tdbb, blob, desc.dsc_address, desc.dsc_length);
 
 /* If we have run out of data, then clear the data buffer. */
 
@@ -1584,9 +1570,6 @@ void BLB_scalar(thread_db*		tdbb,
 	}
 	EVL_make_value(tdbb, &desc, value);
 	BLB_close(tdbb, blob);
-	if (desc.dsc_address != temp_ptr) {
-		delete temp_str;
-	}
 }
 
 
@@ -1827,19 +1810,8 @@ static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination)
 		output->blb_flags |= BLB_stream;
 	}
 
-	UCHAR buffer[2000];
-	UCHAR* buff;
-	str* string;
-	if (input->blb_max_segment > sizeof(buffer))
-
-	{
-		string = FB_NEW_RPT(*tdbb->tdbb_default, input->blb_max_segment) str();
-		buff = (UCHAR *) string->str_data;
-	}
-	else {
-		string = NULL;
-		buff = buffer;
-	}
+	Firebird::HalfStaticArray<UCHAR, 2048> buffer;
+	UCHAR* buff = buffer.getBuffer(input->blb_max_segment);
 
 	while (true) {
 		const USHORT length = 
@@ -1849,8 +1821,6 @@ static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination)
 		}
 		BLB_put_segment(tdbb, output, buff, length);
 	}
-
-	delete string;
 
 	BLB_close(tdbb, input);
 	BLB_close(tdbb, output);
@@ -2342,17 +2312,16 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 			   to slice callback routines */
 			thread_db* tdbb = GET_THREAD_DATA;
 
+			Firebird::HalfStaticArray<char, 1024> tmp_buffer;
 			const USHORT tmp_len = array_desc->dsc_length;
-			STR tmp_buffer = FB_NEW_RPT(*tdbb->tdbb_default, tmp_len) str();
 			const char* p;
 			const USHORT len = MOV_make_string(slice_desc,
 								  INTL_TEXT_TYPE(*array_desc),
 								  &p,
-								  reinterpret_cast<vary*>(tmp_buffer->str_data),
+								  reinterpret_cast<vary*>(tmp_buffer.getBuffer(tmp_len)),
 								  tmp_len);
 			MOVE_FAST(&len, array_desc->dsc_address, sizeof(USHORT));
 			MOVE_FAST(p, array_desc->dsc_address + sizeof(USHORT), (int) len);
-			delete tmp_buffer;
 		}
 		else
 		{
