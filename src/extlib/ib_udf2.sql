@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ib_udf2.sql,v 1.3 2004-11-03 14:16:57 fsg Exp $
+ * $Id: ib_udf2.sql,v 1.4 2004-12-07 00:29:40 robocop Exp $
  * Revision 1.2  2000/11/28 06:47:52  fsg
  * Changed declaration of ascii_char in ib_udf.sql
  * to get correct result as proposed by Claudio Valderrama
@@ -297,6 +297,21 @@ DECLARE EXTERNAL FUNCTION floor
 	DOUBLE PRECISION
 	RETURNS DOUBLE PRECISION BY VALUE
 	ENTRY_POINT 'IB_UDF_floor' MODULE_NAME 'ib_udf';
+
+/*****************************************
+ *
+ *	f r a c
+ *
+ *****************************************
+ *
+ * Functional description:
+ * 	Returns the fractional part of the argument.
+ *
+ *****************************************/
+DECLARE EXTERNAL FUNCTION frac
+	DOUBLE PRECISION
+	RETURNS DOUBLE PRECISION BY VALUE
+	ENTRY_POINT 'IB_UDF_frac' MODULE_NAME 'ib_udf';
 
 /*****************************************
  *

@@ -18,8 +18,10 @@
  * Changes made by Claudio Valderrama for the Firebird project 
  *   changes to substr and added substrlen 
  * 2004.9.1 Claudio Valderrama, change some UDF's to be able to detect NULL.
+ * 2004.12.5 Slavomir Skopalik contributed IB_UDF_frac.
  * 
  */
+
 #include "firebird.h"
 #include <math.h>
 #include <stdlib.h>
@@ -150,6 +152,15 @@ double EXPORT IB_UDF_floor( double *a)
 	return (floor(*a));
 }
 
+double EXPORT IB_UDF_frac(const double* x)
+{
+	if (*x > 0)
+		return *x - floor(*x);
+	if (*x < 0)
+		return *x - ceil(*x);
+	return 0;
+}
+
 double EXPORT IB_UDF_ln( double *a)
 {
 	return (log(*a));
@@ -262,10 +273,6 @@ double EXPORT IB_UDF_rand()
 {
 	return ((float) rand() / (float) RAND_MAX);
 }
-
-
-
-
 
 char *EXPORT IB_UDF_rpad( const char *s, long *a, const char *c)
 {
