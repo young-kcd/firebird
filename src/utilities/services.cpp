@@ -248,7 +248,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
  *
  **************************************/
 	SC_HANDLE service;
-	CONST TEXT *mode;
+	const TEXT *mode;
 
 	service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)

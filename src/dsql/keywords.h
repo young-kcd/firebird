@@ -25,21 +25,15 @@
  * MOD 29-Jun-2002
  */
 
-// TMN: Temp hack
-#if (defined(WIN_NT) && defined(CONST))
-#undef CONST
-#define CONST
-#endif
-
 typedef struct tok {
     USHORT tok_ident;
-    CONST SCHAR *tok_string;
-    CONST USHORT tok_version;
+    SCHAR *tok_string;
+    USHORT tok_version;
 } TOK;
 
 extern "C" {
 
 extern bool KEYWORD_stringIsAToken(const char*);
-extern CONST TOK* KEYWORD_getTokens();
+extern const TOK* KEYWORD_getTokens();
 
 }

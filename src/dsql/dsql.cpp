@@ -152,14 +152,14 @@ static void		punt(void);
 static UCHAR*	put_item(UCHAR, USHORT, UCHAR*, UCHAR*, UCHAR*);
 static void		release_request(DSQL_REQ, USHORT);
 static STATUS	return_success(void);
-static UCHAR*	var_info(DSQL_MSG, CONST UCHAR*, CONST UCHAR*, UCHAR*, UCHAR*, USHORT);
+static UCHAR*	var_info(DSQL_MSG, const UCHAR*, const UCHAR*, UCHAR*, UCHAR*, USHORT);
 
 extern DSQL_NOD DSQL_parse;
 
 static bool init_flag = false;
 static DBB databases;
 static OPN open_cursors;
-static CONST SCHAR db_hdr_info_items[] = {
+static const SCHAR db_hdr_info_items[] = {
 	isc_info_db_sql_dialect,
 	gds_info_ods_version,
 	gds_info_base_level,
@@ -167,14 +167,14 @@ static CONST SCHAR db_hdr_info_items[] = {
 	frb_info_att_charset,
 	gds_info_end
 };
-static CONST SCHAR explain_info[] = {
+static const SCHAR explain_info[] = {
 	gds_info_access_path
 };
-static CONST SCHAR record_info[] = {
+static const SCHAR record_info[] = {
 	gds_info_req_update_count, gds_info_req_delete_count,
 	gds_info_req_select_count, gds_info_req_insert_count
 };
-static CONST UCHAR sql_records_info[] = {
+static const UCHAR sql_records_info[] = {
 	gds_info_sql_records
 };
 
@@ -246,7 +246,7 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 							TEXT*			string,
 							USHORT			dialect,
 							USHORT			item_length,
-							CONST UCHAR*			items,
+							const UCHAR*			items,
 							USHORT			buffer_length,
 							UCHAR*			buffer);
 
@@ -254,7 +254,7 @@ static
 STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
 								dsql_req**		req_handle,
 								USHORT		item_length,
-								CONST UCHAR*	items,
+								const UCHAR*	items,
 								USHORT		info_length,
 								UCHAR*		info);
 
@@ -393,7 +393,7 @@ GDS_DSQL_PREPARE(	STATUS*				user_status,
 					TEXT*				string,
 					USHORT				dialect,
 					USHORT				item_length,
-					CONST SCHAR*		items,
+					const SCHAR*		items,
 					USHORT				buffer_length,
 					SCHAR*				buffer)
 {
@@ -404,7 +404,7 @@ GDS_DSQL_PREPARE(	STATUS*				user_status,
 								string,
 								dialect,
 								item_length,
-								reinterpret_cast<CONST UCHAR*>(items),
+								reinterpret_cast<const UCHAR*>(items),
 								buffer_length,
 								reinterpret_cast<UCHAR*>(buffer));
 
@@ -416,7 +416,7 @@ STATUS DLL_EXPORT
 GDS_DSQL_SQL_INFO(	STATUS*				user_status,
 					struct dsql_req**	req_handle,
 					USHORT				item_length,
-					CONST SCHAR*		items,
+					const SCHAR*		items,
 					USHORT				info_length,
 					SCHAR*				info)
 {
@@ -1286,7 +1286,7 @@ STATUS GDS_DSQL_PREPARE_CPP(STATUS*			user_status,
 							TEXT*			string,
 							USHORT			dialect,
 							USHORT			item_length,
-							CONST UCHAR*	items,
+							const UCHAR*	items,
 							USHORT			buffer_length,
 							UCHAR*			buffer)
 {
@@ -1538,7 +1538,7 @@ STATUS GDS_DSQL_SET_CURSOR_CPP(	STATUS*	user_status,
 STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
 								dsql_req**		req_handle,
 								USHORT		item_length,
-								CONST UCHAR*	items,
+								const UCHAR*	items,
 								USHORT		info_length,
 								UCHAR*		info)
 {
@@ -1555,7 +1555,7 @@ STATUS GDS_DSQL_SQL_INFO_CPP(	STATUS*		user_status,
 	DSQL_REQ request;
 	DSQL_MSG *message;
 	UCHAR item, *end_info, buffer[256], *buffer_ptr;
-	CONST UCHAR *end_items, *end_describe;
+	const UCHAR *end_items, *end_describe;
 	USHORT length, number, first_index;
 	struct tsql thd_context, *tdsql;
 
@@ -3403,7 +3403,7 @@ static BOOLEAN get_rsb_item(SSHORT*		explain_length_ptr,
  *
  **************************************/
 	SCHAR *explain, *plan;
-	CONST SCHAR *p;
+	const SCHAR *p;
 	SSHORT explain_length, plan_length, rsb_type, length;
 	USHORT join_count, union_count, union_level, union_join_count, save_level;
 
@@ -4552,8 +4552,8 @@ static STATUS return_success(void)
 
 static UCHAR *var_info(
 					   DSQL_MSG message,
-					   CONST UCHAR * items,
-					   CONST UCHAR * end_describe,
+					   const UCHAR * items,
+					   const UCHAR * end_describe,
 					   UCHAR * info, UCHAR * end, USHORT first_index)
 {
 /**************************************
@@ -4568,7 +4568,7 @@ static UCHAR *var_info(
  **************************************/
 	PAR par;
 	UCHAR item, *buffer, buf[128];
-	CONST UCHAR *describe;
+	const UCHAR *describe;
 	USHORT length;
 	SLONG sql_type, sql_sub_type, sql_scale, sql_len;
 

@@ -54,11 +54,11 @@ extern STATUS DLL_EXPORT dsql8_insert(STATUS *, struct dsql_req**, USHORT,
 									  SCHAR *, USHORT, USHORT, SCHAR *);
 extern STATUS DLL_EXPORT dsql8_prepare(STATUS *, FRBRD **, struct dsql_req**,
 									   USHORT, TEXT *, USHORT, USHORT,
-									   CONST SCHAR *, USHORT, SCHAR *);
+									   const SCHAR *, USHORT, SCHAR *);
 extern STATUS DLL_EXPORT dsql8_set_cursor(STATUS *, struct dsql_req**, TEXT *,
 										  USHORT);
 extern STATUS DLL_EXPORT dsql8_sql_info(STATUS *, struct dsql_req**, USHORT,
-										CONST SCHAR*, USHORT, SCHAR *);
+										const SCHAR*, USHORT, SCHAR *);
 extern void DSQL_pretty(struct dsql_nod *, int);
 
 extern STATUS callback_execute_immediate(

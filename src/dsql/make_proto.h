@@ -39,11 +39,11 @@ struct dsql_nod* MAKE_list(class dsql_lls*);
 struct dsql_nod* MAKE_node(ENUM nod_t, int);
 class par* MAKE_parameter(class dsql_msg* , USHORT, USHORT, USHORT);
 class str* MAKE_string(const char* , int);
-struct sym* MAKE_symbol(class dbb* , CONST TEXT* , USHORT,
+struct sym* MAKE_symbol(class dbb* , const TEXT* , USHORT,
 						   ENUM sym_type, class dsql_req*);
 class str* MAKE_tagged_string(const char* str, size_t length, const char* charset);
 struct dsql_nod* MAKE_trigger_type(struct dsql_nod*, struct dsql_nod*);
-struct dsql_nod* MAKE_variable(class dsql_fld* , CONST TEXT* , USHORT, USHORT,
+struct dsql_nod* MAKE_variable(class dsql_fld* , const TEXT* , USHORT, USHORT,
 								 USHORT, USHORT);
 
 

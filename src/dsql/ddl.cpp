@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.35 2003-02-12 19:28:13 tamlin Exp $
+ * $Id: ddl.cpp,v 1.36 2003-02-13 09:26:10 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -202,7 +202,7 @@ static inline void BLKCHK(const void* p, USHORT type)
 #define DEFAULT_BLOB_SEGMENT_SIZE	80	/* bytes */
 
 
-static CONST USHORT blr_dtypes[] = {
+static const USHORT blr_dtypes[] = {
 	0,
 	blr_text,					/* dtype_text */
 	blr_cstring,				/* dtype_cstring */
@@ -225,7 +225,7 @@ static CONST USHORT blr_dtypes[] = {
 	blr_int64					/* dtype_int64 */
 };
 
-static CONST UCHAR nonnull_validation_blr[] = {
+static const UCHAR nonnull_validation_blr[] = {
 	blr_version5,
 	blr_not,
 	blr_missing,

@@ -28,7 +28,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: keywords.cpp,v 1.12 2003-01-15 12:00:31 dimitr Exp $
+ *  $Id: keywords.cpp,v 1.13 2003-02-13 09:26:13 dimitr Exp $
  *
  */
 
@@ -42,7 +42,7 @@
 #include "dsql.tab.h"
 #include "keywords.h"
 
-static CONST TOK tokens [] = {
+static const TOK tokens [] = {
 	{NOT_LSS, "!<", 1},
 	{NEQ, "!=", 1},
 	{NOT_GTR, "!>", 1},
@@ -314,7 +314,7 @@ static CONST TOK tokens [] = {
 
 bool KEYWORD_stringIsAToken(const char *in_str)
 {
-    CONST TOK *tok_ptr = tokens;
+    const TOK *tok_ptr = tokens;
     while (tok_ptr -> tok_string) {
         if (!strcmp(tok_ptr -> tok_string, in_str)) {
             return true;
@@ -324,7 +324,7 @@ bool KEYWORD_stringIsAToken(const char *in_str)
     return false;
 }
 
-CONST TOK* KEYWORD_getTokens()
+const TOK* KEYWORD_getTokens()
 {
     return tokens;
 }

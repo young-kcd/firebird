@@ -70,6 +70,7 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
  * 2002.12.28 Dmitry Yemanov: Added support for parametrized events.
  * 2003.01.14 Dmitry Yemanov: Fixed bug with cursors in triggers.
  * 2003.01.15 Dmitry Yemanov: Added support for runtime trigger action checks.
+ * 2003.02.10 Mike Nordell  : Undefined Microsoft introduced macros to get a clean compile.
  */
 
 #if defined(DEV_BUILD) && defined(WIN_NT) && defined(SUPERSERVER)
@@ -103,7 +104,7 @@ static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
 
 /* Can't include ../jrd/err_proto.h here because it pulls jrd.h. */
 #if !defined(JRD_ERR_PROTO_H)
-extern "C" TEXT *DLL_EXPORT ERR_string(CONST TEXT*, int);
+extern "C" TEXT *DLL_EXPORT ERR_string(const TEXT*, int);
 #endif
 
 ASSERT_FILENAME
@@ -125,7 +126,7 @@ static void	yyerror (TEXT *);
 #define MIN_CACHE_BUFFERS       250
 #define DEF_CACHE_BUFFERS       1000
 
-// TMN: Remove Microsoft introduced defines
+/* TMN: Remove Microsoft introduced defines*/
 #ifdef DELETE
 #undef DELETE
 #endif
@@ -4274,7 +4275,7 @@ void LEX_dsql_init (void)
  *	per session.
  *
  **************************************/
-CONST TOK	*token;
+const TOK	*token;
 
 for (token = KEYWORD_getTokens(); token->tok_string; ++token)
     {
@@ -4933,7 +4934,7 @@ if (tok_class & CHR_INTRODUCER)
     /* The Introducer (_) is skipped, all other idents are copied
      * to become the name of the character set
      */
-    char* p = string;
+    p = string;
     for (; ptr < end && classes [*ptr] & CHR_IDENT; ptr++)
 	{
 	if (ptr >= end)
@@ -5311,9 +5312,9 @@ ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) sql_code,
 int
 dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, BOOLEAN *stmt_ambiguous)
 {
-    int yym, yyn, yystate;
+    register int yym, yyn, yystate;
 #if YYDEBUG
-    char *yys;
+    register char *yys;
     ;
 
     if (yys = getenv("YYDEBUG"))

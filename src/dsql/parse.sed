@@ -4,8 +4,8 @@ s/^int yy/static int yy/
 s/^int \*yy/static int *yy/
 s/^YYSTYPE yy/static YYSTYPE yy/
 s/^YYSTYPE \*yy/static YYSTYPE *yy/
-s/^yytabelem yy/static CONST yytabelem yy/
-s/^yytoktype yy/static CONST yytoktype yy/
+s/^yytabelem yy/static const yytabelem yy/
+s/^yytoktype yy/static const yytoktype yy/
 s/^char \* yy/static char * yy/
 s/^static int yychar;/#ifndef SHLIB_DEFS\
 int yychar;\
@@ -21,9 +21,9 @@ s/yyssp/DSQL_yyssp/g
 s/yysslim/DSQL_yysslim/g
 s/yyss/DSQL_yyss/g
 /^#ident/d
-s/^static TOK tokens/static CONST TOK FAR_VARIABLE tokens/
-s/^__YYSCLASS yytabelem/__YYSCLASS CONST yytabelem FAR_VARIABLE/
-s/^__YYSCLASS yytoktype/__YYSCLASS CONST yytoktype FAR_VARIABLE/
+s/^static TOK tokens/static const TOK FAR_VARIABLE tokens/
+s/^__YYSCLASS yytabelem/__YYSCLASS const yytabelem FAR_VARIABLE/
+s/^__YYSCLASS yytoktype/__YYSCLASS const yytoktype FAR_VARIABLE/
 s/^__YYSCLASS char/__YYSCLASS char FAR_VARIABLE/
 s/^#include *<values.h> *$//g
 s/yylex(void)/yylex(USHORT, USHORT, USHORT, BOOLEAN *)/g

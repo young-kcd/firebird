@@ -46,7 +46,7 @@
 
  *)
 
-CONST
+const
 
 	gds_facility		= 20;
 

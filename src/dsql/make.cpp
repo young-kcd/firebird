@@ -1467,7 +1467,7 @@ STR MAKE_string(const char* str, int length)
 
 
 SYM MAKE_symbol(DBB database,
-				CONST TEXT * name, USHORT length, SYM_TYPE type, DSQL_REQ object)
+				const TEXT * name, USHORT length, SYM_TYPE type, DSQL_REQ object)
 {
 /**************************************
  *
@@ -1554,7 +1554,7 @@ DSQL_NOD MAKE_trigger_type(DSQL_NOD prefix_node, DSQL_NOD suffix_node)
 
 
 DSQL_NOD MAKE_variable(DSQL_FLD field,
-				  CONST TEXT * name,
+				  const TEXT * name,
 				  USHORT type,
 				  USHORT msg_number, USHORT item_number, USHORT local_number)
 {

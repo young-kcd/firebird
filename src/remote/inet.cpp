@@ -41,7 +41,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.49 2003-02-10 09:26:52 eku Exp $
+$Id: inet.cpp,v 1.50 2003-02-13 09:30:10 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -319,7 +319,7 @@ static ULONG inet_debug_timer(void)
 #ifdef VMS
 #define ERRNOCODE(symbol, code, text)	text,
 
-static CONST TEXT *CONST win_errlist[] = {
+static const TEXT *const win_errlist[] = {
 	NULL,
 #include "../remote/winerr.h"
 };
@@ -374,7 +374,7 @@ static bool_t	inet_getlong(XDR *, SLONG *);
 static u_int	inet_getpostn(XDR *);
 static void		inet_handler(PORT);
 static caddr_t	inet_inline(XDR *, u_int);
-static int		inet_error(PORT, CONST TEXT *, STATUS, int);
+static int		inet_error(PORT, const TEXT *, STATUS, int);
 static bool_t	inet_putlong(XDR *, SLONG *);
 static bool_t	inet_putbytes(XDR *, SCHAR *, u_int);
 static bool_t	inet_read(XDR *);
@@ -3134,7 +3134,7 @@ static caddr_t inet_inline( XDR * xdrs, u_int bytecount)
 
 static int inet_error(
 					  PORT port,
-					  CONST TEXT * function, STATUS operation, int status)
+					  const TEXT * function, STATUS operation, int status)
 {
 /**************************************
  *

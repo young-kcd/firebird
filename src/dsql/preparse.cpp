@@ -69,7 +69,7 @@ typedef struct pp_table {
 	SSHORT code;
 } PP_TABLE;
 
-static CONST PP_TABLE pp_symbols[] = {
+static const PP_TABLE pp_symbols[] = {
 	{"CREATE", 6, PP_CREATE},
 	{"DATABASE", 8, PP_DATABASE},
 	{"SCHEMA", 6, PP_SCHEMA},

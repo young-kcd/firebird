@@ -921,7 +921,7 @@ static bool_t xdr_cstring( XDR * xdrs, CSTRING * cstring)
  **************************************/
 	SLONG l;
 	SCHAR trash[4];
-	static CONST SCHAR filler[4] = { 0, 0, 0, 0 };
+	static const SCHAR filler[4] = { 0, 0, 0, 0 };
 
 	if (!xdr_short
 		(xdrs,

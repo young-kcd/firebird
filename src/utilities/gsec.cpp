@@ -69,7 +69,7 @@ void UTIL_error_redirect(STATUS *, USHORT, TEXT *, TEXT *);
 void UTIL_error(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 void UTIL_print(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
 void UTIL_print_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-static void util_output(CONST SCHAR *, ...);
+static void util_output(const SCHAR *, ...);
 
 static void data_print(void *, USER_DATA, BOOLEAN);
 static int get_line(int *, SCHAR **, TEXT *, TSEC);
@@ -1182,7 +1182,7 @@ void UTIL_print_status( STATUS * status_vector)
 	}
 }
 
-static void util_output( CONST SCHAR * format, ...)
+static void util_output( const SCHAR * format, ...)
 {
 /**************************************
  *

@@ -29,7 +29,7 @@
 #define CHR_HEX		32
 #define CHR_INTRODUCER	64
 
-static CONST SCHAR classes[] = {
+static const SCHAR classes[] = {
 /* 000     */ 0,
 /* 001     */ 0,
 /* 002     */ 0,

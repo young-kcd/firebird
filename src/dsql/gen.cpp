@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.24 2003-02-12 19:28:12 tamlin Exp $
+$Id: gen.cpp,v 1.25 2003-02-13 09:26:13 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -77,7 +77,7 @@ static void gen_union(DSQL_REQ, DSQL_NOD);
 static void stuff_cstring(DSQL_REQ, char *);
 static void stuff_word(DSQL_REQ, USHORT);
 
-static CONST SCHAR db_key_name[] = "DB_KEY";
+static const SCHAR db_key_name[] = "DB_KEY";
 
 /* STUFF is defined in dsql.h for use in common with ddl.c */
 

@@ -95,7 +95,7 @@
 
 /* Can't include ../jrd/err_proto.h here because it pulls jrd.h. */
 #if !defined(JRD_ERR_PROTO_H)
-extern "C" TEXT *DLL_EXPORT ERR_string(CONST TEXT*, int);
+extern "C" TEXT *DLL_EXPORT ERR_string(const TEXT*, int);
 #endif
 
 ASSERT_FILENAME
@@ -3943,7 +3943,7 @@ void LEX_dsql_init (void)
  *	per session.
  *
  **************************************/
-CONST TOK	*token;
+const TOK	*token;
 
 for (token = KEYWORD_getTokens(); token->tok_string; ++token)
     {

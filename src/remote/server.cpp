@@ -172,14 +172,14 @@ static EVENT_T		thread_event[1];
 static SRVR			servers;
 
 
-static CONST UCHAR request_info[] =
+static const UCHAR request_info[] =
 {
 	gds_info_state,
 	gds_info_message_number,
 	gds_info_end
 };
 
-static CONST UCHAR sql_info[] =
+static const UCHAR sql_info[] =
 {
 	gds_info_sql_stmt_type,
 	isc_info_sql_batch_fetch

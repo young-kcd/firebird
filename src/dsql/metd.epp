@@ -83,7 +83,7 @@ nested FOR loops are added.
 
 ASSERT_FILENAME DATABASE DB = STATIC "yachts.lnk";
 
-static CONST UCHAR blr_bpb[] = { isc_bpb_version1,
+static const UCHAR blr_bpb[] = { isc_bpb_version1,
 	isc_bpb_source_type, 1, BLOB_blr,
 	isc_bpb_target_type, 1, BLOB_blr
 };

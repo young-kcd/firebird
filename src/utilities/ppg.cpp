@@ -33,7 +33,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/gds_proto.h"
 
-static CONST TEXT months[][4] = {
+static const TEXT months[][4] = {
 	"Jan", "Feb", "Mar",
 	"Apr", "May", "Jun",
 	"Jul", "Aug", "Sep",
