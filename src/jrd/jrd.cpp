@@ -417,6 +417,11 @@ IHNDL	internal_db_handles = 0;
 //
 static void check_autocommit(JRD_REQ request, struct tdbb* tdbb)
 {
+	/* dimitr: we should ignore autocommit for requests
+			   created by EXECUTE STATEMENT */
+	if (request->req_transaction->tra_callback_count > 0)
+		return;
+
 	if (request->req_transaction->tra_flags & TRA_perform_autocommit)
 	{
 		request->req_transaction->tra_flags &= ~TRA_perform_autocommit;
