@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbackup.cpp,v 1.30 2004-07-10 03:20:29 robocop Exp $
+ *  $Id: nbackup.cpp,v 1.31 2004-09-15 05:24:28 skidder Exp $
  *
  */
  
@@ -43,6 +43,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/ibase.h"
+#include "../common/classes/array.h"
 #include <typeinfo>
 
 #ifdef HAVE_UNISTD_H
@@ -67,17 +68,19 @@ const int EXIT_ERROR	= 1;
 void usage()
 {
 	fprintf(stderr, 
-		"Physical Backup Manager    Copyright (C) 2003 Firebird development team\n"
+		"Physical Backup Manager    Copyright (C) 2004 Firebird development team\n"
 		"  Original idea is of Sean Leyne <sean@broadviewsoftware.com>\n"
 		"  Designed and implemented by Nickolay Samofatov <skidder@bssys.com>\n"
 		"  This work was funded through a grant from BroadView Software, Inc.\n\n"
 		"Usage: nbackup <options>\n"
 		"valid options are: \n"
 		"  -L <database>                         Lock database for filesystem copy\n"
-		"  -U <database>                         Unlock previously locked database\n"
+		"  -N <database>                         Unlock previously locked database\n"
 		"  -F <database>                         Fixup database after filesystem copy\n"
 		"  -B <level> <database> [<filename>]    Create incremental backup\n"
 		"  -R <database> [<file0> [<file1>...]]  Restore incremental backup\n"
+		"  -U <user>                             User name\n"
+		"  -P <password>                         Password\n"
 		"Notes:\n"
 		"  <database> may specify database alias\n"
 		"  incremental backups of multi-file databases are not supported yet\n"
@@ -140,9 +143,12 @@ struct inc_header {
 
 class nbackup {
 public:
-	nbackup(const char* _database)
+	nbackup(const char* _database, const char* _username, const char* _password)
 	{
+		if (_username) username = _username;
+		if (_password) password = _password;
 		database = _database;
+
 		dbase = 0;
 		backup = 0;
 		newdb = 0;
@@ -167,7 +173,11 @@ private:
 	isc_db_handle newdb; /* database handle */
     isc_tr_handle trans; /* transaction handle */
 	
-	const char* database;
+	// Owned by caller. Not good in theory, may need to be changed.
+	Firebird::PathName database;
+	Firebird::string username;
+	Firebird::string password;
+
 	Firebird::PathName dbname; // Database file name
 	Firebird::PathName bakname;
 	FILE_HANDLE dbase;
@@ -398,7 +408,35 @@ void nbackup::pr_error (const ISC_STATUS* status, const char* operation)
 
 void nbackup::attach_database()
 {
-    if (isc_attach_database(status, 0, database, &newdb, 0, NULL))
+	if (username.length() > 255 || password.length() > 255)
+		b_error::raise("Username or password is too long");
+
+
+	Firebird::HalfStaticArray<char, 100> dpbArray;
+
+	char *dpb = dpbArray.getBuffer(
+		1 + // isc_dpb_version1
+		1 + 1 + // isc_dpb_user_name + length
+		username.length() + 
+		1 + 1 + // isc_dpb_password + length
+		password.length());
+	
+	*dpb++ = isc_dpb_version1;
+	if (!username.isEmpty()) {
+		*dpb++ = isc_dpb_user_name;
+		*dpb++ = username.length();
+		memcpy(dpb, username.c_str(), username.length());
+		dpb += username.length();
+	}
+
+	if (!password.isEmpty()) {
+		*dpb++ = isc_dpb_password;
+		*dpb++ = password.length();
+		memcpy(dpb, password.c_str(), password.length());
+		dpb += password.length();
+	}
+
+	if (isc_attach_database(status, 0, database.c_str(), &newdb, dpb - dpbArray.begin(), dpbArray.begin()))
         pr_error(status, "attach database");
 }
 
@@ -872,61 +910,72 @@ int main( int argc, char *argv[] )
 	bool matched = false;
 	// Do not constify. GCC 3.4.0 chokes on minus below in this case
 	char** end = argv + argc;
+
+	char *username = NULL, *password = NULL;
 	
 	try {
 	
 	while (++argv < end)
-		if (**argv == '-')
-			for (const char* p = *argv + 1; *p; p++)
-			{
-				switch (UPPER(*p)) {
+		if (**argv == '-') {
+			switch (UPPER((*argv)[1])) {
 
-				case 'F':
-					if (++argv >= end)
-						usage();
-					nbackup(*argv).fixup_database();
-					matched = true;
-					break;
-
-				case 'L':
-					if (++argv >= end)
-						usage();
-					nbackup(*argv).lock_database();
-					matched = true;
-					break;
-
-				case 'U':
-					if (++argv >= end)
-						usage();
-					nbackup(*argv).unlock_database();
-					matched = true;
-					break;
-
-				case 'B': {
-					if (++argv >= end)
-						usage();
-					int level = atoi(*argv);
-					if (++argv >= end)
-						usage();
-					nbackup(*argv).backup_database(level, argv + 1 >= end ? NULL : argv[1]);
-					}
-					matched = true;
-					break;
-
-				case 'R':
-					if (++argv >= end)
-						usage();
-					nbackup(*argv).restore_database(end - argv - 1, argv + 1);
-					matched = true;
-					break;
-
-				default:
-					fprintf(stderr, "Unknown switch %c.\n", *p);
+			case 'F':
+				if (++argv >= end)
 					usage();
-					break;
+				nbackup(*argv, username, password).fixup_database();
+				matched = true;
+				break;
+
+			case 'L':
+				if (++argv >= end)
+					usage();
+				nbackup(*argv, username, password).lock_database();
+				matched = true;
+				break;
+
+			case 'N':
+				if (++argv >= end)
+					usage();
+				nbackup(*argv, username, password).unlock_database();
+				matched = true;
+				break;
+
+			case 'U':
+				if (++argv >= end)
+					usage();
+				username = *argv;
+				break;
+
+			case 'P':
+				if (++argv >= end)
+					usage();
+				password = *argv;
+				break;
+
+			case 'B': {
+				if (++argv >= end)
+					usage();
+				int level = atoi(*argv);
+				if (++argv >= end)
+					usage();
+				nbackup(*argv, username, password).backup_database(level, argv + 1 >= end ? NULL : argv[1]);
 				}
+				matched = true;
+				break;
+
+			case 'R':
+				if (++argv >= end)
+					usage();
+				nbackup(*argv, username, password).restore_database(end - argv - 1, argv + 1);
+				matched = true;
+				break;
+
+			default:
+				fprintf(stderr, "Unknown switch %s.\n", *argv);
+				usage();
+				break;
 			}
-				
+		}
 	} catch (const std::exception&) {
 		// It must have been printed out. No need to repeat the task
 		return EXIT_ERROR;
