@@ -34,8 +34,7 @@
 #include "../dudley/extra_proto.h"
 #include "../jrd/gds_proto.h"
 
-//DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME DB_file_name;
-DATABASE DB = EXTERN FILENAME "ok:C:\GDB\ODS.RDB" RUNTIME DB_file_name;
+DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME DB_file_name;
 
 #ifndef FOPEN_WRITE_TYPE
 #define FOPEN_WRITE_TYPE	"w"

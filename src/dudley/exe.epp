@@ -53,8 +53,7 @@
 #define	IS_DTYPE_ANY_TEXT(x)	(make_dtype(x) <= dtype_any_text)
 #define NUMERIC_SCALE(desc)	((IS_DTYPE_ANY_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
 
-//DATABASE DB = FILENAME "yachts.lnk";
-DATABASE DB = FILENAME "ok:C:\GDB\ODS.RDB";
+DATABASE DB = FILENAME "yachts.lnk";
 
 static void add_cache(DBB);
 static void add_field(DUDLEY_FLD);

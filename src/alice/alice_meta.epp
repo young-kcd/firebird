@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.7 2002-12-16 15:15:42 alexpeshkoff Exp $
+ *	$Id: alice_meta.epp,v 1.8 2002-12-16 16:15:54 alexpeshkoff Exp $
  */
 
 #include "firebird.h"
@@ -60,8 +60,7 @@
  *  GPRE.  This is to avoid multiple threading problems with module           
  *  level statics.
  */
-DATABASE DB = STATIC FILENAME "ok:C:\GDB\ODS.RDB";
-//DATABASE DB = STATIC FILENAME "yachts.lnk";
+DATABASE DB = STATIC FILENAME "yachts.lnk";
 
 #define DB          tdgbl->db_handle
 #define gds_trans   tdgbl->tr_handle

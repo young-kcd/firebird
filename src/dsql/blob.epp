@@ -37,8 +37,7 @@
 #include "../jrd/constants.h"
 #include "../dsql/blob_proto.h"
 
-//DATABASE DB = STATIC "yachts.lnk";
-DATABASE DB = STATIC "ok:C:\GDB\ODS.RDB";
+DATABASE DB = STATIC "yachts.lnk";
 
 static void copy_exact_name (UCHAR *, UCHAR *, SSHORT);
 static STATUS copy_status(STATUS *, STATUS *);
