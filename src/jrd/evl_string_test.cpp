@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: evl_string_test.cpp,v 1.6 2004-07-07 15:48:57 skidder Exp $
+ *  $Id: evl_string_test.cpp,v 1.7 2004-07-07 16:06:19 skidder Exp $
  *
  */
 
@@ -44,7 +44,7 @@ using namespace Firebird;
 class StringLikeEvaluator : public LikeEvaluator<char> {
 public:
 	StringLikeEvaluator(MemoryPool *pool, const char *pattern, char escape_char) : 
-	  LikeEvaluator<char>(pool, pattern, (SSHORT)strlen(pattern), escape_char, '%', '_') {}
+	  LikeEvaluator<char>(*pool, pattern, (SSHORT)strlen(pattern), escape_char, '%', '_') {}
 
 	void process(const char *data, bool more, bool result) {
 		SSHORT len = (SSHORT)strlen(data);
@@ -70,7 +70,7 @@ public:
 class StringContainsEvaluator : public ContainsEvaluator<char> {
 public:
 	StringContainsEvaluator(MemoryPool *pool, const char *pattern) : 
-	  ContainsEvaluator<char>(pool, pattern, (SSHORT)strlen(pattern)) {}
+	  ContainsEvaluator<char>(*pool, pattern, (SSHORT)strlen(pattern)) {}
 
 	void process(const char *data, bool more, bool result) {
 		SSHORT len = (SSHORT)strlen(data);

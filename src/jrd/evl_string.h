@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: evl_string.h,v 1.15 2004-07-07 15:48:57 skidder Exp $
+ *  $Id: evl_string.h,v 1.16 2004-07-07 16:06:19 skidder Exp $
  *
  */
 
@@ -419,7 +419,7 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 
 	// If called with empty buffer just return if more data can change the result of evaluation
 	if (!data_len) {
-		return branches.getCount() != 0;
+		return branches.getCount() != 0 || match_type == MATCH_FIXED;
 	}
 
 	if (match_type == MATCH_FIXED)
