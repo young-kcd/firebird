@@ -171,16 +171,18 @@ static size_t getpagesize(void) {return PAGESIZE;}
 
 extern "C" {
 
-static void		alarm_handler(void);
 static void		error(STATUS *, TEXT *, STATUS);
+
+#ifdef UNIX
+static void		alarm_handler(void);
 static SLONG	find_key(STATUS *, TEXT *);
 static SLONG	init_semaphores(STATUS *, SLONG, int);
+static BOOLEAN	semaphore_wait_isc_sync(int, int, int *);
+#endif
 
 #if defined(UNIX) && defined(SUPERSERVER)
 static void		longjmp_sig_handler(int);
 #endif // UNIX && SUPERSERVER
-
-static BOOLEAN	semaphore_wait_isc_sync(int, int, int *);
 
 #ifdef VMS
 static int event_test(WAIT *);
