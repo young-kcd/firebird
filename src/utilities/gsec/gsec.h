@@ -85,10 +85,6 @@ typedef int (DLL_EXPORT* OUTPUTPROC) (SLONG, UCHAR *);
 #define RESTORE_THREAD_DATA     
 #endif
 
-#define EXIT(code)	            {  tdsec->tsec_exit_code = (code);          \
-					if (tdsec->tsec_env != NULL)        \
-					Firebird::status_exception::raise(1);  }
-
 typedef struct user_data {
     int		operation;		/* what's to be done */
     TEXT	user_name [USER_NAME_LEN];	/* the user's name */

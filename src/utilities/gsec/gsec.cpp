@@ -81,6 +81,13 @@ int output_svc(SLONG, UCHAR *);
 static int output_main(SLONG, UCHAR *);
 #endif
 
+void inline gsec_exit(int code, TSEC tdsec)
+{
+	tdsec->tsec_exit_code = code;
+	if (tdsec->tsec_env != NULL)
+		Firebird::status_exception::raise(1);
+}
+
 #ifdef SUPERSERVER
 int main_gsec( SVC service)
 {
@@ -202,7 +209,7 @@ int UTIL_gsec(
 	tdsec = (struct tsec *) gds__alloc(sizeof(*tdsec));
 /* NOMEM: return error, FREE: during function exit in the SETJMP */
 	if (tdsec == NULL) {
-		EXIT(FINI_ERROR);
+		gsec_exit(FINI_ERROR, tdsec);
 	}
 
 	SET_THREAD_DATA;
@@ -213,7 +220,7 @@ int UTIL_gsec(
 		(struct user_data *) gds__alloc(sizeof(*user_data));
 /* NOMEM: return error, FREE: during function exit in the SETJMP */
 	if (tdsec->tsec_user_data == NULL) {
-		EXIT(FINI_ERROR);
+		gsec_exit(FINI_ERROR, tdsec);
 	}
 
 	memset((void *) tdsec->tsec_user_data, 0, sizeof(*user_data));
@@ -369,12 +376,12 @@ int UTIL_gsec(
 		if (isc_detach_database(loc_status, &db_handle))
 			UTIL_error_redirect(loc_status, 0, NULL, NULL);
 	}
-	EXIT(FINI_OK);
+	gsec_exit(FINI_OK, tdsec);
 	return 0;					// silence compiler warning
 
 	}	// try
 	catch (const std::exception&) {
-		/* All calls to EXIT(), normal and error exits, wind up here */
+		/* All calls to gsec_exit(), normal and error exits, wind up here */
 		SVC_STARTED(tdsec->tsec_service_blk);
 		tdsec->tsec_env = NULL;
 		const int exit_code = tdsec->tsec_exit_code;
@@ -1215,7 +1222,7 @@ static void util_output( const SCHAR * format, ...)
 	}
 
 	if (exit_code != 0)
-		EXIT(exit_code);
+		gsec_exit(exit_code, tdsec);
 }
 
 void UTIL_error_redirect(
@@ -1271,7 +1278,7 @@ void UTIL_error(
 #endif
 
 	UTIL_print(errcode, arg1, arg2, arg3, arg4, arg5);
-	EXIT(FINI_ERROR);
+	gsec_exit(FINI_ERROR, tdsec);
 }
 
 void UTIL_print(
