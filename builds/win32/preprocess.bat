@@ -62,8 +62,8 @@ goto :EOF
 :BOOT_PROCESS
 @echo.
 @set GPRE=gpre_boot -lang_internal
-@for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
+@for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @goto :EOF
 
 ::===========
@@ -72,7 +72,9 @@ goto :EOF
 @set GPRE=gpre
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
 @for %%i in (backup, restore) do @call :PREPROCESS burp %%i
+@for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
 @for %%i in (exe, extract) do @call :PREPROCESS dudley %%i
+@for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
 @for %%i in (blob_filter) do @call :PREPROCESS jrd %%i
 @for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, envelope, fun, grant, ini, met, pcmet, scl, stats) do @call :PREPROCESS jrd %%i GDS
