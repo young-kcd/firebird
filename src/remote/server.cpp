@@ -596,7 +596,8 @@ static bool accept_connection(PORT port,
 			) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
 			 protocol->p_cnct_architecture == ARCHITECTURE) &&
-			protocol->p_cnct_weight >= weight) {
+			protocol->p_cnct_weight >= weight)
+		{
 			weight = protocol->p_cnct_weight;
 			version = protocol->p_cnct_version;
 			architecture = protocol->p_cnct_architecture;
@@ -654,9 +655,7 @@ static ISC_STATUS allocate_statement( PORT port, P_RLSE * allocate, PACKET* send
 	handle = NULL;
 
 	THREAD_EXIT;
-	GDS_DSQL_ALLOCATE(status_vector,
-					  &rdb->rdb_handle,
-					  &handle);
+	GDS_DSQL_ALLOCATE(status_vector, &rdb->rdb_handle, &handle);
 	THREAD_ENTER;
 
 	if (status_vector[1])
