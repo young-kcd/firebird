@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.20 2003-02-14 02:44:37 brodsom Exp $
+//  $Id: gpre.cpp,v 1.21 2003-02-16 00:55:09 brodsom Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.20 2003-02-14 02:44:37 brodsom Exp $
+//	$Id: gpre.cpp,v 1.21 2003-02-16 00:55:09 brodsom Exp $
 //
 
 #define GPRE_MAIN
@@ -140,6 +140,15 @@ static pfn_gen_routine gen_routine;
 static TEXT trace_file_name[128];
 static SLONG traced_position = 0;
 
+//___________________________________________________________________
+// Test if input language is cpp based.
+//
+bool isLangCpp(LANG_T lang) {
+    if (lang == lang_cxx || lang == lang_internal) {
+        return true;
+    }
+    return false;
+}
 
 /*
  * Type and table definition for the extension tables.  Tells GPRE
