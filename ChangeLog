@@ -1,3 +1,125 @@
+2003-08-11 23:46  skidder
+
+	* firebird2/src/qli/mov.cpp:
+	
+	Backport FreeBSD fixes
+
+2003-08-11 23:41  skidder
+
+	* firebird2/src/: burp/burp.cpp, jrd/cvt.cpp, jrd/mov.cpp:
+	
+	Backport FreeBSD fixes
+
+2003-08-11 23:37  skidder
+
+	* firebird2/src/: jrd/thd.h, include/firebird.h:
+	
+	Backport Win32 CS startup race condition fix
+
+2003-08-11 23:34  skidder
+
+	* firebird2/src/common/classes/: alloc.cpp, alloc.h, locks.cpp,
+	locks.h:
+	
+	Backport Win32 CS startup race condition fix
+
+2003-08-11 23:07  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Backport lock manager fixes
+
+2003-08-11 22:56  skidder
+
+	* firebird2/src/lock/lock.cpp:
+	
+	Fix original problem that caused Win32 CS lock-ups.  Rollback
+	workarounds.
+
+2003-08-11 13:24  skidder
+
+	* firebird2/src/dsql/parse.cpp:
+	
+	Update parse.cpp
+
+2003-08-11 13:21  skidder
+
+	* firebird2/src/: burp/burp.cpp, common/classes/alloc.cpp,
+	common/classes/alloc.h, jrd/cvt.cpp, jrd/mov.cpp, qli/mov.cpp,
+	utilities/nbackup.cpp:
+	
+	Apply FreeBSD patches by Tomas Skoda
+
+2003-08-11 12:43  aafemt
+
+	* firebird2/src/jrd/: sdl.cpp, sdl.h:
+	
+	Fix up coding style. Thanks to Claudio
+
+2003-08-11 04:18  brodsom
+
+	* firebird2/src/misc/codes.epp:
+	
+	Use stdout for non error output instead of stderr.
+
+2003-08-11 03:25  brodsom
+
+	* firebird2/builds/posix/prefix.linux:
+	
+	-Remove parentheses warnings.  -Remove unknown-pragmas warnings. 
+	-Remove unused variables warnings, near all the actual warnings are
+	for gpre generated stuff.  -Avoid message wrapping.
+
+2003-08-11 03:19  brodsom
+
+	* firebird2/src/jrd/sort.cpp:
+	
+	-Fix signed unsigned comparison
+
+2003-08-11 03:06  arnobrinkman
+
+	* firebird2/src/dsql/parse.y:
+	
+	forgotten cleanup, thanks for your attention BLAS
+
+2003-08-11 02:58  arnobrinkman
+
+	* firebird2/src/dsql/make.cpp:
+	
+	bugfix: CASE / COALESCE functions determine always NUMERIC even
+	when all values where int or long.
+
+2003-08-11 02:43  arnobrinkman
+
+	* firebird2/src/dsql/make.cpp:
+	
+	bugfix: CASE / COALESCE functions determine always NUMERIC even
+	when all values where int or long.
+
+2003-08-11 01:10  brodsom
+
+	* firebird2/builds/win32/prepare.bat:
+	
+	Change message (the previous one is wrong)
+
+2003-08-11 01:09  brodsom
+
+	* firebird2/builds/win32/make_boot.bat:
+	
+	beautify
+
+2003-08-11 01:05  brodsom
+
+	* firebird2/builds/win32/blrtable.bat:
+	
+	Move compiler output to a log file
+
+2003-08-11 00:52  brodsom
+
+	* firebird2/src/burp/: backup.epp, restore.epp:
+	
+	-Patch cast warnings and add a compiler message.
+
 2003-08-10 17:43  skidder
 
 	* firebird2/: builds/win32/msvc7/alice.vcproj,
