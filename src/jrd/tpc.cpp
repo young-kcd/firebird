@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include <string.h>
+#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/tpc.h"
 #include "../jrd/ods.h"

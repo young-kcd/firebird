@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.99 2004-03-20 14:57:30 alexpeshkoff Exp $
+$Id: met.epp,v 1.100 2004-03-22 11:37:55 alexpeshkoff Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -2709,7 +2709,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 				/* should be error if field already exists */
 				Parameter* parameter = 
-					FB_NEW_RPT(*dbb->dbb_permanent, name_length(PA.RDB$PARAMETER_NAME)) Parameter();
+					FB_NEW_RPT(*dbb->dbb_permanent, name_length(PA.RDB$PARAMETER_NAME)) 
+					Parameter(*dbb->dbb_permanent);
 				parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
 				(*vector)[parameter->prm_number] = (BLK) parameter;
 				name_copy(parameter->prm_string, PA.RDB$PARAMETER_NAME);

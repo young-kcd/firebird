@@ -545,8 +545,7 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
 
 	public:
-	jrd_prc(MemoryPool& p) 
-		: prc_security_name(p), prc_name(p) {}
+	jrd_prc(MemoryPool& p) : prc_security_name(p), prc_name(p) {}
 };
 
 #define PRC_scanned           1		/* Field expressions scanned */
@@ -572,9 +571,8 @@ class Parameter : public pool_alloc_rpt<SCHAR, type_prm>
 	jrd_nod*	prm_default_val;
 	Firebird::string prm_name;		/* asciiz name */
 	TEXT 		prm_string[2];		/* one byte for ALLOC and one for the terminating null */
-
     public:
-
+	Parameter(MemoryPool& p) : prm_name(p) { }
 };
 
 

@@ -24,6 +24,7 @@
 #include "firebird.h"
 #include <string.h>
 #include "memory_routines.h"
+#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/val.h"

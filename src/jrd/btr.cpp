@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "memory_routines.h"
+#include "../jrd/common.h"
 #include "../common/classes/vector.h"
 #include "../jrd/ib_stdio.h"
 #include "../jrd/jrd.h"

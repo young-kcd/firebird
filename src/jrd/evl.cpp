@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.71 2004-03-21 09:47:39 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.72 2004-03-22 11:37:54 alexpeshkoff Exp $ 
  */
 
 /*
@@ -62,6 +62,7 @@
 
 #include "firebird.h"
 #include <string.h>
+#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/req.h"

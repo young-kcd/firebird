@@ -26,6 +26,7 @@
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/jrd_time.h"
 #include "../jrd/jrd.h"

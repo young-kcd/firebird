@@ -32,11 +32,12 @@
  *  Contributor(s):
  * 
  *
- *  $Id: nbak.cpp,v 1.28 2004-03-20 14:57:30 alexpeshkoff Exp $
+ *  $Id: nbak.cpp,v 1.29 2004-03-22 11:37:55 alexpeshkoff Exp $
  *
  */
 
 #include "firebird.h"
+#include "common.h"
 #include "jrd.h"
 #include "ods.h"
 #include "lck.h"

@@ -33,11 +33,12 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.60 2004-03-20 14:57:28 alexpeshkoff Exp $
+$Id: blb.cpp,v 1.61 2004-03-22 11:37:54 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
 #include <string.h>
+#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/val.h"

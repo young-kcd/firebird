@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include <string.h>
+#include "../jrd/common.h"
 #include "../jrd/ib_stdio.h"
 
 #include "gen/iberror.h"
