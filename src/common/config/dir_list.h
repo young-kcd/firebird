@@ -82,7 +82,7 @@ protected:
 	virtual const Firebird::string GetConfigString(void) const = 0;
 public:
 	DirectoryList();
-	~DirectoryList();
+	virtual ~DirectoryList();
 
 	// TODO
 	// All functions, checking DirectoryList contents,

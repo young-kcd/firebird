@@ -147,7 +147,8 @@ bool DirectoryList::KeyWord(
 		if (Next.find(KeyValue[0]) == Firebird::string::npos) {
 			return false;
 		}
-		int startPos = KeyValue.find_first_not_of(Next);
+		Firebird::string::size_type startPos = 
+			KeyValue.find_first_not_of(Next);
 		if (startPos == Firebird::string::npos) {
 			return false;
 		}
