@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.144 2003-07-11 02:28:45 brodsom Exp $
+dnl $Id: configure.in,v 1.145 2003-07-11 13:28:04 brodsom Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -560,7 +560,6 @@ mkdir -p gen/firebird/examples/empbuild
 mkdir -p gen/firebird/examples/include
 mkdir -p gen/firebird/examples/stat
 mkdir -p gen/firebird/examples/udf
-mkdir -p gen/firebird/examples/winevent
 mkdir -p gen/firebird/lib
 mkdir -p gen/firebird/misc
 mkdir -p gen/firebird/help
@@ -735,7 +734,7 @@ gen/Makefile.client.util:${MAKE_SRC_DIR}/Makefile.in.client.util
 gen/Makefile.intl:${MAKE_SRC_DIR}/Makefile.in.intl
 gen/Makefile.msgs:${MAKE_SRC_DIR}/Makefile.in.msgs
 gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
-gen/Makefile.v5_examples:${MAKE_SRC_DIR}/Makefile.in.v5_examples
+dnl **********   gen/Makefile.examples:${MAKE_SRC_DIR}/Makefile.in.examples
 gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed
 gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server
 gen/Makefile.embed.lockmgr:${MAKE_SRC_DIR}/Makefile.in.embed.lockmgr
@@ -746,7 +745,7 @@ gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql
 gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
-src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
+dnl ********** src/v5_examples/Makefile:${MAKE_SRC_DIR}/Makefile.in.example5
 gen/Makefile.install:builds/install/arch-specific/${MAKEFILE_PREFIX}/Makefile.in
 Makefile:Makefile.in
 gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline

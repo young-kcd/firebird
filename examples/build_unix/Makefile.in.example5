@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: Makefile.in.example5,v 1.7 2003-07-08 01:05:22 brodsom Exp $
+#   $Id: Makefile.in.example5,v 1.1 2003-07-11 13:30:32 brodsom Exp $
 # 
 
 ROOT=../..
