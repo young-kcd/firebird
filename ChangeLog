@@ -1,3 +1,22 @@
+2003-03-19 14:14  dimitr
+
+	* firebird2/src/remote/inet.cpp:
+	
+	Reworked my previous changes in INET.
+
+2003-03-19 12:33  skidder
+
+	* firebird2/src/alice/all.cpp:
+	
+	Fix up memory leak in gfix I introduced quite some time ago.
+	Noticed by Mike Nordell
+
+2003-03-19 09:49  dimitr
+
+	* firebird2/builds/win32/msvc6/: intl.dsp, intlcpp.dsp:
+	
+	Fixed LD2_lookup issue.
+
 2003-03-18 16:28  brodsom
 
 	* firebird2/src/jrd/john.make:
