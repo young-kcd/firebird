@@ -37,7 +37,7 @@
  */
 
 /*
-$Id: lock.cpp,v 1.56 2003-07-04 03:12:02 brodsom Exp $
+$Id: lock.cpp,v 1.57 2003-07-18 21:34:42 skidder Exp $
 */
 
 #include "firebird.h"
@@ -1484,7 +1484,7 @@ static void acquire( PTR owner_offset)
   we have only one address space and we do not need to adjust our
   mapping because another process has changed size of the lock table.
 */
-#if !defined SUPERSERVER && (defined HAVE_MMAP || defined WIN_NT)
+#if !defined SUPERSERVER && defined HAVE_MMAP
 		ISC_STATUS_ARRAY status_vector;
 		header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, FALSE);
@@ -1609,8 +1609,12 @@ static UCHAR *alloc( SSHORT size, ISC_STATUS * status_vector)
   mainly because it is not tested and is not really needed as long SS builds
   do not use lock manager for page locks. On all other platforms we grow
   lock table automatically.
+  Do not remap file for Win32 CS because we use mapped objects for 
+  synchronization and there is no (documented) way to have multiple 
+  coherent memory mappings of different size on Windows to apply
+  ISC_map_object approach
 */
-#if defined WIN_NT || (!defined SUPERSERVER && defined HAVE_MMAP)
+#if (defined WIN_NT && defined SUPERSERVER) || (!defined SUPERSERVER && defined HAVE_MMAP)
 		ULONG length = LOCK_data.sh_mem_length_mapped + EXTEND_SIZE;
 		LHB header =
 			(LHB) ISC_remap_file(status_vector, &LOCK_data, length, TRUE);
@@ -1911,12 +1915,17 @@ static void THREAD_ROUTINE blocking_action_thread( PTR * owner_offset_ptr)
 	AST_INIT;					/* Check into scheduler as AST thread */
 
 	while (TRUE) {
-		ret = WaitForSingleObject(blocking_event[0], INFINITE);
+		do {
+			ret = WaitForSingleObject(blocking_event[0], 10);
+		} while (ret==WAIT_TIMEOUT && !(LOCK_owner->own_ast_flags & OWN_signaled));
+#ifdef DEV_BUILD
+		if (ret == WAIT_TIMEOUT && WaitForSingleObject(blocking_event[0], 100)==WAIT_TIMEOUT)
+			gds__log("Windows bug: missing blocking event detected");
+#endif
 		ResetEvent(blocking_event[0]);
 		AST_ENTER;
 		owner = (OWN) ABS_PTR(*owner_offset_ptr);
-		if ((ret != WAIT_OBJECT_0 && ret != WAIT_ABANDONED) ||
-			!*owner_offset_ptr ||
+		if (!*owner_offset_ptr ||
 			owner->own_process_id != LOCK_pid || owner->own_owner_id == 0)
 			break;
 		blocking_action(*owner_offset_ptr);
@@ -5053,17 +5062,31 @@ static USHORT wait_for_request(
 		ret =
 			WaitForSingleObject(owner->own_wakeup_hndl,
 								(timeout - current_time) * 1000);
-		THREAD_ENTER;
-#else
-		ret =
-			WaitForSingleObject(wakeup_event[0],
-								(timeout - current_time) * 1000);
-#endif
-		AST_DISABLE;
 		if (ret == WAIT_OBJECT_0 || ret == WAIT_ABANDONED)
 			ret = FB_SUCCESS;
 		else					/* if (ret == WAIT_TIMEOUT) */
 			ret = FB_FAILURE;
+		THREAD_ENTER;
+#else
+		for (int i=(timeout - current_time) * 100; i>0; i++) {
+			ret = WaitForSingleObject(wakeup_event[0], 10);
+			if (ret == WAIT_OBJECT_0 || ret == WAIT_ABANDONED) {
+				ret = FB_SUCCESS;
+				break;
+			} else {
+				if (LOCK_owner->own_flags & OWN_wakeup) {
+#ifdef DEV_BUILD
+					if (WaitForSingleObject(wakeup_event[0], 100)==WAIT_TIMEOUT)
+						gds__log("Windows bug: missing wakeup event detected");
+#endif
+					ret = FB_SUCCESS;
+					break;
+				}
+				ret = FB_FAILURE;
+			}
+		}
+#endif
+		AST_DISABLE;
 #endif
 
 #endif
