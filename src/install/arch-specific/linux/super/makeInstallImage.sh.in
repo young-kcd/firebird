@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.1.2.8 2003-12-28 04:53:17 skidder Exp $
+#   $Id: makeInstallImage.sh.in,v 1.1.2.9 2004-02-21 23:04:03 skidder Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -153,9 +153,11 @@ copyFiles() {
     cp $BuildRootDir/src/extlib/fbudf/fbudf.sql $DestDir/UDF/
 	    
 #   Note that this copies files from outside the build tree.
-    cp $BuildRootDir/doc/README.user.* $DestDir/doc
+    cp $BuildRootDir/doc/*.pdf $DestDir/doc
+    cp $BuildRootDir/doc/README.* $DestDir/doc
+    cp $BuildRootDir/doc/sql.extensions/README* $DestDir/doc/sql.extensions
+    cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
     cp $BuildRootDir/doc/README.user $DestDir/README
-    cp $BuildRootDir/doc/sql.extensions/* $DestDir/doc/sql.extensions
     
 #   Miscellaneous config and startup files
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/firebird.conf
