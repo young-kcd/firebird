@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: rwlock.h,v 1.7 2003-09-13 01:12:45 brodsom Exp $
+ *  $Id: rwlock.h,v 1.8 2003-09-13 09:25:57 brodsom Exp $
  *
  */
 
@@ -64,7 +64,7 @@ private:
 	// Those inlines are needed due to the different argument taken by msvc6 and msvc7
 	// funcions
 	//
-#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(MINGW)
 	inline LONG InterlockedIncrement_uni(volatile LONG* lock_p){
 		return InterlockedIncrement(const_cast<LONG*>(lock_p));
 	}
