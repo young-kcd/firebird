@@ -1,3 +1,53 @@
+2002-11-20 16:07  hippoman
+
+	* firebird2/src/jrd/isc_file.cpp:
+	
+	Fixed the build for win32
+
+2002-11-20 16:01  hippoman
+
+	* firebird2/builds/win32/msvc7/: burp.vcproj, burp_classic.vcproj,
+	dsql_server.vcproj, dsql_server_classic.vcproj, engine.vcproj,
+	engine_classic.vcproj, fb_inet_server.vcproj, fb_lock_print.vcproj,
+	fbclient.vcproj, fbembed.vcproj, fbguard.vcproj, fbserver.vcproj,
+	gbak.vcproj, isql.vcproj, remote.vcproj, remote_classic.vcproj:
+	
+	NOMSG is not needed, addied version.lib
+
+2002-11-20 14:38  kkuznetsov
+
+	* firebird2/builds/posix/: Makefile.in.gpre,
+	Makefile.in.static.gpre, prefix.solx86:
+	
+	GPRE additional files on Solaris x86
+
+2002-11-20 14:37  kkuznetsov
+
+	* firebird2/src/: jrd/isc_i_proto.h, jrd/isc_ipc.cpp,
+	pipe/allp.cpp, pipe/allp_proto.h, remote/merge.cpp,
+	remote/merge_proto.h:
+	
+	Resolving C/C++ linkage problem on SOLX86
+
+2002-11-20 11:28  kkuznetsov
+
+	* firebird2/src/pipe/: head.cpp, head5.cpp, head_proto.h:
+	
+	Fixed mixed C/C++ linkage error on SOLX86
+
+2002-11-20 10:50  dimitr
+
+	* firebird2/src/common/memory/memory_pool.cpp:
+	
+	Fixed alignment bug in the memory manager.
+
+2002-11-20 09:30  eku
+
+	* firebird2/builds/posix/make.shared.variables:
+	
+	Fixed compilation and linking on SINIX-Z (and probably on other
+	POSIX platforms).
+
 2002-11-19 18:02  skidder
 
 	* firebird2/src/jrd/vio.cpp:
