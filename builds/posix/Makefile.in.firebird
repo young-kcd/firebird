@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.54 2004-05-07 11:19:53 brodsom Exp $
+#  $Id: Makefile.in.firebird,v 1.55 2004-05-08 03:28:10 skidder Exp $
 #
 
 ROOT=..
@@ -506,7 +506,7 @@ install package packages dist:
 #___________________________________________________________________________
 # 
 
-clean: clean_objects clean_dependancies clean_extern_objects clean_build clean_gpre_gen
+clean: clean_objects clean_dependancies clean_extern_objects clean_build clean_gpre_gen clean_editline
 
 clean_config: clean clean_makefiles
 	$(RM) $(ROOT)/configure
@@ -515,6 +515,9 @@ clean_config: clean clean_makefiles
 clean_dbs:
 	-$(RM) refDatabases/*\.fdb
 
+
+clean_editline:
+	-make -C $(SRC_ROOT)/extern/editline clean
 
 clean_objects:
 	$(RM) `find $(GEN_ROOT)/ -type f -name '*.o' -print`
