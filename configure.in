@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.185 2003-11-20 08:13:30 eku Exp $
+dnl $Id: configure.in,v 1.186 2003-11-21 19:52:10 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -84,7 +84,7 @@ case "$target" in
     ;;
 
   i386-pc-solaris*)
-    MAKEFILE_PREFIX=solx86
+    MAKEFILE_PREFIX=solx86gcc
     PLATFORM=solx86
     AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
     LOCK_MANAGER_FLG=N
