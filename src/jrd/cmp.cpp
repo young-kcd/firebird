@@ -4364,57 +4364,57 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 
 	case nod_find:
 		stream = base_stream(csb, &node->nod_arg[e_find_stream], TRUE);
-		if (!
-			(node->nod_arg[e_find_rsb] =
-			 (JRD_NOD) csb->
-			 csb_rpt[stream].csb_rsb_ptr)) ERR_post(gds__stream_not_defined,
-													0);
+		if (!(node->nod_arg[e_find_rsb] =
+			(JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
+		{
+			ERR_post(gds__stream_not_defined, 0);
+		}
 		break;
 
 	case nod_find_dbkey:
 	case nod_find_dbkey_version:
 		stream = base_stream(csb, &node->nod_arg[e_find_dbkey_stream], TRUE);
-		if (!
-			(node->nod_arg[e_find_dbkey_rsb] =
-			 (JRD_NOD) csb->
-			 csb_rpt[stream].csb_rsb_ptr)) ERR_post(gds__stream_not_defined,
-													0);
+		if (!(node->nod_arg[e_find_dbkey_rsb] =
+			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
+		{
+			ERR_post(gds__stream_not_defined, 0);
+		}
 		break;
 
 	case nod_set_index:
 		stream = base_stream(csb, &node->nod_arg[e_index_stream], TRUE);
-		if (!
-			(node->nod_arg[e_index_rsb] =
-			 (JRD_NOD) csb->
-			 csb_rpt[stream].csb_rsb_ptr)) ERR_post(gds__stream_not_defined,
-													0);
+		if (!(node->nod_arg[e_index_rsb] =
+			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
+		{
+			ERR_post(gds__stream_not_defined, 0);
+		}
 		break;
 
 	case nod_get_bookmark:
 		stream = base_stream(csb, &node->nod_arg[e_getmark_stream], TRUE);
-		if (!
-			(node->nod_arg[e_getmark_rsb] =
-			 (JRD_NOD) csb->
-			 csb_rpt[stream].csb_rsb_ptr)) ERR_post(gds__stream_not_defined,
-													0);
+		if (!(node->nod_arg[e_getmark_rsb] =
+			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
+		{
+			ERR_post(gds__stream_not_defined, 0);
+		}
 		break;
 
 	case nod_set_bookmark:
 		stream = base_stream(csb, &node->nod_arg[e_setmark_stream], TRUE);
-		if (!
-			(node->nod_arg[e_setmark_rsb] =
-			 (JRD_NOD) csb->
-			 csb_rpt[stream].csb_rsb_ptr)) ERR_post(gds__stream_not_defined,
-													0);
+		if (!(node->nod_arg[e_setmark_rsb] =
+			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
+		{
+			ERR_post(gds__stream_not_defined, 0);
+		}
 		break;
 
 	case nod_lock_record:
 		stream = base_stream(csb, &node->nod_arg[e_lockrec_stream], TRUE);
-		if (!
-			(node->nod_arg[e_lockrec_rsb] =
-			 (JRD_NOD) csb->
-			 csb_rpt[stream].csb_rsb_ptr)) ERR_post(gds__stream_not_defined,
-													0);
+		if (!(node->nod_arg[e_lockrec_rsb] =
+			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
+		{
+			ERR_post(gds__stream_not_defined, 0);
+		}
 		break;
 
 	case nod_crack:
@@ -4426,20 +4426,20 @@ static JRD_NOD pass2(TDBB tdbb, CSB csb, JRD_NOD node, JRD_NOD parent)
 
 	case nod_reset_stream:
 		stream = base_stream(csb, &node->nod_arg[e_reset_from_stream], TRUE);
-		if (!
-			(node->nod_arg[e_reset_from_rsb] =
-			 (JRD_NOD) csb->
-			 csb_rpt[stream].csb_rsb_ptr)) ERR_post(gds__stream_not_defined,
-													0);
+		if (!(node->nod_arg[e_reset_from_rsb] =
+			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
+		{
+			ERR_post(gds__stream_not_defined, 0);
+		}
 		break;
 
 	case nod_cardinality:
 		stream = base_stream(csb, &node->nod_arg[e_card_stream], TRUE);
-		if (!
-			(node->nod_arg[e_card_rsb] =
-			 (JRD_NOD) csb->
-			 csb_rpt[stream].csb_rsb_ptr)) ERR_post(gds__stream_not_defined,
-													0);
+		if (!(node->nod_arg[e_card_rsb] =
+			 (JRD_NOD) csb->csb_rpt[stream].csb_rsb_ptr))
+		{
+			ERR_post(gds__stream_not_defined, 0);
+		}
 		break;
 
 		/* the following DML nodes need to have their rsb's stored when 

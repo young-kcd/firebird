@@ -492,10 +492,11 @@ void AIL_enable(
 
 /* check if journal is already enabled */
 
-	if (PAG_get_clump
-		(HEADER_PAGE, HDR_journal_server, &jd_len,
-		 reinterpret_cast <
-		 UCHAR * >(journal_dir))) ERR_post(gds_jrn_present, 0);
+	if (PAG_get_clump(HEADER_PAGE, HDR_journal_server, &jd_len,
+					  reinterpret_cast <UCHAR *>(journal_dir)))
+	{
+		ERR_post(gds_jrn_present, 0);
+	}
 
 /*
  * check if we are trying to enable long term journaling without

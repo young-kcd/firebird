@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
-  * $Id: evl.cpp,v 1.38 2003-08-30 16:45:05 dimitr Exp $ 
+  * $Id: evl.cpp,v 1.39 2003-09-12 01:58:51 brodsom Exp $ 
  */
 
 /*
@@ -982,7 +982,9 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 				if (extract_part != blr_extract_hour &&
 					extract_part != blr_extract_minute &&
 					extract_part != blr_extract_second)
-						ERR_post(gds_expression_eval_err, 0);
+				{
+					ERR_post(gds_expression_eval_err, 0);
+				}
 				break;
 			case dtype_sql_date:
 				timestamp.timestamp_date = *(GDS_DATE *) value->dsc_address;
@@ -991,7 +993,9 @@ DSC* DLL_EXPORT EVL_expr(TDBB tdbb, JRD_NOD node)
 				if (extract_part == blr_extract_hour ||
 					extract_part == blr_extract_minute ||
 					extract_part == blr_extract_second)
-						ERR_post(gds_expression_eval_err, 0);
+				{
+					ERR_post(gds_expression_eval_err, 0);
+				}
 				break;
 			case dtype_timestamp:
 				timestamp = *((GDS_TIMESTAMP *) value->dsc_address);
@@ -2655,9 +2659,11 @@ static DSC *add_sql_date(DSC * desc, JRD_NOD node, VLU value)
 	isc_decode_timestamp(&new_date, &times);
 
 	if ((times.tm_year + 1900) < MIN_YEAR
-		|| (times.tm_year) + 1900 >
-		MAX_YEAR) ERR_post(gds_expression_eval_err, gds_arg_gds,
+		|| (times.tm_year) + 1900 > MAX_YEAR)
+	{
+		ERR_post(gds_expression_eval_err, gds_arg_gds,
 						   isc_date_range_exceeded, 0);
+	}
 
 	value->vlu_misc.vlu_sql_date = d2;
 
@@ -2857,7 +2863,9 @@ static DSC *add_timestamp(DSC * desc, JRD_NOD node, VLU value)
 
 		if (!((value->vlu_desc.dsc_dtype == dtype_timestamp) ||
 			  DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
-				ERR_post(gds_expression_eval_err, 0);
+		{
+			ERR_post(gds_expression_eval_err, 0);
+		}
 
 		d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
 		d2 = get_timestamp_to_isc_ticks(desc);
@@ -2970,10 +2978,8 @@ static DSC *add_timestamp(DSC * desc, JRD_NOD node, VLU value)
 	new_date.timestamp_date = value->vlu_misc.vlu_timestamp.timestamp_date;
 	isc_decode_timestamp(&new_date, &times);
 
-	if ((times.tm_year + 1900) < MIN_YEAR
-		|| (times.tm_year) + 1900 >
-		MAX_YEAR) ERR_post(gds_expression_eval_err, gds_arg_gds,
-						   isc_date_range_exceeded, 0);
+	if ((times.tm_year + 1900) < MIN_YEAR || (times.tm_year) + 1900 > MAX_YEAR)
+		ERR_post(gds_expression_eval_err, gds_arg_gds, isc_date_range_exceeded, 0);
 
 
 /* Make sure the TIME portion is non-negative */

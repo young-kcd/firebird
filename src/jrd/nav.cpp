@@ -205,9 +205,11 @@ BOOLEAN NAV_find_record(RSB rsb,
 	idx =
 		(IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
-	if ((idx == NULL) ||
-		(find_key->nod_count == 0) ||
-		(find_key->nod_count > idx->idx_count)) ERR_post(gds__invalid_key, 0);
+	if ((idx == NULL) || (find_key->nod_count == 0) ||
+		(find_key->nod_count > idx->idx_count))
+	{
+		ERR_post(gds__invalid_key, 0);
+	}
 
 	if (find_key->nod_count < idx->idx_count)
 		search_flags |= irb_partial;

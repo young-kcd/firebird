@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.35 2003-09-01 07:58:04 brodsom Exp $
+$Id: blb.cpp,v 1.36 2003-09-12 01:58:51 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -852,9 +852,10 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
 		BUGCHECK(199);			/* msg 199 expected field node */
 
 	if (from_desc->dsc_dtype != dtype_quad
-		&& from_desc->dsc_dtype != dtype_blob) ERR_post(gds_convert_error,
-														gds_arg_string,
-														"BLOB", 0);
+		&& from_desc->dsc_dtype != dtype_blob) 
+	{
+		ERR_post(gds_convert_error, gds_arg_string, "BLOB", 0);
+	}
 
 	request = tdbb->tdbb_request;
 	source = (BID) from_desc->dsc_address;
@@ -920,12 +921,13 @@ void BLB_move(TDBB tdbb, DSC * from_desc, DSC * to_desc, JRD_NOD field)
 					break;
 				}
 
-		if (!blob ||
-			MemoryPool::blk_type(blob) != type_blb ||
+		if (!blob || MemoryPool::blk_type(blob) != type_blb ||
 			blob->blb_attachment != tdbb->tdbb_attachment ||
 			!(blob->blb_flags & BLB_closed) ||
 			(blob->blb_request && blob->blb_request != request))
+		{
 			ERR_post(gds_bad_segstr_id, 0);
+		}
 
 		if (materialized_blob && !(blob->blb_flags & BLB_temporary)) {
 			refetch_flag = TRUE;
