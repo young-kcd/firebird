@@ -87,7 +87,7 @@
  */
 
 /*
-$Id: ib_stdio.cpp,v 1.7 2003-02-10 13:28:22 eku Exp $
+$Id: ib_stdio.cpp,v 1.8 2003-02-11 02:12:02 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -400,18 +400,11 @@ int ib_fgetc(IB_FILE * fp)
 
 /*
  * Expand the line buffer.  Return -1 on error.
-#ifdef notdef
- * The `new size' does not account for a terminating '\0',
- * so we add 1 here.
-#endif
  */
 int ib__slbexpand(IB_FILE * fp, size_t newsize)
 {
 	void *p;
 
-#ifdef notdef
-	++newsize;
-#endif
 	if (fp->_lb._size >= newsize)
 		return (0);
 	if ((p = realloc(fp->_lb._base, newsize)) == NULL)
@@ -498,9 +491,6 @@ char *ib_fgetln(IB_FILE * fp, size_t * lenp)
 		break;
 	}
 	*lenp = len;
-#ifdef notdef
-	fp->_lb._base[len] = 0;
-#endif
 	return ((char *) fp->_lb._base);
 
   error:
@@ -3617,15 +3607,10 @@ int ib__svfscanf(IB_FILE * fp, char const *fmt0, va_list ap)
 
 		case CT_INT:
 			/* scan an integer as if by strtoq/strtouq */
-#ifdef hardway
-			if (width == 0 || width > sizeof(buf) - 1)
-				width = sizeof(buf) - 1;
-#else
 			/* size_t is unsigned, hence this optimisation */
 			if (--width > sizeof(buf) - 2)
 				width = sizeof(buf) - 2;
 			width++;
-#endif
 			flags |= SIGNOK | NDIGITS | NZDIGITS;
 			for (p = buf; width; width--) {
 				c = *fp->_p;
@@ -3772,15 +3757,10 @@ int ib__svfscanf(IB_FILE * fp, char const *fmt0, va_list ap)
 
 		case CT_FLOAT:
 			/* scan a floating point number as if by strtod */
-#ifdef hardway
-			if (width == 0 || width > sizeof(buf) - 1)
-				width = sizeof(buf) - 1;
-#else
 			/* size_t is unsigned, hence this optimisation */
 			if (--width > sizeof(buf) - 2)
 				width = sizeof(buf) - 2;
 			width++;
-#endif
 			flags |= SIGNOK | NDIGITS | DPTOK | EXPOK;
 			for (p = buf; width; width--) {
 				c = *fp->_p;
@@ -4390,11 +4370,7 @@ Exactly one of IEEE_LITTLE_ENDIAN IEEE_BIG_ENDIAN, WORDS_BIGENDIAN, or IBM shoul
 #ifndef IEEE_Arith
 #define ROUND_BIASED
 #endif
-#ifdef Unsigned_Shifts
-#define Sign_Extend(a,b) if (b < 0) a |= 0xffff0000;
-#else
 #define Sign_Extend(a,b)		/*no-op */
-#endif
 	struct
 	Bigint {
 	struct Bigint *next;
@@ -4477,11 +4453,7 @@ static Bigint *lshift(Bigint * b, int k)
 	Bigint *b1;
 	ULONG *x, *x1, *xe, z;
 
-#ifdef Pack_32
-	n = k >> 5;
-#else
 	n = k >> 4;
-#endif
 	k1 = b->k;
 	n1 = n + b->wds + 1;
 	for (i = b->maxwds; n1 > i; i <<= 1)
@@ -4492,19 +4464,6 @@ static Bigint *lshift(Bigint * b, int k)
 		*x1++ = 0;
 	x = b->x;
 	xe = x + b->wds;
-#ifdef Pack_32
-	if (k &= 0x1f) {
-		k1 = 32 - k;
-		z = 0;
-		do {
-			*x1++ = *x << k | z;
-			z = *x++ >> k1;
-		}
-		while (x < xe);
-		if ((*x1 = z) != 0)
-			++n1;
-	}
-#else
 	if (k &= 0xf) {
 		k1 = 16 - k;
 		z = 0;
@@ -4516,7 +4475,6 @@ static Bigint *lshift(Bigint * b, int k)
 		if (*x1 = z)
 			++n1;
 	}
-#endif
 	else
 		do
 			*x1++ = *x++;
@@ -4560,9 +4518,6 @@ static Bigint *diff(Bigint * a, Bigint * b)
 	int i, wa, wb;
 	SLONG borrow, y;			/* We need signed shifts here. */
 	ULONG *xa, *xae, *xb, *xbe, *xc;
-#ifdef Pack_32
-	SLONG z;
-#endif
 
 	i = cmp(a, b);
 	if (!i) {
@@ -4589,27 +4544,6 @@ static Bigint *diff(Bigint * a, Bigint * b)
 	xbe = xb + wb;
 	xc = c->x;
 	borrow = 0;
-#ifdef Pack_32
-	do {
-		y = (*xa & 0xffff) - (*xb & 0xffff) + borrow;
-		borrow = y >> 16;
-		Sign_Extend(borrow, y);
-		z = (*xa++ >> 16) - (*xb++ >> 16) + borrow;
-		borrow = z >> 16;
-		Sign_Extend(borrow, z);
-		Storeinc(xc, z, y);
-	}
-	while (xb < xbe);
-	while (xa < xae) {
-		y = (*xa & 0xffff) + borrow;
-		borrow = y >> 16;
-		Sign_Extend(borrow, y);
-		z = (*xa++ >> 16) + borrow;
-		borrow = z >> 16;
-		Sign_Extend(borrow, z);
-		Storeinc(xc, z, y);
-	}
-#else
 	do {
 		y = *xa++ - *xb++ + borrow;
 		borrow = y >> 16;
@@ -4623,7 +4557,6 @@ static Bigint *diff(Bigint * a, Bigint * b)
 		Sign_Extend(borrow, y);
 		*xc++ = y & 0xffff;
 	}
-#endif
 	while (!*--xc)
 		wa--;
 	c->wds = wa;
@@ -4644,11 +4577,7 @@ static Bigint *d2b(double d, int *e, int *bits)
 #define d1 word1(d)
 #endif
 
-#ifdef Pack_32
-	b = Balloc(1);
-#else
 	b = Balloc(2);
-#endif
 	x = b->x;
 
 	z = d0 & Frac_mask;
@@ -4662,27 +4591,6 @@ static Bigint *d2b(double d, int *e, int *bits)
 	if ((de = (int) (d0 >> Exp_shift)) != 0)
 		z |= Exp_msk1;
 #endif
-#ifdef Pack_32
-	if ((y = d1) != 0) {
-		if ((k = lo0bits(&y)) != 0) {
-			x[0] = y | z << (32 - k);
-			z >>= k;
-		}
-		else
-			x[0] = y;
-		i = b->wds = (x[1] = z) ? 2 : 1;
-	}
-	else {
-#ifdef DEBUG
-		if (!z)
-			Bug("Zero passed to d2b");
-#endif
-		k = lo0bits(&z);
-		x[0] = z;
-		i = b->wds = 1;
-		k += 32;
-	}
-#else
 	if (y = d1) {
 		if (k = lo0bits(&y))
 			if (k >= 16) {
@@ -4726,7 +4634,6 @@ static Bigint *d2b(double d, int *e, int *bits)
 	while (!x[i])
 		--i;
 	b->wds = i + 1;
-#endif
 #ifndef Sudden_Underflow
 	if (de) {
 #endif
@@ -4741,11 +4648,7 @@ static Bigint *d2b(double d, int *e, int *bits)
 	}
 	else {
 		*e = de - Bias - (P - 1) + 1 + k;
-#ifdef Pack_32
-		*bits = 32 * i - hi0bits(x[i - 1]);
-#else
 		*bits = (i + 2) * 16 - hi0bits(x[i]);
-#endif
 	}
 #endif
 	return b;
@@ -4791,26 +4694,15 @@ static Bigint *multadd(Bigint * b, int m, int a)
 {
 	int i, wds;
 	ULONG *x, y;
-#ifdef Pack_32
-	ULONG xi, z;
-#endif
 	Bigint *b1;
 
 	wds = b->wds;
 	x = b->x;
 	i = 0;
 	do {
-#ifdef Pack_32
-		xi = *x;
-		y = (xi & 0xffff) * m + a;
-		z = (xi >> 16) * m + (y >> 16);
-		a = (int) (z >> 16);
-		*x++ = (z << 16) + (y & 0xffff);
-#else
 		y = *x * m + a;
 		a = (int) (y >> 16);
 		*x++ = y & 0xffff;
-#endif
 	}
 	while (++i < wds);
 	if (a) {
@@ -4914,9 +4806,6 @@ static Bigint *mult(Bigint * a, Bigint * b)
 	int k, wa, wb, wc;
 	ULONG carry, y, z;
 	ULONG *x, *xa, *xae, *xb, *xbe, *xc, *xc0;
-#ifdef Pack_32
-	ULONG z2;
-#endif
 
 	if (a->wds < b->wds) {
 		c = a;
@@ -4937,39 +4826,6 @@ static Bigint *mult(Bigint * a, Bigint * b)
 	xb = b->x;
 	xbe = xb + wb;
 	xc0 = c->x;
-#ifdef Pack_32
-	for (; xb < xbe; xb++, xc0++) {
-		if ((y = *xb & 0xffff) != 0) {
-			x = xa;
-			xc = xc0;
-			carry = 0;
-			do {
-				z = (*x & 0xffff) * y + (*xc & 0xffff) + carry;
-				carry = z >> 16;
-				z2 = (*x++ >> 16) * y + (*xc >> 16) + carry;
-				carry = z2 >> 16;
-				Storeinc(xc, z2, z);
-			}
-			while (x < xae);
-			*xc = carry;
-		}
-		if ((y = *xb >> 16) != 0) {
-			x = xa;
-			xc = xc0;
-			carry = 0;
-			z2 = *xc;
-			do {
-				z = (*x & 0xffff) * y + (*xc >> 16) + carry;
-				carry = z >> 16;
-				Storeinc(xc, z, z2);
-				z2 = (*x++ >> 16) * y + (*xc & 0xffff) + carry;
-				carry = z2 >> 16;
-			}
-			while (x < xae);
-			*xc = z2;
-		}
-	}
-#else
 	for (; xb < xbe; xc0++) {
 		if (y = *xb++) {
 			x = xa;
@@ -4984,7 +4840,6 @@ static Bigint *mult(Bigint * a, Bigint * b)
 			*xc = carry;
 		}
 	}
-#endif
 	for (xc0 = c->x, xc = xc0 + wc; wc > 0 && !*--xc; --wc);
 	c->wds = wc;
 	return c;
@@ -4996,10 +4851,6 @@ static int quorem(Bigint * b, Bigint * S)
 	SLONG borrow, y;
 	ULONG carry, q, ys;
 	ULONG *bx, *bxe, *sx, *sxe;
-#ifdef Pack_32
-	SLONG z;
-	ULONG si, zs;
-#endif
 
 	n = S->wds;
 #ifdef DEBUG
@@ -5023,26 +4874,12 @@ static int quorem(Bigint * b, Bigint * S)
 		borrow = 0;
 		carry = 0;
 		do {
-#ifdef Pack_32
-			si = *sx++;
-			ys = (si & 0xffff) * q + carry;
-			zs = (si >> 16) * q + (ys >> 16);
-			carry = zs >> 16;
-			y = (*bx & 0xffff) - (ys & 0xffff) + borrow;
-			borrow = y >> 16;
-			Sign_Extend(borrow, y);
-			z = (*bx >> 16) - (zs & 0xffff) + borrow;
-			borrow = z >> 16;
-			Sign_Extend(borrow, z);
-			Storeinc(bx, z, y);
-#else
 			ys = *sx++ * q + carry;
 			carry = ys >> 16;
 			y = *bx - (ys & 0xffff) + borrow;
 			borrow = y >> 16;
 			Sign_Extend(borrow, y);
 			*bx++ = y & 0xffff;
-#endif
 		}
 		while (sx <= sxe);
 		if (!*bxe) {
@@ -5059,26 +4896,12 @@ static int quorem(Bigint * b, Bigint * S)
 		bx = b->x;
 		sx = S->x;
 		do {
-#ifdef Pack_32
-			si = *sx++;
-			ys = (si & 0xffff) + carry;
-			zs = (si >> 16) + (ys >> 16);
-			carry = zs >> 16;
-			y = (*bx & 0xffff) - (ys & 0xffff) + borrow;
-			borrow = y >> 16;
-			Sign_Extend(borrow, y);
-			z = (*bx >> 16) - (zs & 0xffff) + borrow;
-			borrow = z >> 16;
-			Sign_Extend(borrow, z);
-			Storeinc(bx, z, y);
-#else
 			ys = *sx++ + carry;
 			carry = ys >> 16;
 			y = *bx - (ys & 0xffff) + borrow;
 			borrow = y >> 16;
 			Sign_Extend(borrow, y);
 			*bx++ = y & 0xffff;
-#endif
 		}
 		while (sx <= sxe);
 		bx = b->x;
@@ -5404,7 +5227,6 @@ char *ib__dtoa
 				goto no_digits;
 			goto fast_failed;
 		}
-#ifndef No_leftright
 		if (leftright) {
 			/* Use Steele & White method of only
 			 * generating digits needed.
@@ -5425,7 +5247,6 @@ char *ib__dtoa
 			}
 		}
 		else {
-#endif
 			/* Generate ilim digits, then fix them up. */
 			eps *= tens[ilim - 1];
 			for (i = 1;; i++, d *= 10.) {
@@ -5443,9 +5264,7 @@ char *ib__dtoa
 					break;
 				}
 			}
-#ifndef No_leftright
 		}
-#endif
 	  fast_failed:
 		s = s0;
 		d = d2;
@@ -5467,13 +5286,6 @@ char *ib__dtoa
 		for (i = 1;; i++) {
 			L = d / ds;
 			d -= L * ds;
-#ifdef Check_FLT_ROUNDS
-			/* If FLT_ROUNDS == 2, L will usually be high by 1 */
-			if (d < 0) {
-				L--;
-				d += ds;
-			}
-#endif
 			*s++ = '0' + (int) L;
 			if (i == ilim) {
 				d += d;
@@ -5576,13 +5388,8 @@ char *ib__dtoa
 	 * and for all and pass them and a shift to quorem, so it
 	 * can do shifts and ors to compute the numerator for q.
 	 */
-#ifdef Pack_32
-	if ((i = ((s5 ? 32 - hi0bits(S->x[S->wds - 1]) : 1) + s2) & 0x1f) != 0)
-		i = 32 - i;
-#else
 	if (i = ((s5 ? 32 - hi0bits(S->x[S->wds - 1]) : 1) + s2) & 0xf)
 		i = 16 - i;
-#endif
 	if (i > 4) {
 		i -= 4;
 		b2 += i;
