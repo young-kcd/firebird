@@ -28,6 +28,20 @@
 
 extern "C" {
 
+/* AST actions taken by SCH_ast() */
+
+enum ast_t
+{
+	AST_alloc,
+	AST_init,
+	AST_fini,
+	AST_check,
+	AST_disable,
+	AST_enable,
+	AST_enter,
+	AST_exit
+};
+
 int		API_ROUTINE gds__thread_enable(int);
 void	API_ROUTINE gds__thread_enter(void);
 void	API_ROUTINE gds__thread_exit(void);

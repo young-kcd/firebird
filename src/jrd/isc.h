@@ -267,20 +267,6 @@ struct ipccfg
 
 typedef ipccfg *IPCCFG;
 
-/* AST actions taken by SCH_ast() */
-
-enum ast_t
-{
-	AST_alloc,
-	AST_init,
-	AST_fini,
-	AST_check,
-	AST_disable,
-	AST_enable,
-	AST_enter,
-	AST_exit
-};
-
 /* AST thread scheduling macros */
 
 #ifdef AST_THREAD
