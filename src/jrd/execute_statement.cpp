@@ -100,6 +100,8 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	fb_assert(tdbb->tdbb_transaction->tra_pool);
 	Firebird::string SqlText;
 	getString(SqlText, EVL_expr(tdbb, sql), tdbb->tdbb_request);
+	memcpy(StartOfSqlOperator, SqlText.c_str(), sizeof(StartOfSqlOperator) - 1);
+	StartOfSqlOperator[sizeof(StartOfSqlOperator) - 1] = 0;
 
 	WHY_DBB temp_dbb = GetWhyAttachment(tdbb->tdbb_status_vector,
 								  tdbb->tdbb_attachment);
@@ -167,7 +169,7 @@ err_handler:
 	tdbb->tdbb_transaction->tra_callback_count--;
 	if (status[0] == 1 && status[1]) {
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
-		Firebird::status_exception::raise(status);
+		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 	}
 }
 
@@ -198,7 +200,7 @@ bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** JrdVar)
 	tdbb->tdbb_transaction->tra_callback_count--;
 	if (status[0] == 1 && status[1]) {
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
-		Firebird::status_exception::raise(status);
+		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 	}
 
 	XSQLVAR *var=Sqlda->sqlvar;
@@ -216,7 +218,7 @@ rec_err:
 			tdbb->tdbb_status_vector[5] = 
 				(ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
 			tdbb->tdbb_status_vector[6] = isc_arg_end;
-			Firebird::status_exception::raise(status);
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
 		if (DscType2SqlType[d->dsc_dtype].SqlType < 0)
@@ -251,12 +253,6 @@ rec_err:
 			case dtype_int64:
 				ReScaleLike(ISC_INT64);
 				break;
-			case dtype_real:
-				ReScaleLike(float);
-				break;
-			case dtype_double:
-				ReScaleLike(double);
-				break;
 			}
 #			undef ReScaleLike
 		}
@@ -282,7 +278,7 @@ rec_err:
 			status[2] = isc_arg_end;
 		}
 		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
-		Firebird::status_exception::raise(status);
+		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 	}
     return true;
 }

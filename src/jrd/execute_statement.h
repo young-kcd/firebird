@@ -43,8 +43,9 @@ private:
 	XSQLDA	* Sqlda;
 	SCHAR	* Buffer;
 	bool	SingleMode;
-	TEXT	* StartOfSqlOperator;
-	XSQLDA	* MakeSqlda(Jrd::thread_db* tdbb, SSHORT n);
+	TEXT	StartOfSqlOperator[32];
+private:
+	XSQLDA*	MakeSqlda(Jrd::thread_db* tdbb, SSHORT n);
 	ISC_STATUS	ReMakeSqlda(ISC_STATUS *vector, Jrd::thread_db* tdbb);
 	ULONG	ParseSqlda(void);
 public:
