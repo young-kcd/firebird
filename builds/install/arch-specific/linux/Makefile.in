@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.3 2004-01-29 06:32:01 skidder Exp $
+#  $Id: Makefile.in,v 1.4 2004-04-06 02:45:54 skidder Exp $
 #
 ROOT=..
 
@@ -129,6 +129,13 @@ $(DebugFile) :  buildImageDir
 # install and is available in binary form for Mandrake 9.1 and newer.
 #
 #     28-Dec-2003. Nickolay Samofatov
+#
+# Do not use eu-strip any longer because version 0.89/AMD64 shipped with 
+# Mandrake 9.2 produces broken debuginfo packages and there is no easy way to 
+# detect the breakage. Binutils seem to be more reliable alternative to me.
+#
+#     05-Apr-2004. Nickolay Samofatov
+#
 
 buildRoot:
 	(cd $(GEN_ROOT); ./install/makeInstallImage.sh)
@@ -141,15 +148,11 @@ buildDebugInfo: buildRoot
         if [ ! -h $$FIL ] && readelf -h $$FIL > /dev/null 2> /dev/null; then \
             mkdir -p $(GEN_ROOT)/$(DebugDir)/`dirname $$x`/.debug; \
             echo Generating external debug info for $$x; \
-            if eu-strip -g -f $${D_FIL} $${FIL} > /dev/null 2> /dev/null; then \
-               echo Succeeded using eu-strip from elfutils; \
+            cp $${FIL} $${D_FIL}; \
+            if objcopy --add-gnu-debuglink $${D_FIL} $${FIL}; > /dev/null 2> /dev/null; then \
+                echo Succeeded using objcopy from binutils; \
             else \
-                cp $${FIL} $${D_FIL}; \
-                if objcopy --add-gnu-debuglink $${D_FIL} $${FIL}; > /dev/null 2> /dev/null; then \
-                    echo Succeeded using objcopy from binutils; \
-                else \
-                    echo Failed to set debug link for $${x}; \
-                fi; \
+                echo Failed to set debug link for $${x}; \
             fi; \
             echo Stripping unneeded symbols from $${x}; \
             objcopy --strip-debug --strip-unneeded $${FIL}; \
