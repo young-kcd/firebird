@@ -1,3 +1,27 @@
+2004-06-29 06:37  robocop
+
+	* firebird2/src/: burp/burp.cpp (1.81), burp/restore.epp (1.79),
+	common/classes/alloc.cpp (1.54), common/classes/alloc.h (1.43),
+	isql/isql.epp (1.89), isql/show.epp (1.52), jrd/acl.h (1.4),
+	jrd/cmp.cpp (1.134), jrd/cmp_proto.h (1.26), jrd/dfw.epp (1.117),
+	jrd/evl.cpp (1.94), jrd/exe.h (1.57), jrd/grant.epp (1.44),
+	jrd/ibase.h (1.83), jrd/ini.h (1.19), jrd/obj.h (1.5), jrd/scl.epp
+	(1.59), jrd/scl.h (1.11), jrd/scl_proto.h (1.19), jrd/vio.cpp
+	(1.106), jrd/os/vms/rdb.cpp (1.15), jrd/os/vms/rdbint.cpp (1.14),
+	misc/codes.epp (1.17), remote/inet_server.cpp (1.43),
+	remote/os/win32/srvr_w32.cpp (1.22), utilities/nbackup.cpp (1.28):
+	
+	1.- const correctness 2.- style 3.- Try to fix the mess caused by
+	different data types used to represent bifields of SCL_ constants
+	defined in scl.h, first round. No circular dependencies found
+	through MSVC. Still pending dyn* and grant.epp files.
+
+2004-06-29 06:33  robocop
+
+	* firebird2/src/jrd/relations.h (1.7):
+	
+	Add RDB$DESCRIPTION and RDB$SYSTEM_FLAG to RDB$ROLES
+
 2004-06-27 21:06  dimitr
 
 	* firebird2/src/jrd/cmp.cpp (1.133):
