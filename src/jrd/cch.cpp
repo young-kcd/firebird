@@ -80,7 +80,7 @@ using namespace Ods;
 
 #ifdef SUPERSERVER
 #define	CACHE_WRITER
-#define PAGE_LATCHING	1
+#define PAGE_LATCHING
 #endif
 
 #ifdef SUPERSERVER_V2

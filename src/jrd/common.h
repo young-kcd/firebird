@@ -49,7 +49,7 @@
  *
  */
 /*
-$Id: common.h,v 1.111 2004-04-28 22:36:30 brodsom Exp $
+$Id: common.h,v 1.112 2004-05-04 19:16:43 brodsom Exp $
 */
 
 #ifndef JRD_COMMON_H
@@ -84,7 +84,7 @@ $Id: common.h,v 1.111 2004-04-28 22:36:30 brodsom Exp $
 #endif
 
 #ifdef SUPERSERVER
-#define GOVERNOR 1
+#define GOVERNOR
 #define CANCEL_OPERATION
 #define FB_ARCHITECTURE isc_info_db_class_server_access
 #else
@@ -118,15 +118,15 @@ $Id: common.h,v 1.111 2004-04-28 22:36:30 brodsom Exp $
 #define KILLER_SIGNALS
 
 #define VA_START(list,parmN)    va_start (list, parmN)
-#define UNIX    1
-#define IEEE    1
+#define UNIX
+#define IEEE
 
 #ifdef AMD64
 #define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66  next higher unique number, See you later  */
 #endif
 
 #ifdef i386
-#define I386    1
+#define I386
 #define IMPLEMENTATION  isc_info_db_impl_i386 /* 60  next higher unique number, See you later  */
 #endif /* i386 */
 
@@ -227,11 +227,11 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #define KILLER_SIGNALS
 
 #define VA_START(list,parmN)    va_start (list, parmN)
-#define UNIX    1
-#define IEEE    1
+#define UNIX
+#define IEEE
 
 #ifdef i386
-#define I386    1
+#define I386
 /* Change version string into SINIXZ */
 #define IMPLEMENTATION  isc_info_db_impl_sinixz  /* 64 */
 #endif /* i386 */
@@ -272,8 +272,8 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 /*#define ALIGNMENT       4*/
 /*#define DOUBLE_ALIGN    4*/
-#define BSD_UNIX        1
-#define UNIX            1
+#define BSD_UNIX
+#define UNIX
 #define IMPLEMENTATION  63
 #define IEEE
 #define QUADCONST(n) (n##LL)
@@ -303,9 +303,9 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 /*#define ALIGNMENT     4*/
 /*#define DOUBLE_ALIGN  4*/
 
-#define UNIX  1
-#define IEEE  1
-#define I386  1
+#define UNIX
+#define IEEE
+#define I386
 #define IMPLEMENTATION    isc_info_db_impl_freebsd   /* 61 */
 
 #define QUADFORMAT "ll"
@@ -329,8 +329,8 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 /*#define ALIGNMENT     4*/
 /*#define DOUBLE_ALIGN  4*/
 
-#define IEEE  1
-#define I386  1
+#define IEEE
+#define I386
 #define IMPLEMENTATION        isc_info_db_impl_netbsd /* 62 */
 
 #define QUADFORMAT "ll"
@@ -339,7 +339,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #error Please add support for other ports
 #endif
 
-#define UNIX  1
+#define UNIX
 
 #define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
@@ -370,7 +370,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
  * which customers can use to avoid the problems with signals & threads
  * in Solaris
  */
-#define SOLARIS_MT	1
+#define SOLARIS_MT
 
 /*  Define the following only on platforms whose standard I/O
  *  implementation is so weak that we wouldn't be able to fopen
@@ -426,12 +426,12 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 #else /* SOLARIS */
 
-#define BSD_UNIX        1
+#define BSD_UNIX
 
 #endif /* SOLARIS */
 
-#define UNIX            1
-#define                 IEEE
+#define UNIX
+#define IEEE
 
 #ifdef sparc
 /*#define ALIGNMENT       4*/
@@ -440,7 +440,7 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #else /* sparc */
 
 #ifdef i386
-#define I386            1
+#define I386
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun_386i  /* 32 */
 #else /* i386 */
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun_68k /* 28 */
@@ -466,14 +466,14 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #endif
 
 #define KILLER_SIGNALS
-#define UNIX            1
-#define CURSES_KEYPAD   1
+#define UNIX
+#define CURSES_KEYPAD
 
 /*#define ALIGNMENT       8*/
 /*#define DOUBLE_ALIGN    8*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_hp_ux /* 31 */
 
-#define                 IEEE
+#define IEEE
 #pragma OPT_LEVEL 1
 // 16-Apr-2002 HP10 in unistd.h Paul Beach
 //#define setreuid(ruid,euid)     setresuid (ruid, euid, -1)
@@ -499,10 +499,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 * DEC VAX/VMS and AlphaVMS 
 *****************************************************/
 #ifdef VMS
-#define VAX_FLOAT       1
+#define VAX_FLOAT
 /*#define ALIGNMENT       4*/
 #define NO_NFS
-#define NO_CHECKSUM	1
+#define NO_CHECKSUM
 #define ISC_EXT_LIB_PATH_ENV	"interbase_ext_lib_path:"
 #define SYS_ARG		isc_arg_vms
 
@@ -532,11 +532,11 @@ typedef unsigned int64 UATOM;
 #ifndef _POWER					/* IBM RS/6000 */
 #define AIX
 #define KILLER_SIGNALS
-#define UNIX            1
-#define CURSES_KEYPAD   1
+#define UNIX
+#define CURSES_KEYPAD
 /*#define ALIGNMENT       4*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
-#define                 IEEE
+#define IEEE
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
@@ -545,11 +545,11 @@ typedef unsigned int64 UATOM;
 #else /* AIX PowerPC */
 #define AIX_PPC
 #define KILLER_SIGNALS
-#define UNIX            1
-#define CURSES_KEYPAD   1
+#define UNIX
+#define CURSES_KEYPAD
 /*#define ALIGNMENT       4*/
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
-#define                 IEEE
+#define IEEE
 #define MEMMOVE(from,to,length)       memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from,to,length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from,to,length)     memcpy (to, from, (int) (length))
@@ -614,7 +614,7 @@ typedef unsigned __int64 UINT64;
 #define IMPLEMENTATION  isc_info_db_impl_isc_winnt_x86 /* 50 */
 #endif
 
-#define                 IEEE
+#define IEEE
 #define VA_START(list,parmN)    va_start (list, parmN)
 #define API_ROUTINE     __stdcall
 #define API_ROUTINE_VARARG      __cdecl
@@ -622,7 +622,7 @@ typedef unsigned __int64 UINT64;
 #define THREAD_ROUTINE  __stdcall
 #define INTERNAL_API_ROUTINE	API_ROUTINE
 
-#define SYNC_WRITE_DEFAULT      1
+#define SYNC_WRITE_DEFAULT
 
 #ifndef MAXPATHLEN
 #ifdef MAX_PATH
@@ -650,10 +650,10 @@ typedef unsigned __int64 UINT64;
 
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
-#define I386            1
-#define UNIX            1
-#define SCO_UNIX        1
-#define                 IEEE
+#define I386
+#define UNIX
+#define SCO_UNIX
+#define IEEE
 /*
 #define KILLER_SIGNALS
 */
@@ -674,7 +674,7 @@ typedef unsigned __int64 UINT64;
  * UNIX
 *****************************************************/
 #ifdef UNIX
-#define NO_CHECKSUM     1
+#define NO_CHECKSUM
 #define SYS_ARG		isc_arg_unix
 #endif /* UNIX */
 
