@@ -2170,6 +2170,10 @@ REC VIO_record(TDBB tdbb, register RPB * rpb, FMT format, JrdMemoryPool *pool)
 		if (rpb->rpb_prior == old)
 			rpb->rpb_prior = record;
 	}
+	else
+	{
+		record->rec_length = format->fmt_length;
+	}
 
 	record->rec_format = format;
 
