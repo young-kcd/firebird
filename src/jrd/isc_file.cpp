@@ -162,10 +162,6 @@ typedef struct itm {
 #define MTAB			"/etc/fstab"
 #endif
 
-#ifdef DARWIN
-#define MTAB			"/etc/fstab.hd"
-#endif
-
 #ifdef SCO_UNIX
 /* EKU: popen/pclose to access a file??? */
 #define MTAB			"/etc/mount"
