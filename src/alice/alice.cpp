@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.53 2004-03-07 07:58:06 robocop Exp $
+//	$Id: alice.cpp,v 1.54 2004-03-11 05:43:14 skidder Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -475,8 +475,7 @@ int common_main(int			argc,
 			if (--argc <= 0) {
 				ALICE_error(13);	// msg 13: user name required 
 			}
-			tdgbl->ALICE_data.ua_user =
-				const_cast<UCHAR* volatile>(reinterpret_cast<UCHAR*>(*argv++));
+			tdgbl->ALICE_data.ua_user = reinterpret_cast<UCHAR*>(*argv++);
 		}
 
 		if (table->in_sw_value & sw_password) {
@@ -585,8 +584,7 @@ int common_main(int			argc,
 		ret = EXE_action(database, switches);
 
 		// cast away volatile
-		const SLONG* ua_val_errors = 
-			const_cast<SLONG*>(tdgbl->ALICE_data.ua_val_errors);
+		const SLONG* ua_val_errors = tdgbl->ALICE_data.ua_val_errors;
 
 		if (!ua_val_errors[VAL_INVALID_DB_VERSION])
 		{
