@@ -2943,7 +2943,7 @@ static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 
 /* find where new node should fit in tree */
 
-	SSHORT stackp = -1;
+	int stackp = -1;
 	SCHAR comp = 0;
 
 	while (p)
@@ -3002,7 +3002,7 @@ static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 		}
 		else
 		{
-			if (stack[stackp-1].comp > 0)
+			if (stack[stackp - 1].comp > 0)
 			{
 				subtree = btc_insert_balance(&stack[stackp - 1].bdb_node->bdb_right,
 											 subtree, stack[stackp].comp);
@@ -3292,7 +3292,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 	const SLONG page = bdb->bdb_page;
 
 	BufferDesc* p = bcb->bcb_btree;
-	SSHORT stackp_save, stackp = -1;
+	int stackp_save, stackp = -1;
 	SCHAR comp;
 
 	while (true)
@@ -3350,7 +3350,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 
 		if (stackp == -1)
 		{
-			if (bcb->bcb_btree = p)
+			if ( (bcb->bcb_btree = p) )
 			{
 				p->bdb_parent = NULL;
 			}
@@ -3469,14 +3469,14 @@ static void btc_remove_balanced(BufferDesc* bdb)
 		}
 		else
 		{
-			if (stack[stackp-1].comp > 0)
+			if (stack[stackp - 1].comp > 0)
 			{
-				subtree = btc_remove_balance(&stack[stackp-1].bdb_node->bdb_right,
+				subtree = btc_remove_balance(&stack[stackp - 1].bdb_node->bdb_right,
 											 subtree, stack[stackp].comp);
 			}
 			else
 			{
-				subtree = btc_remove_balance(&stack[stackp-1].bdb_node->bdb_left,
+				subtree = btc_remove_balance(&stack[stackp - 1].bdb_node->bdb_left,
 											 subtree, stack[stackp].comp);
 			}
 		}
