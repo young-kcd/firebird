@@ -36,9 +36,7 @@
 
 DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME DB_file_name;
 
-#ifndef FOPEN_WRITE_TYPE
-#define FOPEN_WRITE_TYPE	"w"
-#endif
+static const char* FOPEN_WRITE_TYPE	= "w";
 
 inline bool blob_null(const GDS_QUAD id)
 {
@@ -87,19 +85,6 @@ static SCHAR db_info[] =
 	gds_info_wal_ckpt_length, gds_info_wal_grpc_wait_usecs
 };
 static TEXT acl_privs[] = "?CGDRWP???";
-
-#ifdef NOT_USED_OR_REPLACED
-static TEXT *acl_ids[] = {
-	"?",
-	"group",
-	"user",
-	"person",
-	"project",
-	"organization",
-	"node",
-	"view"
-};
-#endif
 
 static SLONG EXT_capabilities;
 

@@ -52,18 +52,7 @@ static DUDLEY_NOD resolve(DUDLEY_NOD, LLS, LLS);
 static void resolve_rse(DUDLEY_NOD, LLS *);
 
 static SSHORT context_id;
-#ifdef NOT_USED_OR_REPLACED
-static GDS__QUAD null_blob;
-#endif
 static LLS request_context;
-#ifdef NOT_USED_OR_REPLACED
-static jmp_buf exp_env;
-static TEXT alloc_info[] = { gds_info_allocation, gds_info_end };
-#endif
-
-#define CMP_SYMBOL(sym1, sym2) strcmp (sym1->sym_string, sym2->sym_string)
-#define MOVE_SYMBOL(symbol, field) move_symbol (symbol, field, sizeof (field))
-
 
 void EXP_actions(void)
 {
@@ -895,7 +884,7 @@ static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
  *	out of the whole thing;
  *
  **************************************/
-	DUDLEY_NOD sub, *arg, *end;
+	DUDLEY_NOD sub; //, *arg, *end;
 	LLS contexts, temp;
 	DUDLEY_CTX context;
 	SYM name, symbol;
@@ -929,12 +918,12 @@ static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
 		rse->nod_arg[s_rse_boolean] = resolve(sub, *stack, 0);
 
 	if (sub = rse->nod_arg[s_rse_sort])
-		for (arg = sub->nod_arg, end = arg + sub->nod_count; arg < end;
-			 arg += 2) *arg = resolve(*arg, *stack, 0);
+		for (int pos = 0; pos < sub->nod_count; pos += 2)
+			sub->nod_arg[pos] = resolve(sub->nod_arg[pos], *stack, 0);
 
 	if (sub = rse->nod_arg[s_rse_reduced])
-		for (arg = sub->nod_arg, end = arg + sub->nod_count; arg < end;
-			 arg += 2) *arg = resolve(*arg, *stack, 0);
+		for (int pos = 0; pos < sub->nod_count; pos += 2)
+			sub->nod_arg[pos] = resolve(sub->nod_arg[pos], *stack, 0);
 
 	while (temp) {
 		context = (DUDLEY_CTX) LLS_POP(&temp);

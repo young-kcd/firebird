@@ -56,9 +56,7 @@ const TEXT* DDL_prompt;
 static LLS free_stack;
 static TEXT DDL_message[256];
 
-#ifndef FOPEN_INPUT_TYPE
-#define FOPEN_INPUT_TYPE	"r"
-#endif
+static const char* FOPEN_INPUT_TYPE	= "r";
 
 const char* DDL_EXT		= ".gdl";	// normal extension for a ddl file
 const int MAX_ERRORS	= 50;
