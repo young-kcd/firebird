@@ -24,7 +24,7 @@
  *                         readonly databases.
  */
 /*
-$Id: blb.cpp,v 1.5 2001-12-24 02:50:50 tamlin Exp $
+$Id: blb.cpp,v 1.6 2002-01-05 16:28:59 tamlin Exp $
 */
 
 #include "firebird.h"
@@ -1289,13 +1289,14 @@ void BLB_put_segment(TDBB tdbb, BLB blob, UCHAR* seg, USHORT segment_length)
 }
 
 
-void BLB_put_slice(
-				   TDBB tdbb,
-				   TRA transaction,
-				   BID blob_id,
-				   UCHAR * sdl,
-				   USHORT param_length,
-SLONG * param, SLONG slice_length, UCHAR * slice)
+void BLB_put_slice(	TDBB	tdbb,
+					TRA		transaction,
+					BID		blob_id,
+					UCHAR*	sdl,
+					USHORT	param_length,
+					SLONG*	param,
+					SLONG	slice_length,
+					UCHAR*	slice)
 {
 /**************************************
  *
@@ -1307,14 +1308,13 @@ SLONG * param, SLONG slice_length, UCHAR * slice)
  *      Put a slice of an array.
  *
  **************************************/
-	REL relation;
-	FLD field;
-	ARR array_desc, array;
-	BLB blob;
-	SLONG length, variables[64], temp[ADS_LEN(16) / 4];
-	SSHORT n;
-	struct sdl_info info;
-	struct slice arg;
+	REL		relation;
+	ARR		array;
+	SLONG	variables[64];
+	SLONG	temp[ADS_LEN(16) / 4];
+	SSHORT	n;
+	struct	sdl_info info;
+	struct	slice arg;
 
 	SET_TDBB(tdbb);
 	tdbb->tdbb_default = transaction->tra_pool;
@@ -1324,28 +1324,36 @@ SLONG * param, SLONG slice_length, UCHAR * slice)
 	if (SDL_info(tdbb->tdbb_status_vector, sdl, &info, 0))
 		ERR_punt();
 
-	if (info.sdl_info_relation[0])
+	if (info.sdl_info_relation[0]) {
 		relation = MET_lookup_relation(tdbb, info.sdl_info_relation);
-	else
+	} else {
 		relation = MET_relation(tdbb, info.sdl_info_rid);
+	}
 
-	if (!relation)
+	if (!relation) {
 		IBERROR(196);			/* msg 196 relation for array not known */
+	}
 
-	if (info.sdl_info_field[0])
+	if (info.sdl_info_field[0]) {
 		n = MET_lookup_field(tdbb, relation, info.sdl_info_field);
-	else
+	} else {
 		n = info.sdl_info_fid;
+	}
 
 /* Make sure relation is scanned */
 	MET_scan_relation(tdbb, relation);
 
-	if (n < 0 || !(field = MET_get_field(relation, n)))
+	FLD field;
+	if (n < 0 || !(field = MET_get_field(relation, n))) {
 		IBERROR(197);			/* msg 197 field for array not known */
+	}
 
-	if (!(array_desc = field->fld_array))
+	ARR array_desc = field->fld_array;
+	if (!array_desc)
+	{
 		ERR_post(gds_invalid_dimension, gds_arg_number, (SLONG) 0,
 				 gds_arg_number, (SLONG) 1, 0);
+	}
 
 /* Find and/or allocate array block.  There are three distinct cases:
 
@@ -1354,28 +1362,39 @@ SLONG * param, SLONG slice_length, UCHAR * slice)
 	3.  Array exists and is being updated.
 */
 
-	if (blob_id->bid_relation_id) {
+	if (blob_id->bid_relation_id)
+	{
 		for (array = transaction->tra_arrays; array; array = array->arr_next)
+		{
 			if (array->arr_blob &&
 				array->arr_blob->blb_blob_id.bid_relation_id ==
 				blob_id->bid_relation_id &&
 				array->arr_blob->blb_blob_id.bid_stuff.bid_number ==
-				blob_id->bid_stuff.bid_number) break;
+				blob_id->bid_stuff.bid_number)
+			{
+				break;
+			}
+		}
 		if (array)
+		{
 			arg.slice_high_water =
-				(BLOB_PTR *) array->arr_data + array->arr_effective_length;
-		else {
-			blob =
-				BLB_get_array(tdbb, transaction, blob_id,
-							  reinterpret_cast < ads * >(temp));
+				(BLOB_PTR*) array->arr_data + array->arr_effective_length;
+		}
+		else
+		{
+			BLB blob =
+				BLB_get_array(	tdbb,
+								transaction,
+								blob_id,
+								reinterpret_cast<ads*>(temp));
 			array =
-				alloc_array(transaction, reinterpret_cast < ads * >(temp));
+				alloc_array(transaction, reinterpret_cast<ads*>(temp));
 			array->arr_effective_length =
 				blob->blb_length - array->arr_desc.ads_length;
 			BLB_get_data(tdbb, blob, array->arr_data,
 						 array->arr_desc.ads_total_length);
 			arg.slice_high_water =
-				(BLOB_PTR *) array->arr_data + array->arr_effective_length;
+				(BLOB_PTR*) array->arr_data + array->arr_effective_length;
 			array->arr_blob = allocate_blob(tdbb, transaction);
 			(array->arr_blob)->blb_blob_id = *blob_id;
 		}
@@ -1386,8 +1405,10 @@ SLONG * param, SLONG slice_length, UCHAR * slice)
 	else if (*((BLB *) blob_id))
 #endif
 	{
-		if (!(array = find_array(transaction, blob_id)))
+		array = find_array(transaction, blob_id);
+		if (!array) {
 			ERR_post(isc_invalid_array_id, 0);
+		}
 
 		arg.slice_high_water =
 			(BLOB_PTR *) array->arr_data + array->arr_effective_length;
@@ -1414,18 +1435,22 @@ SLONG * param, SLONG slice_length, UCHAR * slice)
 				 array->arr_data,
 				 &array_desc->arr_desc,
 				 variables,
-				 reinterpret_cast < void (*)() > (slice_callback),
-				 &arg)) ERR_punt();
+				 reinterpret_cast<void (*)()>(slice_callback),
+				 &arg))
+	{
+		ERR_punt();
+	}
 
-	length = (BLOB_PTR *) arg.slice_high_water - (BLOB_PTR *) array->arr_data;
+	SLONG length = (BLOB_PTR*)arg.slice_high_water - (BLOB_PTR*)array->arr_data;
 
-	if (length > array->arr_effective_length)
+	if (length > array->arr_effective_length) {
 		array->arr_effective_length = length;
+	}
 
 #ifndef DECOSF
 	blob_id->bid_stuff.bid_blob = (BLB) array;
 #else
-	*((BLB *) blob_id) = (BLB) array;
+	*((BLB*) blob_id) = (BLB) array;
 #endif
 	blob_id->bid_relation_id = 0;
 }
@@ -1443,27 +1468,33 @@ void BLB_release_array(ARR array)
  *      Release an array block and friends and relations.
  *
  **************************************/
-	TRA transaction;
-	ARR *ptr;
 
-	if (array->arr_data)
+	if (array->arr_data) {
 		MemoryPool::deallocate(array->arr_data);
+	}
 
-	if ( (transaction = array->arr_transaction) )
-		for (ptr = &transaction->tra_arrays; *ptr; ptr = &(*ptr)->arr_next)
+	TRA transaction  = array->arr_transaction;
+	if (transaction)
+	{
+		ARR* ptr;
+		for (ptr = &transaction->tra_arrays; *ptr; ptr = &(*ptr)->arr_next) {
 			if (*ptr == array) {
 				*ptr = array->arr_next;
 				break;
 			}
+		}
+	}
 
 	delete array;
 }
 
 
-void BLB_scalar(
-				TDBB tdbb,
-				TRA transaction,
-				BID blob_id, USHORT count, SLONG * subscripts, VLU value)
+void BLB_scalar(TDBB	tdbb,
+				TRA		transaction,
+				BID		blob_id,
+				USHORT	count,
+				SLONG*	subscripts,
+				VLU		value)
 {
 /**************************************
  *
@@ -1474,24 +1505,22 @@ void BLB_scalar(
  * Functional description
  *
  **************************************/
-	BLB blob;
-	ADS array_desc;
-	DSC desc;
-	SLONG number, offset, stuff[ADS_LEN(16) / 4];
+
+	SLONG stuff[ADS_LEN(16) / 4];
 	double temp[64];
 	STR temp_str;
 
 	SET_TDBB(tdbb);
 
-	array_desc = (ADS) stuff;
-	blob = BLB_get_array(tdbb, transaction, blob_id, array_desc);
+	ADS array_desc = (ADS) stuff;
+	BLB blob = BLB_get_array(tdbb, transaction, blob_id, array_desc);
 
 /* Get someplace to put data.  If the local buffer isn't large enough,
    allocate one that is. */
 
-	desc = array_desc->ads_rpt[0].ads_desc;
+	DSC desc = array_desc->ads_rpt[0].ads_desc;
 	if (desc.dsc_length <= sizeof(temp)) {
-		desc.dsc_address = (UCHAR *) temp;
+		desc.dsc_address = (UCHAR*) temp;
 	} else {
 		temp_str =
 			new(*tdbb->tdbb_default, desc.dsc_length + DOUBLE_ALIGN - 1) str;
@@ -1499,30 +1528,33 @@ void BLB_scalar(
 			(UCHAR *) FB_ALIGN((U_IPTR) temp_str->str_data, DOUBLE_ALIGN);
 	}
 
-	number =
+	SLONG number =
 		SDL_compute_subscript(tdbb->tdbb_status_vector, array_desc, count,
 							  subscripts);
 
 	if (number < 0) {
 		BLB_close(tdbb, blob);
-		if (desc.dsc_address != (UCHAR *) temp)
+		if (desc.dsc_address != (UCHAR *) temp) {
 			delete temp_str;
+		}
 		ERR_punt();
 	}
 
-	offset = number * array_desc->ads_element_length;
+	SLONG offset = number * array_desc->ads_element_length;
 	BLB_lseek(blob, 0, offset + (SLONG) array_desc->ads_length);
 	BLB_get_segment(tdbb, blob, reinterpret_cast < UCHAR * >(temp),
 					desc.dsc_length);
 
 /* If we have run out of data, then clear the data buffer. */
 
-	if (blob->blb_flags & BLB_eof)
+	if (blob->blb_flags & BLB_eof) {
 		memset(desc.dsc_address, 0, (int) desc.dsc_length);
+	}
 	EVL_make_value(tdbb, &desc, value);
 	BLB_close(tdbb, blob);
-	if (desc.dsc_address != (UCHAR *) temp)
+	if (desc.dsc_address != (UCHAR *) temp) {
 		delete temp_str;
+	}
 }
 
 
@@ -1538,31 +1570,28 @@ static ARR alloc_array(TRA transaction, ADS proto_desc)
  *      Allocate an array block based on a prototype array descriptor.
  *
  **************************************/
-	ARR array;
-	USHORT n;
- 	DBB dbb;
 
-	dbb = GET_DBB;
+	DBB dbb = GET_DBB;
 
-/* Compute size and allocate block */
+	// Compute size and allocate block
 
-	n = MAX(proto_desc->ads_struct_count, proto_desc->ads_dimensions);
-	array = new(*transaction->tra_pool, n) arr();
+	USHORT n = MAX(proto_desc->ads_struct_count, proto_desc->ads_dimensions);
+	ARR array = new(*transaction->tra_pool, n) arr();
 
-/* Copy prototype descriptor */
+	// Copy prototype descriptor
 
 	MOVE_FAST(proto_desc, &array->arr_desc, proto_desc->ads_length);
 
-/* Link into transaction block */
+	// Link into transaction block
 
 	array->arr_next = transaction->tra_arrays;
 	transaction->tra_arrays = array;
 	array->arr_transaction = transaction;
 
-/* Allocate large block to hold array */
+	// Allocate large block to hold array
 
 	array->arr_data =
-		(UCHAR*) dbb->dbb_permanent->allocate(array->arr_desc.ads_total_length);
+		(UCHAR*)dbb->dbb_permanent->allocate(array->arr_desc.ads_total_length);
 
 	return array;
 }
@@ -1580,15 +1609,13 @@ static BLB allocate_blob(TDBB tdbb, TRA transaction)
  *      Create a shiney, new, empty blob.
  *
  **************************************/
-	DBB dbb;
-	BLB blob;
 
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
 
 /* Create a blob large enough to hold a single data page */
 
-	blob = new(*transaction->tra_pool, dbb->dbb_page_size) blb();
+	BLB blob = new(*transaction->tra_pool, dbb->dbb_page_size) blb();
 	blob->blb_attachment = tdbb->tdbb_attachment;
 	blob->blb_next = transaction->tra_blobs;
 	transaction->tra_blobs = blob;
@@ -1597,8 +1624,10 @@ static BLB allocate_blob(TDBB tdbb, TRA transaction)
 /* Compute some parameters governing various maximum sizes based on
    database page size. */
 
-	blob->blb_clump_size = dbb->dbb_page_size - sizeof(struct dpg) -
-		sizeof(dpg::dpg_repeat) - sizeof(struct blh);
+	blob->blb_clump_size = dbb->dbb_page_size -
+							sizeof(struct dpg) -
+							sizeof(dpg::dpg_repeat) -
+							sizeof(struct blh);
 	blob->blb_max_pages = blob->blb_clump_size >> SHIFTLONG;
 	blob->blb_pointers = (dbb->dbb_page_size - BLP_SIZE) >> SHIFTLONG;
 
@@ -1606,9 +1635,10 @@ static BLB allocate_blob(TDBB tdbb, TRA transaction)
 }
 
 
-static STATUS blob_filter(
-						  USHORT action,
-						  CTL control, SSHORT mode, SLONG offset)
+static STATUS blob_filter(	USHORT	action,
+							CTL		control,
+							SSHORT	mode,
+							SLONG	offset)
 {
 /**************************************
  *
@@ -1621,28 +1651,29 @@ static STATUS blob_filter(
  *
  **************************************/
 	BLB blob;
-	TRA transaction;
-	SLONG *blob_id;
-	TDBB tdbb;
 
 /* Note: Cannot remove this GET_THREAD_DATA without API change to
    blob filter routines */
 
-	tdbb = GET_THREAD_DATA;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	transaction = (TRA) control->ctl_internal[1];
-	blob_id = (SLONG *) control->ctl_internal[2];
+	TRA transaction = (TRA) control->ctl_internal[1];
+	SLONG* blob_id = (SLONG *) control->ctl_internal[2];
 
 #ifdef DEV_BUILD
-	if (transaction)
+	if (transaction) {
 		BLKCHK(transaction, type_tra);
+	}
 #endif
 
 	switch (action) {
 	case ACTION_open:
 		blob =
-			BLB_open2(tdbb, transaction, reinterpret_cast < bid * >(blob_id),
-					  0, 0);
+			BLB_open2(	tdbb,
+						transaction,
+						reinterpret_cast<bid*>(blob_id),
+						0,
+						0);
 		control->ctl_source_handle = (CTL) blob;
 		control->ctl_total_length = blob->blb_length;
 		control->ctl_max_segment = blob->blb_max_segment;
@@ -1654,16 +1685,18 @@ static STATUS blob_filter(
 		control->ctl_segment_length =
 			BLB_get_segment(tdbb, blob, control->ctl_buffer,
 							control->ctl_buffer_length);
-		if (blob->blb_flags & BLB_eof)
+		if (blob->blb_flags & BLB_eof) {
 			return gds_segstr_eof;
-		if (blob->blb_fragment_size)
+		}
+		if (blob->blb_fragment_size) {
 			return gds_segment;
+		}
 		return SUCCESS;
 
 	case ACTION_create:
 		control->ctl_source_handle =
 			(CTL) BLB_create2(tdbb, transaction,
-							  reinterpret_cast < bid * >(blob_id), 0,
+							  reinterpret_cast<bid*>(blob_id), 0,
 							  (UCHAR *) 0);
 		return SUCCESS;
 
@@ -1675,7 +1708,7 @@ static STATUS blob_filter(
 
 	case ACTION_close:
 		BLB_close(tdbb,
-				  reinterpret_cast < blb * >(control->ctl_source_handle));
+				  reinterpret_cast<blb*>(control->ctl_source_handle));
 		return SUCCESS;
 
 	case ACTION_alloc:
@@ -1730,8 +1763,9 @@ static void check_BID_validity(BLB blob, TDBB tdbb)
 		MemoryPool::blk_type(blob) != type_blb ||
 		blob->blb_attachment != tdbb->tdbb_attachment ||
 		blob->blb_level > 2 || !(blob->blb_flags & BLB_temporary))
-
+	{
 		ERR_post(gds_bad_segstr_id, 0);
+	}
 }
 
 
@@ -1747,29 +1781,27 @@ static BLB copy_blob(TDBB tdbb, BID source, REL relation, BID destination)
  *      Make a copy of an existing blob.
  *
  **************************************/
+
 #ifndef STACK_REDUCTION
-	UCHAR buffer[2000], *buff;
-#else
-	UCHAR *buffer, *buff;
+	UCHAR buffer[2000];
 #endif
+	UCHAR* buff;
 	STR string;
-	BLB input, output;
-	REQ request;
-	USHORT length;
 
 #ifdef STACK_REDUCTION
-	buffer = (UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * BUFFER_XLARGE));
+	UCHAR* buffer = (UCHAR*) gds__alloc((SLONG) (sizeof(UCHAR) * BUFFER_XLARGE));
 #endif
 
 	SET_TDBB(tdbb);
 
-	request = tdbb->tdbb_request;
-	input = BLB_open(tdbb, request->req_transaction, source);
-	output = BLB_create(tdbb, request->req_transaction, destination);
+	REQ request = tdbb->tdbb_request;
+	BLB input = BLB_open(tdbb, request->req_transaction, source);
+	BLB output = BLB_create(tdbb, request->req_transaction, destination);
 	output->blb_sub_type = input->blb_sub_type;
 
-	if (input->blb_flags & BLB_stream)
+	if (input->blb_flags & BLB_stream) {
 		output->blb_flags |= BLB_stream;
+	}
 
 #ifdef STACK_REDUCTION
 	if (input->blb_max_segment > BUFFER_XLARGE)
@@ -1787,14 +1819,14 @@ static BLB copy_blob(TDBB tdbb, BID source, REL relation, BID destination)
 	}
 
 	while (TRUE) {
-		length = BLB_get_segment(tdbb, input, buff, input->blb_max_segment);
-		if (input->blb_flags & BLB_eof)
+		USHORT length = BLB_get_segment(tdbb, input, buff, input->blb_max_segment);
+		if (input->blb_flags & BLB_eof) {
 			break;
+		}
 		BLB_put_segment(tdbb, output, buff, length);
 	}
 
-	if (string)
-		delete string;
+	delete string;
 
 #ifdef STACK_REDUCTION
 	gds__free((SLONG *) buffer);
