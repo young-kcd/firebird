@@ -1,3 +1,144 @@
+2003-03-05 21:59  brodsom
+
+	* firebird2/builds/posix/Makefile.in.inet_server:
+	
+	Add cntl.cpp
+
+2003-03-05 18:59  brodsom
+
+	* firebird2/builds/posix/Makefile.in.libfbembed:
+	
+	Changes for MINGW build -Use SHRLIB_EXT instead of 'so' -Add
+	WIN_LIBS
+
+2003-03-05 18:56  brodsom
+
+	* firebird2/builds/posix/Makefile.in.inet_server:
+	
+	Changes for MINGW build -Add ipserver objects
+
+2003-03-05 18:16  brodsom
+
+	* firebird2/builds/posix/Makefile.in.libfbclient:
+	
+	Changes for MINGW build -Use SHRLIB_EXT instead of 'so' -Add some
+	needed sources.  -Add WIN_LIBS
+
+2003-03-05 17:24  brodsom
+
+	* firebird2/src/install/arch-specific/mingw/Makefile.in:
+	
+	Changes for the MINGW build -Add a dummy install Makefile to avoid
+	configure problem.
+
+2003-03-05 17:19  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.extlib,
+	Makefile.in.firebird:
+	
+	Changes for MINGW build -Use SHRLIB_EXT instead of 'so'
+
+2003-03-05 17:15  brodsom
+
+	* firebird2/builds/posix/Makefile.in.inet_server:
+	
+	Changes for MINGW build -Use specific server files -Add LIB_GUI
+
+2003-03-05 17:14  brodsom
+
+	* firebird2/builds/posix/Makefile.in.fbutil:
+	
+	Changes for MINGW build -Use SHRLIB_EXT instead of 'so'
+
+2003-03-05 17:13  brodsom
+
+	* firebird2/builds/posix/Makefile.in.embed.util:
+	
+	Changes for MINGW build -Use specific EMBED_UTIL_TARGETS
+
+2003-03-05 17:09  brodsom
+
+	* firebird2/builds/posix/Makefile.in.client.util:
+	
+	Changes for MINGW build -Add new util targets -Use specific
+	CLIENT_UTIL_TARGETS
+
+2003-03-05 17:07  brodsom
+
+	* firebird2/builds/posix/Makefile.in.fbserver:
+	
+	Changes for MINGW build -Add ipserver files -Use specific server
+	files (remote dir) -Add LIB_GUI
+
+2003-03-05 16:57  brodsom
+
+	* firebird2/builds/posix/: Makefile.in.jrd, Makefile.in.gpre,
+	Makefile.in.intl, Makefile.in.embed.gpre, Makefile.in.client.gfix,
+	Makefile.in.client.gpre, Makefile.in.embed.gfix:
+	
+	Changes for MINGW build -Use SHRLIB_EXT instead of 'so'
+
+2003-03-05 16:51  brodsom
+
+	* firebird2/builds/posix/: make.rules, make.shared.variables:
+	
+	Changes for MINGW build -Use SHRLIB_EXT -Add locks to
+	FBCLASSES_ClientFiles(only used by windows but not part of the os
+	specific files)
+
+2003-03-05 16:49  brodsom
+
+	* firebird2/builds/posix/make.defaults:
+	
+	Changes for MINGW build -Use SHRLIB_EXT -Add new util targets
+
+2003-03-05 16:45  brodsom
+
+	* firebird2/builds/posix/prefix.mingw:
+	
+	Changes for MINGW build -Add OS_ServerFiles -Add
+	CLIENT_UTIL_TARGETS and EMBED_UTIL_TARGETS.  -For mingw add some
+	values only used in this port.	-Set OS_Specific_Files
+
+2003-03-05 16:42  brodsom
+
+	* firebird2/builds/posix/: prefix.linux, prefix.sinixz,
+	prefix.solaris, prefix.solx86, prefix.freebsd, prefix.darwin,
+	prefix.example:
+	
+	Changes for MINGW build -Add OS_ServerFiles -Add
+	CLIENT_UTIL_TARGETS and EMBED_UTIL_TARGETS.
+
+2003-03-05 16:38  brodsom
+
+	* firebird2/configure.in:
+	
+	Changes for MINGW build -Add shrlib_ext value for the shared
+	library extension -Add some libraries to windows build -Add some
+	some needed directories
+
+2003-03-05 15:37  brodsom
+
+	* firebird2/src/: iscguard/iscguard.cpp, utilities/registry.cpp,
+	utilities/install_svc.cpp, utilities/dba.epp,
+	utilities/install_reg.cpp:
+	
+	Patch minGW errors and some warnings
+
+2003-03-05 13:50  dimitr
+
+	* firebird2/src/jrd/: blrtable.cpp, cmp.cpp, exe.cpp, exe.h,
+	par.cpp:
+	
+	Some cleanup and bugfixing.
+
+2003-03-05 12:23  dimitr
+
+	* firebird2/src/jrd/: btr.cpp, btr_proto.h, err.cpp, err_proto.h,
+	idx.cpp, nav.cpp:
+	
+	Allowed NULLs in unique indices.
+
 2003-03-04 23:00  hippoman
 
 	* firebird2/builds/win32/msvc7/: remote.vcproj,
