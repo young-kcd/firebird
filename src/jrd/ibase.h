@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: ibase.h,v 1.84 2004-08-04 06:27:54 aafemt Exp $
+$Id: ibase.h,v 1.85 2004-09-09 08:55:25 robocop Exp $
  */
 
 #ifndef JRD_IBASE_H
@@ -205,7 +205,10 @@ typedef struct bstream
 #if !defined(JRD_VAL_H) && !defined(REQUESTER)
 /* Blob passing structure */
 
-enum lseek_mode {blb_seek_relative = 1, blb_seek_from_tail = 2};
+/* This enum applies to parameter "mode" in blob_lseek */
+enum blob_lseek_mode {blb_seek_relative = 1, blb_seek_from_tail = 2};
+/* This enum applies to the value returned by blob_get_segment */
+enum blob_get_result {blb_got_fragment = -1, blb_got_eof = 0, blb_got_full_segment = 1};
 
 typedef struct blobcallback {
     short (*blob_get_segment)
@@ -248,7 +251,7 @@ typedef struct paramdsc {
 /* This is a helper struct to work with varchars. */
 typedef struct paramvary {
     ISC_USHORT		vary_length;
-    ISC_UCHAR	vary_string [1];
+    ISC_UCHAR*	vary_string;
 } PARAMVARY;
 #endif /* !defined(JRD_VAL_H) */
 
