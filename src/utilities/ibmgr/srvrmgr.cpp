@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: srvrmgr.cpp,v 1.15 2004-06-08 13:41:02 alexpeshkoff Exp $
+ * $Id: srvrmgr.cpp,v 1.16 2004-07-10 03:16:13 robocop Exp $
  */
 
 #include "firebird.h"
@@ -61,7 +61,7 @@ const int ATTACH_RETRY		= 10;	/* Number of attach retries */
 
 static bool attach_service(ibmgr_data_t*);
 static bool detach_service(ibmgr_data_t*);
-static bool print_pool(ibmgr_data_t*);
+static bool print_pool(const ibmgr_data_t*);
 static bool start_shutdown(ibmgr_data_t*);
 static bool start_server(ibmgr_data_t*);
 #ifdef NOT_USED_OR_REPLACED
@@ -637,7 +637,7 @@ static bool server_is_up( ibmgr_data_t* data)
 }
 
 
-static bool print_pool( ibmgr_data_t* data)
+static bool print_pool( const ibmgr_data_t* data)
 {
 /**************************************
  *
@@ -659,7 +659,7 @@ static bool print_pool( ibmgr_data_t* data)
 	const USHORT path_length = strlen(data->print_file);
 	*sptr = isc_info_svc_dump_pool_info;
 	++sptr;
-	add_word(reinterpret_cast<UCHAR*>(sptr), path_length);
+	add_word(reinterpret_cast<UCHAR*&>(sptr), path_length);
 	strcpy(sptr, data->print_file);
 	sptr += path_length;
 
