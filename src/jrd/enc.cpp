@@ -8,11 +8,9 @@
 
 #include "../jrd/common.h"
 #include "../jrd/enc_proto.h"
+#include "../jrd/gdsassert.h"
 
-#ifdef HAVE_CRYPT_H
-#include <crypt.h>
-#endif
-
+/*
 #ifdef HAVE_UNISTD_H
 #ifdef LINUX
 // prevent compiler warning
@@ -21,29 +19,10 @@
 #endif
 #include <unistd.h>
 #endif
-
+ */
 
 extern "C" {
 
-
-#ifdef HAVE_CRYPT
-TEXT* ENC_crypt(const TEXT* string, const TEXT* salt)
-{
-/**************************************
- *
- *	E N C _ c r y p t
- *
- **************************************
- *
- * Functional description
- *	Encrypt a string.   If the string is over
- *	8 bytes, the remaining bytes are not significant.
- *
- **************************************/
-
-	return crypt(string, salt);
-}
-#else /* !HAVE_CRYPT */
 /*
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
@@ -462,14 +441,16 @@ static C_block CF6464[64 / CHUNKBITS][1 << CHUNKBITS];
 
 
 static C_block constdatablock;	/* encryption constant */
-static char cryptresult[1 + 4 + 4 + 11 + 1];	/* encrypted result */
+const static size_t RESULT_SIZE = (1 + 4 + 4 + 11 + 1);
 #define _PASSWORD_EFMT1 '#'
 /*
- * Return a pointer to static data consisting of the "setting"
- * followed by an encryption produced by the "key" and "setting".
+ * Create data consisting of the "setting" followed by 
+ * an encryption produced by the "key" and "setting".
  */
-TEXT* ENC_crypt(const TEXT* key, const TEXT* setting)
+void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 {
+	fb_assert(bufSize >= RESULT_SIZE);
+
 	unsigned long a, b, d;
 	char *encp;
 	long i;
@@ -485,9 +466,12 @@ TEXT* ENC_crypt(const TEXT* key, const TEXT* setting)
 		keyblock.b[i] = t;
 	}
 	if (des_setkey((char *) keyblock.b))	/* also initializes "a64toi" */
-		return (NULL);
+	{
+		buf[0] = 0;
+		return;
+	}
 
-	encp = &cryptresult[0];
+	encp = buf;
 	switch (*setting) {
 	case _PASSWORD_EFMT1:
 		/*
@@ -495,14 +479,20 @@ TEXT* ENC_crypt(const TEXT* key, const TEXT* setting)
 		 */
 		while (*key) {
 			if (des_cipher((const char*) &keyblock, (char*) &keyblock, 0L, 1))
-				return (NULL);
+			{
+				buf[0] = 0;
+				return;
+			}
 			for (i = 0; i < 8; i++) {
 				if ((t = 2 * (unsigned char) (*key)) != 0)
 					key++;
 				keyblock.b[i] ^= t;
 			}
 			if (des_setkey((char *) keyblock.b))
-				return (NULL);
+			{
+				buf[0] = 0;
+				return;
+			}
 		}
 
 		*encp++ = *setting++;
@@ -535,7 +525,8 @@ TEXT* ENC_crypt(const TEXT* key, const TEXT* setting)
 	if (des_cipher((const char*) &constdatablock, (char*) &rsltblock,
 				   salt, num_iter))
 	{
-		return (NULL);
+		buf[0] = 0;
+		return;
 	}
 
 	/*
@@ -592,7 +583,7 @@ TEXT* ENC_crypt(const TEXT* key, const TEXT* setting)
 
 	encp[3] = 0;
 
-	return (cryptresult);
+	return;
 }
 
 
@@ -898,55 +889,6 @@ init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 		}
 	}
 }
-
-/*
- * "setkey" routine (for backwards compatibility)
- */
-int setkey(const char* key)
-{
-	int i, j, k;
-	C_block keyblock;
-
-	for (i = 0; i < 8; i++) {
-		k = 0;
-		for (j = 0; j < 8; j++) {
-			k <<= 1;
-			k |= (unsigned char) *key++;
-		}
-		keyblock.b[i] = k;
-	}
-	return (des_setkey((char *) keyblock.b));
-}
-
-/*
- * "encrypt" routine (for backwards compatibility)
- */
-int encrypt(char* block, int flag)
-{
-	int i, j, k;
-	C_block cblock;
-
-	for (i = 0; i < 8; i++) {
-		k = 0;
-		for (j = 0; j < 8; j++) {
-			k <<= 1;
-			k |= (unsigned char) *block++;
-		}
-		cblock.b[i] = k;
-	}
-	if (des_cipher((const char*) &cblock, (char*) &cblock, 0L, (flag ? -1 : 1)))
-		return (1);
-	for (i = 7; i >= 0; i--) {
-		k = cblock.b[i];
-		for (j = 7; j >= 0; j--) {
-			*--block = k & 01;
-			k >>= 1;
-		}
-	}
-	return (0);
-}
-#endif /* !HAVE_CRYPT */
-
 
 }	// extern "C"
 

@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-TEXT* ENC_crypt(const TEXT*, const TEXT*);
+void ENC_crypt(TEXT*, size_t, const TEXT*, const TEXT*);
 
 #ifdef __cplusplus
 } /* extern "C" */
