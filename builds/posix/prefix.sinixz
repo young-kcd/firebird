@@ -17,119 +17,109 @@
 #
 # Erik Kunze, Philosys GmbH, <kunze@philosys.de>
 #
-# $Id: prefix.sinixz,v 1.1 2002-07-29 15:04:06 skywalker Exp $
+# $Id: prefix.sinixz,v 1.2 2002-09-11 07:49:10 eku Exp $
 #
-.SUFFIXES: .c .e
-.e.c:
-	$(GPRE) $(GPRE_FLAGS) $<
-.SUFFIXES: .bin .o .c
-.c.o:
-	$(CC) -c $(CFLAGS) $(VERSION_FLAG) $<
-.c.bin:
-	$(CC) -c $(PIC_FLAGS) $(VERSION_FLAG) -o $*.bin $<
 
-ifdef IsProdTypeBuild
-DEBUG_OBJECTS=	nodebug.o
-SHRLIB_DIR=	-Lsource/jrd -L$(INTERBASE)/interbase/lib -L$(INTERBASE)/source/interbase/lib
-VERSION_FLAG=	-DPROD_BUILD
-CFLAGS=		-O3 -DHADES -DBSD_COMP -DLARGEFILE -DEXACT_NUMERICS -DUNIX -DSINIXZ -w -fwritable-strings -I$(INTERBASE)/include
+
+# use the following to define conditional DEV/PROD compile
+
+ifeq ($(IsProdTypeBuild),Y)
+    DEBUG_Sources = nodebug.cpp
+    CFLAGS:= -O3 -DPROD_BUILD -DNDEBUG $(CFLAGS)
 
 else
-
-DEBUG_OBJECTS=	grammar.o dbg.o dbt.o dmp.o
-SHRLIB_DIR=		-Lsource/jrd -L$(INTERBASE)/interbase/lib -L$(INTERBASE)/source/interbase/lib
-VERSION_FLAG=	-DDEV_BUILD
-WARNINGS=		-Wall -Wno-implicit -Wno-switch -Wno-unused -Wno-uninitialized -Wno-parentheses
-#CFLAGS=		-g -DBSD_COMP -DLARGEFILE -DEXACT_NUMERICS -DUNIX -DSINIXZ $(DEV_WARNINGS) -fwritable-strings -I$(INTERBASE)/include
-CFLAGS=		-g -DUNIX -DSINIXZ $(DEV_WARNINGS) -fwritable-strings -I$(INTERBASE)/include
+# Commented out since new memory model doesn't work with it.
+    DEBUG_Sources = nodebug.cpp
+#    DEBUG_Sources = grammar.c dbg.cpp dbt.cpp dmp.cpp
+    CFLAGS := -ggdb -DDEV_BUILD $(CFLAGS)
 endif
 
-DEBUG_OBJECTS=		$(DEBUG_OBJECTS)
-SHRLIB_DIR=		$(SHRLIB_DIR)
-VERSION_FLAG=		$(VERSION_FLAG)
-CFLAGS=			$(CFLAGS) -D$(SYSTEM)
+CFLAGS:= $(CFLAGS) -DSINIXZ -DUNIX -w -I../builds -fwritable-strings
 
-UDF_LINK_CMD=		$(CC)
-UDF_CFLAGS=		-fPIC -mieee-fp
-UDF_LFLAGS=		-shared
-UDF_SHRLIBS=		$(SHRLIB_DIR) -lgds -lm -lc -mieee-fp -ldl -lcrypt
+# If we don't define CXXFLAGS again, our changes to CFLAGS won't take effect
+#    for CXXFLAGS
+CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
 
-ACCESS_METHOD=		gdslib.unixware pipe
-BACKEND_BRIDGE_MISC=	head5.o allp.o
+# Determined by configure script
+#LINK_LIBS += -lsocket -lnsl -lresolv -lgen
+
+STATICLINK_LIBS := $(LINK_LIBS)
+
+IO_Sources = unix.cpp
+
+############################# old stuff from FB1 ###############################
+#DEBUG_OBJECTS=		$(DEBUG_OBJECTS)
+#SHRLIB_DIR=		$(SHRLIB_DIR)
+#VERSION_FLAG=		$(VERSION_FLAG)
+#CFLAGS=			$(CFLAGS) -D$(SYSTEM)
+
+#UDF_LINK_CMD=		$(CC)
+#UDF_CFLAGS=		-fPIC -mieee-fp
+#UDF_LFLAGS=		-shared
+#UDF_SHRLIBS=		$(SHRLIB_DIR) -lgds -lm -lc -mieee-fp -ldl -lcrypt
+
+#ACCESS_METHOD=		gdslib.unixware pipe
+#BACKEND_BRIDGE_MISC=	head5.o allp.o
 #BIN_PATH=		/usr/gds/bin
-BRIDGE_MISC=		head5.o allp.o
-CHMOD_VAL=		666
-CURSES_LIB=		-lcurses
-DSQL_P_OBJS=		dsql_p_objects
-FORM_OBJECTS=		noform.o
-FUNCTIONS=		functions.bin
-GDS_LINK=		$(GDSSHR_LINK)
-GDSLIB_BACKEND=		source/jrd/gds_b.a
-GDSLIB_LINK=		-Lsource/jrd -lgds_b -lsocket -lnsl -lresolv -lgen -ldl
-GDSSHR=			source/interbase/lib/gds.so.0
-GDSSHR_LINK=		$(SHRLIB_DIR) -lgds -lsocket -lnsl -lresolv -lgen
-HLPDIR=			source/qli/
-INTL=			intl
-INTL_CFLAGS=		$(CFLAGS)
-INTL_LD_LINE=		$(LD) -G -z text -o gdsintl
+#BRIDGE_MISC=		head5.o allp.o
+#CHMOD_VAL=		666
+#CURSES_LIB=		-lcurses
+#DSQL_P_OBJS=		dsql_p_objects
+#FORM_OBJECTS=		noform.o
+#FUNCTIONS=		functions.bin
+#GDS_LINK=		$(GDSSHR_LINK)
+#GDSLIB_BACKEND=		source/jrd/gds_b.a
+#GDSLIB_LINK=		-Lsource/jrd -lgds_b -lsocket -lnsl -lresolv -lgen -ldl
+#GDSSHR=			source/interbase/lib/gds.so.0
+#GDSSHR_LINK=		$(SHRLIB_DIR) -lgds -lsocket -lnsl -lresolv -lgen
+#HLPDIR=			source/qli/
+#INTL=			intl
+#INTL_CFLAGS=		$(CFLAGS)
+#INTL_LD_LINE=		$(LD) -G -z text -o gdsintl
 #INTL_P_OBJS=		intl
-INTL_PIC_FLAGS=		$(PIC_FLAGS)
-INTL_TARGET=		intl_shr_objs
-IO_OBJECTS=		unix.o
-IO_P_OBJECTS=		unix.bin
+#INTL_PIC_FLAGS=		$(PIC_FLAGS)
+#INTL_TARGET=		intl_shr_objs
+#IO_OBJECTS=		unix.o
+#IO_P_OBJECTS=		unix.bin
 #JRD_MISC_OBJECTS=	source/jrd/sun_ftn.o
 #JRD_J_MISC_OBJECTS=	source/jrd/sun_ftn.j 
 #JRD_P_MISC_OBJECTS=	source/jrd/sun_ftn.bin source/jrd/nodebug.bin
-JRD_MISC_OBJECTS=	stubs.o
-JRD_P_MISC_OBJECTS=	nodebug.bin stubs.bin
-LANG_OBJECTS=		ada.o ftn.o cob.o
-LANGUAGES=		cc cxx microfocus_cob make15 gdl1
+#JRD_MISC_OBJECTS=	stubs.o
+#JRD_P_MISC_OBJECTS=	nodebug.bin stubs.bin
+#LANG_OBJECTS=		ada.o ftn.o cob.o
+#LANGUAGES=		cc cxx microfocus_cob make15 gdl1
 #LANGUAGES=		cc cxx ada microfocus_cob make16 gdl1 sun_ftn
-LD_LIBS=		-ldl
-LD_OPTS=		-G -h
-LOCK_JRD_MISC=
+#LD_LIBS=		-ldl
+#LD_OPTS=		-G -h
+#LOCK_JRD_MISC=
 #LOCK_MANAGER=		manager
-LOCK_MANAGER=
-MARION_DB=		-d source/marion.gdb
-NSL_LIB=		-lnsl
-PIC_FLAGS=		$(CFLAGS) -fPIC
-PIPE=			gds.a gds_pipe
-REG_HELP=		isc_ins_hlp.dat
-REMOTE_GDSSHR=		$(GDSSHR)
-REMOTE_GDSSHR_LINK=	$(SERVER_LINK)
-REMOTE_P_OBJS=		rem_p_objects
-SCREEN_LIBS=		-lcurses
-SERVER_LINK=		$(GDSSHR_LINK)
-SPECIAL_OPT=		sh source/special_opt
-SOCKET_LIB=		-lsocket -lnsl
-UTILITIES=		drop
-VT100_FLAGS=		-DBSD_COMP
+#LOCK_MANAGER=
+#MARION_DB=		-d source/marion.gdb
+#NSL_LIB=		-lnsl
+#PIC_FLAGS=		$(CFLAGS) -fPIC
+#PIPE=			gds.a gds_pipe
+#REG_HELP=		isc_ins_hlp.dat
+#REMOTE_GDSSHR=		$(GDSSHR)
+#REMOTE_GDSSHR_LINK=	$(SERVER_LINK)
+#REMOTE_P_OBJS=		rem_p_objects
+#SCREEN_LIBS=		-lcurses
+#SERVER_LINK=		$(GDSSHR_LINK)
+#SPECIAL_OPT=		sh source/special_opt
+#SOCKET_LIB=		-lsocket -lnsl
+#UTILITIES=		drop
+#VT100_FLAGS=		-DBSD_COMP
 
-INET_SERVER_DEST=	source/interbase/bin/gds_inet_server
-DNET_SERVER_DEST=	source/interbase/bin/gds_dnet_server
-AMBX_SERVER_DEST=	source/interbase/bin/gds_server
-INET_LIB_DEST=		source/interbase/lib/gds_inet_server.a
-DNET_LIB_DEST=		source/interbase/lib/gds_dnet_server.a
+#INET_SERVER_DEST=	source/interbase/bin/gds_inet_server
+#DNET_SERVER_DEST=	source/interbase/bin/gds_dnet_server
+#AMBX_SERVER_DEST=	source/interbase/bin/gds_server
+#INET_LIB_DEST=		source/interbase/lib/gds_inet_server.a
+#DNET_LIB_DEST=		source/interbase/lib/gds_dnet_server.a
 
-SH=			sh -c
-RM=			rm -f
-CHMOD=			chmod
-CHMOD_6=		chmod 666
-CHMOD_7=		chmod 777
-CHMOD_S7=		chmod 06777
-MV=			mv -f
-TOUCH=			touch
-CP=			cp
-ECHO=			echo
-QUIET_ECHO=		@echo
-CD=			cd
-CAT=			cat
-AR=			ar r
-EXPAND_DBNAME=		@echo No need to expand...
-COMPRESS_DBNAME=	@echo No need to compress...
+#AR=			ar r
+#EXPAND_DBNAME=		@echo No need to expand...
+#COMPRESS_DBNAME=	@echo No need to compress...
 
-ARCH_EXT=		.a
-EXEC_EXT=
+#ARCH_EXT=		.a
+#EXEC_EXT=
 
-V3PRINTER=		source/lock/printv3.o
-
+#V3PRINTER=		source/lock/printv3.o
