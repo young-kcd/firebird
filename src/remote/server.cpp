@@ -603,6 +603,7 @@ static bool accept_connection(rem_port* port,
 
 /* Send off out gracious acceptance or flag rejection */
 	if (!accepted) {
+		port->send(send);
 		return false;
 	}
 	accept->p_acpt_version = port->port_protocol = version;
