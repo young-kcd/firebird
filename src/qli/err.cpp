@@ -33,7 +33,7 @@
 #include "../qli/lex_proto.h"
 #include "../jrd/gds_proto.h"
 
-extern UCHAR *QLI_error;
+extern TEXT *QLI_error;
 extern jmp_buf QLI_env;
 
 static TEXT ERRQ_message[256];
@@ -152,7 +152,7 @@ void ERRQ_error_format(
 					arg1, arg2, arg3, arg4, arg5);
 	gds__msg_format(0, QLI_MSG_FAC, 12, sizeof(ERRQ_message),
 					ERRQ_message, s, NULL, NULL, NULL, NULL);	/* Msg12 ** QLI error: %s ** */
-	QLI_error = (UCHAR*) ERRQ_message;
+	QLI_error = (TEXT*) ERRQ_message;
 	QLI_skip_line = TRUE;
 }
 

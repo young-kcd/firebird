@@ -139,7 +139,7 @@ static SYN parse_statistical(void);
 static SYN parse_store(void);
 static TEXT *parse_string(void);
 static SYM parse_symbol(void);
-static int parse_terminating_parens(USHORT *, USHORT *);
+static void parse_terminating_parens(USHORT *, USHORT *);
 static SYN parse_transaction(NOD_T);
 static SYN parse_udf_or_field(void);
 static SYN parse_update(void);
@@ -720,6 +720,7 @@ static SYN parse_accept(void)
  **************************************/
 #ifdef NO_PYXIS
 	IBERROR(484);				/* FORMs not supported */
+	return 0;
 #else
 	SYN node;
 	LLS stack;
@@ -5508,7 +5509,7 @@ static SYM parse_symbol(void)
 }
 
 
-static int parse_terminating_parens( USHORT * paren_count, USHORT * local_count)
+static void parse_terminating_parens( USHORT * paren_count, USHORT * local_count)
 {
 /**************************************
  *
