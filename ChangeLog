@@ -1,3 +1,33 @@
+2003-12-27 23:03  skidder
+
+	* firebird2/src/jrd/ibase.h:
+	
+	Add Firebird version define to ibase.h
+
+2003-12-27 19:50  fsg
+
+	* firebird2/src/isql/isql.epp:
+	
+	oops, it wasn't intended to commit isql.epp, so roll it back FSG
+
+2003-12-27 18:59  fsg
+
+	* firebird2/src/: burp/burp.cpp, burp/restore.epp, isql/isql.epp,
+	isql/isql.h, jrd/evl_string.h, jrd/idx.cpp, jrd/why.cpp:
+	
+	First changes to get it compiled under linux again.  FSG
+
+2003-12-27 05:37  skidder
+
+	* firebird2/src/jrd/: cmp.cpp, constants.h, evl.cpp, evl_like.cpp,
+	evl_proto.h, evl_string.h, evl_string_test.cpp, exe.h, intl.cpp,
+	intl_classes.h, intlobj.h, opt.cpp:
+	
+	Integrate new LIKE/STARTING WITH/CONTAINING algorithms into the
+	engine. This has following impact: 1. String functions now search
+	BLOBs correctly 2. Their performace is improved 3. Fixed crash when
+	NULL is passed as escape value to LIKE
+
 2003-12-26 16:57  dimitr
 
 	* firebird2/doc/WhatsNew:
