@@ -26,6 +26,7 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
+ * 2003.05.11 Nickolay Samofatov - rework temp stuff
  *
  */
 
@@ -2261,7 +2262,7 @@ void * API_ROUTINE gds__temp_file(
 		else
 			directory = WORKFILE;
 	}
-	if (strlen(directory) >= MAXPATHLEN-strlen(string)-strlen(TEMP_PATTERN)-1)
+	if (strlen(directory) >= MAXPATHLEN-strlen(string)-strlen(TEMP_PATTERN)-2)
 		return (void *)-1;
 	void *result;
 
@@ -2303,7 +2304,7 @@ void * API_ROUTINE gds__temp_file(
 	if (!directory && !(directory = getenv("INTERBASE_TMP")) && !(directory = getenv("TMP")))
 		directory = WORKFILE;
 	TEXT file_name[MAXPATHLEN];
-	if (strlen(directory) >= MAXPATHLEN-strlen(string)-strlen(TEMP_PATTERN)-1)
+	if (strlen(directory) >= MAXPATHLEN-strlen(string)-strlen(TEMP_PATTERN)-2)
 		return (void *)-1;
 	strcpy(file_name, directory);
 	if (file_name[strlen(file_name)-1] != '/')
