@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.36 2003-09-28 18:49:21 dimitr Exp $
+ * $Id: rse.cpp,v 1.37 2003-09-29 08:29:36 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -690,7 +690,7 @@ void RSE_open(TDBB tdbb, RSB rsb)
 			//			record set, if there's actually nothing to return
 			if (first_records) {
 				open_sort(tdbb, rsb, (IRSB_SORT) impure,
-						  (UINT64) first_records + skip_records);
+					(first_records < 0) ? 0 : (UINT64) first_records + skip_records);
 			}
 			else {
 				((IRSB_SORT) impure)->irsb_sort_handle = NULL;
