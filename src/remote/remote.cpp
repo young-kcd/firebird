@@ -472,13 +472,13 @@ STR DLL_EXPORT REMOTE_make_string(SCHAR * input)
  *	address of new string.
  *
  **************************************/
-	STR string;
-
-	string = (STR) ALLOCV(type_str, strlen(input));
+	USHORT length = strlen(input);
+	STR string = (STR) ALLOCV(type_str, length);
 #ifdef REMOTE_DEBUG_MEMORY
 	ib_printf("REMOTE_make_string        allocate string  %x\n", string);
 #endif
 	strcpy(string->str_data, input);
+	string->str_length = length;
 
 	return string;
 }

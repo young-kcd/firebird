@@ -31,7 +31,7 @@
  *
  */
 /*
-$Id: inet.cpp,v 1.16 2002-08-22 10:48:24 eku Exp $
+$Id: inet.cpp,v 1.17 2002-08-22 11:22:49 dimitr Exp $
 */
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
@@ -1611,7 +1611,6 @@ static int accept_connection(PORT port, P_CNCT* cnct)
 		sprintf(p, ".%ld.%ld", eff_gid, eff_uid);
 		ALLR_free((UCHAR *) port->port_user_name);
 		port->port_user_name = REMOTE_make_string(name);
-		port->port_user_name->str_length = strlen(name);
 	}
 
 	return TRUE;

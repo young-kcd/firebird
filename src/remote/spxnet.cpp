@@ -555,7 +555,6 @@ static accept_connection(port, cnct)
 	sprintf(p, ".%ld.%ld", eff_gid, eff_uid);
 	ALLR_free(port->port_user_name);
 	port->port_user_name = REMOTE_make_string(name);
-	port->port_user_name->str_length = strlen(name);
 
 	return TRUE;
 }
