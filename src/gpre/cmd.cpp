@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmd.cpp,v 1.36 2004-05-24 17:13:36 brodsom Exp $
+//	$Id: cmd.cpp,v 1.37 2004-05-31 02:34:21 robocop Exp $
 //
 
 #include "firebird.h"
@@ -466,7 +466,8 @@ static void alter_table( gpre_req* request, const act* action)
 //		Generate dyn for creating a CHECK constraint.
 //  
 
-static void create_check_constraint( gpre_req* request, const act* action, cnstrt* constraint)
+static void create_check_constraint( gpre_req* request, const act* action,
+	cnstrt* constraint)
 {
 	gpre_trg* trigger = (gpre_trg*) MSC_alloc(TRG_LEN);
 
@@ -516,7 +517,7 @@ static void create_trg_firing_cond( gpre_req* request, const cnstrt* constraint)
 	fb_assert(prim_key_num_flds > 0);
 
 //  generate blr 
-		request->add_byte(blr_if);
+	request->add_byte(blr_if);
 	if (prim_key_num_flds > 1)
 		request->add_byte(blr_or);
 
@@ -606,8 +607,7 @@ static void create_matching_blr(gpre_req* request, const cnstrt* constraint)
 
 		for_key_fld = for_key_fld->lls_next;
 		prim_key_fld = prim_key_fld->lls_next;
-	}
-	while (num_flds < for_key_num_flds);
+	} while (num_flds < for_key_num_flds);
 
 	request->add_byte(blr_end);
 }
@@ -799,7 +799,6 @@ static void create_set_default_trg(gpre_req* request,
 								   cnstrt* constraint,
 								   bool on_upd_trg)
 {
-	USHORT offset, length;
 	gpre_rel* rel;
 	gpre_req* req;
 	act* request_action;
@@ -828,7 +827,7 @@ static void create_set_default_trg(gpre_req* request,
 //  the trigger blr 
 
 	request->add_byte(isc_dyn_trg_blr);
-	offset = request->req_blr - request->req_base;
+	const USHORT offset = request->req_blr - request->req_base;
 
 	request->add_word(0);
 	if (request->req_flags & REQ_blr_version4)
@@ -1048,7 +1047,7 @@ static void create_set_default_trg(gpre_req* request,
 	}
 
 	request->add_byte(blr_eoc);
-	length = request->req_blr - request->req_base - offset - 2;
+	const USHORT length = request->req_blr - request->req_base - offset - 2;
 	request->req_base[offset] = (UCHAR) length;
 	request->req_base[offset + 1] = (UCHAR) (length >> 8);
 //  end of the blr 
@@ -1783,8 +1782,8 @@ static bool create_view(gpre_req* request,
 	SSHORT position = 0;
 	bool non_updateable = false;
 
-	GPRE_NOD* ptr;
-	const GPRE_NOD* end;
+	gpre_nod** ptr;
+	const gpre_nod* const* end;
 
 	for (ptr = fields->nod_arg, end = ptr + fields->nod_count; ptr < end;
 		 ptr++, field = (field) ? field->fld_next : NULL) 
@@ -2321,9 +2320,9 @@ static void put_array_info( gpre_req* request, const gpre_fld* field)
 //  
 
 static void put_blr(gpre_req* request,
-					USHORT operator_, GPRE_NOD node, pfn_local_trigger_cb routine)
+					USHORT blr_operator, GPRE_NOD node, pfn_local_trigger_cb routine)
 {
-	request->add_byte(operator_);
+	request->add_byte(blr_operator);
 	const USHORT offset = request->req_blr - request->req_base;
 	request->add_word(0);
 	if (request->req_flags & REQ_blr_version4)
@@ -2603,10 +2602,10 @@ static void put_field_attributes( gpre_req* request, const gpre_fld* field)
 //		Put a numeric valued attributed to the output string.
 //  
 
-static void put_numeric( gpre_req* request, USHORT operator_, SSHORT number)
+static void put_numeric( gpre_req* request, USHORT blr_operator, SSHORT number)
 {
 
-	request->add_byte(operator_);
+	request->add_byte(blr_operator);
 	request->add_word(2);
 	request->add_word(number);
 }
@@ -2682,10 +2681,10 @@ static void put_symbol(gpre_req* request, int ddl_operator,
 //  
 
 static void put_trigger_blr(gpre_req* request,
-							USHORT operator_,
+							USHORT blr_operator,
 							GPRE_NOD node, pfn_local_trigger_cb routine)
 {
-	request->add_byte(operator_);
+	request->add_byte(blr_operator);
 	const USHORT offset = request->req_blr - request->req_base;
 	request->add_word(0);
 	if (request->req_flags & REQ_blr_version4)
@@ -2723,12 +2722,12 @@ static void put_trigger_blr(gpre_req* request,
 
 static void put_view_trigger_blr(gpre_req* request,
 								 const gpre_rel* relation,
-								 USHORT operator_,
+								 USHORT blr_operator,
 								 gpre_trg* trigger,
 	GPRE_NOD view_boolean, gpre_ctx** contexts, GPRE_NOD set_list)
 {
 	gpre_rse* node = (gpre_rse*) trigger->trg_boolean;
-	request->add_byte(operator_);
+	request->add_byte(blr_operator);
 	const USHORT offset = request->req_blr - request->req_base;
 	request->add_word(0);
 	if (request->req_flags & REQ_blr_version4)
@@ -2819,7 +2818,8 @@ static void replace_field_names(gpre_nod* const input,
 	}
 
 	gpre_nod** ptr = input->nod_arg;
-	for (gpre_nod** const end = ptr + input->nod_count; ptr < end; ptr++) {
+	for (const gpre_nod* const* const end = ptr + input->nod_count; ptr < end; ptr++)
+	{
 		if ((*ptr)->nod_type == nod_field) {
 			ref* reference = (REF) (*ptr)->nod_arg[0];
 			gpre_fld* rse_field = reference->ref_field;
@@ -2871,3 +2871,4 @@ static void set_statistics( gpre_req* request, const act* action)
 
 	request->add_end();
 }
+

@@ -1675,14 +1675,14 @@ dsql_sym* MAKE_symbol(dsql_dbb* database,
     @param charset
 
  **/
-dsql_str* MAKE_tagged_string(const char* str_, size_t length, const char* charset)
+dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* charset)
 {
 	tsql* tdsql = DSQL_get_thread_data();
 
 	dsql_str* string = FB_NEW_RPT(*tdsql->tsql_default, length) dsql_str;
 	string->str_charset = charset;
 	string->str_length  = length;
-	memcpy(string->str_data, str_, length);
+	memcpy(string->str_data, strvar, length);
 
 	return string;
 }

@@ -42,7 +42,7 @@ static inline void check_blr(str* blr, const int l)
 	}
 }
 
-int GENERATE_acl( SCL class_, UCHAR * buffer)
+int GENERATE_acl( SCL sec_class, UCHAR * buffer)
 {
 /**************************************
  *
@@ -54,22 +54,25 @@ int GENERATE_acl( SCL class_, UCHAR * buffer)
  *	Generate an access control list.
  *
  **************************************/
-	UCHAR *p, *q, **id, c;
-	SCE item;
+	UCHAR** id;
 	USHORT i;
 
-	p = buffer;
+	UCHAR* p = buffer;
 	*p++ = ACL_version;
 
-	for (item = class_->scl_entries; item; item = item->sce_next) {
+	for (SCE item = sec_class->scl_entries; item; item = item->sce_next) {
 		*p++ = ACL_id_list;
 		for (i = 0, id = item->sce_idents; i < id_max; id++, i++)
-			if (q = *id) {
+		{
+			const UCHAR* q = *id;
+			if (q) {
 				*p++ = i;
-				*p++ = strlen((char*) q);
+				*p++ = strlen((const char*) q);
+				UCHAR c;
 				while (c = *q++)
 					*p++ = UPPER(c);
 			}
+		}
 		*p++ = priv_end;
 		*p++ = ACL_priv_list;
 		for (i = 0; i < priv_max; i++)

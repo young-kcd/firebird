@@ -502,16 +502,16 @@ void INI_init(void)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const UCHAR* fld_;
-	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld_ + 1)
+	const UCHAR* fld;
+	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		jrd_rel* relation = MET_relation(tdbb, relfld[RFLD_R_ID]);
 		relation->rel_flags |= REL_system;
-		relation->rel_name = (/* const_cast */ TEXT*)names[relfld[RFLD_R_NAME]];
+		relation->rel_name = const_cast<TEXT*>(names[relfld[RFLD_R_NAME]]);
 		relation->rel_length = strlen(relation->rel_name);
 		int n = 0;
-		for (fld_ = relfld + RFLD_RPT; fld_[RFLD_F_NAME];
-			fld_ += RFLD_F_LENGTH)
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
+			fld += RFLD_F_LENGTH)
 		{
 			n++;
 		}
@@ -539,15 +539,15 @@ void INI_init(void)
 		format->fmt_count = n;
 		Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 
-		for (fld_ = relfld + RFLD_RPT; fld_[RFLD_F_NAME];
-			 fld_ += RFLD_F_LENGTH, desc++, itr++)
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
+			 fld += RFLD_F_LENGTH, desc++, itr++)
 		{
-			const gfld* gfield = &gfields[fld_[RFLD_F_ID]];
+			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
 			desc->dsc_dtype = gfield->gfld_dtype;
 			jrd_fld* field = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_fld();
 			*itr = field;
-			field->fld_name = names[fld_[RFLD_F_NAME]];
+			field->fld_name = names[fld[RFLD_F_NAME]];
 			field->fld_length = strlen(field->fld_name);
 		}
 	}
@@ -575,7 +575,7 @@ void INI_init2(void)
 	const USHORT minor_original = dbb->dbb_minor_original;
 	vec* vector = dbb->dbb_relations;
 
-	const UCHAR*	fld;
+	const UCHAR* fld;
 	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		if (relfld[RFLD_R_MINOR] > ENCODE_ODS(major_version, minor_original))
@@ -1047,7 +1047,7 @@ static void add_relation_fields( USHORT minor_version)
 
 	jrd_req* s_handle = NULL;
 	jrd_req* m_handle = NULL;
-	const UCHAR*	fld;
+	const UCHAR* fld;
 	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		int n = 0;

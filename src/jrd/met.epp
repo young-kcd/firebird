@@ -37,7 +37,7 @@
  * 2004.01.16 Vlad Horsun: added support for default parameters 
  */
 /*
-$Id: met.epp,v 1.128 2004-05-27 16:25:59 alexpeshkoff Exp $
+$Id: met.epp,v 1.129 2004-05-31 02:34:31 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -1034,7 +1034,7 @@ jrd_fld* MET_get_field(jrd_rel* relation, USHORT id)
 }
 
 
-void MET_get_shadow_files( thread_db* tdbb, bool deleteVar)
+void MET_get_shadow_files( thread_db* tdbb, bool delete_files)
 {
 /**************************************
  *
@@ -1063,7 +1063,7 @@ void MET_get_shadow_files( thread_db* tdbb, bool deleteVar)
 		{
 			const USHORT file_flags = X.RDB$FILE_FLAGS;
 			SDW_start(X.RDB$FILE_NAME, X.RDB$SHADOW_NUMBER, file_flags,
-					  deleteVar);
+					  delete_files);
 
 			/* if the shadow exists, mark the appropriate shadow 
 			   block as found for the purposes of this routine;

@@ -561,7 +561,7 @@ void SDW_get_shadows(void)
 
 
 
-void SDW_init(bool activate, bool delete_)
+void SDW_init(bool activate, bool delete_files)
 {
 /**************************************
  *
@@ -607,7 +607,7 @@ void SDW_init(bool activate, bool delete_)
 	LCK_lock(tdbb, lock, LCK_SR, TRUE);
 	CCH_RELEASE(tdbb, &window);
 
-	MET_get_shadow_files(tdbb, delete_);
+	MET_get_shadow_files(tdbb, delete_files);
 }
 
 
@@ -877,7 +877,7 @@ void SDW_shutdown_shadow(Shadow* shadow)
 
 void SDW_start(
 			   const TEXT* file_name,
-			   USHORT shadow_number, USHORT file_flags, bool delete_)
+			   USHORT shadow_number, USHORT file_flags, bool delete_files)
 {
 /**************************************
  *
@@ -888,7 +888,7 @@ void SDW_start(
  * Functional description
  *	Commence shadowing on a previously created shadow file.
  *
- *	<delete_> is TRUE if we are not actually starting shadowing,
+ *	<delete_files> is true if we are not actually starting shadowing,
  *	but deleting inaccessible shadow files.
  *
  **************************************/
@@ -1054,7 +1054,7 @@ void SDW_start(
 		}
 		if (spare_buffer)
 			delete[] spare_buffer;
-		if (file_flags & FILE_manual && !delete_) {
+		if (file_flags & FILE_manual && !delete_files) {
 			ERR_post(isc_shadow_missing, isc_arg_number,
 					 (SLONG) shadow_number, 0);
 		}
