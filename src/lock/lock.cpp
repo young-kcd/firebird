@@ -29,7 +29,7 @@
  *
  */
 /*
-$Id: lock.cpp,v 1.27 2002-12-07 13:23:08 dimitr Exp $
+$Id: lock.cpp,v 1.28 2002-12-09 01:28:01 nmcc Exp $
 */
 
 #include "firebird.h"
@@ -2774,6 +2774,7 @@ static USHORT fork_lock_manager( STATUS * status_vector)
  *
  **************************************/
 	TEXT string[MAXPATHLEN];
+	TEXT errorstring[MAXPATHLEN+100];
 	struct stat stat_buf;
 	int pid;
 
@@ -2785,7 +2786,8 @@ static USHORT fork_lock_manager( STATUS * status_vector)
 	gds__prefix(string, LOCK_MANAGER);
 #endif
 	if (statistics(string, &stat_buf) == -1) {
-		bug(status_vector, "can't start lock manager: gds_lock_mgr");
+		sprintf (errorstring, "can't start lock manager: %s", string);
+		bug(status_vector, errorstring);
 		return FALSE;
 	}
 
