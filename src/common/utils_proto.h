@@ -32,8 +32,14 @@
 #ifndef INCLUDE_UTILS_PROTO_H
 #define INCLUDE_UTILS_PROTO_H
 
+#include "fb_string.h"
+
 namespace fb_utils {
 	char* fb_exact_name(char* const str);
+	inline void fb_exact_name(Firebird::string& str)
+	{
+		str.rtrim();
+	}
 	char* fb_exact_name_limit(char* const str, size_t bufsize);
 }
 

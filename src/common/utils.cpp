@@ -39,6 +39,8 @@
 #undef __need_size_t
 #endif
 
+#include "../common/utils_proto.h"
+
 namespace fb_utils {
 
 char* fb_exact_name(char* const str)
