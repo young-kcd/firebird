@@ -26,7 +26,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../dsql/chars.h"
 #include "../dsql/sqlda.h"
 #include "../dsql/prepa_proto.h"
@@ -193,7 +194,7 @@ int	PREPARSE_execute(
 		return TRUE;
 	}
 
-	stuff_dpb(dpb, gds_dpb_version1);
+	stuff_dpb(dpb, isc_dpb_version1);
 	stuff_dpb(dpb, isc_dpb_overwrite);
 	stuff_dpb(dpb, 1);
 	stuff_dpb(dpb, 0);
@@ -227,7 +228,7 @@ int	PREPARSE_execute(
 						break;
 					}
 					page_size = atol(token);
-					stuff_dpb(dpb, gds_dpb_page_size);
+					stuff_dpb(dpb, isc_dpb_page_size);
 					stuff_dpb(dpb, 4);
 					stuff_dpb_long(dpb, page_size);
 					matched = true;
@@ -241,7 +242,7 @@ int	PREPARSE_execute(
 						break;
 					}
 
-					stuff_dpb(dpb, gds_dpb_user_name);
+					stuff_dpb(dpb, isc_dpb_user_name);
 					l = token_length;
 					stuff_dpb(dpb, l);
 					ch = token;
@@ -258,7 +259,7 @@ int	PREPARSE_execute(
 						break;
 					}
 
-					stuff_dpb(dpb, gds_dpb_password);
+					stuff_dpb(dpb, isc_dpb_password);
 					l = token_length;
 					stuff_dpb(dpb, l);
 					ch = token;
@@ -279,7 +280,7 @@ int	PREPARSE_execute(
 						break;
 					}
 
-					stuff_dpb(dpb, gds_dpb_lc_ctype);
+					stuff_dpb(dpb, isc_dpb_lc_ctype);
 					l = token_length;
 					stuff_dpb(dpb, l);
 					ch = token;
@@ -324,19 +325,19 @@ int	PREPARSE_execute(
 /* This code is because 3.3 server does not recognize isc_dpb_overwrite. */
 	if (!isc_attach_database(user_status, 0, file_name, &temp_db_handle,
 							 dpb_len, dpb_array) ||
-		user_status[1] != gds_io_error) {
+		user_status[1] != isc_io_error) {
 		if (!user_status[1])
 			isc_detach_database(temp_status, &temp_db_handle);
-		if (!user_status[1] || user_status[1] == gds_bad_db_format) {
-			user_status[0] = gds_arg_gds;
-			user_status[1] = gds_io_error;
-			user_status[2] = gds_arg_string;
+		if (!user_status[1] || user_status[1] == isc_bad_db_format) {
+			user_status[0] = isc_arg_gds;
+			user_status[1] = isc_io_error;
+			user_status[2] = isc_arg_string;
 			user_status[3] = (ISC_STATUS) "open";
-			user_status[4] = gds_arg_string;
+			user_status[4] = isc_arg_string;
 			user_status[5] = (ISC_STATUS) file_name;
-			user_status[6] = gds_arg_gds;
-			user_status[7] = gds_db_or_file_exists;
-			user_status[8] = gds_arg_end;
+			user_status[6] = isc_arg_gds;
+			user_status[7] = isc_db_or_file_exists;
+			user_status[8] = isc_arg_end;
 			UTLD_save_status_strings(user_status);
 		}
 		if (dpb_array)
@@ -376,16 +377,16 @@ static void generate_error(
 	TEXT err_string[MAX_TOKEN_SIZE + 3];
 	SSHORT length;
 
-	user_status[0] = gds_arg_gds;
-	user_status[1] = gds_sqlerr;
-	user_status[2] = gds_arg_number;
+	user_status[0] = isc_arg_gds;
+	user_status[1] = isc_sqlerr;
+	user_status[2] = isc_arg_number;
 	user_status[3] = -104;
-	user_status[4] = gds_arg_gds;
+	user_status[4] = isc_arg_gds;
 
 	switch (error) {
 	case UNEXPECTED_END_OF_COMMAND:
-		user_status[5] = gds_command_end_err;
-		user_status[6] = gds_arg_end;
+		user_status[5] = isc_command_end_err;
+		user_status[6] = isc_arg_end;
 		break;
 
 	case UNEXPECTED_TOKEN:
@@ -399,12 +400,12 @@ static void generate_error(
 		}
 		else
 			strcpy(err_string, token);
-		user_status[5] = gds_token_err;
-		user_status[6] = gds_arg_gds;
-		user_status[7] = gds_random;
-		user_status[8] = gds_arg_string;
+		user_status[5] = isc_token_err;
+		user_status[6] = isc_arg_gds;
+		user_status[7] = isc_random;
+		user_status[8] = isc_arg_string;
 		user_status[9] = (ISC_STATUS) err_string;
-		user_status[10] = gds_arg_end;
+		user_status[10] = isc_arg_end;
 		UTLD_save_status_strings(user_status);
 		break;
 	}

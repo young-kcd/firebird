@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.76 2003-11-07 14:10:15 dimitr Exp $
+ * $Id: ddl.cpp,v 1.77 2003-11-07 23:22:16 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -70,7 +70,8 @@
 #include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/thd.h"
 #include "../jrd/intl.h"
 #include "../jrd/flags.h"
@@ -354,9 +355,9 @@ void DDL_generate(dsql_req* request, dsql_nod* node)
 		return;
 	}
 	
-	request->append_uchar(gds_dyn_version_1);
+	request->append_uchar(isc_dyn_version_1);
 	generate_dyn(request, node);
-	request->append_uchar(gds_dyn_eoc);
+	request->append_uchar(isc_dyn_eoc);
 }
 
 
@@ -886,7 +887,7 @@ static void check_constraint(	dsql_req*		request,
 		define_constraint_trigger(request, element);
 	}
 
-	request->append_uchar(gds_dyn_end);	// For CHECK constraint definition
+	request->append_uchar(isc_dyn_end);	// For CHECK constraint definition
 }
 
 
@@ -973,7 +974,7 @@ static void create_view_triggers(dsql_req* request, dsql_nod* element,
 		MAKE_constant((str*) PRE_STORE_TRIGGER, CONSTANT_SLONG);
 	define_view_trigger(request, element, NULL, items);
 
-	request->append_uchar(gds_dyn_end);	// For triggers definition
+	request->append_uchar(isc_dyn_end);	// For triggers definition
 }
 
 
@@ -1035,7 +1036,7 @@ static void define_computed(dsql_req* request,
 
 	// generate the blr expression
 
-	request->append_uchar(gds_dyn_fld_computed_blr);
+	request->append_uchar(isc_dyn_fld_computed_blr);
 	request->begin_blr(0);
 	GEN_expr(request, input);
 	request->end_blr();
@@ -1065,7 +1066,7 @@ static void define_computed(dsql_req* request,
 	// generate the source text
 	const str* source = (str*) node->nod_arg[e_cmp_text];
 	fb_assert(source->str_length <= MAX_USHORT);
-	request->append_string(	gds_dyn_fld_computed_source,
+	request->append_string(	isc_dyn_fld_computed_source,
 							source->str_data,
 							(USHORT) source->str_length);
 }
@@ -1101,7 +1102,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 
 	fb_assert(trigger_name->str_length <= MAX_USHORT);
 
-	request->append_string(	gds_dyn_def_trigger,
+	request->append_string(	isc_dyn_def_trigger,
 							trigger_name->str_data,
 							(USHORT) trigger_name->str_length);
 
@@ -1110,7 +1111,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 
 	fb_assert(trigger_name->str_length <= MAX_USHORT);
 
-	request->append_string(	gds_dyn_rel_name,
+	request->append_string(	isc_dyn_rel_name,
 							relation_name->str_data,
 							(USHORT) relation_name->str_length);
 
@@ -1118,7 +1119,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 	if (source)
 	{
 		fb_assert(source->str_length <= MAX_USHORT);
-		request->append_string(	gds_dyn_trg_source,
+		request->append_string(	isc_dyn_trg_source,
 								source->str_data,
 								(USHORT) source->str_length);
 	}
@@ -1126,34 +1127,34 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 	dsql_nod* constant = node->nod_arg[e_cnstr_position];
 	if (constant)
 	{
-		request->append_number(gds_dyn_trg_sequence,
+		request->append_number(isc_dyn_trg_sequence,
 				   (SSHORT)(SLONG) (constant ? constant->nod_arg[0] : 0));
 	}
 
 	if ((constant = node->nod_arg[e_cnstr_type]) != NULL)
 	{
 		const SSHORT type = (SSHORT)(SLONG) constant->nod_arg[0];
-		request->append_number(gds_dyn_trg_type, type);
+		request->append_number(isc_dyn_trg_type, type);
 	}
 
-	request->append_uchar(gds_dyn_sql_object);
+	request->append_uchar(isc_dyn_sql_object);
 
 	const str* message = (str*) node->nod_arg[e_cnstr_message];
 	if (message)
 	{
-		request->append_number(gds_dyn_def_trigger_msg, 0);
+		request->append_number(isc_dyn_def_trigger_msg, 0);
 		fb_assert(message->str_length <= MAX_USHORT);
-		request->append_string(	gds_dyn_trg_msg,
+		request->append_string(	isc_dyn_trg_msg,
 								message->str_data,
 								(USHORT) message->str_length);
-		request->append_uchar(gds_dyn_end);
+		request->append_uchar(isc_dyn_end);
 	}
 
 	// generate the trigger blr
 
 	if (node->nod_arg[e_cnstr_condition] && node->nod_arg[e_cnstr_actions])
 	{
-		request->begin_blr(gds_dyn_trg_blr);
+		request->begin_blr(isc_dyn_trg_blr);
 		request->append_uchar(blr_begin);
 
 		/* create the "OLD" and "NEW" contexts for the trigger --
@@ -1219,7 +1220,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 
     request->append_number(isc_dyn_system_flag, frb_sysflag_check_constraint);
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 
 /* the request type may have been set incorrectly when parsing
    the trigger actions, so reset it to reflect the fact that this
@@ -1251,9 +1252,9 @@ static void define_database( dsql_req* request)
 
 	const dsql_nod* ddl_node = request->req_ddl_node;
 
-	request->append_uchar(gds_dyn_mod_database);
+	request->append_uchar(isc_dyn_mod_database);
 /*
-request->append_number(gds_dyn_rel_sql_protection, 1);
+request->append_number(isc_dyn_rel_sql_protection, 1);
 */
 
 	const dsql_nod* elements = ddl_node->nod_arg[e_database_initial_desc];
@@ -1297,13 +1298,13 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 				break;
 			case nod_file_desc:
 				file = (FIL) element->nod_arg[0];
-				request->append_cstring(gds_dyn_def_file,
+				request->append_cstring(isc_dyn_def_file,
 							file->fil_name->str_data);
 
 				start = MAX(start, file->fil_start);
 				request->append_file_start(start);
 				request->append_file_length(file->fil_length);
-				request->append_uchar(gds_dyn_end);
+				request->append_uchar(isc_dyn_end);
 				start += file->fil_length;
 				break;
 
@@ -1311,64 +1312,64 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 				file = (FIL) element->nod_arg[0];
 
 				if (file->fil_flags & LOG_default) {
-					request->append_uchar(gds_dyn_def_default_log);
+					request->append_uchar(isc_dyn_def_default_log);
 					break;
 				}
-				request->append_cstring(gds_dyn_def_log_file,
+				request->append_cstring(isc_dyn_def_log_file,
 							file->fil_name->str_data);
 				request->append_file_length(file->fil_length);
-				request->append_uchar(gds_dyn_log_file_sequence);
+				request->append_uchar(isc_dyn_log_file_sequence);
 				request->append_ushort_with_length(number);
 				++number;
-				request->append_uchar(gds_dyn_log_file_partitions);
+				request->append_uchar(isc_dyn_log_file_partitions);
 				request->append_ushort_with_length(file->fil_partitions);
 				if (file->fil_flags & LOG_serial) {
-					request->append_uchar(gds_dyn_log_file_serial);
+					request->append_uchar(isc_dyn_log_file_serial);
 				}
 				if (file->fil_flags & LOG_overflow) {
-					request->append_uchar(gds_dyn_log_file_overflow);
+					request->append_uchar(isc_dyn_log_file_overflow);
 				}
 				if (file->fil_flags & LOG_raw) {
-					request->append_uchar(gds_dyn_log_file_raw);
+					request->append_uchar(isc_dyn_log_file_raw);
 				}
-				request->append_uchar(gds_dyn_end);
+				request->append_uchar(isc_dyn_end);
 				break;
 
 			case nod_cache_file_desc:
 				file = (FIL) element->nod_arg[0];
-				request->append_cstring(gds_dyn_def_cache_file,
+				request->append_cstring(isc_dyn_def_cache_file,
 							file->fil_name->str_data);
 				request->append_file_length(file->fil_length);
-				request->append_uchar(gds_dyn_end);
+				request->append_uchar(isc_dyn_end);
 				break;
 
 			case nod_group_commit_wait:
-				request->append_uchar(gds_dyn_log_group_commit_wait);
+				request->append_uchar(isc_dyn_log_group_commit_wait);
 				temp_long = (SLONG) (element->nod_arg[0]);
 				request->append_ulong_with_length(temp_long);
 				break;
 
 			case nod_check_point_len:
-				request->append_uchar(gds_dyn_log_check_point_length);
+				request->append_uchar(isc_dyn_log_check_point_length);
 				temp_long = (SLONG) (element->nod_arg[0]);
 				request->append_ulong_with_length(temp_long);
 				break;
 
 			case nod_num_log_buffers:
-				request->append_uchar(gds_dyn_log_num_of_buffers);
+				request->append_uchar(isc_dyn_log_num_of_buffers);
 				temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
 				request->append_ushort_with_length(temp_short);
 				break;
 
 			case nod_log_buffer_size:
-				request->append_uchar(gds_dyn_log_buffer_size);
+				request->append_uchar(isc_dyn_log_buffer_size);
 				temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
 				request->append_ushort_with_length(temp_short);
 				break;
 
 			case nod_dfl_charset:
 				name = (str*) element->nod_arg[0];
-				request->append_cstring(gds_dyn_fld_character_set_name,
+				request->append_cstring(isc_dyn_fld_character_set_name,
 							name->str_data);
 				break;
 
@@ -1378,7 +1379,7 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 		}
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -1406,17 +1407,17 @@ static void define_del_cascade_trg(	dsql_req*    request,
 	}
 
 	// stuff a trigger_name of size 0. So the dyn-parser will make one up.
-	request->append_string(	gds_dyn_def_trigger, "", 0);
+	request->append_string(	isc_dyn_def_trigger, "", 0);
 
-	request->append_number(gds_dyn_trg_type, (SSHORT) POST_ERASE_TRIGGER);
+	request->append_number(isc_dyn_trg_type, (SSHORT) POST_ERASE_TRIGGER);
 
-	request->append_uchar(gds_dyn_sql_object);
-	request->append_number(gds_dyn_trg_sequence, (SSHORT) 1);
-	request->append_number(gds_dyn_trg_inactive, (SSHORT) 0);
-	request->append_cstring(gds_dyn_rel_name, prim_rel_name);
+	request->append_uchar(isc_dyn_sql_object);
+	request->append_number(isc_dyn_trg_sequence, (SSHORT) 1);
+	request->append_number(isc_dyn_trg_inactive, (SSHORT) 0);
+	request->append_cstring(isc_dyn_rel_name, prim_rel_name);
 
 	// the trigger blr
-	request->begin_blr(gds_dyn_trg_blr);
+	request->begin_blr(isc_dyn_trg_blr);
 	request->append_uchar(blr_for);
 	request->append_uchar(blr_rse);
 
@@ -1439,7 +1440,7 @@ static void define_del_cascade_trg(	dsql_req*    request,
                            frb_sysflag_referential_constraint);
 
 	// no trg_source and no trg_description
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 
 }
 
@@ -1610,7 +1611,7 @@ static void define_set_default_trg(	dsql_req*    request,
                             frb_sysflag_referential_constraint);
 
 	// no trg_source and no trg_description
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -1636,23 +1637,23 @@ static void define_dimensions( dsql_req* request, dsql_fld* field)
 				  gds_arg_gds, gds_dsql_max_arr_dim_exceeded, 0);
 	}
 
-	request->append_number(gds_dyn_fld_dimensions, (SSHORT) dims);
+	request->append_number(isc_dyn_fld_dimensions, (SSHORT) dims);
 
 	SSHORT position = 0;
 	dsql_nod** ptr = elements->nod_arg;
 	for (const dsql_nod* const* const end = ptr + elements->nod_count;
 		ptr < end; ++ptr, ++position)
 	{
-		request->append_number(gds_dyn_def_dimension, position);
+		request->append_number(isc_dyn_def_dimension, position);
 		dsql_nod* element = *ptr++;
-		request->append_uchar(gds_dyn_dim_lower);
+		request->append_uchar(isc_dyn_dim_lower);
 		SLONG lrange = (SLONG) (element->nod_arg[0]);
 		request->append_ulong_with_length(lrange);
 		element = *ptr;
-		request->append_uchar(gds_dyn_dim_upper);
+		request->append_uchar(isc_dyn_dim_upper);
 		SLONG hrange = (SLONG) (element->nod_arg[0]);
 		request->append_ulong_with_length(hrange);
-		request->append_uchar(gds_dyn_end);
+		request->append_uchar(isc_dyn_end);
 		if (lrange >= hrange)
 		{
 			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -604,
@@ -1681,7 +1682,7 @@ static void define_domain(dsql_req* request)
 	dsql_nod* element = request->req_ddl_node;
 	dsql_fld* field = (dsql_fld*) element->nod_arg[e_dom_name];
 
-	request->append_cstring(gds_dyn_def_global_fld, field->fld_name);
+	request->append_cstring(isc_dyn_def_global_fld, field->fld_name);
 
 	DDL_resolve_intl_type(request, field,
 						  (str*) element->nod_arg[e_dom_collate]);
@@ -1693,7 +1694,7 @@ static void define_domain(dsql_req* request)
 	if (node)
 	{
 		node = PASS1_node(request, node, false);
-		request->begin_blr(gds_dyn_fld_default_value);
+		request->begin_blr(isc_dyn_fld_default_value);
 		GEN_expr(request, node);
 		request->end_blr();
 
@@ -1701,7 +1702,7 @@ static void define_domain(dsql_req* request)
 		if (string)
 		{
 			fb_assert(string->str_length <= MAX_USHORT);
-			request->append_string(	gds_dyn_fld_default_source,
+			request->append_string(	isc_dyn_fld_default_source,
 									string->str_data,
 									string->str_length);
 		}
@@ -1727,7 +1728,7 @@ static void define_domain(dsql_req* request)
 				{
 					if (!null_flag)
 					{
-						request->append_uchar(gds_dyn_fld_not_null);
+						request->append_uchar(isc_dyn_fld_not_null);
 						null_flag = true;
 					}
 					else
@@ -1752,11 +1753,11 @@ static void define_domain(dsql_req* request)
 					if (string)
 					{
 						fb_assert(string->str_length <= MAX_USHORT);
-						request->append_string(	gds_dyn_fld_validation_source,
+						request->append_string(	isc_dyn_fld_validation_source,
 												string->str_data,
 												string->str_length);
 					}
-					request->begin_blr(gds_dyn_fld_validation_blr);
+					request->begin_blr(isc_dyn_fld_validation_blr);
 
 					/* Set any VALUE nodes to the type of the domain being defined. */
 					if (node1->nod_arg[e_cnstr_condition])
@@ -1788,7 +1789,7 @@ static void define_domain(dsql_req* request)
 		}
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -1809,16 +1810,16 @@ static void define_exception( dsql_req* request, NOD_TYPE op)
 	const str* text = (str*) ddl_node->nod_arg[e_xcp_text];
 
 	if (op == nod_def_exception)
-		request->append_cstring(gds_dyn_def_exception, name->str_data);
+		request->append_cstring(isc_dyn_def_exception, name->str_data);
 	else if (op == nod_mod_exception)
-		request->append_cstring(gds_dyn_mod_exception, name->str_data);
+		request->append_cstring(isc_dyn_mod_exception, name->str_data);
 	else
-		request->append_cstring(gds_dyn_del_exception, name->str_data);
+		request->append_cstring(isc_dyn_del_exception, name->str_data);
 
 	if (op != nod_del_exception) {
 		fb_assert(text->str_length <= MAX_USHORT);
-		request->append_string(gds_dyn_xcp_msg, text->str_data, text->str_length);
-		request->append_uchar(gds_dyn_end);
+		request->append_string(isc_dyn_xcp_msg, text->str_data, text->str_length);
+		request->append_uchar(isc_dyn_end);
 	}
 }
 
@@ -1853,10 +1854,10 @@ static void define_field(
 
 	dsql_nod* domain_node = element->nod_arg[e_dfl_domain];
 	if (domain_node) {
-		request->append_cstring(gds_dyn_def_local_fld, field->fld_name);
+		request->append_cstring(isc_dyn_def_local_fld, field->fld_name);
 		node1 = domain_node->nod_arg[e_dom_name];
 		const str* domain_name = (str*) node1->nod_arg[e_fln_name];
-		request->append_cstring(gds_dyn_fld_source, domain_name->str_data);
+		request->append_cstring(isc_dyn_fld_source, domain_name->str_data);
 
 		/* Get the domain information */
 
@@ -1872,15 +1873,15 @@ static void define_field(
 								field,
 								reinterpret_cast<str*>(element->nod_arg[e_dfl_collate]));
 		if (element->nod_arg[e_dfl_collate]) {
-			request->append_number(gds_dyn_fld_collation,
+			request->append_number(isc_dyn_fld_collation,
 					   field->fld_collation_id);
 		}
 	}
 	else
 	{
-		request->append_cstring(gds_dyn_def_sql_fld, field->fld_name);
+		request->append_cstring(isc_dyn_def_sql_fld, field->fld_name);
 		if (relation_name) {
-			request->append_cstring(gds_dyn_rel_name, relation_name->str_data);
+			request->append_cstring(isc_dyn_rel_name, relation_name->str_data);
 		}
 
 		if (element->nod_arg[e_dfl_computed])
@@ -1898,7 +1899,7 @@ static void define_field(
 	}
 
 	if (position != -1)
-		request->append_number(gds_dyn_fld_position, position);
+		request->append_number(isc_dyn_fld_position, position);
 
 	const str* string;
 	
@@ -1908,7 +1909,7 @@ static void define_field(
 	if (node)
 	{
 		node = PASS1_node(request, node, false);
-		request->begin_blr(gds_dyn_fld_default_value);
+		request->begin_blr(isc_dyn_fld_default_value);
 		if (node->nod_type == nod_null) {
 			default_null_flag = true;
 		}
@@ -1918,7 +1919,7 @@ static void define_field(
 		if (string)
 		{
 			fb_assert(string->str_length <= MAX_USHORT);
-			request->append_string(	gds_dyn_fld_default_source,
+			request->append_string(	isc_dyn_fld_default_source,
 									string->str_data,
 									string->str_length);
 		}
@@ -1949,27 +1950,27 @@ static void define_field(
 								  gds_arg_gds, isc_invalid_clause,
 								  gds_arg_string, "default null not null", 0);
 					}
-					request->append_uchar(gds_dyn_fld_not_null);
+					request->append_uchar(isc_dyn_fld_not_null);
 					if (!cnstrt_flag) {
-						request->append_uchar(gds_dyn_end);	/* For field definition  */
+						request->append_uchar(isc_dyn_end);	/* For field definition  */
 						cnstrt_flag = true;
 					}
-					request->append_cstring(gds_dyn_rel_constraint,
+					request->append_cstring(isc_dyn_rel_constraint,
 									string ? string->str_data : 0);
-					request->append_uchar(gds_dyn_fld_not_null);
-					request->append_uchar(gds_dyn_end);	/* For NOT NULL Constraint definition  */
+					request->append_uchar(isc_dyn_fld_not_null);
+					request->append_uchar(isc_dyn_end);	/* For NOT NULL Constraint definition  */
 				}
 				else if (node1->nod_type == nod_primary
 						 || node1->nod_type == nod_unique)
 				{
 					if (!cnstrt_flag)
 					{
-						request->append_uchar(gds_dyn_end);	/* For field definition  */
+						request->append_uchar(isc_dyn_end);	/* For field definition  */
 						cnstrt_flag = true;
 					}
 
 					const char* constraint_name = string ? string->str_data : 0;
-					request->append_cstring(gds_dyn_rel_constraint, constraint_name);
+					request->append_cstring(isc_dyn_rel_constraint, constraint_name);
 
 					dsql_nod* index = node1->nod_arg[e_pri_index];
 					fb_assert(index);
@@ -1983,38 +1984,38 @@ static void define_field(
 
 					if (node1->nod_type == nod_primary)
 					{
-						request->append_cstring(gds_dyn_def_primary_key, index_name);
+						request->append_cstring(isc_dyn_def_primary_key, index_name);
 					}
 					else if (node1->nod_type == nod_unique)
 					{
-						request->append_cstring(gds_dyn_def_unique, index_name);
+						request->append_cstring(isc_dyn_def_unique, index_name);
 					}
 
-					request->append_number(gds_dyn_idx_unique, 1);
+					request->append_number(isc_dyn_idx_unique, 1);
 
 					if (index->nod_arg[e_idx_asc_dsc])
 					{
-						request->append_number(gds_dyn_idx_type, 1);
+						request->append_number(isc_dyn_idx_type, 1);
 					}
 
-					request->append_cstring(gds_dyn_fld_name, field->fld_name);
-					request->append_uchar(gds_dyn_end);
+					request->append_cstring(isc_dyn_fld_name, field->fld_name);
+					request->append_uchar(isc_dyn_end);
 				}
 				else if (node1->nod_type == nod_foreign) {
 					if (!cnstrt_flag) {
-						request->append_uchar(gds_dyn_end);	/* For field definition  */
+						request->append_uchar(isc_dyn_end);	/* For field definition  */
 						cnstrt_flag = true;
 					}
 					const char* constraint_name = string ? string->str_data : 0;
-					request->append_cstring(gds_dyn_rel_constraint, constraint_name);
+					request->append_cstring(isc_dyn_rel_constraint, constraint_name);
 					foreign_key(request, node1, constraint_name);
 				}
 				else if (node1->nod_type == nod_def_constraint) {
 					if (!cnstrt_flag) {
-						request->append_uchar(gds_dyn_end);	/* For field definition  */
+						request->append_uchar(isc_dyn_end);	/* For field definition  */
 						cnstrt_flag = true;
 					}
-					request->append_cstring(gds_dyn_rel_constraint,
+					request->append_cstring(isc_dyn_rel_constraint,
 									string ? string->str_data : 0);
 					check_constraint(request, node1,
 									 false /* No delete trigger */ );
@@ -2024,7 +2025,7 @@ static void define_field(
 	}
 
 	if (!cnstrt_flag) {
-		request->append_uchar(gds_dyn_end);
+		request->append_uchar(isc_dyn_end);
 	}
 }
 
@@ -2043,18 +2044,18 @@ static void define_filter( dsql_req* request)
  **************************************/
 	const dsql_nod* filter_node = request->req_ddl_node;
 	dsql_nod* const* ptr = filter_node->nod_arg;
-	request->append_cstring(gds_dyn_def_filter,
+	request->append_cstring(isc_dyn_def_filter,
 				((str*) (ptr[e_filter_name]))->str_data);
-	request->append_number(gds_dyn_filter_in_subtype,
+	request->append_number(isc_dyn_filter_in_subtype,
 			   (SSHORT)(SLONG) ((ptr[e_filter_in_type])->nod_arg[0]));
-	request->append_number(gds_dyn_filter_out_subtype,
+	request->append_number(isc_dyn_filter_out_subtype,
 			   (SSHORT)(SLONG) ((ptr[e_filter_out_type])->nod_arg[0]));
-	request->append_cstring(gds_dyn_func_entry_point,
+	request->append_cstring(isc_dyn_func_entry_point,
 				((str*) (ptr[e_filter_entry_pt]))->str_data);
-	request->append_cstring(gds_dyn_func_module_name,
+	request->append_cstring(isc_dyn_func_module_name,
 				((str*) (ptr[e_filter_module]))->str_data);
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -2072,8 +2073,8 @@ static void define_generator( dsql_req* request)
  **************************************/
 
 	const str* gen_name = (str*) request->req_ddl_node->nod_arg[e_gen_name];
-	request->append_cstring(gds_dyn_def_generator, gen_name->str_data);
-	request->append_uchar(gds_dyn_end);
+	request->append_cstring(isc_dyn_def_generator, gen_name->str_data);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -2089,7 +2090,7 @@ static void define_index(dsql_req* request)
  *	Generate ddl to create an index.
  *
  **************************************/
-	request->append_uchar(gds_dyn_begin);
+	request->append_uchar(isc_dyn_begin);
 
 	dsql_nod* ddl_node = request->req_ddl_node;
 	dsql_nod* relation_node = (dsql_nod*) ddl_node->nod_arg[e_idx_table];
@@ -2097,8 +2098,8 @@ static void define_index(dsql_req* request)
 	dsql_nod* field_list = ddl_node->nod_arg[e_idx_fields];
 	const str* index_name = (str*) ddl_node->nod_arg[e_idx_name];
 
-	request->append_cstring(gds_dyn_def_idx, index_name->str_data);
-	request->append_cstring(gds_dyn_rel_name, relation_name->str_data);
+	request->append_cstring(isc_dyn_def_idx, index_name->str_data);
+	request->append_cstring(isc_dyn_rel_name, relation_name->str_data);
 
 /* go through the fields list, making an index segment for each field,
    unless we have a computation, in which case generate an expression index */
@@ -2108,7 +2109,7 @@ static void define_index(dsql_req* request)
 	    dsql_nod** ptr = field_list->nod_arg;
 	    dsql_nod* const* const end = ptr + field_list->nod_count;
 		for (; ptr < end; ptr++)
-			request->append_cstring(gds_dyn_fld_name,
+			request->append_cstring(isc_dyn_fld_name,
 						((str*) (*ptr)->nod_arg[1])->str_data);
 	}
 #ifdef EXPRESSION_INDICES
@@ -2119,15 +2120,15 @@ static void define_index(dsql_req* request)
 /* check for a unique index */
 
 	if (ddl_node->nod_arg[e_idx_unique]) {
-		request->append_number(gds_dyn_idx_unique, 1);
+		request->append_number(isc_dyn_idx_unique, 1);
 	}
 
 	if (ddl_node->nod_arg[e_idx_asc_dsc]) {
-		request->append_number(gds_dyn_idx_type, 1);
+		request->append_number(isc_dyn_idx_type, 1);
 	}
 
-	request->append_uchar(gds_dyn_end);			/* of define index */
-	request->append_uchar(gds_dyn_end);			/* of begin */
+	request->append_uchar(isc_dyn_end);			/* of define index */
+	request->append_uchar(isc_dyn_end);			/* of begin */
 }
 
 #ifdef NOT_USED_OR_REPLACED
@@ -2282,13 +2283,13 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	}
 	else if (op == nod_def_procedure || op == nod_redef_procedure)
 	{
-		request->append_cstring(gds_dyn_def_procedure,
+		request->append_cstring(isc_dyn_def_procedure,
 					procedure_name->str_data);
-		request->append_number(gds_dyn_rel_sql_protection, 1);
+		request->append_number(isc_dyn_rel_sql_protection, 1);
 	}
 	else // op == nod_mod_procedure
 	{
-		request->append_cstring(gds_dyn_mod_procedure,
+		request->append_cstring(isc_dyn_mod_procedure,
 					procedure_name->str_data);
 		procedure = METD_get_procedure(request, procedure_name);
 		if (procedure)
@@ -2296,16 +2297,16 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			for (field = procedure->prc_inputs; field;
 				 field = field->fld_next)
 			{
-				request->append_cstring(gds_dyn_delete_parameter,
+				request->append_cstring(isc_dyn_delete_parameter,
 							field->fld_name);
-				request->append_uchar(gds_dyn_end);
+				request->append_uchar(isc_dyn_end);
 			}
 			for (field = procedure->prc_outputs; field;
 				 field = field->fld_next)
 			{
-				request->append_cstring(gds_dyn_delete_parameter,
+				request->append_cstring(isc_dyn_delete_parameter,
 							field->fld_name);
-				request->append_uchar(gds_dyn_end);
+				request->append_uchar(isc_dyn_end);
 			}
 		}
 	}
@@ -2314,7 +2315,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	if (source)
 	{
 		fb_assert(source->str_length <= MAX_USHORT);
-		request->append_string(	gds_dyn_prc_source,
+		request->append_string(	isc_dyn_prc_source,
 								source->str_data,
 								source->str_length);
 	}
@@ -2344,9 +2345,9 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			parameter = *ptr;
 			field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
 
-			request->append_cstring(gds_dyn_def_parameter, field->fld_name);
-			request->append_number(gds_dyn_prm_number, position);
-			request->append_number(gds_dyn_prm_type, 0);
+			request->append_cstring(isc_dyn_def_parameter, field->fld_name);
+			request->append_number(isc_dyn_prm_number, position);
+			request->append_number(isc_dyn_prm_type, 0);
 
 			DDL_resolve_intl_type(request, field, NULL);
 			put_field(request, field, false);
@@ -2360,8 +2361,8 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			field_ptr = &field->fld_next;
 			position++;
 
-			request->append_uchar(gds_dyn_end);
-			request->append_number(gds_dyn_prc_inputs, position);
+			request->append_uchar(isc_dyn_end);
+			request->append_number(isc_dyn_prc_inputs, position);
 		}
 		inputs = position;
 	}
@@ -2383,9 +2384,9 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 		{
 			parameter = *ptr;
 			field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
-			request->append_cstring(gds_dyn_def_parameter, field->fld_name);
-			request->append_number(gds_dyn_prm_number, position);
-			request->append_number(gds_dyn_prm_type, 1);
+			request->append_cstring(isc_dyn_def_parameter, field->fld_name);
+			request->append_number(isc_dyn_prm_number, position);
+			request->append_number(isc_dyn_prm_type, 1);
 			DDL_resolve_intl_type(request, field, NULL);
 			put_field(request, field, false);
 
@@ -2397,8 +2398,8 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			position++;
 			locals++;
 
-			request->append_uchar(gds_dyn_end);
-			request->append_number(gds_dyn_prc_outputs, position);
+			request->append_uchar(isc_dyn_end);
+			request->append_number(isc_dyn_prc_outputs, position);
 		}
 		outputs = position;
 	}
@@ -2407,7 +2408,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	procedure->prc_out_count = outputs;
 	procedure->prc_in_count = inputs;
 
-	request->begin_blr(gds_dyn_prc_blr);
+	request->begin_blr(isc_dyn_prc_blr);
 	request->append_uchar(blr_begin);
 	if (inputs)
 	{
@@ -2482,7 +2483,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	request->append_uchar(blr_end);
 	request->end_blr();
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -2495,7 +2496,7 @@ static void define_rel_constraint( dsql_req* request, dsql_nod* element)
 	const str* string           = (str*) element->nod_arg[e_rct_name];
 	const char* constraint_name = string ? string->str_data : 0;
 
-	request->append_cstring(gds_dyn_rel_constraint, constraint_name);
+	request->append_cstring(isc_dyn_rel_constraint, constraint_name);
 
 	dsql_nod* node = element->nod_arg[e_rct_type];
 
@@ -2533,14 +2534,14 @@ static void define_relation( dsql_req* request)
 
 	dsql_nod* relation_node = ddl_node->nod_arg[e_drl_name];
 	const str* relation_name = (str*) relation_node->nod_arg[e_rln_name];
-	request->append_cstring(gds_dyn_def_rel, relation_name->str_data);
+	request->append_cstring(isc_dyn_def_rel, relation_name->str_data);
 	const str* external_file = (str*) ddl_node->nod_arg[e_drl_ext_file];
 	if (external_file)
 	{
-		request->append_cstring(gds_dyn_rel_ext_file, external_file->str_data);
+		request->append_cstring(isc_dyn_rel_ext_file, external_file->str_data);
 	}
 	save_relation(request, relation_name);
-	request->append_number(gds_dyn_rel_sql_protection, 1);
+	request->append_number(isc_dyn_rel_sql_protection, 1);
 
 /* now do the actual metadata definition */
 
@@ -2566,7 +2567,7 @@ static void define_relation( dsql_req* request)
 		}
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -2577,7 +2578,7 @@ static void define_role(dsql_req* request)
 {
 	const str* gen_name = (str*) request->req_ddl_node->nod_arg[e_gen_name];
 	request->append_cstring(isc_dyn_def_sql_role, gen_name->str_data);
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -2646,7 +2647,7 @@ static void define_set_null_trg(dsql_req*    request,
                             frb_sysflag_referential_constraint);
 
 	// no trg_source and no trg_description
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 
 }
 
@@ -2666,11 +2667,11 @@ static void define_shadow(dsql_req* request)
 				  gds_arg_gds, gds_dsql_shadow_number_err, 0);
 	}
 
-	request->append_number(gds_dyn_def_shadow, (SSHORT)(SLONG) (ptr[e_shadow_number]));
-	request->append_cstring(gds_dyn_def_file, ((str*) (ptr[e_shadow_name]))->str_data);
-	request->append_number(gds_dyn_shadow_man_auto,
+	request->append_number(isc_dyn_def_shadow, (SSHORT)(SLONG) (ptr[e_shadow_number]));
+	request->append_cstring(isc_dyn_def_file, ((str*) (ptr[e_shadow_name]))->str_data);
+	request->append_number(isc_dyn_shadow_man_auto,
 			   (SSHORT)(SLONG) ((ptr[e_shadow_man_auto])->nod_arg[0]));
-	request->append_number(gds_dyn_shadow_conditional,
+	request->append_number(isc_dyn_shadow_conditional,
 			   (SSHORT)(SLONG) ((ptr[e_shadow_conditional])->nod_arg[0]));
 
 	request->append_file_start(0);
@@ -2678,7 +2679,7 @@ static void define_shadow(dsql_req* request)
 	SLONG length = (SLONG) ptr[e_shadow_length];
 	request->append_file_length(length);
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 	dsql_nod* elements = ptr[e_shadow_sec_files];
 	if (elements)
 	{
@@ -2687,7 +2688,7 @@ static void define_shadow(dsql_req* request)
 		{
 			dsql_nod* element = *ptr;
 			FIL file    = (FIL) element->nod_arg[0];
-			request->append_cstring(gds_dyn_def_file, file->fil_name->str_data);
+			request->append_cstring(isc_dyn_def_file, file->fil_name->str_data);
 
 			if (!length && !file->fil_start)
 			{
@@ -2703,11 +2704,11 @@ static void define_shadow(dsql_req* request)
 			request->append_file_start(start);
 			length = file->fil_length;
 			request->append_file_length(length);
-			request->append_uchar(gds_dyn_end);
+			request->append_uchar(isc_dyn_end);
 		}
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -2747,22 +2748,22 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 	else if (node->nod_type == nod_def_trigger)
 	{
 		fb_assert(trigger_name->str_length <= MAX_USHORT);
-		request->append_string(	gds_dyn_def_trigger,
+		request->append_string(	isc_dyn_def_trigger,
 								trigger_name->str_data,
 								trigger_name->str_length);
 		relation_node = node->nod_arg[e_trg_table];
 		relation_name = (str*) relation_node->nod_arg[e_rln_name];
 		fb_assert(relation_name->str_length <= MAX_USHORT);
-		request->append_string(	gds_dyn_rel_name,
+		request->append_string(	isc_dyn_rel_name,
 								relation_name->str_data,
 								relation_name->str_length);
-		request->append_uchar(gds_dyn_sql_object);
+		request->append_uchar(isc_dyn_sql_object);
 	}
 	else // nod_mod_trigger
 	{						
 		fb_assert(node->nod_type == nod_mod_trigger);
 		fb_assert(trigger_name->str_length <= MAX_USHORT);
-		request->append_string(	gds_dyn_mod_trigger,
+		request->append_string(	isc_dyn_mod_trigger,
 								trigger_name->str_data,
 								trigger_name->str_length);
 		if (node->nod_arg[e_trg_actions])
@@ -2795,21 +2796,21 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 
 	if (source && actions) {
 		fb_assert(source->str_length <= MAX_USHORT);
-		request->append_string(	gds_dyn_trg_source,
+		request->append_string(	isc_dyn_trg_source,
 								source->str_data,
 								source->str_length);
 	}
 
 	if (constant = node->nod_arg[e_trg_active])
-		request->append_number(gds_dyn_trg_inactive,
+		request->append_number(isc_dyn_trg_inactive,
 				   (SSHORT)(SLONG) constant->nod_arg[0]);
 
 	if (constant = node->nod_arg[e_trg_position])
-		request->append_number(gds_dyn_trg_sequence,
+		request->append_number(isc_dyn_trg_sequence,
 				   (SSHORT)(SLONG) constant->nod_arg[0]);
 
 	if (constant = node->nod_arg[e_trg_type]) {
-		request->append_number(gds_dyn_trg_type, (SSHORT)(SLONG) constant->nod_arg[0]);
+		request->append_number(isc_dyn_trg_type, (SSHORT)(SLONG) constant->nod_arg[0]);
 		trig_type = (USHORT)(ULONG) constant->nod_arg[0];
 	}
 	else {
@@ -2854,7 +2855,7 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 
 		// generate the trigger blr
 
-		request->begin_blr(gds_dyn_trg_blr);
+		request->begin_blr(isc_dyn_trg_blr);
 		request->append_uchar(blr_begin);
 
 		put_local_variables(request,
@@ -2893,27 +2894,27 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 			SSHORT number  = (SSHORT)(SLONG) message->nod_arg[e_msg_number];
 			if (message->nod_type == nod_del_trigger_msg)
 			{
-				request->append_number(gds_dyn_delete_trigger_msg, number);
-				request->append_uchar(gds_dyn_end);
+				request->append_number(isc_dyn_delete_trigger_msg, number);
+				request->append_uchar(isc_dyn_end);
 			}
 			else
 			{
 				const str* message_text = (str*) message->nod_arg[e_msg_text];
 				if (message->nod_type == nod_def_trigger_msg) {
-					request->append_number(gds_dyn_def_trigger_msg, number);
+					request->append_number(isc_dyn_def_trigger_msg, number);
 				} else {
-					request->append_number(gds_dyn_mod_trigger_msg, number);
+					request->append_number(isc_dyn_mod_trigger_msg, number);
 				}
 				fb_assert(message_text->str_length <= MAX_USHORT);
-				request->append_string(	gds_dyn_trg_msg,
+				request->append_string(	isc_dyn_trg_msg,
 										message_text->str_data,
 										message_text->str_length);
-				request->append_uchar(gds_dyn_end);
+				request->append_uchar(isc_dyn_end);
 			}
 		}
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -2938,9 +2939,9 @@ static void define_udf( dsql_req* request)
 	const char* udf_name = ((str*) (ptr[e_udf_name]))->str_data;
 	const str* func_entry_point_name = reinterpret_cast<str*>(ptr[e_udf_entry_pt]);
 	const str* func_module_name      = reinterpret_cast<str*>(ptr[e_udf_module]);
-	request->append_cstring(gds_dyn_def_function, udf_name);
-	request->append_cstring(gds_dyn_func_entry_point, func_entry_point_name->str_data);
-	request->append_cstring(gds_dyn_func_module_name, func_module_name->str_data);
+	request->append_cstring(isc_dyn_def_function, udf_name);
+	request->append_cstring(isc_dyn_func_entry_point, func_entry_point_name->str_data);
+	request->append_cstring(isc_dyn_func_module_name, func_module_name->str_data);
 
 	dsql_nod** ret_val_ptr = ptr[e_udf_return_value]->nod_arg;
 
@@ -2980,11 +2981,11 @@ static void define_udf( dsql_req* request)
 						  0);
 			}
 
-			request->append_number(gds_dyn_func_return_argument, blob_position);
+			request->append_number(isc_dyn_func_return_argument, blob_position);
 		}
 		else
 		{
-			request->append_number(gds_dyn_func_return_argument, (SSHORT) 0);
+			request->append_number(isc_dyn_func_return_argument, (SSHORT) 0);
 		}
 
 		position = 0;
@@ -3008,7 +3009,7 @@ static void define_udf( dsql_req* request)
 					  0);
 		}
 
-		request->append_number(gds_dyn_func_return_argument, position);
+		request->append_number(isc_dyn_func_return_argument, position);
 		position = 1;
 	}
 
@@ -3021,23 +3022,23 @@ static void define_udf( dsql_req* request)
         /* CVC: I need to test returning blobs by descriptor before allowing the
 		change there. For now, I ignore the return type specification. */
 			bool free_it = ((SSHORT)(SLONG) ret_val_ptr[1]->nod_arg[0] < 0);
-			request->append_number(gds_dyn_def_function_arg, blob_position);
-			request->append_number(gds_dyn_func_mechanism,
+			request->append_number(isc_dyn_def_function_arg, blob_position);
+			request->append_number(isc_dyn_func_mechanism,
 					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * FUN_blob_struct));
 			/* if we have the free_it set then the blob has
 			   to be freed on return */
 		}
 		else
 		{
-			request->append_number(gds_dyn_def_function_arg, (SSHORT) 0);
-			request->append_number(gds_dyn_func_mechanism,
+			request->append_number(isc_dyn_def_function_arg, (SSHORT) 0);
+			request->append_number(isc_dyn_func_mechanism,
 					   (SSHORT)(SLONG) (ret_val_ptr[1]->nod_arg[0]));
 		}
 
-		request->append_cstring(gds_dyn_function_name, udf_name);
+		request->append_cstring(isc_dyn_function_name, udf_name);
 		DDL_resolve_intl_type(request, field, NULL);
 		put_field(request, field, true);
-		request->append_uchar(gds_dyn_end);
+		request->append_uchar(isc_dyn_end);
 		position = 1;
 	}
 
@@ -3063,29 +3064,29 @@ static void define_udf( dsql_req* request)
             dsql_nod** param_node = (*ptr)->nod_arg;
             field = (dsql_fld*) param_node[e_udf_param_field];
 
-			request->append_number(gds_dyn_def_function_arg, (SSHORT) position);
+			request->append_number(isc_dyn_def_function_arg, (SSHORT) position);
 
             if (param_node[e_udf_param_type]) {
                 SSHORT arg_mechanism = (SSHORT)(SLONG) (param_node[e_udf_param_type]->nod_arg[0]);
-				request->append_number(gds_dyn_func_mechanism, arg_mechanism);
+				request->append_number(isc_dyn_func_mechanism, arg_mechanism);
             }
             else if (field->fld_dtype == dtype_blob) {
-				request->append_number(gds_dyn_func_mechanism, 
+				request->append_number(isc_dyn_func_mechanism, 
                                        (SSHORT) FUN_blob_struct);
             }
 			else {
-				request->append_number(gds_dyn_func_mechanism,
+				request->append_number(isc_dyn_func_mechanism,
 						   (SSHORT) FUN_reference);
 			}
 
-			request->append_cstring(gds_dyn_function_name, udf_name);
+			request->append_cstring(isc_dyn_function_name, udf_name);
 			DDL_resolve_intl_type(request, field, NULL);
 			put_field(request, field, true);
-			request->append_uchar(gds_dyn_end);
+			request->append_uchar(isc_dyn_end);
 		}
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -3296,7 +3297,7 @@ static void define_upd_cascade_trg(	dsql_req*    request,
                            frb_sysflag_referential_constraint);
 
 	// no trg_source and no trg_description
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 
 }
 
@@ -3331,14 +3332,14 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 	}
 	else if (op == nod_def_view || op == nod_redef_view)
 	{
-		request->append_cstring(gds_dyn_def_view,
+		request->append_cstring(isc_dyn_def_view,
 					view_name->str_data);
-		request->append_number(gds_dyn_rel_sql_protection, 1);
+		request->append_number(isc_dyn_rel_sql_protection, 1);
 		save_relation(request, view_name);
 	}
 	else // op == nod_mod_view
 	{
-		request->append_cstring(gds_dyn_mod_view,
+		request->append_cstring(isc_dyn_mod_view,
 					view_name->str_data);
 		const dsql_rel* relation = METD_get_relation(request, view_name);
 		if (relation)
@@ -3346,9 +3347,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 			for (const dsql_fld* field = relation->rel_fields; field;
 				 field = field->fld_next)
 			{
-				request->append_cstring(gds_dyn_delete_local_fld,
+				request->append_cstring(isc_dyn_delete_local_fld,
 							field->fld_name);
-				request->append_uchar(gds_dyn_end);
+				request->append_uchar(isc_dyn_end);
 			}
 		}
 		else
@@ -3378,7 +3379,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 
 	// store the blr and source string for the view definition
 
-	request->begin_blr(gds_dyn_view_blr);
+	request->begin_blr(isc_dyn_view_blr);
 	GEN_expr(request, rse);
 	request->end_blr();
 
@@ -3388,7 +3389,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 
 	const str* source = (str*) node->nod_arg[e_view_source];
 	fb_assert(source->str_length <= MAX_USHORT);
-	request->append_string(	gds_dyn_view_source,
+	request->append_string(	isc_dyn_view_source,
 							source->str_data,
 							source->str_length);
 
@@ -3411,12 +3412,12 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		const dsql_rel* relation = context->ctx_relation;
 		if (relation)
 		{
-			request->append_cstring(gds_dyn_view_relation, relation->rel_name);
-			request->append_number(gds_dyn_view_context, context->ctx_context);
-			request->append_cstring(gds_dyn_view_context_name,
+			request->append_cstring(isc_dyn_view_relation, relation->rel_name);
+			request->append_number(isc_dyn_view_context, context->ctx_context);
+			request->append_cstring(isc_dyn_view_context_name,
 						context->ctx_alias ? context->ctx_alias : relation->
 						rel_name);
-			request->append_uchar(gds_dyn_end);
+			request->append_uchar(isc_dyn_end);
 		}
 	}
 
@@ -3491,25 +3492,25 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 
 		if (field)
 		{
-			request->append_cstring(gds_dyn_def_local_fld, field_string);
-			request->append_cstring(gds_dyn_fld_base_fld, field->fld_name);
-			request->append_number(gds_dyn_view_context, context->ctx_context);
+			request->append_cstring(isc_dyn_def_local_fld, field_string);
+			request->append_cstring(isc_dyn_fld_base_fld, field->fld_name);
+			request->append_number(isc_dyn_view_context, context->ctx_context);
 		}
 		else
 		{
-			request->append_cstring(gds_dyn_def_sql_fld, field_string);
+			request->append_cstring(isc_dyn_def_sql_fld, field_string);
 			MAKE_desc(&field_node->nod_desc, field_node);
 			put_descriptor(request, &field_node->nod_desc);
-			request->begin_blr(gds_dyn_fld_computed_blr);
+			request->begin_blr(isc_dyn_fld_computed_blr);
 			GEN_expr(request, field_node);
 			request->end_blr();
-			request->append_number(gds_dyn_view_context, (SSHORT) 0);
+			request->append_number(isc_dyn_view_context, (SSHORT) 0);
 		}
 
 		save_field(request, field_string);
 
-		request->append_number(gds_dyn_fld_position, position);
-		request->append_uchar(gds_dyn_end);
+		request->append_number(isc_dyn_fld_position, position);
+		request->append_uchar(isc_dyn_end);
 	}
 
     /* CVC: This message was not catching the case when
@@ -3602,7 +3603,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		create_view_triggers(request, check, rse->nod_arg[e_rse_items]);
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 	reset_context_stack(request);
 }
 
@@ -3646,13 +3647,13 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 	if (node->nod_type == nod_def_constraint)
 	{
 		fb_assert(trigger_name->str_length <= MAX_USHORT);
-		request->append_string(	gds_dyn_def_trigger,
+		request->append_string(	isc_dyn_def_trigger,
 								trigger_name->str_data,
 								trigger_name->str_length);
 		relation_node = node->nod_arg[e_cnstr_table];
 		relation_name = (str*) relation_node->nod_arg[e_rln_name];
 		fb_assert(relation_name->str_length <= MAX_USHORT);
-		request->append_string(	gds_dyn_rel_name,
+		request->append_string(	isc_dyn_rel_name,
 								relation_name->str_data,
 								relation_name->str_length);
 	}
@@ -3664,7 +3665,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 	dsql_nod* constant = node->nod_arg[e_cnstr_position];
 	if (constant)
 	{
-		request->append_number(gds_dyn_trg_sequence,
+		request->append_number(isc_dyn_trg_sequence,
 				   (SSHORT)(SLONG) (constant ? constant->nod_arg[0] : 0));
 	}
 
@@ -3673,7 +3674,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 	if (constant)
 	{
 		trig_type = (USHORT)(ULONG) constant->nod_arg[0];
-		request->append_number(gds_dyn_trg_type, trig_type);
+		request->append_number(isc_dyn_trg_type, trig_type);
 	}
 	else
 	{
@@ -3683,24 +3684,24 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 		trig_type = 0;
 	}
 
-	request->append_uchar(gds_dyn_sql_object);
+	request->append_uchar(isc_dyn_sql_object);
 
 	const str* message = (str*) node->nod_arg[e_cnstr_message];
 	if (message)
 	{
-		request->append_number(gds_dyn_def_trigger_msg, 0);
+		request->append_number(isc_dyn_def_trigger_msg, 0);
 		fb_assert(message->str_length <= MAX_USHORT);
-		request->append_string(	gds_dyn_trg_msg,
+		request->append_string(	isc_dyn_trg_msg,
 								message->str_data,
 								message->str_length);
-		request->append_uchar(gds_dyn_end);
+		request->append_uchar(isc_dyn_end);
 	}
 
 	// generate the trigger blr
 
 	if (node->nod_arg[e_cnstr_condition] && node->nod_arg[e_cnstr_actions])
 	{
-		request->begin_blr(gds_dyn_trg_blr);
+		request->begin_blr(isc_dyn_trg_blr);
 		request->append_uchar(blr_begin);
 
 		/* create the "OLD" and "NEW" contexts for the trigger --
@@ -3801,7 +3802,7 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 		request->end_blr();
 	}
     request->append_number(isc_dyn_system_flag, frb_sysflag_view_check);
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 
 /* the request type may have been set incorrectly when parsing
    the trigger actions, so reset it to reflect the fact that this
@@ -3837,8 +3838,8 @@ static void delete_procedure (dsql_req*     request,
                 return;
         }
     }
-    request->append_cstring(gds_dyn_delete_procedure, string->str_data);
-    request->append_uchar(gds_dyn_end);
+    request->append_cstring(isc_dyn_delete_procedure, string->str_data);
+    request->append_uchar(isc_dyn_end);
 
 }
 
@@ -3903,8 +3904,8 @@ static void delete_relation_view (
         }
     }
     if (relation) {
-        request->append_cstring(gds_dyn_delete_rel, string->str_data);
-        request->append_uchar(gds_dyn_end);
+        request->append_cstring(isc_dyn_delete_rel, string->str_data);
+        request->append_uchar(isc_dyn_end);
     }
 }
 
@@ -4021,10 +4022,10 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 		break;
 
     case nod_redef_relation:
-		stuff(request, gds_dyn_begin);
+		stuff(request, isc_dyn_begin);
 		delete_relation_view(request, node, true); // silent.
 		define_relation (request);
-		stuff(request, gds_dyn_end);
+		stuff(request, isc_dyn_end);
 		break;
 
 	case nod_def_view:
@@ -4034,10 +4035,10 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 		break;
 
     case nod_redef_view:
-		stuff(request, gds_dyn_begin);
+		stuff(request, isc_dyn_begin);
 		delete_relation_view(request, node, true); // silent.
 		define_view(request, node->nod_type);
-		stuff(request, gds_dyn_end);
+		stuff(request, isc_dyn_end);
 		break;
 
 	case nod_def_exception:
@@ -4053,10 +4054,10 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 		break;
 
     case nod_redef_procedure:
-        stuff(request, gds_dyn_begin);
+        stuff(request, isc_dyn_begin);
         delete_procedure(request, node, true); // silent.
         define_procedure(request, node->nod_type);
-        stuff(request, gds_dyn_end);
+        stuff(request, isc_dyn_end);
         break;
 
 
@@ -4076,14 +4077,14 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 
 	case nod_del_domain:
 		string = (str*) node->nod_arg[0];
-		request->append_cstring(gds_dyn_delete_global_fld, string->str_data);
-		request->append_uchar(gds_dyn_end);
+		request->append_cstring(isc_dyn_delete_global_fld, string->str_data);
+		request->append_uchar(isc_dyn_end);
 		break;
 
 	case nod_del_index:
 		string = (str*) node->nod_arg[0];
-		request->append_cstring(gds_dyn_delete_idx, string->str_data);
-		request->append_uchar(gds_dyn_end);
+		request->append_cstring(isc_dyn_delete_idx, string->str_data);
+		request->append_uchar(isc_dyn_end);
 		break;
 
     /* CVC: Handling drop table and drop view properly. */
@@ -4098,14 +4099,14 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 
 	case nod_del_trigger:
 		string = (str*) node->nod_arg[0];
-		request->append_cstring(gds_dyn_delete_trigger, string->str_data);
-		request->append_uchar(gds_dyn_end);
+		request->append_cstring(isc_dyn_delete_trigger, string->str_data);
+		request->append_uchar(isc_dyn_end);
 		break;
 
 	case nod_del_role:
 		string = (str*) node->nod_arg[0];
 		request->append_cstring(isc_dyn_del_sql_role, string->str_data);
-		request->append_uchar(gds_dyn_end);
+		request->append_uchar(isc_dyn_end);
 		break;
 
 	case nod_grant:
@@ -4128,13 +4129,13 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 	case nod_del_generator:
 		string = (str*) node->nod_arg[0];
         request->append_cstring(isc_dyn_delete_generator, string->str_data);
-        request->append_uchar(gds_dyn_end);
+        request->append_uchar(isc_dyn_end);
 		break;
 
 	case nod_del_filter:
 		string = (str*) node->nod_arg[0];
-		request->append_cstring(gds_dyn_delete_filter, string->str_data);
-		request->append_uchar(gds_dyn_end);
+		request->append_cstring(isc_dyn_delete_filter, string->str_data);
+		request->append_uchar(isc_dyn_end);
 		break;
 
 	case nod_def_udf:
@@ -4143,8 +4144,8 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 
 	case nod_del_udf:
 		string = (str*) node->nod_arg[0];
-		request->append_cstring(gds_dyn_delete_function, string->str_data);
-		request->append_uchar(gds_dyn_end);
+		request->append_cstring(isc_dyn_delete_function, string->str_data);
+		request->append_uchar(isc_dyn_end);
 		break;
 
 	case nod_def_shadow:
@@ -4152,9 +4153,9 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 		break;
 
 	case nod_del_shadow:
-		request->append_number(gds_dyn_delete_shadow,
+		request->append_number(isc_dyn_delete_shadow,
 				   (SSHORT)(SLONG) (node->nod_arg[0]));
-		request->append_uchar(gds_dyn_end);
+		request->append_uchar(isc_dyn_end);
 		break;
 
 	case nod_mod_database:
@@ -4214,7 +4215,7 @@ static void grant_revoke( dsql_req* request)
 			option = 1; // with grant option
 		}
 
-		request->append_uchar(gds_dyn_begin);
+		request->append_uchar(isc_dyn_begin);
 
 		uend = users->nod_arg + users->nod_count;
 		for (uptr = users->nod_arg; uptr < uend; ++uptr)
@@ -4251,7 +4252,7 @@ static void grant_revoke( dsql_req* request)
 		}
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -4293,29 +4294,29 @@ static void make_index(	dsql_req*    request,
 
 	if (element->nod_type == nod_primary)
 	{
-		request->append_cstring(gds_dyn_def_primary_key, index_name);
+		request->append_cstring(isc_dyn_def_primary_key, index_name);
 	}
 	else if (element->nod_type == nod_unique)
 	{
-		request->append_cstring(gds_dyn_def_unique, index_name);
+		request->append_cstring(isc_dyn_def_unique, index_name);
 	}
 
-	request->append_number(gds_dyn_idx_unique, 1);
+	request->append_number(isc_dyn_idx_unique, 1);
 
 	if (index->nod_arg[e_idx_asc_dsc])
 	{
-		request->append_number(gds_dyn_idx_type, 1);
+		request->append_number(isc_dyn_idx_type, 1);
 	}
 
 	const dsql_nod* const* const end = columns->nod_arg + columns->nod_count;
 	for (const dsql_nod* const* ptr = columns->nod_arg; ptr < end; ++ptr)
 	{
 		const str* field_name = (str*) (*ptr)->nod_arg[1];
-		request->append_cstring(gds_dyn_fld_name,
+		request->append_cstring(isc_dyn_fld_name,
 					field_name->str_data);
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -4367,11 +4368,11 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 		index_name = string->str_data;
 	}
 
-	request->append_cstring(gds_dyn_def_foreign_key, index_name);
+	request->append_cstring(isc_dyn_def_foreign_key, index_name);
 
 	if (index->nod_arg[e_idx_asc_dsc])
 	{
-		request->append_number(gds_dyn_idx_type, 1);
+		request->append_number(isc_dyn_idx_type, 1);
 	}
 
 	if (element->nod_arg[e_for_action])
@@ -4384,35 +4385,35 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 		{
 			fb_assert(nod_ref_upd_action->nod_type == nod_ref_trig_action);
 
-			request->append_uchar(gds_dyn_foreign_key_update);
+			request->append_uchar(isc_dyn_foreign_key_update);
 			switch (nod_ref_upd_action->nod_flags)
 			{
 			case REF_ACTION_CASCADE:
-				request->append_uchar(gds_dyn_foreign_key_cascade);
+				request->append_uchar(isc_dyn_foreign_key_cascade);
 				define_upd_cascade_trg(request, element, columns,
 									   referenced_columns, relation_name,
 									   for_rel_name_str->str_data);
 				break;
 			case REF_ACTION_SET_DEFAULT:
-				request->append_uchar(gds_dyn_foreign_key_default);
+				request->append_uchar(isc_dyn_foreign_key_default);
 				define_set_default_trg(request, element, columns,
 									   referenced_columns, relation_name,
 									   for_rel_name_str->str_data,
 									   true);
 				break;
 			case REF_ACTION_SET_NULL:
-				request->append_uchar(gds_dyn_foreign_key_null);
+				request->append_uchar(isc_dyn_foreign_key_null);
 				define_set_null_trg(request, element, columns,
 									referenced_columns, relation_name,
 									for_rel_name_str->str_data,
 									true);
 				break;
 			case REF_ACTION_NONE:
-				request->append_uchar(gds_dyn_foreign_key_none);
+				request->append_uchar(isc_dyn_foreign_key_none);
 				break;
 			default:
 				fb_assert(0);
-				request->append_uchar(gds_dyn_foreign_key_none);	/* just in case */
+				request->append_uchar(isc_dyn_foreign_key_none);	/* just in case */
 				break;
 			}
 		}
@@ -4422,34 +4423,34 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 		{
 			fb_assert(nod_ref_del_action->nod_type == nod_ref_trig_action);
 
-			request->append_uchar(gds_dyn_foreign_key_delete);
+			request->append_uchar(isc_dyn_foreign_key_delete);
 			switch (nod_ref_del_action->nod_flags) {
 			case REF_ACTION_CASCADE:
-				request->append_uchar(gds_dyn_foreign_key_cascade);
+				request->append_uchar(isc_dyn_foreign_key_cascade);
 				define_del_cascade_trg(request, element, columns,
 									   referenced_columns, relation_name,
 									   for_rel_name_str->str_data);
 				break;
 			case REF_ACTION_SET_DEFAULT:
-				request->append_uchar(gds_dyn_foreign_key_default);
+				request->append_uchar(isc_dyn_foreign_key_default);
 				define_set_default_trg(request, element, columns,
 									   referenced_columns, relation_name,
 									   for_rel_name_str->str_data,
 									   false);
 				break;
 			case REF_ACTION_SET_NULL:
-				request->append_uchar(gds_dyn_foreign_key_null);
+				request->append_uchar(isc_dyn_foreign_key_null);
 				define_set_null_trg(request, element, columns,
 									referenced_columns, relation_name,
 									for_rel_name_str->str_data,
 									false);
 				break;
 			case REF_ACTION_NONE:
-				request->append_uchar(gds_dyn_foreign_key_none);
+				request->append_uchar(isc_dyn_foreign_key_none);
 				break;
 			default:
 				fb_assert(0);
-				request->append_uchar(gds_dyn_foreign_key_none);	/* just in case */
+				request->append_uchar(isc_dyn_foreign_key_none);	/* just in case */
 				break;
 				/* Error */
 			}
@@ -4462,23 +4463,23 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 	for (ptr = columns->nod_arg; ptr < end; ++ptr)
 	{
 		const str* field_name = (str*) (*ptr)->nod_arg[1];
-		request->append_cstring(gds_dyn_fld_name,
+		request->append_cstring(isc_dyn_fld_name,
 					field_name->str_data);
 	}
 
-	request->append_cstring(gds_dyn_idx_foreign_key, relation_name);
+	request->append_cstring(isc_dyn_idx_foreign_key, relation_name);
 	if (referenced_columns)
 	{
 		end = referenced_columns->nod_arg + referenced_columns->nod_count;
 		for (ptr = referenced_columns->nod_arg; ptr < end; ++ptr)
 		{
 			const str* field_name = (str*) (*ptr)->nod_arg[1];
-			request->append_cstring(gds_dyn_idx_ref_column,
+			request->append_cstring(isc_dyn_idx_ref_column,
 						field_name->str_data);
 		}
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -4505,9 +4506,9 @@ static void modify_database( dsql_req* request)
 
 	dsql_nod* ddl_node = request->req_ddl_node;
 
-	request->append_uchar(gds_dyn_mod_database);
+	request->append_uchar(isc_dyn_mod_database);
 /*
-request->append_number(gds_dyn_rel_sql_protection, 1);
+request->append_number(isc_dyn_rel_sql_protection, 1);
 */
 	dsql_nod*  elements = ddl_node->nod_arg[e_adb_all];
 	dsql_nod** end      = elements->nod_arg + elements->nod_count;
@@ -4533,10 +4534,10 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 	}
 
 	if (drop_log) {
-		request->append_uchar(gds_dyn_drop_log);
+		request->append_uchar(isc_dyn_drop_log);
 	}
 	if (drop_cache) {
-		request->append_uchar(gds_dyn_drop_cache);
+		request->append_uchar(isc_dyn_drop_cache);
 	}
 	if (drop_difference) {
 		request->append_uchar(isc_dyn_drop_difference);
@@ -4551,14 +4552,14 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 		switch (element->nod_type) {
 		case nod_file_desc:
 			file = (FIL) element->nod_arg[0];
-			request->append_cstring(gds_dyn_def_file,
+			request->append_cstring(isc_dyn_def_file,
 						file->fil_name->str_data);
 
 			start = MAX(start, file->fil_start);
 			request->append_file_start(start);
 
 			request->append_file_length(file->fil_length);
-			request->append_uchar(gds_dyn_end);
+			request->append_uchar(isc_dyn_end);
 			start += file->fil_length;
 			break;
 
@@ -4566,57 +4567,57 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 			file = (FIL) element->nod_arg[0];
 
 			if (file->fil_flags & LOG_default) {
-				request->append_uchar(gds_dyn_def_default_log);
+				request->append_uchar(isc_dyn_def_default_log);
 				break;
 			}
-			request->append_cstring(gds_dyn_def_log_file,
+			request->append_cstring(isc_dyn_def_log_file,
 						file->fil_name->str_data);
 			request->append_file_length(file->fil_length);
-			request->append_uchar(gds_dyn_log_file_sequence);
+			request->append_uchar(isc_dyn_log_file_sequence);
 			request->append_ushort_with_length(number);
 			number++;
-			request->append_uchar(gds_dyn_log_file_partitions);
+			request->append_uchar(isc_dyn_log_file_partitions);
 			request->append_ushort_with_length(file->fil_partitions);
 			if (file->fil_flags & LOG_serial) {
-				request->append_uchar(gds_dyn_log_file_serial);
+				request->append_uchar(isc_dyn_log_file_serial);
 			}
 			if (file->fil_flags & LOG_overflow) {
-				request->append_uchar(gds_dyn_log_file_overflow);
+				request->append_uchar(isc_dyn_log_file_overflow);
 			}
 			if (file->fil_flags & LOG_raw) {
-				request->append_uchar(gds_dyn_log_file_raw);
+				request->append_uchar(isc_dyn_log_file_raw);
 			}
-			request->append_uchar(gds_dyn_end);
+			request->append_uchar(isc_dyn_end);
 			break;
 
 		case nod_cache_file_desc:
 			file = (FIL) element->nod_arg[0];
-			request->append_cstring(gds_dyn_def_cache_file,
+			request->append_cstring(isc_dyn_def_cache_file,
 						file->fil_name->str_data);
 			request->append_file_length(file->fil_length);
-			request->append_uchar(gds_dyn_end);
+			request->append_uchar(isc_dyn_end);
 			break;
 
 		case nod_group_commit_wait:
-			request->append_uchar(gds_dyn_log_group_commit_wait);
+			request->append_uchar(isc_dyn_log_group_commit_wait);
 			temp_long = (SLONG) (element->nod_arg[0]);
 			request->append_ulong_with_length(temp_long);
 			break;
 
 		case nod_check_point_len:
-			request->append_uchar(gds_dyn_log_check_point_length);
+			request->append_uchar(isc_dyn_log_check_point_length);
 			temp_long = (SLONG) (element->nod_arg[0]);
 			request->append_ulong_with_length(temp_long);
 			break;
 
 		case nod_num_log_buffers:
-			request->append_uchar(gds_dyn_log_num_of_buffers);
+			request->append_uchar(isc_dyn_log_num_of_buffers);
 			temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
 			request->append_ushort_with_length(temp_short);
 			break;
 
 		case nod_log_buffer_size:
-			request->append_uchar(gds_dyn_log_buffer_size);
+			request->append_uchar(isc_dyn_log_buffer_size);
 			temp_short = (SSHORT)(SLONG) (element->nod_arg[0]);
 			request->append_ushort_with_length(temp_short);
 			break;
@@ -4639,7 +4640,7 @@ request->append_number(gds_dyn_rel_sql_protection, 1);
 		}
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -4668,7 +4669,7 @@ static void modify_domain( dsql_req* request)
 	dsql_nod* domain_node = ddl_node->nod_arg[e_alt_dom_name];
 	const str* domain_name = (str*) domain_node->nod_arg[e_fln_name];
 
-	request->append_cstring(gds_dyn_mod_global_fld,
+	request->append_cstring(isc_dyn_mod_global_fld,
 				domain_name->str_data);
 
 
@@ -4700,7 +4701,7 @@ static void modify_domain( dsql_req* request)
 			element->nod_arg[e_dft_default] =
 				PASS1_node(request, element->nod_arg[e_dft_default], false);
 
-			request->begin_blr(gds_dyn_fld_default_value);
+			request->begin_blr(isc_dyn_fld_default_value);
 			GEN_expr(request, element->nod_arg[e_dft_default]);
 			request->end_blr();
 
@@ -4708,7 +4709,7 @@ static void modify_domain( dsql_req* request)
 			if (string)
 			{
 				fb_assert(string->str_length <= MAX_USHORT);
-				request->append_string(	gds_dyn_fld_default_source,
+				request->append_string(	isc_dyn_fld_default_source,
 										string->str_data,
 										(USHORT) string->str_length);
 			}
@@ -4716,8 +4717,8 @@ static void modify_domain( dsql_req* request)
 
 		case nod_def_constraint:
 			check_one_call (repetition_count, 1, "DOMAIN CONSTRAINT");
-			request->append_uchar(gds_dyn_single_validation);
-			request->begin_blr(gds_dyn_fld_validation_blr);
+			request->append_uchar(isc_dyn_single_validation);
+			request->begin_blr(isc_dyn_fld_validation_blr);
 
 			/* Get the attributes of the domain, and set any occurances of
 			   nod_dom_value (corresponding to the keyword VALUE) to the
@@ -4755,7 +4756,7 @@ static void modify_domain( dsql_req* request)
 			request->end_blr();
 			if ((string = (str*) element->nod_arg[e_cnstr_source]) != NULL) {
 				fb_assert(string->str_length <= MAX_USHORT);
-				request->append_string(	gds_dyn_fld_validation_source,
+				request->append_string(	isc_dyn_fld_validation_source,
 										string->str_data,
 										string->str_length);
 			}
@@ -4772,19 +4773,19 @@ static void modify_domain( dsql_req* request)
 				check_one_call(repetition_count, 3, "DOMAIN NAME");
 
 				const str* new_dom_name = (str*) element->nod_arg[e_fln_name];
-				request->append_cstring(gds_dyn_fld_name,
+				request->append_cstring(isc_dyn_fld_name,
 							new_dom_name->str_data);
 				break;
 			}
 
 		case nod_delete_rel_constraint:
 			check_one_call (repetition_count, 4, "DOMAIN DROP CONSTRAINT");
-			request->append_uchar(gds_dyn_del_validation);
+			request->append_uchar(isc_dyn_del_validation);
 			break;
 
 		case nod_del_default:
 			check_one_call (repetition_count, 5, "DOMAIN DROP DEFAULT");
-			request->append_uchar(gds_dyn_del_default);
+			request->append_uchar(isc_dyn_del_default);
 			break;
 
 		default:
@@ -4792,7 +4793,7 @@ static void modify_domain( dsql_req* request)
 		}
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -4813,15 +4814,15 @@ static void modify_index( dsql_req* request)
 	dsql_nod* index_node = ddl_node->nod_arg[e_alt_index];
 	const str* index_name = (str*) index_node->nod_arg[e_alt_idx_name];
 
-	request->append_cstring(gds_dyn_mod_idx, index_name->str_data);
+	request->append_cstring(isc_dyn_mod_idx, index_name->str_data);
 
 	if (index_node->nod_type == nod_idx_active) {
-		request->append_number(gds_dyn_idx_inactive, 0);
+		request->append_number(isc_dyn_idx_inactive, 0);
 	} else if (index_node->nod_type == nod_idx_inactive) {
-		request->append_number(gds_dyn_idx_inactive, 1);
+		request->append_number(isc_dyn_idx_inactive, 1);
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -4845,9 +4846,9 @@ static void modify_privilege(	dsql_req*			request,
  **************************************/
 
 	if (type == nod_grant) {
-		request->append_uchar(gds_dyn_grant);
+		request->append_uchar(isc_dyn_grant);
 	} else {
-		request->append_uchar(gds_dyn_revoke);
+		request->append_uchar(isc_dyn_revoke);
 	}
 
 /* stuff the privileges string */
@@ -4869,9 +4870,9 @@ static void modify_privilege(	dsql_req*			request,
 
 	const str* name = (str*) table->nod_arg[0];
 	if (table->nod_type == nod_procedure_name) {
-		request->append_cstring(gds_dyn_prc_name, name->str_data);
+		request->append_cstring(isc_dyn_prc_name, name->str_data);
 	} else {
-		request->append_cstring(gds_dyn_rel_name, name->str_data);
+		request->append_cstring(isc_dyn_rel_name, name->str_data);
 	}
 	name = (str*) user->nod_arg[0];
 	
@@ -4885,20 +4886,20 @@ static void modify_privilege(	dsql_req*			request,
            request->append_cstring(isc_dyn_grant_user_explicit, name->str_data);
         }
         else {
-            request->append_cstring(gds_dyn_grant_user, name->str_data);
+            request->append_cstring(isc_dyn_grant_user, name->str_data);
         }
 		break;
 
 	case nod_proc_obj:
-		request->append_cstring(gds_dyn_grant_proc, name->str_data);
+		request->append_cstring(isc_dyn_grant_proc, name->str_data);
 		break;
 
 	case nod_trig_obj:
-		request->append_cstring(gds_dyn_grant_trig, name->str_data);
+		request->append_cstring(isc_dyn_grant_trig, name->str_data);
 		break;
 
 	case nod_view_obj:
-		request->append_cstring(gds_dyn_grant_view, name->str_data);
+		request->append_cstring(isc_dyn_grant_view, name->str_data);
 		break;
 
     case nod_role_name:
@@ -4913,17 +4914,17 @@ static void modify_privilege(	dsql_req*			request,
 	}
 
 	if (field_name) {
-		request->append_cstring(gds_dyn_fld_name, field_name->str_data);
+		request->append_cstring(isc_dyn_fld_name, field_name->str_data);
 	}
 
 	if ((option) &&
 		((type == nod_grant) ||
 		(!(request->req_dbb->dbb_flags & DBB_v3))))
 	{
-		request->append_number(gds_dyn_grant_options, option);
+		request->append_number(isc_dyn_grant_options, option);
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -5041,7 +5042,7 @@ static void modify_relation( dsql_req* request)
 	dsql_nod* relation_node = ddl_node->nod_arg[e_alt_name];
 	const str* relation_name = (str*) relation_node->nod_arg[e_rln_name];
 
-	request->append_cstring(gds_dyn_mod_rel, relation_name->str_data);
+	request->append_cstring(isc_dyn_mod_rel, relation_name->str_data);
 	save_relation(request, relation_name);
 
 /* need to handle error that occur in generating dyn string.
@@ -5058,16 +5059,16 @@ static void modify_relation( dsql_req* request)
 			{
 				dsql_nod* old_field = element->nod_arg[e_mod_fld_name_orig_name];
 				const str* old_field_name = (str*) old_field->nod_arg[e_fln_name];
-				request->append_cstring(gds_dyn_mod_local_fld,
+				request->append_cstring(isc_dyn_mod_local_fld,
 							old_field_name->str_data);
 
 				dsql_nod* new_field = element->nod_arg[e_mod_fld_name_new_name];
 				const str* new_field_name = (str*) new_field->nod_arg[e_fln_name];
-				request->append_cstring(gds_dyn_rel_name,
+				request->append_cstring(isc_dyn_rel_name,
 							relation_name->str_data);
 				request->append_cstring(isc_dyn_new_fld_name,
 							new_field_name->str_data);
-				request->append_uchar(gds_dyn_end);
+				request->append_uchar(isc_dyn_end);
 				break;
 			}
 
@@ -5078,16 +5079,16 @@ static void modify_relation( dsql_req* request)
 
 				field_node = element->nod_arg[e_mod_fld_pos_orig_name];
 				field_name = (str*) field_node->nod_arg[e_fln_name];
-				request->append_cstring(gds_dyn_mod_local_fld, field_name->str_data);
+				request->append_cstring(isc_dyn_mod_local_fld, field_name->str_data);
 				const_node = element->nod_arg[e_mod_fld_pos_new_position];
 
                 /* CVC: Since now the parser accepts pos=1..N, let's subtract one here. */
                 constant = (SSHORT)(SLONG) const_node->nod_arg[0] - 1;
 
-				request->append_cstring(gds_dyn_rel_name,
+				request->append_cstring(isc_dyn_rel_name,
 							relation_name->str_data);
-				request->append_number(gds_dyn_fld_position, constant);
-				request->append_uchar(gds_dyn_end);
+				request->append_number(isc_dyn_fld_position, constant);
+				request->append_uchar(isc_dyn_end);
 				break;
 			}
 
@@ -5125,13 +5126,13 @@ static void modify_relation( dsql_req* request)
 			}
 
 			fb_assert((element->nod_arg[1])->nod_type == nod_restrict);
-			request->append_cstring(gds_dyn_delete_local_fld, field_name->str_data);
-			request->append_uchar(gds_dyn_end);
+			request->append_cstring(isc_dyn_delete_local_fld, field_name->str_data);
+			request->append_uchar(isc_dyn_end);
 			break;
 
 		case nod_delete_rel_constraint:
 			field_name = (str*) element->nod_arg[0];
-			request->append_cstring(gds_dyn_delete_rel_constraint, field_name->str_data);
+			request->append_cstring(isc_dyn_delete_rel_constraint, field_name->str_data);
 			break;
 
 		case nod_rel_constraint:
@@ -5143,7 +5144,7 @@ static void modify_relation( dsql_req* request)
 		}
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 
 	}	// try
 	catch (const std::exception&)
@@ -5190,7 +5191,7 @@ static void process_role_nm_list(	dsql_req*			request,
 		request->append_number(isc_dyn_grant_admin_options, option);
 	}
 
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -5208,15 +5209,15 @@ static void put_descriptor(dsql_req* request, const dsc* desc)
  *
  **************************************/
 
-	request->append_number(gds_dyn_fld_type, blr_dtypes[desc->dsc_dtype]);
+	request->append_number(isc_dyn_fld_type, blr_dtypes[desc->dsc_dtype]);
 	if (desc->dsc_dtype == dtype_varying) {
-		request->append_number(gds_dyn_fld_length,
+		request->append_number(isc_dyn_fld_length,
 				   (SSHORT) (desc->dsc_length - sizeof(USHORT)));
 	} else {
-		request->append_number(gds_dyn_fld_length, desc->dsc_length);
+		request->append_number(isc_dyn_fld_length, desc->dsc_length);
 	}
-	request->append_number(gds_dyn_fld_scale, desc->dsc_scale);
-	request->append_number(gds_dyn_fld_sub_type, desc->dsc_sub_type);
+	request->append_number(isc_dyn_fld_scale, desc->dsc_scale);
+	request->append_number(isc_dyn_fld_sub_type, desc->dsc_sub_type);
 }
 
 
@@ -5291,23 +5292,23 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
  *
  **************************************/
 
-	request->append_number(gds_dyn_fld_type, blr_dtypes[field->fld_dtype]);
+	request->append_number(isc_dyn_fld_type, blr_dtypes[field->fld_dtype]);
 	if (field->fld_dtype == dtype_blob)
 	{
-		request->append_number(gds_dyn_fld_sub_type, field->fld_sub_type);
-		request->append_number(gds_dyn_fld_scale, 0);
+		request->append_number(isc_dyn_fld_sub_type, field->fld_sub_type);
+		request->append_number(isc_dyn_fld_scale, 0);
 		if (!udf_flag)
 		{
 			if (!field->fld_seg_length) {
 				field->fld_seg_length = DEFAULT_BLOB_SEGMENT_SIZE;
 			}
-			request->append_number(gds_dyn_fld_segment_length,
+			request->append_number(isc_dyn_fld_segment_length,
 					   field->fld_seg_length);
 		}
 		if (!(request->req_dbb->dbb_flags & DBB_v3))
 		{
 			if (field->fld_sub_type == BLOB_text) {
-				request->append_number(gds_dyn_fld_character_set,
+				request->append_number(isc_dyn_fld_character_set,
 						   field->fld_character_set_id);
 			}
 		}
@@ -5315,34 +5316,34 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 	else if (field->fld_dtype <= dtype_any_text)
 	{
 		if (field->fld_sub_type) {
-			request->append_number(gds_dyn_fld_sub_type, field->fld_sub_type);
+			request->append_number(isc_dyn_fld_sub_type, field->fld_sub_type);
 		}
-		request->append_number(gds_dyn_fld_scale, 0);
+		request->append_number(isc_dyn_fld_scale, 0);
 		if (field->fld_dtype == dtype_varying)
 		{
             /* CVC: Fix the assertion */
             fb_assert((field->fld_length) <= MAX_SSHORT);
-			request->append_number(gds_dyn_fld_length,
+			request->append_number(isc_dyn_fld_length,
 					   (SSHORT) (field->fld_length - sizeof(USHORT)));
 		}
 		else
 		{
-			request->append_number(gds_dyn_fld_length, field->fld_length);
+			request->append_number(isc_dyn_fld_length, field->fld_length);
 		}
 		if (!(request->req_dbb->dbb_flags & DBB_v3))
 		{
-			request->append_number(gds_dyn_fld_char_length,
+			request->append_number(isc_dyn_fld_char_length,
 					   field->fld_character_length);
-			request->append_number(gds_dyn_fld_character_set,
+			request->append_number(isc_dyn_fld_character_set,
 					   field->fld_character_set_id);
 			if (!udf_flag)
-				request->append_number(gds_dyn_fld_collation,
+				request->append_number(isc_dyn_fld_collation,
 						   field->fld_collation_id);
 		}
 	}
 	else {
-		request->append_number(gds_dyn_fld_scale, field->fld_scale);
-		request->append_number(gds_dyn_fld_length, field->fld_length);
+		request->append_number(isc_dyn_fld_scale, field->fld_scale);
+		request->append_number(isc_dyn_fld_length, field->fld_length);
 		if (DTYPE_IS_EXACT(field->fld_dtype))
 		{
 			request->append_number(isc_dyn_fld_precision, field->fld_precision);
@@ -5746,9 +5747,9 @@ static void set_statistics( dsql_req* request)
  **************************************/
 	dsql_nod* ddl_node = request->req_ddl_node;
 	const str* index_name = (str*) ddl_node->nod_arg[e_stat_name];
-	request->append_cstring(gds_dyn_mod_idx, index_name->str_data);
-	request->append_uchar(gds_dyn_idx_statistic);
-	request->append_uchar(gds_dyn_end);
+	request->append_cstring(isc_dyn_mod_idx, index_name->str_data);
+	request->append_uchar(isc_dyn_idx_statistic);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -5917,7 +5918,7 @@ static void modify_field(dsql_req*	request,
 	{
 		dsql_nod* node1 = domain_node->nod_arg[e_dom_name];
 		const str* domain_name = (str*) node1->nod_arg[e_fln_name];
-		request->append_cstring(gds_dyn_fld_source, domain_name->str_data);
+		request->append_cstring(isc_dyn_fld_source, domain_name->str_data);
 
 		// Get the domain information
 
@@ -5934,13 +5935,13 @@ static void modify_field(dsql_req*	request,
 	else
 	{
 		if (relation_name) {
-			request->append_cstring(gds_dyn_rel_name, relation_name->str_data);
+			request->append_cstring(isc_dyn_rel_name, relation_name->str_data);
 		}
 
 		DDL_resolve_intl_type2(request, field, NULL, true);
 		put_field(request, field, false);
 	}
-	request->append_uchar(gds_dyn_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 
@@ -6033,13 +6034,13 @@ void dsql_req::append_ulong_with_length(ULONG val)
 
 void dsql_req::append_file_length(ULONG length)
 {
-	append_uchar(gds_dyn_file_length);
+	append_uchar(isc_dyn_file_length);
 	append_ulong_with_length(length);
 }
 
 void dsql_req::append_file_start(ULONG start)
 {
-	append_uchar(gds_dyn_file_start);
+	append_uchar(isc_dyn_file_start);
 	append_ulong_with_length(start);
 }
 
@@ -6053,19 +6054,19 @@ void dsql_req::generate_unnamed_trigger_beginning(	bool		on_update_trigger,
 												dsql_nod*	for_columns)
 {
 	// no trigger name. It is generated by the engine
-	append_string(gds_dyn_def_trigger, "", 0);
+	append_string(isc_dyn_def_trigger, "", 0);
 
-	append_number(gds_dyn_trg_type,
+	append_number(isc_dyn_trg_type,
 			   (SSHORT) (on_update_trigger ? POST_MODIFY_TRIGGER :
 						 POST_ERASE_TRIGGER));
 
-	append_uchar(gds_dyn_sql_object);
-	append_number(gds_dyn_trg_sequence, 1);
-	append_number(gds_dyn_trg_inactive, 0);
-	append_cstring(gds_dyn_rel_name, prim_rel_name);
+	append_uchar(isc_dyn_sql_object);
+	append_number(isc_dyn_trg_sequence, 1);
+	append_number(isc_dyn_trg_inactive, 0);
+	append_cstring(isc_dyn_rel_name, prim_rel_name);
 
 	// the trigger blr
-	begin_blr(gds_dyn_trg_blr);
+	begin_blr(isc_dyn_trg_blr);
 
 /* for ON UPDATE TRIGGER only: generate the trigger firing condition:
    if prim_key.old_value != prim_key.new value.

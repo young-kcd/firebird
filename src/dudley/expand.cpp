@@ -25,7 +25,8 @@
 #include <setjmp.h>
 #include <string.h>
 #include "../dudley/ddl.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../dudley/parse.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/expan_proto.h"

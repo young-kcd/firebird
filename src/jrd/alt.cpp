@@ -44,8 +44,6 @@
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/secur_proto.h"
 
-#include "../jrd/gdsold.h"
-
 #include "../jrd/event.h"
 
 #if !defined(BOOT_BUILD)

@@ -34,7 +34,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "../dsql/dsql.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
 #include "../dsql/alld_proto.h"
@@ -186,8 +187,8 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 			!(ddl_node->nod_type == nod_def_domain ||
 			  ddl_node->nod_type == nod_mod_domain))
 		{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
-						  gds_arg_gds, gds_dsql_domain_err, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+						  isc_arg_gds, isc_dsql_domain_err, 0);
 		}
 		stuff(request, blr_fid);
 		stuff(request, 0);				/* Context   */
@@ -502,9 +503,9 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		return;
 
 	default:
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
-				  gds_arg_gds, gds_dsql_internal_err,
-				  gds_arg_gds, gds_expression_eval_err,
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+				  isc_arg_gds, isc_dsql_internal_err,
+				  isc_arg_gds, isc_expression_eval_err,
 				  /* expression evaluation not supported */
 				  0);
 	}
@@ -562,7 +563,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 				s = message_buf;
 			}
 			ERRD_post_warning(isc_dsql_dialect_warning_expr,
-							  gds_arg_string, s, gds_arg_end);
+							  isc_arg_string, s, isc_arg_end);
 		}
 	}
 
@@ -610,11 +611,11 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 				case dtype_sql_date:
 				case dtype_sql_time:
 				case dtype_int64:
-					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-							  gds_arg_gds, gds_dsql_datatype_err,
-							  gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-							  gds_arg_number, request->req_client_dialect,
-							  gds_arg_string,
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+							  isc_arg_gds, isc_dsql_datatype_err,
+							  isc_arg_gds, isc_sql_dialect_datatype_unsupport,
+							  isc_arg_number, request->req_client_dialect,
+							  isc_arg_string,
 							  DSC_dtype_tostring(parameter->par_desc.dsc_dtype),
 							  0);
 					break;
@@ -746,7 +747,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 /* find out isolation level - if specified. This is required for
  * specifying the correct lock level in reserving clause. */
 
-	USHORT lock_level = gds_tpb_shared;
+	USHORT lock_level = isc_tpb_shared;
 
 	if (count = node->nod_count) {
 		while (count--) {
@@ -756,7 +757,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 				continue;
 
 			lock_level = (ptr->nod_flags & NOD_CONSISTENCY) ?
-				gds_tpb_protected : gds_tpb_shared;
+				isc_tpb_protected : isc_tpb_shared;
 		}
 	}
 
@@ -766,7 +767,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 
 // Stuff some version info.
 	if (count = node->nod_count)
-		stuff(request, gds_tpb_version1);
+		stuff(request, isc_tpb_version1);
 
 	while (count--) {
 		const dsql_nod* ptr = node->nod_arg[count];
@@ -777,51 +778,51 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 		switch (ptr->nod_type) {
 		case nod_access:
 			if (sw_access)
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_dsql_dup_option, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_dup_option, 0);
 
 			sw_access = true;
 			if (ptr->nod_flags & NOD_READ_ONLY)
-				stuff(request, gds_tpb_read);
+				stuff(request, isc_tpb_read);
 			else
-				stuff(request, gds_tpb_write);
+				stuff(request, isc_tpb_write);
 			break;
 
 		case nod_wait:
 			if (sw_wait)
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_dsql_dup_option, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_dup_option, 0);
 
 			sw_wait = true;
 			if (ptr->nod_flags & NOD_NO_WAIT)
-				stuff(request, gds_tpb_nowait);
+				stuff(request, isc_tpb_nowait);
 			else
-				stuff(request, gds_tpb_wait);
+				stuff(request, isc_tpb_wait);
 			break;
 
 		case nod_isolation:
 			if (sw_isolation)
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-						  gds_arg_gds, gds_dsql_dup_option, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_dup_option, 0);
 
 			sw_isolation = true;
 
 			if (ptr->nod_flags & NOD_CONCURRENCY)
-				stuff(request, gds_tpb_concurrency);
+				stuff(request, isc_tpb_concurrency);
 			else if (ptr->nod_flags & NOD_CONSISTENCY)
-				stuff(request, gds_tpb_consistency);
+				stuff(request, isc_tpb_consistency);
 			else {
-				stuff(request, gds_tpb_read_committed);
+				stuff(request, isc_tpb_read_committed);
 
 				if ((ptr->nod_count) && (ptr->nod_arg[0]) &&
 					(ptr->nod_arg[0]->nod_type == nod_version)) {
 					if (ptr->nod_arg[0]->nod_flags & NOD_VERSION)
-						stuff(request, gds_tpb_rec_version);
+						stuff(request, isc_tpb_rec_version);
 					else
-						stuff(request, gds_tpb_no_rec_version);
+						stuff(request, isc_tpb_no_rec_version);
 				}
 				else
-					stuff(request, gds_tpb_no_rec_version);
+					stuff(request, isc_tpb_no_rec_version);
 			}
 
 			break;
@@ -829,8 +830,8 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 		case nod_reserve:
 			{
 				if (sw_reserve)
-					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-							  gds_arg_gds, gds_dsql_dup_option, 0);
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+							  isc_arg_gds, isc_dsql_dup_option, 0);
 
 				sw_reserve = true;
 				const dsql_nod* reserve = ptr->nod_arg[0];
@@ -847,8 +848,8 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 			}
 
 		default:
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-					  gds_arg_gds, gds_dsql_tran_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+					  isc_arg_gds, isc_dsql_tran_err, 0);
 		}
 	}
 }
@@ -1215,8 +1216,8 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		if (list_into) {
 			dsql_nod* list = cursor->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
 			if (list->nod_count != list_into->nod_count)
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 313,
-						  gds_arg_gds, gds_dsql_count_mismatch, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
+						  isc_arg_gds, isc_dsql_count_mismatch, 0);
 			stuff(request, blr_begin);
 			ptr = list->nod_arg;
 			end = ptr + list->nod_count;
@@ -1232,9 +1233,9 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		return;
 
 	default:
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
-				  gds_arg_gds, gds_dsql_internal_err,
-				  gds_arg_gds, gds_node_err, // gen.c: node not supported
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+				  isc_arg_gds, isc_dsql_internal_err,
+				  isc_arg_gds, isc_node_err, // gen.c: node not supported
 				  0);
 	}
 }
@@ -1446,8 +1447,8 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 			 * PRECISION literal either, so we have to bounce it.
 			 */
 			ERRD_post(isc_sqlerr,
-					  gds_arg_number, (SLONG) - 104,
-					  gds_arg_gds, isc_arith_except, 0);
+					  isc_arg_number, (SLONG) - 104,
+					  isc_arg_gds, isc_arith_except, 0);
 		}
 
 		/* We and the lexer both agree that this is an SINT64 constant,
@@ -1498,8 +1499,8 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 
 	default:
 		/* gen_constant: datatype not understood */
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 103,
-				  gds_arg_gds, gds_dsql_constant_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 103,
+				  isc_arg_gds, isc_dsql_constant_err, 0);
 	}
 }
 
@@ -1596,8 +1597,8 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 
 	default:
 		/* don't understand dtype */
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-				  gds_arg_gds, gds_dsql_datatype_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				  isc_arg_gds, isc_dsql_datatype_err, 0);
 	}
 }
 
@@ -1670,11 +1671,11 @@ static void gen_field( dsql_req* request, const dsql_ctx* context,
 		case dtype_sql_date:
 		case dtype_sql_time:
 		case dtype_int64:
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-					  gds_arg_gds, gds_dsql_datatype_err,
-					  gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-					  gds_arg_number, request->req_client_dialect,
-					  gds_arg_string,
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+					  isc_arg_gds, isc_dsql_datatype_err,
+					  isc_arg_gds, isc_sql_dialect_datatype_unsupport,
+					  isc_arg_number, request->req_client_dialect,
+					  isc_arg_string,
 					  DSC_dtype_tostring(static_cast < UCHAR >
 										 (field->fld_dtype)), 0);
 			break;
@@ -1759,8 +1760,8 @@ static void gen_for_select( dsql_req* request, dsql_nod* for_select)
 	dsql_nod* list = rse->nod_arg[e_rse_items];
 	dsql_nod* list_to = for_select->nod_arg[e_flp_into];
 	if (list->nod_count != list_to->nod_count)
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 313,
-				  gds_arg_gds, gds_dsql_count_mismatch, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
+				  isc_arg_gds, isc_dsql_count_mismatch, 0);
 	dsql_nod** ptr = list->nod_arg;
 	dsql_nod** ptr_to = list_to->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end;
@@ -2730,12 +2731,12 @@ static void gen_table_lock( dsql_req* request, const dsql_nod* tbl_lock,
 		flags = tbl_lock->nod_arg[e_lock_mode]->nod_flags;
 
 	if (flags & NOD_PROTECTED)
-		lock_level = gds_tpb_protected;
+		lock_level = isc_tpb_protected;
 	else if (flags & NOD_SHARED)
-		lock_level = gds_tpb_shared;
+		lock_level = isc_tpb_shared;
 
 	const USHORT lock_mode = (flags & NOD_WRITE) ? 
-		gds_tpb_lock_write : gds_tpb_lock_read;
+		isc_tpb_lock_write : isc_tpb_lock_read;
 
     const dsql_nod* const* ptr = tbl_names->nod_arg;
 	for (const dsql_nod* const* const end = ptr + tbl_names->nod_count;

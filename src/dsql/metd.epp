@@ -32,7 +32,8 @@
 #include "firebird.h"
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
 #include "../jrd/thd.h"
@@ -436,7 +437,7 @@ void METD_get_col_default(DSQL_REQ    request,
 
 			if (!stat)
 				continue;
-			else if (stat == gds_segstr_eof) {
+			else if (stat == isc_segstr_eof) {
 				/* null terminate the buffer */
 				*ptr_in_buffer = 0;
 				break;
@@ -816,7 +817,7 @@ void METD_get_domain_default(DSQL_REQ request,
                 
                 if (!stat)
                     continue;
-                else if (stat == gds_segstr_eof) {
+                else if (stat == isc_segstr_eof) {
                     /* null terminate the buffer */
                     *ptr_in_buffer = 0;
                     break;
@@ -1582,7 +1583,7 @@ dsql_rel* METD_get_relation(DSQL_REQ request, const str* name)
                 field->fld_element_dtype = field->fld_dtype;
                 field->fld_element_length = field->fld_length;
                 field->fld_dtype = dtype_array;
-                field->fld_length = sizeof(GDS__QUAD);
+                field->fld_length = sizeof(GDS_QUAD);
                 field->fld_dimensions = FLX.RDB$DIMENSIONS;
             }
             
@@ -1831,7 +1832,7 @@ static void check_array( DSQL_REQ request, const TEXT* field_name, DSQL_FLD fiel
             field->fld_element_dtype = field->fld_dtype;
             field->fld_element_length = field->fld_length;
             field->fld_dtype = dtype_array;
-            field->fld_length = sizeof(GDS__QUAD);
+            field->fld_length = sizeof(GDS_QUAD);
             field->fld_dimensions = X.RDB$DIMENSIONS;
         }
         

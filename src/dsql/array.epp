@@ -36,7 +36,8 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../dsql/array_proto.h"
 #include "../jrd/gds_proto.h"
 
@@ -284,10 +285,10 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS* status,
 		desc->array_desc_dtype = blr_quad;
 		break;
 	default:
-		return error(status, 7, (ISC_STATUS) gds_sqlerr,
-					 (ISC_STATUS) gds_arg_number, (ISC_STATUS) - 804,
-					 (ISC_STATUS) gds_arg_gds, (ISC_STATUS) gds_random,
-					 (ISC_STATUS) gds_arg_string,
+		return error(status, 7, (ISC_STATUS) isc_sqlerr,
+					 (ISC_STATUS) isc_arg_number, (ISC_STATUS) - 804,
+					 (ISC_STATUS) isc_arg_gds, (ISC_STATUS) isc_random,
+					 (ISC_STATUS) isc_arg_string,
 					 (ISC_STATUS) "data type not understood");
 	}
 
@@ -376,12 +377,12 @@ static ISC_STATUS error( ISC_STATUS* status, SSHORT count, ...)
 
 	VA_START(ptr, count);
 	stat = status;
-	*stat++ = gds_arg_gds;
+	*stat++ = isc_arg_gds;
 
 	for (; count; --count)
 		*stat++ = (ISC_STATUS) va_arg(ptr, ISC_STATUS);
 
-	*stat = gds_arg_end;
+	*stat = isc_arg_end;
 
 	return status[1];
 }
@@ -405,9 +406,9 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 	const SSHORT dimensions = desc->array_desc_dimensions;
 
 	if (dimensions > 16)
-		return error(status, 5, (ISC_STATUS) gds_invalid_dimension,
-					 (ISC_STATUS) gds_arg_number, (ISC_STATUS) dimensions,
-					 (ISC_STATUS) gds_arg_number, (ISC_STATUS) 16);
+		return error(status, 5, (ISC_STATUS) isc_invalid_dimension,
+					 (ISC_STATUS) isc_arg_number, (ISC_STATUS) dimensions,
+					 (ISC_STATUS) isc_arg_number, (ISC_STATUS) 16);
 
 	gen_t gen_block;
 	gen_t* gen = &gen_block;
@@ -417,7 +418,7 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 	gen->gen_status = status;
 	gen->gen_internal = 0;
 
-	if (stuff_args(gen, 4, gds_sdl_version1, gds_sdl_struct, 1,
+	if (stuff_args(gen, 4, isc_sdl_version1, isc_sdl_struct, 1,
 				   desc->array_desc_dtype))
 	{
 		return status[1];
@@ -442,10 +443,10 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 		break;
 	}
 
-	if (stuff_string(gen, gds_sdl_relation, desc->array_desc_relation_name))
+	if (stuff_string(gen, isc_sdl_relation, desc->array_desc_relation_name))
 		return status[1];
 
-	if (stuff_string(gen, gds_sdl_field, desc->array_desc_field_name))
+	if (stuff_string(gen, isc_sdl_field, desc->array_desc_field_name))
 		return status[1];
 
 	SSHORT from, to, increment;
@@ -464,11 +465,11 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 	for (n = from; n != to; n += increment) {
 		const ISC_ARRAY_BOUND* tail = desc->array_desc_bounds + n;
 		if (tail->array_bound_lower == 1) {
-			if (stuff_args(gen, 2, gds_sdl_do1, n))
+			if (stuff_args(gen, 2, isc_sdl_do1, n))
 				return status[1];
 		}
 		else {
-			if (stuff_args(gen, 2, gds_sdl_do2, n))
+			if (stuff_args(gen, 2, isc_sdl_do2, n))
 				return status[1];
 			if (stuff_literal(gen, (SLONG) tail->array_bound_lower))
 				return status[1];
@@ -477,14 +478,14 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 			return status[1];
 	}
 
-	if (stuff_args(gen, 5, gds_sdl_element, 1, gds_sdl_scalar, 0, dimensions))
+	if (stuff_args(gen, 5, isc_sdl_element, 1, isc_sdl_scalar, 0, dimensions))
 		return status[1];
 
 	for (n = 0; n < dimensions; n++)
-		if (stuff_args(gen, 2, gds_sdl_variable, n))
+		if (stuff_args(gen, 2, isc_sdl_variable, n))
 			return status[1];
 
-	if (stuff_sdl(gen, gds_sdl_eoc))
+	if (stuff_sdl(gen, isc_sdl_eoc))
 		return status[1];
 	*sdl_length = gen->gen_sdl - *gen->gen_sdl_ptr;
 
@@ -546,10 +547,10 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
 	END_ERROR;
 
 	if (!flag)
-		return error(status, 5, (ISC_STATUS) gds_fldnotdef,
-					 (ISC_STATUS) gds_arg_string,
+		return error(status, 5, (ISC_STATUS) isc_fldnotdef,
+					 (ISC_STATUS) isc_arg_string,
 					 (ISC_STATUS) desc->array_desc_field_name,
-					 (ISC_STATUS) gds_arg_string,
+					 (ISC_STATUS) isc_arg_string,
 					 (ISC_STATUS) desc->array_desc_relation_name);
 
 	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
@@ -578,10 +579,10 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 		const SSHORT new_len = gen->gen_end - *gen->gen_sdl_ptr + 512 + count;
 		UCHAR* const new_sdl = (UCHAR*) gds__alloc(new_len);
 		if (!new_sdl)
-			return error(gen->gen_status, 5, (ISC_STATUS) gds_misc_interpreted,
-						 (ISC_STATUS) gds_arg_string,
-						 (ISC_STATUS) "SDL buffer overflow", (ISC_STATUS) gds_arg_gds,
-						 (ISC_STATUS) gds_virmemexh);
+			return error(gen->gen_status, 5, (ISC_STATUS) isc_misc_interpreted,
+						 (ISC_STATUS) isc_arg_string,
+						 (ISC_STATUS) "SDL buffer overflow", (ISC_STATUS) isc_arg_gds,
+						 (ISC_STATUS) isc_virmemexh);
 
 		const SSHORT current_len = gen->gen_sdl - *gen->gen_sdl_ptr;
 		memcpy(new_sdl, *gen->gen_sdl_ptr, current_len);
@@ -618,12 +619,12 @@ static ISC_STATUS stuff_literal(gen_t* gen, SLONG literal)
 	ISC_STATUS*	status = gen->gen_status;
 
 	if (literal >= -128 && literal <= 127)
-		return stuff_args(gen, 2, gds_sdl_tiny_integer, literal);
+		return stuff_args(gen, 2, isc_sdl_tiny_integer, literal);
 
 	if (literal >= -32768 && literal <= 32767)
-		return stuff_args(gen, 3, gds_sdl_short_integer, literal, literal >> 8);
+		return stuff_args(gen, 3, isc_sdl_short_integer, literal, literal >> 8);
 
-	if (stuff_sdl(gen, gds_sdl_long_integer))
+	if (stuff_sdl(gen, isc_sdl_long_integer))
 		return status[1];
 	if (stuff_sdl_long(gen, literal))
 		return status[1];

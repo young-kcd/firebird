@@ -24,7 +24,8 @@
 #include "firebird.h"
 #include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../dudley/ddl.h"
 #include "../jrd/acl.h"
 #include "../jrd/flags.h"
@@ -79,10 +80,10 @@ static void view_fields(const TEXT*);
 static void wal_info(const UCHAR*, SSHORT*, SLONG*, SLONG*, SLONG*);
 
 static IB_FILE* output_file;
-static const SCHAR db_items[] = { gds_info_page_size };
+static const SCHAR db_items[] = { isc_info_page_size };
 static const SCHAR db_info[] = {
-	gds_info_num_wal_buffers, gds_info_wal_buffer_size,
-	gds_info_wal_ckpt_length, gds_info_wal_grpc_wait_usecs
+	isc_info_num_wal_buffers, isc_info_wal_buffer_size,
+	isc_info_wal_ckpt_length, isc_info_wal_grpc_wait_usecs
 };
 static const TEXT acl_privs[] = "?CGDRWP???";
 
@@ -162,7 +163,7 @@ void DDL_ext(void)
    to ib_stdout, not to the output_file */
 	if (DDL_version) {
 		DDL_msg_put(249, DB_file_name, NULL, NULL, NULL, NULL);	/* msg 249: Version(s) for database \"%s\" */
-		gds__version(&DB, NULL, NULL);
+		isc_version(&DB, NULL, NULL);
 	}
 
 	START_TRANSACTION;
@@ -502,15 +503,15 @@ static void extract_database(const TEXT * DB_file_name)
             } 
         END_FOR;
 
-		if (gds__database_info(status_vector, &DB, sizeof(db_items),
+		if (isc_database_info(status_vector, &DB, sizeof(db_items),
 							   db_items, sizeof(buffer), buffer)) {
 			put_error(254, 0);	
-			/* msg 254: ***gds__database_info failed*** */
+			/* msg 254: ***isc_database_info failed*** */
 			gds__print_status(status_vector);
 		}
 
         TEXT* d = buffer;
-        if (*d++ == gds_info_page_size) {
+        if (*d++ == isc_info_page_size) {
             SSHORT length = gds__vax_integer((UCHAR*) d, 2);
             d += 2;
             page_size = gds__vax_integer((UCHAR*) d, length);
@@ -593,9 +594,9 @@ static void extract_database(const TEXT * DB_file_name)
 	       END_FOR;
 
 			SCHAR db_info_buffer[64];
-			if (gds__database_info(gds_status, &DB, sizeof(db_info), db_info,
+			if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
 								   sizeof(db_info_buffer), db_info_buffer)) {
-				put_error(254, 0);	/* msg 254: ***gds__database_info failed*** */
+				put_error(254, 0);	/* msg 254: ***isc_database_info failed*** */
 				gds__print_status(status_vector);
 			}
 
@@ -1774,16 +1775,16 @@ static void print_blob(SLONG* blob_id, TEXT type)
 
 	FRBRD* blob = NULL;
 	// This logic was never finished: bpb_length (6th param) is always zero,
-	// so this call might be reduced to gds__open_blob().
+	// so this call might be reduced to isc_open_blob().
 	bpb = r = bpb_buffer;
 
-	if (gds__open_blob2(status_vector, &DB, &gds_trans, &blob,
-						(GDS__QUAD*) blob_id, (USHORT) (r - bpb),
-						reinterpret_cast<const SCHAR*>(bpb)))
+	if (isc_open_blob2(status_vector, &DB, &gds_trans, &blob,
+						(GDS_QUAD*) blob_id, (USHORT) (r - bpb),
+						reinterpret_cast<const UCHAR*>(bpb)))
 	{
 		gds__print_status(status_vector);
 		DDL_err(269, NULL, NULL, NULL, NULL, NULL);	
-		/* msg 269: gds__open_blob failed */
+		/* msg 269: isc_open_blob failed */
 		return;
 	}
 
@@ -1793,9 +1794,9 @@ static void print_blob(SLONG* blob_id, TEXT type)
 		*blr_buffer = 0;
 	}
 
-	while (!(status = gds__get_segment(status_vector, &blob, (USHORT*) &length,
+	while (!(status = isc_get_segment(status_vector, &blob, (USHORT*) &length,
 									   (USHORT) (sizeof(buffer) - 1),
-									   buffer)) || status == gds_segment)
+									   buffer)) || status == isc_segment)
 	{
 		buffer[length] = 0;
 		switch (type) {
@@ -1834,15 +1835,15 @@ static void print_blob(SLONG* blob_id, TEXT type)
 		}
 	}
 
-	if (status_vector[1] != gds_segstr_eof) {
+	if (status_vector[1] != isc_segstr_eof) {
 		gds__print_status(status_vector);
-		DDL_err(271, NULL, NULL, NULL, NULL, NULL);	/* msg 271: gds__get_segment failed  */
+		DDL_err(271, NULL, NULL, NULL, NULL, NULL);	/* msg 271: isc_get_segment failed  */
 		return;
 	}
 
-	if (gds__close_blob(status_vector, &blob)) {
+	if (isc_close_blob(status_vector, &blob)) {
 		gds__print_status(status_vector);
-		DDL_err(272, NULL, NULL, NULL, NULL, NULL);	/* msg 272: gds__close_blob failed */
+		DDL_err(272, NULL, NULL, NULL, NULL, NULL);	/* msg 272: isc_close_blob failed */
 		return;
 	}
 
@@ -1927,7 +1928,7 @@ static void set_capabilities(void)
 		END_FOR;
 	}
 
-	gds__release_request(gds_status, &req);
+	isc_release_request(gds_status, &req);
 }
 
 
@@ -2101,23 +2102,23 @@ static void wal_info(const UCHAR* db_info_buffer,
 	UCHAR item;
 	const UCHAR* p = db_info_buffer;
 
-	while ((item = *p++) != gds_info_end) {
+	while ((item = *p++) != isc_info_end) {
 		USHORT length = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item) {
-		case gds_info_num_wal_buffers:
+		case isc_info_num_wal_buffers:
 			*num_buf = gds__vax_integer(p, length);
 			break;
 
-		case gds_info_wal_buffer_size:
+		case isc_info_wal_buffer_size:
 			*buf_size = gds__vax_integer(p, length);
 			break;
 
-		case gds_info_wal_ckpt_length:
+		case isc_info_wal_ckpt_length:
 			*chkpt_len = gds__vax_integer(p, length);
 			break;
 
-		case gds_info_wal_grpc_wait_usecs:
+		case isc_info_wal_grpc_wait_usecs:
 			*grp_commit = gds__vax_integer(p, length);
 			break;
 

@@ -138,7 +138,8 @@
 #include <string.h>
 #include <memory>
 #include "../jrd/ib_stdio.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../dsql/dsql.h"
 #include "gen/codes.h"
 #include "../jrd/thd.h"

@@ -86,7 +86,8 @@
 
 #include "gen/iberror.h"
 #include "../dsql/dsql.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/flags.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
@@ -2293,16 +2294,16 @@ non_charset_simple_type	: national_character_type
 		| BIGINT
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-					gds_arg_number, client_dialect,
-					gds_arg_string, "BIGINT",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
+					isc_arg_number, client_dialect,
+					isc_arg_string, "BIGINT",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					gds_arg_number, db_dialect,
-					gds_arg_string, "BIGINT",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					isc_arg_number, db_dialect,
+					isc_arg_string, "BIGINT",
 					0);
 			lex.g_field->fld_dtype = dtype_int64; 
 			lex.g_field->fld_length = sizeof (SINT64); 
@@ -2323,7 +2324,7 @@ non_charset_simple_type	: national_character_type
 			if (client_dialect <= SQL_DIALECT_V5)
 				{
 				/* Post warning saying that DATE is equivalent to TIMESTAMP */
-					ERRD_post_warning (isc_sqlwarn, gds_arg_number, (SLONG) 301, 
+					ERRD_post_warning (isc_sqlwarn, isc_arg_number, (SLONG) 301, 
 											   isc_arg_warning, isc_dtype_renamed, 0);
 				lex.g_field->fld_dtype = dtype_timestamp; 
 				lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
@@ -2339,16 +2340,16 @@ non_charset_simple_type	: national_character_type
 		| TIME
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-					gds_arg_number, client_dialect,
-					gds_arg_string, "TIME",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
+					isc_arg_number, client_dialect,
+					isc_arg_string, "TIME",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					gds_arg_number, db_dialect,
-					gds_arg_string, "TIME",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					isc_arg_number, db_dialect,
+					isc_arg_string, "TIME",
 					0);
 			lex.g_field->fld_dtype = dtype_sql_time; 
 			lex.g_field->fld_length = sizeof (SLONG);
@@ -2514,11 +2515,11 @@ prec_scale	:
 				   (db_dialect	 >  SQL_DIALECT_V5) ) ||
 				 ( (client_dialect >  SQL_DIALECT_V5) &&
 				   (db_dialect	 <= SQL_DIALECT_V5) ) )
-					ERRD_post (gds_sqlerr,
-					   gds_arg_number, (SLONG) -817,
-					   gds_arg_gds,
+					ERRD_post (isc_sqlerr,
+					   isc_arg_number, (SLONG) -817,
+					   isc_arg_gds,
 					   isc_ddl_not_allowed_by_db_sql_dial,
-					   gds_arg_number, (SLONG) db_dialect,
+					   isc_arg_number, (SLONG) db_dialect,
 					   0);
 				if (client_dialect <= SQL_DIALECT_V5)
 					{
@@ -2531,13 +2532,13 @@ prec_scale	:
 					{
 					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous,
-					gds_arg_end );
+					isc_arg_end );
 					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous1,
-					gds_arg_end );
+					isc_arg_end );
 					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous2,
-					gds_arg_end );
+					isc_arg_end );
 
 					}
 				lex.g_field->fld_dtype = dtype_int64;
@@ -2571,11 +2572,11 @@ prec_scale	:
 				   (db_dialect	 >  SQL_DIALECT_V5) ) ||
 				 ( (client_dialect >  SQL_DIALECT_V5) &&
 				   (db_dialect	 <= SQL_DIALECT_V5) ) )
-					ERRD_post (gds_sqlerr,
-					   gds_arg_number, (SLONG) -817,
-					   gds_arg_gds,
+					ERRD_post (isc_sqlerr,
+					   isc_arg_number, (SLONG) -817,
+					   isc_arg_gds,
 					   isc_ddl_not_allowed_by_db_sql_dial,
-					   gds_arg_number, (SLONG) db_dialect,
+					   isc_arg_number, (SLONG) db_dialect,
 					   0);
 				if (client_dialect <= SQL_DIALECT_V5)
 					{
@@ -2588,13 +2589,13 @@ prec_scale	:
 				  {
 					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous,
-					gds_arg_end );
+					isc_arg_end );
 					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous1,
-					gds_arg_end );
+					isc_arg_end );
 					ERRD_post_warning (
 					isc_dsql_warn_precision_ambiguous2,
-					gds_arg_end );
+					isc_arg_end );
 				  }
 				  /* client_dialect >= SQL_DIALECT_V6 */
 				lex.g_field->fld_dtype = dtype_int64;
@@ -3670,32 +3671,32 @@ value	: column_name
 datetime_value_expression : CURRENT_DATE
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-					gds_arg_number, client_dialect,
-					gds_arg_string, "DATE",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
+					isc_arg_number, client_dialect,
+					isc_arg_string, "DATE",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					gds_arg_number, db_dialect,
-					gds_arg_string, "DATE",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					isc_arg_number, db_dialect,
+					isc_arg_string, "DATE",
 					0);
 			$$ = make_node (nod_current_date, 0, NULL);
 			}
 		| CURRENT_TIME
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-					gds_arg_number, client_dialect,
-					gds_arg_string, "TIME",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
+					isc_arg_number, client_dialect,
+					isc_arg_string, "TIME",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					gds_arg_number, db_dialect,
-					gds_arg_string, "TIME",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					isc_arg_number, db_dialect,
+					isc_arg_string, "TIME",
 					0);
 			$$ = make_node (nod_current_time, 0, NULL);
 			}
@@ -3735,32 +3736,32 @@ u_constant	: u_numeric_constant
 		| DATE STRING
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-					gds_arg_number, client_dialect,
-					gds_arg_string, "DATE",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
+					isc_arg_number, client_dialect,
+					isc_arg_string, "DATE",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					gds_arg_number, db_dialect,
-					gds_arg_string, "DATE",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					isc_arg_number, db_dialect,
+					isc_arg_string, "DATE",
 					0);
 			$$ = MAKE_constant ((STR) $2, CONSTANT_DATE);
 			}
 		| TIME STRING
 			{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_dialect_datatype_unsupport,
-					gds_arg_number, client_dialect,
-					gds_arg_string, "TIME",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
+					isc_arg_number, client_dialect,
+					isc_arg_string, "TIME",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104, 
-					gds_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					gds_arg_number, db_dialect,
-					gds_arg_string, "TIME",
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
+					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
+					isc_arg_number, db_dialect,
+					isc_arg_string, "TIME",
 					0);
 			$$ = MAKE_constant ((STR) $2, CONSTANT_TIME); 
 			}
@@ -4997,12 +4998,12 @@ int LexerState::yylex (
 					 * of our message database.
 					 */
 					ERRD_post_warning( isc_dsql_warning_number_ambiguous,
-							   gds_arg_string,
+							   isc_arg_string,
 							   ERR_string( last_token,
 								   ptr - last_token ),
-							   gds_arg_end );
+							   isc_arg_end );
 					ERRD_post_warning( isc_dsql_warning_number_ambiguous1,
-							   gds_arg_end );
+							   isc_arg_end );
 					}
 
 				yylval = (DSQL_NOD) MAKE_string(last_token, ptr - last_token);
@@ -5226,18 +5227,18 @@ static void yyerror (
  **************************************/
 
 	if (yychar < 1)
-		ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104,
-		gds_arg_gds, gds_command_end_err,	/* Unexpected end of command */
+		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
+		isc_arg_gds, isc_command_end_err,	/* Unexpected end of command */
 		0);
 	else
 	{
-		ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -104,
-		gds_arg_gds, gds_dsql_token_unk_err, 
-		gds_arg_number, (SLONG) lex.lines, 
-		gds_arg_number, (SLONG) (lex.last_token - lex.line_start + 1), /*CVC: +1*/
+		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
+		isc_arg_gds, isc_dsql_token_unk_err, 
+		isc_arg_number, (SLONG) lex.lines, 
+		isc_arg_number, (SLONG) (lex.last_token - lex.line_start + 1), /*CVC: +1*/
 			/* Token unknown - line %d, char %d */
-		gds_arg_gds, gds_random, 
-		gds_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token, 0);
+		isc_arg_gds, isc_random, 
+		isc_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token, 0);
 	}
 }
 
@@ -5256,6 +5257,6 @@ static void yyabandon (SSHORT		sql_code,
  *
  **************************************/
 
-	ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) sql_code, 
-		gds_arg_gds, error_symbol, 0);
+	ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) sql_code, 
+		isc_arg_gds, error_symbol, 0);
 }

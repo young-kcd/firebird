@@ -65,7 +65,8 @@ nested FOR loops are added.
 #include <stdlib.h>
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/thd.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
@@ -85,7 +86,6 @@ nested FOR loops are added.
 #include "../jrd/sch_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../jrd/why_proto.h"
-#include "../jrd/gds.h"
 #include "../jrd/y_handle.h"
 #include "../common/config/config.h"
 
@@ -137,24 +137,24 @@ static OPN open_cursors;
 
 static const SCHAR db_hdr_info_items[] = {
 	isc_info_db_sql_dialect,
-	gds_info_ods_version,
-	gds_info_base_level,
+	isc_info_ods_version,
+	isc_info_base_level,
 	isc_info_db_read_only,
 	frb_info_att_charset,
-	gds_info_end
+	isc_info_end
 };
 
 static const SCHAR explain_info[] = {
-	gds_info_access_path
+	isc_info_access_path
 };
 
 static const SCHAR record_info[] = {
-	gds_info_req_update_count, gds_info_req_delete_count,
-	gds_info_req_select_count, gds_info_req_insert_count
+	isc_info_req_update_count, isc_info_req_delete_count,
+	isc_info_req_select_count, isc_info_req_insert_count
 };
 
 static const UCHAR sql_records_info[] = {
-	gds_info_sql_records
+	isc_info_sql_records
 };
 
 #ifdef	ANY_THREADING
@@ -535,8 +535,8 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 
 		if (*trans_handle == NULL && request->req_type != REQ_START_TRANS)
 		{
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
-				  	gds_arg_gds, gds_bad_trans_handle, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+				  	isc_arg_gds, isc_bad_trans_handle, 0);
 		}
 
 /* If the request is a SELECT or blob statement then this is an open.
@@ -550,8 +550,8 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 		{
 			if (request->req_flags & REQ_cursor_open)
 			{
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
-					  	gds_arg_gds, gds_dsql_cursor_open_err, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
+					  	isc_arg_gds, isc_dsql_cursor_open_err, 0);
 			}
 		}
 
@@ -716,9 +716,9 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 				const int max_diag_len = 50;
 				if (length > max_diag_len)
 					string[max_diag_len] = 0;
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) -902,
-					gds_arg_gds, gds_exec_sql_invalid_req, 
-					gds_arg_string, string, gds_arg_end);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -902,
+					isc_arg_gds, isc_exec_sql_invalid_req, 
+					isc_arg_string, string, isc_arg_end);
 			}
 
 			execute_request(request, trans_handle, in_blr_length, in_blr,
@@ -860,9 +860,9 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 		}
 	}
 	if (! database) {
-    	status[0] = gds_arg_gds;
-    	status[1] = gds_bad_db_handle;
-    	status[2] = gds_arg_end;
+    	status[0] = isc_arg_gds;
+    	status[1] = isc_bad_db_handle;
+    	status[2] = isc_arg_end;
     	THD_MUTEX_UNLOCK(&databases_mutex);
         THREAD_ENTER;
     	return status[1];
@@ -903,9 +903,9 @@ WHY_DBB	GetWhyAttachment (ISC_STATUS* status,
 		}
 	}
 	if (! database) {
-    	status[0] = gds_arg_gds;
-    	status[1] = gds_bad_db_handle;
-    	status[2] = gds_arg_end;
+    	status[0] = isc_arg_gds;
+    	status[1] = isc_bad_db_handle;
+    	status[2] = isc_arg_end;
 	}
 	THD_MUTEX_UNLOCK (&databases_mutex);
     THREAD_ENTER;
@@ -969,8 +969,8 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 			request->req_type == REQ_GET_SEGMENT)
 		{
 			if (!(request->req_flags & REQ_cursor_open))
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
-					  gds_arg_gds, gds_dsql_cursor_err, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
+					  isc_arg_gds, isc_dsql_cursor_err, 0);
 		}
 
 #ifdef SCROLLABLE_CURSORS
@@ -1035,8 +1035,8 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 				break;
 
 			default:
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-					  gds_arg_gds, gds_dsql_sqlda_err, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+					  isc_arg_gds, isc_dsql_sqlda_err, 0);
 			}
 
 			if (offset)
@@ -1104,11 +1104,11 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 				RESTORE_THREAD_DATA;
 				return 0;
 			}
-			else if (s == gds_segment) {
+			else if (s == isc_segment) {
 				RESTORE_THREAD_DATA;
 				return 101;
 			}
-			else if (s == gds_segstr_eof) {
+			else if (s == isc_segstr_eof) {
 				RESTORE_THREAD_DATA;
 				return 100;
 			}
@@ -1189,8 +1189,8 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 		/* Just close the cursor associated with the request. */
 
 			if (!(request->req_flags & REQ_cursor_open))
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 501,
-					  gds_arg_gds, gds_dsql_cursor_close_err, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 501,
+					  isc_arg_gds, isc_dsql_cursor_close_err, 0);
 
 			close_cursor(request);
 		}
@@ -1252,8 +1252,8 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 
 		if (request->req_type == REQ_PUT_SEGMENT)
 			if (!(request->req_flags & REQ_cursor_open))
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 504,
-					  gds_arg_gds, gds_dsql_cursor_err, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
+					  isc_arg_gds, isc_dsql_cursor_err, 0);
 
 		message = (dsql_msg*) request->req_receive;
 
@@ -1333,8 +1333,8 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 		dsql_req* old_request = *req_handle;
 		if (!old_request) {
-			ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -901,
-			           gds_arg_gds, gds_bad_req_handle,
+			ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
+			           isc_arg_gds, isc_bad_req_handle,
 				       0);
 		}
 
@@ -1342,8 +1342,8 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 		if (old_request) { // this test is irrelevant, see ERRD_post call above
 			database = old_request->req_dbb;
 			if (!database) {
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -901,
-		                   gds_arg_gds, gds_bad_req_handle,
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
+		                   isc_arg_gds, isc_bad_req_handle,
 			               0);
 	        }
 	    }
@@ -1351,8 +1351,8 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 /* check to see if old request has an open cursor */
 
 		if (old_request && (old_request->req_flags & REQ_cursor_open)) {
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 519,
-				  gds_arg_gds, gds_dsql_open_cursor_request, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 519,
+				  isc_arg_gds, isc_dsql_open_cursor_request, 0);
 		}
 
 /* Allocate a new request block and then prepare the request.  We want to
@@ -1414,8 +1414,8 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 			if ((request->req_type == REQ_DDL) &&
 				(request->req_ddl_node->nod_type == nod_def_database))
-					ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 530,
-					  	gds_arg_gds, gds_dsql_crdb_prepare_err, 0);
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 530,
+					  	isc_arg_gds, isc_dsql_crdb_prepare_err, 0);
 
 			request->req_flags |= REQ_prepared;
 
@@ -1518,8 +1518,8 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 		const USHORT length = name_length(cursor);
 	
 		if (length == 0) {
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
-				  gds_arg_gds, gds_dsql_decl_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
+				  isc_arg_gds, isc_dsql_decl_err, 0);
 		}
 
 /* If there already is a different cursor by the same name, bitch */
@@ -1531,8 +1531,8 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 				return return_success();
 			}
 
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
-				  gds_arg_gds, gds_dsql_decl_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
+				  isc_arg_gds, isc_dsql_decl_err, 0);
 		}
 
 /* If there already is a cursor and its name isn't the same, ditto.
@@ -1543,8 +1543,8 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 										  length, SYM_cursor, request);
 		} else {
 			fb_assert(request->req_cursor != symbol);
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 502,
-				  gds_arg_gds, gds_dsql_decl_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
+				  isc_arg_gds, isc_dsql_decl_err, 0);
 		}
 	}
 	catch(const std::exception&)
@@ -1604,61 +1604,61 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 		dsql_msg** message = NULL;
 		first_index = 0;
 
-		while (items < end_items && *items != gds_info_end)
+		while (items < end_items && *items != isc_info_end)
 		{
 			UCHAR item = *items++;
-			if (item == gds_info_sql_select || item == gds_info_sql_bind)
+			if (item == isc_info_sql_select || item == isc_info_sql_bind)
 			{
-				message = (item == gds_info_sql_select) ?
+				message = (item == isc_info_sql_select) ?
 					&request->req_receive : &request->req_send;
 				if (info + 1 >= end_info) {
-					*info = gds_info_truncated;
+					*info = isc_info_truncated;
 					return return_success();
 				}
 				*info++ = item;
 			}
-			else if (item == gds_info_sql_stmt_type)
+			else if (item == isc_info_sql_stmt_type)
 			{
 				switch (request->req_type) {
 				case REQ_SELECT:
 				case REQ_EMBED_SELECT:
-					number = gds_info_sql_stmt_select;
+					number = isc_info_sql_stmt_select;
 					break;
 				case REQ_SELECT_UPD:
-					number = gds_info_sql_stmt_select_for_upd;
+					number = isc_info_sql_stmt_select_for_upd;
 					break;
 				case REQ_DDL:
-					number = gds_info_sql_stmt_ddl;
+					number = isc_info_sql_stmt_ddl;
 					break;
 				case REQ_GET_SEGMENT:
-					number = gds_info_sql_stmt_get_segment;
+					number = isc_info_sql_stmt_get_segment;
 					break;
 				case REQ_PUT_SEGMENT:
-					number = gds_info_sql_stmt_put_segment;
+					number = isc_info_sql_stmt_put_segment;
 					break;
 				case REQ_COMMIT:
 				case REQ_COMMIT_RETAIN:
-					number = gds_info_sql_stmt_commit;
+					number = isc_info_sql_stmt_commit;
 					break;
 				case REQ_ROLLBACK:
-					number = gds_info_sql_stmt_rollback;
+					number = isc_info_sql_stmt_rollback;
 					break;
 				case REQ_START_TRANS:
-					number = gds_info_sql_stmt_start_trans;
+					number = isc_info_sql_stmt_start_trans;
 					break;
 				case REQ_INSERT:
-					number = gds_info_sql_stmt_insert;
+					number = isc_info_sql_stmt_insert;
 					break;
 				case REQ_UPDATE:
 				case REQ_UPDATE_CURSOR:
-					number = gds_info_sql_stmt_update;
+					number = isc_info_sql_stmt_update;
 					break;
 				case REQ_DELETE:
 				case REQ_DELETE_CURSOR:
-					number = gds_info_sql_stmt_delete;
+					number = isc_info_sql_stmt_delete;
 					break;
 				case REQ_EXEC_PROCEDURE:
-					number = gds_info_sql_stmt_exec_procedure;
+					number = isc_info_sql_stmt_exec_procedure;
 					break;
 				case REQ_SET_GENERATOR:
 					number = isc_info_sql_stmt_set_generator;
@@ -1676,7 +1676,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 					return return_success();
 				}
 			}
-			else if (item == gds_info_sql_sqlda_start) {
+			else if (item == isc_info_sql_sqlda_start) {
 				length = *items++;
 				first_index =
 					static_cast<USHORT>
@@ -1694,7 +1694,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 					return return_success();
 				}
 			}
-			else if (item == gds_info_sql_records) {
+			else if (item == isc_info_sql_records) {
 				length = get_request_info(request, (SSHORT) sizeof(buffer),
 										  reinterpret_cast<SCHAR*>(buffer));
 				if (length && !(info = put_item(item, length, buffer, info, 
@@ -1703,7 +1703,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 					return return_success();
 				}
 			}
-			else if (item == gds_info_sql_get_plan) {
+			else if (item == isc_info_sql_get_plan) {
 			/* be careful, get_plan_info() will reallocate the buffer to a
 			   larger size if it is not big enough */
 
@@ -1724,12 +1724,12 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 				}
 			}
 			else if (!message ||
-				 	(item != gds_info_sql_num_variables
-				  	&& item != gds_info_sql_describe_vars))
+				 	(item != isc_info_sql_num_variables
+				  	&& item != isc_info_sql_describe_vars))
 			{
 				buffer[0] = item;
-				item = gds_info_error;
-				length = 1 + convert((SLONG) gds_infunk, buffer + 1);
+				item = isc_info_error;
+				length = 1 + convert((SLONG) isc_infunk, buffer + 1);
 				if (!(info = put_item(item, length, buffer, info, end_info))) {
 					return return_success();
 				}
@@ -1741,14 +1741,14 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 				if (!(info = put_item(item, length, buffer, info, end_info))) {
 					return return_success();
 				}
-				if (item == gds_info_sql_num_variables) {
+				if (item == isc_info_sql_num_variables) {
 					continue;
 				}
 
 				const UCHAR* end_describe = items;
 				while (end_describe < end_items &&
-				   	*end_describe != gds_info_end &&
-				   	*end_describe != gds_info_sql_describe_end) 
+				   	*end_describe != isc_info_end &&
+				   	*end_describe != isc_info_sql_describe_end) 
 				{
 					end_describe++;
 				}
@@ -1764,13 +1764,13 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 				}
 
 				items = end_describe;
-				if (*items == gds_info_sql_describe_end) {
+				if (*items == isc_info_sql_describe_end) {
 					items++;
 				}
 			}
 		}
 
-		*info++ = gds_info_end;
+		*info++ = isc_info_end;
 	}
 	catch(const std::exception&)
 	{
@@ -3053,17 +3053,17 @@ static void execute_blob(	dsql_req*		request,
 			   in_msg_length, in_msg);
 
 	UCHAR* p = bpb;
-	*p++ = gds_bpb_version1;
+	*p++ = isc_bpb_version1;
 	SSHORT filter = filter_sub_type(request, blob->blb_to);
 	if (filter) {
-		*p++ = gds_bpb_target_type;
+		*p++ = isc_bpb_target_type;
 		*p++ = 2;
 		*p++ = static_cast<UCHAR>(filter);
 		*p++ = filter >> 8;
 	}
 	filter = filter_sub_type(request, blob->blb_from);
 	if (filter) {
-		*p++ = gds_bpb_source_type;
+		*p++ = isc_bpb_source_type;
 		*p++ = 2;
 		*p++ = static_cast<UCHAR>(filter);
 		*p++ = filter >> 8;
@@ -3078,9 +3078,9 @@ static void execute_blob(	dsql_req*		request,
 
 	if (request->req_type == REQ_GET_SEGMENT)
 	{
-		ISC_QUAD* blob_id = (GDS__QUAD*) parameter->par_desc.dsc_address;
+		ISC_QUAD* blob_id = (GDS_QUAD*) parameter->par_desc.dsc_address;
 		if (null && *((SSHORT *) null->par_desc.dsc_address) < 0) {
-			memset(blob_id, 0, sizeof(GDS__QUAD));
+			memset(blob_id, 0, sizeof(GDS_QUAD));
 		}
 		THREAD_EXIT;
 		s = isc_open_blob2(tdsql->tsql_status,
@@ -3096,8 +3096,8 @@ static void execute_blob(	dsql_req*		request,
 	else
 	{
 		request->req_handle = NULL;
-		ISC_QUAD* blob_id = (GDS__QUAD *) parameter->par_desc.dsc_address;
-		memset(blob_id, 0, sizeof(GDS__QUAD));
+		ISC_QUAD* blob_id = (GDS_QUAD *) parameter->par_desc.dsc_address;
+		memset(blob_id, 0, sizeof(GDS_QUAD));
 		THREAD_EXIT;
 		s = isc_create_blob2(tdsql->tsql_status,
 							 &request->req_dbb->dbb_database_handle,
@@ -3385,19 +3385,19 @@ static ISC_STATUS execute_request(dsql_req*			request,
 
 			if (!s)
 			{
-				tdsql->tsql_status[0] = gds_arg_gds;
-				tdsql->tsql_status[1] = gds_sing_select_err;
-				tdsql->tsql_status[2] = gds_arg_end;
-				return_status = gds_sing_select_err;
+				tdsql->tsql_status[0] = isc_arg_gds;
+				tdsql->tsql_status[1] = isc_sing_select_err;
+				tdsql->tsql_status[2] = isc_arg_end;
+				return_status = isc_sing_select_err;
 			}
-			else if (s == gds_req_sync && counter == 1)
+			else if (s == isc_req_sync && counter == 1)
 			{
-				tdsql->tsql_status[0] = gds_arg_gds;
-				tdsql->tsql_status[1] = gds_stream_eof;
-				tdsql->tsql_status[2] = gds_arg_end;
-				return_status = gds_stream_eof;
+				tdsql->tsql_status[0] = isc_arg_gds;
+				tdsql->tsql_status[1] = isc_stream_eof;
+				tdsql->tsql_status[2] = isc_arg_end;
+				return_status = isc_stream_eof;
 			}
-			else if (s != gds_req_sync)
+			else if (s != isc_req_sync)
 			{
 				punt();
 			}
@@ -3500,18 +3500,18 @@ static bool get_indices(
 
 	explain_length--;
 	switch (*explain++) {
-	case gds_info_rsb_and:
-	case gds_info_rsb_or:
+	case isc_info_rsb_and:
+	case isc_info_rsb_or:
 		if (!get_indices(&explain_length, &explain, &plan_length, &plan))
 			return false;
 		if (!get_indices(&explain_length, &explain, &plan_length, &plan))
 			return false;
 		break;
 
-	case gds_info_rsb_dbkey:
+	case isc_info_rsb_dbkey:
 		break;
 
-	case gds_info_rsb_index:
+	case isc_info_rsb_index:
 		explain_length--;
 		length = *explain++;
 
@@ -3588,7 +3588,7 @@ static USHORT get_plan_info(
 	if (s)
 		return 0;
 
-	if (*explain_buffer == gds_info_truncated) {
+	if (*explain_buffer == isc_info_truncated) {
 		explain_ptr = (SCHAR *) gds__alloc(BUFFER_XLARGE);
 		// CVC: Added test for memory exhaustion here.
 		// Should we throw an exception or simply return 0 to the caller?
@@ -3614,7 +3614,7 @@ static USHORT get_plan_info(
 	SCHAR* plan;
 	for (int i = 0; i < 2; i++) {
 		const SCHAR* explain = explain_ptr;
-		if (*explain++ != gds_info_access_path)
+		if (*explain++ != isc_info_access_path)
 		{
 			// CVC: deallocate memory!
 			if (explain_ptr != explain_buffer) {
@@ -3701,32 +3701,32 @@ static USHORT get_request_info(
 	request->req_selects = request->req_inserts = 0;
 
 	UCHAR p;
-	while ((p = *data++) != gds_info_end) {
+	while ((p = *data++) != isc_info_end) {
 		const USHORT data_length =
 			static_cast < USHORT >
 			(gds__vax_integer(reinterpret_cast<UCHAR*>(data), 2));
 		data += 2;
 
 		switch (p) {
-		case gds_info_req_update_count:
+		case isc_info_req_update_count:
 			request->req_updates =
 				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
 								 data_length);
 			break;
 
-		case gds_info_req_delete_count:
+		case isc_info_req_delete_count:
 			request->req_deletes =
 				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
 								 data_length);
 			break;
 
-		case gds_info_req_select_count:
+		case isc_info_req_select_count:
 			request->req_selects =
 				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
 								 data_length);
 			break;
 
-		case gds_info_req_insert_count:
+		case isc_info_req_insert_count:
 			request->req_inserts =
 				gds__vax_integer(reinterpret_cast<UCHAR*>(data),
 								 data_length);
@@ -3778,7 +3778,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 	explain_length--;
 	switch (*explain++) {
-	case gds_info_rsb_begin:
+	case isc_info_rsb_begin:
 		if (!*level_ptr) {
 			/* put out the PLAN prefix */
 
@@ -3792,14 +3792,14 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		(*level_ptr)++;
 		break;
 
-	case gds_info_rsb_end:
+	case isc_info_rsb_end:
         if (*level_ptr) {
             (*level_ptr)--;
         }
         /* else --*parent_join_count; ??? */
 		break;
 
-	case gds_info_rsb_relation:
+	case isc_info_rsb_relation:
 
 		/* for the single relation case, initiate
 		   the relation with a parenthesis */
@@ -3830,14 +3830,14 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			*plan++ = *explain++;
 		break;
 
-	case gds_info_rsb_type:
+	case isc_info_rsb_type:
 		explain_length--;
 		switch (rsb_type = *explain++) {
 			/* for stream types which have multiple substreams, print out
 			   the stream type and recursively print out the substreams so
 			   we will know where to put the parentheses */
 
-		case gds_info_rsb_union:
+		case isc_info_rsb_union:
 
 			/* put out all the substreams of the join */
 
@@ -3877,9 +3877,9 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			}
 			break;
 
-		case gds_info_rsb_cross:
-		case gds_info_rsb_left_cross:
-		case gds_info_rsb_merge:
+		case isc_info_rsb_cross:
+		case isc_info_rsb_left_cross:
+		case isc_info_rsb_merge:
 
 			/* if this join is itself part of a join list,
 			   but not the first item, then put out a comma */
@@ -3894,8 +3894,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			/* put out the join type */
 
-			if (rsb_type == gds_info_rsb_cross ||
-				rsb_type == gds_info_rsb_left_cross) {
+			if (rsb_type == isc_info_rsb_cross ||
+				rsb_type == isc_info_rsb_left_cross) {
                 p = "JOIN (";
             }
 			else {
@@ -3937,17 +3937,17 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				-- * parent_join_count;
 			break;
 
-		case gds_info_rsb_indexed:
-		case gds_info_rsb_navigate:
-		case gds_info_rsb_sequential:
-		case gds_info_rsb_ext_sequential:
-		case gds_info_rsb_ext_indexed:
-			if (rsb_type == gds_info_rsb_indexed ||
-				rsb_type == gds_info_rsb_ext_indexed) 
+		case isc_info_rsb_indexed:
+		case isc_info_rsb_navigate:
+		case isc_info_rsb_sequential:
+		case isc_info_rsb_ext_sequential:
+		case isc_info_rsb_ext_indexed:
+			if (rsb_type == isc_info_rsb_indexed ||
+				rsb_type == isc_info_rsb_ext_indexed) 
 			{
 				p = " INDEX (";
 			}
-			else if (rsb_type == gds_info_rsb_navigate)
+			else if (rsb_type == isc_info_rsb_navigate)
 				p = " ORDER ";
 			else
 				p = " NATURAL";
@@ -3959,15 +3959,15 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			/* print out additional index information */
 
-			if (rsb_type == gds_info_rsb_indexed ||
-				rsb_type == gds_info_rsb_navigate ||
-				rsb_type == gds_info_rsb_ext_indexed) {
+			if (rsb_type == isc_info_rsb_indexed ||
+				rsb_type == isc_info_rsb_navigate ||
+				rsb_type == isc_info_rsb_ext_indexed) {
 				if (!get_indices(&explain_length, &explain, &plan_length, &plan))
 					return false;
 			}
 
-			if (rsb_type == gds_info_rsb_navigate &&
-				*explain == gds_info_rsb_indexed)
+			if (rsb_type == isc_info_rsb_navigate &&
+				*explain == isc_info_rsb_indexed)
 			{
 				if (!get_rsb_item(&explain_length, &explain, &plan_length,
 								  &plan, &join_count, level_ptr))
@@ -3976,8 +3976,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				}
 			}
 
-			if (rsb_type == gds_info_rsb_indexed ||
-				rsb_type == gds_info_rsb_ext_indexed) {
+			if (rsb_type == isc_info_rsb_indexed ||
+				rsb_type == isc_info_rsb_ext_indexed) {
 				if (--plan_length < 0)
 					return false;
 				*plan++ = ')';
@@ -3997,7 +3997,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				-- * parent_join_count;
 			break;
 
-		case gds_info_rsb_sort:
+		case isc_info_rsb_sort:
 
 			/* if this sort is on behalf of a union, don't bother to
 			   print out the sort, because unions handle the sort on all
@@ -4005,9 +4005,9 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			   in the union, so the sort doesn't really apply to a particular plan */
 
 			if (explain_length > 2 &&
-				(explain[0] == gds_info_rsb_begin) &&
-				(explain[1] == gds_info_rsb_type) &&
-				(explain[2] == gds_info_rsb_union))
+				(explain[0] == isc_info_rsb_begin) &&
+				(explain[1] == isc_info_rsb_type) &&
+				(explain[2] == isc_info_rsb_union))
 			{
 				break;
 			}
@@ -4157,7 +4157,7 @@ static DBB init(FRBRD** db_handle)
 
 	SCHAR* data = buffer;
 	UCHAR p;
-	while ((p = *data++) != gds_info_end)
+	while ((p = *data++) != isc_info_end)
 	{
 		SSHORT l =
 			static_cast<SSHORT>(
@@ -4170,7 +4170,7 @@ static DBB init(FRBRD** db_handle)
 			database->dbb_db_SQL_dialect = (USHORT) data[0];
 			break;
 
-		case gds_info_ods_version:
+		case isc_info_ods_version:
 			if (gds__vax_integer(reinterpret_cast<UCHAR*>(data), l) > 7)
 				database->dbb_flags &= ~DBB_v3;
 			break;
@@ -4191,7 +4191,7 @@ static DBB init(FRBRD** db_handle)
 			   archaic format, not a standard vax integer format.
 			 */
 
-		case gds_info_base_level:
+		case isc_info_base_level:
 			database->dbb_base_level = (USHORT) data[1];
 			break;
 
@@ -4298,8 +4298,8 @@ static void map_in_out(	dsql_req*		request,
 
 	if (parameter || count)
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-				  gds_arg_gds, gds_dsql_sqlda_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				  isc_arg_gds, isc_dsql_sqlda_err, 0);
 	}
 
 	par* dbkey;
@@ -4391,14 +4391,14 @@ static USHORT parse_blr(
 
 	if (*blr != blr_version4 && *blr != blr_version5)
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-				  gds_arg_gds, gds_dsql_sqlda_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				  isc_arg_gds, isc_dsql_sqlda_err, 0);
 	}
 	blr++;						/* skip the blr_version */
 	if (*blr++ != blr_begin || *blr++ != blr_message)
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-				  gds_arg_gds, gds_dsql_sqlda_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				  isc_arg_gds, isc_dsql_sqlda_err, 0);
 	}
 
 	++blr;						/* skip the message number */
@@ -4506,8 +4506,8 @@ static USHORT parse_blr(
 			break;
 
 		default:
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-					  gds_arg_gds, gds_dsql_sqlda_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+					  isc_arg_gds, isc_dsql_sqlda_err, 0);
 		}
 
 		USHORT align = type_alignments[desc.dsc_dtype];
@@ -4517,8 +4517,8 @@ static USHORT parse_blr(
 		offset += desc.dsc_length;
 
 		if (*blr++ != blr_short || *blr++ != 0)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-					  gds_arg_gds, gds_dsql_sqlda_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+					  isc_arg_gds, isc_dsql_sqlda_err, 0);
 
 		align = type_alignments[dtype_short];
 		if (align)
@@ -4543,8 +4543,8 @@ static USHORT parse_blr(
 
 	if (*blr++ != (UCHAR) blr_end || offset != msg_length)
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-				  gds_arg_gds, gds_dsql_sqlda_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				  isc_arg_gds, isc_dsql_sqlda_err, 0);
 	}
 
 	return count;
@@ -4585,8 +4585,8 @@ static dsql_req* prepare(
 	MOVE_CLEAR(local_status, sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
 
 	if (client_dialect > SQL_DIALECT_CURRENT)
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 901,
-				  gds_arg_gds, gds_wish_list, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+				  isc_arg_gds, isc_wish_list, 0);
 
 	if (!string_length)
 		string_length = strlen(string);
@@ -4613,7 +4613,7 @@ static dsql_req* prepare(
 	                 parser_version,
 	                 &stmt_ambiguous))
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104, gds_arg_gds, gds_command_end_err,	/* Unexpected end of command */
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, isc_command_end_err,	/* Unexpected end of command */
 				  0);
 	}
 
@@ -4652,9 +4652,9 @@ static dsql_req* prepare(
 	if (request->req_type == REQ_DDL && stmt_ambiguous &&
 		request->req_dbb->dbb_db_SQL_dialect != client_dialect)
 	{
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 817,
-				  gds_arg_gds, isc_ddl_not_allowed_by_db_sql_dial,
-				  gds_arg_number,
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 817,
+				  isc_arg_gds, isc_ddl_not_allowed_by_db_sql_dial,
+				  isc_arg_number,
 				  (SLONG) request->req_dbb->dbb_db_SQL_dialect, 0);
 	}
 
@@ -4817,7 +4817,7 @@ static UCHAR* put_item(	UCHAR	item,
 {
 
 	if (ptr + length + 3 >= end) {
-		*ptr = gds_info_truncated;
+		*ptr = isc_info_truncated;
 		return NULL;
 	}
 
@@ -4935,12 +4935,12 @@ static ISC_STATUS return_success(void)
 	TSQL tdsql = GET_THREAD_DATA;
 
 	ISC_STATUS* p = tdsql->tsql_status;
-	*p++ = gds_arg_gds;
+	*p++ = isc_arg_gds;
 	*p++ = FB_SUCCESS;
 
 	// do not overwrite warnings
 	if (*p != isc_arg_warning) {
-		*p = gds_arg_end;
+		*p = isc_arg_end;
 	}
 
 	RESTORE_THREAD_DATA;
@@ -5044,8 +5044,8 @@ static UCHAR* var_info(
 				break;
 
 			default:
-				ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-						  gds_arg_gds, gds_dsql_datatype_err, 0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+						  isc_arg_gds, isc_dsql_datatype_err, 0);
 			}
 
 			if (sql_type && (param->par_desc.dsc_flags & DSC_nullable))
@@ -5057,35 +5057,35 @@ static UCHAR* var_info(
 				const UCHAR* buffer = buf;
 				UCHAR item = *describe++;
 				switch (item) {
-				case gds_info_sql_sqlda_seq:
+				case isc_info_sql_sqlda_seq:
 					length = convert((SLONG) param->par_index, buf);
 					break;
 
-				case gds_info_sql_message_seq:
+				case isc_info_sql_message_seq:
 					length = 0;
 					break;
 
-				case gds_info_sql_type:
+				case isc_info_sql_type:
 					length = convert((SLONG) sql_type, buf);
 					break;
 
-				case gds_info_sql_sub_type:
+				case isc_info_sql_sub_type:
 					length = convert((SLONG) sql_sub_type, buf);
 					break;
 
-				case gds_info_sql_scale:
+				case isc_info_sql_scale:
 					length = convert((SLONG) sql_scale, buf);
 					break;
 
-				case gds_info_sql_length:
+				case isc_info_sql_length:
 					length = convert((SLONG) sql_len, buf);
 					break;
 
-				case gds_info_sql_null_ind:
+				case isc_info_sql_null_ind:
 					length = convert((SLONG) (sql_type & 1), buf);
 					break;
 
-				case gds_info_sql_field:
+				case isc_info_sql_field:
 					if (name = param->par_name) {
 						length = strlen(name);
 						buffer = reinterpret_cast<const UCHAR*>(name);
@@ -5094,7 +5094,7 @@ static UCHAR* var_info(
 						length = 0;
 					break;
 
-				case gds_info_sql_relation:
+				case isc_info_sql_relation:
 					if (name = param->par_rel_name) {
 						length = strlen(name);
 						buffer = reinterpret_cast<const UCHAR*>(name);
@@ -5103,7 +5103,7 @@ static UCHAR* var_info(
 						length = 0;
 					break;
 
-				case gds_info_sql_owner:
+				case isc_info_sql_owner:
 					if (name = param->par_owner_name) {
 						length = strlen(name);
 						buffer = reinterpret_cast<const UCHAR*>(name);
@@ -5112,7 +5112,7 @@ static UCHAR* var_info(
 						length = 0;
 					break;
 
-				case gds_info_sql_alias:
+				case isc_info_sql_alias:
 					if (name = param->par_alias) {
 						length = strlen(name);
 						buffer = reinterpret_cast<const UCHAR*>(name);
@@ -5123,8 +5123,8 @@ static UCHAR* var_info(
 
 				default:
 					buf[0] = item;
-					item = gds_info_error;
-					length = 1 + convert((SLONG) gds_infunk, buf + 1);
+					item = isc_info_error;
+					length = 1 + convert((SLONG) isc_infunk, buf + 1);
 					break;
 				}
 
@@ -5133,10 +5133,10 @@ static UCHAR* var_info(
 			}
 
 			if (info + 1 >= end) {
-				*info = gds_info_truncated;
+				*info = isc_info_truncated;
 				return NULL;
 			}
-			*info++ = gds_info_sql_describe_end;
+			*info++ = isc_info_sql_describe_end;
 		} // if()
 	} // for()
 

@@ -41,7 +41,8 @@
 #include <ctype.h>
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../jrd/constants.h"
 #include "../jrd/align.h"
@@ -328,7 +329,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		desc->dsc_flags = DSC_nullable;
 		dtype = desc->dsc_dtype;
 		if (!DTYPE_CAN_AVERAGE(dtype))
-			ERRD_post(gds_expression_eval_err, 0);
+			ERRD_post(isc_expression_eval_err, 0);
 		return;
 
 	case nod_agg_average2:
@@ -336,7 +337,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		desc->dsc_flags = DSC_nullable;
 		dtype = desc->dsc_dtype;
 		if (!DTYPE_CAN_AVERAGE(dtype))
-			ERRD_post(gds_expression_eval_err, 0);
+			ERRD_post(isc_expression_eval_err, 0);
 		if (DTYPE_IS_EXACT(dtype)) {
 			desc->dsc_dtype = dtype_int64;
 			desc->dsc_length = sizeof(SINT64);
@@ -391,9 +392,9 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			if (length > MAX_SSHORT) {
 				length = MAX_SSHORT;
 				/* dimitr: should we post a warning about truncated descriptor length?
-				ERRD_post_warning (gds_sqlwarn,
-								   gds_arg_gds, gds_imp_exc, 
-								   gds_arg_gds, gds_blktoobig,
+				ERRD_post_warning (isc_sqlwarn,
+								   isc_arg_gds, isc_imp_exc, 
+								   isc_arg_gds, isc_blktoobig,
 								   0);
 				*/
 			}
@@ -430,11 +431,11 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 				desc->dsc_length = sizeof (USHORT) + len;
 			}
 			else {
-				ERRD_post (gds_sqlerr, gds_arg_number, (SLONG) -204,
-						gds_arg_gds, gds_dsql_datatype_err,
-						gds_arg_gds, gds_imp_exc,
-						gds_arg_gds, gds_field_name,
-						gds_arg_string, "substring()", // field->fld_name
+				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -204,
+						isc_arg_gds, isc_dsql_datatype_err,
+						isc_arg_gds, isc_imp_exc,
+						isc_arg_gds, isc_field_name,
+						isc_arg_string, "substring()", // field->fld_name
 						0);
 			}
 		}
@@ -488,8 +489,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		dtype = MAX(dtype1, dtype2);
 
 		if (DTYPE_IS_BLOB(dtype))
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 607,
-					  gds_arg_gds, gds_dsql_no_blob_array, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
+					  isc_arg_gds, isc_dsql_no_blob_array, 0);
 
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		switch (dtype) {
@@ -499,7 +500,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
 				DTYPE_IS_TEXT(desc2.dsc_dtype))
 			{
-					ERRD_post(gds_expression_eval_err, 0);
+					ERRD_post(isc_expression_eval_err, 0);
 			}
 
 		case dtype_timestamp:
@@ -532,7 +533,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 							 (dtype1 == dtype_sql_date))
 							dtype = dtype_timestamp;
 					else
-						ERRD_post(gds_expression_eval_err, 0);
+						ERRD_post(isc_expression_eval_err, 0);
 
 					if (dtype == dtype_sql_date) {
 						desc->dsc_dtype = dtype_long;
@@ -560,7 +561,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 				}
 				else
 					/* <date> + <date> */
-					ERRD_post(gds_expression_eval_err, 0);
+					ERRD_post(isc_expression_eval_err, 0);
 			}
 			else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
 					 /* <date> +/- <non-date> */
@@ -577,7 +578,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			else {
 				/* <non-date> - <date> */
 				fb_assert(node->nod_type == nod_subtract);
-				ERRD_post(gds_expression_eval_err, 0);
+				ERRD_post(isc_expression_eval_err, 0);
 			}
 			return;
 
@@ -610,15 +611,15 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 		/* Arrays and blobs can never partipate in addition/subtraction */
 		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype))
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 607,
-					  gds_arg_gds, gds_dsql_no_blob_array, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
+					  isc_arg_gds, isc_dsql_no_blob_array, 0);
 
 		/* In Dialect 2 or 3, strings can never partipate in addition / sub 
 		   (Use a specific cast instead) */
 		if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
 			DTYPE_IS_TEXT(desc2.dsc_dtype))
 		{
-				ERRD_post(gds_expression_eval_err, 0);
+				ERRD_post(isc_expression_eval_err, 0);
 		}
 
 		/* Determine the TYPE of arithmetic to perform, store it
@@ -674,7 +675,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 							 (dtype1 == dtype_sql_date))
 							dtype = dtype_timestamp;
 					else
-						ERRD_post(gds_expression_eval_err, 0);
+						ERRD_post(isc_expression_eval_err, 0);
 
 					if (dtype == dtype_sql_date) {
 						desc->dsc_dtype = dtype_long;
@@ -702,7 +703,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 				}
 				else
 					/* <date> + <date> */
-					ERRD_post(gds_expression_eval_err, 0);
+					ERRD_post(isc_expression_eval_err, 0);
 			}
 			else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
 					 /* <date> +/- <non-date> */
@@ -719,7 +720,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			else {
 				/* <non-date> - <date> */
 				fb_assert(node->nod_type == nod_subtract2);
-				ERRD_post(gds_expression_eval_err, 0);
+				ERRD_post(isc_expression_eval_err, 0);
 			}
 			return;
 
@@ -753,7 +754,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 		default:
 			/* a type which cannot participate in an add or subtract */
-			ERRD_post(gds_expression_eval_err, 0);
+			ERRD_post(isc_expression_eval_err, 0);
 		}
 		return;
 
@@ -763,8 +764,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		dtype = DSC_multiply_blr4_result[desc1.dsc_dtype][desc2.dsc_dtype];
 
 		if (dtype_null == dtype)
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 607,
-					  gds_arg_gds, gds_dsql_no_blob_array, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
+					  isc_arg_gds, isc_dsql_no_blob_array, 0);
 
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		switch (dtype) {
@@ -783,7 +784,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			break;
 
 		default:
-			ERRD_post(gds_expression_eval_err, 0);
+			ERRD_post(isc_expression_eval_err, 0);
 		}
 		return;
 
@@ -810,8 +811,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			break;
 
 		default:
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 607,
-					  gds_arg_gds, gds_dsql_no_blob_array, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
+					  isc_arg_gds, isc_dsql_no_blob_array, 0);
 			break;
 		}
 		return;
@@ -839,8 +840,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		dtype = MAX(dtype1, dtype2);
 
 		if (!DTYPE_CAN_DIVIDE(dtype))
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 607,
-					  gds_arg_gds, gds_dsql_no_blob_array, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
+					  isc_arg_gds, isc_dsql_no_blob_array, 0);
 		desc->dsc_dtype = dtype_double;
 		desc->dsc_length = sizeof(double);
 		desc->dsc_scale = 0;
@@ -867,8 +868,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			break;
 
 		default:
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 607,
-					  gds_arg_gds, gds_dsql_no_blob_array, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
+					  isc_arg_gds, isc_dsql_no_blob_array, 0);
 			break;
 		}
 
@@ -877,8 +878,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 	case nod_negate:
 		MAKE_desc(desc, node->nod_arg[0]);
 		if (!DTYPE_CAN_NEGATE(desc->dsc_dtype))
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 607,
-					  gds_arg_gds, gds_dsql_no_blob_array, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
+					  isc_arg_gds, isc_dsql_no_blob_array, 0);
 		return;
 
 	case nod_alias:
@@ -896,8 +897,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			desc->dsc_ttype = ttype_binary;
 		}
 		else {
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 607,
-					  gds_arg_gds, isc_dsql_dbkey_from_non_table, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
+					  isc_arg_gds, isc_dsql_dbkey_from_non_table, 0);
 		}
 		return;
 
@@ -954,8 +955,8 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_field:
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 203,
-				  gds_arg_gds, gds_dsql_field_ref, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 203,
+				  isc_arg_gds, isc_dsql_field_ref, 0);
 		return;
 
 	case nod_user_name:
@@ -1185,8 +1186,8 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 		{
 			// ERROR !!!!
 			// Unknown datetype 
-			ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-				gds_arg_gds, gds_dsql_datatype_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				isc_arg_gds, isc_dsql_datatype_err, 0);
 		}
 
 		// Initialize some values if this is the first time.
@@ -1314,8 +1315,8 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 
 	// If we haven't had a type at all then all values are NULL and/or parameter nodes.
 	if (firstarg) {
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 804,
-			gds_arg_gds, gds_dsql_datatype_err, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+			isc_arg_gds, isc_dsql_datatype_err, 0);
 		// Dynamic SQL Error SQL error code = -804 Data type unknown
 	}
 
@@ -1323,10 +1324,10 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 		//TEXT error_info[45];
 		//sprintf(error_info, "%s at line %d, column %d.", expression_name,
 		//	(int) err_node->nod_line, (int) err_node->nod_column);
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-			gds_arg_gds, gds_dsql_datatypes_not_comparable,
-			gds_arg_string, "",
-			gds_arg_string, expression_name, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+			isc_arg_gds, isc_dsql_datatypes_not_comparable,
+			isc_arg_string, "",
+			isc_arg_string, expression_name, 0);
 		// "Datatypes %sare not comparable in expression %s"
 	}
 
@@ -1397,10 +1398,10 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 		// We couldn't do anything with this list, mostly because the
 		// datatypes aren't comparable.
 		// Let's try to give a usefull error message.
-		ERRD_post(gds_sqlerr, gds_arg_number, (SLONG) - 104,
-			gds_arg_gds, gds_dsql_datatypes_not_comparable,
-			gds_arg_string, "",
-			gds_arg_string, expression_name, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+			isc_arg_gds, isc_dsql_datatypes_not_comparable,
+			isc_arg_string, "",
+			isc_arg_string, expression_name, 0);
 		// "Datatypes %sare not comparable in expression %s"
 	}
 }
@@ -1441,7 +1442,7 @@ dsql_nod* MAKE_field(DSQL_CTX context, dsql_fld* field, dsql_nod* indices)
 		}
 		else {
 			node->nod_desc.dsc_dtype = dtype_array;
-			node->nod_desc.dsc_length = sizeof(GDS__QUAD);
+			node->nod_desc.dsc_length = sizeof(GDS_QUAD);
 			node->nod_desc.dsc_scale =
 				static_cast<SCHAR>(field->fld_scale);
 			node->nod_desc.dsc_sub_type = field->fld_sub_type;

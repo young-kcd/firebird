@@ -32,7 +32,8 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include <stdarg.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../jrd/constants.h"
 #include "../dsql/blob_proto.h"
@@ -96,8 +97,8 @@ ISC_STATUS API_ROUTINE isc_blob_gen_bpb(
  *
  **************************************/
 	if (bpb_buffer_length < 17)
-		return error(status, 3, (ISC_STATUS) gds_random,
-					 (ISC_STATUS) gds_arg_string,
+		return error(status, 3, (ISC_STATUS) isc_random,
+					 (ISC_STATUS) isc_arg_string,
 					 (ISC_STATUS) "BPB buffer too small");
 
 	UCHAR* p = bpb_buffer;
@@ -180,10 +181,10 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 	END_ERROR;
 
 	if (!flag)
-		return error(status, 5, (ISC_STATUS) gds_fldnotdef,
-					 (ISC_STATUS) gds_arg_string,
+		return error(status, 5, (ISC_STATUS) isc_fldnotdef,
+					 (ISC_STATUS) isc_arg_string,
 					 (ISC_STATUS) desc->blob_desc_field_name,
-					 (ISC_STATUS) gds_arg_string,
+					 (ISC_STATUS) isc_arg_string,
 					 (ISC_STATUS) desc->blob_desc_relation_name);
 
 	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
@@ -295,12 +296,12 @@ static ISC_STATUS error( ISC_STATUS* status, SSHORT count, ...)
 
 	VA_START(ptr, count);
 	stat = status;
-	*stat++ = gds_arg_gds;
+	*stat++ = isc_arg_gds;
 
 	for (; count; --count)
 		*stat++ = (ISC_STATUS) va_arg(ptr, ISC_STATUS);
 
-	*stat = gds_arg_end;
+	*stat = isc_arg_end;
 
 	return status[1];
 }

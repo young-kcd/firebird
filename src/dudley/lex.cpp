@@ -31,7 +31,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../dudley/ddl.h"
 #include "../dudley/parse.h"
 #include "../dudley/ddl_proto.h"
@@ -287,9 +288,9 @@ void LEX_put_text (FRBRD *blob, TXT text)
 				break;
 		}
 		if (l = p - buffer)
-			if (gds__put_segment(status_vector, &blob, l, buffer))
+			if (isc_put_segment(status_vector, &blob, l, buffer))
 				DDL_err(277, NULL, NULL, NULL, NULL, NULL);	
-		/* msg 277: gds__put_segment failed */
+		/* msg 277: isc_put_segment failed */
 	}
 
 	ib_fseek(trace_file, (SLONG) 0, 2);

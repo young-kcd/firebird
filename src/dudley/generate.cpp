@@ -23,7 +23,8 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../dudley/ddl.h"
 #include "../jrd/acl.h"
 #include "../dudley/gener_proto.h"

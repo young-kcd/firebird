@@ -26,7 +26,8 @@
 #include "../dudley/ddl.h"
 #include "../dudley/parse.h"
 #include "../jrd/license.h"
-#include "../jrd/gds.h"
+#include "../jrd/y_ref.h"
+#include "../jrd/ibase.h"
 #include "../jrd/flags.h"
 #include "../jrd/acl.h"
 #include "../jrd/intl.h"
@@ -120,15 +121,15 @@ static int string_length(SCHAR);
 static void wal_info(UCHAR *, SLONG *, SCHAR *, SLONG *);
 
 static LLS files_to_delete = NULL;
-static const TEXT alloc_info[] = { gds_info_allocation, gds_info_end };
+static const TEXT alloc_info[] = { isc_info_allocation, isc_info_end };
 
 #define MOVE_SYMBOL(symbol, field)	move_symbol (symbol, field, sizeof (field) - 1)
 
 static const SCHAR db_info[] =
 {
-	gds_info_logfile,
-	gds_info_cur_logfile_name,
-	gds_info_cur_log_part_offset
+	isc_info_logfile,
+	isc_info_cur_logfile_name,
+	isc_info_cur_log_part_offset
 };
 
 SLONG EXE_check_db_version( DBB dbb)
@@ -183,17 +184,17 @@ void EXE_create_database( DBB dbb)
 
 	dpb_length = 0;
 	d = dpb;
-	*d++ = gds_dpb_version1;
+	*d++ = isc_dpb_version1;
 
 	if (p = DDL_default_user) {
-		*d++ = gds_dpb_user_name;
+		*d++ = isc_dpb_user_name;
 		*d++ = strlen(p);
 		while (*p)
 			*d++ = *p++;
 	}
 
 	if (p = DDL_default_password) {
-		*d++ = gds_dpb_password;
+		*d++ = isc_dpb_password;
 		*d++ = strlen(p);
 		while (*p)
 			*d++ = *p++;
@@ -205,10 +206,10 @@ void EXE_create_database( DBB dbb)
 
 	const TEXT* file_name = dbb->dbb_name->sym_string;
 
-	const SLONG result = gds__attach_database(gds_status, 0, file_name, &DB, dpb_length, dpb);
+	const SLONG result = isc_attach_database(gds_status, 0, file_name, &DB, dpb_length, dpb);
 	if (!DDL_replace) {
 		if (!result) {
-			gds__detach_database(gds_status, &DB);
+			isc_detach_database(gds_status, &DB);
 			DDL_msg_put(18, file_name, NULL, NULL, NULL, NULL);
 			/* msg 18: Database \"%s\" already exists */
 			if (DDL_interactive) {
@@ -220,7 +221,7 @@ void EXE_create_database( DBB dbb)
 			else
 				DDL_exit(FINI_ERROR);
 		}
-		else if (gds_status[1] != gds_io_error)
+		else if (gds_status[1] != isc_io_error)
 			DDL_error_abort(gds_status, 20, file_name, NULL, NULL, NULL, NULL);
 			/* msg 20: Database \"%s\" exists but can't be opened */
 	}
@@ -238,7 +239,7 @@ void EXE_create_database( DBB dbb)
 
 	if (dbb->dbb_page_size) {
 		page_size = MAX(dbb->dbb_page_size, 1024);
-		*d++ = gds_dpb_page_size;
+		*d++ = isc_dpb_page_size;
 		*d++ = 2;
 		*d++ = page_size;
 		*d++ = page_size >> 8;
@@ -246,28 +247,28 @@ void EXE_create_database( DBB dbb)
 	}
 
 	if (llen = dbb->dbb_chkptlen) {
-		*d++ = gds_dpb_wal_chkptlen;
+		*d++ = isc_dpb_wal_chkptlen;
 		*d++ = 4;
 		for (len = 0; len < 4; len++, llen = llen >> 8)
 			*d++ = llen;
 	}
 
 	if (len = dbb->dbb_numbufs) {
-		*d++ = gds_dpb_wal_numbufs;
+		*d++ = isc_dpb_wal_numbufs;
 		*d++ = 2;
 		*d++ = len;
 		*d++ = len >> 8;
 	}
 
 	if (len = dbb->dbb_bufsize) {
-		*d++ = gds_dpb_wal_bufsize;
+		*d++ = isc_dpb_wal_bufsize;
 		*d++ = 2;
 		*d++ = len;
 		*d++ = len >> 8;
 	}
 
 	if ((llen = dbb->dbb_grp_cmt_wait) >= 0) {
-		*d++ = gds_dpb_wal_grp_cmt_wait;
+		*d++ = isc_dpb_wal_grp_cmt_wait;
 		*d++ = 4;
 		for (len = 0; len < 4; len++, llen = llen >> 8)
 			*d++ = llen;
@@ -277,14 +278,14 @@ void EXE_create_database( DBB dbb)
 	if (dpb_length == 1)
 		dpb_length = 0;
 
-	if (gds__create_database(gds_status, 0, file_name, &DB, dpb_length, dpb, 0))
+	if (isc_create_database(gds_status, 0, file_name, &DB, dpb_length, dpb, 0))
 			DDL_error_abort(gds_status, 21, file_name, NULL, NULL, NULL, NULL);
 			/* msg 21: Couldn't create database \"%s\" */
 
 	if (DDL_version) {
 		DDL_msg_put(23, file_name, NULL, NULL, NULL, NULL);
 		/* msg 23: Version(s) for database \"%s\" */
-		gds__version(&DB, NULL, NULL);
+		isc_version(&DB, NULL, NULL);
 	}
 
 	START_TRANSACTION;
@@ -340,7 +341,7 @@ void EXE_create_database( DBB dbb)
 	if ((dbb->dbb_flags & DBB_log_default) || (dbb->dbb_logfiles)) {
 		/* setup enough information to drop log files created */
 
-		if (gds__database_info(gds_status, &DB, sizeof(db_info), db_info,
+		if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
 							   sizeof(db_info_buffer), db_info_buffer))
 				DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
 				/* msg 327: error in getting write ahead log information */
@@ -382,17 +383,17 @@ void EXE_drop_database( DBB dbb)
 
 	dpb_length = 0;
 	d = dpb;
-	*d++ = gds_dpb_version1;
+	*d++ = isc_dpb_version1;
 
 	if (p = DDL_default_user) {
-		*d++ = gds_dpb_user_name;
+		*d++ = isc_dpb_user_name;
 		*d++ = strlen(p);
 		while (*p)
 			*d++ = *p++;
 	}
 
 	if (p = DDL_default_password) {
-		*d++ = gds_dpb_password;
+		*d++ = isc_dpb_password;
 		*d++ = strlen(p);
 		while (*p)
 			*d++ = *p++;
@@ -402,7 +403,7 @@ void EXE_drop_database( DBB dbb)
 	if (dpb_length == 1)
 		dpb_length = 0;
 
-	if (gds__attach_database(gds_status, 0, dbb->dbb_name->sym_string, &DB,
+	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string, &DB,
 							 dpb_length, dpb))
 			DDL_error_abort(gds_status, 25, NULL, NULL, NULL, NULL, NULL);
 			/* msg 25: Couldn't locate database */
@@ -418,7 +419,7 @@ void EXE_drop_database( DBB dbb)
 	ROLLBACK;
 	END_ERROR;
 
-	if (gds__database_info(gds_status, &DB, sizeof(db_info), db_info,
+	if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
 						   sizeof(db_info_buffer), db_info_buffer))
 			DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
 			/* msg 327: error in getting write ahead log information */
@@ -428,7 +429,7 @@ void EXE_drop_database( DBB dbb)
 	if (log)
 		get_log_names_serial(&dbb->dbb_files);
 
-	if (gds__detach_database(gds_status, &DB))
+	if (isc_detach_database(gds_status, &DB))
 		DDL_error_abort(gds_status, 27, NULL, NULL, NULL, NULL, NULL);
 		/* msg 27: Couldn't release database */
 
@@ -696,51 +697,51 @@ void EXE_modify_database( DBB dbb)
 
 	dpb_length = 0;
 	d = dpb;
-	*d++ = gds_dpb_version1;
+	*d++ = isc_dpb_version1;
 
 	if (p = DDL_default_user) {
-		*d++ = gds_dpb_user_name;
+		*d++ = isc_dpb_user_name;
 		*d++ = strlen(p);
 		while (*p)
 			*d++ = *p++;
 	}
 
 	if (p = DDL_default_password) {
-		*d++ = gds_dpb_password;
+		*d++ = isc_dpb_password;
 		*d++ = strlen(p);
 		while (*p)
 			*d++ = *p++;
 	}
 
 	if (dbb->dbb_flags & DBB_drop_log) {
-		*d++ = gds_dpb_drop_walfile;
+		*d++ = isc_dpb_drop_walfile;
 		*d++ = 1;
 		*d++ = 1;
 	}
 
 	if (llen = dbb->dbb_chkptlen) {
-		*d++ = gds_dpb_wal_chkptlen;
+		*d++ = isc_dpb_wal_chkptlen;
 		*d++ = 4;
 		for (len = 0; len < 4; len++, llen = llen >> 8)
 			*d++ = llen;
 	}
 
 	if (len = dbb->dbb_numbufs) {
-		*d++ = gds_dpb_wal_numbufs;
+		*d++ = isc_dpb_wal_numbufs;
 		*d++ = 2;
 		*d++ = len;
 		*d++ = len >> 8;
 	}
 
 	if (len = dbb->dbb_bufsize) {
-		*d++ = gds_dpb_wal_bufsize;
+		*d++ = isc_dpb_wal_bufsize;
 		*d++ = 2;
 		*d++ = len;
 		*d++ = len >> 8;
 	}
 
 	if ((llen = dbb->dbb_grp_cmt_wait) >= 0) {
-		*d++ = gds_dpb_wal_grp_cmt_wait;
+		*d++ = isc_dpb_wal_grp_cmt_wait;
 		*d++ = 4;
 		for (len = 0; len < 4; len++, llen = llen >> 8)
 			*d++ = llen;
@@ -750,7 +751,7 @@ void EXE_modify_database( DBB dbb)
 	if (dpb_length == 1)
 		dpb_length = 0;
 
-	if (gds__attach_database(gds_status, 0, dbb->dbb_name->sym_string, &DB,
+	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string, &DB,
 							 dpb_length, dpb))
 			DDL_error_abort(gds_status, 29, dbb->dbb_name->sym_string, NULL,
 							NULL, NULL, NULL);	/* msg 29: Couldn't attach database */
@@ -758,7 +759,7 @@ void EXE_modify_database( DBB dbb)
 	if (DDL_version) {
 		DDL_msg_put(30, dbb->dbb_name->sym_string, NULL, NULL, NULL, NULL);
 		/* msg 30:	Version(s) for database \"%s\" */
-		gds__version(&DB, NULL, NULL);
+		isc_version(&DB, NULL, NULL);
 	}
 
 	START_TRANSACTION;
@@ -786,7 +787,7 @@ void EXE_modify_database( DBB dbb)
 /* erase log files and commit transaction */
 
 	if (dbb->dbb_flags & DBB_drop_log) {
-		if (gds__database_info(gds_status, &DB, sizeof(db_info), db_info,
+		if (isc_database_info(gds_status, &DB, sizeof(db_info), db_info,
 							   sizeof(db_info_buffer), db_info_buffer))
 				DDL_error_abort(gds_status, 327, NULL, NULL, NULL, NULL, NULL);
 				/* msg 327: error in getting write ahead log information */
@@ -1054,10 +1055,10 @@ static void add_files( DBB dbb, FIL files)
    against the user given maximum length (if given). */
 
 	if (dbb) {
-		if (gds__database_info(gds_status, &DB, sizeof(alloc_info), alloc_info,
-							   sizeof(s), s) || s[0] != gds_info_allocation) 
+		if (isc_database_info(gds_status, &DB, sizeof(alloc_info), alloc_info,
+							   sizeof(s), s) || s[0] != isc_info_allocation) 
 			DDL_err(38, NULL, NULL, NULL, NULL, NULL);
-			/* msg 38: gds__database_info failed */
+			/* msg 38: isc_database_info failed */
 
 		length = gds__vax_integer((UCHAR*) s + 1, 2);
 		start = gds__vax_integer((UCHAR*) s + 3, length);
@@ -1418,7 +1419,7 @@ static void add_index( DUDLEY_IDX index)
 	}
 	else
 		X.RDB$DESCRIPTION.NULL = TRUE;
-	END_STORE ON_ERROR if (gds_status[1] == gds_no_dup) {
+	END_STORE ON_ERROR if (gds_status[1] == isc_no_dup) {
 		DDL_err(47, index->idx_name->sym_string, NULL, NULL, NULL, NULL);
 		/* msg 47: index %s already exists */
 		return;
@@ -2109,9 +2110,9 @@ static void close_blob(FRBRD *blob)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (gds__close_blob(status_vector, &blob))
+	if (isc_close_blob(status_vector, &blob))
 		DDL_db_error(status_vector, 58, NULL, NULL, NULL, NULL, NULL);
-		/* msg 58: gds__close_blob failed */
+		/* msg 58: isc_close_blob failed */
 }
 
 
@@ -2130,12 +2131,12 @@ static FRBRD* create_blob( SLONG* blob_id, USHORT bpb_length, const UCHAR* bpb)
 	ISC_STATUS_ARRAY status_vector;
 	FRBRD *blob = NULL;
 
-	if (gds__create_blob2(status_vector, &DB, &gds_trans, &blob,
-						 (GDS__QUAD*) blob_id, bpb_length,
+	if (isc_create_blob2(status_vector, &DB, &gds_trans, &blob,
+						 (GDS_QUAD*) blob_id, bpb_length,
 						 reinterpret_cast<const SCHAR*>(bpb)))
 	{
 		DDL_db_error(status_vector, 59, NULL, NULL, NULL, NULL, NULL);
-		/* msg 59: gds__create_blob failed */
+		/* msg 59: isc_create_blob failed */
 		return NULL;
 	}
 
@@ -4057,9 +4058,9 @@ static void store_acl( SCL scl_class, SLONG * blob_id)
 
 	blob = create_blob(blob_id, 0, NULL);
 
-	if (gds__put_segment(status_vector, &blob, length, buffer)) {
+	if (isc_put_segment(status_vector, &blob, length, buffer)) {
 		DDL_db_error(status_vector, 92, NULL, NULL, NULL, NULL, NULL);
-		/* msg 92: gds__put_segment failed */
+		/* msg 92: isc_put_segment failed */
 		return;
 	}
 
@@ -4101,11 +4102,11 @@ static void store_blr( DUDLEY_NOD node, SLONG * blob_id, DUDLEY_REL relation)
 	handle = create_blob(blob_id, 0, NULL);
 	length = blr.str_current - blr.str_start;
 
-	if (gds__put_segment(status_vector, &handle, length,
+	if (isc_put_segment(status_vector, &handle, length,
 		reinterpret_cast<const SCHAR*>(blr.str_start)))
 	{
 		DDL_db_error(status_vector, 93, NULL, NULL, NULL, NULL, NULL);
-		/* msg 93: gds__put_segment failed */
+		/* msg 93: isc_put_segment failed */
 		return;
 	}
 
@@ -4136,10 +4137,10 @@ static void store_query_header( DUDLEY_NOD node, SLONG * blob_id)
 
 	for (int pos = 0; pos < node->nod_count; pos++) {
 		const sym* symbol = (SYM) node->nod_arg[pos];
-		if (gds__put_segment(status_vector, &blob, symbol->sym_length,
+		if (isc_put_segment(status_vector, &blob, symbol->sym_length,
 							 symbol->sym_string)) {
 			DDL_db_error(status_vector, 93, NULL, NULL, NULL, NULL, NULL);
-			// msg 93: gds__put_segment failed
+			// msg 93: isc_put_segment failed
 			return;
 		}
 	}
@@ -4303,16 +4304,16 @@ static void wal_info(UCHAR * db_info_buffer,
 
 	p = db_info_buffer;
 
-	while ((item = *p++) != gds_info_end) {
+	while ((item = *p++) != isc_info_end) {
 		length = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item) {
-		case gds_info_logfile:
+		case isc_info_logfile:
 			*log = gds__vax_integer(p, length);
 			p += length;
 			break;
 
-		case gds_info_cur_logfile_name:
+		case isc_info_cur_logfile_name:
 			d = p;
 			p += length;
 			length = *d++;
@@ -4320,7 +4321,7 @@ static void wal_info(UCHAR * db_info_buffer,
 			cur_log[length] = 0;
 			break;
 
-		case gds_info_cur_log_part_offset:
+		case isc_info_cur_log_part_offset:
 			*part_offset = gds__vax_integer(p, length);
 			p += length;
 			break;
