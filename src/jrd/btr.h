@@ -91,43 +91,43 @@ struct IndexDescAlloc : public pool_alloc_rpt<index_desc> {
 /* See jrd/intl.h for notes on idx_itype and dsc_sub_type considerations */
 /* idx_numeric .. idx_byte_array values are compatible with VMS values */
 
-#define idx_numeric		0
-#define idx_string		1
-#define idx_timestamp1		2
-#define idx_byte_array		3
-#define idx_metadata		4
-#define idx_sql_date		5
-#define idx_sql_time		6
-#define idx_timestamp2		7
-#define idx_numeric2		8	/* Introduced for 64-bit Integer support */
+const int idx_numeric		= 0;
+const int idx_string		= 1;
+const int idx_timestamp1	= 2;
+const int idx_byte_array	= 3;
+const int idx_metadata		= 4;
+const int idx_sql_date		= 5;
+const int idx_sql_time		= 6;
+const int idx_timestamp2	= 7;
+const int idx_numeric2		= 8;	/* Introduced for 64-bit Integer support */
 
 /* Historical alias for pre v6 applications */
-#define idx_date		idx_timestamp1
+const int idx_date			= idx_timestamp1;
 
 				   /* idx_itype space for future expansion */
-#define	idx_first_intl_string	64	/* .. MAX (short) Range of computed key strings */
+const int idx_first_intl_string	= 64;	/* .. MAX (short) Range of computed key strings */
 
-#define idx_offset_intl_range	(0x7FFF + idx_first_intl_string)
+const int idx_offset_intl_range	= (0x7FFF + idx_first_intl_string);
 
 /* these flags must match the irt_flags */
 
-#define idx_unique	1
-#define idx_descending	2
-#define idx_in_progress	4
-#define idx_foreign	8
-#define idx_primary	16
-#define idx_expressn	32
+const int idx_unique		= 1;
+const int idx_descending	= 2;
+const int idx_in_progress	= 4;
+const int idx_foreign		= 8;
+const int idx_primary		= 16;
+const int idx_expressn		= 32;
 
 /* these flags are for idx_runtime_flags */
 
-#define idx_plan_dont_use	1	/* index is not mentioned in user-specified access plan */
-#define idx_plan_navigate	2	/* plan specifies index to be used for ordering */
-#define idx_used 		4		/* index was in fact selected for retrieval */
-#define idx_navigate		8	/* index was in fact selected for navigation */
-#define	idx_plan_missing	16	/* index mentioned in missing clause */
-#define	idx_plan_starts		32	/* index mentioned in starts clause */
-#define	idx_used_with_and	64	/* marker used in procedure sort_indices */
-#define	idx_marker			128	/* marker used in procedure sort_indices */
+const int idx_plan_dont_use	= 1;	/* index is not mentioned in user-specified access plan */
+const int idx_plan_navigate	= 2;	/* plan specifies index to be used for ordering */
+const int idx_used 			= 4;	/* index was in fact selected for retrieval */
+const int idx_navigate		= 8;	/* index was in fact selected for navigation */
+const int idx_plan_missing	= 16;	/* index mentioned in missing clause */
+const int idx_plan_starts	= 32;	/* index mentioned in starts clause */
+const int idx_used_with_and	= 64;	/* marker used in procedure sort_indices */
+const int idx_marker		= 128;	/* marker used in procedure sort_indices */
 
 /* Index insertion block -- parameter block for index insertions */
 
@@ -164,8 +164,8 @@ struct index_sort_record {
 	ULONG isr_record_number;
 };
 
-#define ISR_secondary	1	// Record is secondary version
-#define ISR_null		2	// Record consists of NULL values only
+const int ISR_secondary	= 1;	// Record is secondary version
+const int ISR_null		= 2;	// Record consists of NULL values only
 
 
 
@@ -184,12 +184,12 @@ class IndexRetrieval : public pool_alloc_rpt<jrd_nod*, type_irb>
 	jrd_nod* irb_value[1];
 };
 
-#define irb_partial	1			/* Partial match: not all segments or starting of key only */
-#define irb_starting	2		/* Only compute "starting with" key for index segment */
-#define irb_equality	4		/* Probing index for equality match */
-#define irb_ignore_null_value_key  8	/* if lower bound is specified and upper bound unspecified,
-										   * ignore looking at null value keys */
-#define irb_descending	16		/* ?Base index uses descending order */
+const int irb_partial	= 1;				/* Partial match: not all segments or starting of key only */
+const int irb_starting	= 2;				/* Only compute "starting with" key for index segment */
+const int irb_equality	= 4;				/* Probing index for equality match */
+const int irb_ignore_null_value_key  = 8;	/* if lower bound is specified and upper bound unspecified,
+											* ignore looking at null value keys */
+const int irb_descending= 16;				/* ?Base index uses descending order */
 
 // macros used to manipulate btree nodes
 #define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes);

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.95 2004-04-28 21:56:49 brodsom Exp $
+ * $Id: ddl.cpp,v 1.96 2004-04-29 14:51:02 brodsom Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -660,7 +660,7 @@ static void assign_field_length (
 		if (field->fld_dtype == dtype_varying) {
 			field_length += sizeof(USHORT);
 		}
-		if (field_length > (ULONG) MAX_COLUMN_SIZE)
+		if (field_length > MAX_COLUMN_SIZE)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
 					  isc_arg_gds, isc_dsql_datatype_err,

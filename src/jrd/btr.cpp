@@ -78,7 +78,7 @@ extern double	MTH$CVT_G_D();
 #endif
 **********************************************/
 
-#define MAX_LEVELS	16
+const int MAX_LEVELS	= 16;
 
 inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
 {

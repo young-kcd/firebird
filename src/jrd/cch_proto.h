@@ -82,12 +82,12 @@ bool		CCH_write_all_shadows(Jrd::thread_db*, Jrd::Shadow*, Jrd::BufferDesc*,
 
 /* Flush flags */
 
-#define FLUSH_ALL	1			/* flush all dirty buffers in cache */
-#define FLUSH_RLSE	2			/* release page locks after flush */
-#define FLUSH_TRAN	4			/* flush transaction dirty buffers from dirty btree */
-#define FLUSH_SWEEP	8			/* flush dirty buffers from garbage collection */
-#define FLUSH_SYSTEM	16		/* flush system transaction only from dirty btree */
-#define FLUSH_FINI	(FLUSH_ALL | FLUSH_RLSE)
+const int FLUSH_ALL		= 1;		/* flush all dirty buffers in cache */
+const int FLUSH_RLSE	= 2;		/* release page locks after flush */
+const int FLUSH_TRAN	= 4;		/* flush transaction dirty buffers from dirty btree */
+const int FLUSH_SWEEP	= 8;		/* flush dirty buffers from garbage collection */
+const int FLUSH_SYSTEM	= 16;		/* flush system transaction only from dirty btree */
+const int FLUSH_FINI	= (FLUSH_ALL | FLUSH_RLSE);
 
 #endif /* JRD_CCH_PROTO_H */
 

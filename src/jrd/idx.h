@@ -49,6 +49,8 @@ struct ini_idx_t {
 #define INDEX(id,flag,rel,unique,count) {(id),(flag),(UCHAR) (rel),(unique),(count),{
 #define SEGMENT(fld,type) {(fld),(type)}
 
+using namespace Jrd;
+
 static const struct ini_idx_t indices[] = {
 
 /*	define index RDB$INDEX_0 for RDB$RELATIONS unique RDB$RELATION_NAME; */

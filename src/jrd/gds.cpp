@@ -316,26 +316,26 @@ static struct
 #define BLR_BYTE	*(control->ctl_blr)++
 #define PUT_BYTE(byte)	*(control->ctl_ptr)++ = byte
 
-#define op_line		 1
-#define op_verb		 2
-#define op_byte		 3
-#define op_word		 4
-#define op_pad		 5
-#define op_dtype	 6
-#define op_message	 7
-#define op_literal	 8
-#define op_begin	 9
-#define op_map		 10
-#define op_args		 11
-#define op_union	 12
-#define op_indent	 13
-#define op_join		 14
-#define op_parameters	 15
-#define op_error_handler 16
-#define op_set_error	 17
-#define op_literals	 18
-#define op_relation	 20
-#define op_exec_into 21
+const int op_line		= 1;
+const int op_verb		= 2;
+const int op_byte		= 3;
+const int op_word		= 4;
+const int op_pad		= 5;
+const int op_dtype		= 6;
+const int op_message	= 7;
+const int op_literal	= 8;
+const int op_begin		= 9;
+const int op_map		= 10;
+const int op_args		= 11;
+const int op_union		= 12;
+const int op_indent		= 13;
+const int op_join		= 14;
+const int op_parameters	= 15;
+const int op_error_handler	= 16;
+const int op_set_error	= 17;
+const int op_literals	= 18;
+const int op_relation	= 20;
+const int op_exec_into	= 21;
 
 static const UCHAR
 	/* generic print formats */
@@ -395,9 +395,9 @@ static const UCHAR
 
 #include "../jrd/blp.h"
 
-#define FB_LOCK_ENV		"FIREBIRD_LOCK"
-#define FB_MSG_ENV		"FIREBIRD_MSG"
-#define FB_TMP_ENV		"FIREBIRD_TMP"
+const char* FB_LOCK_ENV		= "FIREBIRD_LOCK";
+const char* FB_MSG_ENV		= "FIREBIRD_MSG";
+const char* FB_TMP_ENV		= "FIREBIRD_TMP";
 
 #ifdef WIN_NT
 #define EXPAND_PATH(relative, absolute)		_fullpath(absolute, relative, MAXPATHLEN)

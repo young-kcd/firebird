@@ -34,30 +34,28 @@
  * Subtypes > 0  are InterBase defined 
  */
 
-#define BLOB_untyped	0
+const int BLOB_untyped	= 0;
 
 /* InterBase defined BLOB subtypes */
 
-#define BLOB_text	1
-#define BLOB_blr	2
-#define BLOB_acl	3
-#define BLOB_ranges	4
-#define BLOB_summary	5
-#define BLOB_format	6
-#define BLOB_tra	7
-#define BLOB_extfile	8
-#define BLOB_max_predefined_subtype 9
-
-
+const int BLOB_text		= 1;
+const int BLOB_blr		= 2;
+const int BLOB_acl		= 3;
+const int BLOB_ranges	= 4;
+const int BLOB_summary	= 5;
+const int BLOB_format	= 6;
+const int BLOB_tra		= 7;
+const int BLOB_extfile	= 8;
+const int BLOB_max_predefined_subtype = 9;
 
 
 /* Column Limits */
 
-#define	MAX_COLUMN_SIZE	32767	/* Bytes */
+const ULONG MAX_COLUMN_SIZE	= 32767;	/* Bytes */
 
 /* Misc constant values */
 
-#define USERNAME_LENGTH		31	/* Bytes */
+const int USERNAME_LENGTH	= 31;	/* Bytes */
 
 const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
 const size_t MAX_SQL_IDENTIFIER_LEN = 31;
@@ -105,18 +103,18 @@ enum frb_sysflag {
 /* UDF Arguments are numbered from 0 to MAX_UDF_ARGUMENTS --
    argument 0 is reserved for the return-type of the UDF */
 
-#define MAX_UDF_ARGUMENTS	10
+const int MAX_UDF_ARGUMENTS	= 10;
 
 // Maximum length of single line returned from pretty printer
-#define PRETTY_BUFFER_SIZE 1024
+const int PRETTY_BUFFER_SIZE = 1024;
 
-#define MAX_INDEX_SEGMENTS 16
+const int MAX_INDEX_SEGMENTS = 16;
 
 // Maximum index key length
 // AB: If the maximum key-size will change, don't forget dyn.h and dba.epp 
 // which cannot use these defines.
-#define MAX_KEY				4096	// Maximum page size possible divide by 4 (16384 / 4)
-#define MAX_KEY_PRE_ODS11	255		// Max key-size before ODS11
+const int MAX_KEY			= 4096;		// Maximum page size possible divide by 4 (16384 / 4)
+const int MAX_KEY_PRE_ODS11	= 255;		// Max key-size before ODS11
 
 #define SQL_MATCH_1_CHAR	'_'	/* Not translatable */
 #define SQL_MATCH_ANY_CHARS	'%'	/* Not translatable */

@@ -118,14 +118,12 @@ const size_t REQ_TAIL = sizeof (Jrd::jrd_req::blk_repeat_type);
 
 /* RITTER - changed HP10 to HPUX */
 #if defined (HPUX) && defined (SUPERSERVER)
-#define MAX_RECURSION		96
+const int MAX_RECURSION		= 96;
+#else
+const int MAX_RECURSION		= 128;
 #endif
 
-#ifndef MAX_RECURSION
-#define MAX_RECURSION		128
-#endif
-
-#define MAX_REQUEST_SIZE	10485760	// 10 MB - just to be safe
+const int MAX_REQUEST_SIZE	= 10485760;	// 10 MB - just to be safe
 
 using namespace Jrd;
 
@@ -1791,7 +1789,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				const SLONG sl1 = MOV_get_long(&desc1, 0);
 				const SLONG sl2 = MOV_get_long(&desc2, 0);
 				// error() is a local routine in par.c, so we use plain ERR_post
-				if (sl1 < 0 || sl2 < 0 || sl2 > MAX_COLUMN_SIZE - (SLONG) sizeof(USHORT))
+				if (sl1 < 0 || sl2 < 0 || sl2 > (SLONG) MAX_COLUMN_SIZE - (SLONG) sizeof(USHORT))
 				{
 					ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
 				}

@@ -86,14 +86,14 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	UCHAR blb_data[1];			/* A page's worth of blob */
 };
 
-#define BLB_temporary	1		/* Newly created blob */
-#define BLB_eof		2			/* This blob is exhausted */
-#define BLB_stream	4			/* Stream style blob */
-#define BLB_closed	8			/* Temporary blob has been closed */
-#define BLB_damaged	16			/* Blob is busted */
-#define BLB_seek	32			/* Seek is pending */
-#define BLB_user_def	64		/* Blob is user created */
-#define BLB_large_scan	128		/* Blob is larger than page buffer cache */
+const int BLB_temporary	= 1;			/* Newly created blob */
+const int BLB_eof		= 2;			/* This blob is exhausted */
+const int BLB_stream	= 4;			/* Stream style blob */
+const int BLB_closed	= 8;			/* Temporary blob has been closed */
+const int BLB_damaged	= 16;			/* Blob is busted */
+const int BLB_seek		= 32;			/* Seek is pending */
+const int BLB_user_def	= 64;			/* Blob is user created */
+const int BLB_large_scan	= 128;		/* Blob is larger than page buffer cache */
 
 /* Blob levels are:
 

@@ -43,13 +43,13 @@ struct btree_exp
 	UCHAR btx_data[1];				// expanded data element
 };
 
-#define BTX_SIZE	2
+const int BTX_SIZE				= 2;
 
-#define BTN_END_LEVEL_FLAG	1
-#define	BTN_END_BUCKET_FLAG	2
-#define BTN_DUPLICATE_FLAG	3
+const int BTN_END_LEVEL_FLAG	= 1;
+const int BTN_END_BUCKET_FLAG	= 2;
+const int BTN_DUPLICATE_FLAG	= 3;
 
-#define BTN_DUPLICATE_MARKER	1
+const int BTN_DUPLICATE_MARKER	= 1;
 
 // format of expanded index buffer
 struct exp_index_buf
@@ -59,7 +59,7 @@ struct exp_index_buf
 	btree_exp exp_nodes[1];
 };
 
-#define EXP_SIZE	OFFSETA (exp_index_buf*, exp_nodes)
+const size_t EXP_SIZE	= OFFSETA (exp_index_buf*, exp_nodes);
 
 struct dynKey
 {

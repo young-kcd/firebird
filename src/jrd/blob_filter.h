@@ -87,20 +87,19 @@ class BlobFilter : public pool_alloc<type_blf>
 };
 
 
-#define ACTION_open			0
-#define ACTION_get_segment	1
-#define ACTION_close		2
-#define ACTION_create		3
-#define ACTION_put_segment	4
-#define ACTION_alloc		5
-#define ACTION_free			6
-#define ACTION_seek			7
+const int ACTION_open			= 0;
+const int ACTION_get_segment	= 1;
+const int ACTION_close			= 2;
+const int ACTION_create			= 3;
+const int ACTION_put_segment	= 4;
+const int ACTION_alloc			= 5;
+const int ACTION_free			= 6;
+const int ACTION_seek			= 7;
 
-#define EXCEPTION_MESSAGE				\
-	"The blob filter: \t\t%s\n"			\
-	"\treferencing entrypoint: \t%s\n"	\
-	"\t             in module: \t%s\n"	\
-	"\tcaused the fatal exception:"
+const static char* EXCEPTION_MESSAGE = "The blob filter: \t\t%s\n"
+										"\treferencing entrypoint: \t%s\n"
+										"\t             in module: \t%s\n"
+										"\tcaused the fatal exception:";
 
 } //namespace Jrd
 

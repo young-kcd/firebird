@@ -27,7 +27,6 @@
 #ifdef WIN_NT
 /* There is no interprocess signaling on Windows NT.  We simulate it
    by sending messages through named pipes. */
-
 #define BLOCKING_SIGNAL		1000	/* Lock manager */
 #define WAKEUP_SIGNAL		1100	/* Lock manager */
 #define EVENT_SIGNAL		1200	/* Event manager */

@@ -100,7 +100,7 @@ namespace Jrd {
 // The database block, the topmost block in the metadata
 // cache for a database
 
-#define HASH_SIZE 101
+const int HASH_SIZE		= 101;
 
 
 // fwd. decl.
@@ -300,112 +300,112 @@ private:
 //
 // bit values for dbb_flags
 //
-#define DBB_no_garbage_collect 	0x1L
-#define DBB_damaged         	0x2L
-#define DBB_exclusive       	0x4L	/* Database is accessed in exclusive mode */
-#define DBB_bugcheck        	0x8L	/* Bugcheck has occurred */
+const ULONG DBB_no_garbage_collect	= 0x1L;
+const ULONG DBB_damaged				= 0x2L;
+const ULONG DBB_exclusive			= 0x4L;	/* Database is accessed in exclusive mode */
+const ULONG DBB_bugcheck			= 0x8L;	/* Bugcheck has occurred */
 #ifdef GARBAGE_THREAD
-#define DBB_garbage_collector	0x10L	/* garbage collector thread exists */
-#define DBB_gc_active			0x20L	/* ... and is actively working. */
-#define DBB_gc_pending			0x40L	/* garbage collection requested */
+const ULONG DBB_garbage_collector	= 0x10L;	/* garbage collector thread exists */
+const ULONG DBB_gc_active			= 0x20L;	/* ... and is actively working. */
+const ULONG DBB_gc_pending			= 0x40L;	/* garbage collection requested */
 #endif
-#define DBB_force_write     	0x80L	/* Database is forced write */
-#define DBB_no_reserve     		0x100L	/* No reserve space for versions */
-#define DBB_add_log         	0x200L	/* write ahead log has been added */
-#define DBB_delete_log      	0x400L	/* write ahead log has been deleted */
-#define DBB_cache_manager   	0x800L	/* Shared cache manager */
-#define DBB_DB_SQL_dialect_3 	0x1000L	/* database SQL dialect 3 */
-#define DBB_read_only    		0x2000L	/* DB is ReadOnly (RO). If not set, DB is RW */
-#define DBB_being_opened_read_only 0x4000L	/* DB is being opened RO. If unset, opened as RW */
-#define DBB_not_in_use      	0x8000L	/* Database to be ignored while attaching */
-#define DBB_lck_init_done   	0x10000L	/* LCK_init() called for the database */
-#define DBB_sp_rec_mutex_init 	0x20000L	/* Stored procedure mutex initialized */
-#define DBB_sweep_in_progress 	0x40000L	/* A database sweep operation is in progress */
-#define DBB_security_db     	0x80000L	/* ISC security database */
-#define DBB_sweep_thread_started 0x100000L	/* A database sweep thread has been started */
-#define DBB_suspend_bgio		0x200000L	/* Suspend I/O by background threads */
-#define DBB_being_opened    	0x400000L	/* database is being attached to */
+const ULONG DBB_force_write			= 0x80L;	/* Database is forced write */
+const ULONG DBB_no_reserve			= 0x100L;	/* No reserve space for versions */
+const ULONG DBB_add_log				= 0x200L;	/* write ahead log has been added */
+const ULONG DBB_delete_log			= 0x400L;	/* write ahead log has been deleted */
+const ULONG DBB_cache_manager		= 0x800L;	/* Shared cache manager */
+const ULONG DBB_DB_SQL_dialect_3	= 0x1000L;	/* database SQL dialect 3 */
+const ULONG DBB_read_only			= 0x2000L;	/* DB is ReadOnly (RO). If not set, DB is RW */
+const ULONG DBB_being_opened_read_only	= 0x4000L;	/* DB is being opened RO. If unset, opened as RW */
+const ULONG DBB_not_in_use			= 0x8000L;	/* Database to be ignored while attaching */
+const ULONG DBB_lck_init_done		= 0x10000L;	/* LCK_init() called for the database */
+const ULONG DBB_sp_rec_mutex_init	= 0x20000L;	/* Stored procedure mutex initialized */
+const ULONG DBB_sweep_in_progress	= 0x40000L;	/* A database sweep operation is in progress */
+const ULONG DBB_security_db			= 0x80000L;	/* ISC security database */
+const ULONG DBB_sweep_thread_started	= 0x100000L;	/* A database sweep thread has been started */
+const ULONG DBB_suspend_bgio		= 0x200000L;	/* Suspend I/O by background threads */
+const ULONG DBB_being_opened		= 0x400000L;	/* database is being attached to */
 
 //
 // dbb_ast_flags
 //
-#define DBB_blocking		0x1L	// Exclusive mode is blocking
-#define DBB_get_shadows		0x2L	// Signal received to check for new shadows
-#define DBB_assert_locks	0x4L	// Locks are to be asserted
-#define DBB_shutdown		0x8L	// Database is shutdown
-#define DBB_shut_attach		0x10L	// no new attachments accepted
-#define DBB_shut_tran		0x20L	// no new transactions accepted
-#define DBB_shut_force		0x40L	// forced shutdown in progress
-#define DBB_shutdown_locks	0x80L	// Database locks release by shutdown
-#define DBB_shutdown_full   0x100L  // Database fully shut down
-#define DBB_shutdown_single 0x200L  // Database is in single-user maintenance mode
+const ULONG DBB_blocking			= 0x1L;		// Exclusive mode is blocking
+const ULONG DBB_get_shadows			= 0x2L;		// Signal received to check for new shadows
+const ULONG DBB_assert_locks		= 0x4L;		// Locks are to be asserted
+const ULONG DBB_shutdown			= 0x8L;		// Database is shutdown
+const ULONG DBB_shut_attach			= 0x10L;	// no new attachments accepted
+const ULONG DBB_shut_tran			= 0x20L;	// no new transactions accepted
+const ULONG DBB_shut_force			= 0x40L;	// forced shutdown in progress
+const ULONG DBB_shutdown_locks		= 0x80L;	// Database locks release by shutdown
+const ULONG DBB_shutdown_full		= 0x100L;	// Database fully shut down
+const ULONG DBB_shutdown_single		= 0x200L;	// Database is in single-user maintenance mode
 
 //
 // Database attachments
 //
-#define DBB_read_seq_count      0
-#define DBB_read_idx_count      1
-#define DBB_update_count        2
-#define DBB_insert_count        3
-#define DBB_delete_count        4
-#define DBB_backout_count       5
-#define DBB_purge_count         6
-#define DBB_expunge_count       7
-#define DBB_max_count           8
+const int DBB_read_seq_count		= 0;
+const int DBB_read_idx_count		= 1;
+const int DBB_update_count			= 2;
+const int DBB_insert_count			= 3;
+const int DBB_delete_count			= 4;
+const int DBB_backout_count			= 5;
+const int DBB_purge_count			= 6;
+const int DBB_expunge_count			= 7;
+const int DBB_max_count				= 8;
 
 //
 // Database mutexes and read/write locks
 //
-#define DBB_MUTX_init_fini      0	// During startup and shutdown
-#define DBB_MUTX_statistics     1	// Memory size and counts
-#define DBB_MUTX_replay         2	// Replay logging
-#define DBB_MUTX_dyn            3	// Dynamic ddl
-#define DBB_MUTX_cache          4	// Process-private cache management
-#define DBB_MUTX_clone          5	// Request cloning
-#define DBB_MUTX_cmp_clone      6	// Compiled request cloning
-#define DBB_MUTX_flush_count    7	// flush count/time
-#define DBB_MUTX_max            8
-#define DBB_WLCK_pools          0	// Pool manipulation
-#define DBB_WLCK_files          1	// DB and shadow file manipulation
-#define DBB_WLCK_max            2
+const int DBB_MUTX_init_fini		= 0;	// During startup and shutdown
+const int DBB_MUTX_statistics		= 1;	// Memory size and counts
+const int DBB_MUTX_replay			= 2;	// Replay logging
+const int DBB_MUTX_dyn				= 3;	// Dynamic ddl
+const int DBB_MUTX_cache			= 4;	// Process-private cache management
+const int DBB_MUTX_clone			= 5;	// Request cloning
+const int DBB_MUTX_cmp_clone		= 6;	// Compiled request cloning
+const int DBB_MUTX_flush_count		= 7;	// flush count/time
+const int DBB_MUTX_max				= 8;
+const int DBB_WLCK_pools			= 0;	// Pool manipulation
+const int DBB_WLCK_files			= 1;	// DB and shadow file manipulation
+const int DBB_WLCK_max				= 2;
 
 //
 // Flags to indicate normal internal requests vs. dyn internal requests
 //
-#define IRQ_REQUESTS            1
-#define DYN_REQUESTS            2
+const int IRQ_REQUESTS				= 1;
+const int DYN_REQUESTS				= 2;
 
 
 //
 // Errors during validation - will be returned on info calls
 // CVC: It seems they will be better in a header for val.cpp that's not val.h
 //
-#define VAL_PAG_WRONG_TYPE          0
-#define VAL_PAG_CHECKSUM_ERR        1
-#define VAL_PAG_DOUBLE_ALLOC        2
-#define VAL_PAG_IN_USE              3
-#define VAL_PAG_ORPHAN              4
-#define VAL_BLOB_INCONSISTENT       5
-#define VAL_BLOB_CORRUPT            6
-#define VAL_BLOB_TRUNCATED          7
-#define VAL_REC_CHAIN_BROKEN        8
-#define VAL_DATA_PAGE_CONFUSED      9
-#define VAL_DATA_PAGE_LINE_ERR      10
-#define VAL_INDEX_PAGE_CORRUPT      11
-#define VAL_P_PAGE_LOST             12
-#define VAL_P_PAGE_INCONSISTENT     13
-#define VAL_REC_DAMAGED             14
-#define VAL_REC_BAD_TID             15
-#define VAL_REC_FRAGMENT_CORRUPT    16
-#define VAL_REC_WRONG_LENGTH        17
-#define VAL_INDEX_ROOT_MISSING      18
-#define VAL_TIP_LOST                19
-#define VAL_TIP_LOST_SEQUENCE       20
-#define VAL_TIP_CONFUSED            21
-#define VAL_REL_CHAIN_ORPHANS       22
-#define VAL_INDEX_MISSING_ROWS      23
-#define VAL_INDEX_ORPHAN_CHILD      24
-#define VAL_MAX_ERROR               25
+const int VAL_PAG_WRONG_TYPE			= 0;
+const int VAL_PAG_CHECKSUM_ERR			= 1;
+const int VAL_PAG_DOUBLE_ALLOC			= 2;
+const int VAL_PAG_IN_USE				= 3;
+const int VAL_PAG_ORPHAN				= 4;
+const int VAL_BLOB_INCONSISTENT			= 5;
+const int VAL_BLOB_CORRUPT				= 6;
+const int VAL_BLOB_TRUNCATED			= 7;
+const int VAL_REC_CHAIN_BROKEN			= 8;
+const int VAL_DATA_PAGE_CONFUSED		= 9;
+const int VAL_DATA_PAGE_LINE_ERR		= 10;
+const int VAL_INDEX_PAGE_CORRUPT		= 11;
+const int VAL_P_PAGE_LOST				= 12;
+const int VAL_P_PAGE_INCONSISTENT		= 13;
+const int VAL_REC_DAMAGED				= 14;
+const int VAL_REC_BAD_TID				= 15;
+const int VAL_REC_FRAGMENT_CORRUPT		= 16;
+const int VAL_REC_WRONG_LENGTH			= 17;
+const int VAL_INDEX_ROOT_MISSING		= 18;
+const int VAL_TIP_LOST					= 19;
+const int VAL_TIP_LOST_SEQUENCE			= 20;
+const int VAL_TIP_CONFUSED				= 21;
+const int VAL_REL_CHAIN_ORPHANS			= 22;
+const int VAL_INDEX_MISSING_ROWS		= 23;
+const int VAL_INDEX_ORPHAN_CHILD		= 24;
+const int VAL_MAX_ERROR					= 25;
 
 
 //
@@ -484,33 +484,33 @@ public:
 
 /* Attachment flags */
 
-#define ATT_no_cleanup			1	// Don't expunge, purge, or garbage collect
-#define ATT_shutdown			2	// attachment has been shutdown
-#define ATT_shutdown_notify		4	// attachment has notified client of shutdown
-#define ATT_shutdown_manager	8	// attachment requesting shutdown
-#define ATT_lck_init_done		16	// LCK_init() called for the attachment
-#define ATT_exclusive			32	// attachment wants exclusive database access
-#define ATT_attach_pending		64	// Indicate attachment is only pending
-#define ATT_exclusive_pending   128	// Indicate exclusive attachment pending
-#define ATT_gbak_attachment		256	// Indicate GBAK attachment
-#define ATT_security_db			512	// Indicates an implicit attachment to the security db
+const int ATT_no_cleanup		= 1;	// Don't expunge, purge, or garbage collect
+const int ATT_shutdown			= 2;	// attachment has been shutdown
+const int ATT_shutdown_notify	= 4;	// attachment has notified client of shutdown
+const int ATT_shutdown_manager	= 8;	// attachment requesting shutdown
+const int ATT_lck_init_done		= 16;	// LCK_init() called for the attachment
+const int ATT_exclusive			= 32;	// attachment wants exclusive database access
+const int ATT_attach_pending	= 64;	// Indicate attachment is only pending
+const int ATT_exclusive_pending	= 128;	// Indicate exclusive attachment pending
+const int ATT_gbak_attachment	= 256;	// Indicate GBAK attachment
+const int ATT_security_db		= 512;	// Indicates an implicit attachment to the security db
 #ifdef GARBAGE_THREAD
-#define ATT_notify_gc			1024	// Notify garbage collector to expunge, purge ..
-#define ATT_disable_notify_gc	2048	// Temporarily perform own garbage collection
-#define ATT_garbage_collector	4096	// I'm a garbage collector
+const int ATT_notify_gc			= 1024;	// Notify garbage collector to expunge, purge ..
+const int ATT_disable_notify_gc	= 2048;	// Temporarily perform own garbage collection
+const int ATT_garbage_collector	= 4096;	// I'm a garbage collector
 
-#define ATT_NO_CLEANUP	(ATT_no_cleanup | ATT_notify_gc)
+const int ATT_NO_CLEANUP		= (ATT_no_cleanup | ATT_notify_gc);
 #else
-#define ATT_NO_CLEANUP	ATT_no_cleanup
+const int ATT_NO_CLEANUP		= ATT_no_cleanup;
 #endif
 
 #ifdef CANCEL_OPERATION
-#define ATT_cancel_raise		8192	// Cancel currently running operation
-#define ATT_cancel_disable		16384	// Disable cancel operations
+const int ATT_cancel_raise		= 8192;		// Cancel currently running operation
+const int ATT_cancel_disable	= 16384;	// Disable cancel operations
 #endif
 
-#define ATT_gfix_attachment		32768	// Indicate a GFIX attachment
-#define ATT_gstat_attachment	65536	// Indicate a GSTAT attachment
+const int ATT_gfix_attachment	= 32768;	// Indicate a GFIX attachment
+const int ATT_gstat_attachment	= 65536;	// Indicate a GSTAT attachment
 
 
 /* Procedure block */
@@ -546,21 +546,21 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	explicit jrd_prc(MemoryPool& p) : prc_security_name(p), prc_name(p) {}
 };
 
-#define PRC_scanned           1		/* Field expressions scanned */
-#define PRC_system            2
-#define PRC_obsolete          4		/* Procedure known gonzo */
-#define PRC_being_scanned     8		/* New procedure needs dependencies during scan */
-#define PRC_blocking          16	/* Blocking someone from dropping procedure */
-#define PRC_create            32	/* Newly created */
-#define PRC_being_altered     64	/* Procedure is getting altered */
+const int PRC_scanned			= 1;	/* Field expressions scanned */
+const int PRC_system			= 2;
+const int PRC_obsolete			= 4;	/* Procedure known gonzo */
+const int PRC_being_scanned		= 8;	/* New procedure needs dependencies during scan */
+const int PRC_blocking			= 16;	/* Blocking someone from dropping procedure */
+const int PRC_create			= 32;	/* Newly created */
+const int PRC_being_altered		= 64;	/* Procedure is getting altered */
 									// This flag is used to make sure that MET_remove_procedure
 									// does not delete and remove procedure block from cache
 									// so dfw.epp:modify_procedure() can flip procedure body without 
 									// invalidating procedure pointers from other parts of metadata cache
 
-#define PRC_check_existence	  128	/* Existence lock released */
+const int PRC_check_existence	= 128;	/* Existence lock released */
 
-#define MAX_PROC_ALTER        64	/* No. of times an in-cache procedure can be altered */
+const int MAX_PROC_ALTER		= 64;	/* No. of times an in-cache procedure can be altered */
 
 
 
@@ -674,19 +674,19 @@ public:
 	frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
 };
 
-#define REL_scanned					1		/* Field expressions scanned (or being scanned) */
-#define REL_system					2
-#define REL_deleted					4		/* Relation known gonzo */
-#define REL_get_dependencies		8		/* New relation needs dependencies during scan */
-#define REL_force_scan				16		/* system relation has been updated since ODS change, force a scan */
-#define REL_check_existence			32		/* Existence lock released pending drop of relation */
-#define REL_blocking				64		/* Blocking someone from dropping relation */
-#define REL_sys_triggers			128		/* The relation has system triggers to compile */
-#define REL_sql_relation			256		/* Relation defined as sql table */
-#define REL_check_partners			512		/* Rescan primary dependencies and foreign references */
-#define	REL_being_scanned			1024	/* relation scan in progress */
-#define REL_sys_trigs_being_loaded	2048	/* System triggers being loaded */
-#define REL_deleting				4096	/* relation delete in progress */
+const int REL_scanned					= 1;		/* Field expressions scanned (or being scanned) */
+const int REL_system					= 2;
+const int REL_deleted					= 4;		/* Relation known gonzo */
+const int REL_get_dependencies			= 8;			/* New relation needs dependencies during scan */
+const int REL_force_scan				= 16;		/* system relation has been updated since ODS change, force a scan */
+const int REL_check_existence			= 32;		/* Existence lock released pending drop of relation */
+const int REL_blocking					= 64;		/* Blocking someone from dropping relation */
+const int REL_sys_triggers				= 128;		/* The relation has system triggers to compile */
+const int REL_sql_relation				= 256;		/* Relation defined as sql table */
+const int REL_check_partners			= 512;		/* Rescan primary dependencies and foreign references */
+const int REL_being_scanned				= 1024;	/* relation scan in progress */
+const int REL_sys_trigs_being_loaded	= 2048;	/* System triggers being loaded */
+const int REL_deleting					= 4096;	/* relation delete in progress */
 
 
 /* Field block, one for each field in a scanned relation */
@@ -864,28 +864,28 @@ class BlockingThread : public pool_alloc<type_btb>
 
 /* Lock levels */
 
-#define LCK_none        0
-#define LCK_null        1
-#define LCK_SR          2
-#define LCK_PR          3
-#define LCK_SW          4
-#define LCK_PW          5
-#define LCK_EX          6
+const int LCK_none			= 0;
+const int LCK_null			= 1;
+const int LCK_SR			= 2;
+const int LCK_PR			= 3;
+const int LCK_SW			= 4;
+const int LCK_PW			= 5;
+const int LCK_EX			= 6;
 
-#define LCK_read        LCK_PR
-#define LCK_write       LCK_EX
+const int LCK_read			= LCK_PR;
+const int LCK_write			= LCK_EX;
 
-#define LCK_WAIT        TRUE
-#define LCK_NO_WAIT     FALSE
+const int LCK_WAIT			= TRUE;
+const int LCK_NO_WAIT		= FALSE;
 
 /* Lock query data aggregates */
 
-#define LCK_MIN		1
-#define LCK_MAX		2
-#define LCK_CNT		3
-#define LCK_SUM		4
-#define LCK_AVG		5
-#define LCK_ANY		6
+const int LCK_MIN			= 1;
+const int LCK_MAX			= 2;
+const int LCK_CNT			= 3;
+const int LCK_SUM			= 4;
+const int LCK_AVG			= 5;
+const int LCK_ANY			= 6;
 
 
 /* Window block for loading cached pages into */
@@ -916,10 +916,10 @@ struct win_for_array: public win
 };
 
 
-#define	WIN_large_scan		1	/* large sequential scan */
-#define WIN_secondary		2	/* secondary stream */
-#define	WIN_garbage_collector	4	/* garbage collector's window */
-#define WIN_garbage_collect	8	/* scan left a page for garbage collector */
+const int WIN_large_scan		= 1;	/* large sequential scan */
+const int WIN_secondary			= 2;	/* secondary stream */
+const int WIN_garbage_collector	= 4;	/* garbage collector's window */
+const int WIN_garbage_collect	= 8;	/* scan left a page for garbage collector */
 
 
 // Thread specific database block
@@ -945,11 +945,11 @@ struct thread_db
 #endif
 };
 
-#define	TDBB_sweeper			1	/* Thread sweeper or garbage collector */
-#define TDBB_no_cache_unwind	2	/* Don't unwind page buffer cache */
-#define TDBB_prc_being_dropped	4	/* Dropping a procedure  */
-#define TDBB_set_backup_state   8   /* Setting state for backup lock */
-#define TDBB_backup_merge      16   /* Merging changes from difference file */
+const int TDBB_sweeper				= 1;	/* Thread sweeper or garbage collector */
+const int TDBB_no_cache_unwind		= 2;	/* Don't unwind page buffer cache */
+const int TDBB_prc_being_dropped	= 4;	/* Dropping a procedure  */
+const int TDBB_set_backup_state		= 8;	/* Setting state for backup lock */
+const int TDBB_backup_merge			= 16;	/* Merging changes from difference file */
 
 /* List of internal database handles */
 

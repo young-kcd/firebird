@@ -138,17 +138,17 @@ IV. PHASES OF VALIDATION
          The error does not tell you what page types are what, so here
          they are for reference:
 
-         #define pag_undefined     0    // purposely undefined
-         #define pag_header        1    // Database header page
-         #define pag_pages         2    // Page inventory page
-         #define pag_transactions  3    // Transaction inventory page
-         #define pag_pointer       4    // Pointer page
-         #define pag_data          5    // Data page
-         #define pag_root          6    // Index root page
-         #define pag_index         7    // Index (B-tree) page
-         #define pag_blob          8    // Blob data page
-         #define pag_ids           9    // Gen-ids
-         #define pag_log           10   // Write ahead log page: 4.0 only
+         define pag_undefined     0    // purposely undefined
+         define pag_header        1    // Database header page
+         define pag_pages         2    // Page inventory page
+         define pag_transactions  3    // Transaction inventory page
+         define pag_pointer       4    // Pointer page
+         define pag_data          5    // Data page
+         define pag_root          6    // Index root page
+         define pag_index         7    // Index (B-tree) page
+         define pag_blob          8    // Blob data page
+         define pag_ids           9    // Gen-ids
+         define pag_log           10   // Write ahead log page: 4.0 only
 
       2. Checksum
 
@@ -601,9 +601,9 @@ typedef struct vdr
 	SparseBitmap* vdr_idx_records;		/* 1 bit per index item */
 } *VDR;
 
-#define vdr_update		2		/* fix simple things */
-#define vdr_repair		4		/* fix non-simple things (-mend) */
-#define vdr_records		8		/* Walk all records */
+const int vdr_update		= 2;		/* fix simple things */
+const int vdr_repair		= 4;		/* fix non-simple things (-mend) */
+const int vdr_records		= 8;		/* Walk all records */
 
 typedef enum {
 	fetch_ok,

@@ -111,9 +111,9 @@ static void list_staying(thread_db*, record_param*, RecordStack&);
 static void notify_garbage_collector(thread_db*, record_param*);
 #endif
 
-#define PREPARE_OK       0
-#define PREPARE_CONFLICT 1
-#define PREPARE_DELETE   2
+const int PREPARE_OK		= 0;
+const int PREPARE_CONFLICT	= 1;
+const int PREPARE_DELETE	= 2;
 static int prepare_update(thread_db*, jrd_tra*, SLONG, record_param*, 
 						  record_param*, record_param*, PageStack&, bool);
 

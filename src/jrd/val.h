@@ -81,7 +81,7 @@ public:
 };
 #endif /* REQUESTER */
 
-#define MAX_FORMAT_SIZE		65535
+const ULONG MAX_FORMAT_SIZE	= 65535;
 
 
 /* A macro to define a local vary stack variable of a given length
@@ -123,10 +123,6 @@ class UserFunction : public pool_alloc_rpt<fun_repeat, type_fun>
 	UserFunction(MemoryPool& p) : fun_exception_message(p) { }
 };
 
-// Those two defines seems an intention to do something that wasn't completed.
-#define FUN_value	0
-#define FUN_boolean	1
-
 /* Blob passing structure */
 // CVC: Moved to fun.epp where it belongs.
 
@@ -164,7 +160,7 @@ struct internal_array_desc {
 	iad_repeat iad_rpt[1];
 };
 
-#define IAD_VERSION_1	1
+const int IAD_VERSION_1		= 1;
 
 /*
 inline int IAD_LEN(int count)

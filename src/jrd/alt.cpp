@@ -148,7 +148,7 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
  *	Return the size of the block.
  *
  **************************************/
-#define 	MAX_NAME_LENGTH		31
+const int MAX_NAME_LENGTH		= 31;
 
 /* calculate length of event parameter block, 
    setting initial length to include version

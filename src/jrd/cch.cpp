@@ -146,7 +146,7 @@ static bool write_page(thread_db*, BufferDesc*, const bool, ISC_STATUS*, const b
 static void unmark(thread_db*, WIN *);
 static void update_write_direction(thread_db*, BufferDesc*);
 
-#define MIN_BUFFER_SEGMENT	65536L
+const long MIN_BUFFER_SEGMENT	= 65536L;
 
 #ifndef DEBUG_PRINTF
 #define DEBUG_PRINTF(msg)	fprintf (stderr, (msg))
@@ -174,17 +174,17 @@ static void update_write_direction(thread_db*, BufferDesc*);
 #define LATCH_MUTEX_ACQUIRE
 #define LATCH_MUTEX_RELEASE
 
-#define JOURNAL_PAGE		-1
-#define SHADOW_PAGE		-2
-#define FREE_PAGE		-3
-#define CHECKPOINT_PAGE		-4
-#define MIN_PAGE_NUMBER		-5
+const int JOURNAL_PAGE		= -1;
+const int SHADOW_PAGE		= -2;
+const int FREE_PAGE			= -3;
+const int CHECKPOINT_PAGE	= -4;
+const int MIN_PAGE_NUMBER	= -5;
 
-#define PRE_SEARCH_LIMIT	100
-#define PRE_EXISTS		-1
-#define PRE_UNKNOWN		-2
+const int PRE_SEARCH_LIMIT	= 100;
+const int PRE_EXISTS		= -1;
+const int PRE_UNKNOWN		= -2;
 
-#define DUMMY_CHECKSUM        12345
+const int DUMMY_CHECKSUM	= 12345;
 
 bool set_write_direction(Database* dbb, BufferDesc* bdb, SSHORT direction)
 {
@@ -578,7 +578,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
  *	return false.
  *
  **************************************/
-#define CCH_EXCLUSIVE_RETRY_INTERVAL	1	/* retry interval in seconds */
+const int CCH_EXCLUSIVE_RETRY_INTERVAL	=1;	/* retry interval in seconds */
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;

@@ -46,8 +46,8 @@ class Database;
 
 /* Page buffer cache size constraints. */
 
-#define MIN_PAGE_BUFFERS	50L
-#define MAX_PAGE_BUFFERS	65535L
+const ULONG MIN_PAGE_BUFFERS	= 50L;
+const ULONG MAX_PAGE_BUFFERS	= 65535L;
 
 /* BufferControl -- Buffer control block -- one per system */
 
@@ -75,18 +75,18 @@ public:
 	bcb_repeat	bcb_rpt[1];
 };
 
-#define BCB_keep_pages		1	/* set during btc_flush(), pages not removed from dirty binary tree */
-#define BCB_cache_writer	2	/* cache writer thread has been started */
-#define BCB_checkpoint_db	4	/* WAL has requested a database checkpoint */
-#define BCB_writer_active	8	/* no need to post writer event count */
-#define BCB_cache_reader	16	/* cache reader thread has been started */
-#define BCB_reader_active	32	/* cache reader not blocked on event */
-#define BCB_free_pending	64	/* request cache writer to free pages */
+const int BCB_keep_pages	= 1;	/* set during btc_flush(), pages not removed from dirty binary tree */
+const int BCB_cache_writer	= 2;	/* cache writer thread has been started */
+const int BCB_checkpoint_db	= 4;	/* WAL has requested a database checkpoint */
+const int BCB_writer_active	= 8;	/* no need to post writer event count */
+const int BCB_cache_reader	= 16;	/* cache reader thread has been started */
+const int BCB_reader_active	= 32;	/* cache reader not blocked on event */
+const int BCB_free_pending	= 64;	/* request cache writer to free pages */
 
 
 /* BufferDesc -- Buffer descriptor block */
 
-#define BDB_max_shared		20	/* maximum number of shared latch owners per BufferDesc */
+const int BDB_max_shared	= 20;	/* maximum number of shared latch owners per BufferDesc */
 
 class BufferDesc : public pool_alloc<type_bdb>
 {
@@ -125,33 +125,33 @@ class BufferDesc : public pool_alloc<type_bdb>
 
 /* bdb_flags */
 
-#define BDB_dirty			1		/* page has been updated but not written yet */
-#define BDB_garbage_collect	2		/* left by scan for garbage collector */
-#define BDB_writer			4		/* someone is updating the page */
-#define BDB_marked			8		/* page has been updated */
-#define BDB_must_write		16		/* forces a write as soon as the page is released */
-#define BDB_faked			32		/* page was just allocated */
-//#define BDB_journal			64		/* Journal buffer */
-#define BDB_system_dirty 	128		/* system transaction has marked dirty */
-#define BDB_io_error	 	256		/* page i/o error */
-#define BDB_read_pending 	512		/* read is pending */
-#define BDB_free_pending 	1024	/* buffer being freed for reuse */
-#define BDB_not_valid		2048	/* i/o error invalidated buffer */
-#define BDB_db_dirty 		4096	/* page must be written to database */
-#define BDB_checkpoint		8192	/* page must be written by next checkpoint */
-#define BDB_prefetch		16384	/* page has been prefetched but not yet referenced */
-#define BDB_no_blocking_ast 32768	/* No blocking AST registered with page lock */
+const int BDB_dirty				= 1;		/* page has been updated but not written yet */
+const int BDB_garbage_collect	= 2;		/* left by scan for garbage collector */
+const int BDB_writer			= 4;		/* someone is updating the page */
+const int BDB_marked			= 8;		/* page has been updated */
+const int BDB_must_write		= 16;		/* forces a write as soon as the page is released */
+const int BDB_faked				= 32;		/* page was just allocated */
+//const int BDB_journal			= 64;		/* Journal buffer */
+const int BDB_system_dirty 		= 128;		/* system transaction has marked dirty */
+const int BDB_io_error	 		= 256;		/* page i/o error */
+const int BDB_read_pending 		= 512;		/* read is pending */
+const int BDB_free_pending 		= 1024;		/* buffer being freed for reuse */
+const int BDB_not_valid			= 2048;		/* i/o error invalidated buffer */
+const int BDB_db_dirty 			= 4096;		/* page must be written to database */
+const int BDB_checkpoint		= 8192;		/* page must be written by next checkpoint */
+const int BDB_prefetch			= 16384;	/* page has been prefetched but not yet referenced */
+const int BDB_no_blocking_ast	= 32768;	/* No blocking AST registered with page lock */
 
 /* bdb_ast_flags */
 
-#define BDB_blocking 		1	/* a blocking ast was sent while page locked */
+const int BDB_blocking 			= 1;	/* a blocking ast was sent while page locked */
 
 /* bdb_write_direction values */
 
-#define BDB_write_undefined 0
-#define BDB_write_normal	1
-#define BDB_write_diff		2
-#define BDB_write_both		3
+const int BDB_write_undefined	= 0;
+const int BDB_write_normal		= 1;
+const int BDB_write_diff		= 2;
+const int BDB_write_both		= 3;
 
 
 /* PRE -- Precedence block */
@@ -166,7 +166,7 @@ class Precedence : public pool_alloc<type_pre>
 	SSHORT			pre_flags;
 };
 
-#define PRE_cleared	1
+const int PRE_cleared	= 1;
 
 /* Compatibility matrix for latch types.
 
@@ -215,14 +215,14 @@ class LatchWait : public pool_alloc<type_lwt>
 	USHORT			lwt_flags;
 };
 
-#define LWT_pending	1			/* latch request is pending */
+const int LWT_pending	= 1;			/* latch request is pending */
 
 #include "../jrd/os/pio.h"
 
 /* Constants used by prefetch mechanism */
 
-#define PREFETCH_MAX_TRANSFER	16384	/* maximum block I/O transfer (bytes) */
-#define PREFETCH_MAX_PAGES	(2 * PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE)	/* maximum pages allowed per prefetch request */
+const int PREFETCH_MAX_TRANSFER	= 16384;	/* maximum block I/O transfer (bytes) */
+const int PREFETCH_MAX_PAGES	= (2 * PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE);	/* maximum pages allowed per prefetch request */
 
 /* Prefetch block */
 
@@ -241,7 +241,7 @@ class Prefetch : public pool_alloc<type_prf>
 	SCHAR		prf_unaligned_buffer[PREFETCH_MAX_TRANSFER + MIN_PAGE_SIZE];
 };
 
-#define PRF_active	1			/* prefetch block currently in use */
+const int PRF_active	= 1;			/* prefetch block currently in use */
 
 } //namespace Jrd
 
