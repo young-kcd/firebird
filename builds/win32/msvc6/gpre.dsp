@@ -41,8 +41,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "debug\gpre"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W4 /FI"removed_msvc_warnings.h" /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W4 /FI"removed_msvc_warnings.h" /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/jrd" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /W4 /Gm /GX /ZI /Od /FI"removed_msvc_warnings.h" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/jrd" /FI"removed_msvc_warnings.h" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FR /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -66,9 +66,9 @@ LINK32=link.exe
 # PROP Intermediate_Dir "release\gpre"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W4 /FI"removed_msvc_warnings.h" /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/jrd" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /MDd /W4 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/jrd" /FI"removed_msvc_warnings.h" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W4 /FI"removed_msvc_warnings.h" /GX /Ot /Og /Oi /Oy /Ob2 /I "../../../src/include" /I "../../../src/jrd" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Oy /Ob2 /I "../../../src/include" /I "../../../src/jrd" /FI"removed_msvc_warnings.h" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe

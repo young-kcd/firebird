@@ -40,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "release\engine_cs"
 # PROP Intermediate_Dir "release\engine_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W4 /FI"removed_msvc_warnings.h" /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MD /W4 /FI"removed_msvc_warnings.h" /GX /Ot /Og /Oi /Op /Oy /I "../../../src/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "SERVER_SHUTDOWN" /YX /FD /EHc- /c
+# ADD BASE CPP /nologo /W4 /GX /O2 /FI"removed_msvc_warnings.h" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /I "../../../src/include" /FI"removed_msvc_warnings.h" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "SERVER_SHUTDOWN" /YX /FD /EHc- /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -63,8 +63,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "debug\engine_cs"
 # PROP Intermediate_Dir "debug\engine_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W4 /FI"removed_msvc_warnings.h" /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W4 /FI"removed_msvc_warnings.h" /Gm /GX /ZI /Od /I "../../../src/include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "SERVER_SHUTDOWN" /D "DEV_BUILD" /FD /GZ /c
+# ADD BASE CPP /nologo /W4 /Gm /GX /ZI /Od /FI"removed_msvc_warnings.h" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /FI"removed_msvc_warnings.h" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "WIN32_LEAN_AND_MEAN" /D "_X86_" /D "SERVER_SHUTDOWN" /D "DEV_BUILD" /FD /GZ /c
 # SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
@@ -529,10 +529,6 @@ SOURCE=..\..\..\src\jrd\ansi.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\log2.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\blb.h
 # End Source File
 # Begin Source File
@@ -958,6 +954,10 @@ SOURCE=..\..\..\src\jrd\lnmdef.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\log.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\log2.h
 # End Source File
 # Begin Source File
 
