@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.80 2004-10-29 00:29:17 skidder Exp $
+ * $Id: rse.cpp,v 1.81 2004-10-30 05:12:52 robocop Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2275,6 +2275,7 @@ static bool get_record(thread_db*	tdbb,
 			RecordBitmap **pbitmap = ((IRSB_INDEX) impure)->irsb_bitmap, *bitmap;
 			if (!pbitmap || !(bitmap = *pbitmap))
 				return false;
+
 			bool result = false;
 
 			// NS: Original code was the following:

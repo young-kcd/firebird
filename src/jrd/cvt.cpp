@@ -2096,7 +2096,7 @@ static const TEXT* error_string(const char* in_string, SSHORT length)
 	if (cvt_failures_ptr + length + 1 > cvt_failures + CVT_FAILURE_SPACE)
 		cvt_failures_ptr = cvt_failures;
 
-	TEXT* new_string = cvt_failures_ptr;
+	const TEXT* new_string = cvt_failures_ptr;
 
 	while (length--
 		   && (cvt_failures_ptr < cvt_failures + CVT_FAILURE_SPACE - 1))
