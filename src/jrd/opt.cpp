@@ -1975,7 +1975,8 @@ static SLONG decompose(TDBB tdbb,
    with anything other than a pattern-matching character */
 
 	if ((boolean_node->nod_type == nod_like) &&
-		(arg = optimize_like(tdbb, boolean_node))) {
+		(arg = optimize_like(tdbb, boolean_node))) 
+	{
 		node = make_binary_node(nod_starts, boolean_node->nod_arg[0], arg,
 							 false);
 		LLS_PUSH(node, stack);
@@ -2010,7 +2011,6 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
  **************************************/
 	LLS classes[MAX_OPT_ITEMS], *class_, *class2, *end, stack, temp;
 	JRD_NOD boolean, node1, node2, new_node, arg1, arg2;
-	bool reverse;
 	USHORT count;
 	USHORT n;
 
@@ -2100,18 +2100,22 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 			boolean->nod_type != nod_like) continue;
 		node1 = boolean->nod_arg[0];
 		node2 = boolean->nod_arg[1];
-		reverse = false;
+		bool reverse = false;
 		if (node1->nod_type != nod_field) {
 			new_node = node1;
 			node1 = node2;
 			node2 = new_node;
 			reverse = true;
 		}
-		if (node1->nod_type != nod_field)
+		if (node1->nod_type != nod_field) {
 			continue;
+		}
 		if (node2->nod_type != nod_literal &&
 			node2->nod_type != nod_variable &&
-			node2->nod_type != nod_argument) continue;
+			node2->nod_type != nod_argument) 
+		{
+			continue;
+		}
 		for (class_ = classes; class_ < end; class_++)
 			if (search_stack(node1, *class_)) {
 				for (temp = *class_; temp; temp = temp->lls_next)
@@ -2130,8 +2134,9 @@ static USHORT distribute_equalities(LLS * org_stack, CSB csb)
 						 */
 						new_node =
 							make_inference_node(csb, boolean, arg1, arg2);
-						if (augment_stack(new_node, org_stack))
+						if (augment_stack(new_node, org_stack)) {
 							count++;
+						}
 					}
 				break;
 			}
@@ -5310,8 +5315,9 @@ static JRD_NOD make_binary_node(NOD_T type, JRD_NOD arg1, JRD_NOD arg2, bool fla
 	node->nod_type = type;
 	node->nod_arg[0] = arg1;
 	node->nod_arg[1] = arg2;
-	if (flag)
+	if (flag) {
 		node->nod_flags |= nod_comparison;
+	}
 	return node;
 }
 
@@ -5851,23 +5857,22 @@ static SSHORT match_index(TDBB tdbb,
  *	were not reliable and will not be used.
  *
  **************************************/
-	JRD_NOD match, value;
-	SSHORT i;
-	bool forward;
-	SSHORT count;
 	Opt::opt_repeat * ptr;
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(boolean, type_nod);
 	SET_TDBB(tdbb);
-	if (boolean->nod_count < 2)
+	if (boolean->nod_count < 2) {
 		return 0;
-	if (boolean->nod_type == nod_and)
+	}
+	if (boolean->nod_type == nod_and) {
 		return match_index(tdbb, opt, stream, boolean->nod_arg[0], idx) +
 			match_index(tdbb, opt, stream, boolean->nod_arg[1], idx);
-	forward = true;
-	count = 0;
-	match = boolean->nod_arg[0];
-	value = boolean->nod_arg[1];
+	}
+	bool forward = true;
+	SSHORT i;
+	SSHORT count = 0;
+	JRD_NOD match = boolean->nod_arg[0];
+	JRD_NOD value = boolean->nod_arg[1];
 #ifdef EXPRESSION_INDICES
 	if (idx->idx_expression) {
 		/* see if one side or the other is matchable to the index expression */
@@ -6299,27 +6304,40 @@ static bool river_reference(RIV river, JRD_NOD node, bool *field_found)
  **************************************
  *
  * Functional description
- *	See if a value node is a reference to a given river.  Return
- *	true or false.
+ *	See if a value node is a reference to a given river.
+ *  AB: Handle also expressions (F1 + F2 * 3, etc..)
+ *  The expression is checked if all fields that are
+ *  buried inside are pointing to the the given river.
+ *  If a passed field isn't referenced by the river then
+ *  we have an expression with 2 fields pointing to
+ *  different rivers and then the result is always false.
+ *  NOTE! The first time this function is called 
+ *  field_found should be NULL.
  *
  **************************************/
-	bool lfield_found = false;
-	bool root_caller = false;
-
 	DEV_BLKCHK(river, type_riv);
 	DEV_BLKCHK(node, type_nod);
 
+	bool lfield_found = false;
+	bool root_caller = false;
+
+	// If no boolean parameter is given then this is the first call 
+	// to this function and we use the local boolean to pass to 
+	// itselfs. The boolean is used to see if any field has passed
+	// that references to the river.
 	if (!field_found) {
 		root_caller = true;
-		lfield_found = false;
 		field_found = &lfield_found;
 	}
+
 	switch (node->nod_type) {
 
 		case nod_field :
+			// Check if field references to the river.
 			UCHAR *streams, *end;
 			for (streams = river->riv_streams, end = streams + river->riv_count; 
-					streams < end; streams++) {
+					streams < end; streams++) 
+			{
 				if ((USHORT)(ULONG) node->nod_arg[e_fld_stream] == *streams) {
 					*field_found = true;
 					return true;
@@ -6330,13 +6348,16 @@ static bool river_reference(RIV river, JRD_NOD node, bool *field_found)
 		default : {
 			JRD_NOD *ptr, *end;
 			ptr = node->nod_arg;
+			// Check all sub-nodes of this node.
 			for (end = ptr + node->nod_count; ptr < end; ptr++) {
 				if (!river_reference(river, *ptr, field_found)) {
 					return false;
 				}
 			}
+			// if this was the first call then field_found tells 
+			// us if any field (referenced by river) was found.
 			if (root_caller) {
-				return lfield_found;
+				return *field_found;
 			}
 			else {
 				return true;
