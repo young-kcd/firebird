@@ -3172,7 +3172,7 @@ static UCHAR *delete_tail(
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
 		ib_printf
-			("delete_tail (rpb %"SLONGFORMAT", prior_page %ld, tail %x, tail_end %x)\n",
+			("delete_tail (rpb %"SLONGFORMAT", prior_page %ld, tail %p, tail_end %p)\n",
 			 rpb->rpb_number, prior_page, tail, tail_end);
 	if (debug_flag > DEBUG_WRITES_INFO)
 		ib_printf
@@ -3924,7 +3924,7 @@ static int prepare_update(	TDBB	tdbb,
 		ib_printf
 			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT
-			 ":%d, prior %d\n",
+			 ":%d, prior %p\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line, rpb->rpb_prior);
@@ -4397,7 +4397,7 @@ static void replace_record(
 		ib_printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT
-			 ":%d, prior %d\n",
+			 ":%d, prior %p\n",
 			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line, rpb->rpb_prior);
