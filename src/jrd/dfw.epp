@@ -2793,6 +2793,12 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			delete relation->rel_gc_bitmap;
 			relation->rel_gc_bitmap = 0;
 		}
+
+		if (relation->rel_garbage)
+		{
+		    delete relation->rel_garbage;
+		    relation->rel_garbage = 0;
+		}
 #endif
 		if (relation->rel_file) {
 		    EXT_fini (relation);

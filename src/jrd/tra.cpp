@@ -95,6 +95,10 @@ const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 using namespace Jrd;
 using namespace Ods;
 
+#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+#include "../jrd/isc_s_proto.h"
+#endif
+
 #ifdef SUPERSERVER_V2
 static SLONG bump_transaction_id(thread_db*, WIN *);
 #else
@@ -1655,8 +1659,16 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 	dbb->dbb_oldest_active = oldest_active;
 #endif
 
-	if (trans->tra_oldest_active > dbb->dbb_oldest_snapshot)
+	if (trans->tra_oldest_active > dbb->dbb_oldest_snapshot) {
 		dbb->dbb_oldest_snapshot = trans->tra_oldest_active;
+
+#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+		if (!(dbb->dbb_flags & DBB_gc_active)) {
+			dbb->dbb_flags |= DBB_gc_pending;
+			ISC_event_post(dbb->dbb_gc_event);
+		}
+#endif
+	}
 
 /* If the transaction block is getting out of hand, force a sweep */
 

@@ -106,7 +106,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM);
 #endif
 static void list_staying(thread_db*, record_param*, RecordStack&);
 #ifdef GARBAGE_THREAD
-static void notify_garbage_collector(thread_db*, record_param*);
+static void notify_garbage_collector(thread_db*, record_param *, SLONG = -1);
 #endif
 
 const int PREPARE_OK		= 0;
@@ -547,6 +547,11 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 		(rpb->rpb_b_page == 0 ||
 		 rpb->rpb_transaction_nr >= transaction->tra_oldest_active))
 	{
+#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+		if (rpb->rpb_b_page) 
+			notify_garbage_collector(tdbb, rpb);
+#endif // GARBAGE_THREAD
+
 		return true;
 	}
 
@@ -872,7 +877,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 				if (rpb->rpb_transaction_nr < transaction->tra_oldest_active &&
 					!(attachment->att_flags & ATT_no_cleanup))
 				{
-#ifdef GARBAGE_THREAD
+#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_READ) 
 					if (attachment->att_flags & ATT_notify_gc) {
 						notify_garbage_collector(tdbb, rpb);
 						CCH_RELEASE(tdbb, &rpb->rpb_window);
@@ -895,17 +900,26 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			   might interfere with the updater (prepare_update, update_in_place...).
 			   That might be the reason for the rpb_chained check. */
 
-			if (rpb->rpb_transaction_nr >= transaction->tra_oldest_active ||
+			bool cannotGC = 
+				rpb->rpb_transaction_nr >= transaction->tra_oldest_active ||
 				rpb->rpb_b_page == 0 ||
 				rpb->rpb_flags & rpb_chained ||
-				attachment->att_flags & ATT_no_cleanup)
-			{
+				attachment->att_flags & ATT_no_cleanup;
+
+			if (cannotGC) {
+#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+				if (attachment->att_flags & (ATT_notify_gc | ATT_garbage_collector) &&
+					(rpb->rpb_b_page != 0 && !(rpb->rpb_flags & rpb_chained)) ) {
+					// VIO_chase_record_version
+					notify_garbage_collector(tdbb, rpb);
+				}
+#endif
 				return true;
 			}
 
 			/* Garbage collect. */
 
-#ifdef GARBAGE_THREAD
+#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_READ) 
 			if (attachment->att_flags & ATT_notify_gc) {
 				notify_garbage_collector(tdbb, rpb);
 				return true;
@@ -1493,6 +1507,10 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		transaction->tra_flags |= TRA_perform_autocommit;
 	}
 	
+#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+	// VIO_erase
+	notify_garbage_collector(tdbb, rpb, transaction->tra_number);
+#endif
 }
 
 
@@ -2358,6 +2376,11 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	if (transaction->tra_flags & TRA_autocommit) {
 		transaction->tra_flags |= TRA_perform_autocommit;
 	}
+
+#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+	// VIO_modify
+	notify_garbage_collector(tdbb, org_rpb, transaction->tra_number);
+#endif
 }
 
 
@@ -2867,6 +2890,11 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 				rpb.rpb_number.setValue(BOF_NUMBER);
 				rpb.rpb_org_scans = relation->rel_scan_count++;
 				++relation->rel_sweep_count;
+#ifdef GARBAGE_THREAD
+				if (relation->rel_garbage) {
+					relation->rel_garbage->clear();
+				}
+#endif
 				while (VIO_next_record(tdbb,
 										&rpb,
 										NULL,
@@ -3465,6 +3493,10 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 /* Re-fetch the record */
 
 	if (!DPM_get(tdbb, rpb, LCK_write)) {
+#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+		// expunge
+		notify_garbage_collector(tdbb, rpb);
+#endif
 		return;
 	}
 #ifdef VIO_DEBUG
@@ -3483,6 +3515,12 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 	if (!(rpb->rpb_flags & rpb_deleted) ||
 		rpb->rpb_transaction_nr >= transaction->tra_oldest_active)
 	{
+
+#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+		// expunge
+		notify_garbage_collector(tdbb, rpb);
+#endif
+
 		CCH_RELEASE(tdbb, &rpb->rpb_window);
 		return;
 	}
@@ -3654,10 +3692,11 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	thread_db thd_context, *tdbb;
 	JRD_set_thread_data(tdbb, thd_context);
 	tdbb->tdbb_database = dbb;
-	tdbb->setDefaultPool(dbb->dbb_permanent);
 	tdbb->tdbb_status_vector = status_vector;
 	tdbb->tdbb_quantum = SWEEP_QUANTUM;
 	tdbb->tdbb_flags = TDBB_sweeper;
+
+	ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 /* Surrender if resources to start up aren't available. */
 	bool found = false, flush = false;
@@ -3745,23 +3784,32 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			for (ULONG id = 0; vector && id < vector->count(); ++id) {
 
 				relation = (jrd_rel*) (*vector)[id];
+				RelationGarbage *relGarbage = 
+					relation ? (RelationGarbage*)relation->rel_garbage : NULL;
 
-				if (relation && relation->rel_gc_bitmap != 0 &&
-						!(relation->rel_flags & (REL_deleted | REL_deleting)))
+				if (relation && (relation->rel_gc_bitmap || relGarbage) &&
+					!(relation->rel_flags & (REL_deleted | REL_deleting)))
 				{
+					if (relGarbage) {
+						relGarbage->getGarbage(dbb->dbb_oldest_snapshot, 
+												&relation->rel_gc_bitmap);
+					}
+
 					++relation->rel_sweep_count;
 					SLONG dp_sequence = -1;
 					rpb.rpb_relation = relation;
 
-					while (SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) 
+					if (relation->rel_gc_bitmap)
+						while(relation->rel_gc_bitmap->getFirst())
 					{
+						dp_sequence = relation->rel_gc_bitmap->current();
 						
 						if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 							--relation->rel_sweep_count;
 							goto gc_exit;
 						}
 
-						SBM_clear(relation->rel_gc_bitmap, dp_sequence);
+						relation->rel_gc_bitmap->clear(dp_sequence);
 
 						if (!transaction) {
 							/* Start a "precommitted" transaction by using read-only,
@@ -3789,7 +3837,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 						while (VIO_next_record(tdbb, &rpb, NULL, transaction,
 							NULL, false, true))
 						{
-							CCH_RELEASE(tdbb, &rpb.rpb_window);
+							if(rpb.rpb_window.win_bdb)
+								CCH_RELEASE(tdbb, &rpb.rpb_window);
 
 							if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 								--relation->rel_sweep_count;
@@ -3810,17 +3859,19 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 rel_exit:
 					dp_sequence = -1;
 
-					if (!SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) 
-					{
-						/* If the bitmap is empty then release it */
-						delete relation->rel_gc_bitmap;
-						relation->rel_gc_bitmap = 0;
-					}
-					else {
-						/* Otherwise release bitmap segments that have been cleared. */
-						while (SBM_next(relation->rel_gc_bitmap, &dp_sequence, RSE_get_forward)) 
+					if(relation->rel_gc_bitmap) {
+						if (!relation->rel_gc_bitmap->getFirst())
 						{
-							;	// do nothing
+							/* If the bitmap is empty then release it */
+							delete relation->rel_gc_bitmap;
+							relation->rel_gc_bitmap = 0;
+						}
+						else {
+							/* Otherwise release bitmap segments that have been cleared. */
+								while (relation->rel_gc_bitmap->getNext()) 
+							{
+								;	// do nothing
+							}
 						}
 					}
 					--relation->rel_sweep_count;
@@ -3912,6 +3963,7 @@ gc_exit:
 
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 	}
+	return 0;
 }
 #endif
 
@@ -4031,7 +4083,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 
 
 #ifdef GARBAGE_THREAD
-static void notify_garbage_collector(thread_db* tdbb, record_param* rpb)
+static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG tranid)
 {
 /**************************************
  *
@@ -4050,6 +4102,9 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb)
 	Database* dbb = tdbb->tdbb_database;
 	jrd_rel* relation = rpb->rpb_relation;
 
+	if (tranid == -1)
+		tranid = rpb->rpb_transaction_nr;
+
 /* If this is a large sequential scan then defer the release
    of the data page to the LRU tail until the garbage collector
    can garbage collect the page. */
@@ -4061,18 +4116,31 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb)
 /* A relation's garbage collect bitmap is allocated
    from the database permanent pool. */
 
-	JrdMemoryPool* old_pool = tdbb->getDefaultPool();
-
-	tdbb->setDefaultPool(dbb->dbb_permanent);
+	ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 	const SLONG dp_sequence = rpb->rpb_number.getValue() / dbb->dbb_max_records;
-	SBM_set(tdbb, &relation->rel_gc_bitmap, dp_sequence);
-	tdbb->setDefaultPool(old_pool);
+
+#if !defined(GC_NOTIFY_ON_WRITE)
+	PBM_SET(tdbb->getDefaultPool(), &relation->rel_gc_bitmap, dp_sequence);
+#else 
+	if (!relation->rel_garbage) {
+		relation->rel_garbage = 
+			FB_NEW(*tdbb->getDefaultPool()) RelationGarbage(*tdbb->getDefaultPool());
+	}
+
+	relation->rel_garbage->addPage(tdbb->getDefaultPool(), dp_sequence, tranid);
+
+	if (tranid > relation->rel_garbage->minTranID())
+		tranid = relation->rel_garbage->minTranID();
+#endif // GC_NOTIFY_ON_WRITE
 
 /* If the garbage collector isn't active then poke
    the event on which it sleeps to awaken it. */
 
 	dbb->dbb_flags |= DBB_gc_pending;
-	if (!(dbb->dbb_flags & DBB_gc_active)) {
+
+	if (!(dbb->dbb_flags & DBB_gc_active) &&
+		(tranid < tdbb->tdbb_transaction->tra_oldest_active) )
+	{
 		ISC_event_post(dbb->dbb_gc_event);
 	}
 }
@@ -4504,7 +4572,12 @@ static void purge(thread_db* tdbb, record_param* rpb)
 
 	if (!DPM_get(tdbb, rpb, LCK_write)) {
 		gc_rec->rec_flags &= ~REC_gc_active;
-		return; // false;
+
+#if defined(GARBAGE_THREAD) && defined(GC_NOTIFY_ON_WRITE)
+		// purge
+		notify_garbage_collector(tdbb, rpb);
+#endif
+		return; //false;
 	}
 
 	rpb->rpb_prior = temp.rpb_prior;
@@ -4917,4 +4990,75 @@ static void verb_post(
 	}
 }
 
+#ifdef GARBAGE_THREAD
 
+void RelationGarbage::clear()
+{
+	TranGarbage *item = array.begin(), *const last = array.end();
+
+	for(; item < last; item++)
+	{
+		delete item->bm;
+		item->bm = NULL;
+	}
+
+	array.clear(); 
+};
+
+void RelationGarbage::addPage(MemoryPool* pool, const SLONG pageno, const SLONG tranid)
+{
+	bool found = false;
+	TranGarbage const *item = array.begin(), *const last = array.end();
+
+	for(; item < last; item++) {
+		if (item->tran <= tranid) {
+			if (PageBitmap::test(item->bm, pageno)) {
+				found = true;
+				break;
+			}
+		}
+		else {
+			if (item->bm->clear(pageno))
+				break;
+		}
+	}
+
+	if(!found) {
+		PageBitmap *bm = NULL;
+		size_t pos = 0;
+
+		if (array.find(tranid, pos) ) {
+			bm = array[pos].bm;
+			PBM_SET(pool, &bm, pageno);
+		}
+		else {
+			bm = NULL;
+			PBM_SET(pool, &bm, pageno);
+			array.add(TranGarbage(bm, tranid));
+		}
+	}
+};
+
+void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
+{
+	while(array.getCount() > 0)
+	{
+		TranGarbage &garbage = array[0];
+
+		if (garbage.tran >= oldest_snapshot)
+			break;
+
+		PageBitmap* bm_tran = garbage.bm;
+		PageBitmap** bm_or = PageBitmap::bit_or(sbm, &bm_tran); 
+		if (*bm_or == garbage.bm) {
+			bm_tran = *sbm;
+			*sbm = garbage.bm;
+			garbage.bm = bm_tran;
+		};
+		delete garbage.bm;
+
+		array.remove(0U);
+	}
+};
+
+#endif //GARBAGE_THREAD

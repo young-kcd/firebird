@@ -46,6 +46,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
+#include "../jrd/sbm.h"
 
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
@@ -630,6 +631,50 @@ public:
 
 typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
+#ifdef GARBAGE_THREAD
+
+#define GC_NOTIFY_ON_WRITE
+//#define GC_NOTIFY_ON_READ
+
+class RelationGarbage
+{
+private:
+	class TranGarbage {
+	public:
+		SLONG tran;
+		PageBitmap *bm;
+
+		TranGarbage(PageBitmap *aBm, SLONG aTran) : tran(aTran), bm(aBm) {};
+
+		static inline const SLONG generate(void const*, const TranGarbage& Item) 
+		{ return Item.tran; };
+
+		static inline const bool greaterThan(const TranGarbage& i1, const TranGarbage& i2) 
+		{ return i1.tran > i2.tran; };
+	};
+
+	typedef	Firebird::SortedArray<
+				TranGarbage, 
+				Firebird::EmptyStorage<TranGarbage>, 
+				SLONG, 
+				TranGarbage> TranGarbageArray;
+	
+	TranGarbageArray array;
+
+public:
+	RelationGarbage(MemoryPool& p) : array(p) {};
+	~RelationGarbage() { clear(); };
+
+	void addPage(MemoryPool* pool, const SLONG pageno, const SLONG tranid);
+	void clear();
+
+	void getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm);
+	
+	SLONG minTranID() 
+	{ return (array.getCount() > 0) ? array[0].tran : MAX_SLONG; };
+};
+
+#endif //GARBAGE_THREAD
 
 /* Relation block; one is created for each relation referenced
    in the database, though it is not really filled out until
@@ -660,6 +705,7 @@ public:
 	vec*	rel_gc_rec;		/* vector of records for garbage collection */
 #ifdef GARBAGE_THREAD
 	PageBitmap*	rel_gc_bitmap;	/* garbage collect bitmap of data page sequences */
+	RelationGarbage*	rel_garbage;	/* deffered gc bitmap's by tran numbers */
 #endif
 
 	USHORT rel_slot_space;		/* lowest pointer page with slot space */
