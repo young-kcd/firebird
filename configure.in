@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.5 2003-10-09 16:45:44 alexpeshkoff Exp $
+dnl $Id: configure.in,v 1.141.2.6 2003-10-09 23:08:30 skidder Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -599,6 +599,7 @@ mkdir -p temp/client.gfix/alice
 mkdir -p temp/client.gpre/gpre
 mkdir -p temp/client.gdef/dudley
 mkdir -p temp/client.isql/isql
+mkdir -p temp/client.util/lock
 mkdir -p temp/client.util/utilities
 mkdir -p temp/client.util/iscguard
 mkdir -p temp/client.util/remote
@@ -628,6 +629,7 @@ mkdir -p temp/libfbstatic/wal
 mkdir -p temp/libfbstatic/common/config
 
 mkdir -p temp/embed.lockmgr/lock
+mkdir -p temp/embed.util/lock
 mkdir -p temp/embed.util/utilities
 mkdir -p temp/embed.gbak/burp
 mkdir -p temp/embed.gfix/alice

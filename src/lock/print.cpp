@@ -110,7 +110,7 @@ static const UCHAR compatibility[] = {
 
 
 
-void CLIB_ROUTINE main( int argc, char *argv[])
+int CLIB_ROUTINE main( int argc, char *argv[])
 {
 /**************************************
  *

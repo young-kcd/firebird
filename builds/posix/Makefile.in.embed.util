@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.util,v 1.8 2003-03-28 11:29:18 aafemt Exp $
+#  $Id: Makefile.in.embed.util,v 1.8.2.1 2003-10-09 23:08:33 skidder Exp $
 #
 ROOT=..
 ObjModuleName=embed.util
@@ -39,6 +39,11 @@ include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
+
+
+LOCKPRINT_Files= print.cpp
+LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files))
+LOCKPRINT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKPRINT_Sources))))
 
 
 CREATEDB_Files= create_db.cpp
@@ -90,7 +95,7 @@ AllObjects = $(CREATEDB_Objects) $(DROP_Objects) \
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: create_db gstat gds_drop gds_relay gsec ibguard ibmgr_bin
+.PHONY: create_db gstat gds_drop gds_relay gsec ibguard ibmgr_bin fb_lock_print
 
 all: $(EMBED_UTIL_TARGETS)
 
@@ -124,6 +129,11 @@ gds_relay: $(GDS_RELAY)
 
 $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBEMBED_SO)  
 	$(LD) $(LINK_OPTS) $(RELAY_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+
+fb_lock_print: $(LIBFBEMBED_SO) $(LOCKPRINT)
+
+$(LOCKPRINT):  $(LOCKPRINT_Objects) 
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 gsec: $(LIBFBEMBED_SO) $(GSEC)

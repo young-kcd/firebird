@@ -31,8 +31,8 @@ LIB_LINK_OPTIONS:=-shared -Wl,--add-stdcall-alias
 LIB_LINK_RPATH:=-Wl,-rpath,
 LIB_LINK_SONAME:=-Wl,-soname,
 LIB_GUI:= -mwindows -lcomctl32 -lgdi32
-EMBED_UTIL_TARGETS:=gstat gsec 
-CLIENT_UTIL_TARGETS:=gstat gsec ibguard instsvc instreg 
+EMBED_UTIL_TARGETS:=gstat gsec fb_lock_print
+CLIENT_UTIL_TARGETS:=gstat gsec ibguard instsvc instreg fb_lock_print
 WIN_IPSERVER_Files:=ipserver.cpp alli.cpp
 
 Physical_IO_Module=winnt.cpp

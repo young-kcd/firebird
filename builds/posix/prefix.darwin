@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.8.2.4 2003-07-19 06:19:03 bellardo Exp $
+#$Id: prefix.darwin,v 1.8.2.5 2003-10-09 23:08:34 skidder Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 CC=@CXX@
@@ -29,8 +29,8 @@ LIB_LINK_OPTIONS:=-bundle -flat_namespace -undefined suppress
 #LIB_LINK_SONAME:=-Wl,-soname,
 LIB_LINK_RPATH_LINE:=
 LIB_LINK_SONAME_LINE:=
-EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec 
-CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_delay gstat gsec fbguard fbmgr_bin fb_lock_print
 
 Physical_IO_Module=unix.cpp
 PLATFORM_PATH := jrd/os/darwin
