@@ -5603,7 +5603,7 @@ static SSHORT match_index(TDBB tdbb,
 /* match the field to an index, if possible, and save the value to be matched 
    as either the lower or upper bound for retrieval, or both */
 
-	for (i = 0, ptr = opt->opt_rpt; i < idx->idx_count; i++, ptr++)
+	for (i = 0, ptr = opt->opt_rpt; i < idx->idx_count; i++, ptr++) {
 		if
 #ifdef EXPRESSION_INDICES
 			(idx->idx_expression ||
@@ -5614,39 +5614,51 @@ static SSHORT match_index(TDBB tdbb,
 #endif
 		{
 			++count;
+			/* AB: If we have already an exact match don't 
+			   override it with worser matches, but increment the 
+			   count so that the node will be marked as matched! */
+			if (ptr->opt_match && ptr->opt_match->nod_type == nod_eql) {
+				break;
+			}
 			switch (boolean->nod_type) {
-			case nod_between:
-				if (!forward ||
-					!computable(opt->opt_csb, boolean->nod_arg[2], stream,
-								TRUE)) return 0;
-				ptr->opt_lower = value;
-				ptr->opt_upper = boolean->nod_arg[2];
-				ptr->opt_match = boolean;
-				break;
-			case nod_eql:
-				ptr->opt_lower = ptr->opt_upper = value;
-				ptr->opt_match = boolean;
-				break;
-			case nod_gtr:
-			case nod_geq:
-				if (forward)
+				case nod_between:
+					if (!forward || !computable(opt->opt_csb, 
+						boolean->nod_arg[2], stream, TRUE)) {
+						return 0;
+					}
 					ptr->opt_lower = value;
-				else
-					ptr->opt_upper = value;
-				ptr->opt_match = boolean;
-				break;
-			case nod_lss:
-			case nod_leq:
-				if (forward)
-					ptr->opt_upper = value;
-				else
-					ptr->opt_lower = value;
-				ptr->opt_match = boolean;
-				break;
-                        default:    /* Shut up compiler warnings */
-                                break;
+					ptr->opt_upper = boolean->nod_arg[2];
+					ptr->opt_match = boolean;
+					break;
+				case nod_eql:
+					ptr->opt_lower = ptr->opt_upper = value;
+					ptr->opt_match = boolean;
+					break;
+				case nod_gtr:
+				case nod_geq:
+					if (forward) {
+						ptr->opt_lower = value;
+					}
+					else {
+						ptr->opt_upper = value;
+					}
+					ptr->opt_match = boolean;
+					break;
+				case nod_lss:
+				case nod_leq:
+					if (forward) {
+						ptr->opt_upper = value;
+					}
+					else {
+						ptr->opt_lower = value;
+					}
+					ptr->opt_match = boolean;
+					break;
+				default:    /* Shut up compiler warnings */
+					break;
 			}
 		}
+	}
 
 	return count;
 }
