@@ -506,7 +506,7 @@ static bool start_server( ibmgr_data_t* data)
 */
 	if (!(pid = fork1())) {
 		if (execv(path, argv) == -1) {
-			ib_fprintf(OUTFILE, "Could not create child process %s with args %s \n",
+			printf("Could not create child process %s with args %s \n",
 				   path, argv[1]);
 		}
 		_exit(FINI_ERROR);
@@ -549,7 +549,7 @@ static bool start_server( ibmgr_data_t* data)
 					|| WCOREDUMP(exit_status)
 					|| WIFSIGNALED(exit_status)))
 		{
-			ib_printf("Guardian process %ld terminated with code %ld\n",
+			printf("Guardian process %ld terminated with code %ld\n",
 				pid, WEXITSTATUS(exit_status)); 
 			break;
 		}
