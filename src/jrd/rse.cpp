@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.33 2003-09-03 21:18:27 arnobrinkman Exp $
+ * $Id: rse.cpp,v 1.34 2003-09-17 23:24:03 arnobrinkman Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -1022,7 +1022,13 @@ static SSHORT compare(TDBB tdbb, JRD_NOD node1, JRD_NOD node2)
 				return -1;
 			}
 			else {
-				return 1;
+				// AB: When both expression evaluated NULL then
+				// we return 0 ( (NULL = NULL) = true).
+				//
+				// Currently this (0 and higher) isn't used by the 
+				// MERGE procedure, but when we allow MERGE to 
+				// handle outer-joins we must not forget this one !!!
+				return 0;
 			}
 		}
 		else if (request->req_flags & req_null) {
@@ -2317,7 +2323,7 @@ static BOOLEAN get_record(TDBB			tdbb,
 			rpb->rpb_number = -1;
 		}
 #endif
-		if (!NAV_get_record(rsb, (IRSB_NAV) impure, rpb, mode))
+		if (!NAV_get_record(tdbb, rsb, (IRSB_NAV) impure, rpb, mode))
 		{
 			return FALSE;
 		}

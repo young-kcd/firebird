@@ -29,7 +29,7 @@
 #ifdef SCROLLABLE_CURSORS
 extern struct exp *NAV_expand_index(struct win *, struct irsb_nav *);
 #endif
-extern BOOLEAN NAV_get_record(class Rsb *, struct irsb_nav *, struct rpb *,
+extern BOOLEAN NAV_get_record(TDBB tdbb, class Rsb *, struct irsb_nav *, struct rpb *,
 							  enum rse_get_mode);
 
 #ifdef PC_ENGINE

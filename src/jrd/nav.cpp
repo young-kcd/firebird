@@ -439,7 +439,7 @@ void NAV_get_bookmark(RSB rsb, IRSB_NAV impure, BKM bookmark)
 #endif
 
 
-BOOLEAN NAV_get_record(
+BOOLEAN NAV_get_record(TDBB tdbb,
 					   RSB rsb,
 					   IRSB_NAV impure, RPB * rpb, RSE_GET_MODE direction)
 {
@@ -456,7 +456,6 @@ BOOLEAN NAV_get_record(
  *	BOF, EOF, or CRACK properly.
  *
  **************************************/
-	TDBB tdbb;
 	IDX *idx;
 	IRB retrieval;
 	JRD_NOD retrieval_node;
@@ -473,7 +472,7 @@ BOOLEAN NAV_get_record(
 
 	DEBUG;
 
-	tdbb = GET_THREAD_DATA;
+	SET_TDBB(tdbb);
 
 #ifdef SCROLLABLE_CURSORS
 /* before we do anything, check for the case where an ascending index 
@@ -1197,7 +1196,7 @@ static BOOLEAN find_record(
 	idx =
 		(IDX *) ((SCHAR *) impure + (SLONG) rsb->rsb_arg[RSB_NAV_idx_offset]);
 	page =
-		BTR_find_page(tdbb, retrieval, &window, idx, &lower, &upper, FALSE);
+		BTR_find_page(tdbb, retrieval, &window, idx, &lower, &upper, false);
 
 /* restore the saved equality retrieval key */
 
@@ -1208,7 +1207,7 @@ static BOOLEAN find_record(
 /* find the appropriate leaf node */
 
 	while (!(node = BTR_find_leaf(page, find_key, impure->irsb_nav_data,
-								  0, idx->idx_flags & idx_descending, TRUE)))
+								  0, idx->idx_flags & idx_descending, true)))
 		page =
 			(BTR) CCH_HANDOFF(tdbb, &window, page->btr_sibling, LCK_read,
 							  pag_index);
@@ -1798,7 +1797,7 @@ static BTN nav_open(
 	if (limit_ptr) {
 		while (!(node = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data,
 									  0, idx->idx_flags & idx_descending,
-									  TRUE))
+									  true))
 			   || (get_long(BTN_NUMBER(node)) == END_BUCKET))
 			  page =
 				(BTR) CCH_HANDOFF(tdbb, window, page->btr_sibling, LCK_read,
