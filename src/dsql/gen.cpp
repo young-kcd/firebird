@@ -494,7 +494,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		const char* s = 0;
 		char message_buf[8];
 
-		MAKE_desc(&desc, node);
+		MAKE_desc(&desc, node, NULL);
 		if ((node->nod_flags & NOD_COMP_DIALECT) &&
 			(request->req_client_dialect == SQL_DIALECT_V6_TRANSITION)) 
 		{
@@ -2263,7 +2263,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		dsql_nod* item = *ptr;
 		dsql_par* parameter = MAKE_parameter(request->req_receive, true, true, 0);
 		parameter->par_node = item;
-		MAKE_desc(&parameter->par_desc, item);
+		MAKE_desc(&parameter->par_desc, item, NULL);
 		const char* name_alias = NULL;
 
 		switch(item->nod_type) {

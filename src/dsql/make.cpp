@@ -280,9 +280,10 @@ dsql_str* MAKE_cstring(const char* str)
 
     @param desc
     @param node
+	@param null_replacement
 
  **/
-void MAKE_desc(dsc* desc, dsql_nod* node)
+void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 {
 	dsc desc1, desc2;
 	USHORT dtype, dtype1, dtype2;
@@ -314,17 +315,17 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 	case nod_map:
 		map = (dsql_map*) node->nod_arg[e_map_map];
-		MAKE_desc(desc, map->map_node);
+		MAKE_desc(desc, map->map_node, null_replacement);
 		return;
 
 	case nod_agg_min:
 	case nod_agg_max:
-		MAKE_desc(desc, node->nod_arg[0]);
+		MAKE_desc(desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
 		return;
 
 	case nod_agg_average:
-		MAKE_desc(desc, node->nod_arg[0]);
+		MAKE_desc(desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
 		dtype = desc->dsc_dtype;
 		if (!DTYPE_CAN_AVERAGE(dtype))
@@ -332,7 +333,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_agg_average2:
-		MAKE_desc(desc, node->nod_arg[0]);
+		MAKE_desc(desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
 		dtype = desc->dsc_dtype;
 		if (!DTYPE_CAN_AVERAGE(dtype))
@@ -349,7 +350,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_agg_total:
-		MAKE_desc(desc, node->nod_arg[0]);
+		MAKE_desc(desc, node->nod_arg[0], null_replacement);
 		if (desc->dsc_dtype == dtype_short) {
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_length = sizeof(SLONG);
@@ -362,7 +363,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_agg_total2:
-		MAKE_desc(desc, node->nod_arg[0]);
+		MAKE_desc(desc, node->nod_arg[0], null_replacement);
 		dtype = desc->dsc_dtype;
 		if (DTYPE_IS_EXACT(dtype)) {
 			desc->dsc_dtype = dtype_int64;
@@ -378,32 +379,48 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 	case nod_concatenate:
 		{
-			MAKE_desc(&desc1, node->nod_arg[0]);
-			MAKE_desc(&desc2, node->nod_arg[1]);
+			MAKE_desc(&desc1, node->nod_arg[0], node->nod_arg[1]);
+			MAKE_desc(&desc2, node->nod_arg[1], node->nod_arg[0]);
+
 			desc->dsc_scale = 0;
 			desc->dsc_dtype = dtype_varying;
+
+			if (node->nod_arg[0]->nod_type == nod_null &&
+				node->nod_arg[1]->nod_type == nod_null)
+			{
+				// NULL || NULL = NULL of VARCHAR(1) CHARACTER SET NONE
+				desc->dsc_ttype() = 0;
+				desc->dsc_length = sizeof(USHORT) + 1;
+				desc->dsc_flags |= DSC_nullable;
+				return;
+			}
+
 			if (desc1.dsc_dtype <= dtype_any_text)
 				desc->dsc_ttype() = desc1.dsc_ttype();
 			else
 				desc->dsc_ttype() = ttype_ascii;
+
 			ULONG length = sizeof(USHORT) +
-				DSC_string_length(&desc1) + DSC_string_length(&desc2);
+				((node->nod_arg[0]->nod_type == nod_null) ? 0 : DSC_string_length(&desc1)) +
+				((node->nod_arg[1]->nod_type == nod_null) ? 0 : DSC_string_length(&desc2));
+
 			if (length > MAX_COLUMN_SIZE)
 			{
 				length = MAX_COLUMN_SIZE - sizeof (USHORT);
 			}
+
 			desc->dsc_length = length;
 			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		}
 		return;
 
 	case nod_derived_field:
-		MAKE_desc(desc, node->nod_arg[e_derived_field_value]);
+		MAKE_desc(desc, node->nod_arg[e_derived_field_value], null_replacement);
 		return;
 
 	case nod_upcase:
     case nod_substr:
-		MAKE_desc(&desc1, node->nod_arg[0]);
+		MAKE_desc(&desc1, node->nod_arg[0], null_replacement);
 		if (desc1.dsc_dtype <= dtype_any_text) {
 			*desc = desc1;
 			return;
@@ -446,7 +463,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 	case nod_cast:
 		field = (dsql_fld*) node->nod_arg[e_cast_target];
 		MAKE_desc_from_field(desc, field);
-		MAKE_desc(&desc1, node->nod_arg[e_cast_source]);
+		MAKE_desc(&desc1, node->nod_arg[e_cast_source], null_replacement);
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
 		return;
 
@@ -473,8 +490,20 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 	case nod_add:
 	case nod_subtract:
-		MAKE_desc(&desc1, node->nod_arg[0]);
-		MAKE_desc(&desc2, node->nod_arg[1]);
+		MAKE_desc(&desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(&desc2, node->nod_arg[1], node->nod_arg[0]);
+
+		if (node->nod_arg[0]->nod_type == nod_null &&
+			node->nod_arg[1]->nod_type == nod_null)
+		{
+			// NULL + NULL = NULL of INT
+			desc->dsc_dtype = dtype_long;
+			desc->dsc_sub_type = 0;
+			desc->dsc_length = sizeof(SLONG);
+			desc->dsc_scale = 0;
+			return;
+		}
+
 		dtype1 = desc1.dsc_dtype;
 		dtype2 = desc2.dsc_dtype;
 
@@ -498,7 +527,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 			if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
 				DTYPE_IS_TEXT(desc2.dsc_dtype))
 			{
-					ERRD_post(isc_expression_eval_err, 0);
+				ERRD_post(isc_expression_eval_err, 0);
 			}
 
 		case dtype_timestamp:
@@ -527,12 +556,12 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 					else if ((dtype1 == dtype_timestamp) &&
 							 (dtype2 == dtype_sql_date))
 					{
-							dtype = dtype_timestamp;
+						dtype = dtype_timestamp;
 					}
 					else if ((dtype2 == dtype_timestamp) &&
 							 (dtype1 == dtype_sql_date))
 					{
-							dtype = dtype_timestamp;
+						dtype = dtype_timestamp;
 					}
 					else {
 						ERRD_post(isc_expression_eval_err, 0);
@@ -608,8 +637,20 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 
 	case nod_add2:
 	case nod_subtract2:
-		MAKE_desc(&desc1, node->nod_arg[0]);
-		MAKE_desc(&desc2, node->nod_arg[1]);
+		MAKE_desc(&desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(&desc2, node->nod_arg[1], node->nod_arg[0]);
+
+		if (node->nod_arg[0]->nod_type == nod_null &&
+			node->nod_arg[1]->nod_type == nod_null)
+		{
+			// NULL + NULL = NULL of INT
+			desc->dsc_dtype = dtype_long;
+			desc->dsc_sub_type = 0;
+			desc->dsc_length = sizeof(SLONG);
+			desc->dsc_scale = 0;
+			return;
+		}
+
 		dtype1 = desc1.dsc_dtype;
 		dtype2 = desc2.dsc_dtype;
 
@@ -624,7 +665,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
 			DTYPE_IS_TEXT(desc2.dsc_dtype))
 		{
-				ERRD_post(isc_expression_eval_err, 0);
+			ERRD_post(isc_expression_eval_err, 0);
 		}
 
 		/* Determine the TYPE of arithmetic to perform, store it
@@ -772,8 +813,20 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_multiply:
-		MAKE_desc(&desc1, node->nod_arg[0]);
-		MAKE_desc(&desc2, node->nod_arg[1]);
+		MAKE_desc(&desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(&desc2, node->nod_arg[1], node->nod_arg[0]);
+
+		if (node->nod_arg[0]->nod_type == nod_null &&
+			node->nod_arg[1]->nod_type == nod_null)
+		{
+			// NULL * NULL = NULL of INT
+			desc->dsc_dtype = dtype_long;
+			desc->dsc_sub_type = 0;
+			desc->dsc_length = sizeof(SLONG);
+			desc->dsc_scale = 0;
+			return;
+		}
+
 		dtype = DSC_multiply_blr4_result[desc1.dsc_dtype][desc2.dsc_dtype];
 
 		if (dtype_unknown == dtype) {
@@ -803,8 +856,20 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_multiply2:
-		MAKE_desc(&desc1, node->nod_arg[0]);
-		MAKE_desc(&desc2, node->nod_arg[1]);
+		MAKE_desc(&desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(&desc2, node->nod_arg[1], node->nod_arg[0]);
+
+		if (node->nod_arg[0]->nod_type == nod_null &&
+			node->nod_arg[1]->nod_type == nod_null)
+		{
+			// NULL * NULL = NULL of INT
+			desc->dsc_dtype = dtype_long;
+			desc->dsc_sub_type = 0;
+			desc->dsc_length = sizeof(SLONG);
+			desc->dsc_scale = 0;
+			return;
+		}
+
 		dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
 
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
@@ -840,8 +905,19 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_divide:
-		MAKE_desc(&desc1, node->nod_arg[0]);
-		MAKE_desc(&desc2, node->nod_arg[1]);
+		MAKE_desc(&desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(&desc2, node->nod_arg[1], node->nod_arg[0]);
+
+		if (node->nod_arg[0]->nod_type == nod_null &&
+			node->nod_arg[1]->nod_type == nod_null)
+		{
+			// NULL / NULL = NULL of INT
+			desc->dsc_dtype = dtype_long;
+			desc->dsc_sub_type = 0;
+			desc->dsc_length = sizeof(SLONG);
+			desc->dsc_scale = 0;
+			return;
+		}
 
 		dtype1 = desc1.dsc_dtype;
 		if (dtype_int64 == dtype1)
@@ -864,8 +940,20 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_divide2:
-		MAKE_desc(&desc1, node->nod_arg[0]);
-		MAKE_desc(&desc2, node->nod_arg[1]);
+		MAKE_desc(&desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(&desc2, node->nod_arg[1], node->nod_arg[0]);
+
+		if (node->nod_arg[0]->nod_type == nod_null &&
+			node->nod_arg[1]->nod_type == nod_null)
+		{
+			// NULL / NULL = NULL of INT
+			desc->dsc_dtype = dtype_long;
+			desc->dsc_sub_type = 0;
+			desc->dsc_length = sizeof(SLONG);
+			desc->dsc_scale = 0;
+			return;
+		}
+
 		dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
 		desc->dsc_dtype = static_cast<UCHAR>(dtype);
 
@@ -891,7 +979,18 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_negate:
-		MAKE_desc(desc, node->nod_arg[0]);
+		MAKE_desc(desc, node->nod_arg[0], null_replacement);
+
+		if (node->nod_arg[0]->nod_type == nod_null)
+		{
+			// -NULL = NULL of INT
+			desc->dsc_dtype = dtype_long;
+			desc->dsc_sub_type = 0;
+			desc->dsc_length = sizeof(SLONG);
+			desc->dsc_scale = 0;
+			return;
+		}
+
 		if (!DTYPE_CAN_NEGATE(desc->dsc_dtype)) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
 					  isc_arg_gds, isc_dsql_no_blob_array, 0);
@@ -899,7 +998,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_alias:
-		MAKE_desc(desc, node->nod_arg[e_alias_value]);
+		MAKE_desc(desc, node->nod_arg[e_alias_value], null_replacement);
 		return;
 
 	case nod_dbkey:
@@ -1016,7 +1115,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_extract:
-		MAKE_desc(&desc1, node->nod_arg[e_extract_value]);
+		MAKE_desc(&desc1, node->nod_arg[e_extract_value], null_replacement);
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
@@ -1055,15 +1154,22 @@ void MAKE_desc(dsc* desc, dsql_nod* node)
 		 * as part of the DESCRIBE statement - but I suspect other areas
 		 * of the code would break if this is declared dtype_unknown.
 		 */
-		desc->dsc_dtype = dtype_text;
-		desc->dsc_length = 1;
-		desc->dsc_scale = 0;
-		desc->dsc_ttype() = 0;
-		desc->dsc_flags = DSC_nullable;
+		if (null_replacement)
+		{
+			MAKE_desc(desc, null_replacement, NULL);
+		}
+		else
+		{
+			desc->dsc_dtype = dtype_text;
+			desc->dsc_length = 1;
+			desc->dsc_scale = 0;
+			desc->dsc_ttype() = 0;
+			desc->dsc_flags = DSC_nullable;
+		}
 		return;
 
 	case nod_via:
-		MAKE_desc(desc, node->nod_arg[e_via_value_1]);
+		MAKE_desc(desc, node->nod_arg[e_via_value_1], null_replacement);
 	/**
 	    Set the descriptor flag as nullable. The
 	    select expression may or may not return 
@@ -1196,7 +1302,7 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node, const TEXT* expression_name)
 
 		// Get the descriptor from current node.
 		dsc desc1;
-		MAKE_desc(&desc1, tnod);
+		MAKE_desc(&desc1, tnod, NULL);
 
 		// Check if we support this datatype.
 		if (!(DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_NUMERIC(desc1.dsc_dtype) ||

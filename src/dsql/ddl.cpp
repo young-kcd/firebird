@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.111 2004-08-27 09:24:39 robocop Exp $
+ * $Id: ddl.cpp,v 1.112 2004-09-04 18:24:11 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -1008,7 +1008,7 @@ static void define_computed(dsql_req* request,
 	// try to calculate size of the computed field. The calculated size
 	// may be ignored, but it will catch self references
 	dsc desc;
-	MAKE_desc(&desc, input);
+	MAKE_desc(&desc, input, NULL);
 
 	if (save_desc.dsc_dtype) {
 		// restore the field size/type overrides
@@ -2563,7 +2563,7 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 		{
 			dsql_par* param = MAKE_parameter(request->req_receive, true, true, ++position);
 			param->par_node = *ptr;
-			MAKE_desc(&param->par_desc, *ptr);
+			MAKE_desc(&param->par_desc, *ptr, NULL);
 			param->par_desc.dsc_flags |= DSC_nullable;
 
 			dsql_nod* parameter = *ptr;
@@ -3650,7 +3650,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		else
 		{
 			request->append_cstring(isc_dyn_def_sql_fld, field_string);
-			MAKE_desc(&field_node->nod_desc, field_node);
+			MAKE_desc(&field_node->nod_desc, field_node, NULL);
 			put_descriptor(request, &field_node->nod_desc);
 			request->begin_blr(isc_dyn_fld_computed_blr);
 			GEN_expr(request, field_node);

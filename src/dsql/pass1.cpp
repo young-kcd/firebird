@@ -538,7 +538,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		DDL_resolve_intl_type(request, field, NULL);
 		MAKE_desc_from_field(&node->nod_desc, field);
 		// If the source is nullable, so is the target 
-		MAKE_desc(&sub1->nod_desc, sub1);
+		MAKE_desc(&sub1->nod_desc, sub1, NULL);
 		if (sub1->nod_desc.dsc_flags & DSC_nullable)
 			node->nod_desc.dsc_flags |= DSC_nullable;
 		return node;
@@ -577,7 +577,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		   sure the requested type of information can be extracted */
 
 		sub1 = PASS1_node(request, input->nod_arg[e_extract_value], proc_flag);
-		MAKE_desc(&sub1->nod_desc, sub1);
+		MAKE_desc(&sub1->nod_desc, sub1, NULL);
 
 		switch (*(SLONG*)input->nod_arg[e_extract_part]->nod_desc.dsc_address)
 		{
@@ -3092,7 +3092,7 @@ static dsql_nod* pass1_coalesce( dsql_req* request, dsql_nod* input, bool proc_f
 	}
 
 	// Set descriptor for output node
-	MAKE_desc(&node->nod_desc, node);
+	MAKE_desc(&node->nod_desc, node, NULL);
 
 	// Set parameter-types if parameters are there
 	dsql_nod** ptr = node->nod_arg[0]->nod_arg;
@@ -3138,7 +3138,7 @@ static dsql_nod* pass1_collate( dsql_req* request, dsql_nod* sub1,
 	field->fld_name[0] = 0;
 	node->nod_arg[e_cast_target] = (dsql_nod*) field;
 	node->nod_arg[e_cast_source] = sub1;
-	MAKE_desc(&sub1->nod_desc, sub1);
+	MAKE_desc(&sub1->nod_desc, sub1, NULL);
 	if (sub1->nod_desc.dsc_dtype <= dtype_any_text) {
 		assign_fld_dtype_from_dsc(field, &sub1->nod_desc);
 		field->fld_character_length = 0;
@@ -5680,7 +5680,7 @@ static dsql_nod* pass1_searched_case( dsql_req* request, dsql_nod* input, bool p
 	} // end scope block
 
 	// Set describer for output node 
-	MAKE_desc(&node->nod_desc, node);
+	MAKE_desc(&node->nod_desc, node, NULL);
 
 	// Set parameter-types if parameters are there 
 	dsql_nod* case_search = node->nod_arg[e_searched_case_search_conditions];
@@ -5850,7 +5850,7 @@ static dsql_nod* pass1_simple_case( dsql_req* request, dsql_nod* input, bool pro
 	}
 
 	// Set describer for output node
-	MAKE_desc(&node->nod_desc, node);
+	MAKE_desc(&node->nod_desc, node, NULL);
 	// Set parameter describe information for evt. results parameters
 	dsql_nod* simple_res = node->nod_arg[e_simple_case_results];
 	dsql_nod** ptr = simple_res->nod_arg;
@@ -6124,7 +6124,7 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 	    int i; // please the MS compiler
 		for (i = 0; i < union_node->nod_count; i++) {
 			dsql_nod* nod1 = union_node->nod_arg[i]->nod_arg[e_rse_items];
-			MAKE_desc(&nod1->nod_arg[j]->nod_desc, nod1->nod_arg[j]);
+			MAKE_desc(&nod1->nod_arg[j]->nod_desc, nod1->nod_arg[j], NULL);
 			tmp_list->nod_arg[i] = nod1->nod_arg[j];
 
 			// We look only at the items->nod_arg[] when creating the
@@ -7104,7 +7104,7 @@ static bool set_parameter_type(dsql_nod* in_node, dsql_nod* node, bool force_var
 	switch (in_node->nod_type) {
 		case nod_parameter:
 			{
-				MAKE_desc(&in_node->nod_desc, node);
+				MAKE_desc(&in_node->nod_desc, node, NULL);
 				dsql_par* parameter = (dsql_par*) in_node->nod_arg[e_par_parameter];
 				DEV_BLKCHK(parameter, dsql_type_par);
 				parameter->par_desc = in_node->nod_desc;
