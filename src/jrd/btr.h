@@ -146,7 +146,7 @@ typedef struct isr {
 	ULONG isr_record_number;
 } *ISR;
 
-#define ISR_secondary	1		/* Record is secondary verion */
+#define ISR_secondary	1		/* Record is secondary version */
 #define ISR_null		2		/* Record consists of NULL values only */
 
 
