@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: locks.h,v 1.14 2004-05-20 23:04:30 skidder Exp $
+ *  $Id: locks.h,v 1.15 2004-06-08 06:51:13 alexpeshkoff Exp $
  *
  */
 
@@ -182,7 +182,8 @@ public:
 // RAII holder of mutex lock
 class MutexLockGuard {
 public:
-	MutexLockGuard(Mutex &alock) : lock(&alock) { lock->enter(); }
+	explicit MutexLockGuard(Mutex &alock) 
+		: lock(&alock) { lock->enter(); }
 	~MutexLockGuard() { lock->leave(); };
 private:
 	// Forbid copy constructor
