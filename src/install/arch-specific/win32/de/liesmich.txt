@@ -6,7 +6,7 @@ Firebird 1.5.2       (Win32 Build)
 
 o Einführung
 o Stabilität
-o Installation des selbst-installierenden Pakets
+o Installation des selbstinstallierenden Pakets
 o Installation des ZIP-Pakets
 o Installation des Embedded Server
 o Bekannte Probleme
@@ -20,9 +20,9 @@ Einführung
 
 Willkommen zu Firebird 1.5.2. Dies ist das zweite
 Wartungs-Release von Firebird 1.5. Eine vollständige
-Liste der beseitigten Fehler und den kleineren
-Erweiterungen finden Sie in den Release Notes.
-Diese befinden sich im doc/ Verzeichnis.
+Liste der beseitigten Fehler und den hinzugefügten
+kleineren Erweiterungen finden Sie in den Release
+Notes. Diese befinden sich im doc/ Verzeichnis.
 
 
 Stabilität
@@ -31,12 +31,12 @@ Stabilität
 Firebird 1.5 ist die erste Version von Firebird, die
 mit C++ übersetzt wurde. Diese Version durchschritt
 eine lange Beta und Release Candidate Phase und kann
-genau so stabil, als dessen Vorgänger Firebird 1.0.3,
+als genau so stabil wie dessen Vorgänger Firebird 1.0.3
 angesehen werden. Es wurden seit dem Original-Release
 von Firebird 1.5.0 keine ernsten Probleme festgestellt.
 Daher kann es als solches, als genau so stabil oder sogar
 stabiler als das letzte Release von Firebird 1 (v1.0.3)
-angesehen werden.
+betrachtet werden.
 
 Es besteht kein Grund beunruhigt zu sein, wenn man dieses
 Wartungs-Release in einer Produktionsumgebung einsetzen
@@ -46,14 +46,15 @@ auf einem Entwicklungssystem getestet worden sein. Dies
 sollte generell die Vorgehensweise sein.
 
 
-Installation des selbst-installierenden Pakets
-==============================================
+Installation des selbstinstallierenden Pakets
+=============================================
 
 Starten Sie die ausführbare Datei und lesen Sie die
 beigefügten Installationsanweisungen, die im Setup-Wizard
 enthalten sind. Nach der Installation finden Sie dieses
-Dokument als doc/installation_liesmich.txt vor. Detailliertere
-Informationen befinden sich in den Release Notes.
+Dokument als doc/installation_liesmich.txt vor.
+Detailliertere Informationen befinden sich in den
+Release Notes.
 
 Viele Änderungen sind in diesem Release implementiert
 worden. Falls Sie eine existierende Installation von
@@ -106,7 +107,7 @@ kompatible gds32.dll zu erstellen und optional in
 das Systemverzeichnis zu kopieren. Es ist wichtig,
 dass Sie die Release Notes und die begleitenden
 Informationen in README_library_install.txt lesen,
-bevor Sie dieses Programm anwenden.
+bevor Sie dieses Programm verwenden.
 
 UDFs und Blob-Filter
 --------------------
@@ -131,7 +132,7 @@ Fehler berichten
 o Sind Sie sicher, dass Sie verstehen, wie Firebird arbeitet?
 
   Vielleicht handelt es sich hierbei um ein korrektes
-  Verhalten und Sie haben genau genommen eine Supportfrage.
+  Verhalten und Sie haben genau genommen eine Supportanfrage.
   In diesem Fall, kontaktieren Sie die firebird-support
   Liste.
 
@@ -149,7 +150,7 @@ o Denken Sie nach wie vor, dass es sich um einen Fehler handelt?
 Ansonsten, wenn Sie sich sicher sind, dass es sich um
 einen Fehler handelt, dann versuchen Sie einen
 reproduzierbaren Testfall zu erstellen. Diesen können
-Sie dann dem Bug-Tracker hinzufügen.
+Sie dann im Bug-Tracker hinzufügen.
 
 
 Neue Funktionalitäten anfordern
