@@ -135,7 +135,7 @@ static void RefetchRecord(TDBB tdbb, RPB * rpb, JRD_TRA transaction);
 #define END_RELATION
 
 typedef ENUM rids {
-#include "gen/relations.h"
+#include "../jrd/relations.h"
 rel_MAX} RIDS;
 
 #undef RELATION
@@ -1184,12 +1184,12 @@ void VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 	{
 		switch ((RIDS) relation->rel_id)
 		{
-		case rel_RELATIONS:
-			if (EVL_field(0, rpb->rpb_record, f_RELATIONS__RELATION_NAME, &desc))
+		case rel_relations:
+			if (EVL_field(0, rpb->rpb_record, f_rel_name, &desc))
 			{
 				SCL_check_relation(&desc, SCL_delete);
 			}
-			if (EVL_field(0, rpb->rpb_record, f_RELATIONS__RELATION_ID, &desc2))
+			if (EVL_field(0, rpb->rpb_record, f_rel_id, &desc2))
 			{
 				id = MOV_get_long(&desc2, 0);
 				if (id < (int) rel_MAX)
@@ -1201,38 +1201,38 @@ void VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 			}
 			break;
 
-		case rel_PROCEDURES:
-			if (EVL_field(0, rpb->rpb_record, f_PROCEDURES__PROCEDURE_NAME, &desc))
+		case rel_procedures:
+			if (EVL_field(0, rpb->rpb_record, f_prc_name, &desc))
 			{
 				SCL_check_procedure(&desc, SCL_delete);
 			}
-			EVL_field(0, rpb->rpb_record, f_PROCEDURES__PROCEDURE_ID, &desc2);
+			EVL_field(0, rpb->rpb_record, f_prc_id, &desc2);
 			id = MOV_get_long(&desc2, 0);
 			DFW_post_work(transaction, dfw_delete_procedure, &desc, id);
 			MET_lookup_procedure_id(tdbb, id, FALSE, TRUE, 0);
 			break;
 
-		case rel_EXCEPTIONS:
-			EVL_field(0, rpb->rpb_record, f_PROCEDURES__PROCEDURE_NAME, &desc);
+		case rel_exceptions:
+			EVL_field(0, rpb->rpb_record, f_prc_name, &desc);
 			DFW_post_work(transaction, dfw_delete_exception, &desc, 0);
 			break;
 
-        case rel_GENERATORS:
-            EVL_field (0, rpb->rpb_record, f_PROCEDURES__PROCEDURE_NAME, &desc);
+        case rel_gens:
+            EVL_field (0, rpb->rpb_record, f_prc_name, &desc);
             DFW_post_work (transaction, dfw_delete_generator, &desc, 0);
             break;
 
-        case rel_FUNCTIONS:
-            EVL_field (0, rpb->rpb_record, f_PROCEDURES__PROCEDURE_NAME, &desc);
+        case rel_funs:
+            EVL_field (0, rpb->rpb_record, f_prc_name, &desc);
             DFW_post_work (transaction, dfw_delete_udf, &desc, 0);
             break;
 
-		case rel_INDICES:
-			EVL_field(0, rpb->rpb_record, f_INDICES__RELATION_NAME, &desc);
+		case rel_indices:
+			EVL_field(0, rpb->rpb_record, f_idx_relation, &desc);
 			SCL_check_relation(&desc, SCL_control);
-			EVL_field(0, rpb->rpb_record, f_INDICES__INDEX_ID, &desc2);
+			EVL_field(0, rpb->rpb_record, f_idx_id, &desc2);
 			if ( (id = MOV_get_long(&desc2, 0)) ) {
-				if (EVL_field(0, rpb->rpb_record, f_INDICES__EXPRESSION_BLR, &desc2))
+				if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2))
 				{
 					DFW_post_work(transaction, dfw_delete_expression_index,
 								  &desc, id);
@@ -1244,75 +1244,75 @@ void VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 			}
 			break;
 
-		case rel_RELATION_FIELDS:
-			EVL_field(0, rpb->rpb_record, f_RELATION_FIELDS__RELATION_NAME, &desc);
+		case rel_rfr:
+			EVL_field(0, rpb->rpb_record, f_rfr_rname, &desc);
 			SCL_check_relation(&desc, SCL_control);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
-			EVL_field(0, rpb->rpb_record, f_RELATION_FIELDS__FIELD_NAME, &desc2);
+			EVL_field(0, rpb->rpb_record, f_rfr_fname, &desc2);
 			MOV_get_metadata_str(&desc, relation_name, sizeof(relation_name));
 			if ( (r2 = MET_lookup_relation(tdbb, relation_name)) )
 			{
 				DFW_post_work(transaction, dfw_delete_rfr, &desc2,
 							  r2->rel_id);
 			}
-			EVL_field(0, rpb->rpb_record, f_RELATION_FIELDS__FIELD_SOURCE, &desc2);
+			EVL_field(0, rpb->rpb_record, f_rfr_sname, &desc2);
 			DFW_post_work(transaction, dfw_delete_global, &desc2, 0);
 			break;
 
-		case rel_PROCEDURE_PARAMETERS:
-			EVL_field(0, rpb->rpb_record, f_PROCEDURE_PARAMETERS__PROCEDURE_NAME, &desc);
+		case rel_prc_prms:
+			EVL_field(0, rpb->rpb_record, f_prm_procedure, &desc);
 			SCL_check_procedure(&desc, SCL_control);
-			EVL_field(0, rpb->rpb_record, f_PROCEDURE_PARAMETERS__PARAMETER_NAME, &desc2);
+			EVL_field(0, rpb->rpb_record, f_prm_name, &desc2);
 			MOV_get_metadata_str(&desc, procedure_name, sizeof(procedure_name));
 			if ( (procedure = MET_lookup_procedure(tdbb, procedure_name, TRUE)) )
 			{
 				DFW_post_work(transaction, dfw_delete_prm, &desc2,
 							  procedure->prc_id);
 			}
-			EVL_field(0, rpb->rpb_record, f_PROCEDURE_PARAMETERS__FIELD_SOURCE, &desc2);
+			EVL_field(0, rpb->rpb_record, f_prm_sname, &desc2);
 			DFW_post_work(transaction, dfw_delete_global, &desc2, 0);
 			break;
 
-		case rel_FIELDS:
+		case rel_fields:
 			check_control(tdbb);
-			EVL_field(0, rpb->rpb_record, f_FIELDS__FIELD_NAME, &desc);
+			EVL_field(0, rpb->rpb_record, f_fld_name, &desc);
 			DFW_post_work(transaction, dfw_delete_field, &desc, 0);
 			MET_change_fields(tdbb, transaction, &desc);
 			break;
 
-		case rel_FILES:
-			EVL_field(0, rpb->rpb_record, f_FILES__FILE_NAME, &desc);
-			if (EVL_field(0, rpb->rpb_record, f_FILES__SHADOW_NUMBER, &desc2) &&
+		case rel_files:
+			EVL_field(0, rpb->rpb_record, f_file_name, &desc);
+			if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
 				(id = MOV_get_long(&desc2, 0)))
 			{
 				DFW_post_work(transaction, dfw_delete_shadow, &desc, id);
 			}
 			break;
 
-		case rel_SECURITY_CLASSES:
-			EVL_field(0, rpb->rpb_record, f_SECURITY_CLASSES__SECURITY_CLASS, &desc);
+		case rel_classes:
+			EVL_field(0, rpb->rpb_record, f_cls_class, &desc);
 			DFW_post_work(transaction, dfw_compute_security, &desc, 0);
 			break;
 
-		case rel_TRIGGERS:
-			EVL_field(0, rpb->rpb_record, f_TRIGGERS__RELATION_NAME, &desc);
+		case rel_triggers:
+			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
 
 			/* check if this  request go through without checking permissions */
 			if (!(request->req_flags & req_ignore_perm)) {
 				SCL_check_relation(&desc, SCL_control);
 			}
 
-			EVL_field(0, rpb->rpb_record, f_TRIGGERS__RELATION_NAME, &desc);
+			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
-			EVL_field(0, rpb->rpb_record, f_TRIGGERS__TRIGGER_NAME, &desc);
+			EVL_field(0, rpb->rpb_record, f_trg_name, &desc);
 			DFW_post_work(transaction, dfw_delete_trigger, &desc, 0);
 			break;
 
-		case rel_USER_PRIVILEGES:
-			EVL_field(0, rpb->rpb_record, f_FILES__FILE_NAME, &desc);
+		case rel_priv:
+			EVL_field(0, rpb->rpb_record, f_file_name, &desc);
 			if (!(tdbb->tdbb_request->req_flags & req_internal))
 			{
-				EVL_field(0, rpb->rpb_record, f_USER_PRIVILEGES__GRANTOR, &desc);
+				EVL_field(0, rpb->rpb_record, f_prv_grantor, &desc);
 				if (!check_user(tdbb, &desc))
 				{
 					ERR_post(isc_no_priv, isc_arg_string, "REVOKE",
@@ -1320,13 +1320,13 @@ void VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 							 "RDB$USER_PRIVILEGES", 0);
 				}
 			}
-			EVL_field(0, rpb->rpb_record, f_USER_PRIVILEGES__RELATION_NAME, &desc);
-			EVL_field(0, rpb->rpb_record, f_USER_PRIVILEGES__OBJECT_TYPE, &desc2);
+			EVL_field(0, rpb->rpb_record, f_prv_rname, &desc);
+			EVL_field(0, rpb->rpb_record, f_prv_o_type, &desc2);
 			id = MOV_get_long(&desc2, 0);
 			DFW_post_work(transaction, dfw_grant, &desc, id);
 			break;
 
-		case rel_LOG_FILES:
+		case rel_log:
 			DFW_post_work(transaction, dfw_delete_log, 0, 0);
 			break;
                 default:    /* Shut up compiler warnings */
@@ -1378,16 +1378,16 @@ void VIO_erase(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 
 /* Check to see if recursive revoke needs to be propogated */
 
-	if ((RIDS) relation->rel_id == rel_USER_PRIVILEGES)
+	if ((RIDS) relation->rel_id == rel_priv)
 	{
-		EVL_field(0, rpb->rpb_record, f_USER_PRIVILEGES__RELATION_NAME, &desc);
+		EVL_field(0, rpb->rpb_record, f_prv_rname, &desc);
 		MOV_get_metadata_str(&desc, relation_name, sizeof(relation_name));
-		EVL_field(0, rpb->rpb_record, f_USER_PRIVILEGES__GRANT_OPTION, &desc2);
+		EVL_field(0, rpb->rpb_record, f_prv_grant, &desc2);
 		if (MOV_get_long(&desc2, 0))
 		{
-			EVL_field(0, rpb->rpb_record, f_USER_PRIVILEGES__USER, &desc2);
+			EVL_field(0, rpb->rpb_record, f_prv_user, &desc2);
 			MOV_get_metadata_str(&desc2, revokee, sizeof(revokee));
-			EVL_field(0, rpb->rpb_record, f_USER_PRIVILEGES__PRIVILEGE, &desc2);
+			EVL_field(0, rpb->rpb_record, f_prv_priv, &desc2);
 			MOV_get_metadata_str(&desc2, privilege, sizeof(privilege));
 			MET_revoke(tdbb, transaction, relation_name, revokee, privilege);
 		}
@@ -2040,70 +2040,70 @@ void VIO_modify(TDBB tdbb, RPB * org_rpb, RPB * new_rpb, JRD_TRA transaction)
 
 	if (!(transaction->tra_flags & TRA_system))
 		switch ((RIDS) relation->rel_id) {
-		case rel_DATABASE:
-			check_class(tdbb, transaction, org_rpb, new_rpb, f_DATABASE__SECURITY_CLASS);
+		case rel_database:
+			check_class(tdbb, transaction, org_rpb, new_rpb, f_dat_class);
 			break;
 
-		case rel_RELATIONS:
-			EVL_field(0, org_rpb->rpb_record, f_RELATIONS__RELATION_NAME, &desc1);
+		case rel_relations:
+			EVL_field(0, org_rpb->rpb_record, f_rel_name, &desc1);
 			SCL_check_relation(&desc1, SCL_protect);
-			check_class(tdbb, transaction, org_rpb, new_rpb, f_RELATIONS__SECURITY_CLASS);
+			check_class(tdbb, transaction, org_rpb, new_rpb, f_rel_class);
 			DFW_post_work(transaction, dfw_update_format, &desc1, 0);
 			break;
 
-		case rel_PROCEDURES:
-			EVL_field(0, org_rpb->rpb_record, f_PROCEDURES__PROCEDURE_NAME, &desc1);
+		case rel_procedures:
+			EVL_field(0, org_rpb->rpb_record, f_prc_name, &desc1);
 			SCL_check_procedure(&desc1, SCL_protect);
-			check_class(tdbb, transaction, org_rpb, new_rpb, f_PROCEDURES__SECURITY_CLASS);
-			EVL_field(0, org_rpb->rpb_record, f_PROCEDURES__PROCEDURE_ID, &desc2);
+			check_class(tdbb, transaction, org_rpb, new_rpb, f_prc_class);
+			EVL_field(0, org_rpb->rpb_record, f_prc_id, &desc2);
 			id = MOV_get_long(&desc2, 0);
 			DFW_post_work(transaction, dfw_modify_procedure, &desc1, id);
 			break;
 
-		case rel_RELATION_FIELDS:
-			EVL_field(0, org_rpb->rpb_record, f_RELATION_FIELDS__RELATION_NAME, &desc1);
+		case rel_rfr:
+			EVL_field(0, org_rpb->rpb_record, f_rfr_rname, &desc1);
 			SCL_check_relation(&desc1, SCL_control);
 			DFW_post_work(transaction, dfw_update_format, &desc1, 0);
-			EVL_field(0, new_rpb->rpb_record, f_RELATION_FIELDS__RELATION_NAME, &desc2);
+			EVL_field(0, new_rpb->rpb_record, f_rfr_rname, &desc2);
 			SCL_check_relation(&desc2, SCL_control);
 			DFW_post_work(transaction, dfw_update_format, &desc2, 0);
-			check_class(tdbb, transaction, org_rpb, new_rpb, f_RELATION_FIELDS__SECURITY_CLASS);
+			check_class(tdbb, transaction, org_rpb, new_rpb, f_rfr_class);
 			break;
 
-		case rel_FIELDS:
+		case rel_fields:
 			check_control(tdbb);
-			EVL_field(0, org_rpb->rpb_record, f_FIELDS__FIELD_NAME, &desc1);
+			EVL_field(0, org_rpb->rpb_record, f_fld_name, &desc1);
 			MET_change_fields(tdbb, transaction, &desc1);
-			EVL_field(0, new_rpb->rpb_record, f_FIELDS__FIELD_NAME, &desc2);
+			EVL_field(0, new_rpb->rpb_record, f_fld_name, &desc2);
 			MET_change_fields(tdbb, transaction, &desc2);
 			break;
 
-		case rel_SECURITY_CLASSES:
-			EVL_field(0, org_rpb->rpb_record, f_SECURITY_CLASSES__SECURITY_CLASS, &desc1);
+		case rel_classes:
+			EVL_field(0, org_rpb->rpb_record, f_cls_class, &desc1);
 			DFW_post_work(transaction, dfw_compute_security, &desc1, 0);
-			EVL_field(0, new_rpb->rpb_record, f_SECURITY_CLASSES__SECURITY_CLASS, &desc1);
+			EVL_field(0, new_rpb->rpb_record, f_cls_class, &desc1);
 			DFW_post_work(transaction, dfw_compute_security, &desc1, 0);
 			break;
 
-		case rel_INDICES:
-			EVL_field(0, new_rpb->rpb_record, f_INDICES__RELATION_NAME, &desc1);
+		case rel_indices:
+			EVL_field(0, new_rpb->rpb_record, f_idx_relation, &desc1);
 			SCL_check_relation(&desc1, SCL_control);
-			EVL_field(0, new_rpb->rpb_record, f_INDICES__INDEX_NAME, &desc1);
-			if (EVL_field(0, new_rpb->rpb_record, f_INDICES__EXPRESSION_BLR, &desc2))
+			EVL_field(0, new_rpb->rpb_record, f_idx_name, &desc1);
+			if (EVL_field(0, new_rpb->rpb_record, f_idx_exp_blr, &desc2))
 				DFW_post_work(transaction, dfw_create_expression_index,
 							  &desc1, MAX_IDX);
 			else
 				DFW_post_work(transaction, dfw_create_index, &desc1, MAX_IDX);
 			break;
 
-		case rel_TRIGGERS:
-			EVL_field(0, new_rpb->rpb_record, f_TRIGGERS__RELATION_NAME, &desc1);
+		case rel_triggers:
+			EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
 			SCL_check_relation(&desc1, SCL_control);
-			EVL_field(0, new_rpb->rpb_record, f_TRIGGERS__RELATION_NAME, &desc1);
+			EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
 			DFW_post_work(transaction, dfw_update_format, &desc1, 0);
-			EVL_field(0, org_rpb->rpb_record, f_TRIGGERS__RELATION_NAME, &desc1);
+			EVL_field(0, org_rpb->rpb_record, f_trg_rname, &desc1);
 			DFW_post_work(transaction, dfw_update_format, &desc1, 0);
-			EVL_field(0, org_rpb->rpb_record, f_TRIGGERS__TRIGGER_NAME, &desc1);
+			EVL_field(0, org_rpb->rpb_record, f_trg_name, &desc1);
 			DFW_post_work(transaction, dfw_modify_trigger, &desc1, 0);
 			break;
 
@@ -2480,54 +2480,54 @@ void VIO_store(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 
 	if (!(transaction->tra_flags & TRA_system))
 		switch ((RIDS) relation->rel_id) {
-		case rel_RELATIONS:
-			EVL_field(0, rpb->rpb_record, f_RELATIONS__RELATION_NAME, &desc);
+		case rel_relations:
+			EVL_field(0, rpb->rpb_record, f_rel_name, &desc);
 			DFW_post_work(transaction, dfw_create_relation, &desc, 0);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
-			set_system_flag(rpb, f_RELATIONS__SYSTEM_FLAG, 0);
+			set_system_flag(rpb, f_rel_sys_flag, 0);
 			break;
 
-		case rel_PROCEDURES:
-			EVL_field(0, rpb->rpb_record, f_PROCEDURES__PROCEDURE_NAME, &desc);
-			EVL_field(0, rpb->rpb_record, f_PROCEDURES__PROCEDURE_ID, &desc2);
+		case rel_procedures:
+			EVL_field(0, rpb->rpb_record, f_prc_name, &desc);
+			EVL_field(0, rpb->rpb_record, f_prc_id, &desc2);
 			id = MOV_get_long(&desc2, 0);
 			DFW_post_work(transaction, dfw_create_procedure, &desc, id);
-			set_system_flag(rpb, f_PROCEDURES__SYSTEM_FLAG, 0);
+			set_system_flag(rpb, f_prc_sys_flag, 0);
 			break;
 
-		case rel_INDICES:
-			EVL_field(0, rpb->rpb_record, f_INDICES__RELATION_NAME, &desc);
+		case rel_indices:
+			EVL_field(0, rpb->rpb_record, f_idx_relation, &desc);
 			SCL_check_relation(&desc, SCL_control);
-			EVL_field(0, rpb->rpb_record, f_INDICES__INDEX_NAME, &desc);
-			if (EVL_field(0, rpb->rpb_record, f_INDICES__EXPRESSION_BLR, &desc2))
+			EVL_field(0, rpb->rpb_record, f_idx_name, &desc);
+			if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2))
 				DFW_post_work(transaction, dfw_create_expression_index, &desc,
 							  MAX_IDX);
 			else
 				DFW_post_work(transaction, dfw_create_index, &desc, MAX_IDX);
 			break;
 
-		case rel_RELATION_FIELDS:
-			EVL_field(0, rpb->rpb_record, f_RELATION_FIELDS__RELATION_NAME, &desc);
+		case rel_rfr:
+			EVL_field(0, rpb->rpb_record, f_rfr_rname, &desc);
 			SCL_check_relation(&desc, SCL_control);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
-			set_system_flag(rpb, f_RELATION_FIELDS__SYSTEM_FLAG, 0);
+			set_system_flag(rpb, f_rfr_sys_flag, 0);
 			break;
 
-		case rel_SECURITY_CLASSES:
-			EVL_field(0, rpb->rpb_record, f_SECURITY_CLASSES__SECURITY_CLASS, &desc);
+		case rel_classes:
+			EVL_field(0, rpb->rpb_record, f_cls_class, &desc);
 			DFW_post_work(transaction, dfw_compute_security, &desc, 0);
 			break;
 
-		case rel_FIELDS:
+		case rel_fields:
 			check_control(tdbb);
-			set_system_flag(rpb, f_FIELDS__SYSTEM_FLAG, 0);
+			set_system_flag(rpb, f_fld_sys_flag, 0);
 			break;
 
-		case rel_FILES:
-			EVL_field(0, rpb->rpb_record, f_FILES__FILE_NAME, &desc);
-			if (EVL_field(0, rpb->rpb_record, f_FILES__SHADOW_NUMBER, &desc2) &&
+		case rel_files:
+			EVL_field(0, rpb->rpb_record, f_file_name, &desc);
+			if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
 				MOV_get_long(&desc2, 0)) {
-				EVL_field(0, rpb->rpb_record, f_FILES__FILE_FLAGS, &desc2);
+				EVL_field(0, rpb->rpb_record, f_file_flags, &desc2);
 				if (!(MOV_get_long(&desc2, 0) & FILE_inactive))
 					DFW_post_work(transaction, dfw_add_shadow, &desc, 0);
 			}
@@ -2535,27 +2535,27 @@ void VIO_store(TDBB tdbb, RPB * rpb, JRD_TRA transaction)
 				DFW_post_work(transaction, dfw_add_file, &desc, 0);
 			break;
 
-		case rel_TRIGGERS:
-			EVL_field(0, rpb->rpb_record, f_TRIGGERS__RELATION_NAME, &desc);
+		case rel_triggers:
+			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
 
 			/* check if this  request go through without checking permissions */
 			if (!(request->req_flags & req_ignore_perm))
 				SCL_check_relation(&desc, SCL_control);
 
-			EVL_field(0, rpb->rpb_record, f_TRIGGERS__RELATION_NAME, &desc);
+			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
-			EVL_field(0, rpb->rpb_record, f_TRIGGERS__TRIGGER_NAME, &desc);
+			EVL_field(0, rpb->rpb_record, f_trg_name, &desc);
 			DFW_post_work(transaction, dfw_create_trigger, &desc, 0);
 			break;
 
-		case rel_USER_PRIVILEGES:
-			EVL_field(0, rpb->rpb_record, f_USER_PRIVILEGES__RELATION_NAME, &desc);
-			EVL_field(0, rpb->rpb_record, f_USER_PRIVILEGES__OBJECT_TYPE, &desc2);
+		case rel_priv:
+			EVL_field(0, rpb->rpb_record, f_prv_rname, &desc);
+			EVL_field(0, rpb->rpb_record, f_prv_o_type, &desc2);
 			id = MOV_get_long(&desc2, 0);
 			DFW_post_work(transaction, dfw_grant, &desc, id);
 			break;
 
-		case rel_LOG_FILES:
+		case rel_log:
 			DFW_post_work(transaction, dfw_create_log, 0, 0);
 			break;
                 default:    /* Shut up compiler warnings */

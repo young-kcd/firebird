@@ -35,7 +35,7 @@
 #define NAME(name, id) id,
 
 typedef ENUM nam_i { nam_MIN,
-#include "gen/names.h"
+#include "../jrd/names.h"
 nam_MAX} name_ids;
 
 #undef NAME
@@ -47,7 +47,7 @@ nam_MAX} name_ids;
 static const TEXT* const names[] =
 {
 	0,
-#include "gen/names.h"
+#include "../jrd/names.h"
 };
 #undef NAME
 
@@ -57,7 +57,7 @@ static const TEXT* const names[] =
 
 #define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	type,
 typedef ENUM gflds {
-#include "gen/fields.h"
+#include "../jrd/fields.h"
 gfld_MAX} GFLDS;
 #undef FIELD
 
@@ -82,7 +82,7 @@ typedef struct gfld
 } GFLD;
 
 static const struct gfld gfields[] = {
-#include "gen/fields.h"
+#include "../jrd/fields.h"
 	{ 0, 0, dtype_null, 0, 0, 0, NULL, 0 }
 };
 #undef FIELD
@@ -94,7 +94,7 @@ static const struct gfld gfields[] = {
 #define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)
 #define END_RELATION
 typedef ENUM rids {
-#include "gen/relations.h"
+#include "../jrd/relations.h"
 rel_MAX} RIDS;
 #undef RELATION
 #undef FIELD
@@ -122,7 +122,7 @@ rel_MAX} RIDS;
 
 static const UCHAR relfields[] =
 {
-#include "gen/relations.h"
+#include "../jrd/relations.h"
 	0
 };
 
@@ -142,8 +142,8 @@ typedef struct rtyp {
 #define TYPE(text, type, field)	{ text, type, (UCHAR) field },
 
 #define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2) \
-				{(name), (cs_id),   (UCHAR) nam_CHARACTER_SET_NAME},
-#define CSALIAS(name, cs_id)	{(name), (cs_id),   (UCHAR) nam_CHARACTER_SET_NAME},
+				{(name), (cs_id),   (UCHAR) nam_charset_name},
+#define CSALIAS(name, cs_id)	{(name), (cs_id),   (UCHAR) nam_charset_name},
 #define COLLATION(name, cc_id, cs_id, coll_id, sym)
 #define END_CHARSET
 
