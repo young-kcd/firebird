@@ -345,7 +345,7 @@ void HSHD_remove(DSQL_SYM symbol)
 	}
 
 	unlock_hash();
-	IBERROR(-1, "HSHD_remove failed");
+	ERRD_error(-1, "HSHD_remove failed");
 }
 
 

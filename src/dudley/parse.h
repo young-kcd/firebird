@@ -21,8 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DUDLEY_PARSE_H_
-#define _DUDLEY_PARSE_H_
+#ifndef DUDLEY_PARSE_H
+#define DUDLEY_PARSE_H
 
 #define MATCH(kw)		PARSE_match (kw)
 #define SYNTAX_NODE(type,count)	PARSE_make_node (type, count)
@@ -254,8 +254,9 @@ typedef struct tok {
 #define EXTERN	extern
 #endif
 
-EXTERN tok DDL_token;
+EXTERN	tok DDL_token;
 
 #undef EXTERN
 
-#endif /* _DUDLEY_PARSE_H_ */
+#endif // DUDLEY_PARSE_H
+

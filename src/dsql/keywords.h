@@ -33,7 +33,7 @@ typedef struct tok {
 
 extern "C" {
 
-extern bool KEYWORD_stringIsAToken(const char*);
-extern const TOK* KEYWORD_getTokens();
+bool KEYWORD_stringIsAToken(const char*);
+const TOK* KEYWORD_getTokens();
 
 }

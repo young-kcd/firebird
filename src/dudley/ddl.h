@@ -21,28 +21,21 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _DUDLEY_DDL_H_
-#define _DUDLEY_DDL_H_
+#ifndef DUDLEY_DDL_H
+#define DUDLEY_DDL_H
 
 #include "../jrd/common.h"
 
 #ifdef VMS
-#define BLOCK_SIZE 512
+const int BLOCK_SIZE = 512;
 #else
-#define BLOCK_SIZE 1024
+const int BLOCK_SIZE = 1024;
 #endif
 
-#define MAXSYMLEN	257			/* max length of symbol + terminator */
-#define MAX_PAGE_LEN	16384	/* max allowable length for a database page */
+const int MAXSYMLEN = 257;		// max length of symbol + terminator
+const int MAX_PAGE_LEN = 16384;	// max allowable length for a database page
 
-#define DDL_MSG_FAC	2
-
-#define BUGCHECK(string)	DDL_error (string)
-#define SYNTAX_ERROR(string)	PARSE_syntax_error (string)
-#define IBERROR(string)		DDL_error (string)
-#define LLS_PUSH(object,stack)	DDL_push ((DUDLEY_NOD) object, stack)
-#define LLS_POP(stack)		DDL_pop (stack)
-
+const int DDL_MSG_FAC = 2;
 
 /* Action block.  Do something. */
 
@@ -92,14 +85,14 @@ enum act_t {
 };
 
 typedef struct act {
-	enum act_t act_type;		/* what to do */
-	act* act_next;				/* next action in system */
-	struct dbb *act_object;		/* object in question (dudley_rel, dudley_fld, idx, etc.) */
-	USHORT act_line;			/* line the action started on */
+	enum act_t act_type;		// what to do
+	act* act_next;				// next action in system
+	struct dbb *act_object;		// object in question (dudley_rel, dudley_fld, idx, etc.)
+	USHORT act_line;			// line the action started on
 	USHORT act_flags;
 } *ACT;
 
-#define ACT_ignore	1			/* Ignore the action */
+const int ACT_ignore	= 1;	// Ignore the action
 
 
 /* Context block */
@@ -138,20 +131,23 @@ typedef struct dbb {
 	struct fil *dbb_cache_file;
 } *DBB;
 
-#define DBB_null_description	1
-#define DBB_null_security_class	2
-#define DBB_create_database	4
-#define DBB_drop_log		8
-#define DBB_log_serial		16
-#define DBB_log_preallocated	32
-#define DBB_log_default		64
-#define DBB_cascade		128
-#define DBB_drop_cache		256
+enum dbb_flags_vals {
+	DBB_null_description = 1,
+	DBB_null_security_class = 2,
+	DBB_create_database = 4,
+	DBB_drop_log = 8,
+	DBB_log_serial = 16,
+	DBB_log_preallocated = 32,
+	DBB_log_default = 64,
+	DBB_cascade = 128,
+	DBB_drop_cache = 256
+};
 
-#define DB_VERSION_DDL4 4		/* ods4 db */
-#define DB_VERSION_DDL6 6		/* ods6 db */
-#define DB_VERSION_DDL8 8		/* ods8 db */
-
+enum ods_versions {
+	DB_VERSION_DDL4 = 4, // ods4 db
+	DB_VERSION_DDL6 = 6, // ods6 db
+	DB_VERSION_DDL8 = 8  // ods8 db
+};
 
 /* Field block.  Fields are what farms and databases are all about */
 
@@ -188,17 +184,19 @@ typedef struct dudley_fld {
 	SLONG *fld_ranges;			/* ranges for multi-dim. array */
 } *DUDLEY_FLD;
 
-#define fld_explicit_position	1
-#define fld_modify		2
-#define fld_local		4
-#define fld_null_description	8
-#define fld_null_security_class	16
-#define fld_null_validation	32
-#define fld_explicit_system	64
-#define fld_null_missing_value	128
-#define fld_null_edit_string	256
-#define fld_null_query_name	512
-#define fld_null_query_header	1024
+enum fld_flags_vals {
+	fld_explicit_position = 1,
+	fld_modify = 2,
+	fld_local = 4,
+	fld_null_description = 8,
+	fld_null_security_class = 16,
+	fld_null_validation = 32,
+	fld_explicit_system = 64,
+	fld_null_missing_value = 128,
+	fld_null_edit_string = 256,
+	fld_null_query_name = 512,
+	fld_null_query_header = 1024
+};
 
 
 /* File description block */
@@ -243,11 +241,13 @@ typedef struct funcarg {
 	funcarg* funcarg_next;		/* next field in function */
 } *FUNCARG;
 
-#define FUNCARG_mechanism_value		0
-#define FUNCARG_mechanism_reference	1
-#define FUNCARG_mechanism_descriptor	2
-#define FUNCARG_mechanism_blob_struc	3
-#define FUNCARG_mechanism_sc_array_desc	4
+enum funcarg_mechanism_vals {
+	FUNCARG_mechanism_value = 0,
+	FUNCARG_mechanism_reference,
+	FUNCARG_mechanism_descriptor,
+	FUNCARG_mechanism_blob_struc,
+	FUNCARG_mechanism_sc_array_desc
+};
 
 
 /* Function description block */
@@ -286,14 +286,17 @@ typedef struct dudley_idx {
 	struct sym *idx_field[1];	/* Fields */
 } *DUDLEY_IDX;
 
-#define IDX_active_flag	1
-#define IDX_unique_flag	2
-#define IDX_null_description	4
-#define IDX_type_flag	8
-#define IDX_statistics_flag	16
+enum idx_flags_vals {
+	IDX_active_flag = 1,
+	IDX_unique_flag = 2,
+	IDX_null_description = 4,
+	IDX_type_flag = 8,
+	IDX_statistics_flag = 16
+};
 
-#define IDX_LEN(cnt) (sizeof (struct dudley_idx) + (cnt - 1) * sizeof (((DUDLEY_IDX) NULL)->idx_field[0]))
-
+static inline size_t IDX_LEN(int cnt){
+	return (sizeof (struct dudley_idx) + (cnt - 1) * sizeof (((DUDLEY_IDX) NULL)->idx_field[0]));
+}
 
 /* Linked list stack stuff */
 
@@ -338,8 +341,9 @@ typedef struct dudley_nod {
 	dudley_nod* nod_arg[1];		/* argument */
 } *DUDLEY_NOD;
 
-#define NOD_LEN(cnt) (sizeof(dudley_nod) + (cnt - 1) * sizeof (((DUDLEY_NOD) NULL)->nod_arg[0]))
-
+static inline size_t NOD_LEN(int cnt) {
+	return (sizeof(dudley_nod) + (cnt - 1) * sizeof (((DUDLEY_NOD) NULL)->nod_arg[0]));
+}
 
 /* Relation block, not to be confused with siblings or in-laws */
 
@@ -358,13 +362,15 @@ typedef struct dudley_rel {
 	USHORT rel_flags;
 } *DUDLEY_REL;
 
-#define rel_null_description	1
-#define rel_null_security_class	2
-#define rel_explicit_system	4
-#define rel_marked_for_delete	8
-#define rel_null_ext_file	16
-#define rel_marked_for_modify	32
-#define rel_marked_for_creation	64
+enum rel_flags_values {
+	rel_null_description = 1,
+	rel_null_security_class = 2,
+	rel_explicit_system = 4,
+	rel_marked_for_delete = 8,
+	rel_null_ext_file = 16,
+	rel_marked_for_modify = 32,
+	rel_marked_for_creation = 64
+};
 
 
 /* Security class handling */
@@ -375,7 +381,7 @@ typedef struct scl {
 	struct sce *scl_entries;	/* list of entries */
 } *SCL;
 
-#define SCL_write  2
+const int SCL_write = 2;
 
 /* Security entry */
 
@@ -420,8 +426,7 @@ typedef struct sym {
 	TEXT sym_name[1];			/* space for name, if necessary */
 } *SYM;
 
-#define SYM_LEN sizeof(sym)
-
+const size_t SYM_LEN = sizeof(sym);
 
 /* Trigger block */
 
@@ -439,12 +444,14 @@ typedef enum {
 
 /* these types are used in parsing */
 
-#define trig_pre	0
-#define	trig_post 	1
-#define	trig_sto	2
-#define	trig_mod 	4
-#define	trig_era	8			/* erase defaults to post */
-#define	trig_inact	16
+enum parse_trig_types {
+	trig_pre = 0,
+	trig_post  = 1,
+	trig_sto = 2,
+	trig_mod = 4,
+	trig_era = 8,			// erase defaults to post
+	trig_inact = 16
+};
 
 typedef struct dudley_trg {
 	TRG_T trg_type;
@@ -460,10 +467,12 @@ typedef struct dudley_trg {
 
 /* trg_modify_flag */
 
-#define trg_mflag_onoff         1
-#define trg_mflag_type          2
-#define trg_mflag_seqnum        4
-#define trg_mflag_order		8
+enum trg_modify_flag_vals {
+	trg_mflag_onoff = 1,
+	trg_mflag_type = 2,
+	trg_mflag_seqnum = 4,
+	trg_mflag_order = 8
+};
 
 
 /* Trigger message block */
@@ -513,19 +522,20 @@ typedef struct userpriv {
 
 
 /* user privilege flags */
-
-#define USERPRIV_select	1
-#define USERPRIV_delete	2
-#define USERPRIV_insert	4
-#define USERPRIV_update	8
-#define USERPRIV_grant	16
+enum userpriv_flags_vals {
+	USERPRIV_select = 1,
+	USERPRIV_delete = 2,
+	USERPRIV_insert = 4,
+	USERPRIV_update = 8,
+	USERPRIV_grant = 16
+};
 
 /* rdb$user_privilege.rdb$privilege */
 
-#define UPRIV_SELECT	"SELECT"
-#define UPRIV_DELETE	"DELETE"
-#define UPRIV_INSERT	"INSERT"
-#define UPRIV_UPDATE	"UPDATE"
+static const char* UPRIV_SELECT = "SELECT";
+static const char* UPRIV_DELETE = "DELETE";
+static const char* UPRIV_INSERT = "INSERT";
+static const char* UPRIV_UPDATE = "UPDATE";
 
 /* user name entry */
 
@@ -575,60 +585,62 @@ typedef enum lan_t {
 #define EXTERN	extern
 #endif
 
-EXTERN enum lan_t language;
-EXTERN bool DDL_eof;
-EXTERN USHORT DDL_errors;
-EXTERN USHORT DDL_line;
-EXTERN bool DDL_interactive;
-EXTERN bool DDL_quit;
-EXTERN bool DDL_dynamic;
-EXTERN bool DDL_drop_database;
-EXTERN bool DDL_service;
-EXTERN bool DDL_replace;
-EXTERN bool DDL_description;
-EXTERN bool DDL_extract;
-EXTERN bool DDL_trace;
-EXTERN bool DDL_version;
-EXTERN TEXT *DDL_file_name, DYN_file_name[256], *DB_file_name,
-	DDL_file_string[256], DB_file_string[256];
-EXTERN TEXT *DDL_default_user, *DDL_default_password;
-EXTERN ACT DDL_actions;
-EXTERN DBB database;
+EXTERN	enum lan_t language;
+EXTERN	bool DDL_eof;
+EXTERN	USHORT DDL_errors;
+EXTERN	USHORT DDL_line;
+EXTERN	bool DDL_interactive;
+EXTERN	bool DDL_quit;
+EXTERN	bool DDL_dynamic;
+EXTERN	bool DDL_drop_database;
+EXTERN	bool DDL_service;
+EXTERN	bool DDL_replace;
+EXTERN	bool DDL_description;
+EXTERN	bool DDL_extract;
+EXTERN	bool DDL_trace;
+EXTERN	bool DDL_version;
+EXTERN	TEXT *DDL_file_name, DYN_file_name[256], *DB_file_name,
+		DDL_file_string[256], DB_file_string[256];
+EXTERN	TEXT *DDL_default_user, *DDL_default_password;
+EXTERN	ACT DDL_actions;
+EXTERN	DBB database;
 
 #undef EXTERN
 
 #include "../dudley/ddl_proto.h"
 
-#define s_rse_first	0			/* FIRST clause, if any */
-#define s_rse_boolean	1		/* Boolean clause, if any */
-#define s_rse_sort	2			/* Sort clause, if any */
-#define s_rse_reduced	3		/* Reduced clause, if any */
-#define s_rse_contexts	4		/* Relation block */
-#define s_rse_count	5
+enum nod_val_pos {
+	s_rse_first = 0,		// FIRST clause, if any
+	s_rse_boolean,			// Boolean clause, if any
+	s_rse_sort,				// Sort clause, if any
+	s_rse_reduced,			// Reduced clause, if any
+	s_rse_contexts,			// Relation block
+	s_rse_count,
 
-#define s_stt_rse	0
-#define s_stt_value	1
-#define s_stt_default	2
-#define s_stt_count	3
+	s_stt_rse = 0,
+	s_stt_value,
+	s_stt_default,
+	s_stt_count,
 
-#define s_fld_field	0			/* Field block */
-#define s_fld_context	1		/* Context block */
-#define s_fld_name	2
-#define s_fld_subs	3
-#define s_fld_count	4
+	s_fld_field = 0,		// Field block
+	s_fld_context,			// Context block
+	s_fld_name,
+	s_fld_subs,
+	s_fld_count,
 
-#define s_if_boolean	0
-#define s_if_true	1
-#define s_if_false	2
+	s_if_boolean = 0,
+	s_if_true,
+	s_if_false,
 
-#define s_for_rse	0
-#define s_for_action	1
+	s_for_rse = 0,
+	s_for_action,
 
-#define s_store_rel	0
-#define s_store_action	1
+	s_store_rel = 0,
+	s_store_action,
 
-#define s_mod_old_ctx	0
-#define s_mod_new_ctx	1
-#define s_mod_action	2
+	s_mod_old_ctx = 0,
+	s_mod_new_ctx,
+	s_mod_action,
+};
 
-#endif /* _DUDLEY_DDL_H_ */
+#endif // DUDLEY_DDL_H

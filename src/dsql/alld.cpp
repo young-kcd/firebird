@@ -79,7 +79,7 @@ static Firebird::vector<DsqlMemoryPool*> *pools = 0;
 void ALLD_fini()
 {
 	if (!init_flag) {
-		BUGCHECK ("ALLD_fini - finishing before starting");
+		ERRD_bugcheck("ALLD_fini - finishing before starting");
 	}
 
 	for (pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
@@ -162,7 +162,7 @@ DsqlMemoryPool* DsqlMemoryPool::createPool()
 		}
 	}
 
-	BUGCHECK ("ALLD_fini - finishing before starting");
+	ERRD_bugcheck("ALLD_fini - finishing before starting");
 	return NULL; //silencer
 }
 

@@ -34,7 +34,6 @@
 #include "../dudley/ddl.h"
 #include "../dudley/parse.h"
 #include "../jrd/acl.h"
-#include "../intl/kanji.h"
 #include "../wal/wal.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/exe_proto.h"
@@ -45,14 +44,14 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 
-#define PROMPT			"GDEF> "
-#define CONTINUATION		"CON>  "
-#define GDS_NAME_LEN		31
+const char* PROMPT			= "GDEF> ";
+const char* CONTINUATION	= "CON>  ";
+const int GDS_NAME_LEN		= 31;
 
-#define MAX_DIMENSION		16
+const int MAX_DIMENSION		= 16;
 #ifdef FLINT_CACHE
-#define MIN_CACHE_BUFFERS	250
-#define DEF_CACHE_BUFFERS	1000
+const int MIN_CACHE_BUFFERS	= 250;
+const int DEF_CACHE_BUFFERS	= 1000;
 #endif
 
 #define STUFF(c)	*p++ = c
@@ -91,7 +90,7 @@ static TRG_T trig_table[] = {
 	trg_erase
 };
 
-extern TEXT *DDL_prompt;
+extern const TEXT *DDL_prompt;
 
 static bool check_filename(SYM, bool);
 static SYM copy_symbol(SYM);
@@ -1072,7 +1071,7 @@ static void define_index(void)
 	stack = NULL;
 
 	while (true) {
-		LLS_PUSH(PARSE_symbol(tok_ident), &stack);
+		LLS_PUSH((DUDLEY_NOD) PARSE_symbol(tok_ident), &stack);
 		count++;
 		if (!MATCH(KW_COMMA))
 			break;
@@ -1585,7 +1584,7 @@ static void define_view(void)
 
 	contexts = (LLS) relation->rel_rse->nod_arg[s_rse_contexts];
 	my_context = make_context(0, relation);
-	LLS_PUSH(my_context, &contexts);
+	LLS_PUSH((DUDLEY_NOD) my_context, &contexts);
 	relation->rel_rse->nod_arg[s_rse_contexts] = (DUDLEY_NOD) contexts;
 
 	rel_actions = action = make_action(act_a_relation, (DBB) relation);
@@ -2474,7 +2473,7 @@ static void modify_field(void)
 	DUDLEY_FLD field;
 
 	if (!local_context)
-		LLS_PUSH(DDL_alloc(sizeof(dudley_ctx)), &local_context);
+		LLS_PUSH((DUDLEY_NOD) DDL_alloc(sizeof(dudley_ctx)), &local_context);
 
 /* Lookup global field */
 
@@ -3387,7 +3386,7 @@ static void parse_field_clauses( DUDLEY_FLD field)
 			MATCH(KW_IS);
 			stack = NULL;
 			for (;;) {
-				LLS_PUSH(PARSE_symbol(tok_quoted), &stack);
+				LLS_PUSH((DUDLEY_NOD) PARSE_symbol(tok_quoted), &stack);
 				if (!MATCH(KW_SLASH))
 					break;
 			}

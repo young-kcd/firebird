@@ -271,7 +271,7 @@ static void expand_global_field( DUDLEY_FLD field)
 
 	if (!request_context || !(context = lookup_context(0, request_context))) {
 		context = (DUDLEY_CTX) DDL_alloc(sizeof(dudley_ctx));
-		LLS_PUSH(context, &request_context);
+		LLS_PUSH((DUDLEY_NOD) context, &request_context);
 	}
 
 	context->ctx_field = field;
@@ -324,7 +324,7 @@ static void expand_relation( DUDLEY_REL relation)
 	request_context = NULL;
 
 	if (!relation->rel_rse)
-		LLS_PUSH(make_context(NULL, relation, context_id++),
+		LLS_PUSH((DUDLEY_NOD) make_context(NULL, relation, context_id++),
 				 &request_context);
 	else {
 		rse = relation->rel_rse;
@@ -340,14 +340,14 @@ static void expand_relation( DUDLEY_REL relation)
 		while (stack) {
 			context = (DUDLEY_CTX) LLS_POP(&stack);
 			if (!context->ctx_view_rse)
-				LLS_PUSH(context, &request_context);
+				LLS_PUSH((DUDLEY_NOD) context, &request_context);
 		}
-		LLS_PUSH(my_context, &contexts);
+		LLS_PUSH((DUDLEY_NOD) my_context, &contexts);
 		resolve_rse(relation->rel_rse, &contexts);
 
 		/* Put view context back on stack for global field resolution to follow */
 
-		LLS_PUSH(my_context, &request_context);
+		LLS_PUSH((DUDLEY_NOD) my_context, &request_context);
 		my_context->ctx_view_rse = FALSE;
 	}
 }
@@ -380,15 +380,15 @@ static void expand_trigger( DUDLEY_TRG trigger)
 		&& (trigger->trg_type != trg_post_store)) {
 		if (!old)
 			old = make_context("OLD", relation, 0);
-		LLS_PUSH(old, &contexts);
+		LLS_PUSH((DUDLEY_NOD) old, &contexts);
 	}
 
 	if ((trigger->trg_type != trg_erase)
 		&& (trigger->trg_type != trg_pre_erase)) {
 		if (!new_ctx)
 			new_ctx = make_context("NEW", relation, 1);
-		LLS_PUSH(new_ctx, &contexts);
-		LLS_PUSH(new_ctx, &update);
+		LLS_PUSH((DUDLEY_NOD) new_ctx, &contexts);
+		LLS_PUSH((DUDLEY_NOD) new_ctx, &update);
 	}
 
 	resolve(trigger->trg_statement, contexts, update);
@@ -782,7 +782,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, LLS right, LLS left)
 		if (!HSH_typed_lookup
 			(name->sym_string, name->sym_length,
 			 SYM_relation)) expand_error(107, name->sym_string, 0, 0, 0, 0);	/* msg 107: relation %s is not defined */
-		LLS_PUSH(context, &left);
+		LLS_PUSH((DUDLEY_NOD) context, &left);
 		sub = SYNTAX_NODE(nod_context, 1);
 		sub->nod_arg[0] = (DUDLEY_NOD) context;
 		node->nod_arg[s_store_rel] = sub;
@@ -805,7 +805,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, LLS right, LLS left)
 		context->ctx_name = symbol;
 		context->ctx_context_id = ++context_id;
 		context->ctx_relation = old_context->ctx_relation;
-		LLS_PUSH(context, &left);
+		LLS_PUSH((DUDLEY_NOD) context, &left);
 		node->nod_arg[s_mod_action] =
 			resolve(node->nod_arg[s_mod_action], right, left);
 		return node;
@@ -912,14 +912,16 @@ static void resolve_rse( DUDLEY_NOD rse, LLS * stack)
 	for (contexts = temp; contexts; contexts = contexts->lls_next) {
 		context = (DUDLEY_CTX) contexts->lls_object;
 		name = context->ctx_relation->rel_name;
-		if (!
-			(symbol =
-			 HSH_typed_lookup(name->sym_string, name->sym_length,
-							  SYM_relation))
-|| !symbol->sym_object) expand_error(110, name->sym_string, 0, 0, 0, 0);	/* msg 110: relation %s is not defined */
+		if (!(symbol = HSH_typed_lookup(name->sym_string, name->sym_length,
+										SYM_relation))
+			|| !symbol->sym_object)
+		{
+			expand_error(110, name->sym_string, 0, 0, 0, 0);
+			// msg 110: relation %s is not defined
+		}
 		else
 			context->ctx_relation = (DUDLEY_REL) symbol->sym_object;
-		LLS_PUSH(context, stack);
+		LLS_PUSH((DUDLEY_NOD) context, stack);
 	}
 
 	if (sub = rse->nod_arg[s_rse_boolean])

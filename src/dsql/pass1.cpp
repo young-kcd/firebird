@@ -4498,7 +4498,8 @@ static DSQL_NOD pass1_label(DSQL_REQ request, DSQL_NOD input)
 		}
 		else {
 			// store label name, if specified
-			LLS_PUSH(label_string, &request->req_labels);
+#pragma message("BRS Cast from char* to blk* ??")
+			LLS_PUSH((blk*) label_string, &request->req_labels);
 			number = request->req_loop_level;
 		}
 	}

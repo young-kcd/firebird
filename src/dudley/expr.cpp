@@ -135,7 +135,7 @@ DUDLEY_NOD EXPR_rse(bool view_flag)
 		node->nod_arg[s_rse_first] = EXPR_value(0, NULL);
 
 	while (true) {
-		LLS_PUSH(parse_relation(), &stack);
+		LLS_PUSH((DUDLEY_NOD) parse_relation(), &stack);
 		if (MATCH(KW_OVER)) {
 			for (;;) {
 				if (!stack->lls_next) {
@@ -500,7 +500,7 @@ static DUDLEY_NOD parse_field(void)
 
 	while (true) {
 		LEX_real();
-		LLS_PUSH(PARSE_symbol(tok_ident), &stack);
+		LLS_PUSH((DUDLEY_NOD) PARSE_symbol(tok_ident), &stack);
 		if (!MATCH(KW_DOT))
 			break;
 	}
@@ -1088,7 +1088,7 @@ static DUDLEY_NOD parse_sort(void)
 		else if (MATCH(KW_DESCENDING))
 			direction = 1;
 		LLS_PUSH(EXPR_value(0, NULL), &stack);
-		LLS_PUSH((SLONG) direction, &stack);
+		LLS_PUSH((DUDLEY_NOD) (SLONG) direction, &stack);
 		if (!MATCH(KW_COMMA))
 			break;
 	}

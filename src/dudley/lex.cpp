@@ -34,7 +34,6 @@
 #include "../jrd/gds.h"
 #include "../dudley/ddl.h"
 #include "../dudley/parse.h"
-#include "../intl/kanji.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/hsh_proto.h"
 #include "../dudley/lex_proto.h"
@@ -45,9 +44,9 @@
 #endif
 
 #ifdef SMALL_FILE_NAMES
-#define SCRATCH		"fb_q"
+const char* SCRATCH = "fb_q";
 #else
-#define SCRATCH		"fb_query_"
+const char* SCRATCH = "fb_query_";
 #endif
 
 // needed for unlink in MinGW 3.0 rc2
@@ -55,7 +54,7 @@
 #include <io.h>
 #endif
 
-extern TEXT *DDL_prompt;
+extern const TEXT *DDL_prompt;
 
 
 static int nextchar(void);
@@ -67,19 +66,21 @@ static int skip_white(void);
 static IB_FILE *input_file, *trace_file;
 static TEXT *DDL_char, DDL_buffer[256], trace_file_name[128];
 
-#define CHR_ident	1
-#define CHR_letter	2
-#define CHR_digit	4
-#define CHR_quote	8
-#define CHR_white	16
-#define CHR_eol		32
+enum chr_types {
+	CHR_ident = 1,
+	CHR_letter = 2,
+	CHR_digit = 4,
+	CHR_quote = 8,
+	CHR_white = 16,
+	CHR_eol = 32,
 
-#define CHR_IDENT	CHR_ident
-#define CHR_LETTER	CHR_letter + CHR_ident
-#define CHR_DIGIT	CHR_digit + CHR_ident
-#define CHR_QUOTE	CHR_quote
-#define CHR_WHITE	CHR_white
-#define CHR_EOL		CHR_white
+	CHR_IDENT = CHR_ident,
+	CHR_LETTER = CHR_letter + CHR_ident,
+	CHR_DIGIT = CHR_digit + CHR_ident,
+	CHR_QUOTE = CHR_quote,
+	CHR_WHITE = CHR_white,
+	CHR_EOL = CHR_white
+};
 
 static SCHAR classes[256] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -239,15 +240,16 @@ void LEX_init( void *file)
  **************************************/
 
 #if !(defined WIN_NT)
-	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, 0);
+	trace_file = (IB_FILE*) gds__temp_file(TRUE, const_cast<TEXT*>(SCRATCH), 0);
 #else
-	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
+	trace_file = (IB_FILE*) gds__temp_file(TRUE, const_cast<TEXT*>(SCRATCH),
+											trace_file_name);
 #endif
-	if (trace_file == (IB_FILE *) - 1)
+	if (trace_file == (IB_FILE*) - 1)
 		DDL_err(276, NULL, NULL, NULL, NULL, NULL);
 		/* msg 276: couldn't open scratch file */
 
-	input_file = (IB_FILE *) file;
+	input_file = (IB_FILE*) file;
 	DDL_char = DDL_buffer;
 	DDL_token.tok_position = 0;
 	DDL_description = false;

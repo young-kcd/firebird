@@ -24,13 +24,13 @@
 #ifndef DUDLEY_LEX_PROTO_H
 #define DUDLEY_LEX_PROTO_H
 
-extern tok* LEX_filename(void);
-extern void LEX_fini(void);
-extern void LEX_flush(void);
-extern void LEX_get_text(UCHAR *, TXT);
-extern void LEX_init(void *);
-extern void LEX_put_text(FRBRD *, TXT);
-extern void LEX_real(void);
-extern tok* LEX_token(void);
+tok*	LEX_filename(void);
+void	LEX_fini(void);
+void	LEX_flush(void);
+void	LEX_get_text(UCHAR *, TXT);
+void	LEX_init(void *);
+void	LEX_put_text(FRBRD *, TXT);
+void	LEX_real(void);
+tok*	LEX_token(void);
 
 #endif // DUDLEY_LEX_PROTO_H

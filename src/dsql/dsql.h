@@ -43,9 +43,6 @@
 
 #ifdef DSQL_DEBUG
 DEFINE_TRACE_ROUTINE(dsql_trace);
-#define DSQL_TRACE(args) dsql_trace args
-#else
-#define DSQL_TRACE(args) /* nothing */
 #endif
 
 //! Dynamic SQL Error Status Block
@@ -62,10 +59,7 @@ typedef err* ERR;
 #include "../dsql/blk.h"
 
 // generic block used as header to all allocated structures
-
-#ifndef INCLUDE_FB_BLK
 #include "../include/fb_blk.h"
-#endif
 
 #include "../dsql/sym.h"
 
@@ -93,9 +87,12 @@ public:
 };
 typedef dsql_lls* DLLS;
 
-#define LLS_PUSH(object,stack)		DsqlMemoryPool::ALLD_push ((BLK) object, stack)
-#define LLS_POP(stack)			DsqlMemoryPool::ALLD_pop (stack)
-
+inline void LLS_PUSH(blk* object, dsql_lls** stack){
+	DsqlMemoryPool::ALLD_push(object, stack);
+}
+inline blk* LLS_POP(dsql_lls** stack){
+	return DsqlMemoryPool::ALLD_pop(stack);
+}
 
 
 //======================================================================
@@ -512,7 +509,7 @@ typedef dsql_ctx* DSQL_CTX;
 
 // Flag values for ctx_flags
 
-#define CTX_outer_join		(1<<0)	// reference is part of an outer join
+const USHORT CTX_outer_join = 0x01;	// reference is part of an outer join
 
 //! Aggregate/union map block to map virtual fields to their base
 //! TMN: NOTE! This datatype should definitely be renamed!
@@ -604,13 +601,10 @@ typedef tsql* TSQL;
 
 // macros for error generation
 
-#define BUGCHECK(string)	ERRD_bugcheck(string)
-#define IBERROR(code, string)	ERRD_error(code, string)
-//#define BLKCHK(blk, type) if (blk->blk_type != (SCHAR) type) BUGCHECK ("expected type")
-#define BLKCHK(blk, type) if (MemoryPool::blk_type(blk) != (SSHORT) type) BUGCHECK ("expected type")
+#define BLKCHK(blk, type) if (MemoryPool::blk_type(blk) != (SSHORT) type) ERRD_bugcheck("expected type")
 
 #ifdef DSQL_DEBUG
-extern unsigned DSQL_debug;
+	extern unsigned DSQL_debug;
 #endif
 
 #ifdef DEV_BUILD

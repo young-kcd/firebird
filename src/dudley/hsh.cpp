@@ -29,7 +29,7 @@
 #include "../dudley/hsh_proto.h"
 
 
-#define HASH_SIZE	101
+const int HASH_SIZE = 101;
 
 static USHORT hash(SCHAR *, USHORT);
 static bool scompare(SCHAR *, USHORT, SCHAR *,

@@ -30,7 +30,7 @@
  */
 
 /*
-$Id: utld.cpp,v 1.17 2003-10-01 18:11:23 brodsom Exp $
+$Id: utld.cpp,v 1.18 2003-10-03 01:59:50 brodsom Exp $
 */
 
 #include "firebird.h"
@@ -95,12 +95,12 @@ const int  DSQL_FAILURE_SPACE = 2048;
     @param return_index
 
  **/
-ISC_STATUS DLL_EXPORT UTLD_parse_sql_info(
+ISC_STATUS	UTLD_parse_sql_info(
 				ISC_STATUS * status,
 				USHORT dialect,
-				SCHAR * info,
-				XSQLDA * xsqlda,
-				USHORT * return_index)
+				SCHAR* info,
+				XSQLDA* xsqlda,
+				USHORT* return_index)
 {
 	XSQLVAR *xvar, xsqlvar;
 	SQLDA *sqlda;
@@ -247,14 +247,15 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sql_info(
     @param clause
 
  **/
-ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
-								   DASUP dasup,
-								   USHORT * blr_length,
-								   USHORT * msg_type,
-								   USHORT * msg_length,
-								   USHORT dialect,
-								   XSQLDA * xsqlda,
-								   USHORT clause)
+ISC_STATUS	UTLD_parse_sqlda(
+				ISC_STATUS * status,
+				DASUP dasup,
+				USHORT * blr_length,
+				USHORT * msg_type,
+				USHORT * msg_length,
+				USHORT dialect,
+				XSQLDA * xsqlda,
+				USHORT clause)
 {
 	USHORT i, n, blr_len, par_count, dtype, msg_len, len, align,
 		null_offset;
@@ -665,7 +666,9 @@ ISC_STATUS DLL_EXPORT UTLD_parse_sqlda(ISC_STATUS * status,
     @param vector
 
  **/
-void DLL_EXPORT UTLD_save_status_strings( ISC_STATUS * vector)
+void	UTLD_save_status_strings(
+			ISC_STATUS * vector
+		)
 {
 	TEXT *p;
 	USHORT l;

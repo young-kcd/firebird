@@ -128,7 +128,7 @@ static UCHAR*	var_info(DSQL_MSG, const UCHAR*, const UCHAR*, UCHAR*, UCHAR*, USH
 extern DSQL_NOD DSQL_parse;
 
 #ifdef DSQL_DEBUG
-unsigned DSQL_debug;
+	unsigned DSQL_debug;
 #endif
 
 static bool init_flag = false;
@@ -251,30 +251,30 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*		user_status,
 
 //////////////////////////////////////////////////////////////////
 
-ISC_STATUS DLL_EXPORT
-dsql8_allocate_statement(	ISC_STATUS*    user_status,
-					FRBRD**    db_handle,
-					dsql_req** req_handle)
+ISC_STATUS	dsql8_allocate_statement(
+				ISC_STATUS*    user_status,
+				FRBRD**    db_handle,
+				dsql_req** req_handle)
 {
 	return GDS_DSQL_ALLOCATE_CPP(user_status, db_handle, req_handle);
 }
 
 //////////////////////////////////////////////////////////////////
 
-ISC_STATUS DLL_EXPORT
-dsql8_execute(	ISC_STATUS*    user_status,
-					WHY_TRA*   trans_handle,
-					dsql_req** req_handle,
-					USHORT     in_blr_length,
-					SCHAR*     in_blr,
-					USHORT     in_msg_type,
-					USHORT     in_msg_length,
-					SCHAR*     in_msg,
-					USHORT     out_blr_length,
-					SCHAR*     out_blr,
-					USHORT     out_msg_type,
-					USHORT     out_msg_length,
-					SCHAR*     out_msg)
+ISC_STATUS	dsql8_execute(
+				ISC_STATUS*    user_status,
+				WHY_TRA*   trans_handle,
+				dsql_req** req_handle,
+				USHORT     in_blr_length,
+				SCHAR*     in_blr,
+				USHORT     in_msg_type,
+				USHORT     in_msg_length,
+				SCHAR*     in_msg,
+				USHORT     out_blr_length,
+				SCHAR*     out_blr,
+				USHORT     out_msg_type,
+				USHORT     out_msg_length,
+				SCHAR*     out_msg)
 {
 	return GDS_DSQL_EXECUTE_CPP(user_status,
 								trans_handle,
@@ -293,8 +293,8 @@ dsql8_execute(	ISC_STATUS*    user_status,
 
 //////////////////////////////////////////////////////////////////
 
-ISC_STATUS DLL_EXPORT
-dsql8_fetch(	ISC_STATUS*    user_status,
+ISC_STATUS	dsql8_fetch(
+				ISC_STATUS*    user_status,
 				dsql_req** req_handle,
 				USHORT     blr_length,
 				SCHAR*     blr,
@@ -302,9 +302,9 @@ dsql8_fetch(	ISC_STATUS*    user_status,
 				USHORT     msg_length,
 				SCHAR*     dsql_msg
 #ifdef SCROLLABLE_CURSORS
-				 , USHORT direction, SLONG offset
+				, USHORT direction, SLONG offset
 #endif
-				 )
+				)
 {
 	return GDS_DSQL_FETCH_CPP(	user_status,
 								req_handle,
@@ -321,8 +321,8 @@ dsql8_fetch(	ISC_STATUS*    user_status,
 
 //////////////////////////////////////////////////////////////////
 
-ISC_STATUS DLL_EXPORT
-dsql8_free_statement(	ISC_STATUS*    user_status,
+ISC_STATUS	dsql8_free_statement(
+				ISC_STATUS*    user_status,
 				dsql_req** req_handle,
 				USHORT     option)
 {
@@ -331,8 +331,8 @@ dsql8_free_statement(	ISC_STATUS*    user_status,
 
 //////////////////////////////////////////////////////////////////
 
-ISC_STATUS DLL_EXPORT
-dsql8_insert(ISC_STATUS*				user_status,
+ISC_STATUS	dsql8_insert(
+				ISC_STATUS*				user_status,
 				dsql_req**			req_handle,
 				USHORT				blr_length,
 				SCHAR*				blr,
@@ -351,17 +351,17 @@ dsql8_insert(ISC_STATUS*				user_status,
 
 //////////////////////////////////////////////////////////////////
 
-ISC_STATUS DLL_EXPORT
-dsql8_prepare(	ISC_STATUS*				user_status,
-					WHY_TRA*			trans_handle,
-					dsql_req**	req_handle,
-					USHORT				length,
-					TEXT*				string,
-					USHORT				dialect,
-					USHORT				item_length,
-					const SCHAR*		items,
-					USHORT				buffer_length,
-					SCHAR*				buffer)
+ISC_STATUS	dsql8_prepare(
+				ISC_STATUS*				user_status,
+				WHY_TRA*			trans_handle,
+				dsql_req**	req_handle,
+				USHORT				length,
+				TEXT*				string,
+				USHORT				dialect,
+				USHORT				item_length,
+				const SCHAR*		items,
+				USHORT				buffer_length,
+				SCHAR*				buffer)
 {
 	return GDS_DSQL_PREPARE_CPP(user_status,
 								trans_handle,
@@ -378,13 +378,13 @@ dsql8_prepare(	ISC_STATUS*				user_status,
 
 //////////////////////////////////////////////////////////////////
 
-ISC_STATUS DLL_EXPORT
-dsql8_sql_info(	ISC_STATUS*				user_status,
-					dsql_req**			req_handle,
-					USHORT				item_length,
-					const SCHAR*		items,
-					USHORT				info_length,
-					SCHAR*				info)
+ISC_STATUS	dsql8_sql_info(
+				ISC_STATUS*				user_status,
+				dsql_req**			req_handle,
+				USHORT				item_length,
+				const SCHAR*		items,
+				USHORT				info_length,
+				SCHAR*				info)
 {
 	return GDS_DSQL_SQL_INFO_CPP(	user_status,
 									req_handle,
@@ -396,11 +396,11 @@ dsql8_sql_info(	ISC_STATUS*				user_status,
 
 //////////////////////////////////////////////////////////////////
 
-ISC_STATUS DLL_EXPORT
-dsql8_set_cursor(ISC_STATUS*		user_status,
-					dsql_req**	req_handle,
-					TEXT*		input_cursor,
-					USHORT		type)
+ISC_STATUS	dsql8_set_cursor(
+				ISC_STATUS*		user_status,
+				dsql_req**	req_handle,
+				TEXT*		input_cursor,
+				USHORT		type)
 {
 	return GDS_DSQL_SET_CURSOR_CPP(user_status,
 									req_handle,
@@ -493,19 +493,20 @@ GDS_DSQL_ALLOCATE_CPP(	ISC_STATUS*    user_status,
     @param out_msg
 
  **/
-ISC_STATUS DLL_EXPORT GDS_DSQL_EXECUTE_CPP(ISC_STATUS*		user_status,
-									   FRBRD**		trans_handle,
-									   dsql_req**	req_handle,
-									   USHORT		in_blr_length,
-									   UCHAR*		in_blr,
-									   USHORT		in_msg_type,
-									   USHORT		in_msg_length,
-									   UCHAR*		in_msg,
-									   USHORT		out_blr_length,
-									   UCHAR*		out_blr,
-									   USHORT		out_msg_type,
-									   USHORT		out_msg_length,
-									   UCHAR*		out_msg)
+ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
+				ISC_STATUS*		user_status,
+				FRBRD**		trans_handle,
+				dsql_req**	req_handle,
+				USHORT		in_blr_length,
+				UCHAR*		in_blr,
+				USHORT		in_msg_type,
+				USHORT		in_msg_length,
+				UCHAR*		in_msg,
+				USHORT		out_blr_length,
+				UCHAR*		out_blr,
+				USHORT		out_msg_type,
+				USHORT		out_msg_length,
+				UCHAR*		out_msg)
 {
 	DSQL_REQ request;
 	OPN open_cursor;
@@ -743,22 +744,23 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 	return return_success();
 }
 
-ISC_STATUS DLL_EXPORT dsql8_execute_immediate(ISC_STATUS*	user_status,
-					 WHY_DBB*	db_handle,
-					 WHY_TRA*	trans_handle,
-					 USHORT		length,
-					 TEXT*		string,
-					 USHORT		dialect,
-					 USHORT		in_blr_length,
-					 SCHAR*		in_blr,
-					 USHORT		in_msg_type,
-					 USHORT		in_msg_length,
-					 SCHAR*		in_msg,
-					 USHORT		out_blr_length,
-					 SCHAR*		out_blr,
-					 USHORT		out_msg_type,
-					 USHORT		out_msg_length,
-					 SCHAR*		out_msg)
+ISC_STATUS	dsql8_execute_immediate(
+				ISC_STATUS*	user_status,
+				WHY_DBB*	db_handle,
+				WHY_TRA*	trans_handle,
+				USHORT		length,
+				TEXT*		string,
+				USHORT		dialect,
+				USHORT		in_blr_length,
+				SCHAR*		in_blr,
+				USHORT		in_msg_type,
+				USHORT		in_msg_length,
+				SCHAR*		in_msg,
+				USHORT		out_blr_length,
+				SCHAR*		out_blr,
+				USHORT		out_msg_type,
+				USHORT		out_msg_length,
+				SCHAR*		out_msg)
 {
 /**************************************
  *

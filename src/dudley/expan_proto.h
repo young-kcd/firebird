@@ -24,6 +24,6 @@
 #ifndef DUDLEY_EXPAN_PROTO_H
 #define DUDLEY_EXPAN_PROTO_H
 
-extern void EXP_actions(void);
+void EXP_actions(void);
 
 #endif // DUDLEY_EXPAN_PROTO_H

@@ -24,12 +24,12 @@
 #ifndef DUDLEY_EXE_PROTO_H
 #define DUDLEY_EXE_PROTO_H
 
-extern SLONG EXE_check_db_version(DBB);
-extern void EXE_create_database(DBB);
-extern void EXE_drop_database(DBB);
-extern void EXE_execute(void);
-extern void EXE_fini(DBB);
-extern void EXE_modify_database(DBB);
-extern bool EXE_relation(DUDLEY_REL);
+SLONG	EXE_check_db_version(DBB);
+void	EXE_create_database(DBB);
+void	EXE_drop_database(DBB);
+void	EXE_execute(void);
+void	EXE_fini(DBB);
+void	EXE_modify_database(DBB);
+bool	EXE_relation(DUDLEY_REL);
 
 #endif // DUDLEY_EXE_PROTO_H

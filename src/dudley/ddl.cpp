@@ -51,7 +51,7 @@
 #include <io.h>
 #endif
 
-TEXT *DDL_prompt;
+const TEXT *DDL_prompt;
 
 static LLS free_stack;
 static TEXT DDL_message[256];
@@ -60,24 +60,26 @@ static TEXT DDL_message[256];
 #define FOPEN_INPUT_TYPE	"r"
 #endif
 
-#define DDL_EXT		".gdl"		/* normal extension for a ddl file */
-#define MAX_ERRORS	50
+const char* DDL_EXT		= ".gdl";	// normal extension for a ddl file
+const int MAX_ERRORS	= 50;
 
-#define IN_SW_GDEF_0 		0	/* null switch value */
-#define IN_SW_GDEF_G 		1	/* generate DDL from a database file */
-#define IN_SW_GDEF_R 		2	/* replace existing database */
-#define IN_SW_GDEF_D 		3	/* generate dynamic DDL */
-#define IN_SW_GDEF_Z 		4	/* print version number */
-#define IN_SW_GDEF_T 		5	/* print tokens as they are read */
-#define	IN_SW_GDEF_C		7	/* source is C */
-#define	IN_SW_GDEF_F		8	/* source is FORTRAN */
-#define	IN_SW_GDEF_P 		9	/* source is PASCAL */
-#define IN_SW_GDEF_COB 		10	/* source is (shudder) cobol */
-#define IN_SW_GDEF_ANSI 	11	/* source is (worse and worse!) ansi format */
-#define IN_SW_GDEF_ADA 		14	/* source is ada */
-#define IN_SW_GDEF_CXX 		15	/* source is C++ */
-#define IN_SW_GDEF_USER		17	/* user name for PC security */
-#define IN_SW_GDEF_PASSWORD	18	/* password for PC security */
+enum in_sw_values {
+	IN_SW_GDEF_0 = 0,		// null switch value
+	IN_SW_GDEF_G,			// generate DDL from a database file
+	IN_SW_GDEF_R,			// replace existing database
+	IN_SW_GDEF_D,			// generate dynamic DDL
+	IN_SW_GDEF_Z,			// print version number
+	IN_SW_GDEF_T,			// print tokens as they are read
+	IN_SW_GDEF_C = 7,		// source is C
+	IN_SW_GDEF_F,			// source is FORTRAN
+	IN_SW_GDEF_P, 			// source is PASCAL
+	IN_SW_GDEF_COB, 		// source is (shudder) cobol
+	IN_SW_GDEF_ANSI,		// source is (worse and worse!) ansi format
+	IN_SW_GDEF_ADA = 14,	// source is ada
+	IN_SW_GDEF_CXX,			// source is C++
+	IN_SW_GDEF_USER = 17,	// user name for PC security
+	IN_SW_GDEF_PASSWORD		// password for PC security
+};
 
 static in_sw_tab_t gdef_in_sw_table[] = {
 	{ IN_SW_GDEF_G, 0, "EXTRACT", 0, 0, 0, FALSE, 0, 0,
@@ -346,7 +348,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		/* then handle the case where the input already ends in .GDL */
 
 		if (*p == '.') {
-			for (q = DDL_EXT; UPPER(*p) == UPPER(*q); p++, q++)
+			for (q = const_cast<TEXT*>(DDL_EXT); UPPER(*p) == UPPER(*q); p++, q++)
 				if (!*p) {
 					input_file = ib_fopen(DDL_file_name, FOPEN_INPUT_TYPE);
 					if (!input_file) {

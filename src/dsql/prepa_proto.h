@@ -29,8 +29,7 @@ extern "C" {
 #endif
 
 
-extern int DLL_EXPORT PREPARSE_execute(ISC_STATUS *, FRBRD **, FRBRD **,
-									   USHORT, SCHAR *, BOOLEAN *, USHORT);
+int PREPARSE_execute(ISC_STATUS *, FRBRD **, FRBRD **, USHORT, SCHAR *, BOOLEAN *, USHORT);
 
 #ifdef __cplusplus
 } /* extern "C" */

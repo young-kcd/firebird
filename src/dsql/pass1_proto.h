@@ -24,10 +24,10 @@
 #ifndef DSQL_PASS1_PROTO_H
 #define DSQL_PASS1_PROTO_H
 
-extern dsql_ctx* PASS1_make_context(dsql_req*, dsql_nod*);
-extern dsql_nod* PASS1_node(dsql_req*, dsql_nod*, bool);
-extern dsql_nod* PASS1_rse(dsql_req*, dsql_nod*, dsql_nod*, DSQL_NOD update_lock);
-extern dsql_nod* PASS1_statement(dsql_req*, dsql_nod*, bool);
+dsql_ctx* PASS1_make_context(dsql_req*, dsql_nod*);
+dsql_nod* PASS1_node(dsql_req*, dsql_nod*, bool);
+dsql_nod* PASS1_rse(dsql_req*, dsql_nod*, dsql_nod*, DSQL_NOD update_lock);
+dsql_nod* PASS1_statement(dsql_req*, dsql_nod*, bool);
 
 #endif // DSQL_PASS1_PROTO_H
 

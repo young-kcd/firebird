@@ -26,15 +26,15 @@
 
 #include "../dudley/parse.h"
 
-extern void PARSE_actions(void);
-extern void PARSE_error(USHORT, TEXT *, TEXT *);
-extern FUNC PARSE_function(int);
-extern enum kwwords PARSE_keyword(void);
-extern DUDLEY_NOD PARSE_make_list(LLS);
-extern DUDLEY_NOD PARSE_make_node(enum nod_t, USHORT);
-extern bool PARSE_match(enum kwwords);
-extern int PARSE_number(void);
-extern DUDLEY_REL PARSE_relation(void);
-extern SYM PARSE_symbol(enum tok_t);
+void		PARSE_actions(void);
+void		PARSE_error(USHORT, TEXT *, TEXT *);
+FUNC		PARSE_function(int);
+enum kwwords PARSE_keyword(void);
+DUDLEY_NOD	PARSE_make_list(LLS);
+DUDLEY_NOD	PARSE_make_node(enum nod_t, USHORT);
+bool		PARSE_match(enum kwwords);
+int			PARSE_number(void);
+DUDLEY_REL	PARSE_relation(void);
+SYM			PARSE_symbol(enum tok_t);
 
 #endif // DUDLEY_PARSE_PROTO_H

@@ -24,13 +24,13 @@
 #ifndef DSQL_GEN_PROTO_H
 #define DSQL_GEN_PROTO_H
 
-extern UCHAR GEN_expand_buffer(dsql_req*, UCHAR);
-extern void GEN_expr(dsql_req*, dsql_nod*);
-extern void GEN_port(dsql_req*, dsql_msg*);
-extern void GEN_request(dsql_req*, dsql_nod*);
-extern void GEN_return(DSQL_REQ, DSQL_NOD, bool);
-extern void GEN_start_transaction(dsql_req*, dsql_nod*);
-extern void GEN_statement(dsql_req*, dsql_nod*);
+UCHAR	GEN_expand_buffer(dsql_req*, UCHAR);
+void	GEN_expr(dsql_req*, dsql_nod*);
+void	GEN_port(dsql_req*, dsql_msg*);
+void	GEN_request(dsql_req*, dsql_nod*);
+void	GEN_return(DSQL_REQ, DSQL_NOD, bool);
+void	GEN_start_transaction(dsql_req*, dsql_nod*);
+void	GEN_statement(dsql_req*, dsql_nod*);
 
 inline UCHAR stuff(dsql_req* request, UCHAR byte){
 	return ((BLOB_PTR*)request->req_blr < (BLOB_PTR*)request->req_blr_yellow) ?

@@ -120,13 +120,14 @@ enum token_vals {
     @param dialect
 
  **/
-int DLL_EXPORT PREPARSE_execute(ISC_STATUS * user_status,
-								FRBRD ** db_handle,
-								FRBRD ** trans_handle,
-								USHORT stmt_length,
-								SCHAR * stmt,
-								BOOLEAN * stmt_eaten,
-								USHORT dialect)
+int	PREPARSE_execute(
+		ISC_STATUS * user_status,
+		FRBRD ** db_handle,
+		FRBRD ** trans_handle,
+		USHORT stmt_length,
+		SCHAR * stmt,
+		BOOLEAN * stmt_eaten,
+		USHORT dialect)
 {
 	TEXT file_name[MAX_TOKEN_SIZE + 1];
 	SCHAR *token, *dpb_array, *dpb, *ch, *stmt_end;

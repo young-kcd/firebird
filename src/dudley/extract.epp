@@ -40,7 +40,6 @@ DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME DB_file_name;
 #define FOPEN_WRITE_TYPE	"w"
 #endif
 
-//#define BLOB_NULL(id)	(!id.gds_quad_low && !id.gds_quad_high)
 inline bool blob_null(const GDS_QUAD id)
 {
 	return !id.gds_quad_low && !id.gds_quad_high;
@@ -104,19 +103,20 @@ static TEXT *acl_ids[] = {
 
 static SLONG EXT_capabilities;
 
-#define	EXT_security		1
-#define EXT_files		2
-#define EXT_external		4
-#define EXT_idx_inactive 	8
-#define EXT_triggers		16	/* Obsolete - 1996-Aug-05 */
-#define EXT_context_name	32
-#define EXT_db_description	64
-#define EXT_v3			128		/* rdb$dependencies, rdb$functions, rdb$filters, rdb$user_privileges */
-					/* rdb$triggers, rdb$types, rdb$indices.rdb$index_type */
-					/* rdb$fields.rdb$dimensions, rdb$files.rdb$shadow_number */
-					/* rdb$generators */
-
-#define EXT_v4			256
+enum EXT_flags {
+	EXT_security = 1,
+	EXT_files = 2,
+	EXT_external = 4,
+	EXT_idx_inactive = 8,
+	EXT_triggers = 16,	// Obsolete - 1996-Aug-05
+	EXT_context_name = 32,
+	EXT_db_description = 64,
+	EXT_v3 = 128,	// rdb$dependencies, rdb$functions, rdb$filters, rdb$user_privileges
+					// rdb$triggers, rdb$types, rdb$indices.rdb$index_type
+					// rdb$fields.rdb$dimensions, rdb$files.rdb$shadow_number
+					// rdb$generators
+	EXT_v4 = 256
+};
 
 /* table used to determine capabilities, checking for specific 
    fields in system relations */

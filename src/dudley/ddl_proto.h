@@ -24,17 +24,22 @@
 #ifndef DUDLEY_DDL_PROTO_H
 #define DUDLEY_DDL_PROTO_H
 
-extern UCHAR *DDL_alloc(int);
-extern int DDL_db_error(ISC_STATUS *, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
-						TEXT *);
-extern int DDL_err(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-extern void DDL_error_abort(ISC_STATUS *, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
-							TEXT *);
-extern void DDL_exit(int);
-extern void DDL_msg_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-extern void DDL_msg_put(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
-extern DUDLEY_NOD DDL_pop(LLS *);
-extern void DDL_push(DUDLEY_NOD, LLS *);
-extern bool DDL_yes_no(USHORT);
+UCHAR*		DDL_alloc(int);
+int			DDL_db_error(ISC_STATUS*, USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+int			DDL_err(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+void		DDL_error_abort(ISC_STATUS*, USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+void		DDL_exit(int);
+void		DDL_msg_partial(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+void		DDL_msg_put(USHORT, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+DUDLEY_NOD	DDL_pop(LLS*);
+void		DDL_push(DUDLEY_NOD, LLS*);
+bool		DDL_yes_no(USHORT);
+
+inline void LLS_PUSH(DUDLEY_NOD object, LLS* stack){
+	DDL_push(object, stack);
+}
+inline DUDLEY_NOD LLS_POP(LLS* stack){
+	return DDL_pop(stack);
+}
 
 #endif // DUDLEY_DDL_PROTO_H
