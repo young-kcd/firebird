@@ -1,3 +1,10 @@
+2005-04-07 16:59  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solaris-64gcc (1.1):
+	
+	Starting work to port FB2 to Solaris sparc 64 using gcc
+	(incomplete)
+
 2005-04-06 17:39  alexpeshkoff
 
 	* firebird2/clean.sh (1.12):
