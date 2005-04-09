@@ -1970,9 +1970,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 	}
 
 	if (serv->serv_thd) {
-#pragma FB_COMPILER_MESSAGE("Fix! Probable bug!")
-		event_t* evnt_ptr =
-			reinterpret_cast<event_t*>(&(service->svc_start_event));
+		event_t* evnt_ptr =	service->svc_start_event;
 
 		THREAD_EXIT();
 		/* create an event for the service.  The event will be signaled once the
