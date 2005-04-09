@@ -4893,7 +4893,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 
 	dpb_buffers = JRD_cache_default;
 	dpb_sweep_interval = -1;
-	dpb_overwrite = true;
+	dpb_overwrite = false;
 	dpb_sql_dialect = 99;
 	invalid_client_SQL_dialect = false;
 

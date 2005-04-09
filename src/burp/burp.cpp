@@ -132,6 +132,7 @@ static int output_main(Jrd::Service*, const UCHAR*);
 static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, bool, bool);
 #endif
 static void burp_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
+static void burp_usage();
 
 // fil.fil_length is ULONG
 const ULONG KBYTE	= 1024;
@@ -233,8 +234,9 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	while (argvp < end && !err)
 	{
 		TEXT* string = *argvp++;
-		if (*string != '-') {
-			total += strlen(string) + 1;
+		const USHORT len = strlen(string) + 1;
+		if (*string != *switch_char) {
+			total += len;
 			continue;
 		}
 		if (!string[1])
@@ -253,9 +255,10 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		}
 		switch (in_sw_tab->in_sw)
 		{
-		case IN_SW_BURP_C:		// create database 
-		case IN_SW_BURP_R:		// replace database 
-			total += strlen(string) + 1;
+		case IN_SW_BURP_C:			// create database 
+		case IN_SW_BURP_R:			// replace database 
+		case IN_SW_BURP_RECREATE:	// recreate database 
+			total += len;
 			flag_restore = true;
 			break;
 		case IN_SW_BURP_USER:	// default user name 
@@ -284,11 +287,11 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 			}
 			break;
 		case IN_SW_BURP_V:		// verify actions 
-			total += strlen(string) + 1;
+			total += len;
 			flag_verbose = true;
 			break;
 		default:
-			total += strlen(string) + 1;
+			total += len;
 			break;
 		}
 	}
@@ -628,6 +631,7 @@ int common_main(int		argc,
 		tdgbl->gbl_sw_service_thd = true;
 		tdgbl->service_blk = (Jrd::Service*) output_data;
 		tdgbl->status = tdgbl->service_blk->svc_status;
+		tdgbl->service_blk->svc_started();
 		argv++;
 		argc--;
 	}
@@ -663,6 +667,10 @@ int common_main(int		argc,
 		fAnsiCP = (GetConsoleCP() == GetACP());
 #endif
 
+	if (argc <= 1) {
+		burp_usage();
+		BURP_exit_local(FINI_ERROR, tdgbl);
+	}
 
 	USHORT sw_replace = FALSE;
 
@@ -693,7 +701,7 @@ int common_main(int		argc,
 		if (string[temp] == ',')
 			string[temp] = '\0'; // Modifying argv elements
 
-		if (*string != '-') {
+		if (*string != *switch_char) {
 			if (!file || file->fil_length || !get_size(*argv, file)) {
 				/*  Miserable thing must be a filename
 				   (dummy in a length for the backup file */
@@ -729,19 +737,35 @@ int common_main(int		argc,
 			if (!in_sw_tab->in_sw) {
 				BURP_print(137, string + 1, 0, 0, 0, 0);
 				// msg 137  unknown switch %s 
-				BURP_print(95, 0, 0, 0, 0, 0);
-				// msg 95  legal switches are
-				for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw;
-					 in_sw_tab++)
-					if (in_sw_tab->in_sw_msg) {
-						BURP_msg_put(in_sw_tab->in_sw_msg, (void*)switch_char, 0, 0,
-									 0, 0);
-					}
 
-				BURP_print(132, 0, 0, 0, 0, 0);
-				// msg 132 switches can be abbreviated to one character 
+				burp_usage();
+
 				BURP_error(1, true, 0, 0, 0, 0, 0);
 				// msg 1: found unknown switch 
+			}
+			else if (in_sw_tab->in_sw == IN_SW_BURP_RECREATE) {
+				int real_sw = IN_SW_BURP_C;
+				if ((argv < end) && (**argv != *switch_char) ) {
+					// find optional BURP_SW_OVERWRITE parameter
+					TEXT c;
+					const TEXT* q = BURP_SW_OVERWRITE;
+					for (const TEXT *p = *argv; c = *p++;)
+						if (UPPER(c) != *q++)
+							break;
+
+					if (!c) {
+						real_sw = IN_SW_BURP_R;
+						argv++;
+					}
+				}
+
+				// replace IN_SW_BURP_RECREATE by IN_SW_BURP_R or IN_SW_BURP_C
+				in_sw_tab->in_sw_state = FALSE;
+
+				in_sw_tab_t* real_sw_tab = burp_in_sw_table; 
+				for (; real_sw_tab->in_sw != real_sw; real_sw_tab++)
+					;
+				real_sw_tab->in_sw_state = TRUE;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_S) {
 				if (argv >= end)
@@ -828,7 +852,7 @@ int common_main(int		argc,
 				const TEXT* redirect = *argv;
 				if (argv >= end)	// redirect may equal NULL 
 					redirect = NULL;
-				else if (*redirect == '-')
+				else if (*redirect == *switch_char)
 					redirect = NULL;
 				else
 					++argv;
@@ -1099,19 +1123,18 @@ int common_main(int		argc,
 	
 	int result;
 
+	tdgbl->service_blk->svc_started();
 	switch (action) {
 	case (RESTORE):
-		tdgbl->service_blk->svc_started();
+		tdgbl->gbl_sw_overwrite = (sw_replace == IN_SW_BURP_R);
 		result = RESTORE_restore(file1, file2);
 		break;
 
 	case (BACKUP):
-		tdgbl->service_blk->svc_started();
 		result = BACKUP_backup(file1, file2);
 		break;
 
 	case (QUIT):
-		tdgbl->service_blk->svc_started();
 		BURP_abort();
 		return 0;
 	
@@ -1965,7 +1988,7 @@ static gbak_action open_files(const TEXT* file1,
 			BURP_error(14, true, *file2, 0, 0, 0, 0);
 			// msg 14 database %s already exists.  To replace it, use the -R switch 
 		}
-		else {
+ 		else {
 			isc_drop_database(status_vector, &tdgbl->db_handle);
 			if (tdgbl->db_handle) {
 				ISC_STATUS_ARRAY status_vector2;
@@ -1973,8 +1996,8 @@ static gbak_action open_files(const TEXT* file1,
 					BURP_print_status(status_vector2);
 				}
 
-				/* Complain only if the drop database entrypoint is available.
-				   If it isn't, the database will simply be overwritten. */
+				// Complain only if the drop database entrypoint is available.
+				// If it isn't, the database will simply be overwritten. 
 
 				if (status_vector[1] != isc_unavailable)
 					BURP_error(233, true, *file2, 0, 0, 0, 0);
@@ -2052,6 +2075,33 @@ static void burp_output( const SCHAR* format, ...)
 
 	if (exit_code != 0)
 		BURP_exit_local(exit_code, tdgbl);
+}
+
+
+static void burp_usage()
+{
+/**********************************************
+ *
+ *      b u r p _ u s a g e
+ *
+ **********************************************
+ *
+ * Functional description
+ *	print usage information
+ *
+ **********************************************/
+	BURP_print(95, 0, 0, 0, 0, 0);
+	// msg 95  legal switches are
+
+	in_sw_tab_t* in_sw_tab = burp_in_sw_table;
+	for (; in_sw_tab->in_sw; in_sw_tab++)
+		if (in_sw_tab->in_sw_msg) {
+			BURP_msg_put(in_sw_tab->in_sw_msg, (void*)switch_char, 0, 0,
+							0, 0);
+		}
+
+	BURP_print(132, 0, 0, 0, 0, 0);
+	// msg 132 switches can be abbreviated to one character 
 }
 
 

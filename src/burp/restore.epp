@@ -955,6 +955,7 @@ void create_database (const TEXT* file_name)
 	dpb.insertByte(isc_dpb_shutdown, 
 			isc_dpb_shut_attachment | isc_dpb_shut_single);
 	dpb.insertInt(isc_dpb_shutdown_delay, 0);
+	dpb.insertInt(isc_dpb_overwrite, tdgbl->gbl_sw_overwrite);
 
 	ISC_STATUS_ARRAY status_vector;
 

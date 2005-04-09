@@ -803,6 +803,7 @@ public:
 	bool		gbl_sw_convert_ext_tables;
 	bool		gbl_sw_mode;
 	bool		gbl_sw_mode_val;
+	bool		gbl_sw_overwrite;
 	const SCHAR*	gbl_sw_sql_role;
 	const SCHAR*	gbl_sw_user;
 	const SCHAR*	gbl_sw_password;

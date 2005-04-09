@@ -78,11 +78,14 @@ const int IN_SW_BURP_MODE     = 35;      // database could be restored ReadOnly
 /**************************************************************************/
 const int IN_SW_BURP_HIDDEN_RDONLY	= 36;
 const int IN_SW_BURP_HIDDEN_RDWRITE	= 37;
+
+const int IN_SW_BURP_RECREATE		= 38;      // recreate database 
 /**************************************************************************/
     // used 0BCDEFGILMNOPRSTUVYZ    available AHJQWX 
 
 static const char* BURP_SW_MODE_RO = "read_only";
 static const char* BURP_SW_MODE_RW = "read_write";
+static const char* BURP_SW_OVERWRITE = "OVERWRITE"; // recreate with overwrite
 
 
 static in_sw_tab_t burp_in_sw_table [] =
@@ -127,8 +130,10 @@ static in_sw_tab_t burp_in_sw_table [] =
                 // msg 101: %sPAGE_SIZE override default page size 
     {IN_SW_BURP_PASS, 0,				"PASSWORD",	    0, 0, 0, FALSE, 190, 0, NULL},
                 // msg 190: %sPA(SSWORD) InterBase password 
+    {IN_SW_BURP_RECREATE, 0,	"RECREATE_DATABASE", 0, 0, 0, FALSE, 284, 0, NULL},
+                // msg 284: %sR(ECREATE_DATABASE) [O(VERWRITE)] create (or replace if OVERWRITE used) database from backup file 
     {IN_SW_BURP_R,    isc_spb_res_replace,	"REPLACE_DATABASE", 0, 0, 0, FALSE, 112, 0, NULL},
-                // msg 112: %sREPLACE_DATABASE replace database from backup file 
+                // msg 112: %sREP(LACE_DATABASE) replace database from backup file 
 /**************************************************************
 ** msg 252: %sRO(LE) InterBase SQL role
 ***************************************************************/
