@@ -1,3 +1,26 @@
+2005-04-09 20:48  hvlad
+
+	* firebird2/src/jrd/svc.cpp (1.139):
+	
+	Cleanup
+
+2005-04-09 20:44  hvlad
+
+	* firebird2/src/: burp/burp.cpp (1.97), burp/burp.h (1.65),
+	burp/burpswi.h (1.13), burp/restore.epp (1.89), jrd/jrd.cpp
+	(1.205), msgs/facilities.sql (1.14), msgs/messages.sql (1.21):
+	
+	1. New switch for gbak -RECREATE_DATABASE [OVERWRITE].	    Simple
+	RECREATE_DATABASE is equal to CREATE_DATABASE,	   
+	RECREATE_DATABASE OVERWRITE is equal to REPLACE_DATABASE.  2. gbak
+	uses isc_dpb_overwrite to create database over existing files 3.
+	engine overwrite existing files only if asked explicitly by    
+	user by setting isc_dpb_overwrite to 1 4. fixed unregistered bug -
+	when gbak uses service manager and passed     command line contains
+	invalid switch. Service reports error and     finish but not call
+	Service::svc_started therefore response is not	   send and gbak is
+	stalled forever
+
 2005-04-07 16:59  kkuznetsov
 
 	* firebird2/builds/posix/prefix.solaris-64gcc (1.1):
