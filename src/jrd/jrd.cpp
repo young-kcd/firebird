@@ -6158,11 +6158,11 @@ static void ExtractDriveLetter(const TEXT* file_name, ULONG* drive_mask)
 #endif
 
 
-ULONG JRD_shutdown_all()
+ULONG shutdown_all()
 {
 /**************************************
  *
- *	J R D _ s h u t d o w n _ a l l
+ *	s h u t d o w n _ a l l
  *
  **************************************
  *
@@ -6232,6 +6232,68 @@ ULONG JRD_shutdown_all()
 	JRD_restore_context();
 
 	return FB_SUCCESS;
+}
+
+
+#ifdef SUPERSERVER
+static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) {
+/**************************************
+ *
+ *	s h u t d o w n _ t h r e a d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Shutdown SuperServer. If hangs, server 
+ *  is forcely & dirty closed after timeout.
+ *
+ **************************************/
+
+	THREAD_ENTER();
+	shutdown_all();
+	*reinterpret_cast<int*>(arg) = 1;
+	return 0;
+}
+#endif // SUPERSERVER
+
+
+ULONG JRD_shutdown_all(bool doThreadExit)
+{
+/**************************************
+ *
+ *	J R D _ s h u t d o w n _ a l l
+ *
+ **************************************
+ *
+ * Functional description
+ *	rollback every transaction,
+ *	release every attachment,
+ *	and shutdown every database.
+ *
+ **************************************/
+#ifdef SUPERSERVER
+	int flShutdownComplete = 0;
+	gds__thread_start(shutdown_thread, &flShutdownComplete, 
+		THREAD_medium, 0, 0);
+	if (doThreadExit)
+	{
+		THREAD_EXIT();
+	}
+	int timeout = 10;	// seconds
+	while (timeout--) 
+	{
+		if (flShutdownComplete)
+			break;
+		THREAD_SLEEP(1 * 1000);
+	}
+	if (!flShutdownComplete) 
+	{
+		gds__log("Forced server shutdown - not all databases closed");
+	}
+#else // SUPERSERVER
+	fb_assert(doThreadExit);
+	shutdown_all();
+#endif // SUPERSERVER
 }
 #endif /* SERVER_SHUTDOWN */
 

@@ -38,6 +38,7 @@
 #include "../jrd/common.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/divorce.h"
+#include "../jrd/jrd_proto.h"
 #include "../common/config/config.h"
 #if !(defined VMS)
 #include <sys/param.h>
@@ -119,10 +120,15 @@ static int assign(SCHAR *);
 #endif
 //static void name_process(UCHAR *);
 static void signal_handler(int);
-#ifdef SUPERSERVER
-static void signal_sigpipe_handler(int);
-#endif
 static void set_signal(int, void (*)(int));
+
+#if (defined SUPERSERVER && defined UNIX )
+static void signal_sigpipe_handler(int);
+#ifdef SERVER_SHUTDOWN
+static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg);
+static void signal_term(int);
+#endif
+#endif
 
 static TEXT protocol[128];
 static int INET_SERVER_start = 0;
@@ -385,6 +391,14 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 
 #endif
 
+#if (defined SUPERSERVER && defined UNIX && defined SERVER_SHUTDOWN)
+
+	// process signals 2 & 15 in order to exit gracefully
+	set_signal(SIGINT, signal_term);
+	set_signal(SIGTERM, signal_term);
+
+#endif
+
 	if (multi_threaded)
 		SRVR_multi_thread(port, INET_SERVER_flag);
 	else
@@ -499,6 +513,40 @@ static void signal_sigpipe_handler(int)
 	gds__log
 		("Super Server/main: Bad client socket, send() resulted in SIGPIPE, caught by server\n                   client exited improperly or crashed ????");
 }
-#endif
+
+#ifdef SERVER_SHUTDOWN
+static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) 
+{
+/****************************************************
+ *
+ *	s h u t d o w n _ t h r e a d
+ *
+ ****************************************************
+ *
+ * Functional description
+ *	In order to avoid blocking of the thread, 
+ *	which received SIGTERM, run in separate thread.
+ *
+ **************************************/
+	JRD_shutdown_all(false);
+	exit(0);
+}
+
+static void signal_term(int)
+{
+/****************************************************
+ *
+ *	s i g n a l _ t e r m
+ *
+ ****************************************************
+ *
+ * Functional description
+ *	Handle ^C and kill.
+ *
+ **************************************/
+	gds__thread_start(shutdown_thread, 0, THREAD_medium, 0, 0);
+#endif //SERVER_SHUTDOWN
+}
+#endif //SUPERSERVER && UNIX
 
 
