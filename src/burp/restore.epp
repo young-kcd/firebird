@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.31.2.4 2005-01-20 11:27:03 dimitr Exp $
+$Id: restore.epp,v 1.31.2.5 2005-04-13 11:47:25 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -2603,12 +2603,17 @@ while (TRUE)
     if ((records % RESTORE_VERBOSE_INTERVAL)==0) 
      BURP_verbose(107,(void*) (SLONG) records,NULL_PTR,NULL_PTR,NULL_PTR,NULL_PTR);
     
-    for (field = relation->rel_fields; field; field = field->fld_next)
-	if ((field->fld_type == blr_blob) || (field->fld_flags & FLD_array))
-	    {
-	    blob_id = (SLONG*) ((SCHAR*) buffer + field->fld_offset);
-	    blob_id [0] = blob_id [1] = 0;
-	    }
+	for (field = relation->rel_fields; field; field = field->fld_next)
+	{
+		if (!(field->fld_flags & FLD_computed))
+		{
+			if ((field->fld_type == blr_blob) || (field->fld_flags & FLD_array))
+			{
+				blob_id = (SLONG*) ((SCHAR*) buffer + field->fld_offset);
+				blob_id [0] = blob_id [1] = 0;
+			}
+		}
+	}
 
     GET_RECORD (record);
     while (record == rec_blob || record == rec_array)
