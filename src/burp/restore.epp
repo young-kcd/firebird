@@ -2520,12 +2520,17 @@ rec_type get_data (burp_rel*	relation)
 			BURP_verbose(107, (void*) (IPTR) records, NULL, NULL, NULL, NULL);
 
 		for (field = relation->rel_fields; field; field = field->fld_next)
-			if ((field->fld_type == blr_blob) || (field->fld_flags & FLD_array))
+		{
+			if (!(field->fld_flags & FLD_computed))
 			{
-				ISC_QUAD* blob_id = (ISC_QUAD*) ((SCHAR*) buffer + field->fld_offset);
-				blob_id->gds_quad_high = 0;
-				blob_id->gds_quad_low = 0;
+				if ((field->fld_type == blr_blob) || (field->fld_flags & FLD_array))
+				{
+					ISC_QUAD* blob_id = (ISC_QUAD*) ((SCHAR*) buffer + field->fld_offset);
+					blob_id->gds_quad_high = 0;
+					blob_id->gds_quad_low = 0;
+				}
 			}
+		}
 
 		get_record(&record, tdgbl);
 		while (record == rec_blob || record == rec_array)
