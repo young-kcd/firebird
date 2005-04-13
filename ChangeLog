@@ -1,3 +1,10 @@
+2005-04-13 03:06  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.207):
+	
+	Fixed SF #1155520 - Any user can replace databases created by
+	others
+
 2005-04-11 17:32  alexpeshkoff
 
 	* firebird2/src/: jrd/jrd.cpp (1.206), jrd/jrd_proto.h (1.36),
