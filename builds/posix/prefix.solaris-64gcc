@@ -1,5 +1,5 @@
 #
-# Compiler settings for Solaris (Sparc)
+# Compiler settings for Solaris (Sparc - 64 )
 #
 # This file is processed by configure and the output written to
 # gen/make.platform which is included in src directory makefiles 
@@ -16,8 +16,8 @@
 CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP
 
 # compile flags for GCC compiler
-COMMON_GCC_FLAGS=  -MMD -p -fPIC -m64  -Amachine=sparcv9 -D__sparcv9   -mptr64 -mstack-bias -mno-v8plus -mcpu=v9 
-DEBUG_GCC_FLAGS=  -ggdb -Wall -Wno-switch
+COMMON_GCC_FLAGS=  -MMD -p -fPIC -m64   -D__sparcv9   -mptr64 -mstack-bias -mno-v8plus -mcpu=v9 
+DEBUG_GCC_FLAGS=  -ggdb -g3 -Wall -Wno-switch
 PROD_GCC_FLAGS= -mcpu=ultrasparc -mtune=ultrasparc -O3 -DNDEBUG
 
 # compile flags for SUNWspro/Forte compiler - untested nmcc dec2002
@@ -69,4 +69,5 @@ CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_l
 Physical_IO_Module=os/posix/unix.cpp
 
 LD=g++
-LDFLAGS=-m64
+LDFLAGS=-m64 /usr/local/lib/gcc-lib/sparc-sun-solaris2.9/3.3.2/sparcv9/gmon.o
+#gmon.o is a work-a-round of SF Compile Farm gcc 3.3.2 (undefined symbol _mcount)
