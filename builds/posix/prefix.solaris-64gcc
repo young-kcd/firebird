@@ -17,7 +17,9 @@ CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP
 
 # compile flags for GCC compiler
 COMMON_GCC_FLAGS=  -MMD -p -fPIC -m64   -D__sparcv9   -mptr64 -mstack-bias -mno-v8plus -mcpu=v9 
-DEBUG_GCC_FLAGS=  -ggdb -g3 -Wall -Wno-switch
+DEBUG_GCC_FLAGS=  -gstabs+ -g3 -Wall -Wno-switch
+#switch to dbx accoding SF gdb 64 bits mailfunction
+
 PROD_GCC_FLAGS= -mcpu=ultrasparc -mtune=ultrasparc -O3 -DNDEBUG
 
 # compile flags for SUNWspro/Forte compiler - untested nmcc dec2002
@@ -58,7 +60,10 @@ JRDBOOT_Extra_Files=isc_sync.cpp ThreadData.cpp
 
 OS_ServerFiles=inet_server.cpp
 
+Server_main_dummy = os/sun/server_main_dummy.cpp
+
 LIB_LINK_OPTIONS:= -G
+
 LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
 LIB_LINK_MAPFILE= -Xlinker -M
