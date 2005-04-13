@@ -1906,9 +1906,48 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	initing_security = false;
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
-	dbb->dbb_file =
-		PIO_create(dbb, expanded_name.c_str(), expanded_name.length(), 
-				   options.dpb_overwrite);
+
+	try
+	{
+		// try to create with overwrite = false
+		dbb->dbb_file =
+			PIO_create(dbb, expanded_name.c_str(), expanded_name.length(), 
+					false);
+	}
+	catch (Firebird::status_exception)
+	{
+		if (options.dpb_overwrite)
+		{
+			if (GDS_ATTACH_DATABASE(user_status, file_length, file_name, handle,
+					dpb_length, dpb, expanded_filename) != 0)
+			{
+				throw;
+			}
+
+			bool allow_overwrite = (*handle)->att_user->usr_flags & (USR_locksmith | USR_owner);
+
+			GDS_DETACH(user_status, handle);
+
+			if (allow_overwrite)
+			{
+				// file is a database and the user (SYSDBA or owner) has right to overwrite
+				dbb->dbb_file =
+					PIO_create(dbb, expanded_name.c_str(), expanded_name.length(), 
+							options.dpb_overwrite);
+			}
+			else
+			{
+				ERR_post(isc_no_priv,
+					isc_arg_string, "overwrite",
+					isc_arg_string, "database",
+					isc_arg_string,
+					ERR_cstring(expanded_name.c_str()), 0);
+			}
+		}
+		else
+			throw;
+	}
+
 	const jrd_file* first_dbb_file = dbb->dbb_file;
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
