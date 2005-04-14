@@ -1,3 +1,11 @@
+2005-04-13 13:47  dimitr
+
+	* firebird2/src/burp/restore.epp (1.31.2.5):
+	
+	Fixed bug when a computed column of blob/array type zeroes the
+	first column of the table being restored.  In short words, some
+	data were lost during restore.
+
 2005-04-03 07:00  robocop
 
 	* firebird2/builds/win32/parse.bat (1.4.2.1):
