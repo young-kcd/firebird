@@ -669,7 +669,7 @@ void SVC_detach(Service* service)
 
 #ifdef SERVER_SHUTDOWN
 	if (service->svc_do_shutdown) {
-		JRD_shutdown_all(true);
+		JRD_shutdown_all_ex(true);
 		if (shutdown_fct)
 				(shutdown_fct) (shutdown_param);
 		else

@@ -528,7 +528,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
  *	which received SIGTERM, run in separate thread.
  *
  **************************************/
-	JRD_shutdown_all(false);
+	JRD_shutdown_all_ex(false);
 	exit(0);
 }
 

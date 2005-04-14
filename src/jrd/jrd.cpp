@@ -6197,7 +6197,7 @@ static void ExtractDriveLetter(const TEXT* file_name, ULONG* drive_mask)
 #endif
 
 
-ULONG shutdown_all()
+ULONG JRD_shutdown_all()
 {
 /**************************************
  *
@@ -6289,14 +6289,14 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) {
  **************************************/
 
 	THREAD_ENTER();
-	shutdown_all();
+	JRD_shutdown_all();
 	*reinterpret_cast<int*>(arg) = 1;
 	return 0;
 }
 #endif // SUPERSERVER
 
 
-ULONG JRD_shutdown_all(bool doThreadExit)
+void JRD_shutdown_all_ex(bool doThreadExit)
 {
 /**************************************
  *
@@ -6331,7 +6331,6 @@ ULONG JRD_shutdown_all(bool doThreadExit)
 	}
 #else // SUPERSERVER
 	fb_assert(doThreadExit);
-	shutdown_all();
 #endif // SUPERSERVER
 }
 #endif /* SERVER_SHUTDOWN */
