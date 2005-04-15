@@ -1091,20 +1091,20 @@ inline void PreModifyEraseTriggers(thread_db* tdbb,
  *  storing active rpb in chain.
  *
  ******************************************************/
+	if (! tdbb->tdbb_transaction->tra_rpblist) {
+		tdbb->tdbb_transaction->tra_rpblist = 
+			FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
+				traRpbList(*tdbb->tdbb_transaction->tra_pool);
+	}
+	const int rpblevel =
+		tdbb->tdbb_transaction->tra_rpblist->PushRpb(rpb);
+	jrd_req* trigger = NULL;
 	if ((*trigs) && (which_trig != POST_TRIG)) {
-		if (! tdbb->tdbb_transaction->tra_rpblist) {
-			tdbb->tdbb_transaction->tra_rpblist = 
-				FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
-					traRpbList(*tdbb->tdbb_transaction->tra_pool);
-		}
-		const int rpblevel =
-			tdbb->tdbb_transaction->tra_rpblist->PushRpb(rpb);
-		jrd_req* trigger = execute_triggers(tdbb, trigs,
-					rpb->rpb_record, rec, op);
-		tdbb->tdbb_transaction->tra_rpblist->PopRpb(rpb, rpblevel);
-		if (trigger) {
-			trigger_failure(tdbb, trigger);
-		}
+		trigger = execute_triggers(tdbb, trigs, rpb->rpb_record, rec, op);
+	}
+	tdbb->tdbb_transaction->tra_rpblist->PopRpb(rpb, rpblevel);
+	if (trigger) {
+		trigger_failure(tdbb, trigger);
 	}
 }
 
@@ -1211,7 +1211,8 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 /* Handle pre-operation trigger */
 	PreModifyEraseTriggers(tdbb, &relation->rel_pre_erase,
-				which_trig, rpb, 0, jrd_req::req_trigger_delete);
+						   which_trig, rpb, NULL,
+						   jrd_req::req_trigger_delete);
 
 	if (relation->rel_file)
 		EXT_erase(rpb, reinterpret_cast<int*>(transaction));
@@ -2905,14 +2906,14 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	}
 #endif
 
-/* If the stream was sorted, the various fields in the rpb are
-   probably junk.  Just to make sure that everything is cool,
-   refetch and release the record. */
+		/* If the stream was sorted, the various fields in the rpb are
+		probably junk.  Just to make sure that everything is cool,
+		refetch and release the record. */
 
-	if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
-		VIO_refetch_record(tdbb, org_rpb, transaction);
-		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
-	}
+		if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
+			VIO_refetch_record(tdbb, org_rpb, transaction);
+			org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
+		}
 
 	switch (request->req_operation) {
 	case jrd_req::req_evaluate:
@@ -2955,8 +2956,8 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			++transaction->tra_save_point->sav_verb_count;
 
 		PreModifyEraseTriggers(tdbb, &relation->rel_pre_modify,
-				which_trig, org_rpb, new_rpb->rpb_record, 
-				jrd_req::req_trigger_update);
+							   which_trig, org_rpb, new_rpb->rpb_record, 
+							   jrd_req::req_trigger_update);
 
 		if (node->nod_arg[e_mod_validate]) {
 			validate(tdbb, node->nod_arg[e_mod_validate]);
