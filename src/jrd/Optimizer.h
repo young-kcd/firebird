@@ -49,7 +49,7 @@ const int REDUCE_SELECTIVITY_FACTOR_LESS = 50;
 const int REDUCE_SELECTIVITY_FACTOR_GREATER = 50;
 const int REDUCE_SELECTIVITY_FACTOR_STARTING = 100;
 
-const int SELECTIVITY_THRESHOLD_FACTOR_ADD = 5;
+const int SELECTIVITY_THRESHOLD_FACTOR_ADD = 10;
 
 const double MAXIMUM_SELECTIVITY = 1.0;
 
@@ -140,6 +140,7 @@ public:
 	USHORT			nonFullMatchedSegments;
 	USHORT			matchedSegments;
 	int				indexes;
+	int				dependencies;
 	jrd_nod*		boolean;
 	jrd_nod*		inversion;
 	IndexScratch*	scratch;
