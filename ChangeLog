@@ -1,3 +1,10 @@
+2005-04-14 19:03  alexpeshkoff
+
+	* firebird2/src/: jrd/jrd.cpp (1.208), jrd/jrd_proto.h (1.37),
+	jrd/svc.cpp (1.141), remote/inet_server.cpp (1.53):
+	
+	fixed windows build
+
 2005-04-13 15:02  kkuznetsov
 
 	* firebird2/builds/posix/prefix.solaris-64gcc (1.3):
