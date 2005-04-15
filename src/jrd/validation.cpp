@@ -1481,6 +1481,9 @@ static RTN walk_index(thread_db* tdbb,
 		while (pointer < endPointer) {
 
 			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+			if (pointer > endPointer) {
+				break;
+			}
 
 			// make sure the current key is not less than the previous key
 			q = node.data;
