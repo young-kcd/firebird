@@ -1535,12 +1535,13 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					// Adjust the compound selectivity using the reduce factor.
 					// It should be better than the previous segment but worse
 					// than a full match.
-					selectivity +=
-						(scratch[i]->selectivity - selectivity) / factor;
-
-					// The selectivity can never be worse than the previous segment
-					if (selectivity < scratch[i]->selectivity) {
-						scratch[i]->selectivity = selectivity;
+					selectivity *= factor;
+					if (selectivity > scratch[i]->selectivity) {
+						// The selectivity can never be worse than the previous segment,
+						// but they shouldn't be equal either.
+						const double delta =
+							(selectivity - scratch[i]->selectivity) / factor;
+						scratch[i]->selectivity -= delta;
 					}
 
 					if (segment->scanType != segmentScanNone) {
