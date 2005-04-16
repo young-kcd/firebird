@@ -1760,13 +1760,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	for (i = 0; i < inversions->getCount(); i++) {
 
 		// Initialize vars before walking through candidates
-		double bestSelectivity = MAXIMUM_SELECTIVITY; // worst selectivity
-		int bestNonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1; // worst non matching segments
-		int bestPosition = -1;
-		int bestIndexes = MAX_USHORT; // More as 65535 indexes in a inversion doesn't sound as optimized
-		int bestMatchedSegments = 0;
-		int bestDependencies = 0;
-		bool bestUnique = false;
+		InversionCandidate* bestCandidate = NULL;
 		bool restartLoop = false;
 
 		for (int currentPosition = 0; currentPosition < inversions->getCount(); currentPosition++) {
@@ -1829,98 +1823,69 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					break;
 				}				
 
-				// Do we have very similar selectivities?
-				double diffSelectivity = inversion[currentPosition]->selectivity;
-				if (!diffSelectivity && !bestSelectivity) {
-					// Two zero selectivities should be handled as being the same
-					// (other comparison criterias should be applied, see below).
-					diffSelectivity = 1;
-				}
-				else if (diffSelectivity) {
-					// Calculate the difference.
-					diffSelectivity = bestSelectivity / diffSelectivity;
+				if (!bestCandidate) {
+					// The first candidate
+					bestCandidate = inversion[currentPosition];
 				}
 				else {
-					diffSelectivity = 0;
-				}
+					// Do we have very similar selectivities?
+					double diffSelectivity = inversion[currentPosition]->selectivity;
+					if (!diffSelectivity && !bestCandidate->selectivity) {
+						// Two zero selectivities should be handled as being the same
+						// (other comparison criterias should be applied, see below).
+						diffSelectivity = 1;
+					}
+					else if (diffSelectivity) {
+						// Calculate the difference.
+						diffSelectivity = bestCandidate->selectivity / diffSelectivity;
+					}
+					else {
+						diffSelectivity = 0;
+					}
 
-				if (inversion[currentPosition]->dependencies > bestDependencies) {
-					// Index used for a relationship must be always prefered to
-					// the filtering ones, otherwise the nested loop join has
-					// no chances to be better than a sort merge.
-					// An alternative (simplified) condition might be:
-					//   inversion[currentPosition]->dependencies > 0
-					//   && bestDependencies == 0
-					// but so far I tend to think that the current one is better.
-					bestPosition = currentPosition;
-					bestUnique = inversion[currentPosition]->unique;
-					bestSelectivity = inversion[currentPosition]->selectivity;
-					bestNonFullMatchedSegments = 
-						inversion[currentPosition]->nonFullMatchedSegments;
-					bestMatchedSegments = inversion[currentPosition]->matchedSegments;
-					bestIndexes = inversion[currentPosition]->indexes;
-					bestDependencies = inversion[currentPosition]->dependencies;
-				}
-				else if (inversion[currentPosition]->unique > bestUnique) {
-					// A unique full equal match is better than anything else.
-					bestPosition = currentPosition;
-					bestUnique = inversion[currentPosition]->unique;
-					bestSelectivity = inversion[currentPosition]->selectivity;
-					bestNonFullMatchedSegments = 
-						inversion[currentPosition]->nonFullMatchedSegments;
-					bestMatchedSegments = inversion[currentPosition]->matchedSegments;
-					bestIndexes = inversion[currentPosition]->indexes;
-					bestDependencies = inversion[currentPosition]->dependencies;
-				}
-				else if ((diffSelectivity >= 0.98) && (diffSelectivity <= 1.02)) {
-					// If the "same" selectivity then compare with the nr of unmatched segments, 
-					// how many indexes and matched segments. First compare number of indices.
-					int compareSelectivity = (inversion[currentPosition]->indexes - bestIndexes);
-					if (compareSelectivity == 0) {
-						// For the same number of indices compare number of matched segments.
-						// Note the inverted condition: the more matched segments the better.
-						compareSelectivity = 
-							(bestMatchedSegments - inversion[currentPosition]->matchedSegments);
+					if (inversion[currentPosition]->dependencies > bestCandidate->dependencies) {
+						// Index used for a relationship must be always prefered to
+						// the filtering ones, otherwise the nested loop join has
+						// no chances to be better than a sort merge.
+						// An alternative (simplified) condition might be:
+						//   inversion[currentPosition]->dependencies > 0
+						//   && bestCandidate->dependencies == 0
+						// but so far I tend to think that the current one is better.
+						bestCandidate = inversion[currentPosition];
+					}
+					else if (inversion[currentPosition]->unique && !bestCandidate->unique) {
+						// A unique full equal match is better than anything else.
+						bestCandidate = inversion[currentPosition];
+					}
+					else if ((diffSelectivity >= 0.98) && (diffSelectivity <= 1.02)) {
+						// If the "same" selectivity then compare with the nr of unmatched segments, 
+						// how many indexes and matched segments. First compare number of indices.
+						int compareSelectivity = (inversion[currentPosition]->indexes - bestCandidate->indexes);
 						if (compareSelectivity == 0) {
-							// For the same number of matched segments
-							// compare ones that aren't full matched
-							compareSelectivity =
-								(inversion[currentPosition]->nonFullMatchedSegments - bestNonFullMatchedSegments);
+							// For the same number of indices compare number of matched segments.
+							// Note the inverted condition: the more matched segments the better.
+							compareSelectivity = 
+								(bestCandidate->matchedSegments - inversion[currentPosition]->matchedSegments);
+							if (compareSelectivity == 0) {
+								// For the same number of matched segments
+								// compare ones that aren't full matched
+								compareSelectivity =
+									(inversion[currentPosition]->nonFullMatchedSegments - bestCandidate->nonFullMatchedSegments);
+							}
+						}
+						if (compareSelectivity < 0) {
+							bestCandidate = inversion[currentPosition];
 						}
 					}
-					if (compareSelectivity < 0) {
-						bestPosition = currentPosition;
-						bestUnique = inversion[currentPosition]->unique;
-						bestSelectivity = inversion[currentPosition]->selectivity;
-						bestNonFullMatchedSegments = 
-							inversion[currentPosition]->nonFullMatchedSegments;
-						bestMatchedSegments = inversion[currentPosition]->matchedSegments;
-						bestIndexes = inversion[currentPosition]->indexes;
-						bestDependencies = inversion[currentPosition]->dependencies;
+					else if (inversion[currentPosition]->selectivity == 0) {
+						// We consider zero selectivity to be very good.
+						// But it's not necessarily the best one (see above).
+						bestCandidate = inversion[currentPosition];
 					}
-				}
-				else if (inversion[currentPosition]->selectivity == 0) {
-					// We consider zero selectivity to be very good.
-					// But it's not necessarily the best one (see above).
-					bestPosition = currentPosition;
-					bestUnique = inversion[currentPosition]->unique;
-					bestSelectivity = inversion[currentPosition]->selectivity;
-					bestNonFullMatchedSegments = 
-						inversion[currentPosition]->nonFullMatchedSegments;
-					bestMatchedSegments = inversion[currentPosition]->matchedSegments;
-					bestIndexes = inversion[currentPosition]->indexes;
-					bestDependencies = inversion[currentPosition]->dependencies;
-				}
-				else if (inversion[currentPosition]->selectivity < bestSelectivity) {
-					// The less selectivity we have the better.
-					bestPosition = currentPosition;
-					bestUnique = inversion[currentPosition]->unique;
-					bestSelectivity = inversion[currentPosition]->selectivity;
-					bestNonFullMatchedSegments = 
-						inversion[currentPosition]->nonFullMatchedSegments;
-					bestMatchedSegments = inversion[currentPosition]->matchedSegments;
-					bestIndexes = inversion[currentPosition]->indexes;
-					bestDependencies = inversion[currentPosition]->dependencies;
+					else if (inversion[currentPosition]->selectivity < bestCandidate->selectivity) {
+						// The less selectivity we have the better.
+						bestCandidate = inversion[currentPosition];
+					}
 				}
 			}
 		}
@@ -1931,14 +1896,14 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 		// If we have a candidate which is interesting build the inversion
 		// else we're done.
-		if (bestPosition >= 0) {
-			if (plan || bestSelectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR_ADD)) {
+		if (bestCandidate) {
+			if (plan || bestCandidate->selectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR_ADD)) {
 				// Estimate new selectivity
 				// Assign selectivity for the formula
-				double bestSel = bestSelectivity;
+				double bestSel = bestCandidate->selectivity;
 				double worstSel = totalSelectivity;
-				if (bestSelectivity > totalSelectivity) {
-					worstSel = bestSelectivity;
+				if (bestCandidate->selectivity > totalSelectivity) {
+					worstSel = bestCandidate->selectivity;
 					bestSel = totalSelectivity;
 				}
 
@@ -1953,62 +1918,62 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 				}
 
 				// Exclude index from next pass
-				inversion[bestPosition]->used = true;
+				bestCandidate->used = true;
 
 				if (!invCandidate) {
 					invCandidate = FB_NEW(pool) InversionCandidate(pool);
-					if (!inversion[bestPosition]->inversion && inversion[bestPosition]->scratch) {
-						invCandidate->inversion = makeIndexScanNode(inversion[bestPosition]->scratch);
+					if (!bestCandidate->inversion && bestCandidate->scratch) {
+						invCandidate->inversion = makeIndexScanNode(bestCandidate->scratch);
 					}
 					else {
-						invCandidate->inversion = inversion[bestPosition]->inversion;
+						invCandidate->inversion = bestCandidate->inversion;
 					}
-					invCandidate->unique = inversion[bestPosition]->unique;
-					invCandidate->selectivity = inversion[bestPosition]->selectivity;
-					invCandidate->indexes = inversion[bestPosition]->indexes;
+					invCandidate->unique = bestCandidate->unique;
+					invCandidate->selectivity = bestCandidate->selectivity;
+					invCandidate->indexes = bestCandidate->indexes;
 					invCandidate->nonFullMatchedSegments = 0;
-					invCandidate->matchedSegments = inversion[bestPosition]->matchedSegments;
-					invCandidate->dependencies = inversion[bestPosition]->dependencies;
-					for (int j = 0; j < inversion[bestPosition]->matches.getCount(); j++) {
+					invCandidate->matchedSegments = bestCandidate->matchedSegments;
+					invCandidate->dependencies = bestCandidate->dependencies;
+					for (int j = 0; j < bestCandidate->matches.getCount(); j++) {
 						size_t pos;
-						if (!matches.find(inversion[bestPosition]->matches[j], pos)) {
-							matches.add(inversion[bestPosition]->matches[j]);
+						if (!matches.find(bestCandidate->matches[j], pos)) {
+							matches.add(bestCandidate->matches[j]);
 						}
 					}
-					if (inversion[bestPosition]->boolean) {
+					if (bestCandidate->boolean) {
 						size_t pos;
-						if (!matches.find(inversion[bestPosition]->boolean, pos)) {
-							matches.add(inversion[bestPosition]->boolean);
+						if (!matches.find(bestCandidate->boolean, pos)) {
+							matches.add(bestCandidate->boolean);
 						}
 					}
 				}
 				else {
-					if (!inversion[bestPosition]->inversion && inversion[bestPosition]->scratch) {
+					if (!bestCandidate->inversion && bestCandidate->scratch) {
 						invCandidate->inversion = composeInversion(invCandidate->inversion,
-							makeIndexScanNode(inversion[bestPosition]->scratch), nod_bit_and);
+							makeIndexScanNode(bestCandidate->scratch), nod_bit_and);
 					}
 					else {
 						invCandidate->inversion = composeInversion(invCandidate->inversion,
-							inversion[bestPosition]->inversion, nod_bit_and);
+							bestCandidate->inversion, nod_bit_and);
 					}
-					invCandidate->unique = (invCandidate->unique || inversion[bestPosition]->unique);
+					invCandidate->unique = (invCandidate->unique || bestCandidate->unique);
 					invCandidate->selectivity = totalSelectivity;
-					invCandidate->indexes += inversion[bestPosition]->indexes;
+					invCandidate->indexes += bestCandidate->indexes;
 					invCandidate->nonFullMatchedSegments = 0;
 					invCandidate->matchedSegments = 
-						std::max(inversion[bestPosition]->matchedSegments, invCandidate->matchedSegments);
+						std::max(bestCandidate->matchedSegments, invCandidate->matchedSegments);
 					invCandidate->dependencies =
-						invCandidate->dependencies + inversion[bestPosition]->dependencies;
-					for (int j = 0; j < inversion[bestPosition]->matches.getCount(); j++) {
+						invCandidate->dependencies + bestCandidate->dependencies;
+					for (int j = 0; j < bestCandidate->matches.getCount(); j++) {
 						size_t pos;
-						if (!matches.find(inversion[bestPosition]->matches[j], pos)) {
-	                        matches.add(inversion[bestPosition]->matches[j]);
+						if (!matches.find(bestCandidate->matches[j], pos)) {
+	                        matches.add(bestCandidate->matches[j]);
 						}
 					}
-					if (inversion[bestPosition]->boolean) {
+					if (bestCandidate->boolean) {
 						size_t pos;
-						if (!matches.find(inversion[bestPosition]->boolean, pos)) {
-							matches.add(inversion[bestPosition]->boolean);
+						if (!matches.find(bestCandidate->boolean, pos)) {
+							matches.add(bestCandidate->boolean);
 						}
 					}
 				}
