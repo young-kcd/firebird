@@ -1,3 +1,21 @@
+2005-04-16 20:21  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.132):
+	
+	Fixed issue reported by Adriano.
+
+2005-04-16 19:28  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.22):
+	
+	Third attempt to apply reduced selectivity properly.
+
+2005-04-16 18:57  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.21):
+	
+	Code simplification and some style corrections.
+
 2005-04-15 16:54  dimitr
 
 	* firebird2/src/jrd/: Optimizer.cpp (1.20), Optimizer.h (1.5):
