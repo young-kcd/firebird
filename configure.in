@@ -909,6 +909,17 @@ case "$PLATFORM" in
       ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
     ;;
 
+  SOLARIS)
+
+    AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/pkginfo.in
+                     gen/install/Prototype:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/prototype.in
+                     gen/install/Preinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/preinstall.in
+                     gen/install/Postinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postinstall.in
+                     gen/install/Postremove:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postremove.in
+		     gen/install/prototypelg:builds/install/arch-specific/solaris/LIBGCC/prototypelg.in
+		     gen/install/pkginfolg:builds/install/arch-specific/solaris/LIBGCC/pkginfolg.in
+      ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
+    ;;
   
 
 esac
