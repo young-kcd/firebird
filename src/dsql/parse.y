@@ -4763,7 +4763,7 @@ int LexerState::yylex (
 		tok_class = classes[c];
 
 		if (!(tok_class & CHR_WHITE))
-		break;
+			break;
 	}
 
 	/* Depending on tok_class of token, parse token */

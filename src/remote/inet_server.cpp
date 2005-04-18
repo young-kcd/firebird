@@ -117,10 +117,10 @@ const char* FIREBIRD_USER_NAME		= "firebird";
 
 #ifdef VMS
 static int assign(SCHAR *);
-#endif
-//static void name_process(UCHAR *);
-static void signal_handler(int);
+#else
 static void set_signal(int, void (*)(int));
+#endif
+static void signal_handler(int);
 
 #if (defined SUPERSERVER && defined UNIX )
 static void signal_sigpipe_handler(int);

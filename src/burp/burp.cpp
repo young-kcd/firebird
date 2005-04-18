@@ -1988,7 +1988,7 @@ static gbak_action open_files(const TEXT* file1,
 			BURP_error(14, true, *file2, 0, 0, 0, 0);
 			// msg 14 database %s already exists.  To replace it, use the -R switch 
 		}
- 		else {
+		else {
 			isc_drop_database(status_vector, &tdgbl->db_handle);
 			if (tdgbl->db_handle) {
 				ISC_STATUS_ARRAY status_vector2;
@@ -2093,7 +2093,7 @@ static void burp_usage()
 	BURP_print(95, 0, 0, 0, 0, 0);
 	// msg 95  legal switches are
 
-	in_sw_tab_t* in_sw_tab = burp_in_sw_table;
+	const in_sw_tab_t* in_sw_tab = burp_in_sw_table;
 	for (; in_sw_tab->in_sw; in_sw_tab++)
 		if (in_sw_tab->in_sw_msg) {
 			BURP_msg_put(in_sw_tab->in_sw_msg, (void*)switch_char, 0, 0,
