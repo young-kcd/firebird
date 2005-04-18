@@ -1924,7 +1924,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 				throw;
 			}
 
-			bool allow_overwrite = (*handle)->att_user->usr_flags & (USR_locksmith | USR_owner);
+			const bool allow_overwrite = (*handle)->att_user->usr_flags & (USR_locksmith | USR_owner);
 
 			GDS_DETACH(user_status, handle);
 
@@ -6290,7 +6290,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) {
 
 	THREAD_ENTER();
 	JRD_shutdown_all();
-	*reinterpret_cast<int*>(arg) = 1;
+	*static_cast<int*>(arg) = 1;
 	return 0;
 }
 #endif // SUPERSERVER

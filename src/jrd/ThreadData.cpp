@@ -231,8 +231,7 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 	fb_assert(arg);
 	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
 	{
-		ThreadPriorityScheduler* tps = 
-			reinterpret_cast<ThreadPriorityScheduler*>(arg);
+		ThreadPriorityScheduler* tps =  static_cast<ThreadPriorityScheduler*>(arg);
 		try {
 			tps->run();
 		}
@@ -255,9 +254,9 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 // due to same names of parameters for various ThreadData::start(...),
 // we may use common macro for various platforms
 #define THREAD_ENTRYPOINT threadStart
-#define THREAD_ARG reinterpret_cast<THREAD_ENTRY_PARAM> (FB_NEW(*getDefaultMemoryPool()) \
+#define THREAD_ARG static_cast<THREAD_ENTRY_PARAM> (FB_NEW(*getDefaultMemoryPool()) \
 		ThreadArgs(reinterpret_cast<THREAD_ENTRY_RETURN (THREAD_ENTRY_CALL *) (THREAD_ENTRY_PARAM)>(routine), \
-		reinterpret_cast<THREAD_ENTRY_PARAM>(arg)))
+		static_cast<THREAD_ENTRY_PARAM>(arg)))
 
 class ThreadArgs
 {
@@ -278,8 +277,8 @@ private:
 THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 	fb_assert(arg);
 	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
-	ThreadArgs localArgs(*reinterpret_cast<ThreadArgs*>(arg));
-	delete reinterpret_cast<ThreadArgs*>(arg);
+	ThreadArgs localArgs(*static_cast<ThreadArgs*>(arg));
+	delete static_cast<ThreadArgs*>(arg);
 	localArgs.run();
 	return 0;
 }
@@ -483,10 +482,9 @@ void ThreadData::start(ThreadEntryPoint* routine,
 	 * CreateThread() can lead to memory leaks caused by C-runtime library.
 	 * Advanced Windows by Richter pg. # 109. */
 
-	DWORD thread_id;
-	unsigned long real_handle = 
-		_beginthreadex(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, CREATE_SUSPENDED,
-					   reinterpret_cast<unsigned*>(&thread_id));
+	unsigned thread_id;
+	unsigned long real_handle = _beginthreadex(NULL, 0, THREAD_ENTRYPOINT,
+		THREAD_ARG, CREATE_SUSPENDED, &thread_id);
 	if (!real_handle)
 	{
 		Firebird::system_call_failed::raise("_beginthreadex", GetLastError());
@@ -501,7 +499,7 @@ void ThreadData::start(ThreadEntryPoint* routine,
 	}
 	if (thd_id)
 	{
-		*(HANDLE *) thd_id = handle;
+		*static_cast<HANDLE*>(thd_id) = handle;
 	}
 	else
 	{
