@@ -1136,7 +1136,7 @@ bool get_acl (const TEXT	*owner_nm,
 	if (!blob_id->gds_quad_high && !blob_id->gds_quad_low)
 		return false;
 
-	ISC_STATUS_ARRAY	status_vector;
+	ISC_STATUS_ARRAY status_vector;
 	// Open the blob and get it's vital statistics 
 
 	FB_API_HANDLE blob = 0;
@@ -2749,7 +2749,7 @@ burp_fld* get_field (burp_rel*	relation)
 	burp_fld* field = (burp_fld*) BURP_alloc_zero (sizeof(burp_fld));
 
 	STORE (TRANSACTION_HANDLE local_trans
-		   REQUEST_HANDLE tdgbl->handles_get_field_req_handle1)
+			REQUEST_HANDLE tdgbl->handles_get_field_req_handle1)
 		X IN RDB$RELATION_FIELDS
 		strcpy (X.RDB$RELATION_NAME, relation->rel_name);
 		X.RDB$FIELD_POSITION = 0;
@@ -3238,10 +3238,10 @@ void get_function_arg()
 	{
 		// with RDB$FIELD_PRECISION 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
-		X IN RDB$FUNCTION_ARGUMENTS
-		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
-		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
-		X.RDB$FIELD_PRECISION.NULL  = TRUE;
+			X IN RDB$FUNCTION_ARGUMENTS
+			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
+			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			X.RDB$FIELD_PRECISION.NULL  = TRUE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -3305,9 +3305,9 @@ void get_function_arg()
 	{
 		// without RDB$FIELD_PRECISION 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
-		X IN RDB$FUNCTION_ARGUMENTS
-		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
-		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			X IN RDB$FUNCTION_ARGUMENTS
+			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
+			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -3461,35 +3461,35 @@ bool get_global_field()
 	{
 		// with rdb$field_precision 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
-		X IN RDB$FIELDS
+			X IN RDB$FIELDS
 
-		X.RDB$FIELD_SCALE = X.RDB$SEGMENT_LENGTH = 0;
-		X.RDB$CHARACTER_SET_ID = X.RDB$COLLATION_ID = 0;
-		X.RDB$FIELD_SUB_TYPE = 0;
-		X.RDB$COMPUTED_BLR.NULL = TRUE;
-		X.RDB$COMPUTED_SOURCE.NULL = TRUE;
-		X.RDB$QUERY_NAME.NULL = TRUE;
-		X.RDB$EDIT_STRING.NULL = TRUE;
-		X.RDB$QUERY_HEADER.NULL = TRUE;
-		X.RDB$MISSING_VALUE.NULL = TRUE;
-		X.RDB$DEFAULT_VALUE.NULL = TRUE;
-		X.RDB$VALIDATION_BLR.NULL = TRUE;
-		X.RDB$VALIDATION_SOURCE.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG.NULL = TRUE;
-		X.RDB$NULL_FLAG.NULL = TRUE;
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		X.RDB$DIMENSIONS.NULL = TRUE;
-		X.RDB$EXTERNAL_LENGTH.NULL = TRUE;
-		X.RDB$EXTERNAL_TYPE.NULL = TRUE;
-		X.RDB$EXTERNAL_SCALE.NULL = TRUE;
-		X.RDB$SEGMENT_LENGTH.NULL = TRUE;
-		X.RDB$CHARACTER_LENGTH.NULL = TRUE;
-		X.RDB$MISSING_SOURCE.NULL = TRUE;
-		X.RDB$DEFAULT_SOURCE.NULL = TRUE;
-		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
-		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
-		X.RDB$COLLATION_ID.NULL = TRUE;
-		X.RDB$FIELD_PRECISION.NULL = TRUE;
+			X.RDB$FIELD_SCALE = X.RDB$SEGMENT_LENGTH = 0;
+			X.RDB$CHARACTER_SET_ID = X.RDB$COLLATION_ID = 0;
+			X.RDB$FIELD_SUB_TYPE = 0;
+			X.RDB$COMPUTED_BLR.NULL = TRUE;
+			X.RDB$COMPUTED_SOURCE.NULL = TRUE;
+			X.RDB$QUERY_NAME.NULL = TRUE;
+			X.RDB$EDIT_STRING.NULL = TRUE;
+			X.RDB$QUERY_HEADER.NULL = TRUE;
+			X.RDB$MISSING_VALUE.NULL = TRUE;
+			X.RDB$DEFAULT_VALUE.NULL = TRUE;
+			X.RDB$VALIDATION_BLR.NULL = TRUE;
+			X.RDB$VALIDATION_SOURCE.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG.NULL = TRUE;
+			X.RDB$NULL_FLAG.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$DIMENSIONS.NULL = TRUE;
+			X.RDB$EXTERNAL_LENGTH.NULL = TRUE;
+			X.RDB$EXTERNAL_TYPE.NULL = TRUE;
+			X.RDB$EXTERNAL_SCALE.NULL = TRUE;
+			X.RDB$SEGMENT_LENGTH.NULL = TRUE;
+			X.RDB$CHARACTER_LENGTH.NULL = TRUE;
+			X.RDB$MISSING_SOURCE.NULL = TRUE;
+			X.RDB$DEFAULT_SOURCE.NULL = TRUE;
+			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
+			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			X.RDB$COLLATION_ID.NULL = TRUE;
+			X.RDB$FIELD_PRECISION.NULL = TRUE;
 
 			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
 			skip_init(&scan_next_attr);
@@ -3743,34 +3743,34 @@ bool get_global_field()
 		// without rdb$field_precision 
 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
-		X IN RDB$FIELDS
+			X IN RDB$FIELDS
 
-		X.RDB$FIELD_SCALE = X.RDB$SEGMENT_LENGTH = 0;
-		X.RDB$CHARACTER_SET_ID = X.RDB$COLLATION_ID = 0;
-		X.RDB$FIELD_SUB_TYPE = 0;
-		X.RDB$COMPUTED_BLR.NULL = TRUE;
-		X.RDB$COMPUTED_SOURCE.NULL = TRUE;
-		X.RDB$QUERY_NAME.NULL = TRUE;
-		X.RDB$EDIT_STRING.NULL = TRUE;
-		X.RDB$QUERY_HEADER.NULL = TRUE;
-		X.RDB$MISSING_VALUE.NULL = TRUE;
-		X.RDB$DEFAULT_VALUE.NULL = TRUE;
-		X.RDB$VALIDATION_BLR.NULL = TRUE;
-		X.RDB$VALIDATION_SOURCE.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG.NULL = TRUE;
-		X.RDB$NULL_FLAG.NULL = TRUE;
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		X.RDB$DIMENSIONS.NULL = TRUE;
-		X.RDB$EXTERNAL_LENGTH.NULL = TRUE;
-		X.RDB$EXTERNAL_TYPE.NULL = TRUE;
-		X.RDB$EXTERNAL_SCALE.NULL = TRUE;
-		X.RDB$SEGMENT_LENGTH.NULL = TRUE;
-		X.RDB$CHARACTER_LENGTH.NULL = TRUE;
-		X.RDB$MISSING_SOURCE.NULL = TRUE;
-		X.RDB$DEFAULT_SOURCE.NULL = TRUE;
-		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
-		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
-		X.RDB$COLLATION_ID.NULL = TRUE;
+			X.RDB$FIELD_SCALE = X.RDB$SEGMENT_LENGTH = 0;
+			X.RDB$CHARACTER_SET_ID = X.RDB$COLLATION_ID = 0;
+			X.RDB$FIELD_SUB_TYPE = 0;
+			X.RDB$COMPUTED_BLR.NULL = TRUE;
+			X.RDB$COMPUTED_SOURCE.NULL = TRUE;
+			X.RDB$QUERY_NAME.NULL = TRUE;
+			X.RDB$EDIT_STRING.NULL = TRUE;
+			X.RDB$QUERY_HEADER.NULL = TRUE;
+			X.RDB$MISSING_VALUE.NULL = TRUE;
+			X.RDB$DEFAULT_VALUE.NULL = TRUE;
+			X.RDB$VALIDATION_BLR.NULL = TRUE;
+			X.RDB$VALIDATION_SOURCE.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG.NULL = TRUE;
+			X.RDB$NULL_FLAG.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$DIMENSIONS.NULL = TRUE;
+			X.RDB$EXTERNAL_LENGTH.NULL = TRUE;
+			X.RDB$EXTERNAL_TYPE.NULL = TRUE;
+			X.RDB$EXTERNAL_SCALE.NULL = TRUE;
+			X.RDB$SEGMENT_LENGTH.NULL = TRUE;
+			X.RDB$CHARACTER_LENGTH.NULL = TRUE;
+			X.RDB$MISSING_SOURCE.NULL = TRUE;
+			X.RDB$DEFAULT_SOURCE.NULL = TRUE;
+			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
+			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			X.RDB$COLLATION_ID.NULL = TRUE;
 
 			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
 			skip_init(&scan_next_attr);
@@ -4331,7 +4331,7 @@ bool get_procedure()
 	tdgbl->procedures = procedure;
 
 	STORE (TRANSACTION_HANDLE local_trans
-		   REQUEST_HANDLE tdgbl->handles_get_procedure_req_handle1)
+			REQUEST_HANDLE tdgbl->handles_get_procedure_req_handle1)
 		X IN RDB$PROCEDURES
 		X.RDB$PROCEDURE_SOURCE.NULL = TRUE;
 		X.RDB$DESCRIPTION.NULL = TRUE;
@@ -4442,7 +4442,7 @@ bool get_procedure_prm (GDS_NAME	procptr)
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
 	STORE (TRANSACTION_HANDLE local_trans
-		REQUEST_HANDLE tdgbl->handles_get_procedure_prm_req_handle1)
+			REQUEST_HANDLE tdgbl->handles_get_procedure_prm_req_handle1)
 		X IN RDB$PROCEDURE_PARAMETERS
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		strcpy (X.RDB$PROCEDURE_NAME, procptr);
@@ -4711,7 +4711,7 @@ bool get_relation()
 		local_trans = tdgbl->global_trans;
 
 	STORE (TRANSACTION_HANDLE local_trans
-		   REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
+			REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
 		X IN RDB$RELATIONS
 
 		X.RDB$SYSTEM_FLAG.NULL = sys_flag_null;
@@ -5447,7 +5447,7 @@ bool get_trigger()
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
 	STORE (TRANSACTION_HANDLE local_trans
-		   REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle1)
+			REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle1)
 		X IN RDB$TRIGGERS
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$TRIGGER_BLR.NULL = TRUE;
@@ -5613,7 +5613,7 @@ bool get_trigger_message()
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
 	STORE (TRANSACTION_HANDLE local_trans
-		   REQUEST_HANDLE tdgbl->handles_get_trigger_message_req_handle2)
+			REQUEST_HANDLE tdgbl->handles_get_trigger_message_req_handle2)
 		X IN RDB$TRIGGER_MESSAGES
 		strcpy (X.RDB$TRIGGER_NAME, name);
 		X.RDB$MESSAGE_NUMBER = number;
@@ -5845,8 +5845,8 @@ bool get_user_privilege()
 			local_trans = gds_trans;
 
 		STORE (TRANSACTION_HANDLE local_trans
-		   REQUEST_HANDLE tdgbl->handles_get_user_privilege_req_handle1) X
-		IN RDB$USER_PRIVILEGES
+				REQUEST_HANDLE tdgbl->handles_get_user_privilege_req_handle1)
+			X IN RDB$USER_PRIVILEGES
 
 			X.RDB$FIELD_NAME.NULL = TRUE;
 			X.RDB$OBJECT_TYPE.NULL = TRUE;
@@ -5944,7 +5944,7 @@ bool get_view (burp_rel*		relation)
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
 	STORE (TRANSACTION_HANDLE local_trans
-		   REQUEST_HANDLE tdgbl->handles_get_view_req_handle1)
+			REQUEST_HANDLE tdgbl->handles_get_view_req_handle1)
 		X IN RDB$VIEW_RELATIONS
 		strcpy (X.RDB$VIEW_NAME, relation->rel_name);
 		skip_init(&scan_next_attr);
@@ -6862,7 +6862,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 
 	const SSHORT blr_length = blr - blr_buffer;
 	
-	ISC_STATUS_ARRAY	status_vector;
+	ISC_STATUS_ARRAY status_vector;
 	if (isc_compile_request (status_vector, &DB, &gen_id_reqh,
 							 blr_length, (const SCHAR*) blr_buffer))
 	{
@@ -6916,39 +6916,33 @@ void update_global_field()
 			{
 				X.RDB$VALIDATION_BLR.NULL = FALSE;
 
-				if (length = sizeof(ISC_QUAD))
-				{
-					UCHAR* p = (UCHAR *)&X.RDB$VALIDATION_BLR;
-					const UCHAR* q = (UCHAR *)&gfield->gfld_vb;
+				length = sizeof(ISC_QUAD);
+				UCHAR* p = (UCHAR *)&X.RDB$VALIDATION_BLR;
+				const UCHAR* q = (UCHAR *)&gfield->gfld_vb;
 
-					do { *p++ = *q++; } while (--length);
-				}
+				do { *p++ = *q++; } while (--length);
 			}
 
 			if (gfield->gfld_flags & GFLD_validation_source)
 			{
 				X.RDB$VALIDATION_SOURCE.NULL = FALSE;
 
-				if (length = sizeof(ISC_QUAD))
-				{
-					UCHAR* p = (UCHAR *)&X.RDB$VALIDATION_SOURCE;
-					const UCHAR* q = (UCHAR *)&gfield->gfld_vs;
+				length = sizeof(ISC_QUAD);
+				UCHAR* p = (UCHAR *)&X.RDB$VALIDATION_SOURCE;
+				const UCHAR* q = (UCHAR *)&gfield->gfld_vs;
 
-					do { *p++ = *q++; } while (--length);
-				}
+				do { *p++ = *q++; } while (--length);
 			}
 
 			if (gfield->gfld_flags & GFLD_validation_source2)
 			{
 				X.RDB$VALIDATION_SOURCE.NULL = FALSE;
 
-				if (length = sizeof(ISC_QUAD))
-				{
-					UCHAR* p = (UCHAR *)&X.RDB$VALIDATION_SOURCE;
-					const UCHAR* q = (UCHAR *)&gfield->gfld_vs2;
+				length = sizeof(ISC_QUAD);
+				UCHAR* p = (UCHAR *)&X.RDB$VALIDATION_SOURCE;
+				const UCHAR* q = (UCHAR *)&gfield->gfld_vs2;
 
-					do { *p++ = *q++; } while (--length);
-				}
+				do { *p++ = *q++; } while (--length);
 			}
 
 			END_MODIFY;
