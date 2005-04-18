@@ -24,12 +24,12 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: tree.h,v 1.45 2004-11-24 09:05:12 robocop Exp $
+ *  $Id: tree.h,v 1.46 2005-04-18 03:26:45 robocop Exp $
  *
  */
 
-#ifndef TREE_H
-#define TREE_H
+#ifndef CLASSES_TREE_H
+#define CLASSES_TREE_H
 
 #include <exception>
 #include "../jrd/gdsassert.h"
@@ -801,4 +801,5 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_
 
 }  // namespace Firebird
 
-#endif
+#endif // CLASSES_TREE_H
+
