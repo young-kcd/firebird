@@ -2906,14 +2906,14 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	}
 #endif
 
-		/* If the stream was sorted, the various fields in the rpb are
-		probably junk.  Just to make sure that everything is cool,
-		refetch and release the record. */
+	/* If the stream was sorted, the various fields in the rpb are
+	probably junk.  Just to make sure that everything is cool,
+	refetch and release the record. */
 
-		if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
-			VIO_refetch_record(tdbb, org_rpb, transaction);
-			org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
-		}
+	if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
+		VIO_refetch_record(tdbb, org_rpb, transaction);
+		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
+	}
 
 	switch (request->req_operation) {
 	case jrd_req::req_evaluate:
