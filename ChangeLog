@@ -1,3 +1,64 @@
+2005-04-18 18:05  kkuznetsov
+
+	* firebird2/: builds/install/arch-specific/solaris/Makefile.in
+	(1.2), builds/install/arch-specific/solaris/CS/pkginfo.in (1.1),
+	builds/install/arch-specific/solaris/CS/postinstall.in (1.1),
+	builds/install/arch-specific/solaris/CS/postremove.in (1.1),
+	builds/install/arch-specific/solaris/CS/preinstall.in (1.1),
+	builds/install/arch-specific/solaris/CS/prototype.in (1.1),
+	builds/install/arch-specific/solaris/SS/pkginfo.in (1.1),
+	builds/install/arch-specific/solaris/SS/postinstall.in (1.1),
+	builds/install/arch-specific/solaris/SS/postremove.in (1.1),
+	builds/install/arch-specific/solaris/SS/preinstall.in (1.1),
+	builds/install/arch-specific/solaris/SS/prototype.in (1.1),
+	configure.in (1.221):
+	
+	Try to pick-up Ray Holme Solaris spark32 port into FB2 (not tested
+	yet)
+
+2005-04-18 05:36  robocop
+
+	* firebird2/src/common/classes/tree.h (1.47):
+	
+	Misc.
+
+2005-04-18 05:32  robocop
+
+	* firebird2/src/jrd/: ThreadData.cpp (1.3), jrd.cpp (1.209):
+	
+	We can live with static_cast for these cases.
+
+2005-04-18 05:26  robocop
+
+	* firebird2/src/common/classes/tree.h (1.46):
+	
+	Be in sync with our header protection convention.
+
+2005-04-18 05:25  robocop
+
+	* firebird2/src/burp/restore.epp (1.91):
+	
+	Cleanup. No need to test if sizeof() is bigger than zero.
+
+2005-04-18 05:24  robocop
+
+	* firebird2/src/: burp/burp.cpp (1.98), remote/inet_server.cpp
+	(1.54), dsql/parse.y (1.173):
+	
+	Misc.
+
+2005-04-18 05:22  robocop
+
+	* firebird2/src/jrd/exe.cpp (1.144):
+	
+	Fix recently committed strange indentation.
+
+2005-04-18 05:21  robocop
+
+	* firebird2/src/msgs/history.sql (1.9):
+	
+	Keeping the history manually.
+
 2005-04-16 20:21  dimitr
 
 	* firebird2/src/dsql/ddl.cpp (1.132):
