@@ -898,7 +898,6 @@ case "$PLATFORM" in
     ;;
 
   solx86)
-
     AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/pkginfo.in
                      gen/install/Prototype:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/prototype.in
                      gen/install/Preinstall:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/preinstall.in
@@ -910,7 +909,6 @@ case "$PLATFORM" in
     ;;
 
   SOLARIS)
-
     AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/pkginfo.in
                      gen/install/Prototype:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/prototype.in
                      gen/install/Preinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/preinstall.in
@@ -920,8 +918,6 @@ case "$PLATFORM" in
 		     gen/install/pkginfolg:builds/install/arch-specific/solaris/LIBGCC/pkginfolg.in
       ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
     ;;
-  
-
 esac
 
 
