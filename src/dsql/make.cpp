@@ -1306,6 +1306,12 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node,
 	dsql_nod** arg = node->nod_arg;
 	for (dsql_nod** end = arg + node->nod_count; arg < end; arg++) {
 		dsql_nod* tnod = *arg;
+
+		// If this is an alias pick the source datatype
+		if (tnod->nod_type == nod_alias) {
+			tnod = tnod->nod_arg[e_alias_value];
+		}
+
 		// do we have only literal NULLs?
 		if (tnod->nod_type != nod_null) {
 			all_nulls = false;
