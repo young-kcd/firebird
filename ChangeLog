@@ -1,3 +1,21 @@
+2005-04-19 11:55  arnobrinkman
+
+	* firebird2/src/dsql/make.cpp (1.86):
+	
+	Fix bug with alias hiding datatype by datatype-list coercion
+
+2005-04-19 10:23  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solaris (1.15):
+	
+	misc cleanup
+
+2005-04-19 10:05  kkuznetsov
+
+	* firebird2/configure.in (1.222):
+	
+	misc
+
 2005-04-18 18:05  kkuznetsov
 
 	* firebird2/: builds/install/arch-specific/solaris/Makefile.in
