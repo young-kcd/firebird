@@ -114,6 +114,7 @@ case "$target" in
 
   i386-pc-solaris*)
     MAKEFILE_PREFIX=solx86gcc
+    INSTALL_PREFIX=solx86gcc
     PLATFORM=solx86
     AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
     LOCK_MANAGER_FLG=N
@@ -125,6 +126,7 @@ case "$target" in
 
   sparc-sun-solaris*)
     MAKEFILE_PREFIX=solaris
+    INSTALL_PREFIX=solx86gcc
     PLATFORM=SOLARIS
     AC_DEFINE(SOLARIS, 1, [Define this if OS is Solaris Sparc])
     LOCK_MANAGER_FLG=N
