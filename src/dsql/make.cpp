@@ -1169,7 +1169,7 @@ void MAKE_desc(dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 		if (null_replacement)
 		{
 			MAKE_desc(desc, null_replacement, NULL);
-			desc->dsc_flags |= DSC_nullable;
+			desc->dsc_flags |= (DSC_nullable | DSC_null);
 		}
 		else
 		{
@@ -1314,10 +1314,15 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node,
 
 		// do we have only literal NULLs?
 		if (tnod->nod_type != nod_null) {
-			all_nulls = false;
+			if (!(tnod->nod_desc.dsc_flags & DSC_null)) {
+				all_nulls = false;
+			}
 		}
 		// ignore NULL and parameter value from walking
-		if (tnod->nod_type == nod_null || tnod->nod_type == nod_parameter) {
+		if (tnod->nod_type == nod_null || 
+			tnod->nod_desc.dsc_flags & DSC_null ||
+			tnod->nod_type == nod_parameter) 
+		{
 			continue;
 		}
 
@@ -1498,6 +1503,7 @@ void MAKE_desc_from_list(dsc* desc, dsql_nod* node,
 		{
 			make_placeholder_null(desc);
 		}
+		desc->dsc_flags |= DSC_null;
 		return;
 	}
 
@@ -1962,6 +1968,6 @@ static void make_placeholder_null(dsc* const desc)
 	desc->dsc_length = 1;
 	desc->dsc_scale = 0;
 	desc->dsc_ttype() = 0;
-	desc->dsc_flags = DSC_nullable;
+	desc->dsc_flags = DSC_nullable | DSC_null;
 }
 

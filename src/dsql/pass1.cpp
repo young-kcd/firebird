@@ -6477,6 +6477,9 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 		}
 		dsc desc;
 		MAKE_desc_from_list(&desc, tmp_list, NULL, "UNION");
+		// Only mark upper node as a NULL node when all sub-nodes are NULL
+		items->nod_arg[j]->nod_desc.dsc_flags &= ~DSC_null;
+		items->nod_arg[j]->nod_desc.dsc_flags |= (desc.dsc_flags & DSC_null);
 		for (i = 0; i < union_node->nod_count; i++) {
 			pass1_union_auto_cast(union_node->nod_arg[i], desc, j);
 		}
