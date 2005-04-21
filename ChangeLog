@@ -1,3 +1,28 @@
+2005-04-20 16:29  kkuznetsov
+
+	* firebird2/: configure.in (1.224),
+	builds/install/arch-specific/solx86gcc/Makefile.in (1.3),
+	builds/install/arch-specific/solx86gcc/CS/pkginfo.in (1.2),
+	builds/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in (1.2),
+	builds/install/arch-specific/solx86gcc/SS/pkginfo.in (1.2):
+	
+	Make Solaris install scripts "unified" for sparc and x86
+
+2005-04-20 15:06  arnobrinkman
+
+	* firebird2/src/dsql/: make.cpp (1.87), pass1.cpp (1.200):
+	
+	Second fix for items-list where NULLs default descriptor shouldn't
+	be used to determine the final output descriptor.  Only UNIONs were
+	affected by this bug.
+
+2005-04-20 09:47  kkuznetsov
+
+	* firebird2/configure.in (1.223):
+	
+	Revert my previos commit as autoconf fails with 2 equally filenames
+	beetween case
+
 2005-04-19 11:55  arnobrinkman
 
 	* firebird2/src/dsql/make.cpp (1.86):
