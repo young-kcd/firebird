@@ -1645,7 +1645,7 @@ static void check_sorts(RecordSelExpr* rse)
 	// RP: optimize sort with OUTER JOIN
 	// if all the fields in the sort list are from one stream, check the stream is
 	// the most outer stream, if true update rse and ignore the sort
-	if (sort) {
+	if (sort && !project) {
 		UCHAR sort_stream = 0;
 		bool usableSort = true;
 		const jrd_nod* const* sort_ptr = sort->nod_arg;
