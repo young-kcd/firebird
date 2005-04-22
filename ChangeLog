@@ -1,3 +1,15 @@
+2005-04-21 19:35  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.236):
+	
+	Fix bug with ORDER BY and DISTINCT on OUTER JOIN where the ORDER BY
+	clause was given to a deeper rse, but shouldn't because the
+	distinct should be applied first.  Reproducable query: SELECT  
+	DISTINCT r.rdb$relation_name, r.rdb$relation_id FROM  
+	rdb$relations r   LEFT JOIN rdb$relation_fields f ON
+	(f.rdb$relation_name = r.rdb$relation_name) ORDER BY  
+	r.rdb$relation_id
+
 2005-04-20 16:29  kkuznetsov
 
 	* firebird2/: configure.in (1.224),
