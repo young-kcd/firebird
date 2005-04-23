@@ -1496,7 +1496,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					// This is our last segment that we can use,
 					// estimate the selectivity
 					double selectivity = scratch[i]->selectivity;
-					int factor = 1;
+					double factor = 1;
 					switch (segment->scanType) {
 						case segmentScanBetween:
 							scratch[i]->lowerCount++;
@@ -1535,14 +1535,10 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					// Adjust the compound selectivity using the reduce factor.
 					// It should be better than the previous segment but worse
 					// than a full match.
-					selectivity *= factor;
-					if (selectivity > scratch[i]->selectivity) {
-						// The selectivity can never be worse than the previous segment,
-						// but they shouldn't be equal either.
-						const double delta =
-							(selectivity - scratch[i]->selectivity) / factor;
-						scratch[i]->selectivity -= delta;
-					}
+					const double diffSelectivity =
+						scratch[i]->selectivity - selectivity;
+					selectivity += (diffSelectivity * factor);
+					fb_assert(selectivity <= scratch[i]->selectivity);
 
 					if (segment->scanType != segmentScanNone) {
 						matches.join(segment->matches);
@@ -1963,8 +1959,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->nonFullMatchedSegments = 0;
 					invCandidate->matchedSegments = 
 						std::max(bestCandidate->matchedSegments, invCandidate->matchedSegments);
-					invCandidate->dependencies =
-						invCandidate->dependencies + bestCandidate->dependencies;
+					invCandidate->dependencies += bestCandidate->dependencies;
 					for (int j = 0; j < bestCandidate->matches.getCount(); j++) {
 						size_t pos;
 						if (!matches.find(bestCandidate->matches[j], pos)) {
