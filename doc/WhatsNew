@@ -1,4 +1,66 @@
   **************
+  * v1.5.3
+  **************
+
+    * Fixed unregistered bug.
+        Computed column of blob/array type zeroes the first column of the table being restored.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server crashed in some cases of the BLOB filter declaration.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed v1.5.0 bug.
+        Server locked up after unsuccessful attach to security.fdb.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Conflict between single-line comments and block ones in ISQL.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Bug in AddMonth() UDF when facing January.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed bug SF #1124720.
+        Problem with "FOR EXECUTE STATEMENT ... DO SUSPEND".
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug.
+        Bugchecks on AMD64 (and possibly other platforms) when database was migrated without backup/restore.
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * ISQL improvement:
+        Command line switch -b to bail out on error when used in non-interactive mode.
+        Also, return an error code to the operating system.
+      Contributor(s):
+        Damyan Ivanov <divanov at creditreform.bg>
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Server crashed during some DDL operations.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug.
+        Issues with descending indices used in referential constraints.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed v1.5.1 bug.
+        Generators were garbage-initialized after metadata-only backup/restore.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************
   * v1.5.2
   **************
 
