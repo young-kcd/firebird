@@ -1,3 +1,9 @@
+2005-04-23 14:16  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.23), Optimizer.h (1.6):
+	
+	Tuned reduce factors again.
+
 2005-04-21 19:35  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp (1.236):
