@@ -3407,9 +3407,12 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 				break;
 
 			case RSR_validation_blr:
-				field->fld_validation =
-					PAR_blr(tdbb, relation, p, csb, NULL, NULL, false,
-							csb_validation);
+				if (!csb) 
+				{
+					field->fld_validation =
+						PAR_blr(tdbb, relation, p, csb, NULL, NULL, false,
+								csb_validation);
+				}
 				break;
 
 			case RSR_field_not_null:
