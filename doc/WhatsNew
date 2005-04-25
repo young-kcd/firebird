@@ -2,6 +2,11 @@
   * v2.0 Alpha 2
   **************
 
+    * Fixed Alpha 1 bug (SF #1188734)
+        WHERE CURRENT OF doesn't work
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Fixed Alpha 1 bug (SF #1168898)
         Domain with check containing select
       Contributor(s):
