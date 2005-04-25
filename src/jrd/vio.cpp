@@ -2569,7 +2569,7 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
 		(!VIO_chase_record_version(tdbb, rpb, NULL, transaction,
 								   tdbb->getDefaultPool(), false)))
 	{
-		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+		ERR_post(isc_no_cur_rec, 0);
 	}
 
 	VIO_data(tdbb, rpb, tdbb->tdbb_request->req_pool);
