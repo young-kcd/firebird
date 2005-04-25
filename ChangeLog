@@ -1,3 +1,19 @@
+2005-04-24 20:32  arnobrinkman
+
+	* firebird2/src/jrd/met.epp (1.155):
+	
+	Fix bug #1168898 With sub-select in CHECK constraint and CHECK
+	constraint is part of domain.  A table T with single column C who
+	uses this domain.  Then no VIEW could be created on Table T which
+	uses simple column C.
+
+2005-04-24 20:26  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.201):
+	
+	Fix bug with VALUE keyword in check constraint and bug Found by Tom
+	Cole with VALUE keyword where VALUE represents a column
+
 2005-04-23 14:16  dimitr
 
 	* firebird2/src/jrd/: Optimizer.cpp (1.23), Optimizer.h (1.6):
