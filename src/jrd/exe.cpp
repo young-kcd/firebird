@@ -1129,6 +1129,10 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[e_erase_stream]];
 	jrd_rel* relation = rpb->rpb_relation;
 
+	if (rpb->rpb_number.getValue() == BOF_NUMBER) {
+		ERR_post(isc_no_cur_rec, 0);
+	}
+
 #ifdef PC_ENGINE
 /* for navigational streams, retrieve the rsb */
 	RecordSource* rsb = NULL;
@@ -2883,6 +2887,10 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	const SSHORT org_stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 	record_param* org_rpb = &request->req_rpb[org_stream];
 	jrd_rel* relation = org_rpb->rpb_relation;
+
+	if (org_rpb->rpb_number.getValue() == BOF_NUMBER) {
+		ERR_post(isc_no_cur_rec, 0);
+	}
 
 	const SSHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 	record_param* new_rpb = &request->req_rpb[new_stream];
