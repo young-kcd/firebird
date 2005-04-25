@@ -3407,6 +3407,12 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 				break;
 
 			case RSR_validation_blr:
+				// AB: 2005-04-25   bug SF#1168898
+				// Ignore validation for VIEWs, because fields (domains) which are
+				// defined with CHECK constraints and have sub-selects should at least
+				// be parsed without view-context information. With view-context 
+				// information the context-numbers are wrong.
+				// Because a VIEW can't have a validation section i ignored the whole call.
 				if (!csb) 
 				{
 					field->fld_validation =
