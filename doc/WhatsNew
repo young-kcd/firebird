@@ -1,4 +1,212 @@
   **************
+  * v2.0 Alpha 2
+  **************
+
+    * Fixed Alpha 1 bug (SF #1168898)
+        Domain with check containing select
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 1 bug
+        Bug with VALUE keyword in check constraint and bug with VALUE keyword where VALUE represents a column
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 1 bug
+        Bug with ORDER BY and DISTINCT on OUTER JOIN
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 1 bug
+        Select-list alias hides an expression datatype
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 1 bug
+        Server crashed when SUBSTRING is used in the expression index
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Optimizer improvements
+        Better choice of streams order in joins and better index usage in general
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 1 bugs
+        1) Bad optimization for tables with zero selectivities
+        2) Wrong choice of index in	the case of the same selectivity and number of indices
+        3) Wrong total selectivity calculated for compound non-equality	comparisons
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug
+        Database corruption when row is deleted in a BEFORE UPDATE trigger
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 1 bug
+        Server crashed during validation of broken ODS11 indices
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Computed column of blob/array type zeroes the first column of the table being restored
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #1155520
+        Any user can replace databases created by others
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Shutdown ability
+        Posix SS builds now handle SIGTERM and SIGINT to shutdown all connections gracefully
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        GBAK stalled when it's used via the service manager and invalid command line is passed
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Added new GBAK switch -RECREATE_DATABASE [OVERWRITE]
+        Simple RECREATE_DATABASE is equal to CREATE_DATABASE, RECREATE_DATABASE OVERWRITE is equal to REPLACE_DATABASE
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Changed default value for TcpNoNagle config option
+        TCP_NODELAY socket option is now set by default
+      Contributor(s):
+        Konstantin Kuznetsov <kkuznetsov at users.sourceforge.net>
+
+    * Fixed Alpha 1 bug (SF #1173948)
+        Prompt is shown when using -i switch
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed v1.5.0 bug
+        Server locked up after unsuccessful attach to security.fdb
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        Privileges granted to procedures/triggers/views are preserved after dropping the object
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        EXECUTE PROCEDURE doesn't check SQL permissions at the prepare stage
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * NEW context changes
+        Reject any assignment to the NEW trigger context (make it read-only) in AFTER triggers
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 1 bug
+        Expression index cannot be used for navigation
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Implemented RECREATE EXCEPTION and CREATE OR ALTER EXCEPTION statements (SF #1167973)
+        Allow either creating, recreating or altering an exception, depending in its existance
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Bug in AddMonth() UDF when facing January
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        System transaction is reported as dead
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Alpha 1 bug (SF #1169884)
+        Navigation vs IS NULL vs compound index
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 1 bug (SF #1169730)
+        Database corruption caused by the new GC code
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Alpha 1 bug (SF #1169728)
+        FIRST 1 vs ORDER DESC vs explicit plan (ODS11)
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 1 bug (SF #1169723)
+        Database that will not restore using FB 2.0 Alpha1
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 1 bug (SF #1169708)
+        Select from selectable SP takes MUCH more time than before
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 1 bug (SF #1169707)
+        Database corruption - page 0 expected type 5, found 1
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        A number of buffer overflows
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed Alpha 1 bug (SF #1168910)
+        ISQL stops when meet any chars in comment
+      Contributor(s):
+        Dimitry Sibiryakov <sd at topol.udm.net>
+
+    * Fixed unregistered bug
+        Server crashed due to plan buffer overflows
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 1 bug
+        Lost sort node that caused unordered data to be returned
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        SQL role wasn't properly parsed by the engine
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Alpha 1 bug
+        Broken loopback connections via XNET.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 1 bug
+        Server crashed during SQL optimization
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * A number of ISQL changes
+        1) Stop possible crash with long terminators
+        2) Make SET SQLDA_DISPLAY work in release versions
+        3) Avoid several SQL> prompts when using the INPUT command interactively
+        4) Stop some memory leaks
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Alpha 1 bug
+        "gbak -se" (backup/restore via the service manager) didn't work
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************
   * v2.0 Alpha 1
   **************
 
