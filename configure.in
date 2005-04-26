@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.35 2005-02-01 09:01:24 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.141.2.36 2005-04-26 07:31:11 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -117,6 +117,7 @@ case "$target" in
 
   i386-pc-solaris*)
     MAKEFILE_PREFIX=solx86gcc
+    INSTALL_PREFIX=solx86gcc
     PLATFORM=solx86
     AC_DEFINE(solx86)
     LOCK_MANAGER_FLG=N
@@ -128,6 +129,7 @@ case "$target" in
 
   sparc-sun-solaris*)
     MAKEFILE_PREFIX=solaris
+    INSTALL_PREFIX=solx86gcc
     PLATFORM=SOLARIS
     AC_DEFINE(SOLARIS)
     LOCK_MANAGER_FLG=N

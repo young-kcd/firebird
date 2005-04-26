@@ -27,7 +27,7 @@
 # Contributor(s):
 # 
 # 
-# $Id: Makefile.in,v 1.1.2.4 2004-08-10 14:15:34 kkuznetsov Exp $
+# $Id: Makefile.in,v 1.1.2.5 2005-04-26 07:31:52 kkuznetsov Exp $
 # 
 
 ROOT=..
@@ -42,17 +42,17 @@ include     $(ROOT)/gen/make.shared.variables
 
 PGK_FILES=pkginfo prototype preinstall postinstall postremove
 PKG_DIR=$(RealFirebirdPath)/../install
-PKG_NAME=Firebird-@ARCH_TYPE_SUFFIX@-$(FirebirdVersion).$(BuildNum)-$(PackageVersion)-SolX86.pkg
-LGCC_PKG_NAME=LibGCC-3.x.FB-runtime-SolX86.pkg
+PKG_NAME=Firebird-@ARCH_TYPE_SUFFIX@-$(FirebirdVersion).$(BuildNum)-$(PackageVersion)-Solaris-@CPU_TYPE@.pkg
+LGCC_PKG_NAME=LibGCC-3.x.FB-runtime-@CPU_TYPE@.pkg
 
 install package packages dist:
-	@echo Making Solaris x86 package...
+	@echo Making Solaris @CPU_TYPE@ package...
 	rm -rf $(PKG_DIR)/FB2SI
 	-mkdir -p $(PKG_DIR)
 	(cd $(PKG_DIR); pkgmk -o  -d $(PKG_DIR))
 	pkgtrans -s $(PKG_DIR) $(PKG_DIR)/$(PKG_NAME) FB2SI
 libs:
-	@echo Making Solaris x86 LIBGCC package...
+	@echo Making Solaris @CPU_TYPE@ LIBGCC package...
 	rm -rf $(PKG_DIR)/FBLIBGCC
 	-mkdir -p $(PKG_DIR)
 	(cd $(PKG_DIR); pkgmk -o -f prototypelg -d $(PKG_DIR))
