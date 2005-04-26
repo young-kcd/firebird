@@ -6035,9 +6035,9 @@ static dsql_nod* pass1_searched_case( dsql_req* request, dsql_nod* input, bool p
 	MAKE_desc(&node->nod_desc, node, NULL);
 
 	// Set parameter-types if parameters are there 
-	dsql_nod* case_search = node->nod_arg[e_searched_case_search_conditions];
-	dsql_nod** ptr = case_search->nod_arg;
-	for (const dsql_nod* const* const end = ptr + case_search->nod_count;
+	dsql_nod* case_results = node->nod_arg[e_searched_case_results];//node->nod_arg[e_searched_case_search_conditions];
+	dsql_nod** ptr = case_results->nod_arg;
+	for (const dsql_nod* const* const end = ptr + case_results->nod_count;
 		 ptr < end; ptr++)
 	{
 		set_parameter_type(*ptr, node, false);
