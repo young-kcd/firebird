@@ -2,6 +2,12 @@
   * v2.0 Alpha 2
   **************
 
+
+    * Fixed bug (SF #1016969)
+        Unknown datatype for parameters in result of searched CASE expression
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
     * Fixed Alpha 1 bug (SF #1188734)
         WHERE CURRENT OF doesn't work
       Contributor(s):
