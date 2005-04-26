@@ -1,3 +1,40 @@
+2005-04-25 22:33  dimitr
+
+	* firebird2/doc/WhatsNew (1.62):
+	
+	Updated docs.
+
+2005-04-25 22:31  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.145):
+	
+	Check whether a row we perform positioned update/delete against is
+	actually fetched.
+
+2005-04-25 21:45  dimitr
+
+	* firebird2/src/jrd/vio.cpp (1.130):
+	
+	Corrected the returned error code.
+
+2005-04-25 19:19  dimitr
+
+	* firebird2/doc/WhatsNew (1.61):
+	
+	Updated docs.
+
+2005-04-25 08:54  arnobrinkman
+
+	* firebird2/src/jrd/met.epp (1.156):
+	
+	Add comment
+
+2005-04-25 07:23  robocop
+
+	* firebird2/src/isql/isql.epp (1.140):
+	
+	Fix indentation.
+
 2005-04-24 20:32  arnobrinkman
 
 	* firebird2/src/jrd/met.epp (1.155):
