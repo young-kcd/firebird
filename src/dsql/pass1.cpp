@@ -6034,8 +6034,8 @@ static dsql_nod* pass1_searched_case( dsql_req* request, dsql_nod* input, bool p
 	// Set describer for output node 
 	MAKE_desc(&node->nod_desc, node, NULL);
 
-	// Set parameter-types if parameters are there 
-	dsql_nod* case_results = node->nod_arg[e_searched_case_results];//node->nod_arg[e_searched_case_search_conditions];
+	// Set parameter-types if parameters are there in the result nodes 
+	dsql_nod* case_results = node->nod_arg[e_searched_case_results];
 	dsql_nod** ptr = case_results->nod_arg;
 	for (const dsql_nod* const* const end = ptr + case_results->nod_count;
 		 ptr < end; ptr++)
