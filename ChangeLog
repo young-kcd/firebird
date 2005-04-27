@@ -1,3 +1,23 @@
+2005-04-26 15:51  arnobrinkman
+
+	* firebird2/doc/WhatsNew (1.63):
+	
+	no message
+
+2005-04-26 15:32  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.203):
+	
+	Remove non-sense comment
+
+2005-04-26 13:46  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.202):
+	
+	Fix SF bug #1016969
+	
+	-804 Data type unknown with searched CASE and parameters in results
+
 2005-04-25 22:33  dimitr
 
 	* firebird2/doc/WhatsNew (1.62):
