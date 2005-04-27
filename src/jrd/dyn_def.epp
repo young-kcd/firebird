@@ -423,7 +423,7 @@ void DYN_define_constraint(Global*		gbl,
 
 	if (!not_null) {
 		DYN_error_punt(false, 123, null_field_name, NULL, NULL, NULL, NULL);
-		/* msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY/UNIQUE constraint definition" */
+		/* msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY constraint definition" */
 	}
 
 	request = CMP_find_request(tdbb, drq_n_idx_seg, DYN_REQUESTS);
