@@ -676,6 +676,10 @@ bool ISQL_dbcheck()
  *	Check to see if we are connected to a database.
  *  	Return true if connected, false otherwise
  *
+ * Change from miroslavp on 25.04.2005
+ *   Value assigned here on Exit_value is not used anywhere in the source 
+ *   and cause isql.exe to return 1 in Quiet mode even there is no error. 
+ *   If there is error Exit_value is set by callers - so it is removed from here.
  **************************************/
 	TEXT errbuf[MSG_LENGTH];
 
@@ -684,8 +688,6 @@ bool ISQL_dbcheck()
 			ISQL_msg_get(NO_DB, errbuf, NULL);
 			STDERROUT(errbuf);
 		}
-		else
-			Exit_value = FINI_ERROR;
 		return false;
 	}
 	else
@@ -3033,7 +3035,10 @@ static void do_isql()
 				ISQL_msg_get(NO_DB, errbuf, NULL);
 				STDERROUT(errbuf);
 			}
-			ret = SKIP;
+			if (!Interactive && BailOnError)
+				ret = FAIL;
+			else
+				ret = SKIP;
 		}
 
 		switch (ret) {
