@@ -3253,7 +3253,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_ID EQ relation->rel_id
 			/* Pick up relation level stuff */
 		if (!REQUEST(irq_r_fields)) {
-            REQUEST(irq_r_fields) = request;
+			REQUEST(irq_r_fields) = request;
 		}
 		relation->rel_current_fmt = REL.RDB$FORMAT;
 		vec* vector = relation->rel_fields =
@@ -3458,10 +3458,10 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		}
 	END_FOR;
 
-	if (csb)
-	{
-		delete csb;
-	}
+	if (!REQUEST(irq_r_fields))
+		REQUEST(irq_r_fields) = request;
+
+	delete csb;
 
 /* release any triggers in case of a rescan, but not if the rescan 
    hapenned while system triggers were being loaded. */
