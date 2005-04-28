@@ -230,7 +230,7 @@ static const SCHAR * const messages[] = {
 	"database %s shutdown",		/* 208, shutdown */
 	"cannot modify an existing user privilege",		/* 209, existing_priv_mod */
 	"Cannot delete PRIMARY KEY being used in FOREIGN KEY definition.",		/* 210, primary_key_ref */
-	"Column used in a PRIMARY/UNIQUE constraint must be NOT NULL.",		/* 211, primary_key_notnull */
+	"Column used in a PRIMARY constraint must be NOT NULL.",		/* 211, primary_key_notnull */
 	"Name of Referential Constraint not defined in constraints table.",		/* 212, ref_cnstrnt_notfound */
 	"Non-existent PRIMARY or UNIQUE KEY specified for FOREIGN KEY.",		/* 213, foreign_key_notfound */
 	"Cannot update constraints (RDB$REF_CONSTRAINTS).",		/* 214, ref_cnstrnt_update */
