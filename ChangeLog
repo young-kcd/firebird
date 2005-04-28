@@ -1,3 +1,15 @@
+2005-04-27 20:06  dimitr
+
+	* firebird2/src/jrd/dyn_def.epp (1.91):
+	
+	Minor corrections.
+
+2005-04-27 19:56  dimitr
+
+	* firebird2/src/msgs/messages.sql (1.22):
+	
+	Minor corrections.
+
 2005-04-26 15:51  arnobrinkman
 
 	* firebird2/doc/WhatsNew (1.63):
