@@ -3,6 +3,15 @@
   **************
 
     * Fixed unregistered bug.
+        Backport isql fixes:
+        Another fix for the -b (Bail On Error) option when SQL commands are issued
+        and no db connection exists yet.
+        Apply Miroslav Penchev's patch for bug with -Q always returning 1 to the
+        operating system, discovered by Ivan Prenosil.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+        
+    * Fixed unregistered bug.
         Computed column of blob/array type zeroes the first column of the table being restored.
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
