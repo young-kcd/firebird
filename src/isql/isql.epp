@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.14 2005-04-03 04:59:32 robocop Exp $
+  $Id: isql.epp,v 1.32.2.15 2005-04-28 06:37:10 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -619,6 +619,10 @@ BOOLEAN ISQL_dbcheck(void)
  *	Check to see if we are connected to a database.
  *  	Return TRUE if connected, FALSE otherwise
  *
+ * Change from miroslavp on 25.04.2005
+ *   Value assigned here on Exit_value is not used anywhere in the source
+ *   and cause isql.exe to return 1 in Quiet mode even there is no error.
+ *   If there is error Exit_value is set by callers - so it is removed from here.
  **************************************/
 	TEXT errbuf[MSG_LENGTH];
 
@@ -629,8 +633,6 @@ BOOLEAN ISQL_dbcheck(void)
 							(TEXT*) NULL_PTR);
 			STDERROUT(errbuf, 1);
 		}
-		else
-			Exit_value = FINI_ERROR;
 		return FALSE;
 	}
 	else
@@ -1361,7 +1363,7 @@ void ISQL_disconnect_database( int nQuietMode)
  *
  * Functional description
  *	Disconnect from the current database.  First commit work and then 
- *	call isc_detach_database to detach from the database and the zero
+ *	call isc_detach_database to detach from the database and then zero
  *	out the DB handle.
  *
  **************************************/
@@ -1370,7 +1372,7 @@ void ISQL_disconnect_database( int nQuietMode)
 /* Ignore error msgs during disconnect */
 	Quiet = nQuietMode;
 
-/* If we were in a database, commit before proceding */
+/* If we were in a database, commit before proceeding */
 	if (DB && (M__trans || D__trans))
 		end_trans();
 
@@ -2690,7 +2692,10 @@ static void do_isql(void)
 								(TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
 				STDERROUT(errbuf, 1);
 			}
-			ret = SKIP;
+			if (!Interactive && BailOnError)
+				ret = FAIL;
+			else
+				ret = SKIP;
 		}
 
 		switch (ret) {
