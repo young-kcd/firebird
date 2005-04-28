@@ -56,7 +56,7 @@ DEV_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_FLAGS) $(DEBUG_GCC_FLAGS)
 			$(LOCAL_CFLAGS)
 
 # extra modules needed on this platform during bootstrap phase
-JRDBOOT_Extra_Files=isc_sync.cpp ThreadData.cpp
+JRDBOOT_Extra_Files=isc_sync.cpp thd.cpp
 
 OS_ServerFiles=inet_server.cpp
 
@@ -71,8 +71,9 @@ LIB_LINK_MAPFILE= -Xlinker -M
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
 CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin fb_lock_print
 
-Physical_IO_Module=os/posix/unix.cpp
+Physical_IO_Module=unix.cpp
 
-LD=g++
+LD=g++ -m64 /usr/local/lib/gcc-lib/sparc-sun-solaris2.9/3.3.2/sparcv9/gmon.o
 LDFLAGS=-m64 /usr/local/lib/gcc-lib/sparc-sun-solaris2.9/3.3.2/sparcv9/gmon.o
 #gmon.o is a work-a-round of SF Compile Farm gcc 3.3.2 (undefined symbol _mcount)
+LINK_OPTS=$(LDFLAGS)

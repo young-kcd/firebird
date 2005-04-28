@@ -12,7 +12,7 @@
 CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP
 
 # compile flags for GCC compiler
-COMMON_GCC_FLAGS= -pipe -MMD -p -fPIC -m32
+COMMON_GCC_FLAGS= -MMD -p -fPIC -m32
 DEBUG_GCC_FLAGS=  -ggdb -DDEBUG_GDS_ALLOC -Wall -Wno-switch
 PROD_GCC_FLAGS= -mcpu=ultrasparc -mtune=ultrasparc -O3 -DNDEBUG
 
@@ -43,10 +43,10 @@ SFIO_DIR=@SFIO_DIR@
 SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
-PROD_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_CFLAGS) $(PROD_GCC_FLAGS) \
+PROD_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_FLAGS) $(PROD_GCC_FLAGS) \
 			$(LOCAL_CFLAGS)
 
-DEV_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_CFLAGS) $(DEBUG_GCC_FLAGS) \
+DEV_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_FLAGS) $(DEBUG_GCC_FLAGS) \
 			$(LOCAL_CFLAGS)
 
 # extra modules needed on this platform during bootstrap phase
@@ -57,9 +57,14 @@ OS_ServerFiles=inet_server.cpp
 LIB_LINK_OPTIONS:= -G
 LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
+LIB_LINK_MAPFILE= -Xlinker -M
+
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fb_lock_print
 CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin fb_lock_print
 
 Physical_IO_Module=unix.cpp
 
-LD=gcc
+LD=g++
+LDFLAGS=-m32 /usr/local/lib/gcc-lib/sparc-sun-solaris2.9/3.3.2/gmon.o
+#gmon.o is a work-a-round of SF Compile Farm gcc 3.3.2 (undefined symbol _mcount)
+LINK_OPTS=$(LDFLAGS)
