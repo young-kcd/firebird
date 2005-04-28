@@ -231,7 +231,7 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 	fb_assert(arg);
 	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
 	{
-		ThreadPriorityScheduler* tps =  static_cast<ThreadPriorityScheduler*>(arg);
+		ThreadPriorityScheduler* tps = static_cast<ThreadPriorityScheduler*>(arg);
 		try {
 			tps->run();
 		}
@@ -338,8 +338,6 @@ void ThreadData::start(ThreadEntryPoint* routine,
 
 #else
 	
-	long stack_size;
-
 	state = pthread_attr_create(&pattr);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_create", state);
@@ -352,7 +350,7 @@ void ThreadData::start(ThreadEntryPoint* routine,
    The following code sets threads stack size up to 256K if the
    default stack size is less than this number
 */
-	stack_size = pthread_attr_getstacksize(pattr);
+	const long stack_size = pthread_attr_getstacksize(pattr);
 	if (stack_size == -1)
 		Firebird::system_call_failed::raise("pthread_attr_getstacksize");
 
