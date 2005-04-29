@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.11 2005-03-20 10:59:49 alexpeshkoff Exp $
+#   $Id: makeInstallImage.sh.in,v 1.12 2005-04-29 18:22:15 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -50,6 +50,29 @@ TargetDir=buildroot    # Where we want to build the install image
 RealRootDir=@prefix@   # Where it will be installed on new machine
 FBRootDir=${RealRootDir#/}   # strip off leading / 
 DestDir=$TargetDir/$FBRootDir
+
+
+#------------------------------------------------------------------------
+#  addLibs
+# Add required libraries in the beginning of script.
+# Place it to target directory.
+
+addLibs() {
+	libSdir=$1
+	libScript=$2
+	libTdir=$3
+	libTarget=$libTdir/$libScript
+
+	rm -f $libTarget
+	touch $libTarget
+	for i in posixLibrary.sh classicLibrary.sh linuxLibrary.sh
+	do
+		echo "# $i" >>$libTarget
+		cat $libSdir/$i >>$libTarget
+		echo "" >>$libTarget	# avoid missing linefeed
+	done
+	cat $libSdir/$libScript >>$libTarget
+}
 
 
 #------------------------------------------------------------------------
@@ -120,12 +143,21 @@ copyFiles() {
     cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
     cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
 
-    cp $BuiltFBDir/bin/CSchangeRunUser.sh $DestDir/bin
-    cp $BuiltFBDir/bin/CSrestoreRootRunUser.sh $DestDir/bin
-    cp $BuiltFBDir/bin/changeDBAPassword.sh $DestDir/bin
+    addLibs $BuildRootDir/gen/firebird/bin changeRunUser.sh $DestDir/bin
+    addLibs $BuildRootDir/gen/firebird/bin restoreRootRunUser.sh $DestDir/bin
+    addLibs $BuildRootDir/gen/firebird/bin changeDBAPassword.sh $DestDir/bin
+	
     cp $BuiltFBDir/bin/changeGdsLibraryCompatibleLink.sh $DestDir/bin
     cp $BuiltFBDir/bin/createAliasDB.sh $DestDir/bin
     cp $BuiltFBDir/bin/fb_config $DestDir/bin
+    cp $BuildRootDir/gen/firebird/bin/tarMainInstall.sh $BuildRootDir/gen/install/scripts
+    cp $BuildRootDir/gen/firebird/bin/tarinstall.sh $BuildRootDir/gen/install/scripts
+    cp $BuildRootDir/gen/firebird/bin/preinstall.sh $BuildRootDir/gen/install/scripts
+    cp $BuildRootDir/gen/firebird/bin/postinstall.sh $BuildRootDir/gen/install/scripts
+    cp $BuildRootDir/gen/firebird/bin/preuninstall.sh $BuildRootDir/gen/install/scripts
+    cp $BuildRootDir/gen/firebird/bin/postuninstall.sh $BuildRootDir/gen/install/scripts
+    cp $BuildRootDir/gen/firebird/bin/taruninstall.sh $BuildRootDir/gen/install/scripts
+    cp $BuildRootDir/gen/firebird/bin/tarMainUninstall.sh $BuildRootDir/gen/install/scripts
 
     # Copy examples only if we have them
 
@@ -174,9 +206,9 @@ copyFiles() {
     cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
     cp $BuildRootDir/doc/README.user $DestDir/README
 
-    cp $BuiltFBDir/misc/firebird.xinetd $DestDir/misc/firebird.xinetd
-    cp $BuiltFBDir/misc/firebird.conf $DestDir/firebird.conf
-    cp $BuiltFBDir/misc/aliases.conf $DestDir/aliases.conf
+    cp $BuildRootDir/gen/install/misc/firebird.xinetd $DestDir/misc/
+    cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/
+    cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
 
 
 # Create links from @libdir@ to install area.

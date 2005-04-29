@@ -854,26 +854,36 @@ case "$PLATFORM" in
 
     INSTALL_SRC_DIR=builds/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
     AC_CONFIG_FILES([gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
-                     gen/install/scripts/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
-                     gen/install/scripts/tarinstall.sh:${INSTALL_SRC_DIR}/tarinstall.sh.in
-                     gen/install/scripts/tarMainInstall.sh:${INSTALL_SRC_DIR}/tarMainInstall.sh.in
-                     gen/install/scripts/taruninstall.sh:${INSTALL_SRC_DIR}/taruninstall.sh.in
-                     gen/install/scripts/tarMainUninstall.sh:${INSTALL_SRC_DIR}/tarMainUninstall.sh.in
-                     gen/install/scripts/postinstall.sh:${INSTALL_SRC_DIR}/postinstall.sh.in
-                     gen/install/scripts/preuninstall.sh:${INSTALL_SRC_DIR}/preuninstall.sh.in
-                     gen/install/scripts/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
+                     gen/firebird/bin/tarMainInstall.sh:${INSTALL_SRC_DIR}/tarMainInstall.sh.in
+                     gen/firebird/bin/tarinstall.sh:${INSTALL_SRC_DIR}/tarinstall.sh.in
+                     gen/firebird/bin/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
+                     gen/firebird/bin/postinstall.sh:${INSTALL_SRC_DIR}/postinstall.sh.in
+                     gen/firebird/bin/preuninstall.sh:${INSTALL_SRC_DIR}/preuninstall.sh.in
+                     gen/firebird/bin/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
+                     gen/firebird/bin/taruninstall.sh:${INSTALL_SRC_DIR}/taruninstall.sh.in
+                     gen/firebird/bin/tarMainUninstall.sh:${INSTALL_SRC_DIR}/tarMainUninstall.sh.in
                      gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
-                     gen/firebird/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
-                     gen/firebird/misc/aliases.conf:builds/install/misc/aliases.conf.in
-                     gen/firebird/bin/changeDBAPassword.sh:builds/install/arch-specific/linux/misc/changeDBAPassword.sh.in
-                     gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/arch-specific/linux/misc/changeGdsLibraryCompatibleLink.sh.in
-                     gen/firebird/bin/createAliasDB.sh:builds/install/arch-specific/linux/misc/createAliasDB.sh.in
+                     gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
+                     gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
+                     gen/install/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
+                     gen/install/misc/firebird.init.d.generic:builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
+                     gen/install/misc/firebird.init.d.mandrake:builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+                     gen/install/misc/firebird.init.d.suse:builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
+                     gen/install/misc/firebird.init.d.debian:builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
+                     gen/install/misc/firebird.init.d.gentoo:builds/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
+                     gen/install/misc/rc.config.firebird:builds/install/arch-specific/linux/misc/rc.config.firebird.in
+                     gen/firebird/bin/changeDBAPassword.sh:builds/install/misc/changeDBAPassword.sh.in
+                     gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
+                     gen/firebird/bin/createAliasDB.sh:builds/install/misc/createAliasDB.sh.in
                      gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
-            	     gen/firebird/bin/CSchangeRunUser.sh:builds/install/misc/CSchangeRunUser.sh.in
-                     gen/firebird/bin/CSrestoreRootRunUser.sh:builds/install/misc/CSrestoreRootRunUser.sh.in
-                     gen/firebird/bin/SSchangeRunUser.sh:builds/install/misc/SSchangeRunUser.sh.in
-                     gen/firebird/bin/SSrestoreRootRunUser.sh:builds/install/misc/SSrestoreRootRunUser.sh.in
+            	     gen/firebird/bin/changeRunUser.sh:builds/install/misc/changeRunUser.sh.in
+                     gen/firebird/bin/restoreRootRunUser.sh:builds/install/misc/restoreRootRunUser.sh.in
+                     gen/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
+                     gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
+                     gen/firebird/bin/superLibrary.sh:builds/install/misc/superLibrary.sh.in
+                     gen/firebird/bin/linuxLibrary.sh:builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
+                     gen/firebird/bin/superLinux.sh:builds/install/arch-specific/linux/misc/superLinux.sh.in
       ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
     ;;
 

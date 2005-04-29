@@ -16,8 +16,6 @@
 
 
 FIREBIRD=@prefix@
-ISC_USER=SYSDBA
-ISC_PASSWORD=masterke
 FBRunUser=firebird
 FB_OPTS="-start -forever"
 # WARNING: in a real-world installation, you should not put the 
@@ -28,8 +26,6 @@ FB_OPTS="-start -forever"
 
 
 export FIREBIRD 
-export ISC_USER
-export ISC_PASSWORD
 
 
 # Check the file is there and is executable.
@@ -45,8 +41,7 @@ case "$1" in
 	;;
   stop)
 	echo -n "Stopping Firebird server: "
-#	start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/firebird.pid
-	$MANAGER -shut
+	killall fbserver
 	RETVAL=$?
 	;;
   restart|reload)

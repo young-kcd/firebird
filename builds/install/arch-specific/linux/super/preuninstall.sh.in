@@ -1,84 +1,27 @@
 #! /bin/sh
 
-
-
-#------------------------------------------------------------------------
-#  stop server if it is running
-
-
-stopServerIfRunning() {
-
-    checkString=`ps -ef| egrep "(ibserver|ibguard|fbserver|fbguard)" |grep -v grep`
-
-    if [ ! -z "$checkString" ] 
-      then
-        InitFile=/etc/init.d/firebird
-        if [ ! -x $InitFile ]
-          then
-            InitFile=/etc/rc.d/init.d/firebird
-        fi
-        if [ ! -x $InitFile ]
-          then
-            InitFile=/usr/sbin/rcfirebird
-        fi
-       
-        if [ -x $InitFile ]
-          then
-            $InitFile stop
-        fi
-    fi
-
-# Stop lock manager if it is the only thing running.
-
-    for i in `ps -ef | grep "gds_lock_mgr" | grep -v "grep" | cut -d' ' -f3`
-     do
-        kill $i
-     done
-
-}
-
-
-
 #= Main PreUn ================================================================
 
+stopSuperServerIfRunning
 
 
-    IBRootDir=@prefix@
-    IBBin=$IBRootDir/bin
-    SecurityDatabase=security2.fdb
-
-
-    stopServerIfRunning
-
-    cd $IBRootDir
-    if [ -f $SecurityDatabase ] 
-      then 
-        cp $SecurityDatabase /tmp 
-        echo "Saved a copy of SecurityDatabase ($SecurityDatabase) in /tmp" 
-		chown root:root /tmp/$SecurityDatabase
-		chmod 0600 /tmp/$SecurityDatabase
-    fi 
+cd $FBRootDir
+if [ -f $SecurityDatabase ] 
+then 
+    cp $SecurityDatabase /tmp 
+    echo "Saved a copy of SecurityDatabase ($SecurityDatabase) in /tmp" 
+	chown root:root /tmp/$SecurityDatabase
+	chmod 0600 /tmp/$SecurityDatabase
+fi 
         
 
-    for i in isc_init1* isc_event1* isc_lock1* isc_guard* firebird.log SYSDBA.password
-      do
-        if [ -f $i ]
-          then
-            rm -f $i
-        fi
-      done
+for i in isc_init1* isc_event1* isc_lock1* isc_guard* firebird.log SYSDBA.password
+do
+    if [ -f $i ]
+    then
+        rm -f $i
+    fi
+done
 
 
-    rm -f $IBBin/fbmgr
-
-	testStr=`grep firebird /etc/passwd`
-	if [ ! -z "$testStr" ]
-	  then
-		userdel firebird
-	fi
-
-	testStr=`grep firebird /etc/group`
-	if [ ! -z "$testStr" ]
-	  then
-		groupdel firebird
-	fi
+rm -f $FBBin/fbmgr

@@ -102,11 +102,7 @@ case "$1" in
 	# as root user alone should be sufficient privledge to stop/start
 	# the server.
 
-	ISC_USER=SYSDBA
-	ISC_PASSWORD=masterkey
-	$FIREBIRD/bin/fbmgr -shut -user $ISC_USER -password $ISC_PASSWORD  2>/dev/null
-	unset ISC_USER
-	unset ISC_PASSWORD
+    killall fbserver
 
 	# Remember status and be verbose
 	rc_status -v

@@ -16,22 +16,13 @@
 
 
 FIREBIRD=@prefix@
-ISC_USER=SYSDBA
-ISC_PASSWORD=masterkey
-# WARNING: you should not expose the SYSDBA password in a publicly-
-# readable file.  So please ensure this file is not world readable.
-# Eventually this file should not need to contain any passwords.
-# as root user alone should be sufficient privledge to stop/start 
-# the server. 
 FBRunUser=firebird
 
 export FIREBIRD 
-export ISC_USER
-export ISC_PASSWORD
 
 
 # Check the file is there and is executable.
-[ -x $FIREBIRD/bin/fbmgr ] || exit 0
+[ -x $FIREBIRD/bin/fbmgr ] || exit 1
 
 
 
@@ -47,11 +38,7 @@ case "$1" in
   stop)
 	echo -n "Stopping Firebird server: "
 
-	$FIREBIRD/bin/fbmgr -shut -user $ISC_USER -password $ISC_PASSWORD 
-	unset ISC_USER
-	unset ISC_PASSWORD
-
-#	killproc fbserver
+    killall fbserver
 	RETVAL=$?
 #	echo
 #	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/identd

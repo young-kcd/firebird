@@ -4,7 +4,7 @@ Version: @FIREBIRD_VERSION@.@FB_BUILD_NUM@
 Release: @FIREBIRD_PACKAGE_VERSION@
 Copyright: Distributable 
 Group: Applications/Databases 
-Source: FirebirdSS1.5src.tar.gz 
+Source: Firebird-@FIREBIRD_VERSION@.@FB_BUILD_NUM@.tar.bz2
 URL: http://firebird.sourceforge.net 
 # Prefix: /
 AutoReqProv: no 

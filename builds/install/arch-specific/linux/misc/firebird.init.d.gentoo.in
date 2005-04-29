@@ -9,8 +9,6 @@
 # Source function library.
 . /etc/init.d/functions.sh
 
-ISC_USER:=SYSDBA
-ISC_PASSWORD:=masterke
 FIREBIRD=@prefix@
 FBRunUser=firebird
 
@@ -27,8 +25,6 @@ FBRunUser=firebird
 
 
 export FIREBIRD
-export ISC_USER
-export ISC_PASSWORD
 
 MANAGER=$FIREBIRD/bin/fbmgr.bin
 
@@ -38,6 +34,6 @@ MANAGER=$FIREBIRD/bin/fbmgr.bin
     }
 
     stop(){
-	echo -n "Stopping Firebird server: "
-	$MANAGER -shut
+		echo -n "Stopping Firebird server: "
+		killall fbserver
     }

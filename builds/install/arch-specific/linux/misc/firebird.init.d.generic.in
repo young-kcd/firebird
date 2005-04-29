@@ -10,8 +10,6 @@
 
 
 FIREBIRD=@prefix@
-ISC_USER=SYSDBA
-ISC_PASSWORD=masterkey
 FBRunUser=firebird
 # WARNING: in a real-world installation, you should not put the 
 # SYSDBA password in a publicly-readable file. 
@@ -21,8 +19,6 @@ FBRunUser=firebird
 
 
 export FIREBIRD 
-export ISC_USER
-export ISC_PASSWORD
 
 
 # Check the file is there and is executable.
@@ -39,7 +35,7 @@ case "$1" in
 	;;
   stop)
 	echo -n "Stopping Firebird server: "
-        $FIREBIRD/bin/fbmgr -shut
+    killall fbserver
 	RETVAL=$?
 #	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/identd
 	;;
