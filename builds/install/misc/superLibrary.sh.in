@@ -1,0 +1,90 @@
+#!/bin/sh
+
+#------------------------------------------------------------------------
+# init defaults
+DefaultLibrary=libfbclient
+
+#------------------------------------------------------------------------
+#  fixFilePermissions
+#  Change the permissions to restrict access to server programs to 
+#  firebird group only.  This is MUCH better from a saftey point of 
+#  view than installing as root user, even if it requires a little 
+#  more work.
+
+fixFilePermissions() {
+    # For security reasons initially force all root:root non-writable
+    chown -R root:root $FBRootDir
+    chmod -R uga-w $FBRootDir
+
+    # Prepare bin
+    cd $FBBin
+
+    # Everyone may execute clients
+    chmod 0555 *
+
+    # Shell scripts changing security attributes are for root only
+    chmod 0500 *.sh
+    
+    # Lock files
+    cd $FBRootDir
+
+    for i in isc_init1 isc_lock1 isc_event1 isc_guard1
+    do
+        FileName=$i.`hostname`
+        touch $FileName
+        MakeFileFirebirdWritable $FileName
+    done
+
+    touch firebird.log
+    MakeFileFirebirdWritable firebird.log
+    
+    # Security database
+    # Nobody besides firebird permitted to even read this file
+    chown $RunUser.$RunUser $SecurityDatabase
+    chmod 0600 $SecurityDatabase
+
+	# fix up examples' permissions
+    cd examples
+
+    # set a default of read all files in examples
+    for i in `find . -name '*' -type f -print`
+    do
+         chmod a=r $i
+    done
+
+    # set a default of read&search all dirs in examples
+    for i in `find . -name '*' -type d -print`
+    do
+         chmod a=rx $i
+    done
+
+    # make examples db's writable by group
+    for i in `find . -name '*.fdb' -print`
+    do
+		chown $RunUser.$RunUser $i
+        chmod ug=rw,o= $i
+    done
+	
+	cd ..
+}
+
+
+#------------------------------------------------------------------------
+#  Update inetd service entry 
+#  Check to see if we have xinetd installed or plain inetd.  
+#  Install differs for each of them.
+
+updateInetdServiceEntry() {
+	# do nothing for SS
+	return 0
+}
+
+
+#------------------------------------------------------------------------
+#  resetXinetdServer
+#  Works for both inetd and xinetd
+
+resetInetdServer() {
+	# do nothing for SS
+	return 0
+}

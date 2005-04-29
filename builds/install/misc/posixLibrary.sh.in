@@ -1,0 +1,550 @@
+#!/bin/sh
+
+
+#------------------------------------------------------------------------
+# Global stuff init
+
+Answer=""
+OrigPasswd=""
+TmpFile=""
+FBRootDir=@prefix@
+FBBin=$FBRootDir/bin
+SecurityDatabase=security2.fdb
+
+
+#------------------------------------------------------------------------
+# Create temporary file. In case mktemp failed, do something...
+
+MakeTemp() {
+	TmpFile=`mktemp -q /tmp/firebird_install.XXXXXX`
+	if [ $? -ne 0 ]
+	then
+		TmpFile=/tmp/firebird_install
+		touch $TmpFile
+	fi
+}
+
+#------------------------------------------------------------------------
+# Prompt for response, store result in Answer
+
+AskQuestion() {
+    Test=$1
+    DefaultAns=$2
+    echo -n "${1}"
+    Answer="$DefaultAns"
+    read Answer
+}
+
+
+#------------------------------------------------------------------------
+# Prompt for yes or no answer - returns non-zero for no
+
+AskYNQuestion() {
+    while echo -n "${*} (y/n): "
+    do
+        read answer rest
+        case $answer in
+        [yY]*)
+            return 0
+            ;;
+        [nN]*)
+            return 1
+            ;;
+        *)
+            echo "Please answer y or n"
+            ;;
+        esac
+    done
+}
+
+
+#------------------------------------------------------------------------
+# Run $1. If exit status is not zero, show output to user.
+
+runSilent() {
+	MakeTemp
+	$1 >$TmpFile 2>&1
+	if [ $? -ne 0 ]
+	then
+		cat $TmpFile
+		echo ""
+		rm -f $TmpFile
+		return 1
+	fi
+	rm -f $TmpFile
+	return 0
+}
+
+#------------------------------------------------------------------------
+# Check for a user, running install, to be root
+
+checkRootUser() {
+
+    if [ "`whoami`" != "root" ];
+      then
+        echo ""
+        echo "--- Warning ----------------------------------------------"
+        echo ""
+        echo "    You need to be 'root' user to do this change"
+        echo ""
+        exit 1
+    fi
+}
+
+#alias
+checkInstallUser() {
+	checkRootUser
+}
+
+
+#------------------------------------------------------------------------
+#  check if it is running
+
+checkIfServerRunning() {
+
+    stopSuperServerIfRunning
+
+
+# Check is server is being actively used.
+
+    checkString=`ps -efww| egrep "(fbserver|fbguard)" |grep -v grep`
+
+    if [ ! -z "$checkString" ]
+      then
+        echo "An instance of the Firebird/InterBase Super server seems to be running."
+        echo "Please quit all interbase applications and then proceed"
+        exit 1
+    fi
+
+    checkString=`ps -efww| egrep "(fb_inet_server|gds_pipe)" |grep -v grep`
+
+    if [ ! -z "$checkString" ]
+      then
+        echo "An instance of the Firebird/InterBase server seems to be running."
+        echo "Please quit all interbase applications and then proceed."
+        exit 1
+    fi
+
+
+# Stop lock manager if it is the only thing running.
+
+    for i in `ps -efww | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+	  do
+        kill $i
+	done
+
+}
+
+
+#------------------------------------------------------------------------
+#  ask user to enter CORRECT original DBA password
+
+askForOrigDBAPassword() {
+    OrigPasswd=""
+    while [ -z "$OrigPasswd" ]
+    do
+        AskQuestion "Please enter current password for SYSDBA user: "
+        OrigPasswd=$Answer
+        if ! runSilent "$FBBin/gsec -user sysdba -password $OrigPasswd -di"
+		then
+			OrigPasswd=""
+		fi
+	done
+}
+
+
+#------------------------------------------------------------------------
+#  Modify DBA password to value, asked from user. 
+#  $1 may be set to original DBA password
+#  !! This routine is interactive !!
+
+askUserForNewDBAPassword() {
+
+	if [ -z $1 ]
+	then
+		askForOrigDBAPassword
+	else
+		OrigPasswd=$1
+	fi
+
+    NewPasswd=""
+    while [ -z "$NewPasswd" ]
+    do
+        AskQuestion "Please enter new password for SYSDBA user: "
+        NewPasswd=$Answer
+        if [ ! -z "$NewPasswd" ]
+        then
+            if ! runSilent "$FBBin/gsec -user sysdba -password $OrigPasswd -modify sysdba -pw $NewPasswd"
+            then
+				NewPasswd=""
+			fi
+		fi
+	done
+}
+
+
+#------------------------------------------------------------------------
+# add a line in the (usually) /etc/services or /etc/inetd.conf file
+# Here there are three cases, not found         => add
+#                             found & different => replace
+#                             found & same      => do nothing
+#                             
+
+replaceLineInFile() {
+    FileName="$1"
+    newLine="$2"
+    oldLine=`grep "$3" $FileName`
+
+    if [ -z "$oldLine" ] 
+    then
+        echo "$newLine" >> "$FileName"
+    elif [ "$oldLine" != "$newLine"  ]
+    then
+		MakeTemp
+        grep -v "$oldLine" "$FileName" > "$TmpFile"
+        echo "$newLine" >> $TmpFile
+	    # The \n is needed, some /etc/services files are missing a trailing
+    	# line feed - MOD 12-Dec-2003
+		echo "" >>$TmpFile
+        mv $TmpFile $FileName || rm -f $TmpFile
+        echo "Updated $1"
+    fi
+}
+
+
+#------------------------------------------------------------------------
+# "edit" file $1 - replace line starting from $2 with $3
+# This should stop ed/ex/vim/"what else editor" battle.
+# I hope awk is present in any posix system? AP.
+
+editFile() {
+    FileName=$1
+    Starting=$2
+    NewLine=$3
+	
+	AwkProgram="(\$1 == \"$Starting\") {\$0=\"$NewLine\"} {print \$0}"
+	MakeTemp
+	awk "$AwkProgram" <$FileName >$TmpFile && mv $TmpFile $FileName || rm -f $TmpFile
+# awk '($1 == "user") {$0="\tuser\t\t\t= firebird"} {print $0}'
+}
+
+
+#------------------------------------------------------------------------
+# Write new password to the @prefix@/SYSDBA.password file
+
+writeNewPassword() {
+    NewPasswd=$1
+	DBAPasswordFile=$FBRootDir/SYSDBA.password
+
+	cat <<EOT >$DBAPasswordFile
+# Firebird generated password for user SYSDBA is:
+
+ISC_USER=sysdba
+ISC_PASSWD=$NewPasswd
+
+EOT
+
+    if [ $NewPasswd = "masterkey" ]
+    then
+        echo "# for install on `hostname` at time `date`" >> $DBAPasswordFile
+        echo "# You should change this password at the earliest oportunity" >> $DBAPasswordFile
+    else 
+        echo "# generated on `hostname` at time `date`" >> $DBAPasswordFile
+    fi
+	
+	cat <<EOT >>$DBAPasswordFile
+
+# Your password can be changed to a more suitable one using the
+# @prefix@/bin/changeDBAPassword.sh script
+EOT
+
+    chmod u=r,go= $DBAPasswordFile
+
+
+    # Only if we have changed the password from the default do we need
+    # to update the entry in the database
+
+    if [ $NewPasswd != "masterkey" ]
+    then
+        runSilent "$FBBin/gsec -user sysdba -password masterkey -modify sysdba -pw $NewPasswd"
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  Generate new sysdba password - this routine is used only in the 
+#  rpm file not in the install script.
+
+generateNewDBAPassword() {
+    # openssl generates random data.
+	openssl </dev/null >/dev/null 2&>/dev/null
+    if [ $? -eq 0 ]
+    then
+        # We generate 20 random chars, strip any '/''s and get the first 8
+        NewPasswd=`openssl rand -base64 20 | tr -d '/' | cut -c1-8`
+    fi
+
+    # mkpasswd is a bit of a hassle, but check to see if it's there
+    if [ -z "$NewPasswd" ]
+    then
+        if [ -f /usr/bin/mkpasswd ]
+        then
+            NewPasswd=`/usr/bin/mkpasswd -l 8`
+        fi
+    fi
+
+	# On some systems the mkpasswd program doesn't appear and on others
+	# there is another mkpasswd which does a different operation.  So if
+	# the specific one isn't available then keep the original password.
+    if [ -z "$NewPasswd" ]
+    then
+        NewPasswd="masterkey"
+    fi
+
+    writeNewPassword $NewPasswd
+}
+
+
+#------------------------------------------------------------------------
+#  Change sysdba password.
+
+changeDBAPassword() {
+    if [ -z "$InteractiveInstall" ]
+      then
+        generateNewDBAPassword
+      else
+        askUserForNewDBAPassword masterkey
+    fi
+}
+
+
+#------------------------------------------------------------------------
+# UpdateHostsDotEquivFile
+# The /etc/hosts.equiv file is needed to allow local access for super server
+# from processes on the machine to port 3050 on the local machine.
+# The two host names that are needed there are 
+# localhost.localdomain and whatever hostname returns.
+
+# automatically adding HostsEquiv file was security risk,
+# therefore it was disabled. AP.
+
+updateHostsDotFile() {
+	return 0
+}
+
+
+#------------------------------------------------------------------------
+#  buildUninstallFile
+#  This will work only for the .tar.gz install and it builds an
+#  uninstall shell script.  The RPM system, if present, takes care of it's own.
+
+buildUninstallFile() {
+    cd "$origDir"
+
+    if [ ! -f manifest.txt ]  # Only exists if we are a .tar.gz install
+    then
+        return
+    fi
+
+    cp manifest.txt $FBRootDir/misc
+
+    cp -r scripts $FBRootDir/misc/
+    cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
+}
+
+
+#------------------------------------------------------------------------
+# Remove if only a link
+
+removeIfOnlyAlink() {
+	Target=$1
+
+    if [ -L $Target ]
+    then
+        rm -f $Target
+    fi
+}
+
+
+#------------------------------------------------------------------------
+# re-link new file only if target is a link or missing
+
+safeLink() {
+	Source=$1
+	Target=$2
+	
+	removeIfOnlyAlink $Target
+    if [ ! -e $Target ]
+    then
+        ln -s $Source $Target
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  createLinksForBackCompatibility
+#  Create links for back compatibility to InterBase and Firebird1.0 
+#  linked systems.
+
+createLinksForBackCompatibility() {
+
+    # These two links are required for compatibility with existing ib programs
+    # If the program had been linked with libgds.so then this link is required
+    # to ensure it loads the fb equivalent.  Eventually these should be 
+    # optional and in a seperate rpm install.  MOD 7-Nov-2002.
+
+    # Use DefaultLibrary, set by appropriate install library
+    newLibrary=$FBRootDir/lib/$DefaultLibrary.so
+
+	safeLink $newLibrary @libdir@/libgds.so
+	safeLink $newLibrary @libdir@/libgds.so.0
+}
+
+
+#------------------------------------------------------------------------
+#  removeLinksForBackCompatibility
+#  Remove links for back compatibility to InterBase and Firebird1.0 
+#  linked systems.
+
+removeLinksForBackCompatibility() {
+    removeIfOnlyAlink @libdir@/libgds.so
+    removeIfOnlyAlink @libdir@/libgds.so.0
+}
+
+#------------------------------------------------------------------------
+#  For security reasons most files in firebird installation are
+#  root-owned and world-readable(executable) only (including firebird).
+
+#  For some files RunUser (firebird) must have write access - 
+#  lock and log for examples.
+
+MakeFileFirebirdWritable() {
+    FileName=$1
+    chown $RunUser.$RunUser $FileName
+    chmod 0644 $FileName
+}
+
+
+#------------------------------------------------------------------------
+# Run process and check status
+
+runAndCheckExit() {
+    Cmd=$*
+
+    $Cmd
+    ExitCode=$?
+
+    if [ $ExitCode -ne 0 ]
+    then
+        echo "Install aborted: The command $Cmd "
+        echo "                 failed with error code $ExitCode"
+        exit $ExitCode
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  Display message if this is being run interactively.
+
+displayMessage() {
+    msgText=$1
+
+    if [ ! -z "$InteractiveInstall" ]
+    then
+        echo $msgText
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  Archive any existing prior installed files.
+#  The 'cd' stuff is to avoid the "leading '/' removed message from tar.
+#  for the same reason the DestFile is specified without the leading "/"
+
+archivePriorInstallSystemFiles() {
+	if [ -z ${ArchiveMainFile} ]
+	then
+		echo "Variable ArchiveMainFile not set - exiting"
+		exit 1
+	fi
+
+    oldPWD=`pwd`
+    archiveFileList=""
+
+    cd /
+
+    DestFile=${FBRootDir#/}   # strip off leading /
+    if [ -e "$DestFile"  ]
+    then
+        echo ""
+        echo ""
+        echo ""
+        echo "--- Warning ----------------------------------------------"
+        echo "    The installation target directory: $FBRootDir"
+        echo "    Already contains a prior installation of InterBase/Firebird."
+        echo "    This and files found in /usr/include and @libdir@ will be"
+        echo "    archived in the file : ${ArchiveMainFile}"
+        echo "" 
+
+        if [ ! -z "$InteractiveInstall" ]
+        then
+            AskQuestion "Press return to continue or ^C to abort"
+        fi
+
+        if [ -e $DestFile ]
+        then
+            archiveFileList="$archiveFileList $DestFile"
+        fi
+    fi
+
+
+    for i in ibase.h ib_util.h
+    do
+        DestFile=usr/include/$i
+        if [ -e $DestFile ]
+        then
+            archiveFileList="$archiveFileList $DestFile"
+        fi
+    done
+
+    for i in libib_util.so libfbclient.so.1.5.0 libfbclient.so.1 libfbclient.so
+    do
+        DestFile=usr/lib/$i
+        if [ -e $DestFile ]
+        then
+            archiveFileList="$archiveFileList $DestFile"
+        fi
+    done
+
+    if [ ! -z "$archiveFileList" ]
+    then
+        displayMessage "Archiving..."
+        runAndCheckExit "tar -czf $ArchiveMainFile $archiveFileList"
+        displayMessage "Done."
+
+        displayMessage "Deleting..."
+        for i in $archiveFileList
+        do
+            rm -rf $i
+        done
+        displayMessage "Done."
+    fi
+
+    cd $oldPWD
+}
+
+
+#------------------------------------------------------------------------
+# remove line from config file if it exists in it.
+
+removeLineFromFile() {
+    FileName=$1
+    oldLine=$2
+
+    if [ ! -z "$oldLine" ] 
+    then
+        cat $FileName | grep -v "$oldLine" > ${FileName}.tmp
+        mv ${FileName}.tmp $FileName
+        echo "Updated."
+    fi
+}

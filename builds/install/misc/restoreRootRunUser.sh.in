@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# A routine to change the user that runs interbase Firebird
+
+RunUser=root
+RunGroup=root
+
+checkInstallUser
+checkIfServerRunning
+
+
+# Get confirmation
+echo ""
+echo "Change Firebird install for $FBRootDir to uid=$RunUser gid=$RunGroup"
+echo "(User or group options can be changed by editing this script)"
+echo ""
+AskQuestion "Press return to continue - or ^C to abort"
+
+
+# Add user and group, if missing
+if [ $RunUser != "root" ]
+then
+    addFirebirdUser
+fi
+
+# Update the /etc/inetd.conf or xinetd entry or /etc/init.d/firebird
+echo "Updating /etc file(s)"
+updateInetdServiceEntry
+changeInitRunUser
+
+# Update ownership and SUID bits for programs.
+echo "Updating $FBRootDir"
+fixFilePermissions
+
+# Get inetd to reread new init files, start service.
+resetInetdServer
+startService
+
+echo "Completed."

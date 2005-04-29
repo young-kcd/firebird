@@ -1,0 +1,186 @@
+#!/bin/sh
+#
+#  This library is part of the Firebird project
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License, or (at your option) any later version.
+#  You may obtain a copy of the Licence at
+#  http://www.gnu.org/licences/lgpl.html
+#  
+#  As a special exception this file can also be included in modules
+#  with other source code as long as that source code has been 
+#  released under an Open Source Initiative certificed licence.  
+#  More information about OSI certification can be found at: 
+#  http://www.opensource.org 
+#  
+#  This module is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public Licence for more details.
+#  
+#  This module was created by members of the firebird development 
+#  team.  All individual contributions remain the Copyright (C) of 
+#  those individuals and all rights are reserved.  Contributors to 
+#  this file are either listed below or can be obtained from a CVS 
+#  history command.
+# 
+#   Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+#  
+# 
+#   $Id: changeGdsLibraryCompatibleLink.sh.in,v 1.1 2005-04-29 18:16:46 alexpeshkoff Exp $
+# 
+
+
+# This script allows the user to change the link on classic for the 
+# client library from 
+#
+#  a) libfbembed.so  original classic direct connection
+#  b) libfbclient.so multithreaded client connection
+#
+
+#------------------------------------------------------------------------
+# Prompt for response, store result in Answer
+
+Answer=""
+
+AskQuestion() {
+    Test=$1
+    DefaultAns=$2
+    echo -n "${1}"
+    Answer="$DefaultAns"
+    read Answer
+
+    if [ -z $Answer ]
+      then
+        Answer=$DefaultAns
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  remove Link
+
+removeLink() {
+    fileName=$1
+
+    if [ -L $fileName ]
+      then
+        rm -f $fileName
+    fi
+
+}
+
+
+#------------------------------------------------------------------------
+#  quitIfRealFile
+# Remove the backward compatibility links for libgds.so
+
+quitIfRealFile() {
+
+    fileToCheck=$1
+
+    # Don't worry about symbolic links
+    if [ -L $fileToCheck ]
+      then
+        return
+    fi
+
+    if [ -f $fileToCheck ]
+      then
+        echo "The file $fileToCheck is a real file not just a link to an "
+        echo "existing file.  It therefore may be from a"
+        echo "previous firebird or InterBase(r) installation"
+        echo "You will need to manually check the status of this file"
+        echo "and remove it before running this script again"
+        exit
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  removeLinks
+# Remove the backward compatibility links for libgds.so
+
+removeLinks() {
+    removeLink @libdir@/libgds.so
+    removeLink @libdir@/libgds.so.0
+}
+
+
+#------------------------------------------------------------------------
+#  createLinksForBackCompatibility
+#  Create links for back compatibility to InterBase and Firebird1.0 
+#  linked systems.
+
+createLinksForBackCompatibility() {
+
+    # These two links are required for compatibility with existing ib programs
+    # If the program had been linked with libgds.so then this link is required
+    # to ensure it loads the fb equivalent.  Eventually these should be 
+    # optional and in a seperate rpm install.  MOD 7-Nov-2002.
+
+    newLibrary=$FBRootDir/lib/$1
+
+    removeLinks
+
+    ln -s $newLibrary @libdir@/libgds.so
+    ln -s $newLibrary @libdir@/libgds.so.0
+
+
+}
+
+#------------------------------------------------------------------------
+#  printStatus
+
+printStatus() {
+    printStatus=`ls -l @libdir@/libgds.so | sed 's@^.* /usr@/usr@'`
+    echo $printStatus
+
+}
+    
+
+#= Main ====================================================================
+
+
+    FBRootDir=@prefix@
+    FBBin=$FBRootDir/bin
+
+cat <<EOF
+For classic server there are two optional backward compatible client libraries.
+These are libfbclient.so and libfbembed.so.  
+
+libfbclient.so) enables your client to be multithreaded but must connect to a 
+                database via a server.  
+libfbembed.so)  allows the client to directly open the database file, but does
+                not support multithreaded access
+
+Your current setting is:
+EOF
+    printStatus
+
+    echo ""
+
+    quitIfRealFile @libdir@/libgds.so
+    quitIfRealFile @libdir@/libgds.so.0
+
+    
+    AskQuestion "Which option would you like to choose (client|embed|remove) [client] " "client"
+
+    case $Answer in
+    embed) 
+        createLinksForBackCompatibility libfbembed.so
+        ;;
+    client)
+        createLinksForBackCompatibility libfbclient.so
+        ;;
+    remove)
+        removeLinks
+        ;;
+    *)
+        echo "Unknown option $Answer chosen"
+        ;;
+    esac

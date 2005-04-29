@@ -1,0 +1,185 @@
+#!/bin/sh
+
+#------------------------------------------------------------------------
+# init defaults
+DefaultLibrary=libfbembed
+
+#------------------------------------------------------------------------
+#  fixFilePermissions
+#  Change the permissions to restrict access to server programs to 
+#  firebird group only.  This is MUCH better from a saftey point of 
+#  view than installing as root user, even if it requires a little 
+#  more work.
+
+
+fixFilePermissions() {
+	chown -R $RunUser:$RunGroup $FBRootDir
+
+    # Turn other access off.
+    chmod -R o= $FBRootDir
+
+    # Now fix up the mess.
+
+    # fix up directories 
+    for i in `find $FBRootDir -print`
+    do
+        FileName=$i
+        if [ -d $FileName ]
+        then
+            chmod o=rx $FileName
+        fi
+    done
+
+    # set up the defaults for bin
+    cd $FBBin
+    for i in `ls`
+      do
+         chmod ug=rx,o=  $i
+    done
+
+    # User can run these programs, they need to talk to server though.
+    # and they cannot actually create a database.
+    chmod a=rx isql 
+    chmod a=rx qli
+    
+    # SUID is still needed for group direct access.  General users
+    # cannot run though.
+	chown root:root fb_lock_mgr gds_drop
+    for i in fb_lock_mgr gds_drop fb_inet_server
+    do
+		if [ -f $i ]
+		then
+	        chmod ug=rx,o= $i
+    	    chmod ug+s $i
+		fi
+    done
+
+    # Fix lock files
+    cd $IBRootDir
+    for i in isc_init1 isc_lock1 isc_event1 
+    do
+        FileName=$i.`hostname`
+		touch $FileName
+        chmod ug=rw,o= $FileName
+    done
+
+    # Fix the rest
+	touch firebird.log
+    chmod ug=rw,o= firebird.log
+	chmod a=r aliases.conf
+	chmod a=r firebird.conf
+    chmod a=r firebird.msg
+    chmod ug=rw,o= help/help.fdb
+    chmod ug=rw,o= $SecurityDatabase
+
+	# fix up examples' permissions
+    cd examples
+
+    # set a default of read all files in examples
+    for i in `find . -name '*' -type f -print`
+    do
+         chmod a=r $i
+    done
+
+    # set a default of read&search all dirs in examples
+    for i in `find . -name '*' -type d -print`
+    do
+         chmod a=rx $i
+    done
+
+    # make examples db's writable by group
+    for i in `find . -name '*.fdb' -print`
+    do
+		chown $RunUser.$RunUser $i
+        chmod ug=rw,o= $i
+    done
+	
+	cd ..
+}
+
+
+#------------------------------------------------------------------------
+#  changeXinetdServiceUser
+#  Change the run user of the xinetd service
+
+changeXinetdServiceUser() {
+    InitFile=/etc/xinetd.d/firebird
+    if [ -f $InitFile ] 
+    then
+        editFile $InitFile user "\tuser\t\t\t= $RunUser"
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  Update inetd service entry
+#  This just adds/replaces the service entry line
+
+updateInetdEntry() {
+    newLine="gds_db  stream  tcp     nowait.30000      $RunUser $FBBin/fb_inet_server fb_inet_server # Firebird Database Remote Server"
+    replaceLineInFile /etc/inetd.conf "$newLine" "^gds_db"
+}
+
+
+#------------------------------------------------------------------------
+#  Update xinetd service entry
+
+updateXinetdEntry() {
+    cp $FBRootDir/misc/firebird.xinetd /etc/xinetd.d/firebird
+    changeXinetdServiceUser
+}
+
+
+#------------------------------------------------------------------------
+#  Update inetd service entry 
+#  Check to see if we have xinetd installed or plain inetd.  
+#  Install differs for each of them.
+
+updateInetdServiceEntry() {
+    if [ -d /etc/xinetd.d ] 
+    then
+        updateXinetdEntry
+    else
+        updateInetdEntry
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  resetXinetdServer
+#  Works for both inetd and xinetd
+
+resetInetdServer() {
+	pid=`ps -ax | grep inetd | grep -v grep | awk '{print $1}'`
+    if [ ! -z $pid ]
+    then
+        kill -HUP $pid
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  change init.d RunUser
+
+changeInitRunUser() {
+	# do nothing for CS
+	return 0
+}
+
+
+#------------------------------------------------------------------------
+#  start init.d service
+
+startService() {
+	# do nothing for CS
+	return 0
+}
+
+
+#------------------------------------------------------------------------
+#  stop super server if it is running
+
+stopSuperServerIfRunning() {
+	# do nothing for CS
+	return 0
+}
