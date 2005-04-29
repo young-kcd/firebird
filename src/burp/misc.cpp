@@ -132,6 +132,42 @@ void MISC_release_request_silent(isc_req_handle& req_handle)
 }
 
 
+int MISC_symbol_length( const TEXT* symbol, ULONG size_len)
+{
+/**************************************
+ *
+ *	M I S C _ s y m b o l _ l e n g t h
+ *
+ **************************************
+ *
+ * Functional description
+ * Compute length of null terminated symbol.
+ *      CVC: This function should acknowledge embedded blanks.
+ *
+ **************************************/
+	if (size_len < 2) {
+		return 0;
+	}
+
+	--size_len;
+
+	const TEXT* p = symbol;
+	const TEXT* const q = p + size_len;
+
+	while (*p && p < q) {  // find end of string (null or end).
+		p++;
+	}
+
+	--p;
+
+	while (p >= symbol && *p == ' ') {  // skip trailing blanks
+		--p;
+	}
+
+	return p + 1 - symbol;
+}
+
+
 void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
 {
 /**************************************

@@ -626,7 +626,7 @@ static const SCHAR * const messages[] = {
 	"input and output have the same name.  Disallowed.",		/* 604, gbak_dup_inout_names */
 	"expected page size, encountered \"%s\"",		/* 605, gbak_inv_page_size */
 	"REPLACE specified, but the first file %s is a database",		/* 606, gbak_db_specified */
-	"database %s already exists.  To replace it, use the -R switch",		/* 607, gbak_db_exists */
+	"database %s already exists.  To replace it, use the -REP switch",		/* 607, gbak_db_exists */
 	"device type not specified",		/* 608, gbak_unk_device */
 	"gds_$blob_info failed",		/* 609, gbak_blob_info_failed */
 	"do not understand BLOB INFO item %ld",		/* 610, gbak_unk_blob_item */

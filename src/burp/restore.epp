@@ -348,7 +348,10 @@ int RESTORE_restore (const TEXT* file_name,
 						general_on_error ();
 					END_ERROR;
 				END_ERROR;
-				BURP_verbose(122, IDS.RDB$INDEX_NAME, NULL, NULL, NULL, NULL);
+				MISC_terminate(IDS.RDB$INDEX_NAME, index_name,
+					(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
+					sizeof(index_name));
+				BURP_verbose(122, index_name, NULL, NULL, NULL, NULL);
 			END_FOR;
 			ON_ERROR
 				general_on_error ();

@@ -34,6 +34,7 @@
  * eliminates the problem with harcoded limits in each call.
  * 2002.10.29 Mike Nordell: UINT64 backup message.
  * 2003.08.17 Claudio Valderrama: Fix SF Bug #750659.
+ * 2005.04.29 Claudio Valderrama: Moved symbol_length to misc.cpp.
  */
 
 
@@ -108,7 +109,6 @@ void put_relation(burp_rel*);
 bool put_source_blob(SCHAR, SCHAR, ISC_QUAD *);
 int put_text(SCHAR, const TEXT *, SSHORT);
 void set_capabilities(void);
-int symbol_length(const TEXT *, ULONG);
 void write_character_sets(void);
 void write_check_constraints(void);
 void write_collations(void);
@@ -576,11 +576,11 @@ int copy( const TEXT* from, TEXT* to, ULONG size_len)
  *
  * Functional description
  *	Copy a blank or null terminated string into a null terminated
- *	string.
+ *	string. It assumes there's enough room in the target.
  *
  **************************************/
 
-	const ULONG l = (ULONG) symbol_length (from, size_len);
+	const ULONG l = (ULONG) MISC_symbol_length(from, size_len);
 
 	MOVE_FAST(from, to, l);
 	*(to + l) = '\0';
@@ -2512,7 +2512,7 @@ int put_text( SCHAR attribute, const TEXT* text, SSHORT size_len)
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	const SSHORT l = (SSHORT) symbol_length (text, (ULONG) size_len);
+	const SSHORT l = (SSHORT) MISC_symbol_length(text, (ULONG) size_len);
  
 	put(tdgbl, (UCHAR) (attribute));
 	put(tdgbl, (UCHAR) (l));
@@ -2560,43 +2560,6 @@ void set_capabilities(void)
 	}
 
 	isc_release_request(isc_status, &req);
-}
-
-
-int symbol_length( const TEXT * symbol, ULONG size_len)
-{
-/**************************************
- *
- *	s y m b o l _ l e n g t h
- *
- **************************************
- *
- * Functional description
- * Compute length of null terminated symbol.
- *      CVC: This function should acknowledge embedded blanks.  
- *
- **************************************/
-	if (size_len < 2) {
-		return 0;
-	}
-
-	--size_len;
-
-	const TEXT* p = symbol;
-	const TEXT* const q = p + size_len;
-
-	while (*p && p < q) {  // find end of string (null or end).
-		p++;
-	}
-
-	--p;
-
-	while (p >= symbol && *p == ' ') {  // skip trailing blanks
-		--p;
-	}
-
-	return p + 1 - symbol;
-
 }
 
 
