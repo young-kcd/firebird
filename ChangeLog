@@ -1,3 +1,31 @@
+2005-04-28 08:26  robocop
+
+	* firebird2/src/isql/isql.epp (1.141):
+	
+	Another fix for the -b (Bail On Error) option when SQL commands are
+	issued and no db connection exists yet.  Apply Miroslav Penchev's
+	patch for bug with -Q always returning 1 to the operating system,
+	discovered by Ivan Prenosil.
+
+2005-04-28 08:12  robocop
+
+	* firebird2/src/jrd/met.epp (1.157):
+	
+	Misc.
+
+2005-04-28 07:28  robocop
+
+	* firebird2/src/jrd/ThreadData.cpp (1.4):
+	
+	Misc.
+
+2005-04-28 07:27  robocop
+
+	* firebird2/src/: msgs/facilities.sql (1.15), msgs/history.sql
+	(1.10), include/gen/msgs.h (1.25):
+	
+	Updating messages and history after Dmitry's changes.
+
 2005-04-27 20:06  dimitr
 
 	* firebird2/src/jrd/dyn_def.epp (1.91):
