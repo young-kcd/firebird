@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.36 2005-04-26 07:31:11 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.141.2.37 2005-04-29 06:24:28 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -862,7 +862,7 @@ case "$PLATFORM" in
       ],[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
     ;;
 
-  solx86)
+  solx86|SOLARIS)
     AC_CONFIG_FILES([gen/install/Pkginfo:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/pkginfo.in
                      gen/install/Prototype:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/prototype.in
                      gen/install/Preinstall:src/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/preinstall.in
