@@ -1,3 +1,25 @@
+2005-04-28 09:53  kkuznetsov
+
+	* firebird2/builds/posix/: prefix.solaris (1.5.2.5),
+	prefix.solaris-64gcc (1.3.2.3):
+	
+	Solaris fixes
+
+2005-04-28 08:46  robocop
+
+	* firebird2/doc/WhatsNew (1.36.2.40):
+	
+	FB v1.5's what's new.
+
+2005-04-28 08:37  robocop
+
+	* firebird2/src/isql/isql.epp (1.32.2.15):
+	
+	Backport isql fixes: Another fix for the -b (Bail On Error) option
+	when SQL commands are issued and no db connection exists yet. 
+	Apply Miroslav Penchev's patch for bug with -Q always returning 1
+	to the operating system, discovered by Ivan Prenosil.
+
 2005-04-26 09:31  kkuznetsov
 
 	* firebird2/src/install/arch-specific/solx86gcc/: Makefile.in
