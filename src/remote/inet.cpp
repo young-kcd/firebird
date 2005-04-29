@@ -902,13 +902,16 @@ rem_port* INET_connect(const TEXT* name,
 			n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
 						   TCP_NODELAY, (SCHAR*) &optval, sizeof(optval));
 
-			gds__log("inet log: disabled Nagle algorithm \n");
-
 			if (n == -1) {
-				inet_error(port, "setsockopt TCP_NODELAY",
+				if (INET_ERRNO != EACCES) {		// not enough rights
+					inet_error(port, "setsockopt TCP_NODELAY",
 						   isc_net_connect_listen_err, INET_ERRNO);
-				disconnect(port);
-				return NULL;
+					disconnect(port);
+					return NULL;
+				}
+			}
+			else {			
+				gds__log("inet log: disabled Nagle algorithm \n");
 			}
 		}
 #endif
