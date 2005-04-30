@@ -621,7 +621,7 @@ enum RTN {
 	rtn_eof
 };
 
-static const TEXT msg_table[][52] = {
+static const TEXT msg_table[][64] = {
 	"Page %ld wrong type (expected %d encountered %d)",	/* 0 */
 	"Checksum error on page %ld",
 	"Page %ld doubly allocated",
@@ -633,7 +633,7 @@ static const TEXT msg_table[][52] = {
 	"Chain for record %ld is broken",
 	"Data page %ld (sequence %ld) is confused",
 	"Data page %ld (sequence %ld), line %ld is bad",	/* 10 */
-	"Index %d is corrupt on page %ld",
+	"Index %d is corrupt on page %ld level %ld. File: %s, line: %ld\n\t",
 	"Pointer page (sequence %ld) lost",
 	"Pointer page (sequence %ld) inconsistent",
 	"Record %ld is marked as damaged",
@@ -1415,7 +1415,7 @@ static RTN walk_index(thread_db* tdbb,
 			(flags & BTR_FLAG_COPY_MASK))
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-				id + 1, next);
+				id + 1, next, page->btr_level, __FILE__, __LINE__);
 		}
 		flags = page->btr_header.pag_flags;
 		const bool leafPage = (page->btr_level == 0);
@@ -1426,7 +1426,7 @@ static RTN walk_index(thread_db* tdbb,
 			page->btr_id != (UCHAR) (id % 256)) 
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
-					next);
+					next, page->btr_level, __FILE__, __LINE__);
 			CCH_RELEASE(tdbb, &window);
 			return rtn_corrupt;
 		}
@@ -1441,7 +1441,7 @@ static RTN walk_index(thread_db* tdbb,
 				(jumpInfo.firstNodeOffset > page->btr_length)) 
 			{
 				corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-					id + 1, next);
+					id + 1, next, page->btr_level, __FILE__, __LINE__);
 			}
 
 			USHORT n = jumpInfo.jumpers;
@@ -1456,7 +1456,7 @@ static RTN walk_index(thread_db* tdbb,
 					(jumpNode.offset > page->btr_length))
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-						id + 1, next);
+						id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
 				else {
 					// Check if jump node has same length as data node prefix.
@@ -1464,7 +1464,7 @@ static RTN walk_index(thread_db* tdbb,
 						(UCHAR*)page + jumpNode.offset, flags, leafPage);
 					if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next);
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 				}
 				n--;
@@ -1492,7 +1492,7 @@ static RTN walk_index(thread_db* tdbb,
 			for (; l; l--, p++, q++) {
 				if (*p > *q) {
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next);
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
 				else if (*p < *q) {
 					break;
@@ -1509,7 +1509,7 @@ static RTN walk_index(thread_db* tdbb,
 				{
 					if (node.recordNumber < lastNode.recordNumber) {
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next);
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 				}
 				lastNode = node;
@@ -1560,8 +1560,8 @@ static RTN walk_index(thread_db* tdbb,
 				l = MIN(key.key_length, downNode.length);
 				for (; l; l--, p++, q++) {
 					if (*p < *q) {
-						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT,
-								relation, id + 1, next);
+						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, 
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 					else if (*p > *q) {
 						break;
@@ -1579,15 +1579,15 @@ static RTN walk_index(thread_db* tdbb,
 					if ((l == 0) && (key.key_length == downNode.length) &&
 						(downNode.recordNumber < down_record_number))
 					{
-						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT,
-								relation, id + 1, next);							
+						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, 
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 				}
 
 				// check the left and right sibling pointers against the parent pointers
 				if (previous_number != down_page->btr_left_sibling) {
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next);
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
 
 				BTreeNode::readNode(&downNode, pointer, flags, leafPage);
@@ -1597,7 +1597,7 @@ static RTN walk_index(thread_db* tdbb,
 					(next_number != down_page->btr_sibling)) 
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next);
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
 
 				if (downNode.isEndLevel && down_page->btr_sibling) {
@@ -1612,7 +1612,7 @@ static RTN walk_index(thread_db* tdbb,
 
 		if (pointer != endPointer || page->btr_length > dbb->dbb_page_size) {
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
-					next);
+					next, page->btr_level, __FILE__, __LINE__);
 		}
 
 		if (next == down) {
