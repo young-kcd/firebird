@@ -621,7 +621,7 @@ enum RTN {
 	rtn_eof
 };
 
-static const TEXT msg_table[][64] = {
+static const TEXT msg_table[][66] = {
 	"Page %ld wrong type (expected %d encountered %d)",	/* 0 */
 	"Checksum error on page %ld",
 	"Page %ld doubly allocated",
