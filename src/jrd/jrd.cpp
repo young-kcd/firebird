@@ -1919,14 +1919,24 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		if (options.dpb_overwrite)
 		{
 			if (GDS_ATTACH_DATABASE(user_status, file_length, file_name, handle,
-					dpb_length, dpb, expanded_filename) != 0)
+					dpb_length, dpb, expanded_filename) == isc_adm_task_denied)
 			{
 				throw;
 			}
 
-			const bool allow_overwrite = (*handle)->att_user->usr_flags & (USR_locksmith | USR_owner);
+			bool allow_overwrite = false;
 
-			GDS_DETACH(user_status, handle);
+			if (*handle)
+			{
+				allow_overwrite = (*handle)->att_user->usr_flags & (USR_locksmith | USR_owner);
+				GDS_DETACH(user_status, handle);
+			}
+			else
+			{
+				// clear status after failed attach
+				user_status[0] = 0;
+				allow_overwrite = true;
+			}
 
 			if (allow_overwrite)
 			{
