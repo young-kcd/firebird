@@ -99,7 +99,7 @@ create table journal (
    jrn_lasttransaction integer
 );
 
-CREATE TRIGGER UI_JOURNAL FOR JOURNAL AFTER INSERT OR UPDATE
+CREATE TRIGGER UI_JOURNAL FOR JOURNAL BEFORE INSERT OR UPDATE
 as 
 begin
   new.jrn_lastuser = rdb$get_context('USER_TRANSACTION', 'User_ID');
