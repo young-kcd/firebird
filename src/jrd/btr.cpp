@@ -5218,28 +5218,9 @@ static SLONG insert_node(thread_db* tdbb,
 				return 0;
 			}*/ 
 			//else 
-			if (allRecordNumber) { 
+			if (allRecordNumber && !validateDuplicates) { 
 				// if recordnumber is higher we need to insert before it.
 				if (newRecordNumber <= beforeInsertNode.recordNumber) {
-					// hvlad: save duplicates with higher recordnumbers from 
-					// current page. What must we do if duplicate chain continues 
-					// on the next page ? This is near impossible to have long
-					// duplicate chain in unique index, but we must handle it...
-					if (validateDuplicates) {
-						IndexNode dupeNode;
-						UCHAR *dupePointer = BTreeNode::readNode(&dupeNode, 
-							pointer, flags, leafPage);
-
-						while ((dupeNode.length == 0) && 
-								!dupeNode.isEndLevel && !dupeNode.isEndBucket)
-						{
-							RBM_SET(tdbb->getDefaultPool(), &insertion->iib_duplicates, 
-								dupeNode.recordNumber.getValue());
-
-							dupePointer = BTreeNode::readNode(&dupeNode, 
-								dupePointer, flags, leafPage);
-						}
-					}
 					break;
 				}
 			}
