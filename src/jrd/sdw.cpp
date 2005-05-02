@@ -328,7 +328,8 @@ void SDW_check(void)
 
 	if (SDW_check_conditional()) {
 		if (SDW_lck_update((SLONG) 0)) {
-			Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+			Lock temp_lock;
+			Lock* lock = &temp_lock;
 			lock->lck_dbb = dbb;
 			lock->lck_length = sizeof(SLONG);
 			lock->lck_key.lck_long = -1;
@@ -344,7 +345,6 @@ void SDW_check(void)
 				SDW_dump_pages();
 				LCK_release(tdbb, lock);
 			}
-			delete lock;
 		}
 	}
 }
@@ -516,7 +516,6 @@ void SDW_dump_pages(void)
 }
 
 
-
 void SDW_get_shadows(void)
 {
 /**************************************
@@ -545,7 +544,8 @@ void SDW_get_shadows(void)
 		/* fb_assert (lock->lck_physical == LCK_none); */
 
 		WIN window(HEADER_PAGE);
-		const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+		const header_page* header =
+			(header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		lock->lck_key.lck_long = header->hdr_shadow_count;
 		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 		CCH_RELEASE(tdbb, &window);
@@ -557,8 +557,6 @@ void SDW_get_shadows(void)
 
 	MET_get_shadow_files(tdbb, false);
 }
-
-
 
 
 void SDW_init(bool activate, bool delete_files)
@@ -621,7 +619,7 @@ bool SDW_lck_update(SLONG sdw_update_flags)
  *
  * Functional description
  *  update the Lock struct with the flag
- *  The update type flag indicates the type fo corrective action
+ *  The update type flag indicates the type of corrective action
  *  to be taken by the ASTs of other procs attached to this DB.	
  *	
  *  A non zero sdw_update_flag is passed, it indicates error handling
@@ -686,7 +684,8 @@ void SDW_notify(void)
    on the shadow count, this is effectively an uninterruptible operation */
 
 	WIN window(HEADER_PAGE);
-	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header_page* header =
+		(header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
 /* get an exclusive lock on the current shadowing semaphore to
@@ -748,23 +747,35 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	SLONG sdw_update_flags = SDW_rollover;
 
 	LCK_lock(tdbb, update_lock, LCK_EX, LCK_NO_WAIT);
-	if (update_lock->lck_physical != LCK_EX ||
-		file != dbb->dbb_file || !SDW_lck_update(sdw_update_flags)) 
-	{
-		LCK_release(tdbb, update_lock);
-		LCK_lock(tdbb, update_lock, LCK_SR, LCK_NO_WAIT);
-		while (update_lock->lck_physical != LCK_SR) {
-			if (dbb->dbb_ast_flags & DBB_get_shadows)
-				break;
-			if ((file != dbb->dbb_file) || !dbb->dbb_shadow_lock)
-				break;
-			LCK_lock(tdbb, update_lock, LCK_SR, LCK_NO_WAIT);
-		}
-
-		if (update_lock->lck_physical == LCK_SR)
+	// If our attachment is already purged and an error comes from
+	// CCH_fini(), then consider us accessing the shadow exclusively.
+	// LCK_update_shadow locking isn't going to work anyway. The below
+	// code must be executed for valid active attachments only.
+	if (tdbb->tdbb_attachment->att_flags & ATT_lck_init_done) {
+		if (update_lock->lck_physical != LCK_EX ||
+			file != dbb->dbb_file || !SDW_lck_update(sdw_update_flags)) 
+		{
 			LCK_release(tdbb, update_lock);
-		return true;
+			LCK_lock(tdbb, update_lock, LCK_SR, LCK_NO_WAIT);
+			while (update_lock->lck_physical != LCK_SR) {
+				if (dbb->dbb_ast_flags & DBB_get_shadows)
+					break;
+				if ((file != dbb->dbb_file) || !dbb->dbb_shadow_lock)
+					break;
+				LCK_lock(tdbb, update_lock, LCK_SR, LCK_NO_WAIT);
+			}
+
+			if (update_lock->lck_physical == LCK_SR)
+				LCK_release(tdbb, update_lock);
+
+			return true;
+		}
 	}
+
+	// At this point we should have an exclusive update lock as well
+	// as our opcode being written into the shadow lock data.
+
+	Lock* shadow_lock = dbb->dbb_shadow_lock;
 
 /* check the various status flags to see if there
    is a valid shadow to roll over to */
@@ -778,11 +789,13 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	}
 
 	if (!shadow) {
+		LCK_write_data(shadow_lock, (SLONG) 0);
 		LCK_release(tdbb, update_lock);
 		return false;
 	}
 
 	if (file != dbb->dbb_file) {
+		LCK_write_data(shadow_lock, (SLONG) 0);
 		LCK_release(tdbb, update_lock);
 		return true;
 	}
@@ -806,8 +819,6 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 
 	dbb->dbb_file = shadow->sdw_file;
 	shadow->sdw_flags |= SDW_rollover;
-
-	Lock* shadow_lock = dbb->dbb_shadow_lock;
 
 /* check conditional does a meta data update - since we were
    successfull updating LCK_data we will be the only one doing so */
@@ -875,8 +886,7 @@ void SDW_shutdown_shadow(Shadow* shadow)
 }
 
 
-void SDW_start(
-			   const TEXT* file_name,
+void SDW_start(const TEXT* file_name,
 			   USHORT shadow_number, USHORT file_flags, bool delete_files)
 {
 /**************************************
@@ -1149,9 +1159,8 @@ static void activate_shadow(void)
 }
 
 
-static Shadow* allocate_shadow(
-						   jrd_file* shadow_file,
-						   USHORT shadow_number, USHORT file_flags)
+static Shadow* allocate_shadow(jrd_file* shadow_file,
+							   USHORT shadow_number, USHORT file_flags)
 {
 /**************************************
  *

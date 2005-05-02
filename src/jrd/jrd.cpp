@@ -5668,8 +5668,10 @@ static void release_attachment(Attachment* attachment)
 	}
 	LCK_ast_enable();
 
-	if (attachment->att_flags & ATT_lck_init_done)
+	if (attachment->att_flags & ATT_lck_init_done) {
 		LCK_fini(tdbb, LCK_OWNER_attachment);	/* For the attachment */
+		attachment->att_flags &= ~ATT_lck_init_done;
+	}
 
 	if (attachment->att_compatibility_table)
 		delete attachment->att_compatibility_table;
