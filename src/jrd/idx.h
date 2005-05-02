@@ -127,7 +127,7 @@ static const struct ini_idx_t indices[] = {
 		SEGMENT(f_fmt_format, idx_numeric)	/* format id */
 	}},
 /*	define index RDB$INDEX_17 for RDB$FILTERS RDB$INPUT_SUB_TYPE, RDB$OUTPUT_SUB_TYPE; */
-	INDEX(17, ODS_8_0, rel_filters, 0, 2)
+	INDEX(17, ODS_8_0, rel_filters, idx_unique, 2)
 		SEGMENT(f_flt_input, idx_numeric),	/* input subtype */
 		SEGMENT(f_flt_output, idx_numeric)	/* output subtype */
 	}},
@@ -277,14 +277,25 @@ static const struct ini_idx_t indices[] = {
 	INDEX(43, ODS_10_1, rel_rcon, 0, 1)
 		SEGMENT(f_rcon_iname, idx_metadata),	/* index name */
 	}},
+
 	/* Last index in ODS 10.1 is RDB$INDEX_43 */
+
+	/* New indices added as part of ODS 11.0
+	 * These are now indices on all system tables that previously 
+	 * did not have one.
+	 */
 
 /*	define index RDB$INDEX_44 for RDB$BACKUP_HISTORY RDB$LEVEL, RDB$BACKUP_ID; */
 	INDEX(44, ODS_11_0, rel_backup_history, idx_unique | idx_descending, 2)
 		SEGMENT(f_backup_level, idx_numeric),	/* backup level */
 		SEGMENT(f_backup_id, idx_numeric)	/* backup id */
+	}},
+/*	define index RDB$INDEX_45 for RDB$FILTERS RDB$FUNCTION_NAME; */
+	INDEX(45, ODS_11_0, rel_filters, idx_unique, 1)
+		SEGMENT(f_flt_name, idx_metadata)	/* function name */
 	}}
-	/* Last index in ODS 11.0 is RDB$INDEX_44 */
+
+	/* Last index in ODS 11.0 is RDB$INDEX_45 */
 };
 
 #define SYSTEM_INDEX_COUNT FB_NELEM(indices)
