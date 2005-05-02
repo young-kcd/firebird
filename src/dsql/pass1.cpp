@@ -2859,53 +2859,30 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	dsql_nod* select_expr = input->nod_arg[1];
 	const DsqlContextStack::iterator base(*request->req_context);
 
-	dsql_nod* node = MAKE_node(ntype, 1);
-	dsql_nod* temp = MAKE_node(input->nod_type, 2);
-// Build first the node from our base-context so that the right context is
-// used while parsing the nodes
-	temp->nod_arg[0] = PASS1_node(request, input->nod_arg[0], false);
+	// create a derived table representing our subquery
+	dsql_nod* dt = MAKE_node(nod_derived_table, e_derived_table_count);
+	dt->nod_arg[e_derived_table_rse] = input->nod_arg[1];
+	dsql_nod* from = MAKE_node(nod_list, 1);
+	from->nod_arg[0] = dt;
+	dsql_nod* query_spec = MAKE_node(nod_query_spec, e_qry_count);
+	query_spec->nod_arg[e_qry_from] = from;
+	dsql_nod* select_expr = MAKE_node(nod_select_expr, e_sel_count);
+	select_expr->nod_arg[e_sel_query_spec] = query_spec;
+
 	dsql_nod* rse = PASS1_rse(request, select_expr, NULL);
+
+	// create a conjunct to be injected
+	dsql_nod* temp = MAKE_node(input->nod_type, 2);
+	temp->nod_arg[0] = PASS1_node(request, input->nod_arg[0], false);
+	temp->nod_arg[1] = rse->nod_arg[e_rse_items]->nod_arg[0];
+
+	rse->nod_arg[e_rse_boolean] = temp;
+
+	// create output node
+	dsql_nod* node = MAKE_node(ntype, 1);
 	node->nod_arg[0] = rse;
-
-	const dsql_nod* const query_spec = select_expr->nod_arg[e_sel_query_spec];
-
-	if (query_spec->nod_type == nod_list)
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds, 
-				  isc_token_err, // Token unknown 
-				  isc_arg_gds, isc_random, isc_arg_string, "UNION", 0);
-
-// adjust the scope level back to the sub-rse, so that 
-// the fields in the select list will be properly recognized
-	request->req_scope_level++;
-	request->req_in_select_list++;
-	dsql_nod* const column = query_spec->nod_arg[e_qry_list]->nod_arg[0];
-	temp->nod_arg[1] = PASS1_node(request, column, false);
-	request->req_in_select_list--;
-	request->req_scope_level--;
-
-// AB: Check if this is an aggregate so we know where to add 
-// it to the where-clause. 
-// 2004-12-16 Optimizer is now clever enough to optimize 
-// this self, thus only correct mapping is needed.
-// SF BUG # [ 213859 ] Subquery connected with 'IN' clause
-	if (rse->nod_arg[e_rse_streams] && 
-		(rse->nod_arg[e_rse_streams]->nod_type == nod_list) &&
-		(rse->nod_arg[e_rse_streams]->nod_arg[0]) &&
-		(rse->nod_arg[e_rse_streams]->nod_arg[0]->nod_type == nod_aggregate)) 
-	{
-		dsql_nod* aggregate = rse->nod_arg[e_rse_streams]->nod_arg[0];
-		request->req_scope_level++;
-		dsql_ctx* parent_context = (dsql_ctx*) aggregate->nod_arg[e_agg_context];
-		temp->nod_arg[1] = 
-			remap_field(request, temp->nod_arg[1], parent_context , request->req_scope_level);
-		request->req_scope_level--;
-	} 
-
-	rse->nod_arg[e_rse_boolean] = 
-			compose(rse->nod_arg[e_rse_boolean], temp, nod_and);
 
 	request->req_context->clear(base);
 
