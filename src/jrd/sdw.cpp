@@ -771,6 +771,10 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 			return true;
 		}
 	}
+	else {
+		if (!SDW_lck_update(sdw_update_flags))
+			return true;
+	}
 
 	// At this point we should have an exclusive update lock as well
 	// as our opcode being written into the shadow lock data.
