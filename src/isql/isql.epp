@@ -5522,8 +5522,16 @@ static processing_state parse_arg(int argc,
 					ret = ERR;
 			}
 			else if (c == 'R') {
+				const bool keepLower = s[2] == '2';
 				if ((s = argv[++i]) && *s) {
-					STRARGNCPY(isqlGlob.Role, s, sizeof(isqlGlob.Role) - 1);
+					if (keepLower)
+					{
+						strcpy(isqlGlob.Role, "\"");
+						STRARGNCPY(isqlGlob.Role + 1, s, sizeof(isqlGlob.Role) - 3);
+						strcat(isqlGlob.Role, "\"");
+					}
+					else
+						STRARGNCPY(isqlGlob.Role, s, sizeof(isqlGlob.Role) - 1);
 					global_role = true;
 				}
 				else
@@ -5911,7 +5919,7 @@ static SSHORT print_item(TEXT** s,
 			break;
 
 		case SQL_TIMESTAMP:
-			isc_decode_date((ISC_QUAD*)var->sqldata, &times);
+			isc_decode_timestamp((ISC_TIMESTAMP*)var->sqldata, &times);
 
 			if (isqlGlob.SQL_dialect > SQL_DIALECT_V5) {
 				sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
@@ -5941,16 +5949,10 @@ static SSHORT print_item(TEXT** s,
 
 		case SQL_TYPE_TIME:
 			{
-				/* Temporarily convert the Time to a Time & Date in order
-				   to use isc_decode_date () */
-
-				ULONG time_and_date[2];
-				time_and_date[0] = 0;
-				time_and_date[1] = *(ULONG*) var->sqldata;
-				isc_decode_date((ISC_QUAD*)time_and_date, &times);
+				isc_decode_sql_time((ISC_TIME*)var->sqldata, &times);
 				sprintf(d, "%2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
 						times.tm_hour, times.tm_min, times.tm_sec,
-						(*(ULONG*) var->sqldata) % ISC_TIME_SECONDS_PRECISION);
+						(*(ISC_TIME*) var->sqldata) % ISC_TIME_SECONDS_PRECISION);
 				sprintf(p, "%-*s ", (int) length, d);
 				if (List) {
 					sprintf(Print_buffer, "%s%s", d, NEWLINE);
@@ -5961,14 +5963,7 @@ static SSHORT print_item(TEXT** s,
 
 		case SQL_TYPE_DATE:
 			{
-				/* Temporarily convert the Time to a Time & Date in order
-				   to use isc_decode_date () */
-
-				ULONG time_and_date[2];
-				time_and_date[0] = *(ULONG*) var->sqldata;
-				time_and_date[1] = 0;
-				isc_decode_date((ISC_QUAD*)time_and_date, &times);
-
+				isc_decode_sql_date((ISC_DATE*)var->sqldata, &times);
 				sprintf(d, "%4.4d-%2.2d-%2.2d", times.tm_year + 1900,
 						(times.tm_mon + 1), times.tm_mday);
 
