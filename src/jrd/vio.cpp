@@ -1373,21 +1373,23 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			{
 			const bool name_defined =
 				EVL_field(0, rpb->rpb_record, f_file_name, &desc);
-			USHORT rel_flags;
-			if (EVL_field(0, rpb->rpb_record, f_file_flags, &desc2) && 
-				((rel_flags = MOV_get_long(&desc2, 0)) & FILE_difference))
+			USHORT file_flags =
+				EVL_field(0, rpb->rpb_record, f_file_flags, &desc2) ? 
+				MOV_get_long(&desc2, 0) : 0;
+			if (file_flags & FILE_difference)
 			{
-				if (rel_flags & FILE_backing_up)
+				if (file_flags & FILE_backing_up)
 					DFW_post_work(transaction, dfw_end_backup, &desc, 0);
 				if (name_defined)
 					DFW_post_work(transaction, dfw_delete_difference, &desc, 0);
 			}
-			else
-				if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
-					(id = MOV_get_long(&desc2, 0)))
-				{
+			else if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
+				(id = MOV_get_long(&desc2, 0)))
+			{
+				if (!(file_flags & FILE_inactive)) {
 					DFW_post_work(transaction, dfw_delete_shadow, &desc, id);
 				}
+			}
 			break;
 			}
 
