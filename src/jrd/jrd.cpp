@@ -1142,8 +1142,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	if (options.dpb_wal_action)
 	{
-		/* Make sure WAL enabled before taking any WAL action. */
-
+		// No WAL anymore. We deleted it.
 		ERR_post(isc_no_wal, 0);
 	}
 
