@@ -221,6 +221,7 @@ static dsql_nod* pass1_join(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_label(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_lookup_alias(dsql_req*, const dsql_str*, dsql_nod*);
 static dsql_nod* pass1_make_derived_field(dsql_req*, tsql*, dsql_nod*);
+static dsql_nod* pass1_not(dsql_req*, const dsql_nod*, bool, bool);
 static void	pass1_put_args_on_stack(dsql_req*, dsql_nod*, DsqlNodStack&, bool);
 static dsql_nod* pass1_relation(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_rse(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
@@ -906,6 +907,9 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_join:
 		return pass1_join(request, input, proc_flag);
+
+	case nod_not:
+		return pass1_not(request, input, proc_flag, true);
 
 	default:
 		break;
@@ -5289,6 +5293,162 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, tsql* tdsql,
 	}
 
 	return select_item;
+}
+
+
+/**
+  
+ 	pass1_not
+  
+    @brief	Replace NOT with an appropriately inverted condition, if
+			possible. Get rid of redundant nested NOT predicates.
+ 
+
+    @param request
+    @param input
+	@param proc_flag
+	@param invert
+
+ **/
+static dsql_nod* pass1_not(dsql_req* request,
+						   const dsql_nod* input,
+						   bool proc_flag,
+						   bool invert)
+{
+	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+
+	fb_assert(input->nod_type == nod_not);
+	dsql_nod* sub = input->nod_arg[0];
+
+	if (sub->nod_type == nod_not) {
+		// recurse until different node is found
+		// (every even call means no inversion required)
+		return pass1_not(request, sub, proc_flag, !invert);
+	}
+
+	nod_t node_type;
+	dsql_nod* node;
+	bool is_between = false, invert_args = false;
+
+	if (invert) {
+		// invert the given boolean
+		switch (sub->nod_type) {
+		case nod_eql:
+			node_type = nod_neq;
+			break;
+		case nod_neq:
+			node_type = nod_eql;
+			break;
+		case nod_lss:
+			node_type = nod_geq;
+			break;
+		case nod_gtr:
+			node_type = nod_leq;
+			break;
+		case nod_leq:
+			node_type = nod_gtr;
+			break;
+		case nod_geq:
+			node_type = nod_lss;
+			break;
+		case nod_eql_all:
+			node_type = nod_neq_any;
+			break;
+		case nod_neq_all:
+			node_type = nod_eql_any;
+			break;
+		case nod_lss_all:
+			node_type = nod_geq_any;
+			break;
+		case nod_gtr_all:
+			node_type = nod_leq_any;
+			break;
+		case nod_leq_all:
+			node_type = nod_gtr_any;
+			break;
+		case nod_geq_all:
+			node_type = nod_lss_any;
+			break;
+		case nod_eql_any:
+			node_type = nod_neq_all;
+			break;
+		case nod_neq_any:
+			node_type = nod_eql_all;
+			break;
+		case nod_lss_any:
+			node_type = nod_geq_all;
+			break;
+		case nod_gtr_any:
+			node_type = nod_leq_all;
+			break;
+		case nod_leq_any:
+			node_type = nod_gtr_all;
+			break;
+		case nod_geq_any:
+			node_type = nod_lss_all;
+			break;
+		case nod_between:
+			node_type = nod_or;
+			is_between = true;
+			break;
+		case nod_and:
+			node_type = nod_or;
+			invert_args = true;
+			break;
+		case nod_or:
+			node_type = nod_and;
+			invert_args = true;
+			break;
+		case nod_not:
+			// this case is handled in the beginning
+			fb_assert(false);
+		default:
+			// no inversion is possible, so just recreate the input node
+			// and return immediately to avoid infinite recursion later
+			node = MAKE_node(input->nod_type, 1);
+			node->nod_arg[0] = PASS1_node(request, sub, proc_flag);
+			return node;
+		}
+	}
+	else {
+		// subnode type hasn't been changed
+		node_type = sub->nod_type;
+	}
+
+	fb_assert(node_type != nod_not);
+
+	if (is_between) {
+		// handle the special BETWEEN case
+		fb_assert(node_type == nod_or);
+		node = MAKE_node(node_type, 2);
+		node->nod_arg[0] = MAKE_node(nod_lss, 2);
+		node->nod_arg[0]->nod_arg[0] = sub->nod_arg[0];
+		node->nod_arg[0]->nod_arg[1] = sub->nod_arg[1];
+		node->nod_arg[1] = MAKE_node(nod_gtr, 2);
+		node->nod_arg[1]->nod_arg[0] = sub->nod_arg[0];
+		node->nod_arg[1]->nod_arg[1] = sub->nod_arg[2];
+	}
+	else {
+		// create new (possibly inverted) node
+		node = MAKE_node(node_type, sub->nod_count);
+		dsql_nod* const* src = sub->nod_arg;
+		dsql_nod** dst = node->nod_arg;
+		for (const dsql_nod* const* end = src + sub->nod_count;
+			src < end; src++)
+		{
+			if (invert_args) {
+				dsql_nod* temp = MAKE_node(nod_not, 1);
+				temp->nod_arg[0] = *src;
+				*dst++ = temp;
+			}
+			else {
+				*dst++ = *src;
+			}
+		}
+	}
+
+	return PASS1_node(request, node, proc_flag);
 }
 
 
