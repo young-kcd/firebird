@@ -1371,27 +1371,27 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_files:
 			{
-			const bool name_defined =
-				EVL_field(0, rpb->rpb_record, f_file_name, &desc);
-			USHORT file_flags =
-				EVL_field(0, rpb->rpb_record, f_file_flags, &desc2) ? 
-				MOV_get_long(&desc2, 0) : 0;
-			if (file_flags & FILE_difference)
-			{
-				if (file_flags & FILE_backing_up)
-					DFW_post_work(transaction, dfw_end_backup, &desc, 0);
-				if (name_defined)
-					DFW_post_work(transaction, dfw_delete_difference, &desc, 0);
-			}
-			else if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
-				(id = MOV_get_long(&desc2, 0)))
-			{
-				if (!(file_flags & FILE_inactive)) {
-					DFW_post_work(transaction, dfw_delete_shadow, &desc, id);
+				const bool name_defined =
+					EVL_field(0, rpb->rpb_record, f_file_name, &desc);
+				const USHORT file_flags =
+					EVL_field(0, rpb->rpb_record, f_file_flags, &desc2) ? 
+					MOV_get_long(&desc2, 0) : 0;
+				if (file_flags & FILE_difference)
+				{
+					if (file_flags & FILE_backing_up)
+						DFW_post_work(transaction, dfw_end_backup, &desc, 0);
+					if (name_defined)
+						DFW_post_work(transaction, dfw_delete_difference, &desc, 0);
+				}
+				else if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
+					(id = MOV_get_long(&desc2, 0)))
+				{
+					if (!(file_flags & FILE_inactive)) {
+						DFW_post_work(transaction, dfw_delete_shadow, &desc, id);
+					}
 				}
 			}
 			break;
-			}
 
 		case rel_classes:
 			EVL_field(0, rpb->rpb_record, f_cls_class, &desc);
