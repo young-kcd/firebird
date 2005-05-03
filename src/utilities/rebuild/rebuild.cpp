@@ -995,7 +995,7 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 	fprintf(file, "    Shadow count\t\t%ld\n", header->hdr_shadow_count);
 
 	tm time;
-	isc_decode_date(header->hdr_creation_date, &time);
+	isc_decode_timestamp(header->hdr_creation_date, &time);
 
 	fprintf(file, "    Creation date:\t\t%s %d, %d %d:%02d:%02d\n",
 			   FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,

@@ -132,7 +132,7 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 			FPRINTF(outfile, "\tDatabase dialect\t1\n");
 
 		if (!nocreation) {
-			isc_decode_date(reinterpret_cast<const ISC_QUAD*>(header->hdr_creation_date), 
+			isc_decode_timestamp(reinterpret_cast<const ISC_TIMESTAMP*>(header->hdr_creation_date),
 							&time);
 			FPRINTF(outfile, "\tCreation date\t\t%s %d, %d %d:%02d:%02d\n",
 					FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
@@ -322,7 +322,7 @@ void PPG_print_log(const log_info_page* logp, SLONG page, bool nocreation,
 			else
 			{
 				struct tm time;
-				isc_decode_date(reinterpret_cast<const ISC_QUAD*>(logp->log_creation_date),
+				isc_decode_timestamp(reinterpret_cast<const ISC_TIMESTAMP*>(logp->log_creation_date),
 									&time);
 				FPRINTF(outfile,
 						"\tCreation date\t%s %d, %d %d:%02d:%02d\n",
