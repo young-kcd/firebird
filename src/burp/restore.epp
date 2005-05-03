@@ -277,30 +277,30 @@ int RESTORE_restore (const TEXT* file_name,
 					strcpy(index_name, (TEXT *)tdgbl->status_vector[3]);
 					BURP_print_status(tdgbl->status_vector);
 					FOR (REQUEST_HANDLE req_handle3)
-					 IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ index_name
-					 {
+						IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ index_name
+
 						BURP_verbose(243, index_name, NULL, NULL, NULL, NULL);
-						MODIFY IDX USING IDX.RDB$INDEX_INACTIVE = TRUE;
-					 }
+						MODIFY IDX USING
+							IDX.RDB$INDEX_INACTIVE = TRUE;
+						END_MODIFY;
 						BURP_print(240, index_name, NULL, NULL, NULL, NULL);
-						// msg 240 Index \"%s\" failed to activate because: 
+						// msg 240 Index \"%s\" failed to activate because:
 						if ( error_code == isc_no_dup )
 						{
 							BURP_print(241, NULL, NULL, NULL, NULL, NULL);
-							// msg 241 The unique index has duplicate values or NULLs 
+							// msg 241 The unique index has duplicate values or NULLs
 							BURP_print(242, NULL, NULL, NULL, NULL, NULL);
-							// msg 242 Delete or Update duplicate values or NULLs, and activate index with 
+							// msg 242 Delete or Update duplicate values or NULLs, and activate index with
 						}
 						else
 						{
 							BURP_print(244, NULL, NULL, NULL, NULL, NULL);
-							// msg 244 Not enough disk space to create the sort file for an index 
+							// msg 244 Not enough disk space to create the sort file for an index
 							BURP_print(245, NULL, NULL, NULL, NULL, NULL);
-							// msg 245 Set the TMP environment variable to a directory on a filesystem that does have enough space, and activate index with 
+							// msg 245 Set the TMP environment variable to a directory on a filesystem that does have enough space, and activate index with
 						}
 						BURP_print(243, index_name, NULL, NULL, NULL, NULL);
-						/* msg 243 ALTER INDEX \"%s\" ACTIVE; */
-						END_MODIFY;
+						// msg 243 ALTER INDEX \"%s\" ACTIVE;
 					END_FOR;
 					// don't bring the database on-line 
 					flag_on_line = false;
@@ -330,7 +330,12 @@ int RESTORE_restore (const TEXT* file_name,
 			FOR (REQUEST_HANDLE req_handle1) IDS IN RDB$INDICES WITH
 				IDS.RDB$INDEX_INACTIVE EQ DEFERRED_ACTIVE AND
 				IDS.RDB$FOREIGN_KEY MISSING
-					MODIFY IDS USING IDS.RDB$INDEX_INACTIVE = FALSE;
+				
+				MISC_terminate(IDS.RDB$INDEX_NAME, index_name,
+					(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
+					sizeof(index_name));
+				MODIFY IDS USING
+					IDS.RDB$INDEX_INACTIVE = FALSE;
 				END_MODIFY;
 				ON_ERROR
 					general_on_error();
@@ -339,7 +344,7 @@ int RESTORE_restore (const TEXT* file_name,
 				SAVE
 				// existing ON_ERROR continues past error, beck 
 				ON_ERROR
-					BURP_print (173, IDS.RDB$INDEX_NAME, NULL, NULL, NULL, NULL);
+					BURP_print (173, index_name, NULL, NULL, NULL, NULL);
 					BURP_print_status(isc_status);
 					MODIFY IDS USING
 						IDS.RDB$INDEX_INACTIVE = TRUE;
@@ -348,10 +353,8 @@ int RESTORE_restore (const TEXT* file_name,
 						general_on_error ();
 					END_ERROR;
 				END_ERROR;
-				MISC_terminate(IDS.RDB$INDEX_NAME, index_name,
-					(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
-					sizeof(index_name));
-				BURP_verbose(122, index_name, NULL, NULL, NULL, NULL);
+				BURP_verbose(285, index_name, NULL, NULL, NULL, NULL);
+				// activating and creating deferred index %s
 			END_FOR;
 			ON_ERROR
 				general_on_error ();
@@ -379,9 +382,11 @@ int RESTORE_restore (const TEXT* file_name,
 			CNST.RDB$INDEX_NAME EQ IDS.RDB$INDEX_NAME AND
 			IDS.RDB$INDEX_INACTIVE EQ DEFERRED_ACTIVE
 
-
+			MISC_terminate(IDS.RDB$INDEX_NAME, index_name,
+				(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
+				sizeof(index_name));
 			MODIFY IDS USING
-					IDS.RDB$INDEX_INACTIVE = FALSE;
+				IDS.RDB$INDEX_INACTIVE = FALSE;
 			END_MODIFY;
 			ON_ERROR
 				general_on_error ();
@@ -390,7 +395,7 @@ int RESTORE_restore (const TEXT* file_name,
 			SAVE
 			// existing ON_ERROR continues past error, beck 
 			ON_ERROR
-				BURP_print (173, IDS.RDB$INDEX_NAME, NULL, NULL, NULL, NULL);
+				BURP_print (173, index_name, NULL, NULL, NULL, NULL);
 				BURP_print_status(isc_status);
 				MODIFY IDS USING
 					IDS.RDB$INDEX_INACTIVE = TRUE;
@@ -399,7 +404,8 @@ int RESTORE_restore (const TEXT* file_name,
 					general_on_error ();
 				END_ERROR;
 			END_ERROR;
-			BURP_verbose(122, IDS.RDB$INDEX_NAME, NULL, NULL, NULL, NULL);
+			BURP_verbose(285, index_name, NULL, NULL, NULL, NULL);
+			// activating and creating deferred index %s
 		END_FOR;
 		ON_ERROR
 			general_on_error ();
@@ -457,7 +463,7 @@ int RESTORE_restore (const TEXT* file_name,
 					general_on_error ();
 				END_ERROR;
 
-			restore_security_class (procedure->prc_owner, X.RDB$SECURITY_CLASS);
+				restore_security_class (procedure->prc_owner, X.RDB$SECURITY_CLASS);
 
 			END_FOR;
 			ON_ERROR
@@ -485,8 +491,8 @@ int RESTORE_restore (const TEXT* file_name,
 					general_on_error ();
 				END_ERROR;
 
-			restore_security_class (relation->rel_owner, X.RDB$SECURITY_CLASS);
-			restore_security_class (relation->rel_owner, X.RDB$DEFAULT_CLASS);
+				restore_security_class (relation->rel_owner, X.RDB$SECURITY_CLASS);
+				restore_security_class (relation->rel_owner, X.RDB$DEFAULT_CLASS);
 
 			END_FOR;
 			ON_ERROR
