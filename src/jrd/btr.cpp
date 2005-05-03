@@ -1328,6 +1328,82 @@ void BTR_make_key(thread_db* tdbb,
 }
 
 
+void BTR_make_null_key(thread_db* tdbb, index_desc* idx, temporary_key* key)
+{
+/**************************************
+ *
+ *	B T R _ m a k e _ n u l l _ k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Construct a (possibly) compound search key consist from
+ *  all null values. This is worked only for ODS11 and later
+ * 
+ **************************************/
+	dsc null_desc;
+	null_desc.dsc_dtype = dtype_text;
+	null_desc.dsc_flags = 0;
+	null_desc.dsc_sub_type = 0;
+	null_desc.dsc_scale = 0;
+	null_desc.dsc_length = 1;
+	null_desc.dsc_ttype() = ttype_ascii;
+	null_desc.dsc_address = (UCHAR*) " ";
+
+	temporary_key temp;
+	temp.key_flags = 0;
+	temp.key_length = 0;
+
+	SET_TDBB(tdbb);
+	//const Database* dbb = tdbb->tdbb_database;
+
+	fb_assert(idx != NULL);
+	fb_assert(key != NULL);
+	fb_assert(tdbb->tdbb_database->dbb_ods_version >= ODS_VERSION11)
+
+	key->key_flags = key_all_nulls;
+
+	index_desc::idx_repeat* tail = idx->idx_rpt;
+
+	// If the index is a single segment index, don't sweat the compound
+	// stuff.
+	if ((idx->idx_count == 1) || (idx->idx_flags & idx_expressn)) {
+		compress(tdbb, &null_desc, key, tail->idx_itype, true,
+			(idx->idx_flags & idx_descending), false);
+	}
+	else {
+		// Make a compound key
+		UCHAR* p = key->key_data;
+		SSHORT stuff_count = 0;
+		temp.key_flags |= key_empty;
+		for (USHORT n = 0; n < idx->idx_count; n++, tail++) {
+			for (; stuff_count; --stuff_count) {
+				*p++ = 0;
+			}
+			compress(tdbb, &null_desc, &temp, tail->idx_itype, true,
+				(idx->idx_flags & idx_descending), false);
+			const UCHAR* q = temp.key_data;
+			for (USHORT l = temp.key_length; l; --l, --stuff_count)
+			{
+				if (stuff_count == 0) {
+					*p++ = idx->idx_count - n;
+					stuff_count = STUFF_COUNT;
+				}
+				*p++ = *q++;
+			}
+		}
+		key->key_length = (p - key->key_data);
+		if (temp.key_flags & key_empty) {
+			key->key_flags |= key_empty;
+		}
+	}
+
+	if (idx->idx_flags & idx_descending) {
+		BTR_complement_key(key);
+	}
+}
+
+
 bool BTR_next_index(thread_db* tdbb,
 					   jrd_rel* relation, jrd_tra* transaction, index_desc* idx, 
 					   WIN* window)

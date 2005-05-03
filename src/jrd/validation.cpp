@@ -662,7 +662,7 @@ static void walk_database(thread_db*, VDR);
 static RTN walk_data_page(thread_db*, VDR, jrd_rel*, SLONG, SLONG);
 static void walk_generators(thread_db*, VDR);
 static void walk_header(thread_db*, VDR, SLONG);
-static RTN walk_index(thread_db*, VDR, jrd_rel*, SLONG, USHORT);
+static RTN walk_index(thread_db*, VDR, jrd_rel*, index_root_page&, USHORT);
 static void walk_log(thread_db*, VDR);
 static void walk_pip(thread_db*, VDR);
 static RTN walk_pointer_page(thread_db*, VDR, jrd_rel*, int);
@@ -1363,8 +1363,8 @@ static void walk_header(thread_db* tdbb, VDR control, SLONG page_num)
 	}
 }
 
-static RTN walk_index(thread_db* tdbb,
-					  VDR control, jrd_rel* relation, SLONG page_number, USHORT id)
+static RTN walk_index(thread_db* tdbb, VDR control, jrd_rel* relation, 
+					  index_root_page& root_page, USHORT id)
 {
 /**************************************
  *
@@ -1390,6 +1390,32 @@ static RTN walk_index(thread_db* tdbb,
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
+	const SLONG page_number = root_page.irt_rpt[id].irt_root;
+	if (!page_number) {
+		return rtn_ok;
+	}
+
+	const bool unique = (root_page.irt_rpt[id].irt_flags & (irt_unique | idx_primary));
+
+	temporary_key nullKey, *null_key = 0;
+	if (unique && tdbb->tdbb_database->dbb_ods_version >= ODS_VERSION11)
+	{
+#ifdef EXPRESSION_INDICES
+		const bool isExpression = root_page.irt_rpt[id].irt_flags & irt_expression;
+		if (isExpression)
+			root_page.irt_rpt[id].irt_flags &= ~irt_expression;
+#endif
+		index_desc idx;
+		BTR_description(tdbb, relation, &root_page, &idx, id);
+
+#ifdef EXPRESSION_INDICES
+		if (isExpression)
+			root_page.irt_rpt[id].irt_flags |= irt_expression;
+#endif
+		null_key = &nullKey; 
+		BTR_make_null_key(tdbb, &idx, null_key);
+	}
+
 	SLONG next = page_number;
 	SLONG down = page_number;
 	temporary_key key;
@@ -1401,6 +1427,9 @@ static RTN walk_index(thread_db* tdbb,
 	}
 
 	bool firstNode = true;
+	bool nullKeyNode = false;			// current node is a null key of unique index
+	bool nullKeyHandled = !(unique && null_key);	// null key of unique index was handled
+
 	SCHAR flags = 0;
 	UCHAR* pointer;
 	IndexNode node, lastNode;
@@ -1422,6 +1451,9 @@ static RTN walk_index(thread_db* tdbb,
 		const bool useJumpInfo = (flags & btr_jump_info);
 		const bool useAllRecordNumbers = (flags & btr_all_record_number);
 
+		if (!useAllRecordNumbers)
+			nullKeyHandled = true;
+		
 		if (page->btr_relation != relation->rel_id || 
 			page->btr_id != (UCHAR) (id % 256)) 
 		{
@@ -1473,7 +1505,7 @@ static RTN walk_index(thread_db* tdbb,
 
 		// go through all the nodes on the page and check for validity
 		pointer = BTreeNode::getPointerFirstNode(page);
-		if (useAllRecordNumbers) {
+		if (useAllRecordNumbers && firstNode) {
 			BTreeNode::readNode(&lastNode, pointer, flags, leafPage);
 		}
 
@@ -1486,17 +1518,26 @@ static RTN walk_index(thread_db* tdbb,
 			}
 
 			// make sure the current key is not less than the previous key
+			bool duplicateNode = !firstNode && !node.isEndLevel && 
+					(key.key_length == (node.length + node.prefix));
 			q = node.data;
 			p = key.key_data + node.prefix;
 			l = MIN(node.length, (USHORT) (key.key_length - node.prefix));
 			for (; l; l--, p++, q++) {
 				if (*p > *q) {
+					duplicateNode = false;
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
 				else if (*p < *q) {
+					duplicateNode = false;
 					break;
 				}
+			}
+
+			if (!duplicateNode && nullKeyNode) {
+				nullKeyHandled = true;
+				nullKeyNode = false;
 			}
 
 			if (useAllRecordNumbers && (node.recordNumber.getValue() >= 0) &&
@@ -1504,30 +1545,38 @@ static RTN walk_index(thread_db* tdbb,
 			{
 				// If this node is equal to the previous one and it's
 				// not a MARKER, record number should be same or higher.
-				if ((node.length == 0) && 
-					(node.prefix == (lastNode.prefix + lastNode.length))) 
-				{
-					if (node.recordNumber < lastNode.recordNumber) {
+				if (duplicateNode) {
+					if ((!unique || (unique && nullKeyNode)) &&
+						(node.recordNumber < lastNode.recordNumber)) 
+					{
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 				}
-				lastNode = node;
-			}
 
-			if (firstNode) {
-				firstNode = false;
+				lastNode = node;
 			}
 
 			// save the current key
 			q = node.data;
-			p = key.key_data +  node.prefix;
+			p = key.key_data + node.prefix;
 			for (l = node.length; l; l--) {
 				*p++ = *q++;
 			}
 			key.key_length = p - key.key_data;
 
-			if (node.isEndBucket ||	node.isEndLevel) {
+			if (!nullKeyHandled && !nullKeyNode && !duplicateNode)
+			{
+				nullKeyNode = (leafPage || (!leafPage && !firstNode) ) &&
+					!node.isEndLevel && (null_key->key_length == key.key_length) && 
+					(memcmp(null_key->key_data, key.key_data, null_key->key_length) == 0);
+			}
+
+			if (firstNode) {
+				firstNode = false;
+			}
+			
+			if (node.isEndBucket || node.isEndLevel) {
 				break;
 			}
 
@@ -1631,6 +1680,9 @@ static RTN walk_index(thread_db* tdbb,
 			next = down;
 			key.key_length = 0;
 			previous_number = 0;
+			firstNode = true;
+			nullKeyNode = false;
+			nullKeyHandled = !(unique && null_key);
 		}
 
 		CCH_RELEASE(tdbb, &window);
@@ -2070,10 +2122,7 @@ static RTN walk_root(thread_db* tdbb, VDR control, jrd_rel* relation)
 			   &page);
 
 	for (USHORT i = 0; i < page->irt_count; i++) {
-		const SLONG page_number = page->irt_rpt[i].irt_root;
-		if (page_number) {
-			walk_index(tdbb, control, relation, page_number, i);
-		}
+		walk_index(tdbb, control, relation, *page, i);
 	}
 
 	CCH_RELEASE(tdbb, &window);
