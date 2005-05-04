@@ -5304,9 +5304,9 @@ static dsql_nod* pass1_not(dsql_req* request,
 		return pass1_not(request, sub, proc_flag, !invert);
 	}
 
-	nod_t node_type;
 	dsql_nod* node;
-	bool is_between = false, invert_args = false;
+	nod_t node_type = input->nod_type;
+	bool is_between = false, invert_args = false, no_op = false;
 
 	if (invert) {
 		// invert the given boolean
@@ -5348,7 +5348,13 @@ static dsql_nod* pass1_not(dsql_req* request,
 			node_type = nod_lss_any;
 			break;
 		case nod_eql_any:
-			node_type = nod_neq_all;
+			if (sub->nod_arg[1]->nod_type == nod_list) {
+				// this is NOT IN (<list>), don't change it
+				no_op = true;
+			}
+			else {
+				node_type = nod_neq_all;
+			}
 			break;
 		case nod_neq_any:
 			node_type = nod_eql_all;
@@ -5381,11 +5387,8 @@ static dsql_nod* pass1_not(dsql_req* request,
 			// this case is handled in the beginning
 			fb_assert(false);
 		default:
-			// no inversion is possible, so just recreate the input node
-			// and return immediately to avoid infinite recursion later
-			node = MAKE_node(input->nod_type, 1);
-			node->nod_arg[0] = PASS1_node(request, sub, proc_flag);
-			return node;
+			no_op = true;
+			break;
 		}
 	}
 	else {
@@ -5393,9 +5396,15 @@ static dsql_nod* pass1_not(dsql_req* request,
 		node_type = sub->nod_type;
 	}
 
-	fb_assert(node_type != nod_not);
-
-	if (is_between) {
+	if (no_op) {
+		// no inversion is possible, so just recreate the input node
+		// and return immediately to avoid infinite recursion later
+		fb_assert(node_type == nod_not);
+		node = MAKE_node(input->nod_type, 1);
+		node->nod_arg[0] = PASS1_node(request, sub, proc_flag);
+		return node;
+	}
+	else if (is_between) {
 		// handle the special BETWEEN case
 		fb_assert(node_type == nod_or);
 		node = MAKE_node(node_type, 2);
