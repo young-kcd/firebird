@@ -137,9 +137,10 @@ LanguageDetectionMethod=uilanguage
 [Languages]
 Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: builds\install\arch-specific\win32\installation_readme.txt; InfoAfterFile: builds\install\arch-specific\win32\readme.txt;
 #ifdef i18n
-;Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: builds\install\arch-specific\win32\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: builds\install\arch-specific\win32\ba\ProcitajMe.txt;
+Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: builds\install\arch-specific\win32\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: builds\install\arch-specific\win32\ba\ProcitajMe.txt;
 Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: builds\install\arch-specific\win32\fr\installation_lisezmoi.txt; InfoAfterFile: builds\install\arch-specific\win32\fr\lisezmoi.txt;
-Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: builds\install\arch-specific\win32\de\installation_liesmich.txt; InfoAfterFile: builds\install\arch-specific\win32\de\liesmich.txt
+Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: builds\install\arch-specific\win32\de\installation_liesmich.txt; InfoAfterFile: builds\install\arch-specific\win32\de\liesmich.txt;
+Name: es; MessagesFile: compiler:Languages\Spanish.isl; InfoBeforeFile: builds\install\arch-specific\win32\es\leame_instalacion.txt; InfoAfterFile: builds\install\arch-specific\win32\es\leame.txt;
 Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: builds\install\arch-specific\win32\installation_readme.txt; InfoAfterFile: builds\install\arch-specific\win32\readme.txt;
 Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: builds\install\arch-specific\win32\pl\instalacja_czytajto.txt; InfoAfterFile: builds\install\arch-specific\win32\pl\czytajto.txt;
 Name: pt; MessagesFile: compiler:Languages\PortugueseStd.isl; InfoBeforeFile: builds\install\arch-specific\win32\pt\instalacao_leia-me.txt; InfoAfterFile: builds\install\arch-specific\win32\pt\leia-me.txt
@@ -149,9 +150,10 @@ Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: builds
 [Messages]
 en.BeveledLabel=English
 #ifdef i18n
-;ba.BeveledLabel=Bosanski
+ba.BeveledLabel=Bosanski
 fr.BeveledLabel=Français
 de.BeveledLabel=Deutsch
+es.BeveledLabel=Espagnol
 hu.BeveledLabel=Magyar
 pl.BeveledLabel=Polski
 pt.BeveledLabel=Português
@@ -161,9 +163,10 @@ si.BeveledLabel=Slovenski
 [CustomMessages]
 #include "custom_messages.inc"
 #ifdef i18n
-;#include "ba\custom_messages_ba.inc"
+#include "ba\custom_messages_ba.inc"
 #include "fr\custom_messages_fr.inc"
 #include "de\custom_messages_de.inc"
+#include "es\custom_messages_es.inc"
 #include "hu\custom_messages_hu.inc"
 #include "pl\custom_messages_pl.inc"
 #include "pt\custom_messages_pt.inc"
@@ -279,7 +282,6 @@ Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; C
 Source: output\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
 Source: output\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: output\security2.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
-Source: output\security2.fbk; DestDir: {app}; Components: ServerComponent; Flags: ignoreversion
 Source: output\firebird.msg; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
 Source: output\firebird.log; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall skipifsourcedoesntexist external dontcopy
 

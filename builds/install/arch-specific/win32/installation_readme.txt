@@ -1,4 +1,4 @@
-Firebird Database Server 2.0 ALPHA 1
+Firebird Database Server 2.0 ALPHA 2
 ==================================================
 
   ** IMPORTANT **
@@ -9,7 +9,7 @@ Firebird Database Server 2.0 ALPHA 1
   ** ********* **
 
 This document is a guide to installing this package of
-Firebird 2.0 Alpha 1 on the Win32 platform. These notes
+Firebird 2.0 Alpha 2 on the Win32 platform. These notes
 refer to the installation package itself, rather than
 Firebird 2.0 in general.
 
@@ -54,13 +54,13 @@ in misc/upgrade/security/. A future test release will
 address the issue of user migration more fully.
 
 
-Installing on systems with Firebird 2.0 Alpha 1
------------------------------------------------
+Installing on systems with Firebird 2.0 
+---------------------------------------
 
 The installer cannot automatically detect if a
-Firebird 2.0 Alpha 1 server is running. Therefore you
-will receive no warning until the installer attempts
-to overwrite an active file.
+Firebird 2.0 Alpha 1 or Alpha 2 server is running. 
+Therefore you will receive no warning until the 
+installer attempts to overwrite an active file.
 
 
 New features of the installer

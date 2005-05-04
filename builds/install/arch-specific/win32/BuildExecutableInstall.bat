@@ -55,7 +55,15 @@ for %%v in ( %* )  do (
 (@set ISS_EXAMPLES=examples)
 @if %FB2_ISS_DEBUG% equ 1 (
   @if %FB2_EXAMPLES% equ 0 (@set ISS_EXAMPLES=noexamples)
-  )
+)
+
+::Are we doing a snapshot build? If so we always do less work.
+if "%FB2_SNAPSHOT%"=="1" (
+  (set ISS_EXAMPLES=noexamples)
+  (set FBBUILD_ISX_PACK=0)
+  (set FBBUILD_EMB_PACK=0)
+)
+
 
 :: Set up our final destination
 set FBBUILD_INSTALL_IMAGES=%ROOT_PATH%\builds\install_images
@@ -263,7 +271,7 @@ mkdir %FBBUILD_OUTPUT%\misc\upgrade\ib_udf 2>nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Copying doc\sql.extensions failed  ) & (goto :EOF))
 
 @echo   Copying pdf docs...
-@for %%v in ( Firebird-1.5-QuickStart.pdf Firebird_v1.5.ReleaseNotes.pdf Firebird_v1.5.1.ReleaseNotes.pdf Firebird_v1.5.2.ReleaseNotes.pdf Firebird_v2.0.ReleaseNotes.pdf ) do (
+@for %%v in ( Firebird-1.5-QuickStart.pdf Firebird_v1.5.ReleaseNotes.pdf Firebird_v1.5.1.ReleaseNotes.pdf Firebird_v1.5.2.ReleaseNotes.pdf Firebird_v2.0.0.ReleaseNotes.pdf ) do (
   @echo     ... %%v
   (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FBBUILD_OUTPUT%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
 )
@@ -362,8 +370,8 @@ endlocal
 :GBAK_SEC_DB
 @echo   Let's make sure that we have a backup of the security database handy.
 ::======================================================================
-@copy %ROOT_PATH%\builds\misc\security.gbak %FBBUILD_OUTPUT%\security2.fbk > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security2.fbk failed ) & (goto :EOF))
+::@copy %ROOT_PATH%\builds\misc\security.gbak %FBBUILD_OUTPUT%\security2.fbk > nul
+::@if %ERRORLEVEL% GEQ 1 ( (call :ERROR copy security2.fbk failed ) & (goto :EOF))
 
 ::Migration from old security db to new one
 mkdir %FBBUILD_OUTPUT%\misc\upgrade\security 2>nul
@@ -422,6 +430,10 @@ for %%v in (bin doc doc\sql.extensions help include intl lib udf examples ) do (
 :: Now remove stuff that is not needed.
 for %%v in ( doc\installation_readme.txt bin\fbembed.dll bin\fbembed.pdb bin\gpre_boot.exe bin\gpre_static.exe bin\gds32.dll ) do (
   @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
+)
+
+if %FB2_SNAPSHOT% EQU 1 (
+  @copy %ROOT_PATH%\builds\install\arch-specific\win32\readme_snapshot.txt %FBBUILD_ZIP_PACK_ROOT%\readme_snapshot.txt > nul
 )
 
 if not "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
