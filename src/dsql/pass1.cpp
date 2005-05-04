@@ -2867,6 +2867,8 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 
 	// create a derived table representing our subquery
 	dsql_nod* dt = MAKE_node(nod_derived_table, e_derived_table_count);
+	// Ignore validation for columnames that must be exists for "user" derived tables.
+	dt->nod_flags |= NOD_DT_IGNORE_COLUMN_CHECK;
 	dt->nod_arg[e_derived_table_rse] = input->nod_arg[1];
 	dsql_nod* from = MAKE_node(nod_list, 1);
 	from->nod_arg[0] = dt;
@@ -3612,6 +3614,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	request->req_alias_relation_prefix = req_alias_relation_prefix;
 
 	// If an alias-list is specified process it.
+	bool ignoreColumnChecks = (input->nod_flags & NOD_DT_IGNORE_COLUMN_CHECK);
 	if (node->nod_arg[e_derived_table_column_alias] && 
 		node->nod_arg[e_derived_table_column_alias]->nod_count) 
 	{
@@ -3670,8 +3673,32 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 		// For those select-items where no alias is specified try
 		// to generate one from the field_name.
 		for (int count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++) {
-			rse->nod_arg[e_rse_items]->nod_arg[count] = 
+			dsql_nod* select_item = 
 				pass1_make_derived_field(request, tdsql, rse->nod_arg[e_rse_items]->nod_arg[count]);
+
+			// Auto-create dummy column name for pass_any()
+			if (ignoreColumnChecks && (select_item->nod_type != nod_derived_field)) {
+				// Make new derived field node
+				dsql_nod* derived_field = 
+					MAKE_node(nod_derived_field, e_derived_field_count);
+				derived_field->nod_arg[e_derived_field_value] = select_item;
+
+				// Construct dummy fieldname
+				char fieldname[25];
+				sprintf (fieldname, "f%d", count);
+				dsql_str* alias = FB_NEW_RPT(*tdsql->getDefaultPool(), 
+					strlen(fieldname)) dsql_str;
+				strcpy(alias->str_data, fieldname);
+				alias->str_length = strlen(fieldname);
+
+				derived_field->nod_arg[e_derived_field_name] = (dsql_nod*) alias;
+				derived_field->nod_arg[e_derived_field_scope] = 
+					(dsql_nod*)(ULONG) request->req_scope_level;
+				derived_field->nod_desc = select_item->nod_desc;
+				select_item = derived_field;
+			}
+
+			rse->nod_arg[e_rse_items]->nod_arg[count] = select_item;
 		}
 	}
 
