@@ -2809,9 +2809,6 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 	}
 
 	if (node1->nod_type == nod_variable) {
-		if (node1->nod_type != node2->nod_type) {
-			return false;
-		}
 		const dsql_var* var1 = reinterpret_cast<dsql_var*>(node1->nod_arg[e_var_variable]);
 		const dsql_var* var2 = reinterpret_cast<dsql_var*>(node2->nod_arg[e_var_variable]);
 		DEV_BLKCHK(var1, dsql_type_var);
@@ -2825,6 +2822,13 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 			return false;
 		}
 		return true;
+	}
+
+	if (node1->nod_type == nod_parameter) {
+		// Parameters are equal when there index is the same
+		dsql_par* parameter1 = (dsql_par*) node1->nod_arg[e_par_parameter];
+		dsql_par* parameter2 = (dsql_par*) node2->nod_arg[e_par_parameter];
+		return (parameter1->par_index == parameter2->par_index);
 	}
 
 	const dsql_nod* const* ptr1 = node1->nod_arg;
