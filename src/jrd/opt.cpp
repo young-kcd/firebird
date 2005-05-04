@@ -1679,6 +1679,16 @@ static void check_sorts(RecordSelExpr* rse)
 			while (node) {
 				if (node->nod_type == nod_rse) {
 					new_rse = (RecordSelExpr*) node;
+
+					// AB: Don't distribute the sort when a FIRST/SKIP is supllied, 
+					// because that will effect the behaviour from the deeper RSE.
+					if (new_rse->rse_first || new_rse->rse_skip) {
+						node = NULL;
+						break;
+					}
+
+					// Walk trough the relations of the RSE and see if a
+					// matching stream can be found.
 					if (new_rse->rse_jointype == blr_inner) {
 						if (new_rse->rse_count == 1) {
 							node = new_rse->rse_relation[0];
@@ -1691,12 +1701,14 @@ static void check_sorts(RecordSelExpr* rse)
 									((USHORT)(IPTR)subNode->nod_arg[e_rel_stream]) == sort_stream && 
 									new_rse != rse) 
 								{
+									// We have found the correct stream
 									sortStreamFound = true;
 									break;
 								}
 
 							}
 							if (sortStreamFound) {
+								// Set the sort to the found stream and clear the original sort
 								new_rse->rse_sorted = sort;
 								sort = rse->rse_sorted = NULL;
 							}
@@ -1715,6 +1727,7 @@ static void check_sorts(RecordSelExpr* rse)
 						((USHORT)(IPTR)node->nod_arg[e_rel_stream]) == sort_stream && 
 						new_rse && new_rse != rse) 
 					{
+						// We have found the correct stream, thus apply the sort here
 						new_rse->rse_sorted = sort;
 						sort = rse->rse_sorted = NULL;
 					}
