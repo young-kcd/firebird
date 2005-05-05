@@ -19,7 +19,7 @@ TryAddGroup() {
 TryAddUser() {
 
 	AdditionalParameter=$1
-    testStr=`grep firebird /etc/passwd`
+	testStr=`grep firebird /etc/passwd`
 	
     if [ -z "$testStr" ]
       then

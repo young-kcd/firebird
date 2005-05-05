@@ -38,7 +38,7 @@ case "$1" in
   stop)
 	echo -n "Stopping Firebird server: "
 
-    killall fbserver
+	killall fbserver
 	RETVAL=$?
 #	echo
 #	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/identd

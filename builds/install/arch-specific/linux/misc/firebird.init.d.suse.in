@@ -102,7 +102,7 @@ case "$1" in
 	# as root user alone should be sufficient privledge to stop/start
 	# the server.
 
-    killall fbserver
+	killall fbserver
 
 	# Remember status and be verbose
 	rc_status -v
