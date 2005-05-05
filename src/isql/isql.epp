@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.15 2005-04-28 06:37:10 robocop Exp $
+  $Id: isql.epp,v 1.32.2.16 2005-05-05 08:42:16 robocop Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -3886,7 +3886,7 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			/* Eat any white space at the end of a line */
 
 			q = p;
-			while (q > statement && isspace(*(q - 1)))
+			while (q > statement && isspace(q[-1]))
 				q--;
 
 			/* Search back past a final comment for a terminator 
@@ -3894,13 +3894,13 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			   **  null terminate the line before the comment
 			   **  Otherwise, just read on
 			 */
-			if ((*(q - 1) == '/') && (*(q - 2) == '*')) {
+			if (q - 2 >= statement && q[-1] == '/' && q[-2] == '*') {
 				q -= 2;
 
 				/* Don't search past a newline or beginning of statement  */
 
 				while (q != statement && (*q != '\n') &&
-					   (*(q - 1) != '*') && (*(q - 2) != '/'))
+					   (q[-1] != '*' || q - 2 < statement || q[-2] != '/'))
 					q--;
 				/* If the search took us to begin line, keep reading */
 				if ((q == statement) || (*q == '\n')) {
@@ -3912,7 +3912,7 @@ static SSHORT get_statement(TEXT ** statement_ref,
 				q -= 2;
 			}
 
-			while ((q > statement) && isspace(*(q - 1)))
+			while ((q > statement) && isspace(q[-1]))
 				q--;
 
 			/* 
@@ -3965,8 +3965,8 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			if (count && (*(p - 1) == '-') && !incomment &&
 				!in_single_quoted_string && !in_double_quoted_string)
 			{
-					incomment = TRUE;
-					incomment_eol_term = TRUE;
+				incomment = TRUE;
+				incomment_eol_term = TRUE;
 			}
 			*p++ = c;
 			blank = FALSE;
@@ -3981,10 +3981,13 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			 */
 			if (count && (*(p - 1) == '/') && !incomment_eol_term &&
 				!in_single_quoted_string && !in_double_quoted_string)
-				{
-					incomment = TRUE;
-					incomment_eol_term = FALSE;
-				}
+			{
+			    // CVC: Since we don't want nested /* spoiling the party, we cheat.
+				if (incomment)
+					p[-1] = '*';
+				incomment = TRUE;
+				incomment_eol_term = FALSE;
+			}
 			*p++ = c;
 			blank = FALSE;
 			count++;
@@ -3998,8 +4001,8 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			if (incomment && (*(p - 1) == '*') && !incomment_eol_term &&
 				!in_single_quoted_string && !in_double_quoted_string)
 			{
-					incomment = FALSE;
-					incomment_eol_term = FALSE;
+				incomment = FALSE;
+				incomment_eol_term = FALSE;
 			}
 			*p++ = c;
 			blank = FALSE;
