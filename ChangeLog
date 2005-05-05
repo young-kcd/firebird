@@ -1,3 +1,9 @@
+2005-04-29 08:24  kkuznetsov
+
+	* firebird2/configure.in (1.141.2.37):
+	
+	Solaris spark install config files the same as x86
+
 2005-04-28 09:53  kkuznetsov
 
 	* firebird2/builds/posix/: prefix.solaris (1.5.2.5),
@@ -372,6 +378,13 @@
 
 2004-12-09 15:41  kkuznetsov
 
+	* firebird2/src/install/arch-specific/solx86gcc/SS/postremove.in
+	(1.1):
+	
+	file postremove.in was initially added on branch B1_5_Release.
+
+2004-12-09 15:41  kkuznetsov
+
 	* firebird2/src/install/arch-specific/solx86gcc/SS/preinstall.in
 	(1.1):
 	
@@ -383,13 +396,6 @@
 	(1.1):
 	
 	file prototype.in was initially added on branch B1_5_Release.
-
-2004-12-09 15:41  kkuznetsov
-
-	* firebird2/src/install/arch-specific/solx86gcc/SS/postremove.in
-	(1.1):
-	
-	file postremove.in was initially added on branch B1_5_Release.
 
 2004-12-09 15:41  kkuznetsov
 
@@ -438,10 +444,10 @@
 2004-11-22 16:37  paul_reeves
 
 	*
-	
-	Fix some minor presentation issues in Win32 install kit.
 	firebird2/src/install/arch-specific/win32/fr/installation_lisezmoi.
 	txt (1.1.2.4):
+	
+	Fix some minor presentation issues in Win32 install kit.
 
 2004-11-22 16:12  paul_reeves
 
@@ -462,15 +468,6 @@
 
 2004-11-22 15:00  paul_reeves
 
-	*
-	
-	file telepitesi_segedlet.txt was initially added on branch
-	B1_5_Release.
-	firebird2/src/install/arch-specific/win32/hu/telepitesi_segedlet.tx
-	t (1.1):
-
-2004-11-22 15:00  paul_reeves
-
 	* firebird2/src/install/arch-specific/win32/hu/:
 	custom_messages_hu.inc (1.1.2.5), installation_readme_hu.txt
 	(1.1.2.2), olvass_el.txt (1.1.2.1), telepitesi_segedlet.txt
@@ -483,6 +480,15 @@
 	* firebird2/src/install/arch-specific/win32/hu/olvass_el.txt (1.1):
 	
 	file olvass_el.txt was initially added on branch B1_5_Release.
+
+2004-11-22 15:00  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/hu/telepitesi_segedlet.tx
+	t (1.1):
+	
+	file telepitesi_segedlet.txt was initially added on branch
+	B1_5_Release.
 
 2004-11-22 06:11  skidder
 
@@ -559,10 +565,10 @@
 2004-11-17 10:35  tsteinmaurer
 
 	*
-	
-	Fixed some types and used wordings
 	firebird2/src/install/arch-specific/win32/de/installation_liesmich.
 	txt (1.1.2.3):
+	
+	Fixed some types and used wordings
 
 2004-11-16 15:52  tsteinmaurer
 
@@ -612,19 +618,19 @@
 2004-11-12 15:48  paul_reeves
 
 	*
-	
-	file instalacija_precitajMe.txt was initially added on branch
-	B1_5_Release.
-	firebird2/src/install/arch-specific/win32/si/instalacija_precitajMe
-	.txt (1.1):
-
-2004-11-12 15:48  paul_reeves
-
-	*
 	firebird2/src/install/arch-specific/win32/si/custom_messages_si.inc
 	(1.1):
 	
 	file custom_messages_si.inc was initially added on branch
+	B1_5_Release.
+
+2004-11-12 15:48  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/si/instalacija_precitajMe
+	.txt (1.1):
+	
+	file instalacija_precitajMe.txt was initially added on branch
 	B1_5_Release.
 
 2004-11-12 15:48  paul_reeves
@@ -650,11 +656,11 @@
 2004-11-10 18:18  makowski
 
 	*
+	firebird2/src/install/arch-specific/win32/fr/documents-en-français.
+	txt (1.1.2.2):
 	
 	Update for the new url for the quick start guide in french on main
 	Firebird site and the french site
-	firebird2/src/install/arch-specific/win32/fr/documents-en-français.
-	txt (1.1.2.2):
 
 2004-11-10 12:29  makowski
 
@@ -669,28 +675,28 @@
 2004-11-10 12:29  makowski
 
 	*
+	firebird2/src/install/arch-specific/win32/fr/documents-en-français.
+	txt (1.1):
 	
 	file documents-en-français.txt was initially added on branch
 	B1_5_Release.
-	firebird2/src/install/arch-specific/win32/fr/documents-en-français.
-	txt (1.1):
 
 2004-11-09 15:35  paul_reeves
 
 	*
-	
-	Add Win32 Installation readme in Hungarian
 	firebird2/src/install/arch-specific/win32/hu/installation_readme_hu
 	.txt (1.1.2.1):
+	
+	Add Win32 Installation readme in Hungarian
 
 2004-11-09 15:35  paul_reeves
 
 	*
+	firebird2/src/install/arch-specific/win32/hu/installation_readme_hu
+	.txt (1.1):
 	
 	file installation_readme_hu.txt was initially added on branch
 	B1_5_Release.
-	firebird2/src/install/arch-specific/win32/hu/installation_readme_hu
-	.txt (1.1):
 
 2004-11-09 15:24  paul_reeves
 
@@ -779,18 +785,18 @@
 
 2004-11-01 13:49  paul_reeves
 
+	* firebird2/src/install/arch-specific/win32/pt/leia-me.txt (1.1):
+	
+	file leia-me.txt was initially added on branch B1_5_Release.
+
+2004-11-01 13:49  paul_reeves
+
 	*
 	firebird2/src/install/arch-specific/win32/pt/custom_messages_pt.inc
 	(1.1):
 	
 	file custom_messages_pt.inc was initially added on branch
 	B1_5_Release.
-
-2004-11-01 13:49  paul_reeves
-
-	* firebird2/src/install/arch-specific/win32/pt/leia-me.txt (1.1):
-	
-	file leia-me.txt was initially added on branch B1_5_Release.
 
 2004-11-01 13:49  paul_reeves
 
@@ -803,15 +809,6 @@
 
 2004-11-01 13:49  paul_reeves
 
-	*
-	firebird2/src/install/arch-specific/win32/de/custom_messages_de.inc
-	(1.1):
-	
-	file custom_messages_de.inc was initially added on branch
-	B1_5_Release.
-
-2004-11-01 13:49  paul_reeves
-
 	* firebird2/src/install/arch-specific/win32/de/liesmich.txt (1.1):
 	
 	file liesmich.txt was initially added on branch B1_5_Release.
@@ -819,11 +816,20 @@
 2004-11-01 13:49  paul_reeves
 
 	*
+	firebird2/src/install/arch-specific/win32/de/installation_liesmich.
+	txt (1.1):
 	
 	file installation_liesmich.txt was initially added on branch
 	B1_5_Release.
-	firebird2/src/install/arch-specific/win32/de/installation_liesmich.
-	txt (1.1):
+
+2004-11-01 13:49  paul_reeves
+
+	*
+	firebird2/src/install/arch-specific/win32/de/custom_messages_de.inc
+	(1.1):
+	
+	file custom_messages_de.inc was initially added on branch
+	B1_5_Release.
 
 2004-11-01 13:49  paul_reeves
 
@@ -999,18 +1005,12 @@
 
 2004-10-08 16:24  paul_reeves
 
-	* firebird2/src/install/arch-specific/win32/fr/lisezmoi.txt (1.1):
-	
-	file lisezmoi.txt was initially added on branch B1_5_Release.
-
-2004-10-08 16:24  paul_reeves
-
 	*
+	firebird2/src/install/arch-specific/win32/fr/installation_lisezmoi.
+	txt (1.1):
 	
 	file installation_lisezmoi.txt was initially added on branch
 	B1_5_Release.
-	firebird2/src/install/arch-specific/win32/fr/installation_lisezmoi.
-	txt (1.1):
 
 2004-10-08 16:24  paul_reeves
 
@@ -1023,11 +1023,23 @@
 
 2004-10-08 16:24  paul_reeves
 
+	* firebird2/src/install/arch-specific/win32/fr/lisezmoi.txt (1.1):
+	
+	file lisezmoi.txt was initially added on branch B1_5_Release.
+
+2004-10-08 16:24  paul_reeves
+
 	* firebird2/src/install/arch-specific/win32/custom_messages.inc
 	(1.1):
 	
 	file custom_messages.inc was initially added on branch
 	B1_5_Release.
+
+2004-10-08 16:24  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/i18n_readme.txt (1.1):
+	
+	file i18n_readme.txt was initially added on branch B1_5_Release.
 
 2004-10-08 16:24  paul_reeves
 
@@ -1038,12 +1050,6 @@
 	
 	Add i18n support to the Win32 installation script. With thanks to
 	Philippe Makowski for the initial cut.
-
-2004-10-08 16:24  paul_reeves
-
-	* firebird2/src/install/arch-specific/win32/i18n_readme.txt (1.1):
-	
-	file i18n_readme.txt was initially added on branch B1_5_Release.
 
 2004-10-08 04:00  skidder
 
@@ -1301,11 +1307,11 @@
 2004-09-14 18:17  skidder
 
 	*
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.mand
+	rake.in (1.1.2.3):
 	
 	Add newline printed after Firebird SS service startup (backported
 	to B1_5_Release)
-	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.mand
-	rake.in (1.1.2.3):
 
 2004-09-13 07:22  skidder
 
@@ -1356,18 +1362,18 @@
 
 2004-08-06 15:49  kkuznetsov
 
-	* firebird2/src/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in
-	(1.1):
-	
-	file pkginfolg.in was initially added on branch B1_5_Release.
-
-2004-08-06 15:49  kkuznetsov
-
 	*
 	firebird2/src/install/arch-specific/solx86gcc/LIBGCC/prototypelg.in
 	(1.1):
 	
 	file prototypelg.in was initially added on branch B1_5_Release.
+
+2004-08-06 15:49  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/LIBGCC/pkginfolg.in
+	(1.1):
+	
+	file pkginfolg.in was initially added on branch B1_5_Release.
 
 2004-08-06 15:49  kkuznetsov
 
@@ -1428,6 +1434,13 @@
 
 2004-08-03 18:18  kkuznetsov
 
+	* firebird2/src/install/arch-specific/solx86gcc/CS/postremove.in
+	(1.1):
+	
+	file postremove.in was initially added on branch B1_5_Release.
+
+2004-08-03 18:18  kkuznetsov
+
 	* firebird2/src/install/arch-specific/solx86gcc/CS/preinstall.in
 	(1.1):
 	
@@ -1439,13 +1452,6 @@
 	(1.1):
 	
 	file prototype.in was initially added on branch B1_5_Release.
-
-2004-08-03 18:18  kkuznetsov
-
-	* firebird2/src/install/arch-specific/solx86gcc/CS/postremove.in
-	(1.1):
-	
-	file postremove.in was initially added on branch B1_5_Release.
 
 2004-08-03 18:18  kkuznetsov
 
@@ -1513,16 +1519,16 @@
 
 2004-07-01 18:12  kkuznetsov
 
-	* firebird2/src/install/arch-specific/solx86gcc/Makefile.in (1.1):
-	
-	file Makefile.in was initially added on branch B1_5_Release.
-
-2004-07-01 18:12  kkuznetsov
-
 	* firebird2/src/install/arch-specific/solx86gcc/Makefile.in
 	(1.1.2.1):
 	
 	Some more build files for solx86gcc
+
+2004-07-01 18:12  kkuznetsov
+
+	* firebird2/src/install/arch-specific/solx86gcc/Makefile.in (1.1):
+	
+	file Makefile.in was initially added on branch B1_5_Release.
 
 2004-07-01 18:03  kkuznetsov
 
@@ -1566,10 +1572,10 @@
 2004-06-16 12:40  paul_reeves
 
 	*
-	
-	Make sure that ib_util.dll gets included in the Win32 embedded kit.
 	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
 	t (1.10.2.12):
+	
+	Make sure that ib_util.dll gets included in the Win32 embedded kit.
 
 2004-06-11 09:41  paul_reeves
 
@@ -1844,11 +1850,11 @@
 2004-04-18 12:09  paul_reeves
 
 	*
+	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
+	t (1.10.2.8):
 	
 	Update build number to (more) correct value for Fb 1.5. Add support
 	to generate fbclient_bor.lib from Implib.
-	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
-	t (1.10.2.8):
 
 2004-04-18 12:06  paul_reeves
 
@@ -1904,10 +1910,10 @@
 2004-04-11 14:44  alexpeshkoff
 
 	*
-	
-	fixed problem with /etc/init.d/firebird modification
 	firebird2/src/install/arch-specific/linux/misc/changeDBAPassword.sh
 	.in (1.1.2.4):
+	
+	fixed problem with /etc/init.d/firebird modification
 
 2004-04-10 19:25  skidder
 
@@ -2000,15 +2006,15 @@
 
 2004-04-06 17:46  dimitr
 
-	* firebird2/src/intl/collations/xx885913lt.h (1.1.2.1):
-	
-	Added new collation.
-
-2004-04-06 17:46  dimitr
-
 	* firebird2/src/intl/collations/xx885913lt.h (1.1):
 	
 	file xx885913lt.h was initially added on branch B1_5_Release.
+
+2004-04-06 17:46  dimitr
+
+	* firebird2/src/intl/collations/xx885913lt.h (1.1.2.1):
+	
+	Added new collation.
 
 2004-04-06 17:44  dimitr
 
@@ -2288,8 +2294,6 @@
 	(1.10.2.11),
 	src/install/arch-specific/linux/classic/postuninstall.sh.in
 	(1.1.2.3),
-	
-	Backport AMD64 port
 	src/install/arch-specific/linux/misc/changeGdsLibraryCompatibleLink
 	.sh.in (1.1.2.2),
 	src/install/arch-specific/linux/super/makeInstallImage.sh.in
@@ -2317,6 +2321,8 @@
 	src/remote/interface.cpp (1.48.2.1), src/remote/protocol.cpp
 	(1.26.2.1), src/remote/server.cpp (1.34.2.2), src/remote/xdr.cpp
 	(1.9.2.4), src/remote/xdr_proto.h (1.7.2.1):
+	
+	Backport AMD64 port
 
 2004-03-27 14:36  alexpeshkoff
 
@@ -2468,21 +2474,21 @@
 	* firebird2/: builds/win32/make_all.bat (1.4.2.12),
 	src/install/arch-specific/win32/BuildExecutableInstall.bat
 	(1.10.2.7),
-	
-	Add check for dinkum patches under msvc6. Update Build Number.
 	src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.in
 	c (1.1.2.7), src/install/arch-specific/win32/FirebirdInstall_15.iss
 	(1.5.2.14), src/install/arch-specific/win32/Readme.txt (1.2.2.4),
 	src/install/arch-specific/win32/installation_readme.txt (1.2.2.6),
 	src/jrd/isc_version.h (1.1.2.13):
+	
+	Add check for dinkum patches under msvc6. Update Build Number.
 
 2004-02-22 00:04  skidder
 
 	*
-	
-	Fix SS problem with docs
 	firebird2/src/install/arch-specific/linux/super/makeInstallImage.sh
 	.in (1.1.2.9):
+	
+	Fix SS problem with docs
 
 2004-02-21 22:47  skidder
 
@@ -2639,11 +2645,11 @@
 2004-01-29 14:07  alexpeshkoff
 
 	*
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.suse
+	.in (1.1.2.3):
 	
 	Small fixes of SS install - mostly SuSE related Thanks to Andreas
 	Bentele
-	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.suse
-	.in (1.1.2.3):
 
 2004-01-28 17:26  dimitr
 
@@ -2800,10 +2806,10 @@
 2004-01-15 14:48  alexpeshkoff
 
 	*
-	
-	Fixed typo in script
 	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.debi
 	an.in (1.1.2.2):
+	
+	Fixed typo in script
 
 2004-01-14 10:57  stryqx
 
@@ -2910,11 +2916,11 @@
 2004-01-03 13:34  skywalker
 
 	*
+	firebird2/src/install/arch-specific/linux/misc/changeDBAPassword.sh
+	.in (1.1.2.3):
 	
 	Change to use ex, and to write SYSDBA.password correctly (variable
 	was not set).
-	firebird2/src/install/arch-specific/linux/misc/changeDBAPassword.sh
-	.in (1.1.2.3):
 
 2004-01-03 12:40  epocman
 
@@ -3117,11 +3123,11 @@
 2003-12-24 00:17  skywalker
 
 	*
+	firebird2/src/install/arch-specific/linux/misc/changeDBAPassword.sh
+	.in (1.1.2.2):
 	
 	updated to use the openssl passwd generation for random, and to
 	write out SYSDBA.password file
-	firebird2/src/install/arch-specific/linux/misc/changeDBAPassword.sh
-	.in (1.1.2.2):
 
 2003-12-24 00:14  skywalker
 
@@ -3144,20 +3150,20 @@
 2003-12-24 00:13  skywalker
 
 	*
+	firebird2/src/install/arch-specific/linux/misc/changeGdsLibraryComp
+	atibleLink.sh.in (1.1.2.1):
 	
 	Add a script to help change the libgds.so links between
 	libfbembed.so and libfbclient.so for classic distributions
-	firebird2/src/install/arch-specific/linux/misc/changeGdsLibraryComp
-	atibleLink.sh.in (1.1.2.1):
 
 2003-12-24 00:13  skywalker
 
 	*
+	firebird2/src/install/arch-specific/linux/misc/changeGdsLibraryComp
+	atibleLink.sh.in (1.1):
 	
 	file changeGdsLibraryCompatibleLink.sh.in was initially added on
 	branch B1_5_Release.
-	firebird2/src/install/arch-specific/linux/misc/changeGdsLibraryComp
-	atibleLink.sh.in (1.1):
 
 2003-12-23 21:39  skywalker
 
@@ -3236,15 +3242,15 @@
 	* firebird2/: builds/win32/make_all.bat (1.4.2.11),
 	src/install/arch-specific/win32/BuildExecutableInstall.bat
 	(1.10.2.4),
-	
-	Integrate instclient into Win32 install script. Increment Build no
-	for Fb 1.5. Make some minor corrections to some license
-	boiler-plates.
 	src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.in
 	c (1.1.2.5),
 	src/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
 	(1.1.2.4), src/install/arch-specific/win32/FirebirdInstall_15.iss
 	(1.5.2.9), src/jrd/isc_version.h (1.1.2.6):
+	
+	Integrate instclient into Win32 install script. Increment Build no
+	for Fb 1.5. Make some minor corrections to some license
+	boiler-plates.
 
 2003-12-17 09:23  epocman
 
@@ -3266,6 +3272,12 @@
 
 2003-12-15 17:23  epocman
 
+	* firebird2/src/utilities/install_proto.h (1.1):
+	
+	file install_proto.h was initially added on branch B1_5_Release.
+
+2003-12-15 17:23  epocman
+
 	* firebird2/src/utilities/install_client.cpp (1.1):
 	
 	file install_client.cpp was initially added on branch B1_5_Release.
@@ -3275,12 +3287,6 @@
 	* firebird2/src/utilities/install.cpp (1.1):
 	
 	file install.cpp was initially added on branch B1_5_Release.
-
-2003-12-15 17:23  epocman
-
-	* firebird2/src/utilities/install_proto.h (1.1):
-	
-	file install_proto.h was initially added on branch B1_5_Release.
 
 2003-12-15 17:23  epocman
 
@@ -3657,28 +3663,28 @@
 2003-11-26 20:33  bellardo
 
 	*
+	firebird2/src/install/arch-specific/darwin/Firebird.startupitem/Res
+	ources/English.lproj/Localizable.strings (1.1):
 	
 	file Localizable.strings was initially added on branch
 	B1_5_Release.
-	firebird2/src/install/arch-specific/darwin/Firebird.startupitem/Res
-	ources/English.lproj/Localizable.strings (1.1):
 
 2003-11-26 20:33  bellardo
 
 	*
-	
-	file Firebird was initially added on branch B1_5_Release.
-	firebird2/src/install/arch-specific/darwin/Firebird.startupitem/Fir
-	ebird (1.1):
-
-2003-11-26 20:33  bellardo
-
-	*
+	firebird2/src/install/arch-specific/darwin/Firebird.startupitem/Sta
+	rtupParameters.plist (1.1):
 	
 	file StartupParameters.plist was initially added on branch
 	B1_5_Release.
-	firebird2/src/install/arch-specific/darwin/Firebird.startupitem/Sta
-	rtupParameters.plist (1.1):
+
+2003-11-26 20:33  bellardo
+
+	*
+	firebird2/src/install/arch-specific/darwin/Firebird.startupitem/Fir
+	ebird (1.1):
+	
+	file Firebird was initially added on branch B1_5_Release.
 
 2003-11-26 20:33  bellardo
 
@@ -3976,20 +3982,20 @@
 
 2003-11-12 09:34  bellardo
 
+	* firebird2/src/install/arch-specific/darwin/: Makefile.in
+	(1.2.2.3), installer_background.pdf (1.1.2.1),
+	installer_background.psd (1.1.2.1):
+	
+	Add a background image to the installer
+
+2003-11-12 09:34  bellardo
+
 	*
 	firebird2/src/install/arch-specific/darwin/installer_background.psd
 	(1.1):
 	
 	file installer_background.psd was initially added on branch
 	B1_5_Release.
-
-2003-11-12 09:34  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/: Makefile.in
-	(1.2.2.3), installer_background.pdf (1.1.2.1),
-	installer_background.psd (1.1.2.1):
-	
-	Add a background image to the installer
 
 2003-11-12 09:34  bellardo
 
@@ -4002,15 +4008,15 @@
 
 2003-11-12 08:10  bellardo
 
-	* firebird2/src/install/arch-specific/darwin/fullvers.c (1.1):
-	
-	file fullvers.c was initially added on branch B1_5_Release.
-
-2003-11-12 08:10  bellardo
-
 	* firebird2/src/install/arch-specific/darwin/buildsuffix.c (1.1):
 	
 	file buildsuffix.c was initially added on branch B1_5_Release.
+
+2003-11-12 08:10  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/fullvers.c (1.1):
+	
+	file fullvers.c was initially added on branch B1_5_Release.
 
 2003-11-12 08:10  bellardo
 
@@ -4030,9 +4036,10 @@
 
 2003-11-12 06:57  bellardo
 
-	* firebird2/src/install/arch-specific/darwin/FB.info (1.1):
+	* firebird2/src/install/arch-specific/darwin/Description.plist
+	(1.1):
 	
-	file FB.info was initially added on branch B1_5_Release.
+	file Description.plist was initially added on branch B1_5_Release.
 
 2003-11-12 06:57  bellardo
 
@@ -4046,28 +4053,10 @@
 
 2003-11-12 06:57  bellardo
 
-	* firebird2/src/install/arch-specific/darwin/Welcome.txt (1.1):
-	
-	file Welcome.txt was initially added on branch B1_5_Release.
-
-2003-11-12 06:57  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/ReadMe.txt (1.1):
-	
-	file ReadMe.txt was initially added on branch B1_5_Release.
-
-2003-11-12 06:57  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/Info.plist (1.1):
-	
-	file Info.plist was initially added on branch B1_5_Release.
-
-2003-11-12 06:57  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/Description.plist
+	* firebird2/src/install/arch-specific/darwin/preinstall-script
 	(1.1):
 	
-	file Description.plist was initially added on branch B1_5_Release.
+	file preinstall-script was initially added on branch B1_5_Release.
 
 2003-11-12 06:57  bellardo
 
@@ -4077,10 +4066,34 @@
 
 2003-11-12 06:57  bellardo
 
-	* firebird2/src/install/arch-specific/darwin/preinstall-script
+	* firebird2/src/install/arch-specific/darwin/ReadMe.txt (1.1):
+	
+	file ReadMe.txt was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/FB.info (1.1):
+	
+	file FB.info was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/preupgrade-script
 	(1.1):
 	
-	file preinstall-script was initially added on branch B1_5_Release.
+	file preupgrade-script was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/Info.plist (1.1):
+	
+	file Info.plist was initially added on branch B1_5_Release.
+
+2003-11-12 06:57  bellardo
+
+	* firebird2/src/install/arch-specific/darwin/Welcome.txt (1.1):
+	
+	file Welcome.txt was initially added on branch B1_5_Release.
 
 2003-11-12 06:57  bellardo
 
@@ -4093,13 +4106,6 @@
 	* firebird2/src/install/arch-specific/darwin/License.txt (1.1):
 	
 	file License.txt was initially added on branch B1_5_Release.
-
-2003-11-12 06:57  bellardo
-
-	* firebird2/src/install/arch-specific/darwin/preupgrade-script
-	(1.1):
-	
-	file preupgrade-script was initially added on branch B1_5_Release.
 
 2003-11-12 00:57  stryqx
 
@@ -4180,16 +4186,16 @@
 
 2003-11-11 01:27  bellardo
 
+	* firebird2/builds/posix/postfix.darwin (1.1):
+	
+	file postfix.darwin was initially added on branch B1_5_Release.
+
+2003-11-11 01:27  bellardo
+
 	* firebird2/builds/posix/: postfix.darwin (1.1.2.1), prefix.darwin
 	(1.8.2.9):
 	
 	add the darwin postfix file and update the prefix file accordingly
-
-2003-11-11 01:27  bellardo
-
-	* firebird2/builds/posix/postfix.darwin (1.1):
-	
-	file postfix.darwin was initially added on branch B1_5_Release.
 
 2003-11-11 01:26  bellardo
 
@@ -4372,22 +4378,22 @@
 
 2003-11-06 14:05  paul_reeves
 
-	* firebird2/doc/README.Win32LibraryInstallation.txt (1.1):
-	
-	file README.Win32LibraryInstallation.txt was initially added on
-	branch B1_5_Release.
-
-2003-11-06 14:05  paul_reeves
-
 	* firebird2/: doc/README.Win32LibraryInstallation.txt (1.1.2.1),
-	
-	More tweaks to the Win32 installer. Documentation added about
-	library installation policy. Installation notes for the binary
-	installer updated.
 	src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.in
 	c (1.1.2.3), src/install/arch-specific/win32/FirebirdInstall_15.iss
 	(1.5.2.6), src/install/arch-specific/win32/installation_readme.txt
 	(1.2.2.3):
+	
+	More tweaks to the Win32 installer. Documentation added about
+	library installation policy. Installation notes for the binary
+	installer updated.
+
+2003-11-06 14:05  paul_reeves
+
+	* firebird2/doc/README.Win32LibraryInstallation.txt (1.1):
+	
+	file README.Win32LibraryInstallation.txt was initially added on
+	branch B1_5_Release.
 
 2003-11-06 13:23  stryqx
 
@@ -4442,36 +4448,36 @@
 2003-11-04 13:18  paul_reeves
 
 	*
+	firebird2/src/install/arch-specific/win32/FirebirdInstallSupportFun
+	ctions.inc (1.1):
 	
-	file FirebirdInstallEnvironmentChecks.inc was initially added on
+	file FirebirdInstallSupportFunctions.inc was initially added on
 	branch B1_5_Release.
-	firebird2/src/install/arch-specific/win32/FirebirdInstallEnvironmen
-	tChecks.inc (1.1):
 
 2003-11-04 13:18  paul_reeves
 
 	*
+	firebird2/src/install/arch-specific/win32/FirebirdInstallEnvironmen
+	tChecks.inc (1.1):
 	
-	file FirebirdInstallSupportFunctions.inc was initially added on
+	file FirebirdInstallEnvironmentChecks.inc was initially added on
 	branch B1_5_Release.
-	firebird2/src/install/arch-specific/win32/FirebirdInstallSupportFun
-	ctions.inc (1.1):
 
 2003-11-04 13:18  paul_reeves
 
 	* firebird2/: builds/win32/make_all.bat (1.4.2.6),
 	doc/Firebird_conf.txt (1.2.2.1), doc/README.user (1.1.2.1),
 	doc/WhatsNew (1.36.2.8),
-	
-	Extensive reworking of install script for Win32. Main new feature
-	is better analysis of existing previous installs. This is necessary
-	to support new client library installation requirements.
 	src/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.in
 	c (1.1.2.1),
 	src/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
 	(1.1.2.1), src/install/arch-specific/win32/FirebirdInstall_15.iss
 	(1.5.2.4), src/install/arch-specific/win32/Readme.txt (1.2.2.2),
 	src/jrd/isc_version.rc (1.2.2.1), src/jrd/version.rc (1.3.4.1):
+	
+	Extensive reworking of install script for Win32. Main new feature
+	is better analysis of existing previous installs. This is necessary
+	to support new client library installation requirements.
 
 2003-11-03 22:40  skidder
 
@@ -4715,19 +4721,10 @@
 2003-10-15 11:19  alexpeshkoff
 
 	*
-	
-	Use common SYSDBA password change script for both CS & SS
 	firebird2/src/install/arch-specific/linux/super/SSchangePasswd.sh.i
 	n (1.1.2.2):
-
-2003-10-15 11:07  alexpeshkoff
-
-	*
 	
-	file firebird.init.d.gentoo.in was initially added on branch
-	B1_5_Release.
-	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.gent
-	oo.in (1.1):
+	Use common SYSDBA password change script for both CS & SS
 
 2003-10-15 11:07  alexpeshkoff
 
@@ -4742,11 +4739,20 @@
 2003-10-15 11:07  alexpeshkoff
 
 	*
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.debi
+	an.in (1.1):
 	
 	file firebird.init.d.debian.in was initially added on branch
 	B1_5_Release.
-	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.debi
-	an.in (1.1):
+
+2003-10-15 11:07  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.gent
+	oo.in (1.1):
+	
+	file firebird.init.d.gentoo.in was initially added on branch
+	B1_5_Release.
 
 2003-10-13 14:55  dimitr
 
@@ -4854,38 +4860,38 @@
 2003-10-09 18:47  alexpeshkoff
 
 	*
-	
-	file firebird.init.d.generic.in was initially added on branch
-	B1_5_Release.
-	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.gene
-	ric.in (1.1):
-
-2003-10-09 18:47  alexpeshkoff
-
-	*
+	firebird2/src/install/arch-specific/linux/misc/rc.config.firebird.i
+	n (1.1):
 	
 	file rc.config.firebird.in was initially added on branch
 	B1_5_Release.
-	firebird2/src/install/arch-specific/linux/misc/rc.config.firebird.i
-	n (1.1):
 
 2003-10-09 18:47  alexpeshkoff
 
 	*
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.suse
+	.in (1.1):
 	
 	file firebird.init.d.suse.in was initially added on branch
 	B1_5_Release.
-	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.suse
-	.in (1.1):
 
 2003-10-09 18:47  alexpeshkoff
 
 	*
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.mand
+	rake.in (1.1):
 	
 	file firebird.init.d.mandrake.in was initially added on branch
 	B1_5_Release.
-	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.mand
-	rake.in (1.1):
+
+2003-10-09 18:47  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/misc/firebird.init.d.gene
+	ric.in (1.1):
+	
+	file firebird.init.d.generic.in was initially added on branch
+	B1_5_Release.
 
 2003-10-09 18:45  alexpeshkoff
 
@@ -5076,15 +5082,15 @@
 
 2003-09-29 13:37  paul_reeves
 
-	* firebird2/builds/win32/msvc6/fb2control.dsp (1.1):
-	
-	file fb2control.dsp was initially added on branch B1_5_Release.
-
-2003-09-29 13:37  paul_reeves
-
 	* firebird2/builds/win32/msvc6/fb2control.dsp (1.1.2.1):
 	
 	[no log message]
+
+2003-09-29 13:37  paul_reeves
+
+	* firebird2/builds/win32/msvc6/fb2control.dsp (1.1):
+	
+	file fb2control.dsp was initially added on branch B1_5_Release.
 
 2003-09-29 12:48  paul_reeves
 
@@ -5106,39 +5112,16 @@
 
 2003-09-29 12:48  paul_reeves
 
-	* firebird2/src/utilities/fbcpl/ctrlpan.h (1.1):
+	* firebird2/src/utilities/fbcpl/: FBControl.rc (1.1.2.1),
+	ctrlpan.cpp (1.1.2.1), ctrlpan.h (1.1.2.1), fbcontrol.clw
+	(1.1.2.1), fbcontrol.cpp (1.1.2.1), fbcontrol.def (1.1.2.1),
+	fbcontrol.h (1.1.2.1), fbdialog.cpp (1.1.2.1), fbdialog.h
+	(1.1.2.1), fbpanel.cpp (1.1.2.1), fbpanel.h (1.1.2.1), resource.h
+	(1.1.2.1), stdafx.cpp (1.1.2.1), stdafx.h (1.1.2.1),
+	res/fbcontrol.rc2 (1.1.2.1), res/server.ico (1.1.2.1),
+	res/server_stop.ico (1.1.2.1):
 	
-	file ctrlpan.h was initially added on branch B1_5_Release.
-
-2003-09-29 12:48  paul_reeves
-
-	* firebird2/src/utilities/fbcpl/fbcontrol.cpp (1.1):
-	
-	file fbcontrol.cpp was initially added on branch B1_5_Release.
-
-2003-09-29 12:48  paul_reeves
-
-	* firebird2/src/utilities/fbcpl/stdafx.cpp (1.1):
-	
-	file stdafx.cpp was initially added on branch B1_5_Release.
-
-2003-09-29 12:48  paul_reeves
-
-	* firebird2/src/utilities/fbcpl/FBControl.rc (1.1):
-	
-	file FBControl.rc was initially added on branch B1_5_Release.
-
-2003-09-29 12:48  paul_reeves
-
-	* firebird2/src/utilities/fbcpl/fbcontrol.clw (1.1):
-	
-	file fbcontrol.clw was initially added on branch B1_5_Release.
-
-2003-09-29 12:48  paul_reeves
-
-	* firebird2/src/utilities/fbcpl/fbdialog.h (1.1):
-	
-	file fbdialog.h was initially added on branch B1_5_Release.
+	[no log message]
 
 2003-09-29 12:48  paul_reeves
 
@@ -5154,22 +5137,39 @@
 
 2003-09-29 12:48  paul_reeves
 
-	* firebird2/src/utilities/fbcpl/fbcontrol.h (1.1):
+	* firebird2/src/utilities/fbcpl/fbdialog.cpp (1.1):
 	
-	file fbcontrol.h was initially added on branch B1_5_Release.
+	file fbdialog.cpp was initially added on branch B1_5_Release.
 
 2003-09-29 12:48  paul_reeves
 
-	* firebird2/src/utilities/fbcpl/: FBControl.rc (1.1.2.1),
-	ctrlpan.cpp (1.1.2.1), ctrlpan.h (1.1.2.1), fbcontrol.clw
-	(1.1.2.1), fbcontrol.cpp (1.1.2.1), fbcontrol.def (1.1.2.1),
-	fbcontrol.h (1.1.2.1), fbdialog.cpp (1.1.2.1), fbdialog.h
-	(1.1.2.1), fbpanel.cpp (1.1.2.1), fbpanel.h (1.1.2.1), resource.h
-	(1.1.2.1), stdafx.cpp (1.1.2.1), stdafx.h (1.1.2.1),
-	res/fbcontrol.rc2 (1.1.2.1), res/server.ico (1.1.2.1),
-	res/server_stop.ico (1.1.2.1):
+	* firebird2/src/utilities/fbcpl/fbpanel.cpp (1.1):
 	
-	[no log message]
+	file fbpanel.cpp was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/FBControl.rc (1.1):
+	
+	file FBControl.rc was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/ctrlpan.h (1.1):
+	
+	file ctrlpan.h was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbcontrol.def (1.1):
+	
+	file fbcontrol.def was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/stdafx.cpp (1.1):
+	
+	file stdafx.cpp was initially added on branch B1_5_Release.
 
 2003-09-29 12:48  paul_reeves
 
@@ -5185,21 +5185,27 @@
 
 2003-09-29 12:48  paul_reeves
 
-	* firebird2/src/utilities/fbcpl/fbcontrol.def (1.1):
+	* firebird2/src/utilities/fbcpl/fbdialog.h (1.1):
 	
-	file fbcontrol.def was initially added on branch B1_5_Release.
+	file fbdialog.h was initially added on branch B1_5_Release.
 
 2003-09-29 12:48  paul_reeves
 
-	* firebird2/src/utilities/fbcpl/fbdialog.cpp (1.1):
+	* firebird2/src/utilities/fbcpl/fbcontrol.h (1.1):
 	
-	file fbdialog.cpp was initially added on branch B1_5_Release.
+	file fbcontrol.h was initially added on branch B1_5_Release.
 
 2003-09-29 12:48  paul_reeves
 
-	* firebird2/src/utilities/fbcpl/fbpanel.cpp (1.1):
+	* firebird2/src/utilities/fbcpl/fbcontrol.cpp (1.1):
 	
-	file fbpanel.cpp was initially added on branch B1_5_Release.
+	file fbcontrol.cpp was initially added on branch B1_5_Release.
+
+2003-09-29 12:48  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbcontrol.clw (1.1):
+	
+	file fbcontrol.clw was initially added on branch B1_5_Release.
 
 2003-09-29 11:54  paul_reeves
 
@@ -5265,23 +5271,9 @@
 
 2003-09-23 21:07  skidder
 
-	* firebird2/src/install/misc/firebird.init.d.generic.in (1.1):
+	* firebird2/src/install/misc/firebird.init.d.mandrake.in (1.1):
 	
-	file firebird.init.d.generic.in was initially added on branch
-	B1_5_Release.
-
-2003-09-23 21:07  skidder
-
-	* firebird2/src/install/misc/SSchangeRunUser.sh.in (1.1):
-	
-	file SSchangeRunUser.sh.in was initially added on branch
-	B1_5_Release.
-
-2003-09-23 21:07  skidder
-
-	* firebird2/src/install/misc/changeDBAPassword.sh.in (1.1):
-	
-	file changeDBAPassword.sh.in was initially added on branch
+	file firebird.init.d.mandrake.in was initially added on branch
 	B1_5_Release.
 
 2003-09-23 21:07  skidder
@@ -5293,16 +5285,23 @@
 
 2003-09-23 21:07  skidder
 
-	* firebird2/src/install/misc/firebird.init.d.mandrake.in (1.1):
+	* firebird2/src/install/misc/firebird.init.d.generic.in (1.1):
 	
-	file firebird.init.d.mandrake.in was initially added on branch
+	file firebird.init.d.generic.in was initially added on branch
 	B1_5_Release.
 
 2003-09-23 21:07  skidder
 
-	* firebird2/src/install/misc/CSchangeRunUser.sh.in (1.1):
+	* firebird2/src/install/misc/changeDBAPassword.sh.in (1.1):
 	
-	file CSchangeRunUser.sh.in was initially added on branch
+	file changeDBAPassword.sh.in was initially added on branch
+	B1_5_Release.
+
+2003-09-23 21:07  skidder
+
+	* firebird2/src/install/misc/SSchangeRunUser.sh.in (1.1):
+	
+	file SSchangeRunUser.sh.in was initially added on branch
 	B1_5_Release.
 
 2003-09-23 21:07  skidder
@@ -5314,12 +5313,19 @@
 
 2003-09-23 21:07  skidder
 
+	* firebird2/src/install/misc/CSchangeRunUser.sh.in (1.1):
+	
+	file CSchangeRunUser.sh.in was initially added on branch
+	B1_5_Release.
+
+2003-09-23 21:07  skidder
+
 	*
+	firebird2/src/install/arch-specific/linux/super/SSchangePasswd.sh.i
+	n (1.1):
 	
 	file SSchangePasswd.sh.in was initially added on branch
 	B1_5_Release.
-	firebird2/src/install/arch-specific/linux/super/SSchangePasswd.sh.i
-	n (1.1):
 
 2003-09-23 21:07  skidder
 
@@ -5395,16 +5401,16 @@
 2003-09-12 08:20  alexpeshkoff
 
 	* firebird2/src/install/arch-specific/linux/super/tarinstall.sh.in
-	(1.1):
+	(1.1.2.1):
 	
-	file tarinstall.sh.in was initially added on branch B1_5_Release.
+	fix typo in file name
 
 2003-09-12 08:20  alexpeshkoff
 
 	* firebird2/src/install/arch-specific/linux/super/tarinstall.sh.in
-	(1.1.2.1):
+	(1.1):
 	
-	fix typo in file name
+	file tarinstall.sh.in was initially added on branch B1_5_Release.
 
 2003-09-11 10:01  epocman
 
@@ -5872,10 +5878,10 @@
 2003-08-05 00:17  skidder
 
 	*
-	
-	Distribute docs in Linux builds
 	firebird2/src/install/arch-specific/linux/classic/makeInstallImage.
 	sh.in (1.13.2.1):
+	
+	Distribute docs in Linux builds
 
 2003-08-04 23:54  skidder
 
@@ -6055,12 +6061,6 @@
 
 2003-07-19 06:53  bellardo
 
-	* firebird2/src/jrd/os/darwin/fbsyslog.cpp (1.1):
-	
-	file fbsyslog.cpp was initially added on branch B1_5_Release.
-
-2003-07-19 06:53  bellardo
-
 	* firebird2/src/jrd/os/darwin/: config_root.cpp (1.1.2.1),
 	fbsyslog.cpp (1.1.2.1), mod_loader.cpp (1.2.4.1), path_utils.cpp
 	(1.1.2.1):
@@ -6072,6 +6072,12 @@
 	* firebird2/src/jrd/os/darwin/path_utils.cpp (1.1):
 	
 	file path_utils.cpp was initially added on branch B1_5_Release.
+
+2003-07-19 06:53  bellardo
+
+	* firebird2/src/jrd/os/darwin/fbsyslog.cpp (1.1):
+	
+	file fbsyslog.cpp was initially added on branch B1_5_Release.
 
 2003-07-19 06:53  bellardo
 
@@ -6453,12 +6459,12 @@
 2003-07-05 04:14  brodsom
 
 	*
+	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
+	t (1.7):
 	
 	-Scripts with visual studio version detection -Move output
 	directory to a temporary below root -Use absolute paths (easier to
 	move)
-	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
-	t (1.7):
 
 2003-07-05 04:02  brodsom
 
@@ -6486,10 +6492,10 @@
 2003-07-04 21:13  brodsom
 
 	*
-	
-	-Remove unneeded messages -Replace cat (unix) with type (win)
 	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
 	t (1.6):
+	
+	-Remove unneeded messages -Replace cat (unix) with type (win)
 
 2003-07-04 20:48  brodsom
 
@@ -7670,11 +7676,11 @@
 2003-05-10 17:37  hippoman
 
 	*
+	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
+	t (1.4):
 	
 	* now it's nod needed a FB 1.0 install to make the install package,
 	everything is took from the source tree, or built..
-	firebird2/src/install/arch-specific/win32/BuildExecutableInstall.ba
-	t (1.4):
 
 2003-05-10 17:13  dimitr
 
@@ -17002,10 +17008,10 @@
 2002-11-18 03:43  skywalker
 
 	*
-	
-	Changes for alpha4 release
 	firebird2/src/install/arch-specific/linux/classic/makeInstallImage.
 	sh.in (1.5):
+	
+	Changes for alpha4 release
 
 2002-11-17 17:31  skywalker
 
