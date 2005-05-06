@@ -6896,7 +6896,7 @@ static ISC_STATUS send_blob(ISC_STATUS*	user_status,
 	{
 		buffer = blob->rbl_buffer;
 		buffer_length = blob->rbl_ptr - buffer;
-		blob->rbl_ptr = 0;// <==> buffer;
+		blob->rbl_ptr = blob->rbl_buffer;
 		packet->p_operation = op_batch_segments;
 	}
 
