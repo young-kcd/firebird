@@ -1921,7 +1921,7 @@ static void define_field(
 
 	// check for constraints
 	bool not_null_flag = false;
-	if (node = element->nod_arg[e_dfl_constraint])
+	if ( (node = element->nod_arg[e_dfl_constraint]) )
 	{
 		const dsql_nod* const* const end_ptr = node->nod_arg + node->nod_count;
 		for (dsql_nod** ptr = node->nod_arg; ptr < end_ptr; ++ptr)
@@ -2681,7 +2681,7 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 //
 static void define_rel_constraint( dsql_req* request, dsql_nod* element)
 {
-	const dsql_str* string           = (dsql_str*) element->nod_arg[e_rct_name];
+	const dsql_str* string = (dsql_str*) element->nod_arg[e_rct_name];
 	const char* constraint_name = string ? string->str_data : 0;
 
 	request->append_cstring(isc_dyn_rel_constraint, constraint_name);
@@ -5610,9 +5610,7 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 	}
 	else if (field->fld_dtype <= dtype_any_text)
 	{
-		if (field->fld_sub_type) {
-			request->append_number(isc_dyn_fld_sub_type, field->fld_sub_type);
-		}
+		request->append_number(isc_dyn_fld_sub_type, field->fld_sub_type);
 		request->append_number(isc_dyn_fld_scale, 0);
 		if (field->fld_dtype == dtype_varying)
 		{
@@ -5642,11 +5640,7 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 		if (DTYPE_IS_EXACT(field->fld_dtype))
 		{
 			request->append_number(isc_dyn_fld_precision, field->fld_precision);
-			if (field->fld_sub_type)
-			{
-				request->append_number(isc_dyn_fld_sub_type,
-						   field->fld_sub_type);
-			}
+			request->append_number(isc_dyn_fld_sub_type, field->fld_sub_type);
 		}
 	}
 }
