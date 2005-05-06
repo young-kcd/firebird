@@ -493,11 +493,6 @@
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
-    * Reworked constraint checking logic
-        More precise checks for PK/UK/FK constraints
-      Contributor(s):
-        Vlad Horsun <horsun at kdb.dp.ua>
-
     * SQL improvement
         Added an equivalence predicate which behaves exactly as equality/inequality, but treats NULL = NULL as TRUE
       Syntax:
