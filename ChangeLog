@@ -1,3 +1,17 @@
+2005-05-06 04:09  robocop
+
+	* firebird2/doc/WhatsNew (1.64):
+	
+	Delete mention of enhancement that was undone.
+
+2005-05-05 10:39  robocop
+
+	* firebird2/builds/install/arch-specific/linux/misc/:
+	firebird.init.d.generic.in (1.3), firebird.init.d.mandrake.in
+	(1.4), firebird.init.d.suse.in (1.4), linuxLibrary.sh.in (1.2):
+	
+	Totally misc.
+
 2005-05-04 21:38  arnobrinkman
 
 	* firebird2/src/dsql/: node.h (1.56), pass1.cpp (1.208):
