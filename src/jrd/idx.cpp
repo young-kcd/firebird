@@ -209,12 +209,14 @@ void IDX_create_index(
 	primary.rpb_number.setValue(BOF_NUMBER);
 	//primary.rpb_window.win_flags = secondary.rpb_window.win_flags = 0; redundant
 
-	const USHORT key_length = ROUNDUP(BTR_key_length(relation, idx), sizeof(SLONG));
+	const bool isODS11 = (dbb->dbb_ods_version >= ODS_VERSION11);
+	const bool isDescending = (idx->idx_flags & idx_descending);
 
-	USHORT max_key_size = MAX_KEY_LIMIT;
-	if (dbb->dbb_ods_version < ODS_VERSION11) {
-		max_key_size = MAX_KEY_PRE_ODS11;
-	}
+	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
+
+	const USHORT max_key_size =
+		isODS11 ? MAX_KEY_LIMIT : MAX_KEY_PRE_ODS11;
+
 	if (key_length >= max_key_size) {
 		ERR_post(isc_no_meta_update,
 				 isc_arg_gds,
@@ -224,7 +226,7 @@ void IDX_create_index(
 	}
 
 	RecordStack stack;
-	const UCHAR pad = (idx->idx_flags & idx_descending) ? -1 : 0;
+	const UCHAR pad = isDescending ? -1 : 0;
 
 	index_fast_load ifl_data;
 	ifl_data.ifl_duplicates = 0;

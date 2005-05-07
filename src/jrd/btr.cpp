@@ -1001,7 +1001,7 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 }
 
 
-USHORT BTR_key_length(jrd_rel* relation, index_desc* idx)
+USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 {
 /**************************************
  *
@@ -1013,66 +1013,77 @@ USHORT BTR_key_length(jrd_rel* relation, index_desc* idx)
  *	Compute the maximum key length for an index.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
+
+	// hvlad: in ODS11 key of descending index can be prefixed with
+	//		  one byte value. See comments in compress
+	const size_t prefix = (idx->idx_flags & idx_descending) &&
+		(tdbb->tdbb_database->dbb_ods_version >= ODS_VERSION11) ? 1 : 0;
 
 	const Format* format = MET_current(tdbb, relation);
 	index_desc::idx_repeat* tail = idx->idx_rpt;
+
+	// notice "return sizeof()" above already returns size_t for this
+	// function that declared return type being USHORT.
+	size_t length;
 
 	// If there is only a single key, the computation is straightforward.
 	if (idx->idx_count == 1) {
 		switch (tail->idx_itype)
 		{
 		case idx_numeric:
-			return sizeof(double);
+			length = sizeof(double);
+			break;
 
 		case idx_sql_time:
-			return sizeof(ULONG);
+			length = sizeof(ULONG);
+			break;
 
 		case idx_sql_date:
-			return sizeof(SLONG);
+			length = sizeof(SLONG);
+			break;
 
 		case idx_timestamp2:
-			return sizeof(SINT64);
+			length = sizeof(SINT64);
+			break;
 
 		case idx_numeric2:
-			return INT64_KEY_LENGTH;
-		}
+			length = INT64_KEY_LENGTH;
+			break;
 
-		// notice "return sizeof()" above already returns size_t for this
-		// function that declared return type being USHORT.
-		size_t length;
+		default:
 #ifdef EXPRESSION_INDICES
-		if (idx->idx_flags & idx_expressn)
-		{
-			fb_assert(idx->idx_expression != NULL);
-			length = idx->idx_expression_desc.dsc_length;
-			if (idx->idx_expression_desc.dsc_dtype == dtype_varying)
+			if (idx->idx_flags & idx_expressn)
 			{
-				length = length - sizeof(SSHORT);
+				fb_assert(idx->idx_expression != NULL);
+				length = idx->idx_expression_desc.dsc_length;
+				if (idx->idx_expression_desc.dsc_dtype == dtype_varying)
+				{
+					length = length - sizeof(SSHORT);
+				}
 			}
-		}
-		else
+			else
 #endif
-		{
-			length = format->fmt_desc[tail->idx_field].dsc_length;
-			if (format->fmt_desc[tail->idx_field].dsc_dtype == dtype_varying) {
-				length = length - sizeof(SSHORT);
+			{
+				length = format->fmt_desc[tail->idx_field].dsc_length;
+				if (format->fmt_desc[tail->idx_field].dsc_dtype == dtype_varying) {
+					length = length - sizeof(SSHORT);
+				}
 			}
+
+			if (tail->idx_itype >= idx_first_intl_string) {
+				length = INTL_key_length(tdbb, tail->idx_itype, length);
+			}
+			break;
 		}
 
-		if (tail->idx_itype >= idx_first_intl_string) {
-			return INTL_key_length(tdbb, tail->idx_itype, length);
-		}
-		else {
-			return length;
-		}
+		return length + prefix;
 	}
 
 	// Compute length of key for segmented indices.
 	size_t key_length = 0;
 
 	for (USHORT n = 0; n < idx->idx_count; n++, tail++) {
-		size_t length;
 		switch (tail->idx_itype)
 		{
 		case idx_numeric:
@@ -1103,7 +1114,7 @@ USHORT BTR_key_length(jrd_rel* relation, index_desc* idx)
 		key_length += ((length + STUFF_COUNT - 1) / STUFF_COUNT) * (STUFF_COUNT + 1);
 	}
 
-	return key_length;
+	return key_length + prefix;
 }
 
 

@@ -4430,7 +4430,7 @@ static RecordSource* gen_nav_rsb(thread_db* tdbb,
 	DEV_BLKCHK(alias, type_str);
 	SET_TDBB(tdbb);
 
-	USHORT key_length = ROUNDUP(BTR_key_length(relation, idx), sizeof(SLONG));
+	USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
 	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), RSB_NAV_count) RecordSource();
 	rsb->rsb_type = rsb_navigate;
 	rsb->rsb_relation = relation;
