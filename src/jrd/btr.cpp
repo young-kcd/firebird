@@ -1111,10 +1111,10 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 			}
 			break;
 		}
-		key_length += ((length + STUFF_COUNT - 1) / STUFF_COUNT) * (STUFF_COUNT + 1);
+		key_length += ((length + prefix + STUFF_COUNT - 1) / STUFF_COUNT) * (STUFF_COUNT + 1);
 	}
 
-	return key_length + prefix;
+	return key_length;
 }
 
 
