@@ -1,3 +1,9 @@
+2005-05-08 11:43  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.144):
+	
+	Correct previous fix for multisegment descending indexes
+
 2005-05-07 21:45  hvlad
 
 	* firebird2/src/jrd/: btr.cpp (1.143), Optimizer.cpp (1.24),
