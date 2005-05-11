@@ -3311,7 +3311,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 
 		blob = BLB_open(tdbb, dbb->dbb_sys_trans, &REL.RDB$RUNTIME);
 		Firebird::HalfStaticArray<UCHAR, 256> temp;
-		UCHAR* const buffer = temp.getBuffer(blob->blb_max_segment);
+		UCHAR* const buffer = temp.getBuffer(blob->blb_max_segment + 1);
 
 		jrd_fld* field = NULL;
 		ArrayField* array = 0;
