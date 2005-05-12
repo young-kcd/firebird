@@ -1738,6 +1738,11 @@ dsql_nod* MAKE_node(NOD_TYPE type, int count)
 dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	USHORT sqlda_index)
 {
+	if (!message) {
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+			isc_arg_gds, isc_badmsgnum, 0);
+	}
+	
 	DEV_BLKCHK(message, dsql_type_msg);
 	
 	if (sqlda_flag && sqlda_index && (sqlda_index <= message->msg_index) && 
