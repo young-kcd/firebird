@@ -633,12 +633,17 @@ void ISQL_array_dimensions(const TEXT* fieldname)
 	   FDIM.RDB$FIELD_NAME EQ fieldname
 	   SORTED BY FDIM.RDB$DIMENSION
 
-		/*  Format is [lower:upper, lower:upper,..]  */
+		// Format is [lower:upper, lower:upper,..]
+		// When lower == 1 no need to print a range. Done.
+		// When upper == 1 no need to print a range either, but it's confusing. Not done.
 
 		if (FDIM.RDB$DIMENSION > 0) {
 			ISQL_printf (isqlGlob.Out, ", ");
 		}
-		sprintf (Print_buffer, "%ld:%ld", FDIM.RDB$LOWER_BOUND, FDIM.RDB$UPPER_BOUND);
+		if (FDIM.RDB$LOWER_BOUND == 1)
+			sprintf (Print_buffer, "%ld", FDIM.RDB$UPPER_BOUND);
+		else
+			sprintf (Print_buffer, "%ld:%ld", FDIM.RDB$LOWER_BOUND, FDIM.RDB$UPPER_BOUND);
 		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 	END_FOR
@@ -647,7 +652,7 @@ void ISQL_array_dimensions(const TEXT* fieldname)
 		return;
 	END_ERROR;
 
-	ISQL_printf(isqlGlob.Out, "] ");
+	ISQL_printf(isqlGlob.Out, "]");
 }
 
 
