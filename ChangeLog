@@ -1,3 +1,9 @@
+2005-05-11 09:43  dimitr
+
+	* firebird2/src/jrd/met.epp (1.158):
+	
+	Fixed memory corruption reported privately by Sean.
+
 2005-05-08 11:43  hvlad
 
 	* firebird2/src/jrd/btr.cpp (1.144):
