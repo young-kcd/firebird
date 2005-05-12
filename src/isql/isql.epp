@@ -1538,8 +1538,11 @@ void ISQL_disconnect_database(bool nQuietMode)
  *	call isc_detach_database to detach from the database and then zero
  *	out the DB handle.
  *
+ * Change from miroslavp on 06.05.2005
+ * Quiet global variable is preserved in local variable and restored at the end.
  **************************************/
 
+	const bool OriginalQuiet = Quiet;
 	// Ignore error msgs during disconnect
 	Quiet = nQuietMode;
 
@@ -1565,8 +1568,8 @@ void ISQL_disconnect_database(bool nQuietMode)
 		isc_detach_database(isc_status, &DB);
 	}
 
-	// Enable error msgs
-	Quiet = false;
+	// Restore original value of the flag
+	Quiet = OriginalQuiet;
 
 	// Zero database handle and transaction handles
 	global_Stmt = 0;
