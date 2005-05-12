@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: vector.h,v 1.13 2004-11-07 10:52:32 robocop Exp $
+ *  $Id: vector.h,v 1.14 2005-05-12 18:24:05 alexpeshkoff Exp $
  *
  */
  
@@ -41,20 +41,29 @@ template <typename T, size_t Capacity>
 class Vector {
 public:
 	Vector() : count(0) {}
-	void clear() { count = 0; }
+
 	T& operator[](size_t index) {
+  		fb_assert(index < count);
+  		return data[index];
+	}
+	const T& operator[](size_t index) const {
   		fb_assert(index < count);
   		return data[index];
 	}
 	T* begin() { return data; }
 	T* end() { return data + count; }
+	const T* begin() const { return data; }
+	const T* end() const { return data + count; }
+	size_t getCount() const { return count; }
+	size_t getCapacity() const { return Capacity; }
+
+	void clear() { count = 0; }
 	void insert(size_t index, const T& item) {
 	  fb_assert(index <= count);
 	  fb_assert(count < Capacity);
 	  memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 	  data[index] = item;
 	}
-
 	size_t add(const T& item) {
 		fb_assert(count < Capacity);
 		data[count++] = item;
@@ -68,13 +77,19 @@ public:
 		fb_assert(newCount <= count);
 		count = newCount;
 	}
-	void join(Vector<T, Capacity>& L) {
+	void join(const Vector<T, Capacity>& L) {
 		fb_assert(count + L.count <= Capacity);
 		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
 	}
-	size_t getCount() const { return count; }
-	size_t getCapacity() const { return Capacity; }
+
+	// prepare vector to be used as a buffer of capacity items
+	T* getBuffer(size_t capacityL) {
+		fb_assert(capacityL <= Capacity);
+		count = capacityL;
+		return data;
+	}
+
 protected:
 	size_t count;
 	T data[Capacity];
