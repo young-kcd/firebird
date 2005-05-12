@@ -170,6 +170,7 @@ static void stuff_default_blr(dsql_req*, const TEXT*, USHORT);
 static void stuff_matching_blr(dsql_req*, const dsql_nod*, const dsql_nod*);
 static void stuff_trg_firing_cond(dsql_req*, const dsql_nod*);
 static void set_nod_value_attributes(dsql_nod*, const dsql_fld*);
+static void clearPermanentField (dsql_rel*, bool);
 
 #ifdef BLKCHK
 #undef BLKCHK
@@ -707,6 +708,7 @@ static bool is_array_or_blob(const dsql_nod* node)
 	case nod_via:
 	case nod_substr:
 	case nod_internal_info:
+	case nod_coalesce:
 		return false;
 
 	case nod_map:
@@ -1826,12 +1828,22 @@ static void define_field(
 
 // add the field to the relation being defined for parsing purposes 
 
+	bool permanent = false;
 	dsql_rel* relation = request->req_relation;
 	if (relation != NULL) {
+		if (! (relation->rel_flags & REL_new_relation)) {
+  			dsql_fld* perm_field = FB_NEW_RPT(*request->req_dbb->dbb_pool,
+						strlen(field->fld_name)) dsql_fld;
+			*perm_field = *field;
+			strcpy(perm_field->fld_name, field->fld_name);
+			field = perm_field;
+			permanent = true;
+		}
 		field->fld_next = relation->rel_fields;
 		relation->rel_fields = field;
 	}
 
+	try {
 	const dsql_nod* domain_node = element->nod_arg[e_dfl_domain];
 	if (domain_node) {
 		request->append_cstring(isc_dyn_def_local_fld, field->fld_name);
@@ -2011,6 +2023,14 @@ static void define_field(
 		// dimitr: insert a not null item right before column's isc_dyn_end
 		request->req_blr_data.insert(end, isc_dyn_fld_not_null);
 	}
+	} // try
+
+	catch (...)
+	{
+		clearPermanentField (relation, permanent);
+		throw;
+	}
+	clearPermanentField (relation, permanent);
 }
 
 
@@ -5916,7 +5936,9 @@ static void save_field(dsql_req* request, const TEXT* field_name)
 		return;
 	}
 
-	dsql_fld* field = FB_NEW_RPT(*tdsql->getDefaultPool(), strlen(field_name) + 1) dsql_fld;
+	MemoryPool* p = relation->rel_flags & REL_new_relation ?
+				tdsql->getDefaultPool() : request->req_dbb->dbb_pool;
+	dsql_fld* field = FB_NEW_RPT(*p, strlen(field_name) + 1) dsql_fld;
 	strcpy(field->fld_name, field_name);
 	field->fld_next = relation->rel_fields;
 	relation->rel_fields = field;
@@ -6140,12 +6162,22 @@ static void modify_field(dsql_req*	request,
 	request->append_cstring(isc_dyn_mod_sql_fld, field->fld_name);
 
 // add the field to the relation being defined for parsing purposes
+	bool permanent = false;
 	dsql_rel* relation = request->req_relation;
-	if (relation != NULL)
-	{
+	if (relation != NULL) {
+		if (! (relation->rel_flags & REL_new_relation)) {
+  			dsql_fld* perm_field = FB_NEW_RPT(*request->req_dbb->dbb_pool,
+						strlen(field->fld_name)) dsql_fld;
+			*perm_field = *field;
+			strcpy(perm_field->fld_name, field->fld_name);
+			field = perm_field;
+			permanent = true;
+		}
 		field->fld_next = relation->rel_fields;
 		relation->rel_fields = field;
 	}
+
+	try {
 
 	dsql_nod* domain_node = element->nod_arg[e_mod_fld_type_dom_name];
 	if (domain_node)
@@ -6177,6 +6209,14 @@ static void modify_field(dsql_req*	request,
 		put_field(request, field, false);
 	}
 	request->append_uchar(isc_dyn_end);
+	} // try
+
+	catch (...)
+	{
+		clearPermanentField (relation, permanent);
+		throw;
+	}
+	clearPermanentField (relation, permanent);
 }
 
 
@@ -6424,3 +6464,17 @@ void dsql_req::generate_unnamed_trigger_beginning(	bool		on_update_trigger,
 	append_uchar(blr_begin);
 }
 
+//
+// removes temporary pool pointers from field, stored in permanent cache
+//
+void clearPermanentField (dsql_rel* relation, bool perm)
+{
+	if (relation && relation->rel_fields && perm)
+	{
+		relation->rel_fields->fld_procedure = 0;
+		relation->rel_fields->fld_ranges = 0;
+		relation->rel_fields->fld_character_set = 0;
+		relation->rel_fields->fld_sub_type_name = 0;
+		relation->rel_fields->fld_relation = relation;
+	}
+}
