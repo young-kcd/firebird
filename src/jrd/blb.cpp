@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.91 2004-10-03 20:18:11 skidder Exp $
+$Id: blb.cpp,v 1.92 2005-05-12 18:27:59 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -1428,7 +1428,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 		ERR_punt();
 
 	jrd_rel* relation;
-	if (info.sdl_info_relation[0]) {
+	if (info.sdl_info_relation.length()) {
 		relation = MET_lookup_relation(tdbb, info.sdl_info_relation);
 	} 
 	else {
@@ -1440,7 +1440,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	}
 
 	SSHORT	n;
-	if (info.sdl_info_field[0]) {
+	if (info.sdl_info_field.length()) {
 	    n = MET_lookup_field(tdbb, relation, info.sdl_info_field, 0);
 	} 
 	else {

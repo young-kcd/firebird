@@ -59,7 +59,7 @@ const SecurityClass::flags_t SCL_execute		= 8192;
 class UserId : public pool_alloc_rpt<SCHAR, type_usr>
 {
     public:
-	TEXT *usr_user_name;		/* User name */
+	const TEXT *usr_user_name;	/* User name */
 	TEXT *usr_sql_role_name;	/* Role name */
 	TEXT *usr_project_name;		/* Project name */
 	TEXT *usr_org_name;			/* Organizaion name */

@@ -158,7 +158,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
 }
 
 
-void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
+void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::MetaName& buffer)
 {
 /**************************************
  *
@@ -182,7 +182,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, TEXT* buff
 	
 	do {
 		id = drq_g_nxt_con;
-		sprintf(buffer, "INTEG_%" QUADFORMAT "d",
+		buffer.printf("INTEG_%" QUADFORMAT "d",
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_con,
@@ -195,7 +195,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, TEXT* buff
 		found = false;
 		FOR(REQUEST_HANDLE request)
 			FIRST 1 X IN RDB$RELATION_CONSTRAINTS
-				WITH X.RDB$CONSTRAINT_NAME EQ buffer
+				WITH X.RDB$CONSTRAINT_NAME EQ buffer.c_str()
 
             if (!DYN_REQUEST(drq_f_nxt_con))
                 DYN_REQUEST(drq_f_nxt_con) = request;
@@ -226,6 +226,24 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
  **************************************
  *
  * Functional description
+ *	Stup to make it work with char* too.
+ *
+ **************************************/
+	Firebird::MetaName temp;
+	DYN_UTIL_generate_field_name(tdbb, gbl, temp);
+	strcpy(buffer, temp.c_str());
+}
+
+
+void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaName& buffer)
+{
+/**************************************
+ *
+ *	D Y N _ U T I L _g e n e r a t e _ f i e l d _ n a m e
+ *
+ **************************************
+ *
+ * Functional description
  *	Generate a name unique to RDB$FIELDS.
  *
  **************************************/
@@ -241,7 +259,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
 
 	do {
 		id = drq_g_nxt_fld;
-		sprintf(buffer, "RDB$%" QUADFORMAT "d",
+		buffer.printf("RDB$%" QUADFORMAT "d",
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_fld,
@@ -253,7 +271,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
 
 		found = false;
 		FOR(REQUEST_HANDLE request)
-			FIRST 1 X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ buffer
+			FIRST 1 X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ buffer.c_str()
 
             if (!DYN_REQUEST(drq_f_nxt_fld))
 				DYN_REQUEST(drq_f_nxt_fld) = request;
@@ -278,7 +296,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
 void DYN_UTIL_generate_field_position(
 									  thread_db* tdbb,
 									  Global* gbl,
-									  const TEXT* relation_name,
+									  const Firebird::MetaName* relation_name,
 									  SLONG* field_pos)
 {
 /**************************************
@@ -307,7 +325,7 @@ void DYN_UTIL_generate_field_position(
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$RELATION_FIELDS
-			WITH X.RDB$RELATION_NAME EQ relation_name
+			WITH X.RDB$RELATION_NAME EQ relation_name->c_str()
 
         if (!DYN_REQUEST(drq_l_fld_pos))
             DYN_REQUEST(drq_l_fld_pos) = request;
@@ -330,8 +348,8 @@ void DYN_UTIL_generate_field_position(
 }
 
 
-void DYN_UTIL_generate_index_name(thread_db* tdbb,
-								  Global* gbl, TEXT* buffer, UCHAR verb)
+void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl, 
+								  Firebird::MetaName& buffer, UCHAR verb)
 {
 /**************************************
  *
@@ -354,15 +372,12 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb,
 	bool found = false;
 
 	do {
-		const SCHAR* format;
-		if (verb == isc_dyn_def_primary_key)
-			format = "RDB$PRIMARY%" QUADFORMAT "d";
-		else if (verb == isc_dyn_def_foreign_key)
-			format = "RDB$FOREIGN%" QUADFORMAT "d";
-		else
-			format = "RDB$%" QUADFORMAT "d";
+		const SCHAR* format = 
+			verb == isc_dyn_def_primary_key ? ("RDB$PRIMARY%" QUADFORMAT "d") :
+			verb == isc_dyn_def_foreign_key ? ("RDB$FOREIGN%" QUADFORMAT "d") :
+			("RDB$%" QUADFORMAT "d");
 		id = drq_g_nxt_idx;
-		sprintf(buffer, format,
+		buffer.printf(format,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_idx,
@@ -374,7 +389,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb,
 
 		found = false;
 		FOR(REQUEST_HANDLE request)
-			FIRST 1 X IN RDB$INDICES WITH X.RDB$INDEX_NAME EQ buffer
+			FIRST 1 X IN RDB$INDICES WITH X.RDB$INDEX_NAME EQ buffer.c_str()
 
             if (!DYN_REQUEST(drq_f_nxt_idx))
 				DYN_REQUEST(drq_f_nxt_idx) = request;
@@ -395,7 +410,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb,
 }
 
 
-void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
+void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::MetaName& buffer)
 {
 /**************************************
  *
@@ -419,7 +434,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
 
 	do {
 		id = drq_g_nxt_trg;
-		sprintf(buffer, "CHECK_%" QUADFORMAT "d",
+		buffer.printf("CHECK_%" QUADFORMAT "d",
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_trg,
@@ -431,7 +446,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
 
 		found = false;
 		FOR(REQUEST_HANDLE request)
-			FIRST 1 X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ buffer
+			FIRST 1 X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ buffer.c_str()
 
             if (!DYN_REQUEST(drq_f_nxt_trg))
 				DYN_REQUEST(drq_f_nxt_trg) = request;
@@ -502,10 +517,10 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 }
 
 
-void DYN_UTIL_store_check_constraints(thread_db*	tdbb,
-									  Global*	gbl,
-									  const TEXT*	constraint_name,
-									  const TEXT*	trigger_name)
+void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
+									  Global*					gbl,
+									  const Firebird::MetaName*	constraint_name,
+									  const Firebird::MetaName&	trigger_name)
 {
 /**************************************
  *
@@ -522,11 +537,12 @@ void DYN_UTIL_store_check_constraints(thread_db*	tdbb,
 	jrd_req* request = CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
 
 	try {
-
+	
+	fb_assert(constraint_name);
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		CHK IN RDB$CHECK_CONSTRAINTS
-        strcpy(CHK.RDB$CONSTRAINT_NAME, constraint_name);
-		strcpy(CHK.RDB$TRIGGER_NAME, trigger_name);
+        strcpy(CHK.RDB$CONSTRAINT_NAME, constraint_name->c_str());
+		strcpy(CHK.RDB$TRIGGER_NAME, trigger_name.c_str());
 
 	END_STORE;
 

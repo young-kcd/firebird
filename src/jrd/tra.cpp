@@ -2383,23 +2383,18 @@ static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, SCHAR lock
 
 	lock->lck_logical = lock_type;
 
-	ViewContext* ctx = relation->rel_view_contexts;
-	if (!ctx) {
-		return;
-	}
+	ViewContexts& ctx = relation->rel_view_contexts;
 
-	for (; ctx; ctx = ctx->vcx_next)
+	for (size_t i = 0; i < ctx.getCount(); ++i)
 	{
-		jrd_rel* rel = MET_lookup_relation(tdbb,
-								reinterpret_cast<const char*>(ctx->vcx_relation_name->str_data));
+		jrd_rel* rel = MET_lookup_relation(tdbb, ctx[i].vcx_relation_name);
 		if (!rel)
 		{
 			ERR_post(isc_bad_tpb_content,	/* should be a BUGCHECK */
 					isc_arg_gds,
 					isc_relnotdef,
 					isc_arg_string,
-					ERR_cstring(reinterpret_cast<const char*>
-						(ctx->vcx_relation_name->str_data)),
+					ERR_cstring(ctx[i].vcx_relation_name.c_str()),
 					0);
 		}
 
@@ -2912,27 +2907,21 @@ static void transaction_options(
 		case isc_tpb_lock_write:
 		case isc_tpb_lock_read:
 			{
-			SqlIdentifier name;
-			UCHAR* p = reinterpret_cast<UCHAR*>(name);
-			USHORT l = *tpb++;
-			if (l) {
-				if (l >= sizeof(name)) {
+				USHORT l = *tpb++;
+				if (l >= MAX_SQL_IDENTIFIER_LEN) {
 					TEXT text[BUFFER_TINY];
 					USHORT flags = 0;
 					gds__msg_lookup(0, DYN_MSG_FAC, 159, sizeof(text),
-									text, &flags);
+										text, &flags);
 					/* msg 159: Name longer than database column size */
 					ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_random,
 							 isc_arg_string, ERR_cstring(text), 0);
 				}
-				do {
-					*p++ = *tpb++;
-				} while (--l);
-			}
-			*p = 0;
-			jrd_rel* relation = MET_lookup_relation(tdbb, name);
-			if (!relation) {
-				ERR_post(isc_bad_tpb_content,
+				Firebird::MetaName name(reinterpret_cast<const char*>(tpb), l);
+				tpb += l;
+				jrd_rel* relation = MET_lookup_relation(tdbb, name);
+				if (!relation) {
+					ERR_post(isc_bad_tpb_content,
 						 isc_arg_gds, isc_relnotdef, isc_arg_string,
 						 ERR_cstring(name), 0);
 			}
@@ -3071,4 +3060,3 @@ static void vms_convert(Lock* lock, SLONG* data, SCHAR type, bool wait)
 	return; // true;
 }
 #endif
-

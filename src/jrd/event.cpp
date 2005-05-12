@@ -351,9 +351,9 @@ EVH EVENT_init(ISC_STATUS* status_vector, bool server_flag)
 
 int EVENT_post(ISC_STATUS * status_vector,
 			   USHORT major_length,
-			   TEXT * major_code,
+			   const TEXT * major_code,
 			   USHORT minor_length,
-			   TEXT * minor_code,
+			   const TEXT * minor_code,
 			   USHORT count)
 {
 /**************************************

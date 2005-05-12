@@ -92,17 +92,20 @@ static void change_backup_mode(Global*, UCHAR verb);
 // Function not defined in this file MOD 04-July-2002
 // static void modify_lfield_type(Global*, const UCHAR**, TEXT*, TEXT*);
 
-static void modify_lfield_position(thread_db*, Database*, Global*, const TEXT*, const TEXT*,
-	USHORT, USHORT);
-static bool check_view_dependency(thread_db*, Database*, Global*, const TEXT*, const TEXT*);
-static bool check_sptrig_dependency(thread_db*, Database*, Global*, const TEXT*, const TEXT*);
-static void modify_lfield_index(thread_db*, Database*, Global*, const TEXT*, const TEXT*,
-	const TEXT*);
-static bool field_exists(thread_db*, Database*, Global*, const TEXT*, const TEXT*);
-static bool domain_exists(thread_db*, Database*, Global*, const TEXT*);
-static void get_domain_type(thread_db*, Database*, Global*, dyn_fld*);
-static ULONG check_update_fld_type(const dyn_fld*, const dyn_fld*);
-static void modify_err_punt(thread_db*, ULONG, const dyn_fld*, const dyn_fld*);
+static void modify_lfield_position(thread_db*, Database*, Global*, 
+	const Firebird::MetaName&, const Firebird::MetaName&, USHORT, USHORT);
+static bool check_view_dependency(thread_db*, Database*, Global*, 
+	const Firebird::MetaName&, const Firebird::MetaName&);
+static bool check_sptrig_dependency(thread_db*, Database*, Global*, 
+	const Firebird::MetaName&, const Firebird::MetaName&);
+static void modify_lfield_index(thread_db*, Database*, Global*, 
+	const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&);
+static bool field_exists(thread_db*, Database*, Global*, 
+	const Firebird::MetaName&, const Firebird::MetaName&);
+static bool domain_exists(thread_db*, Database*, Global*, const Firebird::MetaName&);
+static void get_domain_type(thread_db*, Database*, Global*, dyn_fld&);
+static ULONG check_update_fld_type(const dyn_fld&, const dyn_fld&);
+static void modify_err_punt(thread_db*, ULONG, const dyn_fld&, const dyn_fld&);
 
 
 void DYN_modify_database( Global* gbl, const UCHAR** ptr)
@@ -269,7 +272,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
  *	Modify an exception.
  *
  **************************************/
-	SqlIdentifier t;
+	Firebird::MetaName t;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
@@ -284,7 +287,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$EXCEPTIONS
-			WITH X.RDB$EXCEPTION_NAME EQ t
+			WITH X.RDB$EXCEPTION_NAME EQ t.c_str()
 
         if (!DYN_REQUEST(drq_m_xcp)) DYN_REQUEST(drq_m_xcp) = request;
 
@@ -323,10 +326,10 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_modify_global_field(
-							 Global* gbl,
+void DYN_modify_global_field(Global* gbl,
 							 const UCHAR** ptr,
-							 const TEXT* relation_name, TEXT* field_name)
+							 const Firebird::MetaName* relation_name, 
+							 Firebird::MetaName* field_name)
 {
 /**************************************
  *
@@ -349,25 +352,9 @@ void DYN_modify_global_field(
 	jrd_req* request = CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
 	bool found = false;
 	
-	dyn_fld* orig_dom = 0;
-	dyn_fld* new_dom = 0;
+	dyn_fld orig_dom, new_dom;
 
 	try {
-
-/* Allocate the field structures */
-	orig_dom = (dyn_fld*) gds__alloc(sizeof(struct dyn_fld));
-	if (!orig_dom) {
-		DYN_error_punt(true, 211, NULL, NULL, NULL, NULL, NULL);
-	}
-
-	MOVE_CLEAR(orig_dom, sizeof(struct dyn_fld));
-
-	new_dom = (dyn_fld*) gds__alloc(sizeof(struct dyn_fld));
-	if (!new_dom) {
-		DYN_error_punt(true, 211, NULL, NULL, NULL, NULL, NULL);
-	}
-
-	MOVE_CLEAR(new_dom, sizeof(struct dyn_fld));
 
 	bool dtype, scale, prec, subtype, charlen, collation, fldlen, nullflg,
 		charset;
@@ -386,36 +373,36 @@ void DYN_modify_global_field(
 		*flddftval, *flddfltsrc;
 
 
-	GET_STRING(ptr, orig_dom->dyn_fld_name);
+	GET_STRING(ptr, orig_dom.dyn_fld_name);
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ orig_dom->dyn_fld_name
+		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ orig_dom.dyn_fld_name.c_str()
 
         if (!DYN_REQUEST(drq_m_gfield))
             DYN_REQUEST(drq_m_gfield) = request;
 
 		found = true;
 
-		DSC_make_descriptor(&orig_dom->dyn_dsc,
+		DSC_make_descriptor(&orig_dom.dyn_dsc,
 							FLD.RDB$FIELD_TYPE,
 							FLD.RDB$FIELD_SCALE,
 							FLD.RDB$FIELD_LENGTH,
 							FLD.RDB$FIELD_SUB_TYPE,
 							FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID);
 
-		orig_dom->dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
-		orig_dom->dyn_dtype = FLD.RDB$FIELD_TYPE;
-		orig_dom->dyn_precision = FLD.RDB$FIELD_PRECISION;
-		orig_dom->dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
-		orig_dom->dyn_collation = FLD.RDB$COLLATION_ID;
-		orig_dom->dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
+		orig_dom.dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
+		orig_dom.dyn_dtype = FLD.RDB$FIELD_TYPE;
+		orig_dom.dyn_precision = FLD.RDB$FIELD_PRECISION;
+		orig_dom.dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
+		orig_dom.dyn_collation = FLD.RDB$COLLATION_ID;
+		orig_dom.dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
 
 		/* If the original field type is an array, force its blr type to blr_blob */
 		bool has_dimensions = false;
 		if (FLD.RDB$DIMENSIONS != 0)
 		{
-			orig_dom->dyn_dtype = blr_blob;
+			orig_dom.dyn_dtype = blr_blob;
 			has_dimensions = true;
 		}
 
@@ -428,14 +415,14 @@ void DYN_modify_global_field(
 			{
 			case isc_dyn_fld_name:
 				{
-					SqlIdentifier newfld;
+					Firebird::MetaName newfld;
 
 					if (GET_STRING(ptr, newfld))
 					{
 						if (!domain_exists(tdbb, dbb, gbl, newfld))
 						{
 							MODIFY FLD USING
-								strcpy(FLD.RDB$FIELD_NAME, newfld);
+								strcpy(FLD.RDB$FIELD_NAME, newfld.c_str());
 								FLD.RDB$FIELD_NAME.NULL = FALSE;
 								jrd_req* old_request = request;
 								request = NULL;
@@ -444,9 +431,9 @@ void DYN_modify_global_field(
 								{
 									FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 										DIM_DOM IN RDB$FIELD_DIMENSIONS
-										WITH DIM_DOM.RDB$FIELD_NAME EQ orig_dom->dyn_fld_name
+										WITH DIM_DOM.RDB$FIELD_NAME EQ orig_dom.dyn_fld_name.c_str()
 										MODIFY DIM_DOM USING
-											strcpy (DIM_DOM.RDB$FIELD_NAME, newfld);
+											strcpy (DIM_DOM.RDB$FIELD_NAME, newfld.c_str());
 											DIM_DOM.RDB$FIELD_NAME.NULL = FALSE;
 										END_MODIFY;
 									END_FOR;
@@ -456,9 +443,9 @@ void DYN_modify_global_field(
 								/* CVC: End modification. */
 								FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 									DOM IN RDB$RELATION_FIELDS
-									WITH DOM.RDB$FIELD_SOURCE EQ orig_dom->dyn_fld_name
+									WITH DOM.RDB$FIELD_SOURCE EQ orig_dom.dyn_fld_name.c_str()
 									MODIFY DOM USING
-										strcpy(DOM.RDB$FIELD_SOURCE, newfld);
+										strcpy(DOM.RDB$FIELD_SOURCE, newfld.c_str());
 										DOM.RDB$FIELD_SOURCE.NULL = FALSE;
 									END_MODIFY;
 									modify_lfield_index(tdbb, dbb, gbl,
@@ -472,8 +459,8 @@ void DYN_modify_global_field(
 						}
 						else
 						{
-							DYN_error_punt(false, 204, orig_dom->dyn_fld_name,
-										   newfld, NULL, NULL, NULL);
+							DYN_error_punt(false, 204, orig_dom.dyn_fld_name.c_str(),
+										   newfld.c_str(), NULL, NULL, NULL);
 							/* msg 204: Cannot rename domain %s to %s.  A domain with that name already exists. */
 						}
 					}
@@ -486,7 +473,7 @@ void DYN_modify_global_field(
 				}
 
 			case isc_dyn_rel_name:
-				GET_STRING(ptr, new_dom->dyn_rel_name);
+				GET_STRING(ptr, new_dom.dyn_rel_name);
 				break;
 
 			/* CVC: The syntax for DDL alter domain was accepting multiple
@@ -495,13 +482,13 @@ void DYN_modify_global_field(
 
 			case isc_dyn_fld_length:
 				fldlen = true;
-				new_dom->dyn_dsc.dsc_length = DYN_get_number(ptr);
+				new_dom.dyn_dsc.dsc_length = DYN_get_number(ptr);
 				if (++field_adjusted_count > 2)
 				{
 					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
 				}
-				switch (new_dom->dyn_dtype) {
+				switch (new_dom.dyn_dtype) {
 				
 				case blr_text:
 				case blr_text2:
@@ -509,24 +496,24 @@ void DYN_modify_global_field(
 				case blr_varying2:
 				case blr_cstring:
 				case blr_cstring2:
-					new_dom->dyn_charbytelen = new_dom->dyn_dsc.dsc_length;
+					new_dom.dyn_charbytelen = new_dom.dyn_dsc.dsc_length;
 					break;
 				default:
-					new_dom->dyn_charbytelen = 0; /* It won't be used, anyway. */
+					new_dom.dyn_charbytelen = 0; /* It won't be used, anyway. */
 					break;
 				}
 				break;
 
 			case isc_dyn_fld_type:
 				dtype = true;
-				new_dom->dyn_dtype = DYN_get_number(ptr);
+				new_dom.dyn_dtype = DYN_get_number(ptr);
 				if (++field_adjusted_count > 2)
 				{
 					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
 				}
 
-				switch (new_dom->dyn_dtype) {
+				switch (new_dom.dyn_dtype) {
 
 				case blr_text:
 				case blr_text2:
@@ -534,17 +521,17 @@ void DYN_modify_global_field(
 				case blr_varying2:
 				case blr_cstring:
 				case blr_cstring2:
-					if (new_dom->dyn_dsc.dsc_length && !new_dom->dyn_charbytelen)
-						new_dom->dyn_charbytelen = new_dom->dyn_dsc.dsc_length;
-					new_dom->dyn_dsc.dsc_length = DSC_string_length(&new_dom->dyn_dsc);
+					if (new_dom.dyn_dsc.dsc_length && !new_dom.dyn_charbytelen)
+						new_dom.dyn_charbytelen = new_dom.dyn_dsc.dsc_length;
+					new_dom.dyn_dsc.dsc_length = DSC_string_length(&new_dom.dyn_dsc);
 					break;
 				case blr_short:
-					new_dom->dyn_dsc.dsc_length = 2;
+					new_dom.dyn_dsc.dsc_length = 2;
 					break;
 
 				case blr_long:
 				case blr_float:
-					new_dom->dyn_dsc.dsc_length = 4;
+					new_dom.dyn_dsc.dsc_length = 4;
 					break;
 
 				case blr_int64:
@@ -553,7 +540,7 @@ void DYN_modify_global_field(
 				case blr_timestamp:
 				case blr_double:
 				case blr_d_float:
-					new_dom->dyn_dsc.dsc_length = 8;
+					new_dom.dyn_dsc.dsc_length = 8;
 					break;
 
 				default:
@@ -563,37 +550,37 @@ void DYN_modify_global_field(
 
 			case isc_dyn_fld_scale:
 				scale = true;
-				new_dom->dyn_dsc.dsc_scale = DYN_get_number(ptr);
+				new_dom.dyn_dsc.dsc_scale = DYN_get_number(ptr);
 				break;
 
 			case isc_dyn_fld_precision:
 				prec = true;
-				new_dom->dyn_precision = DYN_get_number(ptr);
+				new_dom.dyn_precision = DYN_get_number(ptr);
 				break;
 
 			case isc_dyn_fld_sub_type:
 				subtype = true;
-				new_dom->dyn_dsc.dsc_sub_type = DYN_get_number(ptr);
+				new_dom.dyn_dsc.dsc_sub_type = DYN_get_number(ptr);
 				break;
 
 			case isc_dyn_fld_char_length:
 				charlen = true;
-				new_dom->dyn_charlen = DYN_get_number(ptr);
+				new_dom.dyn_charlen = DYN_get_number(ptr);
 				break;
 
 			case isc_dyn_fld_collation:
 				collation = true;
-				new_dom->dyn_collation = DYN_get_number(ptr);
+				new_dom.dyn_collation = DYN_get_number(ptr);
 				break;
 
 			case isc_dyn_fld_character_set:
 				charset = true;
-				new_dom->dyn_charset = DYN_get_number(ptr);
+				new_dom.dyn_charset = DYN_get_number(ptr);
 				break;
 
 			case isc_dyn_fld_not_null:
 				nullflg = true;
-				new_dom->dyn_null_flag = true;
+				new_dom.dyn_null_flag = true;
 				break;
 
 			case isc_dyn_fld_query_name:
@@ -679,7 +666,7 @@ void DYN_modify_global_field(
 				break;
 
 			case isc_dyn_fld_dimensions:
-				new_dom->dyn_dtype = blr_blob;
+				new_dom.dyn_dtype = blr_blob;
 				break;
 
 				/* These should only be defined for BLOB types and should not come through with
@@ -703,12 +690,13 @@ void DYN_modify_global_field(
 		 */
 
 		if (dtype) {
-			DSC_make_descriptor(&new_dom->dyn_dsc,
-								new_dom->dyn_dtype,
-								new_dom->dyn_dsc.dsc_scale,
-								new_dom->dyn_dsc.dsc_length,
-								new_dom->dyn_dsc.dsc_sub_type,
-								new_dom->dyn_charset, new_dom->dyn_collation);
+			DSC_make_descriptor(&new_dom.dyn_dsc,
+								new_dom.dyn_dtype,
+								new_dom.dyn_dsc.dsc_scale,
+								new_dom.dyn_dsc.dsc_length,
+								new_dom.dyn_dsc.dsc_sub_type,
+								new_dom.dyn_charset, 
+								new_dom.dyn_collation);
             const ULONG retval = check_update_fld_type(orig_dom, new_dom);
 			if (retval != FB_SUCCESS)
 				modify_err_punt(tdbb, retval, orig_dom, new_dom);
@@ -716,7 +704,7 @@ void DYN_modify_global_field(
 
 		MODIFY FLD USING
 			if (dtype) {
-				FLD.RDB$FIELD_TYPE = new_dom->dyn_dtype;
+				FLD.RDB$FIELD_TYPE = new_dom.dyn_dtype;
 				FLD.RDB$FIELD_TYPE.NULL = FALSE;
 
 				/* If the datatype was changed, update any indexes that involved the domain */
@@ -725,7 +713,7 @@ void DYN_modify_global_field(
 				request = NULL;
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					DOM IN RDB$RELATION_FIELDS 
-                    WITH DOM.RDB$FIELD_SOURCE EQ orig_dom->dyn_fld_name 
+                    WITH DOM.RDB$FIELD_SOURCE EQ orig_dom.dyn_fld_name.c_str()
                     modify_lfield_index(tdbb, dbb, gbl,
                                         DOM.RDB$RELATION_NAME,
                                         DOM.RDB$FIELD_NAME,
@@ -737,31 +725,31 @@ void DYN_modify_global_field(
 			}
 
 			if (scale) {
-				FLD.RDB$FIELD_SCALE = new_dom->dyn_dsc.dsc_scale;
+				FLD.RDB$FIELD_SCALE = new_dom.dyn_dsc.dsc_scale;
 				FLD.RDB$FIELD_SCALE.NULL = FALSE;
 			}
 
 			if (prec) {
-				FLD.RDB$FIELD_PRECISION = new_dom->dyn_precision;
+				FLD.RDB$FIELD_PRECISION = new_dom.dyn_precision;
 				FLD.RDB$FIELD_PRECISION.NULL = FALSE;
 			}
 
 			if (subtype) {
-				FLD.RDB$FIELD_SUB_TYPE = new_dom->dyn_dsc.dsc_sub_type;
+				FLD.RDB$FIELD_SUB_TYPE = new_dom.dyn_dsc.dsc_sub_type;
 				FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 			}
 
 			if (charlen) {
-				FLD.RDB$CHARACTER_LENGTH = new_dom->dyn_charlen;
+				FLD.RDB$CHARACTER_LENGTH = new_dom.dyn_charlen;
 				FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
 			}
 
 			if (fldlen) {
 				/* CVC: Rescue from the wrong field_length with a helper. */
-				if (new_dom->dyn_dsc.dsc_dtype <= dtype_varying && new_dom->dyn_charbytelen)
-					FLD.RDB$FIELD_LENGTH = new_dom->dyn_charbytelen;
+				if (new_dom.dyn_dsc.dsc_dtype <= dtype_varying && new_dom.dyn_charbytelen)
+					FLD.RDB$FIELD_LENGTH = new_dom.dyn_charbytelen;
 				else
-					FLD.RDB$FIELD_LENGTH = new_dom->dyn_dsc.dsc_length;
+					FLD.RDB$FIELD_LENGTH = new_dom.dyn_dsc.dsc_length;
 				FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 			}
 
@@ -843,23 +831,9 @@ void DYN_modify_global_field(
 	if (!DYN_REQUEST(drq_m_gfield))
 		DYN_REQUEST(drq_m_gfield) = request;
 
-	if (orig_dom)
-		gds__free(orig_dom);
-
-	if (new_dom)
-		gds__free(new_dom);
-
 	}
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (orig_dom) {
-			gds__free(orig_dom);
-		}
-
-		if (new_dom) {
-			gds__free(new_dom);
-		}
-
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 87, NULL, NULL, NULL, NULL, NULL);
 		/* msg 87: "MODIFY RDB$FIELDS failed" */
@@ -885,7 +859,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
  *	Modify an existing index
  *
  **************************************/
-	SqlIdentifier name;
+	Firebird::MetaName name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
@@ -899,7 +873,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name
+		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name.c_str()
 
         if (!DYN_REQUEST(drq_m_index)) DYN_REQUEST(drq_m_index) = request;
 
@@ -960,7 +934,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 void DYN_modify_local_field(
 							Global* gbl,
 							const UCHAR** ptr,
-							const TEXT* relation_name, TEXT* field_name)
+							const Firebird::MetaName* relation_name)
 {
 /**************************************
  *
@@ -973,7 +947,7 @@ void DYN_modify_local_field(
  *
  **************************************/
 	USHORT position;
-	SqlIdentifier f, r;
+	Firebird::MetaName f, r;
 	TEXT *query_name, *edit_string,
 		*security_class, *new_name;
 		
@@ -983,7 +957,6 @@ void DYN_modify_local_field(
 	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, f);
-	r[0] = 0;
 	
 	bool sfflag, qnflag, qhflag, esflag, dflag, system_flag, scflag, nnflag,
 		ntflag, npflag;
@@ -1045,7 +1018,7 @@ void DYN_modify_local_field(
 
 		default:
 			--(*ptr);
-			DYN_execute(gbl, ptr, relation_name, field_name, NULL, NULL, NULL);
+			DYN_execute(gbl, ptr, relation_name, NULL, NULL, NULL, NULL);
 		}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_lfield, DYN_REQUESTS);
@@ -1057,7 +1030,8 @@ void DYN_modify_local_field(
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$RELATION_FIELDS
-			WITH FLD.RDB$FIELD_NAME EQ f AND FLD.RDB$RELATION_NAME EQ r
+			WITH FLD.RDB$FIELD_NAME EQ f.c_str() 
+			 AND FLD.RDB$RELATION_NAME EQ r.c_str()
 
         if (!DYN_REQUEST(drq_m_lfield))
             DYN_REQUEST(drq_m_lfield) = request;
@@ -1080,23 +1054,21 @@ void DYN_modify_local_field(
 			}
 
 			if (nnflag) {
-				SqlIdentifier new_fld;
-				new_fld[0] = 0;
+				Firebird::MetaName new_fld;
 				GET_STRING(&new_name, new_fld);
-				fb_utils::exact_name(new_fld);
-				if (!new_fld[0])
+				if (new_fld.length() == 0)
 					DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 					/* msg 212: "Zero length identifiers not allowed" */
 
 				check_view_dependency(tdbb, dbb, gbl, r, f);
 				check_sptrig_dependency(tdbb, dbb, gbl, r, f);
 				if (!field_exists(tdbb, dbb, gbl, r, new_fld)) {
-					strcpy(FLD.RDB$FIELD_NAME, new_fld);
+					strcpy(FLD.RDB$FIELD_NAME, new_fld.c_str());
 					modify_lfield_index(tdbb, dbb, gbl, r, f,
 										FLD.RDB$FIELD_NAME);
 				}
 				else {
-					DYN_error_punt(false, 205, f, new_fld, r, NULL, NULL);
+					DYN_error_punt(false, 205, f.c_str(), new_fld.c_str(), r.c_str(), NULL, NULL);
 					/* msg 205: Cannot rename field %s to %s.  A field with that name already exists in table %s. */
 				}
 			}
@@ -1166,7 +1138,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	SqlIdentifier procedure_name;
+	Firebird::MetaName procedure_name;
 
 	GET_STRING(ptr, procedure_name);
 
@@ -1182,7 +1154,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME = procedure_name
+		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME = procedure_name.c_str()
 
         if (!DYN_REQUEST(drq_m_prcs))
 			DYN_REQUEST(drq_m_prcs) = request;
@@ -1238,7 +1210,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, procedure_name);
+					DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, &procedure_name);
 				}
 
 		END_MODIFY;
@@ -1256,7 +1228,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 	}
 
 	if (!found) {
-		DYN_error_punt(false, 140, procedure_name, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 140, procedure_name.c_str(), NULL, NULL, NULL, NULL);
 		/* msg 140: "Procedure %s not found" */
 	}
 }
@@ -1274,12 +1246,11 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
  *	Modify an existing relation
  *
  **************************************/
-	SqlIdentifier name, field_name;
+	Firebird::MetaName name, field_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	field_name[0] = 0;
 	GET_STRING(ptr, name);
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
@@ -1289,7 +1260,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ name
+		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ name.c_str()
 
         if (!DYN_REQUEST(drq_m_relation))
             DYN_REQUEST(drq_m_relation) = request;
@@ -1337,7 +1308,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, name, field_name, NULL, NULL, NULL);
+					DYN_execute(gbl, ptr, &name, &field_name, NULL, NULL, NULL);
 				}
 		END_MODIFY;
 	END_FOR;
@@ -1373,7 +1344,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
  *	Modify a trigger for a relation.
  *
  **************************************/
-	SqlIdentifier trigger_name;
+	Firebird::MetaName trigger_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
@@ -1389,7 +1360,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ trigger_name
+		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ trigger_name.c_str()
 
         if (!DYN_REQUEST(drq_m_trigger)) {
             DYN_REQUEST(drq_m_trigger) = request;
@@ -1418,15 +1389,13 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 				switch (verb) {
 				case isc_dyn_trg_name:
 					{
-					SqlIdentifier new_trigger_name;
-					new_trigger_name[0] = 0;
+					Firebird::MetaName new_trigger_name;
 					/* GET_STRING(ptr, X.RDB$TRIGGER_NAME); */
 					GET_STRING(ptr, new_trigger_name);
-					fb_utils::exact_name(new_trigger_name);
-					if (!new_trigger_name[0])
+					if (new_trigger_name.length() == 0)
 						DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 						/* msg 212: "Zero length identifiers not allowed" */
-				    strcpy (X.RDB$TRIGGER_NAME, new_trigger_name);
+				    strcpy (X.RDB$TRIGGER_NAME, new_trigger_name.c_str());
 					}
 					break;
 
@@ -1471,7 +1440,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, NULL, NULL, trigger_name, NULL, NULL);
+					DYN_execute(gbl, ptr, NULL, NULL, &trigger_name, NULL, NULL);
 				}
 		END_MODIFY;
 	END_FOR;
@@ -1488,13 +1457,13 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 	}
 
 	if (!found) {
-		DYN_error_punt(false, 147, trigger_name, NULL, NULL, NULL, NULL);
+		DYN_error_punt(false, 147, trigger_name.c_str(), NULL, NULL, NULL, NULL);
 		/* msg 147: "Trigger %s not found" */
 	}
 }
 
 
-void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
+void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, Firebird::MetaName* trigger_name)
 {
 /**************************************
  *
@@ -1506,7 +1475,7 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
  *	Modify a trigger message.
  *
  **************************************/
-	SqlIdentifier t;
+	Firebird::MetaName t;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
@@ -1517,7 +1486,7 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
 
 	const int number = DYN_get_number(ptr);
 	if (trigger_name)
-		strcpy(t, trigger_name);
+		t = *trigger_name;
 	else if (*(*ptr)++ == isc_dyn_trg_name)
 		GET_STRING(ptr, t);
 	else
@@ -1526,7 +1495,7 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, TEXT* trigger_name)
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGER_MESSAGES
-			WITH X.RDB$MESSAGE_NUMBER EQ number AND X.RDB$TRIGGER_NAME EQ t
+			WITH X.RDB$MESSAGE_NUMBER EQ number AND X.RDB$TRIGGER_NAME EQ t.c_str()
 
         if (!DYN_REQUEST(drq_m_trg_msg))
             DYN_REQUEST(drq_m_trg_msg) = request;
@@ -1576,16 +1545,14 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	SqlIdentifier view_name;
+	Firebird::MetaName view_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-	view_name[0] = 0;
 	GET_STRING(ptr, view_name);
 
-	fb_utils::exact_name(view_name);
-	if (!view_name[0])
+	if (view_name.length() == 0)
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 	
@@ -1600,7 +1567,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		VRL IN RDB$VIEW_RELATIONS CROSS REL IN RDB$RELATIONS
 			WITH VRL.RDB$VIEW_NAME EQ REL.RDB$RELATION_NAME AND
-				VRL.RDB$VIEW_NAME EQ view_name
+				VRL.RDB$VIEW_NAME EQ view_name.c_str()
 
         if (!DYN_REQUEST(drq_m_relation))
 			DYN_REQUEST(drq_m_relation) = request;
@@ -1638,15 +1605,14 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, REL.RDB$RELATION_NAME, NULL,
-								NULL, NULL, NULL);
+					MetaTmp(REL.RDB$RELATION_NAME)
+						DYN_execute(gbl, ptr, &tmp, NULL, NULL, NULL, NULL);
 				}
 		END_MODIFY;
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_m_relation))
 		DYN_REQUEST(drq_m_relation) = request;
-
 	}
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -1881,8 +1847,8 @@ static void drop_log( Global* gbl)
 static void modify_lfield_position(thread_db* tdbb,
 								   Database* dbb,
 								   Global* gbl,
-								   const TEXT* relation_name,
-								   const TEXT* field_name,
+								   const Firebird::MetaName& relation_name,
+								   const Firebird::MetaName& field_name,
 								   USHORT new_position,
 								   USHORT existing_position)
 {
@@ -1918,11 +1884,11 @@ static void modify_lfield_position(thread_db* tdbb,
 
 /* Find the position of the last field in the relation */
 	SLONG max_position = -1;
-	DYN_UTIL_generate_field_position(tdbb, gbl, relation_name, &max_position);
+	DYN_UTIL_generate_field_position(tdbb, gbl, &relation_name, &max_position);
 
 /* if the existing position of the field is less than the new position of
  * the field, subtract 1 to move the fields to their new positions otherwise,
- * increase the value in RDB$FIELD_POSITION by one
+ * increase the *value in RDB$FIELD_POSITION by one
  */
 
 	bool move_down = false;
@@ -1935,15 +1901,14 @@ static void modify_lfield_position(thread_db* tdbb,
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$RELATION_FIELDS 
-        WITH FLD.RDB$RELATION_NAME EQ relation_name AND 
+        WITH FLD.RDB$RELATION_NAME EQ relation_name.c_str() AND 
         FLD.RDB$FIELD_POSITION >= MIN(new_position, existing_position) AND 
         FLD.RDB$FIELD_POSITION <= MAX(new_position, existing_position)
 		MODIFY FLD USING
 			/* If the field is the one we want, change the position, otherwise
 			 * increase the value of RDB$FIELD_POSITION
 			 */
-			fb_utils::exact_name(FLD.RDB$FIELD_NAME);
-			if (strcmp(FLD.RDB$FIELD_NAME, field_name) == 0) {
+			if (field_name == FLD.RDB$FIELD_NAME) {
 				if (new_position > max_position)
 					/* This prevents gaps in the position sequence of the
 					 * fields */
@@ -1971,7 +1936,7 @@ static void modify_lfield_position(thread_db* tdbb,
 
 	USHORT new_pos = 0;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		FLD IN RDB$RELATION_FIELDS WITH FLD.RDB$RELATION_NAME EQ relation_name
+		FLD IN RDB$RELATION_FIELDS WITH FLD.RDB$RELATION_NAME EQ relation_name.c_str()
 			SORTED BY ASCENDING FLD.RDB$FIELD_POSITION
 
         if (FLD.RDB$FIELD_POSITION != new_pos) {
@@ -1994,8 +1959,8 @@ static void modify_lfield_position(thread_db* tdbb,
 static bool check_view_dependency(thread_db* tdbb,
 									 Database* dbb,
 									 Global* gbl,
-									 const TEXT* relation_name,
-									 const TEXT* field_name)
+									 const Firebird::MetaName& relation_name,
+									 const Firebird::MetaName& field_name)
 {
 /***********************************************************
  *
@@ -2010,14 +1975,14 @@ static bool check_view_dependency(thread_db* tdbb,
  ***********************************************************/
 	jrd_req* request = NULL;
 	bool retval = false;
-	const TEXT* view_name = NULL;
+	Firebird::MetaName view_name;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1
 			X IN RDB$RELATION_FIELDS CROSS Y IN RDB$RELATION_FIELDS CROSS
 			Z IN RDB$VIEW_RELATIONS WITH
-			X.RDB$RELATION_NAME EQ relation_name AND
-			X.RDB$FIELD_NAME EQ field_name AND
+			X.RDB$RELATION_NAME EQ relation_name.c_str() AND
+			X.RDB$FIELD_NAME EQ field_name.c_str() AND
 			X.RDB$FIELD_NAME EQ Y.RDB$BASE_FIELD AND
 			X.RDB$FIELD_SOURCE EQ Y.RDB$FIELD_SOURCE AND
 			Y.RDB$RELATION_NAME EQ Z.RDB$VIEW_NAME AND
@@ -2030,7 +1995,7 @@ static bool check_view_dependency(thread_db* tdbb,
 	CMP_release(tdbb, request);
 
 	if (retval)
-		DYN_error_punt(false, 206, field_name, relation_name, view_name, NULL,
+		DYN_error_punt(false, 206, field_name.c_str(), relation_name.c_str(), view_name.c_str(), NULL,
 					   NULL);
 	/* msg 206: Column %s from table %s is referenced in  %s. */
 
@@ -2041,8 +2006,8 @@ static bool check_view_dependency(thread_db* tdbb,
 static bool check_sptrig_dependency(thread_db* tdbb,
 									   Database* dbb,
 									   Global* gbl,
-									   const TEXT* relation_name,
-									   const TEXT* field_name)
+									   const Firebird::MetaName& relation_name,
+									   const Firebird::MetaName& field_name)
 {
 /***********************************************************
  *
@@ -2056,13 +2021,13 @@ static bool check_sptrig_dependency(thread_db* tdbb,
  ***********************************************************/
 	jrd_req* request = NULL;
 	bool retval = false;
-	const TEXT* dep_name = NULL;
+	Firebird::MetaName dep_name;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1
 			DEP IN RDB$DEPENDENCIES WITH
-			DEP.RDB$DEPENDED_ON_NAME EQ relation_name AND
-			DEP.RDB$FIELD_NAME EQ field_name 
+			DEP.RDB$DEPENDED_ON_NAME EQ relation_name.c_str() AND
+			DEP.RDB$FIELD_NAME EQ field_name.c_str() 
         retval = true;
 		dep_name = DEP.RDB$DEPENDENT_NAME;
 	END_FOR;
@@ -2070,7 +2035,7 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 	CMP_release(tdbb, request);
 
 	if (retval)
-		DYN_error_punt(false, 206, field_name, relation_name, dep_name, NULL,
+		DYN_error_punt(false, 206, field_name.c_str(), relation_name.c_str(), dep_name.c_str(), NULL,
 					   NULL);
 	/* msg 206: Column %s from table %s is referenced in %s. */
 
@@ -2078,11 +2043,11 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 }
 
 static void modify_lfield_index(thread_db*	tdbb,
-								Database* dbb,
+								Database*	dbb,
 								Global*		gbl,
-								const TEXT*	relation_name,
-								const TEXT*	field_name,
-								const TEXT*	new_fld_name)
+								const Firebird::MetaName&	relation_name,
+								const Firebird::MetaName&	field_name,
+								const Firebird::MetaName&	new_fld_name)
 {
 /***********************************************************
  *
@@ -2099,11 +2064,11 @@ static void modify_lfield_index(thread_db*	tdbb,
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES CROSS IDXS IN RDB$INDEX_SEGMENTS WITH
 			IDX.RDB$INDEX_NAME EQ IDXS.RDB$INDEX_NAME AND
-			IDX.RDB$RELATION_NAME EQ relation_name AND
-			IDXS.RDB$FIELD_NAME EQ field_name
+			IDX.RDB$RELATION_NAME EQ relation_name.c_str() AND
+			IDXS.RDB$FIELD_NAME EQ field_name.c_str()
 			/* Change the name of the field in the index */
 		MODIFY IDXS USING
-			MOVE_FASTER(new_fld_name, IDXS.RDB$FIELD_NAME,
+			MOVE_FASTER(new_fld_name.c_str(), IDXS.RDB$FIELD_NAME,
 						sizeof(IDXS.RDB$FIELD_NAME));
 		END_MODIFY;
 
@@ -2117,11 +2082,11 @@ static void modify_lfield_index(thread_db*	tdbb,
 	CMP_release(tdbb, request);
 }
 
-static bool field_exists(thread_db* tdbb,
-							Database* dbb,
-							Global* gbl,
-							const TEXT* relation_name,
-							const TEXT* field_name)
+static bool field_exists(thread_db*					tdbb,
+						 Database*					dbb,
+						 Global*					gbl,
+						 const Firebird::MetaName&	relation_name,
+						 const Firebird::MetaName&	field_name)
 {
 /***********************************************************
  *
@@ -2136,8 +2101,8 @@ static bool field_exists(thread_db* tdbb,
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$RELATION_FIELDS WITH
-			FLD.RDB$RELATION_NAME EQ relation_name AND
-			FLD.RDB$FIELD_NAME EQ field_name 
+			FLD.RDB$RELATION_NAME EQ relation_name.c_str() AND
+			FLD.RDB$FIELD_NAME EQ field_name.c_str()
         retval = true;
 	END_FOR;
 
@@ -2145,7 +2110,10 @@ static bool field_exists(thread_db* tdbb,
 	return retval;
 }
 
-static bool domain_exists(thread_db* tdbb, Database* dbb, Global* gbl, const TEXT* field_name)
+static bool domain_exists(thread_db*				tdbb, 
+						  Database*					dbb, 
+						  Global*					gbl, 
+						  const Firebird::MetaName&	field_name)
 {
 /***********************************************************
  *
@@ -2159,7 +2127,7 @@ static bool domain_exists(thread_db* tdbb, Database* dbb, Global* gbl, const TEX
 	bool retval = false;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ field_name 
+		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ field_name.c_str()
         retval = true;
 	END_FOR;
 
@@ -2167,10 +2135,9 @@ static bool domain_exists(thread_db* tdbb, Database* dbb, Global* gbl, const TEX
 	return retval;
 }
 
-void DYN_modify_sql_field(Global*		gbl,
-						  const UCHAR**	ptr,
-						  const TEXT*		relation_name,
-						  TEXT*		field_name)
+void DYN_modify_sql_field(Global*					gbl,
+						  const UCHAR**				ptr,
+						  const Firebird::MetaName*	relation_name)
 {
 /**************************************
  *
@@ -2222,36 +2189,18 @@ void DYN_modify_sql_field(Global*		gbl,
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	
-	dyn_fld* orig_fld = 0;
-	dyn_fld* new_fld = 0;
-	dyn_fld* dom_fld = 0;
+	dyn_fld orig_fld, new_fld, dom_fld;
 
 	try {
 
-/* Allocate the field structures */
-	orig_fld = (dyn_fld*) gds__alloc(sizeof(struct dyn_fld));
-	if (!orig_fld)
-		DYN_error_punt(false, 211, NULL, NULL, NULL, NULL, NULL);
-
-	MOVE_CLEAR(orig_fld, sizeof(struct dyn_fld));
-
-	new_fld = (dyn_fld*) gds__alloc(sizeof(struct dyn_fld));
-	if (!new_fld)
-		DYN_error_punt(false, 211, NULL, NULL, NULL, NULL, NULL);
-	MOVE_CLEAR(new_fld, sizeof(struct dyn_fld));
-
-	dom_fld = (dyn_fld*) gds__alloc(sizeof(struct dyn_fld));
-	if (!dom_fld)
-		DYN_error_punt(false, 211, NULL, NULL, NULL, NULL, NULL);
-	MOVE_CLEAR(dom_fld, sizeof(struct dyn_fld));
-
-	GET_STRING(ptr, orig_fld->dyn_fld_name);
+	GET_STRING(ptr, orig_fld.dyn_fld_name);
 
 /* check to see if the field being altered is involved in any type of dependency.
  * If there is a dependency, call DYN_error_punt (inside the function).
  */
-	check_sptrig_dependency(tdbb, dbb, gbl, relation_name,
-							orig_fld->dyn_fld_name);
+	fb_assert(relation_name);
+	check_sptrig_dependency(tdbb, dbb, gbl, *relation_name,
+							orig_fld.dyn_fld_name);
 
 	jrd_req* request = NULL;
 	jrd_req* first_request = NULL;
@@ -2262,8 +2211,8 @@ void DYN_modify_sql_field(Global*		gbl,
 		charset = false;
 	
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		RFR IN RDB$RELATION_FIELDS WITH RFR.RDB$RELATION_NAME = relation_name
-			AND RFR.RDB$FIELD_NAME = orig_fld->dyn_fld_name
+		RFR IN RDB$RELATION_FIELDS WITH RFR.RDB$RELATION_NAME = relation_name->c_str()
+			AND RFR.RDB$FIELD_NAME = orig_fld.dyn_fld_name.c_str()
         first_request = request;
 		request = NULL;
 
@@ -2277,7 +2226,7 @@ void DYN_modify_sql_field(Global*		gbl,
 				 * can not be at any time made between
 				 * the two datatypes, error.
 				 */
-				DSC_make_descriptor(&orig_fld->dyn_dsc,
+				DSC_make_descriptor(&orig_fld.dyn_dsc,
 									FLD.RDB$FIELD_TYPE,
 									FLD.RDB$FIELD_SCALE,
 									FLD.RDB$FIELD_LENGTH,
@@ -2285,19 +2234,18 @@ void DYN_modify_sql_field(Global*		gbl,
 									FLD.RDB$CHARACTER_SET_ID,
 									FLD.RDB$COLLATION_ID);
 
-	        orig_fld->dyn_charbytelen = FLD.RDB$FIELD_LENGTH; 
-			orig_fld->dyn_dtype = FLD.RDB$FIELD_TYPE;
-			orig_fld->dyn_precision = FLD.RDB$FIELD_PRECISION;
-			orig_fld->dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
-			orig_fld->dyn_collation = FLD.RDB$COLLATION_ID;
-			orig_fld->dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
-
-			strcpy(orig_fld->dyn_fld_source, RFR.RDB$FIELD_SOURCE);
+	        orig_fld.dyn_charbytelen = FLD.RDB$FIELD_LENGTH; 
+			orig_fld.dyn_dtype = FLD.RDB$FIELD_TYPE;
+			orig_fld.dyn_precision = FLD.RDB$FIELD_PRECISION;
+			orig_fld.dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
+			orig_fld.dyn_collation = FLD.RDB$COLLATION_ID;
+			orig_fld.dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
+			orig_fld.dyn_fld_source = RFR.RDB$FIELD_SOURCE;
 
 			/* If the original field type is an array, force its blr type to blr_blob */
 			if (FLD.RDB$DIMENSIONS != 0)
 			{
-				orig_fld->dyn_dtype = blr_blob;
+				orig_fld.dyn_dtype = blr_blob;
 				has_dimensions = true;
 			}
 
@@ -2305,21 +2253,21 @@ void DYN_modify_sql_field(Global*		gbl,
 			while ((verb = *(*ptr)++) != isc_dyn_end) {
 				switch (verb) {
 				case isc_dyn_fld_source:
-					GET_STRING(ptr, dom_fld->dyn_fld_source);
+					GET_STRING(ptr, dom_fld.dyn_fld_source);
 					get_domain_type(tdbb, dbb, gbl, dom_fld);
 					update_domain = true;
 					break;
 
 				case isc_dyn_rel_name:
-					GET_STRING(ptr, new_fld->dyn_rel_name);
+					GET_STRING(ptr, new_fld.dyn_rel_name);
 					break;
 
 				case isc_dyn_fld_length:
 					fldlen = true;
-					new_fld->dyn_dsc.dsc_length = DYN_get_number(ptr);
+					new_fld.dyn_dsc.dsc_length = DYN_get_number(ptr);
 					if (++field_adjusted_count > 2)
 						DYN_error_punt(false, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
-					switch (new_fld->dyn_dtype)
+					switch (new_fld.dyn_dtype)
 					{
 					case blr_text:
 					case blr_text2:
@@ -2327,39 +2275,39 @@ void DYN_modify_sql_field(Global*		gbl,
 					case blr_varying2:
 					case blr_cstring:
 					case blr_cstring2:
-						new_fld->dyn_charbytelen = new_fld->dyn_dsc.dsc_length;
+						new_fld.dyn_charbytelen = new_fld.dyn_dsc.dsc_length;
 						break;
 					default:
-						new_fld->dyn_charbytelen = 0; /* It won't be used, anyway. */
+						new_fld.dyn_charbytelen = 0; /* It won't be used, anyway. */
 						break;
 					}
 					break;
 
 				case isc_dyn_fld_type:
 					dtype = true;
-					new_fld->dyn_dtype = DYN_get_number(ptr);
+					new_fld.dyn_dtype = DYN_get_number(ptr);
 					if (++field_adjusted_count > 2)
 						DYN_error_punt(false, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
 
-					switch (new_fld->dyn_dtype) {
+					switch (new_fld.dyn_dtype) {
 					case blr_text:
 					case blr_text2:
 					case blr_varying:
 					case blr_varying2:
 					case blr_cstring:
 					case blr_cstring2:
-						if (new_fld->dyn_dsc.dsc_length && !new_fld->dyn_charbytelen)
-							new_fld->dyn_charbytelen = new_fld->dyn_dsc.dsc_length;
-						new_fld->dyn_dsc.dsc_length = DSC_string_length (&new_fld->dyn_dsc);
+						if (new_fld.dyn_dsc.dsc_length && !new_fld.dyn_charbytelen)
+							new_fld.dyn_charbytelen = new_fld.dyn_dsc.dsc_length;
+						new_fld.dyn_dsc.dsc_length = DSC_string_length (&new_fld.dyn_dsc);
 						break;
 
 					case blr_short:
-						new_fld->dyn_dsc.dsc_length = 2;
+						new_fld.dyn_dsc.dsc_length = 2;
 						break;
 
 					case blr_long:
 					case blr_float:
-						new_fld->dyn_dsc.dsc_length = 4;
+						new_fld.dyn_dsc.dsc_length = 4;
 						break;
 
 					case blr_int64:
@@ -2368,7 +2316,7 @@ void DYN_modify_sql_field(Global*		gbl,
 					case blr_timestamp:
 					case blr_double:
 					case blr_d_float:
-						new_fld->dyn_dsc.dsc_length = 8;
+						new_fld.dyn_dsc.dsc_length = 8;
 						break;
 
 					default:
@@ -2378,41 +2326,41 @@ void DYN_modify_sql_field(Global*		gbl,
 
 				case isc_dyn_fld_scale:
 					scale = true;
-					new_fld->dyn_dsc.dsc_scale = DYN_get_number(ptr);
+					new_fld.dyn_dsc.dsc_scale = DYN_get_number(ptr);
 					break;
 
 				case isc_dyn_fld_precision:
 					prec = true;
-					new_fld->dyn_precision = DYN_get_number(ptr);
+					new_fld.dyn_precision = DYN_get_number(ptr);
 					break;
 
 				case isc_dyn_fld_sub_type:
 					subtype = true;
-					new_fld->dyn_dsc.dsc_sub_type = DYN_get_number(ptr);
+					new_fld.dyn_dsc.dsc_sub_type = DYN_get_number(ptr);
 					break;
 
 				case isc_dyn_fld_char_length:
 					charlen = true;
-					new_fld->dyn_charlen = DYN_get_number(ptr);
+					new_fld.dyn_charlen = DYN_get_number(ptr);
 					break;
 
 				case isc_dyn_fld_collation:
 					collation = true;
-					new_fld->dyn_collation = DYN_get_number(ptr);
+					new_fld.dyn_collation = DYN_get_number(ptr);
 					break;
 
 				case isc_dyn_fld_character_set:
 					charset = true;
-					new_fld->dyn_charset = DYN_get_number(ptr);
+					new_fld.dyn_charset = DYN_get_number(ptr);
 					break;
 
 				case isc_dyn_fld_not_null:
 					nullflg = true;
-					new_fld->dyn_null_flag = true;
+					new_fld.dyn_null_flag = true;
 					break;
 
 				case isc_dyn_fld_dimensions:
-					new_fld->dyn_dtype = blr_blob;
+					new_fld.dyn_dtype = blr_blob;
 					break;
 
 					/* These should only be defined for BLOB types and should not come through with
@@ -2425,8 +2373,8 @@ void DYN_modify_sql_field(Global*		gbl,
 
 				default:
 					--(*ptr);
-					DYN_execute(gbl, ptr, relation_name, RFR.RDB$FIELD_SOURCE,
-								NULL, NULL, NULL);
+					MetaTmp(RFR.RDB$FIELD_SOURCE)
+						DYN_execute(gbl, ptr, relation_name, &tmp, NULL, NULL, NULL);
 				}
 			}
 		END_FOR; /* FLD in RDB$FIELDS */
@@ -2440,12 +2388,12 @@ void DYN_modify_sql_field(Global*		gbl,
 			/* CVC: Since get_domain_type() called above already called DSC_make_descriptor,
 					there's no point in calling it again, since it will increment AGAIN the length
 					of varchar fields! This bug detected thanks to new check field dyn_charbytelen.
-			DSC_make_descriptor(&dom_fld->dyn_dsc,
-								dom_fld->dyn_dtype,
-								dom_fld->dyn_dsc.dsc_scale,
-								dom_fld->dyn_dsc.dsc_length,
-								dom_fld->dyn_dsc.dsc_sub_type,
-								dom_fld->dyn_charset, dom_fld->dyn_collation);
+			DSC_make_descriptor(&dom_fld.dyn_dsc,
+								dom_fld.dyn_dtype,
+								dom_fld.dyn_dsc.dsc_scale,
+								dom_fld.dyn_dsc.dsc_length,
+								dom_fld.dyn_dsc.dsc_sub_type,
+								dom_fld.dyn_charset, dom_fld.dyn_collation);
 			*/
 
 			const ULONG retval = check_update_fld_type(orig_fld, dom_fld);
@@ -2453,8 +2401,8 @@ void DYN_modify_sql_field(Global*		gbl,
 				modify_err_punt(tdbb, retval, orig_fld, dom_fld);
 
 			/* if the original definition was a base field type, remove the entries from RDB$FIELDS */
-			if (!strncmp(orig_fld->dyn_fld_source, IMPLICIT_DOMAIN_PREFIX,
-				IMPLICIT_DOMAIN_PREFIX_LEN))
+			if (!strncmp(orig_fld.dyn_fld_source.c_str(), 
+					IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN))
 			{
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME =
@@ -2467,18 +2415,18 @@ void DYN_modify_sql_field(Global*		gbl,
 			}
 			request = first_request;
 			MODIFY RFR USING
-				strcpy(RFR.RDB$FIELD_SOURCE, dom_fld->dyn_fld_source);
+				strcpy(RFR.RDB$FIELD_SOURCE, dom_fld.dyn_fld_source.c_str());
 				RFR.RDB$FIELD_SOURCE.NULL = FALSE;
 			END_MODIFY;
 			first_request = request;
 		}
 		else {
-			DSC_make_descriptor(&new_fld->dyn_dsc,
-								new_fld->dyn_dtype,
-								new_fld->dyn_dsc.dsc_scale,
-								new_fld->dyn_dsc.dsc_length,
-								new_fld->dyn_dsc.dsc_sub_type,
-								new_fld->dyn_charset, new_fld->dyn_collation);
+			DSC_make_descriptor(&new_fld.dyn_dsc,
+								new_fld.dyn_dtype,
+								new_fld.dyn_dsc.dsc_scale,
+								new_fld.dyn_dsc.dsc_length,
+								new_fld.dyn_dsc.dsc_sub_type,
+								new_fld.dyn_charset, new_fld.dyn_collation);
 			const ULONG retval = check_update_fld_type(orig_fld, new_fld);
 			if (retval != FB_SUCCESS)
 				modify_err_punt(tdbb, retval, orig_fld, new_fld);
@@ -2488,14 +2436,14 @@ void DYN_modify_sql_field(Global*		gbl,
 			 * field name for RDB$FIELDS
 			 */
 
-			if (strncmp(orig_fld->dyn_fld_source, IMPLICIT_DOMAIN_PREFIX,
-				IMPLICIT_DOMAIN_PREFIX_LEN))
+			if (strncmp(orig_fld.dyn_fld_source.c_str(), 
+					IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN))
 			{
 				request = first_request;
 				MODIFY RFR USING
 					DYN_UTIL_generate_field_name(tdbb, gbl,
 												 RFR.RDB$FIELD_SOURCE);
-					strcpy(new_fld->dyn_fld_name, RFR.RDB$FIELD_SOURCE);
+					new_fld.dyn_fld_name = RFR.RDB$FIELD_SOURCE;
 				END_MODIFY;
 				first_request = request;
 				request = NULL;
@@ -2521,42 +2469,42 @@ void DYN_modify_sql_field(Global*		gbl,
 					FLD.RDB$COLLATION_ID.NULL = TRUE;
 
 					if (dtype) {
-						FLD.RDB$FIELD_TYPE = new_fld->dyn_dtype;
+						FLD.RDB$FIELD_TYPE = new_fld.dyn_dtype;
 						FLD.RDB$FIELD_TYPE.NULL = FALSE;
 					}
 
 					if (scale) {
-						FLD.RDB$FIELD_SCALE = new_fld->dyn_dsc.dsc_scale;
+						FLD.RDB$FIELD_SCALE = new_fld.dyn_dsc.dsc_scale;
 						FLD.RDB$FIELD_SCALE.NULL = FALSE;
 					}
 
 					if (prec) {
-						FLD.RDB$FIELD_PRECISION = new_fld->dyn_precision;
+						FLD.RDB$FIELD_PRECISION = new_fld.dyn_precision;
 						FLD.RDB$FIELD_PRECISION.NULL = FALSE;
 					}
 
 					if (subtype) {
 						FLD.RDB$FIELD_SUB_TYPE =
-							new_fld->dyn_dsc.dsc_sub_type;
+							new_fld.dyn_dsc.dsc_sub_type;
 						FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 					}
 
 					if (charlen) {
-						FLD.RDB$CHARACTER_LENGTH = new_fld->dyn_charlen;
+						FLD.RDB$CHARACTER_LENGTH = new_fld.dyn_charlen;
 						FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
 					}
 
 					if (fldlen) {
 						/* CVC: Rescue from the wrong field_length with a helper. */
-						if (new_fld->dyn_dsc.dsc_dtype <= dtype_varying && new_fld->dyn_charbytelen)
-							FLD.RDB$FIELD_LENGTH = new_fld->dyn_charbytelen;
+						if (new_fld.dyn_dsc.dsc_dtype <= dtype_varying && new_fld.dyn_charbytelen)
+							FLD.RDB$FIELD_LENGTH = new_fld.dyn_charbytelen;
 						else
-							FLD.RDB$FIELD_LENGTH = new_fld->dyn_dsc.dsc_length;
+							FLD.RDB$FIELD_LENGTH = new_fld.dyn_dsc.dsc_length;
 						FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 					}
 
 					/* Copy the field name into RDB$FIELDS */
-					strcpy(FLD.RDB$FIELD_NAME, new_fld->dyn_fld_name);
+					strcpy(FLD.RDB$FIELD_NAME, new_fld.dyn_fld_name.c_str());
 				END_STORE;
 
 				CMP_release(tdbb, request);
@@ -2569,37 +2517,37 @@ void DYN_modify_sql_field(Global*		gbl,
 					MODIFY FLD USING
 
 						if (dtype) {
-							FLD.RDB$FIELD_TYPE = new_fld->dyn_dtype;
+							FLD.RDB$FIELD_TYPE = new_fld.dyn_dtype;
 							FLD.RDB$FIELD_TYPE.NULL = FALSE;
 						}
 
 						if (scale) {
-							FLD.RDB$FIELD_SCALE = new_fld->dyn_dsc.dsc_scale;
+							FLD.RDB$FIELD_SCALE = new_fld.dyn_dsc.dsc_scale;
 							FLD.RDB$FIELD_SCALE.NULL = FALSE;
 						}
 
 						if (prec) {
-							FLD.RDB$FIELD_PRECISION = new_fld->dyn_precision;
+							FLD.RDB$FIELD_PRECISION = new_fld.dyn_precision;
 							FLD.RDB$FIELD_PRECISION.NULL = FALSE;
 						}
 
 						if (subtype) {
 							FLD.RDB$FIELD_SUB_TYPE =
-								new_fld->dyn_dsc.dsc_sub_type;
+								new_fld.dyn_dsc.dsc_sub_type;
 							FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 						}
 
 						if (charlen) {
-							FLD.RDB$CHARACTER_LENGTH = new_fld->dyn_charlen;
+							FLD.RDB$CHARACTER_LENGTH = new_fld.dyn_charlen;
 							FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
 						}
 
 						if (fldlen) {
 							/* CVC: Rescue from the wrong field_length with a helper. */
-							if (new_fld->dyn_dsc.dsc_dtype <= dtype_varying && new_fld->dyn_charbytelen)
-								FLD.RDB$FIELD_LENGTH = new_fld->dyn_charbytelen;
+							if (new_fld.dyn_dsc.dsc_dtype <= dtype_varying && new_fld.dyn_charbytelen)
+								FLD.RDB$FIELD_LENGTH = new_fld.dyn_charbytelen;
 							else
-								FLD.RDB$FIELD_LENGTH = new_fld->dyn_dsc.dsc_length;
+								FLD.RDB$FIELD_LENGTH = new_fld.dyn_dsc.dsc_length;
 							FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 						}
 
@@ -2619,39 +2567,18 @@ void DYN_modify_sql_field(Global*		gbl,
 	/* msg 96: "Local column not found" */
 
 /* Update any indicies that exist */
-	modify_lfield_index(tdbb, dbb, gbl, relation_name, orig_fld->dyn_fld_name,
-						orig_fld->dyn_fld_name);
-
-	if (new_fld)
-		gds__free(new_fld);
-
-	if (dom_fld)
-		gds__free(dom_fld);
-
-	if (orig_fld)
-		gds__free(orig_fld);
+	modify_lfield_index(tdbb, dbb, gbl, *relation_name, orig_fld.dyn_fld_name,
+						orig_fld.dyn_fld_name);
 
 	}
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (new_fld) {
-			gds__free(new_fld);
-		}
-
-		if (dom_fld) {
-			gds__free(dom_fld);
-		}
-
-		if (orig_fld) {
-			gds__free(orig_fld);
-		}
-
 		DYN_error_punt(true, 95, NULL, NULL, NULL, NULL, NULL);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
 	}
 }
 
-void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld* dom_fld)
+void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld& dom_fld)
 {
 /**************************************
  *
@@ -2668,9 +2595,9 @@ void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld* dom_f
 	jrd_req* request = NULL;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ dom_fld->dyn_fld_source;
+		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ dom_fld.dyn_fld_source.c_str();
 
-		DSC_make_descriptor(&dom_fld->dyn_dsc,
+		DSC_make_descriptor(&dom_fld.dyn_dsc,
 							FLD.RDB$FIELD_TYPE,
 							FLD.RDB$FIELD_SCALE,
 							FLD.RDB$FIELD_LENGTH,
@@ -2678,19 +2605,19 @@ void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld* dom_f
 							FLD.RDB$CHARACTER_SET_ID,
 							FLD.RDB$COLLATION_ID);
 
-		dom_fld->dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
-		dom_fld->dyn_dtype = FLD.RDB$FIELD_TYPE;
-		dom_fld->dyn_precision = FLD.RDB$FIELD_PRECISION;
-		dom_fld->dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
-		dom_fld->dyn_collation = FLD.RDB$COLLATION_ID;
-		dom_fld->dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
+		dom_fld.dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
+		dom_fld.dyn_dtype = FLD.RDB$FIELD_TYPE;
+		dom_fld.dyn_precision = FLD.RDB$FIELD_PRECISION;
+		dom_fld.dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
+		dom_fld.dyn_collation = FLD.RDB$COLLATION_ID;
+		dom_fld.dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
 
 	END_FOR;
 	CMP_release(tdbb, request);
 }
 
-static ULONG check_update_fld_type(const dyn_fld* orig_fld,
-									const dyn_fld* new_fld)
+static ULONG check_update_fld_type(const dyn_fld& orig_fld,
+									const dyn_fld& new_fld)
 {
 /**************************************
  *
@@ -2717,12 +2644,12 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 
 
 /* Check to make sure that the old and new types are compatible */
-	switch (orig_fld->dyn_dtype) {
+	switch (orig_fld.dyn_dtype) {
 /* CHARACTER types */
 	case blr_text:
 	case blr_varying:
 	case blr_cstring:
-		switch (new_fld->dyn_dtype) {
+		switch (new_fld.dyn_dtype) {
 		case blr_blob:
 		case blr_blob_id:
 			return isc_dyn_dtype_invalid;
@@ -2753,13 +2680,13 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 						we should have the added bytes for varchar. For cstring, we are used, since
 						DSC_make_descriptor(DSC_string_length) != DSC_string_length(DSC_make_descriptor). */
 
-				const USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
+				const USHORT maxflen = DSC_string_length(&orig_fld.dyn_dsc);
 
 				/* We can have this assertion since this case is for both string fields. */
-				fb_assert(DSC_string_length(&new_fld->dyn_dsc) - maxflen
-					== new_fld->dyn_charbytelen - orig_fld->dyn_charbytelen);
-				// if (new_fld->dyn_dsc.dsc_length < maxflen)
-				if (DSC_string_length(&new_fld->dyn_dsc) < maxflen)
+				fb_assert(DSC_string_length(&new_fld.dyn_dsc) - maxflen
+					== new_fld.dyn_charbytelen - orig_fld.dyn_charbytelen);
+				// if (new_fld.dyn_dsc.dsc_length < maxflen)
+				if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
 				/* New size specified for column %s must be greater than %d characters. */
 			}
@@ -2783,21 +2710,21 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 	case blr_sql_date:
 	case blr_sql_time:
 	case blr_timestamp:
-		switch (new_fld->dyn_dtype) {
+		switch (new_fld.dyn_dtype) {
 		case blr_sql_date:
-			if (orig_fld->dyn_dtype == blr_sql_time)
+			if (orig_fld.dyn_dtype == blr_sql_time)
 				return isc_dyn_invalid_dtype_conversion;
 			/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
 			break;
 
 		case blr_sql_time:
-			if (orig_fld->dyn_dtype == blr_sql_date)
+			if (orig_fld.dyn_dtype == blr_sql_date)
 				return isc_dyn_invalid_dtype_conversion;
 			/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
 			break;
 
 		case blr_timestamp:
-			if (orig_fld->dyn_dtype == blr_sql_time)
+			if (orig_fld.dyn_dtype == blr_sql_time)
 				return isc_dyn_invalid_dtype_conversion;
 			/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
 			break;
@@ -2811,11 +2738,11 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 		case blr_cstring:
 		case blr_cstring2:
 			{
-				const USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
+				const USHORT maxflen = DSC_string_length(&orig_fld.dyn_dsc);
 
 				// CVC: Solve bug #910423, missing DSC_string_length call.
-				// if (new_fld->dyn_dsc.dsc_length < maxflen)
-                if (DSC_string_length(&new_fld->dyn_dsc) < maxflen)
+				// if (new_fld.dyn_dsc.dsc_length < maxflen)
+                if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
 				/* New size specified for column %s must be greater than %d characters. */
 			}
@@ -2835,7 +2762,7 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 	case blr_d_float:
 	case blr_double:
 	case blr_float:
-		switch (new_fld->dyn_dtype) {
+		switch (new_fld.dyn_dtype) {
 		case blr_blob:
 		case blr_blob_id:
 			return isc_dyn_dtype_invalid;
@@ -2853,7 +2780,7 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 			 * is there enough space in the new field (do not allow the base type to decrease) */
 
 		case blr_short:
-			switch (orig_fld->dyn_dtype) {
+			switch (orig_fld.dyn_dtype) {
 			case blr_short:
 				break;
 			default:
@@ -2863,7 +2790,7 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 			break;
 
 		case blr_long:
-			switch (orig_fld->dyn_dtype) {
+			switch (orig_fld.dyn_dtype) {
 			case blr_long:
 			case blr_short:
 				break;
@@ -2874,7 +2801,7 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 			break;
 
 		case blr_float:
-			switch (orig_fld->dyn_dtype) {
+			switch (orig_fld.dyn_dtype) {
 			case blr_float:
 			case blr_short:
 				break;
@@ -2886,7 +2813,7 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 			break;
 
 		case blr_int64:
-			switch (orig_fld->dyn_dtype) {
+			switch (orig_fld.dyn_dtype) {
 			case blr_int64:
 			case blr_long:
 			case blr_short:
@@ -2900,7 +2827,7 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 
 		case blr_d_float:
 		case blr_double:
-			switch (orig_fld->dyn_dtype) {
+			switch (orig_fld.dyn_dtype) {
 			case blr_double:
 			case blr_d_float:
 			case blr_float:
@@ -2920,11 +2847,11 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 		case blr_varying:
 		case blr_cstring:
 			{
-				const USHORT maxflen = DSC_string_length(&orig_fld->dyn_dsc);
+				const USHORT maxflen = DSC_string_length(&orig_fld.dyn_dsc);
 
 				// CVC: Solve bug #910423, missing DSC_string_length call.
-				// if (new_fld->dyn_dsc.dsc_length < maxflen)
-                if (DSC_string_length(&new_fld->dyn_dsc) < maxflen)
+				// if (new_fld.dyn_dsc.dsc_length < maxflen)
+                if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
 				/* New size specified for column %s must be greater than %d characters. */
 			}
@@ -2945,8 +2872,8 @@ static ULONG check_update_fld_type(const dyn_fld* orig_fld,
 
 static void modify_err_punt(thread_db* tdbb,
 							ULONG errorcode,
-							const dyn_fld* orig_fld_def,
-							const dyn_fld* new_fld_def)
+							const dyn_fld& orig_fld_def,
+							const dyn_fld& new_fld_def)
 {
 /**************************************
  *
@@ -2965,13 +2892,13 @@ static void modify_err_punt(thread_db* tdbb,
 
 	switch (errorcode) {
 	case isc_dyn_dtype_invalid:
-		DYN_error_punt(false, 207, orig_fld_def->dyn_fld_name, NULL, NULL,
+		DYN_error_punt(false, 207, orig_fld_def.dyn_fld_name.c_str(), NULL, NULL,
 					   NULL, NULL);
 		/* Cannot change datatype for column %s.The operation cannot be performed on DATE, BLOB, or ARRAY columns. */
 		break;
 
 	case isc_dyn_dtype_conv_invalid:
-		DYN_error_punt(false, 210, orig_fld_def->dyn_fld_name, NULL, NULL,
+		DYN_error_punt(false, 210, orig_fld_def.dyn_fld_name.c_str(), NULL, NULL,
 					   NULL, NULL);
 		/* Cannot convert column %s from character to non-character data. */
 		break;
@@ -2980,8 +2907,8 @@ static void modify_err_punt(thread_db* tdbb,
 		/* TMN: Bad, bad, bad cast. int -> TEXT* */
 		DYN_error_punt(false,
 						208,
-						orig_fld_def->dyn_fld_name,
-						(TEXT*)(IPTR)DSC_string_length(&orig_fld_def->dyn_dsc),
+						orig_fld_def.dyn_fld_name.c_str(),
+						(TEXT*)(IPTR)DSC_string_length(&orig_fld_def.dyn_dsc),
 						NULL,
 						NULL,
 						NULL);
@@ -2992,12 +2919,12 @@ static void modify_err_punt(thread_db* tdbb,
 		{
 			TEXT orig_type[25], new_type[25];
 
-			DSC_get_dtype_name(&orig_fld_def->dyn_dsc, orig_type,
+			DSC_get_dtype_name(&orig_fld_def.dyn_dsc, orig_type,
 							   sizeof(orig_type));
-			DSC_get_dtype_name(&new_fld_def->dyn_dsc, new_type,
+			DSC_get_dtype_name(&new_fld_def.dyn_dsc, new_type,
 							   sizeof(new_type));
 
-			DYN_error_punt(false, 209, orig_fld_def->dyn_fld_name, orig_type,
+			DYN_error_punt(false, 209, orig_fld_def.dyn_fld_name.c_str(), orig_type,
 						   new_type, NULL, NULL);
 			/* Cannot convert base type %s to base type %s. */
 			break;

@@ -33,7 +33,7 @@ USHORT	INI_get_trig_flags(const TEXT*);
 void	INI_init();
 void	INI_init2();
 const Jrd::jrd_trg*	INI_lookup_sys_trigger(Jrd::jrd_rel*, const Jrd::jrd_trg*,
-										  const UCHAR**, UCHAR*, const SCHAR**,
+										   const UCHAR**, UCHAR*, const TEXT**,
 										  USHORT*);
 void INI_update_database();
 

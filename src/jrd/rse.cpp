@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.84 2004-12-07 01:19:54 skidder Exp $
+ * $Id: rse.cpp,v 1.85 2005-05-12 18:28:03 alexpeshkoff Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2111,7 +2111,7 @@ static bool get_procedure(thread_db*			tdbb,
 	if (!impure->irsb_message)
 	{
 		const SLONG size = msg_format->fmt_length + ALIGNMENT;
-		impure->irsb_message = FB_NEW_RPT(*tdbb->getDefaultPool(), size) str();
+		impure->irsb_message = FB_NEW_RPT(*tdbb->getDefaultPool(), size) VaryingString();
 		impure->irsb_message->str_length = size;
 	}
 	UCHAR* om =
@@ -3811,4 +3811,3 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 						 reinterpret_cast<char*>(mfb->mfb_block_data),
 						 mfb->mfb_block_size);
 }
-

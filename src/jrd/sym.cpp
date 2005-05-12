@@ -34,7 +34,7 @@
 using namespace Jrd;
 
 namespace {
-	SSHORT hash_func(const Firebird::string&);
+	SSHORT hash_func(const Firebird::MetaName&);
 }
 
 void Symbol::insert()
@@ -68,7 +68,7 @@ void Symbol::insert()
 }
 
 
-Symbol* Symbol::lookup(const Firebird::string& string)
+Symbol* Symbol::lookup(const Firebird::MetaName& string)
 {
 /**************************************
  *
@@ -141,7 +141,7 @@ void Symbol::remove()
 
 namespace {
 
-SSHORT hash_func(const Firebird::string& str)
+SSHORT hash_func(const Firebird::MetaName& str)
 {
 /**************************************
  *

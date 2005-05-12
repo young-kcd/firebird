@@ -33,9 +33,9 @@ const int STUFF_COUNT		= 4;
 const int TEXT_BLOB_LENGTH	= 512;
 
 
-#define GET_STRING(from, to)	DYN_get_string ((const TEXT**)from, (TEXT*)to, sizeof (to), true)
+#define GET_STRING(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to), true)
 
-#define GET_STRING_2(from, to)	DYN_get_string ((const TEXT**)from, (TEXT*)to, sizeof (to), false)
+#define GET_STRING_2(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to), false)
 
 namespace Jrd {
 
@@ -57,10 +57,14 @@ struct dyn_fld {
 	USHORT dyn_charlen;
 	SSHORT dyn_collation;
 	SSHORT dyn_charset;
-	SqlIdentifier dyn_fld_source;
-	SqlIdentifier dyn_rel_name;
-	SqlIdentifier dyn_fld_name;
+	Firebird::MetaName dyn_fld_source;
+	Firebird::MetaName dyn_rel_name;
+	Firebird::MetaName dyn_fld_name;
     USHORT dyn_charbytelen; /* Used to check modify operations on string types. */
+public:
+	explicit dyn_fld(MemoryPool& p) 
+		: dyn_fld_source(p), dyn_rel_name(p), dyn_fld_name(p) { }
+	dyn_fld() { }
 };
 
 } //namespace Jrd
@@ -69,16 +73,17 @@ void	DYN_error(bool, USHORT, const TEXT*, const TEXT*, const TEXT*,
 				const TEXT*, const TEXT*);
 void	DYN_error_punt(bool, USHORT, const TEXT*, const TEXT*,
 				const TEXT*, const TEXT*, const TEXT*);
-void	DYN_execute(Jrd::Global*, const UCHAR**, const TEXT*, TEXT*, TEXT*, TEXT*, TEXT*);
+void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
 SLONG	DYN_get_number(const UCHAR**);
-USHORT	DYN_get_string(const TEXT**, TEXT*, USHORT, bool);
-TEXT*	DYN_dup_string(MemoryPool&, const TEXT**, bool, USHORT = 0);
+USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, TEXT*, size_t, bool);
 
 // This function is not defined anywhere.
 // void	DYN_get_string2(TEXT**, TEXT*, USHORT);
 
 // This function doesn't need to be exported currently.
-bool	DYN_is_it_sql_role(Jrd::Global*, const TEXT*, TEXT*, Jrd::thread_db*);
+bool	DYN_is_it_sql_role(Jrd::Global*, const Firebird::MetaName&, Firebird::MetaName&, Jrd::thread_db*);
 USHORT	DYN_put_blr_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
 
 // This function is not defined anywhere.

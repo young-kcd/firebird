@@ -43,6 +43,7 @@
 
 #include "../include/fb_vector.h"
 #include "../common/classes/fb_string.h"
+#include "../common/classes/MetaName.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
@@ -96,7 +97,6 @@
 // Definition of DatabasePlugins
 #include "../jrd/flu.h"
 
-class str;
 class CharSetContainer;
 struct dsc;
 struct thread;
@@ -539,7 +539,7 @@ const ULONG ATT_gstat_attachment	= 65536;	// Indicate a GSTAT attachment
 
 /* Procedure block */
 
-class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
+class jrd_prc : public pool_alloc<type_prc>
 {
     public:
 	USHORT prc_id;
@@ -555,7 +555,6 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 	vec*		prc_input_fields;	/* vector of field blocks */
 	vec*		prc_output_fields;	/* vector of field blocks */
 	jrd_req*	prc_request;	/* compiled procedure request */
-	Firebird::string prc_security_name;	/* security class name for procedure */
 	USHORT prc_use_count;		/* requests compiled with procedure */
 	SSHORT prc_int_use_count;	/* number of procedures compiled with procedure, set and 
 	                               used internally in the MET_clear_cache procedure 
@@ -563,7 +562,8 @@ class jrd_prc : public pool_alloc_rpt<SCHAR, type_prc>
 								   (it will usually be 0)
 								*/
 	Lock* prc_existence_lock;	/* existence lock, if any */
-	Firebird::string prc_name;	/* ascic name */
+	Firebird::MetaName prc_security_name;	/* security class name for procedure */
+	Firebird::MetaName prc_name;	/* ascic name */
 	USHORT prc_alter_count;		/* No. of times the procedure was altered */
 
 	public:
@@ -592,17 +592,15 @@ const USHORT PRC_check_existence	= 128;	/* Existence lock released */
 
 /* Parameter block */
 
-class Parameter : public pool_alloc_rpt<SCHAR, type_prm>
+class Parameter : public pool_alloc<type_prm>
 {
     public:
-	USHORT 		prm_number;
+	USHORT		prm_number;
 	dsc			prm_desc;
 	jrd_nod*	prm_default_val;
-//	Firebird::string prm_name;		/* asciiz name */
-	TEXT 		prm_string[2];		/* one byte for ALLOC and one for the terminating null */
+	Firebird::MetaName prm_name;		/* asciiz name */
     public:
-//	explicit Parameter(MemoryPool& p) : prm_name(p) { }
-	Parameter() { }
+	explicit Parameter(MemoryPool& p) : prm_name(p) { }
 };
 
 
@@ -637,11 +635,11 @@ public:
 	UCHAR		type;			// Trigger type
 	USHORT		flags;			// Flags as they are in RDB$TRIGGERS table
 	jrd_rel*	relation;		// Trigger parent relation
-	Firebird::string	name;	// Trigger name
+	Firebird::MetaName	name;	// Trigger name
 	void compile(thread_db*);	// Ensure that trigger is compiled
 	void release(thread_db*);	// Try to free trigger request
 
-	Trigger(MemoryPool& p) : blr(p), name(p) { }
+	explicit Trigger(MemoryPool& p) : blr(p), name(p) { }
 };
 
 typedef Firebird::ObjectsArray<Trigger> trig_vec;
@@ -671,7 +669,7 @@ private:
 	TranGarbageArray array;
 
 public:
-	RelationGarbage(MemoryPool& p) : array(p) {}
+	explicit RelationGarbage(MemoryPool& p) : array(p) {}
 	~RelationGarbage() { clear(); }
 
 	void addPage(MemoryPool* pool, const SLONG pageno, const SLONG tranid);
@@ -685,6 +683,25 @@ public:
 
 #endif //GARBAGE_THREAD
 
+
+/* view context block to cache view aliases */
+
+class ViewContext
+{
+public:
+	Firebird::MetaName	vcx_context_name;
+	Firebird::MetaName	vcx_relation_name;
+	USHORT	vcx_context;
+	static const USHORT& generate(const void*, const ViewContext& vc) 
+	{ 
+		return vc.vcx_context; 
+	}
+};
+
+typedef Firebird::SortedArray<ViewContext, Firebird::EmptyStorage<ViewContext>, 
+		USHORT, ViewContext> ViewContexts;
+
+
 /* Relation block; one is created for each relation referenced
    in the database, though it is not really filled out until
    the relation is scanned */
@@ -695,18 +712,17 @@ public:
 	USHORT	rel_id;
 	USHORT	rel_flags;
 	USHORT	rel_current_fmt;	/* Current format number */
-	UCHAR	rel_length;			/* length of ascii relation name */
 	Format*	rel_current_format;	/* Current record format */
-	TEXT*	rel_name;			/* pointer to ascii relation name */
+	Firebird::MetaName	rel_name;		/* ascii relation name */
 	vec*	rel_formats;		/* Known record formats */
-	TEXT*	rel_owner_name;		/* pointer to ascii owner */
+	Firebird::MetaName	rel_owner_name;	/* ascii owner */
 	vcl*	rel_pages;			/* vector of pointer page numbers */
 	vec*	rel_fields;			/* vector of field blocks */
 
-	RecordSelExpr* rel_view_rse;	/* view record select expression */
-	ViewContext*	rel_view_contexts;	/* linked list of view contexts */
+	RecordSelExpr*	rel_view_rse;		/* view record select expression */
+	ViewContexts	rel_view_contexts;	/* sorted array of view contexts */
 
-	TEXT *rel_security_name;	/* pointer to security class name for relation */
+	Firebird::MetaName	rel_security_name;	/* security class name for relation */
 	ExternalFile* rel_file;		/* external file name */
 	SLONG rel_index_root;		/* index root page number */
 	SLONG rel_data_pages;		/* count of relation data pages */
@@ -742,6 +758,10 @@ public:
 	trig_vec*	rel_post_store;	/* Post-operation store trigger */
 	prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
 	frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
+
+public:
+	explicit jrd_rel(MemoryPool& p) 
+		: rel_name(p), rel_owner_name(p), rel_security_name(p), rel_view_contexts(p) { }
 };
 
 // rel_flags
@@ -763,20 +783,22 @@ const USHORT REL_deleting				= 4096;		/* relation delete in progress */
 
 /* Field block, one for each field in a scanned relation */
 
-class jrd_fld : public pool_alloc_rpt<SCHAR, type_fld>
+class jrd_fld : public pool_alloc<type_fld>
 {
-    public:
+public:
 	jrd_nod*	fld_validation;		/* validation clause, if any */
 	jrd_nod*	fld_not_null;		/* if field cannot be NULL */
 	jrd_nod*	fld_missing_value;	/* missing value, if any */
 	jrd_nod*	fld_computation;	/* computation for virtual field */
 	jrd_nod*	fld_source;			/* source for view fields */
 	jrd_nod*	fld_default_value;	/* default value, if any */
-	TEXT*		fld_security_name;	/* pointer to security class name for field */
 	ArrayField*	fld_array;			/* array description, if array */
-	const TEXT*	fld_name;			/* Field name */
-	UCHAR		fld_length;			/* Field name length */
-	UCHAR		fld_string[2];		/* one byte for ALLOC and one for the terminating null */
+	Firebird::MetaName	fld_name;	/* Field name */
+	Firebird::MetaName	fld_security_name;	/* security class name for field */
+
+public:
+	explicit jrd_fld(MemoryPool& p) 
+		: fld_name(p), fld_security_name(p) { }
 };
 
 
@@ -794,18 +816,6 @@ class IndexBlock : public pool_alloc<type_idb>
 	UCHAR idb_id;
 };
 
-
-
-/* view context block to cache view aliases */
-
-class ViewContext: public pool_alloc<type_vcx>
-{
-    public:
-	ViewContext*	vcx_next;
-	str*	vcx_context_name;
-	str*	vcx_relation_name;
-	USHORT	vcx_context;
-};
 
 
 /* general purpose vector */
@@ -1067,20 +1077,23 @@ inline char* stringDup(MemoryPool& p, const char* s)
 	return stringDup(p, s, strlen(s));
 }
 
+// Used in string convsersion calls
+typedef Firebird::HalfStaticArray<UCHAR, 256> MoveBuffer;
+
 } //namespace Jrd
 
 /* Lock levels */
 #include "../lock/lock.h"
 
-/* Random string block -- jack of all kludges */
+/* Random string block -- as long as impure areas don't have
+ * constructors and destructors, the need this varying string */
 
-class str : public pool_alloc_rpt<SCHAR, type_str>
+class VaryingString : public pool_alloc_rpt<SCHAR, type_str>
 {
 public:
 	USHORT str_length;
-	UCHAR str_data[2];			/* one byte for ALLOC and one for the NULL */
+	UCHAR str_data[2];			// one byte for ALLOC and one for the NULL
 };
-
 
 /* Threading macros */
 
@@ -1212,4 +1225,3 @@ namespace Jrd {
 }
 
 #endif /* JRD_JRD_H */
-

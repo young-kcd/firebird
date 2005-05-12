@@ -125,31 +125,14 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
  **************************************/
 
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
-	UCHAR temp[800];
+	Firebird::HalfStaticArray<UCHAR, 800> temp;
 
 	thread_db* tdbb = JRD_get_thread_data();
 
 	// Start by constructing argument list
-	str* temp_string;
-	UCHAR* temp_ptr;
-
-	if (function->fun_temp_length < sizeof(temp))
-	{
-		temp_string = NULL;
-		temp_ptr = temp;
-		MOVE_CLEAR(temp, sizeof(temp));
-	}
-	else
-	{
-		// Need to align the starting address because it consists of
-		// a number of data blocks with aligned length
-
-		temp_string =
-			FB_NEW_RPT(*tdbb->getDefaultPool(),
-				function->fun_temp_length + DOUBLE_ALIGN - 1) str;
-		MOVE_CLEAR(temp_string->str_data, temp_string->str_length); // useless, as noted by NS
-		temp_ptr = (UCHAR *) FB_ALIGN((U_IPTR) temp_string->str_data, DOUBLE_ALIGN);
-	}
+	UCHAR* temp_ptr = temp.getBuffer(function->fun_temp_length + DOUBLE_ALIGN);
+	MOVE_CLEAR(temp_ptr, temp.getCount());
+	temp_ptr = (UCHAR *) FB_ALIGN((U_IPTR) temp_ptr, DOUBLE_ALIGN);
 
 	MOVE_CLEAR(args, sizeof(args));
 	UDF_ARG* arg_ptr = args;
@@ -178,7 +161,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	if (value->vlu_desc.dsc_dtype <= dtype_varying)
 	{
 		const USHORT ret_length = value->vlu_desc.dsc_length;
-		str* string = value->vlu_string;
+		VaryingString* string = value->vlu_string;
 		if (string && string->str_length < ret_length)
 		{
 			delete string;
@@ -186,7 +169,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 		}
 		if (!string)
 		{
-			string = FB_NEW_RPT(*tdbb->getDefaultPool(), ret_length) str;
+			string = FB_NEW_RPT(*tdbb->getDefaultPool(), ret_length) VaryingString;
 			string->str_length = ret_length;
 			value->vlu_string = string;
 		}
@@ -527,15 +510,12 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	} // try
 	catch (const std::exception&) 
 	{
-		delete temp_string;
 		// CVC: Maybe we should loop here trying to close blobs from blob_stack, too.
 		while (array_stack.hasData()) {
 			delete[] array_stack.pop();
 		}
 		throw;
 	}
-
-	delete temp_string;
 
 	while (blob_stack.hasData())
 	{
@@ -554,7 +534,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 }
 
 
-UserFunction* FUN_lookup_function(const Firebird::string& name, bool ShowAccessError)
+UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAccessError)
 {
 /**************************************
  *
@@ -1117,4 +1097,3 @@ static void invoke(UserFunction* function,
 	}
 	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 }
-

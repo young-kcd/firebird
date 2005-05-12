@@ -33,6 +33,7 @@
 
 #include "../jrd/jrd_blks.h"
 #include "../common/classes/array.h"
+#include "../common/classes/MetaName.h"
 
 #include "gen/iberror.h"
 
@@ -63,7 +64,7 @@ DEFINE_TRACE_ROUTINE(cmp_trace);
 #define CMP_TRACE(args) /* nothing */
 #endif
 
-class str;
+class VaryingString;
 struct dsc;
 
 namespace Jrd {
@@ -196,7 +197,7 @@ struct impure_state {
 struct impure_value {
 	dsc vlu_desc;
 	USHORT vlu_flags; // Computed/invariant flags
-	str* vlu_string;
+	VaryingString* vlu_string;
 	union {
 		SSHORT vlu_short;
 		SLONG vlu_long;
@@ -562,22 +563,20 @@ typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>,
 	Resource, Firebird::DefaultKeyValue<Resource>, Resource> ResourceList;
 
 /* Access items */
+// In case we start to use MetaName with required pool parameter,
+// access item to be reworked!
 
 struct AccessItem
 {
-	const TEXT*	acc_security_name;
-	SLONG	acc_view_id;
-	const TEXT*	acc_name;
-	const TEXT*	acc_type;
-	SecurityClass::flags_t acc_mask;
-
-	static int strcmp_null(const char* s1, const char* s2) {
-		return s1 == NULL ? s2 != NULL : s2 == NULL ? -1 : strcmp(s1, s2);
-	}
+	Firebird::MetaName		acc_security_name;
+	SLONG					acc_view_id;
+	Firebird::MetaName		acc_name;
+	const TEXT*				acc_type;
+	SecurityClass::flags_t	acc_mask;
 
 	static bool greaterThan(const AccessItem& i1, const AccessItem& i2) {
 		int v;
-		if ((v = strcmp_null(i1.acc_security_name, i2.acc_security_name)) != 0)
+		if ((v = i1.acc_security_name.compare(i2.acc_security_name)) != 0)
 			return v > 0;
 
 		if (i1.acc_view_id != i2.acc_view_id)
@@ -589,14 +588,14 @@ struct AccessItem
 		if ((v = strcmp(i1.acc_type, i2.acc_type)) != 0) 
 			return v > 0;
 
-		if ((v = strcmp(i1.acc_name, i2.acc_name)) != 0)
+		if ((v = i1.acc_name.compare(i2.acc_name)) != 0)
 			return v > 0;
 
 		return false; // Equal
 	}
 
-	AccessItem(const TEXT* security_name, SLONG view_id, const TEXT* name,
-		const TEXT* type, SecurityClass::flags_t mask)
+	AccessItem(const Firebird::MetaName& security_name, SLONG view_id, 
+		const Firebird::MetaName& name, const TEXT* type, SecurityClass::flags_t mask)
 	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
 		acc_type(type), acc_mask(mask)
 	{}
@@ -746,7 +745,7 @@ public:
 		USHORT csb_indices;			/* Number of indices */
 
 		jrd_rel* csb_relation;
-		Firebird::string* csb_alias;	/* SQL alias name for this instance of relation */
+		Firebird::MetaName* csb_alias;	/* SQL alias name for this instance of relation */
 		jrd_prc* csb_procedure;
 		jrd_rel* csb_view;		/* parent view */
 
@@ -830,4 +829,3 @@ const int XCP_MESSAGE_LENGTH	= 1023 - sizeof(USHORT);
 } //namespace Jrd
 
 #endif // JRD_EXE_H
-

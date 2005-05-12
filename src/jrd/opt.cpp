@@ -126,18 +126,18 @@ static RecordSource* gen_boolean(thread_db*, OptimizerBlk*, RecordSource*, jrd_n
 static void gen_deliver_unmapped(thread_db*, NodeStack*, jrd_nod*, NodeStack*, UCHAR);
 static RecordSource* gen_first(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static void gen_join(thread_db*, OptimizerBlk*, UCHAR*, RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
-static RecordSource* gen_navigation(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, str*, index_desc*, jrd_nod**);
+static RecordSource* gen_navigation(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, VaryingString*, index_desc*, jrd_nod**);
 #ifdef SCROLLABLE_CURSORS
-static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, str*, index_desc*, RSE_GET_MODE);
+static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, VaryingString*, index_desc*, RSE_GET_MODE);
 #else
-static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, str*, index_desc*);
+static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, VaryingString*, index_desc*);
 #endif
 static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverStack&, jrd_nod**, jrd_nod**);
 static RecordSource* gen_procedure(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**,
 					jrd_nod**, bool, bool, jrd_nod**);
-static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT, jrd_rel*, str*, jrd_nod*, float);
+static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT, jrd_rel*, VaryingString*, jrd_nod*, float);
 static RecordSource*	gen_skip (thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static RecordSource* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCHAR*,
 							RecordSource*, jrd_nod*, bool);
@@ -1450,7 +1450,7 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 
 /* check to make sure that all indices are either used or marked not to be used,
    and that there are no unused navigational indices */
-	SqlIdentifier index_name;
+	Firebird::MetaName index_name;
 
 	const index_desc* idx = csb_tail->csb_idx->items;
 	for (USHORT i = 0; i < csb_tail->csb_indices; i++) {
@@ -1467,12 +1467,12 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 									 (USHORT) (idx->idx_id + 1));
 				}
 				else {
-					index_name[0] = 0;
+					index_name = "";
 				}
 
 				/* index %s cannot be used in the specified plan */
 				ERR_post(isc_index_unused, isc_arg_string,
-						 ERR_cstring(index_name), 0);
+						 ERR_cstring(index_name.c_str()), 0);
 			}
 		}
 		++idx;
@@ -2310,7 +2310,7 @@ static bool dump_index(const jrd_nod* node,
 		break;
 	}
 
-	SqlIdentifier index_name;
+	Firebird::MetaName index_name;
 	// dump sub-nodes or the actual index info
 	if ((node->nod_type == nod_bit_and) ||
 		(node->nod_type == nod_bit_or) ||
@@ -2327,17 +2327,14 @@ static bool dump_index(const jrd_nod* node,
 		IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 		MET_lookup_index(tdbb, index_name, retrieval->irb_relation->rel_name,
 						 (USHORT) (retrieval->irb_index + 1));
-		SSHORT length = strlen(index_name);
 
-		*buffer_length -= 1 + length;
+		*buffer_length -= 1 + index_name.length();
 		if (*buffer_length < 0) {
 			return false;
 		}
-		*buffer++ = (SCHAR) length;
-		const TEXT* i = index_name;
-		while (length--) {
-			*buffer++ = *i++;
-		}
+		*buffer++ = (SCHAR) (index_name.length());
+		memcpy(buffer, index_name.c_str(), index_name.length());
+		buffer += index_name.length();
 	}
 
 	*buffer_ptr = buffer;
@@ -2378,14 +2375,14 @@ static bool dump_rsb(const jrd_req* request,
 	USHORT length = 0;
 	const SCHAR* name = NULL;
 
-	const str* alias = rsb->rsb_alias;
+	const VaryingString* alias = rsb->rsb_alias;
 	if (alias) {
 		length = alias->str_length;
 		name = (SCHAR *) alias->str_data;
 	}
 	else if (relation) {
-		length = strlen(relation->rel_name);
-		name = relation->rel_name;
+		length = relation->rel_name.length();
+		name = relation->rel_name.c_str();
 	}
 
 	if (name) {
@@ -2467,7 +2464,7 @@ static bool dump_rsb(const jrd_req* request,
         if (request->req_procedure ||
 			procedure->prc_request->req_fors.getCount() == 0)
 		{
-			const Firebird::string& n = procedure->prc_name;
+			const Firebird::MetaName& n = procedure->prc_name;
 			*buffer_length -= 6 + n.length();
             if (*buffer_length < 0) {
                 return false;
@@ -4265,7 +4262,7 @@ static void gen_join(thread_db*		tdbb,
 static RecordSource* gen_navigation(thread_db* tdbb,
 						  OptimizerBlk* opt,
 						  USHORT stream,
-						  jrd_rel* relation, str* alias, index_desc* idx,
+						  jrd_rel* relation, VaryingString* alias, index_desc* idx,
 						  jrd_nod** sort_ptr)
 {
 /**************************************
@@ -4408,7 +4405,7 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 
 static RecordSource* gen_nav_rsb(thread_db* tdbb,
 					   OptimizerBlk* opt,
-					   USHORT stream, jrd_rel* relation, str* alias, index_desc* idx
+					   USHORT stream, jrd_rel* relation, VaryingString* alias, index_desc* idx
 #ifdef SCROLLABLE_CURSORS
 					   , RSE_GET_MODE mode
 #endif
@@ -4713,7 +4710,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 	fb_assert(relation);
 
-	str* alias = make_alias(tdbb, csb, csb_tail);
+	VaryingString* alias = make_alias(tdbb, csb, csb_tail);
 	csb_tail->csb_flags |= csb_active;
 /* bug #8180 reported by Bill Karwin: when a DISTINCT and an ORDER BY 
    are done on different fields, and the ORDER BY can be mapped to an 
@@ -5070,7 +5067,7 @@ static RecordSource* gen_rsb(thread_db* tdbb,
 				   RecordSource* rsb,
 				   jrd_nod* inversion,
 				   SSHORT stream,
-				   jrd_rel* relation, str* alias, jrd_nod* boolean, float cardinality)
+				   jrd_rel* relation, VaryingString* alias, jrd_nod* boolean, float cardinality)
 {
 /**************************************
  *
@@ -7459,4 +7456,3 @@ static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat* csb_tail,
 
 	return idx_walk_count;
 }
-

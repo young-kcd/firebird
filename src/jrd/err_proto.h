@@ -25,6 +25,7 @@
 #define JRD_ERR_PROTO_H
 
 #include "../common/classes/fb_string.h"
+#include "../common/classes/MetaName.h"
 
 #ifndef REQUESTER
 
@@ -63,7 +64,17 @@ void	ERR_log(int, int, const TEXT*);
 #endif /* REQUESTER */
 
 const TEXT*		ERR_cstring(const TEXT*);
-const TEXT*		ERR_cstring(const Firebird::string&);
+inline const TEXT*		ERR_cstring(const Firebird::string& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
+inline const TEXT*		ERR_cstring(const Firebird::MetaName& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
+
+// AP: used ?
+
 const TEXT*		ERR_string(const TEXT*, int);
 
 #endif /* JRD_ERR_PROTO_H */

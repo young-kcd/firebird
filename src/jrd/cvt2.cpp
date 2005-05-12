@@ -700,8 +700,6 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	/* The second parameter should be a string. */
 	else
 	{
-		UCHAR buffer1[BUFFER_LARGE];
-
 		if (arg1->dsc_sub_type == isc_blob_text)
 			ttype1 = arg1->dsc_scale;       /* Load blob character set */
 		else
@@ -746,15 +744,8 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		if (!bin_cmp)
 			(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
 
-		str* temp_str = 0;
-		UCHAR* dbuf = 0;
-		if (arg2->dsc_length + 1 > BUFFER_LARGE)
-		{
-			temp_str = FB_NEW_RPT(*tdbb->getDefaultPool(), arg2->dsc_length + 1) str();
-			dbuf = temp_str->str_data;
-	    }
-		else
-			dbuf = buffer1;
+		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer1;
+		UCHAR* dbuf = buffer1.getBuffer(arg2->dsc_length + 1);
 
 		desc1.dsc_address = dbuf;
 		blb* blob1 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (bid*) arg1->dsc_address);
@@ -762,10 +753,6 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		desc1.dsc_length = l1;
 	    ret_val = CVT2_compare(&desc1, arg2, err);
 		BLB_close(tdbb, blob1);
-
-		/*  do a block deallocation of local variables */
-		if (temp_str)
-			delete temp_str;
 	}
 	return ret_val;
 }
@@ -799,8 +786,9 @@ void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
 
 USHORT CVT2_make_string2(const dsc* desc,
 						 USHORT to_interp,
-						 UCHAR** address,
-						 vary* temp, USHORT length, str** ptr, FPTR_ERROR err)
+						 UCHAR** address, 
+						 Jrd::MoveBuffer& temp, 
+						 FPTR_ERROR err)
 {
 /**************************************
  *
@@ -813,12 +801,6 @@ USHORT CVT2_make_string2(const dsc* desc,
  *     Convert the data from the desc to a string in the specified interp.
  *     The pointer to this string is returned in address.
  *
- *     Should the string not fit in the specified temporary buffer, 
- *     memory is allocated to hold the conversion.
- *
- *     It is the caller's responsibility to free the buffer.
- *     
- *
  **************************************/
 	UCHAR* from_buf;
 	USHORT from_len;
@@ -827,10 +809,6 @@ USHORT CVT2_make_string2(const dsc* desc,
 	fb_assert(desc != NULL);
 	fb_assert(address != NULL);
 	fb_assert(err != NULL);
-	fb_assert((((temp != NULL) && (length > 0))
-			|| ((INTL_TTYPE(desc) <= dtype_any_text)
-				&& (INTL_TTYPE(desc) == to_interp))) || (ptr != NULL));
-	fb_assert((ptr == NULL) || (*ptr == NULL));
 
 	if (desc->dsc_dtype == dtype_text) {
 		from_buf = desc->dsc_address;
@@ -868,15 +846,9 @@ USHORT CVT2_make_string2(const dsc* desc,
 			return from_len;
 		}
 		else {
-			const USHORT needed_len = INTL_convert_bytes(tdbb, cs1, NULL, 0,
-											cs2, from_buf, from_len, err);
-			UCHAR* tempptr = (UCHAR *) temp;
-			if (needed_len > length) {
-				*ptr = FB_NEW_RPT(*tdbb->getDefaultPool(), needed_len) str();
-				(*ptr)->str_length = needed_len;
-				tempptr = (*ptr)->str_data;
-				length = needed_len;
-			}
+			USHORT length = INTL_convert_bytes(tdbb, cs1, NULL, 0,
+											   cs2, from_buf, from_len, err);
+			UCHAR* tempptr = temp.getBuffer(length);
 			length = INTL_convert_bytes(tdbb, cs1, tempptr, length,
 										cs2, from_buf, from_len, err);
 			*address = tempptr;
@@ -888,13 +860,13 @@ USHORT CVT2_make_string2(const dsc* desc,
 
 	dsc temp_desc;
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
-	temp_desc.dsc_length = length;
-	temp_desc.dsc_address = (UCHAR *) temp;
+	temp_desc.dsc_length = temp.getCapacity();
+	temp_desc.dsc_address = temp.getBuffer(temp_desc.dsc_length);
+	vary* vtmp = reinterpret_cast<vary*>(temp_desc.dsc_address);
 	INTL_ASSIGN_TTYPE(&temp_desc, to_interp);
 	temp_desc.dsc_dtype = dtype_varying;
 	CVT_move(desc, &temp_desc, err);
-	*address = reinterpret_cast<UCHAR*>(temp->vary_string);
+	*address = reinterpret_cast<UCHAR*>(vtmp->vary_string);
 
-	return temp->vary_length;
+	return vtmp->vary_length;
 }
-

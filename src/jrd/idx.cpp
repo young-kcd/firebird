@@ -71,8 +71,6 @@
 using namespace Jrd;
 typedef Ods::index_root_page index_root_page;
 
-static const SCHAR NULL_STR = '\0';
-
 /* Data to be passed to index fast load duplicates routine */
 
 struct index_fast_load {
@@ -120,7 +118,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 		if (idx.idx_flags & idx_foreign) {
 			/* find the corresponding primary key index */
 
-			if (!MET_lookup_partner(tdbb, relation, &idx, &NULL_STR)) {
+			if (!MET_lookup_partner(tdbb, relation, &idx, 0)) {
 				continue;
 			}
 			jrd_rel* referenced_relation =
@@ -775,8 +773,7 @@ IDX_E IDX_modify_check_constraints(thread_db* tdbb,
 		   (tdbb, org_rpb->rpb_relation, transaction, &idx, &window)) 
 	{
 		if (!(idx.idx_flags & (idx_primary | idx_unique))
-			|| !MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx,
-			&NULL_STR))
+			|| !MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx,0))
 		{
 				continue;
 		}
@@ -918,9 +915,7 @@ static IDX_E check_duplicates(
 	old_rpb.rpb_record = NULL;
 
 	jrd_rel* relation_1 = insertion->iib_relation;
-
-	str *temp_buf = NULL;
-
+	Firebird::HalfStaticArray<UCHAR, 256> tmp;
 	RecordBitmap::Accessor accessor(insertion->iib_duplicates);
 
 	if (accessor.getFirst())
@@ -974,7 +969,6 @@ static IDX_E check_duplicates(
 			
 			if (record_idx->idx_flags & idx_expressn)
 			{
-				UCHAR tmp[256];
 				bool flag_idx;
 				const dsc* desc_idx = eval_expr_idx(tdbb, record_idx, record, flag_idx);
 				
@@ -986,15 +980,7 @@ static IDX_E check_duplicates(
 
 				desc1 = *desc_idx;
 				const USHORT idx_dsc_length = record_idx->idx_expression_desc.dsc_length;
-				if (idx_dsc_length < sizeof(tmp)) {
-					desc1.dsc_address = tmp;
-				}
-				else {
-					if (!temp_buf)
-						temp_buf = FB_NEW_RPT(*tdbb->getDefaultPool(), idx_dsc_length) str();
-
-					desc1.dsc_address = temp_buf->str_data;
-				}
+				desc1.dsc_address = tmp.getBuffer(idx_dsc_length);
 				fb_assert(desc_idx->dsc_length <= idx_dsc_length);
 				memmove(desc1.dsc_address, desc_idx->dsc_address, desc_idx->dsc_length);
 
@@ -1092,9 +1078,6 @@ static IDX_E check_duplicates(
 	if (old_rpb.rpb_record)
 		delete old_rpb.rpb_record;
 
-	if (temp_buf)
-		delete temp_buf;
-
 	return result;
 }
 
@@ -1123,7 +1106,7 @@ static IDX_E check_foreign_key(
 
 	IDX_E result = idx_e_ok;
 
-	if (!MET_lookup_partner(tdbb, relation, idx, &NULL_STR)) {
+	if (!MET_lookup_partner(tdbb, relation, idx, 0)) {
 		return result;
 	}
 
@@ -1564,4 +1547,3 @@ static void signal_index_deletion(thread_db* tdbb, jrd_rel* relation, USHORT id)
 
 	index_block_flush(index_block);
 }
-

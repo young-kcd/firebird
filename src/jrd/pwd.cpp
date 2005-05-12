@@ -218,7 +218,7 @@ checkForFreeSpace:
 		{
 			THREAD_EXIT();
 			fullAccess.leave();
-			THD_sleep(1000 * FAILURE_DELAY);
+			THREAD_SLEEP(1000 * FAILURE_DELAY);
 			THREAD_ENTER();
 			fullAccess.enter();
 		}
@@ -370,14 +370,27 @@ bool SecurityDatabase::prepare()
 	isc_attach_database(status, 0, user_info_name, &lookup_db, 
 		dpb.getBufferLength(), 
 		reinterpret_cast<const char*>(dpb.getBuffer()));
-	
-	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
+
+	if (status[1])
+	{
+		char buffer[1024];
+		const ISC_STATUS *s = status;
+		fb_interpret(buffer, sizeof buffer, &s);
+		gds__log(buffer);
+	}
+	else {
+		isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
 						reinterpret_cast<const char*>(PWD_REQUEST));
+	}
 
 	JRD_thread_security_disable(false);
 
 	if (status[1])
 	{
+		char buffer[1024];
+		const ISC_STATUS *s = status;
+		fb_interpret(buffer, sizeof buffer, &s);
+		gds__log(buffer);
 		return false;
 	}
 

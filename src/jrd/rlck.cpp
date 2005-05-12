@@ -222,8 +222,10 @@ Lock* RLCK_lock_relation(jrd_rel* relation,
 	lock->lck_object = ast_arg;
 
 	if (!obtain_lock(0, lock, lock_level))
-		ERR_post(isc_relation_lock, isc_arg_string, relation->rel_name, 0);
-
+	{
+		ERR_post(isc_relation_lock, isc_arg_string, 
+					relation->rel_name.c_str(), 0);
+	}
 	return lock;
 }
 #endif
@@ -438,7 +440,10 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 	if (level <= lock->lck_logical)
 		return lock;
 	if (transaction->tra_flags & TRA_reserving)
-		ERR_post(isc_unres_rel, isc_arg_string, relation->rel_name, 0);
+	{
+		ERR_post(isc_unres_rel, isc_arg_string, 
+				relation->rel_name.c_str(), 0);
+	}
 /* get lock */
 	USHORT result;
 	if (lock->lck_logical)

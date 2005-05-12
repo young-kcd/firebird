@@ -67,7 +67,7 @@ bool expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*,
 							  jrd_nod*, USHORT);
 #endif
 double getRelationCardinality(thread_db*, jrd_rel*,const Format*);
-str* make_alias(thread_db*, CompilerScratch*, CompilerScratch::csb_repeat*);
+VaryingString* make_alias(thread_db*, CompilerScratch*, CompilerScratch::csb_repeat*);
 jrd_nod* make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
 USHORT nav_rsb_size(RecordSource*, USHORT, USHORT);
 
@@ -167,7 +167,7 @@ public:
 protected:
 	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, NOD_T node_type) const;
 	void findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const;
-	str* getAlias();
+	VaryingString* getAlias();
 	InversionCandidate* generateInversion(RecordSource** rsb);
 	RecordSource* generateNavigation();
 	bool getInversionCandidates(InversionCandidateList* inversions, 
@@ -183,7 +183,7 @@ private:
 	MemoryPool& pool;
 	thread_db* tdbb;
 	SSHORT stream;
-	str* alias;
+	VaryingString* alias;
 	jrd_nod** sort;
 	jrd_rel* relation;
 	CompilerScratch* csb;
@@ -273,4 +273,3 @@ private:
 } // namespace Jrd
 
 #endif // OPTIMIZER_H
-

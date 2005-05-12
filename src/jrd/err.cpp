@@ -132,12 +132,6 @@ void ERR_corrupt(int number)
 #endif
 
 
-const TEXT* ERR_cstring(const Firebird::string& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
-
-
 const TEXT* ERR_cstring(const TEXT* in_string)
 {
 /**************************************
@@ -174,18 +168,17 @@ void ERR_duplicate_error(IDX_E	code,
  *	Duplicate error during index update.
  *
  **************************************/
-	SqlIdentifier index;
-	SqlIdentifier constraint;
+	Firebird::MetaName index, constraint;
 	const TEXT* index_name;
 	const TEXT* constraint_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 
 	MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
-	if (index[0]) {
+	if (index.length()) {
 		index_name = ERR_cstring(index);
-		MET_lookup_cnstrt_for_index(tdbb, constraint, index_name);
-		if (constraint[0])
+		MET_lookup_cnstrt_for_index(tdbb, constraint, index);
+		if (constraint.length() > 0)
 			constraint_name = ERR_cstring(constraint);
 		else
 			constraint_name = "***unknown***";
@@ -207,21 +200,21 @@ void ERR_duplicate_error(IDX_E	code,
 
 	case idx_e_foreign_target_doesnt_exist:
 		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
-			 	 isc_arg_string, relation->rel_name, 
+			 	 isc_arg_string, relation->rel_name.c_str(), 
 			 	 isc_arg_gds, isc_foreign_key_target_doesnt_exist, 0);
 		break;
 
 	case idx_e_foreign_references_present:
 		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
-			 	 isc_arg_string, relation->rel_name,
+			 	 isc_arg_string, relation->rel_name.c_str(),
 			 	 isc_arg_gds, isc_foreign_key_references_present, 0);
 		break;
 
 	default:
-		if (constraint[0])
+		if (constraint.length() > 0)
 			ERR_post(isc_unique_key_violation,
 					 isc_arg_string, constraint_name,
-					 isc_arg_string, relation->rel_name, 0);
+					 isc_arg_string, relation->rel_name.c_str(), 0);
 		else
 			ERR_post(isc_no_dup, isc_arg_string, index_name, 0);
 	}

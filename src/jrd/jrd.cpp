@@ -245,7 +245,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			throw;
 		}
 		
-		if (name.hasData()) 
+		if (name.length()) 
 		{
 			request->req_trg_name = name.c_str();
 		}

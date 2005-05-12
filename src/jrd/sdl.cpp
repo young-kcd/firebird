@@ -174,13 +174,12 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
  *	element descriptor.
  *
  **************************************/
-	TEXT* q;
 	USHORT n, offset;
 	array_range range;
 
 	const UCHAR* p = sdl;
 	info->sdl_info_fid = info->sdl_info_rid = 0;
-	info->sdl_info_relation[0] = info->sdl_info_field[0] = 0;
+	info->sdl_info_relation = info->sdl_info_field = "";
 
 	if (*p++ != isc_sdl_version1)
 		return error(status_vector, isc_invalid_sdl,
@@ -210,18 +209,14 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 
 		case isc_sdl_field:
 			n = *p++;
-			fb_assert(n < sizeof(info->sdl_info_field));
-			for (q = info->sdl_info_field; n; --n)
-				*q++ = (TEXT) *p++;
-			*q = 0;
+			info->sdl_info_field.assign(reinterpret_cast<const char *>(p), n);
+			p += n;
 			break;
 
 		case isc_sdl_relation:
 			n = *p++;
-			fb_assert(sizeof(info->sdl_info_relation));
-			for (q = info->sdl_info_relation; n; --n)
-				*q++ = (TEXT) *p++;
-			*q = 0;
+			info->sdl_info_relation.assign(reinterpret_cast<const char *>(p), n);
+			p += n;
 			break;
 
 		default:

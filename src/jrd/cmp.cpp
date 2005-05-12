@@ -146,7 +146,6 @@ static RecordSource* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static bool stream_in_rse(USHORT, RecordSelExpr*);
-static SSHORT strcmp_space(const TEXT*, const TEXT*);
 static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request);
 static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view);
 
@@ -339,24 +338,24 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 			if (!(owner_relation->rel_flags & REL_system))
 			{
 				if (!strcmp(access->acc_type, object_table)
-					&& !strcmp(access->acc_name, owner_relation->rel_name))
+					&& (owner_relation->rel_name == access->acc_name))
 				{
 					continue;
 				}
 				if (!strcmp(access->acc_type, object_column)
-					&& (MET_lookup_field(tdbb, owner_relation, access->acc_name, access->acc_security_name) >= 0
+					&& (MET_lookup_field(tdbb, owner_relation, access->acc_name, &access->acc_security_name) >= 0
 					|| MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
 				{
 					continue;
 				}
 			}
 			// a direct access to an object from this trigger
-			const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
+			const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
 			SCL_check_access(sec_class,
 							(access->acc_view_id) ? access->acc_view_id : 
 								(view ? view->rel_id : 0),
 							t.request->req_trg_name, 0, access->acc_mask,
-							access->acc_type, access->acc_name);
+							access->acc_type, access->acc_name.c_str());
 		}
 	}
 }
@@ -386,9 +385,9 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 				 access < prc->prc_request->req_access.end();
 				 access++) 
 			{
-				const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
+				const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
 				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name.c_str(), 
-								 access->acc_mask, access->acc_type, access->acc_name);
+								 access->acc_mask, access->acc_type, access->acc_name.c_str());
 			}
 		} else {
 			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
@@ -420,9 +419,9 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	for (const AccessItem* access = request->req_access.begin(); access < request->req_access.end();
 		access++) 
 	{
-		const SecurityClass* sec_class = SCL_get_class(access->acc_security_name);
+		const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
 		SCL_check_access(sec_class, access->acc_view_id, NULL, NULL, 
-						 access->acc_mask, access->acc_type, access->acc_name);
+						 access->acc_mask, access->acc_type, access->acc_name.c_str());
 	}
 }
 
@@ -462,7 +461,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 		jrd_prc* procedure = request->req_procedure;
 		if (procedure) {
 			const TEXT* prc_sec_name =
-				(procedure->prc_security_name.hasData() ?
+				(procedure->prc_security_name.length() > 0 ?
 				procedure->prc_security_name.c_str() : NULL);
 			const SecurityClass* sec_class = SCL_get_class(prc_sec_name);
 			SCL_check_access(sec_class, 0, 0,
@@ -2089,11 +2088,11 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 void CMP_post_access(thread_db* tdbb,
 					 CompilerScratch* csb,
-					 const TEXT* security_name,
+					 const Firebird::MetaName& security_name,
 					 SLONG view_id,
 					 SecurityClass::flags_t mask,
 					 const TEXT* type_name,
-					 const TEXT* name)
+					 const Firebird::MetaName& name)
 {
 /**************************************
  *
@@ -2117,22 +2116,15 @@ void CMP_post_access(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 	
-	AccessItem temp(security_name, view_id, name, type_name, mask);
+	AccessItem access(security_name, view_id, name, type_name, mask);
 
 	size_t i;
 
-	if (csb->csb_access.find(temp, i))
+	if (csb->csb_access.find(access, i))
 	{
 		return;
 	}
 
-	AccessItem access(
-		stringDup(*(tdbb->getDefaultPool()), security_name),
-		view_id,
-		stringDup(*(tdbb->getDefaultPool()), name),
-		type_name,
-		mask
-	);
 	csb->csb_access.insert(i, access);
 }
 
@@ -2431,13 +2423,11 @@ static UCHAR* alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 
 	SET_TDBB(tdbb);
 
-	str* string = FB_NEW_RPT(*tdbb->getDefaultPool(), MAP_LENGTH) str;
-	string->str_length = MAP_LENGTH;
-	csb->csb_rpt[stream].csb_map = string->str_data;
+	csb->csb_rpt[stream].csb_map = FB_NEW(*tdbb->getDefaultPool()) UCHAR[MAP_LENGTH];
 	fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR maybe?
-	string->str_data[0] = (UCHAR) stream;
+	csb->csb_rpt[stream].csb_map[0] = (UCHAR) stream;
 
-	return string->str_data;
+	return csb->csb_rpt[stream].csb_map;
 }
 
 
@@ -4245,18 +4235,12 @@ static void pass1_source(thread_db*			tdbb,
 	// in the case where there is a parent view, find the context name
 
 	if (parent_view) {
-		for (ViewContext** vcx_ptr = &parent_view->rel_view_contexts; *vcx_ptr;
-			 vcx_ptr = &(*vcx_ptr)->vcx_next)
-		{
-			if ((*vcx_ptr)->vcx_context ==
-				(USHORT)(IPTR) source->nod_arg[e_rel_context])
-			{
-				element->csb_alias = FB_NEW(csb->csb_pool) 
-					Firebird::string(csb->csb_pool, 
-						(TEXT*)((*vcx_ptr)->vcx_context_name->str_data), 
-						(*vcx_ptr)->vcx_context_name->str_length);
-				break;
-			}
+		ViewContexts &ctx = parent_view->rel_view_contexts;
+		USHORT key = (USHORT)(IPTR) source->nod_arg[e_rel_context];
+		size_t pos;
+		if (ctx.find(key, pos)) {
+			element->csb_alias = FB_NEW(csb->csb_pool) 
+				Firebird::MetaName(csb->csb_pool, ctx[pos].vcx_context_name);
 		}
 	}
 
@@ -4574,7 +4558,7 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 		rse->rse_sorted ||
 		!(node = rse->rse_relation[0]) || node->nod_type != nod_relation)
 	{
-		ERR_post(isc_read_only_view, isc_arg_string, relation->rel_name, 0);
+		ERR_post(isc_read_only_view, isc_arg_string, relation->rel_name.c_str(), 0);
 	}
 
 	// for an updateable view, return the view source
@@ -5337,7 +5321,7 @@ static void plan_check(const CompilerScratch* csb, const RecordSelExpr* rse)
 			const USHORT stream = (USHORT)(IPTR) (*ptr)->nod_arg[e_rel_stream];
 			if (!(csb->csb_rpt[stream].csb_plan)) {
 				ERR_post(isc_no_stream_plan, isc_arg_string,
-						 csb->csb_rpt[stream].csb_relation->rel_name, 0);
+						 csb->csb_rpt[stream].csb_relation->rel_name.c_str(), 0);
 			}
 		}
 		else if ((*ptr)->nod_type == nod_rse) {
@@ -5423,10 +5407,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 		// for the base table (if multiple aliases are specified)
 
 		if (*p &&
-			(tail->csb_relation
-			 && !strcmp_space(tail->csb_relation->rel_name, p))
-			|| (tail->csb_alias
-				&& !strcmp_space(tail->csb_alias->c_str(), p)))
+			((tail->csb_relation && tail->csb_relation->rel_name == p) ||
+			 (tail->csb_alias && *(tail->csb_alias) == p)))
 		{
 			while (*p && *p != ' ') {
 				p++;
@@ -5455,7 +5437,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 				else {
 					// view %s has more than one base relation; use aliases to distinguish
 					ERR_post(isc_view_alias, isc_arg_string,
-							 plan_relation->rel_name, 0);
+							 plan_relation->rel_name.c_str(), 0);
 				}
 
 				break;
@@ -5480,7 +5462,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 							// table %s is referenced twice in view; use an alias to distinguish
 							ERR_post(isc_duplicate_base_table,
 									 isc_arg_string,
-									 duplicate_relation->rel_name, 0);
+									 duplicate_relation->rel_name.c_str(), 0);
 						}
 						else {
 							duplicate_relation = relation;
@@ -5509,10 +5491,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 				// and not an oversight here. It's hard to imagine a csb->csb_rpt with
 				// a NULL relation. See exe.h for CompilerScratch struct and its inner csb_repeat struct.
 
-				if (
-					(tail->csb_alias
-					 && !strcmp_space(tail->csb_alias->c_str(), p))
-					|| (relation && !strcmp_space(relation->rel_name, p)))
+				if ((tail->csb_alias && *(tail->csb_alias) == p) || 
+					(relation && relation->rel_name == p))
 				{
 					  break;
 				}
@@ -5530,7 +5510,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 			if (!*map) {
 				// table %s is referenced in the plan but not the from list
 				ERR_post(isc_stream_not_found, isc_arg_string,
-						 plan_relation->rel_name, 0);
+						 plan_relation->rel_name.c_str(), 0);
 			}
 		}
 
@@ -5539,7 +5519,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 		if (!map || !*map) {
 			// table %s is referenced in the plan but not the from list
 			ERR_post(isc_stream_not_found, isc_arg_string,
-					 plan_relation->rel_name, 0);
+					 plan_relation->rel_name.c_str(), 0);
 		}
 
 		plan_relation_node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) *map;
@@ -5550,7 +5530,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 	if (!tail->csb_relation) {
 		// table %s is referenced in the plan but not the from list
 		ERR_post(isc_stream_not_found, isc_arg_string,
-				 plan_relation->rel_name, 0);
+				 plan_relation->rel_name.c_str(), 0);
 	}
 
 	if ((tail->csb_relation->rel_id != plan_relation->rel_id)
@@ -5558,7 +5538,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 	{
 		// table %s is referenced in the plan but not the from list
 		ERR_post(isc_stream_not_found, isc_arg_string,
-				 plan_relation->rel_name, 0);
+				 plan_relation->rel_name.c_str(), 0);
 	}
 
 	// check if we already have a plan for this stream
@@ -5566,7 +5546,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 	if (tail->csb_plan) {
 		// table %s is referenced more than once in plan; use aliases to distinguish
 		ERR_post(isc_stream_twice, isc_arg_string,
-				 tail->csb_relation->rel_name, 0);
+				 tail->csb_relation->rel_name.c_str(), 0);
 	}
 
 	tail->csb_plan = plan;
@@ -5598,7 +5578,7 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 		return;
 
 	const TEXT* prc_sec_name = 
-		(procedure->prc_security_name.hasData() ?
+		(procedure->prc_security_name.length() > 0 ?
 		procedure->prc_security_name.c_str() : NULL);
 
 	// this request must have EXECUTE permission on the stored procedure
@@ -5833,39 +5813,6 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 		}
 		desc3->dsc_address = (UCHAR *) (IPTR) format->fmt_length;
 		format->fmt_length += desc3->dsc_length;
-	}
-}
-
-
-static SSHORT strcmp_space(const TEXT* p, const TEXT* q)
-{
-/**************************************
- *
- *	s t r c m p _ s p a c e
- *
- **************************************
- *
- * Functional description
- *	Compare two strings, which could be either
- *	space-terminated or null-terminated.
- *
- **************************************/
-
-	for (; *p && *p != ' ' && *q && *q != ' '; p++, q++) {
-		if (*p != *q) {
-			break;
-		}
-	}
-
-	if ((!*p || *p == ' ') && (!*q || *q == ' ')) {
-		return 0;
-	}
-
-	if (*p > *q) {
-		return 1;
-	}
-	else {
-		return -1;
 	}
 }
 

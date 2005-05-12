@@ -782,7 +782,7 @@ static RTN corrupt(thread_db* tdbb, VDR control, USHORT err_code, jrd_rel* relat
 		for (; *p; p++)
 			/* nothing */ ;
 		SNPRINTF(p, sizeof(s) - (p - s), " in table %s (%d)\n",
-				relation->rel_name, relation->rel_id);
+				relation->rel_name.c_str(), relation->rel_id);
 	}
 
 	gds__log(s);
@@ -2034,7 +2034,7 @@ static RTN walk_relation(thread_db* tdbb, VDR control, jrd_rel* relation)
 	if (VAL_debug_level)
 		fprintf(stdout, "walk_relation: id %d Format %d %s %s\n",
 				   relation->rel_id, relation->rel_current_fmt,
-				   relation->rel_name, relation->rel_owner_name);
+				   relation->rel_name.c_str(), relation->rel_owner_name.c_str());
 #endif
 
 /* If it's a view or external file, skip this */
@@ -2080,10 +2080,8 @@ static RTN walk_relation(thread_db* tdbb, VDR control, jrd_rel* relation)
 	}	// try
 	catch (const std::exception&) {
 		TEXT s[64];
-		const char* msg = (relation->rel_name) ?
-			"bugcheck during scan of table %d (%s)" :
-			"bugcheck during scan of table %d";
-		sprintf(s, msg, relation->rel_id, relation->rel_name);
+		const char* msg ="bugcheck during scan of table %d (%s)" ;
+		sprintf(s, msg, relation->rel_id, relation->rel_name.c_str());
 		gds__log(s);
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)

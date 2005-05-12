@@ -35,7 +35,7 @@ typedef Firebird::Array<UCHAR> UCharBuffer;
 
 void SCL_check_access(const Jrd::SecurityClass*, SLONG, const TEXT*,
 					  const TEXT*, Jrd::SecurityClass::flags_t, const TEXT*, const TEXT*);
-void SCL_check_index(Jrd::thread_db*, const TEXT*, UCHAR, Jrd::SecurityClass::flags_t);
+void SCL_check_index(Jrd::thread_db*, const Firebird::MetaName&, UCHAR, Jrd::SecurityClass::flags_t);
 void SCL_check_procedure(const dsc*, Jrd::SecurityClass::flags_t);
 void SCL_check_relation(const dsc*, Jrd::SecurityClass::flags_t);
 Jrd::SecurityClass* SCL_get_class(const TEXT*);

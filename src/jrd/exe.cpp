@@ -1426,15 +1426,12 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	jrd_prc* procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
 	jrd_req* proc_request = EXE_find_request(tdbb, procedure->prc_request, false);
 
-	str* temp_buffer = NULL;
+	Firebird::Array<char> temp_buffer;
 	
 	if (!out_message) {
 		const Format* format = (Format*) procedure->prc_output_msg->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
-		temp_buffer =
-			FB_NEW_RPT(*tdbb->getDefaultPool(), out_msg_length + DOUBLE_ALIGN - 1) str();
-		out_msg =
-			(SCHAR *) FB_ALIGN((U_IPTR) temp_buffer->str_data, DOUBLE_ALIGN);
+		out_msg = temp_buffer.getBuffer(out_msg_length);
 	}
 
 
@@ -1476,7 +1473,6 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		proc_request->req_attachment = NULL;
 		proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
 		proc_request->req_timestamp.invalidate();
-		delete temp_buffer;
 		throw;
 	}
 
@@ -1494,7 +1490,6 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		}
 	}
 
-	delete temp_buffer;
 	proc_request->req_attachment = NULL;
 	proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
 	proc_request->req_timestamp.invalidate();
@@ -1757,7 +1752,7 @@ static void stuff_stack_trace(const jrd_req* request)
 		}
 		else if (req->req_procedure) {
 			name = "At procedure '";
-			name += req->req_procedure->prc_name;
+			name += req->req_procedure->prc_name.c_str();
 		}
 
 		if (! name.isEmpty())
@@ -1882,7 +1877,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				{
 					variable->vlu_string =
 						FB_NEW_RPT(*tdbb->getDefaultPool(),
-									  variable->vlu_desc.dsc_length) str();
+									  variable->vlu_desc.dsc_length) VaryingString();
 					variable->vlu_string->str_length =
 						variable->vlu_desc.dsc_length;
 					variable->vlu_desc.dsc_address =
@@ -3648,7 +3643,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
  *	and jump to handle error accordingly.
  *
  **************************************/
-	SqlIdentifier name, relation_name;
+	Firebird::MetaName name, relation_name;
 	TEXT message[XCP_MESSAGE_LENGTH + 1];
 
 	// since temp used as vary, we need size of vary::vary_length 
@@ -3708,24 +3703,21 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 		if (exception->xcp_code == isc_check_constraint) {
 			MET_lookup_cnstrt_for_trigger(tdbb, name, relation_name,
 										  request->req_trg_name);
-			// const CAST
-			s = (name[0]) ? name : (TEXT*) "";
-			const TEXT* r = (relation_name[0]) ? relation_name : (TEXT*) "";
 			ERR_post(exception->xcp_code,
-					 isc_arg_string, ERR_cstring(s),
-					 isc_arg_string, ERR_cstring(r), 0);
+					 isc_arg_string, ERR_cstring(name.c_str()),
+					 isc_arg_string, ERR_cstring(relation_name.c_str()), 0);
 		}
 		else
 			ERR_post(exception->xcp_code, 0);
 
 	case xcp_xcp_code:
-		MET_lookup_exception(tdbb, exception->xcp_code, name, temp);
+		MET_lookup_exception(tdbb, exception->xcp_code, name, temp, sizeof(temp));
 		if (message[0])
 			s = message;
 		else if (temp[0])
 			s = temp;
-		else if (name[0])
-			s = name;
+		else if (name.length())
+			s = name.c_str();
 		else
 			s = NULL;
 		if (s)
@@ -4206,7 +4198,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 				if (vector && id < vector->count() &&
 					(field = (const jrd_fld*) (*vector)[id]))
 				{
-					name = field->fld_name;
+					name = field->fld_name.c_str();
 				}
 			}
 

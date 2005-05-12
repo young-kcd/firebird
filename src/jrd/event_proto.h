@@ -32,7 +32,7 @@ SLONG EVENT_create_session(ISC_STATUS*);
 void EVENT_delete_session(SLONG);
 void EVENT_deliver();
 struct evh* EVENT_init(ISC_STATUS*, bool);
-int EVENT_post(ISC_STATUS*, USHORT, TEXT*, USHORT, TEXT*, USHORT);
+int EVENT_post(ISC_STATUS*, USHORT, const TEXT*, USHORT, const TEXT*, USHORT);
 SLONG EVENT_que(ISC_STATUS*, SLONG, USHORT, const TEXT*, USHORT, const UCHAR*,
 				FPTR_EVENT_CALLBACK, void*);
 

@@ -620,7 +620,7 @@ jrd_nod* make_binary_node(NOD_T type, jrd_nod* arg1, jrd_nod* arg2, bool flag)
 }
 
 
-str* make_alias(thread_db* tdbb, CompilerScratch* csb, 
+VaryingString* make_alias(thread_db* tdbb, CompilerScratch* csb, 
 				CompilerScratch::csb_repeat* base_tail)
 {
 /**************************************
@@ -652,9 +652,8 @@ str* make_alias(thread_db* tdbb, CompilerScratch* csb,
 		if (csb_tail->csb_alias)
 			alias_length += csb_tail->csb_alias->length();
 		else {
-			alias_length +=
-				(!(csb_tail->csb_relation) || !(csb_tail->csb_relation->rel_name))
-					? 0 : strlen(csb_tail->csb_relation->rel_name);
+			alias_length += (csb_tail->csb_relation ? 
+					csb_tail->csb_relation->rel_name.length() : 0);
 		}
 		alias_length++;
 		if (!csb_tail->csb_view)
@@ -662,7 +661,7 @@ str* make_alias(thread_db* tdbb, CompilerScratch* csb,
 	}
 
 	// allocate a string block to hold the concatenated alias
-	str* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), alias_length) str();
+	VaryingString* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), alias_length) VaryingString();
 	alias->str_length = alias_length - 1;
 	// now concatenate the individual aliases into the string block, 
 	// beginning at the end and copying back to the beginning
@@ -675,8 +674,8 @@ str* make_alias(thread_db* tdbb, CompilerScratch* csb,
 		if (csb_tail->csb_alias)
 			q = (TEXT *) csb_tail->csb_alias->c_str();
 		else {
-			q = (!(csb_tail->csb_relation) || !(csb_tail->csb_relation->rel_name))
-				? NULL : csb_tail->csb_relation->rel_name;
+			q = (csb_tail->csb_relation && csb_tail->csb_relation->rel_name.length() ?
+					csb_tail->csb_relation->rel_name.c_str() : NULL);
 		}
 		// go to the end of the alias and copy it backwards
 		if (q) {
@@ -766,8 +765,8 @@ IndexScratchSegment::IndexScratchSegment(MemoryPool& p, IndexScratchSegment* seg
 	}	
 }
 
-IndexScratch::IndexScratch(MemoryPool& p, index_desc* idx) :
-	segments(p) 	
+IndexScratch::IndexScratch(MemoryPool& p, index_desc* ix) :
+	segments(p), idx(ix)
 {
 /**************************************
  *
@@ -785,7 +784,6 @@ IndexScratch::IndexScratch(MemoryPool& p, index_desc* idx) :
 	lowerCount = 0;
 	upperCount = 0;
 	nonFullMatchedSegments = 0;
-	this->idx = idx;
 
 	segments.grow(idx->idx_count);
 
@@ -1109,7 +1107,7 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node,
 	return;
 }
 
-str* OptimizerRetrieval::getAlias()
+VaryingString* OptimizerRetrieval::getAlias()
 {
 /**************************************
  *
@@ -2902,7 +2900,8 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 			if (!relationStreamInfo->used) {
 				bool found = false;
 				IndexRelationship** relationships = processList->begin();
-				for (int index = 0; index < processList->getCount(); index++) {
+				int index;
+				for (index = 0; index < processList->getCount(); index++) {
 					if (relationStreamInfo->stream == relationships[index]->stream) {
 						// If the cost of this relationship is cheaper then remove the
 						// old realtionship and add this one.
@@ -2919,8 +2918,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 				if (!found) {
 					// Add relationship sorted on cost (cheapest as first)
 					IndexRelationship** relationships = processList->begin();
-					int index = 0;
-					for (; index < processList->getCount(); index++) {
+					for (index = 0; index < processList->getCount(); index++) {
 						if (cheaperRelationship(relationship, relationships[index])) {
 							break;
 						}

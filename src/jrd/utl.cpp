@@ -61,6 +61,7 @@
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/MetaName.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -1490,23 +1491,10 @@ int API_ROUTINE blob__display(
  *	PASCAL callable version of EDIT_blob.
  *
  **************************************/
-	// CVC: The old logic passed garbage to BLOB_display if !*name_lenth
-	SqlIdentifier temp;
-	TEXT* p = temp;
-	USHORT l = *name_length;
-	if (l != 0) {
-		if (l >= sizeof(temp))
-			l = sizeof(temp) - 1;
-			
-		const TEXT* q = field_name;
-		do {
-			*p++ = *q++;
-		} while (--l);
-	}
-	*p = 0;
+	Firebird::MetaName temp(field_name, *name_length);
 
 	return BLOB_display(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
-						*transaction, temp);
+						*transaction, temp.c_str());
 }
 
 
@@ -1648,23 +1636,10 @@ int API_ROUTINE blob__edit(
  *	into an internal edit call.
  *
  **************************************/
-	// CVC: The old logic passed garbage to BLOB_edit if !*name_length
-	SqlIdentifier temp;
-	TEXT* p = temp;
-	USHORT l = *name_length;
-	if (l != 0) {
-        if (l >= sizeof(temp))
-			l = sizeof(temp) - 1;
-			
-		const TEXT* q = field_name;
-		do {
-			*p++ = *q++;
-		} while (--l);
-	}
-	*p = 0;
+	Firebird::MetaName temp(field_name, *name_length);
 
 	return BLOB_edit(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
-					 *transaction, temp);
+					 *transaction, temp.c_str());
 }
 
 

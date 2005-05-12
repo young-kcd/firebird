@@ -529,7 +529,8 @@ int MOV_make_string(const dsc*	     desc,
 int MOV_make_string2(
 					 const dsc* desc,
 					 USHORT ttype,
-					 UCHAR** address, vary* temp, USHORT length, str** ptr)
+					 UCHAR** address, 
+					 Jrd::MoveBuffer& buffer)
 {
 /**************************************
  *
@@ -552,7 +553,7 @@ int MOV_make_string2(
  *
  **************************************/
 
-	return CVT2_make_string2(desc, ttype, address, temp, length, ptr, ERR_post);
+	return CVT2_make_string2(desc, ttype, address, buffer, ERR_post);
 }
 
 
@@ -593,4 +594,3 @@ void MOV_time_stamp(GDS_TIMESTAMP* datetime)
 	// the following line that will get rid of the milliseconds.
 	//datetime->timestamp_time = Firebird::TimeStamp::round_time(datetime->timestamp_time, 0);
 }
-

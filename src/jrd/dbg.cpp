@@ -181,7 +181,7 @@ int DBG_analyze(int pool_id)
 	SLONG length;
 	SLONG total_length = 0;
 	TEXT **fields;
-	SqlIdentifier name_padded;
+	Firebird::MetaName name_padded;
 	int pool_type;
 	int i;
 	struct {
@@ -792,7 +792,8 @@ int DBG_pretty(const jrd_nod* node, int column)
 	case nod_relation:
 		relation = (jrd_rel*) node->nod_arg[e_rel_relation];
 		fprintf(dbg_file, ", stream: %d, %s (%X)\n",
-				   node->nod_arg[e_rel_stream], relation->rel_name, relation);
+				   node->nod_arg[e_rel_stream], 
+				   relation->rel_name.c_str(), relation);
 		return TRUE;
 
 	case nod_procedure:
@@ -1201,7 +1202,7 @@ static int rsb_pretty(const RecordSource* rsb, int column)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	if (relation) {
-		fprintf(dbg_file, " %s", relation->rel_name);
+		fprintf(dbg_file, " %s", relation->rel_name.c_str());
 	}
 
 	column += 4;

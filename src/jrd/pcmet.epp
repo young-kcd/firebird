@@ -102,7 +102,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			IDX IN RDB$INDICES CROSS
 				REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
 				IDX.RDB$EXPRESSION_BLR NOT MISSING AND
-				IDX.RDB$INDEX_NAME EQ work->dfw_name 
+				IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
 
 			if (!REQUEST(irq_c_exp_index))
 			{
@@ -112,18 +112,16 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
             if (!relation)
             {
 				relation = MET_relation(tdbb, REL.RDB$RELATION_ID);
-				if (!relation->rel_name)
+				if (relation->rel_name.length())
 				{
-					relation->rel_name =
-						MET_save_name(tdbb, REL.RDB$RELATION_NAME);
-					relation->rel_length = strlen(relation->rel_name);
+					relation->rel_name = REL.RDB$RELATION_NAME;
 				}
 				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
 				{
 					SelectivityList selectivity(*tdbb->getDefaultPool());
 					const USHORT id = IDX.RDB$INDEX_ID - 1;
 					IDX_statistics(tdbb, relation, id, selectivity);
-					DFW_update_index(work->dfw_name, id, selectivity);
+					DFW_update_index(work->dfw_name.c_str(), id, selectivity);
 
 					EXE_unwind(tdbb, request);
 					return false;
@@ -160,15 +158,16 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					Jrd::ContextPoolHolder context(tdbb, new_pool);
 					MET_scan_relation(tdbb, relation);
 
-					if (!IDX.RDB$EXPRESSION_BLR.NULL)
-						idx.idx_expression = MET_get_dependencies(tdbb, relation,
+					if (!IDX.RDB$EXPRESSION_BLR.NULL) 
+					{
+						MetaTmp(IDX.RDB$INDEX_NAME)
+							idx.idx_expression = MET_get_dependencies(tdbb, relation,
 															  NULL, NULL, 
 															  &IDX.RDB$EXPRESSION_BLR,
 															  &idx.idx_expression_request,
-															  &csb,
-															  IDX.RDB$INDEX_NAME,
-															  obj_expression_index,
-															  0);
+															  &csb, tmp,
+															  obj_expression_index, 0);
+					}
 				}
 
 				/* fake a description of the index */
@@ -207,13 +206,13 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		current_transaction = tdbb->tdbb_transaction;
 		TRA_attach_request(transaction, idx.idx_expression_request);
 		tdbb->tdbb_request = idx.idx_expression_request;
-		IDX_create_index(tdbb, relation, &idx, work->dfw_name, NULL,
+		IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(), NULL,
 						 transaction, selectivity);
 		TRA_detach_request(idx.idx_expression_request);
 		tdbb->tdbb_request = current_request;
 		tdbb->tdbb_transaction = current_transaction; 
 	
-		DFW_update_index(work->dfw_name, idx.idx_id, selectivity);
+		DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity);
 
 		// Get rid of the pool containing the expression tree
 
@@ -272,7 +271,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 	FOR(REQUEST_HANDLE request)
 		IDX IN RDB$INDICES WITH
-			IDX.RDB$RELATION_NAME EQ relation->rel_name AND
+			IDX.RDB$RELATION_NAME EQ relation->rel_name.c_str() AND
 			IDX.RDB$INDEX_ID EQ idx->idx_id + 1
 
 		if (!REQUEST(irq_l_exp_index))

@@ -247,18 +247,19 @@ enum dfw_t {
 	dfw_end_backup
 };
 
-class DeferredWork : public pool_alloc_rpt<SCHAR, type_dfw>
+class DeferredWork : public pool_alloc<type_dfw>
 {
-    public:
+public:
 	enum dfw_t 		dfw_type;		/* type of work deferred */
 	DeferredWork*	dfw_next;		/* next block in transaction */
 	Lock*			dfw_lock;		/* relation creation lock */
 	DeferredWork*	dfw_args;		/* arguments */
 	SLONG			dfw_sav_number;	/* save point number */
-	USHORT			dfw_name_length;/* length of object name */
 	USHORT			dfw_id;			/* object id, if appropriate */
 	USHORT			dfw_count;		/* count of block posts */
-	SCHAR			dfw_name[2];	/* name of object */
+	Firebird::string	dfw_name;	/* name of object */
+public:
+	explicit DeferredWork(MemoryPool& p) : dfw_name(p) { }
 };
 
 /* Verb actions */

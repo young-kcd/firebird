@@ -208,7 +208,7 @@ void SCL_check_access(const SecurityClass* s_class,
 }
 
 
-void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id,
+void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHAR index_id,
 	SecurityClass::flags_t mask)
 {
 /******************************************************
@@ -235,14 +235,13 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id,
 
 	// No security to check for if the index is not yet created 
 
-    if ((!index_name || !*index_name) && index_id < 1) {
+    if ((index_name.length() == 0) && (index_id < 1)) {
         return;
     }
 
-    SqlIdentifier reln_name, aux_idx_name;
-    reln_name[0] = aux_idx_name[0] = 0;
-    const TEXT* idx_name_ptr = index_name;
-	const TEXT* relation_name_ptr = index_name;
+    Firebird::MetaName reln_name, aux_idx_name;
+    const Firebird::MetaName* idx_name_ptr = &index_name;
+	const Firebird::MetaName* relation_name_ptr = &index_name;
 
 	jrd_req* request = NULL;
 
@@ -253,9 +252,9 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id,
         FOR(REQUEST_HANDLE request) IND IN RDB$INDICES
             CROSS REL IN RDB$RELATIONS
 			OVER RDB$RELATION_NAME
-			WITH IND.RDB$INDEX_NAME EQ index_name
+			WITH IND.RDB$INDEX_NAME EQ index_name.c_str()
 
-            strcpy(reln_name, REL.RDB$RELATION_NAME);
+            reln_name = REL.RDB$RELATION_NAME;
 		    if (!REL.RDB$SECURITY_CLASS.NULL)
                 s_class = SCL_get_class(REL.RDB$SECURITY_CLASS);
             if (!REL.RDB$DEFAULT_CLASS.NULL)
@@ -265,15 +264,15 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id,
         CMP_release(tdbb, request);
     }
     else {
-        idx_name_ptr = aux_idx_name;
+        idx_name_ptr = &aux_idx_name;
         FOR (REQUEST_HANDLE request) IND IN RDB$INDICES 
             CROSS REL IN RDB$RELATIONS 
             OVER RDB$RELATION_NAME
-            WITH IND.RDB$RELATION_NAME EQ relation_name_ptr
+            WITH IND.RDB$RELATION_NAME EQ relation_name_ptr->c_str()
             AND IND.RDB$INDEX_ID EQ index_id
 
-            strcpy (reln_name, REL.RDB$RELATION_NAME);
-            strcpy (aux_idx_name, IND.RDB$INDEX_NAME);
+            reln_name = REL.RDB$RELATION_NAME;
+            aux_idx_name = IND.RDB$INDEX_NAME;
             if (!REL.RDB$SECURITY_CLASS.NULL)
                 s_class = SCL_get_class(REL.RDB$SECURITY_CLASS);
             if (!REL.RDB$DEFAULT_CLASS.NULL)
@@ -286,11 +285,11 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id,
 	// Check if the relation exists. It may not have been created yet.
 	// Just return in that case.
 
-	if (!reln_name || !*reln_name) {
+	if (reln_name.length() == 0) {
 		return;
 	}
 
-	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, reln_name);
+	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, reln_name.c_str());
 
 	request = NULL;
 
@@ -310,8 +309,8 @@ void SCL_check_index(thread_db* tdbb, const TEXT* index_name, UCHAR index_id,
 	FOR(REQUEST_HANDLE request) ISEG IN RDB$INDEX_SEGMENTS
 		CROSS RF IN RDB$RELATION_FIELDS
 			OVER RDB$FIELD_NAME
-			WITH RF.RDB$RELATION_NAME EQ reln_name
-			AND ISEG.RDB$INDEX_NAME EQ idx_name_ptr
+			WITH RF.RDB$RELATION_NAME EQ reln_name.c_str()
+			AND ISEG.RDB$INDEX_NAME EQ idx_name_ptr->c_str()
 
         if (!RF.RDB$SECURITY_CLASS.NULL) {
 			s_class = SCL_get_class(RF.RDB$SECURITY_CLASS);
@@ -350,34 +349,20 @@ void SCL_check_procedure(const dsc* dsc_name, SecurityClass::flags_t mask)
  *	scanned.  This is used exclusively for meta-data operations.
  *
  **************************************/
-	SqlIdentifier name;
-
 	thread_db* tdbb = JRD_get_thread_data();
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
-
 	fb_assert(dsc_name->dsc_dtype == dtype_text);
-
-	{ // scope only block
-	TEXT* p = name;
-	const TEXT* const endp = name + sizeof(name) - 1;
-	const TEXT* q = (TEXT*) dsc_name->dsc_address;
-	const TEXT* const endq = q + dsc_name->dsc_length;
-	while (q < endq && p < endp && *q) {
-		*p++ = *q++;
-	}
-	*p = 0;
-	} // end scope block
-    fb_utils::exact_name(name);
+	Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address), 
+							dsc_name->dsc_length);
 
 	Database* dbb = tdbb->tdbb_database;
-
 	const SecurityClass* s_class = NULL;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) SPROC IN RDB$PROCEDURES
-		WITH SPROC.RDB$PROCEDURE_NAME EQ name
+		WITH SPROC.RDB$PROCEDURE_NAME EQ name.c_str()
 
         if (!REQUEST(irq_p_security))
 			REQUEST(irq_p_security) = request;
@@ -389,7 +374,7 @@ void SCL_check_procedure(const dsc* dsc_name, SecurityClass::flags_t mask)
 	if (!REQUEST(irq_p_security))
 		REQUEST(irq_p_security) = request;
 
-	SCL_check_access(s_class, 0, NULL, name, mask, object_procedure, name);
+	SCL_check_access(s_class, 0, NULL, name.c_str(), mask, object_procedure, name.c_str());
 }
 
 
@@ -407,25 +392,12 @@ void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
  *	scanned.  This is used exclusively for meta-data operations.
  *
  **************************************/
-	SqlIdentifier name;
-
 	thread_db* tdbb = JRD_get_thread_data();
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
-
 	fb_assert(dsc_name->dsc_dtype == dtype_text);
-
-	{ // scope only block
-	TEXT* p = name;
-	const TEXT* const endp = name + sizeof(name) - 1;
-	const TEXT* q = (TEXT*) dsc_name->dsc_address;
-	const TEXT* const endq = q + dsc_name->dsc_length;
-	while (q < endq && p < endp && *q) {
-		*p++ = *q++;
-	}
-	*p = 0;
-	} // end scope block
-	fb_utils::exact_name(name);
+	Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address), 
+							dsc_name->dsc_length);
 
 	Database* dbb = tdbb->tdbb_database;
 
@@ -434,7 +406,7 @@ void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
 	jrd_req* request = CMP_find_request(tdbb, irq_v_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) REL IN RDB$RELATIONS
-		WITH REL.RDB$RELATION_NAME EQ name
+		WITH REL.RDB$RELATION_NAME EQ name.c_str()
 
         if (!REQUEST(irq_v_security))
 			REQUEST(irq_v_security) = request;
@@ -446,7 +418,7 @@ void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
 	if (!REQUEST(irq_v_security))
 		REQUEST(irq_v_security) = request;
 
-	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, name);
+	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, name.c_str());
 }
 
 
@@ -544,7 +516,7 @@ SecurityClass::flags_t SCL_get_mask(const TEXT* relation_name, const TEXT* field
 		(relation = MET_lookup_relation(tdbb, relation_name)))
 	{
 		MET_scan_relation(tdbb, relation);
-		if ( (s_class = SCL_get_class(relation->rel_security_name)) )
+		if ( (s_class = SCL_get_class(relation->rel_security_name.c_str())) )
 		{
 			access &= s_class->scl_flags;
 		}
@@ -554,7 +526,7 @@ SecurityClass::flags_t SCL_get_mask(const TEXT* relation_name, const TEXT* field
 		if (field_name &&
 			(id = MET_lookup_field(tdbb, relation, field_name, 0)) >= 0 &&
 			(field = MET_get_field(relation, id)) &&
-			(s_class = SCL_get_class(field->fld_security_name)))
+			(s_class = SCL_get_class(field->fld_security_name.c_str())))
 		{
 			access &= s_class->scl_flags;
 		}
@@ -593,7 +565,7 @@ void SCL_init(bool create,
 	jrd_req* request;
 	TEXT name[129], project[33], organization[33];
 	TEXT login_name[129];
-	SqlIdentifier role_name;
+	Firebird::MetaName role_name;
     bool preODS9;
 
 	SET_TDBB(tdbb);
@@ -601,7 +573,7 @@ void SCL_init(bool create,
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
-	*project = *organization = *name = *role_name = *login_name = '\0';
+	*project = *organization = *name = *login_name = '\0';
 
 	int node_id = 0;
 	int id = -1, group = -1;	// CVC: This var contained trash
@@ -737,7 +709,9 @@ void SCL_init(bool create,
                 REQUEST (irq_verify_role_name) = request;
 
             if (!found)
-                strcpy(role_name, NULL_ROLE);
+			{
+                role_name = NULL_ROLE;
+			}
         }
     }
     // CVC: Let's clean any role in pre-ODS9 attachments
@@ -746,18 +720,15 @@ void SCL_init(bool create,
     }
 
 	if (sql_role) {
-        if (!preODS9 && strcmp (role_name, NULL_ROLE)) {
-            strncpy(role_name, sql_role, MAX_SQL_IDENTIFIER_LEN);
-            role_name[MAX_SQL_IDENTIFIER_LEN] = 0;
+        if ((!preODS9) && (role_name != NULL_ROLE)) {
+            role_name = sql_role;
         }
-        /* CVC: Role is an identifier, it may have embedded blanks. */
-        fb_utils::exact_name(role_name);
 	}
 	else {
-		strcpy(role_name, NULL_ROLE);
+		role_name = NULL_ROLE;
 	}
 
-	const USHORT length = strlen(name) + strlen(role_name) + strlen(project) +
+	const USHORT length = strlen(name) + role_name.length() + strlen(project) +
 		strlen(organization) + 4;   /* for the terminating nulls */
 	UserId* user = FB_NEW_RPT(*dbb->dbb_permanent, length) UserId();
 	tdbb->tdbb_attachment->att_user = user;
@@ -765,7 +736,7 @@ void SCL_init(bool create,
 	user->usr_user_name = save_string(name, &p);
 	user->usr_project_name = save_string(project, &p);
 	user->usr_org_name = save_string(organization, &p);
-	user->usr_sql_role_name = save_string(role_name, &p);
+	user->usr_sql_role_name = save_string(role_name.c_str(), &p);
 	user->usr_user_id = id;
 	user->usr_group_id = group;
 	user->usr_node_id = node_id;
@@ -785,15 +756,16 @@ void SCL_init(bool create,
 		END_FOR;
 		CMP_release(tdbb, handle);
 
+		const char* u;
 		FOR(REQUEST_HANDLE handle1)
 			FIRST 1 REL IN RDB$RELATIONS
 			WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
 
             if (!REL.RDB$OWNER_NAME.NULL && 
-				(p = user->usr_user_name) && *p)
+				(u = user->usr_user_name) && *u)
 			{
-				*name = strlen(p);
-				strcpy(name + 1, p);
+				*name = strlen(u);
+				strcpy(name + 1, u);
 				if (!check_string(reinterpret_cast<const UCHAR*>(name), 
 								  REL.RDB$OWNER_NAME))
 				{
@@ -1218,7 +1190,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 		// privileges to the base table or (2b) the view must have
 		// sufficient privileges on the base table.
 
-		user.usr_user_name = view->rel_owner_name;
+		user.usr_user_name = view->rel_owner_name.c_str();
 	}
 	SecurityClass::flags_t privilege = 0;
 
@@ -1307,7 +1279,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					break;
 
 				case id_view:
-					if (!view || check_string(acl, view->rel_name))
+					if (!view || check_string(acl, view->rel_name.c_str()))
 						hit = false;
 					break;
 

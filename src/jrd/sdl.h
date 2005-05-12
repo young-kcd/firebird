@@ -24,13 +24,13 @@
 #ifndef JRD_SDL_H
 #define JRD_SDL_H
 
-#include "../jrd/constants.h"
+#include "../common/classes/MetaName.h"
 
 struct sdl_info {
 	USHORT			sdl_info_fid;
 	USHORT			sdl_info_rid;
-	SqlIdentifier	sdl_info_field;
-	SqlIdentifier	sdl_info_relation;
+	Firebird::MetaName	sdl_info_field;
+	Firebird::MetaName	sdl_info_relation;
 	dsc				sdl_info_element;
 	USHORT			sdl_info_dimensions;
 	SLONG			sdl_info_lower[16];

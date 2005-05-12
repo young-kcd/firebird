@@ -38,7 +38,6 @@
 #include "../jrd/lls.h"
 #include "../jrd/sbm.h"
 
-class str;
 struct dsc;
 
 namespace Jrd {
@@ -52,6 +51,7 @@ struct sort_context;
 class CompilerScratch;
 class jrd_prc;
 class Format;
+class VaryingStr;
 
 // Record source block (RSB) types
 
@@ -96,7 +96,7 @@ public:
 	ULONG rsb_record_count;				// count of records returned from rsb (not candidate records processed)
 	RecordSource* rsb_next;				// next rsb, if appropriate
 	jrd_rel*	rsb_relation;			// relation, if appropriate
-	str*		rsb_alias;				// SQL alias for relation
+	VaryingString*		rsb_alias;				// SQL alias for relation
 	jrd_prc*	rsb_procedure;			// procedure, if appropriate
 	Format*		rsb_format;				// format, if appropriate
 	jrd_nod*	rsb_any_boolean;		// any/all boolean
@@ -198,7 +198,7 @@ typedef irsb_sort *IRSB_SORT;
 struct irsb_procedure {
 	ULONG 		irsb_flags;
 	jrd_req*	irsb_req_handle;
-	str*		irsb_message;
+	VaryingString*		irsb_message;
 };
 
 typedef irsb_procedure *IRSB_PROCEDURE;
@@ -455,4 +455,3 @@ typedef rse_get_mode RSE_GET_MODE;
 } //namespace Jrd
 
 #endif // JRD_RSE_H
-

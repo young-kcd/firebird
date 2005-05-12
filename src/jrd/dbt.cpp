@@ -279,7 +279,7 @@ DeferredWork[] = {
 	"DEFERRED WORK BLOCK",
 		FLD(DeferredWork*, "type: %d", dfw_type),
 		FLD(DeferredWork*, "next: %x", dfw_next),
-		FLD(DeferredWork*, "name: %s", dfw_name),
+		FLD(DeferredWork*, "name: %s", dfw_name.c_str()),
 		0
 },
 TemporaryField[] = {

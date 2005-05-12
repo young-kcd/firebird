@@ -72,8 +72,8 @@ static void add_global_fields(USHORT);
 static void add_index_set(Database*, bool, USHORT, USHORT);
 static void add_new_triggers(USHORT, USHORT);
 static void add_relation_fields(USHORT);
-static void add_security_to_sys_rel(thread_db*, const TEXT*, const TEXT*, const UCHAR*,
-	const SSHORT);
+static void add_security_to_sys_rel(thread_db*, const Firebird::MetaName&, 
+		const TEXT*, const UCHAR*, const SSHORT);
 #ifdef NOT_USED_OR_REPLACED
 static void add_trigger(TEXT*, jrd_req**, jrd_req**);
 #endif
@@ -264,28 +264,12 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	Database* dbb = tdbb->tdbb_database;
 
 /* Uppercase owner name */
-	SqlIdentifier string;
-	*string = 0;
-	if (owner && *owner)
-	{
-		TEXT* p = string;
-		while ( (*p++ = UPPER7(*owner)) )
-		{
-			++owner;
-		}
-	}
+	Firebird::MetaName string(owner ? owner : "");
+	string.upper7();
 
 /* Uppercase charset name */
-	SqlIdentifier string2;
-	*string2 = 0;
-	if (charset && *charset)
-	{
-		TEXT* p2 = string2;
-		while ( (*p2++ = UPPER7(*charset)) )
-		{
-			++charset;
-		}
-	}
+	Firebird::MetaName string2(charset ? charset : "");
+	string2.upper7();
 
 	int n;
 	
@@ -323,9 +307,9 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 			X.RDB$DBKEY_LENGTH = 8;
 			X.RDB$OWNER_NAME.NULL = TRUE;
 
-			if (*string)
+			if (string.length())
 			{
-				PAD(string, X.RDB$OWNER_NAME);
+				PAD(string.c_str(), X.RDB$OWNER_NAME);
 				X.RDB$OWNER_NAME.NULL = FALSE;
 			}
 
@@ -349,8 +333,8 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
 		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
 		X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
-		if (*string2) {
-			PAD ( string2, X.RDB$CHARACTER_SET_NAME); 
+		if (string2.length()) {
+			PAD (string2.c_str(), X.RDB$CHARACTER_SET_NAME); 
 			X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
 		}
 		else {
@@ -436,8 +420,8 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	*acl++ = ACL_id_list;
 	*acl++ = id_person;
 	
-	const TEXT* p_1 = string;
-	USHORT length = strlen(string);
+	const TEXT* p_1 = string.c_str();
+	USHORT length = string.length();
 	*acl++ = (UCHAR)length;
 	if (length)
 	{
@@ -514,8 +498,7 @@ void INI_init(void)
 	{
 		jrd_rel* relation = MET_relation(tdbb, relfld[RFLD_R_ID]);
 		relation->rel_flags |= REL_system;
-		relation->rel_name = const_cast<TEXT*>(names[relfld[RFLD_R_NAME]]);
-		relation->rel_length = strlen(relation->rel_name);
+		relation->rel_name = names[relfld[RFLD_R_NAME]];
 		int n = 0;
 		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
 			fld += RFLD_F_LENGTH)
@@ -552,10 +535,9 @@ void INI_init(void)
 			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
 			desc->dsc_dtype = gfield->gfld_dtype;
-			jrd_fld* field = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_fld();
+			jrd_fld* field = FB_NEW(*dbb->dbb_permanent) jrd_fld(*dbb->dbb_permanent);
 			*itr = field;
 			field->fld_name = names[fld[RFLD_F_NAME]];
-			field->fld_length = strlen(field->fld_name);
 		}
 	}
 }
@@ -676,12 +658,12 @@ void INI_init2(void)
 }
 
 
-const jrd_trg* INI_lookup_sys_trigger(jrd_rel*				relation,
-							const jrd_trg*			trigger,
-							const UCHAR**	blr,
-							UCHAR*			trigger_type,
-							const SCHAR**	trigger_name,
-							USHORT*			trig_flags)
+const jrd_trg* INI_lookup_sys_trigger(jrd_rel*					relation,
+									  const jrd_trg*			trigger,
+									  const UCHAR**				blr,
+									  UCHAR*					trigger_type,
+									  const TEXT**				trigger_name,
+									  USHORT*					trig_flags)
 {
 /**************************************
  *
@@ -698,7 +680,7 @@ const jrd_trg* INI_lookup_sys_trigger(jrd_rel*				relation,
 
 	for (; trigger->trg_relation; trigger++)
 	{
-		if (!strcmp(relation->rel_name, names[trigger->trg_relation]))
+		if (relation->rel_name == names[trigger->trg_relation])
 		{
 			*blr = trigger->trg_blr;
 			*trigger_type = trigger->trg_type;
@@ -895,7 +877,7 @@ static void add_index_set(Database*	dbb,
  *	ODS (major_version,minor_version).
  *
  **************************************/
-	SqlIdentifier string;
+	Firebird::MetaName string;
 	index_desc idx;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -921,9 +903,9 @@ static void add_index_set(Database*	dbb,
 
 		STORE(REQUEST_HANDLE handle1) X IN RDB$INDICES
 			jrd_rel* relation = MET_relation(tdbb, index->ini_idx_relid);
-			PAD(relation->rel_name, X.RDB$RELATION_NAME);
-			sprintf(string, "RDB$INDEX_%d", index->ini_idx_index_id);
-			PAD(string, X.RDB$INDEX_NAME);
+			PAD(relation->rel_name.c_str(), X.RDB$RELATION_NAME);
+			string.printf("RDB$INDEX_%d", index->ini_idx_index_id);
+			PAD(string.c_str(), X.RDB$INDEX_NAME);
 			X.RDB$UNIQUE_FLAG = index->ini_idx_flags & idx_unique;
 			X.RDB$SEGMENT_COUNT = index->ini_idx_segment_count;
 			if (index->ini_idx_flags & idx_descending) {
@@ -949,7 +931,7 @@ static void add_index_set(Database*	dbb,
 
 					Y.RDB$FIELD_POSITION = position;
 					PAD(X.RDB$INDEX_NAME, Y.RDB$INDEX_NAME);
-					PAD(field->fld_name, Y.RDB$FIELD_NAME);
+					PAD(field->fld_name.c_str(), Y.RDB$FIELD_NAME);
 					tail->idx_field = segment->ini_idx_rfld_id;
 					tail->idx_itype = segment->ini_idx_type;
 				    tail->idx_selectivity = 0;
@@ -958,7 +940,7 @@ static void add_index_set(Database*	dbb,
 			idx.idx_count = index->ini_idx_segment_count;
 			idx.idx_flags = index->ini_idx_flags;
 			SelectivityList selectivity(*tdbb->getDefaultPool());
-			IDX_create_index(tdbb, relation, &idx, string, NULL, NULL,
+			IDX_create_index(tdbb, relation, &idx, string.c_str(), NULL, NULL,
 							 selectivity);
 			X.RDB$INDEX_ID = idx.idx_id + 1;
 		END_STORE;
@@ -1088,7 +1070,7 @@ static void add_relation_fields( USHORT minor_version)
 // be passed to this function, only to be converted to UCHAR* to be passed
 // to BLB_put_segment. Therefore, "acl" was changed to UCHAR* as param.
 static void add_security_to_sys_rel(thread_db*	tdbb,
-									const TEXT*	user_name,
+									const Firebird::MetaName&	user_name,
 									const TEXT*	rel_name,
 									const UCHAR*	acl,
 									const SSHORT	acl_length)
@@ -1108,7 +1090,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
  *
  **************************************/
 	TEXT sec_class_name[100];
-	SqlIdentifier default_class;
+	Firebird::MetaName default_class;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -1126,7 +1108,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 	BLB_put_segment(tdbb, blob, acl, acl_length);
 	BLB_close(tdbb, blob);
 
-	sprintf(default_class, "%s%" QUADFORMAT "d", DEFAULT_CLASS,
+	default_class.printf("%s%" QUADFORMAT "d", DEFAULT_CLASS,
 			DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS),
 					   false, (SINT64) 1));
 
@@ -1138,27 +1120,27 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 			switch (cnt)
 			{
 			case 0:
-				strcpy(PRIV.RDB$USER, user_name);
+				strcpy(PRIV.RDB$USER, user_name.c_str());
 				PRIV.RDB$PRIVILEGE[0] = 'S';
 				PRIV.RDB$GRANT_OPTION = 1;
 				break;
 			case 1:
-				strcpy(PRIV.RDB$USER, user_name);
+				strcpy(PRIV.RDB$USER, user_name.c_str());
 				PRIV.RDB$PRIVILEGE[0] = 'I';
 				PRIV.RDB$GRANT_OPTION = 1;
 				break;
 			case 2:
-				strcpy(PRIV.RDB$USER, user_name);
+				strcpy(PRIV.RDB$USER, user_name.c_str());
 				PRIV.RDB$PRIVILEGE[0] = 'U';
 				PRIV.RDB$GRANT_OPTION = 1;
 				break;
 			case 3:
-				strcpy(PRIV.RDB$USER, user_name);
+				strcpy(PRIV.RDB$USER, user_name.c_str());
 				PRIV.RDB$PRIVILEGE[0] = 'D';
 				PRIV.RDB$GRANT_OPTION = 1;
 				break;
 			case 4:
-				strcpy(PRIV.RDB$USER, user_name);
+				strcpy(PRIV.RDB$USER, user_name.c_str());
 				PRIV.RDB$PRIVILEGE[0] = 'R';
 				PRIV.RDB$GRANT_OPTION = 1;
 				break;
@@ -1168,7 +1150,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 				PRIV.RDB$GRANT_OPTION = 0;
 				break;
 			}
-			strcpy(PRIV.RDB$GRANTOR, user_name);
+			strcpy(PRIV.RDB$GRANTOR, user_name.c_str());
 			PRIV.RDB$PRIVILEGE[1] = 0;
 			strcpy(PRIV.RDB$RELATION_NAME, rel_name);
 			PRIV.RDB$FIELD_NAME.NULL = TRUE;
@@ -1194,7 +1176,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	STORE(REQUEST_HANDLE handle1)
 		CLS IN RDB$SECURITY_CLASSES
-        jrd_vtof((char*)default_class, CLS.RDB$SECURITY_CLASS,
+        jrd_vtof(default_class.c_str(), CLS.RDB$SECURITY_CLASS,
                  sizeof(CLS.RDB$SECURITY_CLASS));
 		CLS.RDB$ACL = blob_id_2;
 	END_STORE;
@@ -1207,7 +1189,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 		WITH REL.RDB$RELATION_NAME EQ rel_name
 		MODIFY REL USING
 			REL.RDB$DEFAULT_CLASS.NULL = FALSE;
-            jrd_vtof((char*)default_class, REL.RDB$DEFAULT_CLASS,
+            jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS,
                      sizeof(REL.RDB$DEFAULT_CLASS));
 		END_MODIFY;
 

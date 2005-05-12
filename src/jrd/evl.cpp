@@ -119,6 +119,9 @@ const int TEMP_LENGTH	= 128;
 const SINT64 MAX_INT64_LIMIT	= MAX_SINT64 / 10;
 const SINT64 MIN_INT64_LIMIT	= MIN_SINT64 / 10;
 
+// arbitrary size static part for optimization
+typedef	Firebird::HalfStaticArray<UCS2_CHAR, 100> Ucs2Buffer;
+
 #ifdef VMS
 double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
@@ -977,7 +980,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			impure->vlu_desc.dsc_sub_type = 0;
 			impure->vlu_desc.dsc_scale = 0;
 			INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
-			char* cur_user = 0;
+			const char* cur_user = 0;
 			if (tdbb->tdbb_attachment->att_user)
 			{
 				cur_user = tdbb->tdbb_attachment->att_user->usr_user_name;
@@ -1313,9 +1316,8 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						desc->dsc_sub_type = 0;
 						desc->dsc_scale = 0;
 						INTL_ASSIGN_TTYPE(desc, ttype_metadata);
-						char* owner_name = relation->rel_owner_name;
-						desc->dsc_address = (UCHAR*) owner_name;
-						desc->dsc_length = strlen(owner_name);
+						desc->dsc_address = (UCHAR*) relation->rel_owner_name.c_str();
+						desc->dsc_length = relation->rel_owner_name.length();
 					}
 					else if (temp_nod_type == nod_current_role)
 					{
@@ -1326,13 +1328,12 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						desc->dsc_sub_type = 0;
 						desc->dsc_scale = 0;
 						INTL_ASSIGN_TTYPE(desc, ttype_metadata);
-						const char* owner_name = relation->rel_owner_name;
 						thread_db* tdbb = NULL;
 						SET_TDBB(tdbb);
 						char* rc_role = 0;
 						const UserId* att_user = tdbb->tdbb_attachment->att_user;
 						const char* cur_user = att_user ? att_user->usr_user_name : 0;
-						if (cur_user && strcmp(cur_user, owner_name) == 0)
+						if (cur_user && relation->rel_owner_name == cur_user)
 							rc_role = att_user->usr_sql_role_name;
 						else
 							rc_role = const_cast<char*>(NULL_ROLE);
@@ -1371,7 +1372,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						if (default_literal->nod_type == nod_null)
 						{
 							ERR_post(isc_not_valid,
-									 isc_arg_string, temp_field->fld_name,
+									 isc_arg_string, temp_field->fld_name.c_str(),
 									 isc_arg_string, "*** null ***", 0);
 						}
 
@@ -1947,14 +1948,14 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 							   sizeof(temp));
 
 /* Allocate a string block of sufficient size. */
-		str* string = value->vlu_string;
+		VaryingString* string = value->vlu_string;
 		if (string && string->str_length < length) {
 			delete string;
 			string = NULL;
 		}
 
 		if (!string) {
-			string = value->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) str();
+			string = value->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) VaryingString();
 			string->str_length = length;
 		}
 
@@ -1993,11 +1994,6 @@ bool EVL_mb_matches(thread_db* tdbb,
  *      later processing with EVL_wc_matches().
  *
  **************************************/
-	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
-	UCS2_CHAR *pp1 = buffer1;
-	UCS2_CHAR *pp2 = buffer2;
-	str* buf1;
-	str* buf2;
 	SSHORT err_code;
 	USHORT err_pos;
 
@@ -2005,24 +2001,14 @@ bool EVL_mb_matches(thread_db* tdbb,
 
 	USHORT len1 = obj.to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
 	USHORT len2 = obj.to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
-	if (len1 > sizeof(buffer1)) {
-		buf1 = FB_NEW_RPT(*tdbb->getDefaultPool(), len1) str();
-		pp1 = (UCS2_CHAR *) buf1->str_data;
-	}
-	if (len2 > sizeof(buffer2)) {
-		buf2 = FB_NEW_RPT(*tdbb->getDefaultPool(), len2) str();
-		pp2 = (UCS2_CHAR *) buf2->str_data;
-	}
+	Ucs2Buffer buffer1, buffer2;
+	UCS2_CHAR *pp1 = buffer1.getBuffer(len1);
+	UCS2_CHAR *pp2 = buffer2.getBuffer(len2);
 
 	len1 = obj.to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
 	len2 = obj.to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
 
 	const bool ret_val = EVL_wc_matches(tdbb, obj, pp1, len1, pp2, len2);
-
-	if (pp1 != buffer1)
-		delete buf1;
-	if (pp2 != buffer2)
-		delete buf2;
 
 	return ret_val;
 }
@@ -2049,9 +2035,6 @@ bool EVL_mb_sleuth_check(thread_db* tdbb,
  *      later processing with sleuth_check().
  *
  **************************************/
-	UCS2_CHAR buffer1[100];		/* arbitrary size for optimization */
-	UCS2_CHAR *pp1 = buffer1;
-	str* buf1;
 	SSHORT err_code;
 	USHORT err_pos;
 
@@ -2064,10 +2047,8 @@ bool EVL_mb_sleuth_check(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	USHORT len1 = obj.to_wc(NULL, 0, search, search_bytes, &err_code, &err_pos);
-	if (len1 > sizeof(buffer1)) {
-		buf1 = FB_NEW_RPT(*tdbb->getDefaultPool(), len1) str();
-		pp1 = (UCS2_CHAR *) buf1->str_data;
-	}
+	Ucs2Buffer buffer1;
+	UCS2_CHAR *pp1 = buffer1.getBuffer(len1);
 
 	len1 = obj.to_wc(pp1, len1, search, search_bytes, &err_code, &err_pos);
 
@@ -2075,9 +2056,6 @@ bool EVL_mb_sleuth_check(thread_db* tdbb,
 		EVL_wc_sleuth_check(tdbb, obj, 0, pp1, len1,
 							reinterpret_cast<const UCS2_CHAR*>(match),
 							match_bytes);
-
-	if (pp1 != buffer1)
-		delete buf1;
 
 	return ret_val;
 }
@@ -2102,11 +2080,6 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
  *      Front-end of sleuth_merge() in Japanese version.
  *
  **************************************/
-	UCS2_CHAR buffer1[100], buffer2[100];	/* arbitrary size for optimization */
-	UCS2_CHAR *pp1 = buffer1;
-	UCS2_CHAR *pp2 = buffer2;
-	str* buf1;
-	str* buf2;
 	SSHORT err_code;
 	USHORT err_pos;
 
@@ -2118,14 +2091,9 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
 
 	USHORT len1 = obj.to_wc(NULL, 0, match, match_bytes, &err_code, &err_pos);
 	USHORT len2 = obj.to_wc(NULL, 0, control, control_bytes, &err_code, &err_pos);
-	if (len1 > sizeof(buffer1)) {
-		buf1 = FB_NEW_RPT(*tdbb->getDefaultPool(), len1) str();
-		pp1 = (UCS2_CHAR *) buf1->str_data;
-	}
-	if (len2 > sizeof(buffer2)) {
-		buf2 = FB_NEW_RPT(*tdbb->getDefaultPool(), len2) str();
-		pp2 = (UCS2_CHAR *) buf2->str_data;
-	}
+	Ucs2Buffer buffer1, buffer2;
+	UCS2_CHAR *pp1 = buffer1.getBuffer(len1);
+	UCS2_CHAR *pp2 = buffer2.getBuffer(len2);
 
 	len1 = obj.to_wc(pp1, len1, match, match_bytes, &err_code, &err_pos);
 	len2 = obj.to_wc(pp2, len2, control, control_bytes, &err_code, &err_pos);
@@ -2133,11 +2101,6 @@ USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
 	const USHORT ret_val = EVL_wc_sleuth_merge(tdbb, obj, pp1, len1, pp2, len2,
 				      reinterpret_cast<UCS2_CHAR*>(combined),
 				      combined_bytes);
-
-	if (pp1 != buffer1)
-		delete buf1;
-	if (pp2 != buffer2)
-		delete buf2;
 
 	return ret_val;
 }
@@ -3103,14 +3066,14 @@ static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_
 
 		/* Allocate a string block of sufficient size. */
 
-		str* string = impure->vlu_string;
+		VaryingString* string = impure->vlu_string;
 		if (string && string->str_length < length) {
 			delete string;
 			string = NULL;
 		}
 
 		if (!string) {
-			string = impure->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) str();
+			string = impure->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) VaryingString();
 			string->str_length = length;
 		}
 
@@ -3254,12 +3217,9 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			ttype1 = value2->dsc_sub_type;
 		}
 
-		UCHAR temp2[256], *address2;
-		str* temp3 = NULL;
-		USHORT length2 =
-			MOV_make_string2(value2, ttype1, &address2,
-							 reinterpret_cast<vary*>(temp2),
-							 sizeof(temp2), &temp3);
+		UCHAR *address2;
+		MoveBuffer temp2;
+		USHORT length2 = MOV_make_string2(value2, ttype1, &address2, temp2);
 
 		if ((ULONG) length1 + (ULONG) length2 > MAX_COLUMN_SIZE - sizeof(USHORT))
 		{
@@ -3282,13 +3242,8 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			memcpy(p, address1, length1);
 			p += length1;
 		}
-
 		if (length2) {
 			memcpy(p, address2, length2);
-		}
-
-		if (temp3) {
-			delete temp3;
 		}
 	}
 	return &impure->vlu_desc;
@@ -4537,20 +4492,12 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 	dsc* desc3 = EVL_expr(tdbb, node->nod_arg[2]);
 
 	UCHAR* p1;
-	UCHAR temp1[TEMP_LENGTH];
-	str* sleuth_str = NULL;
-	SSHORT l1 =
-		MOV_make_string2(desc3, ttype, &p1,
-						 reinterpret_cast<vary*>(temp1), sizeof(temp1),
-						 &sleuth_str);
+	MoveBuffer sleuth_str;
+	SSHORT l1 = MOV_make_string2(desc3, ttype, &p1, sleuth_str);
 /* Get address and length of search string */
 	UCHAR* p2;
-	UCHAR temp2[TEMP_LENGTH];
-	str* match_str = NULL;
-	SSHORT l2 =
-		MOV_make_string2(desc2, ttype, &p2,
-						 reinterpret_cast<vary*>(temp2), sizeof(temp2),
-						 &match_str);
+	MoveBuffer match_str;
+	SSHORT l2 = MOV_make_string2(desc2, ttype, &p2, match_str);
 
 /* Merge search and control strings */
 	UCHAR control[BUFFER_SMALL];
@@ -4562,14 +4509,11 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 /* Note: resulting string from sleuth_merge is either UCS2_CHAR or NCHAR 
    and never Multibyte (see note in EVL_mb_sleuth_check) */
 	bool ret_val;
-	str* data_str = NULL;
+	MoveBuffer data_str;
 	if (desc1->dsc_dtype != dtype_blob) {
 		/* Source is not a blob, do a simple search */
 
-		l1 =
-			MOV_make_string2(desc1, ttype, &p1,
-							 reinterpret_cast<vary*>(temp1),
-							 sizeof(temp1), &data_str);
+		l1 = MOV_make_string2(desc1, ttype, &p1, data_str);
 		ret_val = obj.sleuth_check(tdbb, 0, p1, l1, control, l2);
 	}
 	else {
@@ -4594,13 +4538,6 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 		BLB_close(tdbb, blob);
 	}
 
-	if (data_str)
-		delete data_str;
-	if (sleuth_str)
-		delete sleuth_str;
-	if (match_str)
-		delete match_str;
-
 	return ret_val;
 }
 
@@ -4619,11 +4556,11 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
  *      or STARTS WITH.
  *
  **************************************/
-	UCHAR *p1, *p2 = NULL, temp1[TEMP_LENGTH], temp2[TEMP_LENGTH],
-		buffer[BUFFER_LARGE];
+	// !!!!!!!!!!!!!!!!
+	UCHAR *p1, *p2 = NULL, temp1[256], temp2[256], buffer[BUFFER_LARGE];
 	SSHORT l2 = 0;
 	USHORT type1;
-	str* match_str = NULL;
+	MoveBuffer match_str;
 	bool ret_val;
 
 	SET_TDBB(tdbb);
@@ -4642,10 +4579,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		/* Get address and length of search string - convert to datatype of data */
 
 		if (!computed_invariant) {
-			l2 =
-				MOV_make_string2(desc2, type1, &p2,
-							 	 reinterpret_cast<vary*>(temp2),
-							 	 sizeof(temp2), &match_str);
+			l2 = MOV_make_string2(desc2, type1, &p2, match_str);
 		}
 
 		USHORT xtype1;
@@ -4690,9 +4624,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 								sizeof(temp2));
 			} else {
 				l2 =
-					MOV_make_string2(desc2, type1, &p2,
-								 	reinterpret_cast<vary*>(temp2),
-								 	sizeof(temp2), &match_str);
+					MOV_make_string2(desc2, type1, &p2, match_str);
 			}
 		}
 
@@ -4811,8 +4743,6 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 		BLB_close(tdbb, blob);
 	}
-
-	delete match_str;
 
 	return ret_val;
 }
@@ -4979,8 +4909,8 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 		else
 		{
 			const USHORT bufflen = MAX(BUFFER_LARGE, length);
-			str* temp_str = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(UCHAR) * bufflen) str();
-			UCHAR *buffer = temp_str->str_data;
+			Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> temp;
+			UCHAR *buffer = temp.getBuffer(bufflen);
 		
 			USHORT datalen = 0;
 			while (!(blob->blb_flags & BLB_eof) && offset)
@@ -4997,7 +4927,6 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 			desc.dsc_address = buffer;
 			INTL_ASSIGN_TTYPE(&desc, value->dsc_scale);
 			EVL_make_value(tdbb, &desc, impure);
-			delete temp_str;
 		}
 	
 		return &impure->vlu_desc;
@@ -5186,4 +5115,3 @@ static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impur
 
 	return &impure->vlu_desc;
 }
-
