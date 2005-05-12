@@ -734,7 +734,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		jrd_nod* const saved_sort_node = sort;
 
 		// AB: If previous rsb's are already on the stack we can't use
-		// an navigational-retrieval for an ORDER BY cause the next
+		// a navigational-retrieval for an ORDER BY because the next
 		// streams are JOINed to the previous ones
 		if (rivers_stack.hasData()) {
 			sort = NULL;
@@ -744,7 +744,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			while (rivers_stack.hasMore(1)
 			   && gen_sort_merge(tdbb, opt, rivers_stack));
 			// AB: Mark the previous used streams (sub-RecordSelExpr's) again
-			// as active, because an SORT/MERGE could reset the flags
+			// as active, because a SORT/MERGE could reset the flags
 			for (i = 1; i <= sub_streams[0]; i++) {
 				csb->csb_rpt[sub_streams[i]].csb_flags |= csb_active;			
 			}
@@ -1680,8 +1680,8 @@ static void check_sorts(RecordSelExpr* rse)
 				if (node->nod_type == nod_rse) {
 					new_rse = (RecordSelExpr*) node;
 
-					// AB: Don't distribute the sort when a FIRST/SKIP is supllied, 
-					// because that will effect the behaviour from the deeper RSE.
+					// AB: Don't distribute the sort when a FIRST/SKIP is supplied,
+					// because that will affect the behaviour from the deeper RSE.
 					if (new_rse->rse_first || new_rse->rse_skip) {
 						node = NULL;
 						break;
@@ -4549,7 +4549,7 @@ static RecordSource* gen_outer(thread_db* tdbb,
 			              opt,
 			              stream_i.stream_num,
 			              NULL, // AB: the sort clause for the inner stream of an
-						        // OUTER JOIN is never usefull for index retrieval.
+						        // OUTER JOIN is never useful for index retrieval.
 			              NULL, // dimitr: the same for DISTINCT via navigational index
 			              bOuter,
 			              true,
@@ -5712,7 +5712,7 @@ static RecordSource* gen_union(thread_db* tdbb,
 		RecordSelExpr* rse = (RecordSelExpr*) * ptr++;
 		jrd_nod* map = (jrd_nod*) * ptr++;
 
-		// AB: Try to distribute booleans from the top rse for a UNION to 
+		// AB: Try to distribute booleans from the top rse for an UNION to
 		// the WHERE clause of every single rse.
 		NodeStack deliverStack;
 		gen_deliver_unmapped(tdbb, &deliverStack, map, parent_stack, shellStream);
@@ -6673,9 +6673,9 @@ static SSHORT match_index(thread_db* tdbb,
 			 (USHORT)(IPTR) match->nod_arg[e_fld_id] == idx->idx_rpt[i].idx_field)
 		{
 			++count;
-			/* AB: If we have already an exact match don't 
-			   override it with worser matches, but increment the 
-			   count so that the node will be marked as matched! */
+			// AB: If we have already an exact match don't
+			// override it with worser matches, but increment the
+			// count so that the node will be marked as matched!
 			if (ptr->opt_match && ptr->opt_match->nod_type == nod_eql) {
 				break;
 			}
