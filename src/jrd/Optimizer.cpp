@@ -1339,7 +1339,7 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 		idx->idx_runtime_flags |= idx_navigate;
 		//return gen_nav_rsb(tdbb, opt, stream, relation, alias, idx);
 
-		USHORT key_length = ROUNDUP(BTR_key_length(0, relation, idx), sizeof(SLONG));
+		USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
 		RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), RSB_NAV_count) RecordSource();
 		rsb->rsb_type = rsb_navigate;
 		rsb->rsb_relation = relation;
