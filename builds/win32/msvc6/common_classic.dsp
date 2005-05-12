@@ -137,6 +137,10 @@ SOURCE=..\..\..\src\jrd\os\win32\fbsyslog.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\MetaName.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
 # End Source File
 # Begin Source File
@@ -193,15 +197,19 @@ SOURCE=..\..\..\src\common\classes\fb_pair.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\GenericMap.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\common\classes\init.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\objects_array.h
+SOURCE=..\..\..\src\common\classes\MetaName.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\GenericMap.h
+SOURCE=..\..\..\src\common\classes\objects_array.h
 # End Source File
 # Begin Source File
 
@@ -210,6 +218,10 @@ SOURCE=..\..\..\src\common\classes\timestamp.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\utils_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\vector.h
 # End Source File
 # End Group
 # Begin Group "CLUMPLET files"

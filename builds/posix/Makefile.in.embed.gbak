@@ -63,7 +63,7 @@ all: gbak gsplit
 gbak : $(LIBFBEMBED_SO) $(GBAK)
 
 $(GBAK):	$(GBAK_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon -lfbembed $(LINK_LIBS)
 
 
 

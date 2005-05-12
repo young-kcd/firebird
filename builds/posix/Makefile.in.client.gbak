@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gbak,v 1.9 2005-02-05 10:30:48 fsg Exp $
+#  $Id: Makefile.in.client.gbak,v 1.10 2005-05-12 18:28:46 alexpeshkoff Exp $
 #
 
 ROOT=..
@@ -42,9 +42,10 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp\
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
+			common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp\
+			common/classes/MetaName.cpp
 GBAK_Files = backup.epp  restore.epp \
-			 burp.cpp canonical.cpp misc.cpp mvol.cpp
+			burp.cpp canonical.cpp misc.cpp mvol.cpp
 GBAK_Sources = $(addprefix burp/, $(GBAK_Files)) $(GBAK_Other_Sources)
 GBAK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAK_Sources))))
 

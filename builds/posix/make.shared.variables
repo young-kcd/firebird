@@ -220,7 +220,7 @@ FBCONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCONFIG_So
 #
 # common
 
-FBCOMMON_ClientFiles = fb_exception.cpp utils.cpp
+FBCOMMON_ClientFiles = fb_exception.cpp utils.cpp classes/MetaName.cpp
 FBCOMMON_ServerFiles = 
 
 FBCOMMON_Files = $(FBCOMMON_ClientFiles) $(FBCOMMON_ServerFiles)
