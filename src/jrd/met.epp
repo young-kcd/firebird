@@ -3197,11 +3197,13 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
    make sure that the error will be caught if the operation is tried
    again. */
 
+	jrd_req* request = 0;
+
 	try {
 
 /* Since this can be called recursively, find an inactive clone of the request */
 
-	jrd_req* request = CMP_find_request(tdbb, irq_r_fields, IRQ_REQUESTS);
+	request = CMP_find_request(tdbb, irq_r_fields, IRQ_REQUESTS);
 	CompilerScratch* csb = NULL;
 
 	FOR(REQUEST_HANDLE request)
@@ -3470,6 +3472,12 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 #ifdef SUPERSERVER
 		THD_rec_mutex_unlock(&dbb->dbb_sp_rec_mutex);
 #endif
+		// Some functions inside FOR loop may throw, in which case request
+		// remained active forever. AP: 13-may-05.
+		if (request && request->req_flags & req_active)
+		{
+			EXE_unwind(tdbb, request);
+		}
 		throw;
 	}
 }
