@@ -178,6 +178,9 @@
 				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\MetaName.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp">
 			</File>
 			<File
@@ -228,6 +231,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\GenericMap.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\MetaName.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.h">
