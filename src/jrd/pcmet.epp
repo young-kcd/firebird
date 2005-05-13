@@ -112,7 +112,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
             if (!relation)
             {
 				relation = MET_relation(tdbb, REL.RDB$RELATION_ID);
-				if (relation->rel_name.length())
+				if (relation->rel_name.length() == 0)
 				{
 					relation->rel_name = REL.RDB$RELATION_NAME;
 				}
