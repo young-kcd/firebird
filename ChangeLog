@@ -1,3 +1,86 @@
+2005-05-12 20:28  alexpeshkoff
+
+	* firebird2/builds/: posix/Makefile.in.client.gbak (1.10),
+	posix/Makefile.in.embed.gbak (1.11), posix/make.shared.variables
+	(1.50), win32/msvc6/common.dsp (1.31),
+	win32/msvc6/common_classic.dsp (1.25):
+	
+	Applied class MetaName
+
+2005-05-12 20:27  alexpeshkoff
+
+	* firebird2/src/jrd/: blb.cpp (1.92), cmp.cpp (1.172), cmp_proto.h
+	(1.28), cvt2.cpp (1.46), cvt2_proto.h (1.8), dbg.cpp (1.31),
+	dbt.cpp (1.31), dfw.epp (1.147), dyn.epp (1.74), dyn.h (1.23),
+	dyn_def.epp (1.92), dyn_del.epp (1.47), dyn_df_proto.h (1.11),
+	dyn_dl_proto.h (1.7), dyn_md_proto.h (1.8), dyn_mod.epp (1.57),
+	dyn_ut_proto.h (1.9), dyn_util.epp (1.37), err.cpp (1.60),
+	err_proto.h (1.24), event.cpp (1.55), event_proto.h (1.13), evl.cpp
+	(1.134), exe.cpp (1.146), exe.h (1.68), fun.epp (1.70), fun_proto.h
+	(1.14), grant.epp (1.50), idx.cpp (1.90), ini.epp (1.65),
+	ini_proto.h (1.11), jrd.cpp (1.213), jrd.h (1.133), met.epp
+	(1.159), met_proto.h (1.45), mov.cpp (1.22), mov_proto.h (1.11),
+	opt.cpp (1.240), Optimizer.cpp (1.26), Optimizer.h (1.7), par.cpp
+	(1.114), par_proto.h (1.16), pcmet.epp (1.34), pwd.cpp (1.42),
+	rlck.cpp (1.32), rse.cpp (1.85), rse.h (1.37), scl.epp (1.69),
+	scl.h (1.12), scl_proto.h (1.21), sdl.cpp (1.41), sdl.h (1.8),
+	sym.cpp (1.17), sym.h (1.3), tra.cpp (1.100), tra.h (1.46), utl.cpp
+	(1.82), validation.cpp (1.7):
+	
+	1. Applied class MetaName 2. Small generic cleanup
+
+2005-05-12 20:26  alexpeshkoff
+
+	* firebird2/src/common/classes/: MetaName.cpp (1.1), MetaName.h
+	(1.1):
+	
+	Added class to handle metadata names
+
+2005-05-12 20:24  alexpeshkoff
+
+	* firebird2/src/common/classes/vector.h (1.14):
+	
+	make Firebird::vector const-friendly
+
+2005-05-12 20:23  alexpeshkoff
+
+	* firebird2/src/dsql/ddl.cpp (1.134):
+	
+	front-ported my fix from 1.5.2 - fixed AV in ALTER TABLE
+
+2005-05-12 19:46  hvlad
+
+	* firebird2/src/dsql/make.cpp (1.88):
+	
+	Fixed unregistered bug - AV in incorrect written EXECUTE BLOCK
+	statement. For example : EXECUTE BLOCK AS BEGIN   INSERT INTO DUMMY
+	(ID) VALUES(?); END Thanks to Arno
+
+2005-05-12 15:51  hvlad
+
+	* firebird2/src/jrd/Optimizer.cpp (1.25):
+	
+	Correction. Thanks to Claudio
+
+2005-05-12 09:00  robocop
+
+	* firebird2/src/isql/isql.epp (1.144):
+	
+	Apply Miroslav Penchev fix for ISQL_disconnect_database overwriting
+	the Quiet flag permanently.
+
+2005-05-12 08:51  robocop
+
+	* firebird2/src/jrd/opt.cpp (1.239):
+	
+	Totally misc.
+
+2005-05-12 07:32  robocop
+
+	* firebird2/src/isql/isql.epp (1.143):
+	
+	Simplify array bounds printing for canonic case.
+
 2005-05-11 09:43  dimitr
 
 	* firebird2/src/jrd/met.epp (1.158):
