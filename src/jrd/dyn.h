@@ -49,7 +49,8 @@ public:
 	jrd_tra* gbl_transaction;
 };
 
-struct dyn_fld {
+class dyn_fld {
+public:
 	dsc dyn_dsc;
 	bool dyn_null_flag;
 	USHORT dyn_dtype;
@@ -63,8 +64,12 @@ struct dyn_fld {
     USHORT dyn_charbytelen; /* Used to check modify operations on string types. */
 public:
 	explicit dyn_fld(MemoryPool& p) 
-		: dyn_fld_source(p), dyn_rel_name(p), dyn_fld_name(p) { }
-	dyn_fld() { }
+		: dyn_fld_source(p), dyn_rel_name(p), dyn_fld_name(p),
+		dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
+		dyn_collation(0), dyn_charset(0), dyn_charbytelen(0) { }
+	dyn_fld()
+		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
+		dyn_collation(0), dyn_charset(0), dyn_charbytelen(0) { }
 };
 
 } //namespace Jrd
