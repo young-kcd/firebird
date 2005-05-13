@@ -133,6 +133,10 @@ SOURCE=..\..\..\src\jrd\os\win32\fbsyslog.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\MetaName.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
 # End Source File
 # Begin Source File
@@ -182,6 +186,10 @@ SOURCE=..\..\..\src\common\config\dir_list.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\os\fbsyslog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\MetaName.h
 # End Source File
 # Begin Source File
 
