@@ -1473,9 +1473,11 @@ void BURP_print_status(const ISC_STATUS* status_vector)
 		BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
-		    int i = 0;
-			while (*status && (++i < ISC_STATUS_LENGTH))
-				status++;
+			int i = 0;
+			if (status[1]) {
+				while (*status && (++i < ISC_STATUS_LENGTH))
+					status++;
+			}
 			for (int j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH); j++, i++)
 				*status++ = status_vector[j];
 		}
@@ -1651,7 +1653,8 @@ static gbak_action open_files(const TEXT* file1,
  *
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
-	ISC_STATUS* status_vector = tdgbl->status;
+	ISC_STATUS_ARRAY temp_status;
+	ISC_STATUS* status_vector = temp_status;
 
 // try to attach the database using the first file_name 
 
