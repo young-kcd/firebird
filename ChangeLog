@@ -1,3 +1,37 @@
+2005-05-13 16:42  alexpeshkoff
+
+	* firebird2/src/jrd/met.epp (1.160):
+	
+	fixed unregistered bug - after attempt to create view v(c1) as
+	select 1 from v; all clones of system request remained active
+	forever
+
+2005-05-13 15:52  alexpeshkoff
+
+	* firebird2/src/jrd/pcmet.epp (1.35):
+	
+	fixed bug in my resent commit - thanks to Claudio
+
+2005-05-13 15:50  alexpeshkoff
+
+	* firebird2/src/jrd/dyn.h (1.24):
+	
+	perform initialization of dyn_fld in constructor - thanks to
+	Claudio
+
+2005-05-13 09:03  hvlad
+
+	* firebird2/builds/win32/msvc6/common_static.dsp (1.8):
+	
+	Update project files after Alex changes
+
+2005-05-13 08:54  hvlad
+
+	* firebird2/builds/win32/msvc7/: common.vcproj (1.21),
+	common_classic.vcproj (1.19), common_static.vcproj (1.9):
+	
+	Update project files after Alex changes
+
 2005-05-12 20:28  alexpeshkoff
 
 	* firebird2/builds/: posix/Makefile.in.client.gbak (1.10),
