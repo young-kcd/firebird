@@ -761,7 +761,7 @@ public:
 
 public:
 	explicit jrd_rel(MemoryPool& p) 
-		: rel_name(p), rel_owner_name(p), rel_security_name(p), rel_view_contexts(p) { }
+		: rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p) { }
 };
 
 // rel_flags

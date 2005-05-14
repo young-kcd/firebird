@@ -64,9 +64,9 @@ public:
     USHORT dyn_charbytelen; /* Used to check modify operations on string types. */
 public:
 	explicit dyn_fld(MemoryPool& p) 
-		: dyn_fld_source(p), dyn_rel_name(p), dyn_fld_name(p),
-		dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
-		dyn_collation(0), dyn_charset(0), dyn_charbytelen(0) { }
+		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
+		dyn_collation(0), dyn_charset(0), dyn_fld_source(p), dyn_rel_name(p),
+		dyn_fld_name(p), dyn_charbytelen(0) { }
 	dyn_fld()
 		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
 		dyn_collation(0), dyn_charset(0), dyn_charbytelen(0) { }
