@@ -450,7 +450,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 							END_FOR
 							ON_ERROR
 								ISQL_errmsg (isc_status);
-								return ERR;
+								return ps_ERR;
 							END_ERROR;
 						}
 					}

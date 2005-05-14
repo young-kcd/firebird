@@ -402,7 +402,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	bool first = true;
 
 	if (!*object)
-		return ERR;
+		return ps_ERR;
 
 // Query against user_privileges instead of looking at rdb$security_classes
 
@@ -574,7 +574,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
-				return ERR;
+				return ps_ERR;
 			END_ERROR;
 
 			// Print last case if there was anything to print
@@ -599,7 +599,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return ERR;
+			return ps_ERR;
 		END_ERROR;
 
 		if (!first)
@@ -691,12 +691,12 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
-				return (ERR);
+				return (ps_ERR);
 			END_ERROR
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return (ERR);
+			return (ps_ERR);
 		END_ERROR;
 
 		if (!first)
@@ -747,13 +747,13 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
-				return (ERR);
+				return (ps_ERR);
 			END_ERROR;
 
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return (ERR);
+			return (ps_ERR);
 		END_ERROR;
 
 		if (!first)
@@ -912,7 +912,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 // Can't show nothing, return an error
 
 	if (!cmd[1])
-		return (ERR);
+		return (ps_ERR);
 		
 // Only show version works if there is no db attached
 	if ((!strcmp(cmd[1], "VERSION")) || (!strcmp(cmd[1], "VER"))) {
@@ -926,7 +926,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		if (!strcmp(cmd[2], "DIALECT"))
 			ret = show_dialect();
 		else
-			ret = ERR;
+			ret = ps_ERR;
 	}
 	else if (!ISQL_dbcheck())
 	{
@@ -1248,7 +1248,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 	else if ((!strcmp(cmd[1], "DATABASE")) || (!strcmp(cmd[1], "DB")))
 		show_db();
 	else
-		return (ERR);
+		return (ps_ERR);
 
 	if (ret == NOT_FOUND) {
 		TEXT key_string[MSG_LENGTH];
@@ -1357,7 +1357,7 @@ static processing_state show_all_tables(SSHORT sys_flag)
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return ERR;
+			return ps_ERR;
 		END_ERROR;
 	}
 	// 23-Apr-2004 (only tables)
@@ -1378,7 +1378,7 @@ static processing_state show_all_tables(SSHORT sys_flag)
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return ERR;
+			return ps_ERR;
 		END_ERROR;
 	}
 
@@ -1491,7 +1491,7 @@ static processing_state show_check(const SCHAR* object)
 	bool first = true;
 
 	if (!*object)
-		return (ERR);
+		return (ps_ERR);
 // Query gets the check clauses for triggers stored for check constraints
 
 	FOR TRG IN RDB$TRIGGERS CROSS
@@ -1516,7 +1516,7 @@ static processing_state show_check(const SCHAR* object)
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		return (ERR);
+		return (ps_ERR);
 	END_ERROR;
 	if (first)
 		return (OBJECT_NOT_FOUND);
@@ -1717,7 +1717,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return ERR;
+			return ps_ERR;
 		END_ERROR;
 		if (!first)
 			ISQL_printf(isqlGlob.Out, NEWLINE);
@@ -1774,7 +1774,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 							END_FOR
 							ON_ERROR
 								ISQL_errmsg (isc_status);
-								return ERR;
+								return ps_ERR;
 							END_ERROR;
 						}
 					}
@@ -1879,7 +1879,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return (ERR);
+			return (ps_ERR);
 		END_ERROR;
 	}
 	if (first)
@@ -1953,7 +1953,7 @@ static processing_state show_exceptions(const SCHAR* object)
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
-				return ERR;
+				return ps_ERR;
 			END_ERROR;
 
 			sprintf (Print_buffer, "%s  %s%s", (first_dep ? NEWLINE : ""),
@@ -1966,7 +1966,7 @@ static processing_state show_exceptions(const SCHAR* object)
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	END_ERROR;
 	if (first)
 		return (OBJECT_NOT_FOUND);
@@ -2002,7 +2002,7 @@ static processing_state show_filters(const SCHAR* object)
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return ERR;
+			return ps_ERR;
 		END_ERROR;
 		if (!first) {
 			ISQL_printf(isqlGlob.Out, NEWLINE);
@@ -2035,7 +2035,7 @@ static processing_state show_filters(const SCHAR* object)
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	END_ERROR;
 
 	if (first)
@@ -2077,7 +2077,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg(isc_status);
-				return ERR;
+				return ps_ERR;
 			END_ERROR;
 		}
 		else
@@ -2094,7 +2094,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg(isc_status);
-				return ERR;
+				return ps_ERR;
 			END_ERROR;
 		}
 		if (!first)
@@ -2182,7 +2182,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 					END_FOR
 					ON_ERROR
 						ISQL_errmsg (isc_status);
-					   return ERR;
+					   return ps_ERR;
 				   END_ERROR;
 				}
 
@@ -2230,7 +2230,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
-				return ERR;
+				return ps_ERR;
 			END_ERROR;
 		}
 
@@ -2239,7 +2239,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	END_ERROR;
 	if (first)
 		return (OBJECT_NOT_FOUND);
@@ -2344,7 +2344,7 @@ static processing_state show_generators(const SCHAR* object)
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	END_ERROR;
 	if (!found)
 		return (OBJECT_NOT_FOUND);
@@ -2440,7 +2440,7 @@ static processing_state show_indices(const SCHAR* const* cmd)
 			first = false;
 		END_FOR
 			ON_ERROR ISQL_errmsg(isc_status);
-			return ERR;
+			return ps_ERR;
 		END_ERROR;
 		if (first)
 			return (OBJECT_NOT_FOUND);
@@ -2473,7 +2473,7 @@ static processing_state show_indices(const SCHAR* const* cmd)
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return (ERR);
+			return (ps_ERR);
 		END_ERROR;
 		if (first)
 			return (OBJECT_NOT_FOUND);
@@ -2545,14 +2545,14 @@ static processing_state show_proc(const SCHAR* procname)
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
-				return (ERR);
+				return (ps_ERR);
 			END_ERROR;
 			ISQL_printf (isqlGlob.Out, NEWLINE);
 
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return (ERR);
+			return (ps_ERR);
 		END_ERROR;
 		if (first_proc)
 			return OBJECT_NOT_FOUND;
@@ -2622,7 +2622,7 @@ static processing_state show_proc(const SCHAR* procname)
 							END_FOR
 							ON_ERROR
 								ISQL_errmsg (isc_status);
-								return ERR;
+								return ps_ERR;
 							END_ERROR;
 						} // if field_type ...
 					} // if isqlGlob.major_ods ...
@@ -2678,13 +2678,13 @@ static processing_state show_proc(const SCHAR* procname)
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg (isc_status);
-			return ERR;
+			return ps_ERR;
 		END_ERROR;
 
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	END_ERROR;
 	if (first)
 		return (OBJECT_NOT_FOUND);
@@ -2716,7 +2716,7 @@ static processing_state show_role(const SCHAR* object)
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return ERR;
+			return ps_ERR;
 		END_ERROR;
 
 		if (!first)
@@ -2748,7 +2748,7 @@ static processing_state show_role(const SCHAR* object)
 				END_FOR
 				ON_ERROR
 					ISQL_errmsg (isc_status);
-					return (ERR);
+					return (ps_ERR);
 				END_ERROR
 			}
 			
@@ -2781,7 +2781,7 @@ static processing_state show_role(const SCHAR* object)
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
-				return (ERR);
+				return (ps_ERR);
 			END_ERROR
 			
 			if (first)
@@ -2801,7 +2801,7 @@ static processing_state show_role(const SCHAR* object)
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return (ERR);
+			return (ps_ERR);
 		END_ERROR
 
 		if (first)
@@ -2851,7 +2851,7 @@ static processing_state show_table(
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	END_ERROR;
 
 	if (first)
@@ -2946,7 +2946,7 @@ static processing_state show_table(
 						END_FOR
 						ON_ERROR
 							ISQL_errmsg (isc_status);
-							return ERR;
+							return ps_ERR;
 						END_ERROR;
 					}
 				}
@@ -3045,7 +3045,7 @@ static processing_state show_table(
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	END_ERROR;
 
 // If this is a view and there were columns, print the view text
@@ -3063,7 +3063,7 @@ static processing_state show_table(
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return ERR;
+			return ps_ERR;
 		END_ERROR;
 	}
 
@@ -3132,14 +3132,14 @@ static processing_state show_table(
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
-				return ERR;
+				return ps_ERR;
 			END_ERROR;
 		}
 
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	END_ERROR;
 
 	FOR R_C IN RDB$RELATION_CONSTRAINTS CROSS
@@ -3161,7 +3161,7 @@ static processing_state show_table(
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	END_ERROR;
 
 	// Do check constraints
@@ -3227,7 +3227,7 @@ static processing_state show_trigger(
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
-			return ERR;
+			return ps_ERR;
 		END_ERROR;
 		if (first)
 			return OBJECT_NOT_FOUND;
@@ -3263,7 +3263,7 @@ static processing_state show_trigger(
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg (isc_status);
-			return ERR;
+			return ps_ERR;
 		END_ERROR;
 
 		if (skip)
@@ -3300,7 +3300,7 @@ static processing_state show_trigger(
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	END_ERROR;
 	if (first)
 		return OBJECT_NOT_FOUND;

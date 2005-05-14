@@ -559,7 +559,7 @@ int ISQL_main(int argc,
 		}
 		break;
 
-	case ERR:
+	case ps_ERR:
 	    {
 			TEXT helpstring[155];
 			ISQL_msg_get(USAGE1, sizeof(helpstring), helpstring, NULL);
@@ -1816,13 +1816,13 @@ static processing_state add_row(TEXT* tabname)
  *
  **************************************/
 	if (!*tabname)
-		return (ERR);
+		return (ps_ERR);
 
 	if (!Interactive)
-		return (ERR);
+		return (ps_ERR);
 		
 	if (Input_file)
-		return ERR;
+		return ps_ERR;
 
 
 	// There may have been a commit transaction before we got here
@@ -2347,7 +2347,7 @@ static processing_state blobedit(const TEXT* action,
 		return FAIL;
 
 	if (*cmd[1] == 0)
-		return ERR;
+		return ps_ERR;
 
 	const TEXT* p = cmd[1];
 
@@ -2368,7 +2368,7 @@ static processing_state blobedit(const TEXT* action,
 		BLOB_dump(&blobid, DB, M__trans, cmd[2]);
 	}
 	else
-		return ERR;
+		return ps_ERR;
 
 	return (SKIP);
 }
@@ -2936,7 +2936,7 @@ static processing_state create_db(const TEXT* statement,
 
 		if (isc_dsql_allocate_statement(isc_status, &DB, &global_Stmt)) {
 			ISQL_errmsg(isc_status);
-			ret = ERR;
+			ret = ps_ERR;
 		}
 	}
 
@@ -3051,7 +3051,7 @@ static void do_isql()
 
 		switch (ret) {
 		case CONT:
-			if (process_statement(statement, global_sqldap) == ERR)
+			if (process_statement(statement, global_sqldap) == ps_ERR)
 			{
 				Exit_value = FINI_ERROR;
 				if (!Interactive && BailOnError)
@@ -3113,7 +3113,7 @@ static void do_isql()
 		case EXTRACTALL:
 		default:
 			/* fb_assert (FALSE);  -- removed as finds too many problems */
-		case ERR:
+		case ps_ERR:
 		case FAIL:
 			Exit_value = FINI_ERROR;
 			if (!Interactive && BailOnError)
@@ -3572,7 +3572,7 @@ static processing_state frontend(const TEXT* statement)
 	{
 		if (!strcmp(parms[1], "DATABASE") || !strcmp(parms[1], "SCHEMA"))
 			if (*parms[2])
-				ret = ERR;
+				ret = ps_ERR;
 			else
 				ret = drop_db();
 		else
@@ -3615,13 +3615,13 @@ static processing_state frontend(const TEXT* statement)
 			else if (*parms[i])
 			{
 				// Unrecognized option to CONNECT 
-				ret = ERR;
+				ret = ps_ERR;
 				break;
 			}
 			else
 				i++;
 		}
-		if (ret != ERR)
+		if (ret != ps_ERR)
 			ret = newdb(lparms[1], usr, psw, numbufs, sql_role_nm, true);
 	}
 
@@ -3682,7 +3682,7 @@ static processing_state frontend(const TEXT* statement)
 	// Free the frontend command
 	frontend_free_parms(parms, lparms);
 
-	if (ret == ERR) {
+	if (ret == ps_ERR) {
 		if (bad_dialect)
 			ISQL_msg_get(CMD_ERR, errbuf, bad_dialect_buf);
 		else
@@ -3824,7 +3824,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		if (!strcmp(parms[2], "DIALECT"))
 			ret = get_dialect(parms[3], bad_dialect_buf, bad_dialect);
 		else
-			ret = ERR;
+			ret = ps_ERR;
 	}
 	else if (!strcmp (parms[1], "WARNINGS") || !strcmp (parms[1], "WNG")) {
 		ret = do_set_command (parms[2], &Warnings);
@@ -3838,7 +3838,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 	else if (!strcmp(parms[1], "BAIL"))
 		ret = do_set_command(parms[2], &BailOnError);
 	else
-		ret = ERR;
+		ret = ps_ERR;
 	return ret;
 }
 
@@ -3869,7 +3869,7 @@ static processing_state do_set_command(const TEXT* parm,
 	else if (!strcmp(parm, "OFF"))
 		*global_flag = false;
 	else
-		ret = ERR;
+		ret = ps_ERR;
 	return (ret);
 }
 
@@ -3893,7 +3893,7 @@ static processing_state get_dialect(const char* const dialect_str,
 			sprintf(bad_dialect_buf, "%s%s",
 					"invalid SQL dialect ", dialect_str);
 			isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect
-			ret = ERR;
+			ret = ps_ERR;
 		}
 		else
 		{
@@ -3972,7 +3972,7 @@ static processing_state get_dialect(const char* const dialect_str,
 		bad_dialect = true;
 		sprintf(bad_dialect_buf, "%s%s", "invalid SQL dialect ",
 				dialect_str);
-		ret = ERR;
+		ret = ps_ERR;
 	}
 	return ret;
 }
@@ -4883,7 +4883,7 @@ static processing_state input(const TEXT* infile)
 
 	// If there is no file name specified, return error
 	if (!infile || !*infile) {
-		return ERR;
+		return ps_ERR;
 	}
 
 	TEXT path[MAXPATHLEN];
@@ -4971,7 +4971,7 @@ static processing_state newdb(TEXT* dbname,
 	// No name of a database, just return an error
 
 	if (!dbname || !*dbname)
-		return ERR;
+		return ps_ERR;
 
 	/*
 	 * Since the dbname is set already, in the case where a database is specified
@@ -4982,7 +4982,7 @@ static processing_state newdb(TEXT* dbname,
 	const size_t len = chop_at(dbname, MAXPATHLEN);
 	SCHAR* save_database = (SCHAR*) ISQL_ALLOC(len + 1);
 	if (!save_database)
-		return ERR;
+		return ps_ERR;
 
 	strcpy(save_database, dbname);
 	ISQL_disconnect_database(false);
@@ -5255,7 +5255,7 @@ static processing_state newsize(const TEXT* colname,
 	collist* pold = NULL;
 
 	if (!*colname || (strlen(colname) >= WORDLENGTH))
-		return ERR;
+		return ps_ERR;
 
 	// If no size is given, remove the entry
 	if (!*sizestr) {
@@ -5278,7 +5278,7 @@ static processing_state newsize(const TEXT* colname,
 
 	const SSHORT size = atoi(sizestr);
 	if (size <= 0)
-		return ERR;
+		return ps_ERR;
 
 	collist* c = (collist*) ISQL_ALLOC((SLONG) sizeof(collist));
 	strcpy(c->col_name, colname);
@@ -5472,7 +5472,7 @@ static processing_state parse_arg(int argc,
 				if ((s = argv[++i]) && (newoutput(s) != FAIL))
 					;
 				else
-					ret = ERR;
+					ret = ps_ERR;
 			}
 			else if (c == 'I') {
 				// Alternate input file 
@@ -5480,7 +5480,7 @@ static processing_state parse_arg(int argc,
 				if ((s = argv[++i]) && (input(s) == SKIP))
 					Interactive = false;
 				else
-					ret = ERR;
+					ret = ps_ERR;
 				// CVC: Set by input() above only if successful.
 				//Input_file = true;
 			}
@@ -5495,7 +5495,7 @@ static processing_state parse_arg(int argc,
 					STRARGNCPY(isqlGlob.global_Term, s, Termlen);
 				}
 				else
-					ret = ERR;
+					ret = ps_ERR;
 			}
 			else if (c == 'D') {
 				// advance to the next word for target db name 
@@ -5503,14 +5503,14 @@ static processing_state parse_arg(int argc,
 				if ((s = argv[++i]) && *s)
 					STRARGNCPY(isqlGlob.global_Target_db, s, sizeof(isqlGlob.global_Target_db) - 1);
 				else
-					ret = ERR;
+					ret = ps_ERR;
 			}
 			else if (c == 'P' && UPPER(s[2]) == 'A' && UPPER(s[3]) == 'G') {
 				// Change the page length 
 
 				if ((s = argv[++i]) && (Pagelength = atoi(s)));
 				else
-					ret = ERR;
+					ret = ps_ERR;
 			}
 			// This has to be after "PAGE" 
 			else if (c == 'P') {
@@ -5519,7 +5519,7 @@ static processing_state parse_arg(int argc,
 					global_psw = true;
 				}
 				else
-					ret = ERR;
+					ret = ps_ERR;
 			}
 			else if (c == 'U') {
 				if ((s = argv[++i]) && *s) {
@@ -5527,7 +5527,7 @@ static processing_state parse_arg(int argc,
 					global_usr = true;
 				}
 				else
-					ret = ERR;
+					ret = ps_ERR;
 			}
 			else if (c == 'R') {
 				const bool keepLower = s[2] == '2';
@@ -5543,7 +5543,7 @@ static processing_state parse_arg(int argc,
 					global_role = true;
 				}
 				else
-					ret = ERR;
+					ret = ps_ERR;
 			}
 			// number of cache buffers
 			else if (c == 'C'
@@ -5554,7 +5554,7 @@ static processing_state parse_arg(int argc,
 					has_global_numbufs = true;
 				}
 				else
-					ret = ERR;
+					ret = ps_ERR;
 			}
 			// conection character set
 			else if (c == 'C' && UPPER(s[2]) == 'H') {
@@ -5570,7 +5570,7 @@ static processing_state parse_arg(int argc,
 					}
 				}
 				else
-					ret = ERR;
+					ret = ps_ERR;
 			}
 			else if (c == 'Q')
 				// Quiet flag 
@@ -5587,7 +5587,7 @@ static processing_state parse_arg(int argc,
 					if (requested_SQL_dialect < SQL_DIALECT_V5 ||
 						requested_SQL_dialect > SQL_DIALECT_CURRENT)
 					{
-						ret = ERR;
+						ret = ps_ERR;
 					}
 					else {
 						/* requested_SQL_dialect is used to specify the database dialect
@@ -5604,13 +5604,13 @@ static processing_state parse_arg(int argc,
 					}
 				}
 				else
-					ret = ERR;
+					ret = ps_ERR;
 			}
 			else {				// This is an unknown flag 
 
 				ISQL_msg_get(SWITCH, errbuf, s + 1);
 				STDERROUT(errbuf);
-				ret = ERR;
+				ret = ps_ERR;
 			}
 		}
 		else
@@ -5627,7 +5627,7 @@ static processing_state parse_arg(int argc,
 
 		// Quit the loop of interpreting if we got an error 
 
-		if (ret == ERR)
+		if (ret == ps_ERR)
 			break;
 		s = argv[++i];
 	}
@@ -6124,7 +6124,7 @@ static processing_state print_item_blob(FILE* fp,
 					   bpb))
 	{
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	}
 
 	USHORT length;
@@ -6156,7 +6156,7 @@ static processing_state print_item_blob(FILE* fp,
 		isc_close_blob(isc_status, &blob);
 	else if (isc_status[1]) {
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	}
 	return CONT;
 }
@@ -6291,7 +6291,7 @@ static processing_state print_line(XSQLDA* sqlda,
 			sprintf(Print_buffer, "%s:  %s", var->aliasname, NEWLINE);
 			ISQL_printf(isqlGlob.Out, Print_buffer);
 			if (print_item_blob(isqlGlob.Out, var, M__trans))
-				return (ERR);
+				return (ps_ERR);
 			sprintf(Print_buffer,
 					"%s==============================================================================%s",
 					NEWLINE, NEWLINE);
@@ -6345,7 +6345,7 @@ static processing_state print_sqlda_input(const bool is_selectable)
 	if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect, input_sqlda)) {
 		ISQL_FREE(input_sqlda);
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	}
 	else if (isc_status[2] == isc_arg_warning)
 		ISQL_warning(isc_status);
@@ -6363,7 +6363,7 @@ static processing_state print_sqlda_input(const bool is_selectable)
 		{
 			ISQL_FREE(input_sqlda);
 			ISQL_errmsg(isc_status);
-			return ERR;
+			return ps_ERR;
 		}
 		else if (isc_status[2] == isc_arg_warning)
 			ISQL_warning(isc_status);
@@ -6779,7 +6779,7 @@ static int process_statement(const TEXT* string,
  *	than embedded dynamic statements.  The user request
  *	is placed on transaction M__trans, while all
  *	background work is on the default gds_trans.
- *	This function now returns CONT (success) or ERR.
+ *	This function now returns CONT (success) or ps_ERR.
  **************************************/
 	processing_state ret = CONT;
 
@@ -6828,7 +6828,7 @@ static int process_statement(const TEXT* string,
 			ISQL_printf(isqlGlob.Out, NEWLINE);
 		}
 		ISQL_errmsg(isc_status);
-		return ERR;
+		return ps_ERR;
 	}
 
 	// check for warnings
@@ -6838,7 +6838,7 @@ static int process_statement(const TEXT* string,
 	// Find out what kind of statement this is 
 	const SSHORT statement_type = process_request_type();
 	if (!statement_type)
-		return ERR;
+		return ps_ERR;
 
 	const bool is_selectable =
 		statement_type == isc_info_sql_stmt_select ||
@@ -6850,8 +6850,8 @@ static int process_statement(const TEXT* string,
 //#ifdef DEV_BUILD
 	if (Sqlda_display)
 	{
-		if (print_sqlda_input(is_selectable) == ERR)
-			return ERR;
+		if (print_sqlda_input(is_selectable) == ps_ERR)
+			return ps_ERR;
 	}
 //#endif // DEV_BUILD
 
@@ -6882,14 +6882,14 @@ static int process_statement(const TEXT* string,
 										   string, isqlGlob.SQL_dialect, NULL))
 			{
 				ISQL_errmsg(isc_status);
-				ret = ERR;
+				ret = ps_ERR;
 			}
 			// CVC: DDL statements that aren't syntax errors are caught by DFW
 			// only at commit time, so we need to check here.
 			if (!commit_trans(&D__trans))
 			{
 				ISQL_errmsg(isc_status);
-				ret = ERR;
+				ret = ps_ERR;
 			}
 
 			// check for warnings 
@@ -6906,7 +6906,7 @@ static int process_statement(const TEXT* string,
 			// suspect isql will catch it in frontend() through get_statement(),
 			// so this place has little chance to be reached.
 			if (newtrans(string) == FAIL)
-				return ERR;
+				return ps_ERR;
 				
 			return ret;
 		}
@@ -6918,7 +6918,7 @@ static int process_statement(const TEXT* string,
 			ISQL_errmsg(isc_status);
 			// CVC: Make this conditional if it causes problems. For example
 			// if (BailOnError)
-			ret = ERR;
+			ret = ps_ERR;
 		}
 
 		// check for warnings 
@@ -6934,7 +6934,7 @@ static int process_statement(const TEXT* string,
 			if (!commit_trans(&D__trans))
 			{
 				ISQL_errmsg(isc_status);
-				ret = ERR;
+				ret = ps_ERR;
 			}
 		}
 
@@ -6973,7 +6973,7 @@ static int process_statement(const TEXT* string,
 		if (isc_dsql_describe(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda))
 		{
 			ISQL_errmsg(isc_status);
-			return ERR;
+			return ps_ERR;
 		}
 	}
 
@@ -6999,7 +6999,7 @@ static int process_statement(const TEXT* string,
 
 		if (isc_dsql_set_cursor_name(isc_status, &global_Stmt, "C ", 0)) {
 			ISQL_errmsg(isc_status);
-			return (ERR);
+			return (ps_ERR);
 		}
 
 		// check for warnings 
@@ -7009,7 +7009,7 @@ static int process_statement(const TEXT* string,
 
 		if (isc_dsql_execute(isc_status, &M__trans, &global_Stmt, isqlGlob.SQL_dialect, NULL)) {
 			ISQL_errmsg(isc_status);
-			return (ERR);
+			return (ps_ERR);
 		}
 
 		// check for warnings 
@@ -7058,7 +7058,7 @@ static int process_statement(const TEXT* string,
 							  isqlGlob.SQL_dialect, NULL, sqlda))
 		{
 			ISQL_errmsg(isc_status);
-			ret = ERR;
+			ret = ps_ERR;
 		}
 		else {
 			if (sqlda->sqld) { // do not output unnecessary white text
@@ -7146,7 +7146,7 @@ static int process_statement(const TEXT* string,
 					ISQL_FREE(header2);
 				if (line)
 					ISQL_FREE(line);
-				return (ERR);
+				return (ps_ERR);
 			}
 
 			if (!lines)

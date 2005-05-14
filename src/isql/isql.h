@@ -70,7 +70,7 @@ enum processing_state {
 	CONT		=	0,
 	EXIT		=	1,
 	BACKOUT		=	2,
-	ERR			=	3,
+	ps_ERR			=	3,
 	END			=	4,
 	SKIP		=	5,
 	FAIL		=	6,
