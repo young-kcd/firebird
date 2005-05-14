@@ -102,6 +102,7 @@ namespace Firebird {
 	char* MetaName::getBuffer(size_t l) 
 	{
 		fb_assert (l < BUFSIZE);
+		init();
 		count = l;
 		return data;
 	}
