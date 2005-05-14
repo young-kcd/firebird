@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.85 2005-05-12 18:28:03 alexpeshkoff Exp $
+ * $Id: rse.cpp,v 1.86 2005-05-14 10:42:58 alexpeshkoff Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -3792,7 +3792,7 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 		memset(sfb, 0, sizeof(sort_work_file));
 	}
 	if (!sfb->sfb_file_name) {
-		TEXT file_name[128];
+		TEXT file_name[MAXPATHLEN];
 
 		// Cast is ok because stdio_flag is false
 		sfb->sfb_file = (int) (IPTR) gds__temp_file(FALSE, SCRATCH, file_name); 

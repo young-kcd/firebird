@@ -55,7 +55,7 @@ static int skip_white(void);
 /* Input line control */
 
 static FILE *input_file, *trace_file;
-static TEXT *DDL_char, DDL_buffer[256], trace_file_name[128];
+static TEXT *DDL_char, DDL_buffer[256], trace_file_name[MAXPATHLEN];
 
 enum chr_types {
 	CHR_ident = 1,

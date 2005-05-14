@@ -142,7 +142,7 @@ static const TEXT *comment_start, *comment_stop;
 typedef void (*pfn_gen_routine) (const act*, int);
 static pfn_gen_routine gen_routine;
 
-static TEXT trace_file_name[128];
+static TEXT trace_file_name[MAXPATHLEN];
 static SLONG traced_position = 0;
 
 //___________________________________________________________________

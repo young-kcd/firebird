@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.73 2004-11-24 09:21:56 robocop Exp $
+ * $Id: sort.cpp,v 1.74 2005-05-14 10:42:58 alexpeshkoff Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -1694,7 +1694,7 @@ static ULONG find_file_space(sort_context* scb, ULONG size, sort_work_file** ret
  *      available, allocate space at the end.
  *
  **************************************/
-	TEXT file_name[128];
+	TEXT file_name[MAXPATHLEN];
 
 	// Find the best available space. This is defined as the smallest free space
 	// that is big enough. This preserves large blocks.
