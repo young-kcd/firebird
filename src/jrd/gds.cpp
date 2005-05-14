@@ -51,6 +51,7 @@
 
 #include "../common/classes/locks.h"
 #include "../common/classes/timestamp.h"
+#include "../common/classes/init.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -173,9 +174,17 @@ static const char* FB_PID_FILE = "fb_%d";
 // Number of times to try to generate new name for temporary file
 const int MAX_TMPFILE_TRIES		= 256;
 
+static char ib_prefix_val[MAXPATHLEN];
+static char ib_prefix_lock_val[MAXPATHLEN];
+static char ib_prefix_msg_val[MAXPATHLEN];
+static char fbTempDir[MAXPATHLEN];
+#ifdef EMBEDDED
+static char fbEmbeddedRoot[MAXPATHLEN];
+#endif
 static char *ib_prefix = 0;
 static char *ib_prefix_lock = 0;
 static char *ib_prefix_msg = 0;
+static void gdsPrefixInit();
 
 #include "gen/msgs.h"
 
@@ -184,11 +193,6 @@ static char *ib_prefix_msg = 0;
 #endif
 
 const SLONG GENERIC_SQLCODE		= -999;
-
-static char ib_prefix_val[MAXPATHLEN];
-static char ib_prefix_lock_val[MAXPATHLEN];
-static char ib_prefix_msg_val[MAXPATHLEN];
-
 
 #include "../include/fb_types.h"
 #include "../jrd/jrd.h"
@@ -1051,7 +1055,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	while (true) {
 		if (trace_file_handle == INVALID_HANDLE_VALUE) {
 			TEXT name[MAXPATHLEN];
-			gds__prefix(name, LOGFILE); // B.O.
+			gds__prefix(name, LOGFILE);
 			// We do not care to close this file. 
 			// It will be closed automatically when our process terminates.
 			trace_file_handle = CreateFile(name, GENERIC_WRITE, 
@@ -1076,12 +1080,8 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 #else
 	TEXT name[MAXPATHLEN];
 
-	// This function is not truly signal safe now.
-	// It calls string::c_str() and may call getenv(), not good.
-	// We can only hope that failure is unlikely in it...
-	gds__prefix(name, LOGFILE); // B.O.
-
 	// Note: signal-safe code
+	gds__prefix(name, LOGFILE);
 	int file = open(name, O_CREAT | O_APPEND | O_WRONLY, 0660);
 	if (file == -1) return;
 	write(file, text, length);
@@ -1174,7 +1174,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	now = time((time_t *)0);
 #endif
 
-	gds__prefix(name, LOGFILE); // B.O.
+	gds__prefix(name, LOGFILE);
 
 	const int oldmask = umask(0111);
 #ifdef WIN_NT
@@ -1224,7 +1224,7 @@ void API_ROUTINE gds__print_pool(JrdMemoryPool* pool, const TEXT* text, ...)
 	now = time((time_t *)0);
 #endif
 
-	gds__prefix(name, LOGFILE); // B.O.
+	gds__prefix(name, LOGFILE);
 
 	const int oldmask = umask(0111);
 #ifdef WIN_NT
@@ -1383,7 +1383,7 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 			s += "message text not found";
 		else if (n == -2) {
 			s += "message file ";
-			gds__prefix_msg(formatted, MSG_FILE); // B.O.
+			gds__prefix_msg(formatted, MSG_FILE);
 			s += formatted;
 			s += " not found";
 		}
@@ -1452,7 +1452,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 				sanitize(p); // CVC: Sanitizing environment variable???
 				fb_utils::snprintf(translated_msg_file,
 					sizeof(translated_msg_file), MSG_FILE_LANG, p);
-				gds__prefix_msg(msg_file, translated_msg_file); // B.O.
+				gds__prefix_msg(msg_file, translated_msg_file);
 				status =
 					gds__msg_open(reinterpret_cast<void**>(&messageL),
 								  msg_file);
@@ -1462,7 +1462,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			if (status) {
 				/* Default to standard message file */
 
-				gds__prefix_msg(msg_file, MSG_FILE); // B.O.
+				gds__prefix_msg(msg_file, MSG_FILE);
 				status =
 					gds__msg_open(reinterpret_cast<void**>(&messageL),
 								  msg_file);
@@ -1641,6 +1641,8 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 	if (arg_type < IB_PREFIX_TYPE || arg_type > IB_PREFIX_MSG_TYPE)
 		return ((SLONG) - 1);
 
+	gdsPrefixInit();
+
 	char* prefix_ptr;
 	switch (arg_type) {
 	case IB_PREFIX_TYPE:
@@ -1690,26 +1692,9 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
  **************************************/
 	resultString[0] = 0;
 
-	if (ib_prefix == NULL) {
-		// Try and get value from config file
-		const char *regPrefix = Config::getRootDirectory();
+	gdsPrefixInit();
 
-		const size_t len = strlen(regPrefix);
-		if (len > 0) {
-			if (len > sizeof(ib_prefix_val)) {
-				perror("ib_prefix path size too large - truncated");                      
-			}
-			strncpy(ib_prefix_val, regPrefix, sizeof(ib_prefix_val) - 1);
-			ib_prefix_val[sizeof(ib_prefix_val) - 1] = 0;
-			ib_prefix = ib_prefix_val;
-		}
-		else {
-			ib_prefix = FB_PREFIX;
-			strcat(ib_prefix_val, ib_prefix);
-		}
-		ib_prefix = ib_prefix_val;
-	}
-	strcpy(resultString, ib_prefix);
+	strcpy(resultString, ib_prefix);	// safe - no BO
 	safe_concat_path(resultString, file);
 }
 #endif /* !defined(VMS) */
@@ -1774,33 +1759,17 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
  *
  * Functional description
  *	Find appropriate Firebird lock file prefix.
- *	Override conditional defines with the enviroment
- *      variable FIREBIRD_LOCK if it is set.
  *
  **************************************/
 	string[0] = 0;
 
-	if (ib_prefix_lock == NULL) {
-		if (!(ib_prefix_lock = getenv(FB_LOCK_ENV))) {
+	gdsPrefixInit();
+
 #ifdef EMBEDDED
-			ib_prefix_lock = ib_prefix_lock_val;
-			gds__temp_dir(ib_prefix_lock); // B.O.
-			// Generate filename based on the current PID
-			TEXT tmp_buf[MAXPATHLEN];
-			sprintf(tmp_buf, FB_PID_FILE, getpid());
-			sprintf(tmp_buf, root, tmp_buf);
-			root = tmp_buf;
-#else
-			ib_prefix_lock = ib_prefix_lock_val;
-			gds__prefix(ib_prefix_lock, ""); // B.O.
+	root = fbEmbeddedRoot;
 #endif
-		}
-		else {
-			strcat(ib_prefix_lock_val, ib_prefix_lock);
-			ib_prefix_lock = ib_prefix_lock_val;
-		}
-	}
-	strcat(string, ib_prefix_lock);
+
+	strcpy(string, ib_prefix_lock);	// safe - no BO
 	safe_concat_path(string, root);
 }
 #endif
@@ -1872,17 +1841,9 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
  **************************************/
 	string[0] = 0;
 
-	if (ib_prefix_msg == NULL) {
-		if (!(ib_prefix_msg = getenv(FB_MSG_ENV))) {
-			ib_prefix_msg = ib_prefix_msg_val;
-			gds__prefix(ib_prefix_msg, ""); // B.O.
-		}
-		else {
-			strcat(ib_prefix_msg_val, ib_prefix_msg);
-			ib_prefix_msg = ib_prefix_msg_val;
-		}
-	}
-	strcat(string, ib_prefix_msg);
+	gdsPrefixInit();
+
+	strcpy(string, ib_prefix_msg);	// safe - no BO
 	safe_concat_path(string, root);
 }
 #endif
@@ -2359,24 +2320,14 @@ void API_ROUTINE gds__temp_dir(TEXT* buffer)
  *      Return temporary directory.
  *
  **************************************/
-	const TEXT* directory = getenv(FB_TMP_ENV);
-	if (!directory) {
-#ifdef WIN_NT
-		TEXT temp_dir[MAXPATHLEN];
-		const DWORD len = GetTempPath(sizeof(temp_dir), temp_dir);
-		// This checks "TEMP" and "TMP" environment variables
-		if (len && len < sizeof(temp_dir))
-			directory = temp_dir;
-#else
-		directory = getenv("TMP");
-#endif
-	}
-	if (!directory || strlen(directory) >= MAXPATHLEN)
-		directory = WORKFILE;
-	strcpy(buffer, directory);
+	buffer[0] = 0;
+
+	gdsPrefixInit();
+
+	strcpy(buffer, fbTempDir);	// safe - no BO
 }
 
-	
+
 void* API_ROUTINE gds__temp_file(
 					 BOOLEAN stdio_flag, const TEXT* string,
 					 TEXT* expanded_string, TEXT* dir, BOOLEAN unlink_flag)
@@ -2403,7 +2354,7 @@ void* API_ROUTINE gds__temp_file(
 
 	const TEXT* directory = dir;
 	if (!directory) {
-		gds__temp_dir(temp_dir); // B.O.
+		gds__temp_dir(temp_dir);
 		directory = temp_dir;
 	}
 	if (strlen(directory) >= MAXPATHLEN - strlen(string) - strlen(TEMP_PATTERN) - 2)
@@ -3536,6 +3487,8 @@ static void init(void)
 
 	initialized = true;
 
+	gdsPrefixInit();
+
 #ifndef REQUESTER
 	ISC_signal_init();
 #endif
@@ -3576,6 +3529,7 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
  * Functional description
  *	Safely appends appendString to resultString using paths rules.
  *  resultString must be at most MAXPATHLEN size.
+ *	Thread/signal safe code.
  *
  **************************************/
 	int len = strlen(resultString);
@@ -3623,3 +3577,97 @@ void* API_ROUTINE gds__alloc(SLONG size_request)
 	);
 }
 
+
+class InitPrefix
+{
+public:
+	static void init()
+	{
+		// Get ib_prefix value from config file
+		Firebird::PathName prefix(Config::getRootDirectory());
+		if (prefix.isEmpty())
+		{
+			prefix = FB_PREFIX;
+		}
+		prefix.copyTo(ib_prefix_val, sizeof(ib_prefix_val));
+		ib_prefix = ib_prefix_val;
+
+		// Find appropiate temp directory
+		const char* tempDir = getenv(FB_TMP_ENV);
+		if (!tempDir) 
+		{
+#ifdef WIN_NT
+			const DWORD len = GetTempPath(sizeof(fbTempDir), fbTempDir);
+			// This checks "TEMP" and "TMP" environment variables
+			if (len && len < sizeof(fbTempDir))
+			{
+				tempDir = fbTempDir;
+			}
+#else
+			tempDir = getenv("TMP");
+#endif
+		}
+		if (!tempDir || strlen(tempDir) >= MAXPATHLEN)
+		{
+			tempDir = WORKFILE;
+		}
+		strcpy(fbTempDir, tempDir);
+
+#ifdef EMBEDDED
+		// Generate filename based on the current PID
+		Firebird::PathName b1, b2;
+		b2.printf(FB_PID_FILE, getpid());
+		b1.printf(root, b2.c_str());
+		b1.copyTo(fbEmbeddedRoot, sizeof(fbEmbeddedRoot));
+#endif
+
+		// Find appropriate Firebird lock file prefix
+		// Override conditional defines with the enviroment
+		// variable FIREBIRD_LOCK if it is set.
+		Firebird::PathName lockPrefix(getenv(FB_LOCK_ENV) ? getenv(FB_LOCK_ENV) : "");
+		if (lockPrefix.isEmpty()) 
+		{
+#ifdef EMBEDDED
+			lockPrefix = tempDir;
+#else
+			lockPrefix = prefix;
+#endif
+		}
+		lockPrefix.copyTo(ib_prefix_lock_val, sizeof(ib_prefix_lock_val));
+		ib_prefix_lock = ib_prefix_lock_val;
+
+		// Find appropriate Firebird message file prefix.
+		Firebird::PathName msgPrefix(getenv(FB_MSG_ENV) ? getenv(FB_MSG_ENV) : "");
+		if (msgPrefix.isEmpty()) 
+		{
+			msgPrefix = prefix;
+		}
+		msgPrefix.copyTo(ib_prefix_msg_val, sizeof(ib_prefix_msg_val));
+		ib_prefix_msg = ib_prefix_msg_val;
+	}
+	static void cleanup()
+	{
+	}
+};
+
+static Firebird::InitMutex<InitPrefix> initPrefix;
+
+static void gdsPrefixInit()
+{
+/**************************************
+ *
+ *	g d s P r e f i x I n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize all data in various ib_prefixes.
+ *	Calling it before any signal can be caught (from init())
+ *	makes gds__prefix* family of functions signal-safe.
+ *	In order not to break external API, call to gdsPrefixInit
+ *	must be present in all gds__prefix functions. Due to correct
+ *	init this doesn't make them unsafe.
+ *
+ **************************************/
+	initPrefix.init();
+}
