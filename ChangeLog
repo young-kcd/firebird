@@ -1,3 +1,51 @@
+2005-05-14 16:50  kkuznetsov
+
+	* firebird2/src/isql/: extract.epp (1.57), isql.epp (1.145), isql.h
+	(1.45), show.epp (1.70):
+	
+	Renamed ERR to ps_ERR in the  enum processing_state {...} to fix
+	compile error on Solaris
+
+2005-05-14 15:44  hvlad
+
+	* firebird2/src/: alice/alice.cpp (1.76), burp/burp.cpp (1.99):
+	
+	1. Fixed bug #908319 2. Fixed inability to restore into nonexisting
+	file with -se switch used
+
+2005-05-14 12:45  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.168):
+	
+	fixed a couple of buffer overflows in gds__prefix*() functions
+	family
+
+2005-05-14 12:42  alexpeshkoff
+
+	* firebird2/src/: gpre/gpre.cpp (1.74), dudley/lex.cpp (1.29),
+	jrd/rse.cpp (1.86), jrd/sort.cpp (1.74):
+	
+	fixed declarations of gds__temp_file() parameter - buffer overflows
+	were possible
+
+2005-05-14 09:00  aafemt
+
+	* firebird2/src/jrd/dyn_del.epp (1.48):
+	
+	Fix Alex overwork
+
+2005-05-14 07:21  alexpeshkoff
+
+	* firebird2/src/common/classes/MetaName.cpp (1.2):
+	
+	fixed bug noticed by Vlad
+
+2005-05-14 06:39  aafemt
+
+	* firebird2/src/jrd/: dyn.h (1.25), jrd.h (1.134):
+	
+	Fix warnings
+
 2005-05-13 16:42  alexpeshkoff
 
 	* firebird2/src/jrd/met.epp (1.160):
