@@ -2289,7 +2289,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
 			invCandidate->inversion = 
 				composeInversion(invCandidate1->inversion, invCandidate2->inversion, nod_bit_or);
-			invCandidate->unique = (invCandidate1->unique || invCandidate2->unique);
+			invCandidate->unique = (invCandidate1->unique && invCandidate2->unique);
 			invCandidate->selectivity = invCandidate1->selectivity + invCandidate2->selectivity;
 			invCandidate->indexes = invCandidate1->indexes + invCandidate2->indexes;
 			invCandidate->nonFullMatchedSegments = 0;
