@@ -126,7 +126,7 @@ static bool par_messages(thread_db*, const UCHAR*, USHORT, jrd_prc*, CompilerScr
 static bool resolve_charset_and_collation(thread_db*, SSHORT*, const UCHAR*,
 											 const UCHAR*);
 static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, blb*,
-	const TEXT*, bool, bool, USHORT);
+	const TEXT*, UCHAR, bool, USHORT);
 static void store_dependencies(thread_db*, CompilerScratch*, const Firebird::MetaName&, USHORT);
 static bool verify_TRG_ignore_perm(thread_db*, const Firebird::MetaName&);
 
@@ -1449,6 +1449,11 @@ int MET_lookup_field(thread_db* tdbb,
 /* Not found.  Next, try system relations directly */
 
 	USHORT id = (USHORT) -1;
+
+	if (relation->rel_name.length() == 0)
+	{
+		return id;
+	}
 
 	jrd_req* request = CMP_find_request(tdbb, irq_l_field, IRQ_REQUESTS);
 
@@ -2903,6 +2908,7 @@ bool MET_relation_owns_trigger (thread_db* tdbb, const TEXT* relation_name,
 }
 #endif //NOT_USED_OR_REPLACED
 
+
 bool MET_relation_default_class (thread_db* tdbb, const Firebird::MetaName& relation_name,
                                  const Firebird::MetaName& default_security_class_name)
 {
@@ -4079,7 +4085,7 @@ static bool resolve_charset_and_collation(
 
 static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation,
 							  jrd_req* request, blb* blrBlob,
-							  const TEXT* name, bool type,
+							  const TEXT* name, UCHAR type,
 							  bool sys_trigger, USHORT flags)
 {
 /**************************************
