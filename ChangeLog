@@ -1,3 +1,9 @@
+2005-05-15 14:44  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.27):
+	
+	Fixed a small OR handling bug.
+
 2005-05-14 16:50  kkuznetsov
 
 	* firebird2/src/isql/: extract.epp (1.57), isql.epp (1.145), isql.h
