@@ -1766,7 +1766,9 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 	gdsPrefixInit();
 
 #ifdef EMBEDDED
-	root = fbEmbeddedRoot;
+	char buf[MAXPATHLEN];
+	fb_utils::snprintf(buf, MAXPATHLEN, root, fbEmbeddedRoot);
+	root = buf;
 #endif
 
 	strcpy(string, ib_prefix_lock);	// safe - no BO
@@ -3615,10 +3617,9 @@ public:
 
 #ifdef EMBEDDED
 		// Generate filename based on the current PID
-		Firebird::PathName b1, b2;
-		b2.printf(FB_PID_FILE, getpid());
-		b1.printf(root, b2.c_str());
-		b1.copyTo(fbEmbeddedRoot, sizeof(fbEmbeddedRoot));
+		Firebird::PathName buf;
+		buf.printf(FB_PID_FILE, getpid());
+		buf.copyTo(fbEmbeddedRoot, sizeof(fbEmbeddedRoot));
 #endif
 
 		// Find appropriate Firebird lock file prefix
