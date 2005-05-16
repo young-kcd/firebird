@@ -4037,7 +4037,7 @@ static DeferredWork* post_work(jrd_tra* transaction,
  **************************************/
 	const char* string;
 	USHORT length;
-	TEXT temp[MAXPATHLEN];				/* Must hold largest metadata field or filename */
+	TEXT temp[MAXPATHLEN];				// Must hold largest metadata field or filename
 
 	if (!desc)
 	{
@@ -4062,7 +4062,7 @@ static DeferredWork* post_work(jrd_tra* transaction,
 			++p;
 		}
 
-		/* Trim trailing blanks (bug 3355) */
+		// Trim trailing blanks (bug 3355)
 
 		while (--p >= string && *p == ' ')
 			;
@@ -4072,24 +4072,25 @@ static DeferredWork* post_work(jrd_tra* transaction,
 	DeferredWork* work;
 	DeferredWork** ptr;
 	
-/* Check to see if work is already posted */
+	// Check to see if work is already posted
 
 	for (ptr = list; (work = *ptr); ptr = &(*ptr)->dfw_next)
 	{
 		if (work->dfw_type == type &&
 			work->dfw_id == id &&
-			work->dfw_name == string &&
+			work->dfw_name.length() == length &&
 			work->dfw_sav_number == sav_number)
 		{
-			if (length)
-			{
+			if (!length)
+				return *ptr;
+			if (!memcmp(string, work->dfw_name.c_str(), length)) {
 				++work->dfw_count;
+				return *ptr;
 			}
-			return *ptr;
 		}
 	}
 
-/* Not already posted, so do so now. */
+	// Not already posted, so do so now.
 
 	*ptr = work = FB_NEW(*transaction->tra_pool) DeferredWork(*transaction->tra_pool);
 	work->dfw_type = type;
