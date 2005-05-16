@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.76 2005-05-14 13:44:55 hvlad Exp $
+//	$Id: alice.cpp,v 1.77 2005-05-16 09:00:13 robocop Exp $
 //
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
@@ -683,10 +683,10 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 	{
 		const ISC_STATUS* vector = status_vector;
 #ifdef SUPERSERVER
-		int i = 0;
 		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
+			int i = 0;
 			if (status[1]) {
 				while (*status && (++i < ISC_STATUS_LENGTH)) {
 					status++;
