@@ -1316,8 +1316,9 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						desc->dsc_sub_type = 0;
 						desc->dsc_scale = 0;
 						INTL_ASSIGN_TTYPE(desc, ttype_metadata);
-						desc->dsc_address = (UCHAR*) relation->rel_owner_name.c_str();
-						desc->dsc_length = relation->rel_owner_name.length();
+						Firebird::MetaName& owner_name = relation->rel_owner_name;
+						desc->dsc_address = (UCHAR*) owner_name.c_str(); // throwing away const.
+						desc->dsc_length = owner_name.length();
 					}
 					else if (temp_nod_type == nod_current_role)
 					{

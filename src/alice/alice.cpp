@@ -24,8 +24,6 @@
 //
 //____________________________________________________________
 //
-//	$Id: alice.cpp,v 1.77 2005-05-16 09:00:13 robocop Exp $
-//
 // 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
 //                         conditionals, as the engine now fully supports
 //                         readonly databases.

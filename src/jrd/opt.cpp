@@ -2328,13 +2328,14 @@ static bool dump_index(const jrd_nod* node,
 		MET_lookup_index(tdbb, index_name, retrieval->irb_relation->rel_name,
 						 (USHORT) (retrieval->irb_index + 1));
 
-		*buffer_length -= 1 + index_name.length();
+		const SSHORT length = index_name.length();
+		*buffer_length -= 1 + length;
 		if (*buffer_length < 0) {
 			return false;
 		}
-		*buffer++ = (SCHAR) (index_name.length());
-		memcpy(buffer, index_name.c_str(), index_name.length());
-		buffer += index_name.length();
+		*buffer++ = (SCHAR) length;
+		memcpy(buffer, index_name.c_str(), length);
+		buffer += length;
 	}
 
 	*buffer_ptr = buffer;

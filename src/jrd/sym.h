@@ -44,15 +44,14 @@ public:
 		blr,					/* BLR request cache block */
 		label					/* CVC: I need to track labels if LEAVE is implemented. */
 	};
-	typedef sym_t SYM_T;
 	Firebird::MetaName	sym_string;	// symbol value
-	SYM_T	sym_type;		/* symbol type */
+	sym_t	sym_type;		/* symbol type */
 	BLK		sym_object;		/* general pointer to object */
 	Symbol*	sym_homonym;	/* homonym pointer */
 
 public:
 	explicit Symbol(MemoryPool& p, const Firebird::MetaName& val,
-					SYM_T type, BLK object) 
+					sym_t type, BLK object)
 		: sym_collision(0), sym_string(p, val), sym_type(type), 
 		sym_object(object),	sym_homonym(0) { }
 	void insert();

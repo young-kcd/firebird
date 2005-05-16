@@ -773,7 +773,7 @@ IDX_E IDX_modify_check_constraints(thread_db* tdbb,
 		   (tdbb, org_rpb->rpb_relation, transaction, &idx, &window)) 
 	{
 		if (!(idx.idx_flags & (idx_primary | idx_unique))
-			|| !MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx,0))
+			|| !MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
 		{
 				continue;
 		}
