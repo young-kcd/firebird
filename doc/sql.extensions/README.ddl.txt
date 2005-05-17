@@ -127,3 +127,31 @@ BLOB Filter: PESH2
         Filter library is p
         Entry point is p2
 
+
+4) Allow comments in database objects. Proposed syntax for testing:
+
+COMMENT ON DATABASE IS {'txt'|NULL};
+COMMENT ON <basic_type> name IS {'txt'|NULL};
+COMMENT ON COLUMN tblviewname.fieldname IS {'txt'|NULL};
+COMMENT ON PARAMETER procname.parname IS {'txt'|NULL};
+
+An empty literal string '' will act as NULL since the internal code (DYN in this case)
+works this way with blobs.
+
+basic_type:
+- DOMAIN
+- TABLE
+- VIEW
+- PROCEDURE
+- TRIGGER
+- EXTERNAL FUNCTION
+- FILTER
+- EXCEPTION
+- GENERATOR
+- SEQUENCE
+- INDEX
+- ROLE
+- CHARACTER SET
+- COLLATION
+- SECURITY CLASS (not implemented because Borland hid them).
+
