@@ -2710,7 +2710,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		}
 		return;
 
-
 	case nod_udf:
 		trace_line ("%sfunction: \"", buffer);
 		/* nmcc: how are we supposed to tell which type of nod_udf this is ?? */
@@ -2736,6 +2735,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			DSQL_pretty (*ptr, column + 1);
 		}
 		return;
+		
+	case nod_comment:
+		verb = "comment";
+		break;
 
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);

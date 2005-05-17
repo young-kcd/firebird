@@ -183,6 +183,14 @@ const int drq_d_difference	= 132;	/* Delete backup difference file */
 const int drq_l_fld_src3	= 133;	/* lookup a field source */
 const int drq_e_fld_prvs	= 134;	/* erase user privileges on relation field */
 const int drq_e_view_prv	= 135;	/* erase view's privileges */
-const int drq_MAX			= 136;
+const int drq_m_chset       = 136;  // modify charset
+const int drq_m_coll        = 137;  // modify collation
+const int drq_m_bfil        = 138;  // modify blob filter
+const int drq_m_fun         = 139;  // modify udf
+const int drq_m_gen         = 140;  // modify generator
+const int drq_m_prm         = 141;  // modify procedure's parameter
+const int drq_m_rol         = 142;  // modify sql role
+const int drq_m_view        = 143;  // modify view
+const int drq_MAX			= 144;
 
 #endif /* JRD_DRQ_H */

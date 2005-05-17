@@ -82,9 +82,9 @@ using namespace Jrd;
 
 
 static void grant(Global*, const UCHAR**);
-static bool grantor_can_grant_role(thread_db*, Global*, const Firebird::MetaName&, const Firebird::MetaName&);
 static bool grantor_can_grant(Global*, const TEXT*, const TEXT*, const Firebird::MetaName&,
 	const Firebird::MetaName&, bool);
+static bool grantor_can_grant_role(thread_db*, Global*, const Firebird::MetaName&, const Firebird::MetaName&);
 static void	revoke_permission(Global*, const UCHAR**);
 static void store_privilege(Global*, const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&,
 	const TEXT*, SSHORT, SSHORT, int);
@@ -433,6 +433,10 @@ void DYN_execute(Global* gbl,
 			DYN_define_filter(gbl, ptr);
 			break;
 
+		case isc_dyn_mod_filter:
+			DYN_modify_filter(gbl, ptr);
+			break;
+			
 		case isc_dyn_delete_filter:
 			DYN_delete_filter(gbl, ptr);
 			break;
@@ -445,6 +449,10 @@ void DYN_execute(Global* gbl,
 			DYN_define_function_arg(gbl, ptr, function_name);
 			break;
 
+		case isc_dyn_mod_function:
+			DYN_modify_function(gbl, ptr);
+			break;
+			
 		case isc_dyn_delete_function:
 			DYN_delete_function(gbl, ptr);
 			break;
@@ -453,8 +461,20 @@ void DYN_execute(Global* gbl,
 			DYN_define_generator(gbl, ptr);
 			break;
 
+		case isc_dyn_mod_generator:
+			DYN_modify_generator(gbl, ptr);
+			break;
+
+		case isc_dyn_delete_generator:
+			DYN_delete_generator(gbl, ptr);
+			break;
+
 		case isc_dyn_def_sql_role:
 			DYN_define_role(gbl, ptr);
+			break;
+
+		case isc_dyn_mod_sql_role:
+			DYN_modify_role(gbl, ptr);
 			break;
 
 		case isc_dyn_del_sql_role:
@@ -475,6 +495,10 @@ void DYN_execute(Global* gbl,
 
 		case isc_dyn_def_parameter:
 			DYN_define_parameter(gbl, ptr, procedure_name);
+			break;
+
+		case isc_dyn_mod_prc_parameter:
+			DYN_modify_parameter(gbl, ptr);
 			break;
 
 		case isc_dyn_delete_parameter:
@@ -545,17 +569,17 @@ void DYN_execute(Global* gbl,
 			DYN_define_sql_field(gbl, ptr, relation_name, field_name);
 			break;
 
-		case isc_dyn_def_idx:
-			DYN_define_index(gbl, ptr, relation_name, verb, NULL, NULL, NULL,
-							 NULL);
-			break;
-
 		case isc_dyn_rel_constraint:
 			DYN_define_constraint(gbl, ptr, relation_name, field_name);
 			break;
 
 		case isc_dyn_delete_rel_constraint:
 			DYN_delete_constraint(gbl, ptr, relation_name);
+			break;
+
+		case isc_dyn_def_idx:
+			DYN_define_index(gbl, ptr, relation_name, verb, NULL, NULL, NULL,
+							 NULL);
 			break;
 
 		case isc_dyn_mod_idx:
@@ -577,9 +601,13 @@ void DYN_execute(Global* gbl,
 		case isc_dyn_delete_dimensions:
 			DYN_delete_dimensions(gbl, ptr, relation_name, field_name);
 			break;
+			
+		case isc_dyn_mod_charset:
+			DYN_modify_charset(gbl, ptr);
+			break;
 
-		case isc_dyn_delete_generator:
-			DYN_delete_generator(gbl, ptr);
+		case isc_dyn_mod_collation:
+			DYN_modify_collation(gbl, ptr);
 			break;
 
 		default:
@@ -817,8 +845,6 @@ void DYN_rundown_request(jrd_req* handle, SSHORT id)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database*  dbb  = tdbb->tdbb_database;
 
-#pragma FB_COMPILER_MESSAGE("TMN: FIXME! We do not have a jmp_buf anymore!")
-
 	if (!handle) {
 		return;
 	}
@@ -866,7 +892,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	SSHORT id;
-	Firebird::MetaName privileges;
+	char privileges[16];
 	Firebird::MetaName object;
 	Firebird::MetaName field;
 	Firebird::MetaName user;
@@ -881,8 +907,8 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	const USHORT minor_original = dbb->dbb_minor_original;
 
 	GET_STRING(ptr, privileges);
-	if (privileges == "A") {
-		privileges = ALL_PRIVILEGES;
+	if (!strcmp(privileges, "A")) {
+		strcpy(privileges, ALL_PRIVILEGES);
 	}
 
 	int    options   = 0;
@@ -997,7 +1023,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	request = CMP_find_request(tdbb,
 			(USHORT)(field.length() > 0 ? drq_l_grant1 : drq_l_grant2),
 										DYN_REQUESTS);
-	for (const TEXT* pr = privileges.c_str(); *pr; pr++)
+	for (const TEXT* pr = privileges; *pr; pr++)
 	{
 		bool duplicate = false;
 		priv[0] = *pr;
@@ -1237,7 +1263,8 @@ static bool grantor_can_grant(Global*					gbl,
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			G_FLD IN RDB$RELATION_FIELDS WITH
 				G_FLD.RDB$RELATION_NAME = relation_name.c_str() AND
-				G_FLD.RDB$FIELD_NAME = field_name.c_str() if (!DYN_REQUEST(drq_gcg5))
+				G_FLD.RDB$FIELD_NAME = field_name.c_str()
+			if (!DYN_REQUEST(drq_gcg5))
 				DYN_REQUEST(drq_gcg5) = request;
 			field_exists = true;
 		END_FOR;
@@ -1416,7 +1443,7 @@ static bool grantor_can_grant(Global*					gbl,
 			if (field_name == G_FLD.RDB$FIELD_NAME)
 				if (!grantor_can_grant
 					(gbl, grantor, privilege, G_VIEW.RDB$RELATION_NAME,
-					 G_FLD.RDB$BASE_FIELD, FALSE))
+					 G_FLD.RDB$BASE_FIELD, false))
 				{
 					return false;
 				}
@@ -1471,7 +1498,6 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
  **************************************/
 
 	bool grantable = false;
-	Firebird::MetaName owner;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -1481,6 +1507,7 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 	}
 
 	// Fetch the name of the owner of the ROLE
+	Firebird::MetaName owner;
 	if (DYN_is_it_sql_role(gbl, role_name, owner, tdbb))
 	{
 		// The owner of the ROLE can always grant membership
@@ -1570,9 +1597,9 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	UCHAR verb;
-	Firebird::MetaName privileges;
+	char privileges[16];
 	Firebird::MetaName object, field, user;
-	Firebird::MetaName revoking_user_name, dummy_name;
+	Firebird::MetaName dummy_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
@@ -1583,12 +1610,12 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 /* Stash away a copy of the revoker's name, in uppercase form */
 
 	const UserId* revoking_user = tdbb->tdbb_attachment->att_user;
-	revoking_user_name = revoking_user->usr_user_name;
+	Firebird::MetaName revoking_user_name = revoking_user->usr_user_name;
 	revoking_user_name.upper7();
 
 	GET_STRING(ptr, privileges);
-	if (privileges == "A") {
-		privileges = ALL_PRIVILEGES;
+	if (!strcmp(privileges, "A")) {
+		strcpy(privileges, ALL_PRIVILEGES);
 	}
 
 	int options = 0;
@@ -1691,16 +1718,15 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 		}
 
 
-	jrd_req* request = CMP_find_request(tdbb,
-						(USHORT)(field.length() ? drq_e_grant1 : drq_e_grant2),
-						DYN_REQUESTS);
 	USHORT id = field.length() ? drq_e_grant1 : drq_e_grant2;
+
+	jrd_req* request = CMP_find_request(tdbb, id, DYN_REQUESTS);
 
 	try {
 
     TEXT temp[2];
 	temp[1] = 0;
-	for (const TEXT* pr = privileges.c_str(); (temp[0] = *pr); pr++)
+	for (const TEXT* pr = privileges; (temp[0] = *pr); pr++)
 	{
 		bool grant_erased = false;
 
@@ -1747,7 +1773,8 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				   erase the entries from RDB$USER_PRIVILEGES. */
 
 				if ((revoking_user->usr_flags & USR_locksmith) ||
-					(revoking_user_name == PRIV.RDB$GRANTOR)) {
+					(revoking_user_name == PRIV.RDB$GRANTOR))
+				{
 					ERASE PRIV;
 					grant_erased = true;
 				}
@@ -1831,22 +1858,22 @@ static void set_field_class_name(Global*					gbl,
 		RFR.RDB$SECURITY_CLASS MISSING
 
 		MODIFY RFR
-		while (!unique)
-	    {
-			sprintf(RFR.RDB$SECURITY_CLASS, "%s%" QUADFORMAT "d", "SQL$GRANT", 
-			DPM_gen_id(tdbb, 
-				MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), false, (SINT64) 1));
+			while (!unique)
+		    {
+				sprintf(RFR.RDB$SECURITY_CLASS, "%s%" QUADFORMAT "d", "SQL$GRANT", 
+				DPM_gen_id(tdbb, 
+					MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), false, (SINT64) 1));
 
-			unique = true;
-			request2 = CMP_find_request(tdbb, drq_s_u_class, DYN_REQUESTS);
-			FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-				RFR1 IN RDB$RELATION_FIELDS 
-				WITH RFR1.RDB$SECURITY_CLASS = RFR.RDB$SECURITY_CLASS
-				unique = false;
-			END_FOR;
-	    }
+				unique = true;
+				request2 = CMP_find_request(tdbb, drq_s_u_class, DYN_REQUESTS);
+				FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
+					RFR1 IN RDB$RELATION_FIELDS 
+					WITH RFR1.RDB$SECURITY_CLASS = RFR.RDB$SECURITY_CLASS
+					unique = false;
+				END_FOR;
+		    }
 
-		RFR.RDB$SECURITY_CLASS.NULL = FALSE;
+			RFR.RDB$SECURITY_CLASS.NULL = FALSE;
 		END_MODIFY;
     
 	END_FOR;

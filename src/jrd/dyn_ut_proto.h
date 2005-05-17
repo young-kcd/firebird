@@ -26,13 +26,13 @@
 #define JRD_DYN_UT_PROTO_H
 
 void	DYN_UTIL_store_check_constraints(Jrd::thread_db*, Jrd::Global*,
-			const Firebird::MetaName*, const Firebird::MetaName&);
+			const Firebird::MetaName&, const Firebird::MetaName&);
 bool	DYN_UTIL_get_prot(Jrd::thread_db*, Jrd::Global*, const SCHAR*,
 			const SCHAR*, Jrd::SecurityClass::flags_t*);
 void	DYN_UTIL_generate_trigger_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
 void	DYN_UTIL_generate_index_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&, UCHAR);
 void	DYN_UTIL_generate_field_position(Jrd::thread_db*, Jrd::Global*,
-			const Firebird::MetaName*, SLONG*);
+			const Firebird::MetaName&, SLONG*);
 void	DYN_UTIL_generate_field_name(Jrd::thread_db*, Jrd::Global*, TEXT*);
 void	DYN_UTIL_generate_field_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
 void	DYN_UTIL_generate_constraint_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);

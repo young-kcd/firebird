@@ -336,7 +336,8 @@ enum nod_t
 	nod_query_spec,
 	nod_equiv,
 	nod_redef_exception, // RECREATE EXCEPTION
-	nod_replace_exception // CREATE OR ALTER EXCEPTION
+	nod_replace_exception, // CREATE OR ALTER EXCEPTION
+	nod_comment
 };
 
 typedef nod_t NOD_TYPE;
@@ -921,7 +922,13 @@ enum node_args {
 
 	e_agg_function_expression = 0,
 	e_agg_function_scope_level,
-	e_agg_function_count
+	e_agg_function_count,
+	
+	e_comment_obj_type = 0,
+	e_comment_object,
+	e_comment_part,
+	e_comment_string,
+	e_comment_count
 };
 
 #endif // DSQL_NODE_H

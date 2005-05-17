@@ -181,7 +181,7 @@ struct LexerState {
 	dsql_fld* g_field;
 	dsql_fil* g_file;
 	dsql_nod* g_field_name;
-	bool log_defined, cache_defined;
+	//bool log_defined, cache_defined;
 	int dsql_debug;
 	
 	/* Actual lexer state begins from here */
@@ -510,6 +510,8 @@ static LexerState lex;
 %token NEXT
 %token SEQUENCE
 %token RESTART
+%token COMMENT
+%token COLLATION
 
 /* precedence declarations for expression evaluation */
 
@@ -547,6 +549,7 @@ top		: statement
 
 statement	: alter
 		| blob_io
+		| comment
 		| commit
 		| create
 		| declare
@@ -1055,8 +1058,8 @@ equals		:
 		;
 
 db_name		: sql_string
-			{ lex.log_defined = false;
-			  lex.cache_defined = false;
+			{ //lex.log_defined = false;
+			  //lex.cache_defined = false;
 			  $$ = (dsql_nod*) $1; }
 		;
 
@@ -2132,6 +2135,8 @@ keyword_or_column	: valid_symbol_name
 		| ROWS
 		| USING
 		| CROSS
+		| COMMENT
+		| COLLATION
 		;
 
 col_opt		: ALTER
@@ -2182,8 +2187,8 @@ alter_sequence_clause	: symbol_generator_name RESTART WITH signed_long_integer
 /* ALTER DATABASE */
 
 init_alter_db	: 
-			{ lex.log_defined = false;
-			  lex.cache_defined = false;
+			{ //lex.log_defined = false;
+			  //lex.cache_defined = false;
 			  $$ = NULL; }
 		;
 
@@ -2197,7 +2202,7 @@ db_alter_clause : ADD db_file_list
 /*
 		| ADD db_cache
 			{ $$ = $2; }
-				| DROP CACHE
+		| DROP CACHE
 			{ $$ = make_node (nod_drop_cache, (int) 0, NULL); }
 		| DROP LOGFILE
 			{ $$ = make_node (nod_drop_log, (int) 0, NULL); }
@@ -2881,8 +2886,69 @@ table_list	: simple_table_name
 
 
 set_statistics	: SET STATISTICS INDEX symbol_index_name
-			{$$ = make_node (nod_set_statistics, (int) e_stat_count, $4); }
-		;
+				{ $$ = make_node (nod_set_statistics, (int) e_stat_count, $4); }
+			;
+
+comment		: COMMENT ON ddl_type0 IS ddl_desc
+				{ $$ = make_node(nod_comment, e_comment_count, $3, NULL, NULL, $5); }
+			| COMMENT ON ddl_type1 symbol_ddl_name IS ddl_desc
+				{ $$ = make_node(nod_comment, e_comment_count, $3, $4, NULL, $6); }
+			| COMMENT ON ddl_type2 symbol_ddl_name ddl_subname IS ddl_desc
+				{ $$ = make_node(nod_comment, e_comment_count, $3, $4, $5, $7); }
+			;
+
+ddl_type0	: DATABASE
+				{ $$ = MAKE_constant((dsql_str*) ddl_database, CONSTANT_SLONG); }
+			;
+
+ddl_type1	: DOMAIN
+				{ $$ = MAKE_constant((dsql_str*) ddl_domain, CONSTANT_SLONG); }
+			| TABLE
+				{ $$ = MAKE_constant((dsql_str*) ddl_relation, CONSTANT_SLONG); }
+			| VIEW
+				{ $$ = MAKE_constant((dsql_str*) ddl_view, CONSTANT_SLONG); }
+			| PROCEDURE
+				{ $$ = MAKE_constant((dsql_str*) ddl_procedure, CONSTANT_SLONG); }
+			| TRIGGER
+				{ $$ = MAKE_constant((dsql_str*) ddl_trigger, CONSTANT_SLONG); }
+			| EXTERNAL FUNCTION
+				{ $$ = MAKE_constant((dsql_str*) ddl_udf, CONSTANT_SLONG); }
+			| FILTER
+				{ $$ = MAKE_constant((dsql_str*) ddl_blob_filter, CONSTANT_SLONG); }
+			| EXCEPTION
+				{ $$ = MAKE_constant((dsql_str*) ddl_exception, CONSTANT_SLONG); }
+			| GENERATOR
+				{ $$ = MAKE_constant((dsql_str*) ddl_generator, CONSTANT_SLONG); }
+			| SEQUENCE
+				{ $$ = MAKE_constant((dsql_str*) ddl_generator, CONSTANT_SLONG); }
+			| INDEX
+				{ $$ = MAKE_constant((dsql_str*) ddl_index, CONSTANT_SLONG); }
+			| ROLE
+				{ $$ = MAKE_constant((dsql_str*) ddl_role, CONSTANT_SLONG); }
+			| CHARACTER SET
+				{ $$ = MAKE_constant((dsql_str*) ddl_charset, CONSTANT_SLONG); }
+			| COLLATION
+				{ $$ = MAKE_constant((dsql_str*) ddl_collation, CONSTANT_SLONG); }
+/*
+			| SECURITY CLASS
+				{ $$ = MAKE_constant((dsql_str*) ddl_sec_class, CONSTANT_SLONG); }
+*/
+			;
+
+ddl_type2	: COLUMN
+				{ $$ = MAKE_constant((dsql_str*) ddl_relation, CONSTANT_SLONG); }
+			| PARAMETER
+				{ $$ = MAKE_constant((dsql_str*) ddl_procedure, CONSTANT_SLONG); }
+			;
+
+ddl_subname	: '.' symbol_ddl_name
+				{ $$ = $2; }
+			;
+			
+ddl_desc    : sql_string
+			| KW_NULL
+			    { $$ = NULL; }
+			;
 
 
 /* SELECT statement */
@@ -4137,6 +4203,9 @@ symbol_item_alias_name	: valid_symbol_name
 	;
 
 symbol_label_name	: valid_symbol_name
+	;
+
+symbol_ddl_name	: valid_symbol_name
 	;
 
 symbol_procedure_name	: valid_symbol_name

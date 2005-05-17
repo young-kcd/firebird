@@ -214,8 +214,6 @@ void DYN_delete_filter( Global* gbl, const UCHAR** ptr)
  *	deletes a blob filter.
  *
  **************************************/
-	Firebird::MetaName f;
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
@@ -223,9 +221,10 @@ void DYN_delete_filter( Global* gbl, const UCHAR** ptr)
 
 	bool found = false;
 
-	try {
-
+	Firebird::MetaName f;
 	GET_STRING(ptr, f);
+	
+	try {
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -247,8 +246,8 @@ void DYN_delete_filter( Global* gbl, const UCHAR** ptr)
 	}
 
 	if (!found) {
-		DYN_error_punt(false, 37, NULL, NULL, NULL, NULL, NULL);
-		/* msg 37: "Blob Filter not found" */
+		DYN_error_punt(false, 37, f.c_str(), NULL, NULL, NULL, NULL);
+		/* msg 37: "Blob Filter %s not found" */
 	}
 
 	if (*(*ptr)++ != isc_dyn_end) {
@@ -270,8 +269,6 @@ void DYN_delete_function( Global* gbl, const UCHAR** ptr)
  *	deletes a user defined function.
  *
  **************************************/
-	Firebird::MetaName f;
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
@@ -279,10 +276,10 @@ void DYN_delete_function( Global* gbl, const UCHAR** ptr)
 	USHORT id = drq_e_func_args;
 	
 	bool found = false;
-
-	try {
+	Firebird::MetaName f;
 	GET_STRING(ptr, f);
 
+	try {
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FA IN RDB$FUNCTION_ARGUMENTS WITH FA.RDB$FUNCTION_NAME EQ f.c_str()
         if (!DYN_REQUEST(drq_e_func_args))
@@ -325,8 +322,8 @@ void DYN_delete_function( Global* gbl, const UCHAR** ptr)
 
 	if (!found)
 	{
-		DYN_error_punt(false, 41, NULL, NULL, NULL, NULL, NULL);
-		/* msg 41: "Function not found" */
+		DYN_error_punt(false, 41, f.c_str(), NULL, NULL, NULL, NULL);
+		/* msg 41: "Function %s not found" */
 	}
 
 	if (*(*ptr)++ != isc_dyn_end) {
@@ -349,21 +346,18 @@ void DYN_delete_generator(Global* gbl, const UCHAR**ptr)
  *  space allocated in the page won't be released.
  *
  **************************************/
-	Firebird::MetaName t;
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = NULL;
 	
 	bool found = false;
+	Firebird::MetaName t;
+    GET_STRING(ptr, t);
 	
 	try {
-        GET_STRING(ptr, t);
-        
         request = CMP_find_request(tdbb, drq_e_gens, DYN_REQUESTS);
-        
-        
+
         found = false;
         FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
             X IN RDB$GENERATORS
@@ -388,8 +382,8 @@ void DYN_delete_generator(Global* gbl, const UCHAR**ptr)
     }
 
 	if (!found) {
-		DYN_error_punt(false, 214, NULL, NULL, NULL, NULL, NULL);
-	    /* msg 214: "Generator not found" */
+		DYN_error_punt(false, 214, t.c_str(), NULL, NULL, NULL, NULL);
+	    /* msg 214: "Generator %s not found" */
 	}
 }
 
@@ -804,8 +798,8 @@ void DYN_delete_local_field(Global* gbl,
 			DYN_error_punt(true, 62, NULL, NULL, NULL, NULL, NULL);
 			// msg 62: "ERASE RDB$USER_PRIVILEGES failed"
 		default:
-			DYN_error_punt(true, 54, NULL, NULL, NULL, NULL, NULL);
-			// msg 54: "ERASE RDB$RELATION_FIELDS failed"
+			DYN_error_punt(true, 53, NULL, NULL, NULL, NULL, NULL);
+			// msg 53: "ERASE RDB$RELATION_FIELDS failed"
 		}
 	}
 
@@ -1073,6 +1067,7 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
 	if (*(*ptr)++ != isc_dyn_end) {
 		DYN_unsupported_verb();
 	}
+
 	return;
 
 dyn_punt_140:
@@ -1258,9 +1253,8 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
         if (!DYN_REQUEST(drq_e_trigger2))
             DYN_REQUEST(drq_e_trigger2) = request;
 
-		ERASE X;
-
 		trigger_name = X.RDB$TRIGGER_NAME;
+		ERASE X;
 
 		req2 = CMP_find_request(tdbb, drq_e_trg_prv, DYN_REQUESTS);
 		id = drq_e_trg_prv;
@@ -1381,7 +1375,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	int id = -1;
-	Firebird::MetaName role_name, role_owner, user;
+	Firebird::MetaName role_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
@@ -1396,10 +1390,11 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 	}
 
 	jrd_req* request = NULL;
+	bool found = false;
 
 	try {
 
-		user = tdbb->tdbb_attachment->att_user->usr_user_name;
+		Firebird::MetaName user = tdbb->tdbb_attachment->att_user->usr_user_name;
 		user.upper7();
 
 		GET_STRING(ptr, role_name);
@@ -1414,11 +1409,10 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 				XX.RDB$ROLE_NAME EQ role_name.c_str() 
 
 			if (!DYN_REQUEST(drq_drop_role))
-			{
 				DYN_REQUEST(drq_drop_role) = request;
-			}
 
-			role_owner = XX.RDB$OWNER_NAME;
+			found = true;
+			Firebird::MetaName role_owner = XX.RDB$OWNER_NAME;
 
 			if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) ||
 				(role_owner == user))
@@ -1451,9 +1445,9 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 					OR (PRIV.RDB$USER EQ role_name.c_str() AND
 					   PRIV.RDB$USER_TYPE = obj_sql_role)
 
-					if (!DYN_REQUEST(drq_del_role_1)) {
-						DYN_REQUEST(drq_del_role_1) = request;
-					}
+				if (!DYN_REQUEST(drq_del_role_1)) {
+					DYN_REQUEST(drq_del_role_1) = request;
+				}
 
 				ERASE PRIV;
 
@@ -1479,6 +1473,12 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 		// msg 191: "ERASE RDB$ROLES failed"
 		// msg  62: "ERASE RDB$USER_PRIVILEGES failed"
 		DYN_error_punt(true, number, NULL, NULL, NULL, NULL, NULL);
+	}
+
+	if (!found)
+	{
+		DYN_error_punt(false, 155, role_name.c_str(), NULL, NULL, NULL, NULL);
+		// msg 155: "Role %s not found"
 	}
 
 	return;
@@ -1600,18 +1600,16 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
  *	deletes a trigger.
  *
  **************************************/
-	Firebird::MetaName r, t;
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_trg_msgs, DYN_REQUESTS);
 	USHORT id = drq_e_trg_msgs;
 
-	try {
-
+	Firebird::MetaName t;
 	GET_STRING(ptr, t);
 
+	try {
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		TM IN RDB$TRIGGER_MESSAGES WITH TM.RDB$TRIGGER_NAME EQ t.c_str()
 
@@ -1627,6 +1625,8 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 	request = CMP_find_request(tdbb, drq_e_trigger, DYN_REQUESTS);
 	id = drq_e_trigger;
 
+	Firebird::MetaName r;
+	
 	bool found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ t.c_str()
@@ -1643,7 +1643,7 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_e_trigger) = request;
 
 	if (!found) {
-		goto dyn_punt_67;
+		goto dyn_punt_147;
 	}
 
 	request = CMP_find_request(tdbb, drq_e_trg_prv, DYN_REQUESTS);
@@ -1735,9 +1735,9 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 
 	return;
 
-dyn_punt_67:
-	DYN_error_punt(false, 67, NULL, NULL, NULL, NULL, NULL);
-	/* msg 67: "Trigger not found" */
+dyn_punt_147:
+	DYN_error_punt(false, 147, t.c_str(), NULL, NULL, NULL, NULL);
+	/* msg 147: "Trigger %s not found" */
 }
 
 

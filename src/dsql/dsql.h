@@ -696,5 +696,13 @@ void ERRD_assert_msg(const char*, const char*, ULONG);
 
 #endif // DEV_BUILD
 
+// CVC: Enumeration used for the COMMENT command.
+enum
+{
+	ddl_database, ddl_domain, ddl_relation, ddl_view, ddl_procedure, ddl_trigger,
+	ddl_udf, ddl_blob_filter, ddl_exception, ddl_generator, ddl_index, ddl_role,
+	ddl_charset, ddl_collation//, ddl_sec_class
+};
+
 #endif // DSQL_DSQL_H
 

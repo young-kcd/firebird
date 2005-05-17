@@ -1103,6 +1103,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_def_shadow:
 	case nod_del_shadow:
 	case nod_set_statistics:
+	case nod_comment:
 		request->req_type = REQ_DDL;
 		return input;
 
@@ -2826,8 +2827,8 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 
 	if (node1->nod_type == nod_parameter) {
 		// Parameters are equal when there index is the same
-		dsql_par* parameter1 = (dsql_par*) node1->nod_arg[e_par_parameter];
-		dsql_par* parameter2 = (dsql_par*) node2->nod_arg[e_par_parameter];
+		const dsql_par* parameter1 = (dsql_par*) node1->nod_arg[e_par_parameter];
+		const dsql_par* parameter2 = (dsql_par*) node2->nod_arg[e_par_parameter];
 		return (parameter1->par_index == parameter2->par_index);
 	}
 
@@ -2867,7 +2868,7 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 
 	// create a derived table representing our subquery
 	dsql_nod* dt = MAKE_node(nod_derived_table, e_derived_table_count);
-	// Ignore validation for columnames that must be exists for "user" derived tables.
+	// Ignore validation for columnames that must exist for "user" derived tables.
 	dt->nod_flags |= NOD_DT_IGNORE_COLUMN_CHECK;
 	dt->nod_arg[e_derived_table_rse] = input->nod_arg[1];
 	dsql_nod* from = MAKE_node(nod_list, 1);
@@ -3614,7 +3615,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	request->req_alias_relation_prefix = req_alias_relation_prefix;
 
 	// If an alias-list is specified process it.
-	bool ignoreColumnChecks = (input->nod_flags & NOD_DT_IGNORE_COLUMN_CHECK);
+	const bool ignoreColumnChecks = (input->nod_flags & NOD_DT_IGNORE_COLUMN_CHECK);
 	if (node->nod_arg[e_derived_table_column_alias] && 
 		node->nod_arg[e_derived_table_column_alias]->nod_count) 
 	{

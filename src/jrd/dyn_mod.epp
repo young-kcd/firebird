@@ -108,6 +108,132 @@ static ULONG check_update_fld_type(const dyn_fld&, const dyn_fld&);
 static void modify_err_punt(thread_db*, ULONG, const dyn_fld&, const dyn_fld&);
 
 
+// ***********************************
+// D Y N _ m o d i f y _ c h a r s e t
+// ***********************************
+// Its purpose is to change the comment in the charset's record.
+void DYN_modify_charset(Global* gbl, const UCHAR** ptr)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+
+	jrd_req* request = CMP_find_request(tdbb, drq_m_chset, DYN_REQUESTS);
+	bool found = false;
+
+	SqlIdentifier t;
+	GET_STRING(ptr, t);
+
+	try {
+		found = false;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$CHARACTER_SETS
+				WITH X.RDB$CHARACTER_SET_NAME EQ t
+
+	        if (!DYN_REQUEST(drq_m_chset))
+				DYN_REQUEST(drq_m_chset) = request;
+
+			found = true;
+			MODIFY X
+				UCHAR verb;
+				while ((verb = *(*ptr)++) != isc_dyn_end)
+				{
+					switch (verb)
+					{
+					case isc_dyn_description:
+						if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
+							X.RDB$DESCRIPTION.NULL = FALSE;
+						else
+							X.RDB$DESCRIPTION.NULL = TRUE;
+						break;
+
+					default:
+						DYN_unsupported_verb();
+					}
+				}
+			END_MODIFY;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_m_chset))
+			DYN_REQUEST(drq_m_chset) = request;
+	}
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, -1);
+		DYN_error_punt(true, 85, NULL, NULL, NULL, NULL, NULL);
+		// msg 85: "MODIFY RDB$CHARACTER_SETS failed"
+	}
+
+	if (!found)
+	{
+		DYN_error_punt(false, 151, t, NULL, NULL, NULL, NULL);
+		// msg 151: "Character set %s not found"
+	}
+}
+
+
+// ***************************************
+// D Y N _ m o d i f y _ c o l l a t i o n
+// ***************************************
+// Its purpose is to change the comment in the collation's record.
+void DYN_modify_collation(Global* gbl, const UCHAR** ptr)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+
+	jrd_req* request = CMP_find_request(tdbb, drq_m_coll, DYN_REQUESTS);
+	bool found = false;
+
+	SqlIdentifier t;
+	GET_STRING(ptr, t);
+
+	try {
+		found = false;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$COLLATIONS
+				WITH X.RDB$COLLATION_NAME EQ t
+
+	        if (!DYN_REQUEST(drq_m_coll))
+				DYN_REQUEST(drq_m_coll) = request;
+
+			found = true;
+			MODIFY X
+				UCHAR verb;
+				while ((verb = *(*ptr)++) != isc_dyn_end)
+				{
+					switch (verb)
+					{
+					case isc_dyn_description:
+						if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
+							X.RDB$DESCRIPTION.NULL = FALSE;
+						else
+							X.RDB$DESCRIPTION.NULL = TRUE;
+						break;
+
+					default:
+						DYN_unsupported_verb();
+					}
+				}
+			END_MODIFY;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_m_coll))
+			DYN_REQUEST(drq_m_coll) = request;
+	}
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, -1);
+		DYN_error_punt(true, 86, NULL, NULL, NULL, NULL, NULL);
+		// msg 86: "MODIFY RDB$COLLATIONS failed"
+	}
+
+	if (!found)
+	{
+		DYN_error_punt(false, 152, t, NULL, NULL, NULL, NULL);
+		// msg 152: "Collation %s not found"
+	}
+}
+
+
 void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
@@ -169,9 +295,8 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 						DBB.RDB$DESCRIPTION.NULL = TRUE;
 					break;
 
-
 				case isc_dyn_def_file:
-					DYN_define_file(gbl, ptr, (SLONG) 0, &start, 158);
+					DYN_define_file(gbl, ptr, (SLONG) 0, &start, 84);
 					break;
 					
 				case isc_dyn_def_difference:
@@ -249,14 +374,14 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 84, NULL, NULL, NULL, NULL, NULL);
-		/* msg 84: "MODIFY DATABASE failed" */
+		// msg 84: "MODIFY DATABASE failed"
 	}
 
 	return;
 
 dyn_punt_84:
 	DYN_error_punt(true, 84, NULL, NULL, NULL, NULL, NULL);
-	/* msg 84: "MODIFY DATABASE failed" */
+	// msg 84: "MODIFY DATABASE failed"
 }
 
 
@@ -272,8 +397,6 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
  *	Modify an exception.
  *
  **************************************/
-	Firebird::MetaName t;
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
@@ -282,6 +405,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 
 	try {
 
+	Firebird::MetaName t;
 	GET_STRING(ptr, t);
 
 	found = false;
@@ -289,7 +413,8 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 		X IN RDB$EXCEPTIONS
 			WITH X.RDB$EXCEPTION_NAME EQ t.c_str()
 
-        if (!DYN_REQUEST(drq_m_xcp)) DYN_REQUEST(drq_m_xcp) = request;
+        if (!DYN_REQUEST(drq_m_xcp))
+			DYN_REQUEST(drq_m_xcp) = request;
 
 		found = true;
 		MODIFY X
@@ -299,6 +424,13 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 				case isc_dyn_xcp_msg:
 					GET_STRING(ptr, X.RDB$MESSAGE);
 					X.RDB$MESSAGE.NULL = FALSE;
+					break;
+
+				case isc_dyn_description:
+					if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
+						X.RDB$DESCRIPTION.NULL = FALSE;
+					else
+						X.RDB$DESCRIPTION.NULL = TRUE;
 					break;
 
 				default:
@@ -315,13 +447,203 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 145, NULL, NULL, NULL, NULL, NULL);
-		/* msg 145: "MODIFY EXCEPTION failed" */
+		// msg 145: "MODIFY EXCEPTION failed"
 	}
 
 	if (!found)
 	{
 		DYN_error_punt(false, 144, NULL, NULL, NULL, NULL, NULL);
-		/* msg 144: "Exception not found" */
+		// msg 144: "Exception not found"
+	}
+}
+
+
+// *********************************
+// D Y N _ m o d i f y _ f i l t e r
+// *********************************
+// Its purpose is to change the comment in the filter's record.
+void DYN_modify_filter(Global* gbl, const UCHAR** ptr)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+
+	jrd_req* request = CMP_find_request(tdbb, drq_m_bfil, DYN_REQUESTS);
+	bool found = false;
+
+	SqlIdentifier t;
+	GET_STRING(ptr, t);
+
+	try {
+		found = false;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$FILTERS
+				WITH X.RDB$FUNCTION_NAME EQ t
+
+	        if (!DYN_REQUEST(drq_m_bfil))
+				DYN_REQUEST(drq_m_bfil) = request;
+
+			found = true;
+			MODIFY X
+				UCHAR verb;
+				while ((verb = *(*ptr)++) != isc_dyn_end)
+				{
+					switch (verb)
+					{
+					case isc_dyn_description:
+						if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
+							X.RDB$DESCRIPTION.NULL = FALSE;
+						else
+							X.RDB$DESCRIPTION.NULL = TRUE;
+						break;
+
+					// Other cases should go there, like modifying the entry point or module name.
+					default:
+						DYN_unsupported_verb();
+					}
+				}
+			END_MODIFY;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_m_bfil))
+			DYN_REQUEST(drq_m_bfil) = request;
+	}
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, -1);
+		DYN_error_punt(true, 88, NULL, NULL, NULL, NULL, NULL);
+		// msg 88: "MODIFY RDB$BLOB_FILTERS failed"
+	}
+
+	if (!found)
+	{
+		DYN_error_punt(false, 37, t, NULL, NULL, NULL, NULL);
+		// msg 37: "Blob Filter %s not found"
+	}
+}
+
+
+// *************************************
+// D Y N _ m o d i f y _ f u n c t i o n
+// *************************************
+// Its purpose is to change the comment in the function's record.
+void DYN_modify_function(Global* gbl, const UCHAR** ptr)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+
+	jrd_req* request = CMP_find_request(tdbb, drq_m_fun, DYN_REQUESTS);
+	bool found = false;
+
+	SqlIdentifier t;
+	GET_STRING(ptr, t);
+
+	try {
+		found = false;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$FUNCTIONS
+				WITH X.RDB$FUNCTION_NAME EQ t
+
+	        if (!DYN_REQUEST(drq_m_fun))
+				DYN_REQUEST(drq_m_fun) = request;
+
+			found = true;
+			MODIFY X
+				UCHAR verb;
+				while ((verb = *(*ptr)++) != isc_dyn_end)
+				{
+					switch (verb)
+					{
+					case isc_dyn_description:
+						if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
+							X.RDB$DESCRIPTION.NULL = FALSE;
+						else
+							X.RDB$DESCRIPTION.NULL = TRUE;
+						break;
+
+					// Other cases should go there, like modifying the entry point or module name.
+					default:
+						DYN_unsupported_verb();
+					}
+				}
+			END_MODIFY;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_m_fun))
+			DYN_REQUEST(drq_m_fun) = request;
+	}
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, -1);
+		DYN_error_punt(true, 92, NULL, NULL, NULL, NULL, NULL);
+		// msg 92: "MODIFY RDB$FUNCTIONS failed"
+	}
+
+	if (!found)
+	{
+		DYN_error_punt(false, 41, t, NULL, NULL, NULL, NULL);
+		// msg 41: "Function %s not found"
+	}
+}
+
+
+// ***************************************
+// D Y N _ m o d i f y _ g e n e r a t o r
+// ***************************************
+// Its purpose is to change the comment in the generator's record.
+void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+
+	jrd_req* request = CMP_find_request(tdbb, drq_m_gen, DYN_REQUESTS);
+	bool found = false;
+	SqlIdentifier t;
+	GET_STRING(ptr, t);
+
+	try {
+		found = false;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$GENERATORS
+				WITH X.RDB$GENERATOR_NAME EQ t
+
+	        if (!DYN_REQUEST(drq_m_gen))
+				DYN_REQUEST(drq_m_gen) = request;
+
+			found = true;
+			MODIFY X
+				UCHAR verb;
+				while ((verb = *(*ptr)++) != isc_dyn_end)
+				{
+					switch (verb)
+					{
+					case isc_dyn_description:
+						if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
+							X.RDB$DESCRIPTION.NULL = FALSE;
+						else
+							X.RDB$DESCRIPTION.NULL = TRUE;
+						break;
+
+					default:
+						DYN_unsupported_verb();
+					}
+				}
+			END_MODIFY;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_m_gen))
+			DYN_REQUEST(drq_m_gen) = request;
+	}
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, -1);
+		DYN_error_punt(true, 94, NULL, NULL, NULL, NULL, NULL);
+		// msg 94: "MODIFY GENERATOR failed"
+	}
+
+	if (!found)
+	{
+		DYN_error_punt(false, 214, t, NULL, NULL, NULL, NULL);
+		// msg 214: "Generator %s not found"
 	}
 }
 
@@ -499,7 +821,7 @@ void DYN_modify_global_field(Global* gbl,
 					new_dom.dyn_charbytelen = new_dom.dyn_dsc.dsc_length;
 					break;
 				default:
-					new_dom.dyn_charbytelen = 0; /* It won't be used, anyway. */
+					new_dom.dyn_charbytelen = 0; // It won't be used, anyway.
 					break;
 				}
 				break;
@@ -875,7 +1197,8 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name.c_str()
 
-        if (!DYN_REQUEST(drq_m_index)) DYN_REQUEST(drq_m_index) = request;
+        if (!DYN_REQUEST(drq_m_index))
+			DYN_REQUEST(drq_m_index) = request;
 
 		found = true;
 		MODIFY IDX USING
@@ -920,13 +1243,13 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 91, NULL, NULL, NULL, NULL, NULL);
-		/* msg 91: "MODIFY RDB$INDICES failed" */
+		// msg 91: "MODIFY RDB$INDICES failed"
 	}
 
 	if (!found)
 	{
 		DYN_error_punt(false, 93, NULL, NULL, NULL, NULL, NULL);
-		/* msg 93: "Index field not found" */
+		// msg 93: "Index field not found"
 	}
 }
 
@@ -1093,8 +1416,7 @@ void DYN_modify_local_field(
 					FLD.RDB$SECURITY_CLASS.NULL = TRUE;
 			}
 			if (dflag) {
-				if (DYN_put_text_blob
-					(gbl, &description, &FLD.RDB$DESCRIPTION))
+				if (DYN_put_text_blob(gbl, &description, &FLD.RDB$DESCRIPTION))
 					FLD.RDB$DESCRIPTION.NULL = FALSE;
 				else
 					FLD.RDB$DESCRIPTION.NULL = TRUE;
@@ -1122,6 +1444,80 @@ void DYN_modify_local_field(
 	{
 		DYN_error_punt(false, 96, NULL, NULL, NULL, NULL, NULL);
 		/* msg 96: "Local column not found" */
+	}
+}
+
+
+// ***************************************
+// D Y N _ m o d i f y _ p a r a m e t e r
+// ***************************************
+// The sole objective of this function is to allow changing the comment
+// in procedure's parameters without going into other changes.
+void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+
+	jrd_req* request = CMP_find_request(tdbb, drq_m_prm, DYN_REQUESTS);
+	bool found = false;
+
+	SqlIdentifier t;
+	GET_STRING(ptr, t);
+	SqlIdentifier p;
+
+	try {
+		if (**ptr == isc_dyn_prc_name)
+		{
+			++*ptr;
+			GET_STRING(ptr, p);
+		}
+		else
+		    DYN_unsupported_verb();
+
+		found = false;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$PROCEDURE_PARAMETERS
+			WITH X.RDB$PARAMETER_NAME EQ t
+			AND X.RDB$PROCEDURE_NAME EQ p
+
+	        if (!DYN_REQUEST(drq_m_prm))
+				DYN_REQUEST(drq_m_prm) = request;
+
+			found = true;
+			MODIFY X
+				UCHAR verb;
+				while ((verb = *(*ptr)++) != isc_dyn_end)
+				{
+					switch (verb)
+					{
+					case isc_dyn_description:
+						if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
+							X.RDB$DESCRIPTION.NULL = FALSE;
+						else
+							X.RDB$DESCRIPTION.NULL = TRUE;
+						break;
+
+					default:
+						DYN_unsupported_verb();
+					}
+				}
+			END_MODIFY;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_m_prm))
+			DYN_REQUEST(drq_m_prm) = request;
+	}
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, -1);
+		DYN_error_punt(true, 100, NULL, NULL, NULL, NULL, NULL);
+		// msg 100: "MODIFY RDB$PROCEDURE_PARAMETERS failed"
+	}
+
+	if (!found)
+	{
+		DYN_error_punt(false, 146, t, p, NULL, NULL, NULL);
+		// msg : "Parameter %s in procedure %s not found"
 	}
 }
 
@@ -1158,12 +1554,26 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 
         if (!DYN_REQUEST(drq_m_prcs))
 			DYN_REQUEST(drq_m_prcs) = request;
+			
 		found = true;
 
 		/* Set NULL flags to TRUE only for fields which must be specified in the DYN string.
 		   Retain existing values on other fields (RDB$DESCRIPTION, RDB$SECURITY_CLASS),
 		   unless explicitly changed in the DYN string */
 		MODIFY P
+		
+			if (**ptr == isc_dyn_description)
+			{
+			    ++*ptr;
+				if (DYN_put_text_blob(gbl, ptr, &P.RDB$DESCRIPTION))
+					P.RDB$DESCRIPTION.NULL = FALSE;
+				else
+					P.RDB$DESCRIPTION.NULL = TRUE;
+
+				if (**ptr == isc_dyn_end)
+					break;
+			}
+
 			P.RDB$SYSTEM_FLAG.NULL = TRUE;
 			P.RDB$PROCEDURE_BLR.NULL = TRUE;
 			P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
@@ -1184,8 +1594,10 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 					break;
 
 				case isc_dyn_description:
-					DYN_put_text_blob(gbl, ptr, &P.RDB$DESCRIPTION);
-					P.RDB$DESCRIPTION.NULL = FALSE;
+					if (DYN_put_text_blob(gbl, ptr, &P.RDB$DESCRIPTION))
+						P.RDB$DESCRIPTION.NULL = FALSE;
+					else
+						P.RDB$DESCRIPTION.NULL = TRUE;
 					break;
 
 				case isc_dyn_prc_source:
@@ -1267,6 +1679,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 
 		if (!REL.RDB$VIEW_BLR.NULL)
 			DYN_error_punt(false, 177, NULL, NULL, NULL, NULL, NULL);
+			
 		found = true;
 		MODIFY REL USING
 			UCHAR verb;
@@ -1332,6 +1745,68 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 }
 
 
+// *****************************
+// D Y N _ m o d i f y _ r o l e
+// *****************************
+// Its purpose is to change the comment in the role's record.
+void DYN_modify_role(Global* gbl, const UCHAR** ptr)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+
+	jrd_req* request = CMP_find_request(tdbb, drq_m_rol, DYN_REQUESTS);
+	bool found = false;
+	SqlIdentifier t;
+	GET_STRING(ptr, t);
+
+	try {
+		found = false;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$ROLES
+				WITH X.RDB$ROLE_NAME EQ t
+
+	        if (!DYN_REQUEST(drq_m_rol))
+				DYN_REQUEST(drq_m_rol) = request;
+
+			found = true;
+			MODIFY X
+				UCHAR verb;
+				while ((verb = *(*ptr)++) != isc_dyn_end)
+				{
+					switch (verb)
+					{
+					case isc_dyn_description:
+						if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
+							X.RDB$DESCRIPTION.NULL = FALSE;
+						else
+							X.RDB$DESCRIPTION.NULL = TRUE;
+						break;
+
+					default:
+						DYN_unsupported_verb();
+					}
+				}
+			END_MODIFY;
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_m_rol))
+			DYN_REQUEST(drq_m_rol) = request;
+	}
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, -1);
+		DYN_error_punt(true, 158, NULL, NULL, NULL, NULL, NULL);
+		// msg 158: "MODIFY RDB$ROLES failed"
+	}
+
+	if (!found)
+	{
+		DYN_error_punt(false, 155, t, NULL, NULL, NULL, NULL);
+		// msg 155: "Role %s not found"
+	}
+}
+
+
 void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
@@ -1366,8 +1841,8 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
             DYN_REQUEST(drq_m_trigger) = request;
 		}
 
-/* CVC: I think that we'll do well by hiding our automatic triggers from this function.
-		Why would a user want to fiddle with triggers that were generated automatically?
+		// CVC: I think that we'll do well by hiding our automatic triggers from this function.
+		// Why would a user want to fiddle with triggers that were generated automatically?
 
 		if (!X.RDB$SYSTEM_FLAG.NULL)
 		{
@@ -1381,16 +1856,28 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 				break;
 			}
 		}
-*/
+
 		found = true;
 		MODIFY X
+
+			if (**ptr == isc_dyn_description)
+			{
+			    ++*ptr;
+				if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
+					X.RDB$DESCRIPTION.NULL = FALSE;
+				else
+					X.RDB$DESCRIPTION.NULL = TRUE;
+
+				if (**ptr == isc_dyn_end)
+					break;
+			}
+
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_trg_name:
 					{
 					Firebird::MetaName new_trigger_name;
-					/* GET_STRING(ptr, X.RDB$TRIGGER_NAME); */
 					GET_STRING(ptr, new_trigger_name);
 					if (new_trigger_name.length() == 0)
 						DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
@@ -1434,8 +1921,10 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 					break;
 
 				case isc_dyn_description:
-					DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
-					X.RDB$DESCRIPTION.NULL = FALSE;
+					if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
+						X.RDB$DESCRIPTION.NULL = FALSE;
+					else
+						X.RDB$DESCRIPTION.NULL = TRUE;
 					break;
 
 				default:
@@ -1545,11 +2034,10 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	Firebird::MetaName view_name;
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
+	Firebird::MetaName view_name;
 	GET_STRING(ptr, view_name);
 
 	if (view_name.length() == 0)
@@ -1561,7 +2049,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 
 	try {
 
-	request = CMP_find_request(tdbb, drq_m_relation, DYN_REQUESTS);
+	request = CMP_find_request(tdbb, drq_m_view, DYN_REQUESTS);
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1569,11 +2057,24 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 			WITH VRL.RDB$VIEW_NAME EQ REL.RDB$RELATION_NAME AND
 				VRL.RDB$VIEW_NAME EQ view_name.c_str()
 
-        if (!DYN_REQUEST(drq_m_relation))
-			DYN_REQUEST(drq_m_relation) = request;
+        if (!DYN_REQUEST(drq_m_view))
+			DYN_REQUEST(drq_m_view) = request;
 
 		found = true;
 		MODIFY REL
+
+			if (**ptr == isc_dyn_description)
+			{
+			    ++*ptr;
+				if (DYN_put_text_blob(gbl, ptr, &REL.RDB$DESCRIPTION))
+					REL.RDB$DESCRIPTION.NULL = FALSE;
+				else
+					REL.RDB$DESCRIPTION.NULL = TRUE;
+
+				if (**ptr == isc_dyn_end)
+					break;
+			}
+
 			REL.RDB$SYSTEM_FLAG.NULL = TRUE;
 			REL.RDB$VIEW_BLR.NULL = TRUE;
 			REL.RDB$VIEW_SOURCE.NULL = TRUE;
@@ -1602,6 +2103,13 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 					GET_STRING(ptr, REL.RDB$SECURITY_CLASS);
 					REL.RDB$SECURITY_CLASS.NULL = FALSE;
 					break;
+					
+				case isc_dyn_description:
+					if (DYN_put_text_blob(gbl, ptr, &REL.RDB$DESCRIPTION))
+						REL.RDB$DESCRIPTION.NULL = FALSE;
+					else
+						REL.RDB$DESCRIPTION.NULL = TRUE;
+					break;
 
 				default:
 					--(*ptr);
@@ -1611,8 +2119,9 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 		END_MODIFY;
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_m_relation))
-		DYN_REQUEST(drq_m_relation) = request;
+	if (!DYN_REQUEST(drq_m_view))
+		DYN_REQUEST(drq_m_view) = request;
+
 	}
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -1622,8 +2131,8 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 	}
 
 	if (!found) {
-		DYN_error_punt(false, 61, NULL, NULL, NULL, NULL, NULL);
-		/* msg 61: "Relation not found" */
+		DYN_error_punt(false, 54, view_name.c_str(), NULL, NULL, NULL, NULL);
+		/* msg 54: "View %s not found" */
 	}
 }
 
@@ -1884,11 +2393,11 @@ static void modify_lfield_position(thread_db* tdbb,
 
 /* Find the position of the last field in the relation */
 	SLONG max_position = -1;
-	DYN_UTIL_generate_field_position(tdbb, gbl, &relation_name, &max_position);
+	DYN_UTIL_generate_field_position(tdbb, gbl, relation_name, &max_position);
 
 /* if the existing position of the field is less than the new position of
  * the field, subtract 1 to move the fields to their new positions otherwise,
- * increase the *value in RDB$FIELD_POSITION by one
+ * increase the value in RDB$FIELD_POSITION by one
  */
 
 	bool move_down = false;
@@ -1956,6 +2465,7 @@ static void modify_lfield_position(thread_db* tdbb,
 	}
 }
 
+
 static bool check_view_dependency(thread_db* tdbb,
 									 Database* dbb,
 									 Global* gbl,
@@ -2000,8 +2510,8 @@ static bool check_view_dependency(thread_db* tdbb,
 	/* msg 206: Column %s from table %s is referenced in  %s. */
 
 	return retval;
-
 }
+
 
 static bool check_sptrig_dependency(thread_db* tdbb,
 									   Database* dbb,
@@ -2041,6 +2551,7 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 
 	return retval;
 }
+
 
 static void modify_lfield_index(thread_db*	tdbb,
 								Database*	dbb,
@@ -2082,6 +2593,7 @@ static void modify_lfield_index(thread_db*	tdbb,
 	CMP_release(tdbb, request);
 }
 
+
 static bool field_exists(thread_db*					tdbb,
 						 Database*					dbb,
 						 Global*					gbl,
@@ -2110,6 +2622,7 @@ static bool field_exists(thread_db*					tdbb,
 	return retval;
 }
 
+
 static bool domain_exists(thread_db*				tdbb, 
 						  Database*					dbb, 
 						  Global*					gbl, 
@@ -2134,6 +2647,7 @@ static bool domain_exists(thread_db*				tdbb,
 	CMP_release(tdbb, request);
 	return retval;
 }
+
 
 void DYN_modify_sql_field(Global*					gbl,
 						  const UCHAR**				ptr,
@@ -2278,7 +2792,7 @@ void DYN_modify_sql_field(Global*					gbl,
 						new_fld.dyn_charbytelen = new_fld.dyn_dsc.dsc_length;
 						break;
 					default:
-						new_fld.dyn_charbytelen = 0; /* It won't be used, anyway. */
+						new_fld.dyn_charbytelen = 0; // It won't be used, anyway. 
 						break;
 					}
 					break;
@@ -2578,6 +3092,7 @@ void DYN_modify_sql_field(Global*					gbl,
 	}
 }
 
+
 void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld& dom_fld)
 {
 /**************************************
@@ -2615,6 +3130,7 @@ void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld& dom_f
 	END_FOR;
 	CMP_release(tdbb, request);
 }
+
 
 static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 									const dyn_fld& new_fld)
@@ -2870,6 +3386,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 	return FB_SUCCESS;
 }
 
+
 static void modify_err_punt(thread_db* tdbb,
 							ULONG errorcode,
 							const dyn_fld& orig_fld_def,
@@ -2888,7 +3405,6 @@ static void modify_err_punt(thread_db* tdbb,
  *      This function is called by DYN_modify_global_field and by   
  *	DYN_modify_sql_field
  **************************************/
-
 
 	switch (errorcode) {
 	case isc_dyn_dtype_invalid:

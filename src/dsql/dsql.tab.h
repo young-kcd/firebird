@@ -269,6 +269,8 @@
 # define	NEXT	518
 # define	SEQUENCE	519
 # define	RESTART	520
+# define	COMMENT	521
+# define	COLLATION	522
 
 
 extern YYSTYPE yylval;

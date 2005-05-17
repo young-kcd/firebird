@@ -112,7 +112,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
 {
 /**************************************
  *
- *	D Y N _ U T I L _g e n _ u n i q u e _ i d
+ *	D Y N _ U T I L _ g e n _ u n i q u e _ i d
  *
  **************************************
  *
@@ -162,7 +162,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 {
 /**************************************
  *
- *	D Y N _ U T I L _g e n e r a t e _ c o n s t r a i n t _ n a m e
+ *	D Y N _ U T I L _ g e n e r a t e _ c o n s t r a i n t _ n a m e
  *
  **************************************
  *
@@ -221,12 +221,12 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
 {
 /**************************************
  *
- *	D Y N _ U T I L _g e n e r a t e _ f i e l d _ n a m e
+ *	D Y N _ U T I L _ g e n e r a t e _ f i e l d _ n a m e
  *
  **************************************
  *
  * Functional description
- *	Stup to make it work with char* too.
+ *	Stub to make it work with char* too.
  *
  **************************************/
 	Firebird::MetaName temp;
@@ -239,7 +239,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 {
 /**************************************
  *
- *	D Y N _ U T I L _g e n e r a t e _ f i e l d _ n a m e
+ *	D Y N _ U T I L _ g e n e r a t e _ f i e l d _ n a m e
  *
  **************************************
  *
@@ -296,12 +296,12 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 void DYN_UTIL_generate_field_position(
 									  thread_db* tdbb,
 									  Global* gbl,
-									  const Firebird::MetaName* relation_name,
+									  const Firebird::MetaName& relation_name,
 									  SLONG* field_pos)
 {
 /**************************************
  *
- *	D Y N _ U T I L _g e n e r a t e _ f i e l d _ p o s i t i o n
+ *	D Y N _ U T I L _ g e n e r a t e _ f i e l d _ p o s i t i o n
  *
  **************************************
  *
@@ -310,9 +310,6 @@ void DYN_UTIL_generate_field_position(
  *
  **************************************/
 	SLONG field_position = -1;
-
-	if (!relation_name)
-		return;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -325,7 +322,7 @@ void DYN_UTIL_generate_field_position(
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$RELATION_FIELDS
-			WITH X.RDB$RELATION_NAME EQ relation_name->c_str()
+			WITH X.RDB$RELATION_NAME EQ relation_name.c_str()
 
         if (!DYN_REQUEST(drq_l_fld_pos))
             DYN_REQUEST(drq_l_fld_pos) = request;
@@ -353,7 +350,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 {
 /**************************************
  *
- *	D Y N _ U T I L _g e n e r a t e _ i n d e x _ n a m e
+ *	D Y N _ U T I L _ g e n e r a t e _ i n d e x _ n a m e
  *
  **************************************
  *
@@ -372,10 +369,13 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 	bool found = false;
 
 	do {
-		const SCHAR* format = 
-			verb == isc_dyn_def_primary_key ? ("RDB$PRIMARY%" QUADFORMAT "d") :
-			verb == isc_dyn_def_foreign_key ? ("RDB$FOREIGN%" QUADFORMAT "d") :
-			("RDB$%" QUADFORMAT "d");
+		const SCHAR* format;
+		if (verb == isc_dyn_def_primary_key)
+			format = "RDB$PRIMARY%" QUADFORMAT "d";
+		else if (verb == isc_dyn_def_foreign_key)
+			format = "RDB$FOREIGN%" QUADFORMAT "d";
+		else
+			format = "RDB$%" QUADFORMAT "d";
 		id = drq_g_nxt_idx;
 		buffer.printf(format,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
@@ -414,7 +414,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 {
 /**************************************
  *
- *	D Y N _ U T I L _g e n e r a t e _ t r i g g e r _ n a m e
+ *	D Y N _ U T I L _ g e n e r a t e _ t r i g g e r _ n a m e
  *
  **************************************
  *
@@ -475,7 +475,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 {
 /**************************************
  *
- *	D Y N _ U T I L _g e t _ p r o t
+ *	D Y N _ U T I L _ g e t _ p r o t
  *
  **************************************
  *
@@ -519,7 +519,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 
 void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
 									  Global*					gbl,
-									  const Firebird::MetaName*	constraint_name,
+									  const Firebird::MetaName&	constraint_name,
 									  const Firebird::MetaName&	trigger_name)
 {
 /**************************************
@@ -537,11 +537,10 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
 	jrd_req* request = CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
 
 	try {
-	
-	fb_assert(constraint_name);
+
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		CHK IN RDB$CHECK_CONSTRAINTS
-        strcpy(CHK.RDB$CONSTRAINT_NAME, constraint_name->c_str());
+        strcpy(CHK.RDB$CONSTRAINT_NAME, constraint_name.c_str());
 		strcpy(CHK.RDB$TRIGGER_NAME, trigger_name.c_str());
 
 	END_STORE;

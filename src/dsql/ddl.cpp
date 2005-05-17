@@ -140,6 +140,7 @@ static void fix_default_source(dsql_str*);
 static void foreign_key(dsql_req*, dsql_nod*, const char* index_name);
 static void generate_dyn(dsql_req*, dsql_nod*);
 static void grant_revoke(dsql_req*);
+static void make_comment(dsql_req*);
 static void make_index(dsql_req*, const dsql_nod*, const dsql_nod*,
 	const dsql_nod*, const char*, const char*);
 static void make_index_trg_ref_int(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*,
@@ -4446,8 +4447,11 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 	case nod_set_statistics:
 		set_statistics(request);
 		break;
+		
+	case nod_comment:
+		make_comment(request);
 
-	default:
+	default: // CVC: Shouldn't we complain here?
 		break;
 	}
 }
@@ -4517,6 +4521,118 @@ static void grant_revoke( dsql_req* request)
 			}
 		}
 	}
+
+	request->append_uchar(isc_dyn_end);
+}
+
+
+// *******************************
+// m a k e _ c o m m e n t
+// *******************************
+// Set the description blob for objects' self documentation.
+// This query
+// select rdb$relation_name from rdb$relation_fields where rdb$field_name = 'RDB$DESCRIPTION';
+// gives the list of objects that accept descriptions. At FB2 time, the only
+// subobjects with descriptions are relation's fields and procedure's parameters.
+static void make_comment(dsql_req* request)
+{
+	const dsql_nod* node = request->req_ddl_node;
+	fb_assert(node->nod_type == nod_comment);
+	const bool have_subobj = node->nod_arg[e_comment_part] != 0;
+
+	const dsql_nod* obj_type_node = node->nod_arg[e_comment_obj_type];
+	fb_assert(obj_type_node->nod_type == nod_constant
+		&& obj_type_node->nod_desc.dsc_dtype == dtype_long);
+	const int obj_type = (IPTR) obj_type_node->nod_arg[0];
+	
+	UCHAR dyn_verb = 0;
+	switch (obj_type)
+	{
+		case ddl_database:
+			dyn_verb = isc_dyn_mod_database;
+			break;
+		case ddl_domain:
+			dyn_verb = isc_dyn_mod_global_fld;
+			break;
+		case ddl_relation:
+			dyn_verb = isc_dyn_mod_rel;
+			break;
+		case ddl_view:
+			dyn_verb = isc_dyn_mod_view;
+			break;
+		case ddl_procedure:
+			dyn_verb = isc_dyn_mod_procedure;
+			break;
+		case ddl_trigger:
+			dyn_verb = isc_dyn_mod_trigger;
+			break;
+		case ddl_udf:
+			dyn_verb = isc_dyn_mod_function; // missing
+			break;
+		case ddl_blob_filter:
+			dyn_verb = isc_dyn_mod_filter; // mising
+			break;
+		case ddl_exception:
+			dyn_verb = isc_dyn_mod_exception;
+			break;
+		case ddl_generator:
+			dyn_verb = isc_dyn_mod_generator; // missing
+			break;
+		case ddl_index:
+			dyn_verb = isc_dyn_mod_idx;
+			break;
+		case ddl_role:
+			dyn_verb = isc_dyn_mod_sql_role; // missing
+			break;
+		case ddl_charset:
+			dyn_verb = isc_dyn_mod_charset; // missing
+			break;
+		case ddl_collation:
+			dyn_verb = isc_dyn_mod_collation; // missing
+			break;
+//		case ddl_sec_class:
+//			dyn_verb = isc_dyn_mod_security_class;
+//			break;
+		default:
+		    // Complain.
+			break;
+	}
+
+	if (have_subobj)
+	{
+		const dsql_str* field_or_param = (dsql_str*) node->nod_arg[e_comment_part];
+		UCHAR dyn_verb2 = 0;
+		switch (obj_type)
+		{
+		case ddl_relation:
+		case ddl_view:
+			dyn_verb2 = isc_dyn_mod_local_fld;
+			dyn_verb = isc_dyn_rel_name;
+			break;
+		case ddl_procedure:
+			dyn_verb2 = isc_dyn_mod_prc_parameter; // missing
+			dyn_verb = isc_dyn_prc_name;
+			break;
+		default:
+			// Complain.
+			break;
+		}
+	
+		request->append_string(dyn_verb2, field_or_param->str_data, field_or_param->str_length);
+	}
+
+	if (obj_type == ddl_database)
+		request->append_uchar(dyn_verb);
+	else
+	{
+		const dsql_str* obj_name = (dsql_str*) node->nod_arg[e_comment_object];
+		request->append_cstring(dyn_verb, obj_name->str_data);
+	}
+	const dsql_str* obj_desc = (dsql_str*) node->nod_arg[e_comment_string];
+	if (obj_desc)
+		request->append_string(isc_dyn_description, obj_desc->str_data, obj_desc->str_length);
+	else
+		request->append_string(isc_dyn_description, NULL, 0);
 
 	request->append_uchar(isc_dyn_end);
 }

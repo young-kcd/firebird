@@ -1916,11 +1916,20 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 
 #define isc_dyn_delete_generator          217
 
+// New for comments in objects.
+#define isc_dyn_mod_function              224
+#define isc_dyn_mod_filter                225
+#define isc_dyn_mod_generator             226
+#define isc_dyn_mod_sql_role              227
+#define isc_dyn_mod_charset               228
+#define isc_dyn_mod_collation             229
+#define isc_dyn_mod_prc_parameter         230
+
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
 
-#define isc_dyn_last_dyn_value            223
+#define isc_dyn_last_dyn_value            230
 
 /******************************************/
 /* Array slice description language (SDL) */
