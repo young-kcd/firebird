@@ -1,3 +1,43 @@
+2005-05-16 13:08  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.169):
+	
+	fixed embedded build
+
+2005-05-16 11:15  robocop
+
+	* firebird2/src/alice/alice.cpp (1.78):
+	
+	Misc.
+
+2005-05-16 11:13  robocop
+
+	* firebird2/src/jrd/met.epp (1.161):
+	
+	- The trigger type is UCHAR in the range 1..6; don't change it to
+	bool.  -  Restored what seemed a check "just in case": test
+	relation with empty name.
+
+2005-05-16 11:08  robocop
+
+	* firebird2/src/jrd/: evl.cpp (1.135), idx.cpp (1.91), rse.h
+	(1.38), sym.h (1.4), opt.cpp (1.241):
+	
+	Misc.
+
+2005-05-16 11:04  robocop
+
+	* firebird2/src/jrd/dfw.epp (1.148):
+	
+	Let's go back to the old more robust code after Alex change: one
+	argument is not null terminated.
+
+2005-05-16 11:00  robocop
+
+	* firebird2/src/alice/alice.cpp (1.77):
+	
+	Misc.
+
 2005-05-15 14:44  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.27):
