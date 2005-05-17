@@ -984,7 +984,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			if (tdbb->tdbb_attachment->att_user)
 			{
 				cur_user = tdbb->tdbb_attachment->att_user->usr_user_name;
-				impure->vlu_desc.dsc_address = (UCHAR*) cur_user;
+				impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>
+												(const_cast<char*>(cur_user));
 			}
 			if (cur_user)
 				impure->vlu_desc.dsc_length = strlen(cur_user);
@@ -4557,7 +4558,6 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
  *      or STARTS WITH.
  *
  **************************************/
-	// !!!!!!!!!!!!!!!!
 	UCHAR *p1, *p2 = NULL, temp1[256], temp2[256], buffer[BUFFER_LARGE];
 	SSHORT l2 = 0;
 	USHORT type1;

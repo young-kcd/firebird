@@ -2908,7 +2908,7 @@ static void transaction_options(
 		case isc_tpb_lock_read:
 			{
 				USHORT l = *tpb++;
-				if (l >= MAX_SQL_IDENTIFIER_LEN) {
+				if (l > MAX_SQL_IDENTIFIER_LEN) {
 					TEXT text[BUFFER_TINY];
 					USHORT flags = 0;
 					gds__msg_lookup(0, DYN_MSG_FAC, 159, sizeof(text),

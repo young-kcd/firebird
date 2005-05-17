@@ -36,17 +36,17 @@ namespace Firebird {
 
 class MetaName {
 private:
-	enum { BUFSIZE = MAX_SQL_IDENTIFIER_LEN + 1 };
-	char data[BUFSIZE];
+	enum { MAX_SQL_IDENTIFIER_SIZE = MAX_SQL_IDENTIFIER_LEN + 1 };
+	char data[MAX_SQL_IDENTIFIER_SIZE];
 	unsigned int count;
 	
 	void init()
 	{
-		memset(data, 0, BUFSIZE);
+		memset(data, 0, MAX_SQL_IDENTIFIER_SIZE);
 	}
 	MetaName& set(const MetaName& m)
 	{
-		memcpy(data, m.data, BUFSIZE); 
+		memcpy(data, m.data, MAX_SQL_IDENTIFIER_SIZE); 
 		count = m.count;
 		return *this; 
 	}
@@ -75,7 +75,7 @@ public:
 
 	int compare(const char* s, size_t l) const;
 	int compare(const char* s) const { return compare(s, strlen(s)); }
-	int compare(const MetaName& m) const { return memcmp(data, m.data, BUFSIZE); }
+	int compare(const MetaName& m) const { return memcmp(data, m.data, MAX_SQL_IDENTIFIER_SIZE); }
 
 	bool operator==(const char* s) const { return compare(s) == 0; }
 	bool operator!=(const char* s) const { return compare(s) != 0; }

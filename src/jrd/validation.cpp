@@ -2079,10 +2079,10 @@ static RTN walk_relation(thread_db* tdbb, VDR control, jrd_rel* relation)
 
 	}	// try
 	catch (const std::exception&) {
-		TEXT s[64];
-		const char* msg ="bugcheck during scan of table %d (%s)" ;
-		sprintf(s, msg, relation->rel_id, relation->rel_name.c_str());
-		gds__log(s);
+		const char* msg = relation->rel_name.length() > 0 ?
+			"bugcheck during scan of table %d (%s)" :
+			"bugcheck during scan of table %d";
+		gds__log(msg, relation->rel_id, relation->rel_name.c_str());
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			fprintf(stdout, "LOG:\t%s\n", s);

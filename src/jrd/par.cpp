@@ -1531,15 +1531,18 @@ static USHORT par_name(CompilerScratch* csb, Firebird::MetaName& name)
  *
  **************************************/
 	size_t l = BLR_BYTE;
+
 	// Check for overly long identifiers at BLR parse stage to prevent unwanted
 	// surprises in deeper layers of the engine.
 	if (l > MAX_SQL_IDENTIFIER_LEN) {
-		Firebird::string s;
+		SqlIdentifier st;
+		char* s = st;
+		l = MAX_SQL_IDENTIFIER_LEN;
 		while (l--) {
-			s += BLR_BYTE;
+			*s++ = BLR_BYTE;
 		}
-		s.resize(MAX_SQL_IDENTIFIER_LEN);
-		ERR_post(isc_identifier_too_long, isc_arg_string, ERR_cstring(s), 0);
+		*s = 0;
+		ERR_post(isc_identifier_too_long, isc_arg_string, ERR_cstring(st), 0);
 	}
 
 	char* s = name.getBuffer(l);

@@ -540,16 +540,8 @@ int MOV_make_string2(
  *
  * Functional description
  *	Make a string, in a specified text type, out of a descriptor.
- *	The caller provides a temporary, and a pointer to a pointer
- *	to hold a CVT_ allocated data structure.
- *	Should CVT_ allocate memory, it is the caller's responsibility to
- *	free it with gds__free().
  *	The address of the resultant string is returned.
  *	MOV_make_string2 returns the length of the string in bytes.
- *
- *	Note: If the descriptor is known to be a string type in the
- *	given ttype the argument (temp buffer) may be omitted.
- *	But this would be a bad idea in general.
  *
  **************************************/
 

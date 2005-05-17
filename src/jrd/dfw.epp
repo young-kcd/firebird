@@ -1328,12 +1328,7 @@ static void check_filename(const Firebird::string& name, bool shareExpand)
  *
  **************************************/
 	const Firebird::PathName file_name(name.ToPathName());
-	bool valid = true;
-
-	for (const char* p = file_name.c_str(); *p; ++p) {
-		if (p[0] == ':' && p[1] == ':')
-			valid = false;
-	}
+	const bool valid = file_name.find("::") == Firebird::PathName::npos;
 
 	if (!valid || ISC_check_if_remote(file_name, shareExpand)) {
 		ERR_post(isc_no_meta_update, isc_arg_gds, isc_node_name_err, 0);
@@ -2796,6 +2791,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
             ERASE X;
 		END_FOR;
 
+		relation->rel_name = "";
 		relation->rel_flags |= REL_deleted;
 		relation->rel_flags &= ~REL_deleting;
 		
