@@ -1818,7 +1818,7 @@ void DYN_define_index(Global*		gbl,
 
 			case isc_dyn_idx_ref_column:
 				{
-					Firebird::MetaName& str2 = seg_list.add();
+					Firebird::MetaName& str2 = field_list.add();
 					GET_STRING(ptr, str2);
 					referred_cols++;
 				}
