@@ -2864,8 +2864,6 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	const DsqlContextStack::iterator base(*request->req_context);
-
 	// create a derived table representing our subquery
 	dsql_nod* dt = MAKE_node(nod_derived_table, e_derived_table_count);
 	// Ignore validation for columnames that must exist for "user" derived tables.
@@ -2890,8 +2888,6 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	// create output node
 	dsql_nod* node = MAKE_node(ntype, 1);
 	node->nod_arg[0] = rse;
-
-	request->req_context->clear(base);
 
 	return node;
 }
@@ -7445,6 +7441,11 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 					}
 				}
 				return field;
+			}
+
+		case nod_derived_table:
+			{
+				remap_field(request, field->nod_arg[e_derived_table_rse], context, current_level);
 			}
 	
 		default:
