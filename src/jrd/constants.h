@@ -59,7 +59,7 @@ const ULONG MAX_COLUMN_SIZE	= 32767;	/* Bytes */
 const int USERNAME_LENGTH	= 31;	/* Bytes */
 
 const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
-const size_t MAX_SQL_IDENTIFIER_LEN = 31;
+const size_t MAX_SQL_IDENTIFIER_LEN = MAX_SQL_IDENTIFIER_SIZE - 1;
 typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 
 const char* const NULL_ROLE = "NONE";

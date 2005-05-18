@@ -95,7 +95,7 @@ namespace Firebird {
 			l = MAX_SQL_IDENTIFIER_LEN;
 		}
 		data[l] = 0;
-		count = l + 1;
+		count = l;
 		va_end(params);
 	}
 
