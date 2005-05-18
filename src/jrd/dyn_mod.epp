@@ -1556,6 +1556,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_m_prcs) = request;
 			
 		found = true;
+		bool only_description = false;
 
 		/* Set NULL flags to TRUE only for fields which must be specified in the DYN string.
 		   Retain existing values on other fields (RDB$DESCRIPTION, RDB$SECURITY_CLASS),
@@ -1571,14 +1572,17 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 					P.RDB$DESCRIPTION.NULL = TRUE;
 
 				if (**ptr == isc_dyn_end)
-					break;
+					only_description = true;
 			}
 
-			P.RDB$SYSTEM_FLAG.NULL = TRUE;
-			P.RDB$PROCEDURE_BLR.NULL = TRUE;
-			P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
-			P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
-			P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
+			if (!only_description)
+			{
+				P.RDB$SYSTEM_FLAG.NULL = TRUE;
+				P.RDB$PROCEDURE_BLR.NULL = TRUE;
+				P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
+				P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
+				P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
+			}
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -1858,31 +1862,20 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 		}
 
 		found = true;
+		
 		MODIFY X
-
-			if (**ptr == isc_dyn_description)
-			{
-			    ++*ptr;
-				if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
-					X.RDB$DESCRIPTION.NULL = FALSE;
-				else
-					X.RDB$DESCRIPTION.NULL = TRUE;
-
-				if (**ptr == isc_dyn_end)
-					break;
-			}
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_trg_name:
 					{
-					Firebird::MetaName new_trigger_name;
-					GET_STRING(ptr, new_trigger_name);
-					if (new_trigger_name.length() == 0)
-						DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
-						/* msg 212: "Zero length identifiers not allowed" */
-				    strcpy (X.RDB$TRIGGER_NAME, new_trigger_name.c_str());
+						Firebird::MetaName new_trigger_name;
+						GET_STRING(ptr, new_trigger_name);
+						if (new_trigger_name.length() == 0)
+							DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+							/* msg 212: "Zero length identifiers not allowed" */
+					    strcpy (X.RDB$TRIGGER_NAME, new_trigger_name.c_str());
 					}
 					break;
 
@@ -2061,6 +2054,8 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_m_view) = request;
 
 		found = true;
+		bool only_description = false;
+		
 		MODIFY REL
 
 			if (**ptr == isc_dyn_description)
@@ -2072,13 +2067,16 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 					REL.RDB$DESCRIPTION.NULL = TRUE;
 
 				if (**ptr == isc_dyn_end)
-					break;
+					only_description = true;
 			}
 
-			REL.RDB$SYSTEM_FLAG.NULL = TRUE;
-			REL.RDB$VIEW_BLR.NULL = TRUE;
-			REL.RDB$VIEW_SOURCE.NULL = TRUE;
-			REL.RDB$SECURITY_CLASS.NULL = TRUE;
+			if (!only_description)
+			{
+				REL.RDB$SYSTEM_FLAG.NULL = TRUE;
+				REL.RDB$VIEW_BLR.NULL = TRUE;
+				REL.RDB$VIEW_SOURCE.NULL = TRUE;
+				REL.RDB$SECURITY_CLASS.NULL = TRUE;
+			}
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
