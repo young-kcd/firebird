@@ -2448,25 +2448,36 @@ static void list_index()
 		{
 			ISQL_copy_SQL_id (IDX.RDB$INDEX_NAME,    SQL_identifier,  DBL_QUOTE);
 			ISQL_copy_SQL_id (IDX.RDB$RELATION_NAME, SQL_identifier2, DBL_QUOTE);
-			sprintf (Print_buffer, "CREATE%s%s INDEX %s ON %s(",
-					 (IDX.RDB$UNIQUE_FLAG ? " UNIQUE" : ""),
-					 (IDX.RDB$INDEX_TYPE ? " DESCENDING" : ""),
-					 SQL_identifier,
-					 SQL_identifier2);
+			sprintf (Print_buffer, "CREATE%s%s INDEX %s ON %s",
+					(IDX.RDB$UNIQUE_FLAG ? " UNIQUE" : ""),
+					(IDX.RDB$INDEX_TYPE ? " DESCENDING" : ""),
+					SQL_identifier,
+					SQL_identifier2);
 		}
 		else
-			sprintf (Print_buffer, "CREATE%s%s INDEX %s ON %s(",
-					 (IDX.RDB$UNIQUE_FLAG ? " UNIQUE" : ""),
-					 (IDX.RDB$INDEX_TYPE ? " DESCENDING" : ""),
-					 IDX.RDB$INDEX_NAME,
-					 IDX.RDB$RELATION_NAME);
+			sprintf (Print_buffer, "CREATE%s%s INDEX %s ON %s",
+					(IDX.RDB$UNIQUE_FLAG ? " UNIQUE" : ""),
+					(IDX.RDB$INDEX_TYPE ? " DESCENDING" : ""),
+					IDX.RDB$INDEX_NAME,
+					IDX.RDB$RELATION_NAME);
 		ISQL_printf (isqlGlob.Out, Print_buffer);
 
-		// Get column names 
+		// Get index expression or column names 
 
+#ifdef EXPRESSION_INDICES
+		if (!IDX.RDB$EXPRESSION_BLR.NULL)
+		{
+			ISQL_printf (isqlGlob.Out, " COMPUTED BY ");
+			if (!IDX.RDB$EXPRESSION_SOURCE.NULL)
+				SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX.RDB$EXPRESSION_SOURCE);
+			sprintf (Print_buffer, "%s%s", isqlGlob.global_Term, NEWLINE);
+			ISQL_printf (isqlGlob.Out, Print_buffer);
+		}
+		else
+#endif
 		if (ISQL_get_index_segments (collist, sizeof(collist), IDX.RDB$INDEX_NAME, true))
 		{
-			sprintf (Print_buffer, "%s)%s%s", collist, isqlGlob.global_Term, NEWLINE);
+			sprintf (Print_buffer, " (%s)%s%s", collist, isqlGlob.global_Term, NEWLINE);
 			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 
