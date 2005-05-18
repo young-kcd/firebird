@@ -42,7 +42,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\debug\firebird\bin\fbembed.dll"
+				OutputFile="c:\temp\embed\fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\defs\fbclient.def"
@@ -156,6 +156,9 @@
 		<Filter
 			Name="COMMON"
 			Filter="">
+			<File
+				RelativePath="..\..\..\src\common\classes\alloc.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\common\config\config_file.cpp">
 			</File>
