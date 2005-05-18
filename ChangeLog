@@ -1,3 +1,35 @@
+2005-05-17 20:19  alexpeshkoff
+
+	* firebird2/src/: jrd/dfw.epp (1.149), jrd/evl.cpp (1.136),
+	jrd/exe.cpp (1.147), jrd/mov.cpp (1.23), jrd/par.cpp (1.115),
+	jrd/tra.cpp (1.101), jrd/validation.cpp (1.8),
+	common/classes/MetaName.cpp (1.3), common/classes/MetaName.h (1.2):
+	
+	fixed issues, reported by Claudio
+
+2005-05-17 09:21  robocop
+
+	* firebird2/doc/sql.extensions/README.ddl.txt (1.4):
+	
+	Explain how metadata comments syntax works.
+
+2005-05-17 09:16  robocop
+
+	* firebird2/src/: dsql/ddl.cpp (1.135), dsql/dsql.cpp (1.145),
+	dsql/dsql.h (1.73), dsql/dsql.tab.h (1.54), dsql/keywords.cpp
+	(1.42), dsql/node.h (1.57), dsql/parse.cpp (1.148), dsql/parse.y
+	(1.174), dsql/pass1.cpp (1.209), jrd/drq.h (1.10), jrd/dyn.epp
+	(1.75), jrd/dyn_def.epp (1.93), jrd/dyn_del.epp (1.49),
+	jrd/dyn_md_proto.h (1.9), jrd/dyn_mod.epp (1.58),
+	jrd/dyn_ut_proto.h (1.10), jrd/dyn_util.epp (1.38), jrd/ibase.h
+	(1.100), msgs/facilities.sql (1.18), msgs/history.sql (1.12),
+	msgs/messages.sql (1.25):
+	
+	- Implement the proposed COMMENT keyword to allow descriptions in
+	database objects. Subject to change or withdrawal.  - Enhance some
+	messages. Reuse some msg numbers that were duplicate.  - Fix some
+	issues found in Alex recent MetaName-related commits.
+
 2005-05-16 13:08  alexpeshkoff
 
 	* firebird2/src/jrd/gds.cpp (1.169):
