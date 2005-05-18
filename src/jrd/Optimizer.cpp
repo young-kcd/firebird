@@ -1537,6 +1537,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 						scratch[i]->selectivity - selectivity;
 					selectivity += (diffSelectivity * factor);
 					fb_assert(selectivity <= scratch[i]->selectivity);
+					scratch[i]->selectivity = selectivity;
 
 					if (segment->scanType != segmentScanNone) {
 						matches.join(segment->matches);
@@ -1838,48 +1839,47 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 						diffSelectivity = 0;
 					}
 
-					if (inversion[currentPosition]->dependencies > bestCandidate->dependencies) {
-						// Index used for a relationship must be always prefered to
-						// the filtering ones, otherwise the nested loop join has
-						// no chances to be better than a sort merge.
-						// An alternative (simplified) condition might be:
-						//   inversion[currentPosition]->dependencies > 0
-						//   && bestCandidate->dependencies == 0
-						// but so far I tend to think that the current one is better.
-						bestCandidate = inversion[currentPosition];
-					}
-					else if (inversion[currentPosition]->unique && !bestCandidate->unique) {
+					if (inversion[currentPosition]->unique && !bestCandidate->unique) {
 						// A unique full equal match is better than anything else.
 						bestCandidate = inversion[currentPosition];
 					}
-					else if ((diffSelectivity >= 0.98) && (diffSelectivity <= 1.02)) {
-						// If the "same" selectivity then compare with the nr of unmatched segments, 
-						// how many indexes and matched segments. First compare number of indices.
-						int compareSelectivity = (inversion[currentPosition]->indexes - bestCandidate->indexes);
-						if (compareSelectivity == 0) {
-							// For the same number of indices compare number of matched segments.
-							// Note the inverted condition: the more matched segments the better.
-							compareSelectivity = 
-								(bestCandidate->matchedSegments - inversion[currentPosition]->matchedSegments);
-							if (compareSelectivity == 0) {
-								// For the same number of matched segments
-								// compare ones that aren't full matched
-								compareSelectivity =
-									(inversion[currentPosition]->nonFullMatchedSegments - bestCandidate->nonFullMatchedSegments);
-							}
-						}
-						if (compareSelectivity < 0) {
+					else if (inversion[currentPosition]->unique == bestCandidate->unique) {
+						if (inversion[currentPosition]->dependencies > bestCandidate->dependencies) {
+							// Index used for a relationship must be always prefered to
+							// the filtering ones, otherwise the nested loop join has
+							// no chances to be better than a sort merge.
+							// An alternative (simplified) condition might be:
+							//   inversion[currentPosition]->dependencies > 0
+							//   && bestCandidate->dependencies == 0
+							// but so far I tend to think that the current one is better.
 							bestCandidate = inversion[currentPosition];
 						}
-					}
-					else if (inversion[currentPosition]->selectivity == 0) {
-						// We consider zero selectivity to be very good.
-						// But it's not necessarily the best one (see above).
-						bestCandidate = inversion[currentPosition];
-					}
-					else if (inversion[currentPosition]->selectivity < bestCandidate->selectivity) {
-						// The less selectivity we have the better.
-						bestCandidate = inversion[currentPosition];
+						else if (inversion[currentPosition]->dependencies == bestCandidate->dependencies) {
+							if ((diffSelectivity >= 0.98) && (diffSelectivity <= 1.02)) {
+								// If the "same" selectivity then compare with the nr of unmatched segments, 
+								// how many indexes and matched segments. First compare number of indices.
+								int compareSelectivity = (inversion[currentPosition]->indexes - bestCandidate->indexes);
+								if (compareSelectivity == 0) {
+									// For the same number of indices compare number of matched segments.
+									// Note the inverted condition: the more matched segments the better.
+									compareSelectivity = 
+										(bestCandidate->matchedSegments - inversion[currentPosition]->matchedSegments);
+									if (compareSelectivity == 0) {
+										// For the same number of matched segments
+										// compare ones that aren't full matched
+										compareSelectivity =
+											(inversion[currentPosition]->nonFullMatchedSegments - bestCandidate->nonFullMatchedSegments);
+									}
+								}
+								if (compareSelectivity < 0) {
+									bestCandidate = inversion[currentPosition];
+								}
+							}
+							else if (inversion[currentPosition]->selectivity < bestCandidate->selectivity) {
+								// The less selectivity we have the better.
+								bestCandidate = inversion[currentPosition];
+							}
+						}
 					}
 				}
 			}
