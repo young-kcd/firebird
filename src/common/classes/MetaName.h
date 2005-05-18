@@ -36,7 +36,6 @@ namespace Firebird {
 
 class MetaName {
 private:
-	enum { MAX_SQL_IDENTIFIER_SIZE = MAX_SQL_IDENTIFIER_LEN + 1 };
 	char data[MAX_SQL_IDENTIFIER_SIZE];
 	unsigned int count;
 	
