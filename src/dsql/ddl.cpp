@@ -1250,9 +1250,6 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 		
 	const dsql_str* name;
 	const dsql_fil* file;
-	//SLONG temp_long;
-	//SSHORT temp_short;
-	//SSHORT number = 0;
 	elements = ddl_node->nod_arg[e_database_rem_desc];
 	if (elements)
 	{
@@ -1278,68 +1275,6 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 				request->append_uchar(isc_dyn_end);
 				start += file->fil_length;
 				break;
-
-/*
-			case nod_log_file_desc:
-				file = (dsql_fil*) element->nod_arg[0];
-
-				if (file->fil_flags & LOG_default) {
-					request->append_uchar(isc_dyn_def_default_log);
-					break;
-				}
-				request->append_cstring(isc_dyn_def_log_file,
-							file->fil_name->str_data);
-				request->append_file_length(file->fil_length);
-				request->append_uchar(isc_dyn_log_file_sequence);
-				request->append_ushort_with_length(number);
-				++number;
-				request->append_uchar(isc_dyn_log_file_partitions);
-				request->append_ushort_with_length(file->fil_partitions);
-				if (file->fil_flags & LOG_serial) {
-					request->append_uchar(isc_dyn_log_file_serial);
-				}
-				if (file->fil_flags & LOG_overflow) {
-					request->append_uchar(isc_dyn_log_file_overflow);
-				}
-				if (file->fil_flags & LOG_raw) {
-					request->append_uchar(isc_dyn_log_file_raw);
-				}
-				request->append_uchar(isc_dyn_end);
-				break;
-
-			case nod_cache_file_desc:
-				file = (dsql_fil*) element->nod_arg[0];
-				request->append_cstring(isc_dyn_def_cache_file,
-							file->fil_name->str_data);
-				request->append_file_length(file->fil_length);
-				request->append_uchar(isc_dyn_end);
-				break;
-
-			case nod_group_commit_wait:
-				request->append_uchar(isc_dyn_log_group_commit_wait);
-				temp_long = (IPTR) (element->nod_arg[0]);
-				request->append_ulong_with_length(temp_long);
-				break;
-
-			case nod_check_point_len:
-				request->append_uchar(isc_dyn_log_check_point_length);
-				temp_long = (IPTR) (element->nod_arg[0]);
-				request->append_ulong_with_length(temp_long);
-				break;
-
-			case nod_num_log_buffers:
-				request->append_uchar(isc_dyn_log_num_of_buffers);
-				temp_short = (SSHORT)(IPTR) (element->nod_arg[0]);
-				request->append_ushort_with_length(temp_short);
-				break;
-
-			case nod_log_buffer_size:
-				request->append_uchar(isc_dyn_log_buffer_size);
-				temp_short = (SSHORT)(IPTR) (element->nod_arg[0]);
-				request->append_ushort_with_length(temp_short);
-				break;
-*/
-
 			case nod_dfl_charset:
 				name = (dsql_str*) element->nod_arg[0];
 				request->append_cstring(isc_dyn_fld_character_set_name,
@@ -4882,8 +4817,6 @@ static void modify_database( dsql_req* request)
 
 	request->append_uchar(isc_dyn_mod_database);
 // request->append_number(isc_dyn_rel_sql_protection, 1);
-//	bool drop_log = false;
-//	bool drop_cache = false;
 	bool drop_difference = false;
 
 	const dsql_nod* elements = ddl_node->nod_arg[e_adb_all];
@@ -4893,40 +4826,15 @@ static void modify_database( dsql_req* request)
 	for (ptr = elements->nod_arg; ptr < end; ptr++)
 	{
 		const dsql_nod* element = *ptr;
-		switch (element->nod_type) {
-/*
-		case nod_drop_log:
-			drop_log = true;
-			break;
-		case nod_drop_cache:
-			drop_cache = true;
-			break;
-*/
-		case nod_drop_difference:
+		if (element->nod_type == nod_drop_difference)
 			drop_difference = true;
-			break;
-
-		default:
-			break;
-		}
 	}
 
-/*
-	if (drop_log) {
-		request->append_uchar(isc_dyn_drop_log);
-	}
-	if (drop_cache) {
-		request->append_uchar(isc_dyn_drop_cache);
-	}
-*/
 	if (drop_difference) {
 		request->append_uchar(isc_dyn_drop_difference);
 	}
 
 	SLONG start = 0;
-	//SSHORT number = 0;
-	//SLONG temp_long;
-	//SSHORT temp_short;
 
 	elements = ddl_node->nod_arg[e_adb_all];
 	end = elements->nod_arg + elements->nod_count;
@@ -4948,68 +4856,6 @@ static void modify_database( dsql_req* request)
 			request->append_uchar(isc_dyn_end);
 			start += file->fil_length;
 			break;
-
-/*
-		case nod_log_file_desc:
-			file = (dsql_fil*) element->nod_arg[0];
-
-			if (file->fil_flags & LOG_default) {
-				request->append_uchar(isc_dyn_def_default_log);
-				break;
-			}
-			request->append_cstring(isc_dyn_def_log_file,
-						file->fil_name->str_data);
-			request->append_file_length(file->fil_length);
-			request->append_uchar(isc_dyn_log_file_sequence);
-			request->append_ushort_with_length(number);
-			number++;
-			request->append_uchar(isc_dyn_log_file_partitions);
-			request->append_ushort_with_length(file->fil_partitions);
-			if (file->fil_flags & LOG_serial) {
-				request->append_uchar(isc_dyn_log_file_serial);
-			}
-			if (file->fil_flags & LOG_overflow) {
-				request->append_uchar(isc_dyn_log_file_overflow);
-			}
-			if (file->fil_flags & LOG_raw) {
-				request->append_uchar(isc_dyn_log_file_raw);
-			}
-			request->append_uchar(isc_dyn_end);
-			break;
-
-		case nod_cache_file_desc:
-			file = (dsql_fil*) element->nod_arg[0];
-			request->append_cstring(isc_dyn_def_cache_file,
-						file->fil_name->str_data);
-			request->append_file_length(file->fil_length);
-			request->append_uchar(isc_dyn_end);
-			break;
-
-		case nod_group_commit_wait:
-			request->append_uchar(isc_dyn_log_group_commit_wait);
-			temp_long = (IPTR) (element->nod_arg[0]);
-			request->append_ulong_with_length(temp_long);
-			break;
-
-		case nod_check_point_len:
-			request->append_uchar(isc_dyn_log_check_point_length);
-			temp_long = (IPTR) (element->nod_arg[0]);
-			request->append_ulong_with_length(temp_long);
-			break;
-
-		case nod_num_log_buffers:
-			request->append_uchar(isc_dyn_log_num_of_buffers);
-			temp_short = (SSHORT)(IPTR) (element->nod_arg[0]);
-			request->append_ushort_with_length(temp_short);
-			break;
-
-		case nod_log_buffer_size:
-			request->append_uchar(isc_dyn_log_buffer_size);
-			temp_short = (SSHORT)(IPTR) (element->nod_arg[0]);
-			request->append_ushort_with_length(temp_short);
-			break;
-*/
-
 		case nod_difference_file:
 			request->append_cstring(isc_dyn_def_difference, 
 				((dsql_str*)element->nod_arg[0])->str_data);
@@ -5020,10 +4866,6 @@ static void modify_database( dsql_req* request)
 		case nod_end_backup:
 			request->append_uchar(isc_dyn_end_backup);
 			break;
-//		case nod_drop_log:
-//		case nod_drop_cache:
-//			break;
-
 		default:
 			break;
 		}

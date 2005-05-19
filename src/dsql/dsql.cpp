@@ -3740,7 +3740,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 	SCHAR* plan = *plan_ptr;
 
 	explain_length--;
-	switch (*explain++) {
+	switch (*explain++)
+	{
 	case isc_info_rsb_begin:
 		if (!*level_ptr) {
 			// put out the PLAN prefix 
@@ -3785,19 +3786,20 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 		// put out the relation name 
 		{ // scope to keep length local.
-		explain_length--;
-		SSHORT length = (UCHAR) * explain++;
-		explain_length -= length;
-		if ((plan_length -= length) < 0)
-			return false;
-		while (length--)
-			*plan++ = *explain++;
+			explain_length--;
+			SSHORT length = (UCHAR) * explain++;
+			explain_length -= length;
+			if ((plan_length -= length) < 0)
+				return false;
+			while (length--)
+				*plan++ = *explain++;
 		} // scope
 		break;
 
 	case isc_info_rsb_type:
 		explain_length--;
-		switch (rsb_type = *explain++) {
+		switch (rsb_type = *explain++)
+		{
 			/* for stream types which have multiple substreams, print out
 			   the stream type and recursively print out the substreams so
 			   we will know where to put the parentheses */
@@ -3806,40 +3808,40 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			// put out all the substreams of the join 
 			{ // scope to have union_count, union_level and union_join_count local.
-			explain_length--;
-			USHORT union_count = (USHORT) * explain++ - 1;
+				explain_length--;
+				USHORT union_count = (USHORT) * explain++ - 1;
 
-			// finish the first union member 
+				// finish the first union member
 
-			USHORT union_level = *level_ptr;
-			USHORT union_join_count = 0;
-			while (explain_length > 0 && plan_length > 0) {
-				if (!get_rsb_item(&explain_length, &explain, &plan_length, &plan,
-								  &union_join_count, &union_level)) 
-				{
-					return false;
-				}
-				if (union_level == *level_ptr)
-					break;
-			}
-
-			/* for the rest of the members, start the level at 0 so each
-			   gets its own "PLAN ... " line */
-
-			while (union_count) {
-				union_join_count = 0;
-				union_level = 0;
+				USHORT union_level = *level_ptr;
+				USHORT union_join_count = 0;
 				while (explain_length > 0 && plan_length > 0) {
-					if (!get_rsb_item(&explain_length, &explain, &plan_length,
-									  &plan, &union_join_count, &union_level)) 
+					if (!get_rsb_item(&explain_length, &explain, &plan_length, &plan,
+									  &union_join_count, &union_level))
 					{
 						return false;
 					}
-					if (!union_level)
+					if (union_level == *level_ptr)
 						break;
 				}
-				union_count--;
-			}
+
+				/* for the rest of the members, start the level at 0 so each
+				   gets its own "PLAN ... " line */
+
+				while (union_count) {
+					union_join_count = 0;
+					union_level = 0;
+					while (explain_length > 0 && plan_length > 0) {
+						if (!get_rsb_item(&explain_length, &explain, &plan_length,
+										  &plan, &union_join_count, &union_level))
+						{
+							return false;
+						}
+						if (!union_level)
+							break;
+					}
+					union_count--;
+				}
 			} // scope
 			break;
 
@@ -3878,18 +3880,18 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			explain_length--;
 			{ // scope to have join_count local.
-			USHORT join_count = (USHORT) * explain++;
-			while (join_count && explain_length > 0 && plan_length > 0) {
-				if (!get_rsb_item(&explain_length, &explain, &plan_length,
-								  &plan, &join_count, level_ptr))
-				{
-					return false;
+				USHORT join_count = (USHORT) * explain++;
+				while (join_count && explain_length > 0 && plan_length > 0) {
+					if (!get_rsb_item(&explain_length, &explain, &plan_length,
+									  &plan, &join_count, level_ptr))
+					{
+						return false;
+					}
+					// CVC: Here's the additional stop condition.
+					if (!*level_ptr) {
+						break;
+					}
 				}
-				// CVC: Here's the additional stop condition. 
-				if (!*level_ptr) {
-					break;
-				}
-			}
 			} // scope
 
 			// put out the final parenthesis for the join 
@@ -4004,20 +4006,20 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			   allowing us to include everything inside the sort in parentheses */
 
 			{ // scope to have save_level local.
-			const USHORT save_level = *level_ptr;
-			while (explain_length > 0 && plan_length > 0) {
-				if (!get_rsb_item(&explain_length, &explain, &plan_length,
-								  &plan, parent_join_count, level_ptr))
-				{
-					return false;
+				const USHORT save_level = *level_ptr;
+				while (explain_length > 0 && plan_length > 0) {
+					if (!get_rsb_item(&explain_length, &explain, &plan_length,
+									  &plan, parent_join_count, level_ptr))
+					{
+						return false;
+					}
+					if (*level_ptr == save_level)
+						break;
 				}
-				if (*level_ptr == save_level)
-					break;
-			}
 
-			if (--plan_length < 0)
-				return false;
-			*plan++ = ')';
+				if (--plan_length < 0)
+					return false;
+				*plan++ = ')';
 			} // scope
 			break;
 
