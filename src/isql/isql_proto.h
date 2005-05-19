@@ -63,6 +63,7 @@ void ISQL_msg_get(USHORT number, USHORT size, TEXT* msg, const TEXT* arg1,
 	const TEXT* arg2 = 0, const TEXT* arg3 = 0, const TEXT* arg4 = 0, const TEXT* arg5 = 0);
 void	ISQL_print_validation(FILE*, ISC_QUAD*, bool, FB_API_HANDLE);
 void	ISQL_printf(FILE*, const char*);
+void	ISQL_printf2(FILE*, const char*, ...);
 void	ISQL_query_database(SSHORT*, FILE*, FILE*, FILE*);
 void	ISQL_remove_and_unescape_quotes(TEXT* string, const char quote);
 void	ISQL_reset_settings();

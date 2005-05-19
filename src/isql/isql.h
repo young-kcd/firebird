@@ -70,14 +70,14 @@ enum processing_state {
 	CONT		=	0,
 	EXIT		=	1,
 	BACKOUT		=	2,
-	ps_ERR			=	3,
+	ps_ERR		=	3,
 	END			=	4,
 	SKIP		=	5,
 	FAIL		=	6,
 	EXTRACT		=	7,
 	EXTRACTALL	=	8,
 	FETCH		=	9,
-	OBJECT_NOT_FOUND = 53 // See NOT_FOUND below, solves compilation problem.
+	OBJECT_NOT_FOUND = 10
 };
 
 // Which blob subtypes to print 
@@ -85,14 +85,17 @@ enum processing_state {
 const int ALL_BLOBS	= -2;
 const int NO_BLOBS	= -1;
 
-// Flag to decode all vs sql only objects 
-const int SQL_objects	= 0;
-const int ALL_objects	= 1;
+// Flag to decode all vs sql only objects
+enum LegacyTables
+{
+	SQL_objects,
+	ALL_objects
+};
 
 const size_t WORDLENGTH			= 32;
-static const char* const DEFTERM		= ";";
+static const char* const DEFTERM	= ";";
 static const char* const DEFCHARSET	= "NONE";
-const int NULL_DISP_LEN			= 6;
+const int NULL_DISP_LEN				= 6;
 
 // Error codes 
 
@@ -157,7 +160,7 @@ const int NAME_PROMPT				= 49;		// Enter %s>
 const int DATE_ERR					= 50;		// Bad date %s\n 
 const int CON_PROMPT				= 51;		// "CON> "
 const int HLP_SETLIST				= 52;		// \tSET LIST -- toggles column or table display\n 
-const int NOT_FOUND 				= 53;		// %s not found\n 
+const int NOT_FOUND_MSG				= 53;		// %s not found\n
 const int COPY_ERR 					= 54;		// Errors occured(possibly duplicate domains) in creating %s in %s\n" 
 const int SERVER_TOO_OLD			= 55;		// Server version too old to support the isql command 
 const int REC_COUNT 				= 56;		// Total returned: %ld 
@@ -197,6 +200,7 @@ const int NO_TRIGGERS_ON_REL		= 89;		// There are no triggers on table %s in thi
 const int NO_REL_OR_TRIGGER			= 90;		// There is no table or trigger %s in this database 
 const int NO_TRIGGERS				= 91;		// There are no triggers in this database 
 const int NO_CHECKS_ON_REL			= 92;		// There are no check constraints on table %s in this database 
+const int NO_COMMENTS               = 115;		// There are no comments for objects in this database.
 const int BUFFER_OVERFLOW			= 94;		// An isql command exceeded maximum buffer size 
 #ifdef SCROLLABLE_CURSORS
 const int HLP_SETFETCH				= 95;		// \tSET AUTOfetch  -- toggle autofetch of records\n

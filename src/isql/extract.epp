@@ -61,7 +61,7 @@ DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
 static void list_all_grants();
 static processing_state list_all_grants2(bool, const SCHAR*);
 static void list_all_procs();
-static void list_all_tables(SSHORT, SSHORT);
+static void list_all_tables(LegacyTables flag, SSHORT);
 static void list_all_triggers();
 static void list_check();
 static void list_create_db();
@@ -92,7 +92,7 @@ static TEXT SQL_identifier2[BUFFER_LENGTH128];
 
 
 
-int EXTRACT_ddl(int flag,
+int EXTRACT_ddl(LegacyTables flag,
 				   const SCHAR* tabname)
 {
 /**************************************
@@ -174,13 +174,13 @@ int EXTRACT_ddl(int flag,
 	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();
 	int ret_code = FINI_OK;
 
-// If a table name was passed, extract only that table and domains 
+	// If a table name was passed, extract only that table and domains
 	if (*tabname)
 	{
 		if (EXTRACT_list_table(tabname, NULL, true, default_char_set_id))
 		{
 			SCHAR errbuf[MSG_LENGTH];
-			ISQL_msg_get(NOT_FOUND, errbuf, tabname);
+			ISQL_msg_get(NOT_FOUND_MSG, errbuf, tabname);
 			STDERROUT(errbuf);
 			ret_code = FINI_ERROR;
 		}
@@ -201,6 +201,7 @@ int EXTRACT_ddl(int flag,
 		list_all_procs();
 		list_all_triggers();
 		list_all_grants();
+		SHOW_comments(false); // Let's make this an option later.
 	}
 
 	if (gds_trans && did_start)
@@ -1125,7 +1126,7 @@ static void list_all_procs()
 }
 
 
-static void list_all_tables(SSHORT flag,
+static void list_all_tables(LegacyTables flag,
 							SSHORT default_char_set_id)
 {
 /**************************************
@@ -2373,13 +2374,22 @@ static void list_generators()
  *
  **************************************/
 
-	ISQL_printf(isqlGlob.Out, NEWLINE);
+	bool first = true;
 
 	FOR GEN IN RDB$GENERATORS WITH
 		GEN.RDB$GENERATOR_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *" AND
 		GEN.RDB$GENERATOR_NAME NOT MATCHING "SQL$+" USING "+=[0-9][0-9]* *" AND
 		(GEN.RDB$SYSTEM_FLAG MISSING OR GEN.RDB$SYSTEM_FLAG NE 1)
 		SORTED BY GEN.RDB$GENERATOR_NAME
+
+		if (first)
+		{
+			ISQL_printf2(isqlGlob.Out,
+					 "%s/*  Generators or sequences */%s",
+					 NEWLINE,
+					 NEWLINE);
+			first = false;
+		}
 
 		fb_utils::exact_name(GEN.RDB$GENERATOR_NAME);
 
@@ -2426,21 +2436,19 @@ static void list_index()
 		OVER RDB$RELATION_NAME
 		WITH (RELC.RDB$SYSTEM_FLAG NE 1 OR RELC.RDB$SYSTEM_FLAG MISSING)
 		AND NOT (ANY RC IN RDB$RELATION_CONSTRAINTS
-		   WITH RC.RDB$INDEX_NAME EQ IDX.RDB$INDEX_NAME)
+				WITH RC.RDB$INDEX_NAME EQ IDX.RDB$INDEX_NAME)
 		SORTED BY IDX.RDB$RELATION_NAME, IDX.RDB$INDEX_NAME
-
 
 		if (first)
 		{
-			sprintf (Print_buffer,
+			ISQL_printf2(isqlGlob.Out,
 					 "%s/*  Index definitions for all user tables */%s",
 					 NEWLINE,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			first = false;
 		}
-		first = false;
-	// Strip trailing blanks 
 
+		// Strip trailing blanks
 		fb_utils::exact_name(IDX.RDB$RELATION_NAME);
 		fb_utils::exact_name(IDX.RDB$INDEX_NAME);
 

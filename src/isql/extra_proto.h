@@ -24,7 +24,7 @@
 #ifndef ISQL_EXTRA_PROTO_H
 #define ISQL_EXTRA_PROTO_H
 
-int	EXTRACT_ddl(int, const SCHAR*);
+int	EXTRACT_ddl(LegacyTables, const SCHAR*);
 int	EXTRACT_list_table(const SCHAR*, const SCHAR*, bool, SSHORT);
 processing_state	EXTRACT_list_grants (const SCHAR*);
 

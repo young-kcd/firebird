@@ -501,7 +501,7 @@ int ISQL_main(int argc,
 	isqlGlob.Out = stdout;
 	isqlGlob.Errfp = stderr;
 
-	processing_state ret = parse_arg(argc, argv, tabname, NULL);
+	const processing_state ret = parse_arg(argc, argv, tabname, NULL);
 
 	// Detect if stdin is redirected
 #ifdef WIN_NT
@@ -527,32 +527,17 @@ int ISQL_main(int argc,
 	ISQL_make_upper(tabname);
 	switch (ret) {
 	case EXTRACT:
-		if (*isqlGlob.global_Db_name) {
-			// Let's use user and password if provided.
-			// This should solve bug #112263 FSG 28.Jan.2001
-			if (newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_Numbufs,
-				isqlGlob.Role, false) == SKIP)
-			{
-				Exit_value = EXTRACT_ddl(SQL_objects, tabname);
-				ISQL_disconnect_database(true);
-				// isc_detach_database(isc_status, &DB);
-			}
-			else
-				Exit_value = FINI_ERROR;
-		}
-		break;
-
 	case EXTRACTALL:
 		if (*isqlGlob.global_Db_name) {
-			Interactive = false;
 			// Let's use user and password if provided.
 			// This should solve bug #112263 FSG 28.Jan.2001
 			if (newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_Numbufs,
 				isqlGlob.Role, false) == SKIP)
 			{
-				Exit_value = EXTRACT_ddl(ALL_objects, tabname);
-				ISQL_disconnect_database (true);
-				//isc_detach_database(isc_status, &DB);
+				LegacyTables flag = ret == EXTRACT ? SQL_objects : ALL_objects;
+				Exit_value = EXTRACT_ddl(flag, tabname);
+				ISQL_disconnect_database(true);
+				// isc_detach_database(isc_status, &DB);
 			}
 			else
 				Exit_value = FINI_ERROR;
@@ -681,7 +666,7 @@ bool ISQL_dbcheck()
  *	Check to see if we are connected to a database.
  *  	Return true if connected, false otherwise
  *
- * Change from miroslavp on 25.04.2005
+ * Change from miroslavp on 2005.04.25
  *   Value assigned here on Exit_value is not used anywhere in the source 
  *   and cause isql.exe to return 1 in Quiet mode even there is no error. 
  *   If there is error Exit_value is set by callers - so it is removed from here.
@@ -1538,7 +1523,7 @@ void ISQL_disconnect_database(bool nQuietMode)
  *	call isc_detach_database to detach from the database and then zero
  *	out the DB handle.
  *
- * Change from miroslavp on 06.05.2005
+ * Change from miroslavp on 2005.05.06
  * Quiet global variable is preserved in local variable and restored at the end.
  **************************************/
 
@@ -1715,8 +1700,8 @@ void ISQL_print_validation(FILE* fp,
  *	validation blobs and computed fields.
  *	if it does not start with the word CHECK
  *	if this is a computed field blob, look for () or insert them.
- *	if flag == 0, this is a validation clause,
- *	if flag == 1, this is a computed field
+ *	if flag == false, this is a validation clause,
+ *	if flag == true, this is a computed field
  *
  **************************************/
 	// Don't bother with null blobs
@@ -1792,6 +1777,26 @@ void ISQL_printf(FILE* fp,
  *
  **************************************/
 	fprintf(fp, "%s", buffer);
+	fflush(fp); // John's fix.
+}
+
+
+void ISQL_printf2(FILE* fp,
+				 const char* buffer, ...)
+{
+/**************************************
+ *
+ *	I S Q L _ p r i n t f 2
+ *
+ **************************************
+ *
+ *	Centralized printing facility, more flexible
+ *
+ **************************************/
+	va_list args;
+	va_start(args, buffer);
+	vfprintf(fp, buffer, args);
+	va_end(args);
 	fflush(fp); // John's fix.
 }
 
@@ -2668,7 +2673,7 @@ static processing_state copy_table(TEXT* source,
 	*/
 
 	if (EXTRACT_list_table(source, destination, domain_flag, -1)) {
-		ISQL_msg_get(NOT_FOUND, errbuf, source);
+		ISQL_msg_get(NOT_FOUND_MSG, errbuf, source);
 		STDERROUT(errbuf);
 		fclose(isqlGlob.Out);
 	}
