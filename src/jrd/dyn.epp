@@ -214,7 +214,7 @@ void DYN_error(bool	status_flag,
 
 	if (number)
 		gds__msg_format(NULL, DYN_MSG_FAC, number,
-						sizeof(TEXT) * BUFFER_MEDIUM, error_buffer, arg1,
+						sizeof(error_buffer), error_buffer, arg1,
 						arg2, arg3, arg4, arg5);
 
 	ISC_STATUS_ARRAY local_status;
@@ -237,7 +237,8 @@ void DYN_error(bool	status_flag,
 		ISC_STATUS* const end = local_status + sizeof(local_status) - 1;
 		while (v1 < end &&
 			   ((arg = *v2++) != isc_arg_cstring || v1 + 1 < end) &&
-			   (*v1++ = arg)) {
+			   (*v1++ = arg))
+		{
 			*v1++ = *v2++;
 			if (arg == isc_arg_cstring)
 				*v1++ = *v2++;
