@@ -85,14 +85,9 @@ const int MAX_CHARS_DOUBLE	= 22;	/* 15 digits + 2 signs + E + decimal + 3 digit 
 const int MAX_CHARS_FLOAT	= 13;	/* 7 digits + 2 signs + E + decimal + 2 digit exp */
 
 static const UCHAR alloc_info[] = { isc_info_allocation, isc_info_end };
-//static void drop_cache(Global*);
 static void change_backup_mode(Global*, UCHAR verb);
-//static void drop_log(Global*);
 
-// Function not defined in this file MOD 04-July-2002
-// static void modify_lfield_type(Global*, const UCHAR**, TEXT*, TEXT*);
-
-static void modify_lfield_position(thread_db*, Database*, Global*, 
+static void modify_lfield_position(thread_db*, Database*, Global*,
 	const Firebird::MetaName&, const Firebird::MetaName&, USHORT, USHORT);
 static bool check_view_dependency(thread_db*, Database*, Global*, 
 	const Firebird::MetaName&, const Firebird::MetaName&);
@@ -273,10 +268,6 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
         if (!DYN_REQUEST(drq_m_database))
             DYN_REQUEST(drq_m_database) = request;
 
-//#ifdef SUPERSERVER
-//		bool first_log_file = true;
-//#endif
-
 		MODIFY DBB USING
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -303,54 +294,11 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 					DYN_define_difference(gbl, ptr);
 					break;
 
-/*
-#ifdef SUPERSERVER
-				case isc_dyn_def_default_log:
-					DYN_define_log_file(gbl, ptr, first_log_file, true);
-					break;
-
-				case isc_dyn_def_log_file:
-					DYN_define_log_file(gbl, ptr, first_log_file, false);
-					first_log_file = false;
-					break;
-#endif
-
-				case isc_dyn_def_cache_file:
-					DYN_define_cache(gbl, ptr);
-					break;
-
-				case isc_dyn_log_group_commit_wait:
-					DYN_get_number(ptr); // ignore
-					break;
-
-				case isc_dyn_log_buffer_size:
-					DYN_get_number(ptr); // ignore
-					break;
-
-				case isc_dyn_log_check_point_length:
-					DYN_get_number(ptr); // ignore
-					break;
-
-				case isc_dyn_log_num_of_buffers:
-					DYN_get_number(ptr); // ignore
-					break;
-
-				case isc_dyn_drop_cache:
-					drop_cache(gbl);
-					break;
-*/
-
 				case isc_dyn_drop_difference:
 				case isc_dyn_begin_backup:
 				case isc_dyn_end_backup:
 					change_backup_mode(gbl, verb);
 					break;
-
-/*
-				case isc_dyn_drop_log:
-					drop_log(gbl);
-					break;
-*/
 
 				case isc_dyn_fld_character_set_name:
 					if (GET_STRING(ptr, DBB.RDB$CHARACTER_SET_NAME))
@@ -2135,56 +2083,6 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 }
 
 
-/*
-static void drop_cache( Global* gbl)
-{
-// **************************************
-// *
-// *	d r o p _ c a c h e
-// *
-// **************************************
-// *
-// * Functional description
-// *	Drop the database cache
-// *
-// **************************************
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
-
-	jrd_req* request = CMP_find_request(tdbb, drq_d_cache, DYN_REQUESTS);
-	bool found = false;
-
-	try {
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$FILES WITH X.RDB$FILE_FLAGS EQ FILE_cache 
-
-        ERASE X;
-		found = true;
-
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_d_cache)) {
-		DYN_REQUEST(drq_d_cache) = request;
-	}
-
-	}
-	catch (const std::exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, drq_d_cache);
-		DYN_error_punt(true, 63, NULL, NULL, NULL, NULL, NULL);
-		// msg 63: ERASE RDB$FILE failed
-	}
-
-	if (!found)
-	{
-		DYN_error_punt(false, 149, NULL, NULL, NULL, NULL, NULL);
-		// msg 149: "Shared cache file not found"
-	}
-}
-*/
-
-
 static void change_backup_mode( Global* gbl, UCHAR verb)
 {
 /**************************************
@@ -2301,54 +2199,6 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 		/* msg 215: "Difference file is not defined" */
 	}
 }
-
-
-/*
-static void drop_log( Global* gbl)
-{
-// **************************************
-// *
-// *	d r o p _ l o g
-// *
-// **************************************
-// *
-// * Functional description
-// *	Delete all log files
-// *
-// **************************************
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
-
-	jrd_req* request = CMP_find_request(tdbb, drq_d_log, DYN_REQUESTS);
-	bool found = false;
-
-	try {
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$LOG_FILES 
-
-        ERASE X;
-		found = true;
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_d_log))
-		DYN_REQUEST(drq_d_log) = request;
-
-	}
-	catch (const std::exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, drq_d_log);
-		DYN_error_punt(true, 153, NULL, NULL, NULL, NULL, NULL);
-		// msg 153: ERASE RDB$LOG_FILE failed
-	}
-
-	if (!found)
-	{
-		DYN_error_punt(false, 152, NULL, NULL, NULL, NULL, NULL);
-		// msg 152: "Write ahead log not found"
-	}
-}
-*/
 
 
 static void modify_lfield_position(thread_db* tdbb,
@@ -3078,7 +2928,7 @@ void DYN_modify_sql_field(Global*					gbl,
 		DYN_error_punt(false, 96, NULL, NULL, NULL, NULL, NULL);
 	/* msg 96: "Local column not found" */
 
-/* Update any indicies that exist */
+	// Update any indices that exist
 	modify_lfield_index(tdbb, dbb, gbl, *relation_name, orig_fld.dyn_fld_name,
 						orig_fld.dyn_fld_name);
 
