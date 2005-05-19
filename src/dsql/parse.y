@@ -181,7 +181,6 @@ struct LexerState {
 	dsql_fld* g_field;
 	dsql_fil* g_file;
 	dsql_nod* g_field_name;
-	//bool log_defined, cache_defined;
 	int dsql_debug;
 	
 	/* Actual lexer state begins from here */
@@ -235,17 +234,14 @@ static LexerState lex;
 %token AT
 %token AVG
 %token AUTO
-//%token BASENAME
 %token BEFORE
 %token BEGIN
 %token BETWEEN
 %token BLOB
 %token BY
-//%token CACHE
 %token CAST
 %token CHARACTER
 %token CHECK
-//%token CHECK_POINT_LEN
 %token COLLATE
 %token COMMA
 %token COMMIT
@@ -295,7 +291,6 @@ static LexerState lex;
 %token GEN_ID
 %token GRANT
 %token GROUP
-//%token GROUP_COMMIT_WAIT
 %token GTR
 %token HAVING
 %token IF
@@ -323,13 +318,11 @@ static LexerState lex;
 %token KW_UPPER
 %token KW_VALUE
 %token LENGTH
-//%token LOGFILE
 %token LPAREN
 %token LEFT
 %token LEQ
 %token LEVEL
 %token LIKE
-//%token LOG_BUF_SIZE
 %token LSS
 %token MANUAL
 %token MAXIMUM
@@ -347,7 +340,6 @@ static LexerState lex;
 %token NOT
 %token NOT_GTR
 %token NOT_LSS
-//%token NUM_LOG_BUFS
 %token OF
 %token ON
 %token ONLY
@@ -370,7 +362,6 @@ static LexerState lex;
 %token PRIVILEGES
 %token PROCEDURE
 %token PROTECTED
-//%token RAW_PARTITIONS
 %token READ
 %token REAL
 %token REFERENCES
@@ -1058,9 +1049,7 @@ equals		:
 		;
 
 db_name		: sql_string
-			{ //lex.log_defined = false;
-			  //lex.cache_defined = false;
-			  $$ = (dsql_nod*) $1; }
+			{ $$ = (dsql_nod*) $1; }
 		;
 
 db_initial_desc1 :  
@@ -1096,117 +1085,17 @@ db_rem_desc	: db_rem_option
 		;
 
 db_rem_option   : db_file  
-/*   		| db_cache 
-		| db_log
-		| db_log_option 
-*/
 		| DEFAULT CHARACTER SET symbol_character_set_name
 			{ $$ = make_node (nod_dfl_charset, 1, $4);} 
 		| KW_DIFFERENCE KW_FILE sql_string
 			{ $$ = make_node (nod_difference_file, 1, $3); }
 		;
 
-/*
-db_log_option   : GROUP_COMMIT_WAIT equals long_integer
-			{ $$ = make_node (nod_group_commit_wait, 1, $3);}
-		| CHECK_POINT_LEN equals long_integer
-			{ $$ = make_node (nod_check_point_len, 1, $3);}
-		| NUM_LOG_BUFS equals pos_short_integer
-			{ $$ = make_node (nod_num_log_buffers, 1, $3);}
-		| LOG_BUF_SIZE equals unsigned_short_integer
-			{ $$ = make_node (nod_log_buffer_size, 1, $3);}
-		;
-
-db_log		: db_default_log_spec
-			{ if (lex.log_defined)
-				yyabandon (-260, isc_log_redef); 
-				*/ /* Log redefined */ /*
-			  lex.log_defined = true;
-			  $$ = $1; }
-		| db_rem_log_spec
-			{ if (lex.log_defined)
-				yyabandon (-260, isc_log_redef);
-			  lex.log_defined = true;
-			  $$ = $1; }
-		;	
-
-db_rem_log_spec	: LOGFILE '(' logfiles ')' OVERFLOW logfile_desc
-			{ lex.g_file->fil_flags |= LOG_serial | LOG_overflow; 
-			  if (lex.g_file->fil_partitions)
-				  yyabandon (-261, isc_partition_not_supp);
-			*/ /* Partitions not supported in series of log file specification */ /*
-			 $$ = make_node (nod_list, 2, $3, $6); }  
-		| LOGFILE BASENAME logfile_desc
-			{ lex.g_file->fil_flags |= LOG_serial;
-			  if (lex.g_file->fil_partitions)
-				  yyabandon (-261, isc_partition_not_supp);
-			  $$ = $3; }
-		;
-
-db_default_log_spec : LOGFILE 
-			{ lex.g_file = make_file(); 
-			  lex.g_file->fil_flags = LOG_serial | LOG_default;
-			  $$ = make_node (nod_log_file_desc, (int) 1,
-						(dsql_nod*) lex.g_file);}
-		;
-*/
-
 db_file		: file1 sql_string file_desc1
 			{ lex.g_file->fil_name = (dsql_str*) $2;
 			  $$ = (dsql_nod*) make_node (nod_file_desc, (int) 1,
 						(dsql_nod*) lex.g_file); }
 		;
-
-/*
-db_cache	: CACHE sql_string cache_length 
-			{ 
-			  if (lex.cache_defined)
-				  yyabandon (-260, isc_cache_redef);
-				  */ /* Cache redefined */ /*
-			  lex.g_file = make_file();
-			  lex.g_file->fil_length = (IPTR) $3;
-			  lex.g_file->fil_name = (dsql_str*) $2;
-			  lex.cache_defined = true;
-			  $$ = (dsql_nod*) make_node (nod_cache_file_desc, (int) 1,
-					 (dsql_nod*) lex.g_file); }
-		;
-*/
-
-/*
-cache_length	: 
-			{ $$ = (dsql_nod*) (SLONG) DEF_CACHE_BUFFERS; }
-		| LENGTH equals long_integer page_noise
-			{ if ((SLONG) $3 < MIN_CACHE_BUFFERS)
-				  yyabandon (-239, isc_cache_too_small);
-				  */ /* Cache length too small */ /*
-			  else 
-				  $$ = (dsql_nod*) $3; }
-		;
-
-logfiles	: logfile_desc 
-		| logfiles ',' logfile_desc
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
-logfile_desc	: logfile_name logfile_attrs 
-			{ 
-			 $$ = (dsql_nod*) make_node (nod_log_file_desc, (int) 1,
-												(dsql_nod*) lex.g_file); }
-		;
-logfile_name	: sql_string 
-			{ lex.g_file = make_file();
-			  lex.g_file->fil_name = (dsql_str*) $1; }
-		;
-logfile_attrs	: 
-		| logfile_attrs logfile_attr
-		;
-
-logfile_attr	: KW_SIZE equals long_integer
-			{ lex.g_file->fil_length = (IPTR) $3; }
-		| RAW_PARTITIONS equals pos_short_integer
-			{ lex.g_file->fil_partitions = (SSHORT) $3; 
-			  lex.g_file->fil_flags |= LOG_raw; }
-		;
-*/
 
 file1		: KW_FILE
 			{ lex.g_file  = make_file();}
@@ -2136,7 +2025,6 @@ keyword_or_column	: valid_symbol_name
 		| USING
 		| CROSS
 		| COMMENT
-		| COLLATION
 		;
 
 col_opt		: ALTER
@@ -2187,9 +2075,7 @@ alter_sequence_clause	: symbol_generator_name RESTART WITH signed_long_integer
 /* ALTER DATABASE */
 
 init_alter_db	: 
-			{ //lex.log_defined = false;
-			  //lex.cache_defined = false;
-			  $$ = NULL; }
+			{ $$ = NULL; }
 		;
 
 alter_db	: db_alter_clause
@@ -2199,18 +2085,6 @@ alter_db	: db_alter_clause
 
 db_alter_clause : ADD db_file_list
 			{ $$ = $2; }
-/*
-		| ADD db_cache
-			{ $$ = $2; }
-		| DROP CACHE
-			{ $$ = make_node (nod_drop_cache, (int) 0, NULL); }
-		| DROP LOGFILE
-			{ $$ = make_node (nod_drop_log, (int) 0, NULL); }
-		| SET  db_log_option_list
-			{ $$ = $2; }
-		| ADD db_log
-			{ $$ = $2; }
-*/
 		| ADD KW_DIFFERENCE KW_FILE sql_string
 			{ $$ = make_node (nod_difference_file, (int) 1, $4); }
 		| DROP KW_DIFFERENCE KW_FILE
@@ -2220,13 +2094,6 @@ db_alter_clause : ADD db_file_list
 		| END BACKUP
 			{ $$ = make_node (nod_end_backup, (int) 0, NULL); }
 		;
-
-/*
-db_log_option_list : db_log_option
-		   | db_log_option_list ',' db_log_option
-				{ $$ = make_node (nod_list, (int) 2, $1, $3); }
-		   ;
-*/
 
 
 /* ALTER TRIGGER */
@@ -4274,6 +4141,7 @@ non_reserved_word :
 	| SEQUENCE
 	| NEXT
 	| RESTART
+	| COLLATION
 	;
 
 %%
@@ -5177,14 +5045,14 @@ int LexerState::yylex (
 					}
 				}
 			}
-		/* 23 May 2003. Nickolay Samofatov
-		 * Detect FIRST/SKIP as non-reserved keywords
-		 * 1. We detect FIRST or SKIP as keywords if they appear just after SELECT and
-		 *   immediately before parameter mark ('?'), opening brace ('(') or number
-		 * 2. We detect SKIP as a part of FIRST/SKIP clause the same way
-		 * 3. We detect FIRST if we are explicitly asked for (such as in NULLS FIRST/LAST clause)
-		 * 4. In all other cases we return them as SYMBOL
-		 */
+			/* 23 May 2003. Nickolay Samofatov
+			 * Detect FIRST/SKIP as non-reserved keywords
+			 * 1. We detect FIRST or SKIP as keywords if they appear just after SELECT and
+			 *   immediately before parameter mark ('?'), opening brace ('(') or number
+			 * 2. We detect SKIP as a part of FIRST/SKIP clause the same way
+			 * 3. We detect FIRST if we are explicitly asked for (such as in NULLS FIRST/LAST clause)
+			 * 4. In all other cases we return them as SYMBOL
+			 */
 			if ((sym->sym_keyword == FIRST && !first_detection) ||
 				sym->sym_keyword == SKIP)
 			{
@@ -5208,7 +5076,8 @@ int LexerState::yylex (
 					}
 				} /* else fall down and return token as SYMBOL */
 			}
-			else {
+			else if (sym->sym_keyword != COMMENT || prev_keyword == -1)
+			{
 				yylval = (dsql_nod*) sym->sym_object;
 				last_token_bk = last_token;
 				line_start_bk = line_start;
