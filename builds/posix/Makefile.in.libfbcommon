@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbcommon,v 1.7 2004-04-30 23:02:06 brodsom Exp $
+#  $Id: Makefile.in.libfbcommon,v 1.8 2005-05-19 05:09:06 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -40,7 +40,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-LIBFBCOMMON_Objects = $(FBCLASSES_Objects) $(FBCOMMON_Objects) $(FBCONFIG_Objects) 
+LIBFBCOMMON_Objects = $(FBCLASSES_Objects) $(FBCOMMON_Objects)
 
 
 AllObjects= $(LIBFBCOMMON_Objects)

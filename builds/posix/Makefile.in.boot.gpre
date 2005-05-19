@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.boot.gpre,v 1.21 2004-12-28 21:12:46 skidder Exp $
+#  $Id: Makefile.in.boot.gpre,v 1.22 2005-05-19 05:09:06 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=boot
@@ -56,7 +56,7 @@ GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources)))
 
 
 
-GPREBOOT_Objects = $(JRDBOOT_Objects) $(GPRE_Objects) $(OS_SPECIFIC_Objects)
+GPREBOOT_Objects = $(JRDBOOT_Objects) $(GPRE_Objects) $(OS_SPECIFIC_Objects) $(FBCONFIG_Objects)
 
 AllObjects = $(GPREBOOT_Objects)
 
