@@ -846,7 +846,7 @@ void DYN_define_difference(Global*		gbl,
 		{
 			DYN_rundown_request(request, drq_l_difference);
 			DYN_error_punt(true, 156, NULL, NULL, NULL, NULL, NULL);
-			/* msg 156: Shared cache lookup failed */
+			/* msg 156: Difference file lookup failed */
 		}
 	}
 

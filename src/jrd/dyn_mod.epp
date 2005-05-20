@@ -612,10 +612,6 @@ void DYN_modify_global_field(Global* gbl,
  * Note: a global field here is a SQL domain.
  *
  **************************************/
-	SSHORT field_adjusted_count = 0;
-	const TEXT* err_one_type_change_only =
-		"Only one data type change to the domain allowed at a time";
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
@@ -642,10 +638,11 @@ void DYN_modify_global_field(Global* gbl,
 	const UCHAR *qryhdr, *missingval, *fldvald, *fldvaldsrc, *fielddesc,
 		*flddftval, *flddfltsrc;
 
-
 	GET_STRING(ptr, orig_dom.dyn_fld_name);
 
 	found = false;
+	int field_adjusted_count = 0;
+	
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ orig_dom.dyn_fld_name.c_str()
 
@@ -756,7 +753,8 @@ void DYN_modify_global_field(Global* gbl,
 				if (++field_adjusted_count > 2)
 				{
 					EXE_unwind(tdbb, request);
-					DYN_error_punt(false, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 148, orig_dom.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+					// msg 148: "Only one data type change to the domain %s allowed at a time"
 				}
 				switch (new_dom.dyn_dtype) {
 				
@@ -780,7 +778,8 @@ void DYN_modify_global_field(Global* gbl,
 				if (++field_adjusted_count > 2)
 				{
 					EXE_unwind(tdbb, request);
-					DYN_error_punt(false, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
+					DYN_error_punt(false, 148, orig_dom.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+					// msg 148: "Only one data type change to the domain %s allowed at a time"
 				}
 
 				switch (new_dom.dyn_dtype) {
@@ -1803,7 +1802,9 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 			case fb_sysflag_check_constraint:
 			case fb_sysflag_referential_constraint:
 			case fb_sysflag_view_check:
-				continue;
+				DYN_error_punt(false, 109, NULL, NULL, NULL, NULL, NULL);
+				// msg 109: "Triggers created automatically cannot be modified"
+				break;
 			default:
 				break;
 			}
@@ -1822,7 +1823,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 						GET_STRING(ptr, new_trigger_name);
 						if (new_trigger_name.length() == 0)
 							DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
-							/* msg 212: "Zero length identifiers not allowed" */
+							// msg 212: "Zero length identifiers not allowed"
 					    strcpy (X.RDB$TRIGGER_NAME, new_trigger_name.c_str());
 					}
 					break;
@@ -2544,10 +2545,6 @@ void DYN_modify_sql_field(Global*					gbl,
  *	produces a warning. This condition raises an error, too.
  *
  **************************************/
-	SSHORT field_adjusted_count = 0;
-	const TEXT* err_one_type_change_only =
-		"Only one data type change to the field allowed at a time";
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	
@@ -2571,6 +2568,8 @@ void DYN_modify_sql_field(Global*					gbl,
 		charset;
 	dtype = scale = prec = subtype = charlen = collation = fldlen = nullflg =
 		charset = false;
+		
+	int field_adjusted_count = 0;
 	
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS WITH RFR.RDB$RELATION_NAME = relation_name->c_str()
@@ -2628,7 +2627,9 @@ void DYN_modify_sql_field(Global*					gbl,
 					fldlen = true;
 					new_fld.dyn_dsc.dsc_length = DYN_get_number(ptr);
 					if (++field_adjusted_count > 2)
-						DYN_error_punt(false, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
+						DYN_error_punt(false, 149, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+						// msg 149: "Only one data type change to the field %s allowed at a time"
+
 					switch (new_fld.dyn_dtype)
 					{
 					case blr_text:
@@ -2649,7 +2650,8 @@ void DYN_modify_sql_field(Global*					gbl,
 					dtype = true;
 					new_fld.dyn_dtype = DYN_get_number(ptr);
 					if (++field_adjusted_count > 2)
-						DYN_error_punt(false, 5, err_one_type_change_only, NULL, NULL, NULL, NULL);
+						DYN_error_punt(false, 149, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+						// msg 149: "Only one data type change to the field %s allowed at a time"
 
 					switch (new_fld.dyn_dtype) {
 					case blr_text:
