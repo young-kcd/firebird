@@ -58,6 +58,13 @@
 
 DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
 
+
+// This enumeration tell comment-related routines how to behave: for SHOW,
+// we present names and text as they are. For EXTRACT, we need to make a valid
+// script and escape double quotes in identifiers and single quotes in strings.
+enum commentMode {cmmShow, cmmExtract};
+
+
 static void local_fprintf(void*, const char*);
 static void remove_delimited_double_quotes(TEXT*);
 static void make_priv_string(USHORT, char*);
@@ -65,8 +72,8 @@ static processing_state show_all_tables(SSHORT);
 static void show_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool, bool);
 static processing_state show_check(const SCHAR*);
 static void show_comment(const char* objtype, char* name1, char* name2,
-	ISC_QUAD* blobfld, const char* banner);
-static processing_state show_comments(const char* banner);
+	ISC_QUAD* blobfld, const commentMode showextract, const char* banner);
+static processing_state show_comments(const commentMode showextract, const char* banner);
 static void show_db();
 static processing_state show_dialect();
 static processing_state show_domains(const SCHAR*);
@@ -301,10 +308,11 @@ ShowOptions::show_commands ShowOptions::getCommand(const char* cmd)
 }
 
 
+
 // *************************
 // S H O W _ c o m m e n t s
 // *************************
-// Show or extract database comments. Since it's called by the script extraction
+// Extract database comments. Since it's called by the script extraction
 // routine, it does nothing for ODS < 11, unless the force option is true.
 void SHOW_comments(bool force)
 {
@@ -313,7 +321,7 @@ void SHOW_comments(bool force)
 		char banner[BUFFER_LENGTH128];
 		sprintf(banner, "%s/* Comments for database objects. */%s",
 			NEWLINE, NEWLINE);
-		show_comments(banner);
+		show_comments(cmmExtract, banner);
 	}
 }
 
@@ -1374,7 +1382,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		break;
 		
 	case ShowOptions::comment:
-		ret = show_comments(0);
+		ret = show_comments(cmmShow, 0);
 		if (ret == OBJECT_NOT_FOUND)
 			key = NO_COMMENTS;
 		break;
@@ -1663,43 +1671,46 @@ static processing_state show_check(const SCHAR* object)
 // ***********************
 // Helper that displays in correct syntax the COMMENT ON command for each object.
 // It escapes identifiers with embedded double quotes and escapes the comment
-// itself if it contains single quotes.
+// itself if it contains single quotes when we are honoring script extraction.
 static void show_comment(const char* objtype, char* name1, char* name2,
-	ISC_QUAD* blobfld, const char* banner)
+	ISC_QUAD* blobfld, const commentMode showextract, const char* banner)
 {
-	if (banner)
+	const bool escape_quotes = showextract == cmmExtract;
+
+	if (escape_quotes && banner)
 		ISQL_printf(isqlGlob.Out, banner);
 
-	char SQL_identifier2[BUFFER_LENGTH128];
 	if (name1)
-	{
 		fb_utils::exact_name(name1);
-		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+	if (name2)
+		fb_utils::exact_name(name2);
+		
+	char SQL_identifier2[BUFFER_LENGTH128];
+	if (escape_quotes && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+	{
+		if (name1)
 		{
 			ISQL_copy_SQL_id (name1, SQL_identifier, DBL_QUOTE);
 			name1 = SQL_identifier;
 		}
-	}
-	if (name2)
-	{
-		fb_utils::exact_name(name2);
-		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+		if (name2)
 		{
 			ISQL_copy_SQL_id (name2, SQL_identifier2, DBL_QUOTE);
 			name2 = SQL_identifier2;
 		}
 	}
 
+	const char* quot = escape_quotes ? "'" : "";
+
 	if (!name1)
-		ISQL_printf2(isqlGlob.Out, "COMMENT ON %s IS '", objtype);
+		ISQL_printf2(isqlGlob.Out, "COMMENT ON %-12s IS %s", objtype, quot);
 	else if (!name2)
-		ISQL_printf2(isqlGlob.Out, "COMMENT ON %s %s IS '", objtype, name1);
+		ISQL_printf2(isqlGlob.Out, "COMMENT ON %-12s %s IS %s", objtype, name1, quot);
 	else
-		ISQL_printf2(isqlGlob.Out, "COMMENT ON %s %s.%s IS '", objtype, name1, name2);
+		ISQL_printf2(isqlGlob.Out, "COMMENT ON %-12s %s.%s IS %s", objtype, name1, name2, quot);
 		
-	// Last param true = escape single quotes.
-	SHOW_print_metadata_text_blob(isqlGlob.Out, blobfld, true);
-	ISQL_printf2(isqlGlob.Out, "'%s%s", isqlGlob.global_Term, NEWLINE);
+	SHOW_print_metadata_text_blob(isqlGlob.Out, blobfld, escape_quotes);
+	ISQL_printf2(isqlGlob.Out, "%s%s%s", quot, isqlGlob.global_Term, NEWLINE);
 }
 
 
@@ -1719,7 +1730,9 @@ static void show_comment(const char* objtype, char* name1, char* name2,
 // as well as implicit domains and implicit triggers are skipped. For ODS < 11,
 // we skip generators and roles because those system tables didn't have a
 // rdb$description field.
-static processing_state show_comments(const char* banner)
+// When showing comments, we don't escape quotes in neither names nor strings.
+// When extracting comments, we do the usual escaping to make the script valid.
+static processing_state show_comments(const commentMode showextract, const char* banner)
 {
 // From dsql.h:
 //	ddl_database, ddl_domain, ddl_relation, ddl_view, ddl_procedure, ddl_trigger,
@@ -1731,7 +1744,7 @@ static processing_state show_comments(const char* banner)
 	FOR FIRST 1 DT IN RDB$DATABASE
 		WITH DT.RDB$DESCRIPTION NOT MISSING
 
-		show_comment("DATABASE", 0, 0, &DT.RDB$DESCRIPTION, first ? banner : 0);
+		show_comment("DATABASE", 0, 0, &DT.RDB$DESCRIPTION, showextract, first ? banner : 0);
 		first = false;
 	END_FOR
 	ON_ERROR
@@ -1746,7 +1759,7 @@ static processing_state show_comments(const char* banner)
 		SORTED BY DM.RDB$FIELD_NAME
 
 		show_comment("DOMAIN", DM.RDB$FIELD_NAME, 0, &DM.RDB$DESCRIPTION,
-			first ? banner : 0);
+			showextract, first ? banner : 0);
 		first = false;
 	END_FOR
 	ON_ERROR
@@ -1762,7 +1775,7 @@ static processing_state show_comments(const char* banner)
 		if (!RL.RDB$DESCRIPTION.NULL && !blobIsNull(&RL.RDB$DESCRIPTION))
 		{
 			show_comment("TABLE", RL.RDB$RELATION_NAME, 0, &RL.RDB$DESCRIPTION,
-				first ? banner : 0);
+				showextract, first ? banner : 0);
 			first = false;
 		}
 
@@ -1771,8 +1784,8 @@ static processing_state show_comments(const char* banner)
 			AND RF.RDB$DESCRIPTION NOT MISSING
 			SORTED BY RF.RDB$FIELD_POSITION
 
-			show_comment("COLUMN", RL.RDB$RELATION_NAME, RF.RDB$FIELD_NAME,
-				&RF.RDB$DESCRIPTION, first ? banner : 0);
+			show_comment("   COLUMN", RL.RDB$RELATION_NAME, RF.RDB$FIELD_NAME,
+				&RF.RDB$DESCRIPTION, showextract, first ? banner : 0);
 			first = false;
 		END_FOR
 		ON_ERROR
@@ -1794,7 +1807,7 @@ static processing_state show_comments(const char* banner)
 		if (!VW.RDB$DESCRIPTION.NULL && !blobIsNull(&VW.RDB$DESCRIPTION))
 		{
 			show_comment("VIEW", VW.RDB$RELATION_NAME, 0 , &VW.RDB$DESCRIPTION,
-				first ? banner : 0);
+				showextract, first ? banner : 0);
 			first = false;
 		}
 
@@ -1803,8 +1816,8 @@ static processing_state show_comments(const char* banner)
 			AND RF.RDB$DESCRIPTION NOT MISSING
 			SORTED BY RF.RDB$FIELD_POSITION
 
-			show_comment("COLUMN", VW.RDB$RELATION_NAME, RF.RDB$FIELD_NAME,
-				&RF.RDB$DESCRIPTION, first ? banner : 0);
+			show_comment("   COLUMN", VW.RDB$RELATION_NAME, RF.RDB$FIELD_NAME,
+				&RF.RDB$DESCRIPTION, showextract, first ? banner : 0);
 			first = false;
 		END_FOR
 		ON_ERROR
@@ -1825,7 +1838,7 @@ static processing_state show_comments(const char* banner)
 		if (!PR.RDB$DESCRIPTION.NULL && !blobIsNull(&PR.RDB$DESCRIPTION))
 		{
 			show_comment("PROCEDURE", PR.RDB$PROCEDURE_NAME, 0, &PR.RDB$DESCRIPTION,
-				first ? banner : 0);
+				showextract, first ? banner : 0);
 			first = false;
 		}
 
@@ -1834,8 +1847,8 @@ static processing_state show_comments(const char* banner)
 			AND PA.RDB$DESCRIPTION NOT MISSING
 			SORTED BY PA.RDB$PARAMETER_TYPE, PA.RDB$PARAMETER_NUMBER
 
-			show_comment("PARAMETER", PR.RDB$PROCEDURE_NAME, PA.RDB$PARAMETER_NAME,
-				&PA.RDB$DESCRIPTION, first ? banner : 0);
+			show_comment("   PARAMETER", PR.RDB$PROCEDURE_NAME, PA.RDB$PARAMETER_NAME,
+				&PA.RDB$DESCRIPTION, showextract, first ? banner : 0);
 			first = false;
 		END_FOR
 		ON_ERROR
@@ -1855,7 +1868,7 @@ static processing_state show_comments(const char* banner)
 		SORTED BY TR.RDB$TRIGGER_NAME
 
 		show_comment("TRIGGER", TR.RDB$TRIGGER_NAME, 0, &TR.RDB$DESCRIPTION,
-			first ? banner : 0);
+			showextract, first ? banner : 0);
 		first = false;
 	END_FOR
 	ON_ERROR
@@ -1869,7 +1882,7 @@ static processing_state show_comments(const char* banner)
 		SORTED BY UD.RDB$FUNCTION_NAME
 
 		show_comment("EXTERNAL FUNCTION", UD.RDB$FUNCTION_NAME, 0,
-			&UD.RDB$DESCRIPTION, first ? banner : 0);
+			&UD.RDB$DESCRIPTION, showextract, first ? banner : 0);
 		first = false;
 	END_FOR
 	ON_ERROR
@@ -1883,7 +1896,7 @@ static processing_state show_comments(const char* banner)
 		SORTED BY BF.RDB$FUNCTION_NAME
 
 		show_comment("FILTER", BF.RDB$FUNCTION_NAME, 0, &BF.RDB$DESCRIPTION,
-			first ? banner : 0);
+			showextract, first ? banner : 0);
 		first = false;
 	END_FOR
 	ON_ERROR
@@ -1897,7 +1910,7 @@ static processing_state show_comments(const char* banner)
 		SORTED BY XC.RDB$EXCEPTION_NAME
 
 		show_comment("EXCEPTION", XC.RDB$EXCEPTION_NAME, 0, &XC.RDB$DESCRIPTION,
-			first ? banner : 0);
+			showextract, first ? banner : 0);
 		first = false;
 	END_FOR
 	ON_ERROR
@@ -1913,7 +1926,7 @@ static processing_state show_comments(const char* banner)
 			SORTED BY GR.RDB$GENERATOR_NAME
 
 			show_comment("GENERATOR", GR.RDB$GENERATOR_NAME, 0, &GR.RDB$DESCRIPTION,
-				first ? banner : 0);
+				showextract, first ? banner : 0);
 			first = false;
 		END_FOR
 		ON_ERROR
@@ -1928,7 +1941,7 @@ static processing_state show_comments(const char* banner)
 		SORTED BY IX.RDB$INDEX_NAME
 
 		show_comment("INDEX", IX.RDB$INDEX_NAME, 0, &IX.RDB$DESCRIPTION,
-			first ? banner : 0);
+			showextract, first ? banner : 0);
 		first = false;
 	END_FOR
 	ON_ERROR
@@ -1944,7 +1957,7 @@ static processing_state show_comments(const char* banner)
 			SORTED BY RO.RDB$ROLE_NAME
 
 			show_comment("ROLE", RO.RDB$ROLE_NAME, 0, &RO.RDB$DESCRIPTION,
-				first ? banner : 0);
+				showextract, first ? banner : 0);
 			first = false;
 		END_FOR
 		ON_ERROR
@@ -1959,7 +1972,7 @@ static processing_state show_comments(const char* banner)
 		SORTED BY CH.RDB$CHARACTER_SET_NAME
 
 		show_comment("CHARACTER SET", CH.RDB$CHARACTER_SET_NAME, 0,
-			&CH.RDB$DESCRIPTION, first ? banner : 0);
+			&CH.RDB$DESCRIPTION, showextract, first ? banner : 0);
 		first = false;
 	END_FOR
 	ON_ERROR
@@ -1973,7 +1986,7 @@ static processing_state show_comments(const char* banner)
 		SORTED BY CL.RDB$COLLATION_NAME
 
 		show_comment("COLLATION", CL.RDB$COLLATION_NAME, 0, &CL.RDB$DESCRIPTION,
-			first ? banner : 0);
+			showextract, first ? banner : 0);
 		first = false;
 	END_FOR
 	ON_ERROR
