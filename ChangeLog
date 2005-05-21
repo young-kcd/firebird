@@ -1,3 +1,91 @@
+2005-05-20 10:34  robocop
+
+	* firebird2/src/isql/show.epp (1.72):
+	
+	Escape single quotes in comment's text and double quotes in
+	identifiers that have metadata comments not when we are doing SHOW
+	COMMENT[S] but only when we are extracting a script, as Martijn
+	suggested.
+
+2005-05-20 02:23  robocop
+
+	* firebird2/src/: jrd/dyn_def.epp (1.96), jrd/dyn_mod.epp (1.61),
+	msgs/facilities.sql (1.20), msgs/history.sql (1.13),
+	msgs/messages.sql (1.27):
+	
+	- Adjust error messages.  - Correct way to stop automatically
+	generated triggers from being altered.
+
+2005-05-20 01:40  robocop
+
+	* firebird2/src/: dsql/pass1.cpp (1.211), jrd/dyn.epp (1.76):
+	
+	Misc.
+
+2005-05-19 10:26  robocop
+
+	* firebird2/src/jrd/: dyn_def.epp (1.95), dyn_df_proto.h (1.12),
+	dyn_mod.epp (1.60):
+	
+	Getting rid of commented code that belonged to the dead shared
+	cache and/or WAL.
+
+2005-05-19 10:03  robocop
+
+	* firebird2/src/isql/: extra_proto.h (1.10), extract.epp (1.59),
+	isql.epp (1.146), isql.h (1.46), isql_proto.h (1.22), show.epp
+	(1.71), show_proto.h (1.17):
+	
+	- Implement the SHOW COMMENT(S) command.  - Integrate it into
+	metadata extraction, too.  - A couple of minor improvements to
+	isql.  See explanation in show_comments() function.
+
+2005-05-19 09:43  robocop
+
+	* firebird2/src/msgs/: facilities.sql (1.19), messages.sql (1.26):
+	
+	New message for isql.
+
+2005-05-19 09:40  robocop
+
+	* firebird2/src/dsql/: parse.cpp (1.149), parse.y (1.175):
+	
+	Getting rid of commented code that belonged to the dead shared
+	cache and/or WAL plus making COLLATION non-reserved word and having
+	trivial special handling for COMMENT so it's recognized as token
+	only if it's the first token.
+
+2005-05-19 09:38  robocop
+
+	* firebird2/src/dsql/: keywords.cpp (1.43), keywords.h (1.20):
+	
+	Getting rid of commented code that belonged to the dead shared
+	cache and/or WAL plus identifying the keywords that have special
+	handling as non-keyword, so isql and others future clients of
+	KEYWORD_stringIsAToken() won't treat these as if they need double
+	quotes.
+
+2005-05-19 09:34  robocop
+
+	* firebird2/src/dsql/: ddl.cpp (1.136), dsql.cpp (1.146):
+	
+	Getting rid of commented code that belonged to the dead shared
+	cache and/or WAL plus fixing some indentation.
+
+2005-05-19 07:09  aafemt
+
+	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.22),
+	Makefile.in.libfbcommon (1.8):
+	
+	Config classes are not part of common library because of ifdefs
+	inside
+
+2005-05-19 05:28  dimitr
+
+	* firebird2/builds/win32/msvc7/fbembed.vcproj (1.28):
+	
+	Correction.
+
 2005-05-18 21:26  dimitr
 
 	* firebird2/builds/win32/msvc7/fbembed.vcproj (1.27):
