@@ -2423,11 +2423,13 @@ static UCHAR* alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 
 	SET_TDBB(tdbb);
 
-	csb->csb_rpt[stream].csb_map = FB_NEW(*tdbb->getDefaultPool()) UCHAR[MAP_LENGTH];
 	fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR maybe?
-	csb->csb_rpt[stream].csb_map[0] = (UCHAR) stream;
+	UCHAR* const p = FB_NEW(*tdbb->getDefaultPool()) UCHAR[MAP_LENGTH];
+	memset(p, 0, MAP_LENGTH);
+	p[0] = (UCHAR) stream;
+	csb->csb_rpt[stream].csb_map = p;
 
-	return csb->csb_rpt[stream].csb_map;
+	return p;
 }
 
 
