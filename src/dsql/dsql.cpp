@@ -2423,32 +2423,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_file_desc:
 		verb = "file_desc";
 		break;
-/*
-	case nod_log_file_desc:
-		verb = "log_file_desc";
-		break;
-	case nod_cache_file_desc:
-		verb = "cache_file_desc";
-		break;
-	case nod_group_commit_wait:
-		verb = "group_commit_wait";
-		break;
-	case nod_check_point_len:
-		verb = "check_point_len";
-		break;
-	case nod_num_log_buffers:
-		verb = "num_log_buffers";
-		break;
-	case nod_log_buffer_size:
-		verb = "log_buffer_size";
-		break;
-	case nod_drop_log:
-		verb = "drop_log";
-		break;
-	case nod_drop_cache:
-		verb = "drop_cache";
-		break;
-*/
 	case nod_dfl_charset:
 		verb = "dfl_charset";
 		break;
@@ -2738,6 +2712,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		
 	case nod_comment:
 		verb = "comment";
+		break;
+		
+	case nod_mod_udf:
+		verb = "mod_udf";
 		break;
 
 	default:

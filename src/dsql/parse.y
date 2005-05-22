@@ -1910,13 +1910,14 @@ alter_clause	: EXCEPTION alter_exception_clause
 			{ $$ = make_node (nod_mod_database, (int) e_adb_count,
 				make_list ($3)); }
 		| DOMAIN alter_column_name alter_domain_ops
-						{ $$ = make_node (nod_mod_domain, (int) e_alt_count,
+			{ $$ = make_node (nod_mod_domain, (int) e_alt_count,
 										  $2, make_list ($3)); }
 		| INDEX alter_index_clause
-						{ $$ = make_node (nod_mod_index, 
-					 (int) e_mod_idx_count, $2); }
+			{ $$ = make_node (nod_mod_index, (int) e_mod_idx_count, $2); }
 		| SEQUENCE alter_sequence_clause
 			{ $$ = $2; }
+		| EXTERNAL FUNCTION alter_udf_clause
+			{ $$ = $3; }
 		;
 
 domain_default_opt2	: DEFAULT begin_trigger default_value
@@ -2069,6 +2070,22 @@ alter_sequence_clause	: symbol_generator_name RESTART WITH signed_long_integer
 		| symbol_generator_name RESTART WITH '-' NUMBER64BIT
 			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
 				make_node(nod_negate, 1, MAKE_constant((dsql_str*) $5, CONSTANT_SINT64))); }
+		;
+		
+alter_udf_clause    : symbol_UDF_name entry_op module_op
+			{ $$ = make_node(nod_mod_udf, e_mod_udf_count, $1, $2, $3); }
+			;
+
+entry_op	: ENTRY_POINT sql_string
+			{ $$ = $2; }
+		|
+			{ $$ = NULL; }
+		;
+
+module_op	: MODULE_NAME sql_string
+			{ $$ = $2; }
+		|
+			{ $$ = NULL; }
 		;
 
 

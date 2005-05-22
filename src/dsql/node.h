@@ -225,14 +225,6 @@ enum nod_t
 	nod_page_size,
 	nod_file_length,
 	nod_file_desc,
-	//nod_log_file_desc,
-	//nod_cache_file_desc,
-	//nod_group_commit_wait,
-	//nod_check_point_len,
-	//nod_num_log_buffers,
-	//nod_log_buffer_size,
-	//nod_drop_log,
-	//nod_drop_cache,
 	nod_dfl_charset,
 	// sql connect options support (used for create database) 
 	nod_password,
@@ -334,10 +326,11 @@ enum nod_t
 	nod_param_val,		// default value for SP parameters support
 	nod_rows,	// ROWS support
 	nod_query_spec,
-	nod_equiv,
+	nod_equiv,  // IS DISTINCT FROM
 	nod_redef_exception, // RECREATE EXCEPTION
 	nod_replace_exception, // CREATE OR ALTER EXCEPTION
-	nod_comment
+	nod_comment,
+	nod_mod_udf
 };
 
 typedef nod_t NOD_TYPE;
@@ -928,7 +921,12 @@ enum node_args {
 	e_comment_object,
 	e_comment_part,
 	e_comment_string,
-	e_comment_count
+	e_comment_count,
+	
+	e_mod_udf_name = 0,
+	e_mod_udf_entry_pt,
+	e_mod_udf_module,
+	e_mod_udf_count
 };
 
 #endif // DSQL_NODE_H

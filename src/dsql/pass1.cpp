@@ -1104,6 +1104,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_del_shadow:
 	case nod_set_statistics:
 	case nod_comment:
+	case nod_mod_udf:
 		request->req_type = REQ_DDL;
 		return input;
 

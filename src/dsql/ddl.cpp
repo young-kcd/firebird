@@ -154,6 +154,7 @@ static void modify_privilege(dsql_req*, NOD_TYPE, SSHORT, const UCHAR*,
 static SCHAR modify_privileges(dsql_req*, NOD_TYPE, SSHORT, const dsql_nod*,
 	const dsql_nod*, const dsql_nod*);
 static void modify_relation(dsql_req*);
+static void modify_udf(dsql_req*);
 static dsql_par* parameter_reverse_order(dsql_par* parameter, dsql_par* prev);
 static void process_role_nm_list(dsql_req*, SSHORT, dsql_nod*, dsql_nod*, NOD_TYPE);
 static void put_descriptor(dsql_req*, const dsc*);
@@ -4385,6 +4386,11 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 		
 	case nod_comment:
 		make_comment(request);
+		break;
+		
+	case nod_mod_udf:
+		modify_udf(request);
+		break;
 
 	default: // CVC: Shouldn't we complain here?
 		break;
@@ -4461,9 +4467,9 @@ static void grant_revoke( dsql_req* request)
 }
 
 
-// *******************************
+// ***********************
 // m a k e _ c o m m e n t
-// *******************************
+// ***********************
 // Set the description blob for objects' self documentation.
 // This query
 // select rdb$relation_name from rdb$relation_fields where rdb$field_name = 'RDB$DESCRIPTION';
@@ -4922,7 +4928,7 @@ static void modify_domain( dsql_req* request)
 		{
 		case nod_def_default:
 			check_one_call (repetition_count, 0, "DOMAIN DEFAULT");
-			/* CVC: So do you want to crash me with ALTER DOMAIN dom SET; ??? */
+			// CVC: So do you want to crash me with ALTER DOMAIN dom SET; ???
 			if (!element->nod_arg[e_dft_default]) 
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
@@ -5387,6 +5393,35 @@ static void modify_relation( dsql_req* request)
 		request->req_relation = 0;
 		throw;
 	}
+}
+
+
+// *******************
+// m o d i f y _ u d f
+// *******************
+// Allow the user to change the entry point or module name.
+// Useful when there are dependencies on the udf, so it cannot be dropped.
+static void modify_udf(dsql_req* request)
+{
+	const dsql_nod* node = request->req_ddl_node;
+	fb_assert(node->nod_type == nod_mod_udf);
+
+	if (!node->nod_arg[e_mod_udf_entry_pt] && !node->nod_arg[e_mod_udf_module])
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
+					isc_arg_gds, isc_command_end_err,    // Unexpected end of command
+					0);
+
+	const dsql_str* obj_name = (dsql_str*) node->nod_arg[e_mod_udf_name];
+	request->append_cstring(isc_dyn_mod_function, obj_name->str_data);
+	const dsql_str* entry_point_name = (dsql_str*) node->nod_arg[e_mod_udf_entry_pt];
+	if (entry_point_name)
+		request->append_cstring(isc_dyn_func_entry_point, entry_point_name->str_data);
+
+	const dsql_str* module_name = (dsql_str*) node->nod_arg[e_mod_udf_module];
+	if (module_name)
+		request->append_cstring(isc_dyn_func_module_name, module_name->str_data);
+		
+	request->append_uchar(isc_dyn_end);
 }
 
 
