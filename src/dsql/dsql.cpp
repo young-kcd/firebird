@@ -2563,21 +2563,21 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_aggregate:
 		{
-		verb = "aggregate";
-		trace_line("%s%s\n", buffer, verb);
-		const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
-		trace_line("%s   context %d\n", buffer, context->ctx_context);
-		dsql_map* map = context->ctx_map;
-		if (map != NULL)
-			trace_line("%s   map\n", buffer);
-		while (map) {
-			trace_line("%s      position %d\n", buffer, map->map_position);
-			DSQL_pretty(map->map_node, column + 2);
-			map = map->map_next;
-		}
-		DSQL_pretty(node->nod_arg[e_agg_group], column + 1);
-		DSQL_pretty(node->nod_arg[e_agg_rse], column + 1);
-		return;
+			verb = "aggregate";
+			trace_line("%s%s\n", buffer, verb);
+			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
+			trace_line("%s   context %d\n", buffer, context->ctx_context);
+			dsql_map* map = context->ctx_map;
+			if (map != NULL)
+				trace_line("%s   map\n", buffer);
+			while (map) {
+				trace_line("%s      position %d\n", buffer, map->map_position);
+				DSQL_pretty(map->map_node, column + 2);
+				map = map->map_next;
+			}
+			DSQL_pretty(node->nod_arg[e_agg_group], column + 1);
+			DSQL_pretty(node->nod_arg[e_agg_rse], column + 1);
+			return;
 		}
 
 	case nod_constant:
@@ -2594,18 +2594,18 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_field:
 		{
-		const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_fld_context];
-		const dsql_rel* relation = context->ctx_relation;
-		const dsql_prc* procedure = context->ctx_procedure;
-		const dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
-		trace_line("%sfield %s.%s, context %d\n", buffer,
-			(relation != NULL ?
-				relation->rel_name :
-				(procedure != NULL ?
-					procedure->prc_name :
-					"unknown_db_object")),
-			field->fld_name, context->ctx_context);
-		return;
+			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_fld_context];
+			const dsql_rel* relation = context->ctx_relation;
+			const dsql_prc* procedure = context->ctx_procedure;
+			const dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
+			trace_line("%sfield %s.%s, context %d\n", buffer,
+				(relation != NULL ?
+					relation->rel_name :
+					(procedure != NULL ?
+						procedure->prc_name :
+						"unknown_db_object")),
+				field->fld_name, context->ctx_context);
+			return;
 		}
 	
 	case nod_field_name:
@@ -2624,47 +2624,47 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_map:
 		{
-		verb = "map";
-		trace_line("%s%s\n", buffer, verb);
-		const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_map_context];
-		trace_line("%s   context %d\n", buffer, context->ctx_context);
-		for (const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map]; map;
-			map = map->map_next)
-		{
-			trace_line("%s   position %d\n", buffer, map->map_position);
-			DSQL_pretty(map->map_node, column + 1);
-		}
-		return;
+			verb = "map";
+			trace_line("%s%s\n", buffer, verb);
+			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_map_context];
+			trace_line("%s   context %d\n", buffer, context->ctx_context);
+			for (const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map]; map;
+				map = map->map_next)
+			{
+				trace_line("%s   position %d\n", buffer, map->map_position);
+				DSQL_pretty(map->map_node, column + 1);
+			}
+			return;
 		}
 
 	case nod_relation:
 		{
-		const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_rel_context];
-		const dsql_rel* relation = context->ctx_relation;
-		const dsql_prc* procedure = context->ctx_procedure;
-		if ( relation != NULL ) {
-			trace_line("%srelation %s, context %d\n",
-				buffer, relation->rel_name, context->ctx_context);
-		}
-		else if ( procedure != NULL ) {
-			trace_line("%sprocedure %s, context %d\n",
-				buffer, procedure->prc_name, context->ctx_context);
-		}
-		else {
-			trace_line("%sUNKNOWN DB OBJECT, context %d\n",
-				buffer, context->ctx_context);
-		}
-		return;
+			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_rel_context];
+			const dsql_rel* relation = context->ctx_relation;
+			const dsql_prc* procedure = context->ctx_procedure;
+			if ( relation != NULL ) {
+				trace_line("%srelation %s, context %d\n",
+					buffer, relation->rel_name, context->ctx_context);
+			}
+			else if ( procedure != NULL ) {
+				trace_line("%sprocedure %s, context %d\n",
+					buffer, procedure->prc_name, context->ctx_context);
+			}
+			else {
+				trace_line("%sUNKNOWN DB OBJECT, context %d\n",
+					buffer, context->ctx_context);
+			}
+			return;
 		}
 
 	case nod_variable:
 		{
-		const dsql_var* variable = (dsql_var*) node->nod_arg[e_var_variable];
-		// Adding variable->var_variable_number to display, obviously something
-		// is missing from the printf, and Im assuming this was it.
-		// (anyway can't be worse than it was MOD 05-July-2002.
-		trace_line("%svariable %s %d\n", buffer, variable->var_name, variable->var_variable_number);
-		return;
+			const dsql_var* variable = (dsql_var*) node->nod_arg[e_var_variable];
+			// Adding variable->var_variable_number to display, obviously something
+			// is missing from the printf, and Im assuming this was it.
+			// (anyway can't be worse than it was MOD 05-July-2002.
+			trace_line("%svariable %s %d\n", buffer, variable->var_name, variable->var_variable_number);
+			return;
 		}
 
 	case nod_var_name:
@@ -4633,6 +4633,7 @@ static dsql_req* prepare(
 		request->req_flags |= REQ_blr_version5;
 	else
 		request->req_flags |= REQ_blr_version4;
+
 	GEN_request(request, node);
 	const USHORT length = request->req_blr_data.getCount();
 	
@@ -4897,7 +4898,8 @@ static UCHAR* var_info(
 			sql_len = param->par_desc.dsc_length;
 			sql_sub_type = 0;
 			sql_scale = 0;
-			switch (param->par_desc.dsc_dtype) {
+			switch (param->par_desc.dsc_dtype)
+			{
 			case dtype_real:
 				sql_type = SQL_FLOAT;
 				break;
@@ -4963,7 +4965,8 @@ static UCHAR* var_info(
 			if (sql_type && (param->par_desc.dsc_flags & DSC_nullable))
 				sql_type++;
 
-			for (const UCHAR* describe = items; describe < end_describe;) {
+			for (const UCHAR* describe = items; describe < end_describe;)
+			{
 				USHORT length;
 				const TEXT* name;
 				const UCHAR* buffer = buf;

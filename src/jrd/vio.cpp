@@ -2243,8 +2243,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_prc_class);
 			EVL_field(0, org_rpb->rpb_record, f_prc_id, &desc2);
 			{ // scope
-			const USHORT id = MOV_get_long(&desc2, 0);
-			DFW_post_work(transaction, dfw_modify_procedure, &desc1, id);
+				const USHORT id = MOV_get_long(&desc2, 0);
+				DFW_post_work(transaction, dfw_modify_procedure, &desc1, id);
 			} // scope
 			break;
 
@@ -2653,8 +2653,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_prc_name, &desc);
 			EVL_field(0, rpb->rpb_record, f_prc_id, &desc2);
 			{ // scope
-			const USHORT id = MOV_get_long(&desc2, 0);
-			DFW_post_work(transaction, dfw_create_procedure, &desc, id);
+				const USHORT id = MOV_get_long(&desc2, 0);
+				DFW_post_work(transaction, dfw_create_procedure, &desc, id);
 			} // scope
 			set_system_flag(rpb, f_prc_sys_flag, 0);
 			break;
@@ -2740,8 +2740,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_prv_rname, &desc);
 			EVL_field(0, rpb->rpb_record, f_prv_o_type, &desc2);
 			{ // scope
-			const USHORT id = MOV_get_long(&desc2, 0);
-			DFW_post_work(transaction, dfw_grant, &desc, id);
+				const USHORT id = MOV_get_long(&desc2, 0);
+				DFW_post_work(transaction, dfw_grant, &desc, id);
 			} // scope
 			break;
 

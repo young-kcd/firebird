@@ -877,7 +877,8 @@ static void check_one_call (USHORT* repetition_count,
  *  This restriction cannot be enforced by the DSQL parser.
  *
  **************************************/
-	if (++repetition_count[pos] > 1) {
+	if (++repetition_count[pos] > 1)
+	{
 		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -637,
 				   isc_arg_gds, isc_dsql_duplicate_spec,
                    isc_arg_string, error_msg,
@@ -1238,7 +1239,8 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 		{
 			const dsql_nod* element = *ptr;
 
-			switch (element->nod_type) {
+			switch (element->nod_type)
+			{
 			case nod_file_length:
 				start = (IPTR) (element->nod_arg[0]) + 1;
 				break;
@@ -1623,8 +1625,8 @@ static void define_domain(dsql_req* request)
 		define_dimensions(request, field);
 	}
 
-	bool	null_flag = false;
-	bool	check_flag = false;
+	bool null_flag = false;
+	bool check_flag = false;
 
 	// check for constraints
 	node = element->nod_arg[e_dom_constraint];
@@ -1903,47 +1905,47 @@ static void define_field(
 						break;
 					// nod_primary falls into
 				case nod_unique:
-				{
-					const char* constraint_name = string ? string->str_data : 0;
-					request->append_cstring(isc_dyn_rel_constraint, constraint_name);
-
-					const dsql_nod* index = node1->nod_arg[e_pri_index];
-					fb_assert(index);
-
-					const char* index_name = constraint_name;
-					string = (dsql_str*) index->nod_arg[e_idx_name];
-					if (string)
 					{
-						index_name = string->str_data;
-					}
+						const char* constraint_name = string ? string->str_data : 0;
+						request->append_cstring(isc_dyn_rel_constraint, constraint_name);
 
-					if (node1->nod_type == nod_primary)
-					{
-						request->append_cstring(isc_dyn_def_primary_key, index_name);
-					}
-					else if (node1->nod_type == nod_unique)
-					{
-						request->append_cstring(isc_dyn_def_unique, index_name);
-					}
+						const dsql_nod* index = node1->nod_arg[e_pri_index];
+						fb_assert(index);
 
-					request->append_number(isc_dyn_idx_unique, 1);
+						const char* index_name = constraint_name;
+						string = (dsql_str*) index->nod_arg[e_idx_name];
+						if (string)
+						{
+							index_name = string->str_data;
+						}
 
-					if (index->nod_arg[e_idx_asc_dsc])
-					{
-						request->append_number(isc_dyn_idx_type, 1);
+						if (node1->nod_type == nod_primary)
+						{
+							request->append_cstring(isc_dyn_def_primary_key, index_name);
+						}
+						else if (node1->nod_type == nod_unique)
+						{
+							request->append_cstring(isc_dyn_def_unique, index_name);
+						}
+
+						request->append_number(isc_dyn_idx_unique, 1);
+
+						if (index->nod_arg[e_idx_asc_dsc])
+						{
+							request->append_number(isc_dyn_idx_type, 1);
+						}
+
+						request->append_cstring(isc_dyn_fld_name, field->fld_name);
+						request->append_uchar(isc_dyn_end);
+						break;
 					}
-
-					request->append_cstring(isc_dyn_fld_name, field->fld_name);
-					request->append_uchar(isc_dyn_end);
-					break;
-				}
 				case nod_foreign:
-				{
-					const char* constraint_name = string ? string->str_data : 0;
-					request->append_cstring(isc_dyn_rel_constraint, constraint_name);
-					foreign_key(request, node1, constraint_name);
-					break;
-				}
+					{
+						const char* constraint_name = string ? string->str_data : 0;
+						request->append_cstring(isc_dyn_rel_constraint, constraint_name);
+						foreign_key(request, node1, constraint_name);
+						break;
+					}
 				case nod_def_constraint:
 					request->append_cstring(isc_dyn_rel_constraint,
 									string ? string->str_data : 0);
@@ -2113,6 +2115,7 @@ static void define_index(dsql_req* request)
 	request->append_uchar(isc_dyn_end);			// of begin 
 }
 
+
 #ifdef NOT_USED_OR_REPLACED
 static dsql_nod* define_insert_action( dsql_req* request)
 {
@@ -2146,7 +2149,9 @@ static dsql_nod* define_insert_action( dsql_req* request)
 		!(select_expr = select_node->nod_arg[e_sel_query_spec]) ||
 		!(from_list = select_expr->nod_arg[e_sel_from]) ||
 		from_list->nod_count != 1)
+	{
 		return NULL;
+	}
 
 // make up an action node consisting of a list of 1 insert statement 
 
@@ -2221,6 +2226,7 @@ static dsql_nod* define_insert_action( dsql_req* request)
 	return action_node;
 }
 #endif
+
 
 static void define_procedure( dsql_req* request, NOD_TYPE op)
 {
@@ -2487,6 +2493,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 
 	request->append_uchar(isc_dyn_end);
 }
+
 
 void DDL_gen_block(dsql_req* request, dsql_nod* node)
 {
@@ -3144,7 +3151,8 @@ static void define_udf( dsql_req* request)
 		position = (SSHORT)(IPTR) (ret_val_ptr[1]->nod_arg[0]);
 		// Function modifies an argument whose value is the function return value 
 
-		if (!arguments || position > arguments->nod_count || position < 1) {
+		if (!arguments || position > arguments->nod_count || position < 1)
+		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					isc_arg_gds, isc_dsql_udf_return_pos_err, //gds__extern_func_err,
 					isc_arg_number, (SLONG) (arguments ? arguments->nod_count : 0),
@@ -3160,7 +3168,8 @@ static void define_udf( dsql_req* request)
 		// The support for SCALAR_ARRAY is only for input parameters.
 		const dsql_nod* ret_arg = arguments->nod_arg[position - 1];
 		const dsql_nod* const* param_node = ret_arg->nod_arg;
-		if (param_node[e_udf_param_type]) {
+		if (param_node[e_udf_param_type])
+		{
 			const SSHORT arg_mechanism = (SSHORT)(IPTR) (param_node[e_udf_param_type]->nod_arg[0]);
 			if (arg_mechanism == Jrd::FUN_scalar_array)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
@@ -3335,7 +3344,8 @@ static void define_update_action(
 
 		// generate the actual comparisons 
 
-		if (field_node->nod_type == nod_field_name) {
+		if (field_node->nod_type == nod_field_name)
+		{
 			field_node->nod_arg[e_fln_context] =
 				(dsql_nod*) MAKE_cstring(TEMP_CONTEXT);
 
@@ -4070,7 +4080,8 @@ static void delete_relation_view (
     }
     else { /* node->nod_type == nod_del_view, nod_redef_view */
         if (!relation && !silent_deletion ||
-			relation && !(relation->rel_flags & REL_view)) {
+			relation && !(relation->rel_flags & REL_view))
+		{
             ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -607,
                        /* isc_arg_gds, isc_dsql_command_err,
                           isc_arg_gds, isc_dsql_view_not_found, */
@@ -4747,7 +4758,8 @@ static void make_index_trg_ref_int(	dsql_req*    request,
 			fb_assert(nod_ref_del_action->nod_type == nod_ref_trig_action);
 
 			request->append_uchar(isc_dyn_foreign_key_delete);
-			switch (nod_ref_del_action->nod_flags) {
+			switch (nod_ref_del_action->nod_flags)
+			{
 			case REF_ACTION_CASCADE:
 				request->append_uchar(isc_dyn_foreign_key_cascade);
 				define_del_cascade_trg(request, element, columns,
@@ -6158,7 +6170,8 @@ static void modify_field(dsql_req*	request,
 	bool permanent = false;
 	dsql_rel* relation = request->req_relation;
 	if (relation != NULL) {
-		if (! (relation->rel_flags & REL_new_relation)) {
+		if (! (relation->rel_flags & REL_new_relation))
+		{
   			dsql_fld* perm_field = FB_NEW_RPT(*request->req_dbb->dbb_pool,
 						strlen(field->fld_name)) dsql_fld;
 			*perm_field = *field;

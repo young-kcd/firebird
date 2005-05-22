@@ -3328,7 +3328,8 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 				//   not null security class to work on, even if we only take it
 				//   from the relation itself.
 				if (field->fld_security_name.length() == 0 && 
-									!REL.RDB$DEFAULT_CLASS.NULL) {
+									!REL.RDB$DEFAULT_CLASS.NULL)
+				{
 					field->fld_security_name = REL.RDB$DEFAULT_CLASS;
 				}
 
