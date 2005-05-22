@@ -560,6 +560,7 @@ const
 	gds_ctx_too_big                      = 335544845;
 	gds_ctx_bad_argument                 = 335544846;
 	gds_identifier_too_long              = 335544847;
+	gds_except2                          = 335544848;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

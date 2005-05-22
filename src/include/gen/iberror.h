@@ -582,6 +582,7 @@ const SLONG isc_ctx_namespace_invalid            = 335544844L;
 const SLONG isc_ctx_too_big                      = 335544845L;
 const SLONG isc_ctx_bad_argument                 = 335544846L;
 const SLONG isc_identifier_too_long              = 335544847L;
+const SLONG isc_except2                          = 335544848L;
 const SLONG isc_gfix_db_name                     = 335740929L;
 const SLONG isc_gfix_invalid_sw                  = 335740930L;
 const SLONG isc_gfix_incmp_sw                    = 335740932L;
@@ -791,7 +792,7 @@ const SLONG isc_gstat_unexpected_eof             = 336920580L;
 const SLONG isc_gstat_open_err                   = 336920605L;
 const SLONG isc_gstat_read_err                   = 336920606L;
 const SLONG isc_gstat_sysmemex                   = 336920607L;
-const SLONG isc_err_max                          = 736;
+const SLONG isc_err_max                          = 737;
 
 #else /* c definitions */
 
@@ -1343,6 +1344,7 @@ const SLONG isc_err_max                          = 736;
 #define isc_ctx_too_big                      335544845L
 #define isc_ctx_bad_argument                 335544846L
 #define isc_identifier_too_long              335544847L
+#define isc_except2                          335544848L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1552,7 +1554,7 @@ const SLONG isc_err_max                          = 736;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          736
+#define isc_err_max                          737
 
 #endif
 

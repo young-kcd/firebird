@@ -1106,6 +1106,8 @@ C --
       PARAMETER (GDS__ctx_bad_argument                 = 335544846)
       INTEGER*4 GDS__identifier_too_long             
       PARAMETER (GDS__identifier_too_long              = 335544847)
+      INTEGER*4 GDS__except2                         
+      PARAMETER (GDS__except2                          = 335544848)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

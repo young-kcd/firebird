@@ -2047,25 +2047,25 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			switch (request->req_operation) {
 			case jrd_req::req_evaluate:
 				{
-				PsqlException* xcp_node = reinterpret_cast<PsqlException*>(node->nod_arg[e_xcp_desc]);
-				if (xcp_node)
-				{
-					/* PsqlException is defined,
-					   so throw an exception */
-					set_error(tdbb, &xcp_node->xcp_rpt[0], node->nod_arg[e_xcp_msg]);
-				}
-				else if (!request->req_last_xcp.success())
-				{
-					/* PsqlException is undefined, but there was a known exception before,
-					   so re-initiate it */
-					set_error(tdbb, NULL, NULL);
-				}
-				else
-				{
-					/* PsqlException is undefined and there weren't any exceptions before,
-					   so just do nothing */
-					request->req_operation = jrd_req::req_return;
-				}
+					PsqlException* xcp_node = reinterpret_cast<PsqlException*>(node->nod_arg[e_xcp_desc]);
+					if (xcp_node)
+					{
+						/* PsqlException is defined,
+						   so throw an exception */
+						set_error(tdbb, &xcp_node->xcp_rpt[0], node->nod_arg[e_xcp_msg]);
+					}
+					else if (!request->req_last_xcp.success())
+					{
+						/* PsqlException is undefined, but there was a known exception before,
+						   so re-initiate it */
+						set_error(tdbb, NULL, NULL);
+					}
+					else
+					{
+						/* PsqlException is undefined and there weren't any exceptions before,
+						   so just do nothing */
+						request->req_operation = jrd_req::req_return;
+					}
 				}
 
 			default:
@@ -3696,7 +3696,8 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 
 	const TEXT* s;
 
-	switch (exception->xcp_type) {
+	switch (exception->xcp_type)
+	{
 	case xcp_sql_code:
 		ERR_post(isc_sqlerr, isc_arg_number, exception->xcp_code, 0);
 
@@ -3712,22 +3713,38 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 			ERR_post(exception->xcp_code, 0);
 
 	case xcp_xcp_code:
+		// CVC: If we have the exception name, use it instead of the number.
+		// Solves SF Bug #494981.
 		MET_lookup_exception(tdbb, exception->xcp_code, name, temp, sizeof(temp));
 		if (message[0])
 			s = message;
 		else if (temp[0])
 			s = temp;
-		else if (name.length())
-			s = name.c_str();
+		//else if (name.length())
+		//	s = name.c_str();
 		else
 			s = NULL;
-		if (s)
-			ERR_post(isc_except,
-					 isc_arg_number, exception->xcp_code,
-					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
-					 0);
+			
+		if (name.length())
+		{
+			if (s)
+				ERR_post(isc_except2,
+						 isc_arg_string, ERR_cstring(name.c_str()),
+						 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
+						 0);
+			else
+				ERR_post(isc_except2, isc_arg_string, ERR_cstring(name.c_str()), 0);
+		}
 		else
-			ERR_post(isc_except, isc_arg_number, exception->xcp_code, 0);
+		{
+			if (s)
+				ERR_post(isc_except,
+						 isc_arg_number, exception->xcp_code,
+						 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
+						 0);
+			else
+				ERR_post(isc_except, isc_arg_number, exception->xcp_code, 0);
+		}
 	}
 }
 
