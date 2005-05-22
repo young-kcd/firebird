@@ -473,7 +473,8 @@ void DYN_modify_filter(Global* gbl, const UCHAR** ptr)
 // *************************************
 // D Y N _ m o d i f y _ f u n c t i o n
 // *************************************
-// Its purpose is to change the comment in the function's record.
+// Its purpose is to change the comment in the function's record and to
+// allow changing the entry point and/or the module name.
 void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
@@ -508,7 +509,16 @@ void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 							X.RDB$DESCRIPTION.NULL = TRUE;
 						break;
 
-					// Other cases should go there, like modifying the entry point or module name.
+					case isc_dyn_func_module_name:
+						GET_STRING(ptr, X.RDB$MODULE_NAME);
+						X.RDB$MODULE_NAME.NULL = FALSE;
+						break;
+
+					case isc_dyn_func_entry_point:
+						GET_STRING(ptr, X.RDB$ENTRYPOINT);
+						X.RDB$ENTRYPOINT.NULL = FALSE;
+						break;
+
 					default:
 						DYN_unsupported_verb();
 					}
