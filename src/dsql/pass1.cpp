@@ -7463,7 +7463,8 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 			}
 
 		case nod_derived_table:
-				remap_field(request, field->nod_arg[e_derived_table_rse], context, current_level);
+			remap_field(request, field->nod_arg[e_derived_table_rse], context, current_level);
+			return field;
 
 		default:
 			return field;
