@@ -2985,7 +2985,14 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool) 
 		OptimizerRetrieval(pool, optimizer, testStream->stream, false, false, NULL);
 	InversionCandidate* candidate = optimizerRetrieval->getCost();
-	double const cost = candidate->selectivity * csb_tail->csb_cardinality;
+	double cost = candidate->selectivity * csb_tail->csb_cardinality;
+	if (candidate->unique) {
+		// If we've an unique index retrieval the cost is equal to 1
+		// The cost calculation can be far away from the real cost value if there
+		// are only a few datapages with almost no records on the last datapage.
+		// This ensures a more realistic value (only for unique) for these relations.
+		cost = 1;
+	}
 
 	size_t pos;
 	if (candidate->dependentFromStreams.find(baseStream->stream, pos)) {
