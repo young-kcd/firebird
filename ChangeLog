@@ -1,3 +1,52 @@
+2005-05-22 08:18  robocop
+
+	* firebird2/src/jrd/cmp.cpp (1.173):
+	
+	Fix crash with views in expand_view_nodes caused by Alex' recent
+	cleanup: unlike VaryingString (aka str) that inherits from
+	pool_alloc_rpt, plain dynamic allocation of UCHAR[n] isn't memset
+	to zero by our allocator, causing us to walk random garbage.
+
+2005-05-22 08:13  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.13),
+	lang_helpers/gds_codes.pas (1.13), src/include/gen/codetext.h
+	(1.20), src/include/gen/iberror.h (1.19), src/include/gen/msgs.h
+	(1.27), src/include/gen/rdb_codes.h (1.20),
+	src/include/gen/sql_code.h (1.22), src/jrd/exe.cpp (1.148),
+	src/msgs/facilities.sql (1.21), src/msgs/messages.sql (1.28),
+	src/msgs/system_errors.sql (1.10):
+	
+	Fix SF Bug #494981.  If we can print the name of the exception, we
+	do.
+
+2005-05-22 05:11  robocop
+
+	* firebird2/src/: dsql/ddl.cpp (1.138), dsql/dsql.cpp (1.148),
+	dsql/pass1.cpp (1.213), extlib/ib_udf2.sql (1.7), jrd/met.epp
+	(1.162), jrd/vio.cpp (1.133):
+	
+	Misc.
+
+2005-05-22 05:10  robocop
+
+	* firebird2/src/jrd/dyn_mod.epp (1.62):
+	
+	ALTER EXTERNAL FUNCTION: be able to change the entry_point or the
+	module_name when the UDF cannot be dropped to correct the
+	declaration because it's used in some view, procedure, trigger or
+	check.
+
+2005-05-22 04:42  robocop
+
+	* firebird2/src/dsql/: ddl.cpp (1.137), dsql.cpp (1.147), node.h
+	(1.58), parse.cpp (1.150), parse.y (1.176), pass1.cpp (1.212):
+	
+	ALTER EXTERNAL FUNCTION: be able to change the entry_point or the
+	module_name when the UDF cannot be dropped to correct the
+	declaration because it's used in some view, procedure, trigger or
+	check.
+
 2005-05-20 10:34  robocop
 
 	* firebird2/src/isql/show.epp (1.72):
