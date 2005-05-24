@@ -1,3 +1,15 @@
+2005-05-24 01:19  arnobrinkman
+
+	* firebird2/src/jrd/Optimizer.cpp (1.29):
+	
+	more realistic cost value for unique retrieval
+
+2005-05-24 01:16  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.214):
+	
+	fixed missed return, thanks to Claudio
+
 2005-05-22 08:18  robocop
 
 	* firebird2/src/jrd/cmp.cpp (1.173):
