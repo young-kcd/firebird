@@ -373,15 +373,20 @@ bool SecurityDatabase::prepare()
 
 	if (status[1])
 	{
+		JRD_thread_security_disable(false);
 		char buffer[1024];
 		const ISC_STATUS *s = status;
-		fb_interpret(buffer, sizeof buffer, &s);
-		gds__log(buffer);
+		if (fb_interpret(buffer, sizeof buffer, &s))
+		{
+			gds__log(buffer);
+			while (fb_interpret(buffer, sizeof buffer, &s))
+				gds__log(buffer);
+		}
+		return false;
 	}
-	else {
-		isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
+
+	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
 						reinterpret_cast<const char*>(PWD_REQUEST));
-	}
 
 	JRD_thread_security_disable(false);
 
@@ -389,8 +394,12 @@ bool SecurityDatabase::prepare()
 	{
 		char buffer[1024];
 		const ISC_STATUS *s = status;
-		fb_interpret(buffer, sizeof buffer, &s);
-		gds__log(buffer);
+		if (fb_interpret(buffer, sizeof buffer, &s))
+		{
+			gds__log(buffer);
+			while (fb_interpret(buffer, sizeof buffer, &s))
+				gds__log(buffer);
+		}
 		return false;
 	}
 
