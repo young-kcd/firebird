@@ -318,7 +318,9 @@ static const char* UDF_param_types[] = {
 	" ERROR-type-unknown"
 };
 
-struct IsqlGlobals {
+class IsqlGlobals
+{
+public:
 	FILE* Out;
 	FILE* Errfp;
 	SCHAR global_Db_name[MAXPATHLEN];
@@ -330,6 +332,7 @@ struct IsqlGlobals {
 	USHORT db_SQL_dialect;
 	// from isql.epp
 	USHORT major_ods;
+	void printf(const char* buffer, ...);
 };
 
 extern IsqlGlobals isqlGlob;

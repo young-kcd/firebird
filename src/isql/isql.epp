@@ -155,30 +155,49 @@ static inline int fb_isspace(const SSHORT c)
 }
 
 
-struct indev {
+class indev {
+public:
 	indev* indev_next;
 	FILE* indev_fpointer;
 	int indev_line;
 	int indev_aux;
 	char indev_fn[MAXPATHLEN];
-	void init(FILE* fp, const char* fn)
-	{
-		indev_fpointer = fp;
-		indev_line = 0;
-		indev_aux = 0;
-		strncpy(indev_fn, fn, sizeof(indev_fn));
-		indev_fn[sizeof(indev_fn) - 1] = 0;
-	}
-	void copy_from(const indev* src)
-	{
-		indev_fpointer = src->indev_fpointer;
-		indev_line = src->indev_line;
-		indev_aux = src->indev_aux;
-		strcpy(indev_fn, src->indev_fn);
-	}
+	void init(FILE* fp, const char* fn);
+	void copy_from(const indev* src);
 private:
 	indev& operator=(const void*); // prevent surprises.
 };
+
+
+void indev::init(FILE* fp, const char* fn)
+{
+	indev_fpointer = fp;
+	indev_line = 0;
+	indev_aux = 0;
+	strncpy(indev_fn, fn, sizeof(indev_fn));
+	indev_fn[sizeof(indev_fn) - 1] = 0;
+}
+
+void indev::copy_from(const indev* src)
+{
+	indev_fpointer = src->indev_fpointer;
+	indev_line = src->indev_line;
+	indev_aux = src->indev_aux;
+	strcpy(indev_fn, src->indev_fn);
+}
+
+
+// p r i n t f
+// Centralized printing facility, more flexible than ISQL_printf
+void IsqlGlobals::printf(const char* buffer, ...)
+{
+	va_list args;
+	va_start(args, buffer);
+	vfprintf(Out, buffer, args);
+	va_end(args);
+	fflush(Out); // John's fix.
+}
+
 
 struct collist {
 	collist* collist_next;
@@ -626,10 +645,9 @@ void ISQL_array_dimensions(const TEXT* fieldname)
 			ISQL_printf (isqlGlob.Out, ", ");
 		}
 		if (FDIM.RDB$LOWER_BOUND == 1)
-			sprintf (Print_buffer, "%ld", FDIM.RDB$UPPER_BOUND);
+			isqlGlob.printf("%ld", FDIM.RDB$UPPER_BOUND);
 		else
-			sprintf (Print_buffer, "%ld:%ld", FDIM.RDB$LOWER_BOUND, FDIM.RDB$UPPER_BOUND);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%ld:%ld", FDIM.RDB$LOWER_BOUND, FDIM.RDB$UPPER_BOUND);
 
 	END_FOR
 	ON_ERROR
@@ -4610,12 +4628,11 @@ void ISQL_ri_action_print(const TEXT* ri_action_str,
 			{
 				// we have something to print  
 				if (all_caps)
-					sprintf(Print_buffer, "%s %s", ri_action_prefix_str,
+					isqlGlob.printf("%s %s", ri_action_prefix_str,
 							ref_int->ri_action_print_caps);
 				else if (*ref_int->ri_action_print_mixed)
-					sprintf(Print_buffer, "%s %s", ri_action_prefix_str,
+					isqlGlob.printf("%s %s", ri_action_prefix_str,
 							ref_int->ri_action_print_mixed);
-				ISQL_printf(isqlGlob.Out, Print_buffer);
 			}
 			return;
 		}
@@ -4742,41 +4759,34 @@ static processing_state print_sets()
 	else if (Doblob == NO_BLOBS)
 		ISQL_printf(isqlGlob.Out, "NONE");
 	else {
-		sprintf(Print_buffer, "%d", Doblob);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("%d", Doblob);
 	}
 	ISQL_printf(isqlGlob.Out, NEWLINE);
 	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)) {
-		sprintf(Print_buffer, "Set names:               %s%s",
+		isqlGlob.printf("Set names:               %s%s",
 				ISQL_charset, NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
 	}
 	ISQL_printf(isqlGlob.Out, "Column headings:         ");
 	ISQL_printf(isqlGlob.Out, Heading ? "ON" : "OFF");
 	ISQL_printf(isqlGlob.Out, NEWLINE);
 	if (global_Cols) {
-		sprintf(Print_buffer, "Column print widths:%s", NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("Column print widths:%s", NEWLINE);
 		const collist* p = global_Cols;
 		while (p) {
-			sprintf(Print_buffer, "%s%s width: %d%s",
+			isqlGlob.printf("%s%s width: %d%s",
 					TAB_AS_SPACES, p->col_name, p->col_len, NEWLINE);
-			ISQL_printf(isqlGlob.Out, Print_buffer);
 			p = p->collist_next;
 		}
 	}
 	ISQL_printf(isqlGlob.Out, "Terminator:              ");
 	ISQL_printf(isqlGlob.Out, isqlGlob.global_Term);
 	ISQL_printf(isqlGlob.Out, NEWLINE);
-	sprintf(Print_buffer, "Time:                    %s%s",
+	isqlGlob.printf("Time:                    %s%s",
 			(Time_display) ? "ON" : "OFF", NEWLINE);
-	ISQL_printf(isqlGlob.Out, Print_buffer);
-	sprintf(Print_buffer, "Warnings:                %s%s",
+	isqlGlob.printf("Warnings:                %s%s",
 			(Warnings) ? "ON" : "OFF", NEWLINE);
-	ISQL_printf(isqlGlob.Out, Print_buffer);
-	sprintf(Print_buffer, "Bail on error:           %s%s",
+	isqlGlob.printf("Bail on error:           %s%s",
 			(BailOnError) ? "ON" : "OFF", NEWLINE);
-	ISQL_printf(isqlGlob.Out, Print_buffer);
 	return SKIP;
 }
 
@@ -5126,24 +5136,22 @@ static processing_state newdb(TEXT* dbname,
 	if (Interactive) {
 		if (local_usr[0] != '\0') {
 			if (local_sql_role[0] != '\0') {
-				sprintf(Print_buffer, "Database:  %s, User: %s, Role: %s%s",
+				isqlGlob.printf("Database:  %s, User: %s, Role: %s%s",
 						dbname, local_usr, local_sql_role, NEWLINE);
 			}
 			else {
-				sprintf(Print_buffer, "Database:  %s, User: %s%s",
+				isqlGlob.printf("Database:  %s, User: %s%s",
 						dbname, local_usr, NEWLINE);
 			}
-			ISQL_printf(isqlGlob.Out, Print_buffer);
 		}
 		else {
 			if (local_sql_role[0] != '\0') {
-				sprintf(Print_buffer, "Database:  %s, Role:  %s%s",
+				isqlGlob.printf("Database:  %s, Role:  %s%s",
 						dbname, local_sql_role, NEWLINE);
 			}
 			else {
-				sprintf(Print_buffer, "Database:  %s%s", dbname, NEWLINE);
+				isqlGlob.printf("Database:  %s%s", dbname, NEWLINE);
 			}
-			ISQL_printf(isqlGlob.Out, Print_buffer);
 		}
 	}
 
@@ -5583,8 +5591,7 @@ static processing_state parse_arg(int argc,
 			else if (c == 'Z') {
 				Version_info = true;
 				ISQL_msg_get(VERSION, errbuf, FB_VERSION);
-				sprintf(Print_buffer, "%s%s", errbuf, NEWLINE);
-				ISQL_printf(isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%s%s", errbuf, NEWLINE);
 			}
 			else if (c == 'S') {
 				// isqlGlob.SQL_dialect value 
@@ -5677,16 +5684,14 @@ static SSHORT print_item(TEXT** s,
 	const SLONG length = printlength;
 
 	if (List) {
-		sprintf(Print_buffer, "%-31s ", fb_utils::exact_name(var->aliasname));
-		ISQL_printf(isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("%-31s ", fb_utils::exact_name(var->aliasname));
 	}
 
 	if ((var->sqltype & 1) && (*var->sqlind < 0)) {
 		// If field was missing print <null>
 
 		if (List) {
-			sprintf(Print_buffer, "<null>%s", NEWLINE);
-			ISQL_printf(isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("<null>%s", NEWLINE);
 		}
 
 		if ((dtype == SQL_TEXT) || (dtype == SQL_VARYING))
@@ -5702,8 +5707,7 @@ static SSHORT print_item(TEXT** s,
 		for (const TEXT* t = var->sqldata; t < var->sqldata + var->sqllen; t++)
 		{
 			if (List) {
-				sprintf(Print_buffer, "%02X", (unsigned int) (UCHAR) *t);
-				ISQL_printf(isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%02X", (unsigned int) (UCHAR) *t);
 			}
 			else {
 				sprintf(d, "%02X", (unsigned int) (UCHAR) *t);
@@ -5775,8 +5779,7 @@ static SSHORT print_item(TEXT** s,
 						if (src != dest)
 							while (0 != (*dest++ = *src++));	// empty 
 					}
-					sprintf(Print_buffer, "%s%s", str_buf, NEWLINE);
-					ISQL_printf(isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("%s%s", str_buf, NEWLINE);
 				}
 				break;
 			}
@@ -5791,17 +5794,15 @@ static SSHORT print_item(TEXT** s,
 				numeric = numeric / pow(10.0, exponent);
 				sprintf(p, "%*.*f ", (int) length, (int) -dscale, numeric);
 				if (List) {
-					sprintf(Print_buffer, "%.*f%s",
+					isqlGlob.printf("%.*f%s",
 							(int) -dscale, numeric, NEWLINE);
-					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 			}
 			else {
 				sprintf(p, "%*ld ", (int) length, *(SQUAD*) (var->sqldata));
 				if (List) {
-					sprintf(Print_buffer, "%ld%s",
+					isqlGlob.printf("%ld%s",
 							*(SQUAD*) var->sqldata, NEWLINE);
-					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 			}
 			break;
@@ -5820,9 +5821,8 @@ static SSHORT print_item(TEXT** s,
 						(int) MIN(8, (length - 6)) - 1,
 						(double) *(float*) (var->sqldata));
 				if (List) {
-					sprintf(Print_buffer, "%.*g%s", FLOAT_LEN - 6 -1,
+					isqlGlob.printf("%.*g%s", FLOAT_LEN - 6 -1,
 							*(float*) (var->sqldata), NEWLINE);
-					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 			}
 			else {
@@ -5830,18 +5830,16 @@ static SSHORT print_item(TEXT** s,
 						(int) MIN(8, (length - 6)),
 						(double) *(float*) (var->sqldata));
 				if (List) {
-					sprintf(Print_buffer, "%.*g%s", FLOAT_LEN - 6,
+					isqlGlob.printf("%.*g%s", FLOAT_LEN - 6,
 							*(float*) (var->sqldata), NEWLINE);
-					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 			}
 #else
 			sprintf(p, "% #*.*g ", (int) length, (int) MIN(8, (length - 6)),
 					(double) *(float*) (var->sqldata));
 			if (List) {
-				sprintf(Print_buffer, "%.*g%s", FLOAT_LEN - 6,
+				isqlGlob.printf("%.*g%s", FLOAT_LEN - 6,
 						*(float*) (var->sqldata), NEWLINE);
-				ISQL_printf(isqlGlob.Out, Print_buffer);
 			}
 #endif
 			break;
@@ -5856,10 +5854,9 @@ static SSHORT print_item(TEXT** s,
 				sprintf(p, "%*.*f ", (int) length, (int) -dscale,
 						*(double*) (var->sqldata));
 				if (List) {
-					sprintf(Print_buffer, "%.*f%s",
+					isqlGlob.printf("%.*f%s",
 							(int) -dscale,
 							*(double*) (var->sqldata), NEWLINE);
-					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 			}
 			else {
@@ -5869,10 +5866,9 @@ static SSHORT print_item(TEXT** s,
 							(int) MIN(16, (int) (length - 7)) - 1,
 							*(double*) (var->sqldata));
 					if (List) {
-						sprintf(Print_buffer, "%#.*g%s",
+						isqlGlob.printf("%#.*g%s",
 								DOUBLE_LEN - 7 - 1,
 								*(double*) (var->sqldata), NEWLINE);
-						ISQL_printf(isqlGlob.Out, Print_buffer);
 					}
 				}
 				else {
@@ -5880,10 +5876,9 @@ static SSHORT print_item(TEXT** s,
 							(int) MIN(16, (int) (length - 7)),
 							*(double*) (var->sqldata));
 					if (List) {
-						sprintf(Print_buffer, "%#.*g%s",
+						isqlGlob.printf("%#.*g%s",
 								DOUBLE_LEN - 7,
 								*(double*) (var->sqldata), NEWLINE);
-						ISQL_printf(isqlGlob.Out, Print_buffer);
 					}
 				}
 #else
@@ -5891,10 +5886,9 @@ static SSHORT print_item(TEXT** s,
 						(int) MIN(16, (int) (length - 7)),
 						*(double*) (var->sqldata));
 				if (List) {
-					sprintf(Print_buffer, "%#.*g%s",
+					isqlGlob.printf("%#.*g%s",
 							DOUBLE_LEN - 7,
 							*(double*) (var->sqldata), NEWLINE);
-					ISQL_printf(isqlGlob.Out, Print_buffer);
 				}
 #endif
 			}
@@ -5955,8 +5949,7 @@ static SSHORT print_item(TEXT** s,
 
 			sprintf(p, "%-*s ", (int) length, d);
 			if (List) {
-				sprintf(Print_buffer, "%s%s", d, NEWLINE);
-				ISQL_printf(isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%s%s", d, NEWLINE);
 			}
 			break;
 
@@ -5968,8 +5961,7 @@ static SSHORT print_item(TEXT** s,
 						(*(ISC_TIME*) var->sqldata) % ISC_TIME_SECONDS_PRECISION);
 				sprintf(p, "%-*s ", (int) length, d);
 				if (List) {
-					sprintf(Print_buffer, "%s%s", d, NEWLINE);
-					ISQL_printf(isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("%s%s", d, NEWLINE);
 				}
 				break;
 			}
@@ -5982,8 +5974,7 @@ static SSHORT print_item(TEXT** s,
 
 				sprintf(p, "%-*s ", (int) length, d);
 				if (List) {
-					sprintf(Print_buffer, "%s%s", d, NEWLINE);
-					ISQL_printf(isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("%s%s", d, NEWLINE);
 				}
 			}
 			break;
@@ -6040,8 +6031,7 @@ static SSHORT print_item(TEXT** s,
 			sprintf(d, "Unknown type: %d", dtype);
 			sprintf(p, "%-*s ", (int) length, d);
 			if (List) {
-				sprintf(Print_buffer, "%s%s", d, NEWLINE);
-				ISQL_printf(isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%s%s", d, NEWLINE);
 			}
 			break;
 		}
@@ -6280,7 +6270,7 @@ static processing_state print_line(XSQLDA* sqlda,
 	if (Doblob == NO_BLOBS)
 		varnum = 0;
 	else if (varnum >= 20)
-		ISQL_printf(isqlGlob.Out, "Printing only the first 20 blobs.");
+		ISQL_printf2(isqlGlob.Out, "Printing only the first 20 blobs.%s", NEWLINE);
 
 	// If there were Blobs to print, print them passing the blobid
 
@@ -6289,18 +6279,15 @@ static processing_state print_line(XSQLDA* sqlda,
 		if (*var->sqlind == 0) {
 			// Print blob title 
 
-			sprintf(Print_buffer,
+			isqlGlob.printf(
 					"==============================================================================%s",
 					NEWLINE);
-			ISQL_printf(isqlGlob.Out, Print_buffer);
-			sprintf(Print_buffer, "%s:  %s", var->aliasname, NEWLINE);
-			ISQL_printf(isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s:  %s", var->aliasname, NEWLINE);
 			if (print_item_blob(isqlGlob.Out, var, M__trans))
 				return (ps_ERR);
-			sprintf(Print_buffer,
+			isqlGlob.printf(
 					"%s==============================================================================%s",
 					NEWLINE, NEWLINE);
-			ISQL_printf(isqlGlob.Out, Print_buffer);
 		}
 	}
 	return CONT;
@@ -6952,8 +6939,7 @@ static int process_statement(const TEXT* string,
 				TEXT rec_count_msg[MSG_LENGTH];
 				ISQL_msg_get(REC_COUNT, rec_count_msg, (TEXT*)(IPTR) count);
 				// Records affected: %ld
-				sprintf(Print_buffer, "%s%s", rec_count_msg, NEWLINE);
-				ISQL_printf(isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%s%s", rec_count_msg, NEWLINE);
 			}
 		}
 
@@ -7169,8 +7155,7 @@ static int process_statement(const TEXT* string,
 			TEXT rec_count_msg[MSG_LENGTH];
 			ISQL_msg_get(REC_COUNT, rec_count_msg, (TEXT*)(IPTR) lines);
 			// Records affected: %ld
-			sprintf(Print_buffer, "%s%s", rec_count_msg, NEWLINE);
-			ISQL_printf(isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s%s", rec_count_msg, NEWLINE);
 		}
 	}
 

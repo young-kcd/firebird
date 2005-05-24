@@ -121,44 +121,35 @@ int EXTRACT_ddl(LegacyTables flag,
 	ISQL_get_version(false);
 	if (isqlGlob.SQL_dialect != isqlGlob.db_SQL_dialect)
 	{
-		sprintf(Print_buffer,
+		isqlGlob.printf(
 				"/*=========================================================*/%s",
 				NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
 
-		sprintf(Print_buffer,
+		isqlGlob.printf(
 				"/*=                                                      ==*/%s",
 				NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
 
-		sprintf(Print_buffer,
+		isqlGlob.printf(
 				"/*=     Command Line -sqldialect %d is overwritten by    ==*/%s",
 				isqlGlob.SQL_dialect, NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
 
-		sprintf(Print_buffer,
+		isqlGlob.printf(
 				"/*=     Database SQL Dialect %d.                          ==*/%s",
 				isqlGlob.db_SQL_dialect, NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
 
-		sprintf(Print_buffer,
+		isqlGlob.printf(
 				"/*=                                                      ==*/%s",
 				NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
 
-		sprintf(Print_buffer,
+		isqlGlob.printf(
 				"/*=========================================================*/%s",
 				NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
 	}
-	sprintf(Print_buffer, " %s", NEWLINE);
-	ISQL_printf(isqlGlob.Out, Print_buffer);
+	isqlGlob.printf(" %s", NEWLINE);
 
-	sprintf(Print_buffer, "SET SQL DIALECT %d; %s", isqlGlob.db_SQL_dialect, NEWLINE);
-	ISQL_printf(isqlGlob.Out, Print_buffer);
+	isqlGlob.printf("SET SQL DIALECT %d; %s", isqlGlob.db_SQL_dialect, NEWLINE);
 
-	sprintf(Print_buffer, " %s", NEWLINE);
-	ISQL_printf(isqlGlob.Out, Print_buffer);
+	isqlGlob.printf(NEWLINE);
 
 	bool did_start = false;
 	if (!gds_trans)
@@ -334,48 +325,43 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				list_domain_table (relation_name, default_char_set_id);
 
 			fb_utils::exact_name(REL.RDB$OWNER_NAME);
-			sprintf (Print_buffer, "%s/* Table: %s, Owner: %s */%s",
+			isqlGlob.printf("%s/* Table: %s, Owner: %s */%s",
 					 NEWLINE,
 					 relation_name,
 					 REL.RDB$OWNER_NAME,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				if (new_name)
 					ISQL_copy_SQL_id (new_name, SQL_identifier, DBL_QUOTE);
 				else
 					ISQL_copy_SQL_id (relation_name, SQL_identifier, DBL_QUOTE);
-				sprintf (Print_buffer, "CREATE TABLE %s ", SQL_identifier);
+				isqlGlob.printf("CREATE TABLE %s ", SQL_identifier);
 			}
 			else
-				sprintf (Print_buffer, "CREATE TABLE %s ",
+				isqlGlob.printf("CREATE TABLE %s ",
 						 new_name ? new_name : relation_name);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 			if (!REL.RDB$EXTERNAL_FILE.NULL)
 			{
 				ISQL_copy_SQL_id (REL.RDB$EXTERNAL_FILE, SQL_identifier2,
 								  SINGLE_QUOTE);
-				sprintf (Print_buffer, "EXTERNAL FILE %s ", SQL_identifier2);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("EXTERNAL FILE %s ", SQL_identifier2);
 			}
 			ISQL_printf (isqlGlob.Out, "(");
 		}
 		else
 		{
-			sprintf (Print_buffer, ",%s%s", NEWLINE, TAB_AS_SPACES);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf(",%s%s", NEWLINE, TAB_AS_SPACES);
 		}
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (fb_utils::exact_name(RFR.RDB$FIELD_NAME),
 							  SQL_identifier, DBL_QUOTE);
-			sprintf (Print_buffer, "%s ", SQL_identifier);
+			isqlGlob.printf("%s ", SQL_identifier);
 		}
 		else
-			sprintf (Print_buffer, "%s ", fb_utils::exact_name(RFR.RDB$FIELD_NAME));
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s ", fb_utils::exact_name(RFR.RDB$FIELD_NAME));
 
 		/*
 		** Check first for computed fields, then domains.
@@ -398,12 +384,12 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
-				sprintf (Print_buffer, "%s", SQL_identifier);
+				isqlGlob.printf("%s", SQL_identifier);
 			}
 			else
-				sprintf (Print_buffer, "%s", FLD.RDB$FIELD_NAME);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			// International character sets 
+				isqlGlob.printf("%s", FLD.RDB$FIELD_NAME);
+
+			// International character sets
 			// Print only the character set
 			if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR)
 				&& !RFR.RDB$COLLATION_ID.NULL && RFR.RDB$COLLATION_ID)
@@ -623,9 +609,8 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		RELC.RDB$RELATION_NAME EQ relation_name
 		SORTED BY RELC.RDB$CONSTRAINT_NAME
 
-		sprintf (Print_buffer, ",%s", NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
-		// If the name of the constraint is not INTEG..., print it 
+		isqlGlob.printf(",%s", NEWLINE);
+		// If the name of the constraint is not INTEG..., print it
 		if (strncmp(RELC.RDB$CONSTRAINT_NAME, "INTEG", 5))
 		{
 			fb_utils::exact_name(RELC.RDB$CONSTRAINT_NAME);
@@ -633,25 +618,22 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			{
 				ISQL_copy_SQL_id (RELC.RDB$CONSTRAINT_NAME, SQL_identifier,
 								  DBL_QUOTE);
-				sprintf (Print_buffer, "CONSTRAINT %s ", SQL_identifier);
+				isqlGlob.printf("CONSTRAINT %s ", SQL_identifier);
 			}
 			else
-				sprintf (Print_buffer, "CONSTRAINT %s ", RELC.RDB$CONSTRAINT_NAME);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("CONSTRAINT %s ", RELC.RDB$CONSTRAINT_NAME);
 		}
 
 		if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "PRIMARY", 7))
 		{
 			ISQL_get_index_segments (collist, sizeof(collist), RELC.RDB$INDEX_NAME, true);
-			sprintf (Print_buffer, "PRIMARY KEY (%s)", collist);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("PRIMARY KEY (%s)", collist);
 		}
 
 		else if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "UNIQUE", 6))
 		{
 			ISQL_get_index_segments (collist, sizeof(collist), RELC.RDB$INDEX_NAME, true);
-			sprintf (Print_buffer, "UNIQUE (%s)", collist);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("UNIQUE (%s)", collist);
 		}
 
 	END_FOR
@@ -665,8 +647,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	if (first) // we extracted nothing
 		return FINI_ERROR;
 
-	sprintf(Print_buffer, ")%s%s", isqlGlob.global_Term, NEWLINE);
-	ISQL_printf(isqlGlob.Out, Print_buffer);
+	isqlGlob.printf(")%s%s", isqlGlob.global_Term, NEWLINE);
 	return FINI_OK;
 }
 
@@ -722,8 +703,7 @@ static void get_procedure_args(const char* proc_name)
 			}
 			else
 			{
-				sprintf (Print_buffer, ",%s", NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf(",%s", NEWLINE);
 			}
 
 			fb_utils::exact_name(PRM.RDB$PARAMETER_NAME);
@@ -735,8 +715,7 @@ static void get_procedure_args(const char* proc_name)
 			else
 				strcpy (SQL_identifier, PRM.RDB$PARAMETER_NAME);
 
-			sprintf (Print_buffer, "%s ", SQL_identifier);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s ", SQL_identifier);
 
 			// Get column type name to print 
 			for (int i = 0; Column_types[i].type; i++)
@@ -851,13 +830,11 @@ static void get_procedure_args(const char* proc_name)
 
 		if (!first_time)
 		{
-			sprintf(Print_buffer, ")%s", NEWLINE);
-			ISQL_printf(isqlGlob.Out, Print_buffer);
+			isqlGlob.printf(")%s", NEWLINE);
 		}
 
 	}						// end for ptype 
-	sprintf(Print_buffer, "AS %s", NEWLINE);
-	ISQL_printf(isqlGlob.Out, Print_buffer);
+	isqlGlob.printf("AS %s", NEWLINE);
 }
 
 
@@ -907,10 +884,9 @@ static processing_state list_all_grants2(bool show_role_list,
 
 			if (first_role)
 			{
-				sprintf (Print_buffer, "%s/* Grant roles for this database */%s",
+				isqlGlob.printf("%s/* Grant roles for this database */%s",
 						 NEWLINE,
 						 NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 				first_role = false;
 			}
 
@@ -920,12 +896,11 @@ static processing_state list_all_grants2(bool show_role_list,
 
 			if (strcmp (prev_owner, XX.RDB$OWNER_NAME) != 0)
 			{
-				sprintf (Print_buffer, "%s/* Role: %s, Owner: %s */%s",
+				isqlGlob.printf("%s/* Role: %s, Owner: %s */%s",
 						 NEWLINE,
 						 XX.RDB$ROLE_NAME,
 						 XX.RDB$OWNER_NAME,
 						 NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 				strcpy (prev_owner, XX.RDB$OWNER_NAME);
 			}
 
@@ -933,13 +908,12 @@ static processing_state list_all_grants2(bool show_role_list,
 			{
 
 				ISQL_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
-				sprintf (Print_buffer, "CREATE ROLE %s;%s",
+				isqlGlob.printf("CREATE ROLE %s;%s",
 						 SQL_identifier, NEWLINE);
 			}
 			else
-				sprintf (Print_buffer, "CREATE ROLE %s;%s",
+				isqlGlob.printf("CREATE ROLE %s;%s",
 						 XX.RDB$ROLE_NAME, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		END_FOR
 		ON_ERROR
@@ -1041,35 +1015,28 @@ static void list_all_procs()
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 		if (header)
 		{
-			sprintf (Print_buffer, "COMMIT WORK;%s", NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			sprintf (Print_buffer, "SET AUTODDL OFF;%s", NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			sprintf (Print_buffer, "SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			sprintf (Print_buffer, "%s/* Stored procedures */%s", NEWLINE, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("COMMIT WORK;%s", NEWLINE);
+			isqlGlob.printf("SET AUTODDL OFF;%s", NEWLINE);
+			isqlGlob.printf("SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
+			isqlGlob.printf("%s/* Stored procedures */%s", NEWLINE, NEWLINE);
 			header = false;
 		}
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
-			sprintf (Print_buffer, create_procedure_str1,
+			isqlGlob.printf(create_procedure_str1,
 					 SQL_identifier);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 		else
 		{
-			sprintf (Print_buffer, create_procedure_str1,
+			isqlGlob.printf(create_procedure_str1,
 					 PRC.RDB$PROCEDURE_NAME);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 
 		get_procedure_args (PRC.RDB$PROCEDURE_NAME);
-		sprintf (Print_buffer, create_procedure_str2, Procterm, NEWLINE);
+		isqlGlob.printf(create_procedure_str2, Procterm, NEWLINE);
 
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
@@ -1088,13 +1055,12 @@ static void list_all_procs()
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
-			sprintf (Print_buffer, "%sALTER PROCEDURE %s ", NEWLINE,
+			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE,
 					 SQL_identifier);
 		}
 		else
-			sprintf (Print_buffer, "%sALTER PROCEDURE %s ", NEWLINE,
+			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE,
 					 PRC.RDB$PROCEDURE_NAME);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 		get_procedure_args (PRC.RDB$PROCEDURE_NAME);
 
 		// Print the procedure body 
@@ -1102,8 +1068,7 @@ static void list_all_procs()
 		if (!PRC.RDB$PROCEDURE_SOURCE.NULL)
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &PRC.RDB$PROCEDURE_SOURCE);
 
-		sprintf (Print_buffer, " %s%s", Procterm, NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
 
 	END_FOR
 	ON_ERROR
@@ -1116,12 +1081,9 @@ static void list_all_procs()
 // Only reset the terminators is there were procs to print 
 	if (!header)
 	{
-		sprintf(Print_buffer, "SET TERM %s %s%s", isqlGlob.global_Term, Procterm, NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
-		sprintf(Print_buffer, "COMMIT WORK %s%s", isqlGlob.global_Term, NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
-		sprintf(Print_buffer, "SET AUTODDL ON;%s", NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("SET TERM %s %s%s", isqlGlob.global_Term, Procterm, NEWLINE);
+		isqlGlob.printf("COMMIT WORK %s%s", isqlGlob.global_Term, NEWLINE);
+		isqlGlob.printf("SET AUTODDL ON;%s", NEWLINE);
 	}
 }
 
@@ -1197,13 +1159,11 @@ static void list_all_triggers()
 
 		if (header)
 		{
-			sprintf (Print_buffer, "SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			sprintf (Print_buffer,
+			isqlGlob.printf("SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
+			isqlGlob.printf(
 					 "%s/* Triggers only will work for SQL triggers */%s",
 					 NEWLINE,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 			header = false;
 		}
 		fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
@@ -1227,25 +1187,21 @@ static void list_all_triggers()
 			strcpy (SQL_identifier2, TRG.RDB$RELATION_NAME);
 		}
 
-		sprintf (Print_buffer, "CREATE TRIGGER %s FOR %s %s%s %s POSITION %d %s",
+		isqlGlob.printf("CREATE TRIGGER %s FOR %s %s%s %s POSITION %d %s",
 				 SQL_identifier, SQL_identifier2, NEWLINE,
 				 (TRG.RDB$TRIGGER_INACTIVE ? "INACTIVE" : "ACTIVE"),
 				 trigger_action (TRG.RDB$TRIGGER_TYPE), TRG.RDB$TRIGGER_SEQUENCE,
 				 NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		if (!TRG.RDB$TRIGGER_SOURCE.NULL)
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
 
-		sprintf (Print_buffer, " %s%s", Procterm, NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
-		sprintf (Print_buffer, " %s", NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
+		isqlGlob.printf(" %s", NEWLINE);
 
 		if (TRG.RDB$FLAGS != TRG_sql)
 		{
-			sprintf (Print_buffer, "*/%s", NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("*/%s", NEWLINE);
 		}
 
 	END_FOR
@@ -1256,10 +1212,8 @@ static void list_all_triggers()
 
 	if (!header)
 	{
-		sprintf(Print_buffer, "COMMIT WORK %s%s", Procterm, NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
-		sprintf(Print_buffer, "SET TERM %s %s%s", isqlGlob.global_Term, Procterm, NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("COMMIT WORK %s%s", Procterm, NEWLINE);
+		isqlGlob.printf("SET TERM %s %s%s", isqlGlob.global_Term, Procterm, NEWLINE);
 	}
 }
 
@@ -1288,22 +1242,19 @@ static void list_check()
 		REDUCED TO CHK.RDB$CONSTRAINT_NAME
 		SORTED BY CHK.RDB$CONSTRAINT_NAME
 
-
 		fb_utils::exact_name(TRG.RDB$RELATION_NAME);
 
-		sprintf (Print_buffer, " %s ", NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf(" %s ", NEWLINE);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (TRG.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
-			sprintf (Print_buffer, "ALTER TABLE %s ADD %s%s",
+			isqlGlob.printf("ALTER TABLE %s ADD %s%s",
 					 SQL_identifier, NEWLINE, TAB_AS_SPACES);
 		}
 		else
-			sprintf (Print_buffer, "ALTER TABLE %s ADD %s%s",
+			isqlGlob.printf("ALTER TABLE %s ADD %s%s",
 					 TRG.RDB$RELATION_NAME, NEWLINE, TAB_AS_SPACES);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		// If the name of the constraint is not INTEG..., print it 
 		if (strncmp(CHK.RDB$CONSTRAINT_NAME, "INTEG", 5))
@@ -1313,18 +1264,16 @@ static void list_check()
 			{
 				ISQL_copy_SQL_id (CHK.RDB$CONSTRAINT_NAME, SQL_identifier,
 								  DBL_QUOTE);
-				sprintf (Print_buffer, "CONSTRAINT %s ", SQL_identifier);
+				isqlGlob.printf("CONSTRAINT %s ", SQL_identifier);
 			}
 			else
-				sprintf (Print_buffer, "CONSTRAINT %s ", CHK.RDB$CONSTRAINT_NAME);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("CONSTRAINT %s ", CHK.RDB$CONSTRAINT_NAME);
 		}
 
 		if (!TRG.RDB$TRIGGER_SOURCE.NULL)
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
 
-		sprintf (Print_buffer, "%s%s", isqlGlob.global_Term, NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 
 	END_FOR
 	ON_ERROR
@@ -1354,14 +1303,12 @@ static void print_set(bool* set_used)
  **************************************/
 	if (!*set_used)
 	{
-		sprintf(Print_buffer, "  SET ");
-		ISQL_printf(isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("  SET ");
 		*set_used = true;
 	}
 	else
 	{
-		sprintf(Print_buffer, ", %s      ", NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
+		isqlGlob.printf(", %s      ", NEWLINE);
 	}
 }
 #endif
@@ -1392,8 +1339,7 @@ static void list_create_db()
 		strcpy(isqlGlob.global_Target_db, isqlGlob.global_Db_name);
 		nodb = true;
 	}
-	sprintf(Print_buffer, "CREATE DATABASE '%s'", isqlGlob.global_Target_db);
-	ISQL_printf(isqlGlob.Out, Print_buffer);
+	isqlGlob.printf("CREATE DATABASE '%s'", isqlGlob.global_Target_db);
 
 	// Get the page size from db_info call 
 	SCHAR info_buf[20];
@@ -1404,16 +1350,14 @@ static void list_create_db()
 	if (!SHOW_dbb_parameters(DB, info_buf, page_items, sizeof(page_items),
 						translate))
 	{
-		sprintf(Print_buffer, " %s", info_buf);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
+		isqlGlob.printf(" %s", info_buf);
 	}
 
 	FOR DBP IN RDB$DATABASE
 		WITH DBP.RDB$CHARACTER_SET_NAME NOT MISSING
 		AND DBP.RDB$CHARACTER_SET_NAME != " ";
-		sprintf (Print_buffer, " DEFAULT CHARACTER SET %s",
-		fb_utils::exact_name(DBP.RDB$CHARACTER_SET_NAME));
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf(" DEFAULT CHARACTER SET %s",
+			fb_utils::exact_name(DBP.RDB$CHARACTER_SET_NAME));
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
@@ -1422,13 +1366,11 @@ static void list_create_db()
 
 	if (nodb)
 	{
-		sprintf(Print_buffer, " */%s", NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
+		isqlGlob.printf(" */%s", NEWLINE);
 	}
 	else
 	{
-		sprintf(Print_buffer, "%s%s", isqlGlob.global_Term, NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	}
 
 // List secondary files and shadows as alter db and create shadow in comment 
@@ -1440,10 +1382,9 @@ static void list_create_db()
 
 		if (first)
 		{
-			sprintf (Print_buffer, "%s/* Add secondary files in comments %s",
+			isqlGlob.printf("%s/* Add secondary files in comments %s",
 					 NEWLINE,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 
 		first = false;
@@ -1462,50 +1403,32 @@ static void list_create_db()
 		// Pure secondary files 
 		if (FIL.RDB$FILE_FLAGS == 0)
 		{
-			sprintf (Print_buffer, "%sALTER DATABASE ADD FILE '%s'",
+			isqlGlob.printf("%sALTER DATABASE ADD FILE '%s'",
 					 NEWLINE,
 					 FIL.RDB$FILE_NAME);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 			if (FIL.RDB$FILE_START)
 			{
-				sprintf (Print_buffer, " STARTING %ld", FIL.RDB$FILE_START);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf(" STARTING %ld", FIL.RDB$FILE_START);
 			}
 			if (FIL.RDB$FILE_LENGTH)
 			{
-				sprintf (Print_buffer, " LENGTH %ld", FIL.RDB$FILE_LENGTH);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf(" LENGTH %ld", FIL.RDB$FILE_LENGTH);
 			}
-			sprintf (Print_buffer, "%s", NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s", NEWLINE);
 		}
-
-/*
-		if (FIL.RDB$FILE_FLAGS & FILE_cache)
-		{
-			sprintf (Print_buffer, "%sALTER DATABASE ADD CACHE '%s' LENGTH %ld%s",
-					NEWLINE,
-					FIL.RDB$FILE_NAME,
-					FIL.RDB$FILE_LENGTH,
-					NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-		}
-*/
 
 		if (FIL.RDB$FILE_FLAGS & FILE_shadow)
 		{
 			if (FIL.RDB$FILE_SEQUENCE)
 			{
-				sprintf (Print_buffer, "%sFILE '%s' ", TAB_AS_SPACES, FIL.RDB$FILE_NAME);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%sFILE '%s' ", TAB_AS_SPACES, FIL.RDB$FILE_NAME);
 			}
 			else
 			{
-				sprintf (Print_buffer, "%sCREATE SHADOW %d '%s' ",
+				isqlGlob.printf("%sCREATE SHADOW %d '%s' ",
 						 NEWLINE,
 						 FIL.RDB$SHADOW_NUMBER,
 						 FIL.RDB$FILE_NAME);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 				if (FIL.RDB$FILE_FLAGS & FILE_inactive)
 					ISQL_printf (isqlGlob.Out, "INACTIVE ");
 				if (FIL.RDB$FILE_FLAGS & FILE_manual)
@@ -1517,13 +1440,11 @@ static void list_create_db()
 			}
 			if (FIL.RDB$FILE_LENGTH)
 			{
-				sprintf (Print_buffer, "LENGTH %ld ", FIL.RDB$FILE_LENGTH);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("LENGTH %ld ", FIL.RDB$FILE_LENGTH);
 			}
 			if (FIL.RDB$FILE_START)
 			{
-				sprintf (Print_buffer, "STARTING %ld ", FIL.RDB$FILE_START);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("STARTING %ld ", FIL.RDB$FILE_START);
 			}
 			ISQL_printf (isqlGlob.Out, NEWLINE);
 		}
@@ -1538,13 +1459,11 @@ static void list_create_db()
 	{
 		if (nodb)
 		{
-			sprintf(Print_buffer, "%s */%s", NEWLINE, NEWLINE);
-			ISQL_printf(isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s */%s", NEWLINE, NEWLINE);
 		}
 		else
 		{
-			sprintf(Print_buffer, "%s%s%s", isqlGlob.global_Term, NEWLINE, NEWLINE);
-			ISQL_printf(isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s%s%s", isqlGlob.global_Term, NEWLINE, NEWLINE);
 		}
 	}
 }
@@ -1586,14 +1505,12 @@ static void list_domain_table(const SCHAR* table_name,
 
 		if (first)
 		{
-			sprintf (Print_buffer, "/* Domain definitions */%s", NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("/* Domain definitions */%s", NEWLINE);
 			first = false;
 		}
 		fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 
-		sprintf (Print_buffer, "CREATE DOMAIN %s AS ", FLD.RDB$FIELD_NAME);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("CREATE DOMAIN %s AS ", FLD.RDB$FIELD_NAME);
 
 		for (int i = 0; Column_types[i].type; i++)
 			if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
@@ -1704,14 +1621,12 @@ static void list_domain_table(const SCHAR* table_name,
 
 		if (!FLD.RDB$DEFAULT_SOURCE.NULL)
 		{
-			sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s%s ", NEWLINE, TAB_AS_SPACES);
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
 		}
 		if (!FLD.RDB$VALIDATION_SOURCE.NULL)
 		{
-			sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s%s ", NEWLINE, TAB_AS_SPACES);
 			ISQL_print_validation (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE, false, gds_trans);
 		}
 		if (FLD.RDB$NULL_FLAG == 1)
@@ -1734,8 +1649,7 @@ static void list_domain_table(const SCHAR* table_name,
 				ISQL_printf (isqlGlob.Out, char_sets);
 		}
 
-		sprintf (Print_buffer, "%s%s", isqlGlob.global_Term, NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
@@ -1769,8 +1683,7 @@ static void list_domains(SSHORT default_char_set_id)
 
 		if (first)
 		{
-			sprintf (Print_buffer, "/* Domain definitions */%s", NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("/* Domain definitions */%s", NEWLINE);
 			first = false;
 		}
 		fb_utils::exact_name(FLD.RDB$FIELD_NAME);
@@ -1778,14 +1691,12 @@ static void list_domains(SSHORT default_char_set_id)
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id(FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
-			sprintf (Print_buffer, "CREATE DOMAIN %s AS ", SQL_identifier);
+			isqlGlob.printf("CREATE DOMAIN %s AS ", SQL_identifier);
 		}
 		else
-			sprintf (Print_buffer, "CREATE DOMAIN %s AS ", FLD.RDB$FIELD_NAME);
+			isqlGlob.printf("CREATE DOMAIN %s AS ", FLD.RDB$FIELD_NAME);
 
-		ISQL_printf (isqlGlob.Out, Print_buffer);
-
-		// Get domain type 
+		// Get domain type
 		for (int i = 0; Column_types[i].type; i++)
 			if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
 			{
@@ -1855,23 +1766,19 @@ static void list_domains(SSHORT default_char_set_id)
 
 			if ((subtype > 0) && (subtype <= MAX_BLOBSUBTYPES))
 			{
-				sprintf (Print_buffer, "%s", Sub_types[subtype]);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%s", Sub_types[subtype]);
 			}
 			else
 			{
-				sprintf (Print_buffer, "%d", subtype);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%d", subtype);
 			}
-			sprintf (Print_buffer, " SEGMENT SIZE %u", (USHORT) FLD.RDB$SEGMENT_LENGTH);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf(" SEGMENT SIZE %u", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 		}
 
 		else if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 		{
 			// Length for chars 
-			sprintf (Print_buffer, "(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
 		}
 
 		/* Bug 8261: do not show the collation information just yet!  If you
@@ -1896,14 +1803,12 @@ static void list_domains(SSHORT default_char_set_id)
 
 		if (!FLD.RDB$DEFAULT_SOURCE.NULL)
 		{
-			sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s%s ", NEWLINE, TAB_AS_SPACES);
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
 		}
 		if (!FLD.RDB$VALIDATION_SOURCE.NULL)
 		{
-			sprintf (Print_buffer, "%s%s ", NEWLINE, TAB_AS_SPACES);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s%s ", NEWLINE, TAB_AS_SPACES);
 			ISQL_print_validation (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE, false, gds_trans);
 		}
 		if (FLD.RDB$NULL_FLAG == 1)
@@ -1926,8 +1831,7 @@ static void list_domains(SSHORT default_char_set_id)
 				ISQL_printf (isqlGlob.Out, char_sets);
 		}
 
-		sprintf (Print_buffer, "%s%s", isqlGlob.global_Term, NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
@@ -1957,8 +1861,7 @@ static void list_exception()
 
 		if (first)
 		{
-			sprintf (Print_buffer, "%s/*  Exceptions */%s", NEWLINE, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s/*  Exceptions */%s", NEWLINE, NEWLINE);
 		}
 		first = false;
 		fb_utils::exact_name(EXC.RDB$EXCEPTION_NAME);
@@ -1967,14 +1870,12 @@ static void list_exception()
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (EXC.RDB$EXCEPTION_NAME, SQL_identifier, DBL_QUOTE);
-			sprintf (Print_buffer, "CREATE EXCEPTION %s %s%s%s",
+			isqlGlob.printf("CREATE EXCEPTION %s %s%s%s",
 					 SQL_identifier, SQL_identifier2, isqlGlob.global_Term, NEWLINE);
 		}
 		else
-			sprintf (Print_buffer, "CREATE EXCEPTION %s %s%s%s",
+			isqlGlob.printf("CREATE EXCEPTION %s %s%s%s",
 					 EXC.RDB$EXCEPTION_NAME, SQL_identifier2, isqlGlob.global_Term, NEWLINE);
-
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 	END_FOR
 	ON_ERROR
@@ -2011,18 +1912,16 @@ static void list_filters()
 
 		if (first)
 		{
-			sprintf (Print_buffer, "%s/*  BLOB Filter declarations */%s",
+			isqlGlob.printf("%s/*  BLOB Filter declarations */%s",
 					 NEWLINE,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 		first = false;
 
-		sprintf (Print_buffer, "DECLARE FILTER %s INPUT_TYPE %d OUTPUT_TYPE %d%s%sENTRY_POINT '%s' MODULE_NAME '%s'%s%s%s",
+		isqlGlob.printf("DECLARE FILTER %s INPUT_TYPE %d OUTPUT_TYPE %d%s%sENTRY_POINT '%s' MODULE_NAME '%s'%s%s%s",
 				 FIL.RDB$FUNCTION_NAME, FIL.RDB$INPUT_SUB_TYPE, FIL.RDB$OUTPUT_SUB_TYPE,
 				 NEWLINE, TAB_AS_SPACES, FIL.RDB$ENTRYPOINT, FIL.RDB$MODULE_NAME, isqlGlob.global_Term, NEWLINE,
 				 NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 	END_FOR
 	ON_ERROR
@@ -2066,19 +1965,17 @@ static void list_foreign()
 
 		ISQL_get_index_segments (collist, sizeof(collist), RELC1.RDB$INDEX_NAME, true);
 
-		sprintf (Print_buffer, " %s", NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf(" %s", NEWLINE);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (RELC1.RDB$RELATION_NAME, SQL_identifier,
 							  DBL_QUOTE);
-			sprintf (Print_buffer, "ALTER TABLE %s ADD ", SQL_identifier);
+			isqlGlob.printf("ALTER TABLE %s ADD ", SQL_identifier);
 		}
 		else
-			sprintf (Print_buffer, "ALTER TABLE %s ADD ",
+			isqlGlob.printf("ALTER TABLE %s ADD ",
 					 RELC1.RDB$RELATION_NAME);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		/* If the name of the constraint is not INTEG..., print it.
 	      INTEG... are internally generated names. */
@@ -2091,33 +1988,30 @@ static void list_foreign()
 			{
 				ISQL_copy_SQL_id (RELC1.RDB$CONSTRAINT_NAME, SQL_identifier,
 								  DBL_QUOTE);
-				sprintf (Print_buffer, "CONSTRAINT %s ", SQL_identifier);
+				isqlGlob.printf("CONSTRAINT %s ", SQL_identifier);
 			}
 			else
-				sprintf (Print_buffer, "CONSTRAINT %s ",
+				isqlGlob.printf("CONSTRAINT %s ",
 						 RELC1.RDB$CONSTRAINT_NAME);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (RELC2.RDB$RELATION_NAME, SQL_identifier,
 							  DBL_QUOTE);
-			sprintf (Print_buffer, "FOREIGN KEY (%s) REFERENCES %s ",
+			isqlGlob.printf("FOREIGN KEY (%s) REFERENCES %s ",
 					 collist, SQL_identifier);
 		}
 		else
-			sprintf (Print_buffer, "FOREIGN KEY (%s) REFERENCES %s ",
+			isqlGlob.printf("FOREIGN KEY (%s) REFERENCES %s ",
 					 collist,
 					 RELC2.RDB$RELATION_NAME);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		// Get the column list for the primary key 
 
 		ISQL_get_index_segments (collist, sizeof(collist), RELC2.RDB$INDEX_NAME, true);
 
-		sprintf (Print_buffer, "(%s)", collist);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("(%s)", collist);
 
 		// Add the referential actions, if any 
 		if (!REFC.RDB$UPDATE_RULE.NULL)
@@ -2134,8 +2028,7 @@ static void list_foreign()
 			ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " ON DELETE", true);
 		}
 
-		sprintf (Print_buffer, "%s%s", isqlGlob.global_Term, NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 
 	END_FOR
 	ON_ERROR
@@ -2177,18 +2070,16 @@ static void list_functions()
 		fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
 		if (first)
 		{
-			sprintf (Print_buffer, "%s/*  External Function declarations */%s",
+			isqlGlob.printf("%s/*  External Function declarations */%s",
 					 NEWLINE,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 			first = false;
 		}
 
 		// Start new function declaration 
-		sprintf (Print_buffer, "DECLARE EXTERNAL FUNCTION %s %s",
+		isqlGlob.printf("DECLARE EXTERNAL FUNCTION %s %s",
 				 FUN.RDB$FUNCTION_NAME,
 				 NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		bool firstarg = true;
 
@@ -2323,9 +2214,8 @@ static void list_functions()
 
 			if (printarg) {
 				// First arg needs no comma 
-				sprintf (Print_buffer, "%s%s%s", (firstarg ? "" : ", "), type_buffer,
+				isqlGlob.printf("%s%s%s", (firstarg ? "" : ", "), type_buffer,
 						 UDF_param_types[ptype]);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 				firstarg = false;
 			}
 
@@ -2336,20 +2226,18 @@ static void list_functions()
 		END_ERROR;
 
 		// Print the return type -- All functions return a type 
-		sprintf (Print_buffer, "%s%s%s",
+		isqlGlob.printf("%s%s%s",
 				 NEWLINE,
 				 return_buffer,
 				 NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		// Print out entrypoint information 
-		sprintf (Print_buffer, "ENTRY_POINT '%s' MODULE_NAME '%s'%s%s%s",
+		isqlGlob.printf("ENTRY_POINT '%s' MODULE_NAME '%s'%s%s%s",
 				 FUN.RDB$ENTRYPOINT,
 				 FUN.RDB$MODULE_NAME,
 				 isqlGlob.global_Term,
 				 NEWLINE,
 				 NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 	END_FOR
 	ON_ERROR
@@ -2398,11 +2286,10 @@ static void list_generators()
 		else
 			strcpy (SQL_identifier, GEN.RDB$GENERATOR_NAME);
 
-		sprintf (Print_buffer, "CREATE GENERATOR %s%s%s",
+		isqlGlob.printf("CREATE GENERATOR %s%s%s",
 				 SQL_identifier,
 				 isqlGlob.global_Term,
 				 NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
@@ -2456,19 +2343,18 @@ static void list_index()
 		{
 			ISQL_copy_SQL_id (IDX.RDB$INDEX_NAME,    SQL_identifier,  DBL_QUOTE);
 			ISQL_copy_SQL_id (IDX.RDB$RELATION_NAME, SQL_identifier2, DBL_QUOTE);
-			sprintf (Print_buffer, "CREATE%s%s INDEX %s ON %s",
+			isqlGlob.printf("CREATE%s%s INDEX %s ON %s",
 					(IDX.RDB$UNIQUE_FLAG ? " UNIQUE" : ""),
 					(IDX.RDB$INDEX_TYPE ? " DESCENDING" : ""),
 					SQL_identifier,
 					SQL_identifier2);
 		}
 		else
-			sprintf (Print_buffer, "CREATE%s%s INDEX %s ON %s",
+			isqlGlob.printf("CREATE%s%s INDEX %s ON %s",
 					(IDX.RDB$UNIQUE_FLAG ? " UNIQUE" : ""),
 					(IDX.RDB$INDEX_TYPE ? " DESCENDING" : ""),
 					IDX.RDB$INDEX_NAME,
 					IDX.RDB$RELATION_NAME);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		// Get index expression or column names 
 
@@ -2478,15 +2364,13 @@ static void list_index()
 			ISQL_printf (isqlGlob.Out, " COMPUTED BY ");
 			if (!IDX.RDB$EXPRESSION_SOURCE.NULL)
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX.RDB$EXPRESSION_SOURCE);
-			sprintf (Print_buffer, "%s%s", isqlGlob.global_Term, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 		}
 		else
 #endif
 		if (ISQL_get_index_segments (collist, sizeof(collist), IDX.RDB$INDEX_NAME, true))
 		{
-			sprintf (Print_buffer, " (%s)%s%s", collist, isqlGlob.global_Term, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf(" (%s)%s%s", collist, isqlGlob.global_Term, NEWLINE);
 		}
 
 	END_FOR
@@ -2530,14 +2414,12 @@ static void list_views()
 
 		fb_utils::exact_name(REL.RDB$OWNER_NAME);
 
-		sprintf (Print_buffer, "%s/* View: %s, Owner: %s */%s",
+		isqlGlob.printf("%s/* View: %s, Owner: %s */%s",
 				 NEWLINE,
 				 REL.RDB$RELATION_NAME,
 				 REL.RDB$OWNER_NAME,
 				 NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
-		sprintf (Print_buffer, "CREATE VIEW %s (", SQL_identifier);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("CREATE VIEW %s (", SQL_identifier);
 
 		// Get column list 
 		FOR RFR IN RDB$RELATION_FIELDS WITH
@@ -2551,8 +2433,7 @@ static void list_views()
 			else
 				strcpy (SQL_identifier, RFR.RDB$FIELD_NAME);
 
-			sprintf (Print_buffer, "%s%s", (first ? "" : ", "), SQL_identifier);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s%s", (first ? "" : ", "), SQL_identifier);
 			first = false;
 
 		END_FOR
@@ -2560,14 +2441,12 @@ static void list_views()
 			ISQL_errmsg (gds_status);
 			return;
 		END_ERROR;
-		sprintf (Print_buffer, ") AS%s", NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf(") AS%s", NEWLINE);
 
 		if (!REL.RDB$VIEW_SOURCE.NULL)
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &REL.RDB$VIEW_SOURCE);
 
-		sprintf (Print_buffer, "%s%s", isqlGlob.global_Term, NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 
 	END_FOR
 	ON_ERROR

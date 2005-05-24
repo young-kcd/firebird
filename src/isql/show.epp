@@ -573,10 +573,9 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					else
 						strcpy (SQL_identifier, object);
 
-					sprintf (Print_buffer, "GRANT %s%s ON %s TO %s%s%s%s", priv_string,
+					isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s", priv_string,
 							 col_string, SQL_identifier, user_string,
 							 with_option, terminator, NEWLINE);
-					ISQL_printf (isqlGlob.Out, Print_buffer);
 
 					// re-initialize strings
 
@@ -701,10 +700,9 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				else
 					strcpy (SQL_identifier, object);
 
-				sprintf (Print_buffer, "GRANT %s%s ON %s TO %s%s%s%s",
+				isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s",
 						 priv_string, col_string,
 						 SQL_identifier, user_string, with_option, terminator, NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 			}
 
 		END_FOR
@@ -794,10 +792,9 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				else
 					strcpy (SQL_identifier, object);
 
-				sprintf (Print_buffer, "GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s",
+				isqlGlob.printf("GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s",
 						 SQL_identifier, user_string, with_option, terminator, NEWLINE);
 				first = false;
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 
 			END_FOR
 			ON_ERROR
@@ -939,10 +936,8 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 			ISQL_copy_SQL_id (PRV.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 			role = SQL_identifier;
 		}
-		sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", role,
+		isqlGlob.printf("GRANT %s TO %s%s%s%s", role,
 					 user_string, with_option, terminator, NEWLINE);
-
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 	END_FOR
 	ON_ERROR
@@ -1041,8 +1036,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 	if ((!strcmp(cmd[1], "VERSION")) || (!strcmp(cmd[1], "VER"))) {
 		TEXT msg_string[MSG_LENGTH];
 		ISQL_msg_get(VERSION, msg_string, FB_VERSION);
-		sprintf(Print_buffer, "%s%s", msg_string, NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("%s%s", msg_string, NEWLINE);
 		isc_version(&DB, local_fprintf, NULL);
 	}
 	else if (!strcmp(cmd[1], "SQL")) {
@@ -1491,8 +1485,7 @@ static processing_state show_all_tables(SSHORT sys_flag)
 			SORTED BY REL.RDB$RELATION_NAME
 
 			first = false;
-			sprintf (Print_buffer, "%38s%s", REL.RDB$RELATION_NAME, (odd ? " " : NEWLINE));
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%38s%s", REL.RDB$RELATION_NAME, (odd ? " " : NEWLINE));
 			odd = !odd;
 
 		END_FOR
@@ -1512,8 +1505,7 @@ static processing_state show_all_tables(SSHORT sys_flag)
 			SORTED BY REL.RDB$RELATION_NAME
 
 			first = false;
-			sprintf (Print_buffer, "%38s%s", REL.RDB$RELATION_NAME, (odd ? " " : NEWLINE));
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%38s%s", REL.RDB$RELATION_NAME, (odd ? " " : NEWLINE));
 			odd = !odd;
 
 		END_FOR
@@ -1647,9 +1639,8 @@ static processing_state show_check(const SCHAR* object)
 		// Use print_blob to print the blob
 		first = false;
 
-		sprintf (Print_buffer, "CONSTRAINT %s:%s  ",
+		isqlGlob.printf("CONSTRAINT %s:%s  ",
 			fb_utils::exact_name(CHK.RDB$CONSTRAINT_NAME), NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		if (!TRG.RDB$TRIGGER_SOURCE.NULL)
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
@@ -2013,15 +2004,13 @@ static void show_db()
 
 // First print the name of the database
 
-	sprintf(Print_buffer, "Database: %s%s", isqlGlob.global_Db_name, NEWLINE);
-	ISQL_printf(isqlGlob.Out, Print_buffer);
+	isqlGlob.printf("Database: %s%s", isqlGlob.global_Db_name, NEWLINE);
 // Get the owner name
 	FOR REL IN RDB$RELATIONS WITH
 		REL.RDB$RELATION_NAME = "RDB$DATABASE"
 
 		if (!REL.RDB$OWNER_NAME.NULL) {
-			sprintf (Print_buffer, "%sOwner: %s%s", TAB_AS_SPACES, REL.RDB$OWNER_NAME, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%sOwner: %s%s", TAB_AS_SPACES, REL.RDB$OWNER_NAME, NEWLINE);
 		}
 	END_FOR
 	ON_ERROR
@@ -2048,53 +2037,36 @@ static void show_db()
 		fb_utils::exact_name(FIL.RDB$FILE_NAME);
 
 		if (FIL.RDB$FILE_FLAGS == 0) {
-			sprintf (Print_buffer, " File %d: \"%s\", length %ld, start %ld%s",
+			isqlGlob.printf(" File %d: \"%s\", length %ld, start %ld%s",
 					 FIL.RDB$FILE_SEQUENCE, FIL.RDB$FILE_NAME,
 					 FIL.RDB$FILE_LENGTH, FIL.RDB$FILE_START, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
-
-/*
-		if (FIL.RDB$FILE_FLAGS & FILE_cache) {
-			sprintf (Print_buffer, " Cache: %s, length %ld%s",
-					 FIL.RDB$FILE_NAME, FIL.RDB$FILE_LENGTH, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-		}
-*/
 
 		if (FIL.RDB$FILE_FLAGS & FILE_shadow) {
 			if (FIL.RDB$FILE_SEQUENCE) {
-				sprintf (Print_buffer, "%sfile %s ", TAB_AS_SPACES, FIL.RDB$FILE_NAME);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%sfile %s ", TAB_AS_SPACES, FIL.RDB$FILE_NAME);
 			}
 			else {
-				sprintf (Print_buffer, " Shadow %d: \"%s\" ",
+				isqlGlob.printf(" Shadow %d: \"%s\" ",
 						 FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_NAME);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 				if (FIL.RDB$FILE_FLAGS & FILE_inactive) {
-					sprintf (Print_buffer, "inactive ");
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("inactive ");
 				}
 				if (FIL.RDB$FILE_FLAGS & FILE_manual) {
-					sprintf (Print_buffer, "manual ");
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("manual ");
 				}
 				else {
-					sprintf (Print_buffer, "auto ");
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("auto ");
 				}
 				if (FIL.RDB$FILE_FLAGS & FILE_conditional) {
-					sprintf (Print_buffer, "conditional ");
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("conditional ");
 				}
 			}
 			if (FIL.RDB$FILE_LENGTH) {
-				sprintf (Print_buffer, "length %ld ", FIL.RDB$FILE_LENGTH);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("length %ld ", FIL.RDB$FILE_LENGTH);
 			}
 			if (FIL.RDB$FILE_START) {
-				sprintf (Print_buffer, "starting %ld", FIL.RDB$FILE_START);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("starting %ld", FIL.RDB$FILE_START);
 			}
 			ISQL_printf (isqlGlob.Out, NEWLINE);
 		}
@@ -2118,10 +2090,9 @@ static void show_db()
 	FOR DBB IN RDB$DATABASE
 		WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING
 		AND DBB.RDB$CHARACTER_SET_NAME NE " "
-		sprintf (Print_buffer, "Default Character set: %s%s",
+		isqlGlob.printf("Default Character set: %s%s",
 				 DBB.RDB$CHARACTER_SET_NAME,
 				 NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
@@ -2143,21 +2114,20 @@ static processing_state show_dialect()
  **************************************/
 
 	if (isqlGlob.db_SQL_dialect > 0) {
-		sprintf(Print_buffer, "%38s%d%s%d",
+		isqlGlob.printf("%38s%d%s%d",
 				"Client SQL dialect is set to: ", isqlGlob.SQL_dialect,
 				" and database SQL dialect is: ", isqlGlob.db_SQL_dialect);
 	}
 	else if (isqlGlob.SQL_dialect == 0) {
-		sprintf(Print_buffer, "%38s%s",
+		isqlGlob.printf("%38s%s",
 				"Client SQL dialect has not been set",
 				" and no database has been connected yet.");
 	}
 	else {
-		sprintf(Print_buffer, "%38s%d%s",
+		isqlGlob.printf("%38s%d%s",
 				"Client SQL dialect is set to: ", isqlGlob.SQL_dialect,
 				". No database has been connected.");
 	}
-	ISQL_printf(isqlGlob.Out, Print_buffer);
 	ISQL_printf(isqlGlob.Out, NEWLINE);
 	return SKIP;
 }
@@ -2185,8 +2155,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 			SORTED BY FLD.RDB$FIELD_NAME
 
 			first = false;
-			sprintf (Print_buffer, "%38s%s", FLD.RDB$FIELD_NAME, (odd ? " " : NEWLINE));
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%38s%s", FLD.RDB$FIELD_NAME, (odd ? " " : NEWLINE));
 			odd = !odd;
 		END_FOR
 		ON_ERROR
@@ -2204,17 +2173,14 @@ static processing_state show_domains(const SCHAR* domain_name)
 			first = false;
 			// Print the name of the domain
 			fb_utils::exact_name(FLD.RDB$FIELD_NAME);
-			sprintf (Print_buffer, "%-32s", FLD.RDB$FIELD_NAME);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%-32s", FLD.RDB$FIELD_NAME);
 
 			// Array dimensions
 			if (!FLD.RDB$DIMENSIONS.NULL) {
-				sprintf (Print_buffer, "ARRAY OF ");
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("ARRAY OF ");
 				ISQL_array_dimensions (FLD.RDB$FIELD_NAME);
-				sprintf (Print_buffer, "%s                                ",
+				isqlGlob.printf("%s                                ",
 						 NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 			}
 
 			// Look through types array
@@ -2288,22 +2254,18 @@ static processing_state show_domains(const SCHAR* domain_name)
 
 			// Length for CHARs
 			if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
-				sprintf (Print_buffer, "(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
 			}
 
 			// Blob domains
 			if (FLD.RDB$FIELD_TYPE == BLOB) {
-				sprintf (Print_buffer, " segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf(" segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 				const int subtype  = FLD.RDB$FIELD_SUB_TYPE;
 				if (subtype >= 0 && subtype <= MAX_BLOBSUBTYPES) {
-					sprintf (Print_buffer, "%s", Sub_types[subtype]);
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("%s", Sub_types[subtype]);
 				}
 				else {
-					sprintf (Print_buffer, "%d", subtype);
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("%d", subtype);
 				}
 			}
 
@@ -2316,12 +2278,10 @@ static processing_state show_domains(const SCHAR* domain_name)
 			}
 
 			if (FLD.RDB$NULL_FLAG != 1) {
-				sprintf (Print_buffer, " Nullable");
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf(" Nullable");
 			}
 			else {
-				sprintf (Print_buffer, " Not Null");
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf(" Not Null");
 			}
 			ISQL_printf (isqlGlob.Out, NEWLINE);
 
@@ -2329,15 +2289,13 @@ static processing_state show_domains(const SCHAR* domain_name)
 			ISQL_get_default_source (NULL, FLD.RDB$FIELD_NAME,
 									 &default_source);
 			if (default_source.gds_quad_high) {
-				sprintf (Print_buffer, "                                ");
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("                                ");
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &default_source);
 				ISQL_printf (isqlGlob.Out, NEWLINE);
 			}
 
 			if (!FLD.RDB$VALIDATION_SOURCE.NULL) {
-				sprintf (Print_buffer, "                                ");
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("                                ");
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE);
 				ISQL_printf (isqlGlob.Out, NEWLINE);
 			}
@@ -2390,13 +2348,11 @@ static processing_state show_exceptions(const SCHAR* object)
 
 		if (!*object || !strcmp (EXC.RDB$EXCEPTION_NAME, object)) {
 			if (first) {
-				sprintf (Print_buffer, "Exception Name                  Used by, Type%s=============================== =============================================%s", NEWLINE, NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("Exception Name                  Used by, Type%s=============================== =============================================%s", NEWLINE, NEWLINE);
 			}
 			first = false;
 
-			sprintf (Print_buffer, "%-31s ", EXC.RDB$EXCEPTION_NAME);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%-31s ", EXC.RDB$EXCEPTION_NAME);
 
 			// Look up dependent objects --procedures and triggers
 			bool first_dep = true;
@@ -2406,8 +2362,7 @@ static processing_state show_exceptions(const SCHAR* object)
 				SORTED BY DEP.RDB$DEPENDENT_TYPE, DEP.RDB$DEPENDENT_NAME
 
 				if (!first_dep) {
-					sprintf (Print_buffer, "                                ");
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("                                ");
 				}
 				first_dep = false;
 
@@ -2419,21 +2374,19 @@ static processing_state show_exceptions(const SCHAR* object)
 				if (DEP.RDB$DEPENDENT_TYPE == 5)
 					strcpy (type, "Stored procedure");
 
-				sprintf (Print_buffer, "%s, %s%s",
+				isqlGlob.printf("%s, %s%s",
 						 DEP.RDB$DEPENDENT_NAME,
 						 type,
 						 NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
 				return ps_ERR;
 			END_ERROR;
 
-			sprintf (Print_buffer, "%s  %s%s", (first_dep ? NEWLINE : ""),
+			isqlGlob.printf("%s  %s%s", (first_dep ? NEWLINE : ""),
 					 EXC.RDB$MESSAGE,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 		if (!first)
 			ISQL_printf (isqlGlob.Out, NEWLINE);
@@ -2470,8 +2423,7 @@ static processing_state show_filters(const SCHAR* object)
 
 			first = false;
 			//fb_utils::exact_name(FIL.RDB$FUNCTION_NAME);
-			sprintf (Print_buffer, "%38s%s", FIL.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%38s%s", FIL.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
 			odd = !odd;
 		END_FOR
 		ON_ERROR
@@ -2496,15 +2448,13 @@ static processing_state show_filters(const SCHAR* object)
 	   fb_utils::exact_name(FIL.RDB$MODULE_NAME);
 	   fb_utils::exact_name(FIL.RDB$ENTRYPOINT);
 
-	   sprintf (Print_buffer, "BLOB Filter: %s %s%sInput subtype: %d Output subtype: %d%s",
+	   isqlGlob.printf("BLOB Filter: %s %s%sInput subtype: %d Output subtype: %d%s",
 				FIL.RDB$FUNCTION_NAME, NEWLINE,
 				TAB_AS_SPACES, FIL.RDB$INPUT_SUB_TYPE, FIL.RDB$OUTPUT_SUB_TYPE, NEWLINE);
-	   ISQL_printf (isqlGlob.Out, Print_buffer);
-	   sprintf (Print_buffer, "%sFilter library is %s%s%sEntry point is %s%s%s",
+	   isqlGlob.printf("%sFilter library is %s%s%sEntry point is %s%s%s",
 				TAB_AS_SPACES, FIL.RDB$MODULE_NAME, NEWLINE,
 				TAB_AS_SPACES, FIL.RDB$ENTRYPOINT, NEWLINE,
 				NEWLINE);
-	   ISQL_printf (isqlGlob.Out, Print_buffer);
 
 	END_FOR
 	ON_ERROR
@@ -2544,9 +2494,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 				SORTED BY FUN.RDB$FUNCTION_NAME
 
 				first = false;
-				//fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
-				sprintf (Print_buffer, "%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
 				odd = !odd;
 			END_FOR
 			ON_ERROR
@@ -2561,9 +2509,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 				SORTED BY FUN.RDB$FUNCTION_NAME
 
 				first = false;
-				//fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
-				sprintf (Print_buffer, "%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
 				odd = !odd;
 			END_FOR
 			ON_ERROR
@@ -2590,19 +2536,16 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 		fb_utils::exact_name(FUN.RDB$MODULE_NAME);
 		fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
 		if (first) {
-			sprintf (Print_buffer, "%sFunction %s:%s",
+			isqlGlob.printf("%sFunction %s:%s",
 					 NEWLINE,
 					 FUN.RDB$FUNCTION_NAME,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			sprintf (Print_buffer, "Function library is %s%s",
+			isqlGlob.printf("Function library is %s%s",
 				FUN.RDB$MODULE_NAME,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			sprintf (Print_buffer, "Entry point is %s%s",
+			isqlGlob.printf("Entry point is %s%s",
 					 FUN.RDB$ENTRYPOINT,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 
 		SSHORT ptype = (SSHORT) abs (FNA.RDB$MECHANISM);
@@ -2612,15 +2555,13 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 
 		first = false;
 		if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION) {
-			sprintf (Print_buffer, "Returns %s%s",
+			isqlGlob.printf("Returns %s%s",
 					 UDF_param_types[ptype],
 					 (FNA.RDB$MECHANISM < 0 ? " FREE_IT " : " "));
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 		else {
-			sprintf (Print_buffer, "Argument %d:%s ", FNA.RDB$ARGUMENT_POSITION,
+			isqlGlob.printf("Argument %d:%s ", FNA.RDB$ARGUMENT_POSITION,
 					 UDF_param_types[ptype]);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 		for (int i = 0; Column_types[i].type; i++)
 		{
@@ -2696,10 +2637,9 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 				V4FNA.RDB$ARGUMENT_POSITION EQ FNA.RDB$ARGUMENT_POSITION
 
 				fb_utils::exact_name(CHARSET.RDB$CHARACTER_SET_NAME);
-				sprintf (Print_buffer, "(%d) CHARACTER SET %s",
+				isqlGlob.printf("(%d) CHARACTER SET %s",
 						 (FNA.RDB$FIELD_LENGTH / MAX (1, CHARSET.RDB$BYTES_PER_CHARACTER)),
 						 CHARSET.RDB$CHARACTER_SET_NAME);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 
 			END_FOR
 			ON_ERROR
@@ -2796,7 +2736,7 @@ static processing_state show_generators(const SCHAR* object)
 				found = true;
 				if (isqlGlob.SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
 				{
-					sprintf (Print_buffer,
+					isqlGlob.printf(
 							 "Generator %s, current value is %" QUADFORMAT "d%s",
 							 GEN.RDB$GENERATOR_NAME,
 							 genid64,
@@ -2804,12 +2744,11 @@ static processing_state show_generators(const SCHAR* object)
 				}
 				else
 				{
-					sprintf (Print_buffer, "Generator %s, current value is %ld%s",
+					isqlGlob.printf("Generator %s, current value is %ld%s",
 							 GEN.RDB$GENERATOR_NAME,
 							 genid,
 							 NEWLINE);
 				}
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 			}
 			if (isc_dsql_free_statement (isc_status, &stmt, DSQL_drop))
 				ISQL_errmsg (isc_status);
@@ -2844,24 +2783,23 @@ static void show_index(SCHAR* relation_name,
  *
  **************************************/
 
-// Strip trailing blanks
+	// Strip trailing blanks
 
 	fb_utils::exact_name(relation_name);
 	fb_utils::exact_name(index_name);
 
-	sprintf(Print_buffer, "%s%s%s INDEX ON %s", index_name,
+	isqlGlob.printf("%s%s%s INDEX ON %s", index_name,
 			(unique_flag ? " UNIQUE" : ""),
 			(index_type == 1 ? " DESCENDING" : ""), relation_name);
-	ISQL_printf(isqlGlob.Out, Print_buffer);
 
-// Get column names
+	// Get column names
 
 	SCHAR collist[BUFFER_LENGTH512];
 
-	if (ISQL_get_index_segments(collist, sizeof(collist), index_name, false)) {
-		sprintf(Print_buffer, "(%s) %s%s", collist,
+	if (ISQL_get_index_segments(collist, sizeof(collist), index_name, false))
+	{
+		isqlGlob.printf("(%s) %s%s", collist,
 				(inactive ? "(inactive)" : ""), NEWLINE);
-		ISQL_printf(isqlGlob.Out, Print_buffer);
 	}
 }
 
@@ -2902,8 +2840,7 @@ static processing_state show_indices(const SCHAR* const* cmd)
 
 #ifdef EXPRESSION_INDICES
 			if (!IDX1.RDB$EXPRESSION_BLR.NULL) {
-				sprintf (Print_buffer, " COMPUTED BY ");
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf(" COMPUTED BY ");
 				if (!IDX1.RDB$EXPRESSION_SOURCE.NULL)
 					SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX1.RDB$EXPRESSION_SOURCE);
 				ISQL_printf (isqlGlob.Out, NEWLINE);
@@ -2935,8 +2872,7 @@ static processing_state show_indices(const SCHAR* const* cmd)
 
 #ifdef EXPRESSION_INDICES
 			if (!IDX2.RDB$EXPRESSION_BLR.NULL) {
-				sprintf (Print_buffer, " COMPUTED BY ");
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf(" COMPUTED BY ");
 				if (!IDX2.RDB$EXPRESSION_SOURCE.NULL)
 					SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX2.RDB$EXPRESSION_SOURCE);
 				ISQL_printf (isqlGlob.Out, NEWLINE);
@@ -2983,20 +2919,17 @@ static processing_state show_proc(const SCHAR* procname)
 			SORTED BY PRC.RDB$PROCEDURE_NAME
 
 			if (first_proc) {
-				sprintf (Print_buffer,
+				isqlGlob.printf(
 						 "Procedure Name                    Dependency, Type%s", NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
-				sprintf (Print_buffer,
+				isqlGlob.printf(
 						 "================================= ======================================%s", NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 				first_proc = false;
 			}
 
 		// Strip trailing blanks
 
 			fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
-			sprintf (Print_buffer, "%-34s", PRC.RDB$PROCEDURE_NAME);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%-34s", PRC.RDB$PROCEDURE_NAME);
 
 			bool first_dep = true;
 			FOR DEP IN RDB$DEPENDENCIES WITH
@@ -3007,13 +2940,11 @@ static processing_state show_proc(const SCHAR* procname)
 				fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
 			// Get column type name to print
 				if (!first_dep) {
-					sprintf (Print_buffer, "%s%34s", NEWLINE, "");
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("%s%34s", NEWLINE, "");
 				}
 				first_dep = false;
-				sprintf (Print_buffer, "%s, %s", DEP.RDB$DEPENDED_ON_NAME,
+				isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
 						 Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
@@ -3041,18 +2972,14 @@ static processing_state show_proc(const SCHAR* procname)
 		PRC.RDB$PROCEDURE_NAME EQ procname
 		first = false;
 
-		sprintf (Print_buffer, "Procedure text:%s", NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
-		sprintf (Print_buffer, "=============================================================================%s", NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("Procedure text:%s", NEWLINE);
+		isqlGlob.printf("=============================================================================%s", NEWLINE);
 
 		if (!PRC.RDB$PROCEDURE_SOURCE.NULL)
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &PRC.RDB$PROCEDURE_SOURCE);
-		sprintf (Print_buffer, "%s=============================================================================%s", NEWLINE, NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("%s=============================================================================%s", NEWLINE, NEWLINE);
 
-		sprintf (Print_buffer, "Parameters:%s", NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("Parameters:%s", NEWLINE);
 
 		FOR PRM IN RDB$PROCEDURE_PARAMETERS CROSS
 			FLD IN RDB$FIELDS WITH
@@ -3132,10 +3059,9 @@ static processing_state show_proc(const SCHAR* procname)
 				strcpy(lenstring, "");
 			}
 
-			sprintf (Print_buffer, "%-33s %s %s%s ", PRM.RDB$PARAMETER_NAME,
+			isqlGlob.printf("%-33s %s %s%s ", PRM.RDB$PARAMETER_NAME,
 					 (PRM.RDB$PARAMETER_TYPE ? "OUTPUT" : "INPUT"),
 					 type_name, lenstring);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 
 			// Show international character sets and collations
 
@@ -3181,8 +3107,7 @@ static processing_state show_role(const SCHAR* object)
 			SORTED BY X.RDB$ROLE_NAME
 
 			first = false;
-			sprintf (Print_buffer, "%38s%s", X.RDB$ROLE_NAME, (odd ? " " : NEWLINE));
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%38s%s", X.RDB$ROLE_NAME, (odd ? " " : NEWLINE));
 			odd = !odd;
 
 		END_FOR
@@ -3226,14 +3151,11 @@ static processing_state show_role(const SCHAR* object)
 					else
 						strcpy(SQL_identifier, role_name);
 
-					sprintf(Print_buffer, "Role %s is granted to:\n", SQL_identifier);
-					ISQL_printf(isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("Role %s is granted to:\n", SQL_identifier);
 				}
 
 				fb_utils::exact_name(PRV.RDB$USER);
-				sprintf(Print_buffer, "%s\n", PRV.RDB$USER);
-
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%s\n", PRV.RDB$USER);
 
 			END_FOR
 			ON_ERROR
@@ -3251,8 +3173,7 @@ static processing_state show_role(const SCHAR* object)
 				else
 					strcpy(SQL_identifier, role_name);
 
-			    sprintf(Print_buffer, "Role %s isn't granted to anyone.\n", SQL_identifier);
-				ISQL_printf(isqlGlob.Out, Print_buffer);
+			    isqlGlob.printf("Role %s isn't granted to anyone.\n", SQL_identifier);
 			}
 
 		END_FOR
@@ -3298,8 +3219,7 @@ static processing_state show_table(
 		if (first) {
 			if (!REL.RDB$EXTERNAL_FILE.NULL)
 			{
-				sprintf (Print_buffer, "External file: %s\n", REL.RDB$EXTERNAL_FILE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("External file: %s\n", REL.RDB$EXTERNAL_FILE);
 			}
 		}
 		first = false;
@@ -3336,8 +3256,7 @@ static processing_state show_table(
 
 		// Print the column name in first column
 
-		sprintf (Print_buffer, "%-32s", RFR.RDB$FIELD_NAME);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
+		isqlGlob.printf("%-32s", RFR.RDB$FIELD_NAME);
 
 		// Decide if this is a user-created domain
 		if (!((strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0) &&
@@ -3345,25 +3264,21 @@ static processing_state show_table(
 			  FLD.RDB$SYSTEM_FLAG != 1))
 		{
 			fb_utils::exact_name(FLD.RDB$FIELD_NAME);
-			sprintf (Print_buffer, "(%s) ", FLD.RDB$FIELD_NAME);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("(%s) ", FLD.RDB$FIELD_NAME);
 		}
 
 		// Detect the existence of arrays
 
 		if (!FLD.RDB$DIMENSIONS.NULL) {
-			sprintf (Print_buffer, "ARRAY OF ");
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("ARRAY OF ");
 			ISQL_array_dimensions (FLD.RDB$FIELD_NAME);
-			sprintf (Print_buffer, "%s                                ", NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s                                ", NEWLINE);
 		}
 
 		// If a computed field, show the source and exit
 		// Note that view columns which are computed are dealt with later.
 		if (!FLD.RDB$COMPUTED_BLR.NULL) {
-			sprintf (Print_buffer, "Computed by: ");
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("Computed by: ");
 			if (!FLD.RDB$COMPUTED_SOURCE.NULL)
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE);
 			ISQL_printf (isqlGlob.Out, NEWLINE);
@@ -3429,26 +3344,22 @@ static processing_state show_table(
 			}
 
 		if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
-			sprintf (Print_buffer, "(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
 
 			// Show international character sets and collations
 			show_charsets(relation_name, RFR.RDB$FIELD_NAME, true, false, false, false);
 		}
 
 		if (FLD.RDB$FIELD_TYPE == BLOB) {
-			sprintf (Print_buffer, " segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf(" segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 			const int subtype  = FLD.RDB$FIELD_SUB_TYPE;
 			if (subtype >= 0 && subtype <= MAX_BLOBSUBTYPES)
 			{
-				sprintf (Print_buffer, "%s", Sub_types[subtype]);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%s", Sub_types[subtype]);
 			}
 			else
 			{
-				sprintf (Print_buffer, "%d", subtype);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%d", subtype);
 			}
 
 			// Show international character sets and collations
@@ -3458,8 +3369,7 @@ static processing_state show_table(
 
 		if (!FLD.RDB$COMPUTED_BLR.NULL) {
 			// A view expression. Other computed fields will not reach this point.
-			sprintf (Print_buffer, " Expression%s", NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf(" Expression%s", NEWLINE);
 			continue;
 		}
 
@@ -3469,13 +3379,11 @@ static processing_state show_table(
 			(!RFR.RDB$BASE_FIELD.NULL &&
 			 !ISQL_get_null_flag (relation_name, RFR.RDB$FIELD_NAME)))
 		{
-			sprintf (Print_buffer, " Not Null ");
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf(" Not Null ");
 		}
 		else
 		{
-			sprintf (Print_buffer, " Nullable ");
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf(" Nullable ");
 		}
 
 		// Handle defaults for columns
@@ -3488,8 +3396,7 @@ static processing_state show_table(
 
 		// Validation clause for domains
 		if (!FLD.RDB$VALIDATION_SOURCE.NULL) {
-			sprintf (Print_buffer, "                                ");
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("                                ");
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE);
 			ISQL_printf (isqlGlob.Out, NEWLINE);
 		}
@@ -3512,8 +3419,7 @@ static processing_state show_table(
 			REL.RDB$RELATION_NAME EQ relation_name AND
 			REL.RDB$VIEW_BLR NOT MISSING
 
-			sprintf (Print_buffer, "View Source:%s==== ======%s", NEWLINE, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("View Source:%s==== ======%s", NEWLINE, NEWLINE);
 			if (!REL.RDB$VIEW_SOURCE.NULL)
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &REL.RDB$VIEW_SOURCE);
 			ISQL_printf (isqlGlob.Out, NEWLINE);
@@ -3537,25 +3443,19 @@ static processing_state show_table(
 		ISQL_get_index_segments (collist, sizeof(collist), RELC1.RDB$INDEX_NAME, false);
 		if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "PRIMARY", 7)) {
 			fb_utils::exact_name(RELC1.RDB$CONSTRAINT_NAME);
-			sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			sprintf (Print_buffer, "  Primary key (%s)%s", collist, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
+			isqlGlob.printf("  Primary key (%s)%s", collist, NEWLINE);
 		}
 		else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "UNIQUE", 6)) {
 			fb_utils::exact_name(RELC1.RDB$CONSTRAINT_NAME);
-			sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			sprintf (Print_buffer, "  Unique key (%s)%s", collist, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
+			isqlGlob.printf("  Unique key (%s)%s", collist, NEWLINE);
 		}
 		else if (!strncmp (RELC1.RDB$CONSTRAINT_TYPE, "FOREIGN", 7)) {
 			fb_utils::exact_name(RELC1.RDB$CONSTRAINT_NAME);
-			sprintf (Print_buffer, "CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("CONSTRAINT %s:%s", RELC1.RDB$CONSTRAINT_NAME, NEWLINE);
 			ISQL_get_index_segments (collist, sizeof(collist), RELC1.RDB$INDEX_NAME, false);
-			sprintf (Print_buffer, "  Foreign key (%s)", collist);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("  Foreign key (%s)", collist);
 
 			FOR RELC2 IN RDB$RELATION_CONSTRAINTS CROSS
 				REFC IN RDB$REF_CONSTRAINTS WITH
@@ -3565,9 +3465,8 @@ static processing_state show_table(
 				ISQL_get_index_segments (collist, sizeof(collist), RELC2.RDB$INDEX_NAME, false);
 				fb_utils::exact_name(RELC2.RDB$RELATION_NAME);
 
-				sprintf (Print_buffer, "    References %s (%s)",
+				isqlGlob.printf("    References %s (%s)",
 						 RELC2.RDB$RELATION_NAME, collist);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 
 				if (!REFC.RDB$UPDATE_RULE.NULL) {
 					ISQL_truncate_term (REFC.RDB$UPDATE_RULE,
@@ -3583,8 +3482,7 @@ static processing_state show_table(
 										  false);
 				}
 
-				sprintf (Print_buffer, "%s", NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%s", NEWLINE);
 
 			END_FOR
 			ON_ERROR
@@ -3608,12 +3506,10 @@ static processing_state show_table(
 		if (strncmp (R_C.RDB$CONSTRAINT_NAME, "INTEG_", 6)) {
 			fb_utils::exact_name(C_C.RDB$TRIGGER_NAME);
 			fb_utils::exact_name(R_C.RDB$CONSTRAINT_NAME);
-			sprintf (Print_buffer, "CONSTRAINT %s:%s", R_C.RDB$CONSTRAINT_NAME,
+			isqlGlob.printf("CONSTRAINT %s:%s", R_C.RDB$CONSTRAINT_NAME,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
-			sprintf (Print_buffer, "  Not Null Column (%s)%s",
+			isqlGlob.printf("  Not Null Column (%s)%s",
 					 C_C.RDB$TRIGGER_NAME, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		}
 	END_FOR
 	ON_ERROR
@@ -3664,23 +3560,20 @@ static processing_state show_trigger(
 
 			if (first)
 			{
-				sprintf (Print_buffer,
+				isqlGlob.printf(
 						 "Table name                       Trigger name%s", NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
-				sprintf (Print_buffer,
+				isqlGlob.printf(
 						 "===========                      ============%s", NEWLINE);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 				first = false;
 			}
 
 			fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
 			fb_utils::exact_name(TRG.RDB$RELATION_NAME);
-			sprintf (Print_buffer, "%-32s %s%s%s",
+			isqlGlob.printf("%-32s %s%s%s",
 					 TRG.RDB$RELATION_NAME,
 					 TRG.RDB$TRIGGER_NAME,
 					 (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
@@ -3729,29 +3622,26 @@ static processing_state show_trigger(
 		fb_utils::exact_name(TRG.RDB$RELATION_NAME);
 
 		if (first) {
-			sprintf (Print_buffer, "%sTriggers on Table %s:%s",
+			isqlGlob.printf("%sTriggers on Table %s:%s",
 					 NEWLINE,
 					 TRG.RDB$RELATION_NAME,
 					 NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
 			first = false;
 		}
 
-		sprintf (Print_buffer, "%s, Sequence: %d, Type: %s, %s%s",
+		isqlGlob.printf("%s, Sequence: %d, Type: %s, %s%s",
 				 TRG.RDB$TRIGGER_NAME,
 				 TRG.RDB$TRIGGER_SEQUENCE,
 				 trigger_action (TRG.RDB$TRIGGER_TYPE),
 				 (TRG.RDB$TRIGGER_INACTIVE ? "Inactive" : "Active"),
 				 NEWLINE);
-		ISQL_printf (isqlGlob.Out, Print_buffer);
 
 		if (show_source) {
 			// Use print_blob to print the blob
 
 			if (!TRG.RDB$TRIGGER_SOURCE.NULL)
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
-			sprintf (Print_buffer, "%s+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++%s", NEWLINE, NEWLINE);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("%s+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++%s", NEWLINE, NEWLINE);
 		}
 
 	END_FOR
