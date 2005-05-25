@@ -1,3 +1,16 @@
+2005-05-24 06:41  robocop
+
+	* firebird2/src/isql/: extract.epp (1.60), isql.epp (1.147), isql.h
+	(1.47), show.epp (1.73):
+	
+	Lower the clutter.
+
+2005-05-24 05:54  robocop
+
+	* firebird2/src/jrd/pwd.cpp (1.43):
+	
+	Fix fb_interpret misuse done by Alex.
+
 2005-05-24 01:19  arnobrinkman
 
 	* firebird2/src/jrd/Optimizer.cpp (1.29):
