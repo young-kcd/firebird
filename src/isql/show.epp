@@ -510,7 +510,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANT_OPTION prev_option;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$FIELD_NAME prev_field;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$USER_TYPE prev_user_type;
-	SCHAR user_string[44];
+	SCHAR user_string[WORDLENGTH * 2 + 20];
 	bool first = true;
 
 	if (!*object)
@@ -720,7 +720,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			return (SKIP);
 	}
 
-// No relation called "object" was found, try procedure "object"
+	// No relation called "object" was found, try procedure "object"
 	if (obj_type == obj_procedure || obj_type == 255)
 	{
 
@@ -817,13 +817,15 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			return (SKIP);
 	}
 
-// No procedure called "object" was found, try role "object"
+	// No procedure called "object" was found, try role "object"
 	SCHAR role_name[BUFFER_LENGTH128];
 
 	if (obj_type == obj_sql_role || obj_type == 255) {
 		// No procedure called "object" was found, try role "object"
-		/* CVC: This code could be superseded by SHOW_grant_roles() below
-		   with the sole difference of the sort fields. */
+		// CVC: This code could be superseded by SHOW_grant_roles() below
+		// with the sole difference of the sort fields.
+		// This part is only used by SHOW GRANT <object> command
+		// Metadata extraction and SHOW GRANT with no param uses SHOW_grant_roles.
 
 		FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ object
 
@@ -913,7 +915,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 	char with_option[18];
 	char user_string[44];
 
-// process role "object"
+	// process role "object"
 
 	FOR PRV IN RDB$USER_PRIVILEGES WITH
 		PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
