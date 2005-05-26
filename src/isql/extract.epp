@@ -145,7 +145,7 @@ int EXTRACT_ddl(LegacyTables flag,
 				"/*=========================================================*/%s",
 				NEWLINE);
 	}
-	isqlGlob.printf(" %s", NEWLINE);
+	isqlGlob.printf(NEWLINE);
 
 	isqlGlob.printf("SET SQL DIALECT %d; %s", isqlGlob.db_SQL_dialect, NEWLINE);
 
@@ -347,7 +347,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 								  SINGLE_QUOTE);
 				isqlGlob.printf("EXTERNAL FILE %s ", SQL_identifier2);
 			}
-			ISQL_printf (isqlGlob.Out, "(");
+			isqlGlob.printf("(");
 		}
 		else
 		{
@@ -372,7 +372,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 		if (!FLD.RDB$COMPUTED_BLR.NULL)
 		{
-			ISQL_printf (isqlGlob.Out, "COMPUTED BY ");
+			isqlGlob.printf("COMPUTED BY ");
 			if (!FLD.RDB$COMPUTED_SOURCE.NULL)
 				ISQL_print_validation (isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE, true, gds_trans);
 		}
@@ -384,10 +384,10 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
-				isqlGlob.printf("%s", SQL_identifier);
+				isqlGlob.prints(SQL_identifier);
 			}
 			else
-				isqlGlob.printf("%s", FLD.RDB$FIELD_NAME);
+				isqlGlob.prints(FLD.RDB$FIELD_NAME);
 
 			// International character sets
 			// Print only the character set
@@ -399,7 +399,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				char_set_id = FLD.RDB$CHARACTER_SET_ID;
 				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, true, char_sets);
 				if (char_sets[0])
-					ISQL_printf (isqlGlob.Out, char_sets);
+					isqlGlob.prints(char_sets);
 			}
 		}
 		else
@@ -468,7 +468,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 							sprintf (Print_buffer, "%s",
 									 Column_types[i].type_name);
 					}
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.prints(Print_buffer);
 					break;
 				}
 
@@ -477,13 +477,11 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				if (FLD.RDB$CHARACTER_LENGTH.NULL)
 				{
 
-					sprintf (Print_buffer, "(%d)", FLD.RDB$FIELD_LENGTH);
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("(%d)", FLD.RDB$FIELD_LENGTH);
 				}
 				else
 				{
-					sprintf (Print_buffer, "(%d)", FLD.RDB$CHARACTER_LENGTH);
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("(%d)", FLD.RDB$CHARACTER_LENGTH);
 				}
 
 			// Catch arrays after printing the type  
@@ -494,17 +492,15 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			if (FLD.RDB$FIELD_TYPE == BLOB)
 			{
 				const int subtype = FLD.RDB$FIELD_SUB_TYPE;
-				ISQL_printf (isqlGlob.Out, " SUB_TYPE ");
+				isqlGlob.printf(" SUB_TYPE ");
 				if ((subtype > 0) && (subtype <= MAX_BLOBSUBTYPES))
-					ISQL_printf (isqlGlob.Out, Sub_types[subtype]);
+					isqlGlob.prints(Sub_types[subtype]);
 				else
 				{
-					sprintf (Print_buffer, "%d", subtype);
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("%d", subtype);
 				}
-				sprintf (Print_buffer, " SEGMENT SIZE %u",
+				isqlGlob.printf(" SEGMENT SIZE %u",
 						 (USHORT) FLD.RDB$SEGMENT_LENGTH);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
 			}
 
 			// International character sets 
@@ -527,7 +523,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				if ((char_set_id != default_char_set_id) || collation)
 					ISQL_get_character_sets (char_set_id, 0, false, char_sets);
 				if (char_sets[0])
-					ISQL_printf (isqlGlob.Out, char_sets);
+					isqlGlob.prints(char_sets);
 				// CVC: Someone deleted the code that checks intchar when handling collations
 				// several lines below, so it didn't have any effect. Commented it.
 				//if (!char_set_id)
@@ -541,7 +537,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		if (!RFR.RDB$DEFAULT_SOURCE.NULL)
 		{
 
-			ISQL_printf (isqlGlob.Out, " ");
+			isqlGlob.printf(" ");
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &RFR.RDB$DEFAULT_SOURCE);
 		}
 
@@ -571,9 +567,8 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 						sprintf (Print_buffer, " CONSTRAINT %s", SQL_identifier);
 					}
 					else
-					sprintf (Print_buffer, " CONSTRAINT %s",
+						isqlGlob.printf(" CONSTRAINT %s",
 							 CON.RDB$CONSTRAINT_NAME);
-					ISQL_printf (isqlGlob.Out, Print_buffer);
 				}
 			END_FOR
 			ON_ERROR
@@ -581,7 +576,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				return FINI_ERROR;
 			END_ERROR;
 
-			ISQL_printf (isqlGlob.Out, " NOT NULL");
+			isqlGlob.printf(" NOT NULL");
 		}
 
 		// Handle collations after defaults
@@ -591,7 +586,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			char_sets[0] = '\0';
 			ISQL_get_character_sets (char_set_id, collation, true, char_sets);
 			if (char_sets[0])
-				ISQL_printf (isqlGlob.Out, char_sets);
+				isqlGlob.prints(char_sets);
 		}
 	END_FOR
 	ON_ERROR
@@ -694,11 +689,11 @@ static void get_procedure_args(const char* proc_name)
 				first_time = false;
 				if (ptype == 0)
 				{ // this is the input part 
-					ISQL_printf (isqlGlob.Out, "(");
+					isqlGlob.printf("(");
 				}
 				else
 				{ // we are in the output part 
-					ISQL_printf (isqlGlob.Out, "RETURNS (");
+					isqlGlob.printf("RETURNS (");
 				}
 			}
 			else
@@ -782,7 +777,7 @@ static void get_procedure_args(const char* proc_name)
 									 Column_types[i].type_name);
 						}
 					}
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.prints(Print_buffer);
 					break;
 				}
 
@@ -794,13 +789,11 @@ static void get_procedure_args(const char* proc_name)
 				if (FLD.RDB$CHARACTER_LENGTH.NULL)
 				{
 
-					sprintf (Print_buffer, "(%d)", FLD.RDB$FIELD_LENGTH);
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("(%d)", FLD.RDB$FIELD_LENGTH);
 				}
 				else
 				{
-					sprintf (Print_buffer, "(%d)", FLD.RDB$CHARACTER_LENGTH);
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.printf("(%d)", FLD.RDB$CHARACTER_LENGTH);
 				}
 
 
@@ -818,7 +811,7 @@ static void get_procedure_args(const char* proc_name)
 				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID,
 										 FLD.RDB$COLLATION_ID, false, char_sets);
 				if (char_sets[0])
-					ISQL_printf (isqlGlob.Out, char_sets);
+					isqlGlob.prints(char_sets);
 			}
 		END_FOR
 		ON_ERROR
@@ -1174,7 +1167,7 @@ static void list_all_triggers()
 
 		//  If trigger is not SQL put it in comments 
 		if (TRG.RDB$FLAGS != TRG_sql)
-			ISQL_printf (isqlGlob.Out, "/* ");
+			isqlGlob.printf("/* ");
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
@@ -1197,7 +1190,7 @@ static void list_all_triggers()
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
 
 		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
-		isqlGlob.printf(" %s", NEWLINE);
+		isqlGlob.printf(NEWLINE);
 
 		if (TRG.RDB$FLAGS != TRG_sql)
 		{
@@ -1244,7 +1237,7 @@ static void list_check()
 
 		fb_utils::exact_name(TRG.RDB$RELATION_NAME);
 
-		isqlGlob.printf(" %s ", NEWLINE);
+		isqlGlob.printf(NEWLINE);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
@@ -1293,8 +1286,8 @@ static void print_set(bool* set_used)
  **************************************
  *
  * Functional description
- *    print (using ISQL_printf) the word "SET"
- *    if the first line of the ALTER DATABASE
+ *    print the word "SET"
+ *    in the first line of the ALTER DATABASE
  *    settings options. Also, add trailing
  *    comma for end of prior line if needed.
  *
@@ -1312,6 +1305,7 @@ static void print_set(bool* set_used)
 	}
 }
 #endif
+
 
 static void list_create_db()
 {
@@ -1335,7 +1329,7 @@ static void list_create_db()
 	bool nodb = false;
 	if (!*isqlGlob.global_Target_db)
 	{
-		ISQL_printf(isqlGlob.Out, "/* ");
+		isqlGlob.printf("/* ");
 		strcpy(isqlGlob.global_Target_db, isqlGlob.global_Db_name);
 		nodb = true;
 	}
@@ -1414,7 +1408,7 @@ static void list_create_db()
 			{
 				isqlGlob.printf(" LENGTH %ld", FIL.RDB$FILE_LENGTH);
 			}
-			isqlGlob.printf("%s", NEWLINE);
+			isqlGlob.printf(NEWLINE);
 		}
 
 		if (FIL.RDB$FILE_FLAGS & FILE_shadow)
@@ -1430,13 +1424,13 @@ static void list_create_db()
 						 FIL.RDB$SHADOW_NUMBER,
 						 FIL.RDB$FILE_NAME);
 				if (FIL.RDB$FILE_FLAGS & FILE_inactive)
-					ISQL_printf (isqlGlob.Out, "INACTIVE ");
+					isqlGlob.printf("INACTIVE ");
 				if (FIL.RDB$FILE_FLAGS & FILE_manual)
-					ISQL_printf (isqlGlob.Out, "MANUAL ");
+					isqlGlob.printf("MANUAL ");
 				else
-					ISQL_printf (isqlGlob.Out, "AUTO ");
+					isqlGlob.printf("AUTO ");
 				if (FIL.RDB$FILE_FLAGS & FILE_conditional)
-					ISQL_printf (isqlGlob.Out, "CONDITIONAL ");
+					isqlGlob.printf("CONDITIONAL ");
 			}
 			if (FIL.RDB$FILE_LENGTH)
 			{
@@ -1446,7 +1440,7 @@ static void list_create_db()
 			{
 				isqlGlob.printf("STARTING %ld ", FIL.RDB$FILE_START);
 			}
-			ISQL_printf (isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 		}
 
 	END_FOR
@@ -1570,7 +1564,7 @@ static void list_domain_table(const SCHAR* table_name,
 						sprintf (Print_buffer, "%s", Column_types[i].type_name);
 					}
 				}
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.prints(Print_buffer);
 				break;
 			}
 
@@ -1578,26 +1572,22 @@ static void list_domain_table(const SCHAR* table_name,
 		if (FLD.RDB$FIELD_TYPE == BLOB)
 		{
 			const int subtype = FLD.RDB$FIELD_SUB_TYPE;
-			ISQL_printf (isqlGlob.Out, " SUB_TYPE ");
+			isqlGlob.printf(" SUB_TYPE ");
 			if ((subtype > 0) && (subtype <= MAX_BLOBSUBTYPES))
 			{
-				sprintf (Print_buffer, "%s", Sub_types[subtype]);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.prints(Sub_types[subtype]);
 			}
 			else
 			{
-				sprintf (Print_buffer, "%d", subtype);
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.printf("%d", subtype);
 			}
-			sprintf (Print_buffer, " SEGMENT SIZE %u", (USHORT) FLD.RDB$SEGMENT_LENGTH);
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf(" SEGMENT SIZE %u", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 		}
 
 		else if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 		{
 			// Length for chars 
-			sprintf (Print_buffer, "(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
-			ISQL_printf (isqlGlob.Out, Print_buffer);
+			isqlGlob.printf("(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
 		}
 
 		/* Bug 8261: do not show the collation information just yet!  If you
@@ -1613,7 +1603,7 @@ static void list_domain_table(const SCHAR* table_name,
 				(!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0))
 				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, char_sets);
 			if (char_sets[0])
-				ISQL_printf (isqlGlob.Out, char_sets);
+				isqlGlob.prints(char_sets);
 		}
 
 		if (!FLD.RDB$DIMENSIONS.NULL)
@@ -1630,7 +1620,7 @@ static void list_domain_table(const SCHAR* table_name,
 			ISQL_print_validation (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE, false, gds_trans);
 		}
 		if (FLD.RDB$NULL_FLAG == 1)
-			ISQL_printf (isqlGlob.Out, " NOT NULL");
+			isqlGlob.printf(" NOT NULL");
 
 		// Bug 8261:  Now show the collation order information 
 		/* Show the collation order if one has been specified.  If the collation
@@ -1646,7 +1636,7 @@ static void list_domain_table(const SCHAR* table_name,
 			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID,
 									 true, char_sets);
 			if (char_sets[0])
-				ISQL_printf (isqlGlob.Out, char_sets);
+				isqlGlob.prints(char_sets);
 		}
 
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
@@ -1755,18 +1745,18 @@ static void list_domains(SSHORT default_char_set_id)
 						sprintf (Print_buffer, "%s", Column_types[i].type_name);
 					}
 				}
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.prints(Print_buffer);
 				break;
 			}
 
 		if (FLD.RDB$FIELD_TYPE == BLOB)
 		{
 			const int subtype = FLD.RDB$FIELD_SUB_TYPE;
-			ISQL_printf (isqlGlob.Out, " SUB_TYPE ");
+			isqlGlob.printf(" SUB_TYPE ");
 
 			if ((subtype > 0) && (subtype <= MAX_BLOBSUBTYPES))
 			{
-				isqlGlob.printf("%s", Sub_types[subtype]);
+				isqlGlob.prints(Sub_types[subtype]);
 			}
 			else
 			{
@@ -1795,7 +1785,7 @@ static void list_domains(SSHORT default_char_set_id)
 				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, char_sets);
 			}
 			if (char_sets[0])
-				ISQL_printf (isqlGlob.Out, char_sets);
+				isqlGlob.prints(char_sets);
 		}
 
 		if (!FLD.RDB$DIMENSIONS.NULL)
@@ -1812,7 +1802,7 @@ static void list_domains(SSHORT default_char_set_id)
 			ISQL_print_validation (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE, false, gds_trans);
 		}
 		if (FLD.RDB$NULL_FLAG == 1)
-			ISQL_printf (isqlGlob.Out, " NOT NULL");
+			isqlGlob.printf(" NOT NULL");
 
 		// Bug 8261:  Now show the collation order information 
 		/* Show the collation order if one has been specified.  If the collation
@@ -1828,7 +1818,7 @@ static void list_domains(SSHORT default_char_set_id)
 			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID,
 									 true, char_sets);
 			if (char_sets[0])
-				ISQL_printf (isqlGlob.Out, char_sets);
+				isqlGlob.prints(char_sets);
 		}
 
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
@@ -1965,7 +1955,7 @@ static void list_foreign()
 
 		ISQL_get_index_segments (collist, sizeof(collist), RELC1.RDB$INDEX_NAME, true);
 
-		isqlGlob.printf(" %s", NEWLINE);
+		isqlGlob.printf(NEWLINE);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
@@ -2272,7 +2262,7 @@ static void list_generators()
 
 		if (first)
 		{
-			ISQL_printf2(isqlGlob.Out,
+			isqlGlob.printf(
 					 "%s/*  Generators or sequences */%s",
 					 NEWLINE,
 					 NEWLINE);
@@ -2296,7 +2286,7 @@ static void list_generators()
 		return;
 	END_ERROR;
 
-	ISQL_printf(isqlGlob.Out, NEWLINE);
+	isqlGlob.printf(NEWLINE);
 }
 
 
@@ -2328,7 +2318,7 @@ static void list_index()
 
 		if (first)
 		{
-			ISQL_printf2(isqlGlob.Out,
+			isqlGlob.printf(
 					 "%s/*  Index definitions for all user tables */%s",
 					 NEWLINE,
 					 NEWLINE);
@@ -2361,7 +2351,7 @@ static void list_index()
 #ifdef EXPRESSION_INDICES
 		if (!IDX.RDB$EXPRESSION_BLR.NULL)
 		{
-			ISQL_printf (isqlGlob.Out, " COMPUTED BY ");
+			isqlGlob.printf(" COMPUTED BY ");
 			if (!IDX.RDB$EXPRESSION_SOURCE.NULL)
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX.RDB$EXPRESSION_SOURCE);
 			isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);

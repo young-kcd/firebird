@@ -51,6 +51,7 @@
 #include "../jrd/ods.h"
 #include "../isql/extra_proto.h"
 #include "../common/utils_proto.h"
+#include "../jrd/obj.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -564,7 +565,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					make_priv_string (priv_flags, priv_string);
 
 					if (first && optional_msg)
-						ISQL_printf (isqlGlob.Out, optional_msg);
+						isqlGlob.prints(optional_msg);
 
 					first = false;
 
@@ -692,7 +693,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			if (prev_option != -1) {
 				make_priv_string (priv_flags, priv_string);
 				if (first && optional_msg)
-					ISQL_printf (isqlGlob.Out, optional_msg);
+					isqlGlob.prints(optional_msg);
 				first = false;
 
 				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -732,7 +733,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
 
 				if (first && optional_msg)
-					ISQL_printf (isqlGlob.Out, optional_msg);
+					isqlGlob.prints(optional_msg);
 
 				first = false;
 				fb_utils::exact_name(PRV.RDB$USER);
@@ -847,10 +848,10 @@ processing_state SHOW_grants2 (const SCHAR* object,
 						 user_string, with_option, terminator, NEWLINE);
 
 				if (first && optional_msg)
-					ISQL_printf (isqlGlob.Out, optional_msg);
+					isqlGlob.prints(optional_msg);
 
 				first = false;
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.prints(Print_buffer);
 
 			END_FOR
 			ON_ERROR
@@ -917,7 +918,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 
 		if (first) {
 			if (*first && optional_msg) {
-				ISQL_printf (isqlGlob.Out, optional_msg);
+				isqlGlob.prints(optional_msg);
 			}
 			*first = false;
 		}
@@ -1032,23 +1033,30 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 	if (!cmd[1])
 		return ps_ERR;
 		
-// Only show version works if there is no db attached
-	if ((!strcmp(cmd[1], "VERSION")) || (!strcmp(cmd[1], "VER"))) {
+	// Only show version and show sql dialect work if there is no db attached
+	bool handled = true;
+	if ((!strcmp(cmd[1], "VERSION")) || (!strcmp(cmd[1], "VER")))
+	{
 		TEXT msg_string[MSG_LENGTH];
 		ISQL_msg_get(VERSION, msg_string, FB_VERSION);
 		isqlGlob.printf("%s%s", msg_string, NEWLINE);
 		isc_version(&DB, local_fprintf, NULL);
 	}
-	else if (!strcmp(cmd[1], "SQL")) {
+	else if (!strcmp(cmd[1], "SQL"))
+	{
 		if (!strcmp(cmd[2], "DIALECT"))
 			ret = show_dialect();
 		else
 			ret = ps_ERR;
 	}
-	else if (!ISQL_dbcheck())
-		ret = ps_ERR;
+	else
+	{
+		handled = false;
+		if (!ISQL_dbcheck())
+			ret = ps_ERR;
+	}
 		
-	if (ret == ps_ERR)
+	if (ret == ps_ERR || handled)
 		return ret;
 		
 	TEXT SQL_id_for_grant[BUFFER_LENGTH128];
@@ -1136,12 +1144,15 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		break;
 
 	case ShowOptions::system:
-		ISQL_printf(isqlGlob.Out, "Relations:");
-		ISQL_printf(isqlGlob.Out, NEWLINE);
-		show_all_tables(1);
-		ISQL_printf(isqlGlob.Out, "Functions:");
-		ISQL_printf(isqlGlob.Out, NEWLINE);
-		show_functions("", 1);
+		{
+			TEXT msg[MSG_LENGTH];
+			ISQL_msg_get(MSG_TABLES, msg, NULL);
+			isqlGlob.printf("%s%s", msg, NEWLINE);
+			show_all_tables(1);
+			ISQL_msg_get(MSG_FUNCTIONS, msg, NULL);
+			isqlGlob.printf("%s%s", msg, NEWLINE);
+			show_functions("", 1);
+		}
 		break;
 
 	case ShowOptions::index:
@@ -1413,9 +1424,7 @@ static void local_fprintf(void* format_ignored,
  *
  **************************************/
 
-	fprintf(isqlGlob.Out, "%s", string);
-	fprintf(isqlGlob.Out, "%s", NEWLINE);
-
+	isqlGlob.printf("%s%s", string, NEWLINE);
 }
 
 
@@ -1516,7 +1525,7 @@ static processing_state show_all_tables(SSHORT sys_flag)
 	}
 
 	if (!first) {
-		ISQL_printf(isqlGlob.Out, NEWLINE);
+		isqlGlob.printf(NEWLINE);
 		return SKIP;
 	}
 	else
@@ -1602,10 +1611,10 @@ static void show_charsets(
 	}
 	if (char_sets[0]) {
 		if (doIndent)
-			ISQL_printf(isqlGlob.Out, spaces);
-		ISQL_printf(isqlGlob.Out, char_sets);
+			isqlGlob.printf(spaces);
+		isqlGlob.prints(char_sets);
 		if (doReturn)
-			ISQL_printf(isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 	}
 }
 
@@ -1644,7 +1653,7 @@ static processing_state show_check(const SCHAR* object)
 
 		if (!TRG.RDB$TRIGGER_SOURCE.NULL)
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
-		ISQL_printf (isqlGlob.Out, NEWLINE);
+		isqlGlob.printf(NEWLINE);
 
 	END_FOR
 	ON_ERROR
@@ -1669,7 +1678,7 @@ static void show_comment(const char* objtype, char* name1, char* name2,
 	const bool escape_quotes = showextract == cmmExtract;
 
 	if (escape_quotes && banner)
-		ISQL_printf(isqlGlob.Out, banner);
+		isqlGlob.prints(banner);
 
 	if (name1)
 		fb_utils::exact_name(name1);
@@ -1694,14 +1703,14 @@ static void show_comment(const char* objtype, char* name1, char* name2,
 	const char* quot = escape_quotes ? "'" : "";
 
 	if (!name1)
-		ISQL_printf2(isqlGlob.Out, "COMMENT ON %-12s IS %s", objtype, quot);
+		isqlGlob.printf("COMMENT ON %-12s IS %s", objtype, quot);
 	else if (!name2)
-		ISQL_printf2(isqlGlob.Out, "COMMENT ON %-12s %s IS %s", objtype, name1, quot);
+		isqlGlob.printf("COMMENT ON %-12s %s IS %s", objtype, name1, quot);
 	else
-		ISQL_printf2(isqlGlob.Out, "COMMENT ON %-12s %s.%s IS %s", objtype, name1, name2, quot);
+		isqlGlob.printf("COMMENT ON %-12s %s.%s IS %s", objtype, name1, name2, quot);
 		
 	SHOW_print_metadata_text_blob(isqlGlob.Out, blobfld, escape_quotes);
-	ISQL_printf2(isqlGlob.Out, "%s%s%s", quot, isqlGlob.global_Term, NEWLINE);
+	isqlGlob.printf("%s%s%s", quot, isqlGlob.global_Term, NEWLINE);
 }
 
 
@@ -2068,7 +2077,7 @@ static void show_db()
 			if (FIL.RDB$FILE_START) {
 				isqlGlob.printf("starting %ld", FIL.RDB$FILE_START);
 			}
-			ISQL_printf (isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 		}
 
 	END_FOR
@@ -2079,12 +2088,12 @@ static void show_db()
 
 	SCHAR info_buf[BUFFER_LENGTH400];
 
-// First general database parameters
+	// First general database parameters
 
 	bool translate = true;
 
 	if (SHOW_dbb_parameters(DB, info_buf, db_items, sizeof(db_items), translate)) {
-		ISQL_printf(isqlGlob.Out, info_buf);
+		isqlGlob.prints(info_buf);
 	}
 
 	FOR DBB IN RDB$DATABASE
@@ -2128,7 +2137,7 @@ static processing_state show_dialect()
 				"Client SQL dialect is set to: ", isqlGlob.SQL_dialect,
 				". No database has been connected.");
 	}
-	ISQL_printf(isqlGlob.Out, NEWLINE);
+	isqlGlob.printf(NEWLINE);
 	return SKIP;
 }
 
@@ -2163,7 +2172,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 			return ps_ERR;
 		END_ERROR;
 		if (!first)
-			ISQL_printf(isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 	}
 	else {						// List named domain
 
@@ -2247,7 +2256,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 						}
 					}
 
-					ISQL_printf (isqlGlob.Out, Print_buffer);
+					isqlGlob.prints(Print_buffer);
 
 					break;
 				}
@@ -2262,7 +2271,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 				isqlGlob.printf(" segment %u, subtype ", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 				const int subtype  = FLD.RDB$FIELD_SUB_TYPE;
 				if (subtype >= 0 && subtype <= MAX_BLOBSUBTYPES) {
-					isqlGlob.printf("%s", Sub_types[subtype]);
+					isqlGlob.prints(Sub_types[subtype]);
 				}
 				else {
 					isqlGlob.printf("%d", subtype);
@@ -2283,7 +2292,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 			else {
 				isqlGlob.printf(" Not Null");
 			}
-			ISQL_printf (isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 
 			ISC_QUAD default_source;
 			ISQL_get_default_source (NULL, FLD.RDB$FIELD_NAME,
@@ -2291,13 +2300,13 @@ static processing_state show_domains(const SCHAR* domain_name)
 			if (default_source.gds_quad_high) {
 				isqlGlob.printf("                                ");
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &default_source);
-				ISQL_printf (isqlGlob.Out, NEWLINE);
+				isqlGlob.printf(NEWLINE);
 			}
 
 			if (!FLD.RDB$VALIDATION_SOURCE.NULL) {
 				isqlGlob.printf("                                ");
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE);
-				ISQL_printf (isqlGlob.Out, NEWLINE);
+				isqlGlob.printf(NEWLINE);
 			}
 
 			// Show collations
@@ -2346,9 +2355,13 @@ static processing_state show_exceptions(const SCHAR* object)
 		fb_utils::exact_name(EXC.RDB$EXCEPTION_NAME);
 		// List all objects if none specified, or just the named exception
 
-		if (!*object || !strcmp (EXC.RDB$EXCEPTION_NAME, object)) {
+		if (!*object || !strcmp (EXC.RDB$EXCEPTION_NAME, object))
+		{
 			if (first) {
-				isqlGlob.printf("Exception Name                  Used by, Type%s=============================== =============================================%s", NEWLINE, NEWLINE);
+				isqlGlob.printf("Exception Name                  Used by, Type%s%s%s",
+					NEWLINE,
+					"=============================== =============================================",
+					NEWLINE);
 			}
 			first = false;
 
@@ -2357,23 +2370,29 @@ static processing_state show_exceptions(const SCHAR* object)
 			// Look up dependent objects --procedures and triggers
 			bool first_dep = true;
 			FOR DEP IN RDB$DEPENDENCIES WITH
-				DEP.RDB$DEPENDED_ON_TYPE = 7 AND
+				DEP.RDB$DEPENDED_ON_TYPE = obj_exception AND
 				DEP.RDB$DEPENDED_ON_NAME EQ EXC.RDB$EXCEPTION_NAME
 				SORTED BY DEP.RDB$DEPENDENT_TYPE, DEP.RDB$DEPENDENT_NAME
 
 				if (!first_dep) {
-					isqlGlob.printf("                                ");
+					isqlGlob.printf("%31s ", "");
 				}
 				first_dep = false;
 
 				fb_utils::exact_name(DEP.RDB$DEPENDENT_NAME);
 
-				strcpy (type, "Unknown");
-				if (DEP.RDB$DEPENDENT_TYPE == 2)
-					strcpy (type, "Trigger");
-				if (DEP.RDB$DEPENDENT_TYPE == 5)
-					strcpy (type, "Stored procedure");
-
+				switch (DEP.RDB$DEPENDENT_TYPE)
+				{
+					case obj_trigger:
+						strcpy (type, "Trigger");
+						break;
+					case obj_procedure:
+						strcpy (type, "Stored procedure");
+						break;
+					default:
+						strcpy (type, "Unknown");
+						break;
+				}
 				isqlGlob.printf("%s, %s%s",
 						 DEP.RDB$DEPENDENT_NAME,
 						 type,
@@ -2384,12 +2403,14 @@ static processing_state show_exceptions(const SCHAR* object)
 				return ps_ERR;
 			END_ERROR;
 
-			isqlGlob.printf("%s  %s%s", (first_dep ? NEWLINE : ""),
-					 EXC.RDB$MESSAGE,
-					 NEWLINE);
+			if (first_dep)
+				printf(NEWLINE);
+
+			if (!EXC.RDB$MESSAGE.NULL && strlen(EXC.RDB$MESSAGE))
+				isqlGlob.printf("Msg: %s%s", EXC.RDB$MESSAGE, NEWLINE);
 		}
 		if (!first)
-			ISQL_printf (isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
@@ -2431,7 +2452,7 @@ static processing_state show_filters(const SCHAR* object)
 			return ps_ERR;
 		END_ERROR;
 		if (!first) {
-			ISQL_printf(isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 			return (SKIP);
 		}
 		else
@@ -2519,7 +2540,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 		}
 		if (!first)
 		{
-			ISQL_printf(isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 			return (SKIP);
 		}
 		else
@@ -2622,7 +2643,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 						sprintf (Print_buffer, "%s", Column_types[i].type_name);
 					}
 				}
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.prints(Print_buffer);
 				break;
 			}
 
@@ -2648,7 +2669,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 			END_ERROR;
 		}
 
-		ISQL_printf (isqlGlob.Out, NEWLINE);
+		isqlGlob.printf(NEWLINE);
 
 	END_FOR
 	ON_ERROR
@@ -2843,7 +2864,7 @@ static processing_state show_indices(const SCHAR* const* cmd)
 				isqlGlob.printf(" COMPUTED BY ");
 				if (!IDX1.RDB$EXPRESSION_SOURCE.NULL)
 					SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX1.RDB$EXPRESSION_SOURCE);
-				ISQL_printf (isqlGlob.Out, NEWLINE);
+				isqlGlob.printf(NEWLINE);
 			}
 #endif
 
@@ -2875,7 +2896,7 @@ static processing_state show_indices(const SCHAR* const* cmd)
 				isqlGlob.printf(" COMPUTED BY ");
 				if (!IDX2.RDB$EXPRESSION_SOURCE.NULL)
 					SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX2.RDB$EXPRESSION_SOURCE);
-				ISQL_printf (isqlGlob.Out, NEWLINE);
+				isqlGlob.printf(NEWLINE);
 			}
 #endif
 
@@ -2950,7 +2971,7 @@ static processing_state show_proc(const SCHAR* procname)
 				ISQL_errmsg (isc_status);
 				return ps_ERR;
 			END_ERROR;
-			ISQL_printf (isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 
 		END_FOR
 		ON_ERROR
@@ -3071,7 +3092,7 @@ static processing_state show_proc(const SCHAR* procname)
 			{
 				show_charsets(NULL, FLD.RDB$FIELD_NAME, true, true, false, false);
 			}
-			ISQL_printf (isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 
 		END_FOR
 		ON_ERROR
@@ -3118,7 +3139,7 @@ static processing_state show_role(const SCHAR* object)
 
 		if (!first)
 		{
-			ISQL_printf(isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 			return SKIP;
 		}
 		else
@@ -3281,7 +3302,7 @@ static processing_state show_table(
 			isqlGlob.printf("Computed by: ");
 			if (!FLD.RDB$COMPUTED_SOURCE.NULL)
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE);
-			ISQL_printf (isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 			continue;
 		}
 
@@ -3332,14 +3353,15 @@ static processing_state show_table(
 						sprintf (Print_buffer, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
 					}
 					else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-							 (FLD.RDB$FIELD_SCALE < 0)) {
+							 (FLD.RDB$FIELD_SCALE < 0))
+					{
 						sprintf (Print_buffer, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
 					}
 					else {
 						sprintf (Print_buffer, "%s", Column_types[i].type_name);
 					}
 				}
-				ISQL_printf (isqlGlob.Out, Print_buffer);
+				isqlGlob.prints(Print_buffer);
 				break;
 			}
 
@@ -3355,7 +3377,7 @@ static processing_state show_table(
 			const int subtype  = FLD.RDB$FIELD_SUB_TYPE;
 			if (subtype >= 0 && subtype <= MAX_BLOBSUBTYPES)
 			{
-				isqlGlob.printf("%s", Sub_types[subtype]);
+				isqlGlob.prints(Sub_types[subtype]);
 			}
 			else
 			{
@@ -3392,13 +3414,13 @@ static processing_state show_table(
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &RFR.RDB$DEFAULT_SOURCE);
 		else if (!FLD.RDB$DEFAULT_SOURCE.NULL)
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
-		ISQL_printf (isqlGlob.Out, NEWLINE);
+		isqlGlob.printf(NEWLINE);
 
 		// Validation clause for domains
 		if (!FLD.RDB$VALIDATION_SOURCE.NULL) {
 			isqlGlob.printf("                                ");
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE);
-			ISQL_printf (isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 		}
 
 		// Handle collations
@@ -3422,7 +3444,7 @@ static processing_state show_table(
 			isqlGlob.printf("View Source:%s==== ======%s", NEWLINE, NEWLINE);
 			if (!REL.RDB$VIEW_SOURCE.NULL)
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &REL.RDB$VIEW_SOURCE);
-			ISQL_printf (isqlGlob.Out, NEWLINE);
+			isqlGlob.printf(NEWLINE);
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
@@ -3482,7 +3504,7 @@ static processing_state show_table(
 										  false);
 				}
 
-				isqlGlob.printf("%s", NEWLINE);
+				isqlGlob.printf(NEWLINE);
 
 			END_FOR
 			ON_ERROR

@@ -226,6 +226,9 @@ const int USAGE3 					= 111;		// Usage message 3
 const int TIME_PROMPT               = 112;		// Enter %s as H:M:S>
 const int TIMESTAMP_PROMPT          = 113;      // Enter %s as Y/MON/D H:MIN:S[.MSEC]>
 const int TIMESTAMP_ERR				= 114;		// Bad TIMESTAMP: %s\n
+const int ONLY_FIRST_BLOBS          = 116;		// Printing only the first %d blobs.
+const int MSG_TABLES                = 117;      // Tables:
+const int MSG_FUNCTIONS             = 118;      // Functions:
 
 // Initialize types
 
@@ -333,6 +336,7 @@ public:
 	// from isql.epp
 	USHORT major_ods;
 	void printf(const char* buffer, ...);
+	void prints(const char* buffer);
 };
 
 extern IsqlGlobals isqlGlob;
