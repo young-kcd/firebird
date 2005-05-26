@@ -51,7 +51,6 @@
 #include "../jrd/ods.h"
 #include "../isql/extra_proto.h"
 #include "../common/utils_proto.h"
-#include "../jrd/obj.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -510,24 +509,27 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	BASED_ON RDB$USER_PRIVILEGES.RDB$USER prev_user;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANT_OPTION prev_option;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$FIELD_NAME prev_field;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$USER_TYPE prev_user_type;
 	SCHAR user_string[44];
 	bool first = true;
 
 	if (!*object)
 		return ps_ERR;
 
-// Query against user_privileges instead of looking at rdb$security_classes
+	// Query against user_privileges instead of looking at rdb$security_classes
 
 	prev_option = -1;
 	prev_user[0] = '\0';
 	prev_field[0] = '\0';
+	prev_user_type = -1;
 	char priv_string[MAX_PRIV_LIST] = "";
 	char col_string[BUFFER_LENGTH128] = "";
 	char with_option[18] = "";
 	USHORT priv_flags = 0;
 	SSHORT prev_field_null = -1;
 
-	if (obj_type == obj_relation || obj_type == 255) {
+	if (obj_type == obj_relation || obj_type == 255)
+	{
 
 		// Find the user specified relation and show its privileges
 
@@ -559,7 +561,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					(prev_field_null != -1 &&
 					 prev_field_null != PRV.RDB$FIELD_NAME.NULL) ||
 					(!prev_field_null && strcmp (prev_field, PRV.RDB$FIELD_NAME)) ||
-					(prev_option != -1 && prev_option != PRV.RDB$GRANT_OPTION))
+					(prev_option != -1 && prev_option != PRV.RDB$GRANT_OPTION) ||
+					(prev_user_type != -1 && prev_user_type != PRV.RDB$USER_TYPE))
 				{
 
 					make_priv_string (priv_flags, priv_string);
@@ -592,6 +595,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				prev_option = PRV.RDB$GRANT_OPTION;
 				prev_field_null = PRV.RDB$FIELD_NAME.NULL;
 				strcpy (prev_field, PRV.RDB$FIELD_NAME);
+				prev_user_type = PRV.RDB$USER_TYPE;
 
 				switch (PRV.RDB$USER_TYPE) {
 				case obj_relation:
@@ -717,7 +721,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	}
 
 // No relation called "object" was found, try procedure "object"
-	if (obj_type == obj_procedure || obj_type == 255) {
+	if (obj_type == obj_procedure || obj_type == 255)
+	{
 
 		FOR FIRST 1 P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ object
 
