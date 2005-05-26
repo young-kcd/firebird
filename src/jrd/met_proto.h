@@ -52,7 +52,7 @@ void		MET_delete_shadow(Jrd::thread_db*, USHORT);
 void		MET_error(const TEXT*, ...);
 Jrd::Format*	MET_format(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 bool		MET_get_char_subtype(Jrd::thread_db*, SSHORT*, const UCHAR*, USHORT);
-Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const TEXT*,
+Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
 								Jrd::CompilerScratch**, Firebird::MetaName&, USHORT, USHORT);
 class Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);

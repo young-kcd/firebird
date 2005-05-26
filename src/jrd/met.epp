@@ -955,7 +955,7 @@ bool MET_get_char_subtype(thread_db* tdbb,
 
 jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 							  jrd_rel*					relation,
-							  const TEXT*				blob,
+							  const UCHAR*				blob,
 							  CompilerScratch*			view_csb,
 							  bid*						blob_id,
 							  jrd_req**					request,
@@ -986,7 +986,7 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 	{
 		node = PAR_blr(	tdbb,
 						relation,
-						reinterpret_cast<const UCHAR*>(blob),
+						blob,
 						view_csb,
 						&csb,
 						request,
@@ -3346,7 +3346,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 
 			case RSR_computed_blr:
 				field->fld_computation = (dependencies) ?
-					MET_get_dependencies(tdbb, relation, (const TEXT*) p, csb,
+					MET_get_dependencies(tdbb, relation, p, csb,
 										 NULL, NULL, NULL, field->fld_name,
 										 obj_computed, 0) :
 					PAR_blr(tdbb, relation, p, csb, NULL, NULL, false, 0);
@@ -4157,35 +4157,40 @@ static void store_dependencies(thread_db*					tdbb,
         jrd_rel* relation = NULL;
         jrd_prc* procedure = NULL;
         const Firebird::MetaName* dpdo_name = 0;
+        
         switch (dpdo_type) {
         case obj_relation:
 			relation = (jrd_rel*) node->nod_arg[e_dep_object];
 			dpdo_name = &relation->rel_name;
             break;
         case obj_procedure:
-            procedure = (jrd_prc*) node->nod_arg [e_dep_object];
+            procedure = (jrd_prc*) node->nod_arg[e_dep_object];
             dpdo_name = &procedure->prc_name;
             break;
         case obj_exception:
 			{
-				const SLONG number = (IPTR) node->nod_arg [e_dep_object];
+				const SLONG number = (IPTR) node->nod_arg[e_dep_object];
 				MET_lookup_exception (tdbb, number, name, 0, 0);
 				dpdo_name = &name;
-				break;
 			}
-            /* CVC: Here I'm going to track those pesky things named generators and UDFs. */
+			break;
+            // CVC: Here I'm going to track those pesky things named generators and UDFs.
 		case obj_generator:
 			{
-				const SLONG number = (IPTR) node->nod_arg [e_dep_object];
+				const SLONG number = (IPTR) node->nod_arg[e_dep_object];
 				MET_lookup_generator_id (tdbb, number, name);
 				dpdo_name = &name;
-				break;
 			}
+			break;
         case obj_udf:
 			{
-				UserFunction* udf = (UserFunction*) node->nod_arg [e_dep_object];
+				UserFunction* udf = (UserFunction*) node->nod_arg[e_dep_object];
 				dpdo_name = &udf->fun_symbol->sym_string;
 			}
+			break;
+		case obj_index:
+			name = (TEXT*) node->nod_arg[e_dep_object];
+			dpdo_name = &name;
 			break;
 		}
 

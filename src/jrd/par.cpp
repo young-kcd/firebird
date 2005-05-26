@@ -960,7 +960,12 @@ static void par_dependency(thread_db*   tdbb,
 	if (csb->csb_rpt[stream].csb_relation) {
 		node->nod_arg[e_dep_object] =
 			(jrd_nod*) csb->csb_rpt[stream].csb_relation;
-		node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_relation;
+		// How do I determine reliably this is a view?
+		// At this time, rel_view_rse is still null.
+		//if (is_view)
+		//	node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_view;
+		//else
+			node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_relation;
 	}
 	else if (csb->csb_rpt[stream].csb_procedure) {
 		node->nod_arg[e_dep_object] =
@@ -1626,76 +1631,22 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		USHORT extra_count = 0;
 		jrd_nod* access_type = 0;
 		Firebird::MetaName name;
+		TEXT* idx_name = 0;
 		
 		switch (node_type) {
 		case blr_navigational:
 			{
-			access_type = plan->nod_arg[e_retrieve_access_type] =
-				PAR_make_node(tdbb, e_access_type_length);
-			access_type->nod_type = nod_navigational;
+				access_type = plan->nod_arg[e_retrieve_access_type] =
+					PAR_make_node(tdbb, e_access_type_length);
+				access_type->nod_type = nod_navigational;
 
-			/* pick up the index name and look up the appropriate ids */
+				/* pick up the index name and look up the appropriate ids */
 
-			par_name(csb, name);
-            /* CVC: We can't do this. Index names are identifiers.
-               for (p = name; *p; *p++)
-               *p = UPPER (*p);
-               */
-			SLONG relation_id;
-			SSHORT idx_status;
-			const SLONG index_id =
-				MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
-
-			if (idx_status == MET_object_unknown ||
-				idx_status == MET_object_inactive)
-			{
-				if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
-					warning(csb, isc_indexname, isc_arg_string,
-							ERR_cstring(name), isc_arg_string,
-							relation->rel_name.c_str(), 0);
-				else
-					error(csb, isc_indexname, isc_arg_string,
-						  ERR_cstring(name), isc_arg_string,
-						  relation->rel_name.c_str(), 0);
-			}
-
-			/* save both the relation id and the index id, since 
-			   the relation could be a base relation of a view;
-			   save the index name also, for convenience */
-
-			access_type->nod_arg[e_access_type_relation] = (jrd_nod*) (IPTR) relation_id;
-			access_type->nod_arg[e_access_type_index] = (jrd_nod*) (IPTR) index_id;
-			access_type->nod_arg[e_access_type_index_name] = (jrd_nod*) ALL_cstring(tdbb->getDefaultPool(), name.c_str());
-
-			if (BLR_PEEK == blr_indices)
-				// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
-				extra_count = 3;
-			else
-				break;
-			}
-		case blr_indices:
-			{
-			if (extra_count)
-				BLR_BYTE; // skip blr_indices
-			USHORT count = (USHORT) BLR_BYTE;
-			jrd_nod* temp = plan->nod_arg[e_retrieve_access_type] =
-				PAR_make_node(tdbb, count * e_access_type_length + extra_count);
-			for (USHORT i = 0; i < extra_count; i++) {
-				temp->nod_arg[i] = access_type->nod_arg[i];
-			}
-			temp->nod_type = (extra_count) ? nod_navigational : nod_indices;
-			if (extra_count)
-				delete access_type;
-			access_type = temp;
-
-			/* pick up the index names and look up the appropriate ids */
-
-			for (jrd_nod** arg = access_type->nod_arg + extra_count; count--;) {
 				par_name(csb, name);
-          		/* Nickolay Samofatov: We can't do this. Index names are identifiers.
-				 for (p = name; *p; *p++)
-				 *p = UPPER(*p);
-  	             */
+	            /* CVC: We can't do this. Index names are identifiers.
+	               for (p = name; *p; *p++)
+	               *p = UPPER (*p);
+	               */
 				SLONG relation_id;
 				SSHORT idx_status;
 				const SLONG index_id =
@@ -1714,16 +1665,91 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 							  relation->rel_name.c_str(), 0);
 				}
 
-				/* save both the relation id and the index id, since 
+				/* save both the relation id and the index id, since
 				   the relation could be a base relation of a view;
 				   save the index name also, for convenience */
 
-				*arg++ = (jrd_nod*) (IPTR) relation_id;
-				*arg++ = (jrd_nod*) (IPTR) index_id;
-				*arg++ = (jrd_nod*) ALL_cstring(tdbb->getDefaultPool(), name.c_str());
+				access_type->nod_arg[e_access_type_relation] = (jrd_nod*) (IPTR) relation_id;
+				access_type->nod_arg[e_access_type_index] = (jrd_nod*) (IPTR) index_id;
+				idx_name = ALL_cstring(tdbb->getDefaultPool(), name.c_str());
+				access_type->nod_arg[e_access_type_index_name] = (jrd_nod*) idx_name;
+
+				if (csb->csb_g_flags & csb_get_dependencies)
+				{
+	                jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
+	                dep_node->nod_type = nod_dependency;
+	                dep_node->nod_arg[e_dep_object] = (jrd_nod*) idx_name;
+	                dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_index;
+	                csb->csb_dependencies.push(dep_node);
+	            }
+
+				if (BLR_PEEK == blr_indices)
+					// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
+					extra_count = 3;
+				else
+					break;
+			}
+		case blr_indices:
+			{
+				if (extra_count)
+					BLR_BYTE; // skip blr_indices
+				USHORT count = (USHORT) BLR_BYTE;
+				jrd_nod* temp = plan->nod_arg[e_retrieve_access_type] =
+					PAR_make_node(tdbb, count * e_access_type_length + extra_count);
+				for (USHORT i = 0; i < extra_count; i++) {
+					temp->nod_arg[i] = access_type->nod_arg[i];
+				}
+				temp->nod_type = (extra_count) ? nod_navigational : nod_indices;
+				if (extra_count)
+					delete access_type;
+				access_type = temp;
+
+				/* pick up the index names and look up the appropriate ids */
+
+				for (jrd_nod** arg = access_type->nod_arg + extra_count; count--;) {
+					par_name(csb, name);
+	          		/* Nickolay Samofatov: We can't do this. Index names are identifiers.
+					 for (p = name; *p; *p++)
+					 *p = UPPER(*p);
+	  	             */
+					SLONG relation_id;
+					SSHORT idx_status;
+					const SLONG index_id =
+						MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
+
+					if (idx_status == MET_object_unknown ||
+						idx_status == MET_object_inactive)
+					{
+						if (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment)
+							warning(csb, isc_indexname, isc_arg_string,
+									ERR_cstring(name), isc_arg_string,
+									relation->rel_name.c_str(), 0);
+						else
+							error(csb, isc_indexname, isc_arg_string,
+								  ERR_cstring(name), isc_arg_string,
+								  relation->rel_name.c_str(), 0);
+					}
+
+					/* save both the relation id and the index id, since
+					   the relation could be a base relation of a view;
+					   save the index name also, for convenience */
+
+					*arg++ = (jrd_nod*) (IPTR) relation_id;
+					*arg++ = (jrd_nod*) (IPTR) index_id;
+					idx_name = ALL_cstring(tdbb->getDefaultPool(), name.c_str());
+					*arg++ = (jrd_nod*) idx_name;
+
+					if (csb->csb_g_flags & csb_get_dependencies)
+					{
+		                jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
+		                dep_node->nod_type = nod_dependency;
+		                dep_node->nod_arg[e_dep_object] = (jrd_nod*) idx_name;
+		                dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_index;
+		                csb->csb_dependencies.push(dep_node);
+		            }
+				}
 			}
 			break;
-			}
 		case blr_sequential:
 			break;
 		default:
