@@ -175,7 +175,10 @@ and trigger-new is:
 			SQL_INT64 columns and generator values
  */
  
-// Version 7: RDB$DESCRIPTION in roles and generators.
+/* Version 7: RDB$DESCRIPTION in roles and generators.
+			  RDB$FILE_NAME in character_sets and collations
+			  RDB$BASE_COLLATION_NAME and RDB$SPECIFIC_ATTRIBUTES in collations
+ */
 const int ATT_BACKUP_FORMAT		= 7;	// ASF: when change this, change the text of the message gbak_inv_bkup_ver too
 
 // format version number for ranges for arrays 
@@ -505,7 +508,9 @@ enum att_type {
 	att_coll_subtype,		// Unused: 93-11-12 Daves 
 	att_coll_sysflag,
 	att_coll_description,
-	att_coll_funct
+	att_coll_funct,
+	att_coll_base_collation_name,
+	att_coll_specific_attr
 };
 
 

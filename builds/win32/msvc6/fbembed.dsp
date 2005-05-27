@@ -53,7 +53,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib advapi32.lib mpr.lib ws2_32.lib version.lib ole32.lib /nologo /dll /machine:I386 /out:"..\..\..\temp\release\firebird/bin/fbembed.dll"
+# ADD LINK32 kernel32.lib user32.lib advapi32.lib mpr.lib ws2_32.lib version.lib ole32.lib icuuc.lib icuin.lib /nologo /dll /machine:I386 /out:"..\..\..\temp\release\firebird/bin/fbembed.dll" /libpath:../../../extern/icu/lib
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
 
@@ -80,7 +81,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib ole32.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird/bin/fbembed.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib ole32.lib icuuc.lib icuin.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird/bin/fbembed.dll" /pdbtype:sept /libpath:../../../extern/icu/lib
+# SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
 
@@ -299,13 +301,6 @@ SOURCE=..\..\..\src\jrd\version.rc
 # Begin Source File
 
 SOURCE=..\defs\fbclient.def
-
-!IF  "$(CFG)" == "fbembed - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # End Target
 # End Project

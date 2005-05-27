@@ -71,14 +71,19 @@ private:
 
 public:
 	ConfigRoot(MemoryPool& p) : PermanentStorage(p),
-		root_dir(getPool()), config_file(getPool()) 
+		install_dir(getPool()), root_dir(getPool()), config_file(getPool()) 
 	{
 		GetRoot();
+		install_dir = root_dir;
 		config_file = root_dir + string(CONFIG_FILE);
 	}
 
 
 	virtual ~ConfigRoot() {}
+
+	const char *getInstallDirectory() const {
+		return install_dir.c_str();
+	}
 
 	const char *getRootDirectory() const {
 		return root_dir.c_str();
@@ -92,7 +97,7 @@ protected:
 
 	
 private:
-	string root_dir, config_file;
+	string install_dir, root_dir, config_file;
 	void addSlash() {
 		if (root_dir.rfind(PathUtils::dir_sep) != root_dir.length() - 1)
 		{

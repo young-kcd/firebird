@@ -30,21 +30,19 @@
 
 CHARSET_ENTRY(CS_unicode_fss)
 {
-	csptr->charset_version = 40;
-	csptr->charset_id = CS_UNICODE_FSS;
+	csptr->charset_version = CHARSET_VERSION_1;
 	csptr->charset_name = (const ASCII*) "UNICODE_FSS";
-	csptr->charset_flags = 0;
+	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS | CHARSET_ASCII_BASED;
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_max_bytes_per_char = 3;
 	csptr->charset_space_length = 1;
 	csptr->charset_space_character = (const BYTE*) " ";	/* 0x20 */
-	csptr->charset_well_formed = NULL;
-	CV_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_UNICODE_FSS,
+	csptr->charset_fn_well_formed = NULL;
+	CV_convert_init(&csptr->charset_to_unicode,
 					reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_fss_to_unicode_cc),
 					NULL, NULL);
-	CV_convert_init(&csptr->charset_from_unicode, CS_UNICODE_FSS, CS_UNICODE_UCS2,
+	CV_convert_init(&csptr->charset_from_unicode,
 					reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_unicode_to_fss),
 					NULL, NULL);
 	CHARSET_RETURN;
 }
-

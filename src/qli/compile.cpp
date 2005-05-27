@@ -678,6 +678,7 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 		return node;
 
 	case nod_upcase:
+	case nod_lowcase:
 		value = node->nod_arg[0];
 		node->nod_arg[0] = compile_field(value, request, internal_flag);
 		return node;

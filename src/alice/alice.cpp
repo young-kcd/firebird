@@ -192,7 +192,7 @@ int common_main(int			argc,
 #endif
 
 	AliceGlobals gblInstance(output_proc, output_data);
-	AliceGlobals* tdgbl = &gblInstance; 
+	AliceGlobals* tdgbl = &gblInstance;
 	AliceGlobals::putSpecific(tdgbl);
 
 	try {
@@ -266,7 +266,7 @@ int common_main(int			argc,
 	tdgbl->ALICE_data.ua_shutdown_delay = 0;
 	const TEXT* database = NULL;
 	TEXT	string[512];
-	
+
 	argv++;
 	// tested outside the loop
 	const in_sw_tab_t* table = alice_in_sw_table;
@@ -301,7 +301,7 @@ int common_main(int			argc,
 		{
 			const TEXT* p = (TEXT*) table->in_sw_name;
 			if (!p) {
-				ALICE_print(2, *--argv, 0, 0, 0, 0);	// msg 2: invalid switch %s 
+				ALICE_print(2, *--argv, 0, 0, 0, 0);	// msg 2: invalid switch %s
 				error = true;
 				break;
 			}
@@ -321,11 +321,11 @@ int common_main(int			argc,
 			tdgbl->ALICE_data.ua_debug++;
 		}
 		if (table->in_sw_value == sw_z) {
-			ALICE_print(3, GDS_VERSION, 0, 0, 0, 0);	// msg 3: gfix version %s 
+			ALICE_print(3, GDS_VERSION, 0, 0, 0, 0);	// msg 3: gfix version %s
 		}
 		if ((table->in_sw_incompatibilities & switches) ||
 			(table->in_sw_requires && !(table->in_sw_requires & switches))) {
-			ALICE_print(4, 0, 0, 0, 0, 0);	// msg 4: incompatible switch combination 
+			ALICE_print(4, 0, 0, 0, 0, 0);	// msg 4: incompatible switch combination
 			error = true;
 			break;
 		}
@@ -355,44 +355,44 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & sw_begin_log) {
 			if (--argc <= 0) {
-				ALICE_error(5);	// msg 5: replay log pathname required 
+				ALICE_error(5);	// msg 5: replay log pathname required
 			}
 			expand_filename(*argv++, tdgbl->ALICE_data.ua_log_file);
 		}
 
 		if (table->in_sw_value & (sw_buffers)) {
 			if (--argc <= 0) {
-				ALICE_error(6);	// msg 6: number of page buffers for cache required 
+				ALICE_error(6);	// msg 6: number of page buffers for cache required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if ((!(tdgbl->ALICE_data.ua_page_buffers = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7);	// msg 7: numeric value required 
+				ALICE_error(7);	// msg 7: numeric value required
 			}
 			if (tdgbl->ALICE_data.ua_page_buffers < 0) {
-				ALICE_error(8);	// msg 8: positive numeric value required 
+				ALICE_error(8);	// msg 8: positive numeric value required
 			}
 		}
 
 		if (table->in_sw_value & (sw_housekeeping)) {
 			if (--argc <= 0) {
-				ALICE_error(113);	// msg 113: dialect number required 
+				ALICE_error(113);	// msg 113: dialect number required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if ((!(tdgbl->ALICE_data.ua_sweep_interval = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7);	// msg 7: numeric value required 
+				ALICE_error(7);	// msg 7: numeric value required
 			}
 			if (tdgbl->ALICE_data.ua_sweep_interval < 0) {
-				ALICE_error(8);	// msg 8: positive numeric value required 
+				ALICE_error(8);	// msg 8: positive numeric value required
 			}
 		}
 
 		if (table->in_sw_value & (sw_set_db_dialect)) {
 			if (--argc <= 0) {
-				ALICE_error(113);	// msg 113: dialect info is required XXX 
+				ALICE_error(113);	// msg 113: dialect info is required XXX
 			}
 
 			ALICE_down_case(*argv++, string, sizeof(string));
@@ -400,7 +400,7 @@ int common_main(int			argc,
 			if ((!(tdgbl->ALICE_data.ua_db_SQL_dialect = atoi(string))) &&
 				(strcmp(string, "0")))
 			{
-				ALICE_error(7);	// msg 7: numeric value required 
+				ALICE_error(7);	// msg 7: numeric value required
 			}
 
 			// JMB: Removed because tdgbl->ALICE_data.ua_db_SQL_dialect is
@@ -414,12 +414,12 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & (sw_commit | sw_rollback | sw_two_phase)) {
 			if (--argc <= 0) {
-				ALICE_error(10);	// msg 10: transaction number or "all" required 
+				ALICE_error(10);	// msg 10: transaction number or "all" required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!(tdgbl->ALICE_data.ua_transaction = atoi(string))) {
 				if (strcmp(string, "all")) {
-					ALICE_error(10);	// msg 10: transaction number or "all" required 
+					ALICE_error(10);	// msg 10: transaction number or "all" required
 				}
 				else {
 					switches |= sw_list;
@@ -429,7 +429,7 @@ int common_main(int			argc,
 
 		if (table->in_sw_value & sw_write) {
 			if (--argc <= 0) {
-				ALICE_error(11);	// msg 11: "sync" or "async" required 
+				ALICE_error(11);	// msg 11: "sync" or "async" required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, ALICE_SW_SYNC)) {
@@ -439,13 +439,13 @@ int common_main(int			argc,
 				tdgbl->ALICE_data.ua_force = false;
 			}
 			else {
-				ALICE_error(11);	// msg 11: "sync" or "async" required 
+				ALICE_error(11);	// msg 11: "sync" or "async" required
 			}
 		}
 
 		if (table->in_sw_value & sw_use) {
 			if (--argc <= 0) {
-				ALICE_error(12);	// msg 12: "full" or "reserve" required 
+				ALICE_error(12);	// msg 12: "full" or "reserve" required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, "full")) {
@@ -455,54 +455,54 @@ int common_main(int			argc,
 				tdgbl->ALICE_data.ua_use = false;
 			}
 			else {
-				ALICE_error(12);	// msg 12: "full" or "reserve" required 
+				ALICE_error(12);	// msg 12: "full" or "reserve" required
 			}
 		}
 
 		if (table->in_sw_value & sw_user) {
 			if (--argc <= 0) {
-				ALICE_error(13);	// msg 13: user name required 
+				ALICE_error(13);	// msg 13: user name required
 			}
 			tdgbl->ALICE_data.ua_user = reinterpret_cast<UCHAR*>(*argv++);
 		}
 
 		if (table->in_sw_value & sw_password) {
 			if (--argc <= 0) {
-				ALICE_error(14);	// msg 14: password required 
+				ALICE_error(14);	// msg 14: password required
 			}
 			tdgbl->ALICE_data.ua_password = reinterpret_cast<UCHAR*>(*argv++);
 		}
 
 		if (table->in_sw_value & sw_disable) {
 			if (--argc <= 0) {
-				ALICE_error(15);	// msg 15: subsystem name  
+				ALICE_error(15);	// msg 15: subsystem name
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (strcmp(string, "wal")) {
-				ALICE_error(16);	// msg 16: "wal" required 
+				ALICE_error(16);	// msg 16: "wal" required
 			}
 		}
 
 		if (table->in_sw_value & (sw_attach | sw_force | sw_tran | sw_cache)) {
 			if (--argc <= 0) {
-				ALICE_error(17);	// msg 17: number of seconds required 
+				ALICE_error(17);	// msg 17: number of seconds required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if ((!(tdgbl->ALICE_data.ua_shutdown_delay = atoi(string)))
 				&& (strcmp(string, "0")))
 			{
-				ALICE_error(7);	// msg 7: numeric value required 
+				ALICE_error(7);	// msg 7: numeric value required
 			}
 			if (tdgbl->ALICE_data.ua_shutdown_delay < 0
 				|| tdgbl->ALICE_data.ua_shutdown_delay > 32767)
 			{
-				ALICE_error(18);	// msg 18: numeric value between 0 and 32767 inclusive required 
+				ALICE_error(18);	// msg 18: numeric value between 0 and 32767 inclusive required
 			}
 		}
 
 		if (table->in_sw_value & sw_mode) {
 			if (--argc <= 0) {
-				ALICE_error(110);	// msg 110: "read_only" or "read_write" required 
+				ALICE_error(110);	// msg 110: "read_only" or "read_write" required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, ALICE_SW_MODE_RO)) {
@@ -512,7 +512,7 @@ int common_main(int			argc,
 				tdgbl->ALICE_data.ua_read_only = false;
 			}
 			else {
-				ALICE_error(110);	// msg 110: "read_only" or "read_write" required 
+				ALICE_error(110);	// msg 110: "read_only" or "read_write" required
 			}
 		}
 
@@ -523,7 +523,7 @@ int common_main(int			argc,
 	if ((switches & sw_shut)
 		&& !(switches & ((sw_attach | sw_force | sw_tran | sw_cache))))
 	{
-		ALICE_error(19);	// msg 19: must specify type of shutdown 
+		ALICE_error(19);	// msg 19: must specify type of shutdown
 	}
 
 //  catch the case where -z is only command line option
@@ -534,7 +534,7 @@ int common_main(int			argc,
 
 	if (!switches || !(switches & ~(sw_user | sw_password))) {
 #ifndef SUPERSERVER
-		ALICE_print(20, 0, 0, 0, 0, 0);	// msg 20: please retry, specifying an option 
+		ALICE_print(20, 0, 0, 0, 0, 0);	// msg 20: please retry, specifying an option
 #endif
 		error = true;
 	}
@@ -546,16 +546,16 @@ int common_main(int			argc,
 
 		tdgbl->service_blk->svc_started();
 #else
-		ALICE_print(21, 0, 0, 0, 0, 0);	// msg 21: plausible options are:\n 
+		ALICE_print(21, 0, 0, 0, 0, 0);	// msg 21: plausible options are:\n
 		for (table = alice_in_sw_table; table->in_sw_msg; table++)
 			ALICE_print(table->in_sw_msg, 0, 0, 0, 0, 0);
-		ALICE_print(22, 0, 0, 0, 0, 0);	// msg 22: \n    qualifiers show the major option in parenthesis 
+		ALICE_print(22, 0, 0, 0, 0, 0);	// msg 22: \n    qualifiers show the major option in parenthesis
 #endif
 		exit_local(FINI_ERROR, tdgbl);
 	}
 
 	if (!database) {
-		ALICE_error(23);	// msg 23: please retry, giving a database name 
+		ALICE_error(23);	// msg 23: please retry, giving a database name
 	}
 
 	//  generate the database parameter block for the attach,
@@ -585,7 +585,7 @@ int common_main(int			argc,
 			}
 
 			if (any_error) {
-				ALICE_print(24, 0, 0, 0, 0, 0);	// msg 24: Summary of validation errors\n 
+				ALICE_print(24, 0, 0, 0, 0, 0);	// msg 24: Summary of validation errors\n
 
 				for (int i = 0; i < MAX_VAL_ERRORS; ++i) {
 					if (ua_val_errors[i]) {
@@ -606,14 +606,14 @@ int common_main(int			argc,
 	}	// try
 	catch (const std::exception&)
 	{
-		// All "calls" to exit_local(), normal and error exits, wind up here 
+		// All "calls" to exit_local(), normal and error exits, wind up here
 
 		tdgbl->service_blk->svc_started();
 
 		int exit_code = tdgbl->exit_code;
 
-		// Close the status output file 
-		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) 
+		// Close the status output file
+		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL)
 		{
 			fclose(tdgbl->output_file);
 			tdgbl->output_file = NULL;
@@ -625,7 +625,7 @@ int common_main(int			argc,
 		gds_alloc_report(0, __FILE__, __LINE__);
 #endif
 
-		// All returns occur from this point - even normal returns 
+		// All returns occur from this point - even normal returns
 		return exit_code;
 	}	// catch
 

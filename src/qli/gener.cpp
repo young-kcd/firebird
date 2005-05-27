@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: gener.cpp,v 1.36 2004-06-03 14:00:56 fsg Exp $
+$Id: gener.cpp,v 1.37 2005-05-27 22:44:54 asfernandes Exp $
 */
 
 #include "firebird.h"
@@ -944,6 +944,10 @@ static void gen_expression(qli_nod* node, qli_req* request)
 
 	case nod_upcase:
 		operatr = blr_upcase;
+		break;
+
+	case nod_lowcase:
+		operatr = blr_lowcase;
 		break;
 
 	default:

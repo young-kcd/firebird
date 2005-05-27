@@ -1627,7 +1627,7 @@ static bool get_record(
 		BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record,
 				reinterpret_cast<index_desc*>((SCHAR*) impure +
 					(IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]),
-				&value,	0);
+				&value,	0, false);
 		if (compare_keys(idx, key->key_data, key->key_length, &value, 0)) {
 			result = false;
 		} 

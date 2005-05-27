@@ -54,8 +54,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib ole32.lib /nologo /stack:0x200000 /subsystem:windows /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird/bin/fbserver.exe" /pdbtype:sept
-# SUBTRACT LINK32 /verbose /profile /pdb:none /map
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib ole32.lib icuuc.lib icuin.lib /nologo /stack:0x200000 /subsystem:windows /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird/bin/fbserver.exe" /pdbtype:sept /libpath:../../../extern/icu/lib
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "fbserver - Win32 Release"
 
@@ -83,8 +83,8 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib comctl32.lib wsock32.lib mpr.lib shell32.lib /nologo /subsystem:windows /incremental:no /machine:I386 /pdbtype:sept
 # SUBTRACT BASE LINK32 /verbose /profile /pdb:none /map /debug
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib ole32.lib /nologo /stack:0x200000 /subsystem:windows /incremental:no /machine:I386 /out:"..\..\..\temp\release\firebird/bin/fbserver.exe" /pdbtype:sept
-# SUBTRACT LINK32 /verbose /profile /pdb:none /map /debug
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib ole32.lib icuuc.lib icuin.lib /nologo /stack:0x200000 /subsystem:windows /incremental:no /machine:I386 /out:"..\..\..\temp\release\firebird/bin/fbserver.exe" /pdbtype:sept /libpath:../../../extern/icu/lib
+# SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
 

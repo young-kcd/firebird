@@ -50,7 +50,7 @@ namespace Firebird {
 template <typename CharType>
 class StartsEvaluator {
 public:
-	StartsEvaluator(const CharType* _pattern_str, SSHORT _pattern_len) : 
+	StartsEvaluator(const CharType* _pattern_str, SLONG _pattern_len) : 
 		// No need to copy string because this class is used briefly
 		pattern_str(_pattern_str), pattern_len(_pattern_len)
 	{
@@ -63,12 +63,12 @@ public:
 	bool getResult() {
 		return offset >= pattern_len && result;
 	}
-	bool processNextChunk(const CharType* data, SSHORT data_len) 
+	bool processNextChunk(const CharType* data, SLONG data_len) 
 	{
 		// Should work fine when called with data_len equal to zero
 		if (!result || offset >= pattern_len)
 			return false;
-		const SSHORT comp_length = 
+		const SLONG comp_length = 
 			data_len < pattern_len - offset ? data_len : pattern_len - offset;
 		if (memcmp(data, pattern_str + offset, sizeof(CharType) * comp_length) != 0) 
 		{
@@ -79,17 +79,17 @@ public:
 		return offset < pattern_len;
 	}
 private:
-	SSHORT offset;
+	SLONG offset;
 	const CharType* pattern_str;
-	SSHORT pattern_len;
+	SLONG pattern_len;
 	bool result;
 };
 
 template <typename CharType>
-static void preKmp(const CharType *x, int m, SSHORT kmpNext[]) 
+static void preKmp(const CharType *x, int m, SLONG kmpNext[]) 
 {
-	SSHORT i = 0;
-	SSHORT j = kmpNext[0] = -1;
+	SLONG i = 0;
+	SLONG j = kmpNext[0] = -1;
 	while (i < m) {
 		while (j > -1 && x[i] != x[j])
 			j = kmpNext[j];
@@ -111,7 +111,7 @@ public:
 			pool.deallocate(chunksToFree[i]);
 	}
 
-	void* alloc(SSHORT count) {
+	void* alloc(SLONG count) {
 		void* result;
 		if (allocated + count <= STATIC_PATTERN_BUFFER) {
 			result = allocBuffer + allocated;
@@ -134,13 +134,13 @@ private:
 template <typename CharType>
 class ContainsEvaluator : private StaticAllocator {
 public:
-	ContainsEvaluator(MemoryPool& _pool, const CharType* _pattern_str, SSHORT _pattern_len) : 
+	ContainsEvaluator(MemoryPool& _pool, const CharType* _pattern_str, SLONG _pattern_len) : 
 		StaticAllocator(_pool),	pattern_len(_pattern_len)
 	{
 		CharType* temp = reinterpret_cast<CharType*>(alloc(_pattern_len * sizeof(CharType)));
 		memcpy(temp, _pattern_str, _pattern_len * sizeof(CharType));
 		pattern_str = temp;
-		kmpNext = reinterpret_cast<SSHORT*>(alloc((_pattern_len + 1) * sizeof(SSHORT)));
+		kmpNext = reinterpret_cast<SLONG*>(alloc((_pattern_len + 1) * sizeof(SLONG)));
 		preKmp<CharType>(_pattern_str, _pattern_len, kmpNext);
 		reset();
 	}
@@ -154,11 +154,11 @@ public:
 		return result;
 	}
 
-	bool processNextChunk(const CharType* data, SSHORT data_len) {		
+	bool processNextChunk(const CharType* data, SLONG data_len) {		
 		// Should work fine when called with data_len equal to zero
 		if (result)
 			return false;
-		SSHORT data_pos = 0;
+		SLONG data_pos = 0;
 		while (data_pos < data_len) {
 			while (offset > -1 && pattern_str[offset] != data[data_pos])
 				offset = kmpNext[offset];
@@ -174,10 +174,10 @@ public:
 
 private:
 	const CharType* pattern_str;
-	SSHORT pattern_len;
-	SSHORT offset;
+	SLONG pattern_len;
+	SLONG offset;
 	bool result;
-	SSHORT *kmpNext;
+	SLONG *kmpNext;
 };
 
 enum PatternItemType {
@@ -201,7 +201,7 @@ template <typename CharType>
 class LikeEvaluator : private StaticAllocator {
 public:
 	LikeEvaluator(MemoryPool& _pool, const CharType* _pattern_str, 
-		SSHORT pattern_len, CharType escape_char, CharType sql_match_any, 
+		SLONG pattern_len, CharType escape_char, bool use_escape, CharType sql_match_any, 
 		CharType sql_match_one);
 
 	void reset() {
@@ -222,25 +222,25 @@ public:
 	}
 
 	// Returns true if more data can change the result of evaluation
-	bool processNextChunk(const CharType* data, SSHORT data_len);
+	bool processNextChunk(const CharType* data, SLONG data_len);
 
 private:
 	struct PatternItem {
 		PatternItemType type;
 		union {
 			struct {
-				SSHORT length;
+				SLONG length;
 				CharType* data;
-				SSHORT* kmpNext; // Jump table for Knuth-Morris-Pratt algorithm
+				SLONG* kmpNext; // Jump table for Knuth-Morris-Pratt algorithm
 			} str;
-			SSHORT skipCount;
+			SLONG skipCount;
 		};
 		bool match_any;
 	};
 
 	struct BranchItem {
 		PatternItem* pattern;
-		SSHORT offset; // Match offset inside this pattern
+		SLONG offset; // Match offset inside this pattern
 	};
 
 	HalfStaticArray<PatternItem, STATIC_PATTERN_ITEMS> patternItems;
@@ -251,8 +251,8 @@ private:
 
 template <typename CharType>
 LikeEvaluator<CharType>::LikeEvaluator(
-	MemoryPool& _pool, const CharType* _pattern_str, SSHORT pattern_len, 
-	CharType escape_char, CharType sql_match_any, CharType sql_match_one)
+	MemoryPool& _pool, const CharType* _pattern_str, SLONG pattern_len, 
+	CharType escape_char, bool use_escape, CharType sql_match_any, CharType sql_match_one)
 : StaticAllocator(_pool), patternItems(_pool), branches(_pool), match_type(MATCH_NONE)
 {
 	// Create local copy of the string.
@@ -261,12 +261,12 @@ LikeEvaluator<CharType>::LikeEvaluator(
 
 	patternItems.grow(1);
 	// PASS1. Parse pattern.
-	SSHORT pattern_pos = 0;
+	SLONG pattern_pos = 0;
 	PatternItem *item = patternItems.begin();
 	while (pattern_pos < pattern_len) {
 		CharType c = pattern_str[pattern_pos++];
 		// Escaped symbol
-		if (escape_char && c == escape_char) {
+		if (use_escape && c == escape_char) {
 			if (pattern_pos < pattern_len) {
 				c = pattern_str[pattern_pos++];
 				/* Note: SQL II says <escape_char><escape_char> is error condition */
@@ -359,8 +359,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			const CharType *curPos = itemL->str.data;
 			itemL->str.data = 
 				reinterpret_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
-			for (SSHORT j = 0; j < itemL->str.length; j++) {
-				if (*curPos == escape_char) 
+			for (SLONG j = 0; j < itemL->str.length; j++) {
+				if (use_escape && *curPos == escape_char) 
 					curPos++;
 				itemL->str.data[j] = *curPos++;
 			}
@@ -372,7 +372,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 				itemL->type = piDirectMatch;
 			else {
 				itemL->str.kmpNext = 
-					reinterpret_cast<SSHORT*>(alloc((itemL->str.length + 1) * sizeof(SSHORT)));
+					reinterpret_cast<SLONG*>(alloc((itemL->str.length + 1) * sizeof(SLONG)));
 				preKmp<CharType>(itemL->str.data, itemL->str.length, itemL->str.kmpNext);
 				directMatch = true;
 			}
@@ -411,7 +411,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 }
 
 template <typename CharType>
-bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data_len) {
+bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_len) {
 	fb_assert(patternItems.getCount());
 
 	// If called with empty buffer just return if more data can change the result of evaluation
@@ -425,8 +425,8 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SSHORT data
 	if (branches.getCount() == 0)
 		return false;
 
-	SSHORT data_pos = 0;	
-	SSHORT finishCandidate = -1;
+	SLONG data_pos = 0;	
+	SLONG finishCandidate = -1;
 	while (data_pos < data_len) {
 
 		size_t branch_number = 0;

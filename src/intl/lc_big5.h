@@ -22,7 +22,5 @@
  */
 
 /* These macros have a duplicate in cv_big5.cpp */
-static USHORT big5_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
-static SSHORT big5_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr);
-static USHORT big5_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
-
+static ULONG big5_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
+static ULONG big5_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);

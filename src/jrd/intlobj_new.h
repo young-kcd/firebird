@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD International support
  *	MODULE:		intlobj_new.h
- *	DESCRIPTION:	New international text handling definitions (DRAFT)
+ *	DESCRIPTION:	New international text handling definitions
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -120,6 +120,9 @@ typedef void (*pfn_INTL_tt_destroy) (
 	texttype* tt
 );
 
+/* texttype version */
+#define TEXTTYPE_VERSION_1	1
+
 /* texttype flag values */
 
 #define TEXTTYPE_DIRECT_MATCH 1 /* Pattern-matching may be performed directly on
@@ -136,7 +139,7 @@ typedef void (*pfn_INTL_tt_destroy) (
 
 
 typedef struct texttype {
-	// Data which needs to be initialized by collation driver	
+	/* Data which needs to be initialized by collation driver */
 	USHORT texttype_version;	/* version ID of object */
 	TextTypeImpl* texttype_impl;   /* collation object implemented in driver */
 
@@ -155,24 +158,31 @@ typedef struct texttype {
        care about trailing spaces */
 	INTL_BOOL texttype_pad_option;
 
-	/* If not set key length is assumed to be equal to string length */
+	/* If not set for fixed width charset key length is assumed to be equal to string length.
+	   If not set for MBCS key length is assumed to be equal to length of string converted to BOCU-1. */
 	pfn_INTL_keylength	texttype_fn_key_length; /* Return key length for given string */
 
-	/* If not set string itself is used as a key */
+	/* If not set for fixed width charset string itself is used as a key with binary lexical ordering.
+	   If not set for MBCS string converted to BOCU-1 is used as a key with UCS_BASIC ordering. */
 	pfn_INTL_str2key	texttype_fn_string_to_key;
 
-	/* If not set string is assumed to be binary-comparable both for sorting and equality purposes */
+	/* If not set for fixed width charset string itself is assumed to be binary-comparable both for sorting
+	   and equality purposes. If not set for MBCS string converted to UTF-16 is compared. */
 	pfn_INTL_compare	texttype_fn_compare;
 
-	/* If not set string is converted to Unicode and then uppercased via default case folding table */
+	/* If not set string is converted to Unicode and then uppercased via default case folding table.
+	   NOTE: Source buffer may be used by engine as a target for conversion.
+	         Driver must handle this situation appropriately. */
 	pfn_INTL_str2case	texttype_fn_str_to_upper;	/* Convert string to uppercase */
 
-	/* If not set string is converted to Unicode and then lowercased via default case folding table */
+	/* If not set string is converted to Unicode and then lowercased via default case folding table.
+	   NOTE: Source buffer may be used by engine as a target for conversion.
+	         Driver must handle this situation appropriately. */
 	pfn_INTL_str2case	texttype_fn_str_to_lower;	/* Convert string to lowercase */
 
 	/* If not set for fixed width charset string itself is used as canonical 
        representation. If not set for MBCS charset string converted to UTF-32
-       Normalization Form C is used as canonical representation */
+       is used as canonical representation */
 	pfn_INTL_canonical	texttype_fn_canonical;	/* convert string to canonical representation for equality */
 
 	/* May be omitted if not needed */
@@ -185,7 +195,7 @@ typedef struct texttype {
 	void* reserved_for_driver[10];
 } *TEXTTYPE;
 
-// Returns resulting string length or INTL_BAD_STR_LENGTH in case of error
+/* Returns resulting string length or INTL_BAD_STR_LENGTH in case of error */
 typedef ULONG (*pfn_INTL_convert) (
 	csconvert* cv, 
 	ULONG srcLen,
@@ -201,6 +211,9 @@ typedef void (*pfn_INTL_cv_destroy) (
 	csconvert* cv
 );
 
+/* csconvert version */
+#define CSCONVERT_VERSION_1	1
+
 struct csconvert {
 	USHORT csconvert_version;
 	CsConvertImpl* csconvert_impl;
@@ -213,7 +226,7 @@ struct csconvert {
 	/* Conversion routine. Must be present. */
 	pfn_INTL_convert csconvert_fn_convert;
 
-	/* May be omitted if not needed. Is not called for collations embedded into charset interface */
+	/* May be omitted if not needed. Is not called for converters embedded into charset interface */
 	pfn_INTL_cv_destroy	csconvert_fn_destroy;
 
 	/* Some space for future extension of conversion interface */
@@ -236,7 +249,8 @@ struct csconvert {
 typedef INTL_BOOL (*pfn_INTL_well_formed) (
 	charset* cs, 
 	ULONG len,
-	const UCHAR* str
+	const UCHAR* str,
+	ULONG* offending_position	
 );
 
 /* Extracts a portion from a string. Returns INTL_BAD_STR_LENGTH in case of problems. */
@@ -262,9 +276,15 @@ typedef void (*pfn_INTL_cs_destroy) (
 	charset* cv
 );
 
+/* charset version */
+#define CHARSET_VERSION_1	1
+
 /* charset flag values */
 #define CHARSET_LEGACY_SEMANTICS 1 /* MBCS strings may overflow declared lengths
                                       in characters (but not in bytes) */
+
+#define CHARSET_ASCII_BASED 2 /* Value of ASCII characters is equal to the
+                                 ASCII character set */
 
 struct charset
 {
@@ -293,7 +313,7 @@ struct charset
        via intermediate translation of string to Unicode */
 	pfn_INTL_substring	charset_fn_substring;	/* get a portion of string */
 
-	/* May be omitted if not needed. Is not called for collations embedded into charset interface */
+	/* May be omitted if not needed */
 	pfn_INTL_cs_destroy	charset_fn_destroy;
 
 	/* Some space for future extension of charset interface */
@@ -302,6 +322,34 @@ struct charset
 	/* Some space which may be freely used by charset driver */
 	void* reserved_for_driver[10];
 };
+
+
+/* attributes passed by the engine to texttype entry-point */
+#define TEXTTYPE_ATTR_PAD_SPACE				1
+#define TEXTTYPE_ATTR_CASE_INSENSITIVE		2
+#define TEXTTYPE_ATTR_ACCENT_INSENSITIVE	4
+
+
+/* typedef for texttype lookup entry-point */
+typedef INTL_BOOL (*pfn_INTL_lookup_texttype) (
+	texttype* tt, 
+	const ASCII* texttype_name,
+	const ASCII* charset_name,
+	USHORT attributes,
+	const UCHAR* specific_attributes,
+	ULONG specific_attributes_length,
+	INTL_BOOL ignore_attributes
+);
+
+/* typedef for charset lookup entry-point */
+typedef INTL_BOOL (*pfn_INTL_lookup_charset) (
+	charset* cs, 
+	const ASCII* name
+);
+
+
+#define TEXTTYPE_ENTRYPOINT	LD_lookup_texttype
+#define CHARSET_ENTRYPOINT	LD_lookup_charset
 
 #endif /* JRD_INTLOBJ_NEW_H */
 

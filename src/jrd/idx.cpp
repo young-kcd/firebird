@@ -58,6 +58,7 @@
 #include "../jrd/evl_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/idx_proto.h"
+#include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
@@ -332,11 +333,11 @@ void IDX_create_index(
 
 				if (!(idx->idx_flags & idx_unique)) {
 					idx->idx_flags |= idx_unique;
-					result = BTR_key(tdbb, relation, record, idx, &key, &null_state);
+					result = BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
 					idx->idx_flags &= ~idx_unique;
 				} 
 				else {
-					result = BTR_key(tdbb, relation, record, idx, &key, &null_state);
+					result = BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
 				}
 				if (null_state != idx_nulls_none) {
 					result = idx_e_ok;
@@ -352,7 +353,7 @@ void IDX_create_index(
 
 			if (result == idx_e_ok) {
 				idx_null_state null_state;
-				BTR_key(tdbb, relation, record, idx, &key, &null_state);
+				BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
 				key_is_null = (null_state == idx_nulls_all);
 			}
 			else {
@@ -621,7 +622,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 		if (BTR_description(tdbb, rpb->rpb_relation, root, &idx, i)) {
 			for (RecordStack::iterator stack1(going); stack1.hasData(); ++stack1) {
 				Record* rec1 = stack1.object();
-				BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0);
+				BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0, false);
 
 				/* Cancel index if there are duplicates in the remaining records */
 
@@ -631,7 +632,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				{
 					Record* rec2 = stack2.object();
 					if (rec2->rec_number == rec1->rec_number) {
-						BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0);
+						BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0, false);
 						if (key_equal(&key1, &key2))
 							break;
 					}
@@ -645,7 +646,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				RecordStack::iterator stack3(staying);
 				for (; stack3.hasData(); ++stack3) {
 					Record* rec3 = stack3.object();
-					BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, 0);
+					BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, 0, false);
 					if (key_equal(&key1, &key2))
 						break;
 				}
@@ -709,13 +710,13 @@ IDX_E IDX_modify(thread_db* tdbb,
 		*bad_relation = new_rpb->rpb_relation;
 		if ( (error_code =
 			BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx,
-					&key1, 0)) )
+					&key1, 0, false)) )
 		{
 			CCH_RELEASE(tdbb, &window);
 			break;
 		}
 		BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx,
-				&key2, 0);
+				&key2, 0, false);
 		if (!key_equal(&key1, &key2)) {
 			if (( error_code =
 				insert_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record,
@@ -782,10 +783,10 @@ IDX_E IDX_modify_check_constraints(thread_db* tdbb,
 		if (
 			(error_code =
 			 BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx,
-					 &key1, 0))
+					 &key1, 0, false))
 			|| (error_code =
 				BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record,
-						&idx, &key2, 0)))
+						&idx, &key2, 0, false)))
 		{
 			CCH_RELEASE(tdbb, &window);
 			break;
@@ -865,7 +866,7 @@ IDX_E IDX_store(thread_db* tdbb,
 		*bad_index = idx.idx_id;
 		*bad_relation = rpb->rpb_relation;
 		if ( (error_code =
-			BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, &idx, &key, 0)) ) 
+			BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, &idx, &key, 0, false)) ) 
 		{
 			CCH_RELEASE(tdbb, &window);
 			break;
@@ -1197,9 +1198,26 @@ static IDX_E check_partner_index(
 	if (!BTR_description(tdbb, partner_relation, root, &partner_idx, index_id))
 		BUGCHECK(175);			/* msg 175 partner index description not found */
 
+	bool fuzzy = false;
+
+	const index_desc::idx_repeat* idx_desc = idx->idx_rpt;
+	for (USHORT i = 0; i < idx->idx_count; i++, idx_desc++)
+	{
+		if (idx_desc->idx_itype >= idx_first_intl_string)
+		{
+			TextType* textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(idx_desc->idx_itype), ERR_post, NULL);
+
+			if (textType->getFlags() & TEXTTYPE_SEPARATE_UNIQUE)
+			{
+				fuzzy = true;
+				break;
+			}
+		}
+	}
+	
 /* get the key in the original index */
 
-	result = BTR_key(tdbb, relation, record, idx, &key, 0);
+	result = BTR_key(tdbb, relation, record, idx, &key, 0, fuzzy);
 	CCH_RELEASE(tdbb, &window);
 
 /* now check for current duplicates */
@@ -1213,7 +1231,7 @@ static IDX_E check_partner_index(
 		retrieval.irb_index = partner_idx.idx_id;
 		MOVE_FAST(&partner_idx, &retrieval.irb_desc,
 				  sizeof(retrieval.irb_desc));
-		retrieval.irb_generic = irb_equality;
+		retrieval.irb_generic = irb_equality | (fuzzy ? irb_starting : 0);
 		retrieval.irb_relation = partner_relation;
 		retrieval.irb_key = &key;
 		retrieval.irb_upper_count = retrieval.irb_lower_count = idx->idx_count;
@@ -1452,7 +1470,7 @@ static IDX_E insert_key(
 		CCH_FETCH(tdbb, window_ptr, LCK_read, pag_root);
 		temporary_key key;
 		idx_null_state null_state;
-		result = BTR_key(tdbb, relation, record, idx, &key, &null_state);
+		result = BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
 		CCH_RELEASE(tdbb, window_ptr);
 		idx->idx_flags &= ~idx_unique;
 		if (null_state == idx_nulls_none) {

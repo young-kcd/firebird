@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.10 2005-04-29 18:22:25 alexpeshkoff Exp $
+#   $Id: makeInstallImage.sh.in,v 1.11 2005-05-27 22:15:13 asfernandes Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -177,6 +177,11 @@ copyFiles() {
     cp $BuiltFBDir/include/*.h $DestDir/include 
     cp -df $BuiltFBDir/lib/libfbclient.so* $DestDir/lib
     cp -f $BuiltFBDir/lib/libib_util.so $DestDir/lib/libib_util.so 
+
+    cp -f $BuiltFBDir/lib/libicuuc.so.30 $DestDir/lib/libicuuc.so.30 
+    cp -f $BuiltFBDir/lib/libicui18n.so.30 $DestDir/lib/libicui18n.so.30 
+    cp -f $BuiltFBDir/lib/libicudata.so.30 $DestDir/lib/libicudata.so.30 
+
     cp $BuiltFBDir/intl/libfbintl.so $DestDir/intl/fbintl
     cp $BuiltFBDir/UDF/ib_udf.so $DestDir/UDF/
     cp $BuiltFBDir/UDF/fbudf.so $DestDir/UDF/
@@ -194,6 +199,7 @@ copyFiles() {
     
 #   Miscellaneous config and startup files
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/firebird.conf
+    cp $BuildRootDir/gen/install/misc/fbintl.conf $DestDir/intl/fbintl.conf
     cp $BuildRootDir/gen/install/misc/firebird.init.d.generic $DestDir/misc
     cp $BuildRootDir/gen/install/misc/firebird.init.d.mandrake $DestDir/misc
     cp $BuildRootDir/gen/install/misc/firebird.init.d.suse $DestDir/misc

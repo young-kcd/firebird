@@ -58,7 +58,7 @@
 #define FB_API_DEPRECATED
 #endif
 
-/* 
+/*
  * It is difficult to detect 64-bit long from the redistributable header
  * we do not care of 16-bit platforms anymore thus we may use plain "int"
  * which is 32-bit on all platforms we support
@@ -565,12 +565,12 @@ ISC_STATUS ISC_EXPORT isc_get_slice(ISC_STATUS*,
 /* CVC: This non-const signature is needed for compatibility, see gds.cpp. */
 ISC_LONG FB_API_DEPRECATED ISC_EXPORT isc_interprete(ISC_SCHAR*,
 									 ISC_STATUS**);
-									 
+
 /* This const params version used in the engine and other places. */
 ISC_LONG ISC_EXPORT fb_interpret(ISC_SCHAR*,
 								 int,
 								 const ISC_STATUS**);
-									 
+
 ISC_STATUS ISC_EXPORT isc_open_blob(ISC_STATUS*,
 									isc_db_handle*,
 									isc_tr_handle*,
@@ -1250,18 +1250,18 @@ int  ISC_EXPORT isc_get_client_minor_version ();
  <address-path-clumplet> ::=
 	isc_dpb_address_path <byte-clumplet-length> <address-stack>
 
- <address-stack> ::= 
+ <address-stack> ::=
 	<address-descriptor> |
 	<address-stack> <address-descriptor>
 
- <address-descriptor> ::= 
+ <address-descriptor> ::=
 	isc_dpb_address <byte-clumplet-length> <address-elements>
 
- <address-elements> ::= 
-	<address-element> | 
+ <address-elements> ::=
+	<address-element> |
 	<address-elements> <address-element>
 
- <address-element> ::= 
+ <address-element> ::=
 	isc_dpb_addr_protocol <byte-clumplet-length> <protocol-string> |
 	isc_dpb_addr_endpoint <byte-clumplet-length> <remote-endpoint-string>
 
@@ -1925,11 +1925,23 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dyn_mod_collation             229
 #define isc_dyn_mod_prc_parameter         230
 
+#define isc_dyn_def_collation             231
+
+/***********************/
+/* collation values     */
+/***********************/
+//// TODO: review these numbers
+#define isc_dyn_coll_for_charset					10
+#define isc_dyn_coll_from							11
+#define isc_dyn_coll_attribute						12
+#define isc_dyn_coll_specific_attributes_charset	13
+#define isc_dyn_coll_specific_attributes			14
+
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
 
-#define isc_dyn_last_dyn_value            230
+#define isc_dyn_last_dyn_value            231
 
 /******************************************/
 /* Array slice description language (SDL) */

@@ -50,6 +50,9 @@ static const TOK tokens[] = {
 	{EQL, "=", 1, false},
 	{GTR, ">", 1, false},
 	{GEQ, ">=", 1, false},
+#ifdef FB_NEW_INTL_ALLOW_NOT_READY
+	{ACCENT, "ACCENT", 2, false},
+#endif
 	{ACTION, "ACTION", 1, false},
 	{ACTIVE, "ACTIVE", 1, false},
 	{ADD, "ADD", 1, false},
@@ -70,15 +73,19 @@ static const TOK tokens[] = {
 	{BEGIN, "BEGIN", 1, false},
 	{BETWEEN, "BETWEEN", 1, false},
 	{BIGINT, "BIGINT", 2, false},
+	{BIT_LENGTH, "BIT_LENGTH", 2, false},
 	{BLOB, "BLOB", 1, false},
 	{BLOCK, "BLOCK", 1, false},
+	{BOTH, "BOTH", 2, false},
 	{KW_BREAK, "BREAK", 2, false},
 	{BY, "BY", 1, false},
 	{CASCADE, "CASCADE", 1, false},
 	{CASE, "CASE", 2, false},
 	{CAST, "CAST", 1, false},
 	{KW_CHAR, "CHAR", 1, false},
+	{CHAR_LENGTH, "CHAR_LENGTH", 2, false},
 	{CHARACTER, "CHARACTER", 1, false},
+	{CHARACTER_LENGTH, "CHARACTER_LENGTH", 2, false},
 	{CHECK, "CHECK", 1, false},
 	{CLOSE, "CLOSE", 2, false},
 	{COALESCE, "COALESCE", 2, false},
@@ -159,6 +166,9 @@ static const TOK tokens[] = {
 	{INDEX, "INDEX", 1, false},
 	{INNER, "INNER", 1, false},
 	{INPUT_TYPE, "INPUT_TYPE", 1, false},
+#ifdef FB_NEW_INTL_ALLOW_NOT_READY
+	{INSENSITIVE, "INSENSITIVE", 2, false},
+#endif
 	{INSERT, "INSERT", 1, false},
 	{INSERTING, "INSERTING", 2, true},
 	{KW_INT, "INT", 1, false},
@@ -169,12 +179,14 @@ static const TOK tokens[] = {
 	{JOIN, "JOIN", 1, false},
 	{KEY, "KEY", 1, false},
 	{LAST, "LAST", 2, false},
+	{LEADING, "LEADING", 2, false},
 	{LEAVE, "LEAVE", 2, false},
 	{LEFT, "LEFT", 1, false},
 	{LENGTH, "LENGTH", 1, false},
 	{LEVEL, "LEVEL", 1, false},
 	{LIKE, "LIKE", 1, false},
 	{KW_LONG, "LONG", 1, false},
+	{KW_LOWER, "LOWER", 2, false},
 	{MANUAL, "MANUAL", 1, false},
 	{MAXIMUM, "MAX", 1, false},
 	{MAX_SEGMENT, "MAXIMUM_SEGMENT", 1, false},
@@ -196,6 +208,7 @@ static const TOK tokens[] = {
 	{NULLS, "NULLS", 2, false},
 	{LOCK, "LOCK", 2, false},
 	{KW_NUMERIC, "NUMERIC", 1, false},
+	{OCTET_LENGTH, "OCTET_LENGTH", 2, false},
 	{OF, "OF", 1, false},
 	{ON, "ON", 1, false},
 	{ONLY, "ONLY", 1, false},
@@ -206,6 +219,9 @@ static const TOK tokens[] = {
 	{OUTER, "OUTER", 1, false},
 	{OUTPUT_TYPE, "OUTPUT_TYPE", 1, false},
 	{OVERFLOW, "OVERFLOW", 1, false},
+#ifdef FB_NEW_INTL_ALLOW_NOT_READY
+	{PAD, "PAD", 2, false},
+#endif
 	{PAGE, "PAGE", 1, false},
 	{PAGES, "PAGES", 1, false},
 	{KW_PAGE_SIZE, "PAGE_SIZE", 1, false},
@@ -245,6 +261,9 @@ static const TOK tokens[] = {
 	{SECOND, "SECOND", 2, false},
 	{SEGMENT, "SEGMENT", 1, false},
 	{SELECT, "SELECT", 1, false},
+#ifdef FB_NEW_INTL_ALLOW_NOT_READY
+	{SENSITIVE, "SENSITIVE", 2, false},
+#endif
 	{SEQUENCE, "SEQUENCE", 2, false},
 	{SET, "SET", 1, false},
 	{SHADOW, "SHADOW", 1, false},
@@ -256,6 +275,9 @@ static const TOK tokens[] = {
 	{SNAPSHOT, "SNAPSHOT", 1, false},
 	{SOME, "SOME", 1, false},
 	{SORT, "SORT", 1, false},
+#ifdef FB_NEW_INTL_ALLOW_NOT_READY
+	{SPACE, "SPACE", 2, false},
+#endif
 	{SQLCODE, "SQLCODE", 1, false},
 	{STABILITY, "STABILITY", 1, false},
 	{STARTING, "STARTING", 1, false},
@@ -271,8 +293,10 @@ static const TOK tokens[] = {
 	{TIME, "TIME", 2, false},
 	{TIMESTAMP, "TIMESTAMP", 2, false},
 	{TO, "TO", 1, false},
+	{TRAILING, "TRAILING", 2, false},
 	{TRANSACTION, "TRANSACTION", 1, false},
 	{TRIGGER, "TRIGGER", 1, false},
+	{TRIM, "TRIM", 2, false},
 	{TYPE, "TYPE", 2, false},
 	{UNCOMMITTED, "UNCOMMITTED", 1, false},
 	{UNION, "UNION", 1, false},
@@ -308,7 +332,7 @@ static const TOK tokens[] = {
 	{0, 0, 0, false}
 };
 
-/* This method is currently used in isql/isql.epp to check if a 
+/* This method is currently used in isql/isql.epp to check if a
    user field is a reserved word, and hence needs to be quoted.
    Obviously a hash table would make this a little quicker.
 

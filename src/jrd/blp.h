@@ -155,7 +155,10 @@ static const struct
 	{"internal_info", one},
 	{"nullsfirst", zero},
 	{"writelock", zero},
-	{"nullslast", zero}, /* 180 */
+	{"nullslast", zero},
+	{"lowcase", one}, /* 181 */
+	{"length", length},
+	{"trim", trim},
 	{0, 0}
 };
 

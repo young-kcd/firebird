@@ -393,6 +393,10 @@ void DYN_execute(Global* gbl,
 			DYN_modify_database(gbl, ptr);
 			break;
 
+		case isc_dyn_def_collation:
+			DYN_define_collation(gbl, ptr);
+			break;
+
 		case isc_dyn_def_rel:
 		case isc_dyn_def_view:
 			DYN_define_relation(gbl, ptr);
@@ -782,7 +786,7 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	return length;
 }
 
-USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
+USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id, USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -809,7 +813,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	const UCHAR* end = NULL;
 
 	try {
-		blb* blob = BLB_create(tdbb, gbl->gbl_transaction, blob_id);
+		blb* blob = BLB_create2(tdbb, gbl->gbl_transaction, blob_id, bpb_length, bpb);
 
 		for (end = p + length; p < end; p += TEXT_BLOB_LENGTH)
 		{

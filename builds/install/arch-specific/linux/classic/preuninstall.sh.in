@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: preuninstall.sh.in,v 1.3 2005-03-13 16:04:33 alexpeshkoff Exp $
+#   $Id: preuninstall.sh.in,v 1.4 2005-05-27 22:15:10 asfernandes Exp $
 # 
 
 # The pre uninstall routines for Firebird Classic

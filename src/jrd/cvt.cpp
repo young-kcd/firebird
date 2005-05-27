@@ -1508,6 +1508,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
+		{
 			/* If we are within the engine, INTL_convert_string 
 			 * will convert the string between character sets
 			 * (or die trying).
@@ -1571,9 +1572,24 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			length = l =
 				CVT_get_string_ptr(from, &strtype, &ptr, NULL, 0, err);
 			q = ptr;
+
+			USHORT to_size = TEXT_LEN(to);
+			UCHAR* start = to->dsc_address;
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+			CharSet* toCharSet = (err != ERR_post || charset2 == ttype_dynamic || charset2 == CS_METADATA ?
+									NULL : INTL_charset_lookup(NULL, charset2, NULL));
+			USHORT toLength;
+#endif
+
 			switch (to->dsc_dtype) {
 			case dtype_text:
 				length = MIN(length, to->dsc_length);
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+				if (toCharSet && !toCharSet->wellFormed(length, q))
+					(*err)(isc_malformed_string, 0);
+				toLength = length;
+#endif
+
 				l -= length;
 				/* TMN: Here we should really have the following fb_assert */
 				/* fb_assert((to->dsc_length - length) <= MAX_SSHORT); */
@@ -1604,6 +1620,12 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				   byte to represent end-of-string */
 
 				length = MIN(length, to->dsc_length - 1);
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+				if (toCharSet && !toCharSet->wellFormed(length, q))
+					(*err)(isc_malformed_string, 0);
+				toLength = length;
+#endif
+
 				l -= length;
 				CVT_COPY_BUFF(q, p, length);
 				*p = 0;
@@ -1612,14 +1634,36 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			case dtype_varying:
 				length =
 					MIN(length, (SLONG) (to->dsc_length - sizeof(USHORT)));
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+				if (toCharSet && !toCharSet->wellFormed(length, q))
+					(*err)(isc_malformed_string, 0);
+				toLength = length;
+#endif
+
 				l -= length;
 				/* TMN: Here we should really have the following fb_assert */
 				/* fb_assert(length <= MAX_USHORT); */
 				((vary*) p)->vary_length = (USHORT) length;
-				p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
+				start = p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
 				CVT_COPY_BUFF(q, p, length);
 				break;
 			}
+
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+			if (toCharSet)
+			{
+				Jrd::thread_db* tdbb = NULL;
+				SET_TDBB(tdbb);
+
+				if (toCharSet->isMultiByte() &&
+					!(toCharSet->getFlags() & CHARSET_LEGACY_SEMANTICS) &&
+					toLength != 31 &&	/* allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset */
+					toCharSet->length(tdbb, toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
+				{
+					(*err)(isc_arith_except, 0);
+				}
+			}
+#endif
 
 			if (l) {
 				/* scan the truncated string to ensure only spaces lost */
@@ -1633,6 +1677,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				} while (--l);
 			}
 			return;
+		}
 
 		case dtype_short:
 		case dtype_long:

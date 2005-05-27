@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.14 2005-03-05 01:44:03 robocop Exp $
+#  $Id: Makefile.in.libfbembed,v 1.15 2005-05-27 22:16:09 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=std

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.h,v 1.9 2004-11-07 14:38:21 alexpeshkoff Exp $
+ * $Id: ibmgr.h,v 1.10 2005-05-27 22:45:23 asfernandes Exp $
  */
 
 #ifndef UTILITIES_IBMGR_H

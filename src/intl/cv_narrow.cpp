@@ -26,52 +26,52 @@
 #include "ld_proto.h"
 #include "cv_narrow.h"
 
+static void CV_convert_destroy(csconvert* csptr);
+
+
 void CV_convert_init(csconvert* csptr,
-					 SSHORT to_cs,
-					 SSHORT from_cs,
 					 pfn_INTL_convert cvt_fn,
 					 const void* datatable,
 					 const void* datatable2)
 {
-	csptr->csconvert_version = 40;
+	csptr->csconvert_version = CSCONVERT_VERSION_1;
 	csptr->csconvert_name = (const ASCII*) "DIRECT";
-	csptr->csconvert_from = from_cs;
-	csptr->csconvert_to = to_cs;
-	csptr->csconvert_convert = cvt_fn;
-	csptr->csconvert_datatable = (const BYTE*) datatable;
-	csptr->csconvert_misc = (const BYTE*) datatable2;
+	csptr->csconvert_fn_convert = cvt_fn;
+	csptr->csconvert_fn_destroy = CV_convert_destroy;
+	csptr->csconvert_impl = new CsConvertImpl();
+	csptr->csconvert_impl->csconvert_datatable = (const BYTE*) datatable;
+	csptr->csconvert_impl->csconvert_misc = (const BYTE*) datatable2;
 }
 
 
-
-USHORT CV_unicode_to_nc(csconvert* obj,
-						BYTE *dest_ptr,
-						USHORT dest_len,
-						const BYTE* src_ptr,
-						USHORT src_len,
-						SSHORT *err_code,
-						USHORT *err_position)
+ULONG CV_unicode_to_nc(csconvert* obj,
+					   ULONG src_len,
+					   const BYTE* src_ptr,
+					   ULONG dest_len,
+					   BYTE *dest_ptr,
+					   USHORT *err_code,
+					   ULONG *err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CV_unicode_to_nc);
-	fb_assert(obj->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_fn_convert == CV_unicode_to_nc);
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
-	const USHORT src_start = src_len;
+	const ULONG src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
-		return ((USHORT) (src_len + 1) / 2);
+		return ((ULONG) (src_len + 1) / 2);
 
 	const BYTE* const start = dest_ptr;
 	while ((src_len > 1) && dest_len) {
 		const UNICODE uni = *((const UNICODE*) src_ptr);
-		const UCHAR ch = obj->csconvert_datatable[
-									  ((const USHORT*) obj->
+		const UCHAR ch = obj->csconvert_impl->csconvert_datatable[
+									  ((const USHORT*) obj->csconvert_impl->
 									   csconvert_misc)[(USHORT) uni / 256]
 									  + (uni % 256)];
 		if ((ch == CS_CANT_MAP) && !(uni == CS_CANT_MAP)) {
@@ -94,23 +94,23 @@ USHORT CV_unicode_to_nc(csconvert* obj,
 }
 
 
-USHORT CV_wc_to_wc(csconvert* obj,
-				   USHORT* dest_ptr,
-				   USHORT dest_len,
-				   const USHORT* src_ptr,
-				   USHORT src_len,
-				   SSHORT *err_code,
-				   USHORT *err_position)
+ULONG CV_wc_to_wc(csconvert* obj,
+				  ULONG src_len,
+				  const USHORT* src_ptr,
+				  ULONG dest_len,
+				  USHORT* dest_ptr,
+				  USHORT *err_code,
+				  ULONG *err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CV_wc_to_wc));
-	fb_assert(obj->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CV_wc_to_wc));
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
-	const USHORT src_start = src_len;
+	const ULONG src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
@@ -120,8 +120,8 @@ USHORT CV_wc_to_wc(csconvert* obj,
 	const USHORT* const start = dest_ptr;
 	while ((src_len > 1) && (dest_len > 1)) {
 		const UNICODE uni = *((const UNICODE*) src_ptr);
-		const USHORT ch = ((const USHORT*) obj->csconvert_datatable)[
-												   ((const USHORT*) obj->
+		const USHORT ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)[
+												   ((const USHORT*) obj->csconvert_impl->
 													csconvert_misc)[(USHORT)
 																	uni / 256]
 												   + (uni % 256)];
@@ -145,23 +145,23 @@ USHORT CV_wc_to_wc(csconvert* obj,
 }
 
 
-USHORT CV_nc_to_unicode(csconvert* obj,
-						BYTE *dest_ptr,
-						USHORT dest_len,
-						const BYTE* src_ptr,
-						USHORT src_len,
-						SSHORT *err_code,
-						USHORT *err_position)
+ULONG CV_nc_to_unicode(csconvert* obj,
+					   ULONG src_len,
+					   const BYTE* src_ptr,
+					   ULONG dest_len,
+					   BYTE *dest_ptr,
+					   USHORT *err_code,
+					   ULONG *err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CV_nc_to_unicode));
-	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CV_nc_to_unicode));
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
 	fb_assert(sizeof(UNICODE) == 2);
 
-	const USHORT src_start = src_len;
+	const ULONG src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
@@ -170,7 +170,7 @@ USHORT CV_nc_to_unicode(csconvert* obj,
 
 	const BYTE* const start = dest_ptr;
 	while (src_len && (dest_len > 1)) {
-		const UNICODE ch = ((const UNICODE*) (obj->csconvert_datatable))[*src_ptr];
+		const UNICODE ch = ((const UNICODE*) (obj->csconvert_impl->csconvert_datatable))[*src_ptr];
 		/* No need to check for CS_CONVERT_ERROR, all charsets
 		 * must convert to unicode.
 		 */
@@ -189,21 +189,21 @@ USHORT CV_nc_to_unicode(csconvert* obj,
 }
 
 
-USHORT CV_wc_copy(csconvert* obj,
-				  BYTE *dest_ptr,
-				  USHORT dest_len,
-				  const BYTE* src_ptr,
-				  USHORT src_len,
-				  SSHORT *err_code,
-				  USHORT *err_position)
+ULONG CV_wc_copy(csconvert* obj,
+				 ULONG src_len,
+				 const BYTE* src_ptr,
+				 ULONG dest_len,
+				 BYTE *dest_ptr,
+				 USHORT *err_code,
+				 ULONG *err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == CV_wc_copy);
+	fb_assert(obj->csconvert_fn_convert == CV_wc_copy);
 
-	const USHORT src_start = src_len;
+	const ULONG src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
@@ -228,22 +228,22 @@ USHORT CV_wc_copy(csconvert* obj,
 }
 
 
-USHORT eight_bit_convert(csconvert* obj,
-						 BYTE *dest_ptr,
-						 USHORT dest_len,
-						 const BYTE* src_ptr,
-						 USHORT src_len,
-						 SSHORT *err_code,
-						 USHORT *err_position)
+ULONG eight_bit_convert(csconvert* obj,
+						ULONG src_len,
+						const BYTE* src_ptr,
+						ULONG dest_len,
+						BYTE *dest_ptr,
+						USHORT *err_code,
+						ULONG *err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == eight_bit_convert);
-	fb_assert(obj->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_fn_convert == eight_bit_convert);
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
 
-	const USHORT src_start = src_len;
+	const ULONG src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
@@ -252,7 +252,7 @@ USHORT eight_bit_convert(csconvert* obj,
 
 	const BYTE* const start = dest_ptr;
 	while (src_len && dest_len) {
-		const UCHAR ch = obj->csconvert_datatable[*src_ptr];
+		const UCHAR ch = obj->csconvert_impl->csconvert_datatable[*src_ptr];
 		if ((ch == CS_CANT_MAP) && (*src_ptr != CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -270,7 +270,13 @@ USHORT eight_bit_convert(csconvert* obj,
 }
 
 
+static void CV_convert_destroy(csconvert* csptr)
+{
+	delete csptr->csconvert_impl;
+}
 
+
+#if 0
 CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_865, CV_dos_865_x_iso8859_1)
 {
 #include "../intl/conversions/tx865_lat1.h"
@@ -318,4 +324,4 @@ CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_437, CV_dos_437_x_iso8859_1)
 
 	CONVERT_RETURN;
 }
-
+#endif

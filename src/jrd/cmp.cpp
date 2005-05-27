@@ -1599,6 +1599,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		}
 
 	case nod_upcase:
+	case nod_lowcase:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
 		if (desc->dsc_dtype > dtype_varying) {
 			desc->dsc_length = DSC_convert_to_text_length(desc->dsc_dtype);
@@ -1681,6 +1682,14 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			desc->dsc_sub_type = 0;
 			desc->dsc_flags = 0;
 		}
+		return;
+
+	case nod_length:
+		desc->dsc_dtype = dtype_long;
+		desc->dsc_length = sizeof(ULONG);
+		desc->dsc_scale = 0;
+		desc->dsc_sub_type = 0;
+		desc->dsc_flags = 0;
 		return;
 
 	case nod_agg_min:
@@ -1796,10 +1805,18 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 					rc_len = MAX_COLUMN_SIZE - sizeof(USHORT);
 				}
 				desc->dsc_dtype = dtype_varying;
-				desc->dsc_ttype() = desc->dsc_scale;
+				desc->dsc_ttype() = desc->dsc_blob_ttype();
 				desc->dsc_scale = 0;
 				desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
 			}
+			return;
+		}
+
+	case nod_trim:
+		{
+			CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_value], desc);
+			desc->dsc_length = sizeof(USHORT) + DSC_string_length(desc);
+			desc->dsc_dtype = dtype_varying;
 			return;
 		}
 
@@ -2675,6 +2692,29 @@ static jrd_nod* copy(thread_db* tdbb,
 			copy(tdbb, csb, input->nod_arg[e_extract_value], remap, field_id,
 				 message, remap_fld);
 		node->nod_arg[e_extract_part] = input->nod_arg[e_extract_part];
+		return (node);
+
+	case nod_length:
+		node = PAR_make_node(tdbb, e_length_length);
+		node->nod_count = input->nod_count;
+		node->nod_type = input->nod_type;
+		node->nod_arg[e_length_value] =
+			copy(tdbb, csb, input->nod_arg[e_length_value], remap, field_id,
+				 message, remap_fld);
+		node->nod_arg[e_length_type] = input->nod_arg[e_length_type];
+		return (node);
+
+	case nod_trim:
+		node = PAR_make_node(tdbb, e_trim_length);
+		node->nod_count = input->nod_count;
+		node->nod_type = input->nod_type;
+		node->nod_arg[e_trim_characters] =
+			copy(tdbb, csb, input->nod_arg[e_trim_characters], remap, field_id,
+				 message, remap_fld);
+		node->nod_arg[e_trim_value] =
+			copy(tdbb, csb, input->nod_arg[e_trim_value], remap, field_id,
+				 message, remap_fld);
+		node->nod_arg[e_trim_specification] = input->nod_arg[e_trim_specification];
 		return (node);
 
 	case nod_count:
@@ -4977,6 +5017,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		// FALL INTO
 
 	case nod_argument:
+	case nod_variable:
 		csb->csb_impure += sizeof(dsc);
 		break;
 
@@ -4986,6 +5027,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_rec_version:
 	case nod_negate:
 	case nod_substr:
+	case nod_trim:
 	case nod_divide:
 	case nod_null:
 	case nod_user_name:
@@ -4994,6 +5036,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_gen_id:
 	case nod_gen_id2:
 	case nod_upcase:
+	case nod_lowcase:
 	case nod_prot_mask:
 	case nod_lock_state:
 #ifdef PC_ENGINE
@@ -5003,6 +5046,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_scalar:
 	case nod_cast:
 	case nod_extract:
+	case nod_length:
 	case nod_current_time:
 	case nod_current_timestamp:
 	case nod_current_date:

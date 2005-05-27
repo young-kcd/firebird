@@ -116,6 +116,11 @@ class Config
 public:
 
 	/*
+		Installation directory
+	*/
+	static const char* getInstallDirectory();
+
+	/*
 		Root directory of current installation
 	*/
 	static const char* getRootDirectory();

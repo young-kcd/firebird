@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Header: /home/job/firebird/cvs-backup/firebird2/builds/install/arch-specific/solx86gcc/CS/postremove.in,v 1.1 2005-03-11 15:19:37 kkuznetsov Exp $
+# $Header: /home/job/firebird/cvs-backup/firebird2/builds/install/arch-specific/solx86gcc/CS/postremove.in,v 1.2 2005-05-27 22:15:33 asfernandes Exp $
 #------------------------------------------------------------------------------
 # $Copyright: 
 # Copyright (C) Siemens Nixdorf Informationssysteme AG 1994 - 1998

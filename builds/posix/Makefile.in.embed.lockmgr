@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.lockmgr,v 1.8 2004-12-28 21:12:47 skidder Exp $
+#  $Id: Makefile.in.embed.lockmgr,v 1.9 2005-05-27 22:16:01 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=boot

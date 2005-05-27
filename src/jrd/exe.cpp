@@ -84,6 +84,7 @@
 #include "../jrd/ext_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/idx_proto.h"
+#include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 
 #include "../jrd/lck_proto.h"
@@ -842,6 +843,35 @@ void EXE_send(thread_db*		tdbb,
 		MOVE_FAST(buffer, (SCHAR *) request + message->nod_impure, length);
 	else
 		MOVE_FASTER(buffer, (SCHAR *) request + message->nod_impure, length);
+
+	for (USHORT i = 0; i < format->fmt_count; ++i)
+	{
+		const DSC* desc = &format->fmt_desc[i];
+
+		// ASF: I'll not test for dtype_cstring because usage is only internal
+		if (desc->dsc_dtype == dtype_text || desc->dsc_dtype == dtype_varying)
+		{
+			const UCHAR* p = (UCHAR*)request + message->nod_impure + (ULONG)desc->dsc_address;
+			USHORT len;
+
+			switch (desc->dsc_dtype)
+			{
+				case dtype_text:
+					len = desc->dsc_length;
+					break;
+
+				case dtype_varying:
+					len = reinterpret_cast<const vary*>(p)->vary_length;
+					p += sizeof(USHORT);
+					break;
+			}
+
+			CharSet* charSet = INTL_charset_lookup(tdbb, DSC_GET_CHARSET(desc), NULL);
+
+			if (charSet && !charSet->wellFormed(len, p))
+				ERR_post(isc_malformed_string, 0);
+		}
+	}
 
 	execute_looper(tdbb, request, transaction, jrd_req::req_proceed);
 
@@ -3107,7 +3137,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			 * Reference: Bug 10116, 10424 
 			 */
 			CLEAR_NULL(new_record, i);
-			if (EVL_field(new_rpb->rpb_relation, new_record, i, &new_desc)) {
+			if (EVL_field(NULL, new_record, i, &new_desc)) {
 				if (EVL_field
 					(org_rpb->rpb_relation, org_record, i,
 					 &org_desc))
@@ -3672,7 +3702,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 		if (desc && !(request->req_flags & req_null))
 		{
 			length = MOV_make_string(desc,
-									 ttype_none,
+									 tdbb->tdbb_attachment->att_charset,
 									 &string,
 									 reinterpret_cast<vary*>(temp),
 									 sizeof(temp));

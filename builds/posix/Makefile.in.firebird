@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.60 2005-03-05 01:44:02 robocop Exp $
+#  $Id: Makefile.in.firebird,v 1.61 2005-05-27 22:16:02 asfernandes Exp $
 #
 
 ROOT=..
@@ -45,13 +45,14 @@ ISC_PASSWORD=	masterkey
 TEST_PATH = @FIREBIRD_BUILD_DIR@
 # Firebird libs path set at link time (-R) so do not override local requirements - nmcc 28/12/2002
 #LD_LIBRARY_PATH=$(RealFirebirdPath)/lib
+LD_LIBRARY_PATH=$(LIB)
 
 #export ISC_USER
 #export ISC_PASSWORD
 #export INTERBASE
 export FIREBIRD
 export DYLD_FRAMEWORK_PATH
-#export LD_LIBRARY_PATH
+export LD_LIBRARY_PATH
 
 ######################################################################
 ###########  Build process overview  #################################
@@ -180,15 +181,18 @@ $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 
 # 
 # Libraries that come from outside the project but are built 
-# as part of the project are included here.  Currently editline
-# is the only external library we have included.
+# as part of the project are included here.  Currently IBM ICU and 
+# editline is the only externals libraries we have included.
 # 
-EXTERNAL_LIBRARIES=
+EXTERNAL_LIBRARIES= $(LIBICU_SO)
 ifeq ($(EDITLINE_FLG),Y)
 EXTERNAL_LIBRARIES:= $(EXTERNAL_LIBRARIES) $(LIBEDITLINE_A)
 endif
 
 external_libraries: $(EXTERNAL_LIBRARIES)
+
+$(LIBICU_SO): 
+	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.icu
 
 $(LIBEDITLINE_A): 
 	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
@@ -485,7 +489,7 @@ rebuild_codes :
 #INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(CLASSIC_MiscFiles))
 #endif
 
-MiscFiles =  firebird.conf
+MiscFiles =  firebird.conf fbintl.conf
 INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(MiscFiles))
 
 

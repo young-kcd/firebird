@@ -266,7 +266,6 @@ public:
 
 	class blb_map *dbb_blob_map;	/* mapping of blobs for REPLAY */
 	struct log *dbb_log;		/* log file for REPLAY */
-	Firebird::vector<TextType*>		dbb_text_objects;	/* intl text type descriptions */
 	Firebird::vector<CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
 //	struct wal *dbb_wal;		/* WAL handle for WAL API */
 	TxPageCache*	dbb_tip_cache;	/* cache of latest known state of all transactions in system */
@@ -282,13 +281,14 @@ private:
 		dbb_database_name(p),
 		dbb_encrypt_key(p),
 		dbb_pools(1, p, type_dbb),
-		dbb_text_objects(p),
 		dbb_charsets(p)
 	{
 	}
 
 	~Database()
 	{
+		destroyIntlObjects();
+
 		pool_vec_type::iterator itr = dbb_pools.begin();
 		while (itr != dbb_pools.end())
 		{
@@ -302,6 +302,8 @@ private:
 		if (dbb_bufferpool)
 			JrdMemoryPool::deletePool(dbb_bufferpool);
 	}
+
+	void destroyIntlObjects();	// defined in intl.cpp
 
 	// The delete operators are no-oped because the Database memory is allocated from the
 	// Database's own permanent pool.  That pool has already been released by the Database

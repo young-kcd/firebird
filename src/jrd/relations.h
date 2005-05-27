@@ -305,6 +305,8 @@ RELATION(nam_collations, rel_collations, ODS_8_0)
 	FIELD(f_coll_sys_flag, nam_sys_flag, fld_flag, 0, 0, 0, 0)
 	FIELD(f_coll_desc, nam_description, fld_description, 1, 0, 0, 0)
 	FIELD(f_coll_fun_name, nam_fun_name, fld_fun_name, 1, 0, 0, 0)
+	FIELD(f_coll_base_collation_name, nam_base_collation_name, fld_collate_name, 1, 0, 0, 0)
+	FIELD(f_coll_specific_attr, nam_specific_attr, fld_specific_attr, 1, 0, 0, 0)
 END_RELATION 
 RELATION(nam_exceptions, rel_exceptions, ODS_8_0)
 	FIELD(f_xcp_name, nam_xcp_name, fld_xcp_name, 1, 0, 0, 0)

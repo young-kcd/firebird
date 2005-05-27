@@ -35,19 +35,12 @@
 
 #define	SPE_HAN(b1, b2)	(((b1) == 0xa4) && (((b2) == 0xa2) || ((b2) == 0xa4) || ((b2) == 0xa7) || ((b2) == 0xa8) || ((b2) == 0xa9) || ((b2) == 0xb1) || ((b2) == 0xb2) || ((b2) == 0xb3) || ((b2) == 0xb5) || ((b2) == 0xb6) || ((b2) == 0xb7) || ((b2) == 0xb8) || ((b2) == 0xb9) || ((b2) == 0xba) || ((b2) == 0xbb) || ((b2) == 0xbc) || ((b2) == 0xbd) || ((b2) == 0xbe)))
 
-USHORT CVKSC_ksc_to_unicode(csconvert* obj, USHORT *dest_ptr, USHORT dest_len,
-							const UCHAR* ksc_str, USHORT ksc_len,
-							SSHORT *err_code, USHORT *err_position);
+ULONG CVKSC_ksc_to_unicode(csconvert* obj, ULONG ksc_len, const UCHAR* ksc_str,
+						   ULONG dest_len, USHORT *dest_ptr,
+						   USHORT *err_code, ULONG *err_position);
 
-USHORT CVKSC_unicode_to_ksc(csconvert* obj, UCHAR *ksc_str, USHORT ksc_len,
-							const USHORT* unicode_str,
-							USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
+ULONG CVKSC_unicode_to_ksc(csconvert* obj, ULONG unicode_len, const USHORT* unicode_str,
+						   ULONG ksc_len, UCHAR *ksc_str,
+						   USHORT *err_code, ULONG *err_position);
 
-USHORT CVKSC_check_ksc(const UCHAR* ksc_str, USHORT ksc_len);
-
-USHORT CVKSC_ksc_byte2short(TEXTTYPE obj, USHORT *dst, USHORT dst_len,
-							const UCHAR* src, USHORT src_len,
-							SSHORT *err_code, USHORT *err_position);
-
-SSHORT CVKSC_ksc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
-
+INTL_BOOL CVKSC_check_ksc(charset* cs, ULONG ksc_len, const UCHAR* ksc_str, ULONG* offending_position);

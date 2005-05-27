@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: class_test.cpp,v 1.24 2004-10-04 08:14:44 robocop Exp $
+ *  $Id: class_test.cpp,v 1.25 2005-05-27 22:38:22 asfernandes Exp $
  *
  */
 

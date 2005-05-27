@@ -88,35 +88,15 @@ void LD2_assert(const char* filename, int lineno)
 */
 
 
-USHORT FB_DLL_EXPORT LD2_lookup(USHORT objtype,
-                            FPTR_SHORT* fun, SSHORT parm1, SSHORT parm2)
+INTL_BOOL FB_DLL_EXPORT LD2_lookup_charset(charset* cs, const ASCII* name)
 {
+	return false;
+}
 
-   switch (objtype) {
-   case type_texttype:
-       switch (parm1) {
-       default:
-           *fun = NULL;
-           return 1;
-       }
-   case type_charset:
-       switch (parm1) {
-       default:
-           *fun = NULL;
-           return 1;
-       }
-   case type_csconvert:
-       {
-           *fun = NULL;
-           return 1;
-       }
-   default:
-#ifdef DEV_BUILD
-       fb_assert(0);
-#endif
-       *fun = NULL;
-       return 1;
-   }
+
+INTL_BOOL FB_DLL_EXPORT LD2_lookup_texttype(const ASCII* texttype_name, const ASCII* charset_name)
+{
+	return false;
 }
 
 

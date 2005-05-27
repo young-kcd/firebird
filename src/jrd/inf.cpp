@@ -61,6 +61,7 @@
 #include "../jrd/tra_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/intl_proto.h"
 
 using namespace Jrd;
 
@@ -759,6 +760,66 @@ int INF_database_info(const SCHAR* items,
 
 		case frb_info_att_charset:
 			length = INF_convert(tdbb->tdbb_attachment->att_charset, buffer);
+			break;
+
+		case isc_info_internal:
+			length = 0;
+
+			if (items < end_items)
+			{
+				UCHAR privCode = *items++;
+
+				switch (privCode)
+				{
+					case INF_internal_db_info_intl_char_length:
+					case INF_internal_db_info_intl_octet_length:
+					case INF_internal_db_info_intl_is_legacy_charset:
+					{
+						CharSet* charSet = items < end_items ? INTL_charset_lookup(tdbb, *items++, NULL) : NULL;
+
+						if (charSet)
+						{
+							if (privCode == INF_internal_db_info_intl_char_length ||
+								privCode == INF_internal_db_info_intl_octet_length)
+							{
+								USHORT strLen = *reinterpret_cast<const USHORT*>(items);
+								items += sizeof(USHORT);
+								if (items + strLen <= end_items)
+								{
+									if (privCode == INF_internal_db_info_intl_char_length)
+									{
+										ULONG offendingPos;
+										if (!charSet->wellFormed(strLen, (const UCHAR*)items, &offendingPos))
+											length = INF_convert(-1, buffer);
+										else
+										{
+											length = INF_convert(charSet->length(tdbb, strLen,
+												(const UCHAR*)items, true), buffer);
+										}
+									}
+									else if (privCode == INF_internal_db_info_intl_octet_length)
+									{
+										Firebird::HalfStaticArray<UCHAR, 256> dummy;
+										length = INF_convert(charSet->substring(tdbb, strLen, (const UCHAR*)items,
+											strLen, dummy.getBuffer(strLen), 0, 
+											strLen / charSet->maxBytesPerChar()), buffer);
+									}
+								}
+								items += strLen;
+							}
+							else if (privCode == INF_internal_db_info_intl_is_legacy_charset)
+							{
+								*p++ = charSet->getFlags() & CHARSET_LEGACY_SEMANTICS ? 1 : 0;
+								length = 1;
+							}
+						}
+						break;
+					}
+
+					default:
+						break;
+				}
+			}
 			break;
 
 		default:

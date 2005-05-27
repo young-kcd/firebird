@@ -75,6 +75,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "config"=.\config.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "dsql_server"=.\dsql_server.dsp - Package Owner=<4>
 
 Package=<5>
@@ -194,6 +206,9 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name common_classic
     End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name config
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -257,6 +272,9 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name engine_embed
     End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name config
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -310,6 +328,9 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name engine
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name config
     End Project Dependency
 }}}
 
@@ -539,9 +560,6 @@ Package=<5>
 
 Package=<4>
 {{{
-    Begin Project Dependency
-    Project_Dep_Name common
-    End Project Dependency
 }}}
 
 ###############################################################################

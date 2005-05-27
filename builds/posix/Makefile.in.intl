@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.20 2004-12-28 21:12:47 skidder Exp $
+#  $Id: Makefile.in.intl,v 1.21 2005-05-27 22:16:08 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=superclient

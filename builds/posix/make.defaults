@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.38 2005-02-24 12:23:14 alexpeshkoff Exp $
+#   $Id: make.defaults,v 1.39 2005-05-27 22:16:09 asfernandes Exp $
 # 
 
 
@@ -174,6 +174,7 @@ LIBFBINTL_SO = $(FIREBIRD)/intl/libfbintl.$(SHRLIB_EXT)
 LIBFBCOMMON_A = $(LIB)/libfbcommon.a
 LIBFBSTATIC_A = $(LIB)/libfbstatic.a
 LIBEDITLINE_A = $(LIB)/libeditline.a
+LIBICU_SO = $(LIB)/libicuuc.so $(LIB)/libicudata.so $(LIB)/libicui18n.so
 
 # Shared library name for usage inside of the UDF
 IbUtilLibraryName = libib_util.$(SHRLIB_EXT)

@@ -35,14 +35,15 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
 		err.cpp iberr.cpp \
 		event.cpp evl.cpp exe.cpp ext.cpp \
 		execute_statement.cpp filters.cpp flu.cpp functions.cpp \
-		idx.cpp inf.cpp intl.cpp intl_builtin.cpp inuse.cpp \
+		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp inuse.cpp \
 		jrd.cpp lck.cpp log.cpp  \
 		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
 		plugin_manager.cpp pwd.cpp rlck.cpp \
 		rng.cpp rpb_chain.cpp rse.cpp \
 		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
 		svc.cpp sym.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
-		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module) ThreadData.cpp thd.cpp
+		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module) ThreadData.cpp thd.cpp \
+		unicode_util.cpp
 
 
 JRD_Files = $(JRD_ClientFiles) $(JRD_ServerFiles)
@@ -218,6 +219,33 @@ FBCONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCONFIG_So
 
 #________________________________________________________________________
 #
+# config
+
+CONFIG_ClientFiles=AdminException.cpp Args.cpp ArgsException.cpp \
+    ConfObj.cpp ConfObject.cpp ConfigFile.cpp Configuration.cpp \
+    DirectoryList.cpp Element.cpp FileName.cpp InputFile.cpp \
+    InputStream.cpp Lex.cpp ScanDir.cpp Stream.cpp StreamSegment.cpp
+CONFIG_ServerFiles=
+
+CONFIG_Files= $(CONFIG_ClientFiles) $(CONFIG_ServerFiles)
+
+CONFIG_Sources = $(addprefix config/, $(CONFIG_Files))
+CONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CONFIG_Sources))))
+
+#________________________________________________________________________
+#
+# vulcan
+
+VULCAN_ClientFiles=JString.cpp PathName.cpp RefObject.cpp
+VULCAN_ServerFiles=
+
+VULCAN_Files= $(VULCAN_ClientFiles) $(VULCAN_ServerFiles)
+
+VULCAN_Sources = $(addprefix vulcan/, $(VULCAN_Files))
+VULCAN_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(VULCAN_Sources))))
+
+#________________________________________________________________________
+#
 # common
 
 FBCOMMON_ClientFiles = fb_exception.cpp utils.cpp classes/MetaName.cpp
@@ -272,7 +300,9 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(CLUMPLETS_Objects) \
                 $(FBCONFIG_Objects) \
                 $(BURP_Objects) \
-                $(ALICE_Objects)
+                $(ALICE_Objects) \
+		$(CONFIG_Objects) \
+		$(VULCAN_Objects)
 
 # Objects differences for server (super) and embedded (classic) libraries 
 # have been worked out above in this file, based on macros, so here they
@@ -297,7 +327,9 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(INTERFACE_Objects) \
                 $(GPRELIB_Objects) \
 				$(FBCONFIG_Objects) \
-				$(CLUMPLETS_Objects)
+				$(CLUMPLETS_Objects) \
+				$(CONFIG_Objects) \
+				$(VULCAN_Objects)
 
 
 # Not needed since loaded into libfbmemory.a already

@@ -456,6 +456,7 @@ bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 		case nod_value_if:
 		case nod_substr:
+		case nod_trim:
 			{
 				if (node1->nod_count != node2->nod_count)
 				{
@@ -491,6 +492,7 @@ bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 			break;
 
 		case nod_upcase:
+		case nod_lowcase:
 			if (expression_equal2(tdbb, opt, node1->nod_arg[0],
 								  node2->nod_arg[0], stream))
 			{
@@ -528,6 +530,15 @@ bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 			if (node1->nod_arg[e_extract_part] == node2->nod_arg[e_extract_part] &&
 				expression_equal2(tdbb, opt, node1->nod_arg[e_extract_value],
 								  node2->nod_arg[e_extract_value], stream)) 
+			{
+				return true;
+			}
+			break;
+
+		case nod_length:
+			if (node1->nod_arg[e_length_type] == node2->nod_arg[e_length_type] &&
+				expression_equal2(tdbb, opt, node1->nod_arg[e_length_value],
+								  node2->nod_arg[e_length_value], stream)) 
 			{
 				return true;
 			}

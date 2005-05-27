@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.46 2004-11-10 04:18:58 robocop Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.47 2005-05-27 22:42:14 asfernandes Exp $
  */
 
 #include "firebird.h"

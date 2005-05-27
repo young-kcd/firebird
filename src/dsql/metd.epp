@@ -273,7 +273,7 @@ void METD_drop_relation( dsql_req* request, const dsql_str* name)
 }
 
 
-dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name)
+dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name, USHORT charset_id)
 {
 /**************************************
  *
@@ -295,9 +295,14 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name)
 	symbol = HSHD_lookup(request->req_dbb, (TEXT*)name->str_data,
 						 name->str_length, SYM_intlsym, 0);
 	for (; symbol; symbol = symbol->sym_homonym)
+	{
 		if ((symbol->sym_type == SYM_intlsym) &&
-			(((dsql_intlsym*) symbol->sym_object)->intlsym_type ==
-			 DSQL_INTLSYM_collation)) return (dsql_intlsym*) symbol->sym_object;
+			(((dsql_intlsym*) symbol->sym_object)->intlsym_type == DSQL_INTLSYM_collation) &&
+			(((dsql_intlsym*) symbol->sym_object)->intlsym_charset_id == charset_id))
+		{
+			 return (dsql_intlsym*) symbol->sym_object;
+		}
+	}
 
 
 // Now see if it is in the database 
@@ -312,7 +317,8 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name)
 	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_collation])
 	X IN RDB$COLLATIONS
 		CROSS Y IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
-		WITH X.RDB$COLLATION_NAME EQ name->str_data;
+		WITH X.RDB$COLLATION_NAME EQ name->str_data AND
+			 X.RDB$CHARACTER_SET_ID EQ charset_id;
 
 	THREAD_ENTER();
 
@@ -585,6 +591,9 @@ USHORT METD_get_charset_bpc (dsql_req* request,
     gds_trans = request->req_trans;
     
     handle = 0;
+    
+    if (charset_id == CS_dynamic)
+		charset_id = dbb->dbb_att_charset;
     
     THREAD_EXIT();
     

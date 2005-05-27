@@ -25,17 +25,14 @@
 USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen);
 USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 	USHORT iOutLen, BYTE *pOutChar, USHORT partial);
-SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2);
+SSHORT famasc_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2,
+	INTL_BOOL* error_flag);
 
-USHORT famasc_to_upper(TEXTTYPE obj, BYTE ch);
-USHORT famasc_to_lower(TEXTTYPE obj, BYTE ch);
-SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE* pOutStr);
+ULONG famasc_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
+ULONG famasc_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
 
-USHORT cp1251_to_upper(TEXTTYPE obj, BYTE ch);
-USHORT cp1251_to_lower(TEXTTYPE obj, BYTE ch);
-SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE* pOutStr);
-
-SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* ptr, USHORT count);
+ULONG cp1251_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
+ULONG cp1251_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
 
 /*
  * Generic base for InterBase 4.0 Language Driver - ASCII family (binary

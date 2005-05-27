@@ -117,4 +117,5 @@
 	FIELD(fld_backup_level	, nam_backup_level	, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 	FIELD(fld_guid			, nam_guid			, dtype_text	, 38			, 0						, 0, NULL)
 	FIELD(fld_scn			, nam_scn			, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
-	
+
+	FIELD(fld_specific_attr	, nam_specific_attr	, dtype_blob	, BLOB_SIZE		, isc_blob_text			, 0, NULL)

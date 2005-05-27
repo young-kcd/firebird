@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.52 2004-10-07 09:01:39 robocop Exp $
+$Id: isc.cpp,v 1.53 2005-05-27 22:44:00 asfernandes Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE

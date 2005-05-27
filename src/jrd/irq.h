@@ -110,6 +110,8 @@ const int irq_verify_role_name	= 73;	/* ensure role exists in roles & user_privi
 const int irq_l_relation_defsec	= 74;	/* check the default sec class name against rel. */
 const int irq_m_index_seg		= 75;	/* modify per-segment index selectivity */
 
-const int irq_MAX			= 76;
+const int irq_l_subtype		= 76;		/* lookup subtype (charset/collation) */
+
+const int irq_MAX			= 77;
 
 #endif /* JRD_IRQ_H */

@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: guid.cpp,v 1.7 2004-11-14 18:02:50 alexpeshkoff Exp $
+ *  $Id: guid.cpp,v 1.8 2005-05-27 22:44:32 asfernandes Exp $
  *
  */
 

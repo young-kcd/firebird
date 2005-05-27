@@ -178,7 +178,7 @@ typedef contents CONTENTS;
 
 static SLONG add_node(thread_db*, WIN*, index_insertion*, temporary_key*, RecordNumber*, 
 					  SLONG*, SLONG*);
-static void compress(thread_db*, const dsc*, temporary_key*, USHORT, bool, bool, bool);
+static void compress(thread_db*, const dsc*, temporary_key*, USHORT, bool, bool, USHORT);
 static USHORT compress_root(thread_db*, index_root_page*);
 static void copy_key(const temporary_key*, temporary_key*);
 static CONTENTS delete_node(thread_db*, WIN*, UCHAR*);
@@ -830,7 +830,7 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 
 
 IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* idx, 
-			  temporary_key* key, idx_null_state* null_state)
+			  temporary_key* key, idx_null_state* null_state, bool fuzzy)
 {
 /**************************************
  *
@@ -933,7 +933,9 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				key->key_flags &= ~key_all_nulls;
 			}
 			compress(tdbb, desc_ptr, key, tail->idx_itype, isNull,
-				(idx->idx_flags & idx_descending), false);
+				(idx->idx_flags & idx_descending),
+				(fuzzy ? INTL_KEY_PARTIAL :
+						 ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
 		}
 		else {
 			UCHAR* p = key->key_data;
@@ -959,7 +961,9 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				}
 
 				compress(tdbb, desc_ptr, &temp, tail->idx_itype, isNull,
-					(idx->idx_flags & idx_descending), false);
+					(idx->idx_flags & idx_descending),
+					(fuzzy ? INTL_KEY_PARTIAL :
+							 ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
 
 				const UCHAR* q = temp.key_data;
 				for (USHORT l = temp.key_length; l; --l, --stuff_count)	{
@@ -1292,7 +1296,7 @@ void BTR_make_key(thread_db* tdbb,
 			key->key_flags &= ~key_all_nulls;
 		}
 		compress(tdbb, desc, key, tail->idx_itype, isNull,
-			(idx->idx_flags & idx_descending), fuzzy);
+			(idx->idx_flags & idx_descending), (fuzzy ? INTL_KEY_PARTIAL : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
 		if (fuzzy & (key->key_flags & key_empty)) {
 			key->key_length = 0;
 		}
@@ -1313,7 +1317,7 @@ void BTR_make_key(thread_db* tdbb,
 			}
 			compress(tdbb, desc, &temp, tail->idx_itype, isNull,
 				(idx->idx_flags & idx_descending),
-				((n == count - 1) ? fuzzy : false));
+				((n == count - 1) ? (fuzzy ? INTL_KEY_PARTIAL : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)) : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
 			const UCHAR* q = temp.key_data;
 			for (USHORT l = temp.key_length; l; --l, --stuff_count)
 			{
@@ -2084,7 +2088,7 @@ static void compress(thread_db* tdbb,
 					 const dsc* desc,
 					 temporary_key* key,
 					 USHORT itype,
-					 bool isNull, bool descending, bool fuzzy)
+					 bool isNull, bool descending, USHORT key_type)
 {
 /**************************************
  *
@@ -2192,7 +2196,7 @@ static void compress(thread_db* tdbb,
 		itype == idx_metadata || 
 		itype >= idx_first_intl_string) 
 	{
-		UCHAR temp1[MAX_KEY];
+		UCHAR temp1[MAX_KEY + 1];
 		const UCHAR pad = (itype == idx_string) ? ' ' : 0;
 		UCHAR* ptr;
 
@@ -2211,7 +2215,7 @@ static void compress(thread_db* tdbb,
 			to.dsc_ttype() = ttype_sort_key;
 			to.dsc_length = sizeof(temp1);
 			ptr = to.dsc_address = temp1;
-			length = INTL_string_to_key(tdbb, itype, desc, &to, fuzzy);
+			length = INTL_string_to_key(tdbb, itype, desc, &to, key_type);
 		}
 		else {
 			USHORT ttype;

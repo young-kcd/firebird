@@ -532,6 +532,9 @@
 				RelativePath="..\..\..\src\intl\collations\pw1252nor4.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\intl\collations\pw1252ptbr.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\collations\pw1252span.h">
 			</File>
 			<File

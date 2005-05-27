@@ -56,11 +56,20 @@ Firebird 2.0:
 
   Added as reserved words:
 
+    BIT_LENGTH
+    BOTH
+    CHAR_LENGTH
+    CHARACTER_LENGTH
     CLOSE
     CROSS
     FETCH
+    LEADING
+    LOWER
+    OCTET_LENGTH
     OPEN
     ROWS
+    TRAILING
+    TRIM
 
   Moved from non-reserved words to reserved:
 

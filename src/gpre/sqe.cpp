@@ -929,6 +929,7 @@ bool SQE_resolve(GPRE_NOD node,
 	case nod_divide:
 	case nod_negate:
 	case nod_upcase:
+	case nod_lowcase:
 	case nod_concatenate:
 	case nod_cast:
 		{
@@ -1413,6 +1414,7 @@ static gpre_fld* get_ref( GPRE_NOD expr)
 	case nod_divide:
 	case nod_negate:
 	case nod_upcase:
+	case nod_lowcase:
 	case nod_concatenate:
 		{
 			gpre_nod** ptr = expr->nod_arg;
@@ -3100,6 +3102,15 @@ static GPRE_NOD par_udf( gpre_req* request)
 		return node;
 	}
 
+	if (MSC_match(KW_LOWER)) {
+		node = MSC_node(nod_lowcase, 1);
+		EXP_left_paren(0);
+		node->nod_arg[0] = SQE_value(request, false, NULL, NULL);
+		local_count = 1;
+		par_terminating_parens(&local_count, &local_count);
+		return node;
+	}
+
 	if (MSC_match(KW_CAST)) {
 		node = MSC_node(nod_cast, 2);
 		node->nod_count = 1;
@@ -3198,6 +3209,7 @@ static GPRE_NOD post_fields( GPRE_NOD node, map* to_map)
 
 	case nod_list:
 	case nod_upcase:
+	case nod_lowcase:
 	case nod_concatenate:
 	case nod_cast:
 	case nod_plus:
@@ -3529,6 +3541,7 @@ static void set_ref( GPRE_NOD expr, gpre_fld* field_ref)
 	case nod_divide:
 	case nod_negate:
 	case nod_upcase:
+	case nod_lowcase:
 	case nod_concatenate:
 	case nod_cast:
 		{
@@ -3671,6 +3684,7 @@ static bool validate_references(const gpre_nod* fields,
 		case nod_le:
 		case nod_lt:
 		case nod_upcase:
+		case nod_lowcase:
 		case nod_concatenate:
 		case nod_cast:
 			invalid |= validate_references(*ptr, group_by);

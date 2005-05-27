@@ -21,21 +21,21 @@
  * Contributor(s): ______________________________________.
  */
 
-USHORT CVJIS_sjis_to_unicode(csconvert* obj, USHORT *dest_ptr, USHORT dest_len,
-							const UCHAR* sjis_str,
-							USHORT sjis_len, SSHORT *err_code, USHORT *err_position);
+ULONG CVJIS_sjis_to_unicode(csconvert* obj, ULONG sjis_len, const UCHAR* sjis_str,
+							ULONG dest_len, USHORT *dest_ptr,
+							USHORT *err_code, ULONG *err_position);
 
-USHORT CVJIS_unicode_to_sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len,
-							const USHORT* unicode_str,
-							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
+ULONG CVJIS_unicode_to_sjis(csconvert* obj, ULONG unicode_len, const USHORT* unicode_str,
+							ULONG sjis_len, UCHAR *sjis_str,
+							USHORT *err_code, ULONG *err_position);
 
-USHORT CVJIS_eucj_to_unicode(csconvert* obj, USHORT *dest_ptr, USHORT dest_len,
-							const UCHAR* src_ptr,
-							USHORT src_len, SSHORT *err_code, USHORT *err_position);
+ULONG CVJIS_eucj_to_unicode(csconvert* obj, ULONG src_len, const UCHAR* src_ptr,
+							ULONG dest_len, USHORT *dest_ptr,
+							USHORT *err_code, ULONG *err_position);
 
-USHORT CVJIS_unicode_to_eucj(csconvert* obj, UCHAR *eucj_str, USHORT eucj_len,
-							const USHORT* unicode_str,
-							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
+ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const USHORT* unicode_str,
+							ULONG eucj_len, UCHAR *eucj_str,
+							USHORT *err_code, ULONG *err_position);
 
 /*
 static USHORT CVJIS_check_euc(UCHAR *euc_str, USHORT euc_len);
@@ -47,16 +47,3 @@ static USHORT CVJIS_euc2sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len, U
 static USHORT CVJIS_sjis2euc(csconvert* obj, UCHAR *euc_str, USHORT euc_len, UCHAR *sjis_str
 							, USHORT sjis_len, SSHORT *err_code, USHORT *err_position);
 */
-
-USHORT CVJIS_euc_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len,
-							const UCHAR* src, USHORT src_len,
-							SSHORT *err_code,	USHORT *err_position);
-
-SSHORT CVJIS_euc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
-
-USHORT CVJIS_sjis_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len,
-							const UCHAR* src, USHORT src_len,
-							SSHORT *err_code, USHORT *err_position);
-
-SSHORT CVJIS_sjis_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
-

@@ -92,6 +92,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/intlobj_new.h"
 
 static void	yyerror(const TEXT*);
 
@@ -501,8 +502,22 @@ static LexerState lex;
 %token NEXT
 %token SEQUENCE
 %token RESTART
-%token COMMENT
+// %token ACCENT		// FB_NEW_INTL_ALLOW_NOT_READY
+%token BOTH
 %token COLLATION
+%token COMMENT
+%token BIT_LENGTH
+%token CHAR_LENGTH
+%token CHARACTER_LENGTH
+// %token INSENSITIVE	// FB_NEW_INTL_ALLOW_NOT_READY
+%token LEADING
+%token KW_LOWER
+%token OCTET_LENGTH
+// %token PAD			// FB_NEW_INTL_ALLOW_NOT_READY
+// %token SENSITIVE		// FB_NEW_INTL_ALLOW_NOT_READY
+// %token SPACE			// FB_NEW_INTL_ALLOW_NOT_READY
+%token TRAILING
+%token TRIM
 
 /* precedence declarations for expression evaluation */
 
@@ -844,6 +859,10 @@ create_clause	: EXCEPTION exception_clause
 			{ $$ = $2; }
 		| ROLE role_clause
 			{ $$ = $2; }
+		/*** FB_NEW_INTL_ALLOW_NOT_READY
+		| COLLATION collation_clause
+			{ $$ = $2; }
+		***/
 		;
 
 
@@ -1036,6 +1055,51 @@ role_clause : symbol_role_name
 		;
 
 
+/* CREATE COLLATION */
+
+/*** FB_NEW_INTL_ALLOW_NOT_READY
+collation_clause : symbol_collation_name FOR symbol_character_set_name
+		collation_sequence_definition collation_attribute_list_opt collation_specific_attribute_opt
+			{ $$ = make_node (nod_def_collation, 
+						(int) e_def_coll_count, $1, $3, $4, make_list($5), $6); }
+		;
+
+collation_sequence_definition :
+		FROM symbol_collation_name { $$ = make_node(nod_collation_from, 1, $2); }
+		|
+		{ $$ = NULL; }
+		;
+
+collation_attribute_list_opt : { $$ = NULL; }
+		| collation_attribute_list
+		;
+
+collation_attribute_list : collation_attribute
+		| collation_attribute_list ',' collation_attribute { $$ = make_node(nod_list, 2, $1, $3); }
+		;
+
+collation_attribute :
+		  collation_pad_attribute
+		| collation_case_attribute
+		| collation_accent_attribute
+		;
+
+collation_pad_attribute : NO PAD { $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_PAD_SPACE); }
+		| PAD SPACE { $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_PAD_SPACE); }
+		;
+
+collation_case_attribute : CASE SENSITIVE { $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_CASE_INSENSITIVE); }
+		| CASE INSENSITIVE { $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_CASE_INSENSITIVE); }
+		;
+
+collation_accent_attribute : ACCENT SENSITIVE { $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
+		| ACCENT INSENSITIVE { $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
+		;
+
+collation_specific_attribute_opt : { $$ = NULL; }
+		| sql_string { $$ = make_node(nod_collation_specific_attr, 1, MAKE_constant((dsql_str*)$1, CONSTANT_STRING)); }
+		;
+***/
 
 /* CREATE DATABASE */
 
@@ -2025,7 +2089,19 @@ keyword_or_column	: valid_symbol_name
 		| ROWS
 		| USING
 		| CROSS
+		| BIT_LENGTH
+		| BOTH
+		| CHAR_LENGTH
+		| CHARACTER_LENGTH
 		| COMMENT
+		// | INSENSITIVE	// FB_NEW_INTL_ALLOW_NOT_READY
+		| LEADING
+		| KW_LOWER
+		| OCTET_LENGTH
+		// | SENSITIVE		// FB_NEW_INTL_ALLOW_NOT_READY
+		| TRAILING
+		| TRIM
+
 		;
 
 col_opt		: ALTER
@@ -3905,15 +3981,42 @@ aggregate_function	: COUNT '(' '*' ')'
 		;
 
 numeric_value_function	: extract_expression
+		| length_expression
 		;
 
 extract_expression	: EXTRACT '(' timestamp_part FROM value ')'
 			{ $$ = make_node (nod_extract, (int) e_extract_count, $3, $5); }
 		;
 
+length_expression	: bit_length_expression
+		| char_length_expression
+		| octet_length_expression
+		;
+
+bit_length_expression	: BIT_LENGTH '(' value ')'
+			{ $$ = make_node(nod_length, (int) e_length_count,
+					MAKE_constant((dsql_str*)blr_length_bit, CONSTANT_SLONG), $3); }
+		;
+
+char_length_expression	: CHAR_LENGTH '(' value ')'
+			{ $$ = make_node(nod_length, (int) e_length_count,
+					MAKE_constant((dsql_str*)blr_length_char, CONSTANT_SLONG), $3); }
+		| CHARACTER_LENGTH '(' value ')'
+			{ $$ = make_node(nod_length, (int) e_length_count,
+					MAKE_constant((dsql_str*)blr_length_char, CONSTANT_SLONG), $3); }
+		;
+
+octet_length_expression	: OCTET_LENGTH '(' value ')'
+			{ $$ = make_node(nod_length, (int) e_length_count,
+					MAKE_constant((dsql_str*)blr_length_octet, CONSTANT_SLONG), $3); }
+		;
+
 string_value_function	:  substring_function
+		| trim_function
 		| KW_UPPER '(' value ')'
 			{ $$ = make_node (nod_upcase, 1, $3); }
+		| KW_LOWER '(' value ')'
+			{ $$ = make_node (nod_lowcase, 1, $3); }
 		;
 
 substring_function	: SUBSTRING '(' value FROM value string_length_opt ')'
@@ -3923,6 +4026,26 @@ substring_function	: SUBSTRING '(' value FROM value string_length_opt ')'
 			{ $$ = make_node (nod_substr, (int) e_substr_count, $3,
 				make_node (nod_subtract, 2, $5,
 					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)), $6); }
+		;
+
+trim_function	: TRIM '(' trim_specification value FROM value ')'
+			{ $$ = make_node (nod_trim, (int) e_trim_count, $3, $4, $6); }
+		| TRIM '(' value FROM value ')'
+			{ $$ = make_node (nod_trim, (int) e_trim_count, 
+				MAKE_constant ((dsql_str*)blr_trim_both, CONSTANT_SLONG), $3, $5); }
+		| TRIM '(' trim_specification FROM value ')'
+			{ $$ = make_node (nod_trim, (int) e_trim_count, $3, NULL, $5); }
+		| TRIM '(' value ')'
+			{ $$ = make_node (nod_trim, (int) e_trim_count,
+				MAKE_constant ((dsql_str*)blr_trim_both, CONSTANT_SLONG), NULL, $3); }
+		;
+
+trim_specification	: BOTH
+			{ $$ = MAKE_constant ((dsql_str*)blr_trim_both, CONSTANT_SLONG); }
+		| TRAILING
+			{ $$ = MAKE_constant ((dsql_str*)blr_trim_trailing, CONSTANT_SLONG); }
+		| LEADING
+			{ $$ = MAKE_constant ((dsql_str*)blr_trim_leading, CONSTANT_SLONG); }
 		;
 
 string_length_opt	: FOR value
@@ -4149,16 +4272,19 @@ non_reserved_word :
 	| DELETING
 /*  | FIRST | SKIP -- this is handled by the lexer. */
 	| BLOCK
-	| BACKUP				/* added in FB 2.0 */
+	// | ACCENT	// FB_NEW_INTL_ALLOW_NOT_READY				/* added in FB 2.0 */
+	| BACKUP
+	| COLLATION
 	| KW_DIFFERENCE
 	| IIF
+	// | PAD	// FB_NEW_INTL_ALLOW_NOT_READY
 	| SCALAR_ARRAY
+	// | SPACE	// FB_NEW_INTL_ALLOW_NOT_READY
 	| WEEKDAY
 	| YEARDAY
 	| SEQUENCE
 	| NEXT
 	| RESTART
-	| COLLATION
 	;
 
 %%
@@ -5246,4 +5372,3 @@ static void yyabandon (SSHORT		sql_code,
 	ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) sql_code, 
 		isc_arg_gds, error_symbol, 0);
 }
-

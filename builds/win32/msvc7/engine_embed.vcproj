@@ -28,8 +28,8 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,EMBEDDED"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,EMBEDDED,NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="TRUE"
@@ -81,8 +81,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,DEV_BUILD,EMBEDDED"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -256,6 +256,9 @@
 				RelativePath="..\..\..\src\jrd\intl_builtin.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\IntlManager.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\inuse.cpp">
 			</File>
 			<File
@@ -377,6 +380,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\tra.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\unicode_util.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\utl.cpp">
@@ -656,10 +662,13 @@
 				RelativePath="..\..\..\src\jrd\intl_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\IntlManager.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\intlnames.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\intlobj.h">
+				RelativePath="..\..\..\src\jrd\intlobj_new.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\inuse_proto.h">
@@ -978,6 +987,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\types.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\unicode_util.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\utl_proto.h">

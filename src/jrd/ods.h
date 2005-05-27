@@ -137,15 +137,17 @@ const USHORT ODS_CURRENT	= ODS_CURRENT11;	/* the highest defined minor version
 const USHORT ODS_CURRENT_VERSION	= ODS_11_0;		/* Current ODS version in use which includes 
 												both Major and Minor ODS versions! */
 // ODS types.
-const USHORT ODS_TYPE_MASK		= 0xFF00;
-const USHORT ODS_TYPE_INTERBASE	= 0x0000; // Interbase ODS (we support it up to ODS10)
-const USHORT ODS_TYPE_FIREBIRD	= 0x0100; // Official Firebird ODS (used since ODS11)
-const USHORT ODS_TYPE_TRANSIENT	= 0x0200; // Firebird ODS with some unfinished changes
+const USHORT ODS_TYPE_MASK			= 0xFF00;
+const USHORT ODS_TYPE_INTERBASE		= 0x0000; // Interbase ODS (we support it up to ODS10)
+const USHORT ODS_TYPE_FIREBIRD		= 0x0100; // Official Firebird ODS (used since ODS11)
+const USHORT ODS_TYPE_TRANSIENT		= 0x0200; // Firebird ODS with some unfinished changes
+const USHORT ODS_TYPE_TRANSIENT_INTL= 0x0300; // Firebird 2 - INTL branch
 
 // ODS types in range 0x80-0xFF are reserved for private builds and forks
 const USHORT ODS_TYPE_PRIVATE_0	= 0x8000; // ODS used for private versions, such as BroadView builds
 
-const USHORT ODS_TYPE_CURRENT	= ODS_TYPE_TRANSIENT;
+const USHORT ODS_TYPE_CURRENT	= ODS_TYPE_TRANSIENT_INTL;
+//const USHORT ODS_TYPE_CURRENT	= ODS_TYPE_TRANSIENT;
 //const USHORT ODS_TYPE_CURRENT	= ODS_TYPE_PRIVATE_0;
 
 const USHORT USER_REL_INIT_ID_ODS8		= 31;	/* ODS <= 8 */

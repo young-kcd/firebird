@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  	James K. Lowden <jklowden@schemamania.org>
 # 
-#   $Id: install.sh.in,v 1.2 2005-03-05 01:43:50 robocop Exp $
+#   $Id: install.sh.in,v 1.3 2005-05-27 22:15:16 asfernandes Exp $
 # 
 
 #  Install script for FirebirdSQL database engine

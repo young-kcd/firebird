@@ -244,6 +244,7 @@ typedef enum nod_t {
 	nod_natural, nod_index_order, nod_ansi_all,
 	nod_extract, nod_current_date,
 	nod_current_time, nod_current_timestamp,
+	nod_lowcase,
 	nod_LASTNOD					/* Leave this debugging GPRE_NOD last */
 } NOD_T;
 

@@ -118,8 +118,23 @@ const int MAX_INDEX_SEGMENTS = 16;
 const int MAX_KEY			= 4096;		// Maximum page size possible divide by 4 (16384 / 4)
 const int MAX_KEY_PRE_ODS11	= 255;		// Max key-size before ODS11
 
-const char SQL_MATCH_1_CHAR		= '_';	/* Not translatable */
-const char SQL_MATCH_ANY_CHARS	= '%';	/* Not translatable */
+const USHORT SQL_MATCH_1_CHAR		= '_';	/* Not translatable */
+const USHORT SQL_MATCH_ANY_CHARS	= '%';	/* Not translatable */
+
+static const USHORT GDML_MATCH_ONE	= '?';
+static const USHORT GDML_MATCH_ANY	= '*';
+
+static const USHORT GDML_QUOTE		= '@';
+static const USHORT GDML_NOT		= '~';
+static const USHORT GDML_RANGE		= '-';
+static const USHORT GDML_CLASS_START= '[';
+static const USHORT GDML_CLASS_END	= ']';
+static const USHORT GDML_SUBSTITUTE	= '=';
+static const USHORT GDML_FLAG_SET	= '+';
+static const USHORT GDML_FLAG_CLEAR	= '-';
+static const USHORT GDML_COMMA		= ',';
+static const USHORT GDML_LPAREN		= '(';
+static const USHORT GDML_RPAREN		= ')';
 
 const size_t MAX_CONTEXT_VARS	= 1000;		// Maximum number of context variables allowed for a single object
 

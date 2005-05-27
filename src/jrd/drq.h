@@ -10,7 +10,7 @@
  *
  *   drq_e_l_idx/109 and drq_l_idx_seg/110 are not used any more. The usage of
  *   drq_e_l_idx and drq_l_idx_seg in the past is as the following:
- *    
+ *
  *
  *      FOR (...) IDX IN RDB$INDICES
  *               WITH IDX.RDB$RELATION_NAME EQ table_name
@@ -191,6 +191,8 @@ const int drq_m_gen         = 140;  // modify generator
 const int drq_m_prm         = 141;  // modify procedure's parameter
 const int drq_m_rol         = 142;  // modify sql role
 const int drq_m_view        = 143;  // modify view
-const int drq_MAX			= 144;
+const int drq_s_colls		= 144;  /* store collations */
+const int drq_l_colls		= 145;	/* lookup collations */
+const int drq_MAX			= 146;
 
 #endif /* JRD_DRQ_H */

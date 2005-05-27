@@ -116,6 +116,11 @@ public:
 		return false;
 	}
 
+	bool exist(const KeyType& key)
+	{
+		return tree.locate(key);
+	}
+
 	size_t count() const { return mCount; }
 
 	typedef BePlusTree<KeyValuePair*, KeyType, MemoryPool, FirstObjectKey<KeyValuePair>, KeyComparator> ValuesTree;

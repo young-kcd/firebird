@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: tarMainInstall.sh.in,v 1.2 2005-04-29 18:22:25 alexpeshkoff Exp $
+#   $Id: tarMainInstall.sh.in,v 1.3 2005-05-27 22:15:13 asfernandes Exp $
 # 
 
 #  Install script for FirebirdSQL database engine

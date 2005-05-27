@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux_generic,v 1.1 2004-12-28 21:00:57 skidder Exp $
+#$Id: prefix.linux_generic,v 1.2 2005-05-27 22:16:09 asfernandes Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
 PROD_FLAGS=-O3 -DNDEBUG -DLINUX -pipe -MMD -fPIC

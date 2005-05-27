@@ -23,19 +23,13 @@
 
  /* Note: all routines have cousins in jrd/intl.cpp */
 
-USHORT CS_UTFFSS_fss_to_unicode_cc(csconvert* obj, UNICODE *dest_ptr, USHORT dest_len,
-								const NCHAR* src_ptr,
-								USHORT src_len, SSHORT *err_code, USHORT *err_position);
+ULONG CS_UTFFSS_fss_to_unicode_cc(csconvert* obj, ULONG src_len, const UCHAR* src_ptr,
+								  ULONG dest_len, UNICODE *dest_ptr,
+								  USHORT *err_code, ULONG *err_position);
 
-USHORT CS_UTFFSS_fss_to_unicode_tt(TEXTTYPE obj, UNICODE *dest_ptr, USHORT dest_len,
-								const NCHAR* src_ptr,
-								USHORT src_len, SSHORT *err_code, USHORT *err_position);
-
-USHORT CS_UTFFSS_unicode_to_fss(csconvert* obj, MBCHAR *fss_str, USHORT fss_len,
-								const UNICODE* unicode_str,
-								USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
-
-SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const NCHAR* p, USHORT n);
+ULONG CS_UTFFSS_unicode_to_fss(csconvert* obj, ULONG unicode_len, const UNICODE* unicode_str,
+							   ULONG fss_len, UCHAR *fss_str,
+							   USHORT *err_code, ULONG *err_position);
 
 struct Fss_table {
 	int cmask;

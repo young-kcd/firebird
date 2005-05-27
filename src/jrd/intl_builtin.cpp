@@ -11,30 +11,88 @@
 #include "../jrd/err_proto.h"
 #include "../intl/charsets.h"
 
+using Jrd::UnicodeUtil;
+ 
 
-#define TEXTTYPE_RETURN         return (0)
+static USHORT internal_keylength(TEXTTYPE, USHORT);
+static USHORT internal_string_to_key(TEXTTYPE, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
+static SSHORT internal_compare(TEXTTYPE, ULONG, const UCHAR*, ULONG, const UCHAR*, INTL_BOOL*);
+static ULONG internal_str_to_upper(TEXTTYPE, ULONG, const UCHAR*, ULONG, UCHAR*);
+static ULONG internal_str_to_lower(TEXTTYPE, ULONG, const UCHAR*, ULONG, UCHAR*);
+static void internal_destroy(TEXTTYPE);
+static void unicode_destroy(TEXTTYPE obj);
 
-#define FAMILY_INTERNAL(id_number, name, charset, country) \
-	cache->texttype_version =               40; \
-	cache->texttype_type =                  (id_number); \
-	cache->texttype_character_set =         (charset); \
-	cache->texttype_country =               (country); \
-	cache->texttype_bytes_per_char =        1; \
-	cache->texttype_fn_init =               name; \
-	cache->texttype_fn_key_length =         internal_keylength; \
-	cache->texttype_fn_string_to_key =      internal_string_to_key; \
-	cache->texttype_fn_compare =            internal_compare; \
-	cache->texttype_fn_to_upper =           internal_ch_to_upper; \
-	cache->texttype_fn_to_lower =           internal_ch_to_lower; \
-	cache->texttype_fn_str_to_upper =       internal_str_to_upper; \
-	cache->texttype_fn_mbtowc =             INTL_builtin_nc_mbtowc; \
-	cache->texttype_collation_table =       (const BYTE*) " "; \
-	cache->texttype_toupper_table =         NULL; \
-	cache->texttype_tolower_table =         NULL; \
-	cache->texttype_compress_table =        NULL; \
-	cache->texttype_expand_table =          NULL; \
-	cache->texttype_name =                  POSIX;
 
+struct TextTypeImpl
+{
+	BYTE texttype_pad_char;
+};
+
+
+static inline bool FAMILY_INTERNAL(TEXTTYPE cache,
+								   SSHORT country,
+								   const ASCII* POSIX,
+								   USHORT attributes,
+								   const UCHAR* specific_attributes,
+								   ULONG specific_attributes_length)
+//#define FAMILY_INTERNAL(name, country)
+{
+	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
+		return false;
+
+	cache->texttype_version			= TEXTTYPE_VERSION_1;
+	cache->texttype_name			= POSIX;
+	cache->texttype_country			= (country);
+	cache->texttype_pad_option		= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
+	cache->texttype_fn_key_length	= internal_keylength;
+	cache->texttype_fn_string_to_key= internal_string_to_key;
+	cache->texttype_fn_compare		= internal_compare;
+	cache->texttype_fn_str_to_upper	= internal_str_to_upper;
+	cache->texttype_fn_str_to_lower	= internal_str_to_lower;
+	cache->texttype_fn_destroy		= internal_destroy;
+	cache->texttype_impl			= new TextTypeImpl;
+	cache->texttype_impl->texttype_pad_char = ' ';
+
+	return true;
+}
+
+
+static inline bool FAMILY_INTERNAL_UTF(TEXTTYPE cache,
+									   const ASCII* POSIX,
+									   USHORT attributes,
+									   const UCHAR* specific_attributes,
+									   ULONG specific_attributes_length)
+{
+	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
+		return false;
+
+	cache->texttype_version			= TEXTTYPE_VERSION_1;
+	cache->texttype_name			= POSIX;
+	cache->texttype_country			= CC_INTL;
+	cache->texttype_flags			= TEXTTYPE_DIRECT_MATCH;
+	cache->texttype_pad_option		= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
+
+	return true;
+}
+
+
+static inline bool FAMILY_INTERNAL_UNICODE(TEXTTYPE cache,
+										   const ASCII* POSIX,
+										   USHORT attributes,
+										   const UCHAR* specific_attributes,
+										   ULONG specific_attributes_length)
+{
+	if (FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
+	{
+		//// TODO: locale
+		cache->reserved_for_driver[0] = UnicodeUtil::Utf16Collation::create("");
+		cache->texttype_fn_destroy = unicode_destroy;
+
+		return cache->reserved_for_driver[0] != NULL;
+	}
+
+	return true;
+}
 
 
 typedef unsigned char FILECHAR;
@@ -116,7 +174,7 @@ static fss_size_t fss_wctomb(UCHAR * s, fss_wchar_t wc)
 }
 
 static SSHORT internal_fss_mbtowc(TEXTTYPE obj,
-						   UCS2_CHAR* wc, const NCHAR* p, USHORT n)
+						   USHORT* wc, const UCHAR* p, USHORT n)
 {
 /**************************************
  *
@@ -143,12 +201,13 @@ static SSHORT internal_fss_mbtowc(TEXTTYPE obj,
 	return fss_mbtowc(wc, p, n);
 }
 
-static USHORT internal_fss_to_unicode(TEXTTYPE obj,
-							   UNICODE* dest_ptr, USHORT dest_len,	/* BYTE count */
-							   const NCHAR* src_ptr,
-							   USHORT src_len,
-							   SSHORT* err_code,
-							   USHORT* err_position)
+static ULONG internal_fss_to_unicode(TEXTTYPE obj,
+									 ULONG src_len,
+									 const UCHAR* src_ptr,
+									 ULONG dest_len,
+									 UNICODE* dest_ptr,
+									 USHORT* err_code,
+									 ULONG* err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
@@ -162,7 +221,7 @@ static USHORT internal_fss_to_unicode(TEXTTYPE obj,
 		return (src_len * 2);	/* All single byte narrow characters */
 
 	const UNICODE* const start = dest_ptr;
-	const USHORT src_start = src_len;
+	const ULONG src_start = src_len;
 	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
 		const fss_size_t res = fss_mbtowc(dest_ptr, src_ptr, src_len);
 		if (res == -1) {
@@ -182,22 +241,22 @@ static USHORT internal_fss_to_unicode(TEXTTYPE obj,
 	return ((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
-USHORT internal_unicode_to_fss(csconvert* obj,
-									  MBCHAR* fss_str,
-									  USHORT fss_len,
-									  const UNICODE* unicode_str,
-									  USHORT unicode_len,	/* BYTE count */
-									  SSHORT* err_code,
-									  USHORT* err_position)
+ULONG internal_unicode_to_fss(csconvert* obj,
+							  ULONG unicode_len,	/* BYTE count */
+							  const UNICODE* unicode_str,
+							  ULONG fss_len,
+							  UCHAR* fss_str,
+							  USHORT* err_code,
+							  ULONG* err_position)
 {
-	const USHORT src_start = unicode_len;
+	const ULONG src_start = unicode_len;
 	UCHAR tmp_buffer[6];
 
 	fb_assert(unicode_str != NULL || fss_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == (pfn_INTL_convert) internal_unicode_to_fss);
+	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) internal_unicode_to_fss);
 
 	*err_code = 0;
 
@@ -232,10 +291,137 @@ USHORT internal_unicode_to_fss(csconvert* obj,
 	return ((fss_str - start) * sizeof(*fss_str));
 }
 
-static SSHORT internal_str_copy(
+static ULONG internal_fss_length(charset* obj, ULONG srcLen, const UCHAR* src)
+{
+/**************************************
+ *
+ *      i n t e r n a l _ f s s _ l e n g t h
+ *
+ **************************************
+ *
+ * Functional description
+ *  Return character length of a string.
+ *  If the string is malformed, count number
+ *  of bytes after the offending character.
+ *
+ **************************************/
+	ULONG charLength = 0;
+
+	while (srcLen)
+	{
+		USHORT c;
+		const fss_size_t res = fss_mbtowc(&c, src, srcLen);
+
+		if (res == -1)
+			break;
+
+		fb_assert(res <= srcLen);
+
+		src += res;
+		srcLen -= res;
+		++charLength;
+	}
+
+	return charLength + srcLen;
+}
+
+static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src,
+									ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG length)
+{
+/**************************************
+ *
+ *      i n t e r n a l _ f s s _ s u b s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *  Return substring of a string.
+ *  If the string is malformed, consider
+ *  only bytes after the offending character.
+ *
+ **************************************/
+	fb_assert(src != NULL && dst != NULL);
+
+	if (length == 0)
+		return 0;
+
+	const UCHAR* srcStart = src;
+	const UCHAR* dstStart = dst;
+	const UCHAR* srcEnd = src + srcLen;
+	const UCHAR* dstEnd = dst + dstLen;
+	ULONG pos = 0;
+	bool wellFormed = true;
+
+	while (src < srcEnd && dst < dstEnd && pos < startPos)
+	{
+		USHORT c;
+		fss_size_t res;
+
+		if (wellFormed)
+		{
+			res = fss_mbtowc(&c, src, srcLen);
+
+			if (res == -1)
+			{
+				wellFormed = false;
+				continue;
+			}
+		}
+		else
+		{
+			c = *src;
+			res = 1;
+		}
+
+		fb_assert(res <= srcLen);
+
+		src += res;
+		srcLen -= res;
+		++pos;
+	}
+
+	while (src < srcEnd && dst < dstEnd && pos < startPos + length)
+	{
+		USHORT c;
+		fss_size_t res;
+
+		if (wellFormed)
+		{
+			res = fss_mbtowc(&c, src, srcLen);
+
+			if (res == -1)
+			{
+				wellFormed = false;
+				continue;
+			}
+		}
+		else
+		{
+			c = *src;
+			res = 1;
+		}
+
+		fb_assert(res <= srcLen);
+
+		src += res;
+		srcLen -= res;
+		++pos;
+
+		if (wellFormed)
+			res = fss_wctomb(dst, c);
+		else
+			*dst = c;
+
+		dst += res;
+	}
+
+	return dst - dstStart;
+}
+
+static ULONG internal_str_copy(
 								TEXTTYPE obj,
-								USHORT inLen,
-								const UCHAR* src, USHORT outLen, UCHAR* dest)
+								ULONG inLen,
+								const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
 /**************************************
  *
@@ -276,7 +462,7 @@ static USHORT internal_string_to_key(
 									 const UCHAR* src,
 									 USHORT outLen,
 									UCHAR* dest,
-									USHORT partial) // unused
+									USHORT key_type) // unused
 {
 /**************************************
  *
@@ -288,24 +474,27 @@ static USHORT internal_string_to_key(
  *
  **************************************/
 	const UCHAR* const pStart = dest;
-	const UCHAR pad_char = *obj->texttype_collation_table;
+	const UCHAR pad_char = obj->texttype_impl->texttype_pad_char;
 	while (inLen-- && outLen--)
 		*dest++ = *src++;
 
-/* strip off ending pad characters */
-	while (dest > pStart)
-		if (*(dest - 1) == pad_char)
-			dest--;
-		else
-			break;
+	if (obj->texttype_pad_option)
+	{
+		/* strip off ending pad characters */
+		while (dest > pStart)
+			if (*(dest - 1) == pad_char)
+				dest--;
+			else
+				break;
+	}
 
 	return (dest - pStart);
 }
 
 static SSHORT internal_compare(
 							   TEXTTYPE obj,
-							   USHORT length1,
-							   const UCHAR* p1, USHORT length2, const UCHAR* p2)
+							   ULONG length1,
+							   const UCHAR* p1, ULONG length2, const UCHAR* p2, INTL_BOOL* error_flag)
 {
 /**************************************
  *
@@ -316,8 +505,8 @@ static SSHORT internal_compare(
  * Functional description
  *
  **************************************/
-	const UCHAR pad = (obj->texttype_type == ttype_binary) ? 0 : ' ';
-	SSHORT fill = length1 - length2;
+	const UCHAR pad = obj->texttype_impl->texttype_pad_char;
+	SLONG fill = length1 - length2;
 	if (length1 >= length2) {
 		if (length2)
 			do {
@@ -329,7 +518,7 @@ static SSHORT internal_compare(
 			} while (--length2);
 		if (fill > 0)
 			do {
-				if (*p1++ != pad)
+				if (!obj->texttype_pad_option || *p1++ != pad)
 					if (p1[-1] > pad)
 						return 1;
 					else
@@ -348,7 +537,7 @@ static SSHORT internal_compare(
 		} while (--length1);
 
 	do {
-		if (*p2++ != pad)
+		if (!obj->texttype_pad_option || *p2++ != pad)
 			if (pad > p2[-1])
 				return 1;
 			else
@@ -358,135 +547,11 @@ static SSHORT internal_compare(
 	return 0;
 }
 
-static USHORT internal_ch_to_upper(TEXTTYPE obj, UCHAR ch)
-{
-/**************************************
- *
- *      i n t e r n a l _ c h _ t o _ u p p e r
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
 
-	return (UPPER7(ch));
-}
-
-static USHORT internal_ch_to_lower(TEXTTYPE obj, UCHAR ch)
-{
-/**************************************
- *
- *      i n t e r n a l _ c h _ t o _ l o w e r
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return ((((ch) >= 'A') && ((ch) < 'Z')) ? ((ch) - 'A' + 'a') : (ch));
-}
-
-SSHORT INTL_builtin_nc_mbtowc(TEXTTYPE obj,
-							  UCS2_CHAR* wc, const UCHAR* ptr, USHORT count)
-{
-/**************************************
- *
- *      i n t e r n a l _ n c _ m b t o w c 
- *
- **************************************
- *
- * Functional description
- *      Get the next character from the multibyte
- *      input stream.
- *      Narrow character version.
- *  Returns:
- *      Count of bytes consumed from the input stream.
- *
- **************************************/
-
-	fb_assert(obj);
-	fb_assert(ptr);
-
-	if (count >= 1) {
-		if (wc)
-			*wc = *ptr;
-		return 1;
-	}
-	if (wc)
-		*wc = 0;
-	return -1;					/* No more characters */
-}
-
-
-SSHORT INTL_builtin_mb_mbtowc(TEXTTYPE obj,
-							  UCS2_CHAR* wc, const UCHAR* ptr, USHORT count)
-{
-/**************************************
- *
- *      i n t e r n a l _ m b _ m b t o w c 
- *
- **************************************
- *
- * Functional description
- *      Get the next character from the multibyte
- *      input stream.
- *      Multibyte version character version.
- *  Returns:
- *      Count of bytes consumed from the input stream.
- *
- **************************************/
-
-	fb_assert(obj);
-	fb_assert(ptr);
-
-	if (count >= 2) {
-		if (wc)
-			*wc = *(UCS2_CHAR *) ptr;
-		return 2;
-	}
-	if (wc)
-		*wc = 0;
-	return -1;					/* No more characters */
-}
-
-
-SSHORT INTL_builtin_wc_mbtowc(TEXTTYPE obj,
-							  UCS2_CHAR* wc, const UCHAR* ptr, USHORT count)
-{
-/**************************************
- *
- *      i n t e r n a l _ w c _ m b t o w c 
- *
- **************************************
- *
- * Functional description
- *      Get the next character from the multibyte
- *      input stream.
- *      Wide character version.
- *  Returns:
- *      Count of bytes consumed from the input stream.
- *
- **************************************/
-
-	fb_assert(obj);
-	fb_assert(ptr);
-
-	if (count >= 2) {
-		if (wc)
-			*wc = *(UCS2_CHAR *) ptr;
-		return 2;
-	}
-	if (wc)
-		*wc = 0;
-	return -1;					/* No more characters */
-}
-
-static SSHORT internal_str_to_upper(
+static ULONG internal_str_to_upper(
 									TEXTTYPE obj,
-									USHORT inLen,
-									const UCHAR* src, USHORT outLen, UCHAR* dest)
+									ULONG inLen,
+									const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
 /**************************************
  *
@@ -507,24 +572,395 @@ static SSHORT internal_str_to_upper(
 	return (dest - pStart);
 }
 
-static USHORT internal_ch_copy(TEXTTYPE obj, UCHAR ch)
+
+static ULONG internal_str_to_lower(
+									TEXTTYPE obj,
+									ULONG inLen,
+									const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
 /**************************************
  *
- *      i n t e r n a l _ c h _ c o p y
+ *      i n t e r n a l _ s t r _ t o _ l o w e r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Note: dest may equal src.
+ *
+ **************************************/
+	const UCHAR* const pStart = dest;
+	while (inLen-- && outLen--) {
+		*dest++ = LOWWER7(*src);
+		src++;
+	}
+
+	return (dest - pStart);
+}
+
+
+static void internal_destroy(TEXTTYPE obj)
+{
+/**************************************
+ *
+ *      i n t e r n a l _ s t r _ d e s t r o y
  *
  **************************************
  *
  * Functional description
  *
  **************************************/
-
-	return (ch);
+	delete obj->texttype_impl;
 }
 
-static USHORT wc_to_nc(csconvert* obj, NCHAR* pDest, USHORT nDest,	/* byte count */
-					   const UCS2_CHAR* pSrc, USHORT nSrc,	/* byte count */
-					   SSHORT* err_code, USHORT* err_position)
+
+static void unicode_destroy(TEXTTYPE obj)
+{
+/**************************************
+ *
+ *      u n i c o d e _ d e s t r o y
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	fb_assert(obj != NULL);
+	delete (UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0];
+}
+
+
+static USHORT unicode8_keylength(TEXTTYPE obj, USHORT len)
+{
+/**************************************
+ *
+ *      u n i c o d e 8 _ k e y l e n g t h
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	fb_assert(obj != NULL);
+	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->keyLength(len);
+}
+
+
+static USHORT unicode8_string_to_key(
+									 TEXTTYPE obj,
+									 USHORT srcLen,
+									 const UCHAR* src,
+									 USHORT dstLen,
+									 UCHAR* dst,
+									 USHORT key_type)
+{
+/**************************************
+ *
+ *      u n i c o d e 8 _ s t r i n g _ t o _ k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	fb_assert(obj != NULL);
+
+	USHORT err_code;
+	ULONG err_position;
+
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
+	ULONG utf16Len = UnicodeUtil::utf8ToUtf16(srcLen, src, 0, NULL,
+		&err_code, &err_position);
+
+	utf16Len = UnicodeUtil::utf8ToUtf16(srcLen, src,
+		utf16Len, reinterpret_cast<USHORT*>(utf16Str.getBuffer(utf16Len)),
+		&err_code, &err_position);
+
+	if (obj->texttype_pad_option)
+	{
+		const UCHAR* pad;
+
+		for (pad = utf16Str.begin() + utf16Len - sizeof(USHORT); pad >= utf16Str.begin(); pad -= sizeof(USHORT))
+		{
+			if (*reinterpret_cast<const USHORT*>(pad) != 32)
+				break;
+		}
+
+		utf16Len = pad - utf16Str.begin() + sizeof(USHORT);
+	}
+
+	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->stringToKey(
+		utf16Len, (USHORT*)utf16Str.begin(), dstLen, dst, key_type);
+}
+
+
+static SSHORT unicode8_compare(TEXTTYPE obj, ULONG length1, const UCHAR* p1,
+							   ULONG length2, const UCHAR* p2, INTL_BOOL* error_flag)
+{
+/**************************************
+ *
+ *      u n i c o d e 8 _ c o m p a r e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	fb_assert(obj != NULL);
+
+	USHORT err_code;
+	ULONG err_position;
+
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str1;
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str2;
+	ULONG utf16Len1 = UnicodeUtil::utf8ToUtf16(length1, p1, 0, NULL,
+		&err_code, &err_position);
+	ULONG utf16Len2 = UnicodeUtil::utf8ToUtf16(length2, p2, 0, NULL,
+		&err_code, &err_position);
+
+	utf16Len1 = UnicodeUtil::utf8ToUtf16(length1, p1,
+		utf16Len1, reinterpret_cast<USHORT*>(utf16Str1.getBuffer(utf16Len1)),
+		&err_code, &err_position);
+
+	utf16Len2 = UnicodeUtil::utf8ToUtf16(length2, p2,
+		utf16Len2, reinterpret_cast<USHORT*>(utf16Str2.getBuffer(utf16Len2)),
+		&err_code, &err_position);
+
+	if (obj->texttype_pad_option)
+	{
+		const UCHAR* pad;
+
+		for (pad = utf16Str1.begin() + utf16Len1 - sizeof(USHORT); pad >= utf16Str1.begin(); pad -= sizeof(USHORT))
+		{
+			if (*reinterpret_cast<const USHORT*>(pad) != 32)
+				break;
+		}
+
+		utf16Len1 = pad - utf16Str1.begin() + sizeof(USHORT);
+
+		for (pad = utf16Str2.begin() + utf16Len2 - sizeof(USHORT); pad >= utf16Str2.begin(); pad -= sizeof(USHORT))
+		{
+			if (*reinterpret_cast<const USHORT*>(pad) != 32)
+				break;
+		}
+
+		utf16Len2 = pad - utf16Str2.begin() + sizeof(USHORT);
+	}
+
+	INTL_BOOL err_flag;
+
+	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->compare(
+		utf16Len1, (USHORT*)utf16Str1.begin(),
+		utf16Len2, (USHORT*)utf16Str2.begin(), &err_flag);
+}
+
+
+static USHORT utf16_keylength(TEXTTYPE obj, USHORT len)
+{
+/**************************************
+ *
+ *      u t f 1 6 _ k e y l e n g t h
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	return UnicodeUtil::utf16KeyLength(len);
+}
+
+static USHORT utf16_string_to_key(
+								  TEXTTYPE obj,
+								  USHORT srcLen,
+								  const UCHAR* src,
+								  USHORT dstLen,
+								  UCHAR* dst,
+								  USHORT key_type)
+{
+/**************************************
+ *
+ *      u t f 1 6 _ s t r i n g _ t o _ k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	fb_assert(obj != NULL);
+	fb_assert(srcLen % 2 == 0);
+
+	if (obj->texttype_pad_option)
+	{
+		const UCHAR* pad;
+
+		for (pad = src + srcLen - sizeof(USHORT); pad >= src; pad -= sizeof(USHORT))
+		{
+			if (*reinterpret_cast<const USHORT*>(pad) != 32)
+				break;
+		}
+
+		srcLen = pad - src + sizeof(USHORT);
+	}
+
+	return UnicodeUtil::utf16ToKey(srcLen, reinterpret_cast<const USHORT*>(src), dstLen, dst, key_type);
+}
+
+static SSHORT utf16_compare(
+							TEXTTYPE obj,
+							ULONG len1, 
+							const UCHAR* str1, 
+							ULONG len2, 
+							const UCHAR* str2,
+							INTL_BOOL* error_flag)
+{
+/**************************************
+ *
+ *      u t f 1 6 _ c o m p a r e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	fb_assert(obj != NULL);
+	fb_assert(len1 % 2 == 0 && len2 % 2 == 0);
+	fb_assert(str1 != NULL && str2 != NULL);
+
+	if (obj->texttype_pad_option)
+	{
+		const UCHAR* pad;
+
+		for (pad = str1 + len1 - sizeof(USHORT); pad >= str1; pad -= sizeof(USHORT))
+		{
+			if (*reinterpret_cast<const USHORT*>(pad) != 32)
+				break;
+		}
+
+		len1 = pad - str1 + sizeof(USHORT);
+
+		for (pad = str2 + len2 - sizeof(USHORT); pad >= str2; pad -= sizeof(USHORT))
+		{
+			if (*reinterpret_cast<const USHORT*>(pad) != 32)
+				break;
+		}
+
+		len2 = pad - str2 + sizeof(USHORT);
+	}
+
+	return UnicodeUtil::utf16Compare(len1, reinterpret_cast<const USHORT*>(str1),
+									 len2, reinterpret_cast<const USHORT*>(str2), error_flag);
+}
+
+static ULONG utf16_upper(
+						 TEXTTYPE obj,
+						 ULONG srcLen, 
+						 const UCHAR* src, 
+						 ULONG dstLen, 
+						 UCHAR* dst)
+{
+/**************************************
+ *
+ *      u t f 1 6 _ u p p e r
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	fb_assert(obj != NULL);
+	fb_assert(srcLen % 2 == 0);
+	fb_assert(src != NULL && dst != NULL);
+
+	return UnicodeUtil::utf16UpperCase(srcLen, reinterpret_cast<const USHORT*>(src),
+									   dstLen, reinterpret_cast<USHORT*>(dst));
+}
+
+static ULONG utf16_lower(
+						 TEXTTYPE obj,
+						 ULONG srcLen, 
+						 const UCHAR* src, 
+						 ULONG dstLen, 
+						 UCHAR* dst)
+{
+/**************************************
+ *
+ *      u t f 1 6 _ l o w e r
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	fb_assert(obj != NULL);
+	fb_assert(srcLen % 2 == 0);
+	fb_assert(src != NULL && dst != NULL);
+
+	return UnicodeUtil::utf16LowerCase(srcLen, reinterpret_cast<const USHORT*>(src),
+									   dstLen, reinterpret_cast<USHORT*>(dst));
+}
+
+
+static USHORT utf32_keylength(TEXTTYPE obj, USHORT len)
+{
+/**************************************
+ *
+ *      u t f 3 2 _ k e y l e n g t h
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	return len;
+}
+
+static USHORT utf32_string_to_key(
+								  TEXTTYPE obj,
+								  USHORT srcLen,
+								  const UCHAR* src,
+								  USHORT dstLen,
+								  UCHAR* dst,
+								  USHORT key_type)
+{
+/**************************************
+ *
+ *      u t f 3 2 _ s t r i n g _ t o _ k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	fb_assert(obj != NULL);
+	fb_assert(srcLen % 4 == 0);
+
+	USHORT err_code;
+	ULONG err_position;
+
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
+	srcLen = UnicodeUtil::utf32ToUtf16(srcLen, reinterpret_cast<const ULONG*>(src),
+		dstLen, reinterpret_cast<USHORT*>(utf16Str.getBuffer(dstLen)), &err_code, &err_position);
+	src = utf16Str.begin();
+
+	if (obj->texttype_pad_option)
+	{
+		const UCHAR* pad;
+
+		for (pad = src + srcLen - sizeof(USHORT); pad >= src; pad -= sizeof(USHORT))
+		{
+			if (*reinterpret_cast<const USHORT*>(pad) != 32)
+				break;
+		}
+
+		srcLen = pad - src + sizeof(USHORT);
+	}
+
+	return UnicodeUtil::utf16ToKey(srcLen, reinterpret_cast<const USHORT*>(src), dstLen, dst, key_type);
+}
+
+
+static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
+					  ULONG nDest, UCHAR* pDest,
+					  USHORT* err_code, ULONG* err_position)
 {
 /**************************************
  *
@@ -544,8 +980,8 @@ static USHORT wc_to_nc(csconvert* obj, NCHAR* pDest, USHORT nDest,	/* byte count
 	if (pDest == NULL)			/* length estimate needed? */
 		return ((nSrc + 1) / 2);
 
-	const NCHAR* const pStart = pDest;
-	const UCS2_CHAR* const pStart_src = pSrc;
+	const UCHAR* const pStart = pDest;
+	const USHORT* const pStart_src = pSrc;
 
 	while (nDest && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc >= 256) {
@@ -565,9 +1001,9 @@ static USHORT wc_to_nc(csconvert* obj, NCHAR* pDest, USHORT nDest,	/* byte count
 }
 
 
-static USHORT mb_to_wc(csconvert* obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte count */
-					   const MBCHAR* pSrc, USHORT nSrc,	/* byte count */
-					   SSHORT* err_code, USHORT* err_position)
+static ULONG mb_to_wc(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
+					  ULONG nDest, USHORT* pDest,
+					  USHORT* err_code, ULONG* err_position)
 {
 /**************************************
  *
@@ -589,8 +1025,8 @@ static USHORT mb_to_wc(csconvert* obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte c
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc);
 
-	const UCS2_CHAR* const pStart = pDest;
-	const MBCHAR* const pStart_src = pSrc;
+	const USHORT* const pStart = pDest;
+	const UCHAR* const pStart_src = pSrc;
 	while (nDest > 1 && nSrc > 1) {
 		*pDest++ = *pSrc * 256 + *(pSrc + 1);
 		pSrc += 2;
@@ -606,9 +1042,9 @@ static USHORT mb_to_wc(csconvert* obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte c
 }
 
 
-static USHORT wc_to_mb(csconvert* obj, MBCHAR* pDest, USHORT nDest,	/* byte count */
-					   const UCS2_CHAR* pSrc, USHORT nSrc,	/* byte count */
-					   SSHORT* err_code, USHORT* err_position)
+static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
+					  ULONG nDest, UCHAR* pDest,
+					  USHORT* err_code, ULONG* err_position)
 {
 /**************************************
  *
@@ -630,8 +1066,8 @@ static USHORT wc_to_mb(csconvert* obj, MBCHAR* pDest, USHORT nDest,	/* byte coun
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc);
 
-	const MBCHAR* const pStart = pDest;
-	const UCS2_CHAR* const pStart_src = pSrc;
+	const UCHAR* const pStart = pDest;
+	const USHORT* const pStart_src = pSrc;
 	while (nDest > 1 && nSrc > 1) {
 		*pDest++ = *pSrc / 256;
 		*pDest++ = *pSrc++ % 256;
@@ -646,7 +1082,9 @@ static USHORT wc_to_mb(csconvert* obj, MBCHAR* pDest, USHORT nDest,	/* byte coun
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static USHORT ttype_ascii_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
+static INTL_BOOL ttype_ascii_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+								  USHORT attributes, const UCHAR* specific_attributes,
+								  ULONG specific_attributes_length)
 {
 /**************************************
  *
@@ -659,13 +1097,13 @@ static USHORT ttype_ascii_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
  *************************************/
 	static const ASCII POSIX[] = "C.ASCII";
 
-	FAMILY_INTERNAL(ttype_ascii, ttype_ascii_init, CS_ASCII, CC_C);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
-static USHORT ttype_none_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
+static INTL_BOOL ttype_none_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+								 USHORT attributes, const UCHAR* specific_attributes,
+								 ULONG specific_attributes_length)
 {
 /**************************************
  *
@@ -678,15 +1116,13 @@ static USHORT ttype_none_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
  *************************************/
 	static const ASCII POSIX[] = "C";
 
-	FAMILY_INTERNAL(ttype_none, ttype_none_init, CS_NONE, CC_C);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
-static USHORT ttype_unicode_fss_init(
-									 TEXTTYPE cache,
-									 USHORT parm1, USHORT dummy)
+static INTL_BOOL ttype_unicode_fss_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+										USHORT attributes, const UCHAR* specific_attributes,
+										ULONG specific_attributes_length)
 {
 /**************************************
  *
@@ -699,17 +1135,21 @@ static USHORT ttype_unicode_fss_init(
  *************************************/
 	static const ASCII POSIX[] = "C.UNICODE_FSS";
 
-	FAMILY_INTERNAL(ttype_unicode_fss, ttype_unicode_fss_init, CS_UNICODE_FSS,
-					CC_C);
-	cache->texttype_bytes_per_char = 3;
-	cache->texttype_fn_to_wc = internal_fss_to_unicode;
-	cache->texttype_fn_mbtowc = internal_fss_mbtowc;
-
-	TEXTTYPE_RETURN;
+	if (FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
+	{
+		cache->texttype_flags |= TEXTTYPE_DIRECT_MATCH;
+		cache->texttype_fn_str_to_upper	= NULL;		// use default implementation
+		cache->texttype_fn_str_to_lower	= NULL;		// use default implementation
+		return true;
+	}
+	else
+		return false;
 }
 
 
-static USHORT ttype_binary_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
+static INTL_BOOL ttype_binary_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+								   USHORT attributes, const UCHAR* specific_attributes,
+								   ULONG specific_attributes_length)
 {
 /**************************************
  *
@@ -722,13 +1162,117 @@ static USHORT ttype_binary_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
  *************************************/
 	static const ASCII POSIX[] = "C.OCTETS";
 
-	FAMILY_INTERNAL(ttype_binary, ttype_binary_init, CS_BINARY, CC_C);
-	cache->texttype_fn_to_upper = internal_ch_copy;
-	cache->texttype_fn_to_lower = internal_ch_copy;
-	cache->texttype_fn_str_to_upper = internal_str_copy;
-	cache->texttype_collation_table = (const BYTE*) "\0";	/* pad character */
+	if (FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
+	{
+		cache->texttype_fn_str_to_upper = internal_str_copy;
+		cache->texttype_fn_str_to_lower = internal_str_copy;
+		cache->texttype_impl->texttype_pad_char = '\0';
+		return true;
+	}
+	else
+		return false;
+}
 
-	TEXTTYPE_RETURN;
+
+static INTL_BOOL ttype_utf8_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+								 USHORT attributes, const UCHAR* specific_attributes,
+								 ULONG specific_attributes_length)
+{
+/**************************************
+ *
+ *      t t y p e _ u t f 8 _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+	static const ASCII POSIX[] = "C.UTF8";
+
+	return FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
+static INTL_BOOL ttype_unicode8_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+									 USHORT attributes, const UCHAR* specific_attributes,
+									 ULONG specific_attributes_length)
+{
+/**************************************
+ *
+ *      t t y p e _ u n i c o d e 8 _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+	static const ASCII POSIX[] = "C.UTF8.UNICODE";
+
+	if (FAMILY_INTERNAL_UNICODE(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
+	{
+		cache->texttype_fn_key_length = unicode8_keylength;
+		cache->texttype_fn_string_to_key = unicode8_string_to_key;
+		cache->texttype_fn_compare = unicode8_compare;
+
+		return true;
+	}
+
+	return false;
+}
+
+
+static INTL_BOOL ttype_utf16_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+								  USHORT attributes, const UCHAR* specific_attributes,
+								  ULONG specific_attributes_length)
+{
+/**************************************
+ *
+ *      t t y p e _ u t f 1 6 _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+	static const ASCII POSIX[] = "C.UTF16";
+
+	if (FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
+	{
+		cache->texttype_fn_key_length = utf16_keylength;
+		cache->texttype_fn_string_to_key = utf16_string_to_key;
+		cache->texttype_fn_compare = utf16_compare;
+		cache->texttype_fn_str_to_upper = utf16_upper;
+		cache->texttype_fn_str_to_lower = utf16_lower;
+		return true;
+	}
+
+	return false;
+}
+
+
+static INTL_BOOL ttype_utf32_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
+								  USHORT attributes, const UCHAR* specific_attributes,
+								  ULONG specific_attributes_length)
+{
+/**************************************
+ *
+ *      t t y p e _ u t f 3 2 _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+	static const ASCII POSIX[] = "C.UTF32";
+
+	if (FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
+	{
+		cache->texttype_fn_key_length = utf32_keylength;
+		cache->texttype_fn_string_to_key = utf32_string_to_key;
+		return true;
+	}
+
+	return false;
 }
 
 
@@ -736,11 +1280,8 @@ static USHORT ttype_binary_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
  *      Start of Character set definitions 
  */
 
-#define CHARSET_RETURN          return (0)
-
 static void common_8bit_init(
 							 charset* csptr,
-							 USHORT id,
 							 const ASCII* name,
 							 const USHORT* to_unicode_tbl,
 							 const UCHAR* from_unicode_tbl1,
@@ -756,25 +1297,123 @@ static void common_8bit_init(
  *
  *************************************/
 
-	csptr->charset_version = 40;
-	csptr->charset_id = id;
+	csptr->charset_version = CHARSET_VERSION_1;
 	csptr->charset_name = name;
-	csptr->charset_flags = 0;
+	csptr->charset_flags |= CHARSET_ASCII_BASED;
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_max_bytes_per_char = 1;
 	csptr->charset_space_length = 1;
 	csptr->charset_space_character = (const BYTE*) " ";
-	csptr->charset_well_formed = NULL;
+	csptr->charset_fn_well_formed = NULL;
+}
+
+
+static INTL_BOOL cs_utf8_well_formed(charset* cs, 
+									 ULONG len,
+									 const UCHAR* str,
+									 ULONG* offending_position)
+{
+/**************************************
+ *
+ *      c s _ u t f 8 _ w e l l _ f o r m e d
+ *
+ **************************************
+ *
+ * Functional description
+ *      Check if UTF-8 string is weel-formed
+ *
+ *************************************/
+	fb_assert(cs != NULL);
+
+	return UnicodeUtil::utf8WellFormed(len, str, offending_position);
+}
+
+static INTL_BOOL cs_utf16_well_formed(charset* cs, 
+									  ULONG len,
+									  const UCHAR* str,
+									  ULONG* offending_position)
+{
+/**************************************
+ *
+ *      c s _ u t f 1 6 _ w e l l _ f o r m e d
+ *
+ **************************************
+ *
+ * Functional description
+ *      Check if UTF-16 string is weel-formed
+ *
+ *************************************/
+	fb_assert(cs != NULL);
+
+	return UnicodeUtil::utf16WellFormed(len, reinterpret_cast<const USHORT*>(str), offending_position);
+}
+
+static ULONG cs_utf16_length(charset* cs, 
+							 ULONG srcLen,
+							 const UCHAR* src)
+{
+/**************************************
+ *
+ *      c s _ u t f 1 6 _ l e n g t h
+ *
+ **************************************
+ *
+ * Functional description
+ *      Length of UTF-16 string
+ *
+ *************************************/
+	fb_assert(cs != NULL);
+	return UnicodeUtil::utf16Length(srcLen, reinterpret_cast<const USHORT*>(src));
+}
+
+static ULONG cs_utf16_substring(charset* cs, 
+								ULONG srcLen,
+								const UCHAR* src,
+								ULONG dstLen,
+								UCHAR* dst,
+								ULONG startPos,
+								ULONG length)
+{
+/**************************************
+ *
+ *      c s _ u t f 1 6 _ s u b s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *      Substring of UTF-16 string
+ *
+ *************************************/
+	fb_assert(cs != NULL);
+
+	return UnicodeUtil::utf16Substring(srcLen, reinterpret_cast<const USHORT*>(src),
+		dstLen, reinterpret_cast<USHORT*>(dst), startPos, length);
+}
+
+static INTL_BOOL cs_utf32_well_formed(charset* cs, 
+									  ULONG len,
+									  const UCHAR* str,
+									  ULONG* offending_position)
+{
+/**************************************
+ *
+ *      c s _ u t f 3 2 _ w e l l _ f o r m e d
+ *
+ **************************************
+ *
+ * Functional description
+ *      Check if UTF-32 string is weel-formed
+ *
+ *************************************/
+	fb_assert(cs != NULL);
+
+	return UnicodeUtil::utf32WellFormed(len, reinterpret_cast<const ULONG*>(str), offending_position);
 }
 
 
 static void common_convert_init(
 								csconvert* csptr,
-								USHORT to_cs,
-								USHORT from_cs,
-								pfn_INTL_convert cvt_fn,
-								const BYTE* datatable,
-								const BYTE* datatable2)
+								pfn_INTL_convert cvt_fn)
 {
 /**************************************
  *
@@ -786,18 +1425,14 @@ static void common_convert_init(
  *
  **************************************/
 
-	csptr->csconvert_version = 40;
+	csptr->csconvert_version = CSCONVERT_VERSION_1;
 	csptr->csconvert_name = (const ASCII*) "DIRECT";
-	csptr->csconvert_from = from_cs;
-	csptr->csconvert_to = to_cs;
-	csptr->csconvert_convert = cvt_fn;
-	csptr->csconvert_datatable = datatable;
-	csptr->csconvert_misc = datatable2;
+	csptr->csconvert_fn_convert = cvt_fn;
 }
 
-static USHORT cvt_ascii_to_unicode(csconvert* obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte count */
-								   const UCHAR* pSrc, USHORT nSrc,	/* byte count */
-								   SSHORT* err_code, USHORT* err_position)
+static ULONG cvt_ascii_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
+								  ULONG nDest, USHORT* pDest,
+								  USHORT* err_code, ULONG* err_position)
 {
 /**************************************
  *
@@ -819,7 +1454,7 @@ static USHORT cvt_ascii_to_unicode(csconvert* obj, UCS2_CHAR* pDest, USHORT nDes
 	if (pDest == NULL)			/* length estimate needed? */
 		return (2 * nSrc);
 
-	const UCS2_CHAR* const pStart = pDest;
+	const USHORT* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
 	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc > 127) {
@@ -838,9 +1473,9 @@ static USHORT cvt_ascii_to_unicode(csconvert* obj, UCS2_CHAR* pDest, USHORT nDes
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static USHORT cvt_unicode_to_ascii(csconvert* obj, NCHAR* pDest, USHORT nDest,	/* byte count */
-								   const UCS2_CHAR* pSrc, USHORT nSrc,	/* byte count */
-								   SSHORT* err_code, USHORT* err_position)
+static ULONG cvt_unicode_to_ascii(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
+								  ULONG nDest, UCHAR* pDest,
+								  USHORT* err_code, ULONG* err_position)
 {
 /**************************************
  *
@@ -862,8 +1497,8 @@ static USHORT cvt_unicode_to_ascii(csconvert* obj, NCHAR* pDest, USHORT nDest,	/
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc / 2);
 
-	const NCHAR* const pStart = pDest;
-	const UCS2_CHAR* const pStart_src = pSrc;
+	const UCHAR* const pStart = pDest;
+	const USHORT* const pStart_src = pSrc;
 	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc > 127) {
 			*err_code = CS_CONVERT_ERROR;
@@ -881,9 +1516,9 @@ static USHORT cvt_unicode_to_ascii(csconvert* obj, NCHAR* pDest, USHORT nDest,	/
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static USHORT cvt_none_to_unicode(csconvert* obj, UCS2_CHAR* pDest, USHORT nDest,	/* byte count */
-								  const UCHAR* pSrc, USHORT nSrc,	/* byte count */
-								  SSHORT* err_code, USHORT* err_position)
+static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
+								 ULONG nDest, USHORT* pDest,
+								 USHORT* err_code, ULONG* err_position)
 {
 /**************************************
  *
@@ -905,7 +1540,7 @@ static USHORT cvt_none_to_unicode(csconvert* obj, UCS2_CHAR* pDest, USHORT nDest
 	if (pDest == NULL)			/* length estimate needed? */
 		return (2 * nSrc);
 
-	const UCS2_CHAR* const pStart = pDest;
+	const USHORT* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
 	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc > 127) {
@@ -924,9 +1559,45 @@ static USHORT cvt_none_to_unicode(csconvert* obj, UCS2_CHAR* pDest, USHORT nDest
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static USHORT cvt_utffss_to_ascii(csconvert* obj, UCHAR* pDest, USHORT nDest,	/* byte count */
-								  const UCHAR* pSrc, USHORT nSrc,	/* byte count */
-								  SSHORT* err_code, USHORT* err_position)
+static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
+									ULONG nDest, USHORT* pDest,
+									USHORT* err_code, ULONG* err_position)
+{
+/**************************************
+ *
+ *      c v t _ u n i c o d e _ t o _ u n i c o d e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+	fb_assert(obj != NULL);
+	fb_assert((pSrc != NULL) || (pDest == NULL));
+	fb_assert(err_code != NULL);
+
+	*err_code = 0;
+	if (pDest == NULL)			/* length estimate needed? */
+		return nSrc;
+
+	const USHORT* const pStart = pDest;
+	const USHORT* const pStart_src = pSrc;
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
+		*pDest++ = *pSrc++;
+		nDest -= sizeof(*pDest);
+		nSrc -= sizeof(*pSrc);
+	}
+	if (!*err_code && nSrc) {
+		*err_code = CS_TRUNCATION_ERROR;
+	}
+	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+
+	return ((pDest - pStart) * sizeof(*pDest));
+}
+
+static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
+								 ULONG nDest, UCHAR* pDest,
+								 USHORT* err_code, ULONG* err_position)
 {
 /**************************************
  *
@@ -974,7 +1645,60 @@ static USHORT cvt_utffss_to_ascii(csconvert* obj, UCHAR* pDest, USHORT nDest,	/*
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static USHORT cs_ascii_init(charset* csptr, USHORT cs_id, USHORT dummy)
+static ULONG cvt_unicode_to_utf8(csconvert* obj,
+								 ULONG unicode_len,
+								 const USHORT* unicode_str,
+								 ULONG utf8_len,
+								 UCHAR* utf8_str,
+								 USHORT* err_code,
+								 ULONG* err_position)
+{
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_unicode_to_utf8);
+	return UnicodeUtil::utf16ToUtf8(unicode_len, unicode_str, utf8_len, utf8_str, err_code, err_position);
+}
+
+static ULONG cvt_utf8_to_unicode(csconvert* obj,
+								 ULONG utf8_len,
+								 const UCHAR* utf8_str,
+								 ULONG unicode_len,
+								 USHORT* unicode_str,
+								 USHORT* err_code,
+								 ULONG* err_position)
+{
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_utf8_to_unicode);
+	return UnicodeUtil::utf8ToUtf16(utf8_len, utf8_str, unicode_len, unicode_str, err_code, err_position);
+}
+
+static ULONG cvt_unicode_to_utf32(csconvert* obj,
+								  ULONG unicode_len,
+								  const USHORT* unicode_str,
+								  ULONG utf32_len,
+								  ULONG* utf32_str,
+								  USHORT* err_code,
+								  ULONG* err_position)
+{
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_unicode_to_utf32);
+	return UnicodeUtil::utf16ToUtf32(unicode_len, unicode_str, utf32_len, utf32_str, err_code, err_position);
+}
+
+static ULONG cvt_utf32_to_unicode(csconvert* obj,
+								  ULONG utf32_len,
+								  const ULONG* utf32_str,
+								  ULONG unicode_len,
+								  USHORT* unicode_str,
+								  USHORT* err_code,
+								  ULONG* err_position)
+{
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_utf32_to_unicode);
+	return UnicodeUtil::utf32ToUtf16(utf32_len, utf32_str, unicode_len, unicode_str, err_code, err_position);
+}
+
+
+static INTL_BOOL cs_ascii_init(charset* csptr, const ASCII* charset_name)
 {
 /**************************************
  *
@@ -986,18 +1710,16 @@ static USHORT cs_ascii_init(charset* csptr, USHORT cs_id, USHORT dummy)
  *
  *************************************/
 
-	common_8bit_init(csptr, CS_ASCII, (const ASCII*) "ASCII", NULL, NULL, NULL);
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_ASCII,
-						reinterpret_cast<pfn_INTL_convert>(cvt_ascii_to_unicode),
-						NULL, NULL);
-	common_convert_init(&csptr->charset_from_unicode, CS_ASCII, CS_UNICODE_UCS2,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_ascii),
-						NULL, NULL);
-	CHARSET_RETURN;
+	common_8bit_init(csptr, (const ASCII*) "ASCII", NULL, NULL, NULL);
+	common_convert_init(&csptr->charset_to_unicode,
+						reinterpret_cast<pfn_INTL_convert>(cvt_ascii_to_unicode));
+	common_convert_init(&csptr->charset_from_unicode,
+						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_ascii));
+	return true;
 }
 
 
-static USHORT cs_none_init(charset* csptr, USHORT cs_id, USHORT dummy)
+static INTL_BOOL cs_none_init(charset* csptr, const ASCII* charset_name)
 {
 /**************************************
  *
@@ -1009,22 +1731,20 @@ static USHORT cs_none_init(charset* csptr, USHORT cs_id, USHORT dummy)
  *
  *************************************/
 
-	common_8bit_init(csptr, CS_NONE, (const ASCII*) "NONE", NULL, NULL, NULL);
+	common_8bit_init(csptr, (const ASCII*) "NONE", NULL, NULL, NULL);
 /*
-common_convert_init (&csptr->charset_to_unicode, CS_UNICODE_UCS2, id,
+common_convert_init (&csptr->charset_to_unicode, CS_UTF16, id,
 	nc_to_wc, to_unicode_tbl, NULL);
 */
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_NONE,
-						reinterpret_cast<pfn_INTL_convert>(cvt_none_to_unicode),
-						NULL, NULL);
-	common_convert_init(&csptr->charset_from_unicode, CS_NONE, CS_UNICODE_UCS2,
-						reinterpret_cast<pfn_INTL_convert>(wc_to_nc),
-						NULL, NULL);
-	CHARSET_RETURN;
+	common_convert_init(&csptr->charset_to_unicode,
+						reinterpret_cast<pfn_INTL_convert>(cvt_none_to_unicode));
+	common_convert_init(&csptr->charset_from_unicode,
+						reinterpret_cast<pfn_INTL_convert>(wc_to_nc));
+	return true;
 }
 
 
-static USHORT cs_unicode_fss_init(charset* csptr, USHORT cs_id, USHORT dummy)
+static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* charset_name)
 {
 /**************************************
  *
@@ -1036,21 +1756,23 @@ static USHORT cs_unicode_fss_init(charset* csptr, USHORT cs_id, USHORT dummy)
  *
  *************************************/
 
-	common_8bit_init(csptr, CS_UNICODE_FSS, (const ASCII*) "UNICODE_FSS", NULL,
+	common_8bit_init(csptr, (const ASCII*) "UNICODE_FSS", NULL,
 					 NULL, NULL);
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2,
-						CS_UNICODE_FSS,
-						reinterpret_cast<pfn_INTL_convert>(internal_fss_to_unicode),
-						NULL, NULL);
-	common_convert_init(&csptr->charset_from_unicode, CS_UNICODE_FSS,
-						CS_UNICODE_UCS2,
-						reinterpret_cast<pfn_INTL_convert>(internal_unicode_to_fss),
-						NULL, NULL);
-	CHARSET_RETURN;
+	csptr->charset_max_bytes_per_char = 3;
+	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS;
+
+	common_convert_init(&csptr->charset_to_unicode,
+						reinterpret_cast<pfn_INTL_convert>(internal_fss_to_unicode));
+	common_convert_init(&csptr->charset_from_unicode,
+						reinterpret_cast<pfn_INTL_convert>(internal_unicode_to_fss));
+	csptr->charset_fn_length = internal_fss_length;
+	csptr->charset_fn_substring = internal_fss_substring;
+
+	return true;
 }
 
 
-static USHORT cs_unicode_ucs2_init(charset* csptr, USHORT cs_id, USHORT dummy)
+static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* charset_name)
 {
 /**************************************
  *
@@ -1061,22 +1783,27 @@ static USHORT cs_unicode_ucs2_init(charset* csptr, USHORT cs_id, USHORT dummy)
  * Functional description
  *
  *************************************/
-	static const UCS2_CHAR space = 0x0020;
+	static const USHORT space = 0x0020;
 
-	csptr->charset_version = 40;
-	csptr->charset_id = CS_UNICODE_UCS2;
+	csptr->charset_version = CHARSET_VERSION_1;
 	csptr->charset_name = "UNICODE_UCS2";
-	csptr->charset_flags = 0;
+	csptr->charset_flags |= CHARSET_ASCII_BASED;
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 2;
 	csptr->charset_space_character = (const BYTE*) & space;	/* 0x0020 */
-	csptr->charset_well_formed = NULL;
-	CHARSET_RETURN;
+	csptr->charset_fn_well_formed = NULL;
+
+	common_convert_init(&csptr->charset_to_unicode,
+						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
+	common_convert_init(&csptr->charset_from_unicode,
+						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
+
+	return true;
 }
 
 
-static USHORT cs_binary_init(charset* csptr, USHORT cs_id, USHORT dummy)
+static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* charset_name)
 {
 /**************************************
  *
@@ -1088,15 +1815,108 @@ static USHORT cs_binary_init(charset* csptr, USHORT cs_id, USHORT dummy)
  *
  *************************************/
 
-	common_8bit_init(csptr, CS_BINARY, (const ASCII*) "BINARY", NULL, NULL, NULL);
+	common_8bit_init(csptr, (const ASCII*) "BINARY", NULL, NULL, NULL);
 	csptr->charset_space_character = (const BYTE*) "\0";
-	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_BINARY,
-						reinterpret_cast<pfn_INTL_convert>(mb_to_wc),
-						NULL, NULL);
-	common_convert_init(&csptr->charset_from_unicode, CS_BINARY, CS_UNICODE_UCS2,
-						reinterpret_cast<pfn_INTL_convert>(wc_to_mb),
-						NULL, NULL);
-	CHARSET_RETURN;
+	common_convert_init(&csptr->charset_to_unicode,
+						reinterpret_cast<pfn_INTL_convert>(mb_to_wc));
+	common_convert_init(&csptr->charset_from_unicode,
+						reinterpret_cast<pfn_INTL_convert>(wc_to_mb));
+	return true;
+}
+
+
+static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* charset_name)
+{
+/**************************************
+ *
+ *      c s _ u t f 8 _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+
+	static UCHAR space = 32;
+
+	csptr->charset_version = CHARSET_VERSION_1;
+	csptr->charset_name = "UTF8";
+	csptr->charset_flags |= CHARSET_ASCII_BASED;
+	csptr->charset_min_bytes_per_char = 1;
+	csptr->charset_max_bytes_per_char = 4;
+	csptr->charset_space_length = 1;
+	csptr->charset_space_character = (const BYTE*)&space;
+	csptr->charset_fn_well_formed = cs_utf8_well_formed;
+
+	common_convert_init(&csptr->charset_to_unicode,
+						reinterpret_cast<pfn_INTL_convert>(cvt_utf8_to_unicode));
+	common_convert_init(&csptr->charset_from_unicode,
+						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_utf8));
+	return true;
+}
+
+
+static INTL_BOOL cs_utf16_init(charset* csptr, const ASCII* charset_name)
+{
+/**************************************
+ *
+ *      c s _ u t f 1 6 _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+
+	static USHORT space = 32;
+
+	csptr->charset_version = CHARSET_VERSION_1;
+	csptr->charset_name = "UTF16";
+	csptr->charset_flags |= CHARSET_ASCII_BASED;
+	csptr->charset_min_bytes_per_char = 2;
+	csptr->charset_max_bytes_per_char = 4;
+	csptr->charset_space_length = 2;
+	csptr->charset_space_character = (const BYTE*)&space;
+	csptr->charset_fn_well_formed = cs_utf16_well_formed;
+	csptr->charset_fn_length = cs_utf16_length;
+	csptr->charset_fn_substring = cs_utf16_substring;
+
+	common_convert_init(&csptr->charset_to_unicode,
+						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
+	common_convert_init(&csptr->charset_from_unicode,
+						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
+	return true;
+}
+
+
+static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* charset_name)
+{
+/**************************************
+ *
+ *      c s _ u t f 3 2 _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+
+	static ULONG space = 32;
+
+	csptr->charset_version = CHARSET_VERSION_1;
+	csptr->charset_name = "UTF32";
+	csptr->charset_flags |= CHARSET_ASCII_BASED;
+	csptr->charset_min_bytes_per_char = 4;
+	csptr->charset_max_bytes_per_char = 4;
+	csptr->charset_space_length = 4;
+	csptr->charset_space_character = (const BYTE*)&space;
+	csptr->charset_fn_well_formed = cs_utf32_well_formed;
+
+	common_convert_init(&csptr->charset_to_unicode,
+						reinterpret_cast<pfn_INTL_convert>(cvt_utf32_to_unicode));
+	common_convert_init(&csptr->charset_from_unicode,
+						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_utf32));
+	return true;
 }
 
 
@@ -1104,12 +1924,7 @@ static USHORT cs_binary_init(charset* csptr, USHORT cs_id, USHORT dummy)
  *      Start of Conversion entries
  */
 
-#define CONVERT_RETURN  return (0)
-
-
-static USHORT cvt_ascii_utf_init(
-								 csconvert* csptr,
-								 USHORT dest_cs, USHORT source_cs)
+static USHORT cvt_ascii_utf_init(csconvert* csptr)
 {
 /**************************************
  *
@@ -1121,60 +1936,106 @@ static USHORT cvt_ascii_utf_init(
  *
  *************************************/
 
-	common_convert_init(csptr, dest_cs, source_cs,
-						cvt_utffss_to_ascii, NULL, NULL);
-	CONVERT_RETURN;
+	common_convert_init(csptr, cvt_utffss_to_ascii);
+	return true;
 }
 
-
-FPTR_SHORT INTL_builtin_lookup(USHORT objtype, SSHORT parm1, SSHORT parm2)
+INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name)
 {
-	switch (objtype) {
-	case type_texttype:
-		if (parm1 == ttype_none)
-			return (FPTR_SHORT)ttype_none_init;
-		if (parm1 == ttype_ascii)
-			return (FPTR_SHORT)ttype_ascii_init;
-		if (parm1 == ttype_unicode_fss)
-			return (FPTR_SHORT)ttype_unicode_fss_init;
-		if (parm1 == ttype_binary)
-			return (FPTR_SHORT)ttype_binary_init;
-		break;
-	case type_charset:
-		if (parm1 == CS_NONE)
-			return (FPTR_SHORT)cs_none_init;
-		if (parm1 == CS_ASCII)
-			return (FPTR_SHORT)cs_ascii_init;
-		if (parm1 == CS_UNICODE_FSS)
-			return (FPTR_SHORT)cs_unicode_fss_init;
-		if (parm1 == CS_UNICODE_UCS2)
-			return (FPTR_SHORT)cs_unicode_ucs2_init;
-		if (parm1 == CS_BINARY)
-			return (FPTR_SHORT)cs_binary_init;
-		break;
-	case type_csconvert:
-		if (((parm1 == CS_ASCII) && (parm2 == CS_UNICODE_FSS)) ||
-			((parm2 == CS_ASCII) && (parm1 == CS_UNICODE_FSS)))
-		{
-			return (FPTR_SHORT)cvt_ascii_utf_init;
-		}
-
-		/* converting FROM NONE to UNICODE has a short cut 
-		 * - it's treated like ASCII */
-		if ((parm2 == CS_NONE) && (parm1 == CS_UNICODE_FSS))
-			return (FPTR_SHORT)cvt_ascii_utf_init;
-
-#ifdef DEV_BUILD
-		/* Converting TO character set NONE should have been handled at
-		 * a higher level
-		 */
-		fb_assert(parm1 != CS_NONE);
-#endif
-		break;
-	default:
-		BUGCHECK(1);
-		break;
+	if (strcmp(charset_name, "NONE") == 0)
+		return cs_none_init(cs, charset_name);
+	if (strcmp(charset_name, "ASCII") == 0 ||
+		strcmp(charset_name, "USASCII") == 0 ||
+		strcmp(charset_name, "ASCII7") == 0)
+	{
+		return cs_ascii_init(cs, charset_name);
 	}
-	return NULL;
+	if (strcmp(charset_name, "UNICODE_FSS") == 0 ||
+		strcmp(charset_name, "UTF_FSS") == 0 ||
+		strcmp(charset_name, "SQL_TEXT") == 0)
+	{
+		return cs_unicode_fss_init(cs, charset_name);
+	}
+	if (strcmp(charset_name, "UNICODE_UCS2") == 0)
+		return cs_unicode_ucs2_init(cs, charset_name);
+	if (strcmp(charset_name, "OCTETS") == 0 ||
+		strcmp(charset_name, "BINARY") == 0)
+	{
+		return cs_binary_init(cs, charset_name);
+	}
+	if (strcmp(charset_name, "UTF8") == 0 ||
+		strcmp(charset_name, "UTF-8") == 0)
+	{
+		return cs_utf8_init(cs, charset_name);
+	}
+	if (strcmp(charset_name, "UTF16") == 0 ||
+		strcmp(charset_name, "UTF-16") == 0)
+	{
+		return cs_utf16_init(cs, charset_name);
+	}
+	if (strcmp(charset_name, "UTF32") == 0 ||
+		strcmp(charset_name, "UTF-32") == 0)
+	{
+		return cs_utf32_init(cs, charset_name);
+	}
+
+	return false;
 }
 
+INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
+									   USHORT attributes, const UCHAR* specific_attributes,
+									   ULONG specific_attributes_length, INTL_BOOL ignore_attributes)
+{
+	if (ignore_attributes)
+	{
+		attributes = TEXTTYPE_ATTR_PAD_SPACE;
+		specific_attributes = NULL;
+		specific_attributes_length = 0;
+	}
+
+	if (strcmp(texttype_name, "NONE") == 0)
+	{
+		return ttype_none_init(tt, texttype_name, charset_name, attributes,
+							   specific_attributes, specific_attributes_length);
+	}
+	if (strcmp(texttype_name, "ASCII") == 0)
+	{
+		return ttype_ascii_init(tt, texttype_name, charset_name, attributes,
+								specific_attributes, specific_attributes_length);
+	}
+	if (strcmp(texttype_name, "UNICODE_FSS") == 0)
+	{
+		return ttype_unicode_fss_init(tt, texttype_name, charset_name, attributes,
+									  specific_attributes, specific_attributes_length);
+	}
+	if (strcmp(texttype_name, "OCTETS") == 0)
+	{
+		return ttype_binary_init(tt, texttype_name, charset_name, attributes,
+								 specific_attributes, specific_attributes_length);
+	}
+	if (strcmp(texttype_name, "UTF8") == 0 ||
+		(strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
+	{
+		return ttype_utf8_init(tt, texttype_name, charset_name, attributes,
+							   specific_attributes, specific_attributes_length);
+	}
+	if ((strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UNICODE") == 0))
+	{
+		return ttype_unicode8_init(tt, texttype_name, charset_name, attributes,
+								   specific_attributes, specific_attributes_length);
+	}
+	if (strcmp(texttype_name, "UTF16") == 0 ||
+		(strcmp(charset_name, "UTF16") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
+	{
+		return ttype_utf16_init(tt, texttype_name, charset_name, attributes,
+								specific_attributes, specific_attributes_length);
+	}
+	if (strcmp(texttype_name, "UTF32") == 0 ||
+		(strcmp(charset_name, "UTF32") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
+	{
+		return ttype_utf32_init(tt, texttype_name, charset_name, attributes,
+								specific_attributes, specific_attributes_length);
+	}
+
+	return false;
+}

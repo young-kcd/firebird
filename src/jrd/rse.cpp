@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.86 2005-05-14 10:42:58 alexpeshkoff Exp $
+ * $Id: rse.cpp,v 1.87 2005-05-27 22:44:05 asfernandes Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -370,7 +370,7 @@ bool RSE_find_record(thread_db* tdbb,
  *
  * Functional description
  *	Find the record with the passed key
- *	value, using the passed operator to 
+ *	value, using the passed operator to
  *	compare records with the key value.
  *	Search forwards or backwards.
  *
@@ -428,8 +428,8 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 	IRSB impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
 
 #ifdef SCROLLABLE_CURSORS
-/* The mode RSE_get_next is a generic mode which requests that 
-   we continue on in the last direction we were going.  Oblige 
+/* The mode RSE_get_next is a generic mode which requests that
+   we continue on in the last direction we were going.  Oblige
    by converting the mode to the appropriate direction. */
 
 	if (mode == RSE_get_next)
@@ -441,7 +441,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 	request->req_flags &= ~req_fetch_required;
 #endif
 
-/* Turn off the flag so that records at a 
+/* Turn off the flag so that records at a
    lower level will not be counted. */
 
 	const bool count = (request->req_flags & req_count_records) != 0;
@@ -456,7 +456,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 			jrd_tra* transaction = request->req_transaction;
 
 			RecordSource* table_rsb = rsb;
-			
+
 			// Skip nodes without streams
 			while (table_rsb->rsb_type == rsb_boolean ||
 				    table_rsb->rsb_type == rsb_first ||
@@ -464,23 +464,23 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 			{
 				table_rsb = table_rsb->rsb_next;
 			}
-			
+
 			record_param* org_rpb = request->req_rpb + table_rsb->rsb_stream;
 			jrd_rel* relation = org_rpb->rpb_relation;
-			
+
 			// Raise error if we cannot lock this kind of stream
 			if (!relation || relation->rel_view_rse || relation->rel_file) {
 				ERR_post(isc_random, isc_arg_string, "Unsupported RSE construct for blr_writelock operation", 0);
 			}
-			
+
 			RLCK_reserve_relation(tdbb, transaction, relation, true, true);
-				
+
 			// Fetch next record if current was deleted before being locked
 			if (!VIO_writelock(tdbb, org_rpb, rsb, transaction)) {
 				continue;
 			}
 		}
-		
+
 		if (count) {
 			request->req_records_selected++;
 			request->req_records_affected++;
@@ -508,7 +508,7 @@ Bookmark* RSE_get_bookmark(thread_db* tdbb, RecordSource* rsb)
  *
  * Functional description
  *	Return a descriptor whose value is a pointer
- *	to a bookmark describing the location of 
+ *	to a bookmark describing the location of
  *	the current record in a navigational stream.
  *
  **************************************/
@@ -570,7 +570,7 @@ void RSE_mark_crack(thread_db* tdbb, RecordSource* rsb, USHORT flags)
 	if (rsb->rsb_type == rsb_boolean)
 		rsb = rsb->rsb_next;
 
-/* clear all the flag bits first to make sure 
+/* clear all the flag bits first to make sure
    no conflicting bits are set */
 
 	irsb* impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
@@ -606,7 +606,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
  **************************************
  *
  * Functional description
- *	Open a stream, as represented by the 
+ *	Open a stream, as represented by the
  *	record source block (rsb).
  *
  **************************************/
@@ -785,7 +785,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 				   stream in the right sub-stream.  The block will be needed
 				   if we join to nulls before opening the rsbs */
 
-				for (RsbStack::iterator stack(*(rsb->rsb_left_rsbs)); 
+				for (RsbStack::iterator stack(*(rsb->rsb_left_rsbs));
 					stack.hasData(); ++stack)
 				{
 					VIO_record(tdbb,
@@ -812,7 +812,7 @@ bool RSE_reset_position(thread_db* tdbb, RecordSource* rsb, record_param* new_rp
  **************************************
  *
  * Functional description
- *	Reset the position of a navigational stream to 
+ *	Reset the position of a navigational stream to
  *	the position indicated by the passed record.
  *
  **************************************/
@@ -860,7 +860,7 @@ bool RSE_reset_position(thread_db* tdbb, RecordSource* rsb, record_param* new_rp
 		if ((bitmap = impure->irsb_bitmap) &&
 			SBM_next(*bitmap, &rpb->rpb_number, RSE_get_current) &&
 			VIO_get(tdbb, rpb, rsb, request->req_transaction,
-					request->req_pool)) 
+					request->req_pool))
 		{
 			return true;
 		}
@@ -886,7 +886,7 @@ bool RSE_set_bookmark(thread_db* tdbb, RecordSource* rsb, record_param* rpb, Boo
  **************************************
  *
  * Functional description
- *	Set the location of a stream to the location 
+ *	Set the location of a stream to the location
  *	specified by the given bookmark.
  *
  **************************************/
@@ -934,7 +934,7 @@ static void close_merge(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
  **************************************
  *
  * Functional description
- *	Close a merge stream by closing all substreams 
+ *	Close a merge stream by closing all substreams
  *	and cleaning up after any prior sort-merge retrieval.
  *
  **************************************/
@@ -1039,8 +1039,8 @@ static SSHORT compare(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 				// AB: When both expression evaluated NULL then
 				// we return 0 ( (NULL = NULL) = true).
 				//
-				// Currently this (0 and higher) isn't used by the 
-				// MERGE procedure, but when we allow MERGE to 
+				// Currently this (0 and higher) isn't used by the
+				// MERGE procedure, but when we allow MERGE to
 				// handle outer-joins we must not forget this one !!!
 				return 0;
 			}
@@ -1117,8 +1117,8 @@ static bool fetch_record(thread_db* tdbb, RecordSource* rsb, SSHORT n
 		return true;
 	}
 
-/* we have exhausted this stream, so close it; if there is 
-   another candidate record from the n-1 streams to the left, 
+/* we have exhausted this stream, so close it; if there is
+   another candidate record from the n-1 streams to the left,
    then reopen the stream and start again from the beginning */
 
 	while (true)
@@ -1160,7 +1160,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
  * Functional description
  *	Get records for a left outer join.  Records are read
  *	from the left sub-stream when the right sub-stream is
- *	dry or when it is not yet open.  When the left 
+ *	dry or when it is not yet open.  When the left
  *	sub-stream's boolean is true, open the right sub-stream
  *	and read a record.  When the right sub-stream becomes dry,
  *	close it, and if nothing has been joined to the left
@@ -1171,7 +1171,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
  **************************************/
 	SET_TDBB(tdbb);
 
-/* loop through the outer join in either the forward or the backward direction; 
+/* loop through the outer join in either the forward or the backward direction;
    the various modes indicate what state of the join we are in */
 
 	while (true)
@@ -1186,7 +1186,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 				{
 					if (mode == RSE_get_backward)
 						return false;
-					else 
+					else
 					{
 						if (!rsb->rsb_arg[RSB_LEFT_inner_streams])
 							return false;
@@ -1234,7 +1234,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 			RSE_close(tdbb, rsb->rsb_arg[RSB_LEFT_inner]);
 			impure->irsb_flags |= irsb_mustread;
 
-			/* The right stream did not have any matching records.  Join 
+			/* The right stream did not have any matching records.  Join
 			   the left stream to a null valued right sub-stream */
 
 			if (!(impure->irsb_flags & irsb_joined)) {
@@ -1327,7 +1327,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
  * Functional description
  *	Get records for a left outer join.  Records are read
  *	from the left sub-stream when the right sub-stream is
- *	dry or when it is not yet open.  When the left 
+ *	dry or when it is not yet open.  When the left
  *	sub-stream's boolean is true, open the right sub-stream
  *	and read a record.  When the right sub-stream becomes dry,
  *	close it, and if nothing has been joined to the left
@@ -1510,9 +1510,9 @@ static bool get_merge_fetch(
 		++record;
 //} CVC: Misplaced ending brace
 
-/* if there is a record waiting for us, use it; 
-   otherwise proceed recursively from right to left 
-   through the substreams, getting the next record 
+/* if there is a record waiting for us, use it;
+   otherwise proceed recursively from right to left
+   through the substreams, getting the next record
    in the equality group */
 
 	if (record < tail->irsb_mrg_equal || record > tail->irsb_mrg_equal_end) {
@@ -1630,19 +1630,19 @@ static bool get_merge_join(
 	jrd_req* request = tdbb->tdbb_request;
 	const RecordSource* const* const end = rsb->rsb_arg + rsb->rsb_count * 2;
 
-/* If there is a group of equivalent records already formed, 
+/* If there is a group of equivalent records already formed,
    fetch the next record from it */
 
 	if (get_merge_fetch(tdbb, rsb, rsb->rsb_count - 1, mode))
 		return true;
 
-/* We are done with the current equivalence group, 
-   so we need to generate a new one.  If backwards 
-   is specified, we will fetch all the records in  
-   the backward direction, so the backwards flag indicates 
-   that all the equivalent records were fetched in the 
-   backward direction.  This will effectively reverse the 
-   direction we traverse the equivalent records in response  
+/* We are done with the current equivalence group,
+   so we need to generate a new one.  If backwards
+   is specified, we will fetch all the records in
+   the backward direction, so the backwards flag indicates
+   that all the equivalent records were fetched in the
+   backward direction.  This will effectively reverse the
+   direction we traverse the equivalent records in response
    to a scroll request. */
 
 	if (mode == RSE_get_backward)
@@ -1650,7 +1650,7 @@ static bool get_merge_join(
 	else
 		impure->irsb_flags &= ~irsb_backwards;
 
-/* Increment (or decrement) each stream one record.  If any comes 
+/* Increment (or decrement) each stream one record.  If any comes
    up dry, we are at the end. */
 
 	RecordSource** ptr;
@@ -1705,7 +1705,7 @@ static bool get_merge_join(
 		}
 	}
 
-/* Loop thru the streams advancing each up to (or down to) the target value.  
+/* Loop thru the streams advancing each up to (or down to) the target value.
    If any exceeds the target value, there is no match so start over. */
 
 	for (;;)
@@ -1731,7 +1731,7 @@ static bool get_merge_join(
 					mfb->mfb_current_block = 0;
 					mfb->mfb_equal_records = 0;
 
-					/* get the new record, which is both the beginning and end of 
+					/* get the new record, which is both the beginning and end of
 					   the equal queue for the moment */
 
 					const SLONG record =
@@ -2597,7 +2597,7 @@ static bool get_record(thread_db*	tdbb,
          *     empty result sets (when skip >= first) and too small result sets
          *     (when first > skip, first - skip records will be returned).
          *******/
-        
+
 	case rsb_first:
 		switch (mode) {
 		case RSE_get_forward:
@@ -2723,8 +2723,8 @@ static bool get_record(thread_db*	tdbb,
 			break;
 		}
 
-		/* in the case of a project which has been mapped to an index, 
-		   we need to make sure that we only return a single record for 
+		/* in the case of a project which has been mapped to an index,
+		   we need to make sure that we only return a single record for
 		   each of the leftmost records in the join */
 
 		if (rsb->rsb_flags & rsb_project) {
@@ -2775,7 +2775,7 @@ static bool get_record(thread_db*	tdbb,
 		BUGCHECK(166);			/* msg 166 invalid rsb type */
 	}
 
-/* Check to see if we need to update the record_count. This record 
+/* Check to see if we need to update the record_count. This record
    count is used in NAV_get_record and needs to be updated before
    checking for singularity. Note that in our check for singularity
    we call get_record which calls NAV_get_record where this count
@@ -2997,7 +2997,7 @@ static void open_merge(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
  **************************************
  *
  * Functional description
- *	Initialize a merge stream by opening all substreams 
+ *	Initialize a merge stream by opening all substreams
  *	and cleaning up after any prior sort-merge retrieval.
  *
  **************************************/
@@ -3033,7 +3033,7 @@ static void open_merge(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
 		mfb->mfb_block_size = MAX(mfb->mfb_record_size, MERGE_BLOCK_SIZE);
 		mfb->mfb_blocking_factor = mfb->mfb_block_size / mfb->mfb_record_size;
 		if (!mfb->mfb_block_data)
-			mfb->mfb_block_data = 
+			mfb->mfb_block_data =
 				FB_NEW(*tdbb->tdbb_request->req_pool) UCHAR[mfb->mfb_block_size];
 	}
 }
@@ -3218,7 +3218,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, IRSB_SORT impure, UINT
 					map->smb_key_length * sizeof(ULONG))
 				{
 					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->smb_desc),
-									   from, &to, false);
+									   from, &to, INTL_KEY_SORT);
 				}
 				else
 					MOV_move(from, &to);
@@ -3277,7 +3277,7 @@ static void proc_assignment(
 	desc2.dsc_sub_type = 0;
 	desc2.dsc_flags = 0;
 	desc2.dsc_address = (UCHAR *) & indicator;
-	
+
 	dsc desc1;
 	desc1 = *flag_desc;
 	desc1.dsc_address = msg + (IPTR) flag_desc->dsc_address;
@@ -3432,7 +3432,7 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 	case rsb_cross:
 		{
 			/* Bug # 72369: singleton-SELECT in Stored Procedure gives wrong
-			 * results when there are more than 2 streams in the cross. 
+			 * results when there are more than 2 streams in the cross.
 			 * rsb_cross can have more than 2 rsb_arg's. Go through each one
 			 */
 			RecordSource** ptr = rsb->rsb_arg;
@@ -3545,7 +3545,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 	case rsb_cross:
 		{
 			/* Bug # 72369: singleton-SELECT in Stored Procedure gives wrong
-			 * results when there are more than 2 streams in the cross. 
+			 * results when there are more than 2 streams in the cross.
 			 * rsb_cross can have more than 2 rsb_arg's. Go through each one
 			 */
 			RecordSource** ptr = rsb->rsb_arg;
@@ -3659,10 +3659,10 @@ static void resynch_merge(
  **************************************
  *
  * Functional description
- *	We are in trouble because we stepped off 
- *	an equivalence group in a direction different 
- *	than that which we entered it.  We need to 
- *	"back up" each substream by an amount equal 
+ *	We are in trouble because we stepped off
+ *	an equivalence group in a direction different
+ *	than that which we entered it.  We need to
+ *	"back up" each substream by an amount equal
  * 	to the number of records in the grouping.
  *
  **************************************/
@@ -3677,9 +3677,9 @@ static void resynch_merge(
 		RecordSource* sort_rsb = *ptr;
 		merge_file* mfb = &tail->irsb_mrg_file;
 
-		/* increment (or decrement) past each record in the substream 
-		   which has been stored in the merge equivalence group; assume 
-		   the actual count is one less, unless an additional record 
+		/* increment (or decrement) past each record in the substream
+		   which has been stored in the merge equivalence group; assume
+		   the actual count is one less, unless an additional record
 		   was stored in the "last_fetched" field */
 
 		SLONG records = mfb->mfb_equal_records;
@@ -3687,7 +3687,7 @@ static void resynch_merge(
 			--records;
 
 		for (; records; --records) {
-			/* failure of this operation should never happen, 
+			/* failure of this operation should never happen,
 			   but if it does give an error */
 
 			UCHAR* data = get_sort(tdbb, sort_rsb, mode);
@@ -3699,8 +3699,8 @@ static void resynch_merge(
 			unget_sort(tdbb, sort_rsb, data);
 		}
 
-		/* null out the "last fetched" record, since this is not the 
-		   next record we want to retrieve anymore--we are headed in 
+		/* null out the "last fetched" record, since this is not the
+		   next record we want to retrieve anymore--we are headed in
 		   the opposite direction */
 
 		tail->irsb_mrg_last_fetched = -1;
@@ -3733,7 +3733,7 @@ static void save_record(thread_db* tdbb, record_param* rpb)
 				delete rec_copy;
 		}
 		else
-			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->getDefaultPool()) SaveRecordParam(); 
+			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->getDefaultPool()) SaveRecordParam();
 
 		MOVE_FAST(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
 		Record* rec_copy = FB_NEW_RPT(*tdbb->getDefaultPool(), size) Record(*tdbb->getDefaultPool());
@@ -3757,9 +3757,9 @@ static void unget_sort(thread_db* tdbb, RecordSource* rsb, UCHAR* data)
  **************************************
  *
  * Functional description
- *	Fix up the sort data in case we need to re-retrieve 
- *	it.  This was initiated because of the need to navigate 
- *	through the sort, and the fact that retrieving the sort 
+ *	Fix up the sort data in case we need to re-retrieve
+ *	it.  This was initiated because of the need to navigate
+ *	through the sort, and the fact that retrieving the sort
  *	data is destructive to the sort data (diddles it).
  *
  **************************************/
@@ -3795,11 +3795,11 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 		TEXT file_name[MAXPATHLEN];
 
 		// Cast is ok because stdio_flag is false
-		sfb->sfb_file = (int) (IPTR) gds__temp_file(FALSE, SCRATCH, file_name); 
+		sfb->sfb_file = (int) (IPTR) gds__temp_file(FALSE, SCRATCH, file_name);
 		if (sfb->sfb_file == -1)
 			SORT_error(tdbb->tdbb_status_vector, sfb, "open", isc_io_error,
 					   errno);
-		sfb->sfb_file_name = 
+		sfb->sfb_file_name =
 			FB_NEW(*getDefaultMemoryPool()) char[strlen(file_name) + 1];
 		strcpy(sfb->sfb_file_name, file_name);
 

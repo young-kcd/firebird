@@ -667,8 +667,8 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 	
 	BlobControl* source;
 	ISC_STATUS status;
-	SSHORT err_code;
-	USHORT err_position;
+	USHORT err_code;
+	ULONG err_position;
 	SSHORT source_cs, dest_cs;
 	SSHORT i;
 	USHORT result_length;
@@ -711,11 +711,11 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 			if (action == isc_blob_filter_open) {
 				aux->ctlaux_obj1 =
-					INTL_convert_lookup(tdbb, dest_cs, CS_UNICODE_UCS2);
+					INTL_convert_lookup(tdbb, dest_cs, CS_UTF16);
 			}
 			else {
 				aux->ctlaux_obj1 =
-					INTL_convert_lookup(tdbb, CS_UNICODE_UCS2, source_cs);
+					INTL_convert_lookup(tdbb, CS_UTF16, source_cs);
 			}
 
 			if (aux->ctlaux_obj1 == NULL) {
@@ -740,12 +740,12 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			source = control->ctl_handle;
 
 			if (action == isc_blob_filter_open) {
-				control->ctl_from_sub_type = CS_UNICODE_UCS2;
-				aux->ctlaux_subfilter->ctl_to_sub_type = CS_UNICODE_UCS2;
+				control->ctl_from_sub_type = CS_UTF16;
+				aux->ctlaux_subfilter->ctl_to_sub_type = CS_UTF16;
 			}
 			else {
-				control->ctl_to_sub_type = CS_UNICODE_UCS2;
-				aux->ctlaux_subfilter->ctl_from_sub_type = CS_UNICODE_UCS2;
+				control->ctl_to_sub_type = CS_UTF16;
+				aux->ctlaux_subfilter->ctl_from_sub_type = CS_UTF16;
 			}
 
 
@@ -758,8 +758,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		if (action == isc_blob_filter_open) {
 			control->ctl_max_segment =
-				aux->ctlaux_obj1.convert(NULL, 0, NULL,
-						source->ctl_max_segment, &err_code, &err_position);
+				aux->ctlaux_obj1.convertLength(source->ctl_max_segment);
 
 			if (source->ctl_max_segment && control->ctl_max_segment)
 				aux->ctlaux_expansion_factor =
@@ -786,8 +785,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			 * for an appropriate buffer size, allocate that, and re-allocate
 			 * later if we guess wrong.
 			 */
-			const USHORT tmp = aux->ctlaux_obj1.convert( NULL, 0, NULL,
-							128, &err_code, &err_position);
+			const USHORT tmp = aux->ctlaux_obj1.convertLength(128);
 			aux->ctlaux_expansion_factor = (EXP_SCALE * tmp) / 128;
 
 			fb_assert(aux->ctlaux_expansion_factor != 0);
@@ -837,8 +835,8 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		/* Now convert from the input buffer into the temporary buffer */
 
 		/* How much space do we need to convert? */
-		result_length = aux->ctlaux_obj1.convert(NULL, 0,
-			control->ctl_buffer, control->ctl_buffer_length,
+		result_length = aux->ctlaux_obj1.convert(control->ctl_buffer_length, control->ctl_buffer,
+			0, reinterpret_cast<UCHAR*>(NULL),
 			&err_code, &err_position);
 
 		/* Allocate a new buffer if we don't have enough */
@@ -853,9 +851,9 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		/* convert the text */
 
-		result_length = aux->ctlaux_obj1.convert(aux->ctlaux_buffer1,
-			aux->ctlaux_buffer1_len, control->ctl_buffer,
-			control->ctl_buffer_length, &err_code, &err_position);
+		result_length = aux->ctlaux_obj1.convert(control->ctl_buffer_length, control->ctl_buffer,
+			aux->ctlaux_buffer1_len, aux->ctlaux_buffer1,
+			&err_code, &err_position);
 
 		if (err_code)
 			return isc_transliteration_failed;
@@ -947,8 +945,8 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 /* Now convert from the temporary buffer into the destination buffer */
 
-	result_length = aux->ctlaux_obj1.convert(control->ctl_buffer,
-					control->ctl_buffer_length, aux->ctlaux_buffer1, length,
+	result_length = aux->ctlaux_obj1.convert(length, aux->ctlaux_buffer1,
+					control->ctl_buffer_length, control->ctl_buffer,
 					&err_code, &err_position);
 
 	if (err_code == CS_CONVERT_ERROR)

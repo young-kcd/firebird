@@ -31,37 +31,8 @@
 typedef USHORT fss_wchar_t;
 typedef SLONG fss_size_t;
 
-static fss_size_t fss_mbtowc( fss_wchar_t* p, const NCHAR* s, fss_size_t n);
-static fss_size_t fss_wctomb(MBCHAR* s, fss_wchar_t wc);
-
-SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const NCHAR* p, USHORT n)
-{
-/**************************************
- *
- *	I N T L _ f s s _ m b t o w c
- *
- **************************************
- *
- * Functional description
- *	InterBase interface to mbtowc function for Unicode
- *	text in FSS bytestream format.
- *
- * Return:	(common to all mbtowc routines)
- *	-1	Error in parsing next character
- *	<n>	Count of characters consumed.
- *	*wc	Next character from byte steam (if wc <> NULL)
- *
- * Note: This routine has a cousin in jrd/intl.c
- *
- **************************************/
-	fb_assert(obj);
-	fb_assert(wc);
-	fb_assert(p);
-
-	return fss_mbtowc(wc, p, n);
-}
-
-
+static fss_size_t fss_mbtowc( fss_wchar_t* p, const UCHAR* s, fss_size_t n);
+static fss_size_t fss_wctomb(UCHAR* s, fss_wchar_t wc);
 
 /*
  * The following was provided by Ken Thompson of AT&T Bell Laboratories,
@@ -188,7 +159,7 @@ SSHORT CS_UTFFSS_fss_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const NCHAR* p, USHORT 
 
 
 
-static fss_size_t fss_mbtowc( fss_wchar_t* p, const NCHAR* s, fss_size_t n)
+static fss_size_t fss_mbtowc( fss_wchar_t* p, const UCHAR* s, fss_size_t n)
 {
 	if (s == 0)
 		return 0;
@@ -220,7 +191,7 @@ static fss_size_t fss_mbtowc( fss_wchar_t* p, const NCHAR* s, fss_size_t n)
 }
 
 
-static fss_size_t fss_wctomb(MBCHAR* s, fss_wchar_t wc)
+static fss_size_t fss_wctomb(UCHAR* s, fss_wchar_t wc)
 {
 	if (s == 0)
 		return 0;
@@ -244,12 +215,12 @@ static fss_size_t fss_wctomb(MBCHAR* s, fss_wchar_t wc)
 }
 
 
-USHORT fss_to_unicode(UNICODE *dest_ptr,
-						USHORT dest_len,
-						const NCHAR* src_ptr,
-						USHORT src_len,
-						SSHORT *err_code,
-						USHORT *err_position)
+ULONG fss_to_unicode(ULONG src_len,
+					 const UCHAR* src_ptr,
+					 ULONG dest_len,
+					 UNICODE *dest_ptr,
+					 USHORT *err_code,
+					 ULONG *err_position)
 {
 
 	*err_code = 0;
@@ -259,14 +230,14 @@ USHORT fss_to_unicode(UNICODE *dest_ptr,
 		return (src_len * 2);	/* All single byte narrow characters */
 
 	const UNICODE* const start = dest_ptr;
-	const USHORT src_start = src_len;
+	const ULONG src_start = src_len;
 	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
 		const fss_size_t res = fss_mbtowc(dest_ptr, src_ptr, src_len);
 		if (res == -1) {
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
-		fb_assert(res <= src_len);
+		fb_assert(static_cast<ULONG>(res) <= src_len);
 		dest_ptr++;
 		dest_len -= sizeof(*dest_ptr);
 		src_ptr += res;
@@ -280,66 +251,48 @@ USHORT fss_to_unicode(UNICODE *dest_ptr,
 }
 
 
-USHORT CS_UTFFSS_fss_to_unicode_cc(csconvert* obj,
+ULONG CS_UTFFSS_fss_to_unicode_cc(csconvert* obj,
+								ULONG src_len,
+								const UCHAR* src_ptr,
+								ULONG dest_len,
 								UNICODE *dest_ptr,
-								USHORT dest_len,
-								const NCHAR* src_ptr,
-								USHORT src_len,
-								SSHORT *err_code,
-								USHORT *err_position)
+								USHORT *err_code,
+								ULONG *err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert ==
+	fb_assert(obj->csconvert_fn_convert ==
 		reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_fss_to_unicode_cc));
 
-	return fss_to_unicode(dest_ptr, dest_len, src_ptr, src_len, err_code, err_position);
+	return fss_to_unicode(src_len, src_ptr, dest_len, dest_ptr, err_code, err_position);
 }
 
 
-USHORT CS_UTFFSS_fss_to_unicode_tt(TEXTTYPE obj,
-								UNICODE *dest_ptr,
-								USHORT dest_len,
-								const NCHAR* src_ptr,
-								USHORT src_len,
-								SSHORT *err_code,
-								USHORT *err_position)
-{
-	fb_assert(src_ptr != NULL || dest_ptr == NULL);
-	fb_assert(err_code != NULL);
-	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
-	fb_assert(obj->texttype_fn_to_wc == CS_UTFFSS_fss_to_unicode_tt);
-
-	return fss_to_unicode(dest_ptr, dest_len, src_ptr, src_len, err_code, err_position);
-}
-
-
-USHORT CS_UTFFSS_unicode_to_fss(csconvert* obj,
-								MBCHAR *fss_str,
-								USHORT fss_len,
+ULONG CS_UTFFSS_unicode_to_fss(csconvert* obj,
+								ULONG unicode_len,
 								const UNICODE* unicode_str,
-								USHORT unicode_len,
-								SSHORT *err_code,
-								USHORT *err_position)
+								ULONG fss_len,
+								UCHAR *fss_str,
+								USHORT *err_code,
+								ULONG *err_position)
 {
 	fb_assert(unicode_str != NULL || fss_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_unicode_to_fss));
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CS_UTFFSS_unicode_to_fss));
 
-	const USHORT src_start = unicode_len;
+	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (fss_str == NULL)
-		return ((USHORT) (unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
+		return ((ULONG) (unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
 
-	MBCHAR tmp_buffer[6];
-	const MBCHAR* const start = fss_str;
+	UCHAR tmp_buffer[6];
+	const UCHAR* const start = fss_str;
 	while ((fss_len) && (unicode_len >= sizeof(*unicode_str))) {
 		/* Convert the wide character into temp buffer */
 		fss_size_t res = fss_wctomb(tmp_buffer, *unicode_str);
@@ -348,12 +301,12 @@ USHORT CS_UTFFSS_unicode_to_fss(csconvert* obj,
 			break;
 		}
 		/* will the mb sequence fit into space left? */
-		if (res > fss_len) {
+		if (static_cast<ULONG>(res) > fss_len) {
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
 		}
 		/* copy the converted bytes into the destination */
-		const MBCHAR* p = tmp_buffer;
+		const UCHAR* p = tmp_buffer;
 		for (; res; res--, fss_len--)
 			*fss_str++ = *p++;
 		unicode_len -= sizeof(*unicode_str);

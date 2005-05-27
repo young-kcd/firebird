@@ -24,10 +24,10 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: vector.h,v 1.14 2005-05-12 18:24:05 alexpeshkoff Exp $
+ *  $Id: vector.h,v 1.15 2005-05-27 22:38:23 asfernandes Exp $
  *
  */
- 
+
 #ifndef VECTOR_H
 #define VECTOR_H
 
@@ -113,8 +113,8 @@ public:
 
 // Fast sorted array of simple objects
 // It is used for B+ tree nodes lower, but can still be used by itself
-template <typename Value, size_t Capacity, typename Key = Value, 
-	typename KeyOfValue = DefaultKeyValue<Value>, 
+template <typename Value, size_t Capacity, typename Key = Value,
+	typename KeyOfValue = DefaultKeyValue<Value>,
 	typename Cmp = DefaultComparator<Key> >
 class SortedVector : public Vector<Value, Capacity> {
 public:

@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.netbsd:	$(VERSION)	@PLATFORM@
-#$Id: prefix.netbsd,v 1.2 2005-01-24 02:15:48 stryqx Exp $
+#$Id: prefix.netbsd,v 1.3 2005-05-27 22:16:09 asfernandes Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 OS_ServerFiles=inet_server.cpp

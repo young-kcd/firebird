@@ -76,6 +76,7 @@
 
 @echo.
 @echo Completed Preparations for build
+@echo    You may now run make_icu.bat [CLEAN]
 @echo    You may now run make_boot.bat [DEBUG] [CLEAN]
 @echo.
 

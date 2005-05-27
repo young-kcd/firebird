@@ -29,33 +29,33 @@
 #include "cv_narrow.h"
 #include "ld_proto.h"
 
-USHORT CVJIS_eucj_to_unicode(csconvert* obj,
-							 UCS2_CHAR *dest_ptr,
-							 USHORT dest_len,
-							 const UCHAR* src_ptr,
-							 USHORT src_len,
-							 SSHORT *err_code,
-							 USHORT *err_position)
+ULONG CVJIS_eucj_to_unicode(csconvert* obj,
+							ULONG src_len,
+							const UCHAR* src_ptr,
+							ULONG dest_len,
+							USHORT *dest_ptr,
+							USHORT *err_code,
+							ULONG *err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_eucj_to_unicode));
-	fb_assert(obj->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_eucj_to_unicode));
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
-	const USHORT src_start = src_len;
+	const ULONG src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
 		return (src_len);
 
-	UCS2_CHAR ch;
-	UCS2_CHAR wide;
+	USHORT ch;
+	USHORT wide;
 	USHORT this_len;
-	const UCS2_CHAR* const start = dest_ptr;
+	const USHORT* const start = dest_ptr;
 	while ((src_len) && (dest_len > 1)) {
 		const UCHAR ch1 = *src_ptr++;
 
@@ -79,8 +79,8 @@ USHORT CVJIS_eucj_to_unicode(csconvert* obj,
 			this_len = 2;
 
 			/* Step 2: Convert from JIS to UNICODE */
-			ch = ((const USHORT*) obj->csconvert_datatable)
-				[((const USHORT*) obj->csconvert_misc)
+			ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+				[((const USHORT*) obj->csconvert_impl->csconvert_misc)
 					[(USHORT)wide /	256]
 				 + (wide % 256)];
 		}
@@ -124,23 +124,23 @@ static void S2E(const UCHAR s1, const UCHAR s2, UCHAR& j1, UCHAR& j2)
 }
 
 
-USHORT CVJIS_sjis_to_unicode(csconvert* obj,
-							 UCS2_CHAR *dest_ptr,
-							 USHORT dest_len,
-							 const UCHAR* sjis_str,
-							 USHORT sjis_len,
-							 SSHORT *err_code,
-							 USHORT *err_position)
+ULONG CVJIS_sjis_to_unicode(csconvert* obj,
+							ULONG sjis_len,
+							const UCHAR* sjis_str,
+							ULONG dest_len,
+							USHORT *dest_ptr,
+							USHORT *err_code,
+							ULONG *err_position)
 {
 	fb_assert(sjis_str != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_sjis_to_unicode));
-	fb_assert(obj->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_sjis_to_unicode));
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
-	const USHORT src_start = sjis_len;
+	const ULONG src_start = sjis_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
@@ -149,8 +149,8 @@ USHORT CVJIS_sjis_to_unicode(csconvert* obj,
 
 	USHORT table;
 	USHORT this_len;
-	UCS2_CHAR wide;
-	const UCS2_CHAR* const start = dest_ptr;
+	USHORT wide;
+	const USHORT* const start = dest_ptr;
 	while ((sjis_len) && (dest_len > 1)) {
 		/* Step 1: Convert from SJIS to JIS code */
 		if (*sjis_str & 0x80) {	/* Non-Ascii - High bit set */
@@ -194,10 +194,10 @@ USHORT CVJIS_sjis_to_unicode(csconvert* obj,
 		}
 
 		/* Step 2: Convert from JIS code (in wide) to UNICODE */
-		UCS2_CHAR ch;
+		USHORT ch;
 		if (table == 1)
-			ch = ((const USHORT*) obj->csconvert_datatable)
-				[((const USHORT*) obj->csconvert_misc)
+			ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+				[((const USHORT*) obj->csconvert_impl->csconvert_misc)
 					[(USHORT)wide /	256]
 				 + (wide % 256)];
 		else {
@@ -379,23 +379,23 @@ I hope this helps in the discussion.
 */
 
 
-USHORT CVJIS_unicode_to_sjis(csconvert* obj,
-							 UCHAR* sjis_str,
-							 USHORT sjis_len,
-							 const UCS2_CHAR* unicode_str,
-							 USHORT unicode_len,
-							 SSHORT *err_code,
-							 USHORT *err_position)
+ULONG CVJIS_unicode_to_sjis(csconvert* obj,
+							ULONG unicode_len,
+							const USHORT* unicode_str,
+							ULONG sjis_len,
+							UCHAR* sjis_str,
+							USHORT *err_code,
+							ULONG *err_position)
 {
 	fb_assert(unicode_str != NULL || sjis_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_unicode_to_sjis));
-	fb_assert(obj->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_unicode_to_sjis));
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
-	const USHORT src_start = unicode_len;
+	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
@@ -405,10 +405,10 @@ USHORT CVJIS_unicode_to_sjis(csconvert* obj,
 	const UCHAR* const start = sjis_str;
 	while ((sjis_len) && (unicode_len > 1)) {
 		/* Step 1: Convert from UNICODE to JIS code */
-		const UCS2_CHAR wide = *unicode_str++;
+		const USHORT wide = *unicode_str++;
 
-		UCS2_CHAR jis_ch = ((const USHORT*) obj->csconvert_datatable)
-			[((const USHORT*) obj->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
+		USHORT jis_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+			[((const USHORT*) obj->csconvert_impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
 
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 
@@ -458,19 +458,19 @@ USHORT CVJIS_unicode_to_sjis(csconvert* obj,
 }
 
 
-USHORT CVJIS_unicode_to_eucj(csconvert* obj, UCHAR *eucj_str, USHORT eucj_len,
-							 const UCS2_CHAR* unicode_str,
-							 USHORT unicode_len, SSHORT *err_code, USHORT *err_position)
+ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const USHORT* unicode_str,
+							ULONG eucj_len, UCHAR *eucj_str,
+							USHORT *err_code, ULONG *err_position)
 {
 	fb_assert(unicode_str != NULL || eucj_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_unicode_to_eucj));
-	fb_assert(obj->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVJIS_unicode_to_eucj));
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
-	const USHORT src_start = unicode_len;
+	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
@@ -480,15 +480,15 @@ USHORT CVJIS_unicode_to_eucj(csconvert* obj, UCHAR *eucj_str, USHORT eucj_len,
 	const UCHAR* const start = eucj_str;
 	while ((eucj_len) && (unicode_len > 1)) {
 		/* Step 1: Convert from UNICODE to JIS code */
-		const UCS2_CHAR wide = *unicode_str++;
+		const USHORT wide = *unicode_str++;
 
 		/* ASCII range characters map directly -- others go to the table */
-		UCS2_CHAR jis_ch;
+		USHORT jis_ch;
 		if (wide <= 0x007F)
 			jis_ch = wide;
 		else
-			jis_ch = ((const USHORT*) obj->csconvert_datatable)
-					[((const USHORT*) obj->csconvert_misc)
+			jis_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+					[((const USHORT*) obj->csconvert_impl->csconvert_misc)
 						[(USHORT)wide /	256]
 					 + (wide % 256)];
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
@@ -601,6 +601,7 @@ static USHORT CVJIS_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 #endif
 
 
+#if 0
 static USHORT CVJIS_euc2sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len,
 							const UCHAR* euc_str,
 							 USHORT euc_len, SSHORT *err_code, USHORT *err_position)
@@ -687,96 +688,6 @@ static USHORT CVJIS_euc2sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len,
 }
 
 
-
-USHORT CVJIS_euc_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len, // length in bytes
-							const UCHAR* src, USHORT src_len,
-							 SSHORT *err_code,	USHORT *err_position)
-{
-/**************************************
- *
- *      C V _ K A N J I _ e u c _ b y t e 2 s h o r t
- *
- **************************************
- *
- * Functional description
- *      Convert len number of bytes of EUC string in
- *	src (char-based buffer) into dst (short-based buffer).
- *	This routine merges:
- *		1-byte ASCII into 1 short, and
- *		2-byte EUC kanji into 1 short.
- *
- **************************************/
-	fb_assert(src != NULL || dst == NULL);
-	fb_assert(err_code != NULL);
-	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
-
-	const USHORT src_start = src_len;
-	*err_code = 0;
-/* Length estimate needed? */
-	if (dst == NULL)
-		return (2 * src_len);	/* worst case */
-
-	USHORT x;
-	const USHORT* const dst_start = dst;
-	while (src_len && (dst_len > (sizeof(USHORT) - 1))) {
-		if (EUC1(*src)) {
-			if (src_len <= 1) {
-				*err_code = CS_BAD_INPUT;
-				break;
-			}
-			x = (*src << 8) + (*(src + 1));
-			src += 2;
-			src_len -= 2;
-		}
-		else {
-			x = *src++;
-			src_len--;
-		}
-		*dst = x;	/* Assumes alignment */
-		++dst;
-		dst_len -= sizeof(USHORT);
-	}
-	if (src_len && !*err_code)
-		*err_code = CS_TRUNCATION_ERROR;
-	*err_position = src_start - src_len;
-	return (dst - dst_start) * sizeof(*dst);
-}
-
-
-SSHORT CVJIS_euc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len)
-{
-/**************************************
- *
- *      C V _ K A N J I _ e u c _ m b t o w c
- *
- **************************************
- *
- * Functional description
- *	Grab a single character from a mb stream.
- *
- **************************************/
-	fb_assert(src != NULL);
-	fb_assert(obj != NULL);
-
-	if (!src_len)
-		return -1;
-
-	if (EUC1(*src)) {
-		if (src_len <= 1) {
-			return -1;
-		}
-		if (wc)
-			*wc = (*src << 8) + (*(src + 1));
-		return 2;
-	}
-	else {
-		if (wc)
-			*wc = *src++;
-		return 1;
-	}
-}
-
 static USHORT CVJIS_sjis2euc(csconvert* obj, UCHAR *euc_str, USHORT euc_len,
 							const UCHAR* sjis_str,
 							 USHORT sjis_len, SSHORT *err_code, USHORT *err_position)
@@ -851,101 +762,10 @@ static USHORT CVJIS_sjis2euc(csconvert* obj, UCHAR *euc_str, USHORT euc_len,
 	*err_position = src_start - sjis_len;
 	return (euc_str - euc_start);
 }
+#endif
 
 
-
-USHORT CVJIS_sjis_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len, // byte count
-							const UCHAR* src, USHORT src_len,
-							 SSHORT *err_code, USHORT *err_position)
-{
-/**************************************
- *
- *      K A N J I _ s j i s _ b y t e 2 s h o r t
- *
- **************************************
- *
- * Functional description
- *      Convert len number of bytes of SJIS string in
- *	src (char-based buffer) into dst (short-based buffer).
- *	This routine merges:
- *		1-byte ASCII into 1 short,
- *		1-byte SJIS kana 1 short, and
- *		2-byte SJIS kanji into 1 short.
- *	Return the number of "bytes" in dst.
- *
- **************************************/
-	fb_assert(obj != NULL);
-	fb_assert(src != NULL || dst == NULL);
-	fb_assert(err_code != NULL);
-	fb_assert(err_position != NULL);
-
-	const USHORT src_start = src_len;
-	*err_code = 0;
-	if (dst == NULL)
-		return (2 * src_len);	/* worst case */
-
-	USHORT x;
-	const USHORT* const dst_start = dst;
-	while (src_len && (dst_len > (sizeof(USHORT) - 1))) {
-		if (SJIS1(*src)) {
-			if (src_len <= 1) {
-				*err_code = CS_BAD_INPUT;
-				break;
-			}
-			x = (*src << 8) + *(src + 1);
-			src_len -= 2;
-			src += 2;
-		}
-		else {
-			x = *src++;
-			src_len--;
-		}
-		*dst = x;	/* assuming alignment OK */
-		++dst;
-		dst_len -= sizeof(USHORT);
-	}
-	if (src_len && !*err_code)
-		*err_code = CS_TRUNCATION_ERROR;
-
-	*err_position = (src_start - src_len);
-	return (dst - dst_start) * sizeof(*dst);
-}
-
-
-SSHORT CVJIS_sjis_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len)
-{
-/**************************************
- *
- *      C V _ K A N J I _ s j i s _ m b t o w c
- *
- **************************************
- *
- * Functional description
- *	Grab a single character from a mb stream.
- *
- **************************************/
-
-	fb_assert(src != NULL);
-	fb_assert(obj != NULL);
-
-	if (!src_len)
-		return -1;
-
-	if (SJIS1(*src)) {
-		if (src_len <= 1) {
-			return -1;
-		}
-		if (wc)
-			*wc = (*src << 8) + (*(src + 1));
-		return 2;
-	}
-	else {
-		if (wc)
-			*wc = *src++;
-		return 1;
-	}
-}
-
+#if 0
 CONVERT_ENTRY(CS_SJIS, CS_EUCJ, CVJIS_sjis_x_eucj)
 {
 	if (dest_cs == CS_EUCJ)
@@ -959,4 +779,4 @@ CONVERT_ENTRY(CS_SJIS, CS_EUCJ, CVJIS_sjis_x_eucj)
 
 	CONVERT_RETURN;
 }
-
+#endif

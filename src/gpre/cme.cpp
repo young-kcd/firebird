@@ -119,6 +119,7 @@ const op_table operators[] =
 	{ nod_agg_total	, blr_agg_total },
 	{ nod_agg_average	, blr_agg_average },
 	{ nod_upcase		, blr_upcase },
+	{ nod_lowcase		, blr_lowcase },
 	{ nod_sleuth		, blr_matching2 },
 	{ nod_concatenate	, blr_concatenate },
 	{ nod_cast		, blr_cast },
@@ -978,6 +979,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		return;
 
 	case nod_upcase:
+	case nod_lowcase:
 		CME_get_dtype(node->nod_arg[0], f);
 		if (f->fld_dtype <= dtype_any_text)
 			return;

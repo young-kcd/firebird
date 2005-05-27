@@ -263,6 +263,11 @@ const char* ConfigImpl::asString(const string &value)
  *	Public interface
  */
 
+const char* Config::getInstallDirectory()
+{
+	return sysConfig.getInstallDirectory();
+}
+
 const char* Config::getRootDirectory()
 {
 	const char* result = (char*) sysConfig.values[KEY_ROOT_DIRECTORY];

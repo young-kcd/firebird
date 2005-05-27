@@ -351,11 +351,18 @@ USHORT PAR_desc(CompilerScratch* csb, DSC* desc)
 #endif
 
 	default:
-		if (dtype == blr_blob) {
+		if (dtype == blr_blob2)
+		{
 			desc->dsc_dtype = dtype_blob;
 			desc->dsc_length = sizeof(ISC_QUAD);
+			desc->dsc_sub_type = BLR_WORD;
+
+			USHORT ttype = BLR_WORD;
+			desc->dsc_scale = ttype & 0xFF;		// BLOB character set
+			desc->dsc_flags = ttype & 0xFF00;	// BLOB collation
 			break;
 		}
+
 		error(csb, isc_datnotsup, 0);
 	}
 
@@ -2386,6 +2393,25 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		*arg++ = parse(tdbb, csb, sub_type);
 		break;
 
+	case blr_trim:
+	{
+		node->nod_count = e_trim_count;
+		node->nod_arg[e_trim_specification] = (jrd_nod*)(U_IPTR) BLR_BYTE;
+
+		BYTE trimWhat = BLR_BYTE;
+
+		if (trimWhat == blr_trim_characters)
+			node->nod_arg[e_trim_characters] = parse(tdbb, csb, sub_type);
+		else
+		{
+			node->nod_arg[e_trim_characters] = NULL;
+			--node->nod_count;
+		}
+
+		node->nod_arg[e_trim_value] = parse(tdbb, csb, sub_type);
+		break;
+	}
+
 	case blr_and:
 	case blr_or:
 
@@ -2409,6 +2435,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_lock_state:
 	case blr_upcase:
+	case blr_lowcase:
 	case blr_negate:
 	case blr_not:
 	case blr_missing:
@@ -2666,6 +2693,13 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		node->nod_arg[e_extract_part] = (jrd_nod*)(U_IPTR) BLR_BYTE;
 		node->nod_arg[e_extract_value] = parse(tdbb, csb, sub_type);
 		node->nod_count = e_extract_count;
+		break;
+
+	case blr_length_:
+	    // This forced conversion looks strange, but length_type fits in a byte
+		node->nod_arg[e_length_type] = (jrd_nod*)(U_IPTR) BLR_BYTE;
+		node->nod_arg[e_length_value] = parse(tdbb, csb, sub_type);
+		node->nod_count = e_length_count;
 		break;
 
 	case blr_dcl_variable:

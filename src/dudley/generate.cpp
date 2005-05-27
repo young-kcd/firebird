@@ -529,6 +529,9 @@ static void generate( STR blr, DUDLEY_NOD node)
 	case nod_uppercase:
 		operatr = blr_upcase;
 		break;
+	case nod_lowercase:
+		operatr = blr_lowcase;
+		break;
 	case nod_sleuth:
 		operatr = blr_matching2;
 		break;

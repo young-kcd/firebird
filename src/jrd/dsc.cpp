@@ -864,6 +864,7 @@ void DSC_make_descriptor(DSC* desc,
 		if (sub_type == isc_blob_text) {
 			fb_assert(charset <= MAX_SCHAR);
 			desc->dsc_scale = (SCHAR) charset;
+			desc->dsc_flags = collation << 8;	// collation of blob
 		}
 		break;
 

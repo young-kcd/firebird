@@ -57,6 +57,7 @@
 #define blr_sql_date		(unsigned char)12
 #define blr_sql_time		(unsigned char)13
 #define blr_int64               (unsigned char)16
+#define blr_blob2		(unsigned char)17
 
 /* Historical alias for pre V6 applications */
 #define blr_date		blr_timestamp
@@ -284,6 +285,28 @@
 #define blr_nullsfirst		(unsigned char)178
 #define blr_writelock		(unsigned char)179
 #define blr_nullslast       (unsigned char)180
+
+/* FB 2.0 specific BLR */
+
+#define blr_lowcase			(unsigned char)181
+#define blr_length_			(unsigned char)182
+
+/* sub parameters for blr_length */
+
+#define blr_length_bit		(unsigned char)0
+#define blr_length_char		(unsigned char)1
+#define blr_length_octet	(unsigned char)2
+
+#define blr_trim			(unsigned char)183
+
+/* sub parameters for blr_trim */
+
+#define blr_trim_both		(unsigned char)0
+#define blr_trim_leading	(unsigned char)1
+#define blr_trim_trailing	(unsigned char)2
+
+#define blr_trim_spaces		(unsigned char)0
+#define blr_trim_characters	(unsigned char)1
 
 /* These codes reuse BLR code space */
 

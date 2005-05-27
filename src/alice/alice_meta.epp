@@ -27,7 +27,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.44 2004-11-10 04:14:26 robocop Exp $
+ *	$Id: alice_meta.epp,v 1.45 2005-05-27 22:37:41 asfernandes Exp $
  */
 
 #include "firebird.h"

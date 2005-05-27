@@ -19,7 +19,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86,v 1.25 2005-03-01 15:49:10 kkuznetsov Exp $
+# $Id: prefix.solx86,v 1.26 2005-05-27 22:16:09 asfernandes Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extlib,v 1.19 2004-12-28 21:12:47 skidder Exp $
+#  $Id: Makefile.in.extlib,v 1.20 2005-05-27 22:16:02 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=std

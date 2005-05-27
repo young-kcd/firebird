@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: dyntable.cpp,v 1.9 2004-11-08 03:29:16 robocop Exp $
+//	$Id: dyntable.cpp,v 1.10 2005-05-27 22:42:14 asfernandes Exp $
 //
 // CVC: Strange, this file is only referenced in a MacOsX project and gpre
 // works directly with dyntable.h.

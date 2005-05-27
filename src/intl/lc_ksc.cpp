@@ -30,49 +30,40 @@
 static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 	USHORT iOutLen, BYTE *pOutChar, USHORT);
 static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen);
-static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2);
+static SSHORT LCKSC_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, INTL_BOOL* error_flag);
 
 static int GetGenHanNdx(UCHAR b1, UCHAR b2);
 static int GetSpeHanNdx(UCHAR b1, UCHAR b2);
 
-static inline void FAMILY_MULTIBYTE(TEXTTYPE cache,
-									TTYPE_ID id_number,
-									pfn_INTL_init name,
-									CHARSET_ID charset,
+static inline bool FAMILY_MULTIBYTE(TEXTTYPE cache,
 									SSHORT country,
-									const ASCII* POSIX)
+									const ASCII* POSIX,
+									USHORT attributes,
+									const UCHAR* specific_attributes,
+									ULONG specific_attributes_length)
 {
 //static inline void FAMILY_MULTIBYTE(id_number, name, charset, country)
-	cache->texttype_version			= IB_LANGDRV_VERSION;
-	cache->texttype_type			= id_number;
-	cache->texttype_character_set	= charset;
+	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
+		return false;
+
+	cache->texttype_version			= TEXTTYPE_VERSION_1;
+	cache->texttype_name			= POSIX;
 	cache->texttype_country			= country;
-	cache->texttype_bytes_per_char	= 2;
-	cache->texttype_fn_init			= name;
+	cache->texttype_pad_option		= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
 	cache->texttype_fn_key_length	= famasc_key_length;
 	cache->texttype_fn_string_to_key= famasc_string_to_key;
 	cache->texttype_fn_compare		= famasc_compare;
-	cache->texttype_fn_to_upper		= famasc_to_upper;
-	cache->texttype_fn_to_lower		= famasc_to_lower;
-	cache->texttype_fn_str_to_upper = famasc_str_to_upper;
-	cache->texttype_collation_table = NULL;
-	cache->texttype_toupper_table	= NULL;
-	cache->texttype_tolower_table	= NULL;
-	cache->texttype_compress_table	= NULL;
-	cache->texttype_expand_table	= NULL;
-	cache->texttype_name			= POSIX;
+	//cache->texttype_fn_str_to_upper = famasc_str_to_upper;
+	//cache->texttype_fn_str_to_lower = famasc_str_to_lower;
+
+	return true;
 }
 
 TEXTTYPE_ENTRY(KSC_5601_init)
 {
 	static const ASCII POSIX[] = "C.KSC_5601";
 
-	FAMILY_MULTIBYTE(cache, 5601, KSC_5601_init, CS_KSC5601, CC_C, POSIX);
-
-	cache->texttype_fn_to_wc = CVKSC_ksc_byte2short;
-	cache->texttype_fn_mbtowc = CVKSC_ksc_mbtowc;
-
-	TEXTTYPE_RETURN;
+	return FAMILY_MULTIBYTE(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -80,15 +71,15 @@ TEXTTYPE_ENTRY(ksc_5601_dict_init)
 {
 	static const ASCII POSIX[] = "HANGUL.KSC_5601";
 
-	FAMILY_MULTIBYTE(cache, 5602, ksc_5601_dict_init, CS_KSC5601, CC_KOREA, POSIX);
-
-	cache->texttype_fn_to_wc = CVKSC_ksc_byte2short;
-	cache->texttype_fn_mbtowc = CVKSC_ksc_mbtowc;
-	cache->texttype_fn_key_length = LCKSC_key_length;
-	cache->texttype_fn_string_to_key = LCKSC_string_to_key;
-	cache->texttype_fn_compare = LCKSC_compare;
-
-	TEXTTYPE_RETURN;
+	if (FAMILY_MULTIBYTE(cache, CC_KOREA, POSIX, attributes, specific_attributes, specific_attributes_length))
+	{
+		cache->texttype_fn_key_length = LCKSC_key_length;
+		cache->texttype_fn_string_to_key = LCKSC_string_to_key;
+		cache->texttype_fn_compare = LCKSC_compare;
+		return true;
+	}
+	else
+		return false;
 }
 
 
@@ -144,7 +135,7 @@ const BYTE	ASCII_SPACE	= 32;
 
 static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 	USHORT iOutLen, BYTE *pOutChar,
-	USHORT partial) // unused
+	USHORT key_type) // unused
 {
 	fb_assert(pOutChar != NULL);
 	fb_assert(pInChar != NULL);
@@ -161,16 +152,20 @@ static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInCh
 
 	for (USHORT i = 0; i < iInLen && iOutLen; i++, pInChar++) {
 		if (GEN_HAN(*pInChar, *(pInChar + 1))) {	/* general hangul */
-			if (!iOutLen)
-				break;
 			const int idx = GetGenHanNdx(*pInChar, *(pInChar + 1));
 			if (idx >= 0) {
+				if (iOutLen < 3)
+					break;
+
 				*outbuff++ = gen_han[idx][0];
 				*outbuff++ = gen_han[idx][1];
 				*outbuff++ = 1;
 				iOutLen -= 3;
 			}
 			else {
+				if (iOutLen < 2)
+					break;
+
 				*outbuff++ = *pInChar;
 				*outbuff++ = *(pInChar + 1);
 				iOutLen -= 2;
@@ -179,10 +174,12 @@ static USHORT LCKSC_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInCh
 			i++;
 		}
 		else if (SPE_HAN(*pInChar, *(pInChar + 1))) {	/* special hangul */
-			if (!iOutLen)
-				break;
 			const int idx = GetSpeHanNdx(*pInChar, *(pInChar + 1));
 			fb_assert(idx >= 0);
+
+			if (iOutLen < 3)
+				break;
+
 			*outbuff++ = gen_han[idx][0];
 			*outbuff++ = gen_han[idx][1];
 			*outbuff++ = 2;
@@ -255,15 +252,19 @@ static USHORT LCKSC_key_length(TEXTTYPE obj, USHORT inLen)
 *	function name	:	LCKSC_compare
 *	description	:	compare two string
 */
-static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2)
+static SSHORT LCKSC_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, INTL_BOOL* error_flag)
 {
+	fb_assert(error_flag != NULL);
+
 	BYTE key1[LANGKSC_MAX_KEY];
 	BYTE key2[LANGKSC_MAX_KEY];
 
-	const USHORT len1 = LCKSC_string_to_key(obj, l1, s1, sizeof(key1), key1, FALSE);
-	const USHORT len2 = LCKSC_string_to_key(obj, l2, s2, sizeof(key2), key2, FALSE);
-	const USHORT len = MIN(len1, len2);
-	for (USHORT i = 0; i < len; i++) {
+	*error_flag = false;
+
+	const ULONG len1 = LCKSC_string_to_key(obj, l1, s1, sizeof(key1), key1, FALSE);
+	const ULONG len2 = LCKSC_string_to_key(obj, l2, s2, sizeof(key2), key2, FALSE);
+	const ULONG len = MIN(len1, len2);
+	for (ULONG i = 0; i < len; i++) {
 		if (key1[i] == key2[i])
 			continue;
 		else if (key1[i] < key2[i])
@@ -278,4 +279,3 @@ static SSHORT LCKSC_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, 
 	else
 		return 0;
 }
-

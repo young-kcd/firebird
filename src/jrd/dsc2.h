@@ -229,7 +229,7 @@ inline dsc::sub_type_t dsc::getTextType() const
 	if (isText())
 		return dsc_sub_type;
 	if (isBlob())
-		return dsc_scale;
+		return dsc_scale | (dsc_flags & 0xFF00);
 	return 0; // throw an exception?
 }
 
@@ -250,6 +250,8 @@ inline dsc::sub_type_t dsc::getCollate() const
 {
 	if (isText())
 		return dsc_sub_type >> 8;
+	if (isBlob())
+		return dsc_flags >> 8;
 	return 0; // throw an exception?
 }
 

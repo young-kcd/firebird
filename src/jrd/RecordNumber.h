@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: RecordNumber.h,v 1.4 2004-10-27 09:28:26 aafemt Exp $
+ *  $Id: RecordNumber.h,v 1.5 2005-05-27 22:43:14 asfernandes Exp $
  *
  */
 

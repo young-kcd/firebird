@@ -1,4 +1,108 @@
   **************
+  * v2.0 (new INTL) Alpha 2
+  **************
+
+    * New INTL interface
+        A new interface allowing the following enhancements and features
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * INTL enhancements
+        1) Well-formedness checks of string constants and parameters
+        2) Uppercase and lowercase all possible (and not only ASCII) characters in default collation orders
+        3) Check length of characters (and not bytes) for new MBCS (including UTF8)
+        4) Inform original character set in sqlsubtype of XSQLVAR when connecting with NONE
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * BLOB enhancements
+        1) Allow usage of collations
+        2) Performe comparision using entire content
+        3) Convert between character sets when assigning from string or BLOB
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Unicode 4.0 support
+        UTF8 character set with collations UCS_BASIC and UNICODE
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Brazilian collations
+        1) Collation PT_BR for ISO8859_1 and WIN1252 character sets
+        2) Collation WIN_PTBR for WIN1252 character set
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Paulo Henrique Albanez <lista at pha.com.br>
+
+    * New string functions
+        LOWER, BIT_LENGTH, CHAR_LENGTH/CHARACTER_LENGTH, OCTET_LENGTH, TRIM.
+      See also:
+        /doc/sql.extentions/README.length
+        /doc/sql.extentions/README.trim
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * INTL plugins
+        Character sets and collations are installed using a manifest file. Server write to the log when conflicts exist.
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed SF #1073212
+        Order by big columns (collate) terminates server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed SF #939844
+        Queries > 263 chars with UNICODE DB throws GDS Exception
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed SF #977785
+        Wrong character lengths MBCS (UTF-8, East-Asian charsets)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed SF #536243
+        UNICODE_FSS charset and UPPER function
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed SF #942726
+        UPPER does not convert aacute to Aacute for ISO8859_1
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed SF #544630
+        Problems when connecting using UNICODE
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+ 
+    * Fixed SF #540547
+        Concatenation, numeric fields & charset
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        Query produce different result depending on index presence when the last character of the string is the first character of a compression pair
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        SUBSTRING and multi-byte BLOB don't work correctly
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        Pattern matching with multi-byte BLOB is performed in binary mode
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        It's not safe to connect with MBCS if database has columns using different character set
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+  **************
   * v2.0 Alpha 2
   **************
 

@@ -2026,81 +2026,162 @@ bool get_character_set()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	STORE (REQUEST_HANDLE tdgbl->handles_get_character_sets_req_handle1)
-		X IN RDB$CHARACTER_SETS
-		X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
-		X.RDB$FORM_OF_USE.NULL = TRUE;
-		X.RDB$NUMBER_OF_CHARACTERS.NULL = TRUE;
-		X.RDB$DEFAULT_COLLATE_NAME.NULL = TRUE;
-		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG.NULL = TRUE;
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		X.RDB$FUNCTION_NAME.NULL = TRUE;
-		X.RDB$BYTES_PER_CHARACTER.NULL = TRUE;
+	if (tdgbl->RESTORE_format >= 7)
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_character_sets_req_handle1)
+			X IN RDB$CHARACTER_SETS
+			X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
+			X.RDB$FORM_OF_USE.NULL = TRUE;
+			X.RDB$NUMBER_OF_CHARACTERS.NULL = TRUE;
+			X.RDB$DEFAULT_COLLATE_NAME.NULL = TRUE;
+			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$FUNCTION_NAME.NULL = TRUE;
+			X.RDB$BYTES_PER_CHARACTER.NULL = TRUE;
 
-		skip_init(&scan_next_attr);
-		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-		{
-			switch (attribute)
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
+				switch (attribute)
+				{
 
-			case att_charset_name:
-				X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
-				GET_TEXT(X.RDB$CHARACTER_SET_NAME);
-				BURP_verbose (msgVerbose_restore_charset,
-							  X.RDB$CHARACTER_SET_NAME, NULL, NULL, NULL, NULL);
-				break;
+				case att_charset_name:
+					X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$CHARACTER_SET_NAME);
+					BURP_verbose (msgVerbose_restore_charset,
+								X.RDB$CHARACTER_SET_NAME, NULL, NULL, NULL, NULL);
+					break;
 
-			case att_charset_form:
-				X.RDB$FORM_OF_USE.NULL = FALSE;
-					GET_TEXT(X.RDB$FORM_OF_USE);
-				break;
+				case att_charset_form:
+					X.RDB$FORM_OF_USE.NULL = FALSE;
+						GET_TEXT(X.RDB$FORM_OF_USE);
+					break;
 
-			case att_charset_numchar:
-				X.RDB$NUMBER_OF_CHARACTERS.NULL = FALSE;
-				X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_numeric();
-				break;
+				case att_charset_numchar:
+					X.RDB$NUMBER_OF_CHARACTERS.NULL = FALSE;
+					X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_numeric();
+					break;
 
-			case att_charset_coll:
-				X.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
-				GET_TEXT(X.RDB$DEFAULT_COLLATE_NAME);
-				break;
+				case att_charset_coll:
+					X.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$DEFAULT_COLLATE_NAME);
+					break;
 
-			case att_charset_id:
-				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-				X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
-				break;
+				case att_charset_id:
+					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
+					break;
 
-			case att_charset_sysflag:
-				X.RDB$SYSTEM_FLAG.NULL = FALSE;
-				X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
-				break;
+				case att_charset_sysflag:
+					X.RDB$SYSTEM_FLAG.NULL = FALSE;
+					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
+					break;
 
-			case att_charset_description:
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_source_blob (&X.RDB$DESCRIPTION, false);
-				break;
+				case att_charset_description:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_source_blob (&X.RDB$DESCRIPTION, false);
+					break;
 
-			case att_charset_funct:
-				X.RDB$FUNCTION_NAME.NULL = FALSE;
-				GET_TEXT(X.RDB$FUNCTION_NAME);
-				break;
+				case att_charset_funct:
+					X.RDB$FUNCTION_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$FUNCTION_NAME);
+					break;
 
-			case att_charset_bytes_char:
-				X.RDB$BYTES_PER_CHARACTER.NULL = FALSE;
-				X.RDB$BYTES_PER_CHARACTER = (USHORT) get_numeric();
-				break;
+				case att_charset_bytes_char:
+					X.RDB$BYTES_PER_CHARACTER.NULL = FALSE;
+					X.RDB$BYTES_PER_CHARACTER = (USHORT) get_numeric();
+					break;
 
-			default:
-				bad_attribute (scan_next_attr, attribute, msgErr_restore_charset);
-				// RDB$CHARSETS 
-				break;
+				default:
+					bad_attribute (scan_next_attr, attribute, msgErr_restore_charset);
+					// RDB$CHARSETS 
+					break;
+				}
 			}
-		}
-	END_STORE;
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_character_sets_req_handle1)
+			X IN RDB$CHARACTER_SETS
+			X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
+			X.RDB$FORM_OF_USE.NULL = TRUE;
+			X.RDB$NUMBER_OF_CHARACTERS.NULL = TRUE;
+			X.RDB$DEFAULT_COLLATE_NAME.NULL = TRUE;
+			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$FUNCTION_NAME.NULL = TRUE;
+			X.RDB$BYTES_PER_CHARACTER.NULL = TRUE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+
+				case att_charset_name:
+					X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$CHARACTER_SET_NAME);
+					BURP_verbose (msgVerbose_restore_charset,
+								X.RDB$CHARACTER_SET_NAME, NULL, NULL, NULL, NULL);
+					break;
+
+				case att_charset_form:
+					X.RDB$FORM_OF_USE.NULL = FALSE;
+						GET_TEXT(X.RDB$FORM_OF_USE);
+					break;
+
+				case att_charset_numchar:
+					X.RDB$NUMBER_OF_CHARACTERS.NULL = FALSE;
+					X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_numeric();
+					break;
+
+				case att_charset_coll:
+					X.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$DEFAULT_COLLATE_NAME);
+					break;
+
+				case att_charset_id:
+					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
+					break;
+
+				case att_charset_sysflag:
+					X.RDB$SYSTEM_FLAG.NULL = FALSE;
+					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
+					break;
+
+				case att_charset_description:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_source_blob (&X.RDB$DESCRIPTION, false);
+					break;
+
+				case att_charset_funct:
+					X.RDB$FUNCTION_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$FUNCTION_NAME);
+					break;
+
+				case att_charset_bytes_char:
+					X.RDB$BYTES_PER_CHARACTER.NULL = FALSE;
+					X.RDB$BYTES_PER_CHARACTER = (USHORT) get_numeric();
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, msgErr_restore_charset);
+					// RDB$CHARSETS 
+					break;
+				}
+			}
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
 
 	return true;
 }
@@ -2172,74 +2253,162 @@ bool get_collation()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
-		X IN RDB$COLLATIONS
-		X.RDB$COLLATION_NAME.NULL = TRUE;
-		X.RDB$COLLATION_ID.NULL = TRUE;
-		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
-		X.RDB$COLLATION_ATTRIBUTES.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG.NULL = TRUE;
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		X.RDB$FUNCTION_NAME.NULL = TRUE;
+	if (tdgbl->RESTORE_format >= 7)
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
+			X IN RDB$COLLATIONS
+			X.RDB$COLLATION_NAME.NULL = TRUE;
+			X.RDB$COLLATION_ID.NULL = TRUE;
+			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			X.RDB$COLLATION_ATTRIBUTES.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$FUNCTION_NAME.NULL = TRUE;
+			X.RDB$BASE_COLLATION_NAME.NULL = TRUE;
+			X.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
 
-		skip_init(&scan_next_attr);
-		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-		{
-			switch (attribute)
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
+				switch (attribute)
+				{
 
-			case att_coll_name:
-				X.RDB$COLLATION_NAME.NULL = FALSE;
-				GET_TEXT(X.RDB$COLLATION_NAME);
-				BURP_verbose(msgVerbose_restore_collation, X.RDB$COLLATION_NAME,
-							 NULL, NULL, NULL, NULL);
-				break;
+				case att_coll_name:
+					X.RDB$COLLATION_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$COLLATION_NAME);
+					BURP_verbose(msgVerbose_restore_collation, X.RDB$COLLATION_NAME,
+								NULL, NULL, NULL, NULL);
+					break;
 
-			case att_coll_id:
-				X.RDB$COLLATION_ID.NULL = FALSE;
-				X.RDB$COLLATION_ID = (USHORT) get_numeric();
-				break;
+				case att_coll_id:
+					X.RDB$COLLATION_ID.NULL = FALSE;
+					X.RDB$COLLATION_ID = (USHORT) get_numeric();
+					break;
 
-			case att_coll_cs_id:
-				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-				X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
-				break;
+				case att_coll_cs_id:
+					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
+					break;
 
-			case att_coll_attr:
-				X.RDB$COLLATION_ATTRIBUTES.NULL = FALSE;
-				X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_numeric();
-				break;
+				case att_coll_attr:
+					X.RDB$COLLATION_ATTRIBUTES.NULL = FALSE;
+					X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_numeric();
+					break;
 
-			case att_coll_subtype:	// No longer used: 93-11-15 DBS 
-				// still present to handle V4 R&D gbak files
-				get_numeric();
-				break;
+				case att_coll_subtype:	// No longer used: 93-11-15 DBS 
+					// still present to handle V4 R&D gbak files
+					get_numeric();
+					break;
 
-			case att_coll_sysflag:
-				X.RDB$SYSTEM_FLAG.NULL = FALSE;
-				X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
-				break;
+				case att_coll_sysflag:
+					X.RDB$SYSTEM_FLAG.NULL = FALSE;
+					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
+					break;
 
-			case att_coll_description:
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_source_blob (&X.RDB$DESCRIPTION, false);
-				break;
+				case att_coll_description:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_source_blob (&X.RDB$DESCRIPTION, false);
+					break;
 
-			case att_coll_funct:
-				X.RDB$FUNCTION_NAME.NULL = FALSE;
-				GET_TEXT(X.RDB$FUNCTION_NAME);
-				break;
+				case att_coll_funct:
+					X.RDB$FUNCTION_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$FUNCTION_NAME);
+					break;
 
-			default:
-				bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
-				// Bad RDB$COLLATION 
-				break;
+				case att_coll_base_collation_name:
+					X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$BASE_COLLATION_NAME);
+					break;
+
+				case att_coll_specific_attr:
+					X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
+					get_source_blob (&X.RDB$SPECIFIC_ATTRIBUTES, false);
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
+					// Bad RDB$COLLATION 
+					break;
+				}
 			}
-		}
-	END_STORE;
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
+			X IN RDB$COLLATIONS
+			X.RDB$COLLATION_NAME.NULL = TRUE;
+			X.RDB$COLLATION_ID.NULL = TRUE;
+			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			X.RDB$COLLATION_ATTRIBUTES.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$FUNCTION_NAME.NULL = TRUE;
+			X.RDB$BASE_COLLATION_NAME.NULL = TRUE;
+			X.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+
+				case att_coll_name:
+					X.RDB$COLLATION_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$COLLATION_NAME);
+					BURP_verbose(msgVerbose_restore_collation, X.RDB$COLLATION_NAME,
+								NULL, NULL, NULL, NULL);
+					break;
+
+				case att_coll_id:
+					X.RDB$COLLATION_ID.NULL = FALSE;
+					X.RDB$COLLATION_ID = (USHORT) get_numeric();
+					break;
+
+				case att_coll_cs_id:
+					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
+					break;
+
+				case att_coll_attr:
+					X.RDB$COLLATION_ATTRIBUTES.NULL = FALSE;
+					X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_numeric();
+					break;
+
+				case att_coll_subtype:	// No longer used: 93-11-15 DBS 
+					// still present to handle V4 R&D gbak files
+					get_numeric();
+					break;
+
+				case att_coll_sysflag:
+					X.RDB$SYSTEM_FLAG.NULL = FALSE;
+					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
+					break;
+
+				case att_coll_description:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_source_blob (&X.RDB$DESCRIPTION, false);
+					break;
+
+				case att_coll_funct:
+					X.RDB$FUNCTION_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$FUNCTION_NAME);
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
+					// Bad RDB$COLLATION 
+					break;
+				}
+			}
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
 
 	return true;
 }

@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.24 2004-10-04 05:23:56 skidder Exp $
+#   $Id: make.rules,v 1.25 2005-05-27 22:16:09 asfernandes Exp $
 #
 
 #____________________________________________________________________________
@@ -40,7 +40,7 @@ IsProdTypeBuild = @PROD_BUILD_FLG@
 
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
-CFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include
+CFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan -I$(SRC_ROOT)/../extern/icu/include
 
 ifeq ($(IsProdTypeBuild),Y)
   CFLAGS:= $(CFLAGS) $(PROD_FLAGS) -DPROD_BUILD
@@ -81,7 +81,7 @@ STATICLIB_LINK= ar cruvs
 EXE_LINK = @CXX@
 STATICEXE_LINK = @CXX@
 
-LINK_LIBS = @LIBS@ @EDITLINE_A@
+LINK_LIBS = @LIBS@ @EDITLINE_A@ -licuuc -licudata -licui18n
 STATICLINK_LIBS = @LIBS@ @EDITLINE_A@
 SO_LINK_LIBS = @LIBS@
 

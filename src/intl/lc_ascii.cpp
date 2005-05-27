@@ -26,32 +26,27 @@
 #include "ld_proto.h"
 #include "lc_ascii.h"
 
-static inline void FAMILY_ASCII(TEXTTYPE cache,
-								TTYPE_ID id_number,
-								pfn_INTL_init name,
-								CHARSET_ID charset,
+static inline bool FAMILY_ASCII(TEXTTYPE cache,
 								SSHORT country,
-								const ASCII* POSIX)
+								const ASCII* POSIX,
+								USHORT attributes,
+								const UCHAR* specific_attributes,
+								ULONG specific_attributes_length)
 {
-	cache->texttype_version			= IB_LANGDRV_VERSION;
-	cache->texttype_type			= id_number;
-	cache->texttype_character_set	= charset;
+	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
+		return false;
+
+	cache->texttype_version			= TEXTTYPE_VERSION_1;
+	cache->texttype_name			= POSIX;
 	cache->texttype_country			= country;
-	cache->texttype_bytes_per_char	= 1;
-	cache->texttype_fn_init			= name;
+	cache->texttype_pad_option		= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
 	cache->texttype_fn_key_length	= famasc_key_length;
 	cache->texttype_fn_string_to_key= famasc_string_to_key;
 	cache->texttype_fn_compare		= famasc_compare;
-	cache->texttype_fn_to_upper		= famasc_to_upper;
-	cache->texttype_fn_to_lower		= famasc_to_lower;
-	cache->texttype_fn_str_to_upper	= famasc_str_to_upper;
-	cache->texttype_fn_mbtowc		= LC_DOS_nc_mbtowc;
-	cache->texttype_collation_table	= NULL;
-	cache->texttype_toupper_table	= NULL;
-	cache->texttype_tolower_table	= NULL;
-	cache->texttype_compress_table	= NULL;
-	cache->texttype_expand_table	= NULL;
-	cache->texttype_name			= POSIX;
+	//cache->texttype_fn_str_to_upper	= famasc_str_to_upper;
+	//cache->texttype_fn_str_to_lower	= famasc_str_to_lower;
+
+	return true;
 }
 
 
@@ -60,9 +55,7 @@ TEXTTYPE_ENTRY(DOS101_init)
 {
 	static const ASCII POSIX[] = "C.DOS437";
 
-	FAMILY_ASCII(cache, parm1, DOS101_init, CS_DOS_437, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -70,9 +63,7 @@ TEXTTYPE_ENTRY(DOS107_init)
 {
 	static const ASCII POSIX[] = "C.DOS865";
 
-	FAMILY_ASCII(cache, parm1, DOS107_init, CS_DOS_865, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -80,9 +71,7 @@ TEXTTYPE_ENTRY(DOS160_init)
 {
 	static const ASCII POSIX[] = "C.DOS850";
 
-	FAMILY_ASCII(cache, parm1, DOS160_init, CS_DOS_850, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -90,9 +79,7 @@ TEXTTYPE_ENTRY(ISO88591_cp_init)
 {
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
-	FAMILY_ASCII(cache, parm1, ISO88591_cp_init, CS_ISO8859_1, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -100,9 +87,7 @@ TEXTTYPE_ENTRY (ISO88592_cp_init)
 {
 	static const ASCII	POSIX[] = "C.ISO8859_2";
 
-	FAMILY_ASCII(cache, parm1, ISO88592_cp_init, CS_ISO8859_2, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -110,9 +95,7 @@ TEXTTYPE_ENTRY (ISO88593_cp_init)
 {
 	static const ASCII	POSIX[] = "C.ISO8859_3";
 
-	FAMILY_ASCII(cache, parm1, ISO88593_cp_init, CS_ISO8859_3, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -120,9 +103,7 @@ TEXTTYPE_ENTRY (ISO88594_cp_init)
 {
 	static const ASCII	POSIX[] = "C.ISO8859_4";
 
-	FAMILY_ASCII(cache, parm1, ISO88594_cp_init, CS_ISO8859_4, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -130,9 +111,7 @@ TEXTTYPE_ENTRY (ISO88595_cp_init)
 {
 	static const ASCII	POSIX[] = "C.ISO8859_5";
 
-	FAMILY_ASCII(cache, parm1, ISO88595_cp_init, CS_ISO8859_5, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -140,9 +119,7 @@ TEXTTYPE_ENTRY (ISO88596_cp_init)
 {
 	static const ASCII	POSIX[] = "C.ISO8859_6";
 
-	FAMILY_ASCII(cache, parm1, ISO88596_cp_init, CS_ISO8859_6, CC_C, POSIX); 
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length); 
 }
 
 
@@ -150,9 +127,7 @@ TEXTTYPE_ENTRY (ISO88597_cp_init)
 {
 	static const ASCII	POSIX[] = "C.ISO8859_7";
 
-	FAMILY_ASCII(cache, parm1, ISO88597_cp_init, CS_ISO8859_7, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -160,9 +135,7 @@ TEXTTYPE_ENTRY (ISO88598_cp_init)
 {
 	static const ASCII	POSIX[] = "C.ISO8859_8";
 
-	FAMILY_ASCII(cache, parm1, ISO88598_cp_init, CS_ISO8859_8, CC_C, POSIX); 
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length); 
 }
 
 
@@ -170,9 +143,7 @@ TEXTTYPE_ENTRY (ISO88599_cp_init)
 {
 	static const ASCII	POSIX[] = "C.ISO8859_9";
 
-	FAMILY_ASCII(cache, parm1, ISO88599_cp_init, CS_ISO8859_9, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -180,9 +151,7 @@ TEXTTYPE_ENTRY (ISO885913_cp_init)
 {
 	static const ASCII	POSIX[] = "C.ISO8859_13";
 
-	FAMILY_ASCII(cache, parm1, ISO885913_cp_init, CS_ISO8859_13, CC_C, POSIX); 
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length); 
 }
 
 
@@ -190,9 +159,7 @@ TEXTTYPE_ENTRY(DOS852_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS852";
 
-	FAMILY_ASCII(cache, parm1, DOS852_c0_init, CS_DOS_852, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -200,9 +167,7 @@ TEXTTYPE_ENTRY(DOS857_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS857";
 
-	FAMILY_ASCII(cache, parm1, DOS857_c0_init, CS_DOS_857, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -210,9 +175,7 @@ TEXTTYPE_ENTRY(DOS860_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS860";
 
-	FAMILY_ASCII(cache, parm1, DOS860_c0_init, CS_DOS_860, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -220,9 +183,7 @@ TEXTTYPE_ENTRY(DOS861_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS861";
 
-	FAMILY_ASCII(cache, parm1, DOS861_c0_init, CS_DOS_861, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -230,9 +191,7 @@ TEXTTYPE_ENTRY(DOS863_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS863";
 
-	FAMILY_ASCII(cache, parm1, DOS863_c0_init, CS_DOS_863, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -240,9 +199,7 @@ TEXTTYPE_ENTRY(DOS737_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS737";
 
-	FAMILY_ASCII(cache, parm1, DOS737_c0_init, CS_DOS_737, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -250,9 +207,7 @@ TEXTTYPE_ENTRY(DOS775_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS775";
 
-	FAMILY_ASCII(cache, parm1, DOS775_c0_init, CS_DOS_775, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -260,9 +215,7 @@ TEXTTYPE_ENTRY(DOS858_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS858";
 
-	FAMILY_ASCII(cache, parm1, DOS858_c0_init, CS_DOS_858, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -270,9 +223,7 @@ TEXTTYPE_ENTRY(DOS862_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS862";
 
-	FAMILY_ASCII(cache, parm1, DOS862_c0_init, CS_DOS_862, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -280,9 +231,7 @@ TEXTTYPE_ENTRY(DOS864_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS864";
 
-	FAMILY_ASCII(cache, parm1, DOS864_c0_init, CS_DOS_864, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -290,9 +239,7 @@ TEXTTYPE_ENTRY(DOS866_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS866";
 
-	FAMILY_ASCII(cache, parm1, DOS866_c0_init, CS_DOS_866, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -300,9 +247,7 @@ TEXTTYPE_ENTRY(DOS869_c0_init)
 {
 	static const ASCII POSIX[] = "C.DOS869";
 
-	FAMILY_ASCII(cache, parm1, DOS869_c0_init, CS_DOS_869, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -310,9 +255,7 @@ TEXTTYPE_ENTRY(CYRL_c0_init)
 {
 	static const ASCII POSIX[] = "C.CYRL";
 
-	FAMILY_ASCII(cache, parm1, CYRL_c0_init, CS_CYRL, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -320,9 +263,7 @@ TEXTTYPE_ENTRY(WIN1250_c0_init)
 {
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
-	FAMILY_ASCII(cache, parm1, WIN1250_c0_init, CS_WIN1250, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -330,12 +271,14 @@ TEXTTYPE_ENTRY(WIN1251_c0_init)
 {
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
-	FAMILY_ASCII(cache, parm1, WIN1251_c0_init, CS_WIN1251, CC_C, POSIX);
-	cache->texttype_fn_to_upper =		cp1251_to_upper;
-	cache->texttype_fn_to_lower =		cp1251_to_lower;
-	cache->texttype_fn_str_to_upper =	cp1251_str_to_upper;
-
-	TEXTTYPE_RETURN;
+	if (FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
+	{
+		cache->texttype_fn_str_to_upper =	cp1251_str_to_upper;
+		cache->texttype_fn_str_to_lower =	cp1251_str_to_lower;
+		return true;
+	}
+	else
+		return false;
 }
 
 
@@ -343,9 +286,7 @@ TEXTTYPE_ENTRY(WIN1252_c0_init)
 {
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
-	FAMILY_ASCII(cache, parm1, WIN1252_c0_init, CS_WIN1252, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -353,9 +294,7 @@ TEXTTYPE_ENTRY(WIN1253_c0_init)
 {
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
-	FAMILY_ASCII(cache, parm1, WIN1253_c0_init, CS_WIN1253, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -363,9 +302,7 @@ TEXTTYPE_ENTRY(WIN1254_c0_init)
 {
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
-	FAMILY_ASCII(cache, parm1, WIN1254_c0_init, CS_WIN1254, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -373,9 +310,7 @@ TEXTTYPE_ENTRY(WIN1255_c0_init)
 {
 	static const ASCII POSIX[] = "C.ISO8859_5";
 
-	FAMILY_ASCII(cache, parm1, WIN1255_c0_init, CS_WIN1255, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -383,9 +318,7 @@ TEXTTYPE_ENTRY(WIN1256_c0_init)
 {
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
-	FAMILY_ASCII(cache, parm1, WIN1256_c0_init, CS_WIN1256, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -393,9 +326,7 @@ TEXTTYPE_ENTRY(WIN1257_c0_init)
 {
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
-	FAMILY_ASCII(cache, parm1, WIN1257_c0_init, CS_WIN1257, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -403,9 +334,7 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
 {
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
-	FAMILY_ASCII(cache, parm1, NEXT_c0_init, CS_NEXT, CC_C, POSIX);
-
-	TEXTTYPE_RETURN;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -548,7 +477,7 @@ USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen)
  *		Length, in bytes, of returned key
  */
 USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, USHORT iOutLen, BYTE *pOutChar,
-	USHORT partial) // unused
+	USHORT key_type) // unused
 {
 	fb_assert(pOutChar != NULL);
 	fb_assert(pInChar != NULL);
@@ -559,9 +488,13 @@ USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, US
 /* point inbuff at last character */
 	const BYTE* inbuff = pInChar + iInLen - 1;
 
-/* skip backwards over all spaces & reset input length */
-	while ((inbuff >= pInChar) && (*inbuff == ASCII_SPACE))
-		inbuff--;
+	if (obj->texttype_pad_option)
+	{
+		/* skip backwards over all spaces & reset input length */
+		while ((inbuff >= pInChar) && (*inbuff == ASCII_SPACE))
+			inbuff--;
+	}
+
 	iInLen = (inbuff - pInChar + 1);
 
 	BYTE* outbuff = pOutChar;
@@ -572,7 +505,7 @@ USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar, US
 }
 
 
-static bool all_spaces(const BYTE* s, SSHORT len)
+static bool all_spaces(const BYTE* s, SLONG len)
 {
 	fb_assert(s != NULL);
 
@@ -584,19 +517,23 @@ static bool all_spaces(const BYTE* s, SSHORT len)
 }
 
 
-SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2)
+SSHORT famasc_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2,
+	INTL_BOOL* error_flag)
 {
 	fb_assert(obj != NULL);
 	fb_assert(s1 != NULL);
 	fb_assert(s2 != NULL);
+	fb_assert(error_flag != NULL);
 
-	const USHORT len = MIN(l1, l2);
-	for (USHORT i = 0; i < len; i++) {
+	*error_flag = false;
+
+	const ULONG len = MIN(l1, l2);
+	for (ULONG i = 0; i < len; i++) {
 		if (s1[i] == s2[i])
 			continue;
-		else if (all_spaces(&s1[i], (SSHORT) (l1 - i)))
+		else if (all_spaces(&s1[i], (SLONG) (l1 - i)))
 			return -1;
-		else if (all_spaces(&s2[i], (SSHORT) (l2 - i)))
+		else if (all_spaces(&s2[i], (SLONG) (l2 - i)))
 			return 1;
 		else if (s1[i] < s2[i])
 			return -1;
@@ -605,12 +542,12 @@ SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const 
 	}
 
 	if (l1 > len) {
-		if (all_spaces(&s1[len], (SSHORT) (l1 - len)))
+		if (obj->texttype_pad_option && all_spaces(&s1[len], (SLONG) (l1 - len)))
 			return 0;
 		return 1;
 	}
 	if (l2 > len) {
-		if (all_spaces(&s2[len], (SSHORT) (l2 - len)))
+		if (obj->texttype_pad_option && all_spaces(&s2[len], (SLONG) (l2 - len)))
 			return 0;
 		return -1;
 	}
@@ -618,20 +555,10 @@ SSHORT famasc_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const 
 }
 
 
-
-USHORT famasc_to_upper(TEXTTYPE obj, BYTE ch)
-{
-	return ((USHORT) ASCII7_UPPER(ch));
-}
-
-
-
-SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr)
+ULONG famasc_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
-	fb_assert(iLen <= 32000);		/* almost certainly an error */
-	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
 	fb_assert(iOutLen >= iLen);
 	const BYTE* const p = pOutStr;
 	while (iLen && iOutLen) {
@@ -641,31 +568,33 @@ SSHORT famasc_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT i
 		iOutLen--;
 	}
 	if (iLen != 0)
-		return (-1);
+		return INTL_BAD_STR_LENGTH;
 	return (pOutStr - p);
 }
 
 
-
-USHORT famasc_to_lower(TEXTTYPE obj, BYTE ch)
-{
-	return (ASCII7_LOWER(ch));
-}
-
-
-USHORT cp1251_to_upper(TEXTTYPE obj, BYTE ch)
-{
-	return ((USHORT) CP1251_UPPER(ch));
-}
-
-
-
-SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr)
+ULONG famasc_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
-	fb_assert(iLen <= 32000);		/* almost certainly an error */
-	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
+	fb_assert(iOutLen >= iLen);
+	const BYTE* const p = pOutStr;
+	while (iLen && iOutLen) {
+		*pOutStr++ = ASCII7_LOWER(*pStr);
+		pStr++;
+		iLen--;
+		iOutLen--;
+	}
+	if (iLen != 0)
+		return INTL_BAD_STR_LENGTH;
+	return (pOutStr - p);
+}
+
+
+ULONG cp1251_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+{
+	fb_assert(pStr != NULL);
+	fb_assert(pOutStr != NULL);
 	fb_assert(iOutLen >= iLen);
 	const BYTE* const p = pOutStr;
 	while (iLen && iOutLen) {
@@ -675,14 +604,24 @@ SSHORT cp1251_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT i
 		iOutLen--;
 	}
 	if (iLen != 0)
-		return (-1);
+		return INTL_BAD_STR_LENGTH;
 	return (pOutStr - p);
 }
 
 
-
-
-USHORT cp1251_to_lower(TEXTTYPE obj, BYTE ch)
+ULONG cp1251_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
-	return (CP1251_LOWER(ch));
+	fb_assert(pStr != NULL);
+	fb_assert(pOutStr != NULL);
+	fb_assert(iOutLen >= iLen);
+	const BYTE* const p = pOutStr;
+	while (iLen && iOutLen) {
+		*pOutStr++ = CP1251_LOWER(*pStr);
+		pStr++;
+		iLen--;
+		iOutLen--;
+	}
+	if (iLen != 0)
+		return INTL_BAD_STR_LENGTH;
+	return (pOutStr - p);
 }

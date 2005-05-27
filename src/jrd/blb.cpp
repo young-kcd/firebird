@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.92 2005-05-12 18:27:59 alexpeshkoff Exp $
+$Id: blb.cpp,v 1.93 2005-05-27 22:43:14 asfernandes Exp $
 */
 
 #include "firebird.h"
@@ -83,7 +83,7 @@ inline bool SEGMENTED(const blb* blob)
 static ArrayField* alloc_array(jrd_tra*, internal_array_desc*);
 static blb* allocate_blob(thread_db*, jrd_tra*);
 static ISC_STATUS blob_filter(USHORT, BlobControl*, SSHORT, SLONG);
-static blb* copy_blob(thread_db*, const bid*, bid*);
+static blb* copy_blob(thread_db*, const bid*, bid*, USHORT, const UCHAR*);
 static void delete_blob(thread_db*, blb*, ULONG);
 static void delete_blob_id(thread_db*, const bid*, SLONG, jrd_rel*);
 static ArrayField* find_array(jrd_tra*, const bid*);
@@ -276,8 +276,8 @@ blb* BLB_create2(thread_db* tdbb,
 
 
 //
-// This function makes linear stacks lookup. Therefore 
-// in case of big stacks garbage collection speed may become 
+// This function makes linear stacks lookup. Therefore
+// in case of big stacks garbage collection speed may become
 // real problem. Stacks should be sorted before run?
 //
 void BLB_garbage_collect(
@@ -321,7 +321,7 @@ void BLB_garbage_collect(
 
 		for (USHORT id = 0; id < format->fmt_count; id++) {
 			if (!DTYPE_IS_BLOB(format->fmt_desc[id].dsc_dtype)
-				|| !EVL_field(0, rec1, id, &desc1)) 
+				|| !EVL_field(0, rec1, id, &desc1))
 			{
 				continue;
 			}
@@ -397,7 +397,7 @@ blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id,
 }
 
 
-SLONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length)
+SLONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length, bool close)
 {
 /**************************************
  *
@@ -407,8 +407,8 @@ SLONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length)
  *
  * Functional description
  *      Get a large hunk of data from a blob, which can then be
- *      closed.  Return total number of bytes read.  Don't worry
- *      about segment boundaries.
+ *      closed (if close == true).  Return total number of bytes read.
+ *      Don't worry about segment boundaries.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -426,7 +426,9 @@ SLONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length)
 			break;
 	}
 
-	BLB_close(tdbb, blob);
+	if (close)
+		BLB_close(tdbb, blob);
+
 	return (SLONG) (p - buffer);
 }
 
@@ -845,7 +847,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		BUGCHECK(199);			/* msg 199 expected field node */
 
 	if (from_desc->dsc_dtype != dtype_quad
-		&& from_desc->dsc_dtype != dtype_blob) 
+		&& from_desc->dsc_dtype != dtype_blob)
 	{
 		ERR_post(isc_convert_error, isc_arg_string, "BLOB", 0);
 	}
@@ -900,12 +902,26 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	BlobIndex* blobIndex;
 	blb* blob = NULL;
 	bool materialized_blob; // Set if we materialized temporary blob in this routine
-	
+
 	do {
 		materialized_blob = false;
 		blobIndex = NULL;
 		if (source->bid_internal.bid_relation_id)
-			blob = copy_blob(tdbb, source, destination);
+		{
+			UCHAR bpb[] = {isc_bpb_version1,
+						   isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
+						   isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
+			USHORT bpb_length = 0;
+
+			if (from_desc->dsc_sub_type == isc_blob_text && to_desc->dsc_sub_type == isc_blob_text)
+			{
+				bpb[6] = from_desc->dsc_scale;	// source charset
+				bpb[12] = to_desc->dsc_scale;	// destination charset
+				bpb_length = sizeof(bpb);
+			}
+
+			blob = copy_blob(tdbb, source, destination, bpb_length, bpb);
+		}
 		else if ((to_desc->dsc_dtype == dtype_array) &&
 				 (array = find_array(transaction, source)) &&
 				 (blob = store_array(tdbb, transaction, source)))
@@ -917,7 +933,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 				blobIndex = &transaction->tra_blobs.current();
 				if (blobIndex->bli_materialized) {
 					if (blobIndex->bli_request) {
-						// Walk through call stack looking if our BLOB is 
+						// Walk through call stack looking if our BLOB is
 						// owned by somebody from our call chain
 						jrd_req* temp_req = request;
 						do {
@@ -959,9 +975,9 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 				blobIndex = &transaction->tra_blobs.current();
 			}
 		}
-		
-		// If we didn't find materialized blob in transaction blob index it 
-		// means memory structures are inconsistent and crash is appropriate 
+
+		// If we didn't find materialized blob in transaction blob index it
+		// means memory structures are inconsistent and crash is appropriate
 		blobIndex->bli_materialized = true;
 		blobIndex->bli_blob_id = *destination;
 		// Assign temporary BLOB ownership to top-level request if it is not assigned yet
@@ -1012,40 +1028,42 @@ void BLB_move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, j
 		DSC blob_desc;
 		temp_bid.clear();
 		MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
-		blob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction, &temp_bid);
-		blob_desc.dsc_length = MOV_get_string_ptr(from_desc, &ttype, &fromstr, 0, 0);
-		if (from_desc->dsc_sub_type == isc_blob_text)
+
+		int length = MOV_get_string_ptr(from_desc, &ttype, &fromstr, 0, 0);
+
+		UCHAR bpb[] = {isc_bpb_version1,
+					   isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
+					   isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
+		USHORT bpb_length = 0;
+
+		if (to_desc->dsc_sub_type == isc_blob_text)
 		{
-		/* I have doubts on the merits of this charset assignment since BLB_create2
-		calculates charset internally and assigns it to fields inside blb struct.
-		I really need to call BLB_create2 and provide more parameters.
-		This macro is useless here as it doesn't cater for blob fields because
-		desc.dsc_ttype() is desc.dsc_sub_type but blobs use dsc_scale for the charset
-		and dsc_sub_type for blob sub_types, IE text.
-		INTL_ASSIGN_TTYPE (&blob_desc, ttype);
-		*/
-			blob_desc.dsc_scale = ttype;
+			bpb[6] = ttype;					// from charset
+			bpb[12] = to_desc->dsc_scale;	// to charset
+			bpb_length = sizeof(bpb);
 		}
-		else
-		{
-			blob_desc.dsc_scale = ttype_none;
-		}
+
+		blob = BLB_create2(tdbb, tdbb->tdbb_request->req_transaction, &temp_bid, bpb_length, bpb);
+
+		blob_desc.dsc_scale = to_desc->dsc_scale;	// blob charset
+		blob_desc.dsc_flags = (blob_desc.dsc_flags & 0xFF) | (to_desc->dsc_flags & 0xFF00);	// blob collation
+		blob_desc.dsc_sub_type = to_desc->dsc_sub_type;
 		blob_desc.dsc_dtype = dtype_blob;
 		blob_desc.dsc_address = reinterpret_cast<UCHAR*>(&temp_bid);
-		BLB_put_segment(tdbb, blob, fromstr, blob_desc.dsc_length);
+		BLB_put_segment(tdbb, blob, fromstr, length);
 		BLB_close(tdbb, blob);
 		ULONG blob_temp_id = blob->blb_temp_id;
 		BLB_move(tdbb, &blob_desc, to_desc, field);
 		// 14-June-2004. Nickolay Samofatov
-		// The code below saves a lot of memory when bunches of records are 
+		// The code below saves a lot of memory when bunches of records are
 		// converted to blobs from strings. If BLB_move is materialized blob we
 		// can discard it without consequences since we know there are no other
-		// descriptors using temporary ID of blob we just created. If blob is 
-		// still temporary we cannot free it as it may now be used inside 
-		// trigger for updatable view. In theory we could make this decision 
-		// solely via checking that destination field belongs to updatable 
-		// view, but direct check that blob is fully materialized should be 
-		// more future proof. 
+		// descriptors using temporary ID of blob we just created. If blob is
+		// still temporary we cannot free it as it may now be used inside
+		// trigger for updatable view. In theory we could make this decision
+		// solely via checking that destination field belongs to updatable
+		// view, but direct check that blob is fully materialized should be
+		// more future proof.
 		jrd_tra* transaction = tdbb->tdbb_request->req_transaction;
 		if (transaction->tra_blobs.locate(blob_temp_id)) {
 			BlobIndex* current = &transaction->tra_blobs.current();
@@ -1059,7 +1077,7 @@ void BLB_move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, j
 						// We should never get here because when bli_request is assigned
 						// item should be added to req_blobs array
 						fb_assert(false);
-					}					
+					}
 				}
 
 				// Free materialized blob handle
@@ -1068,7 +1086,7 @@ void BLB_move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, j
 			else {
 				// But even in bad case when we cannot free blob immediately
 				// we may still bind lifetime of blob to current request.
-				if (!current->bli_request) { 
+				if (!current->bli_request) {
 					current->bli_request = tdbb->tdbb_request;
 					current->bli_request->req_blobs.add(blob_temp_id);
 				}
@@ -1430,7 +1448,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	jrd_rel* relation;
 	if (info.sdl_info_relation.length()) {
 		relation = MET_lookup_relation(tdbb, info.sdl_info_relation);
-	} 
+	}
 	else {
 		relation = MET_relation(tdbb, info.sdl_info_rid);
 	}
@@ -1442,7 +1460,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	SSHORT	n;
 	if (info.sdl_info_field.length()) {
 	    n = MET_lookup_field(tdbb, relation, info.sdl_info_field, 0);
-	} 
+	}
 	else {
 		n = info.sdl_info_fid;
 	}
@@ -1569,8 +1587,8 @@ void BLB_release_array(ArrayField* array)
 	jrd_tra* transaction = array->arr_transaction;
 	if (transaction)
 	{
-		for (ArrayField** ptr = &transaction->tra_arrays; *ptr; 
-			ptr = &(*ptr)->arr_next) 
+		for (ArrayField** ptr = &transaction->tra_arrays; *ptr;
+			ptr = &(*ptr)->arr_next)
 		{
 			if (*ptr == array) {
 				*ptr = array->arr_next;
@@ -1612,7 +1630,7 @@ void BLB_scalar(thread_db*		tdbb,
 	Firebird::HalfStaticArray<double, 64> temp;
 	dsc desc = array_desc->iad_rpt[0].iad_desc;
 	desc.dsc_address = reinterpret_cast<UCHAR*>
-		(temp.getBuffer((desc.dsc_length / sizeof(double)) + 
+		(temp.getBuffer((desc.dsc_length / sizeof(double)) +
 			(desc.dsc_length % sizeof(double) ? 1 : 0)));
 
 	const SLONG number =
@@ -1813,7 +1831,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 }
 
 
-static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination)
+static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination, USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -1828,7 +1846,7 @@ static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination)
 	SET_TDBB(tdbb);
 
 	jrd_req* request = tdbb->tdbb_request;
-	blb* input = BLB_open(tdbb, request->req_transaction, source);
+	blb* input = BLB_open2(tdbb, request->req_transaction, source, bpb_length, bpb);
 	blb* output = BLB_create(tdbb, request->req_transaction, destination);
 	output->blb_sub_type = input->blb_sub_type;
 
@@ -1840,7 +1858,7 @@ static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination)
 	UCHAR* buff = buffer.getBuffer(input->blb_max_segment);
 
 	while (true) {
-		const USHORT length = 
+		const USHORT length =
 			BLB_get_segment(tdbb, input, buff, input->blb_max_segment);
 		if (input->blb_flags & BLB_eof) {
 			break;
@@ -2061,7 +2079,7 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 		if (!(blob->blb_sequence % dbb->dbb_prefetch_sequence)) {
 			USHORT sequence = blob->blb_sequence;
 			USHORT i = 0;
-			while (i < dbb->dbb_prefetch_pages && 
+			while (i < dbb->dbb_prefetch_pages &&
 				sequence <= blob->blb_max_sequence)
 			{
 				 pages[i++] =
@@ -2276,11 +2294,11 @@ static void release_blob(blb* blob, const bool purge_flag)
 					// We should never get here because when bli_request is assigned
 					// item should be added to req_blobs array
 					fb_assert(false);
-				}					
+				}
 			}
 			transaction->tra_blobs.fastRemove();
 		} else {
-			// We should never get here because allocate_blob stores each blob object 
+			// We should never get here because allocate_blob stores each blob object
 			// in tra_blobs
 			fb_assert(false);
 		}

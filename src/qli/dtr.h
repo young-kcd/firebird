@@ -201,6 +201,7 @@ typedef enum nod_t {
     nod_via,
 
     nod_upcase,				// New blr for v3 
+    nod_lowcase,
     nod_sleuth,
     nod_index,
 

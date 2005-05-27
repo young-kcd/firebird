@@ -22,8 +22,28 @@
  * Contributor(s): ______________________________________.
  */
 
+#define TEXTTYPE_reverse_secondary				0x01	/* Reverse order of secondary keys */
+#define TEXTTYPE_ignore_specials				0x02	/* Do not put special values in keys */
+#define TEXTTYPE_expand_before					0x04	/* Expansion weights before litagure */
+#define TEXTTYPE_secondary_insensitive			0x08	/* Don't use secondary level for comparisions */
+#define TEXTTYPE_tertiary_insensitive			0x10	/* Don't use tertiary level for comparisions */
+#define TEXTTYPE_non_multi_level				0x20	/* Sortkey isn't more precise than equivalence class */
+
+struct TextTypeImpl
+{
+	USHORT texttype_flags;
+	BYTE texttype_bytes_per_key;
+	const BYTE* texttype_collation_table;
+	const BYTE* texttype_expand_table;
+	const BYTE* texttype_compress_table;
+	const BYTE* texttype_toupper_table;
+	const BYTE* texttype_tolower_table;
+};
+
 USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen);
 USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 	USHORT iOutLen, BYTE *pOutChar, USHORT partial);
-SSHORT LC_NARROW_compare(TEXTTYPE obj, USHORT l1, const BYTE* s1, USHORT l2, const BYTE* s2);
-
+SSHORT LC_NARROW_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, 
+	INTL_BOOL* error_flag);
+ULONG LC_NARROW_canonical(TEXTTYPE obj, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst);
+void LC_NARROW_destroy(TEXTTYPE obj);

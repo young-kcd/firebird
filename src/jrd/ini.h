@@ -25,6 +25,7 @@
    as well as by ini.epp in JRD.  Make sure that any
    changes are compatible in both places. */
 
+#include "../jrd/intlobj_new.h"
 #include "../jrd/intl.h"
 #include "../intl/country_codes.h"
 #include "../intl/charsets.h"
@@ -161,10 +162,10 @@ struct rtyp {
 
 #define TYPE(text, type, field)	{ text, type, (UCHAR) field },
 
-#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2) \
+#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
 				{(name), (cs_id),   (UCHAR) nam_charset_name},
 #define CSALIAS(name, cs_id)	{(name), (cs_id),   (UCHAR) nam_charset_name},
-#define COLLATION(name, cc_id, cs_id, coll_id, sym)
+#define COLLATION(name, cc_id, cs_id, coll_id, sym, attr)
 #define END_CHARSET
 
 static const rtyp types[] = {
@@ -191,10 +192,10 @@ struct initcharset {
 
 typedef initcharset CS_TYPE;
 
-#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2) \
+#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
 	{ (const UCHAR *) (name), (cs_id), (bytes)},
 #define CSALIAS(name, cs_id)
-#define COLLATION(name, cc_id, cs_id, coll_id, sym)
+#define COLLATION(name, cc_id, cs_id, coll_id, sym, attr)
 #define END_CHARSET
 
 static const CS_TYPE cs_types[] = {
@@ -210,15 +211,16 @@ struct initcollation {
 	const UCHAR *init_collation_name;
 	SSHORT init_collation_charset;
 	SSHORT init_collation_id;
+	USHORT init_collation_attributes;
 };
 
 typedef initcollation COLL_TYPE;
 
-#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2) \
-	{ (const UCHAR *) (name), (cs_id), (coll_id) },
+#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
+	{ (const UCHAR *) (name), (cs_id), (coll_id), (attr) },
 #define CSALIAS(name, cs_id)
-#define COLLATION(name, cc_id, cs_id, coll_id, sym) \
-	{ (const UCHAR *) (name), (cs_id), (coll_id) },
+#define COLLATION(name, cc_id, cs_id, coll_id, sym, attr) \
+	{ (const UCHAR *) (name), (cs_id), (coll_id), (attr) },
 #define END_CHARSET
 
 static const COLL_TYPE coll_types[] = {

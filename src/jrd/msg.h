@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: msg.h,v 1.7 2004-10-04 04:59:43 robocop Exp $
+$Id: msg.h,v 1.8 2005-05-27 22:44:02 asfernandes Exp $
 */
 
 #ifndef JRD_MSG_H

@@ -94,7 +94,7 @@ USHORT	DYN_put_blr_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
 // This function is not defined anywhere.
 //USHORT	DYN_put_blr_blob2(Jrd::gbl*, const UCHAR**, ISC_QUAD *);
 
-USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
+USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*, USHORT bpb_length = 0, const UCHAR* bpb = NULL);
 // This function is not defined anywhere.
 //USHORT	DYN_put_text_blob2(Jrd::gbl*, const UCHAR**, ISC_QUAD *);
 

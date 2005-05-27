@@ -27,19 +27,12 @@
 #define	GB2(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
 			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 2nd-byte */
 
-USHORT CVGB_gb2312_to_unicode(csconvert* obj, USHORT *dest_ptr, USHORT dest_len,
-							const UCHAR* src_ptr,
-							USHORT src_len, SSHORT *err_code, USHORT *err_position);
+ULONG CVGB_gb2312_to_unicode(csconvert* obj, ULONG src_len, const UCHAR* src_ptr,
+							 ULONG dest_len, USHORT *dest_ptr,
+							 USHORT *err_code, ULONG *err_position);
 
-USHORT CVGB_unicode_to_gb2312(csconvert* obj, UCHAR *gb_str, USHORT gb_len,
-							const USHORT* unicode_str,
-							USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
+ULONG CVGB_unicode_to_gb2312(csconvert* obj, ULONG unicode_len, const USHORT* unicode_str,
+							 ULONG gb_len,UCHAR *gb_str,
+							 USHORT *err_code, ULONG *err_position);
 
-USHORT CVGB_check_gb2312(const UCHAR* gb_str, USHORT gb_len);
-
-USHORT CVGB_gb2312_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len,
-							const UCHAR* src, USHORT src_len,
-							SSHORT *err_code, USHORT *err_position);
-
-SSHORT CVGB_gb2312_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
-
+INTL_BOOL CVGB_check_gb2312(charset* cs, ULONG gb_len, const UCHAR* gb_str, ULONG* offending_position);

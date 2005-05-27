@@ -33,32 +33,28 @@
 #include "lc_ascii.h"
 #include "cv_gb2312.h"
 
-static inline void FAMILY_MULTIBYTE(TEXTTYPE cache,
-									TTYPE_ID id_number,
-									pfn_INTL_init name,
-									CHARSET_ID charset,
+static inline bool FAMILY_MULTIBYTE(TEXTTYPE cache,
 									SSHORT country,
-									const ASCII* POSIX)
+									const ASCII* POSIX,
+									USHORT attributes,
+									const UCHAR* specific_attributes,
+									ULONG specific_attributes_length)
 //#define FAMILY_MULTIBYTE(id_number, name, charset, country)
 {
-	cache->texttype_version			= IB_LANGDRV_VERSION;
-	cache->texttype_type			= id_number;
-	cache->texttype_character_set	= charset;
+	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
+		return false;
+
+	cache->texttype_version			= TEXTTYPE_VERSION_1;
+	cache->texttype_name			= POSIX;
 	cache->texttype_country			= country;
-	cache->texttype_bytes_per_char	= 2;
-	cache->texttype_fn_init			= name;
+	cache->texttype_pad_option		= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
 	cache->texttype_fn_key_length	= famasc_key_length;
 	cache->texttype_fn_string_to_key= famasc_string_to_key;
 	cache->texttype_fn_compare		= famasc_compare;
-	cache->texttype_fn_to_upper		= famasc_to_upper;
-	cache->texttype_fn_to_lower		= famasc_to_lower;
-	cache->texttype_fn_str_to_upper = famasc_str_to_upper;
-	cache->texttype_collation_table = NULL;
-	cache->texttype_toupper_table	= NULL;
-	cache->texttype_tolower_table	= NULL;
-	cache->texttype_compress_table	= NULL;
-	cache->texttype_expand_table	= NULL;
-	cache->texttype_name			= POSIX;
+	//cache->texttype_fn_str_to_upper = famasc_str_to_upper;
+	//cache->texttype_fn_str_to_lower = famasc_str_to_lower;
+
+	return true;
 }
 
 
@@ -66,10 +62,5 @@ TEXTTYPE_ENTRY(GB_2312_init)
 {
 	static const ASCII POSIX[] = "C.GB_2312";
 
-	FAMILY_MULTIBYTE(cache, 2312, GB_2312_init, CS_GB2312, CC_C, POSIX);
-	cache->texttype_fn_to_wc = CVGB_gb2312_byte2short;
-	cache->texttype_fn_mbtowc = CVGB_gb2312_mbtowc;
-
-	TEXTTYPE_RETURN;
+	return FAMILY_MULTIBYTE(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
-

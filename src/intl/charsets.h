@@ -28,7 +28,7 @@ CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 #define   CS_BINARY              1	/* BINARY BYTES     */
 #define   CS_ASCII               2	/* ASCII            */
 #define   CS_UNICODE_FSS         3	/* UNICODE in FSS format */
-#define	  CS_reserved4           4	/* reserved for future internal use */
+#define   CS_UTF8                4	/* UTF-8 */
 
 #define   CS_SJIS                5	/* SJIS             */
 #define   CS_EUCJ                6	/* EUC-J            */
@@ -84,8 +84,11 @@ CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 #define   CS_WIN1256            59	/* Windows cp 1256  */
 #define   CS_WIN1257            60	/* Windows cp 1257  */
 
+#define   CS_UTF16              61	/* UTF-16 */
+#define   CS_UTF32              62	/* UTF-32 */
+
 #define   CS_dynamic           127	/* Pseudo number for runtime charset */
 
-#define   CS_MAX_CS_NUMBER	60
+#define   CS_MAX_CS_NUMBER      63
 
 #endif /* INTL_CHARSETS_H */

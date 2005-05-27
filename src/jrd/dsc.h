@@ -54,6 +54,7 @@ typedef struct dsc
 	USHORT	dsc_flags;
 	UCHAR*	dsc_address; // Used either as offset in a message or as a pointer
 #ifdef __cplusplus
+	SSHORT dsc_blob_ttype() const { return dsc_scale | (dsc_flags & 0xFF00);}
 	SSHORT& dsc_ttype() { return dsc_sub_type;}
 	SSHORT dsc_ttype() const { return dsc_sub_type;}
 #endif

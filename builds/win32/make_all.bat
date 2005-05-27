@@ -75,6 +75,9 @@ if errorlevel 1 call :ERROR Debug build failed
 @mkdir %ROOT_PATH%\output\lib
 @mkdir %ROOT_PATH%\output\system32 > nul
 
+@copy %ROOT_PATH%\extern\icu\bin\icuuc30.dll %ROOT_PATH%\output\bin >nul
+@copy %ROOT_PATH%\extern\icu\bin\icudt30.dll %ROOT_PATH%\output\bin >nul
+@copy %ROOT_PATH%\extern\icu\bin\icuin30.dll %ROOT_PATH%\output\bin >nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\* %ROOT_PATH%\output\bin >nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\intl\* %ROOT_PATH%\output\intl >nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\udf\* %ROOT_PATH%\output\udf >nul
@@ -83,6 +86,7 @@ if errorlevel 1 call :ERROR Debug build failed
 :: Firebird.conf, etc
 @copy %ROOT_PATH%\gen\firebird.msg %ROOT_PATH%\output > nul
 @copy %ROOT_PATH%\builds\install\misc\firebird.conf %ROOT_PATH%\output >nul
+@copy %ROOT_PATH%\builds\install\misc\fbintl.conf %ROOT_PATH%\output\intl >nul
 :: DATABASES
 @copy %ROOT_PATH%\gen\dbs\SECURITY2.FDB %ROOT_PATH%\output\security2.fdb >nul
 @copy %ROOT_PATH%\gen\dbs\HELP.fdb %ROOT_PATH%\output\help\help.fdb >nul

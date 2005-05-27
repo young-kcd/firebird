@@ -41,10 +41,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib icuin.lib"
 				OutputFile="..\..\..\temp\debug\firebird\bin\fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="../../../extern/icu/lib"
 				ModuleDefinitionFile="..\defs\fbclient.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="..\..\..\temp\debug\fbembed\fbembed.pdb"
@@ -114,10 +115,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpr.lib ws2_32.lib version.lib"
+				AdditionalDependencies="mpr.lib ws2_32.lib version.lib icuuc.lib icuin.lib"
 				OutputFile="..\..\..\temp\release\firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="../../../extern/icu/lib"
 				ModuleDefinitionFile="..\defs\fbclient.def"
 				GenerateDebugInformation="TRUE"
 				ImportLibrary="..\..\..\temp\release\fbembed\fbembed.lib"/>

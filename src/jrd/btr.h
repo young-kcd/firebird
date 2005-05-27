@@ -149,7 +149,7 @@ const int key_all_nulls	= 2;	/* All key fields are nulls */
 
 struct temporary_key {
 	USHORT key_length;
-	UCHAR key_data[MAX_KEY];
+	UCHAR key_data[MAX_KEY + 1];
 	UCHAR key_flags;
  /* AB: I don't see the use of multiplying with 2 anymore. */
 	//UCHAR key_data[MAX_KEY * 2];	

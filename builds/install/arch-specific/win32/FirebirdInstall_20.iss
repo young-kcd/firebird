@@ -304,6 +304,9 @@ Source: output\bin\isql.exe; DestDir: {app}\bin; Components: DevAdminComponent; 
 Source: output\bin\nbackup.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: output\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: output\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
+Source: output\bin\icuuc30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: output\bin\icuin30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: output\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 
 ; Install MS libs locally if Win2K or later, else place in <sys> if NT4 or Win95/98/ME.
 ; NOTE: These dll's MUST never be sourced from the local system32 directory.
@@ -327,6 +330,7 @@ Source: output\doc\sql.extensions\*.*; DestDir: {app}\doc\sql.extensions; Compon
 Source: output\help\*.*; DestDir: {app}\help; Components: DevAdminComponent; Flags: ignoreversion;
 Source: output\include\*.*; DestDir: {app}\include; Components: DevAdminComponent; Flags: ignoreversion;
 Source: output\intl\fbintl.dll; DestDir: {app}\intl; Components: ServerComponent; Flags: sharedfile ignoreversion;
+Source: output\intl\fbintl.conf; DestDir: {app}\intl; Components: ServerComponent; Flags: onlyifdoesntexist
 Source: output\lib\*.*; DestDir: {app}\lib; Components: DevAdminComponent; Flags: ignoreversion;
 Source: output\UDF\ib_udf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: output\UDF\fbudf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;

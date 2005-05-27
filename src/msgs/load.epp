@@ -151,6 +151,7 @@ static const stuff a_stuff[] = {
 		ITEM(blr_gen_id, BLR, NEW)
 		ITEM(blr_prot_mask, BLR, NEW)
 		ITEM(blr_upcase, BLR, NEW)
+		ITEM(blr_lowcase, BLR, NEW)
 		ITEM(blr_lock_state, BLR, NEW)
 		ITEM(blr_value_if, BLR, NEW)
 		ITEM(blr_matching2, BLR, NEW)

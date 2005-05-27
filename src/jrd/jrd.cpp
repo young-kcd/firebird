@@ -122,6 +122,7 @@
 #include "../common/config/config.h"
 #include "../jrd/plugin_manager.h"
 #include "../jrd/db_alias.h"
+#include "../jrd/IntlManager.h"
 #include "../common/classes/fb_tls.h"
 #include "../common/classes/ClumpletReader.h"
 
@@ -4906,11 +4907,11 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const Dat
 	const UCHAR* lc_ctype =
 		reinterpret_cast<const UCHAR*>(options->dpb_lc_ctype.c_str());
 		
-	if (MET_get_char_subtype(tdbb, &id, lc_ctype, options->dpb_lc_ctype.length()) &&
-		INTL_defined_type(tdbb, local_status, id) &&
-		(id != CS_BINARY))
+	if (MET_get_char_coll_subtype(tdbb, &id, lc_ctype, options->dpb_lc_ctype.length()) &&
+		INTL_defined_type(tdbb, local_status, id & 0xFF) &&
+		((id & 0xFF) != CS_BINARY))
 	{
-		attachment->att_charset = id;
+		attachment->att_charset = id & 0xFF;
 	}
 	else
 	{
@@ -5388,6 +5389,7 @@ static Database* init(thread_db*	tdbb,
 		THREAD_EXIT();
 		THD_GLOBAL_MUTEX_LOCK;
 		THREAD_ENTER();
+		IntlManager::initialize();
 		PluginManager::load_engine_plugins();
 		if (!initialized) {
 #if defined(V4_THREADING) && !defined(SUPERSERVER)

@@ -30,6 +30,13 @@ namespace Jrd {
 	class blb;
 }
 
+enum INF_priv_db_info
+{
+	INF_internal_db_info_intl_char_length,
+	INF_internal_db_info_intl_octet_length,
+	INF_internal_db_info_intl_is_legacy_charset
+};
+
 int		INF_blob_info(const Jrd::blb*, const SCHAR*, const SSHORT,
 						SCHAR*, const SSHORT);
 USHORT	INF_convert(SLONG, SCHAR*);

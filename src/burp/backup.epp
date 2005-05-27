@@ -151,6 +151,8 @@ enum backup_capabilities
 	BCK_ods9			= 4096,	// SQL roles
 	BCK_ods10			= 8192,	// FIELD_PRECISION
 	BCK_ods11           = 16384 // rdb$description in rdb$roles and rdb$generators
+								// rdb$filename in rdb$character_sets and rdb$collations
+								// rdb$base_collation_name and rdb$specific_attributes in rdb$collations
 };
 
 #ifdef DEBUG
@@ -192,6 +194,8 @@ const rfr_tab_t rfr_table[] =
 	{"RDB$ROLES", "RDB$ROLE_NAME", BCK_ods9},
 	{"RDB$FIELDS", "RDB$FIELD_PRECISION", BCK_ods10},
 	{"RDB$ROLES", "RDB$DESCRIPTION", BCK_ods11},
+	{"RDB$COLLATIONS", "RDB$BASE_COLLATION_NAME", BCK_ods11},
+	{"RDB$COLLATIONS", "RDB$SPECIFIC_ATTRIBUTES", BCK_ods11},
 	{0, 0, 0}
 };
 
@@ -2580,30 +2584,58 @@ void write_character_sets(void)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	FOR (REQUEST_HANDLE req_handle1)
-		X IN RDB$CHARACTER_SETS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
-		put(tdgbl, rec_charset);
-		PUT_TEXT (att_charset_name, X.RDB$CHARACTER_SET_NAME);
-		if (!X.RDB$FORM_OF_USE.NULL)
-			PUT_TEXT (att_charset_form, X.RDB$FORM_OF_USE);
-		if (!X.RDB$NUMBER_OF_CHARACTERS.NULL)
-			put_numeric (att_charset_numchar, X.RDB$NUMBER_OF_CHARACTERS);
-		PUT_TEXT (att_charset_coll, X.RDB$DEFAULT_COLLATE_NAME);
-		put_numeric (att_charset_id, X.RDB$CHARACTER_SET_ID);
-		if (X.RDB$SYSTEM_FLAG)
-			put_numeric (att_charset_sysflag, X.RDB$SYSTEM_FLAG);
-		if (!X.RDB$DESCRIPTION.NULL)
-			put_source_blob (att_charset_description, att_charset_description,
-				&X.RDB$DESCRIPTION);
-		if (!X.RDB$FUNCTION_NAME.NULL)
-			PUT_TEXT (att_charset_funct, X.RDB$FUNCTION_NAME);
-		put_numeric (att_charset_bytes_char, X.RDB$BYTES_PER_CHARACTER);
-	
-		put(tdgbl, att_end);
-	END_FOR;
-	ON_ERROR
-		general_on_error();
-	END_ERROR;
+	if (tdgbl->BCK_capabilities & BCK_ods11)
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$CHARACTER_SETS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_charset);
+			PUT_TEXT (att_charset_name, X.RDB$CHARACTER_SET_NAME);
+			if (!X.RDB$FORM_OF_USE.NULL)
+				PUT_TEXT (att_charset_form, X.RDB$FORM_OF_USE);
+			if (!X.RDB$NUMBER_OF_CHARACTERS.NULL)
+				put_numeric (att_charset_numchar, X.RDB$NUMBER_OF_CHARACTERS);
+			PUT_TEXT (att_charset_coll, X.RDB$DEFAULT_COLLATE_NAME);
+			put_numeric (att_charset_id, X.RDB$CHARACTER_SET_ID);
+			if (X.RDB$SYSTEM_FLAG)
+				put_numeric (att_charset_sysflag, X.RDB$SYSTEM_FLAG);
+			if (!X.RDB$DESCRIPTION.NULL)
+				put_source_blob (att_charset_description, att_charset_description,
+					&X.RDB$DESCRIPTION);
+			if (!X.RDB$FUNCTION_NAME.NULL)
+				PUT_TEXT (att_charset_funct, X.RDB$FUNCTION_NAME);
+			put_numeric (att_charset_bytes_char, X.RDB$BYTES_PER_CHARACTER);
+			put(tdgbl, att_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$CHARACTER_SETS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_charset);
+			PUT_TEXT (att_charset_name, X.RDB$CHARACTER_SET_NAME);
+			if (!X.RDB$FORM_OF_USE.NULL)
+				PUT_TEXT (att_charset_form, X.RDB$FORM_OF_USE);
+			if (!X.RDB$NUMBER_OF_CHARACTERS.NULL)
+				put_numeric (att_charset_numchar, X.RDB$NUMBER_OF_CHARACTERS);
+			PUT_TEXT (att_charset_coll, X.RDB$DEFAULT_COLLATE_NAME);
+			put_numeric (att_charset_id, X.RDB$CHARACTER_SET_ID);
+			if (X.RDB$SYSTEM_FLAG)
+				put_numeric (att_charset_sysflag, X.RDB$SYSTEM_FLAG);
+			if (!X.RDB$DESCRIPTION.NULL)
+				put_source_blob (att_charset_description, att_charset_description,
+					&X.RDB$DESCRIPTION);
+			if (!X.RDB$FUNCTION_NAME.NULL)
+				PUT_TEXT (att_charset_funct, X.RDB$FUNCTION_NAME);
+			put_numeric (att_charset_bytes_char, X.RDB$BYTES_PER_CHARACTER);
+			put(tdgbl, att_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
 
 	MISC_release_request_silent(req_handle1);
 }
@@ -2660,25 +2692,52 @@ void write_collations(void)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	FOR (REQUEST_HANDLE req_handle1)
-		X IN RDB$COLLATIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
-		put(tdgbl, rec_collation);
-		PUT_TEXT (att_coll_name, X.RDB$COLLATION_NAME);
-		put_numeric (att_coll_id, X.RDB$COLLATION_ID);
-		put_numeric (att_coll_cs_id, X.RDB$CHARACTER_SET_ID);
-		put_numeric (att_coll_attr, X.RDB$COLLATION_ATTRIBUTES);
-		if (X.RDB$SYSTEM_FLAG)
-			put_numeric (att_coll_sysflag, X.RDB$SYSTEM_FLAG);
-		if (!X.RDB$DESCRIPTION.NULL)
-			put_source_blob (att_coll_description, att_coll_description, &X.RDB$DESCRIPTION);
-		if (!X.RDB$FUNCTION_NAME.NULL)
-			PUT_TEXT (att_coll_funct, X.RDB$FUNCTION_NAME);
-	
-		put(tdgbl, att_end);
-	END_FOR;
-	ON_ERROR
-		general_on_error();
-	END_ERROR;
+	if (tdgbl->BCK_capabilities & BCK_ods11)
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$COLLATIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_collation);
+			PUT_TEXT (att_coll_name, X.RDB$COLLATION_NAME);
+			put_numeric (att_coll_id, X.RDB$COLLATION_ID);
+			put_numeric (att_coll_cs_id, X.RDB$CHARACTER_SET_ID);
+			put_numeric (att_coll_attr, X.RDB$COLLATION_ATTRIBUTES);
+			if (X.RDB$SYSTEM_FLAG)
+				put_numeric (att_coll_sysflag, X.RDB$SYSTEM_FLAG);
+			if (!X.RDB$DESCRIPTION.NULL)
+				put_source_blob (att_coll_description, att_coll_description, &X.RDB$DESCRIPTION);
+			if (!X.RDB$FUNCTION_NAME.NULL)
+				PUT_TEXT (att_coll_funct, X.RDB$FUNCTION_NAME);
+			if (!X.RDB$BASE_COLLATION_NAME.NULL)
+				PUT_TEXT(att_coll_base_collation_name, X.RDB$BASE_COLLATION_NAME);
+			if (!X.RDB$SPECIFIC_ATTRIBUTES.NULL)
+				put_source_blob (att_coll_specific_attr, att_coll_specific_attr, &X.RDB$SPECIFIC_ATTRIBUTES);
+			put(tdgbl, att_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$COLLATIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_collation);
+			PUT_TEXT (att_coll_name, X.RDB$COLLATION_NAME);
+			put_numeric (att_coll_id, X.RDB$COLLATION_ID);
+			put_numeric (att_coll_cs_id, X.RDB$CHARACTER_SET_ID);
+			put_numeric (att_coll_attr, X.RDB$COLLATION_ATTRIBUTES);
+			if (X.RDB$SYSTEM_FLAG)
+				put_numeric (att_coll_sysflag, X.RDB$SYSTEM_FLAG);
+			if (!X.RDB$DESCRIPTION.NULL)
+				put_source_blob (att_coll_description, att_coll_description, &X.RDB$DESCRIPTION);
+			if (!X.RDB$FUNCTION_NAME.NULL)
+				PUT_TEXT (att_coll_funct, X.RDB$FUNCTION_NAME);
+			put(tdgbl, att_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
 
 	MISC_release_request_silent(req_handle1);
 }

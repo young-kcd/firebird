@@ -35,9 +35,9 @@
 void gds__log(UCHAR*, ...);
 */
 
-#define	EXTERN_texttype(name)	USHORT name (TEXTTYPE, USHORT, USHORT)
-#define EXTERN_convert(name)	USHORT name (csconvert*, SSHORT, SSHORT)
-#define EXTERN_charset(name)	USHORT name (charset*, SSHORT, SSHORT)
+#define	EXTERN_texttype(name)	INTL_BOOL name (TEXTTYPE, const ASCII*, const ASCII*, USHORT, const UCHAR*, ULONG)
+// #define EXTERN_convert(name)	INTL_BOOL name (csconvert*, const ASCII*, const ASCII*)
+#define EXTERN_charset(name)	INTL_BOOL name (charset*, const ASCII*)
 
 EXTERN_texttype(DOS101_init);
 EXTERN_texttype(DOS101_c2_init);
@@ -110,6 +110,7 @@ EXTERN_texttype(ISO88591_51_init);
 EXTERN_texttype(ISO88591_52_init);
 EXTERN_texttype(ISO88591_53_init);
 EXTERN_texttype(ISO88591_54_init);
+EXTERN_texttype(ISO88591_55_init);
 
 /* Latin 2 character set */
 EXTERN_texttype (ISO88592_cp_init);
@@ -144,6 +145,8 @@ EXTERN_texttype(WIN1252_c2_init);
 EXTERN_texttype(WIN1252_c3_init);
 EXTERN_texttype(WIN1252_c4_init);
 EXTERN_texttype(WIN1252_c5_init);
+EXTERN_texttype(WIN1252_c6_init);
+EXTERN_texttype(WIN1252_c7_init);
 
 EXTERN_texttype(WIN1253_c0_init);
 EXTERN_texttype(WIN1253_c1_init);
@@ -228,10 +231,12 @@ EXTERN_texttype(KSC_5601_init);
 EXTERN_texttype(ksc_5601_dict_init);
 EXTERN_texttype(GB_2312_init);
 
+#if 0
 EXTERN_convert(CV_dos_437_x_iso8859_1);
 EXTERN_convert(CV_dos_865_x_iso8859_1);
 EXTERN_convert(CV_dos_437_x_dos_865);
 EXTERN_convert(CVJIS_sjis_x_eucj);
+#endif
 
 
 #ifdef DEV_BUILD
@@ -279,6 +284,7 @@ void LD_assert(const SCHAR* filename, int lineno)
 		return (0);
 */
 
+#if 0
 #define CONVERT_INIT_BI(to_cs, from_cs, name)\
 	if (((parm1 == (to_cs)) && (parm2 == (from_cs))) ||\
 	    ((parm2 == (to_cs)) && (parm1 == (from_cs)))) \
@@ -286,46 +292,15 @@ void LD_assert(const SCHAR* filename, int lineno)
 	    *fun = (FPTR_SHORT) (name);\
 	    return (0);\
 	    }
+#endif
 
-USHORT FB_DLL_EXPORT LD_lookup(USHORT objtype,
-							FPTR_SHORT* fun, SSHORT parm1, SSHORT parm2)
+INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name)
 {
-/**************************************
- *
- *	L D _ l o o k u p 
- *
- **************************************
- *
- * Functional description
- *
- *	Lookup an international object implementation via object type
- *	and id (one id for charsets & collations, two ids for converters).
- *
- *	Note: This routine is a cousin of intl/ld2.c:LD2_lookup
- *
- * Return:
- *	If object implemented by this module:
- *		(fun)	set to the object initializer
- *		0	returned	
- *	Otherwise:
- *		(fun)	set to nil.
- *		1	returned
- *
- **************************************/
-
-	switch (objtype) {
-	case type_texttype:
-		switch (parm1) {
-
-#define CHARSET(name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol) \
-	    case (cs_id): \
-		*fun = (FPTR_SHORT) (cp_symbol); \
-		return (0);
+#define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, attr) \
+    if (strcmp(name, cs_name) == 0) \
+		return cs_symbol(cs, name);
 #define CSALIAS(name, cs_id)
-#define COLLATION(name, cc_id, cs_id, coll_id, symbol) \
-	    case (((coll_id) << 8) | (cs_id)): \
-		*fun = (FPTR_SHORT) (symbol); \
-		return (0);
+#define COLLATION(name, cc_id, cs_id, coll_id, symbol, attr)
 #define COLLATE_ALIAS(name, coll_id)
 #define END_CHARSET
 
@@ -339,59 +314,29 @@ USHORT FB_DLL_EXPORT LD_lookup(USHORT objtype,
 #undef COLLATE_ALIAS
 #undef END_CHARSET
 
-/*
-	    DRIVER (CS_DOS_437, DOS101_init);
-	    DRIVER (CS_DOS_850, DOS160_init);
-	    DRIVER (CS_DOS_865, DOS107_init);
-	    DRIVER (CS_ISO8859_1,  ISO88591_cp_init);
-	    DRIVER (CS_ISO8859_2,  ISO88592_cp_init);
-	    DRIVER (CS_UNICODE_FSS, UNI201_init);
-	    DRIVER (CS_SJIS,    JIS220_init);
-	    DRIVER (CS_EUCJ,    JIS230_init);
+	return (false);
+}
 
-	    DRIVER (101, DOS101_init);
-	    DRIVER (102, DOS102_init);
-	    DRIVER (105, DOS105_init);
-	    DRIVER (106, DOS106_init);
-	    DRIVER (107, DOS107_init);
-	    DRIVER (139, ISO88591_39_init);
-	    DRIVER (140, ISO88591_40_init);
-	    DRIVER (141, ISO88591_41_init);
-	    DRIVER (142, ISO88591_42_init);
-	    DRIVER (143, ISO88591_43_init);
-	    DRIVER (144, ISO88591_44_init);
-	    DRIVER (145, ISO88591_45_init);
-	    DRIVER (146, ISO88591_46_init);
-	    DRIVER (148, ISO88591_48_init);
-	    DRIVER (149, ISO88591_49_init);
-	    DRIVER (151, ISO88591_51_init);
-	    DRIVER (152, ISO88591_52_init);
-	    DRIVER (153, ISO88591_53_init);
-	    DRIVER (154, ISO88591_54_init);
-	    DRIVER (160, DOS160_init);
-	    DRIVER (200, UNI200_init);
-	    DRIVER (201, UNI201_init);
-	    DRIVER (220, JIS220_init);
-	    DRIVER (230, JIS230_init);
-*/
-
-		default:
-			*fun = NULL;
-			return (1);
-		}
-	case type_charset:
-		switch (parm1) {
-#define CHARSET(name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol) \
-	    case (cs_id): \
-		*fun = (FPTR_SHORT) (cs_symbol); \
-		return (0);
+INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
+										   USHORT attributes, const UCHAR* specific_attributes,
+										   ULONG specific_attributes_length, INTL_BOOL ignore_attributes)
+{
+#define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, coll_attr) \
+	if (strcmp(charset_name, cs_name) == 0) { \
+    if (strcmp(texttype_name, cs_name) == 0) \
+	return cp_symbol(tt, texttype_name, charset_name, (ignore_attributes ? coll_attr : attributes), \
+					 (ignore_attributes ? NULL : specific_attributes), \
+					 (ignore_attributes ? 0 : specific_attributes_length));
 #define CSALIAS(name, cs_id)
-#define COLLATION(name, cc_id, cs_id, coll_id, symbol)
+#define END_CHARSET }
+#define COLLATION(tt_name, cc_id, cs_id, coll_id, symbol, coll_attr) \
+    if (strcmp(texttype_name, tt_name) == 0) \
+		return symbol(tt, texttype_name, charset_name, (ignore_attributes ? coll_attr : attributes), \
+					  (ignore_attributes ? NULL : specific_attributes), \
+					  (ignore_attributes ? 0 : specific_attributes_length));
 #define COLLATE_ALIAS(name, coll_id)
-#define END_CHARSET
 
 #define INTL_COMPONENT_FB
-
 
 #include "../jrd/intlnames.h"
 
@@ -399,40 +344,11 @@ USHORT FB_DLL_EXPORT LD_lookup(USHORT objtype,
 #undef CSALIAS
 #undef COLLATION
 #undef COLLATE_ALIAS
+#undef END_CHARSET
 
-/*
-	    CHARSET_INIT (CS_ISO8859_1,     CS_iso_ISO8859_1);
-	    CHARSET_INIT (CS_DOS_437,    CS_dos_437);
-	    CHARSET_INIT (CS_DOS_850,    CS_dos_850);
-	    CHARSET_INIT (CS_DOS_865,    CS_dos_865);
-	    CHARSET_INIT (CS_UNICODE_UCS2, CS_unicode_ucs2);
-	    CHARSET_INIT (CS_UNICODE_FSS, CS_unicode_fss);
-	    CHARSET_INIT (CS_SJIS,       CS_sjis);
-	    CHARSET_INIT (CS_EUCJ,       CS_euc_j);
-*/
-		default:
-			*fun = NULL;
-			return (1);
-		}
-	case type_csconvert:
-		{
-			CONVERT_INIT_BI(CS_DOS_437, CS_ISO8859_1, CV_dos_437_x_iso8859_1);
-			CONVERT_INIT_BI(CS_DOS_865, CS_ISO8859_1, CV_dos_865_x_iso8859_1);
-			CONVERT_INIT_BI(CS_DOS_437, CS_DOS_865, CV_dos_437_x_dos_865);
-			CONVERT_INIT_BI(CS_SJIS, CS_EUCJ, CVJIS_sjis_x_eucj);
-			*fun = NULL;
-			return (1);
-		}
-	default:
-#ifdef DEV_BUILD
-		fb_assert(0);
-#endif
-		*fun = NULL;
-		return (1);
-	}
+	return (false);
 }
 
 #undef DRIVER
 #undef CHARSET_INIT
 #undef CONVERT_INIT_BI
-

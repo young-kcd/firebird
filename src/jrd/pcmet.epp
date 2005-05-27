@@ -179,7 +179,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				idx.idx_rpt[0].idx_itype =
 					DFW_assign_index_type(work,
 										  idx.idx_expression_desc.dsc_dtype,
-										  0);
+										  idx.idx_expression_desc.dsc_sub_type);
 				idx.idx_rpt[0].idx_selectivity = 0;
 		
 				delete csb;

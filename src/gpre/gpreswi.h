@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpreswi.h,v 1.11 2004-11-24 09:09:04 robocop Exp $
+ * $Id: gpreswi.h,v 1.12 2005-05-27 22:42:15 asfernandes Exp $
  * Revision 1.2  2000/11/16 15:54:29  fsg
  * Added new switch -verbose to gpre that will dump
  * parsed lines to stderr

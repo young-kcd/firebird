@@ -909,6 +909,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 
 	case nod_list:
 	case nod_upcase:
+	case nod_lowcase:
 
 	case nod_and:
 	case nod_or:
@@ -2382,6 +2383,7 @@ static bool global_agg( const qli_syntax* item, const qli_syntax* group_list)
 		return true;
 
 	case nod_upcase:
+	case nod_lowcase:
 	case nod_add:
 	case nod_subtract:
 	case nod_multiply:
@@ -2469,6 +2471,7 @@ static bool invalid_nod_field( const qli_nod* node, const qli_nod* list)
 			case nod_choice:
 			case nod_function:
 			case nod_upcase:
+			case nod_lowcase:
 				invalid |= invalid_nod_field(*ptr, list);
 			}
 		}
@@ -2550,6 +2553,7 @@ static bool invalid_syn_field( const qli_syntax* syn_node, const qli_syntax* lis
 			case nod_choice:
 			case nod_function:
 			case nod_upcase:
+			case nod_lowcase:
 				invalid |= invalid_syn_field(*ptr, list);
 			}
 		}

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.74 2005-05-14 10:42:58 alexpeshkoff Exp $
+ * $Id: sort.cpp,v 1.75 2005-05-27 22:44:05 asfernandes Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -100,14 +100,14 @@ const ULONG MAX_TEMPFILE_SIZE		= 1073741824;	// 1GB
 
 #define MOVE_32(len, from, to)      memcpy(to, from, len * 4)
 
-// These values are not defined as const as they are passed to 
+// These values are not defined as const as they are passed to
 // the diddle_key routines which mangles them.
 // As the diddle_key routines differ on VAX (little endian) and non VAX
-// (big endian) patforms, making the following const caused a core on the 
+// (big endian) patforms, making the following const caused a core on the
 // Intel Platforms, while Solaris was working fine.
 
 static ULONG low_key[] = { 0, 0, 0, 0, 0, 0 };
- 
+
 static ULONG high_key[] = {
 	ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
 		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
@@ -381,7 +381,7 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			break;
 
 		case SKD_int64:
-			
+
 			// INT64's fit in TWO LONGS, and hence the SWAP has to happen
 			// here for the right order comparison using DO_32_COMPARE
 
@@ -596,7 +596,7 @@ void SORT_get(ISC_STATUS * status_vector,
 				scb->scb_next_pointer = scb->scb_last_pointer + 1;
 			}
 			else {
-				// By definition, the next pointer is on the next record, 
+				// By definition, the next pointer is on the next record,
 				// so we have to go back one to get to the last fetched record.
 				// This is easier than changing the sense of the next pointer.
 
@@ -713,8 +713,8 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
  *      argument.  If the call back routine returns TRUE, the second
  *      duplicate record is eliminated.
  *
- * hvlad: when duplicates are eliminating only first unique_keys will be 
- *		compared. This is used at creation of unique index since sort key 
+ * hvlad: when duplicates are eliminating only first unique_keys will be
+ *		compared. This is used at creation of unique index since sort key
  *		includes index key (which must be unique) and record numbers
  *
  **************************************/
@@ -1103,7 +1103,7 @@ bool SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 	while (count > 1) {
 		run_merge_hdr** m2 = m1 = streams;
 
-		// "m1" is used to sequence through the runs being merged, 
+		// "m1" is used to sequence through the runs being merged,
 		// while "m2" points at the new merged run
 
 		while (count >= 2) {
@@ -1229,7 +1229,7 @@ ULONG SORT_write_block(ISC_STATUS* status_vector,
 				break;
 			else {
 				if (write_len >= 0)
-					// If write returns value that is not equal len, then 
+					// If write returns value that is not equal len, then
 					// most likely there is not enough space, try to write
 					// one more time to get meaningful errno
 					write_len = write(sfb->sfb_file, address + write_len,
@@ -1274,8 +1274,8 @@ static UCHAR *sort_alloc(sort_context* scb, ULONG size)
  *          is so a large sort will not push up the high-water mark of
  *          memory allocated to a request or attachment (recall this memory
  *          isn't released until the request/attachment finished)
- *        - As a result, the memory blocks allocated here don't have 
- *          the blk_header structure (we'ld have to add it if we ever 
+ *        - As a result, the memory blocks allocated here don't have
+ *          the blk_header structure (we'ld have to add it if we ever
  *          change this)
  *        - Most things allocated have pointers placed in the sort_context.
  *          (sort control block)
@@ -1287,7 +1287,7 @@ static UCHAR *sort_alloc(sort_context* scb, ULONG size)
  *          to be no need to have an error handler to free them as
  *          no errors can be posted during the process.
  *
- *      1994-October-11 David Schnepper 
+ *      1994-October-11 David Schnepper
  *
  **************************************/
 	UCHAR* const block =
@@ -1689,8 +1689,8 @@ static ULONG find_file_space(sort_context* scb, ULONG size, sort_work_file** ret
  **************************************
  *
  * Functional description
- *      Find space of input size in one of the 
- *      open sort files.  If a free block is not 
+ *      Find space of input size in one of the
+ *      open sort files.  If a free block is not
  *      available, allocate space at the end.
  *
  **************************************/
@@ -1711,13 +1711,13 @@ static ULONG find_file_space(sort_context* scb, ULONG size, sort_work_file** ret
 	for (sfb_ptr = &scb->scb_sfb; (sfb = *sfb_ptr); sfb_ptr = &sfb->sfb_next) {
 		work_file_space* space;
 		for (work_file_space** ptr = &sfb->sfb_file_space; (space = *ptr);
-			 ptr = &(*ptr)->wfs_next) 
+			 ptr = &(*ptr)->wfs_next)
 		{
 
 			// If this is smaller than our previous best, use it
 
-			if (space->wfs_size >= size && 
-                (!best || (space->wfs_size < (*best)->wfs_size))) 
+			if (space->wfs_size >= size &&
+                (!best || (space->wfs_size < (*best)->wfs_size)))
 			{
 				best = ptr;
 				best_sfb = sfb;
@@ -1740,7 +1740,7 @@ static ULONG find_file_space(sort_context* scb, ULONG size, sort_work_file** ret
 		// and return
 
 		if (!sfb || !DLS_get_temp_space(size, sfb) ||
-			(sfb->sfb_file_size + size >= MAX_TEMPFILE_SIZE)) 
+			(sfb->sfb_file_size + size >= MAX_TEMPFILE_SIZE))
 		{
 
 			sfb = (sort_work_file*) sort_alloc(scb, (ULONG) sizeof(sort_work_file));
@@ -1816,7 +1816,7 @@ static ULONG find_file_space(sort_context* scb, ULONG size, sort_work_file** ret
 }
 
 
-static void free_file_space(sort_context* scb, sort_work_file* sfb, 
+static void free_file_space(sort_context* scb, sort_work_file* sfb,
 							ULONG position, ULONG size)
 {
 /**************************************
@@ -1950,7 +1950,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 				run->run_record = NEXT_RUN_RECORD(run->run_record);
 #endif
 				if ((record = (sort_record*) run->run_record) <
-					(sort_record*) run->run_end_buffer) 
+					(sort_record*) run->run_end_buffer)
 				{
 #ifndef SCROLLABLE_CURSORS
 					run->run_record =
@@ -1978,14 +1978,14 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 			else {
 				run->run_record = PREV_RUN_RECORD(run->run_record);
 				if ((record = (sort_record*) run->run_record) >=
-					run->run_buffer) 
+					run->run_buffer)
 				{
 					++run->run_records;
 					continue;
 				}
 			}
 
-			// There are records remaining, but we have stepped over the 
+			// There are records remaining, but we have stepped over the
 			// edge of the cache. Read the next buffer full of records.
 
 			fb_assert((BLOB_PTR *) run->run_end_buffer >
@@ -2191,7 +2191,7 @@ static bool local_fini(sort_context* scb, Attachment* att)
 	if (att) {
 
 		// Cover case where a posted error caused reuse by another thread
-		
+
 		if (scb->scb_attachment != att)
 			att = scb->scb_attachment;
 		found_it = false;
@@ -2269,7 +2269,7 @@ static bool local_fini(sort_context* scb, Attachment* att)
 	}
 
 	// Clean up the free runs also
-	
+
 	while ( (run = scb->scb_free_runs) ) {
 		scb->scb_free_runs = run->run_next;
 		if (run->run_buff_alloc)
@@ -2437,7 +2437,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 												reinterpret_cast<char*>(temp_run.run_buffer),
 												size);
 
-	// If the records did not fill the allocated run (such as when duplicates are 
+	// If the records did not fill the allocated run (such as when duplicates are
 	// rejected), then free the remainder and diminish the size of the run accordingly
 
 	if (seek - temp_run.run_seek < temp_run.run_size) {
@@ -2492,7 +2492,7 @@ static void quick(SLONG size, SORTP** pointers, ULONG length)
  **************************************
  *
  * Functional description
- *      Sort an array of record pointers.  The routine assumes the 
+ *      Sort an array of record pointers.  The routine assumes the
  *      following:
  *
  *      a.  Each element in the array points to the key of a record.
@@ -2736,7 +2736,7 @@ static ULONG order(sort_context* scb)
 	THREAD_ENTER();
 
 	// It's OK to free this after checking back into the engine, there's
-	// only fatal failures possible there 
+	// only fatal failures possible there
 
 	if (buffer != temp)
 		if (buffer != NULL)
@@ -2794,7 +2794,7 @@ static void put_run(sort_context* scb)
 #endif
 
 	// Write records to scratch file. Keep track of the number of bytes
-	// written, etc. 
+	// written, etc.
 
 	run->run_size =
 		run->run_records * (scb->scb_longs -
@@ -2933,7 +2933,7 @@ static void validate(sort_context* scb)
  *
  **************************************/
 	for (SORTP** ptr = (SORTP **) (scb->scb_first_pointer + 1);
-		 ptr < (SORTP **) scb->scb_next_pointer; ptr++) 
+		 ptr < (SORTP **) scb->scb_next_pointer; ptr++)
 	{
 		SORTP* record = *ptr;
 		if (record[-1] != (SORTP) ptr) {
@@ -2951,7 +2951,7 @@ static void validate(sort_context* scb)
 #ifdef DEBUG_SORT_TRACE
 static void write_trace(
 						UCHAR* operation,
-						sort_work_file* sfb, ULONG seek, BLOB_PTR* address, 
+						sort_work_file* sfb, ULONG seek, BLOB_PTR* address,
 						ULONG length)
 {
 /**************************************

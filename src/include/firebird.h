@@ -33,6 +33,19 @@
 
 #include "gen/autoconfig.h"
 
+// Vulcan definitions
+#ifdef NAMESPACE
+namespace NAMESPACE{}		// declare namespace before use
+using namespace NAMESPACE;
+#define START_NAMESPACE		namespace NAMESPACE {
+#define CLASS(cls)			namespace NAMESPACE { class cls; };
+#define END_NAMESPACE		}
+#else
+#define START_NAMESPACE
+#define CLASS(cls)			class cls;
+#define END_NAMESPACE
+#endif
+
 // Using our debugging code is pointless when we may use Valgrind features
 #if defined(DEV_BUILD) && !defined(USE_VALGRIND)
 #define DEBUG_GDS_ALLOC

@@ -72,7 +72,7 @@ static void add_global_fields(USHORT);
 static void add_index_set(Database*, bool, USHORT, USHORT);
 static void add_new_triggers(USHORT, USHORT);
 static void add_relation_fields(USHORT);
-static void add_security_to_sys_rel(thread_db*, const Firebird::MetaName&, 
+static void add_security_to_sys_rel(thread_db*, const Firebird::MetaName&,
 		const TEXT*, const UCHAR*, const SSHORT);
 #ifdef NOT_USED_OR_REPLACED
 static void add_trigger(TEXT*, jrd_req**, jrd_req**);
@@ -272,7 +272,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	string2.upper7();
 
 	int n;
-	
+
 /* Make sure relations exist already */
 
 	for (n = 0; n < (int) rel_MAX; n++) {
@@ -334,7 +334,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
 		X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
 		if (string2.length()) {
-			PAD (string2.c_str(), X.RDB$CHARACTER_SET_NAME); 
+			PAD (string2.c_str(), X.RDB$CHARACTER_SET_NAME);
 			X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
 		}
 		else {
@@ -419,7 +419,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	*acl++ = ACL_version;
 	*acl++ = ACL_id_list;
 	*acl++ = id_person;
-	
+
 	const TEXT* p_1 = string.c_str();
 	USHORT length = string.length();
 	*acl++ = (UCHAR)length;
@@ -535,6 +535,10 @@ void INI_init(void)
 			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
 			desc->dsc_dtype = gfield->gfld_dtype;
+			desc->dsc_sub_type = gfield->gfld_sub_type;
+			if (desc->dsc_dtype == dtype_blob)
+				desc->dsc_scale = CS_METADATA;	// blob charset
+
 			jrd_fld* field = FB_NEW(*dbb->dbb_permanent) jrd_fld(*dbb->dbb_permanent);
 			*itr = field;
 			field->fld_name = names[fld[RFLD_F_NAME]];
@@ -620,6 +624,13 @@ void INI_init2(void)
 					if (major_version >= ODS_VERSION11)
 						n = init2_helper(fld, n, relation);
 				}
+				else if ((fld[RFLD_F_NAME] == nam_base_collation_name ||
+						  fld[RFLD_F_NAME] == nam_specific_attr) &&
+						 relfld[RFLD_R_NAME] == nam_collations)
+				{
+					if (major_version >= ODS_VERSION11)
+						n = init2_helper(fld, n, relation);
+				}
 				else if (fld[RFLD_F_NAME] == nam_description &&
 					relfld[RFLD_R_NAME] == nam_gens)
 				{
@@ -642,9 +653,9 @@ void INI_init2(void)
 					format->fmt_length = (USHORT)MET_align(dbb, &(*desc), format->fmt_length);
 					desc->dsc_address = (UCHAR*) (IPTR) format->fmt_length;
 
-					/* In ODS11 length of RDB$MESSAGES are 
+					/* In ODS11 length of RDB$MESSAGES are
 						enlarged from 80 to 1023 bytes	*/
-					if ((fld[RFLD_F_NAME] == nam_msg) && 
+					if ((fld[RFLD_F_NAME] == nam_msg) &&
 						(major_version < ODS_VERSION11))
 					{
 						desc->dsc_length = 80;
@@ -703,10 +714,10 @@ void INI_update_database()
  **************************************
  *
  * Functional description
- *	Perform changes to ODS that were required 
+ *	Perform changes to ODS that were required
  *	since ODS 8 and are dynamically updatable.
  *
- * %% Note %% Update the switch() statement to reflect new major ODS 
+ * %% Note %% Update the switch() statement to reflect new major ODS
  *            addition
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -733,7 +744,7 @@ void INI_update_database()
 	}
 
 /*******************************************************************
-** when new engine is attaching an older ODS database 
+** when new engine is attaching an older ODS database
 **   perform the necessary modifications
 ********************************************************************/
 
@@ -766,7 +777,7 @@ void INI_update_database()
 		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK(tdbb, &window);
 
-/* Only minor upgrades can occur within a major ODS, define which one   
+/* Only minor upgrades can occur within a major ODS, define which one
    occured here. */
 	switch (major_version)
 	{
@@ -896,7 +907,7 @@ static void add_index_set(Database*	dbb,
 			 (((USHORT) DECODE_ODS_MAJOR(index->ini_idx_version_flag)) !=
 			  major_version)))
 		{
-			/* The DECODE_ODS_MAJOR() is used (in this case) to instruct the server 
+			/* The DECODE_ODS_MAJOR() is used (in this case) to instruct the server
 			   to perform updates for minor ODS versions only within a major ODS */
 			continue;
 		}
@@ -964,9 +975,9 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
  **************************************
  *
  * Functional description
- *	Store all new ODS 8.x (x > 0) triggers. 
+ *	Store all new ODS 8.x (x > 0) triggers.
  *      The major and minor_version passed in are the ODS versions
- *      before the ODS is upgraded. 
+ *      before the ODS is upgraded.
  *	This routine is used to upgrade ODS versions.
  *
  **************************************/
@@ -1083,7 +1094,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
  *
  * Functional description
  *
- *      Add security to system relations. Only the owner of the 
+ *      Add security to system relations. Only the owner of the
  *      database has SELECT/INSERT/UPDATE/DELETE privileges on
  *      any system relations. Any other users only has SELECT
  *      privilege.
@@ -1158,7 +1169,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 			PRIV.RDB$OBJECT_TYPE = obj_relation;
 		END_STORE;
 	}
-	
+
 	CMP_release(tdbb, handle1);
 
 	handle1 = NULL;
@@ -1269,7 +1280,7 @@ static void modify_relation_field(thread_db*	tdbb,
  **************************************
  *
  * Functional description
- *	Modify a local field according to the 
+ *	Modify a local field according to the
  *	passed information.  Note that the field id and
  *	field position do not change.
  *
@@ -1298,7 +1309,7 @@ static void store_generator(thread_db* tdbb, const gen* generator, jrd_req** han
  **************************************
  *
  * Functional description
- *	Store the passed generator according to 
+ *	Store the passed generator according to
  *	the information in the generator block.
  *
  **************************************/
@@ -1306,7 +1317,7 @@ static void store_generator(thread_db* tdbb, const gen* generator, jrd_req** han
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_tra* trans = dbb->dbb_sys_trans;
-	
+
 	STORE(REQUEST_HANDLE * handle) X IN RDB$GENERATORS
 		PAD(generator->gen_name, X.RDB$GENERATOR_NAME);
 		X.RDB$GENERATOR_ID = generator->gen_id;
@@ -1339,7 +1350,7 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
  **************************************
  *
  * Functional description
- *	Store a global field according to the 
+ *	Store a global field according to the
  *	passed information.
  *
  **************************************/
@@ -1470,7 +1481,7 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 {
 /**************************************
  *
- *	s t o r e _ i n t l n a m e s 
+ *	s t o r e _ i n t l n a m e s
  *
  **************************************
  *
@@ -1503,6 +1514,7 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 			X.RDB$CHARACTER_SET_ID = collptr->init_collation_charset;
 			X.RDB$COLLATION_ID = collptr->init_collation_id;
 			X.RDB$SYSTEM_FLAG = RDB_system;
+			X.RDB$COLLATION_ATTRIBUTES = collptr->init_collation_attributes;
 		END_STORE;
 	}
 
@@ -1510,8 +1522,8 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 	handle = NULL;
 }
 
-static void store_function_argument(    
-	thread_db* tdbb, Database* dbb, 
+static void store_function_argument(
+	thread_db* tdbb, Database* dbb,
     jrd_req* &handle,
 	const char* function_name, SLONG argument_position, SLONG mechanism, SLONG type, SLONG scale,
 	SLONG length, SLONG sub_type, SLONG charset, SLONG precision, SLONG char_length)
@@ -1531,8 +1543,8 @@ static void store_function_argument(
 	END_STORE;
 }
 
-static void store_function(    
-	thread_db* tdbb, Database* dbb, 
+static void store_function(
+	thread_db* tdbb, Database* dbb,
     jrd_req* &handle,
 	const char* function_name, const char* module, const char* entrypoint, SLONG argument)
 {
@@ -1625,7 +1637,7 @@ static void store_relation_field(thread_db*		tdbb,
  **************************************
  *
  * Functional description
- *	Store a local field according to the 
+ *	Store a local field according to the
  *	passed information.
  *
  **************************************/
@@ -1655,7 +1667,7 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, jrd_req** han
  **************************************
  *
  * Functional description
- *	Store the trigger according to the 
+ *	Store the trigger according to the
  *	information in the trigger block.
  *
  **************************************/

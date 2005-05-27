@@ -715,6 +715,7 @@ mkdir -p temp/boot/alice
 mkdir -p temp/boot/burp
 mkdir -p temp/boot/common/classes
 mkdir -p temp/boot/common/config
+mkdir -p temp/boot/config
 mkdir -p temp/boot/dsql
 mkdir -p temp/boot/dudley
 mkdir -p temp/boot/extlib
@@ -741,11 +742,13 @@ mkdir -p temp/boot/utilities/guard
 mkdir -p temp/boot/utilities/ibmgr
 mkdir -p temp/boot/utilities/install
 mkdir -p temp/boot/utilities/rebuild
+mkdir -p temp/boot/vulcan
 
 mkdir -p temp/std/alice
 mkdir -p temp/std/burp
 mkdir -p temp/std/common/classes
 mkdir -p temp/std/common/config
+mkdir -p temp/std/config
 mkdir -p temp/std/dsql
 mkdir -p temp/std/dudley
 mkdir -p temp/std/extlib
@@ -772,12 +775,14 @@ mkdir -p temp/std/utilities/guard
 mkdir -p temp/std/utilities/ibmgr
 mkdir -p temp/std/utilities/install
 mkdir -p temp/std/utilities/rebuild
+mkdir -p temp/std/vulcan
 mkdir -p temp/std/extern/editline
 
 mkdir -p temp/superclient/alice
 mkdir -p temp/superclient/burp
 mkdir -p temp/superclient/common/classes
 mkdir -p temp/superclient/common/config
+mkdir -p temp/superclient/config
 mkdir -p temp/superclient/dsql
 mkdir -p temp/superclient/dudley
 mkdir -p temp/superclient/extlib
@@ -804,11 +809,13 @@ mkdir -p temp/superclient/utilities/guard
 mkdir -p temp/superclient/utilities/ibmgr
 mkdir -p temp/superclient/utilities/install
 mkdir -p temp/superclient/utilities/rebuild
+mkdir -p temp/superclient/vulcan
 
 mkdir -p temp/superserver/alice
 mkdir -p temp/superserver/burp
 mkdir -p temp/superserver/common/classes
 mkdir -p temp/superserver/common/config
+mkdir -p temp/superserver/config
 mkdir -p temp/superserver/dsql
 mkdir -p temp/superserver/dudley
 mkdir -p temp/superserver/extlib
@@ -835,6 +842,7 @@ mkdir -p temp/superserver/utilities/guard
 mkdir -p temp/superserver/utilities/ibmgr
 mkdir -p temp/superserver/utilities/install
 mkdir -p temp/superserver/utilities/rebuild
+mkdir -p temp/superserver/vulcan
 
 ])
 
@@ -866,6 +874,7 @@ case "$PLATFORM" in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
                      gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
                      gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
+                     gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
                      gen/install/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
                      gen/install/misc/firebird.init.d.generic:builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
                      gen/install/misc/firebird.init.d.mandrake:builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
@@ -967,6 +976,7 @@ gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 gen/Makefile.install:builds/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
 Makefile:Makefile.in
 gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
+gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu
 )
 AC_OUTPUT
 

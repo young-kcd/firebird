@@ -29,17 +29,10 @@
 #define	BIG52(uc)	((UCHAR)((uc)&0xff)>=0x40 && \
 			 (UCHAR)((uc)&0xff)<=0xfe)	/* BIG-5 2nd-byte */
 
-USHORT CVBIG5_big5_to_unicode(csconvert* obj, USHORT *dest_ptr, USHORT dest_len,
-							const UCHAR* src_ptr,
-							USHORT src_len, SSHORT *err_code, USHORT *err_position);
-USHORT CVBIG5_unicode_to_big5(csconvert* obj, UCHAR *big5_str, USHORT big5_len,
-							const USHORT* unicode_str,
-							  USHORT unicode_len, SSHORT *err_code, USHORT *err_position);
-USHORT CVBIG5_check_big5(const UCHAR* big5_str, USHORT big5_len);
-
-USHORT CVBIG5_big5_byte2short(TEXTTYPE obj, USHORT* dst, USHORT dst_len,
-							const UCHAR* src, USHORT src_len,
-							SSHORT *err_code, USHORT *err_position);
-
-SSHORT CVBIG5_big5_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* src, USHORT src_len);
-
+ULONG CVBIG5_big5_to_unicode(csconvert* obj, ULONG src_len, const UCHAR* src_ptr,
+							 ULONG dest_len, USHORT *dest_ptr,
+							 USHORT *err_code, ULONG *err_position);
+ULONG CVBIG5_unicode_to_big5(csconvert* obj, ULONG unicode_len, const USHORT* unicode_str,
+							 ULONG big5_len, UCHAR *big5_str,
+							 USHORT *err_code, ULONG *err_position);
+USHORT CVBIG5_check_big5(charset* cs, ULONG big5_len, const UCHAR* big5_str, ULONG* offending_position);

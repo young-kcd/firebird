@@ -47,10 +47,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib icuin.lib"
 				OutputFile="..\..\..\temp\release\firebird\bin\fb_inet_server.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="../../../extern/icu/lib"
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				StackReserveSize="2097152"/>
@@ -114,10 +115,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib icuin.lib"
 				OutputFile="..\..\..\temp\debug\firebird\bin\fb_inet_server.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="../../../extern/icu/lib"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="..\..\..\temp\debug\fb_inet_server\fb_inet_server.pdb"
 				SubSystem="2"

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.28 2005-03-05 01:44:03 robocop Exp $
+#  $Id: Makefile.in.libfbclient,v 1.29 2005-05-27 22:16:08 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=superclient

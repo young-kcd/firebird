@@ -25,8 +25,8 @@
  * Modified by: Patrick J. P. Griffin
  * Date: 11/24/2000
  * Problem:   select count(0)+1 from rdb$relations where 0=1; returns 0
- *            In the EVL_group processing, the internal assigment for 
- *            the literal in the computation is being done on every 
+ *            In the EVL_group processing, the internal assigment for
+ *            the literal in the computation is being done on every
  *            statement fetch, so if there are no statements fetched
  *            then the internal field never gets set.
  * Change:    Added an assignment process for the literal
@@ -51,7 +51,7 @@
  * 2001.6.18 Claudio Valderrama: substring() is working with international charsets,
  *	thanks to Dave Schnepper's directions.
  * 2002.2.15 Claudio Valderrama: divide2() should not mangle negative values.
- * 2002.04.16 Paul Beach HP10 Port - (UCHAR*) desc.dsc_address = p; modified for HP 
+ * 2002.04.16 Paul Beach HP10 Port - (UCHAR*) desc.dsc_address = p; modified for HP
  *	Compiler
  * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
  *                            exception handling in SPs/triggers,
@@ -120,7 +120,7 @@ const SINT64 MAX_INT64_LIMIT	= MAX_SINT64 / 10;
 const SINT64 MIN_INT64_LIMIT	= MIN_SINT64 / 10;
 
 // arbitrary size static part for optimization
-typedef	Firebird::HalfStaticArray<UCS2_CHAR, 100> Ucs2Buffer;
+typedef	Firebird::HalfStaticArray<USHORT, 100> Ucs2Buffer;
 
 #ifdef VMS
 double MTH$CVT_D_G(), MTH$CVT_G_D();
@@ -141,6 +141,7 @@ static dsc* add_datetime(const dsc*, const jrd_nod*, impure_value*);
 static dsc* add_sql_date(const dsc*, const jrd_nod*, impure_value*);
 static dsc* add_sql_time(const dsc*, const jrd_nod*, impure_value*);
 static dsc* add_timestamp(const dsc*, const jrd_nod*, impure_value*);
+static void adjust_text_descriptor(thread_db*, dsc*);
 static dsc* binary_value(thread_db*, const jrd_nod*, impure_value*);
 static dsc* cast(thread_db*, const dsc*, const jrd_nod*, impure_value*);
 static void compute_agg_distinct(thread_db*, jrd_nod*);
@@ -165,41 +166,13 @@ static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
 static bool reject_duplicate(const UCHAR*, const UCHAR*, void*);
 static dsc* scalar(thread_db*, jrd_nod*, impure_value*);
 static bool sleuth(thread_db*, jrd_nod*, const dsc*, const dsc*);
-/* BRS 13/05/04 NOT USED 
-static bool nc_sleuth_check(TextType, USHORT, const UCHAR*, const UCHAR*,
-	const UCHAR*, const UCHAR*);
-static bool nc_sleuth_class(TextType, USHORT, const UCHAR*, const UCHAR*, UCHAR);
-static bool wc_sleuth_check(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
-						const UCS2_CHAR*, const UCS2_CHAR*);
-static bool wc_sleuth_class(TextType, USHORT, const UCS2_CHAR*, const UCS2_CHAR*,
-						UCS2_CHAR);
-*/
 static bool string_boolean(thread_db*, jrd_nod*, dsc*, dsc*, bool);
-static bool string_function(thread_db*, jrd_nod*, SSHORT, const UCHAR*, SSHORT, const UCHAR*, USHORT, bool);
+static bool string_function(thread_db*, jrd_nod*, SLONG, const UCHAR*, SLONG, const UCHAR*, USHORT, bool);
 static dsc* substring(thread_db*, impure_value*, dsc*, SLONG, SLONG);
+static dsc* trim(thread_db*, jrd_nod*, impure_value*);
 static dsc* upcase(thread_db*, const dsc*, impure_value*);
+static dsc* lowcase(thread_db*, const dsc*, impure_value*);
 static dsc* internal_info(thread_db*, const dsc*, impure_value*);
-
-
-static const UCHAR special[256] = {
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0,	/* $%*+- (dollar, percent, star, plus, minus) */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,	/* ?     (question) */
-	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* @     (at-sign) */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,	/* [     (open square) */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,	/* ~     (tilde) */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
-
 
 
 const SINT64 SECONDS_PER_DAY			= 24 * 60 * 60;
@@ -453,7 +426,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 						request->req_flags |= req_null;
 					else
 						computed_invariant = true;
-				} 
+				}
 				else {
 					desc[1] = EVL_expr(tdbb, *ptr++);
 					if (request->req_flags & req_null) {
@@ -500,7 +473,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 
-			// If either of expressions above returned NULL set req_null flag 
+			// If either of expressions above returned NULL set req_null flag
 			// and return false
 
 			if (flags & req_null)
@@ -722,7 +695,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				// NULL flag is already turned off a few lines above.
 				return true;
 			}
-			
+
 			const bool value2 = EVL_boolean(tdbb, *ptr);
 			if (value || value2) {
 				request->req_flags &= ~req_null;
@@ -873,6 +846,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			impure->vlu_desc.dsc_length = desc->dsc_length;
 			impure->vlu_desc.dsc_scale = desc->dsc_scale;
 			impure->vlu_desc.dsc_sub_type = desc->dsc_sub_type;
+
+			if (impure->vlu_desc.dsc_dtype == dtype_text)
+				adjust_text_descriptor(tdbb, &impure->vlu_desc);
+
 			return &impure->vlu_desc;
 		}
 
@@ -889,17 +866,23 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		{
 			Record* record =
 				request->req_rpb[(int) (IPTR)node->nod_arg[e_fld_stream]].rpb_record;
-			/* In order to "map a null to a default" value (in EVL_field()), 
-			 * the relation block is referenced. 
-			 * Reference: Bug 10116, 10424 
+			jrd_rel* relation = request->req_rpb[(USHORT)(IPTR) node->nod_arg[e_fld_stream]].rpb_relation;
+			/* In order to "map a null to a default" value (in EVL_field()),
+			 * the relation block is referenced.
+			 * Reference: Bug 10116, 10424
 			 */
-			if (!EVL_field(request->req_rpb[(USHORT)(IPTR) node->nod_arg[e_fld_stream]].rpb_relation,
+			if (!EVL_field(relation,
 							record,
 							(USHORT)(IPTR) node->nod_arg[e_fld_id],
 							&impure->vlu_desc))
 			{
 				request->req_flags |= req_null;
 			}
+
+			if (!relation || !(relation->rel_flags & REL_system))
+				if (impure->vlu_desc.dsc_dtype == dtype_text)
+					adjust_text_descriptor(tdbb, &impure->vlu_desc);
+
 			return &impure->vlu_desc;
 		}
 
@@ -1107,6 +1090,105 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		}
 		return &impure->vlu_desc;
 
+	case nod_length:
+		{
+			impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+ 			const ULONG length_type = (IPTR) node->nod_arg[e_length_type];
+			const dsc* value = EVL_expr(tdbb, node->nod_arg[e_length_value]);
+
+			impure->vlu_desc.dsc_dtype = dtype_long;
+			impure->vlu_desc.dsc_scale = 0;
+			impure->vlu_desc.dsc_address =
+				reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
+			impure->vlu_desc.dsc_length = sizeof(ULONG);
+
+			// CVC: Borland used special signaling for nulls in outer joins.
+			if (!value || (request->req_flags & req_null)) {
+				request->req_flags |= req_null;
+				impure->vlu_misc.vlu_long = 0;
+				return &impure->vlu_desc;
+			}
+
+			ULONG length;
+
+			if (value->dsc_dtype == dtype_blob)
+			{
+				blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+									 reinterpret_cast<bid*>(value->dsc_address));
+
+				switch (length_type)
+				{
+					case blr_length_bit:
+						length = blob->blb_length * 8;
+						break;
+
+					case blr_length_octet:
+						length = blob->blb_length;
+						break;
+
+					case blr_length_char:
+					{
+						CharSet* charSet = INTL_charset_lookup(tdbb, value->dsc_blob_ttype(), NULL);
+						fb_assert(charSet != NULL);
+
+						if (charSet->isMultiByte())
+						{
+							Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+							fb_assert(BUFFER_LARGE % 4 == 0);	// 4 is our maximum character length
+
+							length = BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length), blob->blb_length, false);
+							length = charSet->length(tdbb, length, buffer.begin(), true);
+						}
+						else
+							length = blob->blb_length / charSet->maxBytesPerChar();
+
+						break;
+					}
+
+					default:
+						fb_assert(false);
+						length = 0;
+				}
+
+				*(ULONG*)impure->vlu_desc.dsc_address = length;
+
+				BLB_close(tdbb, blob);
+
+				return &impure->vlu_desc;
+			}
+
+			UCHAR temp[32];
+			USHORT ttype;
+			UCHAR* p;
+
+			length = MOV_get_string_ptr(value, &ttype, &p, reinterpret_cast<vary*>(temp), sizeof(temp));
+
+			switch (length_type)
+			{
+				case blr_length_bit:
+					length *= 8;
+					break;
+
+				case blr_length_octet:
+					break;
+
+				case blr_length_char:
+				{
+					CharSet* charSet = INTL_charset_lookup(tdbb, ttype, NULL);
+					fb_assert(charSet != NULL);
+					length = charSet->length(tdbb, length, p, true);
+					break;
+				}
+
+				default:
+					fb_assert(false);
+					length = 0;
+			}
+
+			*(ULONG *) impure->vlu_desc.dsc_address = length;
+		}
+		return &impure->vlu_desc;
+
 	case nod_max:
 	case nod_min:
 	case nod_count:
@@ -1121,15 +1203,27 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		return scalar(tdbb, node, impure);
 
 	case nod_variable:
+	{
 		node = node->nod_arg[e_var_variable];
-		impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-		if (impure->vlu_desc.dsc_flags & DSC_null)
+
+		impure_value* impure2 = (impure_value*) ((SCHAR *) request + node->nod_impure);
+		if (impure2->vlu_desc.dsc_flags & DSC_null)
 			request->req_flags |= req_null;
+
+		impure->vlu_desc = impure2->vlu_desc;
+
+		if (impure->vlu_desc.dsc_dtype == dtype_text)
+			adjust_text_descriptor(tdbb, &impure->vlu_desc);
+
 		return &impure->vlu_desc;
+	}
 
 	case nod_value_if:
 		return EVL_expr(tdbb, (EVL_boolean(tdbb, node->nod_arg[0])) ?
 						node->nod_arg[1] : node->nod_arg[2]);
+
+	case nod_trim:
+		return trim(tdbb, node, impure);
 
 #ifdef PC_ENGINE
 	case nod_crack:
@@ -1184,7 +1278,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 			dsc** v = values;
 			jrd_nod** ptr = node->nod_arg;
 			for (const jrd_nod* const* const end = ptr + node->nod_count;
-				 ptr < end;) 
+				 ptr < end;)
 			{
 				*v++ = EVL_expr(tdbb, *ptr++);
 				if (request->req_flags & req_null)
@@ -1225,6 +1319,9 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 		case nod_upcase:
 			return upcase(tdbb, values[0], impure);
+
+		case nod_lowcase:
+			return lowcase(tdbb, values[0], impure);
 
 		case nod_cast:
 			return cast(tdbb, values[0], node, impure);
@@ -1284,14 +1381,14 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 		 * Reference: Bug 10424, 10116
 		 */
 
-		/* rec_format == NULL indicates we're performing a 
+		/* rec_format == NULL indicates we're performing a
 		   join-to-null operation for outer joins */
 
 		if (record && record->rec_format && relation)
 		{
 			/* A database sweep does not scan a relation's metadata. However
-			 * the change to substitute a default value for a missing "not null" 
-			 * field makes it necessary to reference the field block. 
+			 * the change to substitute a default value for a missing "not null"
+			 * field makes it necessary to reference the field block.
 			 */
 			if (!relation->rel_fields)
 			{
@@ -1339,7 +1436,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 							rc_role = att_user->usr_sql_role_name;
 						else
 							rc_role = const_cast<char*>(NULL_ROLE);
-							
+
 						desc->dsc_address = (UCHAR*) rc_role;
 						desc->dsc_length = strlen(rc_role);
 					}
@@ -1598,7 +1695,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 
 	if (group) {
 		for (ptr = group->nod_arg, end = ptr + group->nod_count; ptr < end;
-			 ptr++) 
+			 ptr++)
 		{
 			jrd_nod* from = *ptr;
 			impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
@@ -1615,7 +1712,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 	while (state != 2) {
 		state = 1;
 
-		/* in the case of a group by, look for a change in value of any of 
+		/* in the case of a group by, look for a change in value of any of
 		   the columns; if we find one, stop aggregating and return what we have */
 
 		if (group)
@@ -1766,7 +1863,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 
 	if (vtemp.vlu_string)
 		delete vtemp.vlu_string;
-		
+
 	dsc temp;
 	double d;
 	SINT64 i;
@@ -1779,7 +1876,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 		Record* record =
 			request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
 		impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
-		
+
 		switch (from->nod_type)
 		{
 		case nod_agg_min:
@@ -1887,7 +1984,7 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
  **************************************
  *
  * Functional description
- *      Make a value block reflect the value of a descriptor. 
+ *      Make a value block reflect the value of a descriptor.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -1974,289 +2071,6 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 	} // scope
 }
 
-
-
-bool EVL_mb_matches(thread_db* tdbb,
-						TextType obj,
-						const UCHAR* p1,
-						SSHORT l1,
-						const UCHAR* p2,
-						SSHORT l2)
-{
-/**************************************
- *
- *      E V L _ m b _ m a t c h e s 
- *
- **************************************
- *
- * Functional description
- *      Front-end of matches() in Japanese version.
- *      Prepare buffer of short, then "copy" char-based data
- *      into the new short-based buffer. Use the new buffer for
- *      later processing with EVL_wc_matches().
- *
- **************************************/
-	SSHORT err_code;
-	USHORT err_pos;
-
-	SET_TDBB(tdbb);
-
-	USHORT len1 = obj.to_wc(NULL, 0, p1, l1, &err_code, &err_pos);
-	USHORT len2 = obj.to_wc(NULL, 0, p2, l2, &err_code, &err_pos);
-	Ucs2Buffer buffer1, buffer2;
-	UCS2_CHAR *pp1 = buffer1.getBuffer(len1);
-	UCS2_CHAR *pp2 = buffer2.getBuffer(len2);
-
-	len1 = obj.to_wc(pp1, len1, p1, l1, &err_code, &err_pos);
-	len2 = obj.to_wc(pp2, len2, p2, l2, &err_code, &err_pos);
-
-	const bool ret_val = EVL_wc_matches(tdbb, obj, pp1, len1, pp2, len2);
-
-	return ret_val;
-}
-
-
-bool EVL_mb_sleuth_check(thread_db* tdbb,
-							TextType obj,
-							USHORT flags,
-							const UCHAR* search,
-							USHORT search_bytes,
-							const UCHAR* match,
-							USHORT match_bytes)
-{
-/**************************************
- *
- *      E V L _ m b _ s l e u t h _ c h e c k 
- *
- **************************************
- *
- * Functional description
- *      Front-end of sleuth_check() in Japanese version.
- *      Prepare buffer of short, then "copy" char-based data
- *      into the new short-based buffer. Use the new buffer for
- *      later processing with sleuth_check().
- *
- **************************************/
-	SSHORT err_code;
-	USHORT err_pos;
-
-	fb_assert(search != NULL);
-	fb_assert(match != NULL);
-
-/* Note: search_merge has already converted the match
-   string to wide character (see note in sleuth()) */
-
-	SET_TDBB(tdbb);
-
-	USHORT len1 = obj.to_wc(NULL, 0, search, search_bytes, &err_code, &err_pos);
-	Ucs2Buffer buffer1;
-	UCS2_CHAR *pp1 = buffer1.getBuffer(len1);
-
-	len1 = obj.to_wc(pp1, len1, search, search_bytes, &err_code, &err_pos);
-
-	const bool ret_val =
-		EVL_wc_sleuth_check(tdbb, obj, 0, pp1, len1,
-							reinterpret_cast<const UCS2_CHAR*>(match),
-							match_bytes);
-
-	return ret_val;
-}
-
-
-USHORT EVL_mb_sleuth_merge(thread_db* tdbb,
-							TextType obj,
-							const UCHAR* match,
-							USHORT match_bytes,
-							const UCHAR* control,
-							USHORT control_bytes,
-							UCHAR* combined,
-							USHORT combined_bytes)
-{
-/**************************************
- *
- *      E V L _ m b _ s l e u t h _ m e r g e 
- *
- **************************************
- *
- * Functional description
- *      Front-end of sleuth_merge() in Japanese version.
- *
- **************************************/
-	SSHORT err_code;
-	USHORT err_pos;
-
-	fb_assert(control != NULL);
-	fb_assert(match != NULL);
-	fb_assert(combined != NULL);
-
-	SET_TDBB(tdbb);
-
-	USHORT len1 = obj.to_wc(NULL, 0, match, match_bytes, &err_code, &err_pos);
-	USHORT len2 = obj.to_wc(NULL, 0, control, control_bytes, &err_code, &err_pos);
-	Ucs2Buffer buffer1, buffer2;
-	UCS2_CHAR *pp1 = buffer1.getBuffer(len1);
-	UCS2_CHAR *pp2 = buffer2.getBuffer(len2);
-
-	len1 = obj.to_wc(pp1, len1, match, match_bytes, &err_code, &err_pos);
-	len2 = obj.to_wc(pp2, len2, control, control_bytes, &err_code, &err_pos);
-
-	const USHORT ret_val = EVL_wc_sleuth_merge(tdbb, obj, pp1, len1, pp2, len2,
-				      reinterpret_cast<UCS2_CHAR*>(combined),
-				      combined_bytes);
-
-	return ret_val;
-}
-
-/**************************************
- *
- *      E V L _ n c _ m a t c h e s
- *
- **************************************
- */
-/**************************************
- *
- *      E V L _ n c _ s l e u t h _ c h e c k
- *
- **************************************
- */
-
-#include "../jrd/evl_like.h"
-
-typedef UCHAR MATCHESTYPE1;
-typedef UCHAR SLEUTHTYPE1;
-
-bool EVL_nc_matches(
-	thread_db* tdbb,
-	TextType obj,
-	const MATCHESTYPE1* p1,
-	SSHORT l1_bytes,
-	const MATCHESTYPE1* p2,
-	SSHORT l2_bytes)
-{
-	return MATCHESNAME(tdbb, obj, p1, l1_bytes, p2, l2_bytes);
-}
-
-bool EVL_nc_sleuth_check(
-	thread_db* tdbb_dummy,
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE1* search,
-	USHORT search_len,
-	const SLEUTHTYPE1* match,
-	USHORT match_len)
-{
-	return SLEUTHNAME(tdbb_dummy, obj, flags, search, search_len,  match, match_len);
-}
-
-USHORT EVL_nc_sleuth_merge(
-	thread_db* tdbb_dummy,
-	TextType obj,
-	const SLEUTHTYPE1* match,
-	USHORT match_bytes,
-	const SLEUTHTYPE1* control,
-	USHORT control_bytes,
-	SLEUTHTYPE1* combined,
-	USHORT combined_bytes)
-{
-	return SLEUTH_MERGE_NAME(tdbb_dummy, obj, match, match_bytes, control, control_bytes, combined, combined_bytes);
-}
-/* BRS 13/05/04 NOT USED 
-bool nc_sleuth_check(
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE1* search,
-	const SLEUTHTYPE1* end_search,
-	const SLEUTHTYPE1* match,
-	const SLEUTHTYPE1* end_match)
-{
-	return SLEUTH_AUX(obj, flags, search, end_search, match, end_match);
-}
-
-bool nc_sleuth_class(
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE1* char_class,
-	const SLEUTHTYPE1* const end_class, 
-	SLEUTHTYPE1 character)
-{
-	return SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, character);
-}
-*/
-
-/**************************************
- *
- *      E V L _ w c _ m a t c h e s
- *
- **************************************
- */
-/**************************************
- *
- *      E V L _ w c _ s l e u t h _ c h e c k
- *
- **************************************
- */
-
-typedef UCS2_CHAR MATCHESTYPE2;
-typedef UCS2_CHAR SLEUTHTYPE2;
-
-bool EVL_wc_matches(
-	thread_db* tdbb,
-	TextType obj,
-	const MATCHESTYPE2* p1,
-	SSHORT l1_bytes,
-	const MATCHESTYPE2* p2,
-	SSHORT l2_bytes)
-{
-	return MATCHESNAME(tdbb, obj, p1, l1_bytes, p2, l2_bytes);
-}
-
-bool EVL_wc_sleuth_check(
-	thread_db* tdbb_dummy,
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE2* search,
-	USHORT search_len,
-	const SLEUTHTYPE2* match,
-	USHORT match_len)
-{
-	return SLEUTHNAME(tdbb_dummy, obj, flags, search, search_len,  match, match_len);
-}
-
-USHORT EVL_wc_sleuth_merge(
-	thread_db* tdbb_dummy,
-	TextType obj,
-	const SLEUTHTYPE2* match,
-	USHORT match_bytes,
-	const SLEUTHTYPE2* control,
-	USHORT control_bytes,
-	SLEUTHTYPE2* combined,
-	USHORT combined_bytes)
-{
-	return SLEUTH_MERGE_NAME(tdbb_dummy, obj, match, match_bytes, control, control_bytes, combined, combined_bytes);
-}
-
-/* BRS 13/05/04 NOT USED 
-bool wc_sleuth_check(
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE2* search,
-	const SLEUTHTYPE2* end_search,
-	const SLEUTHTYPE2* match,
-	const SLEUTHTYPE2* end_match)
-{
-	return SLEUTH_AUX(obj, flags, search, end_search, match, end_match);
-}
-
-bool wc_sleuth_class(
-	TextType obj,
-	USHORT flags,
-	const SLEUTHTYPE2* char_class,
-	const SLEUTHTYPE2* const end_class, 
-	SLEUTHTYPE2 character)
-{
-	return SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, character);
-}
-*/
 
 static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 {
@@ -2468,8 +2282,8 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 			   || (node->nod_type == nod_subtract2));
 		dtype = DSC_sub_result[value->vlu_desc.dsc_dtype][desc->dsc_dtype];
 
-		/* Is this a <date type> - <date type> construct? 
-		   chose the proper routine to do the subtract from the 
+		/* Is this a <date type> - <date type> construct?
+		   chose the proper routine to do the subtract from the
 		   LHS of expression
 		   Thus:   <TIME> - <TIMESTAMP> uses TIME arithmetic
 		   <DATE> - <TIMESTAMP> uses DATE arithmetic
@@ -2480,7 +2294,7 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 		/* Handle historical <timestamp> = <string> - <value> case */
 		if (!DTYPE_IS_DATE(dtype) &&
 			(DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype) ||
-			 DTYPE_IS_TEXT(desc->dsc_dtype))) 
+			 DTYPE_IS_TEXT(desc->dsc_dtype)))
 		{
 			dtype = dtype_timestamp;
 		}
@@ -2490,7 +2304,7 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 	case dtype_timestamp:
 	default:
 		/* This needs to handle a dtype_sql_date + dtype_sql_time */
-		/* For historical reasons prior to V6 - handle any types for 
+		/* For historical reasons prior to V6 - handle any types for
 		   timestamp arithmetic */
 		return add_timestamp(desc, node, value);
 
@@ -2764,9 +2578,9 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		ERR_post(isc_expression_eval_err, 0);
 	}
 
-/* For historical reasons (behavior prior to V6), 
-   there are times we will do timestamp arithmetic without a 
-   timestamp being involved.  
+/* For historical reasons (behavior prior to V6),
+   there are times we will do timestamp arithmetic without a
+   timestamp being involved.
    In such an event we need to convert a text type to a timestamp when
    we don't already have one.
    We assume any text string must represent a timestamp value.  */
@@ -2774,8 +2588,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 /* If we're subtracting, and the 2nd operand is a timestamp, or
    something that looks & smells like it could be a timestamp, then
    we must be doing <timestamp> - <timestamp> subtraction.
-   Notes that this COULD be as strange as <string> - <string>, but 
-   because nod_date is set in the nod_flags we know we're supposed 
+   Notes that this COULD be as strange as <string> - <string>, but
+   because nod_date is set in the nod_flags we know we're supposed
    to use some form of date arithmetic */
 
 	if (((node->nod_type == nod_subtract)
@@ -2806,10 +2620,10 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 		if (node->nod_type == nod_subtract2) {
 
-			/* mutlipy by 100,000 so that we can have the result as decimal (18,9) 
+			/* mutlipy by 100,000 so that we can have the result as decimal (18,9)
 			 * We have 10 ^-4; to convert this to 10^-9 we need to multiply by
 			 * 100,000. Of course all this is true only because we are dividing
-			 * by SECONDS_PER_DAY 
+			 * by SECONDS_PER_DAY
 			 * now divide by the number of seconds per day, this will give us the
 			 * result as a int64 of type decimal (18, 9) in days instead of
 			 * seconds.
@@ -2820,9 +2634,9 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 			 * simplified to (X * 1000) / (SECONDS_PER_DAY / 100)
 			 * Since the largest possible difference in timestamps is about 3E11
 			 * seconds or 3E15 isc_ticks, the product won't exceed approximately
-			 * 3E18, which fits into an INT64.  
+			 * 3E18, which fits into an INT64.
 			 */
-			// 09-Apr-2004, Nickolay Samofatov. Adjust number before division to 
+			// 09-Apr-2004, Nickolay Samofatov. Adjust number before division to
 			// make sure we don't lose a tick as a result of remainder truncation
 			d2 = (d2 * 1000 + (SECONDS_PER_DAY / 200)) / (SINT64) (SECONDS_PER_DAY / 100);
 			value->vlu_misc.vlu_int64 = d2;
@@ -2875,7 +2689,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 	}
 
 /* Exactly one of the operands must be a timestamp or
-   convertable into a timestamp, otherwise it's one of 
+   convertable into a timestamp, otherwise it's one of
 	   <numeric>   +/- <numeric>
 	or <timestamp> +/- <timestamp>
 	or <string>    +/- <string>
@@ -2951,6 +2765,50 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 	result->dsc_sub_type = 0;
 	result->dsc_address = (UCHAR *) & value->vlu_misc.vlu_timestamp;
 	return result;
+}
+
+
+static void adjust_text_descriptor(thread_db* tdbb, dsc* desc)
+{
+	if (desc->dsc_dtype == dtype_text)
+	{
+		USHORT ttype = INTL_TTYPE(desc);
+
+		CharSet* charSet = INTL_charset_lookup(tdbb, ttype, NULL);
+		fb_assert(charSet != NULL);
+
+		if (charSet->isMultiByte())
+		{
+			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+
+			if (charSet->getFlags() & CHARSET_LEGACY_SEMANTICS)
+			{
+				desc->dsc_length = charSet->substring(tdbb, TEXT_LEN(desc), desc->dsc_address, TEXT_LEN(desc),
+										buffer.getBuffer(TEXT_LEN(desc) * charSet->maxBytesPerChar()), 0,
+										TEXT_LEN(desc));
+
+				ULONG maxLength = TEXT_LEN(desc) / charSet->maxBytesPerChar();
+				ULONG charLength = charSet->length(tdbb, desc->dsc_length, desc->dsc_address, true);
+
+				while (charLength > maxLength)
+				{
+					if (desc->dsc_address[desc->dsc_length - 1] == *charSet->getSpace())
+					{
+						--desc->dsc_length;
+						--charLength;
+					}
+					else
+						break;
+				}
+			}
+			else
+			{
+				desc->dsc_length = charSet->substring(tdbb, TEXT_LEN(desc), desc->dsc_address,
+										TEXT_LEN(desc), buffer.getBuffer(TEXT_LEN(desc)), 0,
+										TEXT_LEN(desc) / charSet->maxBytesPerChar());
+			}
+		}
+	}
 }
 
 
@@ -3081,6 +2939,13 @@ static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_
 
 		impure->vlu_desc.dsc_address = string->str_data;
 	}
+	else if (impure->vlu_desc.dsc_dtype == dtype_blob &&
+		(impure->vlu_desc.dsc_scale != value->dsc_scale ||
+		 impure->vlu_desc.dsc_sub_type != value->dsc_sub_type ||
+		 impure->vlu_desc.dsc_sub_type != isc_blob_text))
+	{
+		ERR_post(isc_wish_list, 0);
+	}
 
 	MOV_move(value, &impure->vlu_desc);
 
@@ -3097,7 +2962,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
  **************************************
  *
  * Functional description
- *      Sort/project the values and compute      
+ *      Sort/project the values and compute
  *      the aggregate.
  *
  **************************************/
@@ -3171,7 +3036,7 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
  **************************************
  *
  * Functional description
- *      Concatenate two strings.  
+ *      Concatenate two strings.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -3203,21 +3068,21 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		return value2;
 
 	{
+		USHORT ttype1 = INTL_TTYPE(value1);
+
+ 		if ((value2->dsc_sub_type != CS_NONE) &&
+ 			((ttype1 == CS_NONE) || (ttype1 == CS_ASCII)))
+		{
+ 			ttype1 = value2->dsc_sub_type;
+ 		}
+
 /* Both values are present; build the concatenation */
-		UCHAR temp1[32], *address1;
-		USHORT ttype1;
+		UCHAR *address1;
+		MoveBuffer temp1;
 		USHORT length1 =
-			MOV_get_string_ptr(value1, &ttype1, &address1,
-							   reinterpret_cast<vary*>(temp1),
-							   sizeof(temp1));
+			MOV_make_string2(value1, ttype1, &address1, temp1);
 
 /* value2 will be converted to the same text type as value1 */
-
-		if ((value2->dsc_sub_type != CS_NONE) &&
-			((ttype1 == CS_NONE) || (ttype1 == CS_ASCII)))
-		{
-			ttype1 = value2->dsc_sub_type;
-		}
 
 		UCHAR *address2;
 		MoveBuffer temp2;
@@ -3592,14 +3457,14 @@ static SINT64 get_day_fraction(const dsc* d)
 
 /* There's likely some loss of precision here due to rounding of number */
 
-// 08-Apr-2004, Nickolay Samofatov. Loss of precision manifested itself as bad 
+// 08-Apr-2004, Nickolay Samofatov. Loss of precision manifested itself as bad
 // result returned by the following query:
 //
 // select (cast('01.01.2004 10:01:00' as timestamp)
 //   -cast('01.01.2004 10:00:00' as timestamp))
 //   +cast('01.01.2004 10:00:00' as timestamp) from rdb$database
 //
-// Let's use llrint where it is supported and offset number for other platforms 
+// Let's use llrint where it is supported and offset number for other platforms
 // in hope that compiler rounding mode doesn't get in.
 
 #ifdef HAVE_LLRINT
@@ -3671,7 +3536,7 @@ static SINT64 get_timestamp_to_isc_ticks(const dsc* d)
  *	count of isc_ticks since the base date and time
  *	in MJD time arithmetic.
  *	ISC_TICKS or isc_ticks are actually deci - milli seconds or
- *	tenthousandth of seconds per day. This is derived from the 
+ *	tenthousandth of seconds per day. This is derived from the
  *	ISC_TIME_SECONDS_PRECISION.
  *
  **************************************/
@@ -3799,7 +3664,7 @@ static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
- *      l o c k _ r e l a t i o n 
+ *      l o c k _ r e l a t i o n
  *
  **************************************
  *
@@ -4000,8 +3865,8 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 		value->vlu_desc.dsc_length = sizeof(SINT64);
 		value->vlu_misc.vlu_double = MOV_get_double(&value->vlu_desc);
 		/* This is the Borland solution instead of the five lines above.
-		d1 = MOV_get_double (desc); 
-        d2 = MOV_get_double (&value->vlu_desc); 
+		d1 = MOV_get_double (desc);
+        d2 = MOV_get_double (&value->vlu_desc);
         value->vlu_misc.vlu_double = DOUBLE_MULTIPLY (d1, d2); */
 		value->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 		value->vlu_desc.dsc_length = sizeof(double);
@@ -4079,7 +3944,7 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
        (i1 * i2 < MIN_SINT64) || (i1 * i2 > MAX_SINT64)
    which is equivalent to
        (i1 < MIN_SINT64 / i2) || (i1 > MAX_SINT64 / i2)
-   
+
    Unfortunately, a trial division to see whether the multiplication will
    overflow is expensive: fortunately, we only need perform one division and
    test for one of the two cases, depending on whether the factors have the
@@ -4163,11 +4028,11 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
  *     n1 = v1 * pow(10, s1), and
  *     n2 = v2 * pow(10, s2)
  * Then the quotient is ...
- * 
+ *
  *     v1 * pow(10,s1)
  *     ----------------- = (v1/v2) * pow(10, s1-s2)
  *     v2 * pow(10,s2)
- * 
+ *
  * But we want the scale of the result to be (s1+s2), not (s1-s2)
  * so we need to multiply by 1 in the form
  *         pow(10, -2 * s2) * pow(20, 2 * s2)
@@ -4175,7 +4040,7 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
  *   =  ((v1 * pow(10, -2*s2))/v2) * pow(10, 2*s2) * pow(10, s1-s2)
  *   =  ((v1 * pow(10, -2*s2))/v2) * pow(10, 2*s2 + s1 - s2)
  *   =  ((v1 * pow(10, -2*s2))/v2) * pow(10, s1 + s2)
- * or in our ordered-pair notation, 
+ * or in our ordered-pair notation,
  *      ( v1 * pow(10, -2*s2) / v2, s1 + s2 )
  *
  * To maximize the amount of information in the result, we scale up the
@@ -4335,7 +4200,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
  *
  * Functional description
  *      Make up a record version for a record stream.
- *      The tid of the record will be used.  This will be returned 
+ *      The tid of the record will be used.  This will be returned
  *      as a 4 byte character string.
  *
  **************************************/
@@ -4479,14 +4344,14 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
  	USHORT ttype;
 	if (desc1->dsc_dtype == dtype_blob) {
 		if (desc1->dsc_sub_type == isc_blob_text)
-			ttype = desc1->dsc_scale;	/* Load blob character set */
+			ttype = desc1->dsc_blob_ttype();	/* Load blob character set and collation */
 		else
 			ttype = INTL_TTYPE(desc2);
 	}
 	else
 		ttype = INTL_TTYPE(desc1);
 
-	TextType obj =
+	TextType* obj =
 		INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
 
 /* Get operator definition string (control string) */
@@ -4503,12 +4368,12 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 
 /* Merge search and control strings */
 	UCHAR control[BUFFER_SMALL];
-	l2 = obj.sleuth_merge(tdbb, p2, l2, p1, l1, control,
+	l2 = obj->sleuth_merge(tdbb, p2, l2, p1, l1, control,
 										 BUFFER_SMALL);
 
 /* l2 is result's byte-count */
 
-/* Note: resulting string from sleuth_merge is either UCS2_CHAR or NCHAR 
+/* Note: resulting string from sleuth_merge is either USHORT or UCHAR
    and never Multibyte (see note in EVL_mb_sleuth_check) */
 	bool ret_val;
 	MoveBuffer data_str;
@@ -4516,7 +4381,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 		/* Source is not a blob, do a simple search */
 
 		l1 = MOV_make_string2(desc1, ttype, &p1, data_str);
-		ret_val = obj.sleuth_check(tdbb, 0, p1, l1, control, l2);
+		ret_val = obj->sleuth_check(tdbb, 0, p1, l1, control, l2);
 	}
 	else {
 		/* Source string is a blob, things get interesting */
@@ -4530,7 +4395,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 		while (!(blob->blb_flags & BLB_eof))
 		{
 			l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-			if (obj.sleuth_check(tdbb, 0, buffer, l1, control, l2))
+			if (obj->sleuth_check(tdbb, 0, buffer, l1, control, l2))
 			{
 				ret_val = true;
 				break;
@@ -4544,7 +4409,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 }
 
 
-static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1, 
+static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 							 dsc* desc2, bool computed_invariant)
 {
 /**************************************
@@ -4558,8 +4423,8 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
  *      or STARTS WITH.
  *
  **************************************/
-	UCHAR *p1, *p2 = NULL, temp1[256], temp2[256], buffer[BUFFER_LARGE];
-	SSHORT l2 = 0;
+	UCHAR *p1, *p2 = NULL, temp1[256], temp2[256];
+	SLONG l2 = 0;
 	USHORT type1;
 	MoveBuffer match_str;
 	bool ret_val;
@@ -4595,25 +4460,16 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 	else {
 		/* Source string is a blob, things get interesting */
 
-		if (desc1->dsc_sub_type == isc_blob_text) {
-			type1 = desc1->dsc_scale;	/* pick up character set of blob */
+		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+		fb_assert(BUFFER_SMALL % 4 == 0);	// 4 is our maximum character length
 
-			// 21-May-2004, Nickolay Samofatov. 
-			// This is the ugly hack to solve ugly problem. 
-			// Engine support for MBCS BLOBs is almost non-existent now thus
-			// we have to match them using binary approach (instead of crashing).
-			// Proper fix is to (1) add support for streamed charset converters 
-			// to INTL module and to (2) make metadata blobs use true unicode.
-			// Note how we check that character set is MBCS. This is ugly, but 
-			// will do as a temporary solution until INTL troubles are addressed
-			TextType obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
-			if (obj.getStruct()->texttype_fn_matches == EVL_mb_matches) {
-				type1 = ttype_none;
-			}
-		}
-		else {
+		if (desc1->dsc_sub_type == isc_blob_text)
+			type1 = desc1->dsc_blob_ttype();	/* pick up character set and collation of blob */
+		else
 			type1 = ttype_none;	/* Do byte matching */
-		}
+
+		TextType* obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
+		CharSet* charset = obj->getCharSet();
 
 		/* Get address and length of search string - make it string if neccessary
 		 * but don't transliterate character set if the source blob is binary
@@ -4632,27 +4488,59 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		blb* blob =	BLB_open(tdbb, request->req_transaction,
 						reinterpret_cast<bid*>(desc1->dsc_address));
 
+		if (charset->isMultiByte() && !(obj->getFlags() & TEXTTYPE_DIRECT_MATCH))
+			buffer.getBuffer(blob->blb_length);		// alloc space to put entiry blob in memory
+
 		/* Performs the string_function on each segment of the blob until
 		   a positive result is obtained */
 
 		ret_val = false;
 		switch (node->nod_type) {
-		case nod_starts: 
+		case nod_starts:
 			{
+				Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> canonicalStr1;
+				Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> canonicalStr2;
+
+				if (!(obj->getFlags() & TEXTTYPE_DIRECT_MATCH))
+				{
+					p1 = canonicalStr1.getBuffer(
+							buffer.getCapacity() / charset->minBytesPerChar() * obj->getCanonicalWidth());
+
+					l2 = obj->canonical(l2, p2, l2 / charset->minBytesPerChar() * obj->getCanonicalWidth(),
+							canonicalStr2.getBuffer(l2 / charset->minBytesPerChar() *
+							obj->getCanonicalWidth())) * obj->getCanonicalWidth();
+
+					p2 = canonicalStr2.begin();
+				}
+				else
+					p1 = buffer.begin();
+
 				Firebird::StartsEvaluator<UCHAR> evaluator(p2, l2);
 				while (!(blob->blb_flags & BLB_eof)) {
-					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (l1 && !evaluator.processNextChunk(buffer, l1))
-						break;
+					SLONG l1 = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+					if (l1)
+					{
+						if (!(obj->getFlags() & TEXTTYPE_DIRECT_MATCH))
+						{
+							l1 = obj->canonical(l1, buffer.begin(),
+									buffer.getCapacity() / charset->minBytesPerChar() *
+									obj->getCanonicalWidth(), p1) * obj->getCanonicalWidth();
+						}
+
+						if (!evaluator.processNextChunk(p1, l1))
+							break;
+					}
 				}
+
 				ret_val = evaluator.getResult();
 			}
 			break;
 		case nod_like:
 			{
-				TextType obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
+				UCHAR temp3[TEMP_LENGTH];
+				const UCHAR* escape_str = NULL;
+				USHORT escape_length = 0;
 
-				UCS2_CHAR escape = 0;
 				/* ensure 3rd argument (escape char) is in operation text type */
 				if (node->nod_count == 3 && !computed_invariant) {
 					/* Convert ESCAPE to operation character set */
@@ -4667,20 +4555,27 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 						break;
 					}
 
-					const char* q1;
-					UCHAR temp3[TEMP_LENGTH];
-					const USHORT l3 = MOV_make_string(dsc,
-										 type1, &q1, (vary*) temp3,
+					escape_length = MOV_make_string(dsc,
+										 type1, reinterpret_cast<const char**>(&escape_str), (vary*) temp3,
 										 sizeof(temp3));
-					if (!l3)
+					if (!escape_length || charset->length(tdbb, escape_length, escape_str, true) != 1)
+					{
+						/* If characters left, or null byte character, return error */
+						BLB_close(tdbb, blob);
 						ERR_post(isc_like_escape_invalid, 0);
-					/* Grab the first character from the string */
-					const USHORT consumed =
-						obj.mbtowc(&escape, reinterpret_cast<const unsigned char*>(q1), l3);
+					}
 
-					/* If characters left, or null byte character, return error */
-					if (consumed <= 0 || consumed != l3 || (escape == 0))
+					USHORT escape[2] = {0, 0};
+					USHORT err_code;
+					ULONG err_position;
+
+					charset->getConvToUnicode().convert(escape_length, escape_str, sizeof(escape), escape, &err_code, &err_position);
+					if (!escape[0])
+					{
+						/* If or null byte character, return error */
+						BLB_close(tdbb, blob);
 						ERR_post(isc_like_escape_invalid, 0);
+					}
 				}
 
 				LikeObject* evaluator;
@@ -4688,7 +4583,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 					if (!(impure->vlu_flags & VLU_computed)) {
 						delete reinterpret_cast<LikeObject*>(impure->vlu_misc.vlu_invariant);
-						impure->vlu_misc.vlu_invariant = evaluator = obj.like_create(tdbb, p2, l2, escape);
+						impure->vlu_misc.vlu_invariant = evaluator = obj->like_create(tdbb, p2, l2, escape_str, escape_length);
 						impure->vlu_flags |= VLU_computed;
 					}
 					else {
@@ -4697,11 +4592,11 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 					}
 				}
 				else
-					evaluator = obj.like_create(tdbb, p2, l2, escape);
+					evaluator = obj->like_create(tdbb, p2, l2, escape_str, escape_length);
 
 				while (!(blob->blb_flags & BLB_eof)) {
-					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (!evaluator->process(tdbb, obj, buffer, l1))
+					const SLONG l1 = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+					if (!evaluator->process(tdbb, obj, buffer.begin(), l1))
 						break;
 				}
 
@@ -4712,26 +4607,25 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 			break;
 		case nod_contains:
 			{
-				TextType obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
 				ContainsObject* evaluator;
 				if (node->nod_flags & nod_invariant) {
 					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 					if (!(impure->vlu_flags & VLU_computed)) {
 						delete reinterpret_cast<ContainsObject*>(impure->vlu_misc.vlu_invariant);
-						impure->vlu_misc.vlu_invariant = evaluator = obj.contains_create(tdbb, p2, l2);
+						impure->vlu_misc.vlu_invariant = evaluator = obj->contains_create(tdbb, p2, l2);
 						impure->vlu_flags |= VLU_computed;
-					} 
+					}
 					else {
 						evaluator = reinterpret_cast<ContainsObject*>(impure->vlu_misc.vlu_invariant);
 						evaluator->reset();
 					}
 				}
 				else
-					evaluator = obj.contains_create(tdbb, p2, l2);
+					evaluator = obj->contains_create(tdbb, p2, l2);
 
 				while (!(blob->blb_flags & BLB_eof)) {
-					const SSHORT l1 = BLB_get_segment(tdbb, blob, buffer, sizeof(buffer));
-					if (!evaluator->process(tdbb, obj, buffer, l1))
+					const SLONG l1 = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+					if (!evaluator->process(tdbb, obj, buffer.begin(), l1))
 						break;
 				}
 
@@ -4752,8 +4646,8 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 static bool string_function(
 							  thread_db* tdbb,
 							  jrd_nod* node,
-							  SSHORT l1,
-							  const UCHAR* p1, SSHORT l2, const UCHAR* p2, 
+							  SLONG l1, const UCHAR* p1,
+							  SLONG l2, const UCHAR* p2,
 							  USHORT ttype, bool computed_invariant)
 {
 /**************************************
@@ -4772,15 +4666,34 @@ static bool string_function(
 
 	jrd_req* request = tdbb->tdbb_request;
 
+	TextType* obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+	CharSet* charset = obj->getCharSet();
+
 /* Handle STARTS WITH */
 
 	if (node->nod_type == nod_starts) {
-		if (l1 < l2)
-			return false;
-		return (memcmp(p1, p2, l2) == 0);
-	}
+		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> canonicalStr1;
+		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> canonicalStr2;
 
-	TextType obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+		if (!(obj->getFlags() & TEXTTYPE_DIRECT_MATCH))
+		{
+			l1 = obj->canonical(l1, p1, l1 / charset->minBytesPerChar() * obj->getCanonicalWidth(),
+					canonicalStr1.getBuffer(l1 / charset->minBytesPerChar() *
+					obj->getCanonicalWidth())) * obj->getCanonicalWidth();
+
+			l2 = obj->canonical(l2, p2, l2 / charset->minBytesPerChar() * obj->getCanonicalWidth(),
+					canonicalStr2.getBuffer(l2 / charset->minBytesPerChar() *
+					obj->getCanonicalWidth())) * obj->getCanonicalWidth();
+
+			p1 = canonicalStr1.begin();
+			p2 = canonicalStr2.begin();
+		}
+
+		if (l1 >= l2)
+			return memcmp(p1, p2, l2) == 0;
+		else
+			return false;
+	}
 
 /* Handle contains */
 
@@ -4790,7 +4703,7 @@ static bool string_function(
 			ContainsObject* evaluator;
 			if (!(impure->vlu_flags & VLU_computed)) {
 				delete reinterpret_cast<ContainsObject*>(impure->vlu_misc.vlu_invariant);
-				impure->vlu_misc.vlu_invariant = evaluator = obj.contains_create(tdbb, p2, l2);
+				impure->vlu_misc.vlu_invariant = evaluator = obj->contains_create(tdbb, p2, l2);
 				impure->vlu_flags |= VLU_computed;
 			}
 			else {
@@ -4801,18 +4714,17 @@ static bool string_function(
 			return evaluator->result();
 		}
 		else
-			return obj.contains(tdbb, p1, l1, p2, l2);
+			return obj->contains(tdbb, p1, l1, p2, l2);
 	}
 
 /* Handle LIKE and MATCHES */
 
 	if (node->nod_type == nod_like) {
-		UCS2_CHAR escape = 0;
+		UCHAR temp3[TEMP_LENGTH];
+		const UCHAR* escape_str = NULL;
+		USHORT escape_length = 0;
 		/* ensure 3rd argument (escape char) is in operation text type */
 		if (node->nod_count == 3 && !computed_invariant) {
-			const char* q1;
-			UCHAR temp3[TEMP_LENGTH];
-
 			/* Convert ESCAPE to operation character set */
 			DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
 			if (request->req_flags & req_null) {
@@ -4823,26 +4735,33 @@ static bool string_function(
 				}
 				return false;
 			}
-			const USHORT l3 = MOV_make_string(dsc,
-								 ttype, &q1, (vary*) temp3,
+			escape_length = MOV_make_string(dsc,
+								 ttype, reinterpret_cast<const char**>(&escape_str), (vary*) temp3,
 								 sizeof(temp3));
-			if (!l3)
+			if (!escape_length || charset->length(tdbb, escape_length, escape_str, true) != 1)
+			{
+				/* If characters left, or null byte character, return error */
 				ERR_post(isc_like_escape_invalid, 0);
-			/* Grab the first character from the string */
-			const USHORT consumed =
-				obj.mbtowc(&escape, reinterpret_cast<const unsigned char*>(q1), l3);
+			}
 
-			/* If characters left, or null byte character, return error */
-			if (consumed <= 0 || consumed != l3 || (escape == 0))
+			USHORT escape[2] = {0, 0};
+			USHORT err_code;
+			ULONG err_position;
+
+			charset->getConvToUnicode().convert(escape_length, escape_str, sizeof(escape), escape, &err_code, &err_position);
+			if (!escape[0])
+			{
+				/* If or null byte character, return error */
 				ERR_post(isc_like_escape_invalid, 0);
-
+			}
 		}
+
 		if (node->nod_flags & nod_invariant) {
 			impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 			LikeObject* evaluator;
 			if (!(impure->vlu_flags & VLU_computed)) {
 				delete reinterpret_cast<LikeObject*>(impure->vlu_misc.vlu_invariant);
-				impure->vlu_misc.vlu_invariant = evaluator = obj.like_create(tdbb, p2, l2, escape);
+				impure->vlu_misc.vlu_invariant = evaluator = obj->like_create(tdbb, p2, l2, escape_str, escape_length);
 				impure->vlu_flags |= VLU_computed;
 			}
 			else {
@@ -4853,10 +4772,10 @@ static bool string_function(
 			return evaluator->result();
 		}
 		else
-			return obj.like(tdbb, p1, l1, p2, l2, escape);
+			return obj->like(tdbb, p1, l1, p2, l2, escape_str, escape_length);
 	}
 
-	return obj.matches(tdbb, p1, l1, p2, l2);
+	return obj->matches(tdbb, p1, l1, p2, l2);
 }
 
 
@@ -4888,48 +4807,77 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 	}
 	USHORT offset = (USHORT) offset_arg;
 	USHORT length = (USHORT) length_arg;
+	ULONG ul;
 
-	USHORT ttype;
-	TextType obj1 = NULL;
-	if (dtype_blob == value->dsc_dtype && (isc_blob_text != value->dsc_sub_type
-		|| (ttype = value->dsc_scale) == ttype_ascii || ttype == ttype_none || ttype == ttype_binary
-		|| ((obj1 = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL)) != NULL
-			&& 1 == obj1.getBytesPerChar())))
+	if (value->dsc_dtype == dtype_blob)
 	{
 		/* Source string is a blob, things get interesting. */
+
+		TextType* textType = INTL_texttype_lookup(tdbb,
+			(value->dsc_sub_type == isc_blob_text ? value->dsc_blob_ttype() : ttype_binary), ERR_post, NULL);
+		CharSet* charSet = textType->getCharSet();
+
+		if (length * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
+			ERR_post(isc_arith_except, 0);
 
 		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
 							reinterpret_cast<bid*>(value->dsc_address));
 		if (!blob->blb_length || blob->blb_length <= offset)
 		{
 			desc.dsc_length = 0;
-			INTL_ASSIGN_TTYPE(&desc, value->dsc_scale);
+			INTL_ASSIGN_TTYPE(&desc, value->dsc_blob_ttype());
 			BLB_close(tdbb, blob);
 			EVL_make_value(tdbb, &desc, impure);
 		}
 		else
 		{
-			const USHORT bufflen = MAX(BUFFER_LARGE, length);
-			Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> temp;
-			UCHAR *buffer = temp.getBuffer(bufflen);
-		
-			USHORT datalen = 0;
-			while (!(blob->blb_flags & BLB_eof) && offset)
+			Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+			fb_assert(BUFFER_LARGE % 4 == 0);	// 4 is our maximum character length
+
+			ULONG datalen;
+
+			if (charSet->isMultiByte())
 			{
-				/* Both cases are the same for now. Let's see if we can optimize in the future. */
-				USHORT waste = MIN(bufflen, offset);
-				USHORT l1 = BLB_get_segment(tdbb, blob, buffer, waste);
-				offset -= l1;
+				buffer.getBuffer(blob->blb_length);
+				datalen = BLB_get_data(tdbb, blob, buffer.begin(), blob->blb_length);
+
+				desc.dsc_length = length * charSet->maxBytesPerChar();
+				desc.dsc_address = NULL;
+				INTL_ASSIGN_TTYPE(&desc, value->dsc_blob_ttype());
+				EVL_make_value(tdbb, &desc, impure);
+
+				if ((ul = charSet->substring(tdbb, datalen, buffer.begin(),
+											 desc.dsc_length, impure->vlu_desc.dsc_address,
+											 offset, length)) == INTL_BAD_STR_LENGTH)
+				{
+					delete impure->vlu_desc.dsc_address;
+					ERR_post(isc_arith_except, 0);
+				}
+				else
+					impure->vlu_desc.dsc_length = static_cast<USHORT>(ul);
 			}
-			fb_assert(!offset && !(blob->blb_flags & BLB_eof));
-			datalen = BLB_get_data(tdbb, blob, buffer, length);
-			fb_assert(datalen && datalen <= length);
-			desc.dsc_length = datalen;
-			desc.dsc_address = buffer;
-			INTL_ASSIGN_TTYPE(&desc, value->dsc_scale);
-			EVL_make_value(tdbb, &desc, impure);
+			else
+			{
+				while (!(blob->blb_flags & BLB_eof) && offset)
+				{
+					/* Both cases are the same for now. Let's see if we can optimize in the future. */
+					ULONG waste = MIN(buffer.getCapacity(), offset * charSet->maxBytesPerChar());
+					ULONG l1 = BLB_get_segment(tdbb, blob, buffer.begin(), waste);
+					offset -= l1 / charSet->maxBytesPerChar();
+				}
+
+				fb_assert(!offset && !(blob->blb_flags & BLB_eof));
+				datalen = BLB_get_data(tdbb, blob, buffer.getBuffer(length * charSet->maxBytesPerChar()),
+									   length * charSet->maxBytesPerChar());
+
+				fb_assert(datalen <= length * charSet->maxBytesPerChar());
+				desc.dsc_length = datalen;
+				desc.dsc_address = buffer.begin();
+				INTL_ASSIGN_TTYPE(&desc, value->dsc_blob_ttype());
+				EVL_make_value(tdbb, &desc, impure);
+			}
 		}
-	
+
 		return &impure->vlu_desc;
 	}
 
@@ -4941,6 +4889,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 			they aren't accepted, so they will cause error() to be called anyway.
 	*/
 	UCHAR temp[32];
+	USHORT ttype;
 	desc.dsc_length =
 		MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
 						   reinterpret_cast<vary*>(temp), sizeof(temp));
@@ -4979,51 +4928,135 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 				I couldn't find an appropriate message for this failure among current registered
 				messages, so I will return empty.
 				Finally I decided to use arithmetic exception or numeric overflow. */
-		TextType text_obj = 0;
 		const UCHAR* p = desc.dsc_address;
 		USHORT pcount = desc.dsc_length;
-		bool failure = false;
-		while (offset && pcount)
+
+		TextType* textType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&desc), ERR_post, NULL);
+		CharSet* charSet = textType->getCharSet();
+
+		desc.dsc_address = NULL;
+		desc.dsc_length = charSet->maxBytesPerChar() * length;
+		EVL_make_value(tdbb, &desc, impure);
+
+		if ((ul = charSet->substring(tdbb, pcount, p,
+									 charSet->maxBytesPerChar() * length,
+									 impure->vlu_desc.dsc_address, offset, length)) == INTL_BAD_STR_LENGTH)
 		{
-			if (!INTL_getch(tdbb, &text_obj, INTL_TTYPE(&desc), &p, &pcount))
+			delete impure->vlu_desc.dsc_address;
+			ERR_post(isc_arith_except, 0);
+		}
+		else
+			impure->vlu_desc.dsc_length = static_cast<USHORT>(ul);
+	}
+
+	return &impure->vlu_desc;
+}
+
+
+static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+{
+/**************************************
+ *
+ *      t r i m
+ *
+ **************************************
+ *
+ * Functional description
+ *      Perform trim function.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	jrd_req* request = tdbb->tdbb_request;
+
+	const ULONG specification = (IPTR) node->nod_arg[e_trim_specification];
+	dsc* characters = (node->nod_arg[e_trim_characters] ? EVL_expr(tdbb, node->nod_arg[e_trim_characters]) : NULL);
+	const ULONG flags = (node->nod_arg[e_trim_characters] ? request->req_flags : request->req_flags & ~req_null);
+	request->req_flags &= ~req_null;
+	dsc* value = EVL_expr(tdbb, node->nod_arg[e_trim_value]);
+
+	// restore saved NULL state
+	if (flags & req_null)
+	{
+		request->req_flags |= req_null;
+		return characters;
+	}
+
+	if (request->req_flags & req_null)
+		return value;
+
+	USHORT ttype = INTL_TTYPE(value);
+	TextType* tt = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+
+	UCHAR *charactersAddress;
+	MoveBuffer charactersBuffer;
+	USHORT charactersLength;
+
+	if (characters)
+	{
+		charactersLength = MOV_make_string2(characters, ttype, &charactersAddress,
+								charactersBuffer);
+	}
+	else
+	{
+		charactersLength = tt->getCharSet()->getSpaceLength();
+		charactersAddress = const_cast<UCHAR*>(tt->getCharSet()->getSpace());
+	}
+
+	UCHAR *valueAddress;
+	MoveBuffer valueBuffer;
+	USHORT valueLength =
+		MOV_make_string2(value, ttype, &valueAddress, valueBuffer);
+
+	dsc desc;
+	desc.dsc_dtype = dtype_text;
+	desc.dsc_sub_type = 0;
+	desc.dsc_scale = 0;
+	desc.dsc_length = valueLength;
+	desc.dsc_address = NULL;
+	INTL_ASSIGN_TTYPE(&desc, ttype);
+	EVL_make_value(tdbb, &desc, impure);
+
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> charactersCanonical;
+	charactersCanonical.getBuffer(charactersLength / tt->getCharSet()->minBytesPerChar() * tt->getCanonicalWidth());
+	SLONG charactersCanonicalLen = tt->canonical(charactersLength, charactersAddress,
+		charactersCanonical.getCount(), charactersCanonical.begin()) * tt->getCanonicalWidth();
+
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> valueCanonical;
+	valueCanonical.getBuffer(valueLength / tt->getCharSet()->minBytesPerChar() * tt->getCanonicalWidth());
+	SLONG valueCanonicalLen = tt->canonical(valueLength, valueAddress,
+		valueCanonical.getCount(), valueCanonical.begin()) * tt->getCanonicalWidth();
+
+	SLONG offsetLead = 0;
+	SLONG offsetTrail = valueCanonicalLen;
+
+	if (specification == blr_trim_both || specification == blr_trim_leading)
+	{
+		for (; offsetLead < valueCanonicalLen; offsetLead += charactersCanonicalLen)
+		{
+			if (memcmp(charactersCanonical.begin(), &valueCanonical[offsetLead], charactersCanonicalLen) != 0)
+				break;
+		}
+	}
+
+	if (specification == blr_trim_both || specification == blr_trim_trailing)
+	{
+		for (; offsetTrail - charactersCanonicalLen >= offsetLead; offsetTrail -= charactersCanonicalLen)
+		{
+			if (memcmp(charactersCanonical.begin(), &valueCanonical[offsetTrail - charactersCanonicalLen],
+				charactersCanonicalLen) != 0)
 			{
-				failure = true;
 				break;
 			}
-			--offset;
 		}
-		/* If we failed or we exhausted our available characters before finding the
-		starting position, nothing more to do. */
-		if (failure || !pcount) {
-			desc.dsc_length = 0;
-        }
-		else {
-			/* Keep our starting pos safe. */
-			desc.dsc_address = const_cast<UCHAR*>(p);
-			while (length && pcount) {
-				if (!INTL_getch(tdbb, &text_obj, INTL_TTYPE(&desc), &p, &pcount))
-				{
-					failure = true;
-					break;
-				}
-				--length;
-			}
-			/* We can't use length or pcount as error conditions here, since the
-			target string can be shorter, longer or equal length than the requested. */
-			if (failure)
-				desc.dsc_length = 0;
-			else
-			{
-				/* I thought I would need more operations here, but... */
-				desc.dsc_length = p - desc.dsc_address;
-			}
-		}
-		if (failure)
-			ERR_post(isc_arith_except, 0);
-
-		EVL_make_value(tdbb, &desc, impure);
 	}
-	
+
+	impure->vlu_desc.dsc_length = tt->getCharSet()->substring(tdbb, valueLength, valueAddress,
+		impure->vlu_desc.dsc_length, impure->vlu_desc.dsc_address,
+		offsetLead / tt->getCanonicalWidth(),
+		(valueCanonicalLen - offsetLead - (valueCanonicalLen - offsetTrail)) /
+		tt->getCanonicalWidth());
+
 	return &impure->vlu_desc;
 }
 
@@ -5041,7 +5074,7 @@ static dsc* upcase(thread_db* tdbb, const dsc* value, impure_value* impure)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	
+
 	USHORT temp[16];
 	USHORT ttype;
 	dsc desc;
@@ -5053,7 +5086,7 @@ static dsc* upcase(thread_db* tdbb, const dsc* value, impure_value* impure)
 	EVL_make_value(tdbb, &desc, impure);
 
 	if ((desc.dsc_ttype() == ttype_ascii) ||
-		(desc.dsc_ttype() == ttype_none) || (desc.dsc_ttype() == ttype_metadata))
+		(desc.dsc_ttype() == ttype_none))
 	{
 		UCHAR* p = impure->vlu_desc.dsc_address;
 		for (const UCHAR* const end = p + impure->vlu_desc.dsc_length;
@@ -5064,6 +5097,47 @@ static dsc* upcase(thread_db* tdbb, const dsc* value, impure_value* impure)
 	}
 	else
 		INTL_str_to_upper(tdbb, &impure->vlu_desc);
+
+	return &impure->vlu_desc;
+}
+
+
+static dsc* lowcase(thread_db* tdbb, const dsc* value, impure_value* impure)
+{
+/**************************************
+ *
+ *      l o w c a s e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Lowcase a string.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	USHORT temp[16];
+	USHORT ttype;
+	dsc desc;
+	desc.dsc_length =
+		MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
+						   reinterpret_cast<vary*>(temp), sizeof(temp));
+	desc.dsc_dtype = dtype_text;
+	INTL_ASSIGN_TTYPE(&desc, ttype);
+	EVL_make_value(tdbb, &desc, impure);
+
+	if ((desc.dsc_ttype() == ttype_ascii) ||
+		(desc.dsc_ttype() == ttype_none))
+	{
+		UCHAR* p = impure->vlu_desc.dsc_address;
+		for (const UCHAR* const end = p + impure->vlu_desc.dsc_length;
+			p < end; p++)
+		{
+			*p = LOWWER7(*p);
+		}
+	}
+	else
+		INTL_str_to_lower(tdbb, &impure->vlu_desc);
 
 	return &impure->vlu_desc;
 }

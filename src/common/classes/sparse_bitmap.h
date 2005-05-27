@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.11 2004-11-03 08:36:14 skidder Exp $
+ *  $Id: sparse_bitmap.h,v 1.12 2005-05-27 22:38:22 asfernandes Exp $
  *
  */
 

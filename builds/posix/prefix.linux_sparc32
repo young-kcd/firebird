@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux_sparc32,v 1.5 2004-12-28 20:57:46 skidder Exp $
+#$Id: prefix.linux_sparc32,v 1.6 2005-05-27 22:16:09 asfernandes Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
 PROD_FLAGS=-m32 -mcpu=ultrasparc -mtune=ultrasparc -O3 -DNDEBUG -DLINUX -pipe -MMD -fPIC -Dsparc

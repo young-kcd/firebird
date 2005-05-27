@@ -65,7 +65,7 @@ double MTH$CVT_D_G(), MTH$CVT_G_D();
    the types are integers, and dtype_quad occupies the only available
    place.  Renumbering all the higher-numbered types would be a major
    ODS change and a fundamental discomfort
-   
+
    This table permits us to put the entries in the right order for
    comparison purpose, even though isc_int64 had to get number 19, which
    is otherwise too high.
@@ -114,7 +114,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	CHARSET_ID charset1, charset2;
 	thread_db* tdbb = NULL;
 
-	// AB: Maybe we need a other error-message, but at least throw 
+	// AB: Maybe we need a other error-message, but at least throw
 	// a message when 1 or both input paramters are empty.
 	if (!arg1 || !arg2) {
 		BUGCHECK(189);	// msg 189 comparison not supported for specified data types.
@@ -123,7 +123,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 /* Handle the simple (matched) ones first */
 
 	if (arg1->dsc_dtype == arg2->dsc_dtype &&
-		arg1->dsc_scale == arg2->dsc_scale) 
+		arg1->dsc_scale == arg2->dsc_scale)
 	{
 		const UCHAR* p1 = arg1->dsc_address;
 		const UCHAR* p2 = arg2->dsc_address;
@@ -196,11 +196,11 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 #endif
 
 		case dtype_text:
-			/* 
+			/*
 			 * For the sake of optimization, we call INTL_compare
 			 * only when we cannot just do byte-by-byte compare, as is
 			 * done in the foll. code.
-			 * We can do a local compare here, if 
+			 * We can do a local compare here, if
 			 *    (a) one of the arguments is charset ttype_binary
 			 * OR (b) both of the arguments are char set ttype_none
 			 * OR (c) both of the arguments are char set ttype_ascii
@@ -509,11 +509,9 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
  *
  **************************************/
 
-	SSHORT l1, l2;
+	SLONG l1, l2;
 	USHORT ttype1, ttype2;
 	SSHORT ret_val = 0;
-	TextType obj1 = NULL, obj2 = NULL;
-	DSC desc1, desc2;
 
 	thread_db* tdbb = NULL;
 	SET_TDBB(tdbb);
@@ -523,11 +521,18 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	if (arg1->dsc_dtype != dtype_blob)
 		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
 
+	if (arg1->dsc_sub_type == isc_blob_text)
+		ttype1 = arg1->dsc_blob_ttype();       /* Load blob character set and collation */
+	else
+		ttype1 = ttype_binary;
+
+	TextType* obj1 = INTL_texttype_lookup(tdbb, ttype1, ERR_post, NULL);
+	fb_assert(obj1 != NULL);
+	ttype1 = obj1->getType();
+
 	/* Is arg2 a blob? */
 	if (arg2->dsc_dtype == dtype_blob)
 	{
-		UCHAR buffer1[BUFFER_LARGE], buffer2[BUFFER_LARGE];
-	
 	    /* Same blob id address? */
 		if (arg1->dsc_address == arg2->dsc_address)
 			return 0;
@@ -541,156 +546,85 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 				return 0;
 			}
 		}
-	
-		if (arg1->dsc_sub_type == isc_blob_text)
-			ttype1 = arg1->dsc_scale;       /* Load blob character set */
-		else
-			ttype1 = ttype_none;
-		if (arg2->dsc_sub_type == isc_blob_text)
-			ttype2 = arg2->dsc_scale;       /* Load blob character set */
-		else
-			ttype2 = ttype_none;
 
-	    desc1.dsc_dtype = dtype_text;
-		desc2.dsc_dtype = dtype_text;
-		desc1.dsc_address = buffer1;
-		desc2.dsc_address = buffer2;
-		INTL_ASSIGN_TTYPE(&desc1, ttype1);
-		INTL_ASSIGN_TTYPE(&desc2, ttype2);
+		if (arg2->dsc_sub_type == isc_blob_text)
+			ttype2 = arg2->dsc_blob_ttype();       /* Load blob character set and collation */
+		else
+			ttype2 = ttype_binary;
+
+		TextType* obj2 = INTL_texttype_lookup(tdbb, ttype2, ERR_post, NULL);
+		fb_assert(obj2 != NULL);
+		ttype2 = obj2->getType();
+
+		if (ttype1 == ttype_binary || ttype2 == ttype_binary)
+			ttype1 = ttype2 = ttype_binary;
+		else if (ttype1 == ttype_none || ttype2 == ttype_none)
+			ttype1 = ttype2 = ttype_none;
+
+		obj1 = INTL_texttype_lookup(tdbb, ttype1, ERR_post, NULL);
+		obj2 = INTL_texttype_lookup(tdbb, ttype2, ERR_post, NULL);
+		fb_assert(obj1 != NULL && obj2 != NULL);
+
+		CharSet* charSet1 = obj1->getCharSet();
+		CharSet* charSet2 = obj2->getCharSet();
+		fb_assert(charSet1 != NULL && charSet2 != NULL);
+
+		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer1;
+		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
+		fb_assert(BUFFER_LARGE % 4 == 0);	// 4 is our maximum character length
+
+		UCHAR bpb[] = {isc_bpb_version1,
+					   isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
+					   isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
+		USHORT bpbLength = 0;
+
+		if (arg1->dsc_sub_type == isc_blob_text && arg2->dsc_sub_type == isc_blob_text)
+		{
+			bpb[6] = arg2->dsc_scale;	// source charset
+			bpb[12] = arg1->dsc_scale;	// destination charset
+			bpbLength = sizeof(bpb);
+		}
 
 	    blb* blob1 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (bid*) arg1->dsc_address);
-		blb* blob2 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (bid*) arg2->dsc_address);
+		blb* blob2 = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction, (bid*) arg2->dsc_address, bpbLength, bpb);
 
-
-		// Can we have a lightweight, binary comparison?
-		bool both_are_text = false;
-		bool bin_cmp =
-			(arg1->dsc_sub_type != isc_blob_text || arg2->dsc_sub_type != isc_blob_text);
-		if (!bin_cmp)
+		if (charSet1->isMultiByte())
 		{
-			both_are_text = true;
-			if (ttype1 == ttype_dynamic || ttype2 == ttype_dynamic)
-			{
-				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
-				obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
-				ttype1 = obj1.getType();
-				ttype2 = obj2.getType();
-			}
-			bin_cmp = (ttype1 == ttype2 || ttype1 == ttype_none || ttype1 == ttype_ascii
-				|| ttype2 == ttype_none || ttype2 == ttype_ascii);
+			buffer1.getBuffer(blob1->blb_length);
+			buffer2.getBuffer(blob2->blb_length / charSet2->minBytesPerChar() * charSet1->minBytesPerChar());
 		}
 
-		/* I'm sorry but if we can't make a binary comparison, it doesn't make sense to
-		compare different charsets by pulling fixed chunks of the blobs and compare those
-		slices, due to different sizes of the charsets. I do the last effort by comparing
-		the charsets regarding the max bytes per character: if they use one byte, I can
-		proceed with the comparison, knowing that I will at least get same number of
-		characters per chunk from both blobs. */
-		if (!bin_cmp && (blob1->blb_length > BUFFER_LARGE || blob2->blb_length > BUFFER_LARGE))
+		while (ret_val == 0 &&
+			   !(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
 		{
-			if (obj1 == NULL)
-			{
-				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
-				obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
-			}
-			fb_assert(obj1 != NULL);
-			fb_assert(obj2 != NULL);
-			if (obj1.getBytesPerChar() != 1 || obj2.getBytesPerChar() != 1)
-				(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
+			l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
+			l2 = BLB_get_data(tdbb, blob2, buffer2.begin(), buffer2.getCapacity(), false);
+
+			ret_val = obj1->compare(l1, buffer1.begin(), l2, buffer2.begin());
 		}
 
-		while (!(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
+		if (ret_val == 0)
 		{
-			l1 = BLB_get_segment(tdbb, blob1, buffer1, BUFFER_LARGE);
-			l2 = BLB_get_segment(tdbb, blob2, buffer2, BUFFER_LARGE);
-			if (bin_cmp)
+			if ((blob1->blb_flags & BLB_eof) == BLB_eof)
+				l1 = 0;
+
+			if ((blob2->blb_flags & BLB_eof) == BLB_eof)
+				l2 = 0;
+
+			while (ret_val == 0 &&
+				   !((blob1->blb_flags & BLB_eof) == BLB_eof &&
+					 (blob2->blb_flags & BLB_eof) == BLB_eof))
 			{
-				SSHORT safemin, common_top = MIN(l1, l2);
-				for (safemin = 0; safemin < common_top && !ret_val; ++safemin)
-				{
-					if (buffer1 [safemin] != buffer2[safemin])
-						ret_val = buffer1[safemin] < buffer2[safemin] ? -1 : 1;
-				}
-				/* This is the case when we hit eof on both blobs but with different number
-				of bytes read and there's still no definitive comparison.
-				This is not safe with MBCS for now. */
-				if (!ret_val)
-				{
-					UCHAR blank_char = both_are_text ? '\x20' : '\x0';
-					fb_assert (safemin == common_top);
-					if (l1 < l2)
-					{
-						for (safemin = l1; safemin < l2 && !ret_val; ++safemin)
-							if (buffer2[safemin] != blank_char)
-								ret_val = buffer2[safemin] > blank_char ? -1: 1;
-					}
-					else if (l1 > l2)
-					{
-						for (safemin = l2; safemin < l1 && !ret_val; ++safemin)
-							if (buffer1[safemin] != blank_char)
-								ret_val = buffer1[safemin] > blank_char ? 1 : -1;
-					}
-					fb_assert(ret_val || l1 == l2);
-				}
-			}
-			else 
-			{
-				desc1.dsc_length = l1;
-				desc2.dsc_length = l2;
-				ret_val = INTL_compare(tdbb, &desc1, &desc2, err);
-			}
-			if (ret_val)
-				break;
-		}
-		/* This is the case when both blobs still seem to be equivalent but one of them
-		has not hit eof yet.
-		This is not safe with MBCS for now. */
-		if (!ret_val)
-		{
-			const bool eof1 = ((blob1->blb_flags & BLB_eof) == BLB_eof);
-			const bool eof2 = ((blob2->blb_flags & BLB_eof) == BLB_eof);
-			const UCHAR blank_char = both_are_text ? '\x20' : '\x0';
-			if (eof1 && !eof2)
-			{
-				if (bin_cmp)
-				{
-					SSHORT safemin;
-					while (!(blob2->blb_flags & BLB_eof) && !ret_val)
-					{
-						l2 = BLB_get_segment(tdbb, blob2, buffer2, BUFFER_LARGE);
-						for (safemin = 0; safemin < l2 && !ret_val; ++safemin)
-							if (buffer2[safemin] != blank_char)
-								ret_val = buffer2[safemin] > blank_char ? -1: 1;
-					}
-				}
-				else
-				{
-					desc1.dsc_length = 0;
-					desc2.dsc_length = l2;
-					ret_val = INTL_compare(tdbb, &desc1, &desc2, err);
-				}
-			}
-			else if (!eof1 && eof2)
-			{
-				if (bin_cmp)
-				{
-					SSHORT safemin;
-					while (!(blob1->blb_flags & BLB_eof) && !ret_val)
-					{
-						l1 = BLB_get_segment(tdbb, blob1, buffer1, BUFFER_LARGE);
-						for (safemin = 0; safemin < l1 && !ret_val; ++safemin)
-							if (buffer1[safemin] != blank_char)
-								ret_val = buffer1[safemin] > blank_char ? 1 : -1;
-					}
-				}
-				else
-				{
-					desc1.dsc_length = l1;
-					desc2.dsc_length = 0;
-					ret_val = INTL_compare(tdbb, &desc1, &desc2, err);
-				}
+				if (!(blob1->blb_flags & BLB_eof))
+					l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
+
+				if (!(blob2->blb_flags & BLB_eof))
+					l2 = BLB_get_data(tdbb, blob2, buffer2.begin(), buffer2.getCapacity(), false);
+
+				ret_val = obj1->compare(l1, buffer1.begin(), l2, buffer2.begin());
 			}
 		}
+
 		BLB_close(tdbb, blob1);
 		BLB_close(tdbb, blob2);
 	}
@@ -700,60 +634,50 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	/* The second parameter should be a string. */
 	else
 	{
-		if (arg1->dsc_sub_type == isc_blob_text)
-			ttype1 = arg1->dsc_scale;       /* Load blob character set */
-		else
-			ttype1 = ttype_none;
 		if (arg2->dsc_dtype <= dtype_varying)
-			ttype2 = arg2->dsc_ttype();
-		else
-			ttype2 = ttype_none;
-
-		desc1.dsc_dtype = dtype_text;
-		/* CVC: Cannot be there since we need dbuf pointing to valid address first.
-		Moved after the #if/#endif shown some lines below.
-		desc1.dsc_address = dbuf; */
-		INTL_ASSIGN_TTYPE(&desc1, ttype1);
-
-		/* Can we have a lightweight, binary comparison?*/
-		bool bin_cmp =
-			(arg1->dsc_sub_type != isc_blob_text || arg2->dsc_dtype > dtype_varying);
-		if (!bin_cmp)
 		{
-			if (arg1->dsc_sub_type == isc_blob_text)
-			{
-				obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
-				fb_assert(obj1 != NULL);
-				ttype1 = obj1.getType();
-				if (ttype1 == ttype_none || ttype1 == ttype_ascii)
-					bin_cmp = true;
-			}
-			if (arg2->dsc_dtype <= dtype_varying)
-			{
-				obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
-				fb_assert(obj2 != NULL);
-				ttype2 = obj2.getType();
-				if (ttype2 == ttype_none || ttype2 == ttype_ascii)
-					bin_cmp = true;
-			}
-			if (ttype1 == ttype2)
-				bin_cmp = true;
+			if ((ttype2 = arg2->dsc_ttype()) != ttype_none && ttype2 != ttype_binary)
+				ttype2 = ttype1;
 		}
+		else
+			ttype2 = ttype1;
 
-		/* I will stop execution here until I can complete this function. */
-		if (!bin_cmp)
-			(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
+		if (ttype1 == ttype_binary || ttype2 == ttype_binary)
+			ttype1 = ttype2 = ttype_binary;
+		else if (ttype1 == ttype_none || ttype2 == ttype_none)
+			ttype1 = ttype2 = ttype_none;
+
+		obj1 = INTL_texttype_lookup(tdbb, ttype1, ERR_post, NULL);
+		fb_assert(obj1 != NULL);
+
+		CharSet* charSet1 = obj1->getCharSet();
+		fb_assert(charSet1 != NULL);
 
 		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer1;
-		UCHAR* dbuf = buffer1.getBuffer(arg2->dsc_length + 1);
+		UCHAR* p;
+		MoveBuffer temp_str;
 
-		desc1.dsc_address = dbuf;
+		l2 = CVT2_make_string2(arg2, ttype1, &p, temp_str, err);
+
 		blb* blob1 = BLB_open(tdbb, tdbb->tdbb_request->req_transaction, (bid*) arg1->dsc_address);
-	    l1 = BLB_get_segment(tdbb, blob1, dbuf, arg2->dsc_length + 1);
-		desc1.dsc_length = l1;
-	    ret_val = CVT2_compare(&desc1, arg2, err);
+
+		if (charSet1->isMultiByte())
+			buffer1.getBuffer(blob1->blb_length);
+		else
+			buffer1.getBuffer(l2);
+
+		l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
+		ret_val = obj1->compare(l1, buffer1.begin(), l2, p);
+
+		while (ret_val == 0 && (blob1->blb_flags & BLB_eof) != BLB_eof)
+		{
+			l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
+			ret_val = obj1->compare(l1, buffer1.begin(), 0, p);
+		}
+
 		BLB_close(tdbb, blob1);
 	}
+
 	return ret_val;
 }
 
@@ -786,8 +710,8 @@ void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
 
 USHORT CVT2_make_string2(const dsc* desc,
 						 USHORT to_interp,
-						 UCHAR** address, 
-						 Jrd::MoveBuffer& temp, 
+						 UCHAR** address,
+						 Jrd::MoveBuffer& temp,
 						 FPTR_ERROR err)
 {
 /**************************************

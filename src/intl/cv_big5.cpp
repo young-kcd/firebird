@@ -24,34 +24,35 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 #include "../intl/cv_big5.h"
+#include "../intl/cv_narrow.h"
 #include "ld_proto.h"
 
-USHORT CVBIG5_big5_to_unicode(csconvert* obj,
-							  UCS2_CHAR *dest_ptr,
-							  USHORT dest_len,
-							  const UCHAR* src_ptr,
-							  USHORT src_len,
-							  SSHORT *err_code,
-							  USHORT *err_position)
+ULONG CVBIG5_big5_to_unicode(csconvert* obj,
+							 ULONG src_len,
+							 const UCHAR* src_ptr,
+							 ULONG dest_len,
+							 USHORT *dest_ptr,
+							 USHORT *err_code,
+							 ULONG *err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVBIG5_big5_to_unicode));
-	fb_assert(obj->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVBIG5_big5_to_unicode));
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
-    const USHORT src_start = src_len;
+    const ULONG src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (dest_ptr == NULL)
-		return (src_len * sizeof(UCS2_CHAR));
+		return (src_len * sizeof(USHORT));
 
-	UCS2_CHAR wide;
+	USHORT wide;
 	USHORT this_len;
-	const UCS2_CHAR* const start = dest_ptr;
+	const USHORT* const start = dest_ptr;
 	while ((src_len) && (dest_len > 1)) {
 		if (*src_ptr & 0x80) {
 			const UCHAR c1 = *src_ptr++;
@@ -81,8 +82,8 @@ USHORT CVBIG5_big5_to_unicode(csconvert* obj,
 		}
 
 		/* Convert from BIG5 to UNICODE */
-		const UCS2_CHAR ch = ((const USHORT*) obj->csconvert_datatable)
-			[((const USHORT*) obj->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
+		const USHORT ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+			[((const USHORT*) obj->csconvert_impl->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
 
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
@@ -90,7 +91,7 @@ USHORT CVBIG5_big5_to_unicode(csconvert* obj,
 		}
 
 		*dest_ptr++ = ch;
-		dest_len -= sizeof(UCS2_CHAR);
+		dest_len -= sizeof(USHORT);
 		src_len -= this_len;
 	}
 	if (src_len && !*err_code) {
@@ -101,23 +102,23 @@ USHORT CVBIG5_big5_to_unicode(csconvert* obj,
 }
 
 
-USHORT CVBIG5_unicode_to_big5(csconvert* obj,
-							  UCHAR *big5_str,
-							  USHORT big5_len,
-							  const UCS2_CHAR* unicode_str,
-							  USHORT unicode_len,
-							  SSHORT *err_code,
-							  USHORT *err_position)
+ULONG CVBIG5_unicode_to_big5(csconvert* obj,
+							 ULONG unicode_len,
+							 const USHORT* unicode_str,
+							 ULONG big5_len,
+							 UCHAR *big5_str,
+							 USHORT *err_code,
+							 ULONG *err_position)
 {
 	fb_assert(unicode_str != NULL || big5_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVBIG5_unicode_to_big5));
-	fb_assert(obj->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVBIG5_unicode_to_big5));
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
-	const USHORT src_start = unicode_len;
+	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
@@ -127,10 +128,10 @@ USHORT CVBIG5_unicode_to_big5(csconvert* obj,
 	const UCHAR* const start = big5_str;
 	while ((big5_len) && (unicode_len > 1)) {
 		/* Convert from UNICODE to BIG5 code */
-		const UCS2_CHAR wide = *unicode_str++;
+		const USHORT wide = *unicode_str++;
 
-		const UCS2_CHAR big5_ch = ((const USHORT*) obj->csconvert_datatable)
-			[((const USHORT*) obj->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
+		const USHORT big5_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+			[((const USHORT*) obj->csconvert_impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
 		if ((big5_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -166,22 +167,30 @@ USHORT CVBIG5_unicode_to_big5(csconvert* obj,
 }
 
 
-USHORT CVBIG5_check_big5(const UCHAR* big5_str,
-						 USHORT big5_len)
+INTL_BOOL CVBIG5_check_big5(charset* cs,
+							ULONG big5_len,
+							const UCHAR* big5_str,
+							ULONG* offending_position)
 {
 /**************************************
  * Functional description
  *      Make sure that the big5 string does not have any truncated 2 byte
  *      character at the end. 
  * If we have a truncated character then, 
- *          return 1.  
- *          else return(0);
+ *          return false.  
+ *          else return(true);
  **************************************/
+	const UCHAR* big5_str_start = big5_str;
+
 	while (big5_len--) {
 		const UCHAR c1 = *big5_str;
 		if (BIG51(c1)) {		/* Is it  BIG-5 */
 			if (big5_len == 0)	/* truncated BIG-5 */
-				return (1);
+			{
+				if (offending_position)
+					*offending_position = big5_str - big5_str_start;
+				return (false);
+			}
 			else {
 				big5_str += 2;
 				big5_len -= 1;
@@ -192,93 +201,5 @@ USHORT CVBIG5_check_big5(const UCHAR* big5_str,
 			big5_str++;
 		}
 	}
-	return (0);
+	return (true);
 }
-
-
-USHORT CVBIG5_big5_byte2short(TEXTTYPE obj,
-							  USHORT* dst,
-							  USHORT dst_len,
-							  const UCHAR *src,
-							  USHORT src_len,
-							  SSHORT *err_code,
-							  USHORT *err_position)
-{
-/**************************************
- * Functional description
- *      Convert len number of bytes of BIG5 string in
- *	src (char-based buffer) into dst (short-based buffer).
- *	This routine merges:
- *		1-byte ASCII into 1 short, and
- *		2-byte BIG5 character into 1 short.
- *
- **************************************/
-	fb_assert(src != NULL || dst == NULL);
-	fb_assert(err_code != NULL);
-	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
-
-	const USHORT src_start = src_len;
-	*err_code = 0;
-/* Length estimate needed? */
-	if (dst == NULL)
-		return (2 * src_len);	/* worst case */
-
-	USHORT x;
-	const USHORT* const dst_start = dst;
-	while (src_len && (dst_len > (sizeof(USHORT) - 1))) {
-		if (BIG51(*src)) {
-			if (src_len < 2) {
-				*err_code = CS_BAD_INPUT;
-				break;
-			}
-			x = (*src << 8) + (*(src + 1));
-			src += 2;
-			src_len -= 2;
-		}
-		else {
-			x = *src++;
-			src_len--;
-		}
-		*dst = x;	/* Assumes alignment */
-		++dst;
-		dst_len -= sizeof(USHORT);
-	}
-	if (src_len && !*err_code)
-		*err_code = CS_TRUNCATION_ERROR;
-	*err_position = src_start - src_len;
-	return (dst - dst_start) * sizeof(*dst);
-}
-
-
-SSHORT CVBIG5_big5_mbtowc(TEXTTYPE obj,
-						  UCS2_CHAR* wc,
-						  const UCHAR* src,
-						  USHORT src_len)
-{
-/**************************************
- * Functional description
- *	Grab a single character from a mb stream.
- *
- **************************************/
-	fb_assert(src != NULL);
-	fb_assert(obj != NULL);
-
-	if (!src_len)
-		return -1;
-
-	if (BIG51(*src)) {
-		if (src_len < 2) {
-			return -1;
-		}
-		if (wc)
-			*wc = (*src << 8) + (*(src + 1));
-		return 2;
-	}
-	else {
-		if (wc)
-			*wc = *src++;
-		return 1;
-	}
-}
-

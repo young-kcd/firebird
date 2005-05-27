@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
+#include "cv_narrow.h"
 #include "cv_ksc.h"
 #include "ld_proto.h"
 
@@ -32,31 +33,31 @@
 *	KSC-5601 to EUC is not needed.
 */
 
-USHORT CVKSC_ksc_to_unicode(csconvert* obj,
-							UCS2_CHAR *dest_ptr,
-							USHORT dest_len,
-							const UCHAR* ksc_str,
-							USHORT ksc_len,
-							SSHORT *err_code,
-							USHORT *err_position)
+ULONG CVKSC_ksc_to_unicode(csconvert* obj,
+						   ULONG ksc_len,
+						   const UCHAR* ksc_str,
+						   ULONG dest_len,
+						   USHORT *dest_ptr,
+						   USHORT *err_code,
+						   ULONG *err_position)
 {
 	fb_assert(ksc_str != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVKSC_ksc_to_unicode));
-	fb_assert(obj->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVKSC_ksc_to_unicode));
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
-	const USHORT src_start = ksc_len;
+	const ULONG src_start = ksc_len;
 	*err_code = 0;
 
 	if (dest_ptr == NULL)
-		return (ksc_len * sizeof(UCS2_CHAR));
+		return (ksc_len * sizeof(USHORT));
 
 	USHORT this_len;
-	UCS2_CHAR wide;
-	const UCS2_CHAR* const start = dest_ptr;
+	USHORT wide;
+	const USHORT* const start = dest_ptr;
 	while (ksc_len && dest_len > 1) {
 		if (*ksc_str & 0x80) {
 			const UCHAR c1 = *ksc_str++;
@@ -84,8 +85,8 @@ USHORT CVKSC_ksc_to_unicode(csconvert* obj,
 			this_len = 1;
 		}
 
-		const UCS2_CHAR ch = ((const USHORT*) obj->csconvert_datatable)
-			[((const USHORT*) obj->csconvert_misc)[(USHORT) wide / 256] +
+		const USHORT ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+			[((const USHORT*) obj->csconvert_impl->csconvert_misc)[(USHORT) wide / 256] +
 			 (wide % 256)];
 
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
@@ -104,23 +105,23 @@ USHORT CVKSC_ksc_to_unicode(csconvert* obj,
 }
 
 
-USHORT CVKSC_unicode_to_ksc(csconvert* obj,
-							UCHAR *ksc_str,
-							USHORT ksc_len,
-							const UCS2_CHAR* unicode_str,
-							USHORT unicode_len,
-							SSHORT *err_code,
-							USHORT *err_position)
+ULONG CVKSC_unicode_to_ksc(csconvert* obj,
+						   ULONG unicode_len,
+						   const USHORT* unicode_str,
+						   ULONG ksc_len,
+						   UCHAR *ksc_str,
+						   USHORT *err_code,
+						   ULONG *err_position)
 {
 	fb_assert(unicode_str != NULL || ksc_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_convert == reinterpret_cast<pfn_INTL_convert>(CVKSC_unicode_to_ksc));
-	fb_assert(obj->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVKSC_unicode_to_ksc));
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
-	const USHORT src_start = unicode_len;
+	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
 	if (ksc_str == NULL)
@@ -128,10 +129,10 @@ USHORT CVKSC_unicode_to_ksc(csconvert* obj,
 
 	const UCHAR* const start = ksc_str;
 	while (ksc_len && unicode_len > 1) {
-		const UCS2_CHAR wide = *unicode_str++;
+		const USHORT wide = *unicode_str++;
 
-		const UCS2_CHAR ksc_ch = ((const USHORT*) obj->csconvert_datatable)
-				[((const USHORT*) obj->csconvert_misc)
+		const USHORT ksc_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+				[((const USHORT*) obj->csconvert_impl->csconvert_misc)
 					[wide /	256] + (wide % 256)];
 		if ((ksc_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
@@ -166,114 +167,35 @@ USHORT CVKSC_unicode_to_ksc(csconvert* obj,
 }
 
 
-USHORT CVKSC_check_ksc(const UCHAR* ksc_str,
-					   USHORT ksc_len)
+INTL_BOOL CVKSC_check_ksc(charset* cs,
+						  ULONG ksc_len,
+						  const UCHAR* ksc_str,
+						  ULONG* offending_position)
 {
+	const UCHAR* ksc_str_start = ksc_str;
+
 	while (ksc_len--) {
 		const UCHAR c1 = *ksc_str;
 		if (KSC1(c1)) {			/* Is it KSC-5601 ? */
 			if (ksc_len == 0)	/* truncated KSC */
-				return (1);
+			{
+				if (offending_position)
+					*offending_position = ksc_str - ksc_str_start;
+				return (false);
+			}
 			else {
 				ksc_str += 2;
 				ksc_len -= 1;
 			}
 		}
 		else if (c1 > 0x7f)		/* error */
-			return 1;
+		{
+			if (offending_position)
+				*offending_position = ksc_str - ksc_str_start;
+			return false;
+		}
 		else					/* ASCII */
 			ksc_str++;
 	}
-	return (0);
+	return (true);
 }
-
-
-USHORT CVKSC_ksc_byte2short(TEXTTYPE obj,
-							USHORT *dst,
-							USHORT dst_len,
-							const UCHAR* src,
-							USHORT src_len,
-							SSHORT *err_code,
-							USHORT *err_position)
-{
-	fb_assert(obj != NULL);
-	fb_assert(src != NULL);
-	fb_assert(err_code != NULL);
-	fb_assert(err_position != NULL);
-
-#ifdef DEBUG
-	printf("dst_len = %d, src_len = %d\n src = %s\n", dst_len, src_len,
-			  src);
-#endif
-
-	const USHORT src_start = src_len;
-	*err_code = 0;
-	if (dst == NULL)
-		return (2 * src_len);
-
-	USHORT x;
-	const USHORT* const dst_start = dst;
-	while (src_len && dst_len > 1) {
-		if (KSC1(*src)) {		/* KSC ? */
-			if (src_len < 2) {
-				*err_code = CS_BAD_INPUT;
-				break;
-			}
-			x = (*src << 8) + *(src + 1);
-			src += 2;
-			src_len -= 2;
-		}
-		else if (*src > 0x7f) {	/* error */
-			*err_code = CS_BAD_INPUT;
-			break;
-		}
-		else {					/* ASCII */
-			x = *src++;
-			src_len -= 1;
-		}
-		*dst = x;
-		dst++;
-		dst_len -= 2;
-	}
-	if (src_len && !*err_code)
-		*err_code = CS_TRUNCATION_ERROR;
-
-#ifdef DEBUG
-	printf("dest len = %d %d characters\n",
-			  (dst - dst_start) * sizeof(*dst), dst - dst_start);
-	dump_short_hex(dst_start, (dst - dst_start) * sizeof(*dst));
-#endif
-
-	*err_position = src_start - src_len;
-	return ((dst - dst_start) * sizeof(*dst));
-}
-
-
-SSHORT CVKSC_ksc_mbtowc(TEXTTYPE obj,
-					   UCS2_CHAR* wc,
-					   const UCHAR* src,
-					   USHORT src_len)
-{
-	fb_assert(src != NULL);
-	fb_assert(obj != NULL);
-
-	if (!src_len)
-		return -1;
-
-	if (KSC1(*src)) {			/* KSC */
-		if (src_len < 2) {
-			return -1;
-		}
-		if (wc)
-			*wc = (*src << 8) + *(src + 1);
-		return 2;
-	}
-	else if (*src > 0x7f)		/* error */
-		return -1;
-	else {						/* ASCII */
-		if (wc)
-			*wc = *src++;
-		return 1;
-	}
-}
-

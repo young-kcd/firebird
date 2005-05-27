@@ -38,6 +38,7 @@
 #include "../dsql/dsql.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
+#include "../jrd/constants.h"
 #include "../jrd/intl.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/ddl_proto.h"
@@ -47,7 +48,9 @@
 #include "../dsql/metd_proto.h"
 #include "../dsql/misc_func.h"
 #include "../jrd/thd.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/dsc_proto.h"
+#include "../jrd/inf_proto.h"
 #include "gen/iberror.h"
 
 static void gen_aggregate(dsql_req*, const dsql_nod*);
@@ -124,6 +127,12 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		stuff(request, blr_extract);
 		stuff(request, *(SLONG *) node->nod_arg[e_extract_part]->nod_desc.dsc_address);
 		GEN_expr(request, node->nod_arg[e_extract_value]);
+		return;
+
+	case nod_length:
+		stuff(request, blr_length_);
+		stuff(request, *(SLONG *) node->nod_arg[e_length_type]->nod_desc.dsc_address);
+		GEN_expr(request, node->nod_arg[e_length_value]);
 		return;
 
 	case nod_dbkey:
@@ -406,6 +415,9 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 	case nod_upcase:
 		blr_operator = blr_upcase;
 		break;
+	case nod_lowcase:
+		blr_operator = blr_lowcase;
+		break;
 	case nod_substr:	
         blr_operator = blr_substring;
         break;
@@ -464,6 +476,21 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 			GEN_expr(request, node->nod_arg[0]->nod_arg[e_rse_items]);
 		return;
 
+	case nod_trim:
+		stuff(request, blr_trim);
+		stuff(request, *(SLONG *) node->nod_arg[e_trim_specification]->nod_desc.dsc_address);
+
+		if (node->nod_arg[e_trim_characters])
+		{
+			stuff(request, blr_trim_characters);
+			GEN_expr(request, node->nod_arg[e_trim_characters]);
+		}
+		else
+			stuff(request, blr_trim_spaces);
+
+		GEN_expr(request, node->nod_arg[e_trim_value]);
+		return;
+
 	default:
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  isc_arg_gds, isc_dsql_internal_err,
@@ -497,7 +524,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		const char* s = 0;
 		char message_buf[8];
 
-		MAKE_desc(&desc, node, NULL);
+		MAKE_desc(request, &desc, node, NULL);
 		if ((node->nod_flags & NOD_COMP_DIALECT) &&
 			(request->req_client_dialect == SQL_DIALECT_V6_TRANSITION)) 
 		{
@@ -560,6 +587,31 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 		 parameter = parameter->par_next)
 	{
 		parameter->par_parameter = number++;
+
+		if (parameter->par_desc.dsc_dtype <= dtype_any_text && request->req_dbb->dbb_att_charset != CS_NONE &&
+			request->req_dbb->dbb_att_charset != CS_BINARY)
+		{
+			if (parameter->par_desc.dsc_dtype == dtype_varying)
+				parameter->par_desc.dsc_length -= sizeof(USHORT);
+			else if (parameter->par_desc.dsc_dtype == dtype_cstring)
+				parameter->par_desc.dsc_length--;
+
+			USHORT fromCharSet = INTL_GET_CHARSET(&parameter->par_desc);
+			USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
+				fromCharSet : request->req_dbb->dbb_att_charset;
+
+			USHORT fromCharSetBPC = METD_get_charset_bpc(request, fromCharSet);
+			USHORT toCharSetBPC = METD_get_charset_bpc(request, toCharSet);
+
+			INTL_ASSIGN_TTYPE(&parameter->par_desc, toCharSet);
+			parameter->par_desc.dsc_length =
+				MIN(MAX_COLUMN_SIZE - sizeof(USHORT), parameter->par_desc.dsc_length / fromCharSetBPC * toCharSetBPC);
+
+			if (parameter->par_desc.dsc_dtype == dtype_varying)
+				parameter->par_desc.dsc_length += sizeof(USHORT);
+			else if (parameter->par_desc.dsc_dtype == dtype_cstring)
+				parameter->par_desc.dsc_length++;
+		}
 
 		/* For older clients - generate an error should they try and
 		   access data types which did not exist in the older dialect */
@@ -1466,12 +1518,33 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 		break;
 
 	case dtype_text:
+	{
+		Firebird::HalfStaticArray<UCHAR, 256> inputBuffer;
+		UCHAR* input = inputBuffer.getBuffer(sizeof(UCHAR) + sizeof(UCHAR) + sizeof(UCHAR) +
+											 sizeof(USHORT) + desc->dsc_length);
+		char buffer[16];
+
+		*input++ = isc_info_internal;
+		*input++ = INF_internal_db_info_intl_octet_length;
+		*input++ = INTL_GET_CHARSET(desc);
+		*reinterpret_cast<USHORT*>(input) = desc->dsc_length; input += sizeof(USHORT);
+		memcpy(input, desc->dsc_address, desc->dsc_length);
+
+		ISC_STATUS_ARRAY user_status;
+		THREAD_EXIT();
+		isc_database_info(user_status, &request->req_dbb->dbb_database_handle,
+						inputBuffer.getCount(), (SCHAR*)inputBuffer.begin(),
+						sizeof(buffer), buffer);
+		THREAD_ENTER();
+		l = desc->dsc_length = gds__vax_integer((UCHAR*)buffer + sizeof(UCHAR) + sizeof(USHORT), sizeof(SLONG));
+
 		gen_descriptor(request, desc, true);
 		if (l)
 			do {
 				stuff(request, *p++);
 			} while (--l);
 		break;
+	}
 
 	default:
 		// gen_constant: datatype not understood 
@@ -2270,7 +2343,8 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		dsql_nod* item = *ptr;
 		dsql_par* parameter = MAKE_parameter(request->req_receive, true, true, 0);
 		parameter->par_node = item;
-		MAKE_desc(&parameter->par_desc, item, NULL);
+		MAKE_desc(request, &parameter->par_desc, item, NULL);
+
 		const char* name_alias = NULL;
 
 		switch (item->nod_type) {
@@ -2447,11 +2521,17 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		case nod_substr:
 			name_alias = "SUBSTRING";
 			break;
+		case nod_trim:
+			name_alias = "TRIM";
+			break;
 		case nod_cast:
 			name_alias	= "CAST";
 			break;
 		case nod_upcase:
 			name_alias	= "UPPER";
+			break;
+        case nod_lowcase:
+            name_alias	= "LOWER";
 			break;
 		case nod_current_date:
 			name_alias = "CURRENT_DATE";
@@ -2465,6 +2545,33 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		case nod_extract:
 			name_alias = "EXTRACT";
 			break;
+		case nod_length:
+		{
+ 			const ULONG length_type =
+				*(SLONG*)item->nod_arg[e_length_type]->nod_desc.dsc_address;
+
+			switch (length_type)
+			{
+				case blr_length_bit:
+					name_alias = "BIT_LENGTH";
+					break;
+
+				case blr_length_char:
+					name_alias = "CHAR_LENGTH";
+					break;
+
+				case blr_length_octet:
+					name_alias = "OCTET_LENGTH";
+					break;
+
+				default:
+					name_alias = "LENGTH";
+					fb_assert(false);
+					break;
+			}
+
+			break;
+		}
 		case nod_searched_case:
 		case nod_simple_case:
 			name_alias = "CASE";

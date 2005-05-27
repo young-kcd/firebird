@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gpre,v 1.16 2004-12-28 21:12:47 skidder Exp $
+#  $Id: Makefile.in.static.gpre,v 1.17 2005-05-27 22:16:09 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=boot

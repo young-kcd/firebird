@@ -550,6 +550,7 @@ static const struct {
 	{"ctx_bad_argument", 335544846},
 	{"identifier_too_long", 335544847},
 	{"except2", 335544848},
+	{"malformed_string", 335544849},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

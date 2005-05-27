@@ -29,33 +29,29 @@
 #include "cv_jis.h"
 #include "ld_proto.h"
 
-static USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch);
-static USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch);
-static SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr);
+static ULONG sjis_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
+static ULONG sjis_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
 
-static inline void FAMILY_MULTIBYTE(TEXTTYPE cache,
-									TTYPE_ID id_number,
-									pfn_INTL_init name,
-									CHARSET_ID charset,
+static inline bool FAMILY_MULTIBYTE(TEXTTYPE cache,
 									SSHORT country,
-									const ASCII* POSIX)
+									const ASCII* POSIX,
+									USHORT attributes,
+									const UCHAR* specific_attributes,
+									ULONG specific_attributes_length)
 //#define FAMILY_MULTIBYTE(id_number, name, charset, country)
 {
-	cache->texttype_version			= IB_LANGDRV_VERSION;
-	cache->texttype_type			= id_number;
-	cache->texttype_character_set	= charset;
+	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
+		return false;
+
+	cache->texttype_version			= TEXTTYPE_VERSION_1;
+	cache->texttype_name			= POSIX;
 	cache->texttype_country			= country;
-	cache->texttype_bytes_per_char	= 2;
-	cache->texttype_fn_init			= name;
+	cache->texttype_pad_option		= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
 	cache->texttype_fn_key_length	= famasc_key_length;
 	cache->texttype_fn_string_to_key= famasc_string_to_key;
 	cache->texttype_fn_compare		= famasc_compare;
-	cache->texttype_collation_table = NULL;
-	cache->texttype_toupper_table	= NULL;
-	cache->texttype_tolower_table	= NULL;
-	cache->texttype_compress_table	= NULL;
-	cache->texttype_expand_table	= NULL;
-	cache->texttype_name			= POSIX;
+
+	return true;
 }
 
 
@@ -63,15 +59,14 @@ TEXTTYPE_ENTRY(JIS220_init)
 {
 	static const ASCII POSIX[] = "C.SJIS";
 
-	FAMILY_MULTIBYTE(cache, 220, JIS220_init, CS_SJIS, CC_C, POSIX);
-	cache->texttype_fn_to_wc = CVJIS_sjis_byte2short;
-	cache->texttype_fn_mbtowc = CVJIS_sjis_mbtowc;
-
-	cache->texttype_fn_to_upper = reinterpret_cast<pfn_INTL_ch_case>(sjis_to_upper);
-	cache->texttype_fn_to_lower = reinterpret_cast<pfn_INTL_ch_case>(sjis_to_lower);
-	cache->texttype_fn_str_to_upper = sjis_str_to_upper;
-
-	TEXTTYPE_RETURN;
+	if (FAMILY_MULTIBYTE(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
+	{
+		//cache->texttype_fn_str_to_upper = sjis_str_to_upper;
+		//cache->texttype_fn_str_to_lower = sjis_str_to_lower;
+		return true;
+	}
+	else
+		return false;
 }
 
 
@@ -79,44 +74,29 @@ TEXTTYPE_ENTRY(JIS230_init)
 {
 	static const ASCII POSIX[] = "C.EUC_J";
 
-	FAMILY_MULTIBYTE(cache, 230, JIS230_init, CS_EUCJ, CC_C, POSIX);
-	cache->texttype_fn_to_wc = CVJIS_euc_byte2short;
-	cache->texttype_fn_mbtowc = CVJIS_euc_mbtowc;
-
-	cache->texttype_fn_to_upper = famasc_to_upper;
-	cache->texttype_fn_to_lower = famasc_to_lower;
-	cache->texttype_fn_str_to_upper = famasc_str_to_upper;
-
-	TEXTTYPE_RETURN;
+	if (FAMILY_MULTIBYTE(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
+	{
+		//cache->texttype_fn_str_to_upper = famasc_str_to_upper;
+		//cache->texttype_fn_str_to_lower = famasc_str_to_lower;
+		return true;
+	}
+	else
+		return false;
 }
 
 
 /*
- *	Note: This function expects Wide-Char input, not
- *	Multibyte input
- */
-static USHORT sjis_to_upper(TEXTTYPE obj, UCS2_CHAR ch)
-{
-	if (ch >= (UCS2_CHAR) ASCII_LOWER_A && ch <= (UCS2_CHAR) ASCII_LOWER_Z)
-		return (ch - (UCS2_CHAR) ASCII_LOWER_A + (UCS2_CHAR) ASCII_UPPER_A);
-	return ch;
-}
-
-
-/*
- *	Returns -1 if output buffer was too small
+ *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
 /*
  *	Note: This function expects Multibyte input
  */
-static SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr)
+static ULONG sjis_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	bool waiting_for_sjis2 = false;
 
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
-	fb_assert(iLen <= 32000);		/* almost certainly an error */
-	fb_assert(iOutLen <= 32000);	/* almost certainly an error */
 	fb_assert(iOutLen >= iLen);
 	const BYTE* const p = pOutStr;
 	while (iLen && iOutLen) {
@@ -133,21 +113,39 @@ static SSHORT sjis_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USH
 		iOutLen--;
 	}
 	if (iLen != 0)
-		return (-1);			/* Must have ran out of output space */
+		return (INTL_BAD_STR_LENGTH);			/* Must have ran out of output space */
 	return (pOutStr - p);
 }
 
 
-
-
 /*
- *	Note: This function expects Wide-Char input, not
- *	Multibyte input
+ *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
-static USHORT sjis_to_lower(TEXTTYPE obj, UCS2_CHAR ch)
+/*
+ *	Note: This function expects Multibyte input
+ */
+static ULONG sjis_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
-	if (ch >= (UCS2_CHAR) ASCII_UPPER_A && ch <= (UCS2_CHAR) ASCII_UPPER_Z)
-		return (ch - (UCS2_CHAR) ASCII_UPPER_A + (UCS2_CHAR) ASCII_LOWER_A);
-	return ch;
-}
+	bool waiting_for_sjis2 = false;
 
+	fb_assert(pStr != NULL);
+	fb_assert(pOutStr != NULL);
+	fb_assert(iOutLen >= iLen);
+	const BYTE* const p = pOutStr;
+	while (iLen && iOutLen) {
+		BYTE c = *pStr++;
+		if (waiting_for_sjis2 || SJIS1(c)) {
+			waiting_for_sjis2 = !waiting_for_sjis2;
+		}
+		else {
+			if (c >= ASCII_UPPER_A && c <= ASCII_UPPER_Z)
+				c = (c - ASCII_UPPER_A + ASCII_LOWER_A);
+		}
+		*pOutStr++ = c;
+		iLen--;
+		iOutLen--;
+	}
+	if (iLen != 0)
+		return (INTL_BAD_STR_LENGTH);			/* Must have ran out of output space */
+	return (pOutStr - p);
+}

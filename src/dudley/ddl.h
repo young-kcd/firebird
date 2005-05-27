@@ -336,7 +336,8 @@ enum nod_t {
 	nod_abort, nod_null, nod_user_name,
 	nod_post, nod_function, nod_gen_id,
 	nod_uppercase, nod_sleuth, nod_over,
-	nod_set_generator, nod_index
+	nod_set_generator, nod_index,
+	nod_lowercase
 };
 
 typedef struct dudley_nod {

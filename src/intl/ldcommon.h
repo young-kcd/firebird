@@ -27,16 +27,13 @@
 /* #include "../jrd/gdsassert.h" */
 /* Put the assert in here */
 
-#include "../jrd/intlobj.h"
+#include "../jrd/intlobj_new.h"
 #include "../jrd/constants.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
 #include "../intl/ld.h"
 
 #undef DEBUG
-
-/* texttype version */
-#define IB_LANGDRV_VERSION	1
 
 typedef USHORT UNICODE;
 
@@ -63,25 +60,25 @@ typedef USHORT UNICODE;
 
 
 
-#define	TEXTTYPE_ENTRY(name)	USHORT name (TEXTTYPE cache, USHORT parm1, USHORT dummy)
-
-#define	TEXTTYPE_RETURN	return (0)
-
-
-
-
-#define CONVERT_ENTRY(cs1, cs2, name)	USHORT	name (csconvert* csptr, SSHORT dest_cs, SSHORT source_cs)
-
-#define	CONVERT_RETURN	return (0)
+#define	TEXTTYPE_ENTRY(name)	INTL_BOOL name (TEXTTYPE cache, const ASCII* tt_name, const ASCII* cs_name, \
+												USHORT attributes, const UCHAR* specific_attributes, \
+												ULONG specific_attributes_length)
 
 
 
+#if 0
+#define CONVERT_ENTRY(cs1, cs2, name)	INTL_BOOL	name (csconvert* csptr, const ASCII* dest_cs, const ASCII* source_cs)
 
-#define CHARSET_ENTRY(name)	USHORT	name (charset* csptr, SSHORT cs_id, SSHORT dummy)
+#define	CONVERT_RETURN	return (true)
+#endif
 
-#define CHARSET_RETURN	return (0)
 
-void CV_convert_init(csconvert*, SSHORT, SSHORT, pfn_INTL_convert, const void*, const void*);
+
+#define CHARSET_ENTRY(name)	INTL_BOOL	name (charset* csptr, const ASCII* cs_name)
+
+#define CHARSET_RETURN	return (true)
+
+void CV_convert_init(csconvert*, pfn_INTL_convert, const void*, const void*);
 
 #endif /* INTL_LDCOMMON_H */
 

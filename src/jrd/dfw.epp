@@ -4450,7 +4450,7 @@ static bool validate_text_type(thread_db* tdbb, ISC_STATUS* status,
 		||
 		(tfb->tfb_desc.dsc_dtype == dtype_blob && 
 		tfb->tfb_desc.dsc_sub_type == isc_blob_text && 
-		!INTL_defined_type(tdbb, status, tfb->tfb_desc.dsc_scale)))
+		!INTL_defined_type(tdbb, status, tfb->tfb_desc.dsc_blob_ttype())))
 	{
 		return false;
 	}

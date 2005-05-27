@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\release\engine_es"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GR /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "EMBEDDED" /YX /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /I "../../../src/vulcan" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "EMBEDDED" /D NAMESPACE=Vulcan /YX /FD /EHc- /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -64,8 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "..\..\..\temp\debug\engine_es"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "DEV_BUILD" /D "EMBEDDED" /FD /GZ /c
-# SUBTRACT CPP /YX
+# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /I "../../../src/vulcan" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "DEV_BUILD" /D "EMBEDDED" /D NAMESPACE=Vulcan /FD /GZ /c
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -281,6 +280,10 @@ SOURCE=..\..\..\src\jrd\intl_builtin.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\IntlManager.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\inuse.cpp
 # End Source File
 # Begin Source File
@@ -478,6 +481,10 @@ SOURCE=..\..\..\src\jrd\tpc.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\tra.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\unicode_util.cpp
 # End Source File
 # Begin Source File
 
@@ -862,11 +869,15 @@ SOURCE=..\..\..\src\jrd\intl_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\IntlManager.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\intlnames.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\intlobj.h
+SOURCE=..\..\..\src\jrd\intlobj_new.h
 # End Source File
 # Begin Source File
 
@@ -1255,6 +1266,10 @@ SOURCE=..\..\..\src\jrd\trig.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\types.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\unicode_util.h
 # End Source File
 # Begin Source File
 

@@ -43,6 +43,16 @@ namespace Jrd {
 	struct index_desc;
 }
 
+struct SubtypeInfo
+{
+	Firebird::string charsetName;
+	Firebird::string collationName;
+	Firebird::string baseCollationName;
+	USHORT attributes;
+	bool ignore_attributes;
+	Firebird::HalfStaticArray<UCHAR, 32> specificAttributes;
+};
+
 void		MET_activate_shadow(Jrd::thread_db*);
 ULONG		MET_align(Jrd::Database* dbb, const dsc*, ULONG);
 void		MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, const dsc*);
@@ -51,7 +61,8 @@ void		MET_delete_dependencies(Jrd::thread_db*, const Firebird::MetaName&, USHORT
 void		MET_delete_shadow(Jrd::thread_db*, USHORT);
 void		MET_error(const TEXT*, ...);
 Jrd::Format*	MET_format(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
-bool		MET_get_char_subtype(Jrd::thread_db*, SSHORT*, const UCHAR*, USHORT);
+bool		MET_get_char_coll_subtype(Jrd::thread_db*, SSHORT*, const UCHAR*, USHORT);
+bool		MET_get_char_coll_subtype_info(Jrd::thread_db*, SSHORT, SubtypeInfo* info);
 Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
 								Jrd::CompilerScratch**, Firebird::MetaName&, USHORT, USHORT);

@@ -22,28 +22,30 @@
  */
 
 #define SLEUTH_insensitive	1
-#define COND_UPPER(obj, c)	((flags & SLEUTH_insensitive) ?	(obj).to_upper(c) : (c))
 
-static const char GDML_MATCH_ONE	= '?';
-static const char GDML_MATCH_ANY	= '*';
-
-static const char GDML_QUOTE		= '@';
-static const char GDML_NOT			= '~';
-static const char GDML_RANGE		= '-';
-static const char GDML_CLASS_START	= '[';
-static const char GDML_CLASS_END	= ']';
-static const char GDML_SUBSTITUTE	= '=';
-static const char GDML_FLAG_SET		= '+';
-static const char GDML_FLAG_CLEAR	= '-';
-static const char GDML_COMMA		= ',';
-static const char GDML_LPAREN		= '(';
-static const char GDML_RPAREN		= ')';
+static const UCHAR special[256] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0,	/* $%*+- (dollar, percent, star, plus, minus) */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,	/* ?     (question) */
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* @     (at-sign) */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,	/* [     (open square) */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,	/* ~     (tilde) */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
 
 template <class MATCHESTYPE>
-bool MATCHESNAME(thread_db* tdbb,
-				   TextType obj,
-				   const MATCHESTYPE* p1,
-				   SSHORT l1_bytes, const MATCHESTYPE* p2, SSHORT l2_bytes)
+bool MATCHESNAME(Jrd::thread_db* tdbb, Jrd::TextType* obj,
+				 const MATCHESTYPE* p1, SLONG l1_bytes,
+				 const MATCHESTYPE* p2, SLONG l2_bytes)
 {
 /**************************************
  *
@@ -70,14 +72,15 @@ bool MATCHESNAME(thread_db* tdbb,
 	fb_assert(p2 != NULL);
 	fb_assert((l1_bytes % sizeof(MATCHESTYPE)) == 0);
 	fb_assert((l2_bytes % sizeof(MATCHESTYPE)) == 0);
+	fb_assert((obj->getCanonicalWidth() == sizeof(MATCHESTYPE)));
 
-	SSHORT l1 = l1_bytes / sizeof(MATCHESTYPE);
-	SSHORT l2 = l2_bytes / sizeof(MATCHESTYPE);
+	SLONG l1 = l1_bytes / sizeof(MATCHESTYPE);
+	SLONG l2 = l2_bytes / sizeof(MATCHESTYPE);
 
 	while (l2-- > 0) {
 		const MATCHESTYPE c = *p2++;
-		if (c == (MATCHESTYPE) GDML_MATCH_ANY) {
-			while ((l2 > 0) && (*p2 == (MATCHESTYPE) GDML_MATCH_ANY)) {
+		if (c == *(MATCHESTYPE*)obj->getGdmlMatchAnyCanonic()) {
+			while ((l2 > 0) && (*p2 == *(MATCHESTYPE*)obj->getGdmlMatchAnyCanonic())) {
 				l2--;
 				p2++;
 			}
@@ -96,7 +99,7 @@ bool MATCHESNAME(thread_db* tdbb,
 		}
 		if (l1-- == 0)
 			return false;
-		if ((c != (MATCHESTYPE) GDML_MATCH_ONE && c != *p1))
+		if (c != *(MATCHESTYPE*)obj->getGdmlMatchOneCanonic() && c != *p1)
 			return false;
 		p1++;
 	}
@@ -106,11 +109,9 @@ bool MATCHESNAME(thread_db* tdbb,
 
 
 template <class SLEUTHTYPE>
-bool SLEUTHNAME(thread_db* tdbb_dummy,
-				  TextType obj,
-				  USHORT flags,
-				  const SLEUTHTYPE* search,
-				  USHORT search_len, const SLEUTHTYPE* match, USHORT match_len)
+bool SLEUTHNAME(Jrd::thread_db* tdbb_dummy, Jrd::TextType* obj, USHORT flags,
+				const SLEUTHTYPE* search, SLONG search_len,
+				const SLEUTHTYPE* match, SLONG match_len)
 {
 /**************************************
  *
@@ -127,6 +128,7 @@ bool SLEUTHNAME(thread_db* tdbb_dummy,
  **************************************/
 	fb_assert((match_len % sizeof(SLEUTHTYPE)) == 0);
 	fb_assert((search_len % sizeof(SLEUTHTYPE)) == 0);
+	fb_assert(obj->getCanonicalWidth() == sizeof(SLEUTHTYPE));
 
 	const SLEUTHTYPE* const end_match = match + (match_len / sizeof(SLEUTHTYPE));
 	const SLEUTHTYPE* const end_search = search + (search_len / sizeof(SLEUTHTYPE));
@@ -136,13 +138,10 @@ bool SLEUTHNAME(thread_db* tdbb_dummy,
 
 
 template <class SLEUTHTYPE>
-USHORT SLEUTH_MERGE_NAME(thread_db* tdbb_dummy,
-						 TextType obj,
-						 const SLEUTHTYPE* match,
-						 USHORT match_bytes,
-						 const SLEUTHTYPE* control,
-						 USHORT control_bytes,
-						 SLEUTHTYPE* combined, USHORT combined_bytes)
+ULONG SLEUTH_MERGE_NAME(Jrd::thread_db* tdbb_dummy, Jrd::TextType* obj,
+						const SLEUTHTYPE* match, SLONG match_bytes,
+						const SLEUTHTYPE* control, SLONG control_bytes,
+						SLEUTHTYPE* combined, SLONG combined_bytes)
 {
 /**************************************
  *
@@ -172,6 +171,7 @@ USHORT SLEUTH_MERGE_NAME(thread_db* tdbb_dummy,
 
 	fb_assert((match_bytes % sizeof(SLEUTHTYPE)) == 0);
 	fb_assert((control_bytes % sizeof(SLEUTHTYPE)) == 0);
+	fb_assert(obj->getCanonicalWidth() == sizeof(SLEUTHTYPE));
 
 	const SLEUTHTYPE* const end_match = match + (match_bytes / sizeof(SLEUTHTYPE));
 	const SLEUTHTYPE* const end_control = control + (control_bytes / sizeof(SLEUTHTYPE));
@@ -187,7 +187,7 @@ USHORT SLEUTH_MERGE_NAME(thread_db* tdbb_dummy,
 
 	while (control < end_control) {
 		SLEUTHTYPE c = *control++;
-		if (*control == GDML_SUBSTITUTE) {
+		if (*control == *(SLEUTHTYPE*)obj->getGdmlSubstituteCanonic()) {
 			/* Note: don't allow substitution characters larger than vector */
 			SLEUTHTYPE** const end_vector =
 				vector + (((int)c < FB_NELEM(vector)) ? c : 0);
@@ -197,8 +197,8 @@ USHORT SLEUTH_MERGE_NAME(thread_db* tdbb_dummy,
 			++control;
 			while (control < end_control) {
 				c = *control++;
-				if ((t > temp && t[-1] == GDML_QUOTE)
-					|| ((c != GDML_COMMA) && (c != GDML_RPAREN)))
+				if ((t > temp && t[-1] == *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic())
+					|| ((c != *(SLEUTHTYPE*)obj->getGdmlCommaCanonic()) && (c != *(SLEUTHTYPE*)obj->getGdmlRParenCanonic())))
 				{
 					*t++ = c;
 				}
@@ -207,11 +207,11 @@ USHORT SLEUTH_MERGE_NAME(thread_db* tdbb_dummy,
 			}
 			*t++ = 0;
 		}
-		else if (c == GDML_QUOTE && control < end_control)
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic() && control < end_control)
 			*comb++ = *control++;
-		else if (c == GDML_RPAREN)
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlRParenCanonic())
 			break;
-		else if (c != GDML_LPAREN)
+		else if (c != *(SLEUTHTYPE*)obj->getGdmlLParenCanonic())
 			*comb++ = c;
 	}
 
@@ -232,7 +232,7 @@ USHORT SLEUTH_MERGE_NAME(thread_db* tdbb_dummy,
 			/* if we've got the definition of a quote character, 
 			   slurp the next character too */
 
-			if (comb > combined && comb[-1] == GDML_QUOTE && *match)
+			if (comb > combined && comb[-1] == *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic() && *match)
 				*comb++ = *match++;
 		}
 
@@ -241,9 +241,9 @@ USHORT SLEUTH_MERGE_NAME(thread_db* tdbb_dummy,
 
 		else {
 			if ((((size_t) c) < sizeof(special)) && special[c] &&
-				comb > combined && comb[-1] != GDML_QUOTE)
+				comb > combined && comb[-1] != *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic())
 			{
-				*comb++ = GDML_QUOTE;
+				*comb++ = *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic();
 			}
 			*comb++ = c;
 		}
@@ -262,7 +262,7 @@ USHORT SLEUTH_MERGE_NAME(thread_db* tdbb_dummy,
 
 template <class SLEUTHTYPE>
 static bool SLEUTH_AUX(
-						  TextType obj,
+						  Jrd::TextType* obj,
 						  USHORT flags,
 						  const SLEUTHTYPE* search,
 						  const SLEUTHTYPE* end_search,
@@ -284,18 +284,18 @@ static bool SLEUTH_AUX(
 	fb_assert(end_match != NULL);
 	fb_assert(search <= end_search);
 	fb_assert(match <= end_match);
+	fb_assert(obj->getCanonicalWidth() == sizeof(SLEUTHTYPE));
 
 	while (match < end_match) {
 		SLEUTHTYPE c = *match++;
-		if ((c == GDML_QUOTE && (c = *match++)) ||
+		if ((c == *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic() && (c = *match++)) ||
 			((((size_t) c) < sizeof(special)) && !special[c]))
 		{
-			c = COND_UPPER(obj, c);
-			if (match >= end_match || *match != GDML_MATCH_ANY) {
+			if (match >= end_match || *match != *(SLEUTHTYPE*)obj->getGdmlMatchAnyCanonic()) {
 				if (search >= end_search)
 					return false;
 				const SLEUTHTYPE d = *search++;
-				if (c != COND_UPPER(obj, d))
+				if (c != d)
 					return false;
 			}
 			else {
@@ -308,15 +308,15 @@ static bool SLEUTH_AUX(
 					}
 					else if (search < end_search) {
 						const SLEUTHTYPE d = *search++;
-						if (c != COND_UPPER(obj, d))
+						if (c != d)
 							return false;
 					}
 					else
 						return false;
 			}
 		}
-		else if (c == GDML_MATCH_ONE)
-			if (match >= end_match || *match != GDML_MATCH_ANY) {
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlMatchOneCanonic())
+			if (match >= end_match || *match != *(SLEUTHTYPE*)obj->getGdmlMatchAnyCanonic()) {
 				if (search >= end_search)
 					return false;
 				search++;
@@ -334,14 +334,14 @@ static bool SLEUTH_AUX(
 					else if (++search >= end_search)
 						return false;
 			}
-		else if (c == GDML_CLASS_START) {
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlClassStartCanonic()) {
 			const SLEUTHTYPE* const char_class = match;
-			while (*match++ != GDML_CLASS_END) {
+			while (*match++ != *(SLEUTHTYPE*)obj->getGdmlClassEndCanonic()) {
 				if (match >= end_match)
 					return false;
 			}
 			const SLEUTHTYPE* const end_class = match - 1;
-			if (match >= end_match || *match != GDML_MATCH_ANY) {
+			if (match >= end_match || *match != *(SLEUTHTYPE*)obj->getGdmlMatchAnyCanonic()) {
 				if (!SLEUTH_CLASS_NAME
 					(obj, flags, char_class, end_class, *search++))
 				{
@@ -368,14 +368,14 @@ static bool SLEUTH_AUX(
 						return false;
 			}
 		}
-		else if (c == GDML_FLAG_SET) {
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlFlagSetCanonic()) {
 			c = *match++;
-			if (c == 's' || c == 'S')
+			if (c == *(SLEUTHTYPE*)obj->getGdmlLowerSCanonic() || c == *(SLEUTHTYPE*)obj->getGdmlUpperSCanonic())
 				flags &= ~SLEUTH_insensitive;
 		}
-		else if (c == GDML_FLAG_CLEAR) {
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlFlagClearCanonic()) {
 			c = *match++;
-			if (c == 's' || c == 'S')
+			if (c == *(SLEUTHTYPE*)obj->getGdmlLowerSCanonic() || c == *(SLEUTHTYPE*)obj->getGdmlUpperSCanonic())
 				flags |= SLEUTH_insensitive;
 		}
 	}
@@ -389,7 +389,7 @@ static bool SLEUTH_AUX(
 
 template <class SLEUTHTYPE>
 static bool SLEUTH_CLASS_NAME(
-								 TextType obj,
+								 Jrd::TextType* obj,
 								 USHORT flags,
 								 const SLEUTHTYPE* char_class,
 								 const SLEUTHTYPE* const end_class, 
@@ -410,22 +410,22 @@ static bool SLEUTH_CLASS_NAME(
 	fb_assert(char_class != NULL);
 	fb_assert(end_class != NULL);
 	fb_assert(char_class <= end_class);
+	fb_assert(obj->getCanonicalWidth() == sizeof(SLEUTHTYPE));
 
 	bool result = true;
-	character = COND_UPPER(obj, character);
 
-	if (*char_class == GDML_NOT) {
+	if (*char_class == *(SLEUTHTYPE*)obj->getGdmlNotCanonic()) {
 		++char_class;
 		result = false;
 	}
 
 	while (char_class < end_class) {
 		const SLEUTHTYPE c = *char_class++;
-		if (c == GDML_QUOTE) {
+		if (c == *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic()) {
 			if (*char_class++ == character)
 				return true;
 		}
-		else if (*char_class == GDML_RANGE) {
+		else if (*char_class == *(SLEUTHTYPE*)obj->getGdmlRangeCanonic()) {
 			char_class += 2;
 			if (character >= c && character <= char_class[-1])
 				return result;

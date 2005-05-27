@@ -35,22 +35,6 @@ bool		EVL_field(Jrd::jrd_rel*, Jrd::Record*, USHORT, dsc*);
 USHORT		EVL_group(Jrd::thread_db* tdbb, Jrd::RecordSource*, Jrd::jrd_nod* const, USHORT);
 void		EVL_make_value(Jrd::thread_db* tdbb, const dsc*, Jrd::impure_value*);
 
-// Obsolete functions to support MATCHES and SLEUTH
-bool		EVL_mb_matches(Jrd::thread_db* tdbb, Jrd::TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);
-bool		EVL_mb_sleuth_check(Jrd::thread_db* tdbb, Jrd::TextType, USHORT, const UCHAR*, USHORT,
-								const UCHAR*, USHORT);
-USHORT		EVL_mb_sleuth_merge(Jrd::thread_db* tdbb, Jrd::TextType, const UCHAR*, USHORT, const UCHAR*,
-								USHORT, UCHAR*, USHORT);
-bool		EVL_nc_matches(Jrd::thread_db* tdbb, Jrd::TextType, const UCHAR*, SSHORT, const UCHAR*, SSHORT);
-bool		EVL_nc_sleuth_check(Jrd::thread_db* tdbb, Jrd::TextType, USHORT, const UCHAR*, USHORT,
-								const UCHAR*, USHORT);
-USHORT		EVL_nc_sleuth_merge(Jrd::thread_db* tdbb, Jrd::TextType, const UCHAR*, USHORT, const UCHAR*,
-								USHORT, UCHAR*, USHORT);
-bool		EVL_wc_matches(Jrd::thread_db* tdbb, Jrd::TextType, const USHORT*, SSHORT, const USHORT*, SSHORT);
-bool		EVL_wc_sleuth_check(Jrd::thread_db* tdbb, Jrd::TextType, USHORT, const USHORT*, USHORT,
-								const USHORT*, USHORT);
-USHORT		EVL_wc_sleuth_merge(Jrd::thread_db* tdbb, Jrd::TextType, const USHORT*, USHORT, const USHORT*,
-								USHORT, USHORT*, USHORT);
 
 #endif // JRD_EVL_PROTO_H
 

@@ -21,8 +21,5 @@
  * Contributor(s): ______________________________________.
  */
 
-USHORT fam1_to_upper(TEXTTYPE obj, BYTE ch);
-SSHORT fam1_str_to_upper(TEXTTYPE obj, USHORT iLen, const BYTE* pStr, USHORT iOutLen, BYTE *pOutStr);
-USHORT fam1_to_lower(TEXTTYPE obj, BYTE ch);
-SSHORT LC_DOS_nc_mbtowc(TEXTTYPE obj, UCS2_CHAR* wc, const UCHAR* ptr, USHORT count);
-
+ULONG fam1_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
+ULONG fam1_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);

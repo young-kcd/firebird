@@ -3092,6 +3092,9 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 	case blr_upcase:
 		operatr = nod_upcase;
 		break;
+	case blr_lowcase:
+		operatr = nod_lowcase;
+		break;
 	case blr_null:
 		operatr = nod_null;
 		break;
