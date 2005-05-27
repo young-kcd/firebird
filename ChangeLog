@@ -1,3 +1,33 @@
+2005-05-26 10:26  robocop
+
+	* firebird2/src/isql/show.epp (1.76):
+	
+	I didn't test a case, but I'm pretty sure that long quoted
+	identifiers could lead to a buffer overrun while extracting grants
+	here.
+
+2005-05-26 09:35  robocop
+
+	* firebird2/src/isql/show.epp (1.75):
+	
+	Fix SF Bug #1208932 reported by Ivan Prenosil an hour ago approx.
+
+2005-05-26 08:45  robocop
+
+	* firebird2/src/: isql/extract.epp (1.61), isql/isql.epp (1.148),
+	isql/isql.h (1.48), isql/show.epp (1.74), msgs/facilities.sql
+	(1.22), msgs/messages.sql (1.29):
+	
+	- Cleanup.  - A bit better handling of SHOW EXCEPTION.
+
+2005-05-26 06:00  robocop
+
+	* firebird2/src/jrd/: met.epp (1.163), met_proto.h (1.46), par.cpp
+	(1.116):
+	
+	- Solve char/UCHAR mismatch.  - Track dependencies on indices
+	mentioned in explicit plans for procedures and vierws.
+
 2005-05-24 06:41  robocop
 
 	* firebird2/src/isql/: extract.epp (1.60), isql.epp (1.147), isql.h
