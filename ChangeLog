@@ -1,3 +1,1724 @@
+2005-05-28 00:43  asfernandes
+
+	* firebird2/src/: jrd/intl.h (1.11), jrd/intl_builtin.cpp (1.25),
+	jrd/intl_classes.h (1.21), jrd/intl_proto.h (1.16), jrd/intlnames.h
+	(1.11), jrd/intlobj.h (1.27), jrd/intlobj_new.h (1.13), jrd/irq.h
+	(1.7), jrd/isc.cpp (1.53), jrd/jrd.cpp (1.214), jrd/jrd.h (1.135),
+	jrd/met.epp (1.164), jrd/met_proto.h (1.47), jrd/msg.h (1.8),
+	jrd/names.h (1.5), jrd/nav.cpp (1.49), jrd/nod.h (1.15), jrd/ods.h
+	(1.34), jrd/opt.cpp (1.242), jrd/par.cpp (1.117), jrd/pcmet.epp
+	(1.36), jrd/relations.h (1.9), jrd/rse.cpp (1.87), jrd/sort.cpp
+	(1.75), jrd/unicode_util.cpp (1.2), jrd/unicode_util.h (1.2),
+	jrd/os/config_root.h (1.9), jrd/os/guid.h (1.9),
+	jrd/os/posix/guid.cpp (1.8), misc/align.cpp (1.10),
+	misc/blrtable.cpp (1.18), msgs/facilities.sql (1.23), msgs/load.epp
+	(1.13), msgs/messages.sql (1.30), msgs/system_errors.sql (1.11),
+	qli/compile.cpp (1.26), qli/dtr.h (1.22), qli/expand.cpp (1.30),
+	qli/gener.cpp (1.37), qli/meta.epp (1.54), utilities/drop.cpp
+	(1.31), utilities/ibmgr/ibmgr.h (1.10), vulcan/JString.cpp (1.2),
+	vulcan/JString.h (1.2), vulcan/PathName.cpp (1.2),
+	vulcan/PathName.h (1.2), vulcan/RefObject.cpp (1.2),
+	vulcan/RefObject.h (1.2):
+	
+	Merge INTL branch into HEAD
+
+2005-05-28 00:40  asfernandes
+
+	* firebird2/src/: dsql/parse.y (1.177), dsql/pass1.cpp (1.215),
+	dudley/ddl.h (1.34), dudley/generate.cpp (1.20),
+	extern/editline/CHANGES (1.2), extern/editline/INSTALL (1.2),
+	extern/editline/Makefile.in (1.2), extern/editline/PLATFORMS (1.2),
+	extern/editline/README (1.3), extern/editline/chared.c (1.2),
+	extern/editline/chared.h (1.2), extern/editline/common.c (1.2),
+	extern/editline/config.guess (1.2), extern/editline/config.h.in
+	(1.2), extern/editline/config.sub (1.2), extern/editline/configure
+	(1.3), extern/editline/configure.in (1.3),
+	extern/editline/editline.3 (1.3), extern/editline/editrc.5 (1.2),
+	extern/editline/el.c (1.2), extern/editline/el.h (1.2),
+	extern/editline/emacs.c (1.2), extern/editline/hist.c (1.2),
+	extern/editline/hist.h (1.2), extern/editline/histedit.h (1.2),
+	extern/editline/history.c (1.2), extern/editline/install-sh (1.2),
+	extern/editline/key.c (1.2), extern/editline/key.h (1.2),
+	extern/editline/makelist (1.3), extern/editline/map.c (1.2),
+	extern/editline/map.h (1.2), extern/editline/parse.c (1.2),
+	extern/editline/parse.h (1.2), extern/editline/prompt.c (1.2),
+	extern/editline/prompt.h (1.2), extern/editline/read.c (1.2),
+	extern/editline/read.h (1.2), extern/editline/readline.c (1.2),
+	extern/editline/refresh.c (1.2), extern/editline/refresh.h (1.2),
+	extern/editline/search.c (1.2), extern/editline/search.h (1.2),
+	extern/editline/sig.c (1.2), extern/editline/sig.h (1.2),
+	extern/editline/sys.h (1.2), extern/editline/term.c (1.2),
+	extern/editline/term.h (1.2), extern/editline/tokenizer.c (1.2),
+	extern/editline/tokenizer.h (1.2), extern/editline/tty.c (1.2),
+	extern/editline/tty.h (1.2), extern/editline/vi.c (1.2),
+	extern/editline/TEST/test.c (1.2), extern/editline/np/fgetln.c
+	(1.2), extern/editline/np/strlcat.c (1.2),
+	extern/editline/np/strlcpy.c (1.2), extern/editline/np/unvis.c
+	(1.2), extern/editline/np/vis.c (1.2), extern/editline/np/vis.h
+	(1.2), extern/editline/readline/readline.h (1.2),
+	extern/regex/COPYRIGHT (1.2), extern/regex/INSTALL (1.2),
+	extern/regex/Makefile.am (1.2), extern/regex/Makefile.in (1.2),
+	extern/regex/Makefile.orig (1.2), extern/regex/README (1.2),
+	extern/regex/WHATSNEW (1.2), extern/regex/aclocal.m4 (1.2),
+	extern/regex/autogen.sh (1.2), extern/regex/cclass.h (1.2),
+	extern/regex/cname.h (1.2), extern/regex/config.guess (1.2),
+	extern/regex/config.sub (1.2), extern/regex/configure (1.2),
+	extern/regex/configure.in (1.2), extern/regex/debug.c (1.2),
+	extern/regex/debug.ih (1.2), extern/regex/engine.c (1.2),
+	extern/regex/engine.ih (1.2), extern/regex/install-sh (1.2),
+	extern/regex/ltmain.sh (1.2), extern/regex/main.c (1.2),
+	extern/regex/missing (1.2), extern/regex/mkh (1.2),
+	extern/regex/mkinstalldirs (1.2), extern/regex/regcomp.c (1.2),
+	extern/regex/regcomp.ih (1.2), extern/regex/regerror.c (1.2),
+	extern/regex/regerror.ih (1.2), extern/regex/regex.h (1.2),
+	extern/regex/regex2.h (1.2), extern/regex/regexec.c (1.2),
+	extern/regex/regfree.c (1.2), extern/regex/rxspencer.3 (1.2),
+	extern/regex/rxspencer.7 (1.2), extern/regex/split.c (1.2),
+	extern/regex/test1.sh (1.2), extern/regex/test2.sh (1.2),
+	extern/regex/test3.sh (1.2), extern/regex/tests (1.2),
+	extern/regex/utils.h (1.2), extern/regex/fake/limits.h (1.2),
+	extern/regex/fake/memmove.c (1.2), extern/regex/fake/stdlib.h
+	(1.2), gpre/cmd.cpp (1.40), gpre/cme.cpp (1.36), gpre/dyntable.cpp
+	(1.10), gpre/gpre.h (1.80), gpre/gpre_meta_boot.cpp (1.47),
+	gpre/gpreswi.h (1.12), gpre/hsh.cpp (1.22), gpre/sqe.cpp (1.40),
+	gpre/words.h (1.6), include/firebird.h (1.32),
+	include/gen/codetext.h (1.21), include/gen/iberror.h (1.20),
+	include/gen/ids.h (1.11), include/gen/msgs.h (1.28),
+	include/gen/rdb_codes.h (1.21), include/gen/sql_code.h (1.23),
+	intl/charsets.h (1.5), intl/cs_big5.cpp (1.3), intl/cs_gb2312.cpp
+	(1.4), intl/cs_jis.cpp (1.4), intl/cs_ksc.cpp (1.4),
+	intl/cs_narrow.cpp (1.6), intl/cs_unicode_fss.cpp (1.4),
+	intl/cs_unicode_ucs2.cpp (1.4), intl/cv_big5.cpp (1.9),
+	intl/cv_big5.h (1.6), intl/cv_gb2312.cpp (1.8), intl/cv_gb2312.h
+	(1.5), intl/cv_jis.cpp (1.10), intl/cv_jis.h (1.5), intl/cv_ksc.cpp
+	(1.10), intl/cv_ksc.h (1.7), intl/cv_narrow.cpp (1.8),
+	intl/cv_narrow.h (1.4), intl/cv_unicode_fss.cpp (1.9),
+	intl/cv_unicode_fss.h (1.8), intl/lc_ascii.cpp (1.14),
+	intl/lc_ascii.h (1.8), intl/lc_big5.cpp (1.12), intl/lc_big5.h
+	(1.5), intl/lc_dos.cpp (1.10), intl/lc_dos.h (1.4),
+	intl/lc_gb2312.cpp (1.7), intl/lc_iso8859_1.cpp (1.10),
+	intl/lc_iso8859_2.cpp (1.11), intl/lc_jis.cpp (1.12),
+	intl/lc_ksc.cpp (1.14), intl/lc_narrow.cpp (1.13), intl/lc_narrow.h
+	(1.4), intl/lc_unicode_ucs2.cpp (1.10), intl/ld.cpp (1.11),
+	intl/ld2.cpp (1.6), intl/ld_proto.h (1.6), intl/ldcommon.h (1.21),
+	intl/collations/bl88591ptbr0.h (1.2), intl/collations/pw1252ptbr.h
+	(1.2), jrd/IntlManager.cpp (1.2), jrd/IntlManager.h (1.2),
+	jrd/Optimizer.cpp (1.30), jrd/RecordNumber.h (1.5), jrd/blb.cpp
+	(1.93), jrd/blb_proto.h (1.21), jrd/blp.h (1.18), jrd/blr.h (1.19),
+	jrd/btr.cpp (1.145), jrd/btr.h (1.38), jrd/btr_proto.h (1.34),
+	jrd/cmp.cpp (1.174), jrd/constants.h (1.23), jrd/cvt.cpp (1.63),
+	jrd/cvt2.cpp (1.47), jrd/dfw.epp (1.150), jrd/drq.h (1.11),
+	jrd/dsc.cpp (1.22), jrd/dsc.h (1.21), jrd/dsc2.h (1.7), jrd/dyn.epp
+	(1.77), jrd/dyn.h (1.26), jrd/dyn_def.epp (1.97),
+	jrd/dyn_df_proto.h (1.13), jrd/evl.cpp (1.137), jrd/evl_like.h
+	(1.3), jrd/evl_proto.h (1.21), jrd/evl_string.h (1.20), jrd/exe.cpp
+	(1.149), jrd/exe.h (1.69), jrd/fields.h (1.9), jrd/filters.cpp
+	(1.44), jrd/gds.cpp (1.170), jrd/ibase.h (1.101), jrd/idx.cpp
+	(1.92), jrd/idx.h (1.15), jrd/inf.cpp (1.52), jrd/inf_proto.h
+	(1.9), jrd/inf_pub.h (1.5), jrd/ini.epp (1.66), jrd/ini.h (1.21),
+	jrd/intl.cpp (1.73):
+	
+	Merge INTL branch into HEAD
+
+2005-05-28 00:36  asfernandes
+
+	* firebird2/: extern/icu/source/tools/pkgdata/.cvsignore (1.2),
+	extern/icu/source/tools/pkgdata/Makefile.in (1.2),
+	extern/icu/source/tools/pkgdata/cmnmode.c (1.2),
+	extern/icu/source/tools/pkgdata/dllmode.c (1.2),
+	extern/icu/source/tools/pkgdata/filemode.c (1.2),
+	extern/icu/source/tools/pkgdata/make.c (1.2),
+	extern/icu/source/tools/pkgdata/makefile.h (1.2),
+	extern/icu/source/tools/pkgdata/pkgdata.1.in (1.2),
+	extern/icu/source/tools/pkgdata/pkgdata.c (1.2),
+	extern/icu/source/tools/pkgdata/pkgdata.dsp (1.2),
+	extern/icu/source/tools/pkgdata/pkgdata.vcproj (1.2),
+	extern/icu/source/tools/pkgdata/pkgtypes.c (1.2),
+	extern/icu/source/tools/pkgdata/pkgtypes.h (1.2),
+	extern/icu/source/tools/pkgdata/sttcmode.c (1.2),
+	extern/icu/source/tools/pkgdata/winmode.c (1.2),
+	extern/icu/source/tools/toolutil/.cvsignore (1.2),
+	extern/icu/source/tools/toolutil/Makefile.in (1.2),
+	extern/icu/source/tools/toolutil/toolutil.c (1.2),
+	extern/icu/source/tools/toolutil/toolutil.dsp (1.2),
+	extern/icu/source/tools/toolutil/toolutil.h (1.2),
+	extern/icu/source/tools/toolutil/toolutil.vcproj (1.2),
+	extern/icu/source/tools/toolutil/ucbuf.c (1.2),
+	extern/icu/source/tools/toolutil/ucbuf.h (1.2),
+	extern/icu/source/tools/toolutil/ucm.c (1.2),
+	extern/icu/source/tools/toolutil/ucm.h (1.2),
+	extern/icu/source/tools/toolutil/ucmpwrit.c (1.2),
+	extern/icu/source/tools/toolutil/ucmpwrit.h (1.2),
+	extern/icu/source/tools/toolutil/ucmstate.c (1.2),
+	extern/icu/source/tools/toolutil/unewdata.c (1.2),
+	extern/icu/source/tools/toolutil/unewdata.h (1.2),
+	extern/icu/source/tools/toolutil/uoptions.c (1.2),
+	extern/icu/source/tools/toolutil/uoptions.h (1.2),
+	extern/icu/source/tools/toolutil/uparse.c (1.2),
+	extern/icu/source/tools/toolutil/uparse.h (1.2),
+	extern/icu/source/tools/toolutil/uperf.cpp (1.2),
+	extern/icu/source/tools/toolutil/uperf.h (1.2),
+	extern/icu/source/tools/toolutil/utimer.h (1.2),
+	extern/icu/source/tools/tzcode/patch-icu-tzcode (1.2),
+	extern/icu/source/tools/tzcode/readme.txt (1.2),
+	extern/icu/source/tools/tzcode/tz.alias (1.2),
+	extern/icu/source/tools/tzcode/tz2icu.cpp (1.2),
+	extern/icu/source/tools/tzcode/tz2icu.h (1.2),
+	extern/regex/COPYRIGHT (1.2), extern/regex/INSTALL (1.2),
+	extern/regex/Makefile.am (1.2), extern/regex/Makefile.in (1.2),
+	extern/regex/Makefile.orig (1.2), extern/regex/README (1.2),
+	extern/regex/WHATSNEW (1.2), extern/regex/aclocal.m4 (1.2),
+	extern/regex/autogen.sh (1.2), extern/regex/cclass.h (1.2),
+	extern/regex/cname.h (1.2), extern/regex/config.guess (1.2),
+	extern/regex/config.sub (1.2), extern/regex/configure (1.2),
+	extern/regex/configure.in (1.2), extern/regex/debug.c (1.2),
+	extern/regex/debug.ih (1.2), extern/regex/engine.c (1.2),
+	extern/regex/engine.ih (1.2), extern/regex/install-sh (1.2),
+	extern/regex/ltmain.sh (1.2), extern/regex/main.c (1.2),
+	extern/regex/missing (1.2), extern/regex/mkh (1.2),
+	extern/regex/mkinstalldirs (1.2), extern/regex/regcomp.c (1.2),
+	extern/regex/regcomp.ih (1.2), extern/regex/regerror.c (1.2),
+	extern/regex/regerror.ih (1.2), extern/regex/regex.h (1.2),
+	extern/regex/regex2.h (1.2), extern/regex/regexec.c (1.2),
+	extern/regex/regfree.c (1.2), extern/regex/rxspencer.3 (1.2),
+	extern/regex/rxspencer.7 (1.2), extern/regex/split.c (1.2),
+	extern/regex/test1.sh (1.2), extern/regex/test2.sh (1.2),
+	extern/regex/test3.sh (1.2), extern/regex/tests (1.2),
+	extern/regex/utils.h (1.2), extern/regex/fake/limits.h (1.2),
+	extern/regex/fake/memmove.c (1.2), extern/regex/fake/stdlib.h
+	(1.2), lang_helpers/gds_codes.ftn (1.14),
+	lang_helpers/gds_codes.pas (1.14), src/alice/alice.cpp (1.79),
+	src/alice/alice_meta.epp (1.45), src/burp/backup.epp (1.78),
+	src/burp/burp.h (1.66), src/burp/restore.epp (1.94),
+	src/common/classes/ClumpletWriter.cpp (1.10),
+	src/common/classes/GenericMap.h (1.8),
+	src/common/classes/class_test.cpp (1.25),
+	src/common/classes/sparse_bitmap.h (1.12),
+	src/common/classes/vector.h (1.15), src/common/config/config.cpp
+	(1.62), src/common/config/config.h (1.36),
+	src/config/AdminException.cpp (1.2), src/config/AdminException.h
+	(1.2), src/config/Args.cpp (1.2), src/config/Args.h (1.2),
+	src/config/ArgsException.cpp (1.2), src/config/ArgsException.h
+	(1.2), src/config/ConfObj.cpp (1.2), src/config/ConfObj.h (1.2),
+	src/config/ConfObject.cpp (1.2), src/config/ConfObject.h (1.2),
+	src/config/ConfigFile.cpp (1.2), src/config/ConfigFile.h (1.2),
+	src/config/Configuration.cpp (1.2), src/config/Configuration.h
+	(1.2), src/config/DirectoryList.cpp (1.2),
+	src/config/DirectoryList.h (1.2), src/config/Element.cpp (1.2),
+	src/config/Element.h (1.2), src/config/FileName.cpp (1.2),
+	src/config/FileName.h (1.2), src/config/InputFile.cpp (1.2),
+	src/config/InputFile.h (1.2), src/config/InputStream.cpp (1.2),
+	src/config/InputStream.h (1.2), src/config/Lex.cpp (1.2),
+	src/config/Lex.h (1.2), src/config/Parameters.h (1.2),
+	src/config/ScanDir.cpp (1.2), src/config/ScanDir.h (1.2),
+	src/config/Stream.cpp (1.2), src/config/Stream.h (1.2),
+	src/config/StreamSegment.cpp (1.2), src/config/StreamSegment.h
+	(1.2), src/dsql/ddl.cpp (1.139), src/dsql/dsql.cpp (1.149),
+	src/dsql/dsql.tab.h (1.55), src/dsql/gen.cpp (1.80),
+	src/dsql/keywords.cpp (1.44), src/dsql/make.cpp (1.89),
+	src/dsql/make_proto.h (1.24), src/dsql/metd.epp (1.72),
+	src/dsql/metd_proto.h (1.23), src/dsql/node.h (1.59),
+	src/dsql/parse.cpp (1.151):
+	
+	Merge INTL branch into HEAD
+
+2005-05-28 00:33  asfernandes
+
+	* firebird2/extern/icu/source/tools/: gencmn/.cvsignore (1.2),
+	gencmn/Makefile.in (1.2), gencmn/decmn.8.in (1.2), gencmn/decmn.c
+	(1.2), gencmn/decmn.dsp (1.2), gencmn/decmn.vcproj (1.2),
+	gencmn/gencmn.8.in (1.2), gencmn/gencmn.c (1.2), gencmn/gencmn.dsp
+	(1.2), gencmn/gencmn.vcproj (1.2), gencnval/.cvsignore (1.2),
+	gencnval/Makefile.in (1.2), gencnval/gencnval.1.in (1.2),
+	gencnval/gencnval.c (1.2), gencnval/gencnval.dsp (1.2),
+	gencnval/gencnval.vcproj (1.2), gendraft/gendraft.pl (1.2),
+	gennames/.cvsignore (1.2), gennames/Makefile.in (1.2),
+	gennames/gennames.8.in (1.2), gennames/gennames.c (1.2),
+	gennames/gennames.dsp (1.2), gennames/gennames.vcproj (1.2),
+	gennorm/.cvsignore (1.2), gennorm/Makefile.in (1.2),
+	gennorm/gennorm.8.in (1.2), gennorm/gennorm.c (1.2),
+	gennorm/gennorm.dsp (1.2), gennorm/gennorm.h (1.2),
+	gennorm/gennorm.vcproj (1.2), gennorm/store.c (1.2),
+	genpname/.cvsignore (1.2), genpname/Makefile.in (1.2),
+	genpname/SyntheticPropertyAliases.txt (1.2), genpname/data.h (1.2),
+	genpname/genpname.cpp (1.2), genpname/genpname.dsp (1.2),
+	genpname/genpname.vcproj (1.2), genpname/preparse.pl (1.2),
+	genprops/.cvsignore (1.2), genprops/Makefile.in (1.2),
+	genprops/genprops.8.in (1.2), genprops/genprops.c (1.2),
+	genprops/genprops.dsp (1.2), genprops/genprops.h (1.2),
+	genprops/genprops.vcproj (1.2), genprops/props2.c (1.2),
+	genprops/propsvec.c (1.2), genprops/propsvec.h (1.2),
+	genprops/store.c (1.2), genprops/misc/ucdmerge.c (1.2),
+	genprops/misc/ucdstrip.c (1.2), genprops/misc/ucdstrip.pl (1.2),
+	genrb/.cvsignore (1.2), genrb/Makefile.in (1.2), genrb/derb.1.in
+	(1.2), genrb/derb.c (1.2), genrb/derb.dsp (1.2), genrb/derb.vcproj
+	(1.2), genrb/errmsg.c (1.2), genrb/errmsg.h (1.2),
+	genrb/gendtjar.pl (1.2), genrb/genrb.1.in (1.2), genrb/genrb.c
+	(1.2), genrb/genrb.dsp (1.2), genrb/genrb.h (1.2),
+	genrb/genrb.vcproj (1.2), genrb/genrbjar.pl (1.2), genrb/parse.c
+	(1.2), genrb/parse.h (1.2), genrb/prscmnts.cpp (1.2),
+	genrb/prscmnts.h (1.2), genrb/read.c (1.2), genrb/read.h (1.2),
+	genrb/reslist.c (1.2), genrb/reslist.h (1.2), genrb/rle.c (1.2),
+	genrb/rle.h (1.2), genrb/ustr.c (1.2), genrb/ustr.h (1.2),
+	genrb/util.c (1.2), genrb/util.h (1.2), genrb/wrtjava.c (1.2),
+	genrb/wrtxml.c (1.2), genren/Makefile (1.2), genren/README (1.2),
+	genren/genren.pl (1.2), gensprep/.cvsignore (1.2),
+	gensprep/Makefile.in (1.2), gensprep/filterRFC3454.pl (1.2),
+	gensprep/gensprep.8.in (1.2), gensprep/gensprep.c (1.2),
+	gensprep/gensprep.dsp (1.2), gensprep/gensprep.h (1.2),
+	gensprep/gensprep.vcproj (1.2), gensprep/store.c (1.2),
+	gentest/.cvsignore (1.2), gentest/Makefile.in (1.2),
+	gentest/genres32.c (1.2), gentest/gentest.c (1.2),
+	gentest/gentest.dsp (1.2), gentest/gentest.h (1.2),
+	gentest/gentest.vcproj (1.2), genuca/.cvsignore (1.2),
+	genuca/Makefile.in (1.2), genuca/genuca.8.in (1.2),
+	genuca/genuca.cpp (1.2), genuca/genuca.dsp (1.2), genuca/genuca.h
+	(1.2), genuca/genuca.vcproj (1.2), icuswap/.cvsignore (1.2),
+	icuswap/Makefile.in (1.2), icuswap/icuswap.cpp (1.2),
+	icuswap/icuswap.dsp (1.2), icuswap/icuswap.vcproj (1.2),
+	makeconv/.cvsignore (1.2), makeconv/Makefile.in (1.2),
+	makeconv/gencnvex.c (1.2), makeconv/genmbcs.c (1.2),
+	makeconv/genmbcs.h (1.2), makeconv/makeconv.1.in (1.2),
+	makeconv/makeconv.c (1.2), makeconv/makeconv.dsp (1.2),
+	makeconv/makeconv.h (1.2), makeconv/makeconv.vcproj (1.2),
+	makeconv/ucnvstat.c (1.2), makeconv/misc/canonucm.c (1.2),
+	makeconv/misc/rptp2ucm.c (1.2), makeconv/misc/ucmmerge.c (1.2),
+	makeconv/misc/ucmstrip.c (1.2):
+	
+	Merge INTL branch into HEAD
+
+2005-05-28 00:30  asfernandes
+
+	* firebird2/extern/icu/source/: test/perf/perldriver/Dataset.pm
+	(1.2), test/perf/perldriver/Format.pm (1.2),
+	test/perf/perldriver/Output.pm (1.2),
+	test/perf/perldriver/PerfFramework.pm (1.2),
+	test/perf/ubrkperf/Makefile.in (1.2),
+	test/perf/ubrkperf/UBrkPerf.pl (1.2),
+	test/perf/ubrkperf/ubrkperf.cpp (1.2),
+	test/perf/ubrkperf/ubrkperf.dsp (1.2),
+	test/perf/ubrkperf/ubrkperf.h (1.2),
+	test/perf/ubrkperf/ubrkperf20.dsp (1.2),
+	test/perf/ubrkperf/ubrkperfold.cpp (1.2),
+	test/perf/ubrkperf/ubrkperfold.dsp (1.2),
+	test/perf/ustrperf/StringPerf.pl (1.2),
+	test/perf/ustrperf/stringperf.cpp (1.2),
+	test/perf/ustrperf/stringperf.h (1.2),
+	test/perf/ustrperf/stringperf.vcproj (1.2),
+	test/testdata/.cvsignore (1.2),
+	test/testdata/CollationTest_NON_IGNORABLE_STUB.txt (1.2),
+	test/testdata/CollationTest_SHIFTED_STUB.txt (1.2),
+	test/testdata/DataDrivenCollationTest.txt (1.2),
+	test/testdata/Makefile.in (1.2),
+	test/testdata/NormalizationTest-3.2.0.txt (1.2),
+	test/testdata/NumberFormatTestCases.txt (1.2),
+	test/testdata/casing.txt (1.2), test/testdata/conversion.txt (1.2),
+	test/testdata/default.goo (1.2), test/testdata/default.txt (1.2),
+	test/testdata/ibm9027.ucm (1.2), test/testdata/icuio.txt (1.2),
+	test/testdata/idna_rules.txt (1.2), test/testdata/importtest.bin
+	(1.2), test/testdata/iscii.bin (1.2), test/testdata/mc.txt (1.2),
+	test/testdata/nfs4_cis_prep.txt (1.2),
+	test/testdata/nfs4_cs_prep_ci.txt (1.2),
+	test/testdata/nfs4_cs_prep_cs.txt (1.2),
+	test/testdata/nfs4_mixed_prep_p.txt (1.2),
+	test/testdata/nfs4_mixed_prep_s.txt (1.2), test/testdata/ra.txt
+	(1.2), test/testdata/rbbitst.txt (1.2), test/testdata/re_tests.txt
+	(1.2), test/testdata/readme.txt (1.2), test/testdata/regextst.txt
+	(1.2), test/testdata/riwords.txt (1.2), test/testdata/root.txt
+	(1.2), test/testdata/te.txt (1.2), test/testdata/te_IN.goo (1.2),
+	test/testdata/te_IN.txt (1.2), test/testdata/test1.ucm (1.2),
+	test/testdata/test3.ucm (1.2), test/testdata/test4.ucm (1.2),
+	test/testdata/test4x.ucm (1.2), test/testdata/testaliases.txt
+	(1.2), test/testdata/testdata.mk (1.2),
+	test/testdata/testdata_icu26_testtypes.res (1.2),
+	test/testdata/testdata_icu26e_testtypes.res (1.2),
+	test/testdata/testempty.txt (1.2), test/testdata/testtypes.txt
+	(1.2), test/testdata/translit_rules.txt (1.2),
+	test/testdata/uni-text.bin (1.2), test/testmap/.cvsignore (1.2),
+	test/testmap/Makefile.in (1.2), test/testmap/testmap.c (1.2),
+	test/testmap/testmap.dsp (1.2), test/thaitest/.cvsignore (1.2),
+	test/thaitest/Makefile.in (1.2), test/thaitest/space.txt (1.2),
+	test/thaitest/thaitest.cpp (1.2), test/thaitest/thaitest.dsp (1.2),
+	test/threadtest/.cvsignore (1.2), test/threadtest/Makefile.in
+	(1.2), test/threadtest/converttest.cpp (1.2),
+	test/threadtest/stringtest.cpp (1.2),
+	test/threadtest/threadtest.cpp (1.2),
+	test/threadtest/threadtest.dsp (1.2),
+	test/threadtest/threadtest.dsw (1.2), test/threadtest/threadtest.h
+	(1.2), test/unalignedtest/Makefile.in (1.2),
+	test/unalignedtest/readme (1.2), test/unalignedtest/unaligned.c
+	(1.2), test/usetperf/bitset.cpp (1.2), test/usetperf/bitset.h
+	(1.2), test/usetperf/timer.h (1.2), test/usetperf/usetperf.cpp
+	(1.2), test/usetperf/usetperf.dsp (1.2), test/utfperf/utfperf.c
+	(1.2), test/utfperf/utfperf.dsp (1.2), tools/.cvsignore (1.2),
+	tools/Makefile.in (1.2), tools/cpysearch/cpysearch.pl (1.2),
+	tools/cpysearch/readme.txt (1.2), tools/ctestfw/.cvsignore (1.2),
+	tools/ctestfw/Makefile.in (1.2), tools/ctestfw/ctest.c (1.2),
+	tools/ctestfw/ctestfw.dsp (1.2), tools/ctestfw/ctestfw.vcproj
+	(1.2), tools/ctestfw/datamap.cpp (1.2), tools/ctestfw/testdata.cpp
+	(1.2), tools/ctestfw/tstdtmod.cpp (1.2),
+	tools/ctestfw/unicode/ctest.h (1.2),
+	tools/ctestfw/unicode/datamap.h (1.2),
+	tools/ctestfw/unicode/testdata.h (1.2),
+	tools/ctestfw/unicode/testlog.h (1.2),
+	tools/ctestfw/unicode/testtype.h (1.2),
+	tools/ctestfw/unicode/tstdtmod.h (1.2), tools/dumpce/.cvsignore
+	(1.2), tools/dumpce/Makefile.in (1.2), tools/dumpce/dumpce.cpp
+	(1.2), tools/dumpce/dumpce.dsp (1.2), tools/dumpce/dumpce.dsw
+	(1.2), tools/genbrk/.cvsignore (1.2), tools/genbrk/Makefile.in
+	(1.2), tools/genbrk/genbrk.cpp (1.2), tools/genbrk/genbrk.dsp
+	(1.2), tools/genbrk/genbrk.vcproj (1.2), tools/genccode/.cvsignore
+	(1.2), tools/genccode/Makefile.in (1.2),
+	tools/genccode/genccode.8.in (1.2), tools/genccode/genccode.c
+	(1.2), tools/genccode/genccode.dsp (1.2),
+	tools/genccode/genccode.vcproj (1.2):
+	
+	Merge INTL branch into HEAD
+
+2005-05-28 00:26  asfernandes
+
+	* firebird2/extern/icu/source/: samples/ufortune/fortunedefs.mk
+	(1.2), samples/ufortune/readme.txt (1.2),
+	samples/ufortune/ufortune.c (1.2), samples/ufortune/ufortune.dsp
+	(1.2), samples/ufortune/ufortune.dsw (1.2),
+	samples/ufortune/ufortune.sln (1.2),
+	samples/ufortune/ufortune.vcproj (1.2),
+	samples/ufortune/resources/Makefile (1.2),
+	samples/ufortune/resources/es.txt (1.2),
+	samples/ufortune/resources/fortune_resources.mak (1.2),
+	samples/ufortune/resources/res-file-list.txt (1.2),
+	samples/ufortune/resources/root.txt (1.2), samples/ugrep/Makefile
+	(1.2), samples/ugrep/readme.txt (1.2), samples/ugrep/ugrep.cpp
+	(1.2), samples/ugrep/ugrep.dsp (1.2), samples/ugrep/ugrep.dsw
+	(1.2), samples/ugrep/ugrep.sln (1.2), samples/ugrep/ugrep.vcproj
+	(1.2), samples/uresb/Makefile (1.2), samples/uresb/en.txt (1.2),
+	samples/uresb/readme.txt (1.2), samples/uresb/resources.dsp (1.2),
+	samples/uresb/resources.mak (1.2), samples/uresb/resources.vcproj
+	(1.2), samples/uresb/root.txt (1.2), samples/uresb/sr.txt (1.2),
+	samples/uresb/uresb.c (1.2), samples/uresb/uresb.dsp (1.2),
+	samples/uresb/uresb.dsw (1.2), samples/uresb/uresb.sln (1.2),
+	samples/uresb/uresb.vcproj (1.2), samples/ustring/Makefile (1.2),
+	samples/ustring/readme.txt (1.2), samples/ustring/ustring.cpp
+	(1.2), samples/ustring/ustring.dsp (1.2),
+	samples/ustring/ustring.dsw (1.2), samples/ustring/ustring.sln
+	(1.2), samples/ustring/ustring.vcproj (1.2),
+	samples/xml2txt/readme.txt (1.2), stubdata/.cvsignore (1.2),
+	stubdata/Makefile.in (1.2), stubdata/stubdata.c (1.2),
+	stubdata/stubdata.dsp (1.2), stubdata/stubdata.vcproj (1.2),
+	test/.cvsignore (1.2), test/Makefile.in (1.2),
+	test/cintltst/.cvsignore (1.2), test/cintltst/Makefile.in (1.2),
+	test/cintltst/bocu1tst.c (1.2), test/cintltst/callcoll.c (1.2),
+	test/cintltst/callcoll.h (1.2), test/cintltst/calldata.h (1.2),
+	test/cintltst/calltest.c (1.2), test/cintltst/capitst.c (1.2),
+	test/cintltst/capitst.h (1.2), test/cintltst/cbiapts.c (1.2),
+	test/cintltst/cbiapts.h (1.2), test/cintltst/cbididat.c (1.2),
+	test/cintltst/cbiditst.c (1.2), test/cintltst/cbiditst.h (1.2),
+	test/cintltst/cbkittst.c (1.2), test/cintltst/ccaltst.c (1.2),
+	test/cintltst/ccaltst.h (1.2), test/cintltst/ccapitst.c (1.2),
+	test/cintltst/ccapitst.h (1.2), test/cintltst/ccolltst.c (1.2),
+	test/cintltst/ccolltst.h (1.2), test/cintltst/cconvtst.c (1.2),
+	test/cintltst/cctest.c (1.2), test/cintltst/ccurrtst.c (1.2),
+	test/cintltst/ccurrtst.h (1.2), test/cintltst/cdantst.c (1.2),
+	test/cintltst/cdantst.h (1.2), test/cintltst/cdattst.c (1.2),
+	test/cintltst/cdattst.h (1.2), test/cintltst/cdetst.c (1.2),
+	test/cintltst/cdetst.h (1.2), test/cintltst/cdtdptst.c (1.2),
+	test/cintltst/cdtdptst.h (1.2), test/cintltst/cdtrgtst.c (1.2),
+	test/cintltst/cdtrgtst.h (1.2), test/cintltst/cestst.c (1.2),
+	test/cintltst/cestst.h (1.2), test/cintltst/cfintst.c (1.2),
+	test/cintltst/cfintst.h (1.2), test/cintltst/cformtst.c (1.2),
+	test/cintltst/cformtst.h (1.2), test/cintltst/cfrtst.c (1.2),
+	test/cintltst/cfrtst.h (1.2), test/cintltst/cg7coll.c (1.2),
+	test/cintltst/cg7coll.h (1.2), test/cintltst/chashtst.c (1.2),
+	test/cintltst/cintltst.c (1.2), test/cintltst/cintltst.dsp (1.2),
+	test/cintltst/cintltst.h (1.2), test/cintltst/cintltst.vcproj
+	(1.2), test/cintltst/citertst.c (1.2), test/cintltst/citertst.h
+	(1.2), test/cintltst/cjaptst.c (1.2), test/cintltst/cjaptst.h
+	(1.2), test/cintltst/cloctst.c (1.2), test/cintltst/cloctst.h
+	(1.2), test/cintltst/cmsccoll.c (1.2), test/cintltst/cmsgtst.c
+	(1.2), test/cintltst/cmsgtst.h (1.2), test/cintltst/cnmdptst.c
+	(1.2), test/cintltst/cnmdptst.h (1.2), test/cintltst/cnormtst.c
+	(1.2), test/cintltst/cnormtst.h (1.2), test/cintltst/cnumtst.c
+	(1.2), test/cintltst/cnumtst.h (1.2), test/cintltst/colutil.c
+	(1.2), test/cintltst/cposxtst.c (1.2), test/cintltst/cregrtst.c
+	(1.2), test/cintltst/cregrtst.h (1.2), test/cintltst/crestst.c
+	(1.2), test/cintltst/crestst.h (1.2), test/cintltst/creststn.c
+	(1.2), test/cintltst/creststn.h (1.2), test/cintltst/cstrcase.c
+	(1.2), test/cintltst/cstrtest.c (1.2), test/cintltst/ctstdep.c
+	(1.2), test/cintltst/cturtst.c (1.2), test/cintltst/cturtst.h
+	(1.2), test/cintltst/cucdapi.c (1.2), test/cintltst/cucdapi.h
+	(1.2), test/cintltst/cucdtst.c (1.2), test/cintltst/cucdtst.h
+	(1.2), test/cintltst/custrtrn.c (1.2), test/cintltst/custrtst.c
+	(1.2), test/cintltst/cutiltst.c (1.2), test/cintltst/encoll.c
+	(1.2), test/cintltst/encoll.h (1.2), test/cintltst/eurocreg.c
+	(1.2), test/cintltst/hpmufn.c (1.2), test/cintltst/idnatest.c
+	(1.2), test/cintltst/mstrmtst.c (1.2), test/cintltst/nccbtst.c
+	(1.2), test/cintltst/nccbtst.h (1.2), test/cintltst/ncnvfbts.c
+	(1.2), test/cintltst/ncnvfbts.h (1.2), test/cintltst/ncnvtst.c
+	(1.2), test/cintltst/nfsprep.c (1.2), test/cintltst/nfsprep.h
+	(1.2), test/cintltst/nucnvtst.c (1.2), test/cintltst/nucnvtst.h
+	(1.2), test/cintltst/putiltst.c (1.2), test/cintltst/reapits.c
+	(1.2), test/cintltst/sorttest.c (1.2), test/cintltst/spreptst.c
+	(1.2), test/cintltst/sprpdata.c (1.2), test/cintltst/stdnmtst.c
+	(1.2), test/cintltst/tracetst.c (1.2), test/cintltst/trietest.c
+	(1.2), test/cintltst/ucmptst.c (1.2), test/cintltst/udatatst.c
+	(1.2), test/cintltst/uenumtst.c (1.2), test/cintltst/usettest.c
+	(1.2), test/cintltst/usrchdat.c (1.2), test/cintltst/usrchtst.c
+	(1.2), test/cintltst/utf16tst.c (1.2), test/cintltst/utf8tst.c
+	(1.2), test/cintltst/utransts.c (1.2), test/collperf/.cvsignore
+	(1.2), test/collperf/Makefile.in (1.2), test/collperf/collperf.cpp
+	(1.2), test/collperf/collperf.dsp (1.2), test/collperf/readme.html
+	(1.2), test/hdrtst/.cvsignore (1.2), test/hdrtst/Makefile.in (1.2),
+	test/hdrtst/cxxfiles.txt (1.2), test/hdrtst/dfiles.txt (1.2),
+	test/hdrtst/pfiles.txt (1.2), test/intltest/.cvsignore (1.2),
+	test/intltest/Makefile.in (1.2), test/intltest/allcoll.cpp (1.2),
+	test/intltest/allcoll.h (1.2), test/intltest/apicoll.cpp (1.2),
+	test/intltest/apicoll.h (1.2), test/intltest/astrotst.cpp (1.2),
+	test/intltest/astrotst.h (1.2), test/intltest/calcasts.cpp (1.2),
+	test/intltest/calcasts.h (1.2), test/intltest/callimts.cpp (1.2),
+	test/intltest/callimts.h (1.2), test/intltest/calregts.cpp (1.2),
+	test/intltest/calregts.h (1.2), test/intltest/caltest.cpp (1.2),
+	test/intltest/caltest.h (1.2), test/intltest/caltztst.cpp (1.2),
+	test/intltest/caltztst.h (1.2), test/intltest/canittst.cpp (1.2),
+	test/intltest/canittst.h (1.2), test/intltest/citrtest.cpp (1.2),
+	test/intltest/citrtest.h (1.2), test/intltest/cntabcol.cpp (1.2),
+	test/intltest/cntabcol.h (1.2), test/intltest/convtest.cpp (1.2),
+	test/intltest/convtest.h (1.2), test/intltest/cpdtrtst.cpp (1.2),
+	test/intltest/cpdtrtst.h (1.2), test/intltest/currcoll.cpp (1.2),
+	test/intltest/currcoll.h (1.2), test/intltest/dacoll.cpp (1.2),
+	test/intltest/dacoll.h (1.2), test/intltest/dadrcoll.cpp (1.2),
+	test/intltest/dadrcoll.h (1.2), test/intltest/dcfmapts.cpp (1.2),
+	test/intltest/dcfmapts.h (1.2), test/intltest/decoll.cpp (1.2),
+	test/intltest/decoll.h (1.2), test/intltest/dtfmapts.cpp (1.2),
+	test/intltest/dtfmapts.h (1.2), test/intltest/dtfmrgts.cpp (1.2),
+	test/intltest/dtfmrgts.h (1.2), test/intltest/dtfmtrtts.cpp (1.2),
+	test/intltest/dtfmtrtts.h (1.2), test/intltest/dtfmttst.cpp (1.2),
+	test/intltest/dtfmttst.h (1.2), test/intltest/encoll.cpp (1.2),
+	test/intltest/encoll.h (1.2), test/intltest/escoll.cpp (1.2),
+	test/intltest/escoll.h (1.2), test/intltest/ficoll.cpp (1.2),
+	test/intltest/ficoll.h (1.2), test/intltest/frcoll.cpp (1.2),
+	test/intltest/frcoll.h (1.2), test/intltest/g7coll.cpp (1.2),
+	test/intltest/g7coll.h (1.2), test/intltest/icusvtst.cpp (1.2),
+	test/intltest/icusvtst.h (1.2), test/intltest/idnaref.cpp (1.2),
+	test/intltest/idnaref.h (1.2), test/intltest/incaltst.cpp (1.2),
+	test/intltest/incaltst.h (1.2), test/intltest/intltest.cpp (1.2),
+	test/intltest/intltest.dsp (1.2), test/intltest/intltest.h (1.2),
+	test/intltest/intltest.vcproj (1.2), test/intltest/itercoll.cpp
+	(1.2), test/intltest/itercoll.h (1.2), test/intltest/itformat.cpp
+	(1.2), test/intltest/itformat.h (1.2), test/intltest/itmajor.cpp
+	(1.2), test/intltest/itmajor.h (1.2), test/intltest/itrbbi.cpp
+	(1.2), test/intltest/itrbbi.h (1.2), test/intltest/itrbnf.cpp
+	(1.2), test/intltest/itrbnf.h (1.2), test/intltest/itrbnfp.cpp
+	(1.2), test/intltest/itrbnfp.h (1.2), test/intltest/itrbnfrt.cpp
+	(1.2), test/intltest/itrbnfrt.h (1.2), test/intltest/ittrans.cpp
+	(1.2), test/intltest/ittrans.h (1.2), test/intltest/itutil.cpp
+	(1.2), test/intltest/itutil.h (1.2), test/intltest/jacoll.cpp
+	(1.2), test/intltest/jacoll.h (1.2), test/intltest/jamotest.cpp
+	(1.2), test/intltest/jamotest.h (1.2), test/intltest/lcukocol.cpp
+	(1.2), test/intltest/lcukocol.h (1.2), test/intltest/loctest.cpp
+	(1.2), test/intltest/loctest.h (1.2), test/intltest/miscdtfm.cpp
+	(1.2), test/intltest/miscdtfm.h (1.2), test/intltest/mnkytst.cpp
+	(1.2), test/intltest/mnkytst.h (1.2), test/intltest/msfmrgts.cpp
+	(1.2), test/intltest/msfmrgts.h (1.2), test/intltest/nmfmapts.cpp
+	(1.2), test/intltest/nmfmapts.h (1.2), test/intltest/nmfmtrt.cpp
+	(1.2), test/intltest/nmfmtrt.h (1.2), test/intltest/normconf.cpp
+	(1.2), test/intltest/normconf.h (1.2), test/intltest/nptrans.cpp
+	(1.2), test/intltest/nptrans.h (1.2), test/intltest/numfmtst.cpp
+	(1.2), test/intltest/numfmtst.h (1.2), test/intltest/numrgts.cpp
+	(1.2), test/intltest/numrgts.h (1.2), test/intltest/pptest.cpp
+	(1.2), test/intltest/pptest.h (1.2), test/intltest/punyref.c (1.2),
+	test/intltest/punyref.h (1.2), test/intltest/rbbiapts.cpp (1.2),
+	test/intltest/rbbiapts.h (1.2), test/intltest/rbbitst.cpp (1.2),
+	test/intltest/rbbitst.h (1.2), test/intltest/regcoll.cpp (1.2),
+	test/intltest/regcoll.h (1.2), test/intltest/regextst.cpp (1.2),
+	test/intltest/regextst.h (1.2), test/intltest/reptest.cpp (1.2),
+	test/intltest/reptest.h (1.2), test/intltest/restest.cpp (1.2),
+	test/intltest/restest.h (1.2), test/intltest/restsnew.cpp (1.2),
+	test/intltest/restsnew.h (1.2), test/intltest/sdtfmtts.cpp (1.2),
+	test/intltest/sdtfmtts.h (1.2), test/intltest/sfwdchit.cpp (1.2),
+	test/intltest/sfwdchit.h (1.2), test/intltest/srchtest.cpp (1.2),
+	test/intltest/srchtest.h (1.2), test/intltest/strcase.cpp (1.2),
+	test/intltest/strtest.cpp (1.2), test/intltest/strtest.h (1.2),
+	test/intltest/svccoll.cpp (1.2), test/intltest/svccoll.h (1.2),
+	test/intltest/tchcfmt.cpp (1.2), test/intltest/tchcfmt.h (1.2),
+	test/intltest/testidn.cpp (1.2), test/intltest/testidna.cpp (1.2),
+	test/intltest/testidna.h (1.2), test/intltest/testutil.cpp (1.2),
+	test/intltest/testutil.h (1.2), test/intltest/textfile.cpp (1.2),
+	test/intltest/textfile.h (1.2), test/intltest/tfsmalls.cpp (1.2),
+	test/intltest/tfsmalls.h (1.2), test/intltest/thcoll.cpp (1.2),
+	test/intltest/thcoll.h (1.2), test/intltest/tmsgfmt.cpp (1.2),
+	test/intltest/tmsgfmt.h (1.2), test/intltest/tokiter.cpp (1.2),
+	test/intltest/tokiter.h (1.2), test/intltest/transapi.cpp (1.2),
+	test/intltest/transapi.h (1.2), test/intltest/transrt.cpp (1.2),
+	test/intltest/transrt.h (1.2), test/intltest/transtst.cpp (1.2),
+	test/intltest/transtst.h (1.2), test/intltest/trcoll.cpp (1.2),
+	test/intltest/trcoll.h (1.2), test/intltest/trnserr.cpp (1.2),
+	test/intltest/trnserr.h (1.2), test/intltest/tscoll.cpp (1.2),
+	test/intltest/tscoll.h (1.2), test/intltest/tsdate.cpp (1.2),
+	test/intltest/tsdate.h (1.2), test/intltest/tsdcfmsy.cpp (1.2),
+	test/intltest/tsdcfmsy.h (1.2), test/intltest/tsdtfmsy.cpp (1.2),
+	test/intltest/tsdtfmsy.h (1.2), test/intltest/tsmthred.cpp (1.2),
+	test/intltest/tsmthred.h (1.2), test/intltest/tsnmfmt.cpp (1.2),
+	test/intltest/tsnmfmt.h (1.2), test/intltest/tsputil.cpp (1.2),
+	test/intltest/tsputil.h (1.2), test/intltest/tstnorm.cpp (1.2),
+	test/intltest/tstnorm.h (1.2), test/intltest/tstnrapi.cpp (1.2),
+	test/intltest/tzbdtest.cpp (1.2), test/intltest/tzbdtest.h (1.2),
+	test/intltest/tzregts.cpp (1.2), test/intltest/tzregts.h (1.2),
+	test/intltest/tztest.cpp (1.2), test/intltest/tztest.h (1.2),
+	test/intltest/ucaconf.cpp (1.2), test/intltest/ucaconf.h (1.2),
+	test/intltest/ucdtest.cpp (1.2), test/intltest/ucdtest.h (1.2),
+	test/intltest/uobjtest.cpp (1.2), test/intltest/uobjtest.h (1.2),
+	test/intltest/usettest.cpp (1.2), test/intltest/usettest.h (1.2),
+	test/intltest/ustrtest.cpp (1.2), test/intltest/ustrtest.h (1.2),
+	test/intltest/v32test.cpp (1.2), test/intltest/v32test.h (1.2),
+	test/iotest/.cvsignore (1.2), test/iotest/Makefile.in (1.2),
+	test/iotest/filetst.c (1.2), test/iotest/iotest.cpp (1.2),
+	test/iotest/iotest.dsp (1.2), test/iotest/iotest.h (1.2),
+	test/iotest/iotest.vcproj (1.2), test/iotest/strtst.c (1.2),
+	test/letest/.cvsignore (1.2), test/letest/FontObject.cpp (1.2),
+	test/letest/FontObject.h (1.2), test/letest/FontTableCache.cpp
+	(1.2), test/letest/FontTableCache.h (1.2), test/letest/Makefile.in
+	(1.2), test/letest/PortableFontInstance.cpp (1.2),
+	test/letest/PortableFontInstance.h (1.2), test/letest/cmaps.cpp
+	(1.2), test/letest/cmaps.h (1.2), test/letest/gendata.cpp (1.2),
+	test/letest/gendata.dsp (1.2), test/letest/gendata.dsw (1.2),
+	test/letest/gendata.sln (1.2), test/letest/gendata.vcproj (1.2),
+	test/letest/letest.cpp (1.2), test/letest/letest.dsp (1.2),
+	test/letest/letest.dsw (1.2), test/letest/letest.h (1.2),
+	test/letest/letest.sln (1.2), test/letest/letest.vcproj (1.2),
+	test/letest/readme.html (1.2), test/letest/sfnt.h (1.2),
+	test/letest/testdata.cpp (1.2), test/perf/perf.dsw (1.2),
+	test/perf/all/all.dsp (1.2), test/perf/charperf/CharPerf.pl (1.2),
+	test/perf/charperf/Makefile.in (1.2),
+	test/perf/charperf/charperf.cpp (1.2),
+	test/perf/charperf/charperf.dsp (1.2),
+	test/perf/charperf/charperf.h (1.2),
+	test/perf/convperf/convperf.cpp (1.2),
+	test/perf/convperf/convperf.dsp (1.2),
+	test/perf/convperf/convperf.h (1.2),
+	test/perf/convperf/convperf_ansi.pl (1.2),
+	test/perf/convperf/convperf_iml.pl (1.2), test/perf/convperf/data.h
+	(1.2), test/perf/normperf/Makefile.in (1.2),
+	test/perf/normperf/NormPerf.pl (1.2),
+	test/perf/normperf/normperf.cpp (1.2),
+	test/perf/normperf/normperf.dsp (1.2),
+	test/perf/normperf/normperf.h (1.2):
+	
+	Merge INTL branch into HEAD
+
+2005-05-28 00:23  asfernandes
+
+	* firebird2/extern/icu/source/: io/.cvsignore (1.2), io/Makefile.in
+	(1.2), io/io.dsp (1.2), io/io.rc (1.2), io/io.vcproj (1.2),
+	io/locbund.c (1.2), io/locbund.h (1.2), io/sprintf.c (1.2),
+	io/sscanf.c (1.2), io/ufile.c (1.2), io/ufile.h (1.2),
+	io/ufmt_cmn.c (1.2), io/ufmt_cmn.h (1.2), io/uprintf.c (1.2),
+	io/uprintf.h (1.2), io/uprntf_p.c (1.2), io/uscanf.c (1.2),
+	io/uscanf.h (1.2), io/uscanf_p.c (1.2), io/ustdio.c (1.2),
+	io/ustream.cpp (1.2), io/unicode/ustdio.h (1.2),
+	io/unicode/ustream.h (1.2), layout/.cvsignore (1.2),
+	layout/AlternateSubstSubtables.cpp (1.2),
+	layout/AlternateSubstSubtables.h (1.2), layout/AnchorTables.cpp
+	(1.2), layout/AnchorTables.h (1.2), layout/ArabicLayoutEngine.cpp
+	(1.2), layout/ArabicLayoutEngine.h (1.2),
+	layout/ArabicLigatureData.cpp (1.2), layout/ArabicShaping.cpp
+	(1.2), layout/ArabicShaping.h (1.2),
+	layout/AttachmentPosnSubtables.h (1.2), layout/CanonData.cpp (1.2),
+	layout/CanonShaping.h (1.2), layout/CharSubstitutionFilter.h (1.2),
+	layout/ClassDefinitionTables.cpp (1.2),
+	layout/ClassDefinitionTables.h (1.2),
+	layout/ContextualGlyphInsertion.h (1.2),
+	layout/ContextualGlyphSubstProc.cpp (1.2),
+	layout/ContextualGlyphSubstProc.h (1.2),
+	layout/ContextualGlyphSubstitution.h (1.2),
+	layout/ContextualSubstSubtables.cpp (1.2),
+	layout/ContextualSubstSubtables.h (1.2), layout/CoverageTables.cpp
+	(1.2), layout/CoverageTables.h (1.2),
+	layout/CursiveAttachmentSubtables.cpp (1.2),
+	layout/CursiveAttachmentSubtables.h (1.2),
+	layout/DefaultCharMapper.h (1.2), layout/DeviceTables.cpp (1.2),
+	layout/DeviceTables.h (1.2), layout/ExtensionSubtables.cpp (1.2),
+	layout/ExtensionSubtables.h (1.2), layout/Features.cpp (1.2),
+	layout/Features.h (1.2), layout/GDEFMarkFilter.cpp (1.2),
+	layout/GDEFMarkFilter.h (1.2), layout/GXLayoutEngine.cpp (1.2),
+	layout/GXLayoutEngine.h (1.2), layout/GlyphDefinitionTables.cpp
+	(1.2), layout/GlyphDefinitionTables.h (1.2),
+	layout/GlyphIterator.cpp (1.2), layout/GlyphIterator.h (1.2),
+	layout/GlyphLookupTables.cpp (1.2), layout/GlyphLookupTables.h
+	(1.2), layout/GlyphPositionAdjustments.h (1.2),
+	layout/GlyphPositioningTables.cpp (1.2),
+	layout/GlyphPositioningTables.h (1.2),
+	layout/GlyphPosnLookupProc.cpp (1.2), layout/GlyphPosnLookupProc.h
+	(1.2), layout/GlyphSubstLookupProc.cpp (1.2),
+	layout/GlyphSubstLookupProc.h (1.2),
+	layout/GlyphSubstitutionTables.cpp (1.2),
+	layout/GlyphSubstitutionTables.h (1.2), layout/HanLayoutEngine.cpp
+	(1.2), layout/HanLayoutEngine.h (1.2),
+	layout/HebrewLigatureData.cpp (1.2), layout/HebrewShaping.cpp
+	(1.2), layout/HebrewShaping.h (1.2), layout/HindiFeatureTags.h
+	(1.2), layout/IndicClassTables.cpp (1.2),
+	layout/IndicLayoutEngine.cpp (1.2), layout/IndicLayoutEngine.h
+	(1.2), layout/IndicRearrangement.h (1.2),
+	layout/IndicRearrangementProcessor.cpp (1.2),
+	layout/IndicRearrangementProcessor.h (1.2),
+	layout/IndicReordering.cpp (1.2), layout/IndicReordering.h (1.2),
+	layout/LEFontInstance.cpp (1.2), layout/LEFontInstance.h (1.2),
+	layout/LEGlyphFilter.h (1.2), layout/LEGlyphStorage.cpp (1.2),
+	layout/LEGlyphStorage.h (1.2), layout/LEInsertionList.cpp (1.2),
+	layout/LEInsertionList.h (1.2), layout/LELanguages.h (1.2),
+	layout/LEScripts.h (1.2), layout/LESwaps.h (1.2), layout/LETypes.h
+	(1.2), layout/LayoutEngine.cpp (1.2), layout/LayoutEngine.h (1.2),
+	layout/LayoutTables.h (1.2), layout/LigatureSubstProc.cpp (1.2),
+	layout/LigatureSubstProc.h (1.2), layout/LigatureSubstSubtables.cpp
+	(1.2), layout/LigatureSubstSubtables.h (1.2),
+	layout/LigatureSubstitution.h (1.2), layout/LookupProcessor.cpp
+	(1.2), layout/LookupProcessor.h (1.2), layout/LookupTables.cpp
+	(1.2), layout/LookupTables.h (1.2), layout/Lookups.cpp (1.2),
+	layout/Lookups.h (1.2), layout/MPreFixups.cpp (1.2),
+	layout/MPreFixups.h (1.2), layout/Makefile.in (1.2),
+	layout/MarkArrays.cpp (1.2), layout/MarkArrays.h (1.2),
+	layout/MarkToBasePosnSubtables.cpp (1.2),
+	layout/MarkToBasePosnSubtables.h (1.2),
+	layout/MarkToLigaturePosnSubtables.cpp (1.2),
+	layout/MarkToLigaturePosnSubtables.h (1.2),
+	layout/MarkToMarkPosnSubtables.cpp (1.2),
+	layout/MarkToMarkPosnSubtables.h (1.2), layout/MorphStateTables.h
+	(1.2), layout/MorphTables.cpp (1.2), layout/MorphTables.h (1.2),
+	layout/MultipleSubstSubtables.cpp (1.2),
+	layout/MultipleSubstSubtables.h (1.2),
+	layout/NonContextualGlyphSubst.h (1.2),
+	layout/NonContextualGlyphSubstProc.cpp (1.2),
+	layout/NonContextualGlyphSubstProc.h (1.2),
+	layout/OpenTypeLayoutEngine.cpp (1.2),
+	layout/OpenTypeLayoutEngine.h (1.2), layout/OpenTypeTables.h (1.2),
+	layout/OpenTypeUtilities.cpp (1.2), layout/OpenTypeUtilities.h
+	(1.2), layout/PairPositioningSubtables.cpp (1.2),
+	layout/PairPositioningSubtables.h (1.2),
+	layout/ScriptAndLanguage.cpp (1.2), layout/ScriptAndLanguage.h
+	(1.2), layout/ScriptAndLanguageTags.cpp (1.2),
+	layout/ScriptAndLanguageTags.h (1.2),
+	layout/SegmentArrayProcessor.cpp (1.2),
+	layout/SegmentArrayProcessor.h (1.2),
+	layout/SegmentSingleProcessor.cpp (1.2),
+	layout/SegmentSingleProcessor.h (1.2),
+	layout/SimpleArrayProcessor.cpp (1.2),
+	layout/SimpleArrayProcessor.h (1.2),
+	layout/SinglePositioningSubtables.cpp (1.2),
+	layout/SinglePositioningSubtables.h (1.2),
+	layout/SingleSubstitutionSubtables.cpp (1.2),
+	layout/SingleSubstitutionSubtables.h (1.2),
+	layout/SingleTableProcessor.cpp (1.2),
+	layout/SingleTableProcessor.h (1.2), layout/StateTableProcessor.cpp
+	(1.2), layout/StateTableProcessor.h (1.2), layout/StateTables.h
+	(1.2), layout/SubstitutionLookups.cpp (1.2),
+	layout/SubstitutionLookups.h (1.2), layout/SubtableProcessor.cpp
+	(1.2), layout/SubtableProcessor.h (1.2),
+	layout/ThaiLayoutEngine.cpp (1.2), layout/ThaiLayoutEngine.h (1.2),
+	layout/ThaiShaping.cpp (1.2), layout/ThaiShaping.h (1.2),
+	layout/ThaiStateTables.cpp (1.2), layout/TrimmedArrayProcessor.cpp
+	(1.2), layout/TrimmedArrayProcessor.h (1.2),
+	layout/ValueRecords.cpp (1.2), layout/ValueRecords.h (1.2),
+	layout/layout.dsp (1.2), layout/layout.rc (1.2),
+	layout/layout.vcproj (1.2), layout/loengine.cpp (1.2),
+	layout/unicode/loengine.h (1.2), layoutex/.cvsignore (1.2),
+	layoutex/LXUtilities.cpp (1.2), layoutex/LXUtilities.h (1.2),
+	layoutex/Makefile.in (1.2), layoutex/ParagraphLayout.cpp (1.2),
+	layoutex/RunArrays.cpp (1.2), layoutex/layoutex.dsp (1.2),
+	layoutex/layoutex.rc (1.2), layoutex/layoutex.vcproj (1.2),
+	layoutex/layout/ParagraphLayout.h (1.2),
+	layoutex/layout/RunArrays.h (1.2), samples/.cvsignore (1.2),
+	samples/Makefile.in (1.2), samples/defs.mk (1.2),
+	samples/readme.txt (1.2), samples/rules.mk (1.2),
+	samples/all/all.dsp (1.2), samples/all/all.dsw (1.2),
+	samples/all/all.sln (1.2), samples/break/Makefile (1.2),
+	samples/break/break.cpp (1.2), samples/break/break.dsp (1.2),
+	samples/break/break.dsw (1.2), samples/break/break.sln (1.2),
+	samples/break/break.vcproj (1.2), samples/break/readme.txt (1.2),
+	samples/break/ubreak.c (1.2), samples/cal/.cvsignore (1.2),
+	samples/cal/Makefile.in (1.2), samples/cal/cal.c (1.2),
+	samples/cal/cal.dsp (1.2), samples/cal/cal.dsw (1.2),
+	samples/cal/cal.sln (1.2), samples/cal/cal.vcproj (1.2),
+	samples/cal/readme.txt (1.2), samples/cal/uprint.c (1.2),
+	samples/cal/uprint.h (1.2), samples/case/Makefile (1.2),
+	samples/case/case.cpp (1.2), samples/case/case.dsp (1.2),
+	samples/case/case.dsw (1.2), samples/case/case.sln (1.2),
+	samples/case/case.vcproj (1.2), samples/case/readme.txt (1.2),
+	samples/case/ucase.c (1.2), samples/citer/citer.cpp (1.2),
+	samples/citer/readme.txt (1.2), samples/coll/Makefile (1.2),
+	samples/coll/coll.cpp (1.2), samples/coll/coll.dsp (1.2),
+	samples/coll/coll.dsw (1.2), samples/coll/coll.sln (1.2),
+	samples/coll/coll.vcproj (1.2), samples/coll/readme.txt (1.2),
+	samples/date/.cvsignore (1.2), samples/date/Makefile.in (1.2),
+	samples/date/date.c (1.2), samples/date/date.dsp (1.2),
+	samples/date/date.dsw (1.2), samples/date/date.sln (1.2),
+	samples/date/date.vcproj (1.2), samples/date/readme.txt (1.2),
+	samples/date/uprint.c (1.2), samples/date/uprint.h (1.2),
+	samples/datecal/Makefile (1.2), samples/datecal/cal.cpp (1.2),
+	samples/datecal/ccal.c (1.2), samples/datefmt/Makefile (1.2),
+	samples/datefmt/README.TXT (1.2), samples/datefmt/datefmt.dsp
+	(1.2), samples/datefmt/datefmt.dsw (1.2),
+	samples/datefmt/datefmt.sln (1.2), samples/datefmt/datefmt.vcproj
+	(1.2), samples/datefmt/main.cpp (1.2), samples/datefmt/util.cpp
+	(1.2), samples/datefmt/util.h (1.2),
+	samples/datefmt/answers/main_0.cpp (1.2),
+	samples/datefmt/answers/main_1.cpp (1.2),
+	samples/datefmt/answers/main_2.cpp (1.2),
+	samples/datefmt/answers/main_3.cpp (1.2), samples/layout/.cvsignore
+	(1.2), samples/layout/FontMap.GDI (1.2),
+	samples/layout/FontMap.Gnome (1.2), samples/layout/FontMap.cpp
+	(1.2), samples/layout/FontMap.h (1.2),
+	samples/layout/FontTableCache.cpp (1.2),
+	samples/layout/FontTableCache.h (1.2),
+	samples/layout/GDIFontInstance.cpp (1.2),
+	samples/layout/GDIFontInstance.h (1.2),
+	samples/layout/GDIFontMap.cpp (1.2), samples/layout/GDIFontMap.h
+	(1.2), samples/layout/GDIGUISupport.cpp (1.2),
+	samples/layout/GDIGUISupport.h (1.2), samples/layout/GUISupport.h
+	(1.2), samples/layout/GnomeFontInstance.cpp (1.2),
+	samples/layout/GnomeFontInstance.h (1.2),
+	samples/layout/GnomeFontMap.cpp (1.2),
+	samples/layout/GnomeFontMap.h (1.2),
+	samples/layout/GnomeGUISupport.cpp (1.2),
+	samples/layout/GnomeGUISupport.h (1.2),
+	samples/layout/LayoutSample.rc (1.2), samples/layout/Makefile.in
+	(1.2), samples/layout/RenderingSurface.h (1.2),
+	samples/layout/Sample.txt (1.2),
+	samples/layout/ScriptCompositeFontInstance.cpp (1.2),
+	samples/layout/ScriptCompositeFontInstance.h (1.2),
+	samples/layout/Surface.cpp (1.2), samples/layout/Surface.h (1.2),
+	samples/layout/UnicodeReader.cpp (1.2),
+	samples/layout/UnicodeReader.h (1.2), samples/layout/cmaps.cpp
+	(1.2), samples/layout/cmaps.h (1.2), samples/layout/gnomelayout.cpp
+	(1.2), samples/layout/layout.cpp (1.2), samples/layout/layout.dsp
+	(1.2), samples/layout/layout.dsw (1.2), samples/layout/layout.sln
+	(1.2), samples/layout/layout.vcproj (1.2),
+	samples/layout/paragraph.cpp (1.2), samples/layout/paragraph.h
+	(1.2), samples/layout/readme.html (1.2), samples/layout/resource.h
+	(1.2), samples/layout/sfnt.h (1.2), samples/legacy/Makefile (1.2),
+	samples/legacy/README (1.2), samples/legacy/legacy.cpp (1.2),
+	samples/legacy/legacy.dsp (1.2), samples/legacy/legacy.dsw (1.2),
+	samples/legacy/legacy.sln (1.2), samples/legacy/legacy.vcproj
+	(1.2), samples/legacy/newcol.cpp (1.2), samples/legacy/oldcol.cpp
+	(1.2), samples/msgfmt/Makefile (1.2), samples/msgfmt/README.TXT
+	(1.2), samples/msgfmt/main.cpp (1.2), samples/msgfmt/msgfmt.dsp
+	(1.2), samples/msgfmt/msgfmt.dsw (1.2), samples/msgfmt/msgfmt.sln
+	(1.2), samples/msgfmt/msgfmt.vcproj (1.2), samples/msgfmt/util.cpp
+	(1.2), samples/msgfmt/util.h (1.2),
+	samples/msgfmt/answers/main_0.cpp (1.2),
+	samples/msgfmt/answers/main_1.cpp (1.2),
+	samples/msgfmt/answers/main_2.cpp (1.2),
+	samples/msgfmt/answers/main_3.cpp (1.2), samples/numfmt/Makefile
+	(1.2), samples/numfmt/capi.c (1.2), samples/numfmt/main.cpp (1.2),
+	samples/numfmt/numfmt.dsp (1.2), samples/numfmt/numfmt.dsw (1.2),
+	samples/numfmt/numfmt.sln (1.2), samples/numfmt/numfmt.vcproj
+	(1.2), samples/numfmt/readme.txt (1.2), samples/numfmt/util.cpp
+	(1.2), samples/numfmt/util.h (1.2), samples/props/Makefile (1.2),
+	samples/props/props.cpp (1.2), samples/props/props.dsp (1.2),
+	samples/props/props.dsw (1.2), samples/props/props.sln (1.2),
+	samples/props/props.vcproj (1.2), samples/props/readme.txt (1.2),
+	samples/strsrch/Makefile (1.2), samples/strsrch/readme.txt (1.2),
+	samples/strsrch/strsrch.cpp (1.2), samples/strsrch/strsrch.dsp
+	(1.2), samples/strsrch/strsrch.dsw (1.2),
+	samples/strsrch/strsrch.sln (1.2), samples/strsrch/strsrch.vcproj
+	(1.2), samples/translit/Makefile (1.2), samples/translit/README.TXT
+	(1.2), samples/translit/main.cpp (1.2),
+	samples/translit/translit.dsp (1.2), samples/translit/translit.dsw
+	(1.2), samples/translit/translit.sln (1.2),
+	samples/translit/translit.vcproj (1.2),
+	samples/translit/unaccent.cpp (1.2), samples/translit/unaccent.h
+	(1.2), samples/translit/util.cpp (1.2), samples/translit/util.h
+	(1.2), samples/translit/answers/main_1.cpp (1.2),
+	samples/translit/answers/main_2.cpp (1.2),
+	samples/translit/answers/main_3.cpp (1.2),
+	samples/translit/answers/main_4.cpp (1.2),
+	samples/translit/answers/unaccent.cpp (1.2),
+	samples/translit/answers/unaccent.h (1.2), samples/uciter8/Makefile
+	(1.2), samples/uciter8/readme.txt (1.2), samples/uciter8/uciter8.c
+	(1.2), samples/uciter8/uciter8.dsp (1.2),
+	samples/uciter8/uciter8.dsw (1.2), samples/uciter8/uciter8.sln
+	(1.2), samples/uciter8/uciter8.vcproj (1.2),
+	samples/uciter8/uit_len8.c (1.2), samples/uciter8/uit_len8.h (1.2),
+	samples/ucnv/Makefile (1.2), samples/ucnv/convsamp.cpp (1.2),
+	samples/ucnv/data01.txt (1.2), samples/ucnv/data02.bin (1.2),
+	samples/ucnv/data06.txt (1.2), samples/ucnv/flagcb.c (1.2),
+	samples/ucnv/flagcb.h (1.2), samples/ucnv/readme.txt (1.2),
+	samples/ucnv/ucnv.dsp (1.2), samples/ucnv/ucnv.dsw (1.2),
+	samples/ucnv/ucnv.sln (1.2), samples/ucnv/ucnv.vcproj (1.2),
+	samples/udata/Makefile (1.2), samples/udata/reader.c (1.2),
+	samples/udata/reader.dsp (1.2), samples/udata/reader.vcproj (1.2),
+	samples/udata/readme.txt (1.2), samples/udata/udata.dsw (1.2),
+	samples/udata/udata.sln (1.2), samples/udata/writer.c (1.2),
+	samples/udata/writer.dsp (1.2), samples/udata/writer.vcproj (1.2),
+	samples/ufortune/Makefile (1.2):
+	
+	Merge INTL branch into HEAD
+
+2005-05-28 00:20  asfernandes
+
+	* firebird2/extern/icu/source/: data/locales/af.txt (1.2),
+	data/locales/af_ZA.txt (1.2), data/locales/am.txt (1.2),
+	data/locales/am_ET.txt (1.2), data/locales/ar.txt (1.2),
+	data/locales/ar_AE.txt (1.2), data/locales/ar_BH.txt (1.2),
+	data/locales/ar_DZ.txt (1.2), data/locales/ar_EG.txt (1.2),
+	data/locales/ar_IN.txt (1.2), data/locales/ar_IQ.txt (1.2),
+	data/locales/ar_JO.txt (1.2), data/locales/ar_KW.txt (1.2),
+	data/locales/ar_LB.txt (1.2), data/locales/ar_LY.txt (1.2),
+	data/locales/ar_MA.txt (1.2), data/locales/ar_OM.txt (1.2),
+	data/locales/ar_QA.txt (1.2), data/locales/ar_SA.txt (1.2),
+	data/locales/ar_SD.txt (1.2), data/locales/ar_SY.txt (1.2),
+	data/locales/ar_TN.txt (1.2), data/locales/ar_YE.txt (1.2),
+	data/locales/be.txt (1.2), data/locales/be_BY.txt (1.2),
+	data/locales/bg.txt (1.2), data/locales/bg_BG.txt (1.2),
+	data/locales/bn.txt (1.2), data/locales/bn_IN.txt (1.2),
+	data/locales/ca.txt (1.2), data/locales/ca_ES.txt (1.2),
+	data/locales/cs.txt (1.2), data/locales/cs_CZ.txt (1.2),
+	data/locales/da.txt (1.2), data/locales/da_DK.txt (1.2),
+	data/locales/de.txt (1.2), data/locales/de_AT.txt (1.2),
+	data/locales/de_BE.txt (1.2), data/locales/de_CH.txt (1.2),
+	data/locales/de_DE.txt (1.2), data/locales/de_LU.txt (1.2),
+	data/locales/el.txt (1.2), data/locales/el_GR.txt (1.2),
+	data/locales/en.txt (1.2), data/locales/en_AU.txt (1.2),
+	data/locales/en_BE.txt (1.2), data/locales/en_BW.txt (1.2),
+	data/locales/en_CA.txt (1.2), data/locales/en_GB.txt (1.2),
+	data/locales/en_HK.txt (1.2), data/locales/en_IE.txt (1.2),
+	data/locales/en_IN.txt (1.2), data/locales/en_MT.txt (1.2),
+	data/locales/en_NZ.txt (1.2), data/locales/en_PH.txt (1.2),
+	data/locales/en_SG.txt (1.2), data/locales/en_US.txt (1.2),
+	data/locales/en_US_POSIX.txt (1.2), data/locales/en_VI.txt (1.2),
+	data/locales/en_ZA.txt (1.2), data/locales/en_ZW.txt (1.2),
+	data/locales/eo.txt (1.2), data/locales/es.txt (1.2),
+	data/locales/es_AR.txt (1.2), data/locales/es_BO.txt (1.2),
+	data/locales/es_CL.txt (1.2), data/locales/es_CO.txt (1.2),
+	data/locales/es_CR.txt (1.2), data/locales/es_DO.txt (1.2),
+	data/locales/es_EC.txt (1.2), data/locales/es_ES.txt (1.2),
+	data/locales/es_GT.txt (1.2), data/locales/es_HN.txt (1.2),
+	data/locales/es_MX.txt (1.2), data/locales/es_NI.txt (1.2),
+	data/locales/es_PA.txt (1.2), data/locales/es_PE.txt (1.2),
+	data/locales/es_PR.txt (1.2), data/locales/es_PY.txt (1.2),
+	data/locales/es_SV.txt (1.2), data/locales/es_US.txt (1.2),
+	data/locales/es_UY.txt (1.2), data/locales/es_VE.txt (1.2),
+	data/locales/et.txt (1.2), data/locales/et_EE.txt (1.2),
+	data/locales/eu.txt (1.2), data/locales/eu_ES.txt (1.2),
+	data/locales/fa.txt (1.2), data/locales/fa_AF.txt (1.2),
+	data/locales/fa_IR.txt (1.2), data/locales/fi.txt (1.2),
+	data/locales/fi_FI.txt (1.2), data/locales/fo.txt (1.2),
+	data/locales/fo_FO.txt (1.2), data/locales/fr.txt (1.2),
+	data/locales/fr_BE.txt (1.2), data/locales/fr_CA.txt (1.2),
+	data/locales/fr_CH.txt (1.2), data/locales/fr_FR.txt (1.2),
+	data/locales/fr_LU.txt (1.2), data/locales/ga.txt (1.2),
+	data/locales/ga_IE.txt (1.2), data/locales/gl.txt (1.2),
+	data/locales/gl_ES.txt (1.2), data/locales/gu.txt (1.2),
+	data/locales/gu_IN.txt (1.2), data/locales/gv.txt (1.2),
+	data/locales/gv_GB.txt (1.2), data/locales/he.txt (1.2),
+	data/locales/he_IL.txt (1.2), data/locales/hi.txt (1.2),
+	data/locales/hi_IN.txt (1.2), data/locales/hr.txt (1.2),
+	data/locales/hr_HR.txt (1.2), data/locales/hu.txt (1.2),
+	data/locales/hu_HU.txt (1.2), data/locales/hy.txt (1.2),
+	data/locales/hy_AM.txt (1.2), data/locales/hy_AM_REVISED.txt (1.2),
+	data/locales/id.txt (1.2), data/locales/id_ID.txt (1.2),
+	data/locales/is.txt (1.2), data/locales/is_IS.txt (1.2),
+	data/locales/it.txt (1.2), data/locales/it_CH.txt (1.2),
+	data/locales/it_IT.txt (1.2), data/locales/iw.txt (1.2),
+	data/locales/iw_IL.txt (1.2), data/locales/ja.txt (1.2),
+	data/locales/ja_JP.txt (1.2), data/locales/ja_JP_TRADITIONAL.txt
+	(1.2), data/locales/kk.txt (1.2), data/locales/kk_KZ.txt (1.2),
+	data/locales/kl.txt (1.2), data/locales/kl_GL.txt (1.2),
+	data/locales/kn.txt (1.2), data/locales/kn_IN.txt (1.2),
+	data/locales/ko.txt (1.2), data/locales/ko_KR.txt (1.2),
+	data/locales/kok.txt (1.2), data/locales/kok_IN.txt (1.2),
+	data/locales/kw.txt (1.2), data/locales/kw_GB.txt (1.2),
+	data/locales/lt.txt (1.2), data/locales/lt_LT.txt (1.2),
+	data/locales/lv.txt (1.2), data/locales/lv_LV.txt (1.2),
+	data/locales/mk.txt (1.2), data/locales/mk_MK.txt (1.2),
+	data/locales/mr.txt (1.2), data/locales/mr_IN.txt (1.2),
+	data/locales/ms.txt (1.2), data/locales/ms_BN.txt (1.2),
+	data/locales/ms_MY.txt (1.2), data/locales/mt.txt (1.2),
+	data/locales/mt_MT.txt (1.2), data/locales/nb.txt (1.2),
+	data/locales/nb_NO.txt (1.2), data/locales/nl.txt (1.2),
+	data/locales/nl_BE.txt (1.2), data/locales/nl_NL.txt (1.2),
+	data/locales/nn.txt (1.2), data/locales/nn_NO.txt (1.2),
+	data/locales/no.txt (1.2), data/locales/no_NO.txt (1.2),
+	data/locales/no_NO_NY.txt (1.2), data/locales/om.txt (1.2),
+	data/locales/om_ET.txt (1.2), data/locales/om_KE.txt (1.2),
+	data/locales/pa.txt (1.2), data/locales/pa_IN.txt (1.2),
+	data/locales/pl.txt (1.2), data/locales/pl_PL.txt (1.2),
+	data/locales/ps.txt (1.2), data/locales/ps_AF.txt (1.2),
+	data/locales/pt.txt (1.2), data/locales/pt_BR.txt (1.2),
+	data/locales/pt_PT.txt (1.2), data/locales/resfiles.mk (1.2),
+	data/locales/ro.txt (1.2), data/locales/ro_RO.txt (1.2),
+	data/locales/root.txt (1.2), data/locales/ru.txt (1.2),
+	data/locales/ru_RU.txt (1.2), data/locales/ru_UA.txt (1.2),
+	data/locales/sh.txt (1.2), data/locales/sh_YU.txt (1.2),
+	data/locales/sk.txt (1.2), data/locales/sk_SK.txt (1.2),
+	data/locales/sl.txt (1.2), data/locales/sl_SI.txt (1.2),
+	data/locales/so.txt (1.2), data/locales/so_DJ.txt (1.2),
+	data/locales/so_ET.txt (1.2), data/locales/so_KE.txt (1.2),
+	data/locales/so_SO.txt (1.2), data/locales/sq.txt (1.2),
+	data/locales/sq_AL.txt (1.2), data/locales/sr.txt (1.2),
+	data/locales/sr_YU.txt (1.2), data/locales/sv.txt (1.2),
+	data/locales/sv_FI.txt (1.2), data/locales/sv_SE.txt (1.2),
+	data/locales/sw.txt (1.2), data/locales/sw_KE.txt (1.2),
+	data/locales/sw_TZ.txt (1.2), data/locales/ta.txt (1.2),
+	data/locales/ta_IN.txt (1.2), data/locales/te.txt (1.2),
+	data/locales/te_IN.txt (1.2), data/locales/th.txt (1.2),
+	data/locales/th_TH.txt (1.2), data/locales/th_TH_TRADITIONAL.txt
+	(1.2), data/locales/ti.txt (1.2), data/locales/ti_ER.txt (1.2),
+	data/locales/ti_ET.txt (1.2), data/locales/tr.txt (1.2),
+	data/locales/tr_TR.txt (1.2), data/locales/uk.txt (1.2),
+	data/locales/uk_UA.txt (1.2), data/locales/vi.txt (1.2),
+	data/locales/vi_VN.txt (1.2), data/locales/zh.txt (1.2),
+	data/locales/zh_CN.txt (1.2), data/locales/zh_HK.txt (1.2),
+	data/locales/zh_Hans.txt (1.2), data/locales/zh_Hans_CN.txt (1.2),
+	data/locales/zh_Hans_SG.txt (1.2), data/locales/zh_Hant.txt (1.2),
+	data/locales/zh_Hant_HK.txt (1.2), data/locales/zh_Hant_MO.txt
+	(1.2), data/locales/zh_MO.txt (1.2), data/locales/zh_SG.txt (1.2),
+	data/locales/zh_TW.txt (1.2), data/mappings/cns-11643-1992.ucm
+	(1.2), data/mappings/convrtrs.txt (1.2),
+	data/mappings/ebcdic-xml-us.ucm (1.2), data/mappings/gb18030.ucm
+	(1.2), data/mappings/ibm-1006_P100-1995.ucm (1.2),
+	data/mappings/ibm-1025_P100-1995.ucm (1.2),
+	data/mappings/ibm-1026_P100-1995.ucm (1.2),
+	data/mappings/ibm-1047_P100-1995.ucm (1.2),
+	data/mappings/ibm-1051_P100-1995.ucm (1.2),
+	data/mappings/ibm-1089_P100-1995.ucm (1.2),
+	data/mappings/ibm-1097_P100-1995.ucm (1.2),
+	data/mappings/ibm-1098_P100-1995.ucm (1.2),
+	data/mappings/ibm-1112_P100-1995.ucm (1.2),
+	data/mappings/ibm-1122_P100-1999.ucm (1.2),
+	data/mappings/ibm-1123_P100-1995.ucm (1.2),
+	data/mappings/ibm-1124_P100-1996.ucm (1.2),
+	data/mappings/ibm-1125_P100-1997.ucm (1.2),
+	data/mappings/ibm-1129_P100-1997.ucm (1.2),
+	data/mappings/ibm-1130_P100-1997.ucm (1.2),
+	data/mappings/ibm-1131_P100-1997.ucm (1.2),
+	data/mappings/ibm-1132_P100-1998.ucm (1.2),
+	data/mappings/ibm-1133_P100-1997.ucm (1.2),
+	data/mappings/ibm-1137_P100-1999.ucm (1.2),
+	data/mappings/ibm-1140_P100-1997.ucm (1.2),
+	data/mappings/ibm-1141_P100-1997.ucm (1.2),
+	data/mappings/ibm-1142_P100-1997.ucm (1.2),
+	data/mappings/ibm-1143_P100-1997.ucm (1.2),
+	data/mappings/ibm-1144_P100-1997.ucm (1.2),
+	data/mappings/ibm-1145_P100-1997.ucm (1.2),
+	data/mappings/ibm-1146_P100-1997.ucm (1.2),
+	data/mappings/ibm-1147_P100-1997.ucm (1.2),
+	data/mappings/ibm-1148_P100-1997.ucm (1.2),
+	data/mappings/ibm-1149_P100-1997.ucm (1.2),
+	data/mappings/ibm-1153_P100-1999.ucm (1.2),
+	data/mappings/ibm-1154_P100-1999.ucm (1.2),
+	data/mappings/ibm-1155_P100-1999.ucm (1.2),
+	data/mappings/ibm-1156_P100-1999.ucm (1.2),
+	data/mappings/ibm-1157_P100-1999.ucm (1.2),
+	data/mappings/ibm-1158_P100-1999.ucm (1.2),
+	data/mappings/ibm-1160_P100-1999.ucm (1.2),
+	data/mappings/ibm-1162_P100-1999.ucm (1.2),
+	data/mappings/ibm-1164_P100-1999.ucm (1.2),
+	data/mappings/ibm-1250_P100-1995.ucm (1.2),
+	data/mappings/ibm-1251_P100-1995.ucm (1.2),
+	data/mappings/ibm-1252_P100-2000.ucm (1.2),
+	data/mappings/ibm-1253_P100-1995.ucm (1.2),
+	data/mappings/ibm-1254_P100-1995.ucm (1.2),
+	data/mappings/ibm-1255_P100-1995.ucm (1.2),
+	data/mappings/ibm-1256_P110-1997.ucm (1.2),
+	data/mappings/ibm-1257_P100-1995.ucm (1.2),
+	data/mappings/ibm-1258_P100-1997.ucm (1.2),
+	data/mappings/ibm-12712_P100-1998.ucm (1.2),
+	data/mappings/ibm-1276_P100-1995.ucm (1.2),
+	data/mappings/ibm-1277_P100-1995.ucm (1.2),
+	data/mappings/ibm-1363_P110-1997.ucm (1.2),
+	data/mappings/ibm-1363_P11B-1998.ucm (1.2),
+	data/mappings/ibm-1364_P110-1997.ucm (1.2),
+	data/mappings/ibm-1371_P100-1999.ucm (1.2),
+	data/mappings/ibm-1373_P100-2002.ucm (1.2),
+	data/mappings/ibm-1375_P100-2003.ucm (1.2),
+	data/mappings/ibm-1381_P110-1999.ucm (1.2),
+	data/mappings/ibm-1383_P110-1999.ucm (1.2),
+	data/mappings/ibm-1386_P100-2002.ucm (1.2),
+	data/mappings/ibm-1388_P103-2001.ucm (1.2),
+	data/mappings/ibm-1390_P110-2003.ucm (1.2),
+	data/mappings/ibm-1399_P110-2003.ucm (1.2),
+	data/mappings/ibm-16684_P110-2003.ucm (1.2),
+	data/mappings/ibm-16804_X110-1999.ucm (1.2),
+	data/mappings/ibm-273_P100-1995.ucm (1.2),
+	data/mappings/ibm-277_P100-1995.ucm (1.2),
+	data/mappings/ibm-278_P100-1995.ucm (1.2),
+	data/mappings/ibm-280_P100-1995.ucm (1.2),
+	data/mappings/ibm-284_P100-1995.ucm (1.2),
+	data/mappings/ibm-285_P100-1995.ucm (1.2),
+	data/mappings/ibm-290_P100-1995.ucm (1.2),
+	data/mappings/ibm-297_P100-1995.ucm (1.2),
+	data/mappings/ibm-33722_P120-1999.ucm (1.2),
+	data/mappings/ibm-33722_P12A-1999.ucm (1.2),
+	data/mappings/ibm-367_P100-1995.ucm (1.2),
+	data/mappings/ibm-37_P100-1995.ucm (1.2),
+	data/mappings/ibm-420_X120-1999.ucm (1.2),
+	data/mappings/ibm-424_P100-1995.ucm (1.2),
+	data/mappings/ibm-437_P100-1995.ucm (1.2),
+	data/mappings/ibm-4899_P100-1998.ucm (1.2),
+	data/mappings/ibm-4909_P100-1999.ucm (1.2),
+	data/mappings/ibm-4971_P100-1999.ucm (1.2),
+	data/mappings/ibm-500_P100-1995.ucm (1.2),
+	data/mappings/ibm-5123_P100-1999.ucm (1.2),
+	data/mappings/ibm-5346_P100-1998.ucm (1.2),
+	data/mappings/ibm-5347_P100-1998.ucm (1.2),
+	data/mappings/ibm-5348_P100-1997.ucm (1.2),
+	data/mappings/ibm-5349_P100-1998.ucm (1.2),
+	data/mappings/ibm-5350_P100-1998.ucm (1.2),
+	data/mappings/ibm-5351_P100-1998.ucm (1.2),
+	data/mappings/ibm-5352_P100-1998.ucm (1.2),
+	data/mappings/ibm-5353_P100-1998.ucm (1.2),
+	data/mappings/ibm-5354_P100-1998.ucm (1.2),
+	data/mappings/ibm-5478_P100-1995.ucm (1.2),
+	data/mappings/ibm-803_P100-1999.ucm (1.2),
+	data/mappings/ibm-813_P100-1995.ucm (1.2),
+	data/mappings/ibm-838_P100-1995.ucm (1.2),
+	data/mappings/ibm-8482_P100-1999.ucm (1.2),
+	data/mappings/ibm-850_P100-1995.ucm (1.2),
+	data/mappings/ibm-851_P100-1995.ucm (1.2),
+	data/mappings/ibm-852_P100-1995.ucm (1.2),
+	data/mappings/ibm-855_P100-1995.ucm (1.2),
+	data/mappings/ibm-856_P100-1995.ucm (1.2),
+	data/mappings/ibm-857_P100-1995.ucm (1.2),
+	data/mappings/ibm-858_P100-1997.ucm (1.2),
+	data/mappings/ibm-860_P100-1995.ucm (1.2),
+	data/mappings/ibm-861_P100-1995.ucm (1.2),
+	data/mappings/ibm-862_P100-1995.ucm (1.2),
+	data/mappings/ibm-863_P100-1995.ucm (1.2),
+	data/mappings/ibm-864_X110-1999.ucm (1.2),
+	data/mappings/ibm-865_P100-1995.ucm (1.2),
+	data/mappings/ibm-866_P100-1995.ucm (1.2),
+	data/mappings/ibm-867_P100-1998.ucm (1.2),
+	data/mappings/ibm-868_P100-1995.ucm (1.2),
+	data/mappings/ibm-869_P100-1995.ucm (1.2),
+	data/mappings/ibm-870_P100-1995.ucm (1.2),
+	data/mappings/ibm-871_P100-1995.ucm (1.2),
+	data/mappings/ibm-874_P100-1995.ucm (1.2),
+	data/mappings/ibm-875_P100-1995.ucm (1.2),
+	data/mappings/ibm-878_P100-1996.ucm (1.2),
+	data/mappings/ibm-901_P100-1999.ucm (1.2),
+	data/mappings/ibm-902_P100-1999.ucm (1.2),
+	data/mappings/ibm-912_P100-1995.ucm (1.2),
+	data/mappings/ibm-913_P100-2000.ucm (1.2),
+	data/mappings/ibm-914_P100-1995.ucm (1.2),
+	data/mappings/ibm-915_P100-1995.ucm (1.2),
+	data/mappings/ibm-916_P100-1995.ucm (1.2),
+	data/mappings/ibm-918_P100-1995.ucm (1.2),
+	data/mappings/ibm-920_P100-1995.ucm (1.2),
+	data/mappings/ibm-921_P100-1995.ucm (1.2),
+	data/mappings/ibm-922_P100-1999.ucm (1.2),
+	data/mappings/ibm-923_P100-1998.ucm (1.2),
+	data/mappings/ibm-930_P120-1999.ucm (1.2),
+	data/mappings/ibm-933_P110-1995.ucm (1.2),
+	data/mappings/ibm-935_P110-1999.ucm (1.2),
+	data/mappings/ibm-937_P110-1999.ucm (1.2),
+	data/mappings/ibm-939_P120-1999.ucm (1.2),
+	data/mappings/ibm-942_P12A-1999.ucm (1.2),
+	data/mappings/ibm-943_P130-1999.ucm (1.2),
+	data/mappings/ibm-943_P15A-2003.ucm (1.2),
+	data/mappings/ibm-9447_P100-2002.ucm (1.2),
+	data/mappings/ibm-9449_P100-2002.ucm (1.2),
+	data/mappings/ibm-949_P110-1999.ucm (1.2),
+	data/mappings/ibm-949_P11A-1999.ucm (1.2),
+	data/mappings/ibm-950_P110-1999.ucm (1.2),
+	data/mappings/ibm-954_P101-2000.ucm (1.2),
+	data/mappings/ibm-964_P110-1999.ucm (1.2),
+	data/mappings/ibm-970_P110-1995.ucm (1.2),
+	data/mappings/ibm-971_P100-1995.ucm (1.2),
+	data/mappings/icu-internal-25546.ucm (1.2),
+	data/mappings/iso-ir-165.ucm (1.2), data/mappings/jisx-201.ucm
+	(1.2), data/mappings/jisx-208.ucm (1.2), data/mappings/jisx-212.ucm
+	(1.2), data/mappings/lmb-excp.ucm (1.2),
+	data/mappings/macos-0_2-10.2.ucm (1.2),
+	data/mappings/macos-2566-10.2.ucm (1.2),
+	data/mappings/macos-29-10.2.ucm (1.2),
+	data/mappings/macos-35-10.2.ucm (1.2),
+	data/mappings/macos-6-10.2.ucm (1.2),
+	data/mappings/macos-7_3-10.2.ucm (1.2), data/mappings/ucmcore.mk
+	(1.2), data/mappings/ucmebcdic.mk (1.2), data/mappings/ucmfiles.mk
+	(1.2), data/mappings/windows-1256-2000.ucm (1.2),
+	data/mappings/windows-874-2000.ucm (1.2),
+	data/mappings/windows-936-2000.ucm (1.2),
+	data/mappings/windows-949-2000.ucm (1.2),
+	data/mappings/windows-950-2000.ucm (1.2),
+	data/misc/NamePrepProfile.txt (1.2), data/misc/icudata.rc (1.2),
+	data/misc/miscfiles.mk (1.2), data/misc/zoneinfo.txt (1.2),
+	data/translit/t_Any_Accents.txt (1.2),
+	data/translit/t_Any_Publishing.txt (1.2),
+	data/translit/t_Arab_Latn.txt (1.2),
+	data/translit/t_Beng_InterIndic.txt (1.2),
+	data/translit/t_Cyrl_Latn.txt (1.2),
+	data/translit/t_Deva_InterIndic.txt (1.2),
+	data/translit/t_FWidth_HWidth.txt (1.2),
+	data/translit/t_Grek_Latn.txt (1.2),
+	data/translit/t_Grek_Latn_UNGEGN.txt (1.2),
+	data/translit/t_Gujr_InterIndic.txt (1.2),
+	data/translit/t_Guru_InterIndic.txt (1.2),
+	data/translit/t_Hani_Latn.txt (1.2), data/translit/t_Hani_SpHan.txt
+	(1.2), data/translit/t_Hebr_Latn.txt (1.2),
+	data/translit/t_Hira_Kana.txt (1.2), data/translit/t_Hira_Latn.txt
+	(1.2), data/translit/t_InterIndic_Beng.txt (1.2),
+	data/translit/t_InterIndic_Deva.txt (1.2),
+	data/translit/t_InterIndic_Gujr.txt (1.2),
+	data/translit/t_InterIndic_Guru.txt (1.2),
+	data/translit/t_InterIndic_Knda.txt (1.2),
+	data/translit/t_InterIndic_Latn.txt (1.2),
+	data/translit/t_InterIndic_Mlym.txt (1.2),
+	data/translit/t_InterIndic_Orya.txt (1.2),
+	data/translit/t_InterIndic_Taml.txt (1.2),
+	data/translit/t_InterIndic_Telu.txt (1.2),
+	data/translit/t_Knda_InterIndic.txt (1.2),
+	data/translit/t_Latn_InterIndic.txt (1.2),
+	data/translit/t_Latn_Jamo.txt (1.2), data/translit/t_Latn_Kana.txt
+	(1.2), data/translit/t_Latn_NPinyn.txt (1.2),
+	data/translit/t_Mlym_InterIndic.txt (1.2),
+	data/translit/t_Orya_InterIndic.txt (1.2),
+	data/translit/t_Taml_InterIndic.txt (1.2),
+	data/translit/t_Telu_InterIndic.txt (1.2),
+	data/translit/t_Tone_Digit.txt (1.2),
+	data/translit/translit_index.txt (1.2), data/translit/trnsfiles.mk
+	(1.2), data/unidata/BidiMirroring.txt (1.2),
+	data/unidata/Blocks.txt (1.2), data/unidata/CaseFolding.txt (1.2),
+	data/unidata/DerivedAge.txt (1.2),
+	data/unidata/DerivedBidiClass.txt (1.2),
+	data/unidata/DerivedCoreProperties.txt (1.2),
+	data/unidata/DerivedJoiningGroup.txt (1.2),
+	data/unidata/DerivedJoiningType.txt (1.2),
+	data/unidata/DerivedNormalizationProps.txt (1.2),
+	data/unidata/DerivedNumericValues.txt (1.2),
+	data/unidata/EastAsianWidth.txt (1.2),
+	data/unidata/FractionalUCA.txt (1.2), data/unidata/LineBreak.txt
+	(1.2), data/unidata/NormalizationCorrections.txt (1.2),
+	data/unidata/NormalizationTest.txt (1.2), data/unidata/PropList.txt
+	(1.2), data/unidata/PropertyAliases.txt (1.2),
+	data/unidata/PropertyValueAliases.txt (1.2),
+	data/unidata/Scripts.txt (1.2), data/unidata/SpecialCasing.txt
+	(1.2), data/unidata/UCARules.txt (1.2),
+	data/unidata/UnicodeData.txt (1.2), data/unidata/changes.txt (1.2),
+	data/unidata/ucdterms.txt (1.2), extra/.cvsignore (1.2),
+	extra/Makefile.in (1.2), extra/scrptrun/.cvsignore (1.2),
+	extra/scrptrun/Makefile.in (1.2), extra/scrptrun/readme.html (1.2),
+	extra/scrptrun/scrptrun.cpp (1.2), extra/scrptrun/scrptrun.h (1.2),
+	extra/scrptrun/srtest.cpp (1.2), extra/scrptrun/srtest.dsp (1.2),
+	extra/scrptrun/srtest.dsw (1.2), extra/uconv/.cvsignore (1.2),
+	extra/uconv/Makefile.in (1.2), extra/uconv/README (1.2),
+	extra/uconv/makedata.mak (1.2), extra/uconv/pkgdata.inc.in (1.2),
+	extra/uconv/resfiles.mk (1.2), extra/uconv/uconv.1.in (1.2),
+	extra/uconv/uconv.cpp (1.2), extra/uconv/uconv.dsp (1.2),
+	extra/uconv/uconv.vcproj (1.2), extra/uconv/uwmsg.c (1.2),
+	extra/uconv/resources/.cvsignore (1.2),
+	extra/uconv/resources/fr.txt (1.2), extra/uconv/resources/root.txt
+	(1.2), extra/uconv/samples/ISO-8859-2.txt (1.2),
+	extra/uconv/samples/ISO-8859-3.txt (1.2),
+	extra/uconv/samples/danish-ISO-8859-1.txt (1.2),
+	extra/uconv/samples/eucJP.txt (1.2),
+	extra/uconv/samples/hangul-eucKR.txt (1.2),
+	extra/uconv/samples/hania-eucKR.txt (1.2),
+	extra/uconv/samples/iso8859-1.txt (1.2),
+	extra/uconv/samples/koi8r.txt (1.2),
+	extra/uconv/samples/utf8/armenian.txt (1.2),
+	extra/uconv/samples/utf8/banviet.txt (1.2),
+	extra/uconv/samples/utf8/chinese-ulysses.txt (1.2),
+	extra/uconv/samples/utf8/croat.txt (1.2),
+	extra/uconv/samples/utf8/danish.txt (1.2),
+	extra/uconv/samples/utf8/greek.txt (1.2),
+	extra/uconv/samples/utf8/hangul.txt (1.2),
+	extra/uconv/samples/utf8/hania.txt (1.2),
+	extra/uconv/samples/utf8/jap.txt (1.2),
+	extra/uconv/samples/utf8/korean.txt (1.2),
+	extra/uconv/samples/utf8/linji.txt (1.2),
+	extra/uconv/samples/utf8/many.txt (1.2),
+	extra/uconv/samples/utf8/maopoem.txt (1.2),
+	extra/uconv/samples/utf8/russian.txt (1.2),
+	extra/uconv/samples/utf8/simplechinese.txt (1.2),
+	extra/uconv/samples/utf8/turkish.txt (1.2),
+	extra/uconv/samples/utf8/utf-8-demo.txt (1.2),
+	extra/uconv/unicode/uwmsg.h (1.2), i18n/.cvsignore (1.2),
+	i18n/Makefile.in (1.2), i18n/anytrans.cpp (1.2), i18n/anytrans.h
+	(1.2), i18n/astro.cpp (1.2), i18n/astro.h (1.2), i18n/bocsu.c
+	(1.2), i18n/bocsu.h (1.2), i18n/buddhcal.cpp (1.2), i18n/buddhcal.h
+	(1.2), i18n/calendar.cpp (1.2), i18n/chnsecal.cpp (1.2),
+	i18n/chnsecal.h (1.2), i18n/choicfmt.cpp (1.2), i18n/coleitr.cpp
+	(1.2), i18n/coll.cpp (1.2), i18n/cpdtrans.cpp (1.2),
+	i18n/cpdtrans.h (1.2), i18n/curramt.cpp (1.2), i18n/currfmt.cpp
+	(1.2), i18n/currfmt.h (1.2), i18n/currunit.cpp (1.2),
+	i18n/datefmt.cpp (1.2), i18n/dcfmtsym.cpp (1.2), i18n/decimfmt.cpp
+	(1.2), i18n/digitlst.cpp (1.2), i18n/digitlst.h (1.2),
+	i18n/dtfmtsym.cpp (1.2), i18n/esctrn.cpp (1.2), i18n/esctrn.h
+	(1.2), i18n/fmtable.cpp (1.2), i18n/format.cpp (1.2),
+	i18n/funcrepl.cpp (1.2), i18n/funcrepl.h (1.2), i18n/gregocal.cpp
+	(1.2), i18n/gregoimp.cpp (1.2), i18n/gregoimp.h (1.2),
+	i18n/hebrwcal.cpp (1.2), i18n/hebrwcal.h (1.2), i18n/i18n.dsp
+	(1.2), i18n/i18n.rc (1.2), i18n/i18n.vcproj (1.2),
+	i18n/islamcal.cpp (1.2), i18n/islamcal.h (1.2), i18n/japancal.cpp
+	(1.2), i18n/japancal.h (1.2), i18n/measfmt.cpp (1.2),
+	i18n/measure.cpp (1.2), i18n/msgfmt.cpp (1.2), i18n/name2uni.cpp
+	(1.2), i18n/name2uni.h (1.2), i18n/nfrlist.h (1.2), i18n/nfrs.cpp
+	(1.2), i18n/nfrs.h (1.2), i18n/nfrule.cpp (1.2), i18n/nfrule.h
+	(1.2), i18n/nfsubs.cpp (1.2), i18n/nfsubs.h (1.2),
+	i18n/nortrans.cpp (1.2), i18n/nortrans.h (1.2), i18n/nultrans.cpp
+	(1.2), i18n/nultrans.h (1.2), i18n/numfmt.cpp (1.2),
+	i18n/olsontz.cpp (1.2), i18n/olsontz.h (1.2), i18n/quant.cpp (1.2),
+	i18n/quant.h (1.2), i18n/rbnf.cpp (1.2), i18n/rbt.cpp (1.2),
+	i18n/rbt.h (1.2), i18n/rbt_data.cpp (1.2), i18n/rbt_data.h (1.2),
+	i18n/rbt_pars.cpp (1.2), i18n/rbt_pars.h (1.2), i18n/rbt_rule.cpp
+	(1.2), i18n/rbt_rule.h (1.2), i18n/rbt_set.cpp (1.2),
+	i18n/rbt_set.h (1.2), i18n/regexcmp.cpp (1.2), i18n/regexcmp.h
+	(1.2), i18n/regexcst.h (1.2), i18n/regexcst.pl (1.2),
+	i18n/regexcst.txt (1.2), i18n/regeximp.h (1.2), i18n/regexst.cpp
+	(1.2), i18n/regexst.h (1.2), i18n/rematch.cpp (1.2),
+	i18n/remtrans.cpp (1.2), i18n/remtrans.h (1.2), i18n/repattrn.cpp
+	(1.2), i18n/search.cpp (1.2), i18n/simpletz.cpp (1.2),
+	i18n/smpdtfmt.cpp (1.2), i18n/sortkey.cpp (1.2), i18n/strmatch.cpp
+	(1.2), i18n/strmatch.h (1.2), i18n/strrepl.cpp (1.2),
+	i18n/strrepl.h (1.2), i18n/stsearch.cpp (1.2), i18n/tblcoll.cpp
+	(1.2), i18n/timezone.cpp (1.2), i18n/titletrn.cpp (1.2),
+	i18n/titletrn.h (1.2), i18n/tolowtrn.cpp (1.2), i18n/tolowtrn.h
+	(1.2), i18n/toupptrn.cpp (1.2), i18n/toupptrn.h (1.2),
+	i18n/translit.cpp (1.2), i18n/transreg.cpp (1.2), i18n/transreg.h
+	(1.2), i18n/tridpars.cpp (1.2), i18n/tridpars.h (1.2),
+	i18n/ucal.cpp (1.2), i18n/ucln_in.c (1.2), i18n/ucln_in.h (1.2),
+	i18n/ucol.cpp (1.2), i18n/ucol_bld.cpp (1.2), i18n/ucol_bld.h
+	(1.2), i18n/ucol_cnt.cpp (1.2), i18n/ucol_cnt.h (1.2),
+	i18n/ucol_elm.cpp (1.2), i18n/ucol_elm.h (1.2), i18n/ucol_imp.h
+	(1.2), i18n/ucol_sit.cpp (1.2), i18n/ucol_tok.cpp (1.2),
+	i18n/ucol_tok.h (1.2), i18n/ucol_wgt.c (1.2), i18n/ucol_wgt.h
+	(1.2), i18n/ucoleitr.cpp (1.2), i18n/ucurr.cpp (1.2),
+	i18n/ucurrimp.h (1.2), i18n/udat.cpp (1.2), i18n/ulocdata.c (1.2),
+	i18n/umsg.cpp (1.2), i18n/umsg_imp.h (1.2), i18n/unesctrn.cpp
+	(1.2), i18n/unesctrn.h (1.2), i18n/uni2name.cpp (1.2),
+	i18n/uni2name.h (1.2), i18n/unum.cpp (1.2), i18n/uregex.cpp (1.2),
+	i18n/usearch.cpp (1.2), i18n/usrchimp.h (1.2), i18n/utrans.cpp
+	(1.2), i18n/unicode/calendar.h (1.2), i18n/unicode/choicfmt.h
+	(1.2), i18n/unicode/coleitr.h (1.2), i18n/unicode/coll.h (1.2),
+	i18n/unicode/curramt.h (1.2), i18n/unicode/currunit.h (1.2),
+	i18n/unicode/datefmt.h (1.2), i18n/unicode/dcfmtsym.h (1.2),
+	i18n/unicode/decimfmt.h (1.2), i18n/unicode/dtfmtsym.h (1.2),
+	i18n/unicode/fieldpos.h (1.2), i18n/unicode/fmtable.h (1.2),
+	i18n/unicode/format.h (1.2), i18n/unicode/gregocal.h (1.2),
+	i18n/unicode/measfmt.h (1.2), i18n/unicode/measunit.h (1.2),
+	i18n/unicode/measure.h (1.2), i18n/unicode/msgfmt.h (1.2),
+	i18n/unicode/numfmt.h (1.2), i18n/unicode/rbnf.h (1.2),
+	i18n/unicode/regex.h (1.2), i18n/unicode/search.h (1.2),
+	i18n/unicode/simpletz.h (1.2), i18n/unicode/smpdtfmt.h (1.2),
+	i18n/unicode/sortkey.h (1.2), i18n/unicode/stsearch.h (1.2),
+	i18n/unicode/tblcoll.h (1.2), i18n/unicode/timezone.h (1.2),
+	i18n/unicode/translit.h (1.2), i18n/unicode/ucal.h (1.2),
+	i18n/unicode/ucol.h (1.2), i18n/unicode/ucoleitr.h (1.2),
+	i18n/unicode/ucurr.h (1.2), i18n/unicode/udat.h (1.2),
+	i18n/unicode/ulocdata.h (1.2), i18n/unicode/umsg.h (1.2),
+	i18n/unicode/unirepl.h (1.2), i18n/unicode/unum.h (1.2),
+	i18n/unicode/uregex.h (1.2), i18n/unicode/usearch.h (1.2),
+	i18n/unicode/utrans.h (1.2):
+	
+	Merge INTL branch into HEAD
+
+2005-05-28 00:17  asfernandes
+
+	* firebird2/extern/: editline/readline/readline.h (1.2),
+	icu/.cvsignore (1.2), icu/license.html (1.2), icu/readme.html
+	(1.2), icu/as_is/os390/unpax-icu.sh (1.2),
+	icu/as_is/os400/configure (1.2), icu/as_is/os400/unpax-icu.sh
+	(1.2), icu/debian/.cvsignore (1.2),
+	icu/debian/README.Debian.libicu-dev (1.2), icu/debian/changelog
+	(1.2), icu/debian/control (1.2), icu/debian/copyright (1.2),
+	icu/debian/icu-doc.doc-base (1.2), icu/debian/icu.conffiles.in
+	(1.2), icu/debian/icu.postinst.in (1.2), icu/debian/icu.prerm.in
+	(1.2), icu/debian/libicu.postinst (1.2), icu/debian/libicu.prerm.in
+	(1.2), icu/debian/postinst.in (1.2), icu/debian/prerm.in (1.2),
+	icu/debian/rules (1.2), icu/packaging/PACKAGES (1.2),
+	icu/packaging/README (1.2), icu/packaging/debian/README (1.2),
+	icu/packaging/rpm/icu.spec (1.2), icu/source/.cvsignore (1.2),
+	icu/source/Doxyfile.in (1.2), icu/source/Makefile.in (1.2),
+	icu/source/acconfig.h (1.2), icu/source/aclocal.m4 (1.2),
+	icu/source/config.guess (1.2), icu/source/config.sub (1.2),
+	icu/source/configure (1.2), icu/source/configure.in (1.2),
+	icu/source/icudefs.mk.in (1.2), icu/source/install-sh (1.2),
+	icu/source/mkinstalldirs (1.2), icu/source/runConfigureICU (1.2),
+	icu/source/allinone/.cvsignore (1.2),
+	icu/source/allinone/allinone.dsw (1.2),
+	icu/source/allinone/allinone.sln (1.2),
+	icu/source/allinone/all/.cvsignore (1.2),
+	icu/source/allinone/all/all.dsp (1.2), icu/source/common/.cvsignore
+	(1.2), icu/source/common/Makefile.in (1.2),
+	icu/source/common/brkdict.cpp (1.2), icu/source/common/brkdict.h
+	(1.2), icu/source/common/brkiter.cpp (1.2),
+	icu/source/common/caniter.cpp (1.2), icu/source/common/chariter.cpp
+	(1.2), icu/source/common/charstr.h (1.2),
+	icu/source/common/cmemory.c (1.2), icu/source/common/cmemory.h
+	(1.2), icu/source/common/common.dsp (1.2),
+	icu/source/common/common.rc (1.2), icu/source/common/common.vcproj
+	(1.2), icu/source/common/cpputils.h (1.2),
+	icu/source/common/cstring.c (1.2), icu/source/common/cstring.h
+	(1.2), icu/source/common/cwchar.c (1.2), icu/source/common/cwchar.h
+	(1.2), icu/source/common/dbbi.cpp (1.2),
+	icu/source/common/dbbi_tbl.cpp (1.2), icu/source/common/dbbi_tbl.h
+	(1.2), icu/source/common/filestrm.c (1.2),
+	icu/source/common/filestrm.h (1.2), icu/source/common/hash.h (1.2),
+	icu/source/common/icucfg.h.in (1.2), icu/source/common/iculserv.cpp
+	(1.2), icu/source/common/iculserv.h (1.2),
+	icu/source/common/icunotif.cpp (1.2), icu/source/common/icunotif.h
+	(1.2), icu/source/common/icuserv.cpp (1.2),
+	icu/source/common/icuserv.h (1.2), icu/source/common/locbased.cpp
+	(1.2), icu/source/common/locbased.h (1.2),
+	icu/source/common/locid.cpp (1.2), icu/source/common/locmap.c
+	(1.2), icu/source/common/locmap.h (1.2),
+	icu/source/common/msvcres.h (1.2), icu/source/common/mutex.h (1.2),
+	icu/source/common/normlzr.cpp (1.2), icu/source/common/parsepos.cpp
+	(1.2), icu/source/common/propname.cpp (1.2),
+	icu/source/common/propname.h (1.2), icu/source/common/punycode.c
+	(1.2), icu/source/common/punycode.h (1.2),
+	icu/source/common/putil.c (1.2), icu/source/common/rbbi.cpp (1.2),
+	icu/source/common/rbbicst.pl (1.2), icu/source/common/rbbidata.cpp
+	(1.2), icu/source/common/rbbidata.h (1.2),
+	icu/source/common/rbbinode.cpp (1.2), icu/source/common/rbbinode.h
+	(1.2), icu/source/common/rbbirb.cpp (1.2),
+	icu/source/common/rbbirb.h (1.2), icu/source/common/rbbirpt.h
+	(1.2), icu/source/common/rbbirpt.txt (1.2),
+	icu/source/common/rbbiscan.cpp (1.2), icu/source/common/rbbiscan.h
+	(1.2), icu/source/common/rbbisetb.cpp (1.2),
+	icu/source/common/rbbisetb.h (1.2), icu/source/common/rbbistbl.cpp
+	(1.2), icu/source/common/rbbitblb.cpp (1.2),
+	icu/source/common/rbbitblb.h (1.2), icu/source/common/resbund.cpp
+	(1.2), icu/source/common/ruleiter.cpp (1.2),
+	icu/source/common/ruleiter.h (1.2), icu/source/common/schriter.cpp
+	(1.2), icu/source/common/sprpimpl.h (1.2),
+	icu/source/common/uarrsort.c (1.2), icu/source/common/uarrsort.h
+	(1.2), icu/source/common/uassert.h (1.2), icu/source/common/ubidi.c
+	(1.2), icu/source/common/ubidiimp.h (1.2),
+	icu/source/common/ubidiln.c (1.2), icu/source/common/ubidiwrt.c
+	(1.2), icu/source/common/ubrk.cpp (1.2), icu/source/common/ucat.c
+	(1.2), icu/source/common/uchar.c (1.2),
+	icu/source/common/uchriter.cpp (1.2), icu/source/common/ucln.h
+	(1.2), icu/source/common/ucln_cmn.c (1.2),
+	icu/source/common/ucln_cmn.h (1.2), icu/source/common/ucmndata.c
+	(1.2), icu/source/common/ucmndata.h (1.2),
+	icu/source/common/ucmp8.c (1.2), icu/source/common/ucmp8.h (1.2),
+	icu/source/common/ucnv.c (1.2), icu/source/common/ucnv2022.c (1.2),
+	icu/source/common/ucnv_bld.c (1.2), icu/source/common/ucnv_bld.h
+	(1.2), icu/source/common/ucnv_cb.c (1.2),
+	icu/source/common/ucnv_cnv.c (1.2), icu/source/common/ucnv_cnv.h
+	(1.2), icu/source/common/ucnv_err.c (1.2),
+	icu/source/common/ucnv_ext.c (1.2), icu/source/common/ucnv_ext.h
+	(1.2), icu/source/common/ucnv_imp.h (1.2),
+	icu/source/common/ucnv_io.c (1.2), icu/source/common/ucnv_io.h
+	(1.2), icu/source/common/ucnv_lmb.c (1.2),
+	icu/source/common/ucnv_u16.c (1.2), icu/source/common/ucnv_u32.c
+	(1.2), icu/source/common/ucnv_u7.c (1.2),
+	icu/source/common/ucnv_u8.c (1.2), icu/source/common/ucnvbocu.c
+	(1.2), icu/source/common/ucnvhz.c (1.2),
+	icu/source/common/ucnvisci.c (1.2), icu/source/common/ucnvlat1.c
+	(1.2), icu/source/common/ucnvmbcs.c (1.2),
+	icu/source/common/ucnvmbcs.h (1.2), icu/source/common/ucnvscsu.c
+	(1.2), icu/source/common/ucol_swp.c (1.2),
+	icu/source/common/ucol_swp.h (1.2), icu/source/common/udata.c
+	(1.2), icu/source/common/udatamem.c (1.2),
+	icu/source/common/udatamem.h (1.2), icu/source/common/udataswp.c
+	(1.2), icu/source/common/udataswp.h (1.2),
+	icu/source/common/uenum.c (1.2), icu/source/common/uenumimp.h
+	(1.2), icu/source/common/uhash.c (1.2), icu/source/common/uhash.h
+	(1.2), icu/source/common/uhash_us.cpp (1.2),
+	icu/source/common/uidna.cpp (1.2), icu/source/common/uiter.cpp
+	(1.2), icu/source/common/uloc.c (1.2), icu/source/common/ulocimp.h
+	(1.2), icu/source/common/umapfile.c (1.2),
+	icu/source/common/umapfile.h (1.2), icu/source/common/umemstrm.c
+	(1.2), icu/source/common/umemstrm.h (1.2),
+	icu/source/common/umutex.c (1.2), icu/source/common/umutex.h (1.2),
+	icu/source/common/unames.c (1.2), icu/source/common/unifilt.cpp
+	(1.2), icu/source/common/unifunct.cpp (1.2),
+	icu/source/common/uniset.cpp (1.2), icu/source/common/unistr.cpp
+	(1.2), icu/source/common/unorm.cpp (1.2),
+	icu/source/common/unorm_it.c (1.2), icu/source/common/unorm_it.h
+	(1.2), icu/source/common/unormimp.h (1.2),
+	icu/source/common/uobject.cpp (1.2), icu/source/common/uprops.c
+	(1.2), icu/source/common/uprops.h (1.2),
+	icu/source/common/uresbund.c (1.2), icu/source/common/uresdata.c
+	(1.2), icu/source/common/uresdata.h (1.2),
+	icu/source/common/uresimp.h (1.2), icu/source/common/usc_impl.c
+	(1.2), icu/source/common/usc_impl.h (1.2),
+	icu/source/common/uscript.c (1.2), icu/source/common/uset.cpp
+	(1.2), icu/source/common/usetiter.cpp (1.2),
+	icu/source/common/ushape.c (1.2), icu/source/common/usprep.cpp
+	(1.2), icu/source/common/ustack.cpp (1.2),
+	icu/source/common/ustr_imp.h (1.2), icu/source/common/ustrcase.c
+	(1.2), icu/source/common/ustrenum.cpp (1.2),
+	icu/source/common/ustrenum.h (1.2), icu/source/common/ustrfmt.c
+	(1.2), icu/source/common/ustrfmt.h (1.2),
+	icu/source/common/ustring.c (1.2), icu/source/common/ustrtrns.c
+	(1.2), icu/source/common/utf_impl.c (1.2),
+	icu/source/common/util.cpp (1.2), icu/source/common/util.h (1.2),
+	icu/source/common/utrace.c (1.2), icu/source/common/utracimp.h
+	(1.2), icu/source/common/utrie.c (1.2), icu/source/common/utrie.h
+	(1.2), icu/source/common/uvector.cpp (1.2),
+	icu/source/common/uvector.h (1.2), icu/source/common/uvectr32.cpp
+	(1.2), icu/source/common/uvectr32.h (1.2),
+	icu/source/common/unicode/.cvsignore (1.2),
+	icu/source/common/unicode/brkiter.h (1.2),
+	icu/source/common/unicode/caniter.h (1.2),
+	icu/source/common/unicode/chariter.h (1.2),
+	icu/source/common/unicode/dbbi.h (1.2),
+	icu/source/common/unicode/docmain.h (1.2),
+	icu/source/common/unicode/locid.h (1.2),
+	icu/source/common/unicode/normlzr.h (1.2),
+	icu/source/common/unicode/parseerr.h (1.2),
+	icu/source/common/unicode/parsepos.h (1.2),
+	icu/source/common/unicode/platform.h.in (1.2),
+	icu/source/common/unicode/pmacos.h (1.2),
+	icu/source/common/unicode/pos400.h (1.2),
+	icu/source/common/unicode/putil.h (1.2),
+	icu/source/common/unicode/pwin32.h (1.2),
+	icu/source/common/unicode/rbbi.h (1.2),
+	icu/source/common/unicode/rep.h (1.2),
+	icu/source/common/unicode/resbund.h (1.2),
+	icu/source/common/unicode/schriter.h (1.2),
+	icu/source/common/unicode/strenum.h (1.2),
+	icu/source/common/unicode/symtable.h (1.2),
+	icu/source/common/unicode/ubidi.h (1.2),
+	icu/source/common/unicode/ubrk.h (1.2),
+	icu/source/common/unicode/ucat.h (1.2),
+	icu/source/common/unicode/uchar.h (1.2),
+	icu/source/common/unicode/uchriter.h (1.2),
+	icu/source/common/unicode/uclean.h (1.2),
+	icu/source/common/unicode/ucnv.h (1.2),
+	icu/source/common/unicode/ucnv_cb.h (1.2),
+	icu/source/common/unicode/ucnv_err.h (1.2),
+	icu/source/common/unicode/uconfig.h (1.2),
+	icu/source/common/unicode/udata.h (1.2),
+	icu/source/common/unicode/udeprctd.h (1.2),
+	icu/source/common/unicode/udraft.h (1.2),
+	icu/source/common/unicode/uenum.h (1.2),
+	icu/source/common/unicode/uidna.h (1.2),
+	icu/source/common/unicode/uiter.h (1.2),
+	icu/source/common/unicode/uloc.h (1.2),
+	icu/source/common/unicode/umachine.h (1.2),
+	icu/source/common/unicode/umisc.h (1.2),
+	icu/source/common/unicode/unifilt.h (1.2),
+	icu/source/common/unicode/unifunct.h (1.2),
+	icu/source/common/unicode/unimatch.h (1.2),
+	icu/source/common/unicode/uniset.h (1.2),
+	icu/source/common/unicode/unistr.h (1.2),
+	icu/source/common/unicode/unorm.h (1.2),
+	icu/source/common/unicode/uobject.h (1.2),
+	icu/source/common/unicode/uobslete.h (1.2),
+	icu/source/common/unicode/urename.h (1.2),
+	icu/source/common/unicode/urep.h (1.2),
+	icu/source/common/unicode/ures.h (1.2),
+	icu/source/common/unicode/uscript.h (1.2),
+	icu/source/common/unicode/uset.h (1.2),
+	icu/source/common/unicode/usetiter.h (1.2),
+	icu/source/common/unicode/ushape.h (1.2),
+	icu/source/common/unicode/usprep.h (1.2),
+	icu/source/common/unicode/ustring.h (1.2),
+	icu/source/common/unicode/utf.h (1.2),
+	icu/source/common/unicode/utf16.h (1.2),
+	icu/source/common/unicode/utf32.h (1.2),
+	icu/source/common/unicode/utf8.h (1.2),
+	icu/source/common/unicode/utf_old.h (1.2),
+	icu/source/common/unicode/utrace.h (1.2),
+	icu/source/common/unicode/utypes.h (1.2),
+	icu/source/common/unicode/uversion.h (1.2),
+	icu/source/config/.cvsignore (1.2),
+	icu/source/config/Makefile.inc.in (1.2),
+	icu/source/config/icu-config-bottom (1.2),
+	icu/source/config/icu-config-top (1.2),
+	icu/source/config/icu-config.1.in (1.2),
+	icu/source/config/make2sh.sed (1.2), icu/source/config/mh-aix
+	(1.2), icu/source/config/mh-aix-gcc (1.2),
+	icu/source/config/mh-aix-va (1.2),
+	icu/source/config/mh-alpha-linux-cc (1.2),
+	icu/source/config/mh-alpha-linux-gcc (1.2),
+	icu/source/config/mh-alpha-osf (1.2), icu/source/config/mh-beos
+	(1.2), icu/source/config/mh-bsd-gcc (1.2),
+	icu/source/config/mh-cygwin (1.2), icu/source/config/mh-cygwin-msvc
+	(1.2), icu/source/config/mh-darwin (1.2),
+	icu/source/config/mh-hpux-acc (1.2), icu/source/config/mh-hpux-cc
+	(1.2), icu/source/config/mh-hpux-gcc (1.2),
+	icu/source/config/mh-irix (1.2), icu/source/config/mh-linux (1.2),
+	icu/source/config/mh-mpras (1.2), icu/source/config/mh-os390 (1.2),
+	icu/source/config/mh-os400 (1.2), icu/source/config/mh-ptx (1.2),
+	icu/source/config/mh-qnx (1.2), icu/source/config/mh-solaris (1.2),
+	icu/source/config/mh-solaris-gcc (1.2),
+	icu/source/config/mh-unknown (1.2),
+	icu/source/config/test-icu-config.sh (1.2),
+	icu/source/data/.cvsignore (1.2), icu/source/data/Makefile.in
+	(1.2), icu/source/data/icupkg.inc.in (1.2),
+	icu/source/data/makedata.dsp (1.2), icu/source/data/makedata.mak
+	(1.2), icu/source/data/makedata.vcproj (1.2),
+	icu/source/data/brkitr/char.txt (1.2),
+	icu/source/data/brkitr/line.txt (1.2),
+	icu/source/data/brkitr/line_th.txt (1.2),
+	icu/source/data/brkitr/sent.txt (1.2),
+	icu/source/data/brkitr/thaidict.brk (1.2),
+	icu/source/data/brkitr/title.txt (1.2),
+	icu/source/data/brkitr/word.txt (1.2),
+	icu/source/data/brkitr/word_th.txt (1.2),
+	icu/source/data/coll/ar.txt (1.2), icu/source/data/coll/be.txt
+	(1.2), icu/source/data/coll/bg.txt (1.2),
+	icu/source/data/coll/ca.txt (1.2), icu/source/data/coll/colfiles.mk
+	(1.2), icu/source/data/coll/cs.txt (1.2),
+	icu/source/data/coll/da.txt (1.2), icu/source/data/coll/de.txt
+	(1.2), icu/source/data/coll/de__PHONEBOOK.txt (1.2),
+	icu/source/data/coll/el.txt (1.2), icu/source/data/coll/en.txt
+	(1.2), icu/source/data/coll/en_BE.txt (1.2),
+	icu/source/data/coll/eo.txt (1.2), icu/source/data/coll/es.txt
+	(1.2), icu/source/data/coll/es__TRADITIONAL.txt (1.2),
+	icu/source/data/coll/et.txt (1.2), icu/source/data/coll/fa.txt
+	(1.2), icu/source/data/coll/fa_AF.txt (1.2),
+	icu/source/data/coll/fi.txt (1.2), icu/source/data/coll/fo.txt
+	(1.2), icu/source/data/coll/fr.txt (1.2),
+	icu/source/data/coll/gu.txt (1.2), icu/source/data/coll/he.txt
+	(1.2), icu/source/data/coll/hi.txt (1.2),
+	icu/source/data/coll/hi__DIRECT.txt (1.2),
+	icu/source/data/coll/hr.txt (1.2), icu/source/data/coll/hu.txt
+	(1.2), icu/source/data/coll/is.txt (1.2),
+	icu/source/data/coll/it.txt (1.2), icu/source/data/coll/ja.txt
+	(1.2), icu/source/data/coll/kk.txt (1.2),
+	icu/source/data/coll/kl.txt (1.2), icu/source/data/coll/kn.txt
+	(1.2), icu/source/data/coll/ko.txt (1.2),
+	icu/source/data/coll/lt.txt (1.2), icu/source/data/coll/lv.txt
+	(1.2), icu/source/data/coll/mk.txt (1.2),
+	icu/source/data/coll/mr.txt (1.2), icu/source/data/coll/mt.txt
+	(1.2), icu/source/data/coll/nb.txt (1.2),
+	icu/source/data/coll/nn.txt (1.2), icu/source/data/coll/om.txt
+	(1.2), icu/source/data/coll/pa.txt (1.2),
+	icu/source/data/coll/pl.txt (1.2), icu/source/data/coll/ps.txt
+	(1.2), icu/source/data/coll/ro.txt (1.2),
+	icu/source/data/coll/root.txt (1.2), icu/source/data/coll/ru.txt
+	(1.2), icu/source/data/coll/sh.txt (1.2),
+	icu/source/data/coll/sk.txt (1.2), icu/source/data/coll/sl.txt
+	(1.2), icu/source/data/coll/sq.txt (1.2),
+	icu/source/data/coll/sr.txt (1.2), icu/source/data/coll/sv.txt
+	(1.2), icu/source/data/coll/ta.txt (1.2),
+	icu/source/data/coll/te.txt (1.2), icu/source/data/coll/th.txt
+	(1.2), icu/source/data/coll/tr.txt (1.2),
+	icu/source/data/coll/uk.txt (1.2), icu/source/data/coll/vi.txt
+	(1.2), icu/source/data/coll/zh.txt (1.2),
+	icu/source/data/coll/zh_HK.txt (1.2),
+	icu/source/data/coll/zh_Hant.txt (1.2),
+	icu/source/data/coll/zh_MO.txt (1.2),
+	icu/source/data/coll/zh_TW.txt (1.2),
+	icu/source/data/coll/zh_TW_STROKE.txt (1.2),
+	icu/source/data/coll/zh__PINYIN.txt (1.2):
+	
+	Merge INTL branch into HEAD
+
+2005-05-28 00:14  asfernandes
+
+	* firebird2/: autogen.sh (1.12), configure.in (1.226),
+	builds/install/arch-specific/freebsd/install.sh.in (1.9),
+	builds/install/arch-specific/linux/Makefile.in (1.6),
+	builds/install/arch-specific/linux/classic/makeInstallImage.sh.in
+	(1.13),
+	builds/install/arch-specific/linux/classic/postinstall.sh.in
+	(1.12),
+	builds/install/arch-specific/linux/classic/postuninstall.sh.in
+	(1.3), builds/install/arch-specific/linux/classic/preinstall.sh.in
+	(1.6),
+	builds/install/arch-specific/linux/classic/preuninstall.sh.in
+	(1.4),
+	builds/install/arch-specific/linux/super/makeInstallImage.sh.in
+	(1.11),
+	builds/install/arch-specific/linux/super/tarMainInstall.sh.in
+	(1.3),
+	builds/install/arch-specific/linux/super/tarMainUninstall.sh.in
+	(1.3), builds/install/arch-specific/linux/super/tarinstall.sh.in
+	(1.4), builds/install/arch-specific/linux/super/taruninstall.sh.in
+	(1.3), builds/install/arch-specific/netbsd/install.sh.in (1.3),
+	builds/install/arch-specific/sinixz/prototype.in (1.7),
+	builds/install/arch-specific/solaris/Makefile.in (1.3),
+	builds/install/arch-specific/solaris/CS/postinstall.in (1.2),
+	builds/install/arch-specific/solaris/CS/postremove.in (1.2),
+	builds/install/arch-specific/solaris/CS/preinstall.in (1.2),
+	builds/install/arch-specific/solx86gcc/Makefile.in (1.4),
+	builds/install/arch-specific/solx86gcc/CS/postinstall.in (1.2),
+	builds/install/arch-specific/solx86gcc/CS/postremove.in (1.2),
+	builds/install/arch-specific/solx86gcc/CS/preinstall.in (1.2),
+	builds/install/arch-specific/win32/FirebirdInstall_20.iss (1.9),
+	builds/install/misc/changeGdsLibraryCompatibleLink.sh.in (1.2),
+	builds/install/misc/fb_config.in (1.2),
+	builds/install/misc/fbintl.conf (1.2),
+	builds/posix/Makefile.in.boot.gpre (1.23),
+	builds/posix/Makefile.in.client.fbudf (1.5),
+	builds/posix/Makefile.in.client.gbak (1.11),
+	builds/posix/Makefile.in.client.gdef (1.11),
+	builds/posix/Makefile.in.client.gfix (1.13),
+	builds/posix/Makefile.in.client.gpre (1.18),
+	builds/posix/Makefile.in.client.gsec (1.4),
+	builds/posix/Makefile.in.client.isql (1.10),
+	builds/posix/Makefile.in.client.qli (1.6),
+	builds/posix/Makefile.in.client.util (1.24),
+	builds/posix/Makefile.in.embed.lockmgr (1.9),
+	builds/posix/Makefile.in.examples (1.5),
+	builds/posix/Makefile.in.extern.icu (1.2),
+	builds/posix/Makefile.in.extlib (1.20),
+	builds/posix/Makefile.in.fbserver (1.18),
+	builds/posix/Makefile.in.firebird (1.61),
+	builds/posix/Makefile.in.intl (1.21),
+	builds/posix/Makefile.in.libfbclient (1.29),
+	builds/posix/Makefile.in.libfbcommon (1.9),
+	builds/posix/Makefile.in.libfbembed (1.15),
+	builds/posix/Makefile.in.libfbstatic (1.8),
+	builds/posix/Makefile.in.refDatabases (1.27),
+	builds/posix/Makefile.in.static.gbak (1.10),
+	builds/posix/Makefile.in.static.gpre (1.17),
+	builds/posix/Makefile.in.static.isql (1.9),
+	builds/posix/fbintl.vers (1.3), builds/posix/make.defaults (1.39),
+	builds/posix/make.rules (1.25), builds/posix/make.shared.targets
+	(1.19), builds/posix/make.shared.variables (1.51),
+	builds/posix/prefix.linux_generic (1.2),
+	builds/posix/prefix.linux_sparc32 (1.6), builds/posix/prefix.netbsd
+	(1.3), builds/posix/prefix.solx86 (1.26),
+	builds/posix/prefix.solx86gcc (1.16), builds/win32/make_all.bat
+	(1.34), builds/win32/make_icu.bat (1.2), builds/win32/prepare.bat
+	(1.43), builds/win32/msvc6/Firebird2.dsw (1.36),
+	builds/win32/msvc6/config.dsp (1.2), builds/win32/msvc6/engine.dsp
+	(1.58), builds/win32/msvc6/engine_classic.dsp (1.54),
+	builds/win32/msvc6/engine_embed.dsp (1.33),
+	builds/win32/msvc6/fb_inet_server.dsp (1.22),
+	builds/win32/msvc6/fbembed.dsp (1.35),
+	builds/win32/msvc6/fbserver.dsp (1.36),
+	builds/win32/msvc7/Firebird2.sln (1.23),
+	builds/win32/msvc7/config.vcproj (1.2),
+	builds/win32/msvc7/engine.vcproj (1.48),
+	builds/win32/msvc7/engine_classic.vcproj (1.48),
+	builds/win32/msvc7/engine_embed.vcproj (1.36),
+	builds/win32/msvc7/fb_inet_server.vcproj (1.19),
+	builds/win32/msvc7/fbembed.vcproj (1.29),
+	builds/win32/msvc7/fbserver.vcproj (1.20),
+	builds/win32/msvc7/intl.vcproj (1.19), doc/WhatsNew (1.65),
+	doc/sql.extensions/README.keywords (1.2),
+	doc/sql.extensions/README.length (1.2),
+	doc/sql.extensions/README.trim (1.2), extern/editline/CHANGES
+	(1.2), extern/editline/INSTALL (1.2), extern/editline/Makefile.in
+	(1.2), extern/editline/PLATFORMS (1.2), extern/editline/README
+	(1.2), extern/editline/chared.c (1.2), extern/editline/chared.h
+	(1.2), extern/editline/common.c (1.2), extern/editline/config.guess
+	(1.2), extern/editline/config.h.in (1.2),
+	extern/editline/config.sub (1.2), extern/editline/configure (1.2),
+	extern/editline/configure.in (1.2), extern/editline/editline.3
+	(1.2), extern/editline/editrc.5 (1.2), extern/editline/el.c (1.2),
+	extern/editline/el.h (1.2), extern/editline/emacs.c (1.2),
+	extern/editline/hist.c (1.2), extern/editline/hist.h (1.2),
+	extern/editline/histedit.h (1.2), extern/editline/history.c (1.2),
+	extern/editline/install-sh (1.2), extern/editline/key.c (1.2),
+	extern/editline/key.h (1.2), extern/editline/makelist (1.2),
+	extern/editline/map.c (1.2), extern/editline/map.h (1.2),
+	extern/editline/parse.c (1.2), extern/editline/parse.h (1.2),
+	extern/editline/prompt.c (1.2), extern/editline/prompt.h (1.2),
+	extern/editline/read.c (1.2), extern/editline/read.h (1.2),
+	extern/editline/readline.c (1.2), extern/editline/refresh.c (1.2),
+	extern/editline/refresh.h (1.2), extern/editline/search.c (1.2),
+	extern/editline/search.h (1.2), extern/editline/sig.c (1.2),
+	extern/editline/sig.h (1.2), extern/editline/sys.h (1.2),
+	extern/editline/term.c (1.2), extern/editline/term.h (1.2),
+	extern/editline/tokenizer.c (1.2), extern/editline/tokenizer.h
+	(1.2), extern/editline/tty.c (1.2), extern/editline/tty.h (1.2),
+	extern/editline/vi.c (1.2), extern/editline/TEST/test.c (1.2),
+	extern/editline/np/fgetln.c (1.2), extern/editline/np/strlcat.c
+	(1.2), extern/editline/np/strlcpy.c (1.2),
+	extern/editline/np/unvis.c (1.2), extern/editline/np/vis.c (1.2),
+	extern/editline/np/vis.h (1.2):
+	
+	Merge INTL branch into HEAD
+
 2005-05-26 10:26  robocop
 
 	* firebird2/src/isql/show.epp (1.76):
