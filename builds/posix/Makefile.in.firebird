@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.61 2005-05-27 22:16:02 asfernandes Exp $
+#  $Id: Makefile.in.firebird,v 1.62 2005-05-29 15:26:54 asfernandes Exp $
 #
 
 ROOT=..
@@ -182,7 +182,7 @@ $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 # 
 # Libraries that come from outside the project but are built 
 # as part of the project are included here.  Currently IBM ICU and 
-# editline is the only externals libraries we have included.
+# editline are the only externals libraries we have included.
 # 
 EXTERNAL_LIBRARIES= $(LIBICU_SO)
 ifeq ($(EDITLINE_FLG),Y)
@@ -520,7 +520,7 @@ $(SrcTarFile) :
 #___________________________________________________________________________
 # 
 
-clean: clean_objects clean_dependancies clean_extern_objects clean_build clean_gpre_gen clean_editline
+clean: clean_objects clean_dependancies clean_extern_objects clean_build clean_gpre_gen clean_editline clean_icu
 
 clean_config: clean clean_makefiles
 	$(RM) $(ROOT)/configure
@@ -531,7 +531,10 @@ clean_dbs:
 
 
 clean_editline:
-	-make -C $(SRC_ROOT)/extern/editline clean
+	-make -C $(ROOT)/extern/editline clean
+
+clean_icu:
+	-make -C $(ROOT)/extern/icu/source clean
 
 clean_objects:
 	$(RM) `find $(GEN_ROOT)/ -type f -name '*.o' -print`

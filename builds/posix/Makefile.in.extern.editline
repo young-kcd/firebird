@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extern.editline,v 1.5 2004-05-11 07:30:56 eku Exp $
+#  $Id: Makefile.in.extern.editline,v 1.6 2005-05-29 15:26:54 asfernandes Exp $
 #
 ROOT=..
 #ObjModuleType=std
@@ -63,9 +63,9 @@ include     $(ROOT)/gen/make.shared.variables
 libeditline : $(LIB)/libeditline.a
 
 $(LIB)/libeditline.a:
-	cd $(SRC_ROOT)/extern/editline; ./configure
-	$(MAKE) -C $(SRC_ROOT)/extern/editline lib_a
-	cp $(SRC_ROOT)/extern/editline/libedit.a $(LIB)/libeditline.a
+	cd $(ROOT)/extern/editline; chmod +x configure; ./configure
+	$(MAKE) -C $(ROOT)/extern/editline lib_a
+	cp $(ROOT)/extern/editline/libedit.a $(LIB)/libeditline.a
 
 
 include $(ROOT)/gen/make.shared.targets
