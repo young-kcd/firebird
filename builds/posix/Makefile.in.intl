@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.21 2005-05-27 22:16:08 asfernandes Exp $
+#  $Id: Makefile.in.intl,v 1.22 2005-05-30 15:57:30 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=superclient
@@ -50,9 +50,6 @@ INTL_Files1=	ld.cpp       cv_narrow.cpp \
 		cs_gb2312.cpp  cv_gb2312.cpp lc_gb2312.cpp \
 		cs_jis.cpp     cv_jis.cpp    lc_jis.cpp \
 		cs_ksc.cpp     cv_ksc.cpp    lc_ksc.cpp
-
-# This one is the example stub for another module (I think) MOD 30-July-2002
-INTL_Files2=	ld2.cpp
 
 
 # INTL_Sources =  $(INTL_Files1)

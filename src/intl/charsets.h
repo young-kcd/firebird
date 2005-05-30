@@ -89,6 +89,6 @@ CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 
 #define   CS_dynamic           127	/* Pseudo number for runtime charset */
 
-#define   CS_MAX_CS_NUMBER      63
+#define   CS_MAX_CS_NUMBER      62
 
 #endif /* INTL_CHARSETS_H */
