@@ -1,3 +1,17 @@
+2005-05-29 17:26  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.extern.editline (1.6),
+	builds/posix/Makefile.in.firebird (1.62), src/include/gen/ids.h
+	(1.12):
+	
+	Make "configure --with-editline" work
+
+2005-05-29 16:38  asfernandes
+
+	* firebird2/src/burp/: backup.epp (1.79), restore.epp (1.95):
+	
+	Removed unsense code noticed by Claudio
+
 2005-05-28 00:43  asfernandes
 
 	* firebird2/src/: jrd/intl.h (1.11), jrd/intl_builtin.cpp (1.25),
