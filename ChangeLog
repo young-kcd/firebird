@@ -1,3 +1,10 @@
+2005-05-30 17:57  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.intl (1.22),
+	src/intl/charsets.h (1.6), src/intl/ld2.cpp (1.7):
+	
+	Removed inconsistences spotted by Claudio
+
 2005-05-29 17:26  asfernandes
 
 	* firebird2/: builds/posix/Makefile.in.extern.editline (1.6),
