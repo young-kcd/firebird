@@ -1,3 +1,16 @@
+2005-06-01 03:07  asfernandes
+
+	* firebird2/src/intl/: cv_jis.cpp (1.11), cv_narrow.cpp (1.9),
+	ld.cpp (1.12), ldcommon.h (1.22):
+	
+	Replace "#ifdef 0" by "#ifdef NOT_USED_OR_REPLACED"
+
+2005-05-31 18:10  dimitr
+
+	* firebird2/src/remote/interface.cpp (1.103):
+	
+	Fixed possible event handler crashes during detach.
+
 2005-05-30 17:57  asfernandes
 
 	* firebird2/: builds/posix/Makefile.in.intl (1.22),
