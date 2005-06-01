@@ -276,7 +276,7 @@ static void CV_convert_destroy(csconvert* csptr)
 }
 
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_865, CV_dos_865_x_iso8859_1)
 {
 #include "../intl/conversions/tx865_lat1.h"

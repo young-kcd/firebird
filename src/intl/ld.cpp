@@ -231,7 +231,7 @@ EXTERN_texttype(KSC_5601_init);
 EXTERN_texttype(ksc_5601_dict_init);
 EXTERN_texttype(GB_2312_init);
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 EXTERN_convert(CV_dos_437_x_iso8859_1);
 EXTERN_convert(CV_dos_865_x_iso8859_1);
 EXTERN_convert(CV_dos_437_x_dos_865);
@@ -284,7 +284,7 @@ void LD_assert(const SCHAR* filename, int lineno)
 		return (0);
 */
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 #define CONVERT_INIT_BI(to_cs, from_cs, name)\
 	if (((parm1 == (to_cs)) && (parm2 == (from_cs))) ||\
 	    ((parm2 == (to_cs)) && (parm1 == (from_cs)))) \

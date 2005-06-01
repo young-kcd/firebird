@@ -601,7 +601,7 @@ static USHORT CVJIS_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 #endif
 
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 static USHORT CVJIS_euc2sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len,
 							const UCHAR* euc_str,
 							 USHORT euc_len, SSHORT *err_code, USHORT *err_position)
@@ -765,7 +765,7 @@ static USHORT CVJIS_sjis2euc(csconvert* obj, UCHAR *euc_str, USHORT euc_len,
 #endif
 
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 CONVERT_ENTRY(CS_SJIS, CS_EUCJ, CVJIS_sjis_x_eucj)
 {
 	if (dest_cs == CS_EUCJ)

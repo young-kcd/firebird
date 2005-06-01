@@ -66,7 +66,7 @@ typedef USHORT UNICODE;
 
 
 
-#if 0
+#ifdef NOT_USED_OR_REPLACED
 #define CONVERT_ENTRY(cs1, cs2, name)	INTL_BOOL	name (csconvert* csptr, const ASCII* dest_cs, const ASCII* source_cs)
 
 #define	CONVERT_RETURN	return (true)
