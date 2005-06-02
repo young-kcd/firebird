@@ -33,6 +33,7 @@ INSTALL_PREFIX=""
 
 dnl Use /usr/lib for library links on most platforms except some 64-bit ones
 libdir=/usr/lib
+ICU_PLATFORM=LinuxRedHat
 
 case "$target" in
   *-*-darwin*)
@@ -122,6 +123,7 @@ case "$target" in
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
+    ICU_PLATFORM=SOLARISGCC
     ;;
 
   sparc-sun-solaris*)
@@ -132,6 +134,9 @@ case "$target" in
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    PTHREAD_CFLAGS=-threads
+    PTHREAD_LIBS=-lthread
+    ICU_PLATFORM=SOLARISGCC
     ;;
 
   i*-sni-sysv4)
@@ -166,6 +171,7 @@ fi
 AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(PLATFORM)
 AC_SUBST(SHRLIB_EXT)
+AC_SUBST(ICU_PLATFORM)
 AC_DEFINE(CASE_SENSITIVITY, false, [Define this if paths are case sensitive])
 
 
