@@ -334,6 +334,8 @@ int RESTORE_restore (const TEXT* file_name,
 				MISC_terminate(IDS.RDB$INDEX_NAME, index_name,
 					(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
 					sizeof(index_name));
+				BURP_verbose(285, index_name, NULL, NULL, NULL, NULL);
+				// activating and creating deferred index %s
 				MODIFY IDS USING
 					IDS.RDB$INDEX_INACTIVE = FALSE;
 				END_MODIFY;
@@ -353,8 +355,6 @@ int RESTORE_restore (const TEXT* file_name,
 						general_on_error ();
 					END_ERROR;
 				END_ERROR;
-				BURP_verbose(285, index_name, NULL, NULL, NULL, NULL);
-				// activating and creating deferred index %s
 			END_FOR;
 			ON_ERROR
 				general_on_error ();
@@ -385,6 +385,8 @@ int RESTORE_restore (const TEXT* file_name,
 			MISC_terminate(IDS.RDB$INDEX_NAME, index_name,
 				(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
 				sizeof(index_name));
+			BURP_verbose(285, index_name, NULL, NULL, NULL, NULL);
+			// activating and creating deferred index %s
 			MODIFY IDS USING
 				IDS.RDB$INDEX_INACTIVE = FALSE;
 			END_MODIFY;
@@ -404,8 +406,6 @@ int RESTORE_restore (const TEXT* file_name,
 					general_on_error ();
 				END_ERROR;
 			END_ERROR;
-			BURP_verbose(285, index_name, NULL, NULL, NULL, NULL);
-			// activating and creating deferred index %s
 		END_FOR;
 		ON_ERROR
 			general_on_error ();
