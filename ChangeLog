@@ -1,3 +1,23 @@
+2005-06-03 03:26  asfernandes
+
+	* firebird2/src/jrd/filters.cpp (1.45):
+	
+	Misc.
+
+2005-06-03 03:25  asfernandes
+
+	* firebird2/src/jrd/Optimizer.cpp (1.31):
+	
+	Apply forgotten opt.cpp changes in Optimizer.cpp
+
+2005-06-02 10:00  kkuznetsov
+
+	* firebird2/: configure.in (1.227),
+	builds/posix/Makefile.in.extern.icu (1.3):
+	
+	First step to build icu on others then Linux Linux should work but
+	must be retested
+
 2005-06-01 03:07  asfernandes
 
 	* firebird2/src/intl/: cv_jis.cpp (1.11), cv_narrow.cpp (1.9),
