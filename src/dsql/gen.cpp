@@ -1343,8 +1343,8 @@ static void gen_cast( dsql_req* request, const dsql_nod* node)
 	blr for expression 1
 		blr_value_if
 		blr_missing
-		blr for expression n
-		blr_null
+		blr for expression n-1
+		expression n
 	blr for expression n-1
 
     @param request
@@ -1358,7 +1358,7 @@ static void gen_coalesce( dsql_req* request, const dsql_nod* node)
 	stuff(request, blr_cast);
 	gen_descriptor(request, &node->nod_desc, true);
 	dsql_nod* const* ptr = list->nod_arg;
-	for (const dsql_nod* const* const end = ptr + list->nod_count;
+	for (const dsql_nod* const* const end = ptr + (list->nod_count - 1);
 		ptr < end; ptr++)
 	{
 		// IF (expression IS NULL) THEN
@@ -1371,7 +1371,6 @@ static void gen_coalesce( dsql_req* request, const dsql_nod* node)
 	const dsql_nod* const* const begin = list->nod_arg;
 	ptr = list->nod_arg + list->nod_count;
 	// if all expressions are NULL return NULL
-	stuff(request, blr_null);
 	for (ptr--; ptr >= begin; ptr--)
 	{
 		GEN_expr(request, *ptr);
