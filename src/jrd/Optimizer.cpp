@@ -32,6 +32,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
 #include "../jrd/btr.h"
+#include "../jrd/intl.h"
 #include "../jrd/rse.h"
 #include "../jrd/ods.h"
 #include "../jrd/Optimizer.h"
@@ -41,6 +42,7 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/evl_proto.h"
+#include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
 
@@ -1334,6 +1336,23 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 				usableIndex = false;
 				break;
 			}
+
+			dsc desc;
+			CMP_get_desc(tdbb, csb, node, &desc);
+
+			// ASF: "desc.dsc_ttype() > ttype_last_internal" is to avoid recursion
+			// when looking for charsets/collations
+			if ((idx->idx_flags & idx_unique) && DTYPE_IS_TEXT(desc.dsc_dtype) &&
+				desc.dsc_ttype() > ttype_last_internal)
+			{
+				TextType* tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype(), NULL, NULL);
+
+				if (tt->getFlags() & TEXTTYPE_UNSORTED_UNIQUE)
+				{
+					usableIndex = false;
+					break;
+				}
+			}
 		}
 
 		if (!usableIndex) {
@@ -1689,6 +1708,50 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	i = std::max(indexScratch->lowerCount, indexScratch->upperCount) - 1;
 	if ((i >= 0) && (segment[i]->scanType == segmentScanStarting)) {
 		retrieval->irb_generic |= irb_starting;
+	}
+
+	for (IndexScratchSegment** tail = indexScratch->segments.begin();
+		 tail != indexScratch->segments.end() && ((*tail)->lowerValue || (*tail)->upperValue); ++tail)
+	{
+		bool changed = false;
+		dsc dsc0;
+		dsc *desc0 = &dsc0;
+		CMP_get_desc(tdbb, optimizer->opt_csb, (*tail)->matches[0]->nod_arg[0], desc0);
+
+		// ASF: "dsc0.dsc_ttype() > ttype_last_internal" is to avoid recursion
+		// when looking for charsets/collations
+		if (!(indexScratch->idx->idx_flags & idx_unique) && DTYPE_IS_TEXT(dsc0.dsc_dtype) &&
+			dsc0.dsc_ttype() > ttype_last_internal)
+		{
+			TextType* tt = INTL_texttype_lookup(tdbb, dsc0.dsc_ttype(), NULL, NULL);
+
+			if (tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE)
+			{
+				// ASF: Order is more precise than equivalence class.
+				// It's necessary to use the partial key.
+				// For multi-segmented indices, don't use all segments.
+
+				retrieval->irb_generic |= irb_starting;
+
+				int diff = indexScratch->lowerCount - indexScratch->upperCount;
+
+				if (diff >= 0)
+				{
+					retrieval->irb_lower_count = tail - indexScratch->segments.begin() + 1;
+					retrieval->irb_upper_count = tail - indexScratch->segments.begin() + 1 - diff;
+				}
+				else
+				{
+					retrieval->irb_lower_count = tail - indexScratch->segments.begin() + 1 + diff;
+					retrieval->irb_upper_count = tail - indexScratch->segments.begin() + 1;
+				}
+
+				changed = true;
+			}
+		}
+
+		if (changed)
+			break;
 	}
 
 	// This index is never used for IS NULL, thus we can ignore NULLs
