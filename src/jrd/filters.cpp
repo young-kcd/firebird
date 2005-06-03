@@ -835,9 +835,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		/* Now convert from the input buffer into the temporary buffer */
 
 		/* How much space do we need to convert? */
-		result_length = aux->ctlaux_obj1.convert(control->ctl_buffer_length, control->ctl_buffer,
-			0, reinterpret_cast<UCHAR*>(NULL),
-			&err_code, &err_position);
+		result_length = aux->ctlaux_obj1.convertLength(control->ctl_buffer_length);
 
 		/* Allocate a new buffer if we don't have enough */
 		if (result_length > aux->ctlaux_buffer1_len) {
