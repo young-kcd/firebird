@@ -3137,7 +3137,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			 * Reference: Bug 10116, 10424 
 			 */
 			CLEAR_NULL(new_record, i);
-			if (EVL_field(NULL, new_record, i, &new_desc)) {
+			if (EVL_field(new_rpb->rpb_relation, new_record, i, &new_desc)) {
 				if (EVL_field
 					(org_rpb->rpb_relation, org_record, i,
 					 &org_desc))
