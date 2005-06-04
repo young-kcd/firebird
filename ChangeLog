@@ -1,3 +1,16 @@
+2005-06-03 23:14  arnobrinkman
+
+	* firebird2/src/dsql/gen.cpp (1.81):
+	
+	Fix unneeded evaluation of last item by COALESCE function, noted by
+	Dmitry
+
+2005-06-03 10:40  dimitr
+
+	* firebird2/src/burp/restore.epp (1.96):
+	
+	Let's report we're creating an index before we do so, not after.
+
 2005-06-03 03:26  asfernandes
 
 	* firebird2/src/jrd/filters.cpp (1.45):
