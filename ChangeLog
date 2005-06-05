@@ -1,3 +1,9 @@
+2005-06-04 15:39  asfernandes
+
+	* firebird2/src/jrd/exe.cpp (1.150):
+	
+	Rollback risky change not necessary
+
 2005-06-03 23:14  arnobrinkman
 
 	* firebird2/src/dsql/gen.cpp (1.81):
