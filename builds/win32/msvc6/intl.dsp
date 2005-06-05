@@ -245,6 +245,10 @@ SOURCE=..\..\..\src\intl\collations\bl88591pt0.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\intl\collations\bl88591ptbr0.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\collations\bl88591sv0.h
 # End Source File
 # Begin Source File
@@ -590,6 +594,10 @@ SOURCE=..\..\..\src\intl\collations\pw1252intl.h
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\collations\pw1252nor4.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\pw1252ptbr.h
 # End Source File
 # Begin Source File
 
