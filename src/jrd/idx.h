@@ -153,12 +153,19 @@ static const struct ini_idx_t indices[] = {
 	INDEX(19, ODS_8_0, rel_charsets, idx_unique, 1)
 		SEGMENT(f_cs_cs_name, idx_metadata)	/* character set name */
 	}},
-#if 0	// removed in ODS 11.0
-/*	define index RDB$INDEX_20 for RDB$COLLATIONS unique RDB$COLLATION_NAME; */
+
+/* Changed in ODS 11.0
+ 	define index RDB$INDEX_20 for RDB$COLLATIONS unique RDB$COLLATION_NAME;
 	INDEX(20, ODS_8_0, rel_collations, idx_unique, 1)
-		SEGMENT(f_coll_name, idx_metadata)	/* collation name */
+		SEGMENT(f_coll_name, idx_metadata)	// collation name
 	}},
-#endif
+*/
+//	define index RDB$INDEX_20 for RDB$COLLATIONS unique RDB$CHARACTER_SET_ID, RDB$COLLATION_NAME;
+	INDEX(20, ODS_11_0, rel_collations, idx_unique, 2)
+		SEGMENT(f_coll_cs_id, idx_numeric),	// character set id
+		SEGMENT(f_coll_name, idx_metadata)	// collation name
+	}},
+
 /*	define index RDB$INDEX_21 for RDB$PROCEDURES unique RDB$PROCEDURE_NAME; */
 	INDEX(21, ODS_8_0, rel_procedures, idx_unique, 1)
 		SEGMENT(f_prc_name, idx_metadata)	/* procedure name */
@@ -292,10 +299,9 @@ static const struct ini_idx_t indices[] = {
 		SEGMENT(f_backup_level, idx_numeric),	/* backup level */
 		SEGMENT(f_backup_id, idx_numeric)	/* backup id */
 	}},
-/*	define index RDB$INDEX_45 for RDB$COLLATIONS unique RDB$CHARACTER_SET_ID, RDB$COLLATION_NAME; */
-	INDEX(45, ODS_11_0, rel_collations, idx_unique, 2)
-		SEGMENT(f_coll_cs_id, idx_numeric),	/* character set id */
-		SEGMENT(f_coll_name, idx_metadata)	/* collation name */
+/*	define index RDB$INDEX_45 for RDB$FILTERS RDB$FUNCTION_NAME; */
+	INDEX(45, ODS_11_0, rel_filters, idx_unique, 1)
+		SEGMENT(f_flt_name, idx_metadata)	/* function name */
 	}}
 
 	/* Last index in ODS 11.0 is RDB$INDEX_45 */

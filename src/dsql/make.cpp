@@ -1721,25 +1721,29 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 
 		ISC_STATUS_ARRAY user_status;
 		THREAD_EXIT();
-		isc_database_info(user_status, &context->ctx_request->req_dbb->dbb_database_handle,
+		const ISC_STATUS s =
+			isc_database_info(user_status, &context->ctx_request->req_dbb->dbb_database_handle,
 						inputBuffer.getCapacity(), (SCHAR*)inputBuffer.begin(),
 						sizeof(buffer), buffer);
 		THREAD_ENTER();
+		if (s)
+			;
+#pragma FB_COMPILER_MESSAGE("Adriano should put an error message here.")
 
 		if (*((UCHAR*)buffer + sizeof(UCHAR) + sizeof(USHORT)))	// CHARSET_LEGACY_SEMANTICS
 		{
+			USHORT adjust = 0;
 			if (node->nod_desc.dsc_dtype == dtype_varying)
-				node->nod_desc.dsc_length -= sizeof(USHORT);
+				adjust = sizeof(USHORT);
 			else if (node->nod_desc.dsc_dtype == dtype_cstring)
-				node->nod_desc.dsc_length--;
+				adjust = 1;
+				
+			node->nod_desc.dsc_length -= adjust;
 
 			node->nod_desc.dsc_length *=
 				METD_get_charset_bpc(context->ctx_request, INTL_GET_CHARSET(&node->nod_desc));
 
-			if (node->nod_desc.dsc_dtype == dtype_varying)
-				node->nod_desc.dsc_length += sizeof(USHORT);
-			else if (node->nod_desc.dsc_dtype == dtype_cstring)
-				node->nod_desc.dsc_length++;
+			node->nod_desc.dsc_length += adjust;
 		}
 	}
 

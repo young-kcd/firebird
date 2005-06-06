@@ -38,7 +38,7 @@
 namespace NAMESPACE{}		// declare namespace before use
 using namespace NAMESPACE;
 #define START_NAMESPACE		namespace NAMESPACE {
-#define CLASS(cls)			namespace NAMESPACE { class cls; };
+#define CLASS(cls)			namespace NAMESPACE { class cls; }
 #define END_NAMESPACE		}
 #else
 #define START_NAMESPACE

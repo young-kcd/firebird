@@ -1065,17 +1065,20 @@ collation_clause : symbol_collation_name FOR symbol_character_set_name
 		;
 
 collation_sequence_definition :
-		FROM symbol_collation_name { $$ = make_node(nod_collation_from, 1, $2); }
+		FROM symbol_collation_name
+			{ $$ = make_node(nod_collation_from, 1, $2); }
 		|
-		{ $$ = NULL; }
+			{ $$ = NULL; }
 		;
 
-collation_attribute_list_opt : { $$ = NULL; }
+collation_attribute_list_opt :
+			{ $$ = NULL; }
 		| collation_attribute_list
 		;
 
 collation_attribute_list : collation_attribute
-		| collation_attribute_list ',' collation_attribute { $$ = make_node(nod_list, 2, $1, $3); }
+		| collation_attribute_list ',' collation_attribute
+			{ $$ = make_node(nod_list, 2, $1, $3); }
 		;
 
 collation_attribute :
@@ -1084,22 +1087,31 @@ collation_attribute :
 		| collation_accent_attribute
 		;
 
-collation_pad_attribute : NO PAD { $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_PAD_SPACE); }
-		| PAD SPACE { $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_PAD_SPACE); }
+collation_pad_attribute : NO PAD
+			{ $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_PAD_SPACE); }
+		| PAD SPACE
+			{ $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_PAD_SPACE); }
 		;
 
-collation_case_attribute : CASE SENSITIVE { $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_CASE_INSENSITIVE); }
-		| CASE INSENSITIVE { $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_CASE_INSENSITIVE); }
+collation_case_attribute : CASE SENSITIVE
+			{ $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_CASE_INSENSITIVE); }
+		| CASE INSENSITIVE
+			{ $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_CASE_INSENSITIVE); }
 		;
 
-collation_accent_attribute : ACCENT SENSITIVE { $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
-		| ACCENT INSENSITIVE { $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
+collation_accent_attribute : ACCENT SENSITIVE
+			{ $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
+		| ACCENT INSENSITIVE
+			{ $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
 		;
 
-collation_specific_attribute_opt : { $$ = NULL; }
-		| sql_string { $$ = make_node(nod_collation_specific_attr, 1, MAKE_constant((dsql_str*)$1, CONSTANT_STRING)); }
+collation_specific_attribute_opt :
+			{ $$ = NULL; }
+		| sql_string
+			{ $$ = make_node(nod_collation_specific_attr, 1, MAKE_constant((dsql_str*)$1, CONSTANT_STRING)); }
 		;
 ***/
+
 
 /* CREATE DATABASE */
 
@@ -2101,7 +2113,6 @@ keyword_or_column	: valid_symbol_name
 		// | SENSITIVE		// FB_NEW_INTL_ALLOW_NOT_READY
 		| TRAILING
 		| TRIM
-
 		;
 
 col_opt		: ALTER
@@ -4028,6 +4039,12 @@ substring_function	: SUBSTRING '(' value FROM value string_length_opt ')'
 					MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)), $6); }
 		;
 
+string_length_opt	: FOR value
+			{ $$ = $2; }
+		|
+			{ $$ = MAKE_constant ((dsql_str*) SHRT_POS_MAX, CONSTANT_SLONG); }
+		;
+
 trim_function	: TRIM '(' trim_specification value FROM value ')'
 			{ $$ = make_node (nod_trim, (int) e_trim_count, $3, $4, $6); }
 		| TRIM '(' value FROM value ')'
@@ -4047,13 +4064,7 @@ trim_specification	: BOTH
 		| LEADING
 			{ $$ = MAKE_constant ((dsql_str*)blr_trim_leading, CONSTANT_SLONG); }
 		;
-
-string_length_opt	: FOR value
-			{ $$ = $2; }
-		|
-			{ $$ = MAKE_constant ((dsql_str*) SHRT_POS_MAX, CONSTANT_SLONG); }
-		;
-
+		
 udf		: symbol_UDF_name '(' value_list ')'
 			{ $$ = make_node (nod_udf, 2, $1, $3); }
 		| symbol_UDF_name '(' ')'

@@ -347,8 +347,8 @@ static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src
 
 	const UCHAR* srcStart = src;
 	const UCHAR* dstStart = dst;
-	const UCHAR* srcEnd = src + srcLen;
-	const UCHAR* dstEnd = dst + dstLen;
+	const UCHAR* const srcEnd = src + srcLen;
+	const UCHAR* const dstEnd = dst + dstLen;
 	ULONG pos = 0;
 	bool wellFormed = true;
 
@@ -1142,8 +1142,8 @@ static INTL_BOOL ttype_unicode_fss_init(TEXTTYPE cache, const ASCII* texttype_na
 		cache->texttype_fn_str_to_lower	= NULL;		// use default implementation
 		return true;
 	}
-	else
-		return false;
+
+	return false;
 }
 
 
@@ -1169,8 +1169,8 @@ static INTL_BOOL ttype_binary_init(TEXTTYPE cache, const ASCII* texttype_name, c
 		cache->texttype_impl->texttype_pad_char = '\0';
 		return true;
 	}
-	else
-		return false;
+
+	return false;
 }
 
 
@@ -1328,6 +1328,7 @@ static INTL_BOOL cs_utf8_well_formed(charset* cs,
 	return UnicodeUtil::utf8WellFormed(len, str, offending_position);
 }
 
+
 static INTL_BOOL cs_utf16_well_formed(charset* cs, 
 									  ULONG len,
 									  const UCHAR* str,
@@ -1348,6 +1349,7 @@ static INTL_BOOL cs_utf16_well_formed(charset* cs,
 	return UnicodeUtil::utf16WellFormed(len, reinterpret_cast<const USHORT*>(str), offending_position);
 }
 
+
 static ULONG cs_utf16_length(charset* cs, 
 							 ULONG srcLen,
 							 const UCHAR* src)
@@ -1365,6 +1367,7 @@ static ULONG cs_utf16_length(charset* cs,
 	fb_assert(cs != NULL);
 	return UnicodeUtil::utf16Length(srcLen, reinterpret_cast<const USHORT*>(src));
 }
+
 
 static ULONG cs_utf16_substring(charset* cs, 
 								ULONG srcLen,
@@ -1389,6 +1392,7 @@ static ULONG cs_utf16_substring(charset* cs,
 	return UnicodeUtil::utf16Substring(srcLen, reinterpret_cast<const USHORT*>(src),
 		dstLen, reinterpret_cast<USHORT*>(dst), startPos, length);
 }
+
 
 static INTL_BOOL cs_utf32_well_formed(charset* cs, 
 									  ULONG len,
@@ -1429,6 +1433,7 @@ static void common_convert_init(
 	csptr->csconvert_name = (const ASCII*) "DIRECT";
 	csptr->csconvert_fn_convert = cvt_fn;
 }
+
 
 static ULONG cvt_ascii_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 								  ULONG nDest, USHORT* pDest,
@@ -1473,6 +1478,7 @@ static ULONG cvt_ascii_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
+
 static ULONG cvt_unicode_to_ascii(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
 								  ULONG nDest, UCHAR* pDest,
 								  USHORT* err_code, ULONG* err_position)
@@ -1515,6 +1521,7 @@ static ULONG cvt_unicode_to_ascii(csconvert* obj, ULONG nSrc, const USHORT* pSrc
 
 	return ((pDest - pStart) * sizeof(*pDest));
 }
+
 
 static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 								 ULONG nDest, USHORT* pDest,
@@ -1559,6 +1566,7 @@ static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
+
 static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
 									ULONG nDest, USHORT* pDest,
 									USHORT* err_code, ULONG* err_position)
@@ -1594,6 +1602,7 @@ static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const USHORT* pS
 
 	return ((pDest - pStart) * sizeof(*pDest));
 }
+
 
 static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 								 ULONG nDest, UCHAR* pDest,
@@ -1645,6 +1654,7 @@ static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
+
 static ULONG cvt_unicode_to_utf8(csconvert* obj,
 								 ULONG unicode_len,
 								 const USHORT* unicode_str,
@@ -1657,6 +1667,7 @@ static ULONG cvt_unicode_to_utf8(csconvert* obj,
 	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_unicode_to_utf8);
 	return UnicodeUtil::utf16ToUtf8(unicode_len, unicode_str, utf8_len, utf8_str, err_code, err_position);
 }
+
 
 static ULONG cvt_utf8_to_unicode(csconvert* obj,
 								 ULONG utf8_len,
@@ -1671,6 +1682,7 @@ static ULONG cvt_utf8_to_unicode(csconvert* obj,
 	return UnicodeUtil::utf8ToUtf16(utf8_len, utf8_str, unicode_len, unicode_str, err_code, err_position);
 }
 
+
 static ULONG cvt_unicode_to_utf32(csconvert* obj,
 								  ULONG unicode_len,
 								  const USHORT* unicode_str,
@@ -1683,6 +1695,7 @@ static ULONG cvt_unicode_to_utf32(csconvert* obj,
 	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_unicode_to_utf32);
 	return UnicodeUtil::utf16ToUtf32(unicode_len, unicode_str, utf32_len, utf32_str, err_code, err_position);
 }
+
 
 static ULONG cvt_utf32_to_unicode(csconvert* obj,
 								  ULONG utf32_len,
@@ -1940,6 +1953,7 @@ static USHORT cvt_ascii_utf_init(csconvert* csptr)
 	return true;
 }
 
+
 INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name)
 {
 	if (strcmp(charset_name, "NONE") == 0)
@@ -1981,6 +1995,7 @@ INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name)
 
 	return false;
 }
+
 
 INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 									   USHORT attributes, const UCHAR* specific_attributes,

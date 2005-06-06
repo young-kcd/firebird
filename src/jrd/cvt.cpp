@@ -1576,7 +1576,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			USHORT to_size = TEXT_LEN(to);
 			UCHAR* start = to->dsc_address;
 #if !defined(REQUESTER) && !defined(SUPERCLIENT)
-			CharSet* toCharSet = (err != ERR_post || charset2 == ttype_dynamic || charset2 == CS_METADATA ?
+			CharSet* toCharSet = (!err || charset2 == ttype_dynamic || charset2 == CS_METADATA ?
 									NULL : INTL_charset_lookup(NULL, charset2, NULL));
 			USHORT toLength;
 #endif
@@ -1657,7 +1657,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 				if (toCharSet->isMultiByte() &&
 					!(toCharSet->getFlags() & CHARSET_LEGACY_SEMANTICS) &&
-					toLength != 31 &&	/* allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset */
+					toLength != 31 &&	// allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset
 					toCharSet->length(tdbb, toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 				{
 					(*err)(isc_arith_except, 0);

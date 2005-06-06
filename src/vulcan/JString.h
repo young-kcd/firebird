@@ -28,7 +28,6 @@
 #ifndef __JString_H
 #define __JString_H
 
-#define ALLOC_FUDGE		100
 
 START_NAMESPACE
 

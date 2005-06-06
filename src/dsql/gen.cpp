@@ -591,10 +591,13 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 		if (parameter->par_desc.dsc_dtype <= dtype_any_text && request->req_dbb->dbb_att_charset != CS_NONE &&
 			request->req_dbb->dbb_att_charset != CS_BINARY)
 		{
+			USHORT adjust = 0;
 			if (parameter->par_desc.dsc_dtype == dtype_varying)
-				parameter->par_desc.dsc_length -= sizeof(USHORT);
+				adjust = sizeof(USHORT);
 			else if (parameter->par_desc.dsc_dtype == dtype_cstring)
-				parameter->par_desc.dsc_length--;
+				adjust = 1;
+
+			parameter->par_desc.dsc_length -= adjust;
 
 			USHORT fromCharSet = INTL_GET_CHARSET(&parameter->par_desc);
 			USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
@@ -607,10 +610,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 			parameter->par_desc.dsc_length =
 				MIN(MAX_COLUMN_SIZE - sizeof(USHORT), parameter->par_desc.dsc_length / fromCharSetBPC * toCharSetBPC);
 
-			if (parameter->par_desc.dsc_dtype == dtype_varying)
-				parameter->par_desc.dsc_length += sizeof(USHORT);
-			else if (parameter->par_desc.dsc_dtype == dtype_cstring)
-				parameter->par_desc.dsc_length++;
+			parameter->par_desc.dsc_length += adjust;
 		}
 
 		/* For older clients - generate an error should they try and
@@ -1517,33 +1517,39 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 		break;
 
 	case dtype_text:
-	{
-		Firebird::HalfStaticArray<UCHAR, 256> inputBuffer;
-		UCHAR* input = inputBuffer.getBuffer(sizeof(UCHAR) + sizeof(UCHAR) + sizeof(UCHAR) +
-											 sizeof(USHORT) + desc->dsc_length);
-		char buffer[16];
+		{
+			Firebird::HalfStaticArray<UCHAR, 256> inputBuffer;
+			UCHAR* input = inputBuffer.getBuffer(sizeof(UCHAR) + sizeof(UCHAR) + sizeof(UCHAR) +
+												 sizeof(USHORT) + desc->dsc_length);
+			char buffer[16];
 
-		*input++ = isc_info_internal;
-		*input++ = INF_internal_db_info_intl_octet_length;
-		*input++ = INTL_GET_CHARSET(desc);
-		*reinterpret_cast<USHORT*>(input) = desc->dsc_length; input += sizeof(USHORT);
-		memcpy(input, desc->dsc_address, desc->dsc_length);
+			*input++ = isc_info_internal;
+			*input++ = INF_internal_db_info_intl_octet_length;
+			*input++ = INTL_GET_CHARSET(desc);
+			*reinterpret_cast<USHORT*>(input) = desc->dsc_length;
+			input += sizeof(USHORT);
+			memcpy(input, desc->dsc_address, desc->dsc_length);
 
-		ISC_STATUS_ARRAY user_status;
-		THREAD_EXIT();
-		isc_database_info(user_status, &request->req_dbb->dbb_database_handle,
-						inputBuffer.getCount(), (SCHAR*)inputBuffer.begin(),
-						sizeof(buffer), buffer);
-		THREAD_ENTER();
-		l = desc->dsc_length = gds__vax_integer((UCHAR*)buffer + sizeof(UCHAR) + sizeof(USHORT), sizeof(SLONG));
+			ISC_STATUS_ARRAY user_status;
+			THREAD_EXIT();
+			const ISC_STATUS s =
+				isc_database_info(user_status, &request->req_dbb->dbb_database_handle,
+							inputBuffer.getCount(), (SCHAR*)inputBuffer.begin(),
+							sizeof(buffer), buffer);
+			THREAD_ENTER();
+			if (s)
+				;
+#pragma FB_COMPILER_MESSAGE("Adriano should put an error message here.")
+			
+			l = desc->dsc_length = gds__vax_integer((UCHAR*)buffer + sizeof(UCHAR) + sizeof(USHORT), sizeof(SLONG));
 
-		gen_descriptor(request, desc, true);
-		if (l)
-			do {
-				stuff(request, *p++);
-			} while (--l);
-		break;
-	}
+			gen_descriptor(request, desc, true);
+			if (l)
+				do {
+					stuff(request, *p++);
+				} while (--l);
+			break;
+		}
 
 	default:
 		// gen_constant: datatype not understood 

@@ -19,7 +19,7 @@ ERROR_UNCOMPRESS=`find . -type f -name '*.Z' -print`
 if [ -n "$ERROR_UNCOMPRESS" ]
 then
     echo "uncompress of \"${ERROR_UNCOMPRESS}\" failed, \nrun uncompress in ${PKGSAV} manually, \nand rest
-ore the uncompressed files in the correct pathes.\n\n"
+ore the uncompressed files in the correct paths.\n\n"
     exit 1
 fi
 

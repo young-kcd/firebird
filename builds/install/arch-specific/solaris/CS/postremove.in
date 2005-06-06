@@ -1,6 +1,5 @@
 #!/bin/sh
 #
-# $Header: /home/job/firebird/cvs-backup/firebird2/builds/install/arch-specific/solaris/CS/postremove.in,v 1.2 2005-05-27 22:15:24 asfernandes Exp $
 #------------------------------------------------------------------------------
 # $Copyright: 
 # Copyright (C) Siemens Nixdorf Informationssysteme AG 1994 - 1998
@@ -28,7 +27,7 @@ ERROR_UNCOMPRESS=`find . -type f -name '*.Z' -print`
 if [ -n "$ERROR_UNCOMPRESS" ]
 then
     echo "uncompress of \"${ERROR_UNCOMPRESS}\" failed, \nrun uncompress in ${PKGSAV} manually, \nand rest
-ore the uncompressed files in the correct pathes.\n\n"
+ore the uncompressed files in the correct paths.\n\n"
     exit 1
 fi
 

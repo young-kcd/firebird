@@ -17,7 +17,7 @@
 
     * BLOB enhancements
         1) Allow usage of collations
-        2) Performe comparision using entire content
+        2) Perform comparison using entire content
         3) Convert between character sets when assigning from string or BLOB
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>

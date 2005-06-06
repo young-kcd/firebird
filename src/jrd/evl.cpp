@@ -784,7 +784,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 }
 
 
-dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
+dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 {
 /**************************************
  *
@@ -808,8 +808,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		JRD_reschedule(tdbb, 0, true);
 #endif
 
-	jrd_req* request = tdbb->tdbb_request;
-	impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+	jrd_req* const request = tdbb->tdbb_request;
+	impure_value* const impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	request->req_flags &= ~req_null;
 
 /* Do a preliminary screen for either simple nodes or nodes that
@@ -999,7 +999,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_extract:
 		{
-			impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+			//impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
  			const ULONG extract_part = (IPTR) node->nod_arg[e_extract_part];
 			const dsc* value = EVL_expr(tdbb, node->nod_arg[e_extract_value]);
 
@@ -1092,7 +1092,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 
 	case nod_length:
 		{
-			impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+			//impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
  			const ULONG length_type = (IPTR) node->nod_arg[e_length_type];
 			const dsc* value = EVL_expr(tdbb, node->nod_arg[e_length_value]);
 
@@ -1203,20 +1203,20 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* node)
 		return scalar(tdbb, node, impure);
 
 	case nod_variable:
-	{
-		node = node->nod_arg[e_var_variable];
+		{
+			const jrd_nod* node2 = node->nod_arg[e_var_variable];
 
-		impure_value* impure2 = (impure_value*) ((SCHAR *) request + node->nod_impure);
-		if (impure2->vlu_desc.dsc_flags & DSC_null)
-			request->req_flags |= req_null;
+			impure_value* impure2 = (impure_value*) ((SCHAR *) request + node2->nod_impure);
+			if (impure2->vlu_desc.dsc_flags & DSC_null)
+				request->req_flags |= req_null;
 
-		impure->vlu_desc = impure2->vlu_desc;
+			impure->vlu_desc = impure2->vlu_desc;
 
-		if (impure->vlu_desc.dsc_dtype == dtype_text)
-			adjust_text_descriptor(tdbb, &impure->vlu_desc);
+			if (impure->vlu_desc.dsc_dtype == dtype_text)
+				adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
-		return &impure->vlu_desc;
-	}
+			return &impure->vlu_desc;
+		}
 
 	case nod_value_if:
 		return EVL_expr(tdbb, (EVL_boolean(tdbb, node->nod_arg[0])) ?
@@ -2772,6 +2772,8 @@ static void adjust_text_descriptor(thread_db* tdbb, dsc* desc)
 {
 	if (desc->dsc_dtype == dtype_text)
 	{
+		SET_TDBB(tdbb);
+
 		USHORT ttype = INTL_TTYPE(desc);
 
 		CharSet* charSet = INTL_charset_lookup(tdbb, ttype, NULL);
@@ -4489,7 +4491,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 						reinterpret_cast<bid*>(desc1->dsc_address));
 
 		if (charset->isMultiByte() && !(obj->getFlags() & TEXTTYPE_DIRECT_MATCH))
-			buffer.getBuffer(blob->blb_length);		// alloc space to put entiry blob in memory
+			buffer.getBuffer(blob->blb_length);		// alloc space to put entire blob in memory
 
 		/* Performs the string_function on each segment of the blob until
 		   a positive result is obtained */
@@ -4817,7 +4819,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 			(value->dsc_sub_type == isc_blob_text ? value->dsc_blob_ttype() : ttype_binary), ERR_post, NULL);
 		CharSet* charSet = textType->getCharSet();
 
-		if (length * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
+		if (length_arg * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
 			ERR_post(isc_arith_except, 0);
 
 		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
@@ -4934,6 +4936,9 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 		TextType* textType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&desc), ERR_post, NULL);
 		CharSet* charSet = textType->getCharSet();
 
+		if (length_arg * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
+			ERR_post(isc_arith_except, 0);
+
 		desc.dsc_address = NULL;
 		desc.dsc_length = charSet->maxBytesPerChar() * length;
 		EVL_make_value(tdbb, &desc, impure);
@@ -4988,22 +4993,24 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	USHORT ttype = INTL_TTYPE(value);
 	TextType* tt = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
 
-	UCHAR *charactersAddress;
+	const UCHAR* charactersAddress;
 	MoveBuffer charactersBuffer;
 	USHORT charactersLength;
 
 	if (characters)
 	{
-		charactersLength = MOV_make_string2(characters, ttype, &charactersAddress,
+		UCHAR* tempAddress = 0;
+		charactersLength = MOV_make_string2(characters, ttype, &tempAddress,
 								charactersBuffer);
+		charactersAddress = tempAddress;
 	}
 	else
 	{
 		charactersLength = tt->getCharSet()->getSpaceLength();
-		charactersAddress = const_cast<UCHAR*>(tt->getCharSet()->getSpace());
+		charactersAddress = tt->getCharSet()->getSpace();
 	}
 
-	UCHAR *valueAddress;
+	UCHAR* valueAddress;
 	MoveBuffer valueBuffer;
 	USHORT valueLength =
 		MOV_make_string2(value, ttype, &valueAddress, valueBuffer);
@@ -5019,34 +5026,39 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> charactersCanonical;
 	charactersCanonical.getBuffer(charactersLength / tt->getCharSet()->minBytesPerChar() * tt->getCanonicalWidth());
-	SLONG charactersCanonicalLen = tt->canonical(charactersLength, charactersAddress,
+	const SLONG charactersCanonicalLen = tt->canonical(charactersLength, charactersAddress,
 		charactersCanonical.getCount(), charactersCanonical.begin()) * tt->getCanonicalWidth();
 
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> valueCanonical;
 	valueCanonical.getBuffer(valueLength / tt->getCharSet()->minBytesPerChar() * tt->getCanonicalWidth());
-	SLONG valueCanonicalLen = tt->canonical(valueLength, valueAddress,
+	const SLONG valueCanonicalLen = tt->canonical(valueLength, valueAddress,
 		valueCanonical.getCount(), valueCanonical.begin()) * tt->getCanonicalWidth();
 
 	SLONG offsetLead = 0;
 	SLONG offsetTrail = valueCanonicalLen;
 
-	if (specification == blr_trim_both || specification == blr_trim_leading)
+	// CVC: Avoid endless loop with zero length trim chars.
+	if (charactersCanonicalLen)
 	{
-		for (; offsetLead < valueCanonicalLen; offsetLead += charactersCanonicalLen)
+		if (specification == blr_trim_both || specification == blr_trim_leading)
 		{
-			if (memcmp(charactersCanonical.begin(), &valueCanonical[offsetLead], charactersCanonicalLen) != 0)
-				break;
-		}
-	}
-
-	if (specification == blr_trim_both || specification == blr_trim_trailing)
-	{
-		for (; offsetTrail - charactersCanonicalLen >= offsetLead; offsetTrail -= charactersCanonicalLen)
-		{
-			if (memcmp(charactersCanonical.begin(), &valueCanonical[offsetTrail - charactersCanonicalLen],
-				charactersCanonicalLen) != 0)
+			// CVC: Allow surprises with offsetLead < valueCanonicalLen; it may fail.
+			for (; offsetLead + charactersCanonicalLen <= valueCanonicalLen; offsetLead += charactersCanonicalLen)
 			{
-				break;
+				if (memcmp(charactersCanonical.begin(), &valueCanonical[offsetLead], charactersCanonicalLen) != 0)
+					break;
+			}
+		}
+
+		if (specification == blr_trim_both || specification == blr_trim_trailing)
+		{
+			for (; offsetTrail - charactersCanonicalLen >= offsetLead; offsetTrail -= charactersCanonicalLen)
+			{
+				if (memcmp(charactersCanonical.begin(), &valueCanonical[offsetTrail - charactersCanonicalLen],
+					charactersCanonicalLen) != 0)
+				{
+					break;
+				}
 			}
 		}
 	}
@@ -5054,8 +5066,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	impure->vlu_desc.dsc_length = tt->getCharSet()->substring(tdbb, valueLength, valueAddress,
 		impure->vlu_desc.dsc_length, impure->vlu_desc.dsc_address,
 		offsetLead / tt->getCanonicalWidth(),
-		(valueCanonicalLen - offsetLead - (valueCanonicalLen - offsetTrail)) /
-		tt->getCanonicalWidth());
+		(offsetTrail - offsetLead) / tt->getCanonicalWidth());
 
 	return &impure->vlu_desc;
 }

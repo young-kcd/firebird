@@ -526,7 +526,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	else
 		ttype1 = ttype_binary;
 
-	TextType* obj1 = INTL_texttype_lookup(tdbb, ttype1, ERR_post, NULL);
+	TextType* obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
 	fb_assert(obj1 != NULL);
 	ttype1 = obj1->getType();
 
@@ -552,7 +552,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		else
 			ttype2 = ttype_binary;
 
-		TextType* obj2 = INTL_texttype_lookup(tdbb, ttype2, ERR_post, NULL);
+		TextType* obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
 		fb_assert(obj2 != NULL);
 		ttype2 = obj2->getType();
 
@@ -561,8 +561,8 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		else if (ttype1 == ttype_none || ttype2 == ttype_none)
 			ttype1 = ttype2 = ttype_none;
 
-		obj1 = INTL_texttype_lookup(tdbb, ttype1, ERR_post, NULL);
-		obj2 = INTL_texttype_lookup(tdbb, ttype2, ERR_post, NULL);
+		obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
+		obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
 		fb_assert(obj1 != NULL && obj2 != NULL);
 
 		CharSet* charSet1 = obj1->getCharSet();
@@ -647,7 +647,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		else if (ttype1 == ttype_none || ttype2 == ttype_none)
 			ttype1 = ttype2 = ttype_none;
 
-		obj1 = INTL_texttype_lookup(tdbb, ttype1, ERR_post, NULL);
+		obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
 		fb_assert(obj1 != NULL);
 
 		CharSet* charSet1 = obj1->getCharSet();

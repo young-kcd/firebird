@@ -38,7 +38,7 @@ namespace Jrd {
 // BOCU-1
 USHORT UnicodeUtil::utf16KeyLength(USHORT len)
 {
-	return len / 2 * 4;
+	return (len / 2) * 4;
 }
 
 
@@ -117,9 +117,9 @@ ULONG UnicodeUtil::utf16ToUtf8(ULONG srcLen, const USHORT* src, ULONG dstLen, UC
 
 	srcLen /= sizeof(*src);
 
-	const USHORT* srcEnd = src + srcLen;
-	const UCHAR* dstStart = dst;
-	const UCHAR* dstEnd = dst + dstLen;
+	const USHORT* const srcEnd = src + srcLen;
+	const UCHAR* const dstStart = dst;
+	const UCHAR* const dstEnd = dst + dstLen;
 
 	for (ULONG i = 0; i < srcLen; )
 	{
@@ -184,9 +184,9 @@ ULONG UnicodeUtil::utf8ToUtf16(ULONG srcLen, const UCHAR* src, ULONG dstLen, USH
 	if (dst == NULL)
 		return srcLen * sizeof(*dst);
 
-	const UCHAR* srcEnd = src + srcLen;
-	const USHORT* dstStart = dst;
-	const USHORT* dstEnd = dst + dstLen / sizeof(*dst);
+	const UCHAR* const srcEnd = src + srcLen;
+	const USHORT* const dstStart = dst;
+	const USHORT* const dstEnd = dst + dstLen / sizeof(*dst);
 
 	for (ULONG i = 0; i < srcLen; )
 	{
@@ -249,10 +249,10 @@ ULONG UnicodeUtil::utf16ToUtf32(ULONG srcLen, const USHORT* src, ULONG dstLen, U
 		return srcLen / sizeof(*src) * sizeof(*dst);
 
 	// based on u_strToUTF32 from ICU
-	const USHORT* srcStart = src;
-	const ULONG* dstStart = dst;
-	const USHORT* srcEnd = src + srcLen / sizeof(*src);
-	const ULONG* dstEnd = dst + dstLen / sizeof(*dst);
+	const USHORT* const srcStart = src;
+	const ULONG* const dstStart = dst;
+	const USHORT* const srcEnd = src + srcLen / sizeof(*src);
+	const ULONG* const dstEnd = dst + dstLen / sizeof(*dst);
 
 	while (src < srcEnd && dst < dstEnd)
 	{
@@ -300,10 +300,10 @@ ULONG UnicodeUtil::utf32ToUtf16(ULONG srcLen, const ULONG* src, ULONG dstLen, US
 		return srcLen;
 
 	// based on u_strFromUTF32 from ICU
-	const ULONG* srcStart = src;
-	const USHORT* dstStart = dst;
-	const ULONG* srcEnd = src + srcLen / sizeof(*src);
-	const USHORT* dstEnd = dst + dstLen / sizeof(*dst);
+	const ULONG* const srcStart = src;
+	const USHORT* const dstStart = dst;
+	const ULONG* const srcEnd = src + srcLen / sizeof(*src);
+	const USHORT* const dstEnd = dst + dstLen / sizeof(*dst);
 
 	while (src < srcEnd && dst < dstEnd)
 	{
@@ -375,10 +375,10 @@ ULONG UnicodeUtil::utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen,
 	if (length == 0)
 		return 0;
 
-	const USHORT* srcStart = src;
-	const USHORT* dstStart = dst;
-	const USHORT* srcEnd = src + srcLen / sizeof(*src);
-	const USHORT* dstEnd = dst + dstLen / sizeof(*dst);
+	const USHORT* const srcStart = src;
+	const USHORT* const dstStart = dst;
+	const USHORT* const srcEnd = src + srcLen / sizeof(*src);
+	const USHORT* const dstEnd = dst + dstLen / sizeof(*dst);
 	ULONG pos = 0;
 
 	while (src < srcEnd && dst < dstEnd && pos < startPos)

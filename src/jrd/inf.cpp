@@ -805,6 +805,7 @@ int INF_database_info(const SCHAR* items,
 											strLen / charSet->maxBytesPerChar()), buffer);
 									}
 								}
+#pragma FB_COMPILER_MESSAGE("Adriano should report error here.")
 								items += strLen;
 							}
 							else if (privCode == INF_internal_db_info_intl_is_legacy_charset)
@@ -813,6 +814,7 @@ int INF_database_info(const SCHAR* items,
 								length = 1;
 							}
 						}
+#pragma FB_COMPILER_MESSAGE("Adriano should report error if charSet is NULL")
 						break;
 					}
 

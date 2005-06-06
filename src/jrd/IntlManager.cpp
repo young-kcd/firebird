@@ -140,6 +140,7 @@ bool IntlManager::initialize()
 		ok = false;
 	}
 
+#pragma FB_COMPILER_MESSAGE("CVC: This code must not advance the pointer unconditionally or an item is skipped when removing an element.")
 	for (ObjectsArray<string>::iterator name = conflicts.begin(); name != conflicts.end(); ++name)
 		charSetCollations().remove(*name);
 

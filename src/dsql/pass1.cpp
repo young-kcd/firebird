@@ -2119,7 +2119,7 @@ static void assign_fld_dtype_from_dsc( dsql_fld* field, const dsc* nod_desc)
 	{
 		field->fld_character_set_id = nod_desc->dsc_scale;
 		field->fld_collation_id = nod_desc->dsc_flags >> 8;
-}
+	}
 }
 
 
@@ -3194,10 +3194,13 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* constant)
 		INTL_ASSIGN_TTYPE(&constant->nod_desc, resolved->intlsym_ttype);
 	}
 
+	USHORT adjust = 0;
 	if (constant->nod_desc.dsc_dtype == dtype_varying)
-		constant->nod_desc.dsc_length -= sizeof(USHORT);
+		adjust = sizeof(USHORT);
 	else if (constant->nod_desc.dsc_dtype == dtype_cstring)
-		constant->nod_desc.dsc_length--;
+		adjust = 1;
+		
+	constant->nod_desc.dsc_length -= adjust;
 
 	Firebird::HalfStaticArray<UCHAR, 256> inputBuffer;
 	UCHAR* input = inputBuffer.getBuffer(sizeof(UCHAR) + sizeof(UCHAR) + sizeof(UCHAR) +
@@ -3207,15 +3210,21 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* constant)
 	*input++ = isc_info_internal;
 	*input++ = INF_internal_db_info_intl_char_length;
 	*input++ = INTL_GET_CHARSET(&constant->nod_desc);
-	*reinterpret_cast<USHORT*>(input) = constant->nod_desc.dsc_length; input += sizeof(USHORT);
+	*reinterpret_cast<USHORT*>(input) = constant->nod_desc.dsc_length;
+	input += sizeof(USHORT);
 	memcpy(input, constant->nod_desc.dsc_address, constant->nod_desc.dsc_length);
 
 	ISC_STATUS_ARRAY user_status;
 	THREAD_EXIT();
-	isc_database_info(user_status, &request->req_dbb->dbb_database_handle,
+	const ISC_STATUS s =
+		isc_database_info(user_status, &request->req_dbb->dbb_database_handle,
 					  inputBuffer.getCount(), (SCHAR*)inputBuffer.begin(),
 					  sizeof(buffer), buffer);
 	THREAD_ENTER();
+	if (s)
+		;
+#pragma FB_COMPILER_MESSAGE("Adriano should put an error message here.")
+
 	SLONG length = gds__vax_integer((UCHAR*)buffer + sizeof(UCHAR) + sizeof(USHORT), sizeof(SLONG));
 
 	if (length == -1)	// malformed string
@@ -3227,10 +3236,7 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* constant)
 
 	constant->nod_desc.dsc_length = length * METD_get_charset_bpc(request, INTL_GET_CHARSET(&constant->nod_desc));
 
-	if (constant->nod_desc.dsc_dtype == dtype_varying)
-		constant->nod_desc.dsc_length += sizeof(USHORT);
-	else if (constant->nod_desc.dsc_dtype == dtype_cstring)
-		constant->nod_desc.dsc_length++;
+	constant->nod_desc.dsc_length += adjust;
 
 	return constant;
 }

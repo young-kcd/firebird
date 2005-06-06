@@ -7009,10 +7009,13 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 	UCHAR first_canonic[sizeof(ULONG)];
 	matchTextType->canonical(first_len, p, sizeof(first_canonic), first_canonic);
 
+	const BYTE canWidth = matchTextType->getCanonicalWidth();
+	
+	// If the first character is a wildcard char, forget it.
 	if ((!escape_node ||
-		 (memcmp(first_canonic, escape_canonic, matchTextType->getCanonicalWidth()) != 0)) &&
-		(memcmp(first_canonic, matchTextType->getSqlMatchOneCanonic(), matchTextType->getCanonicalWidth()) == 0 ||
-		 memcmp(first_canonic, matchTextType->getSqlMatchAnyCanonic(), matchTextType->getCanonicalWidth()) == 0))
+		 (memcmp(first_canonic, escape_canonic, canWidth) != 0)) &&
+		(memcmp(first_canonic, matchTextType->getSqlMatchOneCanonic(), canWidth) == 0 ||
+		 memcmp(first_canonic, matchTextType->getSqlMatchAnyCanonic(), canWidth) == 0))
 	{
 		return NULL;
 	}
@@ -7033,8 +7036,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 /* copy the string into the starting with literal, up to the first wildcard character */
 
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> patternCanonical;
-	ULONG patternCanonicalLen = p_count / matchCharset->minBytesPerChar() *
-									matchTextType->getCanonicalWidth();
+	ULONG patternCanonicalLen = p_count / matchCharset->minBytesPerChar() * canWidth;
 
 	patternCanonicalLen = matchTextType->canonical(
 		p_count, p,
@@ -7045,27 +7047,27 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 		// if there are escape characters, skip past them and
 		// don't treat the next char as a wildcard
 		const UCHAR* patternPtrStart = patternPtr;
-		patternPtr += matchTextType->getCanonicalWidth();
+		patternPtr += canWidth;
 
 		if (escape_node &&
-			(memcmp(patternPtrStart, escape_canonic, matchTextType->getCanonicalWidth()) == 0))
+			(memcmp(patternPtrStart, escape_canonic, canWidth) == 0))
 		{
 			/* Check for Escape character at end of string */
 			if (!(patternPtr < patternCanonical.end()))
 				break;
 
 			patternPtrStart = patternPtr;
-			patternPtr += matchTextType->getCanonicalWidth();
+			patternPtr += canWidth;
 		}
-		else if (memcmp(patternPtrStart, matchTextType->getSqlMatchOneCanonic(), matchTextType->getCanonicalWidth()) == 0 ||
-				 memcmp(patternPtrStart, matchTextType->getSqlMatchAnyCanonic(), matchTextType->getCanonicalWidth()) == 0)
+		else if (memcmp(patternPtrStart, matchTextType->getSqlMatchOneCanonic(), canWidth) == 0 ||
+				 memcmp(patternPtrStart, matchTextType->getSqlMatchAnyCanonic(), canWidth) == 0)
 		{
 			break;
 		}
 
 		q += patternCharset->substring(tdbb, pattern_desc->dsc_length, pattern_desc->dsc_address,
 								pattern_desc->dsc_length, q,
-								(patternPtrStart - patternCanonical.begin()) / matchTextType->getCanonicalWidth(),
+								(patternPtrStart - patternCanonical.begin()) / canWidth,
 								1);
 	}
 

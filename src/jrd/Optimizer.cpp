@@ -1715,8 +1715,7 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	{
 		bool changed = false;
 		dsc dsc0;
-		dsc *desc0 = &dsc0;
-		CMP_get_desc(tdbb, optimizer->opt_csb, (*tail)->matches[0]->nod_arg[0], desc0);
+		CMP_get_desc(tdbb, optimizer->opt_csb, (*tail)->matches[0]->nod_arg[0], &dsc0);
 
 		// ASF: "dsc0.dsc_ttype() > ttype_last_internal" is to avoid recursion
 		// when looking for charsets/collations

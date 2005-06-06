@@ -70,7 +70,7 @@ AdminException::AdminException(const char *txt, ...)
 	else
 		text = temp;
 
-	text = temp;
+	va_end(args);
 	lineNumber;
 }
 

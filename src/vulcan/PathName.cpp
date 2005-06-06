@@ -258,11 +258,7 @@ bool PathName::hasDirectory(const char* fileName)
 bool PathName::pathsEquivalent(const char* path1, const char* path2)
 {
 #ifdef _WIN32
-	for (const char *p = path1, *q = path2; *p && *q; ++p, ++q)
-		if (UPPER (*p) != UPPER (*q))
-			return false;
-	
-	return *p == *q;
+	return stricmp(path1, path2) == 0;
 #else
 	return strcmp (path1, path2) == 0;
 #endif	

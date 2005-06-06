@@ -578,12 +578,11 @@ void DDL_resolve_intl_type2(dsql_req* request,
 
 
 // Find an intlsym for any specified character set name & collation name
-	const dsql_intlsym* resolved_charset = NULL;
-	const dsql_intlsym* resolved_type;
+	const dsql_intlsym* resolved_type = NULL;
 
 	if (charset_name)
 	{
-		resolved_charset =
+		const dsql_intlsym* resolved_charset =
 			METD_get_charset(request,
 							(USHORT) strlen(charset_name),
 							charset_name);

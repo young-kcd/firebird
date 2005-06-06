@@ -303,7 +303,7 @@ char* Stream::decompress(int tableId, int recordNumber)
 				throw SQLEXCEPTION (RUNTIME_ERROR, "corrupted record, table %d, record %d, decompressed length %d", 
 									tableId, recordNumber, decompressedLength);
 				}
-			int len = (decompressedLength + 1) / 2 * 2;
+			int len = ((decompressedLength + 1) / 2) * 2;
 			//data = new char [len];
 			data = ALLOCATE_RECORD (len);
 			limit = (short*) (data + decompressedLength);
@@ -318,7 +318,7 @@ char* Stream::decompress(int tableId, int recordNumber)
 			if (n == 0 && run == 0)
 				{
 				Log::log ("corrupted record (zero run), table %d, record %d\n", tableId, recordNumber);
-				printShorts ("Zero run", (segment->length + 1)/2, (short*) segment->address);
+				printShorts ("Zero run", (segment->length + 1) / 2, (short*) segment->address);
 				printChars ("Zero run", segment->length, segment->address);
 				}
 //#endif
@@ -542,6 +542,7 @@ void Stream::format(const char *pattern, ...)
 	if (vsnprintf (temp, sizeof (temp) - 1, pattern, args) < 0)
 		temp [sizeof (temp) - 1] = 0;
 
+	va_end(args);
 	putSegment (temp);
 }
 

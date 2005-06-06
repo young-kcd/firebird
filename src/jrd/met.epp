@@ -968,8 +968,8 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, SSHORT id, SubtypeInfo* inf
  **************************************/
 	fb_assert(info != NULL);
 
-	USHORT charset_id = id & 0x00FF;
-	USHORT collation_id = id >> 8;
+	const USHORT charset_id = id & 0x00FF;
+	const USHORT collation_id = id >> 8;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -1002,12 +1002,17 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, SSHORT id, SubtypeInfo* inf
 				info->baseCollationName.rtrim();
 			}
 
-			blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &CL.RDB$SPECIFIC_ATTRIBUTES);
-			const SLONG length = blob->blb_length;
+			if (CL.RDB$SPECIFIC_ATTRIBUTES.NULL)
+				info->specificAttributes.clear();
+			else
+			{
+				blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &CL.RDB$SPECIFIC_ATTRIBUTES);
+				const SLONG length = blob->blb_length;
 
-			// ASF: Here info->specificAttributes is in UNICODE_FSS charset.
-			// It will be converted to the collation charset in intl.cpp
-			BLB_get_data(tdbb, blob, info->specificAttributes.getBuffer(length), length);
+				// ASF: Here info->specificAttributes is in UNICODE_FSS charset.
+				// It will be converted to the collation charset in intl.cpp
+				BLB_get_data(tdbb, blob, info->specificAttributes.getBuffer(length), length);
+			}
 
 			info->attributes = (USHORT)CL.RDB$COLLATION_ATTRIBUTES;
 			info->ignore_attributes = CL.RDB$COLLATION_ATTRIBUTES.NULL;
@@ -4096,11 +4101,12 @@ static bool resolve_charset_and_collation(
  *
  * Outputs:
  *      (*id)
- *              Set to character set specified by this name.
+ *              Set to character set specified by this name (low byte)
+ *              Set to collation specified by this name (high byte).
  *
  * Return:
- *      1 if no errors (and *id is set).
- *      0 if either name not found.
+ *      true if no errors (and *id is set).
+ *      false if either name not found.
  *        or if names found, but the collation isn't for the specified
  *        character set.
  *

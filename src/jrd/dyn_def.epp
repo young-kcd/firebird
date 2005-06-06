@@ -146,18 +146,16 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 	if (ENCODE_ODS(major_version, minor_original) < ODS_11_0)
 	{
 		DYN_error_punt(false, 220, NULL, NULL, NULL, NULL, NULL);
-		/* msg 220: "CREATE COLLATION statement are not supported in on older versions of the database.
+		/* msg 220: "CREATE COLLATION statement is not supported in older versions of the database.
 					 A backup and restore is required." */
 	}
 
-	SqlIdentifier collation_name;
-	Firebird::string charsetName;
+	Firebird::MetaName collation_name;
+	Firebird::MetaName charsetName;
 
-	collation_name[0] = 0;
 	GET_STRING(ptr, collation_name);
-	fb_utils::exact_name(collation_name);
 
-	if (!collation_name[0])
+	if (!collation_name.length())
 		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
@@ -219,7 +217,6 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 							{
 								found = true;
 								charsetName = CS.RDB$CHARACTER_SET_NAME;
-								charsetName.rtrim();
 							}
 							else
 								X.RDB$COLLATION_ID = Y.RDB$COLLATION_ID - 1;
@@ -294,7 +291,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 				}
 			}
 
-			strcpy(X.RDB$COLLATION_NAME, collation_name);
+			strcpy(X.RDB$COLLATION_NAME, collation_name.c_str());
 			X.RDB$COLLATION_ATTRIBUTES = (info.attributes | attributes_on) & (~attributes_off);
 
 			if (X.RDB$SPECIFIC_ATTRIBUTES.NULL && info.specificAttributes.getCount() != 0)
@@ -309,7 +306,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 				BLB_close(tdbb, blob);
 			}
 
-			info.charsetName = charsetName;
+			info.charsetName = charsetName.c_str();
 			info.collationName = X.RDB$COLLATION_NAME;
 			if (X.RDB$BASE_COLLATION_NAME.NULL)
 				info.baseCollationName = info.collationName;

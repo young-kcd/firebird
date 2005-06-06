@@ -154,7 +154,7 @@ void JString::setString (const char* stuff)
  **************************************
  *
  * Functional description
- *		Append string.
+ *		FIX THE COMMENT.
  *
  **************************************/
 
@@ -171,19 +171,21 @@ void JString::Format (const char* stuff, ...)
 {
 /**************************************
  *
- *		f o r m a t
+ *		F o r m a t
  *
  **************************************
  *
  * Functional description
- *		Append string.
+ *		FIX THE COMMENT.
  *
  **************************************/
 	va_list	args;
 	va_start (args, stuff);
 	char	temp [1024];
 
-	vsprintf (temp, stuff, args);
+	vsnprintf (temp, sizeof(temp), stuff, args);
+	temp[sizeof(temp) - 1] = 0;
+	va_end(args);
 	setString (temp);
 }
 
@@ -197,7 +199,7 @@ JString::operator bool ()
  **************************************
  *
  * Functional description
- *		Return string as string.
+ *		FIX THE COMMENT.
  *
  **************************************/
 
@@ -214,7 +216,7 @@ bool JString::operator ! ()
  **************************************
  *
  * Functional description
- *		Return string as string.
+ *		FIX THE COMMENT.
  *
  **************************************/
 
@@ -225,12 +227,12 @@ JString& JString::operator = (const char *stuff)
 {
 /**************************************
  *
- *		o p e r a t o r   c h a r =
+ *		o p e r a t o r   =
  *
  **************************************
  *
  * Functional description
- *		Return string as string.
+ *		FIX THE COMMENT.
  *
  **************************************/
 
@@ -243,12 +245,12 @@ JString& JString::operator = (const JString& source)
 {
 /**************************************
  *
- *		o p e r a t o r   c h a r =
+ *		o p e r a t o r   =
  *
  **************************************
  *
  * Functional description
- *		Return string as string.
+ *		FIX THE COMMENT.
  *
  **************************************/
 
@@ -269,7 +271,7 @@ JString& JString::operator+= (const char *stuff)
  **************************************
  *
  * Functional description
- *		Return string as string.
+ *		FIX THE COMMENT.
  *
  **************************************/
 
@@ -287,7 +289,7 @@ JString& JString::operator+= (const JString& newString)
  **************************************
  *
  * Functional description
- *		Return string as string.
+ *		FIX THE COMMENT.
  *
  **************************************/
 
@@ -301,12 +303,12 @@ JString operator + (const JString& string1, const char *string2)
 {
 /**************************************
  *
- *		o p e r a t o r   c h a r +
+ *		o p e r a t o r   +
  *
  **************************************
  *
  * Functional description
- *		Return string as string.
+ *		FIX THE COMMENT.
  *
  **************************************/
 	JString	s = string1;

@@ -30,7 +30,7 @@
 dsc*		EVL_assign_to(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
 Jrd::RecordBitmap**	EVL_bitmap(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
 bool		EVL_boolean(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
-dsc*		EVL_expr(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
+dsc*		EVL_expr(Jrd::thread_db* tdbb, Jrd::jrd_nod* const);
 bool		EVL_field(Jrd::jrd_rel*, Jrd::Record*, USHORT, dsc*);
 USHORT		EVL_group(Jrd::thread_db* tdbb, Jrd::RecordSource*, Jrd::jrd_nod* const, USHORT);
 void		EVL_make_value(Jrd::thread_db* tdbb, const dsc*, Jrd::impure_value*);

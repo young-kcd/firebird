@@ -241,7 +241,7 @@ public:
 
 	void reset() { evaluator.reset(); }
 
-	bool result() { return evaluator.getResult(); };
+	bool result() { return evaluator.getResult(); }
 
 	bool process(thread_db* tdbb, Jrd::TextType* ttype, const UCHAR* str, SLONG length) {
 		StrConverter cvt(tdbb, ttype, str, length);
@@ -304,7 +304,7 @@ public:
 
 	void reset() { evaluator.reset(); }
 
-	bool result() { return evaluator.getResult(); };
+	bool result() { return evaluator.getResult(); }
 
 	bool process(thread_db* tdbb, Jrd::TextType* ttype, const UCHAR* str, SLONG length) {
 		StrConverter cvt(tdbb, ttype, str, length);
@@ -675,7 +675,7 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		}
 
 		if (charset_collations.getCount() <= id)
-			charset_collations.grow(id+1);
+			charset_collations.grow(id + 1);
 
 		if (charset_collations[id] == NULL)
 		{
@@ -1277,8 +1277,8 @@ bool INTL_defined_type(thread_db* tdbb, ISC_STATUS * status, SSHORT t_type)
  * Functional description
  *      Is (t_type) a known text type?
  * Return:
- *      FALSE   type is not defined.
- *      TRUE    type is defined
+ *      false   type is not defined.
+ *      true    type is defined
  *      status  set to gds_status codes to describe any error.
  *
  * Note:
@@ -1292,8 +1292,8 @@ bool INTL_defined_type(thread_db* tdbb, ISC_STATUS * status, SSHORT t_type)
 		status[0] = isc_arg_end;
 	TextType* obj = INTL_texttype_lookup(tdbb, t_type, NULL, status);
 	if (obj == NULL)
-		return FALSE;
-	return TRUE;
+		return false;
+	return true;
 }
 
 
@@ -1349,6 +1349,7 @@ USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 
 	return (key_length);
 }
+
 
 CharSet* INTL_charset_lookup(thread_db* tdbb, SSHORT parm1, ISC_STATUS* status)
 {
@@ -1417,6 +1418,7 @@ TextType* INTL_texttype_lookup(thread_db* tdbb,
 	return csc->lookupCollation(tdbb, parm1);
 }
 
+
 bool INTL_texttype_validate(Jrd::thread_db* tdbb, const SubtypeInfo* info)
 {
 	texttype tt;
@@ -1429,6 +1431,7 @@ bool INTL_texttype_validate(Jrd::thread_db* tdbb, const SubtypeInfo* info)
 
 	return ret;
 }
+
 
 void INTL_pad_spaces(thread_db* tdbb, DSC * type, UCHAR * string, USHORT length)
 {
@@ -1754,3 +1757,4 @@ static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, USHORT le
 		}
 	}
 }
+

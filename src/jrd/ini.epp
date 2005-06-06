@@ -624,15 +624,15 @@ void INI_init2(void)
 					if (major_version >= ODS_VERSION11)
 						n = init2_helper(fld, n, relation);
 				}
-				else if ((fld[RFLD_F_NAME] == nam_base_collation_name ||
-						  fld[RFLD_F_NAME] == nam_specific_attr) &&
-						 relfld[RFLD_R_NAME] == nam_collations)
+				else if (fld[RFLD_F_NAME] == nam_description &&
+					relfld[RFLD_R_NAME] == nam_gens)
 				{
 					if (major_version >= ODS_VERSION11)
 						n = init2_helper(fld, n, relation);
 				}
-				else if (fld[RFLD_F_NAME] == nam_description &&
-					relfld[RFLD_R_NAME] == nam_gens)
+				else if ((fld[RFLD_F_NAME] == nam_base_collation_name ||
+						  fld[RFLD_F_NAME] == nam_specific_attr) &&
+						 relfld[RFLD_R_NAME] == nam_collations)
 				{
 					if (major_version >= ODS_VERSION11)
 						n = init2_helper(fld, n, relation);
