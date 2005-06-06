@@ -548,6 +548,7 @@ static const SSHORT gds__sql_code [] = {
 -901 /* 527 identifier_too_long              */,
 -836 /* 528 except2                          */,
 -104 /* 529 malformed_string                 */,
+-170 /* 530 prc_out_param_mismatch           */,
 -901 /*   1 gfix_db_name                     */,
 -901 /*   2 gfix_invalid_sw                  */,
 -901 /*   4 gfix_incmp_sw                    */,

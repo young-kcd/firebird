@@ -1852,7 +1852,7 @@ static void par_procedure_parms(
 	/** They don't match...Hmmm...Its OK if we were dropping the procedure **/
 		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped)) {
 			error(csb,
-				  isc_prcmismat,
+				  input_flag ? isc_prcmismat : isc_prc_out_param_mismatch,
 				  isc_arg_string,
 				  ERR_cstring(procedure->prc_name.c_str()),
 				  0);
@@ -1952,7 +1952,7 @@ static void par_procedure_parms(
 			 !mismatch)
 	{
 		error(csb,
-			  isc_prcmismat,
+			  input_flag ? isc_prcmismat : isc_prc_out_param_mismatch,
 			  isc_arg_string,
 			  ERR_cstring(procedure->prc_name.c_str()),
 			  0);

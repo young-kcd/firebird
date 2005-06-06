@@ -1294,7 +1294,8 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 				count = temp ? temp->nod_count : 0;
 				if (count != procedure->prc_out_count)
 				{
-					ERRD_post(isc_prcmismat, isc_arg_string, name->str_data, 0);
+					ERRD_post(isc_prc_out_param_mismatch,
+							  isc_arg_string, name->str_data, 0);
 				}
 
 				node->nod_arg[e_exe_outputs] =
