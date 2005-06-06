@@ -1090,11 +1090,11 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		}
 		return &impure->vlu_desc;
 
-	case nod_length:
+	case nod_strlen:
 		{
 			//impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
- 			const ULONG length_type = (IPTR) node->nod_arg[e_length_type];
-			const dsc* value = EVL_expr(tdbb, node->nod_arg[e_length_value]);
+ 			const ULONG length_type = (IPTR) node->nod_arg[e_strlen_type];
+			const dsc* value = EVL_expr(tdbb, node->nod_arg[e_strlen_value]);
 
 			impure->vlu_desc.dsc_dtype = dtype_long;
 			impure->vlu_desc.dsc_scale = 0;
@@ -1118,15 +1118,15 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 				switch (length_type)
 				{
-					case blr_length_bit:
+					case blr_strlen_bit:
 						length = blob->blb_length * 8;
 						break;
 
-					case blr_length_octet:
+					case blr_strlen_octet:
 						length = blob->blb_length;
 						break;
 
-					case blr_length_char:
+					case blr_strlen_char:
 					{
 						CharSet* charSet = INTL_charset_lookup(tdbb, value->dsc_blob_ttype(), NULL);
 						fb_assert(charSet != NULL);
@@ -1165,14 +1165,14 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 			switch (length_type)
 			{
-				case blr_length_bit:
+				case blr_strlen_bit:
 					length *= 8;
 					break;
 
-				case blr_length_octet:
+				case blr_strlen_octet:
 					break;
 
-				case blr_length_char:
+				case blr_strlen_char:
 				{
 					CharSet* charSet = INTL_charset_lookup(tdbb, ttype, NULL);
 					fb_assert(charSet != NULL);

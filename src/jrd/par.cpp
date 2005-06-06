@@ -2695,11 +2695,11 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		node->nod_count = e_extract_count;
 		break;
 
-	case blr_length_:
+	case blr_strlen:
 	    // This forced conversion looks strange, but length_type fits in a byte
-		node->nod_arg[e_length_type] = (jrd_nod*)(U_IPTR) BLR_BYTE;
-		node->nod_arg[e_length_value] = parse(tdbb, csb, sub_type);
-		node->nod_count = e_length_count;
+		node->nod_arg[e_strlen_type] = (jrd_nod*)(U_IPTR) BLR_BYTE;
+		node->nod_arg[e_strlen_value] = parse(tdbb, csb, sub_type);
+		node->nod_count = e_strlen_count;
 		break;
 
 	case blr_dcl_variable:

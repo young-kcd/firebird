@@ -336,7 +336,7 @@ enum nod_t
 	nod_collation_from,
 	nod_collation_attr,
 	nod_collation_specific_attr,
-	nod_length,
+	nod_strlen,
 	nod_trim
 };
 
@@ -947,9 +947,9 @@ enum node_args {
 	e_def_coll_specific_attributes,
 	e_def_coll_count,
 
-	e_length_type = 0,				// constant representing type of length
-	e_length_value,
-	e_length_count
+	e_strlen_type = 0,				// constant representing type of length
+	e_strlen_value,
+	e_strlen_count
 };
 
 #endif // DSQL_NODE_H

@@ -1167,8 +1167,8 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		desc->dsc_length = sizeof(SSHORT);
 		return;
 
-	case nod_length:
-		MAKE_desc(request, &desc1, node->nod_arg[e_length_value], NULL);
+	case nod_strlen:
+		MAKE_desc(request, &desc1, node->nod_arg[e_strlen_value], NULL);
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);

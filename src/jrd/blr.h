@@ -289,13 +289,13 @@
 /* FB 2.0 specific BLR */
 
 #define blr_lowcase			(unsigned char)181
-#define blr_length_			(unsigned char)182
+#define blr_strlen			(unsigned char)182
 
 /* sub parameters for blr_length */
 
-#define blr_length_bit		(unsigned char)0
-#define blr_length_char		(unsigned char)1
-#define blr_length_octet	(unsigned char)2
+#define blr_strlen_bit		(unsigned char)0
+#define blr_strlen_char		(unsigned char)1
+#define blr_strlen_octet	(unsigned char)2
 
 #define blr_trim			(unsigned char)183
 

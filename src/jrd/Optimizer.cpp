@@ -537,10 +537,10 @@ bool expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 			}
 			break;
 
-		case nod_length:
-			if (node1->nod_arg[e_length_type] == node2->nod_arg[e_length_type] &&
-				expression_equal2(tdbb, opt, node1->nod_arg[e_length_value],
-								  node2->nod_arg[e_length_value], stream)) 
+		case nod_strlen:
+			if (node1->nod_arg[e_strlen_type] == node2->nod_arg[e_strlen_type] &&
+				expression_equal2(tdbb, opt, node1->nod_arg[e_strlen_value],
+								  node2->nod_arg[e_strlen_value], stream)) 
 			{
 				return true;
 			}

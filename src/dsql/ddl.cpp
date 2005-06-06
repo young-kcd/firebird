@@ -707,7 +707,7 @@ static bool is_array_or_blob(const dsql_nod* node)
 	case nod_current_time:
 	case nod_current_timestamp:
 	case nod_constant:
-	case nod_length:
+	case nod_strlen:
 	case nod_null:
 	case nod_via:
 	case nod_substr:

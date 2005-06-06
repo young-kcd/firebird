@@ -2066,8 +2066,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_join_right:
 		verb = "join_right";
 		break;
-	case nod_length:
-		verb = "length";
+	case nod_strlen:
+		verb = "strlen";
 		break;
 	case nod_leq_all:
 	case nod_leq_any:

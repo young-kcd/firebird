@@ -1115,14 +1115,14 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 	const USHORT from_len =
 		CVT_get_string_ptr(from, &from_type, &from_ptr, NULL, 0, err);
 
-	USHORT to_size, to_len, to_fill;
+	ULONG to_size, to_len, to_fill;
 	to_size = to_len = TEXT_LEN(to);
-	USHORT from_fill;
+	ULONG from_fill;
 
 	const UCHAR* q = from_ptr;
 	CharSet* toCharSet = INTL_charset_lookup(tdbb, to_cs, NULL);
 	fb_assert(toCharSet != NULL);
-	USHORT toLength;
+	ULONG toLength;
 
 	switch (to->dsc_dtype) {
 	case dtype_text:

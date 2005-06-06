@@ -526,10 +526,10 @@ const int e_cursor_stmt_seek	= 2;
 const int e_cursor_stmt_into	= 3;
 const int e_cursor_stmt_length	= 4;
 
-const int e_length_value	= 0;
-const int e_length_type		= 1;
-const int e_length_count	= 1;
-const int e_length_length	= 2;
+const int e_strlen_value	= 0;
+const int e_strlen_type		= 1;
+const int e_strlen_count	= 1;
+const int e_strlen_length	= 2;
 
 const int e_trim_value			= 0;
 const int e_trim_characters		= 1;

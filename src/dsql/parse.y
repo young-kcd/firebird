@@ -4005,21 +4005,21 @@ length_expression	: bit_length_expression
 		;
 
 bit_length_expression	: BIT_LENGTH '(' value ')'
-			{ $$ = make_node(nod_length, (int) e_length_count,
-					MAKE_constant((dsql_str*)blr_length_bit, CONSTANT_SLONG), $3); }
+			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
+					MAKE_constant((dsql_str*)blr_strlen_bit, CONSTANT_SLONG), $3); }
 		;
 
 char_length_expression	: CHAR_LENGTH '(' value ')'
-			{ $$ = make_node(nod_length, (int) e_length_count,
-					MAKE_constant((dsql_str*)blr_length_char, CONSTANT_SLONG), $3); }
+			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
+					MAKE_constant((dsql_str*)blr_strlen_char, CONSTANT_SLONG), $3); }
 		| CHARACTER_LENGTH '(' value ')'
-			{ $$ = make_node(nod_length, (int) e_length_count,
-					MAKE_constant((dsql_str*)blr_length_char, CONSTANT_SLONG), $3); }
+			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
+					MAKE_constant((dsql_str*)blr_strlen_char, CONSTANT_SLONG), $3); }
 		;
 
 octet_length_expression	: OCTET_LENGTH '(' value ')'
-			{ $$ = make_node(nod_length, (int) e_length_count,
-					MAKE_constant((dsql_str*)blr_length_octet, CONSTANT_SLONG), $3); }
+			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
+					MAKE_constant((dsql_str*)blr_strlen_octet, CONSTANT_SLONG), $3); }
 		;
 
 string_value_function	:  substring_function

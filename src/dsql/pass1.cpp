@@ -622,12 +622,12 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		}
 		return node;
 
-	case nod_length:
-		node = MAKE_node(input->nod_type, e_length_count);
-		node->nod_arg[e_length_type] = input->nod_arg[e_length_type];
-		node->nod_arg[e_length_value] =
-			PASS1_node(request, input->nod_arg[e_length_value], proc_flag);
-		if (node->nod_arg[e_length_value]->nod_desc.dsc_flags & DSC_nullable)
+	case nod_strlen:
+		node = MAKE_node(input->nod_type, e_strlen_count);
+		node->nod_arg[e_strlen_type] = input->nod_arg[e_strlen_type];
+		node->nod_arg[e_strlen_value] =
+			PASS1_node(request, input->nod_arg[e_strlen_value], proc_flag);
+		if (node->nod_arg[e_strlen_value]->nod_desc.dsc_flags & DSC_nullable)
 			node->nod_desc.dsc_flags |= DSC_nullable;
 		return node;
 
@@ -1931,7 +1931,7 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 		case nod_upcase:
 		case nod_lowcase:
 		case nod_extract:
-		case nod_length:
+		case nod_strlen:
 		case nod_coalesce:
 		case nod_simple_case:
 		case nod_searched_case:
@@ -2553,7 +2553,7 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_upcase:
 		case nod_lowcase:
 		case nod_extract:
-		case nod_length:
+		case nod_strlen:
 		case nod_equiv:
 		case nod_eql:
 		case nod_neq:
@@ -4341,7 +4341,7 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 		case nod_upcase:
 		case nod_lowcase:
 		case nod_extract:
-		case nod_length:
+		case nod_strlen:
 		case nod_add2:
 		case nod_divide2:
 		case nod_multiply2:
@@ -4576,7 +4576,7 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_upcase:
 		case nod_lowcase:
 		case nod_extract:
-		case nod_length:
+		case nod_strlen:
 		case nod_add2:
 		case nod_divide2:
 		case nod_multiply2:
@@ -4745,7 +4745,7 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 		case nod_upcase:
 		case nod_lowcase:
 		case nod_extract:
-		case nod_length:
+		case nod_strlen:
 		case nod_add2:
 		case nod_divide2:
 		case nod_multiply2:
@@ -7518,7 +7518,7 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 		case nod_lowcase:
 		case nod_internal_info:
 		case nod_extract:
-		case nod_length:
+		case nod_strlen:
 		case nod_list:
 		case nod_join:
 		case nod_join_inner:
@@ -7854,7 +7854,7 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 		case nod_upcase:
 		case nod_lowcase:
 		case nod_extract:
-		case nod_length:
+		case nod_strlen:
 		case nod_limit:
 		case nod_rows:
 			{
@@ -7969,7 +7969,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node,
 	case nod_upcase:
 	case nod_lowcase:
 	case nod_extract:
-	case nod_length:
+	case nod_strlen:
 	case nod_limit:
 	case nod_rows:
 		{

@@ -2846,8 +2846,8 @@ static bool expression_possible_unknown(const jrd_nod* node)
 		case nod_extract:
 			return expression_possible_unknown(node->nod_arg[e_extract_value]);
 
-		case nod_length:
-			return expression_possible_unknown(node->nod_arg[e_length_value]);
+		case nod_strlen:
+			return expression_possible_unknown(node->nod_arg[e_strlen_value]);
 
 		case nod_field:
 		case nod_rec_version:
@@ -2969,9 +2969,9 @@ static bool expression_contains_stream(CompilerScratch* csb,
 			return expression_contains_stream(csb,
 				node->nod_arg[e_extract_value], stream, otherActiveStreamFound);
 
-		case nod_length:
+		case nod_strlen:
 			return expression_contains_stream(csb,
-				node->nod_arg[e_length_value], stream, otherActiveStreamFound);
+				node->nod_arg[e_strlen_value], stream, otherActiveStreamFound);
 
 		case nod_function:
 			return expression_contains_stream(csb,
@@ -5893,8 +5893,8 @@ static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
 			}
 			break;
 
-		case nod_length:
-			if (get_unmapped_node(tdbb, node->nod_arg[e_length_value],
+		case nod_strlen:
+			if (get_unmapped_node(tdbb, node->nod_arg[e_strlen_value],
 				map, shellStream, false) != NULL)
 			{
 				returnNode = node;

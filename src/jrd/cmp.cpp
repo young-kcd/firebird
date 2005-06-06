@@ -1684,7 +1684,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		}
 		return;
 
-	case nod_length:
+	case nod_strlen:
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(ULONG);
 		desc->dsc_scale = 0;
@@ -2694,14 +2694,14 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_arg[e_extract_part] = input->nod_arg[e_extract_part];
 		return (node);
 
-	case nod_length:
-		node = PAR_make_node(tdbb, e_length_length);
+	case nod_strlen:
+		node = PAR_make_node(tdbb, e_strlen_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_length_value] =
-			copy(tdbb, csb, input->nod_arg[e_length_value], remap, field_id,
+		node->nod_arg[e_strlen_value] =
+			copy(tdbb, csb, input->nod_arg[e_strlen_value], remap, field_id,
 				 message, remap_fld);
-		node->nod_arg[e_length_type] = input->nod_arg[e_length_type];
+		node->nod_arg[e_strlen_type] = input->nod_arg[e_strlen_type];
 		return (node);
 
 	case nod_trim:
@@ -5046,7 +5046,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_scalar:
 	case nod_cast:
 	case nod_extract:
-	case nod_length:
+	case nod_strlen:
 	case nod_current_time:
 	case nod_current_timestamp:
 	case nod_current_date:

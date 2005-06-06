@@ -210,4 +210,4 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_lowcase, lowcase, "LOWER")
 		  NODE(nod_equiv, equiv, " == ")
 
-		  NODE(nod_length, length, "LENGTH")
+		  NODE(nod_strlen, strlen, "STRLEN")

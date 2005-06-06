@@ -129,10 +129,10 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		GEN_expr(request, node->nod_arg[e_extract_value]);
 		return;
 
-	case nod_length:
-		stuff(request, blr_length_);
-		stuff(request, *(SLONG *) node->nod_arg[e_length_type]->nod_desc.dsc_address);
-		GEN_expr(request, node->nod_arg[e_length_value]);
+	case nod_strlen:
+		stuff(request, blr_strlen);
+		stuff(request, *(SLONG *) node->nod_arg[e_strlen_type]->nod_desc.dsc_address);
+		GEN_expr(request, node->nod_arg[e_strlen_value]);
 		return;
 
 	case nod_dbkey:
@@ -2550,22 +2550,22 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		case nod_extract:
 			name_alias = "EXTRACT";
 			break;
-		case nod_length:
+		case nod_strlen:
 		{
  			const ULONG length_type =
-				*(SLONG*)item->nod_arg[e_length_type]->nod_desc.dsc_address;
+				*(SLONG*)item->nod_arg[e_strlen_type]->nod_desc.dsc_address;
 
 			switch (length_type)
 			{
-				case blr_length_bit:
+				case blr_strlen_bit:
 					name_alias = "BIT_LENGTH";
 					break;
 
-				case blr_length_char:
+				case blr_strlen_char:
 					name_alias = "CHAR_LENGTH";
 					break;
 
-				case blr_length_octet:
+				case blr_strlen_octet:
 					name_alias = "OCTET_LENGTH";
 					break;
 
