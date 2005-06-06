@@ -1001,8 +1001,8 @@ static void list_all_procs()
 	static const SCHAR* create_procedure_str2 = "BEGIN EXIT; END %s%s";
 
 
-//  First the dummy procedures 
-// create the procedures with their parameters 
+	//  First the dummy procedures
+	// create the procedures with their parameters
 
 	FOR PRC IN RDB$PROCEDURES
 		SORTED BY PRC.RDB$PROCEDURE_NAME
@@ -1023,8 +1023,7 @@ static void list_all_procs()
 		}
 		else
 		{
-			isqlGlob.printf(create_procedure_str1,
-					 PRC.RDB$PROCEDURE_NAME);
+			isqlGlob.printf(create_procedure_str1, PRC.RDB$PROCEDURE_NAME);
 		}
 
 		get_procedure_args (PRC.RDB$PROCEDURE_NAME);
@@ -1036,8 +1035,8 @@ static void list_all_procs()
 		return;
 	END_ERROR;
 
-/* This query gets the procedure name and the source.  We then nest a query
-   to retrieve the parameters. Alter is used, because the procedures are already there*/
+	// This query gets the procedure name and the source.  We then nest a query
+	// to retrieve the parameters. Alter is used, because the procedures are already there
 	TEXT msg[MSG_LENGTH];
 
 	FOR PRC IN RDB$PROCEDURES
@@ -1071,7 +1070,7 @@ static void list_all_procs()
 		return;
 	END_ERROR;
 
-// Only reset the terminators is there were procs to print 
+	// Only reset the terminators is there were procs to print
 	if (!header)
 	{
 		isqlGlob.printf("SET TERM %s %s%s", isqlGlob.global_Term, Procterm, NEWLINE);

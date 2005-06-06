@@ -2710,7 +2710,7 @@ static processing_state show_generators(const SCHAR* object)
 	SLONG genid = 0;
 	TEXT query[100], gen_name[WORDLENGTH * 2];
 
-// Show all generators  or named generator
+	// Show all generators or named generator
 	FOR GEN IN RDB$GENERATORS
 		SORTED BY GEN.RDB$GENERATOR_NAME
 
@@ -2721,8 +2721,7 @@ static processing_state show_generators(const SCHAR* object)
 		{
 			// Get the current id for each generator
 
-			const bool delimited_yes = strchr(GEN.RDB$GENERATOR_NAME, DBL_QUOTE) != 0;
-			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
+			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
 				ISQL_copy_SQL_id (GEN.RDB$GENERATOR_NAME, gen_name, DBL_QUOTE);
 			}
 			else { // If we are extracting in dialect 1, identifiers may cause failures.
@@ -2734,7 +2733,7 @@ static processing_state show_generators(const SCHAR* object)
 			isc_stmt_handle stmt = 0;
 			isc_dsql_allocate_statement (isc_status, &DB, &stmt);
 			sqlda.sqln = 1;
-			sqlda.version = 1;
+			sqlda.version = SQLDA_VERSION1;
 
 			/* If the user has set his client dialect to 1, we take that to
 			   mean that he wants to see just the lower 32 bits of the
