@@ -688,7 +688,7 @@ static bool is_array_or_blob(const dsql_nod* node)
  **************************************
  *
  * Functional description
- *	return true if there is an array or blob in expression, else false.
+ *	Return true if there is an array or blob in expression, else false.
  *	Array and blob expressions have limited usefullness in a computed
  *	expression - so we detect it here to report a syntax error at
  *	definition time, rather than a runtime error at execution.
@@ -735,7 +735,9 @@ static bool is_array_or_blob(const dsql_nod* node)
 	case nod_cast:
 	{
 		const dsql_fld* fld = (dsql_fld*) node->nod_arg[e_cast_target];
-		if ((fld->fld_dtype == dtype_blob) || (fld->fld_dtype == dtype_array)) {
+		if ((fld->fld_dtype == dtype_blob) ||
+			(fld->fld_dtype == dtype_array))
+		{
 			return true;
 		}
 		return is_array_or_blob(node->nod_arg[e_cast_source]);
@@ -762,7 +764,8 @@ static bool is_array_or_blob(const dsql_nod* node)
 	case nod_udf:
 	{
 		const dsql_udf* userFunc = (dsql_udf*) node->nod_arg[0];
-		if ((userFunc->udf_dtype == dtype_blob) || (userFunc->udf_dtype == dtype_array))
+		if ((userFunc->udf_dtype == dtype_blob) ||
+			(userFunc->udf_dtype == dtype_array))
 		{
 			return true;
 		}
@@ -3756,6 +3759,9 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		{
 			request->append_cstring(isc_dyn_def_local_fld, field_string);
 			request->append_cstring(isc_dyn_fld_base_fld, field->fld_name);
+			if (field->fld_dtype <= dtype_any_text) {
+				request->append_number(isc_dyn_fld_collation, field->fld_collation_id);
+			}
 			request->append_number(isc_dyn_view_context, context->ctx_context);
 		}
 		else
@@ -5622,6 +5628,7 @@ static void put_descriptor(dsql_req* request, const dsc* desc)
 	}
 	if (desc->dsc_dtype <= dtype_any_text) {
 		request->append_number(isc_dyn_fld_character_set, DSC_GET_CHARSET(desc));
+		request->append_number(isc_dyn_fld_collation, DSC_GET_COLLATE(desc));
 	}
 	else if (desc->dsc_dtype == dtype_blob) {
 		request->append_number(isc_dyn_fld_sub_type, desc->dsc_sub_type);
