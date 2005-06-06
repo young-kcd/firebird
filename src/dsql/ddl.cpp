@@ -796,7 +796,7 @@ static bool is_array_or_blob(const dsql_nod* node)
 		return false;
 
 	case nod_trim:
-		return is_array_or_blob(node->nod_arg[2]);
+		return is_array_or_blob(node->nod_arg[e_trim_value]);
 
 	default:
 		fb_assert(false);

@@ -490,7 +490,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
     case nod_trim:
-		MAKE_desc(request, &desc1, node->nod_arg[2], null_replacement);
+		MAKE_desc(request, &desc1, node->nod_arg[e_trim_value], null_replacement);
 
 		if (desc1.dsc_dtype <= dtype_any_text) {
 			*desc = desc1;
