@@ -157,7 +157,7 @@ static const struct
 	{"writelock", zero},
 	{"nullslast", zero},
 	{"lowcase", one}, /* 181 */
-	{"length", length},
+	{"strlen", strlength},
 	{"trim", trim},
 	{0, 0}
 };
