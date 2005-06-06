@@ -367,24 +367,16 @@ bool ISC_analyze_pclan(tstring& expanded_name, tstring& node_name)
 	node_name = "\\\\";
 	node_name += expanded_name.substr(2, p - 2);
 
-/* If a drive letter or TCP node name follows the slash after the
-   named pipe node name, space over the slash. */
-	const size q = expanded_name.find_first_of(":\\/", p + 1);
-	if (q != npos && expanded_name[q] == ':')
-	{
-		++p;
-	}
-	expanded_name.erase(0, p);
-
 /* If this is a loopback, substitute "." for the host name.  Otherwise,
    the CreateFile on the pipe will fail. */
-	TEXT localhost[64];
+	TEXT localhost[MAXHOSTLEN];
 	ISC_get_host(localhost, sizeof(localhost));
 	if (node_name.substr(2, npos) == localhost)
 	{
 		node_name.replace(2, npos, ".");
 	}
 
+	expanded_name.erase(0, p + 1);
 	return true;
 }
 #endif	// WIN_NT
