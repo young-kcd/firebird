@@ -1,3 +1,9 @@
+2005-06-06 00:08  asfernandes
+
+	* firebird2/builds/win32/msvc6/intl.dsp (1.23):
+	
+	Add bl88591ptbr0.h and pw1252ptbr.h to MSVC6 build
+
 2005-06-04 15:39  asfernandes
 
 	* firebird2/src/jrd/exe.cpp (1.150):
