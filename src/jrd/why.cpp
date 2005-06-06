@@ -62,6 +62,7 @@
 #include "../jrd/isc.h"
 #include "../jrd/fil.h"
 #include "../jrd/flu.h"
+#include "../jrd/db_alias.h"
 #include "../common/classes/ClumpletWriter.h"
 
 /* includes specific for DSQL */
@@ -794,15 +795,31 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	memcpy(temp_filename, file_name, temp_length);
 	temp_filename[temp_length] = '\0';
 
-	if (isc_set_path(temp_filename, org_length, expanded_filename))
+	if (!ISC_check_if_remote(temp_filename, true))
 	{
-		temp_filename = expanded_filename;
-		org_length = strlen(temp_filename);
+		Firebird::PathName database;
+		if (ResolveDatabaseAlias(temp_filename, database))
+		{
+			ISC_expand_filename(database, false);
+			strcpy(expanded_filename, database.c_str());
+		}
+		else if (isc_set_path(temp_filename, org_length, expanded_filename))
+		{
+			temp_filename = expanded_filename;
+			org_length = strlen(temp_filename);
+		}
+		else
+		{
+			ISC_expand_filename(temp_filename, org_length,
+								expanded_filename, sizeof(expanded_filename),
+								true);
+		}
 	}
 	else
 	{
 		ISC_expand_filename(temp_filename, org_length, 
-				expanded_filename, sizeof(expanded_filename), true);
+							expanded_filename, sizeof(expanded_filename),
+							true);
 	}
 
 	Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb), 
@@ -1411,15 +1428,31 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	memcpy(temp_filename, file_name, temp_length);
 	temp_filename[temp_length] = '\0';
 
-	if (isc_set_path(temp_filename, org_length, expanded_filename))
+	if (!ISC_check_if_remote(temp_filename, true))
 	{
-		temp_filename = expanded_filename;
-		org_length = strlen(temp_filename);
+		Firebird::PathName database;
+		if (ResolveDatabaseAlias(temp_filename, database))
+		{
+			ISC_expand_filename(database, false);
+			strcpy(expanded_filename, database.c_str());
+		}
+		else if (isc_set_path(temp_filename, org_length, expanded_filename))
+		{
+			temp_filename = expanded_filename;
+			org_length = strlen(temp_filename);
+		}
+		else
+		{
+			ISC_expand_filename(temp_filename, org_length,
+								expanded_filename, sizeof(expanded_filename),
+								true);
+		}
 	}
 	else
 	{
 		ISC_expand_filename(temp_filename, org_length, 
-			expanded_filename, sizeof(expanded_filename), true);
+							expanded_filename, sizeof(expanded_filename),
+							true);
 	}
 
 	Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb), 
