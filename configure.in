@@ -157,6 +157,7 @@ case "$target" in
     EDITLINE_FLG=N
     RAW_DEVICES_FLG=N
     SHRLIB_EXT=dll
+	ICU_PLATFORM=Cygwin
     ;;
 
   *)
@@ -985,6 +986,10 @@ gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
 gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu
 )
 AC_OUTPUT
+
+(cd extern/icu/source
+chmod +x runConfigureICU configure install-sh
+./runConfigureICU "$ICU_PLATFORM" --prefix=`pwd`/..)
 
 dnl Print out the build configuration (the most interesting thing)
 echo

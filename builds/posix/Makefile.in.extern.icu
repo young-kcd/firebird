@@ -33,10 +33,9 @@ include     $(ROOT)/gen/make.shared.variables
 .PHONY: libicu
 
 
-libicu: $(LIB)/libicuuc.so $(LIB)/libicudata.so $(LIB)/libicui18n.so
+libicu: $(LIB)/libicuuc.$(SHRLIB_EXT) $(LIB)/libicudata.$(SHRLIB_EXT) $(LIB)/libicui18n.$(SHRLIB_EXT)
 
-$(LIB)/libicuuc.so $(LIB)/libicudata.so $(LIB)/libicui18n.so:
-	cd $(ROOT)/extern/icu/source; chmod +x runConfigureICU configure install-sh; ./runConfigureICU @ICU_PLATFORM@ --prefix=`pwd`/..
+$(LIB)/libicuuc.$(SHRLIB_EXT) $(LIB)/libicudata.$(SHRLIB_EXT) $(LIB)/libicui18n.$(SHRLIB_EXT):
 	$(MAKE) -C $(ROOT)/extern/icu/source
 	$(MAKE) -C $(ROOT)/extern/icu/source install
 	cp $(ROOT)/extern/icu/lib/libicuuc* $(LIB)
