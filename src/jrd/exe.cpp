@@ -1159,7 +1159,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[e_erase_stream]];
 	jrd_rel* relation = rpb->rpb_relation;
 
-	if (rpb->rpb_number.getValue() == BOF_NUMBER) {
+	if (rpb->rpb_number.isBof()) {
 		ERR_post(isc_no_cur_rec, 0);
 	}
 
@@ -2914,7 +2914,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	record_param* org_rpb = &request->req_rpb[org_stream];
 	jrd_rel* relation = org_rpb->rpb_relation;
 
-	if (org_rpb->rpb_number.getValue() == BOF_NUMBER) {
+	if (org_rpb->rpb_number.isBof()) {
 		ERR_post(isc_no_cur_rec, 0);
 	}
 
