@@ -30,6 +30,8 @@
 
 #ifndef _WIN32
 #include <unistd.h>
+#else
+#include <io.h> // for unlink
 #endif
 
 #include <stdio.h>
