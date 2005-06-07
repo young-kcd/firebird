@@ -1088,20 +1088,19 @@ inline void PreModifyEraseTriggers(TDBB tdbb,
  *  storing active rpb in chain.
  *
  ******************************************************/
+	if (! tdbb->tdbb_transaction->tra_rpblist) {
+		tdbb->tdbb_transaction->tra_rpblist = 
+			FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
+				traRpbList(*tdbb->tdbb_transaction->tra_pool);
+	}
+	const int rpblevel = tdbb->tdbb_transaction->tra_rpblist->PushRpb(rpb);
+	JRD_REQ trigger = NULL;
 	if ((*trigs) && (which_trig != POST_TRIG)) {
-		if (! tdbb->tdbb_transaction->tra_rpblist) {
-			tdbb->tdbb_transaction->tra_rpblist = 
-				FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
-					traRpbList(*tdbb->tdbb_transaction->tra_pool);
-		}
-		int rpblevel = tdbb->tdbb_transaction->
-						tra_rpblist->PushRpb(rpb);
-		JRD_REQ trigger = execute_triggers(tdbb, trigs,
-					rpb->rpb_record, rec, op);
-		tdbb->tdbb_transaction->tra_rpblist->PopRpb(rpb, rpblevel);
-		if (trigger) {
-			trigger_failure(tdbb, trigger);
-		}
+		trigger = execute_triggers(tdbb, trigs, rpb->rpb_record, rec, op);
+	}
+	tdbb->tdbb_transaction->tra_rpblist->PopRpb(rpb, rpblevel);
+	if (trigger) {
+		trigger_failure(tdbb, trigger);
 	}
 }
 
