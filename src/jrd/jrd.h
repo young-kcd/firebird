@@ -516,6 +516,7 @@ typedef jrd_prc* JRD_PRC;
 #define PRC_blocking          16	/* Blocking someone from dropping procedure */
 #define PRC_create            32	/* Newly created */
 #define PRC_being_altered     64	/* Procedure is getting altered */
+#define PRC_check_existence   128	/* Existence lock released */
 
 #define MAX_PROC_ALTER        64	/* No. of times an in-cache procedure can be altered */
 

@@ -2,6 +2,11 @@
   * v1.5.3
   **************
 
+    * Fixed unregistered bug.
+        Server crashes during database shutdown when there are active DDL operations.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Fixed bug SF #1110717.
         Wrong charset of subquery in VIEWs.
       Contributor(s):

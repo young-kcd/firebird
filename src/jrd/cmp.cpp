@@ -2412,6 +2412,7 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
 		if ( (relation = (JRD_REL)*ptr) ) {
 			if (relation->rel_existence_lock) {
 				LCK_release(tdbb, relation->rel_existence_lock);
+				relation->rel_flags |= REL_check_existence;
 				relation->rel_use_count = 0;
 			}
 			for (index = relation->rel_index_locks; index;
@@ -2432,6 +2433,7 @@ void DLL_EXPORT CMP_shutdown_database(TDBB tdbb)
 		if ( (procedure = (JRD_PRC)*pptr) ) {
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
+				procedure->prc_flags |= PRC_check_existence;
 				procedure->prc_use_count = 0;
 			}
 		}
