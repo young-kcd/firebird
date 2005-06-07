@@ -2250,10 +2250,6 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 				}
 			}
 		}
-		if (check_relation)
-		{
-			break;
-		}
 	}
 
 /* We need to look up the relation name in RDB$RELATIONS */
