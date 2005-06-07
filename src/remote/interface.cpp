@@ -5519,6 +5519,13 @@ static void disconnect( PORT port)
 		REMOTE_free_packet(port, packet);
 	}
 
+	// Clear context reference for the associated event handler
+	// to avoid SEGV during shutdown
+
+	if (port->port_async) {
+		port->port_async->port_context = NULL;
+	}
+
 /* Perform physical network disconnect and release
    memory for remote database context. */
 

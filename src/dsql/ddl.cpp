@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: ddl.cpp,v 1.50.2.4 2005-02-06 10:50:01 alexpeshkoff Exp $
+ * $Id: ddl.cpp,v 1.50.2.5 2005-06-07 09:06:15 dimitr Exp $
  * 2001.5.20 Claudio Valderrama: Stop null pointer that leads to a crash,
  * caused by incomplete yacc syntax that allows ALTER DOMAIN dom SET;
  *
@@ -3498,6 +3498,9 @@ static void define_view( DSQL_REQ request, NOD_TYPE op)
 		{
 			request->append_cstring(gds_dyn_def_local_fld, field_string);
 			request->append_cstring(gds_dyn_fld_base_fld, field->fld_name);
+			if (field->fld_dtype <= dtype_any_text) {
+				request->append_number(gds_dyn_fld_collation, field->fld_collation_id);
+			}
 			request->append_number(gds_dyn_view_context, context->ctx_context);
 		}
 		else
@@ -5227,8 +5230,20 @@ static void put_descriptor(DSQL_REQ request, DSC * desc)
 	} else {
 		request->append_number(gds_dyn_fld_length, desc->dsc_length);
 	}
-	request->append_number(gds_dyn_fld_scale, desc->dsc_scale);
-	request->append_number(gds_dyn_fld_sub_type, desc->dsc_sub_type);
+	if (desc->dsc_dtype <= dtype_any_text) {
+		request->append_number(gds_dyn_fld_character_set, DSC_GET_CHARSET(desc));
+		request->append_number(gds_dyn_fld_collation, DSC_GET_COLLATE(desc));
+	}
+	else if (desc->dsc_dtype == dtype_blob) {
+		request->append_number(gds_dyn_fld_sub_type, desc->dsc_sub_type);
+		if (desc->dsc_sub_type == isc_blob_text) {
+			request->append_number(gds_dyn_fld_character_set, desc->dsc_scale);
+		}
+	}
+	else {
+		request->append_number(gds_dyn_fld_sub_type, desc->dsc_sub_type);
+		request->append_number(gds_dyn_fld_scale, desc->dsc_scale);
+	}
 }
 
 

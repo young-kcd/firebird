@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.61.2.5 2004-09-14 22:01:51 skidder Exp $
+$Id: met.epp,v 1.61.2.6 2005-06-07 09:12:03 dimitr Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -3539,13 +3539,13 @@ void MET_scan_relation( TDBB tdbb, JRD_REL relation)
 		/* Pick up field specific stuff */
 
 		blob = BLB_open(tdbb, dbb->dbb_sys_trans, &REL.RDB$RUNTIME);
-		if (blob->blb_max_segment < sizeof(temp))
+		if (blob->blb_max_segment + 1 < sizeof(temp))
 		{
 			buffer = temp;
 		}
 		else
 		{
-			string = FB_NEW_RPT(*tdbb->tdbb_default, blob->blb_max_segment) str();
+			string = FB_NEW_RPT(*tdbb->tdbb_default, blob->blb_max_segment + 1) str();
 			buffer = string->str_data;
 		}
 
