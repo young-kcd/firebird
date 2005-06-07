@@ -136,8 +136,8 @@ using namespace Jrd;
 #define TTYPE_TO_COLLATION(tt)  ((SSHORT)((tt) >> 8))
 
 
-static bool all_spaces(thread_db*, CHARSET_ID, const BYTE*, USHORT, USHORT);
-static void pad_spaces(thread_db*, CHARSET_ID, BYTE *, USHORT);
+static bool all_spaces(thread_db*, CHARSET_ID, const BYTE*, ULONG, ULONG);
+static void pad_spaces(thread_db*, CHARSET_ID, BYTE *, ULONG);
 static INTL_BOOL lookup_charset(charset* cs, const SubtypeInfo* info);
 static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info);
 
@@ -443,13 +443,15 @@ public:
 		{
 			USHORT errCode;
 			ULONG errPos;
-			ULONG utf16Len = getConvToUnicode().convertLength(srcLen);
+			ULONG length = getConvToUnicode().convertLength(srcLen);
 
-			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL> utf16Str;
-			utf16Len = getConvToUnicode().convert(srcLen, src, utf16Len,
-							utf16Str.getBuffer(utf16Len / sizeof(USHORT)), &errCode, &errPos);
+			// convert to UTF16
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL> str;
+			length = getConvToUnicode().convert(srcLen, src, length,
+							str.getBuffer(length / sizeof(USHORT)), &errCode, &errPos);
 
-			return UnicodeUtil::utf16Length(utf16Len, utf16Str.begin());
+			// calculate length of UTF16
+			return UnicodeUtil::utf16Length(length, str.begin());
 		}
 	}
 
@@ -468,16 +470,19 @@ public:
 			USHORT errCode;
 			ULONG errPos;
 
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
-			ULONG utf16Len = getConvToUnicode().convertLength(srcLen);
-			utf16Len = getConvToUnicode().convert(srcLen, src, utf16Len,
-				reinterpret_cast<USHORT*>(utf16Str.getBuffer(utf16Len)), &errCode, &errPos);
+			// convert to UTF16
+			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> str;
+			ULONG length = getConvToUnicode().convertLength(srcLen);
+			length = getConvToUnicode().convert(srcLen, src, length,
+				reinterpret_cast<USHORT*>(str.getBuffer(length)), &errCode, &errPos);
 
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Substring;
-			utf16Len = UnicodeUtil::utf16Substring(utf16Len, reinterpret_cast<const USHORT*>(utf16Str.begin()),
-				utf16Len, reinterpret_cast<USHORT*>(utf16Substring.getBuffer(utf16Len)), startPos, length);
+			// generate substring of UTF16
+			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> substr;
+			length = UnicodeUtil::utf16Substring(length, reinterpret_cast<const USHORT*>(str.begin()),
+				length, reinterpret_cast<USHORT*>(substr.getBuffer(length)), startPos, length);
 
-			return getConvFromUnicode().convert(utf16Len, utf16Substring.begin(), dstLen, dst, &errCode, &errPos);
+			// convert generated substring to original charset
+			return getConvFromUnicode().convert(length, substr.begin(), dstLen, dst, &errCode, &errPos);
 		}
 	}
 };
@@ -1433,7 +1438,7 @@ bool INTL_texttype_validate(Jrd::thread_db* tdbb, const SubtypeInfo* info)
 }
 
 
-void INTL_pad_spaces(thread_db* tdbb, DSC * type, UCHAR * string, USHORT length)
+void INTL_pad_spaces(thread_db* tdbb, DSC * type, UCHAR * string, ULONG length)
 {
 /**************************************
  *
@@ -1658,7 +1663,7 @@ int INTL_str_to_lower(thread_db* tdbb, DSC * pString)
 static bool all_spaces(
 						  thread_db* tdbb,
 						  CHARSET_ID charset,
-						  const BYTE* ptr, USHORT len, USHORT offset)
+						  const BYTE* ptr, ULONG len, ULONG offset)
 {
 /**************************************
  *
@@ -1715,7 +1720,7 @@ static bool all_spaces(
 }
 
 
-static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, USHORT len)
+static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, ULONG len)
 {								/* byte count */
 /**************************************
  *

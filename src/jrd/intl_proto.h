@@ -48,7 +48,7 @@ Jrd::CharSet*	INTL_charset_lookup(Jrd::thread_db* tdbb, SSHORT parm1, ISC_STATUS
 Jrd::TextType*	INTL_texttype_lookup(Jrd::thread_db* tdbb, SSHORT parm1, FPTR_ERROR err,
 								ISC_STATUS* status);
 bool		INTL_texttype_validate(Jrd::thread_db*, const SubtypeInfo*);
-void		INTL_pad_spaces(Jrd::thread_db*, dsc*, UCHAR*, USHORT);
+void		INTL_pad_spaces(Jrd::thread_db*, dsc*, UCHAR*, ULONG);
 USHORT		INTL_string_to_key(Jrd::thread_db*, USHORT, const dsc*, dsc*, USHORT);
 int			INTL_str_to_upper(Jrd::thread_db*, dsc*);
 int			INTL_str_to_lower(Jrd::thread_db*, dsc*);
