@@ -2,6 +2,31 @@
   * v1.5.3
   **************
 
+    * Fixed bug SF #1110717.
+        Wrong charset of subquery in VIEWs.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #1106825.
+        Access Violation in fcblient.dll v1.5.2 on disconnecting.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Server crashes while performing a metadata scan for complex table.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        Database corruption due to pre-triggers (e.g. record is deleted in BEFORE UPDATE trigger).
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
+        User savepoints are not released when commit retaining is issued.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Fixed unregistered bug.
         Backport isql fixes:
         Another fix for the -b (Bail On Error) option when SQL commands are issued
@@ -10,7 +35,7 @@
         operating system, discovered by Ivan Prenosil.
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
-        
+
     * Fixed unregistered bug.
         Computed column of blob/array type zeroes the first column of the table being restored.
       Contributor(s):
