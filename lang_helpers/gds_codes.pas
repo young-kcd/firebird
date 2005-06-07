@@ -562,6 +562,7 @@ const
 	gds_identifier_too_long              = 335544847;
 	gds_except2                          = 335544848;
 	gds_malformed_string                 = 335544849;
+	gds_prc_out_param_mismatch           = 335544850;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
