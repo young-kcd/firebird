@@ -591,7 +591,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		if (charSet1->isMultiByte())
 		{
 			buffer1.getBuffer(blob1->blb_length);
-			buffer2.getBuffer(blob2->blb_length / charSet2->minBytesPerChar() * charSet1->minBytesPerChar());
+			buffer2.getBuffer(blob2->blb_length / charSet2->minBytesPerChar() * charSet1->maxBytesPerChar());
 		}
 
 		while (ret_val == 0 &&
