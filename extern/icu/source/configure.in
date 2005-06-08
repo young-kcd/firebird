@@ -539,11 +539,7 @@ if test $ac_cv_var_tzname = yes; then
 else
   AC_CACHE_CHECK(for _tzname,ac_cv_var__tzname,
   [AC_TRY_LINK(
-  changequote(<<, >>)dnl
-  <<#include <time.h>
-  extern char *_tzname[];
-  >>,
-  changequote([, ])dnl
+  [#include <time.h>],
   [atoi(*_tzname);], ac_cv_var__tzname=yes, ac_cv_var__tzname=no)])
     if test $ac_cv_var__tzname = yes; then
       U_TZNAME=_tzname
