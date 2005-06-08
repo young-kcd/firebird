@@ -5876,9 +5876,11 @@ static void put_local_variables(dsql_req* request, dsql_nod* parameters,
 				dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
 				put_local_variable(request, variable, parameter);
 
-				// fld_length is calculated inside put_local_variable(),
-				// so we copy here the length
-				var_node->nod_desc.dsc_length = field->fld_length;
+				// Some field attributes are calculated inside
+				// put_local_variable(), so we reinitialize the
+				// descriptor
+				MAKE_desc_from_field(&var_node->nod_desc, field);
+
 				locals++;
 			}
 			else if (parameter->nod_type == nod_cursor)
