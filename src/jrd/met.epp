@@ -1015,7 +1015,7 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, SSHORT id, SubtypeInfo* inf
 			}
 
 			info->attributes = (USHORT)CL.RDB$COLLATION_ATTRIBUTES;
-			info->ignore_attributes = CL.RDB$COLLATION_ATTRIBUTES.NULL;
+			info->ignoreAttributes = CL.RDB$COLLATION_ATTRIBUTES.NULL;
 		END_FOR;
 	}
 	else
@@ -1037,8 +1037,8 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, SSHORT id, SubtypeInfo* inf
 
 			info->baseCollationName = info->collationName;
 			info->specificAttributes.clear();
-			info->attributes = (USHORT)CL.RDB$COLLATION_ATTRIBUTES;
-			info->ignore_attributes = true;
+			info->attributes = 0;
+			info->ignoreAttributes = true;
 		END_FOR;
 	}
 

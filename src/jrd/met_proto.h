@@ -49,7 +49,7 @@ struct SubtypeInfo
 	Firebird::string collationName;
 	Firebird::string baseCollationName;
 	USHORT attributes;
-	bool ignore_attributes;
+	bool ignoreAttributes;
 	Firebird::HalfStaticArray<UCHAR, 32> specificAttributes;
 };
 

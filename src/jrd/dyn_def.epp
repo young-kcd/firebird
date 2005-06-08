@@ -262,6 +262,11 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						break;
 					}
 
+					// ASF: Our DDL strings is very weak.
+					// I've added isc_dyn_coll_specific_attributes_charset to pass the character set of a string.
+					// It may be the connection charset or some charset specified with INTRODUCER.
+					// Better approach is to pass DYN strings (including delimited identifiers) with the
+					// charset and reading it converting to CS_METADATA.
 					case isc_dyn_coll_specific_attributes_charset:
 						specific_attributes_charset = DYN_get_number(ptr);
 						break;
@@ -273,7 +278,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 									   isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
 
 						bpb[6] = specific_attributes_charset;	// from charset
-						bpb[12] = CS_UNICODE_FSS;				// to charset
+						bpb[12] = CS_METADATA;					// to charset
 
 						X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
 						DYN_put_text_blob(gbl, ptr, &X.RDB$SPECIFIC_ATTRIBUTES, sizeof(bpb), bpb);
@@ -294,6 +299,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 			strcpy(X.RDB$COLLATION_NAME, collation_name.c_str());
 			X.RDB$COLLATION_ATTRIBUTES = (info.attributes | attributes_on) & (~attributes_off);
 
+			// If isc_dyn_coll_specific_attributes is not provided, then inherit from the base collation
 			if (X.RDB$SPECIFIC_ATTRIBUTES.NULL && info.specificAttributes.getCount() != 0)
 			{
 				X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
@@ -313,7 +319,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 			else
 				info.baseCollationName = X.RDB$BASE_COLLATION_NAME;
 			info.attributes = X.RDB$COLLATION_ATTRIBUTES;
-			info.ignore_attributes = false;
+			info.ignoreAttributes = false;
 
 			if (!IntlManager::collationInstalled(info.baseCollationName, info.charsetName))
 			{

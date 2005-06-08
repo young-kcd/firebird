@@ -657,14 +657,14 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 	{
 		CharSet* charset = INTL_charset_lookup(tdbb, TTYPE_TO_CHARSET(tt_id), NULL);
 
-		if (TTYPE_TO_CHARSET(tt_id) != CS_UNICODE_FSS)
+		if (TTYPE_TO_CHARSET(tt_id) != CS_METADATA)
 		{
 			Firebird::HalfStaticArray<UCHAR, 32> specificAttributes;
 			ULONG size = info.specificAttributes.getCount() * charset->maxBytesPerChar();
 
 			size = INTL_convert_bytes(tdbb, TTYPE_TO_CHARSET(tt_id),
 									  specificAttributes.getBuffer(size), size,
-									  CS_UNICODE_FSS, info.specificAttributes.begin(),
+									  CS_METADATA, info.specificAttributes.begin(),
 									  info.specificAttributes.getCount(), ERR_post);
 			specificAttributes.shrink(size);
 			info.specificAttributes = specificAttributes;
@@ -773,7 +773,7 @@ static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
 {
 	return IntlManager::lookupCollation(info->baseCollationName, info->charsetName,
 		info->attributes, info->specificAttributes.begin(),
-		info->specificAttributes.getCount(), info->ignore_attributes, tt);
+		info->specificAttributes.getCount(), info->ignoreAttributes, tt);
 }
 
 
