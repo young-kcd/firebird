@@ -16,7 +16,7 @@ WHY_Sources = why.cpp
 # why.cpp does the switch to determine the actual implementation to use
 
 
-JRD_ClientFiles = alt.cpp cvt.cpp dsc.cpp dls.cpp \
+JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp dls.cpp \
 		enc.cpp gds.cpp isc.cpp isc_file.cpp \
 		isc_sync.cpp perf.cpp sch.cpp sdl.cpp status.cpp \
 		ThreadData.cpp utl.cpp \
@@ -30,7 +30,7 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         grant.epp ini.epp met.epp pcmet.epp scl.epp \
                    \
         all.cpp bookmark.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
-		cch.cpp cmp.cpp cvt2.cpp db_alias.cpp \
+		cch.cpp cmp.cpp cvt2.cpp \
 		dfw.cpp divorce.cpp \
 		err.cpp iberr.cpp \
 		event.cpp evl.cpp exe.cpp ext.cpp \
