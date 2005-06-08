@@ -1,3 +1,41 @@
+2005-06-08 04:09  asfernandes
+
+	* firebird2/src/jrd/: dyn_def.epp (1.99), intl.cpp (1.77), met.epp
+	(1.167), met_proto.h (1.48):
+	
+	Misc.
+
+2005-06-07 12:57  dimitr
+
+	* firebird2/src/jrd/rpb_chain.cpp (1.11):
+	
+	Added a couple of more checks.
+
+2005-06-07 12:52  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.151):
+	
+	Cleanup.
+
+2005-06-07 12:36  aafemt
+
+	* firebird2/src/config/InputFile.cpp (1.3):
+	
+	Required header
+
+2005-06-07 12:20  dimitr
+
+	* firebird2/src/jrd/met.epp (1.166):
+	
+	Removed code remains from before-MetaName times.
+
+2005-06-07 07:09  aafemt
+
+	* firebird2/: configure.in (1.228),
+	builds/posix/Makefile.in.extern.icu (1.4):
+	
+	More appropriate place to configure ICU
+
 2005-06-07 04:05  asfernandes
 
 	* firebird2/src/jrd/: intl.cpp (1.76), intl_proto.h (1.17):
