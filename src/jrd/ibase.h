@@ -1925,23 +1925,22 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dyn_mod_collation             229
 #define isc_dyn_mod_prc_parameter         230
 
-#define isc_dyn_def_collation             231
-
 /***********************/
 /* collation values     */
 /***********************/
-//// TODO: review these numbers
-#define isc_dyn_coll_for_charset					10
-#define isc_dyn_coll_from							11
-#define isc_dyn_coll_attribute						12
-#define isc_dyn_coll_specific_attributes_charset	13
-#define isc_dyn_coll_specific_attributes			14
+#define isc_dyn_def_collation						231
+#define isc_dyn_coll_for_charset					232
+#define isc_dyn_coll_from							233
+#define isc_dyn_coll_attribute						234
+#define isc_dyn_coll_specific_attributes_charset	235
+#define isc_dyn_coll_specific_attributes			236
+#define isc_dyn_del_collation						237
 
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
 
-#define isc_dyn_last_dyn_value            231
+#define isc_dyn_last_dyn_value            237
 
 /******************************************/
 /* Array slice description language (SDL) */
