@@ -2005,9 +2005,9 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		VRL IN RDB$VIEW_RELATIONS CROSS REL IN RDB$RELATIONS
-			WITH VRL.RDB$VIEW_NAME EQ REL.RDB$RELATION_NAME AND
-				VRL.RDB$VIEW_NAME EQ view_name.c_str()
+		REL IN RDB$RELATIONS
+			WITH REL.RDB$RELATION_NAME EQ view_name.c_str()
+				AND REL.RDB$VIEW_BLR NOT MISSING
 
         if (!DYN_REQUEST(drq_m_view))
 			DYN_REQUEST(drq_m_view) = request;
