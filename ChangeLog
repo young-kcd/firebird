@@ -1,3 +1,41 @@
+2005-06-07 12:22  dimitr
+
+	* firebird2/: src/jrd/cmp.cpp (1.52.2.19), src/jrd/jrd.h
+	(1.42.2.7), src/jrd/met.epp (1.61.2.7), doc/WhatsNew (1.36.2.42):
+	
+	Backported some fixes from HEAD.
+
+2005-06-07 11:55  dimitr
+
+	* firebird2/doc/WhatsNew (1.36.2.41):
+	
+	Backported some fixes from HEAD.
+
+2005-06-07 11:26  dimitr
+
+	* firebird2/src/jrd/tra.cpp (1.38.2.4):
+	
+	Backported some fixes from HEAD.
+
+2005-06-07 11:17  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.68.2.12):
+	
+	Backported some fixes from HEAD.
+
+2005-06-07 11:12  dimitr
+
+	* firebird2/src/jrd/met.epp (1.61.2.6):
+	
+	Backported some fixes from HEAD.
+
+2005-06-07 11:06  dimitr
+
+	* firebird2/src/: dsql/ddl.cpp (1.50.2.5), remote/interface.cpp
+	(1.48.2.3):
+	
+	Backported some fixes from HEAD.
+
 2005-05-12 09:04  robocop
 
 	* firebird2/src/isql/isql.epp (1.32.2.17):
