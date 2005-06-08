@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.62 2005-05-29 15:26:54 asfernandes Exp $
+#  $Id: Makefile.in.firebird,v 1.63 2005-06-08 05:28:47 aafemt Exp $
 #
 
 ROOT=..
@@ -192,7 +192,7 @@ endif
 external_libraries: $(EXTERNAL_LIBRARIES)
 
 $(LIBICU_SO): 
-	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.icu
+	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.icu $@
 
 $(LIBEDITLINE_A): 
 	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
