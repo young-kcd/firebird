@@ -3,6 +3,11 @@
   **************
 
     * Fixed unregistered bug.
+        Lost charset/collation for local PSQL variables causing string conversion errors.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug.
         Server crashes during database shutdown when there are active DDL operations.
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
