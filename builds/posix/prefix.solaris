@@ -54,6 +54,8 @@ JRDBOOT_Extra_Files=isc_sync.cpp thd.cpp
 
 OS_ServerFiles=inet_server.cpp
 
+Server_main_dummy = os/sun/server_main_dummy.cpp
+
 LIB_LINK_OPTIONS:= -G
 LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
