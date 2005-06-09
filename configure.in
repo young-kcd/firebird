@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.141.2.37 2005-04-29 06:24:28 kkuznetsov Exp $
+dnl $Id: configure.in,v 1.141.2.38 2005-06-09 09:04:44 kkuznetsov Exp $
 
 dnl ############################# INITIALISATION ###############################
 
@@ -135,6 +135,8 @@ case "$target" in
     LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    PTHREAD_CFLAGS=-threads
+    PTHREAD_LIBS=-lthread
     ;;
 
   i*-sni-sysv4)
