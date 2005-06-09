@@ -1,3 +1,54 @@
+2005-06-09 02:01  asfernandes
+
+	* firebird2/src/jrd/cvt.cpp (1.65):
+	
+	Revert Claudio's change that cause crash when parameters are used
+
+2005-06-08 15:42  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.144):
+	
+	Fixed bug with lost charset/collation in local variables, reported
+	by Eugene Kilin.
+
+2005-06-08 13:10  asfernandes
+
+	* firebird2/src/jrd/cvt2.cpp (1.49):
+	
+	Fix BLOB comparation problem pointed by Claudio
+
+2005-06-08 13:09  asfernandes
+
+	* firebird2/src/jrd/ibase.h (1.102):
+	
+	Use more appropriate codes
+
+2005-06-08 12:21  aafemt
+
+	* firebird2/extern/icu/source/configure.in (1.3):
+	
+	A bit better method to check for _tzname
+
+2005-06-08 11:58  alexpeshkoff
+
+	* firebird2/builds/posix/make.shared.variables (1.52):
+	
+	fixed posix build after Dmitry's change
+
+2005-06-08 08:16  dimitr
+
+	* firebird2/src/jrd/dyn_mod.epp (1.63):
+	
+	Fixed an old ALTER VIEW bug that now prevents COMMENT ON VIEW from
+	working properly.
+
+2005-06-08 07:28  aafemt
+
+	* firebird2/builds/posix/: Makefile.in.firebird (1.63),
+	make.defaults (1.40):
+	
+	ICU build with MinGW
+
 2005-06-08 04:09  asfernandes
 
 	* firebird2/src/jrd/: dyn_def.epp (1.99), intl.cpp (1.77), met.epp
