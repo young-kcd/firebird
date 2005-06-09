@@ -1576,7 +1576,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			USHORT to_size = TEXT_LEN(to);
 			UCHAR* start = to->dsc_address;
 #if !defined(REQUESTER) && !defined(SUPERCLIENT)
-			CharSet* toCharSet = (!err || charset2 == ttype_dynamic || charset2 == CS_METADATA ?
+			CharSet* toCharSet = (err != ERR_post || charset2 == ttype_dynamic || charset2 == CS_METADATA ?
 									NULL : INTL_charset_lookup(NULL, charset2, NULL));
 			USHORT toLength;
 #endif
