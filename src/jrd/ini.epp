@@ -536,7 +536,7 @@ void INI_init(void)
 			desc->dsc_length = gfield->gfld_length;
 			desc->dsc_dtype = gfield->gfld_dtype;
 			desc->dsc_sub_type = gfield->gfld_sub_type;
-			if (desc->dsc_dtype == dtype_blob)
+			if (desc->dsc_dtype == dtype_blob && desc->dsc_sub_type == isc_blob_text)
 				desc->dsc_scale = CS_METADATA;	// blob charset
 
 			jrd_fld* field = FB_NEW(*dbb->dbb_permanent) jrd_fld(*dbb->dbb_permanent);
