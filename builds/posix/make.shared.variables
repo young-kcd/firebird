@@ -300,9 +300,7 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(CLUMPLETS_Objects) \
                 $(FBCONFIG_Objects) \
                 $(BURP_Objects) \
-                $(ALICE_Objects) \
-		$(CONFIG_Objects) \
-		$(VULCAN_Objects)
+                $(ALICE_Objects)
 
 # Objects differences for server (super) and embedded (classic) libraries 
 # have been worked out above in this file, based on macros, so here they
@@ -327,9 +325,7 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(INTERFACE_Objects) \
                 $(GPRELIB_Objects) \
 				$(FBCONFIG_Objects) \
-				$(CLUMPLETS_Objects) \
-				$(CONFIG_Objects) \
-				$(VULCAN_Objects)
+				$(CLUMPLETS_Objects)
 
 
 # Not needed since loaded into libfbmemory.a already

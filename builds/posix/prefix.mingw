@@ -48,11 +48,13 @@ FilesToAddVersionInfo=$(LIBFBEMBED_SO) $(LIBFBCLIENT_SO) $(LIBFBINTL_SO) \
 FilesToAddDialog=$(FB_SUPER_SERVER) $(FB_CLASSIC_SERVER)
 FilesToAddDialog2=$(IBGUARD)
 
-# Override library names to suppress 'lib'-prefix
-LIBFBINTL_SO := $(patsubst %libfbintl.dll,%fbintl.dll,$(LIBFBINTL_SO))
-ClientLibraryName := $(patsubst lib%,%,$(ClientLibraryName))
+# Suppress 'lib'-prefix
+LIB_PREFIX=
 
 # Override library names to suppress version suffix
 ClientLibraryNameFull := $(ClientLibraryName)
 ClientLibraryNameMajor := $(ClientLibraryName)
 
+# This is required for newly built executable to find newly built shared
+# libraries because on Win32 there is no such thing as LD_LIBRARY_PATH
+LIB=$(BIN)

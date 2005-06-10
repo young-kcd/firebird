@@ -21,7 +21,7 @@
 #   Contributor(s): ______________________________________.
 # 
 #
-#  $Id: Makefile.in.codes,v 1.18 2004-06-30 01:26:40 skidder Exp $
+#  $Id: Makefile.in.codes,v 1.19 2005-06-10 10:32:50 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -56,14 +56,14 @@ generated_headers: build_codes $(SRC_ROOT)/include/gen/ids.h
 
 # Rebuild error codes
 
-build_codes: $(BIN)/codes msg.fdb
-	$(BIN)/codes $(SRC_ROOT)/include/gen $(LNG_ROOT)
+build_codes: $(BIN)/codes$(EXEC_EXT) msg.fdb
+	$(BIN)/codes$(EXEC_EXT) $(SRC_ROOT)/include/gen $(LNG_ROOT)
 
 $(SRC_ROOT)/misc/codes.cpp: $(SRC_ROOT)/misc/codes.epp
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
-$(BIN)/codes: $(CODES_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
-	$(CXX) $(LINK_OPTS) $(CODES_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+$(BIN)/codes$(EXEC_EXT): $(CODES_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
+	$(CXX) $(LINK_OPTS) $(CODES_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
 
 
 # Rebuild ids.h

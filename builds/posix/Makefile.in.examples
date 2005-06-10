@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.examples,v 1.5 2005-05-27 22:16:01 asfernandes Exp $
+#  $Id: Makefile.in.examples,v 1.6 2005-06-10 10:32:51 aafemt Exp $
 #
 ROOT=../..
 ObjModuleType=std
@@ -121,7 +121,7 @@ $(EXAMPLES_DEST)/isql$(EXEC_EXT):
 	-$(LN) $(ISQL_STATIC) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
 
 $(EXAMPLES_DEST)/empbuild$(EXEC_EXT): $(EMPBLD_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
-	$(EXE_LINK) $(LINK_OPTS) $(EMPBLD_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $(EMPBLD_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
 
 $(EXAMPLES_DEST)/empbuild.c:	$(EXAMPLES_DEST)/empbuild.fdb $(EXAMPLES_DEST)/empbuild.e
 
@@ -139,7 +139,7 @@ $(EXAMPLES_DEST)/intlemp.fdb:	$(EXAMPLES_DEST)/intlbld$(EXEC_EXT) $(INTL_Sources
 	-$(CHMOD_6) intlemp.fdb
 
 $(EXAMPLES_DEST)/intlbld$(EXEC_EXT): $(INTLBLD_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
-	$(EXE_LINK) $(LINK_OPTS) $(INTLBLD_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $(INTLBLD_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
 
 $(EXAMPLES_DEST)/intlbld.c:	$(EXAMPLES_DEST)/intlbuild.fdb $(EXAMPLES_DEST)/intlbld.e
 

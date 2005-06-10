@@ -32,15 +32,11 @@ include     $(ROOT)/gen/make.shared.variables
 
 .PHONY: libicu
 
+# SD: Let it be so until I find the way to build only required things
 
-libicu: $(LIB)/libicuuc.$(SHRLIB_EXT) $(LIB)/libicudata.$(SHRLIB_EXT) $(LIB)/libicui18n.$(SHRLIB_EXT)
-
-$(LIB)/libicuuc.$(SHRLIB_EXT) $(LIB)/libicudata.$(SHRLIB_EXT) $(LIB)/libicui18n.$(SHRLIB_EXT):
+libicu:
 	$(MAKE) -C $(ROOT)/extern/icu/source
-	$(MAKE) -C $(ROOT)/extern/icu/source install
-	cp $(ROOT)/extern/icu/lib/libicuuc* $(LIB)
-	cp $(ROOT)/extern/icu/lib/libicudata* $(LIB)
-	cp $(ROOT)/extern/icu/lib/libicui18n* $(LIB)
+	cp $(addprefix $(ROOT)/extern/icu/source/lib/, $(notdir $(LIBICU_SO))) $(LIB)
 
 
 include $(ROOT)/gen/make.shared.targets

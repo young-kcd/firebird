@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.40 2005-06-08 05:28:47 aafemt Exp $
+#   $Id: make.defaults,v 1.41 2005-06-10 10:32:51 aafemt Exp $
 # 
 
 
@@ -114,6 +114,7 @@ YACC=			@YACC@
 ARCH_EXT=		.a
 EXEC_EXT=		@EXEEXT@
 SHRLIB_EXT=@SHRLIB_EXT@
+LIB_PREFIX=		lib
 
 #_____________________________________________________________________________
 
@@ -157,7 +158,7 @@ LIBFBEMBED_SONAME = $(LIB)/$(SharedLibraryBaseName)
 # used to link all the utilities to enable them to connect over the wire
 # to the fbserver. MOD 28-July-2002
 
-ClientLibraryName = libfbclient.$(SHRLIB_EXT)
+ClientLibraryName = $(LIB_PREFIX)fbclient.$(SHRLIB_EXT)
 ClientLibraryNameMajor = $(ClientLibraryName).${MajorVer}
 ClientLibraryNameFull = $(ClientLibraryName).${FirebirdVersion}
 
@@ -169,15 +170,17 @@ LIBFBCLIENT_SONAME=$(LIB)/$(ClientLibraryName)
 # confuses the dynamic load process.  So we only have the .$(SHRLIB_EXT) file
 # MOD 28-July-2002
 
-LIBFBINTL_SO = $(FIREBIRD)/intl/libfbintl.$(SHRLIB_EXT)
+LIBFBINTL_SO = $(FIREBIRD)/intl/$(LIB_PREFIX)fbintl.$(SHRLIB_EXT)
 
 LIBFBCOMMON_A = $(LIB)/libfbcommon.a
 LIBFBSTATIC_A = $(LIB)/libfbstatic.a
 LIBEDITLINE_A = $(LIB)/libeditline.a
-LIBICU_SO = $(LIB)/libicuuc.$(SHRLIB_EXT) $(LIB)/libicudata.$(SHRLIB_EXT) $(LIB)/libicui18n.$(SHRLIB_EXT)
+LIBICU_SO = $(LIB)/$(LIB_PREFIX)icuuc.$(SHRLIB_EXT) \
+			$(LIB)/$(LIB_PREFIX)icudata.$(SHRLIB_EXT) \
+			$(LIB)/$(LIB_PREFIX)icui18n.$(SHRLIB_EXT)
 
 # Shared library name for usage inside of the UDF
-IbUtilLibraryName = libib_util.$(SHRLIB_EXT)
+IbUtilLibraryName = $(LIB_PREFIX)ib_util.$(SHRLIB_EXT)
 LIBIBUTIL_SO = $(LIB)/$(IbUtilLibraryName)
 
 # LINKER OPTIONS

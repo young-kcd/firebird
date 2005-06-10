@@ -127,7 +127,7 @@ all: $(EMBED_UTIL_TARGETS)
 create_db: $(CREATE_DB)
 
 $(CREATE_DB):	$(CREATEDB_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(LD) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
 
 nbackup: $(LIBFBEMBED_SO) $(NBACKUP)
 
@@ -162,7 +162,7 @@ $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBEMBED_SO)
 gsec: $(LIBFBEMBED_SO) $(GSEC)
 
 $(GSEC):	$(GSEC_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS) $(LIBFBCOMMON_A)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 ibguard: $(IBGUARD)
 

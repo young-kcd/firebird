@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gpre,v 1.17 2005-05-27 22:16:09 asfernandes Exp $
+#  $Id: Makefile.in.static.gpre,v 1.18 2005-06-10 10:32:51 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=boot
@@ -61,7 +61,7 @@ all : gpre_static
 gpre_static : $(GPRE_STATIC)
 
 $(GPRE_STATIC):	$(GPRESTATIC_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)  
-	$(LD) $(LINK_OPTS) $(GPRESTATIC_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(GPRESTATIC_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
 	-$(RM) $(GPRE_CURRENT)
 	(cd $(@D); $(LN) $(@F) $(notdir $(GPRE_CURRENT)))
 

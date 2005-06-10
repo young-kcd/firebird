@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.63 2005-06-08 05:28:47 aafemt Exp $
+#  $Id: Makefile.in.firebird,v 1.64 2005-06-10 10:32:51 aafemt Exp $
 #
 
 ROOT=..
@@ -184,19 +184,12 @@ $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 # as part of the project are included here.  Currently IBM ICU and 
 # editline are the only externals libraries we have included.
 # 
-EXTERNAL_LIBRARIES= $(LIBICU_SO)
+
+external_libraries:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.icu
 ifeq ($(EDITLINE_FLG),Y)
-EXTERNAL_LIBRARIES:= $(EXTERNAL_LIBRARIES) $(LIBEDITLINE_A)
-endif
-
-external_libraries: $(EXTERNAL_LIBRARIES)
-
-$(LIBICU_SO): 
-	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.icu $@
-
-$(LIBEDITLINE_A): 
 	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
-
+endif
 
 #---------------------------------------------------------------------------
 # Phase1: make a gpre_static from scratch so we can parse .e and .epp files
@@ -514,21 +507,36 @@ SrcTarFile=Firebird$(ArchPrefix)-$(Version).tar.bz2
 srctarfile: $(SrcTarFile)
 
 $(SrcTarFile) :
-	$(GEN_ROOT)/../src/misc/src_bundle.sh
+	$(SRC_ROOT)/misc/src_bundle.sh
 
 
 #___________________________________________________________________________
 # 
+.PHONY: clean clean_objects clean_dependancies clean_extern_objects clean_build \
+		clean_gpre_gen clean_icu clean_dbs clean_examples clean_makefiles \
+		clean_editline clean_all
 
-clean: clean_objects clean_dependancies clean_extern_objects clean_build clean_gpre_gen clean_editline clean_icu
 
-clean_config: clean clean_makefiles
+clean: clean_objects clean_dependancies clean_extern_objects clean_build \
+		clean_gpre_gen clean_icu clean_dbs clean_examples
+
+ifeq ($(EDITLINE_FLG),Y)
+clean: clean_editline
+endif
+
+clean_config clean_all: clean clean_makefiles
 	$(RM) $(ROOT)/configure
+	$(RM) $(ROOT)/aclocal.m4
+	$(RM) $(ROOT)/config.log
+	$(RM) $(ROOT)/config.status
+	$(RM) $(ROOT)/libtool
 
-# Not sure if this one is still needed MOD 7-Oct-2002
 clean_dbs:
-	-$(RM) refDatabases/*\.fdb
+	$(RM) *.fdb *.FDB msg.timestamp
+	$(RM) yachts.lnk
 
+clean_examples:
+	$(RM) $(GEN_ROOT)/examples/*
 
 clean_editline:
 	-make -C $(ROOT)/extern/editline clean
@@ -537,10 +545,10 @@ clean_icu:
 	-make -C $(ROOT)/extern/icu/source clean
 
 clean_objects:
-	$(RM) `find $(GEN_ROOT)/ -type f -name '*.o' -print`
+	$(RM) `find $(TMP_ROOT)/ -type f -name '*.o' -print`
 
 clean_extern_objects:
-	$(RM) `find $(SRC_ROOT)/extern/ -type f -name '*.o' -print`
+	$(RM) `find $(ROOT)/extern/ -type f -name '*.o' -print`
 
 # Clear out dependancies files created by the gcc compiler
 # since when .o and other files are deleted the dependant 
@@ -548,7 +556,7 @@ clean_extern_objects:
 # MOD 10-July-2002
 
 clean_dependancies:
-	$(RM) -f `find $(GEN_ROOT)/ -type f -name '*.d' -print`
+	$(RM) -f `find $(TMP_ROOT)/ -type f -name '*.d' -print`
 
 # delete only all of the files of type regular file in $FIREBIRD
 # leave the directories to make dependacies work still
@@ -560,7 +568,10 @@ clean_build:
 
 # 
 clean_makefiles:
-	$(RM) $(GEN_ROOT)/Makefile.*
+	$(RM) $(GEN_ROOT)/Make*
+	$(RM) $(GEN_ROOT)/make*
+	$(RM) $(ROOT)/Makefile
+	$(RM) $(SRC_ROOT)/include/gen/autoconfig.h
 	
 clean_gpre_gen:
 	-$(RM) `find $(SRC_ROOT) -type f -name '*.epp' -print | sed 's/epp$$/cpp/'`
