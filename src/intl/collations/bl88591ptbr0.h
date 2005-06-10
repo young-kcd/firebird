@@ -820,4 +820,4 @@ static const SortOrderTblEntry NoCaseOrderTbl[NOCASESORT_LEN] = {
 	{FIRST_PRIMARY +  89, FIRST_SECONDARY +  2, NULL_TERTIARY,      0, 0}	/* 255   */
 };
 
-/* End of File : Language driver pw1252ptbr */
+/* End of File : Language driver bl88591ptbr0 */
