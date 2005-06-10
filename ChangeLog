@@ -1,3 +1,22 @@
+2005-06-10 04:03  asfernandes
+
+	* firebird2/src/dsql/: gen.cpp (1.84), make.cpp (1.93), pass1.cpp
+	(1.219), utld.cpp (1.35), utld_proto.h (1.11):
+	
+	Fix possible problems with larger columns sizes noted by Claudio
+
+2005-06-10 04:01  asfernandes
+
+	* firebird2/src/jrd/ini.epp (1.68):
+	
+	Only initialize metadata BLOB charset for text BLOBs
+
+2005-06-10 02:54  robocop
+
+	* firebird2/src/msgs/: facilities.sql (1.26), history.sql (1.15):
+	
+	Totally misc.
+
 2005-06-09 02:01  asfernandes
 
 	* firebird2/src/jrd/cvt.cpp (1.65):
