@@ -47,6 +47,7 @@
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/misc_func.h"
+#include "../dsql/utld_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/dsc_proto.h"
@@ -608,7 +609,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 
 			INTL_ASSIGN_TTYPE(&parameter->par_desc, toCharSet);
 			parameter->par_desc.dsc_length =
-				MIN(MAX_COLUMN_SIZE - sizeof(USHORT), parameter->par_desc.dsc_length / fromCharSetBPC * toCharSetBPC);
+				UTLD_char_length_to_byte_length(parameter->par_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
 
 			parameter->par_desc.dsc_length += adjust;
 		}

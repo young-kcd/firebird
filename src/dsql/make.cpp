@@ -50,6 +50,7 @@
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
+#include "../dsql/utld_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/cvt_proto.h"
@@ -430,14 +431,8 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 				((node->nod_arg[1]->nod_type == nod_null) ? 0 : DSC_string_length(&desc2)) /
 				METD_get_charset_bpc(request, INTL_GET_CHARSET(&desc2));
 
-			length *= METD_get_charset_bpc(request, INTL_GET_CHARSET(desc));
-
-			if (length > MAX_COLUMN_SIZE - sizeof(USHORT))
-			{
-				length = MAX_COLUMN_SIZE - sizeof(USHORT);
-			}
-
-			desc->dsc_length = length + sizeof(USHORT);
+			desc->dsc_length = UTLD_char_length_to_byte_length(
+				length, METD_get_charset_bpc(request, INTL_GET_CHARSET(desc))) + sizeof(USHORT);
 			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		}
 		return;
@@ -464,20 +459,21 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 			dsql_nod* for_node = node->nod_arg[e_substr_length];
 			// Migrate the charset and collation from the blob to the string. 
 			desc->dsc_ttype() = desc1.dsc_blob_ttype();
+
+			USHORT maxBytesPerChar = METD_get_charset_bpc(request, desc1.dsc_scale);	// BLOB character set
+
 			// Set maximum possible length
-			SLONG length = MAX_COLUMN_SIZE - sizeof(USHORT);
+			SLONG length = UTLD_char_length_to_byte_length(MAX_COLUMN_SIZE - sizeof(USHORT), maxBytesPerChar);
+
 			if (for_node->nod_type == nod_constant &&
 				for_node->nod_desc.dsc_dtype == dtype_long)
 			{
 				// We have a constant passed as length, so
 				// use the real length
-				length = *(SLONG *) for_node->nod_desc.dsc_address *
-					METD_get_charset_bpc(request, desc1.dsc_scale);
+				length = UTLD_char_length_to_byte_length(*(SLONG *) for_node->nod_desc.dsc_address, maxBytesPerChar);
 
 				if (length < 0 || length > MAX_COLUMN_SIZE - sizeof(USHORT))
-				{
-					length = MAX_COLUMN_SIZE - sizeof(USHORT);
-				}
+					length = UTLD_char_length_to_byte_length(MAX_COLUMN_SIZE - sizeof(USHORT), maxBytesPerChar);
 			}
 			desc->dsc_length = sizeof(USHORT) + length;
 		}
@@ -1633,7 +1629,7 @@ void MAKE_desc_from_list(dsql_req* request, dsc* desc, dsql_nod* node,
 		// If all of the arguments are the same BLOB datattype.
 		desc->dsc_dtype  = max_dtype;
 		desc->dsc_sub_type = max_sub_type;
-		if (max_sub_type == 1) {
+		if (max_sub_type == isc_blob_text) {
 			// TEXT BLOB
 			desc->dsc_scale = ttype;
 			desc->dsc_flags |= ttype & 0xFF00;	// collation

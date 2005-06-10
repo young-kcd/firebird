@@ -37,6 +37,7 @@
 #include "../dsql/sqlda.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
+#include "../jrd/constants.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
 
@@ -75,6 +76,24 @@ static inline void ch_stuff_word(BLOB_PTR*& p, const SSHORT value, bool& same_fl
 static TEXT *DSQL_failures, *DSQL_failures_ptr;
 
 const int  DSQL_FAILURE_SPACE = 2048;
+
+
+
+/**
+
+	UTLD_char_length_to_byte_length
+	
+	@brief  Return max byte length necessary for a specified character length string
+	
+	@param lengthInChars
+	@param maxBytesPerChar
+	
+**/
+USHORT UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPerChar)
+{
+	return MIN((MAX_COLUMN_SIZE - sizeof(USHORT)) / maxBytesPerChar * maxBytesPerChar,
+			   lengthInChars * maxBytesPerChar);
+}
 
 
 /**

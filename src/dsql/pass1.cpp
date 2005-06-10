@@ -153,8 +153,9 @@
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
-#include "../dsql/pass1_proto.h"
 #include "../dsql/misc_func.h"
+#include "../dsql/pass1_proto.h"
+#include "../dsql/utld_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/inf_proto.h"
 #include "../jrd/thread_proto.h"
@@ -7792,8 +7793,8 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 						USHORT toCharSetBPC = METD_get_charset_bpc(request, toCharSet);
 
 						INTL_ASSIGN_TTYPE(&in_node->nod_desc, toCharSet);
-						in_node->nod_desc.dsc_length = MIN(MAX_COLUMN_SIZE - sizeof(USHORT),
-							in_node->nod_desc.dsc_length / fromCharSetBPC * toCharSetBPC);
+						in_node->nod_desc.dsc_length =
+							UTLD_char_length_to_byte_length(in_node->nod_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
 					}
 
 					if (in_node->nod_desc.dsc_dtype == dtype_varying)
