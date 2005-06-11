@@ -163,6 +163,51 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 }
 
 
+bool IDX_check_master_types (thread_db* tdbb, index_desc& idx, jrd_rel* partner_relation, int& bad_segment)
+{
+/**********************************************
+ *
+ *	I D X _ c h e c k _ m a s t e r _ t y p e s
+ *
+ **********************************************
+ *
+ * Functional description
+ *	Check if both indices of foreign key constraint
+ *	has compatible data types in appropriate segments.
+ *	Called when detail index is created after idx_itype 
+ *	was assigned
+ *
+ **********************************************/
+
+	SET_TDBB(tdbb);
+
+	index_desc partner_idx;
+
+	// get the index root page for the partner relation 
+	WIN window(get_root_page(tdbb, partner_relation));
+	index_root_page* root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
+
+	// get the description of the partner index 
+	if (!BTR_description(tdbb, partner_relation, root, &partner_idx, idx.idx_primary_index))
+		BUGCHECK(175);			/* msg 175 partner index description not found */
+	
+	CCH_RELEASE(tdbb, &window);
+
+	// make sure partner index have the same segment count as our
+	fb_assert(idx.idx_count == partner_idx.idx_count);
+
+	int i;
+	for(i=0; i < idx.idx_count; i++) 
+		if (idx.idx_rpt[i].idx_itype != partner_idx.idx_rpt[i].idx_itype)
+		{
+			bad_segment = i;
+			return false;
+		}
+
+	return true;
+}
+
+
 void IDX_create_index(
 					  thread_db* tdbb,
 					  jrd_rel* relation,

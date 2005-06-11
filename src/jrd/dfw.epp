@@ -1746,6 +1746,15 @@ static bool create_index(	thread_db*	tdbb,
 					}
 				}
 			}
+			
+			int bad_segment;
+			if (!IDX_check_master_types(tdbb, idx, partner_relation, bad_segment))
+			{
+				ERR_post(isc_no_meta_update,
+						isc_arg_gds, isc_partner_idx_incompat_type, 
+						isc_arg_number, bad_segment + 1,
+						0);
+			}
 		}
 
 		fb_assert(work->dfw_id == dbb->dbb_max_idx);
