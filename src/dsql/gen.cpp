@@ -1406,12 +1406,12 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 	{
 		tmp_desc = *desc;
 		tmp_desc.dsc_dtype = dtype_text;
-		tmp_desc.dsc_length = desc->dsc_scale;	// length of string literal 
+		tmp_desc.dsc_length = (USHORT)(UCHAR) desc->dsc_scale;	// length of string literal
 		tmp_desc.dsc_scale = 0;
 		desc = &tmp_desc;
 	}
 
-	USHORT l = desc->dsc_length;
+	USHORT l = 0; //= desc->dsc_length;
 	const UCHAR* p = desc->dsc_address;
 
 	switch (desc->dsc_dtype) {
@@ -1445,7 +1445,8 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 		   which is transmitted to the engine as a string.
 		 */
 		gen_descriptor(request, desc, true);
-		l = (USHORT) desc->dsc_scale;	// length of string literal 
+		// Length of string literal, cast because it could be > 127 bytes.
+		l = (USHORT) (UCHAR) desc->dsc_scale;
 		if (negate_value) {
 			stuff_word(request, l + 1);
 			stuff(request, '-');
