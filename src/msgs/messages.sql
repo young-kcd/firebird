@@ -2966,6 +2966,8 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'DYN_define_collation', 'dyn_def.epp', NULL, 8, 223, NULL, 'Collation not installed', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('prc_out_param_mismatch', 'par_procedure', 'par.c', NULL, 0, 530, NULL, 'Output parameter mismatch for procedure %s', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('command_end_err2', 'yyerror', 'dsql parse.cpp', NULL, 0, 531, NULL, 'Unexpected end of command - line %ld, column %ld', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_type_not_supp_ext_tab', 'define_field', 'ddl.cpp', NULL, 7, 24, NULL, 'Data type %s is not supported for EXTERNAL TABLES. Relation ''%s'', field ''%s''', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('partner_idx_incompat_type', NULL, NULL, NULL, 0, 532, NULL, 'partner index segment no %d has incompatible data type', NULL, NULL);
 
 COMMIT WORK;
 
