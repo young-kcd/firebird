@@ -1838,6 +1838,20 @@ static void define_field(
 		put_field(request, field, false);
 	}
 
+	if ((relation->rel_flags & REL_external) && 
+		(field->fld_dtype == dtype_blob || 
+		field->fld_dtype == dtype_array || field->fld_dimensions))
+	{
+		const char* typeName = (field->fld_dtype == dtype_blob ? "BLOB" : "ARRAY");
+		
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+			isc_arg_gds, isc_dsql_type_not_supp_ext_tab,
+			isc_arg_string, typeName,
+			isc_arg_string, relation->rel_name, 
+			isc_arg_string, field->fld_name,
+			0);		
+	}
+
 	if (position != -1)
 		request->append_number(isc_dyn_fld_position, position);
 
@@ -2789,6 +2803,11 @@ static void define_relation( dsql_req* request)
 		request->append_cstring(isc_dyn_rel_ext_file, external_file->str_data);
 	}
 	save_relation(request, relation_name);
+	if (external_file)
+	{
+		fb_assert(request->req_relation);
+		request->req_relation->rel_flags |= REL_external ;
+	}
 	request->append_number(isc_dyn_rel_sql_protection, 1);
 
 // now do the actual metadata definition
