@@ -1112,6 +1112,8 @@ C --
       PARAMETER (GDS__malformed_string                 = 335544849)
       INTEGER*4 GDS__prc_out_param_mismatch          
       PARAMETER (GDS__prc_out_param_mismatch           = 335544850)
+      INTEGER*4 GDS__command_end_err2                
+      PARAMETER (GDS__command_end_err2                 = 335544851)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

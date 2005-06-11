@@ -552,6 +552,7 @@ static const struct {
 	{"except2", 335544848},
 	{"malformed_string", 335544849},
 	{"prc_out_param_mismatch", 335544850},
+	{"command_end_err2", 335544851},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

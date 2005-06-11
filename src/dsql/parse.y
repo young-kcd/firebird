@@ -5351,17 +5351,21 @@ static void yyerror(const TEXT* error_string)
 
 	if (yychar < 1)
 		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
-			isc_arg_gds, isc_command_end_err,	/* Unexpected end of command */
+			isc_arg_gds, isc_command_end_err2,	/* Unexpected end of command */
+			isc_arg_number, lex.lines,
+			isc_arg_number, lex.last_token - lex.line_start + 1,
 			0);
 	else
 	{
 		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
+			/* Token unknown - line %d, column %d */
 			isc_arg_gds, isc_dsql_token_unk_err,
 			isc_arg_number, (SLONG) lex.lines,
 			isc_arg_number, (SLONG) (lex.last_token - lex.line_start + 1), /*CVC: +1*/
-			/* Token unknown - line %d, char %d */
+			/* Show the token */
 			isc_arg_gds, isc_random,
-			isc_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token, 0);
+			isc_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token,
+			0);
 	}
 }
 

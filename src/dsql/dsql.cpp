@@ -1336,7 +1336,10 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 			if (!string) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, 
-					isc_arg_gds, isc_command_end_err, 0);	// Unexpected end of command
+					isc_arg_gds, isc_command_end_err2,
+					// CVC: Nothing will be line 1, column 1 for the user.
+					isc_arg_number, 1, isc_arg_number, 1,
+					0);	// Unexpected end of command
 			}
 
 			if (!length) {
@@ -4554,6 +4557,9 @@ static dsql_req* prepare(
 	                 parser_version,
 	                 &stmt_ambiguous))
 	{
+		// CVC: Apparently, dsql_ypparse won't return if the command is incomplete,
+		// because yyerror() will call ERRD_post().
+		// This may be a special case, but we don't know about positions here.
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_command_end_err,	// Unexpected end of command
 				  0);
