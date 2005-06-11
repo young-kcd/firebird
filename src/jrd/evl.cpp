@@ -148,6 +148,7 @@ static void compute_agg_distinct(thread_db*, jrd_nod*);
 static dsc* concatenate(thread_db*, jrd_nod*, impure_value*);
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
 static dsc* eval_statistical(thread_db*, jrd_nod*, impure_value*);
+static dsc* extract(thread_db*, jrd_nod*, impure_value*);
 static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const);
 static SINT64 get_day_fraction(const dsc* d);
 static dsc* get_mask(thread_db*, jrd_nod*, impure_value*);
@@ -168,6 +169,7 @@ static dsc* scalar(thread_db*, jrd_nod*, impure_value*);
 static bool sleuth(thread_db*, jrd_nod*, const dsc*, const dsc*);
 static bool string_boolean(thread_db*, jrd_nod*, dsc*, dsc*, bool);
 static bool string_function(thread_db*, jrd_nod*, SLONG, const UCHAR*, SLONG, const UCHAR*, USHORT, bool);
+static dsc* string_length(thread_db*, jrd_nod*, impure_value*);
 static dsc* substring(thread_db*, impure_value*, dsc*, SLONG, SLONG);
 static dsc* trim(thread_db*, jrd_nod*, impure_value*);
 static dsc* upcase(thread_db*, const dsc*, impure_value*);
@@ -998,196 +1000,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		return &impure->vlu_desc;
 
 	case nod_extract:
-		{
-			//impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
- 			const ULONG extract_part = (IPTR) node->nod_arg[e_extract_part];
-			const dsc* value = EVL_expr(tdbb, node->nod_arg[e_extract_value]);
-
-			impure->vlu_desc.dsc_dtype = dtype_short;
-			impure->vlu_desc.dsc_scale = 0;
-			impure->vlu_desc.dsc_address =
-				reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_short);
-			impure->vlu_desc.dsc_length = sizeof(SSHORT);
-			// CVC: Borland used special signaling for nulls in outer joins.
-			if (!value || (request->req_flags & req_null)) {
-				request->req_flags |= req_null;
-				impure->vlu_misc.vlu_short = 0;
-				return &impure->vlu_desc;
-			}
-			tm times;
-			GDS_TIMESTAMP timestamp;
-
-			switch (value->dsc_dtype) {
-			case dtype_sql_time:
-				timestamp.timestamp_time = *(GDS_TIME *) value->dsc_address;
-				timestamp.timestamp_date = 0;
-				isc_decode_timestamp(&timestamp, &times);
-				if (extract_part != blr_extract_hour &&
-					extract_part != blr_extract_minute &&
-					extract_part != blr_extract_second)
-				{
-					ERR_post(isc_expression_eval_err, 0);
-				}
-				break;
-			case dtype_sql_date:
-				timestamp.timestamp_date = *(GDS_DATE *) value->dsc_address;
-				timestamp.timestamp_time = 0;
-				isc_decode_timestamp(&timestamp, &times);
-				if (extract_part == blr_extract_hour ||
-					extract_part == blr_extract_minute ||
-					extract_part == blr_extract_second)
-				{
-					ERR_post(isc_expression_eval_err, 0);
-				}
-				break;
-			case dtype_timestamp:
-				timestamp = *((GDS_TIMESTAMP *) value->dsc_address);
-				isc_decode_timestamp(&timestamp, &times);
-				break;
-			default:
-				ERR_post(isc_expression_eval_err, 0);
-				break;
-			}
-
-			USHORT part;
-			switch (extract_part) {
-			case blr_extract_year:
-				part = times.tm_year + 1900;
-				break;
-			case blr_extract_month:
-				part = times.tm_mon + 1;
-				break;
-			case blr_extract_day:
-				part = times.tm_mday;
-				break;
-			case blr_extract_hour:
-				part = times.tm_hour;
-				break;
-			case blr_extract_minute:
-				part = times.tm_min;
-				break;
-			case blr_extract_second:
-				impure->vlu_desc.dsc_dtype = dtype_long;
-				impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
-				impure->vlu_desc.dsc_address =
-					reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
-				impure->vlu_desc.dsc_length = sizeof(ULONG);
-				*(ULONG *) impure->vlu_desc.dsc_address =
-					times.tm_sec * ISC_TIME_SECONDS_PRECISION +
-					(timestamp.timestamp_time % ISC_TIME_SECONDS_PRECISION);
-				return &impure->vlu_desc;
-			case blr_extract_yearday:
-				part = times.tm_yday;
-				break;
-			case blr_extract_weekday:
-				part = times.tm_wday;
-				break;
-			default:
-				fb_assert(false);
-				part = 0;
-			}
-			*(USHORT *) impure->vlu_desc.dsc_address = part;
-		}
-		return &impure->vlu_desc;
+		return extract(tdbb, node, impure);
 
 	case nod_strlen:
-		{
-			//impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
- 			const ULONG length_type = (IPTR) node->nod_arg[e_strlen_type];
-			const dsc* value = EVL_expr(tdbb, node->nod_arg[e_strlen_value]);
-
-			impure->vlu_desc.dsc_dtype = dtype_long;
-			impure->vlu_desc.dsc_scale = 0;
-			impure->vlu_desc.dsc_address =
-				reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
-			impure->vlu_desc.dsc_length = sizeof(ULONG);
-
-			// CVC: Borland used special signaling for nulls in outer joins.
-			if (!value || (request->req_flags & req_null)) {
-				request->req_flags |= req_null;
-				impure->vlu_misc.vlu_long = 0;
-				return &impure->vlu_desc;
-			}
-
-			ULONG length;
-
-			if (value->dsc_dtype == dtype_blob)
-			{
-				blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
-									 reinterpret_cast<bid*>(value->dsc_address));
-
-				switch (length_type)
-				{
-					case blr_strlen_bit:
-						length = blob->blb_length * 8;
-						break;
-
-					case blr_strlen_octet:
-						length = blob->blb_length;
-						break;
-
-					case blr_strlen_char:
-					{
-						CharSet* charSet = INTL_charset_lookup(tdbb, value->dsc_blob_ttype(), NULL);
-						fb_assert(charSet != NULL);
-
-						if (charSet->isMultiByte())
-						{
-							Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
-							fb_assert(BUFFER_LARGE % 4 == 0);	// 4 is our maximum character length
-
-							length = BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length), blob->blb_length, false);
-							length = charSet->length(tdbb, length, buffer.begin(), true);
-						}
-						else
-							length = blob->blb_length / charSet->maxBytesPerChar();
-
-						break;
-					}
-
-					default:
-						fb_assert(false);
-						length = 0;
-				}
-
-				*(ULONG*)impure->vlu_desc.dsc_address = length;
-
-				BLB_close(tdbb, blob);
-
-				return &impure->vlu_desc;
-			}
-
-			UCHAR temp[32];
-			USHORT ttype;
-			UCHAR* p;
-
-			length = MOV_get_string_ptr(value, &ttype, &p, reinterpret_cast<vary*>(temp), sizeof(temp));
-
-			switch (length_type)
-			{
-				case blr_strlen_bit:
-					length *= 8;
-					break;
-
-				case blr_strlen_octet:
-					break;
-
-				case blr_strlen_char:
-				{
-					CharSet* charSet = INTL_charset_lookup(tdbb, ttype, NULL);
-					fb_assert(charSet != NULL);
-					length = charSet->length(tdbb, length, p, true);
-					break;
-				}
-
-				default:
-					fb_assert(false);
-					length = 0;
-			}
-
-			*(ULONG *) impure->vlu_desc.dsc_address = length;
-		}
-		return &impure->vlu_desc;
+		return string_length(tdbb, node, impure);
 
 	case nod_max:
 	case nod_min:
@@ -3388,6 +3204,110 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 }
 
 
+// *************
+// e x t r a c t
+// *************
+// Handles EXTRACT(part FROM date/time/timestamp)
+static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+{
+	SET_TDBB(tdbb);
+
+	DEV_BLKCHK(node, type_nod);
+
+	const ULONG extract_part = (IPTR) node->nod_arg[e_extract_part];
+	const dsc* value = EVL_expr(tdbb, node->nod_arg[e_extract_value]);
+
+	impure->vlu_desc.dsc_dtype = dtype_short;
+	impure->vlu_desc.dsc_scale = 0;
+	impure->vlu_desc.dsc_address =
+		reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_short);
+	impure->vlu_desc.dsc_length = sizeof(SSHORT);
+	
+	jrd_req* request = tdbb->tdbb_request;
+	// CVC: Borland used special signaling for nulls in outer joins.
+	if (!value || (request->req_flags & req_null)) {
+		request->req_flags |= req_null;
+		impure->vlu_misc.vlu_short = 0;
+		return &impure->vlu_desc;
+	}
+	tm times;
+	GDS_TIMESTAMP timestamp;
+
+	switch (value->dsc_dtype) {
+	case dtype_sql_time:
+		timestamp.timestamp_time = *(GDS_TIME *) value->dsc_address;
+		timestamp.timestamp_date = 0;
+		isc_decode_timestamp(&timestamp, &times);
+		if (extract_part != blr_extract_hour &&
+			extract_part != blr_extract_minute &&
+			extract_part != blr_extract_second)
+		{
+			ERR_post(isc_expression_eval_err, 0);
+		}
+		break;
+	case dtype_sql_date:
+		timestamp.timestamp_date = *(GDS_DATE *) value->dsc_address;
+		timestamp.timestamp_time = 0;
+		isc_decode_timestamp(&timestamp, &times);
+		if (extract_part == blr_extract_hour ||
+			extract_part == blr_extract_minute ||
+			extract_part == blr_extract_second)
+		{
+			ERR_post(isc_expression_eval_err, 0);
+		}
+		break;
+	case dtype_timestamp:
+		timestamp = *((GDS_TIMESTAMP *) value->dsc_address);
+		isc_decode_timestamp(&timestamp, &times);
+		break;
+	default:
+		ERR_post(isc_expression_eval_err, 0);
+		break;
+	}
+
+	USHORT part;
+	switch (extract_part) {
+	case blr_extract_year:
+		part = times.tm_year + 1900;
+		break;
+	case blr_extract_month:
+		part = times.tm_mon + 1;
+		break;
+	case blr_extract_day:
+		part = times.tm_mday;
+		break;
+	case blr_extract_hour:
+		part = times.tm_hour;
+		break;
+	case blr_extract_minute:
+		part = times.tm_min;
+		break;
+	case blr_extract_second:
+		impure->vlu_desc.dsc_dtype = dtype_long;
+		impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
+		impure->vlu_desc.dsc_address =
+			reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
+		impure->vlu_desc.dsc_length = sizeof(ULONG);
+		*(ULONG *) impure->vlu_desc.dsc_address =
+			times.tm_sec * ISC_TIME_SECONDS_PRECISION +
+			(timestamp.timestamp_time % ISC_TIME_SECONDS_PRECISION);
+		return &impure->vlu_desc;
+	case blr_extract_yearday:
+		part = times.tm_yday;
+		break;
+	case blr_extract_weekday:
+		part = times.tm_wday;
+		break;
+	default:
+		fb_assert(false);
+		part = 0;
+	}
+	
+	*(USHORT *) impure->vlu_desc.dsc_address = part;
+	return &impure->vlu_desc;
+}
+
+
 static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
 {
 /**************************************
@@ -4781,6 +4701,126 @@ static bool string_function(
 }
 
 
+// *************************
+// s t r i n g _ l e n g t h
+// *************************
+// Handles BIT_LENGTH(s), OCTET_LENGTH(s) and CHAR[ACTER]_LENGTH(s)
+static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+{
+	SET_TDBB(tdbb);
+
+	DEV_BLKCHK(node, type_nod);
+
+	const ULONG length_type = (IPTR) node->nod_arg[e_strlen_type];
+	const dsc* value = EVL_expr(tdbb, node->nod_arg[e_strlen_value]);
+
+	impure->vlu_desc.dsc_dtype = dtype_long;
+	impure->vlu_desc.dsc_scale = 0;
+	impure->vlu_desc.dsc_address =
+		reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
+	impure->vlu_desc.dsc_length = sizeof(ULONG);
+
+	jrd_req* request = tdbb->tdbb_request;
+	// CVC: Borland used special signaling for nulls in outer joins.
+	if (!value || (request->req_flags & req_null)) {
+		request->req_flags |= req_null;
+		impure->vlu_misc.vlu_long = 0;
+		return &impure->vlu_desc;
+	}
+
+	ULONG length;
+
+	if (value->dsc_dtype == dtype_blob)
+	{
+		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+							 reinterpret_cast<bid*>(value->dsc_address));
+
+		switch (length_type)
+		{
+			case blr_strlen_bit:
+				{
+					UINT64 l = (UINT64) blob->blb_length * 8;
+					if (l > MAX_SINT64)
+						ERR_post(isc_arith_except, 0);
+						
+					length = l;
+				}
+				break;
+
+			case blr_strlen_octet:
+				length = blob->blb_length;
+				break;
+
+			case blr_strlen_char:
+			{
+				CharSet* charSet = INTL_charset_lookup(tdbb, value->dsc_blob_ttype(), NULL);
+				fb_assert(charSet != NULL);
+
+				if (charSet->isMultiByte())
+				{
+					Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+					fb_assert(BUFFER_LARGE % 4 == 0);	// 4 is our maximum character length
+
+					length = BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length), blob->blb_length, false);
+					length = charSet->length(tdbb, length, buffer.begin(), true);
+				}
+				else
+					length = blob->blb_length / charSet->maxBytesPerChar();
+
+				break;
+			}
+
+			default:
+				fb_assert(false);
+				length = 0;
+		}
+
+		*(ULONG*)impure->vlu_desc.dsc_address = length;
+
+		BLB_close(tdbb, blob);
+
+		return &impure->vlu_desc;
+	}
+
+	UCHAR temp[32];
+	USHORT ttype;
+	UCHAR* p;
+
+	length = MOV_get_string_ptr(value, &ttype, &p, reinterpret_cast<vary*>(temp), sizeof(temp));
+
+	switch (length_type)
+	{
+		case blr_strlen_bit:
+			{
+				UINT64 l = (UINT64) length * 8;
+				if (l > MAX_SINT64)
+					ERR_post(isc_arith_except, 0);
+
+				length = l;
+			}
+			break;
+
+		case blr_strlen_octet:
+			break;
+
+		case blr_strlen_char:
+		{
+			CharSet* charSet = INTL_charset_lookup(tdbb, ttype, NULL);
+			fb_assert(charSet != NULL);
+			length = charSet->length(tdbb, length, p, true);
+			break;
+		}
+
+		default:
+			fb_assert(false);
+			length = 0;
+	}
+
+	*(ULONG *) impure->vlu_desc.dsc_address = length;
+	return &impure->vlu_desc;
+}
+
+
 static dsc* substring(thread_db* tdbb, impure_value* impure,
 					  dsc* value, SLONG offset_arg, SLONG length_arg)
 {
@@ -4967,7 +5007,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
  **************************************
  *
  * Functional description
- *      Perform trim function.
+ *      Perform trim function = TRIM([where what FROM] string)
  *
  **************************************/
 	SET_TDBB(tdbb);
