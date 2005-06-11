@@ -349,6 +349,14 @@ SOURCE=..\..\..\src\intl\charsets\cs_jis_0208_1990.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\intl\charsets\cs_koi8r.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\charsets\cs_koi8u.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\charsets\cs_ksc5601.h
 # End Source File
 # Begin Source File
@@ -505,6 +513,14 @@ SOURCE=..\..\..\src\intl\kanji_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\intl\collations\koi8r_ru.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\koi8u_ua.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\langdrv.h
 # End Source File
 # Begin Source File
@@ -634,6 +650,18 @@ SOURCE=..\..\..\src\intl\collations\undef.h
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\collations\win1251_ua.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\win1257_ee.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\win1257_lt.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\win1257_lv.h
 # End Source File
 # Begin Source File
 

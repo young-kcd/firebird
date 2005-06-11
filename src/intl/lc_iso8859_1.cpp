@@ -149,6 +149,30 @@ static inline bool FAMILY3(TEXTTYPE cache,
 }
 
 
+TEXTTYPE_ENTRY(KOI8R_c1_init)
+{
+	static const ASCII POSIX[] = "KOI8R_RU.KOI8R";
+
+#include "../intl/collations/koi8r_ru.h"
+
+	return FAMILY2(cache, CC_RUSSIA, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
+TEXTTYPE_ENTRY(KOI8U_c1_init)
+{
+	static const ASCII POSIX[] = "KOI8U_UA.KOI8U";
+
+#include "../intl/collations/koi8u_ua.h"
+
+	return FAMILY2(cache, CC_INTL, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
 TEXTTYPE_ENTRY(ISO88591_39_init)
 {
 	static const ASCII POSIX[] = "da_DA.ISO8859_1";
@@ -517,6 +541,42 @@ TEXTTYPE_ENTRY(WIN1254_c1_init)
 #include "../intl/collations/pw1254turk.h"
 
 	return FAMILY2(cache, CC_TURKEY, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
+TEXTTYPE_ENTRY(WIN1257_c1_init)
+{
+	static const ASCII POSIX[] = "WIN1257_EE.WIN1257";
+
+#include "../intl/collations/win1257_ee.h"
+
+	return FAMILY2(cache, CC_INTL, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
+TEXTTYPE_ENTRY(WIN1257_c2_init)
+{
+	static const ASCII POSIX[] = "WIN1257_LT.WIN1257";
+
+#include "../intl/collations/win1257_lt.h"
+
+	return FAMILY2(cache, CC_INTL, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
+TEXTTYPE_ENTRY(WIN1257_c3_init)
+{
+	static const ASCII POSIX[] = "WIN1257_LV.WIN1257";
+
+#include "../intl/collations/win1257_lv.h"
+
+	return FAMILY2(cache, CC_INTL, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }

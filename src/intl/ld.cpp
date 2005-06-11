@@ -156,7 +156,11 @@ EXTERN_texttype(WIN1254_c1_init);
 
 EXTERN_texttype(WIN1255_c0_init);
 EXTERN_texttype(WIN1256_c0_init);
+
 EXTERN_texttype(WIN1257_c0_init);
+EXTERN_texttype(WIN1257_c1_init);
+EXTERN_texttype(WIN1257_c2_init);
+EXTERN_texttype(WIN1257_c3_init);
 
 EXTERN_texttype(NEXT_c0_init);
 EXTERN_texttype(NEXT_c1_init);
@@ -183,7 +187,10 @@ EXTERN_texttype(JIS220_init);
 EXTERN_texttype(JIS230_init);
 
 EXTERN_texttype(KOI8R_c0_init);
+EXTERN_texttype(KOI8R_c1_init);
+
 EXTERN_texttype(KOI8U_c0_init);
+EXTERN_texttype(KOI8U_c1_init);
 
 EXTERN_charset(CS_iso_ISO8859_1);
 EXTERN_charset(CS_iso_ISO8859_2);

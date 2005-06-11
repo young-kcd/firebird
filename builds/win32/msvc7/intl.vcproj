@@ -346,6 +346,12 @@
 				RelativePath="..\..\..\src\intl\charsets\cs_jis_0208_1990.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\intl\charsets\cs_koi8r.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\charsets\cs_koi8u.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_ksc5601.h">
 			</File>
 			<File
@@ -463,6 +469,12 @@
 				RelativePath="..\..\..\src\intl\kanji_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\intl\collations\koi8r_ru.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\koi8u_ua.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\langdrv.h">
 			</File>
 			<File
@@ -560,6 +572,15 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\win1251_ua.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\win1257_ee.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\win1257_lt.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\win1257_lv.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\xx88592czech.h">
