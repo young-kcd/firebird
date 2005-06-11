@@ -379,6 +379,20 @@ static SSHORT get_next_token(
 			s++;
 			continue;
 		}
+		// CVC: Dmitry told me to leave this in peace, but if somebody wants
+		// to experiment ignoring single line comments, here's an idea.
+		if (c == '-' && s < stmt_end && *s == '-')
+		{
+			s++;
+			while (s < stmt_end)
+			{
+				c = *s++;
+				if (c == '\n')
+					break;
+			}
+			continue;
+		}
+		// CVC: End modification.
 		char_class = classes[c];
 		if (!(char_class & CHR_WHITE))
 			break;
