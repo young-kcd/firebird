@@ -249,13 +249,16 @@ static void get_str(const TEXT* const, const TEXT**, const TEXT**,
 static void print_set(const char* str, bool v);
 static processing_state print_sets();
 static processing_state help(const TEXT*);
-static processing_state input(const TEXT*);
 static bool isyesno(const TEXT*);
 static processing_state newdb(TEXT*, const TEXT*, const TEXT*, const TEXT*, const TEXT*, bool);
+static processing_state newinput(const TEXT*);
 static processing_state newoutput(const TEXT*);
 static processing_state newsize(const TEXT*, const TEXT*);
 static processing_state newtrans(const TEXT*);
 static processing_state parse_arg(int, SCHAR**, SCHAR*, FILE**);
+#ifdef DEV_BUILD
+static processing_state passthrough(const char* cmd);
+#endif
 static SSHORT print_item(TEXT**, XSQLVAR*, SLONG);
 static processing_state print_item_blob(FILE*, const XSQLVAR*, FB_API_HANDLE);
 static void print_item_numeric(SINT64, SSHORT, SSHORT, TEXT*);
@@ -3471,7 +3474,7 @@ static processing_state frontend(const TEXT* statement)
 	// Any whitespace and comments at the beginning are already swallowed by get_statement()
 
 	// Set beginning of statement past comment
-	const TEXT* cmd = p;
+	const TEXT* const cmd = p;
 
 	if (*cmd) {
 		for (int i = 0; i < MAX_TERMS; i++) {
@@ -3694,9 +3697,9 @@ static processing_state frontend(const TEXT* statement)
 	else if (!strcmp(parms[0], "EDIT"))
 		ret = edit(lparms);
 	else if ((!strcmp(parms[0], "INPUT")) || (!strcmp(parms[0], "IN"))) {
-		// CVC: Set by input() below only if successful.
+		// CVC: Set by newinput() below only if successful.
 		//Input_file = true;
-		ret = input(lparms[1]);
+		ret = newinput(lparms[1]);
 	}
 	else if (!strcmp(parms[0], "QUIT"))
 		ret = BACKOUT;
@@ -3704,6 +3707,10 @@ static processing_state frontend(const TEXT* statement)
 		ret = EXIT;
 	else if (!strcmp(parms[0], "?") || (!strcmp(parms[0], "HELP")))
 		ret = help(parms[1]);
+#ifdef DEV_BUILD
+	else if (!strcmp(parms[0], "PASSTHROUGH"))
+		ret = passthrough(cmd + 11);
+#endif
 	else						// Didn't match, it must be SQL 
 		ret = CONT;
 
@@ -4870,59 +4877,6 @@ static processing_state help(const TEXT* what)
 }
 
 
-static processing_state input(const TEXT* infile)
-{
-/**************************************
- *
- *	i n p u t
- *
- **************************************
- *
- * Functional description
- *	Read commands from the named input file
- *
- *	Parameters:  infile -- Second word of the command line
- *		filelist is a stack of file pointers to
- *			return from nested inputs
- *
- *	The result of calling this is to point the
- *	global input file pointer, Ifp, to the named file.
- *
- **************************************/
-	TEXT errbuf[MSG_LENGTH];
-
-	// If there is no file name specified, return error
-	if (!infile || !*infile) {
-		return ps_ERR;
-	}
-
-	TEXT path[MAXPATHLEN];
-	strip_quotes(infile, path);
-	const TEXT* file = path;
-
-	// filelist is a linked list of file pointers.  We must add a node to
-	// the linked list before discarding the current Ifp.
-	//  Filelist is a global pointing to base of list.
-
-	FILE* fp = fopen(file, "r");
-	if (fp) {
-		indev* current = (indev*) ISQL_ALLOC((SLONG) sizeof(indev));
-		current->copy_from(&Ifp);
-		current->indev_next = Filelist;
-		Filelist = current;
-		Ifp.init(fp, file);
-	}
-	else {
-		ISQL_msg_get(FILE_OPEN_ERR, errbuf, file);
-		STDERROUT(errbuf);
-		return FAIL;
-	}
-
-	Input_file = true;
-	return SKIP;
-}
-
-
 static bool isyesno(const TEXT* buffer)
 {
 /**********************************************
@@ -5188,6 +5142,59 @@ static processing_state newdb(TEXT* dbname,
 		global_Stmt = 0;
 	}
 
+	return SKIP;
+}
+
+
+static processing_state newinput(const TEXT* infile)
+{
+/**************************************
+ *
+ *	n e w i n p u t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Read commands from the named input file
+ *
+ *	Parameters:  infile -- Second word of the command line
+ *		filelist is a stack of file pointers to
+ *			return from nested inputs
+ *
+ *	The result of calling this is to point the
+ *	global input file pointer, Ifp, to the named file.
+ *
+ **************************************/
+	TEXT errbuf[MSG_LENGTH];
+
+	// If there is no file name specified, return error
+	if (!infile || !*infile) {
+		return ps_ERR;
+	}
+
+	TEXT path[MAXPATHLEN];
+	strip_quotes(infile, path);
+	const TEXT* file = path;
+
+	// filelist is a linked list of file pointers.  We must add a node to
+	// the linked list before discarding the current Ifp.
+	//  Filelist is a global pointing to base of list.
+
+	FILE* fp = fopen(file, "r");
+	if (fp) {
+		indev* current = (indev*) ISQL_ALLOC((SLONG) sizeof(indev));
+		current->copy_from(&Ifp);
+		current->indev_next = Filelist;
+		Filelist = current;
+		Ifp.init(fp, file);
+	}
+	else {
+		ISQL_msg_get(FILE_OPEN_ERR, errbuf, file);
+		STDERROUT(errbuf);
+		return FAIL;
+	}
+
+	Input_file = true;
 	return SKIP;
 }
 
@@ -5485,11 +5492,11 @@ static processing_state parse_arg(int argc,
 			else if (c == 'I') {
 				// Alternate input file 
 
-				if ((s = argv[++i]) && (input(s) == SKIP))
+				if ((s = argv[++i]) && (newinput(s) == SKIP))
 					Interactive = false;
 				else
 					ret = ps_ERR;
-				// CVC: Set by input() above only if successful.
+				// CVC: Set by newinput() above only if successful.
 				//Input_file = true;
 			}
 			else if (c == 'T') {
@@ -5649,6 +5656,29 @@ static processing_state parse_arg(int argc,
 
 	return (ret);
 }
+
+
+// *********************
+// p a s s t h r o u g h
+// *********************
+// Execute a command directly on the server. No interpretation done in isql.
+// Use with care. Only for debug builds.
+#ifdef DEV_BUILD
+static processing_state passthrough(const char* cmd)
+{
+	processing_state ret = SKIP;
+	if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0,
+								   cmd, isqlGlob.SQL_dialect, NULL))
+	{
+		ISQL_errmsg(isc_status);
+		if (!DB)
+			ret = FAIL;
+		else
+			ret = ps_ERR;
+	}
+	return ret;
+}
+#endif
 
 
 static SSHORT print_item(TEXT** s,
