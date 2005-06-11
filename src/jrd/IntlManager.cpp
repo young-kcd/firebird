@@ -140,7 +140,7 @@ bool IntlManager::initialize()
 		ok = false;
 	}
 
-	for (ObjectsArray<string>::iterator name = conflicts.begin(); name != conflicts.end(); ++name)
+	for (ObjectsArray<string>::const_iterator name(conflicts.begin()); name != conflicts.end(); ++name)
 		charSetCollations().remove(*name);
 
 	return ok;

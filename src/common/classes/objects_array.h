@@ -39,8 +39,12 @@ namespace Firebird
 	private:
 		typedef A inherited;
 	public:
-		class iterator {
+		class const_iterator; // fwd decl.
+		
+		class iterator
+		{
 			friend class ObjectsArray<T, A>;
+			friend class const_iterator;
 		private:
 			ObjectsArray *lst;
 			size_t pos;
@@ -95,6 +99,78 @@ namespace Firebird
 				return lst ? pos == v.pos : false;
 			}
 		};
+
+		class const_iterator
+		{
+			friend class ObjectsArray<T, A>;
+		private:
+			const ObjectsArray *lst;
+			size_t pos;
+			const_iterator(const ObjectsArray *l, size_t p) : lst(l), pos(p) { }
+		public:
+			const_iterator() : lst(0), pos(0) { }
+			explicit const_iterator(const iterator& it) : lst(it.lst), pos(it.pos) {}
+/*
+			const_iterator& operator=(const ObjectsArray& a)
+			{
+				lst = &a;
+				pos = 0;
+			}
+ */
+			const_iterator& operator++() {
+				++pos;
+				return (*this);
+			}
+			const_iterator operator++(int) {
+				const_iterator tmp = *this;
+				++pos;
+				 return tmp;
+			}
+			const_iterator& operator--() {
+				fb_assert(pos > 0);
+				--pos;
+				return (*this);
+			}
+			const_iterator operator--(int) {
+				fb_assert(pos > 0);
+				const_iterator tmp = *this;
+				--pos;
+				 return tmp;
+			}
+			const T* operator->() {
+				fb_assert(lst);
+				const T* pointer = lst->getPointer(pos);
+				return pointer;
+			}
+			const T& operator*() {
+				fb_assert(lst);
+				const T* pointer = lst->getPointer(pos);
+				return *pointer;
+			}
+			bool operator!=(const const_iterator& v) const
+			{
+				fb_assert(lst == v.lst);
+				return lst ? pos != v.pos : true;
+			}
+			bool operator==(const const_iterator& v) const
+			{
+				fb_assert(lst == v.lst);
+				return lst ? pos == v.pos : false;
+			}
+			// Against iterator
+			bool operator!=(const iterator& v) const
+			{
+				fb_assert(lst == v.lst);
+				return lst ? pos != v.pos : true;
+			}
+			bool operator==(const iterator& v) const
+			{
+				fb_assert(lst == v.lst);
+				return lst ? pos == v.pos : false;
+			}
+
+		};
+
 	public:
 		void insert(size_t index, const T& item) {
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
@@ -142,6 +218,12 @@ namespace Firebird
 		iterator back() {
   			fb_assert(getCount() > 0);
 			return iterator(this, getCount() - 1);
+		}
+		const_iterator begin() const {
+			return const_iterator(this, 0);
+		}
+		const_iterator end() const {
+			return const_iterator(this, getCount());
 		}
 		const T& operator[](size_t index) const {
   			return *getPointer(index);
