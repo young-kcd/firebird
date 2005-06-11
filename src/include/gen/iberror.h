@@ -586,6 +586,7 @@ const SLONG isc_except2                          = 335544848L;
 const SLONG isc_malformed_string                 = 335544849L;
 const SLONG isc_prc_out_param_mismatch           = 335544850L;
 const SLONG isc_command_end_err2                 = 335544851L;
+const SLONG isc_partner_idx_incompat_type        = 335544852L;
 const SLONG isc_gfix_db_name                     = 335740929L;
 const SLONG isc_gfix_invalid_sw                  = 335740930L;
 const SLONG isc_gfix_incmp_sw                    = 335740932L;
@@ -635,6 +636,7 @@ const SLONG isc_dsql_cursor_exists               = 336003092L;
 const SLONG isc_dsql_cursor_rel_ambiguous        = 336003093L;
 const SLONG isc_dsql_cursor_rel_not_found        = 336003094L;
 const SLONG isc_dsql_cursor_not_open             = 336003095L;
+const SLONG isc_dsql_type_not_supp_ext_tab       = 336003096L;
 const SLONG isc_dyn_role_does_not_exist          = 336068796L;
 const SLONG isc_dyn_no_grant_admin_opt           = 336068797L;
 const SLONG isc_dyn_user_not_role_member         = 336068798L;
@@ -795,7 +797,7 @@ const SLONG isc_gstat_unexpected_eof             = 336920580L;
 const SLONG isc_gstat_open_err                   = 336920605L;
 const SLONG isc_gstat_read_err                   = 336920606L;
 const SLONG isc_gstat_sysmemex                   = 336920607L;
-const SLONG isc_err_max                          = 740;
+const SLONG isc_err_max                          = 742;
 
 #else /* c definitions */
 
@@ -1351,6 +1353,7 @@ const SLONG isc_err_max                          = 740;
 #define isc_malformed_string                 335544849L
 #define isc_prc_out_param_mismatch           335544850L
 #define isc_command_end_err2                 335544851L
+#define isc_partner_idx_incompat_type        335544852L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1400,6 +1403,7 @@ const SLONG isc_err_max                          = 740;
 #define isc_dsql_cursor_rel_ambiguous        336003093L
 #define isc_dsql_cursor_rel_not_found        336003094L
 #define isc_dsql_cursor_not_open             336003095L
+#define isc_dsql_type_not_supp_ext_tab       336003096L
 #define isc_dyn_role_does_not_exist          336068796L
 #define isc_dyn_no_grant_admin_opt           336068797L
 #define isc_dyn_user_not_role_member         336068798L
@@ -1560,7 +1564,7 @@ const SLONG isc_err_max                          = 740;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          740
+#define isc_err_max                          742
 
 #endif
 
