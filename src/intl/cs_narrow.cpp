@@ -362,3 +362,21 @@ CHARSET_ENTRY(CS_next)
 					 from_unicode_mapping_array, from_unicode_map);
 	CHARSET_RETURN;
 }
+
+CHARSET_ENTRY(CS_koi8r)
+{
+#include "../intl/charsets/cs_koi8r.h"
+
+	common_8bit_init(csptr, "KOI8R", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
+
+CHARSET_ENTRY(CS_koi8u)
+{
+#include "../intl/charsets/cs_koi8u.h"
+
+	common_8bit_init(csptr, "KOI8U", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}

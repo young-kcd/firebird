@@ -87,8 +87,11 @@ CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 #define   CS_UTF16              61	/* UTF-16 */
 #define   CS_UTF32              62	/* UTF-32 */
 
+#define   CS_KOI8R              63	/* Russian KOI8R */
+#define   CS_KOI8U              64	/* Ukrainian KOI8U */
+
 #define   CS_dynamic           127	/* Pseudo number for runtime charset */
 
-#define   CS_MAX_CS_NUMBER      62
+#define   CS_MAX_CS_NUMBER      64
 
 #endif /* INTL_CHARSETS_H */

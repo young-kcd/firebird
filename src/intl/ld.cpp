@@ -182,6 +182,9 @@ EXTERN_texttype(UNI201_init);
 EXTERN_texttype(JIS220_init);
 EXTERN_texttype(JIS230_init);
 
+EXTERN_texttype(KOI8R_c0_init);
+EXTERN_texttype(KOI8U_c0_init);
+
 EXTERN_charset(CS_iso_ISO8859_1);
 EXTERN_charset(CS_iso_ISO8859_2);
 EXTERN_charset(CS_iso_ISO8859_3);
@@ -225,6 +228,9 @@ EXTERN_charset(CS_euc_j);
 EXTERN_charset(CS_big_5);
 EXTERN_charset(CS_gb_2312);
 EXTERN_charset(CS_ksc_5601);
+
+EXTERN_charset(CS_koi8r);
+EXTERN_charset(CS_koi8u);
 
 EXTERN_texttype(BIG5_init);
 EXTERN_texttype(KSC_5601_init);

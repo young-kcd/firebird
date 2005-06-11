@@ -338,6 +338,22 @@ TEXTTYPE_ENTRY(NEXT_c0_init)
 }
 
 
+TEXTTYPE_ENTRY(KOI8R_c0_init)
+{
+	static const ASCII POSIX[] = "C.KOI8R";
+
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
+TEXTTYPE_ENTRY(KOI8U_c0_init)
+{
+	static const ASCII POSIX[] = "C.KOI8U";
+
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
 /*
  * Generic base for InterBase 4.0 Language Driver - ASCII family (binary
  * 8 bit sorting)
