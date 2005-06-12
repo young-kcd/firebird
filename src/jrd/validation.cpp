@@ -820,7 +820,7 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 	CHECK_DBB(dbb);
 
 #ifdef SUPERSERVER
-	if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
+	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
 #endif
 

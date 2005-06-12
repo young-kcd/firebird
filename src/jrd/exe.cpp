@@ -1865,7 +1865,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 #ifdef SUPERSERVER
 
 		if (request->req_operation == jrd_req::req_evaluate &&
-			(--tdbb->tdbb_quantum < 0) && !tdbb->tdbb_inhibit)
+			(--tdbb->tdbb_quantum < 0))
 		{
 			JRD_reschedule(tdbb, 0, true);
 		}

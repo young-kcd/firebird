@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.87 2005-05-27 22:44:05 asfernandes Exp $
+ * $Id: rse.cpp,v 1.88 2005-06-12 06:27:12 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -2187,7 +2187,7 @@ static bool get_record(thread_db*	tdbb,
 
 #ifdef SUPERSERVER
 
-	if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
+	if (--tdbb->tdbb_quantum < 0)
 	{
 		JRD_reschedule(tdbb, 0, true);
 	}

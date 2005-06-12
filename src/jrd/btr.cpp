@@ -3536,7 +3536,7 @@ static SLONG fast_load(thread_db* tdbb,
 			}
 
 #ifdef SUPERSERVER
-			if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
+			if (--tdbb->tdbb_quantum < 0) {
 				error = JRD_reschedule(tdbb, 0, false);
 			}
 #endif
@@ -6090,7 +6090,7 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 #ifdef SUPERSERVER
 		// Until deletion of duplicate nodes becomes efficient, limit
 		// leaf level traversal by rescheduling.
-		if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
+		if (--tdbb->tdbb_quantum < 0) {
 			if (JRD_reschedule(tdbb, 0, false)) {
 				CCH_RELEASE(tdbb, window);
 				ERR_punt();

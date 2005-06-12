@@ -467,7 +467,7 @@ void IDX_create_index(
 		}
 
 #ifdef SUPERSERVER
-		if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit)
+		if (--tdbb->tdbb_quantum < 0)
 			cancel = JRD_reschedule(tdbb, 0, false);
 #endif
 	}

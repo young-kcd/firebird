@@ -1001,7 +1001,6 @@ public:
 		tdbb_request = 0;
 		tdbb_status_vector = 0;
 		tdbb_setjmp = 0;
-		tdbb_inhibit = 0;
 		tdbb_quantum = 0;
 		tdbb_flags = 0;
 		JRD_inuse_clear(this);
@@ -1012,7 +1011,6 @@ public:
 	jrd_req*	tdbb_request;
 	ISC_STATUS*	tdbb_status_vector;
 	void*		tdbb_setjmp;
-	USHORT		tdbb_inhibit;		// Inhibit context switch if non-zero
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
 	struct iuo	tdbb_mutexes;

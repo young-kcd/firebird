@@ -2850,7 +2850,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 						break;
 					}
 #ifdef SUPERSERVER
-					if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
+					if (--tdbb->tdbb_quantum < 0) {
 						JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
 					}
 					transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
@@ -3617,7 +3617,7 @@ static void garbage_collect(thread_db* tdbb,
 		/* Don't monopolize the server while chasing long
 		   back version chains. */
 
-		if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
+		if (--tdbb->tdbb_quantum < 0) {
 			JRD_reschedule(tdbb, 0, true);
 		}
 #endif
@@ -3863,7 +3863,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 							if (relation->rel_flags & REL_deleting) {
 								goto rel_exit;
 							}
-							if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
+							if (--tdbb->tdbb_quantum < 0) {
 								JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
 							}
 							if (rpb.rpb_number >= last) {
@@ -4053,7 +4053,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			/* Don't monopolize the server while chasing long
 			   back version chains. */
 
-			if (--tdbb->tdbb_quantum < 0 && !tdbb->tdbb_inhibit) {
+			if (--tdbb->tdbb_quantum < 0) {
 				JRD_reschedule(tdbb, 0, true);
 			}
 #endif

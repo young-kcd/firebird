@@ -729,7 +729,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		Config::getPriorityBoost() : 1) * QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	tdbb->tdbb_inhibit = 0;
 	tdbb->tdbb_flags = 0;
 
 	attachment->att_charset = options.dpb_interp;
@@ -1832,7 +1831,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	tdbb->tdbb_quantum = QUANTUM;
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
-	tdbb->tdbb_inhibit = 0;
 	tdbb->tdbb_flags = 0;
 
 	if (options.dpb_working_directory.hasData()) {
@@ -4320,8 +4318,6 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  *	control so that somebody else may run.
  *
  **************************************/
-	if (tdbb->tdbb_inhibit)
-		return false;
 
 /* Force garbage colletion activity to yield the
    processor in case client threads haven't had
@@ -4620,7 +4616,6 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 	tdbb->tdbb_request = NULL;
 	tdbb->tdbb_transaction = NULL;
 	Jrd::ContextPoolHolder context(tdbb, 0);
-	tdbb->tdbb_inhibit = 0;
 	tdbb->tdbb_flags = 0;
 
 /* Count active threads in database */
