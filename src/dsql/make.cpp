@@ -487,11 +487,16 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 
     case nod_trim:
 		MAKE_desc(request, &desc1, node->nod_arg[e_trim_value], null_replacement);
+		if (node->nod_arg[e_trim_characters])
+			MAKE_desc(request, &desc2, node->nod_arg[e_trim_characters], null_replacement);
+		else
+			desc2.dsc_flags = 0;
 
 		if (desc1.dsc_dtype <= dtype_any_text) {
 			*desc = desc1;
 			desc->dsc_dtype = dtype_varying;
 			desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
+			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 			return;
 		}
 
@@ -499,7 +504,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		desc->dsc_scale = 0;
 		desc->dsc_ttype() = ttype_ascii;
 		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
-		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
+		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		return;
 
 	case nod_cast:

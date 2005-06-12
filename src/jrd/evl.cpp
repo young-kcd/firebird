@@ -5015,18 +5015,14 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	jrd_req* request = tdbb->tdbb_request;
 
 	const ULONG specification = (IPTR) node->nod_arg[e_trim_specification];
+
+	request->req_flags &= ~req_null;
 	dsc* characters = (node->nod_arg[e_trim_characters] ? EVL_expr(tdbb, node->nod_arg[e_trim_characters]) : NULL);
-	const ULONG flags = (node->nod_arg[e_trim_characters] ? request->req_flags : request->req_flags & ~req_null);
+	if (request->req_flags & req_null)
+		return characters;
+
 	request->req_flags &= ~req_null;
 	dsc* value = EVL_expr(tdbb, node->nod_arg[e_trim_value]);
-
-	// restore saved NULL state
-	if (flags & req_null)
-	{
-		request->req_flags |= req_null;
-		return characters;
-	}
-
 	if (request->req_flags & req_null)
 		return value;
 
