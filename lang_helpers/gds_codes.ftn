@@ -1114,6 +1114,8 @@ C --
       PARAMETER (GDS__prc_out_param_mismatch           = 335544850)
       INTEGER*4 GDS__command_end_err2                
       PARAMETER (GDS__command_end_err2                 = 335544851)
+      INTEGER*4 GDS__partner_idx_incompat_type       
+      PARAMETER (GDS__partner_idx_incompat_type        = 335544852)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1212,6 +1214,8 @@ C --
       PARAMETER (GDS__dsql_cursor_rel_not_found        = 336003094)
       INTEGER*4 GDS__dsql_cursor_not_open            
       PARAMETER (GDS__dsql_cursor_not_open             = 336003095)
+      INTEGER*4 GDS__dsql_type_not_supp_ext_tab      
+      PARAMETER (GDS__dsql_type_not_supp_ext_tab       = 336003096)
       INTEGER*4 GDS__dyn_role_does_not_exist         
       PARAMETER (GDS__dyn_role_does_not_exist          = 336068796)
       INTEGER*4 GDS__dyn_no_grant_admin_opt          

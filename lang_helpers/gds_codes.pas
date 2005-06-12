@@ -564,6 +564,7 @@ const
 	gds_malformed_string                 = 335544849;
 	gds_prc_out_param_mismatch           = 335544850;
 	gds_command_end_err2                 = 335544851;
+	gds_partner_idx_incompat_type        = 335544852;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
@@ -613,6 +614,7 @@ const
 	gds_dsql_cursor_rel_ambiguous        = 336003093;
 	gds_dsql_cursor_rel_not_found        = 336003094;
 	gds_dsql_cursor_not_open             = 336003095;
+	gds_dsql_type_not_supp_ext_tab       = 336003096;
 	gds_dyn_role_does_not_exist          = 336068796;
 	gds_dyn_no_grant_admin_opt           = 336068797;
 	gds_dyn_user_not_role_member         = 336068798;
