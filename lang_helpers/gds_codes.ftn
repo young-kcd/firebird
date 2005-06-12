@@ -1084,8 +1084,8 @@ C --
       PARAMETER (GDS__bad_shutdown_mode                = 335544835)
       INTEGER*4 GDS__concat_overflow                 
       PARAMETER (GDS__concat_overflow                  = 335544836)
-      INTEGER*4 GDS__bad_substring_param             
-      PARAMETER (GDS__bad_substring_param              = 335544837)
+      INTEGER*4 GDS__bad_substring_offset            
+      PARAMETER (GDS__bad_substring_offset             = 335544837)
       INTEGER*4 GDS__foreign_key_target_doesnt_exist 
       PARAMETER (GDS__foreign_key_target_doesnt_exist  = 335544838)
       INTEGER*4 GDS__foreign_key_references_present  
@@ -1116,6 +1116,8 @@ C --
       PARAMETER (GDS__command_end_err2                 = 335544851)
       INTEGER*4 GDS__partner_idx_incompat_type       
       PARAMETER (GDS__partner_idx_incompat_type        = 335544852)
+      INTEGER*4 GDS__bad_substring_length            
+      PARAMETER (GDS__bad_substring_length             = 335544853)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

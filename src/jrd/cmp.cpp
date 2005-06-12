@@ -1776,25 +1776,25 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 					{
 						offset -= MOV_get_long(&desc3, 0);
 					}
-					// error() is a local routine in par.c, so we use plain ERR_post
+					// error() is a local routine in par.cpp, so we use plain ERR_post
 					if (offset < 0)
 					{
-						ERR_post(isc_bad_substring_param,
-								 isc_arg_string, "offset", 0);
+						ERR_post(isc_bad_substring_offset,
+								 isc_arg_number, offset + 1, 0);
 					}
 				}
 				if (length_node->nod_type == nod_literal &&
 					desc2.dsc_dtype == dtype_long)
 				{
-					const SLONG lenght = MOV_get_long(&desc2, 0);
-					// error() is a local routine in par.c, so we use plain ERR_post
-					if (lenght < 0)
+					const SLONG length = MOV_get_long(&desc2, 0);
+					// error() is a local routine in par.cpp, so we use plain ERR_post
+					if (length < 0)
 					{
-						ERR_post(isc_bad_substring_param,
-								 isc_arg_string, "length", 0);
+						ERR_post(isc_bad_substring_length,
+								 isc_arg_number, length, 0);
 					}
 					// Set up the given length
-					rc_len = lenght;
+					rc_len = length;
 				}
 			}
 			if (desc->dsc_dtype == dtype_blob)

@@ -4841,11 +4841,11 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 
 	if (offset_arg < 0 || offset_arg > MAX_COLUMN_SIZE)
 	{
-		ERR_post(isc_bad_substring_param, isc_arg_string, "offset", 0);
+		ERR_post(isc_bad_substring_offset, isc_arg_number, offset_arg + 1, 0);
 	}
 	else if (length_arg < 0 || length_arg > MAX_COLUMN_SIZE)
 	{
-		ERR_post(isc_bad_substring_param, isc_arg_string, "length", 0);
+		ERR_post(isc_bad_substring_length, isc_arg_number, length_arg, 0);
 	}
 	USHORT offset = (USHORT) offset_arg;
 	USHORT length = (USHORT) length_arg;
