@@ -510,7 +510,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANT_OPTION prev_option;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$FIELD_NAME prev_field;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$USER_TYPE prev_user_type;
-	SCHAR user_string[WORDLENGTH * 2 + 20];
+	SCHAR user_string[QUOTEDLENGTH + 20];
 	bool first = true;
 
 	if (!*object)
@@ -2708,7 +2708,8 @@ static processing_state show_generators(const SCHAR* object)
 	XSQLDA sqlda;
 	SINT64 genid64 = 0;
 	SLONG genid = 0;
-	TEXT query[100], gen_name[WORDLENGTH * 2];
+	const char genIdStr[] = "SELECT GEN_ID(%s, 0) FROM RDB$DATABASE";
+	TEXT query[sizeof(genIdStr) + QUOTEDLENGTH], gen_name[QUOTEDLENGTH];
 
 	// Show all generators or named generator
 	FOR GEN IN RDB$GENERATORS
@@ -2728,7 +2729,7 @@ static processing_state show_generators(const SCHAR* object)
 				strcpy(gen_name, GEN.RDB$GENERATOR_NAME);
 			}
 
-			sprintf (query, "SELECT GEN_ID(%s, 0) FROM RDB$DATABASE", gen_name);
+			sprintf (query, genIdStr, gen_name);
 
 			isc_stmt_handle stmt = 0;
 			isc_dsql_allocate_statement (isc_status, &DB, &stmt);

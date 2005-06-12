@@ -93,6 +93,8 @@ enum LegacyTables
 };
 
 const size_t WORDLENGTH			= 32;
+// The worst case of a quoted identifier is 31 * 2 => 62 + 2 DQUOTES + TERM => 65.
+const size_t QUOTEDLENGTH       = 65;
 static const char* const DEFTERM	= ";";
 static const char* const DEFCHARSET	= "NONE";
 const int NULL_DISP_LEN				= 6;

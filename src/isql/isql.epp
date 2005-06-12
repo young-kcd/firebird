@@ -1875,13 +1875,13 @@ static processing_state add_row(TEXT* tabname)
 			return FAIL;
 		}
 
-	chop_at(tabname, WORDLENGTH * 2);
+	chop_at(tabname, QUOTEDLENGTH);
 	if (tabname[0] != DBL_QUOTE)
 		ISQL_make_upper(tabname);
 	/*
 	chop_at(tablename, WORDLENGTH);
 	const bool delimited_yes = tablename[0] == DBL_QUOTE;
-	TEXT tabname[WORDLENGTH * 2];
+	TEXT tabname[QUOTEDLENGTH];
 	if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
 		ISQL_copy_SQL_id(tablename, tabname, DBL_QUOTE);
 	}
@@ -1935,7 +1935,7 @@ static processing_state add_row(TEXT* tabname)
 
 	// Create the new INSERT statement from the sqlda info
 
-	SCHAR* insertstring = (SCHAR*) ISQL_ALLOC((SLONG) (40 + (WORDLENGTH * 2 + 4) * n_cols));
+	SCHAR* insertstring = (SCHAR*) ISQL_ALLOC((SLONG) (40 + (QUOTEDLENGTH + 4) * n_cols));
 
 	// There is a question marker for each column known updatable column
 
@@ -1947,7 +1947,7 @@ static processing_state add_row(TEXT* tabname)
 	i = 0;
 	{ // scope
 		char fldname[WORDLENGTH];
-		char fldfixed[WORDLENGTH * 2];
+		char fldfixed[QUOTEDLENGTH];
 		for (const XSQLVAR* var = sqlda->sqlvar; i < n_cols; var++, i++) {
 			// Skip columns that are computed
 			if (colnumber[i] != -1)
@@ -2670,12 +2670,12 @@ static processing_state copy_table(TEXT* source,
 		return END;
 	}
 
-	chop_at(source, WORDLENGTH * 2);
+	chop_at(source, QUOTEDLENGTH);
 	if (source[0] != DBL_QUOTE)
 		ISQL_make_upper(source);
 	/*
 	chop_at(source_tbl, WORDLENGTH);
-	TEXT source[WORDLENGTH * 2];
+	TEXT source[QUOTEDLENGTH];
 	bool delimited_yes = source_tbl[0] == DBL_QUOTE;
 	if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
 		ISQL_copy_SQL_id(source_tbl, source, DBL_QUOTE);
@@ -2686,12 +2686,12 @@ static processing_state copy_table(TEXT* source,
 	}
 	*/
 	
-	chop_at(destination, WORDLENGTH * 2);
+	chop_at(destination, QUOTEDLENGTH);
 	if (destination[0] != DBL_QUOTE)
 		ISQL_make_upper(destination);
 	/*
 	chop_at(destination_tbl, WORDLENGTH);
-	TEXT destination[WORDLENGTH * 2];
+	TEXT destination[QUOTEDLENGTH];
 	delimited_yes = destination_tbl[0] == DBL_QUOTE;
 	if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
 		ISQL_copy_SQL_id(destination_tbl, destination, DBL_QUOTE);
