@@ -197,7 +197,7 @@ bool IDX_check_master_types (thread_db* tdbb, index_desc& idx, jrd_rel* partner_
 	fb_assert(idx.idx_count == partner_idx.idx_count);
 
 	int i;
-	for(i=0; i < idx.idx_count; i++) 
+	for(i = 0; i < idx.idx_count; i++) 
 		if (idx.idx_rpt[i].idx_itype != partner_idx.idx_rpt[i].idx_itype)
 		{
 			bad_segment = i;
