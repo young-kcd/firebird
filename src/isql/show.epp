@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: show.epp,v 1.17 2003-04-16 10:17:14 aafemt Exp $
+ * $Id: show.epp,v 1.17.2.1 2005-06-12 01:00:55 robocop Exp $
  * Revision 1.2  2000/11/19 07:02:49  fsg
  * Change in show.e to use CHARACTER_LENGTH instead of FIELD_LENGTH in
  * SHOW PROCEDURE
@@ -2505,7 +2505,7 @@ static int show_generators( SCHAR * object)
 	SINT64 genid64 = 0;
 	SLONG genid = 0;
 	isc_stmt_handle stmt = 0;
-	TEXT query[100], gen_name[MAX_NAME_LENGTH * 2], *p1, *q1;
+	TEXT query[120], gen_name[MAX_NAME_LENGTH * 2], *p1, *q1;
 
 /* Show all generators  or named generator */
 	FOR GEN IN RDB$GENERATORS 
@@ -2518,40 +2518,25 @@ static int show_generators( SCHAR * object)
             
             /* Get the current id for each generator */
 	
-            if (strchr (GEN.RDB$GENERATOR_NAME, DBL_QUOTE)) {
+            if (SQL_dialect == SQL_DIALECT_V6) {
                 q1 = gen_name;
                 *q1++ = DBL_QUOTE;
                 for (p1 = GEN.RDB$GENERATOR_NAME; *p1; p1++) {
-                    *q1 = *p1;
-                    q1++;
-                    if (*p1 == DBL_QUOTE) {
-                        *q1 = DBL_QUOTE;
-                        q1++;
-                    }
+                    *q1++ = *p1;
+                    if (*p1 == DBL_QUOTE)
+                    	*q1++ = DBL_QUOTE;
                 }
                 *q1++ = DBL_QUOTE;
                 *q1 = '\0';
             }
-            else {
-                if (SQL_dialect == SQL_DIALECT_V6) {
-                    q1 = gen_name;
-                    *q1++ = DBL_QUOTE;
-                    for (p1 = GEN.RDB$GENERATOR_NAME; *p1; p1++) {
-                        *q1 = *p1;
-                        q1++;
-                    }
-                    *q1++ = DBL_QUOTE;
-                    *q1 = '\0';
-                }
-                else
-                    strcpy(gen_name, GEN.RDB$GENERATOR_NAME);
-            }
-	
+            else
+                strcpy(gen_name, GEN.RDB$GENERATOR_NAME);
+
             sprintf (query, "SELECT GEN_ID(%s, 0) FROM RDB$DATABASE", gen_name);
 	
             isc_dsql_allocate_statement (isc_status, &DB, &stmt);
             sqlda.sqln = 1;
-            sqlda.version = 1;
+            sqlda.version = SQLDA_VERSION1;
 	   
             /* If the user has set his client dialect to 1, we take that to
                mean that he wants to see just the lower 32 bits of the
