@@ -7139,6 +7139,11 @@ static int process_statement(const TEXT* string,
 			}
 
 			if (isc_status[1]) {
+				// CVC: Add a \n so the error message is not at the right of
+				// header but in its own line, if no row was output yet.
+				if (!lines)
+					isqlGlob.printf(NEWLINE);
+					
 				ISQL_errmsg(isc_status);
 				// CVC: It appears we can have an implicit cursor opened anyways.
 				isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_close);
