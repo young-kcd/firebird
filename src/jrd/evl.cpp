@@ -4893,7 +4893,6 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 											 desc.dsc_length, impure->vlu_desc.dsc_address,
 											 offset, length)) == INTL_BAD_STR_LENGTH)
 				{
-					delete impure->vlu_desc.dsc_address;
 					ERR_post(isc_arith_except, 0);
 				}
 				else
@@ -4988,7 +4987,6 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 									 totLen,
 									 impure->vlu_desc.dsc_address, offset, length)) == INTL_BAD_STR_LENGTH)
 		{
-			delete impure->vlu_desc.dsc_address;
 			ERR_post(isc_arith_except, 0);
 		}
 		else
