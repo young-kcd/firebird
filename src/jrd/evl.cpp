@@ -4848,7 +4848,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 		ERR_post(isc_bad_substring_length, isc_arg_number, length_arg, 0);
 	}
 	USHORT offset = (USHORT) offset_arg;
-	USHORT length = (USHORT) length_arg;
+	const USHORT length = (USHORT) length_arg;
 	ULONG ul;
 
 	if (value->dsc_dtype == dtype_blob)
@@ -4877,13 +4877,14 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 			fb_assert(BUFFER_LARGE % 4 == 0);	// 4 is our maximum character length
 
 			ULONG datalen;
+			const ULONG totLen = length * charSet->maxBytesPerChar();
 
 			if (charSet->isMultiByte())
 			{
 				buffer.getBuffer(blob->blb_length);
 				datalen = BLB_get_data(tdbb, blob, buffer.begin(), blob->blb_length);
 
-				desc.dsc_length = length * charSet->maxBytesPerChar();
+				desc.dsc_length = totLen;
 				desc.dsc_address = NULL;
 				INTL_ASSIGN_TTYPE(&desc, value->dsc_blob_ttype());
 				EVL_make_value(tdbb, &desc, impure);
@@ -4909,10 +4910,9 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 				}
 
 				fb_assert(!offset && !(blob->blb_flags & BLB_eof));
-				datalen = BLB_get_data(tdbb, blob, buffer.getBuffer(length * charSet->maxBytesPerChar()),
-									   length * charSet->maxBytesPerChar());
+				datalen = BLB_get_data(tdbb, blob, buffer.getBuffer(totLen), totLen);
 
-				fb_assert(datalen <= length * charSet->maxBytesPerChar());
+				fb_assert(datalen <= totLen);
 				desc.dsc_length = datalen;
 				desc.dsc_address = buffer.begin();
 				INTL_ASSIGN_TTYPE(&desc, value->dsc_blob_ttype());
@@ -4937,8 +4937,8 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 						   reinterpret_cast<vary*>(temp), sizeof(temp));
 	INTL_ASSIGN_TTYPE(&desc, ttype);
 
-	/* CVC: Why bother? If the offset is greater or equal than the length in bytes,
-			it's impossible that the offset be less than the length in an international charset. */
+	// CVC: Why bother? If the offset is greater or equal than the length in bytes,
+	// it's impossible that the offset be less than the length in an international charset.
 	if (offset >= desc.dsc_length || !length)
 	{
 		desc.dsc_length = 0;
@@ -4966,10 +4966,10 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 	}
 	else
 	{
-		/* CVC: ATTENTION:
-				I couldn't find an appropriate message for this failure among current registered
-				messages, so I will return empty.
-				Finally I decided to use arithmetic exception or numeric overflow. */
+		// CVC: ATTENTION:
+		// I couldn't find an appropriate message for this failure among current registered
+		// messages, so I will return empty.
+		// Finally I decided to use arithmetic exception or numeric overflow.
 		const UCHAR* p = desc.dsc_address;
 		USHORT pcount = desc.dsc_length;
 
@@ -4980,11 +4980,12 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 			ERR_post(isc_arith_except, 0);
 
 		desc.dsc_address = NULL;
-		desc.dsc_length = charSet->maxBytesPerChar() * length;
+		const ULONG totLen = length * charSet->maxBytesPerChar();
+		desc.dsc_length = totLen;
 		EVL_make_value(tdbb, &desc, impure);
 
 		if ((ul = charSet->substring(tdbb, pcount, p,
-									 charSet->maxBytesPerChar() * length,
+									 totLen,
 									 impure->vlu_desc.dsc_address, offset, length)) == INTL_BAD_STR_LENGTH)
 		{
 			delete impure->vlu_desc.dsc_address;
