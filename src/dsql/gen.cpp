@@ -939,14 +939,15 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 
 	case nod_exec_procedure:
 		if (request->req_type == REQ_EXEC_PROCEDURE) {
-			if (message = request->req_receive) {
+			if ( (message = request->req_receive) ) {
 				stuff(request, blr_begin);
 				stuff(request, blr_send);
 				stuff(request, message->msg_number);
 			}
 		}
-		else
+		else {
 			message = NULL;
+		}
 		stuff(request, blr_exec_proc);
 		name = (dsql_str*) node->nod_arg[e_exe_procedure];
 		stuff_cstring(request, name->str_data);
@@ -959,8 +960,9 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
  				GEN_expr(request, *ptr);
  			}
 		}
-		else
+		else {
 			stuff_word(request, 0);
+		}
 		if (temp = node->nod_arg[e_exe_outputs]) {
 			stuff_word(request, temp->nod_count);
 			for (ptr = temp->nod_arg, end = ptr + temp->nod_count;
@@ -969,10 +971,12 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 				GEN_expr(request, *ptr);
 			}
 		}
-		else
+		else {
 			stuff_word(request, 0);
-		if (message)
+		}
+		if (message) {
 			stuff(request, blr_end);
+		}
 		return;
 
 	case nod_for_select:
@@ -1084,7 +1088,7 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		return;
 	
 	case nod_return:
-		if (temp = node->nod_arg[e_rtn_procedure])
+		if ( (temp = node->nod_arg[e_rtn_procedure]) )
 		{
 			if (temp->nod_type == nod_exec_block)
 				GEN_return(request, temp->nod_arg[e_exe_blk_outputs], false);
@@ -1104,13 +1108,34 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
         return;
 
 	case nod_store:
-		if ((temp = node->nod_arg[e_sto_rse]) != NULL) {
+		if (request->req_type == REQ_EXEC_PROCEDURE) {
+			if ( (message = request->req_receive) ) {
+				stuff(request, blr_begin);
+				stuff(request, blr_send);
+				stuff(request, message->msg_number);
+			}
+		}
+		else {
+			message = NULL;
+		}
+		if ( (temp = node->nod_arg[e_sto_rse]) ) {
 			stuff(request, blr_for);
 			GEN_expr(request, temp);
 		}
-		stuff(request, blr_store);
-		GEN_expr(request, node->nod_arg[e_sto_relation]);
-		GEN_statement(request, node->nod_arg[e_sto_statement]);
+		if (node->nod_arg[e_sto_return]) {
+			stuff(request, blr_store2);
+			GEN_expr(request, node->nod_arg[e_sto_relation]);
+			GEN_statement(request, node->nod_arg[e_sto_statement]);
+			GEN_statement(request, node->nod_arg[e_sto_return]);
+		}
+		else {
+			stuff(request, blr_store);
+			GEN_expr(request, node->nod_arg[e_sto_relation]);
+			GEN_statement(request, node->nod_arg[e_sto_statement]);
+		}
+		if (message) {
+			stuff(request, blr_end);
+		}
 		return;
 
 	case nod_abort:

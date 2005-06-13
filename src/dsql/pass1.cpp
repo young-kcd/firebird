@@ -211,7 +211,7 @@ static dsql_ctx* pass1_cursor_context(dsql_req*, const dsql_nod*, const dsql_nod
 static dsql_nod* pass1_cursor_name(dsql_req*, const dsql_str*, USHORT, bool);
 static dsql_nod* pass1_cursor_reference(dsql_req*, const dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_dbkey(dsql_req*, dsql_nod*);
-static dsql_nod* pass1_delete(dsql_req*, dsql_nod*);
+static dsql_nod* pass1_delete(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_derived_table(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_expand_select_list(dsql_req*, dsql_nod*, dsql_nod*);
 static void pass1_expand_select_node(dsql_req*, dsql_nod*, DsqlNodStack&);
@@ -220,7 +220,7 @@ static bool pass1_found_aggregate(const dsql_nod*, USHORT, USHORT, bool);
 static bool pass1_found_field(const dsql_nod*, USHORT, USHORT, bool*);
 static bool pass1_found_sub_select(const dsql_nod*);
 static dsql_nod* pass1_group_by_list(dsql_req*, dsql_nod*, dsql_nod*);
-static dsql_nod* pass1_insert(dsql_req*, dsql_nod*);
+static dsql_nod* pass1_insert(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_join(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_label(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_lookup_alias(dsql_req*, const dsql_str*, dsql_nod*);
@@ -228,6 +228,7 @@ static dsql_nod* pass1_make_derived_field(dsql_req*, tsql*, dsql_nod*);
 static dsql_nod* pass1_not(dsql_req*, const dsql_nod*, bool, bool);
 static void	pass1_put_args_on_stack(dsql_req*, dsql_nod*, DsqlNodStack&, bool);
 static dsql_nod* pass1_relation(dsql_req*, dsql_nod*);
+static dsql_nod* pass1_returning(dsql_req*, const dsql_nod*, bool);
 static dsql_nod* pass1_rse(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static dsql_nod* pass1_searched_case(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_sel_list(dsql_req*, dsql_nod*);
@@ -239,7 +240,7 @@ static void pass1_udf_args(dsql_req*, dsql_nod*, dsql_udf*, USHORT&, DsqlNodStac
 static dsql_nod* pass1_union(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static void pass1_union_auto_cast(dsql_nod*, const dsc&, SSHORT,
 	bool in_select_list = false);
-static dsql_nod* pass1_update(dsql_req*, dsql_nod*);
+static dsql_nod* pass1_update(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_variable(dsql_req*, dsql_nod*);
 static dsql_nod* post_map(dsql_nod*, dsql_ctx*);
 static dsql_nod* remap_field(dsql_req*, dsql_nod*, dsql_ctx*, USHORT);
@@ -924,6 +925,9 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_join:
 		return pass1_join(request, input, proc_flag);
 
+	case nod_returning:
+		return pass1_returning(request, input, proc_flag);
+
 	case nod_not:
 		return pass1_not(request, input, proc_flag, true);
 
@@ -1235,7 +1239,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_delete:
-		node = pass1_savepoint(request, pass1_delete(request, input));
+		node = pass1_savepoint(request, pass1_delete(request, input, proc_flag));
 		break;
 
 	case nod_exec_procedure:
@@ -1437,7 +1441,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return pass1_savepoint(request, node);
 
 	case nod_insert:
-		node = pass1_savepoint(request, pass1_insert(request, input));
+		node = pass1_savepoint(request, pass1_insert(request, input, proc_flag));
 		break;
 
 	case nod_block:
@@ -1565,7 +1569,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_update:
-		node = pass1_savepoint(request, pass1_update(request, input));
+		node = pass1_savepoint(request, pass1_update(request, input, proc_flag));
 		break;
 
 	case nod_while:
@@ -3554,16 +3558,17 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 
     @param request
     @param input
+	@param proc_flag
 
  **/
-static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input)
+static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input, bool proc_flag)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
 	const dsql_nod* cursor = input->nod_arg[e_del_cursor];
 	dsql_nod* relation = input->nod_arg[e_del_relation];
-	if (cursor && (request->req_flags & REQ_block)) {
+	if (cursor && proc_flag) {
 		dsql_nod* anode = MAKE_node(nod_erase_current, e_erc_count);
 		anode->nod_arg[e_erc_context] =
 			(dsql_nod*) pass1_cursor_context(request, cursor, relation);
@@ -4892,9 +4897,10 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 
     @param request
     @param input
+	@param proc_flag
 
  **/
-static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input)
+static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_flag)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -4994,6 +5000,8 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input)
 	}
 
 	node->nod_arg[e_sto_statement] = MAKE_list(stack);
+	node->nod_arg[e_sto_return] =
+		PASS1_node(request, input->nod_arg[e_ins_return], proc_flag);
 
 	set_parameters_name(node->nod_arg[e_sto_statement],
 						node->nod_arg[e_sto_relation]);
@@ -5915,6 +5923,111 @@ static dsql_rel* pass1_base_table( dsql_req* request, const dsql_rel* relation,
 
 /**
 
+ 	pass1_returning
+
+    @brief	Compile a RETURNING clause.
+
+
+    @param request
+    @param input
+	@param proc_flag
+
+ **/
+static dsql_nod* pass1_returning(dsql_req* request,
+								 const dsql_nod* input,
+								 bool proc_flag)
+{
+	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+
+	dsql_nod* const source =
+		PASS1_node(request, input->nod_arg[e_ret_source], false);
+	dsql_nod* const target =
+		PASS1_node(request, input->nod_arg[e_ret_target], false);
+
+	if (!proc_flag && target)
+	{
+		// RETURNING INTO is not allowed syntax for DSQL
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
+				  isc_arg_gds, isc_token_err, // Token unknown 
+				  isc_arg_gds, isc_random, isc_arg_string, "INTO", 0);
+	}
+	else if (proc_flag && !target)
+	{
+		// RETURNING without INTO is not allowed for PSQL
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
+				  isc_arg_gds, isc_command_end_err,	// Unexpected end of command
+				  0);
+	}
+
+	const int count = source->nod_count;
+	fb_assert(count);
+	dsql_nod* node = MAKE_node(nod_list, count);
+
+	if (target)	
+	{
+		// PSQL case
+		fb_assert(proc_flag);
+		if (count != target->nod_count) {
+			// count of column list and value list don't match 
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -804,
+					  isc_arg_gds, isc_dsql_var_count_err, 0);
+		}
+
+		dsql_nod** src = source->nod_arg;
+		dsql_nod** dst = target->nod_arg;
+		dsql_nod** ptr = node->nod_arg;
+		for (const dsql_nod* const* const end = ptr + node->nod_count;
+			ptr < end; src++, ptr++)
+		{
+			dsql_nod* temp = MAKE_node(nod_assign, 2);
+			temp->nod_arg[0] = *src;
+			temp->nod_arg[1] = *dst;
+			*ptr = temp;
+		}
+	}
+	else
+	{
+		// DSQL case
+		fb_assert(!proc_flag);
+		const dsql_ctx* const context = request->req_context->object();
+		fb_assert(context);
+		dsql_nod** src = source->nod_arg;
+		dsql_nod** ptr = node->nod_arg;
+		for (const dsql_nod* const* const end = ptr + node->nod_count;
+			ptr < end; src++, ptr++)
+		{
+			fb_assert((*src)->nod_type == nod_field);
+			dsql_fld* field = (dsql_fld*) (*src)->nod_arg[e_fld_field];
+			dsql_par* parameter = MAKE_parameter(request->req_receive, true, true, 0);
+			MAKE_desc(request, &parameter->par_desc, *src, NULL);
+			parameter->par_name = parameter->par_alias = field->fld_name;
+			parameter->par_rel_name = context->ctx_relation->rel_name;
+			parameter->par_owner_name = context->ctx_relation->rel_owner;
+
+			dsql_nod* p_node = MAKE_node(nod_parameter, e_par_count);
+			p_node->nod_count = 0;
+			p_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
+
+			dsql_nod* temp = MAKE_node(nod_assign, 2);
+			temp->nod_arg[0] = *src;
+			temp->nod_arg[1] = p_node;
+			*ptr = temp;
+		}
+	}
+
+	if (!proc_flag)
+	{
+		fb_assert(request->req_type == REQ_INSERT);
+		request->req_type = REQ_EXEC_PROCEDURE;
+	}
+
+	return node;
+}
+
+
+/**
+  
  	pass1_rse
 
     @brief	Compile a record selection expression.
@@ -7045,16 +7158,17 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 
     @param request
     @param input
+	@param proc_flag
 
  **/
-static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input)
+static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_flag)
 {
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
 	dsql_nod* cursor = input->nod_arg[e_upd_cursor];
 	dsql_nod* relation = input->nod_arg[e_upd_relation];
-	if (cursor && (request->req_flags & REQ_block)) {
+	if (cursor && proc_flag) {
 		dsql_nod* anode = MAKE_node(nod_modify_current, e_mdc_count);
 		anode->nod_arg[e_mdc_context] =
 			(dsql_nod*) pass1_cursor_context(request, cursor, relation);

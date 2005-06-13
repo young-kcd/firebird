@@ -337,7 +337,8 @@ enum nod_t
 	nod_collation_attr,
 	nod_collation_specific_attr,
 	nod_strlen,
-	nod_trim
+	nod_trim,
+	nod_returning
 };
 
 typedef nod_t NOD_TYPE;
@@ -583,11 +584,13 @@ enum node_args {
 	e_ins_fields,
 	e_ins_values,
 	e_ins_select,
+	e_ins_return,
 	e_ins_count,
 
 	e_sto_relation = 0,		// nod_store
 	e_sto_statement,
 	e_sto_rse,
+	e_sto_return,
 	e_sto_count,
 
 	e_del_relation = 0,		// nod_delete
@@ -605,6 +608,12 @@ enum node_args {
 	e_erc_context = 0,		// nod_erase_current
 	e_erc_count,
 
+	e_mod_source = 0,		// nod_modify
+	e_mod_update,
+	e_mod_statement,
+	e_mod_rse,
+	e_mod_count,
+
 	e_mdc_context = 0,		// nod_modify_current
 	e_mdc_update,
 	e_mdc_statement,
@@ -618,12 +627,6 @@ enum node_args {
 	e_upd_rows,
 	e_upd_cursor,
 	e_upd_count,
-
-	e_mod_source = 0,		// nod_modify
-	e_mod_update,
-	e_mod_statement,
-	e_mod_rse,
-	e_mod_count,
 
 	e_map_context = 0,		// nod_map
 	e_map_map,
@@ -949,7 +952,11 @@ enum node_args {
 
 	e_strlen_type = 0,				// constant representing type of length
 	e_strlen_value,
-	e_strlen_count
+	e_strlen_count,
+
+	e_ret_source = 0,				// nod_returning
+	e_ret_target,
+	e_ret_count
 };
 
 #endif // DSQL_NODE_H

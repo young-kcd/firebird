@@ -247,6 +247,7 @@ static const TOK tokens[] = {
 	{RESTART, "RESTART", 2, false},
 	{RESTRICT, "RESTRICT", 1, false},
 	{RETAIN, "RETAIN", 1, false},
+	{RETURNING, "RETURNING", 2, false},
 	{RETURNING_VALUES, "RETURNING_VALUES", 1, false},
 	{RETURNS, "RETURNS", 1, false},
 	{REVOKE, "REVOKE", 1, false},

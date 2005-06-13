@@ -518,6 +518,7 @@ static LexerState lex;
 // %token SPACE			// FB_NEW_INTL_ALLOW_NOT_READY
 %token TRAILING
 %token TRIM
+%token RETURNING
 
 /* precedence declarations for expression evaluation */
 
@@ -3319,11 +3320,13 @@ rows_clause	: ROWS value
 
 /* INSERT statement */
 /* IBO hack: replace column_parens_opt by ins_column_parens_opt. */
-insert		: INSERT INTO simple_table_name ins_column_parens_opt VALUES '(' value_list ')'
+insert		: INSERT INTO simple_table_name ins_column_parens_opt
+				VALUES '(' value_list ')' returning_clause
 			{ $$ = make_node (nod_insert, (int) e_ins_count, 
-			  $3, make_list ($4), make_list ($7), NULL); }
+				$3, make_list ($4), make_list ($7), NULL, $9); }
 		| INSERT INTO simple_table_name ins_column_parens_opt select_expr
-			{ $$ = make_node (nod_insert, (int) e_ins_count, $3, $4, NULL, $5); }
+			{ $$ = make_node (nod_insert, (int) e_ins_count,
+				$3, $4, NULL, $5, NULL); }
 		;
 
 
@@ -3333,12 +3336,15 @@ delete		: delete_searched
 		| delete_positioned
 		;
 
-delete_searched	: KW_DELETE FROM table_name where_clause plan_clause order_clause rows_clause
-			{ $$ = make_node (nod_delete, (int) e_del_count, $3, $4, $5, $6, $7, NULL); }
+delete_searched	: KW_DELETE FROM table_name where_clause
+		plan_clause order_clause rows_clause
+			{ $$ = make_node (nod_delete, (int) e_del_count,
+				$3, $4, $5, $6, $7, NULL); }
 		;
 
 delete_positioned : KW_DELETE FROM table_name cursor_clause
-			{ $$ = make_node (nod_delete, (int) e_del_count, $3, NULL, NULL, NULL, NULL, $4); }
+			{ $$ = make_node (nod_delete, (int) e_del_count,
+				$3, NULL, NULL, NULL, NULL, $4); }
 		;
 
 
@@ -3348,7 +3354,8 @@ update		: update_searched
 		| update_positioned
 		;
 
-update_searched	: UPDATE table_name SET assignments where_clause plan_clause order_clause rows_clause
+update_searched	: UPDATE table_name SET assignments where_clause
+		plan_clause order_clause rows_clause
 			{ $$ = make_node (nod_update, (int) e_upd_count,
 				$2, make_list ($4), $5, $6, $7, $8, NULL); }
 		  	;
@@ -3358,6 +3365,16 @@ update_positioned : UPDATE table_name SET assignments cursor_clause
 				$2, make_list ($4), NULL, NULL, NULL, NULL, $5); }
 		;
 
+
+returning_clause	: RETURNING column_list
+			{ $$ = make_node (nod_returning, (int) e_ret_count,
+					make_list ($2), NULL); }
+		| RETURNING column_list INTO variable_list
+			{ $$ = make_node (nod_returning, (int) e_ret_count,
+					make_list ($2), make_list ($4)); }
+		|
+			{ $$ = NULL; }
+		;
 
 cursor_clause	: WHERE CURRENT OF symbol_cursor_name
 			{ $$ = make_node (nod_cursor, (int) e_cur_count, $4, NULL, NULL, NULL); }
@@ -4285,7 +4302,6 @@ non_reserved_word :
 	| BLOCK
 	// | ACCENT	// FB_NEW_INTL_ALLOW_NOT_READY				/* added in FB 2.0 */
 	| BACKUP
-	| COLLATION
 	| KW_DIFFERENCE
 	| IIF
 	// | PAD	// FB_NEW_INTL_ALLOW_NOT_READY
@@ -4296,6 +4312,8 @@ non_reserved_word :
 	| SEQUENCE
 	| NEXT
 	| RESTART
+	| COLLATION
+	| RETURNING
 	;
 
 %%
