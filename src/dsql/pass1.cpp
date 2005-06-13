@@ -3216,25 +3216,18 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* constant)
 	input += sizeof(USHORT);
 	memcpy(input, constant->nod_desc.dsc_address, constant->nod_desc.dsc_length);
 
-	ISC_STATUS_ARRAY user_status;
+	tsql* tdsql = DSQL_get_thread_data();
+
 	THREAD_EXIT();
 	const ISC_STATUS s =
-		isc_database_info(user_status, &request->req_dbb->dbb_database_handle,
+		isc_database_info(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
 					  inputBuffer.getCount(), (SCHAR*)inputBuffer.begin(),
 					  sizeof(buffer), buffer);
 	THREAD_ENTER();
 	if (s)
-		;
-#pragma FB_COMPILER_MESSAGE("Adriano should put an error message here.")
+		Firebird::status_exception::raise(tdsql->tsql_status);
 
 	SLONG length = gds__vax_integer((UCHAR*)buffer + sizeof(UCHAR) + sizeof(USHORT), sizeof(SLONG));
-
-	if (length == -1)	// malformed string
-	{
-		ERRD_post(isc_sqlerr,
-				  isc_arg_number, (SLONG) - 104,
-				  isc_arg_gds, isc_malformed_string, 0);
-	}
 
 	constant->nod_desc.dsc_length = length * METD_get_charset_bpc(request, INTL_GET_CHARSET(&constant->nod_desc));
 

@@ -790,7 +790,11 @@ int INF_database_info(const SCHAR* items,
 									{
 										ULONG offendingPos;
 										if (!charSet->wellFormed(strLen, (const UCHAR*)items, &offendingPos))
-											length = INF_convert(-1, buffer);
+										{
+											ERR_post(isc_sqlerr,
+													 isc_arg_number, (SLONG) - 104,
+													 isc_arg_gds, isc_malformed_string, 0);
+										}
 										else
 										{
 											length = INF_convert(charSet->length(tdbb, strLen,

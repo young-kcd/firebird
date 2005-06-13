@@ -1720,16 +1720,16 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		*input++ = INF_internal_db_info_intl_is_legacy_charset;
 		*input++ = INTL_GET_CHARSET(&node->nod_desc);
 
-		ISC_STATUS_ARRAY user_status;
+		tsql* tdsql = DSQL_get_thread_data();
+
 		THREAD_EXIT();
 		const ISC_STATUS s =
-			isc_database_info(user_status, &context->ctx_request->req_dbb->dbb_database_handle,
+			isc_database_info(tdsql->tsql_status, &context->ctx_request->req_dbb->dbb_database_handle,
 						inputBuffer.getCapacity(), (SCHAR*)inputBuffer.begin(),
 						sizeof(buffer), buffer);
 		THREAD_ENTER();
 		if (s)
-			;
-#pragma FB_COMPILER_MESSAGE("Adriano should put an error message here.")
+			Firebird::status_exception::raise(tdsql->tsql_status);
 
 		if (*((UCHAR*)buffer + sizeof(UCHAR) + sizeof(USHORT)))	// CHARSET_LEGACY_SEMANTICS
 		{
