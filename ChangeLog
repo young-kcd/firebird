@@ -1,3 +1,23 @@
+2005-06-13 14:44  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h (1.57), gen.cpp (1.87),
+	keywords.cpp (1.45), node.h (1.61), parse.cpp (1.154), parse.y
+	(1.181), pass1.cpp (1.221):
+	
+	RETURNING implementation.
+
+2005-06-13 05:55  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.144):
+	
+	Removed wrong "deletes" noticed by Claudio
+
+2005-06-13 05:48  robocop
+
+	* firebird2/src/jrd/evl.cpp (1.143):
+	
+	Misc.
+
 2005-06-13 04:12  asfernandes
 
 	* firebird2/src/: dsql/gen.cpp (1.86), dsql/make.cpp (1.95),
