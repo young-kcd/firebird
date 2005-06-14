@@ -3191,8 +3191,9 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* constant)
 				*/
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204, isc_arg_gds,
 						isc_dsql_datatype_err, isc_arg_gds,
-						isc_collation_not_found, isc_arg_string,
-						global_temp_collation_name->str_data, 0);
+						isc_collation_not_found,
+						isc_arg_string, global_temp_collation_name->str_data,
+						isc_arg_string, resolved->intlsym_name, 0);
 			}
 			resolved = resolved_collation;
 		}

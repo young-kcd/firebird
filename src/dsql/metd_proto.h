@@ -26,6 +26,8 @@
 #ifndef DSQL_METD_PROTO_H
 #define DSQL_METD_PROTO_H
 
+#include "../common/classes/MetaName.h"
+
 // forward declarations
 class dsql_req;
 class dsql_str;
@@ -36,6 +38,7 @@ void METD_drop_relation(dsql_req*, const dsql_str*);
 
 dsql_intlsym*  METD_get_charset(dsql_req*, USHORT, const char* name); // UTF-8
 USHORT   METD_get_charset_bpc(dsql_req*, SSHORT);
+Firebird::MetaName METD_get_charset_name (dsql_req*, SSHORT);
 dsql_intlsym* METD_get_collation(dsql_req*, const dsql_str*, USHORT charset_id);
 USHORT   METD_get_col_default(dsql_req*, const char*, const char*, bool*, TEXT*, USHORT);
 dsql_str*      METD_get_default_charset(dsql_req*);

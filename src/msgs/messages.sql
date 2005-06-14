@@ -1968,7 +1968,7 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_function_err', 'pass1_udf', 'dsql pass1.c', NULL, 0, 266, NULL, 'Function unknown', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_blob_err', 'pass1_blob', 'dsql pass1.c', NULL, 0, 267, NULL, 'Column is not a BLOB', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('call_num_4', 'stop_stop_stop', 'jrd/node.c', 'Space for translation expansion here and in the preceding message.', 19, 10, NULL, '    Pacific time (GMT + 8 hours).', NULL, NULL);
-INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('collation_not_found', 'DDL_resolve_intl_type', 'dsql/ddl.c', NULL, 0, 268, NULL, 'COLLATION %s is not defined', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('collation_not_found', 'DDL_resolve_intl_type', 'dsql/ddl.c', NULL, 0, 268, NULL, 'COLLATION %s for CHARACTER SET %s is not defined', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('collation_not_for_charset', 'DDL_resolve_intl_type', 'dsql/ddl.c', NULL, 0, 269, NULL, 'COLLATION %s is not valid for specified CHARACTER SET', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_dup_option', 'GEN_start_transaction', 'dsql gen.c', NULL, 0, 270, NULL, 'Option specified more than once', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_tran_err', 'GEN_start_transaction', 'dsql gen.c', NULL, 0, 271, NULL, 'Unknown transaction option', NULL, NULL);
@@ -2969,6 +2969,9 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_type_not_supp_ext_tab', 'define_field', 'ddl.cpp', NULL, 7, 24, NULL, 'Data type %s is not supported for EXTERNAL TABLES. Relation ''%s'', field ''%s''', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('partner_idx_incompat_type', NULL, NULL, NULL, 0, 532, NULL, 'partner index segment no %d has incompatible data type', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('bad_substring_length', NULL, 'evl.cpp', NULL, 0, 533, NULL, 'Invalid length parameter %d to SUBSTRING. Negative integers are not allowed.', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('charset_not_installed', NULL, NULL, NULL, 0, 534, NULL, 'CHARACTER SET %s is not installed', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('collation_not_installed', NULL, NULL, NULL, 0, 535, NULL, 'COLLATION %s for CHARACTER SET %s is not installed', NULL, NULL);
+
 
 COMMIT WORK;
 

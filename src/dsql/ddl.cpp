@@ -70,6 +70,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
+#include "../common/classes/MetaName.h"
 #include "../dsql/dsql.h"
 #include "../jrd/ibase.h"
 #include "../jrd/thd.h"
@@ -607,11 +608,19 @@ void DDL_resolve_intl_type2(dsql_req* request,
 
 		if (!resolved_collation)
 		{
+			Firebird::MetaName charSetName;
+
+			if (charset_name)
+				charSetName = charset_name;
+			else
+				charSetName = METD_get_charset_name(request, field->fld_character_set_id);
+
 			// Specified collation not found
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
 					  isc_arg_gds, isc_dsql_datatype_err,
-					  isc_arg_gds, isc_collation_not_found, isc_arg_string,
-					  collation_name->str_data, 0);
+					  isc_arg_gds, isc_collation_not_found,
+					  isc_arg_string, collation_name->str_data, 
+					  isc_arg_string, charSetName.c_str(), 0);
 		}
 
 		// If both specified, must be for same character set
@@ -2112,8 +2121,9 @@ static void define_collation( dsql_req* request)
 		{
 			// Specified collation not found
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
-					  isc_arg_gds, isc_collation_not_found, isc_arg_string,
-					  ((dsql_str*)coll_from->nod_arg[0])->str_data, 0);
+					  isc_arg_gds, isc_collation_not_found,
+					  isc_arg_string, ((dsql_str*)coll_from->nod_arg[0])->str_data,
+					  isc_arg_string, resolved_charset->intlsym_name, 0);
 		}
 
 		request->append_number(isc_dyn_coll_from,

@@ -775,54 +775,61 @@ int INF_database_info(const SCHAR* items,
 					case INF_internal_db_info_intl_octet_length:
 					case INF_internal_db_info_intl_is_legacy_charset:
 					{
-						CharSet* charSet = items < end_items ? INTL_charset_lookup(tdbb, *items++, NULL) : NULL;
+						CharSet* charSet = items < end_items ? INTL_charset_lookup(tdbb, *items++) : NULL;
 
-						if (charSet)
+						if (privCode == INF_internal_db_info_intl_char_length ||
+							privCode == INF_internal_db_info_intl_octet_length)
 						{
-							if (privCode == INF_internal_db_info_intl_char_length ||
-								privCode == INF_internal_db_info_intl_octet_length)
+							USHORT strLen = *reinterpret_cast<const USHORT*>(items);
+							items += sizeof(USHORT);
+							if (items + strLen <= end_items)
 							{
-								USHORT strLen = *reinterpret_cast<const USHORT*>(items);
-								items += sizeof(USHORT);
-								if (items + strLen <= end_items)
+								if (privCode == INF_internal_db_info_intl_char_length)
 								{
-									if (privCode == INF_internal_db_info_intl_char_length)
+									ULONG offendingPos;
+									if (!charSet->wellFormed(strLen, (const UCHAR*)items, &offendingPos))
 									{
-										ULONG offendingPos;
-										if (!charSet->wellFormed(strLen, (const UCHAR*)items, &offendingPos))
-										{
-											ERR_post(isc_sqlerr,
-													 isc_arg_number, (SLONG) - 104,
-													 isc_arg_gds, isc_malformed_string, 0);
-										}
-										else
-										{
-											length = INF_convert(charSet->length(tdbb, strLen,
-												(const UCHAR*)items, true), buffer);
-										}
+										ERR_post(isc_sqlerr,
+												 isc_arg_number, (SLONG) - 104,
+												 isc_arg_gds, isc_malformed_string, 0);
 									}
-									else if (privCode == INF_internal_db_info_intl_octet_length)
+									else
 									{
-										Firebird::HalfStaticArray<UCHAR, 256> dummy;
-										length = INF_convert(charSet->substring(tdbb, strLen, (const UCHAR*)items,
-											strLen, dummy.getBuffer(strLen), 0, 
-											strLen / charSet->maxBytesPerChar()), buffer);
+										length = INF_convert(charSet->length(tdbb, strLen,
+											(const UCHAR*)items, true), buffer);
 									}
 								}
-#pragma FB_COMPILER_MESSAGE("Adriano should report error here.")
-								items += strLen;
+								else if (privCode == INF_internal_db_info_intl_octet_length)
+								{
+									Firebird::HalfStaticArray<UCHAR, 256> dummy;
+									length = INF_convert(charSet->substring(tdbb, strLen, (const UCHAR*)items,
+										strLen, dummy.getBuffer(strLen), 0, 
+										strLen / charSet->maxBytesPerChar()), buffer);
+								}
 							}
-							else if (privCode == INF_internal_db_info_intl_is_legacy_charset)
+							else
 							{
-								*p++ = charSet->getFlags() & CHARSET_LEGACY_SEMANTICS ? 1 : 0;
-								length = 1;
+								buffer[0] = item;
+								item = isc_info_error;
+								length = 1 + INF_convert(isc_infunk, buffer + 1);
+								break;
 							}
+
+							items += strLen;
 						}
-#pragma FB_COMPILER_MESSAGE("Adriano should report error if charSet is NULL")
+						else if (privCode == INF_internal_db_info_intl_is_legacy_charset)
+						{
+							*p++ = charSet->getFlags() & CHARSET_LEGACY_SEMANTICS ? 1 : 0;
+							length = 1;
+						}
+
 						break;
 					}
 
 					default:
+						buffer[0] = item;
+						item = isc_info_error;
+						length = 1 + INF_convert(isc_infunk, buffer + 1);
 						break;
 				}
 			}

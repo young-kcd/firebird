@@ -1250,7 +1250,7 @@ static IDX_E check_partner_index(
 	{
 		if (idx_desc->idx_itype >= idx_first_intl_string)
 		{
-			TextType* textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(idx_desc->idx_itype), ERR_post, NULL);
+			TextType* textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(idx_desc->idx_itype));
 
 			if (textType->getFlags() & TEXTTYPE_SEPARATE_UNIQUE)
 			{

@@ -187,7 +187,7 @@ static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
 static blb*	setup_triggers(thread_db*, jrd_rel*, bool, trig_vec**, blb*);
 static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*,
 	const TEXT*, bool);
-static bool validate_text_type (thread_db*, ISC_STATUS*, const TemporaryField*);
+static bool validate_text_type (thread_db*, const TemporaryField*);
 
 static const UCHAR nonnull_validation_blr[] =
 {
@@ -279,15 +279,14 @@ USHORT DFW_assign_index_type(DeferredWork* work, SSHORT field_type, SSHORT ttype
 
 		fb_assert(ttype != ttype_dynamic);
 
-		ISC_STATUS_ARRAY status;
-		if (INTL_defined_type(tdbb, status, ttype))
+		if (INTL_defined_type(tdbb, ttype))
 			return INTL_TEXT_TO_INDEX(ttype);
 
-		ERR_post(isc_no_meta_update,
+		ERR_post_nothrow(isc_no_meta_update,
 				 isc_arg_gds, isc_random, isc_arg_string,
-				 ERR_cstring(work->dfw_name), status[0], status[1], status[2],
-				 status[3],
-				 0);
+				 ERR_cstring(work->dfw_name), 0);
+		INTL_texttype_lookup(tdbb, ttype);	// should punt
+		ERR_punt(); // if INTL_texttype_lookup haven't punt
 	}
 
 	switch (field_type)
@@ -3538,7 +3537,6 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	int physical_fields = 0;
 	bool external_flag = false;
 	bool computed_field;
-	ISC_STATUS_ARRAY status;
 	trig_vec* triggers[TRIGGER_MAX];
 
 	SET_TDBB(tdbb);
@@ -3720,15 +3718,17 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 										FLD.RDB$CHARACTER_SET_ID, collation);
 
 					/* Make sure the text type specified is implemented */
-				    if (!(validate_text_type(tdbb, status, tfb)))
+				    if (!(validate_text_type(tdbb, tfb)))
 					{
 						EXE_unwind(tdbb, request_fmt1);
 						EXE_unwind(tdbb, request_fmtx);
-						ERR_post(isc_no_meta_update,
+						ERR_post_nothrow(isc_no_meta_update,
 								 isc_arg_gds, isc_random,
-								 isc_arg_string, ERR_cstring(work->dfw_name),
-								 status[0], status[1], status[2], status[3],
-								 0);
+								 isc_arg_string, ERR_cstring(work->dfw_name), 0);
+						INTL_texttype_lookup(tdbb,
+							(DTYPE_IS_TEXT(tfb->tfb_desc.dsc_dtype) ?
+								tfb->tfb_desc.dsc_ttype() : tfb->tfb_desc.dsc_blob_ttype()));	// should punt
+						ERR_punt(); // if INTL_texttype_lookup haven't punt
 					}
 
 					// dimitr: view fields shouldn't be marked as computed
@@ -4440,7 +4440,7 @@ static void setup_trigger_details(thread_db* tdbb,
 }	
 
 
-static bool validate_text_type(thread_db* tdbb, ISC_STATUS* status,
+static bool validate_text_type(thread_db* tdbb,
 	const TemporaryField* tfb)
 {
 /**************************************
@@ -4455,11 +4455,11 @@ static bool validate_text_type(thread_db* tdbb, ISC_STATUS* status,
  **************************************/
 
 	if ((DTYPE_IS_TEXT (tfb->tfb_desc.dsc_dtype) &&
-		!INTL_defined_type(tdbb, status, tfb->tfb_desc.dsc_ttype()))
+		!INTL_defined_type(tdbb, tfb->tfb_desc.dsc_ttype()))
 		||
 		(tfb->tfb_desc.dsc_dtype == dtype_blob && 
 		tfb->tfb_desc.dsc_sub_type == isc_blob_text && 
-		!INTL_defined_type(tdbb, status, tfb->tfb_desc.dsc_blob_ttype())))
+		!INTL_defined_type(tdbb, tfb->tfb_desc.dsc_blob_ttype())))
 	{
 		return false;
 	}

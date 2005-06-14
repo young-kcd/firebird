@@ -866,9 +866,9 @@ void EXE_send(thread_db*		tdbb,
 					break;
 			}
 
-			CharSet* charSet = INTL_charset_lookup(tdbb, DSC_GET_CHARSET(desc), NULL);
+			CharSet* charSet = INTL_charset_lookup(tdbb, DSC_GET_CHARSET(desc));
 
-			if (charSet && !charSet->wellFormed(len, p))
+			if (!charSet->wellFormed(len, p))
 				ERR_post(isc_malformed_string, 0);
 		}
 	}

@@ -166,7 +166,7 @@ public:
 
 	CsConvert lookupConverter(thread_db* tdbb, CHARSET_ID to_cs);
 
-	static CharSetContainer* lookupCharset(thread_db* tdbb, SSHORT ttype, ISC_STATUS *status);
+	static CharSetContainer* lookupCharset(thread_db* tdbb, SSHORT ttype);
 
 private:
 	Firebird::Array<TextType*> charset_collations;
@@ -549,7 +549,7 @@ typedef SleuthObjectImpl<CanonicalConverter<NullStrConverter>, ULONG> ulong_sleu
 typedef LikeObjectImpl<CanonicalConverter<NullStrConverter>, ULONG> ulong_like_canonical;
 typedef ContainsObjectImpl<CanonicalConverter<UpcaseConverter<NullStrConverter> >, ULONG> ulong_contains_canonical;
 
-CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype, ISC_STATUS *status)
+CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype)
 {
 /**************************************
  *
@@ -563,13 +563,12 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype,
  *
  *      First, search the appropriate vector that hangs
  *      off the dbb.  If not found, then call the lower
- *      level lookup routine to allocate it, or return
- *		null if we don't know about the charset.
+ *      level lookup routine to allocate it, or punt
+ *		if we don't know about the charset.
  *
  * Returns:
- *      *charset        - if no errors;
- *      <never>         - if error & err non NULL
- *      NULL            - if error & err NULL
+ *      *charset
+ *      <never>         - if error
  *
  **************************************/
 	CharSetContainer *cs = NULL;
@@ -595,13 +594,11 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype,
 
 		if ((id == CS_UTF16) || MET_get_char_coll_subtype_info(tdbb, id, &info))
 		{
-			cs = FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
-			if (cs->getCharSet() == NULL) {
-				delete cs;
-				return NULL;
-			}
-			dbb->dbb_charsets[id] = cs;
+			dbb->dbb_charsets[id] = cs =
+				FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
 		}
+		else
+			ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) ttype, 0);
 	}
 
 	return cs;
@@ -624,19 +621,17 @@ CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInf
 	else
 	{
 		delete csL;
-		csL = NULL;
+		ERR_post(isc_charset_not_installed, isc_arg_string, ERR_cstring(info->charsetName.c_str()), 0);
 	}
 }
 
 CsConvert CharSetContainer::lookupConverter(thread_db* tdbb, CHARSET_ID to_cs)
 {
-	if (to_cs == CS_UTF16) {
+	if (to_cs == CS_UTF16)
 		return cs->getConvToUnicode();
-	}
-	if (cs->getId() == CS_UTF16) {
-		CharSet* to_charset = INTL_charset_lookup(tdbb, to_cs, NULL);
-		if (to_charset == NULL)
-			return NULL;
+	else if (cs->getId() == CS_UTF16)
+	{
+		CharSet* to_charset = INTL_charset_lookup(tdbb, to_cs);
 		return to_charset->getConvFromUnicode();
 	}
 
@@ -655,7 +650,7 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 	SubtypeInfo info;
 	if (MET_get_char_coll_subtype_info(tdbb, tt_id, &info))
 	{
-		CharSet* charset = INTL_charset_lookup(tdbb, TTYPE_TO_CHARSET(tt_id), NULL);
+		CharSet* charset = INTL_charset_lookup(tdbb, TTYPE_TO_CHARSET(tt_id));
 
 		if (TTYPE_TO_CHARSET(tt_id) != CS_METADATA)
 		{
@@ -676,7 +671,9 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		if (!lookup_texttype(tt, &info))
 		{
 			delete tt;
-			return NULL;
+			ERR_post(isc_collation_not_installed,
+				isc_arg_string, ERR_cstring(info.collationName.c_str()),
+				isc_arg_string, ERR_cstring(info.charsetName.c_str()), 0);
 		}
 
 		if (charset_collations.getCount() <= id)
@@ -755,11 +752,11 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 					return NULL;
 			}
 		}
-
-		return charset_collations[id];
 	}
 	else
-		return NULL;
+		ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) tt_id, 0);
+
+	return charset_collations[id];
 }
 
 
@@ -785,7 +782,7 @@ void Database::destroyIntlObjects()
 }
 
 
-CHARSET_ID INTL_charset(thread_db* tdbb, USHORT ttype, FPTR_ERROR err)
+CHARSET_ID INTL_charset(thread_db* tdbb, USHORT ttype)
 {
 /**************************************
  *
@@ -858,8 +855,8 @@ int INTL_compare(thread_db* tdbb,
 	UCHAR buffer[MAX_KEY];
 
 	if (t1 != t2) {
-		CHARSET_ID cs1 = INTL_charset(tdbb, t1, err);
-		CHARSET_ID cs2 = INTL_charset(tdbb, t2, err);
+		CHARSET_ID cs1 = INTL_charset(tdbb, t1);
+		CHARSET_ID cs2 = INTL_charset(tdbb, t2);
 		if (cs1 != cs2) {
 			if (compare_type != t2) {
 				/* convert pText2 to pText1's type, if possible */
@@ -888,7 +885,7 @@ int INTL_compare(thread_db* tdbb,
 		}
 	}
 
-	TextType* obj = INTL_texttype_lookup(tdbb, compare_type, err, NULL);
+	TextType* obj = INTL_texttype_lookup(tdbb, compare_type);
 
 	return obj->compare(length1, p1, length2, p2);
 }
@@ -982,10 +979,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 
 		/* Find a CS1 to UNICODE object */
 
-		CharSet* from_cs = INTL_charset_lookup(tdbb, src_type, NULL);
-		if (from_cs == NULL)
-			(*err)(isc_arith_except, isc_arg_gds, isc_text_subtype, isc_arg_number,
-				(ISC_STATUS) src_type, 0);
+		CharSet* from_cs = INTL_charset_lookup(tdbb, src_type);
 
 		/*
 		   ** allocate a temporary buffer that is large enough.
@@ -1010,12 +1004,18 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 
 		/* Find a UNICODE to CS2 object */
 
-		CharSet* to_cs = INTL_charset_lookup(tdbb, dest_type, NULL);
-		if (to_cs == NULL) {
-			delete [] tmp_buffer;
-			(*err) (isc_arith_except, isc_arg_gds, isc_text_subtype, isc_arg_number,
-				   (ISC_STATUS) dest_type, 0);
+		CharSet* to_cs;
+
+		try
+		{
+			to_cs = INTL_charset_lookup(tdbb, dest_type);
 		}
+		catch (...)
+		{
+			delete [] tmp_buffer;
+			throw;
+		}
+
 		cs_obj = to_cs->getConvFromUnicode();
 		fb_assert(cs_obj != NULL);
 		len2 = cs_obj.convert(len, tmp_buffer, dest_len, dest_ptr,
@@ -1053,8 +1053,6 @@ CsConvert INTL_convert_lookup(thread_db* tdbb,
  *
  **************************************/
 
-	CharSetContainer *charset;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
@@ -1070,9 +1068,7 @@ CsConvert INTL_convert_lookup(thread_db* tdbb,
 	fb_assert(from_cs != CS_dynamic);
 	fb_assert(to_cs != CS_dynamic);
 
-	charset = CharSetContainer::lookupCharset(tdbb, from_cs, NULL);
-	if (charset == NULL)
-		return NULL;
+	CharSetContainer* charset = CharSetContainer::lookupCharset(tdbb, from_cs);
 
 	return charset->lookupConverter(tdbb, to_cs);
 }
@@ -1107,8 +1103,8 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 	fb_assert(from != NULL);
 	fb_assert(IS_TEXT(to) && IS_TEXT(from));
 
-	CHARSET_ID from_cs = INTL_charset(tdbb, INTL_TTYPE(from), err);
-	CHARSET_ID to_cs = INTL_charset(tdbb, INTL_TTYPE(to), err);
+	CHARSET_ID from_cs = INTL_charset(tdbb, INTL_TTYPE(from));
+	CHARSET_ID to_cs = INTL_charset(tdbb, INTL_TTYPE(to));
 
 	UCHAR* start = to->dsc_address;
 	UCHAR* p = start;
@@ -1125,8 +1121,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 	ULONG from_fill;
 
 	const UCHAR* q = from_ptr;
-	CharSet* toCharSet = INTL_charset_lookup(tdbb, to_cs, NULL);
-	fb_assert(toCharSet != NULL);
+	CharSet* toCharSet = INTL_charset_lookup(tdbb, to_cs);
 	ULONG toLength;
 
 	switch (to->dsc_dtype) {
@@ -1271,7 +1266,7 @@ int INTL_data_or_binary(const dsc* pText)
 }
 
 
-bool INTL_defined_type(thread_db* tdbb, ISC_STATUS * status, SSHORT t_type)
+bool INTL_defined_type(thread_db* tdbb, SSHORT t_type)
 {
 /**************************************
  *
@@ -1284,7 +1279,6 @@ bool INTL_defined_type(thread_db* tdbb, ISC_STATUS * status, SSHORT t_type)
  * Return:
  *      false   type is not defined.
  *      true    type is defined
- *      status  set to gds_status codes to describe any error.
  *
  * Note:
  *      Due to cleanup that must happen in DFW, this routine
@@ -1293,12 +1287,26 @@ bool INTL_defined_type(thread_db* tdbb, ISC_STATUS * status, SSHORT t_type)
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (status)
-		status[0] = isc_arg_end;
-	TextType* obj = INTL_texttype_lookup(tdbb, t_type, NULL, status);
-	if (obj == NULL)
-		return false;
-	return true;
+	SET_TDBB(tdbb);
+
+	ISC_STATUS* original_status = tdbb->tdbb_status_vector;
+	bool defined = true;
+
+	try
+	{
+		ISC_STATUS_ARRAY local_status;
+		tdbb->tdbb_status_vector = local_status;
+
+		INTL_texttype_lookup(tdbb, t_type);
+	}
+	catch (...)
+	{
+		defined = false;
+	}
+
+	tdbb->tdbb_status_vector = original_status;
+
+	return defined;
 }
 
 
@@ -1340,7 +1348,7 @@ USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 	if (ttype >= 0 && ttype <= ttype_last_internal)
 		key_length = iLength;
 	else {
-		TextType* obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
 		key_length = obj->key_length(iLength);
 	}
 
@@ -1356,7 +1364,7 @@ USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 }
 
 
-CharSet* INTL_charset_lookup(thread_db* tdbb, SSHORT parm1, ISC_STATUS* status)
+CharSet* INTL_charset_lookup(thread_db* tdbb, SSHORT parm1)
 {
 /**************************************
  *
@@ -1370,25 +1378,21 @@ CharSet* INTL_charset_lookup(thread_db* tdbb, SSHORT parm1, ISC_STATUS* status)
  *
  *      First, search the appropriate vector that hangs
  *      off the dbb.  If not found, then call the lower
- *      level lookup routine to allocate it, or return
- *		null if we don't know about the charset.
+ *      level lookup routine to allocate it, or punt
+ *		if we don't know about the charset.
  *
  * Returns:
  *      *charset        - if no errors;
- *      <never>         - if error & err non NULL
- *      NULL            - if error & err NULL
+ *      <never>         - if error
  *
  **************************************/
-	CharSetContainer *cs = CharSetContainer::lookupCharset(tdbb, parm1, status);
-	if (!cs) return NULL;
+	CharSetContainer *cs = CharSetContainer::lookupCharset(tdbb, parm1);
 	return cs->getCharSet();
 }
 
 
 TextType* INTL_texttype_lookup(thread_db* tdbb,
-								SSHORT parm1,
-								FPTR_ERROR err,
-								ISC_STATUS* status)
+								SSHORT parm1)
 {
 /**************************************
  *
@@ -1407,8 +1411,7 @@ TextType* INTL_texttype_lookup(thread_db* tdbb,
  *
  * Returns:
  *      *object         - if no errors;
- *      <never>         - if error & err non NULL
- *      NULL            - if error & err NULL
+ *      <never>         - if error
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -1417,15 +1420,16 @@ TextType* INTL_texttype_lookup(thread_db* tdbb,
 	if (parm1 == ttype_dynamic)
 		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->tdbb_attachment->att_charset);
 
-	CharSetContainer* csc = CharSetContainer::lookupCharset(tdbb, parm1, status);
-	if (!csc)
-		return NULL;
+	CharSetContainer* csc = CharSetContainer::lookupCharset(tdbb, parm1);
+
 	return csc->lookupCollation(tdbb, parm1);
 }
 
 
 bool INTL_texttype_validate(Jrd::thread_db* tdbb, const SubtypeInfo* info)
 {
+	SET_TDBB(tdbb);
+
 	texttype tt;
 	memset(&tt, 0, sizeof(tt));
 
@@ -1457,7 +1461,7 @@ void INTL_pad_spaces(thread_db* tdbb, DSC * type, UCHAR * string, ULONG length)
 	fb_assert(IS_TEXT(type));
 	fb_assert(string != NULL);
 
-	const USHORT charset = INTL_charset(tdbb, type->dsc_ttype(), NULL);
+	const USHORT charset = INTL_charset(tdbb, type->dsc_ttype());
 	pad_spaces(tdbb, charset, string, length);
 }
 
@@ -1541,7 +1545,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 		outlen = (dest - (const char*)pByte->dsc_address);
 		break;
 	default:
-		TextType* obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
 		outlen = obj->string_to_key(len,
 									reinterpret_cast<const unsigned char*>(src),
 									pByte->dsc_length,
@@ -1595,7 +1599,7 @@ int INTL_str_to_upper(thread_db* tdbb, DSC * pString)
 		break;
 
 	default:
-		TextType* obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
 		obj->str_to_upper(len, src, len, src);	// ASF: this works for all cases? (src and dst buffers are the same)
 		break;
 	}
@@ -1648,7 +1652,7 @@ int INTL_str_to_lower(thread_db* tdbb, DSC * pString)
 		break;
 
 	default:
-		TextType* obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
 		obj->str_to_lower(len, src, len, src);	// ASF: this works for all cases? (src and dst buffers are the same)
 		break;
 	}
@@ -1682,9 +1686,7 @@ static bool all_spaces(
 
 	fb_assert(ptr != NULL);
 
-	CharSet* obj = INTL_charset_lookup(tdbb, charset, NULL);
-
-	fb_assert(obj != NULL);
+	CharSet* obj = INTL_charset_lookup(tdbb, charset);
 
 /*
  * We are assuming offset points to the first byte which was not
@@ -1736,9 +1738,7 @@ static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, ULONG len
 
 	fb_assert(ptr != NULL);
 
-	CharSet* obj = INTL_charset_lookup(tdbb, charset, NULL);
-
-	fb_assert(obj != NULL);
+	CharSet* obj = INTL_charset_lookup(tdbb, charset);
 
 /* Single-octet character sets are optimized here */
 	if (obj->getSpaceLength() == 1) {

@@ -1345,7 +1345,7 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 			if ((idx->idx_flags & idx_unique) && DTYPE_IS_TEXT(desc.dsc_dtype) &&
 				desc.dsc_ttype() > ttype_last_internal)
 			{
-				TextType* tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype(), NULL, NULL);
+				TextType* tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype());
 
 				if (tt->getFlags() & TEXTTYPE_UNSORTED_UNIQUE)
 				{
@@ -1722,7 +1722,7 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 		if (!(indexScratch->idx->idx_flags & idx_unique) && DTYPE_IS_TEXT(dsc0.dsc_dtype) &&
 			dsc0.dsc_ttype() > ttype_last_internal)
 		{
-			TextType* tt = INTL_texttype_lookup(tdbb, dsc0.dsc_ttype(), NULL, NULL);
+			TextType* tt = INTL_texttype_lookup(tdbb, dsc0.dsc_ttype());
 
 			if (tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE)
 			{

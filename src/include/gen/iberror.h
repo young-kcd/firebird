@@ -588,6 +588,8 @@ const SLONG isc_prc_out_param_mismatch           = 335544850L;
 const SLONG isc_command_end_err2                 = 335544851L;
 const SLONG isc_partner_idx_incompat_type        = 335544852L;
 const SLONG isc_bad_substring_length             = 335544853L;
+const SLONG isc_charset_not_installed            = 335544854L;
+const SLONG isc_collation_not_installed          = 335544855L;
 const SLONG isc_gfix_db_name                     = 335740929L;
 const SLONG isc_gfix_invalid_sw                  = 335740930L;
 const SLONG isc_gfix_incmp_sw                    = 335740932L;
@@ -798,7 +800,7 @@ const SLONG isc_gstat_unexpected_eof             = 336920580L;
 const SLONG isc_gstat_open_err                   = 336920605L;
 const SLONG isc_gstat_read_err                   = 336920606L;
 const SLONG isc_gstat_sysmemex                   = 336920607L;
-const SLONG isc_err_max                          = 743;
+const SLONG isc_err_max                          = 745;
 
 #else /* c definitions */
 
@@ -1356,6 +1358,8 @@ const SLONG isc_err_max                          = 743;
 #define isc_command_end_err2                 335544851L
 #define isc_partner_idx_incompat_type        335544852L
 #define isc_bad_substring_length             335544853L
+#define isc_charset_not_installed            335544854L
+#define isc_collation_not_installed          335544855L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1566,7 +1570,7 @@ const SLONG isc_err_max                          = 743;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          743
+#define isc_err_max                          745
 
 #endif
 

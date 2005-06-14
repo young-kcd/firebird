@@ -566,6 +566,8 @@ const
 	gds_command_end_err2                 = 335544851;
 	gds_partner_idx_incompat_type        = 335544852;
 	gds_bad_substring_length             = 335544853;
+	gds_charset_not_installed            = 335544854;
+	gds_collation_not_installed          = 335544855;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

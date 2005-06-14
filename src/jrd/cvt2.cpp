@@ -209,12 +209,12 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 			 */
 			SET_TDBB(tdbb);
 			if (INTL_TTYPE(arg1) == ttype_dynamic)
-				charset1 = INTL_charset(tdbb, INTL_TTYPE(arg1), err);
+				charset1 = INTL_charset(tdbb, INTL_TTYPE(arg1));
 			else
 				charset1 = INTL_TTYPE(arg1);
 
 			if (INTL_TTYPE(arg2) == ttype_dynamic)
-				charset2 = INTL_charset(tdbb, INTL_TTYPE(arg2), err);
+				charset2 = INTL_charset(tdbb, INTL_TTYPE(arg2));
 			else
 				charset2 = INTL_TTYPE(arg2);
 
@@ -299,12 +299,12 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 
 		SET_TDBB(tdbb);
 		if (INTL_TTYPE(arg1) == ttype_dynamic)
-			charset1 = INTL_charset(tdbb, INTL_TTYPE(arg1), err);
+			charset1 = INTL_charset(tdbb, INTL_TTYPE(arg1));
 		else
 			charset1 = INTL_TTYPE(arg1);
 
 		if (INTL_TTYPE(arg2) == ttype_dynamic)
-			charset2 = INTL_charset(tdbb, INTL_TTYPE(arg2), err);
+			charset2 = INTL_charset(tdbb, INTL_TTYPE(arg2));
 		else
 			charset2 = INTL_TTYPE(arg2);
 
@@ -526,8 +526,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	else
 		ttype1 = ttype_binary;
 
-	TextType* obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
-	fb_assert(obj1 != NULL);
+	TextType* obj1 = INTL_texttype_lookup(tdbb, ttype1);
 	ttype1 = obj1->getType();
 
 	/* Is arg2 a blob? */
@@ -552,8 +551,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		else
 			ttype2 = ttype_binary;
 
-		TextType* obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
-		fb_assert(obj2 != NULL);
+		TextType* obj2 = INTL_texttype_lookup(tdbb, ttype2);
 		ttype2 = obj2->getType();
 
 		if (ttype1 == ttype_binary || ttype2 == ttype_binary)
@@ -561,13 +559,11 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		else if (ttype1 == ttype_none || ttype2 == ttype_none)
 			ttype1 = ttype2 = ttype_none;
 
-		obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
-		obj2 = INTL_texttype_lookup(tdbb, ttype2, err, NULL);
-		fb_assert(obj1 != NULL && obj2 != NULL);
+		obj1 = INTL_texttype_lookup(tdbb, ttype1);
+		obj2 = INTL_texttype_lookup(tdbb, ttype2);
 
 		CharSet* charSet1 = obj1->getCharSet();
 		CharSet* charSet2 = obj2->getCharSet();
-		fb_assert(charSet1 != NULL && charSet2 != NULL);
 
 		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer1;
 		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
@@ -647,11 +643,9 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		else if (ttype1 == ttype_none || ttype2 == ttype_none)
 			ttype1 = ttype2 = ttype_none;
 
-		obj1 = INTL_texttype_lookup(tdbb, ttype1, err, NULL);
-		fb_assert(obj1 != NULL);
+		obj1 = INTL_texttype_lookup(tdbb, ttype1);
 
 		CharSet* charSet1 = obj1->getCharSet();
-		fb_assert(charSet1 != NULL);
 
 		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer1;
 		UCHAR* p;
@@ -763,8 +757,8 @@ USHORT CVT2_make_string2(const dsc* desc,
 		}
 
 		thread_db* tdbb = JRD_get_thread_data();
-		const USHORT cs1 = INTL_charset(tdbb, to_interp, err);
-		const USHORT cs2 = INTL_charset(tdbb, from_interp, err);
+		const USHORT cs1 = INTL_charset(tdbb, to_interp);
+		const USHORT cs2 = INTL_charset(tdbb, from_interp);
 		if (cs1 == cs2) {
 			*address = from_buf;
 			return from_len;

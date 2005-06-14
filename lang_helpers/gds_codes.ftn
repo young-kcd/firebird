@@ -1118,6 +1118,10 @@ C --
       PARAMETER (GDS__partner_idx_incompat_type        = 335544852)
       INTEGER*4 GDS__bad_substring_length            
       PARAMETER (GDS__bad_substring_length             = 335544853)
+      INTEGER*4 GDS__charset_not_installed           
+      PARAMETER (GDS__charset_not_installed            = 335544854)
+      INTEGER*4 GDS__collation_not_installed         
+      PARAMETER (GDS__collation_not_installed          = 335544855)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

@@ -1093,7 +1093,7 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation,
 				if (!(idx->idx_flags & idx_unique) && DTYPE_IS_TEXT(dsc0.dsc_dtype) &&
 					dsc0.dsc_ttype() > ttype_last_internal)
 				{
-					TextType* tt = INTL_texttype_lookup(tdbb, dsc0.dsc_ttype(), NULL, NULL);
+					TextType* tt = INTL_texttype_lookup(tdbb, dsc0.dsc_ttype());
 
 					if (tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE)
 					{
@@ -4465,7 +4465,7 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 		if ((idx->idx_flags & idx_unique) && DTYPE_IS_TEXT(desc.dsc_dtype) &&
 			desc.dsc_ttype() > ttype_last_internal)
 		{
-			TextType* tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype(), NULL, NULL);
+			TextType* tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype());
 
 			if (tt->getFlags() & TEXTTYPE_UNSORTED_UNIQUE)
 				return NULL;	// index is not suitable for order
@@ -6972,9 +6972,9 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 		return NULL;
 	}
 
-	TextType* matchTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&match_desc), ERR_post, NULL);
+	TextType* matchTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&match_desc));
 	CharSet* matchCharset = matchTextType->getCharSet();
-	TextType* patternTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(pattern_desc), ERR_post, NULL);
+	TextType* patternTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(pattern_desc));
 	CharSet* patternCharset = patternTextType->getCharSet();
 
 	UCHAR escape_canonic[sizeof(ULONG)];

@@ -2592,8 +2592,7 @@ static void adjust_text_descriptor(thread_db* tdbb, dsc* desc)
 
 		USHORT ttype = INTL_TTYPE(desc);
 
-		CharSet* charSet = INTL_charset_lookup(tdbb, ttype, NULL);
-		fb_assert(charSet != NULL);
+		CharSet* charSet = INTL_charset_lookup(tdbb, ttype);
 
 		if (charSet->isMultiByte())
 		{
@@ -4273,8 +4272,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 	else
 		ttype = INTL_TTYPE(desc1);
 
-	TextType* obj =
-		INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+	TextType* obj = INTL_texttype_lookup(tdbb, ttype);
 
 /* Get operator definition string (control string) */
 
@@ -4390,7 +4388,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		else
 			type1 = ttype_none;	/* Do byte matching */
 
-		TextType* obj = INTL_texttype_lookup(tdbb, type1, ERR_post, NULL);
+		TextType* obj = INTL_texttype_lookup(tdbb, type1);
 		CharSet* charset = obj->getCharSet();
 
 		/* Get address and length of search string - make it string if neccessary
@@ -4588,7 +4586,7 @@ static bool string_function(
 
 	jrd_req* request = tdbb->tdbb_request;
 
-	TextType* obj = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+	TextType* obj = INTL_texttype_lookup(tdbb, ttype);
 	CharSet* charset = obj->getCharSet();
 
 /* Handle STARTS WITH */
@@ -4753,8 +4751,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 			case blr_strlen_char:
 			{
-				CharSet* charSet = INTL_charset_lookup(tdbb, value->dsc_blob_ttype(), NULL);
-				fb_assert(charSet != NULL);
+				CharSet* charSet = INTL_charset_lookup(tdbb, value->dsc_blob_ttype());
 
 				if (charSet->isMultiByte())
 				{
@@ -4805,8 +4802,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 		case blr_strlen_char:
 		{
-			CharSet* charSet = INTL_charset_lookup(tdbb, ttype, NULL);
-			fb_assert(charSet != NULL);
+			CharSet* charSet = INTL_charset_lookup(tdbb, ttype);
 			length = charSet->length(tdbb, length, p, true);
 			break;
 		}
@@ -4856,7 +4852,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 		/* Source string is a blob, things get interesting. */
 
 		TextType* textType = INTL_texttype_lookup(tdbb,
-			(value->dsc_sub_type == isc_blob_text ? value->dsc_blob_ttype() : ttype_binary), ERR_post, NULL);
+			(value->dsc_sub_type == isc_blob_text ? value->dsc_blob_ttype() : ttype_binary));
 		CharSet* charSet = textType->getCharSet();
 
 		if (length_arg * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
@@ -4972,7 +4968,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 		const UCHAR* p = desc.dsc_address;
 		USHORT pcount = desc.dsc_length;
 
-		TextType* textType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&desc), ERR_post, NULL);
+		TextType* textType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&desc));
 		CharSet* charSet = textType->getCharSet();
 
 		if (length_arg * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
@@ -5026,7 +5022,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		return value;
 
 	USHORT ttype = INTL_TTYPE(value);
-	TextType* tt = INTL_texttype_lookup(tdbb, ttype, ERR_post, NULL);
+	TextType* tt = INTL_texttype_lookup(tdbb, ttype);
 
 	const UCHAR* charactersAddress;
 	MoveBuffer charactersBuffer;

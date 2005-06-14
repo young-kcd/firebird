@@ -1535,13 +1535,13 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 #ifndef SUPERCLIENT
 			if ((INTL_TTYPE(from) == ttype_dynamic) &&
 				(err == ERR_post))
-					charset1 = INTL_charset(NULL, INTL_TTYPE(from), err);
+					charset1 = INTL_charset(NULL, INTL_TTYPE(from));
 			else
 				charset1 = INTL_TTYPE(from);
 
 			if ((INTL_TTYPE(to) == ttype_dynamic) &&
 				(err == ERR_post))
-					charset2 = INTL_charset(NULL, INTL_TTYPE(to), err);
+					charset2 = INTL_charset(NULL, INTL_TTYPE(to));
 			else
 				charset2 = INTL_TTYPE(to);
 
@@ -1577,7 +1577,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			UCHAR* start = to->dsc_address;
 #if !defined(REQUESTER) && !defined(SUPERCLIENT)
 			CharSet* toCharSet = (err != ERR_post || charset2 == ttype_dynamic || charset2 == CS_METADATA ?
-									NULL : INTL_charset_lookup(NULL, charset2, NULL));
+									NULL : INTL_charset_lookup(NULL, charset2));
 			USHORT toLength;
 #endif
 

@@ -4897,13 +4897,12 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const Dat
 	}
 
 	SSHORT id;
-	ISC_STATUS_ARRAY local_status;
 
 	const UCHAR* lc_ctype =
 		reinterpret_cast<const UCHAR*>(options->dpb_lc_ctype.c_str());
 		
 	if (MET_get_char_coll_subtype(tdbb, &id, lc_ctype, options->dpb_lc_ctype.length()) &&
-		INTL_defined_type(tdbb, local_status, id & 0xFF) &&
+		INTL_defined_type(tdbb, id & 0xFF) &&
 		((id & 0xFF) != CS_BINARY))
 	{
 		attachment->att_charset = id & 0xFF;

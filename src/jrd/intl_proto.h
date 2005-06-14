@@ -33,7 +33,7 @@ namespace Jrd {
 struct dsc;
 struct SubtypeInfo;
 
-CHARSET_ID	INTL_charset(Jrd::thread_db*, USHORT, FPTR_ERROR);
+CHARSET_ID	INTL_charset(Jrd::thread_db*, USHORT);
 int			INTL_compare(Jrd::thread_db*, const dsc*, const dsc*, FPTR_ERROR);
 ULONG		INTL_convert_bytes(Jrd::thread_db*, CHARSET_ID, UCHAR*, ULONG, CHARSET_ID,
 								const BYTE*, ULONG, FPTR_ERROR);
@@ -41,12 +41,11 @@ Jrd::CsConvert	INTL_convert_lookup(Jrd::thread_db*, CHARSET_ID, CHARSET_ID);
 int			INTL_convert_string(dsc*, const dsc*, FPTR_ERROR);
 int			INTL_data(const dsc*);
 int			INTL_data_or_binary(const dsc*);
-bool		INTL_defined_type(Jrd::thread_db*, ISC_STATUS*, SSHORT);
+bool		INTL_defined_type(Jrd::thread_db*, SSHORT);
 void		INTL_init(Jrd::thread_db*);
 USHORT		INTL_key_length(Jrd::thread_db*, USHORT, USHORT);
-Jrd::CharSet*	INTL_charset_lookup(Jrd::thread_db* tdbb, SSHORT parm1, ISC_STATUS* status);
-Jrd::TextType*	INTL_texttype_lookup(Jrd::thread_db* tdbb, SSHORT parm1, FPTR_ERROR err,
-								ISC_STATUS* status);
+Jrd::CharSet*	INTL_charset_lookup(Jrd::thread_db* tdbb, SSHORT parm1);
+Jrd::TextType*	INTL_texttype_lookup(Jrd::thread_db* tdbb, SSHORT parm1);
 bool		INTL_texttype_validate(Jrd::thread_db*, const SubtypeInfo*);
 void		INTL_pad_spaces(Jrd::thread_db*, dsc*, UCHAR*, ULONG);
 USHORT		INTL_string_to_key(Jrd::thread_db*, USHORT, const dsc*, dsc*, USHORT);

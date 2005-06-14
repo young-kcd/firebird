@@ -555,6 +555,8 @@ static const struct {
 	{"command_end_err2", 335544851},
 	{"partner_idx_incompat_type", 335544852},
 	{"bad_substring_length", 335544853},
+	{"charset_not_installed", 335544854},
+	{"collation_not_installed", 335544855},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
