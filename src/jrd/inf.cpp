@@ -266,18 +266,17 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_num_wal_buffers:
-			length = 0;
-			break;
-
 		case isc_info_wal_buffer_size:
-			length = 0;
-			break;
-
 		case isc_info_wal_ckpt_length:
-			length = 0;
-			break;
-
 		case isc_info_wal_cur_ckpt_interval:
+		case isc_info_wal_recv_ckpt_fname:
+		case isc_info_wal_recv_ckpt_poffset:
+		case isc_info_wal_grpc_wait_usecs:
+		case isc_info_wal_num_io:
+		case isc_info_wal_avg_io_size:
+		case isc_info_wal_num_commits:
+		case isc_info_wal_avg_grpc_size:
+			// WAL obsolete
 			length = 0;
 			break;
 
@@ -288,36 +287,6 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_wal_prv_ckpt_poffset:
 			length = INF_convert(0, buffer);
-			break;
-
-		case isc_info_wal_recv_ckpt_fname:
-			// WAL obsolete
-			length = 0;
-			break;
-
-		case isc_info_wal_recv_ckpt_poffset:
-			// WAL obsolete
-			length = 0;
-			break;
-
-		case isc_info_wal_grpc_wait_usecs:
-			length = 0;
-			break;
-
-		case isc_info_wal_num_io:
-			length = 0;
-			break;
-
-		case isc_info_wal_avg_io_size:
-			length = 0;
-			break;
-
-		case isc_info_wal_num_commits:
-			length = 0;
-			break;
-
-		case isc_info_wal_avg_grpc_size:
-			length = 0;
 			break;
 
 #ifdef SUPERSERVER
