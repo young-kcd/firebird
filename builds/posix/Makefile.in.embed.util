@@ -162,7 +162,7 @@ $(GDS_RELAY):	$(RELAY_Objects) $(LIBFBEMBED_SO)
 gsec: $(LIBFBEMBED_SO) $(GSEC)
 
 $(GSEC):	$(GSEC_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS) $(LIBFBCOMMON_A)
 
 ibguard: $(IBGUARD)
 
