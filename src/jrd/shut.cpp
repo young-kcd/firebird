@@ -189,7 +189,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 /* Database is being shutdown. First notification gives shutdown
    type and delay in seconds. */
 
-	notify_shutdown(dbb, flag, delay);
+	bool exclusive = notify_shutdown(dbb, flag, delay);
 
 /* Notify local attachments */
 
@@ -199,15 +199,18 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
    haven't gotten it report shutdown error for weaker forms. For forced shutdown
    keep notifying until successful. */
 
-	bool exclusive = false;
-	SSHORT timeout;
-	for (timeout = delay; timeout >= 0; timeout -= SHUT_WAIT_TIME)
+	SSHORT timeout = delay - SHUT_WAIT_TIME;
+
+	if (!exclusive)
 	{
-		if ((exclusive = notify_shutdown(dbb, flag, timeout)) ||
-			!(dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran |
-									DBB_shut_force)))
+		for (; timeout >= 0; timeout -= SHUT_WAIT_TIME)
 		{
-			break;
+			if ((exclusive = notify_shutdown(dbb, flag, timeout)) ||
+				!(dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran |
+										DBB_shut_force)))
+			{
+				break;
+			}
 		}
 	}
 
@@ -436,7 +439,10 @@ static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
 
 /* Send blocking ASTs to database users */
 
-	if (CCH_exclusive(tdbb, LCK_PW, ((SSHORT) - SHUT_WAIT_TIME)) && (delay != -1)) {
+	bool exclusive =
+		CCH_exclusive(tdbb, LCK_PW, delay > 0 ? -SHUT_WAIT_TIME : LCK_NO_WAIT);
+
+	if (exclusive && (delay != -1)) {
 		return shutdown_locks(dbb, flag);
 	}
 	if ((flag & isc_dpb_shut_force) && !delay) {
@@ -448,7 +454,7 @@ static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)
 		return true;
 	}
 
-	return false;
+	return exclusive;
 }
 
 
