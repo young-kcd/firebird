@@ -25,7 +25,7 @@
 #include "cstring.h"
 #include <stdio.h>
 
-#ifdef WIN32
+#ifdef _MSC_VER
 
 char linebuf[2048];
 

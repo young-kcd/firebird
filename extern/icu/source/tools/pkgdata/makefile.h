@@ -41,7 +41,7 @@ pkg_mak_writeFooter(FileStream *f, const UPKGOptions *o);
 
 
 
-#ifdef WIN32
+#ifdef _MSC_VER
 extern void pkg_mode_windows(UPKGOptions *o, FileStream *makefile, UErrorCode *status);
 #else /*#ifdef WIN32*/
 /**

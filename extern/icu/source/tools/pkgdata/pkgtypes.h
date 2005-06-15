@@ -141,11 +141,7 @@ typedef struct UPKGOptions_
 
 /* set up common defines for library naming */
 
-#ifdef WIN32
-# ifndef UDATA_SO_SUFFIX
-#  define UDATA_SO_SUFFIX ".DLL"
-# endif
-# define LIB_PREFIX ""
+#ifdef _MSC_VER
 # define LIB_STATIC_PREFIX ""
 # define OBJ_SUFFIX ".obj"
 # define UDATA_LIB_SUFFIX ".LIB"
@@ -162,6 +158,17 @@ typedef struct UPKGOptions_
 # define OBJ_SUFFIX ".o"
 # define UDATA_LIB_SUFFIX ".a"
 #endif 
+
+#ifdef WIN32
+#ifdef LIB_PREFIX
+#undef LIB_PREFIX
+#endif
+#define LIB_PREFIX ""
+#ifdef UDATA_SO_SUFFIX
+#undef UDATA_SO_SUFFIX
+#endif
+#define UDATA_SO_SUFFIX ".DLL"
+#endif
 
 #define ASM_SUFFIX ".s"
 

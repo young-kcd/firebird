@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include "unicode/utypes.h"
 
-#ifndef WIN32
+#ifndef _MSC_VER
 #include "cmemory.h"
 #include "cstring.h"
 #include "filestrm.h"

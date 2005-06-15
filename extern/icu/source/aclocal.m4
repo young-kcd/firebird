@@ -31,6 +31,7 @@ alpha*-*-linux-gnu)
 	else
 	  	icu_cv_host_frag=mh-cygwin-msvc
 	fi ;;
+*-*-mingw*) icu_cv_host_frag=mh-mingw ;;
 *-*-*bsd*) 	icu_cv_host_frag=mh-bsd-gcc ;;
 *-*-aix*)
 	if test "$GCC" = yes; then

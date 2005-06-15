@@ -18,7 +18,7 @@
 
 #include "unicode/utypes.h"
 
-#ifdef WIN32
+#ifdef _MSC_VER
 
 #include "unicode/putil.h"
 #include "cmemory.h"

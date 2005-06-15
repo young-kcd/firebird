@@ -157,7 +157,7 @@ case "$target" in
     EDITLINE_FLG=N
     RAW_DEVICES_FLG=N
     SHRLIB_EXT=dll
-	ICU_PLATFORM=Cygwin
+	ICU_PLATFORM=MinGW
     ;;
 
   *)

@@ -59,7 +59,7 @@ static struct
 } modes[] =
 {
     { "files", 0, pkg_mode_files, "Uses raw data files (no effect). Installation copies all files to the target location." },
-#ifdef WIN32
+#ifdef _MSC_VER
     { "dll",    "library", pkg_mode_windows,    "Generates one common data file and one shared library, <package>.dll"},
     { "common", "archive", pkg_mode_windows,    "Generates just the common file, <package>.dat"},
     { "static", "static",  pkg_mode_windows,    "Generates one statically linked library, " LIB_PREFIX "<package>" UDATA_LIB_SUFFIX }
@@ -101,7 +101,7 @@ static UOption options[]={
 
 const char options_help[][320]={
     "Set the data name",
-#ifdef WIN32
+#ifdef _MSC_VER
     "The directory where the ICU is located (e.g. <ICUROOT> which contains the bin directory)",
 #else
     "Specify options for the builder. (Autdetected if icu-config is available)",
@@ -173,7 +173,7 @@ main(int argc, char* argv[]) {
             /* Try to fill in from icu-config or equivalent */
             fillInMakefileFromICUConfig(&options[1]);
         }
-#ifdef WIN32
+#ifdef _MSC_VER
         else {
             fprintf(stderr, "Warning: You are using the deprecated -O option\n"
                             "\tYou can fix this warning by installing pkgdata, gencmn and genccode\n"
@@ -295,7 +295,7 @@ main(int argc, char* argv[]) {
     }
 
     o.verbose   = options[5].doesOccur;
-#ifdef WIN32 /* format is R:pathtoICU or D:pathtoICU */
+#ifdef _MSC_VER /* format is R:pathtoICU or D:pathtoICU */
     {
         char *pathstuff = (char *)options[1].value;
         if(options[1].value[uprv_strlen(options[1].value)-1] == '\\') {
@@ -440,7 +440,7 @@ static int executeMakefile(const UPKGOptions *o)
     }
 
     /*getcwd(pwd, 1024);*/
-#ifdef WIN32
+#ifdef _MSC_VER
     sprintf(cmd, "%s %s%s -f \"%s\" %s %s %s %s",
         make,
         o->install ? "INSTALLTO=" : "",
@@ -697,7 +697,7 @@ static void fillInMakefileFromICUConfig(UOption *option)
     option->doesOccur = TRUE;
 #else  /* ! U_HAVE_POPEN */
 
-#ifdef WIN32
+#ifdef _MSC_VER
     char pathbuffer[_MAX_PATH] = {0};
     char *fullEXEpath = NULL;
     char *pathstuff = NULL;

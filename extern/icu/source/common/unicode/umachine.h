@@ -41,7 +41,7 @@
 /* which are contained in the platform-specific file platform.h             */
 /*==========================================================================*/
 
-#if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+#if (defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)) && defined(_MSC_VER)
 #   include "unicode/pwin32.h"
 #elif defined(__OS400__)
 #   include "unicode/pos400.h"

@@ -274,7 +274,7 @@ public:
      * boundaries have been returned.
      * @stable ICU 2.0
      */
-#ifdef U_CYGWIN
+#if defined(U_CYGWIN) || defined(U_MINGW)
     static U_COMMON_API const int32_t DONE;
 #else
     static const int32_t DONE;
