@@ -625,6 +625,7 @@ USHORT METD_get_charset_bpc (dsql_req* request,
     return bpc;
 }
 
+
 Firebird::MetaName METD_get_charset_name (dsql_req* request, SSHORT charset_id)
 {
 /**************************************
@@ -640,15 +641,13 @@ Firebird::MetaName METD_get_charset_name (dsql_req* request, SSHORT charset_id)
  *	name.
  *
  **************************************/
-    dsql_dbb*	dbb;
-    isc_req_handle handle;
     Firebird::MetaName name;
     
-    dbb = request->req_dbb;
+    dsql_dbb* dbb = request->req_dbb;
     DB = dbb->dbb_database_handle;
     gds_trans = request->req_trans;
     
-    handle = 0;
+    isc_req_handle handle = 0;
     
     if (charset_id == CS_dynamic)
 		charset_id = dbb->dbb_att_charset;
@@ -681,6 +680,7 @@ Firebird::MetaName METD_get_charset_name (dsql_req* request, SSHORT charset_id)
 
     return name;
 }
+
 
 dsql_str* METD_get_default_charset(dsql_req* request)
 {

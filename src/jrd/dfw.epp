@@ -286,7 +286,7 @@ USHORT DFW_assign_index_type(DeferredWork* work, SSHORT field_type, SSHORT ttype
 				 isc_arg_gds, isc_random, isc_arg_string,
 				 ERR_cstring(work->dfw_name), 0);
 		INTL_texttype_lookup(tdbb, ttype);	// should punt
-		ERR_punt(); // if INTL_texttype_lookup haven't punt
+		ERR_punt(); // if INTL_texttype_lookup hasn't punt
 	}
 
 	switch (field_type)
@@ -3728,7 +3728,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						INTL_texttype_lookup(tdbb,
 							(DTYPE_IS_TEXT(tfb->tfb_desc.dsc_dtype) ?
 								tfb->tfb_desc.dsc_ttype() : tfb->tfb_desc.dsc_blob_ttype()));	// should punt
-						ERR_punt(); // if INTL_texttype_lookup haven't punt
+						ERR_punt(); // if INTL_texttype_lookup hasn't punt
 					}
 
 					// dimitr: view fields shouldn't be marked as computed
