@@ -1287,9 +1287,7 @@ bool INTL_defined_type(thread_db* tdbb, SSHORT t_type)
  **************************************/
 	SET_TDBB(tdbb);
 
-	SET_TDBB(tdbb);
-
-	ISC_STATUS* original_status = tdbb->tdbb_status_vector;
+	ISC_STATUS* const original_status = tdbb->tdbb_status_vector;
 	bool defined = true;
 
 	try
