@@ -2359,6 +2359,7 @@ static BOOLEAN invalid_reference(DSQL_CTX context, DSQL_NOD node, DSQL_NOD list,
 		case nod_user_name:
 		case nod_current_role:
 		case nod_internal_info:
+		case nod_dom_value:
 		case nod_dbkey:
 		case nod_plan_expr:
 			return FALSE;
@@ -2595,9 +2596,6 @@ static BOOLEAN node_match( DSQL_NOD node1, DSQL_NOD node2, BOOLEAN ignore_map_ca
 	}
 
 	if (node1->nod_type == nod_variable) {
-		if (node1->nod_type != node2->nod_type) {
-			return FALSE;
-		}
 		VAR var1 = reinterpret_cast<VAR>(node1->nod_arg[e_var_variable]);
 		VAR var2 = reinterpret_cast<VAR>(node2->nod_arg[e_var_variable]);
 		DEV_BLKCHK(var1, dsql_type_var);
@@ -2610,6 +2608,13 @@ static BOOLEAN node_match( DSQL_NOD node1, DSQL_NOD node2, BOOLEAN ignore_map_ca
 			return FALSE;
 		}
 		return TRUE;
+	}
+
+	if (node1->nod_type == nod_parameter) {
+		// Parameters are equal when there index is the same
+		const PAR parameter1 = (PAR) node1->nod_arg[e_par_parameter];
+		const PAR parameter2 = (PAR) node2->nod_arg[e_par_parameter];
+		return (parameter1->par_index == parameter2->par_index);
 	}
 
 	ptr1 = node1->nod_arg;
@@ -3649,6 +3654,7 @@ static BOOLEAN pass1_found_aggregate(DSQL_NOD node, USHORT check_scope_level,
 		case nod_user_name:
 		case nod_current_role:
 		case nod_internal_info:
+		case nod_dom_value:
 			return FALSE;
 
 		default:
@@ -3834,6 +3840,7 @@ static BOOLEAN pass1_found_field(DSQL_NOD node, USHORT check_scope_level,
 		case nod_user_name:
 		case nod_current_role:
 		case nod_internal_info:
+		case nod_dom_value:
 			return FALSE;
 
 		default:
@@ -4587,7 +4594,7 @@ static DSQL_NOD pass1_rse( DSQL_REQ request, DSQL_NOD input, DSQL_NOD order, DSQ
  **/
 static DSQL_NOD pass1_searched_case( DSQL_REQ request, DSQL_NOD input, USHORT proc_flag)
 {
-	DSQL_NOD	node, list, *ptr, *end;
+	DSQL_NOD node, list, *ptr, *end;
 	DLLS stack;
 
 	DEV_BLKCHK(request, dsql_type_req);
@@ -4617,10 +4624,11 @@ static DSQL_NOD pass1_searched_case( DSQL_REQ request, DSQL_NOD input, USHORT pr
 	/* Set describer for output node */
 	MAKE_desc(&node->nod_desc, node);
 
-	/* Set parameter-types if parameters are there */
-	for (ptr = node->nod_arg[e_searched_case_search_conditions]->nod_arg, 
-		 end = ptr + node->nod_arg[e_searched_case_search_conditions]->nod_count; 
-		 ptr < end; ptr++) {
+	// Set parameter-types if parameters are there in the result nodes
+	DSQL_NOD case_results = node->nod_arg[e_searched_case_results];
+	ptr = case_results->nod_arg;
+	for (end = ptr + case_results->nod_count; ptr < end; ptr++) 
+	{
 		set_parameter_type(*ptr, node, FALSE);
 	}
 

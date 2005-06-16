@@ -1290,7 +1290,7 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 			}
 
 			any_blob = true;
-			if (desc1.dsc_sub_type = 1) {
+			if (desc1.dsc_sub_type == 1) {
 				// TEXT BLOB
 				if (!any_text_blob) {
 					// Save first characterset and collation
@@ -1375,7 +1375,7 @@ void MAKE_desc_from_list(DSC * desc, DSQL_NOD node, const TEXT* expression_name)
 		// If all of the arguments are the same BLOB datattype.
 		desc->dsc_dtype  = max_dtype;
 		desc->dsc_sub_type = max_sub_type;
-		if (max_sub_type = 1) {
+		if (max_sub_type == 1) {
 			// TEXT BLOB
 			desc->dsc_scale = ttype;
 		}

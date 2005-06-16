@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.33.2.3 2003-12-21 00:43:47 skidder Exp $
+$Id: gen.cpp,v 1.33.2.4 2005-06-16 09:44:39 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -1248,8 +1248,8 @@ static void gen_cast( DSQL_REQ request, DSQL_NOD node)
 	blr for expression 1
 		blr_value_if
 		blr_missing
-		blr for expression n
-		blr_null
+		blr for expression n-1
+		expression n
 	blr for expression n-1
 
     @param request
@@ -1264,7 +1264,7 @@ static void gen_coalesce( DSQL_REQ request, DSQL_NOD node)
 	list = node->nod_arg[0];
 	STUFF(blr_cast);
 	gen_descriptor(request, &node->nod_desc, TRUE);
-	for (ptr = list->nod_arg, end = ptr + list->nod_count; ptr < end; ptr++)
+	for (ptr = list->nod_arg, end = ptr + (list->nod_count - 1); ptr < end; ptr++)
 	{
 		// IF (expression IS NULL) THEN
 		STUFF(blr_value_if);
@@ -1276,7 +1276,6 @@ static void gen_coalesce( DSQL_REQ request, DSQL_NOD node)
 	end = list->nod_arg;
 	ptr = end + list->nod_count;
 	// if all expressions are NULL return NULL
-	STUFF(blr_null);
 	for (ptr--; ptr >= end; ptr--)
 	{
 		GEN_expr(request, *ptr);
