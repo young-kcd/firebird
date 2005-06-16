@@ -4174,7 +4174,7 @@ ISC_STATUS API_ROUTINE GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	RETURN_SUCCESS;
 }
 
-#if defined (SOLARIS)
+#if defined (SOLARIS) || defined (WIN_NT)
 extern "C" 
 #endif
 
