@@ -2393,19 +2393,28 @@ static processing_state blobedit(const TEXT* action,
 	// If it isn't an explicit blobedit, then do a dump. Since this is a
 	// user operation, put it on the M__trans handle.
 
+	processing_state rc = SKIP;
 	if (!strcmp(action, "BLOBVIEW"))
 		BLOB_edit(&blobid, DB, M__trans, "blob");
-	else if ((!strcmp(action, "BLOBDUMP")) && (*cmd[2])) {
+	else if ((!strcmp(action, "BLOBDUMP")) && (*cmd[2]))
+	{
 		// If this is a blobdump, make sure there is a file name 
-		/* We can't be sure if the BLOB is TEXT or BINARY data,
-		 * as we're not sure, we'll dump it in BINARY mode
-		 */
-		BLOB_dump(&blobid, DB, M__trans, cmd[2]);
+		// We can't be sure if the BLOB is TEXT or BINARY data,
+		// as we're not sure, we'll dump it in BINARY mode.
+		TEXT path[MAXPATHLEN];
+		strip_quotes(cmd[2], path); // ISQL_remove_and_unescape_quotes ???
+		if (!BLOB_dump(&blobid, DB, M__trans, path))
+		{
+			TEXT errbuf[MSG_LENGTH];
+			ISQL_msg_get(FILE_OPEN_ERR, errbuf, path);
+			STDERROUT(errbuf);
+			rc = ps_ERR;
+		}
 	}
 	else
-		return ps_ERR;
+		rc = ps_ERR;
 
-	return (SKIP);
+	return rc;
 }
 
 
@@ -2780,6 +2789,7 @@ static processing_state create_db(const TEXT* statement,
 		// Look for the quotes on the database name and find the close quotes.
 		// Use '"' first, if not successful try '''.
 		// CVC: Again, this is wrong with embedded quotes.
+		// Maybe ISQL_remove_and_unescape_quotes coupled with ISQL_copy_SQL_id could work.
 		const TEXT* q = strchr(statement, quote);
 		if (!q) {
 			quote = SINGLE_QUOTE;
@@ -3260,7 +3270,6 @@ static processing_state edit(const TEXT* const* cmd)
  *	pointer, Ifp, to the named file after editing or the tmp file.
  *
  **************************************/
-	TEXT errbuf[MSG_LENGTH];
 
 	// Set up editing command for shell
 
@@ -3268,6 +3277,7 @@ static processing_state edit(const TEXT* const* cmd)
 
 	// If there is a file name specified, try to open it
 
+	processing_state rc = SKIP;
 	if (*file) {
 		TEXT path[MAXPATHLEN];
 		strip_quotes(file, path);
@@ -3280,11 +3290,13 @@ static processing_state edit(const TEXT* const* cmd)
 			current->indev_next = Filelist;
 			Filelist = current;
 			Ifp.init(fp, path);
-			gds__edit(file, 0);
+			gds__edit(path, 0);
 		}
 		else {
-			ISQL_msg_get(FILE_OPEN_ERR, errbuf, file);
+			TEXT errbuf[MSG_LENGTH];
+			ISQL_msg_get(FILE_OPEN_ERR, errbuf, path);
 			STDERROUT(errbuf);
+			rc = ps_ERR;
 		}
 	}
 	else {
@@ -3301,7 +3313,7 @@ static processing_state edit(const TEXT* const* cmd)
 		Ifp.init(Ofp, Tmpfile);
 	}
 
-	return (SKIP);
+	return rc;
 }
 
 

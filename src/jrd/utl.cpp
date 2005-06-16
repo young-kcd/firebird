@@ -1586,10 +1586,14 @@ int API_ROUTINE BLOB_text_dump(ISC_QUAD* blob_id,
 	if (!file)
 		return FALSE;
 
-	const int ret = dump(blob_id, database, transaction, file);
+	if (!dump(blob_id, database, transaction, file))
+	{
+		fclose(file);
+		unlink(file_name);
+		return FALSE;
+	}
 	fclose(file);
-
-	return ret;
+	return TRUE;
 }
 
 
@@ -1612,10 +1616,14 @@ int API_ROUTINE BLOB_dump(ISC_QUAD* blob_id,
 	if (!file)
 		return FALSE;
 
-	const int ret = dump(blob_id, database, transaction, file);
+	if (!dump(blob_id, database, transaction, file))
+	{
+		fclose(file);
+		unlink(file_name);
+		return FALSE;
+	}
 	fclose(file);
-
-	return ret;
+	return TRUE;
 }
 
 
