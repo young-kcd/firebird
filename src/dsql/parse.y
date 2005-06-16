@@ -2312,13 +2312,13 @@ non_charset_simple_type	: national_character_type
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, client_dialect,
+					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "BIGINT",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, db_dialect,
+					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "BIGINT",
 					0);
 			lex.g_field->fld_dtype = dtype_int64; 
@@ -2358,13 +2358,13 @@ non_charset_simple_type	: national_character_type
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, client_dialect,
+					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "TIME",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, db_dialect,
+					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "TIME",
 					0);
 			lex.g_field->fld_dtype = dtype_sql_time; 
@@ -3775,13 +3775,13 @@ datetime_value_expression : CURRENT_DATE
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, client_dialect,
+					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "DATE",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, db_dialect,
+					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "DATE",
 					0);
 			$$ = make_node (nod_current_date, 0, NULL);
@@ -3791,13 +3791,13 @@ datetime_value_expression : CURRENT_DATE
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, client_dialect,
+					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "TIME",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, db_dialect,
+					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "TIME",
 					0);
 			$$ = make_node (nod_current_time, 0, NULL);
@@ -3840,13 +3840,13 @@ u_constant	: u_numeric_constant
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, client_dialect,
+					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "DATE",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, db_dialect,
+					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "DATE",
 					0);
 			$$ = MAKE_constant ((dsql_str*) $2, CONSTANT_DATE);
@@ -3856,13 +3856,13 @@ u_constant	: u_numeric_constant
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, client_dialect,
+					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "TIME",
 					0);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, db_dialect,
+					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "TIME",
 					0);
 			$$ = MAKE_constant ((dsql_str*) $2, CONSTANT_TIME);
@@ -4510,10 +4510,12 @@ static dsql_nod* make_list (dsql_nod* node)
 		stack_nodes(node, stack);
 		USHORT l = stack.getCount();
 
-		dsql_nod* old = node;
+		const dsql_nod* old = node;
 		node = FB_NEW_RPT(*tdsql->getDefaultPool(), l) dsql_nod;
 		node->nod_count = l;
 		node->nod_type = nod_list;
+		node->nod_line = (USHORT) lex.lines_bk;
+		node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
 		if (MemoryPool::blk_type(old) == dsql_type_nod)
 		{
 			node->nod_flags = old->nod_flags;
@@ -5370,8 +5372,8 @@ static void yyerror(const TEXT* error_string)
 	if (yychar < 1)
 		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
 			isc_arg_gds, isc_command_end_err2,	/* Unexpected end of command */
-			isc_arg_number, lex.lines,
-			isc_arg_number, lex.last_token - lex.line_start + 1,
+			isc_arg_number, (SLONG) lex.lines,
+			isc_arg_number, (SLONG) (lex.last_token - lex.line_start + 1),
 			0);
 	else
 	{

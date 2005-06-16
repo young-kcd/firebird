@@ -628,7 +628,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
 							  isc_arg_gds, isc_dsql_datatype_err,
 							  isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-							  isc_arg_number, request->req_client_dialect,
+							  isc_arg_number, (SLONG) request->req_client_dialect,
 							  isc_arg_string,
 							  DSC_dtype_tostring(parameter->par_desc.dsc_dtype),
 							  0);
@@ -1755,7 +1755,7 @@ static void gen_field( dsql_req* request, const dsql_ctx* context,
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
 					  isc_arg_gds, isc_dsql_datatype_err,
 					  isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					  isc_arg_number, request->req_client_dialect,
+					  isc_arg_number, (SLONG) request->req_client_dialect,
 					  isc_arg_string,
 					  DSC_dtype_tostring(static_cast < UCHAR >
 										 (field->fld_dtype)), 0);

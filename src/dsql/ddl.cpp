@@ -5077,9 +5077,9 @@ static void modify_domain( dsql_req* request)
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
 							isc_arg_gds, isc_command_end_err2,    // Unexpected end of command
-							isc_arg_number, domain_node->nod_line,
+							isc_arg_number, (SLONG) domain_node->nod_line,
 							isc_arg_number,
-							domain_node->nod_column + domain_name->str_length + strlen(" DEFAULT"),
+							(SLONG) domain_node->nod_column + domain_name->str_length + strlen(" DEFAULT"),
 							0);
 			}
 			// CVC End modification.
@@ -5557,9 +5557,9 @@ static void modify_udf(dsql_req* request)
 	if (!node->nod_arg[e_mod_udf_entry_pt] && !node->nod_arg[e_mod_udf_module])
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
 					isc_arg_gds, isc_command_end_err2,    // Unexpected end of command
-					isc_arg_number, node->nod_line,
+					isc_arg_number, (SLONG) node->nod_line,
 					isc_arg_number,
-					node->nod_column + obj_name->str_length, // + strlen("FUNCTION"),
+					(SLONG) node->nod_column + obj_name->str_length, // + strlen("FUNCTION"),
 					0);
 
 	request->append_cstring(isc_dyn_mod_function, obj_name->str_data);

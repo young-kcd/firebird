@@ -4156,7 +4156,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 									  isc_arg_string, field->fld_name,
 									  isc_arg_gds,
 									  isc_sql_dialect_datatype_unsupport,
-									  isc_arg_number, request->req_client_dialect,
+									  isc_arg_number, (SLONG) request->req_client_dialect,
 									  isc_arg_string,
 									  DSC_dtype_tostring(static_cast<UCHAR>
 														 (field->fld_dtype)), 0);
@@ -5955,9 +5955,14 @@ static dsql_nod* pass1_returning(dsql_req* request,
 	}
 	else if (proc_flag && !target)
 	{
+		// This trick because we don't copy lexer positions when copying lists.
+		const dsql_nod* errSrc = input->nod_arg[e_ret_source];
+		fb_assert(errSrc->nod_type == nod_list);
 		// RETURNING without INTO is not allowed for PSQL
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
-				  isc_arg_gds, isc_command_end_err,	// Unexpected end of command
+				  isc_arg_gds, isc_command_end_err2,	// Unexpected end of command
+				  isc_arg_number, (SLONG) errSrc->nod_line,
+				  isc_arg_number, (SLONG) errSrc->nod_column,
 				  0);
 	}
 

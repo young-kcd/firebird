@@ -1338,7 +1338,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, 
 					isc_arg_gds, isc_command_end_err2,
 					// CVC: Nothing will be line 1, column 1 for the user.
-					isc_arg_number, 1, isc_arg_number, 1,
+					isc_arg_number, (SLONG) 1, isc_arg_number, (SLONG) 1,
 					0);	// Unexpected end of command
 			}
 
