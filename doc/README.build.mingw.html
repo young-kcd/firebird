@@ -75,7 +75,7 @@ The valid switches for autogen are<br>
 <li>After the build finish, the firebird directory with the binaries is created as gen/firebird.</li> 
 </ol>
 
-<p>To make a clean build from scratch after making changes to the code use the clean.sh script</p>
+<p>You can use 'make clean' to delete files created during build process when you don't need them anymore. 'make clean_all' will do even more clean. :)</p>
 <p>BUILD NOTE:</p>
 <p>There is a bug in mingw (3.2) related with msvc format for 64bit integers. When the I64 format is used, the compiler throws warnings of two types:</p>
 <p>warning: [...] format, different type arg (arg 3)<br>
