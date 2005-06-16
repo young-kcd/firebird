@@ -89,7 +89,7 @@ void STUFF_STATUS_function(ISC_STATUS* status_vector, ISC_STATUS status, va_list
  * type.  So check for 17 or less
  */
 
-void PARSE_STATUS(ISC_STATUS * status_vector, int &length, int &warning)
+void PARSE_STATUS(const ISC_STATUS* status_vector, int &length, int &warning)
 {
 	warning = 0;
 	length = 0;
