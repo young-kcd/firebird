@@ -274,6 +274,10 @@ SOURCE=..\..\..\gen\jrd\ini.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\init.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\intl.cpp
 # End Source File
 # Begin Source File
@@ -886,6 +890,10 @@ SOURCE=..\..\..\src\jrd\ini.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\ini_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\init.h
 # End Source File
 # Begin Source File
 

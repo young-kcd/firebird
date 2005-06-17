@@ -105,6 +105,10 @@ SOURCE=..\..\..\src\jrd\gds.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\init.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\isc.cpp
 # End Source File
 # Begin Source File

@@ -134,6 +134,10 @@ SOURCE=..\..\..\src\jrd\ibinitdll.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\init.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\isc.cpp
 # End Source File
 # Begin Source File
@@ -333,6 +337,10 @@ SOURCE=..\..\..\src\jrd\gds.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\gds_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\init.h
 # End Source File
 # Begin Source File
 

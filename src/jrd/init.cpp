@@ -33,6 +33,7 @@
 
 #include "firebird.h"
 #include "../jrd/init.h"
+#include "../jrd/common.h"
 #include "../jrd/thd_proto.h"
 
 #ifndef BOOT_BUILD
