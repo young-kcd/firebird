@@ -19,7 +19,7 @@ WHY_Sources = why.cpp
 JRD_ClientFiles = alt.cpp cvt.cpp dsc.cpp dls.cpp \
 		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
 		isc_sync.cpp perf.cpp sch.cpp sdl.cpp status.cpp \
-		thd.cpp utl.cpp \
+		thd.cpp utl.cpp init.cpp \
         $(WHY_Sources)
 
 # These are in the win32 release but not unix one for super? 
