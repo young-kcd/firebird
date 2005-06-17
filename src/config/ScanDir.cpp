@@ -106,10 +106,9 @@ const char* ScanDir::getFileName()
 const char* ScanDir::getFilePath()
 {
 #ifdef _WIN32
-	filePath = directory + "\\" + data.cFileName;
+	filePath.Format("%s\\%s", (const char*) directory, data.cFileName);
 #else
 	filePath.Format("%s/%s", (const char*) directory, data->d_name);
-	//filePath = directory + "/" + data->d_name;
 #endif
 
 	return filePath;
