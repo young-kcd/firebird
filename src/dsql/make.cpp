@@ -1731,7 +1731,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		if (s)
 			Firebird::status_exception::raise(tdsql->tsql_status);
 
-		if (*((UCHAR*)buffer + sizeof(UCHAR) + sizeof(USHORT)))	// CHARSET_LEGACY_SEMANTICS
+		if (buffer[sizeof(UCHAR) + sizeof(USHORT)])	// CHARSET_LEGACY_SEMANTICS
 		{
 			USHORT adjust = 0;
 			if (node->nod_desc.dsc_dtype == dtype_varying)
