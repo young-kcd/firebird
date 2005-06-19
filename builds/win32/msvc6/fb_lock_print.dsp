@@ -127,6 +127,10 @@ SOURCE=..\..\..\src\jrd\thd.cpp
 # Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\init.h
+# End Source File
 # End Group
 # Begin Group "Resource files"
 
