@@ -5452,7 +5452,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 		// if the user has specified an alias, skip past it to find the alias 
 		// for the base table (if multiple aliases are specified)
 
-		if (*p &&
+		if (p && *p &&
 			((tail->csb_relation && tail->csb_relation->rel_name == p) ||
 			 (tail->csb_alias && *(tail->csb_alias) == p)))
 		{
