@@ -569,7 +569,7 @@ public:
 		return type;
 	}
 
-	CharSet* TextType::getCharSet() const
+	CharSet* getCharSet() const
 	{
 		return cs;
 	}
