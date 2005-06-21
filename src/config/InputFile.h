@@ -31,7 +31,7 @@
 
 #define AFX_INPUTFILE_H__8FAAB146_720E_43EE_A79B_262761DD0921__INCLUDED_
 
-#if _MSC_VER > 1000
+#if defined _MSC_VER  && _MSC_VER >= 1000
 #pragma once
 #endif // _MSC_VER > 1000
 

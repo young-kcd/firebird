@@ -31,7 +31,7 @@
 #define AFX_ARGS_H__7C584339_5A11_4040_889B_417B607C858B__INCLUDED_
 
 //#include "JString.h"	// Added by ClassView
-#if _MSC_VER > 1000
+#if defined _MSC_VER  && _MSC_VER >= 1000
 #pragma once
 #endif // _MSC_VER > 1000
 

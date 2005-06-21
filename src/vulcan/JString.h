@@ -96,9 +96,9 @@ protected:
 			delete [] stuff;
 		}
 	
-	inline void allocSpace(int length)
+	inline void allocSpace(int len)
 		{
-		string = new char [length + 1 + sizeof (int)];
+		string = new char [len + 1 + sizeof (int)];
 		*((int*) string) = 1;
 		string += sizeof (int);
 		}

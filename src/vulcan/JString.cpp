@@ -461,12 +461,12 @@ JString& JString::operator =(const WCHAR * wString)
 }
 ***/
 
-void JString::setString(const char * source, int length)
+void JString::setString(const char * source, int len)
 {
 	char *old = string;
-	allocSpace (length);
-	memcpy (string, source, length);
-	string[length] = 0;
+	allocSpace (len);
+	memcpy (string, source, len);
+	string[len] = 0;
 	
 	if (old)
 		release(old);
@@ -501,13 +501,13 @@ JString JString::upcase(const char * source)
 	return string;
 }
 
-void JString::alloc(int length)
+void JString::alloc(int len)
 {
 	if (string)
 		release(string);
 		
-	allocSpace(length);
-	string [length] = 0;
+	allocSpace(len);
+	string [len] = 0;
 }
 
 bool JString::equalsNoCase(const char * string2)
@@ -537,15 +537,15 @@ int JString::length()
 	return (int) (p - string);
 }
 
-JString::JString(const char * source, int length)
+JString::JString(const char * source, int len)
 {
 	string = NULL;
-	setString (source, length);
+	setString (source, len);
 }
 
-char* JString::getBuffer(int length)
+char* JString::getBuffer(int len)
 {
-	alloc (length);
+	alloc (len);
 
 	return string;
 }
