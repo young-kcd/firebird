@@ -34,7 +34,7 @@ namespace Jrd {
 class UnicodeUtil
 {
 public:
-	// routines equivalent with intlobj_new.h
+	// routines semantically equivalent with intlobj_new.h
 
 	static USHORT utf16KeyLength(USHORT len);	// BOCU-1
 	static USHORT utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, UCHAR* dst,

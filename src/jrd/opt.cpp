@@ -6986,23 +6986,21 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 /* Get the escape character, if any */
 	if (escape_node)
 	{
-		/* Ensure escape string is same character set as match string
-		 * Error report on Overflow is OK, as sql only allows a single
-		 * character escape string */
+		// Ensure escape string is same character set as match string
 
-		MoveBuffer pattern_str;
+		MoveBuffer escape_buffer;
 
 		p_count =
-			MOV_make_string2(escape_desc, INTL_TTYPE(&match_desc), &p, pattern_str);
+			MOV_make_string2(escape_desc, INTL_TTYPE(&match_desc), &p, escape_buffer);
 
 		first_len = matchCharset->substring(tdbb, p_count, p, sizeof(first_ch), first_ch, 0, 1);
 		matchTextType->canonical(first_len, p, sizeof(escape_canonic), escape_canonic);
 	}
 
-	MoveBuffer match_str;
+	MoveBuffer pattern_buffer;
 
 	p_count =
-		MOV_make_string2(pattern_desc, INTL_TTYPE(&match_desc), &p, match_str);
+		MOV_make_string2(pattern_desc, INTL_TTYPE(&match_desc), &p, pattern_buffer);
 
 	first_len = matchCharset->substring(tdbb, p_count, p, sizeof(first_ch), first_ch, 0, 1);
 
@@ -7066,7 +7064,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 		}
 
 		q += patternCharset->substring(tdbb, pattern_desc->dsc_length, pattern_desc->dsc_address,
-								pattern_desc->dsc_length, q,
+								literal->lit_desc.dsc_length - (q - literal->lit_desc.dsc_address), q,
 								(patternPtrStart - patternCanonical.begin()) / canWidth,
 								1);
 	}
