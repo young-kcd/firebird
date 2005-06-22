@@ -26,7 +26,7 @@
  *
  *____________________________________________________________
  *
- *	$Id: gpre_meta_boot.cpp,v 1.47 2005-05-27 22:42:14 asfernandes Exp $
+ *	$Id: gpre_meta_boot.cpp,v 1.48 2005-06-22 22:23:05 asfernandes Exp $
  */
 
 #include "firebird.h"
@@ -123,13 +123,12 @@ bool MET_database(DBB db,
 	 */
 
 #ifndef REQUESTER
-	if (gpreGlob.sw_language == lang_internal) {
-		JRDMET_init(db);
-		return true;
-	}
-#endif
+	JRDMET_init(db);
+	return true;
+#else
 	fb_assert(0);
 	return false;
+#endif
 }
 
 
@@ -271,9 +270,6 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 			return field;
 		}
 
-	if (gpreGlob.sw_language == lang_internal)
-		return NULL;
-	fb_assert(0);
 	return NULL;
 }
 
@@ -323,9 +319,6 @@ GPRE_NOD MET_fields(gpre_ctx* context)
 		return node;
 	}
 
-	if (gpreGlob.sw_language == lang_internal)
-		return NULL;
-	fb_assert(0);
 	return NULL;
 }
 
@@ -602,9 +595,6 @@ IND MET_index(DBB db, const TEXT* string)
 			return index;
 		}
 
-	if (gpreGlob.sw_language == lang_internal)
-		return NULL;
-	fb_assert(0);
 	return NULL;
 }
 
@@ -622,9 +612,6 @@ void MET_load_hash_table( DBB db)
  *  stuff
  */
 
-	if (gpreGlob.sw_language == lang_internal)
-		return;
-	fb_assert(0);
 	return;
 }
 
