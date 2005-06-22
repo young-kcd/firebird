@@ -234,18 +234,23 @@ static MUTX_T svc_mutex[1], thd_mutex[1];
 #include "../alice/alice_proto.h"
 int main_lock_print();
 THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
-#include "../utilities/gsec/gsec_proto.h"
 
 #define MAIN_GBAK		BURP_main
 #define MAIN_GFIX		ALICE_main
 #define MAIN_LOCK_PRINT	main_lock_print
 #define MAIN_GSTAT		main_gstat
-#define MAIN_GSEC		GSEC_main
 #else
 #define MAIN_GBAK		NULL
 #define MAIN_GFIX		NULL
 #define MAIN_LOCK_PRINT	NULL
 #define MAIN_GSTAT		NULL
+#define MAIN_GSEC		NULL
+#endif
+
+#if defined(SUPERSERVER) && !defined(EMBEDDED)
+#include "../utilities/gsec/gsec_proto.h"
+#define MAIN_GSEC		GSEC_main
+#else
 #define MAIN_GSEC		NULL
 #endif
 
