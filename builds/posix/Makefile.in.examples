@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.examples,v 1.6 2005-06-10 10:32:51 aafemt Exp $
+#  $Id: Makefile.in.examples,v 1.7 2005-06-22 09:21:37 alexpeshkoff Exp $
 #
 ROOT=../..
 ObjModuleType=std
@@ -92,7 +92,6 @@ $(FIREBIRD)/examples/README:
 	$(CP) $(ROOT)/examples/udf/*.* $(FIREBIRD)/examples/udf/
 	$(CP) employee.fdb $(FIREBIRD)/examples/empbuild/
 #	$(CP) intlemp.fdb $(FIREBIRD)/examples/empbuild/
-	$(CP) $(ROOT)/examples/empbuild/employe2.sql $(FIREBIRD)/examples/empbuild/
 
 $(EXAMPLES_DEST)% : $(EXAMPLES_SRC)%
 	$(CP) $^ $@
