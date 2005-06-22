@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="burp"
-	ProjectGUID="{EC51801D-9C3D-4D2E-A927-BF2BE82A4606}"
+	Name="gbak_embed"
+	ProjectGUID="{03136BE7-9E18-4B03-94DB-D19A6EF992B4}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -12,10 +12,73 @@
 	</Platforms>
 	<Configurations>
 		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="..\..\..\temp\debug\gbak_embed"
+			IntermediateDirectory="..\..\..\temp\debug\gbak_embed"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
+				Optimization="0"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="_DEBUG,DEV_BUILD,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
+				ExceptionHandling="FALSE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				RuntimeTypeInfo="TRUE"
+				PrecompiledHeaderFile="..\..\..\temp\debug\gbak_embed/gbak_embed.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\gbak_embed/"
+				ObjectFile="..\..\..\temp\debug\gbak_embed/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\gbak_embed/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				OutputFile="..\..\..\temp\debug\firebird\bin\gbak_embed.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\temp\debug\gbak_embed\gbak_embed.pdb"
+				SubSystem="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				TypeLibraryName="..\..\..\temp\debug\gbak_embed\gbak_embed.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1053"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\..\temp\release\burp_ss"
-			IntermediateDirectory="..\..\..\temp\release\burp_ss"
-			ConfigurationType="4"
+			OutputDirectory="..\..\..\temp\release\gbak_embed"
+			IntermediateDirectory="..\..\..\temp\release\gbak_embed"
+			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
 			CharacterSet="2">
@@ -30,14 +93,15 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
+				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="TRUE"
-				PrecompiledHeaderFile="..\..\..\temp\release\burp_ss/burp.pch"
-				AssemblerListingLocation="..\..\..\temp\release\burp_ss/"
-				ObjectFile="..\..\..\temp\release\burp_ss/"
-				ProgramDataBaseFileName="..\..\..\temp\release\burp_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\release\gbak_embed\gbak_embed.pch"
+				AssemblerListingLocation="..\..\..\temp\release\gbak_embed/"
+				ObjectFile="..\..\..\temp\release\gbak_embed/"
+				ProgramDataBaseFileName="..\..\..\temp\release\gbak_embed/"
+				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -45,11 +109,17 @@
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\release\burp_ss\burp.lib"
-				SuppressStartupBanner="TRUE"/>
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				OutputFile="..\..\..\temp\release\firebird\bin\gbak_embed.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				GenerateDebugInformation="TRUE"
+				SubSystem="1"/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCMIDLTool"
+				TypeLibraryName="..\..\..\temp\release\gbak_embed\gbak_embed.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -65,58 +135,7 @@
 			<Tool
 				Name="VCXMLDataGeneratorTool"/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="..\..\..\temp\debug\burp_ss"
-			IntermediateDirectory="..\..\..\temp\debug\burp_ss"
-			ConfigurationType="4"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc-"
-				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,_X86_,DEV_BUILD"
-				ExceptionHandling="FALSE"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
-				PrecompiledHeaderFile="..\..\..\temp\debug\burp_ss/burp.pch"
-				AssemblerListingLocation="..\..\..\temp\debug\burp_ss/"
-				ObjectFile="..\..\..\temp\debug\burp_ss/"
-				ProgramDataBaseFileName="..\..\..\temp\debug\burp_ss/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\debug\burp_ss\burp.lib"
-				SuppressStartupBanner="TRUE"/>
-			<Tool
-				Name="VCMIDLTool"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCWebDeploymentTool"/>
 			<Tool
 				Name="VCManagedWrapperGeneratorTool"/>
 			<Tool
@@ -163,6 +182,26 @@
 			</Filter>
 		</Filter>
 		<Filter
+			Name="JRD files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\sdl.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\sdl.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\sdl_proto.h">
+			</File>
+		</Filter>
+		<Filter
+			Name="REMOTE files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\remote\xdr.cpp">
+			</File>
+		</Filter>
+		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
@@ -188,6 +227,25 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\burp\resto_proto.h">
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\version.rc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCResourceCompilerTool"
+						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCResourceCompilerTool"
+						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>

@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="fbembed"
+	ProjectGUID="{97FEEEE5-4A9E-47DF-B04A-4E9C31A78ABA}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -361,9 +362,6 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
-		<File
-			RelativePath="..\defs\fbclient.def">
-		</File>
 		<File
 			RelativePath="..\defs\fbclient.def">
 		</File>

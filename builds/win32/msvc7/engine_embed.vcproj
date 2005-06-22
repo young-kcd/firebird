@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="engine_embed"
+	ProjectGUID="{74042D46-7104-47F1-B8BC-00E0E7BFF8AB}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -370,10 +371,10 @@
 				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
+				RelativePath="..\..\..\src\jrd\os\win32\thd_priority.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\thd_priority.cpp">
+				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\tpc.cpp">

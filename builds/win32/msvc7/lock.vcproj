@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="lock"
+	ProjectGUID="{BDB05FD1-4BB8-47D4-8B22-F0B7ABD684FD}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>

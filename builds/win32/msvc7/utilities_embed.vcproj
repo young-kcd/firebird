@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="alice"
-	ProjectGUID="{0D8750CC-7CCC-4795-9369-48D59FA0A2F5}"
+	Name="utilities_embed"
+	ProjectGUID="{936DA5D9-7B62-4352-95AF-FA3510F9CFDB}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -12,9 +12,9 @@
 	</Platforms>
 	<Configurations>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="..\..\..\temp\release\alice_ss"
-			IntermediateDirectory="..\..\..\temp\release\alice_ss"
+			Name="Debug|Win32"
+			OutputDirectory="..\..\..\temp\debug\utilities_es"
+			IntermediateDirectory="..\..\..\temp\debug\utilities_es"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -22,22 +22,17 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc-"
-				Optimization="4"
-				GlobalOptimizations="TRUE"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="TRUE"
-				ImproveFloatingPointConsistency="TRUE"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="TRUE"
+				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
+				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,EMBEDDED,WIN32,_X86_,DEV_BUILD"
 				ExceptionHandling="FALSE"
-				RuntimeLibrary="2"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="TRUE"
-				PrecompiledHeaderFile="..\..\..\temp\release\alice_ss/alice.pch"
-				AssemblerListingLocation="..\..\..\temp\release\alice_ss/"
-				ObjectFile="..\..\..\temp\release\alice_ss/"
-				ProgramDataBaseFileName="..\..\..\temp\release\alice_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\debug\utilities_es/utilities.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\utilities_es/"
+				ObjectFile="..\..\..\temp\debug\utilities_es/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\utilities_es/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -46,7 +41,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\release\alice_ss\alice.lib"
+				OutputFile="..\..\..\temp\debug\utilities_es\utilities.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -70,9 +65,9 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="..\..\..\temp\debug\alice_ss"
-			IntermediateDirectory="..\..\..\temp\debug\alice_ss"
+			Name="Release|Win32"
+			OutputDirectory="..\..\..\temp\release\utilities_es"
+			IntermediateDirectory="..\..\..\temp\release\utilities_es"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -80,17 +75,22 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc-"
-				Optimization="0"
+				Optimization="4"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="TRUE"
+				ImproveFloatingPointConsistency="TRUE"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,_X86_,DEV_BUILD"
+				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,EMBEDDED,WIN32,_X86_"
 				ExceptionHandling="FALSE"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="TRUE"
-				PrecompiledHeaderFile="..\..\..\temp\debug\alice_ss/alice.pch"
-				AssemblerListingLocation="..\..\..\temp\debug\alice_ss/"
-				ObjectFile="..\..\..\temp\debug\alice_ss/"
-				ProgramDataBaseFileName="..\..\..\temp\debug\alice_ss/"
+				PrecompiledHeaderFile="..\..\..\temp\release\utilities_es/utilities.pch"
+				AssemblerListingLocation="..\..\..\temp\release\utilities_es/"
+				ObjectFile="..\..\..\temp\release\utilities_es/"
+				ProgramDataBaseFileName="..\..\..\temp\release\utilities_es/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -99,7 +99,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\temp\debug\alice_ss\alice.lib"
+				OutputFile="..\..\..\temp\release\utilities_es\utilities.lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -127,32 +127,25 @@
 	</References>
 	<Files>
 		<Filter
-			Name="ALICE files"
+			Name="UTILITIES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\alice\alice.cpp">
+				RelativePath="..\..\..\src\utilities\gsec\call_service.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\alice\all.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\exe.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\tdr.cpp">
+				RelativePath="..\..\..\src\utilities\common\cmd_util.cpp">
 			</File>
 			<Filter
 				Name="epp files"
 				Filter="epp">
 				<File
-					RelativePath="..\..\..\src\alice\alice_meta.epp">
+					RelativePath="..\..\..\src\utilities\gstat.epp">
 				</File>
-			</Filter>
-			<Filter
-				Name="Generated files"
-				Filter="c">
 				<File
-					RelativePath="..\..\..\gen\alice\alice_meta.cpp">
+					RelativePath="..\..\..\src\utilities\rmet.epp">
+				</File>
+				<File
+					RelativePath="..\..\..\src\utilities\rstore.epp">
 				</File>
 			</Filter>
 		</Filter>
@@ -160,40 +153,13 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\alice\alice.h">
+				RelativePath="..\..\..\src\utilities\common\cmd_util_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\alice\alice_meta.h">
+				RelativePath="..\..\..\src\utilities\gsec\gsec.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\alice\alice_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\aliceswi.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\all.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\all_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\alloc.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\blk.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\exe_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\info.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\lls.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\tdr_proto.h">
+				RelativePath="..\..\..\src\utilities\install\registry.h">
 			</File>
 		</Filter>
 	</Files>

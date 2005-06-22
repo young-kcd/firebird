@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="dsql_server"
+	ProjectGUID="{2200CB02-7AED-423E-9484-9D149FD79B24}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
