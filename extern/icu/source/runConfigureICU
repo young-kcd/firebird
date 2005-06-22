@@ -51,6 +51,7 @@ The following names can be supplied as the argument for platform:
     SOLARISCC/W4.2          Use Sun's Workshop 4.2 CC compiler on Solaris
     SOLARISGCC              Use the GNU C++ compiler on Solaris
     SOLARISX86              Use Sun's CC compiler on Solaris x86
+    SOLARISX86GCC           Use GNU C++ compiler on Solaris x86
     TRU64V5.1/CXX           Use Compaq's cxx compiler on Tru64 (OSF)
     zOS                     Use IBM's cxx compiler on z/OS (os/390)
     zOSV1R2                 Use IBM's cxx compiler for z/OS 1.2
@@ -170,6 +171,16 @@ case $platform in
         LDFLAGS="-L -lCrun";export LDFLAGS
         RELEASE_CFLAGS=-xO3
         RELEASE_CXXFLAGS=-O3
+        ;;
+    SOLARISX86GCC)
+        THE_OS="SOLARIS X86"
+        THE_COMP="the GNU C++"
+        CC=`which cc`; export CC
+        CXX=`which CC`; export CXX
+        CXXFLAGS="$CXXFLAGS -I/usr/local/include/g++"; export CXXFLAGS
+        LDFLAGS="$LDFLAGS -R/usr/local/lib"; export LDFLAGS
+        RELEASE_CXXFLAGS=-O
+        RELEASE_CFLAGS=-O3
         ;;
     SOLARISCC)
         THE_OS=SOLARIS

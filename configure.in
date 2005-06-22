@@ -123,7 +123,7 @@ case "$target" in
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
-    ICU_PLATFORM=SOLARISGCC
+    ICU_PLATFORM=SOLARISX86GCC
     ;;
 
   sparc-sun-solaris*)
