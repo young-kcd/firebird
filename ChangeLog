@@ -1,3 +1,31 @@
+2005-06-21 12:23  aafemt
+
+	* firebird2/src/: config/AdminException.h (1.3), config/Args.h
+	(1.3), config/ArgsException.h (1.3), config/Element.h (1.3),
+	config/InputFile.h (1.3), config/InputStream.h (1.3), config/Lex.h
+	(1.3), config/ScanDir.h (1.3), config/Stream.h (1.3),
+	config/StreamSegment.h (1.3), vulcan/JString.cpp (1.4),
+	vulcan/JString.h (1.4), vulcan/PathName.h (1.3), vulcan/RefObject.h
+	(1.3):
+	
+	Warnings
+
+2005-06-21 11:15  alexpeshkoff
+
+	* firebird2/builds/:
+	install/arch-specific/linux/super/makeInstallImage.sh.in (1.13),
+	posix/Makefile.in.extern.icu (1.6):
+	
+	a bit better handling of intl stuff
+
+2005-06-21 11:03  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/classic/makeInstallIma
+	ge.sh.in (1.15):
+	
+	a bit better handling of intl stuff while packaging
+
 2005-06-21 03:44  asfernandes
 
 	* firebird2/src/jrd/: opt.cpp (1.246), unicode_util.h (1.3):
