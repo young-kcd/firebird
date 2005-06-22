@@ -402,25 +402,25 @@ public:
 			return srcLen / minBytesPerChar();
 	}
 
-	virtual ULONG substring(thread_db* tdbb, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG length) const
+	virtual ULONG substring(thread_db* tdbb, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG len) const
 	{
 		fb_assert(getStruct());
 		if (getStruct()->charset_fn_substring)
-			return getStruct()->charset_fn_substring(getStruct(), srcLen, src, dstLen, dst, startPos, length);
+			return getStruct()->charset_fn_substring(getStruct(), srcLen, src, dstLen, dst, startPos, len);
 		else
 		{
 			fb_assert(src != NULL && dst != NULL);
 
-			if (dstLen < length * minBytesPerChar())
+			if (dstLen < len * minBytesPerChar())
 				return INTL_BAD_STR_LENGTH;
 			else if (startPos * minBytesPerChar() > srcLen)
 				return 0;
 
-			length = MIN(srcLen / minBytesPerChar() - startPos, length) * minBytesPerChar();
+			len = MIN(srcLen / minBytesPerChar() - startPos, len) * minBytesPerChar();
 
-			memcpy(dst, src + startPos * minBytesPerChar(), length);
+			memcpy(dst, src + startPos * minBytesPerChar(), len);
 
-			return length;
+			return len;
 		}
 	}
 };
@@ -443,28 +443,28 @@ public:
 		{
 			USHORT errCode;
 			ULONG errPos;
-			ULONG length = getConvToUnicode().convertLength(srcLen);
+			ULONG len = getConvToUnicode().convertLength(srcLen);
 
 			// convert to UTF16
 			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL> str;
-			length = getConvToUnicode().convert(srcLen, src, length,
-							str.getBuffer(length / sizeof(USHORT)), &errCode, &errPos);
+			len = getConvToUnicode().convert(srcLen, src, len,
+							str.getBuffer(len / sizeof(USHORT)), &errCode, &errPos);
 
 			// calculate length of UTF16
-			return UnicodeUtil::utf16Length(length, str.begin());
+			return UnicodeUtil::utf16Length(len, str.begin());
 		}
 	}
 
-	virtual ULONG substring(thread_db* tdbb, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG length) const
+	virtual ULONG substring(thread_db* tdbb, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG len) const
 	{
 		fb_assert(getStruct());
 		if (getStruct()->charset_fn_substring)
-			return getStruct()->charset_fn_substring(getStruct(), srcLen, src, dstLen, dst, startPos, length);
+			return getStruct()->charset_fn_substring(getStruct(), srcLen, src, dstLen, dst, startPos, len);
 		else
 		{
 			fb_assert(src != NULL && dst != NULL);
 
-			if (length == 0 || startPos >= srcLen)
+			if (len == 0 || startPos >= srcLen)
 				return 0;
 
 			USHORT errCode;
@@ -472,17 +472,17 @@ public:
 
 			// convert to UTF16
 			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> str;
-			ULONG length = getConvToUnicode().convertLength(srcLen);
-			length = getConvToUnicode().convert(srcLen, src, length,
-				reinterpret_cast<USHORT*>(str.getBuffer(length)), &errCode, &errPos);
+			ULONG unilength = getConvToUnicode().convertLength(srcLen);
+			unilength = getConvToUnicode().convert(srcLen, src, unilength,
+				reinterpret_cast<USHORT*>(str.getBuffer(unilength)), &errCode, &errPos);
 
 			// generate substring of UTF16
 			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> substr;
-			length = UnicodeUtil::utf16Substring(length, reinterpret_cast<const USHORT*>(str.begin()),
-				length, reinterpret_cast<USHORT*>(substr.getBuffer(length)), startPos, length);
+			unilength = UnicodeUtil::utf16Substring(unilength, reinterpret_cast<const USHORT*>(str.begin()),
+				unilength, reinterpret_cast<USHORT*>(substr.getBuffer(unilength)), startPos, len);
 
 			// convert generated substring to original charset
-			return getConvFromUnicode().convert(length, substr.begin(), dstLen, dst, &errCode, &errPos);
+			return getConvFromUnicode().convert(unilength, substr.begin(), dstLen, dst, &errCode, &errPos);
 		}
 	}
 };
@@ -492,7 +492,7 @@ template <typename pContainsObjectImpl, typename pLikeObjectImpl,
 class CollationImpl : public TextType
 {
 public:
-	CollationImpl(TTYPE_ID type, TEXTTYPE tt, CharSet* cs) : TextType(type, tt, cs) {}
+	CollationImpl(TTYPE_ID a_type, TEXTTYPE a_tt, CharSet* a_cs) : TextType(a_type, a_tt, a_cs) {}
 
 	virtual bool matches(thread_db* tdbb, const UCHAR* a, SLONG b, const UCHAR* c, SLONG d)
 	{

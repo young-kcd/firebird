@@ -51,11 +51,11 @@ struct BooleanName
 
 static const BooleanName booleanNames [] = 
 	{
-	"yes",		true,
-	"true",		true,
-	"false",	false,
-	"no",		false,
-	NULL
+	{"yes",		true},
+	{"true",	true},
+	{"false",	false},
+	{"no",		false},
+	{NULL}
 	};
 	
 ConfObject::ConfObject(ConfigFile *confFile)

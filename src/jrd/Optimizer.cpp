@@ -779,7 +779,7 @@ IndexScratchSegment::IndexScratchSegment(MemoryPool& p, IndexScratchSegment* seg
 }
 
 IndexScratch::IndexScratch(MemoryPool& p, index_desc* ix) :
-	segments(p), idx(ix)
+	idx(ix), segments(p)
 {
 /**************************************
  *

@@ -792,12 +792,12 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			// Create river and copy the streams.
 			River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), count) River();
 			river->riv_count = (UCHAR) count;
-			UCHAR* stream = river->riv_streams;
+			UCHAR* stream_itr = river->riv_streams;
 			RiverStack::iterator stack2(rivers_stack);
 			for (; stack2.hasData(); ++stack2) {
 				River* subRiver = stack2.object();
-				MOVE_FAST(subRiver->riv_streams, stream, subRiver->riv_count);
-				stream += subRiver->riv_count;
+				MOVE_FAST(subRiver->riv_streams, stream_itr, subRiver->riv_count);
+				stream_itr += subRiver->riv_count;
 			}
 			river->riv_rsb = make_cross(tdbb, opt, rivers_stack);
 			rivers_stack.push(river);

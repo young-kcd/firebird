@@ -57,7 +57,7 @@ USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, 
 	fb_assert(U_SUCCESS(status));
 
 	int32_t len = ucnv_fromUChars(conv, reinterpret_cast<char*>(dst), dstLen, 
-								  src, srcLen / sizeof(*src), &status);
+								  reinterpret_cast<const UChar*>(src), srcLen / sizeof(*src), &status);
 	fb_assert(U_SUCCESS(status));
 
 	ucnv_close(conv);
@@ -536,7 +536,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 		return INTL_BAD_KEY_LENGTH;
 	}
 
-	return ucol_getSortKey((UCollator*)collator, src, srcLen / sizeof(*src), dst, dstLen);
+	return ucol_getSortKey((UCollator*)collator, reinterpret_cast<const UChar *>(src), srcLen / sizeof(*src), dst, dstLen);
 }
 
 
