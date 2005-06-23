@@ -47,7 +47,6 @@ public:
 
 	JString	text;
 	JString	fileName;
-	int		lineNumber;
 };
 
 #endif // !defined(AFX_ADMINEXCEPTION_H__ED22B745_F780_416D_8291_0A2D49EF5B43__INCLUDED_)

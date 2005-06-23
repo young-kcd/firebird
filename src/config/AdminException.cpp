@@ -71,7 +71,6 @@ AdminException::AdminException(const char *txt, ...)
 		text = temp;
 
 	va_end(args);
-	lineNumber;
 }
 
 AdminException::~AdminException()
@@ -84,10 +83,9 @@ const char* AdminException::getText()
 	return text;
 }
 
-void AdminException::setLocation(JString file, int line)
+void AdminException::setLocation(JString file, int lineNumber)
 {
 	fileName = file;
-	lineNumber = line;
 	char	temp [1024];
 	char	*buffer = temp;
 	int		l = sizeof (temp);
