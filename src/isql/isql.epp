@@ -6363,7 +6363,7 @@ static void print_performance(perf* perf_before)
 // p r i n t _ s q l d a _ i n p u t
 // *********************************
 // Show the contents of the input sqlda, used typically for parameters.
-static processing_state print_sqlda_input(const bool is_selectable)
+static processing_state print_sqlda_input(const bool can_have_input_parameters)
 {
 	// Describe the input
 	XSQLDA* input_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(10)));
@@ -6397,7 +6397,7 @@ static processing_state print_sqlda_input(const bool is_selectable)
 			ISQL_warning(isc_status);
 	}
 
-	if (is_selectable)
+	if (can_have_input_parameters)
 	{
 		isqlGlob.printf(
 				//"\nINPUT  SQLDA version: %d sqldaid: %s sqldabc: %ld sqln: %d sqld: %d\n",
@@ -6859,17 +6859,18 @@ static int process_statement(const TEXT* string,
 	if (!statement_type)
 		return ps_ERR;
 
-	const bool is_selectable =
-		statement_type == isc_info_sql_stmt_select ||
-		statement_type == isc_info_sql_stmt_select_for_upd ||
-		statement_type == isc_info_sql_stmt_exec_procedure ||
-		statement_type == isc_info_sql_stmt_get_segment;
-
-
 //#ifdef DEV_BUILD
 	if (Sqlda_display)
 	{
-		if (print_sqlda_input(is_selectable) == ps_ERR)
+		const bool can_have_input_parameters =
+			statement_type == isc_info_sql_stmt_select ||
+			statement_type == isc_info_sql_stmt_insert ||
+			statement_type == isc_info_sql_stmt_update ||
+			statement_type == isc_info_sql_stmt_delete ||
+			statement_type == isc_info_sql_stmt_exec_procedure ||
+			statement_type == isc_info_sql_stmt_select_for_upd;
+
+		if (print_sqlda_input(can_have_input_parameters) == ps_ERR)
 			return ps_ERR;
 	}
 //#endif // DEV_BUILD
@@ -6878,6 +6879,12 @@ static int process_statement(const TEXT* string,
 	// check for warnings
 	if (isc_status[2] == isc_arg_warning)
 		ISQL_warning(isc_status);
+
+	const bool is_selectable =
+		statement_type == isc_info_sql_stmt_select ||
+		statement_type == isc_info_sql_stmt_select_for_upd ||
+		statement_type == isc_info_sql_stmt_exec_procedure ||
+		statement_type == isc_info_sql_stmt_get_segment;
 
 	// if PLAN is set, print out the plan now 
 
