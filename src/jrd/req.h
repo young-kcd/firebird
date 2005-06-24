@@ -146,6 +146,26 @@ class SaveRecordParam : public pool_alloc<type_srpb>
 
 typedef Firebird::BePlusTree<ULONG, ULONG, MemoryPool> TempBlobIdTree;
 
+/* Affected rows counter class */
+
+class AffectedRows {
+public:
+	AffectedRows();
+
+	void clear();
+	void bumpFetched();
+	void bumpModified(bool);
+
+	bool isReadOnly() const;
+	bool hasCursor() const;
+	int getCount() const;
+
+private:
+	bool writeFlag;
+	int fetchedRows;
+	int modifiedRows;
+};
+
 /* request block */
 
 class jrd_req : public pool_alloc_rpt<record_param, type_req>
@@ -195,7 +215,7 @@ public:
 	ULONG req_records_updated;	/* count of records updated by request */
 	ULONG req_records_deleted;	/* count of records deleted by request */
 
-	ULONG req_records_affected; /* count of records affected by the last statement */
+	AffectedRows req_records_affected;	/* records affected by the last statement */
 
 	USHORT req_view_flags;			/* special flags for virtual ops on views */
 	jrd_rel* 	req_top_view_store;	/* the top view in store(), if any */

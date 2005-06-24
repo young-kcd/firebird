@@ -5220,10 +5220,12 @@ static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impur
 			tdbb->tdbb_request->req_last_xcp.as_sqlcode();
 		break;
 	case internal_rows_affected:
-		impure->vlu_misc.vlu_long = tdbb->tdbb_request->req_records_affected;
+		impure->vlu_misc.vlu_long =
+			tdbb->tdbb_request->req_records_affected.getCount();
 		break;
 	case internal_trigger_action:
-		impure->vlu_misc.vlu_long = tdbb->tdbb_request->req_trigger_action;
+		impure->vlu_misc.vlu_long =
+			tdbb->tdbb_request->req_trigger_action;
 		break;
 	default:
 		BUGCHECK(232);	/* msg 232 EVL_expr: invalid operation */

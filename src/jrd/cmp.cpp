@@ -2002,7 +2002,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	request->req_external = csb->csb_external;
 	request->req_variables = csb->csb_variables;
 	request->req_resources = csb->csb_resources; // Assign array contents
-	request->req_records_affected = 0;
 	if (csb->csb_g_flags & csb_blr_version4) {
 		request->req_flags |= req_blr_version4;
 	}

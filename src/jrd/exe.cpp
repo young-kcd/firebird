@@ -108,6 +108,49 @@
 
 using namespace Jrd;
 
+// AffectedRows class implementation
+
+AffectedRows::AffectedRows()
+{
+	clear();
+}
+
+void AffectedRows::clear()
+{
+	writeFlag = false;
+	fetchedRows = modifiedRows = 0;
+}
+
+void AffectedRows::bumpFetched()
+{
+	fetchedRows++;
+}
+
+void AffectedRows::bumpModified(bool increment)
+{
+	if (increment) {
+		modifiedRows++;
+	}
+	else {
+		writeFlag = true;
+	}
+}
+
+bool AffectedRows::isReadOnly() const
+{
+	return !writeFlag;
+}
+
+bool AffectedRows::hasCursor() const
+{
+	return (fetchedRows > 0);
+}
+
+int AffectedRows::getCount() const
+{
+	return writeFlag ? modifiedRows : fetchedRows;
+}
+
 // StatusXcp class implementation
 
 StatusXcp::StatusXcp()
@@ -1176,6 +1219,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	switch (request->req_operation) {
 	case jrd_req::req_evaluate:
 		{
+		request->req_records_affected.bumpModified(false);
 		if (!node->nod_arg[e_erase_statement])
 			break;
 		const Format* format = MET_current(tdbb, rpb->rpb_relation);
@@ -1294,12 +1338,12 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	if (relation == request->req_top_view_erase) {
 		if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
 			request->req_records_deleted++;
-			request->req_records_affected++;
+			request->req_records_affected.bumpModified(true);
 		}
 	}
 	else if (relation->rel_file || !relation->rel_view_rse) {
 		request->req_records_deleted++;
-		request->req_records_affected++;
+		request->req_records_affected.bumpModified(true);
 	}
 
 	if (transaction != dbb->dbb_sys_trans) {
@@ -1850,6 +1894,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 	jrd_nod* node = in_node;
 
+	request->req_records_affected.clear();
+
 	// Catch errors so we can unwind cleanly
 
 	bool error_pending = false;
@@ -1964,7 +2010,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_for:
 			switch (request->req_operation) {
 			case jrd_req::req_evaluate:
-				request->req_records_affected = 0;
+				request->req_records_affected.clear();
 				RSE_open(tdbb, (RecordSource*) node->nod_arg[e_for_rsb]);
 			case jrd_req::req_return:
 				if (node->nod_arg[e_for_stall]) {
@@ -2043,14 +2089,14 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					if (!(impure->irsb_flags & irsb_open)) {
 						ERR_post(isc_cursor_not_open, 0);
 					}
+					request->req_records_affected.clear();
 					// perform preliminary navigation, if specified
 					if (node->nod_arg[e_cursor_stmt_seek]) {
 						node = node->nod_arg[e_cursor_stmt_seek];
 						break;
 					}
-					request->req_records_affected = 0;
 				case jrd_req::req_return:
-					if (!request->req_records_affected) {
+					if (!request->req_records_affected.hasCursor()) {
 						// fetch one record
 						if (RSE_get_record(tdbb, rsb,
 #ifdef SCROLLABLE_CURSORS
@@ -2951,6 +2997,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 	switch (request->req_operation) {
 	case jrd_req::req_evaluate:
+		request->req_records_affected.bumpModified(false);
 		break;
 
 	case jrd_req::req_return:
@@ -3075,12 +3122,12 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (relation == request->req_top_view_modify) {
 			if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
 				request->req_records_updated++;
-				request->req_records_affected++;
+				request->req_records_affected.bumpModified(true);
 			}
 		}
 		else if (relation->rel_file || !relation->rel_view_rse) {
 			request->req_records_updated++;
-			request->req_records_affected++;
+			request->req_records_affected.bumpModified(true);
 		}
 
 		if (which_trig != PRE_TRIG) {
@@ -3895,6 +3942,12 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 	switch (request->req_operation) {
 	case jrd_req::req_evaluate:
+		if (request->req_records_affected.isReadOnly() &&
+			!request->req_records_affected.hasCursor())
+		{
+			request->req_records_affected.clear();
+		}
+		request->req_records_affected.bumpModified(false);
 		impure->sta_state = 0;
 		RLCK_reserve_relation(tdbb, transaction, relation, true, true);
 		break;
@@ -3967,12 +4020,12 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (relation == request->req_top_view_store) {
 			if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
 				request->req_records_inserted++;
-				request->req_records_affected++;
+				request->req_records_affected.bumpModified(true);
 			}
 		}
 		else if (relation->rel_file || !relation->rel_view_rse) {
 			request->req_records_inserted++;
-			request->req_records_affected++;
+			request->req_records_affected.bumpModified(true);
 		}
 
 		if (transaction != dbb->dbb_sys_trans) {

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.88 2005-06-12 06:27:12 dimitr Exp $
+ * $Id: rse.cpp,v 1.89 2005-06-24 12:56:34 dimitr Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -483,7 +483,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 
 		if (count) {
 			request->req_records_selected++;
-			request->req_records_affected++;
+			request->req_records_affected.bumpFetched();
 		}
 		break;
 	}
