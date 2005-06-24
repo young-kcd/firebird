@@ -1,3 +1,23 @@
+2005-06-23 17:12  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.153):
+	
+	Make SQLDA_DISPLAY display input SQLDA parameters of INSERTs,
+	UPDATEs and DELETEs
+
+2005-06-23 12:10  kkuznetsov
+
+	* firebird2/extern/icu/source/runConfigureICU (1.5):
+	
+	Fix configure error on Solaris x86
+
+2005-06-23 07:25  aafemt
+
+	* firebird2/src/config/: AdminException.cpp (1.4), AdminException.h
+	(1.4):
+	
+	Cleanup
+
 2005-06-23 01:00  asfernandes
 
 	* firebird2/builds/win32/: make_boot2.bat (1.1), preprocess2.bat
