@@ -145,8 +145,7 @@ const USHORT JRD_info_drivemask	= 1;
 const USHORT JRD_info_dbnames	= 2;
 
 TEXT*	JRD_num_attachments(TEXT* const, USHORT, USHORT, USHORT*, USHORT*);
-ULONG	JRD_shutdown_all();
-void	JRD_shutdown_all_ex(bool);
+void	JRD_shutdown_all(bool);
 #endif /* SERVER_SHUTDOWN */
 
 void	JRD_set_cache_default(ULONG *);

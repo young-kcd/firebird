@@ -286,8 +286,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			HANDLE hEvent =
 				ISC_make_signal(TRUE, TRUE, GetCurrentProcessId(), SIGSHUT);
 			WaitForSingleObject(hEvent, INFINITE);
-			THREAD_ENTER();
-			JRD_shutdown_all();
+			JRD_shutdown_all(false);
 		}
 	}
 

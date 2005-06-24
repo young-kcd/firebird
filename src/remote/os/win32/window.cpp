@@ -222,14 +222,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				fn[strlen(fn) - 19] = 0; // all remote files
 				gds_alloc_report(ALLOC_verbose, fn, 0);
 #endif
-				THREAD_ENTER();
-				JRD_shutdown_all();
+				JRD_shutdown_all(false);
 				DestroyWindow(hWnd);
-
-				/* There is no THREAD_EXIT to help ensure that no
-				 * threads will get in and try to access the data-
-				 * structures we released in JRD_shutdown_all()
-				 */
 			}
 		}
 		break;
@@ -446,7 +440,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 						return FALSE;
 					}
 
-					JRD_shutdown_all();
+					JRD_shutdown_all(false);
 					PostMessage(hWnd, WM_DESTROY, 0, 0);
 					return TRUE;
 				}
@@ -468,7 +462,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 								 IDS_PNP2, p, TMP_STRINGLEN - (p - tmp));
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
-				JRD_shutdown_all();
+				JRD_shutdown_all(false);
 				PostMessage(hWnd, WM_DESTROY, 0, 0);
 			}
 			return TRUE;

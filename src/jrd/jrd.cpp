@@ -6204,7 +6204,7 @@ static void ExtractDriveLetter(const TEXT* file_name, ULONG* drive_mask)
 #endif
 
 
-ULONG JRD_shutdown_all()
+ISC_STATUS shutdown_all()
 {
 /**************************************
  *
@@ -6218,6 +6218,12 @@ ULONG JRD_shutdown_all()
  *	and shutdown every database.
  *
  **************************************/
+	THREAD_ENTER();
+	// NOTE!!!
+	// This routine doesn't contain THREAD_EXIT to help ensure
+	// that no threads will get in and try to access the data
+	// structures we released here
+
 	thread_db thd_context;
 	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
@@ -6251,7 +6257,7 @@ ULONG JRD_shutdown_all()
 				tdbb->tdbb_status_vector = user_status;
 
 				try {
-					/* purge_attachment, rollback any open transactions */
+					/* purge attachment, rollback any open transactions */
 
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 					V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -6295,15 +6301,13 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) {
  *
  **************************************/
 
-	THREAD_ENTER();
-	JRD_shutdown_all();
-	*static_cast<int*>(arg) = 1;
+	*static_cast<int*>(arg) = (shutdown_all() == FB_SUCCESS);
 	return 0;
 }
 #endif // SUPERSERVER
 
 
-void JRD_shutdown_all_ex(bool doThreadExit)
+void JRD_shutdown_all(bool asyncMode)
 {
 /**************************************
  *
@@ -6319,25 +6323,28 @@ void JRD_shutdown_all_ex(bool doThreadExit)
  **************************************/
 #ifdef SUPERSERVER
 	int flShutdownComplete = 0;
-	gds__thread_start(shutdown_thread, &flShutdownComplete, 
-		THREAD_medium, 0, 0);
-	if (doThreadExit)
+
+	if (asyncMode)
 	{
-		THREAD_EXIT();
+		gds__thread_start(shutdown_thread, &flShutdownComplete, 
+			THREAD_medium, 0, 0);
+		int timeout = 10;	// seconds
+		while (timeout--) 
+		{
+			if (flShutdownComplete)
+				break;
+			THREAD_SLEEP(1 * 1000);
+		}
 	}
-	int timeout = 10;	// seconds
-	while (timeout--) 
+	else // sync mode
 	{
-		if (flShutdownComplete)
-			break;
-		THREAD_SLEEP(1 * 1000);
+		flShutdownComplete = (shutdown_all() == FB_SUCCESS);
 	}
-	if (!flShutdownComplete) 
+
+	if (!flShutdownComplete)
 	{
 		gds__log("Forced server shutdown - not all databases closed");
 	}
-#else // SUPERSERVER
-	fb_assert(doThreadExit);
 #endif // SUPERSERVER
 }
 #endif /* SERVER_SHUTDOWN */
@@ -6365,7 +6372,8 @@ static void purge_attachment(thread_db*		tdbb,
 	Database* dbb = attachment->att_database;
 
 	if (!(dbb->dbb_flags & DBB_bugcheck)) {
-		/* Check for any pending transactions */
+
+		// Check for any pending transactions
 
 		int count = 0;
 		jrd_tra* next;
@@ -6392,7 +6400,7 @@ static void purge_attachment(thread_db*		tdbb,
 		if (count)
 			ERR_post(isc_open_trans, isc_arg_number, (SLONG) count, 0);
 
-		/* If there's a side transaction for db-key scope, get rid of it */
+		// If there's a side transaction for db-key scope, get rid of it
 
 		jrd_tra* trans_dbk = attachment->att_dbkey_trans;
 		if (trans_dbk)
@@ -6412,14 +6420,14 @@ static void purge_attachment(thread_db*		tdbb,
 		SORT_shutdown(attachment);
 	}
 
-/* Unlink attachment from database */
+	// Unlink attachment from database
 
 	release_attachment(attachment);
 
-/* At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
-   unlocked and mutex databases_mutex has been locked. */
+	// At this point, mutex dbb->dbb_mutexes [DBB_MUTX_init_fini] has been
+	// unlocked and mutex databases_mutex has been locked.
 
-/* If there are still attachments, do a partial shutdown */
+	// If there are still attachments, do a partial shutdown
 
 	if (MemoryPool::blk_type(dbb) == type_dbb)
 	{
@@ -6530,4 +6538,3 @@ static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS
 	}
 	return vdnOk;
 }
-

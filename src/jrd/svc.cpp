@@ -674,14 +674,19 @@ void SVC_detach(Service* service)
 
 #ifdef SERVER_SHUTDOWN
 	if (service->svc_do_shutdown) {
-		JRD_shutdown_all_ex(true);
-		if (shutdown_fct)
-				(shutdown_fct) (shutdown_param);
-		else
+		THREAD_EXIT();
+		JRD_shutdown_all(true);
+		if (shutdown_fct) {
+			(shutdown_fct) (shutdown_param);
+		}
+		else {
 			exit(0);
+		}
 
 		/* The shutdown operation is complete, just wait to die */
-		while (true);
+		while (true) {
+			THREAD_YIELD();
+		}
 	}
 #endif /* SERVER_SHUTDOWN */
 

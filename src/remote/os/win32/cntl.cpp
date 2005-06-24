@@ -348,13 +348,7 @@ static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
 		}
 	}
 
-
-	THREAD_ENTER();
-	JRD_shutdown_all();
-
-// There is no THREAD_EXIT to help ensure that no
-// threads will get in and try to access the data-
-// structures we released in JRD_shutdown_all()
+	JRD_shutdown_all(false);
 	return 0;
 }
 

@@ -54,8 +54,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 
 	case DLL_PROCESS_DETACH:
 #ifdef EMBEDDED
-		THREAD_ENTER();
-		JRD_shutdown_all();
+		JRD_shutdown_all(false);
 #endif
 		break;
 	}
