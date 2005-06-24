@@ -2586,10 +2586,22 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 static void adjust_text_descriptor(thread_db* tdbb, dsc* desc)
 {
+/**************************************
+ *
+ *      a d j u s t _ t e x t _ d e s c r i p t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *      This function receives a text descriptor with
+ *      dsc_length = numberOfCharacters * maxBytesPerChar
+ *      and change dsc_length to number of bytes used by the string.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
 	if (desc->dsc_dtype == dtype_text)
 	{
-		SET_TDBB(tdbb);
-
 		USHORT ttype = INTL_TTYPE(desc);
 
 		CharSet* charSet = INTL_charset_lookup(tdbb, ttype);
