@@ -6316,9 +6316,11 @@ void JRD_shutdown_all(bool asyncMode)
  **************************************
  *
  * Functional description
- *	rollback every transaction,
- *	release every attachment,
- *	and shutdown every database.
+ *	Rollback every transaction, release
+ *	every attachment, and shutdown every
+ *	database. Can be called in either a
+ *  blocking mode or as a request for
+ *  asynchronous shutdown.
  *
  **************************************/
 #ifdef SUPERSERVER
