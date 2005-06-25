@@ -1,3 +1,33 @@
+2005-06-24 17:38  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.147):
+	
+	Comment
+
+2005-06-24 17:06  dimitr
+
+	* firebird2/src/dsql/metd.epp (1.75):
+	
+	Fixed SF #1012152.
+
+2005-06-24 14:56  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.178), evl.cpp (1.146), exe.cpp
+	(1.154), req.h (1.47), rse.cpp (1.89):
+	
+	Fixed reported issues with ROW_COUNT.
+
+2005-06-24 13:14  dimitr
+
+	* firebird2/src/: jrd/jrd.cpp (1.217), jrd/jrd_proto.h (1.38),
+	jrd/svc.cpp (1.143), jrd/os/win32/ibinitdll.cpp (1.8),
+	remote/inet_server.cpp (1.55), remote/os/win32/cntl.cpp (1.17),
+	remote/os/win32/srvr_w32.cpp (1.29), remote/os/win32/window.cpp
+	(1.14):
+	
+	Slightly changed (mostly cleaned up and fixed) the SS shutdown
+	mechanics.
+
 2005-06-23 17:12  asfernandes
 
 	* firebird2/src/isql/isql.epp (1.153):
