@@ -117,6 +117,7 @@ using namespace Jrd;
 
 static int blocking_ast_procedure(void*);
 static int blocking_ast_relation(void*);
+static int partners_ast_relation(void*);
 static void get_trigger(thread_db*, jrd_rel*, bid*, trig_vec**, const TEXT*, UCHAR, bool, USHORT);
 static bool get_type(thread_db*, SSHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
@@ -209,6 +210,10 @@ void MET_update_partners(thread_db* tdbb)
 		if (!relation) {
 			continue;
 		}
+
+		// signal other processes
+		LCK_lock_non_blocking(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+		LCK_release(tdbb, relation->rel_partners_lock);
 		relation->rel_flags |= REL_check_partners;
 	}
 }
@@ -1963,6 +1968,7 @@ bool MET_lookup_partner(thread_db*	tdbb,
 		if (!REQUEST(irq_foreign2))
 			REQUEST(irq_foreign2) = request;
 
+		LCK_lock(tdbb, relation->rel_partners_lock, LCK_SR, LCK_WAIT);
 		relation->rel_flags &= ~REL_check_partners;
 	}
 
@@ -2237,6 +2243,11 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 
 			if (relation->rel_name == name)
 			{
+				if (relation->rel_flags & REL_check_partners)
+				{
+					LCK_lock(tdbb, relation->rel_partners_lock,
+							LCK_SR, LCK_WAIT);
+				}
 				if (relation->rel_flags & REL_check_existence)
 				{
 					check_relation = relation;
@@ -2282,7 +2293,9 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 		check_relation->rel_flags &= ~REL_check_existence;
 		if (check_relation != relation) {
 			LCK_release(tdbb, check_relation->rel_existence_lock);
+			LCK_release(tdbb, check_relation->rel_partners_lock);
 			check_relation->rel_flags |= REL_deleted;
+			check_relation->rel_flags &= ~REL_check_partners;
 		}
 	}
 
@@ -2325,14 +2338,21 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 				return relation;
 			return NULL;
 		}
-		else if (relation->rel_flags & REL_check_existence)
-		{
-			check_relation = relation;
-			LCK_lock(tdbb, check_relation->rel_existence_lock, LCK_SR, LCK_WAIT);
-		}
 		else
 		{
-			return relation;
+			if (relation->rel_flags & REL_check_partners)
+			{
+				LCK_lock(tdbb, relation->rel_partners_lock, LCK_SR, LCK_WAIT);
+			}
+			if (relation->rel_flags & REL_check_existence)
+			{
+				check_relation = relation;
+				LCK_lock(tdbb, check_relation->rel_existence_lock, LCK_SR, LCK_WAIT);
+			}
+			else
+			{
+				return relation;
+			}
 		}
 	}
 
@@ -2360,7 +2380,9 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 		check_relation->rel_flags &= ~REL_check_existence;
 		if (check_relation != relation) {
 			LCK_release(tdbb, check_relation->rel_existence_lock);
+			LCK_release(tdbb, check_relation->rel_partners_lock);
 			check_relation->rel_flags |= REL_deleted;
+			check_relation->rel_flags &= ~REL_check_partners;
 		}
 	}
 
@@ -2922,11 +2944,25 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	(*vector)[id] = relation;
 	relation->rel_id = id;
 
+	{
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
+	relation->rel_partners_lock = lock;
+	lock->lck_parent = dbb->dbb_lock;
+	lock->lck_dbb = dbb;
+	lock->lck_key.lck_long = relation->rel_id;
+	lock->lck_length = sizeof(lock->lck_key.lck_long);
+	lock->lck_type = LCK_rel_partners;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_object = relation;
+	lock->lck_ast = partners_ast_relation;
+	}
+
 	// This should check system flag instead.
 	if (relation->rel_id <= max_sys_rel) {
 		return relation;
 	}
 
+	{
 	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
 	relation->rel_existence_lock = lock;
 	lock->lck_parent = dbb->dbb_lock;
@@ -2937,6 +2973,7 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 	lock->lck_object = relation;
 	lock->lck_ast = blocking_ast_relation;
+	}
 
 	relation->rel_flags |= (REL_check_existence | REL_check_partners);
 	return relation;
@@ -3769,6 +3806,35 @@ static int blocking_ast_relation(void* ast_object)
 		if (relation->rel_existence_lock)
 			LCK_release(tdbb, relation->rel_existence_lock);
 	}
+
+/* Restore the prior thread context */
+
+	JRD_restore_thread_data();
+	return 0;
+}
+
+
+static int partners_ast_relation(void* ast_object)
+{
+	jrd_rel* relation = static_cast<jrd_rel*>(ast_object);
+	thread_db thd_context, *tdbb;
+
+/* Since this routine will be called asynchronously, we must establish
+   a thread context. */
+
+	JRD_set_thread_data(tdbb, thd_context);
+
+	fb_assert(relation->rel_partners_lock);
+
+	tdbb->tdbb_database = relation->rel_partners_lock->lck_dbb;
+	tdbb->tdbb_attachment = relation->rel_partners_lock->lck_attachment;
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->tdbb_request = NULL;
+	tdbb->tdbb_transaction = NULL;
+	Jrd::ContextPoolHolder context(tdbb, 0);
+
+	relation->rel_flags |= REL_check_partners;
+	LCK_release(tdbb, relation->rel_partners_lock);
 
 /* Restore the prior thread context */
 

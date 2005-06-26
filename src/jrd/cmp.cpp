@@ -2393,6 +2393,10 @@ void CMP_shutdown_database(thread_db* tdbb)
 				relation->rel_flags |= REL_check_existence;
 				relation->rel_use_count = 0;
 			}
+			if (relation->rel_partners_lock) {
+				LCK_release(tdbb, relation->rel_partners_lock);
+				relation->rel_flags |= REL_check_partners;
+			}
 			for (IndexLock* index = relation->rel_index_locks; index;
 				 index = index->idl_next)
 			{

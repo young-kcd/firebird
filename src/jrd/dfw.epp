@@ -98,6 +98,7 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/pcmet_proto.h"
 #include "../jrd/os/pio_proto.h"
+#include "../jrd/rlck_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
@@ -166,6 +167,9 @@ static bool add_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool begin_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static Lock* protect_relation(thread_db*, jrd_tra*, jrd_rel*, bool&);
+static void release_protect_lock(thread_db*, jrd_tra*, Lock*);
+static void check_partners(thread_db*, const USHORT);
 
 /* ---------------------------------------------------------------- */
 
@@ -1511,7 +1515,6 @@ static bool create_index(	thread_db*	tdbb,
 		END_FOR;
 
 		CMP_release(tdbb, handle);
-		CCH_release_exclusive(tdbb);
 		return false;
 
 	case 1:
@@ -1705,69 +1708,96 @@ static bool create_index(	thread_db*	tdbb,
 
 		/* Actually create the index */
 
+		Lock *relationLock = NULL, *partnerLock = NULL;
+		bool releaseRelationLock = false, releasePartnerLock = false;
 		partner_relation = NULL;
-		if (idx.idx_flags & idx_foreign)
+		try	
 		{
-			/* Get an exclusive lock on the database if the index being
-			   defined enforces a foreign key constraint. This will prevent
-			   the constraint from being violated during index construction. */
-
-			if (MET_lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()) &&
-				(partner_relation =
-					MET_lookup_relation_id(	tdbb,
-											idx.idx_primary_relation,
-											true)) &&
-				 !CCH_exclusive(tdbb, LCK_EX, LCK_NO_WAIT))
+			if (idx.idx_flags & idx_foreign)
 			{
-				ERR_post(isc_no_meta_update,
-						isc_arg_gds, isc_obj_in_use,
-						isc_arg_string, partner_relation->rel_name.c_str(),
-						0);
-
-				/* CVC: Currently, the server doesn't enforce FK creation more than at DYN level.
-				If DYN is bypassed, then FK creation succeeds and operation will fail at run-time.
-				The aim is to check REFERENCES at DDL time instead of DML time and behave accordingly
-				to ANSI SQL rules for REFERENCES rights.
-				For testing purposes, I'm calling SCL_check_index, although most of the DFW ops are
-				carried using internal metadata structures that are refreshed from system tables. */
-
-				if (partner_relation)
+				if (MET_lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()) &&
+					(partner_relation = 
+						MET_lookup_relation_id(tdbb, idx.idx_primary_relation, true)) )
 				{
-					/* Don't bother if the master's owner is the same than the detail's owner.
-					If both tables aren't defined in the same session, partner_relation->rel_owner_name
-					won't be loaded hence, we need to be careful about null pointers. */
-
-					if (relation->rel_owner_name.length() == 0 || 
-						partner_relation->rel_owner_name.length() == 0 ||
-						relation->rel_owner_name != partner_relation->rel_owner_name)
+					// Get an protected_read lock on the both relations if the index being
+					// defined enforces a foreign key constraint. This will prevent
+					// the constraint from being violated during index construction. 
+					
+					relationLock = protect_relation(tdbb, transaction, relation, releaseRelationLock);
+					partnerLock = protect_relation(tdbb, transaction, partner_relation, releasePartnerLock);
+					
+					int bad_segment;
+					if (!IDX_check_master_types(tdbb, idx, partner_relation, bad_segment))
 					{
-						SCL_check_index(tdbb, partner_relation->rel_name, idx.idx_id + 1, SCL_sql_references);
+						ERR_post(isc_no_meta_update,
+								isc_arg_gds, isc_partner_idx_incompat_type, 
+								isc_arg_number, bad_segment + 1,
+								0);
 					}
+
+/* hvlad: this code was never called but i preserve it for Claudio review and decision
+
+					// CVC: Currently, the server doesn't enforce FK creation more than at DYN level.
+					// If DYN is bypassed, then FK creation succeeds and operation will fail at run-time.
+					// The aim is to check REFERENCES at DDL time instead of DML time and behave accordingly
+					// to ANSI SQL rules for REFERENCES rights.
+					// For testing purposes, I'm calling SCL_check_index, although most of the DFW ops are
+					// carried using internal metadata structures that are refreshed from system tables. 
+
+					if (partner_relation)
+					{
+						// Don't bother if the master's owner is the same than the detail's owner.
+						// If both tables aren't defined in the same session, partner_relation->rel_owner_name
+						// won't be loaded hence, we need to be careful about null pointers. 
+
+						if (relation->rel_owner_name.length() == 0 || 
+							partner_relation->rel_owner_name.length() == 0 ||
+							relation->rel_owner_name != partner_relation->rel_owner_name)
+						{
+							SCL_check_index(tdbb, partner_relation->rel_name, idx.idx_id + 1, SCL_sql_references);
+						}
+					}
+*/
 				}
 			}
-			
-			int bad_segment;
-			if (!IDX_check_master_types(tdbb, idx, partner_relation, bad_segment))
+
+			fb_assert(work->dfw_id == dbb->dbb_max_idx);
+			SelectivityList selectivity(*tdbb->getDefaultPool());
+			IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(),
+							&work->dfw_id, transaction, selectivity);
+			fb_assert(work->dfw_id == idx.idx_id);
+			DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity);
+
+			if (partner_relation)
 			{
-				ERR_post(isc_no_meta_update,
-						isc_arg_gds, isc_partner_idx_incompat_type, 
-						isc_arg_number, bad_segment + 1,
-						0);
+				relation->rel_flags |= REL_check_partners;
+
+				// signal to other processes about new constraint
+				LCK_convert_non_blocking(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+				LCK_release(tdbb, relation->rel_partners_lock);
+
+				if (relation != partner_relation) {
+					partner_relation->rel_flags |= REL_check_partners;
+					LCK_convert_non_blocking(tdbb, partner_relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+					LCK_release(tdbb, partner_relation->rel_partners_lock);
+				}
+			}
+			if (relationLock && releaseRelationLock) {
+				release_protect_lock(tdbb, transaction, relationLock);
+			}
+			if (partnerLock && releasePartnerLock) {
+				release_protect_lock(tdbb, transaction, partnerLock);
 			}
 		}
-
-		fb_assert(work->dfw_id == dbb->dbb_max_idx);
-		SelectivityList selectivity(*tdbb->getDefaultPool());
-		IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(),
-						 &work->dfw_id, transaction, selectivity);
-		fb_assert(work->dfw_id == idx.idx_id);
-		DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity);
-
-		if (partner_relation)
+		catch(const std::exception&) 
 		{
-			relation->rel_flags |= REL_check_partners;
-			partner_relation->rel_flags |= REL_check_partners;
-			CCH_release_exclusive(tdbb);
+			if (relationLock && releaseRelationLock) {
+				release_protect_lock(tdbb, transaction, relationLock);
+			}
+			if (partnerLock && releasePartnerLock) {
+				release_protect_lock(tdbb, transaction, partnerLock);
+			}
+			throw;
 		}
 
 		break;
@@ -2304,6 +2334,34 @@ static bool delete_global(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 }
 
 
+static void check_partners(thread_db* tdbb, const USHORT rel_id)
+{
+/**************************************
+ *
+ *	c h e c k _ p a r t n e r s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Signal other processes to check partners of relation rel_id
+ * Used when FK index was dropped
+ *
+ **************************************/
+	const Database* dbb = tdbb->tdbb_database;
+	vec* relations = dbb->dbb_relations;
+
+	fb_assert(relations);
+	fb_assert(rel_id < relations->count());
+
+	jrd_rel *relation = (jrd_rel*) (*relations)[rel_id];
+	fb_assert(relation);
+
+	LCK_lock_non_blocking(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+	LCK_release(tdbb, relation->rel_partners_lock);
+	relation->rel_flags |= REL_check_partners;
+}
+
+
 static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction)
 {
@@ -2389,7 +2447,22 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 									work->dfw_name,
 									obj_expression_index);
 		}
-		MET_update_partners(tdbb);
+
+		// if index was bound to deleted FK constraint 
+		// then work->dfw_args was set in VIO_erase
+		if (work->dfw_args) {
+			if (work->dfw_args->dfw_id) {
+				check_partners(tdbb, relation->rel_id);
+				if (relation->rel_id != work->dfw_args->dfw_id) {
+					check_partners(tdbb, work->dfw_args->dfw_id);
+				}
+			}
+			else {
+				// partner relation was not found in VIO_erase
+				// we must check partners of all relations in database
+				MET_update_partners(tdbb);
+			}
+		}
 
 		if (index)
 		{
@@ -2791,6 +2864,9 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (relation->rel_existence_lock) {
 			LCK_release(tdbb, relation->rel_existence_lock);
+		}
+		if (relation->rel_partners_lock) {
+			LCK_release(tdbb, relation->rel_partners_lock);
 		}
 		request = NULL;
 
@@ -4157,6 +4233,50 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id)
 }
 
 
+static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation, bool& releaseLock)
+{
+/**************************************
+*
+* p r o t e c t _ r e l a t i o n
+*
+**************************************
+*
+* Functional description
+*	Lock relation with protected_read level or raise existing relation lock 
+* to this level to ensure nobody can write to this relation. 
+* Used when new FK index to be build. 
+* releaseLock set to true if there was no existing lock before
+*
+**************************************/
+	Lock* relLock = RLCK_transaction_relation_lock(transaction, relation);
+	
+	releaseLock = (relLock->lck_logical == LCK_none); 
+	
+	bool inUse = false;
+
+	if (!releaseLock) {
+		if ( (relLock->lck_logical < LCK_PR) &&
+			!LCK_convert_non_blocking(tdbb, relLock, LCK_PR, transaction->getLockWait()) ) {
+			inUse = true;
+		}
+	}
+	else {
+		if ( !LCK_lock_non_blocking(tdbb, relLock, LCK_PR, transaction->getLockWait()) ) {
+			inUse = true;
+		}
+	}
+
+	if (inUse ) {
+		ERR_post(isc_no_meta_update,
+				isc_arg_gds, isc_obj_in_use,
+				isc_arg_string, relation->rel_name.c_str(),
+				0);
+	}
+
+	return relLock;
+}
+
+
 static void put_summary_record(blb*		blob,
 							   RSR_T	type,
 							   const UCHAR*	data,
@@ -4200,6 +4320,25 @@ static void put_summary_record(blb*		blob,
 
 	if (buffer != temp)
 		delete[] buffer;
+}
+
+
+static void release_protect_lock(thread_db* tdbb, jrd_tra*	transaction, Lock* relLock)
+{
+	vec* vector = transaction->tra_relation_locks;
+	if (vector) {
+		vec::iterator lock = vector->begin();
+		for (ULONG i = 0; i < vector->count();
+			i++, lock++)
+		{
+			if ((Lock*)*lock == relLock)
+			{
+				LCK_release(tdbb, relLock);
+				*lock = 0;
+				break;
+			}
+		}
+	}
 }
 
 

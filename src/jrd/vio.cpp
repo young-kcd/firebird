@@ -69,6 +69,7 @@
 #endif
 #include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
+#include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dbg_proto.h"
 #include "../jrd/dfw_proto.h"
@@ -1267,9 +1268,10 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	if (!(transaction->tra_flags & TRA_system))
 	{
-		const jrd_rel* r2;
+		jrd_rel* r2;
 		const jrd_prc* procedure;
 		USHORT id;
+		DeferredWork* work;
 	
 		switch ((RIDS) relation->rel_id)
 		{
@@ -1323,12 +1325,40 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			if ( (id = MOV_get_long(&desc2, 0)) ) {
 				if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2))
 				{
-					DFW_post_work(transaction, dfw_delete_expression_index,
+					work = DFW_post_work(transaction, dfw_delete_expression_index,
 								  &desc, id);
 				}
 				else
 				{
-					DFW_post_work(transaction, dfw_delete_index, &desc, id);
+					work = DFW_post_work(transaction, dfw_delete_index, &desc, id);
+				}
+			}
+			
+			// get partner relation for FK index
+			if (EVL_field(0, rpb->rpb_record, f_idx_foreign, &desc2))
+			{
+				MOV_get_metadata_str(&desc, relation_name, sizeof(relation_name));
+
+				DSC desc3;
+				EVL_field(0, rpb->rpb_record, f_idx_name, &desc3);
+
+				SqlIdentifier idx_name;
+				MOV_get_metadata_str(&desc3, idx_name, sizeof(idx_name));
+
+				jrd_rel *partner;
+				index_desc idx;
+
+				if ((r2 = MET_lookup_relation(tdbb, relation_name)) && 
+					(BTR_lookup(tdbb, r2, id-1, &idx) == FB_SUCCESS) && 
+					(MET_lookup_partner(tdbb, r2, &idx, idx_name)) &&
+					(partner = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
+				{
+					DFW_post_work_arg(transaction, work, 0, partner->rel_id);
+				}
+				else {	// can't find partner relation - impossible ?
+					// add empty argument to let DFW know dropping
+					// index was bound with FK
+					DFW_post_work_arg(transaction, work, 0, 0);
 				}
 			}
 			break;
@@ -3798,8 +3828,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 			//hvlad: skip system relations
 			vec* vector = dbb->dbb_relations;
-			for (ULONG id = USER_DEF_REL_INIT_ID; vector && id < vector->count(); ++id) {
-
+			for (ULONG id = 0; vector && id < vector->count(); ++id) {
 				relation = (jrd_rel*) (*vector)[id];
 				RelationGarbage *relGarbage = 
 					relation ? (RelationGarbage*)relation->rel_garbage : NULL;
@@ -3808,7 +3837,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 					!(relation->rel_flags & (REL_deleted | REL_deleting | REL_system)))
 				{
 					if (relGarbage) {
-						relGarbage->getGarbage(dbb->dbb_oldest_snapshot, 
+						relGarbage->getGarbage(dbb->dbb_oldest_snapshot,
 												&relation->rel_gc_bitmap);
 					}
 
@@ -3883,7 +3912,7 @@ rel_exit:
 							relation->rel_gc_bitmap = 0;
 						}
 						else {
-							/* Otherwise release bitmap segments that have been cleared. */
+							// Otherwise release bitmap segments that have been cleared. 
 								while (relation->rel_gc_bitmap->getNext()) 
 							{
 								;	// do nothing
@@ -5073,7 +5102,8 @@ void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 			*sbm = garbage.bm;
 			garbage.bm = bm_tran;
 		}
-		delete garbage.bm;
+		if (garbage.bm)
+			delete garbage.bm;
 
 		// Need to cast zero to exact type because literal zero means null pointer
 		array.remove(static_cast<size_t>(0));

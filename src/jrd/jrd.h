@@ -744,6 +744,7 @@ public:
 	Lock*	rel_existence_lock;	/* existence lock, if any */
 	Lock*	rel_interest_lock;	/* interest lock to ensure compatibility of relation and record locks */
 	Lock*	rel_record_locking;	/* lock to start record locking on relation */
+	Lock*	rel_partners_lock;	/* partners lock */
 
 	ULONG rel_explicit_locks;	/* count of records explicitly locked in relation */
 	ULONG rel_read_locks;		/* count of records read locked in relation (implicit or explicit) */
