@@ -4855,8 +4855,8 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 	{
 		ERR_post(isc_bad_substring_length, isc_arg_number, length_arg, 0);
 	}
-	USHORT offset = (USHORT) offset_arg;
-	const USHORT length = (USHORT) length_arg;
+	ULONG offset = (ULONG) offset_arg;
+	const ULONG length = (ULONG) length_arg;
 	ULONG ul;
 
 	if (value->dsc_dtype == dtype_blob)
@@ -4889,8 +4889,8 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 
 			if (charSet->isMultiByte())
 			{
-				buffer.getBuffer(blob->blb_length);
-				datalen = BLB_get_data(tdbb, blob, buffer.begin(), blob->blb_length);
+				buffer.getBuffer(MIN(blob->blb_length, (offset_arg + length_arg) * charSet->maxBytesPerChar()));
+				datalen = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCount());
 
 				desc.dsc_length = totLen;
 				desc.dsc_address = NULL;
@@ -4912,7 +4912,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 				{
 					/* Both cases are the same for now. Let's see if we can optimize in the future. */
 					ULONG waste = MIN(buffer.getCapacity(), offset * charSet->maxBytesPerChar());
-					ULONG l1 = BLB_get_segment(tdbb, blob, buffer.begin(), waste);
+					ULONG l1 = BLB_get_data(tdbb, blob, buffer.begin(), waste, false);
 					offset -= l1 / charSet->maxBytesPerChar();
 				}
 
