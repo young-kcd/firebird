@@ -1,3 +1,15 @@
+2005-06-26 04:09  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.148):
+	
+	Better handling in substring of large blobs
+
+2005-06-25 11:34  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.218):
+	
+	Expanded the routine comment.
+
 2005-06-24 17:38  asfernandes
 
 	* firebird2/src/jrd/evl.cpp (1.147):
