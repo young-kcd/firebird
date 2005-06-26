@@ -90,8 +90,8 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 		FPRINTF(outfile, "\tGeneration\t\t%"ULONGFORMAT"\n",
 				header->hdr_header.pag_generation);
 		FPRINTF(outfile, "\tPage size\t\t%d\n", header->hdr_page_size);
-		FPRINTF(outfile, "\tODS version\t\t%d.%d type %04x\n", header->hdr_ods_version & ~ODS_TYPE_MASK,
-				header->hdr_ods_minor, header->hdr_ods_version & ODS_TYPE_MASK);
+		FPRINTF(outfile, "\tODS version\t\t%d.%d\n",
+				header->hdr_ods_version & ~ODS_FIREBIRD_FLAG, header->hdr_ods_minor);
 		FPRINTF(outfile, "\tOldest transaction\t%"SLONGFORMAT"\n",
 				header->hdr_oldest_transaction);
 		FPRINTF(outfile, "\tOldest active\t\t%"SLONGFORMAT"\n",

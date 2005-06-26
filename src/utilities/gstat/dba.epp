@@ -548,16 +548,16 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	service->svc_started();
 #endif
 
-	if (!ODS_SUPPORTED(header->hdr_ods_version))
+	if (!ODS_SUPPORTED(header->hdr_ods_version, header->hdr_ods_minor))
 	{
 #ifdef SUPERSERVER
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 3,
-								isc_arg_number, (void*)(IPTR)(ODS_VERSION | ODS_TYPE_CURRENT),
+								isc_arg_number, (void*)(IPTR)(ODS_VERSION | ODS_FIREBIRD_FLAG),
 								isc_arg_number, (void*)(IPTR)header->hdr_ods_version,
 								0, NULL, 0, NULL, 0, NULL);
 #endif
-		dba_error(3, (TEXT *)(IPTR) (ODS_VERSION | ODS_TYPE_CURRENT), (TEXT *)(IPTR) header->hdr_ods_version,
+		dba_error(3, (TEXT *)(IPTR) (ODS_VERSION | ODS_FIREBIRD_FLAG), (TEXT *)(IPTR) header->hdr_ods_version,
 				  0, 0, 0);		/* msg 3: Wrong ODS version, expected %d, encountered %d? */
 	}
 

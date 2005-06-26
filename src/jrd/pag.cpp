@@ -474,7 +474,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 /* The following lines (taken from PAG_format_header) are needed to identify
    this file in raw_devices_validate_database as a valid database attachment. */
 	MOV_time_stamp(reinterpret_cast<ISC_TIMESTAMP*>(header->hdr_creation_date));
-	header->hdr_ods_version        = ODS_VERSION | ODS_TYPE_CURRENT;
+	header->hdr_ods_version        = ODS_VERSION | ODS_FIREBIRD_FLAG;
 	header->hdr_implementation     = CLASS;
 	header->hdr_ods_minor          = ODS_CURRENT;
 	header->hdr_ods_minor_original = ODS_CURRENT;
@@ -895,7 +895,7 @@ void PAG_format_header(void)
 	MOV_time_stamp(reinterpret_cast<ISC_TIMESTAMP*>(header->hdr_creation_date));
 	header->hdr_header.pag_type = pag_header;
 	header->hdr_page_size = dbb->dbb_page_size;
-	header->hdr_ods_version = ODS_VERSION | ODS_TYPE_CURRENT;
+	header->hdr_ods_version = ODS_VERSION | ODS_FIREBIRD_FLAG;
 	header->hdr_implementation = CLASS;
 	header->hdr_ods_minor = ODS_CURRENT;
 	header->hdr_ods_minor_original = ODS_CURRENT;
@@ -911,7 +911,7 @@ void PAG_format_header(void)
 		header->hdr_flags |= hdr_SQL_dialect_3;
 	}
 
-	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_TYPE_MASK;
+	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
 	dbb->dbb_minor_original = header->hdr_ods_minor_original;
 
@@ -1075,15 +1075,16 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
 														  file_length), 0);
 	}
 
-	if (!ODS_SUPPORTED(header->hdr_ods_version))
+	if (!ODS_SUPPORTED(header->hdr_ods_version, header->hdr_ods_minor))
 	{
 		ERR_post(isc_wrong_ods,
 				 isc_arg_cstring, file_length, ERR_string(file_name,
 														  file_length),
-				 isc_arg_number, (SLONG) (header->hdr_ods_version & ~ODS_TYPE_MASK), 
-				 isc_arg_number, (SLONG) (header->hdr_ods_version & ODS_TYPE_MASK),
-				 isc_arg_number, (SLONG) ODS_VERSION, 
-				 isc_arg_number, (SLONG) ODS_TYPE_CURRENT, 0);
+				 isc_arg_number, (SLONG) (header->hdr_ods_version & ~ODS_FIREBIRD_FLAG),
+				 isc_arg_number, (SLONG) header->hdr_ods_minor,
+				 isc_arg_number, (SLONG) ODS_VERSION,
+				 isc_arg_number, (SLONG) ODS_CURRENT,
+				 0);
 	}
 
 /****
@@ -1134,7 +1135,7 @@ is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 			BUGCHECK(267);		/* next transaction older than oldest transaction */
 	}
 
-	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_TYPE_MASK;
+	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
 	dbb->dbb_minor_original = header->hdr_ods_minor_original;
 

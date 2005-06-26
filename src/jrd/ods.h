@@ -119,10 +119,13 @@ const USHORT ODS_10_0		= ENCODE_ODS(ODS_VERSION10, 0);
 const USHORT ODS_10_1		= ENCODE_ODS(ODS_VERSION10, 1);
 const USHORT ODS_11_0		= ENCODE_ODS(ODS_VERSION11, 0);
 
+const USHORT ODS_FIREBIRD_FLAG = 0x8000;
+
 /* Decode ODS version to Major and Minor parts. The 4 LSB's are minor and 
-   the next 4 bits are major version number */
+   the next 11 bits are major version number. The highest significant bit
+   is the Firebird database flag. */
 inline USHORT DECODE_ODS_MAJOR(USHORT ods_version) {
-	return ((ods_version & 0x00F0) >> 4);
+	return ((ods_version & 0x7FF0) >> 4);
 }
 inline USHORT DECODE_ODS_MINOR(USHORT ods_version) {
 	return (ods_version & 0x000F);
@@ -130,48 +133,52 @@ inline USHORT DECODE_ODS_MINOR(USHORT ods_version) {
 
 /* Set current ODS major and minor version */
 
-const USHORT ODS_VERSION	= ODS_VERSION11;	/* current ods major version -- always 
-											the highest */
-const USHORT ODS_CURRENT	= ODS_CURRENT11;	/* the highest defined minor version
-											number for this ODS_VERSION!! */
-const USHORT ODS_CURRENT_VERSION	= ODS_11_0;		/* Current ODS version in use which includes 
-												both Major and Minor ODS versions! */
-// ODS types.
-const USHORT ODS_TYPE_MASK			= 0xFF00;
-const USHORT ODS_TYPE_INTERBASE		= 0x0000; // Interbase ODS (we support it up to ODS10)
-const USHORT ODS_TYPE_FIREBIRD		= 0x0100; // Official Firebird ODS (used since ODS11)
-const USHORT ODS_TYPE_TRANSIENT		= 0x0200; // Firebird ODS with some unfinished changes
-const USHORT ODS_TYPE_TRANSIENT_INTL= 0x0300; // Firebird 2 - INTL branch
+const USHORT ODS_VERSION = ODS_VERSION11;		// Current ODS major version -- always
+												// the highest.
 
-// ODS types in range 0x80-0xFF are reserved for private builds and forks
-const USHORT ODS_TYPE_PRIVATE_0	= 0x8000; // ODS used for private versions, such as BroadView builds
+const USHORT ODS_RELEASED = ODS_CURRENT11;		// The lowest stable minor version
+												// number for this ODS_VERSION!
 
-const USHORT ODS_TYPE_CURRENT	= ODS_TYPE_TRANSIENT_INTL;
-//const USHORT ODS_TYPE_CURRENT	= ODS_TYPE_TRANSIENT;
-//const USHORT ODS_TYPE_CURRENT	= ODS_TYPE_PRIVATE_0;
+const USHORT ODS_CURRENT = ODS_CURRENT11;		// The highest defined minor version
+												// number for this ODS_VERSION!
+
+const USHORT ODS_CURRENT_VERSION = ODS_11_0;	// Current ODS version in use which includes
+												// both major and minor ODS versions!
+
 
 const USHORT USER_REL_INIT_ID_ODS8		= 31;	/* ODS <= 8 */
 const USHORT USER_DEF_REL_INIT_ID		= 128;	/* ODS >= 9 */
 
 
-static inline bool ODS_SUPPORTED(USHORT hdr_version) {
-	USHORT ods_version = hdr_version & ~ODS_TYPE_MASK;
-	USHORT ods_type = hdr_version & ODS_TYPE_MASK;
+static inline bool ODS_SUPPORTED(USHORT ods_major_version,
+								 USHORT ods_minor_version)
+{
+	bool ods_firebird_flag = (ods_major_version & ODS_FIREBIRD_FLAG);
+	ods_major_version &= ~ODS_FIREBIRD_FLAG;
 
 #ifdef ODS_8_TO_CURRENT
-	// Support Interbase ODS from 8 to 10;
-	if (ods_type == ODS_TYPE_INTERBASE)
-		return ods_version >= ODS_VERSION8 && ods_version <= ODS_VERSION10;
+	// Support InterBase major ODS numbers from 8 to 10
+	if (!ods_firebird_flag)
+	{
+		return (ods_major_version >= ODS_VERSION8 &&
+				ods_major_version <= ODS_VERSION10);
+	}
 
 	// This is for future ODS versions
-	if (ods_type == ODS_TYPE_FIREBIRD &&
-		ods_version > ODS_VERSION10 && ods_version <= ODS_VERSION - 1)
+	if (ods_major_version > ODS_VERSION10 &&
+		ods_major_version < ODS_VERSION)
+	{
 		return true;
+	}
 #endif
 
 	// Support current ODS of the engine
-	if (ods_type == ODS_TYPE_CURRENT && ods_version == ODS_VERSION)
+	if (ods_major_version == ODS_VERSION &&
+		ods_minor_version >= ODS_RELEASED &&
+		ods_minor_version <= ODS_CURRENT)
+	{	
 		return true;
+	}
 
 	// Do not support anything else
 	return false;

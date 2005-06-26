@@ -77,7 +77,7 @@ static const SCHAR * const messages[] = {
 	"table %s was omitted from the transaction reserving list",		/* 56, unres_rel */
 	"request includes a DSRI extension not supported in this implementation",		/* 57, uns_ext */
 	"feature is not supported",		/* 58, wish_list */
-	"unsupported on-disk structure for file %s; found %ld type %04X, support %ld type %04X",		/* 59, wrong_ods */
+	"unsupported on-disk structure for file %s; found %ld.%ld, support %ld.%ld",		/* 59, wrong_ods */
 	"wrong number of arguments on call",		/* 60, wronumarg */
 	"Implementation limit exceeded",		/* 61, imp_exc */
 	"%s",		/* 62, random */
