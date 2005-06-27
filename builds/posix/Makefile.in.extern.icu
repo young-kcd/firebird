@@ -27,10 +27,9 @@ include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
 
-ICU_LIB_VERSION_MAJOR = 30      ## keep in sync with ~/extern/icu/source/config/Makefile.inc
-
 @SET_MAKE@
 
+ALL_ICU_SO = $(addsuffix *, $(addprefix $(ROOT)/extern/icu/source/lib/, $(notdir $(LIBICU_SO))))
 
 .PHONY: libicu
 
@@ -38,7 +37,6 @@ ICU_LIB_VERSION_MAJOR = 30      ## keep in sync with ~/extern/icu/source/config/
 
 libicu:
 	$(MAKE) -C $(ROOT)/extern/icu/source
-	cp $(addsuffix .$(ICU_LIB_VERSION_MAJOR), $(addprefix $(ROOT)/extern/icu/source/lib/, $(notdir $(LIBICU_SO)))) $(LIB)
-	(cd $(LIB); for lib in $(notdir $(LIBICU_SO)); do (([ -f $$lib ] && $(RM) -f $$lib); $(LN) -s $$lib.$(ICU_LIB_VERSION_MAJOR) $$lib) || exit; done)
+	cp -d $(ALL_ICU_SO) $(LIB)
 
 include $(ROOT)/gen/make.shared.targets
