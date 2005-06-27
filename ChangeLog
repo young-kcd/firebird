@@ -1,3 +1,23 @@
+2005-06-26 23:48  hvlad
+
+	* firebird2/src/jrd/: cmp.cpp (1.179), dfw.epp (1.154), jrd.h
+	(1.137), lck.cpp (1.49), lck.h (1.19), met.epp (1.168), vio.cpp
+	(1.135):
+	
+	1. Allow to create FK constraints without exclusive database
+	locking 2. Fix 'partner index not found' error when one process
+	dropped FK and another trying to delete master record 3. misc
+	changes in vio.cpp
+
+2005-06-26 18:11  dimitr
+
+	* firebird2/src/: utilities/gstat/dba.epp (1.56),
+	utilities/gstat/ppg.cpp (1.25), jrd/dmp.cpp (1.29), jrd/ods.h
+	(1.35), jrd/pag.cpp (1.89), msgs/messages.sql (1.38),
+	include/gen/msgs.h (1.34):
+	
+	Changed the ODS encoding, messaging and protection rules.
+
 2005-06-26 04:09  asfernandes
 
 	* firebird2/src/jrd/evl.cpp (1.148):
