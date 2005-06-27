@@ -2,7 +2,12 @@
 set ERRLEV=0
 
 :: Set env vars
+@if %FB2_EMBED_BOOT% equ 1 (
+@call setenvvar2.bat
+) else (
 @call setenvvar.bat
+)
+
 @if errorlevel 1 (call :ERROR Executing setenvvar.bat failed & goto :EOF)
 
 :: verify that prepare was run before
