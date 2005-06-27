@@ -167,7 +167,7 @@ typedef struct UPKGOptions_
 #ifdef UDATA_SO_SUFFIX
 #undef UDATA_SO_SUFFIX
 #endif
-#define UDATA_SO_SUFFIX ".DLL"
+#define UDATA_SO_SUFFIX ".dll"
 #endif
 
 #define ASM_SUFFIX ".s"
