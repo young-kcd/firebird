@@ -582,13 +582,6 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 #define RDB
 #endif
 
-#ifndef GDS_A_PATH
-#define GDS_A_PATH	"GDS_A"
-#define GDS_B_PATH	"GDS_B"
-#define GDS_C_PATH	"GDS_C"
-#define GDS_D_PATH	"GDS_D"
-#endif
-
 #ifdef SUPERCLIENT
 #define ENTRYPOINT(gen,cur,bridge,rem,os2_rem,csi,rdb,pipe,bridge_pipe,win,winipi)	ISC_STATUS rem(ISC_STATUS * user_status, ...);
 #else
@@ -614,12 +607,6 @@ static const IMAGE images[] =
 	{"GDSRDB", "GDSRDB"},			/* Rdb Interface */
 #endif
 
-#ifndef SINIXZ
-	{"GDS_A", GDS_A_PATH},
-	{"GDS_B", GDS_B_PATH},
-	{"GDS_C", GDS_C_PATH},
-	{"GDS_D", GDS_D_PATH},
-#endif
 };
 
 #define SUBSYSTEMS		sizeof (images) / (sizeof (IMAGE))
