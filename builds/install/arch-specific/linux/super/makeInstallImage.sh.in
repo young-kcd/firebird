@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.13 2005-06-21 09:15:23 alexpeshkoff Exp $
+#   $Id: makeInstallImage.sh.in,v 1.14 2005-06-27 12:46:02 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -178,8 +178,7 @@ copyFiles() {
     cp -df $BuiltFBDir/lib/libfbclient.so* $DestDir/lib
     cp -f $BuiltFBDir/lib/libib_util.so $DestDir/lib/libib_util.so 
 
-    cp -f $BuiltFBDir/lib/libicu*.so.* $DestDir/lib/
-    (cd $DestDir/lib; for lib in libicu*.so.*; do ln -s $lib `echo $lib | awk -F . '{print $1}'`.so; done)
+    cp -df $BuiltFBDir/lib/libicu*.so* $DestDir/lib/
 
     cp $BuiltFBDir/intl/libfbintl.so $DestDir/intl/fbintl
     cp $BuiltFBDir/UDF/ib_udf.so $DestDir/UDF/
