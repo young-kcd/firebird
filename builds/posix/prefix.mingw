@@ -20,8 +20,8 @@
 # 
 
 # -Wno-unused-variable is used due to unused gpre generated variables
-PROD_FLAGS=-O2  -march=i586 -mcpu=i686 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD -mthreads
-DEV_FLAGS=-ggdb -march=i586 -mcpu=i686 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-unknown-pragmas -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD -mthreads
+PROD_FLAGS=-O2  -march=i586 -mcpu=i686 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-sign-compare -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD -mthreads
+DEV_FLAGS=-ggdb -march=i586 -mcpu=i686 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-sign-compare -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD -mthreads
 
 PLATFORM_PATH=jrd/os/win32
 
@@ -31,7 +31,12 @@ OS_SPECIFIC_Files=thd_priority.cpp
 
 OS_ServerFiles= os/win32/srvr_w32 os/win32/window.cpp os/win32/chop.cpp os/win32/property.cpp os/win32/ibconfig.cpp os/win32/cntl.cpp 
 
-LIB_LINK_OPTIONS:=-shared -Wl,--enable-stdcall-fixup
+LIB_LINK_OPTIONS+=-Wl,--enable-stdcall-fixup
+
+# Strip symbols from release versions to decrease size
+ifeq ($(IsProdTypeBuild),Y)
+LINK_OPTS += -Wl,-s
+endif
 # Generation of fbclient_ms.lib
 LIB_LINK_IMPLIB:=-Wl,--out-implib,firebird/lib/fbclient_ms.lib
 LIB_GUI:= -mwindows -lcomctl32 -lgdi32
