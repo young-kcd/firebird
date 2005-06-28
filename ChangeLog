@@ -1,3 +1,56 @@
+2005-06-27 20:36  dimitr
+
+	* firebird2/src/utilities/gstat/dba.epp (1.57):
+	
+	Fixed ODS decoding in GSTAT.
+
+2005-06-27 15:53  paul_reeves
+
+	* firebird2/: builds/win32/make_all.bat (1.35),
+	builds/win32/make_icu.bat (1.4),
+	extern/icu/source/common/unicode/umachine.h (1.4):
+	
+	Minor tweaks to Win32 build system to integrate the icu code into
+	the build.
+
+2005-06-27 14:45  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/:
+	classic/makeInstallImage.sh.in (1.16), super/makeInstallImage.sh.in
+	(1.14):
+	
+	make it compatible with solaris build
+
+2005-06-27 14:43  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.extern.icu (1.7):
+	
+	make icu build on both linux and solaris
+
+2005-06-27 14:26  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.36):
+	
+	fixed posix build after ODS parser changes
+
+2005-06-27 12:24  aafemt
+
+	* firebird2/src/jrd/why.cpp (1.92):
+	
+	Cleanup
+
+2005-06-27 12:22  aafemt
+
+	* firebird2/extern/icu/source/tools/pkgdata/pkgtypes.h (1.4):
+	
+	Case
+
+2005-06-27 12:20  aafemt
+
+	* firebird2/builds/posix/prefix.mingw (1.38):
+	
+	Let's produce not so big files
+
 2005-06-26 23:48  hvlad
 
 	* firebird2/src/jrd/: cmp.cpp (1.179), dfw.epp (1.154), jrd.h
