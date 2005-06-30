@@ -8,6 +8,11 @@ SHAREDLIBCFLAGS = -fPIC
 SHAREDLIBCXXFLAGS = -fPIC
 SHAREDLIBCPPFLAGS = -DPIC
 
+
+THREADSCFLAGS += -threads
+THREADSCXXFLAGS += -threads
+
+
 ## Commands to generate dependency files
 GEN_DEPS.c= 	$(CC) -E -MM $(DEFS) $(CPPFLAGS)
 GEN_DEPS.cc=	$(CXX) -E -MM $(DEFS) $(CPPFLAGS)
