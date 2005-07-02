@@ -2,6 +2,18 @@
   * v2.0 Alpha 3
   **************
 
+    * DDL improvement
+        Allow to create foreign key constraints without need to get exclusive lock 
+        on whole database 
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        Fix 'partner index not found' error when one classic process
+        dropped FK and another process trying to delete master record
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
     * ISQL improvement
         Make SQLDA_DISPLAY display input SQLDA parameters of INSERTs, UPDATEs and DELETEs
       Contributor(s):
