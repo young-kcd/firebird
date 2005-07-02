@@ -1,6 +1,225 @@
   **************
-  * v2.0 (new INTL) Alpha 2
+  * v2.0 Alpha 3
   **************
+
+    * ISQL improvement
+        Make SQLDA_DISPLAY display input SQLDA parameters of INSERTs, UPDATEs and DELETEs
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        Server crashed when PLAN for VIEW is specified but no table alias was given
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Alpha 2 bug (SF #1184591)
+        Invalid ROW_COUNT variable value after DELETE
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bugs
+        1) redundant attempts to get an	exclusive database lock during shutdown
+        2) inaccurate timeout counting
+        3) database lock is not released after bringing database online in the exclusive mode
+        4) removed a 5 sec timeout when bringing database online in the shared mode
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #1016040
+        Missing external libraries causes engine exception
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * DML enhancement
+        Implemented RETURNING clause for the INSERT statement
+      See also:
+        /doc/sql.extentions/README.returning
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #1186607
+        Foreign key relation VARCHAR <-> INT
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug SF #1211325
+        BLOBs in external tables
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * New charsets/collations
+        1) KOI8-R (Russian language) and KOI8-U (Ukrainian language) charsets and dictionary collations
+        2) WIN1257_LV (Latvian), WIN1257_LT (Lithuanian), WIN1257_EE (Estonian) collations
+      Contributor(s):
+      	Oleg Loa <loa at mail.ru>
+        Aleksey Karyakin <karyakin at cmpmail.com>
+
+    * Parser improvement
+        Try report the line/column of an incomplete	statement.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bugs
+        1) Charset/collation issues for expression-based view columns
+        2) Lost charset/collation for local PSQL variables
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 2 bug (SF #1171256)
+        Local Protocol (XNET) isn't using aliases
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Database alises didn't work in WNET
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #1211354
+        Redundant evaluations in COALESCE
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug
+        Client crashed while disconnecting with active event listener
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #1208932
+        SHOW GRANT does not distinguish object types
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Optimizer improvement
+        Use more realistic cost value for unique retrieval
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed SF bug #494981
+        Bad exception report
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * DDL enhancement
+        Implemented ALTER EXTERNAL FUNCTION to change the entry_point or the module_name when the UDF cannot be dropped due to existing dependecies
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Alpha 2 bugs
+        1) bug with selectivity of non-equality comparisons
+        2) changed the invertions selection code to help in both MERGE and JOIN paths
+        3) implemented metadata extract for expression indices
+        4) the threading issues in fbembed
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * DDL enhancement
+        Implemented the COMMENT statement to set the metadata descriptions
+      See also:
+        /doc/sql.extentions/README.ddl.txt
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed bug SF #908319
+        1.5 wrong err msg using gbak with service_mgr
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        A few internal buffer overflows are fixed
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        After an attempt to "create view v(c1) as select 1 from v" all clones of system request remained active forever
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed Alpha 2 bug
+        Server crashed in incorrect written EXECUTE BLOCK statement
+      Example(s):
+        EXECUTE BLOCK AS BEGIN
+          INSERT INTO DUMMY (ID) VALUES(?);
+        END
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        ISQL_disconnect_database overwriting the Quiet flag permanently
+      Contributor(s):
+        Miroslav Penchev <miroslav.penchev at bsc.bg>
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        Server crashed during the table metadata scan in some cases
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Error "index key too big" when creating a descending index
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed SF bug #1191006
+        Using where params in SUM return incorrect results
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 2 bug
+        Problem with distributing sort to deeper RSE
+      Example(s):
+	    SELECT RDB$RELATION_NAME FROM (SELECT FIRST 10 * FROM RDB$RELATIONS ORDER BY RDB$RELATION_NAME DESC) ORDER BY RDB$RELATION_NAME
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed SF bug #1122344
+        gbak -kill option drops existing shadow
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #750662
+        Multiple declaration of blob filters
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Parser improvement
+        UNIONs are allowed in ANY/ALL/IN subqueries
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #743679
+        FIRST / SKIP not well implemented
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Optimizer improvement
+        NOT conditions are simplified and optimized via index when possible
+      Example(s):
+        (NOT NOT A = 0) -> (A = 0)
+        (NOT A > 0) -> (A <= 0)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #450404
+        ISQL uppercases role in the command line
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        100% CPU load when an I/O error causes a rollover to non-existing shadow
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 2 bug (SF #1173988)
+        Minor glitches in GBAK output
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        Fix for the -b (Bail On Error) option when SQL commands are	issued and no db connection exists yet.
+        Apply Miroslav Penchev's patch for bug with -Q always returning 1 to the operating system, discovered by Ivan Prenosil.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
 
     * New INTL interface
         A new interface allowing the following enhancements and features
@@ -105,7 +324,6 @@
   **************
   * v2.0 Alpha 2
   **************
-
 
     * Fixed bug (SF #1016969)
         Unknown datatype for parameters in result of searched CASE expression
