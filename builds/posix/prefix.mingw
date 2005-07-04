@@ -61,7 +61,7 @@ ClientLibraryNameFull := $(ClientLibraryName)
 ClientLibraryNameMajor := $(ClientLibraryName)
 
 # Looks like MinGW 3 does not support version scripts but support def-files
-LINK_FIREBIRD_SYMBOLS = $(BLD_ROOT)/win32/defs/fbclient.def
+LINK_FIREBIRD_SYMBOLS = $(BLD_ROOT)/win32/defs/fbclient_s.def $(BLD_ROOT)/win32/defs/fbclient.def
 
 # This is required for newly built executable to find newly built shared
 # libraries because on Win32 there is no such thing as LD_LIBRARY_PATH
