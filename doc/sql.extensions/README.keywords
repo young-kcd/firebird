@@ -79,12 +79,15 @@ Firebird 2.0:
 
     BACKUP *
     BLOCK *
+    COLLATION
+    COMMENT *
     DIFFERENCE *
     IIF *
     NEXT
     SCALAR_ARRAY *
     SEQUENCE
     RESTART
+    RETURNING *
 
   Moved from reserved words to non-reserved:
 
