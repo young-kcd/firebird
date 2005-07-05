@@ -250,6 +250,9 @@ for %%v in ( fbudf.sql fbudf.txt ) do (
 mkdir %FBBUILD_OUTPUT%\misc\upgrade\ib_udf 2>nul
 @copy %ROOT_PATH%\src\misc\upgrade\v2\ib_udf*.* %FBBUILD_OUTPUT%\misc\upgrade\ib_udf\
 
+::INTL script
+@copy %ROOT_PATH%\src\misc\intl.sql %FBBUILD_OUTPUT%\misc\
+
 
 @echo   Copying other documentation...
 @copy %ROOT_PATH%\builds\install\arch-specific\win32\installation_readme.txt %FBBUILD_OUTPUT%\doc\installation_readme.txt > nul
