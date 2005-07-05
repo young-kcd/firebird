@@ -34,7 +34,7 @@ begin
 	for select rdb$character_set_id
 			from rdb$character_sets
 			order by rdb$character_set_id desc
-		into temp_id do
+		into :temp_id do
 	begin
 		if (temp_id = id) then
 			id = id - 1;
@@ -94,13 +94,14 @@ begin
 
 	select rdb$character_set_id
 		from rdb$character_sets
-		where rdb$character_set_name = :character_set into charset_id;
+		where rdb$character_set_name = :character_set
+		into :charset_id;
 
 	for select rdb$collation_id
 			from rdb$collations
 			where rdb$character_set_id = :charset_id
 			order by rdb$collation_id desc
-		into temp_id do
+		into :temp_id do
 	begin
 		if (temp_id = id) then
 			id = id - 1;
