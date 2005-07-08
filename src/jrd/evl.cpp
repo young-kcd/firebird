@@ -2598,10 +2598,10 @@ static void adjust_text_descriptor(thread_db* tdbb, dsc* desc)
  *      and change dsc_length to number of bytes used by the string.
  *
  **************************************/
-	SET_TDBB(tdbb);
-
 	if (desc->dsc_dtype == dtype_text)
 	{
+		SET_TDBB(tdbb);
+
 		USHORT ttype = INTL_TTYPE(desc);
 
 		CharSet* charSet = INTL_charset_lookup(tdbb, ttype);
