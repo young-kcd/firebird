@@ -7102,6 +7102,7 @@ static int process_statement(const TEXT* string,
 	}
 	else {
 		// Otherwise fetch and print records until EOF
+		const bool printHead = !List && Heading;
 		SLONG lines;
 		for (lines = 0; !Abort_flag; ++lines) {
 
@@ -7148,8 +7149,8 @@ static int process_statement(const TEXT* string,
 			   command-line ISQL only.  For WISQL, print the column
 			   headings only once. */
 
-			if (!List && Heading && (lines % Pagelength == 0)) {
-				isqlGlob.printf("%s%s%s%s",
+			if (printHead && (lines % Pagelength == 0)) {
+				isqlGlob.printf("%s%s%s%s%s",
 								NEWLINE,
 								header,
 								NEWLINE,
@@ -7160,7 +7161,7 @@ static int process_statement(const TEXT* string,
 			if (isc_status[1]) {
 				// CVC: Add a \n so the error message is not at the right of
 				// header but in its own line, if no row was output yet.
-				if (!lines)
+				if (!lines && !printHead)
 					isqlGlob.printf(NEWLINE);
 					
 				ISQL_errmsg(isc_status);
@@ -7181,7 +7182,7 @@ static int process_statement(const TEXT* string,
 				return (ps_ERR);
 			}
 
-			if (!lines)
+			if (!lines && !printHead)
 				isqlGlob.printf(NEWLINE);
 
 			ret = print_line(sqlda, pad, line);
