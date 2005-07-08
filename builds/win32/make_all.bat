@@ -2,7 +2,7 @@
 set ERRLEV=0
 
 :: Set env vars
-@if %FB2_EMBED_BOOT% equ 1 (
+@if "%FB2_EMBED_BOOT%" equ "1" (
 @call setenvvar2.bat
 ) else (
 @call setenvvar.bat
