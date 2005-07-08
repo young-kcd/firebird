@@ -4256,7 +4256,8 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 
 	if (!releaseLock) {
 		if ( (relLock->lck_logical < LCK_PR) &&
-			!LCK_convert_non_blocking(tdbb, relLock, LCK_PR, transaction->getLockWait()) ) {
+			!LCK_convert_non_blocking(tdbb, relLock, LCK_PR, transaction->getLockWait()) )
+		{
 			inUse = true;
 		}
 	}

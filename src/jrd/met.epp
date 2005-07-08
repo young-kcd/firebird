@@ -2944,17 +2944,17 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	(*vector)[id] = relation;
 	relation->rel_id = id;
 
-	{
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
-	relation->rel_partners_lock = lock;
-	lock->lck_parent = dbb->dbb_lock;
-	lock->lck_dbb = dbb;
-	lock->lck_key.lck_long = relation->rel_id;
-	lock->lck_length = sizeof(lock->lck_key.lck_long);
-	lock->lck_type = LCK_rel_partners;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_object = relation;
-	lock->lck_ast = partners_ast_relation;
+	{ // Scope block.
+		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
+		relation->rel_partners_lock = lock;
+		lock->lck_parent = dbb->dbb_lock;
+		lock->lck_dbb = dbb;
+		lock->lck_key.lck_long = relation->rel_id;
+		lock->lck_length = sizeof(lock->lck_key.lck_long);
+		lock->lck_type = LCK_rel_partners;
+		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+		lock->lck_object = relation;
+		lock->lck_ast = partners_ast_relation;
 	}
 
 	// This should check system flag instead.
@@ -2962,17 +2962,17 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 		return relation;
 	}
 
-	{
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
-	relation->rel_existence_lock = lock;
-	lock->lck_parent = dbb->dbb_lock;
-	lock->lck_dbb = dbb;
-	lock->lck_key.lck_long = relation->rel_id;
-	lock->lck_length = sizeof(lock->lck_key.lck_long);
-	lock->lck_type = LCK_rel_exist;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_object = relation;
-	lock->lck_ast = blocking_ast_relation;
+	{ // Scope block.
+		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
+		relation->rel_existence_lock = lock;
+		lock->lck_parent = dbb->dbb_lock;
+		lock->lck_dbb = dbb;
+		lock->lck_key.lck_long = relation->rel_id;
+		lock->lck_length = sizeof(lock->lck_key.lck_long);
+		lock->lck_type = LCK_rel_exist;
+		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+		lock->lck_object = relation;
+		lock->lck_ast = blocking_ast_relation;
 	}
 
 	relation->rel_flags |= (REL_check_existence | REL_check_partners);

@@ -90,7 +90,7 @@ void AdminException::setLocation(JString file, int lineNumber)
 	char	*buffer = temp;
 	int		l = sizeof (temp);
 	
-	for (int n =0; n < 3; ++n)
+	for (int n = 0; n < 3; ++n)
 		{
 		int ret = snprintf (buffer, l, "%s, line %d: %s", 
 							(const char*) fileName, lineNumber, (const char*) text);
