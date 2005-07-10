@@ -13,7 +13,7 @@ if DEFINED VS71COMNTOOLS (
 
 set FB2_EMBED_BOOT=1
 :: Set env vars
-@if %FB2_EMBED_BOOT% equ 1 (
+@if "%FB2_EMBED_BOOT%" equ "1" (
 @call setenvvar2.bat
 ) else (
 @call setenvvar.bat

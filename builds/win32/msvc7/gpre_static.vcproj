@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="gpre_static"
+	ProjectGUID="{ED16DC25-8671-4898-B28C-64BFD44D0EF8}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
