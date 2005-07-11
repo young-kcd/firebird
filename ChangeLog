@@ -1,3 +1,11 @@
+2005-07-10 19:57  asfernandes
+
+	* firebird2/builds/win32/: make_boot2.bat (1.2), make_icu.bat
+	(1.5), msvc7/Firebird2Boot.sln (1.5), msvc7/Firebird2Boot2.sln
+	(1.1), msvc7/gpre_static.vcproj (1.8):
+	
+	Fix normal build for MSVC7
+
 2005-07-08 06:10  robocop
 
 	* firebird2/src/isql/isql.epp (1.154):
