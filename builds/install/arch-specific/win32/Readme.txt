@@ -16,7 +16,7 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to the second Alpha release of Firebird 2.0.
+Welcome to the third Alpha release of Firebird 2.0.
 
 
 Intended Users
@@ -30,6 +30,10 @@ notes first.
 
  o DO NOT install this version if you have never used
    Firebird before. Use Firebird v1.5.2 instead.
+
+ o If you have been testing earlier Alpha releases
+   please make sure you read the installation readme and the
+   release notes.
 
 
 Features in this release (all platforms)

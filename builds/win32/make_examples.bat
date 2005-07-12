@@ -2,7 +2,12 @@
 
 
 :: Set env vars
+if not DEFINED FB2_EMBED_BOOT (set FB2_EMBED_BOOT=1)
+@if %FB2_EMBED_BOOT% equ 1 (
+@call setenvvar2.bat
+) else (
 @call setenvvar.bat
+)
 @if errorlevel 1 (goto :EOF)
 
 :: verify that prepare was run before
@@ -44,20 +49,34 @@
 @copy /y %ROOT_PATH%\examples\empbuild\*.inp   %ROOT_PATH%\gen\examples\ > nul
 
 @echo.
-@echo Creating empbuild.fdb
 :: Here we must use cd because isql does not have an option to set a base directory
 @cd %ROOT_PATH%\gen\examples
-@del empbuild.fdb 2> nul
-@del intlbuild.fdb 2> nul
-@%ROOT_PATH%\gen\examples\isql -i empbld.sql
-@%ROOT_PATH%\gen\examples\isql -i intlbld.sql
-@cd %ROOT_PATH%\builds\win32
-
+@echo   Creating empbuild.fdb...
 @echo.
-@echo preprocessing empbuild.e and intlbld.e
+@del empbuild.fdb 2> nul
+@%ROOT_PATH%\gen\examples\isql -i empbld.sql
+
+
+if defined FB2_INTLEMP (
+@echo   Creating intlbuild.fdb...
+@echo.
+@del intlbuild.fdb 2> nul
+@%ROOT_PATH%\gen\examples\isql -i intlbld.sql
+)
+
+@cd %ROOT_PATH%\builds\win32
+@echo.
 @echo path = %DB_PATH%/gen/examples
-@%ROOT_PATH%\gen\gpre_static -r -m -n -z %ROOT_PATH%\examples\empbuild\empbuild.e %ROOT_PATH%\gen\examples\empbuild.c -b %SERVER_NAME%:%DB_PATH%/gen/examples/
-@%ROOT_PATH%\gen\gpre_static -r -m -n -z %ROOT_PATH%\examples\empbuild\intlbld.e %ROOT_PATH%\gen\examples\intlbld.c -b %SERVER_NAME%:%DB_PATH%/gen/examples/
+@echo   Preprocessing empbuild.e...
+@echo.
+@%ROOT_PATH%\gen\gpre_embed.exe -r -m -n -z %ROOT_PATH%\examples\empbuild\empbuild.e %ROOT_PATH%\gen\examples\empbuild.c -b %SERVER_NAME%:%DB_PATH%/gen/examples/
+
+if defined FB2_INTLEMP (
+@echo   Preprocessing intlbld.e...
+@echo.
+@%ROOT_PATH%\gen\gpre_embed.exe -r -m -n -z %ROOT_PATH%\examples\empbuild\intlbld.e %ROOT_PATH%\gen\examples\intlbld.c -b %SERVER_NAME%:%DB_PATH%/gen/examples/
+)
+
 @goto :EOF
 
 ::===========
@@ -82,9 +101,9 @@ if "%VS_VER%"=="msvc6" (
 if "%VS_VER%"=="msvc6" (
 	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "empbuild - Win32 Debug" "intlbld - Win32 Debug" %CLEAN% /OUT examples.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% debug /project empbuild /OUT empbuild.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% debug /project empbuild /OUT empbuild.log
 	if defined FB2_INTLEMP (
-	  @devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% debug /project intlbuild /OUT intlbld.log
+	  @devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples.sln %CLEAN% debug /project intlbuild /OUT intlbld.log
 	)
 )
 @goto :EOF
@@ -138,10 +157,11 @@ if "%VS_VER%"=="msvc6" (
 :: and empbuild.exe uses isql
 @cd %ROOT_PATH%\gen\examples
 @del %ROOT_PATH%\gen\examples\employee.fdb 2>nul
-@del %ROOT_PATH%\gen\examples\intlemp.fdb 2>nul
 @%ROOT_PATH%\gen\examples\empbuild.exe %DB_PATH%/gen/examples/employee.fdb
 
 if defined FB2_INTLEMP (
+@echo Building intlemp.fdb
+  @del %ROOT_PATH%\gen\examples\intlemp.fdb 2>nul
   @del isql.tmp 2>nul
   @echo s;intlemp.fdb;%SERVER_NAME%:%ROOT_PATH%\gen\examples\intlemp.fdb;g > isql.tmp
   @%ROOT_PATH%\gen\examples\intlbuild.exe %DB_PATH%/gen/examples/intlemp.fdb
@@ -156,7 +176,9 @@ if defined FB2_INTLEMP (
 @copy %ROOT_PATH%\gen\examples\employee.fdb %ROOT_PATH%\output\examples\empbuild\ > nul
 
 if defined FB2_INTLEMP (
+  if exist %ROOT_PATH%\gen\examples\intlemp.fdb (
   @copy %ROOT_PATH%\gen\examples\intlemp.fdb %ROOT_PATH%\output\examples\empbuild\ > nul
+  )
 )
 
 @goto :EOF
@@ -174,7 +196,6 @@ if defined FB2_INTLEMP (
 @echo    You must run make_boot.bat before running this script
 @echo.
 @goto :EOF
-
 
 :ERROR
 ::====

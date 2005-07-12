@@ -1,15 +1,16 @@
-Firebird Database Server 2.0 ALPHA 2
+Firebird Database Server 2.0 ALPHA 3
 ==================================================
 
   ** IMPORTANT **
 
-  See note below regarding installation over
-  older versions of Firebird
+  The ODS has changed. See the notes below regarding
+  the new ODS and installation over older versions
+  of Firebird.
 
   ** ********* **
 
 This document is a guide to installing this package of
-Firebird 2.0 Alpha 2 on the Win32 platform. These notes
+Firebird 2.0 Alpha 3 on the Win32 platform. These notes
 refer to the installation package itself, rather than
 Firebird 2.0 in general.
 
@@ -18,7 +19,8 @@ Contents
 --------
 
 o Before installation
-o Installing on systems with older versions of Firebird
+o New ODS 11.0
+o Installation on systems with Firebird 1.5
 o Installing on systems with Firebird 2.0
 o New features of the installer
 o Known installation problems
@@ -33,11 +35,28 @@ Before installation
 
 It is recommended that you UNINSTALL all previous
 versions of Firebird or InterBase before installing
-this package.
+this package. It is especially important to verify that
+fbclient.dll and gds32.dll are removed from <system32>.
 
 
-Installation on systems with older version of Firebird
-------------------------------------------------------
+New ODS 11.0
+------------
+
+Alpha 3 features a new ODS 11.0 which is wholly
+incompatible with the ODS 11.0 used by the previous
+alpha releases.
+
+If you are installing Alpha 3 for the first time and
+you already have a Firebird 2 alpha installed it is
+recommended that you install into a fresh directory.
+This is because an uninstall will preserve the existing
+security2 database. However this older version uses
+an incompatible ODS so you will be unable to connect to
+the server.
+
+
+Installation on systems with Firebird 1.5
+-----------------------------------------
 
 The security database has been changed. The new
 database is called security2.fdb and uses a
@@ -54,13 +73,15 @@ in misc/upgrade/security/. A future test release will
 address the issue of user migration more fully.
 
 
-Installing on systems with Firebird 2.0 
+Installing on systems with Firebird 2.0
 ---------------------------------------
 
-The installer cannot automatically detect if a
-Firebird 2.0 Alpha 1 or Alpha 2 server is running. 
-Therefore you will receive no warning until the 
-installer attempts to overwrite an active file.
+In addition to the ODS change please note that the
+installer cannot automatically detect if a
+Firebird 2.0 Alpha 1,2 or 3 server is running
+as a service. Therefore you will receive no warning
+until the installer attempts to overwrite an active
+file.
 
 
 New features of the installer

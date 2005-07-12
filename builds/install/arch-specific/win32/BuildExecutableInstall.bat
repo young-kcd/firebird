@@ -32,9 +32,13 @@ set FBBUILD_ZIP_PACK=0
 set FBBUILD_ISX_PACK=0
 set FBBUILD_EMB_PACK=0
 
-:: Hard code our package number - it only needs to be changed if the
-:: kit is repackaged but the engine is not rebuilt
+:: Set our package number at 0 and increment every
+:: time we rebuild in a single session
+if not defined FBBUILD_PACKAGE_NUMBER (
 set FBBUILD_PACKAGE_NUMBER=0
+) else (
+set /A FBBUILD_PACKAGE_NUMBER+=1
+)
 
 :: See what we have on the command line
 ::for %%v in ( %1 %2 %3 %4 %5 )  do (
