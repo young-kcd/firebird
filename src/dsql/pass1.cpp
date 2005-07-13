@@ -3647,15 +3647,11 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	// Save some values to restore after rse process.
 	DsqlContextStack* const req_base = request->req_context;
 	dsql_str* const req_alias_relation_prefix = request->req_alias_relation_prefix;
-	DsqlContextStack::iterator dtStartContext;
-	if (request->req_dt_base_context)
-		dtStartContext = *request->req_dt_base_context;
 
 	// Change req_context, because when we are processing the derived table rse
 	// it may not reference to other streams in the same scope_level.
 	DsqlContextStack temp;
-	request->req_context = request->req_dt_base_context ?
-		request->req_dt_base_context : &temp;
+	request->req_context = &temp;
 	request->req_alias_relation_prefix = pass1_alias_concat(req_alias_relation_prefix, alias);
 
 	// AB: 2005-01-06
@@ -3691,8 +3687,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	// Finish off by cleaning up contexts and put them into req_dt_context
 	// so create view (ddl) can deal with it.
 	// Also add the used contexts into the childs stack.
-	while ((request->req_context->hasData()) &&
-		   (*request->req_context != dtStartContext))
+	while (request->req_context->hasData())
 	{
 		request->req_dt_context.push(request->req_context->object());
 		context->ctx_childs_derived_table.push(request->req_context->pop());
@@ -6086,16 +6081,8 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 	dsql_nod* rse = target_rse;
 	rse->nod_arg[e_rse_lock] = update_lock;
 
-	// Save current context base for derived tables.
-	// Derived tables may not internally reference to outer contexts in from clause.
-	request->req_dt_base_context = request->req_context;
-
 	dsql_nod* list = rse->nod_arg[e_rse_streams] =
 		PASS1_node(request, input->nod_arg[e_qry_from], false);
-
-	// Save new current context for derived tables, because in other
-	// elements a reference to outer context is allowed.
-	request->req_dt_base_context = request->req_context;
 
 	{ // scope block
 		const dsql_rel* relation;

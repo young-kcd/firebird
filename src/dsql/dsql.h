@@ -395,7 +395,6 @@ public:
 		req_context(&req_main_context), 
 		req_union_context(p), 
 		req_dt_context(p), 
-		req_dt_base_context(0), 
 		req_blr_data(p),
 		req_labels(p), 
 		req_cursors(p) { }
@@ -408,7 +407,6 @@ public:
 	DsqlContextStack*	req_context;
     DsqlContextStack	req_union_context;	//!< Save contexts for views of unions
     DsqlContextStack	req_dt_context;		//!< Save contexts for views of derived tables
-    DsqlContextStack*	req_dt_base_context;	//!< Save base context used for processing derived tables
 	dsql_sym* req_name;			//!< Name of request
 	dsql_sym* req_cursor;		//!< Cursor symbol, if any
 	dsql_dbb*	req_dbb;			//!< Database handle
