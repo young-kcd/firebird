@@ -1605,7 +1605,6 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 			RFR IN RDB$RELATION_FIELDS
 			WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
 			AND RFR.RDB$RELATION_NAME EQ name->str_data
-			AND RFR.RDB$FIELD_ID NOT MISSING
 			SORTED BY RFR.RDB$FIELD_POSITION 
 
             THREAD_ENTER();
@@ -1660,7 +1659,6 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 			RFR IN RDB$RELATION_FIELDS
 			WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
 			AND RFR.RDB$RELATION_NAME EQ name->str_data
-			AND RFR.RDB$FIELD_ID NOT MISSING
 			SORTED BY RFR.RDB$FIELD_POSITION
 
 			THREAD_ENTER();
