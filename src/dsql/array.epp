@@ -541,7 +541,6 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
 		RELEASE_REQUESTS;
 
 	DB = *db_handle;
-	gds_trans = *trans_handle;
 
     copy_exact_name (field_name, desc->array_desc_field_name,
                      sizeof(desc->array_desc_field_name));
@@ -553,7 +552,8 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
 
 	bool flag = false;
 
-	FOR X IN RDB$RELATION_FIELDS CROSS Y IN RDB$FIELDS
+	FOR (TRANSACTION_HANDLE *trans_handle)
+		X IN RDB$RELATION_FIELDS CROSS Y IN RDB$FIELDS
 		WITH X.RDB$FIELD_SOURCE EQ Y.RDB$FIELD_NAME AND
 		X.RDB$RELATION_NAME EQ desc->array_desc_relation_name AND
 		X.RDB$FIELD_NAME EQ desc->array_desc_field_name

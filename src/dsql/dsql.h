@@ -133,15 +133,18 @@ enum irq_type_t {
     irq_procedure   = 7,     //!< lookup a stored procedure             
     irq_parameters  = 8,     //!< lookup a procedure's parameters       
     irq_collation   = 9,     //!< lookup a collation name               
-    irq_charset     = 10,    //!< lookup a character set name           
+    irq_charset     = 10,    //!< lookup a character set
     irq_trigger     = 11,    //!< lookup a trigger                      
     irq_domain      = 12,    //!< lookup a domain                       
     irq_type        = 13,    //!< lookup a symbolic name in RDB$TYPES   
     irq_col_default = 14,    //!< lookup default for a column           
     irq_domain_2    = 15,    //!< lookup a domain
     irq_exception   = 16,    //!< lookup an exception
+	irq_cs_bpc      = 17,    //!< lookup a charset bpc
+	irq_cs_name     = 18,    //!< lookup a charset name
+	irq_default_cs  = 19,    //!< lookup the default charset
 
-    irq_MAX         = 17
+    irq_MAX         = 20
 };
 
 // dsql_node definition

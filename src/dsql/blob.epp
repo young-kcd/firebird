@@ -150,7 +150,6 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 		RELEASE_REQUESTS;
 
 	DB = *db_handle;
-	gds_trans = *trans_handle;
 
     copy_exact_name (field_name, desc->blob_desc_field_name, 
                      sizeof(desc->blob_desc_field_name));
@@ -159,7 +158,8 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 
 	bool flag = false;
 
-	FOR X IN RDB$RELATION_FIELDS CROSS Y IN RDB$FIELDS
+	FOR (TRANSACTION_HANDLE *trans_handle)
+		X IN RDB$RELATION_FIELDS CROSS Y IN RDB$FIELDS
 		WITH X.RDB$FIELD_SOURCE EQ Y.RDB$FIELD_NAME AND
 		X.RDB$RELATION_NAME EQ desc->blob_desc_relation_name AND
 		X.RDB$FIELD_NAME EQ desc->blob_desc_field_name
@@ -175,7 +175,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
         }
 	END_FOR 
     ON_ERROR 
-      return copy_status(gds_status, status);
+		return copy_status(gds_status, status);
 	END_ERROR;
 
 	if (!flag)
