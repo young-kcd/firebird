@@ -1,3 +1,9 @@
+2005-07-16 08:46  dimitr
+
+	* firebird2/src/dsql/metd.epp (1.76):
+	
+	Temporarily rolled back my fix.
+
 2005-07-13 22:07  arnobrinkman
 
 	* firebird2/src/dsql/: dsql.h (1.74), pass1.cpp (1.224):
