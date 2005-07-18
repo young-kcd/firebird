@@ -1,3 +1,11 @@
+2005-07-17 09:00  dimitr
+
+	* firebird2/src/dsql/: array.epp (1.34), blob.epp (1.17), dsql.h
+	(1.75), metd.epp (1.77):
+	
+	1) Fixed threading issues in DSQL (they always existed, but were
+	hidden until recently).  2) Cached all METD requests.
+
 2005-07-16 08:46  dimitr
 
 	* firebird2/src/dsql/metd.epp (1.76):
