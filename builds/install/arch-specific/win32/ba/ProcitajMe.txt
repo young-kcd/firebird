@@ -1,1 +1,111 @@
-Please refer to the Readme.txt in english for notes on this release.
+
+==================================
+Firebird 2.0.0       (Win32 Build)
+==================================
+
+o Uvod
+o Kome je namjenjen
+o Odlike ovog release-a (sve platforme)
+o Popravljeni bug-ovi u ovom release-u
+o Instalacija
+o Instalacija iz samoraspakujuce datoteke
+o Poznati nedostatci
+o Prijavljivanje Bug-ova
+o Zahtjev novih mogucnosti
+
+
+Uvod
+============
+
+Dobrodosli u treci Alpha release Firebird-a 2.0.
+
+
+Kome je namjenjen
+============================
+
+Ovaj alpha release nije namjenjen za koristenje u produkciji.
+Objavljen je u svrhe evaluacije ocekuje se da ga koriste 
+iskusni korisnici Firebird-a. Nadamo se da ce svi 
+alpha testeri prvo procitati release notes.
+
+ o NE instalirajte ovu verziju ako nikada ranije niste
+   koristili Firebird. U suprotnom koristite Firebird v1.5.2.
+
+ o Ako ste testirali ranije Alpha release-ove
+   molimo procitajte readme instalacije i 
+   release notes.
+
+
+Odlike ovog release-a (sve platforme)
+========================================
+
+Pogledajte doc/Firebird_v2.0.0.ReleaseNotes.pdf za vise
+informacija.
+
+
+Popravljeni bug-ovi u ovom release-u (all platforms)
+==========================================
+
+Pogledajte doc/Firebird_v2.0.0.ReleaseNotes.pdf za vise 
+informacija.
+
+
+Instalacija iz samoraspakujuce datoteke
+=========================================
+
+Molimo pokrenite izvrsnu datoteku i procitajte prilozene
+instrukcije za instalaciju koji su ukljuceni u 
+setup wizard.
+
+
+Poznati nedostatci
+============
+
+ o Proces instalacije ne moze detektovati pokrenuti
+   Firebird 2.0 server. U krajnjoem slucaju instalacija
+   nece uspjeti, kada pokusa da prepise aktivnu datoteku.
+
+ o Sigurnosna baza podataka je promijenjena! Pogledajte DOC
+   direktorij za vise detalja. Korisnici kjoji zele da 
+   migriraju staru security bazu u novi format mogu koristiti 
+   upgrade script-u koja se nalazi u misc/upgrade/security
+
+Prijavljivanje Bug-ova
+==============
+
+o Jeste li sigurni da razumijete kako Firebird radi?
+
+  Mozda ustvari vidite ispravno ponasanje i ustvari 
+  imate pitanje za support. U ovom slucaju kontaktirajte 
+  firebird-support list server.
+
+  Mozete se prijaviti ovdje:
+
+    mailto:firebird-support-subscribe@yahoogroups.com
+
+
+o I dalje mislite da je bug u pitanju?
+
+  Prvo provjerite fiedl test issue tracker ovdje:
+
+    http://sourceforge.net/tracker/?atid=593943&group_id=9028&func=browse
+
+  On je specijalno namjenjen za prijavljivanje problema 
+  nadjenih prilikom testiranja pre-release verzija Firebird-a.
+
+  Mozete pogledati i listu Open Bugs u
+  stabilnim Firebird release-ovima. Ovo mozete naci na adresi:
+
+    http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
+
+
+Zahtjev novih mogucnosti
+=======================
+
+Prije dostavljanja zahtjeva za nove mogucnosti, molimo pogledajte 
+postojecu listu zahtjeva. Postoje izgledi da je neko vec 
+mislio o tome. Listu postojecih zahtjeva mozete naci ovdje:
+
+  http://sourceforge.net/tracker/?atid=359028&group_id=9028&func=browse
+
+

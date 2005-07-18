@@ -87,7 +87,7 @@ o Are you sure you understand how Firebird works?
 
 o Still think it is a bug?
 
-  First check the fiedl test issue tracker here:
+  First check the field test issue tracker here:
 
     http://sourceforge.net/tracker/?atid=593943&group_id=9028&func=browse
 
