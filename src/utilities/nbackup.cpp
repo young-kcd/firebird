@@ -857,7 +857,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 			}
 			else {
 #ifdef WIN_NT
-				if (!CopyFile(bakname.c_str(), dbname.c_str(), FALSE)) {
+				if (!CopyFile(bakname.c_str(), dbname.c_str(), TRUE)) {
 					b_error::raise("Error (%d) creating database file: %s via copying from: %s", 
 						GetLastError(), dbname.c_str(), bakname.c_str());
 				}
