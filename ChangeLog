@@ -1,3 +1,16 @@
+2005-07-18 16:04  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/: Readme.txt (1.7),
+	ba/Instalacija_ProcitajMe.txt (1.3), ba/ProcitajMe.txt (1.2):
+	
+	Add updated bosnian Win32 install notes.
+
+2005-07-18 16:00  paul_reeves
+
+	* firebird2/src/jrd/isc_version.h (1.7):
+	
+	Sync build numbers for Win32.
+
 2005-07-17 09:00  dimitr
 
 	* firebird2/src/dsql/: array.epp (1.34), blob.epp (1.17), dsql.h
