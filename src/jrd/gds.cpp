@@ -412,25 +412,27 @@ const char* const FB_TMP_ENV		= "FIREBIRD_TMP";
 // maxlen to minlen because it represents the minimum length the number will
 // be printed in. However, this means buffer should be large enough to contain
 // any ULONG (11 bytes) and thus prevent a buffer overflow. If minlen >= 11,
-// then buffer should have be of size = (minlen + 1). A small anomaly means
-// that when "value" is zero, only filler is stored in buffer: no ACSCII(48)
-// appears in buffer, unless filler itself is ASCII(48) == '0'.
+// then buffer should have be of size = (minlen + 1).
 void gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler)
 {
 	ULONG n = value;
+
 	int c = 0;
-	while (n) {
+	do {
 		n = n / 10;
 		c++;
-	}
+	} while (n);
+
 	if (minlen > c)
 		c = minlen;
 		
 	char* p = buffer + c;
-	while (value) {
+
+	do {
 		*--p = '0' + (value % 10);
 		value = value / 10;
-	}
+	} while(value);
+
 	while (p != buffer) {
 		*--p = filler;
 	}
@@ -1029,7 +1031,9 @@ const int SECS_PER_HOUR	= 60 * 60;
 const int SECS_PER_DAY	= SECS_PER_HOUR * 24;
 
 #ifdef WIN_NT
-Firebird::Mutex trace_mutex;
+// This is machine-global. Can be made instance-global.
+// For as long you don't trace two instances in parallel this shouldn't matter.
+HANDLE trace_mutex_handle = CreateMutex(NULL, FALSE, "firebird_trace_mutex");
 HANDLE trace_file_handle = INVALID_HANDLE_VALUE;
 #endif
 
@@ -1053,7 +1057,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 
 	// Nickolay Samofatov, 12 Sept 2003. Windows open files extremely slowly. 
 	// Slowly enough to make such trace useless. Thus we cache file handle !
-	trace_mutex.enter();
+	WaitForSingleObject(trace_mutex_handle, INFINITE);
 	while (true) {
 		if (trace_file_handle == INVALID_HANDLE_VALUE) {
 			TEXT name[MAXPATHLEN];
@@ -1078,7 +1082,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 		}
 		break;
 	}
-	trace_mutex.leave();
+	ReleaseMutex(trace_mutex_handle);
 #else
 	TEXT name[MAXPATHLEN];
 
@@ -1180,7 +1184,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 
 	const int oldmask = umask(0111);
 #ifdef WIN_NT
-	trace_mutex.enter();
+	WaitForSingleObject(trace_mutex_handle, INFINITE);
 #endif
 	FILE* file = fopen(name, "a");
 	if (file != NULL)
@@ -1194,7 +1198,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 		fclose(file);
 	}
 #ifdef WIN_NT
-	trace_mutex.leave();
+	ReleaseMutex(trace_mutex_handle);
 #endif
 
 	umask(oldmask);
@@ -1230,7 +1234,7 @@ void API_ROUTINE gds__print_pool(JrdMemoryPool* pool, const TEXT* text, ...)
 
 	const int oldmask = umask(0111);
 #ifdef WIN_NT
-	trace_mutex.enter();
+	WaitForSingleObject(trace_mutex_handle, INFINITE);
 #endif
 	FILE* file = fopen(name, "a");
 	if (file != NULL)
@@ -1246,7 +1250,7 @@ void API_ROUTINE gds__print_pool(JrdMemoryPool* pool, const TEXT* text, ...)
 		fclose(file);
 	}
 #ifdef WIN_NT
-	trace_mutex.leave();
+	ReleaseMutex(trace_mutex_handle);
 #endif
 
 	umask(oldmask);

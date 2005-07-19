@@ -6299,6 +6299,34 @@ static bool write_page(
 				return false;
 			}
 			page->pag_checksum = CCH_checksum(bdb);
+
+#ifdef NBAK_DEBUG
+			// We cannot call normal trace functions here as they are signal-unsafe
+			// "Write page=%d, dir=%d, diff=%d, scn=%d"
+			char buffer[1000], *ptr = buffer;
+			strcpy(ptr, "NBAK,Write page ");
+			ptr += strlen(ptr);
+			gds__ulstr(ptr, bdb->bdb_page, 0, 0);
+			ptr += strlen(ptr);
+
+			strcpy(ptr, ", dir=");
+			ptr += strlen(ptr);
+			gds__ulstr(ptr, bdb->bdb_write_direction, 0, 0);
+			ptr += strlen(ptr);
+
+			strcpy(ptr, ", diff=");
+			ptr += strlen(ptr);
+			gds__ulstr(ptr, bdb->bdb_difference_page, 0, 0);
+			ptr += strlen(ptr);
+
+			strcpy(ptr, ", scn=");
+			ptr += strlen(ptr);
+			gds__ulstr(ptr, bdb->bdb_buffer->pag_scn, 0, 0);
+			ptr += strlen(ptr);
+
+			gds__trace(buffer);
+#endif
+
 			if (bdb->bdb_write_direction == BDB_write_diff ||
 				(bdb->bdb_write_direction == BDB_write_both 
 #ifndef SUPERSERVER
@@ -6306,20 +6334,6 @@ static bool write_page(
 #endif
 				)) 
 			{
-#ifdef NBAK_DEBUG
-				// We cannot call normal trace functions here as they are signal-unsafe
-				char buffer[1000], *ptr = buffer;
-				strcpy(ptr, "NBAK, Write page ");
-				ptr += strlen(ptr);
-				gds__ulstr(ptr, bdb->bdb_page, 0, 0);
-				ptr += strlen(ptr);
-				strcpy(ptr, " at offset ");
-				ptr += strlen(ptr);
-				gds__ulstr(ptr, bdb->bdb_difference_page, 0, 0);
-				ptr += strlen(ptr);
-				strcpy(ptr, " in difference file");
-				gds__trace(buffer);
-#endif
 				if (!dbb->backup_manager->write_difference(
 					status, bdb->bdb_difference_page, bdb->bdb_buffer)) 
 				{
