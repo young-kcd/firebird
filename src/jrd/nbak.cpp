@@ -537,8 +537,20 @@ void BackupManager::begin_backup()
 	// Lock header page first to prevent possible deadlock
 	WIN window(HEADER_PAGE);
 	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-	bool state_locked = false, header_locked = true;
+	bool state_locked = false, header_locked = true, database_locked = false;
 	try {
+#ifndef SUPERSERVER
+		// Send AST's to flush other caches. While this lock is taken no pages may have
+		// destination of main database file in other process caches
+		database_use_count++;
+		if (!LCK_lock(tdbb, database_lock, LCK_EX, LCK_WAIT)) {
+			ERR_bugcheck_msg(
+				"Internal error. Cannot take EX lock on database when flushing other processes cache");
+		}
+		database_use_count--;
+		database_locked = true;
+#endif
+
 		lock_state_write(true);
 		state_locked = true;
 		NBAK_TRACE(("state locked"));
@@ -597,6 +609,10 @@ void BackupManager::begin_backup()
 			unlock_state_write();
 		if (header_locked)
 			CCH_RELEASE(tdbb, &window);
+#ifndef SUPERSERVER
+		if (database_locked)
+			LCK_release(tdbb, database_lock);
+#endif
 		throw;
 	}
 	// Flush local cache
@@ -611,13 +627,6 @@ void BackupManager::begin_backup()
 	if (database_use_count) {
 		ERR_bugcheck_msg("Internal error. Cannot take EX lock on database when flushing local cache");
 	}
-	// Send AST's to flush other caches
-	database_use_count++;
-	if (!LCK_lock(tdbb, database_lock, LCK_EX, LCK_WAIT)) {
-		ERR_bugcheck_msg(
-			"Internal error. Cannot take EX lock on database when flushing other processes cache");
-	}
-	database_use_count--;
 	LCK_release(tdbb, database_lock);
 #endif
 }
@@ -669,7 +678,7 @@ void BackupManager::end_backup(bool recover) {
 		NBAK_TRACE(("New state is getting to become after fetches %d", backup_state));
 		// Generate new SCN
 		header->hdr_header.pag_scn = current_scn;
-		NBAK_TRACE(("new SCN=%d is getting written to header", adjusted_scn));
+		NBAK_TRACE(("new SCN=%d is getting written to header", header->hdr_header.pag_scn));
 		// Adjust state
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | backup_state;
 		header_locked = false;
@@ -714,6 +723,7 @@ void BackupManager::end_backup(bool recover) {
 		if (all.getFirst()) {
 			do {
 				WIN window2(all.current().db_page);
+				NBAK_TRACE(("Merge page %d, diff=%d", all.current().db_page, all.current().diff_page));
 				Ods::pag* page = CCH_FETCH(tdbb, &window2, LCK_write, pag_undefined);
 				if (page->pag_scn != current_scn)
 					CCH_MARK(tdbb, &window2);
@@ -756,7 +766,7 @@ void BackupManager::end_backup(bool recover) {
 		NBAK_TRACE(("Set state %d in header page", backup_state));
 		// Generate new SCN
 		header->hdr_header.pag_scn = ++current_scn;
-		NBAK_TRACE(("new SCN=%d is getting written to header"));
+		NBAK_TRACE(("new SCN=%d is getting written to header", header->hdr_header.pag_scn));
 		header_locked = false;
 		CCH_RELEASE(tdbb, &window);
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
