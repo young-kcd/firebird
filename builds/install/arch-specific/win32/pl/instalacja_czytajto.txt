@@ -1,2 +1,179 @@
-<div class="moz-text-flowed" style="font-family: -moz-fixed"> 
+<div class="moz-text-flowed" style="font-family: -moz-fixed">Firebird Serwer Baz Danych 2.0 ALPHA 3
+==================================================
+
+  ** WA¯NE **
+
+  Zobacz poni¿sz¹ notatkê dotycz¹c¹ instalacji na 
+  starszej wersji Firebirda
+
+  ** ********* **
+
+Ten dokument jest przewodnikiem instalacji Firebird 2.0 
+Alpha 1 na platformie Win32. Poni¿sze informacje dotycz¹
+raczej tego pakietu instalacyjnego ni¿ Firebirda 2.0 w ogóle.
+
+
+Spis treœci
+-----------
+
+o Przed instalacj¹
+o Instalacja w systemach z starsz¹ wersj¹ Firebirda
+o Instalacja w systemach z Firebird 2.0
+o Nowe funkcjonalnoœci instalatora
+o Przestarza³e funkcjonalnoœci zwi¹zane z instalacj¹
+o Odinstalowanie
+o Pozosta³e informacje
+o Instalacja z pliku wsadowego
+
+
+Przed instalacj¹
+----------------
+
+Zalecane jest ODINSTALOWANIE wszystkich wczeœniejszych 
+wersji Firebirda lub InterBasea przed instalacj¹ tego pakietu.
+
+
+Instalacja w systemach z starsz¹ wersj¹ Firebirda
+-------------------------------------------------
+
+Baza danych bezpieczeñstwa zmieni³a siê. Nowa baza nazywa siê
+security2.fdb i u¿ywa wzmocnionego algorytmu kodowania hase³.
+Mo¿esz uzyskaæ dodatkowe informacje na temat nowych zabezpieczeñ
+w pliku doc/README.sh1.txt.
+
+Nowa struktura bazy oraz zmienione zabezpieczenia powoduj¹
+wiele problemów zwi¹zanych z migracj¹ danych w bazach, w których
+wystêpuje wielu u¿ytkowników. Instalator nie dba o przeniesienie 
+tych danych. Dla wersji pierwszej Alpha trzeba to zrobiæ samodzielnie.
+Jedna z metod migracji znajduje siê w misc/upgrade/security/. 
+Przysz³e wydania testowe bêd¹ rozwi¹zywa³y ten problem w wiêkszym
+zakresie.
+
+
+Instalacja w systemach z Firebird 2.0 Alpha 1
+----------------------------------------------
+
+Instalator nie potrafi automatycznie wykryæ czy jest uruchomiony
+serwer Firebird 2.0 Alpha 1. Tak wiêc nie pojawi siê ¿adne 
+ostrze¿enie dopóki nie spróbuje nadpisaæ aktywny plik.
+
+
+Nowe funkcjonalnoœci instalatora Firebird 2.0.0 Alpha 1
+-------------------------------------------------------
+
+Instalator Alpha 1 nie ma ¿adnych nowych funkcjonalnoœci
+
+
+Nowe funkcjonalnoœci instalatora Firebird 1.5.2
+-----------------------------------------------
+
+Dodano do instalatora wsparcie dla kilku jêzyków.
+Jest to wsparcie TYLKO na etapie instalacji.
+
+
+Nowe funkcjonalnoœci instalatora Firebird 1.5
+---------------------------------------------
+
+o Ten instalator ³¹czy binaria super serwera i classic serwera 
+  w jedn¹ paczkê instalacyjn¹. Mo¿esz wybraæ instalowanie jednej
+  lub drugiej ale nie obu. Aby zmieniæ typ serwera musisz 
+  odinstalowaæ i ponownie zainstalowaæ Firebirda.
+  
+o Znacznie zmieni³y siê zasady instalacji biblioteki. Szczegó³owe
+  wyjaœnienie znajduje siê w pliku 
+  .\docs\README.Win32LibraryInstallation.txt, który bêdzie dostêpny
+  po instalacji.
+
+  W wyniku tych zmian instalator sprawdza istniej¹ce w systemie
+  instalacje Firebirda lub InterBasea.	
+
+
+  - Jeœli Firebird 1.5 jest ju¿ zainstalowany instalator spróbuje
+    zainstalowaæ now¹ wersj¹ na starej. Jeœli serwer jest 
+    uruchomiony spowoduje to zatrzymanie instalatora.
+
+  - Jeœli inna wersja Firebirda lub InterBasea jest ju¿ 
+    zainstalowana instalator ostrze¿e u¿ytkownika. Jeœli u¿ytkownik 
+    zdecyduje siê na kontynuowanie instalacji, instalator zainstaluje
+    Firebirda i doda wpisy do rejestru ale nie skonfiguruje Firebirda 
+    do uruchomienia jako us³ugi serwisowej lub jako aplikacji. Musi 
+    to zostaæ zrobione rêcznie.
+
+  - Instalator ma now¹ opcjê wiersza poleceñ
+      /force
+    która pozwala ludziom z optymistycznym nastawieniem do rzeczywistoœci
+    zlekcewa¿yæ powy¿sze ograniczenie.
+
+
+o Jeœli zmodyfikowany plik firebird.conf istnieje w katalogu z 
+  instalacj¹ zostanie on zapisany pod nazw¹:
+    firebird.conf.saved.n
+  gdzie n jest numerem. Instalator zawsze instaluje domyœln¹ wersjê 
+  pliku firebird.conf. To gwarantuje spójnoœæ instalacji. 
+  W przeciwnym razie instalator musia³by przegl¹daæ istniej¹cy
+  (i byæ mo¿e uszkodzony) plik konfiguracyjny.
+
+
+
+Przestarza³e funkcjonalnoœci zwi¹zane z instalacj¹
+--------------------------------------------------
+
+o Firebird 1.0 rezerwowa³ nowy klucz w rejestrze dla Firebirda.
+  By³ to:
+    HKLM\SOFTWARE\FirebirdSQL
+  Teraz jest to zasz³oœæ i bêdzie kasowane przez instalator. 
+  Jeœli posiadasz aplikacje, które u¿ywaj¹ tego klucza powinieneœ
+  dodaæ go z powrotem rêcznie. Jednak¿e preferowane jest abyœ
+  przebudowa³ swoj¹ aplikacjê tak aby czyta³a nowy klucz.
+	
+o Wczeœniejsi kandydaci do wydania Firebird 1.5 instalowali
+  fbclient.dll w katalogu <system>. Ta praktyka jest ju¿ nie 
+  u¿ywana. W czasie instalacji jest dostêpna opcja umo¿liwiaj¹ca
+  zainstalowanie tego pliku do katalogu <system>. Jednak¿e 
+  preferowane jest abyœ przebudowa³ swoj¹ aplikacjê aby 
+  dopasowa³a siê do nowego u¿ycia fbclient.
+
+
+Odinstalowanie
+--------------
+
+o Zaleca siê, aby odinstalowywaæ t¹ paczkê u¿ywaj¹c dostarczonej
+  aplikacji. Mo¿na j¹ wywo³aæ z Panelu Sterowania. Alternatywn¹
+  metod¹ jest uruchomienie pliku unins000.exe bezpoœrednio z 
+  katalogu z instalacj¹.
+
+o Jeœli Firebird jest uruchamiany jako aplikacja (a nie jako
+  us³uga serwisowa) rekomendowane jest rêczne wy³¹czenie serwera
+  przed procesem odinstalowania. Jest tak poniewa¿ instalator
+  nie potrafi zatrzymaæ uruchomionej aplikacji. Jeœli serwer
+  bêdzie uruchomiony w czasie procesu odinstalowania, odinstalator
+  zakoñczy pracê z b³êdami. Bêdziesz musia³ skasowaæ pozosta³oœci
+  rêcznie.
+
+
+Pozosta³e informacje
+--------------------
+
+  Firebird wymaga WinSock2. Wszystkie platformy Win32 powinny 
+  to mieæ z wyj¹tkiem Win95. Podczas instalacji sprawdzana jest
+  obecnoœæ biblioteki WinSock2. Jeœli nie zostanie znaleziona
+  instalator nie zainstaluje Firebirda. Na poni¿szej stronie 
+  mo¿esz dowiedzieæ siê jak zainstalowaæ wymagan¹ bibliotekê:
+
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+
+
+Instalacja z pliku wsadowego
+----------------------------
+
+Program instalatora mo¿e zostaæ uruchomiony z pliku wsadowego.
+Zobacz ten dokument:
+
+    installation_scripted.txt
+
+w celu uzyskania dodatkowych informacji.
+
+
+ 
+
 </div>
