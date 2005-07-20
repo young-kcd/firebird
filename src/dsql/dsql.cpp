@@ -2424,8 +2424,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_reserve:
 		verb = "reserve";
 		break;
-	case nod_commit_retain:
-		verb = "commit_retain";
+	case nod_retain:
+		verb = "retain";
 		break;
 	case nod_page_size:
 		verb = "page_size";
