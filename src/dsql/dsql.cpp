@@ -1613,6 +1613,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 					number = isc_info_sql_stmt_commit;
 					break;
 				case REQ_ROLLBACK:
+				case REQ_ROLLBACK_RETAIN:
 					number = isc_info_sql_stmt_rollback;
 					break;
 				case REQ_START_TRANS:
@@ -3199,6 +3200,15 @@ static ISC_STATUS execute_request(dsql_req*			request,
 		*trans_handle = 0;
 		return FB_SUCCESS;
 
+	case REQ_ROLLBACK_RETAIN:
+		THREAD_EXIT();
+		s = isc_rollback_retaining(tdsql->tsql_status,
+								   &request->req_trans);
+		THREAD_ENTER();
+		if (s)
+			punt();
+		return FB_SUCCESS;
+
 	case REQ_DDL:
 		DDL_execute(request);
 		return FB_SUCCESS;
@@ -4609,7 +4619,8 @@ static dsql_req* prepare(
 
 	if (request->req_type == REQ_COMMIT ||
 		request->req_type == REQ_COMMIT_RETAIN ||
-		request->req_type == REQ_ROLLBACK)
+		request->req_type == REQ_ROLLBACK ||
+		request->req_type == REQ_ROLLBACK_RETAIN)
 	{
 		return request;
 	}

@@ -1230,12 +1230,22 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_commit:
 		if ((input->nod_arg[e_commit_retain]) &&
-			(input->nod_arg[e_commit_retain]->nod_type == nod_commit_retain))
+			(input->nod_arg[e_commit_retain]->nod_type == nod_retain))
 		{
 			request->req_type = REQ_COMMIT_RETAIN;
 		}
 		else
 			request->req_type = REQ_COMMIT;
+		return input;
+
+	case nod_rollback:
+		if ((input->nod_arg[e_rollback_retain]) &&
+			(input->nod_arg[e_rollback_retain]->nod_type == nod_retain))
+		{
+			request->req_type = REQ_ROLLBACK_RETAIN;
+		}
+		else
+			request->req_type = REQ_ROLLBACK;
 		return input;
 
 	case nod_delete:
@@ -1514,10 +1524,6 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node->nod_arg[e_exec_into_list] =
 			PASS1_node(request, input->nod_arg[e_exec_into_list], proc_flag);
 		return pass1_savepoint(request, node);
-
-	case nod_rollback:
-		request->req_type = REQ_ROLLBACK;
-		return input;
 
 	case nod_exit:
 		return input;

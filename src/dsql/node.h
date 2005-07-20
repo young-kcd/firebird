@@ -221,7 +221,7 @@ enum nod_t
 	nod_table_lock,
 	nod_lock_mode,
 	nod_reserve,
-	nod_commit_retain,
+	nod_retain,
 	// sql database stmts support
 	nod_page_size,
 	nod_file_length,
@@ -791,6 +791,10 @@ enum node_args {
 	e_cdb_count,
 
 	e_commit_retain = 0,	//
+	e_commit_count,
+
+	e_rollback_retain = 0,	//
+	e_rollback_count,
 
 	e_adb_all = 0,			//
 	e_adb_count,

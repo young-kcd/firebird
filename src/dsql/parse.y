@@ -2735,11 +2735,11 @@ optional_savepoint	: SAVEPOINT
 		;
 
 commit		: COMMIT optional_work optional_retain
-			{ $$ = make_node (nod_commit, 1, $3); }
+			{ $$ = make_node (nod_commit, e_commit_count, $3); }
 		;
 
-rollback	: ROLLBACK optional_work
-			{ $$ = make_node (nod_rollback, 0, NULL); }
+rollback	: ROLLBACK optional_work optional_retain
+			{ $$ = make_node (nod_rollback, e_rollback_count, $3); }
 		;
 
 optional_work	: WORK
@@ -2747,7 +2747,7 @@ optional_work	: WORK
 		;
 
 optional_retain	: RETAIN opt_snapshot
-			{ $$ = make_node (nod_commit_retain, 0, NULL); }
+			{ $$ = make_node (nod_retain, 0, NULL); }
 		|
 		 	{ $$ = NULL; }
 		;
