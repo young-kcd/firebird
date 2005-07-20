@@ -1,3 +1,44 @@
+2005-07-20 01:27  skidder
+
+	* firebird2/src/jrd/: cch.cpp (1.120), gds.cpp (1.172):
+	
+	little debug logging improvements
+
+2005-07-20 01:24  skidder
+
+	* firebird2/src/jrd/nbak.cpp (1.47):
+	
+	Fix the bug which results in corrupted backups being created by
+	NBACKUP
+
+2005-07-20 01:23  skidder
+
+	* firebird2/src/utilities/nbackup.cpp (1.46):
+	
+	do not overwrite destination during nbackup restore
+
+2005-07-19 15:17  paul_reeves
+
+	* firebird2/builds/win32/clean_all.bat (1.12):
+	
+	When we say clean lets make sure to include the icu tree as well.
+
+2005-07-19 15:09  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.11):
+	
+	Make sure we ship instructions on scripted installs with the binary
+	installer.
+
+2005-07-19 14:36  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/pl/: czytajto.txt
+	(1.2), instalacja_czytajto.txt (1.2):
+	
+	Update Polish text of Win32 install notes.
+
 2005-07-18 16:04  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/: Readme.txt (1.7),
