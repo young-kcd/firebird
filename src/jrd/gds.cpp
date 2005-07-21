@@ -1035,6 +1035,18 @@ const int SECS_PER_DAY	= SECS_PER_HOUR * 24;
 // For as long you don't trace two instances in parallel this shouldn't matter.
 HANDLE trace_mutex_handle = CreateMutex(NULL, FALSE, "firebird_trace_mutex");
 HANDLE trace_file_handle = INVALID_HANDLE_VALUE;
+
+class CleanupTraceHandles {
+public:
+	~CleanupTraceHandles() {
+		MessageBox(0, "in ~cleanupHandles", "FUCK", 0);
+		CloseHandle(trace_mutex_handle);
+		trace_mutex_handle = INVALID_HANDLE_VALUE;
+		CloseHandle(trace_file_handle);
+		trace_file_handle = INVALID_HANDLE_VALUE;
+	}
+} cleanupHandles;
+
 #endif
 
 void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
