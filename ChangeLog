@@ -1,3 +1,33 @@
+2005-07-21 02:44  skidder
+
+	* firebird2/src/jrd/gds.cpp (1.174):
+	
+	Oops, committed some debugging code which was not supposed to be
+	exposed to public :-)
+
+2005-07-21 02:42  skidder
+
+	* firebird2/src/jrd/gds.cpp (1.173):
+	
+	Global handles need to be closed or we have the leak during
+	client/engine DLL unload.  The cleanest solution would be to port
+	FileObject from BV3 branch here and use it, but this hack will do
+	either.
+
+2005-07-20 14:49  dimitr
+
+	* firebird2/src/dsql/dsql.cpp (1.154):
+	
+	Correction.
+
+2005-07-20 12:04  dimitr
+
+	* firebird2/src/dsql/: dsql.cpp (1.153), dsql.h (1.76), dsql.tab.h
+	(1.59), node.h (1.62), parse.cpp (1.156), parse.y (1.183),
+	pass1.cpp (1.225):
+	
+	Added DSQL support for ROLLBACK RETAIN.
+
 2005-07-20 01:27  skidder
 
 	* firebird2/src/jrd/: cch.cpp (1.120), gds.cpp (1.172):
