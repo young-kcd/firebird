@@ -1039,7 +1039,6 @@ HANDLE trace_file_handle = INVALID_HANDLE_VALUE;
 class CleanupTraceHandles {
 public:
 	~CleanupTraceHandles() {
-		MessageBox(0, "in ~cleanupHandles", "FUCK", 0);
 		CloseHandle(trace_mutex_handle);
 		trace_mutex_handle = INVALID_HANDLE_VALUE;
 		CloseHandle(trace_file_handle);
