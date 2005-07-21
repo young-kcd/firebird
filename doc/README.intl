@@ -28,7 +28,7 @@ Enhancements
 	----------------------
 
 	Some character sets (specially multi-byte) don't accept everything.
-	Now, the engine verify if strings are wellformed when assigning from NONE/OCTETS and strings sended by the client (the statement string and parameters).
+	Now, the engine verifies if strings are wellformed when assigning from NONE/OCTETS and strings sent by the client (the statement string and parameters).
 
 
 	Uppercase
@@ -66,7 +66,7 @@ Enhancements
 	Maximum string length
 	---------------------
 
-	In FB 1.5.X the engine don't verify logical length of MBCS strings.
+	In FB 1.5.X the engine doesn't verify logical length of MBCS strings.
 	Hence a UNICODE_FSS field can accept three (maximum length of one UNICODE_FSS character) times more characters than what's declared in the field size.
 	For compatibility purpose this was maintained for legacy character sets but new character sets (UTF8, for example) don't suffer from this problem.
 
@@ -74,7 +74,7 @@ Enhancements
 	NONE as attachment character set
 	--------------------------------
 	
-	When NONE is used as attachment character set, the sqlsubtype member of XSQLVAR has the character set number of the readed field, instead of always 0 as in previous versions.
+	When NONE is used as attachment character set, the sqlsubtype member of XSQLVAR has the character set number of the read field, instead of always 0 as in previous versions.
 	
 	
 	BLOBs and collations
@@ -91,7 +91,7 @@ New character sets and collations
 	UTF8 character set
 	------------------
 
-	The UNICODE_FSS character set has a number of problems: it's a old version of UTF8, accept malformed strings and don't enforce correct maximum string length. In FB 1.5.X UTF8 is a alias to UNICODE_FSS.
+	The UNICODE_FSS character set has a number of problems: it's an old version of UTF8, accepts malformed strings and doesn't enforce correct maximum string length. In FB 1.5.X UTF8 it's an alias to UNICODE_FSS.
 	Now UTF8 is a new character set, without these problems of UNICODE_FSS.
 
 
@@ -165,7 +165,7 @@ New character sets and collations
 Drivers
 -------
 
-New character sets and collations are implemented through dynamic libraries and installed in the server with a manifest file in intl subdirectory. For a example see fbintl.conf.
+New character sets and collations are implemented through dynamic libraries and installed in the server with a manifest file in intl subdirectory. For an example see fbintl.conf.
 Not all implemented character sets and collations need to be listed in the manifest file. Only those listed are available and duplications are not loaded.
 
 After installed in the server, they should be registered in the database's system tables (rdb$character_sets and rdb$collations).
