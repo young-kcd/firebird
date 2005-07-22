@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gdef,v 1.11 2005-05-27 22:16:01 asfernandes Exp $
+#  $Id: Makefile.in.client.gdef,v 1.12 2005-07-22 10:26:15 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -43,9 +43,9 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-GDEF_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
-gpre/pretty.cpp jrd/isc_file.cpp common/config/config.cpp common/config/dir_list.cpp \
-common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+GDEF_Other_Sources = gpre/pretty.cpp jrd/isc_file.cpp common/config/config.cpp \
+common/config/dir_list.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources) \
+jrd/isc.cpp
 
 GDEF_Files=	exe.epp extract.epp \
 			ddl.cpp expand.cpp expr.cpp generate.cpp \
@@ -62,10 +62,10 @@ Dependencies = $(AllObjects:.o=.d)
 
 all:	gdef 
 
-gdef:   $(BIN)/gdef
+gdef:   $(GDEF)
 
-$(BIN)/gdef: $(GDEF_Objects) $(LIBFBCLIENT_SO)
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+$(GDEF): $(GDEF_Objects) $(LIBFBCLIENT_SO)
+	$(LD) $(LINK_OPTS) $(GDEF_Objects) -o $@ -L$(LIB) -lfbcommon -lfbclient $(LINK_LIBS)
 
 
 

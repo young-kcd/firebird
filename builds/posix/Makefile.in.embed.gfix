@@ -42,8 +42,7 @@ include     $(ROOT)/gen/make.shared.variables
 GFIX_Files = alice_meta.epp \
 			 alice.cpp all.cpp exe.cpp tdr.cpp 
 
-GFIX_Other_Sources += jrd/isc.cpp jrd/ThreadData.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
+GFIX_Other_Sources += jrd/isc.cpp jrd/ThreadData.cpp
 
 GFIX_Sources = $(addprefix alice/, $(GFIX_Files)) $(GFIX_Other_Sources)
 GFIX_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GFIX_Sources))))
@@ -59,7 +58,7 @@ Dependencies = $(AllObjects:.o=.d)
 gfix : $(LIBFBEMBED_SO) $(GFIX)
 
 $(GFIX):	$(GFIX_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon -lfbembed $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

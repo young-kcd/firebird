@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.19 2005-06-10 10:32:51 aafemt Exp $
+#  $Id: Makefile.in.fbserver,v 1.20 2005-07-22 10:26:16 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=superserver
@@ -51,7 +51,7 @@ SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Source
 fbserver : $(FB_SUPER_SERVER)
 
 $(FB_SUPER_SERVER):	$(SERVER_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ -lfbcommon $(ICU_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon $(LIB_GUI) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ $(ICU_LIBS)
 
 AllObjects = $(SERVER_Objects)
 

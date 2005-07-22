@@ -42,9 +42,8 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-GDEF_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
-gpre/pretty.cpp jrd/isc_file.cpp common/config/config.cpp common/config/dir_list.cpp \
-common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+GDEF_Other_Sources = gpre/pretty.cpp jrd/isc_file.cpp common/config/config.cpp common/config/dir_list.cpp \
+common/config/config_file.cpp $(OS_SPECIFIC_Sources) jrd/isc.cpp
 
 GDEF_Files=	exe.epp extract.epp \
 			ddl.cpp expand.cpp expr.cpp generate.cpp \
@@ -61,10 +60,10 @@ Dependencies = $(AllObjects:.o=.d)
 
 all:	gdef 
 
-gdef:   $(BIN)/gdef
+gdef:   $(GDEF)
 
-$(BIN)/gdef: $(GDEF_Objects) $(CLUMPLETS_Objects) $(LIBFBEMBED_SO) 
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) $(CLUMPLETS_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+$(GDEF): $(GDEF_Objects) $(CLUMPLETS_Objects) $(LIBFBEMBED_SO) 
+	$(LD) $(LINK_OPTS) $(GDEF_Objects) $(CLUMPLETS_Objects) -o $@ -L$(LIB) -lfbcommon -lfbembed $(LINK_LIBS)
 
 
 

@@ -41,8 +41,7 @@ include     $(ROOT)/gen/make.shared.variables
 unexport ISC_USER
 unexport ISC_PASSWORD
 
-ISQL_Other_Sources = common/utils.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
+ISQL_Other_Sources =
 ISQL_Files = extract.epp isql.epp show.epp
 ISQL_Sources = $(addprefix isql/, $(ISQL_Files)) $(ISQL_Other_Sources)
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
@@ -59,7 +58,7 @@ Dependencies = $(AllObjects:.o=.d)
 isql : $(LIBFBEMBED_SO) $(ISQL)
 
 $(ISQL):	$(ISQL_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon -lfbembed $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

@@ -39,9 +39,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-QLI_Other_Sources = common/utils.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
-jrd/dsc.cpp gpre/pretty.cpp
+QLI_Other_Sources = jrd/dsc.cpp gpre/pretty.cpp
 
 QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
 		expand.cpp exe.cpp format.cpp gener.cpp help.cpp \
@@ -63,7 +61,7 @@ all:	qli
 qli : create_yachts $(LIBFBEMBED_SO) $(QLI)
 
 $(QLI): $(QLI_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon -lfbembed $(LINK_LIBS)
 	$(CHMOD_S7) $@
 
 # EKU: At this point yachts.lnk is a link to empty.fdb, but gpre will fail

@@ -89,6 +89,7 @@ EXPORTS
 
 	gds_alloc_flag_unfreed@4	PRIVATE
 	gds_alloc_report@12			PRIVATE
+	gds__alloc@4				PRIVATE
 	gds__alloc_debug@12			PRIVATE
 	gds__blob_size@16			PRIVATE
 	gds__edit@8					PRIVATE

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.25 2005-06-10 10:32:50 aafemt Exp $
+#  $Id: Makefile.in.client.util,v 1.26 2005-07-22 10:26:15 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -40,14 +40,13 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-LOCKPRINT_Other_Sources = common/utils.cpp lock/lock.cpp jrd/isc_sync.cpp jrd/isc.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
+LOCKPRINT_Other_Sources = jrd/isc_sync.cpp jrd/isc.cpp jrd/isc_ipc.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 LOCKPRINT_Files= print.cpp
 LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files)) $(LOCKPRINT_Other_Sources)
 LOCKPRINT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKPRINT_Sources))))
 
-NBACKUP_Other_Sources = jrd/db_alias.cpp common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
+NBACKUP_Other_Sources = jrd/db_alias.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 NBACKUP_Files= nbackup.cpp
 NBACKUP_Sources = $(addprefix utilities/, $(NBACKUP_Files)) $(NBACKUP_Other_Sources)
@@ -66,8 +65,7 @@ DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
-GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp common/utils.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
+GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 GSTAT_Files =  dba.epp ppg.cpp
@@ -128,18 +126,18 @@ $(CREATE_DB):	$(CREATEDB_Objects)
 nbackup: $(LIBFBCLIENT_SO) $(NBACKUP)
 
 $(NBACKUP):	$(NBACKUP_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $(NBACKUP_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(NBACKUP_Objects) -o $@ -L$(LIB) -lfbcommon -lfbclient $(LINK_LIBS)
 
 fb_lock_print: $(LIBFBCLIENT_SO) $(LOCKPRINT)
 
 $(LOCKPRINT):	$(LOCKPRINT_Objects) 
-	$(LD) $(LINK_OPTS) $(LOCKPRINT_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(LOCKPRINT_Objects) -o $@ -L$(LIB) -lfbcommon -lfbclient $(LINK_LIBS)
 
 
 gstat : $(LIBFBCLIENT_SO) $(GSTAT)
 
 $(GSTAT):	$(GSTAT_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(GSTAT_Objects) -o $@ -L$(LIB) -lfbcommon -lfbclient $(LINK_LIBS)
  
 
 
@@ -160,12 +158,12 @@ gsec: $(LIBFBCLIENT_SO)
 fbguard: $(LIBFBCLIENT_SO) $(FBGUARD)
 
 $(FBGUARD):	$(FBGUARD_Objects)
-	$(LD) $(LINK_OPTS) $(FBGUARD_Objects) -o $@ -L$(LIB) -lfbclient $(LIB_GUI) $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(FBGUARD_Objects) -o $@ -L$(LIB) -lfbcommon -lfbclient $(LIB_GUI) $(LINK_LIBS)
 
 ibguard: $(LIBFBCLIENT_SO) $(IBGUARD)
 
 $(IBGUARD):	$(IBGUARD_A_Objects) $(IBGUARD_B_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LIB_GUI) $(LINK_LIBS) 
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon -lfbclient $(LIB_GUI) $(LINK_LIBS) 
 
 fbmgr_bin: $(FBMGR_BIN)
 

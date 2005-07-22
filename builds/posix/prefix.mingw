@@ -23,9 +23,9 @@
 PROD_FLAGS=-O2  -march=i586 -mcpu=i686 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-sign-compare -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD -mthreads
 DEV_FLAGS=-ggdb -march=i586 -mcpu=i686 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic -Wno-long-long -Wno-unused-variable -Wno-sign-compare -Wno-parentheses -Wno-switch -fmessage-length=0 -Dlint -DWIN32_LEAN_AND_MEAN -MMD -mthreads
 
-PLATFORM_PATH=jrd/os/win32
+PLATFORM_PATH=os/win32
 
-JRDBOOT_Extra_Files=isc_sync.cpp ThreadData.cpp
+JRDBOOT_Extra_Files=isc_sync.cpp ThreadData.cpp isc_ipc.cpp
 
 OS_SPECIFIC_Files=thd_priority.cpp
 

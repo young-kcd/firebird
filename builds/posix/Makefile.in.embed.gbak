@@ -39,14 +39,13 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp \
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
+GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp
 GBAK_Files = backup.epp  restore.epp \
 			 burp.cpp canonical.cpp misc.cpp mvol.cpp
 GBAK_Sources = $(addprefix burp/, $(GBAK_Files)) $(GBAK_Other_Sources)
 GBAK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAK_Sources))))
 
-GSPLIT_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
+GSPLIT_Other_Sources =
 GSPLIT_Files=	spit.cpp
 GSPLIT_Sources = $(addprefix burp/, $(GSPLIT_Files)) $(GSPLIT_Other_Sources)
 GSPLIT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSPLIT_Sources))))
@@ -69,7 +68,7 @@ $(GBAK):	$(GBAK_Objects) $(CLUMPLETS_Objects)
 
 gsplit : $(LIBFBEMBED_SO) $(GSPLIT)
 
-$(GSPLIT):	$(GSPLIT_Objects) $(CLUMPLETS_Objects)
+$(GSPLIT):	$(GSPLIT_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets

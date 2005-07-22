@@ -26,7 +26,7 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.26 2005-06-10 10:32:51 aafemt Exp $
+#   $Id: make.rules,v 1.27 2005-07-22 10:26:16 aafemt Exp $
 #
 
 #____________________________________________________________________________
@@ -134,61 +134,20 @@ $(SRC_ROOT)/dsql/%.cpp:: $(SRC_ROOT)/dsql/%.epp
 .cpp.o:
 	$(CXX) -c $(CXXFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
 
-$(OBJ)/%.o:: $(SRC_ROOT)/%.c 
+$(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_PATH)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
+
+$(OBJ)/%.o: $(SRC_ROOT)/%.c 
 	$(CC) $(CXXFLAGS) -c $(firstword $<) -o $@
-	@$(move-dep)
 
 $(OBJ)/%.o: $(SRC_ROOT)/%.cpp 
 	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
-	@$(move-dep)
-
-$(TMP_ROOT)/%.o: $(SRC_ROOT)/%.cpp
-	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
-	@$(move-dep)
-
-$(OBJ)/%.lo: $(SRC_ROOT)/%.cpp 
-	@$(move-dep)
-
-$(OBJ)/%.o: $(OBJ)/%.d
 
 .SUFFIXES: .epp .e
-
-# Just write out a line making the .cpp file dependant on the .d file
-# since the .d file was just created then it will force a compile of the
-# .cpp files
-
-$(OBJ)/%.d:: $(SRC_ROOT)/%.c
-	@$(ECHO) "need to rebuild $^"
-	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
-
-$(OBJ)/%.d:: $(SRC_ROOT)/%.epp
-	@$(ECHO) "need to rebuild $^"
-	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
-
-$(OBJ)/%.d:: $(SRC_ROOT)/%.cpp
-	@$(ECHO) "need to rebuild $^"
-	$(ECHO) $(OBJ)/$(*).o " : FORCE" > $@
 
 # Rules for making resource files
 
 $(GEN_ROOT)/%.res: $(SRC_ROOT)/%.rc
 	windres --output-format=coff --include-dir=$(<D) $< $@
-
-# code to move the dependancy files from the current directory
-
-# (a # is used to delimit the sed substitute command since a "/"
-# gets in trouble with directory path names)
-
-define move-dep
-        if [ -f $(*F).d ]; \
-        then \
-                sed -e '1 s#$(@F)#$(OBJ)\/$(@F)#' $(*F).d > tmp.d; \
-                $(MV) tmp.d $(OBJ)/$(*F).d; \
-                $(RM) $(*F).d; \
-                $(TOUCH) $@; \
-        fi
-endef
-
-
 
 

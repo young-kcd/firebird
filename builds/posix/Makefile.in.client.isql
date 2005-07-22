@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.isql,v 1.10 2005-05-27 22:16:01 asfernandes Exp $
+#  $Id: Makefile.in.client.isql,v 1.11 2005-07-22 10:26:15 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -42,8 +42,7 @@ include     $(ROOT)/gen/make.shared.variables
 unexport ISC_USER
 unexport ISC_PASSWORD
 
-ISQL_Other_Sources = common/utils.cpp\
-common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp
+ISQL_Other_Sources = 
 ISQL_Files = extract.epp isql.epp show.epp
 ISQL_Sources = $(addprefix isql/, $(ISQL_Files)) $(ISQL_Other_Sources)
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
@@ -60,7 +59,7 @@ Dependencies = $(AllObjects:.o=.d)
 isql : $(LIBFBCLIENT_SO) $(ISQL)
 
 $(ISQL):	$(ISQL_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon -lfbclient $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets
