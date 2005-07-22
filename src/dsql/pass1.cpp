@@ -2123,6 +2123,7 @@ static void assign_fld_dtype_from_dsc( dsql_fld* field, const dsc* nod_desc)
 	field->fld_scale = nod_desc->dsc_scale;
 	field->fld_sub_type = nod_desc->dsc_sub_type;
 	field->fld_length = nod_desc->dsc_length;
+
 	if (nod_desc->dsc_dtype <= dtype_any_text) {
 		field->fld_collation_id = DSC_GET_COLLATE(nod_desc);
 		field->fld_character_set_id = DSC_GET_CHARSET(nod_desc);
@@ -2132,6 +2133,9 @@ static void assign_fld_dtype_from_dsc( dsql_fld* field, const dsc* nod_desc)
 		field->fld_character_set_id = nod_desc->dsc_scale;
 		field->fld_collation_id = nod_desc->dsc_flags >> 8;
 	}
+
+	if (nod_desc->dsc_flags & DSC_nullable)
+		field->fld_flags |= FLD_nullable;
 }
 
 
@@ -3134,8 +3138,6 @@ static dsql_nod* pass1_collate( dsql_req* request, dsql_nod* sub1,
 	{
 		assign_fld_dtype_from_dsc(field, &sub1->nod_desc);
 		field->fld_character_length = 0;
-		if (sub1->nod_desc.dsc_dtype == dtype_varying)
-			field->fld_length += sizeof(USHORT);
 	}
 	else {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
