@@ -1,3 +1,22 @@
+2005-07-22 12:26  aafemt
+
+	* firebird2/builds/: posix/Makefile.in.client.gbak (1.12),
+	posix/Makefile.in.client.gdef (1.12), posix/Makefile.in.client.gfix
+	(1.14), posix/Makefile.in.client.gpre (1.19),
+	posix/Makefile.in.client.isql (1.11), posix/Makefile.in.client.qli
+	(1.7), posix/Makefile.in.client.util (1.26),
+	posix/Makefile.in.embed.gbak (1.12), posix/Makefile.in.embed.gdef
+	(1.10), posix/Makefile.in.embed.gfix (1.15),
+	posix/Makefile.in.embed.gpre (1.19), posix/Makefile.in.embed.isql
+	(1.11), posix/Makefile.in.embed.qli (1.17),
+	posix/Makefile.in.embed.util (1.21), posix/Makefile.in.fbserver
+	(1.20), posix/make.defaults (1.42), posix/make.rules (1.27),
+	posix/make.shared.variables (1.54), posix/prefix.mingw (1.40),
+	win32/defs/fbclient_s.def (1.2):
+	
+	Use libfbcommon wherever possible and drop ancient workaround for
+	dependencies (use -MMD switch instead)
+
 2005-07-22 04:08  asfernandes
 
 	* firebird2/src/dsql/pass1.cpp (1.226):
