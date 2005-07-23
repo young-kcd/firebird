@@ -639,7 +639,7 @@
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
-    * Extended isc_dsql_info() API call
+    * Extended isc_dsql_sql_info() API call
         Allows to retrieve relation aliases, if required
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
