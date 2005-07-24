@@ -1052,12 +1052,18 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 #endif
-		if (attachment->att_flags & ATT_shutdown)
-			ERR_post(isc_shutdown, isc_arg_string, 
-					ERR_string(file_name, file_length), 0);
+		if (attachment->att_flags & ATT_shutdown) {
+			if (dbb->dbb_ast_flags & DBB_shutdown) {
+				ERR_post(isc_shutdown, isc_arg_string, 
+						 ERR_string(file_name, file_length), 0);
+			}
+			else {
+				ERR_post(isc_att_shutdown, 0);
+			}
+		}
 		if (!attachment_succeeded) {
 			ERR_post(isc_shutdown, isc_arg_string, 
-					ERR_string(file_name, file_length), 0);
+					 ERR_string(file_name, file_length), 0);
 		}
 	}
 #endif
@@ -1092,7 +1098,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (!allow_access) {
 			// Note we throw exception here when entering full-shutdown mode
 			ERR_post(isc_shutdown, isc_arg_string, 
-					ERR_string(file_name, file_length), 0);
+					 ERR_string(file_name, file_length), 0);
 		}
 	}
 
@@ -2441,21 +2447,28 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		tdbb->tdbb_status_vector = user_status;
 		try
 		{
+			const char* file_name = tdbb->tdbb_attachment->att_filename.c_str();
+
 			if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
 				ERR_post(isc_no_priv,
-					isc_arg_string, "drop",
-					isc_arg_string, "database",
-					isc_arg_string,
-					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename.c_str()), 0);
+						 isc_arg_string, "drop",
+						 isc_arg_string, "database",
+						 isc_arg_string, ERR_cstring(file_name), 0);
 
-			if (attachment->att_flags & ATT_shutdown)
-				ERR_post(isc_shutdown, isc_arg_string,
-					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename.c_str()), 0);
+			if (attachment->att_flags & ATT_shutdown) {
+				if (dbb->dbb_ast_flags & DBB_shutdown) {
+					ERR_post(isc_shutdown, isc_arg_string,
+							 ERR_cstring(file_name), 0);
+				}
+				else {
+					ERR_post(isc_att_shutdown, 0);
+				}
+			}
 
 			if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
-				ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
-					isc_arg_string,
-					ERR_cstring((const SCHAR*) tdbb->tdbb_attachment->att_filename.c_str()), 0);
+				ERR_post(isc_lock_timeout,
+						 isc_arg_gds, isc_obj_in_use,
+						 isc_arg_string, ERR_cstring(file_name), 0);
 
 			JRD_SS_MUTEX_LOCK;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -4335,18 +4348,39 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 	Database* dbb = tdbb->tdbb_database;
 	Attachment* attachment = tdbb->tdbb_attachment;
-	if (attachment) {
+	if (attachment)
+	{
+		const char* file_name = attachment->att_filename.c_str();
+
 		if (dbb->dbb_ast_flags & DBB_shutdown &&
 			attachment->att_flags & ATT_shutdown)
 		{
 			if (punt) {
 				CCH_unwind(tdbb, false);
-				ERR_post(isc_shutdown, 0);
+				ERR_post(isc_shutdown, isc_arg_string,
+						 ERR_cstring(file_name), 0);
 			}
 			else {
 				ISC_STATUS* status = tdbb->tdbb_status_vector;
 				*status++ = isc_arg_gds;
 				*status++ = isc_shutdown;
+				*status++ = isc_arg_string;
+				*status++ = (ISC_STATUS) ERR_cstring(file_name);
+				*status++ = isc_arg_end;
+				return true;
+			}
+		}
+		else if (attachment->att_flags & ATT_shutdown &&
+			!(tdbb->tdbb_flags & TDBB_shutdown_manager))
+		{
+			if (punt) {
+				CCH_unwind(tdbb, false);
+				ERR_post(isc_att_shutdown, 0);
+			}
+			else {
+				ISC_STATUS* status = tdbb->tdbb_status_vector;
+				*status++ = isc_arg_gds;
+				*status++ = isc_att_shutdown;
 				*status++ = isc_arg_end;
 				return true;
 			}
@@ -4641,13 +4675,20 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 		 ((dbb->dbb_ast_flags & DBB_shutdown_full) ||
 		 !(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))))
 	{
+		const char* file_name = attachment->att_filename.c_str();
+
 		tdbb->tdbb_status_vector = ptr = user_status;
 		*ptr++ = isc_arg_gds;
-		*ptr++ = isc_shutdown;
-		*ptr++ = isc_arg_cstring;
-		*ptr++ = attachment->att_filename.length();
-		*ptr++ = (ISC_STATUS)(IPTR) attachment->att_filename.c_str();
+		if (dbb->dbb_ast_flags & DBB_shutdown) {
+			*ptr++ = isc_shutdown;
+			*ptr++ = isc_arg_string;
+			*ptr++ = (ISC_STATUS) ERR_cstring(file_name);
+		}
+		else {
+			*ptr++ = isc_att_shutdown;
+		}
 		*ptr = isc_arg_end;
+
 		return error(user_status);
 	}
 
@@ -6248,6 +6289,7 @@ ISC_STATUS shutdown_all()
 				tdbb->tdbb_attachment = attach;
 				tdbb->tdbb_request = NULL;
 				tdbb->tdbb_transaction = NULL;
+				tdbb->tdbb_flags |= TDBB_shutdown_manager;
 				Jrd::ContextPoolHolder context(tdbb, 0);
 
 				++dbb->dbb_use_count;
@@ -6373,6 +6415,9 @@ static void purge_attachment(thread_db*		tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = attachment->att_database;
 
+	const ULONG att_flags = attachment->att_flags;
+	attachment->att_flags |= ATT_shutdown;
+
 	if (!(dbb->dbb_flags & DBB_bugcheck)) {
 
 		// Check for any pending transactions
@@ -6388,7 +6433,7 @@ static void purge_attachment(thread_db*		tdbb,
 			{
 				if (transaction->tra_flags & TRA_prepared ||
 					dbb->dbb_ast_flags & DBB_shutdown ||
-					attachment->att_flags & ATT_shutdown)
+					att_flags & ATT_shutdown)
 				{
 					TRA_release_transaction(tdbb, transaction);
 				}
@@ -6409,7 +6454,7 @@ static void purge_attachment(thread_db*		tdbb,
 		{
 			attachment->att_dbkey_trans = NULL;
 			if (dbb->dbb_ast_flags & DBB_shutdown ||
-				attachment->att_flags & ATT_shutdown)
+				att_flags & ATT_shutdown)
 			{
 				TRA_release_transaction(tdbb, trans_dbk);
 			}
