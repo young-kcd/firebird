@@ -166,7 +166,9 @@ public:
 		: ThreadData(ThreadData::tddALICE), 
 		ALICE_default_pool(0),
 		output_proc(outProc), 
-		output_data(outData)
+		output_data(outData),
+		db_handle(0),
+		tr_handle(0)
 	{
 	}
 
