@@ -694,6 +694,9 @@ static void print_description(const tdr* trans)
 
 static ULONG ask(void)
 {
+#ifndef SUPERCLIENT
+	return (ULONG)-1;
+#else
 	char response[32];
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
@@ -707,9 +710,9 @@ static ULONG ask(void)
 		fflush(stdout);
 		int c;
 		char* p;
-		for (p = response; (c = getchar()) != '\n' && c != EOF;)
+		for (p = response; (c = getchar()) != '\n' && !feof(stdin) && !ferror(stdin);)
 			*p++ = c;
-		if (c == EOF && p == response)
+		if (p == response)
 			return (ULONG) -1;
 		*p = 0;
 		ALICE_down_case(response, response, sizeof(response));
@@ -726,6 +729,7 @@ static ULONG ask(void)
 		switches |= sw_rollback;
 
 	return switches;
+#endif
 }
 
 
@@ -804,10 +808,11 @@ static void reattach_database(TDR trans)
 	ALICE_print(87, reinterpret_cast<char*>(trans->tdr_fullpath->str_data),
 				0, 0, 0, 0);	// msg 87: Original path: %s
 
+#ifdef SUPERCLIENT
 	for (;;) {
 		ALICE_print(88, 0, 0, 0, 0, 0);	// msg 88: Enter a valid path:
 		char* p = buffer;
-		while (p < end && (*p = getchar()) != '\n')
+		while (p < end && (*p = getchar()) != '\n' && !feof(stdin) && !ferror(stdin))
 			++p;
 		*p = 0;
 		if (!buffer[0])
@@ -828,6 +833,7 @@ static void reattach_database(TDR trans)
 		}
 		ALICE_print(89, 0, 0, 0, 0, 0);	// msg 89: Attach unsuccessful.
 	}
+#endif
 }
 
 
