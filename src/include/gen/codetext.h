@@ -557,6 +557,7 @@ static const struct {
 	{"bad_substring_length", 335544853},
 	{"charset_not_installed", 335544854},
 	{"collation_not_installed", 335544855},
+	{"att_shutdown", 335544856},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
