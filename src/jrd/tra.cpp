@@ -1153,7 +1153,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag)
+void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag,
+				  const bool force_flag)
 {
 /**************************************
  *
@@ -1178,6 +1179,20 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, false);
 
+/* If force flag is true, get rid of all savepoints to mark the transaction as dead */
+	if (force_flag) {
+		// Free all savepoint data
+		// We can do it in reverse order because nothing except simple deallocation
+		// of memory is really done in VIO_verb_cleanup when we pass NULL as sav_next
+		while (transaction->tra_save_point)
+		{
+			Savepoint* const next = transaction->tra_save_point->sav_next;
+			transaction->tra_save_point->sav_next = NULL;
+			VIO_verb_cleanup(tdbb, transaction);
+			transaction->tra_save_point = next;				
+		}
+	}
+
 /*  Find out if there is a transaction savepoint we can use to rollback our transaction */
 	bool tran_sav = false;
 	for (const Savepoint* temp = transaction->tra_save_point; temp;
@@ -1188,7 +1203,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			break;
 		}
 	}
-	
+
 /* Measure transaction savepoint size if there is one. We'll use it for undo
   only if it is small enough */
 	IPTR count = SAV_LARGE;
@@ -1201,7 +1216,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 				break;
 		}
 	}
-	
+
 	// We are going to use savepoint to undo transaction
 	if (tran_sav && count > 0) {
 		// Undo all user savepoints work

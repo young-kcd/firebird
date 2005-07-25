@@ -2242,7 +2242,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 			ISC_STATUS_ARRAY temp_status;
 			tdbb->tdbb_status_vector = temp_status;
 			try {
-				TRA_rollback(tdbb, transaction, true);
+				TRA_rollback(tdbb, transaction, true, false);
 			}
 			catch (const std::exception&) {
 			    // CVC, TMN: Do nothing, see FB1 code, this will fall into
@@ -5817,7 +5817,7 @@ static bool rollback(thread_db*	tdbb,
 
 		try {
 		tdbb->tdbb_status_vector = status_vector;
-		TRA_rollback(tdbb, transaction, retaining_flag);
+		TRA_rollback(tdbb, transaction, retaining_flag, false);
 		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 
@@ -6438,7 +6438,7 @@ static void purge_attachment(thread_db*		tdbb,
 					TRA_release_transaction(tdbb, transaction);
 				}
 				else if (force_flag)
-					TRA_rollback(tdbb, transaction, false);
+					TRA_rollback(tdbb, transaction, false, true);
 				else
 					++count;
 			}
