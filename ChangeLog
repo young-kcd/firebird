@@ -1,3 +1,42 @@
+2005-07-24 20:48  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.219), jrd.h (1.138):
+	
+	Fixed one of the server shutdown bugs. More to come.
+
+2005-07-24 20:43  dimitr
+
+	* firebird2/src/: msgs/facilities.sql (1.32), msgs/messages.sql
+	(1.39), msgs/system_errors.sql (1.17), include/gen/codetext.h
+	(1.27), include/gen/iberror.h (1.26), include/gen/msgs.h (1.35),
+	include/gen/rdb_codes.h (1.27), include/gen/sql_code.h (1.29):
+	
+	Added new error message.
+
+2005-07-24 20:32  arnobrinkman
+
+	* firebird2/src/jrd/btr.cpp (1.147):
+	
+	Fix bug SF #1242982 Equality search on first segment (integer) in
+	compound indexes resulted in more scans on specific values (2^n,
+	f.e. 131072) then needed.
+
+2005-07-24 17:53  hvlad
+
+	* firebird2/src/alice/tdr.cpp (1.45):
+	
+	Fixed unregistered bug - crash occured in service gfix code when it
+	tried to reattach to currently unavailable database. Since service
+	can't interact with end user an endless loop leads to overflow
+	service buffer and crash as result.
+
+2005-07-24 17:32  hvlad
+
+	* firebird2/src/alice/alice.h (1.46):
+	
+	Fixed SF bug #1242106 (FB 2.0 Alpha 3: In-Limbo transaction
+	Services API broken)
+
 2005-07-23 14:48  dimitr
 
 	* firebird2/doc/WhatsNew (1.69):
