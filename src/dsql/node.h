@@ -404,7 +404,8 @@ enum nod_flags_vals {
 	NOD_CURSOR_FOR			= 2,
 	NOD_CURSOR_ALL			= USHORT(-1U),
 
-	NOD_DT_IGNORE_COLUMN_CHECK = 1
+	NOD_DT_IGNORE_COLUMN_CHECK = 1,
+	NOD_DT_ALLOW_OUTER_REFERENCE = 2
 };
 
 // Parameters to MAKE_constant

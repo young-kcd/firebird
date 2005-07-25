@@ -395,9 +395,14 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 		string = (dsql_str*) relation_node->nod_arg[e_rln_alias];
 	}
 
+	if (string) 
+	{
+		context->ctx_internal_alias = (TEXT*) string->str_data;
+	}
+
 	DEV_BLKCHK(string, dsql_type_str);
 	if (request->req_alias_relation_prefix && !(relation_node->nod_type == nod_derived_table))
-	{
+	{		
 		if (string) {
 			string = pass1_alias_concat(request->req_alias_relation_prefix, string);
 		}
@@ -2928,7 +2933,7 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	// create a derived table representing our subquery
 	dsql_nod* dt = MAKE_node(nod_derived_table, e_derived_table_count);
 	// Ignore validation for columnames that must exist for "user" derived tables.
-	dt->nod_flags |= NOD_DT_IGNORE_COLUMN_CHECK;
+	dt->nod_flags |= (NOD_DT_IGNORE_COLUMN_CHECK | NOD_DT_ALLOW_OUTER_REFERENCE);
 	dt->nod_arg[e_derived_table_rse] = input->nod_arg[1];
 	dsql_nod* from = MAKE_node(nod_list, 1);
 	from->nod_arg[0] = dt;
@@ -3658,8 +3663,21 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 
 	// Change req_context, because when we are processing the derived table rse
 	// it may not reference to other streams in the same scope_level.
+	const bool allowOuterReference = (input->nod_flags & NOD_DT_ALLOW_OUTER_REFERENCE);
 	DsqlContextStack temp;
-	request->req_context = &temp;
+	if (!allowOuterReference) 
+	{
+		// Put special contexts (NEW/OLD) also on the stack
+		for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
+		{
+	        dsql_ctx* context = stack.object();
+			if (context->ctx_flags & CTX_system)
+			{
+				temp.push(context);
+			}
+		}
+		request->req_context = &temp;
+	}
 	request->req_alias_relation_prefix = pass1_alias_concat(req_alias_relation_prefix, alias);
 
 	// AB: 2005-01-06
@@ -3695,7 +3713,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	// Finish off by cleaning up contexts and put them into req_dt_context
 	// so create view (ddl) can deal with it.
 	// Also add the used contexts into the childs stack.
-	while (request->req_context->hasData())
+	while (request->req_context->hasData() && (request->req_context != req_base))
 	{
 		request->req_dt_context.push(request->req_context->object());
 		context->ctx_childs_derived_table.push(request->req_context->pop());
@@ -4100,15 +4118,15 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 			}
 
 			dsql_fld* field;
-			if (request->req_alias_relation_prefix && qualifier) {
-				dsql_str* req_qualifier =
-					pass1_alias_concat(request->req_alias_relation_prefix, qualifier);
-				field = resolve_context(request, req_qualifier, context, is_check_constraint);
-				delete req_qualifier;
-			}
-			else {
+			//if (request->req_alias_relation_prefix && qualifier) {
+				//dsql_str* req_qualifier =
+				//	pass1_alias_concat(request->req_alias_relation_prefix, qualifier);
+			//	field = resolve_context(request, qualifier, context, is_check_constraint);
+				//delete req_qualifier;
+			//}
+			//else {
 				field = resolve_context(request, qualifier, context, is_check_constraint);
-			}
+			//}
 			// AB: When there's no relation and no procedure then we have a derived table.
 			const bool is_derived_table =
 				(!context->ctx_procedure && !context->ctx_relation && context->ctx_rse);
@@ -5716,15 +5734,17 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 
 	// Is this context a derived table.
 	if (!context->ctx_relation && !context->ctx_procedure && context->ctx_rse) {
-		dsql_str* tmp_qualifier = (dsql_str*) *arg;
+		//dsql_str* tmp_qualifier = (dsql_str*) *arg;
 		arg++;
-		tmp_qualifier = pass1_alias_concat(tmp_qualifier, (dsql_str*) *arg);
+		//tmp_qualifier = pass1_alias_concat(tmp_qualifier, (dsql_str*) *arg);
+		request->req_scope_level++;
+		//dsql_ctx* dt_context =
+		//	pass1_alias(request, context->ctx_childs_derived_table, tmp_qualifier);
+		//if (!dt_context) {
 		dsql_ctx* dt_context =
-			pass1_alias(request, context->ctx_childs_derived_table, tmp_qualifier);
-		if (!dt_context) {
-			dt_context =
 				pass1_alias(request, context->ctx_childs_derived_table, (dsql_str*) *arg);
-		}
+		//}
+		request->req_scope_level--;
 
 		if (!dt_context) {
 			// there is no alias or table named %s at this scope level.
@@ -5821,8 +5841,8 @@ static dsql_ctx* pass1_alias(dsql_req* request, DsqlContextStack& stack, dsql_st
 		}
 
 		// check for matching alias.
-		if (context->ctx_alias) {
-			if (!strcmp(context->ctx_alias,
+		if (context->ctx_internal_alias) {
+			if (!strcmp(context->ctx_internal_alias,
 				reinterpret_cast<const char*>(alias->str_data)))
 			{
 				return context;
@@ -7803,8 +7823,8 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 //	}
 
 	TEXT* table_name = NULL;
-	if (context->ctx_alias) {
-		table_name = context->ctx_alias;
+	if (context->ctx_internal_alias) {
+		table_name = context->ctx_internal_alias;
 	}
 // AB: For a check constraint we should ignore the alias if the alias
 //     contains the "NEW" alias. This is because it is possible
