@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.94 2005-06-12 06:27:11 dimitr Exp $
+$Id: blb.cpp,v 1.95 2005-07-25 12:01:19 asfernandes Exp $
 */
 
 #include "firebird.h"
@@ -231,7 +231,11 @@ blb* BLB_create2(thread_db* tdbb,
 			from_charset = tdbb->tdbb_attachment->att_charset;
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->tdbb_attachment->att_charset;
-		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
+
+		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) && 
+			(to_charset != CS_BINARY) && (from_charset != CS_BINARY)&&
+			(from_charset != to_charset))
+		{
 			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
 			filter->blf_filter = filter_transliterate_text;
 			filter_required = true;
@@ -1164,7 +1168,11 @@ blb* BLB_open2(thread_db* tdbb,
 			from_charset = tdbb->tdbb_attachment->att_charset;
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->tdbb_attachment->att_charset;
-		if ((to_charset != CS_NONE) && (from_charset != to_charset)) {
+
+		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) &&
+			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
+			(from_charset != to_charset))
+		{
 			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
 			filter->blf_filter = filter_transliterate_text;
 			filter_required = true;
