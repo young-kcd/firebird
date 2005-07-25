@@ -602,7 +602,7 @@ static void internal_destroy(TEXTTYPE obj)
 {
 /**************************************
  *
- *      i n t e r n a l _ s t r _ d e s t r o y
+ *      i n t e r n a l _ d e s t r o y
  *
  **************************************
  *
@@ -746,11 +746,9 @@ static SSHORT unicode8_compare(TEXTTYPE obj, ULONG length1, const UCHAR* p1,
 		utf16Len2 = pad - utf16Str2.begin() + sizeof(USHORT);
 	}
 
-	INTL_BOOL err_flag;
-
 	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->compare(
 		utf16Len1, (USHORT*)utf16Str1.begin(),
-		utf16Len2, (USHORT*)utf16Str2.begin(), &err_flag);
+		utf16Len2, (USHORT*)utf16Str2.begin(), error_flag);
 }
 
 

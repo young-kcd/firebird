@@ -225,7 +225,7 @@ typedef initcollation COLL_TYPE;
 
 static const COLL_TYPE coll_types[] = {
 #include "../jrd/intlnames.h"
-	{NULL, 0, 0}
+	{NULL, 0, 0, 0}
 };
 #undef CHARSET
 #undef CSALIAS
