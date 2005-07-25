@@ -2858,7 +2858,9 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		}
 
 		// Since an error happened, the current savepoint needs to be undone
-		if (transaction != dbb->dbb_sys_trans) {
+		if (transaction != dbb->dbb_sys_trans &&
+			transaction->tra_save_point)
+		{
 			++transaction->tra_save_point->sav_verb_count;
 			verb_cleanup(tdbb, transaction);
 		}
