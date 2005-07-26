@@ -1261,8 +1261,13 @@ static IDX_E check_partner_index(
 	}
 	
 /* get the key in the original index */
-
-	result = BTR_key(tdbb, relation, record, idx, &key, 0, fuzzy);
+	// AB: Fake the index to be an unique index, because the INTL makes 
+	// different keys depending on unique index or not.
+	// The key build should be exactly the same as stored in the 
+	// unique index, because a comparison is done on both keys.
+	index_desc tmpIndex = *idx;
+	tmpIndex.idx_flags |= idx_unique;
+	result = BTR_key(tdbb, relation, record, &tmpIndex, &key, 0, fuzzy);
 	CCH_RELEASE(tdbb, &window);
 
 /* now check for current duplicates */
