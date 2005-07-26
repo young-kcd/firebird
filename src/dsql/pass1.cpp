@@ -4117,16 +4117,8 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 				continue;
 			}
 
-			dsql_fld* field;
-			//if (request->req_alias_relation_prefix && qualifier) {
-				//dsql_str* req_qualifier =
-				//	pass1_alias_concat(request->req_alias_relation_prefix, qualifier);
-			//	field = resolve_context(request, qualifier, context, is_check_constraint);
-				//delete req_qualifier;
-			//}
-			//else {
-				field = resolve_context(request, qualifier, context, is_check_constraint);
-			//}
+			dsql_fld* field = resolve_context(request, qualifier, context, is_check_constraint);
+
 			// AB: When there's no relation and no procedure then we have a derived table.
 			const bool is_derived_table =
 				(!context->ctx_procedure && !context->ctx_relation && context->ctx_rse);
@@ -5683,125 +5675,98 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 	dsql_nod** arg = alias_list->nod_arg;
 	const dsql_nod* const* const end = arg + alias_list->nod_count;
 
-	dsql_str* internal_qualifier;
-	if (request->req_alias_relation_prefix) {
-		internal_qualifier =
-			pass1_alias_concat(request->req_alias_relation_prefix, (dsql_str*) *arg);
-	}
-	else {
-		internal_qualifier = (dsql_str*) *arg;
-	}
-
-	// check the first alias in the list with the relations
-	// in the current context for a match.
-	dsql_rel* relation = 0;
-	dsql_ctx* context = pass1_alias(request, *request->req_context, internal_qualifier);
-	if (context) {
-		if (alias_list->nod_count == 1) {
-			return (dsql_nod*) context;
-		}
-		relation = context->ctx_relation;
-	}
-
-	// if the first alias didn't specify a table in the context stack,
-	// look through all contexts to find one which might be a view with
-	// a base table having a matching table name or alias.
-
-	if (!context) {
-		for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack) {
-			context = stack.object();
-			DEV_BLKCHK(context, dsql_type_ctx);
-			if (context->ctx_scope_level == request->req_scope_level &&
-				context->ctx_relation)
+	// Loop through every alias and find the context for that alias.
+	// All aliasses should have a corresponding context.
+	int aliasCount = alias_list->nod_count;
+	USHORT savedScopeLevel = request->req_scope_level;
+	dsql_ctx* context = NULL;
+	while (aliasCount > 0)
+	{
+		if (context) 
+		{
+			if (context->ctx_rse && !context->ctx_relation && !context->ctx_procedure) 
 			{
-				if (relation = pass1_base_table(request, context->ctx_relation,
-						(dsql_str*) *arg))
-				{
-					break;
-				}
+				// Derived table
+				request->req_scope_level++;
+				context = pass1_alias(request, context->ctx_childs_derived_table, (dsql_str*) *arg);
 			}
-			context = NULL;
+			else
+			{
+				// This must be a VIEW
+				dsql_nod** startArg = arg;
+				dsql_rel* relation = context->ctx_relation;
+				// find the base table using the specified alias list, skipping the first one
+				// since we already matched it to the context.
+				for (; arg < end; arg++, aliasCount--)
+				{
+					if (!(relation = pass1_base_table(request, relation, (dsql_str*) *arg))) 
+						break;
+				}
+
+				// Found base relation
+				if ((aliasCount == 0) && relation)
+				{
+					// AB: Pretty ugly huh?
+					// make up a dummy context to hold the resultant relation.
+					tsql* tdsql = DSQL_get_thread_data();
+					dsql_ctx* new_context = FB_NEW(*tdsql->getDefaultPool())
+						dsql_ctx(*tdsql->getDefaultPool());
+					new_context->ctx_context = context->ctx_context;
+					new_context->ctx_relation = relation;
+
+					// concatenate all the contexts to form the alias name;
+					// calculate the length leaving room for spaces and a null
+					USHORT alias_length = alias_list->nod_count;
+					dsql_nod** aliasArg = startArg;
+					for (; aliasArg < end; aliasArg++) 
+					{
+						DEV_BLKCHK(*aliasArg, dsql_type_str);
+						alias_length += static_cast<USHORT>(((dsql_str*) *aliasArg)->str_length);
+					}
+
+					dsql_str* alias = FB_NEW_RPT(*tdsql->getDefaultPool(), alias_length) dsql_str;
+					alias->str_length = alias_length;
+
+					TEXT* p = new_context->ctx_alias = (TEXT*) alias->str_data;
+					for (aliasArg = startArg; aliasArg < end; aliasArg++) 
+					{
+						for (const TEXT* q = (TEXT*) ((dsql_str*) *aliasArg)->str_data; *q;)
+							*p++ = *q++;
+						*p++ = ' ';
+					}
+					p[-1] = 0;
+
+					context = new_context;
+				}
+				else 
+				{
+					context = NULL;				
+				}				
+			}
 		}
-	}
-
-	if (!context) {
-		// there is no alias or table named %s at this scope level.
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-				  isc_arg_gds, isc_dsql_command_err,
-				  isc_arg_gds, isc_dsql_no_relation_alias,
-				  isc_arg_string, ((dsql_str*) *arg)->str_data, 0);
-	}
-
-	// Is this context a derived table.
-	if (!context->ctx_relation && !context->ctx_procedure && context->ctx_rse) {
-		//dsql_str* tmp_qualifier = (dsql_str*) *arg;
-		arg++;
-		//tmp_qualifier = pass1_alias_concat(tmp_qualifier, (dsql_str*) *arg);
-		request->req_scope_level++;
-		//dsql_ctx* dt_context =
-		//	pass1_alias(request, context->ctx_childs_derived_table, tmp_qualifier);
-		//if (!dt_context) {
-		dsql_ctx* dt_context =
-				pass1_alias(request, context->ctx_childs_derived_table, (dsql_str*) *arg);
-		//}
-		request->req_scope_level--;
-
-		if (!dt_context) {
-			// there is no alias or table named %s at this scope level.
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-				  isc_arg_gds, isc_dsql_command_err,
-				  isc_arg_gds, isc_dsql_no_relation_alias,
-				  isc_arg_string, ((dsql_str*) *arg)->str_data, 0);
+		else
+		{
+			context = pass1_alias(request, *request->req_context, (dsql_str*) *arg);
 		}
-		return (dsql_nod*) dt_context;
-	}
 
-	// find the base table using the specified alias list, skipping the first one
-	// since we already matched it to the context.
-	for (arg++; arg < end; arg++) {
-		if (!(relation = pass1_base_table(request, relation, (dsql_str*) *arg))) {
+		if (!context) {
 			break;
 		}
-	}
 
-	if (!relation) {
+		arg++;
+		aliasCount--;
+	}
+	request->req_scope_level = savedScopeLevel;
+
+	if (!context) {
 		// there is no alias or table named %s at this scope level.
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-				  isc_arg_gds, isc_dsql_command_err,
-				  isc_arg_gds, isc_dsql_no_relation_alias,
-				  isc_arg_string, ((dsql_str*) *arg)->str_data, 0);
+			isc_arg_gds, isc_dsql_command_err,
+			isc_arg_gds, isc_dsql_no_relation_alias,
+			isc_arg_string, ((dsql_str*) *arg)->str_data, 0);
 	}
 
-	// make up a dummy context to hold the resultant relation.
-	tsql* tdsql = DSQL_get_thread_data();
-	dsql_ctx* new_context = FB_NEW(*tdsql->getDefaultPool())
-		dsql_ctx(*tdsql->getDefaultPool());
-	new_context->ctx_context = context->ctx_context;
-	new_context->ctx_relation = relation;
-
-/* concatenate all the contexts to form the alias name;
-   calculate the length leaving room for spaces and a null */
-
-	USHORT alias_length = alias_list->nod_count;
-	for (arg = alias_list->nod_arg; arg < end; arg++) {
-		DEV_BLKCHK(*arg, dsql_type_str);
-		alias_length += static_cast<USHORT>(((dsql_str*) *arg)->str_length);
-	}
-
-	dsql_str* alias = FB_NEW_RPT(*tdsql->getDefaultPool(), alias_length) dsql_str;
-	alias->str_length = alias_length;
-
-	TEXT* p = new_context->ctx_alias = (TEXT*) alias->str_data;
-	for (arg = alias_list->nod_arg; arg < end; arg++) {
-		DEV_BLKCHK(*arg, dsql_type_str);
-		for (const TEXT* q = (TEXT*) ((dsql_str*) *arg)->str_data; *q;)
-			*p++ = *q++;
-		*p++ = ' ';
-	}
-
-	p[-1] = 0;
-
-	return (dsql_nod*) new_context;
+	return (dsql_nod*) context;
 }
 
 
@@ -5841,7 +5806,8 @@ static dsql_ctx* pass1_alias(dsql_req* request, DsqlContextStack& stack, dsql_st
 		}
 
 		// check for matching alias.
-		if (context->ctx_internal_alias) {
+		if (context->ctx_internal_alias) 
+		{
 			if (!strcmp(context->ctx_internal_alias,
 				reinterpret_cast<const char*>(alias->str_data)))
 			{
@@ -5849,6 +5815,15 @@ static dsql_ctx* pass1_alias(dsql_req* request, DsqlContextStack& stack, dsql_st
 			}
 			continue;
 		}
+		else 
+		{
+			// If an unnamed derived table and empty alias
+			if (context->ctx_rse && !context->ctx_relation && 
+				!context->ctx_procedure && (alias->str_length == 0))
+			{
+				relation_context = context;
+			}
+		}	
 
 		// check for matching relation name; aliases take priority so
 		// save the context in case there is an alias of the same name;
