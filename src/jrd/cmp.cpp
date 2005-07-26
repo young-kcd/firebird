@@ -145,6 +145,7 @@ static void post_procedure_access(thread_db*, CompilerScratch*, jrd_prc*);
 static RecordSource* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
+static SSHORT strcmp_space(const char*, const char*);
 static bool stream_in_rse(USHORT, RecordSelExpr*);
 static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request);
 static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view);
@@ -5454,10 +5455,9 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 		// if the user has specified an alias, skip past it to find the alias 
 		// for the base table (if multiple aliases are specified)
-
 		if (p && *p &&
-			((tail->csb_relation && tail->csb_relation->rel_name == p) ||
-			 (tail->csb_alias && *(tail->csb_alias) == p)))
+			((tail->csb_relation && !strcmp_space(tail->csb_relation->rel_name.c_str(), p)) || 
+			 (tail->csb_alias && !strcmp_space(tail->csb_alias->c_str(), p))))
 		{
 			while (*p && *p != ' ') {
 				p++;
@@ -5540,8 +5540,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 				// and not an oversight here. It's hard to imagine a csb->csb_rpt with
 				// a NULL relation. See exe.h for CompilerScratch struct and its inner csb_repeat struct.
 
-				if ((tail->csb_alias && *(tail->csb_alias) == p) || 
-					(relation && relation->rel_name == p))
+				if ((tail->csb_alias && !strcmp_space(tail->csb_alias->c_str(), p)) || 
+					(relation && !strcmp_space(relation->rel_name.c_str(), p)))
 				{
 					  break;
 				}
@@ -5863,6 +5863,34 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 		desc3->dsc_address = (UCHAR *) (IPTR) format->fmt_length;
 		format->fmt_length += desc3->dsc_length;
 	}
+}
+
+
+static SSHORT strcmp_space(const char* p, const char* q)
+{
+/**************************************
+ *
+ *	s t r c m p _ s p a c e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compare two strings, which could be either
+ *	space-terminated or null-terminated.
+ *
+ **************************************/
+
+	for (; *p && *p != ' ' && *q && *q != ' '; p++, q++)
+		if (*p != *q)
+			break;
+
+	if ((!*p || *p == ' ') && (!*q || *q == ' '))
+		return 0;
+
+	if (*p > *q)
+		return 1;
+	else
+		return -1;
 }
 
 
