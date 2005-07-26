@@ -259,6 +259,9 @@
 				RelativePath="..\..\..\gen\jrd\ini.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\init.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\intl.cpp">
 			</File>
 			<File
@@ -691,6 +694,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ini_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\init.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\intl.h">

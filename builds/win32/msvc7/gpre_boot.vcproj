@@ -223,6 +223,9 @@
 				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\init.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
 			<File
@@ -282,6 +285,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\hsh_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\init.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\jrdme_proto.h">

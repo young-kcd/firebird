@@ -158,6 +158,9 @@
 				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\init.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
 			<File
@@ -192,6 +195,9 @@
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
+			<File
+				RelativePath="..\..\..\src\jrd\init.h">
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

@@ -191,6 +191,9 @@
 				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\init.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
 			<File
@@ -296,6 +299,9 @@
 		<Filter
 			Name="UTILITIES files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\init.h">
+			</File>
 			<File
 				RelativePath="..\..\..\gen\utilities\security.cpp">
 			</File>
