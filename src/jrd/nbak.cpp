@@ -117,7 +117,7 @@ void BackupManager::release_sw_database_lock() throw()
 	fb_assert(database_use_count > 0);
 	thread_db* tdbb = JRD_get_thread_data();
 	database_use_count--;
-	if (ast_flags & NBAK_database_blocking) {
+	if ((database_use_count == 0) && (ast_flags & NBAK_database_blocking)) {
 		LCK_release(tdbb, database_lock);
 		ast_flags &= ~NBAK_database_blocking;
 	}
