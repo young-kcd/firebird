@@ -168,9 +168,10 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
 
 	ISC_ARRAY_BOUND* tail = desc->array_desc_bounds;
 
-	FOR X IN RDB$FIELD_DIMENSIONS
-	WITH X.RDB$FIELD_NAME EQ global
-	SORTED BY X.RDB$DIMENSION
+	FOR (TRANSACTION_HANDLE *trans_handle)
+		X IN RDB$FIELD_DIMENSIONS
+		WITH X.RDB$FIELD_NAME EQ global
+		SORTED BY X.RDB$DIMENSION
         tail->array_bound_lower = (SSHORT)X.RDB$LOWER_BOUND;
 	    tail->array_bound_upper = (SSHORT)X.RDB$UPPER_BOUND;
         ++tail;
