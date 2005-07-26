@@ -531,7 +531,7 @@ public:
 	class dsql_map*		ctx_map;			//!< Map for aggregates
 	dsql_nod*			ctx_rse;			//!< Sub-rse for aggregates
 	dsql_ctx*			ctx_parent;			//!< Parent context for aggregates
-	TEXT*				ctx_alias;			//!< Context alias
+	TEXT*				ctx_alias;			//!< Context alias (can include concattenated derived table alias)
 	TEXT*				ctx_internal_alias;	//!< Alias as specified in query
 	USHORT				ctx_context;		//!< Context id
 	USHORT				ctx_scope_level;	//!< Subquery level within this request
