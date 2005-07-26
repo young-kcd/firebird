@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.33.2.3 2005-01-26 09:50:36 alexpeshkoff Exp $
+$Id: btr.cpp,v 1.33.2.4 2005-07-26 13:06:30 arnobrinkman Exp $
 */
 
 #include "firebird.h"
@@ -1390,6 +1390,16 @@ void BTR_make_key(TDBB tdbb,
 				*p++ = *q++;
 			}
 		}
+
+		// AB: Fix bug SF #1242982
+		// Equality search on first segment (integer) in compound indexes resulted 
+		// in more scans on specific values (2^n, f.e. 131072) then needed.
+		if (!fuzzy && (n != idx->idx_count)) {
+			for (; stuff_count; --stuff_count) {
+				*p++ = 0;
+			}
+		}
+
 		key->key_length = p - key->key_data;
 	}
 
