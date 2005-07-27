@@ -4149,8 +4149,14 @@ case_result	: value
 /* next value expression */
 
 next_value_expression	: NEXT KW_VALUE FOR symbol_generator_name
-			{ $$ = make_node (nod_gen_id, 2, $4,
-					MAKE_constant((dsql_str*) 1, CONSTANT_SLONG)); }
+			{ 
+			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
+				  $$ = make_node (nod_gen_id2, 2, $4,
+						MAKE_constant((dsql_str*) 1, CONSTANT_SLONG));
+			  else
+				  $$ = make_node (nod_gen_id, 2, $4,
+						MAKE_constant((dsql_str*) 1, CONSTANT_SLONG));
+			}
 		| GEN_ID '(' symbol_generator_name ',' value ')'
 			{ 
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)

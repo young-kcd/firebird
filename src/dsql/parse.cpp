@@ -10279,8 +10279,14 @@ case 1040:
 { yyval = make_node (nod_list, 2, yyvsp[-4], make_node (nod_list, 2, yyvsp[-2], yyvsp[0])); }
 break;
 case 1044:
-{ yyval = make_node (nod_gen_id, 2, yyvsp[0],
-					MAKE_constant((dsql_str*) 1, CONSTANT_SLONG)); }
+{ 
+			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
+				  yyval = make_node (nod_gen_id2, 2, yyvsp[0],
+						MAKE_constant((dsql_str*) 1, CONSTANT_SLONG));
+			  else
+				  yyval = make_node (nod_gen_id, 2, yyvsp[0],
+						MAKE_constant((dsql_str*) 1, CONSTANT_SLONG));
+			}
 break;
 case 1045:
 { 
