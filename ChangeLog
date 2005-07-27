@@ -1,3 +1,78 @@
+2005-07-27 00:52  arnobrinkman
+
+	* firebird2/src/jrd/idx.cpp (1.97):
+	
+	Fix bug with foreign-key checks that failed due new INTL changes
+	(found with an unrestorable backup)
+
+2005-07-26 20:13  skidder
+
+	* firebird2/src/jrd/nbak.cpp (1.48):
+	
+	Port a little cleanliness fix to HEAD too
+
+2005-07-26 14:16  dimitr
+
+	* firebird2/src/dsql/array.epp (1.35):
+	
+	Fixed the arrays bug introduced by myself.
+
+2005-07-26 13:54  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.228):
+	
+	Fix and simplify PLAN alias lookup
+
+2005-07-26 13:48  arnobrinkman
+
+	* firebird2/src/dsql/dsql.h (1.78):
+	
+	Fix and simplify PLAN alias lookup
+
+2005-07-26 13:43  arnobrinkman
+
+	* firebird2/src/jrd/cmp.cpp (1.180):
+	
+	Fix PLAN parsing inside VIEWs
+
+2005-07-25 16:43  arnobrinkman
+
+	* firebird2/src/dsql/: ddl.cpp (1.149), dsql.h (1.77), node.h
+	(1.63), pass1.cpp (1.227):
+	
+	Fix derived table issues with NEW/OLD contexts
+	(Triggers/check-constraints) Also adjust IN predicate behaviour to
+	derived table.	PLAN parsing for derived tables will be fixed
+	later.
+
+2005-07-25 14:01  asfernandes
+
+	* firebird2/src/jrd/blb.cpp (1.95):
+	
+	Fixed field-test #1244126 - Update text BLOBs when connected with
+	NONE charset
+
+2005-07-25 13:59  asfernandes
+
+	* firebird2/src/jrd/: ini.h (1.22), intl_builtin.cpp (1.27):
+	
+	Misc.
+
+2005-07-25 07:13  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.155):
+	
+	Avoid recovery to a not existent savepoint.
+
+2005-07-25 07:03  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.220), tra.cpp (1.102), tra_proto.h
+	(1.18):
+	
+	Fixed a bugcheck (and possibly an engine crash) during server
+	shutdown.  Force a TIP based rollback instead of using a
+	transaction-level savepoint in this case.
+
 2005-07-24 20:48  dimitr
 
 	* firebird2/src/jrd/: jrd.cpp (1.219), jrd.h (1.138):
