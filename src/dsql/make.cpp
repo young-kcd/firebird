@@ -1067,19 +1067,21 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		}
 
 	case nod_gen_id:
+		MAKE_desc(request, &desc1, node->nod_arg[e_gen_id_value], NULL);
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
 		desc->dsc_length = sizeof(SLONG);
-		desc->dsc_flags = node->nod_arg[e_gen_id_value]->nod_desc.dsc_flags;
+		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
 		return;
 
 	case nod_gen_id2:
+		MAKE_desc(request, &desc1, node->nod_arg[e_gen_id_value], NULL);
 		desc->dsc_dtype = dtype_int64;
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
 		desc->dsc_length = sizeof(SINT64);
-		desc->dsc_flags = node->nod_arg[e_gen_id_value]->nod_desc.dsc_flags;
+		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
 		node->nod_flags |= NOD_COMP_DIALECT;
 		return;
 
