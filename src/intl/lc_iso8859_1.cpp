@@ -405,13 +405,25 @@ TEXTTYPE_ENTRY(WIN1250_c4_init)
 TEXTTYPE_ENTRY (WIN1250_c5_init)
 {
 	static const ASCII	  POSIX[] = "PXW_HUN.WIN1250";
-	
+
 #include "../intl/collations/pw1250hun.h"
-	
+
 	return FAMILY2(cache, CC_HUNGARY, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
-}						   
+}
+
+
+TEXTTYPE_ENTRY(WIN1250_c6_init)
+{
+	static const ASCII POSIX[] = "BO_BO.WIN1250";
+
+#include "../intl/collations/win1250bo.h"
+
+	return FAMILY2(cache, CC_YUGOSLAVIA, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
 
 
 TEXTTYPE_ENTRY(WIN1251_c1_init)

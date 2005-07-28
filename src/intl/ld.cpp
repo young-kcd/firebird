@@ -30,7 +30,7 @@
 #endif
 #include <stdio.h>
 
-/* Commented out to make Linux version work because it is inaccessiable on all 
+/* Commented out to make Linux version work because it is inaccessiable on all
   known platforms. Nickolay Samofatov, 10 Sept 2002
 void gds__log(UCHAR*, ...);
 */
@@ -134,6 +134,7 @@ EXTERN_texttype(WIN1250_c2_init);
 EXTERN_texttype(WIN1250_c3_init);
 EXTERN_texttype(WIN1250_c4_init);
 EXTERN_texttype(WIN1250_c5_init);
+EXTERN_texttype(WIN1250_c6_init);
 
 EXTERN_texttype(WIN1251_c0_init);
 EXTERN_texttype(WIN1251_c1_init);
@@ -263,7 +264,7 @@ void LD_assert(const SCHAR* filename, int lineno)
  *
  * Functional description
  *
- *	Utility function for fb_assert() macro 
+ *	Utility function for fb_assert() macro
  *	Defined locally (clone from jrd/err.c) as ERR_assert isn't
  *	a shared module entry point on all platforms, whereas gds__log is.
  *
