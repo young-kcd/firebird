@@ -18,7 +18,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86gcc,v 1.16 2005-05-27 22:16:09 asfernandes Exp $
+# $Id: prefix.solx86gcc,v 1.17 2005-07-29 09:24:46 kkuznetsov Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -56,8 +56,12 @@ DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb -g3 -p $(WARNINGS)
 OS_ServerFiles=inet_server.cpp
 
 #still ugly hack - becouse can not move it to configure.in
+
 GPRECOMMON_Files= ../jrd/ThreadData.cpp ../jrd/isc_sync.cpp
 GPRECommon_Sources= $(GPRECOMMON_Files)
+
+JRDBOOT_Extra_Files= isc_sync.cpp os/posix/isc_ipc.cpp 
+
 GFIX_Other_Sources= jrd/isc_sync.cpp jrd/os/posix/isc_ipc.cpp 
 #needed by thd.cpp on Solaris
 DROP_Other_Sources= jrd/ThreadData.cpp
