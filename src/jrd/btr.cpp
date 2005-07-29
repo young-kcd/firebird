@@ -1305,7 +1305,8 @@ void BTR_make_key(thread_db* tdbb,
 		UCHAR* p = key->key_data;
 		SSHORT stuff_count = 0;
 		temp.key_flags |= key_empty;
-		for (USHORT n = 0; n < count; n++, tail++) {
+		USHORT n = 0;
+		for (; n < count; n++, tail++) {
 			for (; stuff_count; --stuff_count) {
 				*p++ = 0;
 			}
