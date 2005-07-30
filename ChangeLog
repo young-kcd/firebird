@@ -1,3 +1,21 @@
+2005-07-30 03:48  asfernandes
+
+	* firebird2/builds/win32/defs/ib_udf.def (1.2):
+	
+	Export IB_UDF_srand function
+
+2005-07-29 12:42  arnobrinkman
+
+	* firebird2/src/jrd/btr.cpp (1.148):
+	
+	Fix scope problem reported by Konstantin
+
+2005-07-29 11:24  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solx86gcc (1.17):
+	
+	Fix solaris x86 build
+
 2005-07-28 21:58  asfernandes
 
 	* firebird2/: builds/install/misc/fbintl.conf (1.4),
