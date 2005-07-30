@@ -322,19 +322,16 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 		}
 	}
 
-	if (!(obj->texttype_impl->texttype_flags & TEXTTYPE_non_multi_level) && key_type == INTL_KEY_SORT)
+	/* put special keys into output key */
+	if ((lspecial && iOutLen) &&
+		!(obj->texttype_impl->texttype_flags & TEXTTYPE_ignore_specials))
 	{
-		/* put special keys into output key */
-		if ((lspecial && iOutLen) &&
-			!(obj->texttype_impl->texttype_flags & TEXTTYPE_ignore_specials))
-		{
-			/* Insert the marker-byte */
-			*outbuff++ = 0;
+		/* Insert the marker-byte */
+		*outbuff++ = 0;
+		iOutLen--;
+		for (i = 0; i < lspecial && iOutLen; i++) {
+			*outbuff++ = special[i];
 			iOutLen--;
-			for (i = 0; i < lspecial && iOutLen; i++) {
-				*outbuff++ = special[i];
-				iOutLen--;
-			}
 		}
 	}
 
