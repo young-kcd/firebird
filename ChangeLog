@@ -1,3 +1,29 @@
+2005-07-31 03:05  robocop
+
+	* firebird2/: src/alice/alice.cpp (1.80),
+	src/include/gen/codetext.h (1.28), src/include/gen/iberror.h
+	(1.27), src/include/gen/msgs.h (1.36), src/include/gen/rdb_codes.h
+	(1.28), src/include/gen/sql_code.h (1.30), src/msgs/facilities.sql
+	(1.33), src/msgs/messages.sql (1.40), src/msgs/system_errors.sql
+	(1.18), lang_helpers/gds_codes.ftn (1.21),
+	lang_helpers/gds_codes.pas (1.21):
+	
+	Fixed misplaced error messages in gfix. For example, if you do gfix
+	- housekeeping you were getting "dialect number required".
+
+2005-07-31 02:45  robocop
+
+	* firebird2/src/: jrd/blb.cpp (1.96), jrd/btr.cpp (1.149),
+	utilities/gstat/ppg.cpp (1.26):
+	
+	Totally misc.
+
+2005-07-30 20:00  asfernandes
+
+	* firebird2/src/intl/lc_narrow.cpp (1.14):
+	
+	Fix problem reported by Arno
+
 2005-07-30 03:48  asfernandes
 
 	* firebird2/builds/win32/defs/ib_udf.def (1.2):
