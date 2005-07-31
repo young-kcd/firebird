@@ -33,7 +33,7 @@
  *
  */
 /*
-$Id: blb.cpp,v 1.95 2005-07-25 12:01:19 asfernandes Exp $
+$Id: blb.cpp,v 1.96 2005-07-31 00:45:30 robocop Exp $
 */
 
 #include "firebird.h"
@@ -233,7 +233,7 @@ blb* BLB_create2(thread_db* tdbb,
 			to_charset = tdbb->tdbb_attachment->att_charset;
 
 		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) && 
-			(to_charset != CS_BINARY) && (from_charset != CS_BINARY)&&
+			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
 			(from_charset != to_charset))
 		{
 			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);

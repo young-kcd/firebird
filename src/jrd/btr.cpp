@@ -1331,7 +1331,7 @@ void BTR_make_key(thread_db* tdbb,
 
 		// AB: Fix bug SF #1242982
 		// Equality search on first segment (integer) in compound indexes resulted 
-		// in more scans on specific values (2^n, f.e. 131072) then needed.
+		// in more scans on specific values (2^n, f.e. 131072) than needed.
 		if (!fuzzy && (n != idx->idx_count)) {
 			for (; stuff_count; --stuff_count) {
 				*p++ = 0;
