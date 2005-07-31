@@ -1392,7 +1392,8 @@ void PAG_init2(USHORT shadow_number)
 					break;
 
 				case HDR_sweep_interval:
-					if (!(dbb->dbb_flags & DBB_read_only))
+					// CVC: Let's copy it always.
+					//if (!(dbb->dbb_flags & DBB_read_only))
 						MOVE_FAST(p + 2, &dbb->dbb_sweep_interval,
 								  sizeof(SLONG));
 					break;
