@@ -331,20 +331,20 @@ int common_main(int			argc,
 		}
 		switches |= table->in_sw_value;
 
-		if ((table->in_sw_value & (sw_shut | sw_online)) && (argc > 1)) {
+		if ((table->in_sw_value & (sw_shut | sw_online)) && (argc > 1))
+		{
 			ALICE_down_case(*argv, string, sizeof(string));
-			bool found = false;
-			if ((found = (strcmp(string, "normal") == 0)))
+			bool found = true;
+			if (strcmp(string, "normal") == 0)
 				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_NORMAL;
-			else
-			if ((found = (strcmp(string, "multi") == 0)))
+			else if (strcmp(string, "multi") == 0)
 				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_MULTI;
-			else
-			if ((found = (strcmp(string, "single") == 0)))
+			else if (strcmp(string, "single") == 0)
 				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_SINGLE;
-			else
-			if ((found = (strcmp(string, "full") == 0)))
+			else if (strcmp(string, "full") == 0)
 				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_FULL;
+			else
+				found = false;
 			// Consume argument only if we identified mode
 			// Let's hope that database with names of modes above are unusual
 			if (found) {
@@ -371,13 +371,13 @@ int common_main(int			argc,
 				ALICE_error(7);	// msg 7: numeric value required
 			}
 			if (tdgbl->ALICE_data.ua_page_buffers < 0) {
-				ALICE_error(8);	// msg 8: positive numeric value required
+				ALICE_error(114);	// msg 114: positive or zero numeric value required
 			}
 		}
 
 		if (table->in_sw_value & (sw_housekeeping)) {
 			if (--argc <= 0) {
-				ALICE_error(113);	// msg 113: dialect number required
+				ALICE_error(9);	// msg 9: number of transactions per sweep required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if ((!(tdgbl->ALICE_data.ua_sweep_interval = atoi(string)))
@@ -386,13 +386,13 @@ int common_main(int			argc,
 				ALICE_error(7);	// msg 7: numeric value required
 			}
 			if (tdgbl->ALICE_data.ua_sweep_interval < 0) {
-				ALICE_error(8);	// msg 8: positive numeric value required
+				ALICE_error(114);	// msg 114: positive or zero numeric value required
 			}
 		}
 
 		if (table->in_sw_value & (sw_set_db_dialect)) {
 			if (--argc <= 0) {
-				ALICE_error(113);	// msg 113: dialect info is required XXX
+				ALICE_error(113);	// msg 113: dialect number required
 			}
 
 			ALICE_down_case(*argv++, string, sizeof(string));
@@ -407,7 +407,7 @@ int common_main(int			argc,
 			//		an unsigned number.  Therefore this check is useless.
 			// if (tdgbl->ALICE_data.ua_db_SQL_dialect < 0)
 			// {
-			//	ALICE_error(8);	/* msg 8: positive numeric value
+			//	ALICE_error(114);	/* msg 114: positive or zero numeric value
 			//									   required */
 			// }
 		}

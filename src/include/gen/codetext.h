@@ -586,6 +586,7 @@ static const struct {
 	{"gfix_trn_unknown", 335741036},
 	{"gfix_mode_req", 335741038},
 	{"gfix_opt_SQL_dialect", 335741039},
+	{"gfix_pzval_req", 335741042},
 	{"dsql_dbkey_from_non_table", 336003074},
 	{"dsql_transitional_numeric", 336003075},
 	{"dsql_dialect_warning_expr", 336003076},

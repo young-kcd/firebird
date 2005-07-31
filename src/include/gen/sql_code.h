@@ -583,6 +583,7 @@ static const SSHORT gds__sql_code [] = {
 -901 /* 108 gfix_trn_unknown                 */,
 -901 /* 110 gfix_mode_req                    */,
    0 /* 111 gfix_opt_SQL_dialect             */,
+-901 /* 114 gfix_pzval_req                   */,
 -607 /*   2 dsql_dbkey_from_non_table        */,
 -104 /*   3 dsql_transitional_numeric        */,
  301 /*   4 dsql_dialect_warning_expr        */,

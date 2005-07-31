@@ -597,6 +597,7 @@ const
 	gds_gfix_trn_unknown                 = 335741036;
 	gds_gfix_mode_req                    = 335741038;
 	gds_gfix_opt_SQL_dialect             = 335741039;
+	gds_gfix_pzval_req                   = 335741042;
 	gds_dsql_dbkey_from_non_table        = 336003074;
 	gds_dsql_transitional_numeric        = 336003075;
 	gds_dsql_dialect_warning_expr        = 336003076;

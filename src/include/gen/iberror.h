@@ -619,6 +619,7 @@ const SLONG isc_gfix_recon_fail                  = 335741018L;
 const SLONG isc_gfix_trn_unknown                 = 335741036L;
 const SLONG isc_gfix_mode_req                    = 335741038L;
 const SLONG isc_gfix_opt_SQL_dialect             = 335741039L;
+const SLONG isc_gfix_pzval_req                   = 335741042L;
 const SLONG isc_dsql_dbkey_from_non_table        = 336003074L;
 const SLONG isc_dsql_transitional_numeric        = 336003075L;
 const SLONG isc_dsql_dialect_warning_expr        = 336003076L;
@@ -801,7 +802,7 @@ const SLONG isc_gstat_unexpected_eof             = 336920580L;
 const SLONG isc_gstat_open_err                   = 336920605L;
 const SLONG isc_gstat_read_err                   = 336920606L;
 const SLONG isc_gstat_sysmemex                   = 336920607L;
-const SLONG isc_err_max                          = 746;
+const SLONG isc_err_max                          = 747;
 
 #else /* c definitions */
 
@@ -1390,6 +1391,7 @@ const SLONG isc_err_max                          = 746;
 #define isc_gfix_trn_unknown                 335741036L
 #define isc_gfix_mode_req                    335741038L
 #define isc_gfix_opt_SQL_dialect             335741039L
+#define isc_gfix_pzval_req                   335741042L
 #define isc_dsql_dbkey_from_non_table        336003074L
 #define isc_dsql_transitional_numeric        336003075L
 #define isc_dsql_dialect_warning_expr        336003076L
@@ -1572,7 +1574,7 @@ const SLONG isc_err_max                          = 746;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          746
+#define isc_err_max                          747
 
 #endif
 

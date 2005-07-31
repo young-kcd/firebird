@@ -1180,6 +1180,8 @@ C --
       PARAMETER (GDS__gfix_mode_req                    = 335741038)
       INTEGER*4 GDS__gfix_opt_SQL_dialect            
       PARAMETER (GDS__gfix_opt_SQL_dialect             = 335741039)
+      INTEGER*4 GDS__gfix_pzval_req                  
+      PARAMETER (GDS__gfix_pzval_req                   = 335741042)
       INTEGER*4 GDS__dsql_dbkey_from_non_table       
       PARAMETER (GDS__dsql_dbkey_from_non_table        = 336003074)
       INTEGER*4 GDS__dsql_transitional_numeric       
