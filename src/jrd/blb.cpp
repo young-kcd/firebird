@@ -32,9 +32,6 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  *
  */
-/*
-$Id: blb.cpp,v 1.96 2005-07-31 00:45:30 robocop Exp $
-*/
 
 #include "firebird.h"
 #include <string.h>
