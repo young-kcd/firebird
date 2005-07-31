@@ -1373,7 +1373,9 @@ void MAKE_desc_from_list(dsql_req* request, dsc* desc, dsql_nod* node,
 		// Get the descriptor from current node.
 		dsc desc1;
 		MAKE_desc(request, &desc1, tnod, NULL);
-		nullable = (desc1.dsc_flags & DSC_nullable);
+		if (!nullable) {
+			nullable = (desc1.dsc_flags & DSC_nullable);
+		}
 
 		// Check if we support this datatype.
 		if (!(DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_NUMERIC(desc1.dsc_dtype) ||
