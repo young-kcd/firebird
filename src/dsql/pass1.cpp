@@ -3665,19 +3665,17 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	// it may not reference to other streams in the same scope_level.
 	const bool allowOuterReference = (input->nod_flags & NOD_DT_ALLOW_OUTER_REFERENCE);
 	DsqlContextStack temp;
-	if (!allowOuterReference) 
+	// Put special contexts (NEW/OLD) also on the stack
+	for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
 	{
-		// Put special contexts (NEW/OLD) also on the stack
-		for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
+	    dsql_ctx* context = stack.object();
+		if (allowOuterReference || (context->ctx_flags & CTX_system))
 		{
-	        dsql_ctx* context = stack.object();
-			if (context->ctx_flags & CTX_system)
-			{
-				temp.push(context);
-			}
+			temp.push(context);
 		}
-		request->req_context = &temp;
 	}
+	dsql_ctx* baseContext = temp.object();
+	request->req_context = &temp;
 	request->req_alias_relation_prefix = pass1_alias_concat(req_alias_relation_prefix, alias);
 
 	// AB: 2005-01-06
@@ -3713,10 +3711,14 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	// Finish off by cleaning up contexts and put them into req_dt_context
 	// so create view (ddl) can deal with it.
 	// Also add the used contexts into the childs stack.
-	while (request->req_context->hasData() && (request->req_context != req_base))
+	while (temp.hasData() && (temp.object() != baseContext))
 	{
-		request->req_dt_context.push(request->req_context->object());
-		context->ctx_childs_derived_table.push(request->req_context->pop());
+		request->req_dt_context.push(temp.object());
+		context->ctx_childs_derived_table.push(temp.pop());
+	}
+	while (temp.hasData())
+	{
+		temp.pop();
 	}
 
 	delete request->req_alias_relation_prefix;
@@ -7814,8 +7816,7 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 			{
 				table_name = NULL;
 			}
-			else if ((!strcmp(table_name, OLD_CONTEXT)) ||
-				(!strcmp(table_name, TEMP_CONTEXT)))
+			else if (!strcmp(table_name, OLD_CONTEXT))
 			{
 				// Only use the OLD context if it is explicit used. That means the
 				// qualifer should hold the "OLD" alias.
