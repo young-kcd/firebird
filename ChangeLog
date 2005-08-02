@@ -1,3 +1,27 @@
+2005-08-01 21:05  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.229):
+	
+	Fix unreleased contexts problem with derived tables, found by Vlad.
+
+2005-07-31 16:13  arnobrinkman
+
+	* firebird2/src/dsql/make.cpp (1.99):
+	
+	Fix mistake, noticed by Claudio
+
+2005-07-31 05:45  robocop
+
+	* firebird2/src/jrd/pag.cpp (1.90):
+	
+	Fix SF Bug #1238104.
+
+2005-07-31 05:33  robocop
+
+	* firebird2/src/: jrd/blb.cpp (1.97), dsql/dsql.h (1.79):
+	
+	Totally misc.
+
 2005-07-31 03:05  robocop
 
 	* firebird2/: src/alice/alice.cpp (1.80),
