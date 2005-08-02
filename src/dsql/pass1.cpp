@@ -3674,7 +3674,10 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 			temp.push(context);
 		}
 	}
-	dsql_ctx* baseContext = temp.object();
+	dsql_ctx* baseContext = NULL;
+	if (temp.hasData()) {	
+		baseContext = temp.object();
+	}
 	request->req_context = &temp;
 	request->req_alias_relation_prefix = pass1_alias_concat(req_alias_relation_prefix, alias);
 
