@@ -244,7 +244,12 @@ enum dfw_t {
 	dfw_add_difference,
 	dfw_delete_difference,
 	dfw_begin_backup,
-	dfw_end_backup
+	dfw_end_backup,
+
+	// deffered works argument types
+	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory
+	dfw_arg_partner_rel_id,	// partner relation id for dfw_delete_index if index is FK, optional
+	dfw_arg_proc_name		// procedure name for dfw_delete_prm, mandatory
 };
 
 class DeferredWork : public pool_alloc<type_dfw>

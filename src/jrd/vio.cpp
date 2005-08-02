@@ -1327,6 +1327,12 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				{
 					work = DFW_post_work(transaction, dfw_delete_expression_index,
 								  &desc, id);
+
+					// add expression index name to correctly delete dependencies
+					DSC idx_name;
+					EVL_field(0, rpb->rpb_record, f_idx_name, &idx_name);
+					DeferredWork* arg = DFW_post_work_arg(transaction, work, &idx_name, id);
+					arg->dfw_type = dfw_arg_index_name;
 				}
 				else
 				{
@@ -1353,12 +1359,14 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					(MET_lookup_partner(tdbb, r2, &idx, idx_name)) &&
 					(partner = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
 				{
-					DFW_post_work_arg(transaction, work, 0, partner->rel_id);
+					DeferredWork* arg = DFW_post_work_arg(transaction, work, 0, partner->rel_id);
+					arg->dfw_type = dfw_arg_partner_rel_id;
 				}
 				else {	// can't find partner relation - impossible ?
 					// add empty argument to let DFW know dropping
 					// index was bound with FK
-					DFW_post_work_arg(transaction, work, 0, 0);
+					DeferredWork* arg = DFW_post_work_arg(transaction, work, 0, 0);
+					arg->dfw_type = dfw_arg_partner_rel_id;
 				}
 			}
 			break;
@@ -1385,8 +1393,13 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			MOV_get_metadata_str(&desc, procedure_name, sizeof(procedure_name));
 			if ( (procedure = MET_lookup_procedure(tdbb, procedure_name, true)) )
 			{
-				DFW_post_work(transaction, dfw_delete_prm, &desc2,
+				work = DFW_post_work(transaction, dfw_delete_prm, &desc2,
 							  procedure->prc_id);
+
+				// procedure name to track parameter dependencies
+				DeferredWork* arg = DFW_post_work_arg(transaction, work, &desc, 
+										procedure->prc_id);
+				arg->dfw_type = dfw_arg_proc_name;
 			}
 			EVL_field(0, rpb->rpb_record, f_prm_sname, &desc2);
 			DFW_post_work(transaction, dfw_delete_global, &desc2, 0);
@@ -3826,13 +3839,13 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			   Express interest in the relation to prevent it from being deleted
 			   out from under us while garbage collection is in-progress. */
 
-			//hvlad: skip system relations
 			vec* vector = dbb->dbb_relations;
 			for (ULONG id = 0; vector && id < vector->count(); ++id) {
 				relation = (jrd_rel*) (*vector)[id];
 				RelationGarbage *relGarbage = 
 					relation ? (RelationGarbage*)relation->rel_garbage : NULL;
 
+				//hvlad: skip system relations
 				if (relation && (relation->rel_gc_bitmap || relGarbage) &&
 					!(relation->rel_flags & (REL_deleted | REL_deleting | REL_system)))
 				{

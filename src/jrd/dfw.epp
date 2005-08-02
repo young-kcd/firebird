@@ -167,9 +167,6 @@ static bool add_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool begin_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static Lock* protect_relation(thread_db*, jrd_tra*, jrd_rel*, bool&);
-static void release_protect_lock(thread_db*, jrd_tra*, Lock*);
-static void check_partners(thread_db*, const USHORT);
 
 /* ---------------------------------------------------------------- */
 
@@ -193,6 +190,10 @@ static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const 
 	const TEXT*, bool);
 static bool validate_text_type (thread_db*, const TemporaryField*);
 
+static Lock* protect_relation(thread_db*, jrd_tra*, jrd_rel*, bool&);
+static void release_protect_lock(thread_db*, jrd_tra*, Lock*);
+static void check_partners(thread_db*, const USHORT);
+
 static const UCHAR nonnull_validation_blr[] =
 {
 	blr_version5,
@@ -213,6 +214,7 @@ static const deferred_task task_table[] =
 	{ dfw_add_file, add_file },
 	{ dfw_add_shadow, add_shadow },
 	{ dfw_delete_index, delete_index },
+	{ dfw_delete_expression_index, delete_index },
 	{ dfw_delete_rfr, delete_rfr },
 	{ dfw_delete_relation, delete_relation },
 	{ dfw_delete_shadow, delete_shadow },
@@ -226,7 +228,6 @@ static const deferred_task task_table[] =
 #ifdef EXPRESSION_INDICES
 	{ dfw_create_expression_index, PCMET_expression_index },
 #endif
-	{ dfw_delete_expression_index, delete_index },
 	{ dfw_grant, GRANT_privileges },
 	{ dfw_create_trigger, create_trigger },
 	{ dfw_delete_trigger, delete_trigger },
@@ -637,7 +638,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* de
 }
 
 
-void DFW_post_work_arg( jrd_tra* transaction, DeferredWork* work, const dsc* desc,
+DeferredWork* DFW_post_work_arg( jrd_tra* transaction, DeferredWork* work, const dsc* desc,
 	USHORT id)
 {
 /**************************************
@@ -651,7 +652,7 @@ void DFW_post_work_arg( jrd_tra* transaction, DeferredWork* work, const dsc* des
  *
  **************************************/
 
-	post_work(transaction,
+	return post_work(transaction,
 			  work->dfw_sav_number,
 			  &work->dfw_args,
 			  work->dfw_type,
@@ -2443,18 +2444,36 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		IDX_delete_index(tdbb, relation, id);
 		if (work->dfw_type == dfw_delete_expression_index)
 		{
+			// for expression index there are dependincies  
+			// therefore work->dfw_args was set in VIO_erase
+			// to let us know that expression index name
+			fb_assert(work->dfw_args);
+
+			const DeferredWork* arg = work->dfw_args;
+			while(arg && (arg->dfw_type != dfw_arg_index_name)) 
+			{
+				arg = arg->dfw_next;
+			}
+
+			fb_assert(arg);
 			MET_delete_dependencies(tdbb,
-									work->dfw_name,
+				arg->dfw_name, 
 									obj_expression_index);
 		}
 
 		// if index was bound to deleted FK constraint 
 		// then work->dfw_args was set in VIO_erase
-		if (work->dfw_args) {
-			if (work->dfw_args->dfw_id) {
+		const DeferredWork* arg = work->dfw_args;
+		while(arg && (arg->dfw_type != dfw_arg_partner_rel_id)) 
+		{
+			arg = arg->dfw_next;
+		}
+
+		if (arg) {
+			if (arg->dfw_id) {
 				check_partners(tdbb, relation->rel_id);
-				if (relation->rel_id != work->dfw_args->dfw_id) {
-					check_partners(tdbb, work->dfw_args->dfw_id);
+				if (relation->rel_id != arg->dfw_id) {
+					check_partners(tdbb, arg->dfw_id);
 				}
 			}
 			else {
@@ -3136,7 +3155,7 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 		dfw_type = dfw_delete_procedure;
 		break;
 	case obj_expression_index:
-		dfw_type = dfw_delete_index;
+		dfw_type = dfw_delete_expression_index;
 		break;
 	default:
 		fb_assert(false);
@@ -3153,6 +3172,21 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 			(!rel_id || rel_id == work->dfw_id))
 		{
 			return true;
+		}
+
+		if (work->dfw_type == dfw_type && 
+			dfw_type == dfw_delete_expression_index)
+		{
+			const DeferredWork* arg = work->dfw_args;
+			while (arg)
+			{
+				if (arg->dfw_type == dfw_arg_index_name &&
+					arg->dfw_name == object_name)
+				{
+					return true;
+				}
+				arg = arg->dfw_next;
+			}
 		}
 	}
 
