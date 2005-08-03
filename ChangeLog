@@ -1,3 +1,17 @@
+2005-08-02 13:41  hvlad
+
+	* firebird2/src/jrd/: dfw.epp (1.156), dfw_proto.h (1.14), tra.h
+	(1.47), vio.cpp (1.136):
+	
+	Fixed two DFW bugs 1. Unregistered FB2 bug - expression index
+	dependencies was tracked not correctly.  2. SF #1250150
+
+2005-08-02 10:36  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.230):
+	
+	Sigh, if i change something then i must do it right
+
 2005-08-01 21:05  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp (1.229):
