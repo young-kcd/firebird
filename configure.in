@@ -81,7 +81,7 @@ case "$target" in
     PLATFORM=LINUX
     AC_DEFINE(LINUX)
     LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=N
+    EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
 
