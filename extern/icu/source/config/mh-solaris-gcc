@@ -9,8 +9,8 @@ SHAREDLIBCXXFLAGS = -fPIC
 SHAREDLIBCPPFLAGS = -DPIC
 
 
-THREADSCFLAGS += -threads
-THREADSCXXFLAGS += -threads
+THREADSCFLAGS += -threads -DSOLARIS_MT
+THREADSCXXFLAGS += -threads -DSOLARIS_MT
 
 
 ## Commands to generate dependency files

@@ -37,10 +37,14 @@
 #include "ucln_cmn.h"
 
 
-#if defined(POSIX) && (ICU_USE_THREADS==1)
+#if  (ICU_USE_THREADS==1)
+#if defined (POSIX) && ! defined (SOLARIS_MT)
 # include <pthread.h> /* must be first, so that we get the multithread versions of things. */
-
-#endif /* POSIX && (ICU_USE_THREADS==1) */
+#elif defined (SOLARIS_MT)
+# include <thread.h>
+# include <synch.h>
+#endif
+#endif /*  (ICU_USE_THREADS==1) */
 
 #ifdef WIN32
 # define WIN32_LEAN_AND_MEAN
@@ -130,7 +134,7 @@ static int32_t gRecursionCountPool[MAX_MUTEXES]; /* ditto for non-global */
 #endif
 
 
-#elif defined(POSIX) 
+#elif defined(POSIX) && ! defined (SOLARIS_MT)
 /*-------------------------------------------------------------
  *
  *   POSIX   platform variable declarations
@@ -145,7 +149,16 @@ static pthread_mutex_t   gMutexes[MAX_MUTEXES] = {
     PTHREAD_MUTEX_INITIALIZER, PTHREAD_MUTEX_INITIALIZER, PTHREAD_MUTEX_INITIALIZER,
     PTHREAD_MUTEX_INITIALIZER, PTHREAD_MUTEX_INITIALIZER
 };
-
+#elif defined (SOLARIS_MT)
+static mutex_t gMutexes[MAX_MUTEXES]  = {
+	 DEFAULTMUTEX,  DEFAULTMUTEX,  DEFAULTMUTEX, 
+	 DEFAULTMUTEX,  DEFAULTMUTEX,  DEFAULTMUTEX, 
+	 DEFAULTMUTEX,  DEFAULTMUTEX,  DEFAULTMUTEX, 
+	 DEFAULTMUTEX,  DEFAULTMUTEX,  DEFAULTMUTEX, 
+	 DEFAULTMUTEX,  DEFAULTMUTEX,  DEFAULTMUTEX, 
+	 DEFAULTMUTEX,  DEFAULTMUTEX,  DEFAULTMUTEX, 
+	 DEFAULTMUTEX,  DEFAULTMUTEX
+};
 #else 
 /*-------------------------------------------------------------
  *
@@ -208,8 +221,10 @@ umtx_lock(UMTX *mutex)
 #if (ICU_USE_THREADS == 1)
 #if defined(WIN32)
         EnterCriticalSection((CRITICAL_SECTION*) *mutex);
-#elif defined(POSIX)
+#elif defined(POSIX) && ! defined (SOLARIS_MT)
         pthread_mutex_lock((pthread_mutex_t*) *mutex);
+#elif defined (SOLARIS_MT)
+		mutex_lock((mutex_t*) * mutex);
 #endif   /* cascade of platforms */
 #endif /* ICU_USE_THREADS==1 */
     }
@@ -285,8 +300,10 @@ umtx_unlock(UMTX* mutex)
 #if (ICU_USE_THREADS==1)
 #if defined (WIN32)
         LeaveCriticalSection((CRITICAL_SECTION*)*mutex);
-#elif defined (POSIX)
+#elif defined (POSIX) && ! defined (SOLARIS_MT)
         pthread_mutex_unlock((pthread_mutex_t*)*mutex);
+#elif defined (SOLARIS_MT)
+		mutex_unlock((mutex_t*) * mutex);
 #endif  /* cascade of platforms */
 #endif /* ICU_USE_THREADS == 1 */
     }
@@ -337,7 +354,7 @@ static void initGlobalMutex() {
         }
         gMutexPoolInitialized = TRUE;
     }
-#elif defined (POSIX)
+#elif defined (POSIX) && ! defined (SOLARIS_MT)
     /*  TODO:  experimental code.  Shouldn't need to explicitly init the mutexes. */
     if (gMutexPoolInitialized == FALSE) {
         int i;
@@ -346,6 +363,16 @@ static void initGlobalMutex() {
         }
         gMutexPoolInitialized = TRUE;
     }
+#elif defined (SOLARIS_MT)
+   /*  TODO:  experimental code.  Shouldn't need to explicitly init the mutexes. */
+    if (gMutexPoolInitialized == FALSE) {
+        int i;
+        for (i=0; i<MAX_MUTEXES; i++) {
+            mutex_init(&gMutexes[i], USYNC_PROCESS, NULL);
+        }
+        gMutexPoolInitialized = TRUE;
+    }		
+	
 #endif 
 
     /*
@@ -513,7 +540,7 @@ umtx_atomic_inc(int32_t *p)  {
     } else {
         #if defined (WIN32) && ICU_USE_THREADS == 1
             retVal = InterlockedIncrement(p);
-        #elif defined (POSIX) && ICU_USE_THREADS == 1
+        #elif (defined (POSIX)||defined (SOLARIS_MT)) && ICU_USE_THREADS == 1
             umtx_lock(&gIncDecMutex);
             retVal = ++(*p);
             umtx_unlock(&gIncDecMutex);
@@ -533,7 +560,7 @@ umtx_atomic_dec(int32_t *p) {
     } else {
         #if defined (WIN32) && ICU_USE_THREADS == 1
             retVal = InterlockedDecrement(p);
-        #elif defined (POSIX) && ICU_USE_THREADS == 1
+        #elif (defined (POSIX)||defined (SOLARIS_MT)) && ICU_USE_THREADS == 1
             umtx_lock(&gIncDecMutex);
             retVal = --(*p);
             umtx_unlock(&gIncDecMutex);
@@ -605,8 +632,10 @@ U_CFUNC UBool umtx_cleanup(void) {
             if (gMutexesInUse[i]) {
 #if defined (WIN32)
                 DeleteCriticalSection(&gMutexes[i]);
-#elif defined (POSIX)
+#elif defined (POSIX) && ! defined (SOLARIS_MT)
                 pthread_mutex_destroy(&gMutexes[i]);
+#elif defined (SOLARIS_MT)
+				mutex_destroy(&gMutexes[i]);
 #endif
                 gMutexesInUse[i] = 0;
             }
