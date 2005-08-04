@@ -5681,7 +5681,7 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 	const dsql_nod* const* const end = arg + alias_list->nod_count;
 
 	// Loop through every alias and find the context for that alias.
-	// All aliasses should have a corresponding context.
+	// All aliases should have a corresponding context.
 	int aliasCount = alias_list->nod_count;
 	USHORT savedScopeLevel = request->req_scope_level;
 	dsql_ctx* context = NULL;

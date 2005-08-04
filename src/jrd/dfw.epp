@@ -2444,7 +2444,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		IDX_delete_index(tdbb, relation, id);
 		if (work->dfw_type == dfw_delete_expression_index)
 		{
-			// for expression index there are dependincies  
+			// for expression index there are dependencies  
 			// therefore work->dfw_args was set in VIO_erase
 			// to let us know that expression index name
 			fb_assert(work->dfw_args);
