@@ -2457,8 +2457,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 			fb_assert(arg);
 			MET_delete_dependencies(tdbb,
-				arg->dfw_name, 
-									obj_expression_index);
+				arg->dfw_name, obj_expression_index);
 		}
 
 		// if index was bound to deleted FK constraint 
@@ -2565,7 +2564,10 @@ static bool delete_parameter(	thread_db*	tdbb,
 	case 1:
 		if (MET_lookup_procedure_id(tdbb, work->dfw_id, false, true, 0))
 		{
-			check_dependencies(tdbb, work->dfw_name.c_str(), 
+			const DeferredWork* arg = work->dfw_args;
+			fb_assert(arg && (arg->dfw_type == dfw_arg_proc_name));
+
+			check_dependencies(tdbb, arg->dfw_name.c_str(), 
 							   work->dfw_name.c_str(),
 							   obj_procedure, transaction);
 		}
