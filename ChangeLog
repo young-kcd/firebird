@@ -1,3 +1,43 @@
+2005-08-05 03:53  asfernandes
+
+	* firebird2/: src/jrd/intlnames.h (1.15),
+	builds/install/misc/fbintl.conf (1.5), src/intl/lc_iso8859_1.cpp
+	(1.13), src/intl/collations/win1250bo.h (1.2),
+	src/intl/collations/win1250bsba.h (1.1):
+	
+	Rename collation BO_BO to BS_BA - per Fikret request
+
+2005-08-04 14:33  alexpeshkoff
+
+	* firebird2/configure.in (1.232):
+	
+	Set default for x86 linux to build with editline
+
+2005-08-04 13:40  kkuznetsov
+
+	* firebird2/extern/icu/source/: common/umutex.c (1.3),
+	config/mh-solaris-gcc (1.5):
+	
+	First step switching to sun threading of icu
+
+2005-08-04 12:36  alexpeshkoff
+
+	* firebird2/configure.in (1.231):
+	
+	Make output better understandable on 64-bit native platforms
+
+2005-08-04 08:21  hvlad
+
+	* firebird2/src/jrd/dfw.epp (1.158):
+	
+	Lost part of my previous commit. Thanks to Claudio
+
+2005-08-04 06:02  robocop
+
+	* firebird2/src/: jrd/dfw.epp (1.157), dsql/pass1.cpp (1.231):
+	
+	Totally misc.
+
 2005-08-02 13:41  hvlad
 
 	* firebird2/src/jrd/: dfw.epp (1.156), dfw_proto.h (1.14), tra.h
