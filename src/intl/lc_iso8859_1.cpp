@@ -416,9 +416,9 @@ TEXTTYPE_ENTRY (WIN1250_c5_init)
 
 TEXTTYPE_ENTRY(WIN1250_c6_init)
 {
-	static const ASCII POSIX[] = "BO_BO.WIN1250";
+	static const ASCII POSIX[] = "BS_BA.WIN1250";
 
-#include "../intl/collations/win1250bo.h"
+#include "../intl/collations/win1250bsba.h"
 
 	return FAMILY2(cache, CC_YUGOSLAVIA, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
