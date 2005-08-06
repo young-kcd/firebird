@@ -350,18 +350,25 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 	case nod_agg_average:
 		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
-		dtype = desc->dsc_dtype;
-		if (!DTYPE_CAN_AVERAGE(dtype))
+		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) &&
+			!DTYPE_IS_TEXT(desc->dsc_dtype))
+		{
 			ERRD_post(isc_expression_eval_err, 0);
+		}
+		else if (DTYPE_IS_TEXT(desc->dsc_dtype)) {
+			desc->dsc_dtype = dtype_double;
+			desc->dsc_length = sizeof(double);
+		}
 		return;
 
 	case nod_agg_average2:
 		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
 		dtype = desc->dsc_dtype;
-		if (!DTYPE_CAN_AVERAGE(dtype))
+		if (!DTYPE_IS_NUMERIC(dtype)) {
 			ERRD_post(isc_expression_eval_err, 0);
-		if (DTYPE_IS_EXACT(dtype)) {
+		}
+		else if (DTYPE_IS_EXACT(dtype)) {
 			desc->dsc_dtype = dtype_int64;
 			desc->dsc_length = sizeof(SINT64);
 			node->nod_flags |= NOD_COMP_DIALECT;
@@ -374,11 +381,20 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 
 	case nod_agg_total:
 		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
-		if (desc->dsc_dtype == dtype_short) {
+		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) &&
+			!DTYPE_IS_TEXT(desc->dsc_dtype))
+		{
+			ERRD_post(isc_expression_eval_err, 0);
+		}
+		else if (desc->dsc_dtype == dtype_short) {
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_length = sizeof(SLONG);
 		}
 		else if (desc->dsc_dtype == dtype_int64) {
+			desc->dsc_dtype = dtype_double;
+			desc->dsc_length = sizeof(double);
+		}
+		else if (DTYPE_IS_TEXT(desc->dsc_dtype)) {
 			desc->dsc_dtype = dtype_double;
 			desc->dsc_length = sizeof(double);
 		}
@@ -388,7 +404,10 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 	case nod_agg_total2:
 		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
 		dtype = desc->dsc_dtype;
-		if (DTYPE_IS_EXACT(dtype)) {
+		if (!DTYPE_IS_NUMERIC(dtype)) {
+			ERRD_post(isc_expression_eval_err, 0);
+		}
+		else if (DTYPE_IS_EXACT(dtype)) {
 			desc->dsc_dtype = dtype_int64;
 			desc->dsc_length = sizeof(SINT64);
 			node->nod_flags |= NOD_COMP_DIALECT;
@@ -552,11 +571,11 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		}
 
 		dtype1 = desc1.dsc_dtype;
-		dtype2 = desc2.dsc_dtype;
-
-		if (dtype_int64 == dtype1)
+		if (DTYPE_IS_EXACT(dtype1) || DTYPE_IS_TEXT(dtype1))
 			dtype1 = dtype_double;
-		if (dtype_int64 == dtype2)
+
+		dtype2 = desc2.dsc_dtype;
+		if (DTYPE_IS_EXACT(dtype2) || DTYPE_IS_TEXT(dtype2))
 			dtype2 = dtype_double;
 
 		dtype = MAX(dtype1, dtype2);
@@ -567,6 +586,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		}
 
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+
 		switch (dtype) {
 		case dtype_sql_time:
 		case dtype_sql_date:
@@ -704,10 +724,9 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 					  isc_arg_gds, isc_dsql_no_blob_array, 0);
 		}
 
-		/* In Dialect 2 or 3, strings can never partipate in addition / sub 
-		   (Use a specific cast instead) */
-		if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
-			DTYPE_IS_TEXT(desc2.dsc_dtype))
+		// In Dialect 2 or 3, strings can never partipate in addition / sub
+		// (use a specific cast instead)
+		if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
 		{
 			ERRD_post(isc_expression_eval_err, 0);
 		}
@@ -717,7 +736,10 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		   the operation, as <timestamp>-<timestamp> uses
 		   <timestamp> arithmetic, but returns a <double> */
 		if (DTYPE_IS_EXACT(desc1.dsc_dtype)
-			&& DTYPE_IS_EXACT(desc2.dsc_dtype)) dtype = dtype_int64;
+			&& DTYPE_IS_EXACT(desc2.dsc_dtype))
+		{
+			dtype = dtype_int64;
+		}
 		else if (DTYPE_IS_NUMERIC(desc1.dsc_dtype)
 				 && DTYPE_IS_NUMERIC(desc2.dsc_dtype))
 		{
@@ -741,6 +763,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		}
 
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+
 		switch (dtype) {
 		case dtype_sql_time:
 		case dtype_sql_date:
@@ -869,13 +892,8 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		}
 
 		dtype = DSC_multiply_blr4_result[desc1.dsc_dtype][desc2.dsc_dtype];
-
-		if (dtype_unknown == dtype) {
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
-					  isc_arg_gds, isc_dsql_no_blob_array, 0);
-		}
-
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+
 		switch (dtype) {
 		case dtype_double:
 			desc->dsc_dtype = dtype_double;
@@ -892,7 +910,8 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 			break;
 
 		default:
-			ERRD_post(isc_expression_eval_err, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
+					  isc_arg_gds, isc_dsql_no_blob_array, 0);
 		}
 		return;
 
@@ -908,9 +927,16 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 			return;
 		}
 
-		dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
+		// In Dialect 2 or 3, strings can never partipate in multiplication 
+		// (use a specific cast instead)
+		if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
+		{
+			ERRD_post(isc_expression_eval_err, 0);
+		}
 
+		dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+
 		switch (dtype) {
 		case dtype_double:
 			desc->dsc_dtype = dtype_double;
@@ -955,19 +981,20 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		}
 
 		dtype1 = desc1.dsc_dtype;
-		if (dtype_int64 == dtype1)
+		if (DTYPE_IS_EXACT(dtype1) || DTYPE_IS_TEXT(dtype1))
 			dtype1 = dtype_double;
 
 		dtype2 = desc2.dsc_dtype;
-		if (dtype_int64 == dtype2)
+		if (DTYPE_IS_EXACT(dtype2) || DTYPE_IS_TEXT(dtype2))
 			dtype2 = dtype_double;
 
 		dtype = MAX(dtype1, dtype2);
 
-		if (!DTYPE_CAN_DIVIDE(dtype)) {
+		if (!DTYPE_IS_NUMERIC(dtype)) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
 					  isc_arg_gds, isc_dsql_no_blob_array, 0);
 		}
+
 		desc->dsc_dtype = dtype_double;
 		desc->dsc_length = sizeof(double);
 		desc->dsc_scale = 0;
@@ -986,10 +1013,17 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 			return;
 		}
 
+		// In Dialect 2 or 3, strings can never partipate in division
+		// (use a specific cast instead)
+		if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
+		{
+			ERRD_post(isc_expression_eval_err, 0);
+		}
+
 		dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
 		desc->dsc_dtype = static_cast<UCHAR>(dtype);
-
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+
 		switch (dtype) {
 		case dtype_int64:
 			desc->dsc_length = sizeof(SINT64);
@@ -1020,9 +1054,24 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 			return;
 		}
 
-		if (!DTYPE_CAN_NEGATE(desc->dsc_dtype)) {
+		// In Dialect 2 or 3, a string can never partipate in negation
+		// (use a specific cast instead)
+		if (DTYPE_IS_TEXT(desc->dsc_dtype)) {
+			if (request->req_client_dialect >= SQL_DIALECT_V6_TRANSITION) {
+				ERRD_post(isc_expression_eval_err, 0);
+			}
+			desc->dsc_dtype = dtype_double;
+			desc->dsc_length = sizeof(double);
+		}
+		// Forbid blobs and arrays
+		else if (DTYPE_IS_BLOB(desc->dsc_dtype))
+		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
 					  isc_arg_gds, isc_dsql_no_blob_array, 0);
+		}
+		// Forbid other not numeric datatypes
+		else if (!DTYPE_IS_NUMERIC(desc->dsc_dtype)) {
+			ERRD_post(isc_expression_eval_err, 0);
 		}
 		return;
 

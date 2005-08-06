@@ -944,14 +944,14 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
 			// for compatibility with older versions of the product, we accept
 			// text types for division in blr_version4 (dialect <= 1) only
-			if (!(DTYPE_CAN_DIVIDE(desc1.dsc_dtype) ||
+			if (!(DTYPE_IS_NUMERIC(desc1.dsc_dtype) ||
 				  DTYPE_IS_TEXT(desc1.dsc_dtype)))
 			{
 				if (desc1.dsc_dtype != dtype_unknown) {
 					break;		// error, dtype not supported by arithmetic
 				}
 			}
-			if (!(DTYPE_CAN_DIVIDE(desc2.dsc_dtype) ||
+			if (!(DTYPE_IS_NUMERIC(desc2.dsc_dtype) ||
 				  DTYPE_IS_TEXT(desc2.dsc_dtype)))
 			{
 				if (desc2.dsc_dtype != dtype_unknown) {
@@ -974,7 +974,9 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		if (node->nod_type == nod_average) {
 			CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
 		}
-		if (!DTYPE_CAN_AVERAGE(desc->dsc_dtype)) {
+		if (!(DTYPE_IS_NUMERIC(desc->dsc_dtype) ||
+			DTYPE_IS_TEXT(desc->dsc_dtype)))
+		{
 			if (desc->dsc_dtype != dtype_unknown) {
 				break;
 			}
@@ -1015,7 +1017,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			return;
 
 		default:
-			if (!DTYPE_CAN_AVERAGE(desc->dsc_dtype)) {
+			if (!DTYPE_IS_NUMERIC(desc->dsc_dtype)) {
 				break;
 			}
 			desc->dsc_dtype = DEFAULT_DOUBLE;

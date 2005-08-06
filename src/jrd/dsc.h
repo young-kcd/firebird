@@ -189,24 +189,4 @@ inline SCHAR NUMERIC_SCALE(const dsc desc) {
 
 //#define NUMERIC_SCALE(desc)	((DTYPE_IS_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
 
-/* Macros defining what operations are legal on data types */
-inline bool DTYPE_CAN_NEGATE(UCHAR d) {
-	return DTYPE_IS_NUMERIC(d);
-}
-//#define DTYPE_CAN_NEGATE(d)	DTYPE_IS_NUMERIC(d)
-inline bool DTYPE_CAN_AVERAGE(UCHAR d) {
-	return DTYPE_IS_NUMERIC(d);
-}
-//#define DTYPE_CAN_AVERAGE(d)	DTYPE_IS_NUMERIC(d)
-inline bool DTYPE_CAN_DIVIDE(UCHAR d) {
-	return DTYPE_IS_NUMERIC(d);
-}
-//#define DTYPE_CAN_DIVIDE(d)	DTYPE_IS_NUMERIC(d)
-inline bool DTYPE_CAN_MULTIPLY(UCHAR d) {
-	return DTYPE_IS_NUMERIC(d);
-}
-//#define DTYPE_CAN_MULTIPLY(d)	DTYPE_IS_NUMERIC(d)
-
-
 #endif /* JRD_DSC_H */
-

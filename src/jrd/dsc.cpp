@@ -607,21 +607,21 @@ const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	/* dtype_text */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
+	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_cstring */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
+	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_varying */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
+	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
@@ -654,14 +654,14 @@ const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
 
 	/* dtype_short */
-	{dtype_unknown, dtype_long, dtype_long, dtype_long,
+	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
 
 	/* dtype_long */
-	{dtype_unknown, dtype_long, dtype_long, dtype_long,
+	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
