@@ -807,7 +807,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			CME_get_dtype(node->nod_arg[1], f);
 		else
 			CME_get_dtype(node->nod_arg[0], f);
-		if (!DTYPE_CAN_AVERAGE(f->fld_dtype))
+		if (!DTYPE_IS_NUMERIC(f->fld_dtype))
 			CPR_error("expression evaluation not supported");
 		if (gpreGlob.sw_sql_dialect != SQL_DIALECT_V5)
 		{
