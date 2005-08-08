@@ -583,6 +583,10 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			}
 			else
 				csb->csb_rpt[stream].csb_indices = 0;
+
+			const Format* format = CMP_format(tdbb, csb, stream);
+			csb->csb_rpt[stream].csb_cardinality = 
+				getRelationCardinality(tdbb, relation, format);
 		}
 	}
 

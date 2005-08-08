@@ -30,10 +30,11 @@
 #define OPTIMIZER_H
 
 //#define OPT_DEBUG
+//#define OPT_DEBUG_RETRIEVAL
 
-#ifdef OPT_DEBUG
+//#ifdef OPT_DEBUG
 #define OPTIMIZER_DEBUG_FILE "opt_debug.out"
-#endif
+//#endif
 
 
 #include "../common/classes/alloc.h"
@@ -114,7 +115,7 @@ public:
 class IndexScratch 
 {
 public:
-	IndexScratch(MemoryPool& p, index_desc* idx);
+	IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* idx, CompilerScratch::csb_repeat* csb_tail);
 	IndexScratch(MemoryPool& p, IndexScratch* scratch);
 	~IndexScratch();
 
@@ -125,6 +126,7 @@ public:
 	int lowerCount;					//
 	int upperCount;					//
 	int nonFullMatchedSegments;		//
+	double cardinality;				// Estimated cardinality when using the whole index
 
 	Firebird::Array<IndexScratchSegment*> segments;
 };
@@ -137,6 +139,7 @@ public:
 	InversionCandidate(MemoryPool& p);
 
 	double			selectivity;
+	double			cost;
 	USHORT			nonFullMatchedSegments;
 	USHORT			matchedSegments;
 	int				indexes;
@@ -174,10 +177,17 @@ protected:
 		IndexScratchList* indexScratches, USHORT scope) const;
 	jrd_nod* makeIndexNode(const index_desc* idx) const;
 	jrd_nod* makeIndexScanNode(IndexScratch* indexScratch) const;
-	InversionCandidate* makeInversion(InversionCandidateList* inversions) const;
+	InversionCandidate* makeInversion(InversionCandidateList* inversions, bool top = false) const;
 	bool matchBoolean(IndexScratch* indexScratch, jrd_nod* boolean, USHORT scope) const;
 	InversionCandidate* matchOnIndexes(IndexScratchList* indexScratches,
 		jrd_nod* boolean, USHORT scope) const;
+
+#ifdef OPT_DEBUG_RETRIEVAL
+	void printCandidate(InversionCandidate* candidate) const;
+	void printCandidates(InversionCandidateList* inversions) const;
+	void printFinalCandidate(InversionCandidate* candidate) const;
+#endif
+
 	bool validateStarts(IndexScratch* indexScratch, jrd_nod* boolean, USHORT segment) const;
 private:
 	MemoryPool& pool;
@@ -252,8 +262,11 @@ protected:
 		InnerJoinStreamInfo* testStream);
 	InnerJoinStreamInfo* getStreamInfo(int stream);
 #ifdef OPT_DEBUG
-	void printFoundOrder(int position, double cost, double cardinality) const;
+	void printBestOrder() const;
+	void printFoundOrder(int position, double positionCost, 
+		double positionCardinality, double cost, double cardinality) const;
 	void printProcessList(const IndexedRelationships* processList, int stream) const;
+	void printStartOrder() const;
 #endif
 
 private:

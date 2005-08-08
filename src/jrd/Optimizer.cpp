@@ -778,7 +778,8 @@ IndexScratchSegment::IndexScratchSegment(MemoryPool& p, IndexScratchSegment* seg
 	}	
 }
 
-IndexScratch::IndexScratch(MemoryPool& p, index_desc* ix) :
+IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix, 
+	CompilerScratch::csb_repeat* csb_tail) :
 	idx(ix), segments(p)
 {
 /**************************************
@@ -800,10 +801,30 @@ IndexScratch::IndexScratch(MemoryPool& p, index_desc* ix) :
 
 	segments.grow(idx->idx_count);
 
+	int length = 0;
+	const Format* format = csb_tail->csb_format;
+	index_desc::idx_repeat* idx_desc = idx->idx_rpt;
 	IndexScratchSegment** segment = segments.begin();
-	for (int i = 0; i < segments.getCount(); i++) {
+	for (int i = 0; i < segments.getCount(); i++, idx_desc++) {
 		segment[i] = FB_NEW(p) IndexScratchSegment(p);
-	}	
+		length += format->fmt_desc[idx_desc->idx_field].dsc_length;
+	}
+
+	// AB: Calculate the cardinality which should reflect the total number 
+	// of index pages for this index.
+	// We assume that the average index-key can be compressed by a factor 0.5
+	// In the future the average key-length should be stored and retrieved
+	// from a system table (RDB$INDICES for example).
+	// Multipling the selectivity with this cardinality gives the estimated 
+	// number of index pages that are read for the index retrieval.
+	double factor = 0.5;
+	if (segments.getCount() >= 2) {
+		// Compound indexes are generally less compressed.
+		factor = 0.7;
+	}
+	Database* dbb = tdbb->tdbb_database;
+	cardinality = (csb_tail->csb_cardinality * (2 + (length * factor))) / 
+		(dbb->dbb_page_size - BTR_SIZE);
 }
 
 IndexScratch::IndexScratch(MemoryPool& p, IndexScratch* scratch) :
@@ -819,6 +840,7 @@ IndexScratch::IndexScratch(MemoryPool& p, IndexScratch* scratch) :
  *
  **************************************/
 	selectivity = scratch->selectivity;
+	cardinality = scratch->cardinality;
 	candidate = scratch->candidate;
 	scopeCandidate = scratch->scopeCandidate;
 	lowerCount = scratch->lowerCount;
@@ -866,6 +888,7 @@ InversionCandidate::InversionCandidate(MemoryPool& p) :
  *
  **************************************/
 	selectivity = MAXIMUM_SELECTIVITY;
+	cost = 0;
 	indexes = 0;
 	dependencies = 0;
 	nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
@@ -913,7 +936,7 @@ OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
 	IndexScratch** indexScratch = indexScratches.begin();
 	index_desc* idx = csb_tail->csb_idx->items;
 	for (int i = 0; i < csb_tail->csb_indices; ++i, ++idx) {
-		indexScratch[i] = FB_NEW(p) IndexScratch(p, idx);
+		indexScratch[i] = FB_NEW(p) IndexScratch(p, tdbb, idx, csb_tail);
 	}
 
 	inversionCandidates.shrink(0);
@@ -1198,7 +1221,12 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 		}
 	}
 
-	invCandidate = makeInversion(&inversions);
+#ifdef OPT_DEBUG_RETRIEVAL
+	// Debug
+	printCandidates(&inversions);
+#endif
+
+	invCandidate = makeInversion(&inversions, true);
 
 	// Add the streams where this stream is depending on.
 	if (invCandidate) {
@@ -1207,6 +1235,11 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 				&invCandidate->dependentFromStreams);
 		}
 	}
+
+#ifdef OPT_DEBUG_RETRIEVAL
+	// Debug
+	printFinalCandidate(invCandidate);
+#endif
 
 	if (invCandidate && setConjunctionsMatched) {
 		Firebird::SortedArray<jrd_nod*> matches;
@@ -1409,10 +1442,11 @@ InversionCandidate* OptimizerRetrieval::getCost()
 		return inversion;
 	}
 	else {
-		// No index will be used
+		// No index will be used, thus
 		InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
 		invCandidate->indexes = 0;
 		invCandidate->selectivity = MAXIMUM_SELECTIVITY;
+		invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
 		return invCandidate;
 	}
 }
@@ -1443,6 +1477,7 @@ InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
 		InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
 		invCandidate->indexes = 0;
 		invCandidate->selectivity = MAXIMUM_SELECTIVITY;
+		invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
 		return invCandidate;
 	}
 }
@@ -1583,6 +1618,9 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					FB_NEW(pool) InversionCandidate(pool);
 				invCandidate->unique = unique;
 				invCandidate->selectivity = scratch[i]->selectivity;
+				// Calculate the cost (only index pages) for this index. 
+				// The constant 3 is an avergae for the rootpage and non-leaf pages.
+				invCandidate->cost = 3 + (scratch[i]->selectivity * scratch[i]->cardinality);
 				invCandidate->nonFullMatchedSegments =
 					scratch[i]->nonFullMatchedSegments;
 				invCandidate->matchedSegments = 
@@ -1791,8 +1829,8 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	return node;
 }
 
-InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* inversions)
-	const
+InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* inversions, 
+													  bool top)	const
 {
 /**************************************
  *
@@ -1800,7 +1838,11 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
  *
  **************************************
  *
- * Functional description
+ * Select best available inversion candidates
+ * and compose them to 1 inversion.
+ * If top is true the datapages-cost is
+ * also used in the calculation (only needed
+ * for top InversionNode generation).
  *
  **************************************/
 
@@ -1810,9 +1852,15 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 	const jrd_nod* const plan = csb->csb_rpt[stream].csb_plan;
 
-	InversionCandidate* invCandidate = NULL;
-	int i = 0;
 	double totalSelectivity = MAXIMUM_SELECTIVITY; // worst selectivity
+	double totalCost = 0;
+	double totalIndexCost = 0;
+	const double maximumCost = csb->csb_rpt[stream].csb_cardinality * 0.95;
+	const double minimumSelectivity = 1 / csb->csb_rpt[stream].csb_cardinality;
+	double previousTotalCost = maximumCost;
+
+	int i = 0;
+	InversionCandidate* invCandidate = NULL;
 	InversionCandidate** inversion = inversions->begin();
 	for (i = 0; i < inversions->getCount(); i++) {
 		inversion[i]->used = false;
@@ -1852,6 +1900,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					}
 					invCandidate->unique = inversion[currentPosition]->unique;
 					invCandidate->selectivity = inversion[currentPosition]->selectivity;
+					invCandidate->cost = inversion[currentPosition]->cost;
 					invCandidate->indexes = inversion[currentPosition]->indexes;
 					invCandidate->nonFullMatchedSegments = 0;
 					invCandidate->matchedSegments = inversion[currentPosition]->matchedSegments;
@@ -1964,29 +2013,62 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 		// If we have a candidate which is interesting build the inversion
 		// else we're done.
-		if (bestCandidate) {
-			if (plan || bestCandidate->selectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR_ADD)) {
-				// Estimate new selectivity
-				// Assign selectivity for the formula
-				double bestSel = bestCandidate->selectivity;
-				double worstSel = totalSelectivity;
-				if (bestCandidate->selectivity > totalSelectivity) {
-					worstSel = bestCandidate->selectivity;
-					bestSel = totalSelectivity;
-				}
+		if (bestCandidate) 
+		{
+			// AB: Here we test if our new candidate is interesting enough to be added for
+			// index retrieval. 
 
-				if (bestSel >= 1) {
-					totalSelectivity = 1;
-				}
-				else if (bestSel == 0) {
-					totalSelectivity = 0;
-				}
-				else {
-					totalSelectivity = (bestSel + (((worstSel - bestSel) / (1 - bestSel)) * bestSel)) / 2;
-				}
+			// AB: For now i'll use the calculation that's often used for and-ing selectivities (S1 * S2).
+			// I think this calculation is not right for many cases. 
+			// For example two "good" selectivities will result in a very good selectivity, but
+			// mostly a filter is made by adding criteria's where every criteria is an extra filter
+			// compared to the previous one. Thus with the second criteria in _most_ cases still 
+			// records are returned. (Think also on the segment-selectivity in compound indexes)
+			// Assume a table with 100000 records and two selectivities of 0.001 (100 records) which 
+			// are both AND-ed (with S1 * S2 => 0.001 * 0.001 = 0.000001 => 0.1 record).
+			//
+			// A better formula could be where the result is between "Sbest" and "Sbest * factor"
+			// The reducing factor should be between 0 and 1 (Sbest = best selectivity)
+			//
+			// Example:
+			/*
+			double newTotalSelectivity = 0;
+			double bestSel = bestCandidate->selectivity;
+			double worstSel = totalSelectivity;
+			if (bestCandidate->selectivity > totalSelectivity) {
+				worstSel = bestCandidate->selectivity;
+				bestSel = totalSelectivity;
+			}
 
+			if (bestSel >= 1) {
+				newTotalSelectivity = 1;
+			}
+			else if (bestSel == 0) {
+				newTotalSelectivity = 0;
+			}
+			else {
+				newTotalSelectivity = bestSel - ((1 - worstSel) * (bestSel - (bestSel * 0.01)));
+			}
+			*/
+
+			double newTotalSelectivity = bestCandidate->selectivity * totalSelectivity;
+			totalIndexCost += bestCandidate->cost;
+			totalCost = totalIndexCost;
+			if (top) {
+				totalCost += (newTotalSelectivity * csb->csb_rpt[stream].csb_cardinality);
+			}
+
+			// Test if the new totalCost will be higher as the maximumCost or previous totalCost 
+			// and if the current selectivty (without the bestCandidate) is already good enough.
+			//if (plan || bestCandidate->selectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR_ADD)) {
+			if (plan || ((totalCost < maximumCost) && (totalCost < previousTotalCost) && 
+						(totalSelectivity > minimumSelectivity))) 
+			{
 				// Exclude index from next pass
 				bestCandidate->used = true;
+				previousTotalCost = totalCost;
+
+				totalSelectivity = newTotalSelectivity;
 
 				if (!invCandidate) {
 					invCandidate = FB_NEW(pool) InversionCandidate(pool);
@@ -1998,6 +2080,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					}
 					invCandidate->unique = bestCandidate->unique;
 					invCandidate->selectivity = bestCandidate->selectivity;
+					invCandidate->cost = totalCost;
 					invCandidate->indexes = bestCandidate->indexes;
 					invCandidate->nonFullMatchedSegments = 0;
 					invCandidate->matchedSegments = bestCandidate->matchedSegments;
@@ -2026,6 +2109,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					}
 					invCandidate->unique = (invCandidate->unique || bestCandidate->unique);
 					invCandidate->selectivity = totalSelectivity;
+					invCandidate->cost = totalCost;
 					invCandidate->indexes += bestCandidate->indexes;
 					invCandidate->nonFullMatchedSegments = 0;
 					invCandidate->matchedSegments = 
@@ -2364,6 +2448,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 				composeInversion(invCandidate1->inversion, invCandidate2->inversion, nod_bit_or);
 			invCandidate->unique = (invCandidate1->unique && invCandidate2->unique);
 			invCandidate->selectivity = invCandidate1->selectivity + invCandidate2->selectivity;
+			invCandidate->cost = invCandidate1->cost + invCandidate2->cost;
 			invCandidate->indexes = invCandidate1->indexes + invCandidate2->indexes;
 			invCandidate->nonFullMatchedSegments = 0;
 			invCandidate->matchedSegments = 
@@ -2421,6 +2506,86 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 	}
 	return NULL;
 }
+
+
+#ifdef OPT_DEBUG_RETRIEVAL
+void OptimizerRetrieval::printCandidate(InversionCandidate* candidate) const
+{
+/**************************************
+ *
+ *	p r i n t C a n d i d a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+	fprintf(opt_debug_file, "     cost(%1.2f), selectivity(%1.10f), indexes(%d), matched(%d, %d)", 
+		candidate->cost, candidate->selectivity, candidate->indexes, candidate->matchedSegments, 
+		candidate->nonFullMatchedSegments);
+	if (candidate->unique) {
+		fprintf(opt_debug_file, ", unique");
+	}
+	int depFromCount = candidate->dependentFromStreams.getCount();
+	if (depFromCount >= 1) {
+		fprintf(opt_debug_file, ", dependent from ");
+		for (int i = 0; i < depFromCount; i++) {
+			if (i == 0) {
+				fprintf(opt_debug_file, "%d", candidate->dependentFromStreams[i]);
+			}
+			else {
+				fprintf(opt_debug_file, ", %d", candidate->dependentFromStreams[i]);
+			}
+		}
+	}
+	fprintf(opt_debug_file, "\n");
+	fclose(opt_debug_file);
+}
+
+void OptimizerRetrieval::printCandidates(InversionCandidateList* inversions) const
+{
+/**************************************
+ *
+ *	p r i n t C a n d i d a t e s
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+	fprintf(opt_debug_file, "    retrieval candidates:\n");
+	fclose(opt_debug_file);
+	InversionCandidate** inversion = inversions->begin();
+	for (int i = 0; i < inversions->getCount(); i++) {
+		InversionCandidate* candidate = inversion[i];
+		printCandidate(candidate);
+	}
+}
+
+void OptimizerRetrieval::printFinalCandidate(InversionCandidate* candidate) const
+{
+/**************************************
+ *
+ *	p r i n t C a n d i d a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	if (candidate) {
+		FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+		fprintf(opt_debug_file, "    final candidate: ");
+		fclose(opt_debug_file);
+		printCandidate(candidate);
+	}
+}
+#endif
 
 
 bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
@@ -2604,7 +2769,8 @@ OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, UCHAR*	
 		innerStream[i]->stream = streams[i + 1];
 	}
 
-	calculateCardinalities();
+	// Cardinalities are calculated in OPT_compile()
+	//calculateCardinalities();
 	calculateStreamInfo();
 }
 
@@ -2676,7 +2842,7 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool) 
 			OptimizerRetrieval(pool, optimizer, innerStreams[i]->stream, false, false, NULL);
 		InversionCandidate* candidate = optimizerRetrieval->getCost();
-		innerStreams[i]->baseCost = candidate->selectivity * csb_tail->csb_cardinality;
+		innerStreams[i]->baseCost = candidate->cost;//candidate->selectivity * csb_tail->csb_cardinality;
 		innerStreams[i]->baseIndexes = candidate->indexes;
 		innerStreams[i]->baseUnique = candidate->unique;
 		innerStreams[i]->baseConjunctionMatches = candidate->matches.getCount();
@@ -2795,12 +2961,13 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 		// Based on the page-size we make an estimated number of keys per index leaf page.
 		// This is really a wild estimated number because it depends on key size and how good
 		// the prefix compression does its work.
-		const double nodesPerPage = ((double)database->dbb_page_size / 10);
+		//const double nodesPerPage = ((double)database->dbb_page_size / 10);
 		// The estimated index cost reflects the number of pages fetched for this index read.
 		// The number of pages is an index pointer page + the B-Tree level - 1 (leaf page) +
 		// index leaf pages to be read.
-		const double indexCost = 2 + ((cardinality * selectivity) / nodesPerPage);
-		*cost = (cardinality * selectivity) + (candidate->indexes * indexCost);
+		//const double indexCost = 2 + ((cardinality * selectivity) / nodesPerPage);
+		//*cost = (cardinality * selectivity) + (candidate->indexes * indexCost);
+		*cost = candidate->cost;
 	}
 	else {
 		// No indexes are used, this meant for every record a data-page is read.
@@ -2843,6 +3010,11 @@ int OptimizerInnerJoin::findJoinOrder()
 
 	optimizer->opt_best_count = 0;
 
+#ifdef OPT_DEBUG
+	// Debug
+	printStartOrder();
+#endif
+
 	int i = 0;
 	remainingStreams = 0;
 	for (i = 0; i < innerStreams.getCount(); i++) {
@@ -2880,6 +3052,11 @@ int OptimizerInnerJoin::findJoinOrder()
 			getStreamInfo(optimizer->opt_streams[i].opt_best_stream);
 		streamInfo->used = true;
 	}
+
+#ifdef OPT_DEBUG
+	// Debug
+	printBestOrder();
+#endif
 
 	return optimizer->opt_best_count;
 }
@@ -2943,7 +3120,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 
 #ifdef OPT_DEBUG
 	// Debug information
-	printFoundOrder(position, new_cost, new_cardinality);
+	printFoundOrder(position, position_cost, position_cardinality, new_cost, new_cardinality);
 #endif
 
 	// mark this stream as "used" in the sense that it is already included 
@@ -3058,7 +3235,7 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool) 
 		OptimizerRetrieval(pool, optimizer, testStream->stream, false, false, NULL);
 	InversionCandidate* candidate = optimizerRetrieval->getCost();
-	double cost = candidate->selectivity * csb_tail->csb_cardinality;
+	double cost = candidate->cost;// candidate->selectivity * csb_tail->csb_cardinality;
 	if (candidate->unique) {
 		// If we've an unique index retrieval the cost is equal to 1
 		// The cost calculation can be far away from the real cost value if there
@@ -3120,7 +3297,34 @@ InnerJoinStreamInfo* OptimizerInnerJoin::getStreamInfo(int stream)
 }
 
 #ifdef OPT_DEBUG
-void OptimizerInnerJoin::printFoundOrder(int position, double cost, double cardinality) const
+void OptimizerInnerJoin::printBestOrder() const
+{
+/**************************************
+ *
+ *	p r i n t B e s t O r d e r
+ *
+ **************************************
+ *
+ *  Dump finally selected stream order.
+ *
+ **************************************/
+
+	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+	fprintf(opt_debug_file, " best order, streams: ");
+	for (int i = 0; i < optimizer->opt_best_count; i++) {
+		if (i == 0) {
+			fprintf(opt_debug_file, "%d", optimizer->opt_streams[i].opt_best_stream);
+		}
+		else {
+			fprintf(opt_debug_file, ", %d", optimizer->opt_streams[i].opt_best_stream);
+		}
+	}
+	fprintf(opt_debug_file, "\n");
+	fclose(opt_debug_file);
+}
+
+void OptimizerInnerJoin::printFoundOrder(int position, double positionCost, 
+		double positionCardinality, double cost, double cardinality) const
 {
 /**************************************
  *
@@ -3134,13 +3338,21 @@ void OptimizerInnerJoin::printFoundOrder(int position, double cost, double cardi
  **************************************/
 
 	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
-	fprintf(opt_debug_file, "order pos. %2.2d, streams: ", position);
+	fprintf(opt_debug_file, "  position %2.2d:", position);
+	fprintf(opt_debug_file, " pos. cardinality(%10.2f) pos. cost(%10.2f)", positionCardinality, positionCost);
+	fprintf(opt_debug_file, " cardinality(%10.2f) cost(%10.2f)", cardinality, cost);
+	fprintf(opt_debug_file, ", streams: ", position);
 	const OptimizerBlk::opt_stream* tail = optimizer->opt_streams.begin();
 	const OptimizerBlk::opt_stream* const order_end = tail + position;
 	for (; tail < order_end; tail++) {
-		fprintf(opt_debug_file, "%2.2d - ", tail->opt_stream_number);
+		if (tail == optimizer->opt_streams.begin()) {
+			fprintf(opt_debug_file, "%d", tail->opt_stream_number);
+		}
+		else {
+			fprintf(opt_debug_file, ", %d", tail->opt_stream_number);
+		}
 	}
-	fprintf(opt_debug_file, "\tcardinality: %10.2f\tcost: %10.2f\n", cardinality, cost);
+	fprintf(opt_debug_file, "\n");
 	fclose(opt_debug_file);
 }
 
@@ -3158,11 +3370,36 @@ void OptimizerInnerJoin::printProcessList(const IndexedRelationships* processLis
  **************************************/
 
 	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
-	fprintf(opt_debug_file, "processlist, basestream %2.2d, relationships: \n", stream);
+	fprintf(opt_debug_file, "   basestream %d, relationships: stream(cost)", stream);
 	const IndexRelationship* const* relationships = processList->begin();
 	for (int i = 0; i < processList->getCount(); i++) {
-		fprintf(opt_debug_file, "\t\t%2.2d (%10.2f)\n", relationships[i]->stream, relationships[i]->cost);
+		fprintf(opt_debug_file, ", %d (%1.2f)", relationships[i]->stream, relationships[i]->cost);
 	}
+	fprintf(opt_debug_file, "\n");
+	fclose(opt_debug_file);
+}
+
+void OptimizerInnerJoin::printStartOrder() const
+{
+/**************************************
+ *
+ *	p r i n t B e s t O r d e r
+ *
+ **************************************
+ *
+ *  Dump finally selected stream order.
+ *
+ **************************************/
+
+	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+	fprintf(opt_debug_file, "Start join order: with stream(baseCost)");
+	bool firstStream = true;
+	for (int i = 0; i < innerStreams.getCount(); i++) {
+		if (!innerStreams[i]->used) {
+			fprintf(opt_debug_file, ", %d (%1.2f)", innerStreams[i]->stream, innerStreams[i]->baseCost);
+		}
+	}
+	fprintf(opt_debug_file, "\n");
 	fclose(opt_debug_file);
 }
 #endif
