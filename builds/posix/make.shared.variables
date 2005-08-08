@@ -17,7 +17,7 @@ WHY_Sources = why.cpp
 
 
 JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp dls.cpp \
-		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
+		enc.cpp gds.cpp isc.cpp isc_file.cpp \
 		isc_sync.cpp perf.cpp sch.cpp sdl.cpp status.cpp \
 		ThreadData.cpp utl.cpp \
         $(WHY_Sources)
@@ -275,7 +275,7 @@ CLUMPLETS_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CLUMPLETS_
 # Platform Manager
 
 # just in case if make.platform defined some files
-OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp guid.cpp
+OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp guid.cpp isc_ipc.cpp
 
 OS_SPECIFIC_Sources = $(addprefix jrd/, $(OS_SPECIFIC_Files))
 OS_SPECIFIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(OS_SPECIFIC_Sources))))
