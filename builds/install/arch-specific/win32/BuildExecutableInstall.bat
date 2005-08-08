@@ -39,6 +39,7 @@ set FBBUILD_PACKAGE_NUMBER=0
 ) else (
 set /A FBBUILD_PACKAGE_NUMBER+=1
 )
+@echo   Setting FBBUILD_PACKAGE_NUMBER to %FBBUILD_PACKAGE_NUMBER%
 
 :: See what we have on the command line
 ::for %%v in ( %1 %2 %3 %4 %5 )  do (
@@ -435,7 +436,7 @@ for %%v in (bin doc doc\sql.extensions help include intl lib udf examples ) do (
 	@copy /Y %FBBUILD_OUTPUT%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
 )
 :: Now remove stuff that is not needed.
-for %%v in ( doc\installation_readme.txt bin\fbembed.dll bin\fbembed.pdb bin\gpre_boot.exe bin\gpre_static.exe bin\gds32.dll ) do (
+for %%v in ( doc\installation_readme.txt bin\fbembed.dll bin\fbembed.pdb bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll ) do (
   @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
 )
 
