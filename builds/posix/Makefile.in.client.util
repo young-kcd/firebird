@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.26 2005-07-22 10:26:15 aafemt Exp $
+#  $Id: Makefile.in.client.util,v 1.27 2005-08-08 11:20:18 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -40,7 +40,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-LOCKPRINT_Other_Sources = jrd/isc_sync.cpp jrd/isc.cpp jrd/isc_ipc.cpp \
+LOCKPRINT_Other_Sources = jrd/isc_sync.cpp jrd/isc.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 LOCKPRINT_Files= print.cpp
 LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files)) $(LOCKPRINT_Other_Sources)
