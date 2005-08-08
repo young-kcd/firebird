@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.27 2005-08-08 11:20:18 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.util,v 1.28 2005-08-08 13:47:25 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -40,7 +40,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-LOCKPRINT_Other_Sources = jrd/isc_sync.cpp jrd/isc.cpp \
+LOCKPRINT_Other_Sources = jrd/isc_sync.cpp jrd/isc_ipc.cpp jrd/isc.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 LOCKPRINT_Files= print.cpp
 LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files)) $(LOCKPRINT_Other_Sources)
@@ -57,7 +57,7 @@ CREATEDB_Sources = $(addprefix utilities/, $(CREATEDB_Files))
 CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_Sources))))
 
 
-DROP_Other_Sources = common/utils.cpp lock/lock.cpp jrd/isc_sync.cpp jrd/isc.cpp \
+DROP_Other_Sources = common/utils.cpp lock/lock.cpp jrd/isc_sync.cpp jrd/isc_ipc.cpp jrd/isc.cpp \
 common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
