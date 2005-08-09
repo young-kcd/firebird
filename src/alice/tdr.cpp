@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: tdr.cpp,v 1.17.2.2 2003-10-16 13:12:07 alexpeshkoff Exp $
+//	$Id: tdr.cpp,v 1.17.2.3 2005-08-09 11:07:07 hvlad Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -713,6 +713,9 @@ static void print_description(TDR trans)
 
 static ULONG ask(void)
 {
+#ifndef SUPERCLIENT
+	return (ULONG)-1;
+#else
 	UCHAR response[32], *p;
 	int c;
 	ULONG switches;
@@ -727,9 +730,9 @@ static ULONG ask(void)
 		if (tdgbl->sw_service)
 			ib_putc('\001', ib_stdout);
 		ib_fflush(ib_stdout);
-		for (p = response; (c = ib_getchar()) != '\n' && c != EOF;)
+		for (p = response; (c = ib_getchar()) != '\n' && !ib_feof(stdin) && !ib_ferror(stdin);)
 			*p++ = c;
-		if (c == EOF && p == response)
+		if (p == response)
 			return (ULONG) - 1;
 		*p = 0;
 		ALICE_down_case(reinterpret_cast < char *>(response),
@@ -746,6 +749,7 @@ static ULONG ask(void)
 		switches |= sw_rollback;
 
 	return switches;
+#endif
 }
 
 
@@ -824,9 +828,11 @@ static void reattach_database(TDR trans)
 	ALICE_print(87, reinterpret_cast < char *>(trans->tdr_fullpath->str_data),
 				0, 0, 0, 0);	/* msg 87: Original path: %s */
 
+#ifdef SUPERCLIENT
 	for (;;) {
 		ALICE_print(88, 0, 0, 0, 0, 0);	/* msg 88: Enter a valid path:  */
-		for (p = buffer; (*p = ib_getchar()) != '\n'; p++);
+		for (p = buffer; (*p = ib_getchar()) != '\n' && !ib_feof(stdin) && !ib_ferror(stdin); p++);
+
 		*p = 0;
 		if (!buffer[0])
 			break;
@@ -848,6 +854,7 @@ static void reattach_database(TDR trans)
 		}
 		ALICE_print(89, 0, 0, 0, 0, 0);	/* msg 89: Attach unsuccessful. */
 	}
+#endif
 }
 
 
