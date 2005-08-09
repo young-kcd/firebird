@@ -2323,6 +2323,13 @@ BOOLEAN CCH_rollover_to_shadow(DBB dbb, FIL file, BOOLEAN inAst)
 /* Is the shadow subsystem yet initialized */
 	if (!dbb->dbb_shadow_lock)
 		return FALSE;
+
+// hvlad: if there are no shadows can't rollover
+// this is a temporary solution to prevent 100% CPU load
+// in write_page in case of PIO_write failure
+	if (!dbb->dbb_shadow)
+		return FALSE;
+
 /* notify other process immediately to ensure all read from sdw
    file instead of db file */
 	return (SDW_rollover_to_shadow(file, inAst));
