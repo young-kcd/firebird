@@ -835,8 +835,8 @@ int PIO_write(FIL file, BDB bdb, PAG page, ISC_STATUS* status_vector)
 	}
 	else
 	{
-		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) &&
-			actual_length == size)
+		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr)
+			|| actual_length != size)
 		{
 #ifdef SUPERSERVER_V2
 			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE)
