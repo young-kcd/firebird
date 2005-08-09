@@ -15,10 +15,12 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.freebsd:	$(VERSION)	@PLATFORM@
-#$Id: prefix.freebsd,v 1.14 2004-03-25 23:12:31 skidder Exp $
+#$Id: prefix.freebsd,v 1.15 2005-08-09 06:51:43 alexpeshkoff Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 OS_ServerFiles=inet_server.cpp
+
+LINK_OPTS+=-Wl,-rpath,../gen/firebird/lib
 
 PROD_FLAGS=-O -fno-builtin -DNDEBUG -DFREEBSD -pipe -MMD -fPIC
 DEV_FLAGS=-ggdb -DFREEBSD -pipe -MMD -p -fPIC -Wall
