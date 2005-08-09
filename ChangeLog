@@ -1,3 +1,41 @@
+2005-08-09 00:17  arnobrinkman
+
+	* firebird2/src/jrd/: opt.cpp (1.248), Optimizer.cpp (1.36),
+	Optimizer.h (1.8):
+	
+	Some more cost based calculation. Fine-tunning will follow
+
+2005-08-08 15:47  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.24),
+	Makefile.in.client.util (1.28), Makefile.in.embed.util (1.23),
+	make.shared.variables (1.56):
+	
+	Applied suggested by Dmitry changes with some additions, this
+	should be OK for both linux and MinGW
+
+2005-08-08 15:22  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall
+	.bat (1.12):
+	
+	Don't include embeddable client tools in Win32 distribution packs.
+
+2005-08-08 13:20  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.util (1.27),
+	Makefile.in.embed.util (1.22):
+	
+	fixed utils build - such way of adding isc_ipc to lockprint anyway
+	bad
+
+2005-08-08 11:56  alexpeshkoff
+
+	* firebird2/builds/posix/make.shared.variables (1.55):
+	
+	fixed posix build
+
 2005-08-06 07:36  dimitr
 
 	* firebird2/src/gpre/cme.cpp (1.37):
