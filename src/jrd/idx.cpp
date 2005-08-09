@@ -207,6 +207,10 @@ void IDX_create_index(
 		ERR_post(gds_no_meta_update, gds_arg_gds, gds_extfile_uns_op,
 				 gds_arg_string, ERR_cstring(relation->rel_name), 0);
 
+	if (!relation->rel_index_root) {
+		get_root_page(tdbb, relation);
+	}
+
 	BTR_reserve_slot(tdbb, relation, transaction, idx);
 
 	if (index_id) {

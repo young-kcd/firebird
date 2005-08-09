@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: btr.cpp,v 1.33.2.4 2005-07-26 13:06:30 arnobrinkman Exp $
+$Id: btr.cpp,v 1.33.2.5 2005-08-09 08:19:14 hvlad Exp $
 */
 
 #include "firebird.h"
@@ -1644,6 +1644,8 @@ void BTR_reserve_slot(TDBB tdbb, JRD_REL relation, JRD_TRA transaction, IDX * id
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
+
+	fb_assert(relation && relation->rel_index_root);
 
 /* Get root page, assign an index id, and store the index descriptor.
    Leave the root pointer null for the time being.  */
