@@ -985,15 +985,22 @@ Makefile:Makefile.in
 gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
 gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu
 )
-AC_OUTPUT
 
+
+
+if test "$PROD_BUILD_FLG" = N; then
+  DEBUG_ICU=--enable-debug
+fi
+
+AC_OUTPUT
 (cd extern/icu/source
 chmod +x runConfigureICU configure install-sh
-./runConfigureICU "$ICU_PLATFORM" --prefix=`pwd`/..)
+./runConfigureICU "$ICU_PLATFORM" "$DEBUG_ICU" --prefix=`pwd`/..)
+
 
 dnl Print out the build configuration (the most interesting thing)
 echo
-echo
+echo                           
 echo The Firebird2 package has been configured with the following options:
 echo
 
