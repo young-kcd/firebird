@@ -147,7 +147,7 @@ $(GSTAT):	$(GSTAT_Objects) $(CLUMPLETS_Objects)
 gds_drop: $(GDS_DROP)
 
 $(GDS_DROP):	$(DROP_Objects) $(LIBFBEMBED_SO)  
-	$(LD) $(LINK_OPTS) $(DROP_Objects) -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $(DROP_Objects) -o $@ -L$(LIB) -lfbcommon -lfbembed $(LINK_LIBS)
 
 
 gds_relay: $(GDS_RELAY)
