@@ -174,7 +174,9 @@ static inline bool ODS_SUPPORTED(USHORT ods_major_version,
 
 	// Support current ODS of the engine
 	if (ods_major_version == ODS_VERSION &&
+#if ODS_RELEASED > 0
 		ods_minor_version >= ODS_RELEASED &&
+#endif
 		ods_minor_version <= ODS_CURRENT)
 	{	
 		return true;
