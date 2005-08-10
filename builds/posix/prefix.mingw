@@ -25,7 +25,7 @@ DEV_FLAGS=-ggdb -march=i586 -mcpu=i686 -DMINGW -mno-cygwin -Wall -Wshadow -Wunde
 
 PLATFORM_PATH=os/win32
 
-JRDBOOT_Extra_Files=isc_sync.cpp ThreadData.cpp isc_ipc.cpp
+JRDBOOT_Extra_Files=isc_sync.cpp ThreadData.cpp
 
 OS_SPECIFIC_Files=thd_priority.cpp
 
