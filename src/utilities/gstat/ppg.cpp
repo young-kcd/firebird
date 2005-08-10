@@ -35,7 +35,7 @@
 #include "../jrd/nbak.h"
 #include "../jrd/gds_proto.h"
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 #ifndef INCLUDE_FB_BLK
 #include "../include/fb_blk.h"
 #endif
@@ -56,7 +56,7 @@
 using namespace Ods;
 
 void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 					  Jrd::Service* outfile)
 #else
 					  FILE* outfile)
@@ -287,7 +287,7 @@ void PPG_print_header(const header_page* header, SLONG page, bool nocreation,
 
 #ifdef NOT_USED_OR_REPLACED
 void PPG_print_log(const log_info_page* logp, SLONG page, bool nocreation, 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 				   Jrd::Service* outfile)
 #else
 				   FILE* outfile)

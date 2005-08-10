@@ -46,7 +46,7 @@
 #include "../jrd/license.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/gdsassert.h"
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 #include "../utilities/gstat/ppg_proto.h"
 #endif
 #include "../utilities/gstat/dbaswi.h"
@@ -54,7 +54,7 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/enc_proto.h"
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 #include "../utilities/common/cmd_util_proto.h"
 #endif
 #include "../common/utils_proto.h"
@@ -146,7 +146,7 @@ static void db_error(int);
 
 static dba_fil* db_open(const char*, USHORT);
 static const pag* db_read(SLONG);
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 static void db_close(int);
 #endif
 static void move(const SCHAR*, SCHAR*, SSHORT);
@@ -164,7 +164,7 @@ static void dba_print(USHORT, const TEXT*, const TEXT*, const TEXT*,
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 #include <fcntl.h>
 #if (defined WIN_NT)
 #include <share.h>
@@ -192,7 +192,7 @@ struct dba_mem {
 
 /* threading declarations for thread data */
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 class tdba;
 static tdba* gddba;
 #endif
@@ -212,7 +212,7 @@ public:
 		buffer2 = 0;
 		global_buffer = 0;
 		exit_code = 0;
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		sw_outfile = 0;
 		head_of_mem_list = 0;
 		head_of_files_list = 0;
@@ -233,7 +233,7 @@ public:
 	pag* buffer2;
 	pag* global_buffer;
 	int exit_code;
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	Jrd::Service* sw_outfile;
 	dba_mem *head_of_mem_list;
 	open_files *head_of_files_list;
@@ -244,7 +244,7 @@ public:
 	ISC_STATUS *dba_status;
 	ISC_STATUS_ARRAY dba_status_vector;
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	static inline tdba* getSpecific() {
 		return (tdba*) ThreadData::getSpecific();
 	}
@@ -288,7 +288,7 @@ const USHORT GSTAT_MSG_FAC	= 21;
 
 
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg)
 #else
 
@@ -326,7 +326,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	tdba::putSpecific(tddba, &thd_context);
 	tddba->dba_env = (UCHAR *) env;
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 /* Reinitialize static variables for multi-threading */
 	Jrd::Service* service = (Jrd::Service*)arg;
 	int argc = service->svc_argc;
@@ -337,13 +337,13 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 	try {
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	Jrd::Service* sw_outfile = tddba->sw_outfile = service;
 #else
 	FILE* sw_outfile = tddba->sw_outfile = stdout;
 #endif
 
-#if defined (WIN95) && !defined (SUPERSERVER)
+#if defined (WIN95) && !defined (SERVICE_THREAD)
 	bool fAnsiCP = false;
 #endif
 
@@ -360,7 +360,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		argv++;
 		argc--;
 	}
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	else if (!strcmp(argv[1], "-svc_thd")) {
 		called_as_service = true;
 		tddba->dba_service_blk = service;
@@ -375,7 +375,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		long redir_out = atol(argv[3]);
 		long redir_err = atol(argv[4]);
 #ifdef WIN_NT
-#if defined (WIN95) && !defined (SUPERSERVER)
+#if defined (WIN95) && !defined (SERVICE_THREAD)
 		fAnsiCP = true;
 #endif
 		redir_in = _open_osfhandle(redir_in, 0);
@@ -432,7 +432,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 					if (in_sw_tab->in_sw_msg)
 						dba_print(in_sw_tab->in_sw_msg, 0, 0, 0, 0, 0);
 				}
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 				CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 										GSTAT_MSG_FAC, 1,
 										0, NULL,
@@ -504,7 +504,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		dba_print(5, GDS_VERSION, 0, 0, 0, 0);	/* msg 5: gstat version %s */
 
 	if (!name) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 2,
 								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
@@ -518,7 +518,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	if (sw_record && !sw_data)
 		sw_data = true;
 
-#if defined (WIN95) && !defined (SUPERSERVER)
+#if defined (WIN95) && !defined (SERVICE_THREAD)
 	if (!fAnsiCP) {
 		const ULONG ulConsoleCP = GetConsoleCP();
 		if (ulConsoleCP == GetACP())
@@ -544,13 +544,13 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	tddba->page_number = -1;
 	const header_page* header = (const header_page*) db_read((SLONG) 0);
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	service->svc_started();
 #endif
 
 	if (!ODS_SUPPORTED(header->hdr_ods_version, header->hdr_ods_minor))
 	{
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 3,
 								isc_arg_number, (void*)(IPTR) ODS_VERSION,
@@ -562,7 +562,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	}
 
 	char file_name[1024];
-#if defined (WIN95) && !defined (SUPERSERVER)
+#if defined (WIN95) && !defined (SERVICE_THREAD)
 	if (!fAnsiCP)
 		AnsiToOem(name, file_name);
 	else
@@ -595,7 +595,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 				if (*vp == HDR_file) {
 					memcpy(file_name, vp + 2, vp[1]);
 					*(file_name + vp[1]) = '\0';
-#if defined (WIN95) && !defined (SUPERSERVER)
+#if defined (WIN95) && !defined (SERVICE_THREAD)
 					if (!fAnsiCP)
 						AnsiToOem(file_name, file_name);
 #endif
@@ -875,7 +875,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 		if (status_vector[1])
 		{
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 			ISC_STATUS* status = tddba->dba_service_blk->svc_status;
 			if (status != status_vector)
 			{
@@ -907,7 +907,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		 */
 		FINISH;
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		service->svc_started();
 		dba_mem* alloced = tddba->head_of_mem_list;
 		while (alloced != 0) {
@@ -946,7 +946,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		int exit_code = tddba->exit_code;
 		tdba::restoreSpecific();
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		return (THREAD_ENTRY_RETURN)(exit_code);
 #else
 		exit(exit_code);
@@ -969,7 +969,7 @@ static char* alloc(size_t size)
  *	Allocate and zero a piece of memory.
  *
  **************************************/
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	tdba* tddba = tdba::getSpecific();
 	char* const block = FB_NEW(*getDefaultMemoryPool()) SCHAR[size];
 #else
@@ -985,7 +985,7 @@ static char* alloc(size_t size)
 		*p++ = 0;
 	} while (--size);
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	dba_mem* mem_list = FB_NEW(*getDefaultMemoryPool()) dba_mem;
 	if (!mem_list) {
 		/* NOMEM: return error */
@@ -1321,7 +1321,7 @@ static ULONG analyze_versions( dba_rel* relation, const rhdf* header)
 
 
 #ifdef WIN_NT
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 static void db_close( int file_desc)
 {
 /**************************************
@@ -1418,7 +1418,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	if (fil->fil_desc  == INVALID_HANDLE_VALUE)
 	{
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 29,
 								isc_arg_string, file_name,
@@ -1428,7 +1428,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		db_error(GetLastError());
 	}
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	open_files* file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
 	if (!file_list) {
 		/* NOMEM: return error */
@@ -1484,7 +1484,7 @@ static const pag* db_read( SLONG page_number)
 		(fil->fil_desc, (LONG) liOffset.LowPart, &liOffset.HighPart,
 		 FILE_BEGIN) == (DWORD) -1)
 	{
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 30,
 								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
@@ -1500,7 +1500,7 @@ static const pag* db_read( SLONG page_number)
 					reinterpret_cast<LPDWORD>(&actual_length),
 					NULL))
 	{
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 30,
 								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
@@ -1509,7 +1509,7 @@ static const pag* db_read( SLONG page_number)
 		db_error(GetLastError());
 	}
 	if (actual_length != tddba->page_size) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 4,
 								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
@@ -1524,7 +1524,7 @@ static const pag* db_read( SLONG page_number)
 
 
 #ifndef WIN_NT
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 static void db_close( int file_desc)
 {
 /**************************************
@@ -1617,7 +1617,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	if ((fil->fil_desc = open(file_name, O_RDONLY)) == -1)
 	{
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 29,
 								isc_arg_string, file_name,
@@ -1627,7 +1627,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		db_error(errno);
 	}
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	open_files* file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
 	if (!file_list) {
 		/* NOMEM: return error */
@@ -1677,7 +1677,7 @@ static const pag* db_read( SLONG page_number)
 	page_number -= fil->fil_min_page - fil->fil_fudge;
 	const UINT64 offset = ((UINT64)page_number) * ((UINT64)tddba->page_size);
 	if (lseek (fil->fil_desc, offset, 0) == -1) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 								GSTAT_MSG_FAC, 30,
 								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
@@ -1691,7 +1691,7 @@ static const pag* db_read( SLONG page_number)
 	{
 		const SSHORT l = read(fil->fil_desc, p, length);
 		if (l < 0) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 			CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 									GSTAT_MSG_FAC, 30,
 									0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
@@ -1700,7 +1700,7 @@ static const pag* db_read( SLONG page_number)
 			db_error(errno);
 		}
 		if (!l) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 			CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
 									GSTAT_MSG_FAC, 4,
 									0, NULL,

@@ -24,7 +24,7 @@
 #ifndef UTILITIES_PPG_PROTO_H
 #define UTILITIES_PPG_PROTO_H
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 void	PPG_print_header (const Ods::header_page*, SLONG, bool, Jrd::Service*);
 #ifdef NOT_USED_OR_REPLACED
 void	PPG_print_log (const Ods::log_info_page*, SLONG, bool, Jrd::Service*);

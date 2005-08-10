@@ -27,7 +27,7 @@
 
 #include "../jrd/thd.h"
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM);
 #endif
 

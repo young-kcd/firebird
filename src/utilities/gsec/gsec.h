@@ -102,7 +102,7 @@ struct internal_user_data {
 
 };
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 class tsec;
 extern tsec* gdsec;
 #endif
@@ -139,7 +139,7 @@ public:
 	Jrd::Service*		tsec_output_data;
 	FILE*				tsec_output_file;
 	Jrd::Service*		tsec_service_blk;
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	static inline tsec* getSpecific() {
 		return (tsec*) ThreadData::getSpecific();
 	}

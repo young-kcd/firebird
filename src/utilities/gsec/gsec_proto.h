@@ -3,7 +3,7 @@
 
 #include "../jrd/thd.h"
 
-#ifdef SUPERSERVER
+#ifdef MULTI_THREAD
 THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM);
 #endif
 

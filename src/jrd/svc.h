@@ -71,7 +71,7 @@ const USHORT isc_action_max				= 14;
  */
 #define USERNAME_SWITCH "-USER"
 #define PASSWORD_SWITCH "-PASSWORD"
-#if defined ( SUPERSERVER ) || defined ( SUPERCLIENT )
+#ifdef SERVICE_THREAD
 #define SERVICE_THD_PARAM "-svc_thd"
 #else
 #define SERVICE_THD_PARAM "-svc"
@@ -137,14 +137,14 @@ const int SVC_cmd_line		= 128;
 // Method used to signify that the service started has done basic
 // initialization and can be considered a successful startup.
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 
 inline void Service::svc_started()
 {
 	// null definition, no overhead.
 }
 
-#else /* SUPERSERVER */
+#else /* SERVICE_THREAD */
 
 inline void Service::svc_started()
 {
@@ -155,7 +155,7 @@ inline void Service::svc_started()
 	}
 }
 
-#endif /* SUPERSERVER */
+#endif /* SERVICE_THREAD */
 
 typedef int (*pfn_svc_output)(Service*, const UCHAR*);
 
@@ -172,4 +172,3 @@ struct serv_entry
 } //namespace Jrd
 
 #endif // JRD_SVC_H
-

@@ -130,5 +130,8 @@ using namespace NAMESPACE;
 #define THREAD_PSCHED
 #endif
 
-#endif /* INCLUDE_Firebird_H */
+#if defined(MULTI_THREAD) && !defined(SUPERCLIENT)
+#define SERVICE_THREAD
+#endif
 
+#endif /* INCLUDE_Firebird_H */

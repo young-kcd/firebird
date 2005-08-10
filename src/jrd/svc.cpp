@@ -179,10 +179,6 @@ static const TEXT* find_switch(int, const in_sw_tab_t*);
 static USHORT process_switches(USHORT, const SCHAR*, TEXT*);
 static void get_options(const UCHAR*, USHORT, TEXT*, Serv_param_block*);
 static TEXT* get_string_parameter(const UCHAR**, TEXT**);
-#ifndef SUPERSERVER
-static void io_error(const TEXT*, SLONG, const TEXT*, ISC_STATUS, bool);
-static void service_close(Service*);
-#endif
 static bool get_action_svc_bitmask(const TEXT**, const in_sw_tab_t*,
 									TEXT**, USHORT*, USHORT*);
 static void get_action_svc_string(const TEXT**, TEXT**, USHORT*, USHORT*);
@@ -190,7 +186,7 @@ static void get_action_svc_data(const TEXT**, TEXT**, USHORT*, USHORT*);
 static bool get_action_svc_parameter(const TEXT**, const in_sw_tab_t*,
 									TEXT**, USHORT*, USHORT*);
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 static UCHAR service_dequeue_byte(Service*);
 static void service_enqueue_byte(UCHAR, Service*);
 static USHORT service_add_one(USHORT i);
@@ -198,16 +194,13 @@ static USHORT service_empty(Service* service);
 static USHORT service_full(Service* service);
 static void service_fork(ThreadEntryPoint*, Service*);
 #else
+static void io_error(const TEXT*, SLONG, const TEXT*, ISC_STATUS);
+static void service_close(Service*);
 static void service_fork(TEXT*, Service*);
+static void timeout_handler(void* service);
 #endif
 static void service_get(Service*, SCHAR *, USHORT, USHORT, USHORT, USHORT *);
 static void service_put(Service*, const SCHAR*, USHORT);
-#if !defined(WIN_NT) && !defined(SUPERSERVER)
-static void timeout_handler(void* service);
-#endif
-#if defined(WIN_NT) && !defined(SUPERSERVER)
-static USHORT service_read(Service*, SCHAR *, USHORT, USHORT);
-#endif
 
 #ifdef DEBUG
 THREAD_ENTRY_DECLARE test_thread(THREAD_ENTRY_PARAM);
@@ -229,7 +222,7 @@ const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 static MUTX_T svc_mutex[1], thd_mutex[1];
 
 /* Service Functions */
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 #include "../burp/burp_proto.h"
 #include "../alice/alice_proto.h"
 int main_lock_print();
@@ -247,7 +240,7 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 #define MAIN_GSEC		NULL
 #endif
 
-#if defined(SUPERSERVER) && !defined(EMBEDDED)
+#if defined(SERVICE_THREAD) && !defined(EMBEDDED)
 #include "../utilities/gsec/gsec_proto.h"
 #define MAIN_GSEC		GSEC_main
 #else
@@ -574,7 +567,7 @@ Service* SVC_attach(USHORT	service_length,
 	service->svc_handle = 0;
 	service->svc_user_flag = user_flag;
 	service->svc_do_shutdown = false;
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	service->svc_stdout_head = 1;
 	service->svc_stdout_tail = SVC_STDOUT_BUFFER_SIZE;
 	service->svc_stdout = NULL;
@@ -601,13 +594,13 @@ Service* SVC_attach(USHORT	service_length,
 /* If an executable is defined for the service, try to fork a new process.
  * Only do this if we are working with a version 1 service */
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 	if (serv->serv_executable && options.spb_version == isc_spb_version1)
 #else
 	if (serv->serv_thd && options.spb_version == isc_spb_version1)
 #endif
 	{
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 		TEXT service_path[MAXPATHLEN];
 		gds__prefix(service_path, serv->serv_executable);
 		service_fork(service_path, service);
@@ -690,7 +683,7 @@ void SVC_detach(Service* service)
 	}
 #endif /* SERVER_SHUTDOWN */
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 
 /* Mark service as detached. */
 /* If service thread is finished, cleanup memory being used by service. */
@@ -742,7 +735,7 @@ void SVC_shutdown_init(shutdown_fct_t fptr,
 #endif // SERVER_SHUTDOWN
 
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 void SVC_fprintf(Service* service, const SCHAR* format, ...)
 {
 /**************************************
@@ -811,7 +804,7 @@ int SVC_output(Service* output_data, const UCHAR* output_buf)
 
 	return 0;
 }
-#endif /*SUPERSERVER*/
+#endif /*SERVICE_THREAD*/
 
 ISC_STATUS SVC_query2(Service* service,
 					  thread_db* tdbb,
@@ -1838,7 +1831,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 	if (service->svc_switches == NULL && *spb != isc_action_svc_get_ib_log)
 		ERR_post(isc_bad_spb_form, 0);
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 	TEXT service_path[MAXPATHLEN];
 
 	if (serv->serv_executable) {
@@ -1982,7 +1975,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 				0);
 	}
 
-#endif /* SUPERSERVER */
+#endif /* SERVICE_THREAD */
 
 	}	// try
 	catch (const std::exception&) {
@@ -2015,7 +2008,7 @@ THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
  **************************************/
 	bool svc_started = false;
 	Service* service = (Service*)arg;
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	ISC_STATUS *status = service->svc_status;
 	*status++ = isc_arg_gds;
 #endif
@@ -2024,7 +2017,7 @@ THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
 	gds__prefix(name, LOGFILE);
 	FILE* file = fopen(name, "r");
 	if (file != NULL) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		*status++ = FB_SUCCESS;
 		*status++ = isc_arg_end;
 #endif
@@ -2033,7 +2026,7 @@ THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
 		TEXT buffer[100];
 		while (!feof(file) && !ferror(file)) {
 			fgets(buffer, sizeof(buffer), file);
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 			SVC_fprintf(service, "%s", buffer);
 #else
 			service_put(service, buffer, sizeof(buffer));
@@ -2042,7 +2035,7 @@ THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
 	}
 
 	if (!file || file && ferror(file)) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		*status++ = isc_sys_request;
 		if (!file) {
 			SVC_STATUS_ARG(status, isc_arg_string, (void*)"fopen");
@@ -2063,7 +2056,7 @@ THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
 	if (file)
 		fclose(file);
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	SVC_finish(service, SVC_finished);
 #else
 	SVC_cleanup(service);
@@ -2164,12 +2157,10 @@ static TEXT* get_string_parameter(const UCHAR** spb_ptr, TEXT** opt_ptr)
 }
 
 
-#ifndef SUPERSERVER
-static void io_error(
-					 const TEXT* string,
+#ifndef SERVICE_THREAD
+static void io_error(const TEXT* string,
 					 SLONG status,
-					 const TEXT* filename, ISC_STATUS operation,
-					 bool reenter_flag)
+					 const TEXT* filename, ISC_STATUS operation)
 {
 /**************************************
  *
@@ -2178,439 +2169,17 @@ static void io_error(
  **************************************
  *
  * Functional description
- *	Report an I/O error.  If the reenter_flag
- *	is true, re-enter the scheduler.
+ *	Report an I/O error.
  *
  **************************************/
-
-#ifdef MULTI_THREAD
-	if (reenter_flag)
-		THREAD_ENTER();
-#endif
 
 	ERR_post(isc_io_error, isc_arg_string, string, isc_arg_string, filename,
 			 isc_arg_gds, operation, SYS_ERR, status, 0);
 }
 #endif
 
-#ifdef WIN_NT
-#ifndef SUPERSERVER
-static void service_close(Service* service)
-{
-/**************************************
- *
- *	s e r v i c e _ c l o s e		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Shutdown the connection to a service.
- *	Simply close the input and output pipes.
- *
- **************************************/
-	CloseHandle((HANDLE) service->svc_input);
-	CloseHandle((HANDLE) service->svc_output);
-}
 
-
-static void service_fork(TEXT* service_path, Service* service)
-{
-/**************************************
- *
- *	s e r v i c e _ f o r k		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Startup a service.
- *
- **************************************/
-	SECURITY_ATTRIBUTES attr;
-	const bool windows_nt = ISC_is_WinNT();
-
-/* Only Create the pipes on Windows NT.  There is a bug on Windows
-   95 that prohibits these handles from being converted by the
-   child process
-*/
-	HANDLE my_input, my_output, pipe_input, pipe_output, pipe_error;
-	my_input = pipe_output = my_output = pipe_input = INVALID_HANDLE_VALUE;
-	if (windows_nt) {
-		/* Set up input and output pipes and make them the stdin, stdout,
-		   and stderr of the forked process. */
-
-		attr.nLength = sizeof(SECURITY_ATTRIBUTES);
-		attr.bInheritHandle = TRUE;
-		attr.lpSecurityDescriptor = NULL;
-
-		if (!CreatePipe(&my_input, &pipe_output, &attr, 0) ||
-			!CreatePipe(&pipe_input, &my_output, &attr, 0) ||
-			!DuplicateHandle(GetCurrentProcess(), pipe_output,
-							 GetCurrentProcess(), &pipe_error, 0, TRUE,
-							 DUPLICATE_SAME_ACCESS))
-		{
-			const SLONG status = GetLastError();
-			CloseHandle(my_input);
-			CloseHandle(pipe_output);
-			CloseHandle(my_output);
-			CloseHandle(pipe_input);
-			ERR_post(isc_sys_request, isc_arg_string,
-					 (my_output != INVALID_HANDLE_VALUE) ?
-					 	"CreatePipe" : "DuplicateHandle",
-					 SYS_ERR, status, 0);
-		}
-	}
-	else {
-		/* Create a temporary file and get the OS handle to
-		   the file created.  This handle will be used in subsequent
-		   calls to the windows API functions for working with the files
-		 */
-		char tmpPath[MAXPATHLEN];
-
-		GetTempPath(MAXPATHLEN, tmpPath);
-		const char* fname = _tempnam(tmpPath, "ibsvc");
-		int tmp =
-			_open(fname, _O_RDWR | _O_CREAT | _O_TEMPORARY,
-				  _S_IREAD | _S_IWRITE);
-		my_input = (HANDLE) _get_osfhandle(tmp);
-
-		fname = _tempnam(tmpPath, "ibsvc");
-		tmp =
-			_open(fname, _O_RDWR | _O_CREAT | _O_TEMPORARY,
-				  _S_IREAD | _S_IWRITE);
-		my_output = (HANDLE) _get_osfhandle(tmp);
-
-		if (my_input == INVALID_HANDLE_VALUE ||
-			my_output == INVALID_HANDLE_VALUE)
-		{
-			CloseHandle(my_input);
-			CloseHandle(my_output);
-			ERR_post(isc_sys_request, isc_arg_string, "CreateFile", SYS_ERR,
-					 errno, 0);
-		}
-	}
-
-/* Make sure we have buffers that are large enough to hold the number
-   and size of the command line arguments.  Add some extra space for
-   the pipe's file handles. */
-   
-	TEXT* p;
-
-	USHORT len = strlen(service_path) + strlen(service->svc_switches) + 16;
-	for (p = service->svc_switches; *p;)
-		if (*p++ == ' ')
-			len += 2;
-			
-	TEXT argv_data_buf[512];
-	TEXT* argv_data;
-	if (len > sizeof(argv_data_buf))
-		argv_data = (TEXT*) gds__alloc((SLONG) len);
-	else
-		argv_data = argv_data_buf;
-/* FREE: at procedure return */
-	if (!argv_data)				/* NOMEM: */
-		ERR_post(isc_virmemexh, 0);
-
-/* Create a command line. */
-
-	bool svc_flag = false; // Unless there's some ugly macro, this var seems useless
-
-	const TEXT* q = service_path;
-	for (p = argv_data; *p = *q++; p++);
-
-	q = service->svc_switches;
-	if (*q)
-		*p++ = ' ';
-
-	while (*q == ' ')
-		q++;
-	bool user_quote = false;
-	while (*q) {
-		TEXT* arg = p;
-		*p++ = '\"';
-		bool quote_flag = false;
-		while (((*p = *q++) && *p != ' ') || user_quote) {
-			if (*p == '\\' && *q == ' ' && !user_quote) {
-				*p = ' ';
-				q++;
-				quote_flag = true;
-			}
-			if (*p == '"') {
-				user_quote = !user_quote;
-				p++;
-				continue;
-			}
-			p++;
-		}
-		if (!quote_flag) {
-			*arg = ' ';
-			if (!strncmp(arg, " -svc", p - arg)) {
-				if (windows_nt)
-					sprintf(p, "_re %lu %lu %lu", (ULONG) pipe_input, (ULONG) pipe_output,
-							(ULONG) pipe_error);
-				else
-					sprintf(p, "_re %lu %lu %lu", (ULONG) my_output, (ULONG) my_input,
-							(ULONG) my_output);
-				p += strlen(p);
-				*p = q[-1];
-				svc_flag = true;
-			}
-		}
-		else {
-			p[1] = p[0];
-			*p++ = '\"';
-		}
-		if (!*p)
-			break;
-		*p++ = ' ';
-		while (*q == ' ')
-			q++;
-	}
-
-	for (p = argv_data; *p; p++) {
-		if (*p == SVC_TRMNTR)
-			*p = ' ';
-	}
-
-	THREAD_EXIT();
-
-	STARTUPINFO start_crud;
-	start_crud.cb = sizeof(STARTUPINFO);
-	start_crud.lpReserved = NULL;
-	start_crud.lpReserved2 = NULL;
-	start_crud.cbReserved2 = 0;
-	start_crud.lpDesktop = NULL;
-	start_crud.lpTitle = NULL;
-	start_crud.dwFlags = STARTF_USESHOWWINDOW;
-	start_crud.wShowWindow = SW_HIDE;
-
-	PROCESS_INFORMATION pi;
-	const USHORT ret = CreateProcess(NULL,
-							  argv_data,
-							  NULL,
-							  NULL,
-							  TRUE,
-							  NORMAL_PRIORITY_CLASS,
-							  NULL,
-							  NULL,
-							  &start_crud, &pi);
-	const SLONG status = ret ? 0 : GetLastError();
-
-	if (windows_nt) {
-		CloseHandle(pipe_input);
-		CloseHandle(pipe_output);
-		CloseHandle(pipe_error);
-	}
-	THREAD_ENTER();
-
-	if (argv_data != argv_data_buf)
-		gds__free(argv_data);
-
-	if (!ret)
-		ERR_post(isc_sys_request, isc_arg_string, "CreateProcess", SYS_ERR,
-				 status, 0);
-
-	DuplicateHandle(GetCurrentProcess(), pi.hProcess,
-					GetCurrentProcess(), (PHANDLE) & service->svc_handle,
-					0, TRUE, DUPLICATE_SAME_ACCESS);
-
-	CloseHandle(pi.hThread);
-	CloseHandle(pi.hProcess);
-
-	service->svc_input = (void *) my_input;
-	service->svc_output = (void *) my_output;
-}
-
-
-static void service_get(Service* service,
-						SCHAR * buffer,
-						USHORT length,
-						USHORT flags,
-						USHORT timeout,
-						USHORT * return_length)
-{
-/**************************************
- *
- *      s e r v i c e _ g e t           ( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *      Get input from a service.  It is assumed
- *      that we have checked out of the scheduler.
- *
- **************************************/
-	SLONG n = 0L;
-	SCHAR *buf = buffer;
-/* Kludge for PeekNamedPipe to work on Win NT 3.5 */
-	UCHAR temp_buf[600];
-	DWORD temp_len;
-	const bool windows_nt = ISC_is_WinNT();
-
-	*return_length = 0;
-	service->svc_flags &= ~SVC_timeout;
-	is_service_running(service);
-
-	if (timeout) {
-		/* If a timeout period was given, check every .1 seconds to see if
-		   input is available from the pipe.  When something shows up, read
-		   what's available until all data has been read, or timeout occurs.
-		   Otherwise, set the timeout flag and return.
-		   Fall out of the loop if a BROKEN_PIPE error occurs.
-		 */
-		SSHORT iter = timeout * 10; // nice signed/unsigned assignment. :-)
-		while ((iter--) && ((buf - buffer) < length)) {
-			/* PeekNamedPipe sometimes return wrong &n, need to get real
-			   length from &temp_len until it works */
-			if (windows_nt
-				&& !PeekNamedPipe((HANDLE) service->svc_input, temp_buf, 600,
-								  &temp_len, (ULONG*) &n, NULL))
-				{
-				if (GetLastError() == ERROR_BROKEN_PIPE) {
-					service->svc_flags |= SVC_finished;
-					break;
-				}
-				io_error("PeekNamedPipe", GetLastError(), "service pipe",
-						 isc_io_read_err, true);
-			}
-			else {
-				DWORD dwCurrentFilePosition;
-				/* Set the file pointer to the beginning of the file if we are at the end of the
-				   file. */
-				temp_len = GetFileSize(service->svc_input, NULL);
-				dwCurrentFilePosition =
-					SetFilePointer(service->svc_input, 0, NULL, FILE_CURRENT);
-
-				if (temp_len && temp_len == dwCurrentFilePosition)
-					SetFilePointer(service->svc_input, 0, NULL, FILE_BEGIN);
-			}
-
-			if (temp_len) {
-				/* If data is available, read as much as will fit in buffer */
-				temp_len = MIN(temp_len, (DWORD) (length - (buf - buffer)));
-				const USHORT bytes_read =
-					service_read(service, buf, (USHORT) temp_len, flags);
-				buf += bytes_read;
-
-				if (bytes_read < temp_len
-					|| service->svc_flags & SVC_finished) 
-				{
-					/* We stopped w/out reading full length, must have hit
-					   a newline or special character. */
-					break;
-				}
-			}
-			else {
-				/* PeekNamedPipe() is not returning ERROR_BROKEN_PIPE in WIN95. So,
-				   we are going to use WaitForSingleObject() to check if the process
-				   on the other end of the pipe is still active. */
-				if (!windows_nt &&
-					WaitForSingleObject((HANDLE) service->svc_handle,
-										1) != WAIT_TIMEOUT)
-				{
-					service->svc_flags |= SVC_finished;
-					break;
-				}
-
-				/* No data, so wait a while */
-				Sleep(100);
-			}
-		}
-		/* If we timed out, set the appropriate flags */
-		if (iter < 0 && !(service->svc_flags & SVC_finished))
-			service->svc_flags |= SVC_timeout;
-	}
-	else {
-		buf += service_read(service, buf, length, flags);
-	}
-
-	*return_length = buf - buffer;
-}
-
-
-static void service_put(Service* service, const SCHAR* buffer, USHORT length)
-{
-/**************************************
- *
- *	s e r v i c e _ p u t		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Send output to a service.  It is assumed
- *	that we have checked out of the scheduler.
- *
- **************************************/
-	SLONG n;
-
-	is_service_running(service);
-
-	while (length) {
-		if (!WriteFile((HANDLE) service->svc_output, buffer, (SLONG) length,
-					   (ULONG*) &n, NULL))
-		{
-			io_error("WriteFile", GetLastError(), "service pipe",
-					 isc_io_write_err, true);
-		}
-		length -= (USHORT) n;
-		buffer += n;
-	}
-
-	if (!FlushFileBuffers((HANDLE) service->svc_output))
-		io_error("FlushFileBuffers", GetLastError(), "service pipe",
-				 isc_io_write_err, true);
-}
-
-
-static USHORT service_read(Service* service, SCHAR * buffer, USHORT length, USHORT flags)
-{
-/**************************************
- *
- *      s e r v i c e _ r e a d         ( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *      Read data from the named pipe.
- *      Returns true if there is more data to be
- *      read, false if we found the newline or
- *      special character.
- *
- **************************************/
-	SCHAR* buf = buffer;
-
-	while (length) {
-		SLONG n = 0;
-		const SLONG len = (flags & GET_BINARY) ? length : 1;
-		if (ReadFile((HANDLE) service->svc_input, buf, len, (ULONG*) &n, NULL) ||
-			GetLastError() == ERROR_BROKEN_PIPE)
-		{
-			if (!n) {
-				service->svc_flags |= SVC_finished;
-				break;
-			}
-			length -= (USHORT) n;
-			buf += n;
-			if (((flags & GET_LINE) && buf[-1] == '\n') ||
-				(!(flags & GET_BINARY) && buf[-1] == '\001'))
-			{
-				break;
-			}
-		}
-		else
-			io_error("ReadFile", GetLastError(), "service pipe",
-					 isc_io_read_err, true);
-	}
-
-	if ((flags & GET_LINE) && buf[-1] == '\n')
-		buf[-1] = ' ';
-
-	return buf - buffer;
-}
-#endif /* ifndef SUPERSERVER */
-#endif /* WIN_NT */
-
-
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 static USHORT service_add_one(USHORT i)
 {
 /**************************************
@@ -2851,10 +2420,10 @@ static void service_put(Service* service, const SCHAR* buffer, USHORT length)
 
 /* Nothing */
 }
-#endif /* SUPERSERVER */
+#endif /* SERVICE_THREAD */
 
 
-#if !defined(WIN_NT) && !defined(SUPERSERVER)
+#ifndef SERVICE_THREAD
 static void service_close(Service* service)
 {
 /**************************************
@@ -2889,13 +2458,13 @@ static void service_fork(TEXT* service_path, Service* service)
 	int pair1[2], pair2[2];
 
 	if (pipe(pair1) < 0 || pipe(pair2) < 0)
-		io_error("pipe", errno, "", isc_io_create_err, false);
+		io_error("pipe", errno, "", isc_io_create_err);
 
 /* Probe service executable to see it if plausibly exists. */
 
 	struct stat stat_buf;
 	if (statistics(service_path, &stat_buf) == -1)
-		io_error("stat", errno, service_path, isc_io_access_err, false);
+		io_error("stat", errno, service_path, isc_io_access_err);
 
 /* Make sure we have buffers that are large enough to hold the number
    and size of the command line arguments. */
@@ -3064,8 +2633,7 @@ static void service_fork(TEXT* service_path, Service* service)
 	if (!(service->svc_input = (void *) fdopen(pair1[0], "r")) ||
 		!(service->svc_output = (void *) fdopen(pair2[1], "w")))
 	{
-		io_error("fdopen", errno, "service path", isc_io_access_err,
-				 false);
+		io_error("fdopen", errno, "service path", isc_io_access_err);
 	}
 }
 
@@ -3128,8 +2696,7 @@ static void service_get(
 			if (timeout)
 				ISC_reset_timer(timeout_handler, service, (SLONG*)&sv_timr,
 								(void**)&sv_hndlr);
-			io_error("getc", errno_save, "service pipe", isc_io_read_err,
-					 true);
+			io_error("getc", errno_save, "service pipe", isc_io_read_err);
 		}
 	}
 
@@ -3167,12 +2734,11 @@ static void service_put(Service* service, const SCHAR* buffer, USHORT length)
 			length++;
 		}
 		else
-			io_error("putc", errno, "service pipe", isc_io_write_err,
-					 true);
+			io_error("putc", errno, "service pipe", isc_io_write_err);
 	}
 
 	if (fflush((FILE *) service->svc_output) == EOF)
-		io_error("fflush", errno, "service pipe", isc_io_write_err, true);
+		io_error("fflush", errno, "service pipe", isc_io_write_err);
 }
 
 
@@ -3191,7 +2757,7 @@ static void timeout_handler(void* service)
  *
  **************************************/
 }
-#endif // !defined(WIN_NT) && !defined(SUPERSERVER)
+#endif // SERVICE_THREAD
 
 
 void SVC_cleanup(Service* service)
@@ -3207,7 +2773,7 @@ void SVC_cleanup(Service* service)
  *
  **************************************/
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 /* If we forked an executable, close down it's pipes */
 
 	if (service->svc_flags & SVC_forked)

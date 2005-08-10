@@ -63,7 +63,7 @@
 #include <io.h>
 #endif
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 #include "../utilities/common/cmd_util_proto.h"
 #endif
 
@@ -81,9 +81,9 @@ static const USHORT val_err_table[] = {
 
 // The following structure in only needed if we are building a local exe
 // I've commented it out to make it clear since this global variable is
-// defined in burp.cpp as well, and is not relevant for SUPERSERVER
+// defined in burp.cpp as well, and is not relevant for SERVICE_THREAD
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 AliceGlobals* gdgbl;
 #endif
 
@@ -102,7 +102,7 @@ static bool fAnsiCP = false;
 static void ALICE_error(USHORT number);	// overloaded to keep down param count
 static inline void translate_cp(TEXT* sz);
 static void expand_filename(const TEXT*, TEXT*);
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 static int output_main(Jrd::Service*, const UCHAR*);
 #endif
 static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
@@ -123,7 +123,7 @@ static int output_svc(Jrd::Service* output_data, const UCHAR * output_buf)
 }
 
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 
 //____________________________________________________________
 //
@@ -148,7 +148,7 @@ THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
 //	Routine which is passed to GFIX for calling back when there is output.
 //
 
-#else	// SUPERSERVER
+#else	// SERVICE_THREAD
 
 //____________________________________________________________
 //
@@ -174,7 +174,7 @@ static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
 	return 0;
 }
 
-#endif	// SUPERSERVER
+#endif	// SERVICE_THREAD
 
 //____________________________________________________________
 //
@@ -533,14 +533,14 @@ int common_main(int			argc,
 	}
 
 	if (!switches || !(switches & ~(sw_user | sw_password))) {
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 		ALICE_print(20, 0, 0, 0, 0, 0);	// msg 20: please retry, specifying an option
 #endif
 		error = true;
 	}
 
 	if (error) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tdgbl->service_blk->svc_status, ALICE_MSG_FAC,
 								20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
@@ -621,7 +621,7 @@ int common_main(int			argc,
 
 		AliceGlobals::restoreSpecific();
 
-#if defined(DEBUG_GDS_ALLOC) && !defined(SUPERSERVER)
+#if defined(DEBUG_GDS_ALLOC) && !defined(SERVICE_THREAD)
 		gds_alloc_report(0, __FILE__, __LINE__);
 #endif
 
@@ -680,7 +680,7 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 	if (status_vector)
 	{
 		const ISC_STATUS* vector = status_vector;
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {
@@ -728,7 +728,7 @@ void ALICE_error(USHORT	number,
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	TEXT buffer[256];
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	ISC_STATUS* status = tdgbl->service_blk->svc_status;
 
 	CMD_UTIL_put_svc_status(status, ALICE_MSG_FAC, number,

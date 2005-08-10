@@ -64,7 +64,7 @@ static bool fAnsiCP = false;
 const int MAXARGS	= 20;		/* max number of args allowed on command line */
 const int MAXSTUFF	= 1000;		/* longest interactive command line */
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 class tsec *gdsec;
 #endif
 
@@ -76,7 +76,7 @@ static bool get_line(int*, SCHAR**, TEXT*, size_t);
 static bool get_switches(int, const TEXT* const*, const in_sw_tab_t*, tsec*, bool*);
 static SSHORT parse_cmd_line(int, const TEXT* const*, tsec*);
 static void printhelp(void);
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 static int output_main(Jrd::Service*, const UCHAR*);
 #endif
 inline void msg_get(USHORT number, TEXT* msg);
@@ -88,7 +88,7 @@ void inline gsec_exit(int code, tsec* tdsec)
 		throw std::exception();
 }
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 {
 /**********************************************
@@ -159,7 +159,7 @@ inline void envPick(TEXT* dest, size_t size, const TEXT* var)
 	}
 }
 
-#endif /* SUPERSERVER */
+#endif /* SERVICE_THREAD */
 
 int common_main(int argc,
 				char* argv[],
@@ -207,7 +207,7 @@ int common_main(int argc,
 		argv++;
 		argc--;
 	}
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	else if (argc > 1 && !strcmp(argv[1], "-svc_thd")) {
 		tdsec->tsec_service_gsec = true;
 		tdsec->tsec_service_thd = true;
@@ -299,10 +299,10 @@ int common_main(int argc,
 	isc_svc_handle sHandle = 0;
 	if (useServices)
 	{
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 		envPick(user_data->dba_user_name, sizeof user_data->dba_user_name, "ISC_USER");
 		envPick(user_data->dba_password, sizeof user_data->dba_password, "ISC_PASSWORD");
-#endif //SUPERSERVER
+#endif //SERVICE_THREAD
 		sHandle = attachRemoteServiceManager(
 					status,
 					user_data->dba_user_name,
@@ -316,7 +316,7 @@ int common_main(int argc,
 
 	if (!tdsec->tsec_interactive) {
 		if (ret == 0) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 			/* Signal the start of the service here ONLY if we are displaying users
 			 * since the number of users may exceed the service buffer.  This
 			 * will cause the service to wait for the client to request data.  However,
@@ -434,7 +434,7 @@ static void data_print(void* arg, const internal_user_data* data, bool first)
  **************************************/
 	tsec* tdsec = tsec::getSpecific();
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 #define STUFF_USER(item) SVC_putc(tdsec->tsec_service_blk, item)
 #else
 #define STUFF_USER(item) fputc(item, stderr)
@@ -612,7 +612,7 @@ static bool get_switches(
 				for (l = 0; l < 32 && string[l] && string[l] != ' '; l++)
 					user_data->user_name[l] = UPPER(string[l]);
 				if (l == 32) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 					GSEC_error(GsecMsg76, NULL, NULL, NULL, NULL, NULL);
 #else
 					GSEC_print(GsecMsg76, NULL, NULL, NULL, NULL, NULL);
@@ -679,7 +679,7 @@ static bool get_switches(
 				break;
 			case IN_SW_GSEC_Z:
 			case IN_SW_GSEC_0:
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 				GSEC_error(GsecMsg29, NULL, NULL, NULL, NULL, NULL);
 #else
 				GSEC_print(GsecMsg29, NULL, NULL, NULL, NULL, NULL);
@@ -893,7 +893,7 @@ static bool get_switches(
 				tdsec->tsec_sw_version = true;
 				break;
 			case IN_SW_GSEC_0:
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 				GSEC_error(GsecMsg40, NULL, NULL, NULL, NULL, NULL);
 #else
 				GSEC_print(GsecMsg40, NULL, NULL, NULL, NULL, NULL);
@@ -901,7 +901,7 @@ static bool get_switches(
 				/* gsec - invalid switch specified */
 				return false;
 			case IN_SW_GSEC_AMBIG:
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 				GSEC_error(GsecMsg41, NULL, NULL, NULL, NULL, NULL);
 #else
 				GSEC_print(GsecMsg41, NULL, NULL, NULL, NULL, NULL);
@@ -1136,7 +1136,7 @@ static SSHORT parse_cmd_line(int argc, const TEXT* const* argv, tsec* tdsec)
 
 	SSHORT ret = 0;
 	if (!get_switches(argc, argv, gsec_in_sw_table, tdsec, &quitflag)) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		GSEC_error(GsecMsg16, NULL, NULL, NULL, NULL, NULL);
 #else
 		GSEC_print(GsecMsg16, NULL, NULL, NULL, NULL, NULL);
@@ -1182,7 +1182,7 @@ void GSEC_print_status(const ISC_STATUS* status_vector)
  **************************************/
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		tsec* tdsec = tsec::getSpecific();
 		ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
 		if (status != status_vector) {
@@ -1273,7 +1273,7 @@ void GSEC_error(
  *	Format and print an error message, then punt.
  *
  **************************************/
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	tsec* tdsec = tsec::getSpecific();
 	ISC_STATUS* status = tdsec->tsec_service_blk->svc_status;
 

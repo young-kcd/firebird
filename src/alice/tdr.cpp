@@ -308,7 +308,7 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const ULONG switches
 				ALICE_print(71, reinterpret_cast<char*>(id), 0, 0, 0, 0);
 				// msg 71: Transaction %d is in limbo.
 			if (trans = MET_get_transaction(status_vector, handle, id)) {
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 				SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_multi_tra_id);
 				SVC_putc(tdgbl->service_blk, (UCHAR) id);
 				SVC_putc(tdgbl->service_blk, (UCHAR) (id >> 8));
@@ -320,7 +320,7 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const ULONG switches
 				TDR_shutdown_databases(trans);
 				print_description(trans);
 			}
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 			else {
 				SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_single_tra_id);
 				SVC_putc(tdgbl->service_blk, (UCHAR) id);
@@ -522,7 +522,7 @@ static void print_description(const tdr* trans)
 			const char* pszHostSize =
 				reinterpret_cast<const char*>(ptr->tdr_host_site->str_data);
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 			// msg 93: Host Site: %s
 			ALICE_print(93, pszHostSize, 0, 0, 0, 0);
 #else
@@ -540,7 +540,7 @@ static void print_description(const tdr* trans)
 
 		if (ptr->tdr_id)
 		{
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 			// msg 94: Transaction %ld
 			ALICE_print(94, reinterpret_cast<char*>(ptr->tdr_id), 0, 0, 0, 0);
 #else
@@ -555,7 +555,7 @@ static void print_description(const tdr* trans)
 		switch (ptr->tdr_state)
 		{
 		case TRA_limbo:
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 			ALICE_print(95, 0, 0, 0, 0, 0);	// msg 95: has been prepared.
 #else
 			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state);
@@ -565,7 +565,7 @@ static void print_description(const tdr* trans)
 			break;
 
 		case TRA_commit:
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 			ALICE_print(96, 0, 0, 0, 0, 0);	// msg 96: has been committed.
 #else
 			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state);
@@ -574,7 +574,7 @@ static void print_description(const tdr* trans)
 			break;
 
 		case TRA_rollback:
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 			ALICE_print(97, 0, 0, 0, 0, 0);	// msg 97: has been rolled back.
 #else
 			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state);
@@ -583,7 +583,7 @@ static void print_description(const tdr* trans)
 			break;
 
 		case TRA_unknown:
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 			ALICE_print(98, 0, 0, 0, 0, 0);	// msg 98: is not available.
 #else
 			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state);
@@ -592,7 +592,7 @@ static void print_description(const tdr* trans)
 			break;
 
 		default:
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 			if (prepared_seen)
 			{
 				// msg 99: is not found, assumed not prepared.
@@ -612,7 +612,7 @@ static void print_description(const tdr* trans)
 			const char* pszRemoteSite =
 				reinterpret_cast<const char*>(ptr->tdr_remote_site->str_data);
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 			//msg 101: Remote Site: %s
 			ALICE_print(101, pszRemoteSite, 0, 0, 0, 0);
 #else
@@ -633,7 +633,7 @@ static void print_description(const tdr* trans)
 			const char* pszFullpath =
 				reinterpret_cast<const char*>(ptr->tdr_fullpath->str_data);
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 			// msg 102: Database Path: %s
 			ALICE_print(102, pszFullpath, 0, 0, 0, 0);
 #else
@@ -656,7 +656,7 @@ static void print_description(const tdr* trans)
 	switch (TDR_analyze(trans))
 	{
 	case TRA_commit:
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 		// msg 103: Automated recovery would commit this transaction.
 		ALICE_print(103, 0, 0, 0, 0, 0);
 #else
@@ -666,7 +666,7 @@ static void print_description(const tdr* trans)
 		break;
 
 	case TRA_rollback:
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 		// msg 104: Automated recovery would rollback this transaction.
 		ALICE_print(104, 0, 0, 0, 0, 0);
 #else
@@ -676,7 +676,7 @@ static void print_description(const tdr* trans)
 		break;
 
 	default:
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise);
 		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise_unknown);
 #endif

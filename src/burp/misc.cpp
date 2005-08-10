@@ -31,7 +31,7 @@
 #include "../burp/burp_proto.h"
 #include "../burp/misc_proto.h"
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 #include "../jrd/thd.h"
 #endif
 

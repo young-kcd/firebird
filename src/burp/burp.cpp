@@ -62,7 +62,7 @@
 #include <ctype.h>
 #endif
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 #include "../utilities/common/cmd_util_proto.h"
 #endif
 
@@ -92,7 +92,7 @@
 
 // The following structure in only needed if we are building a local exe
 // I've commented it out to make it clear since this global variable is
-// defined in burp.cpp as well, and is not relevant for SUPERSERVER
+// defined in burp.cpp as well, and is not relevant for SERVICE_THREAD
 // MOD 23-July-2002
 
 const char* fopen_write_type = "w";
@@ -126,7 +126,7 @@ static ULONG get_size(const SCHAR*, burp_fil*);
 static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT,
 							  const Firebird::ClumpletWriter&);
 static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 BurpGlobals* gdgbl;
 static int output_main(Jrd::Service*, const UCHAR*);
 static int api_gbak(int, char**, USHORT, TEXT*, TEXT*, TEXT *, bool, bool);
@@ -169,7 +169,7 @@ static int output_svc(Jrd::Service* output_data, const UCHAR* output_buf)
 	return 0;
 }
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
@@ -194,7 +194,7 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
 }
 
 
-#else	// SUPERSERVER
+#else	// SERVICE_THREAD
 
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
@@ -559,7 +559,7 @@ static int api_gbak(int argc,
 }
 
 
-#endif	// SUPERSERVER
+#endif	// SERVICE_THREAD
 
 
 int common_main(int		argc,
@@ -1195,7 +1195,7 @@ int common_main(int		argc,
 
 		BurpGlobals::restoreSpecific();
 
-#if defined(DEBUG_GDS_ALLOC) && !defined(SUPERSERVER)
+#if defined(DEBUG_GDS_ALLOC) && !defined(SERVICE_THREAD)
 		gds_alloc_report(0, __FILE__, __LINE__);
 #endif
 
@@ -1249,7 +1249,7 @@ void BURP_error(USHORT errcode, bool abort,
  * Functional description
  *
  **************************************/
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	ISC_STATUS *status = tdgbl->service_blk->svc_status;
@@ -1469,7 +1469,7 @@ void BURP_print_status(const ISC_STATUS* status_vector)
  **************************************/
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 		BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 		ISC_STATUS* status = tdgbl->service_blk->svc_status;
 		if (status != status_vector) {

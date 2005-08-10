@@ -145,7 +145,7 @@ enum redirect_vals {
 };
 
 
-#ifndef SUPERSERVER
+#ifndef SERVICE_THREAD
 class AliceGlobals;
 extern AliceGlobals* gdgbl;
 #endif
@@ -191,7 +191,7 @@ public:
 	bool			sw_service;
 	bool			sw_service_thd;
 
-#ifdef SUPERSERVER
+#ifdef SERVICE_THREAD
 	static inline AliceGlobals* getSpecific() {
 		ThreadData* tData = ThreadData::getSpecific();
 		fb_assert (tData->getType() == ThreadData::tddALICE)
