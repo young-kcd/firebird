@@ -198,7 +198,7 @@ const int irb_ignore_null_value_key  = 8;	/* if lower bound is specified and upp
 const int irb_descending= 16;				/* ?Base index uses descending order */
 
 // macros used to manipulate btree nodes
-#define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes);
+#define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes)
 
 #define NEXT_NODE(node)	(btree_nod*)(node->btn_data + node->btn_length)
 #define NEXT_NODE_RECNR(node)	(btree_nod*)(node->btn_data + node->btn_length + sizeof(SLONG))
