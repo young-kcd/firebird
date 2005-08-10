@@ -3,6 +3,29 @@
   **************
 
     * Fixed unregistered bug.
+	100% cpu load in case of write failure
+      Contributor(s):
+	Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered v1.5 bug.
+	Wrong error detection in case of write failure
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug SF #1076858
+	Possible corruption in classic server:
+	page 0 is of wrong type (expected 6, found 1)
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug.
+	Crash occured in service gfix code when it tried to reattach to currently 
+	unavailable database. Since service can't interact with end user an endless 
+	loop leads to overflow service buffer and crash as result.
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug.
         Lost charset/collation for local PSQL variables causing string conversion errors.
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
