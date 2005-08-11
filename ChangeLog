@@ -1,3 +1,64 @@
+2005-08-10 16:46  dimitr
+
+	* firebird2/src/: alice/tdr.cpp (1.46), utilities/gstat/dba.epp
+	(1.58), utilities/gstat/ppg.cpp (1.27), utilities/gstat/ppg_proto.h
+	(1.11), utilities/gsec/gsec.cpp (1.45), utilities/gsec/gsec.h
+	(1.22), utilities/gsec/gsec_proto.h (1.11):
+	
+	Moved the Services API into the engine on threadable platforms.
+
+2005-08-10 16:43  dimitr
+
+	* firebird2/src/: alice/alice.cpp (1.81), alice/alice.h (1.47),
+	alice/alice_proto.h (1.11), burp/burp.cpp (1.100), burp/burp.h
+	(1.67), burp/burp_proto.h (1.19), burp/misc.cpp (1.17):
+	
+	Moved the Services API into the engine on threadable platforms.
+
+2005-08-10 16:38  dimitr
+
+	* firebird2/src/: include/firebird.h (1.34), jrd/svc.cpp (1.144),
+	jrd/svc.h (1.35):
+	
+	Moved the Services API into the engine on threadable platforms.
+
+2005-08-10 15:36  hvlad
+
+	* firebird2/src/jrd/btr.h (1.39):
+	
+	Correction
+
+2005-08-10 06:42  aafemt
+
+	* firebird2/builds/posix/: prefix.mingw (1.41), prefix.solx86gcc
+	(1.18):
+	
+	Remove isc_ipc from platform files after it was added to main list
+
+2005-08-09 08:51  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.freebsd (1.15):
+	
+	applied Renato's patch - makes it successfully buildable on freebsd
+
+2005-08-09 08:51  kkuznetsov
+
+	* firebird2/configure.in (1.233):
+	
+	Making icu debug build of icu when building debug FB
+
+2005-08-09 08:46  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.embed.util (1.24):
+	
+	fixed posix CS build
+
+2005-08-09 08:38  alexpeshkoff
+
+	* firebird2/src/jrd/ods.h (1.36):
+	
+	avoid g++ warning
+
 2005-08-09 00:17  arnobrinkman
 
 	* firebird2/src/jrd/: opt.cpp (1.248), Optimizer.cpp (1.36),
