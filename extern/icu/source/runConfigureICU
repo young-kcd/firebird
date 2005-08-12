@@ -101,6 +101,7 @@ fi
 rm -f config.cache
 rm -f config.log
 rm -f config.status
+autoconf
 
 DEBUG_CFLAGS='-g'
 DEBUG_CXXFLAGS='-g'
@@ -177,8 +178,9 @@ case $platform in
         THE_COMP="the GNU C++"
         CC=`which gcc`; export CC
         CXX=`which g++`; export CXX
-        CXXFLAGS="$CXXFLAGS -I/usr/local/include/g++"; export CXXFLAGS
-        LDFLAGS="$LDFLAGS -R/usr/local/lib"; export LDFLAGS
+        C_FLAGS="-w -threads";export C_FLAGS
+        CXXFLAGS="$CXXFLAGS -I/usr/local/include/g++ -threads"; export CXXFLAGS
+        LDFLAGS="$LDFLAGS -R/usr/local/lib -threads "; export LDFLAGS
         RELEASE_CXXFLAGS=-O
         RELEASE_CFLAGS=-O3
         ;;
