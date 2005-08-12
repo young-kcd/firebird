@@ -540,7 +540,7 @@ umtx_atomic_inc(int32_t *p)  {
     } else {
         #if defined (WIN32) && ICU_USE_THREADS == 1
             retVal = InterlockedIncrement(p);
-        #elif (defined (POSIX)||defined (SOLARIS_MT)) && ICU_USE_THREADS == 1
+        #elif (defined (POSIX) || defined (SOLARIS_MT)) && ICU_USE_THREADS == 1
             umtx_lock(&gIncDecMutex);
             retVal = ++(*p);
             umtx_unlock(&gIncDecMutex);
@@ -560,7 +560,7 @@ umtx_atomic_dec(int32_t *p) {
     } else {
         #if defined (WIN32) && ICU_USE_THREADS == 1
             retVal = InterlockedDecrement(p);
-        #elif (defined (POSIX)||defined (SOLARIS_MT)) && ICU_USE_THREADS == 1
+        #elif (defined (POSIX) || defined (SOLARIS_MT)) && ICU_USE_THREADS == 1
             umtx_lock(&gIncDecMutex);
             retVal = --(*p);
             umtx_unlock(&gIncDecMutex);

@@ -803,7 +803,7 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 
 	int length = 0;
 	const Format* format = csb_tail->csb_format;
-	index_desc::idx_repeat* idx_desc = idx->idx_rpt;
+	const index_desc::idx_repeat* idx_desc = idx->idx_rpt;
 	IndexScratchSegment** segment = segments.begin();
 	for (int i = 0; i < segments.getCount(); i++, idx_desc++) {
 		segment[i] = FB_NEW(p) IndexScratchSegment(p);
@@ -1619,7 +1619,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				invCandidate->unique = unique;
 				invCandidate->selectivity = scratch[i]->selectivity;
 				// Calculate the cost (only index pages) for this index. 
-				// The constant 3 is an avergae for the rootpage and non-leaf pages.
+				// The constant 3 is an average for the rootpage and non-leaf pages.
 				invCandidate->cost = 3 + (scratch[i]->selectivity * scratch[i]->cardinality);
 				invCandidate->nonFullMatchedSegments =
 					scratch[i]->nonFullMatchedSegments;
@@ -2058,8 +2058,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 				totalCost += (newTotalSelectivity * csb->csb_rpt[stream].csb_cardinality);
 			}
 
-			// Test if the new totalCost will be higher as the maximumCost or previous totalCost 
-			// and if the current selectivty (without the bestCandidate) is already good enough.
+			// Test if the new totalCost will be higher than the maximumCost or previous totalCost 
+			// and if the current selectivity (without the bestCandidate) is already good enough.
 			//if (plan || bestCandidate->selectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR_ADD)) {
 			if (plan || ((totalCost < maximumCost) && (totalCost < previousTotalCost) && 
 						(totalSelectivity > minimumSelectivity))) 
@@ -2509,7 +2509,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 
 #ifdef OPT_DEBUG_RETRIEVAL
-void OptimizerRetrieval::printCandidate(InversionCandidate* candidate) const
+void OptimizerRetrieval::printCandidate(const InversionCandidate* candidate) const
 {
 /**************************************
  *
@@ -2544,7 +2544,7 @@ void OptimizerRetrieval::printCandidate(InversionCandidate* candidate) const
 	fclose(opt_debug_file);
 }
 
-void OptimizerRetrieval::printCandidates(InversionCandidateList* inversions) const
+void OptimizerRetrieval::printCandidates(const InversionCandidateList* inversions) const
 {
 /**************************************
  *
@@ -2559,18 +2559,18 @@ void OptimizerRetrieval::printCandidates(InversionCandidateList* inversions) con
 	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
 	fprintf(opt_debug_file, "    retrieval candidates:\n");
 	fclose(opt_debug_file);
-	InversionCandidate** inversion = inversions->begin();
+	const InversionCandidate* const* inversion = inversions->begin();
 	for (int i = 0; i < inversions->getCount(); i++) {
-		InversionCandidate* candidate = inversion[i];
+		const InversionCandidate* candidate = inversion[i];
 		printCandidate(candidate);
 	}
 }
 
-void OptimizerRetrieval::printFinalCandidate(InversionCandidate* candidate) const
+void OptimizerRetrieval::printFinalCandidate(const InversionCandidate* candidate) const
 {
 /**************************************
  *
- *	p r i n t C a n d i d a t e
+ *	p r i n t F i n a l C a n d i d a t e
  *
  **************************************
  *

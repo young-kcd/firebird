@@ -183,9 +183,9 @@ protected:
 		jrd_nod* boolean, USHORT scope) const;
 
 #ifdef OPT_DEBUG_RETRIEVAL
-	void printCandidate(InversionCandidate* candidate) const;
-	void printCandidates(InversionCandidateList* inversions) const;
-	void printFinalCandidate(InversionCandidate* candidate) const;
+	void printCandidate(const InversionCandidate* candidate) const;
+	void printCandidates(const InversionCandidateList* inversions) const;
+	void printFinalCandidate(const InversionCandidate* candidate) const;
 #endif
 
 	bool validateStarts(IndexScratch* indexScratch, jrd_nod* boolean, USHORT segment) const;
