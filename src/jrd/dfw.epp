@@ -2562,6 +2562,11 @@ static bool delete_parameter(	thread_db*	tdbb,
 	switch (phase)
 	{
 	case 1:
+/* hvlad: temporary disable procedure parameters dependency check
+		  until proper solution (something like dyn_mod_parameter)
+		  will be implemented. This check was never worked properly
+		  so no harm is done
+		  
 		if (MET_lookup_procedure_id(tdbb, work->dfw_id, false, true, 0))
 		{
 			const DeferredWork* arg = work->dfw_args;
@@ -2571,7 +2576,7 @@ static bool delete_parameter(	thread_db*	tdbb,
 							   work->dfw_name.c_str(),
 							   obj_procedure, transaction);
 		}
-
+*/
 	case 2:
 		return true;
 
