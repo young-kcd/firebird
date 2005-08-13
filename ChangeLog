@@ -1,3 +1,18 @@
+2005-08-12 14:47  kkuznetsov
+
+	* firebird2/extern/icu/source/: configure.in (1.5), runConfigureICU
+	(1.6):
+	
+	Second part of making icu using Solaris threads on Solaris
+	platforms Others platforms should be retested
+
+2005-08-12 10:05  robocop
+
+	* firebird2/: src/jrd/Optimizer.cpp (1.37), src/jrd/Optimizer.h
+	(1.9), extern/icu/source/common/umutex.c (1.4):
+	
+	Misc.
+
 2005-08-10 16:46  dimitr
 
 	* firebird2/src/: alice/tdr.cpp (1.46), utilities/gstat/dba.epp
