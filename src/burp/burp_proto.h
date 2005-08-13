@@ -26,7 +26,7 @@
 
 #include "../jrd/thd.h"
 
-#ifdef MULTI_THREAD
+#ifdef SERVICE_THREAD
 THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM);
 #endif
 
