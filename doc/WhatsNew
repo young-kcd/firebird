@@ -3,25 +3,25 @@
   **************
 
     * Fixed unregistered bug.
-	100% cpu load in case of write failure
+        100% cpu load in case of write failure
       Contributor(s):
-	Vlad Horsun <horsun at kdb.dp.ua>
+        Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed unregistered v1.5 bug.
-	Wrong error detection in case of write failure
+        Wrong error detection in case of write failure
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed bug SF #1076858
-	Possible corruption in classic server:
-	page 0 is of wrong type (expected 6, found 1)
+        Possible corruption in classic server:
+        page 0 is of wrong type (expected 6, found 1)
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed unregistered bug.
-	Crash occured in service gfix code when it tried to reattach to currently 
-	unavailable database. Since service can't interact with end user an endless 
-	loop leads to overflow service buffer and crash as result.
+        Crash occured in service gfix code when it tried to reattach to currently 
+        unavailable database. Since service can't interact with end user an endless 
+        loop leads to overflow service buffer and crash as result.
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -681,6 +681,16 @@
         Forcedly set SO_KEEPALIVE flag for POSIX CS connections independently of what was given by xinetd/inetd to us.
       Contributor(s):
         Nickolay Samofatov <skidder at bssys.com>
+
+    * Fixed bug SF #489762.
+        Trigger on view with union receive nulls.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #489764.
+        Trigger with except-s on view with union.
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
 
   **************
   * v1.5 RC 7
