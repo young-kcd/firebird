@@ -3794,28 +3794,28 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 	case xcp_xcp_code:
 		// CVC: If we have the exception name, use it instead of the number.
 		// Solves SF Bug #494981.
-		MET_lookup_exception(tdbb, exception->xcp_code, name, temp, sizeof(temp));
+		MET_lookup_exception(tdbb, exception->xcp_code,
+							 name, temp, sizeof(temp));
+		if (!name.length())
+			name = exception->xcp_code;
+
 		if (message[0])
 			s = message;
 		else if (temp[0])
 			s = temp;
 		else
 			s = NULL;
-			
-		char nr[20];
-		const char* nameOrNumber = nr;
-		if (name.length())
-			nameOrNumber = name.c_str();
-		else
-			sprintf(nr, "%d", exception->xcp_code);
-			
+
 		if (s)
 			ERR_post(isc_except,
-					 isc_arg_string, ERR_cstring(nameOrNumber),
+					 isc_arg_string, ERR_cstring(name.c_str()),
 					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
 					 0);
 		else
-			ERR_post(isc_except, isc_arg_string, ERR_cstring(nameOrNumber), 0);
+			ERR_post(isc_except, isc_arg_string, ERR_cstring(name.c_str()), 0);
+
+	default:
+		fb_assert(false);
 	}
 }
 
@@ -4153,16 +4153,30 @@ static bool test_and_fixup_error(thread_db* tdbb, const PsqlException* condition
 			break;
 
 		case xcp_xcp_code:
+			{
+			// Look at set_error() routine to understand how the
+			// exception ID info is encoded inside the status vector.
+			Firebird::MetaName name;
+			MET_lookup_exception(tdbb, conditions->xcp_rpt[i].xcp_code,
+								 name, NULL, 0);
+			if (!name.length())
+				name = conditions->xcp_rpt[i].xcp_code;
+
 			if ((status_vector[1] == isc_except) &&
-				(status_vector[3] == conditions->xcp_rpt[i].xcp_code))
+				(name == (char*)(IPTR) status_vector[3]))
 			{
 				found = true;
+			}
+
 			}
 			break;
 
 		case xcp_default:
 			found = true;
 			break;
+
+		default:
+			fb_assert(false);
 		}
 
 		if (found)
