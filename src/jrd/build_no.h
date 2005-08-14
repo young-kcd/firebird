@@ -9,7 +9,7 @@
 #define PRODUCT_VER_STRING "1.5.3.4842"
 #define FILE_VER_STRING "WI-V1.5.3.4842"
 #define LICENSE_VER_STRING "WI-V1.5.3.4842"
-#define FILE_VER_NUMBER 1, 5, 2, 4842
+#define FILE_VER_NUMBER 1, 5, 3, 4842
 #define FB_MAJOR_VER "1"
 #define FB_MINOR_VER "5"
 #define FB_REV_NO "3"
