@@ -1,3 +1,19 @@
+2005-08-13 22:24  hvlad
+
+	* firebird2/src/jrd/dfw.epp (1.159):
+	
+	Temporary disable procedure parameters dependency check until
+	proper solution (something like dyn_mod_parameter) will be
+	implemented.  This check was never worked properly so no harm is
+	done
+
+2005-08-13 10:19  dimitr
+
+	* firebird2/src/: burp/burp_proto.h (1.20),
+	utilities/gsec/gsec_proto.h (1.12):
+	
+	Fixed wrong defines, thanks to Claudio.
+
 2005-08-12 14:47  kkuznetsov
 
 	* firebird2/extern/icu/source/: configure.in (1.5), runConfigureICU
