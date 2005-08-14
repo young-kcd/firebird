@@ -3799,31 +3799,23 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 			s = message;
 		else if (temp[0])
 			s = temp;
-		//else if (name.length())
-		//	s = name.c_str();
 		else
 			s = NULL;
 			
+		char nr[20];
+		const char* nameOrNumber = nr;
 		if (name.length())
-		{
-			if (s)
-				ERR_post(isc_except2,
-						 isc_arg_string, ERR_cstring(name.c_str()),
-						 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
-						 0);
-			else
-				ERR_post(isc_except2, isc_arg_string, ERR_cstring(name.c_str()), 0);
-		}
+			nameOrNumber = name.c_str();
 		else
-		{
-			if (s)
-				ERR_post(isc_except,
-						 isc_arg_number, exception->xcp_code,
-						 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
-						 0);
-			else
-				ERR_post(isc_except, isc_arg_number, exception->xcp_code, 0);
-		}
+			sprintf(nr, "%d", exception->xcp_code);
+			
+		if (s)
+			ERR_post(isc_except,
+					 isc_arg_string, ERR_cstring(nameOrNumber),
+					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
+					 0);
+		else
+			ERR_post(isc_except, isc_arg_string, ERR_cstring(nameOrNumber), 0);
 	}
 }
 

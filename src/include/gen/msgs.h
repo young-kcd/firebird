@@ -216,7 +216,7 @@ static const SCHAR * const messages[] = {
 	"Could not expand the WAL segment for database %s",		/* 194, wal_cant_expand */
 	"status code %s unknown",		/* 195, codnotdef */
 	"exception %s not defined",		/* 196, xcpnotdef */
-	"exception %d",		/* 197, except */
+	"exception %s",		/* 197, except */
 	"restart shared cache manager",		/* 198, cache_restart */
 	"invalid lock handle",		/* 199, bad_lock_handle */
 	"long-term journaling already enabled",		/* 200, jrn_present */
