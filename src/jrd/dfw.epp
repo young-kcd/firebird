@@ -1716,6 +1716,7 @@ static bool create_index(	thread_db*	tdbb,
 		{
 			if (idx.idx_flags & idx_foreign)
 			{
+				idx.idx_id = MAX_USHORT;
 				if (MET_lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()) &&
 					(partner_relation = 
 						MET_lookup_relation_id(tdbb, idx.idx_primary_relation, true)) )
