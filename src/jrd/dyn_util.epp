@@ -529,6 +529,8 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
  **************************************
  *
  * Functional description
+ *	Fill in rdb$check_constraints the association between a check name and the
+ *	system defined trigger that implements that check.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -554,6 +556,204 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
 		DYN_rundown_request(request, drq_s_chk_con);
 		DYN_error_punt(true, 122, NULL, NULL, NULL, NULL, NULL);
 		/* msg 122: "STORE RDB$CHECK_CONSTRAINTS failed" */
+	}
+}
+
+
+//***************************************
+//
+// 	D Y N _ U T I L _ i s _ a r r a y
+//
+//**************************************
+//
+// Functional description
+//	Discover if a given domain (either automatic or explicit) has dimensions.
+//
+//***************************************
+bool DYN_UTIL_is_array(thread_db* tdbb,
+					   Global* gbl,
+					   const Firebird::MetaName& domain_name)
+{
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+	
+	jrd_req* request = CMP_find_request(tdbb, drq_dom_is_array, DYN_REQUESTS);
+	
+	try
+	{
+		bool rc;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ domain_name.c_str()
+			
+			if (!DYN_REQUEST(drq_dom_is_array))
+				DYN_REQUEST(drq_dom_is_array) = request;
+				
+			rc = !X.RDB$DIMENSIONS.NULL && X.RDB$DIMENSIONS > 0;
+		END_FOR
+	
+		if (!DYN_REQUEST(drq_dom_is_array))
+			DYN_REQUEST(drq_dom_is_array) = request;
+			
+		return rc;
+	}
+	catch (const std::exception& ex)
+	{
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, drq_dom_is_array);
+		DYN_error_punt(true, 227, domain_name.c_str(), NULL, NULL, NULL, NULL);
+		// msg 227: "DYN_UTIL_is_array failed for domain %s"
+		return false; // Keep compiler happy.
+	}
+}
+
+
+//***************************************
+//
+// 	D Y N _ U T I L _ c o p y _ d o m a i n
+//
+//**************************************
+//
+// Functional description
+//	Copy a domain in another. More reliable than using dyn_fld as intermediate.
+//  The source cannot be an array domain.
+//  We don't copy the default, it may be useless work.
+//
+//***************************************
+void DYN_UTIL_copy_domain(thread_db* tdbb,
+					   Global* gbl,
+					   const Firebird::MetaName& org_name,
+					   const Firebird::MetaName& new_name)
+{
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+
+	jrd_req* request = NULL; //CMP_find_request(tdbb, drq_dom_copy, DYN_REQUESTS);
+	jrd_req* req2 = NULL;
+
+	try
+	{
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ org_name.c_str()
+
+			//if (!DYN_REQUEST(drq_dom_copy))
+			//	DYN_REQUEST(drq_dom_copy) = request;
+
+			if (!X.RDB$DIMENSIONS.NULL && X.RDB$DIMENSIONS > 0)
+				ERR_punt();
+				
+			STORE(REQUEST_HANDLE req2 TRANSACTION_HANDLE gbl->gbl_transaction)
+				X2 IN RDB$FIELDS
+				
+				X2.RDB$FIELD_NAME.NULL = FALSE;
+				strcpy(X2.RDB$FIELD_NAME, new_name.c_str());
+				
+				X2.RDB$QUERY_NAME.NULL = X.RDB$QUERY_NAME.NULL;
+				if (!X.RDB$QUERY_NAME.NULL)
+					strcpy(X2.RDB$QUERY_NAME, X.RDB$QUERY_NAME);
+					
+				// The following fields may require blob copying:
+				// rdb$validation_blr, rdb$validation_source,
+				// rdb$computed_blr, rdb$computed_source,
+				// rdb$default_value, rdb$default_source,
+				// rdb$missing_value,  rdb$missing_source,
+				// rdb$description and rdb$query_header.
+					
+				X2.RDB$VALIDATION_BLR.NULL    = X.RDB$VALIDATION_BLR.NULL;
+				X2.RDB$VALIDATION_BLR         = X.RDB$VALIDATION_BLR;
+				
+				X2.RDB$VALIDATION_SOURCE.NULL = X.RDB$VALIDATION_SOURCE.NULL;
+				X2.RDB$VALIDATION_SOURCE      = X.RDB$VALIDATION_SOURCE;
+				
+				X2.RDB$COMPUTED_BLR.NULL      = X.RDB$COMPUTED_BLR.NULL;
+				X2.RDB$COMPUTED_BLR           = X.RDB$COMPUTED_BLR;
+				
+				X2.RDB$COMPUTED_SOURCE.NULL   = X.RDB$COMPUTED_SOURCE.NULL;
+				X2.RDB$COMPUTED_SOURCE        = X.RDB$COMPUTED_SOURCE;
+				
+				//X2.RDB$DEFAULT_VALUE.NULL     = X.RDB$DEFAULT_VALUE.NULL;
+				//X2.RDB$DEFAULT_VALUE          = X.RDB$DEFAULT_VALUE;
+				
+				//X2.RDB$DEFAULT_SOURCE.NULL    = X.RDB$DEFAULT_SOURCE.NULL;
+				//X2.RDB$DEFAULT_SOURCE         = X.RDB$DEFAULT_SOURCE;
+				
+				X2.RDB$FIELD_LENGTH.NULL      = X.RDB$FIELD_LENGTH.NULL;
+				X2.RDB$FIELD_LENGTH           = X.RDB$FIELD_LENGTH;
+				
+				X2.RDB$FIELD_SCALE.NULL       = X.RDB$FIELD_SCALE.NULL;
+				X2.RDB$FIELD_SCALE            = X.RDB$FIELD_SCALE;
+				
+				X2.RDB$FIELD_TYPE.NULL        = X.RDB$FIELD_TYPE.NULL;
+				X2.RDB$FIELD_TYPE             = X.RDB$FIELD_TYPE;
+				
+				X2.RDB$FIELD_SUB_TYPE.NULL    = X.RDB$FIELD_SUB_TYPE.NULL;
+				X2.RDB$FIELD_SUB_TYPE         = X.RDB$FIELD_SUB_TYPE;
+				
+				X2.RDB$MISSING_VALUE.NULL     = X.RDB$MISSING_VALUE.NULL;
+				X2.RDB$MISSING_VALUE          = X.RDB$MISSING_VALUE;
+				
+				X2.RDB$MISSING_SOURCE.NULL    = X.RDB$MISSING_SOURCE.NULL;
+				X2.RDB$MISSING_SOURCE         = X.RDB$MISSING_SOURCE;
+				
+				X2.RDB$DESCRIPTION.NULL       = X.RDB$DESCRIPTION.NULL;
+				X2.RDB$DESCRIPTION            = X.RDB$DESCRIPTION;
+				
+				X2.RDB$SYSTEM_FLAG.NULL       = X.RDB$SYSTEM_FLAG.NULL;
+				X2.RDB$SYSTEM_FLAG            = X.RDB$SYSTEM_FLAG;
+				
+				X2.RDB$QUERY_HEADER.NULL      = X.RDB$QUERY_HEADER.NULL;
+				X2.RDB$QUERY_HEADER           = X.RDB$QUERY_HEADER;
+				
+				X2.RDB$SEGMENT_LENGTH.NULL    = X.RDB$SEGMENT_LENGTH.NULL;
+				X2.RDB$SEGMENT_LENGTH         = X.RDB$SEGMENT_LENGTH;
+				
+				X2.RDB$EDIT_STRING.NULL       = X.RDB$EDIT_STRING.NULL;
+				if (!X.RDB$EDIT_STRING.NULL)
+					strcpy(X2.RDB$EDIT_STRING, X.RDB$EDIT_STRING);
+				
+				X2.RDB$EXTERNAL_LENGTH.NULL   = X.RDB$EXTERNAL_LENGTH.NULL;
+				X2.RDB$EXTERNAL_LENGTH        = X.RDB$EXTERNAL_LENGTH;
+				
+				X2.RDB$EXTERNAL_SCALE.NULL    = X.RDB$EXTERNAL_SCALE.NULL;
+				X2.RDB$EXTERNAL_SCALE         = X.RDB$EXTERNAL_SCALE;
+				
+				X2.RDB$EXTERNAL_TYPE.NULL     = X.RDB$EXTERNAL_TYPE.NULL;
+				X2.RDB$EXTERNAL_TYPE          = X.RDB$EXTERNAL_TYPE;
+				
+				X2.RDB$DIMENSIONS.NULL        = X.RDB$DIMENSIONS.NULL;
+				X2.RDB$DIMENSIONS             = X.RDB$DIMENSIONS;
+				
+				X2.RDB$NULL_FLAG.NULL         = X.RDB$NULL_FLAG.NULL;
+				X2.RDB$NULL_FLAG              = X.RDB$NULL_FLAG;
+				
+				X2.RDB$CHARACTER_LENGTH.NULL  = X.RDB$CHARACTER_LENGTH.NULL;
+				X2.RDB$CHARACTER_LENGTH       = X.RDB$CHARACTER_LENGTH;
+				
+				X2.RDB$COLLATION_ID.NULL      = X.RDB$COLLATION_ID.NULL;
+				X2.RDB$COLLATION_ID           = X.RDB$COLLATION_ID;
+				
+				X2.RDB$CHARACTER_SET_ID.NULL  = X.RDB$CHARACTER_SET_ID.NULL;
+				X2.RDB$CHARACTER_SET_ID       = X.RDB$CHARACTER_SET_ID;
+				
+				X2.RDB$FIELD_PRECISION.NULL   = X.RDB$FIELD_PRECISION.NULL;
+				X2.RDB$FIELD_PRECISION        = X.RDB$FIELD_PRECISION;
+			END_STORE
+			CMP_release(tdbb, req2);
+			req2 = NULL;
+		END_FOR
+		
+		CMP_release(tdbb, request);
+		request = NULL;
+		// For now, CMP_release used instead of this:
+		//if (!DYN_REQUEST(drq_dom_copy))
+		//	DYN_REQUEST(drq_dom_copy) = request;
+
+	}
+	catch (const std::exception& ex)
+	{
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, -1); //drq_dom_copy);
+		DYN_error_punt(true, 228, org_name.c_str(), NULL, NULL, NULL, NULL);
+		// msg 228: "DYN_UTIL_copy_domain failed for domain %s"
 	}
 }
 

@@ -5044,7 +5044,7 @@ static void modify_domain( dsql_req* request)
  *	Alter an SQL domain.
  *
  **************************************/
-	const dsql_str* string;
+	dsql_str* string;
 	dsql_fld* field;
 	dsql_fld local_field;
 	/* CVC: This array used with check_one_call to ensure each modification
@@ -5078,32 +5078,35 @@ static void modify_domain( dsql_req* request)
 		switch (element->nod_type)
 		{
 		case nod_def_default:
-			check_one_call (repetition_count, 0, "DOMAIN DEFAULT");
-			// CVC: So do you want to crash me with ALTER DOMAIN dom SET; ???
-			if (!element->nod_arg[e_dft_default])
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
-							isc_arg_gds, isc_command_end_err2,    // Unexpected end of command
-							isc_arg_number, (SLONG) domain_node->nod_line,
-							isc_arg_number,
-							(SLONG) domain_node->nod_column + domain_name->str_length + strlen(" DEFAULT"),
-							0);
-			}
-			// CVC End modification.
-			element->nod_arg[e_dft_default] =
-				PASS1_node(request, element->nod_arg[e_dft_default], false);
+				check_one_call (repetition_count, 0, "DOMAIN DEFAULT");
+				// CVC: So do you want to crash me with ALTER DOMAIN dom SET; ???
+				dsql_nod* defVal = element->nod_arg[e_dft_default];
+				if (!defVal)
+				{
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
+								isc_arg_gds, isc_command_end_err2,    // Unexpected end of command
+								isc_arg_number, (SLONG) domain_node->nod_line,
+								isc_arg_number,
+								(SLONG) domain_node->nod_column + domain_name->str_length + strlen(" DEFAULT"),
+								0);
+				}
+				// CVC End modification.
+				defVal = PASS1_node(request, defVal, false);
 
-			request->begin_blr(isc_dyn_fld_default_value);
-			GEN_expr(request, element->nod_arg[e_dft_default]);
-			request->end_blr();
+				request->begin_blr(isc_dyn_fld_default_value);
+				GEN_expr(request, defVal);
+				request->end_blr();
 
-			string = (dsql_str*) element->nod_arg[e_dft_default_source];
-			if (string)
-			{
-				fb_assert(string->str_length <= MAX_USHORT);
-				request->append_string(	isc_dyn_fld_default_source,
-										string->str_data,
-										(USHORT) string->str_length);
+				string = (dsql_str*) element->nod_arg[e_dft_default_source];
+				if (string)
+				{
+					fb_assert(string->str_length <= MAX_USHORT);
+					fix_default_source(string);
+					request->append_string(	isc_dyn_fld_default_source,
+											string->str_data,
+											(USHORT) string->str_length);
+				}
 			}
 			break;
 
@@ -6316,14 +6319,14 @@ static void modify_field(dsql_req*	request,
  **************************************
  *
  * Function
- *	Modify a field, either as part of an
- *	alter table or alter domain statement.
+ *	Modify a field, as part of an alter table statement.
+ *  Alter domain is handled in modify_domain.
  *
  **************************************/
-	dsql_fld* field = (dsql_fld*) element->nod_arg[e_dfl_field];
+	dsql_fld* field = (dsql_fld*) element->nod_arg[e_mod_fld_type_field];
 	request->append_cstring(isc_dyn_mod_sql_fld, field->fld_name);
 
-// add the field to the relation being defined for parsing purposes
+	// add the field to the relation being defined for parsing purposes
 	bool permanent = false;
 	dsql_rel* relation = request->req_relation;
 	if (relation != NULL) {
@@ -6342,36 +6345,67 @@ static void modify_field(dsql_req*	request,
 
 	try {
 
-	dsql_nod* domain_node = element->nod_arg[e_mod_fld_type_dom_name];
-	if (domain_node)
-	{
-		dsql_nod* node1 = domain_node->nod_arg[e_dom_name];
-		const dsql_str* domain_name = (dsql_str*) node1->nod_arg[e_fln_name];
-		request->append_cstring(isc_dyn_fld_source, domain_name->str_data);
-
-		// Get the domain information
-
-		if (!METD_get_domain(request, field, domain_name->str_data))
+		const dsql_nod* defNod = element->nod_arg[e_mod_fld_type_default];
+		if (defNod)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_dsql_domain_not_found,
-					  // Specified domain or source field does not exist
-					  isc_arg_string, domain_name->str_data,
-					  0);
+			// We have the default or want to get rid of it.
+			if (defNod->nod_type == nod_def_default)
+			{
+				dsql_nod* defVal = defNod->nod_arg[e_dft_default];
+				// Shameful copy/paste from modify_domain.
+				defVal = PASS1_node(request, defVal, false);
+
+				request->begin_blr(isc_dyn_fld_default_value);
+				GEN_expr(request, defVal);
+				request->end_blr();
+
+				dsql_str* defValSrc = (dsql_str*) defNod->nod_arg[e_dft_default_source];
+				fb_assert(defValSrc->str_length <= MAX_USHORT);
+				fix_default_source(defValSrc);
+				request->append_string(	isc_dyn_fld_default_source,
+										defValSrc->str_data,
+										(USHORT) defValSrc->str_length);
+			}
+			else if (defNod->nod_type == nod_del_default)
+				request->append_uchar(isc_dyn_del_default);
+			else
+				fb_assert(false);
 		}
-		DDL_resolve_intl_type(request, field, NULL);
-	}
-	else
-	{
-		if (relation_name) {
-			request->append_cstring(isc_dyn_rel_name, relation_name->str_data);
+		else
+		{
+			// We have the type. Default and type/domain are exclusive for now.
+			dsql_nod* domain_node = element->nod_arg[e_mod_fld_type_dom_name];
+			if (domain_node)
+			{
+				dsql_nod* node1 = domain_node->nod_arg[e_dom_name];
+				const dsql_str* domain_name = (dsql_str*) node1->nod_arg[e_fln_name];
+				request->append_cstring(isc_dyn_fld_source, domain_name->str_data);
+
+				// Get the domain information
+
+				if (!METD_get_domain(request, field, domain_name->str_data))
+				{
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+							  isc_arg_gds, isc_dsql_command_err,
+							  isc_arg_gds, isc_dsql_domain_not_found,
+							  // Specified domain or source field does not exist
+							  isc_arg_string, domain_name->str_data,
+							  0);
+				}
+				DDL_resolve_intl_type(request, field, NULL);
+			}
+			else
+			{
+				if (relation_name) {
+					request->append_cstring(isc_dyn_rel_name, relation_name->str_data);
+				}
+
+				DDL_resolve_intl_type2(request, field, NULL, true);
+				put_field(request, field, false);
+			}
 		}
 
-		DDL_resolve_intl_type2(request, field, NULL, true);
-		put_field(request, field, false);
-	}
-	request->append_uchar(isc_dyn_end);
+		request->append_uchar(isc_dyn_end);
 	} // try
 
 	catch (...)

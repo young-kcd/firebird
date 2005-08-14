@@ -38,6 +38,9 @@ void	DYN_UTIL_generate_field_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaN
 void	DYN_UTIL_generate_constraint_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
 SINT64	DYN_UTIL_gen_unique_id(Jrd::thread_db*, Jrd::Global*, SSHORT,
 			const SCHAR*, BLK*);
+bool    DYN_UTIL_is_array(Jrd::thread_db*, Jrd::Global*, const Firebird::MetaName&);
+void	DYN_UTIL_copy_domain(Jrd::thread_db*, Jrd::Global* gbl,
+			const Firebird::MetaName&, const Firebird::MetaName&);
 
 #endif // JRD_DYN_UT_PROTO_H
 

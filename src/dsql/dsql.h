@@ -147,7 +147,7 @@ enum irq_type_t {
     irq_MAX         = 20
 };
 
-// dsql_node definition
+// dsql_nod definition
 #include "../dsql/node.h"
 
 // blocks used to cache metadata

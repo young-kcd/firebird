@@ -61,15 +61,20 @@ public:
 	Firebird::MetaName dyn_fld_source;
 	Firebird::MetaName dyn_rel_name;
 	Firebird::MetaName dyn_fld_name;
-    USHORT dyn_charbytelen; /* Used to check modify operations on string types. */
+    USHORT dyn_charbytelen; // Used to check modify operations on string types.
+    const UCHAR* dyn_default_src;
+    const UCHAR* dyn_default_val;
+    bool dyn_drop_default;
 public:
 	explicit dyn_fld(MemoryPool& p) 
 		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
 		dyn_collation(0), dyn_charset(0), dyn_fld_source(p), dyn_rel_name(p),
-		dyn_fld_name(p), dyn_charbytelen(0) { }
+		dyn_fld_name(p), dyn_charbytelen(0),
+		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false) { }
 	dyn_fld()
 		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
-		dyn_collation(0), dyn_charset(0), dyn_charbytelen(0) { }
+		dyn_collation(0), dyn_charset(0), dyn_charbytelen(0),
+		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false) { }
 };
 
 } //namespace Jrd

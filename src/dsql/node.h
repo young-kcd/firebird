@@ -873,9 +873,10 @@ enum node_args {
 	e_mod_fld_name_new_name,
 	e_mod_fld_name_count,
 
-	e_mod_fld_type = 0,				// nod_mod_field_type
-	e_mod_fld_type_dom_name = 2,
-	e_mod_fld_type_count = 2,
+	e_mod_fld_type_field = 0,				// nod_mod_field_type
+	e_mod_fld_type_dom_name,
+	e_mod_fld_type_default,
+	e_mod_fld_type_count,
 
 	e_mod_fld_pos_orig_name = 0,	// nod_mod_field_position
 	e_mod_fld_pos_new_position,

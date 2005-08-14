@@ -323,8 +323,8 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 
 			if (!IntlManager::collationInstalled(info.baseCollationName, info.charsetName))
 			{
-				DYN_error_punt(false, 223, NULL, NULL, NULL, NULL, NULL);
-				/* msg: 223: "Collation not installed" */
+				DYN_error_punt(false, 223, info.baseCollationName.c_str(), info.charsetName.c_str(), NULL, NULL, NULL);
+				/* msg: 223: "Collation %s not installed for character set %s" */
 			}
 
 			if (!INTL_texttype_validate(tdbb, &info))
@@ -1477,7 +1477,7 @@ void DYN_define_global_field(Global*		gbl,
  **************************************
  *
  * Functional description
- *	Execute a dynamic ddl statement.
+ *	Execute a dynamic ddl statement. Create an explicit domain.
  *
  **************************************/
 
@@ -1532,6 +1532,9 @@ void DYN_define_global_field(Global*		gbl,
 		FLD.RDB$CHARACTER_SET_ID.NULL = TRUE;
 		FLD.RDB$COLLATION_ID.NULL = TRUE;
 		FLD.RDB$FIELD_PRECISION.NULL = TRUE;
+		
+		bool has_dimensions = false;
+		bool has_default = false;
 
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{
@@ -1646,11 +1649,23 @@ void DYN_define_global_field(Global*		gbl,
 				break;
 
 			case isc_dyn_fld_default_value:
+				if (has_dimensions)
+				{
+					DYN_error_punt(false, 226, global_field_name.c_str(), NULL, NULL, NULL, NULL);
+					// msg 226: "Default value is not allowed for array type in domain %s"
+				}
+				has_default = true;
 				FLD.RDB$DEFAULT_VALUE.NULL = FALSE;
 				DYN_put_blr_blob(gbl, ptr, &FLD.RDB$DEFAULT_VALUE);
 				break;
 
 			case isc_dyn_fld_default_source:
+				if (has_dimensions)
+				{
+					DYN_error_punt(false, 226, global_field_name.c_str(), NULL, NULL, NULL, NULL);
+					// msg 226: "Default value is not allowed for array type in domain %s"
+				}
+				has_default = true;
 				FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
 				DYN_put_text_blob(gbl, ptr, &FLD.RDB$DEFAULT_SOURCE);
 				break;
@@ -1676,6 +1691,12 @@ void DYN_define_global_field(Global*		gbl,
 				break;
 
 			case isc_dyn_fld_dimensions:
+				if (has_default)
+				{
+					DYN_error_punt(false, 226, global_field_name.c_str(), NULL, NULL, NULL, NULL);
+					// msg 226: "Default value is not allowed for array type in domain %s"
+				}
+				has_dimensions = true;
 				FLD.RDB$DIMENSIONS = (SSHORT)DYN_get_number(ptr);
 				FLD.RDB$DIMENSIONS.NULL = FALSE;
 				break;
@@ -2348,6 +2369,9 @@ void DYN_define_local_field(Global*		gbl,
 		RFR.RDB$DEFAULT_SOURCE.NULL = TRUE;
 		RFR.RDB$EDIT_STRING.NULL = TRUE;
 		RFR.RDB$COLLATION_ID.NULL = TRUE;
+		
+		bool has_default = false;
+		
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
 			{
@@ -2425,12 +2449,14 @@ void DYN_define_local_field(Global*		gbl,
 				break;
 
 			case isc_dyn_fld_default_value:
+				has_default = true;
 				RFR.RDB$DEFAULT_VALUE.NULL = FALSE;
 				DYN_put_blr_blob(gbl, ptr, &RFR.RDB$DEFAULT_VALUE);
 				break;
 
 
 			case isc_dyn_fld_default_source:
+				has_default = true;
 				RFR.RDB$DEFAULT_SOURCE.NULL = FALSE;
 				DYN_put_text_blob(gbl, ptr, &RFR.RDB$DEFAULT_SOURCE);
 				break;
@@ -2488,6 +2514,12 @@ void DYN_define_local_field(Global*		gbl,
 				MetaTmp(RFR.RDB$FIELD_SOURCE)
 					DYN_execute(gbl, ptr, relation_name, &tmp, NULL, NULL, NULL);
 			}
+
+		if (has_default && DYN_UTIL_is_array(tdbb, gbl, RFR.RDB$FIELD_SOURCE))
+		{
+			DYN_error_punt(false, 226, RFR.RDB$FIELD_SOURCE, NULL, NULL, NULL, NULL);
+			// msg 226: "Default value is not allowed for array type in domain %s"
+		}
 
 		if (RFR.RDB$FIELD_POSITION.NULL == TRUE) {
 			fld_pos = -1;
@@ -3493,6 +3525,9 @@ void DYN_define_sql_field(Global*		gbl,
 			FLD.RDB$CHARACTER_SET_ID.NULL = TRUE;
 			FLD.RDB$COLLATION_ID.NULL = TRUE;
 
+			bool has_dimensions = false;
+			bool has_default = false;
+			
 			DYN_UTIL_generate_field_name(tdbb, gbl, RFR.RDB$FIELD_SOURCE);
 			strcpy(FLD.RDB$FIELD_NAME, RFR.RDB$FIELD_SOURCE);
 			while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -3549,11 +3584,23 @@ void DYN_define_sql_field(Global*		gbl,
 					break;
 
 				case isc_dyn_fld_default_value:
+					if (has_dimensions)
+					{
+						DYN_error_punt(false, 225, sql_field_name.c_str(), NULL, NULL, NULL, NULL);
+						// msg 225: "Default value is not allowed for array type in field %s"
+					}
+					has_default = true;
 					RFR.RDB$DEFAULT_VALUE.NULL = FALSE;
 					DYN_put_blr_blob(gbl, ptr, &RFR.RDB$DEFAULT_VALUE);
 					break;
 
 				case isc_dyn_fld_default_source:
+					if (has_dimensions)
+					{
+						DYN_error_punt(false, 225, sql_field_name.c_str(), NULL, NULL, NULL, NULL);
+						// msg 225: "Default value is not allowed for array type in field %s"
+					}
+					has_default = true;
 					RFR.RDB$DEFAULT_SOURCE.NULL = FALSE;
 					DYN_put_text_blob(gbl, ptr, &RFR.RDB$DEFAULT_SOURCE);
 					break;
@@ -3639,6 +3686,12 @@ void DYN_define_sql_field(Global*		gbl,
 					break;
 
 				case isc_dyn_fld_dimensions:
+					if (has_default)
+					{
+						DYN_error_punt(false, 225, sql_field_name.c_str(), NULL, NULL, NULL, NULL);
+						// msg 225: "Default value is not allowed for array type in field %s"
+					}
+					has_dimensions = true;
 					FLD.RDB$DIMENSIONS = DYN_get_number(ptr);
 					FLD.RDB$DIMENSIONS.NULL = FALSE;
 					break;

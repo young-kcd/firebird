@@ -933,12 +933,22 @@ void DYN_modify_global_field(Global* gbl,
 				break;
 
 			case isc_dyn_fld_default_value:
+				if (has_dimensions)
+				{
+					DYN_error_punt(false, 226, orig_dom.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+					// msg 226: "Default value is not allowed for array type in domain %s"
+				}
 				flddftval = *ptr;
 				bflddftval = true;
 				DYN_skip_attribute(ptr);
 				break;
 
 			case isc_dyn_fld_default_source:
+				if (has_dimensions)
+				{
+					DYN_error_punt(false, 226, orig_dom.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+					// msg 226: "Default value is not allowed for array type in domain %s"
+				}
 				flddfltsrc = *ptr;
 				bflddfltsrc = true;
 				DYN_skip_attribute(ptr);
@@ -1095,13 +1105,17 @@ void DYN_modify_global_field(Global* gbl,
 			}
 
 			if (bflddftval) {
-				FLD.RDB$DEFAULT_VALUE.NULL = FALSE;
-				DYN_put_blr_blob(gbl, &flddftval, &FLD.RDB$DEFAULT_VALUE);
+				if (DYN_put_blr_blob(gbl, &flddftval, &FLD.RDB$DEFAULT_VALUE))
+					FLD.RDB$DEFAULT_VALUE.NULL = FALSE;
+				else
+					FLD.RDB$DEFAULT_VALUE.NULL = TRUE;
 			}
 
 			if (bflddfltsrc) {
-				FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
-				DYN_put_text_blob(gbl, &flddfltsrc, &FLD.RDB$DEFAULT_SOURCE);
+				if (DYN_put_text_blob(gbl, &flddfltsrc, &FLD.RDB$DEFAULT_SOURCE))
+					FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
+				else
+					FLD.RDB$DEFAULT_SOURCE.NULL = TRUE;
 			}
 
 		END_MODIFY;
@@ -1354,8 +1368,7 @@ void DYN_modify_local_field(
 			}
 
 			if (qhflag) {
-				if (DYN_put_blr_blob
-					(gbl, &query_header, &FLD.RDB$QUERY_HEADER))
+				if (DYN_put_blr_blob(gbl, &query_header, &FLD.RDB$QUERY_HEADER))
 					FLD.RDB$QUERY_HEADER.NULL = FALSE;
 				else
 					FLD.RDB$QUERY_HEADER.NULL = TRUE;
@@ -1550,8 +1563,10 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 					break;
 
 				case isc_dyn_prc_blr:
-					P.RDB$PROCEDURE_BLR.NULL = FALSE;
-					DYN_put_blr_blob(gbl, ptr, &P.RDB$PROCEDURE_BLR);
+					if (DYN_put_blr_blob(gbl, ptr, &P.RDB$PROCEDURE_BLR))
+						P.RDB$PROCEDURE_BLR.NULL = FALSE;
+					else
+						P.RDB$PROCEDURE_BLR.NULL = TRUE;
 					break;
 
 				case isc_dyn_description:
@@ -1562,8 +1577,10 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 					break;
 
 				case isc_dyn_prc_source:
-					DYN_put_text_blob(gbl, ptr, &P.RDB$PROCEDURE_SOURCE);
-					P.RDB$PROCEDURE_SOURCE.NULL = FALSE;
+					if (DYN_put_text_blob(gbl, ptr, &P.RDB$PROCEDURE_SOURCE))
+						P.RDB$PROCEDURE_SOURCE.NULL = FALSE;
+					else
+						P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
 					break;
 
 				case isc_dyn_prc_inputs:
@@ -1861,15 +1878,19 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 				case isc_dyn_trg_blr:
 					blr = *ptr;
 					DYN_skip_attribute(ptr);
-					DYN_put_blr_blob(gbl, &blr, &X.RDB$TRIGGER_BLR);
-					X.RDB$TRIGGER_BLR.NULL = FALSE;
+					if (DYN_put_blr_blob(gbl, &blr, &X.RDB$TRIGGER_BLR))
+						X.RDB$TRIGGER_BLR.NULL = FALSE;
+					else
+						X.RDB$TRIGGER_BLR.NULL = TRUE;
 					break;
 
 				case isc_dyn_trg_source:
 					source = *ptr;
 					DYN_skip_attribute(ptr);
-					DYN_put_text_blob(gbl, &source, &X.RDB$TRIGGER_SOURCE);
-					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
+					if (DYN_put_text_blob(gbl, &source, &X.RDB$TRIGGER_SOURCE))
+						X.RDB$TRIGGER_SOURCE.NULL = FALSE;
+					else
+						X.RDB$TRIGGER_SOURCE.NULL = TRUE;
 					break;
 
 				case isc_dyn_description:
@@ -2047,13 +2068,17 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 					break;
 
 				case isc_dyn_view_blr:
-					DYN_put_blr_blob(gbl, ptr, &REL.RDB$VIEW_BLR);
-					REL.RDB$VIEW_BLR.NULL = FALSE;
+					if (DYN_put_blr_blob(gbl, ptr, &REL.RDB$VIEW_BLR))
+						REL.RDB$VIEW_BLR.NULL = FALSE;
+					else
+						REL.RDB$VIEW_BLR.NULL = TRUE;
 					break;
 
 				case isc_dyn_view_source:
-					DYN_put_text_blob(gbl, ptr, &REL.RDB$VIEW_SOURCE);
-					REL.RDB$VIEW_SOURCE.NULL = FALSE;
+					if (DYN_put_text_blob(gbl, ptr, &REL.RDB$VIEW_SOURCE))
+						REL.RDB$VIEW_SOURCE.NULL = FALSE;
+					else
+						REL.RDB$VIEW_SOURCE.NULL = TRUE;
 					break;
 
 				case isc_dyn_security_class:
@@ -2625,6 +2650,12 @@ void DYN_modify_sql_field(Global*					gbl,
 				switch (verb) {
 				case isc_dyn_fld_source:
 					GET_STRING(ptr, dom_fld.dyn_fld_source);
+					if (!strncmp(dom_fld.dyn_fld_source.c_str(),
+						IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN))
+					{
+						DYN_error_punt(false, 224, dom_fld.dyn_fld_source.c_str(), orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL);
+						// msg 224: "Cannot use the internal domain %s as new type for field %s".
+					}
 					get_domain_type(tdbb, dbb, gbl, dom_fld);
 					update_domain = true;
 					break;
@@ -2737,6 +2768,30 @@ void DYN_modify_sql_field(Global*					gbl,
 					new_fld.dyn_dtype = blr_blob;
 					break;
 
+				case isc_dyn_del_default:
+					new_fld.dyn_drop_default = true;
+					break;
+
+				case isc_dyn_fld_default_value:
+					if (has_dimensions)
+					{
+						DYN_error_punt(false, 225, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+						// msg 225: "Default value is not allowed for array type in field %s"
+					}
+					new_fld.dyn_default_val = *ptr;
+					DYN_skip_attribute(ptr);
+					break;
+
+				case isc_dyn_fld_default_source:
+					if (has_dimensions)
+					{
+						DYN_error_punt(false, 225, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+						// msg 225: "Default value is not allowed for array type in field %s"
+					}
+					new_fld.dyn_default_src = *ptr;
+					DYN_skip_attribute(ptr);
+					break;
+
 					/* These should only be defined for BLOB types and should not come through with
 					 * any other types.  BLOB types are detected above
 					 */
@@ -2755,10 +2810,13 @@ void DYN_modify_sql_field(Global*					gbl,
 		CMP_release(tdbb, request);
 		request = NULL;
 
-		/* Now that we have all of the information needed, let's check to see if the field type can be modifed */
-
+		// Now that we have all of the information needed, let's check to see
+		// if the field type can be modifed
 
 		if (update_domain) {
+			// a1. Internal domain -> domain.
+			// a2. Domain -> domain.
+			
 			/* CVC: Since get_domain_type() called above already called DSC_make_descriptor,
 					there's no point in calling it again, since it will increment AGAIN the length
 					of varchar fields! This bug detected thanks to new check field dyn_charbytelen.
@@ -2778,9 +2836,10 @@ void DYN_modify_sql_field(Global*					gbl,
 			if (!strncmp(orig_fld.dyn_fld_source.c_str(), 
 					IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN))
 			{
+				// a1. Internal domain -> domain.
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-					FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME =
-						RFR.RDB$FIELD_SOURCE 
+					FLD IN RDB$FIELDS
+					WITH FLD.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE
                     ERASE FLD;
 				END_FOR;
 
@@ -2795,6 +2854,17 @@ void DYN_modify_sql_field(Global*					gbl,
 			first_request = request;
 		}
 		else {
+			// b1. Domain -> internal domain.
+			// b2. Internal domain -> internal domain.
+
+			const UCHAR* defVal = new_fld.dyn_default_val;
+			const UCHAR* defSrc = new_fld.dyn_default_src;
+			const bool dropDefault = new_fld.dyn_drop_default;
+			const bool changeDefault = defVal || defSrc || dropDefault;
+			// If we are altering only the default, we need the old field settings.
+			if (changeDefault && !new_fld.dyn_dsc.dsc_dtype)
+				new_fld = orig_fld;
+
 			DSC_make_descriptor(&new_fld.dyn_dsc,
 								new_fld.dyn_dtype,
 								new_fld.dyn_dsc.dsc_scale,
@@ -2805,23 +2875,29 @@ void DYN_modify_sql_field(Global*					gbl,
 			if (retval != FB_SUCCESS)
 				modify_err_punt(tdbb, retval, orig_fld, new_fld);
 
-			/* check to see if the original data type for the field was based on a domain.  If it
-			 * was (and now it isn't), remove the domain information and replace it with a generated
-			 * field name for RDB$FIELDS
-			 */
+			// check to see if the original data type for the field was based on a domain.  If it
+			// was (and now it isn't), remove the domain information and replace it with a generated
+			// field name for RDB$FIELDS
 
-			if (strncmp(orig_fld.dyn_fld_source.c_str(), 
-					IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN))
+			const bool sourceIsInternalDomain = !strncmp(orig_fld.dyn_fld_source.c_str(),
+					IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN);
+
+			if (!sourceIsInternalDomain)
 			{
 				request = first_request;
 				MODIFY RFR USING
 					DYN_UTIL_generate_field_name(tdbb, gbl,
 												 RFR.RDB$FIELD_SOURCE);
-					new_fld.dyn_fld_name = RFR.RDB$FIELD_SOURCE;
+					new_fld.dyn_fld_source = RFR.RDB$FIELD_SOURCE;
 				END_MODIFY;
 				first_request = request;
 				request = NULL;
-
+			}
+			
+			if (!changeDefault && !sourceIsInternalDomain)
+			{
+				// b1. Domain -> internal domain. Not for changing DEFAULT value.
+				
 				STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					FLD IN RDB$FIELDS 
                     FLD.RDB$SYSTEM_FLAG.NULL = TRUE;
@@ -2876,15 +2952,21 @@ void DYN_modify_sql_field(Global*					gbl,
 							FLD.RDB$FIELD_LENGTH = new_fld.dyn_dsc.dsc_length;
 						FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 					}
-
+					
 					/* Copy the field name into RDB$FIELDS */
-					strcpy(FLD.RDB$FIELD_NAME, new_fld.dyn_fld_name.c_str());
+					strcpy(FLD.RDB$FIELD_NAME, new_fld.dyn_fld_source.c_str());
 				END_STORE;
 
 				CMP_release(tdbb, request);
 				request = NULL;
 			}
-			else {				/* the original and new definitions are both base types */
+			else // if (changeDefault || sourceIsInternalDomain)
+			{	// The original and new definitions are both base types
+				// or we need to alter a domain's DEFAULT value.
+				// b2. Internal domain -> internal domain.
+
+				if (!sourceIsInternalDomain)
+					DYN_UTIL_copy_domain(tdbb, gbl, orig_fld.dyn_fld_source, new_fld.dyn_fld_source);
 
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE
@@ -2923,6 +3005,28 @@ void DYN_modify_sql_field(Global*					gbl,
 							else
 								FLD.RDB$FIELD_LENGTH = new_fld.dyn_dsc.dsc_length;
 							FLD.RDB$FIELD_LENGTH.NULL = FALSE;
+						}
+
+						if (dropDefault)
+						{
+							FLD.RDB$DEFAULT_VALUE.NULL = TRUE;
+							FLD.RDB$DEFAULT_SOURCE.NULL = TRUE;
+						}
+						else
+						{
+							if (defVal)
+							{
+								const UCHAR* p = defVal;
+								if (DYN_put_blr_blob(gbl, &p, &FLD.RDB$DEFAULT_VALUE))
+									FLD.RDB$DEFAULT_VALUE.NULL = FALSE;
+							}
+
+							if (defSrc)
+							{
+								const UCHAR* p = defSrc;
+								if (DYN_put_text_blob(gbl, &p, &FLD.RDB$DEFAULT_SOURCE))
+									FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
+							}
 						}
 
 					END_MODIFY;
@@ -2986,6 +3090,9 @@ void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld& dom_f
 		dom_fld.dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
 		dom_fld.dyn_collation = FLD.RDB$COLLATION_ID;
 		dom_fld.dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
+		
+		if (!FLD.RDB$DIMENSIONS.NULL && FLD.RDB$DIMENSIONS > 0)
+			dom_fld.dyn_dtype = blr_blob;
 
 	END_FOR;
 	CMP_release(tdbb, request);

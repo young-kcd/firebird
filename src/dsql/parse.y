@@ -2055,12 +2055,18 @@ alter_op	: DROP simple_column_name drop_behaviour
 			{ $$ = make_node (nod_mod_field_pos, 2, $2,
 			MAKE_constant ((dsql_str*) $4, CONSTANT_SLONG)); } */
 		| col_opt simple_column_name POSITION pos_short_integer
-			{ $$ = make_node (nod_mod_field_pos, 2, $2,
-				MAKE_constant ((dsql_str*) $4, CONSTANT_SLONG)); }
+			{ $$ = make_node(nod_mod_field_pos, 2, $2,
+				MAKE_constant((dsql_str*) $4, CONSTANT_SLONG)); }
 		| col_opt alter_column_name TO simple_column_name
-			{ $$ = make_node (nod_mod_field_name, 2, $2, $4); }
-		| col_opt alter_col_name TYPE alter_data_type_or_domain end_trigger 
-			{ $$ = make_node (nod_mod_field_type, 3, $2, $5, $4); } 
+			{ $$ = make_node(nod_mod_field_name, 2, $2, $4); }
+		| col_opt alter_col_name TYPE alter_data_type_or_domain
+			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, $4, NULL); }
+		| col_opt alter_col_name SET domain_default_opt2 end_trigger
+			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
+					make_node(nod_def_default, (int) e_dft_count, $4, $5)); }
+		| col_opt alter_col_name DROP DEFAULT
+			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
+					make_node(nod_del_default, (int) 0, NULL)); }
 		;
 
 alter_column_name  : keyword_or_column
