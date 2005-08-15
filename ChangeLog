@@ -1,3 +1,40 @@
+2005-08-14 22:46  hvlad
+
+	* firebird2/src/jrd/dfw.epp (1.160):
+	
+	Fix SF #1256675
+
+2005-08-14 14:41  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.157):
+	
+	Some string handling changes + fixed Alpha 3 bug + misc.
+
+2005-08-14 08:56  robocop
+
+	* firebird2/src/: include/gen/msgs.h (1.37), jrd/exe.cpp (1.156),
+	msgs/facilities.sql (1.35), msgs/history.sql (1.20),
+	msgs/messages.sql (1.42):
+	
+	Solve Dmitry's compatibility concerns about my solution for SF Bug
+	#494981. Remember to rebuild the messages db from the scripts in
+	src/msgs.
+
+2005-08-14 07:48  robocop
+
+	* firebird2/src/: dsql/ddl.cpp (1.151), dsql/dsql.h (1.80),
+	dsql/dsql.tab.h (1.60), dsql/node.h (1.64), dsql/parse.cpp (1.158),
+	dsql/parse.y (1.185), jrd/drq.h (1.12), jrd/dyn.h (1.27),
+	jrd/dyn_def.epp (1.100), jrd/dyn_mod.epp (1.64), jrd/dyn_ut_proto.h
+	(1.11), jrd/dyn_util.epp (1.39), msgs/facilities.sql (1.34),
+	msgs/history.sql (1.19), msgs/messages.sql (1.41):
+	
+	Tweak DYN to solve several issues: - Allow to set and drop defaults
+	for table's fields (as it has been possible with domains).  - Stop
+	people from setting a default value for array types.  - Close
+	checking holes that allowed people to change from scalar types to
+	array types and vice/versa.  - Improve some error messages.
+
 2005-08-13 22:24  hvlad
 
 	* firebird2/src/jrd/dfw.epp (1.159):
