@@ -101,7 +101,6 @@ fi
 rm -f config.cache
 rm -f config.log
 rm -f config.status
-autoconf
 
 DEBUG_CFLAGS='-g'
 DEBUG_CXXFLAGS='-g'
