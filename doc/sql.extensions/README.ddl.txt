@@ -128,12 +128,15 @@ BLOB Filter: PESH2
         Entry point is p2
 
 
-4) Allow comments in database objects. Proposed syntax for testing:
+4) Allow comments in database objects.
+(Claudio Valderrama C.)
+
+Proposed syntax for testing:
 
 COMMENT ON DATABASE IS {'txt'|NULL};
 COMMENT ON <basic_type> name IS {'txt'|NULL};
-COMMENT ON COLUMN tblviewname.fieldname IS {'txt'|NULL};
-COMMENT ON PARAMETER procname.parname IS {'txt'|NULL};
+COMMENT ON COLUMN table_or_view_name.field_name IS {'txt'|NULL};
+COMMENT ON PARAMETER procedure_name.param_name IS {'txt'|NULL};
 
 An empty literal string '' will act as NULL since the internal code (DYN in this case)
 works this way with blobs.
@@ -154,4 +157,23 @@ basic_type:
 - CHARACTER SET
 - COLLATION
 - SECURITY CLASS (not implemented because Borland hid them).
+
+
+5) Allow setting and dropping default values from table fields.
+(Claudio Valderrama C.)
+
+Domains allow to change or drop their default. It seems natural that table fields
+can be manipulated the same way without going directly to the system tables. Here's
+the syntax borrowed from the one to alter domains:
+
+ALTER TABLE t ALTER [COLUMN] c SET DEFAULT default_value;
+ALTER TABLE t ALTER [COLUMN] c DROP DEFAULT;
+
+Notes:
+- Array fields cannot have a default value.
+- If you change the type of a field, the default may remain in place. This is
+because a field can be given the type of a domain with a default but the field
+itself can override such domain. On the other hand, the field can be given a
+type directly in whose case the default belongs logically to the field (albeit
+the information is kept on an implicit domain created behind scenes).
 
