@@ -1,3 +1,9 @@
+2005-08-15 13:30  kkuznetsov
+
+	* firebird2/extern/icu/source/runConfigureICU (1.7):
+	
+	revert my previos commit
+
 2005-08-14 22:46  hvlad
 
 	* firebird2/src/jrd/dfw.epp (1.160):
