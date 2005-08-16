@@ -2933,7 +2933,7 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	// create a derived table representing our subquery
 	dsql_nod* dt = MAKE_node(nod_derived_table, e_derived_table_count);
 	// Ignore validation for columnames that must exist for "user" derived tables.
-	dt->nod_flags |= (NOD_DT_IGNORE_COLUMN_CHECK | NOD_DT_ALLOW_OUTER_REFERENCE);
+	dt->nod_flags |= NOD_DT_IGNORE_COLUMN_CHECK;
 	dt->nod_arg[e_derived_table_rse] = input->nod_arg[1];
 	dsql_nod* from = MAKE_node(nod_list, 1);
 	from->nod_arg[0] = dt;
@@ -3663,13 +3663,13 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 
 	// Change req_context, because when we are processing the derived table rse
 	// it may not reference to other streams in the same scope_level.
-	const bool allowOuterReference = (input->nod_flags & NOD_DT_ALLOW_OUTER_REFERENCE);
 	DsqlContextStack temp;
 	// Put special contexts (NEW/OLD) also on the stack
 	for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
 	{
 	    dsql_ctx* context = stack.object();
-		if (allowOuterReference || (context->ctx_flags & CTX_system))
+		if ((context->ctx_scope_level < request->req_scope_level) || 
+			(context->ctx_flags & CTX_system))
 		{
 			temp.push(context);
 		}
