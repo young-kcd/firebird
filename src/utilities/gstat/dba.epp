@@ -60,6 +60,7 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/constants.h"
+#include "../jrd/ods_proto.h"
 
 
 #ifdef HAVE_UNISTD_H
@@ -548,7 +549,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	service->svc_started();
 #endif
 
-	if (!ODS_SUPPORTED(header->hdr_ods_version, header->hdr_ods_minor))
+	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
 	{
 #ifdef SERVICE_THREAD
 		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,

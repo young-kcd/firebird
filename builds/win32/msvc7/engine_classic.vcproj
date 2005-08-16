@@ -295,6 +295,9 @@
 				RelativePath="..\..\..\src\jrd\nodebug.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\ods.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\opt.cpp">
 			</File>
 			<File
@@ -367,10 +370,10 @@
 				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
+				RelativePath="..\..\..\src\jrd\os\win32\thd_priority.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\thd_priority.cpp">
+				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\tpc.cpp">
@@ -801,6 +804,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ods.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ods_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\old.h">

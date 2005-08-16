@@ -150,42 +150,6 @@ const USHORT USER_REL_INIT_ID_ODS8		= 31;	/* ODS <= 8 */
 const USHORT USER_DEF_REL_INIT_ID		= 128;	/* ODS >= 9 */
 
 
-static inline bool ODS_SUPPORTED(USHORT ods_major_version,
-								 USHORT ods_minor_version)
-{
-	bool ods_firebird_flag = (ods_major_version & ODS_FIREBIRD_FLAG);
-	ods_major_version &= ~ODS_FIREBIRD_FLAG;
-
-#ifdef ODS_8_TO_CURRENT
-	// Support InterBase major ODS numbers from 8 to 10
-	if (!ods_firebird_flag)
-	{
-		return (ods_major_version >= ODS_VERSION8 &&
-				ods_major_version <= ODS_VERSION10);
-	}
-
-	// This is for future ODS versions
-	if (ods_major_version > ODS_VERSION10 &&
-		ods_major_version < ODS_VERSION)
-	{
-		return true;
-	}
-#endif
-
-	// Support current ODS of the engine
-	if (ods_major_version == ODS_VERSION &&
-#if ODS_RELEASED > 0
-		ods_minor_version >= ODS_RELEASED &&
-#endif
-		ods_minor_version <= ODS_CURRENT)
-	{	
-		return true;
-	}
-
-	// Do not support anything else
-	return false;
-}
-
 /* Page types */
 
 const SCHAR pag_undefined		= 0;

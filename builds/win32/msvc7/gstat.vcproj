@@ -202,6 +202,9 @@
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
 			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ods.cpp">
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

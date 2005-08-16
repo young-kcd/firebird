@@ -109,6 +109,10 @@ SOURCE=..\..\..\src\jrd\os\win32\guid.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\ods.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\utilities\gstat\ppg.cpp
 # End Source File
 # End Group

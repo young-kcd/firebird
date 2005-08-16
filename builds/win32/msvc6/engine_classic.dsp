@@ -362,6 +362,10 @@ SOURCE=..\..\..\src\jrd\nodebug.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\ods.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\opt.cpp
 
 !IF  "$(CFG)" == "engine_classic - Win32 Release"
@@ -1038,6 +1042,10 @@ SOURCE=..\..\..\src\jrd\obj.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\ods.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ods_proto.h
 # End Source File
 # Begin Source File
 

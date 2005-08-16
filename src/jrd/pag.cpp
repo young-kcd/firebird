@@ -87,6 +87,7 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/ods_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/thd.h"
@@ -1075,7 +1076,7 @@ void PAG_header(const TEXT* file_name, USHORT file_length)
 														  file_length), 0);
 	}
 
-	if (!ODS_SUPPORTED(header->hdr_ods_version, header->hdr_ods_minor))
+	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
 	{
 		ERR_post(isc_wrong_ods,
 				 isc_arg_cstring, file_length, ERR_string(file_name,

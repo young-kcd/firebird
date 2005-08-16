@@ -61,9 +61,9 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/os/isc_i_proto.h"
-
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/ods_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/thd.h"
 
@@ -1306,7 +1306,7 @@ static bool raw_devices_validate_database (
 	if (hp->hdr_header.pag_type != pag_header /*|| hp->hdr_sequence*/)
 		goto quit;
 
-	if (!ODS_SUPPORTED(hp->hdr_ods_version, hp->hdr_ods_minor))
+	if (!Ods::isSupported(hp->hdr_ods_version, hp->hdr_ods_minor))
 		goto quit;
 
 	if (hp->hdr_page_size < MIN_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)
