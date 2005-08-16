@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: changeGdsLibraryCompatibleLink.sh.in,v 1.2 2005-05-27 22:15:57 asfernandes Exp $
+#   $Id: changeGdsLibraryCompatibleLink.sh.in,v 1.3 2005-08-16 10:03:22 alexpeshkoff Exp $
 # 
 
 
@@ -43,41 +43,8 @@
 #
 
 #------------------------------------------------------------------------
-# Prompt for response, store result in Answer
-
-Answer=""
-
-AskQuestion() {
-    Test=$1
-    DefaultAns=$2
-    echo -n "${1}"
-    Answer="$DefaultAns"
-    read Answer
-
-    if [ -z $Answer ]
-      then
-        Answer=$DefaultAns
-    fi
-}
-
-
-#------------------------------------------------------------------------
-#  remove Link
-
-removeLink() {
-    fileName=$1
-
-    if [ -L $fileName ]
-      then
-        rm -f $fileName
-    fi
-
-}
-
-
-#------------------------------------------------------------------------
 #  quitIfRealFile
-# Remove the backward compatibility links for libgds.so
+# Quit if library is real file, not link somewhere
 
 quitIfRealFile() {
 
@@ -100,38 +67,6 @@ quitIfRealFile() {
     fi
 }
 
-
-#------------------------------------------------------------------------
-#  removeLinks
-# Remove the backward compatibility links for libgds.so
-
-removeLinks() {
-    removeLink @libdir@/libgds.so
-    removeLink @libdir@/libgds.so.0
-}
-
-
-#------------------------------------------------------------------------
-#  createLinksForBackCompatibility
-#  Create links for back compatibility to InterBase and Firebird1.0 
-#  linked systems.
-
-createLinksForBackCompatibility() {
-
-    # These two links are required for compatibility with existing ib programs
-    # If the program had been linked with libgds.so then this link is required
-    # to ensure it loads the fb equivalent.  Eventually these should be 
-    # optional and in a seperate rpm install.  MOD 7-Nov-2002.
-
-    newLibrary=$FBRootDir/lib/$1
-
-    removeLinks
-
-    ln -s $newLibrary @libdir@/libgds.so
-    ln -s $newLibrary @libdir@/libgds.so.0
-
-
-}
 
 #------------------------------------------------------------------------
 #  printStatus
@@ -178,7 +113,7 @@ EOF
         createLinksForBackCompatibility libfbclient.so
         ;;
     remove)
-        removeLinks
+        removeLinksForBackCompatibility
         ;;
     *)
         echo "Unknown option $Answer chosen"

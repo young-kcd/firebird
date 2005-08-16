@@ -31,84 +31,9 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: taruninstall.sh.in,v 1.3 2005-05-27 22:15:13 asfernandes Exp $
+#   $Id: taruninstall.sh.in,v 1.4 2005-08-16 10:04:13 alexpeshkoff Exp $
 # 
 
-
-#------------------------------------------------------------------------
-# removeInstalledFiles
-# 
-removeInstalledFiles() {
-
-    manifestFile=$FBRootDir/misc/manifest.txt
-
-    if [ ! -f  $manifestFile ]
-      then
-        return
-    fi
-
-    origDir=`pwd`
-    
-    cd /
-
-    for i in `cat $manifestFile`
-      do
-        if [ -f $i -o -L $i ]
-          then
-            rm -f $i
-            #echo $i
-        fi
-    done
-
-    cd "$origDir"
-}
-
-
-#------------------------------------------------------------------------
-# removeUninstallFiles
-# Under the install directory remove all the empty directories 
-# If some files remain then 
-
-removeUninstallFiles() {
-    # remove the uninstall scripts files.
-    #echo $FBRootDir/misc/scripts
-    rm -rf $FBRootDir/misc/scripts
-    rm -f $FBRootDir/misc/manifest.txt
-    rm -f $FBRootDir/bin/uninstall.sh
-
-}
-
-
-#------------------------------------------------------------------------
-# removeEmptyDirs
-# Under the install directory remove all the empty directories 
-# If some files remain then 
-# This routing loops, since deleting a directory possibly makes
-# the parent empty as well
-
-removeEmptyDirs() {
-
-    dirContentChanged='yes'
-    while [ ! -z $dirContentChanged ]
-      do
-        dirContentChanged=''
-        for i in `find $FBRootDir -empty -type d -print`
-          do
-            rmdir $i
-            dirContentChanged=$i
-        done
-
-        if [ ! -d $FBRootDir ]  # end loop if the FBRootDir was deleted.
-          then
-            dirContentChanged=''
-        fi
-
-      done
-}
-
-
-FBRootDir=@prefix@
-FBBin=$FBRootDir/bin
 
 removeInstalledFiles  # Remove installed files 
 removeUninstallFiles  # Remove the 'uninstall' utility files

@@ -2,9 +2,6 @@
 
 # This runs before firebird archive is opened
 
-ArchiveDateTag=`date +"%Y%m%d_%H%M"`
-ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}.tar.gz"
-
 checkIfServerRunning
 
 # Failing that we archive any files we find

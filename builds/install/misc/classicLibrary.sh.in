@@ -42,20 +42,20 @@ fixFilePermissions() {
     chmod a=rx isql 
     chmod a=rx qli
     
-    # SUID is still needed for group direct access.  General users
-    # cannot run though.
-	chown root:root fb_lock_mgr gds_drop
-    for i in fb_lock_mgr gds_drop fb_inet_server
+    # Root SUID is still needed for group direct access.  
+	# General users cannot run though.
+    for i in fb_lock_mgr gds_drop
     do
 		if [ -f $i ]
 		then
+			chown root $i
 	        chmod ug=rx,o= $i
     	    chmod ug+s $i
 		fi
     done
 
     # Fix lock files
-    cd $IBRootDir
+    cd $FBRootDir
     for i in isc_init1 isc_lock1 isc_event1 
     do
         FileName=$i.`hostname`
@@ -71,6 +71,14 @@ fixFilePermissions() {
     chmod a=r firebird.msg
     chmod ug=rw,o= help/help.fdb
     chmod ug=rw,o= $SecurityDatabase
+	
+	if [ "$RunUser" = "root" ]
+	# In that case we must open databases to the world...
+	# That's a pity, but required if root RunUser choosen.
+	then
+	    chmod a=rw help/help.fdb
+    	chmod a=rw $SecurityDatabase
+	fi
 
 	# fix up examples' permissions
     cd examples
@@ -146,15 +154,55 @@ updateInetdServiceEntry() {
 
 
 #------------------------------------------------------------------------
-#  resetXinetdServer
+#  resetInetdServer
 #  Works for both inetd and xinetd
 
 resetInetdServer() {
-	pid=`ps -ax | grep inetd | grep -v grep | awk '{print $1}'`
+	pid=`ps -efww | grep inetd | grep -v grep | awk '{print $2}'`
     if [ ! -z $pid ]
     then
         kill -HUP $pid
     fi
+}
+
+
+#------------------------------------------------------------------------
+# remove the xinetd config file
+
+removeXinetdEntry() {
+    if [ -f /etc/xinetd.d/firebird ] 
+    then
+        rm -f /etc/xinetd.d/firebird
+    fi
+}
+
+
+#------------------------------------------------------------------------
+# remove the line from inetd file
+
+removeInetdEntry() {
+    FileName=/etc/inetd.conf
+    oldLine=`grep "^gds_db" $FileName`
+    removeLineFromFile "$FileName" "$oldLine"
+}
+
+
+#------------------------------------------------------------------------
+#  Remove (x)inetd service entry and restart the service.
+#  Check to see if we have xinetd installed or plain inetd.  
+#  Install differs for each of them.
+
+removeInetdServiceEntry() {
+    if [ -d /etc/xinetd.d ] 
+    then
+        removeXinetdEntry
+    elif [ -f /etc/inetd.d ]
+	then
+        removeInetdEntry
+    fi
+
+    # Get (x)inetd to reread configuration
+	resetInetdServer
 }
 
 
@@ -171,15 +219,6 @@ changeInitRunUser() {
 #  start init.d service
 
 startService() {
-	# do nothing for CS
-	return 0
-}
-
-
-#------------------------------------------------------------------------
-#  stop super server if it is running
-
-stopSuperServerIfRunning() {
 	# do nothing for CS
 	return 0
 }

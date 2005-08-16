@@ -3,10 +3,6 @@
 # This runs after firebird archive is opened
 
 origDir=`pwd`
-RunUser=firebird
-export FBRootDir
-export FBBin
-export RunUser
 
 
 # Update /etc/services

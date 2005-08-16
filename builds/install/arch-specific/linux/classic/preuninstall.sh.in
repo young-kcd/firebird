@@ -31,68 +31,25 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: preuninstall.sh.in,v 1.4 2005-05-27 22:15:10 asfernandes Exp $
+#   $Id: preuninstall.sh.in,v 1.5 2005-08-16 10:04:11 alexpeshkoff Exp $
 # 
 
 # The pre uninstall routines for Firebird Classic
-
-#------------------------------------------------------------------------
-#  stop server if it is running
-
-
-checkIfServerRunning() {
-
-# Check is server is being actively used.
-
-    checkString=`ps -ef| egrep "(gds_inet_server|gds_pipe)" |grep -v grep`
-
-    if [ ! -z "$checkString" ] 
-      then
-        echo "An instance of the Firebird/InterBase server seems to be running." 
-        echo "(the gds_inet_server or gds_pipe process was detected running on your system)"
-        echo "Please quit all interbase applications and then proceed." 
-        exit 1 
-    fi
-
-
-
-# Stop lock manager if it is the only thing running.
-
-    for i in `ps -ef | egrep "[gds|fb]_lock_mgr" | cut -d' ' -f3`
-     do
-        kill $i
-     done
-
-}
-
-
-#= Main PreUn ================================================================
-# This is a bit simple, but should work for now.  
-# cron will remove files in /tmp after a while. 
-
-    if  [ -z "$FirebirdInstallPrefix" ]
-       then
-        FirebirdInstallPrefix=@prefix@
-    fi
-
-    FBRootDir=$FirebirdInstallPrefix
-    FBBin=$FBRootDir/bin
-	SecurityDatabase=security2.fdb
 
     checkIfServerRunning
 
     cd $FBRootDir
     
     if [ -f $SecurityDatabase ] 
-      then 
+    then 
         cp $SecurityDatabase /tmp 
         echo "Saved a copy of $SecurityDatabase in /tmp" 
     fi 
     
     for i in isc_init1* isc_event1* isc_lock1* isc_guard* firebird.log SYSDBA.password
-      do
+    do
         if [ -f $i ]
-          then
+        then
             rm -f $i
         fi
-      done
+    done

@@ -2,20 +2,6 @@
 
 
 #------------------------------------------------------------------------
-#  print location of init script
-
-getInitScriptLocation() {
-    if [ -f /etc/rc.d/init.d/firebird ]
-	then
-		echo -n /etc/rc.d/init.d/firebird
-    elif [ -f /etc/init.d/firebird ]
-	then
-		echo -n /etc/init.d/firebird
-    fi
-}
-
-
-#------------------------------------------------------------------------
 #  change init.d RunUser
 
 changeInitRunUser() {
@@ -138,22 +124,4 @@ startService() {
 			$InitFile start
 		fi
 	fi
-}
-
-
-#------------------------------------------------------------------------
-#  stop super server if it is running
-
-stopSuperServerIfRunning() {
-    checkString=`ps -efww| egrep "(fbserver|fbguard)" |grep -v grep`
-
-    if [ ! -z "$checkString" ]
-    then
-		init_d=`getInitScriptLocation`
-
-        if [ -f $init_d ]
-        then
-            $init_d stop
-        fi
-    fi
 }

@@ -34,21 +34,6 @@
 
 
 
-#------------------------------------------------------------------------
-# Prompt for response, store result in Answer
-
-Answer=""
-
-AskQuestion() {
-    Test=$1
-    DefaultAns=$2
-    echo -n "${1}"
-    Answer="$DefaultAns"
-    read Answer
-}
-
-
-
 #------------------------------------------------------------------------------
 # appendAliasEntry
 # check to see if an entry already exists in the aliases.conf file
@@ -60,20 +45,19 @@ appendAliasEntry() {
 
     # check if aliasName already exists
     oldLine=`grep "^$aliasName" $AliasFile`
-    if [ -z $oldLine ]
+    if [ -z "$oldLine" ]
       then
         # Create the alias file entry
         echo "$aliasName = $newDB" >> $AliasFile
       else
         cat <<EOF
-The alias name $aliasName already exists in $AliasFile
-with value:
+The alias name $aliasName already exists in $AliasFile with value:
 $oldLine
 
 A new entry will not be created and the existing one will be used.
 EOF
 
-        AskQuestion "Press return to continue or ^C to abort"
+        exit
     fi
 
 }

@@ -1,5 +1,8 @@
 #!/bin/sh
 
+RunUser=firebird
+export RunUser
+
 #------------------------------------------------------------------------
 #  Add new user and group
 
@@ -44,3 +47,76 @@ addFirebirdUser() {
 
 }
 
+
+#------------------------------------------------------------------------
+#  Detect Distribution.
+#	AP: very beautiful, but unused. Let's keep alive for a while. (2005)
+
+detectDistro() {
+
+    # it's not provided...
+    if [ -z "$linuxDistro"  ]
+    then
+	if [ -e /etc/SuSE-release  ]
+	then
+	    # SuSE
+	    linuxDistro="SuSE"
+	elif [ -e /etc/mandrake-release ]
+	then
+	    # Mandrake
+	    linuxDistro="MDK"
+	elif [ -e /etc/debian_version ]
+	then
+	    # Debian
+	    linuxDistro="Debian"
+	elif [ -e /etc/gentoo-release ]
+	then
+	    # Debian
+	    linuxDistro="Gentoo"
+	elif [ -e /etc/rc.d/init.d/functions ]
+	then
+	    # very likely Red Hat
+	    linuxDistro="RH"
+	elif [ -d /etc/rc.d/init.d ]
+	then
+	    # generic Red Hat
+	    linuxDistro="G-RH"
+	elif [ -d /etc/init.d ]
+	then
+	    # generic SuSE
+	    linuxDistro="G-SuSE"
+	fi
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  print location of init script
+
+getInitScriptLocation() {
+    if [ -f /etc/rc.d/init.d/firebird ]
+	then
+		echo -n /etc/rc.d/init.d/firebird
+    elif [ -f /etc/init.d/firebird ]
+	then
+		echo -n /etc/init.d/firebird
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  stop super server if it is running
+
+stopSuperServerIfRunning() {
+    checkString=`ps -efww| egrep "(fbserver|fbguard)" |grep -v grep`
+
+    if [ ! -z "$checkString" ]
+    then
+		init_d=`getInitScriptLocation`
+
+        if [ $init_d ]
+		then
+       	    $init_d stop
+		fi
+    fi
+}

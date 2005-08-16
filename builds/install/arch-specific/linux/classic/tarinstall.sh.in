@@ -31,10 +31,10 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: tarinstall.sh.in,v 1.1 2003-07-08 22:59:57 brodsom Exp $
+#   $Id: tarinstall.sh.in,v 1.2 2005-08-16 10:04:11 alexpeshkoff Exp $
 # 
 
-# THe way this works is that the buildroot file is stored relative to the root
+# The way this works is that the buildroot file is stored relative to the root
 # directory and a tar -xzf at root directory will restore all the files in 
 # the position that we want them to be
 

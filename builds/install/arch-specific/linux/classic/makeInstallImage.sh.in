@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.16 2005-06-27 12:45:36 alexpeshkoff Exp $
+#   $Id: makeInstallImage.sh.in,v 1.17 2005-08-16 10:04:11 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -143,21 +143,22 @@ copyFiles() {
     cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
     cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
 
+    # Append libraries to scripts
     addLibs $BuildRootDir/gen/firebird/bin changeRunUser.sh $DestDir/bin
     addLibs $BuildRootDir/gen/firebird/bin restoreRootRunUser.sh $DestDir/bin
     addLibs $BuildRootDir/gen/firebird/bin changeDBAPassword.sh $DestDir/bin
-	
-    cp $BuiltFBDir/bin/changeGdsLibraryCompatibleLink.sh $DestDir/bin
+    addLibs $BuiltFBDir/bin changeGdsLibraryCompatibleLink.sh $DestDir/bin
+    addLibs $BuildRootDir/gen/firebird/bin tarMainInstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin tarinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin preinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin postinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin preuninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin postuninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin taruninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin tarMainUninstall.sh $BuildRootDir/gen/install/scripts
+    # this scripts don't need libraries
     cp $BuiltFBDir/bin/createAliasDB.sh $DestDir/bin
     cp $BuiltFBDir/bin/fb_config $DestDir/bin
-    cp $BuildRootDir/gen/firebird/bin/tarMainInstall.sh $BuildRootDir/gen/install/scripts
-    cp $BuildRootDir/gen/firebird/bin/tarinstall.sh $BuildRootDir/gen/install/scripts
-    cp $BuildRootDir/gen/firebird/bin/preinstall.sh $BuildRootDir/gen/install/scripts
-    cp $BuildRootDir/gen/firebird/bin/postinstall.sh $BuildRootDir/gen/install/scripts
-    cp $BuildRootDir/gen/firebird/bin/preuninstall.sh $BuildRootDir/gen/install/scripts
-    cp $BuildRootDir/gen/firebird/bin/postuninstall.sh $BuildRootDir/gen/install/scripts
-    cp $BuildRootDir/gen/firebird/bin/taruninstall.sh $BuildRootDir/gen/install/scripts
-    cp $BuildRootDir/gen/firebird/bin/tarMainUninstall.sh $BuildRootDir/gen/install/scripts
 
     # Copy examples only if we have them
 

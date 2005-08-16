@@ -8,8 +8,14 @@ Answer=""
 OrigPasswd=""
 TmpFile=""
 FBRootDir=@prefix@
+export FBRootDir
 FBBin=$FBRootDir/bin
+export FBBin
 SecurityDatabase=security2.fdb
+ArchiveDateTag=`date +"%Y%m%d_%H%M"`
+export ArchiveDateTag
+ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}.tar.gz"
+export ArchiveMainFile
 
 
 #------------------------------------------------------------------------
@@ -33,6 +39,11 @@ AskQuestion() {
     echo -n "${1}"
     Answer="$DefaultAns"
     read Answer
+
+    if [ -z "$Answer" ]
+    then
+        Answer="$DefaultAns"
+    fi
 }
 
 
@@ -110,7 +121,7 @@ checkIfServerRunning() {
     checkString=`ps -efww| egrep "(fbserver|fbguard)" |grep -v grep`
 
     if [ ! -z "$checkString" ]
-      then
+    then
         echo "An instance of the Firebird/InterBase Super server seems to be running."
         echo "Please quit all interbase applications and then proceed"
         exit 1
@@ -119,17 +130,60 @@ checkIfServerRunning() {
     checkString=`ps -efww| egrep "(fb_inet_server|gds_pipe)" |grep -v grep`
 
     if [ ! -z "$checkString" ]
-      then
+    then
         echo "An instance of the Firebird/InterBase server seems to be running."
         echo "Please quit all interbase applications and then proceed."
         exit 1
     fi
 
 
+# The following check for running interbase or firebird 1.0 servers.
+
+    checkString=`ps -efww| egrep "(ibserver|ibguard)" |grep -v grep`
+
+    if [ ! -z "$checkString" ] 
+    then
+        echo "An instance of the Firebird/InterBase Super server seems to be running." 
+        echo "(the ibserver or ibguard process was detected running on your system)"
+        echo "Please quit all Firebird applications and then proceed"
+        exit 1 
+    fi
+
+    checkString=`ps -efww| egrep "(gds_inet_server|gds_pipe)" |grep -v grep`
+
+    if [ ! -z "$checkString" ] 
+    then
+        echo "An instance of the Firebird/InterBase classic server seems to be running." 
+        echo "(the gds_inet_server or gds_pipe process was detected running on your system)"
+        echo "Please quit all Firebird applications and then proceed." 
+        exit 1 
+    fi
+
+#	Moved here from postinstall.sh.in. It's really easy to add appropriate 
+#	(x)inetd stop commands sequence here now, but taking into account,
+#	that worked OK for a long time, but service port may be changed today,
+#	leave it commented here. AP, 2005.
+#
+#  This one is commented out, since it usually works out ok, we have
+#  checked that no procesers are active, but inetd/xinetd is still listening
+#  the best thing would be to turn the service off, but I don't have time
+#  to do all the xinetd/inetd stuff, see the preunistall.sh script for details
+#
+#    checkString=`netstat -an | egrep '3050.*LISTEN'`
+#
+#    if [ ! -z "$checkString" ] 
+#      then
+#        echo "An instance of the Firebird/InterBase server seems to be running." 
+#        echo "(netstat -an reports a process is already listening on port 3050)"
+#        echo "Please quit all Firebird applications and then proceed." 
+#        exit 1 
+#    fi
+
+
 # Stop lock manager if it is the only thing running.
 
     for i in `ps -efww | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
-	  do
+	do
         kill $i
 	done
 
@@ -225,7 +279,6 @@ editFile() {
 	AwkProgram="(\$1 == \"$Starting\") {\$0=\"$NewLine\"} {print \$0}"
 	MakeTemp
 	awk "$AwkProgram" <$FileName >$TmpFile && mv $TmpFile $FileName || rm -f $TmpFile
-# awk '($1 == "user") {$0="\tuser\t\t\t= firebird"} {print $0}'
 }
 
 
@@ -365,7 +418,6 @@ removeIfOnlyAlink() {
     fi
 }
 
-
 #------------------------------------------------------------------------
 # re-link new file only if target is a link or missing
 
@@ -393,8 +445,14 @@ createLinksForBackCompatibility() {
     # to ensure it loads the fb equivalent.  Eventually these should be 
     # optional and in a seperate rpm install.  MOD 7-Nov-2002.
 
-    # Use DefaultLibrary, set by appropriate install library
-    newLibrary=$FBRootDir/lib/$DefaultLibrary.so
+	if [ "$1" ]
+	then
+		# Use library name from parameter
+		newLibrary=$FBRootDir/lib/$1
+	else
+	    # Use DefaultLibrary, set by appropriate install library
+    	newLibrary=$FBRootDir/lib/$DefaultLibrary.so
+	fi
 
 	safeLink $newLibrary @libdir@/libgds.so
 	safeLink $newLibrary @libdir@/libgds.so.0
@@ -507,15 +565,37 @@ archivePriorInstallSystemFiles() {
         fi
     done
 
-    for i in libib_util.so libfbclient.so.1.5.0 libfbclient.so.1 libfbclient.so
+    for i in libib_util.so libfbclient.so*
+	do
+		for DestFile in usr/lib/$i
+	    do
+        	if [ -e $DestFile ]
+	        then
+    	        archiveFileList="$archiveFileList $DestFile"
+        	fi
+		done
+    done
+
+#    for i in `cat manifest.txt`
+#    do
+#        if [ ! -d /$i ]  # Ignore directories 
+#        then
+#            if [ -e /$i ]
+#            then
+#                archiveFileList="$archiveFileList $i"          
+#            fi
+#        fi
+#    done
+
+    for i in usr/sbin/rcfirebird etc/init.d/firebird etc/rc.d/init.d/firebird
     do
-        DestFile=usr/lib/$i
-        if [ -e $DestFile ]
+        DestFile=./$i
+        if [ -e /$DestFile ]
         then
             archiveFileList="$archiveFileList $DestFile"
         fi
     done
-
+	
     if [ ! -z "$archiveFileList" ]
     then
         displayMessage "Archiving..."
@@ -547,4 +627,76 @@ removeLineFromFile() {
         mv ${FileName}.tmp $FileName
         echo "Updated."
     fi
+}
+
+
+#------------------------------------------------------------------------
+# removeInstalledFiles
+# 
+removeInstalledFiles() {
+
+    manifestFile=$FBRootDir/misc/manifest.txt
+
+    if [ ! -f  $manifestFile ]
+      then
+        return
+    fi
+
+    origDir=`pwd`
+    
+    cd /
+
+    for i in `cat $manifestFile`
+      do
+        if [ -f $i -o -L $i ]
+          then
+            rm -f $i
+            #echo $i
+        fi
+    done
+
+    cd "$origDir"
+}
+
+
+#------------------------------------------------------------------------
+# removeUninstallFiles
+# Under the install directory remove all the empty directories 
+# If some files remain then 
+
+removeUninstallFiles() {
+    # remove the uninstall scripts files.
+    #echo $FBRootDir/misc/scripts
+    rm -rf $FBRootDir/misc/scripts
+    rm -f $FBRootDir/misc/manifest.txt
+    rm -f $FBRootDir/bin/uninstall.sh
+
+}
+
+
+#------------------------------------------------------------------------
+# removeEmptyDirs
+# Under the install directory remove all the empty directories 
+# If some files remain then 
+# This routing loops, since deleting a directory possibly makes
+# the parent empty as well
+
+removeEmptyDirs() {
+
+    dirContentChanged='yes'
+    while [ ! -z $dirContentChanged ]
+      do
+        dirContentChanged=''
+        for i in `find $FBRootDir -empty -type d -print`
+          do
+            rmdir $i
+            dirContentChanged=$i
+        done
+
+        if [ ! -d $FBRootDir ]  # end loop if the FBRootDir was deleted.
+          then
+            dirContentChanged=''
+        fi
+
+      done
 }
