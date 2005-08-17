@@ -1,4 +1,4 @@
-Firebird Database Server 1.5.2 
+Firebird Database Server 1.5.3 
 ==================================================
 
 This document is a guide to installing this package of 
@@ -27,17 +27,17 @@ versions of Firebird 1.0, Firebird 1.5 or InterBase
 before installing this package.
 
 
-Installation on systems with Firebird 2.0 Unstable
+Installation on systems with Firebird 2.0 Alpha
 --------------------------------------------------
 
-The Firebird 1.5.2 installation process cannot detect 
-a running version of Firebird 2.0 Unstable. If you have 
-been running an early unstable version of Firebird 2.0 
+The Firebird 1.5.3 installation process cannot detect 
+a running version of Firebird 2.0 Alpha. If you have 
+been running an alpha version of Firebird 2.0 
 it is essential that you stop the server before 
-attempting to install Firebird 1.5.2.
+attempting to install Firebird 1.5.3.
 
 
-New features of the installer in Firebird 1.5.2
+New features of the installer in Firebird 1.5.3
 -----------------------------------------------
 
 Support for several languages has been added to the

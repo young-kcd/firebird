@@ -53,7 +53,7 @@ set FBBUILD_EMB_PACK=0
 
 :: Hard code our package number - it only needs to be changed if the
 :: kit is repackaged but the engine is not rebuilt
-set FBBUILD_PACKAGE_NUMBER=0_RC5
+set FBBUILD_PACKAGE_NUMBER=0_RC1
 
 :: See what we have on the command line
 for %%v in ( %1 %2 %3 %4 %5 )  do (
@@ -188,7 +188,7 @@ dumpbin /headers %ROOT_PATH%\output\bin\fbserver.exe | findstr /C:"Application c
 
 if DEFINED FB_EXTERNAL_DOCS (
 	@echo copying pdf docs.
-	@for %%v in (Firebird-1.5-QuickStart.pdf Firebird_v1.5.ReleaseNotes.pdf Firebird_v1.5.1.ReleaseNotes.pdf Firebird_v1.5.2.ReleaseNotes.pdf ) do @copy %FB_EXTERNAL_DOCS%\%%v %ROOT_PATH%\output\doc\%%v > nul
+	@for %%v in (Firebird-1.5-QuickStart.pdf Firebird_v1.5.ReleaseNotes.pdf Firebird_v1.5.1.ReleaseNotes.pdf Firebird_v1.5.2.ReleaseNotes.pdf Firebird_v1.5.3.ReleaseNotes.pdf ) do @copy %FB_EXTERNAL_DOCS%\%%v %ROOT_PATH%\output\doc\%%v > nul
 ) else (
  @echo.
  @echo The FB_EXTERNAL_DOCS environment var is not defined

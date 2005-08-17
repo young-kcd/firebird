@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 1.5.2       (Win32 Build)
+Firebird 1.5.3       (Win32 Build)
 ==================================
 
 
@@ -18,8 +18,7 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to Firebird 1.5.2. This the second maintenance
-release of Firebird 1.5. Full details of the fixes and
+Welcome to Firebird 1.5.3. Full details of the fixes and
 minor enhancements in this release are contained in the
 release notes. These are in the doc/ directory.
 

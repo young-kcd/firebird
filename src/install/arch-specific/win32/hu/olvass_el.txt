@@ -1,6 +1,6 @@
 
 ======================================
-Firebird 1.5.2       (Win32 Felépítés)
+Firebird 1.5.3       (Win32 Felépítés)
 ======================================
 
 
@@ -18,8 +18,7 @@ o Új képességek igénylése
 Bevezetés
 =========
 
-Üdvözöljük a Firebird 1.5.2 világában. Ez a második 
-karbantartó kiadása a Firebird 1.5 verziójának. A
+Üdvözöljük a Firebird 1.5.2 világában.  A
 javítások és apróbb fejlesztések részletes listáját a
 "Firebird 1.5 - Újdonságok" dokumentumban találja meg. A
 dokumentumokat a .\doc\ mappában lelheti fel.
