@@ -38,7 +38,7 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp inuse.cpp \
 		jrd.cpp lck.cpp log.cpp  \
 		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
-		plugin_manager.cpp pwd.cpp rlck.cpp \
+		ods.cpp plugin_manager.cpp pwd.cpp rlck.cpp \
 		rng.cpp rpb_chain.cpp rse.cpp \
 		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
 		svc.cpp sym.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
@@ -305,7 +305,9 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
 # both refer to the same thing. (better way always possible) 
 # MOD 29-July-2002
 
-LIBFBSERVER_Objects =$(LIBFBEMBED_Objects)
+LIBFBSERVER_Objects =$(LIBFBEMBED_Objects) \
+                $(FBCLASSES_Objects) \
+                $(FBCOMMON_Objects)
 
 
 # The following library is a 'reduced' set (although not that reduced) 

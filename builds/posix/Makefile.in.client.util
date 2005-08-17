@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.28 2005-08-08 13:47:25 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.util,v 1.29 2005-08-17 14:07:19 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -65,7 +65,7 @@ DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
-GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp \
+GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp jrd/ods.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 GSTAT_Files =  dba.epp ppg.cpp
