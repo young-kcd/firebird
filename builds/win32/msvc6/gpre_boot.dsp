@@ -134,6 +134,10 @@ SOURCE=..\..\..\src\gpre\hsh.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\init.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\gpre\int_cxx.cpp
 # End Source File
 # Begin Source File
@@ -275,6 +279,10 @@ SOURCE=..\..\..\src\gpre\hsh.h
 # Begin Source File
 
 SOURCE=..\..\..\src\gpre\hsh_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\init.h
 # End Source File
 # Begin Source File
 

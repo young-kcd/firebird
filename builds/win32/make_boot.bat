@@ -12,7 +12,7 @@
 @if errorlevel 1 (goto :END)
 
 :: verify that prepare was run before
-@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP & goto :END)
+@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb ((goto :HELP ) & ( goto :END))
 
 ::===========
 :MAIN
@@ -27,15 +27,15 @@ for %%a in ( alice burp dsql dudley gpre isql jrd msgs qli utilities v5_examples
 )
 
 ::=======
-@call :gpre_boot
+@call :gpre_boot || ((call :ERROR calling gpre_boot subroutine) & (goto :EOF))
 ::=======
 @echo Preprocessing the entire source tree...
-@call preprocess.bat BOOT
+@call preprocess.bat BOOT || ((call :ERROR calling preprocess.bat with BOOT param ) & ( goto :EOF))
 ::=======
-@call :gpre_static
+@call :gpre_static || ((call :ERROR calling gpre_static subroutine ) & ( goto :EOF))
 ::=======
 @echo Preprocessing the entire source tree...
-@call preprocess.bat
+@call preprocess.bat || ((call :ERROR calling preprocess.bat ) & ( goto :EOF))
 ::=======
 @call :msgs
 ::=======
@@ -44,7 +44,7 @@ for %%a in ( alice burp dsql dudley gpre isql jrd msgs qli utilities v5_examples
 @%ROOT_PATH%\gen\codes %ROOT_PATH%\src\include\gen
 ::=======
 @echo Building BLR Table
-@call blrtable.bat
+@call blrtable.bat || ((call :ERROR calling blrtable.bat with BOOT param ) & ( goto :EOF))
 @call :NEXT_STEP
 @goto END:
 
@@ -55,6 +55,7 @@ for %%a in ( alice burp dsql dudley gpre isql jrd msgs qli utilities v5_examples
 @echo.
 @echo Building gpre_boot...
 if "%VS_VER%"=="msvc6" (
+echo Root_path is %ROOT_PATH%
 	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Release"  /REBUILD /OUT make_boot1_gpre_boot.log
 ) else (
 	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot /rebuild release /OUT make_boot1_gpre_boot.log
@@ -105,5 +106,12 @@ if "%VS_VER%"=="msvc6" (
 @echo.
 @goto :EOF
 
+
+:ERROR
+@echo.
+@echo Oops - something went wrong.
+@echo There was an error %*
+@echo.
+goto :EOF
 
 :END
