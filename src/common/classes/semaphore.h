@@ -73,8 +73,16 @@ public:
 #ifdef MULTI_THREAD
 
 #ifdef SOLARIS_MT
-/* This is dummy, untested implementation of FB::Semaphore
+/* This is  implementation of FB::Semaphore
  on Solaris using conditional variable protected by mutex.
+ Reasons is:
+	1) Old (~1985) troubles reported to Borland about semaphores on Solaris
+	2) No gds_lock_manager
+	3) No sem_timedwait on Solaris
+ Readings is:
+	1) http://cvsweb.freebsd.org/src/lib/libpthread/thread/thr_sem. c?rev=1.15
+	2) http://docs.sun.com/app/docs/doc/802-5747-03/6i9g1bhqp?a=view
+	3) http://docs.sun.com/app/docs/doc/802-5938?a=expand
 
  Konstantin
  thank's to Claudio ...
@@ -219,7 +227,7 @@ public:
 			if (mutex_lock(&mu) != 0) {
 			
 				if (cond_broadcast(&cv) != 0) {
-					system_call_failed::raise("cond_sinal");
+					system_call_failed::raise("cond_signal");
 				}
 
 				mutex_unlock(&mu);
