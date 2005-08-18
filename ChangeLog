@@ -1,3 +1,11 @@
+2005-08-17 16:07  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.util (1.29),
+	Makefile.in.embed.util (1.25), Makefile.in.fbserver (1.21),
+	make.shared.variables (1.57):
+	
+	Added ods.cpp to posix. Also fixes for SS build.
+
 2005-08-16 23:19  arnobrinkman
 
 	* firebird2/src/dsql/: node.h (1.65), pass1.cpp (1.232):
