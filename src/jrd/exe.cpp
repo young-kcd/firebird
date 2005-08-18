@@ -2421,8 +2421,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 								if (transaction != dbb->dbb_sys_trans)
 								{
 									for (const Savepoint* save_point = transaction->tra_save_point;
-										 save_point &&
-											 count <= save_point->sav_number;
+										 save_point && count <= save_point->sav_number;
 										 save_point = transaction->tra_save_point)
 									{
 										verb_cleanup(tdbb, transaction);
@@ -2441,8 +2440,13 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					   using its savepoint. */
 
 					if (error_pending && transaction != dbb->dbb_sys_trans) {
-						++transaction->tra_save_point->sav_verb_count;
-						verb_cleanup(tdbb, transaction);
+						for (const Savepoint* save_point = transaction->tra_save_point;
+								save_point && count <= save_point->sav_number;
+								save_point = transaction->tra_save_point)
+						{
+							++transaction->tra_save_point->sav_verb_count;
+							verb_cleanup(tdbb, transaction);
+						}
 					}
 				}
 				break;
