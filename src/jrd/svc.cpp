@@ -222,7 +222,7 @@ const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 static MUTX_T svc_mutex[1], thd_mutex[1];
 
 /* Service Functions */
-#ifdef SERVICE_THREAD
+#if defined(SERVICE_THREAD) && !defined(BOOT_BUILD)
 #include "../burp/burp_proto.h"
 #include "../alice/alice_proto.h"
 int main_lock_print();
@@ -240,7 +240,7 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 #define MAIN_GSEC		NULL
 #endif
 
-#if defined(SERVICE_THREAD) && !defined(EMBEDDED)
+#if defined(SERVICE_THREAD) && !defined(EMBEDDED) && !defined(BOOT_BUILD)
 #include "../utilities/gsec/gsec_proto.h"
 #define MAIN_GSEC		GSEC_main
 #else
