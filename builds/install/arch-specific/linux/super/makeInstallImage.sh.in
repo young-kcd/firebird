@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.15 2005-08-16 10:04:13 alexpeshkoff Exp $
+#   $Id: makeInstallImage.sh.in,v 1.16 2005-08-19 00:53:22 robocop Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -154,7 +154,7 @@ copyFiles() {
     addLibs $BuildRootDir/gen/firebird/bin postuninstall.sh $BuildRootDir/gen/install/scripts
     addLibs $BuildRootDir/gen/firebird/bin taruninstall.sh $BuildRootDir/gen/install/scripts
     addLibs $BuildRootDir/gen/firebird/bin tarMainUninstall.sh $BuildRootDir/gen/install/scripts
-	# this scripts don't need libraries
+	# these scripts don't need libraries
     cp $BuildRootDir/gen/firebird/bin/createAliasDB.sh $DestDir/bin
     cp $BuildRootDir/gen/firebird/bin/fb_config $DestDir/bin
 

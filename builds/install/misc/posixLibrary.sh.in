@@ -418,6 +418,7 @@ removeIfOnlyAlink() {
     fi
 }
 
+
 #------------------------------------------------------------------------
 # re-link new file only if target is a link or missing
 
@@ -678,7 +679,7 @@ removeUninstallFiles() {
 # removeEmptyDirs
 # Under the install directory remove all the empty directories 
 # If some files remain then 
-# This routing loops, since deleting a directory possibly makes
+# This routine loops, since deleting a directory possibly makes
 # the parent empty as well
 
 removeEmptyDirs() {
