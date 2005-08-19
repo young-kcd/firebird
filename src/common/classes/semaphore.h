@@ -80,7 +80,7 @@ public:
 	2) No gds_lock_manager
 	3) No sem_timedwait on Solaris
  Readings is:
-	1) http://cvsweb.freebsd.org/src/lib/libpthread/thread/thr_sem. c?rev=1.15
+	1) http://www.freebsd.org/cgi/cvsweb.cgi/src/lib/libpthread/thread/thr_sem.c?rev=1.15
 	2) http://docs.sun.com/app/docs/doc/802-5747-03/6i9g1bhqp?a=view
 	3) http://docs.sun.com/app/docs/doc/802-5938?a=expand
 
