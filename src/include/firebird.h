@@ -130,8 +130,14 @@ using namespace NAMESPACE;
 #define THREAD_PSCHED
 #endif
 
-#if defined(MULTI_THREAD) && !defined(SUPERCLIENT)
+#if defined(MULTI_THREAD) && !defined(SUPERCLIENT) && !defined(BOOT_BUILD)
 #define SERVICE_THREAD
 #endif
+
+#if defined(WIN_NT) && !defined(SERVICE_THREAD)
+#define SERVICE_THREAD
+#endif
+
+
 
 #endif /* INCLUDE_Firebird_H */
