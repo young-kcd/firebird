@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.36 2003-07-04 15:17:47 dimitr Exp $
+$Id: isc.cpp,v 1.36.2.1 2005-08-19 10:11:32 alexpeshkoff Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -662,7 +662,6 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 /* This check is not internationalized, the security model needs to be
  * reengineered, especially on SUPERSERVER where none of these local
  * user (in process) assumptions are valid.
- */
 			if (!strcmp(name, "ADMINISTRATOR"))
 			{
 				if (id)
@@ -671,6 +670,7 @@ int INTERNAL_API_ROUTINE ISC_get_user(TEXT*	name,
 				if (group)
 					*group = 0;
 			}
+ */
 		}
 	}
 
