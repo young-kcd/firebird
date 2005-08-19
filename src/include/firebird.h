@@ -134,10 +134,4 @@ using namespace NAMESPACE;
 #define SERVICE_THREAD
 #endif
 
-#if defined(WIN_NT) && !defined(SERVICE_THREAD)
-#define SERVICE_THREAD
-#endif
-
-
-
 #endif /* INCLUDE_Firebird_H */
