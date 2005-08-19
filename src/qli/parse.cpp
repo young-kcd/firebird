@@ -2480,17 +2480,20 @@ static NAM parse_name(void)
  **************************************/
 	PAR_real();
 
-	if (QLI_token->tok_type != tok_ident)
+	const bool isQuoted = QLI_token->tok_type == tok_quoted && sql_flag;
+	if (QLI_token->tok_type != tok_ident && !isQuoted)
 		ERRQ_syntax(199);		// Msg199 identifier
 
-	SSHORT l = QLI_token->tok_length;
+	SSHORT l = QLI_token->tok_length - 2 * int(isQuoted);
 	NAM name = (NAM) ALLOCDV(type_nam, l);
 	name->nam_length = l;
 	name->nam_symbol = QLI_token->tok_symbol;
-	const TEXT* q = QLI_token->tok_string;
+	const TEXT* q = QLI_token->tok_string + int(isQuoted);
 	TEXT* p = name->nam_string;
 
-	if (l)
+	if (isQuoted)
+		memcpy(p, q, l);
+	else if (l)
 		do {
 			const TEXT c = *q++;
 			*p++ = UPPER(c);
@@ -2709,7 +2712,9 @@ static qli_syntax* parse_primitive_value( USHORT* paren_count, bool* bool_flag)
 				node = parse_function();
 				break;
 			}
-			if (QLI_token->tok_type == tok_ident) {
+			if (QLI_token->tok_type == tok_ident
+				|| QLI_token->tok_type == tok_quoted && sql_flag) 
+			{
 				node = parse_field_name(0);
 				break;
 			}

@@ -485,7 +485,7 @@ static NAM decompile_symbol( qli_symbol* symbol)
 	if (l)
 		do {
 			const TEXT c = *q++;
-			*p++ = UPPER(c);
+			*p++ = c; //UPPER(c);
 
 		} while (--l);
 

@@ -28,8 +28,11 @@
 #include "../qli/err_proto.h"
 #include "../qli/hsh_proto.h"
 
+typedef bool (*scompare_t)(const SCHAR*, int, const SCHAR*, int);
+
 static int hash(const SCHAR*, int);
-static bool scompare(const SCHAR*, int, const SCHAR*, int);
+static bool scompare_ins(const SCHAR*, int, const SCHAR*, int);
+static bool scompare_sens(const SCHAR*, int, const SCHAR*, int);
 
 const int HASH_SIZE = 224;
 static qli_symbol* hash_table[HASH_SIZE];
@@ -92,14 +95,14 @@ void HSH_init(void)
 		symbol->sym_length = string - qword->keyword;
 		symbol->sym_string = qword->keyword;
 		symbol->sym_keyword = (int) qword->id;
-		HSH_insert(symbol);
+		HSH_insert(symbol, true);
 		symbol->sym_object = (BLK) key_symbols;
 		key_symbols = symbol;
 	}
 }
 
 
-void HSH_insert( qli_symbol* symbol)
+void HSH_insert( qli_symbol* symbol, bool ignore_case)
 {
 /**************************************
  *
@@ -112,6 +115,7 @@ void HSH_insert( qli_symbol* symbol)
  *
  **************************************/
 	const int h = hash(symbol->sym_string, symbol->sym_length);
+	scompare_t scompare = ignore_case ? scompare_ins : scompare_sens;
 
 	for (qli_symbol* old = hash_table[h]; old; old = old->sym_collision)
 		if (scompare(symbol->sym_string, symbol->sym_length,
@@ -139,6 +143,15 @@ qli_symbol* HSH_lookup(const SCHAR* string, int length)
  *	Perform a string lookup against hash table.
  *
  **************************************/
+	scompare_t scompare = scompare_ins;
+	
+	if (length > 1 && string[0] == '"')
+	{
+		// This logic differs from DSQL. See how LEX_token works.
+		length -= 2;
+		++string;
+		scompare = scompare_sens;
+	}
 	for (qli_symbol* symbol = hash_table[hash(string, length)]; symbol;
 		 symbol = symbol->sym_collision)
 	{
@@ -212,19 +225,19 @@ static int hash(const SCHAR* string, int length)
 }
 
 
-static bool scompare(const SCHAR* string1,
+static bool scompare_ins(const SCHAR* string1,
 					 int length1,
 					 const SCHAR* string2,
 					 int length2)
 {
 /**************************************
  *
- *	s c o m p a r e
+ *	s c o m p a r e _ i n s
  *
  **************************************
  *
  * Functional description
- *	Compare two strings
+ *	Compare two strings, case insensitive.
  *
  **************************************/
 	if (length1 != length2)
@@ -241,4 +254,25 @@ static bool scompare(const SCHAR* string1,
 	return true;
 }
 
+
+static bool scompare_sens(const SCHAR* string1,
+					 int length1,
+					 const SCHAR* string2,
+					 int length2)
+{
+/**************************************
+ *
+ *	s c o m p a r e _ s e n s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compare two strings, case sensitive: quotes identifiers.
+ *
+ **************************************/
+	if (length1 != length2)
+		return false;
+
+	return !memcmp(string1, string2, length1);
+}
 

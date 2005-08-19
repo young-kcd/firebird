@@ -2808,7 +2808,7 @@ static void install( DBB old_dbb)
 		new_dbb->dbb_symbol = asymbol;
 		asymbol->sym_type = SYM_database;
 		asymbol->sym_object = (BLK) new_dbb;
-		HSH_insert(asymbol);
+		HSH_insert(asymbol, true);
 	}
 
 	gds_trans = MET_transaction(nod_start_trans, new_dbb);
@@ -2894,7 +2894,7 @@ static void install( DBB old_dbb)
 				function->fun_query_name = symbol2;
 				symbol2->sym_type = SYM_function;
 				symbol2->sym_object = (BLK) function;
-				HSH_insert(symbol2);
+				HSH_insert(symbol2, true);
 			}
 		END_FOR
 		ON_ERROR
