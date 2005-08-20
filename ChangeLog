@@ -1,3 +1,65 @@
+2005-08-19 12:41  alexpeshkoff
+
+	* firebird2/src/jrd/isc.cpp (1.54):
+	
+	Front-ported fix from 1.5.
+
+2005-08-19 12:08  dimitr
+
+	* firebird2/src/include/firebird.h (1.36):
+	
+	Fixed the win32 build.
+
+2005-08-19 08:56  kkuznetsov
+
+	* firebird2/src/include/firebird.h (1.35):
+	
+	Disabled service threads at boot time for all platform except of
+	WIN_NT
+
+2005-08-19 08:07  robocop
+
+	* firebird2/src/qli/: expand.cpp (1.31), hsh.cpp (1.17),
+	hsh_proto.h (1.9), meta.epp (1.55), parse.cpp (1.38):
+	
+	Try to convince QLI to handle quoted identifiers.  It acts for now
+	as if dialect 3 is the only one available WRT names enclosed in
+	double quotes.
+
+2005-08-19 08:04  kkuznetsov
+
+	* firebird2/src/common/classes/semaphore.h (1.21):
+	
+	Comment correction thanks to Claudio
+
+2005-08-19 02:53  robocop
+
+	* firebird2/builds/:
+	install/arch-specific/linux/super/makeInstallImage.sh.in (1.16),
+	install/misc/posixLibrary.sh.in (1.3), win32/setenvvar.bat (1.8),
+	win32/setenvvar2.bat (1.2):
+	
+	Nitpicking.
+
+2005-08-18 15:56  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.158):
+	
+	Fixed one of the PSQL exception handling bugs. More to follow.
+
+2005-08-18 14:33  kkuznetsov
+
+	* firebird2/src/jrd/svc.cpp (1.145):
+	
+	This patch from Dimitry Sibiryakov disables services at boot time. 
+	This let me compile on Solaris
+
+2005-08-18 11:33  kkuznetsov
+
+	* firebird2/src/common/classes/semaphore.h (1.20):
+	
+	Some comments added
+
 2005-08-17 16:07  alexpeshkoff
 
 	* firebird2/builds/posix/: Makefile.in.client.util (1.29),
