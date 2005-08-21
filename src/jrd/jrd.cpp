@@ -117,6 +117,7 @@
 #include "../jrd/val_proto.h"
 #include "../jrd/file_params.h"
 #include "../jrd/event_proto.h"
+#include "../jrd/why_proto.h"
 #include "../jrd/flags.h"
 
 #include "../common/config/config.h"
@@ -470,6 +471,7 @@ bool invalid_client_SQL_dialect = false;
 #define GDS_DDL					jrd8_ddl
 #define GDS_DETACH				jrd8_detach_database
 #define GDS_DROP_DATABASE		jrd8_drop_database
+#define GDS_INTL_FUNCTION		jrd8_intl_function
 #define GDS_GET_SEGMENT			jrd8_get_segment
 #define GDS_GET_SLICE			jrd8_get_slice
 #define GDS_OPEN_BLOB2			jrd8_open_blob2
@@ -2577,6 +2579,79 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 	return return_success(tdbb);
 
+}
+
+
+ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
+							 USHORT function, UCHAR charSetNumber, USHORT strLen, const UCHAR* str, USHORT* result)
+{
+/**************************************
+ *
+ *	g d s _ i n t l _ f u n c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return INTL informations.
+ *  (candidate for removal when engine functions can be called by DSQL)
+ *
+ **************************************/
+	api_entry_point_init(user_status);
+
+	thread_db thd_context;
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
+
+	if (check_database(tdbb, *handle, user_status))
+		return user_status[1];
+
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
+
+		CharSet* charSet = INTL_charset_lookup(tdbb, charSetNumber);
+
+		switch (function)
+		{
+			case INTL_FUNCTION_CHAR_LENGTH:
+			{
+				ULONG offendingPos;
+
+				if (!charSet->wellFormed(strLen, str, &offendingPos))
+				{
+					ERR_post(isc_sqlerr,
+							isc_arg_number, (SLONG) - 104,
+							isc_arg_gds, isc_malformed_string, 0);
+				}
+				else
+					*result = charSet->length(tdbb, strLen, str, true);
+
+				break;
+			}
+
+			case INTL_FUNCTION_OCTET_LENGTH:
+			{
+				Firebird::HalfStaticArray<UCHAR, 256> dummy;
+				*result = charSet->substring(tdbb, strLen, str,
+					strLen, dummy.getBuffer(strLen), 0, 
+					strLen / charSet->maxBytesPerChar());
+				break;
+			}
+
+			case INTL_FUNCTION_IS_LEGACY_CHARSET:
+				*result = charSet->getFlags() & CHARSET_LEGACY_SEMANTICS ? 1 : 0;
+				break;
+
+			default:
+				fb_assert(false);
+				break;
+		}
+	}
+	catch (const std::exception& ex)
+	{
+		return error(user_status, ex);
+	}
+
+	return return_success(tdbb);
 }
 
 

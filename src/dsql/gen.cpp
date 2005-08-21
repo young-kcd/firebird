@@ -51,7 +51,7 @@
 #include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/dsc_proto.h"
-#include "../jrd/inf_proto.h"
+#include "../jrd/why_proto.h"
 #include "gen/iberror.h"
 
 static void gen_aggregate(dsql_req*, const dsql_nod*);
@@ -1545,36 +1545,25 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 
 	case dtype_text:
 		{
-			Firebird::HalfStaticArray<UCHAR, 256> inputBuffer;
-			UCHAR* input = inputBuffer.getBuffer(sizeof(UCHAR) + sizeof(UCHAR) + sizeof(UCHAR) +
-												 sizeof(USHORT) + desc->dsc_length);
-			char buffer[16];
-
-			*input++ = isc_info_internal;
-			*input++ = INF_internal_db_info_intl_octet_length;
-			*input++ = INTL_GET_CHARSET(desc);
-			*reinterpret_cast<USHORT*>(input) = desc->dsc_length;
-			input += sizeof(USHORT);
-			memcpy(input, desc->dsc_address, desc->dsc_length);
-
 			tsql* tdsql = DSQL_get_thread_data();
+			USHORT length;
 
 			THREAD_EXIT();
 			const ISC_STATUS s =
-				isc_database_info(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
-							inputBuffer.getCount(), (SCHAR*)inputBuffer.begin(),
-							sizeof(buffer), buffer);
+				gds__intl_function(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
+					INTL_FUNCTION_OCTET_LENGTH, INTL_GET_CHARSET(desc),
+					desc->dsc_length, desc->dsc_address, &length);
 			THREAD_ENTER();
 			if (s)
 				Firebird::status_exception::raise(tdsql->tsql_status);
 			
-			l = desc->dsc_length = gds__vax_integer((UCHAR*)buffer + sizeof(UCHAR) + sizeof(USHORT), sizeof(SLONG));
+			desc->dsc_length = length;
 
 			gen_descriptor(request, desc, true);
-			if (l)
+			if (length)
 				do {
 					stuff(request, *p++);
-				} while (--l);
+				} while (--length);
 			break;
 		}
 

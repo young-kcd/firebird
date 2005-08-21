@@ -430,6 +430,7 @@ static const TEXT glbunknown[10] = "<unknown>";
 #define GDS_DETACH				isc_detach_database
 #define GDS_DROP_DATABASE		isc_drop_database
 //#define GDS_EVENT_WAIT			gds__event_wait
+#define GDS_INTL_FUNCTION		gds__intl_function
 #define GDS_GET_SEGMENT			isc_get_segment
 #define GDS_GET_SLICE			isc_get_slice
 #define GDS_OPEN_BLOB			isc_open_blob
@@ -557,8 +558,9 @@ const int PROC_SERVICE_START	= 51;
 
 const int PROC_ROLLBACK_RETAINING	= 52;
 const int PROC_CANCEL_OPERATION	= 53;
+const int PROC_INTL_FUNCTION	= 54;
 
-const int PROC_count			= 54;
+const int PROC_count			= 55;
 
 struct ENTRY
 {
@@ -3563,6 +3565,48 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 	return FB_SUCCESS;
 }
 #endif
+
+
+ISC_STATUS API_ROUTINE GDS_INTL_FUNCTION(ISC_STATUS * user_status,
+										 FB_API_HANDLE * handle,
+										 USHORT function,
+										 UCHAR charSetNumber,
+										 USHORT strLen,
+										 const UCHAR* str,
+										 USHORT* result)
+{
+/**************************************
+ *
+ *	g d s _ i n t l _ f u n c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return INTL informations.
+ *  (candidate for removal when engine functions can be called by DSQL)
+ *
+ **************************************/
+	ISC_STATUS *status;
+	ISC_STATUS_ARRAY local;
+	WHY_ATT database;
+
+	GET_STATUS;
+	TRANSLATE_HANDLE(*handle, database, HANDLE_database, isc_bad_db_handle);
+	subsystem_enter();
+
+	if (CALL(PROC_INTL_FUNCTION, database->implementation) (status,
+															&database->handle,
+															function,
+															charSetNumber,
+															strLen,
+															str,
+															result))
+	{
+		return error(status, local);
+	}
+
+	RETURN_SUCCESS;
+}
 
 
 ISC_STATUS API_ROUTINE GDS_GET_SEGMENT(ISC_STATUS * user_status,

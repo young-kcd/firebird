@@ -157,8 +157,8 @@
 #include "../dsql/pass1_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/dsc_proto.h"
-#include "../jrd/inf_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../jrd/why_proto.h"
 #include "../common/classes/array.h"
 #include "../common/utils_proto.h"
 
@@ -3222,33 +3222,19 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* constant)
 		
 	constant->nod_desc.dsc_length -= adjust;
 
-	Firebird::HalfStaticArray<UCHAR, 256> inputBuffer;
-	UCHAR* input = inputBuffer.getBuffer(sizeof(UCHAR) + sizeof(UCHAR) + sizeof(UCHAR) +
-										 sizeof(USHORT) + constant->nod_desc.dsc_length);
-	char buffer[16];
-
-	*input++ = isc_info_internal;
-	*input++ = INF_internal_db_info_intl_char_length;
-	*input++ = INTL_GET_CHARSET(&constant->nod_desc);
-	*reinterpret_cast<USHORT*>(input) = constant->nod_desc.dsc_length;
-	input += sizeof(USHORT);
-	memcpy(input, constant->nod_desc.dsc_address, constant->nod_desc.dsc_length);
-
 	tsql* tdsql = DSQL_get_thread_data();
+	USHORT length;
 
 	THREAD_EXIT();
 	const ISC_STATUS s =
-		isc_database_info(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
-					  inputBuffer.getCount(), (SCHAR*)inputBuffer.begin(),
-					  sizeof(buffer), buffer);
+		gds__intl_function(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
+			INTL_FUNCTION_CHAR_LENGTH, INTL_GET_CHARSET(&constant->nod_desc),
+			constant->nod_desc.dsc_length, constant->nod_desc.dsc_address, &length);
 	THREAD_ENTER();
 	if (s)
 		Firebird::status_exception::raise(tdsql->tsql_status);
 
-	SLONG length = gds__vax_integer((UCHAR*)buffer + sizeof(UCHAR) + sizeof(USHORT), sizeof(SLONG));
-
 	constant->nod_desc.dsc_length = length * METD_get_charset_bpc(request, INTL_GET_CHARSET(&constant->nod_desc));
-
 	constant->nod_desc.dsc_length += adjust;
 
 	return constant;

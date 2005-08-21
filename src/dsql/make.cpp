@@ -54,8 +54,8 @@
 #include "../jrd/thd.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/cvt_proto.h"
-#include "../jrd/inf_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../jrd/why_proto.h"
 #include "../common/config/config.h"
 
 
@@ -1774,28 +1774,22 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 
 	if (node->nod_desc.dsc_dtype <= dtype_varying)
 	{
-		Firebird::HalfStaticArray<UCHAR, sizeof(UCHAR) + sizeof(UCHAR) + sizeof(UCHAR)> inputBuffer;
-		UCHAR* input = inputBuffer.begin();
-		char buffer[16];
-
-		*input++ = isc_info_internal;
-		*input++ = INF_internal_db_info_intl_is_legacy_charset;
-		*input++ = INTL_GET_CHARSET(&node->nod_desc);
-
 		tsql* tdsql = DSQL_get_thread_data();
+		USHORT isLegacyCharSet;
 
 		THREAD_EXIT();
 		const ISC_STATUS s =
-			isc_database_info(tdsql->tsql_status, &context->ctx_request->req_dbb->dbb_database_handle,
-						inputBuffer.getCapacity(), (SCHAR*)inputBuffer.begin(),
-						sizeof(buffer), buffer);
+			gds__intl_function(tdsql->tsql_status, &context->ctx_request->req_dbb->dbb_database_handle,
+				INTL_FUNCTION_IS_LEGACY_CHARSET, INTL_GET_CHARSET(&node->nod_desc),
+				0, NULL, &isLegacyCharSet);
 		THREAD_ENTER();
 		if (s)
 			Firebird::status_exception::raise(tdsql->tsql_status);
 
-		if (buffer[sizeof(UCHAR) + sizeof(USHORT)])	// CHARSET_LEGACY_SEMANTICS
+		if (isLegacyCharSet)
 		{
 			USHORT adjust = 0;
+
 			if (node->nod_desc.dsc_dtype == dtype_varying)
 				adjust = sizeof(USHORT);
 			else if (node->nod_desc.dsc_dtype == dtype_cstring)
