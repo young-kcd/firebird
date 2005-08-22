@@ -1856,7 +1856,9 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	double totalCost = 0;
 	double totalIndexCost = 0;
 	const double maximumCost = csb->csb_rpt[stream].csb_cardinality * 0.95;
-	const double minimumSelectivity = 1 / csb->csb_rpt[stream].csb_cardinality;
+	const double minimumSelectivity =
+		csb->csb_rpt[stream].csb_cardinality ?
+		1 / csb->csb_rpt[stream].csb_cardinality : 0;
 	double previousTotalCost = maximumCost;
 
 	int i = 0;
