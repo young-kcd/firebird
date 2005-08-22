@@ -1254,7 +1254,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_delete:
-		node = pass1_savepoint(request, pass1_delete(request, input, proc_flag));
+		node = pass1_delete(request, input, proc_flag);
 		break;
 
 	case nod_exec_procedure:
@@ -1414,10 +1414,6 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 				request->req_cursor_number--;
 				request->req_cursors.pop();
 			}
-
-			if (input->nod_flags & NOD_SINGLETON_SELECT) {
-				node = pass1_savepoint(request, node);
-			}
 		}
 		break;
 
@@ -1453,10 +1449,10 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		{
 			node->nod_arg[e_xcps_msg] = 0;
 		}
-		return pass1_savepoint(request, node);
+		return node;
 
 	case nod_insert:
-		node = pass1_savepoint(request, pass1_insert(request, input, proc_flag));
+		node = pass1_insert(request, input, proc_flag);
 		break;
 
 	case nod_block:
@@ -1511,7 +1507,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exec_sql_stmnt] =
 			PASS1_node(request, input->nod_arg[e_exec_sql_stmnt], proc_flag);
-		return pass1_savepoint(request, node);
+		return node;
 
     case nod_exec_into:
 		node = MAKE_node(input->nod_type, input->nod_count);
@@ -1528,7 +1524,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 		node->nod_arg[e_exec_into_list] =
 			PASS1_node(request, input->nod_arg[e_exec_into_list], proc_flag);
-		return pass1_savepoint(request, node);
+		return node;
 
 	case nod_exit:
 		return input;
@@ -1580,7 +1576,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_update:
-		node = pass1_savepoint(request, pass1_update(request, input, proc_flag));
+		node = pass1_update(request, input, proc_flag);
 		break;
 
 	case nod_while:
@@ -1696,6 +1692,10 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 				PASS1_node(request, input->nod_arg[e_cur_stmt_into], proc_flag);
 		}
 		return input;
+
+	case nod_proc_stmt:
+		node = PASS1_statement(request, input->nod_arg[0], proc_flag);
+		return pass1_savepoint(request, node);
 
 	default:
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
@@ -8094,7 +8094,8 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node,
 	@param node
 
  **/
-static dsql_nod* pass1_savepoint(const dsql_req* request, dsql_nod* node) {
+static dsql_nod* pass1_savepoint(const dsql_req* request, dsql_nod* node)
+{
 	if (request->req_error_handlers) {
 		dsql_nod* temp = MAKE_node(nod_list, 3);
 		temp->nod_arg[0] = MAKE_node(nod_start_savepoint, 0);
@@ -8102,6 +8103,6 @@ static dsql_nod* pass1_savepoint(const dsql_req* request, dsql_nod* node) {
 		temp->nod_arg[2] = MAKE_node(nod_end_savepoint, 0);
 		node = temp;
 	}
+
 	return node;
 }
-

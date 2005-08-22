@@ -338,7 +338,8 @@ enum nod_t
 	nod_collation_specific_attr,
 	nod_strlen,
 	nod_trim,
-	nod_returning
+	nod_returning,
+	nod_proc_stmt
 };
 
 typedef nod_t NOD_TYPE;
@@ -365,8 +366,6 @@ enum nod_flags_vals {
 	NOD_AGG_DISTINCT		= 1,
 
 	NOD_UNION_ALL			= 1,
-
-	NOD_SINGLETON_SELECT	= 1,
 
 	NOD_READ_ONLY			= 1,
 	NOD_READ_WRITE			= 2,

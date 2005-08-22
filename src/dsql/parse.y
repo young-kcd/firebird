@@ -1576,25 +1576,33 @@ proc_statements	: proc_block
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-proc_statement	: assignment ';'
-		| insert ';'
-		| update ';'
-		| delete ';'
-		| singleton_select ';'
-		| exec_procedure ';'
-		| exec_sql ';'
-		| exec_into ';'
-		| exec_udf ';'
-		| excp_statement ';'
-		| raise_statement ';'
-		| post_event ';'
-		| cursor_statement ';'
-		| breakleave ';'
-		| SUSPEND ';'
+proc_statement	: simple_proc_statement ';'
+			{ $$ = make_node (nod_proc_stmt, 1, $1); }
+		| complex_proc_statement
+			{ $$ = make_node (nod_proc_stmt, 1, $1); }
+		;
+
+simple_proc_statement	: assignment
+		| insert
+		| update
+		| delete
+		| singleton_select
+		| exec_procedure
+		| exec_sql
+		| exec_into
+		| exec_udf
+		| excp_statement
+		| raise_statement
+		| post_event
+		| cursor_statement
+		| breakleave
+		| SUSPEND
 			{ $$ = make_node (nod_return, (int) e_rtn_count, NULL); }
-		| EXIT ';'
+		| EXIT
 			{ $$ = make_node (nod_exit, 0, NULL); }
-		| if_then_else
+		;
+
+complex_proc_statement	: if_then_else
 		| while
 		| for_select
 		| for_exec_into
