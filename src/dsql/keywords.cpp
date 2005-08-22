@@ -75,7 +75,7 @@ static const TOK tokens[] = {
 	{BIGINT, "BIGINT", 2, false},
 	{BIT_LENGTH, "BIT_LENGTH", 2, false},
 	{BLOB, "BLOB", 1, false},
-	{BLOCK, "BLOCK", 1, false},
+	{BLOCK, "BLOCK", 2, false},
 	{BOTH, "BOTH", 2, false},
 	{KW_BREAK, "BREAK", 2, false},
 	{BY, "BY", 1, false},
