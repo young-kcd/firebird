@@ -102,6 +102,7 @@ namespace {
 #ifdef WIN_NT
 // to avoid implicit .dll suffix
 		{MOD_SUFFIX, ".", false},
+		{MOD_SUFFIX, ".DLL", false},
 #endif
 
 // always try to use module "as is"
@@ -114,10 +115,6 @@ namespace {
 #ifdef DYNAMIC_SHARED_LIBRARIES
 		{MOD_SUFFIX, ".so", true},
 		{MOD_PREFIX, "lib", true},
-#endif
-
-#ifdef WIN_NT
-		{MOD_SUFFIX, ".DLL", true},
 #endif
 
 #ifdef DARWIN
