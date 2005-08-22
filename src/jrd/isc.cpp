@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.54 2005-08-19 10:41:28 alexpeshkoff Exp $
+$Id: isc.cpp,v 1.55 2005-08-22 07:25:13 alexpeshkoff Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -422,6 +422,7 @@ int ISC_get_user(TEXT*	name,
 		*un = 0;
 		p = user_name;
 		egid = euid = -1;
+#ifdef TRUST_CLIENT_VERIFICATION
 		if (*q) {
 			egid = atoi(q);
 			while (*q && (*q != '.'))
@@ -431,6 +432,7 @@ int ISC_get_user(TEXT*	name,
 				euid = atoi(q);
 			}
 		}
+#endif
 	}
 	else {
 		euid = (SLONG) geteuid();
