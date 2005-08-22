@@ -214,8 +214,8 @@ bool DirectoryList::isPathInList(const PathName& path) const
 			PathName(Config::getRootDirectory()), path);
 	}
 
-	ParsedPath pPath(path);
-    bool rc = 0;
+	ParsedPath pPath(varpath);
+    bool rc = false;
     for (size_t i = 0; i < getCount(); i++) {
 		if ((*this)[i].contains(pPath)) {
 			rc = true;
