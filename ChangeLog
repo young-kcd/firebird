@@ -1,3 +1,13 @@
+2005-08-21 17:52  asfernandes
+
+	* firebird2/src/: dsql/gen.cpp (1.89), dsql/make.cpp (1.101),
+	dsql/pass1.cpp (1.233), jrd/entry.h (1.19), jrd/inf.cpp (1.57),
+	jrd/inf_proto.h (1.10), jrd/inf_pub.h (1.6), jrd/jrd.cpp (1.221),
+	jrd/jrd_proto.h (1.39), jrd/why.cpp (1.93), jrd/why_proto.h (1.23):
+	
+	Fixed SF field-test #1249187 - 2.0a3: String literals dest. for
+	large CHAR fields truncated
+
 2005-08-19 12:41  alexpeshkoff
 
 	* firebird2/src/jrd/isc.cpp (1.54):
