@@ -926,15 +926,16 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-
 	fb_assert(src_ptr != NULL);
 	fb_assert(src_type != dest_type);
 	fb_assert(err != NULL);
 
 	const UCHAR* const start_dest_ptr = dest_ptr;
 
-	if ((dest_type == CS_BINARY) || (dest_type == CS_NONE)) {
-
+	if ((dest_type == CS_BINARY) ||
+		(dest_type == CS_NONE) ||
+		(src_type == CS_NONE))
+	{
 		/* See if we just need a length estimate */
 		if (dest_ptr == NULL)
 			return (src_len);
