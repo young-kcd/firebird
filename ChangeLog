@@ -1,3 +1,47 @@
+2005-08-22 15:39  dimitr
+
+	* firebird2/src/dsql/keywords.cpp (1.46):
+	
+	Fixed wrong keyword version.
+
+2005-08-22 15:08  dimitr
+
+	* firebird2/src/jrd/intl.cpp (1.81):
+	
+	Allowed NONE->charset conversions if called during a comparison.
+
+2005-08-22 15:02  dimitr
+
+	* firebird2/src/jrd/flu.cpp (1.51):
+	
+	Fixed another UDF access issue.
+
+2005-08-22 12:12  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h (1.61), node.h (1.66), parse.cpp
+	(1.159), parse.y (1.186), pass1.cpp (1.234):
+	
+	Fixed PSQL exception handling which never worked consistently.
+
+2005-08-22 11:16  dimitr
+
+	* firebird2/src/common/config/dir_list.cpp (1.25):
+	
+	Fixed one of the UDF access issues.
+
+2005-08-22 10:34  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.38):
+	
+	Fixed server crash in the optimizer.
+
+2005-08-22 09:25  alexpeshkoff
+
+	* firebird2/src/jrd/isc.cpp (1.55):
+	
+	Front-ported security fix - always require login/pass in IP
+	connections.
+
 2005-08-21 17:52  asfernandes
 
 	* firebird2/src/: dsql/gen.cpp (1.89), dsql/make.cpp (1.101),
