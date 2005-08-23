@@ -114,6 +114,7 @@ SecurityDatabase SecurityDatabase::instance;
 
 #ifndef EMBEDDED
 namespace {
+#ifdef SUPERSERVER
 // Disable attempts to brutforce logins/passwords
 	class FailedLogin
 	{
@@ -149,7 +150,7 @@ namespace {
 	public:
 		FailedLogins(MemoryPool& p) : inherited(p) {}
 
-		void loginFail(const char* login)
+		void loginFail(const Firebird::string& login)
 		{
 			//Firebird::MutexLockGuard(fullAccess);
 			fullAccess.enter();
@@ -162,7 +163,7 @@ namespace {
 			fullAccess.leave();
 		}
 
-		void loginSuccess(const char* login)
+		void loginSuccess(const Firebird::string& login)
 		{
 			//Firebird::MutexLockGuard(fullAccess);
 			fullAccess.enter();
@@ -175,7 +176,7 @@ namespace {
 		}
 
 	private:
-		FailedLogin& get(const char* login)
+		FailedLogin& get(const Firebird::string& login)
 		{
 			size_t pos;
 			if (find(login, pos))
@@ -223,8 +224,19 @@ checkForFreeSpace:
 			fullAccess.enter();
 		}
 	};
+#else //SUPERSERVER
+	// Unfortunately, in case of multi-process architectire, this doesn't work.
+	class FailedLogins
+	{
+	public:
+		FailedLogins(MemoryPool& p) {}
+		void loginFail(const Firebird::string& login) { }
+		void loginSuccess(const Firebird::string& login) {}
+	};
+#endif //SUPERSERVER
 
-	Firebird::InitInstance<FailedLogins> iFailedLogins;
+	Firebird::InitInstance<FailedLogins> usernameFailedLogins;
+	Firebird::InitInstance<FailedLogins> remoteFailedLogins;
 }
 #endif //EMBEDDED
 
@@ -427,7 +439,8 @@ void SecurityDatabase::verifyUser(TEXT* name,
 								  const TEXT* password_enc,
 								  int* uid,
 								  int* gid,
-								  int* node_id)
+								  int* node_id, 
+								  const Firebird::string& remoteId)
 {
 	if (user_name)
 	{
@@ -458,7 +471,8 @@ void SecurityDatabase::verifyUser(TEXT* name,
 
 	if ((!password && !password_enc) || (password && password_enc) || !found)
 	{
-		iFailedLogins().loginFail(name);
+		usernameFailedLogins().loginFail(name);
+		remoteFailedLogins().loginFail(remoteId);
 		ERR_post(isc_login, 0);
 	}
 
@@ -484,12 +498,14 @@ void SecurityDatabase::verifyUser(TEXT* name,
 		}
 		if (! legacyHash) 
 		{
-			iFailedLogins().loginFail(name);
+			usernameFailedLogins().loginFail(name);
+			remoteFailedLogins().loginFail(remoteId);
 			ERR_post(isc_login, 0);
 		}
 	}
 
-	iFailedLogins().loginSuccess(name);
+	usernameFailedLogins().loginSuccess(name);
+	remoteFailedLogins().loginSuccess(remoteId);
 #endif
 
 	*node_id = 0;

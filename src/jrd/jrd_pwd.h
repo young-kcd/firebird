@@ -67,7 +67,7 @@ public:
 	static void initialize();
 	static void shutdown();
 	static void verifyUser(TEXT*, const TEXT*, const TEXT*, const TEXT*,
-		int*, int*, int*);
+		int*, int*, int*, const Firebird::string&);
 
 	static void hash(Firebird::string& h, 
 					 const TEXT* userName, 

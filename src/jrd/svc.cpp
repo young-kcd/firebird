@@ -494,9 +494,11 @@ Service* SVC_attach(USHORT	service_length,
 		{
 			TEXT name[129]; // unused after retrieved
 			int id, group, node_id;
+			// ToDo: add remote protocol/address information to Serv_param_block
+			//		 and use it here. AP.
 			SecurityDatabase::verifyUser(name, options.spb_user_name,
 					                     options.spb_password, options.spb_password_enc,
-										 &id, &group, &node_id);
+										 &id, &group, &node_id, "");
 		}
 
 /* Check that the validated user has the authority to access this service */

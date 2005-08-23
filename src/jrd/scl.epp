@@ -601,8 +601,12 @@ void SCL_init(bool create,
 
 		if (!JRD_get_thread_security_disabled())
 		{
+			Attachment* att = tdbb->tdbb_attachment;
+			Firebird::string remote = att->att_network_protocol + 
+				(att->att_network_protocol.isEmpty() || att->att_remote_address.isEmpty() ? "" : "/") +
+				att->att_remote_address;
 			SecurityDatabase::verifyUser(name, user_name, password, password_enc,
-										 &id, &group, &node_id);
+										 &id, &group, &node_id, remote);
 		}
 		else
 		{
