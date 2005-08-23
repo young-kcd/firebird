@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.55 2005-08-22 07:25:13 alexpeshkoff Exp $
+$Id: isc.cpp,v 1.56 2005-08-23 14:25:48 dimitr Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -88,6 +88,7 @@ $Id: isc.cpp,v 1.55 2005-08-22 07:25:13 alexpeshkoff Exp $
 #ifdef WIN_NT
 
 #include <windows.h>
+#include <aclapi.h>
 
 static USHORT os_type;
 static SECURITY_ATTRIBUTES security_attr;
@@ -1222,9 +1223,43 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 		return &security_attr;
 	}
 
+	// This is our first call. Ensure that our process has
+	// the SYNCHRONIZE privilege granted to everyone.
+
+	SID_IDENTIFIER_AUTHORITY SIDAuth = SECURITY_WORLD_SID_AUTHORITY;
+    PSID pSID = NULL;
+    AllocateAndInitializeSid(&SIDAuth, 1, SECURITY_WORLD_RID,
+							 0, 0, 0, 0, 0, 0, 0, &pSID);
+
+    EXPLICIT_ACCESS ea;
+    memset(&ea, 0, sizeof(EXPLICIT_ACCESS));
+    ea.grfAccessPermissions = SYNCHRONIZE;
+    ea.grfAccessMode = SET_ACCESS;
+    ea.grfInheritance = NO_INHERITANCE;
+    ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+    ea.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+    ea.Trustee.ptstrName  = (LPTSTR) pSID;
+
+	PACL pOldACL = NULL;
+	GetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
+					DACL_SECURITY_INFORMATION,
+					NULL, NULL, &pOldACL, NULL, NULL);
+
+    PACL pNewACL = NULL;
+    SetEntriesInAcl(1, &ea, pOldACL, &pNewACL);
+
+	SetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
+					DACL_SECURITY_INFORMATION,
+					NULL, NULL, pNewACL, NULL);
+
+	// Create and initialize the default security descriptor
+	// to be assigned to various IPC objects.
+	//
+	// WARNING!!! The absent DACL means full access granted
+	// to everyone, this is a huge security risk!
+
 	PSECURITY_DESCRIPTOR p_security_desc =
-		(PSECURITY_DESCRIPTOR) gds__alloc((SLONG)
-											SECURITY_DESCRIPTOR_MIN_LENGTH);
+		(PSECURITY_DESCRIPTOR) gds__alloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
 /* FREE: apparently never freed */
 	if (!p_security_desc)		/* NOMEM: */
 	{
@@ -1234,8 +1269,8 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 	gds_alloc_flag_unfreed((void *) p_security_desc);
 #endif
 
-	if (!InitializeSecurityDescriptor(	p_security_desc,
-										SECURITY_DESCRIPTOR_REVISION) ||
+	if (!InitializeSecurityDescriptor(p_security_desc,
+									  SECURITY_DESCRIPTOR_REVISION) ||
 		!SetSecurityDescriptorDacl(p_security_desc, TRUE, NULL, FALSE))
 	{
 		gds__free(p_security_desc);
