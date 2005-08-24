@@ -187,13 +187,13 @@ void TimeStamp::decode_time(
 	*fractions = ntime % ISC_TIME_SECONDS_PRECISION;
 }
 
-ISC_TIME TimeStamp::round_time(ISC_TIME ntime, int precision)
+void TimeStamp::round_time(ISC_TIME &ntime, int precision)
 {
 	const int scale = -ISC_TIME_SECONDS_PRECISION_SCALE - precision;
 
 	// for the moment, if greater precision was requested than we can 
 	// provide return what we have.
-	if (scale <= 0) return ntime;
+	if (scale <= 0) return;
 
 	static const ISC_TIME pow10table[] = 
 		{1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
@@ -202,7 +202,7 @@ ISC_TIME TimeStamp::round_time(ISC_TIME ntime, int precision)
 
 	ISC_TIME period = pow10table[scale];
 
-	return ntime - (ntime % period);
+	ntime -= (ntime % period);
 }
 
 ISC_TIME TimeStamp::encode_time(int hours, int minutes, int seconds, int fractions)
