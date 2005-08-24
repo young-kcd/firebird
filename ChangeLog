@@ -1,3 +1,19 @@
+2005-08-23 16:25  dimitr
+
+	* firebird2/src/jrd/isc.cpp (1.56):
+	
+	Fixed inability to establish an IPC channel between processes with
+	custom security descriptors.  Appeared as "unavailable database"
+	while connecting from the service running under special account.
+
+2005-08-23 08:52  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd_pwd.h (1.18), pwd.cpp (1.44), scl.epp
+	(1.70), svc.cpp (1.146):
+	
+	Security fix - temporary disable logins for clients, making too
+	many wrong attempts to login
+
 2005-08-22 15:39  dimitr
 
 	* firebird2/src/dsql/keywords.cpp (1.46):
