@@ -584,5 +584,5 @@ void MOV_time_stamp(GDS_TIMESTAMP* datetime)
 	// and PAG_format_header. In late FB v2, timestamp started returning
 	// milliseconds, so if some unexpected incompatbility arises, uncomment
 	// the following line that will get rid of the milliseconds.
-	//datetime->timestamp_time = Firebird::TimeStamp::round_time(datetime->timestamp_time, 0);
+	//Firebird::TimeStamp::round_time(datetime->timestamp_time, 0);
 }

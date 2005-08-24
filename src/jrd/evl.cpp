@@ -930,16 +930,21 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			impure->vlu_desc.dsc_address =
 				(UCHAR *) &impure->vlu_misc.vlu_timestamp;
 
+			if (node->nod_type == nod_current_time ||
+				node->nod_type == nod_current_timestamp)
+			{
+				const int precision = (int)(IPTR) node->nod_arg[0];
+				fb_assert(precision >= 0);
+				Firebird::TimeStamp::round_time(enc_times.timestamp_time,
+												precision);
+			}
+
 			switch (node->nod_type) {
 			case nod_current_time:
 				impure->vlu_desc.dsc_dtype = dtype_sql_time;
 				impure->vlu_desc.dsc_length = type_lengths[dtype_sql_time];
-				// Note, in SQL standard CURRENT_TIME and CURRENT_TIMESTAMP
-				// have a seconds precision parameter. For CURRENT_TIME it is
-				// zero by default (i.e. return whole seconds) and we hardcode
-				// it here for the moment
 				*(ULONG *) impure->vlu_desc.dsc_address =
-					Firebird::TimeStamp::round_time(enc_times.timestamp_time, 0);
+					enc_times.timestamp_time;
 				break;
 			case nod_current_date:
 				impure->vlu_desc.dsc_dtype = dtype_sql_date;

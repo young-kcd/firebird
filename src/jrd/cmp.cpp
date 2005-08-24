@@ -2625,6 +2625,8 @@ static jrd_nod* copy(thread_db* tdbb,
 
 	case nod_variable:
 	case nod_literal:
+	case nod_current_time:
+	case nod_current_timestamp:
 		return input;
 
 	case nod_field:

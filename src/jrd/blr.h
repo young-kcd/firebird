@@ -315,6 +315,8 @@
 #define blr_user_savepoint	(unsigned char)165
 #define blr_dcl_cursor		(unsigned char)166
 #define blr_cursor_stmt		(unsigned char)167
+#define blr_current_timestamp2	(unsigned char)168
+#define blr_current_time2	(unsigned char)169
 
 /* These codes are actions for user-defined savepoints */
 

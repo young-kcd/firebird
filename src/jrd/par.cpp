@@ -2479,10 +2479,25 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_user_name:
     case blr_current_role:
 	case blr_current_date:
-	case blr_current_time:
-	case blr_current_timestamp:
 	case blr_start_savepoint:
 	case blr_end_savepoint:
+		break;
+
+	case blr_current_time:
+		node->nod_arg[0] = (jrd_nod*) (IPTR) DEFAULT_TIME_PRECISION;
+		break;
+
+	case blr_current_timestamp:
+		node->nod_arg[0] = (jrd_nod*) (IPTR) DEFAULT_TIMESTAMP_PRECISION;
+		break;
+
+	case blr_current_time2:
+	case blr_current_timestamp2:
+		n = BLR_BYTE;
+		if (n < 0) {
+			syntax_error(csb, "non-negative seconds precision");
+		}
+		node->nod_arg[0] = (jrd_nod*) (IPTR) n;
 		break;
 
 	case blr_user_savepoint:
