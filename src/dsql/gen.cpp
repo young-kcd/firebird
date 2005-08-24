@@ -176,11 +176,29 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		return;
 
 	case nod_current_time:
-		stuff(request, blr_current_time);
+		if (node->nod_arg[0]) {
+			const dsql_nod* const_node = node->nod_arg[0];
+			fb_assert(const_node->nod_type == nod_constant);
+			const int precision = (int)(IPTR) const_node->nod_arg[0];
+			stuff(request, blr_current_time2);
+			stuff(request, precision);
+		}
+		else {
+			stuff(request, blr_current_time);
+		}
 		return;
 
 	case nod_current_timestamp:
-		stuff(request, blr_current_timestamp);
+		if (node->nod_arg[0]) {
+			const dsql_nod* const_node = node->nod_arg[0];
+			fb_assert(const_node->nod_type == nod_constant);
+			const int precision = (int)(IPTR) const_node->nod_arg[0];
+			stuff(request, blr_current_timestamp2);
+			stuff(request, precision);
+		}
+		else {
+			stuff(request, blr_current_timestamp);
+		}
 		return;
 
 	case nod_current_date:

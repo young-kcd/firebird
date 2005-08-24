@@ -3798,7 +3798,7 @@ datetime_value_expression : CURRENT_DATE
 					0);
 			$$ = make_node (nod_current_date, 0, NULL);
 			}
-		| CURRENT_TIME
+		| CURRENT_TIME sec_precision_opt
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
@@ -3812,10 +3812,16 @@ datetime_value_expression : CURRENT_DATE
 					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "TIME",
 					0);
-			$$ = make_node (nod_current_time, 0, NULL);
+			$$ = make_node (nod_current_time, 1, $2);
 			}
-		| CURRENT_TIMESTAMP
-			{ $$ = make_node (nod_current_timestamp, 0, NULL); }
+		| CURRENT_TIMESTAMP sec_precision_opt
+			{ $$ = make_node (nod_current_timestamp, 1, $2); }
+		;
+
+sec_precision_opt	: '(' nonneg_short_integer ')'
+			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
+		|
+			{ $$ = NULL; }
 		;
 
 array_element   : column_name '[' value_list ']'
