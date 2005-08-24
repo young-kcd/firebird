@@ -338,8 +338,7 @@ enum nod_t
 	nod_collation_specific_attr,
 	nod_strlen,
 	nod_trim,
-	nod_returning,
-	nod_proc_stmt
+	nod_returning
 };
 
 typedef nod_t NOD_TYPE;

@@ -1254,7 +1254,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_delete:
-		node = pass1_delete(request, input, proc_flag);
+		node = pass1_savepoint(request, pass1_delete(request, input, proc_flag));
 		break;
 
 	case nod_exec_procedure:
@@ -1449,10 +1449,10 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		{
 			node->nod_arg[e_xcps_msg] = 0;
 		}
-		return node;
+		return pass1_savepoint(request, node);
 
 	case nod_insert:
-		node = pass1_insert(request, input, proc_flag);
+		node = pass1_savepoint(request, pass1_insert(request, input, proc_flag));
 		break;
 
 	case nod_block:
@@ -1507,7 +1507,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exec_sql_stmnt] =
 			PASS1_node(request, input->nod_arg[e_exec_sql_stmnt], proc_flag);
-		return node;
+		return pass1_savepoint(request, node);
 
     case nod_exec_into:
 		node = MAKE_node(input->nod_type, input->nod_count);
@@ -1524,7 +1524,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 		node->nod_arg[e_exec_into_list] =
 			PASS1_node(request, input->nod_arg[e_exec_into_list], proc_flag);
-		return node;
+		return pass1_savepoint(request, node);
 
 	case nod_exit:
 		return input;
@@ -1576,7 +1576,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_update:
-		node = pass1_update(request, input, proc_flag);
+		node = pass1_savepoint(request, pass1_update(request, input, proc_flag));
 		break;
 
 	case nod_while:
@@ -1692,10 +1692,6 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 				PASS1_node(request, input->nod_arg[e_cur_stmt_into], proc_flag);
 		}
 		return input;
-
-	case nod_proc_stmt:
-		node = PASS1_statement(request, input->nod_arg[0], proc_flag);
-		return pass1_savepoint(request, node);
 
 	default:
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,

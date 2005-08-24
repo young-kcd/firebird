@@ -1577,9 +1577,7 @@ proc_statements	: proc_block
 		;
 
 proc_statement	: simple_proc_statement ';'
-			{ $$ = make_node (nod_proc_stmt, 1, $1); }
 		| complex_proc_statement
-			{ $$ = make_node (nod_proc_stmt, 1, $1); }
 		;
 
 simple_proc_statement	: assignment

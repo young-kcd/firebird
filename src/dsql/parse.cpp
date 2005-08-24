@@ -8176,12 +8176,6 @@ break;
 case 298:
 { yyval = make_node (nod_list, 2, yyvsp[-1], yyvsp[0]); }
 break;
-case 299:
-{ yyval = make_node (nod_proc_stmt, 1, yyvsp[-1]); }
-break;
-case 300:
-{ yyval = make_node (nod_proc_stmt, 1, yyvsp[0]); }
-break;
 case 315:
 { yyval = make_node (nod_return, (int) e_rtn_count, NULL); }
 break;
