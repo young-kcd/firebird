@@ -31,6 +31,7 @@ namespace Jrd {
 	class thread_db;
 }
 
+extern "C" {
 Jrd::Service* SVC_attach(USHORT, const TEXT*, USHORT, const SCHAR*);
 void   SVC_cleanup(Jrd::Service*);
 void   SVC_detach(Jrd::Service*);
@@ -50,6 +51,7 @@ int SVC_output(Jrd::Service*, const UCHAR*);
 typedef void (*shutdown_fct_t) (ULONG);
 void SVC_shutdown_init(shutdown_fct_t, ULONG);
 #endif /* SERVER_SHUTDOWN */
+} //extern "C"
 
 #endif /* JRD_SVC_PROTO_H */
 

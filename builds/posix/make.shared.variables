@@ -1,4 +1,4 @@
-
+CS_SRV_TH=@service_thread_CS@
 
 #________________________________________________________________________
 #
@@ -136,6 +136,11 @@ GPRELIB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRELIB_Sour
 ALICE_Files=
 ifeq ($(ArchType),super)
     ALICE_Files=alice.cpp all.cpp exe.cpp alice_meta.epp tdr.cpp
+else
+	ifeq ($(CS_SRV_TH),true)
+	    ALICE_Files=alice.cpp all.cpp exe.cpp alice_meta.epp tdr.cpp
+	endif
+
 endif
 
 ALICE_Sources = $(addprefix alice/, $(ALICE_Files))
@@ -148,6 +153,10 @@ ALICE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ALICE_Sources)
 BURP_Files=
 ifeq ($(ArchType),super)
     BURP_Files=burp.cpp backup.epp restore.epp mvol.cpp misc.cpp canonical.cpp
+else
+	ifeq ($(CS_SRV_TH),true)
+	    BURP_Files=burp.cpp backup.epp restore.epp mvol.cpp misc.cpp canonical.cpp
+	endif
 endif
 
 BURP_Sources = $(addprefix burp/, $(BURP_Files))
@@ -168,6 +177,13 @@ ifeq ($(ArchType),super)
     SECURITY_ServerFiles_gsec:= $(SECURITY_ServerFiles_gsec) gsec.cpp 
     SECURITY_ServerFiles_gstat:= $(SECURITY_ServerFiles_gstat) dba.epp ppg.cpp 
     SECURITY_ServerFiles_common:= $(SECURITY_ServerFiles_common) cmd_util.cpp
+else
+	ifeq ($(CS_SRV_TH),true)
+	    SECURITY_ServerFiles_gsec:= $(SECURITY_ServerFiles_gsec) gsec.cpp 
+	    SECURITY_ServerFiles_gstat:= $(SECURITY_ServerFiles_gstat) dba.epp ppg.cpp 
+	    SECURITY_ServerFiles_common:= $(SECURITY_ServerFiles_common) cmd_util.cpp
+	endif
+
 endif
 
 SECURITY_Files_gsec = $(SECURITY_ClientFiles_gsec) $(SECURITY_ServerFiles_gsec)

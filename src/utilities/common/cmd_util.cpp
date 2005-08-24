@@ -43,7 +43,7 @@
 
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
-
+#include "cmd_util_proto.h"
 
 void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							 USHORT  facility,

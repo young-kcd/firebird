@@ -25,7 +25,8 @@
 #define UTILITIES_CMD_UTIL_PROTO_H
 
 
-void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
+extern "C" {
+ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							 USHORT  facility,
 							 USHORT  errcode,
 							 USHORT arg1_t, const void* arg1,
@@ -34,6 +35,6 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							 USHORT arg4_t, const void* arg4,
 							 USHORT arg5_t, const void* arg5);
 
-
+}
 #endif /* UTILITIES_CMD_UTIL_PROTO_H */
 

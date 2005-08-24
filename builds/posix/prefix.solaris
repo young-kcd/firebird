@@ -54,7 +54,7 @@ DEV_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_FLAGS) $(DEBUG_GCC_FLAGS)
 			$(LOCAL_CFLAGS)
 
 # extra modules needed on this platform during bootstrap phase
-JRDBOOT_Extra_Files=isc_sync.cpp ThreadData.cpp
+JRDBOOT_Extra_Files=isc_sync.cpp ThreadData.cpp os/posix/isc_ipc.cpp 
 
 OS_ServerFiles=inet_server.cpp
 
