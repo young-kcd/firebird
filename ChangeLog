@@ -1,3 +1,52 @@
+2005-08-24 14:12  kkuznetsov
+
+	* firebird2/: configure.in (1.234), builds/posix/firebird.vers
+	(1.9), builds/posix/make.shared.variables (1.58),
+	builds/posix/prefix.solaris (1.16), src/jrd/svc_proto.h (1.18),
+	src/utilities/common/cmd_util.cpp (1.10),
+	src/utilities/common/cmd_util_proto.h (1.4):
+	
+	Allowing using SERVICE_THREAD in CLASSIC server as platform option
+
+2005-08-24 11:42  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.236):
+	
+	Added optional seconds precision to CURRENT_TIME and
+	CURRENT_TIMESTAMP as agreed with Ann and others times ago.
+
+2005-08-24 11:22  dimitr
+
+	* firebird2/src/dsql/: gen.cpp (1.90), parse.cpp (1.161), parse.y
+	(1.188):
+	
+	Added optional seconds precision to CURRENT_TIME and
+	CURRENT_TIMESTAMP as agreed with Ann and others times ago.
+
+2005-08-24 11:14  dimitr
+
+	* firebird2/src/: jrd/blr.h (1.21), jrd/cmp.cpp (1.182),
+	jrd/evl.cpp (1.150), jrd/exe.h (1.71), jrd/mov.cpp (1.24),
+	jrd/par.cpp (1.120), misc/blrtable.cpp (1.20):
+	
+	Added optional seconds precision to CURRENT_TIME and
+	CURRENT_TIMESTAMP as agreed with Ann and others times ago.
+
+2005-08-24 11:09  dimitr
+
+	* firebird2/src/common/classes/: timestamp.cpp (1.9), timestamp.h
+	(1.9):
+	
+	Slightly change the round function.
+
+2005-08-24 08:21  dimitr
+
+	* firebird2/src/dsql/: node.h (1.67), parse.cpp (1.160), parse.y
+	(1.187), pass1.cpp (1.235):
+	
+	Rolled back my commit as a performance looser.	More precise
+	savepoints handling is being investigated.
+
 2005-08-23 16:25  dimitr
 
 	* firebird2/src/jrd/isc.cpp (1.56):
