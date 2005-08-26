@@ -1,3 +1,9 @@
+2005-08-25 14:37  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.237):
+	
+	Fixed SEGV reported by Konstantin.
+
 2005-08-24 14:12  kkuznetsov
 
 	* firebird2/: configure.in (1.234), builds/posix/firebird.vers
