@@ -104,6 +104,11 @@
 #endif
 #endif
 
+#if (defined SUPERSERVER && defined UNIX && defined SERVER_SHUTDOWN)
+#include "../common/classes/semaphore.h"
+#define SHUTDOWN_THREAD
+#endif
+
 #ifdef SUPERSERVER
 #ifndef WIN_NT
 const char* TEMP_DIR = "/tmp";
@@ -124,10 +129,13 @@ static void signal_handler(int);
 
 #if (defined SUPERSERVER && defined UNIX )
 static void signal_sigpipe_handler(int);
-#ifdef SERVER_SHUTDOWN
+#endif
+
+#ifdef SHUTDOWN_THREAD
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg);
 static void signal_term(int);
-#endif
+static void shutdown_init();
+static void shutdown_fini();
 #endif
 
 static TEXT protocol[128];
@@ -391,18 +399,18 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 
 #endif
 
-#if (defined SUPERSERVER && defined UNIX && defined SERVER_SHUTDOWN)
-
-	// process signals 2 & 15 in order to exit gracefully
-	set_signal(SIGINT, signal_term);
-	set_signal(SIGTERM, signal_term);
-
+#ifdef SHUTDOWN_THREAD
+	shutdown_init();
 #endif
 
 	if (multi_threaded)
 		SRVR_multi_thread(port, INET_SERVER_flag);
 	else
 		SRVR_main(port, INET_SERVER_flag);
+
+#ifdef SHUTDOWN_THREAD
+	shutdown_fini();
+#endif
 
 #ifdef DEBUG_GDS_ALLOC
 /* In Debug mode - this will report all server-side memory leaks
@@ -513,8 +521,12 @@ static void signal_sigpipe_handler(int)
 	gds__log
 		("Super Server/main: Bad client socket, send() resulted in SIGPIPE, caught by server\n                   client exited improperly or crashed ????");
 }
+#endif //SUPERSERVER && UNIX
 
-#ifdef SERVER_SHUTDOWN
+#ifdef SHUTDOWN_THREAD
+static Firebird::Semaphore shutSem;
+static bool alreadyClosing = false;
+
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) 
 {
 /****************************************************
@@ -528,8 +540,14 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
  *	which received SIGTERM, run in separate thread.
  *
  **************************************/
-	JRD_shutdown_all(false);
-	exit(0);
+ 	shutSem.enter();
+	if (! alreadyClosing)
+	{
+		alreadyClosing = true;
+		JRD_shutdown_all(false);
+		exit(0);
+	}
+	return 0;	//make compilers happy
 }
 
 static void signal_term(int)
@@ -544,9 +562,37 @@ static void signal_term(int)
  *	Handle ^C and kill.
  *
  **************************************/
-	gds__thread_start(shutdown_thread, 0, THREAD_medium, 0, 0);
-#endif //SERVER_SHUTDOWN
+	try
+	{
+	 	shutSem.release();
+	}
+	catch (Firebird::status_exception& e)
+	{
+		TEXT buffer[1024];
+        const ISC_STATUS* vector = 0;
+		if (! (e.status_known() && (vector = e.value()) &&
+			  fb_interpret(buffer, sizeof(buffer), &vector)))
+		{
+			strcpy(buffer, "Unknown failure in semaphore::release()");
+		}
+		gds__log(buffer, 0);
+		exit(0);
+	}
 }
-#endif //SUPERSERVER && UNIX
 
+static void shutdown_init()
+{
+	gds__thread_start(shutdown_thread, 0, THREAD_medium, 0, 0);
+	// process signals 2 & 15 in order to exit gracefully
+	set_signal(SIGINT, signal_term);
+	set_signal(SIGTERM, signal_term);
+}
 
+static void shutdown_fini()
+{
+	set_signal(SIGINT, SIG_IGN);
+	set_signal(SIGTERM, SIG_IGN);
+	alreadyClosing = true;
+	shutSem.release();
+}
+#endif //SHUTDOWN_THREAD
