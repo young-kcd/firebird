@@ -1930,7 +1930,7 @@ static void define_field(
 					if (!not_null_flag)
 					{
 						request->append_cstring(isc_dyn_rel_constraint,
-										string ? string->str_data : 0);
+										string && node1->nod_type == nod_null ? string->str_data : 0);
 						request->append_uchar(isc_dyn_fld_not_null);
 						request->append_uchar(isc_dyn_end);
 						not_null_flag = true;
