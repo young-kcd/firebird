@@ -1167,6 +1167,13 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	gds__trace_raw(buffer, p - buffer);
 }
 
+#ifndef WIN_NT
+// On non-NT platforms gds__log() is called sometimes from signal-handlers.
+// Mutexes can't be used in that case. We can only hope that we will not
+// swallow too many diagnostic from log.
+static bool inLogger = false;
+#endif
+
 void API_ROUTINE gds__log(const TEXT* text, ...)
 {
 /**************************************
@@ -1193,10 +1200,16 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 
 	gds__prefix(name, LOGFILE);
 
-	const int oldmask = umask(0111);
 #ifdef WIN_NT
 	WaitForSingleObject(trace_mutex_handle, INFINITE);
+#else
+	if (inLogger)
+	{
+		return;
+	}
+	inLogger = true;
 #endif
+	const int oldmask = umask(0111);
 	FILE* file = fopen(name, "a");
 	if (file != NULL)
 	{
@@ -1208,12 +1221,12 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 		fprintf(file, "\n\n");
 		fclose(file);
 	}
+	umask(oldmask);
 #ifdef WIN_NT
 	ReleaseMutex(trace_mutex_handle);
+#else
+	inLogger = false;
 #endif
-
-	umask(oldmask);
-
 }
 
 void API_ROUTINE gds__print_pool(JrdMemoryPool* pool, const TEXT* text, ...)
