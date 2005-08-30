@@ -1,3 +1,24 @@
+2005-08-29 20:41  asfernandes
+
+	* firebird2/src/dsql/ddl.cpp (1.152):
+	
+	Fixed problem of implict NOT NULL (in PRIMARY KEY constraint) being
+	generated with the same constraint name of the PK.  Thanks to my
+	brother Adilson for the test case.
+
+2005-08-29 17:00  alexpeshkoff
+
+	* firebird2/src/remote/inet_server.cpp (1.56):
+	
+	Fixed signal safety problems in SS shutdown
+
+2005-08-29 16:57  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.175):
+	
+	avoid unpredictable behaviour of gds__log() on posix in signal
+	handlers
+
 2005-08-25 14:37  dimitr
 
 	* firebird2/src/dsql/pass1.cpp (1.237):
