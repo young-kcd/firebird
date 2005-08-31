@@ -234,10 +234,10 @@ void CNTL_shutdown_service( const TEXT* message)
  **************************************/
 	const char* strings[2];
 
-	char buffer[256];
-	sprintf(buffer, "%s error: %lu", "Firebird Server", GetLastError());
+	char buffer[BUFFER_SMALL];
+	sprintf(buffer, "%s error: %lu", REMOTE_SERVICE, GetLastError());
 
-	HANDLE event_source = RegisterEventSource(NULL, "Firebird Server");
+	HANDLE event_source = RegisterEventSource(NULL, REMOTE_SERVICE);
 	if (event_source) {
 		strings[0] = buffer;
 		strings[1] = message;

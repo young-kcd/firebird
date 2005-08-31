@@ -164,7 +164,7 @@ void CNTL_shutdown_service(const TEXT* message)
  *
  **************************************/
 	const char* strings[2];
-	char buffer[256];
+	char buffer[BUFFER_SMALL];
 
 	sprintf(buffer, "%s error: %lu", service_name, GetLastError());
 

@@ -87,16 +87,16 @@ class SyslogAccess iSyslogAccess;
 
 namespace Firebird {
 	void Syslog::Record(Severity level, Firebird::string Msg) {
-	WORD wType = EVENTLOG_ERROR_TYPE;
-	switch (level) {
-	case Warning:
-		wType = EVENTLOG_INFORMATION_TYPE;
-		break;
-	case Error:
-	default:
-		wType = EVENTLOG_ERROR_TYPE;
-		break;
+		WORD wType = EVENTLOG_ERROR_TYPE;
+		switch (level) {
+		case Warning:
+			wType = EVENTLOG_INFORMATION_TYPE;
+			break;
+		case Error:
+		default:
+			wType = EVENTLOG_ERROR_TYPE;
+			break;
+		}
+		iSyslogAccess.Record(wType, Msg);
 	}
-	iSyslogAccess.Record(wType, Msg);
-}
 } // namespace Firebird
