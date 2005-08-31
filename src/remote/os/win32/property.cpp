@@ -44,6 +44,7 @@
 #include "../jrd/isc.h"
 #include "../jrd/file_params.h"
 #include "../remote/remote_def.h"
+#include "../remote/os/win32/window.h"
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
 
@@ -60,10 +61,6 @@
 #include "../jrd/thd.h"			/* get jrd_proto.h to declare the function */
 #include "../jrd/jrd_proto.h"	/* JRD_num_attachments() */
 #include <stdio.h>				/* sprintf() */
-
-const int WIN_TEXTLEN			= 128;
-const int MSG_STRINGLEN			= 64;
-static const char* APP_LABEL			= "Firebird Server";
 
 static HINSTANCE hInstance = NULL;	// Handle to the current app. instance
 static HWND hPSDlg = NULL;		// Handle to the parent prop. sheet window

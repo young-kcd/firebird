@@ -31,7 +31,7 @@ const int APP_VSIZE			= 150;
    Both fbclient.dll and fbserver.exe should use the same. */
 
 static const char* APP_NAME		= "Firebird Server";
-static const char* APP_LABEL		= "Firebird Server";
+static const char* APP_LABEL	= "Firebird Server";
 
 #define ON_NOTIFYICON		WM_USER + 2
 
