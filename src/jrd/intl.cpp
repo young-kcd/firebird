@@ -427,7 +427,9 @@ CHARSET_ID src_type, BYTE * src_ptr, USHORT src_len, FPTR_VOID err)
 
 	start_dest_ptr = dest_ptr;
 
-	if ((dest_type == CS_BINARY) || (dest_type == CS_NONE)) {
+	if ((dest_type == CS_BINARY) ||
+		(dest_type == CS_NONE) ||
+		(src_type == CS_NONE)) {
 
 		/* See if we just need a length estimate */
 		if (dest_ptr == NULL)
