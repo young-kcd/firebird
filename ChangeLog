@@ -1,3 +1,29 @@
+2005-08-31 18:08  dimitr
+
+	* firebird2/src/jrd/os/win32/fbsyslog.cpp (1.4):
+	
+	Cleanup.
+
+2005-08-31 18:02  dimitr
+
+	* firebird2/src/: remote/os/win32/cntl.cpp (1.18),
+	iscguard/cntl_guard.cpp (1.19):
+	
+	Cleanup.
+
+2005-08-31 16:55  dimitr
+
+	* firebird2/src/remote/os/win32/: property.cpp (1.14), window.h
+	(1.5):
+	
+	Cleanup.
+
+2005-08-31 15:19  dimitr
+
+	* firebird2/src/remote/os/win32/winmain.cpp (1.11):
+	
+	Removed the unused file.
+
 2005-08-29 20:41  asfernandes
 
 	* firebird2/src/dsql/ddl.cpp (1.152):
