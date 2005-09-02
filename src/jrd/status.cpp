@@ -1,16 +1,34 @@
-// status.cpp
-//
-// Copyright 2001 Mikael Nordell <tamlin@users.sourceforge.net>
-//
-// This file is part of the firebird RDBMS engine, and as such
-// is only allowed to be used within that engine, where it may
-// be used freely. Any other use is prohibited.
-//
-// 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
-//
-// 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
-//
-//
+/*
+ *	PROGRAM:		Firebird exceptions classes
+ *	MODULE:			status.cpp
+ *	DESCRIPTION:	Status vector filling and parsing.
+ *
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
+ *
+ *  The Original Code was created by Mike Nordell
+ *  for the Firebird Open Source RDBMS project.
+ *
+ *  Copyright (c) 2001 Mike Nordell <tamlin at algonet.se>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
+ *
+ * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+ *
+ * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
+ */
+
 
 #include "firebird.h"
 #include <stdlib.h>
