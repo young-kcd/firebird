@@ -50,6 +50,7 @@
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
+#include "../dsql/misc_func.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/dsc_proto.h"
@@ -78,6 +79,10 @@ static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
 
 static void make_null(dsc* const desc);
 static void make_placeholder_null(dsc* const desc);
+static void make_parameter_names(dsql_par*, const dsql_nod*);
+
+
+static const char* db_key_name = "DB_KEY";
 
 
 /**
@@ -1868,10 +1873,11 @@ dsql_nod* MAKE_node(NOD_TYPE type, int count)
     @param sqlda_flag
     @param null_flag
     @param sqlda_index
+	@param node
 
  **/
 dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
-	USHORT sqlda_index)
+	USHORT sqlda_index, const dsql_nod* node)
 {
 	if (!message) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
@@ -1901,9 +1907,14 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 		message->msg_par_ordered = parameter;
 	message->msg_parameters = parameter;
 	parameter->par_parameter = message->msg_parameter++;
+
 	parameter->par_rel_name = NULL;
 	parameter->par_owner_name = NULL;
 	parameter->par_rel_alias = NULL;
+
+	if (node) {
+		make_parameter_names(parameter, node);
+	}
 
 // If the parameter is used declared, set SQLDA index 
 	if (sqlda_flag) {
@@ -1920,7 +1931,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 // If a null handing has been requested, set up a null flag 
 
 	if (null_flag) {
-		dsql_par* null = MAKE_parameter(message, false, false, 0);
+		dsql_par* null = MAKE_parameter(message, false, false, 0, NULL);
 		parameter->par_null = null;
 		null->par_desc.dsc_dtype = dtype_short;
 		null->par_desc.dsc_scale = 0;
@@ -2111,3 +2122,262 @@ static void make_placeholder_null(dsc* const desc)
 	desc->dsc_flags = DSC_nullable | DSC_null;
 }
 
+/**
+
+	make_parameter_names
+
+	@brief  Determine relation/column/alias names (if appropriate)
+			and store them in the given parameter.
+
+	@param parameter
+	@param item
+
+**/
+static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
+{
+	const dsql_fld* field;
+	const dsql_ctx* context;
+	const dsql_str* string;
+	const dsql_nod* alias;
+
+	fb_assert(parameter && item);
+
+	const char* name_alias = NULL;
+
+	switch (item->nod_type) {
+	case nod_field:
+		field = (dsql_fld*) item->nod_arg[e_fld_field];
+		name_alias = field->fld_name;
+		context = (dsql_ctx*) item->nod_arg[e_fld_context];
+		if (context->ctx_relation) {
+			parameter->par_rel_name = context->ctx_relation->rel_name;
+			parameter->par_owner_name = context->ctx_relation->rel_owner;
+		}
+		else if (context->ctx_procedure) {
+			parameter->par_rel_name = context->ctx_procedure->prc_name;
+			parameter->par_owner_name = context->ctx_procedure->prc_owner;
+		}
+		parameter->par_rel_alias = context->ctx_alias;
+		break;
+	case nod_dbkey:
+		parameter->par_name = parameter->par_alias = db_key_name;
+		context = (dsql_ctx*) item->nod_arg[0]->nod_arg[0];
+		parameter->par_rel_name = context->ctx_relation->rel_name;
+		parameter->par_owner_name = context->ctx_relation->rel_owner;
+		parameter->par_rel_alias = context->ctx_alias;
+		break;
+	case nod_alias:
+		string = (dsql_str*) item->nod_arg[e_alias_alias];
+		parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
+		alias = item->nod_arg[e_alias_value];
+		if (alias->nod_type == nod_field) {
+			field = (dsql_fld*) alias->nod_arg[e_fld_field];
+			parameter->par_name = field->fld_name;
+			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
+			if (context->ctx_relation) {
+				parameter->par_rel_name = context->ctx_relation->rel_name;
+				parameter->par_owner_name =
+					context->ctx_relation->rel_owner;
+			}
+			else if (context->ctx_procedure) {
+				parameter->par_rel_name =
+					context->ctx_procedure->prc_name;
+				parameter->par_owner_name =
+					context->ctx_procedure->prc_owner;
+			}
+			parameter->par_rel_alias = context->ctx_alias;
+		}
+		else if (alias->nod_type == nod_dbkey) {
+			parameter->par_name = db_key_name;
+			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
+			parameter->par_rel_name = context->ctx_relation->rel_name;
+			parameter->par_owner_name = context->ctx_relation->rel_owner;
+			parameter->par_rel_alias = context->ctx_alias;
+		}
+		break;
+	case nod_derived_field:
+		string = (dsql_str*) item->nod_arg[e_derived_field_name];
+		parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
+		alias = item->nod_arg[e_derived_field_value];
+		if (alias->nod_type == nod_field) {
+			field = (dsql_fld*) alias->nod_arg[e_fld_field];
+			parameter->par_name = field->fld_name;
+			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
+			if (context->ctx_relation) {
+				parameter->par_rel_name = context->ctx_relation->rel_name;
+				parameter->par_owner_name =
+					context->ctx_relation->rel_owner;
+			}
+			else if (context->ctx_procedure) {
+				parameter->par_rel_name =
+					context->ctx_procedure->prc_name;
+				parameter->par_owner_name =
+					context->ctx_procedure->prc_owner;
+			}
+			parameter->par_rel_alias = context->ctx_alias;
+		}
+		else if (alias->nod_type == nod_dbkey) {
+			parameter->par_name = db_key_name;
+			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
+			parameter->par_rel_name = context->ctx_relation->rel_name;
+			parameter->par_owner_name = context->ctx_relation->rel_owner;
+			parameter->par_rel_alias = context->ctx_alias;
+		}
+		break;
+	case nod_map:
+		{
+		const dsql_map* map = (dsql_map*) item->nod_arg[e_map_map];
+		const dsql_nod* map_node = map->map_node;
+		while (map_node->nod_type == nod_map) {
+			// skip all the nod_map nodes
+			map = (dsql_map*) map_node->nod_arg[e_map_map];
+			map_node = map->map_node;
+		}
+		switch (map_node->nod_type) {
+		case nod_field:
+			field = (dsql_fld*) map_node->nod_arg[e_fld_field];
+			name_alias = field->fld_name;
+			break;
+		case nod_alias:
+			string = (dsql_str*) map_node->nod_arg[e_alias_alias];
+			parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
+			alias = map_node->nod_arg[e_alias_value];
+			if (alias->nod_type == nod_field) {
+				field = (dsql_fld*) alias->nod_arg[e_fld_field];
+				parameter->par_name = field->fld_name;
+			}
+			break;
+		case nod_derived_field:
+			string = (dsql_str*) map_node->nod_arg[e_derived_field_name];
+			parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
+			alias = map_node->nod_arg[e_derived_field_value];
+			if (alias->nod_type == nod_field) {
+				field = (dsql_fld*) alias->nod_arg[e_fld_field];
+				parameter->par_name = field->fld_name;
+			}
+			break;
+
+		case nod_agg_count:
+			name_alias = "COUNT";
+			break;
+		case nod_agg_total:
+			name_alias = "SUM";
+			break;
+		case nod_agg_average:
+			name_alias = "AVG";
+			break;
+		case nod_agg_total2:
+			name_alias = "SUM";
+			break;
+		case nod_agg_average2:
+			name_alias = "AVG";
+			break;
+		case nod_agg_min:
+			name_alias = "MIN";
+			break;
+		case nod_agg_max:
+			name_alias = "MAX";
+			break;
+		} // switch(map_node->nod_type)
+		break;
+		} // case nod_map
+	case nod_variable:
+		{
+		dsql_var* variable = (dsql_var*) item->nod_arg[e_var_variable];
+		name_alias = variable->var_field->fld_name;
+		break;
+		}
+	case nod_udf: 
+		{
+		dsql_udf* userFunc = (dsql_udf*) item->nod_arg[0];
+		name_alias = userFunc->udf_name;
+		break;
+		}
+	case nod_gen_id:
+		name_alias	= "GEN_ID";
+		break;
+	case nod_gen_id2:
+		name_alias	= "GEN_ID";
+		break;
+	case nod_user_name:
+		name_alias	= "USER";
+		break;
+	case nod_current_role:
+		name_alias	= "ROLE";
+		break;
+	case nod_internal_info:
+		{
+		internal_info_id id =
+			*reinterpret_cast<internal_info_id*>(item->nod_arg[0]->nod_desc.dsc_address);
+		name_alias = InternalInfo::getAlias(id);
+		break;
+		}
+	case nod_concatenate:
+		name_alias = "CONCATENATION";
+		break;
+	case nod_substr:
+		name_alias = "SUBSTRING";
+		break;
+	case nod_trim:
+		name_alias = "TRIM";
+		break;
+	case nod_cast:
+		name_alias	= "CAST";
+		break;
+	case nod_upcase:
+		name_alias	= "UPPER";
+		break;
+    case nod_lowcase:
+        name_alias	= "LOWER";
+		break;
+	case nod_current_date:
+		name_alias = "CURRENT_DATE";
+		break;
+	case nod_current_time:
+		name_alias = "CURRENT_TIME";
+		break;
+	case nod_current_timestamp:
+		name_alias = "CURRENT_TIMESTAMP";
+		break;
+	case nod_extract:
+		name_alias = "EXTRACT";
+		break;
+	case nod_strlen:
+		{
+ 		const ULONG length_type =
+			*(SLONG*)item->nod_arg[e_strlen_type]->nod_desc.dsc_address;
+
+		switch (length_type)
+		{
+			case blr_strlen_bit:
+				name_alias = "BIT_LENGTH";
+				break;
+
+			case blr_strlen_char:
+				name_alias = "CHAR_LENGTH";
+				break;
+
+			case blr_strlen_octet:
+				name_alias = "OCTET_LENGTH";
+				break;
+
+			default:
+				name_alias = "LENGTH";
+				fb_assert(false);
+				break;
+		}
+		break;
+		}
+	case nod_searched_case:
+	case nod_simple_case:
+		name_alias = "CASE";
+		break;
+	case nod_coalesce:
+		name_alias = "COALESCE";
+		break;
+	} 
+
+	if (name_alias) {
+		parameter->par_name = parameter->par_alias = name_alias;
+	}
+}

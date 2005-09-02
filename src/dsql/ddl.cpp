@@ -2698,20 +2698,17 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
 			 ptr < end; ptr++)
 		{
-			dsql_par* param = MAKE_parameter(request->req_receive, true, true, ++position);
+			dsql_par* param = MAKE_parameter(request->req_receive,
+											 true, true, ++position, *ptr);
 			param->par_node = *ptr;
 			MAKE_desc(request, &param->par_desc, *ptr, NULL);
 			param->par_desc.dsc_flags |= DSC_nullable;
-
-			dsql_nod* parameter = *ptr;
-			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
-			dsql_fld* field = variable->var_field;
-			param->par_name = param->par_alias = field->fld_name;
 		}
 	}
 
 	// Set up parameter to handle EOF
-	dsql_par* param = MAKE_parameter(request->req_receive, false, false, 0);
+	dsql_par* param =
+		MAKE_parameter(request->req_receive, false, false, 0, NULL);
 	request->req_eof = param;
 	param->par_desc.dsc_dtype = dtype_short;
 	param->par_desc.dsc_scale = 0;

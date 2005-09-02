@@ -79,8 +79,6 @@ static void gen_union(dsql_req*, const dsql_nod*);
 static void stuff_cstring(dsql_req*, const char*);
 static void stuff_word(dsql_req*, USHORT);
 
-static const SCHAR db_key_name[] = "DB_KEY";
-
 // STUFF is defined in dsql.h for use in common with ddl.c 
 
 // The following are passed as the third argument to gen_constant 
@@ -716,7 +714,6 @@ void GEN_request( dsql_req* request, dsql_nod* node)
 	} 
 	else 
 	{	
-	
 		stuff(request, blr_begin);
 
 		if (request->req_type == REQ_SELECT ||
@@ -2360,285 +2357,38 @@ static void gen_searched_case( dsql_req* request, const dsql_nod* node)
  **/
 static void gen_select( dsql_req* request, dsql_nod* rse)
 {
-	const dsql_fld* field;
 	const dsql_rel* relation;
 	dsql_ctx* context;
-	
-	SSHORT constant;
-	dsc constant_desc;
-	constant_desc.dsc_dtype = dtype_short;
-	constant_desc.dsc_scale = 0;
-	constant_desc.dsc_sub_type = 0;
-	constant_desc.dsc_flags = 0;
-	constant_desc.dsc_length = sizeof(SSHORT);
-	constant_desc.dsc_address = (UCHAR*) & constant;
+
+	fb_assert(rse->nod_type == nod_rse);
 
 // Set up parameter for things in the select list 
-	dsql_nod* list = rse->nod_arg[e_rse_items];
+	const dsql_nod* list = rse->nod_arg[e_rse_items];
 	dsql_nod* const* ptr = list->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end;
 		ptr++) 
 	{
-		dsql_nod* item = *ptr;
-		dsql_par* parameter = MAKE_parameter(request->req_receive, true, true, 0);
-		parameter->par_node = item;
-		MAKE_desc(request, &parameter->par_desc, item, NULL);
-
-		const char* name_alias = NULL;
-
-		switch (item->nod_type) {
-		case nod_field: {
-			field = (dsql_fld*) item->nod_arg[e_fld_field];
-			name_alias = field->fld_name;
-			context = (dsql_ctx*) item->nod_arg[e_fld_context];
-			if (context->ctx_relation) {
-				parameter->par_rel_name = context->ctx_relation->rel_name;
-				parameter->par_owner_name = context->ctx_relation->rel_owner;
-			}
-			else if (context->ctx_procedure) {
-				parameter->par_rel_name = context->ctx_procedure->prc_name;
-				parameter->par_owner_name = context->ctx_procedure->prc_owner;
-			}
-			parameter->par_rel_alias = context->ctx_alias;
-			break;
-			}
-		case nod_dbkey: {
-			parameter->par_name = parameter->par_alias = db_key_name;
-			context = (dsql_ctx*) item->nod_arg[0]->nod_arg[0];
-			parameter->par_rel_name = context->ctx_relation->rel_name;
-			parameter->par_owner_name = context->ctx_relation->rel_owner;
-			parameter->par_rel_alias = context->ctx_alias;
-			break;
-			}
-		case nod_alias: {
-			const dsql_str* string = (dsql_str*) item->nod_arg[e_alias_alias];
-			parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
-			dsql_nod* alias = item->nod_arg[e_alias_value];
-			if (alias->nod_type == nod_field) {
-				field = (dsql_fld*) alias->nod_arg[e_fld_field];
-				parameter->par_name = field->fld_name;
-				context = (dsql_ctx*) alias->nod_arg[e_fld_context];
-				if (context->ctx_relation) {
-					parameter->par_rel_name = context->ctx_relation->rel_name;
-					parameter->par_owner_name =
-						context->ctx_relation->rel_owner;
-				}
-				else if (context->ctx_procedure) {
-					parameter->par_rel_name =
-						context->ctx_procedure->prc_name;
-					parameter->par_owner_name =
-						context->ctx_procedure->prc_owner;
-				}
-				parameter->par_rel_alias = context->ctx_alias;
-			}
-			else if (alias->nod_type == nod_dbkey) {
-				parameter->par_name = db_key_name;
-				context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
-				parameter->par_rel_name = context->ctx_relation->rel_name;
-				parameter->par_owner_name = context->ctx_relation->rel_owner;
-				parameter->par_rel_alias = context->ctx_alias;
-			}
-			break;
-			}
-		case nod_derived_field: {
-			const dsql_str* string = (dsql_str*) item->nod_arg[e_derived_field_name];
-			parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
-			dsql_nod* alias = item->nod_arg[e_derived_field_value];
-			if (alias->nod_type == nod_field) {
-				field = (dsql_fld*) alias->nod_arg[e_fld_field];
-				parameter->par_name = field->fld_name;
-				context = (dsql_ctx*) alias->nod_arg[e_fld_context];
-				if (context->ctx_relation) {
-					parameter->par_rel_name = context->ctx_relation->rel_name;
-					parameter->par_owner_name =
-						context->ctx_relation->rel_owner;
-				}
-				else if (context->ctx_procedure) {
-					parameter->par_rel_name =
-						context->ctx_procedure->prc_name;
-					parameter->par_owner_name =
-						context->ctx_procedure->prc_owner;
-				}
-				parameter->par_rel_alias = context->ctx_alias;
-			}
-			else if (alias->nod_type == nod_dbkey) {
-				parameter->par_name = db_key_name;
-				context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
-				parameter->par_rel_name = context->ctx_relation->rel_name;
-				parameter->par_owner_name = context->ctx_relation->rel_owner;
-				parameter->par_rel_alias = context->ctx_alias;
-			}
-			break;
-			}
-		case nod_map: {
-			const dsql_map* map = (dsql_map*) item->nod_arg[e_map_map];
-			const dsql_nod* map_node = map->map_node;
-			while (map_node->nod_type == nod_map) {
-				// skip all the nod_map nodes
-				map = (dsql_map*) map_node->nod_arg[e_map_map];
-				map_node = map->map_node;
-			}
-			switch (map_node->nod_type) {
-			case nod_field: {
-				field = (dsql_fld*) map_node->nod_arg[e_fld_field];
-				name_alias = field->fld_name;
-				break;
-				}
-			case nod_alias: {
-				const dsql_str* string = (dsql_str*) map_node->nod_arg[e_alias_alias];
-				parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
-				dsql_nod* alias = map_node->nod_arg[e_alias_value];
-				if (alias->nod_type == nod_field) {
-					field = (dsql_fld*) alias->nod_arg[e_fld_field];
-					parameter->par_name = field->fld_name;
-				}
-				break;
-				}
-			case nod_derived_field: {
-				const dsql_str* string = (dsql_str*) map_node->nod_arg[e_derived_field_name];
-				parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
-				dsql_nod* alias = map_node->nod_arg[e_derived_field_value];
-				if (alias->nod_type == nod_field) {
-					field = (dsql_fld*) alias->nod_arg[e_fld_field];
-					parameter->par_name = field->fld_name;
-				}
-				break;
-				}
-
-			case nod_agg_count:
-				name_alias = "COUNT";
-				break;
-			case nod_agg_total:
-				name_alias = "SUM";
-				break;
-			case nod_agg_average:
-				name_alias = "AVG";
-				break;
-			case nod_agg_total2:
-				name_alias = "SUM";
-				break;
-			case nod_agg_average2:
-				name_alias = "AVG";
-				break;
-			case nod_agg_min:
-				name_alias = "MIN";
-				break;
-			case nod_agg_max:
-				name_alias = "MAX";
-				break;
-			} // switch(map_node->nod_type)
-			break;
-			} // case nod_map
-		case nod_udf: 
-			{
-			dsql_udf* userFunc = (dsql_udf*) item->nod_arg[0];
-			name_alias = userFunc->udf_name;
-			break;
-			}
-		case nod_gen_id:
-			name_alias	= "GEN_ID";
-			break;
-		case nod_gen_id2:
-			name_alias	= "GEN_ID";
-			break;
-		case nod_user_name:
-			name_alias	= "USER";
-			break;
-		case nod_current_role:
-			name_alias	= "ROLE";
-			break;
-		case nod_internal_info:
-			{
-			internal_info_id id =
-				*reinterpret_cast<internal_info_id*>(item->nod_arg[0]->nod_desc.dsc_address);
-			name_alias = InternalInfo::getAlias(id);
-			break;
-			}
-		case nod_concatenate:
-			name_alias = "CONCATENATION";
-			break;
-		case nod_substr:
-			name_alias = "SUBSTRING";
-			break;
-		case nod_trim:
-			name_alias = "TRIM";
-			break;
-		case nod_cast:
-			name_alias	= "CAST";
-			break;
-		case nod_upcase:
-			name_alias	= "UPPER";
-			break;
-        case nod_lowcase:
-            name_alias	= "LOWER";
-			break;
-		case nod_current_date:
-			name_alias = "CURRENT_DATE";
-			break;
-		case nod_current_time:
-			name_alias = "CURRENT_TIME";
-			break;
-		case nod_current_timestamp:
-			name_alias = "CURRENT_TIMESTAMP";
-			break;
-		case nod_extract:
-			name_alias = "EXTRACT";
-			break;
-		case nod_strlen:
-		{
- 			const ULONG length_type =
-				*(SLONG*)item->nod_arg[e_strlen_type]->nod_desc.dsc_address;
-
-			switch (length_type)
-			{
-				case blr_strlen_bit:
-					name_alias = "BIT_LENGTH";
-					break;
-
-				case blr_strlen_char:
-					name_alias = "CHAR_LENGTH";
-					break;
-
-				case blr_strlen_octet:
-					name_alias = "OCTET_LENGTH";
-					break;
-
-				default:
-					name_alias = "LENGTH";
-					fb_assert(false);
-					break;
-			}
-
-			break;
-		}
-		case nod_searched_case:
-		case nod_simple_case:
-			name_alias = "CASE";
-			break;
-		case nod_coalesce:
-			name_alias = "COALESCE";
-			break;
-		} // end switch(item->nod_type)
-		if (name_alias)
-			parameter->par_name = parameter->par_alias = name_alias;
-	} // for (ptr = list->nod_arg
+		dsql_par* parameter =
+			MAKE_parameter(request->req_receive, true, true, 0, *ptr);
+		parameter->par_node = *ptr;
+		MAKE_desc(request, &parameter->par_desc, *ptr, NULL);
+	}
 
 // Set up parameter to handle EOF 
 
-	{
-		dsql_par* parameter_eof = MAKE_parameter(request->req_receive, false, false, 0);
-		request->req_eof = parameter_eof;
-		parameter_eof->par_desc.dsc_dtype = dtype_short;
-		parameter_eof->par_desc.dsc_scale = 0;
-		parameter_eof->par_desc.dsc_length = sizeof(SSHORT);
-	}
+	dsql_par* parameter_eof =
+		MAKE_parameter(request->req_receive, false, false, 0, NULL);
+	request->req_eof = parameter_eof;
+	parameter_eof->par_desc.dsc_dtype = dtype_short;
+	parameter_eof->par_desc.dsc_scale = 0;
+	parameter_eof->par_desc.dsc_length = sizeof(SSHORT);
 
 // Save DBKEYs for possible update later
 
 	list = rse->nod_arg[e_rse_streams];
 
 	if (!rse->nod_arg[e_rse_reduced]) {
-		ptr = list->nod_arg;
+		dsql_nod* const* ptr = list->nod_arg;
 		for (const dsql_nod* const* const end2 = ptr + list->nod_count; 
 			ptr < end2; ptr++) 
 		{
@@ -2648,7 +2398,8 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 				if (relation = context->ctx_relation) {
 					// Set up dbkey
 					dsql_par* parameter =
-						MAKE_parameter(request->req_receive, false, false, 0);
+						MAKE_parameter(request->req_receive,
+									   false, false, 0, NULL);
 					parameter->par_dbkey_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
 					parameter->par_desc.dsc_ttype() = ttype_binary;
@@ -2660,7 +2411,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 					if (!(request->req_dbb->dbb_flags & DBB_v3)) {
 						parameter =
 							MAKE_parameter(request->req_receive, false,
-										   false, 0);
+										   false, 0, NULL);
 						parameter->par_rec_version_ctx = context;
 						parameter->par_desc.dsc_dtype = dtype_text;
 						parameter->par_desc.dsc_ttype() = ttype_binary;
@@ -2679,14 +2430,16 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 	if (request->req_type == REQ_SELECT &&
 		request->req_dbb->dbb_base_level >= 5) 
 	{
-		dsql_par* parameter = MAKE_parameter(request->req_async, false, false, 0);
+		dsql_par* parameter =
+			MAKE_parameter(request->req_async, false, false, 0, NULL);
 		parameter->par_desc.dsc_dtype = dtype_short;
 		parameter->par_desc.dsc_length = sizeof(USHORT);
 		parameter->par_desc.dsc_scale = 0;
 		parameter->par_desc.dsc_flags = 0;
 		parameter->par_desc.dsc_sub_type = 0;
 
-		parameter = MAKE_parameter(request->req_async, false, false, 0);
+		parameter =
+			MAKE_parameter(request->req_async, false, false, 0, NULL);
 		parameter->par_desc.dsc_dtype = dtype_long;
 		parameter->par_desc.dsc_length = sizeof(ULONG);
 		parameter->par_desc.dsc_scale = 0;
@@ -2731,8 +2484,17 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 
 // Build body of FOR loop
 
+	SSHORT constant;
+	dsc constant_desc;
+	constant_desc.dsc_dtype = dtype_short;
+	constant_desc.dsc_scale = 0;
+	constant_desc.dsc_sub_type = 0;
+	constant_desc.dsc_flags = 0;
+	constant_desc.dsc_length = sizeof(SSHORT);
+	constant_desc.dsc_address = (UCHAR*) & constant;
+
 	// Add invalid usage here
-	
+
 	stuff(request, blr_assignment);
 	constant = 1;
 	gen_constant(request, &constant_desc, USE_VALUE);

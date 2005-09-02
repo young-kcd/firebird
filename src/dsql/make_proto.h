@@ -37,7 +37,7 @@ void MAKE_desc_from_list(dsql_req*, dsc*, dsql_nod*, dsql_nod*, const TEXT*);
 dsql_nod* MAKE_field(class dsql_ctx*, class dsql_fld*, dsql_nod*);
 dsql_nod* MAKE_list(DsqlNodStack&);
 dsql_nod* MAKE_node(enum nod_t, int);
-class dsql_par* MAKE_parameter(class dsql_msg* , bool, bool, USHORT);
+class dsql_par* MAKE_parameter(class dsql_msg* , bool, bool, USHORT, const dsql_nod*);
 class dsql_str* MAKE_string(const char* , int);
 dsql_sym* MAKE_symbol(dsql_dbb*, const TEXT*, USHORT,
 						   enum sym_type, class dsql_req*);

@@ -727,7 +727,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 									  true, true,
 									// Pass 0 here to restore older parameter
 									// ordering behavior unconditionally.
-									  (USHORT)(IPTR) input->nod_arg[0]);
+									  (USHORT)(IPTR) input->nod_arg[0],
+									  NULL);
 		return node;
 
 	case nod_param_val:
@@ -2272,7 +2273,8 @@ static dsql_nod* explode_outputs( dsql_req* request, const dsql_prc* procedure)
 		dsql_nod* p_node = MAKE_node(nod_parameter, e_par_count);
 		*ptr = p_node;
 		p_node->nod_count = 0;
-		dsql_par* parameter = MAKE_parameter(request->req_receive, true, true, 0);
+		dsql_par* parameter =
+			MAKE_parameter(request->req_receive, true, true, 0, NULL);
 		p_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 		MAKE_desc_from_field(&parameter->par_desc, field);
 		parameter->par_name = parameter->par_alias = field->fld_name;
@@ -3008,7 +3010,8 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 
 // Create a parameter for the blob segment
 
-	dsql_par* parameter = MAKE_parameter(blob->blb_segment_msg, true, true, 0);
+	dsql_par* parameter =
+		MAKE_parameter(blob->blb_segment_msg, true, true, 0, NULL);
 	blob->blb_segment = parameter;
 	parameter->par_desc.dsc_dtype = dtype_text;
 	parameter->par_desc.dsc_ttype() = ttype_binary;
@@ -3027,8 +3030,9 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 
 	dsql_msg* temp_msg = (input->nod_type == nod_get_segment) ?
 		blob->blb_open_in_msg : blob->blb_open_out_msg;
-	blob->blb_blob_id = parameter = MAKE_parameter(temp_msg, true, true, 0);
-	parameter->par_desc = field->nod_desc;
+	blob->blb_blob_id = parameter =
+		MAKE_parameter(temp_msg, true, true, 0, NULL);
+	MAKE_desc(request, &parameter->par_desc, field, NULL);
 	parameter->par_desc.dsc_dtype = dtype_quad;
 	parameter->par_desc.dsc_scale = 0;
 
@@ -3477,7 +3481,7 @@ static dsql_nod* pass1_cursor_reference( dsql_req* request,
 	node->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
 	temp->nod_count = 0;
 	dsql_par* parameter = request->req_dbkey =
-		MAKE_parameter(request->req_send, false, false, 0);
+		MAKE_parameter(request->req_send, false, false, 0, NULL);
 	temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 	parameter->par_desc = source->par_desc;
 
@@ -3489,7 +3493,7 @@ static dsql_nod* pass1_cursor_reference( dsql_req* request,
 		node->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
 		temp->nod_count = 0;
 		parameter = request->req_rec_version =
-			MAKE_parameter(request->req_send, false, false, 0);
+			MAKE_parameter(request->req_send, false, false, 0, NULL);
 		temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 		parameter->par_desc = rv_source->par_desc;
 
@@ -5998,20 +6002,16 @@ static dsql_nod* pass1_returning(dsql_req* request,
 	{
 		// DSQL case
 		fb_assert(!proc_flag);
-		const dsql_ctx* const context = request->req_context->object();
-		fb_assert(context);
+
 		dsql_nod** src = source->nod_arg;
 		dsql_nod** ptr = node->nod_arg;
 		for (const dsql_nod* const* const end = ptr + node->nod_count;
 			ptr < end; src++, ptr++)
 		{
-			fb_assert((*src)->nod_type == nod_field);
-			dsql_fld* field = (dsql_fld*) (*src)->nod_arg[e_fld_field];
-			dsql_par* parameter = MAKE_parameter(request->req_receive, true, true, 0);
+			dsql_par* parameter =
+				MAKE_parameter(request->req_receive, true, true, 0, *src);
+			parameter->par_node = *src;
 			MAKE_desc(request, &parameter->par_desc, *src, NULL);
-			parameter->par_name = parameter->par_alias = field->fld_name;
-			parameter->par_rel_name = context->ctx_relation->rel_name;
-			parameter->par_owner_name = context->ctx_relation->rel_owner;
 
 			dsql_nod* p_node = MAKE_node(nod_parameter, e_par_count);
 			p_node->nod_count = 0;

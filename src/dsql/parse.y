@@ -3378,10 +3378,10 @@ update_positioned : UPDATE table_name SET assignments cursor_clause
 		;
 
 
-returning_clause	: RETURNING column_list
+returning_clause	: RETURNING value_list
 			{ $$ = make_node (nod_returning, (int) e_ret_count,
 					make_list ($2), NULL); }
-		| RETURNING column_list INTO variable_list
+		| RETURNING value_list INTO variable_list
 			{ $$ = make_node (nod_returning, (int) e_ret_count,
 					make_list ($2), make_list ($4)); }
 		|
