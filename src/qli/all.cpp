@@ -20,9 +20,6 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-/*
-$Id: all.cpp,v 1.28 2005-09-03 05:52:02 robocop Exp $
-*/
 
 /***************************************************
    THIS MODULE HAS SEVERAL KISSING COUSINS; IF YOU
