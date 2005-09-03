@@ -38,6 +38,7 @@
 #include "../qli/parse_proto.h"
 #include "../qli/proc_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/constants.h"
 
 #define KEYWORD(kw)		(QLI_token->tok_keyword == kw)
 #define INT_CAST		(qli_syntax*) (IPTR)
@@ -116,7 +117,8 @@ static qli_syntax* parse_show(void);
 static qli_syntax* parse_sort(void);
 static qli_syntax* parse_sql_alter(void);
 static qli_syntax* parse_sql_create(void);
-static int parse_sql_dtype(USHORT *, USHORT *);
+static int parse_sql_dtype(USHORT* length, USHORT* scale, USHORT* precision,
+	USHORT* sub_type);
 static qli_fld* parse_sql_field(void);
 static qli_syntax* parse_sql_grant_revoke(USHORT);
 static qli_syntax* parse_sql_index_create(const bool, const bool);
@@ -775,7 +777,7 @@ static qli_syntax* parse_assignment(void)
  *	Parse an assignment statement (or give an error).  The
  *	assignment statement can be either a simple assignment
  *	(field = value) or a restructure (relation = rse).
- *	If the assignment operatr is missing,
+ *	If the assignment operator is missing,
  *	generate an "expected statement" error.
  *
  **************************************/
@@ -1163,7 +1165,7 @@ static qli_syntax* parse_def_relation(void)
  *	Parse a DEFINE RELATION command,
  *	which include the field definitions
  *	for a primitive relation definition
- *	or it may just reference another relatio
+ *	or it may just reference another relation
  *	whose field definitions we will copy.
  *
  **************************************/
@@ -1396,7 +1398,8 @@ static int parse_dtype( USHORT * length, USHORT * scale)
 		return dtype_blob;
 	}
 
-	if (dtype == dtype_short || dtype == dtype_long || dtype == dtype_int64 ) {
+	if (dtype == dtype_short || dtype == dtype_long || dtype == dtype_int64 )
+	{
 		if (PAR_match(KW_SCALE)) {
 			const bool m = (PAR_match(KW_MINUS)) ? true : false;
 			*scale = parse_ordinal();
@@ -1404,7 +1407,8 @@ static int parse_dtype( USHORT * length, USHORT * scale)
 				*scale = -(*scale);
 		}
 	}
-	else if (dtype == dtype_text || dtype == dtype_varying) {
+	else if (dtype == dtype_text || dtype == dtype_varying)
+	{
 		if (!PAR_match(KW_L_BRCKET) && !PAR_match(KW_LT))
 			ERRQ_syntax(174);	/* Msg174 "[" */
 
@@ -4270,7 +4274,8 @@ if (PAR_match (KW_VIEW))
 }
 
 
-static int parse_sql_dtype( USHORT * length, USHORT * scale)
+static int parse_sql_dtype( USHORT* length, USHORT* scale, USHORT* precision,
+	USHORT* sub_type)
 {
 /**************************************
  *
@@ -4282,12 +4287,14 @@ static int parse_sql_dtype( USHORT * length, USHORT * scale)
  *	Parse a SQL datatype clause.
  *
  **************************************/
-	USHORT dtype;
+	USHORT dtype = dtype_unknown;
 
-	KWWORDS keyword = QLI_token->tok_keyword;
+	const KWWORDS keyword = QLI_token->tok_keyword;
 	PAR_token();
 	*scale = 0;
 	*length = 1;
+	*precision = 0;
+	*sub_type = 0;
 
 	switch (keyword) {
 	case KW_DATE:
@@ -4323,8 +4330,13 @@ static int parse_sql_dtype( USHORT * length, USHORT * scale)
 	case KW_LONG:
 		if (!PAR_match(KW_FLOAT))
 			ERRQ_syntax(388);	// Msg388 "FLOAT"
+		*length = sizeof(double);
+		dtype = dtype_double;
+		break;
+
 	case KW_DOUBLE:
-	case KW_PRECISION:
+		if (!PAR_match(KW_PRECISION))
+			ERRQ_syntax(509);   // Msg509 "PRECISION"
 		*length = sizeof(double);
 		dtype = dtype_double;
 		break;
@@ -4332,23 +4344,66 @@ static int parse_sql_dtype( USHORT * length, USHORT * scale)
 	case KW_DECIMAL:
 		*length = sizeof(SLONG);
 		dtype = dtype_long;
+		*sub_type = dsc_num_type_decimal;
+		break;
+		
+	case KW_NUMERIC:
+		*length = sizeof(SLONG);
+		dtype = dtype_long;
+		*sub_type = dsc_num_type_numeric;
 		break;
 	}
 
-	if (dtype == dtype_long || dtype == dtype_real || dtype == dtype_double) {
-		if (PAR_match(KW_LEFT_PAREN)) {
-			const bool l = (PAR_match(KW_MINUS)) ? true : false;
-			*scale = parse_ordinal();
-			if (l)
-				*scale = -(*scale);
+	// CVC: SQL doesn't accept arbitrary types with scale specification.
+	//if (dtype == dtype_long || dtype == dtype_real || dtype == dtype_double) {
+	if (keyword == KW_DECIMAL || keyword == KW_NUMERIC)
+	{
+		if (PAR_match(KW_LEFT_PAREN)) 
+		{
+			const USHORT logLength = parse_ordinal();
+			if (logLength < 1)
+				ERRQ_syntax(512);  // Msg512 "Field length should be greater than zero"
+			else if (logLength < 5)
+			{
+				*length = sizeof(SSHORT);
+				dtype = dtype_short;
+			}
+			else if (logLength > 18)
+				ERRQ_syntax(511);  // Msg511 "Field length exceeds allowed range"
+			else if (logLength > 9)
+			{
+				*length = sizeof(SINT64);
+				dtype = dtype_int64;
+			}
+			
+			if (PAR_match(KW_COMMA))
+			{
+				const bool l = (PAR_match(KW_MINUS)) ? true : false;
+				*scale = parse_ordinal();
+				if (*scale < 0 || *scale > 18 || *scale > logLength)
+					ERRQ_syntax(510);  // Msg510 "Field scale exceeds allowed range"
+					
+				if (l || *scale > 0) // We need to have it negative in system tables.
+					*scale = -(*scale);
+			}
+
+			*precision = logLength;
 			parse_matching_paren();
 		}
 	}
-	else if (dtype == dtype_text || dtype == dtype_varying) {
-		if (PAR_match(KW_LEFT_PAREN)) {
+	else if (dtype == dtype_text || dtype == dtype_varying)
+	{
+		if (PAR_match(KW_LEFT_PAREN))
+		{
 			USHORT l = parse_ordinal();
+			if (l > MAX_COLUMN_SIZE)
+				ERRQ_syntax(511);  // Msg511 "Field length exceeds allowed range"
 			if (dtype == dtype_varying)
+			{
+				if (l > MAX_COLUMN_SIZE - sizeof(SSHORT))
+					ERRQ_syntax(511);  // Msg511 "Field length exceeds allowed range"
 				l += sizeof(SSHORT);
+			}
 			*length = l;
 			parse_matching_paren();
 		}
@@ -4372,8 +4427,8 @@ static qli_fld* parse_sql_field(void)
  **************************************/
 	PAR_real();
 
-    USHORT dtype, length, scale;
-	dtype = length = scale = 0;
+    USHORT dtype, length, scale, precision, sub_type;
+	dtype = length = scale = precision = sub_type = 0;
 	qli_symbol* name = parse_symbol();
 
 	PAR_real();
@@ -4390,7 +4445,8 @@ static qli_fld* parse_sql_field(void)
 	case KW_FLOAT:
 	case KW_LONG:
 	case KW_DECIMAL:
-		dtype = parse_sql_dtype(&length, &scale);
+	case KW_BIGINT:
+		dtype = parse_sql_dtype(&length, &scale, &precision, &sub_type);
 		break;
 
 	default:
@@ -4403,6 +4459,8 @@ static qli_fld* parse_sql_field(void)
 	field->fld_dtype = dtype;
 	field->fld_scale = scale;
 	field->fld_length = length;
+	field->fld_precision = precision;
+	field->fld_sub_type = sub_type;
 
 	if (PAR_match(KW_NOT))
 		if (PAR_match(KW_NULL)) {
@@ -5310,7 +5368,7 @@ static qli_syntax* parse_value( USHORT* paren_count, bool* bool_flag)
  *
  * Functional description
  *	Parse a general value expression.  In practice, this means parse the
- *	lowest precedence operatr CONCATENATE.
+ *	lowest precedence operator CONCATENATE.
  *
  **************************************/
 	USHORT local_count;
@@ -5398,7 +5456,8 @@ static qli_rel* resolve_relation( qli_symbol* db_symbol, qli_symbol* relation_sy
 	if (db_symbol) {			/* && db_symbol->sym_type == SYM_database ?  */
 		for (; db_symbol; db_symbol = db_symbol->sym_homonym)
 			for (temp = relation_symbol; temp; temp = temp->sym_homonym)
-				if (temp->sym_type == SYM_relation) {
+				if (temp->sym_type == SYM_relation)
+				{
 					relation = (qli_rel*) temp->sym_object;
 					if (relation->rel_database == (DBB) db_symbol->sym_object)
 						return relation;
@@ -5410,7 +5469,8 @@ static qli_rel* resolve_relation( qli_symbol* db_symbol, qli_symbol* relation_sy
 
 	for (DBB dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		for (temp = relation_symbol; temp; temp = temp->sym_homonym)
-			if (temp->sym_type == SYM_relation) {
+			if (temp->sym_type == SYM_relation)
+			{
 				relation = (qli_rel*) temp->sym_object;
 				if (relation->rel_database == dbb)
 					return relation;

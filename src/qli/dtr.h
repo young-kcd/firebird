@@ -375,8 +375,9 @@ struct qli_fld {
     qli_syntax*		fld_validation;		// Validation expression 
     qli_syntax*		fld_computed;		// Computed by expression 
     qli_const*	fld_missing;		// Missing value defined in system relation 
-    SSHORT		fld_sub_type;		// Subtype for blobs and text 
+    SSHORT		fld_sub_type;		// Subtype for blobs, text and EXACT_NUMERICs.
     SSHORT		fld_sub_type_missing;	// Subtype missing flag 
+    SSHORT      fld_precision;      // Precision for NUMERIC and DECIMAL.
     USHORT		fld_system_flag;	// System flag 
     double		fld_dummy;			// Force fld_data to a nice boundary word boundary 
     UCHAR		fld_data [1];

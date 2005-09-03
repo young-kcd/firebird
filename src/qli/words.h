@@ -40,6 +40,7 @@
 {KW_BEGIN,               "BEGIN"},
 {KW_BETWEEN,             "BETWEEN"},
 {KW_BETWEEN,             "BT"},
+{KW_BIGINT,		"BIGINT"},
 {KW_BLOB,                "BLOB"},
 {KW_BLR,                 "BLR"},
 {KW_BOTTOM,              "BOTTOM"},

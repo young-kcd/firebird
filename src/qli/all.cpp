@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 /*
-$Id: all.cpp,v 1.27 2004-05-16 01:41:20 brodsom Exp $
+$Id: all.cpp,v 1.28 2005-09-03 05:52:02 robocop Exp $
 */
 
 /***************************************************
@@ -431,26 +431,24 @@ void ALLQ_release( FRB block)
 // Try to merge the free block with the next one down.
 
 	if (free) {
-		if ((SCHAR *) block + block->frb_header.blk_length ==
-			(SCHAR *) free) {
+		if ((SCHAR *) block + block->frb_header.blk_length == (SCHAR *) free)
+		{
 			block->frb_header.blk_length += free->frb_header.blk_length;
 			block->frb_next = free->frb_next;
 		}
-		else if ((SCHAR *) block + block->frb_header.blk_length >
-				 (SCHAR *) free)
+		else if ((SCHAR *) block + block->frb_header.blk_length > (SCHAR *) free)
 			ERRQ_bugcheck(436);		// released block overlaps following free block
 	}
 
 // Try and merge the block with the prior free block
 
 	if (prior) {
-		if ((SCHAR *) prior + prior->frb_header.blk_length ==
-			(SCHAR *) block) {
+		if ((SCHAR *) prior + prior->frb_header.blk_length == (SCHAR *) block)
+		{
 			prior->frb_header.blk_length += block->frb_header.blk_length;
 			prior->frb_next = block->frb_next;
 		}
-		else if ((SCHAR *) prior + prior->frb_header.blk_length >
-				 (SCHAR *) block)
+		else if ((SCHAR *) prior + prior->frb_header.blk_length > (SCHAR *) block)
 			ERRQ_bugcheck(437);		// released block overlaps prior free block
 	}
 }

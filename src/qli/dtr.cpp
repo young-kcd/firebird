@@ -108,7 +108,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 #ifdef UNIX
 // If a Unix system, get home directory from environment 
-	SCHAR home_directory[256];
+	SCHAR home_directory[MAXPATHLEN];
 	startup_file = getenv("HOME");
 	if (startup_file == NULL) {
 		startup_file = ".qli_startup";
@@ -239,7 +239,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			default:
-				ERRQ_msg_put(469, (TEXT *)(IPTR) c, NULL, NULL, NULL, NULL);	// Msg469 qli: ignoring unknown switch %c 
+				ERRQ_msg_put(469, (TEXT *)(IPTR) c, NULL, NULL, NULL, NULL);	
+				// Msg469 qli: ignoring unknown switch %c 
 				break;
 			}
 	}

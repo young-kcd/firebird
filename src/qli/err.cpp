@@ -135,7 +135,7 @@ void ERRQ_error_format(
 {
 /**************************************
  *
- *	E R R Q _ e r r o r _ f o  r m a t
+ *	E R R Q _ e r r o r _ f o r m a t
  *
  **************************************
  *
@@ -242,7 +242,7 @@ void ERRQ_msg_put(
  *
  * Functional description
  *	Retrieve a message from the error file, format it, and print it
- * It's same outcome than ERRQ_msg_partial but with a newline at the end.
+ * It's same outcome as ERRQ_msg_partial but with a newline at the end.
  *
  **************************************/
 

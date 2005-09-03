@@ -1749,7 +1749,7 @@ static void add_sql_field( qli_rel* relation, qli_fld* field, USHORT position,
 	const qli_symbol* relation_name = relation->rel_symbol;
 	const qli_symbol* field_name = field->fld_name;
 
-// Check to see if it already exits in relation
+// Check to see if it already exists in relation
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_rfr_def])
 		X IN DB.RDB$RELATION_FIELDS WITH
@@ -1780,6 +1780,16 @@ static void add_sql_field( qli_rel* relation, qli_fld* field, USHORT position,
 	STUFF(isc_dyn_fld_scale);
 	STUFF_WORD(2);
 	STUFF_WORD(field->fld_scale);
+
+	if (DTYPE_IS_EXACT(field->fld_dtype))
+	{
+		STUFF(isc_dyn_fld_precision);
+		STUFF_WORD(2);
+		STUFF_WORD(field->fld_precision);
+		STUFF(isc_dyn_fld_sub_type);
+		STUFF_WORD(2);
+		STUFF_WORD(field->fld_sub_type);
+	}
 
 	if (position) {
 		STUFF(isc_dyn_fld_position);
