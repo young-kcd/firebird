@@ -1141,7 +1141,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 
 	case nod_limit:
 	case nod_rows:
-		if (node->nod_desc.dsc_scale <= SQL_DIALECT_V5) {
+		if (request->req_client_dialect <= SQL_DIALECT_V5) {
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_length = sizeof (SLONG);
 		}

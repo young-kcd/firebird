@@ -6110,10 +6110,6 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 				  isc_arg_gds, isc_random, isc_arg_string, "ROWS", 0);
 	}
     else if (node || (node = rows) ) {
-		/* CVC: This line is a hint because set_parameter_type() doesn't receive
-           the dialect currently as an argument. */
-        node->nod_desc.dsc_scale = request->req_client_dialect;
-
 		const int length_index = rows ? e_rows_length : e_limit_length;
 		const int skip_index = rows ? e_rows_skip : e_limit_skip;
 
@@ -6951,10 +6947,6 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 	}
 
 	if (rows) {
-		/* CVC: This line is a hint because set_parameter_type() doesn't receive
-           the dialect currently as an argument. */
-        rows->nod_desc.dsc_scale = request->req_client_dialect;
-
         if (rows->nod_arg[e_rows_length]) {
             dsql_nod* sub = PASS1_node(request, rows->nod_arg[e_rows_length], false);
             union_rse->nod_arg[e_rse_first] = sub;
