@@ -1,3 +1,19 @@
+2005-09-02 07:30  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp (1.153), gen.cpp (1.91), make.cpp
+	(1.102), make_proto.h (1.25), parse.cpp (1.162), parse.y (1.189),
+	pass1.cpp (1.238):
+	
+	1) Made output parameter naming a common procedure instead of
+	select-list private code.  2) Allowed value expressions in the
+	RETURNING clause.
+
+2005-09-02 06:59  robocop
+
+	* firebird2/src/jrd/: status.cpp (1.14), status.h (1.7):
+	
+	Please the Furies and change Mike's license with his permission.
+
 2005-08-31 18:08  dimitr
 
 	* firebird2/src/jrd/os/win32/fbsyslog.cpp (1.4):
