@@ -485,9 +485,8 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 				{
 					DEV_BLKCHK(field, dsql_type_fld);
 					DEV_BLKCHK(*input, dsql_type_nod);
-					// MAKE_desc_from_field(&desc_node.nod_desc, field);
+					MAKE_desc_from_field(&desc_node->nod_desc, field);
 					//	set_parameter_type(request, *input, &desc_node, false);
-					MAKE_desc_from_field(&(desc_node->nod_desc), field);
 					set_parameter_type(request, *input, desc_node.get(), false);
 				}
 			}
@@ -747,7 +746,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			DEV_BLKCHK(field, dsql_type_fld);
 			DEV_BLKCHK(temp, dsql_type_nod);
 			MAKE_desc_from_field(&(desc_node->nod_desc), field);
-			set_parameter_type(request, temp, desc_node.get(), FALSE);
+			set_parameter_type(request, temp, desc_node.get(), false);
 		} // end scope
 
 		return node;
@@ -1318,9 +1317,8 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 				{
 					DEV_BLKCHK(field, dsql_type_fld);
 					DEV_BLKCHK(*ptr, dsql_type_nod);
-					// MAKE_desc_from_field(&desc_node.nod_desc, field);
-					// set_parameter_type(*ptr, &desc_node, false);
 					MAKE_desc_from_field(&desc_node->nod_desc, field);
+					// set_parameter_type(*ptr, &desc_node, false);
 					set_parameter_type(request, *ptr, desc_node.get(), false);
 				}
 			}
@@ -7884,11 +7882,18 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 				if (in_node->nod_desc.dsc_dtype <= dtype_any_text && request->req_dbb->dbb_att_charset != CS_NONE &&
 					request->req_dbb->dbb_att_charset != CS_BINARY)
 				{
-					if (in_node->nod_desc.dsc_dtype == dtype_varying)
-						in_node->nod_desc.dsc_length -= sizeof(USHORT);
-					else if (in_node->nod_desc.dsc_dtype == dtype_cstring)
-						in_node->nod_desc.dsc_length--;
-
+					int diff = 0;
+					switch (in_node->nod_desc.dsc_dtype)
+					{
+					case dtype_varying:
+						diff = sizeof(USHORT);
+						break;
+					case dtype_cstring:
+						diff = 1;
+						break;
+					}
+					in_node->nod_desc.dsc_length -= diff;
+						
 					USHORT fromCharSet = INTL_GET_CHARSET(&in_node->nod_desc);
 					USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
 						fromCharSet : request->req_dbb->dbb_att_charset;
@@ -7903,10 +7908,7 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 							UTLD_char_length_to_byte_length(in_node->nod_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
 					}
 
-					if (in_node->nod_desc.dsc_dtype == dtype_varying)
-						in_node->nod_desc.dsc_length += sizeof(USHORT);
-					else if (in_node->nod_desc.dsc_dtype == dtype_cstring)
-						in_node->nod_desc.dsc_length++;
+					in_node->nod_desc.dsc_length += diff;
 				}
 
 				dsql_par* parameter = (dsql_par*) in_node->nod_arg[e_par_parameter];
@@ -7923,8 +7925,19 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 				// datatype assumption from occuring.
 
 				if (force_varchar) {
-					if (parameter->par_desc.dsc_dtype == dtype_text) {
+					if (parameter->par_desc.dsc_dtype == dtype_text)
+					{
 						parameter->par_desc.dsc_dtype = dtype_varying;
+						// The error msgs is inaccurate, but causing dsc_length
+						// to be outsise range can be worse.
+						if (parameter->par_desc.dsc_length > MAX_COLUMN_SIZE - sizeof(USHORT))
+							ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
+								  //isc_arg_gds, isc_dsql_datatype_err,
+								  isc_arg_gds, isc_imp_exc,
+								  //isc_arg_gds, isc_field_name,
+								  //isc_arg_string, parameter->par_name,
+								  0);
+
 						parameter->par_desc.dsc_length += sizeof(USHORT);
 					}
 					else if (parameter->par_desc.dsc_dtype > dtype_any_text) {
