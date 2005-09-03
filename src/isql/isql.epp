@@ -3429,26 +3429,31 @@ static processing_state escape(const TEXT* cmd)
 #ifdef WIN_NT
 	// MSDN says: You must explicitly flush (using fflush or _flushall)
 	// or close any stream before calling system.
-	_flushall();
+	// CVC: But that function defeats our possible several input streams opened.
+	//_flushall();
+	// Save Ofp position in case it's being used as input. See EDIT command.
+	fpos_t OfpPos = 0;
+	fgetpos(Ofp, &OfpPos);
+	fflush(NULL); // Flush only output buffers.
+	const char* emptyCmd = "%ComSpec%";
+#else
+	const char* emptyCmd = "$SHELL";
 #endif
 
 	// If no command given just spawn a shell
+	if (!*shellcmd)
+		shellcmd = emptyCmd;
+		
+	int rc  = system(shellcmd);
 
-	if (!*shellcmd) {
 #ifdef WIN_NT
-		if (system("%ComSpec%"))
-			return FAIL;
-#else
-		if (system("$SHELL"))
-			return FAIL;
+	// If we are reading from the temp file, restore the read position because
+	// it's opened in r+ mode in this case, that's R/W.
+	if (Ifp.indev_fpointer == Ofp)
+		fsetpos(Ofp, &OfpPos);
 #endif
-	}
-	else {
-		if (system(shellcmd))
-			return FAIL;
-	}
-
-	return (SKIP);
+			
+	return rc ? FAIL : SKIP;
 }
 
 
