@@ -309,6 +309,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 
 // Now see if it is in the database 
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 	iname = NULL;
@@ -336,9 +337,14 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 		(Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
 	THREAD_EXIT();
 
-	END_FOR ON_ERROR
-		// Assume V3 database 
-		END_ERROR;
+	END_FOR 
+	ON_ERROR
+	if (!(dbb->dbb_flags & DBB_v3))
+	{
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
+	}
+	END_ERROR;
 
 	THREAD_ENTER();
 
@@ -395,6 +401,7 @@ USHORT METD_get_col_default(dsql_req* request,
 
 	*has_default = false;
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 
@@ -429,7 +436,7 @@ USHORT METD_get_col_default(dsql_req* request,
 							  blr_bpb);
 		THREAD_ENTER();
 		if (stat)
-			ERRD_punt();
+			ERRD_punt(status_vect);
 
 		// fetch segments. Assuming here that the buffer is big enough. 
 		ptr_in_buffer = buffer;
@@ -450,7 +457,7 @@ USHORT METD_get_col_default(dsql_req* request,
 				break;
 			}
 			else
-				ERRD_punt();
+				ERRD_punt(status_vect);
 
 		}
 		THREAD_EXIT();
@@ -474,8 +481,13 @@ USHORT METD_get_col_default(dsql_req* request,
 
 	THREAD_EXIT();
 
-	END_FOR ON_ERROR ERRD_punt();
-	END_ERROR THREAD_ENTER();
+	END_FOR 
+	ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
+	END_ERROR 
+	
+	THREAD_ENTER();
 
 	return result;
 }
@@ -509,6 +521,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 
 // Now see if it is in the database 
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 	iname = NULL;
@@ -542,7 +555,11 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 
 	END_FOR 
     ON_ERROR
-		// Assume V3 database 
+		if (!(dbb->dbb_flags & DBB_v3))
+		{
+			THREAD_ENTER();
+			ERRD_punt(isc_status);
+		}
    	END_ERROR;
 
 	THREAD_ENTER();
@@ -583,6 +600,7 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
     dsql_dbb* dbb;
     USHORT bpc = 0;
     
+	ISC_STATUS_ARRAY isc_status = {0};
     dbb = request->req_dbb;
     DB = dbb->dbb_database_handle;
     
@@ -603,7 +621,11 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
         THREAD_EXIT();
     END_FOR
     ON_ERROR
-    // Assume V3 database 
+		if (!(dbb->dbb_flags & DBB_v3))
+		{
+			THREAD_ENTER();
+			ERRD_punt(isc_status);
+		}
     END_ERROR;
 
     THREAD_ENTER();
@@ -629,6 +651,7 @@ Firebird::MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
  **************************************/
     Firebird::MetaName name;
     
+	ISC_STATUS_ARRAY isc_status = {0};
     dsql_dbb* dbb = request->req_dbb;
     DB = dbb->dbb_database_handle;
     
@@ -648,7 +671,11 @@ Firebird::MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
         THREAD_EXIT();
     END_FOR
     ON_ERROR
-    // Assume V3 database 
+		if (!(dbb->dbb_flags & DBB_v3))
+		{
+			THREAD_ENTER();
+			ERRD_punt(isc_status);
+		}
     END_ERROR;
 
     THREAD_ENTER();
@@ -672,6 +699,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 	dsql_dbb* dbb;
 	USHORT length;
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	if (dbb->dbb_flags & DBB_no_charset)
 		return NULL;
@@ -705,7 +733,11 @@ dsql_str* METD_get_default_charset(dsql_req* request)
         THREAD_EXIT();
 	END_FOR 
     ON_ERROR
-		// Assume V3 database 
+		if (!(dbb->dbb_flags & DBB_v3))
+		{
+			THREAD_ENTER();
+			ERRD_punt(isc_status);
+		}
    	END_ERROR;
 
 	THREAD_ENTER();
@@ -732,6 +764,7 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 
 	bool found = false;
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 
@@ -770,6 +803,8 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 
 	END_FOR 
     ON_ERROR
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR;
 
 	THREAD_ENTER();
@@ -798,6 +833,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 
 	*has_default = false;
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 	USHORT result = 0;
@@ -827,7 +863,7 @@ USHORT METD_get_domain_default(dsql_req* request,
                                   blr_bpb);
             THREAD_ENTER();
             if (stat)
-                ERRD_punt();
+                ERRD_punt(status_vect);
 
             // fetch segments. Assume buffer is big enough.  
             TEXT* ptr_in_buffer = buffer;
@@ -850,7 +886,7 @@ USHORT METD_get_domain_default(dsql_req* request,
                     break;
                 }
                 else
-                    ERRD_punt();
+                    ERRD_punt(status_vect);
 
             }
             THREAD_EXIT();
@@ -876,7 +912,8 @@ USHORT METD_get_domain_default(dsql_req* request,
         
     END_FOR 
     ON_ERROR 
-        ERRD_punt();
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR 
 
     THREAD_ENTER();
@@ -900,6 +937,7 @@ bool METD_get_exception(dsql_req* request, const dsql_str* name)
 	dsql_dbb* dbb;
 	bool found = false;
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 
@@ -917,6 +955,8 @@ bool METD_get_exception(dsql_req* request, const dsql_str* name)
         
 	END_FOR 
     ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR;
 
 	THREAD_ENTER();
@@ -969,6 +1009,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 // Now see if it is in the database 
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 	userFunc = NULL;
@@ -998,6 +1039,8 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 	END_FOR 
     ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR;
 
 	THREAD_ENTER();
@@ -1033,6 +1076,8 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
             
 		END_FOR 
         ON_ERROR
+			THREAD_ENTER();
+			ERRD_punt(isc_status);
         END_ERROR;
 	}
 	else {						// V4 or greater dbb 
@@ -1108,6 +1153,8 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
         END_FOR 
         ON_ERROR 
+			THREAD_ENTER();
+			ERRD_punt(isc_status);
         END_ERROR;
 	}
 
@@ -1203,6 +1250,7 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
  *
  **************************************/
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 
@@ -1235,6 +1283,8 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 
 	END_FOR 
     ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR;
 
 	THREAD_ENTER();
@@ -1290,6 +1340,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 // now see if it is in the database 
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 	procedure = NULL;
@@ -1317,6 +1368,8 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 	END_FOR 
     ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR;
 
 	THREAD_ENTER();
@@ -1373,7 +1426,6 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
             
             convert_dtype(parameter, RFR.RDB$FIELD_TYPE);
             
-            
             if (!RFR.RDB$NULL_FLAG)
                 parameter->fld_flags |= FLD_nullable;
             
@@ -1389,6 +1441,9 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 		END_FOR 
         ON_ERROR 
+		if (!(dbb->dbb_flags & DBB_v3))
+			THREAD_ENTER();
+			ERRD_punt(isc_status);
         END_ERROR;
 
 		THREAD_ENTER();
@@ -1489,6 +1544,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 // now see if it is in the database 
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 	relation = NULL;
@@ -1539,6 +1595,8 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	END_FOR 
     ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR;
 
 	THREAD_ENTER();
@@ -1605,6 +1663,8 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 		END_FOR 
         ON_ERROR 
+			THREAD_ENTER();
+			ERRD_punt(isc_status);
         END_ERROR;
 	}
 	else {						// V4 ODS8 dbb 
@@ -1676,6 +1736,8 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 		END_FOR 
         ON_ERROR 
+			THREAD_ENTER();
+			ERRD_punt(isc_status);
         END_ERROR;
 	}
 
@@ -1733,6 +1795,7 @@ dsql_str* METD_get_trigger_relation(dsql_req* request, const dsql_str* name, USH
 	dsql_dbb* dbb;
 	dsql_str* relation;
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 
@@ -1754,6 +1817,8 @@ dsql_str* METD_get_trigger_relation(dsql_req* request, const dsql_str* name, USH
 
 	END_FOR 
     ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR;
 
 	THREAD_ENTER();
@@ -1777,6 +1842,7 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT*
 	dsql_dbb* dbb;
 	bool found = false;
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 
@@ -1795,6 +1861,8 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT*
         
 	END_FOR 
     ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR;
 
 	THREAD_ENTER();
@@ -1823,6 +1891,7 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
 
 	dsql_rel* relation = 0;
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 
@@ -1857,6 +1926,8 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
 
 	END_FOR 
     ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR;
 
 	THREAD_ENTER();
@@ -1881,6 +1952,7 @@ static void check_array(dsql_req* request, const TEXT* field_name, dsql_fld* fie
  **************************************/
 	dsql_dbb* dbb;
 
+	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
 
