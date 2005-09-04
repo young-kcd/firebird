@@ -1,3 +1,43 @@
+2005-09-03 10:03  robocop
+
+	* firebird2/src/dsql/: make.cpp (1.103), pass1.cpp (1.240):
+	
+	Get rid of my old hack to solve a problem between John/Mark's
+	FIRST/SKIP parameters type and dialect detection. The dialect is in
+	the request.
+
+2005-09-03 09:47  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.239):
+	
+	- Misc.  - Detect a limit case with params and containing or
+	starting.
+
+2005-09-03 07:56  robocop
+
+	* firebird2/src/qli/all.cpp (1.29):
+	
+	Misc.
+
+2005-09-03 07:54  robocop
+
+	* firebird2/src/isql/isql.epp (1.155):
+	
+	Fix premature EOF while reading a script file when using the SHELL
+	command inside it, found by Paul Reeves. Trying to find a
+	compromise between MS requirements for system() call and its bad
+	side effects on our isql.
+
+2005-09-03 07:52  robocop
+
+	* firebird2/src/: msgs/facilities.sql (1.36), msgs/messages.sql
+	(1.43), qli/all.cpp (1.28), qli/dtr.cpp (1.39), qli/dtr.h (1.23),
+	qli/err.cpp (1.18), qli/meta.epp (1.56), qli/parse.cpp (1.39),
+	qli/words.h (1.5):
+	
+	Archeology: enable QLI to handle NUMERIC, DECIMAL and BIGINT in
+	definitions. No dialect check made.
+
 2005-09-02 07:30  dimitr
 
 	* firebird2/src/dsql/: ddl.cpp (1.153), gen.cpp (1.91), make.cpp
