@@ -366,9 +366,14 @@ void ERRD_post(ISC_STATUS status, ...)
 
 
  **/
-void ERRD_punt(void)
+void ERRD_punt(const ISC_STATUS* local)
 {
 	tsql* tdsql = DSQL_get_thread_data();
+
+// copy local status into user status
+	if (local) {
+		UTLD_copy_status(local, tdsql->tsql_status);
+	}
 
 // Save any strings in a permanent location 
 

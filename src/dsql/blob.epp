@@ -35,11 +35,11 @@
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../dsql/blob_proto.h"
+#include "../dsql/utld_proto.h"
 
 DATABASE DB = STATIC "yachts.lnk";
 
 static void copy_exact_name (const UCHAR*, UCHAR*, SSHORT);
-static ISC_STATUS copy_status(const ISC_STATUS*, ISC_STATUS*);
 static ISC_STATUS error(ISC_STATUS*, SSHORT, ...);
 
 
@@ -175,7 +175,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
         }
 	END_FOR 
     ON_ERROR 
-		return copy_status(gds_status, status);
+		return UTLD_copy_status(gds_status, status);
 	END_ERROR;
 
 	if (!flag)
@@ -252,28 +252,6 @@ static void copy_exact_name (
 		*to++ = *from++;
 	}
 	*++to2 = 0;
-}
-
-
-static ISC_STATUS copy_status( const ISC_STATUS* from, ISC_STATUS* to)
-{
-/**************************************
- *
- *	c o p y _ s t a t u s
- *
- **************************************
- *
- * Functional description
- *	Copy a status vector.
- *
- **************************************/
-	const ISC_STATUS status = from[1];
-
-	const ISC_STATUS* const end = from + ISC_STATUS_LENGTH;
-	while (from < end)
-		*to++ = *from++;
-
-	return status;
 }
 
 

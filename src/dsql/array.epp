@@ -38,6 +38,7 @@
 #include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../dsql/array_proto.h"
+#include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
 
 DATABASE DB = STATIC FILENAME "yachts.lnk";
@@ -56,7 +57,6 @@ typedef gen_t *GEN_T;
 
 static void adjust_length(ISC_ARRAY_DESC*);
 static void copy_exact_name (const char*, char*, SSHORT);
-static ISC_STATUS copy_status(const ISC_STATUS*, ISC_STATUS*);
 static ISC_STATUS error(ISC_STATUS*, SSHORT, ...);
 static ISC_STATUS gen_sdl(ISC_STATUS*, const ISC_ARRAY_DESC*, SSHORT*, UCHAR**,
 					  SSHORT*, bool);
@@ -177,7 +177,7 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
         ++tail;
 	END_FOR 
     ON_ERROR 
-        return copy_status(gds_status, status);
+        return UTLD_copy_status(gds_status, status);
 	END_ERROR;
 
 	return status[1];
@@ -360,28 +360,6 @@ static void copy_exact_name (
 		*to++ = *from++;
 	}
 	*++to2 = 0;
-}
-
-
-static ISC_STATUS copy_status( const ISC_STATUS* from, ISC_STATUS* to)
-{
-/**************************************
- *
- *	c o p y _ s t a t u s
- *
- **************************************
- *
- * Functional description
- *	Copy a status vector.
- *
- **************************************/
-	const ISC_STATUS status = from[1];
-
-	const ISC_STATUS* const end = from + ISC_STATUS_LENGTH;
-	while (from < end)
-		*to++ = *from++;
-
-	return status;
 }
 
 
@@ -570,7 +548,7 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
  
 	END_FOR 
     ON_ERROR 
-        return copy_status(gds_status, status);
+        return UTLD_copy_status(gds_status, status);
 	END_ERROR;
 
 	if (!flag)
