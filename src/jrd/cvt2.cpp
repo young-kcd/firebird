@@ -632,7 +632,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	{
 		if (arg2->dsc_dtype <= dtype_varying)
 		{
-			if ((ttype2 = arg2->dsc_ttype()) != ttype_none && ttype2 != ttype_binary)
+			if ((ttype2 = arg2->dsc_ttype()) != ttype_binary)
 				ttype2 = ttype1;
 		}
 		else
