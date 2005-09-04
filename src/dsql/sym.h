@@ -53,11 +53,11 @@ public:
 	USHORT sym_length;			// length of string (exc. term.) 
 	SYM_TYPE sym_type;			// symbol type 
 	USHORT sym_keyword;			// keyword number, if keyword 
+	USHORT sym_version;			// dialect version the symbol was introduced 
 	void *sym_object;			// general pointer to object 
 	dsql_sym* sym_collision;	// collision pointer 
 	dsql_sym* sym_homonym;		// homonym pointer 
 	TEXT sym_name[2];			// space for name, if necessary 
-	USHORT sym_version;			// dialect version the symbol was introduced 
 };
 typedef dsql_sym *DSQL_SYM;
 
