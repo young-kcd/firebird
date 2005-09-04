@@ -626,7 +626,7 @@ public:
 	typedef tsql* Pointer;
 	tsql(ISC_STATUS* status, Pointer& ptr) 
 		: ThreadData(tddSQL), tsql_default(0), 
-		tsql_status(status), tsql_user_status(0)
+		tsql_status(status)
 	{
 		ptr = this;
 		putSpecific();
@@ -638,7 +638,6 @@ public:
 	}
 
 	ISC_STATUS*		tsql_status;
-	ISC_STATUS*		tsql_user_status;
 
 	DsqlMemoryPool* getDefaultPool()
 	{
