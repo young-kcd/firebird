@@ -1,3 +1,36 @@
+2005-09-04 23:39  hvlad
+
+	* firebird2/src/dsql/dsql.h (1.81):
+	
+	Removed unused member
+
+2005-09-04 23:33  hvlad
+
+	* firebird2/src/dsql/sym.h (1.10):
+	
+	Correction
+
+2005-09-04 23:32  hvlad
+
+	* firebird2/src/dsql/metd.epp (1.78):
+	
+	Add error handlers
+
+2005-09-04 23:31  hvlad
+
+	* firebird2/src/dsql/: array.epp (1.36), blob.epp (1.18), errd.cpp
+	(1.37), errd_proto.h (1.11), utld.cpp (1.36), utld_proto.h (1.12):
+	
+	Small code reorganisation: 1. move two identical 'copy_status'
+	functions from array.epp and blob.epp into utld.cpp 2. allow
+	ERRD_punt use local instance of status-vector
+
+2005-09-04 17:28  asfernandes
+
+	* firebird2/src/jrd/cvt2.cpp (1.51):
+	
+	Use the same comparation rules of VARCHAR/NONE in text BLOB/NONE
+
 2005-09-03 10:03  robocop
 
 	* firebird2/src/dsql/: make.cpp (1.103), pass1.cpp (1.240):
