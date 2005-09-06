@@ -42,7 +42,7 @@
  *
  */
 /*
-$Id: why.cpp,v 1.23.2.3 2004-09-24 15:45:01 hvlad Exp $
+$Id: why.cpp,v 1.23.2.4 2005-09-06 09:55:22 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -668,6 +668,28 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		return error2(status, local);
 	}
 
+	org_length = GDS_VAL(file_length);
+	if (org_length && org_length <= MAXPATHLEN)
+	{
+		p = file_name + org_length - 1;
+		while (*p == ' ')
+		{
+			p--;
+		}
+		org_length = p - file_name + 1;
+	}
+	temp_length = org_length ? org_length : strlen(file_name);
+
+	if (temp_length >= MAXPATHLEN)
+	{
+		status[0] = isc_arg_gds;
+		status[1] = isc_bad_db_format;
+		status[2] = isc_arg_string;
+		status[3] = (ISC_STATUS) "(name too long)";
+		status[4] = isc_arg_end;
+		return error2(status, local);
+	}
+
 	if (GDS_VAL(dpb_length) > 0 && !dpb)
 	{
 		status[0] = isc_arg_gds;
@@ -693,22 +715,9 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	ptr = status;
 
-	org_length = GDS_VAL(file_length);
-
-	if (org_length)
-	{
-		p = file_name + org_length - 1;
-		while (*p == ' ')
-		{
-			p--;
-		}
-		org_length = p - file_name + 1;
-	}
-
 /* copy the file name to a temp buffer, since some of the following
    utilities can modify it */
 
-	temp_length = org_length ? org_length : strlen(file_name);
 	memcpy(temp_filename, file_name, temp_length);
 	temp_filename[temp_length] = '\0';
 
@@ -1293,6 +1302,26 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 		return error2(status, local);
 	}
 
+	org_length = file_length;
+	if (org_length)
+	{
+		p = file_name + org_length - 1;
+		while (*p == ' ')
+			p--;
+		org_length = p - file_name + 1;
+	}
+	temp_length = org_length ? org_length : strlen(file_name);
+
+	if (temp_length >= MAXPATHLEN)
+	{
+		status[0] = isc_arg_gds;
+		status[1] = isc_bad_db_format;
+		status[2] = isc_arg_string;
+		status[3] = (ISC_STATUS) "(name too long)";
+		status[4] = isc_arg_end;
+		return error2(status, local);
+	}
+
 	if (dpb_length > 0 && !dpb)
 	{
 		status[0] = isc_arg_gds;
@@ -1318,23 +1347,9 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS * user_status,
 
 	ptr = status;
 
-	org_length = file_length;
-
-	if (org_length)
-	{
-		p = file_name + org_length - 1;
-		while (*p == ' ')
-			p--;
-		org_length = p - file_name + 1;
-	}
-
 /* copy the file name to a temp buffer, since some of the following
    utilities can modify it */
 
-	if (org_length)
-		temp_length = org_length;
-	else
-		temp_length = strlen(file_name);
 	memcpy(temp_filename, file_name, temp_length);
 	temp_filename[temp_length] = '\0';
 
