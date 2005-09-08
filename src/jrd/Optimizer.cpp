@@ -1850,7 +1850,16 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		return NULL;
 	}
 
-	const jrd_nod* const plan = csb->csb_rpt[stream].csb_plan;
+	// This constant disables our smart index selection algorithm. When we
+	// deal with a system request, most probably it's being cached at the
+	// first invocation and hence it may have out-of-date plan at runtime.
+	// An example is a database restore process which starts with almost
+	// empty system tables which may significantly grow later. So, as a
+	// practical rule, we use all available indices for any system request.
+	// Another special case is an explicit (i.e. user specified) plan which
+	// requires all existing indices to be considered for a retrieval.
+	const bool acceptAll =
+		((csb->csb_g_flags & csb_internal) || csb->csb_rpt[stream].csb_plan);
 
 	double totalSelectivity = MAXIMUM_SELECTIVITY; // worst selectivity
 	double totalCost = 0;
@@ -1859,7 +1868,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	const double minimumSelectivity =
 		csb->csb_rpt[stream].csb_cardinality ?
 		1 / csb->csb_rpt[stream].csb_cardinality : 0;
-	double previousTotalCost = maximumCost;
+//	double previousTotalCost = maximumCost;
 
 	int i = 0;
 	InversionCandidate* invCandidate = NULL;
@@ -2015,7 +2024,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 		// If we have a candidate which is interesting build the inversion
 		// else we're done.
-		if (bestCandidate) 
+		if (bestCandidate)
 		{
 			// AB: Here we test if our new candidate is interesting enough to be added for
 			// index retrieval. 
@@ -2042,8 +2051,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 				bestSel = totalSelectivity;
 			}
 
-			if (bestSel >= 1) {
-				newTotalSelectivity = 1;
+			if (bestSel >= MAXIMUM_SELECTIVITY) {
+				newTotalSelectivity = MAXIMUM_SELECTIVITY;
 			}
 			else if (bestSel == 0) {
 				newTotalSelectivity = 0;
@@ -2062,13 +2071,15 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 			// Test if the new totalCost will be higher than the maximumCost or previous totalCost 
 			// and if the current selectivity (without the bestCandidate) is already good enough.
-			//if (plan || bestCandidate->selectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR_ADD)) {
-			if (plan || ((totalCost < maximumCost) && (totalCost < previousTotalCost) && 
-						(totalSelectivity > minimumSelectivity))) 
+//			if (plan || bestCandidate->selectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR_ADD))
+//			if (plan || ((totalCost < maximumCost) && (totalCost < previousTotalCost) && 
+//				(totalSelectivity > minimumSelectivity)))
+			if (acceptAll || ((totalCost < maximumCost) &&
+				(!totalSelectivity || totalSelectivity > minimumSelectivity)))
 			{
 				// Exclude index from next pass
 				bestCandidate->used = true;
-				previousTotalCost = totalCost;
+//				previousTotalCost = totalCost;
 
 				totalSelectivity = newTotalSelectivity;
 
@@ -2082,7 +2093,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					}
 					invCandidate->unique = bestCandidate->unique;
 					invCandidate->selectivity = bestCandidate->selectivity;
-					invCandidate->cost = totalCost;
+					invCandidate->cost = bestCandidate->cost;
 					invCandidate->indexes = bestCandidate->indexes;
 					invCandidate->nonFullMatchedSegments = 0;
 					invCandidate->matchedSegments = bestCandidate->matchedSegments;
@@ -2111,7 +2122,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					}
 					invCandidate->unique = (invCandidate->unique || bestCandidate->unique);
 					invCandidate->selectivity = totalSelectivity;
-					invCandidate->cost = totalCost;
+					invCandidate->cost += bestCandidate->cost;
 					invCandidate->indexes += bestCandidate->indexes;
 					invCandidate->nonFullMatchedSegments = 0;
 					invCandidate->matchedSegments = 
@@ -2844,7 +2855,7 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool) 
 			OptimizerRetrieval(pool, optimizer, innerStreams[i]->stream, false, false, NULL);
 		InversionCandidate* candidate = optimizerRetrieval->getCost();
-		innerStreams[i]->baseCost = candidate->cost;//candidate->selectivity * csb_tail->csb_cardinality;
+		innerStreams[i]->baseCost = candidate->cost;
 		innerStreams[i]->baseIndexes = candidate->indexes;
 		innerStreams[i]->baseUnique = candidate->unique;
 		innerStreams[i]->baseConjunctionMatches = candidate->matches.getCount();
@@ -2960,15 +2971,6 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	const InversionCandidate* candidate = optimizerRetrieval->getCost();
 	double selectivity = candidate->selectivity;
 	if (candidate->indexes) {
-		// Based on the page-size we make an estimated number of keys per index leaf page.
-		// This is really a wild estimated number because it depends on key size and how good
-		// the prefix compression does its work.
-		//const double nodesPerPage = ((double)database->dbb_page_size / 10);
-		// The estimated index cost reflects the number of pages fetched for this index read.
-		// The number of pages is an index pointer page + the B-Tree level - 1 (leaf page) +
-		// index leaf pages to be read.
-		//const double indexCost = 2 + ((cardinality * selectivity) / nodesPerPage);
-		//*cost = (cardinality * selectivity) + (candidate->indexes * indexCost);
 		*cost = candidate->cost;
 	}
 	else {
@@ -3237,7 +3239,7 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool) 
 		OptimizerRetrieval(pool, optimizer, testStream->stream, false, false, NULL);
 	InversionCandidate* candidate = optimizerRetrieval->getCost();
-	double cost = candidate->cost;// candidate->selectivity * csb_tail->csb_cardinality;
+	double cost = candidate->cost;
 	if (candidate->unique) {
 		// If we've an unique index retrieval the cost is equal to 1
 		// The cost calculation can be far away from the real cost value if there
