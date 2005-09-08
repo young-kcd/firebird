@@ -72,7 +72,7 @@ static void release_io_event(jrd_file*, OVERLAPPED*);
 static ULONG get_number_of_pages(const jrd_file*, const USHORT);
 static bool	MaybeCloseFile(SLONG*);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
-static jrd_file* setup_file(Database*, const TEXT*, USHORT, HANDLE);
+static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE);
 static bool nt_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
 
 static USHORT ostype;
@@ -94,7 +94,7 @@ static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
 
 
 
-int PIO_add_file(Database* dbb, jrd_file* main_file, const TEXT* file_name, SLONG start)
+int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& file_name, SLONG start)
 {
 /**************************************
  *
@@ -108,7 +108,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const TEXT* file_name, SLON
  *	sequence of 0.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, strlen(file_name), false);
+	jrd_file* new_file = PIO_create(dbb, file_name, false);
 	if (!new_file) {
 		return 0;
 	}
@@ -159,7 +159,7 @@ void PIO_close(jrd_file* main_file)
 }
 
 
-int PIO_connection(const TEXT* file_name, USHORT* file_length)
+int PIO_connection(const Firebird::PathName& file_name)
 {
 /**************************************
  *
@@ -181,7 +181,7 @@ int PIO_connection(const TEXT* file_name, USHORT* file_length)
 
 
 
-jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool overwrite)
+jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite)
 {
 /**************************************
  *
@@ -193,16 +193,7 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
  *	Create a new database file.
  *
  **************************************/
-	TEXT workspace[MAXPATHLEN];
-
-	const TEXT* file_name = string;
-
-	if (length)
-	{
-		MOVE_FAST(file_name, workspace, length);
-		workspace[length] = 0;
-		file_name = workspace;
-	}
+	const TEXT* file_name = string.c_str();
 
 	const HANDLE desc = CreateFile(file_name,
 					  GENERIC_READ | GENERIC_WRITE,
@@ -218,8 +209,8 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
 		ERR_post(isc_io_error,
 				 isc_arg_string, "CreateFile (create)",
 				 isc_arg_cstring,
-				 length,
-				 ERR_string(string, length),
+				 string.length(),
+				 ERR_cstring(string),
 				 isc_arg_gds,
 				 isc_io_create_err, isc_arg_win32, GetLastError(), 0);
 	}
@@ -227,10 +218,11 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
 /* File open succeeded.  Now expand the file name. */
 /* workspace is the exapnded name here */
 
-	length = PIO_expand(string, length, workspace, sizeof(workspace));
+	Firebird::PathName workspace(string);
+	ISC_expand_filename(workspace, false);
 	jrd_file *file;
 	try {
-		file = setup_file(dbb, workspace, length, desc);
+		file = setup_file(dbb, workspace, desc);
 	} catch(const std::exception&) {
 		CloseHandle(desc);
 		throw;
@@ -483,10 +475,10 @@ SLONG PIO_act_alloc(Database* dbb)
 
 
 jrd_file* PIO_open(Database* dbb,
-			 const TEXT* string,
-			 SSHORT length,
+			 const Firebird::PathName& string,
 			 bool trace_flag,
-			 blk* connection, const TEXT* file_name, USHORT file_length)
+			 blk* connection, 
+			 const Firebird::PathName& file_name)
 {
 /**************************************
  *
@@ -500,25 +492,7 @@ jrd_file* PIO_open(Database* dbb,
  *	to communicate with a page/lock server.
  *
  **************************************/
-	TEXT temp[MAXPATHLEN];
-
-	const TEXT* ptr;
-	if (string) {
-		ptr = string;
-		if (length) {
-			MOVE_FAST(string, temp, length);
-			temp[length] = 0;
-			ptr = temp;
-		}
-	}
-	else {
-		ptr = file_name;
-		if (file_length) {
-			MOVE_FAST(file_name, temp, file_length);
-			temp[file_length] = 0;
-			ptr = temp;
-		}
-	}
+	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
 
 	HANDLE desc = CreateFile(ptr,
 					  GENERIC_READ | GENERIC_WRITE,
@@ -547,8 +521,8 @@ jrd_file* PIO_open(Database* dbb,
 					 isc_arg_string,
 					 "CreateFile (open)",
 					 isc_arg_cstring,
-					 file_length,
-					 ERR_string(file_name, file_length),
+					 file_name.length(),
+					 ERR_cstring(file_name),
 					 isc_arg_gds,
 					 isc_io_open_err, isc_arg_win32, GetLastError(), 0);
 		}
@@ -565,7 +539,7 @@ jrd_file* PIO_open(Database* dbb,
 
 	jrd_file *file;
 	try {
-		file = setup_file(dbb, string, length, desc);
+		file = setup_file(dbb, string, desc);
 	} catch(const std::exception&) {
 		CloseHandle(desc);
 		throw;
@@ -1012,10 +986,9 @@ static jrd_file* seek_file(jrd_file*			file,
 }
 
 
-static jrd_file* setup_file(Database*		dbb,
-					  const TEXT*		file_name,
-					  USHORT	file_length,
-					  HANDLE	desc)
+static jrd_file* setup_file(Database*					dbb,
+							const Firebird::PathName&	file_name,
+							HANDLE						desc)
 {
 /**************************************
  *
@@ -1030,17 +1003,17 @@ static jrd_file* setup_file(Database*		dbb,
 
 /* Allocate file block and copy file name string */
 
-	jrd_file* file = FB_NEW_RPT(*dbb->dbb_permanent, file_length + 1) jrd_file;
+	jrd_file* file = FB_NEW_RPT(*dbb->dbb_permanent, file_name.length() + 1) jrd_file;
 	file->fil_desc = reinterpret_cast<SLONG>(desc);
 	file->fil_force_write_desc =
 		reinterpret_cast<SLONG>(INVALID_HANDLE_VALUE);
-	file->fil_length = file_length;
+	file->fil_length = file_name.length();
 	file->fil_max_page = (ULONG) -1;
 #ifdef SUPERSERVER_V2
 	memset(file->fil_io_events, 0, MAX_FILE_IO * sizeof(SLONG));
 #endif
-	MOVE_FAST(file_name, file->fil_string, file_length);
-	file->fil_string[file_length] = 0;
+	MOVE_FAST(file_name.c_str(), file->fil_string, file_name.length());
+	file->fil_string[file_name.length()] = 0;
 
 /* If this isn't the primary file, we're done */
 
@@ -1109,7 +1082,7 @@ static jrd_file* setup_file(Database*		dbb,
 				dbb->dbb_file = file;
 				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
 				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
-					ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name, file_length), 0);
+					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), 0);
 				dbb->dbb_file = NULL; // Will be set again later by the caller				
 			} catch(const std::exception&) {
 				delete dbb->dbb_lock;

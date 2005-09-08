@@ -90,7 +90,7 @@ void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
 			isc_arg_end);
 	}
 
-	jrd_file* shadow_file = PIO_create(dbb, file_name, strlen(file_name), false);
+	jrd_file* shadow_file = PIO_create(dbb, file_name, false);
 
 	if (dbb->dbb_flags & DBB_force_write)
 		PIO_force_write(shadow_file, true);
@@ -906,7 +906,6 @@ void SDW_start(const TEXT* file_name,
  *	but deleting inaccessible shadow files.
  *
  **************************************/
-	SCHAR expanded_name[MAXPATHLEN];
 	USHORT header_fetched = 0;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -933,13 +932,12 @@ void SDW_start(const TEXT* file_name,
 /* check to see if the shadow is the same as the current database --
    if so, a shadow file is being accessed as a database */
 
-	const int length = strlen(file_name);
-	const int expanded_length = PIO_expand(file_name, (USHORT) length, 
-					expanded_name, sizeof(expanded_name));
+	Firebird::PathName expanded_name(file_name);
+	ISC_expand_filename(expanded_name, false);
 	jrd_file* dbb_file = dbb->dbb_file;
 
-	if (dbb_file && dbb_file->fil_string &&
-		!strcmp(dbb_file->fil_string, expanded_name)) 
+	if (dbb_file && dbb_file->fil_string && 
+		expanded_name == dbb_file->fil_string) 
 	{
 		if (shadow && (shadow->sdw_flags & SDW_rollover))
 			return;
@@ -973,8 +971,7 @@ void SDW_start(const TEXT* file_name,
 	try {
 
 	shadow_file =
-		PIO_open(dbb, expanded_name, expanded_length, false, 0, file_name,
-				 length);
+		PIO_open(dbb, expanded_name, false, 0, file_name);
 
 	if (dbb->dbb_flags & DBB_force_write) {
 		PIO_force_write(shadow_file, true);
@@ -1078,7 +1075,7 @@ void SDW_start(const TEXT* file_name,
 			MET_delete_shadow(tdbb, shadow_number);
 			gds__log
 				("shadow %s deleted from database %s due to unavailability on attach",
-				 expanded_name, dbb_file->fil_string);
+				 expanded_name.c_str(), dbb_file->fil_string);
 		}
 	}
 }
@@ -1226,12 +1223,13 @@ static bool check_for_file(const SCHAR* name, USHORT length)
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
+	const Firebird::PathName path(name, length);
 
 	try {
 //  This use of PIO_open is NOT checked against DatabaseAccess configuration
 // parameter. It's not required, because here we only check for presence of
 // existing file, never really use (or create) it.
-		jrd_file* temp_file = PIO_open(dbb, name, length, false, 0, name, length);
+		jrd_file* temp_file = PIO_open(dbb, path, false, 0, path);
 		PIO_close(temp_file);
 	}	// try
 	catch (const std::exception& ex) {

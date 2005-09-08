@@ -564,7 +564,7 @@ void BackupManager::begin_backup()
 		}
 		// Create file
 		NBAK_TRACE(("Creating difference file %s", diff_name));
-		diff_file = PIO_create(database, diff_name, strlen(diff_name), true);
+		diff_file = PIO_create(database, diff_name, true);
 		// Zero out first page (empty allocation table)
 		BufferDesc temp_bdb;
 		temp_bdb.bdb_page = 0;
@@ -1177,8 +1177,7 @@ bool BackupManager::actualize_state() throw() {
 #endif
 		try {
 			NBAK_TRACE(("Open difference file"));
-			diff_file = PIO_open(database, diff_name, strlen(diff_name), false,
-								 NULL, diff_name, strlen(diff_name));
+			diff_file = PIO_open(database, diff_name, false, NULL, diff_name);
 		} catch(const std::exception& ex) {
 #ifdef SUPERSERVER
 			adjust_state_lock->leave();

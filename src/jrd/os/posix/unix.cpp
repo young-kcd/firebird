@@ -123,16 +123,16 @@ using namespace Jrd;
 
 static void close_marker_file(TEXT *);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, UINT64 *, ISC_STATUS *);
-static jrd_file* setup_file(Database*, const TEXT*, USHORT, int);
+static jrd_file* setup_file(Database*, const Firebird::PathName&, int);
 static bool unix_error(TEXT*, jrd_file*, ISC_STATUS, ISC_STATUS*);
 #if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
 #endif
 #ifdef SUPPORT_RAW_DEVICES
-static bool raw_devices_check_file (const TEXT*);
-static bool raw_devices_validate_database (int, const TEXT*, USHORT);
-static int  raw_devices_unlink_database (const TEXT*);
+static bool raw_devices_check_file (const Firebird::PathName&);
+static bool raw_devices_validate_database (int, const Firebird::PathName&);
+static int  raw_devices_unlink_database (const Firebird::PathName&);
 #endif
 
 #ifdef hpux
@@ -143,7 +143,7 @@ union fcntlun {
 #endif
 
 
-int PIO_add_file(Database* dbb, jrd_file* main_file, const TEXT* file_name, SLONG start)
+int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& file_name, SLONG start)
 {
 /**************************************
  *
@@ -160,7 +160,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const TEXT* file_name, SLON
  *	have been locked before entry.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, strlen(file_name), false);
+	jrd_file* new_file = PIO_create(dbb, file_name, false);
 	if (!new_file)
 		return 0;
 
@@ -219,7 +219,7 @@ void PIO_close(jrd_file* main_file)
 }
 
 
-int PIO_connection(const TEXT* file_name, USHORT* file_length)
+int PIO_connection(const Firebird::PathName& file_name)
 {
 /**************************************
  *
@@ -240,7 +240,7 @@ int PIO_connection(const TEXT* file_name, USHORT* file_length)
 }
 
 
-jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool overwrite)
+jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite)
 {
 /**************************************
  *
@@ -255,14 +255,7 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
  *	have been locked before entry.
  *
  **************************************/
-	const TEXT* file_name = string;
-
-    TEXT temp[256]; // Shouldn't it be MAXPATHLEN?
-	if (length) {
-		MOVE_FAST(file_name, temp, length);
-		temp[length] = 0;
-		file_name = temp;
-	}
+	const TEXT* file_name = string.c_str();
 
 #ifdef SUPERSERVER_V2
 	const int flag =
@@ -283,18 +276,18 @@ jrd_file* PIO_create(Database* dbb, const TEXT* string, SSHORT length, bool over
 	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "open O_CREAT",
-				 isc_arg_cstring, length, ERR_string(string, length),
+				 isc_arg_cstring, string.length(), ERR_cstring(string),
 				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
 	}
 
 /* File open succeeded.  Now expand the file name. */
 
-	TEXT expanded_name[256]; // Shouldn't it be MAXPATHLEN?
-	length = PIO_expand(string, length, expanded_name, sizeof(expanded_name));
+	Firebird::PathName expanded_name(string);
+	ISC_expand_filename(expanded_name, false);
 	jrd_file* file;
 	try 
 	{
-		file = setup_file(dbb, expanded_name, length, desc);
+		file = setup_file(dbb, expanded_name, desc);
 	} 
 	catch(const std::exception&) 
 	{
@@ -580,10 +573,10 @@ SLONG PIO_act_alloc(Database* dbb)
 
 
 jrd_file* PIO_open(Database* dbb,
-			 const TEXT* string,
-			 SSHORT length,
+			 const Firebird::PathName& string,
 			 bool trace_flag,
-			 blk* connection, const TEXT* file_name, USHORT file_length)
+			 blk* connection, 
+			 const Firebird::PathName& file_name)
 {
 /**************************************
  *
@@ -596,26 +589,8 @@ jrd_file* PIO_open(Database* dbb,
  *	the connection to communication with a page/lock server.
  *
  **************************************/
-	TEXT temp[256];
 	int desc, i, flag;
-
-	const TEXT* ptr;
-	if (string) {
-		ptr = string;
-		if (length) {
-			MOVE_FAST(string, temp, length);
-			temp[length] = 0;
-			ptr = temp;
-		}
-	}
-	else {
-		ptr = file_name;
-		if (file_length) {
-			MOVE_FAST(file_name, temp, file_length);
-			temp[file_length] = 0;
-			ptr = temp;
-		}
-	}
+	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
 
 #ifdef SUPERSERVER_V2
 	flag = SYNC | O_RDWR | O_BINARY;
@@ -640,8 +615,7 @@ jrd_file* PIO_open(Database* dbb,
 		if ((desc = open(ptr, flag)) == -1) {
 			ERR_post(isc_io_error,
 					 isc_arg_string, "open",
-					 isc_arg_cstring, file_length, ERR_string(file_name,
-															  file_length),
+					 isc_arg_cstring, file_name.length(), ERR_cstring(file_name),
 					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, 0);
 		}
 		else {
@@ -661,12 +635,12 @@ jrd_file* PIO_open(Database* dbb,
 	 * valid database is on it. If not, return an error.
 	 */
 	if (raw_devices_check_file(file_name)
-		&& !raw_devices_validate_database(desc, file_name, file_length))
+		&& !raw_devices_validate_database(desc, file_name))
 	{
 		ERR_post (isc_io_error,
 					isc_arg_string, "open",
-					isc_arg_cstring, file_length,
-						ERR_string (file_name, file_length),
+					isc_arg_cstring, file_name.length(),
+						ERR_cstring (file_name),
 					isc_arg_gds, isc_io_open_err,
 					isc_arg_unix, ENOENT, 0);
 	}
@@ -674,7 +648,7 @@ jrd_file* PIO_open(Database* dbb,
 
 	jrd_file *file;
 	try {
-		file = setup_file(dbb, string, length, desc);
+		file = setup_file(dbb, string, desc);
 	} catch(const std::exception&) {
 		close(desc);
 		throw;
@@ -959,8 +933,7 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, UINT64* offset,
 }
 
 
-static jrd_file* setup_file(Database* dbb, const TEXT* file_name, USHORT file_length,
-	int desc)
+static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, int desc)
 {
 /**************************************
  *
@@ -975,12 +948,12 @@ static jrd_file* setup_file(Database* dbb, const TEXT* file_name, USHORT file_le
 
 /* Allocate file block and copy file name string */
 
-	jrd_file* file = FB_NEW_RPT(*dbb->dbb_permanent, file_length + 1) jrd_file();
+	jrd_file* file = FB_NEW_RPT(*dbb->dbb_permanent, file_name.length() + 1) jrd_file();
 	file->fil_desc = desc;
-	file->fil_length = file_length;
+	file->fil_length = file_name.length();
 	file->fil_max_page = -1UL;
-	MOVE_FAST(file_name, file->fil_string, file_length);
-	file->fil_string[file_length] = '\0';
+	MOVE_FAST(file_name.c_str(), file->fil_string, file_name.length());
+	file->fil_string[file_name.length()] = '\0';
 #ifndef PREAD_PWRITE
 	THD_IO_MUTEX_INIT(file->fil_mutex);
 #endif
@@ -1042,11 +1015,11 @@ static jrd_file* setup_file(Database* dbb, const TEXT* file_name, USHORT file_le
 				if (lseek (file->fil_desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
 					ERR_post (isc_io_error,
 						isc_arg_string, "lseek",
-						isc_arg_string, ERR_string (file_name, file_length),
+						isc_arg_cstring, file_name.length(), ERR_cstring (file_name),
 						isc_arg_gds, isc_io_read_err,
 						isc_arg_unix, errno, 0);
 				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
-					ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name, file_length), 0);
+					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), 0);
 				dbb->dbb_file = NULL; // Will be set again later by the caller				
 			} catch(const std::exception&) {
 				delete dbb->dbb_lock;
@@ -1198,7 +1171,8 @@ static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
 #endif /* PREAD_PWRITE && !(HAVE_PREAD && HAVE_PWRITE)*/
 
 
-int PIO_unlink (const TEXT* file_name)
+#ifdef SUPPORT_RAW_DEVICES
+int PIO_unlink (const Firebird::PathName& file_name)
 {
 /**************************************
  *
@@ -1211,18 +1185,15 @@ int PIO_unlink (const TEXT* file_name)
  *
  **************************************/
 
-#ifdef SUPPORT_RAW_DEVICES
 	if (raw_devices_check_file(file_name))
 		return raw_devices_unlink_database(file_name);
 	else
-#endif
-		return unlink(file_name);
+		return unlink(file_name.c_str());
 }
 
 
-#ifdef SUPPORT_RAW_DEVICES
 static bool raw_devices_check_file (
-	const TEXT* file_name)
+	const Firebird::PathName& file_name)
 {
 /**************************************
  *
@@ -1236,15 +1207,14 @@ static bool raw_devices_check_file (
  **************************************/
 	struct stat s;
 
-	return (stat(file_name, &s) == 0
+	return (stat(file_name.c_str(), &s) == 0
 			&& (S_ISCHR(s.st_mode) || S_ISBLK(s.st_mode)));
 }
 
 
 static bool raw_devices_validate_database (
 	int desc,
-	const TEXT* file_name,
-	USHORT file_length)
+	const Firebird::PathName& file_name)
 {
 /**************************************
  *
@@ -1264,7 +1234,7 @@ static bool raw_devices_validate_database (
 	if (desc == -1)
 		ERR_post (isc_io_error,
 					isc_arg_string, "raw_devices_validate_database",
-					isc_arg_string, ERR_string (file_name, file_length),
+					isc_arg_string, file_name.length(), ERR_cstring (file_name),
 					isc_arg_gds, isc_io_read_err,
 					isc_arg_unix, errno, 0);
 
@@ -1273,7 +1243,7 @@ static bool raw_devices_validate_database (
 		if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 			ERR_post (isc_io_error,
 						isc_arg_string, "lseek",
-						isc_arg_string, ERR_string (file_name, file_length),
+						isc_arg_string, file_name.length(), ERR_cstring (file_name),
 						isc_arg_gds, isc_io_read_err,
 						isc_arg_unix, errno, 0);
 		const ssize_t bytes = read (desc, header, sizeof(header));
@@ -1282,14 +1252,14 @@ static bool raw_devices_validate_database (
 		if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
 			ERR_post (isc_io_error,
 						isc_arg_string, "read",
-						isc_arg_string, ERR_string (file_name, file_length),
+						isc_arg_string, file_name.length(), ERR_cstring (file_name),
 						isc_arg_gds, isc_io_read_err,
 						isc_arg_unix, errno, 0);
 	}
 
 	ERR_post (isc_io_error,
 				isc_arg_string, "read_retry",
-				isc_arg_string, ERR_string (file_name, file_length),
+				isc_arg_string, file_name.length(), ERR_cstring (file_name),
 				isc_arg_gds, isc_io_read_err,
 				isc_arg_unix, errno, 0);
 
@@ -1298,7 +1268,7 @@ static bool raw_devices_validate_database (
 	if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
 		ERR_post (isc_io_error,
 					isc_arg_string, "lseek",
-					isc_arg_string, ERR_string (file_name, file_length),
+					isc_arg_string, file_name.length(), ERR_cstring (file_name),
 					isc_arg_gds, isc_io_read_err,
 					isc_arg_unix, errno, 0);
 
@@ -1320,7 +1290,7 @@ static bool raw_devices_validate_database (
   quit:
 #ifdef DEV_BUILD
 	gds__log ("raw_devices_validate_database: %s -> %s%s\n",
-		 file_name,
+		 file_name.c_str(),
 		 retval ? "true" : "false",
 		 retval && hp->hdr_sequence != 0 ? " (continuation file)" : "");
 #endif
@@ -1329,20 +1299,19 @@ static bool raw_devices_validate_database (
 
 
 static int raw_devices_unlink_database (
-	const TEXT* file_name)
+	const Firebird::PathName& file_name)
 {
 	char header[MIN_PAGE_SIZE];
-	const size_t file_length = strlen(file_name);
 	int desc = -1, i;
 
 	for (i = 0; i < IO_RETRY; i++)
 	{
-		if ((desc = open (file_name, O_RDWR | O_BINARY)) != -1)
+		if ((desc = open (file_name.c_str(), O_RDWR | O_BINARY)) != -1)
 			break;
 		if (!SYSCALL_INTERRUPTED(errno))
 			ERR_post (isc_io_error,
 						isc_arg_string, "open",
-						isc_arg_string, ERR_string (file_name, file_length),
+						isc_arg_string, file_name.length(), ERR_cstring (file_name),
 						isc_arg_gds, isc_io_open_err,
 						isc_arg_unix, errno, 0);
 	}
@@ -1358,7 +1327,7 @@ static int raw_devices_unlink_database (
 			continue;
 		ERR_post (isc_io_error,
 			isc_arg_string, "write",
-			isc_arg_string, ERR_string (file_name, file_length),
+			isc_arg_string, file_name.length(), ERR_cstring (file_name),
 			isc_arg_gds, isc_io_write_err,
 			isc_arg_unix, errno, 0);
 	}
@@ -1368,7 +1337,7 @@ static int raw_devices_unlink_database (
 
 #if DEV_BUILD
 	gds__log ("raw_devices_unlink_database: %s -> %s\n",
-				file_name, i < IO_RETRY ? "true" : "false");
+				file_name.c_str(), i < IO_RETRY ? "true" : "false");
 #endif
 
 	return 0;
