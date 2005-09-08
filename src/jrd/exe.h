@@ -776,28 +776,26 @@ public:
 	Firebird::HalfStaticArray<csb_repeat, 5> csb_rpt;
 };
 
-const int csb_internal			= 1;	/* "csb_g_flag" switch */
-const int csb_get_dependencies	= 2;
-const int csb_ignore_perm		= 4;	/* ignore permissions checks */
-const int csb_blr_version4		= 8;	/* The blr is of version 4 */
-const int csb_pre_trigger		= 16;
-const int csb_post_trigger		= 32;
+const int csb_internal			= 1;	// "csb_g_flag" switch
+const int csb_get_dependencies	= 2;	// we are retrieving dependencies
+const int csb_ignore_perm		= 4;	// ignore permissions checks
+const int csb_blr_version4		= 8;	// the BLR is of version 4
+const int csb_pre_trigger		= 16;	// this is a BEFORE trigger
+const int csb_post_trigger		= 32;	// this is an AFTER trigger
+const int csb_validation		= 64;	// we're in a validation expression (RDB hack)
 
-const int csb_active		= 1;
-const int csb_used			= 2;		/* Context has already been defined (BLR parsing only) */
-const int csb_view_update	= 4;		/* View update w/wo trigger is in progress */
-const int csb_trigger		= 8;		/* NEW or OLD context in trigger */
-const int csb_no_dbkey		= 16;		/* Stream doesn't have a dbkey */
-const int csb_validation	= 32;		/* We're in a validation expression (RDB hack) */
-const int csb_store			= 64;			/* we are processing a store statement */
-const int csb_modify		= 128;			/* we are processing a modify */
-const int csb_compute		= 256;			/* compute cardinality for this stream */
-const int csb_erase			= 512;			/* we are processing an erase */
-const int csb_unmatched		= 1024;	/* stream has conjuncts unmatched by any index */
-
-const int csb_dbkey			= 8192;		/* Dbkey as been requested (Gateway only) */
-const int csb_update		= 16384;		/* Erase or modify for relation */
-const int csb_made_river	= 32768;	/* stream has been included in a river */
+const int csb_active		= 1;		// stream is active
+const int csb_used			= 2;		// context has already been defined (BLR parsing only)
+const int csb_view_update	= 4;		// view update w/wo trigger is in progress
+const int csb_trigger		= 8;		// NEW or OLD context in trigger
+const int csb_no_dbkey		= 16;		// stream doesn't have a dbkey
+const int csb_store			= 32;		// we are processing a store statement
+const int csb_modify		= 64;		// we are processing a modify
+const int csb_compute		= 128;		// compute cardinality for this stream
+const int csb_erase			= 256;		// we are processing an erase
+const int csb_unmatched		= 512;		// stream has conjuncts unmatched by any index
+const int csb_update		= 1024;		// erase or modify for relation
+const int csb_made_river	= 2048;		// stream has been included in a river
 
 /* Exception condition list */
 
