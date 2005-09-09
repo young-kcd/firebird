@@ -2000,12 +2000,12 @@ static void define_field(
 	}
 	} // try
 
-	catch (...)
+	catch (const std::exception&)
 	{
-		clearPermanentField (relation, permanent);
+		clearPermanentField(relation, permanent);
 		throw;
 	}
-	clearPermanentField (relation, permanent);
+	clearPermanentField(relation, permanent);
 }
 
 
@@ -6407,12 +6407,12 @@ static void modify_field(dsql_req*	request,
 		request->append_uchar(isc_dyn_end);
 	} // try
 
-	catch (...)
+	catch (const std::exception&)
 	{
-		clearPermanentField (relation, permanent);
+		clearPermanentField(relation, permanent);
 		throw;
 	}
-	clearPermanentField (relation, permanent);
+	clearPermanentField(relation, permanent);
 }
 
 
