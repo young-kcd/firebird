@@ -327,7 +327,9 @@ void DDL_execute(dsql_req* request)
 
 // Signal UDF for obsolescence
 
-	if (temp_type == nod_del_udf) {
+	if ((temp_type == nod_del_udf) ||
+		(temp_type == nod_mod_udf))
+	{
 		string = (dsql_str*) request->req_ddl_node->nod_arg[e_udf_name];
 		METD_drop_function (request, string);
 	}
