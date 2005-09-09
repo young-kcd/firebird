@@ -1,3 +1,26 @@
+2005-09-08 18:39  alexpeshkoff
+
+	* firebird2/src/jrd/: err_proto.h (1.25), jrd.cpp (1.222), nbak.cpp
+	(1.49), pag.cpp (1.92), sdw.cpp (1.59), os/pio_proto.h (1.15),
+	os/posix/unix.cpp (1.38), os/win32/winnt.cpp (1.28):
+	
+	fixed BOFs in PIO functions
+
+2005-09-08 12:22  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.39):
+	
+	1) Commented code that doesn't work properly (until Arno is back). 
+	2) Fixed some optimization issues in the new logic.  3) Small
+	cleanup.
+
+2005-09-08 12:08  dimitr
+
+	* firebird2/src/jrd/exe.h (1.72):
+	
+	1) Fixed csb_validation which was defined in a wrong flags group. 
+	2) Renumbering and cleanup.
+
 2005-09-04 23:39  hvlad
 
 	* firebird2/src/dsql/dsql.h (1.81):
