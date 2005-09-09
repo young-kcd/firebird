@@ -233,10 +233,8 @@ public:
 
 enum fld_flags_vals {
 	FLD_computed	= 1,
-	FLD_drop		= 2,
-	FLD_dbkey		= 4,
-	FLD_national	= 8, //!< field uses NATIONAL character set
-	FLD_nullable	= 16
+	FLD_national	= 2, //!< field uses NATIONAL character set
+	FLD_nullable	= 4
 };
 
 const int MAX_ARRAY_DIMENSIONS = 16; //!< max array dimensions
