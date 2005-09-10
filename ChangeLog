@@ -1,3 +1,22 @@
+2005-09-09 12:15  dimitr
+
+	* firebird2/src/dsql/dsql.h (1.82):
+	
+	Cleanup.
+
+2005-09-09 11:07  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.155):
+	
+	Small correction.
+
+2005-09-09 08:40  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.154):
+	
+	Clear the DSQL metadata cache after ALTER EXTERNAL FUNCTION
+	statement.
+
 2005-09-08 18:39  alexpeshkoff
 
 	* firebird2/src/jrd/: err_proto.h (1.25), jrd.cpp (1.222), nbak.cpp
