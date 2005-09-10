@@ -721,6 +721,9 @@ const
 	gds_gbak_mode_req                    = 336331031;
 	gds_gbak_just_data                   = 336331033;
 	gds_gbak_data_only                   = 336331034;
+	gds_dsql_view_not_found              = 336397047;
+	gds_dsql_table_not_found             = 336397048;
+	gds_dsql_too_old_ods                 = 336397058;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

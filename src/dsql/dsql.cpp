@@ -3388,40 +3388,38 @@ static ISC_STATUS execute_request(dsql_req*			request,
 		}
 	}
 
-	if (!(request->req_dbb->dbb_flags & DBB_v3))
+	UCHAR buffer[20]; // Not used after retrieved.
+	if (request->req_type == REQ_UPDATE_CURSOR)
 	{
-		UCHAR buffer[20]; // Not used after retrieved.
-		if (request->req_type == REQ_UPDATE_CURSOR)
+		GDS_DSQL_SQL_INFO_CPP(	local_status,
+								&request,
+								sizeof(sql_records_info),
+								sql_records_info,
+								sizeof(buffer),
+								buffer);
+		if (!request->req_updates)
 		{
-			GDS_DSQL_SQL_INFO_CPP(	local_status,
-									&request,
-									sizeof(sql_records_info),
-									sql_records_info,
-									sizeof(buffer),
-									buffer);
-			if (!request->req_updates)
-			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
-						  isc_arg_gds, isc_deadlock, isc_arg_gds,
-						  isc_update_conflict, 0);
-			}
-		}
-		else if (request->req_type == REQ_DELETE_CURSOR)
-		{
-			GDS_DSQL_SQL_INFO_CPP(	local_status,
-									&request,
-									sizeof(sql_records_info),
-									sql_records_info,
-									sizeof(buffer),
-									buffer);
-			if (!request->req_deletes)
-			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
-						  isc_arg_gds, isc_deadlock, isc_arg_gds,
-						  isc_update_conflict, 0);
-			}
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
+					  isc_arg_gds, isc_deadlock, isc_arg_gds,
+					  isc_update_conflict, 0);
 		}
 	}
+	else if (request->req_type == REQ_DELETE_CURSOR)
+	{
+		GDS_DSQL_SQL_INFO_CPP(	local_status,
+								&request,
+								sizeof(sql_records_info),
+								sql_records_info,
+								sizeof(buffer),
+								buffer);
+		if (!request->req_deletes)
+		{
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
+					  isc_arg_gds, isc_deadlock, isc_arg_gds,
+					  isc_update_conflict, 0);
+		}
+	}
+
 	return return_status;
 }
 
@@ -4122,11 +4120,8 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 	isc_database_cleanup(user_status, db_handle, cleanup_database, NULL);
 	THREAD_ENTER();
 
-// Determine if the database is V3 or V4 
-
 	SCHAR buffer[128];
 
-	database->dbb_flags |= DBB_v3;
 	THREAD_EXIT();
 	const ISC_STATUS s =
 		isc_database_info(user_status, db_handle,
@@ -4157,8 +4152,10 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 			break;
 
 		case isc_info_ods_version:
-			if (gds__vax_integer(data, l) > 7)
-				database->dbb_flags &= ~DBB_v3;
+			if (gds__vax_integer(data, l) <= 7)
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				  isc_arg_gds, isc_dsql_too_old_ods,
+				  isc_arg_number, (SLONG) 8, 0);
 			break;
 
 			/* This flag indicates the version level of the engine

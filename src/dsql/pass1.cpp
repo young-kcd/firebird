@@ -3450,7 +3450,7 @@ static dsql_nod* pass1_cursor_reference( dsql_req* request,
 	dsql_par* source;
 	if (parent->req_type != REQ_SELECT_UPD ||
 		!(source = find_dbkey(parent, relation_name)) ||
-		(!rv_source && !(request->req_dbb->dbb_flags & DBB_v3)))
+		!rv_source)
 	{
 		// cursor is not updatable
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 510,

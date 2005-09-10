@@ -264,13 +264,9 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		return;
 
 	case nod_agg_count:
-		if (!(request->req_dbb->dbb_flags & DBB_v3)) {
-			if (node->nod_count)
-				blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
-					blr_agg_count_distinct : blr_agg_count2;
-			else
-				blr_operator = blr_agg_count;
-		}
+		if (node->nod_count)
+			blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
+				blr_agg_count_distinct : blr_agg_count2;
 		else
 			blr_operator = blr_agg_count;
 		break;
@@ -283,19 +279,13 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		break;
 
 	case nod_agg_average:
-		if (!(request->req_dbb->dbb_flags & DBB_v3))
-			blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
-				blr_agg_average_distinct : blr_agg_average;
-		else
-			blr_operator = blr_agg_average;
+		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
+			blr_agg_average_distinct : blr_agg_average;
 		break;
 
 	case nod_agg_total:
-		if (!(request->req_dbb->dbb_flags & DBB_v3))
-			blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
-				blr_agg_total_distinct : blr_agg_total;
-		else
-			blr_operator = blr_agg_total;
+		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
+			blr_agg_total_distinct : blr_agg_total;
 		break;
 
 	case nod_agg_average2:
@@ -414,10 +404,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		blr_operator = blr_any;
 		break;
 	case nod_ansi_any:
-		if (!(request->req_dbb->dbb_flags & DBB_v3))
 			blr_operator = blr_ansi_any;
-		else
-			blr_operator = blr_any;
 		break;
 	case nod_ansi_all:
 		blr_operator = blr_ansi_all;
@@ -1440,17 +1427,6 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 
 	stuff(request, blr_literal);
 
-	if ((desc->dsc_dtype == dtype_double)
-		&& (request->req_dbb->dbb_flags & DBB_v3))
-		// v3 doesn't understand blr_double literal, generate blr_text instead 
-	{
-		tmp_desc = *desc;
-		tmp_desc.dsc_dtype = dtype_text;
-		tmp_desc.dsc_length = (USHORT)(UCHAR) desc->dsc_scale;	// length of string literal
-		tmp_desc.dsc_scale = 0;
-		desc = &tmp_desc;
-	}
-
 	USHORT l = 0; //= desc->dsc_length;
 	const UCHAR* p = desc->dsc_address;
 
@@ -1606,9 +1582,7 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 {
 	switch (desc->dsc_dtype) {
 	case dtype_text:
-		if (request->req_dbb->dbb_flags & DBB_v3)
-			stuff(request, blr_text);
-		else if (texttype || desc->dsc_ttype() == ttype_binary) {
+		if (texttype || desc->dsc_ttype() == ttype_binary) {
 			stuff(request, blr_text2);
 			stuff_word(request, desc->dsc_ttype());
 		}
@@ -1621,9 +1595,7 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 		break;
 
 	case dtype_varying:
-		if (request->req_dbb->dbb_flags & DBB_v3)
-			stuff(request, blr_varying);
-		else if (texttype || desc->dsc_ttype() == ttype_binary) {
+		if (texttype || desc->dsc_ttype() == ttype_binary) {
 			stuff(request, blr_varying2);
 			stuff_word(request, desc->dsc_ttype());
 		}
@@ -1822,8 +1794,7 @@ static void gen_for_select( dsql_req* request, dsql_nod* for_select)
 
 	stuff(request, blr_for);
 
-	if (!for_select->nod_arg[e_flp_action] &&
-		!(request->req_dbb->dbb_flags & DBB_v3))
+	if (!for_select->nod_arg[e_flp_action])
 	{
 		stuff(request, blr_singular);
 	}
@@ -2206,8 +2177,7 @@ void GEN_return( dsql_req* request, const dsql_nod* parameters, bool eos_flag)
  **/
 static void gen_rse( dsql_req* request, const dsql_nod* rse)
 {
-	if ((rse->nod_flags & NOD_SELECT_EXPR_SINGLETON)
-		&& !(request->req_dbb->dbb_flags & DBB_v3))
+	if (rse->nod_flags & NOD_SELECT_EXPR_SINGLETON)
 	{
 			stuff(request, blr_singular);
 	}
@@ -2408,16 +2378,14 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 
 					// Set up record version - for post v33 databases
 
-					if (!(request->req_dbb->dbb_flags & DBB_v3)) {
-						parameter =
-							MAKE_parameter(request->req_receive, false,
-										   false, 0, NULL);
-						parameter->par_rec_version_ctx = context;
-						parameter->par_desc.dsc_dtype = dtype_text;
-						parameter->par_desc.dsc_ttype() = ttype_binary;
-						parameter->par_desc.dsc_length =
-							relation->rel_dbkey_length / 2;
-					}
+					parameter =
+						MAKE_parameter(request->req_receive, false,
+									   false, 0, NULL);
+					parameter->par_rec_version_ctx = context;
+					parameter->par_desc.dsc_dtype = dtype_text;
+					parameter->par_desc.dsc_ttype() = ttype_binary;
+					parameter->par_desc.dsc_length =
+						relation->rel_dbkey_length / 2;
 				}
 			}
 		}
@@ -2474,8 +2442,7 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 	message = request->req_receive;
 
 	stuff(request, blr_for);
-	if (!(request->req_dbb->dbb_flags & DBB_v3))
-		stuff(request, blr_stall);
+	stuff(request, blr_stall);
 	gen_rse(request, rse);	
 
 	stuff(request, blr_send);

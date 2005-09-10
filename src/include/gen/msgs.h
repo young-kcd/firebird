@@ -708,64 +708,67 @@ static const SCHAR * const messages[] = {
 	"\"read_only\" or \"read_write\" required",		/* 686, gbak_mode_req */
 	"just data ignore all constraints etc.",		/* 687, gbak_just_data */
 	"restoring data only ignoring foreign key, unique, not null & other constraints",		/* 688, gbak_data_only */
-	"unable to open database",		/* 689, gsec_cant_open_db */
-	"error in switch specifications",		/* 690, gsec_switches_error */
-	"no operation specified",		/* 691, gsec_no_op_spec */
-	"no user name specified",		/* 692, gsec_no_usr_name */
-	"add record error",		/* 693, gsec_err_add */
-	"modify record error",		/* 694, gsec_err_modify */
-	"find/modify record error",		/* 695, gsec_err_find_mod */
-	"record not found for user: %s",		/* 696, gsec_err_rec_not_found */
-	"delete record error",		/* 697, gsec_err_delete */
-	"find/delete record error",		/* 698, gsec_err_find_del */
-	"find/display record error",		/* 699, gsec_err_find_disp */
-	"invalid parameter, no switch defined",		/* 700, gsec_inv_param */
-	"operation already specified",		/* 701, gsec_op_specified */
-	"password already specified",		/* 702, gsec_pw_specified */
-	"uid already specified",		/* 703, gsec_uid_specified */
-	"gid already specified",		/* 704, gsec_gid_specified */
-	"project already specified",		/* 705, gsec_proj_specified */
-	"organization already specified",		/* 706, gsec_org_specified */
-	"first name already specified",		/* 707, gsec_fname_specified */
-	"middle name already specified",		/* 708, gsec_mname_specified */
-	"last name already specified",		/* 709, gsec_lname_specified */
-	"invalid switch specified",		/* 710, gsec_inv_switch */
-	"ambiguous switch specified",		/* 711, gsec_amb_switch */
-	"no operation specified for parameters",		/* 712, gsec_no_op_specified */
-	"no parameters allowed for this operation",		/* 713, gsec_params_not_allowed */
-	"incompatible switches specified",		/* 714, gsec_incompat_switch */
-	"Invalid user name (maximum 31 bytes allowed)",		/* 715, gsec_inv_username */
-	"Warning - maximum 8 significant bytes of password used",		/* 716, gsec_inv_pw_length */
-	"database already specified",		/* 717, gsec_db_specified */
-	"database administrator name already specified",		/* 718, gsec_db_admin_specified */
-	"database administrator password already specified",		/* 719, gsec_db_admin_pw_specified */
-	"SQL role name already specified",		/* 720, gsec_sql_role_specified */
-	"The license file does not exist or could not be opened for read",		/* 721, license_no_file */
-	"operation already specified",		/* 722, license_op_specified */
-	"no operation specified",		/* 723, license_op_missing */
-	"invalid switch",		/* 724, license_inv_switch */
-	"invalid switch combination",		/* 725, license_inv_switch_combo */
-	"illegal operation/switch combination",		/* 726, license_inv_op_combo */
-	"ambiguous switch",		/* 727, license_amb_switch */
-	"invalid parameter, no switch specified",		/* 728, license_inv_parameter */
-	"switch does not take any parameter",		/* 729, license_param_specified */
-	"switch requires a parameter",		/* 730, license_param_req */
-	"syntax error in command line",		/* 731, license_syntx_error */
-	"The certificate was not added.  A duplicate ID exists in the license file.",		/* 732, license_dup_id */
-	"The certificate was not added.  Invalid certificate ID / Key combination.",		/* 733, license_inv_id_key */
-	"The certificate was not removed.  The key does not exist or corresponds to a temporary evaluation license.",		/* 734, license_err_remove */
-	"An error occurred updating the license file.  Operation cancelled.",		/* 735, license_err_update */
-	"The certificate could not be validated based on the information given.  Please recheck the ID and key information.",		/* 736, license_err_convert */
-	"Operation failed.  An unknown error occurred.",		/* 737, license_err_unk */
-	"Add license operation failed, KEY: %s ID: %s",		/* 738, license_svc_err_add */
-	"Remove license operation failed, KEY: %s",		/* 739, license_svc_err_remove */
-	"The evaluation license has already been used on this server.  You need to purchase a non-evaluation license.",		/* 740, license_eval_exists */
-	"found unknown switch",		/* 741, gstat_unknown_switch */
-	"please retry, giving a database name",		/* 742, gstat_retry */
-	"Wrong ODS version, expected %d, encountered %d",		/* 743, gstat_wrong_ods */
-	"Unexpected end of database file.",		/* 744, gstat_unexpected_eof */
-	"Can't open database file %s",		/* 745, gstat_open_err */
-	"Can't read a database page",		/* 746, gstat_read_err */
-	"System memory exhausted",		/* 747, gstat_sysmemex */
+	"View %s does not exist",		/* 689, dsql_view_not_found */
+	"Table %s does not exist",		/* 690, dsql_table_not_found */
+	"ODS versions before ODS%d are not supported",		/* 691, dsql_too_old_ods */
+	"unable to open database",		/* 692, gsec_cant_open_db */
+	"error in switch specifications",		/* 693, gsec_switches_error */
+	"no operation specified",		/* 694, gsec_no_op_spec */
+	"no user name specified",		/* 695, gsec_no_usr_name */
+	"add record error",		/* 696, gsec_err_add */
+	"modify record error",		/* 697, gsec_err_modify */
+	"find/modify record error",		/* 698, gsec_err_find_mod */
+	"record not found for user: %s",		/* 699, gsec_err_rec_not_found */
+	"delete record error",		/* 700, gsec_err_delete */
+	"find/delete record error",		/* 701, gsec_err_find_del */
+	"find/display record error",		/* 702, gsec_err_find_disp */
+	"invalid parameter, no switch defined",		/* 703, gsec_inv_param */
+	"operation already specified",		/* 704, gsec_op_specified */
+	"password already specified",		/* 705, gsec_pw_specified */
+	"uid already specified",		/* 706, gsec_uid_specified */
+	"gid already specified",		/* 707, gsec_gid_specified */
+	"project already specified",		/* 708, gsec_proj_specified */
+	"organization already specified",		/* 709, gsec_org_specified */
+	"first name already specified",		/* 710, gsec_fname_specified */
+	"middle name already specified",		/* 711, gsec_mname_specified */
+	"last name already specified",		/* 712, gsec_lname_specified */
+	"invalid switch specified",		/* 713, gsec_inv_switch */
+	"ambiguous switch specified",		/* 714, gsec_amb_switch */
+	"no operation specified for parameters",		/* 715, gsec_no_op_specified */
+	"no parameters allowed for this operation",		/* 716, gsec_params_not_allowed */
+	"incompatible switches specified",		/* 717, gsec_incompat_switch */
+	"Invalid user name (maximum 31 bytes allowed)",		/* 718, gsec_inv_username */
+	"Warning - maximum 8 significant bytes of password used",		/* 719, gsec_inv_pw_length */
+	"database already specified",		/* 720, gsec_db_specified */
+	"database administrator name already specified",		/* 721, gsec_db_admin_specified */
+	"database administrator password already specified",		/* 722, gsec_db_admin_pw_specified */
+	"SQL role name already specified",		/* 723, gsec_sql_role_specified */
+	"The license file does not exist or could not be opened for read",		/* 724, license_no_file */
+	"operation already specified",		/* 725, license_op_specified */
+	"no operation specified",		/* 726, license_op_missing */
+	"invalid switch",		/* 727, license_inv_switch */
+	"invalid switch combination",		/* 728, license_inv_switch_combo */
+	"illegal operation/switch combination",		/* 729, license_inv_op_combo */
+	"ambiguous switch",		/* 730, license_amb_switch */
+	"invalid parameter, no switch specified",		/* 731, license_inv_parameter */
+	"switch does not take any parameter",		/* 732, license_param_specified */
+	"switch requires a parameter",		/* 733, license_param_req */
+	"syntax error in command line",		/* 734, license_syntx_error */
+	"The certificate was not added.  A duplicate ID exists in the license file.",		/* 735, license_dup_id */
+	"The certificate was not added.  Invalid certificate ID / Key combination.",		/* 736, license_inv_id_key */
+	"The certificate was not removed.  The key does not exist or corresponds to a temporary evaluation license.",		/* 737, license_err_remove */
+	"An error occurred updating the license file.  Operation cancelled.",		/* 738, license_err_update */
+	"The certificate could not be validated based on the information given.  Please recheck the ID and key information.",		/* 739, license_err_convert */
+	"Operation failed.  An unknown error occurred.",		/* 740, license_err_unk */
+	"Add license operation failed, KEY: %s ID: %s",		/* 741, license_svc_err_add */
+	"Remove license operation failed, KEY: %s",		/* 742, license_svc_err_remove */
+	"The evaluation license has already been used on this server.  You need to purchase a non-evaluation license.",		/* 743, license_eval_exists */
+	"found unknown switch",		/* 744, gstat_unknown_switch */
+	"please retry, giving a database name",		/* 745, gstat_retry */
+	"Wrong ODS version, expected %d, encountered %d",		/* 746, gstat_wrong_ods */
+	"Unexpected end of database file.",		/* 747, gstat_unexpected_eof */
+	"Can't open database file %s",		/* 748, gstat_open_err */
+	"Can't read a database page",		/* 749, gstat_read_err */
+	"System memory exhausted",		/* 750, gstat_sysmemex */
 	0						/* Null entry to terminate list */
 };

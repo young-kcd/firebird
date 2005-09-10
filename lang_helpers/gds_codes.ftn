@@ -1428,6 +1428,12 @@ C --
       PARAMETER (GDS__gbak_just_data                   = 336331033)
       INTEGER*4 GDS__gbak_data_only                  
       PARAMETER (GDS__gbak_data_only                   = 336331034)
+      INTEGER*4 GDS__dsql_view_not_found             
+      PARAMETER (GDS__dsql_view_not_found              = 336397047)
+      INTEGER*4 GDS__dsql_table_not_found            
+      PARAMETER (GDS__dsql_table_not_found             = 336397048)
+      INTEGER*4 GDS__dsql_too_old_ods                
+      PARAMETER (GDS__dsql_too_old_ods                 = 336397058)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

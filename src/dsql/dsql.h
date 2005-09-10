@@ -173,9 +173,8 @@ public:
 //! values used in dbb_flags
 enum dbb_flags_vals {
 	DBB_no_arrays	= 0x1,
-	DBB_v3			= 0x2,
-	DBB_no_charset	= 0x4,
-	DBB_read_only	= 0x8
+	DBB_no_charset	= 0x2,
+	DBB_read_only	= 0x4
 };
 
 //! Relation block

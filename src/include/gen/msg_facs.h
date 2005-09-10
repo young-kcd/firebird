@@ -40,6 +40,7 @@ static const struct _facilities facilities[] = {
 	{7,  "DSQL      "},
 	{8,  "DYN       "},
 	{12,  "GBAK      "},
+	{13,  "SQLERR    "},
 	{18,  "GSEC      "},
 	{19,  "LICENSE   "},
 	{21,  "GSTAT     "},

@@ -339,11 +339,8 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 
 	END_FOR 
 	ON_ERROR
-	if (!(dbb->dbb_flags & DBB_v3))
-	{
 		THREAD_ENTER();
 		ERRD_punt(isc_status);
-	}
 	END_ERROR;
 
 	THREAD_ENTER();
@@ -555,11 +552,8 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 
 	END_FOR 
     ON_ERROR
-		if (!(dbb->dbb_flags & DBB_v3))
-		{
-			THREAD_ENTER();
-			ERRD_punt(isc_status);
-		}
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
    	END_ERROR;
 
 	THREAD_ENTER();
@@ -621,11 +615,8 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
         THREAD_EXIT();
     END_FOR
     ON_ERROR
-		if (!(dbb->dbb_flags & DBB_v3))
-		{
-			THREAD_ENTER();
-			ERRD_punt(isc_status);
-		}
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR;
 
     THREAD_ENTER();
@@ -671,11 +662,8 @@ Firebird::MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
         THREAD_EXIT();
     END_FOR
     ON_ERROR
-		if (!(dbb->dbb_flags & DBB_v3))
-		{
-			THREAD_ENTER();
-			ERRD_punt(isc_status);
-		}
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
     END_ERROR;
 
     THREAD_ENTER();
@@ -733,11 +721,8 @@ dsql_str* METD_get_default_charset(dsql_req* request)
         THREAD_EXIT();
 	END_FOR 
     ON_ERROR
-		if (!(dbb->dbb_flags & DBB_v3))
-		{
-			THREAD_ENTER();
-			ERRD_punt(isc_status);
-		}
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
    	END_ERROR;
 
 	THREAD_ENTER();
@@ -1058,105 +1043,80 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
  */
 	THREAD_EXIT();
 
-	if (dbb->dbb_flags & DBB_v3) {
-		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_func_return] TRANSACTION_HANDLE request->req_trans)
-		    X IN RDB$FUNCTION_ARGUMENTS WITH
-			X.RDB$FUNCTION_NAME EQ name->str_data AND
-			X.RDB$ARGUMENT_POSITION EQ return_arg 
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_func_return] TRANSACTION_HANDLE request->req_trans)
+	    X IN RDB$FUNCTION_ARGUMENTS WITH
+        X.RDB$FUNCTION_NAME EQ name->str_data
+        SORTED BY X.RDB$ARGUMENT_POSITION
 
-            THREAD_ENTER();
+        THREAD_ENTER();
 
-		    userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+        if (X.RDB$ARGUMENT_POSITION == return_arg) {
+            userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
                 gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
             userFunc->udf_scale = X.RDB$FIELD_SCALE;
-            userFunc->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
-            userFunc->udf_length = X.RDB$FIELD_LENGTH;
-
-            THREAD_EXIT();
             
-		END_FOR 
-        ON_ERROR
-			THREAD_ENTER();
-			ERRD_punt(isc_status);
-        END_ERROR;
-	}
-	else {						// V4 or greater dbb 
-
-		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_func_return] TRANSACTION_HANDLE request->req_trans)
-		    X IN RDB$FUNCTION_ARGUMENTS WITH
-            X.RDB$FUNCTION_NAME EQ name->str_data
-            SORTED BY X.RDB$ARGUMENT_POSITION
-
-            THREAD_ENTER();
-
-            if (X.RDB$ARGUMENT_POSITION == return_arg) {
-                userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
-                    gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
-                userFunc->udf_scale = X.RDB$FIELD_SCALE;
-                
-                if (!X.RDB$FIELD_SUB_TYPE.NULL) {
-                    userFunc->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
-                }
-                else {
-                    userFunc->udf_sub_type = 0;
-                }
-                /* CVC: We are overcoming a bug in ddl.c:put_field()
-                   when any field is defined: the length is not given for blobs. */
-                if (X.RDB$FIELD_TYPE == blr_blob)
-                    userFunc->udf_length = sizeof (ISC_QUAD);
-                else
-                    userFunc->udf_length = X.RDB$FIELD_LENGTH;
-                
-                if (!X.RDB$CHARACTER_SET_ID.NULL) {
-                    userFunc->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
-                }
+            if (!X.RDB$FIELD_SUB_TYPE.NULL) {
+                userFunc->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
             }
-
             else {
-                DSC* d;
-                /* udf_param_node = MAKE_node (type_nod, 0); */
-			    udf_param_node = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_nod;
-                d = &udf_param_node->nod_desc;
-                d->dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
-                    gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
-                d->dsc_scale = X.RDB$FIELD_SCALE;
-                if (!X.RDB$FIELD_SUB_TYPE.NULL) {
-                    d->dsc_sub_type = X.RDB$FIELD_SUB_TYPE;
+                userFunc->udf_sub_type = 0;
+            }
+            /* CVC: We are overcoming a bug in ddl.c:put_field()
+               when any field is defined: the length is not given for blobs. */
+            if (X.RDB$FIELD_TYPE == blr_blob)
+                userFunc->udf_length = sizeof (ISC_QUAD);
+            else
+                userFunc->udf_length = X.RDB$FIELD_LENGTH;
+            
+            if (!X.RDB$CHARACTER_SET_ID.NULL) {
+                userFunc->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
+            }
+        }
+
+        else {
+            DSC* d;
+            /* udf_param_node = MAKE_node (type_nod, 0); */
+		    udf_param_node = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_nod;
+            d = &udf_param_node->nod_desc;
+            d->dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+                gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
+            d->dsc_scale = X.RDB$FIELD_SCALE;
+            if (!X.RDB$FIELD_SUB_TYPE.NULL) {
+                d->dsc_sub_type = X.RDB$FIELD_SUB_TYPE;
+            }
+            else {
+                d->dsc_sub_type = 0;
+            }
+            d->dsc_length = X.RDB$FIELD_LENGTH;
+            if (d->dsc_dtype == dtype_varying) {
+                d->dsc_length += sizeof (USHORT);
+            }
+            d->dsc_address = NULL;
+            
+            if (!X.RDB$CHARACTER_SET_ID.NULL) {
+                if (d->dsc_dtype != dtype_blob) {
+                    d->dsc_ttype() = X.RDB$CHARACTER_SET_ID;
                 }
                 else {
-                    d->dsc_sub_type = 0;
+                    d->dsc_scale = X.RDB$CHARACTER_SET_ID;
                 }
-                d->dsc_length = X.RDB$FIELD_LENGTH;
-                if (d->dsc_dtype == dtype_varying) {
-                    d->dsc_length += sizeof (USHORT);
-                }
-                d->dsc_address = NULL;
-                
-                if (!X.RDB$CHARACTER_SET_ID.NULL) {
-                    if (d->dsc_dtype != dtype_blob) {
-                        d->dsc_ttype() = X.RDB$CHARACTER_SET_ID;
-                    }
-                    else {
-                        d->dsc_scale = X.RDB$CHARACTER_SET_ID;
-                    }
-                }
-                
-                if (X.RDB$MECHANISM != Jrd::FUN_value && X.RDB$MECHANISM != Jrd::FUN_reference)
-				{
-                    d->dsc_flags = DSC_nullable;
-                }
-                
-                stack.push(udf_param_node);
             }
+            
+            if (X.RDB$MECHANISM != Jrd::FUN_value && X.RDB$MECHANISM != Jrd::FUN_reference)
+			{
+                d->dsc_flags = DSC_nullable;
+            }
+            
+            stack.push(udf_param_node);
+        }
 
-            THREAD_EXIT();
+        THREAD_EXIT();
 
-        END_FOR 
-        ON_ERROR 
-			THREAD_ENTER();
-			ERRD_punt(isc_status);
-        END_ERROR;
-	}
+    END_FOR 
+    ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
+    END_ERROR;
 
 	THREAD_ENTER();
     
@@ -1441,7 +1401,6 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 		END_FOR 
         ON_ERROR 
-		if (!(dbb->dbb_flags & DBB_v3))
 			THREAD_ENTER();
 			ERRD_punt(isc_status);
         END_ERROR;
@@ -1612,134 +1571,76 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	THREAD_EXIT();
 
-	if (dbb->dbb_flags & DBB_v3) {
-		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_fields] TRANSACTION_HANDLE request->req_trans)
-		    FLX IN RDB$FIELDS CROSS
-			RFR IN RDB$RELATION_FIELDS
-			WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
-			AND RFR.RDB$RELATION_NAME EQ name->str_data
-			SORTED BY RFR.RDB$FIELD_POSITION 
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_fields] TRANSACTION_HANDLE request->req_trans)
+	    FLX IN RDB$FIELDS CROSS
+		RFR IN RDB$RELATION_FIELDS
+		WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
+		AND RFR.RDB$RELATION_NAME EQ name->str_data
+		SORTED BY RFR.RDB$FIELD_POSITION
 
-            THREAD_ENTER();
+		THREAD_ENTER();
 
-		    // allocate the field block 
+	    // allocate the field block 
 
-	        fb_utils::exact_name(RFR.RDB$FIELD_NAME);
+	    fb_utils::exact_name(RFR.RDB$FIELD_NAME);
 
-            // Allocate from default or permanent pool as appropriate 
-            
-            if (relation->rel_flags & REL_new_relation)
-                *ptr = field = FB_NEW_RPT(*tdsql->getDefaultPool(),
-                                             strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
-            else
-                *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,
-                                            strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
-            ptr = &field->fld_next;
-            
-            // get field information 
-            
-            strcpy(field->fld_name, RFR.RDB$FIELD_NAME);
-            field->fld_id = RFR.RDB$FIELD_ID;
-            field->fld_length = FLX.RDB$FIELD_LENGTH;
-            field->fld_scale = FLX.RDB$FIELD_SCALE;
-            field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
-            field->fld_relation = relation;
-         
-            if (!FLX.RDB$COMPUTED_BLR.NULL)
-                field->fld_flags |= FLD_computed;
-            
-            convert_dtype(field, FLX.RDB$FIELD_TYPE);
-            
-            if (FLX.RDB$FIELD_TYPE == blr_blob) {
-                field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
-            }
-            
-            if (!(dbb->dbb_flags & DBB_no_arrays))
-                check_array(request, FLX.RDB$FIELD_NAME, field);
-            
+        // Allocate from default or permanent pool as appropriate 
+        
+        if (relation->rel_flags & REL_new_relation)
+            *ptr = field = FB_NEW_RPT(*tdsql->getDefaultPool(),
+                                         strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
+        else
+            *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,
+                                        strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
+        
+        ptr = &field->fld_next;
+        
+        // get field information 
+        
+        strcpy(field->fld_name, RFR.RDB$FIELD_NAME);
+        field->fld_id = RFR.RDB$FIELD_ID;
+        field->fld_length = FLX.RDB$FIELD_LENGTH;
+        field->fld_scale = FLX.RDB$FIELD_SCALE;
+        field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
+        field->fld_relation = relation;
+        
+        if (!FLX.RDB$COMPUTED_BLR.NULL)
+            field->fld_flags |= FLD_computed;
+        
+        convert_dtype(field, FLX.RDB$FIELD_TYPE);
+        
+        if (FLX.RDB$FIELD_TYPE == blr_blob) {
+            field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
+        }
+        
+        if (!FLX.RDB$DIMENSIONS.NULL && FLX.RDB$DIMENSIONS) {
+            field->fld_element_dtype = field->fld_dtype;
+            field->fld_element_length = field->fld_length;
+            field->fld_dtype = dtype_array;
+            field->fld_length = sizeof(ISC_QUAD);
+            field->fld_dimensions = FLX.RDB$DIMENSIONS;
+        }
+        
+        if (!FLX.RDB$CHARACTER_SET_ID.NULL)
+            field->fld_character_set_id = FLX.RDB$CHARACTER_SET_ID;
+        
+        if (!RFR.RDB$COLLATION_ID.NULL)
+            field->fld_collation_id = RFR.RDB$COLLATION_ID;
+        else if (!FLX.RDB$COLLATION_ID.NULL)
+            field->fld_collation_id = FLX.RDB$COLLATION_ID;
+
+        if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG)
+         /*XXX:IOL    || (relation->rel_flags & REL_view)*/) {
             field->fld_flags |= FLD_nullable;
-            
-            THREAD_EXIT();
+        }
+        
+        THREAD_EXIT();
 
-		END_FOR 
-        ON_ERROR 
-			THREAD_ENTER();
-			ERRD_punt(isc_status);
-        END_ERROR;
-	}
-	else {						// V4 ODS8 dbb 
-
-		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_fields] TRANSACTION_HANDLE request->req_trans)
-		    FLX IN RDB$FIELDS CROSS
-			RFR IN RDB$RELATION_FIELDS
-			WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
-			AND RFR.RDB$RELATION_NAME EQ name->str_data
-			SORTED BY RFR.RDB$FIELD_POSITION
-
-			THREAD_ENTER();
-
-		    // allocate the field block 
-
-		    fb_utils::exact_name(RFR.RDB$FIELD_NAME);
-
-            // Allocate from default or permanent pool as appropriate 
-            
-            if (relation->rel_flags & REL_new_relation)
-                *ptr = field = FB_NEW_RPT(*tdsql->getDefaultPool(),
-                                             strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
-            else
-                *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,
-                                            strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
-            
-            ptr = &field->fld_next;
-            
-            // get field information 
-            
-            strcpy(field->fld_name, RFR.RDB$FIELD_NAME);
-            field->fld_id = RFR.RDB$FIELD_ID;
-            field->fld_length = FLX.RDB$FIELD_LENGTH;
-            field->fld_scale = FLX.RDB$FIELD_SCALE;
-            field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
-            field->fld_relation = relation;
-            
-            if (!FLX.RDB$COMPUTED_BLR.NULL)
-                field->fld_flags |= FLD_computed;
-            
-            convert_dtype(field, FLX.RDB$FIELD_TYPE);
-            
-            if (FLX.RDB$FIELD_TYPE == blr_blob) {
-                field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
-            }
-            
-            if (!FLX.RDB$DIMENSIONS.NULL && FLX.RDB$DIMENSIONS) {
-                field->fld_element_dtype = field->fld_dtype;
-                field->fld_element_length = field->fld_length;
-                field->fld_dtype = dtype_array;
-                field->fld_length = sizeof(ISC_QUAD);
-                field->fld_dimensions = FLX.RDB$DIMENSIONS;
-            }
-            
-            if (!FLX.RDB$CHARACTER_SET_ID.NULL)
-                field->fld_character_set_id = FLX.RDB$CHARACTER_SET_ID;
-            
-            if (!RFR.RDB$COLLATION_ID.NULL)
-                field->fld_collation_id = RFR.RDB$COLLATION_ID;
-            else if (!FLX.RDB$COLLATION_ID.NULL)
-                field->fld_collation_id = FLX.RDB$COLLATION_ID;
-
-            if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG)
-             /*XXX:IOL    || (relation->rel_flags & REL_view)*/) {
-                field->fld_flags |= FLD_nullable;
-            }
-            
-            THREAD_EXIT();
-
-		END_FOR 
-        ON_ERROR 
-			THREAD_ENTER();
-			ERRD_punt(isc_status);
-        END_ERROR;
-	}
+	END_FOR 
+    ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
+    END_ERROR;
 
 	THREAD_ENTER();
 

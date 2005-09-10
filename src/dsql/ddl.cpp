@@ -3651,9 +3651,8 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		else
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					  /* isc_arg_gds, isc_dsql_command_err,
-						 isc_arg_gds, isc_dsql_view_not_found, */
-					  isc_arg_gds, 336068783L,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_dsql_view_not_found,
 					  isc_arg_string, view_name->str_data,
 					  isc_arg_end);
 		}
@@ -4205,9 +4204,8 @@ static void delete_relation_view (
             relation && (relation->rel_flags & REL_view))
 		{
             ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -607,
-                       /* isc_arg_gds, isc_dsql_command_err,
-                          isc_arg_gds, isc_dsql_table_not_found, */
-                       isc_arg_gds, 336068783L,
+                       isc_arg_gds, isc_dsql_command_err,
+                       isc_arg_gds, isc_dsql_table_not_found,
                        isc_arg_string, string->str_data,
                        isc_arg_end);
         }
@@ -4217,9 +4215,8 @@ static void delete_relation_view (
 			relation && !(relation->rel_flags & REL_view))
 		{
             ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -607,
-                       /* isc_arg_gds, isc_dsql_command_err,
-                          isc_arg_gds, isc_dsql_view_not_found, */
-                       isc_arg_gds, 336068783L,
+                       isc_arg_gds, isc_dsql_command_err,
+                       isc_arg_gds, isc_dsql_view_not_found,
                        isc_arg_string, string->str_data,
                        isc_arg_end);
         }
@@ -5313,9 +5310,7 @@ static void modify_privilege(	dsql_req*			request,
 		request->append_cstring(isc_dyn_fld_name, field_name->str_data);
 	}
 
-	if ((option) &&
-		((type == nod_grant) ||
-		(!(request->req_dbb->dbb_flags & DBB_v3))))
+	if (option)
 	{
 		request->append_number(isc_dyn_grant_options, option);
 	}
@@ -5711,7 +5706,7 @@ static void put_dtype(dsql_req* request, const dsql_fld* field, bool use_subtype
 	if (field->fld_dtype == dtype_cstring || field->fld_dtype == dtype_text ||
 		field->fld_dtype == dtype_varying || field->fld_dtype == dtype_blob)
 	{
-		if (!use_subtype || (request->req_dbb->dbb_flags & DBB_v3)) {
+		if (!use_subtype) {
 			request->append_uchar(blr_dtypes[field->fld_dtype]);
 		}
 		else if (field->fld_dtype == dtype_varying) {
@@ -5779,14 +5774,11 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 			request->append_number(isc_dyn_fld_segment_length,
 					   field->fld_seg_length);
 		}
-		if (!(request->req_dbb->dbb_flags & DBB_v3))
-		{
-			if (field->fld_sub_type == isc_blob_text) {
-				request->append_number(isc_dyn_fld_character_set,
-					field->fld_character_set_id);
-				request->append_number(isc_dyn_fld_collation,
-					field->fld_collation_id);
-			}
+		if (field->fld_sub_type == isc_blob_text) {
+			request->append_number(isc_dyn_fld_character_set,
+				field->fld_character_set_id);
+			request->append_number(isc_dyn_fld_collation,
+				field->fld_collation_id);
 		}
 	}
 	else if (field->fld_dtype <= dtype_any_text)
@@ -5804,16 +5796,13 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 		{
 			request->append_number(isc_dyn_fld_length, field->fld_length);
 		}
-		if (!(request->req_dbb->dbb_flags & DBB_v3))
-		{
-			request->append_number(isc_dyn_fld_char_length,
-					   field->fld_character_length);
-			request->append_number(isc_dyn_fld_character_set,
-					   field->fld_character_set_id);
-			if (!udf_flag)
-				request->append_number(isc_dyn_fld_collation,
-						   field->fld_collation_id);
-		}
+		request->append_number(isc_dyn_fld_char_length,
+				   field->fld_character_length);
+		request->append_number(isc_dyn_fld_character_set,
+				   field->fld_character_set_id);
+		if (!udf_flag)
+			request->append_number(isc_dyn_fld_collation,
+					   field->fld_collation_id);
 	}
 	else {
 		request->append_number(isc_dyn_fld_scale, field->fld_scale);
