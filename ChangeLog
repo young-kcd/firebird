@@ -1,3 +1,21 @@
+2005-09-10 09:15  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.22),
+	lang_helpers/gds_codes.pas (1.22), src/dsql/ddl.cpp (1.156),
+	src/dsql/dsql.cpp (1.155), src/dsql/dsql.h (1.83), src/dsql/gen.cpp
+	(1.92), src/dsql/metd.epp (1.79), src/dsql/pass1.cpp (1.241),
+	src/include/gen/codetext.h (1.29), src/include/gen/iberror.h
+	(1.28), src/include/gen/msg_facs.h (1.9), src/include/gen/msgs.h
+	(1.38), src/include/gen/rdb_codes.h (1.29),
+	src/include/gen/sql_code.h (1.31), src/msgs/facilities.sql (1.37),
+	src/msgs/history.sql (1.21), src/msgs/messages.sql (1.44),
+	src/msgs/system_errors.sql (1.19):
+	
+	- Get rid of DBB_v3 in DSQL and put a message just in case we find
+	ODS<=7 (impossible in theory, since FB wouldn't open such db).	-
+	Put mnemonics for two hardcoded error msgs I hijacked from DYN
+	years ago. Now they are defined for the SQLERR facility.
+
 2005-09-09 12:15  dimitr
 
 	* firebird2/src/dsql/dsql.h (1.82):
