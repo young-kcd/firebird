@@ -2436,13 +2436,6 @@ inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
 	}
 }
 
-#ifdef UNIX
-void setSingleUser(Firebird::ClumpletWriter& dpb, const TEXT* single_user)
-{
-	setTag(dpb, isc_dpb_reserved, single_user);
-}
-#endif
-
 void setLogin(Firebird::ClumpletWriter& dpb)
 {
 	const TEXT* username = getenv("ISC_USER");

@@ -340,9 +340,6 @@ static void iterative_sql_info(ISC_STATUS *, FB_API_HANDLE*, SSHORT, const SCHAR
 							   SCHAR *, USHORT, XSQLDA *);
 static ISC_STATUS open_blob(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, FB_API_HANDLE*, SLONG*,
 						USHORT, const UCHAR*, SSHORT, SSHORT);
-#ifdef UNIX
-static ISC_STATUS open_marker_file(ISC_STATUS *, TEXT *, TEXT *);
-#endif
 static ISC_STATUS prepare(ISC_STATUS *, WHY_TRA);
 static void release_dsql_support(sqlda_sup*);
 static void release_handle(WHY_HNDL);
@@ -813,21 +810,6 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb), 
 									dpb_length, isc_dpb_version1);
-
-#ifdef UNIX
-/* added so that only the pipe_server goes in here */
-	single_user[0] = 0;
-	if (open_marker_file(status, expanded_filename, single_user))
-	{
-		SUBSYSTEM_USAGE_DECR;
-		return error(status, local);
-	}
-
-	if (single_user[0]) 
-	{
-		setSingleUser(newDpb, single_user);
-	}
-#endif
 
 	setLogin(newDpb);
 
@@ -1446,18 +1428,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb), 
 									dpb_length, isc_dpb_version1);
-
-#ifdef UNIX
-	single_user[0] = 0;
-	if (open_marker_file(status, expanded_filename, single_user))
-	{
-		SUBSYSTEM_USAGE_DECR;
-		return error(status, local);
-	}
-
-	if (single_user[0])
-		setSingleUser(newDpb, single_user);
-#endif
 
 	setLogin(newDpb);
 
@@ -5748,163 +5718,6 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 	RETURN_SUCCESS;
 }
 
-
-#ifdef UNIX
-static ISC_STATUS open_marker_file(ISC_STATUS * status,
-								   TEXT * expanded_filename,
-								   TEXT * single_user)
-{
-/*************************************
- *
- *	o p e n _ m a r k e r _ f i l e
- *
- *************************************
- *
- * Functional description
- *	Try to open a marker file.  If one is
- *	found, open it, read the absolute path
- *	to the NFS mounted database, lockf()
- *	the marker file to ensure single user
- *	access to the db and write the open marker
- *	file descriptor into the marker file so
- *	that the file can be closed in
- *	close_marker_file located in unix.c.
- *	Return FB_FAILURE if a marker file exists
- *	but something goes wrong.  Return FB_SUCCESS
- *	otherwise.
- *
- *************************************/
-	TEXT buffer[80];
-
-/* Create the marker file name and see if it exists.  If not,
-   don't sweat it. */
-	TEXT marker_filename[MAXPATHLEN], marker_contents[MAXPATHLEN];
-	strcpy(marker_filename, expanded_filename);
-	strcat(marker_filename, "_m");
-	if (access(marker_filename, F_OK))	/* Marker file doesn't exist. */
-		return FB_SUCCESS;
-
-	const TEXT* err_routine = 0;
-/* Ensure that writes are ok on the marker file for lockf(). */
-	TEXT fildes_str[5];
-	int fd = -1;
-	if (!access(marker_filename, W_OK)) {
-		for (int i = 0; i < IO_RETRY; i++) {
-			fd = open(marker_filename, O_RDWR);
-			if (fd == -1) {
-				sprintf(buffer,
-						"Couldn't open marker file %s\n", marker_filename);
-				gds__log(buffer);
-				err_routine = "open";
-				break;
-			}
-
-			/* Place an advisory lock on the marker file. */
-#ifdef HAVE_FLOCK
-			if (flock(fd, LOCK_EX ) != -1) {
-#else
-			if (lockf(fd, F_TLOCK, 0) != -1) {
-#endif
-				const SLONG size = sizeof(marker_contents);
-				for (int j = 0; j < IO_RETRY; j++) {
-					const SLONG bytes = read(fd, marker_contents, size);
-					if (bytes != -1)
-						break;
-
-					if ((bytes == -1) && (!SYSCALL_INTERRUPTED(errno))) {
-						err_routine = "read";
-						close(fd);
-						fd = -1;
-					}
-				}				/* for (j < IO_RETRY ) */
-
-				TEXT* p = strchr(marker_contents, '\n');
-				*p = 0;
-				if (strcmp(expanded_filename, marker_contents))
-					close(fd);
-				else {
-					sprintf(fildes_str, "%d\n", fd);
-					strcpy(single_user, "YES");
-					const SLONG size2 = strlen(fildes_str);
-					for (int j2 = 0; j2 < IO_RETRY; j2++) {
-						if (lseek(fd, LSEEK_OFFSET_CAST 0L, SEEK_END) == -1) {
-							err_routine = "lseek";
-							close(fd);
-							fd = -1;
-						}
-
-						const SLONG bytes = write(fd, fildes_str, size2);
-						if (bytes == size2)
-							break;
-
-						if ((bytes == -1) && (!SYSCALL_INTERRUPTED(errno))) {
-							err_routine = "write";
-							close(fd);
-							fd = -1;
-						}
-					}			/* for (j2 < IO_RETRY ) */
-				}
-			}
-			else
-			{				/* Else couldn't lockf(). */
-
-				sprintf(buffer,
-						"Marker file %s already opened by another user\n",
-						marker_filename);
-				gds__log(buffer);
-				close(fd);
-				fd = -1;
-			}
-
-			if (!SYSCALL_INTERRUPTED(errno))
-			{
-				break;
-			}
-		}						/* for (i < IO_RETRY ) */
-	}							/* if (access (...)) */
-	else
-	{						/* Else the marker file exists, but can't write to it. */
-
-		sprintf(buffer,
-				"Must have write permission on marker file %s\n",
-				marker_filename);
-		gds__log(buffer);
-		err_routine = "access";
-		fd = -1;
-	}
-
-	if (fd != -1)
-		return FB_SUCCESS;
-
-/* The following code saves the name of the offending marker
-   file in a (sort of) permanent location.  It is totally specific
-   because this is the only dynamic string being returned in
-   a status vector in this entire module.  Since the marker
-   feature will almost never be used, it's not worth saving the
-   information in a more general way. */
-
-	if (marker_failures_ptr + strlen(marker_filename) + 1 >
-		marker_failures + sizeof(marker_failures) - 1)
-	{
-		marker_failures_ptr = marker_failures;
-	}
-
-	*status++ = isc_arg_gds;
-	*status++ = isc_io_error;
-	*status++ = isc_arg_string;
-	*status++ = (ISC_STATUS) err_routine;
-	*status++ = isc_arg_string;
-	*status++ = (ISC_STATUS) marker_failures_ptr;
-	*status++ = isc_arg_unix;
-	*status++ = errno;
-	*status = isc_arg_end;
-
-	strcpy(marker_failures_ptr, marker_filename);
-	marker_failures_ptr += strlen(marker_filename) + 1;
-
-	return FB_FAILURE;
-}
-#endif
 
 extern "C" {
 

@@ -121,7 +121,6 @@ using namespace Jrd;
 #define MASK		0666
 #endif
 
-static void close_marker_file(TEXT *);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, UINT64 *, ISC_STATUS *);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, int);
 static bool unix_error(TEXT*, jrd_file*, ISC_STATUS, ISC_STATUS*);
@@ -193,17 +192,6 @@ void PIO_close(jrd_file* main_file)
  *
  **************************************/
 	jrd_file* file;
-
-	if (main_file) {
-		TEXT marker_filename[MAXPATHLEN];
-
-		/* If a marker file is found for single user access, close it. */
-
-		strcpy(marker_filename, main_file->fil_string);
-		strcat(marker_filename, "_m");
-		if (!access(marker_filename, F_OK))	/* Marker file exists. */
-			close_marker_file(marker_filename);
-	}
 
 	for (file = main_file; file; file = file->fil_next) {
 		if (file->fil_desc == -1)
@@ -824,52 +812,6 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	ISC_enable();
 	return true;
 }
-
-
-#ifdef UNIX
-static void close_marker_file(TEXT * marker_filename)
-{
-/***************************************
- *
- *	c l o s e _ m a r k e r _ f i l e
- *
- ***************************************
- *
- * Functional description
- *	The caller has already found a marker
- *	file exists, so open the file, read
- *	the absolute path to the database,
- *	then start reading fildes and closing
- *	the open marker files.
- *
- ***************************************/
-	TEXT fildes_str[5], marker_file_path[MAXPATHLEN];
-
-/* Open the marker file and save the marker_file_path for later. */
-
-	FILE* fp = fopen(marker_filename, "r");
-	if (fp == NULL)
-		return;
-	if (fgets(marker_file_path, sizeof(marker_file_path), fp) == NULL)
-		return;
-
-/* Read the fildes string, convert it into a file descriptor and close. */
-
-	int fd;
-	while (fgets(fildes_str, sizeof(fildes_str), fp) != NULL) {
-		sscanf(fildes_str, "%d", &fd);
-		close(fd);
-	}
-
-/* Remove all fildes from marker file by writing just the path to the file. */
-
-	if ((fp = fopen(marker_filename, "w")) == NULL)
-		return;
-
-	fputs(marker_file_path, fp);
-	fclose(fp);
-}
-#endif
 
 
 static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, UINT64* offset,
