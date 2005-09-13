@@ -1,3 +1,10 @@
+2005-09-12 13:14  alexpeshkoff
+
+	* firebird2/src/jrd/: utl.cpp (1.84), utl_proto.h (1.19), why.cpp
+	(1.94), os/posix/unix.cpp (1.39):
+	
+	removed marker file related code
+
 2005-09-10 09:15  robocop
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.22),
