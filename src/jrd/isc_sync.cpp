@@ -131,11 +131,6 @@ static UCHAR *next_shared_memory;
 
 #define FTOK_KEY	15
 #define PRIV		0666
-//#define LOCAL_SEMAPHORES 4
-
-//#ifndef GDS_RELAY
-//#define GDS_RELAY	"/bin/gds_relay"
-//#endif
 
 #ifndef SHMEM_DELTA
 #define SHMEM_DELTA	(1 << 22)
