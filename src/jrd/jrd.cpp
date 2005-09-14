@@ -2633,10 +2633,6 @@ ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
 				break;
 			}
 
-			case INTL_FUNCTION_IS_LEGACY_CHARSET:
-				*result = charSet->getFlags() & CHARSET_LEGACY_SEMANTICS ? 1 : 0;
-				break;
-
 			default:
 				fb_assert(false);
 				break;

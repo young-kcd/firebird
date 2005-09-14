@@ -52,6 +52,8 @@
 #include "../dsql/metd_proto.h"
 #include "../dsql/misc_func.h"
 #include "../dsql/utld_proto.h"
+#include "../jrd/ods.h"
+#include "../jrd/ini.h"
 #include "../jrd/thd.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/cvt_proto.h"
@@ -1777,36 +1779,21 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		node->nod_desc.dsc_flags = DSC_nullable;
 	}
 
-	if (node->nod_desc.dsc_dtype <= dtype_varying)
+	// check if the field is CHAR/VARCHAR CHARACTER SET UNICODE_FSS and if it's from a system table
+	if (node->nod_desc.dsc_dtype <= dtype_varying &&
+		INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA &&
+		field->fld_relation && field->fld_relation->rel_id < static_cast<int>(rel_MAX))
 	{
-		tsql* tdsql = DSQL_get_thread_data();
-		USHORT isLegacyCharSet;
+		USHORT adjust = 0;
 
-		THREAD_EXIT();
-		const ISC_STATUS s =
-			gds__intl_function(tdsql->tsql_status, &context->ctx_request->req_dbb->dbb_database_handle,
-				INTL_FUNCTION_IS_LEGACY_CHARSET, INTL_GET_CHARSET(&node->nod_desc),
-				0, NULL, &isLegacyCharSet);
-		THREAD_ENTER();
-		if (s)
-			Firebird::status_exception::raise(tdsql->tsql_status);
+		if (node->nod_desc.dsc_dtype == dtype_varying)
+			adjust = sizeof(USHORT);
+		else if (node->nod_desc.dsc_dtype == dtype_cstring)
+			adjust = 1;
 
-		if (isLegacyCharSet)
-		{
-			USHORT adjust = 0;
-
-			if (node->nod_desc.dsc_dtype == dtype_varying)
-				adjust = sizeof(USHORT);
-			else if (node->nod_desc.dsc_dtype == dtype_cstring)
-				adjust = 1;
-				
-			node->nod_desc.dsc_length -= adjust;
-
-			node->nod_desc.dsc_length *=
-				METD_get_charset_bpc(context->ctx_request, INTL_GET_CHARSET(&node->nod_desc));
-
-			node->nod_desc.dsc_length += adjust;
-		}
+		node->nod_desc.dsc_length -= adjust;
+		node->nod_desc.dsc_length *= 3;
+		node->nod_desc.dsc_length += adjust;
 	}
 
 	return node;

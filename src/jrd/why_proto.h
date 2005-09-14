@@ -271,7 +271,6 @@ ISC_STATUS gds__handle_cleanup(ISC_STATUS*, FB_API_HANDLE*);
 
 #define INTL_FUNCTION_CHAR_LENGTH		1
 #define INTL_FUNCTION_OCTET_LENGTH		2
-#define INTL_FUNCTION_IS_LEGACY_CHARSET	3
 ISC_STATUS API_ROUTINE gds__intl_function(ISC_STATUS*, FB_API_HANDLE*, USHORT, UCHAR, USHORT, const UCHAR*, USHORT*);
 
 typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);
