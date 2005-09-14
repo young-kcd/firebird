@@ -1493,7 +1493,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 			return (dsql_rel*) symbol->sym_object;
 		}
 
-// see if the relation is the one currently being defined in this request 
+// See if the relation is the one currently being defined in this request 
 
 	if (((temp = request->req_relation) != NULL) &&
 		!strcmp((char*) temp->rel_name, (char*) name->str_data)) {
@@ -1501,39 +1501,67 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		return temp;
 	}
 
-// now see if it is in the database 
-
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	DB = dbb->dbb_database_handle;
+
+// If the relation id or any of the field ids have not yet been assigned,
+// and this is a type of request which does not use ids, prepare a
+// temporary relation block to provide information without caching it
+
+	bool permanent = true;
+
+	THREAD_EXIT();
+
+	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_rel_ids] TRANSACTION_HANDLE request->req_trans)
+	    REL IN RDB$RELATIONS
+	    CROSS RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
+	    WITH REL.RDB$RELATION_NAME EQ name->str_data
+		AND (REL.RDB$RELATION_ID MISSING OR RFR.RDB$FIELD_ID MISSING)
+
+        THREAD_ENTER();
+
+		permanent = false;
+
+        THREAD_EXIT();
+
+	END_FOR 
+    ON_ERROR 
+		THREAD_ENTER();
+		ERRD_punt(isc_status);
+    END_ERROR;
+
+	THREAD_ENTER();
+
+// Now see if it is in the database 
+
+	DsqlMemoryPool& pool =
+		permanent ? *dbb->dbb_pool : *tdsql->getDefaultPool();
+
 	relation = NULL;
 
 	THREAD_EXIT();
 
 	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_relation] TRANSACTION_HANDLE request->req_trans)
 	    X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->str_data
-		/* allocate the relation block -- if the relation id has not yet 
-		   been assigned, and this is a type of request which does not 
-		   use ids, prepare a temporary relation block to provide 
-		   information without caching it */
+
         THREAD_ENTER();
 
 	    fb_utils::exact_name(X.RDB$OWNER_NAME);
+	    const int length = name->str_length + strlen(X.RDB$OWNER_NAME);
+
+        // Allocate from default or permanent pool as appropriate 
 
         if (!X.RDB$RELATION_ID.NULL) {
-            relation = FB_NEW_RPT(*dbb->dbb_pool,
-                                  name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_rel;
+            relation = FB_NEW_RPT(pool, length) dsql_rel;
             relation->rel_id = X.RDB$RELATION_ID;
         }
         else if (!DDL_ids(request)) {
-            relation =
-                FB_NEW_RPT(*tdsql->getDefaultPool(),
-                                   name->str_length + strlen(X.RDB$OWNER_NAME)) dsql_rel;
-            relation->rel_flags |= REL_new_relation;
+            relation = FB_NEW_RPT(pool, length) dsql_rel;
         }
 
         // fill out the relation information 
-        
+
         if (relation) {
             relation->rel_name = relation->rel_data;
             relation->rel_owner = relation->rel_data + name->str_length + 1;
@@ -1583,57 +1611,63 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	    // allocate the field block 
 
 	    fb_utils::exact_name(RFR.RDB$FIELD_NAME);
+	    const int length = strlen(RFR.RDB$FIELD_NAME);
 
         // Allocate from default or permanent pool as appropriate 
-        
-        if (relation->rel_flags & REL_new_relation)
-            *ptr = field = FB_NEW_RPT(*tdsql->getDefaultPool(),
-                                         strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
-        else
-            *ptr = field = FB_NEW_RPT(*dbb->dbb_pool,
-                                        strlen(RFR.RDB$FIELD_NAME)) dsql_fld;
-        
-        ptr = &field->fld_next;
-        
-        // get field information 
-        
-        strcpy(field->fld_name, RFR.RDB$FIELD_NAME);
-        field->fld_id = RFR.RDB$FIELD_ID;
-        field->fld_length = FLX.RDB$FIELD_LENGTH;
-        field->fld_scale = FLX.RDB$FIELD_SCALE;
-        field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
-        field->fld_relation = relation;
-        
-        if (!FLX.RDB$COMPUTED_BLR.NULL)
-            field->fld_flags |= FLD_computed;
-        
-        convert_dtype(field, FLX.RDB$FIELD_TYPE);
-        
-        if (FLX.RDB$FIELD_TYPE == blr_blob) {
-            field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
-        }
-        
-        if (!FLX.RDB$DIMENSIONS.NULL && FLX.RDB$DIMENSIONS) {
-            field->fld_element_dtype = field->fld_dtype;
-            field->fld_element_length = field->fld_length;
-            field->fld_dtype = dtype_array;
-            field->fld_length = sizeof(ISC_QUAD);
-            field->fld_dimensions = FLX.RDB$DIMENSIONS;
-        }
-        
-        if (!FLX.RDB$CHARACTER_SET_ID.NULL)
-            field->fld_character_set_id = FLX.RDB$CHARACTER_SET_ID;
-        
-        if (!RFR.RDB$COLLATION_ID.NULL)
-            field->fld_collation_id = RFR.RDB$COLLATION_ID;
-        else if (!FLX.RDB$COLLATION_ID.NULL)
-            field->fld_collation_id = FLX.RDB$COLLATION_ID;
 
-        if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG)
-         /*XXX:IOL    || (relation->rel_flags & REL_view)*/) {
-            field->fld_flags |= FLD_nullable;
+		field = NULL;
+
+        if (!RFR.RDB$FIELD_ID.NULL) {
+            field = FB_NEW_RPT(pool, length) dsql_fld;
+			field->fld_id = RFR.RDB$FIELD_ID;
         }
-        
+        else if (!DDL_ids(request)) {
+            field = FB_NEW_RPT(pool, length) dsql_fld;
+        }
+
+		if (field) {
+			*ptr = field;
+			ptr = &field->fld_next;
+
+			// get field information 
+
+			strcpy(field->fld_name, RFR.RDB$FIELD_NAME);
+			field->fld_length = FLX.RDB$FIELD_LENGTH;
+			field->fld_scale = FLX.RDB$FIELD_SCALE;
+			field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
+			field->fld_relation = relation;
+
+			if (!FLX.RDB$COMPUTED_BLR.NULL)
+				field->fld_flags |= FLD_computed;
+
+			convert_dtype(field, FLX.RDB$FIELD_TYPE);
+
+			if (FLX.RDB$FIELD_TYPE == blr_blob) {
+				field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
+			}
+
+			if (!FLX.RDB$DIMENSIONS.NULL && FLX.RDB$DIMENSIONS) {
+				field->fld_element_dtype = field->fld_dtype;
+				field->fld_element_length = field->fld_length;
+				field->fld_dtype = dtype_array;
+				field->fld_length = sizeof(ISC_QUAD);
+				field->fld_dimensions = FLX.RDB$DIMENSIONS;
+			}
+
+			if (!FLX.RDB$CHARACTER_SET_ID.NULL)
+				field->fld_character_set_id = FLX.RDB$CHARACTER_SET_ID;
+
+			if (!RFR.RDB$COLLATION_ID.NULL)
+				field->fld_collation_id = RFR.RDB$COLLATION_ID;
+			else if (!FLX.RDB$COLLATION_ID.NULL)
+				field->fld_collation_id = FLX.RDB$COLLATION_ID;
+
+			if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG)
+			/*XXX:IOL    || (relation->rel_flags & REL_view)*/) {
+				field->fld_flags |= FLD_nullable;
+			}
+		}
+
         THREAD_EXIT();
 
 	END_FOR 
@@ -1644,9 +1678,8 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	THREAD_ENTER();
 
-/* Since we could give up control due to the THREAD_EXIT and THEAD_ENTER,
- * another thread may have added the same table in the mean time
- */
+// Since we could give up control due to the THREAD_EXIT and THREAD_ENTER,
+// another thread may have added the same table in the mean time
 
 	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
 						 name->str_length, SYM_relation, 0);
@@ -1659,10 +1692,9 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 			return (dsql_rel*) symbol->sym_object;
 		}
 
-
 // Add relation to front of list 
 
-	if (!(relation->rel_flags & REL_new_relation)) {
+	if (permanent) {
 		relation->rel_next = dbb->dbb_relations;
 		dbb->dbb_relations = relation;
 
@@ -1676,6 +1708,10 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		symbol->sym_dbb = dbb;
 		HSHD_insert(symbol);
 	}
+	else {
+		relation->rel_flags |= REL_new_relation;
+	}
+
 	metd_rec_unlock();
 	return relation;
 }

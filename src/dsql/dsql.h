@@ -143,8 +143,9 @@ enum irq_type_t {
 	irq_cs_bpc      = 17,    //!< lookup a charset bpc
 	irq_cs_name     = 18,    //!< lookup a charset name
 	irq_default_cs  = 19,    //!< lookup the default charset
+	irq_rel_ids		= 20,    //!< check relation/field ids
 
-    irq_MAX         = 20
+    irq_MAX         = 21
 };
 
 // dsql_nod definition
