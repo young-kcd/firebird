@@ -1561,6 +1561,7 @@ int MET_lookup_field(thread_db* tdbb,
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$RELATION_FIELDS WITH
 			X.RDB$RELATION_NAME EQ relation->rel_name.c_str() AND
+			X.RDB$FIELD_ID NOT MISSING AND
 			X.RDB$FIELD_NAME EQ name.c_str()
 
         if (!REQUEST(irq_l_field)) {
