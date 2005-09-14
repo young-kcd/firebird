@@ -780,7 +780,7 @@ extern BurpGlobals* gdgbl;
 class BurpGlobals : public ThreadData
 {
 public:
-	BurpGlobals() : ThreadData(ThreadData::tddGBL)
+	BurpGlobals() : ThreadData(ThreadData::tddGBL), flag_on_line(true)
 	{
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
@@ -911,6 +911,7 @@ public:
 	isc_req_handle	handles_write_procedure_prms_req_handle1;
 	USHORT			hdr_forced_writes;
 	TEXT			database_security_class[GDS_NAME_LEN]; // To save database security class for deferred update 
+	
 #ifdef SERVICE_THREAD
 	static inline BurpGlobals* getSpecific() {
 		return (BurpGlobals*) ThreadData::getSpecific();
@@ -933,6 +934,9 @@ public:
 #endif
 
 	char veryEnd;
+	//starting after this members must be initialized in constructor explicitly
+	
+	bool flag_on_line;	// indicates whether we will bring the database on-line
 };
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h

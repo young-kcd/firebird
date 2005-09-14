@@ -152,10 +152,6 @@ void	general_on_error();
 UCHAR	debug_on = 0;   // able to turn this on in the debugger 
 #endif
 
-bool	flag_on_line = true;	/* indicates whether we will bring
-					   the database on-line :
-                                           true - we will
-                                           false - we will not */
 #ifdef sparc
 const SSHORT old_sparcs[] =
     {0, 0, 0, 2, 0, 0, 0, 0, 2, 4, 4, 4, 8, 8, 0, 0, 8, 8, 8};
@@ -241,7 +237,7 @@ int RESTORE_restore (const TEXT* file_name,
  *
  **************************************/
 	isc_req_handle  req_handle1 = 0, req_handle2 = 0, req_handle3 = 0;
-	isc_req_handle	req_handle4 = 0;
+	isc_req_handle	req_handle4 = 0, req_handle5 = 0;
 	BASED_ON RDB$INDICES.RDB$INDEX_NAME index_name;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
@@ -303,7 +299,7 @@ int RESTORE_restore (const TEXT* file_name,
 						// msg 243 ALTER INDEX \"%s\" ACTIVE;
 					END_FOR;
 					// don't bring the database on-line 
-					flag_on_line = false;
+					tdgbl->flag_on_line = false;
 					break;
 				default:
 					general_on_error ();
@@ -375,6 +371,11 @@ int RESTORE_restore (const TEXT* file_name,
 		 * activation.
 		 * -bsriram, 11-May-1999             BUG: 10016
 		 */
+		/* In case error happens creating FK, triggers don't let set 
+		 * INACTIVE = TRUE for FK index. Therefore use separate 
+		 * transaction be able to rollback when needed.
+		 * AP, 2005
+		 */
 		FOR (REQUEST_HANDLE req_handle1)
 			CNST IN RDB$RELATION_CONSTRAINTS
 			CROSS IDS IN RDB$INDICES WITH
@@ -386,26 +387,44 @@ int RESTORE_restore (const TEXT* file_name,
 				(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
 				sizeof(index_name));
 			BURP_verbose(285, index_name, NULL, NULL, NULL, NULL);
+			
 			// activating and creating deferred index %s
-			MODIFY IDS USING
-				IDS.RDB$INDEX_INACTIVE = FALSE;
-			END_MODIFY;
+			bool fError = false;
+			isc_tr_handle activateIndexTran = 0;
+			ISC_STATUS_ARRAY local_status_vector;
+			ISC_STATUS* local_status = local_status_vector;
+		
+			START_TRANSACTION activateIndexTran;
+			FOR (TRANSACTION_HANDLE activateIndexTran REQUEST_HANDLE req_handle5)
+			    IND1 IN RDB$INDICES WITH IND1.RDB$INDEX_NAME EQ IDS.RDB$INDEX_NAME
+               	MODIFY IND1 USING 
+            		IND1.RDB$INDEX_INACTIVE = FALSE;
+            	END_MODIFY;
+			END_FOR;
 			ON_ERROR
-				general_on_error ();
+				fError = true;
+				memcpy(local_status, isc_status, sizeof (ISC_STATUS_ARRAY));
 			END_ERROR;
+			MISC_release_request_silent(req_handle5);
 
-			SAVE
-			// existing ON_ERROR continues past error, beck 
-			ON_ERROR
-				BURP_print (173, index_name, NULL, NULL, NULL, NULL);
-				BURP_print_status(isc_status);
-				MODIFY IDS USING
-					IDS.RDB$INDEX_INACTIVE = TRUE;
-				END_MODIFY;
+			if (!fError) 
+			{
+				COMMIT activateIndexTran;
+				ON_ERROR
+					fError = true;
+					memcpy(local_status, isc_status, sizeof (ISC_STATUS_ARRAY));
+				END_ERROR;
+			}
+			if (fError)
+			{
+				ROLLBACK activateIndexTran;
 				ON_ERROR
 					general_on_error ();
 				END_ERROR;
-			END_ERROR;
+				BURP_print (173, index_name, NULL, NULL, NULL, NULL);
+				BURP_print_status(local_status);
+				tdgbl->flag_on_line = false;
+			}
 		END_FOR;
 		ON_ERROR
 			general_on_error ();
@@ -555,7 +574,7 @@ int RESTORE_restore (const TEXT* file_name,
 
 	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
 
-	if (flag_on_line)
+	if (tdgbl->flag_on_line)
 	{
 		dpb.insertTag(isc_dpb_online);
 	}
@@ -588,7 +607,7 @@ int RESTORE_restore (const TEXT* file_name,
 	if (isc_detach_database (tdgbl->status_vector, &db_handle))
 		general_on_error();
 
-	if (!flag_on_line)
+	if (!tdgbl->flag_on_line)
 	{
 		BURP_print(246, NULL, NULL, NULL, NULL, NULL);
 		// msg 246 Database is not online due to failure to activate one or more indices. 
@@ -2720,7 +2739,7 @@ rec_type get_data (burp_rel*	relation)
 							END_MODIFY;
 						END_FOR;
 						// don't bring the database on-line 
-						flag_on_line = false;
+						tdgbl->flag_on_line = false;
 						// commit one more time 
 						COMMIT
 						ON_ERROR
