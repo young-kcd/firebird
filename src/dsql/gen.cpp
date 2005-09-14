@@ -1536,18 +1536,21 @@ static void gen_constant( dsql_req* request, dsc* desc, bool negate_value)
 
 	case dtype_text:
 		{
-			tsql* tdsql = DSQL_get_thread_data();
 			USHORT length;
+
+			ISC_STATUS_ARRAY status_vector = {0};
 
 			THREAD_EXIT();
 			const ISC_STATUS s =
-				gds__intl_function(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
+				gds__intl_function(status_vector, &request->req_dbb->dbb_database_handle,
 					INTL_FUNCTION_OCTET_LENGTH, INTL_GET_CHARSET(desc),
 					desc->dsc_length, desc->dsc_address, &length);
 			THREAD_ENTER();
-			if (s)
-				Firebird::status_exception::raise(tdsql->tsql_status);
-			
+
+			if (s) {
+				ERRD_punt(status_vector);
+			}
+
 			desc->dsc_length = length;
 
 			gen_descriptor(request, desc, true);

@@ -3237,17 +3237,20 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* constant)
 		
 	constant->nod_desc.dsc_length -= adjust;
 
-	tsql* tdsql = DSQL_get_thread_data();
 	USHORT length;
+
+	ISC_STATUS_ARRAY status_vector = {0};
 
 	THREAD_EXIT();
 	const ISC_STATUS s =
-		gds__intl_function(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
+		gds__intl_function(status_vector, &request->req_dbb->dbb_database_handle,
 			INTL_FUNCTION_CHAR_LENGTH, INTL_GET_CHARSET(&constant->nod_desc),
 			constant->nod_desc.dsc_length, constant->nod_desc.dsc_address, &length);
 	THREAD_ENTER();
-	if (s)
-		Firebird::status_exception::raise(tdsql->tsql_status);
+
+	if (s) {
+		ERRD_punt(status_vector);
+	}
 
 	constant->nod_desc.dsc_length = length * METD_get_charset_bpc(request, INTL_GET_CHARSET(&constant->nod_desc));
 	constant->nod_desc.dsc_length += adjust;
