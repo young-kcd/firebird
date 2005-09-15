@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.16 2004-06-08 13:40:38 alexpeshkoff Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.17 2005-09-15 16:42:34 alexpeshkoff Exp $ */
 
 #include "firebird.h"
 #include <stdio.h>
@@ -259,14 +259,22 @@ int ISC_kill(SLONG pid, SLONG signal_number)
 
 /* Process is there, but we don't have the privilege to
    send to him.  */
-
+   
 	int pipes[2];
 	
 	if (!relay_pipe) {
 		TEXT process[MAXPATHLEN], arg[10];
+		
 		gds__prefix(process, GDS_RELAY);
+		if (access(process, X_OK) != 0) {
+			// we don't have relay, therefore simply give meaningful diagnostic
+			gds__log("ISC_kill: process %d couldn't deliver signal %d "
+				"to process %d: permission denied", getpid(), signal_number, pid);
+			return -1;
+		}
+
 		if (pipe(pipes)) {
-			gds__log("ISC_kill: error %d creating gds_relay", errno);
+			gds__log("ISC_kill: error %d creating pipe to gds_relay", errno);
 			return -1;
 		}
 		sprintf(arg, "%d", pipes[0]);
