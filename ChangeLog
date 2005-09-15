@@ -1,3 +1,41 @@
+2005-09-14 21:06  dimitr
+
+	* firebird2/src/dsql/: gen.cpp (1.93), pass1.cpp (1.242):
+	
+	Fixed the issue with zero-initialized status vector during prepare.
+
+2005-09-14 20:53  dimitr
+
+	* firebird2/src/jrd/isc_sync.cpp (1.98):
+	
+	Cleanup.
+
+2005-09-14 20:09  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.104), jrd/jrd.cpp (1.223),
+	jrd/why_proto.h (1.24):
+	
+	Fix issue of SQLVAR.sqllen from non-system MBCS fields, thanks to
+	Roman
+
+2005-09-14 14:02  dimitr
+
+	* firebird2/src/jrd/met.epp (1.170):
+	
+	More checks for uncommitted DDL.
+
+2005-09-14 13:42  dimitr
+
+	* firebird2/src/dsql/: dsql.h (1.84), metd.epp (1.80):
+	
+	Another attempt to fix the issue with uncommitted DDL.
+
+2005-09-14 07:58  alexpeshkoff
+
+	* firebird2/src/burp/: burp.h (1.68), restore.epp (1.97):
+	
+	fixed restore of database with broken foreign keys
+
 2005-09-12 13:14  alexpeshkoff
 
 	* firebird2/src/jrd/: utl.cpp (1.84), utl_proto.h (1.19), why.cpp
