@@ -1,3 +1,9 @@
+2005-09-15 18:42  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.17):
+	
+	slightly better diagnostics
+
 2005-09-14 21:06  dimitr
 
 	* firebird2/src/dsql/: gen.cpp (1.93), pass1.cpp (1.242):
