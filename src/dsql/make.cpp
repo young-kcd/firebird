@@ -621,19 +621,19 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 					   <string> - <timestamp> 
 					   <string> - <string>   */
 
-					if (DTYPE_IS_TEXT(dtype1))
+					if (DTYPE_IS_TEXT(desc1.dsc_dtype))
 						dtype = dtype_timestamp;
-					else if (DTYPE_IS_TEXT(dtype2))
+					else if (DTYPE_IS_TEXT(desc2.dsc_dtype))
 						dtype = dtype_timestamp;
-					else if (dtype1 == dtype2)
-						dtype = dtype1;
-					else if ((dtype1 == dtype_timestamp) &&
-							 (dtype2 == dtype_sql_date))
+					else if (desc1.dsc_dtype == desc2.dsc_dtype)
+						dtype = desc1.dsc_dtype;
+					else if ((desc1.dsc_dtype == dtype_timestamp) &&
+							 (desc2.dsc_dtype == dtype_sql_date))
 					{
 						dtype = dtype_timestamp;
 					}
-					else if ((dtype2 == dtype_timestamp) &&
-							 (dtype1 == dtype_sql_date))
+					else if ((desc2.dsc_dtype == dtype_timestamp) &&
+							 (desc1.dsc_dtype == dtype_sql_date))
 					{
 						dtype = dtype_timestamp;
 					}
