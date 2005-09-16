@@ -361,7 +361,7 @@ public:
 					  const UCHAR* search, SLONG search_len,
 					  const UCHAR* match, SLONG match_len)
 	{
-		StrConverter cvt1(tdbb, ttype, search, search_len), cvt2(tdbb, ttype, match, match_len);
+		StrConverter cvt1(tdbb, ttype, search, search_len);//, cvt2(tdbb, ttype, match, match_len);
 		fb_assert(search_len % sizeof(CharType) == 0);
 		fb_assert(match_len % sizeof(CharType) == 0);
 		return SLEUTHNAME(tdbb, ttype, flags,
@@ -369,7 +369,7 @@ public:
 						  reinterpret_cast<const CharType*>(match), match_len);
 	}
 
-	static bool merge(thread_db* tdbb, TextType* ttype,
+	static ULONG merge(thread_db* tdbb, TextType* ttype,
 					  const UCHAR* match, SLONG match_bytes,
 					  const UCHAR* control, SLONG control_bytes,
 					  UCHAR* combined, SLONG combined_bytes)
