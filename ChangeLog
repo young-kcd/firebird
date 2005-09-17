@@ -1,3 +1,15 @@
+2005-09-16 12:50  dimitr
+
+	* firebird2/src/dsql/make.cpp (1.105):
+	
+	Fixed dialect 1 regression caused by my recent changes.
+
+2005-09-16 12:24  dimitr
+
+	* firebird2/src/jrd/intl.cpp (1.82):
+	
+	Fixed bugs with nod_sleuth implementation. Exists since v1.5.0.
+
 2005-09-15 18:42  alexpeshkoff
 
 	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.17):
