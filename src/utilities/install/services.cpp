@@ -48,6 +48,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 						USHORT sw_startup,
 						const TEXT* nt_user_name,
 						const TEXT* nt_user_password,
+						bool interactive_mode,
 						pfnSvcError err_handler)
 {
 /**************************************
@@ -75,15 +76,16 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	strcat(path_name, ".exe");
 	strcat(path_name, RUNAS_SERVICE);
 
-	const DWORD dwServiceType = SERVICE_WIN32_OWN_PROCESS;
+	DWORD dwServiceType = SERVICE_WIN32_OWN_PROCESS;
 	if (nt_user_name != 0)
 	{
 		if (nt_user_password == 0)
 			nt_user_password = "";
 	}
-	// OM : commmented out after security discussions Sept 2003.
-	//else
-	//	dwServiceType |= SERVICE_INTERACTIVE_PROCESS;
+	else if (interactive_mode)
+	{
+		dwServiceType |= SERVICE_INTERACTIVE_PROCESS;
+	}
 
 	SC_HANDLE service = CreateService(manager,
 							service_name,

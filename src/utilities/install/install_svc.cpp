@@ -72,6 +72,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT sw_mode = DEFAULT_PRIORITY;
 	USHORT sw_guardian = NO_GUARDIAN;
 	USHORT sw_arch = ARCH_SS;
+	bool sw_interactive = false;
 
 	TEXT *username = 0;
 	TEXT *password = 0;
@@ -169,6 +170,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					}
 					break;
 
+				case 'I':
+					sw_interactive = true;
+					break;
+
 				default:
 					printf("Unknown switch \"%s\"\n", p);
 					usage_exit();
@@ -187,6 +192,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	if (sw_command == COMMAND_INSTALL && username != 0)
 	{
+		if (sw_interactive)
+		{
+			printf("\"Interact with desktop\" mode can be set for LocalSystem account only");
+			exit(FINI_ERROR);
+		}
+
 		p = username;
 		while (*p != '\0' && *p != '\\') ++p;
 		if (*p == '\0')
@@ -257,13 +268,16 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				status = SERVICES_install(manager, ISCGUARD_SERVICE,
 					ISCGUARD_DISPLAY_NAME, ISCGUARD_DISPLAY_DESCR,
 					ISCGUARD_EXECUTABLE, directory, NULL, sw_startup,
-					username, password, svc_error);
+					username, password, false, svc_error);
+
 				status2 = FB_SUCCESS;
+
 				if (username != 0)
 				{
 					status2 = SERVICES_grant_access_rights(ISCGUARD_SERVICE,
 						username, svc_error);
 				}
+
 				if (status == FB_SUCCESS && status2 == FB_SUCCESS)
 					printf("Service \"%s\" successfully created.\n", ISCGUARD_DISPLAY_NAME);
 
@@ -273,16 +287,21 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 			/* do the install of the server */
 			status = SERVICES_install(manager, REMOTE_SERVICE,
-					REMOTE_DISPLAY_NAME, REMOTE_DISPLAY_DESCR, REMOTE_EXECUTABLE,
-						directory, NULL, sw_startup, username, password, svc_error);
+				REMOTE_DISPLAY_NAME, REMOTE_DISPLAY_DESCR, REMOTE_EXECUTABLE,
+				directory, NULL, sw_startup, username, password,
+				sw_interactive, svc_error);
+
 			status2 = FB_SUCCESS;
+
 			if (username != 0)
 			{
 				status2 = SERVICES_grant_access_rights(REMOTE_SERVICE,
 					username, svc_error);
 			}
+
 			if (status == FB_SUCCESS && status2 == FB_SUCCESS)
 				printf("Service \"%s\" successfully created.\n", REMOTE_DISPLAY_NAME);
+
 			break;
 
 		case COMMAND_REMOVE:
@@ -290,8 +309,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (service)
 			{
 				CloseServiceHandle(service);
+
 				status = SERVICES_remove(manager, ISCGUARD_SERVICE,
 					ISCGUARD_DISPLAY_NAME, svc_error);
+
 				if (status == FB_SUCCESS)
 				{
 					printf("Service \"%s\" successfully deleted.\n", ISCGUARD_DISPLAY_NAME);
@@ -309,8 +330,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (service)
 			{
 				CloseServiceHandle(service);
+
 				status2 = SERVICES_remove(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 										 svc_error);
+
 				if (status2 == FB_SUCCESS)
 				{
 				    printf("Service \"%s\" successfully deleted.\n", REMOTE_DISPLAY_NAME);
@@ -326,6 +349,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 			if (status != FB_SUCCESS && status2 != FB_SUCCESS)
 				status = FB_FAILURE;
+
 			break;
 
 		case COMMAND_START:
@@ -334,16 +358,20 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (service)
 			{
 				CloseServiceHandle(service);
+
 				status = SERVICES_start(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
 										sw_mode, svc_error);
+
 				if (status == FB_SUCCESS)
 				    printf("Service \"%s\" successfully started.\n", ISCGUARD_DISPLAY_NAME);
 			}
 			else
 			{
 				CloseServiceHandle(service);
+
 				status = SERVICES_start(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
 										sw_mode, svc_error);
+
 				if (status == FB_SUCCESS)
 					printf("Service \"%s\" successfully started.\n", REMOTE_DISPLAY_NAME);
 			}
@@ -355,16 +383,20 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (service)
 			{
 				CloseServiceHandle(service);
+
 				status = SERVICES_stop(manager, ISCGUARD_SERVICE,
 					ISCGUARD_DISPLAY_NAME, svc_error);
+
 				if (status == FB_SUCCESS)
 					printf("Service \"%s\" successfully stopped.\n", ISCGUARD_DISPLAY_NAME);
 			}
 			else
 			{
 				CloseServiceHandle(service);
+
 				status = SERVICES_stop(manager, REMOTE_SERVICE,
 					REMOTE_DISPLAY_NAME, svc_error);
+
 				if (status == FB_SUCCESS)
 					printf("Service \"%s\" successfully stopped.\n", REMOTE_DISPLAY_NAME);
 			}
@@ -519,7 +551,8 @@ static void usage_exit(void)
 	printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] ]\n");
 	printf("                    [ -a[uto]* | -d[emand] ]\n");
 	printf("                    [ -g[uardian] ]\n");
-	printf("                    [ -l[ogin] username [password] ]\n\n");
+	printf("                    [ -l[ogin] username [password] ]\n");
+	printf("                    [ -i[nteractive] ]\n\n");
 	printf("          sta[rt]   [ -b[oostpriority] ]\n");
 	printf("          sto[p]\n");
 	printf("          q[uery]\n");
