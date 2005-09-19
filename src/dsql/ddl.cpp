@@ -2817,7 +2817,7 @@ static void define_relation( dsql_req* request)
 	if (external_file)
 	{
 		fb_assert(request->req_relation);
-		request->req_relation->rel_flags |= REL_external ;
+		request->req_relation->rel_flags |= REL_external;
 	}
 	request->append_number(isc_dyn_rel_sql_protection, 1);
 
@@ -5433,6 +5433,17 @@ static void modify_relation( dsql_req* request)
 
 	request->append_cstring(isc_dyn_mod_rel, relation_name->str_data);
 	save_relation(request, relation_name);
+
+	if (!request->req_relation)
+	{
+		TEXT linecol[64];
+		sprintf (linecol, "At line %d, column %d.",
+				(int) relation_node->nod_line, (int) relation_node->nod_column);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204, isc_arg_gds,
+					isc_dsql_relation_err, isc_arg_gds, isc_random,
+					isc_arg_string, relation_name->str_data, isc_arg_gds,
+					isc_random, isc_arg_string, linecol, 0);
+	}
 
 /* need to handle error that occur in generating dyn string.
  * If there is an error, get rid of the cached data
