@@ -2,6 +2,18 @@
   * v1.5.3
   **************
 
+    * Fixed unregistered security related bugs.
+        1) Server crashed when too long filename is provided
+        2) No longer trust UID received from the client side
+        3) isc_user_* functions worked wrongly under "superuser" account on win32
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed v1.5.2 bug.
+        Comparisons between strings in NONE and other charset caused an error
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Fixed unregistered bug.
         100% cpu load in case of write failure
       Contributor(s):
