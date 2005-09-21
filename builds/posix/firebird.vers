@@ -272,10 +272,10 @@ global:
 	isc_service_query;
 	isc_service_start;
 	#functions called by utils
-	SVC_putc;
-	SVC_finish;
-        SVC_output;
-	CMD_UTIL_put_svc_status;
+	#SVC_putc;
+	#SVC_finish;
+        #SVC_output;
+	#CMD_UTIL_put_svc_status;
 
 # Transaction control functions
 
