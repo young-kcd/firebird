@@ -1,3 +1,19 @@
+2005-09-19 16:48  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.157):
+	
+	Let's recognize an attempt to alter a not existing table earlier
+	than in DYN.  In particular, this prevents a server crash
+	introduced by some recent DDL checks.
+
+2005-09-19 12:43  dimitr
+
+	* firebird2/src/utilities/install/: install_svc.cpp (1.21),
+	servi_proto.h (1.11), services.cpp (1.18):
+	
+	Added -i switch to instsvc, as agreed with Olivier and Alex times
+	ago.
+
 2005-09-16 12:50  dimitr
 
 	* firebird2/src/dsql/make.cpp (1.105):
