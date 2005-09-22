@@ -1,3 +1,15 @@
+2005-09-21 09:51  alexpeshkoff
+
+	* firebird2/src/jrd/isc_ipc.cpp (1.37.2.1):
+	
+	backported diagnostic enhancement
+
+2005-09-20 19:26  dimitr
+
+	* firebird2/doc/WhatsNew (1.36.2.46):
+	
+	Described recent commits.
+
 2005-09-06 11:55  alexpeshkoff
 
 	* firebird2/src/jrd/why.cpp (1.23.2.4):
