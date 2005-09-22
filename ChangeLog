@@ -1,3 +1,27 @@
+2005-09-21 10:31  kkuznetsov
+
+	* firebird2/src/include/firebird.h (1.37):
+	
+	Adding ability to build CS server with threaded services (can be
+	controled throught configure platform varyable service_thread_CS):
+	1)Add new define STD_UTIL
+	
+	Build tested Solaris x86 and Linux x86
+
+2005-09-21 10:30  kkuznetsov
+
+	* firebird2/builds/posix/: Makefile.in.embed.gbak (1.13),
+	Makefile.in.embed.gfix (1.16), Makefile.in.embed.util (1.26),
+	firebird.vers (1.10):
+	
+	Adding ability to build CS server with threaded services (can be
+	controled throught configure platform varyable service_thread_CS):
+	1)Moving object files of utils to superclient temp directory 2)Add
+	new define STD_UTIL 3) Hide utils functions to local scope of
+	libfbembed
+	
+	Build tested Solaris x86 and Linux x86
+
 2005-09-19 16:48  dimitr
 
 	* firebird2/src/dsql/ddl.cpp (1.157):
