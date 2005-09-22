@@ -2,6 +2,11 @@
   * v1.5.3
   **************
 
+    * Added diagnostics.
+        Logged attempt to send signals via missing gds_relay
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Fixed unregistered security related bugs.
         1) Server crashed when too long filename is provided
         2) No longer trust UID received from the client side
