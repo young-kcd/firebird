@@ -130,7 +130,7 @@ using namespace NAMESPACE;
 #define THREAD_PSCHED
 #endif
 
-#if defined(MULTI_THREAD) && !defined(SUPERCLIENT) && !defined(BOOT_BUILD)  &&!defined (STD_UTIL)
+#if defined(MULTI_THREAD) && !defined(SUPERCLIENT) && !defined(BOOT_BUILD) &&!defined (STD_UTIL)
 #define SERVICE_THREAD
 #endif
 
