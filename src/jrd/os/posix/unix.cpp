@@ -191,9 +191,8 @@ void PIO_close(jrd_file* main_file)
  *	have been locked before entry.
  *
  **************************************/
-	jrd_file* file;
 
-	for (file = main_file; file; file = file->fil_next) {
+	for (jrd_file* file = main_file; file; file = file->fil_next) {
 		if (file->fil_desc == -1)
 			continue;			/* This really should be an error */
 		if (file->fil_desc) {
@@ -317,13 +316,12 @@ void PIO_flush(jrd_file* main_file)
  *	Flush the operating system cache back to good, solid oxide.
  *
  **************************************/
-	jrd_file* file;
 
 /* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
    is a no-op. */
 
 #ifndef SUPERSERVER_V2
-	for (file = main_file; file; file = file->fil_next) {
+	for (jrd_file* file = main_file; file; file = file->fil_next) {
 		if (file->fil_desc != -1) {	/* This really should be an error */
 			THD_IO_MUTEX_LOCK(file->fil_mutex);
 			fsync(file->fil_desc);
@@ -396,11 +394,10 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
  *	repositioned since the file was originally mapped.
  *
  **************************************/
-	jrd_file* file;
-	SSHORT i;
+	int i;
 	UINT64 bytes;
 
-	file = dbb->dbb_file;
+	jrd_file* file = dbb->dbb_file;
 
 	ISC_inhibit();
 
@@ -486,8 +483,6 @@ SLONG PIO_max_alloc(Database* dbb)
  *	Compute last physically allocated page of database.
  *
  **************************************/
-	struct stat statistics;
-	UINT64 length;
 	jrd_file* file;
 
 	for (file = dbb->dbb_file; file->fil_next; file = file->fil_next);
@@ -498,12 +493,13 @@ SLONG PIO_max_alloc(Database* dbb)
 		return (0);
 	}
 
+	struct stat statistics;
 	if (fstat(file->fil_desc, &statistics)) {
 		ISC_inhibit();
 		unix_error("fstat", file, isc_io_access_err, 0);
 	}
 
-	length = statistics.st_size;
+	UINT64 length = statistics.st_size;
 
 /****
 #ifndef sun
@@ -531,15 +527,13 @@ SLONG PIO_act_alloc(Database* dbb)
  *
  **************************************/
 	struct stat statistics;
-	UINT64 length;
-	jrd_file* file;
 	ULONG tot_pages = 0;
 
 /**
  **  Traverse the linked list of files and add up the number of pages
  **  in each file
  **/
-	for (file = dbb->dbb_file; file != NULL; file = file->fil_next) {
+	for (jrd_file* file = dbb->dbb_file; file != NULL; file = file->fil_next) {
 		if (file->fil_desc == -1) {
 			ISC_inhibit();
 			unix_error("fstat", file, isc_io_access_err, 0);
@@ -551,7 +545,7 @@ SLONG PIO_act_alloc(Database* dbb)
 			unix_error("fstat", file, isc_io_access_err, 0);
 		}
 
-		length = statistics.st_size;
+		UINT64 length = statistics.st_size;
 
 		tot_pages += (length + dbb->dbb_page_size - 1) / dbb->dbb_page_size;
 	}
@@ -577,7 +571,7 @@ jrd_file* PIO_open(Database* dbb,
  *	the connection to communication with a page/lock server.
  *
  **************************************/
-	int desc, i, flag;
+	int desc, flag;
 	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();
 
 #ifdef SUPERSERVER_V2
@@ -586,8 +580,8 @@ jrd_file* PIO_open(Database* dbb,
 	flag = O_RDWR | O_BINARY;
 #endif
 
-	for (i = 0; i < IO_RETRY; i++) {
-
+	for (int i = 0; i < IO_RETRY; i++)
+	{
 		if ((desc = open(ptr, flag)) != -1)
 			break;
 		if (!SYSCALL_INTERRUPTED(errno))
@@ -657,7 +651,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
  *	Read a data page.  Oh wow.
  *
  **************************************/
-	SSHORT i;
+	int i;
 	UINT64 bytes, offset;
 
 	ISC_inhibit();
@@ -750,7 +744,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
  *	Write a data page.  Oh wow.
  *
  **************************************/
-	SSHORT i;
+	int i;
 	SLONG bytes;
     UINT64 offset;
 
@@ -1058,18 +1052,17 @@ static SLONG pread(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
  **************************************/
 {
 	struct aiocb io;
-	struct aiocb *list[1];
-	int err;
-
 	io.aio_fildes = fd;
 	io.aio_offset = offset;
 	io.aio_buf = buf;
 	io.aio_nbytes = nbytes;
 	io.aio_reqprio = 0;
 	io.aio_sigevent.sigev_notify = SIGEV_NONE;
-	err = aio_read(&io);		/* atomically reads at offset */
+	int err = aio_read(&io);		/* atomically reads at offset */
 	if (err != 0)
 		return (err);			/* errno is set */
+
+	struct aiocb *list[1];
 	list[0] = &io;
 	err = aio_suspend(list, 1, NULL);	/* wait for I/O to complete */
 	if (err != 0)
@@ -1091,18 +1084,17 @@ static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
  **************************************/
 {
 	struct aiocb io;
-	struct aiocb *list[1];
-	int err;
-
 	io.aio_fildes = fd;
 	io.aio_offset = offset;
 	io.aio_buf = buf;
 	io.aio_nbytes = nbytes;
 	io.aio_reqprio = 0;
 	io.aio_sigevent.sigev_notify = SIGEV_NONE;
-	err = aio_write(&io);		/* atomically reads at offset */
+	int err = aio_write(&io);		/* atomically reads at offset */
 	if (err != 0)
 		return (err);			/* errno is set */
+
+	struct aiocb *list[1];
 	list[0] = &io;
 	err = aio_suspend(list, 1, NULL);	/* wait for I/O to complete */
 	if (err != 0)
