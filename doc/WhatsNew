@@ -42,6 +42,41 @@
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
+    * Fixed SF bug #1242982.
+        Bug in compound index key mangling.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed SF bug #739480.
+        Locally exploitable stack overflow.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug.
+        Unneeded evaluation of the last item by COALESCE function.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed SF bug #1191006.
+        Using where params in SUM return incorrect results.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed SF bug #1016969.
+        -804 Data type unknown in UPDATE with CASE and parameters.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        BLOB sub-type bug in COALESCE/CASE.
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug.
+        Fixed Dialect 3 quoted identifiers issue in the ISQL command SHOW GENERATORS.
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * Fixed unregistered bug.
         Lost charset/collation for local PSQL variables causing string conversion errors.
       Contributor(s):
