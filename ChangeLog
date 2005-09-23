@@ -1,3 +1,15 @@
+2005-09-22 09:09  robocop
+
+	* firebird2/src/include/firebird.h (1.38):
+	
+	Totally misc.
+
+2005-09-22 08:14  robocop
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.40):
+	
+	Misc.
+
 2005-09-21 10:31  kkuznetsov
 
 	* firebird2/src/include/firebird.h (1.37):
