@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.22 2005-05-30 15:57:30 asfernandes Exp $
+#  $Id: Makefile.in.intl,v 1.23 2005-09-24 22:50:21 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=superclient
@@ -43,7 +43,8 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 INTL_Files1=	ld.cpp       cv_narrow.cpp \
-		cs_narrow.cpp  lc_ascii.cpp lc_narrow.cpp lc_iso8859_1.cpp lc_iso8859_2.cpp lc_dos.cpp \
+		cs_narrow.cpp  lc_ascii.cpp lc_narrow.cpp lc_iso8859_1.cpp \
+		lc_iso8859_2.cpp lc_iso8859_13.cpp lc_dos.cpp \
 		cs_unicode_ucs2.cpp lc_unicode_ucs2.cpp \
 		cs_unicode_fss.cpp cv_unicode_fss.cpp \
 		cs_big5.cpp    cv_big5.cpp   lc_big5.cpp \

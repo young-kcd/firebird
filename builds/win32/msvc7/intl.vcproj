@@ -210,6 +210,9 @@
 				RelativePath="..\..\..\src\intl\lc_iso8859_1.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\intl\lc_iso8859_13.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\lc_iso8859_2.cpp">
 			</File>
 			<File
@@ -581,6 +584,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\win1257_lv.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\xx885913lt.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\xx88592czech.h">

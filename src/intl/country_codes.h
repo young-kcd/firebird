@@ -57,6 +57,7 @@
 #define   CC_GREECE                30	/* TURKEY           */
 #define   CC_TURKEY                90	/* TURKEY           */
 #define   CC_RUSSIA                07	/* RUSSIA           */
+#define   CC_LITHUANIA             370	/* LITHUANIA        */
 
 #define   CC_NORDAN                92	/* NORDAY + DENMARK */
 #define   CC_SWEDFIN               404	/* SWEDIN + FINLAND */

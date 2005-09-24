@@ -169,6 +169,10 @@ SOURCE=..\..\..\src\intl\lc_iso8859_2.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\intl\lc_iso8859_13.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\lc_jis.cpp
 # End Source File
 # Begin Source File
@@ -666,6 +670,11 @@ SOURCE=..\..\..\src\intl\collations\win1257_lv.h
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\collations\xx88592czech.h
+# End Source File
+# End Group
+# Begin Group "Resource files"
+
+SOURCE=..\..\..\src\intl\collations\xx885913lt.h
 # End Source File
 # End Group
 # Begin Group "Resource files"
