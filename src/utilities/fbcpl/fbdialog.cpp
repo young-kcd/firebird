@@ -18,7 +18,7 @@
  *  
  *  The Initial Developer of the Original Code is Paul Reeves.
  *
- *  The Original Code is (C) 2003 Paul Reeves .
+ *  The Original Code is (C) 2003 Paul Reeves.
  *
  *  All Rights Reserved.
  *  
@@ -898,7 +898,7 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 			m_Error_Status = SERVICES_install (hScManager, ISCGUARD_SERVICE,
 				ISCGUARD_DISPLAY_NAME, ISCGUARD_DISPLAY_DESCR,
 				ISCGUARD_EXECUTABLE, ServerPath, NULL, status.AutoStart,
-				NULL, NULL, svc_error);
+				NULL, NULL, false, svc_error);
 			if (m_Error_Status != FB_SUCCESS)
 			{
 				CloseServiceManager();
@@ -914,7 +914,7 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 			REMOTE_DISPLAY_NAME, REMOTE_DISPLAY_DESCR,
 			(LPCTSTR) status.ServiceExecutable, 
 			ServerPath, NULL, status.AutoStart, 
-			NULL, NULL, svc_error);
+			NULL, NULL, false, svc_error);
 		if (m_Error_Status != FB_SUCCESS)
 		{
 			CloseServiceManager();
