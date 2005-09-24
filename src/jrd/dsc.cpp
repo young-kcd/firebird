@@ -755,7 +755,7 @@ USHORT DSC_convert_to_text_length(USHORT dsc_type)
 }
 
 
-void DSC_make_descriptor(DSC* desc,
+bool DSC_make_descriptor(DSC* desc,
 						USHORT blr_type,
 						SSHORT scale,
 						USHORT length,
@@ -876,8 +876,10 @@ void DSC_make_descriptor(DSC* desc,
 	default:
 		fb_assert(FALSE);
 		desc->dsc_dtype = dtype_unknown;
+		return false;
 		break;
 	}
+	return true;
 }
 
 
