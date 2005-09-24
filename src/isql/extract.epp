@@ -1488,10 +1488,10 @@ static void list_domain_table(const SCHAR* table_name,
 		RFR.RDB$RELATION_NAME EQ table_name
 		SORTED BY FLD.RDB$FIELD_NAME
 
-		// Skip over artifical domains 
+		// Skip over artificial domains
 		if (strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0 &&
 			isdigit (FLD.RDB$FIELD_NAME[4]) &&
-			FLD.RDB$SYSTEM_FLAG != 1)
+			(FLD.RDB$SYSTEM_FLAG.NULL || FLD.RDB$SYSTEM_FLAG != 1))
 		{
 			continue;
 		}
