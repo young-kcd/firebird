@@ -253,7 +253,8 @@ static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
 
 // New functions that try to be safe.
 static SLONG safe_interpret(char* const s, const int bufsize,
-	const ISC_STATUS** const vector);
+	const ISC_STATUS** const vector, bool legacy = false);
+static void safe_strncpy(char* target, const char* source, int bs);
 
 
 /* Generic cleanup handlers */
@@ -791,10 +792,10 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
  * Functional description
  * See safe_interpret for details. Now this is a wrapper for that function.
  * CVC: Since this routine doesn't get the size of the input buffer,
- * it's DEPRECATED and we'll assume the buffer size was twice MAXPATHLEN.
+ * it's DEPRECATED and we'll assume the buffer size was 1024 as in Borland examples.
  *
  **************************************/
-	return safe_interpret(s, MAXPATHLEN << 1, const_cast<const ISC_STATUS**>(vector));
+	return safe_interpret(s, 1024, const_cast<const ISC_STATUS**>(vector), true);
 }
 
  
@@ -813,7 +814,7 @@ safe_interpret
 
 **/
 static SLONG safe_interpret(char* const s, const int bufsize,
-	const ISC_STATUS** const vector)
+	const ISC_STATUS** const vector, bool legacy)
 {
 	// CVC: It doesn't make sense to provide a buffer smaller than 50 bytes.
 	// Return error otherwise.
@@ -912,32 +913,44 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 								args[4]) < 0)
 			{
 				if ((decoded < FB_NELEM(messages) - 1) && (decoded >= 0))
-					fb_utils::snprintf(s, bufsize, messages[decoded], args[0], args[1], args[2],
-							args[3], args[4]);
+					if (legacy)
+						sprintf(s, messages[decoded], args[0], args[1], args[2],
+								args[3], args[4]);
+					else
+						fb_utils::snprintf(s, bufsize, messages[decoded], args[0], args[1], args[2],
+								args[3], args[4]);
 				else
-					fb_utils::snprintf(s, bufsize, "unknown ISC error %ld", code);	/* TXNN */
+					sprintf(s, "unknown ISC error %ld", code);	/* TXNN */
 			}
 		}
 		break;
 
 	case isc_arg_interpreted:
-		//p = s;
 		q = (const TEXT*) (*vector)[1];
-		//while ((*p++ = *q++) /*!= NULL*/);
-		strncpy(s, q, bufsize);
-		s[bufsize - 1] = 0;
+		if (legacy)
+			safe_strncpy(s, q, bufsize);
+		else
+		{
+			strncpy(s, q, bufsize);
+			s[bufsize - 1] = 0;
+		}
 		break;
 
 	case isc_arg_unix:
 		/* The  strerror()  function  returns  the appropriate description
 		   string, or an unknown error message if the error code is unknown. */
 		q = (const TEXT*) strerror(code);
-		strncpy(s, q, bufsize);
-		s[bufsize - 1] = 0;
+		if (legacy)
+			safe_strncpy(s, q, bufsize);
+		else
+		{
+			strncpy(s, q, bufsize);
+			s[bufsize - 1] = 0;
+		}
 		break;
 
 	case isc_arg_dos:
-		fb_utils::snprintf(s, bufsize, "unknown dos error %ld", code);	/* TXNN */
+		sprintf(s, "unknown dos error %ld", code);	/* TXNN */
 		break;
 
 #ifdef VMS
@@ -976,7 +989,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 										 bufsize,
 										 NULL))
 		{
-			fb_utils::snprintf(s, bufsize, "unknown Win32 error %ld", code);	/* TXNN */
+			sprintf(s, "unknown Win32 error %ld", code);	/* TXNN */
 		}
 		break;
 #endif
@@ -997,6 +1010,20 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 		end++;
 
 	return static_cast<SLONG>(end - s);
+}
+
+
+// ***********************
+// s a f e _ s t r n c p y
+// ***********************
+// Done exclusively because in legacy mode, safe_interpret cannot fill the
+// string up to the end by calling strncpy.
+static void safe_strncpy(char* target, const char* source, int bs)
+{
+	for (--bs; bs > 0 && *source; --bs)
+		*target++ = *source++;
+
+	*target = 0;
 }
 
 
