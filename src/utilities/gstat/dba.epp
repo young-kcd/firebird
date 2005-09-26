@@ -1485,13 +1485,17 @@ static const pag* db_read( SLONG page_number)
 		(fil->fil_desc, (LONG) liOffset.LowPart, &liOffset.HighPart,
 		 FILE_BEGIN) == (DWORD) -1)
 	{
+		int lastError = GetLastError();
+		if (lastError != NO_ERROR)
+		{
 #ifdef SERVICE_THREAD
-		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
-								GSTAT_MSG_FAC, 30,
-								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
-		// msg 30: Can't read a database page 
+			CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+									GSTAT_MSG_FAC, 30,
+									0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
+			// msg 30: Can't read a database page
 #endif
-		db_error(GetLastError());
+			db_error(lastError);
+		}
 	}
 
 	SLONG actual_length;
