@@ -833,7 +833,7 @@ blob_filter_subtype :	symbol_blob_subtype_name
 
 create	 	: CREATE create_clause
 			{ $$ = $2; }
-				; 
+		;
 
 create_clause	: EXCEPTION exception_clause
 			{ $$ = $2; }
@@ -993,53 +993,56 @@ domain_clause	: column_def_name
 		collate_clause
 			{ $$ = make_node (nod_def_domain, (int) e_dom_count,
 										  $1, $5, $6, make_list ($7), $8); }
-				;
+		;
 
 /*
 rdomain_clause	: DOMAIN alter_column_name alter_domain_ops
-						{ $$ = make_node (nod_mod_domain, (int) e_alt_count,
-										  $2, make_list ($3)); }
+			{ $$ = make_node (nod_mod_domain, (int) e_alt_count,
+							  $2, make_list ($3)); }
 */
 
-as_opt		: AS
-				  { $$ = NULL; }
-				| 
-				  { $$ = NULL; }  
-				;
+as_opt	: AS
+			{ $$ = NULL; }
+		| 
+			{ $$ = NULL; }  
+		;
 
-domain_default_opt	: DEFAULT begin_trigger default_value
-				{ $$ = $3; }
-			|
-				{ $$ = NULL; }
-			;
+domain_default	: DEFAULT begin_trigger default_value
+			{ $$ = $3; }
+		;
 
-domain_constraint_clause	: 
-								  { $$ = NULL; }
-				| domain_constraint_list
-								; 
+domain_default_opt	: domain_default
+		|
+			{ $$ = NULL; }
+		;
 
-domain_constraint_list  	: domain_constraint_def
-				| domain_constraint_list domain_constraint_def
-								  { $$ = make_node (nod_list, (int) 2, $1, $2); }
-						;
-domain_constraint_def		: domain_constraint
-				  { $$ = make_node (nod_rel_constraint, (int) 2, NULL, $1);}
- 
-						;	
+domain_constraint_clause	: domain_constraint_list
+		| 
+			{ $$ = NULL; }
+		; 
 
-domain_constraint	  	: null_constraint
-				| domain_check_constraint
-							;
-								
-null_constraint			: NOT KW_NULL
-								  { $$ = make_node (nod_null, (int) 0, NULL); }
-								;
+domain_constraint_list  : domain_constraint_def
+		| domain_constraint_list domain_constraint_def
+			{ $$ = make_node (nod_list, (int) 2, $1, $2); }
+		;
 
-domain_check_constraint 	: begin_trigger CHECK '(' search_condition ')' end_trigger
-				  { $$ = make_node (nod_def_constraint, 
+domain_constraint_def	: domain_constraint
+			{ $$ = make_node (nod_rel_constraint, (int) 2, NULL, $1);}
+		;	
+
+domain_constraint	: null_constraint
+		| check_constraint
+		;
+				
+null_constraint	: NOT KW_NULL
+			{ $$ = make_node (nod_null, (int) 0, NULL); }
+		;
+
+check_constraint	: CHECK begin_trigger '(' search_condition ')' end_trigger
+			{ $$ = make_node (nod_def_constraint, 
 				  (int) e_cnstr_count, MAKE_string(NULL_STRING, 0), NULL, 
 				  NULL, NULL, $4, NULL, $6, NULL, NULL); }
-								;
+		;
 
 
 /* CREATE SEQUENCE/GENERATOR */
@@ -1299,12 +1302,6 @@ init_data_type :
 		;
 
 
-default_opt	: DEFAULT default_value
-			{ $$ = $2; }
-		|
-			{ $$ = NULL; }
-		;
-
 default_value	: constant
 		| current_user
 		| current_role
@@ -1328,14 +1325,13 @@ column_constraint_def : constraint_name_opt column_constraint
 		;
 
 
-column_constraint : NOT KW_NULL 
-						{ $$ = make_node (nod_null, (int) 1, NULL); }
+column_constraint : null_constraint
+				  | check_constraint
 				  | REFERENCES simple_table_name column_parens_opt
 			referential_trigger_action constraint_index_opt
 						{ $$ = make_node (nod_foreign, (int) e_for_count,
 						make_node (nod_list, (int) 1, lex.g_field_name), $2, $3, $4, $5); }
 
-				  | check_constraint
 				  | UNIQUE constraint_index_opt
 						{ $$ = make_node (nod_unique, 2, NULL, $2); }
 				  | PRIMARY KEY constraint_index_opt
@@ -1348,12 +1344,13 @@ column_constraint : NOT KW_NULL
 
 table_constraint_definition : constraint_name_opt table_constraint
 		   { $$ = make_node (nod_rel_constraint, (int) 2, $1, $2);}
-					  ;
+		;
 
 constraint_name_opt : CONSTRAINT symbol_constraint_name
-					  { $$ = $2; }
-					| { $$ = NULL ;}
-					;
+			{ $$ = $2; }
+		|
+			{ $$ = NULL ;}
+		;
 
 table_constraint : unique_constraint
 			| primary_constraint
@@ -1386,12 +1383,6 @@ constraint_index_opt	: USING order_direction INDEX symbol_index_name
 		|
 			{ $$ = make_node (nod_def_index, (int) e_idx_count, 
 					NULL, NULL, NULL, NULL, NULL); }
-		;
-
-check_constraint : begin_trigger CHECK '(' search_condition ')' end_trigger
-			{ $$ = make_node (nod_def_constraint, 
-				(int) e_cnstr_count, MAKE_string(NULL_STRING, 0), NULL, 
-				NULL, NULL, $4, NULL, $6, NULL, NULL); }
 		;
 
 referential_trigger_action:	
@@ -1491,9 +1482,9 @@ input_proc_parameters	: input_proc_parameter
 		;
 
 input_proc_parameter	: simple_column_def_name non_array_type
-				default_par_opt end_trigger 
+				begin_trigger default_par_opt end_trigger 
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, $3, $4, NULL, NULL, NULL, NULL); }   
+				$1, $4, $5, NULL, NULL, NULL, NULL); }   
 		;
 
 output_proc_parameters	: proc_parameter
@@ -1506,12 +1497,12 @@ proc_parameter	: simple_column_def_name non_array_type
 				$1, NULL, NULL, NULL, NULL, NULL, NULL); }   
 		;
 
-default_par_opt	: DEFAULT begin_string default_value
+default_par_opt	: DEFAULT begin_trigger default_value
 			{ $$ = $3; }
-		| '=' begin_string default_value
+		| '=' begin_trigger default_value
 			{ $$ = $3; }
-		| begin_string
-			{ $$ = (dsql_nod*) NULL; }
+		|
+			{ $$ = NULL; }
 		;
 
 local_declaration_list	: local_declarations
@@ -1544,10 +1535,12 @@ var_decl_opt	: VARIABLE
 			{ $$ = NULL; }
 		;
 
-var_init_opt	: '=' default_value
+var_init_opt	: DEFAULT default_value
 			{ $$ = $2; }
-		| default_opt
-			{ $$ = $1; }
+		| '=' default_value
+			{ $$ = $2; }
+		|
+			{ $$ = NULL; }
 		;
 
 cursor_declaration_item	: symbol_cursor_name CURSOR FOR '(' select ')'
@@ -1827,27 +1820,27 @@ block_parameter	: proc_parameter '=' parameter
 /* CREATE VIEW */
 
 view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
-															check_opt end_string
+															check_opt end_trigger
 			{ $$ = make_node (nod_def_view, (int) e_view_count, 
 					  $1, $2, $5, $6, $7); }   
 		;		
 
 
 rview_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
-															check_opt end_string
+															check_opt end_trigger
 			{ $$ = make_node (nod_redef_view, (int) e_view_count, 
 					  $1, $2, $5, $6, $7); }   
 		;		
 
 /*
 replace_view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
-															check_opt end_string
+															check_opt end_trigger
 			{ $$ = make_node (nod_replace_view, (int) e_view_count, 
 					  $1, $2, $5, $6, $7); }   
 		;		
 
 alter_view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
-															check_opt end_string
+															check_opt end_trigger
  			{ $$ = make_node (nod_mod_view, (int) e_view_count, 
 					  $1, $2, $5, $6, $7); }   
  		;		
@@ -1859,19 +1852,21 @@ alter_view_clause	: symbol_view_name column_parens_opt AS begin_string select_ex
 begin_string	: 
 			{ lex.beginning = lex_position(); }
 		;
-
+/*
 end_string	:
 			{ $$ = (dsql_nod*) MAKE_string(lex.beginning,
 				   (lex_position() == lex.end) ?
 				   lex_position() - lex.beginning : lex.last_token - lex.beginning);}
 		;
-
+*/
 begin_trigger	: 
 			{ lex.beginning = lex.last_token; }
 		;
 
 end_trigger	:
 			{ $$ = (dsql_nod*) MAKE_string(lex.beginning,
+					(lex.last_token == lex.last_token_bk) ?
+					lex.last_token  - lex.beginning :
 					lex_position() - lex.beginning); }
 		;
 
@@ -1892,22 +1887,20 @@ def_trigger_clause : symbol_trigger_name FOR simple_table_name
 		trigger_active
 		trigger_type
 		trigger_position
-		begin_trigger
 		trigger_action
 		end_trigger
 			{ $$ = make_node (nod_def_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $8, $9, NULL); }
+				$1, $3, $4, $5, $6, $7, $8, NULL); }
 		;
 
 replace_trigger_clause : symbol_trigger_name FOR simple_table_name
 		trigger_active
 		trigger_type
 		trigger_position
-		begin_trigger
 		trigger_action
 		end_trigger
 			{ $$ = make_node (nod_replace_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $8, $9, NULL); }
+				$1, $3, $4, $5, $6, $7, $8, NULL); }
 		;
 
 trigger_active	: ACTIVE 
@@ -1972,9 +1965,9 @@ trigger_action : AS begin_trigger local_declaration_list full_proc_block
 
 /* ALTER statement */
 
-alter		: ALTER alter_clause
+alter	: ALTER alter_clause
 			{ $$ = $2; }
-				; 
+		; 
 
 alter_clause	: EXCEPTION alter_exception_clause
 			{ $$ = $2; }
@@ -2003,45 +1996,26 @@ alter_clause	: EXCEPTION alter_exception_clause
 			{ $$ = $3; }
 		;
 
-domain_default_opt2	: DEFAULT begin_trigger default_value
-				{ $$ = $3; }
+alter_domain_ops	: alter_domain_op
+		| alter_domain_ops alter_domain_op
+			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-domain_check_constraint2 	: CHECK begin_trigger '(' search_condition ')' end_trigger
-				  { $$ = make_node (nod_def_constraint, 
-				  (int) e_cnstr_count, MAKE_string(NULL_STRING, 0), NULL, 
-				  NULL, NULL, $4, NULL, $6, NULL, NULL); }
-								;
-
-alter_domain_ops	: alter_domain_op
-			| alter_domain_ops alter_domain_op
-			  { $$ = make_node (nod_list, 2, $1, $2); }
-			;
-
-alter_domain_op		: SET begin_trigger domain_default_opt2 end_trigger
-						  { $$ = make_node (nod_def_default, (int) e_dft_count,
-						$3, $4); }			  
-/*			SET begin_string default_opt end_trigger
-						  { $$ = make_node (nod_def_default, (int) e_dft_count,
-						$3, $4); }
-						| begin_trigger default_opt end_trigger
-						  { $$ = make_node (nod_def_default, (int) e_dft_count,
-						$2, $3); }			  */
-						| ADD CONSTRAINT domain_check_constraint2
-						  { $$ = $3; } 
-/*						| ADD CONSTRAINT domain_check_constraint
-						  { $$ = $3; }						 */
-						| ADD domain_check_constraint
-						  { $$ = $2; } 
-			| DROP DEFAULT
-						  {$$ = make_node (nod_del_default, (int) 0, NULL); }
-			| DROP CONSTRAINT
-						  { $$ = make_node (nod_delete_rel_constraint, (int) 1, NULL); }
-			| TO simple_column_name
-			  { $$ = $2; }
-			| TYPE init_data_type non_array_type 
-			  { $$ = make_node (nod_mod_domain_type, 2, $2); }
-			;
+alter_domain_op	: SET domain_default end_trigger
+			{ $$ = make_node (nod_def_default, (int) e_dft_count, $2, $3); }			  
+		| ADD CONSTRAINT check_constraint
+			{ $$ = $3; } 
+		| ADD check_constraint
+			{ $$ = $2; } 
+		| DROP DEFAULT
+			{$$ = make_node (nod_del_default, (int) 0, NULL); }
+		| DROP CONSTRAINT
+			{ $$ = make_node (nod_delete_rel_constraint, (int) 1, NULL); }
+		| TO simple_column_name
+			{ $$ = $2; }
+		| TYPE init_data_type non_array_type 
+			{ $$ = make_node (nod_mod_domain_type, 2, $2); }
+		;
 
 alter_ops	: alter_op
 		| alter_ops ',' alter_op
@@ -2050,12 +2024,12 @@ alter_ops	: alter_op
 
 alter_op	: DROP simple_column_name drop_behaviour
 			{ $$ = make_node (nod_del_field, 2, $2, $3); }
-				| DROP CONSTRAINT symbol_constraint_name
-						{ $$ = make_node (nod_delete_rel_constraint, (int) 1, $3);}
+		| DROP CONSTRAINT symbol_constraint_name
+			{ $$ = make_node (nod_delete_rel_constraint, (int) 1, $3);}
 		| ADD column_def
 			{ $$ = $2; }
 		| ADD table_constraint_definition
-						{ $$ = $2; }
+			{ $$ = $2; }
 /* CVC: From SQL, field positions start at 1, not zero. Think in ORDER BY, for example. 
 		| col_opt simple_column_name POSITION nonneg_short_integer 
 			{ $$ = make_node (nod_mod_field_pos, 2, $2,
@@ -2067,7 +2041,7 @@ alter_op	: DROP simple_column_name drop_behaviour
 			{ $$ = make_node(nod_mod_field_name, 2, $2, $4); }
 		| col_opt alter_col_name TYPE alter_data_type_or_domain
 			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, $4, NULL); }
-		| col_opt alter_col_name SET domain_default_opt2 end_trigger
+		| col_opt alter_col_name SET domain_default end_trigger
 			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
 					make_node(nod_def_default, (int) e_dft_count, $4, $5)); }
 		| col_opt alter_col_name DROP DEFAULT
@@ -2078,7 +2052,7 @@ alter_op	: DROP simple_column_name drop_behaviour
 alter_column_name  : keyword_or_column
 		   { $$ = make_node (nod_field_name, (int) e_fln_count,
 						NULL, $1); }
-		   ;
+	   ;
 
 /* below are reserved words that could be used as column identifiers
    in the previous versions */
@@ -2128,17 +2102,17 @@ keyword_or_column	: valid_symbol_name
 		| TRIM
 		;
 
-col_opt		: ALTER
+col_opt	: ALTER
 			{ $$ = NULL; }
 		| ALTER COLUMN
 			{ $$ = NULL; }
 		;
 
-alter_data_type_or_domain	: non_array_type begin_trigger
-						  		{ $$ = NULL; }
-				| simple_column_name begin_string
-						  		{ $$ = make_node (nod_def_domain, (int) e_dom_count,
-												$1, NULL, NULL, NULL, NULL); }
+alter_data_type_or_domain	: non_array_type
+			{ $$ = NULL; }
+		| simple_column_name
+			{ $$ = make_node (nod_def_domain, (int) e_dom_count,
+					$1, NULL, NULL, NULL, NULL); }
 		;
 
 alter_col_name	: simple_column_name
