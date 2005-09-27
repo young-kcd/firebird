@@ -1,3 +1,12 @@
+2005-09-26 10:43  robocop
+
+	* firebird2/src/utilities/gstat/dba.epp (1.60):
+	
+	Gstat will have problems if it has to seek to a db page beyond 4GB
+	from BOF, because we detect a problem that didn't happen. I put the
+	check that appears in my old VC6 MSDN examples and that matches
+	Vulcan's logic.
+
 2005-09-25 00:50  asfernandes
 
 	* firebird2/: builds/install/misc/fbintl.conf (1.6),
