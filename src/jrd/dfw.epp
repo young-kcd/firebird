@@ -2158,7 +2158,7 @@ static bool modify_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			return false;
 		case 1:
 			check_system_generator(gen_name, dfw_modify_generator);
-			if (work->dfw_id)
+			if (work->dfw_id) // != 0 means not only the desc was changed.
 				ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_generator_name,
 					 isc_arg_string, ERR_cstring(gen_name),

@@ -46,7 +46,7 @@ char* exact_name(char* const str)
 {
 /**************************************
  *
- *	f b _ e x a c t _ n a m e
+ *	e x a c t _ n a m e
  *
  **************************************
  *
@@ -76,7 +76,7 @@ char* exact_name_limit(char* const str, size_t bufsize)
 {
 /**************************************
  *
- *	f b _ e x a c t _ n a m e _ l i m i t
+ *	e x a c t _ n a m e _ l i m i t
  *
  **************************************
  *
@@ -130,6 +130,10 @@ int name_length(const TEXT* const name)
 }
 
 
+// ***************
+// s n p r i n t f
+// ***************
+// Provide a single place to deal with vsnprintf and error detection.
 int snprintf(char* buffer, size_t count, const char* format...)
 {
 	va_list args;
