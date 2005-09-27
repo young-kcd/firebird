@@ -3517,7 +3517,9 @@ static void define_update_action(dsql_req* request,
 	}
 
 	if (and_arg <= 1)
-		and_node->nod_arg[and_arg] = select_expr->nod_arg[e_qry_where];
+		and_node->nod_arg[and_arg] =
+			replace_field_names(select_expr->nod_arg[e_qry_where], items, 
+				NULL, false, TEMP_CONTEXT);
 	else {
 		dsql_nod* old_and = and_node;
 		and_node = MAKE_node(nod_and, (int) 2);
