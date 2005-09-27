@@ -3259,7 +3259,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 
 // If there is no data required, just start the request 
 
-	dsql_msg* message = (dsql_msg*) request->req_send;
+	dsql_msg* message = request->req_send;
 	if (!message)
 	{
 		THREAD_EXIT();
@@ -3301,7 +3301,8 @@ static ISC_STATUS execute_request(dsql_req*			request,
 	// 2-byte message for EOS synchronization
 	const bool isBlock = (request->req_type == REQ_EXEC_BLOCK);
 
-	if (out_msg_length && (message = request->req_receive) || isBlock) {
+	message = request->req_receive;
+	if ((out_msg_length && message) || isBlock) {
 		char		temp_buffer[DOUBLE_ALIGN * 2];
 		dsql_msg	temp_msg;
 
