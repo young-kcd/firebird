@@ -182,6 +182,7 @@ case $platform in
         LDFLAGS="$LDFLAGS -R/usr/local/lib -threads "; export LDFLAGS
         RELEASE_CXXFLAGS=-O
         RELEASE_CFLAGS=-O3
+	GENCCODE_ASSEMBLY=-a gcc
         ;;
     SOLARISCC)
         THE_OS=SOLARIS
@@ -202,10 +203,14 @@ case $platform in
     SOLARISGCC)
         THE_OS=SOLARIS
         THE_COMP="the GNU C++"
-        CXXFLAGS="$CXXFLAGS -I/usr/local/include/g++"; export CXXFLAGS
-        LDFLAGS="$LDFLAGS -R/usr/local/lib"; export LDFLAGS
+        CC=`which gcc`; export CC
+        CXX=`which g++`; export CXX
+        C_FLAGS="-w -threads";export C_FLAGS
+        CXXFLAGS="$CXXFLAGS -I/usr/local/include/g++ -threads"; export CXXFLAGS
+        LDFLAGS="$LDFLAGS -R/usr/local/lib -threads "; export LDFLAGS
         RELEASE_CXXFLAGS=-O
         RELEASE_CFLAGS=-O3
+	GENCCODE_ASSEMBLY=-a gcc
         ;;
     HP-UX11CC)
         THE_OS="HP-UX 11"

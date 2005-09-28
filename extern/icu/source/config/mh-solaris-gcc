@@ -25,8 +25,8 @@ LD_RPATH_PRE=
 LD_SONAME = -h $(notdir $(MIDDLE_SO_TARGET))
 
 ## The type of assembly needed when pkgdata is used for generating shared libraries.
-GENCCODE_ASSEMBLY=-a gcc
-##Was -a sun causes errors
+#GENCCODE_ASSEMBLY=-a gcc
+##Was -a sun causes errors  moved to runConfigure
 
 ## Shared object suffix
 SO=		so
