@@ -210,7 +210,7 @@ case $platform in
         LDFLAGS="$LDFLAGS -R/usr/local/lib -threads "; export LDFLAGS
         RELEASE_CXXFLAGS=-O
         RELEASE_CFLAGS=-O3
-	GENCCODE_ASSEMBLY=-a gcc
+	GENCCODE_ASSEMBLY=-a sun
         ;;
     HP-UX11CC)
         THE_OS="HP-UX 11"
