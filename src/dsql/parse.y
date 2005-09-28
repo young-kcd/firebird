@@ -1865,8 +1865,6 @@ begin_trigger	:
 
 end_trigger	:
 			{ $$ = (dsql_nod*) MAKE_string(lex.beginning,
-					(lex.last_token == lex.last_token_bk) ?
-					lex.last_token  - lex.beginning :
 					lex_position() - lex.beginning); }
 		;
 

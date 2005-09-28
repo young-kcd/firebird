@@ -8381,8 +8381,6 @@ case 377:
 break;
 case 378:
 { yyval = (dsql_nod*) MAKE_string(lex.beginning,
-					(lex.last_token == lex.last_token_bk) ?
-					lex.last_token  - lex.beginning :
 					lex_position() - lex.beginning); }
 break;
 case 379:
