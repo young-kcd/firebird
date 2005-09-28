@@ -1,3 +1,41 @@
+2005-09-27 22:41  arnobrinkman
+
+	* firebird2/src/dsql/ddl.cpp (1.158):
+	
+	Fix another "with check option" issue <sigh>
+
+2005-09-27 21:23  hvlad
+
+	* firebird2/src/dsql/dsql.cpp (1.156):
+	
+	Make code more robust. Reported privately by Tom Cole
+
+2005-09-27 13:17  dimitr
+
+	* firebird2/src/dsql/: parse.cpp (1.163), parse.y (1.190):
+	
+	Significant changes in the DDL source parsing (begin_*, end_*
+	rules): 1) store WITH CHECK OPTION instead of WITH CHECK (views) 2)
+	store DEFAULT <value> instead of <value> (procedure parameters) 3)
+	attempt to fix the bug in end_trigger causing longer string to be
+	stored (try e.g. DEFAULT CURRENT_TIME NOT NULL) 4) major cleanup of
+	begin_trigger and indentation, simplified some parser rules Now
+	awaiting for the Claudio's attack :-)
+
+2005-09-27 09:47  robocop
+
+	* firebird2/src/: common/utils.cpp (1.14), jrd/dfw.epp (1.162):
+	
+	Source code comments.
+
+2005-09-27 09:46  robocop
+
+	* firebird2/src/jrd/vio.cpp (1.137):
+	
+	Putting, deleting or changing the comment on an index shouldn't
+	cause the index to be rebuilt. The logic was applied previously to
+	user generators only. To be reviewed by Dmitry.
+
 2005-09-26 10:43  robocop
 
 	* firebird2/src/utilities/gstat/dba.epp (1.60):
