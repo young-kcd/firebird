@@ -1,3 +1,23 @@
+2005-09-28 16:03  kkuznetsov
+
+	* firebird2/extern/icu/source/runConfigureICU (1.9):
+	
+	Fix my previos commit
+
+2005-09-28 15:23  dimitr
+
+	* firebird2/src/dsql/: parse.cpp (1.164), parse.y (1.191):
+	
+	Temporarely rolled back to the previous end_trigger logic due to
+	found issues.  Still looking for a proper solution.
+
+2005-09-28 11:26  kkuznetsov
+
+	* firebird2/extern/icu/source/: runConfigureICU (1.8),
+	config/mh-solaris-gcc (1.6):
+	
+	Maked Solaris gcc ICU build unified
+
 2005-09-27 22:41  arnobrinkman
 
 	* firebird2/src/dsql/ddl.cpp (1.158):
