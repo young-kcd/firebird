@@ -3099,6 +3099,16 @@ static processing_state show_proc(const SCHAR* procname)
 			{
 				show_charsets(NULL, FLD.RDB$FIELD_NAME, true, true, false, false);
 			}
+			
+			if (PRM.RDB$PARAMETER_TYPE == 0) // input, try to show default and make Vlad happy.
+			{
+				if (!FLD.RDB$DEFAULT_SOURCE.NULL)
+				{
+					isqlGlob.printf(" ");
+					SHOW_print_metadata_text_blob(isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
+				}
+			}
+
 			isqlGlob.printf(NEWLINE);
 
 		END_FOR
