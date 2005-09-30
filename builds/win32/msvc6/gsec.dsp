@@ -107,6 +107,10 @@ SOURCE=..\..\..\src\jrd\enc.cpp
 
 SOURCE=..\..\..\src\jrd\isc.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\isc_file.cpp
+# End Source File
 # End Group
 # Begin Group "Header files"
 
