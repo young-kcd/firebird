@@ -29,6 +29,7 @@
 
 const size_t SERVICE_SIZE = 256;
 const size_t SERVER_PART = 200;
+const size_t RESULT_BUF_SIZE = 512;
 
 /**
   
@@ -90,7 +91,7 @@ static bool serverSizeValidate(ISC_STATUS* status, const TEXT* server)
 
 
 static int typeBuffer(ISC_STATUS*, char*, int, internal_user_data&,
-					   FPTR_SECURITY_CALLBACK, void*);
+					  FPTR_SECURITY_CALLBACK, void*, Firebird::string&);
 
 
 // all this spb-writing functions should be gone 
@@ -346,10 +347,14 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		return;
 	}
 
+	if (userInfo.database_name_entered) {
+		stuffSpb2(spb, isc_spb_dbname, userInfo.database_name);
+	}
+	
 	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));
 	isc_service_start(status, &handle, 0, 
 		static_cast<USHORT>(spb - spb_buffer), spb_buffer);
-	if (status[1] || userInfo.operation != DIS_OPER || !outputFunction)
+	if (status[1] || /*userInfo.operation != DIS_OPER || */!outputFunction)
 	{
 		return;
 	}
@@ -357,35 +362,78 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	spb = spb_buffer;
 	stuffSpbByte(spb, isc_info_svc_timeout);
 	stuffSpbLong(spb, 10);
-	const char request = isc_info_svc_get_users;
-	const int resultBufSize = 512;
-	char resultBuffer[resultBufSize];
-	int startQuery = 0;
-	internal_user_data uData;
-	memset(&uData, 0, sizeof uData);
-	uData.user_name_entered = false;
+	char resultBuffer[RESULT_BUF_SIZE + 4];
+	Firebird::string text;
+	
+	if (userInfo.operation == DIS_OPER) {
+		const char request[] = {isc_info_svc_get_users};
+		int startQuery = 0;
+		internal_user_data uData;
+		memset(&uData, 0, sizeof uData);
+		uData.user_name_entered = false;
 
-	for (;;)
-	{
-		isc_resv_handle reserved = 0;
-		isc_service_query(status, &handle, &reserved, spb - spb_buffer, 
-			spb, 1, &request, resultBufSize - startQuery, 
-			&resultBuffer[startQuery]);
-		if (status[1])
+		for (;;)
 		{
-			return;
+			isc_resv_handle reserved = 0;
+			isc_service_query(status, &handle, &reserved, spb - spb_buffer, 
+				spb, sizeof(request), request, RESULT_BUF_SIZE - startQuery, 
+				&resultBuffer[startQuery]);
+			if (status[1])
+			{
+				return;
+			}
+			startQuery = typeBuffer(status, resultBuffer, startQuery, uData, 
+				outputFunction, functionArg, text);
+			if (startQuery < 0)
+			{
+				break;
+			}
 		}
-		startQuery = typeBuffer(status, resultBuffer, startQuery, uData, 
-			outputFunction, functionArg);
-		if (startQuery < 0)
+
+		if (uData.user_name[0])
 		{
-			break;
+			outputFunction(functionArg, &uData, !uData.user_name_entered);
 		}
 	}
-
-	if (uData.user_name[0])
+	else {
+		const char request = isc_info_svc_line;
+		for (;;)
+		{
+			isc_resv_handle reserved = 0;
+			isc_service_query(status, &handle, &reserved, spb - spb_buffer, 
+				spb, 1, &request, RESULT_BUF_SIZE, resultBuffer);
+			if (status[1])
+			{
+				return;
+			}
+			char *p = resultBuffer;
+			if (*p++ == isc_info_svc_line)
+			{
+				size_t len = static_cast<size_t>(isc_vax_integer(p, sizeof(USHORT)));
+				p += sizeof(USHORT);
+				if (len > RESULT_BUF_SIZE)
+				{
+					len = RESULT_BUF_SIZE;
+				}
+				if (!len)
+				{
+					if (*p == isc_info_data_not_ready)
+						continue;
+					else if (*p == isc_info_end)
+						break;
+				}
+				p[len] = 0;
+				text += p;
+			}
+		}
+		
+	}
+	if (! text.isEmpty())
 	{
-		outputFunction(functionArg, &uData, !uData.user_name_entered);
+		status[0] = isc_arg_interpreted;
+		status[1] = reinterpret_cast<ISC_STATUS>(strdup(text.c_str()));
+									// memory leak in case of errors
+		status[2] = isc_arg_end;
 	}
 }
 
@@ -458,12 +506,13 @@ static void parseLong(const char*& p, int& ul, size_t& loop)
 	@param uData
 	@param outputFunction
 	@param functionArg
+	@param text
 
  **/
 static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 					   internal_user_data& uData,
 					   FPTR_SECURITY_CALLBACK outputFunction,
-					   void* functionArg)
+					   void* functionArg, Firebird::string& text)
 {
 	const char* p = &buf[offset];
 
@@ -501,7 +550,8 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 
 	while (*p != isc_info_end)
 	{
-		try {
+		try 
+		{
 			switch (*p++)
 			{
 			case isc_spb_sec_username:
@@ -528,11 +578,9 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 			case isc_spb_sec_userid:
 				parseLong(p, uData.uid, loop);
 				break;
-			default:
-				status[0] = isc_arg_gds;
-				status[1] = isc_gsec_params_not_allowed;
-				status[2] = isc_arg_end;
-				return true;
+			default:	// give up - treat it as gsec error
+				text = Firebird::string(p - 1, loop + 1);
+				return -1;
 			}
 		}
 		catch(size_t newOffset)

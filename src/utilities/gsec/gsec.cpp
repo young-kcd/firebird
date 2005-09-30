@@ -141,7 +141,8 @@ static int output_main(Jrd::Service* output_data, const UCHAR* output_buf)
  *	Routine which is passed to GBAK for calling back when there is output.
  *
  **************************************/
-	fprintf(stderr, "%s", output_buf);
+//	fprintf(stderr, "%s", output_buf);
+	fprintf(stdout, "%s", output_buf);
 	return 0;
 }
 
@@ -242,27 +243,42 @@ int common_main(int argc,
 
 	ISC_STATUS* status = tdsec->tsec_status;
 	SSHORT ret = parse_cmd_line(argc, argv, tdsec);
-	
-#ifndef SUPERCLIENT
-	TEXT database_name[MAXPATHLEN];
-	SecurityDatabase::getPath(database_name);
-#endif
-
-	const TEXT* serverName = "";
-	if (user_data->server_entered)
+	Firebird::PathName databaseName;
+	bool databaseNameEntered = user_data->database_name_entered;
+	if (user_data->database_name_entered)
 	{
-		if (tdsec->tsec_service_gsec)
-		{
-			GSEC_error(GsecMsg16, NULL, NULL, NULL, NULL, NULL);
-		}
-		serverName = user_data->server_name;
+		databaseName = user_data->database_name;
 	}
-
+	else
+	{
+		TEXT database_name[MAXPATHLEN];
+		SecurityDatabase::getPath(database_name);
+		databaseName = database_name;
+	}
+	
+	Firebird::PathName serverName;
+	bool useServices = false;
+	switch (ISC_extract_host(databaseName, serverName, true))
+	{
+	case ISC_PROTOCOL_TCPIP:
+		serverName += ":";
+		useServices = true;
+		break;
+	case ISC_PROTOCOL_WLAN:
+		serverName = "\\\\" + serverName + "\\";
+		useServices = true;
+		break;
+	}
+		
+	if (! useServices)
+	{
+		serverName = "";
+	}
+	databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
+	
 #ifdef SUPERCLIENT
-	const bool useServices = true;
+	useServices = true;
 #else //SUPERCLIENT
-	bool useServices = serverName[0] ? true : false;
-
 	FB_API_HANDLE db_handle = 0;
 
 	if (! useServices) 
@@ -286,14 +302,13 @@ int common_main(int argc,
 				user_data->sql_role_name, strlen(user_data->sql_role_name));
 		}
 
-		if (isc_attach_database(status, 0, database_name, &db_handle, 
+		if (isc_attach_database(status, 0, databaseName.c_str(), &db_handle, 
 				dpb.getBufferLength(), 
 				reinterpret_cast<const char*>(dpb.getBuffer())))
 		{
 			GSEC_error_redirect(status, GsecMsg15, NULL, NULL);
 		}
 	}
-
 #endif //SUPERCLIENT
 
 	isc_svc_handle sHandle = 0;
@@ -307,7 +322,7 @@ int common_main(int argc,
 					status,
 					user_data->dba_user_name,
 					user_data->dba_password,
-					serverName);
+					serverName.c_str());
 		if (! sHandle)
 		{
 			GSEC_error_redirect(status, GsecMsg15, NULL, NULL);
@@ -329,18 +344,22 @@ int common_main(int argc,
 			{
 				ret = SECURITY_exec_line(status, db_handle, 
 							user_data, data_print, NULL);
+				if (ret) {
+					GSEC_print(ret, user_data->user_name, NULL, NULL, NULL, NULL);
+					if (status[1])
+					{
+						GSEC_print_status(status);
+					}
+				}
 			}
 			else
 #endif //SUPERCLIENT
 			{
 				callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
-				ret = status[1] ? GsecMsg75 : 0;
-			}
-			if (ret) {
-				GSEC_print(ret, user_data->user_name, NULL, NULL, NULL, NULL);
-				if (status[1])
+				if(status[1])
 				{
 					GSEC_print_status(status);
+					ret = GsecMsg75;
 				}
 			}
 		}
@@ -355,6 +374,8 @@ int common_main(int argc,
 				break;
 			if (local_argc > 1) {
 				ret = parse_cmd_line(local_argc, local_argv, tdsec);
+				databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
+				user_data->database_name_entered = databaseNameEntered;
 				if (ret == 1)
 					break;
 				if (ret == 0) {
@@ -368,7 +389,12 @@ int common_main(int argc,
 #endif //SUPERCLIENT
 					{
 						callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
-						ret = status[1] ? GsecMsg75 : 0;
+						if(status[1])
+						{
+							GSEC_print_status(status);
+							ret = GsecMsg75;
+							break;
+						}
 					}
 					if (ret) {
 						GSEC_print(ret, user_data->user_name, NULL, NULL,
@@ -661,9 +687,9 @@ static bool get_switches(
 				strncpy(user_data->last_name, string, sizeof(user_data->last_name));
 				user_data->last_name_entered = true;
 				break;
-			case IN_SW_GSEC_SERVER:
-				strncpy(user_data->server_name, string, sizeof(user_data->server_name));
-				user_data->server_entered = true;
+			case IN_SW_GSEC_DATABASE:
+				strncpy(user_data->database_name, string, sizeof(user_data->database_name));
+				user_data->database_name_entered = true;
 				break;
 			case IN_SW_GSEC_DBA_USER_NAME:
 				strncpy(user_data->dba_user_name, string, sizeof(user_data->dba_user_name));
@@ -777,7 +803,7 @@ static bool get_switches(
 			case IN_SW_GSEC_FNAME:
 			case IN_SW_GSEC_MNAME:
 			case IN_SW_GSEC_LNAME:
-			case IN_SW_GSEC_SERVER:
+			case IN_SW_GSEC_DATABASE:
 			case IN_SW_GSEC_DBA_USER_NAME:
 			case IN_SW_GSEC_DBA_PASSWORD:
 			case IN_SW_GSEC_SQL_ROLE_NAME:
@@ -847,13 +873,13 @@ static bool get_switches(
 					user_data->last_name_specified = true;
 					user_data->last_name[0] = '\0';
 					break;
-				case IN_SW_GSEC_SERVER:
-					if (user_data->server_specified) {
+				case IN_SW_GSEC_DATABASE:
+					if (user_data->database_name_specified) {
 						err_msg_no = GsecMsg78;
 						break;
 					}
-					user_data->server_specified = true;
-					user_data->server_name[0] = '\0';
+					user_data->database_name_specified = true;
+					user_data->database_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_DBA_USER_NAME:
 					if (user_data->dba_user_name_specified) {
@@ -1195,12 +1221,13 @@ void GSEC_print_status(const ISC_STATUS* status_vector)
 #endif
 
 		SCHAR s[1024];
+		const char* nl = vector[0] == isc_arg_interpreted ? "" : "\n";
 		if (fb_interpret(s, sizeof(s), &vector)) {
 			TRANSLATE_CP(s);
-			util_output("%s\n", s);
+			util_output("%s%s", s, nl);
 			while (fb_interpret(s, sizeof(s), &vector)) {
 				TRANSLATE_CP(s);
-				util_output("%s\n", s);
+				util_output("%s%s", s, nl);
 			}
 		}
 	}

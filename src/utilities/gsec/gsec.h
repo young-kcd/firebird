@@ -48,7 +48,8 @@ const int USER_NAME_LEN	= 133;
 const int ALT_NAME_LEN	= 129;
 const int NAME_LEN		= 33;
 const int PASS_LEN		= MAX_PASSWORD_LENGTH + 1;
-const int SERVER_LEN	= 128;
+const int _SERVER_LEN	= 128;
+const int DATABASE_LEN  = _SERVER_LEN + MAXPATHLEN;
 
 #if !(defined REMOTE_REMOTE_H || defined JRD_JRD_H)
 #ifndef INCLUDE_FB_BLK
@@ -96,10 +97,9 @@ struct internal_user_data {
 	TEXT	sql_role_name [NAME_LEN];	/* the user's name */
 	bool	sql_role_name_entered;	/* user name entered flag */
 	bool	sql_role_name_specified;/* database specified flag */
-	TEXT	server_name [SERVER_LEN];	/* remote host name */
-	bool	server_entered;		/* remote host entered flag */
-	bool	server_specified;	/* remote host specified flag */
-
+	TEXT	database_name [DATABASE_LEN];	/* database to manage name */
+	bool	database_name_entered;		/* database entered flag */
+	bool	database_name_specified;		/* database specified flag */
 };
 
 #ifndef SERVICE_THREAD
