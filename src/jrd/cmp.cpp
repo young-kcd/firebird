@@ -3520,6 +3520,23 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_stream:
 		return (jrd_nod*) pass1_rse(tdbb, csb, (RecordSelExpr*) node, view, view_stream);
 
+	case nod_dcl_cursor:
+		node->nod_arg[e_dcl_cursor_rse] =
+			pass1(tdbb, csb, node->nod_arg[e_dcl_cursor_rse], view, view_stream,
+				  validate_expr);
+		break;
+
+	case nod_cursor_stmt:
+		if ((UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op] == blr_cursor_fetch) {
+			node->nod_arg[e_cursor_stmt_seek] =
+				pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_seek], view, view_stream,
+					validate_expr);
+			node->nod_arg[e_cursor_stmt_into] =
+				pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_into], view, view_stream,
+					validate_expr);
+		}
+		break;
+
 	case nod_max:
 	case nod_min:
 	case nod_average:
