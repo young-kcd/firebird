@@ -68,6 +68,14 @@ begin
   Result := (InstallOnThisVersion('0,5.01', '0,0') = irInstall);
 end;
 
+(* Untested.
+function UsingWin95: boolean;
+// return true if using Win95.
+begin
+  Result := (InstallOnThisVersion('0,0', '4,1,0.0') = irInstall);
+end;
+*)
+
 
 const
   sWinSock2 = 'ws2_32.dll';

@@ -105,7 +105,8 @@ class Config
 		KEY_DATABASE_ACCESS,						// 38
 		KEY_UDF_ACCESS,								// 39
 		KEY_TEMP_DIRECTORIES,						// 40
-		KEY_BUGCHECK_ABORT							// 41
+		KEY_BUGCHECK_ABORT,							// 41
+		KEY_OLD_COLUMN_NAMING						// 42
 	};
 
 public:
@@ -319,6 +320,12 @@ public:
 		Abort on BUGCHECK and structured exceptions
 	*/
 	static bool getBugcheckAbort();
+
+	/*
+		Use old column naming rules (does not conform to SQL standard)
+	*/
+	static bool getOldColumnNaming();
+
 };
 
 #endif // CONFIG_H

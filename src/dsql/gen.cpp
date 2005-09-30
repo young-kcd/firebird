@@ -29,7 +29,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  */
 /*
-$Id: gen.cpp,v 1.33.2.4 2005-06-16 09:44:39 arnobrinkman Exp $
+$Id: gen.cpp,v 1.33.2.5 2005-09-30 13:13:45 paul_reeves Exp $
 */
 
 #include "firebird.h"
@@ -51,6 +51,7 @@ $Id: gen.cpp,v 1.33.2.4 2005-06-16 09:44:39 arnobrinkman Exp $
 #include "../jrd/thd_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "gen/iberror.h"
+#include "../common/config/config.h"
 
 ASSERT_FILENAME static void gen_aggregate(DSQL_REQ, DSQL_NOD);
 static void gen_cast(DSQL_REQ, DSQL_NOD);
@@ -2317,20 +2318,30 @@ static void gen_select( DSQL_REQ request, DSQL_NOD rse)
               FIXED IN PARSE.Y; here it doesn't catch expressions: Bug 450301. */
             parameter->par_name = parameter->par_alias  = "SUBSTRING";
         }
-        else if (item->nod_type == nod_concatenate)
-            parameter->par_name = parameter->par_alias	= "CONCATENATION";
+        else if (item->nod_type == nod_concatenate) {
+            if ( !Config::getOldColumnNaming() ) 
+                parameter->par_name = parameter->par_alias  = "CONCATENATION";
+        }
         else if (item->nod_type == nod_cast)
-            parameter->par_name = parameter->par_alias	= "CAST";
+            parameter->par_name = parameter->par_alias  = "CAST";
         else if (item->nod_type == nod_upcase)
-            parameter->par_name = parameter->par_alias	= "UPPER";
-        else if (item->nod_type == nod_current_date)
-            parameter->par_name = parameter->par_alias	= "CURRENT_DATE";
-        else if (item->nod_type == nod_current_time)
-            parameter->par_name = parameter->par_alias	= "CURRENT_TIME";
-        else if (item->nod_type == nod_current_timestamp)
-            parameter->par_name = parameter->par_alias	= "CURRENT_TIMESTAMP";
-        else if (item->nod_type == nod_extract)
-            parameter->par_name = parameter->par_alias	= "EXTRACT";
+            parameter->par_name = parameter->par_alias  = "UPPER";
+        else if (item->nod_type == nod_current_date) {
+            if ( !Config::getOldColumnNaming() ) 
+                parameter->par_name = parameter->par_alias  = "CURRENT_DATE";
+        }
+        else if (item->nod_type == nod_current_time) {
+            if ( !Config::getOldColumnNaming() ) 
+                parameter->par_name = parameter->par_alias  = "CURRENT_TIME";
+        }
+        else if (item->nod_type == nod_current_timestamp) {
+            if ( !Config::getOldColumnNaming() ) 
+                parameter->par_name = parameter->par_alias  = "CURRENT_TIMESTAMP";
+        }
+        else if (item->nod_type == nod_extract) {
+            if ( !Config::getOldColumnNaming() ) 
+                parameter->par_name = parameter->par_alias  = "EXTRACT";
+        }
         else if (item->nod_type == nod_searched_case)
             parameter->par_name = parameter->par_alias	= "CASE";
         else if (item->nod_type == nod_simple_case)
