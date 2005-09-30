@@ -1,3 +1,9 @@
+2005-09-29 11:22  aafemt
+
+	* firebird2/configure.in (1.235):
+	
+	MinGW also can do threaded CS
+
 2005-09-28 16:03  kkuznetsov
 
 	* firebird2/extern/icu/source/runConfigureICU (1.9):
