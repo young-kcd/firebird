@@ -29,8 +29,13 @@
 #
 #
 ROOT=..
-ObjModuleType=superclient
-CFLAGS+=-DSTD_UTIL
+SERVICES_THREADED=@service_thread_CS@
+ifeq ($(SERVICES_THREADED),true)
+    ObjModuleType=superclient
+    CFLAGS+=-DSTD_UTIL
+else
+    ObjModuleType=std
+endif
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

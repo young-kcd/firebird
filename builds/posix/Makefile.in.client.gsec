@@ -18,7 +18,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 #
-# $Id: Makefile.in.client.gsec,v 1.4 2005-05-27 22:16:01 asfernandes Exp $
+# $Id: Makefile.in.client.gsec,v 1.5 2005-09-30 16:25:52 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=superclient
@@ -31,10 +31,8 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-GSEC_Other_Sources = 
-#jrd/enc.cpp jrd/isc_file.cpp common/config/config.cpp \
-#jrd/os/posix/path_utils.cpp common/config/config_file.cpp \
-#jrd/os/posix/config_root.cpp jrd/os/posix/fbsyslog.cpp 
+GSEC_Other_Sources = jrd/isc_file.cpp common/config/config.cpp common/config/config_file.cpp \
+jrd/os/posix/path_utils.cpp jrd/os/posix/config_root.cpp jrd/os/posix/fbsyslog.cpp 
 GSEC_Files =  gsec.cpp call_service.cpp
 GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
 GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))
