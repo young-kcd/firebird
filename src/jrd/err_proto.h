@@ -76,6 +76,18 @@ inline const TEXT*		ERR_cstring(const Firebird::MetaName& in_string)
 {
 	return ERR_cstring(in_string.c_str());
 }
+inline const TEXT*		ERR_string(const Firebird::string& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
+inline const TEXT*		ERR_string(const Firebird::PathName& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
+inline const TEXT*		ERR_string(const Firebird::MetaName& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
 
 // AP: used ?
 

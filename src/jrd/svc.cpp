@@ -1832,7 +1832,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 /* All services except for get_ib_log require switches */
 	if (service->svc_switches == NULL && *spb != isc_action_svc_get_ib_log)
 		ERR_post(isc_bad_spb_form, 0);
-
+		
 #ifndef SERVICE_THREAD
 	TEXT service_path[MAXPATHLEN];
 
@@ -2984,6 +2984,15 @@ static USHORT process_switches(
 				get_action_svc_string(&p, &sw, &total, &len);
 				break;
 
+			case isc_spb_dbname:
+				if (!get_action_svc_parameter(&p, gsec_in_sw_table,
+											  &sw, &total, &len))
+				{
+					return 0;
+				}
+				get_action_svc_string(&p, &sw, &total, &len);
+				break;
+				
 			default:
 				return 0;
 				break;
@@ -3038,6 +3047,7 @@ static USHORT process_switches(
 			case isc_spb_sec_firstname:
 			case isc_spb_sec_middlename:
 			case isc_spb_sec_lastname:
+			case isc_spb_dbname:
 				if (!get_action_svc_parameter(&p, gsec_in_sw_table,
 											  &sw, &total, &len))
 				{

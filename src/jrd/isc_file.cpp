@@ -171,7 +171,9 @@ const char* MTAB		= "/etc/mtab";
 #endif
 
 #if (defined AIX || defined AIX_PPC)
+#include <sys/mntctl.h>
 #include <sys/vmount.h>
+extern "C" int mntctl(int, size_t, void*);
 #endif
 
 
@@ -189,12 +191,12 @@ namespace {
 	class osMtab {
 	public:
 #if (defined AIX || defined AIX_PPC)
-		TEXT* temp;
+		TEXT* buffer;
 		int context;
 		
-		osMtab() : temp(0), context(0) { }
+		osMtab();
 		~osMtab() { delete[] temp; }
-		bool ok() const { return true; }
+		bool ok() const { return temp ? true : false; }
 #else
 		FILE* mtab;
 		
@@ -353,6 +355,7 @@ bool ISC_analyze_pclan(tstring& expanded_name, tstring& node_name)
  *	file name, and return true.  Otherwise return false.
  *
  **************************************/
+	node_name.erase();
 	if (expanded_name.length() < 2 ||
 		(expanded_name[0] != '\\' && expanded_name[0] != '/') ||
 		(expanded_name[1] != '\\' && expanded_name[1] != '/'))
@@ -387,7 +390,7 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
 /**************************************
  *
  *	I S C _ a n a l y z e _ t c p		( G E N E R I C )
- *
+ *>
  **************************************
  *
  * Functional description
@@ -399,6 +402,7 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
 
 /* Scan file name looking for separator character */
 
+	node_name.erase();
 	const size p = file_name.find(INET_FLAG);
 	if (p == npos)
 		return false;
@@ -445,22 +449,47 @@ bool ISC_check_if_remote(const tstring& file_name, bool implicit_flag)
  *
  **************************************/
 	tstring temp_name = file_name;
+	tstring host_name;
+	return ISC_extract_host(temp_name, host_name, implicit_flag) != ISC_PROTOCOL_LOCAL;
+}
+
+	
+iscProtocol ISC_extract_host(Firebird::PathName& file_name, 
+							 Firebird::PathName& host_name,
+							 bool implicit_flag) 
+{
+/**************************************
+ *
+ *	I S C _ e x t r a c t _ h o s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check to see if a file name resolves to a
+ *	remote file.  If implicit_flag is true, then
+ *	analyze the path to see if it resolves to a
+ *	file on a remote machine.  Otherwise, simply
+ *	check for an explicit node name.
+ *  If file is found to be remote, extract 
+ *  the node name and compute the residual file name.
+ *  Return protocol type.
+ *
+ **************************************/
 
 /* Always check for an explicit TCP node name */
 
-	tstring host_name;
-	if (ISC_analyze_tcp(temp_name, host_name)) 
+	if (ISC_analyze_tcp(file_name, host_name)) 
 	{
-		return true;
+		return ISC_PROTOCOL_TCPIP;
 	}
 #ifndef NO_NFS
 	if (implicit_flag) 
 	{
 		/* Check for a file on an NFS mounted device */
 
-		if (ISC_analyze_nfs(temp_name, host_name)) 
+		if (ISC_analyze_nfs(file_name, host_name)) 
 		{
-			return true;
+			return ISC_PROTOCOL_TCPIP;
 		}
 	}
 #endif
@@ -468,9 +497,9 @@ bool ISC_check_if_remote(const tstring& file_name, bool implicit_flag)
 #if defined(WIN_NT)
 /* Check for an explicit named pipe node name */
 
-	if (ISC_analyze_pclan(temp_name, host_name)) 
+	if (ISC_analyze_pclan(file_name, host_name)) 
 	{
-		return true;
+		return ISC_PROTOCOL_WLAN;
 	}
 
 	if (implicit_flag) {
@@ -478,17 +507,20 @@ bool ISC_check_if_remote(const tstring& file_name, bool implicit_flag)
 		   the path.  Then check the expanded path for a TCP or
 		   named pipe. */
 
-		ISC_expand_share(temp_name);
-		if (ISC_analyze_tcp(temp_name, host_name) ||
-			ISC_analyze_pclan(temp_name, host_name))
+		ISC_expand_share(file_name);
+		if (ISC_analyze_tcp(file_name, host_name))
 		{
-			return true;
+			return ISC_PROTOCOL_TCPIP;
+		}
+		if (ISC_analyze_pclan(file_name, host_name))
+		{
+			return ISC_PROTOCOL_WLAN;
 		}
 
 	}
 #endif	// WIN_NT
 
-	return false;
+	return ISC_PROTOCOL_LOCAL;
 }
 
 
@@ -1320,6 +1352,29 @@ namespace {
 #ifndef NO_NFS
 #if (defined AIX || defined AIX_PPC)
 #define GET_MOUNTS
+
+osMtab::osMtab() : temp(0), context(0) 
+{ 
+	SLONG l;
+	if (mntctl(MCTL_QUERY, sizeof(SLONG), reinterpret_cast<char*>(&l)) != 0)
+		return;
+	try 
+	{
+		temp = FB_NEW(*getDefaultMemoryPool()) char[l];
+	}
+	catch(std::bad_alloc& ba)
+	{
+		temp = 0;
+		return;
+	}
+	context = mntctl(MCTL_QUERY, l, temp);
+	if (context <= 0)
+	{
+		delete[] temp;
+		temp = 0;
+	}
+}
+
 bool Mnt::get()
 {
 /**************************************
@@ -1332,57 +1387,39 @@ bool Mnt::get()
  *	Get ALL mount points.
  *
  **************************************/
-	if (!*buffer) {
-		/* The first time through, get the mount info from the system.
-		   First find out how much information there is, then allocate
-		   a buffer for it, and finally get it. */
-
-		if (mntctl(MCTL_QUERY, sizeof(SLONG), mnt_buffer) != 0)
-			return false;
-
-		const int l = *(SLONG *) mnt_buffer;
-		/* FREE: in get_mounts() */
-		if (!(*buffer = gds__alloc((SLONG) l)) ||
-			(*count = mntctl(MCTL_QUERY, l, *buffer)) <= 0)
-		{
-			return false;		/* NOMEM: */
-		}
-	}
-	else if (!*count)
+	if (!context)
+	{
 		return false;
+	}
 
 	TEXT* p;
-	for (int i = --(*count), p = *buffer; i--;)
-		p += ((struct vmount *) p)->vmt_length;
+	for (int i = --context, p = temp; i--;)
+		p += reinterpret_cast<struct vmount *>(p)->vmt_length;
 
-	struct vmount* vmt = (struct vmount *) p;
+	struct vmount* vmt = reinterpret_cast<struct vmount *>(p);
 
-	mount->mnt_node = mnt_buffer;
 	p = vmt2dataptr(vmt, VMT_HOSTNAME);
 	int l = vmt2datasize(vmt, VMT_HOSTNAME);
-	if (l && (p[0] != '-' || p[1]))
-		while (l-- && *p)
-			*mnt_buffer++ = *p++;
-	*mnt_buffer++ = 0;
+	if (l && (p[0] != '-' || p[1])) 
+	{
+		node = tstring(p, l);
+	}
+	else 
+	{
+		node.erase();
+	}
 
-	mount->mnt_path = mnt_buffer;
 	p = vmt2dataptr(vmt, VMT_OBJECT);
 	l = vmt2datasize(vmt, VMT_OBJECT);
-	while (l-- && *p)
-		*mnt_buffer++ = *p++;
-	*mnt_buffer++ = 0;
+	path = tstring(p, l);
 
-	mount->mnt_mount = mnt_buffer;
 	p = vmt2dataptr(vmt, VMT_STUB);
 	l = vmt2datasize(vmt, VMT_STUB);
-	while (l-- && *p)
-		*mnt_buffer++ = *p++;
-	*mnt_buffer = 0;
+	mount = tstring(p, l);
 
-	if (!*mount->mnt_node) {
-		p = mount->mnt_node;
-		mount->mnt_node = mount->mnt_path;
-		mount->mnt_path = p;
+	if (node.isEmpty()) {
+		node = path;
+		path.erase();
 	}
 
 	return true;

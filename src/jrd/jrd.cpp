@@ -561,12 +561,12 @@ void JRD_print_pools(const char* filename) {
 
 
 ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
-								SSHORT	file_length,
-								const TEXT*	file_name,
+								SSHORT	_file_length,
+								const TEXT*	_file_name,
 								Attachment**	handle,
 								SSHORT	dpb_length,
 								const UCHAR*	dpb,
-								const TEXT* expanded_filename)
+								const TEXT* _expanded_filename)
 {
 /**************************************
  *
@@ -584,14 +584,12 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (*handle) {
 		return handle_error(user_status, isc_bad_db_handle, 0);
 	}
+	
+	Firebird::PathName file_name(_file_name, 
+		_file_length ? _file_length : strlen(_file_name));
+	Firebird::PathName expanded_name(file_name);
 
 /* Resolve given alias name */
-
-	if (!file_length) 
-		file_length = strlen(file_name);
-	Firebird::PathName expanded_name(file_name, 
-		file_length ? file_length : strlen(file_name));
-
 	const bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
 	if (is_alias)
 	{
@@ -599,7 +597,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 	else
 	{
-		expanded_name = expanded_filename;
+		expanded_name = _expanded_filename;
 	}
 
 	thread_db thd_context;
@@ -690,7 +688,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				 isc_arg_string, "direct",
 				 isc_arg_string, "security database",
 				 isc_arg_string, 
-				 ERR_string(file_name, file_length), 
+				 ERR_string(file_name), 
 				 0);
 	}
 
@@ -708,7 +706,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 						 isc_arg_string, "encryption",
 						 isc_arg_string, "database",
 						 isc_arg_string, 
-                         ERR_string(file_name, file_length), 
+                         ERR_string(file_name), 
                          0);
 			}
 		}
@@ -773,7 +771,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		// 2. Make sure that ID value can be used to connect back to database
 		//
 		if (is_alias && vdn == vdnFail)
-			dbb->dbb_database_name.assign(file_name, file_length ? file_length : strlen(file_name));
+			dbb->dbb_database_name = file_name;
 		else
 			dbb->dbb_database_name = expanded_name;
 			
@@ -783,9 +781,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		dbb->dbb_flags |= DBB_lck_init_done;
 		INI_init();
 		dbb->dbb_file =
-			PIO_open(dbb, expanded_name, options.dpb_trace != 0, NULL, Firebird::PathName(file_name, file_length));
+			PIO_open(dbb, expanded_name, options.dpb_trace != 0, NULL, file_name);
 		SHUT_init(dbb);
-		PAG_header(file_name, file_length);
+		PAG_header(file_name.c_str(), file_name.length());
 		INI_init2();
 		PAG_init();
 		if (options.dpb_set_page_buffers) {
@@ -825,7 +823,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
     if (options.dpb_disable_wal) {
 		ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 				 isc_arg_string, 
-                 ERR_string(file_name, file_length), 
+                 ERR_string(file_name), 
                  0);
 	}
 
@@ -991,7 +989,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 						 isc_arg_string, "shutdown or online",
 						 isc_arg_string, "database",
 						 isc_arg_string, 
-                         ERR_string(file_name, file_length), 
+                         ERR_string(file_name), 
                          0);
 		}
 		JRD_SS_MUTEX_LOCK;
@@ -1024,7 +1022,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 						 isc_arg_string, "shutdown or online",
 						 isc_arg_string, "database",
 						 isc_arg_string, 
-                         ERR_string(file_name, file_length), 
+                         ERR_string(file_name), 
                          0);
 		}
 		JRD_SS_MUTEX_LOCK;
@@ -1056,7 +1054,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (attachment->att_flags & ATT_shutdown) {
 			if (dbb->dbb_ast_flags & DBB_shutdown) {
 				ERR_post(isc_shutdown, isc_arg_string, 
-						 ERR_string(file_name, file_length), 0);
+						 ERR_string(file_name), 0);
 			}
 			else {
 				ERR_post(isc_att_shutdown, 0);
@@ -1064,7 +1062,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		}
 		if (!attachment_succeeded) {
 			ERR_post(isc_shutdown, isc_arg_string, 
-					 ERR_string(file_name, file_length), 0);
+					 ERR_string(file_name), 0);
 		}
 	}
 #endif
@@ -1074,7 +1072,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
 	{
 		ERR_post(isc_shutinprog, isc_arg_string, 
-				ERR_string(file_name, file_length), 0);
+				ERR_string(file_name), 0);
 	}
 
 	if (dbb->dbb_ast_flags & DBB_shutdown) {
@@ -1099,7 +1097,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (!allow_access) {
 			// Note we throw exception here when entering full-shutdown mode
 			ERR_post(isc_shutdown, isc_arg_string, 
-					 ERR_string(file_name, file_length), 0);
+					 ERR_string(file_name), 0);
 		}
 	}
 
@@ -1174,7 +1172,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 				ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 						 isc_arg_string, 
-                         ERR_string(file_name, file_length),
+                         ERR_string(file_name),
                          0);
 			}
 			LOG_enable(options.dpb_log, strlen(options.dpb_log));
@@ -1211,7 +1209,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string,
-					 ERR_string(file_name, file_length), 
+					 ERR_string(file_name), 
 					 0); 
 		}
 		PAG_set_db_readonly(dbb, options.dpb_db_readonly);
@@ -1220,7 +1218,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 /* don't record the attach until now in case the log is added during the attach */
 
-	LOG_call(log_attach2, file_length, file_name, *handle, dpb_length, dpb,
+	LOG_call(log_attach2, file_name, *handle, dpb_length, dpb,
 			 expanded_filename);
 #endif
 
@@ -1709,13 +1707,13 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
-								USHORT	file_length,
-								const TEXT*	file_name,
+								USHORT	_file_length,
+								const TEXT*	_file_name,
 								Attachment**	handle,
 								USHORT	dpb_length,
 								const UCHAR*	dpb,
 								USHORT	db_type,
-								const TEXT*	expanded_filename)
+								const TEXT*	_expanded_filename)
 {
 /**************************************
  *
@@ -1730,14 +1728,15 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	api_entry_point_init(user_status);
 
 	if (*handle)
+	{
 		return handle_error(user_status, isc_bad_db_handle, 0);
+	}
 
-/* Get length of database file name, if not already known */
-	if (!file_length) 
-		file_length = strlen(file_name);
-	Firebird::PathName expanded_name;
-	expanded_name.assign(file_name, file_length);
+	Firebird::PathName file_name(_file_name, 
+		_file_length ? _file_length : strlen(_file_name));
+	Firebird::PathName expanded_name(file_name);
 
+/* Resolve given alias name */
 	const bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
 	if (is_alias)
 	{
@@ -1745,7 +1744,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	}
 	else
 	{
-		expanded_name = expanded_filename;
+		expanded_name = _expanded_filename;
 	}
 
 	thread_db thd_context;
@@ -1921,8 +1920,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	{
 		if (options.dpb_overwrite)
 		{
-			if (GDS_ATTACH_DATABASE(user_status, file_length, file_name, handle,
-					dpb_length, dpb, expanded_filename) == isc_adm_task_denied)
+			if (GDS_ATTACH_DATABASE(user_status, _file_length, _file_name, handle,
+					dpb_length, dpb, _expanded_filename) == isc_adm_task_denied)
 			{
 				throw;
 			}
@@ -1986,7 +1985,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	// There is no point to move database online at database creation since it is online by default.
 	// We do not allow to create database that is fully shut down.
 	if (options.dpb_online || (options.dpb_shutdown & isc_dpb_shut_mode_mask) == isc_dpb_shut_full)
-		ERR_post(isc_bad_shutdown_mode, isc_arg_string, ERR_string(file_name, file_length), 0);
+		ERR_post(isc_bad_shutdown_mode, isc_arg_string, ERR_string(file_name), 0);
 	
 	if (options.dpb_shutdown) {
 		/* By releasing the DBB_MUTX_init_fini mutex here, we would be allowing
@@ -2007,7 +2006,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 					 isc_arg_string, "shutdown or online",
 					 isc_arg_string, "database",
 					 isc_arg_string,
-					 ERR_string(file_name, file_length), 0);
+					 ERR_string(file_name), 0);
 		}
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -2035,7 +2034,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
         if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
             ERR_post (isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
                       isc_arg_string, 
-                      ERR_string (file_name, file_length), 
+                      ERR_string (file_name), 
                       0);
         
         PAG_set_db_readonly (dbb, options.dpb_db_readonly);
@@ -2061,7 +2060,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	// 2. Make sure that ID value can be used to connect back to database
 	//
 	if (is_alias && vdn == vdnFail)
-		dbb->dbb_database_name.assign(file_name, file_length ? file_length : strlen(file_name));
+		dbb->dbb_database_name = file_name;
 	else
 		dbb->dbb_database_name = dbb->dbb_filename;
 
@@ -2445,7 +2444,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		tdbb->tdbb_status_vector = user_status;
 		try
 		{
-			const char* file_name = tdbb->tdbb_attachment->att_filename.c_str();
+			Firebird::PathName file_name = tdbb->tdbb_attachment->att_filename;
 
 			if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
 				ERR_post(isc_no_priv,
@@ -4417,7 +4416,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	Attachment* attachment = tdbb->tdbb_attachment;
 	if (attachment)
 	{
-		const char* file_name = attachment->att_filename.c_str();
+		Firebird::PathName file_name = attachment->att_filename;
 
 		if (dbb->dbb_ast_flags & DBB_shutdown &&
 			attachment->att_flags & ATT_shutdown)
@@ -4742,14 +4741,12 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 		 ((dbb->dbb_ast_flags & DBB_shutdown_full) ||
 		 !(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))))
 	{
-		const char* file_name = attachment->att_filename.c_str();
-
 		tdbb->tdbb_status_vector = ptr = user_status;
 		*ptr++ = isc_arg_gds;
 		if (dbb->dbb_ast_flags & DBB_shutdown) {
 			*ptr++ = isc_shutdown;
 			*ptr++ = isc_arg_string;
-			*ptr++ = (ISC_STATUS) ERR_cstring(file_name);
+			*ptr++ = (ISC_STATUS) ERR_cstring(attachment->att_filename);
 		}
 		else {
 			*ptr++ = isc_att_shutdown;

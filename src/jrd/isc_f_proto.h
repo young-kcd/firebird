@@ -36,6 +36,8 @@ bool		ISC_analyze_pclan(Firebird::PathName&, Firebird::PathName&);
 bool		ISC_analyze_tcp(Firebird::PathName&, Firebird::PathName&);
 bool		ISC_analyze_xnet(Firebird::PathName&, Firebird::PathName&);
 bool		ISC_check_if_remote(const Firebird::PathName&, bool);
+enum		iscProtocol {ISC_PROTOCOL_LOCAL, ISC_PROTOCOL_TCPIP, ISC_PROTOCOL_WLAN};
+iscProtocol	ISC_extract_host(Firebird::PathName&, Firebird::PathName&, bool);
 void		ISC_expand_filename(Firebird::PathName&, bool);
 
 // This form of ISC_expand_filename makes epp files happy
