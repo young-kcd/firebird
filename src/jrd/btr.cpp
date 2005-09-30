@@ -543,10 +543,12 @@ UCHAR* BTR_find_leaf(btree_page* bucket, temporary_key* key, UCHAR* value,
 
 
 btree_page* BTR_find_page(thread_db* tdbb,
-				  IndexRetrieval* retrieval,
-				  WIN* window,
-				  index_desc* idx, temporary_key* lower, temporary_key* upper,
-				  bool backwards)
+						  IndexRetrieval* retrieval,
+						  WIN* window,
+						  index_desc* idx,
+						  temporary_key* lower,
+						  temporary_key* upper,
+						  bool backwards)
 {
 /**************************************
  *
@@ -569,19 +571,30 @@ btree_page* BTR_find_page(thread_db* tdbb,
 		copy_key(retrieval->irb_key, upper);
 	}
 	else {
+		IDX_E errorCode = idx_e_ok;
+
 		if (retrieval->irb_upper_count) {
-			BTR_make_key(tdbb, retrieval->irb_upper_count,
-						 retrieval->irb_value +
-						 retrieval->irb_desc.idx_count,
-						 &retrieval->irb_desc, upper,
-						 (retrieval->irb_generic & irb_starting) != 0);
+			errorCode =
+				BTR_make_key(tdbb, retrieval->irb_upper_count,
+							 retrieval->irb_value +
+							 retrieval->irb_desc.idx_count,
+							 &retrieval->irb_desc, upper,
+							 (retrieval->irb_generic & irb_starting) != 0);
 		}
 
-		if (retrieval->irb_lower_count) {
-			BTR_make_key(tdbb, retrieval->irb_lower_count,
-						 retrieval->irb_value,
-						 &retrieval->irb_desc, lower,
-						 (retrieval->irb_generic & irb_starting) != 0);
+		if (errorCode == idx_e_ok) {
+			if (retrieval->irb_lower_count) {
+				errorCode =
+					BTR_make_key(tdbb, retrieval->irb_lower_count,
+								retrieval->irb_value,
+								&retrieval->irb_desc, lower,
+								(retrieval->irb_generic & irb_starting) != 0);
+			}
+		}
+
+		if (errorCode != idx_e_ok) {
+			ERR_duplicate_error(errorCode, retrieval->irb_relation,
+								retrieval->irb_index);
 		}
 	}
 
@@ -1253,9 +1266,12 @@ USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buf
 }
 
 
-void BTR_make_key(thread_db* tdbb,
-				  USHORT count,
-				  jrd_nod** exprs, index_desc* idx, temporary_key* key, bool fuzzy)
+IDX_E BTR_make_key(thread_db* tdbb,
+				   USHORT count,
+				   jrd_nod** exprs,
+				   index_desc* idx,
+				   temporary_key* key,
+				   bool fuzzy)
 {
 /**************************************
  *
@@ -1274,12 +1290,14 @@ void BTR_make_key(thread_db* tdbb,
 	temp.key_length = 0;
 
 	SET_TDBB(tdbb);
-	//const Database* dbb = tdbb->tdbb_database;
+	const Database* dbb = tdbb->tdbb_database;
 
 	fb_assert(count > 0);
 	fb_assert(idx != NULL);
 	fb_assert(exprs != NULL);
 	fb_assert(key != NULL);
+
+	IDX_E result = idx_e_ok;
 
 	key->key_flags = key_all_nulls;
 
@@ -1347,9 +1365,15 @@ void BTR_make_key(thread_db* tdbb,
 		}
 	}
 
+	if (key->key_length >= MAX_KEY_LIMIT) {
+		result = idx_e_keytoobig;
+	}
+
 	if (idx->idx_flags & idx_descending) {
 		BTR_complement_key(key);
 	}
+
+	return result;
 }
 
 
@@ -2158,7 +2182,7 @@ static void compress(thread_db* tdbb,
 					return;
 				}
 			}
-			
+
 			size_t length;
 			switch (itype)
 			{
@@ -2206,7 +2230,7 @@ static void compress(thread_db* tdbb,
 		itype == idx_metadata || 
 		itype >= idx_first_intl_string) 
 	{
-		UCHAR temp1[MAX_KEY + 1];
+		UCHAR buffer[MAX_KEY];
 		const UCHAR pad = (itype == idx_string) ? ' ' : 0;
 		UCHAR* ptr;
 
@@ -2214,7 +2238,9 @@ static void compress(thread_db* tdbb,
 		if (isNull) {
 			length = 0;
 		}
-		else if (itype >= idx_first_intl_string || itype == idx_metadata) {
+		else if (itype >= idx_first_intl_string ||
+			itype == idx_metadata)
+		{
 			DSC to;
 
 			// convert to an international byte array
@@ -2223,13 +2249,13 @@ static void compress(thread_db* tdbb,
 			to.dsc_sub_type = 0;
 			to.dsc_scale = 0;
 			to.dsc_ttype() = ttype_sort_key;
-			to.dsc_length = sizeof(temp1);
-			ptr = to.dsc_address = temp1;
+			to.dsc_length = sizeof(buffer);
+			ptr = to.dsc_address = buffer;
 			length = INTL_string_to_key(tdbb, itype, desc, &to, key_type);
 		}
 		else {
 			USHORT ttype;
-			length = MOV_get_string_ptr(desc, &ttype, &ptr, (vary*) temp1, MAX_KEY);
+			length = MOV_get_string_ptr(desc, &ttype, &ptr, (vary*) buffer, MAX_KEY);
 		}
 
 		if (length) {
