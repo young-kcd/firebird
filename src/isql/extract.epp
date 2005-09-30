@@ -536,7 +536,6 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 		if (!RFR.RDB$DEFAULT_SOURCE.NULL)
 		{
-
 			isqlGlob.printf(" ");
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &RFR.RDB$DEFAULT_SOURCE);
 		}
@@ -812,6 +811,15 @@ static void get_procedure_args(const char* proc_name)
 										 FLD.RDB$COLLATION_ID, false, char_sets);
 				if (char_sets[0])
 					isqlGlob.prints(char_sets);
+			}
+			
+			if (ptype == 0) // input, try to extract default and make Vlad happy.
+			{
+				if (!FLD.RDB$DEFAULT_SOURCE.NULL)
+				{
+					isqlGlob.printf(" ");
+					SHOW_print_metadata_text_blob(isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
+				}
 			}
 		END_FOR
 		ON_ERROR
