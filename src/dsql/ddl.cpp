@@ -138,7 +138,8 @@ static void define_view_trigger(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*);
 static void delete_exception(dsql_req*, dsql_nod*, bool);
 static void delete_procedure(dsql_req*, dsql_nod*, bool);
 static void delete_relation_view(dsql_req*, dsql_nod*, bool);
-static void fix_default_source(dsql_str*);
+static int find_start_of_body(const dsql_str* string);
+static void fix_default_source(dsql_str* string);
 static void foreign_key(dsql_req*, dsql_nod*, const char* index_name);
 static void generate_dyn(dsql_req*, dsql_nod*);
 static void grant_revoke(dsql_req*);
@@ -2419,9 +2420,10 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	if (source)
 	{
 		fb_assert(source->str_length <= MAX_USHORT);
+		int j = find_start_of_body(source);
 		request->append_string(	isc_dyn_prc_source,
-								source->str_data,
-								source->str_length);
+								source->str_data + j,
+								source->str_length - j);
 	}
 
 	// fill req_procedure to allow procedure to self reference
@@ -2470,6 +2472,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 				if (string)
 				{
 					fb_assert(string->str_length <= MAX_USHORT);
+					fix_default_source(string);
 					request->append_string(isc_dyn_fld_default_source,
 											string->str_data,
 											string->str_length);
@@ -4230,6 +4233,30 @@ static void delete_relation_view (
 }
 
 
+//	find_start_of_body
+//
+//  @brief Find the start of a procedure body. Empty lines are irrelevant.
+//  @param string the source string to be searched.
+//
+static int find_start_of_body(const dsql_str* string)
+{
+	for (int i = 0; i < string->str_length; ++i)
+	{
+		switch (string->str_data[i])
+		{
+		case ' ':
+		case '\n':
+		case '\r':
+		case '\t':
+			break;
+		default:
+			return i;
+		}
+	}
+	return 0; // Something suspicious happened, better return zero than str_length.
+}
+
+
 /**
 
  	fix_default_source
@@ -4266,7 +4293,7 @@ static void fix_default_source(dsql_str* string)
 			string->str_data[i] = ' ';
 			break;
 		default:
-			i = string->str_length - 1;
+			return;
 		}
 	}
 }
