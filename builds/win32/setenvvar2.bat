@@ -15,11 +15,11 @@
 @cd %~dp0
 for /f "tokens=*" %%a in ('@echo %ROOT_PATH:\=/%') do (set DB_PATH=%%a)
 
-@msdev /? >nul 2>nul
-@if not errorlevel 9009 ((set MSVC_VERSION=6) & (set VS_VER=msvc6) & (goto :END))
-
 @devenv /? >nul 2>nul
 @if not errorlevel 9009 ((set MSVC_VERSION=7) & (set VS_VER=msvc7) & (goto :END))
+
+@msdev /? >nul 2>nul
+@if not errorlevel 9009 ((set MSVC_VERSION=6) & (set VS_VER=msvc6) & (goto :END))
 
 ::===========
 :HELP
