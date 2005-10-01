@@ -109,7 +109,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_STRING,		"UdfAccess",				(ConfigValue) "Restrict UDF"},	// location(s) of UDFs
 	{TYPE_STRING,		"TempDirectories",			(ConfigValue) 0},
 	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false},	// whether to abort() engine when internal error is found
-	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false}	// if true use old style concatenation
+	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false}	// if true use old column naming rules
 
 };
 
