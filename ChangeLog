@@ -1,3 +1,21 @@
+2005-10-01 03:08  robocop
+
+	* firebird2/src/common/config/config.cpp (1.40.2.7):
+	
+	Correct comment.
+
+2005-09-30 15:13  paul_reeves
+
+	* firebird2/src/: common/config/config.cpp (1.40.2.6),
+	common/config/config.h (1.23.2.2), dsql/gen.cpp (1.33.2.5),
+	install/arch-specific/win32/BuildExecutableInstall.bat (1.10.2.23),
+	install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+	(1.1.2.6), install/arch-specific/win32/FirebirdInstall_15.iss
+	(1.5.2.23), install/misc/firebird.conf (1.28.2.8),
+	jrd/isc_version.h (1.1.2.31), misc/src_bundle.sh (1.2.2.4):
+	
+	Add OldColumnNaming parameter. Update build number.
+
 2005-09-22 09:13  dimitr
 
 	* firebird2/src/jrd/isc_version.h (1.1.2.30):
