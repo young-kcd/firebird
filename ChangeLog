@@ -1,3 +1,96 @@
+2005-09-30 19:49  dimitr
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.37), gsec.dsp
+	(1.18):
+	
+	Fixed MSVC6 build.
+
+2005-09-30 19:45  dimitr
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.25), gsec.vcproj
+	(1.20):
+	
+	Fixed MSVC7 build.
+
+2005-09-30 18:25  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.gsec (1.5),
+	Makefile.in.embed.gbak (1.14), Makefile.in.embed.gfix (1.17),
+	Makefile.in.embed.util (1.27):
+	
+	Reanimated -database switch in gsec. Also fixed linux CS build
+	after solaris-related changes.
+
+2005-09-30 18:21  alexpeshkoff
+
+	* firebird2/src/msgs/messages.sql (1.45):
+	
+	reanimated -database switch in gsec
+
+2005-09-30 18:16  alexpeshkoff
+
+	* firebird2/src/jrd/: err_proto.h (1.26), isc_f_proto.h (1.20),
+	isc_file.cpp (1.96), jrd.cpp (1.224), svc.cpp (1.147):
+	
+	  1. reanimated -database switch in gsec\n  2. isc_file.cpp should
+	now compile at AIX\n  3.Use PathName to store database name in
+	jrd.cpp during attach/create
+
+2005-09-30 18:10  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/: call_service.cpp (1.8), gsec.cpp
+	(1.46), gsec.h (1.23), gsecswi.h (1.5):
+	
+	reanimated -database switch in gsec
+
+2005-09-30 14:06  asfernandes
+
+	* firebird2/src/intl/lc_iso8859_13.cpp (1.2):
+	
+	Fix problem reported by Konstantin
+
+2005-09-30 13:40  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.183):
+	
+	Fixed two bugs with PSQL cursors.
+
+2005-09-30 12:34  paul_reeves
+
+	* firebird2/builds/win32/: setenvvar.bat (1.9), setenvvar2.bat
+	(1.3):
+	
+	Evaluate available compilers in correct order.
+
+2005-09-30 10:48  dimitr
+
+	* firebird2/src/jrd/: btr.cpp (1.150), btr_proto.h (1.35):
+	
+	Fixed server crashes caused by buffer overruns if too big index key
+	was used.
+
+2005-09-30 10:43  robocop
+
+	* firebird2/src/isql/show.epp (1.79):
+	
+	SHOW command should also show procedure parameters defaults.
+
+2005-09-30 09:52  robocop
+
+	* firebird2/src/isql/extract.epp (1.64):
+	
+	Update isql to extract procedure parameters defaults in a script as
+	a tribute to Vlad.  Note: Vlad is still alive.
+
+2005-09-30 09:50  robocop
+
+	* firebird2/src/dsql/ddl.cpp (1.159):
+	
+	Trim unneeded blanks and some control characters between DEFAULT
+	clause and the default value itself in procedure parameters, too. 
+	Trim unneded blanks and some control characters before the BEGIN or
+	DECLARE clauses in a procedure body.
+
 2005-09-29 11:22  aafemt
 
 	* firebird2/configure.in (1.235):
