@@ -390,7 +390,7 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
 /**************************************
  *
  *	I S C _ a n a l y z e _ t c p		( G E N E R I C )
- *>
+ *
  **************************************
  *
  * Functional description
