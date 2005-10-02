@@ -1,3 +1,9 @@
+2005-10-01 09:16  robocop
+
+	* firebird2/src/: jrd/isc_file.cpp (1.97), msgs/history.sql (1.22):
+	
+	Misc.
+
 2005-09-30 19:49  dimitr
 
 	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.37), gsec.dsp
