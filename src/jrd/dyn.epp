@@ -1507,16 +1507,14 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	if (tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) {
-		return true;
-	}
-
 	// Fetch the name of the owner of the ROLE
 	Firebird::MetaName owner;
 	if (DYN_is_it_sql_role(gbl, role_name, owner, tdbb))
 	{
-		// The owner of the ROLE can always grant membership
-		if (owner == grantor) {
+		// Both SYSDBA and the owner of this ROLE can grant membership
+		if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith)
+			|| (owner == grantor))
+		{
 			return true;
 		}
 	}
