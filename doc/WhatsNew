@@ -1,4 +1,261 @@
   **************
+  * v2.0 Beta 1
+  **************
+
+    * Fixed Alpha 3 bug
+        Broken GSEC compatibility (-database switch)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed Alpha 3 bug
+        Bugcheck or wrong result caused by the FETCH statement
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Server crashes when too big key is specified for an index retrieval
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 3 bug
+        ISQL doesn't extract default values for stored procedure parameters
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        SQL string is stored truncated within the RDB$*_SOURCE columns in some cases
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 3 bug
+        Index is rebuilt while being described via the COMMENT ON INDEX statement
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Alpha 3 bug
+        SEGV when legacy isc_interprete() is called
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Alpha 3 bug
+        Server crashes on some DDL operations performed on not yet committed tables
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Installation enhancement
+        Added optional switch -i[interactive] to instsvc.exe to allow interactive mode
+        for LocalSystem services
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Broken implementation of the MATCHES predicate in GDML
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 3 bug
+        Issue of SQLVAR.sqllen from non-system MBCS fields
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        GBAK cannot restore a database containing broken foreign keys
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * SQL enhancement
+        Allowed value expressions to be returned via the RETURNING clause
+      See also:
+        /doc/sql.extentions/README.returning.txt
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 3 bug
+        Implict NOT NULL (in PRIMARY KEY constraint) is	generated with the same
+        constraint name of the PK
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bugs
+        1) Unpredictable behaviour of gds__log() on POSIX in signal	handlers
+        2) Signal safety issues in SuperServer shutdown
+        3) Buffer overrruns in physical I/O functions
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * SQL enhancement
+        CURRENT_TIME and CURRENT_TIMESTAMP now optionally allow seconds precision
+      See also:
+        /doc/sql.extentions/README.current_time.txt
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 3 bug
+        Not enough process permissions caused rejecting of XNET connections
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Security enhancement
+        1) Always require login/password for remote clients
+        2) Temporary disable logins for clients, making too many wrong attempts to login
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        Comparisons between strings in NONE and other charset caused an error
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        Incorrect UDF access checking
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 3 bug (SF #1249187)
+        String literals dest. for large CHAR fields truncated
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed Alpha 3 bug (SF #1256675)
+        Create foreign constraint without PK sometimes fails
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Alpha 3 bug
+        WHEN EXCEPTION <name> handler doesn't work
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * DDL enhancement
+        SET/DROP DEFAULT clauses are now available for ALTER DOMAIN and ALTER TABLE statements
+      See also:
+        /doc/sql.extentions/README.ddl.txt
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Improved Services API
+        Services are now executed as threads rather than processes on some threadable CS builds
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bugs
+        1) '1.5' / '0.5' doesn't work in Dialect 1
+        2) avg ('1.5') doesn't work in Dialect 1
+        3) 5 * '1.5' produces INT result instead of DOUBLE PRECISION in Dialect 1
+        4) sum ('1.5') produces NUMERIC(15, 2) result instead of DOUBLE PRECISION in Dialect 1
+        5) - '1.5' doesn't work in Dialect 1
+        6) '1.5' * '0.5' and '1.5' / '0.5' are not forbidden in Dialect 3
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #1250150
+        Can't drop procedure
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Alpha 3 bug
+        Expression index dependencies aren't tracked correctly
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug SF #1238104
+        Incorrect sweep internal report
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Added UDF function
+        IB_UDF_srand is now available in the IB_UDF library
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Added new collation
+        BS_BA for WIN1250 charset (Bosnian language)
+      Contributor(s):
+        Fikret Hasovic <fikreth at bihtamp.net>
+
+    * Fixed Alpha 3 bugs
+        1) "WITH CHECK OPTION" bug
+        2) Issue with unreleased contexts in derived tables
+        3) Outer references to higher scope-levels are rejected in derived tables
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 3 bugs
+        1) NEXT VALUE FOR bug for dialect 3 (32bit impementation was used)
+        2) Issue with GEN_ID(<value>, NULL)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 3 bug
+        Foreign-key checks failed due to the new INTL changes
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Alpha 3 bug (SF #1289925)
+        isc_array_lookup_bounds bug
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 3 bugs
+        1) Issues with NEW/OLD contexts and derived tables
+        2) Issues with the IN predicate
+        3) Invalid parsing of PLANs inside views
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed bug SF #1244126
+        Update text BLOBs when connected with NONE charset
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed bug SF #1242106
+        1) Incorrect commit instead of rollback during shutdown
+        2) Crash or bugcheck during SuperServer shutdown with active attachments
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug SF #1242982
+        Bug in compound index key mangling
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug
+        Crash occured in service gfix code when it tried to reattach to currently 
+        unavailable database. Since service can't interact with end user an endless 
+        loop leads to overflow service buffer and crash as result.
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Alpha 3 bug (SF #1242106)
+        In-Limbo transaction Services API broken
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug SF #1242379
+        Collation changes VARCHAR's length
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Added ROLLBACK RETAIN syntax support
+        ROLLBACK RETAIN statement is now supported in DSQL
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bugs
+        1) Do not overwrite destination during NBACKUP restore
+        2) Fixed cases of corrupted backups created by NBACKUP
+        3) Fixed some memory/handle leaks
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed Alpha 3 bug
+        Threading issues in DSQL causing errors at prepare
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************
   * v2.0 Alpha 3
   **************
 
