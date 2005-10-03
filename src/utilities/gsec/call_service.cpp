@@ -376,7 +376,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		{
 			isc_resv_handle reserved = 0;
 			isc_service_query(status, &handle, &reserved, spb - spb_buffer, 
-				spb, sizeof(request), request, RESULT_BUF_SIZE - startQuery, 
+				spb_buffer, sizeof(request), request, RESULT_BUF_SIZE - startQuery, 
 				&resultBuffer[startQuery]);
 			if (status[1])
 			{
@@ -401,7 +401,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		{
 			isc_resv_handle reserved = 0;
 			isc_service_query(status, &handle, &reserved, spb - spb_buffer, 
-				spb, 1, &request, RESULT_BUF_SIZE, resultBuffer);
+				spb_buffer, 1, &request, RESULT_BUF_SIZE, resultBuffer);
 			if (status[1])
 			{
 				return;
