@@ -14,5 +14,5 @@
 #define FB_MINOR_VER "5"
 #define FB_REV_NO "3"
 #define FB_BUILD_NO "4854"
-#define FB_BUILD_TYPE "X"
-#define FB_BUILD_SUFFIX "Firebird 1.5 (Special Concat build)"
+#define FB_BUILD_TYPE "V"
+#define FB_BUILD_SUFFIX "Firebird 1.5"

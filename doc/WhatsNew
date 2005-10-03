@@ -2,6 +2,11 @@
   * v1.5.3
   **************
 
+    * Added OldColumnNaming parameter to firebird.conf
+        Allow users to revert to pre-V1.5 column naming in Select expressions.
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
     * Added diagnostics.
         Logged attempt to send signals via missing gds_relay
       Contributor(s):
