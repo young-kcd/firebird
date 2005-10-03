@@ -34,5 +34,3 @@ RETURNING clause
     4. Any explicit record change (update or delete) performed by AFTER-triggers is ignored by
        the RETURNING clause.
     5. Cursor based inserts (INSERT INTO ... SELECT ... RETURNING ...) are not supported.
-    6. Currently this clause can return only table column values, arbitrary expressions are not
-       allowed. This is expected to be introduced in the future versions.
