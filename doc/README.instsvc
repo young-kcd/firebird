@@ -73,6 +73,7 @@ Usage
                     [ -a[uto]* | -d[emand] ]
                     [ -g[uardian] ]
                     [ -l[ogin] username [password] ]
+                    [ -i[nteractive] ]
 
           sta[rt]   [ -b[oostpriority] ]
           sto[p]
@@ -180,31 +181,5 @@ user defined on a domain or locally on another server.  In the above examples,
    DOMAIN\user or
    SERVER\user
 With no prefix, the user is implicitly a local user on the current machine.
-
-
-Instsvc and the "local" client/server protocol
-==============================================
-
-When Firebird is configured to run under a specific user--which is 
-recommended for servers on wide networks--the "local" protocol is 
-unavailable.  
-
-NOTE  Regular user login is not compatible with the local access 
-  protocol.  Local protocol needs the server and the client to 
-  interact by way of an emulated network layer using Windows messages. 
-  A service running under a specific user account runs in its own, 
-  isolated, virtual desktop environment and those messages cannot be 
-  delivered.  It is necessary for local clients to connect using TCP/IP 
-  local loopback protocol (localhost server).
-
-  This is not a bug but, rather, implements a function of Windows 
-  NT/2K/XP design that has some shortcomings.  In future releases, 
-  local protocol will be re-implemented, using proper inter-process 
-  communication mechanisms.
-
-  When Firebird is configured without a specific user (i.e. LocalSystem 
-  user in SERVICE_INTERACTIVE_PROCESS mode, "Allow service to interact 
-  with Desktop"), both TCP/IP local loopback and "local" protocols are 
-  available.  
 
 /* ends */
