@@ -1,3 +1,17 @@
+2005-10-03 17:50  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/FirebirdInstall_15.iss
+	(1.5.2.24):
+	
+	Restart system if classic server still running after
+	uninstallation.
+
+2005-10-03 08:33  paul_reeves
+
+	* firebird2/doc/WhatsNew (1.36.2.49):
+	
+	Allow build_no.h to be used for mass consumption again.
+
 2005-10-01 03:08  robocop
 
 	* firebird2/src/common/config/config.cpp (1.40.2.7):
