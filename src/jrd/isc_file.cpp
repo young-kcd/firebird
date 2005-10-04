@@ -171,6 +171,11 @@ const char* MTAB		= "/etc/mtab";
 #endif
 
 #if (defined AIX || defined AIX_PPC)
+
+#error AIX code in this file was never tested.
+#error You should check for: 1) normal access to databases works,
+#error 2) access to databases on NFS-mounted shares disabled.
+
 #include <sys/mntctl.h>
 #include <sys/vmount.h>
 extern "C" int mntctl(int, size_t, void*);
@@ -191,7 +196,7 @@ namespace {
 	class osMtab {
 	public:
 #if (defined AIX || defined AIX_PPC)
-		TEXT* buffer;
+		TEXT* temp;
 		int context;
 		
 		osMtab();
