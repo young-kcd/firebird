@@ -2484,7 +2484,8 @@ static NAM parse_name(void)
  **************************************/
 	PAR_real();
 
-	const bool isQuoted = QLI_token->tok_type == tok_quoted && sql_flag;
+	const bool isQuoted = QLI_token->tok_type == tok_quoted && sql_flag &&
+		QLI_token->tok_string[0] == '"';
 	if (QLI_token->tok_type != tok_ident && !isQuoted)
 		ERRQ_syntax(199);		// Msg199 identifier
 
@@ -2717,7 +2718,8 @@ static qli_syntax* parse_primitive_value( USHORT* paren_count, bool* bool_flag)
 				break;
 			}
 			if (QLI_token->tok_type == tok_ident
-				|| QLI_token->tok_type == tok_quoted && sql_flag) 
+				|| QLI_token->tok_type == tok_quoted && sql_flag &&
+				QLI_token->tok_string[0] == '"')
 			{
 				node = parse_field_name(0);
 				break;
@@ -4900,7 +4902,7 @@ static qli_syntax* parse_sql_singleton_select(void)
 	node->syn_arg[s_stt_value] = value;
 
 	node->syn_arg[s_stt_rse] = parse_sql_rse();
-	--sql_flag;
+	--sql_flag; // The increment was done in parse_sql_subquery, the only caller.
 
 	return node;
 }
