@@ -2553,7 +2553,7 @@ void XNET_srv(USHORT flag)
 
 			try {
 
-			status_vector = (ISC_STATUS*) ALLR_alloc(ISC_STATUS_LENGTH);
+			status_vector = (ISC_STATUS*) ALLR_alloc(sizeof(ISC_STATUS_ARRAY));
 
 			port = get_server_port(client_pid, xpm, map_num, slot_num,
 				                   timestamp, status_vector);
