@@ -360,7 +360,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
    too small, compute the number of pad bytes required */
 
 	SLONG fill = (RHDF_SIZE - RHD_SIZE) - size;
-	if (fill < 0) {
+	if (fill < 0 || (new_rpb->rpb_flags & rpb_deleted)) {
 		fill = 0;
 	}
 
