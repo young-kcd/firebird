@@ -1,3 +1,22 @@
+2005-10-04 16:15  alexpeshkoff
+
+	* firebird2/src/jrd/isc_file.cpp (1.98):
+	
+	mark AIX case as untested in this file
+
+2005-10-04 10:00  robocop
+
+	* firebird2/src/qli/parse.cpp (1.40):
+	
+	Solve problem with QLI and SQL quoted identifiers created
+	previously.
+
+2005-10-04 07:15  robocop
+
+	* firebird2/src/extlib/ib_udf2.sql (1.8):
+	
+	Declare UDF lower as "LOWER" in ib_udf2.sql and go on with life.
+
 2005-10-03 15:46  dimitr
 
 	* firebird2/src/jrd/dyn.epp (1.78):
