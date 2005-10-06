@@ -970,7 +970,7 @@ void ISQL_errmsg(const ISC_STATUS* status)
 		}
 		if (Input_file)
 		{
-			const char* s = 0;
+			//const char* s = 0;
 			int linenum = -1;
 			if (status[0] == isc_arg_gds && status[1] == isc_dsql_error
 				&& status[2] == isc_arg_gds && status[3] == isc_sqlerr
@@ -982,11 +982,15 @@ void ISQL_errmsg(const ISC_STATUS* status)
 				case isc_dsql_procedure_err:
 				case isc_dsql_relation_err:
 				case isc_dsql_procedure_use_err:
-					if (vec[-2] == isc_arg_string)
-					{
-						s = (char*) vec[-1];
-						//STDERROUT(s);
-					}
+				case isc_dsql_no_dup_name:
+					vec = &status[8];
+					while (*vec++ != isc_arg_end)
+						if (vec[0] == isc_dsql_line_col_error && vec[1] == isc_arg_number)
+						{
+							linenum  = vec[2];
+							//STDERROUT(s);
+							break;
+						}
 					break;
 				case isc_dsql_token_unk_err:
 					if (status[8] == isc_arg_number)
@@ -998,6 +1002,7 @@ void ISQL_errmsg(const ISC_STATUS* status)
 					break;
 				}
 			}
+			/* CVC: Obsolete on 2005.10.06 because now line & column are numeric arguments.
 			if (s)
 			{
 				while (*s && !isdigit(*s))
@@ -1009,13 +1014,15 @@ void ISQL_errmsg(const ISC_STATUS* status)
 						linenum = linenum * 10 + *s - '0';
 				}
 			}
+			*/
 			if (linenum != -1)
 			{
 				linenum += Ifp.indev_line;
-				sprintf(errbuf, "At line %d in file %s", linenum, Ifp.indev_fn);
+				ISQL_msg_get(EXACTLINE, errbuf, (TEXT*)(IPTR) linenum, Ifp.indev_fn);
 			}
 			else
-				sprintf(errbuf, "After line %d in file %s", Ifp.indev_line, Ifp.indev_fn);
+                ISQL_msg_get(AFTERLINE, errbuf, (TEXT*)(IPTR) Ifp.indev_line, Ifp.indev_fn);
+
 			STDERROUT(errbuf);
 		}
 	}

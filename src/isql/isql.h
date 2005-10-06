@@ -202,13 +202,13 @@ const int NO_TRIGGERS_ON_REL		= 89;		// There are no triggers on table %s in thi
 const int NO_REL_OR_TRIGGER			= 90;		// There is no table or trigger %s in this database 
 const int NO_TRIGGERS				= 91;		// There are no triggers in this database 
 const int NO_CHECKS_ON_REL			= 92;		// There are no check constraints on table %s in this database 
-const int NO_COMMENTS               = 115;		// There are no comments for objects in this database.
+const int NO_COMMENTS				= 115;		// There are no comments for objects in this database.
 const int BUFFER_OVERFLOW			= 94;		// An isql command exceeded maximum buffer size 
 #ifdef SCROLLABLE_CURSORS
 const int HLP_SETFETCH				= 95;		// \tSET AUTOfetch  -- toggle autofetch of records\n
 #endif
 
-const int NO_ROLES					= 95;		// There are no roles in this database 
+const int NO_ROLES					= 95;		// There are no roles in this database
 const int NO_REL_OR_PROC_OR_ROLE	= 96;		// There is no table, stored procedure, or
 											// role %s in this database
 const int NO_GRANT_ON_ROL			= 97;		// There is no membership privilege granted
@@ -216,7 +216,7 @@ const int NO_GRANT_ON_ROL			= 97;		// There is no membership privilege granted
 const int UNEXPECTED_EOF			= 98;		// Expected end of statement, encountered EOF
 const int TIME_ERR					= 101;		// Bad TIME: %s\n 
 const int HLP_OBJTYPE3				= 102;		// Some more objects 
-const int NO_ROLE					= 103;
+const int NO_ROLE					= 103;		// There is no role %s in this database
 const int USAGE4 					= 104;		// Usage message 4
 const int INCOMPLETE_STR			= 105;		// Incomplete string in %s 
 const int HLP_SETSQLDIALECT			= 106;		// \tSET SQL DIALECT <n>    -- set sql dialect to <n>
@@ -225,12 +225,14 @@ const int HLP_SETPLANONLY			= 108;		// toggle display of query plan without exec
 const int HLP_SETHEADING			= 109;		// toggle display of query column titles
 const int HLP_SETBAIL				= 110;		// toggle bailing out on errors in non-interactive mode
 const int USAGE3 					= 111;		// Usage message 3
-const int TIME_PROMPT               = 112;		// Enter %s as H:M:S>
-const int TIMESTAMP_PROMPT          = 113;      // Enter %s as Y/MON/D H:MIN:S[.MSEC]>
+const int TIME_PROMPT				= 112;		// Enter %s as H:M:S>
+const int TIMESTAMP_PROMPT			= 113;		// Enter %s as Y/MON/D H:MIN:S[.MSEC]>
 const int TIMESTAMP_ERR				= 114;		// Bad TIMESTAMP: %s\n
-const int ONLY_FIRST_BLOBS          = 116;		// Printing only the first %d blobs.
-const int MSG_TABLES                = 117;      // Tables:
-const int MSG_FUNCTIONS             = 118;      // Functions:
+const int ONLY_FIRST_BLOBS			= 116;		// Printing only the first %d blobs.
+const int MSG_TABLES				= 117;		// Tables:
+const int MSG_FUNCTIONS				= 118;		// Functions:
+const int EXACTLINE					= 119;		// At line %d in file %s
+const int AFTERLINE					= 120;		// After line %d in file %s
 
 // Initialize types
 
