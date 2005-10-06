@@ -1,3 +1,24 @@
+2005-10-05 10:54  dimitr
+
+	* firebird2/src/jrd/dpm.epp (1.60):
+	
+	Restored the fragmentation logic I removed one year ago.  I cannot
+	reproduce the old bug anymore and this code allows smaller version
+	stubs.
+
+2005-10-05 10:39  robocop
+
+	* firebird2/src/remote/xnet.cpp (1.65):
+	
+	Fix allocation bug.
+
+2005-10-05 08:23  robocop
+
+	* firebird2/builds/win32/msvc6/intl.dsp (1.26):
+	
+	Fix MSVC6 "intl" project file that Adriano invalidated accidentally
+	by manual editing.
+
 2005-10-04 16:15  alexpeshkoff
 
 	* firebird2/src/jrd/isc_file.cpp (1.98):
