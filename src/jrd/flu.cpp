@@ -222,6 +222,8 @@ namespace Jrd
 			return Module(im);
 		}
 
+		bool prohibited = false;
+
 		// apply suffix (and/or prefix) and try that name
 		Firebird::PathName module(initialModule);
 		for (int i = 0; i < sizeof(libfixes) / sizeof(Libfix); i++)
@@ -251,7 +253,7 @@ namespace Jrd
 
 			if (udf)
 			{
-				// UdfAccess  verification
+				// UdfAccess verification
 				Firebird::PathName path, relative;
 
 				// Search for module name in UdfAccess restricted 
@@ -271,20 +273,19 @@ namespace Jrd
 				ModuleLoader::Module* mlm = ModuleLoader::loadModule(fixedModule);
 				if (mlm)
 				{
-					if (! ok)
+					if (ok)
 					{
-						delete mlm;
-						// module loadable, but prohibited in configuration
-						ERR_post(isc_conf_access_denied,
-							isc_arg_string, "UDF/BLOB-filter module",
-							isc_arg_string, ERR_cstring(fixedModule.c_str()),
-							isc_arg_end);
+						im = FB_NEW(*getDefaultMemoryPool())
+							InternalModule(*getDefaultMemoryPool(), mlm,
+								initialModule, fixedModule);
+						loadedModules().add(im);
+						return Module(im);
 					}
-					im = FB_NEW(*getDefaultMemoryPool())
-						InternalModule(*getDefaultMemoryPool(), mlm,
-							initialModule, fixedModule);
-					loadedModules().add(im);
-					return Module(im);
+					else
+					{
+						prohibited = true;
+						delete mlm;
+					}
 				}
 			}
 			else
@@ -302,6 +303,16 @@ namespace Jrd
 				}
 			}
 		}
+
+		// module is loadable, but prohibited in configuration
+		if (prohibited)
+		{
+			ERR_post(isc_conf_access_denied,
+				isc_arg_string, "UDF/BLOB-filter module",
+				isc_arg_string, ERR_cstring(initialModule.c_str()),
+				isc_arg_end);
+		}
+
 		// let others raise 'missing library' error if needed
 		return Module();
 	}
