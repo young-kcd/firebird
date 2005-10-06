@@ -192,7 +192,9 @@ static void assign_fld_dtype_from_dsc(dsql_fld*, const dsc*);
 static void check_unique_fields_names(StrArray& names, const dsql_nod* fields);
 static dsql_nod* compose(dsql_nod*, dsql_nod*, NOD_TYPE);
 static dsql_nod* explode_outputs(dsql_req*, const dsql_prc*);
-static void field_error(const TEXT*, const TEXT*, const dsql_nod*);
+static void field_appears_once(const dsql_nod*, const dsql_nod*, const bool);
+static void field_duplication(const TEXT*, const TEXT*, const dsql_nod*, const bool);
+static void field_unknown(const TEXT*, const TEXT*, const dsql_nod*);
 static dsql_par* find_dbkey(const dsql_req*, const dsql_nod*);
 static dsql_par* find_record_version(const dsql_req*, const dsql_nod*);
 static bool invalid_reference(const dsql_ctx*, const dsql_nod*,
@@ -331,13 +333,13 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 		procedure = METD_get_procedure(request, relation_name);
 		if (!procedure)
 		{
-			TEXT linecol[64];
-			sprintf (linecol, "At line %d, column %d.",
-					(int) relation_node->nod_line, (int) relation_node->nod_column);
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204, isc_arg_gds,
-						isc_dsql_procedure_err, isc_arg_gds, isc_random,
-						isc_arg_string, relation_name->str_data, isc_arg_gds,
-						isc_random, isc_arg_string, linecol, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
+						isc_arg_gds, isc_dsql_procedure_err,
+						isc_arg_gds, isc_random, isc_arg_string, relation_name->str_data,
+						isc_arg_gds, isc_dsql_line_col_error,
+						isc_arg_number, (int) relation_node->nod_line,
+						isc_arg_number, (int) relation_node->nod_column,
+						0);
 		}
 	}
 	else
@@ -349,24 +351,24 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 		}
 		if (!relation && !procedure)
 		{
-			TEXT linecol[64];
-			sprintf (linecol, "At line %d, column %d.",
-					(int) relation_node->nod_line, (int) relation_node->nod_column);
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204, isc_arg_gds,
-						isc_dsql_relation_err, isc_arg_gds, isc_random,
-						isc_arg_string, relation_name->str_data, isc_arg_gds,
-						isc_random, isc_arg_string, linecol, 0);
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
+						isc_arg_gds, isc_dsql_relation_err,
+						isc_arg_gds, isc_random, isc_arg_string, relation_name->str_data,
+						isc_arg_gds, isc_dsql_line_col_error,
+						isc_arg_number, (int) relation_node->nod_line,
+						isc_arg_number, (int) relation_node->nod_column,
+						0);
 		}
 	}
 
 	if (procedure && !procedure->prc_out_count) {
-		TEXT linecol[64];
-		sprintf (linecol, "At line %d, column %d.",
-				(int) relation_node->nod_line, (int) relation_node->nod_column);
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 84, isc_arg_gds,
-					isc_dsql_procedure_use_err, isc_arg_string,
-					relation_name->str_data,  isc_arg_gds, isc_random,
-					isc_arg_string, linecol, 0);
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 84,
+					isc_arg_gds, isc_dsql_procedure_use_err,
+					isc_arg_string, relation_name->str_data,
+					isc_arg_gds, isc_dsql_line_col_error,
+					isc_arg_number, (int) relation_node->nod_line,
+					isc_arg_number, (int) relation_node->nod_column,
+					0);
 	}
 
 	// Set up context block.
@@ -776,7 +778,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		{
 			dsql_nod* sub2 = input->nod_arg[1];
 			if (sub2->nod_type == nod_list) {
-				USHORT list_item_count = 0;
+				int list_item_count = 0;
 
 				node = NULL;
 				dsql_nod** ptr = sub2->nod_arg;
@@ -791,11 +793,10 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 					node = compose(node, temp, nod_or);
 				}
 				if (list_item_count >= MAX_MEMBER_LIST)
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -901,
 							  isc_arg_gds, isc_imp_exc,
-							  isc_arg_gds, isc_random,
-							  isc_arg_string,
-							  "too many values (more than 1500) in member list to match against",
+							  isc_arg_gds, isc_dsql_too_many_values,
+							  isc_arg_number, MAX_MEMBER_LIST,
 							  0);
 				return PASS1_node(request, node, proc_flag);
 			}
@@ -2286,7 +2287,92 @@ static dsql_nod* explode_outputs( dsql_req* request, const dsql_prc* procedure)
 
 /**
 
- 	field_error
+ 	field_appears_once
+
+    @brief	Check that a field is named only once in INSERT or UPDATE statements.
+
+
+    @param fields
+    @param old_fields
+	@param is_insert
+
+ **/
+static void field_appears_once(const dsql_nod* fields, const dsql_nod* old_fields,
+							   const bool is_insert)
+{
+	for (int i = 0; i < fields->nod_count; ++i)
+	{
+		const dsql_nod* elem1 = fields->nod_arg[i];
+		if (elem1->nod_type == nod_assign && !is_insert)
+			elem1 = elem1->nod_arg[1]; // 0 = value, 1 = field.
+
+		if (elem1->nod_type == nod_field)
+		{
+			const char* n1 = reinterpret_cast<dsql_fld*>(elem1->nod_arg[e_fld_field])->fld_name;
+			for (int j = i + 1; j < fields->nod_count; ++j)
+			{
+				const dsql_nod* elem2 = fields->nod_arg[j];
+				if (elem2->nod_type == nod_assign && !is_insert)
+					elem2 = elem2->nod_arg[1]; // 0 = value, 1 = field.
+
+				if (elem2->nod_type == nod_field)
+				{
+					const char* n2 = reinterpret_cast<dsql_fld*>(elem2->nod_arg[e_fld_field])->fld_name;
+					if (strcmp(n1, n2) == 0)
+					{
+						const dsql_ctx* tmp_ctx = (dsql_ctx*) elem2->nod_arg[e_fld_context];
+						const dsql_rel* bad_rel = tmp_ctx ? tmp_ctx->ctx_relation : 0;
+						field_duplication(bad_rel ? bad_rel->rel_name : 0,
+										n2,
+										is_insert ? old_fields->nod_arg[j]: old_fields->nod_arg[j]->nod_arg[1], 
+										is_insert);
+					}
+				}
+			}
+		}
+	}
+}
+
+
+/**
+
+ 	field_duplication
+
+    @brief	Report a field duplication error in INSERT or UPDATE statements.
+
+
+    @param qualifier_name
+    @param field_name
+    @param flawed_node
+	@param is_insert
+
+ **/
+static void field_duplication(const TEXT* qualifier_name, const TEXT* field_name,
+	const dsql_nod* flawed_node, const bool is_insert)
+{
+	TEXT field_buffer[MAX_SQL_IDENTIFIER_SIZE * 2];
+
+	if (qualifier_name)
+	{
+		sprintf(field_buffer, "%.*s.%.*s", MAX_SQL_IDENTIFIER_LEN, qualifier_name,
+				MAX_SQL_IDENTIFIER_LEN, field_name);
+		field_name = field_buffer;
+	}
+
+	ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -206,
+			  isc_arg_gds, isc_dsql_no_dup_name,
+			  isc_arg_string, field_name,
+			  isc_arg_string, is_insert ? "INSERT" : "UPDATE",
+			  isc_arg_gds, isc_dsql_line_col_error,
+			  isc_arg_number, (int) flawed_node->nod_line,
+			  isc_arg_number, (int) flawed_node->nod_column,
+			  0);
+}
+
+
+/**
+
+ 	field_unknown
 
     @brief	Report a field parsing recognition error.
 
@@ -2296,36 +2382,50 @@ static dsql_nod* explode_outputs( dsql_req* request, const dsql_prc* procedure)
     @param flawed_node
 
  **/
-static void field_error(const TEXT* qualifier_name, const TEXT* field_name,
+static void field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
 	const dsql_nod* flawed_node)
 {
-    TEXT field_string[64], linecol[64];
+	TEXT field_buffer[MAX_SQL_IDENTIFIER_SIZE * 2];
 
-	if (qualifier_name) {
-		sprintf(field_string, "%.31s.%.31s", qualifier_name,
-				field_name ? field_name : "*");
-		field_name = field_string;
+	if (qualifier_name)
+	{
+		sprintf(field_buffer, "%.*s.%.*s", MAX_SQL_IDENTIFIER_LEN, qualifier_name,
+				MAX_SQL_IDENTIFIER_LEN, field_name ? field_name : "*");
+		field_name = field_buffer;
 	}
 
-    if (flawed_node)
-        sprintf (linecol, "At line %d, column %d.",
-                 (int) flawed_node->nod_line, (int) flawed_node->nod_column);
-    else
-        sprintf (linecol, "At unknown line and column.");
-
-	if (field_name)
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
-				  isc_arg_gds, isc_dsql_field_err,
-				  isc_arg_gds, isc_random, isc_arg_string, field_name,
-                  isc_arg_gds, isc_random,
-                  isc_arg_string, linecol,
-                  0);
+	if (flawed_node)
+	{
+		if (field_name)
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -206,
+					  isc_arg_gds, isc_dsql_field_err,
+					  isc_arg_gds, isc_random, isc_arg_string, field_name,
+					  isc_arg_gds, isc_dsql_line_col_error,
+					  isc_arg_number, (int) flawed_node->nod_line,
+					  isc_arg_number, (int) flawed_node->nod_column,
+					  0);
+		else
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -206,
+					  isc_arg_gds, isc_dsql_field_err,
+					  isc_arg_gds, isc_dsql_line_col_error,
+					  isc_arg_number, (int) flawed_node->nod_line,
+					  isc_arg_number, (int) flawed_node->nod_column,
+					  0);
+	}
 	else
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
-				  isc_arg_gds, isc_dsql_field_err,
-                  isc_arg_gds, isc_random,
-                  isc_arg_string, linecol,
-                  0);
+	{
+		if (field_name)
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -206,
+					  isc_arg_gds, isc_dsql_field_err,
+					  isc_arg_gds, isc_random, isc_arg_string, field_name,
+					  isc_arg_gds, isc_dsql_unknown_pos,
+					  0);
+		else
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -206,
+					  isc_arg_gds, isc_dsql_field_err,
+					  isc_arg_gds, isc_dsql_unknown_pos,
+					  0);
+	}
 }
 
 
@@ -3560,7 +3660,7 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 
 // field unresolved
 
-	field_error(reinterpret_cast<const char*>(qualifier ? qualifier->str_data : 0),
+	field_unknown(reinterpret_cast<const char*>(qualifier ? qualifier->str_data : 0),
 				DB_KEY_STRING, input);
 
 	return NULL;
@@ -3571,7 +3671,7 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 
  	pass1_delete
 
-    @brief	Process INSERT statement.
+    @brief	Process DELETE statement.
 
 
     @param request
@@ -4052,7 +4152,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
     /* CVC: PLEASE READ THIS EXPLANATION IF YOU NEED TO CHANGE THIS CODE.
        You should ensure that this function:
        1.- Never returns NULL. In such case, it such fall back to an invocation
-       to field_error() near the end of this function. None of the multiple callers
+       to field_unknown() near the end of this function. None of the multiple callers
        of this function (inside this same module) expect a null pointer, hence they
        will crash the engine in such case.
        2.- Doesn't allocate more than one field in "node". Either you put a break,
@@ -4297,10 +4397,10 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
         return node;
     }
 
-	field_error(qualifier ? (TEXT*) qualifier->str_data : NULL,
+	field_unknown(qualifier ? (TEXT*) qualifier->str_data : NULL,
 				name ? (TEXT*) name->str_data : NULL, input);
 
-	// CVC: field_error() calls ERRD_post() that never returns, so the next line
+	// CVC: field_unknown() calls ERRD_post() that never returns, so the next line
 	// is only to make the compiler happy.
 	return NULL;
 }
@@ -4931,7 +5031,7 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 	request->req_type = REQ_INSERT;
 	dsql_nod* node = MAKE_node(nod_store, e_sto_count);
 
-// Process SELECT expression, if present
+	// Process SELECT expression, if present
 
 	dsql_nod* values;
 	dsql_nod* rse = input->nod_arg[e_ins_select];
@@ -4942,7 +5042,7 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 	else
 		values = PASS1_node(request, input->nod_arg[e_ins_values], false);
 
-// Process relation
+	// Process relation
 
 	dsql_nod* temp_rel = pass1_relation(request, input->nod_arg[e_ins_relation]);
 	node->nod_arg[e_sto_relation] = temp_rel;
@@ -4950,11 +5050,15 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 	DEV_BLKCHK(context, dsql_type_ctx);
 	dsql_rel* relation = context->ctx_relation;
 
-// If there isn't a field list, generate one
+	// If there isn't a field list, generate one
 
 	dsql_nod* fields = input->nod_arg[e_ins_fields];
 	if (fields) {
+		const dsql_nod* old_fields = fields; // for error reporting.
 		fields = PASS1_node(request, fields, false);
+		// We do not allow cases like INSERT INTO T(f1, f2, f1)...
+		field_appears_once(fields, old_fields, true);
+			
         // begin IBO hack
 		// 02-May-2004, Nickolay Samofatov. Do not constify ptr further e.g. to
 		// const dsql_nod* const* .... etc. It chokes GCC 3.4.0
@@ -4975,10 +5079,11 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
                 const dsql_fld* bad_fld = (dsql_fld*) temp2->nod_arg[e_fld_field];
                 // At this time, "fields" has been replaced by the processed list in
                 // the same variable, so we refer again to input->nod_arg[e_ins_fields].
+                // CVC: After three years, made old_fields for that purpose.
 
-                field_error (bad_rel ? (TEXT*) bad_rel->rel_name : NULL,
+                field_unknown(bad_rel ? (TEXT*) bad_rel->rel_name : NULL,
                              bad_fld ? (TEXT*) bad_fld->fld_name : NULL,
-                             input->nod_arg[e_ins_fields]->nod_arg[ptr - fields->nod_arg]);
+                             old_fields->nod_arg[ptr - fields->nod_arg]);
             }
         }
         // end IBO hack
@@ -4997,7 +5102,7 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 		fields = MAKE_list(stack);
 	}
 
-// Match field fields and values
+	// Match field fields and values
 
 	if (fields->nod_count != values->nod_count) {
 		// count of column list and value list don't match
@@ -7168,6 +7273,8 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 		anode->nod_arg[e_mdc_update] = PASS1_node(request, relation, false);
 		anode->nod_arg[e_mdc_statement] =
 			PASS1_statement(request, input->nod_arg[e_upd_statement], false);
+		// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
+		field_appears_once(anode->nod_arg[e_mdc_statement], input->nod_arg[e_upd_statement], false);
 		request->req_context->pop();
 		return anode;
 	}
@@ -7178,11 +7285,13 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 	node->nod_arg[e_mod_update] = PASS1_node(request, relation, false);
 	node->nod_arg[e_mod_statement] =
 		PASS1_statement(request, input->nod_arg[e_upd_statement], false);
+	// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
+	field_appears_once(node->nod_arg[e_mod_statement], input->nod_arg[e_upd_statement], false);
 
 	set_parameters_name(node->nod_arg[e_mod_statement],
 						node->nod_arg[e_mod_update]);
 
-// Generate record selection expression
+	// Generate record selection expression
 
 	dsql_nod* rse;
 	if (cursor)
@@ -7220,6 +7329,7 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 	return node;
 }
 
+
 /**
 	resolve_variable_name
 
@@ -7246,6 +7356,7 @@ static dsql_nod* resolve_variable_name(const dsql_nod* var_nodes, const dsql_str
 
 	return NULL;
 }
+
 
 /**
 
@@ -7274,7 +7385,7 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
 			if (request->req_flags & REQ_trigger) // triggers only
 				return pass1_field(request, input, false, NULL);
 			else
-				field_error(0, 0, input);
+				field_unknown(0, 0, input);
 		}
 		var_name = (dsql_str*) input->nod_arg[e_fln_name];
 	}
@@ -7379,9 +7490,9 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
     // CVC: That's all [the fix], folks!
 
     if (var_name)
-        field_error(0, (TEXT*) var_name->str_data, input);
+        field_unknown(0, (TEXT*) var_name->str_data, input);
     else
-        field_error(0, 0, input);
+        field_unknown(0, 0, input);
 
 	return NULL;
 }

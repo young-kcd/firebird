@@ -1428,6 +1428,14 @@ C --
       PARAMETER (GDS__gbak_just_data                   = 336331033)
       INTEGER*4 GDS__gbak_data_only                  
       PARAMETER (GDS__gbak_data_only                   = 336331034)
+      INTEGER*4 GDS__dsql_too_many_values            
+      PARAMETER (GDS__dsql_too_many_values             = 336397041)
+      INTEGER*4 GDS__dsql_no_dup_name                
+      PARAMETER (GDS__dsql_no_dup_name                 = 336397042)
+      INTEGER*4 GDS__dsql_unknown_pos                
+      PARAMETER (GDS__dsql_unknown_pos                 = 336397043)
+      INTEGER*4 GDS__dsql_line_col_error             
+      PARAMETER (GDS__dsql_line_col_error              = 336397044)
       INTEGER*4 GDS__dsql_view_not_found             
       PARAMETER (GDS__dsql_view_not_found              = 336397047)
       INTEGER*4 GDS__dsql_table_not_found            

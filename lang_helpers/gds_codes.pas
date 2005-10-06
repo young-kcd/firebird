@@ -721,6 +721,10 @@ const
 	gds_gbak_mode_req                    = 336331031;
 	gds_gbak_just_data                   = 336331033;
 	gds_gbak_data_only                   = 336331034;
+	gds_dsql_too_many_values             = 336397041;
+	gds_dsql_no_dup_name                 = 336397042;
+	gds_dsql_unknown_pos                 = 336397043;
+	gds_dsql_line_col_error              = 336397044;
 	gds_dsql_view_not_found              = 336397047;
 	gds_dsql_table_not_found             = 336397048;
 	gds_dsql_too_old_ods                 = 336397058;

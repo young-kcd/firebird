@@ -743,6 +743,10 @@ const SLONG isc_gbak_not_ownr                    = 336331026L;
 const SLONG isc_gbak_mode_req                    = 336331031L;
 const SLONG isc_gbak_just_data                   = 336331033L;
 const SLONG isc_gbak_data_only                   = 336331034L;
+const SLONG isc_dsql_too_many_values             = 336397041L;
+const SLONG isc_dsql_no_dup_name                 = 336397042L;
+const SLONG isc_dsql_unknown_pos                 = 336397043L;
+const SLONG isc_dsql_line_col_error              = 336397044L;
 const SLONG isc_dsql_view_not_found              = 336397047L;
 const SLONG isc_dsql_table_not_found             = 336397048L;
 const SLONG isc_dsql_too_old_ods                 = 336397058L;
@@ -805,7 +809,7 @@ const SLONG isc_gstat_unexpected_eof             = 336920580L;
 const SLONG isc_gstat_open_err                   = 336920605L;
 const SLONG isc_gstat_read_err                   = 336920606L;
 const SLONG isc_gstat_sysmemex                   = 336920607L;
-const SLONG isc_err_max                          = 750;
+const SLONG isc_err_max                          = 754;
 
 #else /* c definitions */
 
@@ -1518,6 +1522,10 @@ const SLONG isc_err_max                          = 750;
 #define isc_gbak_mode_req                    336331031L
 #define isc_gbak_just_data                   336331033L
 #define isc_gbak_data_only                   336331034L
+#define isc_dsql_too_many_values             336397041L
+#define isc_dsql_no_dup_name                 336397042L
+#define isc_dsql_unknown_pos                 336397043L
+#define isc_dsql_line_col_error              336397044L
 #define isc_dsql_view_not_found              336397047L
 #define isc_dsql_table_not_found             336397048L
 #define isc_dsql_too_old_ods                 336397058L
@@ -1580,7 +1588,7 @@ const SLONG isc_err_max                          = 750;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          750
+#define isc_err_max                          754
 
 #endif
 
