@@ -462,8 +462,8 @@ C --
       PARAMETER (GDS__wal_err_expansion                = 335544524)
       INTEGER*4 GDS__wal_err_setup                   
       PARAMETER (GDS__wal_err_setup                    = 335544525)
-      INTEGER*4 GDS__wal_err_ww_sync                 
-      PARAMETER (GDS__wal_err_ww_sync                  = 335544526)
+      INTEGER*4 GDS__must_have_phys_field            
+      PARAMETER (GDS__must_have_phys_field             = 335544526)
       INTEGER*4 GDS__wal_err_ww_start                
       PARAMETER (GDS__wal_err_ww_start                 = 335544527)
       INTEGER*4 GDS__shutdown                        

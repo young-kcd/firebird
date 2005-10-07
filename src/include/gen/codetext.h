@@ -227,7 +227,7 @@ static const struct {
 	{"wal_err_jrn_comm", 335544523},
 	{"wal_err_expansion", 335544524},
 	{"wal_err_setup", 335544525},
-	{"wal_err_ww_sync", 335544526},
+	{"must_have_phys_field", 335544526},
 	{"wal_err_ww_start", 335544527},
 	{"shutdown", 335544528},
 	{"existing_priv_mod", 335544529},

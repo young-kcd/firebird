@@ -260,7 +260,7 @@ const SLONG isc_wal_err_logwrite                 = 335544522L;
 const SLONG isc_wal_err_jrn_comm                 = 335544523L;
 const SLONG isc_wal_err_expansion                = 335544524L;
 const SLONG isc_wal_err_setup                    = 335544525L;
-const SLONG isc_wal_err_ww_sync                  = 335544526L;
+const SLONG isc_must_have_phys_field             = 335544526L;
 const SLONG isc_wal_err_ww_start                 = 335544527L;
 const SLONG isc_shutdown                         = 335544528L;
 const SLONG isc_existing_priv_mod                = 335544529L;
@@ -1039,7 +1039,7 @@ const SLONG isc_err_max                          = 754;
 #define isc_wal_err_jrn_comm                 335544523L
 #define isc_wal_err_expansion                335544524L
 #define isc_wal_err_setup                    335544525L
-#define isc_wal_err_ww_sync                  335544526L
+#define isc_must_have_phys_field             335544526L
 #define isc_wal_err_ww_start                 335544527L
 #define isc_shutdown                         335544528L
 #define isc_existing_priv_mod                335544529L

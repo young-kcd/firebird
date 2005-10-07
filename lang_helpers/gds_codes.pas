@@ -238,7 +238,7 @@ const
 	gds_wal_err_jrn_comm                 = 335544523;
 	gds_wal_err_expansion                = 335544524;
 	gds_wal_err_setup                    = 335544525;
-	gds_wal_err_ww_sync                  = 335544526;
+	gds_must_have_phys_field             = 335544526;
 	gds_wal_err_ww_start                 = 335544527;
 	gds_shutdown                         = 335544528;
 	gds_existing_priv_mod                = 335544529;

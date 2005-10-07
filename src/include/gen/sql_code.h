@@ -224,7 +224,7 @@ static const SSHORT gds__sql_code [] = {
 -250 /* 203 wal_err_jrn_comm                 */,
 -251 /* 204 wal_err_expansion                */,
 -252 /* 205 wal_err_setup                    */,
--253 /* 206 wal_err_ww_sync                  */,
+-607 /* 206 must_have_phys_field             */,
 -254 /* 207 wal_err_ww_start                 */,
 -902 /* 208 shutdown                         */,
 -553 /* 209 existing_priv_mod                */,

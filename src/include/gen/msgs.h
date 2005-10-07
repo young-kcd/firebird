@@ -225,7 +225,7 @@ static const SCHAR * const messages[] = {
 	"WAL writer - Journal server communication error.  Please see Firebird log.",		/* 203, wal_err_jrn_comm */
 	"WAL buffers cannot be increased.  Please see Firebird log.",		/* 204, wal_err_expansion */
 	"WAL setup error.  Please see Firebird log.",		/* 205, wal_err_setup */
-	"WAL writer synchronization error for the database %s",		/* 206, wal_err_ww_sync */
+	"Can't have relation with only computed fields or constraints",		/* 206, must_have_phys_field */
 	"Cannot start WAL writer for the database %s",		/* 207, wal_err_ww_start */
 	"database %s shutdown",		/* 208, shutdown */
 	"cannot modify an existing user privilege",		/* 209, existing_priv_mod */
