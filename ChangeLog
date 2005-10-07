@@ -1,3 +1,32 @@
+2005-10-06 12:26  dimitr
+
+	* firebird2/src/jrd/flu.cpp (1.52):
+	
+	Restored the v1.5 diagnostics logic.  Don't report the access error
+	immediately as other suffix attempts could succeed.
+
+2005-10-06 09:01  robocop
+
+	* firebird2/src/: isql/isql.epp (1.156), isql/isql.h (1.50),
+	msgs/facilities.sql (1.39), msgs/history.sql (1.23),
+	msgs/messages.sql (1.47):
+	
+	Update isql accordingly to my previous Fix SF Bug #1292007 Move
+	more hardcoded error strings to the msg database.
+
+2005-10-06 08:08  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.23),
+	lang_helpers/gds_codes.pas (1.23), src/dsql/pass1.cpp (1.243),
+	src/include/gen/codetext.h (1.30), src/include/gen/iberror.h
+	(1.29), src/include/gen/msgs.h (1.39), src/include/gen/rdb_codes.h
+	(1.30), src/include/gen/sql_code.h (1.32), src/msgs/facilities.sql
+	(1.38), src/msgs/messages.sql (1.46), src/msgs/system_errors.sql
+	(1.20):
+	
+	Fix SF Bug #1292007 Move some hardcoded error texts to the msg
+	database.
+
 2005-10-05 10:54  dimitr
 
 	* firebird2/src/jrd/dpm.epp (1.60):
