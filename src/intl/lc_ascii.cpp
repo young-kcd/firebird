@@ -271,14 +271,7 @@ TEXTTYPE_ENTRY(WIN1251_c0_init)
 {
 	static const ASCII POSIX[] = "C.ISO8859_1";
 
-	if (FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
-	{
-		cache->texttype_fn_str_to_upper =	cp1251_str_to_upper;
-		cache->texttype_fn_str_to_lower =	cp1251_str_to_lower;
-		return true;
-	}
-	else
-		return false;
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 
@@ -371,99 +364,6 @@ const BYTE ASCII_SPACE			= 32;			// ASCII code for space
 		? (UCHAR) ((ch)-ASCII_UPPER_A+ASCII_LOWER_A) \
 		: (UCHAR) (ch))
 
-const UCHAR CP1251_UPPER_A		= 0xC0;
-const UCHAR CP1251_LOWER_A		= 0xE0;
-const UCHAR CP1251_UPPER_YA		= 0xDF;
-const UCHAR CP1251_LOWER_YA		= 0xFF;
-
-const UCHAR CP1251_UPPER_EX0	= 0xA8;	// ¨
-const UCHAR CP1251_LOWER_EX0	= 0xB8;	// ¸
-const UCHAR CP1251_UPPER_EX1	= 0xA5;	// ¥
-const UCHAR CP1251_LOWER_EX1	= 0xB4;	// ´
-const UCHAR CP1251_UPPER_EX2	= 0xAA;	// ª
-const UCHAR CP1251_LOWER_EX2	= 0xBA;	// º
-const UCHAR CP1251_UPPER_EX3	= 0xAF;	// ¯
-const UCHAR CP1251_LOWER_EX3	= 0xBF;	// ¿
-const UCHAR CP1251_UPPER_EX4	= 0xB2;	// ²
-const UCHAR CP1251_LOWER_EX4	= 0xB3;	// ³
-
-static inline UCHAR CP1251_UPPER(UCHAR ch)
-{
-	UCHAR res;
-
-	if (ch >= ASCII_LOWER_A && ch <= ASCII_LOWER_Z)
-	{
-		res = ch - ASCII_LOWER_A + ASCII_UPPER_A;
-	}
-	else if (ch >= CP1251_LOWER_A && ch <= CP1251_LOWER_YA)
-	{
-		res = ch - CP1251_LOWER_A + CP1251_UPPER_A;
-	}
-	else
-	{
-		switch (ch)
-		{
-		case CP1251_LOWER_EX0:
-			res = CP1251_UPPER_EX0;
-			break;
-		case CP1251_LOWER_EX1:
-			res = CP1251_UPPER_EX1;
-			break;
-		case CP1251_LOWER_EX2:
-			res = CP1251_UPPER_EX2;
-			break;
-		case CP1251_LOWER_EX3:
-			res = CP1251_UPPER_EX3;
-			break;
-		case CP1251_LOWER_EX4:
-			res = CP1251_UPPER_EX4;
-			break;
-		default:
-			res = ch;
-		}
-	}
-
-	return res;
-}
-
-static inline UCHAR CP1251_LOWER(UCHAR ch)
-{
-	UCHAR res;
-
-	if (ch >= ASCII_UPPER_A && ch <= ASCII_UPPER_Z)
-	{
-		res = ch - ASCII_UPPER_A + ASCII_LOWER_A;
-	}
-	else if (ch >= CP1251_UPPER_A && ch <= CP1251_UPPER_YA)
-	{
-		res = ch - CP1251_UPPER_A + CP1251_LOWER_A;
-	}
-	else
-	{
-		switch (ch)
-		{
-		case CP1251_UPPER_EX0:
-			res = CP1251_LOWER_EX0;
-			break;
-		case CP1251_UPPER_EX1:
-			res = CP1251_LOWER_EX1;
-			break;
-		case CP1251_UPPER_EX2:
-			res = CP1251_LOWER_EX2;
-			break;
-		case CP1251_UPPER_EX3:
-			res = CP1251_LOWER_EX3;
-			break;
-		case CP1251_UPPER_EX4:
-			res = CP1251_LOWER_EX4;
-			break;
-		default:
-			res = ch;
-		}
-	}
-
-	return res;
-}
 
 
 /*
@@ -597,42 +497,6 @@ ULONG famasc_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOut
 	const BYTE* const p = pOutStr;
 	while (iLen && iOutLen) {
 		*pOutStr++ = ASCII7_LOWER(*pStr);
-		pStr++;
-		iLen--;
-		iOutLen--;
-	}
-	if (iLen != 0)
-		return INTL_BAD_STR_LENGTH;
-	return (pOutStr - p);
-}
-
-
-ULONG cp1251_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
-{
-	fb_assert(pStr != NULL);
-	fb_assert(pOutStr != NULL);
-	fb_assert(iOutLen >= iLen);
-	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen) {
-		*pOutStr++ = CP1251_UPPER(*pStr);
-		pStr++;
-		iLen--;
-		iOutLen--;
-	}
-	if (iLen != 0)
-		return INTL_BAD_STR_LENGTH;
-	return (pOutStr - p);
-}
-
-
-ULONG cp1251_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
-{
-	fb_assert(pStr != NULL);
-	fb_assert(pOutStr != NULL);
-	fb_assert(iOutLen >= iLen);
-	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen) {
-		*pOutStr++ = CP1251_LOWER(*pStr);
 		pStr++;
 		iLen--;
 		iOutLen--;
