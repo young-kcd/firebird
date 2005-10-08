@@ -3644,7 +3644,7 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 			if ((!(context->ctx_relation) ||
 				strcmp(reinterpret_cast<const char*>(qualifier->str_data),
 						context->ctx_relation->rel_name)) &&
-				(!(context->ctx_alias)||
+				(!(context->ctx_alias) ||
 				strcmp(reinterpret_cast<const char*>(qualifier->str_data),
 						context->ctx_alias)))
 			{
