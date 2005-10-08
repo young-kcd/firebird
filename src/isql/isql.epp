@@ -259,10 +259,10 @@ static processing_state parse_arg(int, SCHAR**, SCHAR*, FILE**);
 #ifdef DEV_BUILD
 static processing_state passthrough(const char* cmd);
 #endif
-static SSHORT print_item(TEXT**, XSQLVAR*, SLONG);
+static SSHORT print_item(TEXT**, XSQLVAR*, const SLONG);
 static processing_state print_item_blob(FILE*, const XSQLVAR*, FB_API_HANDLE);
 static void print_item_numeric(SINT64, SSHORT, SSHORT, TEXT*);
-static processing_state print_line(XSQLDA*, const SLONG*, TEXT line[]);
+static processing_state print_line(XSQLDA*, const SLONG pad[], TEXT line[]);
 static void print_performance(perf* perf_before);
 static processing_state print_sqlda_input(const bool is_selectable);
 static void print_sqlda_output(const XSQLDA& sqlda);
@@ -2250,13 +2250,13 @@ static processing_state add_row(TEXT* tabname)
 
 				case SQL_VARYING:
 					{
-					vary* avary =
-						(vary*) ISQL_ALLOC((SLONG) (length + sizeof(USHORT)));
-					avary->vary_length = length;
-					strncpy(avary->vary_string, lastInputLine, length);
-					ivar->sqldata = (SCHAR*) avary;
-					ivar->sqllen = length + sizeof(USHORT);
-					break;
+						vary* avary =
+							(vary*) ISQL_ALLOC((SLONG) (length + sizeof(USHORT)));
+						avary->vary_length = length;
+						strncpy(avary->vary_string, lastInputLine, length);
+						ivar->sqldata = (SCHAR*) avary;
+						ivar->sqllen = length + sizeof(USHORT);
+						break;
 					}
 
 				case SQL_SHORT:
@@ -5707,7 +5707,7 @@ static processing_state passthrough(const char* cmd)
 
 static SSHORT print_item(TEXT** s,
 						 XSQLVAR* var,
-						 SLONG printlength)
+						 const SLONG length)
 {
 /**************************************
  *
@@ -5729,8 +5729,7 @@ static SSHORT print_item(TEXT** s,
 	const SSHORT dscale = var->sqlscale;
 
 	// The printlength should have in it the right length
-
-	const SLONG length = printlength;
+	//const SLONG length = printlength;
 
 	if (List) {
 		isqlGlob.printf("%-31s ", fb_utils::exact_name(var->aliasname));
@@ -5947,17 +5946,18 @@ static SSHORT print_item(TEXT** s,
 			string[var->sqllen] = '\0';
 			// See if it is character set OCTETS 
 			if (var->sqlsubtype == 1) {
-				TEXT* buff2 = (TEXT*) ISQL_ALLOC(2 * var->sqllen + 1);
+				const SLONG hex_len = 2 * var->sqllen;
+				TEXT* buff2 = (TEXT*) ISQL_ALLOC(hex_len + 1);
 				// Convert the string to hex digits 
 				for (USHORT i = 0; i < var->sqllen; i++) {
 					sprintf(&buff2[i * 2], "%02X", (UCHAR)string[i]);
 				}
-				buff2[(2 * var->sqllen + 1) - 1] = 0;
+				buff2[hex_len] = 0;
 				if (List) {
 					isqlGlob.printf("%s%s", buff2, NEWLINE);
 				}
 				else
-					sprintf(p, "%s ", buff2);
+					sprintf(p, "%-*s ", (int) length, buff2);
 				ISQL_FREE(buff2);
 			}
 			else if (List) {
@@ -6027,48 +6027,48 @@ static SSHORT print_item(TEXT** s,
 
 		case SQL_VARYING:
 			{
-			vary* avary = (vary*) var->sqldata;
+				vary* avary = (vary*) var->sqldata;
 
-			// Note: we allocated the dataspace 1 byte larger already
-			avary->vary_string[avary->vary_length] = 0;
+				// Note: we allocated the dataspace 1 byte larger already
+				avary->vary_string[avary->vary_length] = 0;
 
-			// If CHARACTER SET OCTETS, print two hex digits per octet
-			if (var->sqlsubtype == 1)
-			{
-				const SLONG hex_len = 2 * avary->vary_length;
-				char* buff2 = static_cast<char*>(ISQL_ALLOC(hex_len + 1));
-				char* bp = buff2;
-
-				for (USHORT i = 0; i < avary->vary_length; i++, bp += 2)
+				// If CHARACTER SET OCTETS, print two hex digits per octet
+				if (var->sqlsubtype == 1)
 				{
-					sprintf(bp, "%02X",
-					static_cast<UCHAR>(avary->vary_string[i]));
+					const SLONG hex_len = 2 * avary->vary_length;
+					char* buff2 = static_cast<char*>(ISQL_ALLOC(hex_len + 1));
+					char* bp = buff2;
+
+					for (USHORT i = 0; i < avary->vary_length; i++, bp += 2)
+					{
+						sprintf(bp, "%02X",
+						static_cast<UCHAR>(avary->vary_string[i]));
+					}
+					buff2[hex_len] = '\0'; // there is an extra byte for terminator
+
+					if (List)
+					{
+						isqlGlob.printf("%s%s", buff2, NEWLINE);
+					}
+					else
+					{
+						// Truncate if necessary
+						sprintf(p, "%-*.*s ", static_cast<int>(length),
+							static_cast<int>(MIN(length, hex_len)), buff2);
+					}
+					ISQL_FREE(buff2);
 				}
-				buff2[hex_len] = '\0'; // there is an extra byte for terminator
-
-				if (List)
-				{
-					isqlGlob.printf("%s%s", buff2, NEWLINE);
+				else if (List) {
+					isqlGlob.printf("%s%s", avary->vary_string, NEWLINE);
 				}
-				else
-				{
+				else {
 					// Truncate if necessary
-					sprintf(p, "%-*.*s ", static_cast<int>(length),
-						static_cast<int>(MIN(length, hex_len)), buff2);
+					if (length < avary->vary_length)
+						avary->vary_length = length;
+					sprintf(p, "%-*.*s ", (int) length, (int) avary->vary_length,
+							avary->vary_string);
 				}
-				ISQL_FREE(buff2);
-			}
-			else if (List) {
-				isqlGlob.printf("%s%s", avary->vary_string, NEWLINE);
-			}
-			else {
-				// Truncate if necessary 
-				if (length < avary->vary_length)
-					avary->vary_length = length;
-				sprintf(p, "%-*.*s ", (int) length, (int) avary->vary_length,
-						avary->vary_string);
-			}
-			break;
+				break;
 			}
 
 		default:
@@ -6263,7 +6263,7 @@ static void print_item_numeric(SINT64 value,
 
 
 static processing_state print_line(XSQLDA* sqlda,
-					  const SLONG* pad,
+					  const SLONG pad[],
 					  TEXT line[])
 {
 /**************************************
