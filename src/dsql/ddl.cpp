@@ -1008,10 +1008,12 @@ static void define_computed(dsql_req* request,
 		save_desc.dsc_length = field->fld_length;
 		fb_assert(field->fld_scale <= MAX_SCHAR);
 		save_desc.dsc_scale = (SCHAR) field->fld_scale;
+		save_desc.dsc_sub_type = field->fld_sub_type;
 
 		field->fld_dtype = 0;
 		field->fld_length = 0;
 		field->fld_scale = 0;
+		field->fld_sub_type = 0;
 	}
 
 	PASS1_make_context(request, relation_node);
@@ -1044,12 +1046,26 @@ static void define_computed(dsql_req* request,
 		field->fld_dtype  = save_desc.dsc_dtype;
 		field->fld_length = save_desc.dsc_length;
 		field->fld_scale  = save_desc.dsc_scale;
+		if (field->fld_dtype <= dtype_any_text)
+		{
+			field->fld_character_set_id = DSC_GET_CHARSET(&save_desc);
+			field->fld_collation_id= DSC_GET_COLLATE(&save_desc);
+		}
+		else
+			field->fld_sub_type = save_desc.dsc_sub_type;
 	}
 	else if (field) {
 		// use size calculated
 		field->fld_dtype  = desc.dsc_dtype;
 		field->fld_length = desc.dsc_length;
 		field->fld_scale  = desc.dsc_scale;
+		if (field->fld_dtype <= dtype_any_text)
+		{
+			field->fld_character_set_id = DSC_GET_CHARSET(&desc);
+			field->fld_collation_id= DSC_GET_COLLATE(&desc);
+		}
+		else
+			field->fld_sub_type = desc.dsc_sub_type;
 	}
 
 	request->req_type = REQ_DDL;
@@ -1544,7 +1560,7 @@ static void define_set_default_trg(	dsql_req*    request,
 
 	request->end_blr();
 
-    request->append_number(isc_dyn_system_flag,
+	request->append_number(isc_dyn_system_flag,
                             fb_sysflag_referential_constraint);
 
 	// no trg_source and no trg_description
@@ -1819,7 +1835,7 @@ static void define_field(
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_dsql_domain_not_found,
-                      isc_arg_string, domain_name->str_data,
+					  isc_arg_string, domain_name->str_data,
 					  // Specified domain or source field does not exist
 					  0);
 
@@ -2848,6 +2864,7 @@ static void define_relation( dsql_req* request)
 		}
 	}
 
+	request->req_relation->rel_flags &= ~REL_creating;
 	request->append_uchar(isc_dyn_end);
 }
 
@@ -6162,7 +6179,7 @@ static void save_relation( dsql_req* request, const dsql_str* relation_name)
 
 	request->req_flags |= REQ_save_metadata;
 
-	dsql_nod* ddl_node = request->req_ddl_node;
+	const dsql_nod* ddl_node = request->req_ddl_node;
 	dsql_rel* relation;
 
 	if (ddl_node->nod_type == nod_mod_relation)
@@ -6177,6 +6194,8 @@ static void save_relation( dsql_req* request, const dsql_str* relation_name)
 			relation->rel_data + relation_name->str_length + 1;
 		strcpy(relation->rel_name, (SCHAR *) relation_name->str_data);
 		*relation->rel_owner = 0;
+		if (ddl_node->nod_type == nod_def_relation || ddl_node->nod_type == nod_redef_relation)
+			relation->rel_flags = REL_creating;
 	}
 	request->req_relation = relation;
 }

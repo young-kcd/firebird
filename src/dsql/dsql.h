@@ -196,10 +196,11 @@ public:
 
 // rel_flags bits
 enum rel_flags_vals {
-	REL_new_relation	= 1, //!< relation is newly defined, not committed yet
+	REL_new_relation	= 1, //!< relation exists in sys tables, not committed yet
 	REL_dropped			= 2, //!< relation has been dropped
 	REL_view			= 4, //!< relation is a view 
-	REL_external		= 8  //!< relation is an external table
+	REL_external		= 8, //!< relation is an external table
+	REL_creating		= 16 //!< we are creating the bare relation in memory
 };
 
 class dsql_fld : public pool_alloc_rpt<SCHAR, dsql_type_fld>

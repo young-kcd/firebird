@@ -1092,7 +1092,10 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		relation = context->ctx_relation;
 		if (relation != 0) {
 			desc->dsc_dtype = dtype_text;
-			desc->dsc_length = relation->rel_dbkey_length;
+			if (relation->rel_flags & REL_creating)
+				desc->dsc_length = 8;
+			else
+				desc->dsc_length = relation->rel_dbkey_length;
 			desc->dsc_flags = 0;
 			desc->dsc_ttype() = ttype_binary;
 		}
