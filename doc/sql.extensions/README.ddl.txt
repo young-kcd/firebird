@@ -53,7 +53,7 @@ udf/ib_udf2.sql
 and commit afterwards, preferable when no more users are connected to the database.
 Note the "2" at the end of the name. The original script for FB v1.5 is still
 available in the same directory.
-The directories upgrade" and "udf" are inside the home directory of your FB v2
+The directories "upgrade" and "udf" are inside the home directory of your FB v2
 installation.
 
 
