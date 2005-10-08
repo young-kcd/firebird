@@ -1,3 +1,20 @@
+2005-10-07 17:38  asfernandes
+
+	* firebird2/src/intl/lc_ascii.cpp (1.16):
+	
+	Remove ugly WIN1251 upper/lower - use default
+
+2005-10-07 10:52  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.24),
+	lang_helpers/gds_codes.pas (1.24), src/include/gen/codetext.h
+	(1.31), src/include/gen/iberror.h (1.30), src/include/gen/msgs.h
+	(1.40), src/include/gen/sql_code.h (1.33), src/jrd/dfw.epp (1.163),
+	src/msgs/facilities.sql (1.40), src/msgs/history.sql (1.24),
+	src/msgs/messages.sql (1.48), src/msgs/system_errors.sql (1.21):
+	
+	Moved another hardcoded error string to the msg database.
+
 2005-10-06 12:26  dimitr
 
 	* firebird2/src/jrd/flu.cpp (1.52):
