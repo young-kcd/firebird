@@ -2,6 +2,33 @@
   * v2.0 Beta 1
   **************
 
+    * Fixed SF bug #217042
+        IB doesn't validate weird constructions
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Alpha 3 bug
+        Deletes perform slower than in v1.5
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #1292007
+        INSERT and UPDATE allow duplicate field name
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Alpha 3 bug (SF #1305110)
+        FB 2.0 clash between UDF and internal LOWER function
+      Note(s):
+        UDF lower is now declared as "LOWER" in ib_udf2.sql
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed SF bug #223128
+        SYSDBA can grant non existent roles
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Fixed Alpha 3 bug
         Broken GSEC compatibility (-database switch)
       Contributor(s):
