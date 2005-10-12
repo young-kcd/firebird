@@ -1030,7 +1030,7 @@ static void printhelp(void)
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg87, NULL, NULL, NULL, NULL, NULL);
-/* -server <server to manage> */
+/* -database <database to manage> */
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg88, NULL, NULL, NULL, NULL, NULL);
