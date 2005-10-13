@@ -2253,13 +2253,16 @@ static void insert_page(thread_db* tdbb, blb* blob)
 		window.win_flags = 0;
 		page = (blob_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_blob);
 	}
-	else {
+	else if (l < blob->blb_pointers) {
 		page = (blob_page*) DPM_allocate(tdbb, &window);
 		page->blp_header.pag_flags = Ods::blp_pointers;
 		page->blp_header.pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
 		vector->resize(l + 1);
 		(*vector)[l] = window.win_page;
+	}
+	else {
+		ERR_post(isc_imp_exc, isc_arg_gds, isc_blobtoobig, 0);
 	}
 
 	CCH_precedence(tdbb, &window, page_number);
