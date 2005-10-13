@@ -669,42 +669,6 @@ void INI_init2(void)
 }
 
 
-const jrd_trg* INI_lookup_sys_trigger(jrd_rel*					relation,
-									  const jrd_trg*			trigger,
-									  const UCHAR**				blr,
-									  UCHAR*					trigger_type,
-									  const TEXT**				trigger_name,
-									  USHORT*					trig_flags)
-{
-/**************************************
- *
- *	I N I _ l o o k u p _ s y s _ t r i g g e r
- *
- **************************************
- *
- * Functional description
- *	Lookup the next trigger for a system relation.
- *
- **************************************/
-
-	trigger =  (trigger) ? trigger + 1 : triggers;
-
-	for (; trigger->trg_relation; trigger++)
-	{
-		if (relation->rel_name == names[trigger->trg_relation])
-		{
-			*blr = trigger->trg_blr;
-			*trigger_type = trigger->trg_type;
-			*trigger_name = trigger->trg_name;
-			*trig_flags = trigger->trg_flags;
-			return trigger;
-		}
-	}
-
-	return NULL;
-}
-
-
 void INI_update_database()
 {
 /**************************************

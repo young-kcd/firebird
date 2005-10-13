@@ -1251,13 +1251,14 @@ void MET_load_trigger(thread_db* tdbb,
 		return;
 	}
 
-/* No need to load triggers for ReadOnly databases,
-   since INSERT/DELETE/UPDATE statements are not going to be allowed */
+	// No need to load triggers for ReadOnly databases,
+	// since INSERT/DELETE/UPDATE statements are not going to be allowed
+
 	if (dbb->dbb_flags & DBB_read_only) {
 		return;
 	}
 
-/* Scan RDB$TRIGGERS next */
+	// Scan RDB$TRIGGERS next
 
 	jrd_req* trigger_request = CMP_find_request(tdbb, irq_s_triggers, IRQ_REQUESTS);
 
@@ -2446,7 +2447,7 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 
 	relation->rel_flags &= ~REL_sys_triggers;
 
-/* release any triggers in case of a rescan */
+	// Release any triggers in case of a rescan
 
 	if (relation->rel_pre_store)
 		MET_release_triggers(tdbb, &relation->rel_pre_store);
@@ -2461,8 +2462,8 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 	if (relation->rel_post_modify)
 		MET_release_triggers(tdbb, &relation->rel_post_modify);
 
-/* No need to load triggers for ReadOnly databases, since
-   INSERT/DELETE/UPDATE statements are not going to be allowed */
+	// No need to load triggers for ReadOnly databases, since
+	// INSERT/DELETE/UPDATE statements are not going to be allowed
 
 	if (dbb->dbb_flags & DBB_read_only)
 	{
@@ -2471,22 +2472,24 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 
 	relation->rel_flags |= REL_sys_trigs_being_loaded;
 
-	const jrd_trg* trigger = NULL;
-	const UCHAR*	blr;
-	UCHAR	type;
-	const TEXT*	name;
-	USHORT	trig_flags;
-	jrd_req* request;
+    jrd_req* trigger_request =
+		CMP_find_request(tdbb, irq_s_triggers2, IRQ_REQUESTS);
 
-	while ( (trigger =
-		   INI_lookup_sys_trigger(relation,
-										trigger,
-										&blr,
-										&type,
-										&name,
-										&trig_flags)) )
-	{
+    FOR (REQUEST_HANDLE trigger_request)
+        TRG IN RDB$TRIGGERS
+        WITH TRG.RDB$RELATION_NAME = relation->rel_name.c_str()
+        AND TRG.RDB$SYSTEM_FLAG = 1
+
+        if (!REQUEST (irq_s_triggers2))
+            REQUEST (irq_s_triggers2) = trigger_request;
+
+		const UCHAR type = (UCHAR) TRG.RDB$TRIGGER_TYPE;
+		const USHORT trig_flags = TRG.RDB$FLAGS;
+		const TEXT* name = TRG.RDB$TRIGGER_NAME;
+
+		jrd_req* request;
         trig_vec** ptr;
+
 		switch (type) {
 		case 1:
 			ptr = &relation->rel_pre_store;
@@ -2513,15 +2516,21 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 
 		if (ptr)
 		{
+			blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &TRG.RDB$TRIGGER_BLR);
+			const SLONG length = blob->blb_length + 10;
+			Firebird::HalfStaticArray<UCHAR, 128> blr;
+			BLB_get_data(tdbb, blob, blr.getBuffer(length), length);
+
 			USHORT par_flags = (USHORT)
 				((trig_flags & TRG_ignore_perm) ? csb_ignore_perm : 0);
 			if (type & 1)
 				par_flags |= csb_pre_trigger;
 			else
 				par_flags |= csb_post_trigger;
+
 			{
 				Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
-				PAR_blr(tdbb, relation, blr, NULL, NULL,
+				PAR_blr(tdbb, relation, blr.begin(), NULL, NULL,
 						&request, true, par_flags);
 			}
 
@@ -2536,7 +2545,11 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 			save_trigger_data(tdbb, ptr, relation, request, NULL,
 							  NULL, type, true, 0);
 		}
-	}
+
+    END_FOR;
+
+    if (!REQUEST (irq_s_triggers2))
+        REQUEST (irq_s_triggers2) = trigger_request;
 
 	relation->rel_flags &= ~REL_sys_trigs_being_loaded;
 }
@@ -2979,64 +2992,6 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	relation->rel_flags |= (REL_check_existence | REL_check_partners);
 	return relation;
 }
-
-
-#ifdef NOT_USED_OR_REPLACED
-bool MET_relation_owns_trigger (thread_db* tdbb, const TEXT* relation_name,
-                                   const TEXT* trigger_name)
-{
-/**************************************
- *
- *      M E T _ r e l a t i o n _ o w n s _ t r i g g e r
- *
- **************************************
- *
- * Functional description
- *      Checks that a given trigger is defined for a
- *      given relation, returning TRUE if there's a match.
- *      It's almost a subset of MET_load_trigger().
- *
- **************************************/
-    SET_TDBB (tdbb);
-    Database* dbb = tdbb->tdbb_database;
-    CHECK_DBB (dbb);
-
-    /* No need to load triggers for ReadOnly databases,
-       since INSERT/DELETE/UPDATE statements are not going to be allowed;
-       but we do not care of this flag here. We do not load, we only check. */
-    /*if (dbb->dbb_flags & DBB_read_only)
-      return;*/
-
-    /* Scan RDB$TRIGGERS next */
-
-    bool found = false;
-    /* CVC: Notice that we'll use the request irq_s_triggers2 that was found
-       to be unused at this time. */
-
-    jrd_req* trigger_request = CMP_find_request (tdbb, irq_s_triggers2, IRQ_REQUESTS);
-
-    FOR (REQUEST_HANDLE trigger_request)
-        TRG IN RDB$TRIGGERS WITH TRG.RDB$RELATION_NAME = relation_name AND
-	    TRG.RDB$TRIGGER_NAME EQ trigger_name
-
-        if (!REQUEST (irq_s_triggers2))
-            REQUEST (irq_s_triggers2) = trigger_request;
-
-        found = true;
-
-        /* Notice we do not care whether the trigger is valid or not. We assume
-           the caller wants to verify already validated entities.
-           if (TRG.RDB$TRIGGER_TYPE > 0 && TRG.RDB$TRIGGER_TYPE < TRIGGER_MAX)
-        */
-
-    END_FOR;
-
-    if (!REQUEST (irq_s_triggers2))
-        REQUEST (irq_s_triggers2) = trigger_request;
-
-    return found;
-}
-#endif //NOT_USED_OR_REPLACED
 
 
 bool MET_relation_default_class (thread_db* tdbb, const Firebird::MetaName& relation_name,
@@ -4482,11 +4437,14 @@ static bool verify_TRG_ignore_perm(thread_db* tdbb, const Firebird::MetaName& tr
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-/* see if this is a system trigger, with the flag set as TRG_ignore_perm */
-	if (INI_get_trig_flags(trig_name.c_str()) & (USHORT) TRG_ignore_perm)
+	// See if this is a system trigger, with the flag set as TRG_ignore_perm
+
+	if (INI_get_trig_flags(trig_name.c_str()) & TRG_ignore_perm)
 	{
 		return true;
 	}
+
+	// See if this is a RI trigger
 
 	jrd_req* request = CMP_find_request(tdbb, irq_c_trg_perm, IRQ_REQUESTS);
 

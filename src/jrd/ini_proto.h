@@ -32,10 +32,7 @@ void	INI_format(const TEXT*, const TEXT*);
 USHORT	INI_get_trig_flags(const TEXT*);
 void	INI_init();
 void	INI_init2();
-const Jrd::jrd_trg*	INI_lookup_sys_trigger(Jrd::jrd_rel*, const Jrd::jrd_trg*,
-										   const UCHAR**, UCHAR*, const TEXT**,
-										  USHORT*);
-void INI_update_database();
+void	INI_update_database();
 
 #endif // JRD_INI_PROTO_H
 
