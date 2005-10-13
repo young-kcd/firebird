@@ -522,18 +522,6 @@ TEXTTYPE_ENTRY(WIN1252_c6_init)
 }
 
 
-TEXTTYPE_ENTRY(WIN1252_c7_init)
-{
-	static const ASCII POSIX[] = "PT_BR.WIN1252";
-
-#include "../intl/collations/pw1252ptbr.h"
-
-	return FAMILY3(cache, CC_BRAZIL, LDRV_TIEBREAK,
-			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
-			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
-}
-
-
 TEXTTYPE_ENTRY(WIN1253_c1_init)
 {
 	static const ASCII POSIX[] = "PXW_GREEK.WIN1253";

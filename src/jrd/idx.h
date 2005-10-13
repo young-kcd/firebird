@@ -154,15 +154,8 @@ static const struct ini_idx_t indices[] = {
 		SEGMENT(f_cs_cs_name, idx_metadata)	/* character set name */
 	}},
 
-/* Changed in ODS 11.0
- 	define index RDB$INDEX_20 for RDB$COLLATIONS unique RDB$COLLATION_NAME;
+/* 	define index RDB$INDEX_20 for RDB$COLLATIONS unique RDB$COLLATION_NAME; */
 	INDEX(20, ODS_8_0, rel_collations, idx_unique, 1)
-		SEGMENT(f_coll_name, idx_metadata)	// collation name
-	}},
-*/
-//	define index RDB$INDEX_20 for RDB$COLLATIONS unique RDB$CHARACTER_SET_ID, RDB$COLLATION_NAME;
-	INDEX(20, ODS_11_0, rel_collations, idx_unique, 2)
-		SEGMENT(f_coll_cs_id, idx_numeric),	// character set id
 		SEGMENT(f_coll_name, idx_metadata)	// collation name
 	}},
 
