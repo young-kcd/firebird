@@ -1,3 +1,51 @@
+2005-10-13 21:11  asfernandes
+
+	* firebird2/: builds/install/misc/fbintl.conf (1.7),
+	src/intl/lc_iso8859_1.cpp (1.14), src/jrd/idx.h (1.17),
+	src/jrd/intlnames.h (1.17):
+	
+	1) Remove feature that allow one collation name to be used with
+	more than one charset.	2) Remove PT_BR for WIN1252, let's live
+	with WIN_PTBR only.
+
+2005-10-13 21:09  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.25),
+	lang_helpers/gds_codes.pas (1.25), src/include/gen/codetext.h
+	(1.32), src/include/gen/iberror.h (1.31), src/include/gen/msgs.h
+	(1.41), src/include/gen/rdb_codes.h (1.31),
+	src/include/gen/sql_code.h (1.34):
+	
+	Regenerate files
+
+2005-10-13 15:39  dimitr
+
+	* firebird2/src/jrd/blb.cpp (1.98):
+	
+	Fixed SF #1211328.
+
+2005-10-13 15:36  dimitr
+
+	* firebird2/src/msgs/: facilities.sql (1.41), messages.sql (1.49),
+	system_errors.sql (1.22):
+	
+	Added new error message.
+
+2005-10-13 10:11  dimitr
+
+	* firebird2/src/jrd/: ini.epp (1.69), ini_proto.h (1.12), met.epp
+	(1.171):
+	
+	Let's load real system triggers from the database, not the ones
+	hardcoded in trigs.h.  Otherwise weird things happen when we access
+	a database with older ODS.
+
+2005-10-13 10:03  dimitr
+
+	* firebird2/src/jrd/idx.cpp (1.98):
+	
+	Temporary fix for the issue found by Tom Cole.
+
 2005-10-12 08:47  dimitr
 
 	* firebird2/src/utilities/gsec/gsec.cpp (1.47):
