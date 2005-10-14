@@ -132,3 +132,25 @@ only showed system tables. Now it lists the predefined, system UDFs incorporated
 into FB 2. It may be enhanced to list system views if we create some of them
 in the future.
 
+6) -r2 command line parameter.
+
+The sole objective of this parameter is to specify a case-sensitive role name.
+With -r, the default switch, roles provided in the command line are uppercased.
+With -r2, the role is passed to the engine exactly as typed in the command line.
+
+7) Binary text is shown in hex.
+
+This feature was contributed before the firt FB2 alpha. It will show content
+from CHAR/VARCHAR columns in hex when the character set is binary (octets).
+This feature is currently hardcoded: it can't be disabled.
+
+8) SET SQLDA_DISPLAY ON/OFF option.
+
+This option exists long before FB1 and it was available previously in DEBUG builds
+only. Now this has been made public. It shows the raw SQLVARs information.
+Each SQLVAR represents a field in the XSQLDA, the main structure used in the FB API
+to talk to clients, transferring data into and out of the server. This option
+is not accounted for when you type
+SET;
+in isql to see the state for most options.
+
