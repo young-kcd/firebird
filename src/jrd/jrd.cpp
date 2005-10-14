@@ -846,7 +846,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		ERR_post(isc_inv_client_dialect_specified, isc_arg_number,
 				 options.dpb_sql_dialect,
 				 isc_arg_gds, isc_valid_client_dialects,
-				 isc_arg_string, "1, or 3", 0);
+				 isc_arg_string, "1, 2 or 3", 0);
 	}
 	invalid_client_SQL_dialect = false;
 
