@@ -36,6 +36,17 @@
    See MET_format() and make_format() in MET.EPP for enlightenment.
 */
 
+struct OdsDesc
+{
+	UCHAR	dsc_dtype;
+	SCHAR	dsc_scale;
+	USHORT	dsc_length;
+	SSHORT	dsc_sub_type;
+	USHORT	dsc_flags;
+	ULONG	dsc_offset;
+};
+
+
 typedef struct dsc
 {
 	dsc()
@@ -58,18 +69,30 @@ typedef struct dsc
 	SSHORT& dsc_ttype() { return dsc_sub_type;}
 	SSHORT dsc_ttype() const { return dsc_sub_type;}
 #endif
+
+// this functions were added to have interoperability
+// between OdsDesc and DSC
+	dsc(const OdsDesc& od)
+	:	dsc_dtype(od.dsc_dtype),
+		dsc_scale(od.dsc_scale),
+		dsc_length(od.dsc_length),
+		dsc_sub_type(od.dsc_sub_type),
+		dsc_flags(od.dsc_flags),
+		dsc_address(0)
+	{}
+	operator OdsDesc()
+	{
+		OdsDesc d;
+		d.dsc_dtype = dsc_dtype;
+		d.dsc_scale = dsc_scale;
+		d.dsc_length = dsc_length;
+		d.dsc_sub_type = dsc_sub_type;
+		d.dsc_flags = dsc_flags;
+		d.dsc_offset = 0;
+		return d;
+	}
+	    
 } DSC;
-
-struct OdsDesc
-{
-	UCHAR	dsc_dtype;
-	SCHAR	dsc_scale;
-	USHORT	dsc_length;
-	SSHORT	dsc_sub_type;
-	USHORT	dsc_flags;
-	ULONG	dsc_offset;
-};
-
 
 inline SSHORT DSC_GET_CHARSET(const dsc* desc) {
 	return (desc->dsc_sub_type & 0x00FF);

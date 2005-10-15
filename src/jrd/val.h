@@ -157,7 +157,7 @@ struct internal_array_desc {
 	SLONG iad_count;			/* Total number of elements */
 	SLONG iad_total_length;		/* Total length of array */
 	struct iad_repeat {
-		DSC iad_desc;			/* Element descriptor */
+		OdsDesc iad_desc;		/* Element descriptor */
 		SLONG iad_length;		/* Length of "vector" element */
 		SLONG iad_lower;		/* Lower bound */
 		SLONG iad_upper;		/* Upper bound */
