@@ -1,3 +1,22 @@
+2005-10-14 06:51  robocop
+
+	* firebird2/src/msgs/: facilities.sql (1.42), history.sql (1.25),
+	messages.sql (1.50):
+	
+	Changed the command-line help in isql when you type isql -?
+
+2005-10-14 06:12  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.225):
+	
+	Misc.
+
+2005-10-14 06:10  robocop
+
+	* firebird2/doc/README.isql_enhancements.txt (1.5):
+	
+	Explain other isql options.
+
 2005-10-13 21:11  asfernandes
 
 	* firebird2/: builds/install/misc/fbintl.conf (1.7),
