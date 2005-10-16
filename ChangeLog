@@ -1,3 +1,9 @@
+2005-10-15 15:02  alexpeshkoff
+
+	* firebird2/src/jrd/: dsc.h (1.23), val.h (1.29):
+	
+	Fixed ODS problem with arrays
+
 2005-10-14 06:51  robocop
 
 	* firebird2/src/msgs/: facilities.sql (1.42), history.sql (1.25),
