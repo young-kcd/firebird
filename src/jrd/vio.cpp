@@ -331,8 +331,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	if ((temp2.rpb_b_page != rpb->rpb_b_page ||
 		 temp.rpb_b_line != rpb->rpb_b_line ||
 		 temp.rpb_transaction_nr != rpb->rpb_transaction_nr)
-		&& debug_flag >
-		DEBUG_WRITES_INFO)
+		&& debug_flag > DEBUG_WRITES_INFO)
 	{
 		printf("    record changed!)\n");
 	}
@@ -531,19 +530,18 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
    system crashed. Clear the flag and set the state to tra_dead to
    reattempt the backout. */
 
-	if (rpb->rpb_flags & rpb_gc_active) {
-		switch (state) {
-		case tra_committed:
+	if (rpb->rpb_flags & rpb_gc_active) 
+	{
+		if (!rpb->rpb_transaction_nr) {
+			state = tra_active;
+		}
+
+		if (state == tra_committed) {
 			state = tra_dead;
-			rpb->rpb_flags &= ~rpb_gc_active;
-			break;
+		}
 
-		case tra_dead:
+		if (state == tra_dead) {
 			rpb->rpb_flags &= ~rpb_gc_active;
-			break;
-
-		default:
-			break;
 		}
 	}
 
@@ -950,18 +948,16 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 
 		if (!(rpb->rpb_flags & rpb_chained) && rpb->rpb_flags & rpb_gc_active)
 		{
-			switch (state) {
-			case tra_committed:
+			if (!rpb->rpb_transaction_nr) {
+				state = tra_active;
+			}
+
+			if (state == tra_committed) {
 				state = tra_dead;
-				rpb->rpb_flags &= ~rpb_gc_active;
-				break;
+			}
 
-			case tra_dead:
+			if (state == tra_dead) {
 				rpb->rpb_flags &= ~rpb_gc_active;
-				break;
-
-			default:
-				break;
 			}
 		}
 	}
@@ -3862,9 +3858,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 				RelationGarbage *relGarbage = 
 					relation ? (RelationGarbage*)relation->rel_garbage : NULL;
 
-				//hvlad: skip system relations
 				if (relation && (relation->rel_gc_bitmap || relGarbage) &&
-					!(relation->rel_flags & (REL_deleted | REL_deleting | REL_system)))
+					!(relation->rel_flags & (REL_deleted | REL_deleting)))
 				{
 					if (relGarbage) {
 						relGarbage->getGarbage(dbb->dbb_oldest_snapshot,
@@ -3941,6 +3936,7 @@ rel_exit:
 							delete relation->rel_gc_bitmap;
 							relation->rel_gc_bitmap = 0;
 						}
+/* hvlad: obsolete ?
 						else {
 							// Otherwise release bitmap segments that have been cleared. 
 								while (relation->rel_gc_bitmap->getNext()) 
@@ -3948,6 +3944,7 @@ rel_exit:
 								;	// do nothing
 							}
 						}
+*/
 					}
 					--relation->rel_sweep_count;
 				}
@@ -5132,8 +5129,7 @@ void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 			*sbm = garbage.bm;
 			garbage.bm = bm_tran;
 		}
-		if (garbage.bm)
-			delete garbage.bm;
+		delete garbage.bm;
 
 		// Need to cast zero to exact type because literal zero means null pointer
 		array.remove(static_cast<size_t>(0));
