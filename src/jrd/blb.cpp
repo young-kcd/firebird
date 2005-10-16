@@ -970,15 +970,15 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	// This is the only place in the engine where blobs are materialized
 	// If new places appear code below should transform to common sub-routine
 	if (materialized_blob) {
-		if (!blobIndex) {
-			// In case of normal blobs tra_blobs is already positioned on item we need
-			if (transaction->tra_blobs.locate(blob->blb_temp_id)) {
-				blobIndex = &transaction->tra_blobs.current();
-			}
+		// hvlad: we have possible thread switch in DPM_store_blob above and somebody 
+		// can modify transaction->tra_blobs therefore we must update our blobIndex 
+		if (!transaction->tra_blobs.locate(blob->blb_temp_id)) {
+			// If we didn't find materialized blob in transaction blob index it
+			// means memory structures are inconsistent and crash is appropriate
+			fb_assert(false);
 		}
+		blobIndex = &transaction->tra_blobs.current();
 
-		// If we didn't find materialized blob in transaction blob index it
-		// means memory structures are inconsistent and crash is appropriate
 		blobIndex->bli_materialized = true;
 		blobIndex->bli_blob_id = *destination;
 		// Assign temporary BLOB ownership to top-level request if it is not assigned yet
@@ -1975,7 +1975,7 @@ static void delete_blob_id(
 
 /* Fetch blob */
 
-	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans);
+	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans); 
 	blob->blb_relation = relation;
 	prior_page =
 		DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), true,
