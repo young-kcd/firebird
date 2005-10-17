@@ -67,7 +67,7 @@ const UCHAR SecurityDatabase::PWD_REQUEST[] = {
 	blr_begin,
 	blr_for,
 	blr_rse, 1,
-	blr_relation, 8, 'U', 'S', 'E', 'R', 'S', '_', 'B', 'G', 0,
+	blr_relation, 9, 'R', 'D', 'B', '$', 'U', 'S', 'E', 'R', 'S', 0,
 	blr_first,
 	blr_literal, blr_short, 0, 1, 0,
 	blr_boolean,
