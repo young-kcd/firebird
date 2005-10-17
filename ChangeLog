@@ -1,3 +1,17 @@
+2005-10-16 13:36  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.138):
+	
+	1. Proper fix to "can't find record fragment" bug occured when user
+	  transaction back out record modified by system transaction 2.
+	Restore gc_thread's ability to collect garbage in system tables
+
+2005-10-16 13:19  hvlad
+
+	* firebird2/src/jrd/blb.cpp (1.99):
+	
+	Fixed FB2 regression with blobs
+
 2005-10-15 15:02  alexpeshkoff
 
 	* firebird2/src/jrd/: dsc.h (1.23), val.h (1.29):
