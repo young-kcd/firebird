@@ -1,3 +1,9 @@
+2005-10-17 19:15  alexpeshkoff
+
+	* firebird2/src/: dbs/security.sql (1.5), jrd/pwd.cpp (1.45):
+	
+	let user_name be in unicode_fss in table rdb$users
+
 2005-10-16 13:36  hvlad
 
 	* firebird2/src/jrd/vio.cpp (1.138):
