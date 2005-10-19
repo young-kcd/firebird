@@ -32,7 +32,7 @@ CREATE DOMAIN USER_NAME AS VARCHAR(128) CHARACTER SET UNICODE_FSS;
 CREATE DOMAIN PRIVILEGE AS INTEGER;
 
 
-/*  Table: RDB$USERS, BG means BackGround */
+/*  Table: RDB$USERS */
 CREATE TABLE RDB$USERS (USER_NAME USER_NAME,
 	/* local system user name for setuid for file permissions */
 	SYS_USER_NAME	USER_NAME,
