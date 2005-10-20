@@ -462,8 +462,8 @@ C --
       PARAMETER (GDS__wal_err_expansion                = 335544524)
       INTEGER*4 GDS__wal_err_setup                   
       PARAMETER (GDS__wal_err_setup                    = 335544525)
-      INTEGER*4 GDS__must_have_phys_field            
-      PARAMETER (GDS__must_have_phys_field             = 335544526)
+      INTEGER*4 GDS__wal_err_ww_sync                 
+      PARAMETER (GDS__wal_err_ww_sync                  = 335544526)
       INTEGER*4 GDS__wal_err_ww_start                
       PARAMETER (GDS__wal_err_ww_start                 = 335544527)
       INTEGER*4 GDS__shutdown                        
@@ -1126,6 +1126,8 @@ C --
       PARAMETER (GDS__att_shutdown                     = 335544856)
       INTEGER*4 GDS__blobtoobig                      
       PARAMETER (GDS__blobtoobig                       = 335544857)
+      INTEGER*4 GDS__must_have_phys_field            
+      PARAMETER (GDS__must_have_phys_field             = 335544858)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1430,20 +1432,20 @@ C --
       PARAMETER (GDS__gbak_just_data                   = 336331033)
       INTEGER*4 GDS__gbak_data_only                  
       PARAMETER (GDS__gbak_data_only                   = 336331034)
-      INTEGER*4 GDS__dsql_too_many_values            
-      PARAMETER (GDS__dsql_too_many_values             = 336397041)
-      INTEGER*4 GDS__dsql_no_dup_name                
-      PARAMETER (GDS__dsql_no_dup_name                 = 336397042)
-      INTEGER*4 GDS__dsql_unknown_pos                
-      PARAMETER (GDS__dsql_unknown_pos                 = 336397043)
-      INTEGER*4 GDS__dsql_line_col_error             
-      PARAMETER (GDS__dsql_line_col_error              = 336397044)
-      INTEGER*4 GDS__dsql_view_not_found             
-      PARAMETER (GDS__dsql_view_not_found              = 336397047)
-      INTEGER*4 GDS__dsql_table_not_found            
-      PARAMETER (GDS__dsql_table_not_found             = 336397048)
       INTEGER*4 GDS__dsql_too_old_ods                
-      PARAMETER (GDS__dsql_too_old_ods                 = 336397058)
+      PARAMETER (GDS__dsql_too_old_ods                 = 336397205)
+      INTEGER*4 GDS__dsql_table_not_found            
+      PARAMETER (GDS__dsql_table_not_found             = 336397206)
+      INTEGER*4 GDS__dsql_view_not_found             
+      PARAMETER (GDS__dsql_view_not_found              = 336397207)
+      INTEGER*4 GDS__dsql_line_col_error             
+      PARAMETER (GDS__dsql_line_col_error              = 336397208)
+      INTEGER*4 GDS__dsql_unknown_pos                
+      PARAMETER (GDS__dsql_unknown_pos                 = 336397209)
+      INTEGER*4 GDS__dsql_no_dup_name                
+      PARAMETER (GDS__dsql_no_dup_name                 = 336397210)
+      INTEGER*4 GDS__dsql_too_many_values            
+      PARAMETER (GDS__dsql_too_many_values             = 336397211)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

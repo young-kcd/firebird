@@ -260,7 +260,7 @@ const SLONG isc_wal_err_logwrite                 = 335544522L;
 const SLONG isc_wal_err_jrn_comm                 = 335544523L;
 const SLONG isc_wal_err_expansion                = 335544524L;
 const SLONG isc_wal_err_setup                    = 335544525L;
-const SLONG isc_must_have_phys_field             = 335544526L;
+const SLONG isc_wal_err_ww_sync                  = 335544526L;
 const SLONG isc_wal_err_ww_start                 = 335544527L;
 const SLONG isc_shutdown                         = 335544528L;
 const SLONG isc_existing_priv_mod                = 335544529L;
@@ -592,6 +592,7 @@ const SLONG isc_charset_not_installed            = 335544854L;
 const SLONG isc_collation_not_installed          = 335544855L;
 const SLONG isc_att_shutdown                     = 335544856L;
 const SLONG isc_blobtoobig                       = 335544857L;
+const SLONG isc_must_have_phys_field             = 335544858L;
 const SLONG isc_gfix_db_name                     = 335740929L;
 const SLONG isc_gfix_invalid_sw                  = 335740930L;
 const SLONG isc_gfix_incmp_sw                    = 335740932L;
@@ -744,13 +745,13 @@ const SLONG isc_gbak_not_ownr                    = 336331026L;
 const SLONG isc_gbak_mode_req                    = 336331031L;
 const SLONG isc_gbak_just_data                   = 336331033L;
 const SLONG isc_gbak_data_only                   = 336331034L;
-const SLONG isc_dsql_too_many_values             = 336397041L;
-const SLONG isc_dsql_no_dup_name                 = 336397042L;
-const SLONG isc_dsql_unknown_pos                 = 336397043L;
-const SLONG isc_dsql_line_col_error              = 336397044L;
-const SLONG isc_dsql_view_not_found              = 336397047L;
-const SLONG isc_dsql_table_not_found             = 336397048L;
-const SLONG isc_dsql_too_old_ods                 = 336397058L;
+const SLONG isc_dsql_too_old_ods                 = 336397205L;
+const SLONG isc_dsql_table_not_found             = 336397206L;
+const SLONG isc_dsql_view_not_found              = 336397207L;
+const SLONG isc_dsql_line_col_error              = 336397208L;
+const SLONG isc_dsql_unknown_pos                 = 336397209L;
+const SLONG isc_dsql_no_dup_name                 = 336397210L;
+const SLONG isc_dsql_too_many_values             = 336397211L;
 const SLONG isc_gsec_cant_open_db                = 336723983L;
 const SLONG isc_gsec_switches_error              = 336723984L;
 const SLONG isc_gsec_no_op_spec                  = 336723985L;
@@ -810,7 +811,7 @@ const SLONG isc_gstat_unexpected_eof             = 336920580L;
 const SLONG isc_gstat_open_err                   = 336920605L;
 const SLONG isc_gstat_read_err                   = 336920606L;
 const SLONG isc_gstat_sysmemex                   = 336920607L;
-const SLONG isc_err_max                          = 755;
+const SLONG isc_err_max                          = 756;
 
 #else /* c definitions */
 
@@ -1040,7 +1041,7 @@ const SLONG isc_err_max                          = 755;
 #define isc_wal_err_jrn_comm                 335544523L
 #define isc_wal_err_expansion                335544524L
 #define isc_wal_err_setup                    335544525L
-#define isc_must_have_phys_field             335544526L
+#define isc_wal_err_ww_sync                  335544526L
 #define isc_wal_err_ww_start                 335544527L
 #define isc_shutdown                         335544528L
 #define isc_existing_priv_mod                335544529L
@@ -1372,6 +1373,7 @@ const SLONG isc_err_max                          = 755;
 #define isc_collation_not_installed          335544855L
 #define isc_att_shutdown                     335544856L
 #define isc_blobtoobig                       335544857L
+#define isc_must_have_phys_field             335544858L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1524,13 +1526,13 @@ const SLONG isc_err_max                          = 755;
 #define isc_gbak_mode_req                    336331031L
 #define isc_gbak_just_data                   336331033L
 #define isc_gbak_data_only                   336331034L
-#define isc_dsql_too_many_values             336397041L
-#define isc_dsql_no_dup_name                 336397042L
-#define isc_dsql_unknown_pos                 336397043L
-#define isc_dsql_line_col_error              336397044L
-#define isc_dsql_view_not_found              336397047L
-#define isc_dsql_table_not_found             336397048L
-#define isc_dsql_too_old_ods                 336397058L
+#define isc_dsql_too_old_ods                 336397205L
+#define isc_dsql_table_not_found             336397206L
+#define isc_dsql_view_not_found              336397207L
+#define isc_dsql_line_col_error              336397208L
+#define isc_dsql_unknown_pos                 336397209L
+#define isc_dsql_no_dup_name                 336397210L
+#define isc_dsql_too_many_values             336397211L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -1590,7 +1592,7 @@ const SLONG isc_err_max                          = 755;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          755
+#define isc_err_max                          756
 
 #endif
 

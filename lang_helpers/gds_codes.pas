@@ -238,7 +238,7 @@ const
 	gds_wal_err_jrn_comm                 = 335544523;
 	gds_wal_err_expansion                = 335544524;
 	gds_wal_err_setup                    = 335544525;
-	gds_must_have_phys_field             = 335544526;
+	gds_wal_err_ww_sync                  = 335544526;
 	gds_wal_err_ww_start                 = 335544527;
 	gds_shutdown                         = 335544528;
 	gds_existing_priv_mod                = 335544529;
@@ -570,6 +570,7 @@ const
 	gds_collation_not_installed          = 335544855;
 	gds_att_shutdown                     = 335544856;
 	gds_blobtoobig                       = 335544857;
+	gds_must_have_phys_field             = 335544858;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
@@ -722,13 +723,13 @@ const
 	gds_gbak_mode_req                    = 336331031;
 	gds_gbak_just_data                   = 336331033;
 	gds_gbak_data_only                   = 336331034;
-	gds_dsql_too_many_values             = 336397041;
-	gds_dsql_no_dup_name                 = 336397042;
-	gds_dsql_unknown_pos                 = 336397043;
-	gds_dsql_line_col_error              = 336397044;
-	gds_dsql_view_not_found              = 336397047;
-	gds_dsql_table_not_found             = 336397048;
-	gds_dsql_too_old_ods                 = 336397058;
+	gds_dsql_too_old_ods                 = 336397205;
+	gds_dsql_table_not_found             = 336397206;
+	gds_dsql_view_not_found              = 336397207;
+	gds_dsql_line_col_error              = 336397208;
+	gds_dsql_unknown_pos                 = 336397209;
+	gds_dsql_no_dup_name                 = 336397210;
+	gds_dsql_too_many_values             = 336397211;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;
