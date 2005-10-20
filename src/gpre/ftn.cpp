@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.20 2003-04-06 11:40:29 alexpeshkoff Exp $
+//	$Id: ftn.cpp,v 1.20.2.1 2005-10-20 13:01:30 kkuznetsov Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -1544,7 +1544,7 @@ static void gen_database_data( ACT action)
 	BOOLEAN any_extern;
 	TEXT include_buffer[MAXPATHLEN];
 
-	ISC_prefix(include_buffer, INCLUDE_FTN_FILE);
+	gds__prefix(include_buffer, INCLUDE_FTN_FILE);
 	sprintf(output_buffer, INCLUDE_ISC_FTN, include_buffer);
 
 	FTN_print_buffer(output_buffer);
