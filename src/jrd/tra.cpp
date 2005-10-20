@@ -1886,6 +1886,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 	dbb->dbb_flags |= DBB_sweep_in_progress;
 
+	jrd_tra* const tdbb_old_trans = tdbb->tdbb_transaction;
 	jrd_tra* transaction = 0;
 /* The following line seems to fix a bug that appears on VMS and AIX
    (and perhaps MPE XL).  It probably has to do with the fact that
@@ -1917,6 +1918,8 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 								reinterpret_cast<const char*>(sweep_tpb));
 
 	SLONG transaction_oldest_active = transaction->tra_oldest_active;
+	tdbb->tdbb_transaction = transaction;
+
 
 #ifdef GARBAGE_THREAD
 /* The garbage collector runs asynchronously with respect to
@@ -1986,6 +1989,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	dbb->dbb_flags &= ~DBB_sweep_in_progress;
 
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
+	tdbb->tdbb_transaction = tdbb_old_trans;
 	}	// try
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -1996,12 +2000,14 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 			LCK_release(tdbb, &temp_lock);
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;
 			tdbb->tdbb_flags &= ~TDBB_sweeper;
+			tdbb->tdbb_transaction = tdbb_old_trans;
 		}
 		catch (const std::exception& ex2) {
 			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex2);
 			LCK_release(tdbb, &temp_lock);
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;
 			tdbb->tdbb_flags &= ~TDBB_sweeper;
+			tdbb->tdbb_transaction = tdbb_old_trans;
 			return false;
 		}
 	}

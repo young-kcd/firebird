@@ -2845,6 +2845,10 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 	}
 
 	DPM_scan_pages(tdbb);
+
+	// hvlad: restore tdbb->tdbb_transaction since it can be used later
+	tdbb->tdbb_transaction = transaction;
+
 	record_param rpb;
 	rpb.rpb_record = NULL;
 	rpb.rpb_stream_flags = 0;
@@ -4210,9 +4214,11 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
    the event on which it sleeps to awaken it. */
 
 	dbb->dbb_flags |= DBB_gc_pending;
-
+	
 	if (!(dbb->dbb_flags & DBB_gc_active) &&
-		(tranid < tdbb->tdbb_transaction->tra_oldest_active) )
+		(tranid < (tdbb->tdbb_transaction ? 
+					tdbb->tdbb_transaction->tra_oldest_active : 
+					dbb->dbb_oldest_snapshot)) )
 	{
 		ISC_event_post(dbb->dbb_gc_event);
 	}
