@@ -1,3 +1,9 @@
+2005-10-19 11:02  dimitr
+
+	* firebird2/src/dbs/security.sql (1.6):
+	
+	Cleanup.
+
 2005-10-17 19:15  alexpeshkoff
 
 	* firebird2/src/: dbs/security.sql (1.5), jrd/pwd.cpp (1.45):
