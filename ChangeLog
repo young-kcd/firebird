@@ -1,3 +1,21 @@
+2005-10-20 15:03  hvlad
+
+	* firebird2/src/jrd/: tra.cpp (1.103), vio.cpp (1.139):
+	
+	Fixed AV in notify_garbage_collector
+
+2005-10-20 06:09  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.26),
+	lang_helpers/gds_codes.pas (1.26), src/include/gen/codetext.h
+	(1.33), src/include/gen/iberror.h (1.32), src/include/gen/msgs.h
+	(1.42), src/include/gen/rdb_codes.h (1.32),
+	src/include/gen/sql_code.h (1.35), src/msgs/facilities.sql (1.43),
+	src/msgs/messages.sql (1.51), src/msgs/system_errors.sql (1.23):
+	
+	Try to please the team leader before it's too late.  :-) We have
+	definitely serious problems with firebird.msg mismatches.
+
 2005-10-19 11:02  dimitr
 
 	* firebird2/src/dbs/security.sql (1.6):
