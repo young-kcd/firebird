@@ -374,6 +374,8 @@ void DDL_generate(dsql_req* request, dsql_nod* node)
 //
 bool DDL_ids(const dsql_req* request)
 {
+	return !request->req_ddl_node;
+/*
 	const dsql_nod* ddl_node = request->req_ddl_node;
 
 	if (!ddl_node) {
@@ -400,6 +402,7 @@ bool DDL_ids(const dsql_req* request)
 		default:
 			return true;
 	}
+*/
 }
 
 
