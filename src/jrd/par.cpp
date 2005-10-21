@@ -2494,8 +2494,9 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_current_time2:
 	case blr_current_timestamp2:
 		n = BLR_BYTE;
-		if (n < 0) {
-			syntax_error(csb, "non-negative seconds precision");
+		if (n > MAX_TIME_PRECISION) {
+			ERR_post(isc_invalid_time_precision,
+					 isc_arg_number, MAX_TIME_PRECISION, 0);
 		}
 		node->nod_arg[0] = (jrd_nod*) (IPTR) n;
 		break;

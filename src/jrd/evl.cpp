@@ -4280,7 +4280,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 /* Choose interpretation for the operation */
 
  	USHORT ttype;
-	if (desc1->dsc_dtype == dtype_blob) {
+	if (desc1->dsc_dtype == dtype_blob || desc1->dsc_dtype == dtype_quad) {
 		if (desc1->dsc_sub_type == isc_blob_text)
 			ttype = desc1->dsc_blob_ttype();	/* Load blob character set and collation */
 		else
@@ -4314,7 +4314,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
    and never Multibyte (see note in EVL_mb_sleuth_check) */
 	bool ret_val;
 	MoveBuffer data_str;
-	if (desc1->dsc_dtype != dtype_blob) {
+	if (desc1->dsc_dtype != dtype_blob && desc1->dsc_dtype != dtype_quad) {
 		/* Source is not a blob, do a simple search */
 
 		l1 = MOV_make_string2(desc1, ttype, &p1, data_str);
@@ -4372,7 +4372,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 	DEV_BLKCHK(node, type_nod);
 
-	if (desc1->dsc_dtype != dtype_blob) {
+	if (desc1->dsc_dtype != dtype_blob && desc1->dsc_dtype != dtype_quad) {
 		/* Source is not a blob, do a simple search */
 
 		/* Get text type of data string */
@@ -4745,7 +4745,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 	ULONG length;
 
-	if (value->dsc_dtype == dtype_blob)
+	if (value->dsc_dtype == dtype_blob || value->dsc_dtype == dtype_quad)
 	{
 		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
 							 reinterpret_cast<bid*>(value->dsc_address));
@@ -4864,7 +4864,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 	const ULONG length = (ULONG) length_arg;
 	ULONG ul;
 
-	if (value->dsc_dtype == dtype_blob)
+	if (value->dsc_dtype == dtype_blob || value->dsc_dtype == dtype_quad)
 	{
 		/* Source string is a blob, things get interesting. */
 

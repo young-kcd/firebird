@@ -138,5 +138,14 @@ static const USHORT GDML_RPAREN		= ')';
 
 const size_t MAX_CONTEXT_VARS	= 1000;		// Maximum number of context variables allowed for a single object
 
-#endif // JRD_CONSTANTS_H
+// Time precision limits and defaults for TIME/TIMESTAMP values.
+// Currently they're applied to CURRENT_TIME[STAMP] expressions only.
 
+// Should be more than 6 as per SQL spec, but we don't support more than 3 yet
+const size_t MAX_TIME_PRECISION			= 3;
+// Consistent with the SQL spec
+const size_t DEFAULT_TIME_PRECISION		= 0;
+// Should be 6 as per SQL spec
+const size_t DEFAULT_TIMESTAMP_PRECISION	= 3;
+
+#endif // JRD_CONSTANTS_H

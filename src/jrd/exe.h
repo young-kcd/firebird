@@ -835,9 +835,6 @@ public:
 // declared as varchar
 const int XCP_MESSAGE_LENGTH	= 1023 - sizeof(USHORT);
 
-const int DEFAULT_TIME_PRECISION		= 0;
-const int DEFAULT_TIMESTAMP_PRECISION	= 6;
-
 } //namespace Jrd
 
 #endif // JRD_EXE_H

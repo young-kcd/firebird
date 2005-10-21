@@ -936,10 +936,9 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				fb_assert(const_node->nod_type == nod_constant);
 				const int precision = (int)(IPTR) const_node->nod_arg[0];
 				fb_assert(precision >= 0);
-				// We pass precision as a single byte, hence a check
-				// to avoid overflows
-				if (precision > MAX_UCHAR) {
-					const_node->nod_arg[0] = (dsql_nod*)(IPTR) MAX_UCHAR;
+				if (precision > MAX_TIME_PRECISION) {
+					ERRD_post(isc_invalid_time_precision,
+							  isc_arg_number, MAX_TIME_PRECISION, 0);
 				}
 			}
 		}
