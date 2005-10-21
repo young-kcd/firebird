@@ -557,6 +557,7 @@ static const SSHORT gds__sql_code [] = {
 -902 /* 536 att_shutdown                     */,
 -904 /* 537 blobtoobig                       */,
 -607 /* 538 must_have_phys_field             */,
+-901 /* 539 invalid_time_precision           */,
 -901 /*   1 gfix_db_name                     */,
 -901 /*   2 gfix_invalid_sw                  */,
 -901 /*   4 gfix_incmp_sw                    */,

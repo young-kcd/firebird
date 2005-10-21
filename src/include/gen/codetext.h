@@ -560,6 +560,7 @@ static const struct {
 	{"att_shutdown", 335544856},
 	{"blobtoobig", 335544857},
 	{"must_have_phys_field", 335544858},
+	{"invalid_time_precision", 335544859},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

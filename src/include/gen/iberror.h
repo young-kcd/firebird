@@ -593,6 +593,7 @@ const SLONG isc_collation_not_installed          = 335544855L;
 const SLONG isc_att_shutdown                     = 335544856L;
 const SLONG isc_blobtoobig                       = 335544857L;
 const SLONG isc_must_have_phys_field             = 335544858L;
+const SLONG isc_invalid_time_precision           = 335544859L;
 const SLONG isc_gfix_db_name                     = 335740929L;
 const SLONG isc_gfix_invalid_sw                  = 335740930L;
 const SLONG isc_gfix_incmp_sw                    = 335740932L;
@@ -811,7 +812,7 @@ const SLONG isc_gstat_unexpected_eof             = 336920580L;
 const SLONG isc_gstat_open_err                   = 336920605L;
 const SLONG isc_gstat_read_err                   = 336920606L;
 const SLONG isc_gstat_sysmemex                   = 336920607L;
-const SLONG isc_err_max                          = 756;
+const SLONG isc_err_max                          = 757;
 
 #else /* c definitions */
 
@@ -1374,6 +1375,7 @@ const SLONG isc_err_max                          = 756;
 #define isc_att_shutdown                     335544856L
 #define isc_blobtoobig                       335544857L
 #define isc_must_have_phys_field             335544858L
+#define isc_invalid_time_precision           335544859L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1592,7 +1594,7 @@ const SLONG isc_err_max                          = 756;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          756
+#define isc_err_max                          757
 
 #endif
 
