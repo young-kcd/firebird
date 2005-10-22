@@ -18,11 +18,11 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 #
-# $Id: Makefile.in.client.gsec,v 1.5 2005-09-30 16:25:52 alexpeshkoff Exp $
+# $Id: Makefile.in.client.gsec,v 1.6 2005-10-22 12:35:03 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=superclient
-CFLAGS+=-DSUPERCLIENT
+CFLAGS+=-DSUPERCLIENT -DSTD_UTIL
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -31,8 +31,8 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-GSEC_Other_Sources = jrd/isc_file.cpp common/config/config.cpp common/config/config_file.cpp \
-jrd/os/posix/path_utils.cpp jrd/os/posix/config_root.cpp jrd/os/posix/fbsyslog.cpp 
+GSEC_Other_Sources = jrd/isc_file.cpp jrd/isc.cpp common/config/config.cpp common/config/config_file.cpp \
+jrd/path_utils.cpp jrd/config_root.cpp jrd/fbsyslog.cpp 
 GSEC_Files =  gsec.cpp call_service.cpp
 GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
 GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))
@@ -49,7 +49,7 @@ all: gsec
 gsec: $(LIBFBCLIENT_SO) $(GSEC)
 
 $(GSEC):	$(GSEC_Objects)
-	$(LD) $(LINK_OPTS) $(GSEC_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) $(LIBFBCOMMON_A)
+	$(LD) $(LINK_OPTS) $(GSEC_Objects) -o $@ -L$(LIB) -lfbclient $(LIBFBCOMMON_A) $(LINK_LIBS)
 
 include $(ROOT)/gen/make.shared.targets
 

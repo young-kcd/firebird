@@ -194,10 +194,12 @@ static USHORT service_empty(Service* service);
 static USHORT service_full(Service* service);
 static void service_fork(ThreadEntryPoint*, Service*);
 #else
-static void io_error(const TEXT*, SLONG, const TEXT*, ISC_STATUS);
+#ifndef WIN_NT
+static void timeout_handler(void* service);
+#endif
 static void service_close(Service*);
 static void service_fork(TEXT*, Service*);
-static void timeout_handler(void* service);
+static void io_error(const TEXT*, SLONG, const TEXT*, ISC_STATUS);
 #endif
 static void service_get(Service*, SCHAR *, USHORT, USHORT, USHORT, USHORT *);
 static void service_put(Service*, const SCHAR*, USHORT);
@@ -2426,6 +2428,75 @@ static void service_put(Service* service, const SCHAR* buffer, USHORT length)
 
 
 #ifndef SERVICE_THREAD
+
+#ifdef WIN_NT
+
+static void service_close(Service* service)
+{
+/**************************************
+ *
+ *	s e r v i c e _ c l o s e		( W I N _ N T )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Shutdown the connection to a service.
+ *	Just a stub
+ *
+ **************************************/
+}
+
+static void service_fork(TEXT* service_path, Service* service)
+{
+/**************************************
+ *
+ *	s e r v i c e _ f o r k		( W I N _ N T )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Startup a service. Just a stub.
+ *
+ **************************************/
+	ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, 0);
+}
+
+static void service_get(
+						Service* service,
+						SCHAR * buffer,
+						USHORT length,
+						USHORT flags, USHORT timeout, USHORT * return_length)
+{
+/**************************************
+ *
+ *	s e r v i c e _ g e t		( W I N _ N T )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get input from a service.
+ *	Just a stub
+ *
+ **************************************/
+}
+
+static void service_put(Service* service, const SCHAR* buffer, USHORT length)
+{
+/**************************************
+ *
+ *	s e r v i c e _ p u t		( W I N _ N T )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Send output to a service.
+ *	Just a stub
+ *
+ **************************************/
+}
+
+#else
+
 static void service_close(Service* service)
 {
 /**************************************
@@ -2759,6 +2830,7 @@ static void timeout_handler(void* service)
  *
  **************************************/
 }
+#endif // !WIN_NT
 #endif // SERVICE_THREAD
 
 

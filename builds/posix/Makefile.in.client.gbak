@@ -27,11 +27,12 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gbak,v 1.12 2005-07-22 10:26:15 aafemt Exp $
+#  $Id: Makefile.in.client.gbak,v 1.13 2005-10-22 12:35:03 aafemt Exp $
 #
 
 ROOT=..
 ObjModuleType=std
+CFLAGS+=-DSTD_UTIL
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
