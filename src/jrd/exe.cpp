@@ -3800,8 +3800,6 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 		// Solves SF Bug #494981.
 		MET_lookup_exception(tdbb, exception->xcp_code,
 							 name, temp, sizeof(temp));
-		if (!name.length())
-			name = exception->xcp_code;
 
 		if (message[0])
 			s = message;
@@ -3810,13 +3808,21 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 		else
 			s = NULL;
 
-		if (s)
-			ERR_post(isc_except,
-					 isc_arg_string, ERR_cstring(name.c_str()),
+		if (s && name.length())
+			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
+					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
 					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
 					 0);
-		else
-			ERR_post(isc_except, isc_arg_string, ERR_cstring(name.c_str()), 0);
+		else if (s)
+			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
+					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
+					 0);
+		else if (name.length())
+			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
+					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
+					 0);
+		else		
+			ERR_post(isc_except, isc_arg_number, exception->xcp_code, 0);
 
 	default:
 		fb_assert(false);
@@ -4160,14 +4166,8 @@ static bool test_and_fixup_error(thread_db* tdbb, const PsqlException* condition
 			{
 			// Look at set_error() routine to understand how the
 			// exception ID info is encoded inside the status vector.
-			Firebird::MetaName name;
-			MET_lookup_exception(tdbb, conditions->xcp_rpt[i].xcp_code,
-								 name, NULL, 0);
-			if (!name.length())
-				name = conditions->xcp_rpt[i].xcp_code;
-
 			if ((status_vector[1] == isc_except) &&
-				(name == (char*)(IPTR) status_vector[3]))
+				(status_vector[3] == conditions->xcp_rpt[i].xcp_code))
 			{
 				found = true;
 			}
