@@ -571,6 +571,7 @@ const
 	gds_att_shutdown                     = 335544856;
 	gds_blobtoobig                       = 335544857;
 	gds_must_have_phys_field             = 335544858;
+	gds_invalid_time_precision           = 335544859;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

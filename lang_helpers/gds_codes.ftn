@@ -1128,6 +1128,8 @@ C --
       PARAMETER (GDS__blobtoobig                       = 335544857)
       INTEGER*4 GDS__must_have_phys_field            
       PARAMETER (GDS__must_have_phys_field             = 335544858)
+      INTEGER*4 GDS__invalid_time_precision          
+      PARAMETER (GDS__invalid_time_precision           = 335544859)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
