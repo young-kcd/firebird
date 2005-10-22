@@ -2,6 +2,64 @@
   * v2.0 Beta 1
   **************
 
+    * Fixed Alpha 3 bug
+        Client crashes while calling isc_interpret() for isc_except error code
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Alpha 3 bug
+        ALTER TABLE doesn't see uncommitted relations
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Alpha 3 bug
+        Server crashes while performing the sweep
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Alpha 3 bug
+        Improperly reused error codes causing wrong lookup in older firebird.msg
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Changed security2.fdb
+        1) Table USERS_BG is renamed to RDB$USERS
+        2) User name is now UNICODE_FSS instead of ASCII
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        "Cannot find record fragment" bugcheck happens during GC in system tables
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Alpha 3 bug
+        Server crashes when attempting to release a BLOB
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Alpha 3 bug
+        Incorrect ODS layout in AMD64 builds
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed Alpha 3 bug
+        Removed collation alias PT_BR for WIN1252,
+        rolled back to globally unique collation names
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed SF bug #1211328
+        Maximum BLOB size (error reporting)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        System triggers of wrong ODS are executed
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Fixed SF bug #217042
         IB doesn't validate weird constructions
       Contributor(s):
