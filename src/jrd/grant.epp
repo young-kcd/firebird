@@ -777,6 +777,7 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 
 	jrd_req* request = CMP_find_request(tdbb, irq_grant6, IRQ_REQUESTS);
 	jrd_req* request2 = NULL;
+	jrd_req* request3 = NULL;
 
 	FOR(REQUEST_HANDLE request)
 		FLD IN RDB$RELATION_FIELDS CROSS
@@ -788,11 +789,11 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 			(PRV.RDB$USER NE owner.c_str() OR PRV.RDB$USER_TYPE NE obj_user)
 		SORTED BY PRV.RDB$FIELD_NAME, PRV.RDB$USER 
 
-        if (!REQUEST(irq_grant6))
-            REQUEST(irq_grant6) = request;
-            
-		 fb_utils::exact_name_limit(PRV.RDB$USER, sizeof(PRV.RDB$USER));
-		 fb_utils::exact_name_limit(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
+		if (!REQUEST(irq_grant6))
+			REQUEST(irq_grant6) = request;
+
+		fb_utils::exact_name_limit(PRV.RDB$USER, sizeof(PRV.RDB$USER));
+		fb_utils::exact_name_limit(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
 
 		/* create a control break on field_name,user */
 
@@ -869,23 +870,33 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 			field_name = PRV.RDB$FIELD_NAME;
 			fb_utils::exact_name_limit(FLD.RDB$SECURITY_CLASS, sizeof(FLD.RDB$SECURITY_CLASS));
 			s_class = FLD.RDB$SECURITY_CLASS;
-			if (s_class.length() == 0) {
-			    /* We should never get here (I think) because this
-				   value is set by dyn.e when the rdb$user_privileges
-			       record is stored.  There's also a before store trigger
-				   on rdb$user_privileges, but it isn't so smart.  -- AWH
-			    */
-			    s_class.printf("%s%" QUADFORMAT "d", "SQL$GRANT", 
-				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), 
-						   false, (SINT64) 1));
+			// dimitr: should it be "if (FLD.RDB$SECURITY_CLASS.NULL)" instead?
+			if (s_class.length() == 0)
+			{
+				bool unique = false;
 
 				FOR(REQUEST_HANDLE request2)
-					FLD2 IN RDB$RELATION_FIELDS WITH
-						FLD2.RDB$RELATION_NAME EQ FLD.RDB$RELATION_NAME
-						AND FLD2.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
-					MODIFY FLD2
-						jrd_vtof(s_class.c_str(), FLD2.RDB$SECURITY_CLASS,
-								 sizeof(FLD2.RDB$SECURITY_CLASS));
+					RFR IN RDB$RELATION_FIELDS WITH
+						RFR.RDB$RELATION_NAME EQ FLD.RDB$RELATION_NAME
+						AND RFR.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
+					MODIFY RFR
+						while (!unique)
+						{
+							sprintf(RFR.RDB$SECURITY_CLASS, "%s%" QUADFORMAT "d", "SQL$GRANT",
+								DPM_gen_id(tdbb, MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), 
+										   false, (SINT64) 1));
+
+							unique = true;
+							FOR (REQUEST_HANDLE request3)
+								RFR2 IN RDB$RELATION_FIELDS 
+								WITH RFR2.RDB$SECURITY_CLASS = RFR.RDB$SECURITY_CLASS
+								unique = false;
+							END_FOR;
+
+						}
+
+						RFR.RDB$SECURITY_CLASS.NULL = FALSE;
+						s_class = RFR.RDB$SECURITY_CLASS;
 					END_MODIFY;
 				END_FOR;
 			}
