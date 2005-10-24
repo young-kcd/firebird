@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pas.cpp,v 1.10 2003-06-01 17:02:22 fsg Exp $
+//	$Id: pas.cpp,v 1.10.2.1 2005-10-24 16:51:47 awharrison Exp $
 //
 
 #include "firebird.h"
@@ -1859,10 +1859,11 @@ static void gen_dyn_open( ACT action, int column)
 
 static void gen_dyn_prepare( ACT action, int column)
 {
-	DYN statement;
+	DYN statement = (DYN) action->act_object;
 	DBB database;
 	TEXT s[64], *transaction;
 	struct gpre_req *request, req_const;
+
 
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
@@ -2135,7 +2136,7 @@ static void gen_event_wait( ACT action, int column)
 
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) ident;
+	args.pat_value1 = ident;
 	args.pat_string1 = GDS_EVENT_WAIT;
 	args.pat_string2 = GDS_EVENT_COUNTS;
 

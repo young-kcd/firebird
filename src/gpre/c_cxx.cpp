@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.20.2.1 2004-03-29 03:49:39 skidder Exp $
+//	$Id: c_cxx.cpp,v 1.20.2.2 2005-10-24 16:51:46 awharrison Exp $
 //
 
 #include "firebird.h"
@@ -1406,11 +1406,11 @@ static int gen_cursor_close( ACT action, GPRE_REQ request, int column)
 {
 	PAT args;
 	TEXT *pattern1 =
-		"if (%RIs && !isc_dsql_free_statement (%V1, &%RIs, %N1))";
+		"if (%RIs && !isc_dsql_free_statement (%V1, &%RIs, %L1))";
 
 	args.pat_request = request;
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = 1;
+	args.pat_long1 = 1;
 
 	PATTERN_expand((USHORT) column, pattern1, &args);
 	column += INDENT;
@@ -2169,11 +2169,11 @@ static void gen_event_init( ACT action, int column)
 	TEXT variable[20];
 	TEXT
 		* pattern1 =
-		"isc_%N1l = isc_event_block (&isc_%N1a, &isc_%N1b, (short) %N2",
+		"isc_%L1l = isc_event_block (&isc_%L1a, &isc_%L1b, (short) %N2",
 		*pattern2 =
-		"isc_wait_for_event (%V1, &%DH, isc_%N1l, isc_%N1a, isc_%N1b);",
+		"isc_wait_for_event (%V1, &%DH, isc_%L1l, isc_%L1a, isc_%L1b);",
 		*pattern3 =
-		"isc_event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
+		"isc_event_counts (isc_events, isc_%L1l, isc_%L1a, isc_%L1b);";
 
 	if (action->act_error)
 		BEGIN;
@@ -2184,7 +2184,7 @@ static void gen_event_init( ACT action, int column)
 
 	args.pat_database = (DBB) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) init->nod_arg[2];
+	args.pat_long1 = (int) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
 
 //  generate call to dynamically generate event blocks 
@@ -2236,9 +2236,9 @@ static void gen_event_wait( ACT action, int column)
 	TEXT s[64];
 	TEXT
 		* pattern1 =
-		"isc_wait_for_event (%V1, &%DH, isc_%N1l, isc_%N1a, isc_%N1b);",
+		"isc_wait_for_event (%V1, &%DH, isc_%L1l, isc_%L1a, isc_%L1b);",
 		*pattern2 =
-		"isc_event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
+		"isc_event_counts (isc_events, isc_%L1l, isc_%L1a, isc_%L1b);";
 
 	if (action->act_error)
 		BEGIN;
@@ -2255,7 +2255,7 @@ static void gen_event_wait( ACT action, int column)
 		event_init = (GPRE_NOD) event_action->act_object;
 		stack_name = (SYM) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
-			ident = (int) event_init->nod_arg[2];
+			ident = (ULONG) event_init->nod_arg[2];
 			database = (DBB) event_init->nod_arg[3];
 		}
 	}
@@ -2268,7 +2268,7 @@ static void gen_event_wait( ACT action, int column)
 
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) ident;
+	args.pat_long1 = ident;
 
 //  generate calls to wait on the event and to fill out the events array 
 

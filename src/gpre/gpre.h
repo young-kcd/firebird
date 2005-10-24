@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: gpre.h,v 1.33.2.1 2005-02-10 10:25:25 kkuznetsov Exp $
+ * $Id: gpre.h,v 1.33.2.2 2005-10-24 16:51:47 awharrison Exp $
  * Revision 1.3  2000/11/27 09:26:13  fsg
  * Fixed bugs in gpre to handle PYXIS forms
  * and allow edit.e and fred.e to go through
@@ -344,7 +344,7 @@ typedef struct act {
    an array has been declared in a subroutine. */
 
 typedef struct adl {
-	USHORT adl_gds_ident;		/* Identifier of array for which Gpre has
+	ULONG adl_gds_ident;		/* Identifier of array for which Gpre has
 								   generated a declaration in main or a
 								   subroutine */
 	struct adl *adl_next;		/* Next declared array identifier */
@@ -362,7 +362,7 @@ typedef struct ary {
 	int ary_dimension_count;	/* Number of dimensions in this array */
 	struct dim *ary_dimension;	/* Linked list of range info for each dimension */
 	SLONG ary_size;				/* Size of the array */
-	USHORT ary_ident;			/* Array identifier */
+	ULONG ary_ident;			/* Array identifier */
 	BOOLEAN ary_declared;		/* True if a declaration already was generated */
 	struct ary_repeat {
 		SLONG ary_lower;
@@ -401,10 +401,10 @@ public:
 	blb*		blb_next;		/* next blob in request */
 	struct ref *blb_reference;	/* field reference for blob field */
 	struct sym *blb_symbol;		/* Blob context variable */
-	USHORT blb_ident;			/* Blob handle */
-	USHORT blb_buff_ident;		/* Ident of segment buffer */
-	USHORT blb_len_ident;		/* Ident of segment length */
-	USHORT blb_seg_length;		/* Segment length of blob */
+	ULONG blb_ident;			/* Blob handle */
+	ULONG blb_buff_ident;		/* Ident of segment buffer */
+	ULONG blb_len_ident;		/* Ident of segment length */
+	ULONG blb_seg_length;		/* Segment length of blob */
 	USHORT blb_flags;			/* Misc and various blobs */
 	USHORT blb_top_label;		/* fortran label for top of request */
 	USHORT blb_btm_label;		/* fortran label for request exit */
@@ -896,7 +896,7 @@ typedef struct opn {
 
 typedef struct por {
 	USHORT por_msg_number;		/* message number within request */
-	USHORT por_ident;			/* ident in source */
+	ULONG por_ident;			/* ident in source */
 	int por_length;				/* length of port in bytes */
 	struct ref *por_references;	/* linked list of field references */
 	struct por *por_next;		/* next port in request */
@@ -988,7 +988,7 @@ typedef struct ref {
 	TEXT *ref_sdl_base;			/* base of sdl string during generation */
 	int ref_sdl_length;			/* sdl length for this reference */
 	struct slc *ref_slice;		/* Slice, if field referenced is sliced */
-	USHORT ref_sdl_ident;		/* identifier of sdl structure */
+	ULONG ref_sdl_ident;		/* identifier of sdl structure */
 	USHORT ref_offset;			/* offset of field in port */
 	USHORT ref_flags;
 	SSHORT ref_ttype;			/* Character set type for literals */
@@ -1072,7 +1072,7 @@ enum req_t {
 
 typedef struct gpre_req {
 	enum req_t req_type;		/* request type */
-	USHORT req_ident;			/* ident for request handle */
+	ULONG req_ident;			/* ident for request handle */
 	USHORT req_act_flag;		/* activity flag ident, if used */
 	int req_length;				/* blr length of request */
 	UCHAR *req_base;			/* base of blr string during generation */
@@ -1370,7 +1370,7 @@ typedef struct tpb {
 	struct tpb *tpb_dbb_next;	/* next TPB for this database */
 	struct dbb *tpb_database;	/* DBB of this part of the transaction */
 	USHORT tpb_length;			/* length of actual TPB */
-	USHORT tpb_ident;			/* unique part of name for this TPB */
+	ULONG tpb_ident;			/* unique part of name for this TPB */
 	UCHAR tpb_string[1];		/* actual TPB */
 } *TPB;
 

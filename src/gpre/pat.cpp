@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: pat.cpp,v 1.8 2003-04-01 11:49:30 brodsom Exp $
+//	$Id: pat.cpp,v 1.8.2.1 2005-10-24 16:51:47 awharrison Exp $
 //
 
 #include "firebird.h"
@@ -42,6 +42,7 @@ extern "C" {
 
 
 extern TEXT *ident_pattern;
+extern TEXT *long_ident_pattern;
 
 typedef enum {
 	NL,
@@ -221,7 +222,8 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 			break;
 
 		case RI:
-			value = args->pat_request->req_ident;
+			long_value = args->pat_request->req_ident;
+			long_flag = TRUE;
 			sw_ident = TRUE;
 			break;
 
@@ -243,8 +245,9 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 			break;
 
 		case PI:
-			value = args->pat_port->por_ident;
+			long_value = args->pat_port->por_ident;
 			sw_ident = TRUE;
+			long_flag = TRUE;
 			break;
 
 		case QN:
@@ -256,23 +259,27 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 			break;
 
 		case QI:
-			value = args->pat_port2->por_ident;
+			long_value = args->pat_port2->por_ident;
 			sw_ident = TRUE;
+			long_flag = TRUE;
 			break;
 
 		case BH:
-			value = args->pat_blob->blb_ident;
+			long_value = args->pat_blob->blb_ident;
 			sw_ident = TRUE;
+			long_flag = TRUE;
 			break;
 
 		case I1:
-			value = args->pat_ident1;
+			long_value = args->pat_ident1;
 			sw_ident = TRUE;
+			long_flag = TRUE;
 			break;
 
 		case I2:
-			value = args->pat_ident2;
+			long_value = args->pat_ident2;
 			sw_ident = TRUE;
+			long_flag = TRUE;
 			break;
 
 		case S1:
@@ -373,8 +380,12 @@ void PATTERN_expand( USHORT column, TEXT * pattern, PAT * args)
 				*p++ = *string++;
 			continue;
 		}
-		if (sw_ident)
-			sprintf(p, ident_pattern, value);
+		if (sw_ident) {
+			if (long_flag)
+				sprintf (p, long_ident_pattern, long_value);
+			else 
+				sprintf(p, ident_pattern, value);
+		}
 		else if (reference) {
 			if (!reference->ref_port)
 				sprintf(p, ident_pattern, reference->ref_ident);

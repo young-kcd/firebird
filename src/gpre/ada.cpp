@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ada.cpp,v 1.15 2003-03-27 17:15:48 brodsom Exp $
+//	$Id: ada.cpp,v 1.15.2.1 2005-10-24 16:51:46 awharrison Exp $
 //
 
 #include "firebird.h"
@@ -2013,7 +2013,7 @@ static void gen_event_wait( ACT action, int column)
 
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) ident;
+	args.pat_value1 = ident;
 
 //  generate calls to wait on the event and to fill out the events array 
 

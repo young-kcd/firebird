@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cob.cpp,v 1.22 2003-04-03 08:52:45 brodsom Exp $
+//	$Id: cob.cpp,v 1.22.2.1 2005-10-24 16:51:46 awharrison Exp $
 //
 // 2002.10.27 Sean Leyne - Completed removal of obsolete "DG_X86" port
 // 2002.10.27 Sean Leyne - Code Cleanup, removed obsolete "UNIXWARE" port
@@ -2745,7 +2745,7 @@ static void gen_event_wait( ACT action)
 
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) ident;
+	args.pat_value1 = ident;
 	args.pat_string2 = ISC_EVENT_WAIT;
 	args.pat_string3 = ISC_EVENT_COUNTS;
 	args.pat_string4 = names[ISC_];

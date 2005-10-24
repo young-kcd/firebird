@@ -37,7 +37,7 @@ extern int CMP_display_code(FINT, REF);
 #endif
 extern void CMP_external_field(GPRE_REQ, GPRE_FLD);
 extern void CMP_init(void);
-extern USHORT CMP_next_ident(void);
+extern ULONG CMP_next_ident(void);
 extern void CMP_stuff_symbol(GPRE_REQ, SYM);
 extern void CMP_t_start(GPRE_TRA);
 

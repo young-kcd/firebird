@@ -62,15 +62,15 @@ typedef struct fint {
 
 typedef struct entree {
 	struct gpre_req *entree_request;	/* Parent request */
-	USHORT entree_entree;		/* ident for entree */
-	USHORT entree_value;		/* ident for entree value */
-	USHORT entree_end;			/* ident for end flag for get */
+	ULONG entree_entree;		/* ident for entree */
+	ULONG entree_value;		/* ident for entree value */
+	ULONG entree_end;			/* ident for end flag for get */
 } *ENTREE;
 
 typedef struct menu {
 	struct entree menu_entree;	/* current/terminating entree */
-	USHORT menu_title;			/* ident for menu title */
-	USHORT menu_terminator;		/* ident for menu terminator */
+	ULONG menu_title;			/* ident for menu title */
+	ULONG menu_terminator;		/* ident for menu terminator */
 } *MENU;
 
 #define		menu_request		menu_entree.entree_request

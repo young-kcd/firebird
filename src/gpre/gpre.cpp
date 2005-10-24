@@ -20,7 +20,7 @@
 //  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  $Id: gpre.cpp,v 1.26.2.1 2004-03-29 03:49:39 skidder Exp $
+//  $Id: gpre.cpp,v 1.26.2.2 2005-10-24 16:51:47 awharrison Exp $
 //  Revision 1.2  2000/11/16 15:54:29  fsg
 //  Added new switch -verbose to gpre that will dump
 //  parsed lines to stderr
@@ -42,7 +42,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: gpre.cpp,v 1.26.2.1 2004-03-29 03:49:39 skidder Exp $
+//	$Id: gpre.cpp,v 1.26.2.2 2005-10-24 16:51:47 awharrison Exp $
 //
 
 #define GPRE_MAIN
@@ -119,7 +119,7 @@ SLONG position, last_position, line_position, first_position,
 	prior_line_position;
 ACT last_action, first_action;
 UCHAR classes[256], fortran_labels[1024];
-TEXT *ident_pattern, *utility_name, *count_name, *slack_name,
+TEXT *ident_pattern, *long_ident_pattern, *utility_name, *count_name, *slack_name,
 	*transaction_name, *database_name;
 
 static TEXT input_buffer[512], *input_char;
@@ -328,6 +328,7 @@ int main(int argc, char* argv[])
 	comment_start		= "/*";
 	comment_stop		= "*/";
 	ident_pattern		= "gds__%d";
+	long_ident_pattern	= "gds__%ld";
 	transaction_name	= "gds__trans";
 	database_name		= "gds__database";
 	utility_name		= "gds__utility";
@@ -464,6 +465,7 @@ int main(int argc, char* argv[])
 		case IN_SW_GPRE_C:
 			sw_language		= lang_c;
 			ident_pattern	= "isc_%d";
+			long_ident_pattern	= "isc_%ld";
 			utility_name	= "isc_utility";
 			count_name		= "isc_count";
 			slack_name		= "isc_slack";
@@ -474,6 +476,7 @@ int main(int argc, char* argv[])
 		case IN_SW_GPRE_CPLUSPLUS:
 			sw_language		= lang_cxx;
 			ident_pattern	= "isc_%d";
+			long_ident_pattern	= "isc_%ld";
 			utility_name	= "isc_utility";
 			count_name		= "isc_count";
 			slack_name		= "isc_slack";
@@ -542,6 +545,7 @@ int main(int argc, char* argv[])
 			transaction_name = "gds_trans";
 			database_name = "isc_database";
 			ident_pattern = "isc_%d";
+			long_ident_pattern	= "isc_%ld";
 			comment_start = "--";
 			if (db)
 				db->dbb_name->sym_string = "isc_database";
@@ -561,6 +565,7 @@ int main(int argc, char* argv[])
 			transaction_name = "gds_trans";
 			database_name = "isc_database";
 			ident_pattern = "isc_%d";
+			long_ident_pattern	= "isc_%ld";
 			comment_start = "--";
 			if (db)
 				db->dbb_name->sym_string = "isc_database";
@@ -586,6 +591,7 @@ int main(int argc, char* argv[])
 			/* Change the patterns for v4.0 */
 
 			ident_pattern = "isc_%d";
+			long_ident_pattern	= "isc_%ld";
 			utility_name = "isc_utility";
 			count_name = "isc_count";
 			slack_name = "isc_slack";
@@ -653,6 +659,7 @@ int main(int argc, char* argv[])
 			sw_know_interp = FALSE;
 			sw_interp = 0;
 			ident_pattern = "isc_%d"; 
+			long_ident_pattern	= "isc_%ld";
 			utility_name = "isc_utility";
 			count_name = "isc_count";
 			slack_name = "isc_slack";
@@ -759,6 +766,7 @@ int main(int argc, char* argv[])
 				db->dbb_name->sym_string = "isc-database";
 			comment_start = "      *  ";
 			ident_pattern = "isc-%d";
+			long_ident_pattern	= "isc-%ld";
 			transaction_name = "isc-trans";
 			database_name = "isc-database";
 			utility_name = "isc-utility";
