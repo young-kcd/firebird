@@ -7904,6 +7904,16 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 //		return NULL;
 //	}
 
+	// AB: If this context is a system generated context as in NEW/OLD inside 
+	// triggers, the qualifier by the field is mandatory. While we can't 
+	// fall back from a higher scope-level to the NEW/OLD contexts without 
+	// the qualifier present.
+	// An exception is a check-constraint that is allowed to reference fields
+	// without the qualifier.
+	if (!isCheckConstraint && (context->ctx_flags & CTX_system) && (!qualifier)) {
+		return NULL;
+	}
+
 	TEXT* table_name = NULL;
 	if (context->ctx_internal_alias) {
 		table_name = context->ctx_internal_alias;
