@@ -1,3 +1,12 @@
+2005-10-24 18:51  awharrison
+
+	* firebird2/src/gpre/: ada.cpp (1.15.2.1), c_cxx.cpp (1.20.2.2),
+	cmp.cpp (1.12.2.1), cmp_proto.h (1.5.2.1), cob.cpp (1.22.2.1),
+	form.h (1.5.2.1), ftn.cpp (1.20.2.2), gpre.cpp (1.26.2.2), gpre.h
+	(1.33.2.2), pas.cpp (1.10.2.1), pat.cpp (1.8.2.1):
+	
+	Allow more than 32767 identifiers.
+
 2005-10-20 15:01  kkuznetsov
 
 	* firebird2/src/gpre/ftn.cpp (1.20.2.1):
