@@ -1,3 +1,16 @@
+2005-10-24 14:29  alexpeshkoff
+
+	* firebird2/src/: misc/upgrade/v2/security_database.sql (1.2),
+	dbs/security.sql (1.7), jrd/pwd.cpp (1.46):
+	
+	finished rdb$users to match vulcan
+
+2005-10-24 13:56  dimitr
+
+	* firebird2/src/jrd/grant.epp (1.51):
+	
+	Bugfix (workaround) for #1334034.
+
 2005-10-22 14:35  aafemt
 
 	* firebird2/: builds/posix/Makefile.in.client.gbak (1.13),
