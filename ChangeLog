@@ -1,3 +1,9 @@
+2005-10-25 22:42  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.246):
+	
+	Fix NEW/OLD context problem found by Dmitry
+
 2005-10-24 14:29  alexpeshkoff
 
 	* firebird2/src/: misc/upgrade/v2/security_database.sql (1.2),
