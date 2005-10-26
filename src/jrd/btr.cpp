@@ -872,6 +872,7 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 	IDX_E result = idx_e_ok;
 	index_desc::idx_repeat* tail = idx->idx_rpt;
 	key->key_flags = key_all_nulls;
+	key->key_null_segment = 0;
 
 	try {
 
@@ -965,7 +966,9 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				const bool isNull =
 					!EVL_field(relation, record, tail->idx_field, desc_ptr);
 				if (isNull && (idx->idx_flags & idx_unique)) {
-					missing_unique_segments++;
+					if (missing_unique_segments++ == 0) {
+						key->key_null_segment = n;
+					}
 				}
 
 				if (!isNull) {
@@ -1300,6 +1303,7 @@ IDX_E BTR_make_key(thread_db* tdbb,
 	IDX_E result = idx_e_ok;
 
 	key->key_flags = key_all_nulls;
+	key->key_null_segment = 0;
 
 	index_desc::idx_repeat* tail = idx->idx_rpt;
 

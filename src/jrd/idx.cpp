@@ -255,6 +255,7 @@ void IDX_create_index(
 
 	const bool isODS11 = (dbb->dbb_ods_version >= ODS_VERSION11);
 	const bool isDescending = (idx->idx_flags & idx_descending);
+	const bool isPrimary = (idx->idx_flags & idx_primary);
 
 	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
 
@@ -400,6 +401,18 @@ void IDX_create_index(
 				idx_null_state null_state;
 				BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
 				key_is_null = (null_state == idx_nulls_all);
+
+				if (isPrimary && null_state != idx_nulls_none) 
+				{
+					fb_assert(key.key_null_segment < idx->idx_count);
+
+					const USHORT bad_id = idx->idx_rpt[key.key_null_segment].idx_field;
+					const jrd_fld *bad_fld = MET_get_field(relation, bad_id);
+
+					ERR_post(isc_not_valid,
+						isc_arg_string, bad_fld->fld_name.c_str(),
+						isc_arg_string, "*** null ***", 0);
+				}
 			}
 			else {
 				do {

@@ -151,6 +151,10 @@ struct temporary_key {
 	USHORT key_length;
 	UCHAR key_data[MAX_KEY + 1];
 	UCHAR key_flags;
+	USHORT key_null_segment;	// index of first encountered null segment. 
+		// Evaluated in BTR_key only and used in IDX_create_index for better 
+		// error diagnostics
+
  /* AB: I don't see the use of multiplying with 2 anymore. */
 	//UCHAR key_data[MAX_KEY * 2];	
 		// This needs to be on a SHORT boundary. 
