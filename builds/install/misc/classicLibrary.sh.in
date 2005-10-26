@@ -69,14 +69,13 @@ fixFilePermissions() {
 	chmod a=r aliases.conf
 	chmod a=r firebird.conf
     chmod a=r firebird.msg
-    chmod ug=rw,o= help/help.fdb
+    chmod a=r help/help.fdb
     chmod ug=rw,o= $SecurityDatabase
 	
 	if [ "$RunUser" = "root" ]
 	# In that case we must open databases to the world...
 	# That's a pity, but required if root RunUser choosen.
 	then
-	    chmod a=rw help/help.fdb
     	chmod a=rw $SecurityDatabase
 	fi
 
