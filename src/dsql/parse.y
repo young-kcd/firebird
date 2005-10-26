@@ -1039,9 +1039,8 @@ null_constraint	: NOT KW_NULL
 		;
 
 check_constraint	: CHECK begin_trigger '(' search_condition ')' end_trigger
-			{ $$ = make_node (nod_def_constraint, 
-				  (int) e_cnstr_count, MAKE_string(NULL_STRING, 0), NULL, 
-				  NULL, NULL, $4, NULL, $6, NULL, NULL); }
+			{ $$ = make_node (nod_def_constraint, (int) e_cnstr_count,
+					NULL, NULL, $4, NULL, $6); }
 		;
 
 
@@ -1871,7 +1870,6 @@ end_trigger	:
 
 check_opt	: WITH CHECK OPTION
 			{ $$ = make_node (nod_def_constraint, (int) e_cnstr_count, 
-					MAKE_string(NULL_STRING, 0), NULL, NULL, NULL, 
 					NULL, NULL, NULL, NULL, NULL); }
 		|
 			{ $$ = 0; }

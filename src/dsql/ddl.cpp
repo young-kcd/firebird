@@ -844,27 +844,20 @@ static void check_constraint(	dsql_req*		request,
 
 	// specify that the trigger should abort if the condition is not met
 
-	dsql_nod* list_node = MAKE_node(nod_list, (int) 1);
+	dsql_nod* list_node = MAKE_node(nod_list, 1);
 	element->nod_arg[e_cnstr_actions] = list_node;
-	list_node->nod_arg[0] = MAKE_node(nod_gdscode, (int) 1);
+	list_node->nod_arg[0] = MAKE_node(nod_gdscode, 1);
 
 	dsql_nod** errorcode_node = &list_node->nod_arg[0]->nod_arg[0];
 	*errorcode_node = (dsql_nod*) MAKE_cstring("check_constraint");
-	element->nod_arg[e_cnstr_message] = NULL;
 
 	// create the INSERT trigger
-
-// element->nod_arg[e_cnstr_message] =
-//   (dsql_nod*) MAKE_cstring ("insert violates CHECK constraint on table");
 
 	element->nod_arg[e_cnstr_type] =
 		MAKE_constant((dsql_str*) PRE_STORE_TRIGGER, CONSTANT_SLONG);
 	define_constraint_trigger(request, element);
 
 	// create the UPDATE trigger
-
-// element->nod_arg[e_cnstr_message] =
-//  (dsql_nod*) MAKE_cstring ("update violates CHECK constraint on table");
 
 	element->nod_arg[e_cnstr_type] =
 		MAKE_constant((dsql_str*) PRE_MODIFY_TRIGGER, CONSTANT_SLONG);
@@ -873,10 +866,6 @@ static void check_constraint(	dsql_req*		request,
 	// create the DELETE trigger, if required
 	if (delete_trigger_required)
 	{
-//
-//		element->nod_arg[e_cnstr_message] =
-//			(dsql_nod*) MAKE_cstring ("delete violates CHECK constraint on table");
-//
 		element->nod_arg[e_cnstr_type] =
 			MAKE_constant((dsql_str*) PRE_ERASE_TRIGGER, CONSTANT_SLONG);
 		define_constraint_trigger(request, element);
@@ -934,18 +923,14 @@ static void create_view_triggers(dsql_req* request, dsql_nod* element,
 
 	// specify that the trigger should abort if the condition is not met
 
-	dsql_nod* list_node = MAKE_node(nod_list, (int) 1);
+	dsql_nod* list_node = MAKE_node(nod_list, 1);
 	element->nod_arg[e_cnstr_actions] = list_node;
-	list_node->nod_arg[0] = MAKE_node(nod_gdscode, (int) 1);
+	list_node->nod_arg[0] = MAKE_node(nod_gdscode, 1);
 
 	dsql_nod** errorcode_node = &list_node->nod_arg[0]->nod_arg[0];
 	*errorcode_node = (dsql_nod*) MAKE_cstring("check_constraint");
-	element->nod_arg[e_cnstr_message] = NULL;
 
 	// create the UPDATE trigger
-
-// element->nod_arg[e_cnstr_message] =
-//   (dsql_nod*) MAKE_cstring ("update violates CHECK constraint on view");
 
 	element->nod_arg[e_cnstr_type] =
 		MAKE_constant((dsql_str*) PRE_MODIFY_TRIGGER, CONSTANT_SLONG);
@@ -962,9 +947,6 @@ static void create_view_triggers(dsql_req* request, dsql_nod* element,
 	define_view_trigger(request, element, rse, items);
 
 	// create the INSERT trigger
-
-// element->nod_arg[e_cnstr_message] =
-//   (dsql_nod*) MAKE_cstring ("insert violates CHECK constraint on view");
 
 	element->nod_arg[e_cnstr_type] =
 		MAKE_constant((dsql_str*) PRE_STORE_TRIGGER, CONSTANT_SLONG);
@@ -1110,18 +1092,10 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 		return;
 	}
 
-	const dsql_str* trigger_name = (dsql_str*) node->nod_arg[e_cnstr_name];
-
-	fb_assert(trigger_name->str_length <= MAX_USHORT);
-
-	request->append_string(	isc_dyn_def_trigger,
-							trigger_name->str_data,
-							(USHORT) trigger_name->str_length);
+	request->append_string(isc_dyn_def_trigger, "", 0);
 
 	dsql_nod* relation_node = node->nod_arg[e_cnstr_table];
 	const dsql_str* relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
-
-	fb_assert(trigger_name->str_length <= MAX_USHORT);
 
 	request->append_string(	isc_dyn_rel_name,
 							relation_name->str_data,
@@ -1136,32 +1110,16 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 								(USHORT) source->str_length);
 	}
 
-	const dsql_nod* constant = node->nod_arg[e_cnstr_position];
-	if (constant)
-	{
-		request->append_number(isc_dyn_trg_sequence,
-				   (SSHORT) (constant ? (IPTR) constant->nod_arg[0] : 0));
-	}
+	request->append_number(isc_dyn_trg_sequence, 0);
 
-	constant = node->nod_arg[e_cnstr_type];
-	if (constant != NULL)
+	const dsql_nod* constant = node->nod_arg[e_cnstr_type];
+	if (constant)
 	{
 		const SSHORT type = (SSHORT)(IPTR) constant->nod_arg[0];
 		request->append_number(isc_dyn_trg_type, type);
 	}
 
 	request->append_uchar(isc_dyn_sql_object);
-
-	const dsql_str* message = (dsql_str*) node->nod_arg[e_cnstr_message];
-	if (message)
-	{
-		request->append_number(isc_dyn_def_trigger_msg, 0);
-		fb_assert(message->str_length <= MAX_USHORT);
-		request->append_string(	isc_dyn_trg_msg,
-								message->str_data,
-								(USHORT) message->str_length);
-		request->append_uchar(isc_dyn_end);
-	}
 
 	// generate the trigger blr
 
@@ -1197,14 +1155,15 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 		// generate the condition for firing the trigger
 
 		request->append_uchar(blr_if);
-		GEN_expr(request,
-				 PASS1_node(request, node->nod_arg[e_cnstr_condition], false));
 
-		request->append_uchar(blr_begin);
-		request->append_uchar(blr_end);		// of begin
+		dsql_nod* condition = MAKE_node(nod_not, 1);
+		condition->nod_arg[0] = node->nod_arg[e_cnstr_condition];
+
+		GEN_expr(request, PASS1_node(request, condition, false));
 
 		// generate the action statements for the trigger
-		dsql_nod*  actions = node->nod_arg[e_cnstr_actions];
+
+		dsql_nod* actions = node->nod_arg[e_cnstr_actions];
 		dsql_nod** ptr = actions->nod_arg;
 		for (const dsql_nod* const* const end = ptr + actions->nod_count;
 			 ptr < end; ptr++)
@@ -1212,23 +1171,8 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 			GEN_statement(request, PASS1_statement(request, *ptr, false));
 		}
 
-		// generate the action statements for the trigger
-
-		if ((actions = node->nod_arg[e_cnstr_else]) != NULL)
-		{
-			request->append_uchar(blr_begin);
-			ptr = actions->nod_arg;
-			for (const dsql_nod* const* const end = ptr + actions->nod_count;
-				 ptr < end; ptr++)
-			{
-				GEN_statement(request, PASS1_statement(request, *ptr, false));
-			}
-			request->append_uchar(blr_end);	// of begin
-		}
-		else
-		{
-			request->append_uchar(blr_end);	// of if
-		}
+		request->append_uchar(blr_end);	// of if (as there's no ELSE branch)
+		request->append_uchar(blr_end);	// of begin
 
 		request->end_blr();
 	}
@@ -1360,7 +1304,7 @@ static void define_del_cascade_trg(	dsql_req*    request,
 	}
 
 	// stuff a trigger_name of size 0. So the dyn-parser will make one up.
-	request->append_string(	isc_dyn_def_trigger, "", 0);
+	request->append_string(isc_dyn_def_trigger, "", 0);
 
 	request->append_number(isc_dyn_trg_type, (SSHORT) POST_ERASE_TRIGGER);
 
@@ -3954,15 +3898,11 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 
 	request->req_ddl_node = node;
 
-	const dsql_str* trigger_name = (dsql_str*) node->nod_arg[e_cnstr_name];
 	dsql_nod* relation_node = NULL;
 
 	if (node->nod_type == nod_def_constraint)
 	{
-		fb_assert(trigger_name->str_length <= MAX_USHORT);
-		request->append_string(	isc_dyn_def_trigger,
-								trigger_name->str_data,
-								trigger_name->str_length);
+		request->append_string(isc_dyn_def_trigger, "", 0);
 		relation_node = node->nod_arg[e_cnstr_table];
 		const dsql_str* relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
 		fb_assert(relation_name->str_length <= MAX_USHORT);
@@ -3975,14 +3915,9 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 		return;
 	}
 
-	dsql_nod* constant = node->nod_arg[e_cnstr_position];
-	if (constant)
-	{
-		request->append_number(isc_dyn_trg_sequence,
-				   (SSHORT)(IPTR) (constant ? constant->nod_arg[0] : 0));
-	}
+	request->append_number(isc_dyn_trg_sequence, 0);
 
-	constant = node->nod_arg[e_cnstr_type];
+	const dsql_nod* constant = node->nod_arg[e_cnstr_type];
 	USHORT trig_type;
 	if (constant)
 	{
@@ -3998,17 +3933,6 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 	}
 
 	request->append_uchar(isc_dyn_sql_object);
-
-	const dsql_str* message = (dsql_str*) node->nod_arg[e_cnstr_message];
-	if (message)
-	{
-		request->append_number(isc_dyn_def_trigger_msg, 0);
-		fb_assert(message->str_length <= MAX_USHORT);
-		request->append_string(	isc_dyn_trg_msg,
-								message->str_data,
-								message->str_length);
-		request->append_uchar(isc_dyn_end);
-	}
 
 	// generate the trigger blr
 
@@ -4058,28 +3982,17 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 			temp = rse->nod_arg[e_rse_boolean];
 			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp, false);
 			GEN_expr(request, rse);
-
-			dsql_nod* condition = MAKE_node(nod_not, 1);
-			condition->nod_arg[0] =
-				replace_field_names(select_expr->nod_arg[e_qry_where], items,
-									view_fields, false, NEW_CONTEXT);
-			request->append_uchar(blr_begin);
-			request->append_uchar(blr_if);
-			GEN_expr(request, PASS1_node(request, condition->nod_arg[0], false));
-			request->append_uchar(blr_begin);
-			request->append_uchar(blr_end);
 		}
 
-		if (trig_type == PRE_STORE_TRIGGER) {
-			dsql_nod* condition = MAKE_node(nod_not, 1);
-			condition->nod_arg[0] =
-				replace_field_names(select_expr->nod_arg[e_qry_where], items,
-									view_fields, true, NEW_CONTEXT);
-			request->append_uchar(blr_if);
-			GEN_expr(request, PASS1_node(request, condition->nod_arg[0], false));
-			request->append_uchar(blr_begin);
-			request->append_uchar(blr_end);
-		}
+		// generate the condition for firing the trigger
+
+		dsql_nod* condition =
+			replace_field_names(select_expr->nod_arg[e_qry_where], items,
+								view_fields, false, NEW_CONTEXT);
+		request->append_uchar(blr_if);
+		GEN_expr(request, PASS1_node(request, condition, false));
+		request->append_uchar(blr_begin);
+		request->append_uchar(blr_end);
 
 		// generate the action statements for the trigger
 
@@ -4091,32 +4004,8 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 			GEN_statement(request, PASS1_statement(request, *ptr, false));
 		}
 
-		// generate the action statements for the trigger
+		request->append_uchar(blr_end);	// of begin
 
-		actions = node->nod_arg[e_cnstr_else];
-		if (actions)
-		{
-			request->append_uchar(blr_begin);
-			dsql_nod** ptr2 = actions->nod_arg;
-			for (const dsql_nod* const* const end2 = ptr2 + actions->nod_count;
-				 ptr2 < end2; ptr++)
-			{
-				dsql_nod* action_node = PASS1_statement(request, *ptr2, false);
-				if (action_node->nod_type == nod_modify)
-				{
-					dsql_nod* temp_rse = action_node->nod_arg[e_mod_rse];
-					temp_rse->nod_arg[e_rse_first] =
-						MAKE_constant((dsql_str*) 1, CONSTANT_SLONG);
-				}
-				GEN_statement(request, action_node);
-			}
-			request->append_uchar(blr_end);		// of begin
-		}
-
-		request->append_uchar(blr_end);			// of if
-		if (trig_type == PRE_MODIFY_TRIGGER) {
-			request->append_uchar(blr_end);		// of for
-		}
 		request->end_blr();
 	}
     request->append_number(isc_dyn_system_flag, fb_sysflag_view_check);

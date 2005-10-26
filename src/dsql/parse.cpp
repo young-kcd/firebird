@@ -7898,9 +7898,8 @@ case 159:
 { yyval = make_node (nod_null, (int) 0, NULL); }
 break;
 case 160:
-{ yyval = make_node (nod_def_constraint, 
-				  (int) e_cnstr_count, MAKE_string(NULL_STRING, 0), NULL, 
-				  NULL, NULL, yyvsp[-2], NULL, yyvsp[0], NULL, NULL); }
+{ yyval = make_node (nod_def_constraint, (int) e_cnstr_count,
+					NULL, NULL, yyvsp[-2], NULL, yyvsp[0]); }
 break;
 case 161:
 { yyval = make_node (nod_def_generator, (int) e_gen_count, yyvsp[0]); }
@@ -8385,7 +8384,6 @@ case 378:
 break;
 case 379:
 { yyval = make_node (nod_def_constraint, (int) e_cnstr_count, 
-					MAKE_string(NULL_STRING, 0), NULL, NULL, NULL, 
 					NULL, NULL, NULL, NULL, NULL); }
 break;
 case 380:

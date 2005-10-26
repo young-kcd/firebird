@@ -739,15 +739,11 @@ enum node_args {
 
 	e_ref_trig_action_count = 0,	//
 
-	e_cnstr_name = 0,		// nod_def_constraint
-	e_cnstr_table,			// NOTE: IF ADDING AN ARG IT MUST BE
-	e_cnstr_type,			// NULLED OUT WHEN THE NODE IS
-	e_cnstr_position,		// DEFINED IN parse.y
+	e_cnstr_table = 0,		// nod_def_constraint
+	e_cnstr_type,
 	e_cnstr_condition,
 	e_cnstr_actions,
 	e_cnstr_source,
-	e_cnstr_message,
-	e_cnstr_else,
 	e_cnstr_count,
 
 	e_trg_name = 0,			// nod_mod_trigger and nod_def trigger
