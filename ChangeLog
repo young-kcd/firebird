@@ -1,3 +1,11 @@
+2005-10-26 16:31  alexpeshkoff
+
+	*
+	firebird2/src/install/arch-specific/linux/classic/postinstall.sh.in
+	(1.10.2.12):
+	
+	backported qli fix
+
 2005-10-24 18:51  awharrison
 
 	* firebird2/src/gpre/: ada.cpp (1.15.2.1), c_cxx.cpp (1.20.2.2),
