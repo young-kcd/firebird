@@ -210,7 +210,8 @@ static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 static CONTENTS remove_node(thread_db*, index_insertion*, WIN*);
 static CONTENTS remove_leaf_node(thread_db*, index_insertion*, WIN*);
 static bool scan(thread_db*, UCHAR*, RecordBitmap**, index_desc*, 
-				 IndexRetrieval*, USHORT, temporary_key*, const SCHAR);
+				 IndexRetrieval*, USHORT, temporary_key*, const SCHAR, 
+				 bool&, const USHORT);
 static void update_selectivity(index_root_page*, USHORT, const SelectivityList&);
 
 USHORT BTR_all(thread_db*		tdbb,
@@ -435,6 +436,10 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 	upper.key_length = 0;
 	btree_page* page = BTR_find_page(tdbb, retrieval, &window, &idx, &lower, &upper, false);
 
+	const bool descending = (idx.idx_flags & idx_descending);
+	bool skipLowerKey = (retrieval->irb_generic & irb_exclude_lower);
+	const bool partLower = (retrieval->irb_lower_count < idx.idx_count);
+
 	// If there is a starting descriptor, search down index to starting position.
 	// This may involve sibling buckets if splits are in progress.  If there 
 	// isn't a starting descriptor, walk down the left side of the index.
@@ -454,16 +459,56 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 			prefix = BTreeNode::computePrefix(upper.key_data, upper.key_length,
 				lower.key_data, lower.key_length);
 		}
+
+		if (skipLowerKey)
+		{
+			IndexNode node;
+			BTreeNode::readNode(&node, pointer, page->btr_header.pag_flags, true);
+
+			if ((lower.key_length == node.prefix + node.length) ||
+				(lower.key_length <= node.prefix + node.length) && partLower)
+			{
+				const UCHAR *p = node.data, *q = lower.key_data + node.prefix;
+				const UCHAR *const end = lower.key_data + lower.key_length;
+				while(q < end)
+				{
+					if (*p++ != *q++) {
+						skipLowerKey = false;
+						break;
+					}
+				}
+
+				if ((q >= end) && (p < node.data + node.length) && skipLowerKey && partLower) 
+				{
+					// since key length always is multiplier of (STUFF_COUNT + 1) (for partial 
+					// compound keys) and we passed lower key completely then p pointed 
+					// us to the next segment number and we can use this fact to calculate 
+					// how many segments is equal to lower key
+					const USHORT segnum = 
+						idx.idx_count - (UCHAR)(descending ? ((*p)^-1) : *p);
+
+					if (segnum < retrieval->irb_lower_count) {
+						skipLowerKey = false;
+					}
+				}
+			}
+			else {
+				skipLowerKey = false;
+			}
+		}
 	}
 	else {
 		pointer = BTreeNode::getPointerFirstNode(page);
 		prefix = 0;
+		skipLowerKey = false;
 	}
 
 	const SCHAR flags = page->btr_header.pag_flags;
 	// if there is an upper bound, scan the index pages looking for it
 	if (retrieval->irb_upper_count)	{
-		while (scan(tdbb, pointer, bitmap, &idx, retrieval, prefix, &upper, flags)) {
+		while (scan(tdbb, pointer, bitmap, &idx, retrieval, prefix, &upper, flags, 
+					skipLowerKey, lower.key_length)) 
+		{
 			page = (btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
 				LCK_read, pag_index);
 			pointer = BTreeNode::getPointerFirstNode(page);
@@ -473,7 +518,6 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 	else {
 		// if there isn't an upper bound, just walk the index to the end of the level
 		const UCHAR* endPointer = (UCHAR*)page + page->btr_length;
-		const bool descending = (idx.idx_flags & idx_descending);
 		const bool ignoreNulls = 
 			(retrieval->irb_generic & irb_ignore_null_value_key) && (idx.idx_count == 1);
 
@@ -483,6 +527,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 		if (pointer > endPointer) {
 			BUGCHECK(204);	// msg 204 index inconsistent
 		}
+
 		while (true) {
 
 			if (node.isEndLevel) {
@@ -498,11 +543,36 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 					break;
 				}
 
-				RBM_SET(tdbb->getDefaultPool(), bitmap, node.recordNumber.getValue());
+				if (!skipLowerKey) {
+					RBM_SET(tdbb->getDefaultPool(), bitmap, node.recordNumber.getValue());
+				}
 				pointer = BTreeNode::readNode(&node, pointer, flags, true);
 				// Check if pointer is still valid
 				if (pointer > endPointer) {
 					BUGCHECK(204);	// msg 204 index inconsistent
+				}
+
+				if (skipLowerKey) 
+				{
+					// are we skip all duplicates of lower key ?
+					if (node.prefix < lower.key_length) {
+						skipLowerKey = false;
+					}
+					else if ((node.prefix == lower.key_length) && node.length) 
+					{
+						if (partLower) 
+						{
+							const USHORT segnum = idx.idx_count - 
+								(UCHAR)(descending ? (*node.data)^-1 : *node.data);
+
+							if (segnum < retrieval->irb_lower_count){
+								skipLowerKey = false;
+							}
+						} 
+						else {
+							skipLowerKey = false;
+						}
+					}
 				}
 				continue;
 			}
@@ -1658,7 +1728,6 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	if (root_window->win_bdb) {
 		CCH_RELEASE(tdbb, root_window);
 	}
-
 }
 
 
@@ -3886,7 +3955,6 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 			if (pointer > endPointer) {
 				BUGCHECK(204);	// msg 204 index inconsistent
 			}
-
 		}
 
 	  done1:
@@ -6151,7 +6219,8 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 
 static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 				 index_desc* idx, IndexRetrieval* retrieval, USHORT prefix, 
-				 temporary_key* key, const SCHAR page_flags)
+				 temporary_key* key, const SCHAR page_flags, 
+				 bool& skipLowerKey, const USHORT lowerKeyLen)
 {
 /**************************************
  *
@@ -6196,9 +6265,14 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 	const bool ignoreNulls = (flag & irb_ignore_null_value_key) && (idx->idx_count == 1);
 	bool done = false;
 	bool ignore = false;
+	const bool skipUpperKey = (flag & irb_exclude_upper);
+	const bool partLower = (retrieval->irb_lower_count < idx->idx_count);
+	const bool partUpper = (retrieval->irb_upper_count < idx->idx_count);
+	USHORT upperPrefix = prefix;
 
 	// reset irb_equality flag passed for optimization
 	flag &= ~(irb_equality | irb_ignore_null_value_key);
+	flag &= ~(irb_exclude_lower | irb_exclude_upper);
 
 	if (page_flags & btr_large_keys) {
 		IndexNode node;
@@ -6226,7 +6300,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 					// Up to (partial/starting) to_segment is expected to be NULL.
 					if (node.length && (node.prefix == 0)) {
 						const UCHAR* q = node.data;
-						if (*q > to_segment) {
+						if (*q > to_segment) {	// hvlad: for desc indexes we must use *q^-1 ?
 							return false;
 						}
 					}
@@ -6236,7 +6310,24 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 				prefix = node.prefix;
 				p = key->key_data + prefix;
 				const UCHAR* q = node.data;
-				for (USHORT l = node.length; l; --l, prefix++) {
+				USHORT l = node.length;
+				for (; l; --l, prefix++) {
+					if (skipUpperKey && partUpper) {
+						if (upperPrefix >= key->key_length) 
+						{
+							const USHORT segnum = 
+								idx->idx_count - (UCHAR)(descending ? ((*q)^-1) : *q) + 1;
+
+							if (segnum >= retrieval->irb_upper_count) {
+								return false;
+							}
+						}
+
+						if (*p == *q) {
+							upperPrefix++;
+						}
+					}
+
 					if (p >= end_key) {
 						if (flag) {
 							break;
@@ -6267,6 +6358,10 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 				}
 				if (p >= end_key) {
 					done = true;
+					
+					if ((l==0) && skipUpperKey) {
+						return false;
+					}
 				}
 			}
 
@@ -6288,7 +6383,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 				}
 			}
 
-			if (!ignore) {
+			if (!ignore && !skipLowerKey) {
 				if ((flag & irb_starting) || !count) {
 					RBM_SET(tdbb->getDefaultPool(), bitmap, node.recordNumber.getValue());
 				}
@@ -6298,6 +6393,28 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 			}
 
 			pointer = BTreeNode::readNode(&node, pointer, page_flags, true);
+
+			if (skipLowerKey) 
+			{
+				if (node.prefix < lowerKeyLen) {
+					skipLowerKey = false;
+				}
+				else if ((node.prefix == lowerKeyLen) && node.length) 
+				{
+					if (partLower) 
+					{
+						const USHORT segnum = idx->idx_count - 
+							(UCHAR)(descending ? (*node.data)^-1 : *node.data);
+
+						if (segnum < retrieval->irb_lower_count){
+							skipLowerKey = false;
+						}
+					} 
+					else {
+						skipLowerKey = false;
+					}
+				}
+			}
 		}
 	}
 	else {
@@ -6336,9 +6453,27 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 			}
 			else if (node->btn_prefix <= prefix) {
 				prefix = node->btn_prefix;
+				upperPrefix = prefix;
 				p = key->key_data + prefix;
 				const UCHAR* q = node->btn_data;
-				for (USHORT l = node->btn_length; l; --l, prefix++) {
+				USHORT l = node->btn_length;
+				for (; l; --l, prefix++) {
+					if (skipUpperKey && partUpper) {
+						if (upperPrefix >= key->key_length) 
+						{
+							const USHORT segnum = 
+								idx->idx_count - (UCHAR)(descending ? ((*q)^-1) : *q) + 1;
+
+							if (segnum >= retrieval->irb_upper_count) {
+								return false;
+							}
+						}
+
+						if (*p == *q) {
+							upperPrefix++;
+						}
+					}
+
 					if (p >= end_key) {
 						if (flag) {
 							break;
@@ -6369,6 +6504,10 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 				}
 				if (p >= end_key) {
 					done = true;
+					
+					if ((l==0) && skipUpperKey) {
+						return false;
+					}
 				}
 			}
 
@@ -6393,7 +6532,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 				}
 			}
 
-			if (!ignore) {
+			if (!ignore && !skipLowerKey) {
 				if ((flag & irb_starting) || !count) {
 					RBM_SET(tdbb->getDefaultPool(), bitmap, number);
 				}
@@ -6403,6 +6542,27 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 			}
 
 			node = NEXT_NODE(node);
+
+			if (skipLowerKey) {
+				if (node->btn_prefix < lowerKeyLen) {
+					skipLowerKey = false;
+				}
+				else if ((node->btn_prefix == lowerKeyLen) && node->btn_length) 
+				{
+					if (partLower) 
+					{
+						const USHORT segnum = idx->idx_count - 
+							(UCHAR)(descending ? (*node->btn_data)^-1 : *node->btn_data);
+
+						if (segnum < retrieval->irb_lower_count){
+							skipLowerKey = false;
+						}
+					} 
+					else {
+						skipLowerKey = false;
+					}
+				}
+			}
 		}
 	}
 

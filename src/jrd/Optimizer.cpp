@@ -799,6 +799,9 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 	upperCount = 0;
 	nonFullMatchedSegments = 0;
 
+	excludeLower = false;
+	excludeUpper = false;
+
 	segments.grow(idx->idx_count);
 
 	int length = 0;
@@ -847,6 +850,9 @@ IndexScratch::IndexScratch(MemoryPool& p, IndexScratch* scratch) :
 	upperCount = scratch->upperCount;
 	nonFullMatchedSegments = scratch->nonFullMatchedSegments;
 	idx = scratch->idx;
+
+	excludeLower = scratch->excludeLower;
+	excludeUpper = scratch->excludeUpper;
 
 	// Allocate needed segments
 	segments.grow(scratch->segments.getCount());
@@ -1823,6 +1829,13 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 		}
 	}
 
+	if (indexScratch->excludeLower) {
+		retrieval->irb_generic |= irb_exclude_lower;
+	}
+	if (indexScratch->excludeUpper) {
+		retrieval->irb_generic |= irb_exclude_upper;
+	}
+
 	// mark the index as utilized for the purposes of this compile
 	idx->idx_runtime_flags |= idx_used;
 
@@ -2230,6 +2243,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 	// match the field to an index, if possible, and save the value to be matched 
 	// as either the lower or upper bound for retrieval, or both
 
+	const bool isDesc = (indexScratch->idx->idx_flags & idx_descending);
 	int count = 0;
 	IndexScratchSegment** segment = indexScratch->segments.begin();
 	for (int i = 0; i < indexScratch->idx->idx_count; i++) {
@@ -2285,6 +2299,13 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 						(segment[i]->scanType == segmentScanEquivalent) ||
 						(segment[i]->scanType == segmentScanBetween))) 
 					{
+						if (boolean->nod_type == nod_gtr) {
+							if (forward != isDesc) // (forward && !isDesc || !forward && isDesc)
+								indexScratch->excludeLower = true;
+							else
+								indexScratch->excludeUpper = true;
+						}
+						
 						if (forward) {
 							segment[i]->lowerValue = value;
 							if (segment[i]->scanType == segmentScanLess) {
@@ -2313,6 +2334,13 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 						(segment[i]->scanType == segmentScanEquivalent) ||
 						(segment[i]->scanType == segmentScanBetween))) 
 					{
+						if (boolean->nod_type == nod_lss) {
+							if (forward != isDesc)
+								indexScratch->excludeUpper = true;
+							else
+								indexScratch->excludeLower = true;
+						}
+
 						if (forward) {
 							segment[i]->upperValue = value;
 							if (segment[i]->scanType == segmentScanGreater) {

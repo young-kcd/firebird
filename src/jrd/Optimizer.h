@@ -128,6 +128,9 @@ public:
 	int nonFullMatchedSegments;		//
 	double cardinality;				// Estimated cardinality when using the whole index
 
+	bool excludeLower;				//  
+	bool excludeUpper;				//
+
 	Firebird::Array<IndexScratchSegment*> segments;
 };
 

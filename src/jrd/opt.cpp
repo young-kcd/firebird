@@ -1152,6 +1152,35 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation,
 		retrieval->irb_generic |= irb_ignore_null_value_key;
 	}
 
+	bool includeLower = true, includeUpper = true;
+	for (tail = opt->opt_segments; (tail->opt_lower || tail->opt_upper) && 
+									tail->opt_match && (tail < end); tail++)
+	{
+		switch (tail->opt_match->nod_type)
+		{
+			case nod_gtr: 
+				if (retrieval->irb_generic & irb_descending)
+					includeUpper = false;
+				else
+					includeLower = false;
+				break;
+			
+			case nod_lss:
+				if (retrieval->irb_generic & irb_descending)
+					includeLower = false;
+				else
+					includeUpper = false;
+				break;
+		}
+	}
+
+	if (!includeLower) {
+		retrieval->irb_generic |= irb_exclude_lower;
+	}
+	if (!includeUpper) {
+		retrieval->irb_generic |= irb_exclude_upper;
+	}
+
 /* Check to see if this is really an equality retrieval */
 
 	if (retrieval->irb_lower_count == retrieval->irb_upper_count) {
