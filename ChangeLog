@@ -1,3 +1,33 @@
+2005-10-26 20:21  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp (1.162), node.h (1.68), parse.cpp
+	(1.165), parse.y (1.192):
+	
+	1) Fixed check constraints 2) A bit simplified generation of check
+	option triggers 3) Cleanup of unused parser stuff
+
+2005-10-26 17:11  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.151), btr.h (1.40), idx.cpp
+	(1.99):
+	
+	Don't allow to create primary key constraint on non-null fields
+	with null values.  For example:
+	
+	create table buggg (f1 int not null, f2 int not null); commit;
+	
+	insert into buggg values (1, 1) commit;
+	
+	alter table buggg add pk int not null primary key; or alter table
+	buggg add constraint pk_buggg primary key (pk) or alter table buggg
+	add constraint pk_buggg primary key (f1, f2, pk)
+
+2005-10-26 16:03  alexpeshkoff
+
+	* firebird2/builds/install/misc/classicLibrary.sh.in (1.3):
+	
+	fixed bug with access to QLI's help
+
 2005-10-25 22:42  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp (1.246):
