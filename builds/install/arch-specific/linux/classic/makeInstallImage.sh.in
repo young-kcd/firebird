@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.17 2005-08-16 10:04:11 alexpeshkoff Exp $
+#   $Id: makeInstallImage.sh.in,v 1.18 2005-10-27 13:51:27 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -115,6 +115,8 @@ copyFiles() {
     mkdir $DestDir/doc/sql.extensions 
     mkdir $DestDir/UDF 
     mkdir $DestDir/misc
+	mkdir $DestDir/upgrade
+	
 #    mkdir $TargetDir/etc 
 #    mkdir $TargetDir/etc/init.d
 #    mkdir $TargetDir/var
@@ -196,18 +198,24 @@ copyFiles() {
     cp $BuiltFBDir/UDF/ib_udf.so $DestDir/UDF/
     cp $BuiltFBDir/UDF/fbudf.so $DestDir/UDF/
 
+#	Note that the following items copy files from outside the build tree.
+
 #   Copy the sql-declarations into the UDF-directory  
     cp $BuildRootDir/src/extlib/ib_udf.sql $DestDir/UDF/
+    cp $BuildRootDir/src/extlib/ib_udf2.sql $DestDir/UDF/
     cp $BuildRootDir/src/extlib/fbudf/fbudf.sql $DestDir/UDF/
 	    
-
-    # Note that this copies files from outside the build tree.
+#   Copy various documentation
     cp $BuildRootDir/doc/*.pdf $DestDir/doc
     cp $BuildRootDir/doc/README.* $DestDir/doc
-    cp $BuildRootDir/doc/sql.extensions/* $DestDir/doc/sql.extensions
+    cp $BuildRootDir/doc/sql.extensions/README* $DestDir/doc/sql.extensions
     cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
     cp $BuildRootDir/doc/README.user $DestDir/README
+    
+#	Copy various upgrade stuff
+    cp $BuildRootDir/src/misc/upgrade/v2/* $DestDir/upgrade/
 
+#	Misc. config files
     cp $BuildRootDir/gen/install/misc/firebird.xinetd $DestDir/misc/
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/
     cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/

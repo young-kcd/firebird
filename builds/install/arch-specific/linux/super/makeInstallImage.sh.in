@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.16 2005-08-19 00:53:22 robocop Exp $
+#   $Id: makeInstallImage.sh.in,v 1.17 2005-10-27 13:51:35 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -116,6 +116,7 @@ copyFiles() {
     mkdir $DestDir/doc/sql.extensions
     mkdir $DestDir/UDF 
     mkdir $DestDir/misc
+    mkdir $DestDir/upgrade
 
     mkdir -p $TargetDir@libdir@
     mkdir -p $TargetDir/usr/include
@@ -182,25 +183,27 @@ copyFiles() {
     cp $BuiltFBDir/UDF/ib_udf.so $DestDir/UDF/
     cp $BuiltFBDir/UDF/fbudf.so $DestDir/UDF/
 
+#	Note that the following items copy files from outside the build tree.
+
 #   Copy the sql-declarations into the UDF-directory  
     cp $BuildRootDir/src/extlib/ib_udf.sql $DestDir/UDF/
+    cp $BuildRootDir/src/extlib/ib_udf2.sql $DestDir/UDF/
     cp $BuildRootDir/src/extlib/fbudf/fbudf.sql $DestDir/UDF/
 	    
-#   Note that this copies files from outside the build tree.
+#   Copy various documentation
     cp $BuildRootDir/doc/*.pdf $DestDir/doc
     cp $BuildRootDir/doc/README.* $DestDir/doc
     cp $BuildRootDir/doc/sql.extensions/README* $DestDir/doc/sql.extensions
     cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
     cp $BuildRootDir/doc/README.user $DestDir/README
     
+#	Copy various upgrade stuff
+    cp $BuildRootDir/src/misc/upgrade/v2/* $DestDir/upgrade/
+
 #   Miscellaneous config and startup files
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/firebird.conf
     cp $BuildRootDir/gen/install/misc/fbintl.conf $DestDir/intl/fbintl.conf
-    cp $BuildRootDir/gen/install/misc/firebird.init.d.generic $DestDir/misc
-    cp $BuildRootDir/gen/install/misc/firebird.init.d.mandrake $DestDir/misc
-    cp $BuildRootDir/gen/install/misc/firebird.init.d.suse $DestDir/misc
-    cp $BuildRootDir/gen/install/misc/firebird.init.d.debian $DestDir/misc
-    cp $BuildRootDir/gen/install/misc/firebird.init.d.gentoo $DestDir/misc
+    cp $BuildRootDir/gen/install/misc/firebird.init.d.* $DestDir/misc
     cp $BuildRootDir/gen/install/misc/rc.config.firebird $DestDir/misc
     cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
 
