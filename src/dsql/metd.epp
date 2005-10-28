@@ -49,6 +49,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/init.h"
 
 /* NOTE: The static definition of DB and gds_trans by gpre will not
          be used by the meta data routines.  Each of those routines has
@@ -96,35 +97,43 @@ static void	free_function (dsql_udf*);
 static void free_procedure(dsql_prc*);
 static void free_relation(dsql_rel*);
 
+namespace {
 #ifdef  SUPERSERVER
-static REC_MUTX_T rec_mutex;	// Recursive metadata mutex 
-static USHORT rec_mutex_inited = 0;
-
-static inline void metd_rec_lock()
-{
-	if ( !rec_mutex_inited)
+	REC_MUTX_T rec_mutex;	// Recursive metadata mutex 
+	
+	class RecMutexInit
 	{
-		rec_mutex_inited = 1;
-		THD_rec_mutex_init (&rec_mutex);
-	}
-	THREAD_EXIT();
-	THD_rec_mutex_lock (&rec_mutex);
-	THREAD_ENTER();
-}
+	public:
+		static void init() {
+			THD_rec_mutex_init (&rec_mutex);
+		}
+		static void cleanup() {
+			THD_rec_mutex_destroy (&rec_mutex);
+		}
+	};
+	Firebird::InitMutex<RecMutexInit> recMutexInited;
 
-static inline void metd_rec_unlock()
-{
-	THD_rec_mutex_unlock (&rec_mutex);
-}
+	class RecMutexHolder {
+	public:
+		RecMutexHolder() {
+			recMutexInited.init();
+			THREAD_EXIT();
+			THD_rec_mutex_lock (&rec_mutex);
+			THREAD_ENTER();
+		}
+		~RecMutexHolder() {
+		    THD_rec_mutex_unlock (&rec_mutex);
+		}
+	};
 #else
-static inline void metd_rec_lock()
-{
+	class RecMutexHolder {
+	public:
+		RecMutexHolder() { }
+		~RecMutexHolder() { }
+	};
+#endif
 }
 
-static inline void metd_rec_unlock()
-{
-}
-#endif
 
 void METD_drop_function(dsql_req* request, const dsql_str* name)
 {
@@ -147,7 +156,7 @@ void METD_drop_function(dsql_req* request, const dsql_str* name)
     dsql_udf* userFunc;
     dsql_sym* symbol;
 
-    metd_rec_lock();
+    RecMutexHolder holder;
 
     // If the symbol wasn't defined, we've got nothing to do 
     
@@ -174,7 +183,6 @@ void METD_drop_function(dsql_req* request, const dsql_str* name)
 				  reinterpret_cast<const TEXT*>(name->str_data),
 				  name->str_length, SYM_udf, UDF_dropped);
 
-    metd_rec_unlock();
 }
 
 
@@ -199,7 +207,7 @@ void METD_drop_procedure(dsql_req* request, const dsql_str* name)
 	dsql_prc* procedure;
 	dsql_sym* symbol;
 
-	metd_rec_lock();
+    RecMutexHolder holder;
 
 // If the symbol wasn't defined, we've got nothing to do 
 
@@ -221,7 +229,6 @@ void METD_drop_procedure(dsql_req* request, const dsql_str* name)
 	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
 				  SYM_procedure, PRC_dropped);
 
-	metd_rec_unlock();
 }
 
 
@@ -246,8 +253,7 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
 	dsql_rel* relation;
 	dsql_sym* symbol;
 
-
-	metd_rec_lock();
+    RecMutexHolder holder;
 
 // If the symbol wasn't defined, we've got nothing to do 
 
@@ -269,7 +275,6 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
 	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
 				  SYM_relation, REL_dropped);
 
-	metd_rec_unlock();
 }
 
 
@@ -968,8 +973,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
     dsql_nod* udf_param_node;
 	dsql_nod** ptr;
 
-
-    metd_rec_lock();
+    RecMutexHolder holder;
 
 // Start by seeing if symbol is already defined 
 
@@ -980,14 +984,12 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	    ((userFunc = (dsql_udf*) symbol->sym_object) &&
          (!(userFunc->udf_flags & UDF_dropped))))
 	{
-        metd_rec_unlock();
         return (dsql_udf*) symbol->sym_object;
 	}
 
 
 /* This was the old code that didn't do the loop above to check for the flag.
 	if (symbol) {
-        metd_rec_unlock();
 		return (dsql_udf*) symbol->sym_object;
     }
 */
@@ -1031,7 +1033,6 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	THREAD_ENTER();
 
 	if (!userFunc) {
-        metd_rec_unlock();
 		return NULL;
     }
     
@@ -1169,7 +1170,6 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
             // Get rid of all the stuff we just read in. Use existing one 
             
             free_function (userFunc);
-            metd_rec_unlock();
             return (dsql_udf*) symbol->sym_object;
         }
     }
@@ -1190,7 +1190,6 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	symbol->sym_dbb = dbb;
 	HSHD_insert(symbol);
 
-    metd_rec_unlock();
 	return userFunc;
 }
 
@@ -1274,8 +1273,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 	dsql_prc* temp;
 	SSHORT type, count, defaults;
 
-
-	metd_rec_lock();
+    RecMutexHolder holder;
 
 // Start by seeing if symbol is already defined 
 
@@ -1286,7 +1284,6 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 			((procedure = (dsql_prc*) symbol->sym_object) &&
 			 (!(procedure->prc_flags & PRC_dropped))))
 		{
-			metd_rec_unlock();
 			return (dsql_prc*) symbol->sym_object;
 		}
 
@@ -1294,7 +1291,6 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 	if (((temp = request->req_procedure) != NULL) &&
 		!strcmp((char*) temp->prc_name, (char*) name->str_data)) {
-		metd_rec_unlock();
 		return temp;
 	}
 
@@ -1335,7 +1331,6 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 	THREAD_ENTER();
 
 	if (!procedure) {
-		metd_rec_unlock();
 		return NULL;
 	}
 
@@ -1428,7 +1423,6 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 			// Get rid of all the stuff we just read in. Use existing one 
 
 			free_procedure(procedure);
-			metd_rec_unlock();
 			return (dsql_prc*) symbol->sym_object;
 		}
 
@@ -1451,7 +1445,6 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		HSHD_insert(symbol);
 	}
 
-	metd_rec_unlock();
 	return procedure;
 }
 
@@ -1479,7 +1472,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	tdsql = DSQL_get_thread_data();
 
-	metd_rec_lock();
+    RecMutexHolder holder;
 
 // Start by seeing if symbol is already defined 
 
@@ -1489,7 +1482,6 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		if ((symbol->sym_type == SYM_relation) &&
 			((relation = (dsql_rel*) symbol->sym_object) &&
 			 (!(relation->rel_flags & REL_dropped)))) {
-			metd_rec_unlock();
 			return (dsql_rel*) symbol->sym_object;
 		}
 
@@ -1497,7 +1489,6 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	if (((temp = request->req_relation) != NULL) &&
 		!strcmp((char*) temp->rel_name, (char*) name->str_data)) {
-		metd_rec_unlock();
 		return temp;
 	}
 
@@ -1589,7 +1580,6 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	THREAD_ENTER();
 
 	if (!relation) {
-		metd_rec_unlock();
 		return NULL;
 	}
 
@@ -1688,7 +1678,6 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 			((temp = (dsql_rel*) symbol->sym_object) &&
 			 (!(temp->rel_flags & REL_dropped)))) {
 			free_relation(relation);
-			metd_rec_unlock();
 			return (dsql_rel*) symbol->sym_object;
 		}
 
@@ -1712,7 +1701,6 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		relation->rel_flags |= REL_new_relation;
 	}
 
-	metd_rec_unlock();
 	return relation;
 }
 
