@@ -921,6 +921,9 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 	if (request2)
 		CMP_release(tdbb, request2);
 
+	if (request3)
+		CMP_release(tdbb, request3);
+
 /* flush out the last user's info */
 
 	if (user.length())
