@@ -1309,28 +1309,16 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 					}
 					return true;
 				}
-				else
-				{
-					desc->dsc_dtype = dtype_text;
-					desc->dsc_length = 1;
-					desc->dsc_sub_type = 0;
-					desc->dsc_scale = 0;
-					desc->dsc_ttype() = ttype_ascii;
-					desc->dsc_address = (UCHAR *) " ";
-					return false;
-				}
 			}
 		}
-		else
-		{
-			desc->dsc_dtype = dtype_text;
-			desc->dsc_length = 1;
-			desc->dsc_sub_type = 0;
-			desc->dsc_scale = 0;
-			desc->dsc_ttype() = ttype_ascii;
-			desc->dsc_address = (UCHAR *) " ";
-			return false;
-		}
+
+		desc->dsc_dtype = dtype_text;
+		desc->dsc_length = 1;
+		desc->dsc_sub_type = 0;
+		desc->dsc_scale = 0;
+		desc->dsc_ttype() = ttype_ascii;
+		desc->dsc_address = (UCHAR *) " ";
+		return false;
 	}
 
 /* If the offset of the field is 0, the field can't possible exist */
