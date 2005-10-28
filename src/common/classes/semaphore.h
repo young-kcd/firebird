@@ -275,24 +275,30 @@ public:
 		fb_assert(init == true);
 		if (seconds == 0) {
 			// Instant try
-			if (sem_trywait(&sem) != -1) 
-				return true;
+			do {
+				if (sem_trywait(&sem) != -1) 
+					return true;
+			} while (errno == EINTR);
 			if (errno == EAGAIN) 
 				return false;
 			system_call_failed::raise("sem_trywait");
 		}
 		if (seconds < 0) {
 			// Unlimited wait, like enter()
-			if (sem_wait(&sem) != -1)
-				return true;
+			do {
+				if (sem_wait(&sem) != -1)
+					return true;
+			} while (errno == EINTR);
 			system_call_failed::raise("sem_wait");
 		}
 		// Wait with timeout
 		struct timespec timeout;
 		timeout.tv_sec = time(NULL) + seconds;
 		timeout.tv_nsec = 0;
-		if (sem_timedwait(&sem, &timeout) == 0) 
-			return true;
+		do {
+			if (sem_timedwait(&sem, &timeout) == 0) 
+				return true;
+		} while (errno == EINTR);
 		if (errno == ETIMEDOUT) {
 			return false;
 		}
@@ -301,15 +307,17 @@ public:
 	
 	void enter() {
 		fb_assert(init == true);
-		if (sem_wait(&sem) == -1) {
-			//gds__log("Error on semaphore.h: enter");
-			system_call_failed::raise("sem_wait");
-		}
+		do {
+			if (sem_wait(&sem) != -1)
+				return;
+		} while (errno == EINTR);
+		//gds__log("Error on semaphore.h: enter");
+		system_call_failed::raise("sem_wait");
 	}
 	
 	void release(SLONG count = 1) {
 		fb_assert(init == true);
-		for (int i = 0; i < count; i++) 
+		for (int i = 0; i < count; i++)
 			if (sem_post(&sem) == -1) {
 				//gds__log("Error on semaphore.h: release");
 				system_call_failed::raise("sem_post");
