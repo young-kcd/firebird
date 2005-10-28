@@ -33,7 +33,7 @@ produced by Borland Resource Workshop
 
 STRINGTABLE 
 {
- IDS_PNP1, "A device which is in use by Firebird is going to be removed.  The Firebird server will have to be shotdown before the device can be removed."
+ IDS_PNP1, "A device which is in use by Firebird is going to be removed.  The Firebird server will have to be shutdown before the device can be removed."
  IDS_PNP2, "Any uncommitted data will be lost.  Choose OK when you are ready to shutdown the server, or Cancel to abort the removal of the device."
  IDS_PNP3, "Note: The removal of this device may not be cancelable in which case another warning will follow."
  IDS_QUIT, "connections active; Are you sure you want to exit?"
