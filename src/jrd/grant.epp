@@ -868,10 +868,8 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 			/* initialize for new field */
 
 			field_name = PRV.RDB$FIELD_NAME;
-			fb_utils::exact_name_limit(FLD.RDB$SECURITY_CLASS, sizeof(FLD.RDB$SECURITY_CLASS));
 			s_class = FLD.RDB$SECURITY_CLASS;
-			// dimitr: should it be "if (FLD.RDB$SECURITY_CLASS.NULL)" instead?
-			if (s_class.length() == 0)
+			if (FLD.RDB$SECURITY_CLASS.NULL || s_class.length() == 0)
 			{
 				bool unique = false;
 
