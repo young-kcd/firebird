@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: guid.cpp,v 1.8 2005-05-27 22:44:32 asfernandes Exp $
+ *  $Id: guid.cpp,v 1.9 2005-10-28 15:18:03 alexpeshkoff Exp $
  *
  */
 
@@ -37,16 +37,36 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <errno.h>
 
 void GenerateRandomBytes(void* buffer, size_t size)
 {
 	// do not use /dev/random because it may return lesser data than we need.
-	int fd = open("/dev/urandom", O_RDONLY);
-	if (fd < 0)
-		Firebird::system_call_failed::raise("open");
-	if (read(fd, buffer, size) != static_cast<int>(size))
-		Firebird::system_call_failed::raise("read");
-	close(fd);
+	int fd = -1;
+	for (;;) {
+		fd = open("/dev/urandom", O_RDONLY);
+		if (fd >= 0)
+			break;
+		if (errno != EINTR)
+			Firebird::system_call_failed::raise("open");
+	}
+	for (size_t offset = 0; offset < size; ) {
+		int rc = read(fd, static_cast<char*>(buffer) + offset, size - offset);
+		if (rc < 0) {
+			if (errno != EINTR)
+				Firebird::system_call_failed::raise("read");
+			continue;
+		}
+		if (rc == 0)
+			Firebird::system_call_failed::raise("read", EIO);
+		offset += static_cast<size_t>(rc);
+	}
+	if (close(fd) < 0) {
+		if (errno != EINTR)
+			Firebird::system_call_failed::raise("close");
+		// In case when close() is interrupted by a signal,
+		// the state of fd is inspecified - give up and return success. 
+	}
 }
 
 void GenerateGuid(FB_GUID* guid) {
