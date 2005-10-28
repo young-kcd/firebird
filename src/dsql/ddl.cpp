@@ -3975,6 +3975,10 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 			request->req_context->push(sav_context);
 		}
 
+		// generate the condition for firing the trigger
+
+		dsql_nod* condition;
+
 		if (trig_type == PRE_MODIFY_TRIGGER) {
 			request->append_uchar(blr_for);
 			dsql_nod* temp = rse->nod_arg[e_rse_streams];
@@ -3982,13 +3986,19 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 			temp = rse->nod_arg[e_rse_boolean];
 			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp, false);
 			GEN_expr(request, rse);
+			condition =
+				replace_field_names(select_expr->nod_arg[e_qry_where], items,
+									view_fields, false, NEW_CONTEXT);
+		}
+		else if (trig_type == PRE_STORE_TRIGGER) {
+			condition =
+				replace_field_names(select_expr->nod_arg[e_qry_where], items,
+									view_fields, true, NEW_CONTEXT);
+		}
+		else {
+			fb_assert(false);
 		}
 
-		// generate the condition for firing the trigger
-
-		dsql_nod* condition =
-			replace_field_names(select_expr->nod_arg[e_qry_where], items,
-								view_fields, false, NEW_CONTEXT);
 		request->append_uchar(blr_if);
 		GEN_expr(request, PASS1_node(request, condition, false));
 		request->append_uchar(blr_begin);
