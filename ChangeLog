@@ -1,3 +1,18 @@
+2005-10-27 23:52  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.152), Optimizer.cpp (1.40),
+	Optimizer.h (1.10), btr.h (1.41), opt.cpp (1.249):
+	
+	Fixed SF #223060 Slow processing of GREATER-THEN operator
+
+2005-10-27 15:51  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/:
+	classic/makeInstallImage.sh.in (1.18), super/makeInstallImage.sh.in
+	(1.17):
+	
+	added new stuff to the packages
+
 2005-10-26 20:21  dimitr
 
 	* firebird2/src/dsql/: ddl.cpp (1.162), node.h (1.68), parse.cpp
