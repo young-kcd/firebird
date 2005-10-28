@@ -485,7 +485,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 					// us to the next segment number and we can use this fact to calculate 
 					// how many segments is equal to lower key
 					const USHORT segnum = 
-						idx.idx_count - (UCHAR)(descending ? ((*p)^-1) : *p);
+						idx.idx_count - (UCHAR)(descending ? ((*p) ^ -1) : *p);
 
 					if (segnum < retrieval->irb_lower_count) {
 						skipLowerKey = false;
@@ -563,9 +563,9 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 						if (partLower) 
 						{
 							const USHORT segnum = idx.idx_count - 
-								(UCHAR)(descending ? (*node.data)^-1 : *node.data);
+								(UCHAR)(descending ? (*node.data) ^ -1 : *node.data);
 
-							if (segnum < retrieval->irb_lower_count){
+							if (segnum < retrieval->irb_lower_count) {
 								skipLowerKey = false;
 							}
 						} 
@@ -6316,7 +6316,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 						if (upperPrefix >= key->key_length) 
 						{
 							const USHORT segnum = 
-								idx->idx_count - (UCHAR)(descending ? ((*q)^-1) : *q) + 1;
+								idx->idx_count - (UCHAR)(descending ? ((*q) ^ -1) : *q) + 1;
 
 							if (segnum >= retrieval->irb_upper_count) {
 								return false;
@@ -6359,7 +6359,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 				if (p >= end_key) {
 					done = true;
 					
-					if ((l==0) && skipUpperKey) {
+					if ((l == 0) && skipUpperKey) {
 						return false;
 					}
 				}
@@ -6404,9 +6404,9 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 					if (partLower) 
 					{
 						const USHORT segnum = idx->idx_count - 
-							(UCHAR)(descending ? (*node.data)^-1 : *node.data);
+							(UCHAR)(descending ? (*node.data) ^ -1 : *node.data);
 
-						if (segnum < retrieval->irb_lower_count){
+						if (segnum < retrieval->irb_lower_count) {
 							skipLowerKey = false;
 						}
 					} 
@@ -6462,7 +6462,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 						if (upperPrefix >= key->key_length) 
 						{
 							const USHORT segnum = 
-								idx->idx_count - (UCHAR)(descending ? ((*q)^-1) : *q) + 1;
+								idx->idx_count - (UCHAR)(descending ? ((*q) ^ -1) : *q) + 1;
 
 							if (segnum >= retrieval->irb_upper_count) {
 								return false;
@@ -6505,7 +6505,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 				if (p >= end_key) {
 					done = true;
 					
-					if ((l==0) && skipUpperKey) {
+					if ((l == 0) && skipUpperKey) {
 						return false;
 					}
 				}
@@ -6552,9 +6552,9 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 					if (partLower) 
 					{
 						const USHORT segnum = idx->idx_count - 
-							(UCHAR)(descending ? (*node->btn_data)^-1 : *node->btn_data);
+							(UCHAR)(descending ? (*node->btn_data) ^ -1 : *node->btn_data);
 
-						if (segnum < retrieval->irb_lower_count){
+						if (segnum < retrieval->irb_lower_count) {
 							skipLowerKey = false;
 						}
 					} 
