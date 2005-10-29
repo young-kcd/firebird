@@ -338,7 +338,8 @@ enum nod_t
 	nod_collation_specific_attr,
 	nod_strlen,
 	nod_trim,
-	nod_returning
+	nod_returning,
+	nod_redef_trigger
 };
 
 typedef nod_t NOD_TYPE;
@@ -753,7 +754,6 @@ enum node_args {
 	e_trg_position,
 	e_trg_actions,
 	e_trg_source,
-	e_trg_messages,
 	e_trg_count,
 
 	e_trg_act_dcls = 0,

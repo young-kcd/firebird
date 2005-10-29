@@ -1169,6 +1169,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_def_trigger:
+	case nod_redef_trigger:
 	case nod_mod_trigger:
 	case nod_replace_trigger:
 	case nod_del_trigger:

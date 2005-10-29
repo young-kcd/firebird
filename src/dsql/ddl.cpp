@@ -128,7 +128,7 @@ static void define_set_null_trg(dsql_req*, const dsql_nod*, const dsql_nod*,
 static void define_set_default_trg(dsql_req*, const dsql_nod*, const dsql_nod*,
 	const dsql_nod*, const char*, const char*, bool);
 static void define_shadow(dsql_req*);
-static void define_trigger(dsql_req*, dsql_nod*);
+static void define_trigger(dsql_req*, NOD_TYPE);
 static void define_udf(dsql_req*);
 static void define_update_action(dsql_req*, dsql_nod**, dsql_nod**,	dsql_nod*);
 static void define_upd_cascade_trg(dsql_req*, const dsql_nod*, const dsql_nod*,
@@ -138,6 +138,7 @@ static void define_view_trigger(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*);
 static void delete_exception(dsql_req*, dsql_nod*, bool);
 static void delete_procedure(dsql_req*, dsql_nod*, bool);
 static void delete_relation_view(dsql_req*, dsql_nod*, bool);
+static void delete_trigger(dsql_req*, dsql_nod*, bool);
 static int find_start_of_body(const dsql_str* string);
 static void fix_default_source(dsql_str* string);
 static void foreign_key(dsql_req*, dsql_nod*, const char* index_name);
@@ -384,19 +385,20 @@ bool DDL_ids(const dsql_req* request)
 
 	switch (ddl_node->nod_type)
 	{
+		case nod_def_constraint:
+		case nod_def_computed:
 		case nod_def_view:
 		case nod_redef_view:
 		case nod_mod_view:
 		case nod_replace_view:
-		case nod_def_constraint:
 		case nod_def_trigger:
+		case nod_redef_trigger:
 		case nod_mod_trigger:
 		case nod_replace_trigger:
 		case nod_def_procedure:
-		case nod_def_computed:
+		case nod_redef_procedure:
 		case nod_mod_procedure:
 		case nod_replace_procedure:
-		case nod_redef_procedure:
 			return false;
 
 		default:
@@ -2400,7 +2402,6 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	*procedure->prc_owner = '\0';
 	request->req_procedure = procedure;
 
-
 	// now do the input parameters
 
 	dsql_fld** field_ptr = &procedure->prc_inputs;
@@ -2961,40 +2962,35 @@ static void define_shadow(dsql_req* request)
 //
 // Create the ddl to define or alter a trigger.
 //
-static void define_trigger( dsql_req* request, dsql_nod* node)
+static void define_trigger(dsql_req* request, NOD_TYPE op)
 {
 	tsql* tdsql = DSQL_get_thread_data();
 
-	// make the "define trigger" node the current request ddl node so
-	// that generating of BLR will be appropriate for trigger
-
-	request->req_ddl_node = node;
-
-	const dsql_str* trigger_name = (dsql_str*) node->nod_arg[e_trg_name];
+	dsql_nod* trigger_node = request->req_ddl_node;
+	const dsql_str* trigger_name = (dsql_str*) trigger_node->nod_arg[e_trg_name];
 
 	USHORT trig_type;
 	dsql_nod* relation_node = NULL;
 
-	if (node->nod_type == nod_replace_trigger)
+	if (op == nod_replace_trigger)
 	{
 		if (METD_get_trigger_relation(request, trigger_name, &trig_type))
 		{
-			node->nod_type = nod_mod_trigger;
+			define_trigger(request, nod_mod_trigger);
 		}
 		else
 		{
-			node->nod_type = nod_def_trigger;
+			define_trigger(request, nod_def_trigger);
 		}
-		define_trigger(request, node);
 		return;
 	}
-	else if (node->nod_type == nod_def_trigger)
+	else if (op == nod_def_trigger || op == nod_redef_trigger)
 	{
 		fb_assert(trigger_name->str_length <= MAX_USHORT);
 		request->append_string(	isc_dyn_def_trigger,
 								trigger_name->str_data,
 								trigger_name->str_length);
-		relation_node = node->nod_arg[e_trg_table];
+		relation_node = trigger_node->nod_arg[e_trg_table];
 		const dsql_str* relation_name =
 			(dsql_str*) relation_node->nod_arg[e_rln_name];
 		fb_assert(relation_name->str_length <= MAX_USHORT);
@@ -3005,12 +3001,12 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 	}
 	else // nod_mod_trigger
 	{
-		fb_assert(node->nod_type == nod_mod_trigger);
+		fb_assert(op == nod_mod_trigger);
 		fb_assert(trigger_name->str_length <= MAX_USHORT);
 		request->append_string(	isc_dyn_mod_trigger,
 								trigger_name->str_data,
 								trigger_name->str_length);
-		if (node->nod_arg[e_trg_actions])
+		if (trigger_node->nod_arg[e_trg_actions])
 		{
 			/* Since we will be updating the body of the trigger, we need
 			   to know what relation the trigger relates to. */
@@ -3025,7 +3021,7 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 							  trigger_name->str_data, 0);
 			}
 			relation_node = FB_NEW_RPT(*tdsql->getDefaultPool(), e_rln_count) dsql_nod;
-			node->nod_arg[e_trg_table] = relation_node;
+			trigger_node->nod_arg[e_trg_table] = relation_node;
 			relation_node->nod_type = nod_relation_name;
 			relation_node->nod_count = e_rln_count;
 			// Warning: implicit const cast
@@ -3033,9 +3029,9 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 		}
 	}
 
-	const dsql_str* source = (dsql_str*) node->nod_arg[e_trg_source];
-	dsql_nod* actions = (node->nod_arg[e_trg_actions]) ?
-		node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_body] : NULL;
+	const dsql_str* source = (dsql_str*) trigger_node->nod_arg[e_trg_source];
+	dsql_nod* actions = (trigger_node->nod_arg[e_trg_actions]) ?
+		trigger_node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_body] : NULL;
 
 	if (source && actions) {
 		fb_assert(source->str_length <= MAX_USHORT);
@@ -3044,21 +3040,21 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 								source->str_length);
 	}
 
-	dsql_nod* constant = node->nod_arg[e_trg_active];
+	dsql_nod* constant = trigger_node->nod_arg[e_trg_active];
 	if (constant)
 		request->append_number(isc_dyn_trg_inactive,
 				   (SSHORT)(IPTR) constant->nod_arg[0]);
 
-	if (constant = node->nod_arg[e_trg_position])
+	if (constant = trigger_node->nod_arg[e_trg_position])
 		request->append_number(isc_dyn_trg_sequence,
 				   (SSHORT)(IPTR) constant->nod_arg[0]);
 
-	if (constant = node->nod_arg[e_trg_type]) {
+	if (constant = trigger_node->nod_arg[e_trg_type]) {
 		request->append_number(isc_dyn_trg_type, (SSHORT)(IPTR) constant->nod_arg[0]);
 		trig_type = (USHORT)(IPTR) constant->nod_arg[0];
 	}
 	else {
-		fb_assert(node->nod_type == nod_mod_trigger);
+		fb_assert(op == nod_mod_trigger);
 	}
 
 	if (actions)
@@ -3105,7 +3101,7 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 		request->append_uchar(blr_begin);
 
 		put_local_variables(request,
-			node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_dcls], 0);
+			trigger_node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_dcls], 0);
 
 		request->req_scope_level++;
 		// dimitr: I see no reason to deny EXIT command in triggers,
@@ -3130,39 +3126,6 @@ static void define_trigger( dsql_req* request, dsql_nod* node)
 
 		request->req_type = REQ_DDL;
 	}
-
-	/* const dsql_nod* temp = node->nod_arg[e_trg_messages];
-	if (temp)
-	{
-		const dsql_nod* const* ptr = temp->nod_arg;
-		for (const dsql_nod* const* const end = ptr + temp->nod_count;
-			ptr < end; ++ptr)
-		{
-			const dsql_nod*    message = *ptr;
-			const SSHORT number  = (SSHORT)(IPTR) message->nod_arg[e_msg_number];
-			if (message->nod_type == nod_del_trigger_msg)
-			{
-				request->append_number(isc_dyn_delete_trigger_msg, number);
-				request->append_uchar(isc_dyn_end);
-			}
-			else
-			{
-				const dsql_str* message_text = (dsql_str*) message->nod_arg[e_msg_text];
-				if (message->nod_type == nod_def_trigger_msg) {
-					request->append_number(isc_dyn_def_trigger_msg, number);
-				}
-				else {
-					request->append_number(isc_dyn_mod_trigger_msg, number);
-				}
-				fb_assert(message_text->str_length <= MAX_USHORT);
-				request->append_string(	isc_dyn_trg_msg,
-										message_text->str_data,
-										message_text->str_length);
-				request->append_uchar(isc_dyn_end);
-			}
-		}
-	}
-	*/
 
 	request->append_uchar(isc_dyn_end);
 }
@@ -4152,6 +4115,33 @@ static void delete_relation_view (
 }
 
 
+static void delete_trigger(dsql_req* request,
+                           dsql_nod* node,
+                           bool silent_deletion)
+{
+/**************************************
+ *
+ *  d e l e t e _ t r i g g e r
+ *
+ **************************************
+ *
+ * Function
+ *  Do nothing and don't throw error if the trigger doesn't exist
+ *  and silent_deletion is true.
+ *
+ **************************************/
+    const dsql_str* string = (dsql_str*) node->nod_arg[e_trg_name];
+    fb_assert(string);
+    if (silent_deletion) {
+		USHORT trig_type;
+		if (!METD_get_trigger_relation(request, string, &trig_type))
+            return;
+    }
+	request->append_cstring(isc_dyn_delete_trigger, string->str_data);
+	request->append_uchar(isc_dyn_end);
+}
+
+
 //	find_start_of_body
 //
 //  @brief Find the start of a procedure body. Empty lines are irrelevant.
@@ -4318,6 +4308,10 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 		stuff(request, isc_dyn_end);
 		break;
 
+	case nod_mod_relation:
+		modify_relation(request);
+		break;
+
 	case nod_def_view:
 	case nod_mod_view:
 	case nod_replace_view:
@@ -4368,12 +4362,15 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 	case nod_def_trigger:
 	case nod_mod_trigger:
 	case nod_replace_trigger:
-		define_trigger(request, node);
+		define_trigger(request, node->nod_type);
 		break;
 
-	case nod_mod_relation:
-		modify_relation(request);
-		break;
+	case nod_redef_trigger:
+        stuff(request, isc_dyn_begin);
+		delete_trigger(request, node, true); // silent
+		define_trigger(request, node->nod_type);
+        stuff(request, isc_dyn_end);
+        break;
 
 	case nod_del_domain:
 		string = (dsql_str*) node->nod_arg[0];
@@ -4398,9 +4395,7 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 		break;
 
 	case nod_del_trigger:
-		string = (dsql_str*) node->nod_arg[0];
-		request->append_cstring(isc_dyn_delete_trigger, string->str_data);
-		request->append_uchar(isc_dyn_end);
+		delete_trigger(request, node, false); // no silent
 		break;
 
 	case nod_del_role:

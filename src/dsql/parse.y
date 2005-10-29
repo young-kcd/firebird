@@ -844,7 +844,7 @@ create_clause	: EXCEPTION exception_clause
 			{ $$ = $2; }
 		| TABLE table_clause
 			{ $$ = $2; }
-		| TRIGGER def_trigger_clause
+		| TRIGGER trigger_clause
 			{ $$ = $2; }
 		| VIEW view_clause
 			{ $$ = $2; }
@@ -854,7 +854,7 @@ create_clause	: EXCEPTION exception_clause
 			{ $$ = $2; }
 		| DATABASE db_clause
 			{ $$ = $2; }
-		| DOMAIN   domain_clause
+		| DOMAIN domain_clause
 			{ $$ = $2; }
 		| SHADOW shadow_clause
 			{ $$ = $2; }
@@ -877,9 +877,9 @@ recreate_clause	: PROCEDURE rprocedure_clause
 			{ $$ = $2; }
 		| VIEW rview_clause
 			{ $$ = $2; }
-/*
-		| TRIGGER def_trigger_clause
+		| TRIGGER rtrigger_clause
 			{ $$ = $2; }
+/*
 		| DOMAIN rdomain_clause
 			{ $$ = $2; }
 */
@@ -1879,14 +1879,24 @@ check_opt	: WITH CHECK OPTION
 
 /* CREATE TRIGGER */
 
-def_trigger_clause : symbol_trigger_name FOR simple_table_name
+trigger_clause : symbol_trigger_name FOR simple_table_name
 		trigger_active
 		trigger_type
 		trigger_position
 		trigger_action
 		end_trigger
 			{ $$ = make_node (nod_def_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $7, $8, NULL); }
+				$1, $3, $4, $5, $6, $7, $8); }
+		;
+
+rtrigger_clause : symbol_trigger_name FOR simple_table_name
+		trigger_active
+		trigger_type
+		trigger_position
+		trigger_action
+		end_trigger
+			{ $$ = make_node (nod_redef_trigger, (int) e_trg_count,
+				$1, $3, $4, $5, $6, $7, $8); }
 		;
 
 replace_trigger_clause : symbol_trigger_name FOR simple_table_name
@@ -1896,7 +1906,7 @@ replace_trigger_clause : symbol_trigger_name FOR simple_table_name
 		trigger_action
 		end_trigger
 			{ $$ = make_node (nod_replace_trigger, (int) e_trg_count,
-				$1, $3, $4, $5, $6, $7, $8, NULL); }
+				$1, $3, $4, $5, $6, $7, $8); }
 		;
 
 trigger_active	: ACTIVE 
@@ -2192,7 +2202,7 @@ alter_trigger_clause : symbol_trigger_name trigger_active
 		new_trigger_action
 		end_trigger
 			{ $$ = make_node (nod_mod_trigger, (int) e_trg_count,
-				$1, NULL, $2, $3, $4, $6, $7, NULL); }
+				$1, NULL, $2, $3, $4, $6, $7); }
 		;
 
 new_trigger_type : trigger_type

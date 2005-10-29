@@ -1995,6 +1995,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_replace_trigger:
 		verb = "replace trigger";
 		break;
+	case nod_redef_trigger:
+		verb = "redefine trigger";
+		break;
 	case nod_del_trigger:
 		verb = "delete trigger";
 		break;
