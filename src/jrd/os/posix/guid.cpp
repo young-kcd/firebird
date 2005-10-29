@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: guid.cpp,v 1.9 2005-10-28 15:18:03 alexpeshkoff Exp $
+ *  $Id: guid.cpp,v 1.10 2005-10-29 03:46:23 robocop Exp $
  *
  */
 
@@ -65,7 +65,7 @@ void GenerateRandomBytes(void* buffer, size_t size)
 		if (errno != EINTR)
 			Firebird::system_call_failed::raise("close");
 		// In case when close() is interrupted by a signal,
-		// the state of fd is inspecified - give up and return success. 
+		// the state of fd is unspecified - give up and return success. 
 	}
 }
 
