@@ -296,6 +296,9 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		}
 	}
 
+	if (total > 0)
+		--total;
+
 	int exit_code;
 	if (sw_service && !err)
 	{
