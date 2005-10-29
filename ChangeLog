@@ -1,3 +1,57 @@
+2005-10-28 18:34  alexpeshkoff
+
+	* firebird2/src/dsql/metd.epp (1.81):
+	
+	Fixed SS deadlock in DSQL
+
+2005-10-28 17:25  alexpeshkoff
+
+	* firebird2/src/common/classes/semaphore.h (1.22):
+	
+	Retry when system call is interrupted
+
+2005-10-28 17:18  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/guid.cpp (1.9):
+	
+	Retry when system call is interrupted
+
+2005-10-28 10:11  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.153):
+	
+	Fixed the bug reported by Jim.
+
+2005-10-28 09:39  dimitr
+
+	* firebird2/src/jrd/grant.epp (1.53):
+	
+	Forgot one more fix.
+
+2005-10-28 08:18  dimitr
+
+	* firebird2/src/jrd/grant.epp (1.52):
+	
+	Misc.
+
+2005-10-28 07:37  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.163):
+	
+	Fixed the bug noticed by Claudio.
+
+2005-10-28 06:15  robocop
+
+	* firebird2/src/remote/os/win32/window.rc (1.2):
+	
+	Fix funny message in a resource.
+
+2005-10-28 06:15  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.153):
+	
+	Misc.
+
 2005-10-27 23:52  hvlad
 
 	* firebird2/src/jrd/: btr.cpp (1.152), Optimizer.cpp (1.40),
