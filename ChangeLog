@@ -1,3 +1,30 @@
+2005-10-30 03:29  robocop
+
+	* firebird2/src/jrd/os/posix/guid.cpp (1.11):
+	
+	Totally misc.
+
+2005-10-29 16:57  asfernandes
+
+	* firebird2/src/burp/burp.cpp (1.101):
+	
+	Fixed problem of GBAK adding a garbage byte to SPB, when called
+	with -SE. Reproducable with: gbak -C -SE service_mgr c:\t.fbk
+	localhost:c:\t.fdb
+
+2005-10-29 11:15  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp (1.164), dsql.cpp (1.157), node.h
+	(1.69), parse.cpp (1.166), parse.y (1.193), pass1.cpp (1.247):
+	
+	Implemented RECREATE TRIGGER.
+
+2005-10-29 05:46  robocop
+
+	* firebird2/src/jrd/os/posix/guid.cpp (1.10):
+	
+	Totally misc.
+
 2005-10-28 18:34  alexpeshkoff
 
 	* firebird2/src/dsql/metd.epp (1.81):
