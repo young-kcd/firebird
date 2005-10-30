@@ -110,7 +110,7 @@ static void define_del_cascade_trg(dsql_req*, const dsql_nod*, const dsql_nod*,
 static void define_dimensions(dsql_req*, const dsql_fld*);
 static void define_domain(dsql_req*);
 static void define_exception(dsql_req*, NOD_TYPE);
-static void define_field(dsql_req*, dsql_nod*, SSHORT, const dsql_str*);
+static void define_field(dsql_req*, dsql_nod*, SSHORT, const dsql_str*, const dsql_nod* pkcols);
 static void define_filter(dsql_req*);
 static SSHORT getBlobFilterSubType(dsql_req* request, const dsql_nod* node);
 static void define_collation(dsql_req*);
@@ -139,6 +139,7 @@ static void delete_exception(dsql_req*, dsql_nod*, bool);
 static void delete_procedure(dsql_req*, dsql_nod*, bool);
 static void delete_relation_view(dsql_req*, dsql_nod*, bool);
 static void delete_trigger(dsql_req*, dsql_nod*, bool);
+static const dsql_nod* find_pk_columns(const dsql_nod* def_rel_elements);
 static int find_start_of_body(const dsql_str* string);
 static void fix_default_source(dsql_str* string);
 static void foreign_key(dsql_req*, dsql_nod*, const char* index_name);
@@ -1738,7 +1739,8 @@ static void define_exception( dsql_req* request, NOD_TYPE op)
 static void define_field(
 						 dsql_req* request,
 						 dsql_nod* element, SSHORT position,
-						 const dsql_str* relation_name)
+						 const dsql_str* relation_name,
+						 const dsql_nod* pkcols)
 {
 /**************************************
  *
@@ -1951,8 +1953,7 @@ static void define_field(
 				case nod_def_constraint:
 					request->append_cstring(isc_dyn_rel_constraint,
 									string ? string->str_data : 0);
-					check_constraint(request, node1,
-									 false); // No delete trigger
+					check_constraint(request, node1, false); // No delete trigger
 					break;
 				}
 			}
@@ -1964,6 +1965,22 @@ static void define_field(
 		// dimitr: insert a not null item right before column's isc_dyn_end
 		request->req_blr_data.insert(end, isc_dyn_fld_not_null);
 	}
+	else if (pkcols)
+	{
+		// Let's see if it appears in a "primary_key(a, b, c)" relation constraint.
+		const size_t len  = strlen(field->fld_name);
+		for (int i = 0; i < pkcols->nod_count; ++i)
+		{
+			const dsql_str* pkfield_name = (dsql_str*) pkcols->nod_arg[i]->nod_arg[e_fln_name];
+			if (pkfield_name->str_length == len &&
+				!memcmp(pkfield_name->str_data, field->fld_name, len))
+			{
+				request->req_blr_data.insert(end, isc_dyn_fld_not_null);
+				break;
+			}
+		}
+	}
+
 	} // try
 
 	catch (const std::exception&)
@@ -2710,8 +2727,8 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	put_local_variables(request, node->nod_arg[e_exe_blk_dcls], locals);
 
 	request->append_uchar(blr_stall);
-// Put a label before body of procedure, so that
-//   any exit statement can get out
+	// Put a label before body of procedure, so that
+	// any exit statement can get out
 	request->append_uchar(blr_label);
 	request->append_uchar(0);
 	request->req_loop_level = 0;
@@ -2727,7 +2744,9 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 }
 
 
-//
+// *****************************************
+// d e f i n e _ r e l _ c o n s t r a i n t
+// *****************************************
 // Define a constraint, either as part of a create
 // table or an alter table statement.
 //
@@ -2743,7 +2762,7 @@ static void define_rel_constraint( dsql_req* request, dsql_nod* element)
 	switch (node->nod_type) {
 	case nod_unique:
 	case nod_primary:
-		make_index(request, node, node->nod_arg[0], 0, 0, constraint_name);
+		make_index(request, node, node->nod_arg[e_pri_columns], 0, 0, constraint_name);
 		break;
 	case nod_foreign:
 		foreign_key(request, node, constraint_name);
@@ -2788,9 +2807,11 @@ static void define_relation( dsql_req* request)
 	}
 	request->append_number(isc_dyn_rel_sql_protection, 1);
 
-// now do the actual metadata definition
+	// now do the actual metadata definition
 
 	dsql_nod* elements = ddl_node->nod_arg[e_drl_elements];
+	const dsql_nod* pkcols = find_pk_columns(elements);
+	
 	SSHORT position = 0;
 	dsql_nod** ptr = elements->nod_arg;
 	for (const dsql_nod* const* const end = ptr + elements->nod_count;
@@ -2799,7 +2820,7 @@ static void define_relation( dsql_req* request)
 		dsql_nod* element = *ptr;
 		switch (element->nod_type) {
 		case nod_def_field:
-			define_field(request, element, position, relation_name);
+			define_field(request, element, position, relation_name, pkcols);
 			++position;
 			break;
 
@@ -2817,7 +2838,9 @@ static void define_relation( dsql_req* request)
 }
 
 
-//
+// ******************************
+// d e f i n e _ r o l e
+// ******************************
 //	Create a SQL role.
 //
 static void define_role(dsql_req* request)
@@ -4142,7 +4165,28 @@ static void delete_trigger(dsql_req* request,
 }
 
 
-//	find_start_of_body
+// f i n d _ p k _ c o l u m n s
+//
+// @brief Starting from the elements in a table definition, locate the PK columns
+// if given in a separate table constraint declaration.
+//
+const dsql_nod* find_pk_columns(const dsql_nod* def_rel_elements)
+{
+	for (int i = 0; i < def_rel_elements->nod_count; ++i)
+	{
+		const dsql_nod* element = def_rel_elements->nod_arg[i];
+		if (element->nod_type == nod_rel_constraint)
+		{
+			const dsql_nod* node = element->nod_arg[e_rct_type];
+			if (node->nod_type == nod_primary)
+				return node->nod_arg[e_pri_columns];
+		}
+	}
+	return 0;
+}
+
+
+//	f i n d _ s t a r t _ o f _ b o d y
 //
 //  @brief Find the start of a procedure body. Empty lines are irrelevant.
 //  @param string the source string to be searched.
@@ -4168,7 +4212,7 @@ static int find_start_of_body(const dsql_str* string)
 
 /**
 
- 	fix_default_source
+ 	f i x _ d e f a u l t _ s o u r c e
 
     @brief Get rid of newlines between DEFAULT and the value.
 
@@ -4724,7 +4768,7 @@ static void make_index(	dsql_req*    request,
 	for (const dsql_nod* const* const end = ptr + columns->nod_count;
 		ptr < end; ++ptr)
 	{
-		const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[1];
+		const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[e_fln_name];
 		request->append_cstring(isc_dyn_fld_name, field_name->str_data);
 	}
 
@@ -5443,7 +5487,7 @@ static void modify_relation( dsql_req* request)
 			break;
 
 		case nod_def_field:
-			define_field(request, element, (SSHORT) -1, relation_name);
+			define_field(request, element, (SSHORT) -1, relation_name, 0);
 			break;
 
 		case nod_del_field:
