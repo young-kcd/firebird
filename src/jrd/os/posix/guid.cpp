@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: guid.cpp,v 1.10 2005-10-29 03:46:23 robocop Exp $
- *
  */
 
 #include "../jrd/os/guid.h"
