@@ -175,6 +175,8 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 
 			info.attributes = 0;
 
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			X.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
 			X.RDB$BASE_COLLATION_NAME.NULL = TRUE;
 
@@ -402,7 +404,7 @@ void DYN_define_constraint(Global*		gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		CRT IN RDB$RELATION_CONSTRAINTS
-        strcpy(CRT.RDB$CONSTRAINT_NAME, constraint_name.c_str());
+		strcpy(CRT.RDB$CONSTRAINT_NAME, constraint_name.c_str());
 		strcpy(CRT.RDB$RELATION_NAME, relation_name->c_str());
 
 		switch (verb = *(*ptr)++)
@@ -531,8 +533,8 @@ void DYN_define_constraint(Global*		gbl,
 			REDUCED TO IDS.RDB$FIELD_NAME, IDS.RDB$INDEX_NAME,
 			FLX.RDB$NULL_FLAG
 			SORTED BY ASCENDING IDS.RDB$FIELD_NAME
-        if (!DYN_REQUEST(drq_c_unq_nam))
-            DYN_REQUEST(drq_c_unq_nam) = request;
+		if (!DYN_REQUEST(drq_c_unq_nam))
+			DYN_REQUEST(drq_c_unq_nam) = request;
 
 		if ((FLX.RDB$NULL_FLAG.NULL || !FLX.RDB$NULL_FLAG) &&
 			(RFR.RDB$NULL_FLAG.NULL || !RFR.RDB$NULL_FLAG) &&
@@ -561,8 +563,8 @@ void DYN_define_constraint(Global*		gbl,
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDS IN RDB$INDEX_SEGMENTS WITH IDS.RDB$INDEX_NAME EQ index_name.c_str()
-        if (!DYN_REQUEST(drq_n_idx_seg)) {
-            DYN_REQUEST(drq_n_idx_seg) = request;
+		if (!DYN_REQUEST(drq_n_idx_seg)) {
+			DYN_REQUEST(drq_n_idx_seg) = request;
 		}
 
 		all_count++;
@@ -594,8 +596,8 @@ void DYN_define_constraint(Global*		gbl,
 				 CRT.RDB$CONSTRAINT_TYPE EQ UNIQUE_CNSTRT) AND
 				CRT.RDB$CONSTRAINT_NAME NE constraint_name.c_str()
 				SORTED BY CRT.RDB$INDEX_NAME, DESCENDING IDS.RDB$FIELD_NAME
-            if (!DYN_REQUEST(drq_c_dup_con))
-                DYN_REQUEST(drq_c_dup_con) = request;
+			if (!DYN_REQUEST(drq_c_dup_con))
+				DYN_REQUEST(drq_c_dup_con) = request;
 
 			if (index_name != CRT.RDB$INDEX_NAME)
 			{
@@ -644,10 +646,9 @@ void DYN_define_constraint(Global*		gbl,
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			REF IN RDB$REF_CONSTRAINTS
-				old_request = request;
+			old_request = request;
 			const SSHORT old_id = id;
-			request =
-				CMP_find_request(tdbb, drq_l_intg_con, DYN_REQUESTS);
+			request = CMP_find_request(tdbb, drq_l_intg_con, DYN_REQUESTS);
 			id = drq_l_intg_con;
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -656,7 +657,7 @@ void DYN_define_constraint(Global*		gbl,
 					(CRT.RDB$CONSTRAINT_TYPE = PRIMARY_KEY OR
 					 CRT.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
 
-                if (!DYN_REQUEST(drq_l_intg_con))
+				if (!DYN_REQUEST(drq_l_intg_con))
 					DYN_REQUEST(drq_l_intg_con) = request;
 
 				fb_utils::exact_name_limit(CRT.RDB$CONSTRAINT_NAME,
@@ -771,7 +772,7 @@ void DYN_define_dimension(Global*		gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		DIM IN RDB$FIELD_DIMENSIONS
-        DIM.RDB$UPPER_BOUND.NULL = TRUE;
+		DIM.RDB$UPPER_BOUND.NULL = TRUE;
 		DIM.RDB$LOWER_BOUND.NULL = TRUE;
 		DIM.RDB$DIMENSION = (SSHORT)DYN_get_number(ptr);
 		if (field_name) {
@@ -858,6 +859,8 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$EXCEPTIONS
 			strcpy(X.RDB$EXCEPTION_NAME, exception_name.c_str());
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			X.RDB$MESSAGE.NULL = TRUE;
 
 			UCHAR verb;
@@ -936,14 +939,14 @@ void DYN_define_file(Global*		gbl,
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1 X IN RDB$FILES WITH X.RDB$FILE_NAME EQ temp_f.c_str()
-            DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
+			DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 	END_FOR;
 
 	request = CMP_find_request(tdbb, id = drq_s_files, DYN_REQUESTS);
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES
-        temp_f.copyTo(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
+		temp_f.copyTo(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
 		X.RDB$SHADOW_NUMBER = (SSHORT)shadow_number;
 		X.RDB$FILE_FLAGS = 0;
 		X.RDB$FILE_FLAGS.NULL = FALSE;
@@ -1033,7 +1036,7 @@ void DYN_define_difference(Global*		gbl,
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIL IN RDB$FILES
 		if (FIL.RDB$FILE_FLAGS & FILE_difference)
-      		found = true;
+			found = true;
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_l_difference)) {
@@ -1125,6 +1128,8 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 			X.RDB$MODULE_NAME.NULL = TRUE;
 			X.RDB$ENTRYPOINT.NULL = TRUE;
 			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -1216,6 +1221,8 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 			X.RDB$MODULE_NAME.NULL = TRUE;
 			X.RDB$ENTRYPOINT.NULL = TRUE;
 			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -1303,7 +1310,7 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FUNCTION_ARGUMENTS
-        X.RDB$ARGUMENT_POSITION = (SSHORT)DYN_get_number(ptr);
+		X.RDB$ARGUMENT_POSITION = (SSHORT)DYN_get_number(ptr);
 
 		if (X.RDB$ARGUMENT_POSITION > MAX_UDF_ARGUMENTS)
 			DYN_error_punt(true, 12, NULL, NULL, NULL, NULL, NULL);
@@ -1436,7 +1443,8 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 	try {
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$GENERATORS
-
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			strcpy(X.RDB$GENERATOR_NAME, generator_name.c_str());
 
 			b_ending_store = true;
@@ -1511,7 +1519,8 @@ void DYN_define_global_field(Global*		gbl,
 
 		strcpy(FLD.RDB$FIELD_NAME, global_field_name.c_str());
 
-		FLD.RDB$SYSTEM_FLAG.NULL = TRUE;
+		FLD.RDB$SYSTEM_FLAG = 0;
+		FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
 		FLD.RDB$FIELD_SCALE.NULL = TRUE;
 		FLD.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 		FLD.RDB$SEGMENT_LENGTH.NULL = TRUE;
@@ -1792,7 +1801,7 @@ void DYN_define_index(Global*		gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES
-        IDX.RDB$UNIQUE_FLAG.NULL = TRUE;
+		IDX.RDB$UNIQUE_FLAG.NULL = TRUE;
 		IDX.RDB$INDEX_INACTIVE.NULL = TRUE;
 		IDX.RDB$INDEX_TYPE.NULL = TRUE;
 		IDX.RDB$DESCRIPTION.NULL = TRUE;
@@ -1812,6 +1821,8 @@ void DYN_define_index(Global*		gbl,
 		/* msg 14: "No relation specified for index" */
 
 		IDX.RDB$RELATION_NAME.NULL = FALSE;
+		IDX.RDB$SYSTEM_FLAG = 0;
+		IDX.RDB$SYSTEM_FLAG.NULL = FALSE;
 
 		/* Check if the table is actually a view */
 
@@ -1821,10 +1832,10 @@ void DYN_define_index(Global*		gbl,
 		id = drq_l_view_idx;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			VREL IN RDB$RELATIONS WITH VREL.RDB$RELATION_NAME EQ
-				IDX.RDB$RELATION_NAME
-            if (!VREL.RDB$VIEW_BLR.NULL)
-                DYN_error_punt(false, 181, NULL, NULL, NULL, NULL, NULL);
+			VREL IN RDB$RELATIONS
+			WITH VREL.RDB$RELATION_NAME EQ IDX.RDB$RELATION_NAME
+			if (!VREL.RDB$VIEW_BLR.NULL)
+				DYN_error_punt(false, 181, NULL, NULL, NULL, NULL, NULL);
 			/* msg 181: "attempt to index a view" */
 
 		END_FOR;
@@ -1872,9 +1883,9 @@ void DYN_define_index(Global*		gbl,
 						WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
 						F.RDB$FIELD_NAME EQ str.c_str() AND
 						IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
-                    if (!DYN_REQUEST(drq_l_lfield))
+					if (!DYN_REQUEST(drq_l_lfield))
 					{
-                        DYN_REQUEST(drq_l_lfield) = request;
+						DYN_REQUEST(drq_l_lfield) = request;
 					}
 
 					fld_count++;
@@ -2111,7 +2122,7 @@ void DYN_define_index(Global*		gbl,
 			while (seg_list.getCount()) {
 				STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					X IN RDB$INDEX_SEGMENTS
-                    strcpy(X.RDB$INDEX_NAME, IDX.RDB$INDEX_NAME);
+					strcpy(X.RDB$INDEX_NAME, IDX.RDB$INDEX_NAME);
 					Firebird::MetaName str = seg_list.pop();
 					strcpy(X.RDB$FIELD_NAME, str.c_str());
 					X.RDB$FIELD_POSITION = --fld_count;
@@ -2159,8 +2170,8 @@ void DYN_define_index(Global*		gbl,
 					SORTED BY Y.RDB$INDEX_NAME,
 					DESCENDING Z.RDB$FIELD_POSITION
 
-                if (!DYN_REQUEST(drq_l_unq_idx))
-                    DYN_REQUEST(drq_l_unq_idx) = request;
+				if (!DYN_REQUEST(drq_l_unq_idx))
+					DYN_REQUEST(drq_l_unq_idx) = request;
 
 				/* create a control break on index name, in which we set up
 				   to handle a new index, assuming it is the right one */
@@ -2223,8 +2234,8 @@ void DYN_define_index(Global*		gbl,
 					OVER RDB$INDEX_NAME WITH
 					IND.RDB$RELATION_NAME EQ referenced_relation.c_str() AND
 					RC.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY
-                if (!DYN_REQUEST(drq_l_primary))
-                    DYN_REQUEST(drq_l_primary) = request;
+				if (!DYN_REQUEST(drq_l_primary))
+					DYN_REQUEST(drq_l_primary) = request;
 
 				/* Number of columns in referred index should be same as number
 				   of columns in referring index */
@@ -2540,7 +2551,7 @@ void DYN_define_local_field(Global*		gbl,
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				FLD IN RDB$FIELDS
-                strcpy(FLD.RDB$FIELD_NAME, RFR.RDB$FIELD_SOURCE);
+				strcpy(FLD.RDB$FIELD_NAME, RFR.RDB$FIELD_SOURCE);
 				DYN_put_blr_blob(gbl, &blr, &FLD.RDB$COMPUTED_BLR);
 				if (source) {
 					DYN_put_text_blob(gbl, &source, &FLD.RDB$COMPUTED_SOURCE);
@@ -2635,7 +2646,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
  **************************************
  *
  * Functional description
- *	Execute a dynamic ddl statement.
+ *	Define the parameters for a stored procedure.
  *
  **************************************/
 	// Leave these as USHORT. Don't convert the *_null ones to bool.
@@ -2683,7 +2694,8 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 		P.RDB$PARAMETER_NUMBER.NULL = TRUE;
 		P.RDB$PARAMETER_TYPE.NULL = TRUE;
 		P.RDB$FIELD_SOURCE.NULL = TRUE;
-		P.RDB$SYSTEM_FLAG.NULL = TRUE;
+		P.RDB$SYSTEM_FLAG = 0;
+		P.RDB$SYSTEM_FLAG.NULL = FALSE;
 		P.RDB$DESCRIPTION.NULL = TRUE;
 
 		UCHAR verb;
@@ -2809,8 +2821,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 			jrd_req* request2 = CMP_find_request(tdbb, drq_s_prm_src, DYN_REQUESTS);
 			STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				PS IN RDB$FIELDS USING
-                DYN_UTIL_generate_field_name(tdbb, gbl,
-                                             PS.RDB$FIELD_NAME);
+				DYN_UTIL_generate_field_name(tdbb, gbl, PS.RDB$FIELD_NAME);
 				strcpy(P.RDB$FIELD_SOURCE, PS.RDB$FIELD_NAME);
 				P.RDB$FIELD_SOURCE.NULL = FALSE;
 				PS.RDB$FIELD_LENGTH = f_length;
@@ -2912,8 +2923,9 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURES
-        strcpy(P.RDB$PROCEDURE_NAME, procedure_name.c_str());
-		P.RDB$SYSTEM_FLAG.NULL = TRUE;
+		strcpy(P.RDB$PROCEDURE_NAME, procedure_name.c_str());
+		P.RDB$SYSTEM_FLAG = 0;
+		P.RDB$SYSTEM_FLAG.NULL = FALSE;
 		P.RDB$PROCEDURE_BLR.NULL = TRUE;
 		P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
 		P.RDB$SECURITY_CLASS.NULL = TRUE;
@@ -2986,7 +2998,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				X IN RDB$USER_PRIVILEGES
-                strcpy(X.RDB$RELATION_NAME, procedure_name.c_str());
+				strcpy(X.RDB$RELATION_NAME, procedure_name.c_str());
 				strcpy(X.RDB$USER, owner_name.c_str());
 				X.RDB$USER_TYPE = obj_user;
 				X.RDB$OBJECT_TYPE = obj_procedure;
@@ -3069,8 +3081,9 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS
-        strcpy(REL.RDB$RELATION_NAME, relation_name.c_str());
-		REL.RDB$SYSTEM_FLAG.NULL = TRUE;
+		strcpy(REL.RDB$RELATION_NAME, relation_name.c_str());
+		REL.RDB$SYSTEM_FLAG = 0;
+		REL.RDB$SYSTEM_FLAG.NULL = FALSE;
 		REL.RDB$VIEW_BLR.NULL = TRUE;
 		REL.RDB$VIEW_SOURCE.NULL = TRUE;
 		REL.RDB$SECURITY_CLASS.NULL = TRUE;
@@ -3159,8 +3172,8 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 					VRL IN RDB$VIEW_RELATIONS CROSS
 						PREL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
 						VRL.RDB$VIEW_NAME EQ relation_name.c_str()
-                    if (!DYN_REQUEST(drq_l_view_rels))
-                        DYN_REQUEST(drq_l_view_rels) = request;
+					if (!DYN_REQUEST(drq_l_view_rels))
+						DYN_REQUEST(drq_l_view_rels) = request;
 
 					/* CVC: This never matches so it causes unnecessary calls to verify,
 							so I included a call to strip trailing blanks. */
@@ -3215,7 +3228,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				X IN RDB$USER_PRIVILEGES
-                strcpy(X.RDB$RELATION_NAME, relation_name.c_str());
+				strcpy(X.RDB$RELATION_NAME, relation_name.c_str());
 				strcpy(X.RDB$USER, owner_name.c_str());
 				X.RDB$USER_TYPE = obj_user;
 				X.RDB$OBJECT_TYPE = obj_relation;
@@ -3341,7 +3354,8 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 			X IN RDB$ROLES
 			strcpy(X.RDB$ROLE_NAME, role_name.c_str());
 			strcpy(X.RDB$OWNER_NAME, owner_name.c_str());
-
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		END_STORE;
 
 		if (!DYN_REQUEST(drq_role_gens)) {
@@ -3507,7 +3521,9 @@ void DYN_define_sql_field(Global*		gbl,
 		id = drq_s_sql_gfld;
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			FLD IN RDB$FIELDS FLD.RDB$SYSTEM_FLAG.NULL = TRUE;
+			FLD IN RDB$FIELDS
+			FLD.RDB$SYSTEM_FLAG = 0;
+			FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
 			FLD.RDB$FIELD_SCALE.NULL = TRUE;
 			FLD.RDB$FIELD_PRECISION.NULL = TRUE;
 			FLD.RDB$FIELD_SUB_TYPE.NULL = TRUE;
@@ -3866,12 +3882,13 @@ void DYN_define_trigger(Global*						gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS
-        X.RDB$TRIGGER_TYPE.NULL = TRUE;
+		X.RDB$TRIGGER_TYPE.NULL = TRUE;
 		X.RDB$TRIGGER_SEQUENCE = 0;
 		X.RDB$TRIGGER_SEQUENCE.NULL = FALSE;
 		X.RDB$TRIGGER_INACTIVE = 0;
 		X.RDB$TRIGGER_INACTIVE.NULL = FALSE;
-		X.RDB$SYSTEM_FLAG.NULL = TRUE;
+		X.RDB$SYSTEM_FLAG = 0;
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 
 		/* currently, we make no difference between ignoring permissions in
 		   order to define this trigger and ignoring permissions checks when the
@@ -3946,7 +3963,7 @@ void DYN_define_trigger(Global*						gbl,
 				X.RDB$DESCRIPTION.NULL = FALSE;
 				break;
 
-		    case isc_dyn_system_flag:
+			case isc_dyn_system_flag:
 				X.RDB$SYSTEM_FLAG = DYN_get_number(ptr);
 				X.RDB$SYSTEM_FLAG.NULL = FALSE;
 				/* fb_assert(!ignore_perm || ignore_perm
