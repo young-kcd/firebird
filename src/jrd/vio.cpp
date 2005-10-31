@@ -3515,22 +3515,31 @@ static UCHAR* delete_tail(
 // ******************************
 // Not all operations on system tables are relevant to inform DFW.
 // In particular, changing comments on objects is irrelevant.
+// Engine often perform empty update to force some tasks (e.g. to 
+// recreate index after field type change). So we must return true 
+// if relevant field changed or if no fields changed. Or we must 
+// return false if only irrelevant field changed 
 static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
 	USHORT irrelevant_field)
 {
 	dsc desc2, desc3;
+	bool irrelevant_changed = false;
 	for (USHORT iter = 0; iter < org_rpb->rpb_record->rec_format->fmt_count;
 		++iter)
 	{
-		if (iter != irrelevant_field)
+		const bool a = EVL_field(0, org_rpb->rpb_record, iter, &desc2);
+		const bool b = EVL_field(0, new_rpb->rpb_record, iter, &desc3);
+		if (a != b || MOV_compare(&desc2, &desc3)) 
 		{
-			const bool a = EVL_field(0, org_rpb->rpb_record, iter, &desc2);
-			const bool b = EVL_field(0, new_rpb->rpb_record, iter, &desc3);
-			if (a != b || MOV_compare(&desc2, &desc3))
+			if (iter != irrelevant_field) {
 				return true;
+			}
+			else {
+				irrelevant_changed = true;
+			}
 		}
 	}
-	return false;
+	return !irrelevant_changed;
 }
 
 
