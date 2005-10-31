@@ -1,3 +1,17 @@
+2005-10-30 09:15  robocop
+
+	* firebird2/src/dsql/ddl.cpp (1.165):
+	
+	Fix SF-bug field-test #1192225.
+
+2005-10-30 08:44  robocop
+
+	* firebird2/src/jrd/dyn_def.epp (1.101):
+	
+	DYN must write always the system flag when creating objects.  This
+	is the first step before we are able to make rdb$system_flag field
+	mandatory in the future.
+
 2005-10-30 03:29  robocop
 
 	* firebird2/src/jrd/os/posix/guid.cpp (1.11):
