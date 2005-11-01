@@ -1,3 +1,9 @@
+2005-10-31 08:28  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.140):
+	
+	Fixed FB2 regression
+
 2005-10-30 09:15  robocop
 
 	* firebird2/src/dsql/ddl.cpp (1.165):
