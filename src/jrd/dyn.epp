@@ -1915,11 +1915,12 @@ static void store_privilege(Global*						gbl,
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
 
-/* need to unwind our own request here!! SM 27-Sep-96 */
+	// need to unwind our own request here!! SM 27-Sep-96
 
 	try {
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			PRIV IN RDB$USER_PRIVILEGES PRIV.RDB$FIELD_NAME.NULL = TRUE;
+			PRIV IN RDB$USER_PRIVILEGES
+			PRIV.RDB$FIELD_NAME.NULL = TRUE;
 			strcpy(PRIV.RDB$RELATION_NAME, object.c_str());
 			strcpy(PRIV.RDB$USER, user.c_str());
 			PRIV.RDB$USER_TYPE = user_type;
