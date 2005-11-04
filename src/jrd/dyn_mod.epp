@@ -1547,7 +1547,8 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 
 			if (!only_description)
 			{
-				P.RDB$SYSTEM_FLAG.NULL = TRUE;
+				P.RDB$SYSTEM_FLAG = 0;
+				P.RDB$SYSTEM_FLAG.NULL = FALSE;
 				P.RDB$PROCEDURE_BLR.NULL = TRUE;
 				P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
 				P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
@@ -2052,7 +2053,8 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 
 			if (!only_description)
 			{
-				REL.RDB$SYSTEM_FLAG.NULL = TRUE;
+				REL.RDB$SYSTEM_FLAG = 0;
+				REL.RDB$SYSTEM_FLAG.NULL = FALSE;
 				REL.RDB$VIEW_BLR.NULL = TRUE;
 				REL.RDB$VIEW_SOURCE.NULL = TRUE;
 				REL.RDB$SECURITY_CLASS.NULL = TRUE;
