@@ -1412,8 +1412,8 @@ void DYN_modify_local_field(
 
 	if (!found)
 	{
-		DYN_error_punt(false, 96, NULL, NULL, NULL, NULL, NULL);
-		/* msg 96: "Local column not found" */
+		DYN_error_punt(false, 96, f.c_str(), NULL, NULL, NULL, NULL);
+		/* msg 96: "Local column %s not found" */
 	}
 }
 
@@ -2589,9 +2589,8 @@ void DYN_modify_sql_field(Global*					gbl,
 
 	GET_STRING(ptr, orig_fld.dyn_fld_name);
 
-/* check to see if the field being altered is involved in any type of dependency.
- * If there is a dependency, call DYN_error_punt (inside the function).
- */
+	// Check to see if the field being altered is involved in any type of dependency.
+	// If there is a dependency, call DYN_error_punt (inside the function).
 	fb_assert(relation_name);
 	check_sptrig_dependency(tdbb, dbb, gbl, *relation_name,
 							orig_fld.dyn_fld_name);
@@ -2615,13 +2614,12 @@ void DYN_modify_sql_field(Global*					gbl,
 		found = true;
 		bool has_dimensions = false;
 		bool update_domain = false;
+		bool domain_has_default = false;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE
-				/* Get information about the original field type.  If a conversion 
-				 * can not be at any time made between
-				 * the two datatypes, error.
-				 */
+				// Get information about the original field type.  If a conversion
+				// can not be at any time made between the two datatypes, error.
 				DSC_make_descriptor(&orig_fld.dyn_dsc,
 									FLD.RDB$FIELD_TYPE,
 									FLD.RDB$FIELD_SCALE,
@@ -2638,12 +2636,14 @@ void DYN_modify_sql_field(Global*					gbl,
 			orig_fld.dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
 			orig_fld.dyn_fld_source = RFR.RDB$FIELD_SOURCE;
 
-			/* If the original field type is an array, force its blr type to blr_blob */
+			// If the original field type is an array, force its blr type to blr_blob
 			if (FLD.RDB$DIMENSIONS != 0)
 			{
 				orig_fld.dyn_dtype = blr_blob;
 				has_dimensions = true;
 			}
+			
+			domain_has_default = !FLD.RDB$DEFAULT_VALUE.NULL;
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end) {
@@ -2792,9 +2792,8 @@ void DYN_modify_sql_field(Global*					gbl,
 					DYN_skip_attribute(ptr);
 					break;
 
-					/* These should only be defined for BLOB types and should not come through with
-					 * any other types.  BLOB types are detected above
-					 */
+					// These should only be defined for BLOB types and should not come through with
+					// any other types.  BLOB types are detected above
 
 				case isc_dyn_fld_segment_length:
 					DYN_get_number(ptr);
@@ -2806,10 +2805,13 @@ void DYN_modify_sql_field(Global*					gbl,
 						DYN_execute(gbl, ptr, relation_name, &tmp, NULL, NULL, NULL);
 				}
 			}
-		END_FOR; /* FLD in RDB$FIELDS */
+		END_FOR; // FLD in RDB$FIELDS
 		CMP_release(tdbb, request);
 		request = NULL;
 
+		const bool sourceIsInternalDomain = !strncmp(orig_fld.dyn_fld_source.c_str(),
+			IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN);
+					
 		// Now that we have all of the information needed, let's check to see
 		// if the field type can be modifed
 
@@ -2832,9 +2834,8 @@ void DYN_modify_sql_field(Global*					gbl,
 			if (retval != FB_SUCCESS)
 				modify_err_punt(tdbb, retval, orig_fld, dom_fld);
 
-			/* if the original definition was a base field type, remove the entries from RDB$FIELDS */
-			if (!strncmp(orig_fld.dyn_fld_source.c_str(), 
-					IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN))
+			// If the original definition was a base field type, remove the entries from RDB$FIELDS
+			if (sourceIsInternalDomain)
 			{
 				// a1. Internal domain -> domain.
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -2852,6 +2853,7 @@ void DYN_modify_sql_field(Global*					gbl,
 				RFR.RDB$FIELD_SOURCE.NULL = FALSE;
 			END_MODIFY;
 			first_request = request;
+			request = NULL;
 		}
 		else {
 			// b1. Domain -> internal domain.
@@ -2875,15 +2877,14 @@ void DYN_modify_sql_field(Global*					gbl,
 			if (retval != FB_SUCCESS)
 				modify_err_punt(tdbb, retval, orig_fld, new_fld);
 
-			// check to see if the original data type for the field was based on a domain.  If it
+			// Check to see if the original data type for the field was based on a domain.  If it
 			// was (and now it isn't), remove the domain information and replace it with a generated
 			// field name for RDB$FIELDS
 
-			const bool sourceIsInternalDomain = !strncmp(orig_fld.dyn_fld_source.c_str(),
-					IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN);
-
-			if (!sourceIsInternalDomain)
+			if (!changeDefault && !sourceIsInternalDomain)
 			{
+				// b1. Domain -> internal domain. Not for changing DEFAULT value.
+				
 				request = first_request;
 				MODIFY RFR USING
 					DYN_UTIL_generate_field_name(tdbb, gbl,
@@ -2892,15 +2893,11 @@ void DYN_modify_sql_field(Global*					gbl,
 				END_MODIFY;
 				first_request = request;
 				request = NULL;
-			}
-			
-			if (!changeDefault && !sourceIsInternalDomain)
-			{
-				// b1. Domain -> internal domain. Not for changing DEFAULT value.
-				
+
 				STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					FLD IN RDB$FIELDS 
-                    FLD.RDB$SYSTEM_FLAG.NULL = TRUE;
+                    FLD.RDB$SYSTEM_FLAG = 0;
+                    FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
 					FLD.RDB$FIELD_SCALE.NULL = TRUE;
 					FLD.RDB$FIELD_PRECISION.NULL = TRUE;
 					FLD.RDB$FIELD_SUB_TYPE.NULL = TRUE;
@@ -2945,7 +2942,7 @@ void DYN_modify_sql_field(Global*					gbl,
 					}
 
 					if (fldlen) {
-						/* CVC: Rescue from the wrong field_length with a helper. */
+						// CVC: Rescue from the wrong field_length with a helper.
 						if (new_fld.dyn_dsc.dsc_dtype <= dtype_varying && new_fld.dyn_charbytelen)
 							FLD.RDB$FIELD_LENGTH = new_fld.dyn_charbytelen;
 						else
@@ -2953,20 +2950,61 @@ void DYN_modify_sql_field(Global*					gbl,
 						FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 					}
 					
-					/* Copy the field name into RDB$FIELDS */
+					// Copy the field name into RDB$FIELDS
 					strcpy(FLD.RDB$FIELD_NAME, new_fld.dyn_fld_source.c_str());
 				END_STORE;
 
 				CMP_release(tdbb, request);
 				request = NULL;
 			}
-			else // if (changeDefault || sourceIsInternalDomain)
-			{	// The original and new definitions are both base types
-				// or we need to alter a domain's DEFAULT value.
-				// b2. Internal domain -> internal domain.
+			else if (changeDefault)
+			{
+				request = first_request;
+				MODIFY RFR USING
+					if (dropDefault)
+					{
+						if (RFR.RDB$DEFAULT_VALUE.NULL)
+						{
+							if (sourceIsInternalDomain || !domain_has_default)
+								DYN_error_punt(false, 229, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+								// msg 229: "Local column %s doesn't have a default"
+							else if (domain_has_default)
+								DYN_error_punt(false, 230, orig_fld.dyn_fld_name.c_str(), orig_fld.dyn_fld_source.c_str(), NULL, NULL, NULL);
+								// msg 230: "Local column %s default belongs to domain %s"
+						}
+						else
+						{
+							RFR.RDB$DEFAULT_VALUE.NULL = TRUE;
+							RFR.RDB$DEFAULT_SOURCE.NULL = TRUE;
+						}
+					}
+					else
+					{
+						if (defVal)
+						{
+							const UCHAR* p = defVal;
+							if (DYN_put_blr_blob(gbl, &p, &RFR.RDB$DEFAULT_VALUE))
+								RFR.RDB$DEFAULT_VALUE.NULL = FALSE;
+						}
 
-				if (!sourceIsInternalDomain)
-					DYN_UTIL_copy_domain(tdbb, gbl, orig_fld.dyn_fld_source, new_fld.dyn_fld_source);
+						if (defSrc)
+						{
+							const UCHAR* p = defSrc;
+							if (DYN_put_text_blob(gbl, &p, &RFR.RDB$DEFAULT_SOURCE))
+								RFR.RDB$DEFAULT_SOURCE.NULL = FALSE;
+						}
+					}
+				END_MODIFY
+				first_request = request;
+				request = NULL;
+			}
+			else //if (sourceIsInternalDomain)
+			{	// The original and new definitions are both base types.
+				// b2. Internal domain -> internal domain.
+				// Modify in place, since there cannot be other fields using it.
+
+				//if (!sourceIsInternalDomain)
+				//	DYN_UTIL_copy_domain(tdbb, gbl, orig_fld.dyn_fld_source, new_fld.dyn_fld_source);
 
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE
@@ -2999,7 +3037,7 @@ void DYN_modify_sql_field(Global*					gbl,
 						}
 
 						if (fldlen) {
-							/* CVC: Rescue from the wrong field_length with a helper. */
+							// CVC: Rescue from the wrong field_length with a helper.
 							if (new_fld.dyn_dsc.dsc_dtype <= dtype_varying && new_fld.dyn_charbytelen)
 								FLD.RDB$FIELD_LENGTH = new_fld.dyn_charbytelen;
 							else
@@ -3007,42 +3045,20 @@ void DYN_modify_sql_field(Global*					gbl,
 							FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 						}
 
-						if (dropDefault)
-						{
-							FLD.RDB$DEFAULT_VALUE.NULL = TRUE;
-							FLD.RDB$DEFAULT_SOURCE.NULL = TRUE;
-						}
-						else
-						{
-							if (defVal)
-							{
-								const UCHAR* p = defVal;
-								if (DYN_put_blr_blob(gbl, &p, &FLD.RDB$DEFAULT_VALUE))
-									FLD.RDB$DEFAULT_VALUE.NULL = FALSE;
-							}
-
-							if (defSrc)
-							{
-								const UCHAR* p = defSrc;
-								if (DYN_put_text_blob(gbl, &p, &FLD.RDB$DEFAULT_SOURCE))
-									FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
-							}
-						}
-
 					END_MODIFY;
-				END_FOR; /* FLD in RDB$FIELDS */
+				END_FOR; // FLD in RDB$FIELDS
 				CMP_release(tdbb, request);
 				request = NULL;
 			}
-		}						/* else not a domain */
+		} // else not a domain
 		request = first_request;
-	END_FOR; /* RFR IN RDB$RELATION_FIELDS */
+	END_FOR; // RFR IN RDB$RELATION_FIELDS
 	CMP_release(tdbb, request);
 	request = NULL;
 
 	if (!found)
-		DYN_error_punt(false, 96, NULL, NULL, NULL, NULL, NULL);
-	/* msg 96: "Local column not found" */
+		DYN_error_punt(false, 96, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+		// msg 96: "Local column %s not found"
 
 	// Update any indices that exist
 	modify_lfield_index(tdbb, dbb, gbl, *relation_name, orig_fld.dyn_fld_name,
@@ -3052,7 +3068,7 @@ void DYN_modify_sql_field(Global*					gbl,
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 95, NULL, NULL, NULL, NULL, NULL);
-		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
+		// msg 95: "MODIFY RDB$RELATION_FIELDS failed"
 	}
 }
 
