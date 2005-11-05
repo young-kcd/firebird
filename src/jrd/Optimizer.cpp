@@ -1625,8 +1625,13 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				invCandidate->unique = unique;
 				invCandidate->selectivity = scratch[i]->selectivity;
 				// Calculate the cost (only index pages) for this index. 
-				// The constant 3 is an average for the rootpage and non-leaf pages.
-				invCandidate->cost = 3 + (scratch[i]->selectivity * scratch[i]->cardinality);
+				// The constant DEFAULT_INDEX_COST 1 is an average for 
+				// the rootpage and non-leaf pages.
+				// Assuming the rootpage will stay in cache else the index
+				// cost is calculted to high. Better would be including
+				// the index-depth, but this is not possible due lack 
+				// on information at this time.
+				invCandidate->cost = DEFAULT_INDEX_COST + (scratch[i]->selectivity * scratch[i]->cardinality);
 				invCandidate->nonFullMatchedSegments =
 					scratch[i]->nonFullMatchedSegments;
 				invCandidate->matchedSegments = 
@@ -1871,17 +1876,24 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	// practical rule, we use all available indices for any system request.
 	// Another special case is an explicit (i.e. user specified) plan which
 	// requires all existing indices to be considered for a retrieval.
-	const bool acceptAll =
-		((csb->csb_g_flags & csb_internal) || csb->csb_rpt[stream].csb_plan);
+	const bool acceptAll = csb->csb_rpt[stream].csb_plan;
 
 	double totalSelectivity = MAXIMUM_SELECTIVITY; // worst selectivity
 	double totalCost = 0;
 	double totalIndexCost = 0;
-	const double maximumCost = csb->csb_rpt[stream].csb_cardinality * 0.95;
+
+	// Allow indexes also to be used on very small tables. Limit starts
+	// now above 5 indexes + almost all datapages.
+	// Also when the table is small and a statement is prepared, but would grow
+	// while inserting data into this would really slow down the statement.
+	// An example here is with system tables and the restore process of gbak.
+	//const double maximumCost = csb->csb_rpt[stream].csb_cardinality * 0.95;
+	const double maximumCost = (DEFAULT_INDEX_COST * 5) + (csb->csb_rpt[stream].csb_cardinality * 0.95);
+	double previousTotalCost = maximumCost;
+
 	const double minimumSelectivity =
 		csb->csb_rpt[stream].csb_cardinality ?
 		1 / csb->csb_rpt[stream].csb_cardinality : 0;
-//	double previousTotalCost = maximumCost;
 
 	int i = 0;
 	InversionCandidate* invCandidate = NULL;
@@ -1970,21 +1982,6 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					bestCandidate = inversion[currentPosition];
 				}
 				else {
-					// Do we have very similar selectivities?
-					double diffSelectivity = inversion[currentPosition]->selectivity;
-					if (!diffSelectivity && !bestCandidate->selectivity) {
-						// Two zero selectivities should be handled as being the same
-						// (other comparison criterias should be applied, see below).
-						diffSelectivity = 1;
-					}
-					else if (diffSelectivity) {
-						// Calculate the difference.
-						diffSelectivity = bestCandidate->selectivity / diffSelectivity;
-					}
-					else {
-						diffSelectivity = 0;
-					}
-
 					if (inversion[currentPosition]->unique && !bestCandidate->unique) {
 						// A unique full equal match is better than anything else.
 						bestCandidate = inversion[currentPosition];
@@ -2001,12 +1998,33 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 							bestCandidate = inversion[currentPosition];
 						}
 						else if (inversion[currentPosition]->dependencies == bestCandidate->dependencies) {
-							if ((diffSelectivity >= 0.98) && (diffSelectivity <= 1.02)) {
-								// If the "same" selectivity then compare with the nr of unmatched segments, 
-								// how many indexes and matched segments. First compare number of indices.
+
+							double bestCandidateCost = bestCandidate->cost + 
+								(bestCandidate->selectivity * csb->csb_rpt[stream].csb_cardinality);
+							double currentCandidateCost = inversion[currentPosition]->cost + 
+								(inversion[currentPosition]->selectivity * csb->csb_rpt[stream].csb_cardinality);
+
+							// Do we have very similar costs?
+							double diffCost = currentCandidateCost;
+							if (!diffCost && !bestCandidateCost) {
+								// Two zero costs should be handled as being the same
+								// (other comparison criterias should be applied, see below).
+								diffCost = 1;
+							}
+							else if (diffCost) {
+								// Calculate the difference.
+								diffCost = bestCandidateCost / diffCost;
+							}
+							else {
+								diffCost = 0;
+							}
+
+							if ((diffCost >= 0.98) && (diffCost <= 1.02)) {
+								// If the "same" costs then compare with the nr of unmatched segments, 
+								// how many indexes and matched segments. First compare number of indexes.
 								int compareSelectivity = (inversion[currentPosition]->indexes - bestCandidate->indexes);
 								if (compareSelectivity == 0) {
-									// For the same number of indices compare number of matched segments.
+									// For the same number of indexes compare number of matched segments.
 									// Note the inverted condition: the more matched segments the better.
 									compareSelectivity = 
 										(bestCandidate->matchedSegments - inversion[currentPosition]->matchedSegments);
@@ -2021,8 +2039,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 									bestCandidate = inversion[currentPosition];
 								}
 							}
-							else if (inversion[currentPosition]->selectivity < bestCandidate->selectivity) {
-								// The less selectivity we have the better.
+							else if (currentCandidateCost < bestCandidateCost) {
+								// How lower the cost the better.
 								bestCandidate = inversion[currentPosition];
 							}
 						}
@@ -2076,23 +2094,19 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 			*/
 
 			double newTotalSelectivity = bestCandidate->selectivity * totalSelectivity;
-			totalIndexCost += bestCandidate->cost;
-			totalCost = totalIndexCost;
-			if (top) {
-				totalCost += (newTotalSelectivity * csb->csb_rpt[stream].csb_cardinality);
-			}
+			double newTotalDataCost = newTotalSelectivity * csb->csb_rpt[stream].csb_cardinality;
+			double newTotalIndexCost = totalIndexCost + bestCandidate->cost;
+			totalCost = newTotalDataCost + newTotalIndexCost;
 
-			// Test if the new totalCost will be higher than the maximumCost or previous totalCost 
+			// Test if the new totalCost will be higher than the previous totalCost 
 			// and if the current selectivity (without the bestCandidate) is already good enough.
-//			if (plan || bestCandidate->selectivity < (totalSelectivity * SELECTIVITY_THRESHOLD_FACTOR_ADD))
-//			if (plan || ((totalCost < maximumCost) && (totalCost < previousTotalCost) && 
-//				(totalSelectivity > minimumSelectivity)))
-			if (acceptAll || ((totalCost < maximumCost) &&
+			if (acceptAll || ((totalCost < previousTotalCost) &&
 				(!totalSelectivity || totalSelectivity > minimumSelectivity)))
 			{
 				// Exclude index from next pass
 				bestCandidate->used = true;
-//				previousTotalCost = totalCost;
+				previousTotalCost = totalCost;
+				totalIndexCost = newTotalIndexCost; 
 
 				totalSelectivity = newTotalSelectivity;
 
@@ -2273,6 +2287,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 						segment[i]->lowerValue = value;
 						segment[i]->upperValue = boolean->nod_arg[2];
 						segment[i]->scanType = segmentScanBetween;
+						indexScratch->excludeLower = false;
+						indexScratch->excludeUpper = false;
 					}
 					break;
 
@@ -2283,6 +2299,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 					if (!(segment[i]->scanType == segmentScanEqual)) {
 						segment[i]->lowerValue = segment[i]->upperValue = value;
 						segment[i]->scanType = segmentScanEquivalent;
+						indexScratch->excludeLower = false;
+						indexScratch->excludeUpper = false;
 					}
 					break;
 
@@ -2290,6 +2308,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 					segment[i]->matches.add(boolean);
 					segment[i]->lowerValue = segment[i]->upperValue = value;
 					segment[i]->scanType = segmentScanEqual;
+					indexScratch->excludeLower = false;
+					indexScratch->excludeUpper = false;
 					break;
 
 				case nod_gtr:
@@ -2374,6 +2394,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 					{
 						segment[i]->lowerValue = segment[i]->upperValue = value;
 						segment[i]->scanType = segmentScanStarting;
+						indexScratch->excludeLower = false;
+						indexScratch->excludeUpper = false;
 					}
 					break;
 
