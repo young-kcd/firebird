@@ -1,3 +1,47 @@
+2005-11-06 02:56  robocop
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.42), Optimizer.h (1.12),
+	ext.cpp (1.61), opt.cpp (1.250):
+	
+	Non-member functions that are used in other modules should have a
+	prefix.  Created a couple of temporary vars for code
+	simplification.
+
+2005-11-05 15:50  arnobrinkman
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.41), Optimizer.h (1.11):
+	
+	Use candidate cost for decision which candidate to use.  Stop using
+	indexes when total cost is greater as the previous used total cost.
+	 Fix excludeLower/exludeUpper problem with using more operators to
+	the same field.
+
+2005-11-04 06:20  robocop
+
+	* firebird2/src/burp/restore.epp (1.98):
+	
+	Gbak must write always the system flag when creating objects.  This
+	is the first step before we are able to make rdb$system_flag field
+	mandatory in the future.
+
+2005-11-04 06:19  robocop
+
+	* firebird2/src/jrd/dyn_mod.epp (1.66):
+	
+	DYN must write always the system flag when creating objects.  This
+	is the first step before we are able to make rdb$system_flag field
+	mandatory in the future.
+
+2005-11-04 05:46  robocop
+
+	* firebird2/src/: jrd/dyn_mod.epp (1.65), msgs/facilities.sql
+	(1.45), msgs/messages.sql (1.54):
+	
+	Fixing SET DEFAULT so it operates on rdb$relation_fields only and
+	raises an error if DROP DEFAULT finds the default belonging to an
+	explicit domain. Thanks to Ann for committing the messages to the
+	central db.
+
 2005-11-02 01:11  robocop
 
 	* firebird2/src/jrd/dyn.epp (1.79):
