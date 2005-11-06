@@ -125,6 +125,11 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	}
 };
 
+// System transaction is always transaction 0.
+const SLONG TRA_system_transaction = 0;
+
+// Flag definitions for tra_flags.
+
 const ULONG TRA_system			= 1L;		/* system transaction */
 const ULONG TRA_update			= 2L;		/* update is permitted */
 const ULONG TRA_prepared		= 4L;		/* transaction is in limbo */
