@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * $Id: rse.cpp,v 1.89 2005-06-24 12:56:34 dimitr Exp $
+ * $Id: rse.cpp,v 1.90 2005-11-06 03:31:16 robocop Exp $
  *
  * 2001.07.28: John Bellardo: Implemented rse_skip and made rse_first work with
  *                              seekable streams.
@@ -83,22 +83,22 @@
 
 using namespace Jrd;
 
-static void close_merge(thread_db*, RecordSource*, IRSB_MRG);
+static void close_merge(thread_db*, RecordSource*, irsb_mrg*);
 static void close_procedure(thread_db*, RecordSource*);
 static SSHORT compare(thread_db*, jrd_nod*, jrd_nod*);
 static SSHORT compare_longs(const SLONG*, const SLONG*, USHORT);
 #ifdef SCROLLABLE_CURSORS
 static bool fetch_record(thread_db*, RecordSource*, SSHORT, RSE_GET_MODE);
-static bool get_merge_join(thread_db*, RecordSource*, IRSB_MRG, RSE_GET_MODE);
+static bool get_merge_join(thread_db*, RecordSource*, irsb_mrg*, RSE_GET_MODE);
 static bool get_merge_fetch(thread_db*, RecordSource*, SSHORT, RSE_GET_MODE);
 static SLONG get_merge_record(thread_db*, RecordSource*, irsb_mrg::irsb_mrg_repeat *,
 							  RSE_GET_MODE);
 static UCHAR *get_sort(thread_db*, RecordSource*, RSE_GET_MODE);
-static void resynch_merge(thread_db*, RecordSource*, IRSB_MRG, RSE_GET_MODE);
+static void resynch_merge(thread_db*, RecordSource*, irsb_mrg*, RSE_GET_MODE);
 static void unget_sort(thread_db*, RecordSource*, UCHAR *);
 #else
 static bool fetch_record(thread_db*, RecordSource*, SSHORT);
-static bool get_merge_join(thread_db*, RecordSource*, IRSB_MRG);
+static bool get_merge_join(thread_db*, RecordSource*, irsb_mrg*);
 static bool get_merge_fetch(thread_db*, RecordSource*, SSHORT);
 static SLONG get_merge_record(thread_db*, RecordSource*, irsb_mrg::irsb_mrg_repeat *);
 static UCHAR *get_sort(thread_db*, RecordSource*);
@@ -109,14 +109,14 @@ static bool fetch_left(thread_db*, RecordSource*, IRSB, RSE_GET_MODE);
 static bool fetch_left(thread_db*, RecordSource*, IRSB);
 #endif
 static UCHAR* get_merge_data(thread_db*, merge_file*, SLONG);
-static bool get_procedure(thread_db*, RecordSource*, IRSB_PROCEDURE, record_param*);
+static bool get_procedure(thread_db*, RecordSource*, irsb_procedure*, record_param*);
 static bool get_record(thread_db*, RecordSource*, RecordSource*, RSE_GET_MODE);
 static bool get_union(thread_db*, RecordSource*, IRSB);
 static void join_to_nulls(thread_db*, RecordSource*, StreamStack*);
 static void map_sort_data(jrd_req*, SortMap*, UCHAR *);
-static void open_merge(thread_db*, RecordSource*, IRSB_MRG);
-static void open_procedure(thread_db*, RecordSource*, IRSB_PROCEDURE);
-static void open_sort(thread_db*, RecordSource*, IRSB_SORT, UINT64);
+static void open_merge(thread_db*, RecordSource*, irsb_mrg*);
+static void open_procedure(thread_db*, RecordSource*, irsb_procedure*);
+static void open_sort(thread_db*, RecordSource*, irsb_sort*, UINT64);
 static void proc_assignment(const dsc*, const dsc*, UCHAR*, dsc*, SSHORT, Record*);
 static void pop_rpbs(jrd_req*, RecordSource*);
 static void push_rpbs(thread_db*, jrd_req*, RecordSource*);
@@ -148,7 +148,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 	SET_TDBB(tdbb);
 
 	while (true) {
-		IRSB_SORT impure = (IRSB_SORT) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
+		irsb_sort* impure = (irsb_sort*) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
 		if (!(impure->irsb_flags & irsb_open))
 			return;
 
@@ -197,7 +197,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 			return;
 
 		case rsb_merge:
-			close_merge(tdbb, rsb, (IRSB_MRG) impure);
+			close_merge(tdbb, rsb, (irsb_mrg*) impure);
 			return;
 
 		case rsb_sort:
@@ -280,7 +280,7 @@ bool RSE_find_dbkey(thread_db* tdbb, RecordSource* rsb, jrd_nod* find_key, jrd_n
 	}
 
 	record_param* rpb;
-	IRSB_INDEX impure;
+	irsb_index* impure;
 	RecordBitmap* bitmap;
 
 	switch (rsb->rsb_type) {
@@ -335,7 +335,7 @@ bool RSE_find_dbkey(thread_db* tdbb, RecordSource* rsb, jrd_nod* find_key, jrd_n
 	case rsb_indexed:
 		rpb = request->req_rpb + rsb->rsb_stream;
 		rpb->rpb_number = dbkey[1] - 1;
-		impure = (IRSB_INDEX) ((UCHAR *) request + rsb->rsb_impure);
+		impure = (irsb_index*) ((UCHAR *) request + rsb->rsb_impure);
 
 		RSE_MARK_CRACK(tdbb, rsb, 0);
 		if ((bitmap = impure->irsb_bitmap) &&
@@ -627,7 +627,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 	}
 
 	while (true) {
-		IRSB_INDEX impure = (IRSB_INDEX) ((SCHAR *) request + rsb->rsb_impure);
+		irsb_index* impure = (irsb_index*) ((SCHAR *) request + rsb->rsb_impure);
 		impure->irsb_flags |= irsb_first | irsb_open;
 		impure->irsb_flags &=
 			~(irsb_singular_processed | irsb_checking_singular);
@@ -697,16 +697,16 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			// dimitr:	we can avoid reading and sorting the entire
 			//			record set, if there's actually nothing to return
 			if (first_records) {
-				open_sort(tdbb, rsb, (IRSB_SORT) impure,
+				open_sort(tdbb, rsb, (irsb_sort*) impure,
 					(first_records < 0) ? 0 : (UINT64) first_records + skip_records);
 			}
 			else {
-				((IRSB_SORT) impure)->irsb_sort_handle = NULL;
+				((irsb_sort*) impure)->irsb_sort_handle = NULL;
 			}
 			return;
 
 		case rsb_procedure:
-			open_procedure(tdbb, rsb, (IRSB_PROCEDURE) impure);
+			open_procedure(tdbb, rsb, (irsb_procedure*) impure);
 			return;
 
         case rsb_first:
@@ -718,7 +718,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 	            if (first_records < 0)
 		            ERR_post(isc_bad_limit_param, 0);
 
-				((IRSB_FIRST) impure)->irsb_count = first_records;
+				((irsb_first_n*) impure)->irsb_count = first_records;
 				rsb = rsb->rsb_next;
 			}
             break;
@@ -732,7 +732,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 	            if (skip_records < 0)
 		            ERR_post(isc_bad_skip_param, 0);
 
-				((IRSB_SKIP) impure)->irsb_count = skip_records + 1;
+				((irsb_skip_n*) impure)->irsb_count = skip_records + 1;
 				rsb = rsb->rsb_next;
 			}
             break;
@@ -765,7 +765,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			return;
 
 		case rsb_merge:
-			open_merge(tdbb, rsb, (IRSB_MRG) impure);
+			open_merge(tdbb, rsb, (irsb_mrg*) impure);
 			return;
 
 		case rsb_ext_sequential:
@@ -817,7 +817,7 @@ bool RSE_reset_position(thread_db* tdbb, RecordSource* rsb, record_param* new_rp
  *
  **************************************/
 	record_param* rpb;
-	IRSB_INDEX impure;
+	irsb_index* impure;
 	RecordBitmap* bitmap;
 
 	SET_TDBB(tdbb);
@@ -856,7 +856,7 @@ bool RSE_reset_position(thread_db* tdbb, RecordSource* rsb, record_param* new_rp
 		rpb = request->req_rpb + rsb->rsb_stream;
 		rpb->rpb_number = new_rpb->rpb_number;
 
-		impure = (IRSB_INDEX) ((UCHAR *) request + rsb->rsb_impure);
+		impure = (irsb_index*) ((UCHAR *) request + rsb->rsb_impure);
 		if ((bitmap = impure->irsb_bitmap) &&
 			SBM_next(*bitmap, &rpb->rpb_number, RSE_get_current) &&
 			VIO_get(tdbb, rpb, rsb, request->req_transaction,
@@ -925,7 +925,7 @@ bool RSE_set_bookmark(thread_db* tdbb, RecordSource* rsb, record_param* rpb, Boo
 #endif
 
 
-static void close_merge(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
+static void close_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 {
 /**************************************
  *
@@ -989,7 +989,7 @@ static void close_procedure(thread_db* tdbb, RecordSource* rsb)
 	SET_TDBB(tdbb);
 
 	jrd_req* request = tdbb->tdbb_request;
-	IRSB_PROCEDURE impure = (IRSB_PROCEDURE) ((UCHAR *) request + rsb->rsb_impure);
+	irsb_procedure* impure = (irsb_procedure*) ((UCHAR *) request + rsb->rsb_impure);
 	jrd_req* proc_request = impure->irsb_req_handle;
 	if (proc_request) {
 		EXE_unwind(tdbb, proc_request);
@@ -1490,7 +1490,7 @@ static bool get_merge_fetch(
  **************************************/
 	SET_TDBB(tdbb);
 
-	irsb_mrg* impure = (IRSB_MRG) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
+	irsb_mrg* impure = (irsb_mrg*) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
 	irsb_mrg::irsb_mrg_repeat* tail = impure->irsb_mrg_rpt + stream;
 	const SSHORT m = tail->irsb_mrg_order;
 	tail = impure->irsb_mrg_rpt + m;
@@ -1585,7 +1585,7 @@ static bool get_merge_fetch(thread_db* tdbb, RecordSource* rsb, SSHORT stream)
  **************************************/
 	SET_TDBB(tdbb);
 
-	IRSB_MRG impure = (IRSB_MRG) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
+	irsb_mrg* impure = (irsb_mrg*) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
 	irsb_mrg::irsb_mrg_repeat* tail = impure->irsb_mrg_rpt + stream;
 	const SSHORT m = tail->irsb_mrg_order;
 	tail = impure->irsb_mrg_rpt + m;
@@ -1613,7 +1613,7 @@ static bool get_merge_fetch(thread_db* tdbb, RecordSource* rsb, SSHORT stream)
 #ifdef SCROLLABLE_CURSORS
 static bool get_merge_join(
 							  thread_db* tdbb,
-							  RecordSource* rsb, IRSB_MRG impure, RSE_GET_MODE mode)
+							  RecordSource* rsb, irsb_mrg* impure, RSE_GET_MODE mode)
 {
 /**************************************
  *
@@ -1832,7 +1832,7 @@ static bool get_merge_join(
 	return true;
 }
 #else
-static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
+static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 {
 /**************************************
  *
@@ -2086,7 +2086,7 @@ static SLONG get_merge_record(
 
 static bool get_procedure(thread_db*			tdbb,
 							 RecordSource*		rsb,
-							 IRSB_PROCEDURE		impure,
+							 irsb_procedure*	impure,
 							 record_param*		rpb)
 {
 /**************************************
@@ -2103,7 +2103,7 @@ static bool get_procedure(thread_db*			tdbb,
 
 	jrd_prc* procedure = rsb->rsb_procedure;
 	jrd_req* request = tdbb->tdbb_request;
-	impure = (IRSB_PROCEDURE) ((UCHAR *) request + rsb->rsb_impure);
+	impure = (irsb_procedure*) ((UCHAR *) request + rsb->rsb_impure);
 	jrd_req* proc_request = impure->irsb_req_handle;
 	Format* rec_format = procedure->prc_format;
 
@@ -2267,7 +2267,7 @@ static bool get_record(thread_db*	tdbb,
 
 	case rsb_indexed:
 		{
-			RecordBitmap **pbitmap = ((IRSB_INDEX) impure)->irsb_bitmap, *bitmap;
+			RecordBitmap **pbitmap = ((irsb_index*) impure)->irsb_bitmap, *bitmap;
 			if (!pbitmap || !(bitmap = *pbitmap))
 				return false;
 
@@ -2283,10 +2283,10 @@ static bool get_record(thread_db*	tdbb,
 				/* Prefetch next set of data pages from bitmap. */
 
 				if (rpb->rpb_number >
-					((IRSB_INDEX) impure)->irsb_prefetch_number &&
+					((irsb_index*) impure)->irsb_prefetch_number &&
 					(mode == RSE_get_forward))
 				{
-					((IRSB_INDEX) impure)->irsb_prefetch_number =
+					((irsb_index*) impure)->irsb_prefetch_number =
 						DPM_prefetch_bitmap(tdbb, rpb->rpb_relation,
 											*bitmap, rpb->rpb_number);
 				}
@@ -2601,22 +2601,22 @@ static bool get_record(thread_db*	tdbb,
 	case rsb_first:
 		switch (mode) {
 		case RSE_get_forward:
-			if (((IRSB_FIRST) impure)->irsb_count <= 0)
+			if (((irsb_first_n*) impure)->irsb_count <= 0)
 				return false;
-			((IRSB_FIRST) impure)->irsb_count--;
+			((irsb_first_n*) impure)->irsb_count--;
 			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
 
 		case RSE_get_current:
-			if (((IRSB_FIRST) impure)->irsb_count <= 0)
+			if (((irsb_first_n*) impure)->irsb_count <= 0)
 				return false;
 			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
 
 		case RSE_get_backward:
-			((IRSB_FIRST) impure)->irsb_count++;
+			((irsb_first_n*) impure)->irsb_count++;
 			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
@@ -2626,31 +2626,31 @@ static bool get_record(thread_db*	tdbb,
 	case rsb_skip:
 		switch (mode) {
 		case RSE_get_backward:
-			if (((IRSB_SKIP) impure)->irsb_count > 0)
+			if (((irsb_skip_n*) impure)->irsb_count > 0)
 				return false;
-			if (((IRSB_SKIP) impure)->irsb_count == 0) {
-				((IRSB_SKIP) impure)->irsb_count++;
+			if (((irsb_skip_n*) impure)->irsb_count == 0) {
+				((irsb_skip_n*) impure)->irsb_count++;
 				get_record(tdbb, rsb->rsb_next, NULL, mode);
 				return false;
 			}
-			((IRSB_SKIP) impure)->irsb_count++;
+			((irsb_skip_n*) impure)->irsb_count++;
 			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
 
 		case RSE_get_forward:
-			while (((IRSB_SKIP) impure)->irsb_count > 1) {
-				((IRSB_SKIP) impure)->irsb_count--;
+			while (((irsb_skip_n*) impure)->irsb_count > 1) {
+				((irsb_skip_n*) impure)->irsb_count--;
 				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 					return false;
 			}
-			((IRSB_SKIP) impure)->irsb_count--;
+			((irsb_skip_n*) impure)->irsb_count--;
 			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
 
 		case RSE_get_current:
-			if (((IRSB_SKIP) impure)->irsb_count >= 1)
+			if (((irsb_skip_n*) impure)->irsb_count >= 1)
 				return false;
 			else if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
@@ -2658,7 +2658,7 @@ static bool get_record(thread_db*	tdbb,
 		break;
 
 	case rsb_merge:
-		if (!get_merge_join(tdbb, rsb, (IRSB_MRG) impure
+		if (!get_merge_join(tdbb, rsb, (irsb_mrg*) impure
 #ifdef SCROLLABLE_CURSORS
 							, mode
 #endif
@@ -2667,7 +2667,7 @@ static bool get_record(thread_db*	tdbb,
 		break;
 
 	case rsb_procedure:
-		if (!get_procedure(tdbb, rsb, (IRSB_PROCEDURE) impure, rpb))
+		if (!get_procedure(tdbb, rsb, (irsb_procedure*) impure, rpb))
 			return false;
 		break;
 
@@ -2823,7 +2823,7 @@ static UCHAR *get_sort(thread_db* tdbb, RecordSource* rsb
 	SET_TDBB(tdbb);
 
 	jrd_req* request = tdbb->tdbb_request;
-	irsb_sort* impure = (IRSB_SORT) ((UCHAR *) request + rsb->rsb_impure);
+	irsb_sort* impure = (irsb_sort*) ((UCHAR *) request + rsb->rsb_impure);
 
 /* Get address of record from sort.  If the address if null, we
    ran out of records.  This is known in the trade as "end of file." */
@@ -2988,7 +2988,7 @@ static void map_sort_data(jrd_req* request, SortMap* map, UCHAR * data)
 }
 
 
-static void open_merge(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
+static void open_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 {
 /**************************************
  *
@@ -3039,7 +3039,7 @@ static void open_merge(thread_db* tdbb, RecordSource* rsb, IRSB_MRG impure)
 }
 
 
-static void open_procedure(thread_db* tdbb, RecordSource* rsb, IRSB_PROCEDURE impure)
+static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* impure)
 {
 /**************************************
  *
@@ -3111,7 +3111,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, IRSB_PROCEDURE im
 }
 
 
-static void open_sort(thread_db* tdbb, RecordSource* rsb, IRSB_SORT impure, UINT64 max_records)
+static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UINT64 max_records)
 {
 /**************************************
  *
@@ -3650,7 +3650,7 @@ static void restore_record(record_param* rpb)
 #ifdef SCROLLABLE_CURSORS
 static void resynch_merge(
 						  thread_db* tdbb,
-						  RecordSource* rsb, IRSB_MRG impure, RSE_GET_MODE mode)
+						  RecordSource* rsb, irsb_mrg* impure, RSE_GET_MODE mode)
 {
 /**************************************
  *
@@ -3766,7 +3766,7 @@ static void unget_sort(thread_db* tdbb, RecordSource* rsb, UCHAR* data)
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->tdbb_request;
 
-	IRSB_SORT impure = (IRSB_SORT) ((UCHAR *) request + rsb->rsb_impure);
+	irsb_sort* impure = (irsb_sort*) ((UCHAR *) request + rsb->rsb_impure);
 
 	SORT_diddle_key(data, impure->irsb_sort_handle, true);
 }

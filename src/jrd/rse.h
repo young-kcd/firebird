@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2001.07.28: Added rsb_t.rsb_skip and IRSB_SKIP to support LIMIT functionality.
+ * 2001.07.28: Added rsb_t.rsb_skip to support LIMIT functionality.
  */
 
 #ifndef JRD_RSE_H
@@ -74,7 +74,6 @@ enum rsb_t
 	rsb_left_cross,						// left outer join as a nested loop
 	rsb_procedure						// stored procedure
 };
-typedef rsb_t RSB_T;
 
 
 // Array which stores relative pointers to impure areas of invariant nodes
@@ -87,7 +86,7 @@ class RecordSource : public pool_alloc_rpt<RecordSource*, type_rsb>
 public:
 	RecordSource() : rsb_left_inner_streams(0),
 		rsb_left_streams(0), rsb_left_rsbs(0) { }
-	RSB_T rsb_type;						// type of rsb
+	rsb_t rsb_type;						// type of rsb
 	UCHAR rsb_stream;					// stream, if appropriate
 	USHORT rsb_count;					// number of sub arguments
 	USHORT rsb_flags;
@@ -169,15 +168,11 @@ struct irsb_first_n {
     SINT64 irsb_count;
 };
 
-typedef irsb_first_n *IRSB_FIRST;
-
 struct irsb_skip_n {
     ULONG irsb_flags;
     SLONG irsb_number;
     SINT64 irsb_count;
 };
-
-typedef irsb_skip_n *IRSB_SKIP;
 
 struct irsb_index {
 	ULONG irsb_flags;
@@ -186,22 +181,16 @@ struct irsb_index {
 	RecordBitmap**	irsb_bitmap;
 };
 
-typedef irsb_index *IRSB_INDEX;
-
 struct irsb_sort {
 	ULONG irsb_flags;
 	sort_context*	irsb_sort_handle;
 };
-
-typedef irsb_sort *IRSB_SORT;
 
 struct irsb_procedure {
 	ULONG 		irsb_flags;
 	jrd_req*	irsb_req_handle;
 	VaryingString*		irsb_message;
 };
-
-typedef irsb_procedure *IRSB_PROCEDURE;
 
 struct irsb_mrg {
 	ULONG irsb_flags;
@@ -216,22 +205,19 @@ struct irsb_mrg {
 	} irsb_mrg_rpt[1];
 };
 
-typedef irsb_mrg *IRSB_MRG;
-
+/* CVC: Unused as of Nov-2005.
 struct irsb_sim {
 	ULONG irsb_flags;
 	USHORT irsb_sim_rid;				// next relation id
 	USHORT irsb_sim_fid;				// next field id
-	jrd_req *irsb_sim_req1;		// request handle #1
-	jrd_req *irsb_sim_req2;		// request handle #2
+	jrd_req *irsb_sim_req1;				// request handle #1
+	jrd_req *irsb_sim_req2;				// request handle #2
 };
-
-typedef irsb_sim *IRSB_SIM;
 
 const ULONG irsb_sim_alias = 32;		// duplicate relation but w/o user name
 const ULONG irsb_sim_eos = 64;			// encountered end of stream
 const ULONG irsb_sim_active = 128;		// remote simulated stream request is active
-
+*/
 
 // impure area format for navigational rsb type,
 // which holds information used to get back to 
@@ -240,7 +226,7 @@ const ULONG irsb_sim_active = 128;		// remote simulated stream request is active
 struct irsb_nav {
 	ULONG irsb_flags;
 	SLONG irsb_nav_expanded_offset;			// page offset of current index node on expanded index page
-	RecordNumber irsb_nav_number;					// last record number
+	RecordNumber irsb_nav_number;			// last record number
 	SLONG irsb_nav_page;					// index page number
 	SLONG irsb_nav_incarnation;				// buffer/page incarnation counter
 	ULONG irsb_nav_count;					// record count of last record returned
@@ -282,7 +268,7 @@ struct smb_repeat {
 	USHORT smb_flag_offset;		// offset of missing flag
 	USHORT smb_stream;			// stream for field id
 	SSHORT smb_field_id;		// id for field (-1 if dbkey)
-	jrd_nod*	smb_node;	// expression node
+	jrd_nod*	smb_node;		// expression node
 };
 
 class SortMap : public pool_alloc_rpt<smb_repeat, type_smb>
