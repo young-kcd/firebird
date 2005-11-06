@@ -169,7 +169,7 @@ void DYN_delete_exception( Global* gbl, const UCHAR** ptr)
 
 	try {
 
-	found = false;;
+	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$EXCEPTIONS
         WITH X.RDB$EXCEPTION_NAME EQ t.c_str()

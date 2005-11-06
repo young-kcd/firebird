@@ -104,7 +104,7 @@ static void preKmp(const CharType *x, int m, SLONG kmpNext[])
 
 class StaticAllocator {
 public:
-	StaticAllocator(MemoryPool& _pool) : chunksToFree(_pool), pool(_pool), allocated(0) {};
+	StaticAllocator(MemoryPool& _pool) : chunksToFree(_pool), pool(_pool), allocated(0) {}
 
 	~StaticAllocator() {
 		for (size_t i = 0; i < chunksToFree.getCount(); i++)
@@ -116,13 +116,12 @@ public:
 		if (allocated + count <= STATIC_PATTERN_BUFFER) {
 			result = allocBuffer + allocated;
 			allocated += count;		
-			return result;
 		}
 		else {
 			result = pool.allocate(count);
 			chunksToFree.add(result);
-			return result;
 		}
+		return result;
 	}
 private:
 	Array<void*> chunksToFree;
