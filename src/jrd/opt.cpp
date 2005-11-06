@@ -586,7 +586,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 			const Format* format = CMP_format(tdbb, csb, stream);
 			csb->csb_rpt[stream].csb_cardinality = 
-				getRelationCardinality(tdbb, relation, format);
+				OPT_getRelationCardinality(tdbb, relation, format);
 		}
 	}
 
@@ -996,7 +996,7 @@ jrd_nod* OPT_make_dbkey(OptimizerBlk* opt, jrd_nod* boolean, USHORT stream)
 /* If the value isn't computable, this has been a waste of time */
 
 	CompilerScratch* csb = opt->opt_csb;
-	if (!Jrd::computable(csb, value, stream, false, false)) {
+	if (!OPT_computable(csb, value, stream, false, false)) {
 		return NULL;
 	}
 
@@ -1253,7 +1253,7 @@ int OPT_match_index(OptimizerBlk* opt, USHORT stream, index_desc* idx)
 	{
 		jrd_nod* node = tail->opt_conjunct_node;
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-			&& computable(csb, node, -1, true, false))
+			&& OPT_computable(csb, node, -1, true, false))
 		{
 			n += match_index(tdbb, opt, stream, node, idx);
 		}
@@ -1918,7 +1918,7 @@ static jrd_nod* compose(jrd_nod** node1, jrd_nod* node2, NOD_T node_type)
 		return (*node1 = node2);
 	}
 
-	return *node1 = make_binary_node(node_type, *node1, node2, false);
+	return *node1 = OPT_make_binary_node(node_type, *node1, node2, false);
 }
 
 
@@ -2160,10 +2160,10 @@ static SLONG decompose(thread_db*		tdbb,
 			ERR_post(isc_optimizer_between_err, 0);
 			/* Msg 493: Unsupported field type specified in BETWEEN predicate */
 		}
-		jrd_nod* node = make_binary_node(nod_geq, arg, boolean_node->nod_arg[1], true);
+		jrd_nod* node = OPT_make_binary_node(nod_geq, arg, boolean_node->nod_arg[1], true);
 		stack.push(node);
 		arg = CMP_clone_node(tdbb, csb, arg);
-		node = make_binary_node(nod_leq, arg, boolean_node->nod_arg[2], true);
+		node = OPT_make_binary_node(nod_leq, arg, boolean_node->nod_arg[2], true);
 		stack.push(node);
 		return 2;
 	}
@@ -2175,7 +2175,7 @@ static SLONG decompose(thread_db*		tdbb,
 	if ((boolean_node->nod_type == nod_like) &&
 		(arg = optimize_like(tdbb, csb, boolean_node)))
 	{
-		stack.push(make_binary_node(nod_starts,
+		stack.push(OPT_make_binary_node(nod_starts,
 			boolean_node->nod_arg[0], arg, false));
 		stack.push(boolean_node);
 		return 2;
@@ -2273,7 +2273,7 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 			for (NodeStack::iterator outer(*eq_class); outer.hasData(); ++outer) {
 				for (NodeStack::iterator inner(outer); (++inner).hasData(); ) {
 					jrd_nod* boolean =
-						make_binary_node(nod_eql, outer.object(),
+						OPT_make_binary_node(nod_eql, outer.object(),
 										 inner.object(), true);
 					if ((base_count + count < MAX_CONJUNCTS) &&
 						augment_stack(boolean, org_stack))
@@ -4263,7 +4263,7 @@ static void gen_join(thread_db*		tdbb,
 			fb_assert(relation);
 			const Format* format = CMP_format(tdbb, csb, streams[1]);
 			fb_assert(format);
-			csb_tail->csb_cardinality = getRelationCardinality(tdbb, relation, format);
+			csb_tail->csb_cardinality = OPT_getRelationCardinality(tdbb, relation, format);
 		}
 
 		River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) River();
@@ -4298,7 +4298,7 @@ static void gen_join(thread_db*		tdbb,
 			csb_tail->csb_cardinality = (float) 0;
 		}
 		else {
-			csb_tail->csb_cardinality = getRelationCardinality(tdbb, relation, format);
+			csb_tail->csb_cardinality = OPT_getRelationCardinality(tdbb, relation, format);
 		}
 
 		// find indexed relationships from this stream to every other stream
@@ -4445,7 +4445,7 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 #ifdef EXPRESSION_INDICES
 		if (idx->idx_flags & idx_expressn)
 		{
-			if (!expression_equal(tdbb, opt, idx, node, stream))
+			if (!OPT_expression_equal(tdbb, opt, idx, node, stream))
 				return NULL;
 		}
 		else
@@ -4567,7 +4567,7 @@ static RecordSource* gen_nav_rsb(thread_db* tdbb,
 	if (opt->opt_g_flags & opt_g_stream) {
 		key_length = MAX_KEY;
 	}
-	const USHORT size = nav_rsb_size(rsb, key_length, 0);
+	const USHORT size = OPT_nav_rsb_size(rsb, key_length, 0);
 	rsb->rsb_impure = CMP_impure(opt->opt_csb, size);
 	return rsb;
 }
@@ -4825,7 +4825,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 	fb_assert(relation);
 
-	VaryingString* alias = make_alias(tdbb, csb, csb_tail);
+	VaryingString* alias = OPT_make_alias(tdbb, csb, csb_tail);
 	csb_tail->csb_flags |= csb_active;
 /* bug #8180 reported by Bill Karwin: when a DISTINCT and an ORDER BY
    are done on different fields, and the ORDER BY can be mapped to an
@@ -4929,7 +4929,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 				}
 				jrd_nod* node = tail->opt_conjunct_node;
 				if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				    computable(csb, node, -1, (inner_flag || outer_flag), false))
+				    OPT_computable(csb, node, -1, (inner_flag || outer_flag), false))
 				{
 					match_index(tdbb, opt, stream, node, idx);
 				}
@@ -5015,7 +5015,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 					// Setting opt_lower and/or opt_upper values
 					jrd_nod* node = tail->opt_conjunct_node;
 					if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-						 computable(csb,
+						 OPT_computable(csb,
 						            node,
 									-1,
 									(inner_flag || outer_flag),
@@ -5117,7 +5117,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++) {
 			jrd_nod* node = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-				&& computable(csb, node, -1, false, false))
+				&& OPT_computable(csb, node, -1, false, false))
 			{
 				compose(return_boolean, node, nod_and);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -5143,7 +5143,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			compose(&inversion, OPT_make_dbkey(opt, node, stream), nod_bit_and);
 		}
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-			&& computable(csb, node, -1, false, false))
+			&& OPT_computable(csb, node, -1, false, false))
 		{
 			// Don't waste time trying to match OR to available indices
 			// if we already have an excellent match
@@ -5154,7 +5154,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			// If no index is used then leave other nodes alone, because they
 			// could be used for building a SORT/MERGE.
 			if ((inversion && expression_contains_stream(csb, node, stream, NULL)) ||
-				(!inversion && computable(csb, node, stream, false, true)))
+				(!inversion && OPT_computable(csb, node, stream, false, true)))
 			{
 				compose(&opt_boolean, node, nod_and);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -5232,7 +5232,7 @@ static RecordSource* gen_rsb(thread_db* tdbb,
 		// OPT_set_index() could be used to convert it to one.
 		if (opt->opt_g_flags & opt_g_stream) {
 			size = sizeof(impure_inversion);
-			size = nav_rsb_size(rsb, MAX_KEY, size);
+			size = OPT_nav_rsb_size(rsb, MAX_KEY, size);
 		}
 
 		rsb->rsb_impure = CMP_impure(opt->opt_csb, size);
@@ -5766,7 +5766,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		{
 			jrd_nod* node1 = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-				&& computable(opt->opt_csb, node1, -1, false, false))
+				&& OPT_computable(opt->opt_csb, node1, -1, false, false))
 			{
 				compose(&node, node1, nod_and);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -6035,7 +6035,7 @@ static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* 
 		{
 			jrd_nod* node = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-				&& computable(csb, node, -1, false, false))
+				&& OPT_computable(csb, node, -1, false, false))
 			{
 				// AB: Why only check for AND structures ?
 				// Added match_indices for support of "OR" with INNER JOINs */
@@ -6414,7 +6414,7 @@ static jrd_nod* make_missing(thread_db* tdbb,
 	if (idx->idx_flags & idx_expressn)
 	{
 		fb_assert(idx->idx_expression != NULL);
-		if (!expression_equal(tdbb, opt, idx, field, stream))
+		if (!OPT_expression_equal(tdbb, opt, idx, field, stream))
 		{
 			return NULL;
 		}
@@ -6500,11 +6500,11 @@ static jrd_nod* make_starts(thread_db* tdbb,
 	if (idx->idx_flags & idx_expressn)
 	{
 		fb_assert(idx->idx_expression != NULL);
-		if (!(expression_equal(tdbb, opt, idx, field, stream) &&
-			computable(opt->opt_csb, value, stream, true, false)))
+		if (!(OPT_expression_equal(tdbb, opt, idx, field, stream) &&
+			OPT_computable(opt->opt_csb, value, stream, true, false)))
 		{
-			if (expression_equal(tdbb, opt, idx, value, stream) &&
-				computable(opt->opt_csb, field, stream, true, false))
+			if (OPT_expression_equal(tdbb, opt, idx, value, stream) &&
+				OPT_computable(opt->opt_csb, field, stream, true, false))
 			{
 				field = value;
 				value = boolean->nod_arg[0];
@@ -6552,7 +6552,7 @@ static jrd_nod* make_starts(thread_db* tdbb,
 			 || idx->idx_rpt[0].idx_itype == idx_byte_array
 			 || idx->idx_rpt[0].idx_itype == idx_metadata
 			 || idx->idx_rpt[0].idx_itype >= idx_first_intl_string)
-		|| !computable(opt->opt_csb, value, stream, false, false))
+		|| !OPT_computable(opt->opt_csb, value, stream, false, false))
 	{
 		return NULL;
 	}
@@ -6742,12 +6742,12 @@ static SSHORT match_index(thread_db* tdbb,
 
 	    fb_assert(idx->idx_expression != NULL);
 
-		if (!expression_equal(tdbb, opt, idx, match, stream) ||
-			(value && !computable(opt->opt_csb, value, stream, true, false)))
+		if (!OPT_expression_equal(tdbb, opt, idx, match, stream) ||
+			(value && !OPT_computable(opt->opt_csb, value, stream, true, false)))
 		{
 			if (value &&
-				expression_equal(tdbb, opt, idx, value, stream) &&
-				computable(opt->opt_csb, match, stream, true, false))
+				OPT_expression_equal(tdbb, opt, idx, value, stream) &&
+				OPT_computable(opt->opt_csb, match, stream, true, false))
 			{
 				match = boolean->nod_arg[1];
 				value = boolean->nod_arg[0];
@@ -6763,14 +6763,14 @@ static SSHORT match_index(thread_db* tdbb,
 
 		if (match->nod_type != nod_field ||
 			(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
-			(value && !computable(opt->opt_csb, value, stream, true, false)))
+			(value && !OPT_computable(opt->opt_csb, value, stream, true, false)))
 		{
 			match = value;
 			value = boolean->nod_arg[0];
 			if (!match ||
 				match->nod_type != nod_field ||
 				(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
-				!computable(opt->opt_csb, value, stream, true, false))
+				!OPT_computable(opt->opt_csb, value, stream, true, false))
 			{
 				return 0;
 			}
@@ -6804,7 +6804,7 @@ static SSHORT match_index(thread_db* tdbb,
 			switch (boolean->nod_type) {
 				case nod_between:
 					if (!forward ||
-						!computable(opt->opt_csb,
+						!OPT_computable(opt->opt_csb,
 						            boolean->nod_arg[2],
 						            stream,
 						            true,
@@ -7367,7 +7367,7 @@ static void set_made_river(OptimizerBlk* opt, const River* river)
  *
  *      A stream with this flag set, incicates that this stream has
  *      already been made into a river. Currently, this flag is used
- *      in computable() to decide if we can use the an index to
+ *      in OPT_computable() to decide if we can use the an index to
  *      optimise retrieving the streams involved in the conjunct.
  *
  *      We can use an index in retrieving the streams involved in a

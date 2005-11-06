@@ -391,7 +391,7 @@ if (opt->opt_count)
 	    {
 	    node = tail->opt_conjunct;
 	    if (!(tail->opt_flags & opt_used) &&
-		computable (csb, node, -1))
+		OPT_computable(csb, node, -1))
 		match (opt, stream, node, idx);
 	    if (node->nod_type == nod_starts)
 		compose (&inversion,

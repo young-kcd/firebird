@@ -64,17 +64,17 @@ struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
 
-bool computable(CompilerScratch*, jrd_nod*, SSHORT, bool, bool);
+bool OPT_computable(CompilerScratch*, jrd_nod*, SSHORT, bool, bool);
 #ifdef EXPRESSION_INDICES
-bool expression_equal(thread_db*, OptimizerBlk*, const index_desc*,
+bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*,
 							 jrd_nod*, USHORT);
-bool expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*,
+bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*,
 							  jrd_nod*, USHORT);
 #endif
-double getRelationCardinality(thread_db*, jrd_rel*,const Format*);
-VaryingString* make_alias(thread_db*, CompilerScratch*, CompilerScratch::csb_repeat*);
-jrd_nod* make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
-USHORT nav_rsb_size(RecordSource*, USHORT, USHORT);
+double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
+VaryingString* OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
+jrd_nod* OPT_make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
+USHORT OPT_nav_rsb_size(RecordSource*, USHORT, USHORT);
 
 inline int STREAM_INDEX(const jrd_nod* node)
 {
