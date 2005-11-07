@@ -1,3 +1,27 @@
+2005-11-06 07:23  robocop
+
+	* firebird2/src/jrd/rse.cpp (1.91):
+	
+	Totally misc.
+
+2005-11-06 04:31  robocop
+
+	* firebird2/src/jrd/: rse.cpp (1.90), rse.h (1.39):
+	
+	Get rid of some redundant or unused stuff.
+
+2005-11-06 04:29  robocop
+
+	* firebird2/src/jrd/: dyn_del.epp (1.50), evl_string.h (1.21):
+	
+	Misc.
+
+2005-11-06 04:20  robocop
+
+	* firebird2/src/jrd/: tra.cpp (1.104), tra.h (1.48):
+	
+	Backport Ann's fix for the system txn.
+
 2005-11-06 02:56  robocop
 
 	* firebird2/src/jrd/: Optimizer.cpp (1.42), Optimizer.h (1.12),
