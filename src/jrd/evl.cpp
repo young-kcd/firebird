@@ -3980,7 +3980,7 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 	if (i2 == 0)
 		ERR_post(isc_arith_except, 0);
 
-	SINT64 i1 = MOV_get_int64(&value->vlu_desc, value->vlu_desc.dsc_scale);
+	SINT64 i1 = MOV_get_int64(&value->vlu_desc, node->nod_scale - desc->dsc_scale);
 
 /* MIN_SINT64 / -1 = (MAX_SINT64 + 1), which overflows in SINT64. */
 	if ((i1 == MIN_SINT64) && (i2 == -1))
