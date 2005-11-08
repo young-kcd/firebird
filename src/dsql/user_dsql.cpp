@@ -108,7 +108,7 @@ static BOOLEAN	scompare(SCHAR*, USHORT, SCHAR*, USHORT);
 #pragma FB_COMPILER_MESSAGE("Dragons ahead. Static data. Not thread safe!")
 
 static BOOLEAN	init_flag		= FALSE;	/* whether we've been initialized */
-static ERR		UDSQL_error		= NULL;
+static fb_ERR		UDSQL_error		= NULL;
 static STMT		statements		= NULL;
 static NAME		statement_names	= NULL;
 static NAME		cursor_names	= NULL;
@@ -1495,7 +1495,7 @@ static void init(FRBRD** db_handle)
 	// If we haven't been initialized yet, do it now
 	if (!init_flag)
 	{
-		UDSQL_error = (ERR) gds__alloc((SLONG) sizeof(err));
+		UDSQL_error = (fb_ERR) gds__alloc((SLONG) sizeof(err));
 		// FREE: by exit cleanup()
 		if (!UDSQL_error) {		// NOMEM:
 			return;				// Don't set the init_flag

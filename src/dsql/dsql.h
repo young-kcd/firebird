@@ -46,7 +46,7 @@ struct err
 	ISC_STATUS* dsql_status;
 	ISC_STATUS* dsql_user_status;
 };
-typedef err* ERR;
+typedef err* fb_ERR;
 
 
 // this table is used in data allocation to determine
