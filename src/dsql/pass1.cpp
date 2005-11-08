@@ -2746,6 +2746,10 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 				if (lscope_level == context->ctx_scope_level) {
 					invalid |= true;
 				}
+				else if (context->ctx_scope_level < lscope_level) {
+					invalid |= invalid_reference(context, node->nod_arg[e_derived_field_value],
+						list, inside_own_map, inside_higher_map);
+				}
 			}
 			break;
 
@@ -3913,7 +3917,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 
 				derived_field->nod_arg[e_derived_field_name] = (dsql_nod*) alias;
 				derived_field->nod_arg[e_derived_field_scope] =
-					(dsql_nod*)(ULONG) request->req_scope_level;
+					(dsql_nod*)(IPTR) request->req_scope_level;
 				derived_field->nod_desc = select_item->nod_desc;
 				select_item = derived_field;
 			}
@@ -7583,6 +7587,11 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 				if (lscope_level == context->ctx_scope_level) {
 					return post_map(field, context);
 				}
+				else if (context->ctx_scope_level < lscope_level) {
+					field->nod_arg[e_derived_field_value] = 
+						remap_field(request, field->nod_arg[e_derived_field_value], 
+							context, current_level);
+				}
 				return field;
 			}
 
@@ -7602,9 +7611,11 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 			{
 				dsql_ctx* lcontext =
 					reinterpret_cast<dsql_ctx*>(field->nod_arg[e_map_context]);
-				dsql_map* lmap = reinterpret_cast<dsql_map*>(field->nod_arg[e_map_map]);
-				lmap->map_node = remap_field(request, lmap->map_node, context,
-					lcontext->ctx_scope_level);
+				if (lcontext->ctx_scope_level != context->ctx_scope_level) {
+					dsql_map* lmap = reinterpret_cast<dsql_map*>(field->nod_arg[e_map_map]);
+					lmap->map_node = remap_field(request, lmap->map_node, context,
+						lcontext->ctx_scope_level);
+				}
 				return field;
 			}
 
@@ -7707,6 +7718,9 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 		case nod_geq_all:
 		case nod_lss_all:
 		case nod_leq_all:
+		case nod_any:
+		case nod_ansi_any:
+		case nod_ansi_all:
 		case nod_between:
 		case nod_like:
 		case nod_containing:
@@ -7801,9 +7815,14 @@ static dsql_nod* remap_fields(dsql_req* request, dsql_nod* fields, dsql_ctx* con
 	DEV_BLKCHK(fields, dsql_type_nod);
 	DEV_BLKCHK(context, dsql_type_ctx);
 
-	for (int i = 0; i < fields->nod_count; i++) {
-		fields->nod_arg[i] = remap_field(request, fields->nod_arg[i], context,
-			request->req_scope_level);
+	if (fields->nod_type == nod_list) {
+		for (int i = 0; i < fields->nod_count; i++) {
+			fields->nod_arg[i] = remap_field(request, fields->nod_arg[i], context,
+				request->req_scope_level);
+		}
+	}
+	else {
+		fields = remap_field(request, fields, context, request->req_scope_level);
 	}
 
 	return fields;
