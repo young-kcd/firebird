@@ -431,11 +431,20 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 		UCHAR* p = to_desc->dsc_address;
 		switch (to_desc->dsc_dtype) {
 		case dtype_text:
-			/* YYY - not necessarily the right thing to do */
-			/* for text formats that don't have trailing spaces */
+			// YYY - not necessarily the right thing to do
+			// for text formats that don't have trailing spaces
 			if (l) {
+				const CHARSET_ID chid = DSC_GET_CHARSET(to_desc);
+				/*
+				CVC: I don't know if we have to check for dynamic-127 charset here.
+				If that is needed, the line above should be replaced by the ccmmented code here.
+				CHARSET_ID chid = INTL_TTYPE(to_desc);
+				if (chid == ttype_dynamic)
+					chid = INTL_charset(tdbb, chid);
+				*/
+				const char pad = chid == ttype_binary ? '\0' : ' ';
 				do {
-					*p++ = ' ';
+					*p++ = pad;
 				} while (--l);
 			}
 			break;

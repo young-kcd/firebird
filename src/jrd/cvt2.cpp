@@ -108,10 +108,6 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
  *	Compare two descriptors.  Return (-1, 0, 1) if a<b, a=b, or a>b.
  *
  **************************************/
-	USHORT length, length2;
-	SSHORT fill;
-	USHORT t1, t2;
-	CHARSET_ID charset1, charset2;
 	thread_db* tdbb = NULL;
 
 	// AB: Maybe we need a other error-message, but at least throw
@@ -122,8 +118,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 
 /* Handle the simple (matched) ones first */
 
-	if (arg1->dsc_dtype == arg2->dsc_dtype &&
-		arg1->dsc_scale == arg2->dsc_scale)
+	if (arg1->dsc_dtype == arg2->dsc_dtype && arg1->dsc_scale == arg2->dsc_scale)
 	{
 		const UCHAR* p1 = arg1->dsc_address;
 		const UCHAR* p2 = arg2->dsc_address;
@@ -196,39 +191,63 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 #endif
 
 		case dtype_text:
-			/*
-			 * For the sake of optimization, we call INTL_compare
-			 * only when we cannot just do byte-by-byte compare, as is
-			 * done in the foll. code.
-			 * We can do a local compare here, if
-			 *    (a) one of the arguments is charset ttype_binary
-			 * OR (b) both of the arguments are char set ttype_none
-			 * OR (c) both of the arguments are char set ttype_ascii
-			 * If any argument is ttype_dynamic, we must see the
-			 * charset of the attachment.
-			 */
-			SET_TDBB(tdbb);
-			if (INTL_TTYPE(arg1) == ttype_dynamic)
-				charset1 = INTL_charset(tdbb, INTL_TTYPE(arg1));
-			else
-				charset1 = INTL_TTYPE(arg1);
+			{
+				/*
+				 * For the sake of optimization, we call INTL_compare
+				 * only when we cannot just do byte-by-byte compare, as is
+				 * done in the foll. code.
+				 * We can do a local compare here, if
+				 *    (a) one of the arguments is charset ttype_binary
+				 * OR (b) both of the arguments are char set ttype_none
+				 * OR (c) both of the arguments are char set ttype_ascii
+				 * If any argument is ttype_dynamic, we must see the
+				 * charset of the attachment.
+				 */
+				SET_TDBB(tdbb);
+				CHARSET_ID charset1 = INTL_TTYPE(arg1);
+				if (charset1 == ttype_dynamic)
+					charset1 = INTL_charset(tdbb, charset1);
 
-			if (INTL_TTYPE(arg2) == ttype_dynamic)
-				charset2 = INTL_charset(tdbb, INTL_TTYPE(arg2));
-			else
-				charset2 = INTL_TTYPE(arg2);
+				CHARSET_ID charset2 = INTL_TTYPE(arg2);
+				if (charset2 == ttype_dynamic)
+					charset2 = INTL_charset(tdbb, charset2);
 
-			if ((IS_INTL_DATA(arg1) || IS_INTL_DATA(arg2)) &&
-				(charset1 != ttype_binary) &&
-				(charset2 != ttype_binary) &&
-				((charset1 != ttype_ascii) ||
-				 (charset2 != ttype_ascii)) &&
-				((charset1 != ttype_none) || (charset2 != ttype_none))
-				)
-				return INTL_compare(tdbb, arg1, arg2, err);
+				if ((IS_INTL_DATA(arg1) || IS_INTL_DATA(arg2)) &&
+					(charset1 != ttype_binary) &&
+					(charset2 != ttype_binary) &&
+					((charset1 != ttype_ascii) ||
+					 (charset2 != ttype_ascii)) &&
+					((charset1 != ttype_none) || (charset2 != ttype_none))
+					)
+				{
+					return INTL_compare(tdbb, arg1, arg2, err);
+				}
 
-			if (arg1->dsc_length >= arg2->dsc_length) {
-				length = arg2->dsc_length;
+				USHORT length;
+				const UCHAR pad = charset1 == ttype_binary || charset2 == ttype_binary ? '\0' : ' ';
+				if (arg1->dsc_length >= arg2->dsc_length)
+				{
+					length = arg2->dsc_length;
+					if (length)
+						do
+							if (*p1++ != *p2++)
+								if (p1[-1] > p2[-1])
+									return 1;
+								else
+									return -1;
+						while (--length);
+					length = arg1->dsc_length - arg2->dsc_length;
+					if (length)
+						do
+							if (*p1++ != pad)
+								if (p1[-1] > pad)
+									return 1;
+								else
+									return -1;
+						while (--length);
+					return 0;
+				}
+				length = arg1->dsc_length;
 				if (length)
 					do
 						if (*p1++ != *p2++)
@@ -237,35 +256,16 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 							else
 								return -1;
 					while (--length);
-				length = arg1->dsc_length - arg2->dsc_length;
-				if (length)
-					do
-						if (*p1++ != ' ')
-							if (p1[-1] > ' ')
-								return 1;
-							else
-								return -1;
-					while (--length);
-				return 0;
-			}
-			length = arg1->dsc_length;
-			if (length)
+				length = arg2->dsc_length - arg1->dsc_length;
 				do
-					if (*p1++ != *p2++)
-						if (p1[-1] > p2[-1])
+					if (*p2++ != pad)
+						if (pad > p2[-1])
 							return 1;
 						else
 							return -1;
 				while (--length);
-			length = arg2->dsc_length - arg1->dsc_length;
-			do
-				if (*p2++ != ' ')
-					if (' ' > p2[-1])
-						return 1;
-					else
-						return -1;
-			while (--length);
-			return 0;
+				return 0;
+			}
 
 		case dtype_varying:
 		case dtype_cstring:
@@ -285,7 +285,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 
 /* Handle mixed string comparisons */
 
-	if (arg1->dsc_dtype <= dtype_varying && arg2->dsc_dtype <= dtype_varying) {
+	if (arg1->dsc_dtype <= dtype_varying && arg2->dsc_dtype <= dtype_varying)
+	{
 		/*
 		 * For the sake of optimization, we call INTL_compare
 		 * only when we cannot just do byte-by-byte compare.
@@ -298,31 +299,32 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		 */
 
 		SET_TDBB(tdbb);
-		if (INTL_TTYPE(arg1) == ttype_dynamic)
-			charset1 = INTL_charset(tdbb, INTL_TTYPE(arg1));
-		else
-			charset1 = INTL_TTYPE(arg1);
+		CHARSET_ID charset1 = INTL_TTYPE(arg1);
+		if (charset1 == ttype_dynamic)
+			charset1 = INTL_charset(tdbb, charset1);
 
-		if (INTL_TTYPE(arg2) == ttype_dynamic)
-			charset2 = INTL_charset(tdbb, INTL_TTYPE(arg2));
-		else
-			charset2 = INTL_TTYPE(arg2);
+		CHARSET_ID charset2 = INTL_TTYPE(arg2);
+		if (charset2 == ttype_dynamic)
+			charset2 = INTL_charset(tdbb, charset2);
 
 		if ((IS_INTL_DATA(arg1) || IS_INTL_DATA(arg2)) &&
 			(charset1 != ttype_binary) &&
 			(charset2 != ttype_binary) &&
 			((charset1 != ttype_ascii) ||
 			 (charset2 != ttype_ascii)) &&
-			((charset1 != ttype_none) || (charset2 != ttype_none))
-			)
+			((charset1 != ttype_none) || (charset2 != ttype_none)))
+		{
 			return INTL_compare(tdbb, arg1, arg2, err);
+		}
 
 		UCHAR* p1 = NULL;
 		UCHAR* p2 = NULL;
-		length = CVT_get_string_ptr(arg1, &t1, &p1, NULL, 0, err);
-		length2 = CVT_get_string_ptr(arg2, &t2, &p2, NULL, 0, err);
+		USHORT t1, t2; // unused later
+		USHORT length = CVT_get_string_ptr(arg1, &t1, &p1, NULL, 0, err);
+		USHORT length2 = CVT_get_string_ptr(arg2, &t2, &p2, NULL, 0, err);
 
-		fill = length - length2;
+		int fill = length - length2;
+		const UCHAR pad = charset1 == ttype_binary || charset2 == ttype_binary ? '\0' : ' ';
 		if (length >= length2) {
 			if (length2)
 				do
@@ -334,8 +336,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 				while (--length2);
 			if (fill > 0)
 				do
-					if (*p1++ != ' ')
-						if (p1[-1] > ' ')
+					if (*p1++ != pad)
+						if (p1[-1] > pad)
 							return 1;
 						else
 							return -1;
@@ -351,8 +353,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 						return -1;
 			while (--length);
 		do
-			if (*p2++ != ' ')
-				if (' ' > p2[-1])
+			if (*p2++ != pad)
+				if (pad > p2[-1])
 					return 1;
 				else
 					return -1;
@@ -373,37 +375,37 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		SLONG date[2];
 
 	case dtype_timestamp:
-	{
-		DSC desc;
-		MOVE_CLEAR(&desc, sizeof(desc));
-		desc.dsc_dtype = dtype_timestamp;
-		desc.dsc_length = sizeof(date);
-		desc.dsc_address = (UCHAR *) date;
-		CVT_move(arg2, &desc, err);
-		return CVT2_compare(arg1, &desc, err);
-	}
+		{
+			DSC desc;
+			MOVE_CLEAR(&desc, sizeof(desc));
+			desc.dsc_dtype = dtype_timestamp;
+			desc.dsc_length = sizeof(date);
+			desc.dsc_address = (UCHAR *) date;
+			CVT_move(arg2, &desc, err);
+			return CVT2_compare(arg1, &desc, err);
+		}
 
 	case dtype_sql_time:
-	{
-		DSC desc;
-		MOVE_CLEAR(&desc, sizeof(desc));
-		desc.dsc_dtype = dtype_sql_time;
-		desc.dsc_length = sizeof(date[0]);
-		desc.dsc_address = (UCHAR *) date;
-		CVT_move(arg2, &desc, err);
-		return CVT2_compare(arg1, &desc, err);
-	}
+		{
+			DSC desc;
+			MOVE_CLEAR(&desc, sizeof(desc));
+			desc.dsc_dtype = dtype_sql_time;
+			desc.dsc_length = sizeof(date[0]);
+			desc.dsc_address = (UCHAR *) date;
+			CVT_move(arg2, &desc, err);
+			return CVT2_compare(arg1, &desc, err);
+		}
 
 	case dtype_sql_date:
-	{
-		DSC desc;
-		MOVE_CLEAR(&desc, sizeof(desc));
-		desc.dsc_dtype = dtype_sql_date;
-		desc.dsc_length = sizeof(date[0]);
-		desc.dsc_address = (UCHAR *) date;
-		CVT_move(arg2, &desc, err);
-		return CVT2_compare(arg1, &desc, err);
-	}
+		{
+			DSC desc;
+			MOVE_CLEAR(&desc, sizeof(desc));
+			desc.dsc_dtype = dtype_sql_date;
+			desc.dsc_length = sizeof(date[0]);
+			desc.dsc_address = (UCHAR *) date;
+			CVT_move(arg2, &desc, err);
+			return CVT2_compare(arg1, &desc, err);
+		}
 
 	case dtype_short:
 		{
@@ -510,7 +512,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
  **************************************/
 
 	SLONG l1, l2;
-	USHORT ttype1, ttype2;
+	USHORT ttype2;
 	SSHORT ret_val = 0;
 
 	thread_db* tdbb = NULL;
@@ -521,6 +523,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	if (arg1->dsc_dtype != dtype_blob)
 		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
 
+	USHORT ttype1;
 	if (arg1->dsc_sub_type == isc_blob_text)
 		ttype1 = arg1->dsc_blob_ttype();       /* Load blob character set and collation */
 	else
