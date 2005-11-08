@@ -705,7 +705,8 @@ bool ISQL_dbcheck()
 	TEXT errbuf[MSG_LENGTH];
 
 	if (!isqlGlob.global_Db_name[0]) {
-		if (!Quiet) {
+		if (!Quiet)
+		{
 			ISQL_msg_get(NO_DB, errbuf, NULL);
 			STDERROUT(errbuf);
 		}
@@ -943,7 +944,7 @@ void ISQL_errmsg(const ISC_STATUS* status)
 
 	if (Quiet)
 		Exit_value = FINI_ERROR;
-	else
+	//else
 	{
 		const ISC_STATUS* vec = status;
 		if (vec[0] != isc_arg_gds ||
@@ -1050,7 +1051,8 @@ void ISQL_warning(ISC_STATUS* status)
 	const ISC_STATUS* vec = status;
 	fb_assert(vec[1] == 0);		// shouldn't be any errors 
 
-	if (!Quiet) {
+	//if (!Quiet)
+	{
 		if (vec[0] != isc_arg_gds ||
 			vec[2] != isc_arg_warning ||
 			(vec[2] == isc_arg_warning && !Warnings))
@@ -3091,7 +3093,8 @@ static void do_isql()
 		// But don't execute the statement 
 
 		if (!isqlGlob.global_Db_name[0] && (ret == CONT)) {
-			if (!Quiet) {
+			if (!Quiet)
+			{
 				ISQL_msg_get(NO_DB, errbuf, NULL);
 				STDERROUT(errbuf);
 			}
