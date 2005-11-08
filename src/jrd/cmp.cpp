@@ -2625,8 +2625,6 @@ static jrd_nod* copy(thread_db* tdbb,
 
 	case nod_variable:
 	case nod_literal:
-	case nod_current_time:
-	case nod_current_timestamp:
 		return input;
 
 	case nod_field:
@@ -2670,6 +2668,15 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_arg[e_fun_function] = input->nod_arg[e_fun_function];
 		return (node);
 
+
+	case nod_current_time:
+	case nod_current_timestamp:
+		fb_assert(e_current_time_length == e_current_timestamp_length);
+		node = PAR_make_node(tdbb, e_current_time_length);
+		node->nod_count = input->nod_count;
+		node->nod_type = input->nod_type;
+		node->nod_arg[0] = input->nod_arg[0];
+		return (node);
 
 	case nod_gen_id:
 	case nod_gen_id2:			// 20001013 PJPG
@@ -3660,7 +3667,9 @@ static jrd_nod* pass1(thread_db* tdbb,
 	{
 		sub = node->nod_arg[e_asgn_to];
 		if (sub->nod_type != nod_field &&
-			sub->nod_type != nod_argument && sub->nod_type != nod_variable && sub->nod_type != nod_null)
+			sub->nod_type != nod_argument &&
+			sub->nod_type != nod_variable &&
+			sub->nod_type != nod_null)
 		{
 			ERR_post(isc_read_only_field, 0);
 		}
