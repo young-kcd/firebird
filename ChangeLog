@@ -1,3 +1,9 @@
+2005-11-08 13:10  kkuznetsov
+
+	* firebird2/src/dsql/: dsql.h (1.28.2.2), user_dsql.cpp (1.20.2.4):
+	
+	Renamed ERR to fb_ERR to avoid conflict on Solaris
+
 2005-10-26 16:31  alexpeshkoff
 
 	*
