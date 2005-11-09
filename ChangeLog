@@ -1,3 +1,41 @@
+2005-11-09 00:57  robocop
+
+	* firebird2/src/isql/isql.epp (1.158):
+	
+	Let isql yell always, irregardless of the switches.
+
+2005-11-09 00:54  robocop
+
+	* firebird2/src/msgs/messages.sql (1.55):
+	
+	Correct messages.
+
+2005-11-09 00:49  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.248):
+	
+	Fix problem with sub-queries/derived tables in the HAVING clause
+
+2005-11-08 16:24  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.154):
+	
+	Fixed division when compile-time and runtime scales don't match. 
+	Look at multiply2() for example.
+
+2005-11-08 13:49  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.184):
+	
+	Fixed corruption of the impure area introduced by myself a few
+	months ago.
+
+2005-11-08 06:59  robocop
+
+	* firebird2/src/jrd/: cvt2.cpp (1.52), exe.cpp (1.160):
+	
+	Solved SF Bug# 1184099.  To be reviewed by Adriano.
+
 2005-11-06 07:23  robocop
 
 	* firebird2/src/jrd/rse.cpp (1.91):
