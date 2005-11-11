@@ -2979,9 +2979,9 @@ static void transaction_options(
 		case isc_tpb_verb_time:
 		case isc_tpb_commit_time:
 			{
-			const USHORT l = *tpb++;
-			tpb += l;
-			break;
+				const USHORT l = *tpb++;
+				tpb += l;
+				break;
 			}
 
 		case isc_tpb_autocommit:
@@ -2994,15 +2994,15 @@ static void transaction_options(
 
 		case isc_tpb_lock_timeout:
 			{
-			if (!wait)
-			{
-				ERR_post(isc_bad_tpb_content, 0);
-			}
-			const USHORT l = *tpb++;
-			transaction->tra_lock_timeout = gds__vax_integer(tpb, l);
-			tpb += l;
-			lock_timeout = true;
-			break;
+				if (!wait)
+				{
+					ERR_post(isc_bad_tpb_content, 0);
+				}
+				const USHORT l = *tpb++;
+				transaction->tra_lock_timeout = gds__vax_integer(tpb, l);
+				tpb += l;
+				lock_timeout = true;
+				break;
 			}
 
 		default:
