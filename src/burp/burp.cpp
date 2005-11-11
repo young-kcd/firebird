@@ -236,7 +236,8 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		TEXT* string = *argvp++;
 		const USHORT len = strlen(string) + 1;
 		if (*string != *switch_char) {
-			total += len;
+			if (*string != '\0')
+				total += len;
 			continue;
 		}
 		if (!string[1])
