@@ -2725,6 +2725,27 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			DSQL_pretty (*ptr, column + 1);
 		}
 		return;
+
+	case nod_cursor_open:
+		verb = "cursor_open";
+		break;
+	case nod_cursor_fetch:
+		verb = "cursor_fetch";
+		break;
+	case nod_cursor_close:
+		verb = "cursor_close";
+		break;
+	case nod_fetch_seek:
+		verb = "fetch_seek";
+		break;
+
+	case nod_param_val:
+		verb = "param_val"; // do we need more here?
+		break;
+		
+	case nod_query_spec:
+		verb = "query_spec";
+		break;
 		
 	case nod_comment:
 		verb = "comment";
@@ -2748,6 +2769,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_collation_specific_attr:
 		verb = "collation_specific_attr";
+		break;
+		
+	case nod_returning:
+		verb = "returning";
 		break;
 
 	default:
