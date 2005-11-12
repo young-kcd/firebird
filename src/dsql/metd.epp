@@ -316,7 +316,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 	iname = NULL;
 
 	THREAD_EXIT();
@@ -405,7 +405,7 @@ USHORT METD_get_col_default(dsql_req* request,
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 
 // V4.x multi threading requirements 
 	THREAD_EXIT();
@@ -525,7 +525,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 	iname = NULL;
 
 	THREAD_EXIT();
@@ -601,7 +601,7 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
     
 	ISC_STATUS_ARRAY isc_status = {0};
     dbb = request->req_dbb;
-    DB = dbb->dbb_database_handle;
+    isc_db_handle DB = dbb->dbb_database_handle;
     
     if (charset_id == CS_dynamic)
 		charset_id = dbb->dbb_att_charset;
@@ -649,7 +649,7 @@ Firebird::MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
     
 	ISC_STATUS_ARRAY isc_status = {0};
     dsql_dbb* dbb = request->req_dbb;
-    DB = dbb->dbb_database_handle;
+    isc_db_handle DB = dbb->dbb_database_handle;
     
     if (charset_id == CS_dynamic)
 		charset_id = dbb->dbb_att_charset;
@@ -702,7 +702,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 
 // Now see if it is in the database 
 
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 
 	THREAD_EXIT();
 
@@ -756,7 +756,7 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 
 	THREAD_EXIT();
 
@@ -825,7 +825,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 	USHORT result = 0;
 
 // V4.x multi threading requirements 
@@ -929,7 +929,7 @@ bool METD_get_exception(dsql_req* request, const dsql_str* name)
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 
 	THREAD_EXIT();
 
@@ -998,7 +998,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 	userFunc = NULL;
     DsqlNodStack stack;
     USHORT return_arg;
@@ -1211,7 +1211,7 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 
 	dsql_nod* list = NULL;
 	USHORT count = 0;
@@ -1298,7 +1298,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 	procedure = NULL;
 
 	THREAD_EXIT();
@@ -1494,7 +1494,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 
 // If the relation id or any of the field ids have not yet been assigned,
 // and this is a type of request which does not use ids, prepare a
@@ -1722,7 +1722,7 @@ dsql_str* METD_get_trigger_relation(dsql_req* request, const dsql_str* name, USH
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 
 	relation = NULL;
 
@@ -1769,7 +1769,7 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT*
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 
 	THREAD_EXIT();
 
@@ -1818,7 +1818,7 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 
 	THREAD_EXIT();
 
@@ -1879,7 +1879,7 @@ static void check_array(dsql_req* request, const TEXT* field_name, dsql_fld* fie
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
-	DB = dbb->dbb_database_handle;
+	isc_db_handle DB = dbb->dbb_database_handle;
 
 	THREAD_EXIT();
 
