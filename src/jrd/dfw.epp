@@ -481,6 +481,7 @@ void DFW_perform_work(jrd_tra* transaction)
 	bool dump_shadow = false;
 	SSHORT phase = 1;
 	bool more;
+	ISC_STATUS_ARRAY err_status = {0};
 
 	do
 	{
@@ -507,15 +508,20 @@ void DFW_perform_work(jrd_tra* transaction)
 				}
 			}
 			if (!phase) {
+				Firebird::stuff_exception(tdbb->tdbb_status_vector, 
+					Firebird::status_exception(err_status));
 				ERR_punt();
 			}
 			++phase;
 		}	
 		catch (const std::exception& ex) {
-			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 			/* Do any necessary cleanup */
 			if (!phase) {
+				Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 				ERR_punt();
+			}
+			else {
+				Firebird::stuff_exception(err_status, ex);
 			}
 			phase = 0;
 			more = true;
