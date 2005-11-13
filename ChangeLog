@@ -1,3 +1,16 @@
+2005-11-13 00:36  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.158):
+	
+	What about putting the nodes you added in node.h also in the DSQL
+	debugging facilility, folks? :-)
+
+2005-11-12 19:48  dimitr
+
+	* firebird2/src/dsql/metd.epp (1.82):
+	
+	Globals must die, epysode III.
+
 2005-11-11 06:42  robocop
 
 	* firebird2/src/jrd/tra.cpp (1.105):
