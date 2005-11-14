@@ -1,3 +1,10 @@
+2005-11-13 11:01  hvlad
+
+	* firebird2/src/jrd/dfw.epp (1.164):
+	
+	Fixed bug in DFW reported by Claudio in fb-devel (lost
+	status-vector during phase 0 execution)
+
 2005-11-13 00:36  robocop
 
 	* firebird2/src/dsql/dsql.cpp (1.158):
