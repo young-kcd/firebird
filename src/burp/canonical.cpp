@@ -28,7 +28,7 @@
  *
  */
 /*
-$Id: canonical.cpp,v 1.35 2004-09-22 08:54:36 robocop Exp $
+$Id: canonical.cpp,v 1.36 2005-11-15 08:48:16 dimitr Exp $
 */
 
 #include "firebird.h"
@@ -106,11 +106,8 @@ ULONG CAN_encode_decode(burp_rel* relation,
 			continue;
 		UCHAR* p = data + field->fld_offset;
 		const bool array_fld = ((field->fld_flags & FLD_array) != 0);
-		FLD_LENGTH length;
-		if (array_fld)
-			length = 8;
-		else
-			length = field->fld_length;
+		FLD_LENGTH length =
+			(array_fld) ? 8 : field->fld_length;
 		if (field->fld_offset >= offset)
 			offset = field->fld_offset + length;
 		if (field->fld_type == blr_varying && !array_fld)
@@ -132,14 +129,14 @@ ULONG CAN_encode_decode(burp_rel* relation,
 		case dtype_varying:
 			{
 				vary* pVary = reinterpret_cast<vary*>(p);
-				if (!xdr_short(	xdrs,
-								reinterpret_cast<SSHORT*>(&pVary->vary_length)))
+				if (!xdr_short(xdrs,
+							   reinterpret_cast<SSHORT*>(&pVary->vary_length)))
 				{
 					return FALSE;
 				}
 				if (!xdr_opaque(xdrs,
 								reinterpret_cast<SCHAR*>(pVary->vary_string),
-								pVary->vary_length))
+								MIN(pVary->vary_length, length)))
 				{
 				  return FALSE;
 				}
@@ -148,7 +145,7 @@ ULONG CAN_encode_decode(burp_rel* relation,
 
 		case dtype_cstring:
 			if (xdrs->x_op == XDR_ENCODE)
-				n = (strlen(reinterpret_cast<const char*>(p)));
+				n = MIN(strlen(reinterpret_cast<const char*>(p)), length);
 			if (!xdr_short(xdrs, &n))
 				return FALSE;
 			if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(p), n))
