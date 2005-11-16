@@ -4136,7 +4136,7 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 	}
 
 	DsqlMemoryPool* pool = DsqlMemoryPool::createPool();
-	database = FB_NEW(*pool) dsql_dbb;
+	database = FB_NEW(*pool) dsql_dbb(*pool);
 	database->dbb_pool = pool;
 	database->dbb_next = databases;
 	databases = database;

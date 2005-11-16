@@ -576,6 +576,8 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 	symbol->sym_dbb = dbb;
 	HSHD_insert(symbol);
 
+	dbb->dbb_charsets_by_id.add(iname); 
+
 	return iname;
 }
 
@@ -596,37 +598,26 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
  *	charset' id, not by name.
  *
  **************************************/
-    dsql_dbb* dbb;
-    USHORT bpc = 0;
-    
+	dsql_dbb* dbb;
+	USHORT bpc = 0;
+
 	ISC_STATUS_ARRAY isc_status = {0};
-    dbb = request->req_dbb;
-    isc_db_handle DB = dbb->dbb_database_handle;
-    
-    if (charset_id == CS_dynamic)
+	dbb = request->req_dbb;
+	isc_db_handle DB = dbb->dbb_database_handle;
+
+	if (charset_id == CS_dynamic)
 		charset_id = dbb->dbb_att_charset;
-    
-    THREAD_EXIT();
-    
-    FOR (REQUEST_HANDLE dbb->dbb_requests[irq_cs_bpc] TRANSACTION_HANDLE request->req_trans)
-        Y IN RDB$CHARACTER_SETS
-        WITH Y.RDB$CHARACTER_SET_ID EQ charset_id
 
-        THREAD_ENTER();
-
-        bpc = (Y.RDB$BYTES_PER_CHARACTER.NULL)	? 1 :
-                                       (Y.RDB$BYTES_PER_CHARACTER);
-
-        THREAD_EXIT();
-    END_FOR
-    ON_ERROR
-		THREAD_ENTER();
-		ERRD_punt(isc_status);
-    END_ERROR;
-
-    THREAD_ENTER();
-
-    return bpc;
+	dsql_intlsym* cs_sym = 0;
+	size_t pos = 0;
+	if (dbb->dbb_charsets_by_id.find(charset_id, pos)) {
+		cs_sym = dbb->dbb_charsets_by_id[pos];
+	}
+	else {
+		Firebird::MetaName cs_name = METD_get_charset_name(request, charset_id);
+		cs_sym = METD_get_charset(request, cs_name.length(), cs_name.c_str());
+	}
+	return cs_sym->intlsym_bytes_per_char;
 }
 
 
@@ -654,6 +645,12 @@ Firebird::MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
     if (charset_id == CS_dynamic)
 		charset_id = dbb->dbb_att_charset;
     
+	size_t pos = 0;
+	if (dbb->dbb_charsets_by_id.find(charset_id, pos))
+	{
+		return dbb->dbb_charsets_by_id[pos]->intlsym_name;
+	}
+
     THREAD_EXIT();
     
     FOR (REQUEST_HANDLE dbb->dbb_requests[irq_cs_name] TRANSACTION_HANDLE request->req_trans)
@@ -672,6 +669,9 @@ Firebird::MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
     END_ERROR;
 
     THREAD_ENTER();
+
+	// put new charset into hash table if needed
+	METD_get_charset(request, name.length(), name.c_str());
 
     return name;
 }

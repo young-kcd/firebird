@@ -109,6 +109,7 @@ inline blk* LLS_POP(dsql_lls** stack)
 class dsql_ctx;
 class dsql_str;
 class dsql_nod;
+class dsql_intlsym;
 typedef Firebird::Stack<dsql_ctx*> DsqlContextStack;
 typedef Firebird::Stack<dsql_str*> DsqlStrStack;
 typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
@@ -140,12 +141,11 @@ enum irq_type_t {
     irq_col_default = 14,    //!< lookup default for a column           
     irq_domain_2    = 15,    //!< lookup a domain
     irq_exception   = 16,    //!< lookup an exception
-	irq_cs_bpc      = 17,    //!< lookup a charset bpc
-	irq_cs_name     = 18,    //!< lookup a charset name
-	irq_default_cs  = 19,    //!< lookup the default charset
-	irq_rel_ids		= 20,    //!< check relation/field ids
+	irq_cs_name     = 17,    //!< lookup a charset name
+	irq_default_cs  = 18,    //!< lookup the default charset
+	irq_rel_ids		= 19,    //!< check relation/field ids
 
-    irq_MAX         = 21
+    irq_MAX         = 20
 };
 
 // dsql_nod definition
@@ -154,6 +154,15 @@ enum irq_type_t {
 // blocks used to cache metadata
 
 //! Database Block
+typedef Firebird::SortedArray
+	<
+		dsql_intlsym*, 
+		Firebird::EmptyStorage<dsql_intlsym*>, 
+		SSHORT,
+		dsql_intlsym, 
+		Firebird::DefaultComparator<SSHORT>
+	> IntlSymArray;
+
 class dsql_dbb : public pool_alloc<dsql_type_dbb>
 {
 public:
@@ -169,6 +178,11 @@ public:
 	USHORT			dbb_flags;
 	USHORT			dbb_db_SQL_dialect;
 	SSHORT			dbb_att_charset;	//!< characterset at time of attachment
+	IntlSymArray	dbb_charsets_by_id;	// charsets sorted by charset_id
+
+	dsql_dbb(DsqlMemoryPool& p) : 
+		dbb_charsets_by_id(p, 16) 
+		{};
 };
 
 //! values used in dbb_flags
@@ -341,6 +355,9 @@ public:
 	SSHORT		intlsym_collate_id;
 	USHORT		intlsym_bytes_per_char;
 	TEXT		intlsym_name[2];
+
+	static const SSHORT generate(const void*, const dsql_intlsym* Item) 
+	{ return Item->intlsym_charset_id; }
 };
 
 // values used in intlsym_type
