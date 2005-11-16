@@ -3350,13 +3350,24 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 
 		request = CMP_find_request(tdbb, drq_role_gens, DYN_REQUESTS);
 
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$ROLES
-			strcpy(X.RDB$ROLE_NAME, role_name.c_str());
-			strcpy(X.RDB$OWNER_NAME, owner_name.c_str());
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		END_STORE;
+		if (ENCODE_ODS(major_version, minor_original) < ODS_11_0)
+		{
+			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				X IN RDB$ROLES
+				strcpy(X.RDB$ROLE_NAME, role_name.c_str());
+				strcpy(X.RDB$OWNER_NAME, owner_name.c_str());
+			END_STORE;
+		}
+		else
+		{
+			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				X IN RDB$ROLES
+				strcpy(X.RDB$ROLE_NAME, role_name.c_str());
+				strcpy(X.RDB$OWNER_NAME, owner_name.c_str());
+				X.RDB$SYSTEM_FLAG = 0;
+				X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			END_STORE;
+		}
 
 		if (!DYN_REQUEST(drq_role_gens)) {
 			DYN_REQUEST(drq_role_gens) = request;
