@@ -1,3 +1,20 @@
+2005-11-16 02:27  skidder
+
+	* firebird2/src/jrd/blb.cpp (1.100):
+	
+	Fix the issue with bad incremental backups created when large blobs
+	were changed.  Direct thanks to Hui Wang of BroadView QA team who
+	chased down the problem.
+
+2005-11-15 09:48  dimitr
+
+	* firebird2/src/burp/canonical.cpp (1.36):
+	
+	Avoid buffer overruns when restoring corrupted data (always check
+	for the declared length).  Look at remote/xdr.cpp for example.
+	
+	TODO: print a warning during backup in this case.
+
 2005-11-13 11:01  hvlad
 
 	* firebird2/src/jrd/dfw.epp (1.164):
