@@ -2206,7 +2206,13 @@ static void insert_page(thread_db* tdbb, blb* blob)
 	if (blob->blb_sequence == 0)
 		blob->blb_lead_page = page_number;
 
-	MOVE_FASTER(blob->blb_data, page, length);
+	// Page header is partially populated by DPM_allocate. Preserve it.
+	MOVE_FASTER(
+		reinterpret_cast<char*>(blob->blb_data) + sizeof(Ods::pag), 
+		reinterpret_cast<char*>(page) + sizeof(Ods::pag),
+		length - sizeof(Ods::pag));
+	page->blp_header.pag_type = pag_blob;
+
 	page->blp_sequence = blob->blb_sequence;
 	page->blp_lead_page = blob->blb_lead_page;
 	page->blp_length = length - BLP_SIZE;
