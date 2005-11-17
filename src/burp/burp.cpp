@@ -234,10 +234,13 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	while (argvp < end && !err)
 	{
 		TEXT* string = *argvp++;
-		const USHORT len = strlen(string) + 1;
+		USHORT len = strlen(string);
+
+		if (total > 0 && len > 0)
+			++len;	// space to separate the current argument from the previous
+
 		if (*string != *switch_char) {
-			if (*string != '\0')
-				total += len;
+			total += len;
 			continue;
 		}
 		if (!string[1])
@@ -296,9 +299,6 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 			break;
 		}
 	}
-
-	if (total > 0)
-		--total;
 
 	int exit_code;
 	if (sw_service && !err)
@@ -454,13 +454,14 @@ static int api_gbak(int argc,
 // Fill command line options 
 
 	*spb_ptr++ = isc_spb_command_line;
-	const TEXT* const* const begin = argv;
 	const TEXT* const* const end = argv + argc;
 	argv++;
 
 	*spb_ptr++ = length;
+	const char* cmdline_begin = spb_ptr;
+
 	while (argv < end) {
-		if (**argv && argv > begin + 1)
+		if (**argv && spb_ptr > cmdline_begin)
 			*spb_ptr++ = ' ';
 		for (const TEXT* x = *argv++; *x;)
 			*spb_ptr++ = *x++;
