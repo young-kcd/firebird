@@ -20,7 +20,7 @@ Les notes de versions de Firebird 1.5.1 (release notes)
 à :
 en pdf -> http://www.ibphoenix.com/downloads/Firebird_v15pt1_ReleaseNotes_French.pdf
 
-Les notes de versions de Firebird 1.5 (release notes)
+Les notes de versions de Firebird 1.5.2 (release notes)
 à :
 en pdf -> http://www.ibphoenix.com/downloads/Firebird_v15.108_ReleaseNotesFrench.pdf
 ou

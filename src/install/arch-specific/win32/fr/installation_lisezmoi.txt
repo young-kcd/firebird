@@ -1,4 +1,4 @@
-Firebird Serveur de bases de données 1.5.2
+Firebird Serveur de bases de données 1.5.3
 ==================================================
 
 Ce document est un guide pour l'installation de
@@ -39,7 +39,7 @@ Installation sur des systèmes avec Firebird 2.0
 Instable
 -------------------------------------------------------
 
-Le programme d'installation de Firebird 1.5.2 ne peut
+Le programme d'installation de Firebird 1.5.3 ne peut
 détecter une version existante en cours d'éxécution de
 Firebird 2.0 Instable. Si vous avez une version de
 Firebird 2.0 en cours d'éxécution, il est indispensable
@@ -47,7 +47,7 @@ d'arréter ce serveur avant de commencer l'installation.
 
 
 Nouvelles fonctionnalités du programme d'installation
-Firebird 1.5.2
+Firebird 1.5.3
 -------------------------------------------------------
 
 Le programme d'installation est maintenant traduit dans
