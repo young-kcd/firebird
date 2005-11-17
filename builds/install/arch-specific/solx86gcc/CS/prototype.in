@@ -94,6 +94,8 @@ f none @prefix@/bin/fb_lock_print=$SRCDIR/bin/fb_lock_print 0755 root root
 f none @prefix@/bin/gdef=$SRCDIR/bin/gdef 0755 root root
 f none @prefix@/bin/qli=$SRCDIR/bin/qli 6777 root root
 
+f none @prefix@/bin/nbackup=$SRCDIR/bin/nbackup 6777 root root
+
 
 
 d none @prefix@/examples 0755 root root
@@ -185,20 +187,35 @@ d none @prefix@/lib 0755 root root
 #s none @prefix@/lib/libgds.so=@prefix@/lib/libfbembed.so
 
 f none @prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbclient.so.@FIREBIRD_VERSION@  0755 root root
-s none @prefix@/lib/libfbclient.so.1=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
+s none @prefix@/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
 s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.1
 
 f none @prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbembed.so.@FIREBIRD_VERSION@ 0755 root root
-s none @prefix@/lib/libfbembed.so.2=$SRCDIR/lib/libfbembed.so.@FIREBIRD_VERSION@
-s none @prefix@/lib/libfbembed.so=$SRCDIR/lib/libfbembed.so.2
+s none @prefix@/lib/libfbembed.so.2=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
+s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.2
 
 
 
 #f none @prefix@/lib/libeditline.a=$SRCDIR/lib/libeditline.a 0644 root root
 #f none @prefix@/lib/libfbcommon.a=$SRCDIR/lib/libfbcommon.a 0666 root root
 #f none @prefix@/lib/libfbstatic.a=$SRCDIR/lib/libfbstatic.a 0666 root root
-f none @prefix@/lib/libib_util.so=$SRCDIR/lib/libib_util.so 0755 root root
-s none @prefix@/lib/libfbclient.so.2=$SRCDIR/libfbclient.so.@FIREBIRD_VERSION@
+f none @prefix@/lib/libib_util.so=$SRCDIR/lib/lib/libib_util.so 0755 root root
+s none @prefix@/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
+
+
+#ICU
+f none @prefix@/lib/libicudata.so.30.0=$SRCDIR/lib/libicudata.so.30.0 0755 root root
+s none @prefix@/lib/libicudata.so.30=@prefix@/lib/libicudata.so.30.0
+s none @prefix@/lib/libicudata.so=@prefix@/lib/libicudata.so.30
+
+f none @prefix@/lib/libicui18n.so.30.0=$SRCDIR/lib/libicui18n.so.30.0 0755 root root
+s none @prefix@/lib/libicui18n.so.30=@prefix@/lib/libicui18n.so.30.0
+s none @prefix@/lib/libicui18n.so=@prefix@/lib/libicui18n.so.30
+
+f none @prefix@/lib/libicuuc.so.30.0=$SRCDIR/lib/libicuuc.so.30.0 0755 root root
+s none @prefix@/lib/libicuuc.so.30=@prefix@/lib/libicuuc.so.30.0
+s none @prefix@/lib/libicuuc.so=@prefix@/lib/libicuuc.so.30
+
 
 
 d none @prefix@/misc 0755 root root
