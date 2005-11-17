@@ -2774,6 +2774,14 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_returning:
 		verb = "returning";
 		break;
+		
+	case nod_tra_misc:
+		verb = "tra_misc";
+		break;
+
+	case nod_lock_timeout:
+		verb = "lock_timeout"; // maybe show the timeout value?
+		break;
 
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);

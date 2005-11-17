@@ -371,7 +371,8 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		{
 			dsql_nod* child = node->nod_arg[0];
 			if (child->nod_type == nod_constant &&
-				DTYPE_IS_NUMERIC(child->nod_desc.dsc_dtype)) {
+				DTYPE_IS_NUMERIC(child->nod_desc.dsc_dtype))
+			{
 				gen_constant(request, &child->nod_desc, NEGATE_VALUE);
 				return;
 			}
@@ -763,8 +764,8 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 	if (!node)
 		return;
 
-/* find out isolation level - if specified. This is required for
- * specifying the correct lock level in reserving clause. */
+	// Find out isolation level - if specified. This is required for
+	// specifying the correct lock level in reserving clause.
 
 	USHORT lock_level = isc_tpb_shared;
 
@@ -782,13 +783,15 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 
 
    	bool sw_access = false, sw_wait = false, sw_isolation = false,
-		sw_reserve = false;
+		sw_reserve = false, sw_lock_timeout = false;
+	int misc_flags = 0;
 
 // Stuff some version info.
 	if (count = node->nod_count)
 		stuff(request, isc_tpb_version1);
 
-	while (count--) {
+	while (count--)
+	{
 		const dsql_nod* ptr = node->nod_arg[count];
 
 		if (!ptr)
@@ -866,6 +869,35 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 				}
 				break;
 			}
+			
+		case nod_tra_misc:
+			if (misc_flags & ptr->nod_flags)
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_dup_option, 0);
+						  
+			misc_flags |= ptr->nod_flags;
+			if (ptr->nod_flags & NOD_NO_AUTO_UNDO)
+				stuff(request, isc_tpb_no_auto_undo);
+			else if (ptr->nod_flags & NOD_IGNORE_LIMBO)
+				stuff(request, isc_tpb_ignore_limbo);
+			else if (ptr->nod_flags & NOD_RESTART_REQUESTS)
+				stuff(request, isc_tpb_restart_requests);
+			break;
+			
+		case nod_lock_timeout:
+			if (sw_lock_timeout)
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+						  isc_arg_gds, isc_dsql_dup_option, 0);
+
+			sw_lock_timeout = true;
+			if (ptr->nod_count == 1 && ptr->nod_arg[0]->nod_type == nod_constant)
+			{
+				const int lck_timeout = (int)(IPTR) ptr->nod_arg[0]->nod_arg[0];
+				stuff(request, isc_tpb_lock_timeout);
+				stuff(request, 2);
+				stuff_word(request, lck_timeout);
+			}
+			break;
 
 		default:
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,

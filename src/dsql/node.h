@@ -339,7 +339,9 @@ enum nod_t
 	nod_strlen,
 	nod_trim,
 	nod_returning,
-	nod_redef_trigger
+	nod_redef_trigger,
+	nod_tra_misc,
+	nod_lock_timeout
 };
 
 typedef nod_t NOD_TYPE;
@@ -363,47 +365,51 @@ public:
 
 // values of flags
 enum nod_flags_vals {
-	NOD_AGG_DISTINCT		= 1,
+	NOD_AGG_DISTINCT		= 1, // nod_agg_...
 
-	NOD_UNION_ALL			= 1,
+	NOD_UNION_ALL			= 1, // nod_list
 
-	NOD_READ_ONLY			= 1,
+	NOD_READ_ONLY			= 1, // nod_access
 	NOD_READ_WRITE			= 2,
 
-	NOD_WAIT				= 1,
+	NOD_WAIT				= 1, // nod_wait
 	NOD_NO_WAIT				= 2,
 
-	NOD_VERSION				= 1,
+	NOD_VERSION				= 1, // nod_version
 	NOD_NO_VERSION			= 2,
 
-	NOD_CONCURRENCY			= 1,
+	NOD_CONCURRENCY			= 1, // nod_isolation
 	NOD_CONSISTENCY			= 2,
 	NOD_READ_COMMITTED		= 4,
 
-	NOD_SHARED				= 1,
+	NOD_SHARED				= 1, // nod_lock_mode
 	NOD_PROTECTED			= 2,
 	NOD_READ				= 4,
 	NOD_WRITE				= 8,
+	
+	NOD_NO_AUTO_UNDO        = 1, // nod_tra_misc
+	NOD_IGNORE_LIMBO        = 2,
+	NOD_RESTART_REQUESTS    = 4,
 
-	NOD_NULLS_FIRST			= 1,
+	NOD_NULLS_FIRST			= 1, // nod_order
 	NOD_NULLS_LAST			= 2,
 
-	REF_ACTION_CASCADE		= 1,
+	REF_ACTION_CASCADE		= 1, // nod_ref_trig_action
 	REF_ACTION_SET_DEFAULT	= 2,
 	REF_ACTION_SET_NULL		= 4,
 	REF_ACTION_NONE			= 8,
 	// Node flag indicates that this node has a different type or result
 	// depending on the SQL dialect.
-	NOD_COMP_DIALECT		= 16,
+	NOD_COMP_DIALECT		= 16, // nod_...2, see MAKE_desc
 
-	NOD_SELECT_EXPR_SINGLETON	= 1,
+	NOD_SELECT_EXPR_SINGLETON	= 1, // nod_select_expr
 	NOD_SELECT_EXPR_VALUE		= 2,
 
-	NOD_CURSOR_EXPLICIT		= 1,
+	NOD_CURSOR_EXPLICIT		= 1, // nod_cursor
 	NOD_CURSOR_FOR			= 2,
 	NOD_CURSOR_ALL			= USHORT(-1U),
 
-	NOD_DT_IGNORE_COLUMN_CHECK = 1
+	NOD_DT_IGNORE_COLUMN_CHECK = 1 // nod_cursor, see pass1_cursor_name
 };
 
 // Parameters to MAKE_constant

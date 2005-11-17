@@ -519,6 +519,11 @@ static LexerState lex;
 %token TRAILING
 %token TRIM
 %token RETURNING
+%token IGNORE
+%token LIMBO
+%token UNDO
+%token REQUESTS
+%token TIMEOUT
 
 /* precedence declarations for expression evaluation */
 
@@ -2766,6 +2771,8 @@ tran_opt_list	: tran_opt
 tran_opt	: access_mode 
 		| lock_wait 
 		| isolation_mode 
+		| tra_misc_options
+		| tra_timeout
 		| tbl_reserve_options 
 		;
 
@@ -2808,6 +2815,18 @@ version_mode	: VERSION
 			{ $$ = make_flag_node (nod_version, NOD_NO_VERSION, 0, NULL); }
 		|
 			{ $$ = 0; }
+		;
+
+tra_misc_options: NO AUTO UNDO
+			{ $$ = make_flag_node(nod_tra_misc, NOD_NO_AUTO_UNDO, 0, NULL); }
+		| IGNORE LIMBO
+			{ $$ = make_flag_node(nod_tra_misc, NOD_IGNORE_LIMBO, 0, NULL); }
+		| RESTART REQUESTS
+			{ $$ = make_flag_node(nod_tra_misc, NOD_RESTART_REQUESTS, 0, NULL); }
+		;
+		
+tra_timeout: LOCK TIMEOUT nonneg_short_integer
+			{ $$ = make_node(nod_lock_timeout, 1, MAKE_constant ((dsql_str*) $3, CONSTANT_SLONG)); }
 		;
 
 tbl_reserve_options: RESERVING restr_list
@@ -4318,6 +4337,11 @@ non_reserved_word :
 	| RESTART
 	| COLLATION
 	| RETURNING
+	| IGNORE
+	| LIMBO
+	| UNDO
+	| REQUESTS
+	| TIMEOUT
 	;
 
 %%
