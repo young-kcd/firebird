@@ -96,8 +96,9 @@ const USHORT OSTYPE_WIN_95	= 2;
 
 const char* ISC_USER		= "ISC_USER";
 const char* ISC_PASSWORD	= "ISC_PASSWORD";
-const int MAX_USER_LENGTH	= 33;
-#define MAX_OTHER_PARAMS	(1 + 1 + sizeof(port->port_dummy_packet_interval))
+//const int MAX_USER_LENGTH	= 33;
+const int MAX_OTHER_PARAMS	= 1 + 1 + sizeof(((rem_port*)NULL)->port_dummy_packet_interval);
+const int MAX_DPB_DIR_SIZE	= 2 + MAX_UCHAR; // The length is expressed as a byte.
 
 static RVNT add_event(rem_port*);
 static void add_other_params(rem_port*, UCHAR*, USHORT*);
@@ -279,15 +280,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	NULL_CHECK(handle, isc_bad_db_handle);
 
 	UCHAR	new_dpb[MAXPATHLEN];
+	memset(new_dpb, '*', sizeof(new_dpb));
 	UCHAR* new_dpb_ptr = new_dpb;
-	rem_port* port = 0; // MAX_OTHER_PARAMS uses port's port_dummy_packet_interval
 
-	if ((dpb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
-		 MAX_OTHER_PARAMS) > sizeof(new_dpb))
+	USHORT new_dpb_length = dpb_length + MAX_PASSWORD_LENGTH +
+		 MAX_OTHER_PARAMS + MAX_DPB_DIR_SIZE;
+	if (new_dpb_length > sizeof(new_dpb))
 	{
-		new_dpb_ptr =
-			(UCHAR*)gds__alloc(dpb_length + MAX_USER_LENGTH +
-							   MAX_PASSWORD_ENC_LENGTH + MAX_OTHER_PARAMS);
+		new_dpb_ptr = (UCHAR*)gds__alloc(new_dpb_length);
 
 		/* FREE: by return(s) from this procedure */
 
@@ -296,10 +296,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			user_status[1] = isc_virmemexh;
 			return error(user_status);
 		}
+		memset(new_dpb_ptr, '*', new_dpb_length);
 	}
 
-	TEXT user_string[256];
-	USHORT new_dpb_length;
+	TEXT user_string[256] = "";
 	const bool user_verification = get_new_dpb(reinterpret_cast<const UCHAR*>(dpb),
 					dpb_length, true, new_dpb_ptr,
 					&new_dpb_length, user_string);
@@ -308,7 +308,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	Firebird::PathName expanded_name(expanded_filename);
 	Firebird::PathName node_name;
-	port = analyze(expanded_name, user_status, us,
+	rem_port* port = analyze(expanded_name, user_status, us,
 					user_verification, dpb, dpb_length, node_name);
 	if (!port)
 	{
@@ -865,16 +865,15 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	NULL_CHECK(handle, isc_bad_db_handle);
 
-	rem_port* port;
 	UCHAR new_dpb[MAXPATHLEN];
+	memset(new_dpb, '*', sizeof(new_dpb));
 	UCHAR* new_dpb_ptr = new_dpb;
 
-	if ((dpb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
-		 MAX_OTHER_PARAMS) > sizeof(new_dpb))
+	USHORT new_dpb_length = dpb_length + MAX_PASSWORD_LENGTH +
+		 MAX_OTHER_PARAMS + MAX_DPB_DIR_SIZE;
+	if (new_dpb_length > sizeof(new_dpb))
 	{
-		new_dpb_ptr =
-			(UCHAR*)gds__alloc(dpb_length + MAX_USER_LENGTH +
-							   MAX_PASSWORD_ENC_LENGTH + MAX_OTHER_PARAMS);
+		new_dpb_ptr = (UCHAR*)gds__alloc(new_dpb_length);
 
 		/* FREE: by return(s) in this routine */
 
@@ -883,10 +882,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			user_status[1] = isc_virmemexh;
 			return error(user_status);
 		}
+		memset(new_dpb_ptr, '*', new_dpb_length);
 	}
 
-	USHORT new_dpb_length;
-	TEXT user_string[256];
+	TEXT user_string[256] = "";
 	const bool user_verification =
 		get_new_dpb(reinterpret_cast<const UCHAR*>(dpb),
 					dpb_length, true, new_dpb_ptr,
@@ -896,7 +895,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	Firebird::PathName expanded_name(expanded_filename);
 	Firebird::PathName node_name;
-	port = analyze(expanded_name, user_status, us,
+	rem_port* port = analyze(expanded_name, user_status, us,
 				   user_verification, dpb, dpb_length, node_name);
 	if (!port) {
 		if (new_dpb_ptr != new_dpb)
@@ -3857,15 +3856,15 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	*v++ = isc_unavailable;
 	*v = isc_arg_end;
 
-	rem_port* port;
 	UCHAR new_spb[MAXPATHLEN];
+	memset(new_spb, '*', sizeof(new_spb));
 	UCHAR* new_spb_ptr = new_spb;
-	if ((spb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
-		 MAX_OTHER_PARAMS) > sizeof(new_spb))
+	
+	USHORT new_spb_length = spb_length + MAX_PASSWORD_LENGTH +
+		 MAX_OTHER_PARAMS + MAX_DPB_DIR_SIZE;
+	if (new_spb_length > sizeof(new_spb))
 	{
-		new_spb_ptr =
-			(UCHAR*)gds__alloc(spb_length + MAX_USER_LENGTH +
-					   MAX_PASSWORD_ENC_LENGTH + MAX_OTHER_PARAMS);
+		new_spb_ptr = (UCHAR*)gds__alloc(new_spb_length);
 
 		/* FREE: by return(s) in this routine */
 
@@ -3874,9 +3873,10 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 			user_status[1] = isc_virmemexh;
 			return error(user_status);
 		}
+		memset(new_spb_ptr, '*', new_spb_length);
 	}
-	USHORT new_spb_length;
-	TEXT user_string[256];
+
+	TEXT user_string[256] = "";
 	const bool user_verification =
 		get_new_dpb(reinterpret_cast<const UCHAR*>(spb),
 					spb_length, false, new_spb_ptr,
@@ -3884,7 +3884,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 	const TEXT* us = (user_string[0]) ? user_string : 0;
 
-	port = analyze_service(expanded_name, user_status, us,
+	rem_port* port = analyze_service(expanded_name, user_status, us,
 						 user_verification, spb, spb_length);
 	if (!port) {
 		if (new_spb_ptr != new_spb)
@@ -4633,9 +4633,10 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
 		dpb_or_spb[(*length)++] = isc_dpb_version1;
 	}
 	dpb_or_spb[(*length)++] = isc_dpb_working_directory;
-	dpb_or_spb[(*length)++] = cwd.length();
-	memcpy(&(dpb_or_spb[(*length)]), cwd.c_str(), cwd.length());
-	*length += cwd.length();
+	UCHAR l = cwd.length();
+	dpb_or_spb[(*length)++] = l;
+	memcpy(&(dpb_or_spb[(*length)]), cwd.c_str(), l);
+	*length += l;
 }
 
 
@@ -5651,8 +5652,7 @@ static bool get_new_dpb(const UCHAR*	dpb,
  *	(Based on JRD get_options())
  *
  **************************************/
-	UCHAR	pw_buffer[MAX_PASSWORD_ENC_LENGTH + 6];
-
+	const USHORT backup_dpb_length = *new_dpb_length;
 	*user_string = 0;
 	*new_dpb_length = 0;
 
@@ -5733,15 +5733,11 @@ static bool get_new_dpb(const UCHAR*	dpb,
 		if (c == pb_sys_user_name)
 		{
 			s--;
-			UCHAR* q = (UCHAR *) user_string;
-			SSHORT l = *p++;
-			if (l)
-			{
-				do {
-					*q++ = *p++;
-				} while (--l);
-			}
-			*q = 0;
+			const SSHORT l = *p++;
+			memcpy(user_string, p, l);
+				
+			user_string[l] = 0;
+			p += l;
 		}
 		else if (c == pb_password)
 		{
@@ -5757,14 +5753,10 @@ static bool get_new_dpb(const UCHAR*	dpb,
 				result = true;
 			}
 			moved_some = true;
-			SSHORT l = *p++;
-			if (*s++ = static_cast<UCHAR>(l))
-			{
-				do {
-					*s++ = *p++;
-				} while (--l);
-			}
-
+			const SSHORT l = 1 + *p;
+			memcpy(s, p, l);
+			s += l;
+			p += l;
 		}
 	}
 
@@ -5784,10 +5776,11 @@ static bool get_new_dpb(const UCHAR*	dpb,
 		moved_some = true;
 		*s++ = pb_password_enc;
 		const SSHORT l = MIN(password_length, MAX_PASSWORD_ENC_LENGTH);
-		strncpy((char*) pw_buffer, (const char*) password, l);
+		char pw_buffer[MAX_PASSWORD_ENC_LENGTH + 6];
+		strncpy(pw_buffer, (const char*) password, l);
 		pw_buffer[l] = 0;
 		TEXT pwt[MAX_PASSWORD_LENGTH + 2];
-		ENC_crypt(pwt, sizeof pwt, reinterpret_cast<char*>(pw_buffer), PASSWORD_SALT);
+		ENC_crypt(pwt, sizeof pwt, pw_buffer, PASSWORD_SALT);
 		const char* pp = pwt + 2;
 		*s++ = strlen(pp);
 		while (*pp) {
@@ -5798,6 +5791,7 @@ static bool get_new_dpb(const UCHAR*	dpb,
 
 	if (moved_some || ((s - new_dpb) > 1)) {
 		*new_dpb_length = s - new_dpb;
+		fb_assert(*new_dpb_length <= backup_dpb_length);
 	}
 	else {
 		*new_dpb_length = 0;

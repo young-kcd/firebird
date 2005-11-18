@@ -519,7 +519,7 @@ static LexerState lex;
 %token TRAILING
 %token TRIM
 %token RETURNING
-%token IGNORE
+%token KW_IGNORE
 %token LIMBO
 %token UNDO
 %token REQUESTS
@@ -2819,7 +2819,7 @@ version_mode	: VERSION
 
 tra_misc_options: NO AUTO UNDO
 			{ $$ = make_flag_node(nod_tra_misc, NOD_NO_AUTO_UNDO, 0, NULL); }
-		| IGNORE LIMBO
+		| KW_IGNORE LIMBO
 			{ $$ = make_flag_node(nod_tra_misc, NOD_IGNORE_LIMBO, 0, NULL); }
 		| RESTART REQUESTS
 			{ $$ = make_flag_node(nod_tra_misc, NOD_RESTART_REQUESTS, 0, NULL); }
@@ -4337,7 +4337,7 @@ non_reserved_word :
 	| RESTART
 	| COLLATION
 	| RETURNING
-	| IGNORE
+	| KW_IGNORE
 	| LIMBO
 	| UNDO
 	| REQUESTS

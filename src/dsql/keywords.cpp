@@ -161,7 +161,7 @@ static const TOK tokens[] =
 	{HAVING, "HAVING", 1, false},
 	{HOUR, "HOUR", 2, false},
 	{IF, "IF", 1, false},
-	{IGNORE, "IGNORE", 2, true},
+	{KW_IGNORE, "IGNORE", 2, true},
 	{IIF, "IIF", 2, true},
 	{KW_IN, "IN", 1, false},
 	{INACTIVE, "INACTIVE", 1, false},

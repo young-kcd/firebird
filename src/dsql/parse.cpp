@@ -279,7 +279,7 @@
 # define	TRAILING	530
 # define	TRIM	531
 # define	RETURNING	532
-# define	IGNORE	533
+# define	KW_IGNORE	533
 # define	LIMBO	534
 # define	UNDO	535
 # define	REQUESTS	536
@@ -1217,7 +1217,7 @@ static const char *const yytname[] =
   "OPEN", "CLOSE", "FETCH", "ROWS", "BLOCK", "IIF", "SCALAR_ARRAY", 
   "CROSS", "NEXT", "SEQUENCE", "RESTART", "BOTH", "COLLATION", "COMMENT", 
   "BIT_LENGTH", "CHAR_LENGTH", "CHARACTER_LENGTH", "LEADING", "KW_LOWER", 
-  "OCTET_LENGTH", "TRAILING", "TRIM", "RETURNING", "IGNORE", "LIMBO", 
+  "OCTET_LENGTH", "TRAILING", "TRIM", "RETURNING", "KW_IGNORE", "LIMBO", 
   "UNDO", "REQUESTS", "TIMEOUT", "'='", "'<'", "'>'", "'+'", "'-'", "'*'", 
   "'/'", "';'", "','", "'('", "')'", "':'", "'['", "']'", "'.'", "'?'", 
   "top", "statement", "grant", "table_noise", "privileges", 
