@@ -1,3 +1,11 @@
+2005-11-17 12:13  makowski
+
+	* firebird2/src/install/arch-specific/win32/fr/:
+	custom_messages_fr.inc (1.1.2.5), documents-en-français.txt
+	(1.1.2.3), installation_lisezmoi.txt (1.1.2.5):
+	
+	modification for the 1.5.3 release
+
 2005-11-15 15:22  kkuznetsov
 
 	* firebird2/builds/posix/: prefix.solaris (1.5.2.8),
