@@ -163,12 +163,12 @@ public:
 	void removeRange(size_t from, size_t to) {
   		fb_assert(from <= to);
   		fb_assert(to <= count);
-  		memmove(data + from, data + to, sizeof(T) * (to - from));
+  		memmove(data + from, data + to, sizeof(T) * (count - to));
 		count -= (to - from);
 	}
 	void removeCount(size_t index, size_t n) {
   		fb_assert(index + n <= count);
-  		memmove(data + index, data + index + n, sizeof(T) * n);
+  		memmove(data + index, data + index + n, sizeof(T) * (count - index - n));
 		count -= n;
 	}
 	void remove(T* itr) {
