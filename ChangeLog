@@ -1,3 +1,31 @@
+2005-11-17 15:24  kkuznetsov
+
+	* firebird2/builds/install/arch-specific/solx86gcc/CS/prototype.in
+	(1.3):
+	
+	Start update Solaris packaging for FB2
+
+2005-11-17 12:32  asfernandes
+
+	* firebird2/src/burp/burp.cpp (1.103):
+	
+	1) Make "total" to Claudio taste :-) 2) Fix error found by Vlad
+
+2005-11-17 07:55  kkuznetsov
+
+	* firebird2/builds/posix/: prefix.solaris (1.17),
+	prefix.solaris-64gcc (1.4), prefix.solx86gcc (1.19):
+	
+	Sync solaris prefixes
+
+2005-11-17 05:22  robocop
+
+	* firebird2/src/dsql/: dsql.cpp (1.160), dsql.tab.h (1.62), gen.cpp
+	(1.94), keywords.cpp (1.47), node.h (1.70), parse.cpp (1.167),
+	parse.y (1.194):
+	
+	Let Ivan Prenosil test his beloved transaction options.
+
 2005-11-16 08:49  hvlad
 
 	* firebird2/src/dsql/: dsql.cpp (1.159), dsql.h (1.86), metd.epp
