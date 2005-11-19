@@ -1888,7 +1888,6 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	// Also when the table is small and a statement is prepared, but would grow
 	// while inserting data into this would really slow down the statement.
 	// An example here is with system tables and the restore process of gbak.
-	//const double maximumCost = streamCard * 0.95;
 	const double maximumCost = (DEFAULT_INDEX_COST * 5) + (streamCard * 0.95);
 	double previousTotalCost = maximumCost;
 
@@ -2405,6 +2404,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 					{
 						segment[i]->lowerValue = segment[i]->upperValue = value;
 						segment[i]->scanType = segmentScanMissing;
+						indexScratch->excludeLower = false;
+						indexScratch->excludeUpper = false;
 					}
 					break;
 
@@ -3294,7 +3295,7 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 		// The cost calculation can be far away from the real cost value if there
 		// are only a few datapages with almost no records on the last datapage.
 		// This ensures a more realistic value (only for unique) for these relations.
-		cost = 1;
+		cost = 1 * candidate->indexes;
 	}
 
 	size_t pos;
