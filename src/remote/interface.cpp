@@ -64,6 +64,7 @@
 #include "../jrd/sdl_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../common/classes/ClumpletWriter.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -96,13 +97,13 @@ const USHORT OSTYPE_WIN_95	= 2;
 
 const char* ISC_USER		= "ISC_USER";
 const char* ISC_PASSWORD	= "ISC_PASSWORD";
-//const int MAX_USER_LENGTH	= 33;
-const int MAX_OTHER_PARAMS	= 1 + 1 + sizeof(((rem_port*)NULL)->port_dummy_packet_interval);
-const int MAX_DPB_DIR_SIZE	= 2 + MAX_UCHAR; // The length is expressed as a byte.
+const int MAX_USER_LENGTH	= 33;
+#define MAX_OTHER_PARAMS	(1 + 1 + sizeof(port->port_dummy_packet_interval))
 
 static RVNT add_event(rem_port*);
 static void add_other_params(rem_port*, UCHAR*, USHORT*);
-static void add_working_directory(UCHAR*, USHORT*, const Firebird::PathName&);
+static void add_other_params( rem_port*, Firebird::ClumpletWriter&);
+static void add_working_directory(Firebird::ClumpletWriter&, const Firebird::PathName&);
 static rem_port* analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*,
 					bool, const SCHAR*, SSHORT, Firebird::PathName&);
 static rem_port* analyze_service(Firebird::PathName&, ISC_STATUS*, const TEXT*, 
@@ -131,7 +132,8 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
 static ISC_STATUS fetch_blob(ISC_STATUS*, RSR, USHORT, const UCHAR*, USHORT,
 						USHORT, UCHAR*);
 static RVNT find_event(rem_port*, SLONG);
-static bool get_new_dpb(const UCHAR*, SSHORT, bool, UCHAR*, USHORT*, TEXT*);
+static bool get_new_spb(const UCHAR*, SSHORT, UCHAR*, USHORT*, TEXT*);
+static bool get_new_dpb(Firebird::ClumpletWriter&, Firebird::string&);
 #ifdef UNIX
 static bool get_single_user(USHORT, const SCHAR*);
 #endif
@@ -258,9 +260,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
  *	Connect to an old, grungy database, corrupted by user data.
  *
  **************************************/
-	trdb	thd_context(user_status);
-	trdb*	tdrdb;
-
 	ISC_STATUS* v = user_status;
 
 	*v++ = isc_arg_gds;
@@ -275,69 +274,48 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 #endif
 
+	trdb	thd_context(user_status);
+	trdb*	tdrdb;
 	REM_set_thread_data(tdrdb, &thd_context);
 
 	NULL_CHECK(handle, isc_bad_db_handle);
 
-	UCHAR	new_dpb[MAXPATHLEN];
-	memset(new_dpb, '*', sizeof(new_dpb));
-	UCHAR* new_dpb_ptr = new_dpb;
+	RDB rdb = 0;
+	
+	try {
+		Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb),
+                                               dpb_length, isc_dpb_version1);
+		rem_port* port = 0; // MAX_OTHER_PARAMS uses port's port_dummy_packet_interval
 
-	USHORT new_dpb_length = dpb_length + MAX_PASSWORD_LENGTH +
-		 MAX_OTHER_PARAMS + MAX_DPB_DIR_SIZE;
-	if (new_dpb_length > sizeof(new_dpb))
-	{
-		new_dpb_ptr = (UCHAR*)gds__alloc(new_dpb_length);
+		Firebird::string user_string;
+		const bool user_verification = get_new_dpb(newDpb, user_string);
 
-		/* FREE: by return(s) from this procedure */
+		const TEXT* us = user_string.hasData() ? user_string.c_str() : 0;
 
-		if (!new_dpb_ptr)
-		{		/* NOMEM: return error to client */
-			user_status[1] = isc_virmemexh;
+		Firebird::PathName expanded_name(expanded_filename);
+		Firebird::PathName node_name;
+		port = analyze(expanded_name, user_status, us, user_verification, 
+					   reinterpret_cast<const SCHAR*>(newDpb.getBuffer()), 
+					   newDpb.getBufferLength(), node_name);
+		if (!port)
+		{
 			return error(user_status);
 		}
-		memset(new_dpb_ptr, '*', new_dpb_length);
-	}
 
-	TEXT user_string[256] = "";
-	const bool user_verification = get_new_dpb(reinterpret_cast<const UCHAR*>(dpb),
-					dpb_length, true, new_dpb_ptr,
-					&new_dpb_length, user_string);
+		rdb = port->port_context;
+		rdb->rdb_status_vector = user_status;
+		tdrdb->trdb_database = rdb;
 
-	const TEXT* us = (user_string[0]) ? user_string : 0;
-
-	Firebird::PathName expanded_name(expanded_filename);
-	Firebird::PathName node_name;
-	rem_port* port = analyze(expanded_name, user_status, us,
-					user_verification, dpb, dpb_length, node_name);
-	if (!port)
-	{
-		if (new_dpb_ptr != new_dpb) 
-		{
-			gds__free(new_dpb_ptr);
-		}
-		return error(user_status);
-	}
-
-	RDB rdb = port->port_context;
-
-	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_database = rdb;
-	try
-	{
 		/* The client may have set a parameter for dummy_packet_interval.  Add that to the
 		   the DPB so the server can pay attention to it.  Note: allocation code must
 		   ensure sufficient space has been added. */
 
-		add_other_params(port, new_dpb_ptr, &new_dpb_length);
-		add_working_directory(new_dpb_ptr, &new_dpb_length, node_name);
-
+		add_other_params(port, newDpb);
+		add_working_directory(newDpb, node_name);
+		
 		const bool result = init(user_status, port, op_attach, expanded_name,
-						new_dpb_ptr, new_dpb_length);
+					const_cast<UCHAR*>(newDpb.getBuffer()), newDpb.getBufferLength());
 
-		if (new_dpb_ptr != new_dpb) {
-			gds__free(new_dpb_ptr);
-		}
 		if (!result) {
 			return error(user_status);
 		}
@@ -846,9 +824,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
  *	Create a nice, squeeky clean database, uncorrupted by user data.
  *
  **************************************/
-	trdb thd_context(user_status);
-	trdb* tdrdb;
-
 	ISC_STATUS* v = user_status;
 	*v++ = isc_arg_gds;
 	*v++ = isc_unavailable;
@@ -861,67 +836,45 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		return isc_unavailable;
 #endif
 
+	trdb thd_context(user_status);
+	trdb* tdrdb;
 	REM_set_thread_data(tdrdb, &thd_context);
 
 	NULL_CHECK(handle, isc_bad_db_handle);
 
-	UCHAR new_dpb[MAXPATHLEN];
-	memset(new_dpb, '*', sizeof(new_dpb));
-	UCHAR* new_dpb_ptr = new_dpb;
-
-	USHORT new_dpb_length = dpb_length + MAX_PASSWORD_LENGTH +
-		 MAX_OTHER_PARAMS + MAX_DPB_DIR_SIZE;
-	if (new_dpb_length > sizeof(new_dpb))
-	{
-		new_dpb_ptr = (UCHAR*)gds__alloc(new_dpb_length);
-
-		/* FREE: by return(s) in this routine */
-
-		if (!new_dpb_ptr)
-		{		/* NOMEM: return error to client */
-			user_status[1] = isc_virmemexh;
-			return error(user_status);
-		}
-		memset(new_dpb_ptr, '*', new_dpb_length);
-	}
-
-	TEXT user_string[256] = "";
-	const bool user_verification =
-		get_new_dpb(reinterpret_cast<const UCHAR*>(dpb),
-					dpb_length, true, new_dpb_ptr,
-					&new_dpb_length, user_string);
-
-	const TEXT* us = (user_string[0]) ? user_string : 0;
-
-	Firebird::PathName expanded_name(expanded_filename);
-	Firebird::PathName node_name;
-	rem_port* port = analyze(expanded_name, user_status, us,
-				   user_verification, dpb, dpb_length, node_name);
-	if (!port) {
-		if (new_dpb_ptr != new_dpb)
-			gds__free(new_dpb_ptr);
-		return error(user_status);
-	}
-
-	RDB rdb = port->port_context;
-	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_database = rdb;
-
+	RDB rdb = 0;
+	
 	try
 	{
-	/* The client may have set a parameter for dummy_packet_interval.  Add that to the
-	   the DPB so the server can pay attention to it.  Note: allocation code must
-	   ensure sufficient space has been added. */
+		rem_port* port;
+		Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb),
+                                               dpb_length, isc_dpb_version1);
+		Firebird::string user_string;
+		const bool user_verification = get_new_dpb(newDpb, user_string);
+		const TEXT* us = (user_string.hasData()) ? user_string.c_str() : 0;
 
-		add_other_params(port, new_dpb_ptr, &new_dpb_length);
-		add_working_directory(new_dpb_ptr, &new_dpb_length, node_name);
+		Firebird::PathName expanded_name(expanded_filename);
+		Firebird::PathName node_name;
+		port = analyze(expanded_name, user_status, us,
+					   user_verification, dpb, dpb_length, node_name);
+		if (!port) {
+			return error(user_status);
+		}
+
+		rdb = port->port_context;
+		rdb->rdb_status_vector = user_status;
+		tdrdb->trdb_database = rdb;
+
+		/* The client may have set a parameter for dummy_packet_interval.  Add that to the
+		   the DPB so the server can pay attention to it.  Note: allocation code must
+		   ensure sufficient space has been added. */
+
+		add_other_params(port, newDpb);
+		add_working_directory(newDpb, node_name);
 
 		const bool result = 
 			init(user_status, port, op_create, expanded_name,
-					  new_dpb_ptr, new_dpb_length);
-		if (new_dpb_ptr != new_dpb) {
-			gds__free(new_dpb_ptr);
-		}
+					const_cast<UCHAR*>(newDpb.getBuffer()), newDpb.getBufferLength());
 		if (!result) {
 			return error(user_status);
 		}
@@ -3856,15 +3809,15 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	*v++ = isc_unavailable;
 	*v = isc_arg_end;
 
+	rem_port* port;
 	UCHAR new_spb[MAXPATHLEN];
-	memset(new_spb, '*', sizeof(new_spb));
 	UCHAR* new_spb_ptr = new_spb;
-	
-	USHORT new_spb_length = spb_length + MAX_PASSWORD_LENGTH +
-		 MAX_OTHER_PARAMS + MAX_DPB_DIR_SIZE;
-	if (new_spb_length > sizeof(new_spb))
+	if ((spb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
+		 MAX_OTHER_PARAMS) > sizeof(new_spb))
 	{
-		new_spb_ptr = (UCHAR*)gds__alloc(new_spb_length);
+		new_spb_ptr =
+			(UCHAR*)gds__alloc(spb_length + MAX_USER_LENGTH +
+					   MAX_PASSWORD_ENC_LENGTH + MAX_OTHER_PARAMS);
 
 		/* FREE: by return(s) in this routine */
 
@@ -3873,18 +3826,17 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 			user_status[1] = isc_virmemexh;
 			return error(user_status);
 		}
-		memset(new_spb_ptr, '*', new_spb_length);
 	}
-
-	TEXT user_string[256] = "";
+	USHORT new_spb_length;
+	TEXT user_string[256];
 	const bool user_verification =
-		get_new_dpb(reinterpret_cast<const UCHAR*>(spb),
-					spb_length, false, new_spb_ptr,
+		get_new_spb(reinterpret_cast<const UCHAR*>(spb),
+					spb_length, new_spb_ptr,
 					&new_spb_length, user_string);
 
 	const TEXT* us = (user_string[0]) ? user_string : 0;
 
-	rem_port* port = analyze_service(expanded_name, user_status, us,
+	port = analyze_service(expanded_name, user_status, us,
 						 user_verification, spb, spb_length);
 	if (!port) {
 		if (new_spb_ptr != new_spb)
@@ -4575,7 +4527,7 @@ static RVNT add_event( rem_port* port)
 }
 
 
-static void add_other_params( rem_port* port, UCHAR* dpb_or_spb, USHORT* length)
+static void add_other_params( rem_port* port, UCHAR* spb, USHORT* length)
 {
 /**************************************
  *
@@ -4591,15 +4543,15 @@ static void add_other_params( rem_port* port, UCHAR* dpb_or_spb, USHORT* length)
  *	the passed in dpb or spb.
  *
  **************************************/
-	fb_assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
+/*	fb_assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
 	fb_assert(isc_dpb_version1 == isc_spb_version1);
-
+ */
 	if (port->port_flags & PORT_dummy_pckt_set) {
 		if (*length == 0)
-			dpb_or_spb[(*length)++] = isc_dpb_version1;
-		dpb_or_spb[(*length)++] = isc_dpb_dummy_packet_interval;
-		dpb_or_spb[(*length)++] = sizeof(port->port_dummy_packet_interval);
-		stuff_vax_integer(&dpb_or_spb[*length],
+			spb[(*length)++] = isc_spb_version1;
+		spb[(*length)++] = isc_spb_dummy_packet_interval;
+		spb[(*length)++] = sizeof(port->port_dummy_packet_interval);
+		stuff_vax_integer(&spb[*length],
 						  port->port_dummy_packet_interval,
 						  sizeof(port->port_dummy_packet_interval));
 		*length += sizeof(port->port_dummy_packet_interval);
@@ -4607,9 +4559,30 @@ static void add_other_params( rem_port* port, UCHAR* dpb_or_spb, USHORT* length)
 }
 
 
-static void add_working_directory(UCHAR*	dpb_or_spb,
-								  USHORT*	length,
-								  const Firebird::PathName&	node_name)
+static void add_other_params( rem_port* port, Firebird::ClumpletWriter& dpb)
+{
+/**************************************
+ *
+ *	a d d _ o t h e r _ p a r a m s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Add parameters to a dpb to describe client-side
+ *	settings that the server should know about.  
+ *	Currently only dummy_packet_interval.
+ *
+ **************************************/
+	if (port->port_flags & PORT_dummy_pckt_set) 
+	{
+		if (dpb.find(isc_dpb_dummy_packet_interval))
+			dpb.deleteClumplet();
+		dpb.insertInt(isc_dpb_dummy_packet_interval, port->port_dummy_packet_interval);
+	}
+}
+
+
+static void add_working_directory(Firebird::ClumpletWriter& dpb, const Firebird::PathName& node_name)
 {
 /************************************************
  *
@@ -4622,6 +4595,11 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
  *      settings that the server should know about.
  *
  ************************************************/
+	if (dpb.find(isc_dpb_working_directory))
+	{
+		return;
+	}
+ 
 	Firebird::PathName cwd;
 
 	// for WNet local node_name should be compared with "\\\\." ?
@@ -4629,14 +4607,7 @@ static void add_working_directory(UCHAR*	dpb_or_spb,
 	{
 		fb_getcwd(cwd);
 	}
-	if (*length == 0) {
-		dpb_or_spb[(*length)++] = isc_dpb_version1;
-	}
-	dpb_or_spb[(*length)++] = isc_dpb_working_directory;
-	UCHAR l = cwd.length();
-	dpb_or_spb[(*length)++] = l;
-	memcpy(&(dpb_or_spb[(*length)]), cwd.c_str(), l);
-	*length += l;
+	dpb.insertPath(isc_dpb_working_directory, cwd);
 }
 
 
@@ -5634,27 +5605,28 @@ static RVNT find_event( rem_port* port, SLONG id)
 }
 
 
-static bool get_new_dpb(const UCHAR*	dpb,
-						  SSHORT	dpb_length,
-						  bool		dpb_vs_spb,
-						  UCHAR*	new_dpb,
-						  USHORT*	new_dpb_length,
+static bool get_new_spb(const UCHAR*	spb,
+						  SSHORT	spb_length,
+						  UCHAR*	new_spb,
+						  USHORT*	new_spb_length,
 						  TEXT*		user_string)
 {
 /**************************************
  *
- *	g e t _ n e w _ d p b
+ *	g e t _ n e w _ s p b
  *
  **************************************
  *
  * Functional description
- *	Fetch user_string out of dpb.
+ *	Fetch user_string out of spb.
  *	(Based on JRD get_options())
  *
  **************************************/
-	const USHORT backup_dpb_length = *new_dpb_length;
+ 
+	UCHAR	pw_buffer[MAX_PASSWORD_ENC_LENGTH + 6];
+
 	*user_string = 0;
-	*new_dpb_length = 0;
+	*new_spb_length = 0;
 
 	UCHAR	pb_version;
 	UCHAR	pb_sys_user_name;
@@ -5662,50 +5634,35 @@ static bool get_new_dpb(const UCHAR*	dpb,
 	UCHAR	pb_user_name;
 	UCHAR	pb_password_enc;
 
-	if (dpb_vs_spb)
+	if (spb_length)
 	{
-		pb_version = isc_dpb_version1;
-		pb_sys_user_name = isc_dpb_sys_user_name;
-		pb_password = isc_dpb_password;
-		pb_user_name = isc_dpb_user_name;
-		pb_password_enc = isc_dpb_password_enc;
+		if (*spb == isc_spb_version) {
+			pb_version = spb[1];
+		}
+		else {
+			pb_version = *spb;
+		}
 	}
 	else
 	{
-		if (dpb_length)
-		{
-			if (*dpb == isc_spb_version) {
-				pb_version = dpb[1];
-			}
-			else {
-				pb_version = *dpb;
-			}
-		}
-		else
-		{
-			pb_version = isc_spb_current_version;
-		}
-
-		pb_sys_user_name = isc_spb_sys_user_name;
-		pb_password = isc_spb_password;
-		pb_user_name = isc_spb_user_name;
-		pb_password_enc = isc_spb_password_enc;
+		pb_version = isc_spb_current_version;
 	}
-	const UCHAR* p = dpb;
-	UCHAR* s = new_dpb;
-	const UCHAR* const end_dpb = p + dpb_length;
 
-	if ((dpb_length > 0) && (*p != pb_version))
+	pb_sys_user_name = isc_spb_sys_user_name;
+	pb_password = isc_spb_password;
+	pb_user_name = isc_spb_user_name;
+	pb_password_enc = isc_spb_password_enc;
+
+	const UCHAR* p = spb;
+	UCHAR* s = new_spb;
+	const UCHAR* const end_spb = p + spb_length;
+
+	if ((spb_length > 0) && (*p != pb_version))
 	{
-		if (dpb_vs_spb) {
-			gds__log("REMOTE INTERFACE: wrong dpb version", 0);
-		}
-		else {
-			gds__log("REMOTE INTERFACE: wrong spb version", 0);
-		}
+		gds__log("REMOTE INTERFACE: wrong spb version", 0);
 	}
 
-	if (dpb_length == 0)
+	if (spb_length == 0)
 	{
 		*s++ = pb_version;
 	}
@@ -5726,18 +5683,22 @@ static bool get_new_dpb(const UCHAR*	dpb,
 	SSHORT password_length = 0;
 	const UCHAR* password = 0;
 	bool moved_some = false;
-	while (p < end_dpb)
+	while (p < end_spb)
 	{
 		const UCHAR c = *p++;
 		*s++ = c;
 		if (c == pb_sys_user_name)
 		{
 			s--;
-			const SSHORT l = *p++;
-			memcpy(user_string, p, l);
-				
-			user_string[l] = 0;
-			p += l;
+			UCHAR* q = (UCHAR *) user_string;
+			SSHORT l = *p++;
+			if (l)
+			{
+				do {
+					*q++ = *p++;
+				} while (--l);
+			}
+			*q = 0;
 		}
 		else if (c == pb_password)
 		{
@@ -5753,10 +5714,13 @@ static bool get_new_dpb(const UCHAR*	dpb,
 				result = true;
 			}
 			moved_some = true;
-			const SSHORT l = 1 + *p;
-			memcpy(s, p, l);
-			s += l;
-			p += l;
+			SSHORT l = *p++;
+			if (*s++ = static_cast<UCHAR>(l))
+			{
+				do {
+					*s++ = *p++;
+				} while (--l);
+			}
 		}
 	}
 
@@ -5776,11 +5740,10 @@ static bool get_new_dpb(const UCHAR*	dpb,
 		moved_some = true;
 		*s++ = pb_password_enc;
 		const SSHORT l = MIN(password_length, MAX_PASSWORD_ENC_LENGTH);
-		char pw_buffer[MAX_PASSWORD_ENC_LENGTH + 6];
-		strncpy(pw_buffer, (const char*) password, l);
+		strncpy((char*) pw_buffer, (const char*) password, l);
 		pw_buffer[l] = 0;
 		TEXT pwt[MAX_PASSWORD_LENGTH + 2];
-		ENC_crypt(pwt, sizeof pwt, pw_buffer, PASSWORD_SALT);
+		ENC_crypt(pwt, sizeof pwt, reinterpret_cast<char*>(pw_buffer), PASSWORD_SALT);
 		const char* pp = pwt + 2;
 		*s++ = strlen(pp);
 		while (*pp) {
@@ -5789,15 +5752,53 @@ static bool get_new_dpb(const UCHAR*	dpb,
 	}
 #endif
 
-	if (moved_some || ((s - new_dpb) > 1)) {
-		*new_dpb_length = s - new_dpb;
-		fb_assert(*new_dpb_length <= backup_dpb_length);
+	if (moved_some || ((s - new_spb) > 1)) {
+		*new_spb_length = s - new_spb;
 	}
 	else {
-		*new_dpb_length = 0;
+		*new_spb_length = 0;
 	}
 
 	return result;
+}
+
+static bool get_new_dpb(Firebird::ClumpletWriter& dpb, Firebird::string& user_string)
+{
+/**************************************
+ *
+ *	g e t _ n e w _ d p b
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fetch user_string out of dpb.
+ *	(Based on JRD get_options())
+ *
+ **************************************/
+#ifndef NO_PASSWORD_ENCRYPTION
+	if (dpb.find(isc_dpb_password))
+	{
+		Firebird::string password;
+		dpb.getString(password);
+		dpb.deleteClumplet();
+		TEXT pwt[MAX_PASSWORD_LENGTH + 2];
+		ENC_crypt(pwt, sizeof pwt, password.c_str(), PASSWORD_SALT);
+		password = pwt + 2;
+		dpb.insertString(isc_dpb_password_enc, password);
+	}
+#endif
+	
+	if (dpb.find(isc_dpb_sys_user_name)) 
+	{
+		dpb.getString(user_string);
+		dpb.deleteClumplet();
+	}
+	else
+	{
+		user_string.erase();
+	}
+
+	return dpb.find(isc_dpb_user_name);
 }
 
 #ifdef UNIX
@@ -5933,6 +5934,7 @@ static ISC_STATUS info(
 	return rdb->rdb_status_vector[1];
 }
 
+#include <ctype.h>
 
 static bool init(ISC_STATUS* user_status,
 				 rem_port* port,
@@ -5961,10 +5963,10 @@ static bool init(ISC_STATUS* user_status,
 	packet->p_operation = op;
 	attach->p_atch_file.cstr_length = file_name.length();
 	attach->p_atch_file.cstr_address = 
-			reinterpret_cast<UCHAR*>(file_name.begin());
+			reinterpret_cast<UCHAR*>(const_cast<char*>(file_name.c_str()));
 	attach->p_atch_dpb.cstr_length = dpb_length;
 	attach->p_atch_dpb.cstr_address = dpb;
-
+	
 	if (!send_packet(rdb->rdb_port, packet, user_status)) 
 	{
 		disconnect(port);
