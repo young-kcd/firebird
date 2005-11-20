@@ -587,8 +587,11 @@ Service* SVC_attach(USHORT	service_length,
  * decrypt function).
  */
 	if (options.spb_password) {
-		ENC_crypt(service->svc_enc_password, sizeof service->svc_enc_password, 
-			options.spb_password, PASSWORD_SALT);
+		char tmp_enc_pwd[sizeof(service->svc_enc_password) + 2];
+		ENC_crypt(tmp_enc_pwd, sizeof(tmp_enc_pwd), 
+				  options.spb_password, PASSWORD_SALT);
+		memcpy(service->svc_enc_password, tmp_enc_pwd + 2, 
+			sizeof(service->svc_enc_password));
 	}
 
 	if (options.spb_password_enc) {
