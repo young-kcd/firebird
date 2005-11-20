@@ -1,3 +1,9 @@
+2005-11-19 19:45  arnobrinkman
+
+	* firebird2/src/jrd/Optimizer.cpp (1.43):
+	
+	no message
+
 2005-11-18 06:31  robocop
 
 	* firebird2/src/common/classes/array.h (1.34):
