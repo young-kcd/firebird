@@ -3390,6 +3390,12 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 				}
 				field_id = n;
 				field = (jrd_fld*) (*vector)[field_id];
+
+				if (field) {
+					field->fld_computation = field->fld_missing_value = 
+					field->fld_default_value = field->fld_validation = NULL;
+				}
+
 				array = NULL;
 				break;
 
