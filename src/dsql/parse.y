@@ -188,6 +188,7 @@ struct LexerState {
 	const TEXT* beginning;
 	const TEXT* ptr;
 	const TEXT* end;
+	const TEXT* stop_trigger;
 	const TEXT* last_token;
 	const TEXT* line_start;
 	const TEXT* last_token_bk;
@@ -1864,12 +1865,19 @@ end_string	:
 		;
 */
 begin_trigger	: 
-			{ lex.beginning = lex.last_token; }
+			{ lex.beginning = lex.last_token; lex.stop_trigger = 0; }
 		;
 
 end_trigger	:
-			{ $$ = (dsql_nod*) MAKE_string(lex.beginning,
-					lex_position() - lex.beginning); }
+			{
+				$$ = (dsql_nod*) MAKE_string(lex.beginning, 
+					(lex.stop_trigger ? lex.stop_trigger : lex_position()) - lex.beginning); 
+				lex.stop_trigger = 0; 
+			}
+		;
+
+stop_trigger :
+			{ lex.stop_trigger = lex.last_token; }
 		;
 
 
@@ -3819,7 +3827,7 @@ datetime_value_expression : CURRENT_DATE
 
 sec_precision_opt	: '(' nonneg_short_integer ')'
 			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
-		|
+		|	stop_trigger
 			{ $$ = NULL; }
 		;
 
