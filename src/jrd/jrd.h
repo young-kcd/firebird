@@ -106,7 +106,7 @@ namespace Jrd {
 // The database block, the topmost block in the metadata
 // cache for a database
 
-const int HASH_SIZE		= 101;
+const int HASH_SIZE		= 509;
 
 
 // fwd. decl.

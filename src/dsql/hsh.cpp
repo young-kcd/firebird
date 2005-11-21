@@ -33,7 +33,7 @@
 #include "../jrd/thd.h"
 
 
-const int HASH_SIZE = 211;
+const int HASH_SIZE = 1021;
 static SSHORT hash(const SCHAR*, USHORT);
 static bool remove_symbol(dsql_sym**, dsql_sym*);
 static bool scompare(const TEXT*, USHORT, const TEXT*, const USHORT);
