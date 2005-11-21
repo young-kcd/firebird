@@ -1,3 +1,15 @@
+2005-11-20 18:02  alexpeshkoff
+
+	* firebird2/src/remote/interface.cpp (1.105):
+	
+	fixed redirection issues
+
+2005-11-20 16:40  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.149):
+	
+	fixed work with embedded service manager
+
 2005-11-19 19:45  arnobrinkman
 
 	* firebird2/src/jrd/Optimizer.cpp (1.43):
