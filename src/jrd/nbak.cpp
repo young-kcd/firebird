@@ -29,6 +29,7 @@
 #include "firebird.h"
 #include "common.h"
 #include "jrd.h"
+#include "nbak.h"
 #include "ods.h"
 #include "lck.h"
 #include "cch.h"
@@ -77,7 +78,7 @@ void BackupManager::decrement_diff_use_count() throw()
 }
 #endif
 
-bool BackupManager::get_sw_database_lock(bool enable_signals) throw()
+bool BackupManager::get_sw_database_lock(thread_db* tdbb, bool enable_signals) throw()
 {
 #ifdef SUPERSERVER
 #ifdef WIN_NT
@@ -89,7 +90,6 @@ bool BackupManager::get_sw_database_lock(bool enable_signals) throw()
 	return true;
 #else
 	NBAK_TRACE(("get_sw_database_lock %d", database_use_count));
-	thread_db* tdbb = JRD_get_thread_data();
 	database_use_count++;
 	if (enable_signals)
 		LCK_ast_enable();
@@ -103,7 +103,7 @@ bool BackupManager::get_sw_database_lock(bool enable_signals) throw()
 #endif
 }
 
-void BackupManager::release_sw_database_lock() throw()
+void BackupManager::release_sw_database_lock(thread_db* tdbb) throw()
 {
 #ifdef SUPERSERVER
 #ifdef WIN_NT
@@ -115,7 +115,6 @@ void BackupManager::release_sw_database_lock() throw()
 #else
 	NBAK_TRACE(("release_sw_database_lock %d", database_use_count));
 	fb_assert(database_use_count > 0);
-	thread_db* tdbb = JRD_get_thread_data();
 	database_use_count--;
 	if ((database_use_count == 0) && (ast_flags & NBAK_database_blocking)) {
 		LCK_release(tdbb, database_lock);
@@ -124,7 +123,7 @@ void BackupManager::release_sw_database_lock() throw()
 #endif
 }
 
-void BackupManager::lock_state_write(bool thread_exit)
+void BackupManager::lock_state_write(thread_db* tdbb, bool thread_exit)
 {
 #ifdef SUPERSERVER
 	if (thread_exit)
@@ -134,7 +133,6 @@ void BackupManager::lock_state_write(bool thread_exit)
 		THREAD_ENTER();
 #else
 	fb_assert(!(flags & NBAK_state_in_use));
-	thread_db* tdbb = JRD_get_thread_data();
 	flags |= NBAK_state_in_use;
 	bool locked = false;
 	// Release shared lock to prevent possible deadlocks
@@ -154,20 +152,19 @@ void BackupManager::lock_state_write(bool thread_exit)
 	}
 	NBAK_TRACE(("backup state locked for writing"));
 #endif
-	if (!actualize_state()) {
-		unlock_state_write();
+	if (!actualize_state(tdbb)) {
+		unlock_state_write(tdbb);
 		ERR_punt();
 	}
 }
 
-bool BackupManager::try_lock_state_write()
+bool BackupManager::try_lock_state_write(thread_db* tdbb)
 {
 #ifdef SUPERSERVER
 	if (!state_lock->tryBeginWrite())
 		return false;
 #else
 	fb_assert(!(flags & NBAK_state_in_use));
-	thread_db* tdbb = JRD_get_thread_data();
 	flags |= NBAK_state_in_use;
 	bool result;
 	if (state_lock->lck_physical == LCK_none)
@@ -186,20 +183,19 @@ bool BackupManager::try_lock_state_write()
 	} 
 	NBAK_TRACE(("backup state locked for writing"));
 #endif
-	if (!actualize_state()) {
-		unlock_state_write();
+	if (!actualize_state(tdbb)) {
+		unlock_state_write(tdbb);
 		ERR_punt();
 	}
 	return true;
 }
 
-void BackupManager::unlock_state_write() throw()
+void BackupManager::unlock_state_write(thread_db* tdbb) throw()
 {
 #ifdef SUPERSERVER
 	state_lock->endWrite();
 #else
 	fb_assert(flags & NBAK_state_in_use);
-	thread_db* tdbb = JRD_get_thread_data();
 	// ASTs are going to be reposted after CONVERT
 	ast_flags &= ~NBAK_state_blocking;
 	LCK_convert(tdbb, state_lock, LCK_SR, LCK_WAIT);
@@ -212,7 +208,7 @@ void BackupManager::unlock_state_write() throw()
 #endif
 }
 
-bool BackupManager::lock_alloc_write(bool thread_exit) throw()
+bool BackupManager::lock_alloc_write(thread_db* tdbb, bool thread_exit) throw()
 {
 #ifdef SUPERSERVER
 	if (thread_exit)
@@ -222,7 +218,6 @@ bool BackupManager::lock_alloc_write(bool thread_exit) throw()
 		THREAD_ENTER();
 #else
 	fb_assert(!(flags & NBAK_alloc_in_use));
-	thread_db* tdbb = JRD_get_thread_data();
 	flags |= NBAK_alloc_in_use;
 	// Release shared lock to prevent possible deadlocks
 	bool locked = false;
@@ -241,20 +236,19 @@ bool BackupManager::lock_alloc_write(bool thread_exit) throw()
 		return false;
 	}
 #endif
-	if (!actualize_alloc()) {
-		unlock_alloc_write();
+	if (!actualize_alloc(tdbb)) {
+		unlock_alloc_write(tdbb);
 		return false;
 	}
 	return true;
 }
 
-void BackupManager::unlock_alloc_write() throw()
+void BackupManager::unlock_alloc_write(thread_db* tdbb) throw()
 {
 #ifdef SUPERSERVER
 	alloc_lock->endWrite();
 #else
 	fb_assert(flags & NBAK_alloc_in_use);
-	thread_db* tdbb = JRD_get_thread_data();
 	// ASTs are going to be reposted after CONVERT
 	ast_flags &= ~NBAK_alloc_blocking;
 	LCK_convert(tdbb, alloc_lock, LCK_SR, LCK_WAIT);
@@ -267,9 +261,8 @@ void BackupManager::unlock_alloc_write() throw()
 #endif
 }
 
-bool BackupManager::lock_state(bool thread_exit) throw()
+bool BackupManager::lock_state(thread_db* tdbb, bool thread_exit) throw()
 {
-	thread_db* tdbb = JRD_get_thread_data();
 	// If we own exlock here no need to do anything else
 	if (tdbb->tdbb_flags & TDBB_set_backup_state)
 		return true;
@@ -290,16 +283,15 @@ bool BackupManager::lock_state(bool thread_exit) throw()
 		}
 	}
 #endif
-	if (!actualize_state()) {
-		unlock_state();
+	if (!actualize_state(tdbb)) {
+		unlock_state(tdbb);
 		return false;
 	}
 	return true;
 }
 
-void BackupManager::unlock_state() throw()
+void BackupManager::unlock_state(thread_db* tdbb) throw()
 {
-	thread_db* tdbb = JRD_get_thread_data();
 	// If we own exlock here no need to do anything else
 	if (tdbb->tdbb_flags & TDBB_set_backup_state)
 		return;
@@ -316,7 +308,8 @@ void BackupManager::unlock_state() throw()
 #endif
 }
 
-bool BackupManager::lock_alloc(bool thread_exit) throw() {
+bool BackupManager::lock_alloc(thread_db* tdbb, bool thread_exit) throw() 
+{
 #ifdef SUPERSERVER
 	if (thread_exit)
 		THREAD_EXIT();
@@ -325,7 +318,6 @@ bool BackupManager::lock_alloc(bool thread_exit) throw() {
 		THREAD_ENTER();
 #else
 	fb_assert(!(flags & NBAK_alloc_in_use));
-	thread_db* tdbb = JRD_get_thread_data();
 	flags |= NBAK_alloc_in_use;
 	if (alloc_lock->lck_physical < LCK_SR) {
 		if (!LCK_lock(tdbb, alloc_lock, LCK_SR, LCK_WAIT)) {
@@ -335,19 +327,19 @@ bool BackupManager::lock_alloc(bool thread_exit) throw() {
 		}
 	}
 #endif
-	if (!actualize_alloc()) {
-		unlock_alloc();
+	if (!actualize_alloc(tdbb)) {
+		unlock_alloc(tdbb);
 		return false;
 	}
 	return true;
 }
 
-void BackupManager::unlock_alloc() throw() {
+void BackupManager::unlock_alloc(thread_db* tdbb) throw() 
+{
 #ifdef SUPERSERVER
 	alloc_lock->endRead();
 #else
 	fb_assert(flags & NBAK_alloc_in_use);
-	thread_db* tdbb = JRD_get_thread_data();
 	flags &= ~NBAK_alloc_in_use;
 	if (ast_flags & NBAK_alloc_blocking) {
 		LCK_release(tdbb, alloc_lock);
@@ -378,7 +370,7 @@ int BackupManager::backup_state_ast(void *ast_object) throw()
  *
  **************************************/
 	Database* new_dbb = static_cast<Database*>(ast_object);
-	Lock* lock = new_dbb->backup_manager->state_lock;
+	Lock* lock = new_dbb->dbb_backup_manager->state_lock;
 
 	ISC_ast_enter();
 
@@ -396,11 +388,11 @@ int BackupManager::backup_state_ast(void *ast_object) throw()
 
 	NBAK_TRACE_AST("NBAK, backup_state_ast");
 	
-	if (new_dbb->backup_manager->flags & NBAK_state_in_use)
-		new_dbb->backup_manager->ast_flags |= NBAK_state_blocking;
+	if (new_dbb->dbb_backup_manager->flags & NBAK_state_in_use)
+		new_dbb->dbb_backup_manager->ast_flags |= NBAK_state_blocking;
 	else {
 		// We know state only as long we lock it
-		new_dbb->backup_manager->backup_state = nbak_state_unknown; 
+		new_dbb->dbb_backup_manager->backup_state = nbak_state_unknown; 
 		LCK_release(tdbb, lock);
 	}
 
@@ -429,7 +421,7 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
  *
  **************************************/
 	Database* new_dbb = static_cast<Database*>(ast_object);
-	Lock* lock = new_dbb->backup_manager->alloc_lock;
+	Lock* lock = new_dbb->dbb_backup_manager->alloc_lock;
 
 	ISC_ast_enter();
 
@@ -447,10 +439,10 @@ int BackupManager::alloc_table_ast(void *ast_object) throw()
 	
 	NBAK_TRACE_AST("NBAK, alloc_table_ast");
 
-	if (new_dbb->backup_manager->flags & NBAK_alloc_in_use)
-		new_dbb->backup_manager->ast_flags |= NBAK_alloc_blocking;
+	if (new_dbb->dbb_backup_manager->flags & NBAK_alloc_in_use)
+		new_dbb->dbb_backup_manager->ast_flags |= NBAK_alloc_blocking;
 	else {
-		new_dbb->backup_manager->ast_flags |= NBAK_alloc_dirty;
+		new_dbb->dbb_backup_manager->ast_flags |= NBAK_alloc_dirty;
 		LCK_release(tdbb, lock);
 	}
 
@@ -481,7 +473,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 	Database* new_dbb = static_cast<Database*>(ast_object);
 	ISC_STATUS_ARRAY ast_status;
 
-	Lock* lock = new_dbb->backup_manager->database_lock;
+	Lock* lock = new_dbb->dbb_backup_manager->database_lock;
 
 	ISC_ast_enter();
 
@@ -500,8 +492,8 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 
 	NBAK_TRACE_AST("NBAK, backup_database_ast");
 	
-	if (new_dbb->backup_manager->database_use_count) {
-		new_dbb->backup_manager->ast_flags |= NBAK_database_blocking;
+	if (new_dbb->dbb_backup_manager->database_use_count) {
+		new_dbb->dbb_backup_manager->ast_flags |= NBAK_database_blocking;
 		ast_status[1] = 0;
 		CCH_flush_database(tdbb); // This may release database lock
 		if (ast_status[1])
@@ -524,15 +516,13 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 
 void BackupManager::generate_filename() throw()
 {
-	strncpy(diff_name, (char*)database->dbb_filename.c_str(), sizeof(diff_name));
-	strncat(diff_name, ".delta", sizeof(diff_name) - strlen(diff_name) - 1);
+	diff_name = database->dbb_filename + ".delta";
 }
 
 // Initialize and open difference file for writing
-void BackupManager::begin_backup()
+void BackupManager::begin_backup(thread_db* tdbb)
 {
 	NBAK_TRACE(("begin_backup"));
-	thread_db* tdbb = JRD_get_thread_data();
 
 	// Lock header page first to prevent possible deadlock
 	WIN window(HEADER_PAGE);
@@ -551,14 +541,14 @@ void BackupManager::begin_backup()
 		database_locked = true;
 #endif
 
-		lock_state_write(true);
+		lock_state_write(tdbb, true);
 		state_locked = true;
 		NBAK_TRACE(("state locked"));
 
 		// Check state
 		if (backup_state != nbak_state_normal) {
 			NBAK_TRACE(("end backup - invalid state %d", backup_state));
-			unlock_state_write();
+			unlock_state_write(tdbb);
 			CCH_RELEASE(tdbb, &window);
 			return;
 		}
@@ -599,14 +589,14 @@ void BackupManager::begin_backup()
 #ifdef SUPERSERVER
 		// We cannot do this in classic because we do not have alloc_lock now
 		// and we'll not get alloc_table_ast at the appropriate point
-		actualize_alloc(); 
+		actualize_alloc(tdbb); 
 #endif
-		unlock_state_write();
+		unlock_state_write(tdbb);
 	} catch (const std::exception&) {
 		backup_state = nbak_state_unknown;
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		if (state_locked)
-			unlock_state_write();
+			unlock_state_write(tdbb);
 		if (header_locked)
 			CCH_RELEASE(tdbb, &window);
 #ifndef SUPERSERVER
@@ -634,9 +624,9 @@ void BackupManager::begin_backup()
 // Merge difference file to main files (if needed) and unlink() difference 
 // file then. If merge is already in progress method silently returns and 
 // does nothing (so it can be used for recovery on database startup). 
-void BackupManager::end_backup(bool recover) {
+void BackupManager::end_backup(thread_db* tdbb, bool recover) 
+{
 	NBAK_TRACE(("end_backup"));
-	thread_db* tdbb = JRD_get_thread_data();
 	ULONG adjusted_scn; // We use this value to prevent race conditions.
 						// They are possible because we release state lock
 						// for some instants and anything is possible at
@@ -649,13 +639,13 @@ void BackupManager::end_backup(bool recover) {
 
 	try {
 		if (recover) {
-			if (!try_lock_state_write()) {
+			if (!try_lock_state_write(tdbb)) {
 				CCH_RELEASE(tdbb, &window);
 				return;
 			}
 		}
 		else
-			lock_state_write(true);
+			lock_state_write(tdbb, true);
 		state_locked = true;
 		NBAK_TRACE(("state locked"));
 		// Check state
@@ -663,7 +653,7 @@ void BackupManager::end_backup(bool recover) {
 		if (backup_state == nbak_state_normal || (recover && backup_state != nbak_state_merge))
 		{
 			NBAK_TRACE(("invalid state %d", backup_state));
-			unlock_state_write();
+			unlock_state_write(tdbb);
 			CCH_RELEASE(tdbb, &window);
 			return;
 		}
@@ -689,7 +679,7 @@ void BackupManager::end_backup(bool recover) {
 		backup_state = nbak_state_unknown;
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		if (state_locked)
-			unlock_state_write();
+			unlock_state_write(tdbb);
 		if (header_locked)
 			CCH_RELEASE(tdbb, &window);
 		throw;
@@ -701,19 +691,19 @@ void BackupManager::end_backup(bool recover) {
 	// Release write state lock and get read lock. 
 	// Merge process should not inhibit normal operations.
 	tdbb->tdbb_flags &= ~TDBB_set_backup_state;
-	unlock_state_write();
-	if (!lock_state(true))
+	unlock_state_write(tdbb);
+	if (!lock_state(tdbb, true))
 		ERR_punt();
 	try {
 		NBAK_TRACE(("Merge. State=%d, current_scn=%d, adjusted_scn=%d",
 			backup_state, current_scn, adjusted_scn));	
 		if (backup_state != nbak_state_merge || current_scn != adjusted_scn) {
 			/* Handle the case when somebody finalized merge for us */
-			unlock_state();
+			unlock_state(tdbb);
 			return;
 		}
 		NBAK_TRACE(("Status OK."));
-		if (!actualize_alloc())
+		if (!actualize_alloc(tdbb))
 			ERR_punt();
 		NBAK_TRACE(("Allocation table %p is current.", alloc_table));
 		AllocItemTree::Accessor all(alloc_table);
@@ -733,11 +723,11 @@ void BackupManager::end_backup(bool recover) {
 		CCH_flush(tdbb, FLUSH_ALL, 0); // Really write changes to main database file
 		
 		tdbb->tdbb_flags &= ~(TDBB_set_backup_state | TDBB_backup_merge);
-		unlock_state();
+		unlock_state(tdbb);
 		
 	} catch(const std::exception&) {
 		tdbb->tdbb_flags &= ~(TDBB_set_backup_state | TDBB_backup_merge);
-		unlock_state();
+		unlock_state(tdbb);
 		throw;
 	}
 	
@@ -748,12 +738,12 @@ void BackupManager::end_backup(bool recover) {
 	state_locked = false;
 	header_locked = true;
 	try {
-		lock_state_write(true);
+		lock_state_write(tdbb, true);
 		state_locked = true;
 		// Check state
 		if (backup_state != nbak_state_merge || current_scn != adjusted_scn) {
 			/* Handle the case when somebody finalized merge for us */
-			unlock_state_write();
+			unlock_state_write(tdbb);
 			CCH_RELEASE(tdbb, &window);
 			return;
 		}
@@ -783,15 +773,15 @@ void BackupManager::end_backup(bool recover) {
 			PIO_close(diff_file);
 			diff_file = NULL;
 		}
-		unlink(diff_name);
+		unlink(diff_name.c_str());
 		
-		unlock_state_write();
+		unlock_state_write(tdbb);
 		NBAK_TRACE(("backup ended"));
 	} catch (const std::exception&) {
 		backup_state = nbak_state_unknown;
 		tdbb->tdbb_flags &= ~TDBB_set_backup_state;
 		if (state_locked)
-			unlock_state_write();
+			unlock_state_write(tdbb);
 		if (header_locked)
 			CCH_RELEASE(tdbb, &window);
 		throw;
@@ -799,14 +789,14 @@ void BackupManager::end_backup(bool recover) {
 	return;
 }
 	
-bool BackupManager::actualize_alloc() throw()
+bool BackupManager::actualize_alloc(thread_db* tdbb) throw()
 {
 	if (alloc_table
 #ifndef SUPERSERVER
 		&& !(ast_flags & NBAK_alloc_dirty)
 #endif
 	) return true;
-	ISC_STATUS *status_vector = JRD_get_thread_data()->tdbb_status_vector;
+	ISC_STATUS *status_vector = tdbb->tdbb_status_vector;
 	try {
 		NBAK_TRACE(("actualize_alloc last_allocated_page=%d alloc_table=%p", 
 			last_allocated_page, alloc_table));
@@ -876,10 +866,11 @@ ULONG BackupManager::get_page_index(ULONG db_page) const throw()
 }
 
 // Mark next difference page as used by some database page
-ULONG BackupManager::allocate_difference_page(ULONG db_page) throw() {
+ULONG BackupManager::allocate_difference_page(thread_db* tdbb, ULONG db_page) throw() 
+{
 	fb_assert(last_allocated_page % (database->dbb_page_size / sizeof(ULONG)) == alloc_buffer[0]);
 
-	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
+	ISC_STATUS* status_vector = tdbb->tdbb_status_vector;
 	// Grow file first. This is done in such order to keep difference
 	// file consistent in case of write error. We should always be able 
 	// to read next alloc page when previous one is full.
@@ -940,25 +931,22 @@ bool BackupManager::write_difference(ISC_STATUS* status, ULONG diff_page, Ods::p
 	return true;
 }
 	
-bool BackupManager::read_difference(ULONG diff_page, Ods::pag* page) throw()
+bool BackupManager::read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* page) throw()
 {
 	BufferDesc temp_bdb;
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = page;
-	if (!PIO_read(diff_file, &temp_bdb, page, JRD_get_thread_data()->tdbb_status_vector))		
+	if (!PIO_read(diff_file, &temp_bdb, page, tdbb->tdbb_status_vector))		
 		return false;
 	return true;
 }
 	
-BackupManager::BackupManager(Database* _database, int ini_state) :
+BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state) :
 	database(_database), diff_file(NULL), alloc_table(NULL), 
 	backup_state(ini_state), last_allocated_page(0),
-	current_scn(0), backup_pages(0), diff_pending_close(false)
+	current_scn(0), backup_pages(0), diff_name(*_database->dbb_permanent),  diff_pending_close(false)
 {
-	thread_db* tdbb = JRD_get_thread_data();
-	diff_name[0] = 0;
-	
 	// Allocate various database page buffers needed for operation
 	temp_buffers_space = FB_NEW(*database->dbb_permanent) BYTE[database->dbb_page_size * 3 + MIN_PAGE_SIZE];
 	// Align it at sector boundary for faster IO
@@ -1012,10 +1000,9 @@ BackupManager::BackupManager(Database* _database, int ini_state) :
 #endif
 }
 
-void BackupManager::shutdown_locks() throw()
+void BackupManager::shutdown_locks(thread_db* tdbb) throw()
 {
 #ifndef SUPERSERVER
-	thread_db* tdbb = JRD_get_thread_data();
 	if (state_lock)
 		LCK_release(tdbb, state_lock);
 	if (alloc_lock)
@@ -1028,9 +1015,6 @@ void BackupManager::shutdown_locks() throw()
 
 BackupManager::~BackupManager()
 {
-	if (diff_file)
-		PIO_close(diff_file);
-	shutdown_locks();
 	delete alloc_table;
 	delete[] temp_buffers_space;
 #ifdef SUPERSERVER
@@ -1041,9 +1025,8 @@ BackupManager::~BackupManager()
 #endif
 }
 
-void BackupManager::set_difference(const char* filename) {
-	thread_db* tdbb = JRD_get_thread_data();
-	
+void BackupManager::set_difference(thread_db* tdbb, const char* filename) 
+{
 	if (filename) {
 		WIN window(HEADER_PAGE);
 		Ods::header_page* header =
@@ -1052,7 +1035,7 @@ void BackupManager::set_difference(const char* filename) {
 		PAG_replace_entry_first(header, Ods::HDR_difference_file, 
 			strlen(filename), reinterpret_cast<const UCHAR*>(filename));
 		CCH_RELEASE(tdbb, &window);
-		strncpy(diff_name, filename, sizeof(diff_name));
+		diff_name = filename;
 	}
 	else {
 		PAG_delete_clump_entry(HEADER_PAGE, Ods::HDR_difference_file);
@@ -1060,7 +1043,8 @@ void BackupManager::set_difference(const char* filename) {
 	}
 }
 
-bool BackupManager::actualize_state() throw() {
+bool BackupManager::actualize_state(thread_db* tdbb) throw() 
+{
 	if (backup_state != nbak_state_unknown)
 		return true;
 
@@ -1068,7 +1052,7 @@ bool BackupManager::actualize_state() throw() {
 	// We cannot use CCH for this because of likely recursion.
 	NBAK_TRACE(("actualize_state"));	
 	
-	ISC_STATUS *status = JRD_get_thread_data()->tdbb_status_vector;
+	ISC_STATUS *status = tdbb->tdbb_status_vector;
 			
 	// Read original page from database file or shadows.
 	SSHORT retryCount = 0;
@@ -1114,8 +1098,7 @@ bool BackupManager::actualize_state() throw() {
 			continue;
 		case Ods::HDR_difference_file:
 			fname_found = true;
-			memcpy(diff_name, p + 2, p[1]);
-			diff_name[p[1]] = 0;				
+			diff_name.assign(reinterpret_cast<const char*>(p + 2), p[1]);
 		}
 		break;
 	}
@@ -1183,7 +1166,7 @@ bool BackupManager::actualize_state() throw() {
 			adjust_state_lock->leave();
 #endif
 			Firebird::stuff_exception(status, ex);
-			gds__log_status(diff_name, status);
+			gds__log_status(diff_name.c_str(), status);
 			return false;
 		}
 #ifdef SUPERSERVER
@@ -1195,3 +1178,10 @@ bool BackupManager::actualize_state() throw() {
 	return true;
 }
 
+void BackupManager::shutdown(thread_db* tdbb) 
+{
+	if (diff_file)
+		PIO_close(diff_file);
+	shutdown_locks(tdbb);
+	delete this;
+}

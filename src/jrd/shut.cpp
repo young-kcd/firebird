@@ -26,6 +26,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"
 #include "../jrd/ibase.h"
+#include "../jrd/nbak.h"
 #include "../jrd/ods.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -550,7 +551,7 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 			LCK_release(tdbb, dbb->dbb_retaining_lock);
 		if (dbb->dbb_lock)
 			LCK_release(tdbb, dbb->dbb_lock);
-		dbb->backup_manager->shutdown_locks();
+		dbb->dbb_backup_manager->shutdown_locks(tdbb);
 		dbb->dbb_ast_flags |= DBB_shutdown_locks;
 	}
 

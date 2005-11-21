@@ -58,6 +58,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/blb.h"
 #include "../jrd/lck.h"
+#include "../jrd/nbak.h"
 #include "../jrd/scl.h"
 #include "../jrd/license.h"
 #include "../jrd/os/pio.h"
@@ -793,7 +794,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		
 		// Initialize backup difference subsystem. This must be done before WAL and shadowing
 		// is enabled because nbackup it is a lower level subsystem
-		dbb->backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(dbb, nbak_state_unknown);
+		dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_unknown);
 		
 		PAG_init2(0);		
 		
@@ -1267,7 +1268,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	JRD_SS_MUTEX_UNLOCK;
 	
 	// Recover database after crash during backup difference file merge
-	dbb->backup_manager->end_backup(true/*do recovery*/); 
+	dbb->dbb_backup_manager->end_backup(tdbb, true/*do recovery*/); 
 	
 	*handle = attachment;	
 
@@ -1966,7 +1967,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	
 	// Initialize backup difference subsystem. This must be done before WAL and shadowing
 	// is enabled because nbackup it is a lower level subsystem
-	dbb->backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(dbb, nbak_state_normal); 
+	dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_normal); 
 	
 	PAG_format_header();
 	INI_init2();
@@ -5948,7 +5949,8 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 #endif
 	CMP_fini(tdbb);
 	CCH_fini(tdbb);
-	delete dbb->backup_manager;
+	if (dbb->dbb_backup_manager)
+		dbb->dbb_backup_manager->shutdown(tdbb);
 	// FUN_fini(tdbb);
 
 	if (dbb->dbb_shadow_lock)

@@ -33,7 +33,6 @@
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
 #include "../jrd/all.h"
-#include "../jrd/nbak.h"
 #include "../jrd/btn.h"
 #include "../jrd/all.h"
 #include "../jrd/jrd_proto.h"
@@ -121,6 +120,7 @@ class jrd_file;
 class Format;
 class jrd_nod;
 class BufferControl;
+class BackupManager;
 class SparseBitmap;
 class BlockingThread;
 class jrd_rel;
@@ -270,7 +270,7 @@ public:
 //	struct wal *dbb_wal;		/* WAL handle for WAL API */
 	TxPageCache*	dbb_tip_cache;	/* cache of latest known state of all transactions in system */
 	vcl*		dbb_pc_transactions;	/* active precommitted transactions */
-	class BackupManager *backup_manager; /* physical backup manager */
+	BackupManager *dbb_backup_manager; /* physical backup manager */
 	Symbol*	dbb_hash_table[HASH_SIZE];	/* keep this at the end */
 
 private:
