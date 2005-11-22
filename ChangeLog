@@ -1,3 +1,38 @@
+2005-11-22 00:52  hvlad
+
+	* firebird2/src/: dsql/hsh.cpp (1.30), jrd/jrd.h (1.140):
+	
+	Enlarged dsql and jrd hash tables sizes
+
+2005-11-22 00:33  hvlad
+
+	* firebird2/src/jrd/: cch.cpp (1.121), dfw.epp (1.165), jrd.cpp
+	(1.226), jrd.h (1.139), nbak.cpp (1.50), nbak.h (1.17), shut.cpp
+	(1.34):
+	
+	Eliminate unnecessary JRD_get_thread_data call in nbak.  Checked
+	against B2_0_BV_Stable3 branch
+
+2005-11-21 18:58  hvlad
+
+	* firebird2/src/dsql/parse.cpp (1.169):
+	
+	Regenerated parser files after parse.y change
+
+2005-11-21 18:57  hvlad
+
+	* firebird2/src/dsql/parse.y (1.196):
+	
+	Fixed issue with parser and not correctly stored source for DEFAULT
+	CURRENT_TIME\DEFAULT CURRENT_TIMESTAMP
+
+2005-11-21 18:55  hvlad
+
+	* firebird2/src/jrd/met.epp (1.172):
+	
+	Fixed unregistered bug with DROP DEFAULT reported in fb-devel by
+	"Robert"
+
 2005-11-20 18:02  alexpeshkoff
 
 	* firebird2/src/remote/interface.cpp (1.105):
