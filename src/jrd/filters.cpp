@@ -141,7 +141,7 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
 		return string_filter(action, control);
 
 /* Initialize for retrieval */
-	UCHAR buffer[512];
+	UCHAR buffer[BUFFER_MEDIUM];
 	const SLONG l = control->ctl_handle->ctl_total_length;
 	UCHAR* const temp =
 		(l <= (SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
@@ -154,7 +154,7 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
 	const ISC_STATUS status =
 		caller(isc_blob_filter_get_segment, control, (USHORT) l, temp, &length);
 		
-	TEXT line[256];
+	TEXT line[BUFFER_SMALL];
 
 	if (!status) {
 		sprintf(line, "ACL version %d", (int) *p++);
@@ -224,7 +224,7 @@ ISC_STATUS filter_blr(USHORT action, BlobControl* control)
 		return string_filter(action, control);
 
 /* Initialize for retrieval */
-	UCHAR buffer[512];
+	UCHAR buffer[BUFFER_MEDIUM];
 	const SLONG l = 1 + control->ctl_handle->ctl_total_length;
 	UCHAR* const temp =
 		(l <= (SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
@@ -346,7 +346,7 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 	}
 
 /* Loop thru descriptors looking for one with a data type */
-	UCHAR temp[256];
+	UCHAR temp[BUFFER_SMALL];
 	UCHAR* buff = temp;
 	const USHORT buff_len = sizeof(temp);
 	control->ctl_data[3] = 8;
@@ -1005,7 +1005,7 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 		return string_filter(action, control);
 
 /* Initialize for retrieval */
-	UCHAR buffer[512];
+	UCHAR buffer[BUFFER_MEDIUM];
 	const SLONG l = control->ctl_handle->ctl_total_length;
 	UCHAR* const temp =
 		(l <= (SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
@@ -1019,7 +1019,7 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 		caller(isc_blob_filter_get_segment, control, (USHORT) l, temp, &length);
 
 	if (!status) {
-        TEXT line[256];
+        TEXT line[BUFFER_SMALL];
 		sprintf(line, "Transaction description version: %d", (int) *p++);
 		string_put(control, line);
 		TEXT* out = line;
@@ -1112,11 +1112,11 @@ static void dump_blr(void* arg, SSHORT offset, const char* line)
  *
  **************************************/
 	BlobControl* control = static_cast<BlobControl*>(arg);
-	TEXT buffer[256];
+	TEXT buffer[BUFFER_SMALL];
 
 	const SLONG l = (USHORT) control->ctl_data[3] + strlen(line);
 	TEXT* const temp = (l < (SLONG) sizeof(buffer)) ?
-		buffer : (TEXT*) gds__alloc((SLONG) l);
+		buffer : (TEXT*) gds__alloc((SLONG) l + 1);
 /* FREE: at procedure exit */
 	if (!temp) {				/* NOMEM: */
 		/* No memory left - ignore the padding spaces and put the data */

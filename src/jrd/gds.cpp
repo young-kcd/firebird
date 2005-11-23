@@ -225,7 +225,16 @@ struct gds_ctl
 	void* ctl_user_arg;			/* User argument */
 	TEXT* ctl_ptr;
 	SSHORT ctl_language;
-	TEXT ctl_buffer[PRETTY_BUFFER_SIZE];
+	TEXT* ctl_buffer;
+
+	gds_ctl()
+	{
+		ctl_buffer = (TEXT*) gds__alloc(PRETTY_BUFFER_SIZE * 1024);
+	}
+	~gds_ctl()
+	{
+		gds__free(ctl_buffer);
+	}
 };
 
 #ifdef DEV_BUILD
