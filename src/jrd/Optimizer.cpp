@@ -1062,6 +1062,7 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node,
 			int fieldStream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 			// dimitr: OLD/NEW contexts shouldn't create any stream dependencies
 			if (fieldStream != stream &&
+				(csb->csb_rpt[fieldStream].csb_flags & csb_active) &&
 				!(csb->csb_rpt[fieldStream].csb_flags & csb_trigger))
 			{
 				size_t pos;
@@ -1076,7 +1077,9 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node,
 		case nod_dbkey:
 		{
 			int keyStream = (USHORT)(IPTR) node->nod_arg[0];
-			if (keyStream != stream) {
+			if (keyStream != stream &&
+				(csb->csb_rpt[keyStream].csb_flags & csb_active))
+			{
 				size_t pos;
 				if (!streamList->find(keyStream, pos)) {
 					streamList->add(keyStream);
