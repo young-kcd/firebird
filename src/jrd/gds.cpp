@@ -223,18 +223,8 @@ struct gds_ctl
 	const UCHAR* ctl_blr_start;		/* Original start of blr string */
 	FPTR_PRINT_CALLBACK ctl_routine; /* Call back */
 	void* ctl_user_arg;			/* User argument */
-	TEXT* ctl_ptr;
 	SSHORT ctl_language;
-	TEXT* ctl_buffer;
-
-	gds_ctl()
-	{
-		ctl_buffer = (TEXT*) gds__alloc(PRETTY_BUFFER_SIZE * 1024);
-	}
-	~gds_ctl()
-	{
-		gds__free(ctl_buffer);
-	}
+	Firebird::string ctl_string;
 };
 
 #ifdef DEV_BUILD
@@ -318,7 +308,7 @@ static struct
 /* BLR Pretty print stuff */
 
 #define BLR_BYTE	*(control->ctl_blr)++
-#define PUT_BYTE(byte)	*(control->ctl_ptr)++ = byte
+#define PUT_BYTE(byte)	control->ctl_string += byte
 
 const int op_line		= 1;
 const int op_verb		= 2;
@@ -2169,7 +2159,6 @@ int API_ROUTINE gds__print_blr(
 	control->ctl_routine = routine;
 	control->ctl_user_arg = user_arg;
 	control->ctl_blr = control->ctl_blr_start = blr;
-	control->ctl_ptr = control->ctl_buffer;
 	control->ctl_language = language;
 
 	const SSHORT version = BLR_BYTE;
@@ -2882,10 +2871,10 @@ static void blr_format(gds_ctl* control, const char* string, ...)
 	va_list ptr;
 
 	va_start(ptr, string);
-	vsprintf(control->ctl_ptr, string, ptr);
+	Firebird::string temp;
+	temp.vprintf(string, ptr);
+	control->ctl_string += temp;
 	va_end(ptr);
-	while (*control->ctl_ptr)
-		control->ctl_ptr++;
 }
 
 
@@ -3240,10 +3229,9 @@ static SLONG blr_print_line(gds_ctl* control, SSHORT offset)
  *
  **************************************/
 
-	*control->ctl_ptr = 0;
-
-	(*control->ctl_routine)(control->ctl_user_arg, offset, control->ctl_buffer);
-	control->ctl_ptr = control->ctl_buffer;
+	(*control->ctl_routine)(control->ctl_user_arg, offset,
+							control->ctl_string.c_str());
+	control->ctl_string.erase();
 
 	return control->ctl_blr - control->ctl_blr_start;
 }
