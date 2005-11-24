@@ -350,8 +350,7 @@ USHORT PAR_desc(CompilerScratch* csb, DSC* desc)
 		break;
 #endif
 
-	default:
-		if (dtype == blr_blob2)
+	case blr_blob2:
 		{
 			desc->dsc_dtype = dtype_blob;
 			desc->dsc_length = sizeof(ISC_QUAD);
@@ -363,6 +362,7 @@ USHORT PAR_desc(CompilerScratch* csb, DSC* desc)
 			break;
 		}
 
+	default:
 		error(csb, isc_datnotsup, 0);
 	}
 
