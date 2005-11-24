@@ -2313,7 +2313,10 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 
 		do {
 			if (!xdr_protocol(&main_port->port_receive, packet))
-				return NULL;
+			{
+				packet->p_operation = op_exit;
+				break;
+			}
 #ifdef DEBUG
 			{
 				static ULONG op_rec_count = 0;
