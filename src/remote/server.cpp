@@ -456,9 +456,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 	  finished:
 		;
 	}
-/* We should never get to this point */
-
-	THREAD_EXIT();
 
 	}	// try
 	catch (const std::exception&)
@@ -528,14 +525,9 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		 * The likely error here is out-of-memory.
 		 */
 		gds__log("SRVR_multi_thread: error during startup, shutting down");
-
-		REM_restore_thread_data();
-		THREAD_EXIT();
-		return;
 	}
 
-
-/* Why isn't this inside the #endif above? */
+	THREAD_EXIT();
 	REM_restore_thread_data();
 #endif
 }
@@ -3241,10 +3233,7 @@ bool process_packet(rem_port* port,
 		if (port && port->port_state == state_broken) {
 			if (!port->port_parent) {
 				gds__log("SERVER/process_packet: broken port, server exiting", 0);
-				if (port->port_type == port_inet)
-					port->disconnect();
-				else
-					port->disconnect(sendL, receive);
+				port->disconnect(sendL, receive);
 				ThreadData::restoreSpecific();
 				return false;
 			}
@@ -3255,8 +3244,6 @@ bool process_packet(rem_port* port,
 		if (result)
 			*result = port;
 
-		ThreadData::restoreSpecific();
-	
 	}	// try
 	catch (const std::exception& ex) {
 		// NS: trdb_status_vector is usually NULL at this point.
@@ -3285,6 +3272,7 @@ bool process_packet(rem_port* port,
 		return false;
 	}
 
+	ThreadData::restoreSpecific();
 	return true;
 }
 
