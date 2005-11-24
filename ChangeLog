@@ -1,3 +1,24 @@
+2005-11-23 21:18  dimitr
+
+	* firebird2/src/jrd/: filters.cpp (1.46), gds.cpp (1.177):
+	
+	1. Fixed memory corruption in filters.cpp 2. Increased internal
+	buffer in gds.cpp to avoid overflows 3. Made this buffer
+	dynamically allocated to avoid stack corruptions 4. Minor cleanup
+
+2005-11-23 15:22  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.44):
+	
+	Fixed wrong optimization of join orders.
+
+2005-11-23 10:23  kkuznetsov
+
+	* firebird2/builds/install/arch-specific/solx86gcc/CS/prototype.in
+	(1.4):
+	
+	Some more updates
+
 2005-11-22 00:52  hvlad
 
 	* firebird2/src/: dsql/hsh.cpp (1.30), jrd/jrd.h (1.140):
