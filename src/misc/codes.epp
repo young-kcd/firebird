@@ -262,9 +262,6 @@ static const SCHAR *ftn_boiler_plate_decls[] = {
 	"",
 };
 
-static const SCHAR sql_code_boiler_plate[] =
-	"static const SSHORT gds__sql_code [] = {";
-
 
 int CLIB_ROUTINE main( int argc, char *argv[])
 {
@@ -764,8 +761,10 @@ static void build_other_headers(void)
 
 /* Start the MSGS file */
 
-	fprintf(msgs, "static const SCHAR * const messages[] = {\n");
-	fprintf(msgs, "\t\"unassigned code\",\n");
+	fprintf(msgs, "static const struct {\n");
+	fprintf(msgs, "\tSLONG code_number;\n");
+	fprintf(msgs, "\tconst SCHAR *code_text;\n");
+	fprintf(msgs, "} messages[] = {\n");
 
 /* Fetch error codes from SYSTEM_ERRORS relation.  Write them
    out to the pascal, fortran, and rdb header files */
@@ -810,12 +809,10 @@ static void build_other_headers(void)
 		      q++;
 		*q = 0;
 
-		// CVC: Restore this line if something strange happen.
-		//fprintf(msgs, "\t\"%s\",\t\t/*%d, %-32.32s*/\n",
-		fprintf(msgs, "\t\"%s\",\t\t/* %d, %s */\n",
-				   text, code, S.GDS_SYMBOL);
-				   
-		fprintf(code_text, "\t{\"%s\", %lu},\n", S.GDS_SYMBOL, new_code);
+		fprintf(code_text, "\t{\"%s\", %lu},\n",
+				S.GDS_SYMBOL, new_code);
+		fprintf(msgs, "\t{%lu, \"%s\"},\t\t/* %d, %s */\n",
+				new_code, text, code, S.GDS_SYMBOL);
 		++code;
 
 	END_FOR;
@@ -826,9 +823,8 @@ static void build_other_headers(void)
 	fprintf(code_text, "\t{NULL, 0}\n");
 	fprintf(code_text, "};\n");
 /* end the msgs.h */
-	fprintf(msgs, "\t0\t\t\t\t\t\t/* Null entry to terminate list */\n");
+	fprintf(msgs, "\t{0, NULL}\n");
 	fprintf(msgs, "};\n");
-
 
 	check_close(pas_codes, CODES_PAS, "tmpcode4", "w", genFtnPasDirectory);
 	check_close(ftn_codes, CODES_FTN, "tmpcode5", "w", genFtnPasDirectory);
@@ -842,12 +838,15 @@ static void build_other_headers(void)
 	check_open(sql_codes, SQL_CODES_H, "tmpcode9", "w");
 	add_text(sql_codes, CSTYLE, license);
 	add_text(sql_codes, CSTYLE, warn);
-	fprintf(sql_codes, "%s\n", sql_code_boiler_plate);
-	
+
+	fprintf(sql_codes, "static const struct {\n");
+	fprintf(sql_codes, "\tSLONG gds_code;\n");
+	fprintf(sql_codes, "\tSSHORT sql_code;\n");
+	fprintf(sql_codes, "} gds__sql_code[] = {\n");
+
 	const int DEFAULT_SQL_CODE = -999;	// InterBase error
 
 	i = 0;
-	fprintf(sql_codes, "%4d /* No Error */", 0);
 	FOR E IN SYSTEM_ERRORS SORTED BY E.FAC_CODE, E.NUMBER
 		// The only facility that is guaranteed to have all codes
 		// in system errors is JRD
@@ -859,20 +858,22 @@ static void build_other_headers(void)
 						   E.NUMBER);
 		}
 		i = E.NUMBER;
-		fprintf(sql_codes, ",\n");
+
+		new_code = ENCODE_ISC_MSG(E.NUMBER, E.FAC_CODE);
 		if (E.SQL_CODE.NULL)
 		{
-			fprintf(sql_codes, "%4d /* %3d %-32.32s (default) */",
-						DEFAULT_SQL_CODE, E.NUMBER, E.GDS_SYMBOL);
+			fprintf(sql_codes, "\t{%lu, %4d}, /* %3d %-32.32s (default) */\n",
+					new_code, DEFAULT_SQL_CODE, E.NUMBER, E.GDS_SYMBOL);
 		}
 		else {
-			fprintf(sql_codes, "%4d /* %3d %-32.32s */",
-						(int) E.SQL_CODE, E.NUMBER, E.GDS_SYMBOL);
+			fprintf(sql_codes, "\t{%lu, %4d}, /* %3d %-32.32s */\n",
+					new_code, (int) E.SQL_CODE, E.NUMBER, E.GDS_SYMBOL);
 		}
 	END_FOR;
 
 	--code;
-	fprintf(sql_codes, "\n};\n");
+	fprintf(sql_codes, "\t{0, 0}\n");
+	fprintf(sql_codes, "};\n");
 	check_close(sql_codes, SQL_CODES_H, "tmpcode9", "w", genDirectory);
 }
 
