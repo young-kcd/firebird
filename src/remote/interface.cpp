@@ -98,7 +98,7 @@ const USHORT OSTYPE_WIN_95	= 2;
 const char* ISC_USER		= "ISC_USER";
 const char* ISC_PASSWORD	= "ISC_PASSWORD";
 const int MAX_USER_LENGTH	= 33;
-#define MAX_OTHER_PARAMS	(1 + 1 + sizeof(port->port_dummy_packet_interval))
+const int MAX_OTHER_PARAMS	= 1 + 1 + sizeof(((rem_port*)NULL)->port_dummy_packet_interval);
 
 static RVNT add_event(rem_port*);
 static void add_other_params(rem_port*, UCHAR*, USHORT*);
@@ -122,7 +122,7 @@ static void enqueue_receive(rem_port*,
 							t_rmtque_fn,
 							RDB, void*, rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
-static ISC_STATUS error(ISC_STATUS *);
+static ISC_STATUS error(const ISC_STATUS*);
 static ISC_STATUS error(ISC_STATUS* user_status, const std::exception& ex);
 #ifndef MULTI_THREAD
 static void event_handler(rem_port*);
@@ -285,7 +285,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	try {
 		Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb),
                                                dpb_length, isc_dpb_version1);
-		rem_port* port = 0; // MAX_OTHER_PARAMS uses port's port_dummy_packet_interval
 
 		Firebird::string user_string;
 		const bool user_verification = get_new_dpb(newDpb, user_string);
@@ -294,7 +293,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 		Firebird::PathName expanded_name(expanded_filename);
 		Firebird::PathName node_name;
-		port = analyze(expanded_name, user_status, us, user_verification, 
+		rem_port* port = analyze(expanded_name, user_status, us, user_verification,
 					   reinterpret_cast<const SCHAR*>(newDpb.getBuffer()), 
 					   newDpb.getBufferLength(), node_name);
 		if (!port)
@@ -846,7 +845,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	
 	try
 	{
-		rem_port* port;
 		Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb),
                                                dpb_length, isc_dpb_version1);
 		Firebird::string user_string;
@@ -855,7 +853,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		Firebird::PathName expanded_name(expanded_filename);
 		Firebird::PathName node_name;
-		port = analyze(expanded_name, user_status, us,
+		rem_port* port = analyze(expanded_name, user_status, us,
 					   user_verification, dpb, dpb_length, node_name);
 		if (!port) {
 			return error(user_status);
@@ -3809,7 +3807,6 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	*v++ = isc_unavailable;
 	*v = isc_arg_end;
 
-	rem_port* port;
 	UCHAR new_spb[MAXPATHLEN];
 	UCHAR* new_spb_ptr = new_spb;
 	if ((spb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
@@ -3836,7 +3833,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 	const TEXT* us = (user_string[0]) ? user_string : 0;
 
-	port = analyze_service(expanded_name, user_status, us,
+	rem_port* port = analyze_service(expanded_name, user_status, us,
 						 user_verification, spb, spb_length);
 	if (!port) {
 		if (new_spb_ptr != new_spb)
@@ -4536,7 +4533,7 @@ static void add_other_params( rem_port* port, UCHAR* spb, USHORT* length)
  **************************************
  *
  * Functional description
- *	Add parameters to a dpb or spb to describe client-side
+ *	Add parameters to a spb to describe client-side
  *	settings that the server should know about.  
  *	Currently only dummy_packet_interval.
  *	Note: caller must ensure enough spare space is available at the end of 
@@ -5371,7 +5368,7 @@ static REM_MSG dump_cache(
 #endif
 
 
-static ISC_STATUS error( ISC_STATUS * user_status)
+static ISC_STATUS error( const ISC_STATUS* user_status)
 {
 /**************************************
  *
@@ -5762,6 +5759,7 @@ static bool get_new_spb(const UCHAR*	spb,
 	return result;
 }
 
+
 static bool get_new_dpb(Firebird::ClumpletWriter& dpb, Firebird::string& user_string)
 {
 /**************************************
@@ -5934,7 +5932,6 @@ static ISC_STATUS info(
 	return rdb->rdb_status_vector[1];
 }
 
-#include <ctype.h>
 
 static bool init(ISC_STATUS* user_status,
 				 rem_port* port,
