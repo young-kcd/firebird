@@ -911,15 +911,24 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 								bufsize, s, args[0], args[1], args[2], args[3],
 								args[4]) < 0)
 			{
-				if ((decoded < FB_NELEM(messages) - 1) && (decoded >= 0))
-					if (legacy)
-						sprintf(s, messages[decoded], args[0], args[1], args[2],
-								args[3], args[4]);
-					else
-						fb_utils::snprintf(s, bufsize, messages[decoded], args[0], args[1], args[2],
-								args[3], args[4]);
-				else
+				bool found = false;
+
+				for (int i = 0; messages[i].code_number; ++i) {
+					if (code == messages[i].code_number) {
+						if (legacy)
+							sprintf(s, messages[i].code_text,
+									args[0], args[1], args[2], args[3], args[4]);
+						else
+							fb_utils::snprintf(s, bufsize, messages[i].code_text,
+									args[0], args[1], args[2], args[3], args[4]);
+						found = true;
+						break;
+					}
+				}
+
+				if (!found) {
 					sprintf(s, "unknown ISC error %ld", code);	/* TXNN */
+				}
 			}
 		}
 		break;
@@ -2321,15 +2330,16 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 			if (!have_sqlcode) {
 				/* Now check the hard-coded mapping table of gds_codes to
 				   sql_codes */
-				USHORT fac = 0, dummy_class = 0;
+				const SLONG gdscode = status_vector[1];
 
-				const USHORT code = (USHORT) gds__decode(status_vector[1], &fac, &dummy_class);
-
-				if ((code < FB_NELEM(gds__sql_code)) &&
-					(gds__sql_code[code] != GENERIC_SQLCODE))
-				{
-					sqlcode = gds__sql_code[code];
-					have_sqlcode = true;
+				for (int i = 0; gds__sql_code[i].gds_code; ++i) {
+					if (gdscode == gds__sql_code[i].gds_code) {
+						if (gds__sql_code[i].sql_code != GENERIC_SQLCODE) {
+							sqlcode = gds__sql_code[i].sql_code;
+							have_sqlcode = true;
+						}
+						break;
+					}
 				}
 			}
 			s++;
