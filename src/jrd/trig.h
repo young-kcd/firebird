@@ -82,15 +82,15 @@ struct gen
 
 static const Jrd::gen generators[] =
 {
-	{ "RDB$SECURITY_CLASS", 0, NULL },
-	{ "SQL$DEFAULT", 0, NULL },
-	{ "RDB$PROCEDURES", 0, "Procedure ID" },
-	{ "RDB$EXCEPTIONS", 0, "Exception ID" },
-	{ "RDB$CONSTRAINT_NAME", 0, "Implicit constraint name" },
-	{ "RDB$FIELD_NAME", 0, "Implicit domain name" },
-	{ "RDB$INDEX_NAME", 0, "Implicit index name" },
-	{ "RDB$TRIGGER_NAME", 0, "Implicit trigger name" },
-	{ "RDB$BACKUP_HISTORY", 0, "Nbackup technology" },
+	{ "RDB$SECURITY_CLASS", 1, NULL },
+	{ "SQL$DEFAULT", 2, NULL },
+	{ "RDB$PROCEDURES", 3, "Procedure ID" },
+	{ "RDB$EXCEPTIONS", 4, "Exception ID" },
+	{ "RDB$CONSTRAINT_NAME", 5, "Implicit constraint name" },
+	{ "RDB$FIELD_NAME", 6, "Implicit domain name" },
+	{ "RDB$INDEX_NAME", 7, "Implicit index name" },
+	{ "RDB$TRIGGER_NAME", 8, "Implicit trigger name" },
+	{ "RDB$BACKUP_HISTORY", 9, "Nbackup technology" },
 	{ 0, 0, NULL }
 };
 

@@ -378,6 +378,10 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	}
 	CMP_release(tdbb, handle1);
 
+// Adjust the value of the hidden generator RDB$GENERATORS
+
+	DPM_gen_id(tdbb, 0, true, FB_NELEM(generators) - 1);
+
 /* store system-defined triggers */
 
 	handle1 = NULL;
