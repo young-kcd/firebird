@@ -267,6 +267,10 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		return;
 	}
 
+	if (relation->rel_name.length() == 0) {
+		relation = MET_lookup_relation_id(tdbb, relation->rel_id, false);
+	}
+
 	jrd_req* request = CMP_find_request(tdbb, irq_l_exp_index, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
