@@ -844,22 +844,14 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (field->nod_type != nod_field)
-		BUGCHECK(199);			/* msg 199 expected field node */
-
 	if (from_desc->dsc_dtype != dtype_quad
 		&& from_desc->dsc_dtype != dtype_blob)
 	{
 		ERR_post(isc_convert_error, isc_arg_string, "BLOB", 0);
 	}
 
-	jrd_req* request = tdbb->tdbb_request;
 	bid* source = (bid*) from_desc->dsc_address;
 	bid* destination = (bid*) to_desc->dsc_address;
-	const USHORT id = (USHORT) (IPTR) field->nod_arg[e_fld_id];
-	record_param* rpb = &request->req_rpb[(IPTR)field->nod_arg[e_fld_stream]];
-	jrd_rel* relation = rpb->rpb_relation;
-	Record* record = rpb->rpb_record;
 
 /* If nothing changed, do nothing.  If it isn't broken,
    don't fix it. */
@@ -868,6 +860,26 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	{
 		return;
 	}
+
+/* If the target node is not a field, just copy the blob id
+   and return. */
+
+	switch (field->nod_type) {
+		case nod_field:
+			break;
+		case nod_argument:
+		case nod_variable:
+			*destination = *source;
+			return;
+		default:
+			BUGCHECK(199);			/* msg 199 expected field node */
+	}
+
+	jrd_req* request = tdbb->tdbb_request;
+	const USHORT id = (USHORT) (IPTR) field->nod_arg[e_fld_id];
+	record_param* rpb = &request->req_rpb[(IPTR)field->nod_arg[e_fld_stream]];
+	jrd_rel* relation = rpb->rpb_relation;
+	Record* record = rpb->rpb_record;
 
 /* If either the source value is null or the blob id itself is null (all
    zeros, then the blob is null. */
