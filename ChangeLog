@@ -1,3 +1,48 @@
+2005-11-24 15:03  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.145):
+	
+	Fixed cleanup of the broken port in classic. Let's always close the
+	connection properly.
+
+2005-11-24 13:15  dimitr
+
+	* firebird2/src/remote/server.cpp (1.108):
+	
+	Fixed a couple of issues in the port cleanup logic: - improper
+	thread data operations - no rollback for a broken INET port
+
+2005-11-24 12:53  dimitr
+
+	* firebird2/src/jrd/gds.cpp (1.179):
+	
+	Fixed builtin lookups for error messages and SQLCODEs. 
+	IMPORTANT!!! You have to rebuild the tree from scratch!
+
+2005-11-24 12:51  dimitr
+
+	* firebird2/src/misc/codes.epp (1.18):
+	
+	Fixed builtin lookups for error messages and SQLCODEs.
+
+2005-11-24 09:43  dimitr
+
+	* firebird2/src/jrd/par.cpp (1.122):
+	
+	Misc.
+
+2005-11-24 09:34  dimitr
+
+	* firebird2/src/jrd/gds.cpp (1.178):
+	
+	Reworked the BLR printer to use Firebird::string as its buffer.
+
+2005-11-24 05:03  robocop
+
+	* firebird2/src/remote/interface.cpp (1.106):
+	
+	Misc.
+
 2005-11-23 21:18  dimitr
 
 	* firebird2/src/jrd/: filters.cpp (1.46), gds.cpp (1.177):
