@@ -1950,7 +1950,12 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 						}
 					}
 					invCandidate->matches.join(matches);
-					return invCandidate;
+					if (acceptAll) {
+						continue;
+					}
+					else {
+						return invCandidate;
+					}
 				}
 		
 				// Look if a match is already used by previous matches.
@@ -1963,7 +1968,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					}
 				}
 
-				if (anyMatchAlreadyUsed) {
+				if (anyMatchAlreadyUsed && !acceptAll) {
 					currentInv->used = true;
 					// If a match on this index was already used by another 
 					// index, add also the other matches from this index.
@@ -2171,7 +2176,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 				}
 				if (invCandidate->unique) {
 					// Single unique full equal match is enough
-					break;
+					if (!acceptAll) break;
 				}
 			}
 			else {
