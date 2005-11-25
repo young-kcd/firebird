@@ -5836,10 +5836,6 @@ static void put_local_variable( dsql_req* request, dsql_var* variable,
 
 	const USHORT dtype = field->fld_dtype;
 
-	if (dtype == dtype_blob) {
-		field->fld_dtype = dtype_quad;
-	}
-
 	put_dtype(request, field, true);
 	field->fld_dtype = dtype;
 
@@ -5938,10 +5934,6 @@ static void put_msg_field( dsql_req* request, dsql_fld* field)
  **************************************/
 
 	const USHORT dtype = field->fld_dtype;
-
-	if (dtype == dtype_blob) {
-		field->fld_dtype = dtype_quad;
-	}
 
 	put_dtype(request, field, true);
 	field->fld_dtype = dtype;
