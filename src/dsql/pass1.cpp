@@ -4935,6 +4935,15 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 			break;
 
 		case nod_aggregate:
+		case nod_agg_average:
+		case nod_agg_count:
+		case nod_agg_max:
+		case nod_agg_min:
+		case nod_agg_total:
+		case nod_agg_average2:
+		case nod_agg_total2:
+		case nod_map:
+
 		case nod_derived_field:
 		case nod_dbkey:
 		case nod_field:
