@@ -1,3 +1,55 @@
+2005-11-25 16:39  hvlad
+
+	* firebird2/src/jrd/pcmet.epp (1.37):
+	
+	Fixed AV after incorrect expression index metadata loading in case
+	of not scanned relation
+
+2005-11-25 16:20  dimitr
+
+	* firebird2/src/jrd/: blb.cpp (1.101), evl.cpp (1.155):
+	
+	1) Prepare the blobs mover to be ready for dtype_blob variables. 
+	2) Fix the string routines to work with PSQL blobs.
+
+2005-11-25 15:58  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.166):
+	
+	Let's generate blr_blob2 for PSQL blobs instead of blr_quad.  This
+	allow PSQL blobs to carry the charset/collation attributes.
+
+2005-11-25 15:23  dimitr
+
+	* firebird2/src/jrd/: ini.epp (1.70), trig.h (1.16):
+	
+	Fixed corrupted IDs of system generators caused by my changes re.
+	system triggers loading.
+
+2005-11-25 13:49  arnobrinkman
+
+	* firebird2/src/jrd/Optimizer.cpp (1.45):
+	
+	Fix explicit PLAN issue with ODS11 optimizer
+
+2005-11-25 10:31  dimitr
+
+	* firebird2/src/jrd/os/win32/config_root.cpp (1.18):
+	
+	Disable usage of the registry to locate the root.
+
+2005-11-25 07:30  robocop
+
+	* firebird2/src/jrd/nav.cpp (1.50):
+	
+	Totally misc.
+
+2005-11-25 06:54  dimitr
+
+	* firebird2/src/include/gen/: msgs.h (1.45), sql_code.h (1.37):
+	
+	Damn, I'm much sorry.
+
 2005-11-24 15:03  dimitr
 
 	* firebird2/src/remote/inet.cpp (1.145):
