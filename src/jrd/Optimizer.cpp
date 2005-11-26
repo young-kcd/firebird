@@ -1953,9 +1953,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					if (acceptAll) {
 						continue;
 					}
-					else {
-						return invCandidate;
-					}
+
+					return invCandidate;
 				}
 		
 				// Look if a match is already used by previous matches.
@@ -2176,7 +2175,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 				}
 				if (invCandidate->unique) {
 					// Single unique full equal match is enough
-					if (!acceptAll) break;
+					if (!acceptAll)
+						break;
 				}
 			}
 			else {
