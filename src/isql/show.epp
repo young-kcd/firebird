@@ -51,6 +51,7 @@
 #include "../jrd/ods.h"
 #include "../isql/extra_proto.h"
 #include "../common/utils_proto.h"
+#include "../jrd/constants.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -1648,7 +1649,8 @@ static processing_state show_check(const SCHAR* object)
 		CHK IN RDB$CHECK_CONSTRAINTS WITH
 		TRG.RDB$TRIGGER_TYPE EQ 1 AND
 		TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME AND
-		CHK.RDB$TRIGGER_NAME STARTING WITH "CHECK" AND
+		//CHK.RDB$TRIGGER_NAME STARTING WITH "CHECK" AND
+		TRG.RDB$SYSTEM_FLAG EQ int(fb_sysflag_check_constraint) AND
 		TRG.RDB$RELATION_NAME EQ object
 		SORTED BY CHK.RDB$CONSTRAINT_NAME
 
@@ -3591,10 +3593,11 @@ static processing_state show_trigger(
 	if (!*object)
 	{
 		FOR TRG IN RDB$TRIGGERS CROSS REL IN RDB$RELATIONS
-			WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
-			TRG.RDB$RELATION_NAME = REL.RDB$RELATION_NAME AND
-			NOT (ANY CHK IN RDB$CHECK_CONSTRAINTS WITH
-				 TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME)
+			//WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
+			//NOT (ANY CHK IN RDB$CHECK_CONSTRAINTS WITH
+			//	 TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME)
+			WITH (TRG.RDB$SYSTEM_FLAG EQ 0 OR TRG.RDB$SYSTEM_FLAG MISSING) AND
+			TRG.RDB$RELATION_NAME = REL.RDB$RELATION_NAME
 			SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_NAME
 
 			if (first)
@@ -3640,23 +3643,24 @@ static processing_state show_trigger(
 
 	FOR TRG IN RDB$TRIGGERS WITH
 		(TRG.RDB$RELATION_NAME EQ relationName OR
-		 TRG.RDB$TRIGGER_NAME EQ triggerName)
+			TRG.RDB$TRIGGER_NAME EQ triggerName) AND
+		(TRG.RDB$SYSTEM_FLAG EQ 0 OR TRG.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_TYPE,
 		TRG.RDB$TRIGGER_SEQUENCE, TRG.RDB$TRIGGER_NAME;
 
-		bool skip = false;
+		//bool skip = false;
 		// Skip triggers for check constraints
-		FOR FIRST 1 CHK IN RDB$CHECK_CONSTRAINTS WITH
-			TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME
-			skip = true;
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg (isc_status);
-			return ps_ERR;
-		END_ERROR;
+		//FOR FIRST 1 CHK IN RDB$CHECK_CONSTRAINTS WITH
+		//	TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME
+		//	skip = true;
+		//END_FOR
+		//ON_ERROR
+		//	ISQL_errmsg (isc_status);
+		//	return ps_ERR;
+		//END_ERROR;
 
-		if (skip)
-			continue;
+		//if (skip)
+		//	continue;
 		fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
 		fb_utils::exact_name(TRG.RDB$RELATION_NAME);
 

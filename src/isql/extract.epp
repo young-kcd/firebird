@@ -55,6 +55,7 @@
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
 #include "../common/utils_proto.h"
+#include "../jrd/constants.h"
 
 DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
 
@@ -1151,9 +1152,10 @@ static void list_all_triggers()
    source that are not part of an SQL constraint */
 
 	FOR TRG IN RDB$TRIGGERS CROSS REL IN RDB$RELATIONS OVER RDB$RELATION_NAME
-		WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
-		NOT (ANY CHK IN RDB$CHECK_CONSTRAINTS WITH
-		TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME)
+		//WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
+		//NOT (ANY CHK IN RDB$CHECK_CONSTRAINTS WITH
+		//TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME)
+		WITH (TRG.RDB$SYSTEM_FLAG EQ 0 OR TRG.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_TYPE,
 			TRG.RDB$TRIGGER_SEQUENCE, TRG.RDB$TRIGGER_NAME
 
@@ -1173,7 +1175,7 @@ static void list_all_triggers()
 			TRG.RDB$TRIGGER_INACTIVE = 0;
 
 		//  If trigger is not SQL put it in comments 
-		if (TRG.RDB$FLAGS != TRG_sql)
+		if (!(TRG.RDB$FLAGS & TRG_sql))
 			isqlGlob.printf("/* ");
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -1199,7 +1201,7 @@ static void list_all_triggers()
 		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
 		isqlGlob.printf(NEWLINE);
 
-		if (TRG.RDB$FLAGS != TRG_sql)
+		if (!(TRG.RDB$FLAGS & TRG_sql))
 		{
 			isqlGlob.printf("*/%s", NEWLINE);
 		}
@@ -1236,9 +1238,11 @@ static void list_check()
 	FOR TRG IN RDB$TRIGGERS CROSS
 		CHK IN RDB$CHECK_CONSTRAINTS WITH
 		TRG.RDB$TRIGGER_TYPE EQ 1 AND
+		TRG.RDB$SYSTEM_FLAG EQ int(fb_sysflag_check_constraint) AND
 		TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME AND
 		(ANY RELC IN RDB$RELATION_CONSTRAINTS WITH
-		CHK.RDB$CONSTRAINT_NAME EQ RELC.RDB$CONSTRAINT_NAME)
+		CHK.RDB$CONSTRAINT_NAME EQ RELC.RDB$CONSTRAINT_NAME
+		AND RELC.RDB$CONSTRAINT_TYPE EQ "CHECK")
 		REDUCED TO CHK.RDB$CONSTRAINT_NAME
 		SORTED BY CHK.RDB$CONSTRAINT_NAME
 
