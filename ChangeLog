@@ -1,3 +1,15 @@
+2005-11-26 17:15  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.249):
+	
+	Add missing nodes to sub-select detection
+
+2005-11-26 10:10  robocop
+
+	* firebird2/src/jrd/Optimizer.cpp (1.46):
+	
+	Misc.
+
 2005-11-25 16:39  hvlad
 
 	* firebird2/src/jrd/pcmet.epp (1.37):
