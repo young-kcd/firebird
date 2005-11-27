@@ -651,7 +651,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 /* Check to make sure that the user accessing the database is either
  * SYSDBA or owner of the database */
 	
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertTag(isc_dpb_gstat_attach);
 
 	if (*username) {

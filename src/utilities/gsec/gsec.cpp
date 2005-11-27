@@ -283,7 +283,7 @@ int common_main(int argc,
 
 	if (! useServices) 
 	{
-		Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 		dpb.insertByte(isc_dpb_gsec_attach, 1); // not 0 - yes, I'm gsec
 
 		if (user_data->dba_user_name_entered) {

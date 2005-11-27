@@ -808,8 +808,8 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 							true);
 	}
 
-	Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb), 
-									dpb_length, isc_dpb_version1);
+	Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
+		reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
 
 	setLogin(newDpb);
 
@@ -1426,8 +1426,8 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 							true);
 	}
 
-	Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb), 
-									dpb_length, isc_dpb_version1);
+	Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
+			reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
 
 	setLogin(newDpb);
 

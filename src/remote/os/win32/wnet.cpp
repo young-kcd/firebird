@@ -137,7 +137,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 /* Pick up some user identification information */
 	TEXT buffer[128];
 	TEXT *p;
-	Firebird::ClumpletWriter user_id(false, MAX_DPB_SIZE);
+	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
 	ISC_get_user(buffer, 0, 0, 0, 0, 0, 0);
 	for (p = buffer; *p; p++) {
@@ -571,8 +571,8 @@ static int accept_connection( rem_port* port, P_CNCT * cnct)
 
 /* Pick up account and password, if given */
 
-	Firebird::ClumpletReader id(false, cnct->p_cnct_user_id.cstr_address,
-									   cnct->p_cnct_user_id.cstr_length);
+	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged, 
+			cnct->p_cnct_user_id.cstr_address, cnct->p_cnct_user_id.cstr_length);
 
 	for (id.rewind(); !id.isEof(); id.moveNext())
 	{

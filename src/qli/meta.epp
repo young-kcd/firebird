@@ -507,7 +507,7 @@ void MET_delete_database( DBB dbb)
 		password_length = strlen(QLI_default_password);
 	}
 
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	if (user_length) {
 		dpb.insertString(isc_dpb_user_name, user, user_length);
 	}
@@ -1366,7 +1366,7 @@ void MET_ready( qli_syntax* node, USHORT create_flag)
  *	fail, all fail.  Fair enough?
  *
  **************************************/
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	DBB temp = (DBB) node->syn_arg[0];
 

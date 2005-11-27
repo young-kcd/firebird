@@ -144,41 +144,6 @@ struct scalar_array_desc {
 
 #endif /* REQUESTER */
 
-
-/* Array description, "internal side" used by the engine. */
-// Renamed internal_array_desc to end the confusion.
-
-struct internal_array_desc {
-	UCHAR iad_version;			/* Array descriptor version number */
-	UCHAR iad_dimensions;		/* Dimensions of array */
-	USHORT iad_struct_count;	/* Number of struct elements */
-	USHORT iad_element_length;	/* Length of array element */
-	USHORT iad_length;			/* Length of array descriptor */
-	SLONG iad_count;			/* Total number of elements */
-	SLONG iad_total_length;		/* Total length of array */
-	struct iad_repeat {
-		OdsDesc iad_desc;		/* Element descriptor */
-		SLONG iad_length;		/* Length of "vector" element */
-		SLONG iad_lower;		/* Lower bound */
-		SLONG iad_upper;		/* Upper bound */
-	};
-	iad_repeat iad_rpt[1];
-};
-
-const int IAD_VERSION_1		= 1;
-
-/*
-inline int IAD_LEN(int count)
-{
-	if (!count)
-		count = 1;
-	return sizeof (internal_array_desc) + 
-		(count - 1) * sizeof (internal_array_desc::iad_repeat);
-}
-*/
-#define IAD_LEN(count)	(sizeof (internal_array_desc) + \
-	(count ? count - 1: count) * sizeof (internal_array_desc::iad_repeat))
-
 #ifndef REQUESTER
 
 // Sorry for the clumsy name, but in blk.h this is referred as array description.
@@ -188,7 +153,7 @@ inline int IAD_LEN(int count)
 // There was also confusion for the casual reader due to the presence of
 // the structure "slice" in sdl.h that was renamed array_slice.
 
-class ArrayField : public pool_alloc_rpt<internal_array_desc::iad_repeat, type_arr>
+class ArrayField : public pool_alloc_rpt<Ods::InternalArrayDesc::iad_repeat, type_arr>
 {
     public:
 	UCHAR*				arr_data;			/* Data block, if allocated */
@@ -201,7 +166,7 @@ class ArrayField : public pool_alloc_rpt<internal_array_desc::iad_repeat, type_a
 	ULONG				arr_temp_id;		// Temporary ID for open array inside the transaction
 
 	// Keep this field last as it is C-style open array !
-	internal_array_desc	arr_desc;			/* Array descriptor. ! */
+	Ods::InternalArrayDesc	arr_desc;		/* Array descriptor. ! */
 };
 
 #endif /* REQUESTER */

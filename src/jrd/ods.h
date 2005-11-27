@@ -590,6 +590,52 @@ const UCHAR LOG_end			= HDR_end;
 //const int LOG_grp_cmt_wait	8	// Group commit wait time
 const int LOG_max			= 8;	// Maximum LOG_clump value
 
+// This (not exact) copy of class DSC is used to store descriptors on disk.
+// Hopefully it's binary layout is common for 32/64 bit CPUs.
+struct Descriptor
+{
+	UCHAR	dsc_dtype;
+	SCHAR	dsc_scale;
+	USHORT	dsc_length;
+	SSHORT	dsc_sub_type;
+	USHORT	dsc_flags;
+	ULONG	dsc_offset;
+};
+
+// Array description, "internal side" used by the engine.
+// And stored on the disk, in the relation summary blob.
+
+struct InternalArrayDesc {
+	UCHAR iad_version;			/* Array descriptor version number */
+	UCHAR iad_dimensions;		/* Dimensions of array */
+	USHORT iad_struct_count;	/* Number of struct elements */
+	USHORT iad_element_length;	/* Length of array element */
+	USHORT iad_length;			/* Length of array descriptor */
+	SLONG iad_count;			/* Total number of elements */
+	SLONG iad_total_length;		/* Total length of array */
+	struct iad_repeat {
+		Descriptor iad_desc;	/* Element descriptor */
+		SLONG iad_length;		/* Length of "vector" element */
+		SLONG iad_lower;		/* Lower bound */
+		SLONG iad_upper;		/* Upper bound */
+	};
+	iad_repeat iad_rpt[1];
+};
+
+const UCHAR IAD_VERSION_1		= 1;
+
+/*
+inline int IAD_LEN(int count)
+{
+	if (!count)
+		count = 1;
+	return sizeof (InternalArrayDesc) + 
+		(count - 1) * sizeof (InternalArrayDesc::iad_repeat);
+}
+*/
+#define IAD_LEN(count)	(sizeof (Ods::InternalArrayDesc) + \
+	(count ? count - 1: count) * sizeof (Ods::InternalArrayDesc::iad_repeat))
+
 } //namespace Ods
 
 #endif // JRD_ODS_H

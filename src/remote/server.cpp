@@ -131,6 +131,7 @@ static void		aux_connect(rem_port*, P_REQ*, PACKET*);
 #endif
 static void		aux_request(rem_port*, P_REQ*, PACKET*);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
+static void		addRemoteAddress(Firebird::ClumpletWriter&, UCHAR, const rem_port*);
 
 #ifdef CANCEL_OPERATION
 static void	cancel_operation(rem_port*);
@@ -728,6 +729,57 @@ static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que_inst)
 }
 #endif
 
+static void addRemoteAddress(Firebird::ClumpletWriter& dpb_buffer, UCHAR par, const rem_port* port)
+{
+/**************************************
+ *
+ *	a d d R e m o t e A d d r e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Insert remote endpoint data into DPB address stack
+ *
+ **************************************/
+	Firebird::ClumpletWriter address_stack_buffer(Firebird::ClumpletReader::UnTagged, MAX_UCHAR - 2);
+	if (dpb_buffer.find(par)) {
+		address_stack_buffer.reset(dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
+		dpb_buffer.deleteClumplet();
+	}
+
+	Firebird::ClumpletWriter address_record(Firebird::ClumpletReader::UnTagged, MAX_UCHAR - 2);
+	if (port->port_protocol_str)
+		address_record.insertString(isc_dpb_addr_protocol, 
+			port->port_protocol_str->str_data, port->port_protocol_str->str_length);
+	if (port->port_address_str)
+		address_record.insertString(isc_dpb_addr_endpoint, 
+			port->port_address_str->str_data, port->port_address_str->str_length);
+
+	// We always insert remote address descriptor as a first element
+	// of appropriate clumplet so user cannot fake it and engine may somewhat trust it.
+	fb_assert(address_stack_buffer.getCurOffset() == 0);
+	address_stack_buffer.insertBytes(isc_dpb_address, 
+		address_record.getBuffer(), address_record.getBufferLength());
+
+	dpb_buffer.insertBytes(par, address_stack_buffer.getBuffer(), 
+								address_stack_buffer.getBufferLength());
+
+	// Remove all remaining isc_*pb_address_path clumplets. 	
+	// This is the security feature to prevent user from faking remote address
+	// by passing multiple address_path clumplets. Engine assumes that
+	// dpb contains no more than one address_path clumplet and for 
+	// clients coming via remote interface it can trust the first address from 
+	// address stack. Clients acessing database directly can do whatever they 
+	// want with the engine including faking the source address, not much we 
+	// can do about it.
+
+	while (!dpb_buffer.isEof()) {
+		if (dpb_buffer.getClumpTag() == par)
+			dpb_buffer.deleteClumplet();
+		else
+			dpb_buffer.moveNext();
+	}
+}
 
 static ISC_STATUS attach_database(
 							  rem_port* port,
@@ -753,7 +805,7 @@ static ISC_STATUS attach_database(
 	const UCHAR* dpb = attach->p_atch_dpb.cstr_address;
 	USHORT dl = attach->p_atch_dpb.cstr_length;
 
-	Firebird::ClumpletWriter dpb_buffer(true, MAX_SSHORT);
+	Firebird::ClumpletWriter dpb_buffer(Firebird::ClumpletReader::Tagged, MAX_SSHORT);
 
 	if (dl)
 		dpb_buffer.reset(dpb, dl);
@@ -769,48 +821,7 @@ static ISC_STATUS attach_database(
 	}
 
 	// Now, insert remote endpoint data into DPB address stack
-	dpb_buffer.setCurOffset(1);
-	while (!dpb_buffer.isEof() && dpb_buffer.getClumpTag() != isc_dpb_address_path)
-		dpb_buffer.moveNext();
-
-	Firebird::ClumpletWriter address_stack_buffer(false, MAX_UCHAR - 2);
-	if (!dpb_buffer.isEof()) {
-		address_stack_buffer.reset(dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
-		dpb_buffer.deleteClumplet();
-	}
-
-	Firebird::ClumpletWriter address_record(false, MAX_UCHAR - 2);
-	if (port->port_protocol_str)
-		address_record.insertString(isc_dpb_addr_protocol, 
-			port->port_protocol_str->str_data, port->port_protocol_str->str_length);
-	if (port->port_address_str)
-		address_record.insertString(isc_dpb_addr_endpoint, 
-			port->port_address_str->str_data, port->port_address_str->str_length);
-
-	// We always insert remote address descriptor as a first element
-	// of appropriate clumplet so user cannot fake it and engine may somewhat trust it.
-	fb_assert(address_stack_buffer.getCurOffset() == 0);
-	address_stack_buffer.insertBytes(isc_dpb_address, 
-		address_record.getBuffer(), address_record.getBufferLength());
-
-	dpb_buffer.insertBytes(isc_dpb_address_path,
-		address_stack_buffer.getBuffer(), address_stack_buffer.getBufferLength());
-
-	// Remove all remaining isc_dpb_address_path clumplets. 	
-	// This is the security feature to prevent user from faking remote address
-	// by passing multiple isc_dpb_address_path clumplets. Engine assumes that
-	// dpb contains no more than one isc_dpb_address_path clumplet and for 
-	// clients coming via remote interface it can trust the first address from 
-	// address stack. Clients acessing database directly can do whatever they 
-	// want with the engine including faking the source address, not much we 
-	// can do about it.
-
-	while (!dpb_buffer.isEof()) {
-		if (dpb_buffer.getClumpTag() == isc_dpb_address_path)
-			dpb_buffer.deleteClumplet();
-		else
-			dpb_buffer.moveNext();
-	}
+	addRemoteAddress(dpb_buffer, isc_dpb_address_path, port);
 	
 /* Disable remote gsec attachments */
 	for (dpb_buffer.setCurOffset(1); !dpb_buffer.isEof(); ) {
@@ -4306,45 +4317,24 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
 	FB_API_HANDLE handle = 0;
 	const UCHAR* service_name = attach->p_atch_file.cstr_address;
 	const USHORT service_length = attach->p_atch_file.cstr_length;
-	const UCHAR* spb = attach->p_atch_dpb.cstr_address;
-	USHORT spb_length = attach->p_atch_dpb.cstr_length;
 
-/* If we have user identification, append it to database parameter block */
+	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
+		attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length, isc_spb_current_version);
 
-	UCHAR new_spb_buffer[512];
-	UCHAR* new_spb = new_spb_buffer;
-	const rem_str* string = this->port_user_name;
-	if (string)
-	{
-		if ((spb_length + 3 + string->str_length) > (int)sizeof(new_spb_buffer))
-			new_spb =
-				ALLR_alloc((SLONG) (spb_length + 3 + string->str_length));
-		UCHAR* p = new_spb;
-		if (spb_length) {
-			for (const UCHAR* const end = spb + spb_length; spb < end;)
-			{
-				*p++ = *spb++;
-			}
-		}
-		else {
-			*p++ = isc_spb_current_version;
-		}
-
-		*p++ = isc_spb_sys_user_name;
-		*p++ = (UCHAR) string->str_length;
-		spb = (const UCHAR*) string->str_data;
-		for (const UCHAR* const end = spb + string->str_length;
-			 spb < end;)
-		{
-			*p++ = *spb++;
-		}
-		spb = new_spb;
-		spb_length = p - new_spb;
+	// If we have user identification, append it to database parameter block
+	const rem_str* string = port_user_name;
+	if (string) {
+		spb.setCurOffset(spb.getBufferLength());
+		spb.insertString(isc_spb_sys_user_name, 
+			string->str_data, string->str_length);
 	}
 
-/* See if user has specified parameters relevent to the connection,
-   they will be stuffed in the SPB if so. */
-	REMOTE_get_timeout_params(this, spb, spb_length);
+	// Now, insert remote endpoint data into DPB address stack
+	addRemoteAddress(spb, isc_spb_address_path, this);
+	
+	/* See if user has specified parameters relevent to the connection,
+	   they will be stuffed in the SPB if so. */
+	REMOTE_get_timeout_params(this, spb.getBuffer(), spb.getBufferLength());
 
 	THREAD_EXIT();
 	ISC_STATUS_ARRAY status_vector;
@@ -4352,12 +4342,9 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
 					   service_length,
 					   reinterpret_cast<const char*>(service_name),
 					   &handle,
-					   spb_length,
-					   reinterpret_cast<const char*>(spb));
+					   spb.getBufferLength(),
+					   reinterpret_cast<const char*>(spb.getBuffer()));
 	THREAD_ENTER();
-
-	if (new_spb != new_spb_buffer)
-		ALLR_free(new_spb);
 
 	if (!status_vector[1]) {
 		RDB rdb = (RDB) ALLR_block(type_rdb, 0);

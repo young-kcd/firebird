@@ -928,7 +928,7 @@ int common_main(int		argc,
 	}
 
 	// Initialize 'dpb'
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	dpb.insertString(isc_dpb_gbak_attach, GDS_VERSION, strlen(GDS_VERSION));
 

@@ -2994,8 +2994,8 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_too_many_values', 'PASS1_node', 'pass1.cpp', NULL, 13, 923, NULL, 'Too many values (more than %d) in member list to match against', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('must_have_phys_field', 'make_version', 'dfw.epp', NULL, 0, 538, NULL, 'Can''t have relation with only computed fields or constraints', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('invalid_time_precision', NULL, 'par.cpp', NULL, 0, 539, NULL, 'Time precision exceeds allowed range (0-%d)', NULL, NULL);
-INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'DYN_mod.epp', 'modify_sql_field', NULL, 8, 229, NULL, 'Local column %s doesn''t have a default', NULL, NULL);
-INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'DYN_mod.epp', 'modify_sql_field', NULL, 8, 230, NULL, 'Local column %s default belongs to domain %s', NULL, NULL);
+--INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'DYN_mod.epp', 'modify_sql_field', NULL, 0, 229, NULL, 'Local column %s doesn''t have a default', NULL, NULL);
+--INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'DYN_mod.epp', 'modify_sql_field', NULL, 0, 230, NULL, 'Local column %s default belongs to domain %s', NULL, NULL);
 
 COMMIT WORK;
 

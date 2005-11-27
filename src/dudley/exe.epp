@@ -173,7 +173,7 @@ void EXE_create_database( DBB dbb)
 /* Generate a dpb for attempting to attach to, and
    later to create, the specified database. */
 
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	const TEXT* p;
 	if (p = dudleyGlob.DDL_default_user) {
@@ -341,7 +341,7 @@ void EXE_drop_database( DBB dbb)
  *	its files.
  *
  **************************************/
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	const TEXT* p;
 	if (p = dudleyGlob.DDL_default_user) {
@@ -634,7 +634,7 @@ void EXE_modify_database( DBB dbb)
  *	Modify an existing database.
  *
  **************************************/
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	const TEXT* p;
 	if (p = dudleyGlob.DDL_default_user) {

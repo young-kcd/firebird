@@ -32,47 +32,67 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "fb_exception.h"
 
+#include "../jrd/ibase.h"
+
 namespace Firebird {
 
-ClumpletWriter::ClumpletWriter(bool isTagged, size_t limit, UCHAR tag) : 
-	ClumpletReader(isTagged, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
+ClumpletWriter::ClumpletWriter(Kind k, size_t limit, UCHAR tag) : 
+	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
 {
-	if (isTagged) {
-		dynamic_buffer.push(tag);
-	}
+	initNewBuffer(tag);
+	rewind();
 }
  
-ClumpletWriter::ClumpletWriter(bool isTagged, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag) :
-	ClumpletReader(isTagged, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
+void ClumpletWriter::initNewBuffer(UCHAR tag)
+{
+	switch(kind)
+	{
+		case SpbAttach:
+			if (tag != isc_spb_version1)
+			{
+				dynamic_buffer.push(isc_spb_version1);
+			}
+			dynamic_buffer.push(tag);
+			break;
+		case Tagged:
+		case Tpb:
+			dynamic_buffer.push(tag);
+			break;
+		default:
+			break;
+	}
+}
+
+ClumpletWriter::ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag) :
+	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
 {
 	if (buffer && buffLen) {
 		dynamic_buffer.push(buffer, buffLen);
 	}
-	else if (isTagged) {
-		dynamic_buffer.push(tag);
+	else {
+		initNewBuffer(tag);
 	}
+	rewind();
 }
 
 void ClumpletWriter::reset(UCHAR tag)
 {
 	dynamic_buffer.shrink(0);
-
-	if (!mIsTagged) {
-		usage_mistake("buffer is not tagged");
-
-		cur_offset = 0;
-		return;
-	}
-
-	cur_offset = 1;
-	dynamic_buffer.push(tag);
+	initNewBuffer(tag);
+	rewind();
 }
 
 void ClumpletWriter::reset(const UCHAR* buffer, size_t buffLen)
 {
-	cur_offset = mIsTagged ? 1 : 0;
 	dynamic_buffer.clear();
-	dynamic_buffer.push(buffer, buffLen);
+	if (buffer && buffLen) {
+		dynamic_buffer.push(buffer, buffLen);
+	}
+	else {
+		UCHAR tag = (kind == SpbQuery || kind == UnTagged) ? getBufferTag() : 0;
+		initNewBuffer(tag);
+	}
+	rewind();
 }
 
 
@@ -90,9 +110,9 @@ void ClumpletWriter::insertInt(UCHAR tag, SLONG value)
 	bytes[1] = ptr[2];
 	bytes[2] = ptr[1];
 	bytes[3] = ptr[0];
-	insertBytesNoLengthCheck(tag, bytes, sizeof(bytes));
+	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
 #else
-	insertBytesNoLengthCheck(tag, reinterpret_cast<UCHAR*>(&value), sizeof(value));
+	insertBytesLengthCheck(tag, reinterpret_cast<UCHAR*>(&value), sizeof(value));
 #endif 
 }
 
@@ -109,9 +129,9 @@ void ClumpletWriter::insertBigInt(UCHAR tag, SINT64 value)
 	bytes[5] = ptr[2];
 	bytes[6] = ptr[1];
 	bytes[7] = ptr[0];
-	insertBytesNoLengthCheck(tag, bytes, sizeof(bytes));
+	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
 #else
-	insertBytesNoLengthCheck(tag, reinterpret_cast<UCHAR*>(&value), sizeof(value));
+	insertBytesLengthCheck(tag, reinterpret_cast<UCHAR*>(&value), sizeof(value));
 #endif 
 }
 
@@ -127,29 +147,20 @@ void ClumpletWriter::insertPath(UCHAR tag, const PathName& str)
 
 void ClumpletWriter::insertString(UCHAR tag, const char* str, size_t length)
 {
-	if (length > 255) {
-		string errStr(str, 100);
-		errStr.append("...");
-
-		string msgStr;
-		msgStr.printf("string \"%s\" is too long to be inserted into clumplet buffer",
-			errStr.c_str());
-		usage_mistake(msgStr.c_str());
-		return;
-	}
-	insertBytesNoLengthCheck(tag, reinterpret_cast<const UCHAR*>(str), length);
+	insertBytesLengthCheck(tag, reinterpret_cast<const UCHAR*>(str), length);
 }
 
 void ClumpletWriter::insertBytes(UCHAR tag, const UCHAR* bytes, size_t length)
 {
-	if (length > 255) {
-		usage_mistake("byte sequence is too long to be inserted into clumplet buffer");
-		return;
-	}
-	insertBytesNoLengthCheck(tag, bytes, length);
+	insertBytesLengthCheck(tag, bytes, length);
 }
 
-void ClumpletWriter::insertBytesNoLengthCheck(UCHAR tag, const UCHAR* bytes, UCHAR length)
+void ClumpletWriter::insertByte(UCHAR tag, const UCHAR byte)
+{
+	insertBytesLengthCheck(tag, &byte, 1);
+}
+
+void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_t length)
 {
 	// Check that we're not beyond the end of buffer.
 	// We get there when we set end marker.
@@ -158,35 +169,90 @@ void ClumpletWriter::insertBytesNoLengthCheck(UCHAR tag, const UCHAR* bytes, UCH
 		return;
 	}
 	
-	// Check that resulting data doesn't overflow size limit
-	if (dynamic_buffer.getCount() + length + 2 > sizeLimit) {
-		size_overflow();
-	}
-
-		// Insert the data
-	dynamic_buffer.insert(cur_offset, tag);
-	dynamic_buffer.insert(cur_offset + 1, length);
-	dynamic_buffer.insert(cur_offset + 2, bytes, length);
-	cur_offset += length + 2;
-}
-
-void ClumpletWriter::insertTag(UCHAR tag)
-{
-	// Check that we're not beyond the end of buffer.
-	// We get there when we set end marker.
-	if (cur_offset > dynamic_buffer.getCount()) {
-		usage_mistake("write past EOF");
-		return;
+	// Check length according to clumplet type
+	ClumpletType t = getClumpletType(tag);
+	UCHAR lenSize = 0;
+	switch (t)
+	{
+	case TraditionalDpb:
+		if (length > 0xFF)
+		{
+			string m;
+			m.printf("attempt to store %d bytes in a clumplet with maximum size 255 bytes", length);
+			usage_mistake(m.c_str());
+			return;
+		}
+		lenSize = 1;
+		break;
+	case SingleTpb:
+		if (length > 0)
+		{
+        	usage_mistake("attempt to store data in dataless clumplet");
+			return;
+		}
+		break;
+	case StringSpb:
+		if (length > 0xFFFF)
+		{
+			string m;
+			m.printf("attempt to store %d bytes in a clumplet", length);
+			usage_mistake(m.c_str());
+			return;
+		}
+		lenSize = 2;
+		break;
+	case IntSpb:
+		if (length != 4)
+		{
+        	usage_mistake("attempt to store %d bytes in clumplet, need 4");
+			return;
+		}
+		break;
+	case ByteSpb:
+		if (length != 1)
+		{
+        	usage_mistake("attempt to store %d bytes in clumplet, need 1");
+			return;
+		}
+		break;
 	}
 	
 	// Check that resulting data doesn't overflow size limit
-	if (dynamic_buffer.getCount() + 2 > sizeLimit) {
+	if (dynamic_buffer.getCount() + length + lenSize + 1 > sizeLimit) {
 		size_overflow();
 	}
 
 	// Insert the data
 	dynamic_buffer.insert(cur_offset++, tag);
-	dynamic_buffer.insert(cur_offset++, 0);
+	switch (lenSize)
+	{
+	case 1:
+		dynamic_buffer.insert(cur_offset++, static_cast<UCHAR>(length));
+		break;
+	case 2:
+		{
+			USHORT value = static_cast<USHORT>(length);
+			fb_assert(sizeof(USHORT) == 2);
+#if defined(WORDS_BIGENDIAN)
+			UCHAR b[2];
+			const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
+			b[0] = ptr[1];
+			b[1] = ptr[0];
+			dynamic_buffer.insert(cur_offset, b, sizeof(b));
+#else
+			dynamic_buffer.insert(cur_offset, reinterpret_cast<UCHAR*>(&value), sizeof(value));
+#endif
+			cur_offset += 2;
+		}
+		break;
+	}
+	dynamic_buffer.insert(cur_offset, bytes, length);
+	cur_offset += length;
+}
+
+void ClumpletWriter::insertTag(UCHAR tag)
+{
+	insertBytesLengthCheck(tag, 0, 0);
 }
 
 
@@ -225,8 +291,7 @@ void ClumpletWriter::deleteClumplet()
 		// It appears we're erasing EOF marker
 		dynamic_buffer.shrink(cur_offset);
 	} else {
-		size_t length = clumplet[1];
-		dynamic_buffer.removeCount(cur_offset, length + 2);
+		dynamic_buffer.removeCount(cur_offset, getClumpletSize(true, true, true));
 	}
 }
 

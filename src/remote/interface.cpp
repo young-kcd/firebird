@@ -100,9 +100,27 @@ const char* ISC_PASSWORD	= "ISC_PASSWORD";
 const int MAX_USER_LENGTH	= 33;
 const int MAX_OTHER_PARAMS	= 1 + 1 + sizeof(((rem_port*)NULL)->port_dummy_packet_interval);
 
+namespace {
+	// this sets of parameters help use same functions
+	// for both services and databases attachments
+	struct ParametersSet {
+		UCHAR dummy_packet_interval, user_name, sys_user_name, 
+			  password, password_enc;
+	};
+	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval, 
+									isc_dpb_user_name, 
+									isc_dpb_sys_user_name, 
+									isc_dpb_password, 
+									isc_dpb_password_enc};
+	const ParametersSet spbParam = {isc_spb_dummy_packet_interval, 
+									isc_spb_user_name, 
+									isc_spb_sys_user_name, 
+									isc_spb_password, 
+									isc_spb_password_enc};
+}
+
 static RVNT add_event(rem_port*);
-static void add_other_params(rem_port*, UCHAR*, USHORT*);
-static void add_other_params( rem_port*, Firebird::ClumpletWriter&);
+static void add_other_params(rem_port*, Firebird::ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(Firebird::ClumpletWriter&, const Firebird::PathName&);
 static rem_port* analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*,
 					bool, const SCHAR*, SSHORT, Firebird::PathName&);
@@ -132,15 +150,14 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
 static ISC_STATUS fetch_blob(ISC_STATUS*, RSR, USHORT, const UCHAR*, USHORT,
 						USHORT, UCHAR*);
 static RVNT find_event(rem_port*, SLONG);
-static bool get_new_spb(const UCHAR*, SSHORT, UCHAR*, USHORT*, TEXT*);
-static bool get_new_dpb(Firebird::ClumpletWriter&, Firebird::string&);
+static bool get_new_dpb(Firebird::ClumpletWriter&, Firebird::string&, const ParametersSet&);
 #ifdef UNIX
-static bool get_single_user(USHORT, const SCHAR*);
+static bool get_single_user(Firebird::ClumpletReader&);
 #endif
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static ISC_STATUS info(ISC_STATUS*, RDB, P_OP, USHORT, USHORT, USHORT,
 					const SCHAR*, USHORT, const SCHAR*, USHORT, SCHAR*);
-static bool init(ISC_STATUS *, rem_port*, P_OP, Firebird::PathName&, UCHAR *, USHORT);
+static bool init(ISC_STATUS *, rem_port*, P_OP, Firebird::PathName&, Firebird::ClumpletWriter&);
 static RTR make_transaction(RDB, USHORT);
 static ISC_STATUS mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(ISC_STATUS, ...);
@@ -266,14 +283,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	*v++ = isc_unavailable;
 	*v = isc_arg_end;
 
-#ifdef UNIX
-	// If single user, return
-	if (get_single_user(dpb_length, dpb))
-	{
-		return isc_unavailable;
-	}
-#endif
-
 	trdb	thd_context(user_status);
 	trdb*	tdrdb;
 	REM_set_thread_data(tdrdb, &thd_context);
@@ -283,11 +292,19 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	RDB rdb = 0;
 	
 	try {
-		Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb),
-                                               dpb_length, isc_dpb_version1);
+		Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
+				reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+
+#ifdef UNIX
+		// If single user, return
+		if (get_single_user(newDpb))
+		{
+			return isc_unavailable;
+		}
+#endif
 
 		Firebird::string user_string;
-		const bool user_verification = get_new_dpb(newDpb, user_string);
+		const bool user_verification = get_new_dpb(newDpb, user_string, dpbParam);
 
 		const TEXT* us = user_string.hasData() ? user_string.c_str() : 0;
 
@@ -309,11 +326,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		   the DPB so the server can pay attention to it.  Note: allocation code must
 		   ensure sufficient space has been added. */
 
-		add_other_params(port, newDpb);
+		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 		
-		const bool result = init(user_status, port, op_attach, expanded_name,
-					const_cast<UCHAR*>(newDpb.getBuffer()), newDpb.getBufferLength());
+		const bool result = init(user_status, port, op_attach, expanded_name, newDpb);
 
 		if (!result) {
 			return error(user_status);
@@ -828,13 +844,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	*v++ = isc_unavailable;
 	*v = isc_arg_end;
 
-#ifdef UNIX
-/* If single user, return */
-
-	if (get_single_user(dpb_length, dpb))
-		return isc_unavailable;
-#endif
-
 	trdb thd_context(user_status);
 	trdb* tdrdb;
 	REM_set_thread_data(tdrdb, &thd_context);
@@ -845,10 +854,19 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	
 	try
 	{
-		Firebird::ClumpletWriter newDpb(true, MAX_DPB_SIZE, reinterpret_cast<const UCHAR*>(dpb),
-                                               dpb_length, isc_dpb_version1);
+		Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
+					reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+
+#ifdef UNIX
+		// If single user, return
+		if (get_single_user(newDpb))
+		{
+			return isc_unavailable;
+		}
+#endif
+
 		Firebird::string user_string;
-		const bool user_verification = get_new_dpb(newDpb, user_string);
+		const bool user_verification = get_new_dpb(newDpb, user_string, dpbParam);
 		const TEXT* us = (user_string.hasData()) ? user_string.c_str() : 0;
 
 		Firebird::PathName expanded_name(expanded_filename);
@@ -867,12 +885,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		   the DPB so the server can pay attention to it.  Note: allocation code must
 		   ensure sufficient space has been added. */
 
-		add_other_params(port, newDpb);
+		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 
-		const bool result = 
-			init(user_status, port, op_create, expanded_name,
-					const_cast<UCHAR*>(newDpb.getBuffer()), newDpb.getBufferLength());
+		const bool result = init(user_status, port, op_create, expanded_name, newDpb);
 		if (!result) {
 			return error(user_status);
 		}
@@ -3807,52 +3823,28 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	*v++ = isc_unavailable;
 	*v = isc_arg_end;
 
-	UCHAR new_spb[MAXPATHLEN];
-	UCHAR* new_spb_ptr = new_spb;
-	if ((spb_length + MAX_USER_LENGTH + MAX_PASSWORD_ENC_LENGTH +
-		 MAX_OTHER_PARAMS) > sizeof(new_spb))
-	{
-		new_spb_ptr =
-			(UCHAR*)gds__alloc(spb_length + MAX_USER_LENGTH +
-					   MAX_PASSWORD_ENC_LENGTH + MAX_OTHER_PARAMS);
+	RDB rdb = 0;
+	
+	try {
+		Firebird::ClumpletWriter newSpb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
+				reinterpret_cast<const UCHAR*>(spb), spb_length, isc_spb_current_version);
+		Firebird::string user_string;
+	
+		const bool user_verification = get_new_dpb(newSpb, user_string, spbParam);
+		const TEXT* us = (user_string.hasData()) ? user_string.c_str() : 0;
 
-		/* FREE: by return(s) in this routine */
-
-		if (!new_spb_ptr)
-		{		/* NOMEM: return error to client */
-			user_status[1] = isc_virmemexh;
+		rem_port* port = analyze_service(expanded_name, user_status, us,
+						 user_verification, spb, spb_length);
+		if (!port) {
 			return error(user_status);
 		}
-	}
-	USHORT new_spb_length;
-	TEXT user_string[256];
-	const bool user_verification =
-		get_new_spb(reinterpret_cast<const UCHAR*>(spb),
-					spb_length, new_spb_ptr,
-					&new_spb_length, user_string);
 
-	const TEXT* us = (user_string[0]) ? user_string : 0;
+		rdb = port->port_context;
+		rdb->rdb_status_vector = user_status;
+		tdrdb->trdb_database = rdb;
 
-	rem_port* port = analyze_service(expanded_name, user_status, us,
-						 user_verification, spb, spb_length);
-	if (!port) {
-		if (new_spb_ptr != new_spb)
-			gds__free(new_spb_ptr);
-		return error(user_status);
-	}
-
-	RDB rdb = port->port_context;
-	rdb->rdb_status_vector = user_status;
-	tdrdb->trdb_database = rdb;
-
-	try
-	{
 		/* make sure the protocol supports it */
-
 		if (port->port_protocol < PROTOCOL_VERSION8) {
-			if (new_spb_ptr != new_spb) {
-				gds__free(new_spb_ptr);
-			}
 			disconnect(port);
 			return unsupported(user_status);
 		}
@@ -3861,14 +3853,9 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		   the SPB so the server can pay attention to it.  Note: allocation code must
 		   ensure sufficient space has been added. */
 
-		add_other_params(port, new_spb_ptr, &new_spb_length);
+		add_other_params(port, newSpb, spbParam);
 
-		const bool result =
-			init(user_status, port, op_service_attach, expanded_name,
-				 new_spb_ptr, new_spb_length);
-		if (new_spb_ptr != new_spb) {
-			gds__free(new_spb_ptr);
-		}
+		const bool result = init(user_status, port, op_service_attach, expanded_name, newSpb);
 		if (!result) {
 			return error(user_status);
 		}
@@ -4524,39 +4511,9 @@ static RVNT add_event( rem_port* port)
 }
 
 
-static void add_other_params( rem_port* port, UCHAR* spb, USHORT* length)
-{
-/**************************************
- *
- *	a d d _ o t h e r _ p a r a m s
- *
- **************************************
- *
- * Functional description
- *	Add parameters to a spb to describe client-side
- *	settings that the server should know about.  
- *	Currently only dummy_packet_interval.
- *	Note: caller must ensure enough spare space is available at the end of 
- *	the passed in dpb or spb.
- *
- **************************************/
-/*	fb_assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
-	fb_assert(isc_dpb_version1 == isc_spb_version1);
- */
-	if (port->port_flags & PORT_dummy_pckt_set) {
-		if (*length == 0)
-			spb[(*length)++] = isc_spb_version1;
-		spb[(*length)++] = isc_spb_dummy_packet_interval;
-		spb[(*length)++] = sizeof(port->port_dummy_packet_interval);
-		stuff_vax_integer(&spb[*length],
-						  port->port_dummy_packet_interval,
-						  sizeof(port->port_dummy_packet_interval));
-		*length += sizeof(port->port_dummy_packet_interval);
-	}
-}
-
-
-static void add_other_params( rem_port* port, Firebird::ClumpletWriter& dpb)
+static void add_other_params(rem_port* port, 
+							 Firebird::ClumpletWriter& dpb, 
+							 const ParametersSet& par)
 {
 /**************************************
  *
@@ -4572,14 +4529,15 @@ static void add_other_params( rem_port* port, Firebird::ClumpletWriter& dpb)
  **************************************/
 	if (port->port_flags & PORT_dummy_pckt_set) 
 	{
-		if (dpb.find(isc_dpb_dummy_packet_interval))
+		if (dpb.find(par.dummy_packet_interval))
 			dpb.deleteClumplet();
-		dpb.insertInt(isc_dpb_dummy_packet_interval, port->port_dummy_packet_interval);
+		dpb.insertInt(par.dummy_packet_interval, port->port_dummy_packet_interval);
 	}
 }
 
 
-static void add_working_directory(Firebird::ClumpletWriter& dpb, const Firebird::PathName& node_name)
+static void add_working_directory(Firebird::ClumpletWriter& dpb, 
+								  const Firebird::PathName& node_name)
 {
 /************************************************
  *
@@ -5602,165 +5560,9 @@ static RVNT find_event( rem_port* port, SLONG id)
 }
 
 
-static bool get_new_spb(const UCHAR*	spb,
-						  SSHORT	spb_length,
-						  UCHAR*	new_spb,
-						  USHORT*	new_spb_length,
-						  TEXT*		user_string)
-{
-/**************************************
- *
- *	g e t _ n e w _ s p b
- *
- **************************************
- *
- * Functional description
- *	Fetch user_string out of spb.
- *	(Based on JRD get_options())
- *
- **************************************/
- 
-	UCHAR	pw_buffer[MAX_PASSWORD_ENC_LENGTH + 6];
-
-	*user_string = 0;
-	*new_spb_length = 0;
-
-	UCHAR	pb_version;
-	UCHAR	pb_sys_user_name;
-	UCHAR	pb_password;
-	UCHAR	pb_user_name;
-	UCHAR	pb_password_enc;
-
-	if (spb_length)
-	{
-		if (*spb == isc_spb_version) {
-			pb_version = spb[1];
-		}
-		else {
-			pb_version = *spb;
-		}
-	}
-	else
-	{
-		pb_version = isc_spb_current_version;
-	}
-
-	pb_sys_user_name = isc_spb_sys_user_name;
-	pb_password = isc_spb_password;
-	pb_user_name = isc_spb_user_name;
-	pb_password_enc = isc_spb_password_enc;
-
-	const UCHAR* p = spb;
-	UCHAR* s = new_spb;
-	const UCHAR* const end_spb = p + spb_length;
-
-	if ((spb_length > 0) && (*p != pb_version))
-	{
-		gds__log("REMOTE INTERFACE: wrong spb version", 0);
-	}
-
-	if (spb_length == 0)
-	{
-		*s++ = pb_version;
-	}
-	else
-	{
-		/* for all spb_versions > 1 (meaning usc_spb_version was specified)
-		 * the actual version of the spb is stored in the second byte so
-		 * move the first byte (isc_spb_version) into the new spb so that
-		 * it can be saved off
-		 */
-		if (*p == isc_spb_version) {
-			*s++ = *p++;
-		}
-		*s++ = *p++;
-	}
-
-	bool result = false;
-	SSHORT password_length = 0;
-	const UCHAR* password = 0;
-	bool moved_some = false;
-	while (p < end_spb)
-	{
-		const UCHAR c = *p++;
-		*s++ = c;
-		if (c == pb_sys_user_name)
-		{
-			s--;
-			UCHAR* q = (UCHAR *) user_string;
-			SSHORT l = *p++;
-			if (l)
-			{
-				do {
-					*q++ = *p++;
-				} while (--l);
-			}
-			*q = 0;
-		}
-		else if (c == pb_password)
-		{
-			moved_some = true;
-			s--;
-			password_length = *p++;
-			password = p;
-			p += password_length;
-		}
-		else
-		{
-			if (c == pb_user_name) {
-				result = true;
-			}
-			moved_some = true;
-			SSHORT l = *p++;
-			if (*s++ = static_cast<UCHAR>(l))
-			{
-				do {
-					*s++ = *p++;
-				} while (--l);
-			}
-		}
-	}
-
-#ifdef NO_PASSWORD_ENCRYPTION
-	if (password)
-	{
-		moved_some = true;
-		*s++ = pb_password;
-		*s++ = password_length;
-		do {
-			*s++ = *password++;
-		} while (--password_length);
-	}
-#else
-	if (password)
-	{
-		moved_some = true;
-		*s++ = pb_password_enc;
-		const SSHORT l = MIN(password_length, MAX_PASSWORD_ENC_LENGTH);
-		strncpy((char*) pw_buffer, (const char*) password, l);
-		pw_buffer[l] = 0;
-		TEXT pwt[MAX_PASSWORD_LENGTH + 2];
-		ENC_crypt(pwt, sizeof pwt, reinterpret_cast<char*>(pw_buffer), PASSWORD_SALT);
-		const char* pp = pwt + 2;
-		*s++ = strlen(pp);
-		while (*pp) {
-			*s++ = *pp++;
-		}
-	}
-#endif
-
-	if (moved_some || ((s - new_spb) > 1)) {
-		*new_spb_length = s - new_spb;
-	}
-	else {
-		*new_spb_length = 0;
-	}
-
-	return result;
-}
-
-
-static bool get_new_dpb(Firebird::ClumpletWriter& dpb, Firebird::string& user_string)
+static bool get_new_dpb(Firebird::ClumpletWriter& dpb, 
+						Firebird::string& user_string, 
+						const ParametersSet& par)
 {
 /**************************************
  *
@@ -5774,7 +5576,7 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb, Firebird::string& user_st
  *
  **************************************/
 #ifndef NO_PASSWORD_ENCRYPTION
-	if (dpb.find(isc_dpb_password))
+	if (dpb.find(par.password))
 	{
 		Firebird::string password;
 		dpb.getString(password);
@@ -5782,11 +5584,11 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb, Firebird::string& user_st
 		TEXT pwt[MAX_PASSWORD_LENGTH + 2];
 		ENC_crypt(pwt, sizeof pwt, password.c_str(), PASSWORD_SALT);
 		password = pwt + 2;
-		dpb.insertString(isc_dpb_password_enc, password);
+		dpb.insertString(par.password_enc, password);
 	}
 #endif
 	
-	if (dpb.find(isc_dpb_sys_user_name)) 
+	if (dpb.find(par.sys_user_name)) 
 	{
 		dpb.getString(user_string);
 		dpb.deleteClumplet();
@@ -5796,12 +5598,11 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb, Firebird::string& user_st
 		user_string.erase();
 	}
 
-	return dpb.find(isc_dpb_user_name);
+	return dpb.find(par.user_name);
 }
 
 #ifdef UNIX
-static bool get_single_user(USHORT dpb_length,
-							const SCHAR* dpb)
+static bool get_single_user(Firebird::ClumpletReader& dpb)
 {
 /******************************************
  *
@@ -5815,28 +5616,14 @@ static bool get_single_user(USHORT dpb_length,
  *	otherwise.
  *
  ******************************************/
-	if (!dpb)
+	if (dpb.getBufferTag() != isc_dpb_version1)
 		return false;
 
-	const SCHAR* const end_dpb = dpb + dpb_length;
-
-	if (dpb < end_dpb && *dpb++ != isc_dpb_version1)
-		return false;
-
-	USHORT l;
-	while (dpb < end_dpb)
-		switch (*dpb++) {
-		case isc_dpb_reserved:
-			l = *dpb++;
-			if (l == 3 && !strncmp(dpb, "YES", 3))
-				return true;
-			return false;
-
-		default:
-			l = *dpb++;
-			dpb += l;
-		}
-
+	Firebird::string su;
+	if (dpb.find(isc_dpb_reserved)) {
+		dpb.getString(su);
+		return su == "YES";
+	}
 	return false;
 }
 #endif
@@ -5937,8 +5724,7 @@ static bool init(ISC_STATUS* user_status,
 				 rem_port* port,
 				 P_OP op,
 				 Firebird::PathName& file_name,
-				 UCHAR* dpb,
-				 USHORT dpb_length)
+				 Firebird::ClumpletWriter& dpb)
 {
 /**************************************
  *
@@ -5961,8 +5747,8 @@ static bool init(ISC_STATUS* user_status,
 	attach->p_atch_file.cstr_length = file_name.length();
 	attach->p_atch_file.cstr_address = 
 			reinterpret_cast<UCHAR*>(const_cast<char*>(file_name.c_str()));
-	attach->p_atch_dpb.cstr_length = dpb_length;
-	attach->p_atch_dpb.cstr_address = dpb;
+	attach->p_atch_dpb.cstr_length = dpb.getBufferLength();
+	attach->p_atch_dpb.cstr_address = const_cast<UCHAR*>(dpb.getBuffer());
 	
 	if (!send_packet(rdb->rdb_port, packet, user_status)) 
 	{

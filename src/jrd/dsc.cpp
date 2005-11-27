@@ -962,6 +962,23 @@ void DSC_get_dtype_name(const dsc* desc, TEXT * buffer, USHORT len)
 
 
 #ifdef DEV_BUILD
+void dsc::address32bit() const
+{
+/**************************************
+ *
+ *	a d d r e s s 3 2 b i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Validates dsc_address member to feed into 4-byte integer.
+ *
+ **************************************/
+	unsigned long addr = (unsigned long)dsc_address;
+	fb_assert(addr == addr & 0xFFFFFFFF);
+}
+
+
 static bool validate_dsc_tables()
 {
 /**************************************

@@ -73,7 +73,7 @@ BLKDEF(type_sdw, Shadow, 0)
 BLKDEF(type_vct, VerbAction, 0)	/* Verb actions */
 BLKDEF(type_btb, BlockingThread, 0)
 BLKDEF(type_blf, BlobFilter, 0)
-BLKDEF(type_arr, ArrayField, sizeof(((internal_array_desc*) NULL)->iad_rpt[0]))	/* Done, but funny   Array description */
+BLKDEF(type_arr, ArrayField, sizeof(((Ods::InternalArrayDesc*) NULL)->iad_rpt[0]))	/* Done, but funny   Array description */
 BLKDEF(type_map, blb_map, 0)
 BLKDEF(type_log, fblog, 0)
 BLKDEF(type_dls, dir_list, 1)

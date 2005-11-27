@@ -27,25 +27,9 @@
 #define JRD_DSC_H
 
 #include "../jrd/dsc_pub.h"
+#include "../jrd/ods.h"
 
 /* Descriptor format */
-
-/* WARNING !
-   This run-time structure is stored in RDB$FORMATS.RDB$DESCRIPTORS.
-   Any modification to this structure is tantamount to an ODS change.
-   See MET_format() and make_format() in MET.EPP for enlightenment.
-*/
-
-struct OdsDesc
-{
-	UCHAR	dsc_dtype;
-	SCHAR	dsc_scale;
-	USHORT	dsc_length;
-	SSHORT	dsc_sub_type;
-	USHORT	dsc_flags;
-	ULONG	dsc_offset;
-};
-
 
 typedef struct dsc
 {
@@ -71,26 +55,31 @@ typedef struct dsc
 #endif
 
 // this functions were added to have interoperability
-// between OdsDesc and DSC
-	dsc(const OdsDesc& od)
+// between Ods::Descriptor and struct dsc
+	dsc(const Ods::Descriptor& od)
 	:	dsc_dtype(od.dsc_dtype),
 		dsc_scale(od.dsc_scale),
 		dsc_length(od.dsc_length),
 		dsc_sub_type(od.dsc_sub_type),
 		dsc_flags(od.dsc_flags),
-		dsc_address(0)
+		dsc_address((UCHAR*)(IPTR)(od.dsc_offset))
 	{}
-	operator OdsDesc()
-	{
-		OdsDesc d;
+	operator Ods::Descriptor() const {
+#ifdef DEV_BUILD
+		address32bit();
+#endif
+		Ods::Descriptor d;
 		d.dsc_dtype = dsc_dtype;
 		d.dsc_scale = dsc_scale;
 		d.dsc_length = dsc_length;
 		d.dsc_sub_type = dsc_sub_type;
 		d.dsc_flags = dsc_flags;
-		d.dsc_offset = 0;
+		d.dsc_offset = (ULONG)(IPTR)dsc_address;
 		return d;
 	}
+#ifdef DEV_BUILD
+	void address32bit() const;
+#endif
 	    
 } DSC;
 

@@ -540,7 +540,21 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
  *	which received SIGTERM, run in separate thread.
  *
  **************************************/
- 	shutSem.enter();
+	try {
+	 	shutSem.enter();
+	}
+	catch (Firebird::status_exception& e)
+	{
+		TEXT buffer[1024];
+        const ISC_STATUS* vector = 0;
+		if (! (e.status_known() && (vector = e.value()) &&
+			  fb_interpret(buffer, sizeof(buffer), &vector)))
+		{
+			strcpy(buffer, "Unknown failure in semaphore::enter()");
+		}
+		gds__log(buffer, 0);
+		exit(0);
+	}
 	if (! alreadyClosing)
 	{
 		alreadyClosing = true;

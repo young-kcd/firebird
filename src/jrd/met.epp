@@ -829,7 +829,7 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 		}
 		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$DESCRIPTOR);
 
-		if (sizeof(OdsDesc) == sizeof(struct dsc) || dbb->dbb_ods_version < ODS_VERSION11) {
+		if (sizeof(Ods::Descriptor) == sizeof(struct dsc) || dbb->dbb_ods_version < ODS_VERSION11) {
 			// For ODS10 and earlier read descriptors in their in-memory representation
 			// This makes 64-bit and 32-bit ODS10 different for the same architecture.
 
@@ -852,24 +852,19 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 		} else {
 			// Use generic representation of formats with 32-bit offsets
 
-			const USHORT count = blob->blb_length / sizeof(OdsDesc);
+			const USHORT count = blob->blb_length / sizeof(Ods::Descriptor);
 			format = Format::newFormat(*dbb->dbb_permanent, count);
 			format->fmt_count = count;
-			Firebird::Array<OdsDesc> odsDescs;
-			OdsDesc *odsDesc = odsDescs.getBuffer(count);
+			Firebird::Array<Ods::Descriptor> odsDescs;
+			Ods::Descriptor *odsDesc = odsDescs.getBuffer(count);
 			BLB_get_data(tdbb, blob, (UCHAR*) odsDesc, blob->blb_length);
 
 			for (Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 				 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
 			{
-				desc->dsc_dtype = odsDesc->dsc_dtype;
-				desc->dsc_scale = odsDesc->dsc_scale;
-				desc->dsc_length = odsDesc->dsc_length;
-				desc->dsc_sub_type = odsDesc->dsc_sub_type;
-				desc->dsc_flags = odsDesc->dsc_flags;
-				desc->dsc_address = (UCHAR*)(IPTR) odsDesc->dsc_offset;
-				if (desc->dsc_address)
-					format->fmt_length = (IPTR) desc->dsc_address + desc->dsc_length;
+				*desc = *odsDesc;
+				if (odsDesc->dsc_offset)
+					format->fmt_length = odsDesc->dsc_offset + desc->dsc_length;
 			}
 		}
 	END_FOR;

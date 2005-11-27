@@ -803,7 +803,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 /* Get first the array descriptor, then the array */
 
 	SLONG stuff[IAD_LEN(16) / 4];
-	internal_array_desc* array_desc = (internal_array_desc*) stuff;
+	Ods::InternalArrayDesc* array_desc = (Ods::InternalArrayDesc*) stuff;
 	blb* blob = BLB_get_array(tdbb,
 						tdbb->tdbb_request->req_transaction,
 						(bid*)value->dsc_address,
@@ -844,7 +844,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 	scalar_desc->sad_desc.dsc_address = data;
 	scalar_desc->sad_dimensions = dimensions;
 
-	const internal_array_desc::iad_repeat* tail1 = array_desc->iad_rpt;
+	const Ods::InternalArrayDesc::iad_repeat* tail1 = array_desc->iad_rpt;
 	scalar_array_desc::sad_repeat* tail2 = scalar_desc->sad_rpt;
 	for (const scalar_array_desc::sad_repeat* const end = tail2 + dimensions; tail2 < end;
 		++tail1, ++tail2)

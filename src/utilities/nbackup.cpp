@@ -433,7 +433,7 @@ void nbackup::attach_database()
 	if (username.length() > 255 || password.length() > 255)
 		b_error::raise("Username or password is too long");
 
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	
 	if (!username.isEmpty()) {
 		dpb.insertString(isc_dpb_user_name, username);

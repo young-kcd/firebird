@@ -188,7 +188,7 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 		ALICE_print(68, pathname, 0, 0, 0, 0);
 		// msg 68: ATTACH_DATABASE: attempted attach of %s
 
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertTag(isc_dpb_no_garbage_collect);
 	dpb.insertTag(isc_dpb_gfix_attach);
 	if (tdgbl->ALICE_data.ua_user) {

@@ -361,7 +361,7 @@ bool SecurityDatabase::prepare()
 	getPath(user_info_name);
 
 	// Perhaps build up a dpb
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	// Insert username
 	const char* szAuthenticator = "authenticator";

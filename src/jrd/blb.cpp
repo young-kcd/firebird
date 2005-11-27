@@ -77,7 +77,7 @@ inline bool SEGMENTED(const blb* blob)
 	return !(blob->blb_flags & BLB_stream);
 }
 
-static ArrayField* alloc_array(jrd_tra*, internal_array_desc*);
+static ArrayField* alloc_array(jrd_tra*, Ods::InternalArrayDesc*);
 static blb* allocate_blob(thread_db*, jrd_tra*);
 static ISC_STATUS blob_filter(USHORT, BlobControl*, SSHORT, SLONG);
 static blb* copy_blob(thread_db*, const bid*, bid*, USHORT, const UCHAR*);
@@ -366,7 +366,7 @@ void BLB_garbage_collect(
 
 
 blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id,
-				   internal_array_desc* desc)
+				   Ods::InternalArrayDesc* desc)
 {
 /**************************************
  *
@@ -382,16 +382,16 @@ blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id,
 
 	blb* blob = BLB_open2(tdbb, transaction, blob_id, 0, 0);
 
-	if (blob->blb_length < sizeof(internal_array_desc)) {
+	if (blob->blb_length < sizeof(Ods::InternalArrayDesc)) {
 		BLB_close(tdbb, blob);
 		IBERROR(193);			/* msg 193 null or invalid array */
 	}
 
-	BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc), sizeof(internal_array_desc));
+	BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc), sizeof(Ods::InternalArrayDesc));
 
-	const USHORT n = desc->iad_length - sizeof(internal_array_desc);
+	const USHORT n = desc->iad_length - sizeof(Ods::InternalArrayDesc);
 	if (n) {
-		BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc) + sizeof(internal_array_desc), n);
+		BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc) + sizeof(Ods::InternalArrayDesc), n);
 	}
 
 	return blob;
@@ -671,7 +671,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 	}
 
 	SLONG stuff[IAD_LEN(16) / 4];
-	internal_array_desc* desc = (internal_array_desc*) stuff;
+	Ods::InternalArrayDesc* desc = (Ods::InternalArrayDesc*) stuff;
 	blb* blob = BLB_get_array(tdbb, transaction, blob_id, desc);
 	SLONG length = desc->iad_total_length;
 
@@ -1523,7 +1523,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 		{
 			// CVC: maybe char temp[IAD_LEN(16)]; may work but it won't be aligned.
 			SLONG temp[IAD_LEN(16) / 4];
-			internal_array_desc* p_ads = reinterpret_cast<internal_array_desc*>(temp);
+			Ods::InternalArrayDesc* p_ads = reinterpret_cast<Ods::InternalArrayDesc*>(temp);
 			blb* blob = BLB_get_array(tdbb, transaction, blob_id, p_ads);
 			array =	alloc_array(transaction, p_ads);
 			array->arr_effective_length =
@@ -1639,7 +1639,7 @@ void BLB_scalar(thread_db*		tdbb,
 
 	SET_TDBB(tdbb);
 
-	internal_array_desc* array_desc = (internal_array_desc*) stuff;
+	Ods::InternalArrayDesc* array_desc = (Ods::InternalArrayDesc*) stuff;
 	blb* blob = BLB_get_array(tdbb, transaction, blob_id, array_desc);
 
 // Get someplace to put data.
@@ -1672,7 +1672,7 @@ void BLB_scalar(thread_db*		tdbb,
 }
 
 
-static ArrayField* alloc_array(jrd_tra* transaction, internal_array_desc* proto_desc)
+static ArrayField* alloc_array(jrd_tra* transaction, Ods::InternalArrayDesc* proto_desc)
 {
 /**************************************
  *

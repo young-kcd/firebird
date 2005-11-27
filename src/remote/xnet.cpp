@@ -247,7 +247,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 
 	TEXT buffer[BUFFER_TINY];
 	TEXT *p;
-	Firebird::ClumpletWriter user_id(false, MAX_DPB_SIZE);
+	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
 	ISC_get_user(buffer, 0, 0, 0, 0, 0, 0);
 	for (p = buffer; *p; p++) {

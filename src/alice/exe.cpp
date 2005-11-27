@@ -80,7 +80,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 
 //  generate the database parameter block for the attach,
 //  based on the various switches
-		Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE);
+		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE);
 		buildDpb(dpb, switches);
 
 		FB_API_HANDLE handle = 0;
@@ -147,7 +147,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 
 //  generate the database parameter block for the attach,
 //  based on the various switches
-		Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE);
+		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE);
 		buildDpb(dpb, switches);
 
 		FB_API_HANDLE handle = 0;

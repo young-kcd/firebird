@@ -62,6 +62,9 @@
 #include "../utilities/gsec/gsecswi.h"
 #include "../utilities/gstat/dbaswi.h"
 #include "../common/classes/alloc.h"
+#include "../common/classes/ClumpletWriter.h"
+#include "../jrd/ibase.h"
+
 #ifdef SERVER_SHUTDOWN
 #include "../jrd/jrd_proto.h"
 #endif
@@ -166,19 +169,22 @@ bool ck_space_for_numeric(char*& info, const char* const end)
 // It was easier to rename this struct.
 
 struct Serv_param_block {
-	TEXT*	spb_sys_user_name;
-	TEXT*	spb_user_name;
-	TEXT*	spb_password;
-	TEXT*	spb_password_enc;
-	TEXT*	spb_command_line;
-	USHORT	spb_version;
+	Firebird::string	spb_sys_user_name;
+	Firebird::string	spb_user_name;
+	Firebird::string	spb_password;
+	Firebird::string	spb_password_enc;
+	Firebird::string	spb_command_line;
+	Firebird::string	spb_network_protocol;
+	Firebird::string    spb_remote_address;
+	USHORT				spb_version;
+
+	Serv_param_block() : spb_version(0) { }
 };
 
 static void conv_switches(USHORT, USHORT, const SCHAR*, TEXT**);
 static const TEXT* find_switch(int, const in_sw_tab_t*);
 static USHORT process_switches(USHORT, const SCHAR*, TEXT*);
-static void get_options(const UCHAR*, USHORT, TEXT*, Serv_param_block*);
-static TEXT* get_string_parameter(const UCHAR**, TEXT**);
+static void get_options(Firebird::ClumpletReader&, Serv_param_block*);
 static bool get_action_svc_bitmask(const TEXT**, const in_sw_tab_t*,
 									TEXT**, USHORT*, USHORT*);
 static void get_action_svc_string(const TEXT**, TEXT**, USHORT*, USHORT*);
@@ -248,6 +254,11 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 #else
 #define MAIN_GSEC		NULL
 #endif
+
+static inline const TEXT* SVC_err_string(const Firebird::string& s)
+{
+	return SVC_err_string(s.c_str(), s.length());
+}
 
 void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value)
 {
@@ -351,7 +362,7 @@ const ULONG SERVER_CAPABILITIES_FLAG	= REMOTE_HOP_SUPPORT | NO_SERVER_SHUTDOWN_S
 Service* SVC_attach(USHORT	service_length,
 			   const TEXT*	service_name,
 			   USHORT	spb_length,
-			   const SCHAR*	spb)
+			   const SCHAR*	spb_data)
 {
 /**************************************
  *
@@ -372,18 +383,13 @@ Service* SVC_attach(USHORT	service_length,
 			service_length--;
 	}
 	
-	TEXT misc_buf[512];
-	// CVC: Close easy buffer overrun attack
-	if (!service_length || service_length >= sizeof(misc_buf)) {
-	    service_length = (USHORT) sizeof(misc_buf) - 1;
-	}
-	strncpy(misc_buf, service_name, (size_t) service_length);
-	misc_buf[service_length] = 0;
 
 /* Find the service by looking for an exact match. */
+	Firebird::string misc_buf(service_name, 
+		service_length ? service_length : strlen(service_name));
 	serv_entry* serv;
 	for (serv = services; serv->serv_name; serv++) {
-		if (!strcmp(misc_buf, serv->serv_name))
+		if (misc_buf == serv->serv_name)
 			break;
 	}
 
@@ -393,7 +399,7 @@ Service* SVC_attach(USHORT	service_length,
 				 0);
 #else
 		ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnotdef,
-				 isc_arg_string, SVC_err_string(misc_buf, strlen(misc_buf)),
+				 isc_arg_string, SVC_err_string(misc_buf),
 				 0);
 #endif
 
@@ -401,111 +407,64 @@ Service* SVC_attach(USHORT	service_length,
 
 /* If anything goes wrong, we want to be able to free any memory
    that may have been allocated. */
-
-	SCHAR* spb_buf = 0;
-	TEXT* switches = 0;
-	TEXT* misc = 0;
 	Service* service = 0;
 
 	try {
+ 	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE, 
+		reinterpret_cast<const UCHAR*>(spb_data), spb_length, isc_spb_current_version);
 
 /* Insert internal switch SERVICE_THD_PARAM in the service parameter block. */
-
-	const SCHAR* p = spb;
-	const SCHAR* const end = spb + spb_length;
-	bool cmd_line_found = false;
-	while (!cmd_line_found && p < end) {
-		switch (*p++) {
-		case isc_spb_version1:
-		case isc_spb_version:
-			p++;
-			break;
-
-		case isc_spb_sys_user_name:
-		case isc_spb_user_name:
-		case isc_spb_password:
-		case isc_spb_password_enc:
-			{
-			const USHORT length = *p++;
-			p += length;
-			}
-			break;
-
-		case isc_spb_command_line:
-			cmd_line_found = true;
-			break;
-		}
-	}
-
 	/* dimitr: it looks that we shouldn't execute the below code
 	           if the first switch of the command line is "-svc_re",
 			   but I couldn't find where such a switch is specified
 			   by any of the client tools, so it seems that in fact
 			   it's not used at all. Hence I ignore this situation. */
-	if (cmd_line_found && p++ < end) {
-		USHORT ignored_length = 0;
-		if (!strncmp(p, "-svc ", 5))
-			ignored_length = 5;
-		else if (!strncmp(p, "-svc_thd ", 9))
-			ignored_length = 9;
-		USHORT param_length = sizeof(SERVICE_THD_PARAM) - 1;
-		USHORT spb_buf_length = spb_length + param_length - ignored_length + 1;
-		SCHAR* q = spb_buf = (TEXT*) gds__alloc(spb_buf_length + 1);
-		if (!q)
-			ERR_post(isc_virmemexh, 0);
-		memcpy(q, spb, p - spb);
-		q += p - spb - 1;
-		*q++ += param_length - ignored_length + 1;
-		memcpy(q, SERVICE_THD_PARAM, param_length);
-		q += param_length;
-		*q++ = ' ';
-		p += ignored_length;
-		memcpy(q, p, end - p);
-		spb = spb_buf;
-		spb_length = spb_buf_length;
+	if (spb.find(isc_spb_command_line)) {
+		Firebird::string cl;
+		spb.getString(cl);
+		if (cl.substr(0, 5) == "-svc ")
+			cl.erase(0, 5);
+		else if (cl.substr(0, 9) == "-svc_thd ")
+			cl.erase(0, 9);
+		cl.insert(0, ' ');
+		cl.insert(0, SERVICE_THD_PARAM);
+		spb.deleteClumplet();
+		spb.insertString(isc_spb_command_line, cl);
 	}
 
 /* Process the service parameter block. */
-
-	if (spb_length > sizeof(misc_buf)) {
-		misc = (TEXT *) gds__alloc((SLONG) spb_length);
-		if (!misc) {
-			ERR_post(isc_virmemexh, 0);
-		}
-	}
-	else {
-		misc = misc_buf;
-	}
-
 	Serv_param_block options;
-	get_options(reinterpret_cast<const UCHAR*>(spb), spb_length, misc, &options);
+	get_options(spb, &options);
 
 /* Perhaps checkout the user in the security database. */
 	USHORT user_flag;
-	if (!strcmp(serv->serv_name, "anonymous")) {
+	if (serv->serv_name == "anonymous") {
 		user_flag = SVC_user_none;
 	}
 	else {
-		if (!options.spb_user_name)
+		if (!options.spb_user_name.hasData())
 		{
 			// user name and password are required while
 			// attaching to the services manager
 			ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnouser, 0);
 		}
-		if (options.spb_user_name)
+		else 
 		{
 			TEXT name[129]; // unused after retrieved
 			int id, group, node_id;
-			// ToDo: add remote protocol/address information to Serv_param_block
-			//		 and use it here. AP.
-			SecurityDatabase::verifyUser(name, options.spb_user_name,
-					                     options.spb_password, options.spb_password_enc,
-										 &id, &group, &node_id, "");
+			
+			Firebird::string remote = options.spb_network_protocol +
+				(options.spb_network_protocol.isEmpty() || options.spb_remote_address.isEmpty() ? "" : "/") +
+									  options.spb_remote_address;
+			
+			SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
+					                     options.spb_password.nullStr(), 
+										 options.spb_password_enc.nullStr(),
+										 &id, &group, &node_id, remote);
 		}
 
 /* Check that the validated user has the authority to access this service */
-
-		if (fb_stricmp(options.spb_user_name, SYSDBA_USER_NAME))
+		if (fb_stricmp(options.spb_user_name.c_str(), SYSDBA_USER_NAME))
 		{
 			user_flag = SVC_user_any;
 		}
@@ -514,31 +473,14 @@ Service* SVC_attach(USHORT	service_length,
 		}
 	}
 
-/* Allocate a buffer for the service switches, if any.  Then move them in. */
-
-	const USHORT len =
-		((serv->serv_std_switches) ? strlen(serv->serv_std_switches) : 0) +
-		((options.spb_command_line) ? strlen(options.spb_command_line) : 0) +
-		1;
-
-	if (len > 1)
-	{
-		if ((switches = (TEXT *) gds__alloc((SLONG) len)) == NULL)
-		{
-			/* FREE: by exception handler */
-			ERR_post(isc_virmemexh, 0);
-		}
-	}
-
-	if (switches)
-		*switches = 0;
+/* move service switches in */
+	Firebird::string switches;
 	if (serv->serv_std_switches)
-		strcpy(switches, serv->serv_std_switches);
-	if (options.spb_command_line && serv->serv_std_switches)
-		strcat(switches, " ");
-	if (options.spb_command_line)
-		strcat(switches, options.spb_command_line);
-
+		switches = serv->serv_std_switches;
+	if (options.spb_command_line.hasData() && serv->serv_std_switches)
+		switches += " ";
+	switches += options.spb_command_line;
+	
 /* Services operate outside of the context of databases.  Therefore
    we cannot use the JRD allocator. */
 
@@ -559,15 +501,20 @@ Service* SVC_attach(USHORT	service_length,
 	memset((void *) service->svc_status, 0,
 		   ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
 
-	//service->blk_type = type_svc;
-	//service->blk_pool_id = 0;
-	//service->blk_length = 0;
 	service->svc_service = serv;
 	service->svc_resp_ptr = service->svc_resp_buf = NULL;
 	service->svc_resp_buf_len = service->svc_resp_len = 0;
 	service->svc_flags =
-		(serv->serv_executable ? SVC_forked : 0) | (switches ? SVC_cmd_line : 0);
-	service->svc_switches = switches;
+		(serv->serv_executable ? SVC_forked : 0) | (switches.hasData() ? SVC_cmd_line : 0);
+	if (switches.hasData()) {
+		service->svc_switches = (TEXT *) gds__alloc((SLONG) (switches.length() + 1));
+		if (! service->svc_switches)
+		{
+			/* FREE: by exception handler */
+			ERR_post(isc_virmemexh, 0);
+		}
+		switches.copyTo(service->svc_switches, switches.length() + 1);
+	}
 	service->svc_handle = 0;
 	service->svc_user_flag = user_flag;
 	service->svc_do_shutdown = false;
@@ -578,24 +525,28 @@ Service* SVC_attach(USHORT	service_length,
 	service->svc_argv = NULL;
 #endif
 	service->svc_spb_version = options.spb_version;
-	if (options.spb_user_name)
-		strcpy(service->svc_username, options.spb_user_name);
+	if (options.spb_user_name.hasData())
+	{
+		options.spb_user_name.copyTo(service->svc_username, sizeof(service->svc_username));
+	}
 
 /* The password will be issued to the service threads on NT since
  * there is no OS authentication.  If the password is not yet
  * encrypted, then encrypt it before saving it (since there is no
  * decrypt function).
  */
-	if (options.spb_password) {
+	if (options.spb_password.hasData()) 
+	{
 		char tmp_enc_pwd[sizeof(service->svc_enc_password) + 2];
 		ENC_crypt(tmp_enc_pwd, sizeof(tmp_enc_pwd), 
-				  options.spb_password, PASSWORD_SALT);
+				  options.spb_password.c_str(), PASSWORD_SALT);
 		memcpy(service->svc_enc_password, tmp_enc_pwd + 2, 
 			sizeof(service->svc_enc_password));
 	}
 
-	if (options.spb_password_enc) {
-		strcpy(service->svc_enc_password, options.spb_password_enc);
+	if (options.spb_password_enc.hasData()) 
+	{
+		options.spb_password_enc.copyTo(service->svc_enc_password, sizeof(service->svc_enc_password));
 	}
 
 /* If an executable is defined for the service, try to fork a new process.
@@ -627,29 +578,15 @@ Service* SVC_attach(USHORT	service_length,
 #endif
 	}
 
-	if (spb_buf) {
-		gds__free(spb_buf);
-	}
-	if (misc != misc_buf) {
-		gds__free(misc);
-	}
-
 	}	// try
 	catch (const std::exception&) {
-		if (spb_buf) {
-			gds__free(spb_buf);
-		}
-		if (misc && misc != misc_buf) {
-			gds__free(misc);
-		}
-		if (switches) {
-			gds__free(switches);
-		}
 		if (service) {
 			if (service->svc_status) {
 				gds__free(service->svc_status);
 			}
-//			gds__free(service);
+			if (service->svc_switches) {
+				gds__free(service->svc_switches);
+			}
 			delete service;
 		}
 		throw;
@@ -2072,10 +2009,8 @@ THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
 }
 
 
-static void get_options(const UCHAR*	spb,
-						USHORT	spb_length,
-						TEXT*	scratch,
-						Serv_param_block*	options)
+static void get_options(Firebird::ClumpletReader&	spb,
+						Serv_param_block*			options)
 {
 /**************************************
  *
@@ -2087,80 +2022,66 @@ static void get_options(const UCHAR*	spb,
  *	Parse service parameter block picking up options and things.
  *
  **************************************/
-	MOVE_CLEAR(options, (SLONG) sizeof(Serv_param_block));
-	const UCHAR* p = spb;
-	const UCHAR* const end_spb = p + spb_length;
-
-	if (p < end_spb && (*p != isc_spb_version1 && *p != isc_spb_version))
+	const UCHAR p = spb.getBufferTag();
+	if (p != isc_spb_version1 && p != isc_spb_current_version)
 		ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, 0);
+	options->spb_version = p;
 
-	while (p < end_spb)
-		switch (*p++) {
-		case isc_spb_version1:
-			options->spb_version = isc_spb_version1;
-			break;
-
-		case isc_spb_version:
-			options->spb_version = *p++;
-			break;
-
+	for (spb.rewind(); !(spb.isEof()); spb.moveNext())
+	{
+		switch (spb.getClumpTag()) 
+		{
 		case isc_spb_sys_user_name:
-			options->spb_sys_user_name = get_string_parameter(&p, &scratch);
+			spb.getString(options->spb_sys_user_name);
 			break;
 
 		case isc_spb_user_name:
-			options->spb_user_name = get_string_parameter(&p, &scratch);
+			spb.getString(options->spb_user_name);
 			break;
 
 		case isc_spb_password:
-			options->spb_password = get_string_parameter(&p, &scratch);
+			spb.getString(options->spb_password);
 			break;
 
 		case isc_spb_password_enc:
-			options->spb_password_enc = get_string_parameter(&p, &scratch);
+			spb.getString(options->spb_password_enc);
 			break;
 
 		case isc_spb_command_line:
-			options->spb_command_line = get_string_parameter(&p, &scratch);
+			spb.getString(options->spb_command_line);
 			break;
 
-		default:
+		case isc_spb_address_path: 
 			{
-				const USHORT l = *p++;
-				p += l;
+				Firebird::ClumpletReader address_stack(Firebird::ClumpletReader::UnTagged, 
+					spb.getBytes(), spb.getClumpLength());
+				while (!address_stack.isEof()) {
+					if (address_stack.getClumpTag() != isc_dpb_address) {
+						address_stack.moveNext();
+						continue;
+					}
+					Firebird::ClumpletReader address(Firebird::ClumpletReader::UnTagged, 
+						address_stack.getBytes(), address_stack.getClumpLength());
+					while (!address.isEof()) {
+						switch (address.getClumpTag()) {
+							case isc_dpb_addr_protocol:
+								address.getString(options->spb_network_protocol);
+								break;
+							case isc_dpb_addr_endpoint:
+								address.getString(options->spb_remote_address);
+								break;
+							default:
+								break;
+						}
+						address.moveNext();
+					}
+					break;
+				}
 			}
+			break;
+
 		}
-}
-
-
-static TEXT* get_string_parameter(const UCHAR** spb_ptr, TEXT** opt_ptr)
-{
-/**************************************
- *
- *	g e t _ s t r i n g _ p a r a m e t e r
- *
- **************************************
- *
- * Functional description
- *	Pick up a string valued parameter, copy it to a running temp,
- *	and return pointer to copied string.
- *
- **************************************/
-	TEXT* opt = *opt_ptr;
-	const UCHAR* spb = *spb_ptr;
-
-	USHORT l = *spb++;
-	if (l)
-		do {
-			*opt++ = *spb++;
-		} while (--l);
-
-	*opt++ = 0;
-	*spb_ptr = spb;
-	spb = (UCHAR *) * opt_ptr;
-	*opt_ptr = opt;
-
-	return (TEXT *) spb;
+	}
 }
 
 

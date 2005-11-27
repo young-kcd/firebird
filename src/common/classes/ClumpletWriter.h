@@ -44,10 +44,10 @@ class ClumpletWriter : public ClumpletReader
 {
 public:
 	// Create empty clumplet writer.
-	ClumpletWriter(bool isTagged, size_t limit, UCHAR tag = 0);
+	ClumpletWriter(Kind k, size_t limit, UCHAR tag = 0);
 
 	// Create writer from a given buffer
-	ClumpletWriter(bool isTagged, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
+	ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
 
 	void reset(UCHAR tag);
 	void reset(const UCHAR* buffer, size_t buffLen);
@@ -59,10 +59,7 @@ public:
 	void insertString(UCHAR tag, const string& str);
 	void insertPath(UCHAR tag, const PathName& str);
 	void insertString(UCHAR tag, const char* str, size_t length);
-	void insertByte(UCHAR tag, const UCHAR byte)
-	{
-		insertBytesNoLengthCheck(tag, &byte, 1);
-	}
+	void insertByte(UCHAR tag, const UCHAR byte);
 	void insertTag(UCHAR tag);
 	void insertEndMarker(UCHAR tag);
 
@@ -73,7 +70,7 @@ public:
 protected:
 	virtual const UCHAR* getBufferEnd() const { return dynamic_buffer.end(); }
 	virtual void size_overflow();
-	void insertBytesNoLengthCheck(UCHAR tag, const UCHAR* bytes, UCHAR length);
+	void insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_t length);
 private:
 	size_t sizeLimit;
 
@@ -82,6 +79,8 @@ private:
 	ClumpletWriter& operator=(const ClumpletWriter& from);
 
 	HalfStaticArray<UCHAR, 128> dynamic_buffer;
+	
+	void initNewBuffer(UCHAR tag);
 };
 
 } // namespace Firebird

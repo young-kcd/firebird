@@ -5055,7 +5055,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 		ERR_post(isc_bad_dpb_form, 0);
 	}
 
-	Firebird::ClumpletReader rdr(true, dpb, dpb_length);
+	Firebird::ClumpletReader rdr(Firebird::ClumpletReader::Tagged, dpb, dpb_length);
 
 	if (rdr.getBufferTag() != isc_dpb_version1)
 	{
@@ -5364,14 +5364,14 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			break;
 
 		case isc_dpb_address_path: {
-			Firebird::ClumpletReader address_stack(false, 
+			Firebird::ClumpletReader address_stack(Firebird::ClumpletReader::UnTagged, 
 				rdr.getBytes(), rdr.getClumpLength());
 			while (!address_stack.isEof()) {
 				if (address_stack.getClumpTag() != isc_dpb_address) {
 					address_stack.moveNext();
 					continue;
 				}
-				Firebird::ClumpletReader address(false, 
+				Firebird::ClumpletReader address(Firebird::ClumpletReader::UnTagged, 
 					address_stack.getBytes(), address_stack.getClumpLength());
 				while (!address.isEof()) {
 					switch (address.getClumpTag()) {

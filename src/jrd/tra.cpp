@@ -2814,7 +2814,7 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
  *
  **************************************/
 	isc_db_handle db_handle = 0;
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	const char* szAuthenticator = "sweeper";
 	dpb.insertString(isc_dpb_user_name, 

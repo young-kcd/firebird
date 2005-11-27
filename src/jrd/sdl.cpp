@@ -41,7 +41,7 @@ using namespace Jrd;
 
 struct sdl_arg {
 	USHORT sdl_arg_mode;
-	internal_array_desc* sdl_arg_desc;
+	Ods::InternalArrayDesc* sdl_arg_desc;
 	const UCHAR* sdl_arg_sdl;
 	UCHAR* sdl_arg_array;
 	SLONG* sdl_arg_variables;
@@ -120,7 +120,7 @@ UCHAR* SDL_clone_sdl(const UCHAR* origin, size_t origin_size,
 
 
 SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
-							const internal_array_desc* desc,
+							const Ods::InternalArrayDesc* desc,
 							USHORT dimensions,
 							const SLONG* subscripts)
 {
@@ -144,8 +144,8 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 
 	SLONG subscript = 0;
 
-	const internal_array_desc::iad_repeat* range = desc->iad_rpt;
-	for (const internal_array_desc::iad_repeat* const end = range + desc->iad_dimensions;
+	const Ods::InternalArrayDesc::iad_repeat* range = desc->iad_rpt;
+	for (const Ods::InternalArrayDesc::iad_repeat* const end = range + desc->iad_dimensions;
 		 range < end; ++range)
 	{
 		const SLONG n = *subscripts++;
@@ -318,7 +318,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 		const UCHAR* sdl,
 		bool mode,
 		UCHAR* array,
-		internal_array_desc* array_desc,
+		Ods::InternalArrayDesc* array_desc,
 		SLONG* variables,
 		SDL_walk_callback callback,
 		array_slice* argument)
@@ -626,8 +626,8 @@ static bool execute(sdl_arg* arg)
 	SLONG value, count;
 	dsc element_desc;
 
-	internal_array_desc* array_desc = arg->sdl_arg_desc;
-	const internal_array_desc::iad_repeat* const range_end = 
+	Ods::InternalArrayDesc* array_desc = arg->sdl_arg_desc;
+	const Ods::InternalArrayDesc::iad_repeat* const range_end = 
 		array_desc->iad_rpt + array_desc->iad_dimensions;
 	SLONG* variables = arg->sdl_arg_variables;
 	const IPTR* next = arg->sdl_arg_compiled;
@@ -695,7 +695,7 @@ static bool execute(sdl_arg* arg)
 				value = *next++;
 				next++;				/* Skip count, unsupported. */
 				SLONG subscript = 0;
-				for (const internal_array_desc::iad_repeat* range = array_desc->iad_rpt;
+				for (const Ods::InternalArrayDesc::iad_repeat* range = array_desc->iad_rpt;
 					 range < range_end; ++range)
 				{
 					const SLONG n = *stack_ptr++;

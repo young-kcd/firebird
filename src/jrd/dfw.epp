@@ -175,7 +175,7 @@ static void check_filename(const Firebird::string&, bool);
 static void check_system_generator(const TEXT*, const dfw_t);
 static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
-static void get_array_desc(thread_db*, const TEXT*, internal_array_desc*);
+static void get_array_desc(thread_db*, const TEXT*, Ods::InternalArrayDesc*);
 static void get_procedure_dependencies(DeferredWork*);
 static void get_trigger_dependencies(DeferredWork*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
@@ -3240,7 +3240,7 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 
 
 static void get_array_desc(thread_db* tdbb, const TEXT* field_name, 
-	internal_array_desc* desc)
+	Ods::InternalArrayDesc* desc)
 {
 /**************************************
  *
@@ -3257,7 +3257,7 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name,
 
 	jrd_req* request = CMP_find_request(tdbb, irq_r_fld_dim, IRQ_REQUESTS);
 
-	internal_array_desc::iad_repeat* ranges = 0;
+	Ods::InternalArrayDesc::iad_repeat* ranges = 0;
 	FOR (REQUEST_HANDLE request)
 		D IN RDB$FIELD_DIMENSIONS WITH D.RDB$FIELD_NAME EQ field_name
         if (!REQUEST(irq_r_fld_dim))
@@ -3286,7 +3286,7 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name,
 		desc->iad_count *= ranges->iad_upper - ranges->iad_lower + 1;
 	}
 
-	desc->iad_version = IAD_VERSION_1;
+	desc->iad_version = Ods::IAD_VERSION_1;
 	desc->iad_length =
 		IAD_LEN(MAX(desc->iad_struct_count, desc->iad_dimensions));
 	desc->iad_element_length = desc->iad_rpt[0].iad_desc.dsc_length;
@@ -3597,7 +3597,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		FMTS.RDB$RELATION_ID = relation->rel_id;
 		blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &FMTS.RDB$DESCRIPTOR);
 
-		if (sizeof(OdsDesc) == sizeof(struct dsc) || dbb->dbb_ods_version < ODS_VERSION11) {
+		if (sizeof(Ods::Descriptor) == sizeof(struct dsc) || dbb->dbb_ods_version < ODS_VERSION11) {
 			// For ODS10 and earlier put descriptors in their in-memory representation
 			// This makes 64-bit and 32-bit ODS10 different for the same architecture.
 			BLB_put_segment(tdbb,
@@ -3607,22 +3607,17 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		} else {
 			// Use generic representation of formats with 32-bit offsets
 			
-			Firebird::Array<OdsDesc> odsDescs;
-			OdsDesc *odsDesc = odsDescs.getBuffer(format->fmt_count);
+			Firebird::Array<Ods::Descriptor> odsDescs;
+			Ods::Descriptor *odsDesc = odsDescs.getBuffer(format->fmt_count);
 		
 			for (Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
 				 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
 			{
-				odsDesc->dsc_dtype = desc->dsc_dtype;
-				odsDesc->dsc_length = desc->dsc_length;
-				odsDesc->dsc_sub_type = desc->dsc_sub_type;
-				odsDesc->dsc_flags = desc->dsc_flags;
-				odsDesc->dsc_scale = desc->dsc_scale;
-				odsDesc->dsc_offset = (ULONG) (IPTR) desc->dsc_address;
+				*odsDesc = *desc;
 			}
 		
 			BLB_put_segment(tdbb, blob,
-			  (UCHAR*) odsDescs.begin(), odsDescs.getCount() * sizeof(OdsDesc));
+			  (UCHAR*) odsDescs.begin(), odsDescs.getCount() * sizeof(Ods::Descriptor));
 		}
 		BLB_close(tdbb, blob);
     END_STORE;
@@ -4479,8 +4474,8 @@ static void setup_array(thread_db* tdbb, blb* blob, const TEXT* field_name, USHO
 
 	put_summary_record(blob, RSR_dimensions, (UCHAR*) &n, sizeof(n));
 	tfb->tfb_flags |= TFB_array;
-	internal_array_desc* array = reinterpret_cast<internal_array_desc*>(stuff);
-	MOVE_CLEAR(array, (SLONG) sizeof(internal_array_desc));
+	Ods::InternalArrayDesc* array = reinterpret_cast<Ods::InternalArrayDesc*>(stuff);
+	MOVE_CLEAR(array, (SLONG) sizeof(Ods::InternalArrayDesc));
 	array->iad_dimensions = n;
 	array->iad_struct_count = 1;
 	array->iad_rpt[0].iad_desc = tfb->tfb_desc;

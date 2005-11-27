@@ -164,7 +164,7 @@ bool MET_database(dbb* database, bool print_version)
  *  compiletime user name and password 
  */
 
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	const TEXT* p;
 	if ((p = database->dbb_c_user)) {

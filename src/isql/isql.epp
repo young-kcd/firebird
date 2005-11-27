@@ -5032,7 +5032,7 @@ static processing_state newdb(TEXT* dbname,
 		strcpy(local_numbufs, global_Numbufs);
 
 	// Build up a dpb
-	Firebird::ClumpletWriter dpb(true, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)) {
 		dpb.insertString(isc_dpb_lc_ctype, ISQL_charset, strlen(ISQL_charset));

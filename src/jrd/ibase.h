@@ -1243,6 +1243,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
+/*						 and isc_spb_address_path */
 /**************************************************/
 
 /* Format of this clumplet is the following:
@@ -1382,6 +1383,8 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_spb_dbname                    106
 #define isc_spb_verbose                   107
 #define isc_spb_options                   108
+#define isc_spb_address_path              109
+
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout
 #define isc_spb_dummy_packet_interval     isc_dpb_dummy_packet_interval

@@ -453,7 +453,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
-	Firebird::ClumpletWriter user_id(false, MAX_DPB_SIZE);
+	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 	char buffer[BUFFER_SMALL];
 
 	int eff_gid;
@@ -1092,7 +1092,7 @@ static int accept_connection(rem_port* port,
 
 /* Pick up account and password, if given */
 
-	Firebird::ClumpletReader id(false, cnct->p_cnct_user_id.cstr_address,
+	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged, cnct->p_cnct_user_id.cstr_address,
 									   cnct->p_cnct_user_id.cstr_length);
 	SLONG eff_gid = -1, eff_uid = -1;
 	bool user_verification = false;

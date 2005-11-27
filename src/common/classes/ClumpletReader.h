@@ -33,6 +33,10 @@
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 
+#if defined(DEV_BUILD) && !defined(DEBUG_CLUMPLETS)
+#define DEBUG_CLUMPLETS
+#endif
+
 namespace Firebird {
 
 // This class provides read access for clumplet structure
@@ -40,7 +44,10 @@ namespace Firebird {
 class ClumpletReader : protected AutoStorage
 {
 public:
-	ClumpletReader(bool isTagged, const UCHAR* buffer, size_t buffLen);
+	enum Kind {Tagged, UnTagged, SpbAttach, SpbQuery, Tpb/*, SpbInfo*/};
+
+	// Constructor prepares an object from plain PB
+	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
 
 	// Navigation in clumplet buffer
 	bool isEof() const { return cur_offset >= getBufferLength(); }
@@ -57,7 +64,7 @@ public:
 	SINT64 getBigInt() const;
 	string& getString(string& str) const;
 	PathName& getPath(PathName& str) const;
-	const UCHAR* getBytes() const { return getBuffer() + cur_offset + 2; }
+	const UCHAR* getBytes() const;
 
 	// Return the tag for buffer (usually structure version)
 	UCHAR getBufferTag() const;
@@ -72,9 +79,21 @@ public:
 	}
 	size_t getCurOffset() const { return cur_offset; }
 	void setCurOffset(size_t newOffset) { cur_offset = newOffset; }
+	
+#ifdef DEBUG_CLUMPLETS
+	// Sometimes it's really useful to have it in case of errors
+	void dump() const;
+#endif
+
 protected:
+	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, ByteSpb};
+	ClumpletType getClumpletType(UCHAR tag) const;
+	size_t getClumpletSize(bool wTag, bool wLength, bool wData) const;
+	void adjustSpbState();
+	
 	size_t cur_offset;
-	bool mIsTagged;
+	const Kind kind;
+	UCHAR spbState;		// Reflects state of spb parser/writer
 
 	// Methods are virtual so writer can override 'em
 	virtual const UCHAR* getBuffer() const { return static_buffer; }
@@ -89,6 +108,7 @@ protected:
 
 	// This is called when passed buffer appears invalid
 	virtual void invalid_structure() const;
+
 private:
 	// Assignment and copy constructor not implemented.
 	ClumpletReader(const ClumpletReader& from);
