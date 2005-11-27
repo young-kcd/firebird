@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.64 2005-06-10 10:32:51 aafemt Exp $
+#  $Id: Makefile.in.firebird,v 1.65 2005-11-27 15:04:40 alexpeshkoff Exp $
 #
 
 ROOT=..
@@ -253,7 +253,7 @@ lock_mgr :
 
 .PHONY: create_db empty_db gbak_static isql_static ref_databases
 
-boot_phase2 : $(ISC_GDB)
+boot_phase2 : libfbcommon libfbstatic $(ISC_GDB)
 
 $(ISC_GDB):
 	$(MAKE) boot_phase2_build
@@ -298,8 +298,8 @@ security2.fdb: gdef isql 		# build the security database
 
 .PHONY: ref_databases msgs msgs_intl generated_headers intl extlib includes
 
-basic_targets: ref_databases msgs msgs_intl generated_headers intl extlib includes examples_cp \
-		otherfiles
+basic_targets: libfbcommon ref_databases msgs msgs_intl generated_headers \
+               intl extlib includes examples_cp otherfiles
 
 # hack to make code regeneration work
 generated_headers :
