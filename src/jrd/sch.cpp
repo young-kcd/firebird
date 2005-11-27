@@ -484,7 +484,11 @@ void SCH_exit(void)
 	// happens during attach to database in SS builds. Exception
 	// handler there calls THREAD_EXIT without preceding THREAD_ENTER
 	// in this case (during shutdown of CACHE_WRITER or CACHE_READER)
-	if (!thread) return; 
+	if (!thread) {
+		if (mutex_state = THD_mutex_unlock(thread_mutex))
+			mutex_bugcheck("mutex unlock", mutex_state);
+		return; 
+	}
 
 	if (thread == thread->thread_next)
 		active_thread = NULL;
