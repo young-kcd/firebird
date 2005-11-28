@@ -1,3 +1,51 @@
+2005-11-27 21:52  alexpeshkoff
+
+	* firebird2/src/: alice/exe.cpp (1.43), alice/tdr.cpp (1.47),
+	burp/burp.cpp (1.104), burp/restore.epp (1.99),
+	common/classes/ClumpletReader.cpp (1.10),
+	common/classes/ClumpletReader.h (1.12),
+	common/classes/ClumpletWriter.cpp (1.11),
+	common/classes/ClumpletWriter.h (1.9), dsql/preparse.cpp (1.38),
+	dudley/exe.epp (1.59), gpre/gpre_meta.epp (1.53), isql/isql.epp
+	(1.159), jrd/blb.cpp (1.102), jrd/blb_proto.h (1.22), jrd/blk.h
+	(1.24), jrd/cvt2.cpp (1.53), jrd/dfw.epp (1.166), jrd/dsc.cpp
+	(1.25), jrd/dsc.h (1.24), jrd/fun.epp (1.71), jrd/ibase.h (1.103),
+	jrd/jrd.cpp (1.227), jrd/met.epp (1.173), jrd/ods.h (1.38),
+	jrd/pwd.cpp (1.47), jrd/sdl.cpp (1.42), jrd/sdl_proto.h (1.16),
+	jrd/svc.cpp (1.150), jrd/tra.cpp (1.106), jrd/val.h (1.30),
+	jrd/why.cpp (1.95), msgs/messages.sql (1.56), qli/meta.epp (1.57),
+	remote/inet.cpp (1.146), remote/inet_server.cpp (1.57),
+	remote/interface.cpp (1.107), remote/server.cpp (1.109),
+	remote/xnet.cpp (1.66), remote/os/win32/wnet.cpp (1.32),
+	utilities/create_db.cpp (1.10), utilities/nbackup.cpp (1.47),
+	utilities/gsec/gsec.cpp (1.48), utilities/gstat/dba.epp (1.61):
+	
+	1. Moved data structures, written to database file, into ods.h.  2.
+	Added new types of clumplets to ClumpletReader and ClupmletWriter. 
+	3. Applied modified ClumpletReader and ClupmletWriter to /remote
+	and partially /jrd.  4. Added active protection from remote
+	brute-force attack to services API.
+
+2005-11-27 16:04  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.65):
+	
+	rebuild libraries not only during boot_phase1
+
+2005-11-27 13:05  hvlad
+
+	* firebird2/src/jrd/sch.cpp (1.31):
+	
+	Fixed SF bug 1175157
+
+2005-11-27 07:42  robocop
+
+	* firebird2/src/isql/: extract.epp (1.65), show.epp (1.80):
+	
+	Fix for problems with triggers v/s checks (some triggers not
+	extracted, other automatically generated triggers belonging to
+	CHECK, view's CHECK OPTION and CASCADE being extracted).
+
 2005-11-26 17:15  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp (1.249):
