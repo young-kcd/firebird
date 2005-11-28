@@ -436,9 +436,14 @@ for %%v in (bin doc doc\sql.extensions help include intl lib udf examples ) do (
 	@copy /Y %FBBUILD_OUTPUT%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
 )
 :: Now remove stuff that is not needed.
-for %%v in ( doc\installation_readme.txt bin\fbembed.dll bin\fbembed.pdb bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll ) do (
+setlocal
+set RM_FILE_LIST=doc\installation_readme.txt bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll
+if %FB2_SNAPSHOT% EQU 0 (set RM_FILE_LIST=bin\fbembed.dll bin\fbembed.pdb %RM_FILE_LIST%)
+
+for %%v in ( %RM_FILE_LIST% ) do (
   @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
 )
+endlocal
 
 if %FB2_SNAPSHOT% EQU 1 (
   @copy %ROOT_PATH%\builds\install\arch-specific\win32\readme_snapshot.txt %FBBUILD_ZIP_PACK_ROOT%\readme_snapshot.txt > nul
@@ -492,6 +497,9 @@ for %%v in (aliases.conf firebird.conf firebird.msg) do (	@copy /Y %FBBUILD_OUTP
 for %%v in ( doc intl udf ) do (@mkdir %FBBUILD_EMB_PACK_ROOT%\%%v 2>nul)
 
 @copy /Y %ROOT_PATH%\temp\release\firebird\bin\fbembed.* %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %ROOT_PATH%\extern\icu\bin\icudt30.dll %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %ROOT_PATH%\extern\icu\bin\icuin30.dll %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %ROOT_PATH%\extern\icu\bin\icuuc30.dll %FBBUILD_EMB_PACK_ROOT% > nul
 @copy /Y %ROOT_PATH%\temp\release\firebird\bin\ib_util.dll %FBBUILD_EMB_PACK_ROOT% > nul
 @copy /Y %FBBUILD_OUTPUT%\doc\Firebird*.pdf %FBBUILD_EMB_PACK_ROOT%\doc\ > nul
 @copy /Y %FBBUILD_OUTPUT%\intl\*.* %FBBUILD_EMB_PACK_ROOT%\intl\ > nul
