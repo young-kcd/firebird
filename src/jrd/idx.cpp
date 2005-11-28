@@ -83,7 +83,6 @@ static IDX_E check_duplicates(thread_db*, Record*, index_desc*, index_insertion*
 static IDX_E check_foreign_key(thread_db*, Record*, jrd_rel*, jrd_tra*, index_desc*, jrd_rel**, USHORT *);
 static IDX_E check_partner_index(thread_db*, jrd_rel*, Record*, jrd_tra*, index_desc*, jrd_rel*, SSHORT);
 static bool duplicate_key(const UCHAR*, const UCHAR*, void*);
-static const dsc* eval_expr_idx(thread_db*, const index_desc*, Record*, bool &);
 static SLONG get_root_page(thread_db*, const jrd_rel*);
 static int index_block_flush(void*);
 static IDX_E insert_key(thread_db*, jrd_rel*, Record*, jrd_tra*, WIN *, index_insertion*, jrd_rel**, USHORT *);
@@ -1034,11 +1033,11 @@ static IDX_E check_duplicates(
 			if (record_idx->idx_flags & idx_expressn)
 			{
 				bool flag_idx;
-				const dsc* desc_idx = eval_expr_idx(tdbb, record_idx, record, flag_idx);
+				const dsc* desc_idx = BTR_eval_expression(tdbb, record_idx, record, flag_idx);
 				
-				/*	hvlad: eval_expr_idx call EVL_expr which returns impure->vlu_desc. 
-					Since record_idx and insertion_idx are the same indexes second call 
-					to eval_expr_idx will overwrite value from first call. So we must 
+				/*	hvlad: BTR_eval_expression call EVL_expr which returns impure->vlu_desc. 
+					Since record_idx and insertion_idx are the same indexes second call to 
+					BTR_eval_expression will overwrite value from first call. So we must 
 					save first result into another dsc
 				*/
 
@@ -1050,7 +1049,7 @@ static IDX_E check_duplicates(
 
 				bool flag_rec = false;
 				const dsc* desc_rec = has_cur_values ? 
-					eval_expr_idx(tdbb, insertion_idx, rpb.rpb_record, flag_rec) : NULL;
+					BTR_eval_expression(tdbb, insertion_idx, rpb.rpb_record, flag_rec) : NULL;
 
 				const bool equal_cur = has_cur_values && flag_rec && flag_idx && 
 					(MOV_compare(desc_rec, &desc1) == 0);
@@ -1062,7 +1061,7 @@ static IDX_E check_duplicates(
 
 				if (has_old_values)
 				{
-					desc_rec = eval_expr_idx(tdbb, insertion_idx, old_rpb.rpb_record, flag_rec);
+					desc_rec = BTR_eval_expression(tdbb, insertion_idx, old_rpb.rpb_record, flag_rec);
 
 					const bool equal_old = flag_rec && flag_idx && 
 						(MOV_compare(desc_rec, &desc1) == 0);
@@ -1080,7 +1079,6 @@ static IDX_E check_duplicates(
 						}
 					}
 				}
-				
 			}
 			else
 			{
@@ -1371,42 +1369,6 @@ static bool duplicate_key(const UCHAR* record1, const UCHAR* record2, void* ifl_
 	}
 
 	return false;
-}
-
-
-static const dsc* eval_expr_idx(thread_db* tdbb, const index_desc* idx, Record* record, bool &not_null)
-{
-	fb_assert(idx->idx_expression != NULL);
-	fb_assert(idx->idx_expression_request->req_caller == NULL);
-
-	SET_TDBB(tdbb);
-
-	idx->idx_expression_request->req_caller = tdbb->tdbb_request;
-
-	if (tdbb->tdbb_request)
-	{
-		TRA_attach_request(tdbb->tdbb_request->req_transaction, idx->idx_expression_request);
-	}
-
-	tdbb->tdbb_request = idx->idx_expression_request;
-	tdbb->tdbb_request->req_rpb[0].rpb_record = record;
-	tdbb->tdbb_request->req_flags &= ~req_null;
-
-	const dsc* result;
-	{
-		Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
-
-		if (!(result = EVL_expr(tdbb, idx->idx_expression)))
-			result = &idx->idx_expression_desc;
-	}
-
-	not_null = !(tdbb->tdbb_request->req_flags & req_null);
-
-	TRA_detach_request(idx->idx_expression_request);
-	tdbb->tdbb_request = idx->idx_expression_request->req_caller;
-	idx->idx_expression_request->req_caller = NULL;
-
-	return result;
 }
 
 

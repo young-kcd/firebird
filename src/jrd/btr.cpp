@@ -51,6 +51,7 @@
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
+#include "../jrd/exe_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
@@ -403,6 +404,56 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 #endif
 
 	return true;
+}
+
+
+DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool &notNull)
+{
+	SET_TDBB(tdbb);
+	fb_assert(idx->idx_expression != NULL);
+	
+	// 15 June 2004. Nickolay Samofatov.
+	// This code doesn't look correct. It should get broken in
+	// case of reentrance due to recursion or multi-threading
+	// 28 Nov 2005 hvlad
+	// When using EXE_find_request i hope all is ok here
+	jrd_req* expr_request = EXE_find_request(tdbb, idx->idx_expression_request, false);
+	fb_assert(expr_request->req_caller == NULL);
+
+	expr_request->req_caller = tdbb->tdbb_request;
+
+	// 10 Feb 2005 hvlad
+	// When this code called from IDX_create_index
+	// tdbb->tdbb_request is set to our idx->idx_expression_request
+	// by PCMET_expression_index. Therefore no need to attach\detach
+	// idx_expression_request to the same transaction twice
+	const bool already_attached = (expr_request->req_caller == expr_request);
+
+	if (tdbb->tdbb_request && !already_attached) {
+		TRA_attach_request(tdbb->tdbb_request->req_transaction, expr_request);
+	}
+
+	tdbb->tdbb_request = expr_request;
+	tdbb->tdbb_request->req_rpb[0].rpb_record = record;
+	tdbb->tdbb_request->req_flags &= ~req_null;
+
+	DSC* result = 0;
+	{
+		Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
+
+		if (!(result = EVL_expr(tdbb, idx->idx_expression)))
+			result = &idx->idx_expression_desc;
+	}
+	notNull = !(tdbb->tdbb_request->req_flags & req_null);
+
+	if (!already_attached) {
+		TRA_detach_request(expr_request);
+	}
+	tdbb->tdbb_request = expr_request->req_caller;
+	expr_request->req_caller = NULL;
+	expr_request->req_flags &= ~req_in_use;
+
+	return result;
 }
 
 
@@ -952,49 +1003,11 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			bool isNull;
 #ifdef EXPRESSION_INDICES
 			// for expression indices, compute the value of the expression
-			if (idx->idx_flags & idx_expressn) {
-
-				fb_assert(idx->idx_expression != NULL);
-
-				// 15 June 2004. Nickolay Samofatov.
-				// This code doesn't look correct. It should get broken in
-				// case of reentrance due to recursion or multi-threading
-				fb_assert(idx->idx_expression_request->req_caller == NULL);
-				idx->idx_expression_request->req_caller = tdbb->tdbb_request;
-				
-				// 10 Feb 2005 hvlad
-				// When this code called from IDX_create_index
-				// tdbb->tdbb_request is set to our idx->idx_expression_request
-				// by PCMET_expression_index. Therefore no need to attach\detach
-				// idx_expression_request to the same transaction twice
-				const bool already_attached = 
-					(idx->idx_expression_request->req_caller == 
-					idx->idx_expression_request);
-
-				if (tdbb->tdbb_request && !already_attached) {
-					TRA_attach_request(tdbb->tdbb_request->req_transaction,
-						idx->idx_expression_request);
-				}
-				tdbb->tdbb_request = idx->idx_expression_request;
-				tdbb->tdbb_request->req_rpb[0].rpb_record = record;
-
-				{
-					Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
-
-					tdbb->tdbb_request->req_flags &= ~req_null;
-
-					if (!(desc_ptr = EVL_expr(tdbb, idx->idx_expression))) {
-						desc_ptr = &idx->idx_expression_desc;
-					}
-
-					isNull = (tdbb->tdbb_request->req_flags & req_null);
-
-				}
-				if (!already_attached) {
-					TRA_detach_request(idx->idx_expression_request);
-				}
-				tdbb->tdbb_request = idx->idx_expression_request->req_caller;
-				idx->idx_expression_request->req_caller = NULL;
+			if (idx->idx_flags & idx_expressn) 
+			{
+				bool notNull;
+				desc_ptr = BTR_eval_expression(tdbb, idx, record, notNull);
+				isNull = !notNull;
 			}
 			else
 #endif
@@ -5441,7 +5454,7 @@ static SLONG insert_node(thread_db* tdbb,
 
 	// Update the values for the next node after our new node.
 	// First, store needed data for beforeInsertNode into tempData.
-	UCHAR* tempData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLength];
+	UCHAR* tempData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLength]; 
 	{ // scope
 	const UCHAR* p = beforeInsertNode.data + newPrefix - beforeInsertNode.prefix;
 	memcpy(tempData, p, newLength);
