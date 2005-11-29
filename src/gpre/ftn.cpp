@@ -24,7 +24,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: ftn.cpp,v 1.20.2.2 2005-10-24 16:51:47 awharrison Exp $
+//	$Id: ftn.cpp,v 1.20.2.3 2005-11-29 10:22:53 kkuznetsov Exp $
 //
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "DGUX" port
 // 2002.10.28 Sean Leyne - Completed removal of obsolete "SGI" port
@@ -44,7 +44,7 @@
 #include "../gpre/lang_proto.h"
 #include "../gpre/pat_proto.h"
 #include "../gpre/prett_proto.h"
-#include "../jrd/isc_proto.h"
+#include "../jrd/gds_proto.h"
 
 #ifdef HAVE_STRING_H
 #include <string.h>
