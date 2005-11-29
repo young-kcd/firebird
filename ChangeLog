@@ -1,3 +1,33 @@
+2005-11-29 00:06  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.250):
+	
+	Fix column-name problem with UNION and derived fields.	Problem
+	found by Volker Rehn.
+
+2005-11-28 22:43  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.154), btr_proto.h (1.36), idx.cpp
+	(1.100):
+	
+	1. Move IDX\eval_expr_idx into BTR_eval_expression 2. Replace
+	similar code in BTR_key by new BTR_eval_expression 3. Use
+	EXE_find_request in index expression evaluation to avoid AV in case
+	of using index simultaneously in some connections
+
+2005-11-28 14:58  hvlad
+
+	* firebird2/src/jrd/pcmet.epp (1.38):
+	
+	Correct previous fix
+
+2005-11-28 11:27  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.13), readme_snapshot.txt (1.1):
+	
+	Update win32 build installer script for snapshot builds.
+
 2005-11-27 21:52  alexpeshkoff
 
 	* firebird2/src/: alice/exe.cpp (1.43), alice/tdr.cpp (1.47),
