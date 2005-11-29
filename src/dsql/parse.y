@@ -188,7 +188,6 @@ struct LexerState {
 	const TEXT* beginning;
 	const TEXT* ptr;
 	const TEXT* end;
-	const TEXT* stop_trigger;
 	const TEXT* last_token;
 	const TEXT* line_start;
 	const TEXT* last_token_bk;
@@ -994,7 +993,7 @@ domain_clause	: column_def_name
 		data_type
 		begin_trigger
 		domain_default_opt
-		end_trigger
+		end_default_opt
 		domain_constraint_clause
 		collate_clause
 			{ $$ = make_node (nod_def_domain, (int) e_dom_count,
@@ -1245,7 +1244,7 @@ table_element	: column_def
 /* column definition */
 
 column_def	: column_def_name data_type_or_domain domain_default_opt
-			end_trigger column_constraint_clause collate_clause
+			end_default_opt column_constraint_clause collate_clause
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
 					$1, $3, $4, make_list ($5), $6, $2, NULL); }   
 		| column_def_name non_array_type def_computed
@@ -1865,19 +1864,18 @@ end_string	:
 		;
 */
 begin_trigger	: 
-			{ lex.beginning = lex.last_token; lex.stop_trigger = 0; }
+			{ lex.beginning = lex.last_token; }
 		;
 
 end_trigger	:
-			{
-				$$ = (dsql_nod*) MAKE_string(lex.beginning, 
-					(lex.stop_trigger ? lex.stop_trigger : lex_position()) - lex.beginning); 
-				lex.stop_trigger = 0; 
-			}
+			{ $$ = (dsql_nod*) MAKE_string(lex.beginning,
+					lex_position() - lex.beginning); }
 		;
 
-stop_trigger :
-			{ lex.stop_trigger = lex.last_token; }
+end_default_opt	:
+			{ $$ = (dsql_nod*) MAKE_string(lex.beginning, 
+					(yychar < 0 ? lex_position() : lex.last_token) - lex.beginning); 
+			}
 		;
 
 
@@ -3827,7 +3825,7 @@ datetime_value_expression : CURRENT_DATE
 
 sec_precision_opt	: '(' nonneg_short_integer ')'
 			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
-		|	stop_trigger
+		|
 			{ $$ = NULL; }
 		;
 
