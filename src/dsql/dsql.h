@@ -356,7 +356,7 @@ public:
 	USHORT		intlsym_bytes_per_char;
 	TEXT		intlsym_name[2];
 
-	static const SSHORT generate(const void*, const dsql_intlsym* Item) 
+	static SSHORT generate(const void*, const dsql_intlsym* Item)
 	{ return Item->intlsym_charset_id; }
 };
 
