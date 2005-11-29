@@ -65,16 +65,16 @@ bool getRootFromRegistry(string& root)
 
 void ConfigRoot::osConfigRoot()
 {
-/*
 	// check the registry first
-#if !defined(EMBEDDED)
+//#if !defined(EMBEDDED)
+#if defined(SUPERCLIENT)
 	if (getRootFromRegistry(root_dir))
 	{
 		addSlash();
 		return;
 	}
 #endif
-*/
+
 	// get the pathname of the running executable
 	string bin_dir;
 	{
