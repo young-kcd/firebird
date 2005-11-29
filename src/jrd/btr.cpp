@@ -5454,10 +5454,10 @@ static SLONG insert_node(thread_db* tdbb,
 
 	// Update the values for the next node after our new node.
 	// First, store needed data for beforeInsertNode into tempData.
-	UCHAR* tempData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLength]; 
+	UCHAR* tempData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLength];
 	{ // scope
-	const UCHAR* p = beforeInsertNode.data + newPrefix - beforeInsertNode.prefix;
-	memcpy(tempData, p, newLength);
+		const UCHAR* p = beforeInsertNode.data + newPrefix - beforeInsertNode.prefix;
+		memcpy(tempData, p, newLength);
 	} // scope
 
 	beforeInsertNode.prefix = newPrefix;
