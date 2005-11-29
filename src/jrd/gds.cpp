@@ -2332,14 +2332,20 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 				   sql_codes */
 				const SLONG gdscode = status_vector[1];
 
-				for (int i = 0; gds__sql_code[i].gds_code; ++i) {
-					if (gdscode == gds__sql_code[i].gds_code) {
-						if (gds__sql_code[i].sql_code != GENERIC_SQLCODE) {
-							sqlcode = gds__sql_code[i].sql_code;
-							have_sqlcode = true;
+				if (gdscode) {
+					for (int i = 0; gds__sql_code[i].gds_code; ++i) {
+						if (gdscode == gds__sql_code[i].gds_code) {
+							if (gds__sql_code[i].sql_code != GENERIC_SQLCODE) {
+								sqlcode = gds__sql_code[i].sql_code;
+								have_sqlcode = true;
+							}
+							break;
 						}
-						break;
 					}
+				}
+				else {
+					sqlcode = 0;
+					have_sqlcode = true;
 				}
 			}
 			s++;
