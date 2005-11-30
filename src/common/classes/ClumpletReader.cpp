@@ -37,17 +37,27 @@
 #include "../jrd/gds_proto.h"
 #include <ctype.h>
 
-void Firebird::ClumpletReader::dump() const
+namespace Firebird {
+
+void ClumpletReader::dump() const
 {
-	const size_t co = getCurOffset();
-	try {
-		gds__log("Offset %d\n", co);
-		for (const_cast<ClumpletReader*>(this)->rewind(); !isEof(); 
-			 const_cast<ClumpletReader*>(this)->moveNext())
+	static int dmp = 0;
+	gds__log("*** DUMP ***");
+	if (dmp) {
+		gds__log("recursion");
+		return;
+	}
+	dmp++;
+	
+	// Avoid infinite recursion during dump
+	class ClumpletDump : public ClumpletReader
+	{
+	public:
+		ClumpletDump(Kind k, const UCHAR* buffer, size_t buffLen)
+			: ClumpletReader(k, buffer, buffLen) { }
+		static string hexString(const UCHAR* b, size_t len)
 		{
-			size_t len = getClumpLength();
-			const UCHAR* b = getBytes();
-			Firebird::string t1, t2;
+			string t1, t2;
 			for (; len>0; --len, ++b) {
 				if (isprint(*b))
 					t2 += *b;
@@ -56,13 +66,41 @@ void Firebird::ClumpletReader::dump() const
 					t2 += t1;
 				}
 			}
-			gds__log("Clump %d: %s", getClumpTag(), t2.c_str());
+			return t2;
+		}
+	protected:
+		virtual void usage_mistake(const char* what) const 
+		{
+			fatal_exception::raiseFmt(
+			        "Internal error when using clumplet API: %s", what);
+		}
+		virtual void invalid_structure(const char* what) const 
+		{
+			fatal_exception::raiseFmt(
+					"Invalid clumplet buffer structure: %s", what);
+		}
+	};
+
+	try {
+		ClumpletDump d(kind, getBuffer(), getBufferLength());
+		int t = (kind == SpbStart || kind == UnTagged) ? -1 : d.getBufferTag();
+		gds__log("Tag=%d Offset=%d\n", t, getCurOffset());
+		for (d.rewind(); !(d.isEof()); d.moveNext())
+		{
+			gds__log("Clump %d at offset %d: %s", d.getClumpTag(), d.getCurOffset(),
+				ClumpletDump::hexString(d.getBytes(), d.getClumpLength()).c_str());
 		}
 	}
 	catch(const fatal_exception& x) {
 		gds__log("Fatal exception during clumplet dump: %s", x.what());
+		size_t l = getBufferLength() - getCurOffset();
+		const UCHAR *p = getBuffer() + getCurOffset();
+		gds__log("Plain dump starting with offset %d: %s", getCurOffset(),
+			ClumpletDump::hexString(p, l).c_str());
 	}
-	const_cast<ClumpletReader*>(this)->setCurOffset(co);
+	dmp--;
+}
+
 }
 #endif //DEBUG_CLUMPLETS
 
@@ -82,11 +120,12 @@ void ClumpletReader::usage_mistake(const char* what) const {
 		"Internal error when using clumplet API: %s", what);
 }
 
-void ClumpletReader::invalid_structure() const {
+void ClumpletReader::invalid_structure(const char* what) const {
 #ifdef DEBUG_CLUMPLETS
 	dump();
 #endif
-	fatal_exception::raise("Invalid clumplet buffer structure");
+	fatal_exception::raiseFmt(
+		"Invalid clumplet buffer structure: %s", what);
 }
 
 UCHAR ClumpletReader::getBufferTag() const
@@ -100,18 +139,18 @@ UCHAR ClumpletReader::getBufferTag() const
 	case Tagged:
 		if (buffer_end - buffer_start == 0) 
 		{
-			invalid_structure();
+			invalid_structure("empty buffer");
 			return 0;
 		}
 		return buffer_start[0];
-	case SpbQuery:
+	case SpbStart:
 	case UnTagged:
 		usage_mistake("buffer is not tagged");
 		return 0;
 	case SpbAttach:
 		if (buffer_end - buffer_start == 0) 
 		{
-			invalid_structure();
+			invalid_structure("empty buffer");
 			return 0;
 		}
 		switch (buffer_start[0])
@@ -124,14 +163,17 @@ UCHAR ClumpletReader::getBufferTag() const
 			// Buffer's tag is the second byte
 			if (buffer_end - buffer_start == 1) 
 			{
-				invalid_structure();
+				invalid_structure("buffer too short (1 byte)");
 				return 0;
 			}
 			return buffer_start[1];
 		default:
-			invalid_structure();
+			invalid_structure("spb in service attach should begin with isc_spb_version1 or isc_spb_version");
 			return 0;
 		}
+	default:
+		fb_assert(false);
+		return 0;
 	}
 }
 
@@ -151,7 +193,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			return TraditionalDpb;
 		}
 		return SingleTpb;
-	case SpbQuery:
+	case SpbStart:
 		switch (spbState) {
 		case 0:
 			return SingleTpb;
@@ -172,6 +214,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_res_access_mode:
 				return ByteSpb;
 			}
+			invalid_structure("unknown parameter for backup/restore");
 			break;
 		case isc_action_svc_repair:
 			switch(tag) 
@@ -200,6 +243,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_tra_advise_unknown:
 				return SingleTpb;
 			}
+			invalid_structure("unknown parameter for repair");
 			break;
 		case isc_action_svc_add_user:     
 		case isc_action_svc_delete_user:
@@ -220,6 +264,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_sec_groupid:
 				return IntSpb;
 			}
+			invalid_structure("unknown parameter for security database operation");
 			break;
 		case isc_action_svc_properties:
 			switch(tag) 
@@ -239,6 +284,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_prp_access_mode:
 				return ByteSpb;
 			}
+			invalid_structure("unknown parameter for setting database properties");
 			break;
 //		case isc_action_svc_add_license:
 //		case isc_action_svc_remove_license:
@@ -250,13 +296,16 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_options:
 				return IntSpb;
 			}
+			invalid_structure("unknown parameter for getting statistics");
 			break;
 		case isc_action_svc_get_ib_log:
+			invalid_structure("unknown parameter for getting log");
 			break;
 		}
+		invalid_structure("wrong spb state");
 		break;
 	}
-	invalid_structure();
+	invalid_structure("unknown reason");
 	return SingleTpb;
 }
 
@@ -264,8 +313,8 @@ void ClumpletReader::adjustSpbState()
 {
 	switch (kind)
 	{
-	case SpbQuery:
-		if (spbState == 0) {	// Just started with service query block
+	case SpbStart:
+		if (spbState == 0) {	// Just started with service start block
 			spbState = getClumpTag();
 		}
 		break;
@@ -296,7 +345,7 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 	case TraditionalDpb:
 		// Check did we receive length component for clumplet
 		if (buffer_end - clumplet < 2) {
-			invalid_structure();
+			invalid_structure("buffer end before end of clumplet - no length component");
 			return rc;
 		}
 		lengthSize = 1;
@@ -311,13 +360,13 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 	case StringSpb:
 		// Check did we receive length component for clumplet
 		if (buffer_end - clumplet < 3) {
-			invalid_structure();
+			invalid_structure("buffer end before end of clumplet - no length component");
 			return rc;
 		}
 		lengthSize = 2;
-		dataSize = clumplet[1];
+		dataSize = clumplet[2];
 		dataSize <<= 8;
-		dataSize += clumplet[2];
+		dataSize += clumplet[1];
 		break;
 		
 	// Used in SPB for 4-byte integers
@@ -333,7 +382,7 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 
 	size_t total = 1 + lengthSize + dataSize;	
 	if (clumplet + total > buffer_end) {
-		invalid_structure();
+		invalid_structure("buffer end before end of clumplet - clumplet too long");
 		size_t delta = total - (buffer_end - clumplet);
 		if (delta > dataSize)
 			dataSize = 0;
@@ -354,8 +403,9 @@ void ClumpletReader::moveNext()
 {
 	if (isEof())
 		return;		// no need to raise useless exceptions
-	cur_offset += getClumpletSize(true, true, true);
+	size_t cs = getClumpletSize(true, true, true);
 	adjustSpbState();
+	cur_offset += cs;
 }
 
 void ClumpletReader::rewind()
@@ -365,7 +415,7 @@ void ClumpletReader::rewind()
 		spbState = 0;
 		return;
 	}
-	if (kind == UnTagged || kind == SpbQuery)
+	if (kind == UnTagged || kind == SpbStart)
 		cur_offset = 0;
 	else if (kind == SpbAttach && getBufferLength() > 0 
 						 && getBuffer()[0] != isc_spb_version1)
@@ -420,7 +470,7 @@ SLONG ClumpletReader::getInt() const
 	size_t length = getClumpLength();
 
 	if (length > 4) {
-		invalid_structure();
+		invalid_structure("length of integer exceeds 4 bytes");
 		return 0;
 	}
 
@@ -442,7 +492,7 @@ SINT64 ClumpletReader::getBigInt() const
 	size_t length = getClumpLength();
 
 	if (length > 8) {
-		invalid_structure();
+		invalid_structure("length of BigInt exceeds 8 bytes");
 		return 0;
 	}
 
@@ -478,8 +528,8 @@ bool ClumpletReader::getBoolean() const
 {
 	const UCHAR* ptr = getBytes();
 	size_t length = getClumpLength();
-	if (length != 1) {
-		invalid_structure();
+	if (length > 1) {
+		invalid_structure("length of boolean exceeds 1 byte");
 		return false;
 	}
 	return length && ptr[0];

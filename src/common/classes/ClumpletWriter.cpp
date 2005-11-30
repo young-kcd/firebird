@@ -89,7 +89,7 @@ void ClumpletWriter::reset(const UCHAR* buffer, size_t buffLen)
 		dynamic_buffer.push(buffer, buffLen);
 	}
 	else {
-		UCHAR tag = (kind == SpbQuery || kind == UnTagged) ? getBufferTag() : 0;
+		UCHAR tag = (kind == SpbStart || kind == UnTagged) ? getBufferTag() : 0;
 		initNewBuffer(tag);
 	}
 	rewind();

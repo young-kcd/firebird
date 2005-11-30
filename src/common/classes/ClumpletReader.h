@@ -33,6 +33,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 
+#define DEBUG_CLUMPLETS
 #if defined(DEV_BUILD) && !defined(DEBUG_CLUMPLETS)
 #define DEBUG_CLUMPLETS
 #endif
@@ -44,7 +45,7 @@ namespace Firebird {
 class ClumpletReader : protected AutoStorage
 {
 public:
-	enum Kind {Tagged, UnTagged, SpbAttach, SpbQuery, Tpb/*, SpbInfo*/};
+	enum Kind {Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/};
 
 	// Constructor prepares an object from plain PB
 	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
@@ -107,7 +108,7 @@ protected:
 	virtual void usage_mistake(const char* what) const;
 
 	// This is called when passed buffer appears invalid
-	virtual void invalid_structure() const;
+	virtual void invalid_structure(const char* what) const;
 
 private:
 	// Assignment and copy constructor not implemented.
