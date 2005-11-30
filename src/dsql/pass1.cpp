@@ -737,7 +737,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node->nod_arg[e_prm_val_fld] = input->nod_arg[e_prm_val_fld];
 		node->nod_arg[e_prm_val_val] = PASS1_node(request, input->nod_arg[e_prm_val_val], proc_flag);
 
-		field	= (dsql_fld*) node->nod_arg[e_prm_val_fld]->nod_arg[e_dfl_field];
+		field = (dsql_fld*) node->nod_arg[e_prm_val_fld]->nod_arg[e_dfl_field];
 		DDL_resolve_intl_type(request, field, NULL);
 
 		{ // scope
@@ -1009,14 +1009,12 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		else
 			/* That didn't work - try to force sub2 same type as sub 1 eg: FIELD = ? case */
 			set_parameter_type(request, sub2, sub1, false);
-		if (sub3)
+
+		/* X BETWEEN Y AND ? case */
+		if (!set_parameter_type(request, sub3, sub1, false))
 		{
-			/* X BETWEEN Y AND ? case */
-			if (!set_parameter_type(request, sub3, sub1, false))
-			{
-				/* ? BETWEEN Y AND ? case */
-				set_parameter_type(request, sub3, sub2, false);
-			}
+			/* ? BETWEEN Y AND ? case */
+			set_parameter_type(request, sub3, sub2, false);
 		}
 		break;
 
@@ -1036,9 +1034,9 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		else
 			/* That didn't work - try to force sub2 same type as sub 1 eg: FIELD LIKE ? case */
 			set_parameter_type(request, sub2, sub1, true);
-		if (sub3)
-			/* X LIKE Y ESCAPE ? case */
-			set_parameter_type(request, sub3, sub2, true);
+
+		/* X LIKE Y ESCAPE ? case */
+		set_parameter_type(request, sub3, sub2, true);
 		break;
 
 	case nod_trim:
@@ -1785,6 +1783,9 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(node, dsql_type_nod);
 
+	if (!node)
+		return false;
+
 	bool aggregate = false;
 
 	switch (node->nod_type)
@@ -1902,14 +1903,10 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 			(*current_level)++;
 			aggregate |= aggregate_found2(request, node->nod_arg[e_rse_streams], current_level,
 				deepest_level, ignore_sub_selects);
-			if (node->nod_arg[e_rse_boolean]) {
-				aggregate |= aggregate_found2(request, node->nod_arg[e_rse_boolean],
-					current_level, deepest_level, ignore_sub_selects);
-			}
-			if (node->nod_arg[e_rse_items]) {
-				aggregate |= aggregate_found2(request, node->nod_arg[e_rse_items],
-					current_level, deepest_level, ignore_sub_selects);
-			}
+			aggregate |= aggregate_found2(request, node->nod_arg[e_rse_boolean],
+				current_level, deepest_level, ignore_sub_selects);
+			aggregate |= aggregate_found2(request, node->nod_arg[e_rse_items],
+				current_level, deepest_level, ignore_sub_selects);
 			(*current_level)--;
 			return aggregate;
 
@@ -1975,11 +1972,8 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 				for (const dsql_nod* const* const end = ptr + node->nod_count;
 					ptr < end; ++ptr)
 				{
-					if (*ptr) {
-						DEV_BLKCHK(*ptr, dsql_type_nod);
-						aggregate |= aggregate_found2(request, *ptr, current_level,
-							deepest_level, ignore_sub_selects);
-					}
+					aggregate |= aggregate_found2(request, *ptr, current_level,
+						deepest_level, ignore_sub_selects);
 				}
 				return aggregate;
 			}
@@ -2004,11 +1998,9 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 				const dsql_ctx* lrelation_context = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
 				// Check if relation is a procedure
 				if (lrelation_context->ctx_procedure) {
-					// If input parameters exists check if a aggregate is buried inside
-					if (lrelation_context->ctx_proc_inputs) {
-						aggregate |= aggregate_found2(request, lrelation_context->ctx_proc_inputs,
-							current_level, deepest_level, ignore_sub_selects);
-					}
+					// Check if a aggregate is buried inside the input parameters
+					aggregate |= aggregate_found2(request, lrelation_context->ctx_proc_inputs,
+						current_level, deepest_level, ignore_sub_selects);
 				}
 				return aggregate;
 			}
@@ -2763,11 +2755,9 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 				const dsql_ctx* lrelation_context = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
 				// Check if relation is a procedure
 				if (lrelation_context->ctx_procedure) {
-					// If input parameters exists check if the parameters are valid
-					if (lrelation_context->ctx_proc_inputs) {
-						invalid |= invalid_reference(context, lrelation_context->ctx_proc_inputs,
-							list, inside_own_map, inside_higher_map);
-					}
+					// Check if the parameters are valid
+					invalid |= invalid_reference(context, lrelation_context->ctx_proc_inputs,
+						list, inside_own_map, inside_higher_map);
 				}
 			}
 			break;
@@ -7592,6 +7582,9 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 	DEV_BLKCHK(field, dsql_type_nod);
 	DEV_BLKCHK(context, dsql_type_ctx);
 
+	if (!field)
+		return NULL;
+
 	switch (field->nod_type) {
 
 		case nod_alias:
@@ -7684,14 +7677,10 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 			current_level++;
 			field->nod_arg[e_rse_streams] =
 				remap_field(request, field->nod_arg[e_rse_streams], context, current_level);
-			if (field->nod_arg[e_rse_boolean]) {
-				field->nod_arg[e_rse_boolean] =
-					remap_field(request, field->nod_arg[e_rse_boolean], context, current_level);
-			}
-			if (field->nod_arg[e_rse_items]) {
-				field->nod_arg[e_rse_items] =
-					remap_field(request, field->nod_arg[e_rse_items], context, current_level);
-			}
+			field->nod_arg[e_rse_boolean] =
+				remap_field(request, field->nod_arg[e_rse_boolean], context, current_level);
+			field->nod_arg[e_rse_items] =
+				remap_field(request, field->nod_arg[e_rse_items], context, current_level);
 			current_level--;
 			return field;
 
@@ -7799,11 +7788,9 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 					reinterpret_cast<dsql_ctx*>(field->nod_arg[e_rel_context]);
 				// Check if relation is a procedure
 				if (lrelation_context->ctx_procedure) {
-					// If input parameters exists remap those
-					if (lrelation_context->ctx_proc_inputs) {
-						lrelation_context->ctx_proc_inputs =
-							remap_field(request, lrelation_context->ctx_proc_inputs, context, current_level);
-					}
+					// Remap the input parameters
+					lrelation_context->ctx_proc_inputs =
+						remap_field(request, lrelation_context->ctx_proc_inputs, context, current_level);
 				}
 				return field;
 			}
@@ -8211,6 +8198,9 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node,
 	DEV_BLKCHK(par_node, dsql_type_nod);
 	DEV_BLKCHK(fld_node, dsql_type_nod);
 	DEV_BLKCHK(relation, dsql_type_dsql_rel);
+
+	if (!par_node)
+		return;
 
 /* Could it be something else ??? */
 	fb_assert(fld_node->nod_type == nod_field);
