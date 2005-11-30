@@ -37,7 +37,7 @@
  *
  */
 /*
-$Id: met.epp,v 1.61.2.7 2005-06-07 10:22:40 dimitr Exp $
+$Id: met.epp,v 1.61.2.8 2005-11-30 04:21:53 robocop Exp $
 */
 // This MUST be at the top of the file
 #ifdef DARWIN
@@ -4626,8 +4626,10 @@ static void store_dependencies(TDBB			tdbb,
 					}
 					else if (procedure)
 					{
-						field =
-							(JRD_FLD) (*procedure->prc_output_fields)[fld_id];
+						// CVC: We didn't use it in FB1.5, but this is the correct code.
+						//PRM param =
+						//	(PRM) (*procedure->prc_output_fields)[fld_id];
+						//field_name = param->prm_name;
 					}
 				}
 			}
