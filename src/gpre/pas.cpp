@@ -2020,7 +2020,7 @@ static void gen_event_wait( const act* action, int column)
 
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) ident;
+	args.pat_value1 = ident;
 	args.pat_string1 = GDS_EVENT_WAIT;
 	args.pat_string2 = GDS_EVENT_COUNTS;
 

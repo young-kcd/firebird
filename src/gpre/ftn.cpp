@@ -2258,7 +2258,7 @@ static void gen_event_wait(const act* action)
 	PAT args;
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) ident;
+	args.pat_value1 = ident;
 	args.pat_string1 = ISC_EVENT_WAIT;
 	args.pat_string2 = ISC_EVENT_COUNTS;
 

@@ -1867,7 +1867,7 @@ static void gen_event_wait( const act* action, int column)
 	PAT args;
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) ident;
+	args.pat_value1 = ident;
 
 //  generate calls to wait on the event and to fill out the gpreGlob.events array 
 
