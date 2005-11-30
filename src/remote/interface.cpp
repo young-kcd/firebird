@@ -97,8 +97,8 @@ const USHORT OSTYPE_WIN_95	= 2;
 
 const char* ISC_USER		= "ISC_USER";
 const char* ISC_PASSWORD	= "ISC_PASSWORD";
-const int MAX_USER_LENGTH	= 33;
-const int MAX_OTHER_PARAMS	= 1 + 1 + sizeof(((rem_port*)NULL)->port_dummy_packet_interval);
+//const int MAX_USER_LENGTH	= 33;
+//const int MAX_OTHER_PARAMS	= 1 + 1 + sizeof(((rem_port*)NULL)->port_dummy_packet_interval);
 
 namespace {
 	// this sets of parameters help use same functions
