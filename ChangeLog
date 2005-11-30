@@ -1,3 +1,9 @@
+2005-11-29 11:22  kkuznetsov
+
+	* firebird2/src/gpre/ftn.cpp (1.20.2.3):
+	
+	Fix my previous commit to FTN gpre module
+
 2005-11-24 11:02  dimitr
 
 	* firebird2/doc/WhatsNew (1.36.2.50):
