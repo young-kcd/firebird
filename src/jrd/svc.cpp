@@ -181,16 +181,18 @@ struct Serv_param_block {
 	Serv_param_block() : spb_version(0) { }
 };
 
-static void conv_switches(USHORT, USHORT, const SCHAR*, TEXT**);
+static void conv_switches(Firebird::ClumpletReader&, TEXT**);
 static const TEXT* find_switch(int, const in_sw_tab_t*);
-static USHORT process_switches(USHORT, const SCHAR*, TEXT*);
+static bool process_switches(Firebird::ClumpletReader&, Firebird::string&);
 static void get_options(Firebird::ClumpletReader&, Serv_param_block*);
-static bool get_action_svc_bitmask(const TEXT**, const in_sw_tab_t*,
-									TEXT**, USHORT*, USHORT*);
-static void get_action_svc_string(const TEXT**, TEXT**, USHORT*, USHORT*);
-static void get_action_svc_data(const TEXT**, TEXT**, USHORT*, USHORT*);
-static bool get_action_svc_parameter(const TEXT**, const in_sw_tab_t*,
-									TEXT**, USHORT*, USHORT*);
+static bool get_action_svc_bitmask(const Firebird::ClumpletReader&,
+                                   const in_sw_tab_t*, Firebird::string&);
+static void get_action_svc_string(const Firebird::ClumpletReader&,
+                                  Firebird::string&);
+static void get_action_svc_data(const Firebird::ClumpletReader&,
+                                Firebird::string&);
+static bool get_action_svc_parameter(UCHAR tag, const in_sw_tab_t*,
+		                             Firebird::string&);
 
 #ifdef SERVICE_THREAD
 static UCHAR service_dequeue_byte(Service*);
@@ -438,7 +440,7 @@ Service* SVC_attach(USHORT	service_length,
 
 /* Perhaps checkout the user in the security database. */
 	USHORT user_flag;
-	if (serv->serv_name == "anonymous") {
+	if (!strcmp(serv->serv_name, "anonymous")) {
 		user_flag = SVC_user_none;
 	}
 	else {
@@ -1615,7 +1617,7 @@ void SVC_query(Service*		service,
 }
 
 
-void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
+void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 {
 /**************************************
  *
@@ -1637,8 +1639,13 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 
 	isc_resv_handle reserved = (isc_resv_handle)0;	/* Reserved for future functionality */
 
+	try {
+	
+	Firebird::ClumpletReader spb(Firebird::ClumpletReader::SpbStart, 
+		reinterpret_cast<const UCHAR*>(spb_data), spb_length);
+
 /* The name of the service is the first element of the buffer */
-	const USHORT svc_id = *spb;
+	const UCHAR svc_id = spb.getClumpTag();
 	serv_entry* serv;
 	for (serv = services; serv->serv_action; serv++)
 		if (serv->serv_action == svc_id)
@@ -1675,22 +1682,20 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	try {
-
 /* Only need to add username and password information to those calls which need
  * to make a database connection
  */
  	USHORT opt_switch_len = 0;
  	
-	if (*spb == isc_action_svc_backup ||
-		*spb == isc_action_svc_restore ||
-		*spb == isc_action_svc_repair ||
-		*spb == isc_action_svc_add_user ||
-		*spb == isc_action_svc_delete_user ||
-		*spb == isc_action_svc_modify_user ||
-		*spb == isc_action_svc_display_user ||
-		*spb == isc_action_svc_db_stats ||
-		*spb == isc_action_svc_properties)
+	if (svc_id == isc_action_svc_backup ||
+		svc_id == isc_action_svc_restore ||
+		svc_id == isc_action_svc_repair ||
+		svc_id == isc_action_svc_add_user ||
+		svc_id == isc_action_svc_delete_user ||
+		svc_id == isc_action_svc_modify_user ||
+		svc_id == isc_action_svc_display_user ||
+		svc_id == isc_action_svc_db_stats ||
+		svc_id == isc_action_svc_properties)
 	{
 		/* the user issued a username when connecting to the service so
 		 * add the length of the username and switch to new_spb_length
@@ -1712,8 +1717,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 		bool flag_spb_options = false;
 		/* If svc_switches is not used -- call a command-line parsing utility */
 		if (!service->svc_switches) {
-			conv_switches(spb_length, opt_switch_len, spb,
-						  &service->svc_switches);
+			conv_switches(spb, &service->svc_switches);
 		}
 		else {
 			/* Command line options (isc_spb_options) is used.
@@ -1764,15 +1768,15 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb)
 	else {
 		/* If svc_switches is not used -- call a command-line parsing utility */
 		if (!service->svc_switches) {
-			conv_switches(spb_length, opt_switch_len, spb,
-						  &service->svc_switches);
+			conv_switches(spb, &service->svc_switches);
 		}
 		else {
 			fb_assert(service->svc_switches == NULL);
 		}
 	}
 /* All services except for get_ib_log require switches */
-	if (service->svc_switches == NULL && *spb != isc_action_svc_get_ib_log)
+	spb.rewind();
+	if (service->svc_switches == NULL && svc_id != isc_action_svc_get_ib_log)
 		ERR_post(isc_bad_spb_form, 0);
 		
 #ifndef SERVICE_THREAD
@@ -2851,10 +2855,7 @@ void SVC_finish(Service* service, USHORT flag)
 }
 
 
-static void conv_switches(
-						  USHORT spb_length,
-						  USHORT opt_switch_len,
-						  const SCHAR* spb, TEXT** switches)
+static void conv_switches(Firebird::ClumpletReader& spb, TEXT** switches)
 {
 /**************************************
  *
@@ -2866,27 +2867,27 @@ static void conv_switches(
  *	Convert spb flags to utility switches.
  *
  **************************************/
-	const TEXT* p = spb;
-
-	if (*p < isc_action_min || *p > isc_action_max)
+	spb.rewind();
+	if (spb.getClumpTag() < isc_action_min || spb.getClumpTag() > isc_action_max)
 		return;					/* error action not defined */
 
-/* Calculate the total length */
-	const USHORT total = process_switches(spb_length, p, NULL);
-	if (total == 0)
+	// convert to string
+	Firebird::string sw;
+	if (! process_switches(spb, sw)) 
+	{
 		return;
+	}
+
+	sw.insert(0, ' ');
+	sw.insert(0, SERVICE_THD_PARAM);
 
 	*switches =
-		(TEXT *) gds__alloc(total + opt_switch_len +
-							sizeof(SERVICE_THD_PARAM) + 1);
+		(TEXT *) gds__alloc(sw.length() + 1);
 /* NOMEM: return error */
 	if (!*switches)
 		ERR_post(isc_virmemexh, 0);
 
-	strcpy(*switches, SERVICE_THD_PARAM);
-	strcat(*switches, " ");
-	process_switches(spb_length, p,
-					 *switches + strlen(SERVICE_THD_PARAM) + 1);
+	sw.copyTo(*switches, sw.length() + 1);
 	return;
 }
 
@@ -2912,9 +2913,8 @@ static const TEXT* find_switch(int in_spb_sw, const in_sw_tab_t* table)
 }
 
 
-static USHORT process_switches(
-							   USHORT spb_length,
-							   const SCHAR* spb, TEXT* switches)
+static bool process_switches(Firebird::ClumpletReader&	spb,
+							 Firebird::string&			switches)
 {
 /**************************************
  *
@@ -2931,66 +2931,51 @@ static USHORT process_switches(
  *   parameters.
  *
  **************************************/
-	if (spb_length == 0)
-		return 0;
+	if (spb.getBufferLength() == 0)
+		return false;
 
-	const TEXT* p = spb;
-	USHORT len = spb_length;
-	TEXT* sw = switches;
+	spb.rewind();
+	const UCHAR svc_action = spb.getClumpTag();
+	spb.moveNext();
 
-	// CVC: Isn't ISC_USHORT an external name?
-	const ISC_USHORT svc_action = *p;
-
-	if (len > 1) {
-		++p;
-		--len;
-	}
-
-	USHORT total = 0;				// total length of the command line
 	bool found = false;
 
-	while (len > 0) {
-		switch (svc_action) {
+	do 
+	{
+		switch (svc_action) 
+		{
 		case isc_action_svc_delete_user:
 		case isc_action_svc_display_user:
 			if (!found) {
-				if (spb != p) {
-					--p;
-					++len;
-				}
 				fb_assert(spb == p);
-				if (!get_action_svc_parameter(&p, gsec_action_in_sw_table,
-											  &sw, &total, &len))
+				if (!get_action_svc_parameter(svc_action, gsec_action_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
 				else {
 					found = true;
 					/* in case of "display all users" the spb buffer contains
 					   nothing but isc_action_svc_display_user */
-					if (len == 0)
+					if (spb.isEof())
 						break;
 				}
 			}
 
-			switch (*p) {
+			switch (spb.getClumpTag()) {
 			case isc_spb_sec_username:
-				++p;
-				--len;
-				get_action_svc_string(&p, &sw, &total, &len);
+				get_action_svc_string(spb, switches);
 				break;
 
 			case isc_spb_dbname:
-				if (!get_action_svc_parameter(&p, gsec_in_sw_table,
-											  &sw, &total, &len))
+				if (!get_action_svc_parameter(spb.getClumpTag(), gsec_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
-				get_action_svc_string(&p, &sw, &total, &len);
+				get_action_svc_string(spb, switches);
 				break;
 				
 			default:
-				return 0;
+				return false;
 				break;
 			}
 			break;
@@ -2998,19 +2983,13 @@ static USHORT process_switches(
 		case isc_action_svc_add_user:
 		case isc_action_svc_modify_user:
 			if (!found) {
-				if (spb != p) {
-					--p;
-					++len;
-				}
-				fb_assert(spb == p);
-				if (!get_action_svc_parameter(&p, gsec_action_in_sw_table,
-											  &sw, &total, &len))
+				if (!get_action_svc_parameter(svc_action, gsec_action_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
 				else {
 					found = true;
-					if (*p != isc_spb_sec_username) {
+					if (spb.getClumpTag() != isc_spb_sec_username) {
 						/* unexpected service parameter block:
 						   expected %d, encountered %d */
 						ERR_post(isc_unexp_spb_form, isc_arg_string,
@@ -3021,22 +3000,20 @@ static USHORT process_switches(
 				}
 			}
 
-			switch (*p) {
+			switch (spb.getClumpTag()) {
 			case isc_spb_sec_userid:
 			case isc_spb_sec_groupid:
-				if (!get_action_svc_parameter(&p, gsec_in_sw_table,
-											  &sw, &total, &len))
+				if (!get_action_svc_parameter(spb.getClumpTag(), gsec_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
-				get_action_svc_data(&p, &sw, &total, &len);
+				get_action_svc_data(spb, switches);
 				break;
 
 			case isc_spb_sec_username:
-				++p;
-				--len;
-				get_action_svc_string(&p, &sw, &total, &len);
+				get_action_svc_string(spb, switches);
 				break;
+				
 			case isc_spb_sql_role_name:
 			case isc_spb_sec_password:
 			case isc_spb_sec_groupname:
@@ -3044,42 +3021,34 @@ static USHORT process_switches(
 			case isc_spb_sec_middlename:
 			case isc_spb_sec_lastname:
 			case isc_spb_dbname:
-				if (!get_action_svc_parameter(&p, gsec_in_sw_table,
-											  &sw, &total, &len))
+				if (!get_action_svc_parameter(spb.getClumpTag(), gsec_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
-				get_action_svc_string(&p, &sw, &total, &len);
+				get_action_svc_string(spb, switches);
 				break;
 
 			default:
-				return 0;
+				return false;
 				break;
 			}
 			break;
 
 		case isc_action_svc_db_stats:
-			switch (*p) {
+			switch (spb.getClumpTag()) {
 			case isc_spb_dbname:
-				++p;
-				--len;
-				get_action_svc_string(&p, &sw, &total, &len);
+				get_action_svc_string(spb, switches);
 				break;
 
 			case isc_spb_options:
-				++p;
-				--len;
-				if (!get_action_svc_bitmask(&p, dba_in_sw_table,
-											&sw, &total, &len))
+				if (!get_action_svc_bitmask(spb, dba_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
 				break;
 
 			case isc_spb_command_line: 
-				++p;
-				--len;
-				get_action_svc_string(&p, &sw, &total, &len);
+				get_action_svc_string(spb, switches);
 				break;
 
 			default:
@@ -3090,51 +3059,39 @@ static USHORT process_switches(
 
 		case isc_action_svc_backup:
 		case isc_action_svc_restore:
-			switch (*p) {
+			switch (spb.getClumpTag()) {
 			case isc_spb_bkp_file:
 			case isc_spb_dbname:
 			case isc_spb_sql_role_name:
-				++p;
-				--len;
-				get_action_svc_string(&p, &sw, &total, &len);
+                get_action_svc_string(spb, switches);
 				break;
 			case isc_spb_options:
-				++p;
-				--len;
-				if (!get_action_svc_bitmask(&p, burp_in_sw_table,
-											&sw, &total, &len))
+				if (!get_action_svc_bitmask(spb, burp_in_sw_table, switches))
 				{
 					return 0;
 				}
 				break;
 			case isc_spb_bkp_length:
 			case isc_spb_res_length:
-				++p;
-				--len;
-				get_action_svc_data(&p, &sw, &total, &len);
+				get_action_svc_data(spb, switches);
 				break;
 			case isc_spb_bkp_factor:
 			case isc_spb_res_buffers:
 			case isc_spb_res_page_size:
-				if (!get_action_svc_parameter(&p, burp_in_sw_table,
-											  &sw, &total, &len))
+				if (!get_action_svc_parameter(spb.getClumpTag(), burp_in_sw_table, switches))
 				{
 					return 0;
 				}
-				get_action_svc_data(&p, &sw, &total, &len);
+				get_action_svc_data(spb, switches);
 				break;
 			case isc_spb_res_access_mode:
-				++p;
-				--len;
-				if (!get_action_svc_parameter(&p, burp_in_sw_table,
-											  &sw, &total, &len))
+				if (!get_action_svc_parameter(spb.getClumpTag(), burp_in_sw_table, switches))
 				{
 					return 0;
 				}
 				break;
 			case isc_spb_verbose:
-				if (!get_action_svc_parameter(&p, burp_in_sw_table,
-											  &sw, &total, &len))
+				if (!get_action_svc_parameter(spb.getClumpTag(), burp_in_sw_table, switches))
 				{
 					return 0;
 				}
@@ -3147,17 +3104,12 @@ static USHORT process_switches(
 
 		case isc_action_svc_repair:
 		case isc_action_svc_properties:
-			switch (*p) {
+			switch (spb.getClumpTag()) {
 			case isc_spb_dbname:
-				++p;
-				--len;
-				get_action_svc_string(&p, &sw, &total, &len);
+                get_action_svc_string(spb, switches);
 				break;
 			case isc_spb_options:
-				++p;
-				--len;
-				if (!get_action_svc_bitmask(&p, alice_in_sw_table,
-											&sw, &total, &len))
+				if (!get_action_svc_bitmask(spb, alice_in_sw_table, switches))
 				{
 					return 0;
 				}
@@ -3171,20 +3123,16 @@ static USHORT process_switches(
 			case isc_spb_rpr_commit_trans:
 			case isc_spb_rpr_rollback_trans:
 			case isc_spb_rpr_recover_two_phase:
-				if (!get_action_svc_parameter(&p, alice_in_sw_table,
-											  &sw, &total, &len))
+				if (!get_action_svc_parameter(spb.getClumpTag(), alice_in_sw_table, switches))
 				{
 					return 0;
 				}
-				get_action_svc_data(&p, &sw, &total, &len);
+				get_action_svc_data(spb, switches);
 				break;
 			case isc_spb_prp_write_mode:
 			case isc_spb_prp_access_mode:
 			case isc_spb_prp_reserve_space:
-				++p;
-				--len;
-				if (!get_action_svc_parameter(&p, alice_in_sw_table,
-											  &sw, &total, &len))
+				if (!get_action_svc_parameter(spb.getClumpTag(), alice_in_sw_table, switches))
 				{
 					return 0;
 				}
@@ -3198,20 +3146,19 @@ static USHORT process_switches(
 			return 0;
 			break;
 		}
-	}
+		
+		spb.moveNext();
+	} 
+	while (! spb.isEof());
 
-	if (sw && *(sw - 1) == ' ')
-		*--sw = '\0';
-
-	return total;
+	switches.rtrim();
+	return true;
 }
 
 
-static bool get_action_svc_bitmask(
-									  const TEXT** spb,
-									  const in_sw_tab_t* table,
-									  TEXT** cmd,
-									  USHORT* total, USHORT* len)
+static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb,
+								   const in_sw_tab_t* table,
+                                   Firebird::string& switches)
 {
 /**************************************
  *
@@ -3226,35 +3173,30 @@ static bool get_action_svc_bitmask(
  *	adjust pointers.
  *
  **************************************/
-	const ISC_ULONG opt =
-		gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
-						 sizeof(ISC_ULONG));
+	const int opt = spb.getInt();
 	ISC_ULONG mask = 1;
-	for (int count = (sizeof(ISC_ULONG) * 8) - 1; count; --count) {
-		if (opt & mask) {
+	for (int count = (sizeof(ISC_ULONG) * 8) - 1; count--; mask <<= 1) 
+	{
+		if (opt & mask) 
+		{
 			const TEXT* s_ptr = find_switch((opt & mask), table);
 			if (!s_ptr)
+			{
 				return false;
-			else {
-				if (*cmd) {
-					sprintf(*cmd, "-%s ", s_ptr);
-					*cmd += 1 + strlen(s_ptr) + 1;
-				}
-				*total += 1 + strlen(s_ptr) + 1;
 			}
+			
+			switches += '-';
+			switches += s_ptr;
+			switches += ' ';
 		}
-		mask = mask << 1;
 	}
 
-	*spb += sizeof(ISC_ULONG);
-	*len -= sizeof(ISC_ULONG);
 	return true;
 }
 
 
-static void get_action_svc_string(
-								  const TEXT** spb,
-								  TEXT** cmd, USHORT* total, USHORT* len)
+static void get_action_svc_string(const Firebird::ClumpletReader& spb,
+								  Firebird::string& switches)
 {
 /**************************************
  *
@@ -3271,34 +3213,17 @@ static void get_action_svc_string(
  *      when creating the argc / argv paramters for the service.
  *
  **************************************/
-	const ISC_USHORT l = gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
-						 sizeof(ISC_USHORT));
-
-/* Do not go beyond the bounds of the spb buffer */
-	if (l > *len)
-		ERR_post(isc_bad_spb_form, 0);
-
-	*spb += sizeof(ISC_USHORT);
-	if (*cmd)
-	{
-		**cmd = SVC_TRMNTR;
-		*cmd += 1;
-		MOVE_FASTER(*spb, *cmd, l);
-		*cmd += l;
-		**cmd = SVC_TRMNTR;
-		*cmd += 1;
-		**cmd = ' ';
-		*cmd += 1;
-	}
-	*spb += l;
-	*total += l + 1 + 2;		/* Two SVC_TRMNTR for strings */
-	*len -= sizeof(ISC_USHORT) + l;
+	Firebird::string s;
+	spb.getString(s);
+	switches += SVC_TRMNTR;
+	switches += s;
+	switches += SVC_TRMNTR;
+	switches += ' ';
 }
 
 
-static void get_action_svc_data(
-								const TEXT** spb,
-								TEXT** cmd, USHORT* total, USHORT* len)
+static void get_action_svc_data(const Firebird::ClumpletReader& spb,
+                                Firebird::string& switches)
 {
 /**************************************
  *
@@ -3311,27 +3236,15 @@ static void get_action_svc_data(
  *      add it to the command line, adjust pointers.
  *
  **************************************/
-	TEXT buf[64];
-
-	const ISC_ULONG ll =
-		gds__vax_integer(reinterpret_cast<const UCHAR*>(*spb),
-						 sizeof(ISC_ULONG));
-	sprintf(buf, "%"ULONGFORMAT" ", ll);
-	if (*cmd) {
-		sprintf(*cmd, "%lu ", ll);
-		*cmd += strlen(buf);
-	}
-	*spb += sizeof(ISC_ULONG);
-	*total += strlen(buf) + 1;
-	*len -= sizeof(ISC_ULONG);
+	Firebird::string s;
+	s.printf("%"ULONGFORMAT" ", spb.getInt());
+	switches += s;
 }
 
 
-static bool get_action_svc_parameter(
-										const TEXT** spb,
-										const in_sw_tab_t* table,
-										TEXT** cmd,
-										USHORT* total, USHORT* len)
+static bool get_action_svc_parameter(UCHAR action, 
+									 const in_sw_tab_t* table,
+									 Firebird::string& switches)
 {
 /**************************************
  *
@@ -3346,18 +3259,16 @@ static bool get_action_svc_parameter(
  *	adjust pointers.
  *
  **************************************/
-	const TEXT* s_ptr = find_switch(**spb, table);
+	const TEXT* s_ptr = find_switch(action, table);
 	if (!s_ptr)
+	{
 		return false;
-
-	if (*cmd) {
-		sprintf(*cmd, "-%s ", s_ptr);
-		*cmd += 1 + strlen(s_ptr) + 1;
 	}
 
-	*spb += 1;
-	*total += 1 + strlen(s_ptr) + 1;
-	*len -= 1;
+	switches += '-';
+	switches += s_ptr;
+	switches += ' ';
+
 	return true;
 }
 
