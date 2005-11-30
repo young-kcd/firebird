@@ -41,12 +41,11 @@
 #include "../jrd/y_ref.h"
 
 //! Dynamic SQL Error Status Block
-struct err
+struct dsql_err_stblock
 {
 	ISC_STATUS* dsql_status;
 	ISC_STATUS* dsql_user_status;
 };
-typedef err* fb_ERR;
 
 
 // this table is used in data allocation to determine
