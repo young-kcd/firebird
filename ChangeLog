@@ -1,3 +1,46 @@
+2005-11-29 17:13  hvlad
+
+	* firebird2/src/dsql/parse.cpp (1.170):
+	
+	Regenerated parser files after parse.y change
+
+2005-11-29 17:09  hvlad
+
+	* firebird2/src/dsql/parse.y (1.197):
+	
+	Second attempt to fix issue with parser and not correctly stored
+	source for DEFAULT CURRENT_TIME\DEFAULT CURRENT_TIMESTAMP
+
+2005-11-29 15:25  dimitr
+
+	* firebird2/src/jrd/os/win32/config_root.cpp (1.19):
+	
+	Fixed broken (again by myself) root lookup for fbclient.
+
+2005-11-29 12:36  dimitr
+
+	* firebird2/src/jrd/gds.cpp (1.180):
+	
+	Fixed the bug I introduced with my GDS changes.
+
+2005-11-29 07:39  robocop
+
+	* firebird2/src/msgs/messages.sql (1.57):
+	
+	Undo Alex mistake with the facility number.
+
+2005-11-29 07:24  robocop
+
+	* firebird2/src/dsql/dsql.h (1.87):
+	
+	Misc.
+
+2005-11-29 07:18  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.155):
+	
+	Misc.
+
 2005-11-29 00:06  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp (1.250):
