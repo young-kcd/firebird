@@ -710,6 +710,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 
 	rem_port* new_port = alloc_port(port->port_parent);
 	port->port_async = new_port;
+	new_port->port_flags = port->port_flags & PORT_no_oob;
 	new_port->port_flags |= PORT_async;
 	new_port->port_connection =
 		make_pipe_name(port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
@@ -731,8 +732,6 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 	}
 
 	THREAD_ENTER();
-
-	new_port->port_flags = port->port_flags & PORT_no_oob;
 
 	return new_port;
 }

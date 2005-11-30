@@ -1419,7 +1419,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
-
+	new_port->port_flags = port->port_flags & PORT_no_oob;
 	new_port->port_flags |= PORT_async;
 	P_RESP* response = &packet->p_resp;
 
@@ -1484,7 +1484,6 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 #endif /* SIOCSPGRP */
 
 	new_port->port_handle = (HANDLE) n;
-	new_port->port_flags |= port->port_flags & PORT_no_oob;
 
 	return new_port;
 }
