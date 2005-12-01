@@ -911,14 +911,9 @@ int DSC_string_length(const dsc* desc)
 	default:
 		if (desc->dsc_scale == 0)
 			return (int) DSC_convert_to_text_length(desc->dsc_dtype);
-		else {
-			if (desc->dsc_scale < 0)
-				return (int) (DSC_convert_to_text_length(desc->dsc_dtype)) +
-					1;
-			else
-				return (int) (DSC_convert_to_text_length(desc->dsc_dtype)) +
-					desc->dsc_scale;
-		}
+		if (desc->dsc_scale < 0)
+			return (int) DSC_convert_to_text_length(desc->dsc_dtype) + 1;
+		return (int) DSC_convert_to_text_length(desc->dsc_dtype) + desc->dsc_scale;
 	}
 }
 
@@ -971,11 +966,11 @@ void dsc::address32bit() const
  **************************************
  *
  * Functional description
- *	Validates dsc_address member to feed into 4-byte integer.
+ *	Validates dsc_address member to fit into 4-byte integer.
  *
  **************************************/
 	UINT64 addr = (UINT64)dsc_address;
-	fb_assert(addr == addr & 0xFFFFFFFF);
+	fb_assert(addr == (addr & 0xFFFFFFFF));
 }
 
 
@@ -1004,7 +999,8 @@ static bool validate_dsc_tables()
 		for (BYTE op2 = dtype_unknown; op2 < DTYPE_TYPE_MAX; op2++) {
 
 			if ((DSC_add_result[op1][op2] >= DTYPE_TYPE_MAX) &&
-				(DSC_add_result[op1][op2] != DTYPE_CANNOT)) {
+				(DSC_add_result[op1][op2] != DTYPE_CANNOT))
+			{
 /*
 	fprintf (stderr, "DSC_add_result [%d][%d] is %d, invalid.\n",
 		 op1, op2, DSC_add_result [op1][op2]);
@@ -1026,7 +1022,8 @@ static bool validate_dsc_tables()
 			/* Difficult to validate Subtraction */
 
 			if ((DSC_sub_result[op1][op2] >= DTYPE_TYPE_MAX) &&
-				(DSC_sub_result[op1][op2] != DTYPE_CANNOT)) {
+				(DSC_sub_result[op1][op2] != DTYPE_CANNOT))
+			{
 /*
 	fprintf (stderr, "DSC_sub_result [%d][%d] is %d, invalid.\n",
 		 op1, op2, DSC_sub_result [op1][op2]);
@@ -1035,8 +1032,7 @@ static bool validate_dsc_tables()
 			}
 
 			/* Multiplication operator must be commutative */
-			if (DSC_multiply_result[op1][op2] !=
-				DSC_multiply_result[op2][op1])
+			if (DSC_multiply_result[op1][op2] != DSC_multiply_result[op2][op1])
 			{
 /*
 	fprintf (stderr,
@@ -1048,8 +1044,7 @@ static bool validate_dsc_tables()
 			}
 
 			/* Multiplication operator must be communitive */
-			if (DSC_multiply_blr4_result[op1][op2] !=
-				DSC_multiply_blr4_result[op2][op1])
+			if (DSC_multiply_blr4_result[op1][op2] != DSC_multiply_blr4_result[op2][op1])
 			{
 /*
 	fprintf (stderr,
