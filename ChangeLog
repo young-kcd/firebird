@@ -1,3 +1,23 @@
+2005-11-30 05:24  robocop
+
+	* firebird2/src/jrd/sch.cpp (1.6.2.6):
+	
+	Backport fix made by Vlad for SF Bug# 1175157: mutex not unlocked
+	in the custom scheduler.
+
+2005-11-30 05:22  robocop
+
+	* firebird2/src/dsql/: dsql.h (1.28.2.3), user_dsql.cpp (1.20.2.5):
+	
+	Backport name from FB2 to avoid conflict with non-FB libraries.
+
+2005-11-30 05:21  robocop
+
+	* firebird2/src/jrd/met.epp (1.61.2.8):
+	
+	Fortunately we didn't use this code in FB1.5, but I'm posting the
+	correct one as documentation.
+
 2005-11-29 11:22  kkuznetsov
 
 	* firebird2/src/gpre/ftn.cpp (1.20.2.3):
