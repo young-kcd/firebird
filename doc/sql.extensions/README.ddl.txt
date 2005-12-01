@@ -177,3 +177,13 @@ itself can override such domain. On the other hand, the field can be given a
 type directly in whose case the default belongs logically to the field (albeit
 the information is kept on an implicit domain created behind scenes).
 
+
+6) New blob filter restriction.
+(Dmitry Yemanov)
+
+In FB2, the pair (input subtype, output subtype) must be unique for blob filter
+declarations. This fix stops ambiguity in deciding which blob filter will be
+executed to go from input type X to output type Z. If you have such problem in
+databases created with earlier versions and you have a backup for them that want
+to restore in FB2, expect to see your database restore being rejected by FB2.
+
