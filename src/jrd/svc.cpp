@@ -2947,7 +2947,8 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 		case isc_action_svc_delete_user:
 		case isc_action_svc_display_user:
 			if (!found) {
-				fb_assert(spb == p);
+				// Please review an equivalent assertion if needed for the new code.
+				// fb_assert(spb == p);
 				if (!get_action_svc_parameter(svc_action, gsec_action_in_sw_table, switches))
 				{
 					return false;
@@ -3052,7 +3053,7 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 				break;
 
 			default:
-				return 0;
+				return false;
 				break;
 			}
 			break;
@@ -3068,7 +3069,7 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 			case isc_spb_options:
 				if (!get_action_svc_bitmask(spb, burp_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
 				break;
 			case isc_spb_bkp_length:
@@ -3080,24 +3081,24 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 			case isc_spb_res_page_size:
 				if (!get_action_svc_parameter(spb.getClumpTag(), burp_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
 				get_action_svc_data(spb, switches);
 				break;
 			case isc_spb_res_access_mode:
 				if (!get_action_svc_parameter(spb.getClumpTag(), burp_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
 				break;
 			case isc_spb_verbose:
 				if (!get_action_svc_parameter(spb.getClumpTag(), burp_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
 				break;
 			default:
-				return 0;
+				return false;
 				break;
 			}
 			break;
@@ -3111,7 +3112,7 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 			case isc_spb_options:
 				if (!get_action_svc_bitmask(spb, alice_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
 				break;
 			case isc_spb_prp_page_buffers:
@@ -3125,7 +3126,7 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 			case isc_spb_rpr_recover_two_phase:
 				if (!get_action_svc_parameter(spb.getClumpTag(), alice_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
 				get_action_svc_data(spb, switches);
 				break;
@@ -3134,25 +3135,24 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 			case isc_spb_prp_reserve_space:
 				if (!get_action_svc_parameter(spb.getClumpTag(), alice_in_sw_table, switches))
 				{
-					return 0;
+					return false;
 				}
 				break;
 			default:
-				return 0;
+				return false;
 				break;
 			}
 			break;
 		default:
-			return 0;
+			return false;
 			break;
 		}
 		
 		spb.moveNext();
-	} 
-	while (! spb.isEof());
+	} while (! spb.isEof());
 
 	switches.rtrim();
-	return true;
+	return switches.length() > 0;
 }
 
 
