@@ -1,3 +1,63 @@
+2005-12-01 04:00  robocop
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.12):
+	
+	Totally misc.
+
+2005-12-01 03:34  robocop
+
+	* firebird2/doc/sql.extensions/README.set_transaction.txt (1.1):
+	
+	Add documentation for the extra options exposed through the DSQL's
+	SET TRANSACTION command. This functionality exists already using
+	TPB's.
+
+2005-11-30 18:32  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.151):
+	
+	use ClumpletReader in SVC_start
+
+2005-11-30 18:30  alexpeshkoff
+
+	* firebird2/src/jrd/dsc.cpp (1.26):
+	
+	Use better type in declaration - thanks to Claudio
+
+2005-11-30 18:11  alexpeshkoff
+
+	* firebird2/src/common/classes/: ClumpletReader.cpp (1.11),
+	ClumpletReader.h (1.13), ClumpletWriter.cpp (1.12):
+	
+	Clumplet's improvements
+
+2005-11-30 13:36  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.147), os/win32/wnet.cpp
+	(1.33):
+	
+	Fixed lost PORT_async flag for WNET + misc.
+
+2005-11-30 10:03  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.251):
+	
+	Simplified code a bit. Fixed the crash with the usage of TRIM in
+	aggregation.
+
+2005-11-30 08:45  robocop
+
+	* firebird2/src/remote/interface.cpp (1.108):
+	
+	Misc.
+
+2005-11-30 07:12  robocop
+
+	* firebird2/src/gpre/: ada.cpp (1.50), c_cxx.cpp (1.65), cob.cpp
+	(1.61), ftn.cpp (1.57), pas.cpp (1.51):
+	
+	Misc.
+
 2005-11-29 17:13  hvlad
 
 	* firebird2/src/dsql/parse.cpp (1.170):
