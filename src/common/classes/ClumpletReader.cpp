@@ -58,7 +58,7 @@ void ClumpletReader::dump() const
 		static string hexString(const UCHAR* b, size_t len)
 		{
 			string t1, t2;
-			for (; len>0; --len, ++b) {
+			for (; len > 0; --len, ++b) {
 				if (isprint(*b))
 					t2 += *b;
 				else {
