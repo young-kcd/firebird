@@ -188,7 +188,6 @@ static bool send_partial_packet(rem_port*, PACKET *, ISC_STATUS *);
 #ifdef MULTI_THREAD
 static void server_death(rem_port*);
 #endif
-static void stuff_vax_integer(UCHAR*, SLONG, USHORT);
 static ISC_STATUS svcstart(ISC_STATUS*, RDB, P_OP, USHORT, USHORT, USHORT, const SCHAR*);
 static ISC_STATUS unsupported(ISC_STATUS*);
 static void zap_packet(PACKET *);
@@ -6872,26 +6871,6 @@ static void server_death(rem_port* port)
 	THREAD_EXIT();
 }
 #endif
-
-
-static void stuff_vax_integer(UCHAR* ptr, SLONG value, USHORT length)
-{
-/**************************************
- *
- *	s t u f f _ v a x _ i n t e g e r
- *
- **************************************
- *
- * Functional description
- *	Move an integer value into network format.
- *
- **************************************/
-
-	while (length--) {
-		*ptr++ = value % 256;
-		value = value >> 8;
-	}
-}
 
 
 static ISC_STATUS svcstart(ISC_STATUS*	user_status,
