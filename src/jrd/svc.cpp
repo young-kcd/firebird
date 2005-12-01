@@ -2947,8 +2947,6 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 		case isc_action_svc_delete_user:
 		case isc_action_svc_display_user:
 			if (!found) {
-				// Please review an equivalent assertion if needed for the new code.
-				// fb_assert(spb == p);
 				if (!get_action_svc_parameter(svc_action, gsec_action_in_sw_table, switches))
 				{
 					return false;
