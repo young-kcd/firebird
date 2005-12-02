@@ -141,8 +141,8 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
  *
  *	This routine will lookup the subtype,
  *	character set and segment size information
- *	from the metadata, given a relation name
- *	and column name.  it will fill in the information
+ *	from the metadata, given a relation/procedure name
+ *	and column/parameter name.  it will fill in the information
  *	in the BLOB_DESC.	
  *
  ***********************************************/
@@ -178,6 +178,29 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 		return UTLD_copy_status(gds_status, status);
 	END_ERROR;
 
+	if (!flag)
+	{
+		FOR (TRANSACTION_HANDLE *trans_handle)
+			X IN RDB$PROCEDURE_PARAMETERS CROSS Y IN RDB$FIELDS
+			WITH X.RDB$FIELD_SOURCE EQ Y.RDB$FIELD_NAME AND
+			X.RDB$PROCEDURE_NAME EQ desc->blob_desc_relation_name AND
+			X.RDB$PARAMETER_NAME EQ desc->blob_desc_field_name
+			flag = true;
+
+			desc->blob_desc_subtype = Y.RDB$FIELD_SUB_TYPE;
+			desc->blob_desc_charset = Y.RDB$CHARACTER_SET_ID;
+			desc->blob_desc_segment_size = Y.RDB$SEGMENT_LENGTH;
+
+			if (global) {
+				copy_exact_name ((UCHAR*) Y.RDB$FIELD_NAME, global,
+								sizeof(Y.RDB$FIELD_NAME));
+			}
+		END_FOR 
+		ON_ERROR 
+			return UTLD_copy_status(gds_status, status);
+		END_ERROR;
+	}
+	
 	if (!flag)
 		return error(status, 5, (ISC_STATUS) isc_fldnotdef,
 					 (ISC_STATUS) isc_arg_string,
