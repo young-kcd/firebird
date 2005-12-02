@@ -3960,7 +3960,7 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 		}
 		/* 10-Aug-2004. Nickolay Samofatov
 		   Unneeded nulls seem to be skipped somehow. */
-		aggregate->nod_arg[2] = (jrd_nod*) rse_nulls_default;
+		aggregate->nod_arg[2] = (jrd_nod*) (IPTR) rse_nulls_default;
 		rse->rse_aggregate = aggregate;
 	}
 
@@ -5709,7 +5709,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 			selected_class < selected_classes.end(); selected_class++)
 		{
 			ptr[sort->nod_count] = (jrd_nod*) FALSE; // Ascending sort
-			ptr[sort->nod_count * 2] = (jrd_nod*) rse_nulls_default; // Default nulls placement
+			ptr[sort->nod_count * 2] = (jrd_nod*) (IPTR) rse_nulls_default; // Default nulls placement
 			*ptr++ = (*selected_class)[river1->riv_number];
 		}
 

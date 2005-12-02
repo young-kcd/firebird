@@ -4846,16 +4846,16 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 
-	if (offset_arg < 0 || offset_arg > MAX_COLUMN_SIZE)
+	ULONG offset = (ULONG) offset_arg;
+	const ULONG length = (ULONG) length_arg;
+	if (offset_arg < 0 || offset > MAX_COLUMN_SIZE)
 	{
 		ERR_post(isc_bad_substring_offset, isc_arg_number, offset_arg + 1, 0);
 	}
-	else if (length_arg < 0 || length_arg > MAX_COLUMN_SIZE)
+	else if (length_arg < 0 || length > MAX_COLUMN_SIZE)
 	{
 		ERR_post(isc_bad_substring_length, isc_arg_number, length_arg, 0);
 	}
-	ULONG offset = (ULONG) offset_arg;
-	const ULONG length = (ULONG) length_arg;
 	ULONG ul;
 
 	if (value->dsc_dtype == dtype_blob ||
@@ -4867,7 +4867,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 			(value->dsc_sub_type == isc_blob_text ? value->dsc_blob_ttype() : ttype_binary));
 		CharSet* charSet = textType->getCharSet();
 
-		if (length_arg * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
+		if (length * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
 			ERR_post(isc_arith_except, 0);
 
 		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
@@ -4889,7 +4889,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 
 			if (charSet->isMultiByte())
 			{
-				buffer.getBuffer(MIN(blob->blb_length, (offset_arg + length_arg) * charSet->maxBytesPerChar()));
+				buffer.getBuffer(MIN(blob->blb_length, (offset + length) * charSet->maxBytesPerChar()));
 				datalen = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCount());
 
 				desc.dsc_length = totLen;
@@ -4983,7 +4983,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 		TextType* textType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&desc));
 		CharSet* charSet = textType->getCharSet();
 
-		if (length_arg * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
+		if (length * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
 			ERR_post(isc_arith_except, 0);
 
 		desc.dsc_address = NULL;

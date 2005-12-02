@@ -903,7 +903,7 @@ void EXE_send(thread_db*		tdbb,
 		// ASF: I'll not test for dtype_cstring because usage is only internal
 		if (desc->dsc_dtype == dtype_text || desc->dsc_dtype == dtype_varying)
 		{
-			const UCHAR* p = (UCHAR*)request + message->nod_impure + (ULONG)desc->dsc_address;
+			const UCHAR* p = (UCHAR*)request + message->nod_impure + (ULONG)(IPTR)desc->dsc_address;
 			USHORT len;
 
 			switch (desc->dsc_dtype)
