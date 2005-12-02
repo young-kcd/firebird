@@ -127,6 +127,55 @@ const int GET_BINARY	= 4;
 
 const TEXT SVC_TRMNTR	= '\377';
 
+namespace Jrd {
+	Service::Service(serv_entry *se) :
+		svc_handle(0), svc_status(svc_status_array), svc_input(0), svc_output(0),
+		svc_stdout_head(0), svc_stdout_tail(0), svc_stdout(0), svc_argv(0), svc_argc(0),
+		svc_service(se), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
+		svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false)
+	{
+		memset(svc_start_event, 0, sizeof svc_start_event);
+	}
+	
+	Service::~Service()
+	{
+		// If we forked an executable, close down it's pipes
+#ifndef SERVICE_THREAD
+		if (svc_flags & SVC_forked)
+		{
+#ifndef WIN_NT
+			if (svc_input)
+			{
+				fclose(svc_input);
+			}
+			if (svc_output)
+			{
+				fclose(svc_output);
+			}
+#endif //WIN_NT
+		}
+#else //SERVICE_THREAD
+		if (svc_stdout)
+		{
+			gds__free(svc_stdout);
+		}
+		if (svc_argv) 
+		{
+			gds__free(svc_argv);
+		}
+#endif //SERVICE_THREAD
+
+		if (svc_resp_buf)
+		{
+			gds__free(svc_resp_buf);
+		}
+
+#ifdef WIN_NT
+		CloseHandle((HANDLE) svc_handle);
+#endif
+	}
+} //namespace
+	
 using namespace Jrd;
 
 /* This checks if the service has forked a process.  If not,
@@ -181,7 +230,8 @@ struct Serv_param_block {
 	Serv_param_block() : spb_version(0) { }
 };
 
-static void conv_switches(Firebird::ClumpletReader&, TEXT**);
+
+static void conv_switches(Firebird::ClumpletReader&, Firebird::string&);
 static const TEXT* find_switch(int, const in_sw_tab_t*);
 static bool process_switches(Firebird::ClumpletReader&, Firebird::string&);
 static void get_options(Firebird::ClumpletReader&, Serv_param_block*);
@@ -205,7 +255,6 @@ static void service_fork(ThreadEntryPoint*, Service*);
 #ifndef WIN_NT
 static void timeout_handler(void* service);
 #endif
-static void service_close(Service*);
 static void service_fork(TEXT*, Service*);
 static void io_error(const TEXT*, SLONG, const TEXT*, ISC_STATUS);
 #endif
@@ -485,41 +534,13 @@ Service* SVC_attach(USHORT	service_length,
 	
 /* Services operate outside of the context of databases.  Therefore
    we cannot use the JRD allocator. */
+	service = FB_NEW(*getDefaultMemoryPool()) Service(serv);
 
-//	service = (Service*) gds__alloc((SLONG) (sizeof(Service)));
-	service = FB_NEW(*getDefaultMemoryPool()) Service;
-/* FREE: by exception handler */
-	if (!service)
-		ERR_post(isc_virmemexh, 0);
-
-	memset((void *) service, 0, sizeof(Service));
-
-	service->svc_status =
-		(ISC_STATUS *) gds__alloc(ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
-/* FREE: by exception handler */
-	if (!service->svc_status)
-		ERR_post(isc_virmemexh, 0);
-
-	memset((void *) service->svc_status, 0,
-		   ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
-
-	service->svc_service = serv;
-	service->svc_resp_ptr = service->svc_resp_buf = NULL;
-	service->svc_resp_buf_len = service->svc_resp_len = 0;
 	service->svc_flags =
 		(serv->serv_executable ? SVC_forked : 0) | (switches.hasData() ? SVC_cmd_line : 0);
-	if (switches.hasData()) {
-		service->svc_switches = (TEXT *) gds__alloc((SLONG) (switches.length() + 1));
-		if (! service->svc_switches)
-		{
-			/* FREE: by exception handler */
-			ERR_post(isc_virmemexh, 0);
-		}
-		switches.copyTo(service->svc_switches, switches.length() + 1);
-	}
-	service->svc_handle = 0;
+	service->svc_perm_sw = switches;
 	service->svc_user_flag = user_flag;
-	service->svc_do_shutdown = false;
+	
 #ifdef SERVICE_THREAD
 	service->svc_stdout_head = 1;
 	service->svc_stdout_tail = SVC_STDOUT_BUFFER_SIZE;
@@ -527,28 +548,24 @@ Service* SVC_attach(USHORT	service_length,
 	service->svc_argv = NULL;
 #endif
 	service->svc_spb_version = options.spb_version;
-	if (options.spb_user_name.hasData())
-	{
-		options.spb_user_name.copyTo(service->svc_username, sizeof(service->svc_username));
-	}
+	service->svc_username = options.spb_user_name;
 
 /* The password will be issued to the service threads on NT since
  * there is no OS authentication.  If the password is not yet
  * encrypted, then encrypt it before saving it (since there is no
  * decrypt function).
  */
-	if (options.spb_password.hasData()) 
-	{
-		char tmp_enc_pwd[sizeof(service->svc_enc_password) + 2];
-		ENC_crypt(tmp_enc_pwd, sizeof(tmp_enc_pwd), 
-				  options.spb_password.c_str(), PASSWORD_SALT);
-		memcpy(service->svc_enc_password, tmp_enc_pwd + 2, 
-			sizeof(service->svc_enc_password));
-	}
-
 	if (options.spb_password_enc.hasData()) 
 	{
-		options.spb_password_enc.copyTo(service->svc_enc_password, sizeof(service->svc_enc_password));
+		service->svc_enc_password = options.spb_password_enc;
+	}
+	else if (options.spb_password.hasData()) 
+	{
+		service->svc_enc_password.resize(MAX_PASSWORD_LENGTH + 2);
+		ENC_crypt(service->svc_enc_password.begin(), service->svc_enc_password.length(), 
+				  options.spb_password.c_str(), PASSWORD_SALT);
+		service->svc_enc_password.resize(strlen(service->svc_enc_password.c_str()));
+		service->svc_enc_password.erase(0, 2);
 	}
 
 /* If an executable is defined for the service, try to fork a new process.
@@ -582,15 +599,7 @@ Service* SVC_attach(USHORT	service_length,
 
 	}	// try
 	catch (const std::exception&) {
-		if (service) {
-			if (service->svc_status) {
-				gds__free(service->svc_status);
-			}
-			if (service->svc_switches) {
-				gds__free(service->svc_switches);
-			}
-			delete service;
-		}
+		delete service;
 		throw;
 	}
 
@@ -1666,27 +1675,36 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 				 SVC_err_string(serv->serv_name, strlen(serv->serv_name)),
 				 0);
 	}
-	else {
-		/* Another service may have been started with this service block.  If so,
-		 * we must reset the service flags.
-		 */
-		if (service->svc_switches && !(service->svc_flags & SVC_cmd_line)) {
-			gds__free(service->svc_switches);
-			service->svc_switches = NULL;
-		}
-		if (!(service->svc_flags & SVC_detached))
-			service->svc_flags = 0;
-		service->svc_flags |= SVC_thd_running;
+	/* Another service may have been started with this service block.
+	 * If so, we must reset the service flags.
+	 */
+	service->svc_switches.erase();
+	if (!(service->svc_flags & SVC_detached))
+	{
+		service->svc_flags = 0;
 	}
+	service->svc_flags |= SVC_thd_running;
 	THD_MUTEX_UNLOCK(thd_mutex);
 
 	thread_db* tdbb = JRD_get_thread_data();
 
+	if (!service->svc_perm_sw.hasData())
+	{
+		/* If svc_perm_sw is not used -- call a command-line parsing utility */
+		conv_switches(spb, service->svc_switches);
+	}
+	else
+	{
+		/* Command line options (isc_spb_options) is used.
+		 * Currently the only case in which it might happen is -- gbak utility
+		 * is called with a "-server" switch.
+		 */
+		service->svc_switches = service->svc_perm_sw;
+	}
+
 /* Only need to add username and password information to those calls which need
  * to make a database connection
  */
- 	USHORT opt_switch_len = 0;
- 	
 	if (svc_id == isc_action_svc_backup ||
 		svc_id == isc_action_svc_restore ||
 		svc_id == isc_action_svc_repair ||
@@ -1697,86 +1715,29 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		svc_id == isc_action_svc_db_stats ||
 		svc_id == isc_action_svc_properties)
 	{
-		/* the user issued a username when connecting to the service so
-		 * add the length of the username and switch to new_spb_length
-		 */
-		TEXT* tmp_ptr = NULL;
-
-		if (*service->svc_username)
-			opt_switch_len +=
-				(strlen(service->svc_username) + 1 + sizeof(USERNAME_SWITCH));
-
-		/* the user issued a password when connecting to the service so add
-		 * the length of the password and switch to new_spb_length
-		 */
-		if (*service->svc_enc_password)
-			opt_switch_len +=
-				(strlen(service->svc_enc_password) + 1 +
-				 sizeof(PASSWORD_SWITCH));
-
-		bool flag_spb_options = false;
-		/* If svc_switches is not used -- call a command-line parsing utility */
-		if (!service->svc_switches) {
-			conv_switches(spb, &service->svc_switches);
-		}
-		else {
-			/* Command line options (isc_spb_options) is used.
-			 * Currently the only case in which it might happen is -- gbak utility
-			 * is called with a "-server" switch.
-			 */
-			flag_spb_options = true;
-
-			tmp_ptr = (TEXT *)
-				gds__alloc((SLONG)
-						   (strlen(service->svc_switches) + 1 +
-							opt_switch_len + 1));
-			if (!tmp_ptr)		/* NOMEM: */
-				ERR_post(isc_virmemexh, 0);
-		}
-
 		/* add the username and password to the end of svc_switches if needed */
-		if (service->svc_switches) {
-			if (flag_spb_options)
-				strcpy(tmp_ptr, service->svc_switches);
-
-			if (*service->svc_username) {
-				if (!flag_spb_options)
-					sprintf(service->svc_switches, "%s %s %s",
-							service->svc_switches, USERNAME_SWITCH,
-							service->svc_username);
-				else
-					sprintf(tmp_ptr, "%s %s %s", tmp_ptr, USERNAME_SWITCH,
-							service->svc_username);
+		if (service->svc_switches.hasData()) {
+			if (service->svc_username.hasData())
+			{
+				service->svc_switches += ' ';
+				service->svc_switches += USERNAME_SWITCH;
+				service->svc_switches += ' ';
+				service->svc_switches += service->svc_username;
 			}
 
-			if (*service->svc_enc_password) {
-				if (!flag_spb_options)
-					sprintf(service->svc_switches, "%s %s %s",
-							service->svc_switches, PASSWORD_SWITCH,
-							service->svc_enc_password);
-				else
-					sprintf(tmp_ptr, "%s %s %s", tmp_ptr, PASSWORD_SWITCH,
-							service->svc_enc_password);
-			}
-
-			if (flag_spb_options) {
-				gds__free(service->svc_switches);
-				service->svc_switches = tmp_ptr;
+			if (service->svc_enc_password.hasData())
+			{
+				service->svc_switches += ' ';
+				service->svc_switches += PASSWORD_SWITCH;
+				service->svc_switches += ' ';
+				service->svc_switches += service->svc_enc_password;
 			}
 		}
 	}
-	else {
-		/* If svc_switches is not used -- call a command-line parsing utility */
-		if (!service->svc_switches) {
-			conv_switches(spb, &service->svc_switches);
-		}
-		else {
-			fb_assert(service->svc_switches == NULL);
-		}
-	}
-/* All services except for get_ib_log require switches */
+
+// All services except for get_ib_log require switches
 	spb.rewind();
-	if (service->svc_switches == NULL && svc_id != isc_action_svc_get_ib_log)
+	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_ib_log)
 		ERR_post(isc_bad_spb_form, 0);
 		
 #ifndef SERVICE_THREAD
@@ -1791,11 +1752,11 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 #else
 
 /* Break up the command line into individual arguments. */
-	if (service->svc_switches)
+	if (service->svc_switches.hasData())
 	{
 		USHORT argc;
 		TEXT* p;
-		for (argc = 2, p = service->svc_switches; *p;) {
+		for (argc = 2, p = service->svc_switches.begin(); *p;) {
 			if (*p == ' ') {
 				argc++;
 				while (*p == ' ')
@@ -1825,7 +1786,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 			ERR_post(isc_virmemexh, 0);
 
 		*arg++ = (TEXT *)(serv->serv_thd);
-		const TEXT* q = p = service->svc_switches;
+		const TEXT* q = p = service->svc_switches.begin();
 
 		while (*q == ' ')
 			q++;
@@ -1927,13 +1888,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 
 	}	// try
 	catch (const std::exception&) {
-		if (service->svc_switches) {
-			gds__free(service->svc_switches);
-		}
-		if (service) {
-//			gds__free(service);
-			delete service;
-		}
+		delete service;
 		throw;
 	}
 
@@ -2222,7 +2177,7 @@ static void service_fork(ThreadEntryPoint* service_executable, Service* service)
 	TEXT* p;
 	
 	USHORT argc = 2;
-	for (p = service->svc_switches; *p;)
+	for (p = service->svc_switches.begin(); *p;)
 		if (*p++ == ' ')
 			argc++;
 
@@ -2238,7 +2193,7 @@ static void service_fork(ThreadEntryPoint* service_executable, Service* service)
 
 /* Break up the command line into individual arguments. */
 
-	const TEXT* q = p = service->svc_switches;
+	const TEXT* q = p = service->svc_switches.begin();
 
 	while (*q == ' ')
 		q++;
@@ -2359,21 +2314,6 @@ static void service_put(Service* service, const SCHAR* buffer, USHORT length)
 
 #ifdef WIN_NT
 
-static void service_close(Service* service)
-{
-/**************************************
- *
- *	s e r v i c e _ c l o s e		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Shutdown the connection to a service.
- *	Just a stub
- *
- **************************************/
-}
-
 static void service_fork(TEXT* service_path, Service* service)
 {
 /**************************************
@@ -2425,25 +2365,6 @@ static void service_put(Service* service, const SCHAR* buffer, USHORT length)
 
 #else
 
-static void service_close(Service* service)
-{
-/**************************************
- *
- *	s e r v i c e _ c l o s e		( G E N E R I C )
- *
- **************************************
- *
- * Functional description
- *	Shutdown the connection to a service.
- *	Simply close the input and output pipes.
- *
- **************************************/
-
-	fclose((FILE *) service->svc_input);
-	fclose((FILE *) service->svc_output);
-}
-
-
 static void service_fork(TEXT* service_path, Service* service)
 {
 /**************************************
@@ -2473,7 +2394,7 @@ static void service_fork(TEXT* service_path, Service* service)
 	TEXT* p;
 	
 	USHORT argc = 2;
-	for (p = service->svc_switches; *p;)
+	for (p = service->svc_switches.begin(); *p;)
 	{
 		if (*p == ' ')
 		{
@@ -2506,7 +2427,7 @@ static void service_fork(TEXT* service_path, Service* service)
 
 	TEXT argv_data_buf[512];
 	TEXT* argv_data;
-	const USHORT len = strlen(service->svc_switches) + 1;
+	const USHORT len = service->svc_switches.length() + 1;
 	if (len > sizeof(argv_data_buf))
 		argv_data = (TEXT *) gds__alloc((SLONG) len);
 	else
@@ -2524,7 +2445,7 @@ static void service_fork(TEXT* service_path, Service* service)
 	*arg++ = service_path;
 
 	p = argv_data;
-	const TEXT* q = service->svc_switches;
+	const TEXT* q = service->svc_switches.c_str();
 
 	while (*q == ' ')
 		q++;
@@ -2631,8 +2552,8 @@ static void service_fork(TEXT* service_path, Service* service)
 	if (argv_data != argv_data_buf)
 		gds__free(argv_data);
 
-	if (!(service->svc_input = (void *) fdopen(pair1[0], "r")) ||
-		!(service->svc_output = (void *) fdopen(pair2[1], "w")))
+	if (!(service->svc_input = fdopen(pair1[0], "r")) ||
+		!(service->svc_output = fdopen(pair2[1], "w")))
 	{
 		io_error("fdopen", errno, "service path", isc_io_access_err);
 	}
@@ -2774,38 +2695,6 @@ void SVC_cleanup(Service* service)
  *	Cleanup memory used by service.
  *
  **************************************/
-
-#ifndef SERVICE_THREAD
-/* If we forked an executable, close down it's pipes */
-
-	if (service->svc_flags & SVC_forked)
-		service_close(service);
-#else
-
-	if (service->svc_stdout) {
-		gds__free(service->svc_stdout);
-		service->svc_stdout = NULL;
-	}
-	if (service->svc_argv) {
-		gds__free(service->svc_argv);
-		service->svc_argv = NULL;
-	}
-#endif
-
-	if (service->svc_resp_buf)
-		gds__free(service->svc_resp_buf);
-
-	if (service->svc_switches != NULL)
-		gds__free(service->svc_switches);
-
-	if (service->svc_status != NULL)
-		gds__free(service->svc_status);
-
-#ifdef WIN_NT
-	CloseHandle((HANDLE) service->svc_handle);
-#endif
-
-//	gds__free(service);
 	delete service;
 }
 
@@ -2855,7 +2744,7 @@ void SVC_finish(Service* service, USHORT flag)
 }
 
 
-static void conv_switches(Firebird::ClumpletReader& spb, TEXT** switches)
+static void conv_switches(Firebird::ClumpletReader& spb, Firebird::string& switches)
 {
 /**************************************
  *
@@ -2881,13 +2770,7 @@ static void conv_switches(Firebird::ClumpletReader& spb, TEXT** switches)
 	sw.insert(0, ' ');
 	sw.insert(0, SERVICE_THD_PARAM);
 
-	*switches =
-		(TEXT *) gds__alloc(sw.length() + 1);
-/* NOMEM: return error */
-	if (!*switches)
-		ERR_post(isc_virmemexh, 0);
-
-	sw.copyTo(*switches, sw.length() + 1);
+	switches = sw;
 	return;
 }
 
@@ -2956,7 +2839,9 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 					/* in case of "display all users" the spb buffer contains
 					   nothing but isc_action_svc_display_user */
 					if (spb.isEof())
+					{
 						break;
+					}
 				}
 			}
 

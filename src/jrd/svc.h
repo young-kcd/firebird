@@ -24,6 +24,8 @@
 #ifndef JRD_SVC_H
 #define JRD_SVC_H
 
+#include <stdio.h>
+
 #include "../jrd/thd.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/isc.h"
@@ -96,11 +98,16 @@ struct serv_entry; // forward decl.
 /* Service manager block */
 class Service : public pool_alloc<type_svc>
 {
+private:
+	ISC_STATUS_ARRAY svc_status_array;
 public:
+	Service(serv_entry *se);
+	~Service();
+	
 	SLONG	svc_handle;			/* "handle" of process/thread running service */
 	ISC_STATUS*	svc_status;		/* status vector for svc_handle */
-	void*	svc_input;			/* input to service */
-	void*	svc_output;			/* output from service */
+	FILE*	svc_input;			/* input to service */
+	FILE*	svc_output;			/* output from service */
 	ULONG	svc_stdout_head;
 	ULONG	svc_stdout_tail;
 	UCHAR*	svc_stdout;
@@ -116,10 +123,12 @@ public:
 	USHORT	svc_user_flag;
 	USHORT	svc_spb_version;
 	bool	svc_do_shutdown;
-	TEXT	svc_username[33];
-	TEXT	svc_enc_password[MAX_PASSWORD_ENC_LENGTH];
-	TEXT	svc_reserved[1];
-	TEXT*	svc_switches;
+	Firebird::string	svc_username;
+	Firebird::string	svc_enc_password;
+	Firebird::string	svc_switches;	// Full set of switches
+	Firebird::string	svc_perm_sw;	// Switches, taken from services table 
+										// and/or passed using spb_command_line
+	
 	void	svc_started();
 };
 

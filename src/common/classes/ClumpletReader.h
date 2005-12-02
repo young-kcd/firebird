@@ -72,7 +72,7 @@ public:
 	size_t getBufferLength() const 
 	{
 		size_t rc = getBufferEnd() - getBuffer();
-		if (rc == 1)
+		if (rc == 1 && kind != UnTagged && kind != SpbStart)
 		{
 			rc = 0;
 		}
