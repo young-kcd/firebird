@@ -1731,18 +1731,17 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 /* V4_MUTEX_LOCK (&relation->rel_mutex); */
 
 /* Allocate a vector of garbage collect record blocks for relation. */
-	vec* vector = relation->rel_gc_rec;
+	vec<Record*>* vector = relation->rel_gc_rec;
 	if (!vector) {
-		vector = relation->rel_gc_rec = vec::newVector(*dbb->dbb_permanent, 1);
+		vector = relation->rel_gc_rec = vec<Record*>::newVector(*dbb->dbb_permanent, 1);
 	}
 
 /* Set the active flag on an inactive garbage collect record block
    and return it. */
-	vec::iterator rec_ptr = vector->begin();
-	for (const vec::const_iterator end = vector->end();
-		rec_ptr != end; ++rec_ptr)
+	vec<Record*>::iterator rec_ptr = vector->begin();
+	for (const vec<Record*>::const_iterator end = vector->end(); rec_ptr != end; ++rec_ptr)
 	{
-		Record* record = *(Record**) &*rec_ptr;
+		Record* record = *rec_ptr;
 		if (record && !(record->rec_flags & REC_gc_active)) {
 			record->rec_flags |= REC_gc_active;
 /*	V4_MUTEX_UNLOCK (&relation->rel_mutex); */
@@ -1764,7 +1763,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 	if ((*vector)[slot]) {
 		vector->resize((++slot) + 1);
 	}
-	(*vector)[slot] = (BLK) record;
+	(*vector)[slot] = record;
 
 /* V4_MUTEX_UNLOCK (&relation->rel_mutex); */
 	return record;
@@ -2855,13 +2854,13 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 	rpb.rpb_window.win_flags = WIN_large_scan;
 	
 	jrd_rel* relation = 0; // wasn't initialized: memory problem in catch() part.
-	vec* vector = 0;
+	vec<jrd_rel*>* vector = 0;
 
 	try {
 
 		for (size_t i = 1; (vector = dbb->dbb_relations) && i < vector->count(); i++)
 		{
-			if ((relation = (jrd_rel*) (*vector)[i]) && relation->rel_pages &&
+			if ((relation = (*vector)[i]) && relation->rel_pages &&
 				!(relation->rel_flags & (REL_deleted | REL_deleting)))
 			{
 				rpb.rpb_relation = relation;
@@ -3865,9 +3864,9 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			   Express interest in the relation to prevent it from being deleted
 			   out from under us while garbage collection is in-progress. */
 
-			vec* vector = dbb->dbb_relations;
+			vec<jrd_rel*>* vector = dbb->dbb_relations;
 			for (ULONG id = 0; vector && id < vector->count(); ++id) {
-				relation = (jrd_rel*) (*vector)[id];
+				relation = (*vector)[id];
 				RelationGarbage *relGarbage = 
 					relation ? (RelationGarbage*)relation->rel_garbage : NULL;
 
@@ -4713,8 +4712,8 @@ static Record* replace_gc_record(jrd_rel* relation, Record** gc_record, USHORT l
 
 /* V4_MUTEX_LOCK (&relation->rel_mutex); */
 
-	vec* vector = relation->rel_gc_rec;
-	vec::iterator rec_ptr, end;
+	vec<Record*>* vector = relation->rel_gc_rec;
+	vec<Record*>::iterator rec_ptr, end;
 	for (rec_ptr = vector->begin(), end = vector->end(); rec_ptr < end;
 					++rec_ptr)
 	{
@@ -4727,7 +4726,7 @@ static Record* replace_gc_record(jrd_rel* relation, Record** gc_record, USHORT l
 			// some cases.
 			*gc_record = temp;
 /*	V4_MUTEX_UNLOCK (&relation->rel_mutex); */
-			return (Record*)*rec_ptr;
+			return *rec_ptr;
 		}
 	}
 

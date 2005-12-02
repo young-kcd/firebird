@@ -434,7 +434,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
  * in a temporary state (partially loaded).  In this case
  * there is nothing we can do but post an error and exit.
  * Note: This will most likely happen if we have a large list
- * of deffered work which can not complete because of some
+ * of deferred work which can not complete because of some
  * error, and while we are trying to commit, we find 
  * that we have a dependency on something later in the list.
  * IF there were no error, then the dependency woyld have
@@ -447,26 +447,41 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
  * implicitly, because this is a task for the user to do, and
  * should never be decided by the server. This fixes bug 10052 */
 
+	// CVC: The code for procedures now compiles correctly, but Vlad has
+	// pointed out that we don't have default for output fields, therefore
+	// the code is commented till better times.
 	jrd_fld* field = NULL;
+	/*
+	Parameter* param = NULL;
 
 	if (procedure)
 	{
-		field = (jrd_fld*) (*procedure->prc_output_fields)[id];
+		param = (*procedure->prc_output_fields)[id];
 	}
-	else if (relation)
+	else
+	*/
+	if (relation)
 	{
 		if (!relation->rel_fields) {
 			ERR_post(isc_depend_on_uncommitted_rel, 0);
 		}
-		field = (jrd_fld*) (*relation->rel_fields)[id];
+		field = (*relation->rel_fields)[id];
 	}
 
 	jrd_nod* temp_node = PAR_gen_field(tdbb, stream, id);
-
-	if (field) {
-		if (field->fld_default_value && field->fld_not_null)
+	/*
+	if (param)
+	{
+		if (param->prm_default_value) //&& param->prm_not_null)
 			temp_node->nod_arg[e_fld_default_value] =
-				field->fld_default_value;
+				param->prm_default_value;
+	}
+	else
+	*/
+	if (field) 
+	{
+		if (field->fld_default_value && field->fld_not_null)
+			temp_node->nod_arg[e_fld_default_value] = field->fld_default_value;
 	}
 
 	return temp_node;
@@ -685,13 +700,12 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName
  **************************************/
 #pragma FB_COMPILER_MESSAGE("Vector's last element still unresolved")
 	// JMB: Is there a reason we are skipping the last element in the array?
-	// CVC: This should be const vec*, but then the compiler rejects the iterator!
-	vec* list = procedure->prc_output_fields;
-	vec::const_iterator ptr = list->begin();
-	for (const vec::const_iterator end = list->end() - 1; ptr < end;
+	vec<Parameter*>* list = procedure->prc_output_fields;
+	vec<Parameter*>::const_iterator ptr = list->begin();
+	for (const vec<Parameter*>::const_iterator end = list->end() - 1; ptr < end;
 		 ptr++)
 	{
-		const Parameter* param = (Parameter*) * ptr;
+		const Parameter* param = *ptr;
 		if (name == param->prm_name)
 			return param->prm_number;
 	}
@@ -1204,7 +1218,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 	if (is_column) {
 		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
 		if (temp_rel) {
-			jrd_fld* field = (jrd_fld*) (*temp_rel->rel_fields)[id];
+			jrd_fld* field = (*temp_rel->rel_fields)[id];
 			if (field) {
 				if (field->fld_default_value && field->fld_not_null)
 					node->nod_arg[e_fld_default_value] =
@@ -1926,10 +1940,9 @@ static void par_procedure_parms(
 
 			// default value for parameter 
 			if ((count <= 0) && input_flag) {
-				Parameter* parameter = (Parameter*)(*procedure->prc_input_fields)
-					[procedure->prc_inputs - n];
-
-				asgn->nod_arg[asgn_arg1] = parameter->prm_default_val;
+				Parameter* parameter =
+					(*procedure->prc_input_fields)[procedure->prc_inputs - n];
+				asgn->nod_arg[asgn_arg1] = parameter->prm_default_value;
 			}
 			else {
 				asgn->nod_arg[asgn_arg1] = parse(tdbb, csb, VALUE);
@@ -2723,9 +2736,9 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			n = BLR_WORD;
 			node->nod_arg[e_dcl_id] = (jrd_nod*) (IPTR) n;
 			PAR_desc(csb, (DSC *) (node->nod_arg + e_dcl_desc));
-			vec* vector = csb->csb_variables =
-				vec::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
-			(*vector)[n] = (BLK) node;
+			vec<jrd_nod*>* vector = csb->csb_variables =
+				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
+			(*vector)[n] = node;
 		}
 		break;
 
@@ -2733,9 +2746,9 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		{
 			n = BLR_WORD;
 			node->nod_arg[e_var_id] = (jrd_nod*) (IPTR) n;
-			vec* vector = csb->csb_variables;
+			vec<jrd_nod*>* vector = csb->csb_variables;
 			if (!vector || n >= vector->count() ||
-				!(node->nod_arg[e_var_variable] = (jrd_nod*) (*vector)[n]))
+				!(node->nod_arg[e_var_variable] = (*vector)[n]))
 			{
 				syntax_error(csb, "variable identifier");
 			}

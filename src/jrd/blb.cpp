@@ -1262,11 +1262,10 @@ blb* BLB_open2(thread_db* tdbb,
    know about the relation, the blob id has got to be invalid
    anyway. */
 
-	vec* vector = dbb->dbb_relations;
+	vec<jrd_rel*>* vector = dbb->dbb_relations;
 
 	if (blob_id->bid_internal.bid_relation_id >= vector->count() ||
-		!(blob->blb_relation =
-		  static_cast<jrd_rel*>( (*vector)[blob_id->bid_internal.bid_relation_id]) ) )
+		!(blob->blb_relation = (*vector)[blob_id->bid_internal.bid_relation_id] ) )
 	{
 			ERR_post(isc_bad_segstr_id, 0);
 	}

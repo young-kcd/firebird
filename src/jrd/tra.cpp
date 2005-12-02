@@ -1107,14 +1107,13 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 /* Release the locks associated with the transaction */
 
-	vec* vector = transaction->tra_relation_locks;
+	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector) {
-		vec::iterator lock = vector->begin();
-		for (ULONG i = 0; i < vector->count();
-			 i++, lock++)
+		vec<Lock*>::iterator lock = vector->begin();
+		for (ULONG i = 0; i < vector->count(); ++i, ++lock)
 		{
 			if (*lock)
-				LCK_release(tdbb, (Lock*)*lock);
+				LCK_release(tdbb, *lock);
 		}
 	}
 
@@ -1407,12 +1406,12 @@ void TRA_shutdown_attachment(thread_db* tdbb, Attachment* attachment)
 	{
 		/* Release the relation locks associated with the transaction */
 
-		vec* vector = transaction->tra_relation_locks;
+		vec<Lock*>* vector = transaction->tra_relation_locks;
 		if (vector) {
-			vec::iterator lock = vector->begin();
-			for (ULONG i = 0; i < vector->count(); i++, lock++) {
+			vec<Lock*>::iterator lock = vector->begin();
+			for (ULONG i = 0; i < vector->count(); ++i, ++lock) {
 				if (*lock)
-					LCK_release(tdbb, (Lock*)*lock);
+					LCK_release(tdbb, *lock);
 			}
 		}
 
@@ -2574,10 +2573,10 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
 		/* now take care of any other request levels;
 		   start at level 1 since level 0 was just handled */
 
-		vec* vector = request->req_sub_requests;
+		vec<jrd_req*>* vector = request->req_sub_requests;
 		if (vector) {
 			for (USHORT level = 1; level < vector->count(); level++) {
-				jrd_req* clone = (jrd_req*) (*vector)[level];
+				jrd_req* clone = (*vector)[level];
 				if (clone && clone->req_transaction) {
 					EXE_unwind(tdbb, clone);
 					EXE_start(tdbb, clone, trans);
@@ -3012,7 +3011,7 @@ static void transaction_options(
 
 /* If there aren't any relation locks to seize, we're done. */
 
-	vec* vector = transaction->tra_relation_locks;
+	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (!vector)
 		return;
 
@@ -3020,7 +3019,7 @@ static void transaction_options(
    If any can't be seized, release all and try again. */
 
 	for (ULONG id = 0; id < vector->count(); id++) {
-		Lock* lock = (Lock*) (*vector)[id];
+		Lock* lock = (*vector)[id];
 		if (!lock)
 			continue;
 		USHORT level = lock->lck_logical;
@@ -3031,7 +3030,7 @@ static void transaction_options(
 			continue;
 		}
 		for (USHORT l = 0; l < id; l++) {
-			if ( (lock = (Lock*) (*vector)[l]) ) {
+			if ( (lock = (*vector)[l]) ) {
 				level = lock->lck_logical;
 				LCK_release(tdbb, lock);
 				lock->lck_logical = level;

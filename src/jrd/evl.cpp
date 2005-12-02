@@ -1219,8 +1219,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 				MET_scan_relation(tdbb, relation);
 			}
 
-			jrd_fld* temp_field =
-				static_cast<jrd_fld*>((*relation->rel_fields)[id]);
+			jrd_fld* temp_field = (*relation->rel_fields)[id];
 
 			if (temp_field)
 			{
@@ -3049,7 +3048,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	}
 	SLONG count = 0;
 
-	RecordSource* rsb = (RecordSource*) (BLK) node->nod_arg[e_stat_rsb];
+	RecordSource* rsb = (RecordSource*) node->nod_arg[e_stat_rsb];
 	RSE_open(tdbb, rsb);
 
 /* Handle each variety separately */
@@ -3575,7 +3574,7 @@ static dsc* lock_record(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		Attachment* att = tdbb->tdbb_attachment;
 		const ULONG slot = ALL_get_free_object(tdbb->tdbb_database->dbb_permanent,
 								   &att->att_lck_quick_ref, 50);
-		att->att_lck_quick_ref->vec_object[slot] = lock;
+		(*att->att_lck_quick_ref)[slot] = lock;
 		impure->vlu_misc.vlu_long = slot;
 	}
 #endif
@@ -3644,7 +3643,7 @@ static dsc* lock_relation(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		const ULONG slot =
 			ALL_get_free_object(tdbb->tdbb_database->dbb_permanent,
 								   &att->att_lck_quick_ref, 50);
-		att->att_lck_quick_ref->vec_object[slot] = lock;
+		(*att->att_lck_quick_ref)[slot] = lock;
 		impure->vlu_misc.vlu_long = slot;
 	}
 #endif

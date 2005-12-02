@@ -72,7 +72,7 @@ namespace Jrd {
 class jrd_rel;
 class jrd_nod;
 struct sort_key_def;
-class vec;
+template <typename T> class vec;
 class jrd_prc;
 struct index_desc;
 struct IndexDescAlloc;
@@ -711,7 +711,7 @@ public:
 	jrd_nod*		csb_node;
 	ExternalAccessList csb_external;      /* Access to outside procedures/triggers to be checked */
 	AccessItemList	csb_access;			/* Access items to be checked */
-	vec*			csb_variables;		/* Vector of variables, if any */
+	vec<jrd_nod*>*	csb_variables;		/* Vector of variables, if any */
 	ResourceList	csb_resources;		/* Resources (relations and indexes) */
 	NodeStack		csb_dependencies;	/* objects this request depends upon */
 	Firebird::Array<RecordSource*> csb_fors;	/* stack of fors */

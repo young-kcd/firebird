@@ -1211,8 +1211,12 @@ static void set_flags(jrd_rel* relation, Record* record)
  **************************************/
 	DSC desc;
 
+	vec<jrd_fld*>* vector = relation->rel_fields;
+	if (!vector)
+		return;
+	
+	jrd_fld** field_ptr = &vector[0];
 	const Format* format = record->rec_format;
-	jrd_fld** field_ptr = relation->rel_fields->vec_object;
 	dsc* desc_ptr = format->fmt_desc;
 
 	for (USHORT i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++) {
@@ -1246,8 +1250,12 @@ static void set_missing(jrd_rel* relation, Record* record)
  **************************************/
 	DSC desc;
 
+	vec<jrd_fld*>* vector = relation->rel_fields;
+	if (!vector)
+		return;
+
+	jrd_fld** field_ptr = &vector[0];
 	const Format* format = record->rec_format;
-	jrd_fld** field_ptr = relation->rel_fields->vec_object;
 	dsc* desc_ptr = format->fmt_desc;
 
 	for (USHORT i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)

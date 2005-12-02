@@ -46,7 +46,7 @@ namespace Jrd {
 class blb;
 class Lock;
 class jrd_rel;
-class vec;
+template <typename T> class vec;
 class Savepoint;
 class Record;
 class VerbAction;
@@ -100,7 +100,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	BlobIndexTree tra_blobs;		/* list of active blobs */
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
 	Lock*		tra_lock;		/* lock for transaction */
-	vec*		tra_relation_locks;	/* locks for relations */
+	vec<Lock*>*		tra_relation_locks;	/* locks for relations */
 	UInt32Bitmap*	tra_commit_sub_trans;	/* commited sub-transactions */
 	Savepoint*	tra_save_point;	/* list of savepoints  */
 	SLONG tra_save_point_number;	/* next save point number to use */

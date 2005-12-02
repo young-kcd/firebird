@@ -84,7 +84,7 @@ Bookmark* BKM_allocate(RecordSource* rsb, USHORT length)
 		const ULONG slot =
 			ALL_get_free_object(dbb->dbb_permanent,
 								&attachment->att_bkm_quick_ref, 50);
-		attachment->att_bkm_quick_ref->vec_object[slot] = (BLK) bookmark;
+		(*attachment->att_bkm_quick_ref)[slot] = bookmark;
 		bookmark->bkm_handle = slot;
 	}
 #endif
@@ -130,9 +130,9 @@ Bookmark* BKM_lookup(jrd_nod* node)
 
 		bookmark = NULL;
 		const ULONG slot = MOV_get_long(EVL_expr(tdbb, node), 0);
-		vec* vector = attachment->att_bkm_quick_ref;
-		if (vector && slot < vector->vec_count) {
-				bookmark = (Bookmark*) vector->vec_object[slot];
+		vec<Bookmark*>* vector = attachment->att_bkm_quick_ref;
+		if (vector && slot < vector->count()) {
+				bookmark = (*vector)[slot];
 		}
 	}
 #endif
@@ -173,7 +173,7 @@ void BKM_release(jrd_nod* node)
 
 #if SIZEOF_VOID_P == 8
 	const ULONG slot = MOV_get_long(EVL_expr(tdbb, node), 0);
-	attachment->att_bkm_quick_ref->vec_object[slot] = NULL;
+	(*attachment->att_bkm_quick_ref)[slot] = NULL;
 #endif
 
 	ALL_release(bookmark);

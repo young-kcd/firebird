@@ -1439,7 +1439,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		}
 	}
 	else {
-		VCL vector = blob->blb_pages;
+		vcl* vector = blob->blb_pages;
 		if (!vector) {
 			vector = blob->blb_pages =
 				vcl::newVector(*blob->blb_transaction->tra_pool, 0);
@@ -2579,7 +2579,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 			CCH_must_write(&new_pp_window);
 			CCH_RELEASE(tdbb, &new_pp_window);
 
-			VCL vector = relation->rel_pages =
+			vcl* vector = relation->rel_pages =
 				vcl::newVector(*dbb->dbb_permanent, relation->rel_pages,
 							   pp_sequence + 1);
 			(*vector)[pp_sequence] = new_pp_window.win_page;

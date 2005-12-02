@@ -1154,13 +1154,14 @@ static void walk_database(thread_db* tdbb, VDR control)
 	walk_tip(tdbb, control, page->hdr_next_transaction);
 	walk_generators(tdbb, control);
 
-	vec* vector;
-	for (USHORT i = 0; (vector = dbb->dbb_relations) && i < vector->count(); i++) {
+	vec<jrd_rel*>* vector;
+	for (USHORT i = 0; (vector = dbb->dbb_relations) && i < vector->count(); i++)
+	{
 #ifdef DEBUG_VAL_VERBOSE
 		if (i >= 32 /* rel_MAX */ ) // Why not system flag instead?
 			VAL_debug_level = 2;
 #endif
-		jrd_rel* relation = (jrd_rel*) (*vector)[i];
+		jrd_rel* relation = (*vector)[i];
 		if (relation)
 			walk_relation(tdbb, control, relation);
 	}
@@ -1787,7 +1788,7 @@ static RTN walk_pointer_page(	thread_db*	tdbb,
 
 	Database* dbb = tdbb->tdbb_database;
 
-	VCL vector = relation->rel_pages;
+	const vcl* vector = relation->rel_pages;
 
 	if (!vector || sequence >= static_cast<int>(vector->count())) {
 		return corrupt(tdbb, control, VAL_P_PAGE_LOST, relation, sequence);
@@ -2145,7 +2146,7 @@ static RTN walk_tip(thread_db* tdbb, VDR control, SLONG transaction)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	VCL vector = dbb->dbb_t_pages;
+	const vcl* vector = dbb->dbb_t_pages;
 	if (!vector) {
 		return corrupt(tdbb, control, VAL_TIP_LOST, 0);
 	}

@@ -108,15 +108,13 @@ static TEXT_PTR dbb_stuff[] = {
 },
 vec[] = {
 	"VECTOR",
-// TMN: FIXFIX! John?
-//	FLD(VEC, "Count %d", vec_count),
+	FLD(vec<void**>*, "Count %d", count()),
 	"Count %d", (SCHAR*)4, (SCHAR*)4,
 	0
 },
 vcl[] = {
 	"VECTOR OF ULONGS",
-// TMN: FIXFIX! John?
-//	FLD(VCL, "Count %d", vcl_count),
+	FLD(vcl*, "Count %d", count()),
 	"Count %d", (SCHAR*)4, (SCHAR*)4,
 	0
 };

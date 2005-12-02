@@ -522,12 +522,12 @@ void INI_init(void)
 			}
 		}
 
-		vec* fields = vec::newVector(*dbb->dbb_permanent, n);
+		vec<jrd_fld*>* fields = vec<jrd_fld*>::newVector(*dbb->dbb_permanent, n);
 		relation->rel_fields = fields;
-		vec::iterator itr = fields->begin();
+		vec<jrd_fld*>::iterator itr = fields->begin();
 		Format* format = Format::newFormat(*dbb->dbb_permanent, n);
 		relation->rel_current_format = format;
-		vec* formats = vec::newVector(*dbb->dbb_permanent, 1);
+		vec<Format*>* formats = vec<Format*>::newVector(*dbb->dbb_permanent, 1);
 		relation->rel_formats = formats;
 		(*formats)[0] = format;
 		format->fmt_count = n;
@@ -570,7 +570,7 @@ void INI_init2(void)
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
-	vec* vector = dbb->dbb_relations;
+	vec<jrd_rel*>* vector = dbb->dbb_relations;
 
 	const UCHAR* fld;
 	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
@@ -583,7 +583,7 @@ void INI_init2(void)
         **
         ******************************************************/
 			const USHORT id = relfld[RFLD_R_ID];
-			jrd_rel* relation = (jrd_rel*)(*vector)[id];
+			jrd_rel* relation = (*vector)[id];
 			delete relation->rel_current_format;
 			delete relation->rel_formats;
 			delete relation->rel_fields;
@@ -905,8 +905,7 @@ static void add_index_set(Database*	dbb,
 				const ini_idx_t::ini_idx_segment_t* segment =
 					&index->ini_idx_segment[position];
 				STORE(REQUEST_HANDLE handle2) Y IN RDB$INDEX_SEGMENTS
-					jrd_fld* field =
-						(jrd_fld*) (*relation->rel_fields)[segment->ini_idx_rfld_id];
+					jrd_fld* field = (*relation->rel_fields)[segment->ini_idx_rfld_id];
 
 					Y.RDB$FIELD_POSITION = position;
 					PAD(X.RDB$INDEX_NAME, Y.RDB$INDEX_NAME);

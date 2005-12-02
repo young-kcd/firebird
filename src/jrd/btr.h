@@ -47,7 +47,7 @@ namespace Jrd {
 
 class jrd_rel;
 class jrd_tra;
-class vec;
+template <typename T> class vec;
 class jrd_req;
 struct temporary_key;
 class jrd_tra;
@@ -69,9 +69,9 @@ struct index_desc {
 	USHORT	idx_primary_index;	/* id for primary key partner index */
 	USHORT	idx_primary_relation;	/* id for primary key partner relation */
 	USHORT	idx_count;			/* number of keys */
-	vec*	idx_foreign_primaries;	/* ids for primary/unique indexes with partners */
-	vec*	idx_foreign_relations;	/* ids for foreign key partner relations */
-	vec*	idx_foreign_indexes;	/* ids for foreign key partner indexes */
+	vec<int>*	idx_foreign_primaries;	/* ids for primary/unique indexes with partners */
+	vec<int>*	idx_foreign_relations;	/* ids for foreign key partner relations */
+	vec<int>*	idx_foreign_indexes;	/* ids for foreign key partner indexes */
 	jrd_nod* idx_expression;	/* node tree for indexed expresssion */
 	dsc		idx_expression_desc;	/* descriptor for expression result */
 	jrd_req* idx_expression_request;	/* stored request for expression evaluation */

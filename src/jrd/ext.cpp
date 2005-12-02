@@ -279,10 +279,10 @@ bool EXT_get(RecordSource* rsb)
 	Format::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
 
     SSHORT i = 0;
-	for (vec::iterator itr = relation->rel_fields->begin();
+	for (vec<jrd_fld*>::iterator itr = relation->rel_fields->begin();
 			i < format->fmt_count; ++i, ++itr, ++desc_ptr)
 	{
-	    const jrd_fld* field = (jrd_fld*) (*itr);
+	    const jrd_fld* field = *itr;
 		SET_NULL(record, i);
 		if (!desc_ptr->dsc_length || !field)
 			continue;
@@ -470,12 +470,12 @@ void EXT_store(record_param* rpb, int* transaction)
 	}
 
 	dsc desc;
-	vec::iterator field_ptr = relation->rel_fields->begin();
+	vec<jrd_fld*>::iterator field_ptr = relation->rel_fields->begin();
 	Format::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
 
 	for (USHORT i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
 	{
-		const jrd_fld* field = (jrd_fld*) *field_ptr;
+		const jrd_fld* field = *field_ptr;
 		if (field &&
 			!field->fld_computation &&
 			desc_ptr->dsc_length &&

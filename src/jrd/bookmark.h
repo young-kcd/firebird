@@ -24,8 +24,10 @@
 #ifndef JRD_BOOKMARK_H
 #define JRD_BOOKMARK_H
 
+#ifdef PC_ENGINE
 Jrd::Bookmark*	BKM_allocate(Jrd::RecordSource*, USHORT);
 Jrd::Bookmark*	BKM_lookup(Jrd::jrd_nod*);
 void	BKM_release(Jrd::jrd_nod*);
+#endif
 
 #endif /* JRD_BOOKMARK_H */

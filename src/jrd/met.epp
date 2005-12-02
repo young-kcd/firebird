@@ -201,12 +201,12 @@ void MET_update_partners(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	vec* relations = dbb->dbb_relations;
+	vec<jrd_rel*>* relations = dbb->dbb_relations;
 
-	vec::iterator ptr = relations->begin();
-	for (const vec::const_iterator end = relations->end(); ptr < end; ptr++)
+	vec<jrd_rel*>::iterator ptr = relations->begin();
+	for (const vec<jrd_rel*>::const_iterator end = relations->end(); ptr < end; ptr++)
 	{
-		jrd_rel* relation = static_cast<jrd_rel*>(*ptr);
+		jrd_rel* relation = *ptr;
 		if (!relation) {
 			continue;
 		}
@@ -262,15 +262,15 @@ void MET_verify_cache(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	vec* procedures = dbb->dbb_procedures;
+	vec<jrd_prc*>* procedures = dbb->dbb_procedures;
 	if (procedures) {
 		jrd_prc* procedure;
-		vec::iterator	ptr, end;
+		vec<jrd_prc*>::iterator	ptr, end;
 
 		for (ptr = procedures->begin(), end = procedures->end();
 			ptr < end; ptr++)
 		{
-			if ( (procedure = (jrd_prc*)(*ptr)) && procedure->prc_request /*&&
+			if ( (procedure = *ptr) && procedure->prc_request /*&&
 				 !(procedure->prc_flags & PRC_obsolete)*/ )
 			{
 				fb_assert(procedure->prc_int_use_count == 0);
@@ -281,7 +281,7 @@ void MET_verify_cache(thread_db* tdbb)
 		for (ptr = procedures->begin(), end = procedures->end();
 			ptr < end; ptr++)
 		{
-			if ( (procedure = (jrd_prc*)(*ptr)) && procedure->prc_request /*&&
+			if ( (procedure = *ptr) && procedure->prc_request /*&&
 				 !(procedure->prc_flags & PRC_obsolete)*/ )
 			{
 				inc_int_use_count(procedure->prc_request);
@@ -292,18 +292,18 @@ void MET_verify_cache(thread_db* tdbb)
 		for (ptr = procedures->begin(), end = procedures->end();
 			ptr < end; ptr++)
 		{
-			if ( (procedure = (jrd_prc*)(*ptr)) && procedure->prc_request && /*
+			if ( (procedure = *ptr) && procedure->prc_request && /*
 				 !(procedure->prc_flags & PRC_obsolete) && */
 				 procedure->prc_use_count < procedure->prc_int_use_count)
 			{
 				char buffer[1024], *buf = buffer;
 				buf += sprintf(buf, "Procedure %d:%s is not properly counted (use count=%d, prc use=%d). Used by: \n",
 					procedure->prc_id, procedure->prc_name.c_str(), procedure->prc_use_count, procedure->prc_int_use_count);
-				vec::const_iterator ptr2 = procedures->begin();
-				for (const vec::const_iterator end2 = procedures->end();
+				vec<jrd_prc*>::const_iterator ptr2 = procedures->begin();
+				for (const vec<jrd_prc*>::const_iterator end2 = procedures->end();
 					ptr2 < end2; ptr2++)
 				{
-					const jrd_prc* prc = (jrd_prc*)(*ptr2);
+					const jrd_prc* prc = *ptr2;
 					if (prc && prc->prc_request /*&&
 						!(prc->prc_flags & PRC_obsolete)*/ )
 					{
@@ -331,7 +331,7 @@ void MET_verify_cache(thread_db* tdbb)
 		for (ptr = procedures->begin(), end = procedures->end();
 				ptr < end; ptr++)
 		{
-			if ( (procedure = (jrd_prc*)(*ptr)) )
+			if ( (procedure = *ptr) )
 			{
 				procedure->prc_int_use_count = 0;
 			}
@@ -358,32 +358,36 @@ void MET_clear_cache(thread_db* tdbb)
 #ifdef DEV_BUILD
 	MET_verify_cache(tdbb);
 #endif
-	vec::iterator	ptr, end;
 
 	Database* dbb = tdbb->tdbb_database;
 
-	vec* relations = dbb->dbb_relations;
-	for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
-	{
-		jrd_rel* relation = static_cast<jrd_rel*>(*ptr);
-		if (!relation)
-			continue;
-		release_cached_triggers(tdbb, relation->rel_pre_store);
-		release_cached_triggers(tdbb, relation->rel_post_store);
-		release_cached_triggers(tdbb, relation->rel_pre_erase);
-		release_cached_triggers(tdbb, relation->rel_post_erase);
-		release_cached_triggers(tdbb, relation->rel_pre_modify);
-		release_cached_triggers(tdbb, relation->rel_post_modify);
-	}
+	vec<jrd_rel*>* relations = dbb->dbb_relations;
+	{ // scope
+		vec<jrd_rel*>::iterator ptr, end;
+		for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
+		{
+			jrd_rel* relation = *ptr;
+			if (!relation)
+				continue;
+			release_cached_triggers(tdbb, relation->rel_pre_store);
+			release_cached_triggers(tdbb, relation->rel_post_store);
+			release_cached_triggers(tdbb, relation->rel_pre_erase);
+			release_cached_triggers(tdbb, relation->rel_post_erase);
+			release_cached_triggers(tdbb, relation->rel_pre_modify);
+			release_cached_triggers(tdbb, relation->rel_post_modify);
+		}
+	} // scope
 
-	vec* procedures = dbb->dbb_procedures;
-	if (procedures) {
+	vec<jrd_prc*>* procedures = dbb->dbb_procedures;
+	if (procedures)
+	{
 		jrd_prc* procedure;
+		vec<jrd_prc*>::iterator ptr, end;
 		/* Walk procedures and calculate internal dependencies */
 		for (ptr = procedures->begin(), end = procedures->end();
 			ptr < end; ptr++)
 		{
-			if ( (procedure = (jrd_prc*)(*ptr)) && procedure->prc_request &&
+			if ( (procedure = *ptr) && procedure->prc_request &&
 				 !(procedure->prc_flags & PRC_obsolete) )
 			{
 				inc_int_use_count(procedure->prc_request);
@@ -395,7 +399,7 @@ void MET_clear_cache(thread_db* tdbb)
 		for (ptr = procedures->begin(), end = procedures->end();
 			ptr < end; ptr++)
 		{
-			if ( (procedure = (jrd_prc*)(*ptr)) && procedure->prc_request &&
+			if ( (procedure = *ptr) && procedure->prc_request &&
 				 !(procedure->prc_flags & PRC_obsolete) &&
 				 procedure->prc_use_count != procedure->prc_int_use_count )
 			{
@@ -407,7 +411,7 @@ void MET_clear_cache(thread_db* tdbb)
 		for (ptr = procedures->begin(), end = procedures->end();
 				ptr < end; ptr++)
 		{
-			if ( (procedure = (jrd_prc*)(*ptr))  )
+			if ( (procedure = *ptr)  )
 			{
 
 				if ( procedure->prc_request &&
@@ -433,7 +437,7 @@ void MET_clear_cache(thread_db* tdbb)
 		for (ptr = procedures->begin(), end = procedures->end();
 				ptr < end; ptr++)
 		{
-			if ( (procedure = (jrd_prc*)(*ptr)) &&
+			if ( (procedure = *ptr) &&
 				 (procedure->prc_flags & PRC_obsolete) )
 			{
 				MET_remove_procedure(tdbb, procedure->prc_id, procedure);
@@ -467,34 +471,36 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 	Database* dbb = tdbb->tdbb_database;
 
 	// This should not really happen
-	vec* procedures = dbb->dbb_procedures;
+	vec<jrd_prc*>* procedures = dbb->dbb_procedures;
 	if (!procedures) {
 		return false;
 	}
 
-	vec* relations = dbb->dbb_relations;
-
-	vec::iterator	ptr, end;
-	for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
-	{
-		jrd_rel* relation = static_cast<jrd_rel*>(*ptr);
-		if (!relation) {
-			continue;
+	vec<jrd_rel*>* relations = dbb->dbb_relations;
+	{ // scope
+	    vec<jrd_rel*>::iterator ptr, end;
+		for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
+		{
+			jrd_rel* relation = *ptr;
+			if (!relation) {
+				continue;
+			}
+			post_used_procedures(relation->rel_pre_store);
+			post_used_procedures(relation->rel_post_store);
+			post_used_procedures(relation->rel_pre_erase);
+			post_used_procedures(relation->rel_post_erase);
+			post_used_procedures(relation->rel_pre_modify);
+			post_used_procedures(relation->rel_post_modify);
 		}
-		post_used_procedures(relation->rel_pre_store);
-		post_used_procedures(relation->rel_post_store);
-		post_used_procedures(relation->rel_pre_erase);
-		post_used_procedures(relation->rel_post_erase);
-		post_used_procedures(relation->rel_pre_modify);
-		post_used_procedures(relation->rel_post_modify);
-	}
+	} // scope
 
 	jrd_prc* procedure;
+	vec<jrd_prc*>::iterator ptr, end;
 	/* Walk procedures and calculate internal dependencies */
 	for (ptr = procedures->begin(), end = procedures->end();
 		ptr < end; ptr++)
 	{
-		if ( (procedure = (jrd_prc*)(*ptr)) && procedure->prc_request &&
+		if ( (procedure = *ptr) && procedure->prc_request &&
 			 !(procedure->prc_flags & PRC_obsolete) )
 		{
 			inc_int_use_count(procedure->prc_request);
@@ -506,7 +512,7 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 	for (ptr = procedures->begin(), end = procedures->end();
 		ptr < end; ptr++)
 	{
-		if ( (procedure = (jrd_prc*)(*ptr)) && procedure->prc_request &&
+		if ( (procedure = *ptr) && procedure->prc_request &&
 			 !(procedure->prc_flags & PRC_obsolete) &&
 			 procedure->prc_use_count != procedure->prc_int_use_count &&
 			 procedure != proc )
@@ -521,7 +527,7 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 	for (ptr = procedures->begin(), end = procedures->end();
 			ptr < end; ptr++)
 	{
-		if ( (procedure = (jrd_prc*)(*ptr)) )
+		if ( (procedure = *ptr) )
 		{
 			procedure->prc_int_use_count = 0;
 		}
@@ -808,10 +814,10 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 	Database* dbb = tdbb->tdbb_database;
 
 	Format* format;
-	vec* formats = relation->rel_formats;
+	vec<Format*>* formats = relation->rel_formats;
 	if (formats &&
 		(number < formats->count()) &&
-		(format = (Format*) (*formats)[number]))
+		(format = (*formats)[number]))
 	{
 		return format;
 	}
@@ -882,8 +888,8 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 /* Link the format block into the world */
 
 	formats = relation->rel_formats =
-		vec::newVector(*dbb->dbb_permanent, relation->rel_formats, number + 1);
-	(*formats)[number] = (BLK) format;
+		vec<Format*>::newVector(*dbb->dbb_permanent, relation->rel_formats, number + 1);
+	(*formats)[number] = format;
 
 	return format;
 }
@@ -1139,7 +1145,7 @@ jrd_fld* MET_get_field(jrd_rel* relation, USHORT id)
  *      return NULL;
  *
  **************************************/
-	vec* vector;
+	vec<jrd_fld*>* vector;
 
 	if (!relation ||
 		!(vector = relation->rel_fields) ||
@@ -1148,7 +1154,7 @@ jrd_fld* MET_get_field(jrd_rel* relation, USHORT id)
 		return NULL;
 	}
 
-	return (jrd_fld*) (*vector)[id];
+	return (*vector)[id];
 }
 
 
@@ -1516,18 +1522,18 @@ int MET_lookup_field(thread_db* tdbb,
 	Database* dbb = tdbb->tdbb_database;
 
 /* Start by checking field names that we already know */
-	vec* vector = relation->rel_fields;
+	vec<jrd_fld*>* vector = relation->rel_fields;
 
 	if (vector)
 	{
 		USHORT id = 0;
-		vec::iterator fieldIter = vector->begin();
+		vec<jrd_fld*>::iterator fieldIter = vector->begin();
 
-		for (const vec::const_iterator end = vector->end();  fieldIter < end; fieldIter++, id++)
+		for (const vec<jrd_fld*>::const_iterator end = vector->end();  fieldIter < end; fieldIter++, id++)
 		{
 			if (*fieldIter)
 			{
-				jrd_fld* field = static_cast<jrd_fld*>(*fieldIter);
+				jrd_fld* field = *fieldIter;
 				if (field->fld_name == name)
 				{
 					if (!security_name)
@@ -1858,26 +1864,24 @@ bool MET_lookup_partner(thread_db*	tdbb,
 
 			if (partner_relation)
 			{
+				// This seems a good candidate for vcl.
 				references->frgn_reference_ids =
-					vec::newVector(*dbb->dbb_permanent, references->frgn_reference_ids,
+					vec<int>::newVector(*dbb->dbb_permanent, references->frgn_reference_ids,
 								   index_number + 1);
 
-				(*references->frgn_reference_ids)[index_number] =
-					(BLK)(IPTR)(IDX.RDB$INDEX_ID - 1);
+				(*references->frgn_reference_ids)[index_number] = IDX.RDB$INDEX_ID - 1;
 
 				references->frgn_relations =
-					vec::newVector(*dbb->dbb_permanent, references->frgn_relations,
+					vec<int>::newVector(*dbb->dbb_permanent, references->frgn_relations,
 								   index_number + 1);
 
-				(*references->frgn_relations)[index_number] =
-					(BLK) (IPTR) partner_relation->rel_id;
+				(*references->frgn_relations)[index_number] = partner_relation->rel_id;
 
 				references->frgn_indexes =
-					vec::newVector(*dbb->dbb_permanent, references->frgn_indexes,
+					vec<int>::newVector(*dbb->dbb_permanent, references->frgn_indexes,
 								   index_number + 1);
 
-				(*references->frgn_indexes)[index_number] =
-					(BLK) (IPTR) (IND.RDB$INDEX_ID - 1);
+				(*references->frgn_indexes)[index_number] = IND.RDB$INDEX_ID - 1;
 
 				index_number++;
 			}
@@ -1938,25 +1942,23 @@ bool MET_lookup_partner(thread_db*	tdbb,
 			if (partner_relation)
 			{
 				dependencies->prim_reference_ids =
-					vec::newVector(*dbb->dbb_permanent, dependencies->prim_reference_ids,
+					vec<int>::newVector(*dbb->dbb_permanent, dependencies->prim_reference_ids,
 								   index_number + 1);
 
-				(*dependencies->prim_reference_ids)[index_number] =
-					(BLK) (IPTR) (IDX.RDB$INDEX_ID - 1);
+				(*dependencies->prim_reference_ids)[index_number] = IDX.RDB$INDEX_ID - 1;
 
 				dependencies->prim_relations =
-					vec::newVector(*dbb->dbb_permanent, dependencies->prim_relations,
+					vec<int>::newVector(*dbb->dbb_permanent, dependencies->prim_relations,
 								   index_number + 1);
 
 				(*dependencies->prim_relations)[index_number] =
-					(BLK) (IPTR) partner_relation->rel_id;
+					partner_relation->rel_id;
 
 				dependencies->prim_indexes =
-					vec::newVector(*dbb->dbb_permanent, dependencies->prim_indexes,
+					vec<int>::newVector(*dbb->dbb_permanent, dependencies->prim_indexes,
 								   index_number + 1);
 
-				(*dependencies->prim_indexes)[index_number] =
-					(BLK) (IPTR) (IND.RDB$INDEX_ID - 1);
+				(*dependencies->prim_indexes)[index_number] = IND.RDB$INDEX_ID - 1;
 
 				index_number++;
 			}
@@ -2011,13 +2013,10 @@ bool MET_lookup_partner(thread_db*	tdbb,
 				 index_number < (int) references->frgn_reference_ids->count();
 				 index_number++)
 			{
-				if (idx->idx_id == (UCHAR)(IPTR) (*references->frgn_reference_ids)
-											[index_number])
+				if (idx->idx_id == (*references->frgn_reference_ids)[index_number])
 				{
-					idx->idx_primary_relation =
-						(USHORT)(IPTR) (*references->frgn_relations)[index_number];
-					idx->idx_primary_index =
-						(UCHAR)(IPTR) (*references->frgn_indexes)[index_number];
+					idx->idx_primary_relation = (*references->frgn_relations)[index_number];
+					idx->idx_primary_index = (*references->frgn_indexes)[index_number];
 					return true;
 				}
 			}
@@ -2033,8 +2032,7 @@ bool MET_lookup_partner(thread_db*	tdbb,
 				 index_number < (int) dependencies->prim_reference_ids->count();
 				 index_number++)
 			{
-				if (idx->idx_id == (UCHAR)(IPTR) (*dependencies->prim_reference_ids)
-											[index_number])
+				if (idx->idx_id == (*dependencies->prim_reference_ids)[index_number])
 				{
 					idx->idx_foreign_primaries =
 						relation->rel_primary_dpnds.prim_reference_ids;
@@ -2071,13 +2069,13 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const Firebird::MetaName& name, b
 	jrd_prc* check_procedure = NULL;
 
 /* See if we already know the procedure by name */
-	vec* procedures = dbb->dbb_procedures;
+	vec<jrd_prc*>* procedures = dbb->dbb_procedures;
 	if (procedures) {
-        vec::iterator ptr = procedures->begin();
-		for (const vec::const_iterator end = procedures->end();
+        vec<jrd_prc*>::iterator ptr = procedures->begin();
+		for (const vec<jrd_prc*>::const_iterator end = procedures->end();
 					ptr < end; ptr++)
 		{
-			jrd_prc* procedure = (jrd_prc*)(*ptr);
+			jrd_prc* procedure = *ptr;
 			if (procedure && !(procedure->prc_flags & PRC_obsolete)
 				&& ((procedure->prc_flags & PRC_scanned) || noscan)
 				&& !(procedure->prc_flags & PRC_being_scanned)
@@ -2150,10 +2148,10 @@ jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, SSHORT id,
 
 	jrd_prc* procedure;
 
-	vec* procedures = dbb->dbb_procedures;
+	vec<jrd_prc*>* procedures = dbb->dbb_procedures;
 	if (procedures
 		&& id < (SSHORT) procedures->count()
-	    && (procedure = (jrd_prc*)(*procedures)[id])
+	    && (procedure = (*procedures)[id])
 		&& procedure->prc_id == id
 		&& !(procedure->prc_flags & PRC_being_scanned)
 		&& ((procedure->prc_flags & PRC_scanned) || noscan)
@@ -2218,13 +2216,13 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 
 /* See if we already know the relation by name */
 
-	vec* relations = dbb->dbb_relations;
+	vec<jrd_rel*>* relations = dbb->dbb_relations;
 	jrd_rel* check_relation = NULL;
 
-	vec::iterator ptr = relations->begin();
-	for (const vec::const_iterator end = relations->end(); ptr < end; ptr++)
+	vec<jrd_rel*>::iterator ptr = relations->begin();
+	for (const vec<jrd_rel*>::const_iterator end = relations->end(); ptr < end; ptr++)
 	{
-		jrd_rel* relation = static_cast<jrd_rel*>(*ptr);
+		jrd_rel* relation = *ptr;
 		if (relation && (relation->rel_name.length() > 0)
 			&& (!(relation->rel_flags & REL_deleted)))
 		{
@@ -2325,9 +2323,9 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 
 	jrd_rel* check_relation = NULL;
 	jrd_rel* relation;
-	vec* vector = dbb->dbb_relations;
+	vec<jrd_rel*>* vector = dbb->dbb_relations;
 	if (vector &&
-		(id < (SLONG) vector->count()) && (relation = (jrd_rel*) (*vector)[id]))
+		(id < (SLONG) vector->count()) && (relation = (*vector)[id]))
 	{
 		if (relation->rel_flags & REL_deleted)
 		{
@@ -2621,20 +2619,13 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
  *      Find or create a procedure block for a given procedure id.
  *
  **************************************/
-	jrd_req* request;
-	jrd_req* request2;
-	vec::iterator ptr, end;
-	jrd_nod* node;
-	Format* format;
-	Format::fmt_desc_iterator desc;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	vec* vector = dbb->dbb_procedures;
+	vec<jrd_prc*>* vector = dbb->dbb_procedures;
 	if (!vector)
 	{
-		vector = dbb->dbb_procedures = vec::newVector(*dbb->dbb_permanent, id + 10);
+		vector = dbb->dbb_procedures = vec<jrd_prc*>::newVector(*dbb->dbb_permanent, id + 10);
 	}
 	else if (id >= (int) vector->count())
 	{
@@ -2660,7 +2651,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 #endif /* SUPERSERVER */
 
-	jrd_prc* procedure = (jrd_prc*) (*vector)[id];
+	jrd_prc* procedure = (*vector)[id];
 	if (procedure)
 	{
 		/* Make sure PRC_being_scanned and PRC_scanned
@@ -2728,9 +2719,10 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
 	}
 
-	if (!noscan) {
-		request = CMP_find_request(tdbb, irq_r_procedure, IRQ_REQUESTS);
-		request2 = CMP_find_request(tdbb, irq_r_params, IRQ_REQUESTS);
+	if (!noscan)
+	{
+		jrd_req* request = CMP_find_request(tdbb, irq_r_procedure, IRQ_REQUESTS);
+		jrd_req* request2 = CMP_find_request(tdbb, irq_r_params, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_ID EQ procedure->prc_id
@@ -2760,16 +2752,17 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			if ( (procedure->prc_inputs = P.RDB$PROCEDURE_INPUTS) )
 			{
 				procedure->prc_input_fields =
-					vec::newVector(*dbb->dbb_permanent, procedure->prc_input_fields,
+					vec<Parameter*>::newVector(*dbb->dbb_permanent, procedure->prc_input_fields,
 								   P.RDB$PROCEDURE_INPUTS + 1);
 			}
 			if ( (procedure->prc_outputs = P.RDB$PROCEDURE_OUTPUTS) )
 			{
 				procedure->prc_output_fields =
-					vec::newVector(*dbb->dbb_permanent, procedure->prc_output_fields,
+					vec<Parameter*>::newVector(*dbb->dbb_permanent, procedure->prc_output_fields,
 								   P.RDB$PROCEDURE_OUTPUTS + 1);
 			}
 
+			vec<Parameter*>* paramVector = 0;
 			procedure->prc_defaults = 0;
 			FOR(REQUEST_HANDLE request2) PA IN RDB$PROCEDURE_PARAMETERS CROSS
 				F IN RDB$FIELDS WITH F.RDB$FIELD_NAME = PA.RDB$FIELD_SOURCE
@@ -2781,17 +2774,17 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				}
 
 				if (PA.RDB$PARAMETER_TYPE) {
-					vector = procedure->prc_output_fields;
+					paramVector = procedure->prc_output_fields;
 				}
 				else {
-					vector = procedure->prc_input_fields;
+					paramVector = procedure->prc_input_fields;
 				}
 
 				/* should be error if field already exists */
 				Parameter* parameter =
 					FB_NEW(*dbb->dbb_permanent) Parameter(*dbb->dbb_permanent);
 				parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
-				(*vector)[parameter->prm_number] = (BLK) parameter;
+				(*paramVector)[parameter->prm_number] = parameter;
 				parameter->prm_name = PA.RDB$PARAMETER_NAME;
 				DSC_make_descriptor(&parameter->prm_desc, F.RDB$FIELD_TYPE,
 									F.RDB$FIELD_SCALE, F.RDB$FIELD_LENGTH,
@@ -2803,7 +2796,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					procedure->prc_defaults++;
 					Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
 					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
-					parameter->prm_default_val =
+					parameter->prm_default_value =
 						parse_param_blr(tdbb, procedure, &F.RDB$DEFAULT_VALUE, csb);
 
 					delete csb;
@@ -2815,18 +2808,18 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				REQUEST(irq_r_params) = request2;
 			}
 
-			if ((vector = procedure->prc_output_fields) && (*vector)[0])
+			if ((paramVector = procedure->prc_output_fields) && (*paramVector)[0])
 			{
-				ULONG length;
-				format = procedure->prc_format =
+				Format* format = procedure->prc_format =
 					Format::newFormat(*dbb->dbb_permanent, procedure->prc_outputs);
 				format->fmt_count = procedure->prc_outputs;
-				length = FLAG_BYTES(format->fmt_count);
-				desc = format->fmt_desc.begin();
-				for (ptr = vector->begin(), end = vector->end();
-					 ptr < end; ptr++, desc++)
+				ULONG length = FLAG_BYTES(format->fmt_count);
+				Format::fmt_desc_iterator desc = format->fmt_desc.begin();
+				vec<Parameter*>::iterator ptr, end;
+				for (ptr = paramVector->begin(), end = paramVector->end();
+					 ptr < end; ++ptr, ++desc)
 				{
-					Parameter* parameter = (Parameter*) * ptr;
+					Parameter* parameter = *ptr;
 					/* check for parameter to be null, this can only happen if the
 					 * parameter numbers get out of sync. This was added to fix bug
 					 * 10534. -Shaunak Mistry 12-May-99
@@ -2852,7 +2845,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				procedure->prc_request->req_procedure = procedure;
 				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 				{
-					if ( (node = csb->csb_rpt[i].csb_message) )
+					jrd_nod* node = csb->csb_rpt[i].csb_message;
+					if (node)
 					{
 						if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
 						{
@@ -2920,18 +2914,18 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	vec* vector = dbb->dbb_relations;
+	vec<jrd_rel*>* vector = dbb->dbb_relations;
 
 	if (!vector)
 	{
-		vector = dbb->dbb_relations = vec::newVector(*dbb->dbb_permanent, id + 10);
+		vector = dbb->dbb_relations = vec<jrd_rel*>::newVector(*dbb->dbb_permanent, id + 10);
 	}
 	else if (id >= vector->count())
 	{
 		vector->resize(id + 10);
 	}
 
-	jrd_rel* relation = (jrd_rel*) (*vector)[id];
+	jrd_rel* relation = (*vector)[id];
 	if (relation) {
 		return relation;
 	}
@@ -3076,14 +3070,14 @@ void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	vec* vector = dbb->dbb_procedures;
-	if (!vector) {
+	vec<jrd_prc*>* pvector = dbb->dbb_procedures;
+	if (!pvector) {
 		return;
 	}
 
 	if (!procedure) {
 	/** If we are in here then dfw.epp/modify_procedure() called us **/
-		if (!(procedure = (jrd_prc*) (*vector)[id]))
+		if (!(procedure = (*pvector)[id]))
 			return;
 	}
 
@@ -3096,10 +3090,10 @@ void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
 /* Procedure that is being altered may have references
    to it by other procedures via pointer to current meta
    data structure, so don't loose the structure or the pointer. */
-	if ((procedure == (jrd_prc*) (*vector)[id]) &&
+	if ((procedure == (*pvector)[id]) &&
 		!(procedure->prc_flags & PRC_being_altered))
 	{
-	    (*vector)[id] = NULL;
+	    (*pvector)[id] = NULL;
 	}
 
 /* deallocate all structure which were allocated.  The procedure
@@ -3113,6 +3107,7 @@ void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
 	}
 
 /* deallocate input param structures */
+	vec<Parameter*>* vector;
 	SSHORT i;
 	if ((procedure->prc_inputs) && (vector = procedure->prc_input_fields)) {
 		for (i = 0; i < procedure->prc_inputs; i++)
@@ -3299,8 +3294,8 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 			REQUEST(irq_r_fields) = request;
 		}
 		relation->rel_current_fmt = REL.RDB$FORMAT;
-		vec* vector = relation->rel_fields =
-			vec::newVector(*dbb->dbb_permanent, relation->rel_fields,
+		vec<jrd_fld*>* vector = relation->rel_fields =
+			vec<jrd_fld*>::newVector(*dbb->dbb_permanent, relation->rel_fields,
 						   REL.RDB$FIELD_ID + 1);
 		if (!REL.RDB$SECURITY_CLASS.NULL) {
 			relation->rel_security_name = REL.RDB$SECURITY_CLASS;
@@ -3384,7 +3379,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 					field->fld_security_name = REL.RDB$DEFAULT_CLASS;
 				}
 				field_id = n;
-				field = (jrd_fld*) (*vector)[field_id];
+				field = (*vector)[field_id];
 
 				if (field) {
 					field->fld_computation = field->fld_missing_value = 
@@ -4329,14 +4324,13 @@ static void store_dependencies(thread_db*					tdbb,
 				}
 				else if (procedure)
 				{
-					const jrd_fld* field =
-						(jrd_fld*) (*procedure->prc_output_fields)[fld_id];
+					const Parameter* param = (*procedure->prc_output_fields)[fld_id];
 					// CVC: Setting the field var here didn't make sense alone,
 					// so I thought the missing code was to try to extract
 					// the field name that's in this case an output var from a proc.
-					if (field)
+					if (param)
 					{
-						field_name = field->fld_name;
+						field_name = param->prm_name;
 					}
 				}
 			}

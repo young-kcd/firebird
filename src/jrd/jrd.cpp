@@ -4355,13 +4355,13 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 	V4_JRD_MUTEX_LOCK(databases_mutex);
 #endif
 
-	vec* procedures = tdbb->tdbb_database->dbb_procedures;
+	vec<jrd_prc*>* procedures = tdbb->tdbb_database->dbb_procedures;
 	if (procedures) {
-		vec::iterator ptr, end;
+		vec<jrd_prc*>::iterator ptr, end;
 		for (ptr = procedures->begin(), end = procedures->end();
 					ptr < end; ptr++)
 		{
-			const jrd_prc* procedure = (jrd_prc*) *ptr;
+			const jrd_prc* procedure = *ptr;
 			if (procedure)
 				fprintf(fptr, "%s  ,  %d,  %X,  %d, %d\n",
 							(procedure->prc_name->hasData()) ?
@@ -5566,9 +5566,8 @@ static Database* init(thread_db*	tdbb,
 
 	dbb->dbb_mutexes = FB_NEW(*dbb->dbb_permanent) MUTX_T[DBB_MUTX_max];
 	dbb->dbb_rw_locks = FB_NEW(*dbb->dbb_permanent) WLCK_T[DBB_WLCK_max];
-	vec* vector = vec::newVector(*dbb->dbb_permanent, irq_MAX);
-	dbb->dbb_internal = vector;
-	dbb->dbb_dyn_req = vector = vec::newVector(*dbb->dbb_permanent, drq_MAX);
+	dbb->dbb_internal = vec<jrd_req*>::newVector(*dbb->dbb_permanent, irq_MAX);
+	dbb->dbb_dyn_req = vec<jrd_req*>::newVector(*dbb->dbb_permanent, drq_MAX);
 	dbb->dbb_flags |= DBB_exclusive;
 	dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 
@@ -5722,24 +5721,25 @@ static void release_attachment(Attachment* attachment)
 		}
 	}
 
-/* Release any validation error vector allocated */
+	// Release any validation error vector allocated
 
 	if (attachment->att_val_errors) {
 		delete attachment->att_val_errors;
 		attachment->att_val_errors = NULL;
 	}
 
-/* Release the persistent locks taken out during the attachment */
-	vec* lock_vector = attachment->att_relation_locks;
+#ifdef PC_ENGINE
+	// Release the persistent locks taken out during the attachment
+	vec<Lock*>* lock_vector = attachment->att_relation_locks;
 	if (lock_vector)
 	{
 		size_t i = 0;
-		for (vec::iterator lock = lock_vector->begin();
+		for (vec<Lock*>::iterator lock = lock_vector->begin();
 			 i < lock_vector->count(); i++, lock++)
 		{
 			if (*lock)
 			{
-				LCK_release(tdbb, (Lock*)(*lock));
+				LCK_release(tdbb, *lock);
 				delete *lock;
 			}
 		}
@@ -5752,6 +5752,7 @@ static void release_attachment(Attachment* attachment)
 	{
 		LCK_release(tdbb, record_lock);
 	}
+#endif
 
 /* bug #7781, need to null out the attachment pointer of all locks which
    were hung off this attachment block, to ensure that the attachment
@@ -5759,13 +5760,13 @@ static void release_attachment(Attachment* attachment)
 
 	// Disable delivery of ASTs for the moment while queue of locks is in flux
 	LCK_ast_inhibit();
-	record_lock = attachment->att_long_locks;
-	while (record_lock) {
-		Lock* next = record_lock->lck_next;
-		record_lock->lck_attachment = NULL;
-		record_lock->lck_next = NULL;
-		record_lock->lck_prior = NULL;
-		record_lock = next;
+	Lock* long_lock = attachment->att_long_locks;
+	while (long_lock) {
+		Lock* next = long_lock->lck_next;
+		long_lock->lck_attachment = NULL;
+		long_lock->lck_next = NULL;
+		long_lock->lck_prior = NULL;
+		long_lock = next;
 	}
 	LCK_ast_enable();
 
@@ -5971,14 +5972,14 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 
 	if (dbb->dbb_relations)
 	{
-		vec* vector = dbb->dbb_relations;
-		vec::iterator ptr = vector->begin(), end = vector->end();
+		vec<jrd_rel*>* vector = dbb->dbb_relations;
+		vec<jrd_rel*>::iterator ptr = vector->begin(), end = vector->end();
 
 		for (; ptr < end; ++ptr)
 		{
-			if (*ptr && ((jrd_rel*)(*ptr))->rel_file)
+			if (*ptr && (*ptr)->rel_file)
 			{
-				EXT_fini((jrd_rel*)(*ptr));
+				EXT_fini(*ptr);
 			}
 		}
 	}
@@ -6565,6 +6566,7 @@ static void purge_attachment(thread_db*		tdbb,
 				delete user;
 			}
 			
+#ifdef PC_ENGINE
 			Bookmark* bookmark;
 			while ( (bookmark = attachment->att_bookmarks) ) {
 				attachment->att_bookmarks = bookmark->bkm_next;
@@ -6574,9 +6576,11 @@ static void purge_attachment(thread_db*		tdbb,
 			if (attachment->att_bkm_quick_ref) {
 				delete attachment->att_bkm_quick_ref;
 			}
+
 			if (attachment->att_lck_quick_ref) {
 				delete attachment->att_lck_quick_ref;
 			}
+#endif
 
 			delete attachment;
 		}
@@ -6603,9 +6607,9 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
 {
 	const USHORT lev = level;
 	if (lev) {
-		const vec* vector = request->req_sub_requests;
+		const vec<jrd_req*>* vector = request->req_sub_requests;
 		if (!vector || lev >= vector->count() ||
-			!(request = static_cast<jrd_req*>((*vector)[lev])))
+			!(request = (*vector)[lev]))
 		{
 			ERR_post(isc_req_sync, 0);
 		}

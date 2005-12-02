@@ -2356,12 +2356,12 @@ static void check_partners(thread_db* tdbb, const USHORT rel_id)
  *
  **************************************/
 	const Database* dbb = tdbb->tdbb_database;
-	vec* relations = dbb->dbb_relations;
+	vec<jrd_rel*>* relations = dbb->dbb_relations;
 
 	fb_assert(relations);
 	fb_assert(rel_id < relations->count());
 
-	jrd_rel *relation = (jrd_rel*) (*relations)[rel_id];
+	jrd_rel *relation = (*relations)[rel_id];
 	fb_assert(relation);
 
 	LCK_lock_non_blocking(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
@@ -3046,7 +3046,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			id = MET_lookup_field(tdbb, relation, work->dfw_name, 0);
 			if (id >= 0)
 			{
-				vec* vector = relation->rel_fields;
+				vec<jrd_fld*>* vector = relation->rel_fields;
 				if (vector &&
 					(ULONG)id < vector->count() &&
 					(*vector)[id])
@@ -3580,8 +3580,8 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 
 /* Link the format block into the world */
 
-	vec* vector = relation->rel_formats =
-		vec::newVector(*dbb->dbb_permanent, relation->rel_formats,
+	vec<Format*>* vector = relation->rel_formats =
+		vec<Format*>::newVector(*dbb->dbb_permanent, relation->rel_formats,
 					   format->fmt_version + 1);
 	(*vector)[format->fmt_version] = format;
 
@@ -4374,13 +4374,13 @@ static void put_summary_record(blb*		blob,
 
 static void release_protect_lock(thread_db* tdbb, jrd_tra*	transaction, Lock* relLock)
 {
-	vec* vector = transaction->tra_relation_locks;
+	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector) {
-		vec::iterator lock = vector->begin();
+		vec<Lock*>::iterator lock = vector->begin();
 		for (ULONG i = 0; i < vector->count();
 			i++, lock++)
 		{
-			if ((Lock*)*lock == relLock)
+			if (*lock == relLock)
 			{
 				LCK_release(tdbb, relLock);
 				*lock = 0;

@@ -1179,28 +1179,27 @@ static IDX_E check_foreign_key(
 
 	jrd_rel* partner_relation;
 	USHORT index_id = 0;
-	if (idx->idx_flags & idx_foreign) {
+	if (idx->idx_flags & idx_foreign)
+	{
 		partner_relation = MET_relation(tdbb, idx->idx_primary_relation);
 		index_id = (USHORT) idx->idx_primary_index;
 		result =
 			check_partner_index(tdbb, relation, record, transaction, idx,
 								partner_relation, index_id);
 	}
-	else if (idx->idx_flags & (idx_primary | idx_unique)) {
+	else if (idx->idx_flags & (idx_primary | idx_unique))
+	{
 		for (int index_number = 0;
 			 index_number < (int) idx->idx_foreign_primaries->count();
 			 index_number++)
 		{
-			if (idx->idx_id !=
-				(UCHAR)(IPTR) (*idx->idx_foreign_primaries)[index_number])
+			if (idx->idx_id != (*idx->idx_foreign_primaries)[index_number])
 			{
 				continue;
 			}
 			partner_relation =
-				MET_relation(tdbb,
-							 (IPTR) (*idx->idx_foreign_relations)[index_number]);
-			index_id =
-				(USHORT)(IPTR) (*idx->idx_foreign_indexes)[index_number];
+				MET_relation(tdbb, (*idx->idx_foreign_relations)[index_number]);
+			index_id = (*idx->idx_foreign_indexes)[index_number];
 			if ( (result =
 				check_partner_index(tdbb, relation, record, transaction, idx,
 									partner_relation, index_id)) )

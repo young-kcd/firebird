@@ -29,7 +29,7 @@
 // BLKDEF(type_hnk, hnk, 0)
 // BLKDEF(type_plb, plb, 0)
 
-BLKDEF(type_vec, vec, sizeof(((vec*) NULL)->vec_object[0]))
+BLKDEF(type_vec, vec, sizeof(*((vec<void**>*) NULL)->begin()))
 BLKDEF(type_dbb, Database, 0)
 BLKDEF(type_bcb, BufferControl, sizeof(((BufferControl*) NULL)->bcb_rpt[0]))   /* Done 2 */
 BLKDEF(type_bdb, BufferDesc, 0)
@@ -39,7 +39,7 @@ BLKDEF(type_fil, jrd_file, 1)
 BLKDEF(type_pgc, PageControl, 0)
 BLKDEF(type_rel, jrd_rel, 0)
 BLKDEF(type_fmt, Format, sizeof(((Format*) NULL)->fmt_desc[0]))   /* Done */
-BLKDEF(type_vcl, vcl, sizeof(((vcl*) NULL)->vcl_long[0]))   /* Done */
+BLKDEF(type_vcl, vcl, sizeof(*((vcl*) NULL)->begin()))   /* Done */
 BLKDEF(type_req, jrd_req, sizeof(((jrd_req*) NULL)->req_rpb[0]))    /* Done */
 BLKDEF(type_tra, jrd_tra, 1)
 BLKDEF(type_nod, jrd_nod, sizeof(((jrd_nod*) NULL)->nod_arg[0]))    /* Done */

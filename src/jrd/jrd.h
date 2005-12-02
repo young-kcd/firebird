@@ -110,7 +110,8 @@ const int HASH_SIZE		= 509;
 
 
 // fwd. decl.
-class vec;
+//class vec;
+template <typename T> class vec;
 class thread_db;
 class Attachment;
 class jrd_tra;
@@ -128,7 +129,9 @@ class ExternalFile;
 class ViewContext;
 class IndexBlock;
 class IndexLock;
+#ifdef PC_ENGINE
 class Bookmark;
+#endif
 class ArrayField;
 class BlobFilter;
 class PageControl;
@@ -141,6 +144,9 @@ class SecurityClass;
 class vcl;
 class Shadow;
 class TextType;
+class jrd_prc;
+class Parameter;
+class jrd_fld;
 
 class Database : private pool_alloc<type_dbb>
 {
@@ -176,8 +182,8 @@ public:
 	Database*	dbb_next;		/* Next database block in system */
 	Attachment* dbb_attachments;	/* Active attachments */
 	BufferControl*	dbb_bcb;		/* Buffer control block */
-	vec*		dbb_relations;	/* relation vector */
-	vec*		dbb_procedures;	/* scanned procedures */
+	vec<jrd_rel*>*	dbb_relations;	/* relation vector */
+	vec<jrd_prc*>*	dbb_procedures;	/* scanned procedures */
 	Lock* 		dbb_lock;		/* granddaddy lock */
 	jrd_tra*	dbb_sys_trans;	/* system transaction */
 	jrd_file*	dbb_file;		/* files for I/O operations */
@@ -207,7 +213,9 @@ public:
 	USHORT dbb_max_idx;			/* max number of indexes on a root page */
 	USHORT dbb_use_count;		/* active count of threads */
 	USHORT dbb_shutdown_delay;	/* seconds until forced shutdown */
+#if defined(PC_ENGINE) || defined(SUPERSERVER)
 	USHORT dbb_refresh_ranges;	/* active count of refresh ranges */
+#endif
 	USHORT dbb_prefetch_sequence;	/* sequence to pace frequency of prefetch requests */
 	USHORT dbb_prefetch_pages;	/* prefetch pages per request */
 	Firebird::string dbb_spare_string;	/* random buffer */
@@ -223,8 +231,8 @@ public:
 
 	pool_vec_type dbb_pools;		/* pools */
     USHORT dbb_next_pool_id;
-	vec*		dbb_internal;	/* internal requests */
-	vec*		dbb_dyn_req;	/* internal dyn requests */
+	vec<jrd_req*>*	dbb_internal;	/* internal requests */
+	vec<jrd_req*>*	dbb_dyn_req;	/* internal dyn requests */
 
 	SLONG dbb_oldest_active;	/* Cached "oldest active" transaction */
 	SLONG dbb_oldest_transaction;	/* Cached "oldest interesting" transaction */
@@ -457,11 +465,13 @@ public:
 		att_event_session(0),
 		att_security_class(0),
 		att_security_classes(0),
+#ifdef PC_ENGINE
 		att_relation_locks(0),
 		att_bookmarks(0),
 		att_record_locks(0),
 		att_bkm_quick_ref(0),
 		att_lck_quick_ref(0),
+#endif
 		att_flags(0),
 		att_charset(0),
 		att_lc_messages(0),
@@ -488,16 +498,18 @@ public:
 	SecurityClass*	att_security_class;	// security class for database
 	SecurityClass*	att_security_classes;	// security classes
 	vcl*		att_counts[DBB_max_count];
-	vec*		att_relation_locks;	// explicit persistent locks for relations
+#ifdef PC_ENGINE
+	vec<Lock*>*	att_relation_locks;	// explicit persistent locks for relations
 	Bookmark*	att_bookmarks;		// list of bookmarks taken out using this attachment
 	Lock*		att_record_locks;	// explicit or implicit record locks taken out during attachment
-	vec*		att_bkm_quick_ref;	// correspondence table of bookmarks
-	vec*		att_lck_quick_ref;	// correspondence table of locks
+	vec<Bookmark*>*	att_bkm_quick_ref;	// correspondence table of bookmarks
+	vec<Lock*>*	att_lck_quick_ref;	// correspondence table of locks
+#endif
 	ULONG		att_flags;			// Flags describing the state of the attachment
 	SSHORT		att_charset;		// user's charset specified in dpb
 	Firebird::PathName	att_lc_messages;	// attachment's preference for message natural language
 	Lock*		att_long_locks;		// outstanding two phased locks
-	vec*		att_compatibility_table;	// hash table of compatible locks
+	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	vcl*		att_val_errors;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
 	Firebird::PathName	att_filename;			// alias used to attach the database
@@ -554,8 +566,8 @@ class jrd_prc : public pool_alloc<type_prc>
 	Format*		prc_input_fmt;
 	Format*		prc_output_fmt;
 	Format*		prc_format;
-	vec*		prc_input_fields;	/* vector of field blocks */
-	vec*		prc_output_fields;	/* vector of field blocks */
+	vec<Parameter*>*	prc_input_fields;	/* vector of field blocks */
+	vec<Parameter*>*	prc_output_fields;	/* vector of field blocks */
 	jrd_req*	prc_request;	/* compiled procedure request */
 	USHORT prc_use_count;		/* requests compiled with procedure */
 	SSHORT prc_int_use_count;	/* number of procedures compiled with procedure, set and 
@@ -596,12 +608,12 @@ const USHORT PRC_check_existence	= 128;	/* Existence lock released */
 
 class Parameter : public pool_alloc<type_prm>
 {
-    public:
+public:
 	USHORT		prm_number;
 	dsc			prm_desc;
-	jrd_nod*	prm_default_val;
+	jrd_nod*	prm_default_value;
 	Firebird::MetaName prm_name;		/* asciiz name */
-    public:
+//public:
 	explicit Parameter(MemoryPool& p) : prm_name(p) { }
 };
 
@@ -610,22 +622,22 @@ class Parameter : public pool_alloc<type_prm>
    primary/unique keys */
 
 struct prim {
-	vec* prim_reference_ids;
-	vec* prim_relations;
-	vec* prim_indexes;
+	vec<int>* prim_reference_ids;
+	vec<int>* prim_relations;
+	vec<int>* prim_indexes;
 };
 
-typedef prim *PRIM;
+//typedef prim *PRIM;
 
 /* Foreign references to other relations' primary/unique keys */
 
 struct frgn {
-	vec* frgn_reference_ids;
-	vec* frgn_relations;
-	vec* frgn_indexes;
+	vec<int>* frgn_reference_ids;
+	vec<int>* frgn_relations;
+	vec<int>* frgn_indexes;
 };
 
-typedef frgn *FRGN;
+//typedef frgn *FRGN;
 
 // Relation trigger definition
 class Trigger {
@@ -711,56 +723,57 @@ typedef Firebird::SortedArray<ViewContext, Firebird::EmptyStorage<ViewContext>,
 class jrd_rel : public pool_alloc<type_rel>
 {
 public:
-	USHORT	rel_id;
-	USHORT	rel_flags;
-	USHORT	rel_current_fmt;	/* Current format number */
-	Format*	rel_current_format;	/* Current record format */
+	USHORT			rel_id;
+	USHORT			rel_flags;
+	USHORT			rel_current_fmt;	/* Current format number */
+	Format*			rel_current_format;	/* Current record format */
 	Firebird::MetaName	rel_name;		/* ascii relation name */
-	vec*	rel_formats;		/* Known record formats */
+	vec<Format*>*	rel_formats;		/* Known record formats */
 	Firebird::MetaName	rel_owner_name;	/* ascii owner */
-	vcl*	rel_pages;			/* vector of pointer page numbers */
-	vec*	rel_fields;			/* vector of field blocks */
+	vcl*			rel_pages;			/* vector of pointer page numbers */
+	vec<jrd_fld*>*	rel_fields;			/* vector of field blocks */
 
 	RecordSelExpr*	rel_view_rse;		/* view record select expression */
 	ViewContexts	rel_view_contexts;	/* sorted array of view contexts */
 
 	Firebird::MetaName	rel_security_name;	/* security class name for relation */
-	ExternalFile* rel_file;		/* external file name */
-	SLONG rel_index_root;		/* index root page number */
-	SLONG rel_data_pages;		/* count of relation data pages */
+	ExternalFile* 	rel_file;			/* external file name */
+	SLONG			rel_index_root;		/* index root page number */
+	SLONG			rel_data_pages;		/* count of relation data pages */
 
-	vec*	rel_gc_rec;		/* vector of records for garbage collection */
+	vec<Record*>*	rel_gc_rec;			/* vector of records for garbage collection */
 #ifdef GARBAGE_THREAD
-	PageBitmap*	rel_gc_bitmap;	/* garbage collect bitmap of data page sequences */
+	PageBitmap*		rel_gc_bitmap;		/* garbage collect bitmap of data page sequences */
 	RelationGarbage*	rel_garbage;	/* deffered gc bitmap's by tran numbers */
 #endif
 
-	USHORT rel_slot_space;		/* lowest pointer page with slot space */
-	USHORT rel_data_space;		/* lowest pointer page with data page space */
-	USHORT rel_use_count;		/* requests compiled with relation */
-	USHORT rel_sweep_count;		/* sweep and/or garbage collector threads active */
-	SSHORT rel_scan_count;		/* concurrent sequential scan count */
+	USHORT		rel_slot_space;		/* lowest pointer page with slot space */
+	USHORT		rel_data_space;		/* lowest pointer page with data page space */
+	USHORT		rel_use_count;		/* requests compiled with relation */
+	USHORT		rel_sweep_count;	/* sweep and/or garbage collector threads active */
+	SSHORT		rel_scan_count;		/* concurrent sequential scan count */
 
-	Lock*	rel_existence_lock;	/* existence lock, if any */
-	Lock*	rel_interest_lock;	/* interest lock to ensure compatibility of relation and record locks */
-	Lock*	rel_record_locking;	/* lock to start record locking on relation */
-	Lock*	rel_partners_lock;	/* partners lock */
+	Lock*		rel_existence_lock;	/* existence lock, if any */
+#ifdef PC_ENGINE
+	Lock*		rel_interest_lock;	/* interest lock to ensure compatibility of relation and record locks */
+	Lock*		rel_record_locking;	/* lock to start record locking on relation */
+	ULONG		rel_explicit_locks;	/* count of records explicitly locked in relation */
+	ULONG		rel_read_locks;		/* count of records read locked in relation (implicit or explicit) */
+	ULONG		rel_write_locks;	/* count of records write locked in relation (implicit or explicit) */
+	ULONG		rel_lock_total;		/* count of records locked since database first attached */
+#endif
 
-	ULONG rel_explicit_locks;	/* count of records explicitly locked in relation */
-	ULONG rel_read_locks;		/* count of records read locked in relation (implicit or explicit) */
-	ULONG rel_write_locks;		/* count of records write locked in relation (implicit or explicit) */
-	ULONG rel_lock_total;		/* count of records locked since database first attached */
-
+	Lock*		rel_partners_lock;	/* partners lock */
 	IndexLock*	rel_index_locks;	/* index existence locks */
 	IndexBlock*	rel_index_blocks;	/* index blocks for caching index info */
-	trig_vec*	rel_pre_erase; 	/* Pre-operation erase trigger */
-	trig_vec*	rel_post_erase;	/* Post-operation erase trigger */
-	trig_vec*	rel_pre_modify;	/* Pre-operation modify trigger */
+	trig_vec*	rel_pre_erase; 		/* Pre-operation erase trigger */
+	trig_vec*	rel_post_erase;		/* Post-operation erase trigger */
+	trig_vec*	rel_pre_modify;		/* Pre-operation modify trigger */
 	trig_vec*	rel_post_modify;	/* Post-operation modify trigger */
 	trig_vec*	rel_pre_store;		/* Pre-operation store trigger */
-	trig_vec*	rel_post_store;	/* Post-operation store trigger */
-	prim rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
-	frgn rel_foreign_refs;	/* foreign references to other relations' primary keys */
+	trig_vec*	rel_post_store;		/* Post-operation store trigger */
+	prim		rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
+	frgn		rel_foreign_refs;	/* foreign references to other relations' primary keys */
 
 public:
 	explicit jrd_rel(MemoryPool& p) 
@@ -810,7 +823,7 @@ public:
 
 class IndexBlock : public pool_alloc<type_idb>
 {
-    public:
+public:
 	IndexBlock*	idb_next;
 	jrd_nod*	idb_expression;			/* node tree for index expression */
 	jrd_req*	idb_expression_request;	/* request in which index expression is evaluated */
@@ -828,7 +841,7 @@ class vec_base : protected pool_alloc<TYPE>
 public:
 	typedef typename Firebird::vector<T>::iterator iterator;
 	typedef typename Firebird::vector<T>::const_iterator const_iterator;
-
+	/*
 	static vec_base* newVector(MemoryPool& p, int len)
 	{
 		return FB_NEW(p) vec_base<T, TYPE>(p, len);
@@ -837,6 +850,7 @@ public:
 	{
 		return FB_NEW(p) vec_base<T, TYPE>(p, base);
 	}
+	*/
 		
 	// CVC: This should be size_t instead of ULONG for maximum portability.
 	ULONG count() const { return vector.size(); }
@@ -850,7 +864,7 @@ public:
 	const_iterator end() const { return vector.end(); }
 	
 	void clear() { vector.clear(); }
-	void prepend(int n) { vector.insert(vector.begin(), n); }
+	//void prepend(int n) { vector.insert(vector.begin(), n); }
 	
 //	T* memPtr() { return &*(vector.begin()); }
 	T* memPtr() { return &vector[0]; }
@@ -869,29 +883,30 @@ private:
 	Firebird::vector<T> vector;
 };
 
-class vec : public vec_base<BlkPtr, type_vec>
+template <typename T>
+class vec : public vec_base<T, type_vec>
 {
 public:
     static vec* newVector(MemoryPool& p, int len)
 	{
-		return FB_NEW(p) vec(p, len);
+		return FB_NEW(p) vec<T>(p, len);
 	}
     static vec* newVector(MemoryPool& p, const vec& base)
 	{
-		return FB_NEW(p) vec(p, base);
+		return FB_NEW(p) vec<T>(p, base);
 	}
 	static vec* newVector(MemoryPool& p, vec* base, int len)
 	{
 		if (!base)
-			base = FB_NEW(p) vec(p, len);
+			base = FB_NEW(p) vec<T>(p, len);
 		else if (len > (int) base->count())
 			base->resize(len);
 		return base;
 	}
 
 private:
-    vec(MemoryPool& p, int len) : vec_base<BlkPtr, type_vec>(p, len) {}
-    vec(MemoryPool& p, const vec& base) : vec_base<BlkPtr, type_vec>(p, base) {}
+    vec(MemoryPool& p, int len) : vec_base<T, type_vec>(p, len) {}
+    vec(MemoryPool& p, const vec& base) : vec_base<T, type_vec>(p, base) {}
 };
 
 class vcl : public vec_base<SLONG, type_vcl>
@@ -918,10 +933,10 @@ private:
     vcl(MemoryPool& p, int len) : vec_base<SLONG, type_vcl>(p, len) {}
     vcl(MemoryPool& p, const vcl& base) : vec_base<SLONG, type_vcl>(p, base) {}
 };
-typedef vcl* VCL;
+//typedef vcl* VCL;
 
-//#define TEST_VECTOR(vector, number)      ((vector && number < vector->vec_count) ?
-//					  vector->vec_object [number] : NULL)
+//#define TEST_VECTOR(vector, number)      ((vector && number < vector->count()) ?
+//					  (*vector)[number] : NULL)
 
 
 //

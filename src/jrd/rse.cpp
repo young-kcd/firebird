@@ -1789,7 +1789,8 @@ static bool get_merge_join(
    of merge blocks. This ordering will vary for each set of equivalence
    groups and cannot be statically assigned by the optimizer. */
 
-	lls* best_tails = 0;
+	typedef Firebird::Stack<irsb_mrg::irsb_mrg_repeat*> ImrStack;
+	ImrStack best_tails;
 
 	tail = impure->irsb_mrg_rpt;
 	for (const irsb_mrg::irsb_mrg_repeat* const tail_end = tail + rsb->rsb_count;
@@ -1800,15 +1801,15 @@ static bool get_merge_join(
 		for (irsb_mrg::irsb_mrg_repeat* tail2 = impure->irsb_mrg_rpt;
 			tail2 < tail_end; tail2++)
 		{
-			lls* stack;
-			for (stack = best_tails; stack; stack = stack->lls_next)
+			ImrStack::iterator stack(best_tails);
+			for (; stack.hasData(); ++stack)
 			{
-				if (stack->lls_object == (BLK) tail2)
+				if (stack.object() == tail2)
 				{
 					break;
 				}
 			}
-			if (stack) {
+			if (stack.hasData()) {
 				continue;
 			}
 			merge_file* mfb = &tail2->irsb_mrg_file;
@@ -1819,13 +1820,15 @@ static bool get_merge_join(
 			}
 		}
 
-		LLS_PUSH(best_tail, &best_tails);
+		best_tails.push(best_tail);
 		tail->irsb_mrg_order = best_tail - impure->irsb_mrg_rpt;
 	}
 
+	/*
 	while (best_tails) {
 		LLS_POP(&best_tails);
 	}
+	*/
 
 	return true;
 }
@@ -2016,9 +2019,11 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		tail->irsb_mrg_order = best_tail - impure->irsb_mrg_rpt;
 	}
 
-/*	while (best_tails) {
+	/*
+	while (best_tails) {
 		LLS_POP(&best_tails);
-	} */
+	}
+	*/
 
 	return true;
 }

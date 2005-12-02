@@ -584,7 +584,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 		/* Request exists and is in use.  Search clones for one in use by
 		   this attachment. If not found, return first inactive request. */
 
-		vec* vector = request->req_sub_requests;
+		vec<jrd_req*>* vector = request->req_sub_requests;
 		const USHORT clones = (vector) ? (vector->count() - 1) : 0;
 
 		USHORT n;
@@ -2049,10 +2049,10 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			if (request->req_operation == jrd_req::req_evaluate) {
 				const USHORT number = (USHORT) (IPTR) node->nod_arg[e_dcl_cursor_number];
 				// set up the cursors vector
-				request->req_cursors = vec::newVector(*request->req_pool,
+				request->req_cursors = vec<RecordSource*>::newVector(*request->req_pool,
 					request->req_cursors, number + 1);
 				// store RecordSource in the vector
-				(*request->req_cursors)[number] = node->nod_arg[e_dcl_cursor_rsb];
+				(*request->req_cursors)[number] = (RecordSource*) node->nod_arg[e_dcl_cursor_rsb];
 				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
@@ -2064,7 +2064,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			const USHORT number = (USHORT) (IPTR) node->nod_arg[e_cursor_stmt_number];
 			// get RecordSource and the impure area
 			fb_assert(request->req_cursors && number < request->req_cursors->count());
-			RecordSource* rsb = (RecordSource*) (*request->req_cursors)[number];
+			RecordSource* rsb = (*request->req_cursors)[number];
 			IRSB impure = (IRSB) ((UCHAR*) tdbb->tdbb_request + rsb->rsb_impure);
 			switch (op) {
 			case blr_cursor_open:
@@ -2777,12 +2777,12 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 					Lock* lock = NULL;
 					const ULONG slot = *(ULONG *) desc->dsc_address;
-					vec* vector = attachment->att_lck_quick_ref;
-					if (vector && slot < vector->vec_count) {
-						lock = (Lock*) vector->vec_object[slot];
+					vec<Lock*>* vector = attachment->att_lck_quick_ref;
+					if (vector && slot < vector->count()) {
+						lock = (*vector)[slot];
 					}
 					RLCK_release_lock(lock);
-					vector->vec_object[slot] = NULL;
+					(*vector)[slot] = NULL;
 				}
 #endif
 				request->req_operation = jrd_req::req_return;
@@ -2902,11 +2902,11 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	{
 		// Close active cursors
 		if (request->req_cursors) {
-			for (vec::iterator ptr = request->req_cursors->begin(),
+			for (vec<RecordSource*>::iterator ptr = request->req_cursors->begin(),
 				end = request->req_cursors->end(); ptr < end; ptr++)
 			{
 				if (*ptr)
-					RSE_close(tdbb, (RecordSource*) *ptr);
+					RSE_close(tdbb, *ptr);
 			}
 		}
 
@@ -4316,9 +4316,9 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 				const jrd_rel* relation = request->req_rpb[stream].rpb_relation;
 
 				const jrd_fld* field;
-				const vec* vector = relation->rel_fields;
+				const vec<jrd_fld*>* vector = relation->rel_fields;
 				if (vector && id < vector->count() &&
-					(field = (const jrd_fld*) (*vector)[id]))
+					(field = (*vector)[id]))
 				{
 					name = field->fld_name.c_str();
 				}

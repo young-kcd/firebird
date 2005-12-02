@@ -175,13 +175,12 @@ bool CMP_clone_is_active(const jrd_req* request)
 	if (request->req_flags & req_in_use)
 		return true;
 
-	// This should be const, but the iterator won't work then.
-	vec* vector = request->req_sub_requests;
+	vec<jrd_req*>* vector = request->req_sub_requests;
 	if (vector) {
-		for (vec::const_iterator sub_req = vector->begin(), end = vector->end();
+		for (vec<jrd_req*>::const_iterator sub_req = vector->begin(), end = vector->end();
 			 sub_req < end; ++sub_req)
 		{
-			if (*sub_req && ((const jrd_req*)(*sub_req))->req_flags & req_in_use)
+			if (*sub_req && (*sub_req)->req_flags & req_in_use)
 				return true;
 		}
 	}
@@ -219,7 +218,7 @@ jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 }
 
 
-inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, trig_vec* vec)
+inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, trig_vec* tvec)
 /**************************************
  *
  *	t r i g g e r s _ e x t e r n a l _ a c c e s s
@@ -231,10 +230,10 @@ inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, 
  *
  **************************************/
 {
-	if (vec) {
-		for (size_t i = 0; i < vec->getCount(); i++)
+	if (tvec) {
+		for (size_t i = 0; i < tvec->getCount(); i++)
 		{
-			Trigger& t = (*vec)[i];
+			Trigger& t = (*tvec)[i];
 			t.compile(tdbb);
 			if (t.request)
 			{
@@ -451,8 +450,8 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	}
 		
 	jrd_req* clone;
-	vec* vector = request->req_sub_requests;
-	if (vector && level < vector->count() && (clone = (jrd_req*) (*vector)[level]))
+	vec<jrd_req*>* vector = request->req_sub_requests;
+	if (vector && level < vector->count() && (clone = (*vector)[level]))
 	{
 		return clone;
 	}
@@ -477,14 +476,14 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	// we need to clone the request - find someplace to put it
 
 	vector = request->req_sub_requests =
-		vec::newVector(*request->req_pool, request->req_sub_requests, level + 1);
+		vec<jrd_req*>::newVector(*request->req_pool, request->req_sub_requests, level + 1);
 
 	// clone the request
 
 	const USHORT n =
 		(USHORT) ((request->req_impure_size - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL);
 	clone = FB_NEW_RPT(*request->req_pool, n) jrd_req(request->req_pool);
-	(*vector)[level] = (BLK) clone;
+	(*vector)[level] = clone;
 	clone->req_attachment = tdbb->tdbb_attachment;
 	clone->req_count = request->req_count;
 	clone->req_pool = request->req_pool;
@@ -632,8 +631,8 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 
 	THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
 	jrd_req* request;
-	if ((which == IRQ_REQUESTS && !(request = (jrd_req*) REQUEST(id))) ||
-		(which == DYN_REQUESTS && !(request = (jrd_req*) DYN_REQUEST(id))) ||
+	if ((which == IRQ_REQUESTS && !(request = REQUEST(id))) ||
+		(which == DYN_REQUESTS && !(request = DYN_REQUEST(id))) ||
 		!(request->req_flags & (req_active | req_reserved)))
 	{
 		if (request) {
@@ -2003,7 +2002,8 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	request->req_top_node = csb->csb_node;
 	request->req_access = csb->csb_access;
 	request->req_external = csb->csb_external;
-	request->req_variables = csb->csb_variables;
+	// CVC: Unused.
+	//request->req_variables = csb->csb_variables;
 	request->req_resources = csb->csb_resources; // Assign array contents
 	if (csb->csb_g_flags & csb_blr_version4) {
 		request->req_flags |= req_blr_version4;
@@ -2260,8 +2260,8 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	// floating copy, i.e. an old copy or a deleted procedure.
 	if ((procedure->prc_use_count == 0) &&
 		( (*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id]
-		 //!= &procedure->prc_header)) {
-		 != (BLK) procedure))
+		 //!= &procedure->prc_header))
+		 != procedure))
 	{
 		if (procedure->prc_request) {
 			CMP_release(tdbb, procedure->prc_request);
@@ -2380,16 +2380,16 @@ void CMP_shutdown_database(thread_db* tdbb)
 
 	DEV_BLKCHK(dbb, type_dbb);
 
-	vec* vector = dbb->dbb_relations;
-	if (!vector)
+	vec<jrd_rel*>* rvector = dbb->dbb_relations;
+	if (!rvector)
 		return;
 
 	// go through relations and indices and release
 	// all existence locks that might have been taken
 
-	vec::iterator ptr, end;
-	for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++) {
-		jrd_rel* relation = (jrd_rel*) *ptr;
+	vec<jrd_rel*>::iterator ptr, end;
+	for (ptr = rvector->begin(), end = rvector->end(); ptr < end; ptr++) {
+		jrd_rel* relation = *ptr;
 		if (relation) {
 			if (relation->rel_existence_lock) {
 				LCK_release(tdbb, relation->rel_existence_lock);
@@ -2411,14 +2411,15 @@ void CMP_shutdown_database(thread_db* tdbb)
 		}
 	}
 
-	if (!(vector = dbb->dbb_procedures))
+	vec<jrd_prc*>* pvector = dbb->dbb_procedures;
+	if (!pvector)
 		return;
 
 	// release all procedure existence locks that might have been taken
 
-	vec::iterator pptr, pend;
-	for (pptr = vector->begin(), pend = vector->end(); pptr < pend; pptr++) {
-		jrd_prc* procedure = (jrd_prc*) *pptr;
+	vec<jrd_prc*>::iterator pptr, pend;
+	for (pptr = pvector->begin(), pend = pvector->end(); pptr < pend; pptr++) {
+		jrd_prc* procedure = *pptr;
 		if (procedure) {
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
@@ -3105,7 +3106,7 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 
 	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 
-	vec* vector = relation->rel_fields;
+	vec<jrd_fld*>* vector = relation->rel_fields;
 	if (!vector)
 		return statement;
 
@@ -3122,12 +3123,12 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 	NodeStack stack;
 
 	USHORT field_id = 0;
-	vec::iterator ptr1 = vector->begin();
-	for (const vec::const_iterator end = vector->end();
+	vec<jrd_fld*>::iterator ptr1 = vector->begin();
+	for (const vec<jrd_fld*>::const_iterator end = vector->end();
 	     ptr1 < end; ptr1++, field_id++)
 	{
 		jrd_nod* value;
-		if (*ptr1 && (value = ((jrd_fld*)(*ptr1))->fld_default_value)) {
+		if (*ptr1 && (value = (*ptr1)->fld_default_value)) {
 			jrd_nod* node = PAR_make_node(tdbb, e_asgn_length);
 			node->nod_type = nod_assignment;
 			node->nod_arg[e_asgn_from] =
@@ -3167,7 +3168,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 
 	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 
-	vec* vector = relation->rel_fields;
+	vec<jrd_fld*>* vector = relation->rel_fields;
 	if (!vector)
 		return NULL;
 
@@ -3182,12 +3183,12 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 	NodeStack stack;
 
 	USHORT field_id = 0;
-	vec::iterator ptr1 = vector->begin();
-	for (const vec::const_iterator end = vector->end();
+	vec<jrd_fld*>::iterator ptr1 = vector->begin();
+	for (const vec<jrd_fld*>::const_iterator end = vector->end();
 		     ptr1 < end; ptr1++, field_id++)
 	{
 		jrd_nod* validation;
-		if (*ptr1 && (validation = ((jrd_fld*)(*ptr1))->fld_validation)) {
+		if (*ptr1 && (validation = (*ptr1)->fld_validation)) {
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
@@ -3198,7 +3199,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			stack.push(node);
 		}
 
-		if (*ptr1 && (validation = ((jrd_fld*)(*ptr1))->fld_not_null)) {
+		if (*ptr1 && (validation = (*ptr1)->fld_not_null)) {
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
@@ -3844,12 +3845,12 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 
 	NodeStack stack;
 	jrd_rel* relation = csb->csb_rpt[org_stream].csb_relation;
-	vec* fields = relation->rel_fields;
+	vec<jrd_fld*>* fields = relation->rel_fields;
 
 	dsc desc;
 	USHORT id = 0, new_id = 0;
-	vec::iterator ptr = fields->begin();
-	for (const vec::const_iterator end = fields->end();
+	vec<jrd_fld*>::iterator ptr = fields->begin();
+	for (const vec<jrd_fld*>::const_iterator end = fields->end();
 			ptr < end; ptr++, id++)
 	{
 		if (*ptr) {

@@ -823,7 +823,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 
 	const ISC_STATUS* v;
 	ISC_STATUS code;
-	/* handle a case: "no errors, some warning(s)" */
+	// Handle a case: "no errors, some warning(s)"
 	if ((*vector)[1] == 0 && (*vector)[2] == isc_arg_warning) {
 		v = *vector + 4;
 		code = (*vector)[3];
@@ -837,7 +837,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 	const TEXT** arg = args;
 	const char* const* const argend = arg + FB_NELEM(args);
 
-	/* Parse and collect any arguments that may be present */
+	// Parse and collect any arguments that may be present
 	
 	TEXT* p = 0;
 	const TEXT* q;
@@ -861,18 +861,18 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 
 		case isc_arg_cstring:
 			if (!temp) {
-				/* We need a temporary buffer when cstrings are involved.
-				   Give up if we can't get one. */
+				// We need a temporary buffer when cstrings are involved.
+				// Give up if we can't get one.
 
 				p = temp = (TEXT*) gds__alloc((SLONG) temp_len);
-				/* FREE: at procedure exit */
-				if (!temp)		/* NOMEM: */
+				// FREE: at procedure exit
+				if (!temp)		// NOMEM:
 					return 0;
 			}
 			len = 1 + (int) *v++; // CVC: Add one for the needed terminator.
 			q = (const TEXT*) *v++;
 
-			// ensure that we do not overflow the buffer allocated
+			// Ensure that we do not overflow the buffer allocated
 			len = (temp_len < len) ? temp_len : len;
 			if (len)
 			{
@@ -899,7 +899,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 		break;
 	}
 
-/* Handle primary code on a system by system basis */
+	// Handle primary code on a system by system basis
 
 	switch ((UCHAR) (*vector)[0]) {
 	case isc_arg_warning:
@@ -927,7 +927,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 				}
 
 				if (!found) {
-					sprintf(s, "unknown ISC error %ld", code);	/* TXNN */
+					sprintf(s, "unknown ISC error %ld", code);	// TXNN
 				}
 			}
 		}
@@ -945,8 +945,8 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 		break;
 
 	case isc_arg_unix:
-		/* The  strerror()  function  returns  the appropriate description
-		   string, or an unknown error message if the error code is unknown. */
+		// The  strerror()  function  returns  the appropriate description
+		// string, or an unknown error message if the error code is unknown.
 		q = (const TEXT*) strerror(code);
 		if (legacy)
 			safe_strncpy(s, q, bufsize);
@@ -958,7 +958,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 		break;
 
 	case isc_arg_dos:
-		sprintf(s, "unknown dos error %ld", code);	/* TXNN */
+		sprintf(s, "unknown dos error %ld", code);	// TXNN
 		break;
 
 #ifdef VMS
@@ -975,7 +975,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 			if (status & 1)
 				s[ll] = 0;
 			else
-				sprintf(s, "uninterpreted VMS code %x", code);	/* TXNN */
+				sprintf(s, "uninterpreted VMS code %x", code);	// TXNN
 		}
 		break;
 #endif
@@ -997,7 +997,7 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 										 bufsize,
 										 NULL))
 		{
-			sprintf(s, "unknown Win32 error %ld", code);	/* TXNN */
+			sprintf(s, "unknown Win32 error %ld", code);	// TXNN
 		}
 		break;
 #endif
@@ -2327,9 +2327,10 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 				return *(s + 2);
 			}
 
-			if (!have_sqlcode) {
-				/* Now check the hard-coded mapping table of gds_codes to
-				   sql_codes */
+			if (!have_sqlcode)
+			{
+				// Now check the hard-coded mapping table of gds_codes to
+				// sql_codes
 				const SLONG gdscode = status_vector[1];
 
 				if (gdscode) {
@@ -2351,9 +2352,9 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 			s++;
 		}
 		else if (*s == isc_arg_cstring)
-			s += 3;				/* skip: isc_arg_cstring <len> <ptr> */
+			s += 3;				// skip: isc_arg_cstring <len> <ptr>
 		else
-			s += 2;				/* skip: isc_arg_* <item> */
+			s += 2;				// skip: isc_arg_* <item>
 	}
 
 	return sqlcode;

@@ -403,6 +403,7 @@ public:
 // within an index; a pointer to this block is passed to the user as a
 // handle to facilitate returning to this position
 
+#ifdef PC_ENGINE
 class Bookmark : public pool_alloc_rpt<SCHAR, type_bkm>
 {
 public:
@@ -424,6 +425,7 @@ const USHORT bkm_bof = 1;
 const USHORT bkm_eof = 2;
 const USHORT bkm_crack = 4;
 const USHORT bkm_forced_crack = 8;
+#endif
 
 // types for navigating through a stream
 
@@ -441,3 +443,4 @@ typedef rse_get_mode RSE_GET_MODE;
 } //namespace Jrd
 
 #endif // JRD_RSE_H
+

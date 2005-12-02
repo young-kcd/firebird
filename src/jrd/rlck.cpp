@@ -340,7 +340,7 @@ void RLCK_release_lock(Lock* lock)
 
 	if (!lock)
 		ERR_post(isc_bad_lock_handle, 0);
-	if (((BLK) lock)->blk_type != (UCHAR) type_lck)
+	if (((blk*) lock)->blk_type != (UCHAR) type_lck)
 		ERR_post(isc_bad_lock_handle, 0);
 /* now use the lock type to determine the type
    of lock to release */
@@ -369,26 +369,26 @@ void RLCK_release_locks(Attachment* attachment)
  *
  **************************************/
 
-/* unlock all explicit relation locks */
-	vec* vector = attachment->att_relation_locks;
+	// unlock all explicit relation locks
+	vec<Lock*>* vector = attachment->att_relation_locks;
 	if (vector) {
-        vec::iterator lptr = vector->begin();
+        vec<Lock*>::iterator lptr = vector->begin();
 		for (const vec::const_iterator lend = vector->end(); lptr < lend; lptr++)
 		{
-			Lock* lock = (Lock*)(*lptr);
+			Lock* lock = *lptr;
 			if (lock)
 				RLCK_unlock_relation(0, (jrd_rel*) lock->lck_object);
 		}
 	}
-/* unlock all explicit record locks */
+	// unlock all explicit record locks
 	Lock* lock;
 	while (lock = attachment->att_record_locks) {
 		RLCK_unlock_record(lock, 0);
 	}
-/* clear the vector of user locks */
+	// clear the vector of user locks
 	if (vector = attachment->att_lck_quick_ref) {
-        vec::iterator lptr = vector->begin();
-		for (const vec::const_iterator lend = vector->end(); lptr < lend; lptr++)
+        vec<Lock*>::iterator lptr = vector->begin();
+		for (const vec<Lock*>::const_iterator lend = vector->end(); lptr < lend; lptr++)
 		{
 			*lptr = NULL;
 		}
@@ -462,6 +462,7 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 }
 
 
+#ifdef PC_ENGINE
 void RLCK_shutdown_attachment(Attachment* attachment)
 {
 /**************************************
@@ -477,25 +478,29 @@ void RLCK_shutdown_attachment(Attachment* attachment)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 /* Release child record locks before parent relation locks */
+
 	for (Lock* record_lock = attachment->att_record_locks;
 		record_lock;
 		record_lock = record_lock->lck_att_next)
 	{
 		LCK_release(tdbb, record_lock);
 	}
-	vec* lock_vector = attachment->att_relation_locks;
+
+	vec<Lock*>* lock_vector = attachment->att_relation_locks;
 	if (lock_vector) {
-		for (vec::iterator lock = lock_vector->begin(); 
+		for (vec<Lock*>::iterator lock = lock_vector->begin();
 			lock != lock_vector->end(); ++lock) 
 		{
 			if (*lock) {
-				LCK_release(tdbb, (Lock*)(*lock));
+				LCK_release(tdbb, *lock);
 			}
 		}
 	}
 }
+#endif
 
 
+#ifdef PC_ENGINE
 void RLCK_shutdown_database(Database* dbb)
 {
 /**************************************
@@ -511,14 +516,14 @@ void RLCK_shutdown_database(Database* dbb)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	vec* vector = dbb->dbb_relations;
+	vec<jrd_rel*>* vector = dbb->dbb_relations;
 	if (!vector)
 		return;
 
-	vec::iterator ptr = vector->begin();
-	for (const vec::const_iterator end =  vector->end(); ptr < end; ptr++)
+	vec<jrd_rel*>::iterator ptr = vector->begin();
+	for (const vec<jrd_rel*>::const_iterator end =  vector->end(); ptr < end; ptr++)
 	{
-		jrd_rel* relation = (jrd_rel*)(*ptr);
+		jrd_rel* relation = *ptr;
 		if (relation) {
 			if (relation->rel_record_locking)
 				LCK_release(tdbb, relation->rel_record_locking);
@@ -531,6 +536,7 @@ void RLCK_shutdown_database(Database* dbb)
 		}
 	}
 }
+#endif
 
 
 #ifdef PC_ENGINE
@@ -550,7 +556,7 @@ void RLCK_signal_refresh(jrd_tra* transaction)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 /* for each relation, take out a range relation lock and then release it */
-	vec* vector = transaction->tra_relation_locks;
+	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector) {
 
 		/* allocate a local lock */
@@ -564,7 +570,7 @@ void RLCK_signal_refresh(jrd_tra* transaction)
 		local_lock->lck_parent = dbb->dbb_lock;
 		local_lock->lck_compatible = tdbb->tdbb_attachment;
 		for (size_t i = 0; i < vector->count(); i++) {
-			Lock* lock = (Lock**) ((*vector)[i]);
+			Lock* lock = (*vector)[i];
 			if (lock) {
 				jrd_rel* relation = (jrd_rel*) lock->lck_object;
 				local_lock->lck_key.lck_long = relation->rel_id;
@@ -593,19 +599,19 @@ Lock* RLCK_transaction_relation_lock(jrd_tra* transaction, jrd_rel* relation)
  *
  **************************************/
 	Lock* lock;
-	vec* vector = transaction->tra_relation_locks;
+	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector &&
 		(relation->rel_id < vector->count()) &&
-		(lock = (Lock*) (*vector)[relation->rel_id]))
+		(lock = (*vector)[relation->rel_id]))
 	{
 		return lock;
 	}
 
 	vector = transaction->tra_relation_locks =
-		vec::newVector(*transaction->tra_pool, transaction->tra_relation_locks,
+		vec<Lock*>::newVector(*transaction->tra_pool, transaction->tra_relation_locks,
 					   relation->rel_id + 1);
 	
-	if ( (lock = (Lock*) (*vector)[relation->rel_id]) )
+	if ( (lock = (*vector)[relation->rel_id]) )
 		return lock;
 
 	lock = allocate_relation_lock(transaction->tra_pool, relation);
@@ -615,7 +621,7 @@ Lock* RLCK_transaction_relation_lock(jrd_tra* transaction, jrd_rel* relation)
    that relation locks are incompatible with locks taken out by other
    transactions, if a transaction is specified */
 	lock->lck_compatible2 = transaction;
-	(*vector)[relation->rel_id] = (BLK) lock;
+	(*vector)[relation->rel_id] = lock;
 
 	return lock;
 }
@@ -732,7 +738,7 @@ void RLCK_unlock_relation(Lock* lock, jrd_rel* relation)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 	Attachment* attachment = tdbb->tdbb_attachment;
-	vec* vector = attachment->att_relation_locks;
+	vec<Lock*>* vector = attachment->att_relation_locks;
 	if (!vector)
 		return;
 		
@@ -740,11 +746,11 @@ void RLCK_unlock_relation(Lock* lock, jrd_rel* relation)
 		const USHORT id = relation->rel_id;
 		if (id >= vector->count())
 			return;
-		lock = (Lock*) (*vector)[id];
+		lock = (*vector)[id];
 	}
 	else {
 		for (int id = 0; id < vector->count(); id++)
-			if (lock == (Lock*) (*vector)[id])
+			if (lock == (*vector)[id])
 				break;
 	}
 	if (!lock)
@@ -869,24 +875,24 @@ static Lock* attachment_relation_lock(jrd_rel* relation)
 	Attachment* attachment = tdbb->tdbb_attachment;
 
 	Lock* lock;
-	vec* vector = attachment->att_relation_locks;
+	vec<Lock*>* vector = attachment->att_relation_locks;
 	if (vector &&
 		(relation->rel_id < vector->count()) &&
-		(lock = (Lock*) (*vector)[relation->rel_id]))
+		(lock = (*vector)[relation->rel_id]))
 	{
 		return lock;
 	}
 
 	vector = attachment->att_relation_locks =
-		vec::newVector(*dbb->dbb_permanent, attachment->att_relation_locks,
+		vec<Lock*>::newVector(*dbb->dbb_permanent, attachment->att_relation_locks,
 					   relation->rel_id + 1);
 
-	if ( (lock = (Lock*) (*vector)[relation->rel_id]) )
+	if ( (lock = (*vector)[relation->rel_id]) )
 		return lock;
 
 	lock = allocate_relation_lock(dbb->dbb_permanent, relation);
 	lock->lck_owner = attachment;
-	(*vector)[relation->rel_id] = (BLK) lock;
+	(*vector)[relation->rel_id] = lock;
 
 	return lock;
 }

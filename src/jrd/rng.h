@@ -29,19 +29,20 @@
 
 namespace Jrd {
 class Attachment;
-class vec;
+template <typename T> class vec;
 
+#ifdef PC_ENGINE
 class RefreshRange : public pool_alloc_rpt<SCHAR, type_rng>
 {
     public:
 	RefreshRange*	rng_next;			/* next in list of ranges being created */
 	Attachment*		rng_attachment;		/* attachment that owns range */
 	RefreshRange*	rng_lck_next;		/* next in list of ranges interested in a lock */
-	vec*		rng_relation_locks;	/* relation locks */
-	vec*		rng_relation_trans;	/* relation transactions */
-	vec*		rng_record_locks;	/* record locks */
-	vec*		rng_page_locks;		/* page locks */
-	vec*		rng_transaction_locks;	/* transaction locks */
+	vec<Lock*>*		rng_relation_locks;	/* relation locks */
+	// vec<jrd_tra*>*	rng_relation_trans;	// relation transactions CVC: Unused stuff.
+	vec<Lock*>*		rng_record_locks;	/* record locks */
+	vec<Lock*>*		rng_page_locks;		/* page locks */
+	vec<Lock*>*		rng_transaction_locks;	/* transaction locks */
 	USHORT rng_relations;		/* count of relations in range */
 	USHORT rng_records;			/* count of records in range */
 	USHORT rng_pages;			/* count of index pages in range */
@@ -55,6 +56,7 @@ class RefreshRange : public pool_alloc_rpt<SCHAR, type_rng>
 const USHORT RNG_posted	= 1;			/* range has already been posted */
 
 const int RANGE_NAME_LENGTH	= 31;	/* max. length of range name for the event */
+#endif
 
 } //namespace Jrd
 

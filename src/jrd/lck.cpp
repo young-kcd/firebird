@@ -1169,7 +1169,7 @@ static void hash_allocate(Lock* lock)
 	Attachment* attachment = lock->lck_attachment;
 	if (attachment) {
 		attachment->att_compatibility_table =
-			vec::newVector(*dbb->dbb_permanent, LOCK_HASH_SIZE);
+			vec<Lock*>::newVector(*dbb->dbb_permanent, LOCK_HASH_SIZE);
 	}
 }
 
@@ -1207,12 +1207,12 @@ static Lock* hash_get_lock(Lock* lock, USHORT * hash_slot, Lock*** prior)
 
 /* if no collisions found, we're done */
 
-	Lock* match = (Lock*) (*att->att_compatibility_table)[hash_value];
+	Lock* match = (*att->att_compatibility_table)[hash_value];
 	if (!match)
 		return NULL;
+		
 	if (prior)
-		*prior =
-			(Lock**) & (*att->att_compatibility_table)[hash_value];
+		*prior = & (*att->att_compatibility_table)[hash_value];
 
 /* look for an identical lock */
 
@@ -1269,9 +1269,8 @@ static void hash_insert_lock(Lock* lock)
 	USHORT hash_slot;
 	Lock* identical = hash_get_lock(lock, &hash_slot, 0);
 	if (!identical) {
-		lock->lck_collision =
-			(Lock*) (*att->att_compatibility_table)[hash_slot];
-		(*att->att_compatibility_table)[hash_slot] = (BLK) lock;
+		lock->lck_collision = (*att->att_compatibility_table)[hash_slot];
+		(*att->att_compatibility_table)[hash_slot] = lock;
 		return;
 	}
 

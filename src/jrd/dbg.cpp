@@ -191,9 +191,10 @@ int DBG_analyze(int pool_id)
 
 	Database* dbb = GET_DBB();
 
-	VEC vector = dbb->dbb_pools;
-	if (!vector)
+	if (!dbb || !dbb->dbb_pools.size())
 		return TRUE;
+	
+	Database::pool_vec_type* vector = &dbb->dbb_pools;
 
 	for (p = blocks, end = p + (int) type_MAX; p < end; p++) {
 		p->sum_count = 0;
@@ -205,12 +206,12 @@ int DBG_analyze(int pool_id)
 		p->sum_length = 0;
 	}
 
-	PLB pool = (PLB) vector->vec_object[pool_id];
+	PLB pool = (PLB) (*vector)[pool_id];
 	if (pool) {
 		for (hunk = pool->plb_hunks; hunk; hunk = hunk->hnk_next) {
 			const char* hunk_end = ((char*)hunk->hnk_address) + hunk->hnk_length;
-			for (block = (BLK) hunk->hnk_address; block != (const BLK) hunk_end;
-				 block = (BLK) ((SCHAR *) block + length))
+			for (block = (blk*) hunk->hnk_address; block != (const blk*) hunk_end;
+				 block = (blk*) ((SCHAR *) block + length))
 			{
 				type = block->blk_type;
 				length = block->blk_length << SHIFT;
@@ -451,8 +452,8 @@ int DBG_block(BLK block)
 		fprintf(dbg_file, "\t");
 		p = string;
 		*p = 0;
-		for (i = 0; i < ((VEC) block)->vec_count; i++) {
-			sprintf(p, "%X, ", ((VEC) block)->vec_object[i]);
+		for (i = 0; i < ((vec<void**>*) block)->count(); i++) {
+			sprintf(p, "%X, ", (*((vec<void**>*) block))[i]);
 			if (strlen(string) > 60) {
 				fprintf(dbg_file, "%s\n", string);
 				strcpy(string, "\t\t");
@@ -466,8 +467,8 @@ int DBG_block(BLK block)
 		fprintf(dbg_file, "\t");
 		p = string;
 		*p = 0;
-		for (i = 0; i < ((VCL) block)->vcl_count; i++) {
-			sprintf(p, "%X, ", ((VCL) block)->vcl_long[i]);
+		for (i = 0; i < ((vcl*) block)->vcl_count; i++) {
+			sprintf(p, "%X, ", ((vcl*) block)->vcl_long[i]);
 			if (strlen(string) > 60) {
 				fprintf(dbg_file, "%s\n", string);
 				strcpy(string, "\t\t");
@@ -539,17 +540,18 @@ int DBG_check(int pool_id)
 
 	int corrupt = 0;
 
-	VEC vector = dbb->dbb_pools;
-	if (!vector)
+	if (!dbb || !dbb->dbb_pools.size())
 		return corrupt;
 
-	PLB pool = (PLB) vector->vec_object[pool_id];
+	Database::pool_vec_type* vector = &dbb->dbb_pools;
+
+	PLB pool = (PLB) (*vector)[pool_id];
 	if (pool) {
 		for (HNK hunk = pool->plb_hunks; hunk; hunk = hunk->hnk_next) {
 			const char* hunk_end = ((char*)hunk->hnk_address) + hunk->hnk_length;
-			for (blk* block = (BLK) hunk->hnk_address; block != (const BLK) hunk_end;
-				 block =
-				 (BLK) ((SCHAR *) block + (block->blk_length << SHIFT))) {
+			for (blk* block = (blk*) hunk->hnk_address; block != (const blk*) hunk_end;
+				 block = (blk*) ((SCHAR *) block + (block->blk_length << SHIFT)))
+			{
 				if (block->blk_pool_id != (UCHAR) pool_id) {
 					fprintf(dbg_file, "%X\t*** BAD POOL ID (%d) ***\n",
 							   block, block->blk_pool_id);
@@ -965,11 +967,12 @@ int DBG_verify(void)
 	if (!dbg_file)
 		dbg_file = fopen("tt:", "w");
 
-	VEC vector;
-	if (!dbb || !(vector = dbb->dbb_pools))
+	if (!dbb || !dbb->dbb_pools.size())
 		return TRUE;
 
-	for (int i = 0; i < vector->vec_count; i++)
+	Database::pool_vec_type* vector = &dbb->dbb_pools;
+
+	for (int i = 0; i < vector->count(); i++)
 		DBG_check(i);
 
 	return TRUE;
@@ -1022,10 +1025,13 @@ int DBG_memory(void)
 	int req_pools = 0;
 	int other_pools = 0;
 
-	
-	VEC vector = dbb->dbb_pools;
-	for (int pool_id = 0; pool_id < vector->vec_count; pool_id++) {
-		PLB pool = (PLB) vector->vec_object[pool_id];
+	if (!dbb || !dbb->dbb_pools.size())
+		return TRUE;
+
+	Database::pool_vec_type* vector = &dbb->dbb_pools;
+
+	for (int pool_id = 0; pool_id < vector->count(); pool_id++) {
+		PLB pool = (PLB) (*vector)[pool_id];
 		if (!pool)
 			continue;
 		const int pool_type = DBG_analyze(pool_id);

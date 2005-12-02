@@ -46,10 +46,12 @@ class jrd_prc;
 class Record;
 class jrd_nod;
 class SaveRecordParam;
-class vec;
+template <typename T> class vec;
 class jrd_tra;
 class Savepoint;
+#ifdef PC_ENGINE
 class RefreshRange;
+#endif
 class RecordSource;
 
 /* record parameter block */
@@ -180,7 +182,7 @@ public:
 	USHORT		req_incarnation;	// incarnation number
 	ULONG		req_impure_size;	// size of impure area
 	JrdMemoryPool* req_pool;
-	vec*		req_sub_requests;	// vector of sub-requests
+	vec<jrd_req*>*	req_sub_requests;	// vector of sub-requests
 
 	// Transaction pointer and doubly linked list pointers for requests in this 
 	// transaction. Maintained by TRA_attach_request/TRA_detach_request.
@@ -194,14 +196,16 @@ public:
 	TempBlobIdTree req_blobs;		// Temporary BLOBs owned by this request
 	ExternalAccessList req_external;	/* Access to procedures/triggers to be checked */
 	AccessItemList req_access;		/* Access items to be checked */
-	vec*		req_variables;		/* Vector of variables, if any */
+	//vec<jrd_nod*>*	req_variables;		// Vector of variables, if any CVC: UNUSED
 	ResourceList req_resources;		/* Resources (relations and indices) */
 	jrd_nod*	req_message;		/* Current message for send/receive */
 #ifdef SCROLLABLE_CURSORS
 	jrd_nod*	req_async_message;	/* Asynchronous message (used in scrolling) */
 #endif
-	vec*		req_refresh_ranges;	/* Vector of refresh_ranges */
+#ifdef PC_ENGINE
+	vec<RefreshRange*>*	req_refresh_ranges;	/* Vector of refresh_ranges */
 	RefreshRange*	req_begin_ranges;	/* Vector of refresh_ranges */
+#endif
 	jrd_prc*	req_procedure;		/* procedure, if any */
 	const TEXT*	req_trg_name;		/* name of request (trigger), if any */
 	USHORT		req_length;			/* message length for send/receive */
@@ -210,10 +214,10 @@ public:
 	USHORT		req_msend;			/* longest send message */
 	USHORT		req_mreceive;		/* longest receive message */
 
-	ULONG req_records_selected;	/* count of records selected by request (meeting selection criteria) */
-	ULONG req_records_inserted;	/* count of records inserted by request */
-	ULONG req_records_updated;	/* count of records updated by request */
-	ULONG req_records_deleted;	/* count of records deleted by request */
+	ULONG		req_records_selected;	/* count of records selected by request (meeting selection criteria) */
+	ULONG		req_records_inserted;	/* count of records inserted by request */
+	ULONG		req_records_updated;	/* count of records updated by request */
+	ULONG		req_records_deleted;	/* count of records deleted by request */
 
 	AffectedRows req_records_affected;	/* records affected by the last statement */
 
@@ -225,7 +229,7 @@ public:
 	jrd_nod*	req_top_node;		/* top of execution tree */
 	jrd_nod*	req_next;			/* next node for execution */
 	Firebird::Array<RecordSource*> req_fors;	/* Vector of for loops, if any */
-	vec* 		req_cursors;		/* Vector of named cursors, if any */
+	vec<RecordSource*>* 	req_cursors;		/* Vector of named cursors, if any */
 	Firebird::Array<jrd_nod*> req_invariants;	/* Vector of invariant nodes, if any */
 	USHORT		req_label;			/* label for leave */
 	ULONG		req_flags;			/* misc request flags */
