@@ -101,7 +101,7 @@ class Service : public pool_alloc<type_svc>
 private:
 	ISC_STATUS_ARRAY svc_status_array;
 public:
-	Service(serv_entry *se);
+	Service(serv_entry *se, Firebird::MemoryPool& p);
 	~Service();
 	
 	SLONG	svc_handle;			/* "handle" of process/thread running service */

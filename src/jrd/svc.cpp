@@ -128,11 +128,13 @@ const int GET_BINARY	= 4;
 const TEXT SVC_TRMNTR	= '\377';
 
 namespace Jrd {
-	Service::Service(serv_entry *se) :
+	Service::Service(serv_entry *se, Firebird::MemoryPool& p) :
 		svc_handle(0), svc_status(svc_status_array), svc_input(0), svc_output(0),
 		svc_stdout_head(0), svc_stdout_tail(0), svc_stdout(0), svc_argv(0), svc_argc(0),
 		svc_service(se), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
-		svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false)
+		svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
+		svc_username(p), svc_enc_password(p), svc_switches(p), svc_perm_sw(p)
+
 	{
 		memset(svc_start_event, 0, sizeof svc_start_event);
 	}
@@ -534,7 +536,7 @@ Service* SVC_attach(USHORT	service_length,
 	
 /* Services operate outside of the context of databases.  Therefore
    we cannot use the JRD allocator. */
-	service = FB_NEW(*getDefaultMemoryPool()) Service(serv);
+	service = FB_NEW(*getDefaultMemoryPool()) Service(serv, *getDefaultMemoryPool());
 
 	service->svc_flags =
 		(serv->serv_executable ? SVC_forked : 0) | (switches.hasData() ? SVC_cmd_line : 0);
