@@ -862,7 +862,7 @@ qli_tok* LEX_token(void)
 			}
 			*p++ = next;
 			if ((p - token->tok_string) >= MAXSYMLEN)
-				ERRQ_msg_put(470, (TEXT *) MAXSYMLEN, NULL, NULL, NULL, NULL);	// Msg 470 literal too long
+				ERRQ_msg_put(470, (TEXT *) (IPTR) MAXSYMLEN, NULL, NULL, NULL, NULL);	// Msg 470 literal too long
 
 			// If there are 2 quotes in a row, interpret 2nd as a literal
 
