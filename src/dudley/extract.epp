@@ -76,7 +76,10 @@ static void put_error(USHORT, const TEXT*);
 static void set_capabilities(void);
 static void type_scalar(USHORT, SSHORT, USHORT, SSHORT, USHORT, const TEXT*);
 static void view_fields(const TEXT*);
+
+#ifdef NOT_USED_OR_REPLACED
 static void wal_info(const UCHAR*, SSHORT*, SLONG*, SLONG*, SLONG*);
+#endif
 
 static FILE* output_file;
 static const SCHAR db_items[] = { isc_info_page_size };
@@ -543,7 +546,7 @@ static void extract_database(const TEXT * DB_file_nameL)
 
 /* print log info. */
 
-/*
+#ifdef NOT_USED_OR_REPLACED
 		if (EXT_capabilities & EXT_v4) {
 			bool first_time = true;
 			bool need_close = false;
@@ -622,7 +625,7 @@ static void extract_database(const TEXT * DB_file_nameL)
 				fprintf(output_file, "\n\tgroup_commit_wait_time %"SLONGFORMAT,
 						   grp_commit);
 		}
-*/
+#endif
 
 	fprintf(output_file, ";\n");
 
@@ -2108,7 +2111,7 @@ static void view_fields(const TEXT * view_name)
 	extract_computed(view_name, first);
 }
 
-
+#ifdef NOT_USED_OR_REPLACED
 static void wal_info(const UCHAR* db_info_buffer,
 					 SSHORT* num_buf,
 					 SLONG* buf_size, SLONG* chkpt_len, SLONG* grp_commit)
@@ -2151,4 +2154,4 @@ static void wal_info(const UCHAR* db_info_buffer,
 		p += length;
 	}
 }
-
+#endif
