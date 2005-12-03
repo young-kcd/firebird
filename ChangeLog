@@ -1,3 +1,55 @@
+2005-12-02 23:19  hvlad
+
+	* firebird2/src/jrd/: svc.cpp (1.155), svc.h (1.37):
+	
+	Allocate strings members of Service from the same pool as Service
+	itself
+
+2005-12-02 17:54  alexpeshkoff
+
+	* firebird2/src/: common/classes/ClumpletReader.cpp (1.13),
+	common/classes/ClumpletReader.h (1.14), jrd/svc.cpp (1.154),
+	jrd/svc.h (1.36):
+	
+	fixed problems, caused by my previous commit
+
+2005-12-02 17:49  alexpeshkoff
+
+	* firebird2/src/qli/lex.cpp (1.33):
+	
+	fixed a warning
+
+2005-12-02 17:48  alexpeshkoff
+
+	* firebird2/src/jrd/: evl.cpp (1.157), exe.cpp (1.162), opt.cpp
+	(1.251):
+	
+	fixed some warnings
+
+2005-12-02 17:34  alexpeshkoff
+
+	* firebird2/src/dudley/extract.epp (1.42):
+	
+	mark wal_info() NOT_USED_OR_REPLACED
+
+2005-12-02 08:35  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.103), blk.h (1.25), bookmark.cpp
+	(1.20), bookmark.h (1.9), btr.h (1.42), cmp.cpp (1.185), dbg.cpp
+	(1.32), dbt.cpp (1.32), dfw.epp (1.167), dpm.epp (1.61), evl.cpp
+	(1.156), exe.cpp (1.161), exe.h (1.74), ext.cpp (1.62), gds.cpp
+	(1.181), idx.cpp (1.101), ini.epp (1.71), jrd.cpp (1.228), jrd.h
+	(1.141), lck.cpp (1.50), met.epp (1.174), nav_proto.h (1.15),
+	par.cpp (1.123), req.h (1.48), rlck.cpp (1.33), rlck_proto.h
+	(1.13), rng.cpp (1.33), rng.h (1.9), rse.cpp (1.92), rse.h (1.40),
+	rse_proto.h (1.12), shut.cpp (1.35), tra.cpp (1.107), tra.h (1.49),
+	validation.cpp (1.10), vio.cpp (1.141), os/vms/extvms.cpp (1.24):
+	
+	1.- Make "vec" type safe and get rid of several code contortions.
+	Fix some small bugs meanwhile.	2.- Put inside PC_ENGINE several
+	data members that belong to that feature.  3.- Put inside PC_ENGINE
+	the code that does cleanup on those unused data members.
+
 2005-12-02 01:28  asfernandes
 
 	* firebird2/src/dsql/blob.epp (1.19):
