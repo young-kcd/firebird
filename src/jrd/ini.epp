@@ -530,7 +530,6 @@ void INI_init(void)
 		vec<Format*>* formats = vec<Format*>::newVector(*dbb->dbb_permanent, 1);
 		relation->rel_formats = formats;
 		(*formats)[0] = format;
-		format->fmt_count = n;
 		Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 
 		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
@@ -646,7 +645,7 @@ void INI_init2(void)
 			}
 
 			relation->rel_fields->resize(n);
-			format->fmt_count = n;
+			format->fmt_count = n; // ??? This doesn't enlarge the vector.
 			format->fmt_length = (USHORT)FLAG_BYTES(n);
 			Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];

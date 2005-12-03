@@ -61,7 +61,7 @@ class Format : public pool_alloc<type_fmt>
 {
 public:
 	Format(MemoryPool& p, int len)
-	:	fmt_desc(len, p, type_fmt)
+	:	fmt_desc(len, p, type_fmt), fmt_count(len)
 	{
 	}
 	static Format* newFormat(MemoryPool& p, int len = 0)
