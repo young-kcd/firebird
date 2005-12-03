@@ -352,8 +352,8 @@ USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 
 
 
-#define	HAVE_WAITING	1
-#define HAVE_SPECIAL	2
+#define	LC_HAVE_WAITING	1
+#define LC_HAVE_SPECIAL	2
 
 /* expansion char go before the expansion. */
 /* eg: S-set collates before ss */
@@ -423,10 +423,10 @@ static SSHORT special_scan(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, con
 static const SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p,
 	ULONG* l, coltab_status* stat)
 {
-	if (stat->stat_flags & HAVE_WAITING) {
+	if (stat->stat_flags & LC_HAVE_WAITING) {
 		(*l)--;
 		(*p)++;
-		stat->stat_flags &= ~HAVE_WAITING;
+		stat->stat_flags &= ~LC_HAVE_WAITING;
 		fb_assert(stat->stat_waiting);
 		return stat->stat_waiting;
 	}
@@ -447,7 +447,7 @@ static const SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p,
 			/* Need a new col */
 			(*l)--;
 			(*p)++;
-			stat->stat_flags |= HAVE_SPECIAL;
+			stat->stat_flags |= LC_HAVE_SPECIAL;
 			continue;
 		}
 		else if (col->IsExpand) {
@@ -461,7 +461,7 @@ static const SortOrderTblEntry* get_coltab_entry(TEXTTYPE obj, const UCHAR** p,
 			stat->stat_waiting =
 				&((const SortOrderTblEntry*) obj->texttype_impl->
 				  texttype_collation_table)[exp->ExpCh2];
-			stat->stat_flags |= HAVE_WAITING;
+			stat->stat_flags |= LC_HAVE_WAITING;
 			return col;
 		}
 		else {					/* (col->IsCompress) */
@@ -556,13 +556,13 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const
 			if (!save_tertiary)
 				save_tertiary = (col1->Tertiary - col2->Tertiary);
 		}
-		else if (((stat1.stat_flags & HAVE_WAITING) XOR
-				  (stat2.stat_flags & HAVE_WAITING)) && !save_quandary)
+		else if (((stat1.stat_flags & LC_HAVE_WAITING) XOR
+				  (stat2.stat_flags & LC_HAVE_WAITING)) && !save_quandary)
 		{
 			if (obj->texttype_impl->texttype_flags & TEXTTYPE_expand_before)
-				save_quandary = (stat1.stat_flags & HAVE_WAITING) ? -1 : 1;
+				save_quandary = (stat1.stat_flags & LC_HAVE_WAITING) ? -1 : 1;
 			else
-				save_quandary = (stat1.stat_flags & HAVE_WAITING) ? 1 : -1;
+				save_quandary = (stat1.stat_flags & LC_HAVE_WAITING) ? 1 : -1;
 		}
 	}
 
@@ -584,10 +584,9 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const
 		if (save_quandary)
 			return save_quandary;
 		if (
-			((stat1.stat_flags & HAVE_SPECIAL)
-			 || (stat2.stat_flags & HAVE_SPECIAL))
-			&& !(obj->texttype_impl->
-				 texttype_flags & TEXTTYPE_ignore_specials))
+			((stat1.stat_flags & LC_HAVE_SPECIAL)
+			 || (stat2.stat_flags & LC_HAVE_SPECIAL))
+			&& !(obj->texttype_impl->texttype_flags & TEXTTYPE_ignore_specials))
 		{
 			return special_scan(obj, save_l1, save_s1, save_l2, save_s2);
 		}
@@ -605,7 +604,7 @@ SSHORT LC_NARROW_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const
 
 /*
  * Debugging only
- * Routine used for comparing results from comparision algorithm
+ * Routine used for comparing results from comparison algorithm
  * to results from key creation algorithm
  */
 static SSHORT old_fam2_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1,
@@ -618,8 +617,8 @@ static SSHORT old_fam2_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1,
 	fb_assert(s1 != NULL);
 	fb_assert(s2 != NULL);
 
-	const ULONG len1 = LC_NARROW_string_to_key(obj, l1, s1, sizeof(key1), key1, FALSE);
-	const ULONG len2 = LC_NARROW_string_to_key(obj, l2, s2, sizeof(key2), key2, FALSE);
+	const ULONG len1 = LC_NARROW_string_to_key(obj, l1, s1, sizeof(key1), key1, INTL_KEY_SORT);
+	const ULONG len2 = LC_NARROW_string_to_key(obj, l2, s2, sizeof(key2), key2, INTL_KEY_SORT);
 	const ULONG len = MIN(len1, len2);
 	for (ULONG i = 0; i < len; i++) {
 		if (key1[i] == key2[i])
@@ -669,18 +668,16 @@ static SSHORT fam2_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1,
 
 ULONG LC_NARROW_canonical(TEXTTYPE obj, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
 {
-	const BYTE *inbuff;
-	const SortOrderTblEntry *coll;
-
 	fb_assert(dst != NULL);
 	fb_assert(src != NULL);
 	fb_assert(dstLen >= obj->texttype_canonical_width * srcLen);
 
-	inbuff = src;
+	const BYTE* const inbuff = src;
 
 	for (ULONG i = 0; i < srcLen; i++, src++)
 	{
-		coll = &((const SortOrderTblEntry*)obj->texttype_impl->texttype_collation_table)[*src];
+		const SortOrderTblEntry* coll =
+			&((const SortOrderTblEntry*)obj->texttype_impl->texttype_collation_table)[*src];
 
 		if ((obj->texttype_impl->texttype_flags & (TEXTTYPE_secondary_insensitive | TEXTTYPE_tertiary_insensitive)) == 0)
 		{
@@ -709,3 +706,4 @@ void LC_NARROW_destroy(TEXTTYPE obj)
 {
 	delete obj->texttype_impl;
 }
+
