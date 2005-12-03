@@ -69,8 +69,8 @@ Universal triggers (FB 1.5)
        although they have the same semantics and will be executed exactly the same way.
     3. In multiple-action triggers both OLD and NEW contexts are available. If the
        trigger invocation forbids one of them (e.g. OLD context for INSERT operation),
-       then all fields of that context will eveluate to NULL. If you assign to
-       unproper context, runtime exception will be thrown.
+       then all fields of that context will evaluate to NULL. If you assign to
+       improper context, runtime exception will be thrown.
     4. You may use new context variables INSERTING/UPDATING/DELETING to check the
        operation type at runtime.
 
