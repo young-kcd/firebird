@@ -1784,16 +1784,14 @@ void ISQL_print_validation(FILE* fp,
 		if (firsttime) {
 			firsttime = false;
 			if (!issql) {
-				sprintf(Print_buffer, "%s ", (isComputedField ? "/* " : "("));
-				ISQL_printf(fp, Print_buffer);
+				ISQL_printf2(fp, "%s ", (isComputedField ? "/* " : "("));
 			}
 		}
 
 		ISQL_printf(fp, buffer);
 	}
 	if (!issql) {
-		sprintf(Print_buffer, "%s", (isComputedField ? " */" : ")"));
-		ISQL_printf(fp, Print_buffer);
+		ISQL_printf2(fp, "%s", (isComputedField ? " */" : ")"));
 	}
 
 	isc_close_blob(isc_status, &blob);
@@ -6185,8 +6183,7 @@ static processing_state print_item_blob(FILE* fp,
 				else
 					break;
 			}
-			sprintf(Print_buffer, "%s	%s%s", TAB_AS_SPACES, buffer, NEWLINE);
-			ISQL_printf(fp, Print_buffer);
+			ISQL_printf2(fp, "%s	%s%s", TAB_AS_SPACES, buffer, NEWLINE);
 		}
 		else {
 			buffer[length] = 0;
@@ -6369,8 +6366,7 @@ static void print_performance(perf* perf_before)
 	}
 	SCHAR statistics[256];
 	perf_format(perf_before, &perf_after, report_1, statistics, NULL);
-	sprintf(Print_buffer, "%s%s", statistics, NEWLINE);
-	ISQL_printf(Diag, Print_buffer);
+	ISQL_printf2(Diag, "%s%s", statistics, NEWLINE);
 }
 
 
@@ -6531,11 +6527,11 @@ static void process_plan()
 	{
 		ISQL_errmsg(isc_status);
 	}
-	else if (plan_buffer[0] == isc_info_sql_get_plan) {
+	else if (plan_buffer[0] == isc_info_sql_get_plan)
+	{
 		const int l =
 			gds__vax_integer(reinterpret_cast<const UCHAR*>(plan_buffer) + 1, 2);
-		sprintf(Print_buffer, "%.*s%s", l, plan_buffer + 3, NEWLINE);
-		ISQL_printf(Diag, Print_buffer);
+		ISQL_printf2(Diag, "%.*s%s", l, plan_buffer + 3, NEWLINE);
 	}
 }
 
