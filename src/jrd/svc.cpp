@@ -3036,9 +3036,7 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 		spb.moveNext();
 	} while (! spb.isEof());
 
-//	dimitr: trimming doesn't work with non-ASCII strings.
-//			In our case, it removes the SVC_TRMNTR symbol.
-//	switches.rtrim();
+	switches.rtrim();
 	return switches.length() > 0;
 }
 
