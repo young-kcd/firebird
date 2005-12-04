@@ -1874,7 +1874,7 @@ end_trigger	:
 
 end_default_opt	:
 			{ $$ = (dsql_nod*) MAKE_string(lex.beginning, 
-					(yychar < 0 ? lex_position() : lex.last_token) - lex.beginning); 
+					(yychar <= 0 ? lex_position() : lex.last_token) - lex.beginning); 
 			}
 		;
 
@@ -5402,20 +5402,27 @@ static void yyerror(const TEXT* error_string)
  *	Print a syntax error.
  *
  **************************************/
+	const TEXT* line_start = lex.line_start;
+	SLONG lines = lex.lines;
+	if (lex.last_token < lex.line_start)
+	{
+		line_start = lex.line_start_bk;
+		lines--;
+	}
 
 	if (yychar < 1)
 		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
 			isc_arg_gds, isc_command_end_err2,	/* Unexpected end of command */
-			isc_arg_number, (SLONG) lex.lines,
-			isc_arg_number, (SLONG) (lex.last_token - lex.line_start + 1),
+			isc_arg_number, lines,
+			isc_arg_number, (SLONG) (lex.last_token - line_start + 1),
 			0);
 	else
 	{
 		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
 			/* Token unknown - line %d, column %d */
 			isc_arg_gds, isc_dsql_token_unk_err,
-			isc_arg_number, (SLONG) lex.lines,
-			isc_arg_number, (SLONG) (lex.last_token - lex.line_start + 1), /*CVC: +1*/
+			isc_arg_number, (SLONG) lines,
+			isc_arg_number, (SLONG) (lex.last_token - line_start + 1), /*CVC: +1*/
 			/* Show the token */
 			isc_arg_gds, isc_random,
 			isc_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token,
