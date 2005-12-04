@@ -698,12 +698,9 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName
  *	Look for named field in procedure output fields.
  *
  **************************************/
-#pragma FB_COMPILER_MESSAGE("Vector's last element still unresolved")
-	// JMB: Is there a reason we are skipping the last element in the array?
 	vec<Parameter*>* list = procedure->prc_output_fields;
 	vec<Parameter*>::const_iterator ptr = list->begin();
-	for (const vec<Parameter*>::const_iterator end = list->end() - 1; ptr < end;
-		 ptr++)
+	for (const vec<Parameter*>::const_iterator end = list->end(); ptr < end; ++ptr)
 	{
 		const Parameter* param = *ptr;
 		if (name == param->prm_name)
