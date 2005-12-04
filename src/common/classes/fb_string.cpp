@@ -64,12 +64,13 @@ namespace {
 			}
 			Firebird::AbstractString::const_pointer end = s + l;
 			while (s < end) {
-				const unsigned char c = static_cast<unsigned char>(*s++);
-				m[c >> 3] |= (1 << (c & 7));
+				const unsigned char uc = static_cast<unsigned char>(*s++);
+				m[uc >> 3] |= (1 << (uc & 7));
 			}
 		}
 		inline bool Contains(const char c) const {
-			return m[c >> 3] & (1 << (c & 7));
+			const unsigned char uc = static_cast<unsigned char>(c);
+			return m[uc >> 3] & (1 << (uc & 7));
 		}
 	};
 } // namespace
