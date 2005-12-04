@@ -594,6 +594,14 @@ void test(void) {
 	validate(a, "  011100   ");
 }
 {
+	string a = lbl;
+	a += '\377';
+	string b = a;
+	a += " ";
+	a.rtrim();
+	validate(a, b.c_str());
+}
+{
 	string a = "AaBbCc", b;
 
 	b = a;
