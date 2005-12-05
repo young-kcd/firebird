@@ -44,7 +44,6 @@ SLONG  BLB_get_slice(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, const UCHA
 SLONG  BLB_lseek(Jrd::blb*, USHORT, SLONG);
 
 void BLB_move(Jrd::thread_db*, dsc*, dsc*, Jrd::jrd_nod*);
-void BLB_move_from_string(Jrd::thread_db*, const dsc*, dsc*, Jrd::jrd_nod*);
 Jrd::blb* BLB_open(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*);
 Jrd::blb* BLB_open2(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const UCHAR*);
 void BLB_put_segment(Jrd::thread_db*, Jrd::blb*, const UCHAR*, USHORT);

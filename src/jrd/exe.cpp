@@ -375,18 +375,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 		if (DTYPE_IS_BLOB(to_desc->dsc_dtype)
 			&& to_desc->dsc_dtype != dtype_d_float)
 #endif
-		{
-			/* CVC: This is a case that has hurt me for years and I'm going to solve it.
-					It should be possible to copy a string to a blob, even if the charset is
-					lost as a result of this experimental implementation. */
-			if (from_desc->dsc_dtype <= dtype_varying
-				&& to_desc->dsc_dtype != dtype_array)
-			{
-				BLB_move_from_string(tdbb, from_desc, to_desc, to);
-			}
-			else 
-				BLB_move(tdbb, from_desc, to_desc, to);
-		}
+			BLB_move(tdbb, from_desc, to_desc, to);
 
 		else if (!DSC_EQUIV(from_desc, to_desc))
 			MOV_move(from_desc, to_desc);

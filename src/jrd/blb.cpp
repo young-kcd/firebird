@@ -90,6 +90,7 @@ static blob_page* get_next_page(thread_db*, blb*, WIN *);
 static void get_replay_blob(thread_db*, const bid*);
 #endif
 static void insert_page(thread_db*, blb*);
+static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, Jrd::jrd_nod*);
 static void release_blob(blb*, const bool);
 static void slice_callback(array_slice*, ULONG, dsc*);
 static blb* store_array(thread_db*, jrd_tra*, bid*);
@@ -844,9 +845,18 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (from_desc->dsc_dtype != dtype_quad
-		&& from_desc->dsc_dtype != dtype_blob)
+	if (DTYPE_IS_TEXT(from_desc->dsc_type)
+		&& to_desc->dsc_dtype == dtype_blob)
 	{
+		// any string can be copied into a blob
+		move_from_string(tdbb, from_desc, to_desc, field);
+		return;
+	}
+	else if (from_desc->dsc_dtype != dtype_quad
+		&& from_desc->dsc_dtype != dtype_blob
+		&& from_desc->dsc_dtype != dtype_array)
+	{
+		// other conversions are prohibited
 		ERR_post(isc_convert_error, isc_arg_string, "BLOB", 0);
 	}
 
@@ -1010,102 +1020,6 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			array->arr_request = own_request;
 	}
 	release_blob(blob, !materialized_blob);
-}
-
-
-void BLB_move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, jrd_nod* field)
-{
-/**************************************
- *
- *      B L B _ m o v e _ f r o m _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *      Perform an assignment to a blob field.  It's capable of handling
- *      strings by doing an internal conversion to blob and then calling
- *      BLB_move with that new blob.
- *
- **************************************/
-	SET_TDBB (tdbb);
-
-	if (from_desc->dsc_dtype > dtype_varying)
-	    ERR_post(isc_convert_error, isc_arg_string,
-		DSC_dtype_tostring(from_desc->dsc_dtype), 0);
-	else
-	{
-		USHORT ttype = 0;
-		blb* blob = 0;
-		UCHAR *fromstr = 0;
-		bid temp_bid;
-		DSC blob_desc;
-		temp_bid.clear();
-		MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
-
-		int length = MOV_get_string_ptr(from_desc, &ttype, &fromstr, 0, 0);
-
-		UCHAR bpb[] = {isc_bpb_version1,
-					   isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
-					   isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
-		USHORT bpb_length = 0;
-
-		if (to_desc->dsc_sub_type == isc_blob_text)
-		{
-			bpb[6] = ttype;					// from charset
-			bpb[12] = to_desc->dsc_scale;	// to charset
-			bpb_length = sizeof(bpb);
-		}
-
-		blob = BLB_create2(tdbb, tdbb->tdbb_request->req_transaction, &temp_bid, bpb_length, bpb);
-
-		blob_desc.dsc_scale = to_desc->dsc_scale;	// blob charset
-		blob_desc.dsc_flags = (blob_desc.dsc_flags & 0xFF) | (to_desc->dsc_flags & 0xFF00);	// blob collation
-		blob_desc.dsc_sub_type = to_desc->dsc_sub_type;
-		blob_desc.dsc_dtype = dtype_blob;
-		blob_desc.dsc_address = reinterpret_cast<UCHAR*>(&temp_bid);
-		BLB_put_segment(tdbb, blob, fromstr, length);
-		BLB_close(tdbb, blob);
-		ULONG blob_temp_id = blob->blb_temp_id;
-		BLB_move(tdbb, &blob_desc, to_desc, field);
-		// 14-June-2004. Nickolay Samofatov
-		// The code below saves a lot of memory when bunches of records are
-		// converted to blobs from strings. If BLB_move is materialized blob we
-		// can discard it without consequences since we know there are no other
-		// descriptors using temporary ID of blob we just created. If blob is
-		// still temporary we cannot free it as it may now be used inside
-		// trigger for updatable view. In theory we could make this decision
-		// solely via checking that destination field belongs to updatable
-		// view, but direct check that blob is fully materialized should be
-		// more future proof.
-		jrd_tra* transaction = tdbb->tdbb_request->req_transaction;
-		if (transaction->tra_blobs.locate(blob_temp_id)) {
-			BlobIndex* current = &transaction->tra_blobs.current();
-			if (current->bli_materialized) {
-				// Delete BLOB from request owned blob list
-				jrd_req* blob_request = current->bli_request;
-				if (blob_request) {
-					if (blob_request->req_blobs.locate(blob_temp_id)) {
-						blob_request->req_blobs.fastRemove();
-					} else {
-						// We should never get here because when bli_request is assigned
-						// item should be added to req_blobs array
-						fb_assert(false);
-					}
-				}
-
-				// Free materialized blob handle
-				transaction->tra_blobs.fastRemove();
-			}
-			else {
-				// But even in bad case when we cannot free blob immediately
-				// we may still bind lifetime of blob to current request.
-				if (!current->bli_request) {
-					current->bli_request = tdbb->tdbb_request;
-					current->bli_request->req_blobs.add(blob_temp_id);
-				}
-			}
-		}
-	}
 }
 
 
@@ -2288,6 +2202,102 @@ static void insert_page(thread_db* tdbb, blb* blob)
 	page->blp_page[l] = page_number;
 	page->blp_length = (l + 1) << SHIFTLONG;
 	CCH_RELEASE(tdbb, &window);
+}
+
+
+static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, jrd_nod* field)
+{
+/**************************************
+ *
+ *      m o v e _ f r o m _ s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *      Perform an assignment to a blob field.  It's capable of handling
+ *      strings by doing an internal conversion to blob and then calling
+ *      BLB_move with that new blob.
+ *
+ **************************************/
+	SET_TDBB (tdbb);
+
+	if (from_desc->dsc_dtype > dtype_varying)
+	    ERR_post(isc_convert_error, isc_arg_string,
+		DSC_dtype_tostring(from_desc->dsc_dtype), 0);
+	else
+	{
+		USHORT ttype = 0;
+		blb* blob = 0;
+		UCHAR *fromstr = 0;
+		bid temp_bid;
+		DSC blob_desc;
+		temp_bid.clear();
+		MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
+
+		int length = MOV_get_string_ptr(from_desc, &ttype, &fromstr, 0, 0);
+
+		UCHAR bpb[] = {isc_bpb_version1,
+					   isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
+					   isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
+		USHORT bpb_length = 0;
+
+		if (to_desc->dsc_sub_type == isc_blob_text)
+		{
+			bpb[6] = ttype;					// from charset
+			bpb[12] = to_desc->dsc_scale;	// to charset
+			bpb_length = sizeof(bpb);
+		}
+
+		blob = BLB_create2(tdbb, tdbb->tdbb_request->req_transaction, &temp_bid, bpb_length, bpb);
+
+		blob_desc.dsc_scale = to_desc->dsc_scale;	// blob charset
+		blob_desc.dsc_flags = (blob_desc.dsc_flags & 0xFF) | (to_desc->dsc_flags & 0xFF00);	// blob collation
+		blob_desc.dsc_sub_type = to_desc->dsc_sub_type;
+		blob_desc.dsc_dtype = dtype_blob;
+		blob_desc.dsc_address = reinterpret_cast<UCHAR*>(&temp_bid);
+		BLB_put_segment(tdbb, blob, fromstr, length);
+		BLB_close(tdbb, blob);
+		ULONG blob_temp_id = blob->blb_temp_id;
+		BLB_move(tdbb, &blob_desc, to_desc, field);
+		// 14-June-2004. Nickolay Samofatov
+		// The code below saves a lot of memory when bunches of records are
+		// converted to blobs from strings. If BLB_move is materialized blob we
+		// can discard it without consequences since we know there are no other
+		// descriptors using temporary ID of blob we just created. If blob is
+		// still temporary we cannot free it as it may now be used inside
+		// trigger for updatable view. In theory we could make this decision
+		// solely via checking that destination field belongs to updatable
+		// view, but direct check that blob is fully materialized should be
+		// more future proof.
+		jrd_tra* transaction = tdbb->tdbb_request->req_transaction;
+		if (transaction->tra_blobs.locate(blob_temp_id)) {
+			BlobIndex* current = &transaction->tra_blobs.current();
+			if (current->bli_materialized) {
+				// Delete BLOB from request owned blob list
+				jrd_req* blob_request = current->bli_request;
+				if (blob_request) {
+					if (blob_request->req_blobs.locate(blob_temp_id)) {
+						blob_request->req_blobs.fastRemove();
+					} else {
+						// We should never get here because when bli_request is assigned
+						// item should be added to req_blobs array
+						fb_assert(false);
+					}
+				}
+
+				// Free materialized blob handle
+				transaction->tra_blobs.fastRemove();
+			}
+			else {
+				// But even in bad case when we cannot free blob immediately
+				// we may still bind lifetime of blob to current request.
+				if (!current->bli_request) {
+					current->bli_request = tdbb->tdbb_request;
+					current->bli_request->req_blobs.add(blob_temp_id);
+				}
+			}
+		}
+	}
 }
 
 
