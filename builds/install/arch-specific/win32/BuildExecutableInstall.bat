@@ -341,15 +341,15 @@ for /R %FBBUILD_OUTPUT%\doc %%v in (.) do (
 setlocal
 set OUTPATH=%FBBUILD_OUTPUT%\include
 copy %ROOT_PATH%\src\jrd\ibase.h %OUTPATH%\ibase.h > nul
-for %%v in ( %ROOT_PATH%\src\include\fb_types.h %ROOT_PATH%\src\dsql\sqlda_pub.h %ROOT_PATH%\src\jrd\dsc_pub.h %ROOT_PATH%\src\jrd\inf_pub.h %ROOT_PATH%\src\jrd\blr.h ) do (
+for %%v in ( %ROOT_PATH%\src\include\types_pub.h %ROOT_PATH%\src\dsql\sqlda_pub.h %ROOT_PATH%\src\jrd\dsc_pub.h %ROOT_PATH%\src\jrd\inf_pub.h %ROOT_PATH%\src\jrd\blr.h ) do (
   del %OUTPATH%\%%~nxv 2> nul
   copy %%v %OUTPATH%\%%~nxv > nul
   sed -n -f strip_comments.sed %OUTPATH%\%%~nxv > %OUTPATH%\%%~nv.more
   more /s %OUTPATH%\%%~nv.more > %OUTPATH%\%%~nv.sed
 )
 move /y %OUTPATH%\ibase.h %OUTPATH%\ibase.sed
-sed -e "/#include \"fb_types\.h\"/r %OUTPATH%\fb_types.sed" -e "/#include \"fb_types\.h\"/d" -e "/#include \"..\/jrd\/dsc_pub\.h\"/r %OUTPATH%\dsc_pub.sed" -e "/#include \"..\/jrd\/dsc_pub\.h\"/d" -e "/#include \"..\/dsql\/sqlda_pub\.h\"/r %OUTPATH%\sqlda_pub.sed" -e "/#include \"..\/dsql\/sqlda_pub\.h\"/d" -e "/#include \"blr\.h\"/r %OUTPATH%\blr.sed" -e "/#include \"blr\.h\"/d" -e "/#include \"..\/jrd\/inf_pub\.h\"/r %OUTPATH%\inf_pub.sed" -e "/#include \"..\/jrd\/inf_pub\.h\"/d" %OUTPATH%\ibase.sed > %OUTPATH%\ibase.h
-del %OUTPATH%\ibase.sed %OUTPATH%\fb_types.* %OUTPATH%\sqlda_pub.* %OUTPATH%\dsc_pub.* %OUTPATH%\inf_pub.* %OUTPATH%\blr.*
+sed -e "/#include \"types_pub\.h\"/r %OUTPATH%\types_pub.sed" -e "/#include \"types_pub\.h\"/d" -e "/#include \"..\/jrd\/dsc_pub\.h\"/r %OUTPATH%\dsc_pub.sed" -e "/#include \"..\/jrd\/dsc_pub\.h\"/d" -e "/#include \"..\/dsql\/sqlda_pub\.h\"/r %OUTPATH%\sqlda_pub.sed" -e "/#include \"..\/dsql\/sqlda_pub\.h\"/d" -e "/#include \"blr\.h\"/r %OUTPATH%\blr.sed" -e "/#include \"blr\.h\"/d" -e "/#include \"..\/jrd\/inf_pub\.h\"/r %OUTPATH%\inf_pub.sed" -e "/#include \"..\/jrd\/inf_pub\.h\"/d" %OUTPATH%\ibase.sed > %OUTPATH%\ibase.h
+del %OUTPATH%\ibase.sed %OUTPATH%\types_pub.* %OUTPATH%\sqlda_pub.* %OUTPATH%\dsc_pub.* %OUTPATH%\inf_pub.* %OUTPATH%\blr.*
 endlocal
 
 ::End of IBASE_H
