@@ -29,33 +29,10 @@
  *
  */
 
-
 #ifndef INCLUDE_FB_TYPES_H
 #define INCLUDE_FB_TYPES_H
 
-
-/******************************************************************/
-/* Define type, export and other stuff based on c/c++ and Windows */
-/******************************************************************/
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-	#define  ISC_EXPORT	__stdcall
-	#define  ISC_EXPORT_VARARG	__cdecl
-#else
-	#define  ISC_EXPORT
-	#define  ISC_EXPORT_VARARG
-#endif
-
-/*******************************************************************/
-/* 64 bit Integers                                                 */
-/*******************************************************************/
-
-#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__)) && !defined(__GNUC__)
-typedef __int64				ISC_INT64;
-typedef unsigned __int64	ISC_UINT64;
-#else
-typedef long long int			ISC_INT64;
-typedef unsigned long long int	ISC_UINT64;
-#endif
+#include <types_pub.h>
 
 /* Nickolay: it is easier to assume that integer is at least 32-bit.
  * This comes from limitation that we cannot reliably detect datatype size at
@@ -70,29 +47,15 @@ typedef unsigned long long int	ISC_UINT64;
 	/* EKU: Firebird requires (S)LONG to be 32 bit */
 	typedef int SLONG;
 	typedef unsigned int ULONG;
-	typedef unsigned int FB_API_HANDLE;
-/*	typedef void* FB_API_HANDLE; */
 #else
 	typedef long SLONG;
 	typedef unsigned long ULONG;
-	typedef void* FB_API_HANDLE;
 #endif
 
 typedef struct {
 	SLONG high;
 	ULONG low;
 } SQUAD;
-
-struct GDS_QUAD_t {
-	SLONG gds_quad_high;
-	ULONG gds_quad_low;
-};
-
-typedef struct GDS_QUAD_t GDS_QUAD;
-typedef struct GDS_QUAD_t ISC_QUAD;
-
-#define	isc_quad_high	gds_quad_high
-#define	isc_quad_low	gds_quad_low
 
 /* Basic data types */
 
@@ -102,11 +65,18 @@ typedef struct GDS_QUAD_t ISC_QUAD;
  */
 typedef char SCHAR;
 
-
 typedef unsigned char UCHAR;
 typedef short SSHORT;
 typedef unsigned short USHORT;
 
+/* Substitution of API data types */
+
+typedef SCHAR ISC_SCHAR;
+typedef UCHAR ISC_UCHAR;
+typedef SSHORT ISC_SHORT;
+typedef USHORT ISC_USHORT;
+typedef SLONG ISC_LONG;
+typedef ULONG ISC_ULONG;
 
 /*
  * TMN: some misc data types from all over the place
@@ -124,6 +94,8 @@ struct lstring
 	UCHAR*	lstr_address;
 };
 
+#define ISC_STATUS_LENGTH	20
+typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
 
 typedef unsigned char BOOLEAN;
 typedef char TEXT;				/* To be expunged over time */
@@ -131,9 +103,9 @@ typedef char TEXT;				/* To be expunged over time */
 typedef unsigned char UTEXT;	Unsigned text - not used */
 typedef unsigned char BYTE;		/* Unsigned byte - common */
 /*typedef char SBYTE;			Signed byte - not used */
-typedef long ISC_STATUS;
 typedef long IPTR;
 typedef unsigned long U_IPTR;
+
 typedef void (*FPTR_VOID) ();
 typedef void (*FPTR_VOID_PTR) (void*);
 typedef int (*FPTR_INT) ();
@@ -158,9 +130,6 @@ but our code never uses the return value. */
 typedef int (*lock_ast_t)(void*);
 
 typedef IPTR FB_THREAD_ID;
-
-#define ISC_STATUS_LENGTH	20
-typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
 
 /* Number of elements in an array */
 #define FB_NELEM(x)	((int)(sizeof(x) / sizeof(x[0])))

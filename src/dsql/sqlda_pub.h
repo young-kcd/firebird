@@ -33,31 +33,31 @@
 
 typedef struct
 {
-	SSHORT	sqltype;			/* datatype of field */
-	SSHORT	sqlscale;			/* scale factor */
-	SSHORT	sqlsubtype;			/* datatype subtype - currently BLOBs only */
-	SSHORT	sqllen;				/* length of data area */
-	SCHAR*	sqldata;			/* address of data */
-	SSHORT*	sqlind;				/* address of indicator variable */
-	SSHORT	sqlname_length;		/* length of sqlname field */
-	SCHAR	sqlname[32];		/* name of field, name length + space for NULL */
-	SSHORT	relname_length;		/* length of relation name */
-	SCHAR	relname[32];		/* field's relation name + space for NULL */
-	SSHORT	ownname_length;		/* length of owner name */
-	SCHAR	ownname[32];		/* relation's owner name + space for NULL */
-	SSHORT	aliasname_length;	/* length of alias name */
-	SCHAR	aliasname[32];		/* relation's alias name + space for NULL */
+	ISC_SHORT	sqltype;			/* datatype of field */
+	ISC_SHORT	sqlscale;			/* scale factor */
+	ISC_SHORT	sqlsubtype;			/* datatype subtype - currently BLOBs only */
+	ISC_SHORT	sqllen;				/* length of data area */
+	ISC_SCHAR*	sqldata;			/* address of data */
+	ISC_SHORT*	sqlind;				/* address of indicator variable */
+	ISC_SHORT	sqlname_length;		/* length of sqlname field */
+	ISC_SCHAR	sqlname[32];		/* name of field, name length + space for NULL */
+	ISC_SHORT	relname_length;		/* length of relation name */
+	ISC_SCHAR	relname[32];		/* field's relation name + space for NULL */
+	ISC_SHORT	ownname_length;		/* length of owner name */
+	ISC_SCHAR	ownname[32];		/* relation's owner name + space for NULL */
+	ISC_SHORT	aliasname_length;	/* length of alias name */
+	ISC_SCHAR	aliasname[32];		/* relation's alias name + space for NULL */
 } XSQLVAR;
 
 #define SQLDA_VERSION1		1
 
 typedef struct
 {
-	SSHORT	version;			/* version of this XSQLDA */
-	SCHAR	sqldaid[8];			/* XSQLDA name field */
-	SLONG	sqldabc;			/* length in bytes of SQLDA */
-	SSHORT	sqln;				/* number of fields allocated */
-	SSHORT	sqld;				/* actual number of fields */
+	ISC_SHORT	version;			/* version of this XSQLDA */
+	ISC_SCHAR	sqldaid[8];			/* XSQLDA name field */
+	ISC_LONG	sqldabc;			/* length in bytes of SQLDA */
+	ISC_SHORT	sqln;				/* number of fields allocated */
+	ISC_SHORT	sqld;				/* actual number of fields */
 	XSQLVAR	sqlvar[1];			/* first field address */
 } XSQLDA;
 

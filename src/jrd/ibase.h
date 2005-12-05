@@ -36,7 +36,7 @@
 #ifndef JRD_IBASE_H
 #define JRD_IBASE_H
 
-#include "fb_types.h"
+#include "types_pub.h"
 
 #define FB_API_VER 20
 #define isc_version4
@@ -80,6 +80,19 @@ typedef	unsigned short	ISC_USHORT;
 
 typedef	unsigned char	ISC_UCHAR;
 typedef char		ISC_SCHAR;
+
+/*******************************************************************/
+/* 64 bit Integers                                                 */
+/*******************************************************************/
+
+#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__)) && !defined(__GNUC__)
+typedef __int64				ISC_INT64;
+typedef unsigned __int64	ISC_UINT64;
+#else
+typedef long long int			ISC_INT64;
+typedef unsigned long long int	ISC_UINT64;
+#endif
+
 /********************************/
 /* InterBase Handle Definitions */
 /********************************/
@@ -94,26 +107,10 @@ typedef FB_API_HANDLE isc_tr_handle;
 typedef void (* isc_callback) ();
 typedef ISC_LONG isc_resv_handle;
 
-/*******************************************************************/
-/* Time & Date Support                                             */
-/*******************************************************************/
+typedef void (*ISC_PRINT_CALLBACK) (void*, ISC_SHORT, const char*);
+typedef void (*ISC_VERSION_CALLBACK)(void*, const char*);
+typedef void (*ISC_EVENT_CALLBACK)(void*, ISC_USHORT, const ISC_UCHAR*);
 
-#ifndef ISC_TIMESTAMP_DEFINED
-typedef int			ISC_DATE;
-typedef unsigned int	ISC_TIME;
-typedef struct
-{
-	ISC_DATE timestamp_date;
-	ISC_TIME timestamp_time;
-} ISC_TIMESTAMP;
-#define ISC_TIMESTAMP_DEFINED
-#endif	/* ISC_TIMESTAMP_DEFINED */
-
-/*
- * Included in dsc_pub.h
- * #define ISC_TIME_SECONDS_PRECISION          10000L
- * #define ISC_TIME_SECONDS_PRECISION_SCALE    (-4)
- */
 /*******************************************************************/
 /* Blob id structure                                               */
 /*******************************************************************/
@@ -148,8 +145,6 @@ typedef struct
 	ISC_UCHAR	blob_desc_field_name[32];
 	ISC_UCHAR	blob_desc_relation_name[32];
 } ISC_BLOB_DESC;
-
-
 
 /***************************/
 /* Blob control structure  */
@@ -193,7 +188,6 @@ typedef struct bstream
 #define putb(x,p) (((x) == '\n' || (!(--(p)->bstr_cnt))) ? BLOB_put ((x),p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
 #define putbx(x,p) ((!(--(p)->bstr_cnt)) ? BLOB_put ((x),p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
 
-
 /********************************************************************/
 /* CVC: Public blob interface definition held in val.h.             */
 /* For some unknown reason, it was only documented in langRef       */
@@ -229,7 +223,6 @@ typedef struct blobcallback {
 #endif /* !defined(JRD_VAL_H) && !defined(REQUESTER) */
 
 
-
 /********************************************************************/
 /* CVC: Public descriptor interface held in dsc2.h.                  */
 /* We need it documented to be able to recognize NULL in UDFs.      */
@@ -263,13 +256,11 @@ typedef struct paramvary {
 
 #endif /* !defined(JRD_DSC_H) */
 
-
 /***************************/
 /* Dynamic SQL definitions */
 /***************************/
 
 #include "../dsql/sqlda_pub.h"
-
 
 /***************************/
 /* OSRI database functions */
@@ -616,7 +607,7 @@ ISC_STATUS ISC_EXPORT isc_que_events(ISC_STATUS*,
 									 ISC_LONG*,
 									 short,
 									 const ISC_SCHAR*,
-									 FPTR_EVENT_CALLBACK,
+									 ISC_EVENT_CALLBACK,
 									 void*);
 
 ISC_STATUS ISC_EXPORT isc_rollback_retaining(ISC_STATUS *,
@@ -1069,7 +1060,7 @@ ISC_LONG ISC_EXPORT isc_ftof(const ISC_SCHAR*,
 							 const unsigned short);
 
 ISC_STATUS ISC_EXPORT isc_print_blr(const ISC_SCHAR*,
-									FPTR_PRINT_CALLBACK,
+									ISC_PRINT_CALLBACK,
 									void*,
 									short);
 
@@ -1087,7 +1078,7 @@ void ISC_EXPORT isc_vtov(const ISC_SCHAR*,
 						 short);
 
 int ISC_EXPORT isc_version(isc_db_handle*,
-						   FPTR_VERSION_CALLBACK,
+						   ISC_VERSION_CALLBACK,
 						   void*);
 
 ISC_LONG ISC_EXPORT isc_reset_fpe(ISC_USHORT);
