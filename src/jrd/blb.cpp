@@ -845,7 +845,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (DTYPE_IS_TEXT(from_desc->dsc_type)
+	if (DTYPE_IS_TEXT(from_desc->dsc_dtype)
 		&& to_desc->dsc_dtype == dtype_blob)
 	{
 		// any string can be copied into a blob
