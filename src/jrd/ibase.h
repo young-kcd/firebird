@@ -36,8 +36,6 @@
 #ifndef JRD_IBASE_H
 #define JRD_IBASE_H
 
-#include "types_pub.h"
-
 #define FB_API_VER 20
 #define isc_version4
 
@@ -92,6 +90,8 @@ typedef unsigned __int64	ISC_UINT64;
 typedef long long int			ISC_INT64;
 typedef unsigned long long int	ISC_UINT64;
 #endif
+
+#include "types_pub.h"
 
 /********************************/
 /* InterBase Handle Definitions */

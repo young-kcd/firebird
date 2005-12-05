@@ -74,8 +74,8 @@ typedef struct
 /*******************************************************************/
 
 struct GDS_QUAD_t {
-	long gds_quad_high;
-	unsigned long gds_quad_low;
+	ISC_LONG gds_quad_high;
+	ISC_ULONG gds_quad_low;
 };
 
 typedef struct GDS_QUAD_t GDS_QUAD;

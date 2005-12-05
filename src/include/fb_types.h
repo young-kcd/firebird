@@ -32,8 +32,6 @@
 #ifndef INCLUDE_FB_TYPES_H
 #define INCLUDE_FB_TYPES_H
 
-#include <types_pub.h>
-
 /* Nickolay: it is easier to assume that integer is at least 32-bit.
  * This comes from limitation that we cannot reliably detect datatype size at
  *  compile time in cases when we do not control compilation (public headers) 
@@ -77,6 +75,8 @@ typedef SSHORT ISC_SHORT;
 typedef USHORT ISC_USHORT;
 typedef SLONG ISC_LONG;
 typedef ULONG ISC_ULONG;
+
+#include <types_pub.h>
 
 /*
  * TMN: some misc data types from all over the place
