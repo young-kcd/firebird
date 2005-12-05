@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.65 2005-11-27 15:04:40 alexpeshkoff Exp $
+#  $Id: Makefile.in.firebird,v 1.66 2005-12-05 12:57:15 dimitr Exp $
 #
 
 ROOT=..
@@ -432,7 +432,7 @@ include_generic: $(INCLUDE_DEST)/ib_util.h  \
 # All these files are #includes in ibase.h here we cat them all together
 # and remove the embedded #includes to make it simpler for external usage.
 
-IBASE_ExtraFiles = include/fb_types.h dsql/sqlda_pub.h jrd/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h 
+IBASE_ExtraFiles = include/types_pub.h dsql/sqlda_pub.h jrd/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h 
 SRC_IBASE_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(IBASE_ExtraFiles))
 
 $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
