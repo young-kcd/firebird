@@ -110,7 +110,7 @@ if errorlevel 1 call :ERROR Debug build failed
 echo #pragma message("Non-production version of ibase.h.") > %ROOT_PATH%\output\include\ibase.tmp
 echo #pragma message("Using raw, unprocessed concatenation of header files.") >> %ROOT_PATH%\output\include\ibase.tmp
 type %ROOT_PATH%\src\misc\ibase_header.txt >> %ROOT_PATH%\output\include\ibase.tmp
-type %ROOT_PATH%\src\include\fb_types.h >> %ROOT_PATH%\output\include\ibase.tmp
+type %ROOT_PATH%\src\include\types_pub.h >> %ROOT_PATH%\output\include\ibase.tmp
 type %ROOT_PATH%\src\jrd\dsc_pub.h >> %ROOT_PATH%\output\include\ibase.tmp
 type %ROOT_PATH%\src\dsql\sqlda_pub.h >> %ROOT_PATH%\output\include\ibase.tmp
 type %ROOT_PATH%\src\jrd\ibase.h >> %ROOT_PATH%\output\include\ibase.tmp
