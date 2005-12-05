@@ -1305,13 +1305,13 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		EXT_erase(rpb, reinterpret_cast<int*>(transaction));
 	else if (!relation->rel_view_rse)
 		VIO_erase(tdbb, rpb, transaction);
-		
+
 /* Handle post operation trigger */
 	jrd_req* trigger;
 	if (relation->rel_post_erase &&
 		which_trig != PRE_TRIG &&
 		(trigger = execute_triggers(tdbb, &relation->rel_post_erase,
-									rpb->rpb_record, 0,
+									rpb->rpb_record, NULL,
 									jrd_req::req_trigger_delete)))
 	{
 		VIO_bump_count(tdbb, DBB_delete_count, relation, true);
@@ -1597,12 +1597,6 @@ static jrd_req* execute_triggers(thread_db* tdbb,
  *	if any blow up.
  *
  **************************************/
-	jrd_req* trigger = NULL;
-
-	//DEV_BLKCHK(*triggers, type_vec);
-	DEV_BLKCHK(old_rec, type_rec);
-	DEV_BLKCHK(new_rec, type_rec);
-
 	if (!*triggers) {
 		return NULL;
 	}
@@ -1613,14 +1607,32 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 	trig_vec* vector = *triggers;
 	jrd_req* result = NULL;
 
+	Record* null_rec = NULL;
+
+	if (!old_rec || !new_rec) {
+		const Record* record = old_rec ? old_rec : new_rec;
+		fb_assert(record && record->rec_format);
+		// copy the record
+		null_rec = FB_NEW_RPT(record->rec_pool, record->rec_length) 
+			Record(record->rec_pool);
+		memcpy(null_rec, record, sizeof(Record));
+		// zero the record buffer
+		memset(null_rec->rec_data, 0, record->rec_length);
+		// initialize all fields to missing
+		const SSHORT n = (record->rec_format->fmt_count + 7) >> 3;
+		memset(null_rec->rec_data, 0xFF, n);
+	}
+
+	jrd_req* trigger = NULL;
+
 	try
 	{
 		for (trig_vec::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
 		{
 			ptr->compile(tdbb);
 			trigger = EXE_find_request(tdbb, ptr->request, false);
-			trigger->req_rpb[0].rpb_record = old_rec;
-			trigger->req_rpb[1].rpb_record = new_rec;
+			trigger->req_rpb[0].rpb_record = old_rec ? old_rec : null_rec;
+			trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec;
 			trigger->req_timestamp = tdbb->tdbb_request->req_timestamp;
 			trigger->req_trigger_action = trigger_action;
 			EXE_start(tdbb, trigger, transaction);
@@ -1634,15 +1646,16 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 			trigger = NULL;
 		}
 
+		delete null_rec;
 		if (vector != *triggers) {
 			MET_release_triggers(tdbb, &vector);
 		}
 
 		return result;
-
 	}
 	catch (const std::exception& ex)
 	{
+		delete null_rec;
 		if (vector != *triggers) {
 			MET_release_triggers(tdbb, &vector);
 		}
@@ -3084,8 +3097,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (relation->rel_post_modify &&
 			which_trig != PRE_TRIG &&
 			(trigger = execute_triggers(tdbb, &relation->rel_post_modify,
-										org_rpb->rpb_record,
-										new_rpb->rpb_record,
+										org_rpb->rpb_record, new_rpb->rpb_record,
 										jrd_req::req_trigger_update)))
 		{
 			VIO_bump_count(tdbb, DBB_update_count, relation, true);
@@ -3940,7 +3952,6 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
  *
  **************************************/
 	jrd_req* trigger;
-	Record* record;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
@@ -3968,7 +3979,6 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	case jrd_req::req_return:
 		if (impure->sta_state)
 			return node->nod_parent;
-		record = rpb->rpb_record;
 
 		if (transaction != dbb->dbb_sys_trans)
 			++transaction->tra_save_point->sav_verb_count;
@@ -3976,7 +3986,8 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (relation->rel_pre_store &&
 			(which_trig != POST_TRIG) &&
 			(trigger = execute_triggers(tdbb, &relation->rel_pre_store,
-										0, record, jrd_req::req_trigger_insert)))
+										NULL, rpb->rpb_record,
+										jrd_req::req_trigger_insert)))
 		{
 			trigger_failure(tdbb, trigger);
 		}
@@ -4016,7 +4027,8 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (relation->rel_post_store &&
 			(which_trig != PRE_TRIG) &&
 			(trigger = execute_triggers(tdbb, &relation->rel_post_store,
-										0, record, jrd_req::req_trigger_insert)))
+										NULL, rpb->rpb_record,
+										jrd_req::req_trigger_insert)))
 		{
 			VIO_bump_count(tdbb, DBB_insert_count, relation, true);
 			trigger_failure(tdbb, trigger);
@@ -4061,7 +4073,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    to "missing." */
 
 	const Format* format = MET_current(tdbb, relation);
-	record = VIO_record(tdbb, rpb, format, tdbb->getDefaultPool());
+	Record* record = VIO_record(tdbb, rpb, format, tdbb->getDefaultPool());
 
 	rpb->rpb_address = record->rec_data;
 	rpb->rpb_length = format->fmt_length;
