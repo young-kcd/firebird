@@ -1604,7 +1604,8 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 		// copy the record
 		null_rec = FB_NEW_RPT(record->rec_pool, record->rec_length) 
 			Record(record->rec_pool);
-		memcpy(null_rec, record, sizeof(Record));
+		null_rec->rec_length = record->rec_length;
+		null_rec->rec_format = record->rec_format;
 		// zero the record buffer
 		memset(null_rec->rec_data, 0, record->rec_length);
 		// initialize all fields to missing
