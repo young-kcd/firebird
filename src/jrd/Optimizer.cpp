@@ -42,6 +42,7 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/evl_proto.h"
+#include "../jrd/exe_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
@@ -269,18 +270,23 @@ bool OPT_expression_equal(thread_db* tdbb, OptimizerBlk* opt,
 	if (idx && idx->idx_expression_request && idx->idx_expression)
 	{
 		fb_assert(idx->idx_flags & idx_expressn);
-		fb_assert(idx->idx_expression_request->req_caller == NULL);
-		idx->idx_expression_request->req_caller = tdbb->tdbb_request;
-		tdbb->tdbb_request = idx->idx_expression_request;
+
+		jrd_req* expr_req = 
+			EXE_find_request(tdbb, idx->idx_expression_request, false);
+
+		fb_assert(expr_req->req_caller == NULL);
+		expr_req->req_caller = tdbb->tdbb_request;
+		tdbb->tdbb_request = expr_req;
 		bool result = false;
 		{
 			Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
 
-			result = OPT_expression_equal2(tdbb, opt, idx->idx_expression,
-										node, stream);
+			result = OPT_expression_equal2(tdbb, opt, idx->idx_expression, 
+				node, stream);
 		}
-		tdbb->tdbb_request = idx->idx_expression_request->req_caller;
-		idx->idx_expression_request->req_caller = NULL;
+		tdbb->tdbb_request = expr_req->req_caller;
+		expr_req->req_caller = NULL;
+		expr_req->req_flags &= ~req_in_use;
 
 		return result;
 	}
