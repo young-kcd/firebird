@@ -931,6 +931,7 @@ int common_main(int		argc,
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	dpb.insertString(isc_dpb_gbak_attach, GDS_VERSION, strlen(GDS_VERSION));
+	dpb.insertByte(isc_dpb_gsec_attach, 1);		// make it possible to have local security backups
 
 	for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++) {
 		if (in_sw_tab->in_sw_state) {
