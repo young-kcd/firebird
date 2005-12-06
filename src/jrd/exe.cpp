@@ -2554,7 +2554,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			break;
 
 		case nod_if:
-			if (request->req_operation == jrd_req::req_evaluate)
+			if (request->req_operation == jrd_req::req_evaluate) {
 				if (EVL_boolean(tdbb, node->nod_arg[e_if_boolean])) {
 					node = node->nod_arg[e_if_true];
 					request->req_operation = jrd_req::req_evaluate;
@@ -2565,8 +2565,10 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					request->req_operation = jrd_req::req_evaluate;
 					break;
 				}
-				else
+				else {
 					request->req_operation = jrd_req::req_return;
+				}
+			}
 			node = node->nod_parent;
 			break;
 
