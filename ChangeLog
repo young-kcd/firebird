@@ -1,3 +1,95 @@
+2005-12-06 02:02  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.158):
+	
+	Fixed problem "STARTING WITH and subselect CASE bug" reported by
+	Mustafa WILMAZ on fb-devel
+
+2005-12-05 23:13  hvlad
+
+	* firebird2/src/jrd/Optimizer.cpp (1.47):
+	
+	Use EXE_find_request in optimizer at index expression comparison to
+	avoid AV in case of using index simultaneously in some connections
+
+2005-12-05 14:42  dimitr
+
+	* firebird2/src/: include/fb_types.h (1.49), include/types_pub.h
+	(1.2), jrd/ibase.h (1.105):
+	
+	Fixed 64bit builds.
+
+2005-12-05 14:25  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.165):
+	
+	Fixed crash caused by my recent commit.
+
+2005-12-05 13:57  dimitr
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.66):
+	
+	Changed location of some defines in order to avoid internals inside
+	ibase.h.
+
+2005-12-05 13:45  dimitr
+
+	* firebird2/src/jrd/blb.cpp (1.105):
+	
+	Oops.
+
+2005-12-05 13:40  dimitr
+
+	* firebird2/src/jrd/: blb.cpp (1.104), blb_proto.h (1.23), exe.cpp
+	(1.164):
+	
+	1. Cleanup.  2. Made array->blob assignments possible.
+
+2005-12-05 12:45  alexpeshkoff
+
+	* firebird2/src/burp/burp.cpp (1.105):
+	
+	let use services to backup security database
+
+2005-12-05 12:44  dimitr
+
+	* firebird2/builds/win32/make_all.bat (1.38):
+	
+	Changed location of some defines in order to avoid internals inside
+	ibase.h.
+
+2005-12-05 12:39  dimitr
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall
+	.bat (1.14):
+	
+	Changed location of some defines in order to avoid internals inside
+	ibase.h.
+
+2005-12-05 12:31  dimitr
+
+	* firebird2/src/misc/headers.sed (1.5):
+	
+	Changed location of some defines in order to avoid internals inside
+	ibase.h.
+
+2005-12-05 12:28  dimitr
+
+	* firebird2/src/: include/fb_types.h (1.48), include/types_pub.h
+	(1.1), jrd/ibase.h (1.104), dsql/sqlda_pub.h (1.5):
+	
+	Changed location of some defines in order to avoid internals inside
+	ibase.h.
+
+2005-12-05 12:06  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.163):
+	
+	Let's explicitly initialize unavailable trigger contexts with NULLs
+	instead of relying on EVL_field.  This solves wrong error reporting
+	in universal triggers vs req_warning.
+
 2005-12-04 22:23  asfernandes
 
 	* firebird2/src/intl/collations/xx885913lt.h (1.3):
