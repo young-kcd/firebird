@@ -2770,6 +2770,9 @@ static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_
 
 	MOV_move(value, &impure->vlu_desc);
 
+	if (impure->vlu_desc.dsc_dtype == dtype_text)
+		adjust_text_descriptor(tdbb, &impure->vlu_desc);
+
 	return &impure->vlu_desc;
 }
 
