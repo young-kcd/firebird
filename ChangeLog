@@ -1,3 +1,15 @@
+2005-12-06 13:30  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.166):
+	
+	Misc.
+
+2005-12-06 11:11  dimitr
+
+	* firebird2/src/jrd/blb.cpp (1.106):
+	
+	More changes re. blobs handling.
+
 2005-12-06 02:02  asfernandes
 
 	* firebird2/src/jrd/evl.cpp (1.158):
