@@ -2,8 +2,9 @@
   * v1.5.3
   **************
 
-    * Fixed unregistered bug.
-        SuperServer lockups in some cases
+    * Fixed SF bug #1175157
+	Error in thread scheduler causes server to lockup 
+	in case if IO error at database attachment
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
