@@ -199,6 +199,9 @@ static const jrd_trg triggers[] =
 	{ "RDB$TRIGGER_35", (UCHAR) nam_chk_constr,
 		RDB$TRIGGERS.RDB$TRIGGER_TYPE.POST_ERASE, sizeof(trigger35),
 		trigger35, TRG_ignore_perm, ODS_8_1 },
+	{ "RDB$TRIGGER_36", (UCHAR) nam_fields,
+		RDB$TRIGGERS.RDB$TRIGGER_TYPE.PRE_MODIFY, sizeof(trigger36),
+		trigger36, 0, ODS_11_0 },
 	{ 0, 0, 0, 0, 0, 0 }
 };
 
@@ -241,6 +244,8 @@ static const trigger_msg trigger_messages[] =
 	{ "RDB$TRIGGER_31", 0, "no_write_user_priv", ODS_8_1 },
 	{ "RDB$TRIGGER_32", 0, "no_write_user_priv", ODS_8_1 },
 	{ "RDB$TRIGGER_33", 0, "no_write_user_priv", ODS_8_1 },
+	{ "RDB$TRIGGER_24", 2, "integ_index_seg_mod", ODS_11_0 },
+	{ "RDB$TRIGGER_36", 1, "integ_index_seg_mod", ODS_11_0 },
 	{ 0, 0, 0, 0 }
 };
 
