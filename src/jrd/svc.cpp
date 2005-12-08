@@ -1667,8 +1667,9 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 
 /* currently we do not use "anonymous" service for any purposes but
    isc_service_query() */
-	if (service->svc_user_flag == SVC_user_none)
+	if (service->svc_user_flag == SVC_user_none) {
 		ERR_post(isc_bad_spb_form, 0);
+	}
 
 	THD_MUTEX_LOCK(thd_mutex);
 	if (service->svc_flags & SVC_thd_running) {
@@ -1739,8 +1740,9 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 
 // All services except for get_ib_log require switches
 	spb.rewind();
-	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_ib_log)
+	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_ib_log) {
 		ERR_post(isc_bad_spb_form, 0);
+	}
 		
 #ifndef SERVICE_THREAD
 	TEXT service_path[MAXPATHLEN];
@@ -1984,8 +1986,9 @@ static void get_options(Firebird::ClumpletReader&	spb,
  *
  **************************************/
 	const UCHAR p = spb.getBufferTag();
-	if (p != isc_spb_version1 && p != isc_spb_current_version)
+	if (p != isc_spb_version1 && p != isc_spb_current_version) {
 		ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, 0);
+	}
 	options->spb_version = p;
 
 	for (spb.rewind(); !(spb.isEof()); spb.moveNext())
@@ -2971,7 +2974,7 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 				get_action_svc_data(spb, switches);
 				break;
 			case isc_spb_res_access_mode:
-				if (!get_action_svc_parameter(spb.getClumpTag(), burp_in_sw_table, switches))
+				if (!get_action_svc_parameter(*(spb.getBytes()), burp_in_sw_table, switches))
 				{
 					return false;
 				}
