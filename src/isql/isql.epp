@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.17 2005-05-12 07:04:30 robocop Exp $
+  $Id: isql.epp,v 1.32.2.18 2005-12-08 10:47:36 dimitr Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -816,7 +816,8 @@ void ISQL_errmsg( ISC_STATUS * status)
 	vec = status;
 	if (Quiet)
 		Exit_value = FINI_ERROR;
-	else {
+//	else
+	{
 		if (vec[0] != gds_arg_gds ||
 			(vec[0] == gds_arg_gds && vec[1] == 0
 			 && vec[2] != gds_arg_warning) || (vec[0] == gds_arg_gds
@@ -866,7 +867,8 @@ void ISQL_warning( ISC_STATUS * status)
 	vec = status;
 	fb_assert(vec[1] == 0);		/* shouldn't be any errors */
 
-	if (!Quiet) {
+//	if (!Quiet)
+	{
 		if (vec[0] != gds_arg_gds ||
 			vec[2] != gds_arg_warning ||
 			(vec[2] == gds_arg_warning && !Warnings)) return;
