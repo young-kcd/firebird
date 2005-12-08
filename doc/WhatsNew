@@ -3,6 +3,21 @@
   **************
 
     * Fixed unregistered bug.
+        SuperServer lockups in some cases
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC2 bug.
+        ISQL -q supresses error messages
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug.
+        Wrong permissions for the QLI help database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug.
         Wrong permissions for the QLI help database
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
