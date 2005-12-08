@@ -1500,7 +1500,6 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 
 /******************************************
  * Parameters for isc_spb_prp_access_mode *
- *            and isc_spb_res_access_mode *
  ******************************************/
 
 #define isc_spb_prp_am_readonly		39
