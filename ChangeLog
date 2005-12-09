@@ -1,3 +1,28 @@
+2005-12-09 03:23  robocop
+
+	* firebird2/: doc/WhatsNew (1.36.2.53), src/gpre/c_cxx.cpp
+	(1.20.2.3), src/gpre/gpre.cpp (1.26.2.3):
+	
+	Misc.
+
+2005-12-08 14:21  hvlad
+
+	* firebird2/doc/WhatsNew (1.36.2.52):
+	
+	Correct WhatsNew
+
+2005-12-08 11:52  dimitr
+
+	* firebird2/doc/WhatsNew (1.36.2.51):
+	
+	More docs.
+
+2005-12-08 11:47  dimitr
+
+	* firebird2/src/isql/isql.epp (1.32.2.18):
+	
+	Backported Claudio's fix for ISQL.
+
 2005-11-30 05:24  robocop
 
 	* firebird2/src/jrd/sch.cpp (1.6.2.6):
