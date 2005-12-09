@@ -27,7 +27,7 @@
    jrd/common.h but should not be exposed externally with those name so 
    are reproduced here MOD 15-07-2001
 */
-/* typedef char TEXT; */
+typedef char TEXT;
 #define FINI_OK 0
 #define FINI_ERROR 44
 
