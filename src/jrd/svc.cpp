@@ -137,6 +137,7 @@ namespace Jrd {
 
 	{
 		memset(svc_start_event, 0, sizeof svc_start_event);
+		memset(svc_status_array, 0, sizeof svc_status_array);
 	}
 	
 	Service::~Service()
@@ -324,10 +325,11 @@ void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value)
 			*status++ = reinterpret_cast<ISC_STATUS>(value);
 			break;
 		case isc_arg_string:
-			*status++ = type;
-			*status++ = (ISC_STATUS)
-			SVC_err_string(static_cast<const char*>(value),
-						   strlen(static_cast<const char*>(value)));
+			{
+				*status++ = type;
+				const char* s = static_cast<const char*>(value);
+				*status++ = (ISC_STATUS) SVC_err_string(s, strlen(s));
+			}
 			break;
 		default:
 			break;
@@ -566,7 +568,7 @@ Service* SVC_attach(USHORT	service_length,
 		service->svc_enc_password.resize(MAX_PASSWORD_LENGTH + 2);
 		ENC_crypt(service->svc_enc_password.begin(), service->svc_enc_password.length(), 
 				  options.spb_password.c_str(), PASSWORD_SALT);
-		service->svc_enc_password.resize(strlen(service->svc_enc_password.c_str()));
+		service->svc_enc_password.recalculate_length();
 		service->svc_enc_password.erase(0, 2);
 	}
 
@@ -1945,10 +1947,10 @@ THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
 #ifdef SERVICE_THREAD
 		*status++ = isc_sys_request;
 		if (!file) {
-			SVC_STATUS_ARG(status, isc_arg_string, (void*)"fopen");
+			SVC_STATUS_ARG(status, isc_arg_string, "fopen");
 		}
 		else {
-			SVC_STATUS_ARG(status, isc_arg_string, (void*)"fgets");
+			SVC_STATUS_ARG(status, isc_arg_string, "fgets");
 		}
 		*status++ = SYS_ARG;
 		*status++ = errno;
@@ -2459,7 +2461,8 @@ static void service_fork(TEXT* service_path, Service* service)
 		*arg = p;
 		while (*p = *q++)
 		{
-			if (*p == ' ') break;
+			if (*p == ' ')
+				break;
 
 			if (*p == SVC_TRMNTR)
 			{

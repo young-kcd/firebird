@@ -492,7 +492,7 @@ void SecurityDatabase::verifyUser(TEXT* name,
 		{
 			newHash.resize(MAX_PASSWORD_LENGTH + 2);
 			ENC_crypt(newHash.begin(), newHash.length(), password_enc, PASSWORD_SALT);
-			newHash.resize(strlen(newHash.c_str()));
+			newHash.recalculate_length();
 			newHash.erase(0, 2);
 			legacyHash = newHash == storedHash;
 		}
