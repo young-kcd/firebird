@@ -1,3 +1,30 @@
+2005-12-08 16:33  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.158):
+	
+	fixed problem with isc_spb_res_access_mode
+
+2005-12-08 16:20  alexpeshkoff
+
+	* firebird2/src/jrd/ibase.h (1.107):
+	
+	rolled back my last change - was done due to bug in ib6.0
+	documentation
+
+2005-12-08 16:16  alexpeshkoff
+
+	* firebird2/src/jrd/ibase.h (1.106):
+	
+	fixed comment
+
+2005-12-08 14:52  dimitr
+
+	* firebird2/src/jrd/: ini.epp (1.73), trig.h (1.17):
+	
+	An attempt to fix the regression with allowed updates of
+	index-constrained columns.  No guarantees that it won't cause some
+	MET/DFW conflicts, but I'm out of better ideas.
+
 2005-12-06 13:30  dimitr
 
 	* firebird2/src/jrd/exe.cpp (1.166):
