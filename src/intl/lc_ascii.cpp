@@ -347,6 +347,14 @@ TEXTTYPE_ENTRY(KOI8U_c0_init)
 }
 
 
+TEXTTYPE_ENTRY(WIN1258_c0_init)
+{
+	static const ASCII POSIX[] = "C.ISO8859_1";
+
+	return FAMILY_ASCII(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
 /*
  * Generic base for InterBase 4.0 Language Driver - ASCII family (binary
  * 8 bit sorting)

@@ -195,6 +195,8 @@ EXTERN_texttype(KOI8R_c1_init);
 EXTERN_texttype(KOI8U_c0_init);
 EXTERN_texttype(KOI8U_c1_init);
 
+EXTERN_texttype(WIN1258_c0_init);
+
 EXTERN_charset(CS_iso_ISO8859_1);
 EXTERN_charset(CS_iso_ISO8859_2);
 EXTERN_charset(CS_iso_ISO8859_3);
@@ -241,6 +243,8 @@ EXTERN_charset(CS_ksc_5601);
 
 EXTERN_charset(CS_koi8r);
 EXTERN_charset(CS_koi8u);
+
+EXTERN_charset(CS_win1258);
 
 EXTERN_texttype(BIG5_init);
 EXTERN_texttype(KSC_5601_init);

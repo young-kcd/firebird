@@ -90,8 +90,10 @@ CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 #define   CS_KOI8R              63	/* Russian KOI8R */
 #define   CS_KOI8U              64	/* Ukrainian KOI8U */
 
+#define   CS_WIN1258            65	/* Windows cp 1257  */
+
 #define   CS_dynamic           127	/* Pseudo number for runtime charset */
 
-#define   CS_MAX_CS_NUMBER      64
+#define   CS_MAX_CS_NUMBER      65
 
 #endif /* INTL_CHARSETS_H */

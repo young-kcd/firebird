@@ -380,3 +380,12 @@ CHARSET_ENTRY(CS_koi8u)
 					 from_unicode_mapping_array, from_unicode_map);
 	CHARSET_RETURN;
 }
+
+CHARSET_ENTRY(CS_win1258)
+{
+#include "../intl/charsets/cs_w1258.h"
+
+	common_8bit_init(csptr, "WIN1258", to_unicode_map,
+					 from_unicode_mapping_array, from_unicode_map);
+	CHARSET_RETURN;
+}
