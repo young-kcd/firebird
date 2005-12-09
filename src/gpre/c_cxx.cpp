@@ -27,7 +27,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: c_cxx.cpp,v 1.20.2.2 2005-10-24 16:51:46 awharrison Exp $
+//	$Id: c_cxx.cpp,v 1.20.2.3 2005-12-09 02:23:37 robocop Exp $
 //
 
 #include "firebird.h"
@@ -2255,7 +2255,7 @@ static void gen_event_wait( ACT action, int column)
 		event_init = (GPRE_NOD) event_action->act_object;
 		stack_name = (SYM) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
-			ident = (ULONG) event_init->nod_arg[2];
+			ident = (int) event_init->nod_arg[2];
 			database = (DBB) event_init->nod_arg[3];
 		}
 	}
