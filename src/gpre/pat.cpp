@@ -218,7 +218,8 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			break;
 
 		case RI:
-			value = args->pat_request->req_ident;
+			long_value = args->pat_request->req_ident;
+			long_flag = true;
 			sw_ident = true;
 			break;
 
@@ -240,7 +241,8 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			break;
 
 		case PI:
-			value = args->pat_port->por_ident;
+			long_value = args->pat_port->por_ident;
+			long_flag = true;
 			sw_ident = true;
 			break;
 
@@ -253,22 +255,26 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			break;
 
 		case QI:
-			value = args->pat_port2->por_ident;
+			long_value = args->pat_port2->por_ident;
+			long_flag = true;
 			sw_ident = true;
 			break;
 
 		case BH:
-			value = args->pat_blob->blb_ident;
+			long_value = args->pat_blob->blb_ident;
+			long_flag = true;
 			sw_ident = true;
 			break;
 
 		case I1:
-			value = args->pat_ident1;
+			long_value = args->pat_ident1;
+			long_flag = true;
 			sw_ident = true;
 			break;
 
 		case I2:
-			value = args->pat_ident2;
+			long_value = args->pat_ident2;
+			long_flag = true;
 			sw_ident = true;
 			break;
 
@@ -373,7 +379,12 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			continue;
 		}
 		if (sw_ident)
-			sprintf(p, gpreGlob.ident_pattern, value);
+		{
+			if (long_flag)
+				sprintf(p, gpreGlob.long_ident_pattern, long_value);
+			else
+				sprintf(p, gpreGlob.ident_pattern, value);
+		}	
 		else if (reference) {
 			if (!reference->ref_port)
 				sprintf(p, gpreGlob.ident_pattern, reference->ref_ident);

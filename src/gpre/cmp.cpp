@@ -25,7 +25,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: cmp.cpp,v 1.32 2004-06-03 07:31:09 robocop Exp $
+//	$Id: cmp.cpp,v 1.33 2005-12-09 05:07:57 robocop Exp $
 //
 
 #include "firebird.h"
@@ -75,7 +75,7 @@ static GPRE_NOD lit0, lit1;
 static gpre_fld* eof_field;
 static gpre_fld* count_field;
 static gpre_fld* slack_byte_field;
-static USHORT next_ident;
+static ULONG next_ident;
 
 //#define STUFF(blr)	*request->req_blr++ = (UCHAR)(blr)
 //#define STUFF_WORD(blr) {STUFF (blr); STUFF ((blr) >> 8);}
@@ -359,7 +359,7 @@ void CMP_init(void)
 //		Give out next identifier.
 //  
 
-USHORT CMP_next_ident(void)
+ULONG CMP_next_ident(void)
 {
 	return next_ident++;
 }

@@ -1302,11 +1302,11 @@ static int gen_cursor_close( const act* action, const gpre_req* request, int col
 {
 	PAT args;
 	const TEXT* pattern1 =
-		"if (%RIs && !isc_dsql_free_statement (%V1, &%RIs, %N1))";
+		"if (%RIs && !isc_dsql_free_statement (%V1, &%RIs, %L1))";
 
 	args.pat_request = request;
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = 1;
+	args.pat_long1 = 1;
 
 	PATTERN_expand((USHORT) column, pattern1, &args);
 	column += INDENT;
@@ -2005,11 +2005,11 @@ static SSHORT gen_event_block( const act* action)
 static void gen_event_init( const act* action, int column)
 {
 	const TEXT* pattern1 =
-		"isc_%N1l = isc_event_block (&isc_%N1a, &isc_%N1b, (short) %N2";
+		"isc_%L1l = isc_event_block (&isc_%L1a, &isc_%L1b, (short) %N2";
 	const TEXT* pattern2 =
-		"isc_wait_for_event (%V1, &%DH, isc_%N1l, isc_%N1a, isc_%N1b);";
+		"isc_wait_for_event (%V1, &%DH, isc_%L1l, isc_%L1a, isc_%L1b);";
 	const TEXT* pattern3 =
-		"isc_event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
+		"isc_event_counts (isc_events, isc_%L1l, isc_%L1a, isc_%L1b);";
 
 	if (action->act_error)
 		begin(column);
@@ -2021,7 +2021,7 @@ static void gen_event_init( const act* action, int column)
 	PAT args;
 	args.pat_database = (DBB) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (IPTR) init->nod_arg[2];
+	args.pat_long1 = (IPTR) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
 
 //  generate call to dynamically generate event blocks 
@@ -2069,9 +2069,9 @@ static void gen_event_wait( const act* action, int column)
 	PAT args;
 	TEXT s[64];
 	const TEXT* pattern1 =
-		"isc_wait_for_event (%V1, &%DH, isc_%N1l, isc_%N1a, isc_%N1b);";
+		"isc_wait_for_event (%V1, &%DH, isc_%L1l, isc_%L1a, isc_%L1b);";
 	const TEXT* pattern2 =
-		"isc_event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
+		"isc_event_counts (isc_events, isc_%L1l, isc_%L1a, isc_%L1b);";
 
 	if (action->act_error)
 		begin(column);
@@ -2102,7 +2102,7 @@ static void gen_event_wait( const act* action, int column)
 
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = ident;
+	args.pat_long1 = ident;
 
 //  generate calls to wait on the event and to fill out the gpreGlob.events array 
 

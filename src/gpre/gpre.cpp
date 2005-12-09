@@ -323,6 +323,7 @@ int main(int argc, char* argv[])
 	comment_start				= "/*";
 	comment_stop				= "*/";
 	gpreGlob.ident_pattern		= "gds__%d";
+	gpreGlob.long_ident_pattern	= "gds__%ld";
 	gpreGlob.transaction_name	= "gds__trans";
 	gpreGlob.database_name		= "gds__database";
 	gpreGlob.utility_name		= "gds__utility";
@@ -461,8 +462,9 @@ int main(int argc, char* argv[])
 		switch (sw_tab->sw_in_sw)
 		{
 		case IN_SW_GPRE_C:
-			gpreGlob.sw_language		= lang_c;
+			gpreGlob.sw_language	= lang_c;
 			gpreGlob.ident_pattern	= "isc_%d";
+			gpreGlob.long_ident_pattern	= "isc_%ld";
 			gpreGlob.utility_name	= "isc_utility";
 			gpreGlob.count_name		= "isc_count";
 			gpreGlob.slack_name		= "isc_slack";
@@ -471,8 +473,9 @@ int main(int argc, char* argv[])
 		case IN_SW_GPRE_SCXX:
 		case IN_SW_GPRE_CXX:
 		case IN_SW_GPRE_CPLUSPLUS:
-			gpreGlob.sw_language		= lang_cxx;
+			gpreGlob.sw_language	= lang_cxx;
 			gpreGlob.ident_pattern	= "isc_%d";
+			gpreGlob.long_ident_pattern	= "isc_%ld";
 			gpreGlob.utility_name	= "isc_utility";
 			gpreGlob.count_name		= "isc_count";
 			gpreGlob.slack_name		= "isc_slack";
@@ -544,6 +547,7 @@ int main(int argc, char* argv[])
 			gpreGlob.transaction_name = "gds_trans";
 			gpreGlob.database_name = "isc_database";
 			gpreGlob.ident_pattern = "isc_%d";
+			gpreGlob.long_ident_pattern	= "isc_%ld";
 			comment_start = "--";
 			if (db)
 				db->dbb_name->sym_string = "isc_database";
@@ -563,6 +567,7 @@ int main(int argc, char* argv[])
 			gpreGlob.transaction_name = "gds_trans";
 			gpreGlob.database_name = "isc_database";
 			gpreGlob.ident_pattern = "isc_%d";
+			gpreGlob.long_ident_pattern	= "isc_%ld";
 			comment_start = "--";
 			if (db)
 				db->dbb_name->sym_string = "isc_database";
@@ -588,6 +593,7 @@ int main(int argc, char* argv[])
 			// Change the patterns for v4.0 
 
 			gpreGlob.ident_pattern = "isc_%d";
+			gpreGlob.long_ident_pattern	= "isc_%ld";
 			gpreGlob.utility_name = "isc_utility";
 			gpreGlob.count_name = "isc_count";
 			gpreGlob.slack_name = "isc_slack";
@@ -657,6 +663,7 @@ int main(int argc, char* argv[])
 			gpreGlob.sw_know_interp = FALSE;
 			gpreGlob.sw_interp = 0;
 			gpreGlob.ident_pattern = "isc_%d"; 
+			gpreGlob.long_ident_pattern	= "isc_%ld";
 			gpreGlob.utility_name = "isc_utility";
 			gpreGlob.count_name = "isc_count";
 			gpreGlob.slack_name = "isc_slack";
@@ -768,6 +775,7 @@ int main(int argc, char* argv[])
 				db->dbb_name->sym_string = "isc-database";
 			comment_start = "      *  ";
 			gpreGlob.ident_pattern = "isc-%d";
+			gpreGlob.long_ident_pattern	= "isc-%ld";
 			gpreGlob.transaction_name = "isc-trans";
 			gpreGlob.database_name = "isc-database";
 			gpreGlob.utility_name = "isc-utility";
