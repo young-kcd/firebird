@@ -3024,7 +3024,7 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 			case isc_spb_prp_write_mode:
 			case isc_spb_prp_access_mode:
 			case isc_spb_prp_reserve_space:
-				if (!get_action_svc_parameter(spb.getClumpTag(), alice_in_sw_table, switches))
+				if (!get_action_svc_parameter(*(spb.getBytes()), alice_in_sw_table, switches))
 				{
 					return false;
 				}
