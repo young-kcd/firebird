@@ -859,14 +859,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		// incompatible datatypes are prohibited
 		ERR_post(isc_convert_error, isc_arg_string, "BLOB", 0);
 	}
-// dimitr:	I followed Claudio's suggestion to temporarily forbid
-//			array->array assignments as not reliable (currently
-//			it's possible to assign CHAR[3] to INT[2] etc - no
-//			compatibility checks are performed).
-//
-//	else if (from_desc->dsc_dtype != dtype_array
-//		&& to_desc->dsc_dtype == dtype_array)
-	else if (to_desc->dsc_dtype == dtype_array)
+	else if (from_desc->dsc_dtype != dtype_array
+		&& to_desc->dsc_dtype == dtype_array)
 	{
 		// something->array conversions are prohibited
 		ERR_post(isc_convert_error, isc_arg_string, "BLOB", 0);
