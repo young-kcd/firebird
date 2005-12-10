@@ -284,13 +284,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_prp_reserve_space:
 			case isc_spb_prp_write_mode:
 			case isc_spb_prp_access_mode:
-			case isc_spb_prp_wm_async:
-			case isc_spb_prp_wm_sync:
-			case isc_spb_prp_res_use_full:
-			case isc_spb_prp_res:
-			case isc_spb_prp_am_readonly:
-			case isc_spb_prp_am_readwrite:
-				return SingleTpb;
+				return ByteSpb;
 			}
 			invalid_structure("unknown parameter for setting database properties");
 			break;
