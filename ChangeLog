@@ -1,3 +1,33 @@
+2005-12-09 22:50  asfernandes
+
+	* firebird2/: builds/install/misc/fbintl.conf (1.8),
+	src/intl/charsets.h (1.8), src/intl/cs_narrow.cpp (1.8),
+	src/intl/lc_ascii.cpp (1.17), src/intl/ld.cpp (1.17),
+	src/intl/charsets/cs_w1258.h (1.1), src/jrd/intlnames.h (1.18):
+	
+	Add Vietnamese charset WIN1258 - contributed by Nguyen The Phuong
+
+2005-12-09 11:17  dimitr
+
+	* firebird2/examples/empbuild/empbuild.e (1.6):
+	
+	Fixed compilation of empbuild.
+
+2005-12-09 06:07  robocop
+
+	* firebird2/src/gpre/: c_cxx.cpp (1.66), cmp.cpp (1.33),
+	cmp_proto.h (1.13), gpre.cpp (1.75), gpre.h (1.81), pat.cpp (1.28):
+	
+	Forward-port Ann's enhancement to gpre to allow more range for
+	identifiers (more changes may be needed in the future to complete
+	the feature).
+
+2005-12-09 06:00  robocop
+
+	* firebird2/src/jrd/: pwd.cpp (1.48), svc.cpp (1.159):
+	
+	Misc.
+
 2005-12-08 16:33  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.158):
