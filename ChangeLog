@@ -1,3 +1,28 @@
+2005-12-10 11:25  dimitr
+
+	* firebird2/src/jrd/blb.cpp (1.107):
+	
+	Rolled back one of my previous commits.  We cannot forbid
+	array->array assignments.
+
+2005-12-10 11:15  dimitr
+
+	* firebird2/src/jrd/svc.cpp (1.160):
+	
+	Fixed regressions with SAPI.
+
+2005-12-10 11:15  dimitr
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.17):
+	
+	Undone my changes in clumplets to follow Alex's solution.
+
+2005-12-10 11:05  dimitr
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.16):
+	
+	Fixed regressions with SAPI.
+
 2005-12-09 22:50  asfernandes
 
 	* firebird2/: builds/install/misc/fbintl.conf (1.8),
