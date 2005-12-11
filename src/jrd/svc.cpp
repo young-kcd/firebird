@@ -1209,6 +1209,11 @@ ISC_STATUS SVC_query2(Service* service,
 				}
 			}
 			break;
+
+		default:
+			*status++ = isc_wish_list;
+			*status++ = isc_arg_end;
+			break;
 		}
 
 		if (service->svc_user_flag == SVC_user_none)
