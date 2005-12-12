@@ -848,7 +848,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	if (to_desc->dsc_dtype == dtype_array)
 	{
 		// only array->array conversions are allowed
-		if (from_desc->dsc_dtype != dtype_array)
+		if (from_desc->dsc_dtype != dtype_array &&
+			from_desc->dsc_dtype != dtype_quad)
 		{
 			ERR_post(isc_array_convert_error, 0);
 		}
