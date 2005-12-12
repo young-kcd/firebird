@@ -2996,6 +2996,8 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('invalid_time_precision', NULL, 'par.cpp', NULL, 0, 539, NULL, 'Time precision exceeds allowed range (0-%d)', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'DYN_mod.epp', 'modify_sql_field', NULL, 8, 229, NULL, 'Local column %s doesn''t have a default', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'DYN_mod.epp', 'modify_sql_field', NULL, 8, 230, NULL, 'Local column %s default belongs to domain %s', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('blob_convert_error', 'BLB_move', 'blb.cpp', NULL, 0, 540, NULL, 'Unsupported conversion to target type BLOB (subtype %d)', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('array_convert_error', 'BLB_move', 'blb.cpp', NULL, 0, 541, NULL, 'Unsupported conversion to target type ARRAY', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('record_lock_not_supp', 'RSE_get_record', 'rse.cpp', NULL, 0, 542, NULL, 'Stream does not support record locking', NULL, NULL);
 
 COMMIT WORK;
-
