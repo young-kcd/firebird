@@ -457,10 +457,19 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 
 			// Skip nodes without streams
 			while (table_rsb->rsb_type == rsb_boolean ||
-				    table_rsb->rsb_type == rsb_first ||
-					table_rsb->rsb_type == rsb_skip)
+				   table_rsb->rsb_type == rsb_sort ||
+				   table_rsb->rsb_type == rsb_first ||
+				   table_rsb->rsb_type == rsb_skip)
 			{
 				table_rsb = table_rsb->rsb_next;
+			}
+
+			// Raise error if we cannot lock this kind of stream
+			if (table_rsb->rsb_type != rsb_sequential &&
+				table_rsb->rsb_type != rsb_indexed &&
+				table_rsb->rsb_type != rsb_navigate)
+			{
+				ERR_post(isc_record_lock_not_supp, 0);
 			}
 
 			record_param* org_rpb = request->req_rpb + table_rsb->rsb_stream;
@@ -468,7 +477,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 
 			// Raise error if we cannot lock this kind of stream
 			if (!relation || relation->rel_view_rse || relation->rel_file) {
-				ERR_post(isc_random, isc_arg_string, "Unsupported RSE construct for blr_writelock operation", 0);
+				ERR_post(isc_record_lock_not_supp, 0);
 			}
 
 			RLCK_reserve_relation(tdbb, transaction, relation, true, true);
