@@ -1607,8 +1607,8 @@ static const UCHAR trigger19[] = {
 
 /******
 static const TEXT trigger_20_msg_0 [] = "Can't modify index used by an Integrity Constraint";
-static const TEXT trigger_20_msg_1 [] = "Can't deactivate index used by an Integrity Constraint";
-static const TEXT trigger_20_msg_2 [] = "Can't deactivate a primary index";
+static const TEXT trigger_20_msg_1 [] = "Can't deactivate index used by an integrity constraint";
+static const TEXT trigger_20_msg_2 [] = "Can't deactivate index used by a PRIMARY/UNIQUE constraint";
 ******/
 
 static const UCHAR trigger20[] = {
@@ -1724,6 +1724,11 @@ static const UCHAR trigger20[] = {
 		'I', 'N', 'T', '_', 'T', 'Y', 'P', 'E',
 	blr_literal, blr_text, 11, 0, 'P', 'R', 'I', 'M', 'A', 'R', 'Y', 32, 'K',
 		'E', 'Y',
+	blr_or,
+	blr_eql,
+	blr_field, 7, 19, 'R', 'D', 'B', '$', 'C', 'O', 'N', 'S', 'T', 'R', 'A',
+		'I', 'N', 'T', '_', 'T', 'Y', 'P', 'E',
+	blr_literal, blr_text, 6, 0, 'U', 'N', 'I', 'Q', 'U', 'E',
 	blr_eql,
 	blr_field, 7, 19, 'R', 'D', 'B', '$', 'C', 'O', 'N', 'S', 'T', 'R', 'A',
 		'I', 'N', 'T', '_', 'T', 'Y', 'P', 'E',
@@ -1750,10 +1755,10 @@ static const UCHAR trigger20[] = {
 	blr_eql,
 	blr_field, 7, 19, 'R', 'D', 'B', '$', 'C', 'O', 'N', 'S', 'T', 'R', 'A',
 		'I', 'N', 'T', '_', 'T', 'Y', 'P', 'E',
-	blr_literal, blr_text, 11, 0, 'P', 'R', 'I', 'M', 'A', 'R', 'Y', 32, 'K',
+	blr_literal, blr_text, 11, 0, 'F', 'O', 'R', 'E', 'I', 'G', 'N', 32, 'K',
 		'E', 'Y',
-	blr_leave, 3,
 	blr_leave, 2,
+	blr_leave, 3,
 	blr_end,
 	blr_end,
 	blr_end,

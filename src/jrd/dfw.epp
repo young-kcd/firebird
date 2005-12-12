@@ -1723,50 +1723,62 @@ static bool create_index(	thread_db*	tdbb,
 			if (idx.idx_flags & idx_foreign)
 			{
 				idx.idx_id = MAX_USHORT;
-				if (MET_lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()) &&
-					(partner_relation = 
-						MET_lookup_relation_id(tdbb, idx.idx_primary_relation, true)) )
+
+				if (MET_lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()))
 				{
-					// Get an protected_read lock on the both relations if the index being
-					// defined enforces a foreign key constraint. This will prevent
-					// the constraint from being violated during index construction. 
-					
-					relationLock = protect_relation(tdbb, transaction, relation, releaseRelationLock);
-					partnerLock = protect_relation(tdbb, transaction, partner_relation, releasePartnerLock);
-					
-					int bad_segment;
-					if (!IDX_check_master_types(tdbb, idx, partner_relation, bad_segment))
-					{
-						ERR_post(isc_no_meta_update,
-								isc_arg_gds, isc_partner_idx_incompat_type, 
-								isc_arg_number, bad_segment + 1,
-								0);
-					}
+					partner_relation = 
+						MET_lookup_relation_id(tdbb, idx.idx_primary_relation, true);
+				}
+
+				if (!partner_relation)
+				{
+					Firebird::MetaName constraint_name;
+					MET_lookup_cnstrt_for_index(tdbb, constraint_name, work->dfw_name);
+					ERR_post(isc_partner_idx_not_found,
+							 isc_arg_string, ERR_cstring(constraint_name), 0);
+				}
+
+				// Get an protected_read lock on the both relations if the index being
+				// defined enforces a foreign key constraint. This will prevent
+				// the constraint from being violated during index construction. 
+				
+				relationLock =
+					protect_relation(tdbb, transaction,
+									 relation, releaseRelationLock);
+				partnerLock =
+					protect_relation(tdbb, transaction,
+									 partner_relation, releasePartnerLock);
+				
+				int bad_segment;
+				if (!IDX_check_master_types(tdbb, idx, partner_relation, bad_segment))
+				{
+					ERR_post(isc_no_meta_update,
+							isc_arg_gds, isc_partner_idx_incompat_type, 
+							isc_arg_number, bad_segment + 1,
+							0);
+				}
 
 /* hvlad: this code was never called but i preserve it for Claudio review and decision
 
-					// CVC: Currently, the server doesn't enforce FK creation more than at DYN level.
-					// If DYN is bypassed, then FK creation succeeds and operation will fail at run-time.
-					// The aim is to check REFERENCES at DDL time instead of DML time and behave accordingly
-					// to ANSI SQL rules for REFERENCES rights.
-					// For testing purposes, I'm calling SCL_check_index, although most of the DFW ops are
-					// carried using internal metadata structures that are refreshed from system tables. 
+				// CVC: Currently, the server doesn't enforce FK creation more than at DYN level.
+				// If DYN is bypassed, then FK creation succeeds and operation will fail at run-time.
+				// The aim is to check REFERENCES at DDL time instead of DML time and behave accordingly
+				// to ANSI SQL rules for REFERENCES rights.
+				// For testing purposes, I'm calling SCL_check_index, although most of the DFW ops are
+				// carried using internal metadata structures that are refreshed from system tables. 
 
-					if (partner_relation)
-					{
-						// Don't bother if the master's owner is the same than the detail's owner.
-						// If both tables aren't defined in the same session, partner_relation->rel_owner_name
-						// won't be loaded hence, we need to be careful about null pointers. 
+				// Don't bother if the master's owner is the same than the detail's owner.
+				// If both tables aren't defined in the same session, partner_relation->rel_owner_name
+				// won't be loaded hence, we need to be careful about null pointers. 
 
-						if (relation->rel_owner_name.length() == 0 || 
-							partner_relation->rel_owner_name.length() == 0 ||
-							relation->rel_owner_name != partner_relation->rel_owner_name)
-						{
-							SCL_check_index(tdbb, partner_relation->rel_name, idx.idx_id + 1, SCL_sql_references);
-						}
-					}
-*/
+				if (relation->rel_owner_name.length() == 0 || 
+					partner_relation->rel_owner_name.length() == 0 ||
+					relation->rel_owner_name != partner_relation->rel_owner_name)
+				{
+					SCL_check_index(tdbb, partner_relation->rel_name,
+									idx.idx_id + 1, SCL_sql_references);
 				}
+*/
 			}
 
 			fb_assert(work->dfw_id == dbb->dbb_max_idx);
@@ -1781,12 +1793,14 @@ static bool create_index(	thread_db*	tdbb,
 				relation->rel_flags |= REL_check_partners;
 
 				// signal to other processes about new constraint
-				LCK_convert_non_blocking(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+				LCK_convert_non_blocking(tdbb, relation->rel_partners_lock,
+										 LCK_EX, LCK_WAIT);
 				LCK_release(tdbb, relation->rel_partners_lock);
 
 				if (relation != partner_relation) {
 					partner_relation->rel_flags |= REL_check_partners;
-					LCK_convert_non_blocking(tdbb, partner_relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+					LCK_convert_non_blocking(tdbb, partner_relation->rel_partners_lock,
+											 LCK_EX, LCK_WAIT);
 					LCK_release(tdbb, partner_relation->rel_partners_lock);
 				}
 			}
