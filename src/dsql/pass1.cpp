@@ -550,6 +550,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		DEV_BLKCHK(field, dsql_type_fld);
 		DDL_resolve_intl_type(request, field, NULL);
 		MAKE_desc_from_field(&node->nod_desc, field);
+		set_parameter_type(request, node, NULL, false);
 		// If the source is nullable, so is the target
 		MAKE_desc(request, &sub1->nod_desc, sub1, NULL);
 		if (sub1->nod_desc.dsc_flags & DSC_nullable)
@@ -1004,11 +1005,11 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		sub2 = node->nod_arg[1];
 
 		/* Try to force sub1 to be same type as sub2 eg: ? = FIELD case */
-		if (set_parameter_type(request, sub1, sub2, false))
-			; // nothing
-		else
+		if (!set_parameter_type(request, sub1, sub2, false))
+		{
 			/* That didn't work - try to force sub2 same type as sub 1 eg: FIELD = ? case */
 			set_parameter_type(request, sub2, sub1, false);
+		}
 
 		/* X BETWEEN Y AND ? case */
 		if (!set_parameter_type(request, sub3, sub1, false))
@@ -1029,14 +1030,18 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		sub2 = node->nod_arg[1];
 
 		/* Try to force sub1 to be same type as sub2 eg: ? LIKE FIELD case */
-		if (set_parameter_type(request, sub1, sub2, true))
-			; // nothing
-		else
+		if (!set_parameter_type(request, sub1, sub2, true))
+		{
 			/* That didn't work - try to force sub2 same type as sub 1 eg: FIELD LIKE ? case */
 			set_parameter_type(request, sub2, sub1, true);
+		}
 
 		/* X LIKE Y ESCAPE ? case */
 		set_parameter_type(request, sub3, sub2, true);
+		break;
+
+	case nod_missing:
+		set_parameter_type(request, node, NULL, false);
 		break;
 
 	case nod_trim:
@@ -8021,6 +8026,10 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 	{
 		case nod_parameter:
 			{
+				if (!node) {
+					return false;
+				}
+
 				MAKE_desc(request, &in_node->nod_desc, node, NULL);
 
 				if (in_node->nod_desc.dsc_dtype <= dtype_any_text && request->req_dbb->dbb_att_charset != CS_NONE &&
@@ -8099,10 +8108,22 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 			}
 
 		case nod_cast:
-			// Unable to guess parameters within a CAST() statement - as
-			// any datatype could be the input to cast.
-			return false;
+			{
+				dsql_nod* par_node = in_node->nod_arg[e_cast_source];
+				dsql_fld* field = (dsql_fld*) in_node->nod_arg[e_cast_target];
+				if (par_node->nod_type == nod_parameter) {
+					dsql_par* parameter =
+						(dsql_par*) par_node->nod_arg[e_par_parameter];
+					DEV_BLKCHK(parameter, dsql_type_par);
+					parameter->par_desc = par_node->nod_desc;
+					parameter->par_node = par_node;
+					MAKE_desc_from_field(&parameter->par_desc, field);
+					return true;
+				}
+				return false;
+			}
 
+		case nod_missing:
 		case nod_add:
 		case nod_add2:
 		case nod_concatenate:
