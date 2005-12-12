@@ -845,25 +845,34 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (DTYPE_IS_TEXT(from_desc->dsc_dtype)
-		&& to_desc->dsc_dtype == dtype_blob)
+	if (to_desc->dsc_dtype == dtype_array)
 	{
-		// any string can be copied into a blob
-		move_from_string(tdbb, from_desc, to_desc, field);
-		return;
+		// only array->array conversions are allowed
+		if (from_desc->dsc_dtype != dtype_array)
+		{
+			ERR_post(isc_array_convert_error, 0);
+		}
 	}
-	else if (from_desc->dsc_dtype != dtype_quad
-		&& from_desc->dsc_dtype != dtype_blob
-		&& from_desc->dsc_dtype != dtype_array)
+	else if (to_desc->dsc_dtype == dtype_blob)
 	{
-		// incompatible datatypes are prohibited
-		ERR_post(isc_convert_error, isc_arg_string, "BLOB", 0);
+		if (DTYPE_IS_TEXT(from_desc->dsc_dtype))
+		{
+			// any string can be copied into a blob
+			move_from_string(tdbb, from_desc, to_desc, field);
+			return;
+		}
+		else if (from_desc->dsc_dtype != dtype_quad &&
+				 from_desc->dsc_dtype != dtype_blob &&
+				 from_desc->dsc_dtype != dtype_array)
+		{
+			// incompatible datatypes are prohibited
+			ERR_post(isc_blob_convert_error,
+					 isc_arg_number, to_desc->dsc_sub_type, 0);
+		}
 	}
-	else if (from_desc->dsc_dtype != dtype_array
-		&& to_desc->dsc_dtype == dtype_array)
+	else
 	{
-		// something->array conversions are prohibited
-		ERR_post(isc_convert_error, isc_arg_string, "BLOB", 0);
+		fb_assert(false);
 	}
 
 	bid* source = (bid*) from_desc->dsc_address;
