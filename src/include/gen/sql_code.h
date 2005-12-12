@@ -560,6 +560,9 @@ static const struct {
 	{335544857, -904}, /* 537 blobtoobig                       */
 	{335544858, -607}, /* 538 must_have_phys_field             */
 	{335544859, -901}, /* 539 invalid_time_precision           */
+	{335544860, -413}, /* 540 blob_convert_error               */
+	{335544861, -413}, /* 541 array_convert_error              */
+	{335544862, -904}, /* 542 record_lock_not_supp             */
 	{335740929, -901}, /*   1 gfix_db_name                     */
 	{335740930, -901}, /*   2 gfix_invalid_sw                  */
 	{335740932, -901}, /*   4 gfix_incmp_sw                    */

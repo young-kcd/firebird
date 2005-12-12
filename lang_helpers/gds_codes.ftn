@@ -1130,6 +1130,12 @@ C --
       PARAMETER (GDS__must_have_phys_field             = 335544858)
       INTEGER*4 GDS__invalid_time_precision          
       PARAMETER (GDS__invalid_time_precision           = 335544859)
+      INTEGER*4 GDS__blob_convert_error              
+      PARAMETER (GDS__blob_convert_error               = 335544860)
+      INTEGER*4 GDS__array_convert_error             
+      PARAMETER (GDS__array_convert_error              = 335544861)
+      INTEGER*4 GDS__record_lock_not_supp            
+      PARAMETER (GDS__record_lock_not_supp             = 335544862)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
