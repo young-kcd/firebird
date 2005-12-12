@@ -575,6 +575,7 @@ const
 	gds_blob_convert_error               = 335544860;
 	gds_array_convert_error              = 335544861;
 	gds_record_lock_not_supp             = 335544862;
+	gds_partner_idx_not_found            = 335544863;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

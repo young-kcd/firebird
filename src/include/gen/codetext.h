@@ -564,6 +564,7 @@ static const struct {
 	{"blob_convert_error", 335544860},
 	{"array_convert_error", 335544861},
 	{"record_lock_not_supp", 335544862},
+	{"partner_idx_not_found", 335544863},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
