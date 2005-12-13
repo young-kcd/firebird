@@ -1633,6 +1633,14 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					FB_NEW(pool) InversionCandidate(pool);
 				invCandidate->unique = unique;
 				invCandidate->selectivity = scratch[i]->selectivity;
+				// When selectivty is zero the statement is prepared on an
+				// empty table or the statistics aren't updated.
+				// Assume a half of the maximum selectivty, so at least some
+				// indexes are chosen by the optimizer. This avoids some slowdown
+				// statements on growing tables.
+				if (invCandidate->selectivity <= 0) {
+					invCandidate->selectivity = MAXIMUM_SELECTIVITY / 2.0;
+				}
 				// Calculate the cost (only index pages) for this index. 
 				// The constant DEFAULT_INDEX_COST 1 is an average for 
 				// the rootpage and non-leaf pages.
@@ -1886,7 +1894,15 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	// Another special case is an explicit (i.e. user specified) plan which
 	// requires all existing indices to be considered for a retrieval.
 	const bool acceptAll = csb->csb_rpt[stream].csb_plan;
-	const double streamCard = csb->csb_rpt[stream].csb_cardinality;
+	double streamCard = csb->csb_rpt[stream].csb_cardinality;
+	// When the cardinality is zero the statement prepared on an empty table,
+	// which would meant no indexes will be used at all. The prepared 
+	// statement could be cached (such as in system restore process) and
+	// cause slowdown when the table grows. Set the cardinality to a value
+	// so that at least some indexes are chosen.
+	if (streamCard <= 0) {
+		streamCard = 5;
+	}
 
 	double totalSelectivity = MAXIMUM_SELECTIVITY; // worst selectivity
 	double totalCost = 0;
