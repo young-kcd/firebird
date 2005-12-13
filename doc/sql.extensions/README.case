@@ -1,5 +1,3 @@
-SQL Language Extension: CASE
-
 Function:
     Allow the result of a column to be determined by a the results of a 
     case expression.
@@ -8,6 +6,8 @@ Author:
     Arno Brinkman <firebird@abvisie.nl>
 
 Format:
+
+
   <case expression> ::=
       <case abbreviation>
     | <case specification>
@@ -46,8 +46,9 @@ Format:
 
   <result expression> ::= <value expression>
 
-Notes:
-    See also README.data_type_results_of_aggregations.txt
+
+Syntax Rules:
+
 
 Examples:
 

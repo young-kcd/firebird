@@ -42,8 +42,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\debug\fbclient"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MTd /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GDS32_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "GOVERNOR" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GDS32_EXPORTS" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "SERVER_SHUTDOWN" /D "IPSERV" /D "GOVERNOR" /D "EXACT_NUMERICS" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -69,8 +69,8 @@ LINK32=link.exe
 # PROP Intermediate_Dir "..\..\..\temp\release\fbclient"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /Gm /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "GDS32_EXPORTS" /D "CLIENT" /D "SUPERCLIENT" /D "NOMSG" /D "IPSERV" /D "GOVERNOR" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "GOVERNOR" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
+# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "GDS32_EXPORTS" /D "CLIENT" /D "SUPERCLIENT" /D "NOMSG" /D "SERVER_SHUTDOWN" /D "IPSERV" /D "GOVERNOR" /D "EXACT_NUMERICS" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "SERVER_SHUTDOWN" /D "IPSERV" /D "GOVERNOR" /D "EXACT_NUMERICS" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -80,8 +80,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib mpr.lib wsock32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /dll /incremental:no /machine:I386 /out:"..\..\..\temp\release\firebird/bin/fbclient.dll" /pdbtype:sept
-# SUBTRACT LINK32 /debug
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /dll /incremental:no /pdb:"..\..\..\temp\release\firebird/bin/fbclient.pdb" /debug /machine:I386 /out:"..\..\..\temp\release\firebird/bin/fbclient.dll" /opt:ref,icf
+# SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
 
@@ -92,10 +92,6 @@ LINK32=link.exe
 # Begin Group "COMMON files"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\alloc.cpp
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\common\config\config_file.cpp
@@ -134,7 +130,11 @@ SOURCE=..\..\..\src\jrd\gds.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\ibinitdll.cpp
+SOURCE=..\..\..\src\jrd\ibinitdll.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\init.cpp
 # End Source File
 # Begin Source File
 
@@ -146,7 +146,7 @@ SOURCE=..\..\..\src\jrd\isc_file.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\isc_ipc.cpp
+SOURCE=..\..\..\src\jrd\isc_ipc.cpp
 # End Source File
 # Begin Source File
 
@@ -192,10 +192,6 @@ SOURCE=..\..\..\src\jrd\thd.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ThreadData.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\utl.cpp
 # End Source File
 # Begin Source File
@@ -231,6 +227,22 @@ SOURCE=..\..\..\src\dsql\user_dsql.cpp
 SOURCE=..\..\..\src\dsql\utld.cpp
 # End Source File
 # End Group
+# Begin Group "IPSERVER files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\ipserver\alli.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\ipserver\ipcevent.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\ipserver\ipclient.cpp
+# End Source File
+# End Group
 # Begin Group "REMOTE files"
 
 # PROP Default_Filter ""
@@ -264,7 +276,7 @@ SOURCE=..\..\..\src\remote\remote.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\os\win32\wnet.cpp
+SOURCE=..\..\..\src\remote\wnet.cpp
 # End Source File
 # Begin Source File
 
@@ -280,16 +292,12 @@ SOURCE=..\..\..\src\remote\xnet.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\gsec\call_service.cpp
+SOURCE=..\..\..\gen\utilities\security.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
-# Begin Source File
-
-SOURCE=..\..\..\src\utilities\gsec\call_service.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\cvt_proto.h
@@ -305,10 +313,6 @@ SOURCE=..\..\..\src\jrd\dls_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\dsc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\dsc_pub.h
 # End Source File
 # Begin Source File
 
@@ -328,7 +332,15 @@ SOURCE=..\..\..\src\jrd\flu_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\gds.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\gds_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\init.h
 # End Source File
 # Begin Source File
 
@@ -364,6 +376,10 @@ SOURCE=..\..\..\src\jrd\thd.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\thd_proto.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\utl_proto.h
 # End Source File
 # Begin Source File
@@ -391,6 +407,28 @@ SOURCE=..\..\..\src\jrd\version.rc
 # Begin Source File
 
 SOURCE=..\defs\fbclient.def
+
+!IF  "$(CFG)" == "fbclient - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\defs\fbclient_debug.def
+
+!IF  "$(CFG)" == "fbclient - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "fbclient - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
 # End Source File
 # End Target
 # End Project

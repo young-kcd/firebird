@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		rng_proto.h
- *	DESCRIPTION:	Prototype header file for rng.cpp
+ *	DESCRIPTION:	Prototype header file for rng.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,34 +21,21 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_RNG_PROTO_H
-#define JRD_RNG_PROTO_H
+#ifndef _JRD_RNG_PROTO_H_
+#define _JRD_RNG_PROTO_H_
 
 #ifdef PC_ENGINE
-
-namespace Jrd {
-	class jrd_req;
-	struct record_param;
-	class jrd_nod;
-	class RefreshRange;
-	struct impure_value;
-	class Attachment;
-}
-
-struct dsc;
-
-void RNG_add_page(ULONG);
-void RNG_add_record(Jrd::record_param*);
-jrd_nod* RNG_add_relation(Jrd::jrd_nod*);
-void RNG_add_uncommitted_record(Jrd::record_param*);
-dsc *RNG_begin(Jrd::jrd_nod*, Jrd::impure_value*);
-jrd_nod *RNG_delete(Jrd::jrd_nod*);
-void RNG_delete_ranges(Jrd::jrd_req *);
-jrd_nod* RNG_end(Jrd::jrd_nod*);
-void RNG_release_locks(Jrd::RefreshRange*);
-void RNG_release_ranges(Jrd::jrd_req *);
-void RNG_shutdown_attachment(Jrd::Attachment*);
+extern void RNG_add_page(ULONG);
+extern void RNG_add_record(struct rpb *);
+extern struct jrd_nod *RNG_add_relation(struct jrd_nod *);
+extern void RNG_add_uncommitted_record(struct rpb *);
+extern struct dsc *RNG_begin(struct jrd_nod *, struct vlu *);
+extern struct jrd_nod *RNG_delete(struct jrd_nod *);
+extern void RNG_delete_ranges(struct jrd_req *);
+extern struct jrd_nod *RNG_end(struct jrd_nod *);
+extern void RNG_release_locks(struct rng *);
+extern void RNG_release_ranges(struct jrd_req *);
+extern void RNG_shutdown_attachment(struct att *);
 #endif
 
-#endif // JRD_RNG_PROTO_H
-
+#endif /* _JRD_RNG_PROTO_H_ */

@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbstatic,v 1.8 2005-05-27 22:16:09 asfernandes Exp $
+#  $Id: Makefile.in.libfbstatic,v 1.5 2003-03-27 11:21:45 aafemt Exp $
 #
 ROOT=..
-ObjModuleType=boot
-CFLAGS+=-DBOOT_BUILD
+ObjModuleName=libfbstatic
+CFLAGS:=-DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

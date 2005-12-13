@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic  SQL RUNTIME SUPPORT
  *	MODULE:		alld_proto.h
- *	DESCRIPTION:	Prototype Header file for alld.cpp
+ *	DESCRIPTION:	Prototype Header file for alld.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,11 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DSQL_ALLD_PROTO_H
-#define DSQL_ALLD_PROTO_H
+#ifndef _DSQL_ALLD_PROTO_H_
+#define _DSQL_ALLD_PROTO_H_
 
-void		ALLD_init();				// initialize pool system
-void		ALLD_fini();				// get rid of everything
+#include "../dsql/all.h"
 
-#endif // DSQL_ALLD_PROTO_H
-
+#endif /* _DSQL_ALLD_PROTO_H_ */

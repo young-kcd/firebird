@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		iberr_proto.h
- *	DESCRIPTION:	Prototype header file for iberr.cpp
+ *	DESCRIPTION:	Prototype header file for iberr.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,13 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_IBERR_PROTO_H
-#define JRD_IBERR_PROTO_H
+#ifndef _JRD_IBERR_PROTO_H_
+#define _JRD_IBERR_PROTO_H_
 
-void IBERR_append_status(ISC_STATUS *, ISC_STATUS, ...);
-void IBERR_build_status(ISC_STATUS *, ISC_STATUS, ...);
-void IBERR_bugcheck(ISC_STATUS *, SCHAR *, UCHAR *, int, TEXT *);
-void IBERR_error(ISC_STATUS*, const SCHAR*, UCHAR*, int, TEXT*);
+extern void IBERR_append_status(ISC_STATUS *, ISC_STATUS, ...);
+extern void IBERR_build_status(ISC_STATUS *, ISC_STATUS, ...);
+extern void IBERR_bugcheck(ISC_STATUS *, SCHAR *, UCHAR *, int, TEXT *);
+extern void IBERR_error(ISC_STATUS *, SCHAR *, UCHAR *, int, TEXT *);
 
-#endif // JRD_IBERR_PROTO_H
-
+#endif /* _JRD_IBERR_PROTO_H_ */

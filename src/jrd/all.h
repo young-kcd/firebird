@@ -28,19 +28,13 @@
 #include "../common/classes/alloc.h"
 #include "../jrd/block_cache.h"
 #include "../jrd/lls.h"
-#include "../common/classes/fb_string.h"
 
+TEXT* ALL_cstring(TEXT* in_string);
 void ALL_fini(void);
 void ALL_init(void);
-
-struct blk;
-
-namespace Jrd {
-	class Database;
-	class DataComprControl;
-}
-
-void ALL_print_memory_pool_info(FILE*, Jrd::Database*);
+//void ALL_push(BLK , LLS *);
+//BLK ALL_pop(LLS *);
+void ALL_print_memory_pool_info(IB_FILE*, class dbb*);
 
 #ifdef DEV_BUILD
 void ALL_check_memory(void);
@@ -50,18 +44,23 @@ class JrdMemoryPool : public MemoryPool
 {
 protected:
 	// Dummy constructor and destructor. Should never be called
-	JrdMemoryPool();
-	~JrdMemoryPool();
+	JrdMemoryPool() : MemoryPool(NULL, NULL), lls_cache(*this) {}
+	~JrdMemoryPool() {}	
 public:
-	static JrdMemoryPool *createDbPool(Firebird::MemoryStats &stats);
+	static JrdMemoryPool *createPool(int *cur_mem, int *max_mem);
 	static JrdMemoryPool *createPool();
 	static void deletePool(JrdMemoryPool* pool);
 	static void noDbbDeletePool(JrdMemoryPool* pool);
 
-	Jrd::DataComprControl* plb_dccs;
+	static class blk* ALL_pop(class lls**);
+	static void       ALL_push(class blk*, class lls**);
+
+    struct sbm* plb_buckets;   /* available bit map buckets */
+    struct bms* plb_segments;  /* available bit map segments */
+	struct Dcc* plb_dccs;
+
+private:
+	BlockCache<lls> lls_cache;  /* Was plb_lls */
 };
 
-TEXT* ALL_cstring(JrdMemoryPool* pool, const Firebird::string& in_string);
-
 #endif	// JRD_ALL_H
-

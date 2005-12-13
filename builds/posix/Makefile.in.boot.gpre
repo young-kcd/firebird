@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.boot.gpre,v 1.24 2005-08-08 13:47:25 alexpeshkoff Exp $
+#  $Id: Makefile.in.boot.gpre,v 1.14.2.2 2004-03-29 03:49:24 skidder Exp $
 #
 ROOT=..
-ObjModuleType=boot
-CFLAGS += -DBOOT_BUILD
+ObjModuleName=boot.gpre
+CFLAGS := -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -41,14 +41,15 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-JRDBOOT_Files =	dsc.cpp gds.cpp isc.cpp dls.cpp isc_ipc.cpp $(JRDBOOT_Extra_Files)
+JRDBOOT_Files =	dsc.cpp gds.cpp isc_ipc.cpp isc.cpp dls.cpp $(JRDBOOT_Extra_Files)
 JRDBOOT_Sources = $(addprefix jrd/, $(JRDBOOT_Files))
 JRDBOOT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRDBOOT_Sources))))
 
 
 GPRECOMMON_Files += cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp \
 		gpre.cpp hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp \
-		msc.cpp par.cpp pat.cpp sqe.cpp sql.cpp
+		msc.cpp par.cpp pat.cpp sqe.cpp sql.cpp noform.cpp\
+		@GPRE_LANGUAGE_MODULES@
 
 GPRE_Files = $(GPRECOMMON_Files) pretty.cpp gpre_meta_boot.cpp
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files))
@@ -56,7 +57,7 @@ GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources)))
 
 
 
-GPREBOOT_Objects = $(JRDBOOT_Objects) $(GPRE_Objects) $(OS_SPECIFIC_Objects) $(FBCONFIG_Objects)
+GPREBOOT_Objects = $(JRDBOOT_Objects) $(GPRE_Objects) $(OS_SPECIFIC_Objects)
 
 AllObjects = $(GPREBOOT_Objects)
 

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		sort_proto.h
- *	DESCRIPTION:	Prototype header file for sort.cpp
+ *	DESCRIPTION:	Prototype header file for sort.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,35 +21,28 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_SORT_PROTO_H
-#define JRD_SORT_PROTO_H
+#ifndef _JRD_SORT_PROTO_H_
+#define _JRD_SORT_PROTO_H_
 
-namespace Jrd {
-	class Attachment;
-	struct sort_key_def;
-	struct sort_work_file;
-	struct sort_context;
-}
 
 #ifdef SCROLLABLE_CURSORS
-void	SORT_diddle_key(UCHAR *, Jrd::sort_context*, bool);
-void	SORT_get(ISC_STATUS*, Jrd::sort_context*, ULONG **, RSE_GET_MODE);
-void	SORT_read_block(ISC_STATUS*, Jrd::sort_work_file*, ULONG, BLOB_PTR *, ULONG);
+extern void SORT_diddle_key(UCHAR *, struct scb *, USHORT);
+extern void SORT_get(ISC_STATUS *, struct scb *, ULONG **, RSE_GET_MODE);
+extern void SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *, ULONG);
 #else
-void	SORT_get(ISC_STATUS*, Jrd::sort_context*, ULONG **);
-ULONG	SORT_read_block(ISC_STATUS*, Jrd::sort_work_file*, ULONG, BLOB_PTR *,
+extern void SORT_get(ISC_STATUS *, struct scb *, ULONG **);
+extern ULONG SORT_read_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 							 ULONG);
 #endif
 
-void	SORT_error(ISC_STATUS*, Jrd::sort_work_file*, TEXT *, ISC_STATUS, int);
-void	SORT_fini(Jrd::sort_context*, Jrd::Attachment*);
-Jrd::sort_context*	SORT_init(ISC_STATUS*, USHORT, USHORT, USHORT, const Jrd::sort_key_def*,
-						Jrd::FPTR_REJECT_DUP_CALLBACK, void*, Jrd::Attachment*, UINT64);
-void	SORT_put(ISC_STATUS*, Jrd::sort_context*, ULONG **);
-void	SORT_shutdown(Jrd::Attachment*);
-bool	SORT_sort(ISC_STATUS*, Jrd::sort_context*);
-ULONG	SORT_write_block(ISC_STATUS*, Jrd::sort_work_file*, ULONG, BLOB_PTR *,
+extern void SORT_error(ISC_STATUS *, struct sfb *, TEXT *, ISC_STATUS, int);
+extern void SORT_fini(struct scb *, struct att *);
+extern struct scb *SORT_init(ISC_STATUS *, USHORT, USHORT, struct skd *,
+							 BOOLEAN(*)(), void *, struct att *, ULONG);
+extern int SORT_put(ISC_STATUS *, struct scb *, ULONG **);
+extern void SORT_shutdown(struct att *);
+extern int SORT_sort(ISC_STATUS *, struct scb *);
+extern ULONG SORT_write_block(ISC_STATUS *, struct sfb *, ULONG, BLOB_PTR *,
 							  ULONG);
 
-#endif // JRD_SORT_PROTO_H
-
+#endif /* _JRD_SORT_PROTO_H_ */

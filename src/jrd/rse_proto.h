@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		rse_proto.h
- *	DESCRIPTION:	Prototype header file for rse.cpp
+ *	DESCRIPTION:	Prototype header file for rse.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,35 +21,28 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_RSE_PROTO_H
-#define JRD_RSE_PROTO_H
+#ifndef _JRD_RSE_PROTO_H_
+#define _JRD_RSE_PROTO_H_
 
 #include "../jrd/jrd.h"
 #include "../jrd/rse.h"
 
-namespace Jrd {
-	class RecordSource;
-	struct record_param;
-	class jrd_nod;
+extern void RSE_close(TDBB, class Rsb *);
 #ifdef PC_ENGINE
-	class Bookmark;
+extern BOOLEAN RSE_find_dbkey(TDBB, class Rsb *, struct jrd_nod *, struct jrd_nod *);
+extern BOOLEAN RSE_find_record(TDBB, class Rsb *, USHORT, USHORT,
+							   struct jrd_nod *);
 #endif
-}
-
-void RSE_close(Jrd::thread_db*, Jrd::RecordSource*);
+extern BOOLEAN RSE_get_record(TDBB, class Rsb *, enum rse_get_mode);
 #ifdef PC_ENGINE
-bool RSE_find_dbkey(Jrd::thread_db*, Jrd::RecordSource*, Jrd::jrd_nod*, Jrd::jrd_nod*);
-bool RSE_find_record(Jrd::thread_db*, Jrd::RecordSource*, USHORT, USHORT, Jrd::jrd_nod*);
+extern struct bkm *RSE_get_bookmark(TDBB, class Rsb *);
+extern void RSE_mark_crack(TDBB, class Rsb *, USHORT);
 #endif
-bool RSE_get_record(Jrd::thread_db*, Jrd::RecordSource*, Jrd::rse_get_mode);
+extern void RSE_open(TDBB, class Rsb *);
 #ifdef PC_ENGINE
-Bookmark* RSE_get_bookmark(Jrd::thread_db*, Jrd::RecordSource*);
-void RSE_mark_crack(Jrd::thread_db*, Jrd::RecordSource*, USHORT);
-#endif
-void RSE_open(Jrd::thread_db*, Jrd::RecordSource*);
-#ifdef PC_ENGINE
-bool RSE_reset_position(Jrd::thread_db*, Jrd::RecordSource*, Jrd::record_param*);
-bool RSE_set_bookmark(Jrd::thread_db*, Jrd::RecordSource*, Jrd::record_param*, Jrd::Bookmark*);
+extern BOOLEAN RSE_reset_position(TDBB, class Rsb *, struct rpb *);
+extern BOOLEAN RSE_set_bookmark(TDBB, class Rsb *, struct rpb *,
+								struct bkm *);
 #endif
 
 #ifdef PC_ENGINE
@@ -58,5 +51,4 @@ bool RSE_set_bookmark(Jrd::thread_db*, Jrd::RecordSource*, Jrd::record_param*, J
 #define RSE_MARK_CRACK(t, var1, var2)
 #endif
 
-#endif // JRD_RSE_PROTO_H
-
+#endif /* _JRD_RSE_PROTO_H_ */

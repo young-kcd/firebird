@@ -26,7 +26,6 @@
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
-				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\build_msg/build_msg.pch"
 				AssemblerListingLocation=".\..\..\..\temp\release\build_msg/"
@@ -72,8 +71,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\..\..\..\temp\debug\build_msg"
-			IntermediateDirectory=".\..\..\..\temp\debug\build_msg"
+			OutputDirectory=".\..\..\..\temp\release\build_msg"
+			IntermediateDirectory=".\..\..\..\temp\release\build_msg"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -85,7 +84,6 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,SUPERCLIENT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\build_msg/build_msg.pch"
 				AssemblerListingLocation=".\..\..\..\temp\release\build_msg/"
@@ -140,6 +138,9 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
 				RelativePath="..\..\..\gen\msgs\build_file.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 		</Filter>
 		<Filter

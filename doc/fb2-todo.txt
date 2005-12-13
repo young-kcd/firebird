@@ -33,23 +33,21 @@ Targets we are going to support under Firebird 2 architecture
 - built-in INTL
 - internal UDF handler
 3. Clustered server
-Run multi-process engine on each cluster node. Direct page latches and
-other locks to a distributed lock manager. Processes may share the same
-buffer and metadata cache via shared memory. This target should be kept 
-in mind, but may not be finalized in 2.0 release. Making Firebird run
-in such configuration is quite an easy thing (at least without shared 
-cache), but it requires expensive equipment and time for testing.
+Run multi-threaded engine on each cluster node. Direct page latches and
+other locks to a distributed lock manager. This target should be kept in mind,
+but may not be finalized in 2.0 release.
 
 Another important thing. Engine AS IS already _is_ already suited for parallel 
 operation by initial design. Versioning is a great thing !
 We NEED:
-- just a few simple Java-like object-level mutexes and a few
-  rw-locks
+- just a few simple Java-like object-level mutexes
 - make it run just like CS, but using several shared subsystems
-- we should use constant objects with usage tracking 
 We do NOT NEED:
 - big amount of mutexes and mutex arrays
 - relation-level mutexes and other shit like this
+- multi-state mutexes as they are inherently deadlock-prone.
+  we should use constant objects with usage tracking or ordinary 
+  lock manager instead
 Mutexes should be aquired only for a very short periods of time.
 Linked lists usage should be discouraged. All classes touched
 by thread-safety cleanup (bdb, att, dbb) should be fixed to avoid
@@ -68,12 +66,9 @@ TODO:
 7. Make DSQL compilation thread-safe (via porting it to BISON correctly)
 8. Make DSQL requests use new metadata cache
 9. Implement cache of compiled requests (should be easy at this point)
-10. Thread context should be converted to a class and removed from
-parameters from all functions (and SET_TDBB should be eliminated too).
-tdbb_default memory pool usage should be eradicated. Functions should 
-normally derive their context from parameters, not from thread context.
-Final goal is to minimize or even eliminate TLS usage at all (because
-its usage is simular to local variables usage in terms of maintainability).
+10. Review all tdbb/dbb usage in TLS. In general, all functions should derive
+its context only from its parameters. TLS usage should be eliminated
+or at least minimized
 11. Warp dbb/att access with thread-safe accessor methods using dbb-level mutex.
   Review all places where it is used.
 12. Kill manual thread shcheduling (sch.cpp, THREAD_ENTER/THREAD_EXIT 
@@ -81,11 +76,6 @@ its usage is simular to local variables usage in terms of maintainability).
 13. Engine should be thread-safe at this point. TEST IT !
   Perform stress testing and add needed logging where required.
   We need to unify debug logging across the engine.
-
-Other tasks:
-
-1. NOMEM cleanup + EH cleanup. Use auto_ptr-like templates for resource management
-2. system_call_failed exception must have call name, parameters and error code
 
 Assignments
 

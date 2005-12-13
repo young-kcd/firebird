@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Data Definition Utility
- *	MODULE:		ddl.cpp
+ *	MODULE:		ddl.c
  *	DESCRIPTION:	Main line routine
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,11 +23,13 @@
 
 #include "firebird.h"
 
-#include <stdio.h>
+#define DDL_MAIN
+
+#include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../dudley/ddl.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/license.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/exe_proto.h"
@@ -45,40 +47,40 @@
 #endif
 
 #if defined(WIN_NT)
-#include <io.h> // isatty
+#include <io.h>
 #endif
 
-DudleyGlobals dudleyGlob;
+TEXT *DDL_prompt;
 
-static dudley_lls* free_stack;
+static LLS free_stack;
 static TEXT DDL_message[256];
 
-static const char* const FOPEN_INPUT_TYPE	= "r";
+#ifndef FOPEN_INPUT_TYPE
+#define FOPEN_INPUT_TYPE	"r"
+#endif
 
-const char* DDL_EXT		= ".gdl";	// normal extension for a ddl file
-const int MAX_ERRORS	= 50;
+#define DDL_EXT		".gdl"		/* normal extension for a ddl file */
+#define MAX_ERRORS	50
 
-enum in_sw_values
-{
-	IN_SW_GDEF_0 = 0,		// null switch value
-	IN_SW_GDEF_G,			// generate DDL from a database file
-	IN_SW_GDEF_R,			// replace existing database
-	IN_SW_GDEF_D,			// generate dynamic DDL
-	IN_SW_GDEF_Z,			// print version number
-	IN_SW_GDEF_T,			// print tokens as they are read
-	IN_SW_GDEF_C = 7,		// source is C
-	IN_SW_GDEF_F,			// source is FORTRAN
-	IN_SW_GDEF_P, 			// source is PASCAL
-	IN_SW_GDEF_COB, 		// source is (shudder) cobol
-	IN_SW_GDEF_ANSI,		// source is (worse and worse!) ansi format
-	IN_SW_GDEF_ADA = 14,	// source is ada
-	IN_SW_GDEF_CXX,			// source is C++
-	IN_SW_GDEF_USER = 17,	// user name for PC security
-	IN_SW_GDEF_PASSWORD		// password for PC security
-};
+#define IN_SW_GDEF_0 		0	/* null switch value */
+#define IN_SW_GDEF_G 		1	/* generate DDL from a database file */
+#define IN_SW_GDEF_R 		2	/* replace existing database */
+#define IN_SW_GDEF_D 		3	/* generate dynamic DDL */
+#define IN_SW_GDEF_Z 		4	/* print version number */
+#define IN_SW_GDEF_T 		5	/* print tokens as they are read */
+#define	IN_SW_GDEF_C		7	/* source is C */
+#define	IN_SW_GDEF_F		8	/* source is FORTRAN */
+#define	IN_SW_GDEF_P 		9	/* source is PASCAL */
+#define IN_SW_GDEF_COB 		10	/* source is (shudder) cobol */
+#define IN_SW_GDEF_ANSI 	11	/* source is (worse and worse!) ansi format */
+#define IN_SW_GDEF_BAS 		12	/* source is basic */
+#define IN_SW_GDEF_PLI 		13	/* source is pli */
+#define IN_SW_GDEF_ADA 		14	/* source is ada */
+#define IN_SW_GDEF_CXX 		15	/* source is C++ */
+#define IN_SW_GDEF_USER		17	/* user name for PC security */
+#define IN_SW_GDEF_PASSWORD	18	/* password for PC security */
 
-static const in_sw_tab_t gdef_in_sw_table[] =
-{
+static struct in_sw_tab_t gdef_in_sw_table[] = {
 	{ IN_SW_GDEF_G, 0, "EXTRACT", 0, 0, 0, FALSE, 0, 0,
 		"\t\textract definition from database"}, 	/* extract DDL from database */
 	{ IN_SW_GDEF_R, 0, "REPLACE", 0, 0, 0, FALSE, 0, 0,
@@ -92,6 +94,8 @@ static const in_sw_tab_t gdef_in_sw_table[] =
 	{ IN_SW_GDEF_COB, 0, "COB", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for COBOL" },
 	{ IN_SW_GDEF_ANSI, 0, "ANSI", 0, 0, 0, FALSE, 0, 0,
 		"\t\tDYN for ANSI COBOL" },
+	{ IN_SW_GDEF_BAS, 0, "BASIC", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for BASIC" },
+	{ IN_SW_GDEF_PLI, 0, "PLI", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for PLI" },
 	{ IN_SW_GDEF_ADA, 0, "ADA", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for ADA" },
 	{ IN_SW_GDEF_CXX, 0, "CXX", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for C++" },
 	{ IN_SW_GDEF_USER, 0, "USER", 0, 0, 0, FALSE, 0, 0,
@@ -103,7 +107,7 @@ static const in_sw_tab_t gdef_in_sw_table[] =
 };
 
 #ifndef SUPERSERVER
-int CLIB_ROUTINE main( int argc, char* argv[])
+int CLIB_ROUTINE main( int argc, char *argv[])
 {
 /**************************************
  *
@@ -117,7 +121,14 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *	command line.
  *
  **************************************/
-	//TEXT buffer[256];
+	IB_FILE *input_file;
+	TEXT *p, *q, *string, file_name_1[256], file_name_2[256],
+		buffer[256];
+	USHORT in_sw;
+	IN_SW_TAB in_sw_tab;
+	ACT temp, stack;
+	FIL file;
+	SLONG redir_in, redir_out, redir_err;
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -125,20 +136,20 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 /* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
+   by 3 file descriptors to use in re-directing ib_stdin, ib_stdout, and ib_stderr. */
 
-	dudleyGlob.DDL_service = false;
+	DDL_service = FALSE;
 
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
-		dudleyGlob.DDL_service = true;
+		DDL_service = TRUE;
 		argv++;
 		argc--;
 	}
 	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
-		dudleyGlob.DDL_service = true;
-		long redir_in = atol(argv[2]);
-		long redir_out = atol(argv[3]);
-		long redir_err = atol(argv[4]);
+		DDL_service = TRUE;
+		redir_in = atol(argv[2]);
+		redir_out = atol(argv[3]);
+		redir_err = atol(argv[4]);
 #ifdef WIN_NT
 		redir_in = _open_osfhandle(redir_in, 0);
 		redir_out = _open_osfhandle(redir_out, 0);
@@ -157,23 +168,16 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		argc -= 4;
 	}
 
-	dudleyGlob.DDL_file_name = NULL;
-	dudleyGlob.DB_file_name = NULL;
-	dudleyGlob.DDL_drop_database = false;
-	dudleyGlob.DDL_quit = false;
-	dudleyGlob.DDL_extract = false;
-	dudleyGlob.DDL_dynamic = false;
-	dudleyGlob.DDL_trace = false;
-	dudleyGlob.DDL_version = false;
-	dudleyGlob.DDL_default_user = NULL;
-	dudleyGlob.DDL_default_password = NULL;
+	DDL_file_name = NULL;
+	DB_file_name = NULL;
+	DDL_drop_database = DDL_quit = DDL_extract = DDL_dynamic = DDL_trace =
+		DDL_version = FALSE;
+	DDL_default_user = DDL_default_password = NULL;
 
-	TEXT file_name_1[256], file_name_2[256];
 	file_name_1[0] = file_name_2[0] = 0;
-	USHORT in_sw = 0; // silence uninitialized warning
 
 	for (--argc; argc; argc--) {
-		const TEXT* string = *++argv;
+		string = *++argv;
 		if ((*string != '-') && (*string != '?')) {
 			if (!*file_name_1)
 				strcpy(file_name_1, string);
@@ -185,11 +189,9 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 			/* iterate through the switch table, looking for matches */
 
 			in_sw = IN_SW_GDEF_0;
-			const TEXT* q;
-			for (const in_sw_tab_t* in_sw_tab = gdef_in_sw_table;
-				q = in_sw_tab->in_sw_name; in_sw_tab++)
-			{
-				const TEXT* p = string + 1;
+			for (in_sw_tab = gdef_in_sw_table; q = in_sw_tab->in_sw_name;
+				 in_sw_tab++) {
+				p = string + 1;
 
 				/* handle orphaned hyphen case */
 
@@ -213,73 +215,82 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		}
 		switch (in_sw) {
 		case IN_SW_GDEF_D:
-			dudleyGlob.DDL_dynamic = true;
-			dudleyGlob.DYN_file_name[0] = 0;
+			DDL_dynamic = TRUE;
+			DYN_file_name[0] = 0;
 			if (argc == 1)
 				break;
 			string = *++argv;
 			if (*string != '-') {
 				argc--;
-				strcpy(dudleyGlob.DYN_file_name, string);
+				strcpy(DYN_file_name, string);
 			}
 			else
 				argv--;
 			break;
 
 		case IN_SW_GDEF_C:
-			dudleyGlob.language = lan_c;
+			language = lan_c;
 			break;
 
 		case IN_SW_GDEF_P:
-			dudleyGlob.language = lan_pascal;
+			language = lan_pascal;
 			break;
 
 		case IN_SW_GDEF_COB:
-			dudleyGlob.language = lan_cobol;
+			language = lan_cobol;
 			break;
 
 		case IN_SW_GDEF_ANSI:
-			dudleyGlob.language = lan_ansi_cobol;
+			language = lan_ansi_cobol;
 			break;
+
+		case IN_SW_GDEF_BAS:
+			language = lan_basic;
+			break;
+
+		case IN_SW_GDEF_PLI:
+			language = lan_pli;
+			break;
+
 		case IN_SW_GDEF_F:
-			dudleyGlob.language = lan_fortran;
+			language = lan_fortran;
 			break;
 
 		case IN_SW_GDEF_ADA:
-			dudleyGlob.language = lan_ada;
+			language = lan_ada;
 			break;
 
 		case IN_SW_GDEF_CXX:
-			dudleyGlob.language = lan_cxx;
+			language = lan_cxx;
 			break;
 
 		case IN_SW_GDEF_G:
-			dudleyGlob.DDL_extract = true;
+			DDL_extract = TRUE;
 			break;
 
 		case IN_SW_GDEF_R:
-			dudleyGlob.DDL_replace = true;
+			DDL_replace = TRUE;
 			break;
 
 		case IN_SW_GDEF_T:
-			dudleyGlob.DDL_trace = true;
+			DDL_trace = TRUE;
 			break;
 
 		case IN_SW_GDEF_Z:
 			DDL_msg_put(0, GDS_VERSION, 0, 0, 0, 0);	/* msg 0: gdef version %s\n */
-			dudleyGlob.DDL_version = true;
+			DDL_version = TRUE;
 			break;
 
 		case IN_SW_GDEF_PASSWORD:
 			if (argc > 1) {
-				dudleyGlob.DDL_default_password = *++argv;
+				DDL_default_password = *++argv;
 				argc--;
 			}
 			break;
 
 		case IN_SW_GDEF_USER:
 			if (argc > 1) {
-				dudleyGlob.DDL_default_user = *++argv;
+				DDL_default_user = *++argv;
 				argc--;
 			}
 			break;
@@ -288,40 +299,34 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 			if (*string != '?')
 				DDL_msg_put(1, string, 0, 0, 0, 0);	/* msg 1: gdef: unknown switch %s */
 			DDL_msg_put(2, 0, 0, 0, 0, 0);	/* msg 2: \tlegal switches are: */
-			for (const in_sw_tab_t* in_sw_tab = gdef_in_sw_table;
-				in_sw_tab->in_sw; in_sw_tab++)
-			{
-				if (in_sw_tab->in_sw_text) {
+			for (in_sw_tab = gdef_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
+				if (in_sw_tab->in_sw_text)
 					DDL_msg_put(3, in_sw_tab->in_sw_name,
 								in_sw_tab->in_sw_text, 0, 0, 0);	/* msg 3: %s%s */
-				}
-			}
 			DDL_exit(FINI_ERROR);
 		}
 	}
 
-	FILE* input_file;
-	
-	if (dudleyGlob.DDL_extract) {
-		strcpy(dudleyGlob.DB_file_string, file_name_1);
-		strcpy(dudleyGlob.DDL_file_string, file_name_2);
-		if (!*dudleyGlob.DB_file_string) {
+	if (DDL_extract) {
+		strcpy(DB_file_string, file_name_1);
+		strcpy(DDL_file_string, file_name_2);
+		if (!*DB_file_string) {
 			DDL_msg_put(4, 0, 0, 0, 0, 0);	/* msg 4: gdef: Database name is required for extract */
 			DDL_exit(FINI_ERROR);
 		}
-		dudleyGlob.DB_file_name = dudleyGlob.DB_file_string;
-		dudleyGlob.DDL_file_name = dudleyGlob.DDL_file_string;
+		DB_file_name = DB_file_string;
+		DDL_file_name = DDL_file_string;
 		DDL_ext();
 		DDL_exit(FINI_OK);
 	}
 	else if (*file_name_1) {
-		strcpy(dudleyGlob.DDL_file_string, file_name_1);
-		dudleyGlob.DDL_file_name = dudleyGlob.DDL_file_string;
+		strcpy(DDL_file_string, file_name_1);
+		DDL_file_name = DDL_file_string;
 	}
-	if (dudleyGlob.DDL_file_name == NULL) {
-		dudleyGlob.DDL_file_name = "standard input";
-		input_file = stdin;
-		dudleyGlob.DDL_interactive = dudleyGlob.DDL_service || isatty(0);
+	if (DDL_file_name == NULL) {
+		DDL_file_name = "standard input";
+		input_file = ib_stdin;
+		DDL_interactive = DDL_service || isatty(0);
 	}
 	else {
 		/* 
@@ -335,37 +340,34 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 		/* first find the extension by going to the end and backing up */
 
-		const TEXT* p = dudleyGlob.DDL_file_name;
-		while (*p)
-			++p;
-		while ((p != dudleyGlob.DDL_file_name) && (*p != '.') && (*p != '/'))
-			--p;
+		for (p = DDL_file_name; *p; p++);
+		while ((p != DDL_file_name) && (*p != '.') && (*p != '/'))
+			p--;
 
 		/* then handle the case where the input already ends in .GDL */
 
 		if (*p == '.') {
-			for (const TEXT* q2 = DDL_EXT; UPPER(*p) == UPPER(*q2); p++, q2++) {
+			for (q = DDL_EXT; UPPER(*p) == UPPER(*q); p++, q++)
 				if (!*p) {
-					input_file = fopen(dudleyGlob.DDL_file_name, FOPEN_INPUT_TYPE);
+					input_file = ib_fopen(DDL_file_name, FOPEN_INPUT_TYPE);
 					if (!input_file) {
-						DDL_msg_put(5, dudleyGlob.DDL_file_name, 0, 0, 0, 0);	/* msg 5: gdef: can't open %s */
+						DDL_msg_put(5, DDL_file_name, 0, 0, 0, 0);	/* msg 5: gdef: can't open %s */
 						DDL_exit(FINI_ERROR);
 					}
 				}
-			}
 		}
 
 		/* if we got this far without opening it, it's time to add the new extension */
 
 		if (!input_file) {
-			sprintf(file_name_1, "%s%s", dudleyGlob.DDL_file_name, DDL_EXT);
-			input_file = fopen(file_name_1, FOPEN_INPUT_TYPE);
+			sprintf(file_name_1, "%s%s", DDL_file_name, DDL_EXT);
+			input_file = ib_fopen(file_name_1, FOPEN_INPUT_TYPE);
 			if (input_file)
-				dudleyGlob.DDL_file_name = file_name_1;
+				DDL_file_name = file_name_1;
 			else {
-				input_file = fopen(dudleyGlob.DDL_file_name, FOPEN_INPUT_TYPE);
+				input_file = ib_fopen(DDL_file_name, FOPEN_INPUT_TYPE);
 				if (!input_file)
-					DDL_msg_put(6, dudleyGlob.DDL_file_name, file_name_1, 0, 0, 0);
+					DDL_msg_put(6, DDL_file_name, file_name_1, 0, 0, 0);
 				/* msg 6: gdef: can't open %s or %s */
 			}
 		}
@@ -377,67 +379,60 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	HSH_init();
 	PARSE_actions();
 
-	if (input_file != stdin)
-		fclose(input_file);
+	if (input_file != ib_stdin)
+		ib_fclose(input_file);
 
-	if (dudleyGlob.DDL_actions && ((dudleyGlob.DDL_errors && dudleyGlob.DDL_interactive) || dudleyGlob.DDL_quit)) {
-		rewind(stdin);
-		//*buffer = 0;
-		if (dudleyGlob.DDL_errors > 1)
-			DDL_msg_partial(7, (TEXT *) (IPTR) dudleyGlob.DDL_errors, 0, 0, 0, 0);	/* msg 7: \n%d errors during input. */
-		else if (dudleyGlob.DDL_errors)
+	if (DDL_actions && ((DDL_errors && DDL_interactive) || DDL_quit)) {
+		ib_rewind(ib_stdin);
+		*buffer = 0;
+		if (DDL_errors > 1)
+			DDL_msg_partial(7, (TEXT *) (ULONG) DDL_errors, 0, 0, 0, 0);	/* msg 7: \n%d errors during input. */
+		else if (DDL_errors)
 			DDL_msg_partial(9, 0, 0, 0, 0, 0);	/* msg 9: \n1 error during input. */
 		else
 			DDL_msg_partial(8, 0, 0, 0, 0, 0);	/* msg 8: \nNo errors. */
-		if (DDL_yes_no(10)) { // msg 10 : save changes before exiting?
-			dudleyGlob.DDL_quit = false;
-			dudleyGlob.DDL_errors = 0;
-		}
+		if (DDL_yes_no(10))		/* msg 10 : save changes before exiting? */
+			DDL_quit = DDL_errors = 0;
 	}
 
 /* Reverse the set of actions */
 
-	act* stack = NULL;
-	while (dudleyGlob.DDL_actions) {
-		act* temp = dudleyGlob.DDL_actions;
-		dudleyGlob.DDL_actions = temp->act_next;
+	stack = NULL;
+	while (DDL_actions) {
+		temp = DDL_actions;
+		DDL_actions = temp->act_next;
 		temp->act_next = stack;
 		stack = temp;
 	}
-	dudleyGlob.DDL_actions = stack;
+	DDL_actions = stack;
 
-	if (!dudleyGlob.DDL_errors && !dudleyGlob.DDL_quit) {
+	if (!DDL_errors && !DDL_quit) {
 		EXP_actions();
-		if (!dudleyGlob.DDL_errors && !dudleyGlob.DDL_quit) {
+		if (!DDL_errors && !DDL_quit) {
 			EXE_execute();
-			if (dudleyGlob.DDL_dynamic)
+			if (DDL_dynamic)
 				TRN_translate();
 		}
 	}
 
-	if (dudleyGlob.DDL_actions && (dudleyGlob.DDL_errors || dudleyGlob.DDL_quit))
-		if (dudleyGlob.DDL_errors)
+	if (DDL_actions && (DDL_errors || DDL_quit))
+		if (DDL_errors)
 			DDL_msg_put(307, 0, 0, 0, 0, 0);	/* msg 307: Ceasing processing because of errors. */
 		else
 			DDL_msg_put(308, 0, 0, 0, 0, 0);	/* msg 308: Ceasing processing. */
 
-	EXE_fini(dudleyGlob.database);
+	EXE_fini(database);
 
-	if (dudleyGlob.DDL_errors) {
-		if (dudleyGlob.database && (dudleyGlob.database->dbb_flags & DBB_create_database)) {
-			for (const fil* file = dudleyGlob.database->dbb_files; file;
-				file = file->fil_next)
-			{
+	if (DDL_errors) {
+		if (database && (database->dbb_flags & DBB_create_database)) {
+			for (file = database->dbb_files; file; file = file->fil_next)
 				unlink(file->fil_name->sym_name);
-			}
-			unlink(dudleyGlob.database->dbb_name->sym_string);
+			unlink(database->dbb_name->sym_string);
 		}
 		DDL_exit(FINI_ERROR);
 	}
 
 	DDL_exit(FINI_OK);
-	// This will never execute, see exit() in DDL_exit. Make the compiler happy.
-	return 0;
 }
 #endif
 
@@ -452,8 +447,9 @@ UCHAR *DDL_alloc(int size)
  * Functional description
  *
  **************************************/
-	UCHAR* const block = (UCHAR*) gds__alloc((SLONG) size);
-	UCHAR* p = block;
+	UCHAR *block, *p;
+
+	p = block = (UCHAR*) gds__alloc((SLONG) size);
 
 #ifdef DEBUG_GDS_ALLOC
 /* For V4.0 we don't care about gdef specific memory leaks */
@@ -463,20 +459,19 @@ UCHAR *DDL_alloc(int size)
 	if (!p)
 		DDL_err(14, 0, 0, 0, 0, 0);	/* msg 14: memory exhausted */
 	else
-		do {
+		do
 			*p++ = 0;
-		} while (--size);
+		while (--size);
 
 	return block;
 }
 
 
 int DDL_db_error(
-				 ISC_STATUS* status_vector,
+				 ISC_STATUS * status_vector,
 				 USHORT number,
-				 const TEXT* arg1,
-				 const TEXT* arg2, const TEXT* arg3,
-				 const TEXT* arg4, const TEXT* arg5)
+				 TEXT * arg1,
+				 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
 {
 /**************************************
  *
@@ -497,8 +492,7 @@ int DDL_db_error(
 
 int DDL_err(
 			USHORT number,
-			const TEXT* arg1, const TEXT* arg2, const TEXT* arg3,
-			const TEXT* arg4, const TEXT* arg5)
+			TEXT * arg1, TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
 {
 /**************************************
  *
@@ -511,13 +505,13 @@ int DDL_err(
  *
  **************************************/
 
-	DDL_msg_partial(15, dudleyGlob.DDL_file_name, (TEXT *) (IPTR) dudleyGlob.DDL_line, 0, 0, 0);	/*msg 15: %s:%d: */
+	DDL_msg_partial(15, DDL_file_name, (TEXT *) (ULONG) DDL_line, 0, 0, 0);	/*msg 15: %s:%d: */
 	DDL_msg_put(number, arg1, arg2, arg3, arg4, arg5);
-	if (dudleyGlob.DDL_errors++ > MAX_ERRORS) {
+	if (DDL_errors++ > MAX_ERRORS) {
 		DDL_msg_put(16, (TEXT *) (SLONG) MAX_ERRORS, 0, 0, 0, 0);	/* msg 16: error count exceeds limit (%d) */
 		DDL_msg_put(17, 0, 0, 0, 0, 0);	/* msg 17: what we have here is a failure to communicate! */
-		if (dudleyGlob.database && (dudleyGlob.database->dbb_flags & DBB_create_database))
-			unlink(dudleyGlob.DB_file_name);
+		if (database && (database->dbb_flags & DBB_create_database))
+			unlink(DB_file_name);
 		DDL_exit(FINI_ERROR);
 	}
 
@@ -526,11 +520,10 @@ int DDL_err(
 
 
 void DDL_error_abort(
-					 ISC_STATUS* status_vector,
+					 ISC_STATUS * status_vector,
 					 USHORT number,
-					 const TEXT* arg1,
-					 const TEXT* arg2, const TEXT* arg3, 
-					 const TEXT* arg4, const TEXT* arg5)
+					 TEXT * arg1,
+					 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
 {
 /**************************************
  *
@@ -572,9 +565,8 @@ void DDL_exit( int stat)
 
 void DDL_msg_partial(
 					 USHORT number,
-					 const TEXT* arg1,
-					 const TEXT* arg2, const TEXT* arg3,
-					 const TEXT* arg4, const TEXT* arg5)
+					 TEXT * arg1,
+					 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
 {
 /**************************************
  *
@@ -590,15 +582,14 @@ void DDL_msg_partial(
 
 	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message,
 					arg1, arg2, arg3, arg4, arg5);
-	printf("%s", DDL_message);
+	ib_printf("%s", DDL_message);
 }
 
 
 void DDL_msg_put(
 				 USHORT number,
-				 const TEXT* arg1,
-				 const TEXT* arg2, const TEXT* arg3,
-				 const TEXT* arg4, const TEXT* arg5)
+				 TEXT * arg1,
+				 TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
 {
 /**************************************
  *
@@ -613,11 +604,11 @@ void DDL_msg_put(
 
 	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message,
 					arg1, arg2, arg3, arg4, arg5);
-	printf("%s\n", DDL_message);
+	ib_printf("%s\n", DDL_message);
 }
 
 
-DUDLEY_NOD DDL_pop(dudley_lls** pointer)
+DUDLEY_NOD DDL_pop(LLS * pointer)
 {
 /**************************************
  *
@@ -629,8 +620,11 @@ DUDLEY_NOD DDL_pop(dudley_lls** pointer)
  *	Pop an item off a linked list stack.  Free the stack node.
  *
  **************************************/
-	dudley_lls* stack = *pointer;
-	DUDLEY_NOD node = stack->lls_object;
+	LLS stack;
+	DUDLEY_NOD node;
+
+	stack = *pointer;
+	node = stack->lls_object;
 	*pointer = stack->lls_next;
 	stack->lls_next = free_stack;
 	free_stack = stack;
@@ -639,7 +633,7 @@ DUDLEY_NOD DDL_pop(dudley_lls** pointer)
 }
 
 
-void DDL_push( DUDLEY_NOD object, dudley_lls** pointer)
+void DDL_push( DUDLEY_NOD object, LLS * pointer)
 {
 /**************************************
  *
@@ -651,14 +645,14 @@ void DDL_push( DUDLEY_NOD object, dudley_lls** pointer)
  *	Push an arbitrary object onto a linked list stack.
  *
  **************************************/
-	dudley_lls* stack;
+	LLS stack;
 
 	if (free_stack) {
 		stack = free_stack;
 		free_stack = stack->lls_next;
 	}
 	else
-		stack = (dudley_lls*) DDL_alloc(sizeof(dudley_lls));
+		stack = (LLS) DDL_alloc(LLS_LEN);
 
 	stack->lls_object = object;
 	stack->lls_next = *pointer;
@@ -666,7 +660,7 @@ void DDL_push( DUDLEY_NOD object, dudley_lls** pointer)
 }
 
 
-bool DDL_yes_no( USHORT number)
+int DDL_yes_no( USHORT number)
 {
 /**************************************
  *
@@ -678,56 +672,47 @@ bool DDL_yes_no( USHORT number)
  *	Ask a yes/no question.
  *
  **************************************/
+	int c, d;
+	USHORT count, yes_num, no_num, re_num;
 	TEXT prompt[128], reprompt[128], yes_ans[128], no_ans[128];
 
 	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(prompt), prompt, NULL,
 					NULL, NULL, NULL, NULL);
 
-	USHORT yes_num = 342;				/* Msg342 YES   */
-	USHORT no_num = 343;				/* Msg343 NO    */
-	USHORT re_num = 344;				/* Msg344 Please respond with YES or NO. */
+	yes_num = 342;				/* Msg342 YES   */
+	no_num = 343;				/* Msg343 NO    */
+	re_num = 344;				/* Msg344 Please respond with YES or NO. */
 	reprompt[0] = '\0';
 
 	if (gds__msg_format
 		(0, DDL_MSG_FAC, no_num, sizeof(no_ans), no_ans, NULL, NULL, NULL,
 		 NULL, NULL) <= 0)
-	{
 		strcpy(no_ans, "NO");	/* default if msg_format fails */
-	}
 	if (gds__msg_format
 		(0, DDL_MSG_FAC, yes_num, sizeof(yes_ans), yes_ans, NULL, NULL, NULL,
 		 NULL, NULL) <= 0)
-	{
 		strcpy(yes_ans, "YES");
-	}
 
 	for (;;) {
-		printf(prompt);
-		if (dudleyGlob.DDL_service)
-			putc('\001', stdout);
-		fflush(stdout);
-		int count = 0;
-		int c;
-		while ((c = getc(stdin)) == ' ')
+		ib_printf(prompt);
+		if (DDL_service)
+			ib_putc('\001', ib_stdout);
+		ib_fflush(ib_stdout);
+		count = 0;
+		while ((c = ib_getc(ib_stdin)) == ' ')
 			count++;
 		if (c != '\n' && c != EOF)
-		{
-			int d;
-			while ((d = getc(stdin)) != '\n' && d != EOF);
-		}
+			while ((d = ib_getc(ib_stdin)) != '\n' && d != EOF);
 		if (!count && c == EOF)
-			return false;
+			return FALSE;
 		if (UPPER(c) == UPPER(yes_ans[0]))
-			return true;
+			return TRUE;
 		if (UPPER(c) == UPPER(no_ans[0]))
-			return false;
+			return FALSE;
 		if (!reprompt
 			&& gds__msg_format(0, DDL_MSG_FAC, re_num, sizeof(reprompt),
 							   reprompt, NULL, NULL, NULL, NULL, NULL) <= 0)
-		{
 			sprintf(reprompt, "Please respond with YES or NO.");	/* default if msg_format fails */
-		}
-		printf("%s\n", reprompt);
+		ib_printf("%s\n", reprompt);
 	}
 }
-

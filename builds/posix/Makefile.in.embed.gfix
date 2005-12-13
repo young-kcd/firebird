@@ -27,15 +27,10 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.embed.gfix,v 1.7.2.2 2004-09-17 20:34:21 skidder Exp $
 #
 ROOT=..
-SERVICES_THREADED=@service_thread_CS@
-ifeq ($(SERVICES_THREADED),true)
-    ObjModuleType=superclient
-    CFLAGS+=-DSTD_UTIL
-else
-    ObjModuleType=std
-endif
+ObjModuleName=embed.gfix
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -48,12 +43,13 @@ include     $(ROOT)/gen/make.shared.variables
 GFIX_Files = alice_meta.epp \
 			 alice.cpp all.cpp exe.cpp tdr.cpp 
 
-GFIX_Other_Sources += jrd/isc.cpp jrd/ThreadData.cpp
+GFIX_Other_Sources = jrd/isc.cpp \
+common/classes/alloc.cpp common/fb_exception.cpp
 
 GFIX_Sources = $(addprefix alice/, $(GFIX_Files)) $(GFIX_Other_Sources)
 GFIX_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GFIX_Sources))))
 
-AllObjects = $(GFIX_Objects) $(CLUMPLETS_Objects)
+AllObjects = $(GFIX_Objects)
 
 Dependencies = $(AllObjects:.o=.d) 
 
@@ -63,8 +59,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 gfix : $(LIBFBEMBED_SO) $(GFIX)
 
-$(GFIX):	$(GFIX_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon -lfbembed $(LINK_LIBS)
+$(GFIX):	$(GFIX_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

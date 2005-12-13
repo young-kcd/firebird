@@ -21,15 +21,15 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_INTL_H
-#define JRD_INTL_H
+#ifndef _JRD_INTL_H_
+#define _JRD_INTL_H_
 
 #include "../intl/charsets.h"
 
 #define ASCII_SPACE     32		/* ASCII code for space */
 
-//#define INTL_name_not_found		1
-//#define INTL_subtype_not_implemented	2
+#define INTL_name_not_found		1
+#define INTL_subtype_not_implemented	2
 
 /*
  *  Default character set name for specification of COLLATE clause without
@@ -48,11 +48,11 @@
 
 /* text type definitions */
 
-#define ttype_none				CS_NONE			/* 0 */
-#define ttype_ascii				CS_ASCII		/* 2 */
-#define ttype_binary			CS_BINARY		/* 1 */
-#define ttype_unicode_fss		CS_UNICODE_FSS	/* 3 */
-#define ttype_last_internal		CS_UTF8			/* 4 */		// not internal yet, but will be in the future
+#define ttype_none			CS_NONE	/* 0 */
+#define	ttype_ascii			CS_ASCII	/* 2 */
+#define	ttype_binary			CS_BINARY	/* 1 */
+#define	ttype_unicode_fss		CS_UNICODE_FSS	/* 3 */
+#define	ttype_last_internal		4	/* CS_reserved4 */
 
 #define ttype_dynamic			CS_dynamic	/* use att_charset */
 
@@ -82,17 +82,21 @@
 #define INTL_GET_COLLATE(dsc)	((SCHAR)((dsc)->dsc_sub_type >> 8))
 
 
+#define	IS_DTYPE_ANY_TEXT(x)		((x) <= dtype_any_text)
+
 /* Define tests for international data */
 
-#define	INTL_TTYPE(desc)		((desc)->dsc_ttype())
-#define	INTL_ASSIGN_TTYPE(desc, value) 	((desc)->dsc_ttype() = (SSHORT)(value))
+#define	INTL_TTYPE(desc)		((desc)->dsc_ttype)
+#define	INTL_ASSIGN_TTYPE(desc, value) 	((desc)->dsc_ttype = (SSHORT)(value))
 
-#define INTERNAL_TTYPE(d)	(((USHORT)((d)->dsc_ttype())) <= ttype_last_internal)
+#define INTERNAL_TTYPE(d)	(((USHORT)((d)->dsc_ttype)) <= ttype_last_internal)
 
 #define IS_INTL_DATA(d)		((d)->dsc_dtype <= dtype_any_text &&    \
-				 (((USHORT)((d)->dsc_ttype())) > ttype_last_internal))
+				 (((USHORT)((d)->dsc_ttype)) > ttype_last_internal))
 
-#define INTL_TEXT_TYPE(desc)    ((DTYPE_IS_TEXT((desc).dsc_dtype)) ? INTL_TTYPE (&(desc)) : ttype_ascii)
+#define NUMERIC_SCALE(desc)	((IS_DTYPE_ANY_TEXT((desc).dsc_dtype)) ? 0 : (desc).dsc_scale)
+
+#define INTL_TEXT_TYPE(desc)    ((IS_DTYPE_ANY_TEXT((desc).dsc_dtype)) ? INTL_TTYPE (&(desc)) : ttype_ascii)
 
 #define INTL_DYNAMIC_CHARSET(desc)	(INTL_GET_CHARSET(desc) == CS_dynamic)
 
@@ -104,7 +108,7 @@
  *  2) As a CHARACTER_SET_ID (when collation isn't relevent, like UDF parms)
  *  3) As an index type - (btr.h)
  *  4) As a driver ID (used to lookup the code which implements the locale)
- *     This is also known as dsc_ttype() (aka text subtype).
+ *     This is also known as dsc_ttype (aka text subtype).
  *
  * In Descriptors (DSC) the data is encoded as:
  *	dsc_charset	overloaded into dsc_scale
@@ -138,7 +142,6 @@
 #define INTL_INDEX_TYPE(desc)	INTL_TEXT_TO_INDEX (INTL_RES_TTYPE (desc))
 
 /* Maps a Character_set_id & collation_id to a text_type (driver ID) */
-#define INTL_CS_COLL_TO_TTYPE(cs, coll)	((SSHORT)((coll) << 8 | ((cs) & 0x00FF)))
+#define INTL_CS_COLL_TO_TTYPE(cs,coll)	((SSHORT)((coll) << 8 | ((cs) & 0x00FF)))
 
-#endif /* JRD_INTL_H */
-
+#endif /* _JRD_INTL_H_ */

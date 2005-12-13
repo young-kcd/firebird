@@ -1,610 +1,259 @@
-/* A Bison parser, made by GNU Bison 1.875.  */
-
-/* Skeleton parser for Yacc-like parsing with Bison,
-   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002 Free Software Foundation, Inc.
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place - Suite 330,
-   Boston, MA 02111-1307, USA.  */
-
-/* As a special exception, when this file is copied by Bison into a
-   Bison output file, you may use that output file without restriction.
-   This special exception was added by the Free Software Foundation
-   in version 1.24 of Bison.  */
-
-/* Tokens.  */
-#ifndef YYTOKENTYPE
-# define YYTOKENTYPE
-   /* Put the tokens into the symbol table, so that GDB and other debuggers
-      know about them.  */
-   enum yytokentype {
-     ACTIVE = 258,
-     ADD = 259,
-     AFTER = 260,
-     ALL = 261,
-     ALTER = 262,
-     AND = 263,
-     ANY = 264,
-     AS = 265,
-     ASC = 266,
-     AT = 267,
-     AVG = 268,
-     AUTO = 269,
-     BEFORE = 270,
-     BEGIN = 271,
-     BETWEEN = 272,
-     BLOB = 273,
-     BY = 274,
-     CAST = 275,
-     CHARACTER = 276,
-     CHECK = 277,
-     COLLATE = 278,
-     COMMA = 279,
-     COMMIT = 280,
-     COMMITTED = 281,
-     COMPUTED = 282,
-     CONCATENATE = 283,
-     CONDITIONAL = 284,
-     CONSTRAINT = 285,
-     CONTAINING = 286,
-     COUNT = 287,
-     CREATE = 288,
-     CSTRING = 289,
-     CURRENT = 290,
-     CURSOR = 291,
-     DATABASE = 292,
-     DATE = 293,
-     DB_KEY = 294,
-     KW_DEBUG = 295,
-     DECIMAL = 296,
-     DECLARE = 297,
-     DEFAULT = 298,
-     KW_DELETE = 299,
-     DESC = 300,
-     DISTINCT = 301,
-     DO = 302,
-     DOMAIN = 303,
-     DROP = 304,
-     ELSE = 305,
-     END = 306,
-     ENTRY_POINT = 307,
-     EQL = 308,
-     ESCAPE = 309,
-     EXCEPTION = 310,
-     EXECUTE = 311,
-     EXISTS = 312,
-     EXIT = 313,
-     EXTERNAL = 314,
-     FILTER = 315,
-     FOR = 316,
-     FOREIGN = 317,
-     FROM = 318,
-     FULL = 319,
-     FUNCTION = 320,
-     GDSCODE = 321,
-     GEQ = 322,
-     GENERATOR = 323,
-     GEN_ID = 324,
-     GRANT = 325,
-     GROUP = 326,
-     GTR = 327,
-     HAVING = 328,
-     IF = 329,
-     KW_IN = 330,
-     INACTIVE = 331,
-     INNER = 332,
-     INPUT_TYPE = 333,
-     INDEX = 334,
-     INSERT = 335,
-     INTEGER = 336,
-     INTO = 337,
-     IS = 338,
-     ISOLATION = 339,
-     JOIN = 340,
-     KEY = 341,
-     KW_CHAR = 342,
-     KW_DEC = 343,
-     KW_DOUBLE = 344,
-     KW_FILE = 345,
-     KW_FLOAT = 346,
-     KW_INT = 347,
-     KW_LONG = 348,
-     KW_NULL = 349,
-     KW_NUMERIC = 350,
-     KW_UPPER = 351,
-     KW_VALUE = 352,
-     LENGTH = 353,
-     LPAREN = 354,
-     LEFT = 355,
-     LEQ = 356,
-     LEVEL = 357,
-     LIKE = 358,
-     LSS = 359,
-     MANUAL = 360,
-     MAXIMUM = 361,
-     MAX_SEGMENT = 362,
-     MERGE = 363,
-     MESSAGE = 364,
-     MINIMUM = 365,
-     MODULE_NAME = 366,
-     NAMES = 367,
-     NATIONAL = 368,
-     NATURAL = 369,
-     NCHAR = 370,
-     NEQ = 371,
-     NO = 372,
-     NOT = 373,
-     NOT_GTR = 374,
-     NOT_LSS = 375,
-     OF = 376,
-     ON = 377,
-     ONLY = 378,
-     OPTION = 379,
-     OR = 380,
-     ORDER = 381,
-     OUTER = 382,
-     OUTPUT_TYPE = 383,
-     OVERFLOW = 384,
-     PAGE = 385,
-     PAGES = 386,
-     KW_PAGE_SIZE = 387,
-     PARAMETER = 388,
-     PASSWORD = 389,
-     PLAN = 390,
-     POSITION = 391,
-     POST_EVENT = 392,
-     PRECISION = 393,
-     PRIMARY = 394,
-     PRIVILEGES = 395,
-     PROCEDURE = 396,
-     PROTECTED = 397,
-     READ = 398,
-     REAL = 399,
-     REFERENCES = 400,
-     RESERVING = 401,
-     RETAIN = 402,
-     RETURNING_VALUES = 403,
-     RETURNS = 404,
-     REVOKE = 405,
-     RIGHT = 406,
-     RPAREN = 407,
-     ROLLBACK = 408,
-     SEGMENT = 409,
-     SELECT = 410,
-     SET = 411,
-     SHADOW = 412,
-     KW_SHARED = 413,
-     SINGULAR = 414,
-     KW_SIZE = 415,
-     SMALLINT = 416,
-     SNAPSHOT = 417,
-     SOME = 418,
-     SORT = 419,
-     SQLCODE = 420,
-     STABILITY = 421,
-     STARTING = 422,
-     STATISTICS = 423,
-     SUB_TYPE = 424,
-     SUSPEND = 425,
-     SUM = 426,
-     TABLE = 427,
-     THEN = 428,
-     TO = 429,
-     TRANSACTION = 430,
-     TRIGGER = 431,
-     UNCOMMITTED = 432,
-     UNION = 433,
-     UNIQUE = 434,
-     UPDATE = 435,
-     USER = 436,
-     VALUES = 437,
-     VARCHAR = 438,
-     VARIABLE = 439,
-     VARYING = 440,
-     VERSION = 441,
-     VIEW = 442,
-     WAIT = 443,
-     WHEN = 444,
-     WHERE = 445,
-     WHILE = 446,
-     WITH = 447,
-     WORK = 448,
-     WRITE = 449,
-     FLOAT_NUMBER = 450,
-     NUMBER = 451,
-     NUMERIC = 452,
-     SYMBOL = 453,
-     STRING = 454,
-     INTRODUCER = 455,
-     ACTION = 456,
-     ADMIN = 457,
-     CASCADE = 458,
-     FREE_IT = 459,
-     RESTRICT = 460,
-     ROLE = 461,
-     COLUMN = 462,
-     TYPE = 463,
-     EXTRACT = 464,
-     YEAR = 465,
-     MONTH = 466,
-     DAY = 467,
-     HOUR = 468,
-     MINUTE = 469,
-     SECOND = 470,
-     WEEKDAY = 471,
-     YEARDAY = 472,
-     TIME = 473,
-     TIMESTAMP = 474,
-     CURRENT_DATE = 475,
-     CURRENT_TIME = 476,
-     CURRENT_TIMESTAMP = 477,
-     NUMBER64BIT = 478,
-     SCALEDINT = 479,
-     CURRENT_USER = 480,
-     CURRENT_ROLE = 481,
-     KW_BREAK = 482,
-     SUBSTRING = 483,
-     RECREATE = 484,
-     KW_DESCRIPTOR = 485,
-     FIRST = 486,
-     SKIP = 487,
-     CURRENT_CONNECTION = 488,
-     CURRENT_TRANSACTION = 489,
-     BIGINT = 490,
-     CASE = 491,
-     NULLIF = 492,
-     COALESCE = 493,
-     USING = 494,
-     NULLS = 495,
-     LAST = 496,
-     ROW_COUNT = 497,
-     LOCK = 498,
-     SAVEPOINT = 499,
-     RELEASE = 500,
-     STATEMENT = 501,
-     LEAVE = 502,
-     INSERTING = 503,
-     UPDATING = 504,
-     DELETING = 505,
-     KW_INSERTING = 506,
-     KW_UPDATING = 507,
-     KW_DELETING = 508,
-     BACKUP = 509,
-     KW_DIFFERENCE = 510,
-     OPEN = 511,
-     CLOSE = 512,
-     FETCH = 513,
-     ROWS = 514,
-     BLOCK = 515,
-     IIF = 516,
-     SCALAR_ARRAY = 517,
-     CROSS = 518,
-     NEXT = 519,
-     SEQUENCE = 520,
-     RESTART = 521,
-     BOTH = 522,
-     COLLATION = 523,
-     COMMENT = 524,
-     BIT_LENGTH = 525,
-     CHAR_LENGTH = 526,
-     CHARACTER_LENGTH = 527,
-     LEADING = 528,
-     KW_LOWER = 529,
-     OCTET_LENGTH = 530,
-     TRAILING = 531,
-     TRIM = 532,
-     RETURNING = 533,
-     KW_IGNORE = 534,
-     LIMBO = 535,
-     UNDO = 536,
-     REQUESTS = 537,
-     TIMEOUT = 538
-   };
-#endif
-#define ACTIVE 258
-#define ADD 259
-#define AFTER 260
-#define ALL 261
-#define ALTER 262
-#define AND 263
-#define ANY 264
-#define AS 265
-#define ASC 266
-#define AT 267
-#define AVG 268
-#define AUTO 269
+#define ACTIVE 257
+#define ADD 258
+#define AFTER 259
+#define ALL 260
+#define ALTER 261
+#define AND 262
+#define ANY 263
+#define AS 264
+#define ASC 265
+#define AT 266
+#define AVG 267
+#define AUTO 268
+#define BASENAME 269
 #define BEFORE 270
 #define BEGIN 271
 #define BETWEEN 272
 #define BLOB 273
 #define BY 274
-#define CAST 275
-#define CHARACTER 276
-#define CHECK 277
-#define COLLATE 278
-#define COMMA 279
-#define COMMIT 280
-#define COMMITTED 281
-#define COMPUTED 282
-#define CONCATENATE 283
-#define CONDITIONAL 284
-#define CONSTRAINT 285
-#define CONTAINING 286
-#define COUNT 287
-#define CREATE 288
-#define CSTRING 289
-#define CURRENT 290
-#define CURSOR 291
-#define DATABASE 292
-#define DATE 293
-#define DB_KEY 294
-#define KW_DEBUG 295
-#define DECIMAL 296
-#define DECLARE 297
-#define DEFAULT 298
-#define KW_DELETE 299
-#define DESC 300
-#define DISTINCT 301
-#define DO 302
-#define DOMAIN 303
-#define DROP 304
-#define ELSE 305
-#define END 306
-#define ENTRY_POINT 307
-#define EQL 308
-#define ESCAPE 309
-#define EXCEPTION 310
-#define EXECUTE 311
-#define EXISTS 312
-#define EXIT 313
-#define EXTERNAL 314
-#define FILTER 315
-#define FOR 316
-#define FOREIGN 317
-#define FROM 318
-#define FULL 319
-#define FUNCTION 320
-#define GDSCODE 321
-#define GEQ 322
-#define GENERATOR 323
-#define GEN_ID 324
-#define GRANT 325
-#define GROUP 326
-#define GTR 327
-#define HAVING 328
-#define IF 329
-#define KW_IN 330
-#define INACTIVE 331
-#define INNER 332
-#define INPUT_TYPE 333
-#define INDEX 334
-#define INSERT 335
-#define INTEGER 336
-#define INTO 337
-#define IS 338
-#define ISOLATION 339
-#define JOIN 340
-#define KEY 341
-#define KW_CHAR 342
-#define KW_DEC 343
-#define KW_DOUBLE 344
-#define KW_FILE 345
-#define KW_FLOAT 346
-#define KW_INT 347
-#define KW_LONG 348
-#define KW_NULL 349
-#define KW_NUMERIC 350
-#define KW_UPPER 351
-#define KW_VALUE 352
-#define LENGTH 353
-#define LPAREN 354
-#define LEFT 355
-#define LEQ 356
-#define LEVEL 357
-#define LIKE 358
-#define LSS 359
-#define MANUAL 360
-#define MAXIMUM 361
-#define MAX_SEGMENT 362
-#define MERGE 363
-#define MESSAGE 364
-#define MINIMUM 365
-#define MODULE_NAME 366
-#define NAMES 367
-#define NATIONAL 368
-#define NATURAL 369
-#define NCHAR 370
-#define NEQ 371
-#define NO 372
-#define NOT 373
-#define NOT_GTR 374
-#define NOT_LSS 375
-#define OF 376
-#define ON 377
-#define ONLY 378
-#define OPTION 379
-#define OR 380
-#define ORDER 381
-#define OUTER 382
-#define OUTPUT_TYPE 383
-#define OVERFLOW 384
-#define PAGE 385
-#define PAGES 386
-#define KW_PAGE_SIZE 387
-#define PARAMETER 388
-#define PASSWORD 389
-#define PLAN 390
-#define POSITION 391
-#define POST_EVENT 392
-#define PRECISION 393
-#define PRIMARY 394
-#define PRIVILEGES 395
-#define PROCEDURE 396
-#define PROTECTED 397
-#define READ 398
-#define REAL 399
-#define REFERENCES 400
-#define RESERVING 401
-#define RETAIN 402
-#define RETURNING_VALUES 403
-#define RETURNS 404
-#define REVOKE 405
-#define RIGHT 406
-#define RPAREN 407
-#define ROLLBACK 408
-#define SEGMENT 409
-#define SELECT 410
-#define SET 411
-#define SHADOW 412
-#define KW_SHARED 413
-#define SINGULAR 414
-#define KW_SIZE 415
-#define SMALLINT 416
-#define SNAPSHOT 417
-#define SOME 418
-#define SORT 419
-#define SQLCODE 420
-#define STABILITY 421
-#define STARTING 422
-#define STATISTICS 423
-#define SUB_TYPE 424
-#define SUSPEND 425
-#define SUM 426
-#define TABLE 427
-#define THEN 428
-#define TO 429
-#define TRANSACTION 430
-#define TRIGGER 431
-#define UNCOMMITTED 432
-#define UNION 433
-#define UNIQUE 434
-#define UPDATE 435
-#define USER 436
-#define VALUES 437
-#define VARCHAR 438
-#define VARIABLE 439
-#define VARYING 440
-#define VERSION 441
-#define VIEW 442
-#define WAIT 443
-#define WHEN 444
-#define WHERE 445
-#define WHILE 446
-#define WITH 447
-#define WORK 448
-#define WRITE 449
-#define FLOAT_NUMBER 450
-#define NUMBER 451
-#define NUMERIC 452
-#define SYMBOL 453
-#define STRING 454
-#define INTRODUCER 455
-#define ACTION 456
-#define ADMIN 457
-#define CASCADE 458
-#define FREE_IT 459
-#define RESTRICT 460
-#define ROLE 461
-#define COLUMN 462
-#define TYPE 463
-#define EXTRACT 464
-#define YEAR 465
-#define MONTH 466
-#define DAY 467
-#define HOUR 468
-#define MINUTE 469
-#define SECOND 470
-#define WEEKDAY 471
-#define YEARDAY 472
-#define TIME 473
-#define TIMESTAMP 474
-#define CURRENT_DATE 475
-#define CURRENT_TIME 476
-#define CURRENT_TIMESTAMP 477
-#define NUMBER64BIT 478
-#define SCALEDINT 479
-#define CURRENT_USER 480
-#define CURRENT_ROLE 481
-#define KW_BREAK 482
-#define SUBSTRING 483
-#define RECREATE 484
-#define KW_DESCRIPTOR 485
-#define FIRST 486
-#define SKIP 487
-#define CURRENT_CONNECTION 488
-#define CURRENT_TRANSACTION 489
-#define BIGINT 490
-#define CASE 491
-#define NULLIF 492
-#define COALESCE 493
-#define USING 494
-#define NULLS 495
-#define LAST 496
-#define ROW_COUNT 497
-#define LOCK 498
-#define SAVEPOINT 499
-#define RELEASE 500
-#define STATEMENT 501
-#define LEAVE 502
-#define INSERTING 503
-#define UPDATING 504
-#define DELETING 505
-#define KW_INSERTING 506
-#define KW_UPDATING 507
-#define KW_DELETING 508
-#define BACKUP 509
-#define KW_DIFFERENCE 510
-#define OPEN 511
-#define CLOSE 512
-#define FETCH 513
-#define ROWS 514
-#define BLOCK 515
-#define IIF 516
-#define SCALAR_ARRAY 517
-#define CROSS 518
-#define NEXT 519
-#define SEQUENCE 520
-#define RESTART 521
-#define BOTH 522
-#define COLLATION 523
-#define COMMENT 524
-#define BIT_LENGTH 525
-#define CHAR_LENGTH 526
-#define CHARACTER_LENGTH 527
-#define LEADING 528
-#define KW_LOWER 529
-#define OCTET_LENGTH 530
-#define TRAILING 531
-#define TRIM 532
-#define RETURNING 533
-#define KW_IGNORE 534
-#define LIMBO 535
-#define UNDO 536
-#define REQUESTS 537
-#define TIMEOUT 538
-
-
-
-
-#if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-typedef int YYSTYPE;
-# define yystype YYSTYPE /* obsolescent; will be withdrawn */
-# define YYSTYPE_IS_DECLARED 1
-# define YYSTYPE_IS_TRIVIAL 1
-#endif
-
-extern YYSTYPE yylval;
-
-
-
+#define CACHE 275
+#define CAST 276
+#define CHARACTER 277
+#define CHECK 278
+#define CHECK_POINT_LEN 279
+#define COLLATE 280
+#define COMMA 281
+#define COMMIT 282
+#define COMMITTED 283
+#define COMPUTED 284
+#define CONCATENATE 285
+#define CONDITIONAL 286
+#define CONSTRAINT 287
+#define CONTAINING 288
+#define COUNT 289
+#define CREATE 290
+#define CSTRING 291
+#define CURRENT 292
+#define CURSOR 293
+#define DATABASE 294
+#define DATE 295
+#define DB_KEY 296
+#define KW_DEBUG 297
+#define DECIMAL 298
+#define DECLARE 299
+#define DEFAULT 300
+#define KW_DELETE 301
+#define DESC 302
+#define DISTINCT 303
+#define DO 304
+#define DOMAIN 305
+#define DROP 306
+#define ELSE 307
+#define END 308
+#define ENTRY_POINT 309
+#define EQL 310
+#define ESCAPE 311
+#define EXCEPTION 312
+#define EXECUTE 313
+#define EXISTS 314
+#define EXIT 315
+#define EXTERNAL 316
+#define FILTER 317
+#define FOR 318
+#define FOREIGN 319
+#define FROM 320
+#define FULL 321
+#define FUNCTION 322
+#define GDSCODE 323
+#define GEQ 324
+#define GENERATOR 325
+#define GEN_ID 326
+#define GRANT 327
+#define GROUP 328
+#define GROUP_COMMIT_WAIT 329
+#define GTR 330
+#define HAVING 331
+#define IF 332
+#define KW_IN 333
+#define INACTIVE 334
+#define INNER 335
+#define INPUT_TYPE 336
+#define INDEX 337
+#define INSERT 338
+#define INTEGER 339
+#define INTO 340
+#define IS 341
+#define ISOLATION 342
+#define JOIN 343
+#define KEY 344
+#define KW_CHAR 345
+#define KW_DEC 346
+#define KW_DOUBLE 347
+#define KW_FILE 348
+#define KW_FLOAT 349
+#define KW_INT 350
+#define KW_LONG 351
+#define KW_NULL 352
+#define KW_NUMERIC 353
+#define KW_UPPER 354
+#define KW_VALUE 355
+#define LENGTH 356
+#define LOGFILE 357
+#define LPAREN 358
+#define LEFT 359
+#define LEQ 360
+#define LEVEL 361
+#define LIKE 362
+#define LOG_BUF_SIZE 363
+#define LSS 364
+#define MANUAL 365
+#define MAXIMUM 366
+#define MAX_SEGMENT 367
+#define MERGE 368
+#define MESSAGE 369
+#define MINIMUM 370
+#define MODULE_NAME 371
+#define NAMES 372
+#define NATIONAL 373
+#define NATURAL 374
+#define NCHAR 375
+#define NEQ 376
+#define NO 377
+#define NOT 378
+#define NOT_GTR 379
+#define NOT_LSS 380
+#define NUM_LOG_BUFS 381
+#define OF 382
+#define ON 383
+#define ONLY 384
+#define OPTION 385
+#define OR 386
+#define ORDER 387
+#define OUTER 388
+#define OUTPUT_TYPE 389
+#define OVERFLOW 390
+#define PAGE 391
+#define PAGES 392
+#define KW_PAGE_SIZE 393
+#define PARAMETER 394
+#define PASSWORD 395
+#define PLAN 396
+#define POSITION 397
+#define POST_EVENT 398
+#define PRECISION 399
+#define PRIMARY 400
+#define PRIVILEGES 401
+#define PROCEDURE 402
+#define PROTECTED 403
+#define RAW_PARTITIONS 404
+#define READ 405
+#define REAL 406
+#define REFERENCES 407
+#define RESERVING 408
+#define RETAIN 409
+#define RETURNING_VALUES 410
+#define RETURNS 411
+#define REVOKE 412
+#define RIGHT 413
+#define RPAREN 414
+#define ROLLBACK 415
+#define SEGMENT 416
+#define SELECT 417
+#define SET 418
+#define SHADOW 419
+#define KW_SHARED 420
+#define SINGULAR 421
+#define KW_SIZE 422
+#define SMALLINT 423
+#define SNAPSHOT 424
+#define SOME 425
+#define SORT 426
+#define SQLCODE 427
+#define STABILITY 428
+#define STARTING 429
+#define STATISTICS 430
+#define SUB_TYPE 431
+#define SUSPEND 432
+#define SUM 433
+#define TABLE 434
+#define THEN 435
+#define TO 436
+#define TRANSACTION 437
+#define TRIGGER 438
+#define UNCOMMITTED 439
+#define UNION 440
+#define UNIQUE 441
+#define UPDATE 442
+#define USER 443
+#define VALUES 444
+#define VARCHAR 445
+#define VARIABLE 446
+#define VARYING 447
+#define VERSION 448
+#define VIEW 449
+#define WAIT 450
+#define WHEN 451
+#define WHERE 452
+#define WHILE 453
+#define WITH 454
+#define WORK 455
+#define WRITE 456
+#define FLOAT_NUMBER 457
+#define NUMBER 458
+#define NUMERIC 459
+#define SYMBOL 460
+#define STRING 461
+#define INTRODUCER 462
+#define ACTION 463
+#define ADMIN 464
+#define CASCADE 465
+#define FREE_IT 466
+#define RESTRICT 467
+#define ROLE 468
+#define COLUMN 469
+#define TYPE 470
+#define EXTRACT 471
+#define YEAR 472
+#define MONTH 473
+#define DAY 474
+#define HOUR 475
+#define MINUTE 476
+#define SECOND 477
+#define WEEKDAY 478
+#define YEARDAY 479
+#define TIME 480
+#define TIMESTAMP 481
+#define CURRENT_DATE 482
+#define CURRENT_TIME 483
+#define CURRENT_TIMESTAMP 484
+#define NUMBER64BIT 485
+#define SCALEDINT 486
+#define CURRENT_USER 487
+#define CURRENT_ROLE 488
+#define KW_BREAK 489
+#define SUBSTRING 490
+#define RECREATE 491
+#define KW_DESCRIPTOR 492
+#define FIRST 493
+#define SKIP 494
+#define CURRENT_CONNECTION 495
+#define CURRENT_TRANSACTION 496
+#define BIGINT 497
+#define CASE 498
+#define NULLIF 499
+#define COALESCE 500
+#define USING 501
+#define NULLS 502
+#define LAST 503
+#define ROW_COUNT 504
+#define LOCK 505
+#define SAVEPOINT 506
+#define RELEASE 507
+#define STATEMENT 508
+#define LEAVE 509
+#define INSERTING 510
+#define UPDATING 511
+#define DELETING 512
+#define KW_INSERTING 513
+#define KW_UPDATING 514
+#define KW_DELETING 515

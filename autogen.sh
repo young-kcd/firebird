@@ -2,7 +2,7 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
-# $Id: autogen.sh,v 1.12 2005-05-27 22:14:40 asfernandes Exp $
+# $Id: autogen.sh,v 1.8.2.1 2003-11-11 08:24:11 tmcsys Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
@@ -24,14 +24,13 @@ fi
 echo "AUTOCONF="$AUTOCONF
 echo "LIBTOOL="$LIBTOOL
 echo "LIBTOOLiZE="$LIBTOOLIZE
-AUTOHEADER=`echo $AUTOCONF |sed 's/conf/header/'`
 
 VER=`$AUTOCONF --version|grep '^[Aa]utoconf'|sed 's/^[^0-9]*//'`
 case "$VER" in
  0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
- 2\.[1-4][0-9] | 2\.5[0-5][a-z]* )
+ 2\.[1-4][0-9] | 2\.5[0-2]* )
   echo
-  echo "**Error**: You must have autoconf 2.56 or later installed."
+  echo "**Error**: You must have autoconf 2.53 or later installed."
   echo "Download the appropriate package for your distribution/OS,"
   echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/autoconf/"
   DIE=1
@@ -51,7 +50,6 @@ case "$VER" in
 esac
 
 # Put other tests for programs here!
-
 
 # If anything failed, exit now.
 if test "$DIE" -eq 1; then
@@ -74,9 +72,6 @@ if test "x$LIBTOOL_M4" != "x"; then
  cp $LIBTOOL_M4 aclocal.m4
 fi
 $LIBTOOLIZE --copy --force || exit 1
-
-echo "Running autoheader ..."
-$AUTOHEADER || exit 1
 
 echo "Running autoconf ..."
 $AUTOCONF || exit 1

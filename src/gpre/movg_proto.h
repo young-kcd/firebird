@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		movg_proto.h
- *	DESCRIPTION:	Prototype Header file for movg.cpp
+ *	DESCRIPTION:	Prototype Header file for movg.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +21,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DSQL_MOVG_PROTO_H
-#define DSQL_MOVG_PROTO_H
+#ifndef _DSQL_MOVG_PROTO_H_
+#define _DSQL_MOVG_PROTO_H_
 
-void MOVG_move(const dsc*, dsc*);
-
-#endif //  DSQL_MOVG_PROTO_H
-
+extern void MOVG_move(DSC *, DSC *);
+#endif /*  _DSQL_MOVG_PROTO_H_  */

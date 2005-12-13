@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		pcmet_proto.h
- *	DESCRIPTION:	Prototype header file for pcmet.cpp
+ *	DESCRIPTION:	Prototype header file for pcmet.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,18 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_PCMET_PROTO_H
-#define JRD_PCMET_PROTO_H
+#ifndef _JRD_PCMET_PROTO_H_
+#define _JRD_PCMET_PROTO_H_
 
-namespace Jrd {
-	class DeferredWork;
-	class jrd_tra;
-	class jrd_rel;
-	struct index_desc;
-}
+extern int PCMET_expression_index(TDBB, SSHORT, struct dfw *, struct jrd_tra *);
+extern void PCMET_lookup_index(struct jrd_rel *, struct idx *);
 
-bool PCMET_expression_index(Jrd::thread_db*, SSHORT, Jrd::DeferredWork*, Jrd::jrd_tra*);
-void PCMET_lookup_index(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*);
-
-#endif // JRD_PCMET_PROTO_H
-
+#endif /* _JRD_PCMET_PROTO_H_ */

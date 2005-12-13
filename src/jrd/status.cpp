@@ -1,34 +1,16 @@
-/*
- *	PROGRAM:		Firebird exceptions classes
- *	MODULE:			status.cpp
- *	DESCRIPTION:	Status vector filling and parsing.
- *
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
- *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
- *
- *  The Original Code was created by Mike Nordell
- *  for the Firebird Open Source RDBMS project.
- *
- *  Copyright (c) 2001 Mike Nordell <tamlin at algonet.se>
- *  and all contributors signed below.
- *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
- *
- * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
- *
- * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
- *
- */
-
+// status.cpp
+//
+// Copyright 2001 Mikael Nordell <tamlin@users.sourceforge.net>
+//
+// This file is part of the firebird RDBMS engine, and as such
+// is only allowed to be used within that engine, where it may
+// be used freely. Any other use is prohibited.
+//
+// 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
+//
+// 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+//
+//
 
 #include "firebird.h"
 #include <stdlib.h>
@@ -36,7 +18,7 @@
 #include <string.h>
 #include "../jrd/status.h"
 #include "../jrd/gdsassert.h"
-#include "gen/iberror.h"
+#include "gen/codes.h"
 #include "../jrd/gds_proto.h"
 
 
@@ -53,52 +35,52 @@ void STUFF_STATUS_function(ISC_STATUS* status_vector, ISC_STATUS status, va_list
 
 	ISC_STATUS* p = status_vector;
 
-	*p++ = isc_arg_gds;
+	*p++ = gds_arg_gds;
 	*p++ = status;
 
 	while ((type = va_arg(args, int)) && ((p - status_vector) < 17))
 	{
 		switch (*p++ = type)
 		{
-			case isc_arg_gds:
+			case gds_arg_gds:
 				*p++ = va_arg(args, ISC_STATUS);
 				break;
 
-			case isc_arg_string:
+			case gds_arg_string:
 				{
 					ISC_STATUS* q = va_arg(args, ISC_STATUS*);
-					if (strlen((TEXT *) q) >= (size_t) MAX_ERRSTR_LEN)
+					if (strlen((TEXT *) q) >= MAX_ERRSTR_LEN)
 					{
-						*(p - 1) = isc_arg_cstring;
+						*(p - 1) = gds_arg_cstring;
 						*p++ = (ISC_STATUS) MAX_ERRSTR_LEN;
 					}
 					*p++ = (ISC_STATUS) q;
 				}
 				break;
 
-			case isc_arg_interpreted:
+			case gds_arg_interpreted:
 				*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 				break;
 
-			case isc_arg_cstring:
+			case gds_arg_cstring:
 				len = (int) va_arg(args, int);
 				*p++ = (ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
 				*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 				break;
 
-			case isc_arg_number:
+			case gds_arg_number:
 				*p++ = (ISC_STATUS) va_arg(args, SLONG);
 				break;
 
-			case isc_arg_vms:
-			case isc_arg_unix:
-			case isc_arg_win32:
+			case gds_arg_vms:
+			case gds_arg_unix:
+			case gds_arg_win32:
 			default:
 				*p++ = (ISC_STATUS) va_arg(args, int);
 				break;
 		}
 	}
-	*p = isc_arg_end;
+	*p = gds_arg_end;
 }
 
 
@@ -107,14 +89,14 @@ void STUFF_STATUS_function(ISC_STATUS* status_vector, ISC_STATUS status, va_list
  * type.  So check for 17 or less
  */
 
-void PARSE_STATUS(const ISC_STATUS* status_vector, int &length, int &warning)
+void PARSE_STATUS(ISC_STATUS * status_vector, int &length, int &warning)
 {
 	warning = 0;
 	length = 0;
 
     int i = 0;
 
-	for (; status_vector[i] != isc_arg_end; i++, length++)
+	for (; status_vector[i] != gds_arg_end; i++, length++)
 	{
 		switch (status_vector[i])
 		{
@@ -122,28 +104,28 @@ void PARSE_STATUS(const ISC_STATUS* status_vector, int &length, int &warning)
 			if (!warning)
 				warning = i;	// find the very first
 			// fallthrought intended
-		case isc_arg_gds:
-		case isc_arg_string:
-		case isc_arg_number:
-		case isc_arg_interpreted:
-		case isc_arg_vms:
-		case isc_arg_unix:
-		case isc_arg_win32:
+		case gds_arg_gds:
+		case gds_arg_string:
+		case gds_arg_number:
+		case gds_arg_interpreted:
+		case gds_arg_vms:
+		case gds_arg_unix:
+		case gds_arg_win32:
 			i++;
 			length++;
 			break;
 
-		case isc_arg_cstring:
+		case gds_arg_cstring:
 			i += 2;
 			length += 2;
 			break;
 
 		default:
-			fb_assert(FALSE);
+			assert(FALSE);
 			break;
 		}
 	}
 	if (i) {
-		length++;				// isc_arg_end is counted
+		length++;				// gds_arg_end is counted
 	}
 }

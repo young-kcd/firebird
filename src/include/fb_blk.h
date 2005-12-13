@@ -1,7 +1,7 @@
 #ifndef INCLUDE_FB_BLK
 #define INCLUDE_FB_BLK
 
-#include <vector>
+//#include <vector>
 #include "../common/classes/alloc.h"
 
 struct blk
@@ -43,19 +43,18 @@ private:
     void* operator new[](size_t s) { return 0; }
 };
 
-template<typename RPT, SSHORT BLOCK_TYPE = 0>
+template<class RPT, SSHORT BLOCK_TYPE = 0>
 class pool_alloc_rpt : public blk
 {
     public:
-		typedef RPT blk_repeat_type;
 #ifdef DEBUG_GDS_ALLOC
-        void* operator new(size_t s, MemoryPool& p, int rpt, char* file, int line)
-            { return p.calloc(s + sizeof(RPT) * rpt, BLOCK_TYPE, file, line); }
+        void* operator new(size_t s, MemoryPool& p, int rpt, char *file, int line)
+            { return p.calloc(s + sizeof(RPT)*rpt, BLOCK_TYPE, file, line); }
 #else
         void* operator new(size_t s, MemoryPool& p, int rpt)
-            { return p.calloc(s + sizeof(RPT) * rpt, BLOCK_TYPE); }
+            { return p.calloc(s + sizeof(RPT)*rpt, BLOCK_TYPE); }
 #endif
-        void operator delete(void* mem, MemoryPool& p, int rpt)
+        void operator delete(void* mem, MemoryPool& p,int rpt)
             { if (mem) p.deallocate(mem); }
         void operator delete(void* mem) { if (mem) MemoryPool::globalFree(mem); }
 
@@ -82,11 +81,10 @@ class vector_rpt : public BASE
           : rptAllocator(pool, BLOCK_TYPE), rpt(size, rptAllocator) {}
 
     public:
-        std::vector<RPT> rpt;
+        std::vector<RPT>    rpt;
 
-        static vector_rpt<BASE, RPT, BLOCK_TYPE>* allocate(int size, MemoryPool& p)
-            { return new(p) vector_rpt<BASE, RPT, BLOCK_TYPE>(size, p); }
+        static vector_rpt<BASE,RPT,BLOCK_TYPE>* allocate(int size, MemoryPool& p)
+            { return new(p) vector_rpt<BASE,RPT,BLOCK_TYPE>(size,p); }
 }; */
 
 #endif	/* INCLUDE_FB_BLK */
-

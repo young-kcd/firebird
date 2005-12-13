@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		dyn_proto.h
- *	DESCRIPTION:	Prototype Header file for dyn.epp
+ *	DESCRIPTION:	Prototype Header file for dyn.e
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +21,19 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_DYN_PROTO_H
-#define JRD_DYN_PROTO_H
+#ifndef _JRD_DYN_PROTO_H_
+#define _JRD_DYN_PROTO_H_
 
-void	DYN_ddl(class Jrd::Attachment*, class Jrd::jrd_tra*, USHORT, const UCHAR*);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // JRD_DYN_PROTO_H
+extern void DYN_ddl(struct att *, struct jrd_tra *, USHORT, UCHAR *);
+extern void	DYN_terminate(TEXT *, int);
 
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _JRD_DYN_PROTO_H_ */

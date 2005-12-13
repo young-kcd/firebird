@@ -1,5 +1,5 @@
-#ifndef JRD_SMP_H
-#define JRD_SMP_H
+#ifndef _JRD_SMP_H_
+#define _JRD_SMP_H_
 
 class SmpLock
 {
@@ -7,9 +7,8 @@ class SmpLock
         SmpLock() {}
         virtual ~SmpLock() {}
 
-        virtual void acquire(void) = 0;
+        virtual void aquire(void) = 0;
         virtual void release(void) = 0;
 };
 
-#endif // JRD_SMP_H
-
+#endif

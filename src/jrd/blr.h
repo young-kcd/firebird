@@ -26,11 +26,10 @@
  *                            implemented ROWS_AFFECTED system variable
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
  */
 
-#ifndef JRD_BLR_H
-#define JRD_BLR_H
+#ifndef _JRD_BLR_H_
+#define _JRD_BLR_H_
 
 /*  WARNING: if you add a new BLR representing a data type, and the value
  *           is greater than the numerically greatest value which now
@@ -57,7 +56,6 @@
 #define blr_sql_date		(unsigned char)12
 #define blr_sql_time		(unsigned char)13
 #define blr_int64               (unsigned char)16
-#define blr_blob2		(unsigned char)17
 
 /* Historical alias for pre V6 applications */
 #define blr_date		blr_timestamp
@@ -98,7 +96,7 @@
 #define blr_label		(unsigned char)17
 #define blr_leave		(unsigned char)18
 #define blr_store2		(unsigned char)19
-#define blr_post		(unsigned char)20
+#define blr_post                (unsigned char)20
 #define blr_literal		(unsigned char)21
 #define blr_dbkey		(unsigned char)22
 #define blr_field		(unsigned char)23
@@ -127,7 +125,6 @@
 #define blr_user_name   	(unsigned char)44	/* added from gds.h */
 #define blr_null		(unsigned char)45
 
-#define blr_equiv			(unsigned char)46
 #define blr_eql			(unsigned char)47
 #define blr_neq			(unsigned char)48
 #define blr_gtr			(unsigned char)49
@@ -193,7 +190,7 @@
 #define blr_force_crack		(unsigned char)111
 #define blr_seek		(unsigned char)112
 #define blr_find		(unsigned char)113
-
+                                 
 /* these indicate directions for blr_seek and blr_find */
 
 #define blr_continue		(unsigned char)0
@@ -286,37 +283,11 @@
 #define blr_writelock		(unsigned char)179
 #define blr_nullslast       (unsigned char)180
 
-/* FB 2.0 specific BLR */
-
-#define blr_lowcase			(unsigned char)181
-#define blr_strlen			(unsigned char)182
-
-/* sub parameters for blr_length */
-
-#define blr_strlen_bit		(unsigned char)0
-#define blr_strlen_char		(unsigned char)1
-#define blr_strlen_octet	(unsigned char)2
-
-#define blr_trim			(unsigned char)183
-
-/* sub parameters for blr_trim */
-
-#define blr_trim_both		(unsigned char)0
-#define blr_trim_leading	(unsigned char)1
-#define blr_trim_trailing	(unsigned char)2
-
-#define blr_trim_spaces		(unsigned char)0
-#define blr_trim_characters	(unsigned char)1
-
 /* These codes reuse BLR code space */
 
 #define blr_post_arg		(unsigned char)163
 #define blr_exec_into		(unsigned char)164
 #define blr_user_savepoint	(unsigned char)165
-#define blr_dcl_cursor		(unsigned char)166
-#define blr_cursor_stmt		(unsigned char)167
-#define blr_current_timestamp2	(unsigned char)168
-#define blr_current_time2	(unsigned char)169
 
 /* These codes are actions for user-defined savepoints */
 
@@ -325,10 +296,4 @@
 #define blr_savepoint_undo	(unsigned char)2
 #define blr_savepoint_release_single	(unsigned char)3
 
-/* These codes are actions for cursors */
-
-#define blr_cursor_open			(unsigned char)0
-#define blr_cursor_close		(unsigned char)1
-#define blr_cursor_fetch		(unsigned char)2
-
-#endif /* JRD_BLR_H */
+#endif /* _JRD_BLR_H_ */

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		tpc_proto.h
- *	DESCRIPTION:	Prototype Header file for tpc.cpp
+ *	DESCRIPTION:	Prototype Header file for tpc.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,14 +21,13 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_TPC_PROTO_H
-#define JRD_TPC_PROTO_H
+#ifndef _JRD_TPC_PROTO_H_
+#define _JRD_TPC_PROTO_H_
 
-int		TPC_cache_state(Jrd::thread_db*, SLONG);
-void	TPC_initialize_tpc(Jrd::thread_db*, SLONG);
-void	TPC_set_state(Jrd::thread_db*, SLONG, SSHORT);
-int		TPC_snapshot_state(Jrd::thread_db*, SLONG);
-void	TPC_update_cache(Jrd::thread_db*, const Ods::tx_inv_page*, SLONG);
+extern int TPC_cache_state(TDBB, SLONG);
+extern void TPC_initialize_tpc(TDBB, SLONG);
+extern void TPC_set_state(TDBB, SLONG, SSHORT);
+extern int TPC_snapshot_state(TDBB, SLONG);
+extern void TPC_update_cache(TDBB, struct tip *, SLONG);
 
-#endif // JRD_TPC_PROTO_H
-
+#endif /* _JRD_TPC_PROTO_H_ */

@@ -1,35 +1,39 @@
 /*
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *	PROGRAM:		JRD Sort
+ *	MODULE:			sort_mem.h
+ *	DESCRIPTION:	Sort Space Management
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  The Original Code was created by Dmitry Yemanov
- *  for the Firebird Open Source RDBMS project.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Copyright (c) 2002 Dmitry Yemanov <dimitr@users.sf.net>
- *  and all contributors signed below.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ *
+ * 2002.04.28 Dmitry Yemanov - Created new implementation of temporary
+ *							   sort space that allows virtual memory to
+ *							   be used as much as possible (or as much
+ *							   as server configured for).
  */
 
-#ifndef JRD_SORT_MEM_H
-#define JRD_SORT_MEM_H
+#ifndef SORT_MEM_H
+#define SORT_MEM_H
 
 #include "../jrd/sort.h"
 
 /*
  *	Virtual scratch file
  */
-
-namespace Jrd {
 
 class SortMem {
 private:
@@ -72,15 +76,15 @@ private:
 	class FileBlock : public Block {
 	private:
 		// Sort file block
-		sort_work_file*	file;
+		struct sfb *file;
 		// File offset
-		size_t	offset;
+		size_t offset;
 
 	public:
 		size_t read(ISC_STATUS*, size_t, char*, size_t);
 		size_t write(ISC_STATUS*, size_t, char*, size_t);
 
-		FileBlock(Block*, size_t, sort_work_file*, size_t);
+		FileBlock(Block*, size_t, struct sfb*, size_t);
 		~FileBlock();
 	};
 
@@ -94,7 +98,7 @@ private:
 	// Total amount of allocated virtual memory
 	static size_t mem_total_size;
 
-	sort_work_file*	internal;
+	struct sfb *internal;
 
 	// Virtual scratch file size
 	size_t logical_size;
@@ -119,11 +123,8 @@ public:
 	// Write bytes into the scratch file
 	size_t write(ISC_STATUS*, size_t, char*, size_t);
 
-	SortMem(sort_work_file*, size_t);
+	SortMem(struct sfb*, size_t);
 	~SortMem();
 };
 
-} //namespace Jrd
-
-#endif	// JRD_SORT_MEM_H
-
+#endif	// SORT_MEM_H

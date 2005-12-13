@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		grant_proto.h
- *	DESCRIPTION:	Function prototypes for file grant.epp
+ *	DESCRIPTION:	Function prototypes for file grant.e
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,14 +21,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_GRANT_PROTO_H
-#define JRD_GRANT_PROTO_H
+#ifndef _JRD_GRANT_PROTO_H_
+#define _JRD_GRANT_PROTO_H_
 
-class Jrd::DeferredWork;
-typedef Firebird::Array<UCHAR> UCharBuffer;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-bool GRANT_privileges(Jrd::thread_db*, SSHORT, Jrd::DeferredWork*, Jrd::jrd_tra*);
-void GRANT_realloc_acl(UCharBuffer&, UCHAR**, ULONG *);
+extern int GRANT_privileges(TDBB, SSHORT, struct dfw *);
+extern STR GRANT_realloc_acl(STR, UCHAR **, ULONG *);
 
-#endif // JRD_GRANT_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_GRANT_PROTO_H_  */

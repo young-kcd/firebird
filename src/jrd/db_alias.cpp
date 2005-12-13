@@ -1,40 +1,44 @@
 /*
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *	PROGRAM:		JRD Access Method
+ *	MODULE:			db_alias.cpp
+ *	DESCRIPTION:	Server-side database aliases
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  The Original Code was created by Dmitry Yemanov
- *  for the Firebird Open Source RDBMS project.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Copyright (c) 2002 Dmitry Yemanov <dimitr@users.sf.net>
- *  and all contributors signed below.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ *
+ * 2002.06.04 Dmitry Yemanov - Server-side database alias management.
  */
-
 #include "firebird.h"
+
 #include <algorithm>
+
 #include "../common/config/config.h"
 #include "../common/config/config_file.h"
 #include "../jrd/os/path_utils.h"
 #include "../jrd/gds_proto.h"
 
-typedef Firebird::PathName string;
+typedef Firebird::string string;
 
 const char* ALIAS_FILE = "aliases.conf";
 
-bool ResolveDatabaseAlias(const string& alias, string& database)
+bool ResolveDatabaseAlias(const char* alias, char* database)
 {
-	string alias_filename;
-	Firebird::Prefix(alias_filename, ALIAS_FILE);
+	TEXT alias_filename[MAXPATHLEN];
+	gds__prefix(alias_filename, const_cast<char*>(ALIAS_FILE));
 	ConfigFile aliasConfig(false);
 	aliasConfig.setConfigFile(alias_filename);
 
@@ -43,17 +47,17 @@ bool ResolveDatabaseAlias(const string& alias, string& database)
 	string corrected_alias = alias;
 	std::replace(corrected_alias.begin(), corrected_alias.end(), incorrect_dir_sep, correct_dir_sep);
 	
-	database = aliasConfig.getString(corrected_alias);
+	string value = aliasConfig.getString(corrected_alias);
 
-	if (!database.empty())
+	if (!value.empty())
 	{
-		std::replace(database.begin(), database.end(), incorrect_dir_sep, correct_dir_sep);
-		if (PathUtils::isRelative(database)) {
+		std::replace(value.begin(), value.end(), incorrect_dir_sep, correct_dir_sep);
+		if (PathUtils::isRelative(value)) {
 			gds__log("Value %s configured for alias %s "
-				"is not a fully qualified path name, ignored", 
-						database.c_str(), alias.c_str());
+				"is not a fully qualified path name, ignored", value.c_str(), alias);
 			return false;
 		}
+		strcpy(database, value.c_str());
 		return true;
 	}
 

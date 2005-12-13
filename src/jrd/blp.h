@@ -18,12 +18,6 @@
  *
  * 2001.07.28: John Bellardo: Added skip and current_role to table.
  */
-static const struct
-{
-	const char* blr_string;
-	const UCHAR* blr_operators;
-} blr_table[] =
-{
 	{NULL, NULL},
 	{"assignment", two},
 	{"begin", begin},
@@ -137,17 +131,29 @@ static const struct
 /* New BLR in 6.0 */
 	{"extract", extract}, {"current_date", zero},	/* 160 */
 	{"current_timestamp", zero}, {"current_time", zero},
-	{"post_arg", two},
-	{"exec_into", exec_into},
+    /* These verbs were added in 6.0, primarily to support 64-bit integers */
+	/* Were dropped and reused in fb 1.5
+	{"add2", two},
+	{"subtract2", two},
+	{"multiply2", two},
+    {"divide2", two},
+	{"agg_total2", one},
+	{"agg_total_distinct2", one}, {"agg_average2", one}, {"agg_average_distinct2", one},	// 170 
+	{"average2", two}, {"gen_id2", gen_id}, 
+    {"set_generator2", gen_id}, */
+	{"post_arg", one },
+	{"exec_into", exec_into },
 	{"user_savepoint", user_savepoint},
-	{"dcl_cursor", dcl_cursor},
-	{"cursor_stmt", cursor_stmt},
-    /* These verbs were added in 6.0, primarily to support 64-bit integers, now obsolete */
-	{"agg_total_distinct2", one}, {"agg_average2", one}, {"agg_average_distinct2", one},	/* 170 */
-	{"average2", two}, 
-	{"gen_id2", gen_id}, 
-    {"set_generator2", gen_id},
+	{"?", zero },
+	{"?", zero },
+	{"?", zero },
+	{"?", zero },
+	{"?", zero }, // 170
+	{"?", zero },
+	{"?", zero },
+	{"?", zero },
 /* New BLR in FB1 */
+	// 174
     {"current_role", zero},
     {"skip", one}, 
 /* New BLR in FB2 */
@@ -156,9 +162,3 @@ static const struct
 	{"nullsfirst", zero},
 	{"writelock", zero},
 	{"nullslast", zero},
-	{"lowcase", one}, /* 181 */
-	{"strlen", strlength},
-	{"trim", trim},
-	{0, 0}
-};
-

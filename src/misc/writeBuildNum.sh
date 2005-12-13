@@ -3,24 +3,22 @@
 # This file is used both to rebuild the header file and to set the 
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.12088 2005-12-13 10:32:45 dimitr Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.3741.2.46 2005-12-13 10:33:08 dimitr Exp $"
 
-BuildType=T
-MajorVer=2
-MinorVer=0
-RevNo=0
-BuildNum=11938
+BuildType=V
+MajorVer=1
+MinorVer=5
+RevNo=3
+BuildNum=4870
 
 if [ "$SPECIAL_BUILD_SUFFIX" = "" ]; then
 # Normal builds
-SuffixKind=Beta
-SuffixVer=1
-BuildSuffix="Firebird 2.0 $SuffixKind $SuffixVer"
-FIREBIRD_PACKAGE_VERSION=$SuffixKind$SuffixVer
+BuildSuffix="Firebird 1.5"
+FIREBIRD_PACKAGE_VERSION=0
 PRODUCT_VER_STRING="$MajorVer.$MinorVer.$RevNo.$BuildNum"
 else
-# Special builds (daily snapshots, etc)
-BuildSuffix="Firebird 2.0 $SPECIAL_BUILD_SUFFIX"
+# Special builds (dayly snapshots, etc)
+BuildSuffix="Firebird 1.5 $SPECIAL_BUILD_SUFFIX"
 FIREBIRD_PACKAGE_VERSION=$SPECIAL_BUILD_SUFFIX
 PRODUCT_VER_STRING="$MajorVer.$MinorVer.$RevNo.$BuildNum-$SPECIAL_BUILD_SUFFIX"
 fi
@@ -93,7 +91,7 @@ cat >$1 <<eof
 MajorVer = $MajorVer
 MinorVer = $MinorVer
 RevNo = $RevNo
-BuildNum=11938
+BuildNum=$BuildNum
 BuildType = $BuildType
 BuildSuffix = $BuildSuffix
 

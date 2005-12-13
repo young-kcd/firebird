@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
  *	MODULE:		merge_proto.h
- *	DESCRIPTION:	Prototpe header file for merge.cpp
+ *	DESCRIPTION:	Prototpe header file for merge.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,11 +21,20 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef REMOTE_MERGE_PROTO_H
-#define REMOTE_MERGE_PROTO_H
+#ifndef _REMOTE_MERGE_PROTO_H_
+#define _REMOTE_MERGE_PROTO_H_
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+extern "C" {
+#endif
 
-USHORT MERGE_database_info(const UCHAR*, UCHAR*, USHORT, USHORT,
-							USHORT, USHORT, const UCHAR*, const UCHAR*, ULONG);
+extern USHORT DLL_EXPORT MERGE_database_info (UCHAR *, UCHAR *, USHORT, USHORT,
+					      USHORT, USHORT, UCHAR *, UCHAR *,
+					      ULONG);
 
-#endif // REMOTE_MERGE_PROTO_H
+#if (defined __cplusplus) && (defined SOLX86)
+}
+#endif
 
+#endif /* _REMOTE_MERGE_PROTO_H */ 

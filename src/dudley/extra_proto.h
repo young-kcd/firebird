@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		extra_proto.h
- *	DESCRIPTION:	Prototype header file for extract.epp
+ *	DESCRIPTION:	Prototype header file for extract.e
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DUDLEY_EXTRA_PROTO_H
-#define DUDLEY_EXTRA_PROTO_H
+#ifndef _DUDLEY_EXTRA_PROTO_H_
+#define _DUDLEY_EXTRA_PROTO_H_
 
-void DDL_ext(void);
+extern void DDL_ext(void);
 
-#endif // DUDLEY_EXTRA_PROTO_H
-
+#endif /* _DUDLEY_EXTRA_PROTO_H_ */

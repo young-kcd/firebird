@@ -40,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\release\engine_ss"
 # PROP Intermediate_Dir "..\..\..\temp\release\engine_ss"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GR /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /I "../../../src/vulcan" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D NAMESPACE=Vulcan /YX /FD /I /EHc- /c
+# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SERVER_SHUTDOWN" /D "SUPERSERVER" /YX /FD /EHc- /c
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
 # ADD RSC /l 0x419 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -63,8 +63,9 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\debug\engine_ss"
 # PROP Intermediate_Dir "..\..\..\temp\debug\engine_ss"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /I "../../../src/vulcan" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "DEV_BUILD" /D NAMESPACE=Vulcan /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_LIB" /D "_X86_" /D "SUPERSERVER" /D "SERVER_SHUTDOWN" /D "DEV_BUILD" /FD /GZ /c
+# SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
 # ADD RSC /l 0x419 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -83,67 +84,10 @@ LIB32=link.exe -lib
 # Begin Group "JRD files"
 
 # PROP Default_Filter ""
-# Begin Group "Generated files"
-
-# PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\gen\jrd\dfw.cpp
-
-!IF  "$(CFG)" == "engine - Win32 Release"
-
-# SUBTRACT CPP /Og
-
-!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
-
-!ENDIF 
-
+SOURCE=..\..\..\src\jrd\ail.cpp
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dpm.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_def.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_del.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_mod.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\dyn_util.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\fun.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\ini.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\met.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\pcmet.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\gen\jrd\scl.cpp
-# End Source File
-# End Group
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\all.cpp
@@ -159,10 +103,6 @@ SOURCE=..\..\..\src\jrd\blb.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\blob_filter.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\btn.cpp
 # End Source File
 # Begin Source File
 
@@ -199,6 +139,19 @@ SOURCE=..\..\..\src\jrd\cvt2.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\gen\jrd\dfw.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Release"
+
+# SUBTRACT CPP /Og
+
+!ELSEIF  "$(CFG)" == "engine - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\divorce.cpp
 # End Source File
 # Begin Source File
@@ -207,7 +160,31 @@ SOURCE=..\..\..\src\jrd\dls.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\gen\jrd\dpm.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\dsc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_def.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_del.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_mod.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\dyn_util.cpp
 # End Source File
 # Begin Source File
 
@@ -240,7 +217,7 @@ SOURCE=..\..\..\src\jrd\exe.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\execute_statement.cpp
+SOURCE=..\..\..\src\jrd\ExecuteStatement.cpp
 # End Source File
 # Begin Source File
 
@@ -256,6 +233,10 @@ SOURCE=..\..\..\src\jrd\flu.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\gen\jrd\fun.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\functions.cpp
 # End Source File
 # Begin Source File
@@ -265,10 +246,6 @@ SOURCE=..\..\..\src\jrd\gds.cpp
 # Begin Source File
 
 SOURCE=..\..\..\gen\jrd\grant.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\os\win32\guid.cpp
 # End Source File
 # Begin Source File
 
@@ -293,15 +270,19 @@ SOURCE=..\..\..\src\jrd\inf.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\gen\jrd\ini.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\init.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\intl.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\intl_builtin.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\IntlManager.cpp
 # End Source File
 # Begin Source File
 
@@ -317,7 +298,7 @@ SOURCE=..\..\..\src\jrd\isc_file.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\isc_ipc.cpp
+SOURCE=..\..\..\src\jrd\isc_ipc.cpp
 # End Source File
 # Begin Source File
 
@@ -338,11 +319,27 @@ SOURCE=..\..\..\src\jrd\jrd.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\jrn.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\lck.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\llio.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\log.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\met.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\misc.cpp
 # End Source File
 # Begin Source File
 
@@ -363,15 +360,11 @@ SOURCE=..\..\..\src\jrd\nav.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\nbak.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\nodebug.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ods.cpp
+SOURCE=..\..\..\src\jrd\old.cpp
 # End Source File
 # Begin Source File
 
@@ -388,10 +381,6 @@ SOURCE=..\..\..\src\jrd\opt.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\Optimizer.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\pag.cpp
 # End Source File
 # Begin Source File
@@ -400,11 +389,19 @@ SOURCE=..\..\..\src\jrd\par.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\gen\jrd\pcmet.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\plugin_manager.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\pwd.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rec.cpp
 # End Source File
 # Begin Source File
 
@@ -433,7 +430,15 @@ SOURCE=..\..\..\src\jrd\rse.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\sbm.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\sch.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\gen\jrd\scl.cpp
 # End Source File
 # Begin Source File
 
@@ -442,10 +447,6 @@ SOURCE=..\..\..\src\jrd\sdl.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sdw.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\sha.cpp
 # End Source File
 # Begin Source File
 
@@ -494,19 +495,11 @@ SOURCE=..\..\..\src\jrd\os\win32\thd_priority.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ThreadData.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\tpc.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\tra.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\unicode_util.cpp
 # End Source File
 # Begin Source File
 
@@ -523,7 +516,7 @@ SOURCE=..\..\..\src\jrd\utl.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\validation.cpp
+SOURCE=..\..\..\src\jrd\val.cpp
 # End Source File
 # Begin Source File
 
@@ -544,7 +537,7 @@ SOURCE=..\..\..\src\jrd\why.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\winnt.cpp
+SOURCE=..\..\..\src\jrd\winnt.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -557,6 +550,10 @@ SOURCE=..\..\..\src\jrd\acl.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\aif_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ail_proto.h
 # End Source File
 # Begin Source File
 
@@ -612,10 +609,6 @@ SOURCE=..\..\..\src\jrd\bookmark.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\btn.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\btr.h
 # End Source File
 # Begin Source File
@@ -644,6 +637,10 @@ SOURCE=..\..\..\src\jrd\cmp_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\codes.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\codetext.h
 # End Source File
 # Begin Source File
@@ -661,10 +658,6 @@ SOURCE=..\..\..\src\jrd\cvt2_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\cvt_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\db_alias.h
 # End Source File
 # Begin Source File
 
@@ -713,10 +706,6 @@ SOURCE=..\..\..\src\jrd\dsc.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\dsc_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\dsc_pub.h
 # End Source File
 # Begin Source File
 
@@ -780,7 +769,7 @@ SOURCE=..\..\..\src\jrd\exe_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\execute_statement.h
+SOURCE=..\..\..\src\jrd\ExecuteStatement.h
 # End Source File
 # Begin Source File
 
@@ -828,6 +817,14 @@ SOURCE=..\..\..\src\jrd\fun_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\gds.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\gds.hxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\gds_proto.h
 # End Source File
 # Begin Source File
@@ -836,11 +833,15 @@ SOURCE=..\..\..\src\jrd\gdsassert.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\gdsold.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\grant_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\guid.h
+SOURCE=..\..\..\src\jrd\ib_stdio.h
 # End Source File
 # Begin Source File
 
@@ -876,11 +877,11 @@ SOURCE=..\..\..\src\jrd\idx_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\inf_proto.h
+SOURCE=..\..\..\src\jrd\inf.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\inf_pub.h
+SOURCE=..\..\..\src\jrd\inf_proto.h
 # End Source File
 # Begin Source File
 
@@ -892,6 +893,10 @@ SOURCE=..\..\..\src\jrd\ini_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\init.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\intl.h
 # End Source File
 # Begin Source File
@@ -900,15 +905,11 @@ SOURCE=..\..\..\src\jrd\intl_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\IntlManager.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\intlnames.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\intlobj_new.h
+SOURCE=..\..\..\src\jrd\intlobj.h
 # End Source File
 # Begin Source File
 
@@ -928,7 +929,7 @@ SOURCE=..\..\..\src\jrd\isc_f_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\isc_i_proto.h
+SOURCE=..\..\..\src\jrd\isc_i_proto.h
 # End Source File
 # Begin Source File
 
@@ -960,6 +961,14 @@ SOURCE=..\..\..\src\jrd\jrd_time.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\jrn.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\jrn_proto.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\kanji.h
 # End Source File
 # Begin Source File
@@ -977,6 +986,14 @@ SOURCE=..\..\..\src\jrd\lck_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\license.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\llio.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\llio_proto.h
 # End Source File
 # Begin Source File
 
@@ -1024,7 +1041,15 @@ SOURCE=..\..\..\src\jrd\met_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\misc.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\misc_func_ids.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\misc_proto.h
 # End Source File
 # Begin Source File
 
@@ -1076,15 +1101,15 @@ SOURCE=..\..\..\src\jrd\ods.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ods_proto.h
+SOURCE=..\..\..\src\jrd\old.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\old_proto.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\opt_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\Optimizer.h
 # End Source File
 # Begin Source File
 
@@ -1112,11 +1137,11 @@ SOURCE=..\..\..\src\jrd\perf_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\pio.h
+SOURCE=..\..\..\src\jrd\pio.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\pio_proto.h
+SOURCE=..\..\..\src\jrd\pio_proto.h
 # End Source File
 # Begin Source File
 
@@ -1141,6 +1166,22 @@ SOURCE=..\..\..\src\jrd\quad_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\que.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rdb.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rdb_codes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rdbcodes.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\rec_proto.h
 # End Source File
 # Begin Source File
 
@@ -1180,6 +1221,10 @@ SOURCE=..\..\..\src\jrd\sbm.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\sbm_proto.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\sch_proto.h
 # End Source File
 # Begin Source File
@@ -1213,10 +1258,6 @@ SOURCE=..\..\..\src\jrd\sdw_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\seg_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\sha.h
 # End Source File
 # Begin Source File
 
@@ -1264,7 +1305,7 @@ SOURCE=..\..\..\src\jrd\syidef.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\sym.h
+SOURCE=..\..\..\src\jrd\sym_proto.h
 # End Source File
 # Begin Source File
 
@@ -1277,6 +1318,10 @@ SOURCE=..\..\..\src\jrd\thd.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\os\thd_priority.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\thd_proto.h
 # End Source File
 # Begin Source File
 
@@ -1301,10 +1346,6 @@ SOURCE=..\..\..\src\jrd\trig.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\types.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\unicode_util.h
 # End Source File
 # Begin Source File
 

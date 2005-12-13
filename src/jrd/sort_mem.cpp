@@ -1,35 +1,38 @@
 /*
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *	PROGRAM:		JRD Sort
+ *	MODULE:			sort_mem.cpp
+ *	DESCRIPTION:	Sort Space Management
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
  *
- *  The Original Code was created by Dmitry Yemanov
- *  for the Firebird Open Source RDBMS project.
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
  *
- *  Copyright (c) 2002 Dmitry Yemanov <dimitr@users.sf.net>
- *  and all contributors signed below.
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ *
+ * 2002.04.28 Dmitry Yemanov - Created new implementation of temporary
+ *							   sort space that allows virtual memory to
+ *							   be used as much as possible (or as much
+ *							   as the server configured for).
  */
 
 #include "firebird.h"
 
 #include "../common/config/config.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/sort.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/sort_mem.h"
-
-using namespace Jrd;
 
 bool SortMem::is_initialized = false;
 
@@ -63,13 +66,13 @@ SortMem::MemoryBlock::MemoryBlock(Block* tail, size_t length)
 	: Block(tail, length)
 {
 	// Allocate virtual memory block
-	address = FB_NEW(*getDefaultMemoryPool()) char[size];
+	address = reinterpret_cast<char*>(gds__alloc(size));
 }
 
 SortMem::MemoryBlock::~MemoryBlock()
 {
 	// Free virtual memory block
-	delete[] address;
+	gds__free(address);
 }
 
 size_t SortMem::MemoryBlock::read(ISC_STATUS *status, size_t position, char *buffer, size_t length)
@@ -99,8 +102,7 @@ size_t SortMem::MemoryBlock::write(ISC_STATUS *status, size_t position, char *bu
  *	File block implementation
  */
 
-SortMem::FileBlock::FileBlock(Block *tail, size_t length, sort_work_file* blk, 
-							  size_t position)
+SortMem::FileBlock::FileBlock(Block *tail, size_t length, struct sfb *blk, size_t position)
 	: Block(tail, length), file(blk), offset(position)
 {
 }
@@ -140,7 +142,7 @@ size_t SortMem::FileBlock::write(ISC_STATUS *status, size_t position, char *buff
  *	Virtual scratch file implementation
  */
 
-SortMem::SortMem(sort_work_file* blk, size_t size)
+SortMem::SortMem(struct sfb *blk, size_t size)
 	: internal(blk), logical_size(0), physical_size(0), file_size(0), head(0), tail(0)
 {
 	// Initialize itself
@@ -288,7 +290,7 @@ size_t SortMem::read(ISC_STATUS *status, size_t position, char *address, size_t 
 		// Search for the first needed block
 		size_t pos = position;
 		Block *block = seek(pos);
-		fb_assert(block);
+		assert(block);
 
 		// Read data from as many blocks as necessary
 		for (Block *itr = block; itr && length > 0; itr = itr->next, pos = 0)
@@ -298,7 +300,7 @@ size_t SortMem::read(ISC_STATUS *status, size_t position, char *address, size_t 
 			copied += n;
 			length -= n;
 		}
-		fb_assert(!length);
+		assert(!length);
 	}
 
 	// New seek value
@@ -328,7 +330,7 @@ size_t SortMem::write(ISC_STATUS *status, size_t position, char *address, size_t
 		// Search for the first needed block
 		size_t pos = position;
 		Block *block = seek(pos);
-		fb_assert(block);
+		assert(block);
 
 		// Write data to as many blocks as necessary
 		for (Block *itr = block; itr && length > 0; itr = itr->next, pos = 0)
@@ -338,10 +340,9 @@ size_t SortMem::write(ISC_STATUS *status, size_t position, char *address, size_t
 			copied += n;
 			length -= n;
 		}
-		fb_assert(!length);
+		assert(!length);
 	}
 
 	// New seek value
 	return position + copied;
 }
-

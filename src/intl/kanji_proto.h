@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		kanji_proto.h
- *	DESCRIPTION:	Prototype header file for kanji.cpp
+ *	DESCRIPTION:	Prototype header file for kanji.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,19 +21,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_KANJI_PROTO_H
-#define JRD_KANJI_PROTO_H
+#ifndef _JRD_KANJI_PROTO_H_
+#define _JRD_KANJI_PROTO_H_
 
-USHORT KANJI_check_euc(const UCHAR*, USHORT);
-USHORT KANJI_check_sjis(const UCHAR*, USHORT);
-USHORT KANJI_euc2sjis(const UCHAR*, USHORT, UCHAR*, USHORT, USHORT*);
-USHORT KANJI_euc_byte2short(const UCHAR*, USHORT*, USHORT);
-USHORT KANJI_euc_len(const UCHAR*, USHORT, USHORT*);
-USHORT KANJI_sjis2euc(const UCHAR*, USHORT, UCHAR*, USHORT, USHORT*);
-USHORT KANJI_sjis_byte2short(const UCHAR*, USHORT*, USHORT);
-USHORT KANJI_sjis2euc5(const UCHAR*, USHORT, UCHAR*, USHORT, USHORT*,
-							  USHORT*, USHORT*);
-USHORT KANJI_sjis_len(const UCHAR*, USHORT, USHORT*);
+extern USHORT KANJI_check_euc(UCHAR *, USHORT);
+extern USHORT KANJI_check_sjis(UCHAR *, USHORT);
+extern USHORT KANJI_euc2sjis(UCHAR *, USHORT, UCHAR *, USHORT, USHORT *);
+extern USHORT KANJI_euc_byte2short(UCHAR *, USHORT *, USHORT);
+extern USHORT KANJI_euc_len(UCHAR *, USHORT, USHORT *);
+extern USHORT KANJI_sjis2euc(UCHAR *, USHORT, UCHAR *, USHORT, USHORT *);
+extern USHORT KANJI_sjis_byte2short(UCHAR *, USHORT *, USHORT);
+extern USHORT KANJI_sjis2euc5(UCHAR *, USHORT, UCHAR *, USHORT, USHORT *,
+							  USHORT *, USHORT *);
+extern USHORT KANJI_sjis_len(UCHAR *, USHORT, USHORT *);
 
-#endif // JRD_KANJI_PROTO_H
-
+#endif /* _JRD_KANJI_PROTO_H_ */

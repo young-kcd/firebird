@@ -24,42 +24,40 @@
 #ifndef JRD_SCL_H
 #define JRD_SCL_H
 
-namespace Jrd {
-
 /* Security class definition */
 
-class SecurityClass : public pool_alloc_rpt<SCHAR, type_scl>
+class scl : public pool_alloc_rpt<SCHAR, type_scl>
 {
     public:
-    typedef USHORT flags_t;
-	SecurityClass* scl_next;	/* Next security class in system */
-	flags_t scl_flags;			/* Access permissions */
+	scl *scl_next;		/* Next security class in system */
+	USHORT scl_flags;			/* Access permissions */
 	TEXT scl_name[2];
 };
+typedef scl *SCL;
 
-const SecurityClass::flags_t SCL_read			= 1;		/* Read access */
-const SecurityClass::flags_t SCL_write			= 2;		/* Write access */
-const SecurityClass::flags_t SCL_delete			= 4;		/* Delete access */
-const SecurityClass::flags_t SCL_control		= 8;		/* Control access */
-const SecurityClass::flags_t SCL_grant			= 16;		/* Grant privileges */
-const SecurityClass::flags_t SCL_exists			= 32;		/* At least ACL exists */
-const SecurityClass::flags_t SCL_scanned		= 64;		/* But we did look */
-const SecurityClass::flags_t SCL_protect		= 128;		/* Change protection */
-const SecurityClass::flags_t SCL_corrupt		= 256;		/* ACL does look too good */
-const SecurityClass::flags_t SCL_sql_insert		= 512;
-const SecurityClass::flags_t SCL_sql_delete		= 1024;
-const SecurityClass::flags_t SCL_sql_update		= 2048;
-const SecurityClass::flags_t SCL_sql_references	= 4096;
-const SecurityClass::flags_t SCL_execute		= 8192;
+#define SCL_read		1		/* Read access */
+#define SCL_write		2		/* Write access */
+#define SCL_delete		4		/* Delete access */
+#define SCL_control		8		/* Control access */
+#define SCL_grant		16		/* Grant privileges */
+#define SCL_exists		32		/* At least ACL exists */
+#define SCL_scanned		64		/* But we did look */
+#define SCL_protect		128		/* Change protection */
+#define SCL_corrupt		256		/* ACL does look too good */
+#define SCL_sql_insert		512
+#define SCL_sql_delete		1024
+#define SCL_sql_update		2048
+#define SCL_sql_references	4096
+#define SCL_execute		8192
 
 
 
 /* information about the user */
 
-class UserId : public pool_alloc_rpt<SCHAR, type_usr>
+class usr : public pool_alloc_rpt<SCHAR, type_usr>
 {
     public:
-	const TEXT *usr_user_name;	/* User name */
+	TEXT *usr_user_name;		/* User name */
 	TEXT *usr_sql_role_name;	/* Role name */
 	TEXT *usr_project_name;		/* Project name */
 	TEXT *usr_org_name;			/* Organizaion name */
@@ -70,23 +68,21 @@ class UserId : public pool_alloc_rpt<SCHAR, type_usr>
 	USHORT usr_flags;			/* Misc. crud */
 	TEXT usr_data[2];
 };
+typedef usr *USR;
 
-const USHORT USR_locksmith	= 1;		/* User has great karma */
-const USHORT USR_dba		= 2;		/* User has DBA privileges */
-const USHORT USR_owner		= 4;		/* User owns database */
+#define USR_locksmith	1		/* User has great karma */
+#define USR_dba		2			/* User has DBA privileges */
+#define USR_owner	4			/* User owns database */
 
 /*
  * User name assigned to any user granted USR_locksmith rights.
  * If this name is changed, modify also the trigger in 
  * jrd/grant.gdl (which turns into jrd/trig.h.
  */
-static const char* SYSDBA_USER_NAME	= "SYSDBA";
+#define SYSDBA_USER_NAME	"SYSDBA"
 
-static const char* object_table		= "TABLE";
-static const char* object_procedure	= "PROCEDURE";
-static const char* object_column	= "COLUMN";
+#define object_table "TABLE"
+#define object_procedure "PROCEDURE"
+#define object_column "COLUMN"
 
-} //namespace Jrd
-
-#endif // JRD_SCL_H
-
+#endif /* JRD_SCL_H */

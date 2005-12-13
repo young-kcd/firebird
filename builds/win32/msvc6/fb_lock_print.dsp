@@ -41,8 +41,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\debug\fb_lock_print"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /GR /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /GR /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "CLIENT" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "CLIENT" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -65,9 +65,9 @@ LINK32=link.exe
 # PROP Intermediate_Dir "..\..\..\temp\release\fb_lock_print"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /GR /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /D "CLIENT" /FD /GZ /c
+# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /D "CLIENT" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /GR /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "CLIENT" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "CLIENT" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -105,11 +105,15 @@ SOURCE=..\..\..\src\jrd\gds.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\init.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\isc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\os\win32\isc_ipc.cpp
+SOURCE=..\..\..\src\jrd\isc_ipc.cpp
 # End Source File
 # Begin Source File
 
@@ -123,6 +127,10 @@ SOURCE=..\..\..\src\jrd\thd.cpp
 # Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\init.h
+# End Source File
 # End Group
 # Begin Group "Resource files"
 

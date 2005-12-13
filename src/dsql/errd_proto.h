@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic  SQL RUNTIME SUPPORT
  *	MODULE:		errd_proto.h
- *	DESCRIPTION:	Prototype Header file for errd.cpp
+ *	DESCRIPTION:	Prototype Header file for errd_proto.h
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,6 +24,10 @@
 #ifndef DSQL_ERRD_PROTO_H
 #define DSQL_ERRD_PROTO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef DEV_BUILD
 void ERRD_assert_msg(const char*, const char*, ULONG);
 #endif
@@ -31,8 +35,11 @@ void ERRD_assert_msg(const char*, const char*, ULONG);
 void ERRD_bugcheck(const char*);
 void ERRD_error(int, const char*);
 void ERRD_post(ISC_STATUS, ...);
-bool ERRD_post_warning(ISC_STATUS, ...);
-void ERRD_punt(const ISC_STATUS* = 0);
+BOOLEAN ERRD_post_warning(ISC_STATUS, ...);
+void ERRD_punt(void);
 
-#endif // DSQL_ERRD_PROTO_H 
+#ifdef __cplusplus
+}	/* extern "C" */
+#endif
 
+#endif /* DSQL_ERRD_PROTO_H */

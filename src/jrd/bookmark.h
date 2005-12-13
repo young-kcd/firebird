@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		bookmark.h
- *	DESCRIPTION:	Prototype header file for bookmark.cpp
+ *	DESCRIPTION:	Prototype header file for bkm.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,10 +24,8 @@
 #ifndef JRD_BOOKMARK_H
 #define JRD_BOOKMARK_H
 
-#ifdef PC_ENGINE
-Jrd::Bookmark*	BKM_allocate(Jrd::RecordSource*, USHORT);
-Jrd::Bookmark*	BKM_lookup(Jrd::jrd_nod*);
-void	BKM_release(Jrd::jrd_nod*);
-#endif
+struct bkm*	BKM_allocate(struct rsb*, USHORT);
+struct bkm*	BKM_lookup(struct jrd_nod*);
+void		BKM_release(struct jrd_nod*);
 
 #endif /* JRD_BOOKMARK_H */

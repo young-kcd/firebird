@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		trn_proto.h
- *	DESCRIPTION:	Prototype header file for trn.cpp
+ *	DESCRIPTION:	Prototype header file for trn.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,11 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DUDLEY_TRN_PROTO_H
-#define DUDLEY_TRN_PROTO_H
+#ifndef _DUDLEY_TRN_PROTO_H_
+#define _DUDLEY_TRN_PROTO_H_
 
-void	TRN_translate(void);
-bool	TRN_get_buffer(STR, USHORT);
+extern void TRN_translate(void);
+extern BOOLEAN TRN_get_buffer(STR, USHORT);
 
-#endif // DUDLEY_TRN_PROTO_H
-
+#endif /* _DUDLEY_TRN_PROTO_H_ */

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		pass1_proto.h
- *	DESCRIPTION:	Prototype Header file for pass1.cpp
+ *	DESCRIPTION:	Prototype Header file for pass1.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,13 +21,20 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DSQL_PASS1_PROTO_H
-#define DSQL_PASS1_PROTO_H
+#ifndef _DSQL_PASS1_PROTO_H_
+#define _DSQL_PASS1_PROTO_H_
 
-dsql_ctx* PASS1_make_context(dsql_req*, dsql_nod*);
-dsql_nod* PASS1_node(dsql_req*, dsql_nod*, bool);
-dsql_nod* PASS1_rse(dsql_req*, dsql_nod*, dsql_nod*);
-dsql_nod* PASS1_statement(dsql_req*, dsql_nod*, bool);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // DSQL_PASS1_PROTO_H
+extern struct dsql_ctx *PASS1_make_context(struct dsql_req *, struct dsql_nod *);
+extern struct dsql_nod *PASS1_node(struct dsql_req *, struct dsql_nod *, USHORT);
+extern struct dsql_nod *PASS1_rse(struct dsql_req *, struct dsql_nod *, struct dsql_nod *, DSQL_NOD update_lock);
+extern struct dsql_nod *PASS1_statement(struct dsql_req *, struct dsql_nod *, USHORT);
 
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif /* _DSQL_PASS1_PROTO_H_ */

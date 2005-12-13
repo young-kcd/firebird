@@ -26,18 +26,17 @@
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
-#include "gen/iberror.h"
+#include "gen/codes.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/bookmark.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/thd.h"
+#include "../jrd/thd_proto.h"
 
-using namespace Jrd;
 
 #ifdef PC_ENGINE
-Bookmark* BKM_allocate(RecordSource* rsb, USHORT length)
+BKM BKM_allocate(RSB rsb, USHORT length)
 {
 /**************************************
  *
@@ -49,17 +48,25 @@ Bookmark* BKM_allocate(RecordSource* rsb, USHORT length)
  *	Allocate and initialize a bookmark structure.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->tdbb_database;
-	jrd_req* request = tdbb->tdbb_request;
-	irsb* impure = (irsb*) ((UCHAR *) request + rsb->rsb_impure);
+	TDBB tdbb;
+	DBB dbb;
+	ATT attachment;
+	BKM bookmark;
+	JRD_REQ request;
+	IRSB impure;
+
+
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
+	request = tdbb->tdbb_request;
+	impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
 
 /* allocate the bookmark and link it into the 
    linked list hanging off the attachment block */
 
-	Bookmark* bookmark = FB_NEW_RPT(*dbb->dbb_permanent, length) Bookmark();
+	bookmark = FB_NEW_RPT(*dbb->dbb_permanent, length) bkm();
 
-	Attachment* attachment = tdbb->tdbb_attachment;
+	attachment = tdbb->tdbb_attachment;
 	bookmark->bkm_next = attachment->att_bookmarks;
 	attachment->att_bookmarks = bookmark;
 
@@ -74,6 +81,8 @@ Bookmark* BKM_allocate(RecordSource* rsb, USHORT length)
 	bookmark->bkm_handle = (ULONG) bookmark;
 #else
 	{
+		ULONG slot;
+
 		/* The bookmark pointer can't be stored in a ULONG.  Therefore
 		   we must generate a ULONG value that can be used to retrieve
 		   the pointer.  Basically we will keep a vector of active bookmarks
@@ -81,10 +90,10 @@ Bookmark* BKM_allocate(RecordSource* rsb, USHORT length)
 		   a bookmark, its slot in the vector is zeroed and it becomes available
 		   for reuse. */
 
-		const ULONG slot =
+		slot =
 			ALL_get_free_object(dbb->dbb_permanent,
 								&attachment->att_bkm_quick_ref, 50);
-		(*attachment->att_bkm_quick_ref)[slot] = bookmark;
+		attachment->att_bkm_quick_ref->vec_object[slot] = (BLK) bookmark;
 		bookmark->bkm_handle = slot;
 	}
 #endif
@@ -107,7 +116,7 @@ Bookmark* BKM_allocate(RecordSource* rsb, USHORT length)
 
 
 #ifdef PC_ENGINE
-Bookmark* BKM_lookup(jrd_nod* node)
+BKM BKM_lookup(NOD node)
 {
 /**************************************
  *
@@ -119,21 +128,25 @@ Bookmark* BKM_lookup(jrd_nod* node)
  *	Find a bookmark using a user supplied value.
  *
  **************************************/
-	Bookmark* bookmark;
+	BKM bookmark;
 
 #if SIZEOF_VOID_P != 8
-	bookmark = (Bookmark*) MOV_get_long(EVL_expr(tdbb, node), 0);
+	bookmark = (BKM) MOV_get_long(EVL_expr(tdbb, node), 0);
 #else
 	{
-		thread_db* tdbb = JRD_get_thread_data();
-		Attachment* attachment = tdbb->tdbb_attachment;
+		TDBB tdbb;
+		ATT attachment;
+		ULONG slot;
+		VEC vector;
+
+		tdbb = GET_THREAD_DATA;
+		attachment = tdbb->tdbb_attachment;
 
 		bookmark = NULL;
-		const ULONG slot = MOV_get_long(EVL_expr(tdbb, node), 0);
-		vec<Bookmark*>* vector = attachment->att_bkm_quick_ref;
-		if (vector && slot < vector->count()) {
-				bookmark = (*vector)[slot];
-		}
+		slot = MOV_get_long(EVL_expr(tdbb, node), 0);
+		if ((vector = attachment->att_bkm_quick_ref) &&
+			slot < vector->vec_count)
+				bookmark = (BKM) vector->vec_object[slot];
 	}
 #endif
 
@@ -146,7 +159,7 @@ Bookmark* BKM_lookup(jrd_nod* node)
 
 
 #ifdef PC_ENGINE
-void BKM_release(jrd_nod* node)
+void BKM_release(NOD node)
 {
 /**************************************
  *
@@ -158,25 +171,29 @@ void BKM_release(jrd_nod* node)
  *	Release a bookmark using a user supplied value.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Attachment* attachment = tdbb->tdbb_attachment;
+	TDBB tdbb;
+	ATT attachment;
+	BKM bookmark, *bptr;
+	ULONG slot;
 
-	Bookmark* bookmark = BKM_lookup(node);
+	tdbb = GET_THREAD_DATA;
+	attachment = tdbb->tdbb_attachment;
+
+	bookmark = BKM_lookup(node);
 
 /* unlink the bookmark from the attachment linked list */
 
-	for (Bookmark** bptr = &attachment->att_bookmarks; *bptr; bptr = &(*bptr)->bkm_next)
+	for (bptr = &attachment->att_bookmarks; *bptr; bptr = &(*bptr)->bkm_next)
 		if (*bptr == bookmark) {
 			*bptr = bookmark->bkm_next;
 			break;
 		}
 
 #if SIZEOF_VOID_P == 8
-	const ULONG slot = MOV_get_long(EVL_expr(tdbb, node), 0);
-	(*attachment->att_bkm_quick_ref)[slot] = NULL;
+	slot = MOV_get_long(EVL_expr(tdbb, node), 0);
+	attachment->att_bkm_quick_ref->vec_object[slot] = NULL;
 #endif
 
 	ALL_release(bookmark);
 }
 #endif
-

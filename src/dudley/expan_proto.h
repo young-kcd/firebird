@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		expan_proto.h
- *	DESCRIPTION:	Prototype header file for expand.cpp
+ *	DESCRIPTION:	Prototype header file for expand.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DUDLEY_EXPAN_PROTO_H
-#define DUDLEY_EXPAN_PROTO_H
+#ifndef _DUDLEY_EXPAN_PROTO_H_
+#define _DUDLEY_EXPAN_PROTO_H_
 
-void EXP_actions(void);
+extern void EXP_actions(void);
 
-#endif // DUDLEY_EXPAN_PROTO_H
-
+#endif /* _DUDLEY_EXPAN_PROTO_H_ */

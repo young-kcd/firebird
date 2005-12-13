@@ -27,12 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gbak,v 1.13 2005-10-22 12:35:03 aafemt Exp $
+#  $Id: Makefile.in.client.gbak,v 1.6.2.2 2004-09-17 20:34:21 skidder Exp $
 #
 
 ROOT=..
-ObjModuleType=std
-CFLAGS+=-DSTD_UTIL
+ObjModuleName=client.gbak
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -42,10 +41,10 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp\
-			common/classes/MetaName.cpp
+GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp common/fb_exception.cpp
+
 GBAK_Files = backup.epp  restore.epp \
-			burp.cpp canonical.cpp misc.cpp mvol.cpp
+			 burp.cpp canonical.cpp misc.cpp mvol.cpp
 GBAK_Sources = $(addprefix burp/, $(GBAK_Files)) $(GBAK_Other_Sources)
 GBAK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAK_Sources))))
 
@@ -54,7 +53,7 @@ GSPLIT_Sources = $(addprefix burp/, $(GSPLIT_Files))
 GSPLIT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSPLIT_Sources))))
 
 
-AllObjects = $(GBAK_Objects) $(GSPLIT_Objects) $(CLUMPLETS_Objects)
+AllObjects = $(GBAK_Objects) $(GSPLIT_Objects)
 Dependencies = $(AllObjects:.o=.d) 
 
 
@@ -64,14 +63,14 @@ all: gbak gsplit
 
 gbak : $(LIBFBCLIENT_SO) $(GBAK)
 
-$(GBAK):	$(GBAK_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon -lfbclient $(LINK_LIBS)
+$(GBAK):	$(GBAK_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 gsplit : $(LIBFBCLIENT_SO) $(GSPLIT)
 
 $(GSPLIT):	$(GSPLIT_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBCLIENT_LINK) $(LINK_LIBS)
 
 
 

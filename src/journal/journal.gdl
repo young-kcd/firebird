@@ -1,0 +1,143 @@
+/*
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ */
+define database "journal.fdb";
+
+define field db_id		long;
+define field file_id		long;
+define field file_sequence	long;
+define field status		varying [15];
+define field dump_id		long;
+define field partition_offset 	long;
+define field file_size		long;
+
+define relation databases
+
+	db_id,
+	db_name		varying [250],
+	status,
+	date_enabled	date,
+	archive_base_name	varying [250],
+	page_size	short,
+	device_type	varying [10],
+	enable_seqno	long,
+	enable_offset	long,
+	use_count	short,
+	last_dump_id	long,
+	archive_mode	varying [15],
+	delete_mode	varying [10]
+	;
+
+define relation journal
+
+	status,
+	use_count,
+	max_retry	long,
+	date_init	date
+	;
+
+define relation journal_files
+
+	db_id,
+	file_id,
+	file_sequence,
+	file_size,
+	partition_offset,
+	log_name	varying [250],
+	archive_name	varying [250],
+	file_status	varying [15], 
+	archive_status	varying [15],
+	delete_status	varying [15],
+	archive_date	date
+	;
+
+define relation log_archive_status
+
+	file_id,
+	process_id	long
+	;
+
+define relation online_dump_files
+
+	dump_id,
+	file_seqno	long,
+	dump_file_name	varying [250],
+	file_size,
+	creation_date	date
+	;
+
+define relation online_dump
+
+	dump_date	date,
+	db_id,
+	dump_id,
+	start_seqno	long,
+	start_offset	long,
+	start_partition_offset	long,
+	end_seqno	long,
+	end_offset	long,
+	end_partition_offset	long
+	;
+
+define relation partial_rebuilds
+	db_id,
+	new_db_name     varying [250],
+	last_log_seq    long
+	;
+
+define index idx_db_id for databases db_id;
+define index idx_db_name for databases db_name;
+define index idx_jrn_files for journal_files db_id, file_sequence;
+define index idx_old_files for online_dump_files dump_id;
+
+define generator db_serial;
+define generator file_serial;
+define generator dump_serial;
+
+
+define trigger db_serial_num for databases
+pre store 0:
+begin
+	new.db_id	= gen_id (db_serial, 1);
+end;
+end_trigger;
+
+define trigger file_serial_num for journal_files
+pre store 0:
+begin
+	new.file_id	= gen_id (file_serial, 1);
+end;
+end_trigger;
+
+define trigger dump_serial_num for online_dump
+pre store 0:
+begin
+	new.dump_id	= gen_id (dump_serial, 1);
+end;
+end_trigger;
+
+define trigger old_serial_num for online_dump
+pre modify 0:
+begin
+	for d in databases with d.db_id = old.db_id
+	    modify d using
+		d.last_dump_id  = old.dump_id
+	    end_modify;
+        end_for;
+end;
+end_trigger;

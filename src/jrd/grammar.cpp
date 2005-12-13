@@ -24,6 +24,8 @@
 # line 44 "grammar.y"
 #include "../jrd/dbg.h"
 
+extern "C" {
+
 void yyerror(const char *string);	// defined in dbg.cpp
 
 void DMP_active(void);
@@ -135,7 +137,7 @@ int yydef[] = {
 	16, 17, 20
 };
 typedef struct {
-	const char* t_name;
+	char *t_name;
 	int t_val;
 } yytoktype;
 #ifndef YYDEBUG
@@ -310,17 +312,17 @@ int yyparse()
 		if (yydebug) {
 			int yy_i;
 
-			printf("State %d, token ", yy_state);
+			(void) ib_printf("State %d, token ", yy_state);
 			if (yychar == 0)
-				printf("end-of-file\n");
+				(void) ib_printf("end-of-file\n");
 			else if (yychar < 0)
-				printf("-none-\n");
+				(void) ib_printf("-none-\n");
 			else {
 				for (yy_i = 0; yytoks[yy_i].t_val >= 0; yy_i++) {
 					if (yytoks[yy_i].t_val == yychar)
 						break;
 				}
-				printf("%s\n", yytoks[yy_i].t_name);
+				(void) ib_printf("%s\n", yytoks[yy_i].t_name);
 			}
 		}
 #endif /* YYDEBUG */
@@ -365,17 +367,17 @@ int yyparse()
 		if (yydebug && yytmp) {
 			int yy_i;
 
-			printf("Received token ");
+			(void) ib_printf("Received token ");
 			if (yychar == 0)
-				printf("end-of-file\n");
+				(void) ib_printf("end-of-file\n");
 			else if (yychar < 0)
-				printf("-none-\n");
+				(void) ib_printf("-none-\n");
 			else {
 				for (yy_i = 0; yytoks[yy_i].t_val >= 0; yy_i++) {
 					if (yytoks[yy_i].t_val == yychar)
 						break;
 				}
-				printf("%s\n", yytoks[yy_i].t_name);
+				(void) ib_printf("%s\n", yytoks[yy_i].t_name);
 			}
 		}
 #endif /* YYDEBUG */
@@ -401,18 +403,18 @@ int yyparse()
 			if (yydebug && yytmp) {
 				int yy_i;
 
-				printf("Received token ");
+				(void) ib_printf("Received token ");
 				if (yychar == 0)
-					printf("end-of-file\n");
+					(void) ib_printf("end-of-file\n");
 				else if (yychar < 0)
-					printf("-none-\n");
+					(void) ib_printf("-none-\n");
 				else {
 					for (yy_i = 0; yytoks[yy_i].t_val >= 0; yy_i++) {
 						if (yytoks[yy_i].t_val == yychar) {
 							break;
 						}
 					}
-					printf("%s\n", yytoks[yy_i].t_name);
+					(void) ib_printf("%s\n", yytoks[yy_i].t_name);
 				}
 			}
 #endif /* YYDEBUG */
@@ -461,8 +463,7 @@ int yyparse()
 				while (yy_ps >= yys) {
 					yy_n = yypact[*yy_ps] + YYERRCODE;
 					if (yy_n >= 0 && yy_n < YYLAST &&
-						yychk[yyact[yy_n]] == YYERRCODE)
-					{
+						yychk[yyact[yy_n]] == YYERRCODE) {
 						/*
 						   ** simulate shift of "error"
 						 */
@@ -476,7 +477,7 @@ int yyparse()
 #if YYDEBUG
 #	define _POP_ "Error recovery pops state %d, uncovers state %d\n"
 					if (yydebug)
-						printf(_POP_, *yy_ps, yy_ps[-1]);
+						(void) ib_printf(_POP_, *yy_ps, yy_ps[-1]);
 #	undef _POP_
 #endif
 					yy_ps--;
@@ -499,18 +500,18 @@ int yyparse()
 				if (yydebug) {
 					int yy_i;
 
-					printf("Error recovery discards ");
+					(void) ib_printf("Error recovery discards ");
 					if (yychar == 0)
-						printf("token end-of-file\n");
+						(void) ib_printf("token end-of-file\n");
 					else if (yychar < 0)
-						printf("token -none-\n");
+						(void) ib_printf("token -none-\n");
 					else {
 						for (yy_i = 0; yytoks[yy_i].t_val >= 0; yy_i++) {
 							if (yytoks[yy_i].t_val == yychar) {
 								break;
 							}
 						}
-						printf("token %s\n", yytoks[yy_i].t_name);
+						(void) ib_printf("token %s\n", yytoks[yy_i].t_name);
 					}
 				}
 #endif /* YYDEBUG */
@@ -531,7 +532,7 @@ int yyparse()
 		   ** to be done.
 		 */
 		if (yydebug)
-			printf("Reduce by (%d) \"%s\"\n", yy_n, yyreds[yy_n]);
+			(void) ib_printf("Reduce by (%d) \"%s\"\n", yy_n, yyreds[yy_n]);
 #endif
 		yytmp = yy_n;			/* value to switch over */
 		yypvt = yy_pv;			/* $vars top of value stack */
@@ -556,8 +557,7 @@ int yyparse()
 				yyval = (yy_pv -= yy_len)[1];	/* $$ = $1 */
 				yy_state = yypgo[yy_n = yyr1[yy_n]] + *(yy_ps -= yy_len) + 1;
 				if (yy_state >= YYLAST ||
-					yychk[yy_state = yyact[yy_state]] != -yy_n)
-				{
+					yychk[yy_state = yyact[yy_state]] != -yy_n) {
 					yy_state = yyact[yypgo[yy_n]];
 				}
 				goto yy_stack;
@@ -566,8 +566,7 @@ int yyparse()
 			yyval = (yy_pv -= yy_len)[1];	/* $$ = $1 */
 			yy_state = yypgo[yy_n = yyr1[yy_n]] + *(yy_ps -= yy_len) + 1;
 			if (yy_state >= YYLAST ||
-				yychk[yy_state = yyact[yy_state]] != -yy_n)
-			{
+				yychk[yy_state = yyact[yy_state]] != -yy_n) {
 				yy_state = yyact[yypgo[yy_n]];
 			}
 		}
@@ -632,7 +631,7 @@ int yyparse()
 # line 102 "grammar.y"
 		{
 			system("csh");
-			printf("\n");
+			ib_printf("\n");
 		}
 		break;
 	case 11:
@@ -703,3 +702,4 @@ int yyparse()
 }
 
 
+} // extern "C"

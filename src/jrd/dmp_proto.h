@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		dmp_proto.h
- *	DESCRIPTION:	Prototype header file for dmp.cpp
+ *	DESCRIPTION:	Prototype header file for dmp.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,12 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_DMP_PROTO_H
-#define JRD_DMP_PROTO_H
+#ifndef _JRD_DMP_PROTO_H_
+#define _JRD_DMP_PROTO_H_
 
-namespace Ods {
-	struct pag;
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void DMP_active(void);
 void DMP_btc(void);
@@ -34,7 +34,10 @@ void DMP_btc_errors(void);
 void DMP_btc_ordered(void);
 void DMP_dirty(void);
 void DMP_page(SLONG, USHORT);
-void DMP_fetched_page(const struct Ods::pag*, ULONG, ULONG, USHORT);
+void DMP_fetched_page(struct pag *, ULONG, ULONG, USHORT);
 
-#endif // JRD_DMP_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _JRD_DMP_PROTO_H_ */

@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GR /GX /Zi /Ox /Ow /Og /Os /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SUPERSERVER" /D "_WINDLL" /D "_AFXDLL" /FR /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ox /Ow /Og /Os /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SUPERSERVER" /D "_WINDLL" /D "_AFXDLL" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 shlwapi.lib mfc42.lib mfcs42.lib version.lib /nologo /version:1.0 /subsystem:windows /dll /machine:I386 /out:"..\..\..\temp\release\firebird\system32\Firebird2Control.cpl"
+# ADD LINK32 shlwapi.lib mfc42.lib mfcs42.lib version.lib /nologo /version:1.0 /subsystem:windows /dll /machine:I386 /out:"..\..\..\temp\release\fb2control\Firebird2Control.cpl"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "fb2control - Win32 Debug"
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /D "_USRDLL" /D "CPL_APPLET" /D "_WINDLL" /U "TRACE" /FR /YX /FD /GZ /c
 # SUBTRACT BASE CPP /X
-# ADD CPP /nologo /MDd /W3 /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D "DEV_BUILD" /D "_USRDLL" /D "CPL_APPLET" /D "_WINDLL" /D "_AFXDLL" /U "TRACE" /FR /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D "DEV_BUILD" /D "_USRDLL" /D "CPL_APPLET" /D "_WINDLL" /D "_AFXDLL" /U "TRACE" /FR /FD /GZ /c
 # SUBTRACT CPP /Gy /X /YX
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -83,7 +83,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 fbclient.lib shlwapi.lib /nologo /version:1.0 /subsystem:windows /dll /debug /machine:I386 /out:"c:\winnt\system32\Firebird2Control.cpl" /pdbtype:sept /libpath:"..\..\..\temp\debug\fbclient"
-# ADD LINK32 shlwapi.lib mfc42d.lib mfcs42d.lib th32.lib version.lib /nologo /version:1.0 /subsystem:windows /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird\system32\Firebird2Control.cpl" /pdbtype:sept
+# ADD LINK32 shlwapi.lib mfc42d.lib mfcs42d.lib th32.lib version.lib /nologo /version:1.0 /subsystem:windows /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\fb2control\Firebird2Control.cpl" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -95,6 +95,46 @@ LINK32=link.exe
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+# Begin Group "MEMORY files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\locks.cpp
+# End Source File
+# End Group
+# Begin Group "CONFIG files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\common\config\config.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\config\config_file.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\os\win32\config_root.cpp
+# End Source File
+# End Group
+# Begin Group "OTHER files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\os\win32\fbsyslog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\..\src\utilities\fbcpl\ctrlpan.cpp
@@ -117,7 +157,7 @@ SOURCE=..\..\..\src\utilities\fbcpl\FBPanel.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\install\services.cpp
+SOURCE=..\..\..\src\utilities\services.cpp
 # End Source File
 # Begin Source File
 
@@ -128,6 +168,38 @@ SOURCE=..\..\..\src\utilities\fbcpl\StdAfx.cpp
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\alloc.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\include\gen\autoconfig.h
+
+!IF  "$(CFG)" == "fb2control - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "fb2control - Win32 Debug"
+
+# Begin Custom Build
+InputPath=..\..\..\src\include\gen\autoconfig.h
+
+"..\..\..\src\include\gen\autoconfig.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	del ..\..\..\src\include\gen\autoconfig.h 2>nul 
+	copy ..\..\..\src\include\gen\autoconfig_msvc.h ..\..\..\src\include\gen\autoconfig.h > nul 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\common.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\config\config.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\utilities\fbcpl\ctrlpan.h
@@ -146,7 +218,11 @@ SOURCE=..\..\..\src\utilities\fbcpl\FBPanel.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\install\registry.h
+SOURCE=..\..\..\src\jrd\os\fbsyslog.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\utilities\registry.h
 # End Source File
 # Begin Source File
 
@@ -154,7 +230,7 @@ SOURCE=..\..\..\src\utilities\fbcpl\Resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\utilities\install\servi_proto.h
+SOURCE=..\..\..\src\utilities\servi_proto.h
 # End Source File
 # Begin Source File
 

@@ -40,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\debug\common_ss"
 # PROP Intermediate_Dir "..\..\..\temp\debug\common_ss"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "DEV_BUILD" /D "SUPERSERVER" /YX /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "DEV_BUILD" /D "SUPERSERVER" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -63,8 +63,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\release\common_ss"
 # PROP Intermediate_Dir "..\..\..\temp\release\common_ss"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /GR /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /D "SUPERSERVER" /FD /EHc- /c
+# ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /D "SUPERSERVER" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -129,15 +129,7 @@ SOURCE=..\..\..\src\jrd\db_alias.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\fb_string.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\os\win32\fbsyslog.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\MetaName.cpp
 # End Source File
 # Begin Source File
 
@@ -146,14 +138,6 @@ SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\timestamp.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\utils.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -166,10 +150,6 @@ SOURCE=..\..\..\src\common\classes\alloc.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\array.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\auto.h
 # End Source File
 # Begin Source File
 
@@ -193,51 +173,7 @@ SOURCE=..\..\..\src\common\config\dir_list.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\fb_pair.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\os\fbsyslog.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\GenericMap.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\init.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\MetaName.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\objects_array.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\timestamp.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\utils_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\vector.h
-# End Source File
-# End Group
-# Begin Group "CLUMPLET files"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\ClumpletReader.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\ClumpletWriter.cpp
 # End Source File
 # End Group
 # End Target

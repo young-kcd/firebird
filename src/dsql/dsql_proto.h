@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		dsql_proto.h
- *	DESCRIPTION:	Prototype Header file for dsql.cpp
+ *	DESCRIPTION:	Prototype Header file for dsql.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,62 +21,56 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DSQL_DSQL_PROTO_H
-#define DSQL_DSQL_PROTO_H
-
-#include "../common/classes/fb_string.h"
+#ifndef _DSQL_DSQL_PROTO_H_
+#define _DSQL_DSQL_PROTO_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-namespace Jrd {
-	class Attachment;
-	class jrd_tra;
-}
-
-class dsql_req;
-
-ISC_STATUS dsql8_allocate_statement(ISC_STATUS*, FB_API_HANDLE*, dsql_req**);
-ISC_STATUS dsql8_execute(ISC_STATUS*, FB_API_HANDLE*, dsql_req**,
-									   USHORT, const SCHAR*, USHORT, USHORT,
-									   SCHAR*, USHORT, SCHAR*, USHORT,
-									   USHORT, SCHAR*);
-ISC_STATUS dsql8_execute_immediate(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
-												 USHORT, const TEXT*, USHORT,
-												 USHORT, const SCHAR*, USHORT,
-												 USHORT, SCHAR*, USHORT,
-												 SCHAR*, USHORT, USHORT,
-												 SCHAR*);
+extern ISC_STATUS DLL_EXPORT dsql8_allocate_statement(	ISC_STATUS*,
+													FRBRD **,
+													struct dsql_req **);
+extern ISC_STATUS DLL_EXPORT dsql8_execute(ISC_STATUS *, FRBRD **, struct dsql_req**,
+									   USHORT, SCHAR *, USHORT, USHORT,
+									   SCHAR *, USHORT, SCHAR *, USHORT,
+									   USHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT dsql8_execute_immediate(ISC_STATUS *, FRBRD **, FRBRD **,
+												 USHORT, TEXT *, USHORT,
+												 USHORT, SCHAR *, USHORT,
+												 USHORT, SCHAR *, USHORT,
+												 SCHAR *, USHORT, USHORT,
+												 SCHAR *);
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS dsql8_fetch(ISC_STATUS*, dsql_req**, USHORT, const SCHAR*,
-									 USHORT, USHORT, SCHAR*, USHORT, SLONG);
+extern ISC_STATUS DLL_EXPORT dsql8_fetch(ISC_STATUS *, struct dsql_req**, USHORT, SCHAR *,
+									 USHORT, USHORT, SCHAR *, USHORT, SLONG);
 #else
-ISC_STATUS dsql8_fetch(ISC_STATUS*, dsql_req**, USHORT, const SCHAR*,
-									 USHORT, USHORT, SCHAR*);
-#endif // SCROLLABLE_CURSORS 
-ISC_STATUS dsql8_free_statement(ISC_STATUS*, dsql_req**,
+extern ISC_STATUS DLL_EXPORT dsql8_fetch(ISC_STATUS *, struct dsql_req**, USHORT, SCHAR *,
+									 USHORT, USHORT, SCHAR *);
+#endif /* SCROLLABLE_CURSORS */
+extern ISC_STATUS DLL_EXPORT dsql8_free_statement(ISC_STATUS *, struct dsql_req**,
 											  USHORT);
-ISC_STATUS dsql8_insert(ISC_STATUS*, dsql_req**, USHORT,
-									  const SCHAR*, USHORT, USHORT, const SCHAR*);
-ISC_STATUS dsql8_prepare(ISC_STATUS*, FB_API_HANDLE*, dsql_req**,
-									   USHORT, const TEXT*, USHORT, USHORT,
-									   const SCHAR*, USHORT, SCHAR*);
-ISC_STATUS dsql8_set_cursor(ISC_STATUS*, dsql_req**, const TEXT*,
+extern ISC_STATUS DLL_EXPORT dsql8_insert(ISC_STATUS *, struct dsql_req**, USHORT,
+									  SCHAR *, USHORT, USHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT dsql8_prepare(ISC_STATUS *, FRBRD **, struct dsql_req**,
+									   USHORT, TEXT *, USHORT, USHORT,
+									   const SCHAR *, USHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT dsql8_set_cursor(ISC_STATUS *, struct dsql_req**, TEXT *,
 										  USHORT);
-ISC_STATUS dsql8_sql_info(ISC_STATUS*, dsql_req**, USHORT,
-										const SCHAR*, USHORT, SCHAR*);
+extern ISC_STATUS DLL_EXPORT dsql8_sql_info(ISC_STATUS *, struct dsql_req**, USHORT,
+										const SCHAR*, USHORT, SCHAR *);
+extern void DSQL_pretty(struct dsql_nod *, int);
 
-ISC_STATUS callback_execute_immediate(ISC_STATUS* status,
-									Jrd::Attachment* jrd_attachment_handle,
-									Jrd::jrd_tra* jrd_transaction_handle,
-									const Firebird::string& sql_operator);
+extern ISC_STATUS callback_execute_immediate(
+		ISC_STATUS *status,
+		class att* jrd_attachment_handle,
+		class jrd_tra* jrd_transaction_handle,
+		TEXT *sql_operator,
+		int len);
 
 
 #ifdef __cplusplus
-} // extern "C" 
+} /* extern "C" */
 #endif
 
-
-#endif //  DSQL_DSQL_PROTO_H
-
+#endif /*  _DSQL_DSQL_PROTO_H_  */

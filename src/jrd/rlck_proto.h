@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		rlck_proto.h
- *	DESCRIPTION:	Prototype header file for rlck.cpp
+ *	DESCRIPTION:	Prototype header file for rlck.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,44 +24,38 @@
 #ifndef JRD_RLCK_PROTO_H
 #define JRD_RLCK_PROTO_H
 
-namespace Jrd {
-	class Lock;
-	class jrd_rel;
-	class jrd_tra;
-	struct record_param;
-	class Attachment;
-	class thread_db;
-}
-struct blk;
-
 #ifdef PC_ENGINE
-Jrd::Lock* RLCK_lock_record(Jrd::record_param*, USHORT, lock_ast_t, blk*);
-									
-Jrd::Lock* RLCK_lock_record_implicit(Jrd::jrd_tra*, Jrd::record_param*,
-											 USHORT, lock_ast_t, blk*);
-Jrd::Lock* RLCK_lock_relation(Jrd::jrd_rel*, USHORT, lock_ast_t, blk*);
-Jrd::Lock* RLCK_range_relation(Jrd::jrd_tra*, Jrd::jrd_rel*, lock_ast_t, blk*);
-Jrd::Lock* RLCK_record_locking(Jrd::jrd_rel*);
-void RLCK_release_lock(Jrd::Lock*);
-void RLCK_release_locks(Jrd::Attachment*);
+extern struct lck *RLCK_lock_record(struct rpb *, USHORT, int (*)(),
+									struct blk *);
+extern struct lck *RLCK_lock_record_implicit(struct jrd_tra *, struct rpb *,
+											 USHORT, int (*)(), struct blk *);
+extern struct lck *RLCK_lock_relation(struct jrd_rel *, USHORT, int (*)(),
+									  struct blk *);
+extern struct lck *RLCK_range_relation(struct jrd_tra *, struct jrd_rel *, int (*)(),
+									   struct blk *);
+extern struct lck *RLCK_record_locking(struct jrd_rel *);
+extern void RLCK_release_lock(struct lck *);
+extern void RLCK_release_locks(struct att *);
+#endif
+extern struct lck *RLCK_reserve_relation(struct tdbb *, struct jrd_tra *,
+										 struct jrd_rel *, USHORT, USHORT);
+
+/* TMN: This header did not match the implementation.
+ * I moved the #ifdef as noted
+ */
+/* #ifdef PC_ENGINE */
+extern void RLCK_shutdown_attachment(struct att *);
+extern void RLCK_shutdown_database(struct dbb *);
+#ifdef PC_ENGINE
+extern void RLCK_signal_refresh(struct jrd_tra *);
 #endif
 
-Jrd::Lock* RLCK_reserve_relation(Jrd::thread_db*, Jrd::jrd_tra*,
-										 Jrd::jrd_rel*, bool, bool);
+extern struct lck *RLCK_transaction_relation_lock(struct jrd_tra *, struct jrd_rel *);
 
 #ifdef PC_ENGINE
-void RLCK_shutdown_attachment(Jrd::Attachment*);
-void RLCK_shutdown_database(Jrd::Database*);
-void RLCK_signal_refresh(Jrd::jrd_tra*);
+extern void RLCK_unlock_record(struct lck *, struct rpb *);
+extern void RLCK_unlock_record_implicit(struct lck *, struct rpb *);
+extern void RLCK_unlock_relation(struct lck *, struct jrd_rel *);
 #endif
 
-Jrd::Lock* RLCK_transaction_relation_lock(Jrd::jrd_tra*, Jrd::jrd_rel*);
-
-#ifdef PC_ENGINE
-void RLCK_unlock_record(Lock*, Jrd::record_param*);
-void RLCK_unlock_record_implicit(Lock*, Jrd::record_param*);
-void RLCK_unlock_relation(Lock*, Jrd::jrd_rel*);
-#endif
-
-#endif // JRD_RLCK_PROTO_H
-
+#endif /* JRD_RLCK_PROTO_H */

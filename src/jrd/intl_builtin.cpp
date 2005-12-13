@@ -1,4 +1,3 @@
-#include "../jrd/common.h"
 #include "intl_classes.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -7,212 +6,554 @@
 #include "../jrd/intl.h"
 #include "../intl/country_codes.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/jrd.h"
-#include "../jrd/err_proto.h"
-#include "../intl/charsets.h"
-
-using Jrd::UnicodeUtil;
- 
-
-static USHORT internal_keylength(TEXTTYPE, USHORT);
-static USHORT internal_string_to_key(TEXTTYPE, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
-static SSHORT internal_compare(TEXTTYPE, ULONG, const UCHAR*, ULONG, const UCHAR*, INTL_BOOL*);
-static ULONG internal_str_to_upper(TEXTTYPE, ULONG, const UCHAR*, ULONG, UCHAR*);
-static ULONG internal_str_to_lower(TEXTTYPE, ULONG, const UCHAR*, ULONG, UCHAR*);
-static void internal_destroy(TEXTTYPE);
-static void unicode_destroy(TEXTTYPE obj);
 
 
-struct TextTypeImpl
-{
-	BYTE texttype_pad_char;
-};
-
-
-static inline bool FAMILY_INTERNAL(TEXTTYPE cache,
-								   SSHORT country,
-								   const ASCII* POSIX,
-								   USHORT attributes,
-								   const UCHAR* specific_attributes,
-								   ULONG specific_attributes_length)
-//#define FAMILY_INTERNAL(name, country)
-{
-	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
-		return false;
-
-	cache->texttype_version			= TEXTTYPE_VERSION_1;
-	cache->texttype_name			= POSIX;
-	cache->texttype_country			= (country);
-	cache->texttype_pad_option		= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
-	cache->texttype_fn_key_length	= internal_keylength;
-	cache->texttype_fn_string_to_key= internal_string_to_key;
-	cache->texttype_fn_compare		= internal_compare;
-	cache->texttype_fn_str_to_upper	= internal_str_to_upper;
-	cache->texttype_fn_str_to_lower	= internal_str_to_lower;
-	cache->texttype_fn_destroy		= internal_destroy;
-	cache->texttype_impl			= new TextTypeImpl;
-	cache->texttype_impl->texttype_pad_char = ' ';
-
-	return true;
-}
-
-
-static inline bool FAMILY_INTERNAL_UTF(TEXTTYPE cache,
-									   const ASCII* POSIX,
-									   USHORT attributes,
-									   const UCHAR* specific_attributes,
-									   ULONG specific_attributes_length)
-{
-	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
-		return false;
-
-	cache->texttype_version			= TEXTTYPE_VERSION_1;
-	cache->texttype_name			= POSIX;
-	cache->texttype_country			= CC_INTL;
-	cache->texttype_flags			= TEXTTYPE_DIRECT_MATCH;
-	cache->texttype_pad_option		= (attributes & TEXTTYPE_ATTR_PAD_SPACE) ? true : false;
-
-	return true;
-}
-
-
-static inline bool FAMILY_INTERNAL_UNICODE(TEXTTYPE cache,
-										   const ASCII* POSIX,
-										   USHORT attributes,
-										   const UCHAR* specific_attributes,
-										   ULONG specific_attributes_length)
-{
-	if (FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
-	{
-		//// TODO: locale
-		cache->reserved_for_driver[0] = UnicodeUtil::Utf16Collation::create("");
-		cache->texttype_fn_destroy = unicode_destroy;
-
-		return cache->reserved_for_driver[0] != NULL;
-	}
-
-	return true;
-}
-
-
-typedef unsigned char FILECHAR;
-typedef USHORT UNICODE;
-
+// types unsed internal to this file
 typedef USHORT fss_wchar_t;
 typedef int fss_size_t;
+typedef unsigned char FILECHAR;   
 
-struct Byte_Mask_Table
+// internal functions
+static fss_size_t fss_wctomb(UCHAR *, fss_wchar_t);
+static fss_size_t fss_mbtowc(fss_wchar_t *, UCHAR *, fss_size_t);
+static unsigned short cvt_utffss_to_ascii(UCHAR *, USHORT, UCHAR *, USHORT,
+								  short*, USHORT *);
+static USHORT internal_string_to_key(USHORT, UCHAR *, USHORT,
+									 UCHAR *, USHORT, UCHAR);
+static SSHORT internal_compare(USHORT, UCHAR *, USHORT, UCHAR *, UCHAR);
+static SSHORT internal_str_to_upper(USHORT, UCHAR *, USHORT,
+									UCHAR *);
+static unsigned short internal_unicode_to_fss(
+							unsigned char *,
+							unsigned short,
+							unsigned char *,
+							unsigned short ,
+							short *,
+							unsigned short *);
+static USHORT  internal_fss_to_unicode (
+    UCS2_CHAR*,
+    USHORT,
+    NCHAR*,
+    USHORT,
+    SSHORT*,
+    USHORT*);
+/********************************************************************************/
+// This module contains the code to handle the default international character
+// sets.  As such it defines its own subclasses of the international interface.
+// The classes are defined in this section and implemented twords the end of the
+// file.
+
+
+class TextType_Binary : public TextTypeNC
 {
-	int cmask;
-	int cval;
-	int shift;
-	SLONG lmask;
-	SLONG lval;
+public:
+	static TextType *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) TextType_Binary; }
+	TextType_Binary() : TextTypeNC(ttype_binary, "C.OCTETS", CS_BINARY, CC_C, 1)
+		{}
+
+	unsigned short key_length(unsigned short len)
+		{ return len; }
+	unsigned short string_to_key(unsigned short a,
+										 unsigned char *b,
+										 unsigned short c,
+										 unsigned char *d,
+										 unsigned short e)
+		{ return internal_string_to_key(a,b,c,d,e,'\0'); }
+	
+	short compare(unsigned short a,
+						  unsigned char *b,
+						  unsigned short c,
+						  unsigned char *d)
+		{ return internal_compare(a,b,c,d,'\0'); }
+	
+	unsigned short to_upper(unsigned short ch)
+		{ return (ch); }
+	
+	unsigned short to_lower(unsigned short ch)
+		{ return (ch); }
+	
+	short str_to_upper(unsigned short,
+							   unsigned char *,
+							   unsigned short,
+							   unsigned char *);
 };
 
-static const Byte_Mask_Table tab[] = {
-	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
-	{ 0xE0, 0xC0, 1 * 6, 0x7FF, 0x80 },	/* 2 byte sequence */
-	{ 0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800 },	/* 3 byte sequence */
-	{ 0xF8, 0xF0, 3 * 6, 0x1FFFFF, 0x10000 },	/* 4 byte sequence */
-	{ 0xFC, 0xF8, 4 * 6, 0x3FFFFFF, 0x200000 },	/* 5 byte sequence */
-	{ 0xFE, 0xFC, 5 * 6, 0x7FFFFFFF, 0x4000000 },	/* 6 byte sequence */
-	{ 0, 0, 0, 0, 0 } 				/* end of table    */
+class TextType_UFSS : public TextTypeMB
+{
+public:
+	static TextType *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) TextType_UFSS; }
+	TextType_UFSS() : TextTypeMB(ttype_unicode_fss, "C.UNICODE_FSS", CS_UNICODE_FSS, CC_C, 3)
+		{}
+
+	unsigned short key_length(unsigned short len)
+		{ return len; }
+	unsigned short string_to_key(unsigned short a,
+										 unsigned char *b,
+										 unsigned short c,
+										 unsigned char *d,
+										 unsigned short e)
+		{ return internal_string_to_key(a,b,c,d,e,' '); }
+	
+	short compare(unsigned short a,
+						  unsigned char *b,
+						  unsigned short c,
+						  unsigned char *d)
+		{ return internal_compare(a,b,c,d,' '); }
+	
+	unsigned short to_upper(unsigned short ch)
+		{ return (UPPER7(ch)); }
+	
+	unsigned short to_lower(unsigned short ch)
+		{ return ((((ch) >= 'A') && ((ch) < 'Z')) ? ((ch) - 'A' + 'a') : (ch)); }
+	
+	short str_to_upper(unsigned short a,
+							   unsigned char *b,
+							   unsigned short c,
+							   unsigned char *d)
+		{ return internal_str_to_upper(a,b,c,d); }
+
+	unsigned short to_wc(UCS2_CHAR *a,
+									unsigned short b,
+									unsigned char *c,
+									unsigned short d,
+									short *e,
+									unsigned short *f)
+		{ return internal_fss_to_unicode(a,b,c,d,e,f); }
+
+	unsigned short mbtowc(UCS2_CHAR *wc, unsigned char *p, unsigned short n)
+		{ return fss_mbtowc(wc, p, n); }
 };
 
-static fss_size_t fss_mbtowc(fss_wchar_t* p, const UCHAR* s, fss_size_t n)
+class TextType_ASCII : public TextTypeNC
 {
-	if (s == 0)
-		return 0;
+public:
+	static TextType *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) TextType_ASCII; }
+	TextType_ASCII() : TextTypeNC(ttype_ascii, "C.ASCII", CS_ASCII, CC_C, 1)
+		{}
 
-	int nc = 0;
-	if (n <= nc)
-		return -1;
-	const int c0 = *s & 0xff;
-	SLONG l = c0;
-	for (const Byte_Mask_Table* t = tab; t->cmask; t++) {
-		nc++;
-		if ((c0 & t->cmask) == t->cval) {
-			l &= t->lmask;
-			if (l < t->lval)
-				return -1;
-			*p = l;
-			return nc;
-		}
-		if (n <= nc)
-			return -1;
-		s++;
-		const int c = (*s ^ 0x80) & 0xFF;
-		if (c & 0xC0)
-			return -1;
-		l = (l << 6) | c;
-	}
-	return -1;
-}
-
-static fss_size_t fss_wctomb(UCHAR * s, fss_wchar_t wc)
+	unsigned short key_length(unsigned short len)
+		{ return len; }
+	unsigned short string_to_key(unsigned short a,
+										 unsigned char *b,
+										 unsigned short c,
+										 unsigned char *d,
+										 unsigned short e)
+		{ return internal_string_to_key(a,b,c,d,e,' '); }
+	
+	short compare(unsigned short a,
+						  unsigned char *b,
+						  unsigned short c,
+						  unsigned char *d)
+		{ return internal_compare(a,b,c,d,' '); }
+	
+	unsigned short to_upper(unsigned short ch)
+		{ return (UPPER7(ch)); }
+	
+	unsigned short to_lower(unsigned short ch)
+		{ return ((((ch) >= 'A') && ((ch) < 'Z')) ? ((ch) - 'A' + 'a') : (ch)); }
+	
+	short str_to_upper(unsigned short a,
+							   unsigned char *b,
+							   unsigned short c,
+							   unsigned char *d)
+		{ return internal_str_to_upper(a,b,c,d); }
+};
+	
+class TextType_None : public TextTypeNC
 {
-	if (s == 0)
-		return 0;
+public:
+	static TextType *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) TextType_None; }
+	TextType_None() : TextTypeNC(ttype_none, "C", CS_NONE, CC_C, 1)
+		{}
+		
+	unsigned short key_length(unsigned short len)
+		{ return len; }
+	unsigned short string_to_key(unsigned short a,
+										 unsigned char *b,
+										 unsigned short c,
+										 unsigned char *d,
+										 unsigned short e)
+		{ return internal_string_to_key(a,b,c,d,e,' '); }
+	
+	short compare(unsigned short a,
+						  unsigned char *b,
+						  unsigned short c,
+						  unsigned char *d)
+		{ return internal_compare(a,b,c,d,' '); }
+		
+	unsigned short to_upper(unsigned short ch)
+		{ return (UPPER7(ch)); }
+	
+	unsigned short to_lower(unsigned short ch)
+		{ return ((((ch) >= 'A') && ((ch) < 'Z')) ? ((ch) - 'A' + 'a') : (ch)); }
+	
+	short str_to_upper(unsigned short a,
+							   unsigned char *b,
+							   unsigned short c,
+							   unsigned char *d)
+		{ return internal_str_to_upper(a,b,c,d); }
+};
 
-	SLONG l = wc;
-	int nc = 0;
-	for (const Byte_Mask_Table* t = tab; t->cmask; t++) {
-		nc++;
-		if (l <= t->lmask) {
-			int c = t->shift;
-			*s = t->cval | (l >> c);
-			while (c > 0) {
-				c -= 6;
-				s++;
-				*s = 0x80 | ((l >> c) & 0x3F);
-			}
-			return nc;
-		}
+class CsConvert_ASCII_UFSS : public CsConvert
+{
+public:
+	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CsConvert_ASCII_UFSS; }
+	CsConvert_ASCII_UFSS() : CsConvert(0, "DIRECT", CS_ASCII, CS_UNICODE_FSS)
+			{}
+			
+	unsigned short convert(unsigned char *a,
+						   unsigned short b,
+						   unsigned char *c,
+						   unsigned short d,
+						   short *e,
+						   unsigned short *f)
+		{ return cvt_utffss_to_ascii(a,b,c,d,e,f); }
+};
+
+class CsConvert_UFSS_ASCII : public CsConvert
+{
+public:
+	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CsConvert_UFSS_ASCII; }
+	CsConvert_UFSS_ASCII() : CsConvert(0, "DIRECT", CS_UNICODE_FSS, CS_ASCII)
+			{}
+	unsigned short convert(unsigned char *a,
+						   unsigned short b,
+						   unsigned char *c,
+						   unsigned short d,
+						   short *e,
+						   unsigned short *f)
+		{ return cvt_utffss_to_ascii(a,b,c,d,e,f); }
+};
+
+class CsConvert_UFSS_None : public CsConvert
+{
+public:
+	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CsConvert_UFSS_None; }
+	CsConvert_UFSS_None() : CsConvert(0, "DIRECT", CS_UNICODE_FSS, CS_NONE)
+			{}
+	unsigned short convert(unsigned char *a,
+						   unsigned short b,
+						   unsigned char *c,
+						   unsigned short d,
+						   short *e,
+						   unsigned short *f)
+		{ return cvt_utffss_to_ascii(a,b,c,d,e,f); }
+};
+
+class CsConvert_None_Unicode : public CsConvert
+{
+public:
+	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CsConvert_None_Unicode; }
+	CsConvert_None_Unicode() : CsConvert(0, "DIRECT", CS_NONE, CS_UNICODE_UCS2)
+			{}
+	unsigned short convert(unsigned char*,
+						   unsigned short,
+						   unsigned char*,
+						   unsigned short,
+						   short*,
+						   unsigned short*);
+};
+
+class CsConvert_Unicode_None : public CsConvert
+{
+public:
+	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CsConvert_Unicode_None; }
+	CsConvert_Unicode_None() : CsConvert(0, "DIRECT", CS_UNICODE_UCS2, CS_NONE)
+			{}
+	unsigned short convert(unsigned char*,
+						   unsigned short,
+						   unsigned char*,
+						   unsigned short,
+						   short*,
+						   unsigned short*);
+};
+
+class CsConvert_ASCII_Unicode : public CsConvert
+{
+public:
+	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CsConvert_ASCII_Unicode; }
+	CsConvert_ASCII_Unicode() : CsConvert(0, "DIRECT", CS_ASCII, CS_UNICODE_UCS2)
+			{}
+	unsigned short convert(unsigned char*,
+						   unsigned short,
+						   unsigned char*,
+						   unsigned short,
+						   short*,
+						   unsigned short*);
+};
+
+class CsConvert_Unicode_ASCII : public CsConvert
+{
+public:
+	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CsConvert_Unicode_ASCII; }
+	CsConvert_Unicode_ASCII() : CsConvert(0, "DIRECT", CS_UNICODE_UCS2, CS_ASCII)
+			{}
+	unsigned short convert(unsigned char*,
+						   unsigned short,
+						   unsigned char*,
+						   unsigned short,
+						   short*,
+						   unsigned short*);
+};
+
+class CsConvert_UFSS_Unicode : public CsConvert
+{
+public:
+	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CsConvert_UFSS_Unicode; }
+	CsConvert_UFSS_Unicode() : CsConvert(0, "DIRECT", CS_UNICODE_FSS, CS_UNICODE_UCS2)
+			{}
+	unsigned short convert(unsigned char*,
+						   unsigned short,
+						   unsigned char*,
+						   unsigned short,
+						   short*,
+						   unsigned short*);
+};
+
+class CsConvert_Unicode_UFSS : public CsConvert
+{
+public:
+	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CsConvert_Unicode_UFSS; }
+	CsConvert_Unicode_UFSS() : CsConvert(0, "DIRECT", CS_UNICODE_UCS2, CS_UNICODE_FSS)
+			{}
+	unsigned short convert(unsigned char *a,
+						   unsigned short b,
+						   unsigned char *c,
+						   unsigned short d,
+						   short *e,
+						   unsigned short *f)
+		{ return internal_unicode_to_fss(a,b,c,d,e,f); }
+};
+
+class CsConvert_Binary_Unicode : public CsConvert
+{
+public:
+	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CsConvert_Binary_Unicode; }
+	CsConvert_Binary_Unicode() : CsConvert(0, "DIRECT", CS_BINARY, CS_UNICODE_UCS2)
+		{}	
+	unsigned short convert(unsigned char*,
+						   unsigned short,
+						   unsigned char*,
+						   unsigned short,
+						   short*,
+						   unsigned short*);
+};
+
+class CsConvert_Unicode_Binary : public CsConvert
+{
+public:
+	static CsConvert *object_factory(MemoryPool& p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CsConvert_Unicode_Binary; }
+	CsConvert_Unicode_Binary() : CsConvert(0, "DIRECT", CS_UNICODE_UCS2, CS_BINARY)
+		{}	
+	unsigned short convert(unsigned char*,
+						   unsigned short,
+						   unsigned char*,
+						   unsigned short,
+						   short*,
+						   unsigned short*);
+};
+
+class CharSet_None : public CharSet
+{
+public:
+	static CharSet *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CharSet_None(p); }
+	CharSet_None(MemoryPool &p) : CharSet(CS_NONE, "NONE", 1, 1, 1, " ")
+	{
+		charset_to_unicode = CsConvert_None_Unicode::object_factory(p,0,0);
+		charset_from_unicode = CsConvert_Unicode_None::object_factory(p,0,0);
 	}
-	return -1;
-}
+};
 
-static SSHORT internal_fss_mbtowc(TEXTTYPE obj,
-						   USHORT* wc, const UCHAR* p, USHORT n)
+class CharSet_ASCII : public CharSet
+{
+public:
+	static CharSet *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CharSet_ASCII(p); }
+	CharSet_ASCII(MemoryPool &p) : CharSet(CS_ASCII, "ASCII", 1, 1, 1, " ")
+	{
+		charset_to_unicode = CsConvert_ASCII_Unicode::object_factory(p,0,0);
+		charset_from_unicode = CsConvert_Unicode_ASCII::object_factory(p,0,0);
+	}
+};
+
+class CharSet_Unicode_FSS : public CharSet
+{
+public:
+	static CharSet *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CharSet_Unicode_FSS(p); }
+	CharSet_Unicode_FSS(MemoryPool &p) : CharSet(CS_UNICODE_FSS, "UNICODE_FSS", 1, 1, 1, " ")
+	{
+		charset_to_unicode = CsConvert_UFSS_Unicode::object_factory(p,0,0);
+		charset_from_unicode = CsConvert_Unicode_UFSS::object_factory(p,0,0);
+	}
+};
+
+class CharSet_Unicode : public CharSet
+{
+public:
+	static CharSet *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CharSet_Unicode(p); }
+	CharSet_Unicode(MemoryPool &p) : CharSet(CS_UNICODE_UCS2, "UNICODE_UCS2", 2, 2, 2, 0)
+	{
+		static const UCS2_CHAR space = 0x0020;
+		charset_space_character = (const char *) & space;	/* 0x0020 */
+	}
+};
+
+class CharSet_Binary : public CharSet
+{
+public:
+	static CharSet *object_factory(MemoryPool &p, CHARSET_ID u1, CHARSET_ID u2)
+		{ return FB_NEW(p) CharSet_Binary(p); }
+	CharSet_Binary(MemoryPool &p) : CharSet(CS_BINARY, "BINARY", 1, 1, 1, "\0")
+	{
+		charset_to_unicode = CsConvert_Binary_Unicode::object_factory(p,0,0);
+		charset_from_unicode = CsConvert_Unicode_Binary::object_factory(p,0,0);
+	}
+};
+
+/********************************************************************************/
+
+#ifndef HAVE_SWAB
+#ifdef HAVE__SWAB
+#define swab _swab
+#else // use generic swab(). Slow (but faster than previous implementation) and buggy
+void swab(char * a, char * b, int n)
+{
+ while(--n>0)
+ {
+  *b++ = a[1];
+  *b++ = *a++;
+  a++; n--;
+ }
+}
+#endif
+#endif
+
+unsigned short CsConvert_Unicode_Binary::convert(
+							unsigned char *pDest,
+							unsigned short nDest,
+							unsigned char *pSrcUC,
+							unsigned short nSrc,
+							short *err_code,
+							unsigned short *err_position)
 {
 /**************************************
  *
- *      I N T L _ f s s _ m b t o w c
+ *      CsConvert_Unicode_Binary::convert 
  *
  **************************************
  *
  * Functional description
- *      InterBase interface to mbtowc function for Unicode
- *      text in FSS bytestream format.
+ *      Convert a wc string to network form - high-endian
+ *      byte stream.
  *
- * Return:      (common to all mbtowc routines)
- *      -1      Error in parsing next character
- *      <n>     Count of characters consumed.
- *      *wc     Next character from byte stream (if wc <> NULL)
- *
- * Note: This routine has a cousin in intl/cv_utffss.c
- *
- **************************************/
-	fb_assert(obj);
-	fb_assert(wc);
-	fb_assert(p);
+ *************************************/
+	unsigned short res;
 
-	return fss_mbtowc(wc, p, n);
+	assert((pSrcUC != NULL) || (pDest == NULL));
+	assert(err_code != NULL);
+	assert(err_position != NULL);
+
+	*err_code = 0;
+	if (pDest == NULL)			/* length estimate needed? */
+		return (nSrc);
+
+	assert(nSrc&1 == 0); // check for even length
+
+	if (nSrc>nDest) {
+		*err_code = CS_TRUNCATION_ERROR;
+	}
+	res = nSrc>nDest?nDest:nSrc;
+#ifdef WORDS_BIGENDIAN
+	MOVE_FAST(pSrcUC,pDest,res);
+#else
+	swab((char *)pSrcUC,(char *)pDest,res);
+#endif
+	*err_position = res;
+
+	return res;
 }
 
-static ULONG internal_fss_to_unicode(TEXTTYPE obj,
-									 ULONG src_len,
-									 const UCHAR* src_ptr,
-									 ULONG dest_len,
-									 UNICODE* dest_ptr,
-									 USHORT* err_code,
-									 ULONG* err_position)
+
+unsigned short CsConvert_Binary_Unicode::convert(
+							unsigned char *pDestUC,
+							unsigned short nDest,
+							unsigned char *pSrc,
+							unsigned short nSrc,
+							short *err_code,
+							unsigned short *err_position)
 {
-	fb_assert(src_ptr != NULL || dest_ptr == NULL);
-	fb_assert(err_code != NULL);
-	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
+/**************************************
+ *
+ *      CsConvert_Binary_Unicode::convert
+ *
+ **************************************
+ *
+ * Functional description
+ *      Convert a wc string from network form - high-endian
+ *      byte stream.
+ *	Symmetrical with CsConvert_Unicode_Binary::convert
+ *	but really the same
+ *
+ *************************************/
+	unsigned short res;
+
+	assert((pSrc != NULL) || (pDestUC == NULL));
+	assert(err_code != NULL);
+	assert(err_position != NULL);
+
+	*err_code = 0;
+	if (pDestUC == NULL)			/* length estimate needed? */
+		return (nSrc);
+
+	assert(nSrc&1 == 0);
+
+	if (nSrc>nDest) {
+		*err_code = CS_TRUNCATION_ERROR;
+	}
+	res = nSrc>nDest?nDest:nSrc;
+#ifdef WORDS_BIGENDIAN
+	MOVE_FAST(pSrc,pDestUC,res);
+#else
+	swab((char *)pSrc,(char *)pDestUC,res);
+#endif
+	*err_position = res;
+
+	return res;
+}
+
+unsigned short CsConvert_UFSS_Unicode::convert(
+							unsigned char *dest_ptrUC,
+							unsigned short dest_len,
+							unsigned char *src_ptr,
+							unsigned short src_len,
+							short *err_code,
+							unsigned short *err_position)
+{
+	UCS2_CHAR *start, *dest_ptr = (UCS2_CHAR*)dest_ptrUC;
+	USHORT src_start = src_len;
+	fss_size_t res;
+
+	assert(src_ptr != NULL || dest_ptr == NULL);
+	assert(err_code != NULL);
+	assert(err_position != NULL);
 
 	*err_code = 0;
 
@@ -220,15 +561,15 @@ static ULONG internal_fss_to_unicode(TEXTTYPE obj,
 	if (dest_ptr == NULL)
 		return (src_len * 2);	/* All single byte narrow characters */
 
-	const UNICODE* const start = dest_ptr;
-	const ULONG src_start = src_len;
+	start = dest_ptr;
+	src_start = src_len;
 	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
-		const fss_size_t res = fss_mbtowc(dest_ptr, src_ptr, src_len);
+		res = fss_mbtowc(dest_ptr, src_ptr, src_len);
 		if (res == -1) {
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
-		fb_assert(res <= src_len);
+		assert(res <= src_len);
 		dest_ptr++;
 		dest_len -= sizeof(*dest_ptr);
 		src_ptr += res;
@@ -241,724 +582,109 @@ static ULONG internal_fss_to_unicode(TEXTTYPE obj,
 	return ((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
-ULONG internal_unicode_to_fss(csconvert* obj,
-							  ULONG unicode_len,	/* BYTE count */
-							  const UNICODE* unicode_str,
-							  ULONG fss_len,
-							  UCHAR* fss_str,
-							  USHORT* err_code,
-							  ULONG* err_position)
+unsigned short CsConvert_Unicode_ASCII::convert(
+							unsigned char *pDest,
+							unsigned short nDest,
+							unsigned char *pSrcUC,
+							unsigned short nSrc,
+							short *err_code,
+							unsigned short *err_position)
 {
-	const ULONG src_start = unicode_len;
-	UCHAR tmp_buffer[6];
+/**************************************
+ *
+ *      CsConvert_Unicode_ASCII::convert
+ *
+ **************************************
+ *
+ * Functional description
+ *      Convert UNICODE to CHARACTER SET ASCII (wide char).
+ *      Byte values below 128 treated as ASCII.
+ *      Byte values >= 128 create CONVERT_ERROR
+ *
+ *************************************/
+	NCHAR *pStart;
+	UCS2_CHAR *pStart_src, *pSrc = (UCS2_CHAR*)pSrcUC;
 
-	fb_assert(unicode_str != NULL || fss_str == NULL);
-	fb_assert(err_code != NULL);
-	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) internal_unicode_to_fss);
+	assert((pSrc != NULL) || (pDest == NULL));
+	assert(err_code != NULL);
 
 	*err_code = 0;
+	if (pDest == NULL)			/* length estimate needed? */
+		return (nSrc / 2);
+	pStart = pDest;
+	pStart_src = pSrc;
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
+		if (*pSrc > 127) {
+			*err_code = CS_CONVERT_ERROR;
+			break;
+		}
+		*pDest++ = *pSrc++;
+		nDest -= sizeof(*pDest);
+		nSrc -= sizeof(*pSrc);
+	}
+	if (!*err_code && nSrc) {
+		*err_code = CS_TRUNCATION_ERROR;
+	}
+	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
 
-/* See if we're only after a length estimate */
-	if (fss_str == NULL)
-		return ((unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
+	return ((pDest - pStart) * sizeof(*pDest));
+}
 
-	const UCHAR* const start = fss_str;
-	while ((fss_len) && (unicode_len >= sizeof(*unicode_str))) {
-		/* Convert the wide character into temp buffer */
-		fss_size_t res = fss_wctomb(tmp_buffer, *unicode_str);
-		if (res == -1) {
+unsigned short CsConvert_ASCII_Unicode::convert(
+							unsigned char *pDestUC,
+							unsigned short nDest,
+							unsigned char *pSrc,
+							unsigned short nSrc,
+							short *err_code,
+							unsigned short *err_position)
+{
+/**************************************
+ *
+ *      CsConvert_ASCII_Unicode::convert
+ *
+ **************************************
+ *
+ * Functional description
+ *      Convert CHARACTER SET NONE to UNICODE (wide char).
+ *      Byte values below 128 treated as ASCII.
+ *      Byte values >= 128 create BAD_INPUT
+ *
+ *************************************/
+	UCS2_CHAR *pStart, *pDest = (UCS2_CHAR*)pDestUC;
+	UCHAR *pStart_src;
+
+	assert((pSrc != NULL) || (pDest == NULL));
+	assert(err_code != NULL);
+
+	*err_code = 0;
+	if (pDest == NULL)			/* length estimate needed? */
+		return (2 * nSrc);
+	pStart = pDest;
+	pStart_src = pSrc;
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
+		if (*pSrc > 127) {
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
-		/* will the mb sequence fit into space left? */
-		if (res > fss_len) {
-			*err_code = CS_TRUNCATION_ERROR;
-			break;
-		}
-		/* copy the converted bytes into the destination */
-		const UCHAR* p = tmp_buffer;
-		for (; res; res--, fss_len--)
-			*fss_str++ = *p++;
-		unicode_len -= sizeof(*unicode_str);
-		unicode_str++;
+		*pDest++ = *pSrc++;
+		nDest -= sizeof(*pDest);
+		nSrc -= sizeof(*pSrc);
 	}
-	if (unicode_len && !*err_code) {
+	if (!*err_code && nSrc) {
 		*err_code = CS_TRUNCATION_ERROR;
 	}
-	*err_position = src_start - unicode_len;
-	return ((fss_str - start) * sizeof(*fss_str));
+	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+
+	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static ULONG internal_fss_length(charset* obj, ULONG srcLen, const UCHAR* src)
-{
-/**************************************
- *
- *      i n t e r n a l _ f s s _ l e n g t h
- *
- **************************************
- *
- * Functional description
- *  Return character length of a string.
- *  If the string is malformed, count number
- *  of bytes after the offending character.
- *
- **************************************/
-	ULONG charLength = 0;
-
-	while (srcLen)
-	{
-		USHORT c;
-		const fss_size_t res = fss_mbtowc(&c, src, srcLen);
-
-		if (res == -1)
-			break;
-
-		fb_assert(res <= srcLen);
-
-		src += res;
-		srcLen -= res;
-		++charLength;
-	}
-
-	return charLength + srcLen;
-}
-
-static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src,
-									ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG length)
-{
-/**************************************
- *
- *      i n t e r n a l _ f s s _ s u b s t r i n g
- *
- **************************************
- *
- * Functional description
- *  Return substring of a string.
- *  If the string is malformed, consider
- *  only bytes after the offending character.
- *
- **************************************/
-	fb_assert(src != NULL && dst != NULL);
-
-	if (length == 0)
-		return 0;
-
-	const UCHAR* srcStart = src;
-	const UCHAR* dstStart = dst;
-	const UCHAR* const srcEnd = src + srcLen;
-	const UCHAR* const dstEnd = dst + dstLen;
-	ULONG pos = 0;
-	bool wellFormed = true;
-
-	while (src < srcEnd && dst < dstEnd && pos < startPos)
-	{
-		USHORT c;
-		fss_size_t res;
-
-		if (wellFormed)
-		{
-			res = fss_mbtowc(&c, src, srcLen);
-
-			if (res == -1)
-			{
-				wellFormed = false;
-				continue;
-			}
-		}
-		else
-		{
-			c = *src;
-			res = 1;
-		}
-
-		fb_assert(res <= srcLen);
-
-		src += res;
-		srcLen -= res;
-		++pos;
-	}
-
-	while (src < srcEnd && dst < dstEnd && pos < startPos + length)
-	{
-		USHORT c;
-		fss_size_t res;
-
-		if (wellFormed)
-		{
-			res = fss_mbtowc(&c, src, srcLen);
-
-			if (res == -1)
-			{
-				wellFormed = false;
-				continue;
-			}
-		}
-		else
-		{
-			c = *src;
-			res = 1;
-		}
-
-		fb_assert(res <= srcLen);
-
-		src += res;
-		srcLen -= res;
-		++pos;
-
-		if (wellFormed)
-			res = fss_wctomb(dst, c);
-		else
-			*dst = c;
-
-		dst += res;
-	}
-
-	return dst - dstStart;
-}
-
-static ULONG internal_str_copy(
-								TEXTTYPE obj,
-								ULONG inLen,
-								const UCHAR* src, ULONG outLen, UCHAR* dest)
-{
-/**************************************
- *
- *      i n t e r n a l _ s t r _ c o p y
- *
- **************************************
- *
- * Functional description
- *      Note: dest may equal src.
- *
- **************************************/
-	const UCHAR* const pStart = dest;
-	while (inLen-- && outLen--) {
-		*dest++ = *src++;
-	}
-
-	return (dest - pStart);
-}
-
-static USHORT internal_keylength(TEXTTYPE obj, USHORT iLength)
-{
-/**************************************
- *
- *      i n t e r n a l _ k e y l e n g t h
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return (iLength);
-}
-
-static USHORT internal_string_to_key(
-									 TEXTTYPE obj,
-									 USHORT inLen,
-									 const UCHAR* src,
-									 USHORT outLen,
-									UCHAR* dest,
-									USHORT key_type) // unused
-{
-/**************************************
- *
- *      i n t e r n a l _ s t r i n g _ t o _ k e y
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	const UCHAR* const pStart = dest;
-	const UCHAR pad_char = obj->texttype_impl->texttype_pad_char;
-	while (inLen-- && outLen--)
-		*dest++ = *src++;
-
-	if (obj->texttype_pad_option)
-	{
-		/* strip off ending pad characters */
-		while (dest > pStart)
-			if (*(dest - 1) == pad_char)
-				dest--;
-			else
-				break;
-	}
-
-	return (dest - pStart);
-}
-
-static SSHORT internal_compare(
-							   TEXTTYPE obj,
-							   ULONG length1,
-							   const UCHAR* p1, ULONG length2, const UCHAR* p2, INTL_BOOL* error_flag)
-{
-/**************************************
- *
- *      i n t e r n a l _ c o m p a r e
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	const UCHAR pad = obj->texttype_impl->texttype_pad_char;
-	SLONG fill = length1 - length2;
-	if (length1 >= length2) {
-		if (length2)
-			do {
-				if (*p1++ != *p2++)
-					if (p1[-1] > p2[-1])
-						return 1;
-					else
-						return -1;
-			} while (--length2);
-		if (fill > 0)
-			do {
-				if (!obj->texttype_pad_option || *p1++ != pad)
-					if (p1[-1] > pad)
-						return 1;
-					else
-						return -1;
-			} while (--fill);
-		return 0;
-	}
-
-	if (length1)
-		do {
-			if (*p1++ != *p2++)
-				if (p1[-1] > p2[-1])
-					return 1;
-				else
-					return -1;
-		} while (--length1);
-
-	do {
-		if (!obj->texttype_pad_option || *p2++ != pad)
-			if (pad > p2[-1])
-				return 1;
-			else
-				return -1;
-	} while (++fill);
-
-	return 0;
-}
-
-
-static ULONG internal_str_to_upper(
-									TEXTTYPE obj,
-									ULONG inLen,
-									const UCHAR* src, ULONG outLen, UCHAR* dest)
-{
-/**************************************
- *
- *      i n t e r n a l _ s t r _ t o _ u p p e r
- *
- **************************************
- *
- * Functional description
- *      Note: dest may equal src.
- *
- **************************************/
-	const UCHAR* const pStart = dest;
-	while (inLen-- && outLen--) {
-		*dest++ = UPPER7(*src);
-		src++;
-	}
-
-	return (dest - pStart);
-}
-
-
-static ULONG internal_str_to_lower(
-									TEXTTYPE obj,
-									ULONG inLen,
-									const UCHAR* src, ULONG outLen, UCHAR* dest)
-{
-/**************************************
- *
- *      i n t e r n a l _ s t r _ t o _ l o w e r
- *
- **************************************
- *
- * Functional description
- *      Note: dest may equal src.
- *
- **************************************/
-	const UCHAR* const pStart = dest;
-	while (inLen-- && outLen--) {
-		*dest++ = LOWWER7(*src);
-		src++;
-	}
-
-	return (dest - pStart);
-}
-
-
-static void internal_destroy(TEXTTYPE obj)
-{
-/**************************************
- *
- *      i n t e r n a l _ d e s t r o y
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	delete obj->texttype_impl;
-}
-
-
-static void unicode_destroy(TEXTTYPE obj)
-{
-/**************************************
- *
- *      u n i c o d e _ d e s t r o y
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-	delete (UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0];
-}
-
-
-static USHORT unicode8_keylength(TEXTTYPE obj, USHORT len)
-{
-/**************************************
- *
- *      u n i c o d e 8 _ k e y l e n g t h
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->keyLength(len);
-}
-
-
-static USHORT unicode8_string_to_key(
-									 TEXTTYPE obj,
-									 USHORT srcLen,
-									 const UCHAR* src,
-									 USHORT dstLen,
-									 UCHAR* dst,
-									 USHORT key_type)
-{
-/**************************************
- *
- *      u n i c o d e 8 _ s t r i n g _ t o _ k e y
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-
-	USHORT err_code;
-	ULONG err_position;
-
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
-	ULONG utf16Len = UnicodeUtil::utf8ToUtf16(srcLen, src, 0, NULL,
-		&err_code, &err_position);
-
-	utf16Len = UnicodeUtil::utf8ToUtf16(srcLen, src,
-		utf16Len, reinterpret_cast<USHORT*>(utf16Str.getBuffer(utf16Len)),
-		&err_code, &err_position);
-
-	if (obj->texttype_pad_option)
-	{
-		const UCHAR* pad;
-
-		for (pad = utf16Str.begin() + utf16Len - sizeof(USHORT); pad >= utf16Str.begin(); pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		utf16Len = pad - utf16Str.begin() + sizeof(USHORT);
-	}
-
-	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->stringToKey(
-		utf16Len, (USHORT*)utf16Str.begin(), dstLen, dst, key_type);
-}
-
-
-static SSHORT unicode8_compare(TEXTTYPE obj, ULONG length1, const UCHAR* p1,
-							   ULONG length2, const UCHAR* p2, INTL_BOOL* error_flag)
-{
-/**************************************
- *
- *      u n i c o d e 8 _ c o m p a r e
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-
-	USHORT err_code;
-	ULONG err_position;
-
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str1;
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str2;
-	ULONG utf16Len1 = UnicodeUtil::utf8ToUtf16(length1, p1, 0, NULL,
-		&err_code, &err_position);
-	ULONG utf16Len2 = UnicodeUtil::utf8ToUtf16(length2, p2, 0, NULL,
-		&err_code, &err_position);
-
-	utf16Len1 = UnicodeUtil::utf8ToUtf16(length1, p1,
-		utf16Len1, reinterpret_cast<USHORT*>(utf16Str1.getBuffer(utf16Len1)),
-		&err_code, &err_position);
-
-	utf16Len2 = UnicodeUtil::utf8ToUtf16(length2, p2,
-		utf16Len2, reinterpret_cast<USHORT*>(utf16Str2.getBuffer(utf16Len2)),
-		&err_code, &err_position);
-
-	if (obj->texttype_pad_option)
-	{
-		const UCHAR* pad;
-
-		for (pad = utf16Str1.begin() + utf16Len1 - sizeof(USHORT); pad >= utf16Str1.begin(); pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		utf16Len1 = pad - utf16Str1.begin() + sizeof(USHORT);
-
-		for (pad = utf16Str2.begin() + utf16Len2 - sizeof(USHORT); pad >= utf16Str2.begin(); pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		utf16Len2 = pad - utf16Str2.begin() + sizeof(USHORT);
-	}
-
-	return ((UnicodeUtil::Utf16Collation*)obj->reserved_for_driver[0])->compare(
-		utf16Len1, (USHORT*)utf16Str1.begin(),
-		utf16Len2, (USHORT*)utf16Str2.begin(), error_flag);
-}
-
-
-static USHORT utf16_keylength(TEXTTYPE obj, USHORT len)
-{
-/**************************************
- *
- *      u t f 1 6 _ k e y l e n g t h
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	return UnicodeUtil::utf16KeyLength(len);
-}
-
-static USHORT utf16_string_to_key(
-								  TEXTTYPE obj,
-								  USHORT srcLen,
-								  const UCHAR* src,
-								  USHORT dstLen,
-								  UCHAR* dst,
-								  USHORT key_type)
-{
-/**************************************
- *
- *      u t f 1 6 _ s t r i n g _ t o _ k e y
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-	fb_assert(srcLen % 2 == 0);
-
-	if (obj->texttype_pad_option)
-	{
-		const UCHAR* pad;
-
-		for (pad = src + srcLen - sizeof(USHORT); pad >= src; pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		srcLen = pad - src + sizeof(USHORT);
-	}
-
-	return UnicodeUtil::utf16ToKey(srcLen, reinterpret_cast<const USHORT*>(src), dstLen, dst, key_type);
-}
-
-static SSHORT utf16_compare(
-							TEXTTYPE obj,
-							ULONG len1, 
-							const UCHAR* str1, 
-							ULONG len2, 
-							const UCHAR* str2,
-							INTL_BOOL* error_flag)
-{
-/**************************************
- *
- *      u t f 1 6 _ c o m p a r e
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-	fb_assert(len1 % 2 == 0 && len2 % 2 == 0);
-	fb_assert(str1 != NULL && str2 != NULL);
-
-	if (obj->texttype_pad_option)
-	{
-		const UCHAR* pad;
-
-		for (pad = str1 + len1 - sizeof(USHORT); pad >= str1; pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		len1 = pad - str1 + sizeof(USHORT);
-
-		for (pad = str2 + len2 - sizeof(USHORT); pad >= str2; pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		len2 = pad - str2 + sizeof(USHORT);
-	}
-
-	return UnicodeUtil::utf16Compare(len1, reinterpret_cast<const USHORT*>(str1),
-									 len2, reinterpret_cast<const USHORT*>(str2), error_flag);
-}
-
-static ULONG utf16_upper(
-						 TEXTTYPE obj,
-						 ULONG srcLen, 
-						 const UCHAR* src, 
-						 ULONG dstLen, 
-						 UCHAR* dst)
-{
-/**************************************
- *
- *      u t f 1 6 _ u p p e r
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-	fb_assert(srcLen % 2 == 0);
-	fb_assert(src != NULL && dst != NULL);
-
-	return UnicodeUtil::utf16UpperCase(srcLen, reinterpret_cast<const USHORT*>(src),
-									   dstLen, reinterpret_cast<USHORT*>(dst));
-}
-
-static ULONG utf16_lower(
-						 TEXTTYPE obj,
-						 ULONG srcLen, 
-						 const UCHAR* src, 
-						 ULONG dstLen, 
-						 UCHAR* dst)
-{
-/**************************************
- *
- *      u t f 1 6 _ l o w e r
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-	fb_assert(srcLen % 2 == 0);
-	fb_assert(src != NULL && dst != NULL);
-
-	return UnicodeUtil::utf16LowerCase(srcLen, reinterpret_cast<const USHORT*>(src),
-									   dstLen, reinterpret_cast<USHORT*>(dst));
-}
-
-
-static USHORT utf32_keylength(TEXTTYPE obj, USHORT len)
-{
-/**************************************
- *
- *      u t f 3 2 _ k e y l e n g t h
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	return len;
-}
-
-static USHORT utf32_string_to_key(
-								  TEXTTYPE obj,
-								  USHORT srcLen,
-								  const UCHAR* src,
-								  USHORT dstLen,
-								  UCHAR* dst,
-								  USHORT key_type)
-{
-/**************************************
- *
- *      u t f 3 2 _ s t r i n g _ t o _ k e y
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	fb_assert(obj != NULL);
-	fb_assert(srcLen % 4 == 0);
-
-	USHORT err_code;
-	ULONG err_position;
-
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
-	srcLen = UnicodeUtil::utf32ToUtf16(srcLen, reinterpret_cast<const ULONG*>(src),
-		dstLen, reinterpret_cast<USHORT*>(utf16Str.getBuffer(dstLen)), &err_code, &err_position);
-	src = utf16Str.begin();
-
-	if (obj->texttype_pad_option)
-	{
-		const UCHAR* pad;
-
-		for (pad = src + srcLen - sizeof(USHORT); pad >= src; pad -= sizeof(USHORT))
-		{
-			if (*reinterpret_cast<const USHORT*>(pad) != 32)
-				break;
-		}
-
-		srcLen = pad - src + sizeof(USHORT);
-	}
-
-	return UnicodeUtil::utf16ToKey(srcLen, reinterpret_cast<const USHORT*>(src), dstLen, dst, key_type);
-}
-
-
-static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
-					  ULONG nDest, UCHAR* pDest,
-					  USHORT* err_code, ULONG* err_position)
+unsigned short CsConvert_Unicode_None::convert(
+							unsigned char *pDest,
+							unsigned short nDest,
+							unsigned char *pSrcUC,
+							unsigned short nSrc,
+							short *err_code,
+							unsigned short *err_position)
 {
 /**************************************
  *
@@ -969,18 +695,18 @@ static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
  * Functional description
  *
  **************************************/
-	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
-	fb_assert(err_code != NULL);
-	fb_assert(err_position != NULL);
+	NCHAR *pStart;
+	UCS2_CHAR *pStart_src, *pSrc = (UCS2_CHAR*)pSrcUC;
+
+	assert((pSrc != NULL) || (pDest == NULL));
+	assert(err_code != NULL);
+	assert(err_position != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return ((nSrc + 1) / 2);
-
-	const UCHAR* const pStart = pDest;
-	const USHORT* const pStart_src = pSrc;
-
+	pStart = pDest;
+	pStart_src = pSrc;
 	while (nDest && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc >= 256) {
 			*err_code = CS_CONVERT_ERROR;
@@ -998,536 +724,17 @@ static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-
-static ULONG mb_to_wc(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-					  ULONG nDest, USHORT* pDest,
-					  USHORT* err_code, ULONG* err_position)
+unsigned short CsConvert_None_Unicode::convert(
+							unsigned char *pDestUC,
+							unsigned short nDest,
+							unsigned char *pSrc,
+							unsigned short nSrc,
+							short *err_code,
+							unsigned short *err_position)
 {
 /**************************************
  *
- *      m b _ t o _ w c
- *
- **************************************
- *
- * Functional description
- *      Convert a wc string from network form - high-endian
- *      byte stream.
- *
- *************************************/
-	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
-	fb_assert(err_code != NULL);
-	fb_assert(err_position != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return (nSrc);
-
-	const USHORT* const pStart = pDest;
-	const UCHAR* const pStart_src = pSrc;
-	while (nDest > 1 && nSrc > 1) {
-		*pDest++ = *pSrc * 256 + *(pSrc + 1);
-		pSrc += 2;
-		nDest -= 2;
-		nSrc -= 2;
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
-					  ULONG nDest, UCHAR* pDest,
-					  USHORT* err_code, ULONG* err_position)
-{
-/**************************************
- *
- *      w c _ t o _ m b 
- *
- **************************************
- *
- * Functional description
- *      Convert a wc string to network form - high-endian
- *      byte stream.
- *
- *************************************/
-	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
-	fb_assert(err_code != NULL);
-	fb_assert(err_position != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return (nSrc);
-
-	const UCHAR* const pStart = pDest;
-	const USHORT* const pStart_src = pSrc;
-	while (nDest > 1 && nSrc > 1) {
-		*pDest++ = *pSrc / 256;
-		*pDest++ = *pSrc++ % 256;
-		nDest -= 2;
-		nSrc -= 2;
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-static INTL_BOOL ttype_ascii_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
-								  USHORT attributes, const UCHAR* specific_attributes,
-								  ULONG specific_attributes_length)
-{
-/**************************************
- *
- *      t t y p e _ a s c i i _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static const ASCII POSIX[] = "C.ASCII";
-
-	return FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
-}
-
-
-static INTL_BOOL ttype_none_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
-								 USHORT attributes, const UCHAR* specific_attributes,
-								 ULONG specific_attributes_length)
-{
-/**************************************
- *
- *      t t y p e _ n o n e _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static const ASCII POSIX[] = "C";
-
-	return FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length);
-}
-
-
-static INTL_BOOL ttype_unicode_fss_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
-										USHORT attributes, const UCHAR* specific_attributes,
-										ULONG specific_attributes_length)
-{
-/**************************************
- *
- *      t t y p e _ u n i c o d e _ f s s _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static const ASCII POSIX[] = "C.UNICODE_FSS";
-
-	if (FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
-	{
-		cache->texttype_flags |= TEXTTYPE_DIRECT_MATCH;
-		cache->texttype_fn_str_to_upper	= NULL;		// use default implementation
-		cache->texttype_fn_str_to_lower	= NULL;		// use default implementation
-		return true;
-	}
-
-	return false;
-}
-
-
-static INTL_BOOL ttype_binary_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
-								   USHORT attributes, const UCHAR* specific_attributes,
-								   ULONG specific_attributes_length)
-{
-/**************************************
- *
- *      t t y p e _ b i n a r y _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static const ASCII POSIX[] = "C.OCTETS";
-
-	if (FAMILY_INTERNAL(cache, CC_C, POSIX, attributes, specific_attributes, specific_attributes_length))
-	{
-		cache->texttype_fn_str_to_upper = internal_str_copy;
-		cache->texttype_fn_str_to_lower = internal_str_copy;
-		cache->texttype_impl->texttype_pad_char = '\0';
-		return true;
-	}
-
-	return false;
-}
-
-
-static INTL_BOOL ttype_utf8_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
-								 USHORT attributes, const UCHAR* specific_attributes,
-								 ULONG specific_attributes_length)
-{
-/**************************************
- *
- *      t t y p e _ u t f 8 _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static const ASCII POSIX[] = "C.UTF8";
-
-	return FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length);
-}
-
-
-static INTL_BOOL ttype_unicode8_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
-									 USHORT attributes, const UCHAR* specific_attributes,
-									 ULONG specific_attributes_length)
-{
-/**************************************
- *
- *      t t y p e _ u n i c o d e 8 _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static const ASCII POSIX[] = "C.UTF8.UNICODE";
-
-	if (FAMILY_INTERNAL_UNICODE(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
-	{
-		cache->texttype_fn_key_length = unicode8_keylength;
-		cache->texttype_fn_string_to_key = unicode8_string_to_key;
-		cache->texttype_fn_compare = unicode8_compare;
-
-		return true;
-	}
-
-	return false;
-}
-
-
-static INTL_BOOL ttype_utf16_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
-								  USHORT attributes, const UCHAR* specific_attributes,
-								  ULONG specific_attributes_length)
-{
-/**************************************
- *
- *      t t y p e _ u t f 1 6 _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static const ASCII POSIX[] = "C.UTF16";
-
-	if (FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
-	{
-		cache->texttype_fn_key_length = utf16_keylength;
-		cache->texttype_fn_string_to_key = utf16_string_to_key;
-		cache->texttype_fn_compare = utf16_compare;
-		cache->texttype_fn_str_to_upper = utf16_upper;
-		cache->texttype_fn_str_to_lower = utf16_lower;
-		return true;
-	}
-
-	return false;
-}
-
-
-static INTL_BOOL ttype_utf32_init(TEXTTYPE cache, const ASCII* texttype_name, const ASCII* charset_name,
-								  USHORT attributes, const UCHAR* specific_attributes,
-								  ULONG specific_attributes_length)
-{
-/**************************************
- *
- *      t t y p e _ u t f 3 2 _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	static const ASCII POSIX[] = "C.UTF32";
-
-	if (FAMILY_INTERNAL_UTF(cache, POSIX, attributes, specific_attributes, specific_attributes_length))
-	{
-		cache->texttype_fn_key_length = utf32_keylength;
-		cache->texttype_fn_string_to_key = utf32_string_to_key;
-		return true;
-	}
-
-	return false;
-}
-
-
-/*
- *      Start of Character set definitions 
- */
-
-static void common_8bit_init(
-							 charset* csptr,
-							 const ASCII* name,
-							 const USHORT* to_unicode_tbl,
-							 const UCHAR* from_unicode_tbl1,
-							 const USHORT* from_unicode_tbl2)
-{
-/**************************************
- *
- *      c o m m o n _ 8 b i t _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	csptr->charset_version = CHARSET_VERSION_1;
-	csptr->charset_name = name;
-	csptr->charset_flags |= CHARSET_ASCII_BASED;
-	csptr->charset_min_bytes_per_char = 1;
-	csptr->charset_max_bytes_per_char = 1;
-	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (const BYTE*) " ";
-	csptr->charset_fn_well_formed = NULL;
-}
-
-
-static INTL_BOOL cs_utf8_well_formed(charset* cs, 
-									 ULONG len,
-									 const UCHAR* str,
-									 ULONG* offending_position)
-{
-/**************************************
- *
- *      c s _ u t f 8 _ w e l l _ f o r m e d
- *
- **************************************
- *
- * Functional description
- *      Check if UTF-8 string is weel-formed
- *
- *************************************/
-	fb_assert(cs != NULL);
-
-	return UnicodeUtil::utf8WellFormed(len, str, offending_position);
-}
-
-
-static INTL_BOOL cs_utf16_well_formed(charset* cs, 
-									  ULONG len,
-									  const UCHAR* str,
-									  ULONG* offending_position)
-{
-/**************************************
- *
- *      c s _ u t f 1 6 _ w e l l _ f o r m e d
- *
- **************************************
- *
- * Functional description
- *      Check if UTF-16 string is weel-formed
- *
- *************************************/
-	fb_assert(cs != NULL);
-
-	return UnicodeUtil::utf16WellFormed(len, reinterpret_cast<const USHORT*>(str), offending_position);
-}
-
-
-static ULONG cs_utf16_length(charset* cs, 
-							 ULONG srcLen,
-							 const UCHAR* src)
-{
-/**************************************
- *
- *      c s _ u t f 1 6 _ l e n g t h
- *
- **************************************
- *
- * Functional description
- *      Length of UTF-16 string
- *
- *************************************/
-	fb_assert(cs != NULL);
-	return UnicodeUtil::utf16Length(srcLen, reinterpret_cast<const USHORT*>(src));
-}
-
-
-static ULONG cs_utf16_substring(charset* cs, 
-								ULONG srcLen,
-								const UCHAR* src,
-								ULONG dstLen,
-								UCHAR* dst,
-								ULONG startPos,
-								ULONG length)
-{
-/**************************************
- *
- *      c s _ u t f 1 6 _ s u b s t r i n g
- *
- **************************************
- *
- * Functional description
- *      Substring of UTF-16 string
- *
- *************************************/
-	fb_assert(cs != NULL);
-
-	return UnicodeUtil::utf16Substring(srcLen, reinterpret_cast<const USHORT*>(src),
-		dstLen, reinterpret_cast<USHORT*>(dst), startPos, length);
-}
-
-
-static INTL_BOOL cs_utf32_well_formed(charset* cs, 
-									  ULONG len,
-									  const UCHAR* str,
-									  ULONG* offending_position)
-{
-/**************************************
- *
- *      c s _ u t f 3 2 _ w e l l _ f o r m e d
- *
- **************************************
- *
- * Functional description
- *      Check if UTF-32 string is weel-formed
- *
- *************************************/
-	fb_assert(cs != NULL);
-
-	return UnicodeUtil::utf32WellFormed(len, reinterpret_cast<const ULONG*>(str), offending_position);
-}
-
-
-static void common_convert_init(
-								csconvert* csptr,
-								pfn_INTL_convert cvt_fn)
-{
-/**************************************
- *
- *      c o m m o n _ c o n v e r t _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	csptr->csconvert_version = CSCONVERT_VERSION_1;
-	csptr->csconvert_name = (const ASCII*) "DIRECT";
-	csptr->csconvert_fn_convert = cvt_fn;
-}
-
-
-static ULONG cvt_ascii_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-								  ULONG nDest, USHORT* pDest,
-								  USHORT* err_code, ULONG* err_position)
-{
-/**************************************
- *
- *      c v t _ a s c i i _ t o _ u n i c o d e
- *
- **************************************
- *
- * Functional description
- *      Convert CHARACTER SET NONE to UNICODE (wide char).
- *      Byte values below 128 treated as ASCII.
- *      Byte values >= 128 create BAD_INPUT
- *
- *************************************/
-	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
-	fb_assert(err_code != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return (2 * nSrc);
-
-	const USHORT* const pStart = pDest;
-	const UCHAR* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc > 127) {
-			*err_code = CS_BAD_INPUT;
-			break;
-		}
-		*pDest++ = *pSrc++;
-		nDest -= sizeof(*pDest);
-		nSrc -= sizeof(*pSrc);
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-static ULONG cvt_unicode_to_ascii(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
-								  ULONG nDest, UCHAR* pDest,
-								  USHORT* err_code, ULONG* err_position)
-{
-/**************************************
- *
- *      c v t _ u n i c o d e _ t o _ a s c i i 
- *
- **************************************
- *
- * Functional description
- *      Convert UNICODE to CHARACTER SET ASCII (wide char).
- *      Byte values below 128 treated as ASCII.
- *      Byte values >= 128 create CONVERT_ERROR
- *
- *************************************/
-	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
-	fb_assert(err_code != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return (nSrc / 2);
-
-	const UCHAR* const pStart = pDest;
-	const USHORT* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc > 127) {
-			*err_code = CS_CONVERT_ERROR;
-			break;
-		}
-		*pDest++ = *pSrc++;
-		nDest -= sizeof(*pDest);
-		nSrc -= sizeof(*pSrc);
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-								 ULONG nDest, USHORT* pDest,
-								 USHORT* err_code, ULONG* err_position)
-{
-/**************************************
- *
- *      c v t _ n o n e _ t o _ u n i c o d e
+ *      CsConvert_None_Unicode::convert
  *
  **************************************
  *
@@ -1537,16 +744,17 @@ static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
  *      Byte values >= 128 create CONVERT ERROR
  *
  *************************************/
-	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
-	fb_assert(err_code != NULL);
+	UCS2_CHAR *pStart, *pDest = (UCS2_CHAR*)pDestUC;
+	UCHAR *pStart_src;
+
+	assert((pSrc != NULL) || (pDest == NULL));
+	assert(err_code != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return (2 * nSrc);
-
-	const USHORT* const pStart = pDest;
-	const UCHAR* const pStart_src = pSrc;
+	pStart = pDest;
+	pStart_src = pSrc;
 	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc > 127) {
 			*err_code = CS_CONVERT_ERROR;
@@ -1564,55 +772,13 @@ static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-
-static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const USHORT* pSrc,
-									ULONG nDest, USHORT* pDest,
-									USHORT* err_code, ULONG* err_position)
-{
-/**************************************
- *
- *      c v t _ u n i c o d e _ t o _ u n i c o d e
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
-	fb_assert(err_code != NULL);
-
-	*err_code = 0;
-	if (pDest == NULL)			/* length estimate needed? */
-		return nSrc;
-
-	const USHORT* const pStart = pDest;
-	const USHORT* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
-		*pDest++ = *pSrc++;
-		nDest -= sizeof(*pDest);
-		nSrc -= sizeof(*pSrc);
-	}
-	if (!*err_code && nSrc) {
-		*err_code = CS_TRUNCATION_ERROR;
-	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
-
-	return ((pDest - pStart) * sizeof(*pDest));
-}
-
-
-static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-								 ULONG nDest, UCHAR* pDest,
-								 USHORT* err_code, ULONG* err_position)
+static unsigned short cvt_utffss_to_ascii(UCHAR * pDest, USHORT nDest,	/* byte count */
+								  UCHAR * pSrc, USHORT nSrc,	/* byte count */
+								  short *err_code, unsigned short *err_position)
 {
 /**************************************
  *
  *      c v t _ u t f f s s _ t o _ a s c i i 
- * also
- *      c v t _ a s c i i _ t o _ u t f f s s 
- * also
- *      c v t _ n o n e _ t o _ u t f f s s 
  *
  **************************************
  *
@@ -1623,16 +789,17 @@ static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
  *      routine does double duty.
  *
  *************************************/
-	fb_assert(obj != NULL);
-	fb_assert((pSrc != NULL) || (pDest == NULL));
-	fb_assert(err_code != NULL);
+	UCHAR *pStart;
+	UCHAR *pStart_src;
+
+	assert((pSrc != NULL) || (pDest == NULL));
+	assert(err_code != NULL);
 
 	*err_code = 0;
 	if (pDest == NULL)			/* length estimate needed? */
 		return (nSrc);
-
-	const UCHAR* const pStart = pDest;
-	const UCHAR* const pStart_src = pSrc;
+	pStart = pDest;
+	pStart_src = pSrc;
 	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
 		if (*pSrc > 127) {
 			/* In the cvt_ascii_to_utffss case this should be CS_BAD_INPUT */
@@ -1652,64 +819,648 @@ static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
+/*
+ * The following was provided by Ken Thompson of AT&T Bell Laboratories,
+ * <ken@research.att.com>, on Tue, 8 Sep 92 03:22:07 EDT, to the X/Open
+ * Joint Internationalization Group.  Some minor formatting changes have
+ * been made by Glenn Adams, <glenn@metis.com>.
+ *
+ * -------------------------------------------------------------------------
+ *  File System Safe Universal Character Set Transformation Format (FSS-UTF)
+ * -------------------------------------------------------------------------
+ *
+ * With the approval of ISO/IEC 10646 (Unicode) as an international
+ * standard and the anticipated wide spread use of this universal coded
+ * character set (UCS), it is necessary for historically ASCII based
+ * operating systems to devise ways to cope with representation and
+ * handling of the large number of characters that are possible to be
+ * encoded by this new standard.
+ *
+ * There are several challenges presented by UCS which must be dealt with
+ * by historical operating systems and the C-language programming
+ * environment.  The most significant of these challenges is the encoding
+ * scheme used by UCS. More precisely, the challenge is the marrying of
+ * the UCS standard with existing programming languages and existing
+ * operating systems and utilities.
+ *
+ * The challenges of the programming languages and the UCS standard are
+ * being dealt with by other activities in the industry.  However, we are
+ * still faced with the handling of UCS by historical operating systems
+ * and utilities.  Prominent among the operating system UCS handling
+ * concerns is the representation of the data within the file system.  An
+ * underlying assumption is that there is an absolute requirement to
+ * maintain the existing operating system software investment while at
+ * the same time taking advantage of the use the large number of
+ * characters provided by the UCS.
+ *
+ * UCS provides the capability to encode multi-lingual text within a
+ * single coded character set.  However, UCS and its UTF variant do not
+ * protect null bytes and/or the ASCII slash ("/") making these character
+ * encodings incompatible with existing Unix implementations.  The
+ * following proposal provides a Unix compatible transformation format of
+ * UCS such that Unix systems can support multi-lingual text in a single
+ * encoding.  This transformation format encoding is intended to be used
+ * as a file code.  This transformation format encoding of UCS is
+ * intended as an intermediate step towards full UCS support.  However,
+ * since nearly all Unix implementations face the same obstacles in
+ * supporting UCS, this proposal is intended to provide a common and
+ * compatible encoding during this transition stage.
+ *
+ * Goal/Objective
+ * --------------
+ *
+ * With the assumption that most, if not all, of the issues surrounding
+ * the handling and storing of UCS in historical operating system file
+ * systems are understood, the objective is to define a UCS
+ * transformation format which also meets the requirement of being usable
+ * on a historical operating system file system in a non-disruptive
+ * manner.  The intent is that UCS will be the process code for the
+ * transformation format, which is usable as a file code.
+ *
+ * Criteria for the Transformation Format
+ * --------------------------------------
+ *
+ * Below are the guidelines that were used in defining the UCS
+ * transformation format:
+ *
+ *      1) Compatibility with historical file systems:
+ *
+ *      Historical file systems disallow the null byte and the ASCII
+ *      slash character as a part of the file name.
+ *
+ *      2) Compatibility with existing programs:
+ *
+ *      The existing model for multibyte processing is that ASCII does
+ *      not occur anywhere in a multibyte encoding.  There should be
+ *      no ASCII code values for any part of a transformation format
+ *      representation of a character that was not in the ASCII
+ *      character set in the UCS representation of the character.
+ *
+ *      3) Ease of conversion from/to UCS.
+ *
+ *      4) The first byte should indicate the number of bytes to
+ *      follow in a multibyte sequence.
+ *
+ *      5) The transformation format should not be extravagant in
+ *      terms of number of bytes used for encoding.
+ *
+ *      6) It should be possible to find the start of a character
+ *      efficiently starting from an arbitrary location in a byte
+ *      stream.
+ *
+ * Proposed FSS-UTF
+ * ----------------
+ *
+ * The proposed UCS transformation format encodes UCS values in the range
+ * [0,0x7fffffff] using multibyte characters of lengths 1, 2, 3, 4, 5,
+ * and 6 bytes.  For all encodings of more than one byte, the initial
+ * byte determines the number of bytes used and the high-order bit in
+ * each byte is set.  Every byte that does not start 10xxxxxx is the
+ * start of a UCS character sequence.
+ *
+ * An easy way to remember this transformation format is to note that the
+ * number of high-order 1's in the first byte signifies the number of
+ * bytes in the multibyte character:
+ *
+ * Bits  Hex Min  Hex Max  Byte Sequence in Binary
+ *   7  00000000 0000007f 0vvvvvvv
+ *  11  00000080 000007FF 110vvvvv 10vvvvvv
+ *  16  00000800 0000FFFF 1110vvvv 10vvvvvv 10vvvvvv
+ *  21  00010000 001FFFFF 11110vvv 10vvvvvv 10vvvvvv 10vvvvvv
+ *  26  00200000 03FFFFFF 111110vv 10vvvvvv 10vvvvvv 10vvvvvv 10vvvvvv
+ *  31  04000000 7FFFFFFF 1111110v 10vvvvvv 10vvvvvv 10vvvvvv 10vvvvvv 10vvvvvv
+ *
+ * The UCS value is just the concatenation of the v bits in the multibyte
+ * encoding.  When there are multiple ways to encode a value, for example
+ * UCS 0, only the SSHORTest encoding is legal.
+ *
+ * Below are sample implementations of the C standard wctomb() and
+ * mbtowc() functions which demonstrate the algorithms for converting
+ * from UCS to the transformation format and converting from the
+ * transformation format to UCS. The sample implementations include error
+ * checks, some of which may not be necessary for conformance:
+ *
+ */
 
-static ULONG cvt_unicode_to_utf8(csconvert* obj,
-								 ULONG unicode_len,
-								 const USHORT* unicode_str,
-								 ULONG utf8_len,
-								 UCHAR* utf8_str,
-								 USHORT* err_code,
-								 ULONG* err_position)
+typedef struct {
+	int cmask;
+	int cval;
+	int shift;
+	SLONG lmask;
+	SLONG lval;
+} Tab;
+
+static const Tab tab[] = {
+	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
+	{ 0xE0, 0xC0, 1 * 6, 0x7FF, 0x80 },	/* 2 byte sequence */
+	{ 0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800 },	/* 3 byte sequence */
+	{ 0xF8, 0xF0, 3 * 6, 0x1FFFFF, 0x10000 },	/* 4 byte sequence */
+	{ 0xFC, 0xF8, 4 * 6, 0x3FFFFFF, 0x200000 },	/* 5 byte sequence */
+	{ 0xFE, 0xFC, 5 * 6, 0x7FFFFFFF, 0x4000000 },	/* 6 byte sequence */
+	{ 0, 0, 0, 0, 0 } 				/* end of table    */
+};
+
+
+static fss_size_t fss_mbtowc(fss_wchar_t * p, UCHAR * s, fss_size_t n)
 {
-	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_unicode_to_utf8);
-	return UnicodeUtil::utf16ToUtf8(unicode_len, unicode_str, utf8_len, utf8_str, err_code, err_position);
+	SLONG l;
+	int c0, c, nc;
+	Tab *t;
+
+	if (s == 0)
+		return 0;
+
+	nc = 0;
+	if (n <= nc)
+		return -1;
+	c0 = *s & 0xff;
+	l = c0;
+	for (t = const_cast < Tab * >(tab); t->cmask; t++) {
+		nc++;
+		if ((c0 & t->cmask) == t->cval) {
+			l &= t->lmask;
+			if (l < t->lval)
+				return -1;
+			*p = l;
+			return nc;
+		}
+		if (n <= nc)
+			return -1;
+		s++;
+		c = (*s ^ 0x80) & 0xFF;
+		if (c & 0xC0)
+			return -1;
+		l = (l << 6) | c;
+	}
+	return -1;
+}
+
+static fss_size_t fss_wctomb(UCHAR * s, fss_wchar_t wc)
+{
+	SLONG l;
+	int c, nc;
+	Tab *t;
+
+	if (s == 0)
+		return 0;
+
+	l = wc;
+	nc = 0;
+	for (t = const_cast < Tab * >(tab); t->cmask; t++) {
+		nc++;
+		if (l <= t->lmask) {
+			c = t->shift;
+			*s = t->cval | (l >> c);
+			while (c > 0) {
+				c -= 6;
+				s++;
+				*s = 0x80 | ((l >> c) & 0x3F);
+			}
+			return nc;
+		}
+	}
+	return -1;
 }
 
 
-static ULONG cvt_utf8_to_unicode(csconvert* obj,
-								 ULONG utf8_len,
-								 const UCHAR* utf8_str,
-								 ULONG unicode_len,
-								 USHORT* unicode_str,
-								 USHORT* err_code,
-								 ULONG* err_position)
+
+/************************************************************************************/
+static unsigned short internal_string_to_key(
+									 USHORT inLen,
+									 UCHAR * src,
+									 USHORT outLen,
+UCHAR * dest, USHORT partial, UCHAR pad_char)
 {
-	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_utf8_to_unicode);
-	return UnicodeUtil::utf8ToUtf16(utf8_len, utf8_str, unicode_len, unicode_str, err_code, err_position);
+/**************************************
+ *
+ *      i n t e r n a l _ s t r i n g _ t o _ k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	UCHAR *pStart;
+
+	pStart = dest;
+	while (inLen-- && outLen--)
+		*dest++ = *src++;
+
+/* strip off ending pad characters */
+	while (dest > pStart)
+		if (*(dest - 1) == pad_char)
+			dest--;
+		else
+			break;
+
+	return (dest - pStart);
+}
+
+static SSHORT internal_compare(USHORT length1,
+							   UCHAR * p1, USHORT length2, UCHAR * p2, UCHAR pad)
+{
+/**************************************
+ *
+ *      i n t e r n a l _ c o m p a r e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	SSHORT fill;
+
+	fill = length1 - length2;
+	if (length1 >= length2) {
+		if (length2)
+			do
+				if (*p1++ != *p2++)
+					if (p1[-1] > p2[-1])
+						return 1;
+					else
+						return -1;
+			while (--length2);
+		if (fill > 0)
+			do
+				if (*p1++ != pad)
+					if (p1[-1] > pad)
+						return 1;
+					else
+						return -1;
+			while (--fill);
+		return 0;
+	}
+
+	if (length1)
+		do
+			if (*p1++ != *p2++)
+				if (p1[-1] > p2[-1])
+					return 1;
+				else
+					return -1;
+		while (--length1);
+
+	do
+		if (*p2++ != pad)
+			if (pad > p2[-1])
+				return 1;
+			else
+				return -1;
+	while (++fill);
+
+	return 0;
+}
+
+short TextType_Binary::str_to_upper(USHORT inLen,
+								UCHAR * src, USHORT outLen, UCHAR * dest)
+{
+/**************************************
+ *
+ *      TextType_Binary::str_to_upper
+ *
+ **************************************
+ *
+ * Functional description
+ *      Note: dest may equal src.
+ *
+ **************************************/
+	UCHAR *pStart;
+
+	pStart = dest;
+	while (inLen-- && outLen--) {
+		*dest++ = *src++;
+	}
+
+	return (dest - pStart);
+}
+
+static SSHORT internal_str_to_upper(USHORT inLen,
+									UCHAR * src, USHORT outLen, UCHAR * dest)
+{
+/**************************************
+ *
+ *      i n t e r n a l _ s t r _ t o _ u p p e r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Note: dest may equal src.
+ *
+ **************************************/
+	UCHAR *pStart;
+
+	pStart = dest;
+	while (inLen-- && outLen--) {
+		*dest++ = UPPER7(*src);
+		src++;
+	}
+
+	return (dest - pStart);
+}
+
+unsigned short internal_unicode_to_fss(
+							unsigned char *fss_strUC,
+							unsigned short fss_len,
+							unsigned char *unicode_strUC,
+							unsigned short unicode_len,
+							short *err_code,
+							unsigned short *err_position)
+{
+	MBCHAR *fss_str = (MBCHAR*)fss_strUC;
+	UCS2_CHAR *unicode_str = (UCS2_CHAR*)unicode_strUC;
+	UCHAR *start;
+	USHORT src_start = unicode_len;
+	UCHAR tmp_buffer[6];
+	UCHAR *p;
+	fss_size_t res;
+
+	assert(unicode_str != NULL || fss_str == NULL);
+	assert(err_code != NULL);
+	assert(err_position != NULL);
+
+	*err_code = 0;
+
+/* See if we're only after a length estimate */
+	if (fss_str == NULL)
+		return ((unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
+
+	start = fss_str;
+	while ((fss_len) && (unicode_len >= sizeof(*unicode_str))) {
+		/* Convert the wide character into temp buffer */
+		res = fss_wctomb(tmp_buffer, *unicode_str);
+		if (res == -1) {
+			*err_code = CS_BAD_INPUT;
+			break;
+		}
+		/* will the mb sequence fit into space left? */
+		if (res > fss_len) {
+			*err_code = CS_TRUNCATION_ERROR;
+			break;
+		}
+		/* copy the converted bytes into the destination */
+		p = tmp_buffer;
+		for (; res; res--, fss_len--)
+			*fss_str++ = *p++;
+		unicode_len -= sizeof(*unicode_str);
+		unicode_str++;
+	}
+	if (unicode_len && !*err_code) {
+		*err_code = CS_TRUNCATION_ERROR;
+	}
+	*err_position = src_start - unicode_len;
+	return ((fss_str - start) * sizeof(*fss_str));
+}
+
+static USHORT  internal_fss_to_unicode (
+    UCS2_CHAR     *dest_ptr,
+    USHORT      dest_len,               /* BYTE count */
+    NCHAR       *src_ptr,
+    USHORT      src_len,
+    SSHORT      *err_code,
+    USHORT      *err_position)
+{
+	UCS2_CHAR         *start;
+	USHORT          src_start = src_len;
+	fss_size_t      res;
+	
+	assert (src_ptr  != NULL || dest_ptr == NULL);
+	assert (err_code != NULL);
+	assert (err_position != NULL);
+	
+	*err_code = 0;
+	
+	/* See if we're only after a length estimate */
+	if (dest_ptr == NULL)
+		return (src_len*2); /* All single byte narrow characters */
+	
+	start = dest_ptr;
+	src_start = src_len;
+	while ((src_len) && (dest_len >= sizeof (*dest_ptr))) 
+		{
+		res = fss_mbtowc (dest_ptr, src_ptr, src_len);
+		if (res == -1)
+			{
+			*err_code = CS_BAD_INPUT;
+			break;
+			}
+		assert (res <= src_len);
+		dest_ptr++;
+		dest_len -= sizeof (*dest_ptr);
+		src_ptr += res;
+		src_len -= res;
+		}
+	if (src_len && !*err_code) 
+		{
+		*err_code = CS_TRUNCATION_ERROR;
+		}
+	*err_position = src_start - src_len;
+	return ((dest_ptr - start)*sizeof (*dest_ptr)); 
+}
+
+CharSetAllocFunc INTL_charset_alloc_func(short charset)
+{
+	switch(charset)
+	{
+		case CS_NONE:
+			return CharSet_None::object_factory;
+		case CS_ASCII:
+			return CharSet_ASCII::object_factory;
+		case CS_UNICODE_FSS:
+			return CharSet_Unicode_FSS::object_factory;
+		case CS_UNICODE_UCS2:
+			return CharSet_Unicode::object_factory;
+		case CS_BINARY:
+			return CharSet_Binary::object_factory;
+		default:
+			return NULL;
+		}
+	return NULL;
+}
+
+TextTypeAllocFunc INTL_texttype_alloc_func(short ttype)
+{
+	switch(ttype)
+	{
+		case ttype_none:
+			return TextType_None::object_factory;
+		case ttype_ascii:
+			return TextType_ASCII::object_factory;
+		case ttype_unicode_fss:
+			return TextType_UFSS::object_factory;
+		case ttype_binary:
+			return TextType_Binary::object_factory;
+		default:
+			return NULL;
+	}
+	return NULL;
+}
+
+CsConvertAllocFunc INTL_csconvert_alloc_func(short from, short to)
+{
+	if (from == CS_ASCII && to == CS_UNICODE_FSS)
+		return CsConvert_ASCII_UFSS::object_factory;
+	if (from == CS_UNICODE_FSS && to == CS_ASCII)
+		return CsConvert_UFSS_ASCII::object_factory;
+	if (from == CS_UNICODE_FSS && to == CS_NONE)
+		return CsConvert_UFSS_None::object_factory;
+	return NULL;
+}
+
+#if NOT_USED_OR_REPLACED
+//========================================================================================
+//========================================================================================
+//========================================================================================
+//========================================================================================
+//
+// JMB: absolete code - to be removed later
+#define TEXTTYPE_RETURN         return (0)
+
+#define FAMILY_INTERNAL(id_number, name, charset, country) \
+	cache->texttype_version =               40; \
+	cache->texttype_type =                  (id_number); \
+	cache->texttype_character_set =         (charset); \
+	cache->texttype_country =               (country); \
+	cache->texttype_bytes_per_char =        1; \
+	cache->texttype_fn_init =               (FPTR_SHORT) (name); \
+	cache->texttype_fn_key_length =         (FPTR_SHORT) internal_keylength; \
+	cache->texttype_fn_string_to_key =      (FPTR_SHORT) internal_string_to_key; \
+	cache->texttype_fn_compare =            (FPTR_short) internal_compare; \
+	cache->texttype_fn_to_upper =           (FPTR_SHORT) internal_ch_to_upper; \
+	cache->texttype_fn_to_lower =           (FPTR_SHORT) internal_ch_to_lower; \
+	cache->texttype_fn_str_to_upper =       (FPTR_short) internal_str_to_upper; \
+	cache->texttype_fn_mbtowc =             (FPTR_short) internal_nc_mbtowc; \
+	cache->texttype_collation_table =       (BYTE *) " "; \
+	cache->texttype_toupper_table =         (BYTE *) NULL; \
+	cache->texttype_tolower_table =         (BYTE *) NULL; \
+	cache->texttype_compress_table =        (BYTE *) NULL; \
+	cache->texttype_expand_table =          (BYTE *) NULL; \
+	cache->texttype_name =                  const_cast<char*>(POSIX);
+
+
+
+static USHORT ttype_ascii_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
+{
+/**************************************
+ *
+ *      t t y p e _ a s c i i _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+	static const ASCII POSIX[] = "C.ASCII";
+
+	FAMILY_INTERNAL(ttype_ascii, ttype_ascii_init, CS_ASCII, CC_C);
+
+	TEXTTYPE_RETURN;
 }
 
 
-static ULONG cvt_unicode_to_utf32(csconvert* obj,
-								  ULONG unicode_len,
-								  const USHORT* unicode_str,
-								  ULONG utf32_len,
-								  ULONG* utf32_str,
-								  USHORT* err_code,
-								  ULONG* err_position)
+static USHORT ttype_none_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
 {
-	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_unicode_to_utf32);
-	return UnicodeUtil::utf16ToUtf32(unicode_len, unicode_str, utf32_len, utf32_str, err_code, err_position);
+/**************************************
+ *
+ *      t t y p e _ n o n e _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+	static const ASCII POSIX[] = "C";
+
+	FAMILY_INTERNAL(ttype_none, ttype_none_init, CS_NONE, CC_C);
+
+	TEXTTYPE_RETURN;
 }
 
 
-static ULONG cvt_utf32_to_unicode(csconvert* obj,
-								  ULONG utf32_len,
-								  const ULONG* utf32_str,
-								  ULONG unicode_len,
-								  USHORT* unicode_str,
-								  USHORT* err_code,
-								  ULONG* err_position)
+static USHORT ttype_unicode_fss_init(
+									 TEXTTYPE cache,
+									 USHORT parm1, USHORT dummy)
 {
-	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == (pfn_INTL_convert) cvt_utf32_to_unicode);
-	return UnicodeUtil::utf32ToUtf16(utf32_len, utf32_str, unicode_len, unicode_str, err_code, err_position);
+/**************************************
+ *
+ *      t t y p e _ u n i c o d e _ f s s _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+	static const ASCII POSIX[] = "C.UNICODE_FSS";
+
+	FAMILY_INTERNAL(ttype_unicode_fss, ttype_unicode_fss_init, CS_UNICODE_FSS,
+					CC_C);
+	cache->texttype_bytes_per_char = 3;
+	cache->texttype_fn_to_wc = (FPTR_SHORT) INTL_fss_to_unicode;
+	cache->texttype_fn_mbtowc = (FPTR_short) INTL_fss_mbtowc;
+
+	TEXTTYPE_RETURN;
 }
 
 
-static INTL_BOOL cs_ascii_init(charset* csptr, const ASCII* charset_name)
+static USHORT ttype_binary_init(TEXTTYPE cache, USHORT parm1, USHORT dummy)
+{
+/**************************************
+ *
+ *      t t y p e _ b i n a r y _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+	static const ASCII POSIX[] = "C.OCTETS";
+
+	FAMILY_INTERNAL(ttype_binary, ttype_binary_init, CS_BINARY, CC_C);
+	cache->texttype_fn_to_upper = (FPTR_SHORT) internal_ch_copy;
+	cache->texttype_fn_to_lower = (FPTR_SHORT) internal_ch_copy;
+	cache->texttype_fn_str_to_upper = (FPTR_short) internal_str_copy;
+	cache->texttype_collation_table = (BYTE *) "\0";	/* pad character */
+
+	TEXTTYPE_RETURN;
+}
+
+
+/*
+ *      Start of Character set definitions 
+ */
+
+#define CHARSET_RETURN          return (0)
+
+static void common_8bit_init(
+							 CHARSET csptr,
+							 USHORT id,
+							 ASCII * name,
+							 BYTE * to_unicode_tbl,
+							 BYTE * from_unicode_tbl1,
+BYTE * from_unicode_tbl2)
+{
+/**************************************
+ *
+ *      c o m m o n _ 8 b i t _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *************************************/
+
+	csptr->charset_version = 40;
+	csptr->charset_id = id;
+	csptr->charset_name = name;
+	csptr->charset_flags = 0;
+	csptr->charset_min_bytes_per_char = 1;
+	csptr->charset_max_bytes_per_char = 1;
+	csptr->charset_space_length = 1;
+	csptr->charset_space_character = (BYTE *) " ";
+	csptr->charset_well_formed = (FPTR_SHORT) NULL;
+}
+
+
+static USHORT cs_ascii_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 {
 /**************************************
  *
@@ -1721,16 +1472,16 @@ static INTL_BOOL cs_ascii_init(charset* csptr, const ASCII* charset_name)
  *
  *************************************/
 
-	common_8bit_init(csptr, (const ASCII*) "ASCII", NULL, NULL, NULL);
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_ascii_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_ascii));
-	return true;
+	common_8bit_init(csptr, CS_ASCII, (ASCII *) "ASCII", NULL, NULL, NULL);
+	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_ASCII,
+						(FPTR_SHORT) cvt_ascii_to_unicode, NULL, NULL);
+	common_convert_init(&csptr->charset_from_unicode, CS_ASCII, CS_UNICODE_UCS2,
+						(FPTR_SHORT) cvt_unicode_to_ascii, NULL, NULL);
+	CHARSET_RETURN;
 }
 
 
-static INTL_BOOL cs_none_init(charset* csptr, const ASCII* charset_name)
+static USHORT cs_none_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 {
 /**************************************
  *
@@ -1742,20 +1493,20 @@ static INTL_BOOL cs_none_init(charset* csptr, const ASCII* charset_name)
  *
  *************************************/
 
-	common_8bit_init(csptr, (const ASCII*) "NONE", NULL, NULL, NULL);
+	common_8bit_init(csptr, CS_NONE, (ASCII *) "NONE", NULL, NULL, NULL);
 /*
-common_convert_init (&csptr->charset_to_unicode, CS_UTF16, id,
+common_convert_init (&csptr->charset_to_unicode, CS_UNICODE_UCS2, id,
 	nc_to_wc, to_unicode_tbl, NULL);
 */
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_none_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(wc_to_nc));
-	return true;
+	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_NONE,
+						(FPTR_SHORT) cvt_none_to_unicode, NULL, NULL);
+	common_convert_init(&csptr->charset_from_unicode, CS_NONE, CS_UNICODE_UCS2,
+						(FPTR_SHORT) wc_to_nc, NULL, NULL);
+	CHARSET_RETURN;
 }
 
 
-static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* charset_name)
+static USHORT cs_unicode_fss_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 {
 /**************************************
  *
@@ -1767,23 +1518,19 @@ static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* charset_name)
  *
  *************************************/
 
-	common_8bit_init(csptr, (const ASCII*) "UNICODE_FSS", NULL,
+	common_8bit_init(csptr, CS_UNICODE_FSS, (ASCII *) "UNICODE_FSS", NULL,
 					 NULL, NULL);
-	csptr->charset_max_bytes_per_char = 3;
-	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS;
-
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(internal_fss_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(internal_unicode_to_fss));
-	csptr->charset_fn_length = internal_fss_length;
-	csptr->charset_fn_substring = internal_fss_substring;
-
-	return true;
+	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2,
+						CS_UNICODE_FSS, (FPTR_SHORT) INTL_fss_to_unicode,
+						NULL, NULL);
+	common_convert_init(&csptr->charset_from_unicode, CS_UNICODE_FSS,
+						CS_UNICODE_UCS2, (FPTR_SHORT) INTL_unicode_to_fss, NULL,
+						NULL);
+	CHARSET_RETURN;
 }
 
 
-static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* charset_name)
+static USHORT cs_unicode_ucs2_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 {
 /**************************************
  *
@@ -1794,27 +1541,22 @@ static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* charset_name)
  * Functional description
  *
  *************************************/
-	static const USHORT space = 0x0020;
+	static const UCS2_CHAR space = 0x0020;
 
-	csptr->charset_version = CHARSET_VERSION_1;
-	csptr->charset_name = "UNICODE_UCS2";
-	csptr->charset_flags |= CHARSET_ASCII_BASED;
+	csptr->charset_version = 40;
+	csptr->charset_id = CS_UNICODE;
+	csptr->charset_name = (*const* ASCII) "UNICODE_UCS2";
+	csptr->charset_flags = 0;
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 2;
-	csptr->charset_space_character = (const BYTE*) & space;	/* 0x0020 */
-	csptr->charset_fn_well_formed = NULL;
-
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
-
-	return true;
+	csptr->charset_space_character = (BYTE *) & space;	/* 0x0020 */
+	csptr->charset_well_formed = (FPTR_SHORT) NULL;
+	CHARSET_RETURN;
 }
 
 
-static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* charset_name)
+static USHORT cs_binary_init(CHARSET csptr, USHORT cs_id, USHORT dummy)
 {
 /**************************************
  *
@@ -1826,108 +1568,13 @@ static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* charset_name)
  *
  *************************************/
 
-	common_8bit_init(csptr, (const ASCII*) "BINARY", NULL, NULL, NULL);
-	csptr->charset_space_character = (const BYTE*) "\0";
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(mb_to_wc));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(wc_to_mb));
-	return true;
-}
-
-
-static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* charset_name)
-{
-/**************************************
- *
- *      c s _ u t f 8 _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	static UCHAR space = 32;
-
-	csptr->charset_version = CHARSET_VERSION_1;
-	csptr->charset_name = "UTF8";
-	csptr->charset_flags |= CHARSET_ASCII_BASED;
-	csptr->charset_min_bytes_per_char = 1;
-	csptr->charset_max_bytes_per_char = 4;
-	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (const BYTE*)&space;
-	csptr->charset_fn_well_formed = cs_utf8_well_formed;
-
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_utf8_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_utf8));
-	return true;
-}
-
-
-static INTL_BOOL cs_utf16_init(charset* csptr, const ASCII* charset_name)
-{
-/**************************************
- *
- *      c s _ u t f 1 6 _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	static USHORT space = 32;
-
-	csptr->charset_version = CHARSET_VERSION_1;
-	csptr->charset_name = "UTF16";
-	csptr->charset_flags |= CHARSET_ASCII_BASED;
-	csptr->charset_min_bytes_per_char = 2;
-	csptr->charset_max_bytes_per_char = 4;
-	csptr->charset_space_length = 2;
-	csptr->charset_space_character = (const BYTE*)&space;
-	csptr->charset_fn_well_formed = cs_utf16_well_formed;
-	csptr->charset_fn_length = cs_utf16_length;
-	csptr->charset_fn_substring = cs_utf16_substring;
-
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_unicode));
-	return true;
-}
-
-
-static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* charset_name)
-{
-/**************************************
- *
- *      c s _ u t f 3 2 _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- *************************************/
-
-	static ULONG space = 32;
-
-	csptr->charset_version = CHARSET_VERSION_1;
-	csptr->charset_name = "UTF32";
-	csptr->charset_flags |= CHARSET_ASCII_BASED;
-	csptr->charset_min_bytes_per_char = 4;
-	csptr->charset_max_bytes_per_char = 4;
-	csptr->charset_space_length = 4;
-	csptr->charset_space_character = (const BYTE*)&space;
-	csptr->charset_fn_well_formed = cs_utf32_well_formed;
-
-	common_convert_init(&csptr->charset_to_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_utf32_to_unicode));
-	common_convert_init(&csptr->charset_from_unicode,
-						reinterpret_cast<pfn_INTL_convert>(cvt_unicode_to_utf32));
-	return true;
+	common_8bit_init(csptr, CS_BINARY, (ASCII *) "BINARY", NULL, NULL, NULL);
+	csptr->charset_space_character = (BYTE *) "\0";
+	common_convert_init(&csptr->charset_to_unicode, CS_UNICODE_UCS2, CS_BINARY,
+						(FPTR_SHORT) mb_to_wc, NULL, NULL);
+	common_convert_init(&csptr->charset_from_unicode, CS_BINARY,
+						CS_UNICODE_UCS2, (FPTR_SHORT) wc_to_mb, NULL, NULL);
+	CHARSET_RETURN;
 }
 
 
@@ -1935,7 +1582,12 @@ static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* charset_name)
  *      Start of Conversion entries
  */
 
-static USHORT cvt_ascii_utf_init(csconvert* csptr)
+#define CONVERT_RETURN  return (0)
+
+
+static USHORT cvt_ascii_utf_init(
+								 CSCONVERT csptr,
+								 USHORT dest_cs, USHORT source_cs)
 {
 /**************************************
  *
@@ -1947,108 +1599,8 @@ static USHORT cvt_ascii_utf_init(csconvert* csptr)
  *
  *************************************/
 
-	common_convert_init(csptr, cvt_utffss_to_ascii);
-	return true;
+	common_convert_init(csptr, dest_cs, source_cs,
+						(FPTR_SHORT) cvt_utffss_to_ascii, NULL, NULL);
+	CONVERT_RETURN;
 }
-
-
-INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name)
-{
-	if (strcmp(charset_name, "NONE") == 0)
-		return cs_none_init(cs, charset_name);
-	if (strcmp(charset_name, "ASCII") == 0 ||
-		strcmp(charset_name, "USASCII") == 0 ||
-		strcmp(charset_name, "ASCII7") == 0)
-	{
-		return cs_ascii_init(cs, charset_name);
-	}
-	if (strcmp(charset_name, "UNICODE_FSS") == 0 ||
-		strcmp(charset_name, "UTF_FSS") == 0 ||
-		strcmp(charset_name, "SQL_TEXT") == 0)
-	{
-		return cs_unicode_fss_init(cs, charset_name);
-	}
-	if (strcmp(charset_name, "UNICODE_UCS2") == 0)
-		return cs_unicode_ucs2_init(cs, charset_name);
-	if (strcmp(charset_name, "OCTETS") == 0 ||
-		strcmp(charset_name, "BINARY") == 0)
-	{
-		return cs_binary_init(cs, charset_name);
-	}
-	if (strcmp(charset_name, "UTF8") == 0 ||
-		strcmp(charset_name, "UTF-8") == 0)
-	{
-		return cs_utf8_init(cs, charset_name);
-	}
-	if (strcmp(charset_name, "UTF16") == 0 ||
-		strcmp(charset_name, "UTF-16") == 0)
-	{
-		return cs_utf16_init(cs, charset_name);
-	}
-	if (strcmp(charset_name, "UTF32") == 0 ||
-		strcmp(charset_name, "UTF-32") == 0)
-	{
-		return cs_utf32_init(cs, charset_name);
-	}
-
-	return false;
-}
-
-
-INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
-									   USHORT attributes, const UCHAR* specific_attributes,
-									   ULONG specific_attributes_length, INTL_BOOL ignore_attributes)
-{
-	if (ignore_attributes)
-	{
-		attributes = TEXTTYPE_ATTR_PAD_SPACE;
-		specific_attributes = NULL;
-		specific_attributes_length = 0;
-	}
-
-	if (strcmp(texttype_name, "NONE") == 0)
-	{
-		return ttype_none_init(tt, texttype_name, charset_name, attributes,
-							   specific_attributes, specific_attributes_length);
-	}
-	if (strcmp(texttype_name, "ASCII") == 0)
-	{
-		return ttype_ascii_init(tt, texttype_name, charset_name, attributes,
-								specific_attributes, specific_attributes_length);
-	}
-	if (strcmp(texttype_name, "UNICODE_FSS") == 0)
-	{
-		return ttype_unicode_fss_init(tt, texttype_name, charset_name, attributes,
-									  specific_attributes, specific_attributes_length);
-	}
-	if (strcmp(texttype_name, "OCTETS") == 0)
-	{
-		return ttype_binary_init(tt, texttype_name, charset_name, attributes,
-								 specific_attributes, specific_attributes_length);
-	}
-	if (strcmp(texttype_name, "UTF8") == 0 ||
-		(strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
-	{
-		return ttype_utf8_init(tt, texttype_name, charset_name, attributes,
-							   specific_attributes, specific_attributes_length);
-	}
-	if ((strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UNICODE") == 0))
-	{
-		return ttype_unicode8_init(tt, texttype_name, charset_name, attributes,
-								   specific_attributes, specific_attributes_length);
-	}
-	if (strcmp(texttype_name, "UTF16") == 0 ||
-		(strcmp(charset_name, "UTF16") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
-	{
-		return ttype_utf16_init(tt, texttype_name, charset_name, attributes,
-								specific_attributes, specific_attributes_length);
-	}
-	if (strcmp(texttype_name, "UTF32") == 0 ||
-		(strcmp(charset_name, "UTF32") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
-	{
-		return ttype_utf32_init(tt, texttype_name, charset_name, attributes,
-								specific_attributes, specific_attributes_length);
-	}
-
-	return false;
-}
+#endif

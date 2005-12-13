@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		enc_proto.h
- *	DESCRIPTION:	Prototype header file for enc.cpp
+ *	DESCRIPTION:	Prototype header file for enc.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,18 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_ENC_PROTO_H
-#define JRD_ENC_PROTO_H
+#ifndef _JRD_ENC_PROTO_H_
+#define _JRD_ENC_PROTO_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void ENC_crypt(TEXT*, size_t, const TEXT*, const TEXT*);
+extern TEXT *DLL_EXPORT ENC_crypt(TEXT *, TEXT *);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif // JRD_ENC_PROTO_H
-
+#endif /* _JRD_ENC_PROTO_H_ */

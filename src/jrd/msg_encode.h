@@ -20,24 +20,22 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-#ifndef MSG_ENCODE_H
-#define MSG_ENCODE_H
 
-const ISC_STATUS ISC_MASK	= 0x14000000;	/* Defines the code as a valid ISC code */
-const ISC_STATUS FAC_MASK	= 0x00FF0000;	/* Specifies the facility where the code is located */
-const ISC_STATUS CODE_MASK	= 0x0000FFFF;	/* Specifies the code in the message file */
-const ISC_STATUS CLASS_MASK	= 0xF0000000;	/* Defines the code as warning, error, info, or other */
+#define ISC_MASK	0x14000000	/* Defines the code as a valid ISC code */
+#define FAC_MASK	0x00FF0000	/* Specifies the facility where the code is located */
+#define CODE_MASK	0x0000FFFF	/* Specifies the code in the message file */
+#define CLASS_MASK	0xF0000000	/* Defines the code as warning, error, info, or other */
 
 /* The following definitions can be used to specify the context in
  * which a status code is used.
  */
-//#define CLASS_ERROR		0L		/* Code represents an error */
-//#define CLASS_WARNING		1L	/* Code represents a warning */
-//#define CLASS_INFO		2L		/* Code represents an information msg */
+#define CLASS_ERROR		0L		/* Code represents an error */
+#define CLASS_WARNING		1L	/* Code represents a warning */
+#define CLASS_INFO		2L		/* Code represents an information msg */
 
-//#define MAKE_ERROR(code)	(code | (CLASS_ERROR & 0x3L) << 30)
-//#define MAKE_WARNING(code)	(code | (CLASS_WARNING & 0x3L) << 30)
-//#define MAKE_INFO(code)		(code | (CLASS_INFO & 0x3L) << 30)
+#define MAKE_ERROR(code)	(code | (CLASS_ERROR & 0x3L) << 30)
+#define MAKE_WARNING(code)	(code | (CLASS_WARNING & 0x3L) << 30)
+#define MAKE_INFO(code)		(code | (CLASS_INFO & 0x3L) << 30)
 
 /* The procedure for encoding an error message is as follows:
  * Be sure to update gds.c::gds__decode if this calculation changes
@@ -51,5 +49,3 @@ const ISC_STATUS CLASS_MASK	= 0xF0000000;	/* Defines the code as warning, error,
 #define GET_FACILITY(code)		(code & FAC_MASK) >> 16
 #define GET_CLASS(code)			(code & CLASS_MASK) >> 30
 #define GET_CODE(code)			(code & CODE_MASK) >> 0
-
-#endif // MSG_ENCODE_H

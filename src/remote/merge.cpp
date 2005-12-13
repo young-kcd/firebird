@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Remote Interface/Server
- *	MODULE:		merge.cpp
- *	DESCRIPTION:	Merge database/server information
+ *	MODULE:		merge.c
+ *	DESCRIPTION:	Merge database/server inforation
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -23,7 +23,7 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../remote/remote.h"
 #include "../remote/merge_proto.h"
 #include "../jrd/gds_proto.h"
@@ -34,18 +34,20 @@
 #ifdef NOT_USED_OR_REPLACED
 static SSHORT convert(ULONG, UCHAR *);
 #endif
-static ISC_STATUS merge_setup(const UCHAR**, UCHAR**, const UCHAR* const, USHORT);
+static ISC_STATUS merge_setup(UCHAR **, UCHAR **, UCHAR *, USHORT);
 
+#if (defined __cplusplus) && (defined SOLX86)
+/* Who else got mixed c and C++ linkage error - let join me. KLK
+*/
+extern "C" {
+#endif
 
-USHORT MERGE_database_info(const UCHAR* in,
-							UCHAR* out,
-							USHORT out_length,
-							USHORT impl,
-							USHORT class_,
-							USHORT base_level,
-							const UCHAR* version,
-							const UCHAR* id,
-							ULONG mask)
+USHORT DLL_EXPORT MERGE_database_info(
+									  UCHAR * in,
+									  UCHAR * out,
+									  USHORT out_length,
+									  USHORT impl,
+USHORT class_, USHORT base_level, UCHAR * version, UCHAR * id, ULONG mask)
 {
 /**************************************
  *
@@ -59,10 +61,10 @@ USHORT MERGE_database_info(const UCHAR* in,
  *
  **************************************/
 	SSHORT length, l;
-	const UCHAR* p;
+	UCHAR *start, *end, *p;
 
-	UCHAR* start = out;
-	const UCHAR* const end = out + out_length;
+	start = out;
+	end = out + out_length;
 
 	for (;;)
 		switch (*out++ = *in++) {
@@ -75,9 +77,9 @@ USHORT MERGE_database_info(const UCHAR* in,
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
 			if ((*out++ = (UCHAR) l) != 0)
-				do {
+				do
 					*out++ = *p++;
-				} while (--l);
+				while (--l);
 			break;
 
 		case isc_info_db_id:
@@ -85,9 +87,9 @@ USHORT MERGE_database_info(const UCHAR* in,
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
 			if ((*out++ = (UCHAR) l) != 0)
-				do {
+				do
 					*out++ = *p++;
-				} while (--l);
+				while (--l);
 			break;
 
 		case isc_info_implementation:
@@ -107,17 +109,20 @@ USHORT MERGE_database_info(const UCHAR* in,
 			length = (SSHORT) gds__vax_integer(in, 2);
 			in += 2;
 			if (out + length + 2 >= end) {
-				out[-1] = isc_info_truncated;
+				out[-1] = gds_info_truncated;
 				return 0;
 			}
 			PUT_WORD(out, (UCHAR) length);
 			if (length)
-				do {
+				do
 					*out++ = *in++;
-				} while (--length);
+				while (--length);
 			break;
 		}
 }
+#if (defined __cplusplus) && (defined SOLX86)
+}
+#endif
 
 #ifdef NOT_USED_OR_REPLACED
 static SSHORT convert( ULONG number, UCHAR * buffer)
@@ -133,10 +138,11 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
  *	Return the length.
  *
  **************************************/
-	const UCHAR *p;
+	ULONG n;
+	UCHAR *p;
 
 #ifndef WORDS_BIGENDIAN
-	ULONG n = number;
+	n = number;
 	p = (UCHAR *) & n;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
@@ -159,9 +165,8 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 #endif
 
 static ISC_STATUS merge_setup(
-						  const UCHAR** in,
-						  UCHAR** out, const UCHAR* const end,
-						  USHORT delta_length)
+						  UCHAR ** in,
+						  UCHAR ** out, UCHAR * end, USHORT delta_length)
 {
 /**************************************
  *
@@ -175,26 +180,27 @@ static ISC_STATUS merge_setup(
  *	already there.
  *
  **************************************/
-	USHORT length = (USHORT) gds__vax_integer(*in, 2);
-	const USHORT new_length = length + delta_length;
+	USHORT length, new_length, count;
+
+	length = (USHORT) gds__vax_integer(*in, 2);
+	new_length = length + delta_length;
 
 	if (*out + new_length + 2 >= end) {
-		(*out)[-1] = isc_info_truncated;
+		(*out)[-1] = gds_info_truncated;
 		return FB_FAILURE;
 	}
 
 	*in += 2;
-	const USHORT count = 1 + *(*in)++;
+	count = 1 + *(*in)++;
 	PUT_WORD(*out, (UCHAR) new_length);
 	PUT(*out, (UCHAR) count);
 
 /* Copy data portion of information sans original count */
 
 	if (--length)
-		do {
+		do
 			*(*out)++ = *(*in)++;
-		} while (--length);
+		while (--length);
 
 	return FB_SUCCESS;
 }
-

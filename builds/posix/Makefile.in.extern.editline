@@ -27,11 +27,10 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.extern.editline,v 1.6 2005-05-29 15:26:54 asfernandes Exp $
+#  $Id: Makefile.in.extern.editline,v 1.2.2.1 2004-05-23 18:24:03 skidder Exp $
 #
 ROOT=..
-#ObjModuleType=std
-
+#ObjModuleName=editline
 ##  Set your options:
 ##  -DANSI_ARROWS       ANSI arrows keys work like emacs.
 ##  -DHIDE              Make static functions static (non debug).
@@ -47,8 +46,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-#EDITLINE_Files = editline.c tokenizer.c history.c readline.c
-
+#EDITLINE_Files = editline.c complete.c sysunix.c
 #EDITLINE_Sources = $(addprefix extern/editline/, $(EDITLINE_Files))
 #EDITLINE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(EDITLINE_Sources))))
 
@@ -63,9 +61,9 @@ include     $(ROOT)/gen/make.shared.variables
 libeditline : $(LIB)/libeditline.a
 
 $(LIB)/libeditline.a:
-	cd $(ROOT)/extern/editline; chmod +x configure; ./configure
-	$(MAKE) -C $(ROOT)/extern/editline lib_a
-	cp $(ROOT)/extern/editline/libedit.a $(LIB)/libeditline.a
+	cd $(SRC_ROOT)/extern/editline; ./configure
+	$(MAKE) -C $(SRC_ROOT)/extern/editline lib_a
+	cp $(SRC_ROOT)/extern/editline/libedit.a $(LIB)/libeditline.a
 
 
 include $(ROOT)/gen/make.shared.targets

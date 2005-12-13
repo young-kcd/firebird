@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Language
- *	MODULE:		lex.cpp
+ *	MODULE:		lex.c
  *	DESCRIPTION:	Lexical analyser
  *
  * The contents of this file are subject to the Interbase Public
@@ -27,12 +27,14 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../dudley/ddl.h"
+#include "../dudley/parse.h"
+#include "../intl/kanji.h"
 #include "../dudley/ddl_proto.h"
 #include "../dudley/hsh_proto.h"
 #include "../dudley/lex_proto.h"
@@ -43,10 +45,13 @@
 #endif
 
 #ifdef SMALL_FILE_NAMES
-const char* SCRATCH = "fb_q";
+#define SCRATCH		"fb_q"
 #else
-const char* SCRATCH = "fb_query_";
+#define SCRATCH		"fb_query_"
 #endif
+
+extern TEXT *DDL_prompt;
+
 
 static int nextchar(void);
 static void retchar(SSHORT);
@@ -54,24 +59,22 @@ static int skip_white(void);
 
 /* Input line control */
 
-static FILE *input_file, *trace_file;
-static TEXT *DDL_char, DDL_buffer[256], trace_file_name[MAXPATHLEN];
+static IB_FILE *input_file, *trace_file;
+static TEXT *DDL_char, DDL_buffer[256], trace_file_name[128];
 
-enum chr_types {
-	CHR_ident = 1,
-	CHR_letter = 2,
-	CHR_digit = 4,
-	CHR_quote = 8,
-	CHR_white = 16,
-	CHR_eol = 32,
+#define CHR_ident	1
+#define CHR_letter	2
+#define CHR_digit	4
+#define CHR_quote	8
+#define CHR_white	16
+#define CHR_eol		32
 
-	CHR_IDENT = CHR_ident,
-	CHR_LETTER = CHR_letter + CHR_ident,
-	CHR_DIGIT = CHR_digit + CHR_ident,
-	CHR_QUOTE = CHR_quote,
-	CHR_WHITE = CHR_white,
-	CHR_EOL = CHR_white
-};
+#define CHR_IDENT	CHR_ident
+#define CHR_LETTER	CHR_letter + CHR_ident
+#define CHR_DIGIT	CHR_digit + CHR_ident
+#define CHR_QUOTE	CHR_quote
+#define CHR_WHITE	CHR_white
+#define CHR_EOL		CHR_white
 
 static SCHAR classes[256] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -115,12 +118,13 @@ TOK LEX_filename(void)
  **************************************/
 	TOK token;
 	SSHORT c;
+	TEXT *p;
 
-	token = &dudleyGlob.DDL_token;
-	TEXT* p = token->tok_string;
+	token = &DDL_token;
+	p = token->tok_string;
 	*p++ = c = skip_white();
 
-	if (dudleyGlob.DDL_eof) {
+	if (DDL_eof) {
 		token->tok_symbol = NULL;
 		token->tok_keyword = KW_none;
 		return NULL;
@@ -153,7 +157,7 @@ void LEX_fini(void)
  **************************************/
 
 	if (trace_file != NULL)
-		fclose(trace_file);
+		ib_fclose(trace_file);
 	if (trace_file_name[0])
 		unlink(trace_file_name);
 }
@@ -174,7 +178,7 @@ void LEX_flush(void)
  **************************************/
 	SSHORT c;
 
-	while (!dudleyGlob.DDL_eof) {
+	while (!DDL_eof) {
 		if ((c = nextchar()) == '\n')
 			break;
 	}
@@ -182,7 +186,7 @@ void LEX_flush(void)
 }
 
 
-void LEX_get_text(UCHAR * buffer, TXT text)
+void LEX_get_text( SCHAR * buffer, TXT text)
 {
 /**************************************
  *
@@ -196,22 +200,21 @@ void LEX_get_text(UCHAR * buffer, TXT text)
  **************************************/
 	SLONG start;
 	int length;
-	UCHAR *p;
+	TEXT *p;
 
 	start = text->txt_position;
 	length = text->txt_length;
 
-	if (fseek(trace_file, start, 0)) {
-		fseek(trace_file, (SLONG) 0, 2);
-		DDL_err(275, NULL, NULL, NULL, NULL, NULL);
-		/* msg 275: fseek failed */
+	if (ib_fseek(trace_file, start, 0)) {
+		ib_fseek(trace_file, (SLONG) 0, 2);
+		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	/* msg 275: ib_fseek failed */
 	}
 
 	p = buffer;
 	while (length--)
-		*p++ = getc(trace_file);
+		*p++ = ib_getc(trace_file);
 
-	fseek(trace_file, (SLONG) 0, 2);
+	ib_fseek(trace_file, (SLONG) 0, 2);
 }
 
 
@@ -230,23 +233,22 @@ void LEX_init( void *file)
  **************************************/
 
 #if !(defined WIN_NT)
-	trace_file = (FILE*) gds__temp_file(TRUE, SCRATCH, 0);
+	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, 0);
 #else
-	trace_file = (FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
+	trace_file = (IB_FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
 #endif
-	if (trace_file == (FILE*) - 1)
-		DDL_err(276, NULL, NULL, NULL, NULL, NULL);
-		/* msg 276: couldn't open scratch file */
+	if (trace_file == (IB_FILE *) - 1)
+		DDL_err(276, NULL, NULL, NULL, NULL, NULL);	/* msg 276: couldn't open scratch file */
 
-	input_file = (FILE*) file;
+	input_file = (IB_FILE *) file;
 	DDL_char = DDL_buffer;
-	dudleyGlob.DDL_token.tok_position = 0;
-	dudleyGlob.DDL_description = false;
-	dudleyGlob.DDL_line = 1;
+	DDL_token.tok_position = 0;
+	DDL_description = FALSE;
+	DDL_line = 1;
 }
 
 
-void LEX_put_text (FB_API_HANDLE blob, TXT text)
+void LEX_put_text (FRBRD *blob, TXT text)
 {
 /**************************************
  *
@@ -262,32 +264,30 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 	ISC_STATUS_ARRAY status_vector;
 	int length;
 	SSHORT l, c;
-	TEXT buffer[1024];
+	TEXT buffer[1024], *p;
 
 	start = text->txt_position;
 	length = text->txt_length;
 
-	if (fseek(trace_file, start, 0)) {
-		fseek(trace_file, (SLONG) 0, 2);
-		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	
-		/* msg 275: fseek failed */
+	if (ib_fseek(trace_file, start, 0)) {
+		ib_fseek(trace_file, (SLONG) 0, 2);
+		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	/* msg 275: ib_fseek failed */
 	}
 
 	while (length) {
-		TEXT* p = buffer;
+		p = buffer;
 		while (length) {
 			--length;
-			*p++ = c = getc(trace_file);
+			*p++ = c = ib_getc(trace_file);
 			if (c == '\n')
 				break;
 		}
 		if (l = p - buffer)
-			if (isc_put_segment(status_vector, &blob, l, buffer))
-				DDL_err(277, NULL, NULL, NULL, NULL, NULL);	
-		/* msg 277: isc_put_segment failed */
+			if (gds__put_segment(status_vector, GDS_REF(blob), l, buffer))
+				DDL_err(277, NULL, NULL, NULL, NULL, NULL);	/* msg 277: gds__put_segment failed */
 	}
 
-	fseek(trace_file, (SLONG) 0, 2);
+	ib_fseek(trace_file, (SLONG) 0, 2);
 }
 
 
@@ -304,7 +304,7 @@ void LEX_real(void)
  *
  **************************************/
 
-	if (dudleyGlob.DDL_token.tok_string[0] != '\n')
+	if (DDL_token.tok_string[0] != '\n')
 		return;
 
 	LEX_token();
@@ -323,18 +323,20 @@ TOK LEX_token(void)
  *	Parse and return the next token.
  *
  **************************************/
+	TOK token;
 	SSHORT c, next;
+	TEXT class_, *p;
 	SYM symbol;
 
-	TOK token = &dudleyGlob.DDL_token;
-	TEXT* p = token->tok_string;
+	token = &DDL_token;
+	p = token->tok_string;
 	*p++ = c = skip_white();
 
 /* On end of file, generate furious but phony end of line tokens */
 
-	TEXT char_class = classes[c];
+	class_ = classes[c];
 
-	if (dudleyGlob.DDL_eof) {
+	if (DDL_eof) {
 		p = token->tok_string;
 		*p++ = '*';
 		*p++ = 'E';
@@ -348,14 +350,14 @@ TOK LEX_token(void)
 		*p = '\0';
 		return NULL;
 	}
-	else if (char_class & CHR_letter) {
+	else if (class_ & CHR_letter) {
 		while (classes[c = nextchar()] & CHR_ident)
 			*p++ = c;
 
 		retchar(c);
 		token->tok_type = tok_ident;
 	}
-	else if (char_class & CHR_digit) {
+	else if (class_ & CHR_digit) {
 		while (classes[c = nextchar()] & CHR_digit)
 			*p++ = c;
 		if (c == '.') {
@@ -366,12 +368,11 @@ TOK LEX_token(void)
 		retchar(c);
 		token->tok_type = tok_number;
 	}
-	else if ((char_class & CHR_quote) && !dudleyGlob.DDL_description) {
+	else if ((class_ & CHR_quote) && !DDL_description) {
 		token->tok_type = tok_quoted;
 		do {
 			if (!(next = nextchar()) || next == '\n') {
-				DDL_err(278, NULL, NULL, NULL, NULL, NULL);
-				/* msg 278: unterminated quoted string */
+				DDL_err(278, NULL, NULL, NULL, NULL, NULL);	/* msg 278: unterminated quoted string */
 				break;
 			}
 			*p++ = next;
@@ -396,8 +397,8 @@ TOK LEX_token(void)
 	else
 		token->tok_keyword = KW_none;
 
-	if (dudleyGlob.DDL_trace)
-		puts(token->tok_string);
+	if (DDL_trace)
+		ib_puts(token->tok_string);
 
 	return token;
 }
@@ -416,22 +417,23 @@ static int nextchar(void)
  *
  **************************************/
 	SSHORT c;
+	SCHAR *end;
 
 /* mark the end of the buffer */
 
-	const char* const end = DDL_buffer + sizeof(DDL_buffer);
+	end = DDL_buffer + sizeof(DDL_buffer);
 
 /* If there isn't anything floating around, get a new line */
 
 	while (!(c = *DDL_char++)) {
 		DDL_char = DDL_buffer;
-		if (dudleyGlob.DDL_interactive) {
-			printf(dudleyGlob.DDL_prompt);
-			if (dudleyGlob.DDL_service)
-				putc('\001', stdout);
-			fflush(stdout);
+		if (DDL_interactive) {
+			ib_printf(DDL_prompt);
+			if (DDL_service)
+				ib_putc('\001', ib_stdout);
+			ib_fflush(ib_stdout);
 		}
-		while (c = getc(input_file)) {
+		while (c = ib_getc(input_file)) {
 			if (c == EOF && SYSCALL_INTERRUPTED(errno)) {
 				errno = 0;
 				continue;
@@ -441,31 +443,30 @@ static int nextchar(void)
 			if (DDL_char < end)
 				*DDL_char++ = c;
 			else
-				DDL_err(279, NULL, NULL, NULL, NULL, NULL);
-				/* msg 279: line too SLONG */
+				DDL_err(279, NULL, NULL, NULL, NULL, NULL);	/* msg 279: line too SLONG */
 			if (c == '\n')
 				break;
 		}
 		*DDL_char = 0;
 		if (c == EOF && DDL_char == DDL_buffer) {
 #ifdef UNIX
-			if (dudleyGlob.DDL_interactive)
-				printf("\n");
+			if (DDL_interactive)
+				ib_printf("\n");
 #endif
-			dudleyGlob.DDL_eof = true;
+			DDL_eof = TRUE;
 			return EOF;
 		}
 		DDL_char = DDL_buffer;
-		fputs(DDL_buffer, trace_file);
+		ib_fputs(DDL_buffer, trace_file);
 	}
 
-	dudleyGlob.DDL_token.tok_position++;
+	DDL_token.tok_position++;
 	if (c == '\n') {
-		++dudleyGlob.DDL_line;
+		++DDL_line;
 #if (defined WIN_NT)
 		/* need to account for extra linefeed on newline */
 
-		dudleyGlob.DDL_token.tok_position++;
+		DDL_token.tok_position++;
 #endif
 	}
 
@@ -487,15 +488,15 @@ static void retchar( SSHORT c)
  **************************************/
 
 	if (c == '\n') {
-		--dudleyGlob.DDL_line;
+		--DDL_line;
 #if (defined WIN_NT)
 		/* account for the extra linefeed in a newline */
 
-		--dudleyGlob.DDL_token.tok_position;
+		--DDL_token.tok_position;
 #endif
 	}
 
-	--dudleyGlob.DDL_token.tok_position;
+	--DDL_token.tok_position;
 	--DDL_char;
 }
 
@@ -512,25 +513,22 @@ static int skip_white(void)
  *	Skip over white space and comments in input stream
  *
  **************************************/
-	SSHORT c;
+	SSHORT c, next, class_;
 
 	while ((c = nextchar()) != EOF) {
 
-		const SSHORT char_class = classes[c];
-		if (char_class & CHR_white)
+		class_ = classes[c];
+		if (class_ & CHR_white)
 			continue;
 		if (c == '/') {
-			SSHORT next = nextchar();
-			if (next != '*') {
+			if ((next = nextchar()) != '*') {
 				retchar(next);
 				return c;
 			}
 			c = nextchar();
 			while ((next = nextchar()) &&
 				   (next != EOF) && !(c == '*' && next == '/'))
-			{
 				c = next;
-			}
 			continue;
 		}
 		break;

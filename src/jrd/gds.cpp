@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		gds.cpp
+ *	MODULE:		gds.c
  *	DESCRIPTION:	User callable routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -30,13 +30,19 @@
  *
  */
 
+#define IO_RETRY	20
+
+#ifdef SHLIB_DEFS
+#define LOCAL_SHLIB_DEFS
+#endif
+
 // 11 Sept 2002 Nickolay Samofatov
-// this defined in included dsc2.h
+// this defined in included dsc.h
 //#define ISC_TIME_SECONDS_PRECISION		10000L
 //#define ISC_TIME_SECONDS_PRECISION_SCALE	-4
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
@@ -46,28 +52,23 @@
 #include "../jrd/iberr.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/os/path_utils.h"
-#include "../jrd/dsc.h"
-#include "../jrd/constants.h"
-
-#include "../common/classes/locks.h"
-#include "../common/classes/timestamp.h"
-#include "../common/classes/init.h"
+#include "../jrd/init.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_SYS_PARAM_H
+#ifndef WIN_NT
 #include <sys/param.h>
-#endif
-
 #include <errno.h>
+#endif
 
 #include <stdarg.h>
 #include "../jrd/jrd_time.h"
+#include "../jrd/misc.h"
 
 #if defined(WIN_NT)
-#include <io.h> // umask, close, lseek, read, open, _sopen
+#include <io.h>
 #include <process.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
@@ -75,7 +76,7 @@
 
 #ifdef VMS
 #include <file.h>
-#include <perror.h>
+#include <ib_perror.h>
 #include <descrip.h>
 #include <types.h>
 #include <stat.h>
@@ -83,9 +84,11 @@
 
 #else /* !VMS */
 
+#include <errno.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef HAVE_SYS_FILE_H
+#ifndef WIN_NT
 #include <sys/file.h>
 #endif
 
@@ -111,31 +114,31 @@
 // Those definitions are commented to allow V4_ macros to be inside V4_THREADING ifdefs
 // The include chain is
 // gdsassert.h -> gds_proto.h -> fil.h -> thd.h
-//
-//#ifdef WIN_NT
-//#define V4_THREADING
-//#endif
-//
-//#ifdef SOLARIS_MT
-//#define V4_THREADING
-//#endif
-//
-//#ifdef SUPERSERVER
-//#define V4_THREADING			// RFM: 9/22/2000 fix from Inprise tree,
-//								// Inprise bug 114840
-//#endif
-//
+/*
+#ifdef WIN_NT
+#define V4_THREADING
+#endif
+
+#ifdef SOLARIS_MT
+#define V4_THREADING
+#endif
+
+#ifdef SUPERSERVER
+#define V4_THREADING			// RFM: 9/22/2000 fix from Inprise tree,
+								// Inprise bug 114840
+#endif
+
 // The following ifdef was added to build thread safe gds shared
 //  library on linux platform. It seems the gdslib works now (20020220)
 //  with thread enabled applications. Anyway, more tests should be 
 //  done as I don't have deep knowledge of the interbase/firebird 
 //  engine and this change may imply side effect I haven't known 
 //  about yet. Tomas Nejedlik (tomas@nejedlik.cz)
-//
-//#if ((defined(LINUX) || defined(FREEBSD)) && defined(SUPERCLIENT))
-//#define V4_THREADING
-//#endif
-//
+
+#if ((defined(LINUX) || defined(FREEBSD)) && defined(SUPERCLIENT))
+#define V4_THREADING
+#endif
+*/
 
 
 #ifdef SUPERSERVER
@@ -148,31 +151,75 @@ static const TEXT gdslogid[] = "";
 #endif
 #endif
 
-static const char* FB_PID_FILE = "fb_%d";
+static const char * FB_PID_FILE = "fb_%d";
 
 #include "gen/sql_code.h"
 #include "../jrd/thd.h"
-#include "gen/iberror.h"
-#include "../jrd/ibase.h"
-
+#include "../jrd/gdsold.h"
+//#include "../jrd/gen/codes.h" // is already included in gdsold.h
 #include "../jrd/blr.h"
 #include "../jrd/msg.h"
 #include "../jrd/fil.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #ifndef REQUESTER
-#include "../jrd/os/isc_i_proto.h"
+#include "../jrd/isc_i_proto.h"
 #endif
 
 #ifdef WIN_NT
 #define _WINSOCKAPI_
+
+#include <windows.h>
 #include <share.h>
+#include "thd_proto.h"
 #include "err_proto.h"
+
 #undef leave
+#ifdef TEXT
+#undef TEXT
+#endif
+#define TEXT		SCHAR
 #endif /* WIN_NT */
 
+static void gdsPrefixInit();	// C++ function
+
+extern "C" {
+
+#if !(defined VMS || defined WIN_NT || defined LINUX || defined FREEBSD || defined NETBSD || defined DARWIN )
+extern int errno;
+extern SCHAR *sys_errlist[];
+extern int sys_nerr;
+#endif
+
+#ifndef PRINTF
+#define PRINTF 			ib_printf
+#endif
+
 // Number of times to try to generate new name for temporary file
-const int MAX_TMPFILE_TRIES		= 256;
+#define MAX_TMPFILE_TRIES 256
+
+static char *ib_prefix = 0;
+static char *ib_prefix_lock = 0;
+static char *ib_prefix_msg = 0;
+
+
+
+static const SCHAR * const messages[] = {
+#include "gen/msgs.h"
+	0							/* Null entry to terminate list */
+};
+
+#ifndef FOPEN_APPEND_TYPE
+#define FOPEN_APPEND_TYPE	"a"
+#endif
+
+#ifndef O_BINARY
+#define O_BINARY		0
+#endif
+
+#ifndef GENERIC_SQLCODE
+#define GENERIC_SQLCODE		-999
+#endif
 
 static char ib_prefix_val[MAXPATHLEN];
 static char ib_prefix_lock_val[MAXPATHLEN];
@@ -181,109 +228,85 @@ static char fbTempDir[MAXPATHLEN];
 #ifdef EMBEDDED
 static char fbEmbeddedRoot[MAXPATHLEN];
 #endif
-static char *ib_prefix = 0;
-static char *ib_prefix_lock = 0;
-static char *ib_prefix_msg = 0;
-static void gdsPrefixInit();
 
-#include "gen/msgs.h"
 
-#ifndef O_BINARY
-#define O_BINARY	0
+#ifndef INCLUDE_FB_TYPES_H
+#include "../include/fb_types.h"
 #endif
 
-const SLONG GENERIC_SQLCODE		= -999;
-
-#include "../include/fb_types.h"
-#include "../jrd/jrd.h"
-#include "../common/utils_proto.h"
-
-using Firebird::TimeStamp;
-
-// This structure is used to parse the firebird.msg file.
-struct gds_msg
+typedef struct gds_msg
 {
 	ULONG msg_top_tree;
 	int msg_file;
 	USHORT msg_bucket_size;
 	USHORT msg_levels;
 	SCHAR msg_bucket[1];
-};
+} *GDS_MSG;
 
-
-// CVC: This structure has a totally different layout than "class ctl" from
-// blob_filter.h and "struct isc_blob_ctl" from ibase.h. These two should match
-// for blob filters to work. However, this one is private to gds.cpp and hence
-// I renamed it gds_ctl to avoid confusion and possible name clashes.
-// However, filters.cpp calls gds__print_blr(), but this struct is not shared
-// between the two modules.
-struct gds_ctl
+typedef struct ctl
 {
-	const UCHAR* ctl_blr;				/* Running blr string */
-	const UCHAR* ctl_blr_start;		/* Original start of blr string */
-	FPTR_PRINT_CALLBACK ctl_routine; /* Call back */
-	void* ctl_user_arg;			/* User argument */
+	UCHAR *ctl_blr;				/* Running blr string */
+	UCHAR *ctl_blr_start;		/* Original start of blr string */
+	void (*ctl_routine) ();		/* Call back */
+	SCHAR *ctl_user_arg;		/* User argument */
+	TEXT *ctl_ptr;
 	SSHORT ctl_language;
-	Firebird::string ctl_string;
-};
+	TEXT ctl_buffer[1024];
+} *CTL;
 
 #ifdef DEV_BUILD
 void GDS_breakpoint(int);
 #endif
 
 
-static void		blr_error(gds_ctl*, const TEXT*, ...) ATTRIBUTE_FORMAT(2,3);
-static void		blr_format(gds_ctl*, const char*, ...) ATTRIBUTE_FORMAT(2,3);
-static void		blr_indent(gds_ctl*, SSHORT);
-static void		blr_print_blr(gds_ctl*, UCHAR);
-static SCHAR	blr_print_byte(gds_ctl*);
-static SCHAR	blr_print_char(gds_ctl*);
-static void		blr_print_cond(gds_ctl*);
-static int		blr_print_dtype(gds_ctl*);
-static void		blr_print_join(gds_ctl*);
-static SLONG	blr_print_line(gds_ctl*, SSHORT);
-static void		blr_print_verb(gds_ctl*, SSHORT);
-static int		blr_print_word(gds_ctl*);
+static void		blr_error(CTL, TEXT *, ...) ATTRIBUTE_FORMAT(2,3);
+static void		blr_format(CTL, const char *, ...) ATTRIBUTE_FORMAT(2,3);
+static void		blr_indent(CTL, SSHORT);
+static void		blr_print_blr(CTL, UCHAR);
+static SCHAR	blr_print_byte(CTL);
+static SCHAR	blr_print_char(CTL);
+static bool		blr_print_cond(CTL);
+static int		blr_print_dtype(CTL);
+static void		blr_print_join(CTL);
+static SLONG	blr_print_line(CTL, SSHORT);
+static void		blr_print_verb(CTL, SSHORT);
+static int		blr_print_word(CTL);
+static int		blr_get_word(CTL);
 
 static void		init(void);
-static void		sanitize(TEXT*);
+static int		yday(struct tm *);
 
-static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
+static void		ndate(SLONG, struct tm *);
+static GDS_DATE	nday(struct tm *);
+static void		sanitize(TEXT *);
 
-// New functions that try to be safe.
-static SLONG safe_interpret(char* const s, const int bufsize,
-	const ISC_STATUS** const vector, bool legacy = false);
-static void safe_strncpy(char* target, const char* source, int bs);
-
+static void		safe_concat_path(TEXT *destbuf, const TEXT *srcbuf);
 
 /* Generic cleanup handlers */
 
-struct clean
+typedef struct clean
 {
 	struct clean*	clean_next;
 	void			(*clean_routine)(void*);
 	void*			clean_arg;
-};
-
-typedef clean *CLEAN;
+} *CLEAN;
 
 static CLEAN	cleanup_handlers = NULL;
-static gds_msg* global_default_msg = NULL;
-static bool initialized = false;
+static GDS_MSG		default_msg = NULL;
+static SLONG	initialized = FALSE;
 
 void* API_ROUTINE gds__alloc_debug(SLONG size_request,
-                                   const TEXT* filename,
+                                   TEXT* filename,
                                    ULONG lineno)
 {
-	return getDefaultMemoryPool()->allocate_nothrow(size_request, 0
+	return getDefaultMemoryPool()->allocate(size_request, 0
 #ifdef DEBUG_GDS_ALLOC
 		, filename, lineno
 #endif
 	);
 }
 
-ULONG API_ROUTINE gds__free(void* blk)
-{
+ULONG API_ROUTINE gds__free(void* blk) {
 	getDefaultMemoryPool()->deallocate(blk);
 	return 0;
 }
@@ -305,32 +328,113 @@ static struct
 } exit_description;
 #endif
 
+
+
+#ifdef SHLIB_DEFS
+#define sprintf		(*_libgds_sprintf)
+#define vsprintf	(*_libgds_vsprintf)
+#define strlen		(*_libgds_strlen)
+#define strcpy		(*_libgds_strcpy)
+#define _iob		(*_libgds__iob)
+#define getpid		(*_libgds_getpid)
+#define ib_fprintf	(*_libgds_fprintf)
+#define ib_printf	(*_libgds_printf)
+#define ib_fopen	(*_libgds_fopen)
+#define ib_fclose	(*_libgds_fclose)
+#define sys_nerr	(*_libgds_sys_nerr)
+#define sys_errlist	(*_libgds_sys_errlist)
+#define malloc		(*_libgds_malloc)
+#define gettimeofday(*_libgds_gettimeofday)
+#define ctime		(*_libgds_ctime)
+#define getenv		(*_libgds_getenv)
+#define lseek		(*_libgds_lseek)
+#define read		(*_libgds_read)
+#define memcpy		(*_libgds_memcpy)
+#define open		(*_libgds_open)
+#define strcat		(*_libgds_strcat)
+#define ib_fputs	(*_libgds_fputs)
+#define ib_fputc	(*_libgds_fputc)
+#define mktemp		(*_libgds_mktemp)
+#define unlink		(*_libgds_unlink)
+#define close		(*_libgds_close)
+#define strncmp		(*_libgds_strncmp)
+#define time		(*_libgds_time)
+#define ib_fflush	(*_libgds_fflush)
+#define errno		(*_libgds_errno)
+#define umask		(*_libgds_umask)
+#define atexit		(*_libgds_atexit)
+#define ib_vfprintf	(*_libgds_vfprintf)
+
+extern int sprintf();
+extern int vsprintf();
+extern int strlen();
+extern SCHAR *strcpy();
+extern IB_FILE _iob[];
+extern pid_t getpid();
+extern int ib_fprintf();
+extern int ib_printf();
+extern IB_FILE *ib_fopen();
+extern int ib_fclose();
+extern int sys_nerr;
+extern SCHAR *sys_errlist[];
+extern void *malloc();
+extern int gettimeofday();
+extern SCHAR *ctime();
+extern SCHAR *getenv();
+extern off_t lseek();
+extern int read();
+extern void *memcpy();
+extern int open();
+extern SCHAR *strcat();
+extern int ib_fputs();
+extern int ib_fputc();
+extern SCHAR *mktemp();
+extern int unlink();
+extern int close();
+extern int strncmp();
+extern time_t time();
+extern int ib_fflush();
+extern int errno;
+extern mode_t umask();
+extern int atexit();
+extern int ib_vfprintf();
+#endif /* SHLIB_DEFS */
+
+
 /* BLR Pretty print stuff */
 
+#define PRINT_VERB 	blr_print_verb (control, level)
+#define PRINT_LINE	blr_print_line (control, (SSHORT) offset)
+#define PRINT_BYTE	blr_print_byte (control)
+#define PRINT_CHAR	blr_print_char (control)
+#define PRINT_WORD	blr_print_word (control)
+#define PRINT_COND	blr_print_cond (control)
+#define PRINT_DTYPE	blr_print_dtype (control)
+#define PRINT_JOIN	blr_print_join (control)
 #define BLR_BYTE	*(control->ctl_blr)++
-#define PUT_BYTE(byte)	control->ctl_string += byte
+#define BLR_WORD	blr_get_word (control)
+#define PUT_BYTE(byte)	*(control->ctl_ptr)++ = byte
 
-const int op_line		= 1;
-const int op_verb		= 2;
-const int op_byte		= 3;
-const int op_word		= 4;
-const int op_pad		= 5;
-const int op_dtype		= 6;
-const int op_message	= 7;
-const int op_literal	= 8;
-const int op_begin		= 9;
-const int op_map		= 10;
-const int op_args		= 11;
-const int op_union		= 12;
-const int op_indent		= 13;
-const int op_join		= 14;
-const int op_parameters	= 15;
-const int op_error_handler	= 16;
-const int op_set_error	= 17;
-const int op_literals	= 18;
-const int op_relation	= 20;
-const int op_exec_into	= 21;
-const int op_cursor_stmt	= 22;
+#define op_line		 1
+#define op_verb		 2
+#define op_byte		 3
+#define op_word		 4
+#define op_pad		 5
+#define op_dtype	 6
+#define op_message	 7
+#define op_literal	 8
+#define op_begin	 9
+#define op_map		 10
+#define op_args		 11
+#define op_union	 12
+#define op_indent	 13
+#define op_join		 14
+#define op_parameters	 15
+#define op_error_handler 16
+#define op_set_error	 17
+#define op_literals	 18
+#define op_relation	 20
+#define op_exec_into 21
 
 static const UCHAR
 	/* generic print formats */
@@ -379,69 +483,44 @@ static const UCHAR
 	pid[]		= { op_word, op_pad, op_byte, op_line, op_indent, op_word,
 					op_line, op_parameters, 0},
 	error_handler[] = { op_word, op_line, op_error_handler, 0},
-	set_error[] = { op_set_error, op_line, 0},
+	set_error[] = { op_line, op_set_error, 0},
 	cast[]		= { op_dtype, op_line, op_verb, 0},
 	indices[]	= { op_byte, op_line, op_literals, 0},
 	lock_relation[] = { op_line, op_indent, op_relation, op_line, op_verb, 0},
 	range_relation[] = { op_line, op_verb, op_indent, op_relation, op_line, 0},
 	extract[]	= { op_line, op_byte, op_verb, 0},
 	user_savepoint[]	= { op_byte, op_byte, op_literal, op_line, 0},
-	exec_into[] = { op_word, op_line, op_indent, op_exec_into, 0},
-	dcl_cursor[] = { op_word, op_line, op_verb, 0},
-	cursor_stmt[] = { op_cursor_stmt, 0 },
-	strlength[] = { op_byte, op_line, op_verb, 0},
-	trim[] = { op_byte, op_byte, op_line, op_verb, 0};
+	exec_into[] = { op_line, op_exec_into, 0};
+
+static const struct
+{
+	const char *blr_string;
+	const UCHAR *blr_operators;
+} blr_table[] =
+{
+
+#pragma FB_COMPILER_MESSAGE("Fix this!")
 
 #include "../jrd/blp.h"
+	{0, 0}
+};
 
-const char* const FB_LOCK_ENV		= "FIREBIRD_LOCK";
-const char* const FB_MSG_ENV		= "FIREBIRD_MSG";
-const char* const FB_TMP_ENV		= "FIREBIRD_TMP";
+
+#define FB_ENV			"FIREBIRD"
+#define FB_LOCK_ENV		"FIREBIRD_LOCK"
+#define FB_MSG_ENV		"FIREBIRD_MSG"
+#define FB_TMP_ENV		"FIREBIRD_TMP"
 
 #ifdef WIN_NT
 #define EXPAND_PATH(relative, absolute)		_fullpath(absolute, relative, MAXPATHLEN)
-#define COMPARE_PATH(a, b)			_stricmp(a, b)
+#define COMPARE_PATH(a,b)			_stricmp(a,b)
 #else
 #define EXPAND_PATH(relative, absolute)		realpath(relative, absolute)
-#define COMPARE_PATH(a, b)			strcmp(a, b)
+#define COMPARE_PATH(a,b)			strcmp(a,b)
 #endif
 
 
-// This function is very crude, but signal-safe.
-// CVC: This function converts and ULONG into a string. I renamed the param
-// maxlen to minlen because it represents the minimum length the number will
-// be printed in. However, this means buffer should be large enough to contain
-// any ULONG (11 bytes) and thus prevent a buffer overflow. If minlen >= 11,
-// then buffer should have be of size = (minlen + 1).
-void gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler)
-{
-	ULONG n = value;
-
-	int c = 0;
-	do {
-		n = n / 10;
-		c++;
-	} while (n);
-
-	if (minlen > c)
-		c = minlen;
-		
-	char* p = buffer + c;
-
-	do {
-		*--p = '0' + (value % 10);
-		value = value / 10;
-	} while(value);
-
-	while (p != buffer) {
-		*--p = filler;
-	}
-	buffer[c] = 0;
-}
-
-
-ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT*
-	code_class)
+ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT* class_)
 {
 /**************************************
  *
@@ -466,13 +545,13 @@ ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT*
 	}
 
 	*fac = GET_FACILITY(code);
-	*code_class = GET_CLASS(code);
+	*class_ = GET_CLASS(code);
 	return GET_CODE(code);
 
 }
 
 
-void API_ROUTINE isc_decode_date(const ISC_QUAD* date, void* times_arg)
+void API_ROUTINE isc_decode_date(GDS_QUAD* date, void* times_arg)
 {
 /**************************************
  *
@@ -487,11 +566,11 @@ void API_ROUTINE isc_decode_date(const ISC_QUAD* date, void* times_arg)
  *	isc_decode_timestamp
  *
  **************************************/
-	isc_decode_timestamp((const GDS_TIMESTAMP*) date, times_arg);
+	isc_decode_timestamp((GDS_TIMESTAMP*) date, times_arg);
 }
 
 
-void API_ROUTINE isc_decode_sql_date(const GDS_DATE* date, void* times_arg)
+void API_ROUTINE isc_decode_sql_date(GDS_DATE* date, void* times_arg)
 {
 /**************************************
  *
@@ -503,12 +582,19 @@ void API_ROUTINE isc_decode_sql_date(const GDS_DATE* date, void* times_arg)
  *	Convert from internal DATE format to UNIX time structure.
  *
  **************************************/
-	tm* times = (struct tm*) times_arg;
-	TimeStamp::decode_date(*date, times);
+	struct tm *times;
+
+	times = (struct tm *) times_arg;
+	memset(times, 0, sizeof(*times));
+
+	ndate(*date, times);
+	times->tm_yday = yday(times);
+	if ((times->tm_wday = (*date + 3) % 7) < 0)
+		times->tm_wday += 7;
 }
 
 
-void API_ROUTINE isc_decode_sql_time(const GDS_TIME* sql_time, void* times_arg)
+void API_ROUTINE isc_decode_sql_time(GDS_TIME * sql_time, void *times_arg)
 {
 /**************************************
  *
@@ -520,17 +606,20 @@ void API_ROUTINE isc_decode_sql_time(const GDS_TIME* sql_time, void* times_arg)
  *	Convert from internal TIME format to UNIX time structure.
  *
  **************************************/
-	tm* times = (struct tm*) times_arg;
+	ULONG minutes;
+	struct tm *times;
+
+	times = (struct tm *) times_arg;
 	memset(times, 0, sizeof(*times));
 
-	const ULONG minutes = *sql_time / (ISC_TIME_SECONDS_PRECISION * 60);
+	minutes = *sql_time / (ISC_TIME_SECONDS_PRECISION * 60);
 	times->tm_hour = minutes / 60;
 	times->tm_min = minutes % 60;
 	times->tm_sec = (*sql_time / ISC_TIME_SECONDS_PRECISION) % 60;
 }
 
 
-void API_ROUTINE isc_decode_timestamp(const GDS_TIMESTAMP* date, void* times_arg)
+void API_ROUTINE isc_decode_timestamp(GDS_TIMESTAMP * date, void *times_arg)
 {
 /**************************************
  *
@@ -541,12 +630,26 @@ void API_ROUTINE isc_decode_timestamp(const GDS_TIMESTAMP* date, void* times_arg
  * Functional description
  *	Convert from internal timestamp format to UNIX time structure.
  *
- *	Note: This routine is intended only for public API use. Engine itself and 
- *  utilities should be using TimeStamp class directly in type-safe manner.
+ *	Note: the date arguement is really an ISC_TIMESTAMP -- however the
+ *	definition of ISC_TIMESTAMP is not available from all the source
+ *	modules that need to use isc_encode_timestamp
  *
  **************************************/
+	SLONG minutes;
+	struct tm *times;
 
-	Firebird::TimeStamp(*date).decode(static_cast<tm*>(times_arg));
+	times = (struct tm *) times_arg;
+	memset(times, 0, sizeof(*times));
+
+	ndate(date->timestamp_date, times);
+	times->tm_yday = yday(times);
+	if ((times->tm_wday = (date->timestamp_date + 3) % 7) < 0)
+		times->tm_wday += 7;
+
+	minutes = date->timestamp_time / (ISC_TIME_SECONDS_PRECISION * 60);
+	times->tm_hour = minutes / 60;
+	times->tm_min = minutes % 60;
+	times->tm_sec = (date->timestamp_time / ISC_TIME_SECONDS_PRECISION) % 60;
 }
 
 
@@ -571,7 +674,7 @@ ISC_STATUS API_ROUTINE gds__encode(ISC_STATUS code, USHORT facility)
 }
 
 
-void API_ROUTINE isc_encode_date(const void* times_arg, ISC_QUAD* date)
+void API_ROUTINE isc_encode_date(void *times_arg, GDS_QUAD * date)
 {
 /**************************************
  *
@@ -586,13 +689,11 @@ void API_ROUTINE isc_encode_date(const void* times_arg, ISC_QUAD* date)
  *	isc_encode_timestamp
  *
  **************************************/
-	Firebird::TimeStamp temp;
-	temp.encode(static_cast<const tm*>(times_arg));
-	*date = (ISC_QUAD&)temp.value();
+	isc_encode_timestamp(times_arg, (GDS_TIMESTAMP *) date);
 }
 
 
-void API_ROUTINE isc_encode_sql_date(const void* times_arg, GDS_DATE* date)
+void API_ROUTINE isc_encode_sql_date(void *times_arg, GDS_DATE * date)
 {
 /**************************************
  *
@@ -605,11 +706,11 @@ void API_ROUTINE isc_encode_sql_date(const void* times_arg, GDS_DATE* date)
  *
  **************************************/
 
-	*date = TimeStamp::encode_date((const struct tm*) times_arg);
+	*date = nday((struct tm *) times_arg);
 }
 
 
-void API_ROUTINE isc_encode_sql_time(const void* times_arg, GDS_TIME* isc_time)
+void API_ROUTINE isc_encode_sql_time(void *times_arg, GDS_TIME * isc_time)
 {
 /**************************************
  *
@@ -621,13 +722,15 @@ void API_ROUTINE isc_encode_sql_time(const void* times_arg, GDS_TIME* isc_time)
  *	Convert from UNIX time structure to internal TIME format.
  *
  **************************************/
-	const tm* times = (const struct tm*) times_arg;
+	struct tm *times;
+
+	times = (struct tm *) times_arg;
 	*isc_time = ((times->tm_hour * 60 + times->tm_min) * 60 +
 				 times->tm_sec) * ISC_TIME_SECONDS_PRECISION;
 }
 
 
-void API_ROUTINE isc_encode_timestamp(const void* times_arg, GDS_TIMESTAMP* date)
+void API_ROUTINE isc_encode_timestamp(void *times_arg, GDS_TIMESTAMP * date)
 {
 /**************************************
  *
@@ -638,13 +741,19 @@ void API_ROUTINE isc_encode_timestamp(const void* times_arg, GDS_TIMESTAMP* date
  * Functional description
  *	Convert from UNIX time structure to internal timestamp format.
  *
- *	Note: This routine is intended only for public API use. Engine itself and 
- *  utilities should be using TimeStamp class directly in type-safe manner.
+ *	Note: the date arguement is really an ISC_TIMESTAMP -- however the
+ *	definition of ISC_TIMESTAMP is not available from all the source
+ *	modules that need to use isc_encode_timestamp
  *
  **************************************/
-	Firebird::TimeStamp temp;
-	temp.encode(static_cast<const tm*>(times_arg));
-	*date = temp.value();
+	struct tm *times;
+
+	times = (struct tm *) times_arg;
+
+	date->timestamp_date = nday(times);
+	date->timestamp_time =
+		((times->tm_hour * 60 + times->tm_min) * 60 +
+		 times->tm_sec) * ISC_TIME_SECONDS_PRECISION;
 }
 
 
@@ -669,7 +778,7 @@ void GDS_breakpoint(int parameter)
 #endif
 
 
-SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
+SINT64 API_ROUTINE isc_portable_integer(UCHAR* ptr, SSHORT length)
 {
 /**************************************
  *
@@ -697,11 +806,11 @@ SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
 	SINT64 value;
 	SSHORT shift;
 
-	fb_assert(length <= 8);
+	assert(length <= 8);
 	value = shift = 0;
 
 	while (--length >= 0) {
-		value += ((SINT64) *ptr++) << shift;
+		value += ((SINT64) * ptr++) << shift;
 		shift += 8;
 	}
 
@@ -726,8 +835,7 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
 // What we really need is to fix all memory leaks including very old.
 }
 
-
-void API_ROUTINE gds_alloc_report(ULONG flags, const char* filter_filename, int lineno)
+void API_ROUTINE gds_alloc_report(ULONG flags, char* filename, int lineno)
 {
 /**************************************
  *
@@ -741,46 +849,9 @@ void API_ROUTINE gds_alloc_report(ULONG flags, const char* filter_filename, int 
  *
  **************************************/
 // Skidder: Calls to this function must be replaced with MemoryPool::print_contents
-	char report_name[MAXPATHLEN];
-	gds__prefix(report_name, "fbsrvreport.txt");
-	// Our new facilities don't expose flags for reporting.
-	const bool used_only = !(flags & ALLOC_verbose);
-	getDefaultMemoryPool()->print_contents(report_name, used_only, filter_filename);
 }
 
-
-/**
-fb_interpret
-
-	@brief Buffer overrun-aware version of the old gds__interprete
-	without the double underscore and without the misspelling.
-	Translate a status code with arguments to a string.  Return the
-	length of the string while updating the vector address.  If the
-	message is null (end of messages) or invalid, return 0;
-	
-	@param s the output buffer where a human readable version of the error is put
-	@param bufsize the size of the output buffer
-	@param vector the input, the address of const pointer to the status vector
-	    that was filled by an API call that reported an error. The function
-	    positions the pointer on the next element of the vector.
-**/
-SLONG API_ROUTINE fb_interpret(char* s, int bufsize, const ISC_STATUS** vector)
-{
-	return safe_interpret(s, bufsize, vector);
-}
-
-
-/* CVC: This non-const signature is needed for compatibility. The reason is
-that, unlike int* that can be assigned to const int* transparently to the caller,
-int** CANNOT be assigned to const int**, so applications would have to be
-fixed to provide such const int**; while it may be more correct from the
-semantic POV, we can't estimate how much work it's for app developers.
-Therefore, we go back to the old signature and provide fb_interpret
-for compliance, to be used inside the engine, too. September, 2003.
-November, 2004: We agree that fb_interpret is the new, safe interface.
-Both gds__interprete and isc_interprete are deprecated. */
-
-SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
+SLONG API_ROUTINE gds__interprete(char *s, ISC_STATUS ** vector)
 {
 /**************************************
  *
@@ -789,41 +860,30 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
  **************************************
  *
  * Functional description
- * See safe_interpret for details. Now this is a wrapper for that function.
- * CVC: Since this routine doesn't get the size of the input buffer,
- * it's DEPRECATED and we'll assume the buffer size was 1024 as in Borland examples.
+ *	Translate a status code with arguments to a string.  Return the
+ *	length of the string while updating the vector address.  If the
+ *	message is null (end of messages) or invalid, return 0;
  *
  **************************************/
-	return safe_interpret(s, 1024, const_cast<const ISC_STATUS**>(vector), true);
-}
+	TEXT *p, *q, *temp;
+	SSHORT l, temp_len;
 
- 
-/**
-safe_interpret
+	TEXT **arg, *args[10];
+	ISC_STATUS code, *v;
+	UCHAR x;
+	ISC_STATUS decoded;
+#ifdef VMS
+	ISC_STATUS status;
+	TEXT flags[4];
+	struct dsc$descriptor_s desc;
+#endif
 
-	@brief Translate a status code with arguments to a string.  Return the
-	length of the string while updating the vector address.  If the
-	message is null (end of messages) or invalid, return 0;
-
-	@param s the output buffer where a human readable version of the error is put
-	@param bufsize the size of the output buffer
-	@param vector the input, the address of const pointer to the status vector
-	    that was filled by an API call that reported an error. The function
-	    positions the pointer on the next element of the vector.
-
-**/
-static SLONG safe_interpret(char* const s, const int bufsize,
-	const ISC_STATUS** const vector, bool legacy)
-{
-	// CVC: It doesn't make sense to provide a buffer smaller than 50 bytes.
-	// Return error otherwise.
-	// Also, if the first element of the vector doesn't signal an error, return.
-	if (!**vector || bufsize < 50)
+	if (!**vector)
 		return 0;
 
-	const ISC_STATUS* v;
-	ISC_STATUS code;
-	// Handle a case: "no errors, some warning(s)"
+	temp = NULL;
+
+	/* handle a case: "no errors, some warning(s)" */
 	if ((*vector)[1] == 0 && (*vector)[2] == isc_arg_warning) {
 		v = *vector + 4;
 		code = (*vector)[3];
@@ -833,63 +893,40 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 		code = (*vector)[1];
 	}
 
-	const TEXT* args[10];
-	const TEXT** arg = args;
-	const char* const* const argend = arg + FB_NELEM(args);
+	arg = args;
 
-	// Parse and collect any arguments that may be present
-	
-	TEXT* p = 0;
-	const TEXT* q;
-	int temp_len = BUFFER_SMALL;
-	TEXT* temp = NULL;
+	/* Parse and collect any arguments that may be present */
 
-	for (;;)
-	{
-		// CVC: Close overflow in "args".
-		if (arg >= argend)
-			break;
-
-		int len;
-		const UCHAR x = (UCHAR) *v++;
-		switch (x)
-		{
-		case isc_arg_string:
-		case isc_arg_number:
-			*arg++ = (TEXT*) *v++;
+	for (;;) {
+		x = (UCHAR) * v++;
+		switch (x) {
+		case gds_arg_string:
+		case gds_arg_number:
+			*arg++ = (TEXT *) * v++;
 			continue;
 
-		case isc_arg_cstring:
+		case gds_arg_cstring:
 			if (!temp) {
-				// We need a temporary buffer when cstrings are involved.
-				// Give up if we can't get one.
+				/* We need a temporary buffer when cstrings are involved.
+				   Give up if we can't get one. */
 
-				p = temp = (TEXT*) gds__alloc((SLONG) temp_len);
-				// FREE: at procedure exit
-				if (!temp)		// NOMEM:
+				p = temp = (TEXT*) gds__alloc((SLONG) BUFFER_SMALL);
+				temp_len = (SSHORT) BUFFER_SMALL;
+				/* FREE: at procedure exit */
+				if (!temp)		/* NOMEM: */
 					return 0;
 			}
-			len = 1 + (int) *v++; // CVC: Add one for the needed terminator.
-			q = (const TEXT*) *v++;
+			l = (SSHORT) * v++;
+			q = (TEXT *) * v++;
+			*arg++ = p;
 
-			// Ensure that we do not overflow the buffer allocated
-			len = (temp_len < len) ? temp_len : len;
-			if (len)
-			{
-				// CVC: On the next iteration, we don't have the full buffer
-				// but only the remainer of the buffer. We decrement here before
-				// the loop changes "len".
-				temp_len -= len;
-				*arg++ = p;
-				// We'll silently truncate the parameter to our available space.
-				while (--len) // CVC: Decrement first to make room for the null terminator.
+			/* ensure that we do not overflow the buffer allocated */
+			l = (temp_len < l) ? temp_len : l;
+			if (l)
+				do
 					*p++ = *q++;
-					
-				*p++ = 0;
-			}
-			else // No space at all, pass the empty string.
-				*arg++ = "";
-				
+				while (--l);
+			*p++ = 0;
 			continue;
 
 		default:
@@ -899,148 +936,106 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 		break;
 	}
 
-	// Handle primary code on a system by system basis
+/* Handle primary code on a system by system basis */
 
 	switch ((UCHAR) (*vector)[0]) {
 	case isc_arg_warning:
-	case isc_arg_gds:
+	case gds_arg_gds:
 		{
-			USHORT fac = 0, dummy_class = 0;
-			const ISC_STATUS decoded = gds__decode(code, &fac, &dummy_class);
+			USHORT fac = 0, class_ = 0;
+			decoded = gds__decode(code, &fac, &class_);
 			if (gds__msg_format(0, fac, (USHORT) decoded,
-								bufsize, s, args[0], args[1], args[2], args[3],
-								args[4]) < 0)
-			{
-				bool found = false;
-
-				for (int i = 0; messages[i].code_number; ++i) {
-					if (code == messages[i].code_number) {
-						if (legacy)
-							sprintf(s, messages[i].code_text,
-									args[0], args[1], args[2], args[3], args[4]);
-						else
-							fb_utils::snprintf(s, bufsize, messages[i].code_text,
-									args[0], args[1], args[2], args[3], args[4]);
-						found = true;
-						break;
-					}
-				}
-
-				if (!found) {
-					sprintf(s, "unknown ISC error %ld", code);	// TXNN
-				}
+								128, s, args[0], args[1], args[2], args[3],
+								args[4]) < 0) {
+				if ((decoded < FB_NELEM(messages) - 1) && (decoded >= 0))
+					sprintf(s, messages[decoded], args[0], args[1], args[2],
+							args[3], args[4]);
+				else
+					sprintf(s, "unknown ISC error %ld", code);	/* TXNN */
 			}
 		}
 		break;
 
-	case isc_arg_interpreted:
-		q = (const TEXT*) (*vector)[1];
-		if (legacy)
-			safe_strncpy(s, q, bufsize);
-		else
-		{
-			strncpy(s, q, bufsize);
-			s[bufsize - 1] = 0;
-		}
+	case gds_arg_interpreted:
+		p = s;
+		q = (TEXT *) (*vector)[1];
+		while ((*p++ = *q++) /*!= NULL*/);
 		break;
 
-	case isc_arg_unix:
-		// The  strerror()  function  returns  the appropriate description
-		// string, or an unknown error message if the error code is unknown.
-		q = (const TEXT*) strerror(code);
-		if (legacy)
-			safe_strncpy(s, q, bufsize);
+	case gds_arg_unix:
+		if (code > 0 && code < sys_nerr && (p = (TEXT*)sys_errlist[code]))
+			strcpy(s, p);
+		else if (code == 60)
+			strcpy(s, "connection timed out");
+		else if (code == 61)
+			strcpy(s, "connection refused");
 		else
-		{
-			strncpy(s, q, bufsize);
-			s[bufsize - 1] = 0;
-		}
+			sprintf(s, "unknown unix error %ld", code);	/* TXNN */
 		break;
 
-	case isc_arg_dos:
-		sprintf(s, "unknown dos error %ld", code);	// TXNN
+	case gds_arg_dos:
+
+		sprintf(s, "unknown dos error %ld", code);	/* TXNN */
 		break;
 
 #ifdef VMS
-	case isc_arg_vms:
-		{
-			SSHORT ll = 0;
-			struct dsc$descriptor_s desc;
-			desc.dsc$b_class = DSC$K_CLASS_S;
-			desc.dsc$b_dtype = DSC$K_DTYPE_T;
-			desc.dsc$w_length = bufsize;
-			desc.dsc$a_pointer = s;
-			TEXT flags[4];
-			ISC_STATUS status = sys$getmsg(code, &ll, &desc, 15, flags);
-			if (status & 1)
-				s[ll] = 0;
-			else
-				sprintf(s, "uninterpreted VMS code %x", code);	// TXNN
-		}
+	case gds_arg_vms:
+		l = 0;
+		desc.dsc$b_class = DSC$K_CLASS_S;
+		desc.dsc$b_dtype = DSC$K_DTYPE_T;
+		desc.dsc$w_length = 128;
+		desc.dsc$a_pointer = s;
+		status = sys$getmsg(code, &l, &desc, 15, flags);
+		if (status & 1)
+			s[l] = 0;
+		else
+			sprintf(s, "uninterpreted VMS code %x", code);	/* TXNN */
 		break;
 #endif
 
 #ifdef WIN_NT
-	case isc_arg_win32:
-		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+	case gds_arg_win32:
+		if (!(l = (SSHORT) FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 										 NULL,
 										 code,
 										 GetUserDefaultLangID(),
 										 s,
-										 bufsize,
-						                 NULL)
-		  && !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+										 128,
+						                 NULL))
+		  && !(l = (SSHORT)FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 										 NULL,
 										 code,
-										 0, // TMN: Fallback to system known language
+										 0, /* TMN: Fallback to system known language */
 										 s,
-										 bufsize,
-										 NULL))
-		{
-			sprintf(s, "unknown Win32 error %ld", code);	// TXNN
-		}
+										 128,
+										 NULL))) 
+			sprintf(s, "unknown Win32 error %ld", code);	/* TXNN */
 		break;
 #endif
 
 	default:
 		if (temp)
-			gds__free(temp);
+			gds__free((SLONG *) temp);
 		return 0;
 	}
 
 
 	if (temp)
-		gds__free(temp);
+		gds__free((SLONG *) temp);
 
 	*vector = v;
-	const TEXT* end = s;
-	while (*end)
-		end++;
+	p = s;
+	while (*p)
+		p++;
 
-	return static_cast<SLONG>(end - s);
+	return p - s;
 }
 
 
-// ***********************
-// s a f e _ s t r n c p y
-// ***********************
-// Done exclusively because in legacy mode, safe_interpret cannot fill the
-// string up to the end by calling strncpy.
-static void safe_strncpy(char* target, const char* source, int bs)
-{
-	for (--bs; bs > 0 && *source; --bs)
-		*target++ = *source++;
-
-	*target = 0;
-}
-
-
-/* CVC: This special function for ADA has been restored to non-const vector,
- too, in case its usage was broken. */
 void API_ROUTINE gds__interprete_a(
-								   SCHAR* s,
-								   SSHORT* length,
-								   ISC_STATUS* vector, SSHORT* offset)
+								   SCHAR * s,
+								   SSHORT * length,
+								   ISC_STATUS * vector, SSHORT * offset)
 {
 /**************************************
  *
@@ -1056,160 +1051,15 @@ void API_ROUTINE gds__interprete_a(
  *	the concept of indexing into the vector.
  *
  **************************************/
-	ISC_STATUS *v = vector + *offset;
+	ISC_STATUS *v;
+
+	v = vector + *offset;
 	*length = (SSHORT) gds__interprete(s, &v);
 	*offset = v - vector;
 }
 
 
-const int SECS_PER_HOUR	= 60 * 60;
-const int SECS_PER_DAY	= SECS_PER_HOUR * 24;
-
-#ifdef WIN_NT
-// This is machine-global. Can be made instance-global.
-// For as long you don't trace two instances in parallel this shouldn't matter.
-HANDLE trace_mutex_handle = CreateMutex(NULL, FALSE, "firebird_trace_mutex");
-HANDLE trace_file_handle = INVALID_HANDLE_VALUE;
-
-class CleanupTraceHandles {
-public:
-	~CleanupTraceHandles() {
-		CloseHandle(trace_mutex_handle);
-		trace_mutex_handle = INVALID_HANDLE_VALUE;
-		CloseHandle(trace_file_handle);
-		trace_file_handle = INVALID_HANDLE_VALUE;
-	}
-} cleanupHandles;
-
-#endif
-
-void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
-{
-/**************************************
- *
- *	g d s _ t r a c e _ r a w
- *
- **************************************
- *
- * Functional description
- *	Write trace event to a log file
- *  This function tries to be async-signal safe
- *
- **************************************/
-	if (!length) 
-		length = strlen(text);
-#ifdef WIN_NT
-	// Note: thread-safe code
-
-	// Nickolay Samofatov, 12 Sept 2003. Windows open files extremely slowly. 
-	// Slowly enough to make such trace useless. Thus we cache file handle !
-	WaitForSingleObject(trace_mutex_handle, INFINITE);
-	while (true) {
-		if (trace_file_handle == INVALID_HANDLE_VALUE) {
-			TEXT name[MAXPATHLEN];
-			gds__prefix(name, LOGFILE);
-			// We do not care to close this file. 
-			// It will be closed automatically when our process terminates.
-			trace_file_handle = CreateFile(name, GENERIC_WRITE, 
-				FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-			if (trace_file_handle == INVALID_HANDLE_VALUE)
-				break;
-		}
-		DWORD bytesWritten;
-		SetFilePointer(trace_file_handle, 0, NULL, FILE_END);
-		WriteFile(trace_file_handle, text, length, &bytesWritten, NULL);
-		if (bytesWritten != length) {
-			// Handle the case when file was deleted by another process on Win9x
-			// On WinNT we are not going to notice that fact :(
-			CloseHandle(trace_file_handle);
-			trace_file_handle = INVALID_HANDLE_VALUE;
-			continue;
-		}
-		break;
-	}
-	ReleaseMutex(trace_mutex_handle);
-#else
-	TEXT name[MAXPATHLEN];
-
-	// Note: signal-safe code
-	gds__prefix(name, LOGFILE);
-	int file = open(name, O_CREAT | O_APPEND | O_WRONLY, 0660);
-	if (file == -1) return;
-	write(file, text, length);
-	close(file);
-#endif
-}
-
-void API_ROUTINE gds__trace(const TEXT * text)
-{
-/**************************************
- *
- *	g d s _ t r a c e
- *
- **************************************
- *
- * Functional description
- *	Post trace event to a log file. Function records date and time
- *  This function tries to be async-signal safe
- *
- **************************************/
-	
-	const time_t now = time((time_t *)0); // is specified in POSIX to be signal-safe
-	
-	// 07 Sept 2003, Nickolay Samofatov.
-	// Since we cannot call ctime/localtime_r or anything else like this from 
-	// signal hanlders we need to decode time by hand. 
-
-	const int days = now / SECS_PER_DAY;
-	int rem = now % SECS_PER_DAY;
-
-	tm today;
-	TimeStamp::decode_date(days + TimeStamp::GDS_EPOCH_START, &today);
-    today.tm_hour = rem / SECS_PER_HOUR;
-    rem %= SECS_PER_HOUR;
-    today.tm_min = rem / 60;
-    today.tm_sec = rem % 60;
-
-	char buffer[1024]; // 1K should be enough for the trace message
-	char* p = buffer;
-	gds__ulstr(p, today.tm_year + 1900, 4, '0'); p += 4;
-	*p++ = '-';
-	gds__ulstr(p, today.tm_mon, 2, '0'); p += 2;
-	*p++ = '-';
-	gds__ulstr(p, today.tm_mday, 2, '0'); p += 2;
-	*p++ = 'T';
-	gds__ulstr(p, today.tm_hour, 2, '0'); p += 2;
-	*p++ = ':';
-	gds__ulstr(p, today.tm_min, 2, '0'); p += 2;
-	*p++ = ':';
-	gds__ulstr(p, today.tm_sec, 2, '0'); p += 2;
-	*p++ = ' ';
-	gds__ulstr(p, 
-#ifdef WIN_NT
-#ifdef SUPERSERVER
-			     GetCurrentThreadId(),
-#else
-				 GetCurrentProcessId(),				   
-#endif
-#else
-				 getpid(),
-#endif
-				 5, ' '); p += 5;
-	*p++ = ' ';
-	strcpy(p, text); p += strlen(p);
-	strcat(p, "\n"); p += strlen(p);
-	gds__trace_raw(buffer, p - buffer);
-}
-
-#ifndef WIN_NT
-// On non-NT platforms gds__log() is called sometimes from signal-handlers.
-// Mutexes can't be used in that case. We can only hope that we will not
-// swallow too many diagnostic from log.
-static bool inLogger = false;
-#endif
-
-void API_ROUTINE gds__log(const TEXT* text, ...)
+void API_ROUTINE gds__log(const TEXT * text, ...)
 {
 /**************************************
  *
@@ -1222,103 +1072,45 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
  *
  **************************************/
 	va_list ptr;
+	IB_FILE *file;
+	int oldmask;
 	time_t now;
 	TEXT name[MAXPATHLEN];
 
 #ifdef HAVE_GETTIMEOFDAY
-	struct timeval tv;
-	GETTIMEOFDAY(&tv);
-	now = tv.tv_sec;
+	{
+	    struct timeval tv;
+#ifdef GETTIMEOFDAY_RETURNS_TIMEZONE
+	    (void)gettimeofday(&tv, (struct timezone *)0);
+#else
+	    (void)gettimeofday(&tv);
+#endif
+	    now = tv.tv_sec;
+	}
 #else
 	now = time((time_t *)0);
 #endif
 
 	gds__prefix(name, LOGFILE);
 
-#ifdef WIN_NT
-	WaitForSingleObject(trace_mutex_handle, INFINITE);
-#else
-	if (inLogger)
+	oldmask = umask(0111);
+
+	if ((file = ib_fopen(name, FOPEN_APPEND_TYPE)) != NULL)
 	{
-		return;
+		ib_fprintf(file, "%s%s\t%.25s\t", ISC_get_host(name, MAXPATHLEN),
+ 				   gdslogid, ctime(&now));
+		VA_START(ptr, text);
+		ib_vfprintf(file, text, ptr);
+		ib_fprintf(file, "\n\n");
+		ib_fclose(file);
 	}
-	inLogger = true;
-#endif
-	const int oldmask = umask(0111);
-	FILE* file = fopen(name, "a");
-	if (file != NULL)
-	{
-		fprintf(file, "\n%s%s\t%.25s\t", 
-				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
-		va_start(ptr, text);
-		vfprintf(file, text, ptr);
-		va_end(ptr);
-		fprintf(file, "\n\n");
-		fclose(file);
-	}
-	umask(oldmask);
-#ifdef WIN_NT
-	ReleaseMutex(trace_mutex_handle);
-#else
-	inLogger = false;
-#endif
-}
-
-void API_ROUTINE gds__print_pool(JrdMemoryPool* pool, const TEXT* text, ...)
-{
-/**************************************
- *
- *	g d s _ p r i n t _ p o o l
- *
- **************************************
- *
- * Functional description
- *	Print pool contents to the log file. 
- * Preced it with normal log record as in gds__log
- *
- **************************************/
-	va_list ptr;
-	time_t now;
-	TEXT name[MAXPATHLEN];
-
-#ifdef HAVE_GETTIMEOFDAY
-	struct timeval tv;
-	GETTIMEOFDAY(&tv);
-	now = tv.tv_sec;
-#else
-	now = time((time_t *)0);
-#endif
-
-	gds__prefix(name, LOGFILE);
-
-	const int oldmask = umask(0111);
-#ifdef WIN_NT
-	WaitForSingleObject(trace_mutex_handle, INFINITE);
-#endif
-	FILE* file = fopen(name, "a");
-	if (file != NULL)
-	{
-		fprintf(file, "\n%s%s\t%.25s\t", 
-				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
-		va_start(ptr, text);
-		vfprintf(file, text, ptr);
-		va_end(ptr);
-		fprintf(file, "\n");
-		pool->print_contents(file, false);
-		fprintf(file, "\n");
-		fclose(file);
-	}
-#ifdef WIN_NT
-	ReleaseMutex(trace_mutex_handle);
-#endif
 
 	umask(oldmask);
 
 }
 
 
-void API_ROUTINE gds__log_status(const TEXT* database,
-	const ISC_STATUS* status_vector)
+void API_ROUTINE gds__log_status(TEXT * database, ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -1330,33 +1122,26 @@ void API_ROUTINE gds__log_status(const TEXT* database,
  *	Log error to error log.
  *
  **************************************/
-	TEXT* const buffer = (TEXT*) gds__alloc((SLONG) BUFFER_XLARGE);
+	TEXT *buffer, *p;
+
+	buffer = (TEXT *) gds__alloc((SLONG) BUFFER_XLARGE);
 /* FREE: at procedure exit */
 	if (!buffer)				/* NOMEM: */
 		return;
-		
-#ifdef DEV_BUILD
-	const size_t db_len = database ? strlen(database) : 0;
-	fb_assert(db_len < BUFFER_XLARGE - 2);
-	fb_assert(db_len < MAXPATHLEN);
-#endif
 
-	TEXT* p = buffer;
-	const TEXT* const end = p + BUFFER_XLARGE;
-	const int max_db_len = int(BUFFER_XLARGE - 12);
-	sprintf(p, "Database: %.*s", max_db_len, (database) ? database : "");
+	p = buffer;
+	sprintf(p, "Database: %s", (database) ? database : "");
 
 	do {
 		while (*p)
 			p++;
-			
 		*p++ = '\n';
 		*p++ = '\t';
-	} while (p < end && safe_interpret(p, end - p, &status_vector));
+	} while (gds__interprete(p, &status_vector));
 
 	p[-2] = 0;
 	gds__log(buffer, 0);
-	gds__free(buffer);
+	gds__free((SLONG *) buffer);
 }
 
 
@@ -1373,20 +1158,20 @@ int API_ROUTINE gds__msg_close(void *handle)
  *
  **************************************/
 
-	gds_msg* messageL = static_cast<gds_msg*>(handle);
+	GDS_MSG message = reinterpret_cast < GDS_MSG > (handle);
 
-	if (!messageL) {
-		if (!global_default_msg) {
+	if (!message) {
+		if (!default_msg) {
 			return 0;
 		}
-		messageL = global_default_msg;
+		message = default_msg;
 	}
 
-	global_default_msg = NULL;
+	default_msg = (GDS_MSG) NULL;
 
-	const int fd = messageL->msg_file;
+	int fd = message->msg_file;
 
-	FREE_LIB_MEMORY(messageL);
+	FREE_LIB_MEMORY(message);
 
 	if (fd <= 0)
 		return 0;
@@ -1417,15 +1202,19 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
  *	as fits in caller's buffer.
  *
  **************************************/
-	SLONG size = (SLONG) (((arg1) ? MAX_ERRSTR_LEN : 0) +
-						  ((arg2) ? MAX_ERRSTR_LEN : 0) +
-						  ((arg3) ? MAX_ERRSTR_LEN : 0) +
-						  ((arg4) ? MAX_ERRSTR_LEN : 0) +
-						  ((arg5) ? MAX_ERRSTR_LEN : 0) + MAX_ERRMSG_LEN);
+	TEXT *p, *formatted, *end;
+	SLONG size;
+	int n;
+
+	size = (SLONG) (((arg1) ? MAX_ERRSTR_LEN : 0) +
+					((arg2) ? MAX_ERRSTR_LEN : 0) +
+					((arg3) ? MAX_ERRSTR_LEN : 0) +
+					((arg4) ? MAX_ERRSTR_LEN : 0) +
+					((arg5) ? MAX_ERRSTR_LEN : 0) + MAX_ERRMSG_LEN);
 
 	size = (size < length) ? length : size;
 
-	TEXT* formatted = (TEXT *) gds__alloc((SLONG) size);
+	formatted = (TEXT *) gds__alloc((SLONG) size);
 
 	if (!formatted)				/* NOMEM: */
 		return -1;
@@ -1434,49 +1223,50 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
    than the raw text of the message to be formatted.  Then we can
    use the caller's buffer to temporarily hold the raw text. */
 
-	const int n = gds__msg_lookup(handle, facility, number, length, buffer, NULL);
+	n = gds__msg_lookup(handle, facility, number, length, buffer, NULL);
 
 	if (n > 0 && n < length)
 	{
-		fb_utils::snprintf(formatted, size, buffer, arg1, arg2, arg3, arg4, arg5);
+		sprintf(formatted, buffer, arg1, arg2, arg3, arg4, arg5);
 	}
 	else
 	{
-		Firebird::string s;
-		s.printf("can't format message %d:%d -- ", facility, number);
+		sprintf(formatted, "can't format message %d:%d -- ", facility,
+				number);
 		if (n == -1)
-			s += "message text not found";
+			strcat(formatted, "message text not found");
 		else if (n == -2) {
-			s += "message file ";
-			gds__prefix_msg(formatted, MSG_FILE);
-			s += formatted;
-			s += " not found";
+			strcat(formatted, "message file ");
+			for (p = formatted; *p;)
+				p++;
+			gds__prefix_msg(p, MSG_FILE);
+			strcat(p, " not found");
 		}
 		else {
-			fb_utils::snprintf(formatted, size, "message system code %d", n);
-			s += formatted;
+			for (p = formatted; *p;)
+				p++;
+			sprintf(p, "message system code %d", n);
 		}
-		s.copyTo(formatted, size);
 	}
 
-	const USHORT l = strlen(formatted);
-	const TEXT* const end = buffer + length - 1;
+	USHORT l = strlen(formatted);
+	end = buffer + length - 1;
 
-	for (const TEXT* p = formatted; *p && buffer < end;) {
+	for (p = formatted; *p && buffer < end;) {
 		*buffer++ = *p++;
 	}
 	*buffer = 0;
 
-	gds__free(formatted);
+	gds__free((SLONG *) formatted);
 	return ((n > 0) ? l : -l);
 }
 
 
-SSHORT API_ROUTINE gds__msg_lookup(void* handle,
+SSHORT API_ROUTINE gds__msg_lookup(void *handle,
 								   USHORT facility,
 								   USHORT number,
 								   USHORT length,
-								   TEXT* buffer, USHORT* flags)
+								   TEXT * buffer, USHORT * flags)
 {
 /**************************************
  *
@@ -1490,36 +1280,41 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
  *	number if we can't find the message.
  *
  **************************************/
-// Handle default message file
-	int status = -1;
-	gds_msg* messageL = (gds_msg*) handle;
-	if (!messageL && !(messageL = global_default_msg)) {
+	GDS_MSG message;
+	int status;
+	USHORT n;
+	MSGREC leaf;
+	MSGNOD node, end;
+	ULONG position, code;
+	TEXT *p;
+
+/* Handle default message file */
+
+	if (!(message = (GDS_MSG) handle) && !(message = default_msg)) {
 		/* Try environment variable setting first */
 
-		TEXT* p = getenv("ISC_MSGS");
-		if (p == NULL ||
+		if ((p = getenv("ISC_MSGS")) == NULL ||
 			(status =
-			 gds__msg_open(reinterpret_cast<void**>(&messageL), p)))
-		{
+			 gds__msg_open(reinterpret_cast < void **>(&message), p))) {
 			TEXT translated_msg_file[sizeof(MSG_FILE_LANG) + LOCALE_MAX + 1];
+			TEXT *msg_file;
 
 			/* Try declared language of this attachment */
 			/* This is not quite the same as the language declared on the
 			   READY statement */
 
-			TEXT* msg_file = (TEXT *) gds__alloc((SLONG) MAXPATHLEN);
+			msg_file = (TEXT *) gds__alloc((SLONG) MAXPATHLEN);
 			/* FREE: at block exit */
 			if (!msg_file)		/* NOMEM: */
 				return -2;
 
 			p = getenv("LC_MESSAGES");
 			if (p != NULL) {
-				sanitize(p); // CVC: Sanitizing environment variable???
-				fb_utils::snprintf(translated_msg_file,
-					sizeof(translated_msg_file), MSG_FILE_LANG, p);
+				sanitize(p);
+				sprintf(translated_msg_file, MSG_FILE_LANG, p);
 				gds__prefix_msg(msg_file, translated_msg_file);
 				status =
-					gds__msg_open(reinterpret_cast<void**>(&messageL),
+					gds__msg_open(reinterpret_cast < void **>(&message),
 								  msg_file);
 			}
 			else
@@ -1529,36 +1324,34 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 				gds__prefix_msg(msg_file, MSG_FILE);
 				status =
-					gds__msg_open(reinterpret_cast<void**>(&messageL),
+					gds__msg_open(reinterpret_cast < void **>(&message),
 								  msg_file);
 			}
-			gds__free(msg_file);
+			gds__free((SLONG *) msg_file);
 		}
 
 		if (status)
 			return status;
 
-		global_default_msg = messageL;
+		default_msg = message;
 	}
 
 /* Search down index levels to the leaf.  If we get lost, punt */
 
-	const ULONG code = MSG_NUMBER(facility, number);
-	const msgnod* const end = 
-		(msgnod*) ((char*) messageL->msg_bucket + messageL->msg_bucket_size);
-	ULONG position = messageL->msg_top_tree;
+	code = MSG_NUMBER(facility, number);
+	end = (MSGNOD) ((SCHAR *) message->msg_bucket + message->msg_bucket_size);
+	position = message->msg_top_tree;
 
-	status = 0;
-	for (USHORT n = 1; !status; n++) {
-		if (lseek(messageL->msg_file, LSEEK_OFFSET_CAST position, 0) < 0)
+	for (n = 1, status = 0; !status; n++) {
+		if (lseek(message->msg_file, LSEEK_OFFSET_CAST position, 0) < 0)
 			status = -6;
-		else if (read(messageL->msg_file, messageL->msg_bucket,
-					  messageL->msg_bucket_size) < 0)
+		else if (read(message->msg_file, message->msg_bucket,
+					  message->msg_bucket_size) < 0)
 			status = -7;
-		else if (n == messageL->msg_levels)
+		else if (n == message->msg_levels)
 			break;
 		else {
-			for (const msgnod* node = (msgnod*) messageL->msg_bucket; !status; node++) {
+			for (node = (MSGNOD) message->msg_bucket; !status; node++) {
 				if (node >= end) {
 					status = -8;
 					break;
@@ -1573,16 +1366,15 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 	if (!status) {
 		/* Search the leaf */
-		for (const msgrec* leaf = (msgrec*) messageL->msg_bucket; !status;
-			 leaf = NEXT_LEAF(leaf)) 
-		{
-			if (leaf >= (const msgrec*) end || leaf->msgrec_code > code) {
+		for (leaf = (MSGREC) message->msg_bucket; !status;
+			 leaf = NEXT_LEAF(leaf)) {
+			if (leaf >= (MSGREC) end || leaf->msgrec_code > code) {
 				status = -1;
 				break;
 			}
 			else if (leaf->msgrec_code == code) {
 				/* We found the correct message, so return it to the user */
-				const USHORT n = MIN(length - 1, leaf->msgrec_length);
+				n = MIN(length - 1, leaf->msgrec_length);
 				memcpy(buffer, leaf->msgrec_text, n);
 				buffer[n] = 0;
 
@@ -1599,7 +1391,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 }
 
 
-int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
+int API_ROUTINE gds__msg_open(void **handle, TEXT * filename)
 {
 /**************************************
  *
@@ -1612,58 +1404,56 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
  *	and update a message handle.
  *
  **************************************/
-	const int n = open(filename, O_RDONLY | O_BINARY, 0);
-	if (n < 0)
+	int n;
+	GDS_MSG message;
+	ISC_MSGHDR header;
+
+	if ((n = open(filename, O_RDONLY | O_BINARY, 0)) < 0)
 		return -2;
 
-	isc_msghdr header;
 	if (read(n, &header, sizeof(header)) < 0) {
-		close(n);
+		(void) close(n);
 		return -3;
 	}
-	// Trick to silence compiler when MSG_MINOR_VERSION == 0
-	const USHORT minor = MSG_MINOR_VERSION;
 
 	if (header.msghdr_major_version != MSG_MAJOR_VERSION ||
-		header.msghdr_minor_version < minor)
-	{
-		close(n);
+		(SSHORT) header.msghdr_minor_version < MSG_MINOR_VERSION) {
+		(void) close(n);
 		return -4;
 	}
 
-	gds_msg* messageL =
-		(gds_msg*) ALLOC_LIB_MEMORY((SLONG) sizeof(gds_msg) +
+	message =
+		(GDS_MSG) ALLOC_LIB_MEMORY((SLONG) sizeof(gds_msg) +
 							   header.msghdr_bucket_size - 1);
 /* FREE: in gds__msg_close */
-	if (!messageL) {				/* NOMEM: return non-open error */
-		close(n);
+	if (!message) {				/* NOMEM: return non-open error */
+		(void) close(n);
 		return -5;
 	}
 
 #ifdef DEBUG_GDS_ALLOC
 /* This will only be freed if the client closes the message file for us */
-	gds_alloc_flag_unfreed((void *) messageL);
+	gds_alloc_flag_unfreed((void *) message);
 #endif
 
-	messageL->msg_file = n;
-	messageL->msg_bucket_size = header.msghdr_bucket_size;
-	messageL->msg_levels = header.msghdr_levels;
-	messageL->msg_top_tree = header.msghdr_top_tree;
+	message->msg_file = n;
+	message->msg_bucket_size = header.msghdr_bucket_size;
+	message->msg_levels = header.msghdr_levels;
+	message->msg_top_tree = header.msghdr_top_tree;
 
 
-	*handle = messageL;
+	*handle = message;
 
 	return 0;
 }
 
 
 void API_ROUTINE gds__msg_put(
-							  void* handle,
+							  void *handle,
 							  USHORT facility,
 							  USHORT number,
-							  const TEXT* arg1, const TEXT* arg2,
-							  const TEXT* arg3, const TEXT* arg4,
-							  const TEXT* arg5)
+							  TEXT * arg1,
+TEXT * arg2, TEXT * arg3, TEXT * arg4, TEXT * arg5)
 {
 /**************************************
  *
@@ -1676,15 +1466,15 @@ void API_ROUTINE gds__msg_put(
  *	as fits in callers buffer.
  *
  **************************************/
-	TEXT formatted[BUFFER_MEDIUM];
+	TEXT formatted[512];
 
-	gds__msg_format(handle, facility, number, sizeof(formatted),
+	gds__msg_format(handle, facility, number, sizeof(TEXT) * BUFFER_MEDIUM,
 					formatted, arg1, arg2, arg3, arg4, arg5);
 	gds__put_error(formatted);
 }
 
 
-SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
+SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, TEXT * passed_string)
 {
 /**************************************
  *
@@ -1701,6 +1491,8 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
  *
  *      Function returns 0 on success and -1 on failure
  **************************************/
+
+	char *prefix_ptr;
 	int count = 0;
 
 	if (arg_type < IB_PREFIX_TYPE || arg_type > IB_PREFIX_MSG_TYPE)
@@ -1708,7 +1500,6 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 
 	gdsPrefixInit();
 
-	char* prefix_ptr;
 	switch (arg_type) {
 	case IB_PREFIX_TYPE:
 		prefix_ptr = ib_prefix = ib_prefix_val;
@@ -1727,8 +1518,7 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 		/* if the next character is space, newline or carriage return OR
 		   number of characters exceeded */
 		if (*passed_string == ' ' || *passed_string == 10
-			|| *passed_string == 13 || (count == MAXPATHLEN))
-		{
+			|| *passed_string == 13 || (count == MAXPATHLEN)) {
 			*(prefix_ptr++) = '\0';
 			break;
 		}
@@ -1743,7 +1533,7 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 
 
 #ifndef VMS
-void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
+void API_ROUTINE gds__prefix(TEXT *resultString, const TEXT *file)
 {
 /**************************************
  *
@@ -1753,20 +1543,22 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
  *
  * Functional description
  *	Find appropriate file prefix.
+ *	Override conditional defines with
+ *	the enviroment variable FIREBIRD if it is set.
  *
  **************************************/
 	resultString[0] = 0;
 
 	gdsPrefixInit();
 
-	strcpy(resultString, ib_prefix);	// safe - no BO
+	strcat(resultString, ib_prefix);
 	safe_concat_path(resultString, file);
 }
 #endif /* !defined(VMS) */
 
 
 #ifdef VMS
-void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
+void API_ROUTINE gds__prefix(TEXT * string, const TEXT * root)
 {
 /**************************************
  *
@@ -1780,6 +1572,10 @@ void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
  *	the enviroment variable INTERBASE if it is set.
  *
  **************************************/
+	TEXT temp[256], *p, *q;
+	ISC_VMS_PREFIX prefix;
+	SSHORT len;
+
 	if (*root != '[') {
 		strcpy(string, root);
 		return;
@@ -1787,21 +1583,19 @@ void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
 
 /* Check for the existence of an InterBase logical name.  If there is 
    one use it, otherwise use the system directories. */
-	TEXT temp[256];
-	if (ISC_expand_logical_once(ISC_LOGICAL, sizeof(ISC_LOGICAL) - 2, temp, sizeof(temp)))
-	{
+
+	if (ISC_expand_logical_once(ISC_LOGICAL, sizeof(ISC_LOGICAL) - 2, temp)) {
 		strcpy(string, ISC_LOGICAL);
 		strcat(string, root);
 		return;
 	}
 
-	TEXT* p = temp;
-	for (const TEXT* q = root; *p = UPPER7(*q); q++)
+	for (p = temp, q = root; *p = UPPER7(*q); q++)
 		if (*p++ == ']')
 			break;
 
-	const SSHORT len = p - temp;
-	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
+	len = p - temp;
+	for (prefix = trans_prefix; prefix->isc_prefix; prefix++)
 		if (!strncmp(temp, prefix->isc_prefix, len)) {
 			strcpy(string, prefix->vms_prefix);
 			strcat(string, &root[len]);
@@ -1814,7 +1608,7 @@ void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
 
 
 #ifndef VMS
-void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
+void API_ROUTINE gds__prefix_lock(TEXT * string, const TEXT * root)
 {
 /********************************************************
  *
@@ -1824,6 +1618,8 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
  *
  * Functional description
  *	Find appropriate Firebird lock file prefix.
+ *	Override conditional defines with the enviroment
+ *      variable FIREBIRD_LOCK if it is set.
  *
  **************************************/
 	string[0] = 0;
@@ -1832,7 +1628,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 
 #ifdef EMBEDDED
 	char buf[MAXPATHLEN];
-	fb_utils::snprintf(buf, MAXPATHLEN, root, fbEmbeddedRoot);
+	snprintf(buf, MAXPATHLEN, root, fbEmbeddedRoot);
 	root = buf;
 #endif
 
@@ -1843,7 +1639,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 
 
 #ifdef VMS
-void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
+void API_ROUTINE gds__prefix_lock(TEXT * string, const TEXT * root)
 {
 /************************************************
  *
@@ -1857,6 +1653,10 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
  *      variable FIREBIRD_LOCK if it is set.
  *
  *************************************************/
+	TEXT temp[256], *p, *q;
+	ISC_VMS_PREFIX prefix;
+	SSHORT len;
+
 	if (*root != '[') {
 		strcpy(string, root);
 		return;
@@ -1864,22 +1664,20 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 
 /* Check for the existence of a Firebird logical name.  If there is 
    one use it, otherwise use the system directories. */
-	TEXT temp[256];
+
 	if (ISC_expand_logical_once
-		(ISC_LOGICAL_LOCK, sizeof(ISC_LOGICAL_LOCK) - 2, temp, sizeof(temp)))
-	{
+		(ISC_LOGICAL_LOCK, sizeof(ISC_LOGICAL_LOCK) - 2, temp)) {
 		strcpy(string, ISC_LOGICAL_LOCK);
 		strcat(string, root);
 		return;
 	}
 
-	TEXT* p = temp;
-	for (const TEXT* q = root; *p = UPPER7(*q); q++)
+	for (p = temp, q = root; *p = UPPER7(*q); q++)
 		if (*p++ == ']')
 			break;
 
-	const SSHORT len = p - temp;
-	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
+	len = p - temp;
+	for (prefix = trans_prefix; prefix->isc_prefix; prefix++)
 		if (!strncmp(temp, prefix->isc_prefix, len)) {
 			strcpy(string, prefix->vms_prefix);
 			strcat(string, &root[len]);
@@ -1891,7 +1689,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 #endif
 
 #ifndef VMS
-void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
+void API_ROUTINE gds__prefix_msg(TEXT * string, const TEXT * root)
 {
 /********************************************************
  *
@@ -1916,7 +1714,7 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 #endif
 
 #ifdef VMS
-void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
+void API_ROUTINE gds__prefix_msg(TEXT * string, const TEXT * root)
 {
 /************************************************
  *
@@ -1930,6 +1728,10 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
  *      variable FIREBIRD_MSG if it is set.
  *
  *************************************************/
+	TEXT temp[256], *p, *q;
+	ISC_VMS_PREFIX prefix;
+	SSHORT len;
+
 	if (*root != '[') {
 		strcpy(string, root);
 		return;
@@ -1941,22 +1743,19 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 
 /* ISC_LOGICAL_MSG macro needs to be defined, check non VMS version of routine
    for functionality. */
-	TEXT temp[256];
 	if (ISC_expand_logical_once
-		(ISC_LOGICAL_MSG, sizeof(ISC_LOGICAL_MSG) - 2, temp, sizeof(temp)))
-	{
+		(ISC_LOGICAL_MSG, sizeof(ISC_LOGICAL_MSG) - 2, te mp)) {
 		strcpy(string, ISC_LOGICAL_MSG);
 		strcat(string, root);
 		return;
 	}
 
-	TEXT* p = temp;
-	for (const TEXT* q = root; *p = UPPER7(*q); q++)
+	for (p = temp, q = root; *p = UPPER7(*q); q++)
 		if (*p++ == ']')
 			break;
 
-	const SSHORT len = p - temp;
-	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
+	len = p - temp;
+	for (prefix = trans_prefix; prefix->isc_prefix; prefix++)
 		if (!strncmp(temp, prefix->isc_prefix, len)) {
 			strcpy(string, prefix->vms_prefix);
 			strcat(string, &root[len]);
@@ -1968,7 +1767,7 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 #endif
 
 
-ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
+ISC_STATUS API_ROUTINE gds__print_status(ISC_STATUS * vec)
 {
 /**************************************
  *
@@ -1980,37 +1779,39 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
  *	Interprete a status vector.
  *
  **************************************/
-	if (!vec || (!vec[1] && vec[2] == isc_arg_end))
+	ISC_STATUS *vector;
+	TEXT *s;
+
+	if (!vec || (!vec[1] && vec[2] == gds_arg_end))
 		return FB_SUCCESS;
 
-	TEXT* s = (TEXT *) gds__alloc((SLONG) BUFFER_LARGE);
+	s = (TEXT *) gds__alloc((SLONG) BUFFER_LARGE);
 /* FREE: at procedure return */
 	if (!s)						/* NOMEM: */
 		return vec[1];
 
-	const ISC_STATUS* vector = vec;
+	vector = vec;
 
-	if (!safe_interpret(s, BUFFER_LARGE, &vector)) {
-		gds__free(s);
+	if (!gds__interprete(s, &vector)) {
+		gds__free((SLONG *) s);
 		return vec[1];
 	}
 
 	gds__put_error(s);
 	s[0] = '-';
 
-	while (safe_interpret(s + 1, BUFFER_LARGE - 1, &vector))
+	while (gds__interprete(s + 1, &vector))
 		gds__put_error(s);
 
-	gds__free(s);
+	gds__free((SLONG *) s);
 
 	return vec[1];
 }
 
 
 USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length,
-								  const UCHAR* bpb,
-								  USHORT* source,
-								  USHORT* target)
+								  UCHAR * bpb,
+								  USHORT * source, USHORT * target)
 {
 /**************************************
  *
@@ -2031,11 +1832,11 @@ USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length,
 
 
 USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
-								   const UCHAR* bpb,
-								   SSHORT* source,
-								   SSHORT* target,
-								   USHORT* source_interp,
-								   USHORT* target_interp)
+								   UCHAR * bpb,
+								   SSHORT * source,
+								   SSHORT * target,
+								   USHORT * source_interp,
+								   USHORT * target_interp)
 {
 /**************************************
  *
@@ -2050,45 +1851,47 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
  *	source_interp and target_interp.
  *
  **************************************/
-	USHORT type = 0;
-	*source = *target = 0;
+	UCHAR *p, *end, op;
+	USHORT type, length;
+
+	type = *source = *target = 0;
 
 	if (source_interp)
 		*source_interp = 0;
 	if (target_interp)
 		*target_interp = 0;
 
-	if (!bpb_length || !bpb)
+	if (!bpb_length)
 		return type;
 
-	const UCHAR* p = bpb;
-	const UCHAR* const end = p + bpb_length;
+	p = bpb;
+	end = p + bpb_length;
 
-	if (*p++ != isc_bpb_version1)
+	if (*p++ != gds_bpb_version1)
 		return type;
 
 	while (p < end) {
-		const UCHAR op = *p++;
-		const USHORT length = *p++;
+		op = *p++;
+		length = *p++;
 		switch (op) {
-		case isc_bpb_source_type:
+		case gds_bpb_source_type:
 			*source = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case isc_bpb_target_type:
+		case gds_bpb_target_type:
 			*target = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case isc_bpb_type:
+		case gds_bpb_type:
 			type = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case isc_bpb_source_interp:
+		case gds_bpb_source_interp:
 			if (source_interp)
 				*source_interp = (USHORT) gds__vax_integer(p, length);
 			break;
 
-		case isc_bpb_target_interp:
+		case gds_bpb_target_interp:
 			if (target_interp)
 				*target_interp = (USHORT) gds__vax_integer(p, length);
 			break;
@@ -2103,10 +1906,10 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 }
 
 
-SLONG API_ROUTINE gds__ftof(const SCHAR* string,
-							const USHORT length1,
-							SCHAR* fieldL,
-							const USHORT length2)
+SLONG API_ROUTINE gds__ftof(SCHAR * string,
+							USHORT GDS_VAL(length1),
+							SCHAR * field,
+							USHORT GDS_VAL(length2))
 {
 /**************************************
  *
@@ -2120,30 +1923,28 @@ SLONG API_ROUTINE gds__ftof(const SCHAR* string,
  *	move strings around.
  *
  **************************************/
-	USHORT fill = 0;
-	// CVC: a logic bug rendered the fill > 0 test useless
-	if (length2 > length1)
-		fill = length2 - length1;
+	USHORT l, fill;
 
-	USHORT l = MIN(length1, length2);
-	if (l > 0)
-		do {
-			*fieldL++ = *string++;
-		} while (--l);
+	fill = GDS_VAL(length2) - GDS_VAL(length1);
+
+	if ((l = MIN(GDS_VAL(length1), GDS_VAL(length2))) > 0)
+		do
+			*field++ = *string++;
+		while (--l);
 
 	if (fill > 0)
-		do {
-			*fieldL++ = ' ';
-		} while (--fill);
+		do
+			*field++ = ' ';
+		while (--fill);
 
 	return 0;
 }
 
 
 int API_ROUTINE gds__print_blr(
-							   const UCHAR* blr,
-							   FPTR_PRINT_CALLBACK routine,
-							   void* user_arg, SSHORT language)
+							   UCHAR * blr,
+							   FPTR_VOID routine,
+							   SCHAR * user_arg, SSHORT language)
 {
 /**************************************
  *
@@ -2155,22 +1956,29 @@ int API_ROUTINE gds__print_blr(
  *	Pretty print blr thru callback routine.
  *
  **************************************/
+	struct ctl ctl, *control;
+	SCHAR eoc;
+	SLONG offset;
+	SSHORT version, level;
+
 	try {
 
-	gds_ctl ctl;
-	gds_ctl* control = &ctl;
+	control = &ctl;
+	level = 0;
+	offset = 0;
 
 	if (!routine) {
-		routine = gds__default_printer;
-		user_arg = NULL;
+		routine = (void (*)()) PRINTF;
+		user_arg = "%4d %s\n";
 	}
 
 	control->ctl_routine = routine;
 	control->ctl_user_arg = user_arg;
 	control->ctl_blr = control->ctl_blr_start = blr;
+	control->ctl_ptr = control->ctl_buffer;
 	control->ctl_language = language;
 
-	const SSHORT version = BLR_BYTE;
+	version = BLR_BYTE;
 
 	if ((version != blr_version4) && (version != blr_version5))
 		blr_error(control, "*** blr version %d is not supported ***",
@@ -2178,21 +1986,18 @@ int API_ROUTINE gds__print_blr(
 
 	blr_format(control,
 			   (version == blr_version4) ? "blr_version4," : "blr_version5,");
-
-	SSHORT level = 0;
-	SLONG offset = 0;
-	blr_print_line(control, (SSHORT) offset);
-	blr_print_verb(control, level);
+	PRINT_LINE;
+	PRINT_VERB;
 
 	offset = control->ctl_blr - control->ctl_blr_start;
-	const SCHAR eoc = BLR_BYTE;
+	eoc = BLR_BYTE;
 
 	if (eoc != blr_eoc)
 		blr_error(control, "*** expected end of command, encounted %d ***",
 				  (int) eoc);
 
 	blr_format(control, "blr_eoc");
-	blr_print_line(control, (SSHORT) offset);
+	PRINT_LINE;
 
 	}	// try
 	catch (const std::exception&) {
@@ -2203,7 +2008,7 @@ int API_ROUTINE gds__print_blr(
 }
 
 
-void API_ROUTINE gds__put_error(const TEXT* string)
+void API_ROUTINE gds__put_error(TEXT * string)
 {
 /**************************************
  *
@@ -2217,19 +2022,24 @@ void API_ROUTINE gds__put_error(const TEXT* string)
  **************************************/
 
 #ifdef VMS
+#define PUT_ERROR
 	struct dsc$descriptor_s desc;
 
 	ISC_make_desc(string, &desc, 0);
 	lib$put_output(&desc);
+#endif
+
+#ifdef PUT_ERROR
+#undef PUT_ERROR
 #else
-	fputs(string, stderr);
-	fputc('\n', stderr);
-	fflush(stderr);
+	ib_fputs(string, ib_stderr);
+	ib_fputc('\n', ib_stderr);
+	ib_fflush(ib_stderr);
 #endif
 }
 
 
-void API_ROUTINE gds__qtoq(const void* quad_in, void* quad_out)
+void API_ROUTINE gds__qtoq(void *quad_in, void *quad_out)
 {
 /**************************************
  *
@@ -2244,11 +2054,11 @@ void API_ROUTINE gds__qtoq(const void* quad_in, void* quad_out)
  *
  **************************************/
 
-	*((ISC_QUAD*) quad_out) = *((ISC_QUAD*) quad_in);
+	*((GDS_QUAD *) quad_out) = *((GDS_QUAD *) quad_in);
 }
 
 
-void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
+void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void *arg)
 {
 /**************************************
  *
@@ -2266,10 +2076,12 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
  * determining when a task ends, therefore this never gets called.
 */
 
+	CLEAN clean;
+
 	if (!initialized)
 		init();
 
-	CLEAN clean = (CLEAN) ALLOC_LIB_MEMORY((SLONG) sizeof(struct clean));
+	clean = (CLEAN) ALLOC_LIB_MEMORY((SLONG) sizeof(struct clean));
 	clean->clean_next = cleanup_handlers;
 	cleanup_handlers = clean;
 	clean->clean_routine = routine;
@@ -2282,7 +2094,7 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
 }
 
 
-SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
+SLONG API_ROUTINE gds__sqlcode(ISC_STATUS * status_vector)
 {
 /**************************************
  *
@@ -2301,13 +2113,18 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
  *	first code for which there is a non-generic SQLCODE, return it.
  *
  **************************************/
+	USHORT code;
+	SLONG sqlcode;
+	ISC_STATUS *s;
+	USHORT have_sqlcode;
+
 	if (!status_vector) {
 		DEV_REPORT("gds__sqlcode: NULL status vector");
 		return GENERIC_SQLCODE;
 	}
 
-	bool have_sqlcode = false;
-	SLONG sqlcode = GENERIC_SQLCODE;	/* error of last resort */
+	have_sqlcode = FALSE;
+	sqlcode = GENERIC_SQLCODE;	/* error of last resort */
 
 /* SQL code -999 (GENERIC_SQLCODE) is generic, meaning "no other sql code
  * known".  Now scan the status vector, seeing if there is ANY sqlcode
@@ -2316,52 +2133,44 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
  * sqlerr reported.
  */
 
-	const ISC_STATUS* s = status_vector;
-	while (*s != isc_arg_end)
+	s = status_vector;
+	while (*s != gds_arg_end)
 	{
-		if (*s == isc_arg_gds)
+		if (*s == gds_arg_gds)
 		{
 			s++;
-			if (*s == isc_sqlerr)
+			if (*s == gds_sqlerr)
 			{
 				return *(s + 2);
 			}
 
-			if (!have_sqlcode)
-			{
-				// Now check the hard-coded mapping table of gds_codes to
-				// sql_codes
-				const SLONG gdscode = status_vector[1];
+			if (!have_sqlcode) {
+				/* Now check the hard-coded mapping table of gds_codes to
+				   sql_codes */
+				USHORT fac = 0, class_ = 0;
 
-				if (gdscode) {
-					for (int i = 0; gds__sql_code[i].gds_code; ++i) {
-						if (gdscode == gds__sql_code[i].gds_code) {
-							if (gds__sql_code[i].sql_code != GENERIC_SQLCODE) {
-								sqlcode = gds__sql_code[i].sql_code;
-								have_sqlcode = true;
-							}
-							break;
-						}
-					}
-				}
-				else {
-					sqlcode = 0;
-					have_sqlcode = true;
+				code = (USHORT) gds__decode(status_vector[1], &fac, &class_);
+
+				if ((code < FB_NELEM(gds__sql_code)) &&
+					(gds__sql_code[code] != GENERIC_SQLCODE))
+				{
+					sqlcode = gds__sql_code[code];
+					have_sqlcode = TRUE;
 				}
 			}
 			s++;
 		}
-		else if (*s == isc_arg_cstring)
-			s += 3;				// skip: isc_arg_cstring <len> <ptr>
+		else if (*s == gds_arg_cstring)
+			s += 3;				/* skip: gds_arg_cstring <len> <ptr> */
 		else
-			s += 2;				// skip: isc_arg_* <item>
-	}
+			s += 2;				/* skip: gds_arg_* <item> */
+	};
 
 	return sqlcode;
 }
 
 
-void API_ROUTINE gds__sqlcode_s(const ISC_STATUS* status_vector, ULONG* sqlcode)
+void API_ROUTINE gds__sqlcode_s(ISC_STATUS * status_vector, ULONG * sqlcode)
 {
 /**************************************
  *
@@ -2373,7 +2182,7 @@ void API_ROUTINE gds__sqlcode_s(const ISC_STATUS* status_vector, ULONG* sqlcode)
  *	Translate GDS error code to SQL error code.  This is a little
  *	imprecise (to say the least) because we don't know the proper
  *	SQL codes.  One must do what what can; stiff upper lip, and all
- *	that.  THIS IS THE COBOL VERSION.  (Some cobols don't have
+ *	that.  THIS IS THE COBOL VERSION.  (Some cobols son't have 
  *	return values for calls...
  *
  **************************************/
@@ -2382,7 +2191,7 @@ void API_ROUTINE gds__sqlcode_s(const ISC_STATUS* status_vector, ULONG* sqlcode)
 }
 
 
-void API_ROUTINE gds__temp_dir(TEXT* buffer)
+void API_ROUTINE gds__temp_dir(TEXT * buffer)
 {
 /**************************************
  *
@@ -2401,10 +2210,10 @@ void API_ROUTINE gds__temp_dir(TEXT* buffer)
 	strcpy(buffer, fbTempDir);	// safe - no BO
 }
 
-
-void* API_ROUTINE gds__temp_file(
-					 BOOLEAN stdio_flag, const TEXT* string,
-					 TEXT* expanded_string, TEXT* dir, BOOLEAN unlink_flag)
+	
+void * API_ROUTINE gds__temp_file(
+					 BOOLEAN stdio_flag, TEXT * string, 
+					 TEXT * expanded_string, TEXT * dir, BOOLEAN unlink_flag)
 {
 /**************************************
  *
@@ -2419,22 +2228,22 @@ void* API_ROUTINE gds__temp_file(
  *      If unlink_flag is TRUE than file is marked as pre-deleted even if 
  *      expanded_string is not NULL.
  * NOTE 
- *      Function returns untyped handle that needs to be casted to either FILE
+ *      Function returns untyped handle that needs to be casted to either IB_FILE
  *      or used as file descriptor. This is ugly and needs to be fixed probably 
  *      via introducing two functions with different return types.
  *
  **************************************/
 	TEXT temp_dir[MAXPATHLEN];
 
-	const TEXT* directory = dir;
+	TEXT *directory = dir;
 	if (!directory) {
 		gds__temp_dir(temp_dir);
 		directory = temp_dir;
 	}
-	if (strlen(directory) >= MAXPATHLEN - strlen(string) - strlen(TEMP_PATTERN) - 2)
+	if (strlen(directory) >= MAXPATHLEN-strlen(string)-strlen(TEMP_PATTERN)-2)
 		return (void *)-1;
 
-	void* result;
+	void *result;
 
 #ifdef WIN_NT
 	/* These are the characters used in temporary filenames.  */
@@ -2448,14 +2257,14 @@ void* API_ROUTINE gds__temp_file(
 	for (int tryCount = 0; tryCount < MAX_TMPFILE_TRIES; tryCount++) {
 		char file_name[MAXPATHLEN];
 		strcpy(file_name, directory);
-		if (file_name[strlen(file_name) - 1] != '\\')
+		if (file_name[strlen(file_name)-1] != '\\')
 			strcat(file_name, "\\");
 		strcat(file_name, string);
 		char suffix[] = TEMP_PATTERN;
 		__int64 temp = randomness;
-		for (size_t i = 0; i < sizeof(suffix) - 1; i++) {
-			suffix[i] = letters[temp % (sizeof(letters) - 1)];
-			temp /= sizeof(letters) - 1;
+		for (int i=0; i<sizeof(suffix)-1; i++) {
+			suffix[i] = letters[temp % (sizeof(letters)-1)];
+			temp /= sizeof(letters)-1;
 		}
 		strcat(file_name, suffix);
 		if (expanded_string)
@@ -2463,39 +2272,39 @@ void* API_ROUTINE gds__temp_file(
 		result = (void*)_sopen(file_name, _O_CREAT | _O_TRUNC | _O_RDWR | 
 			_O_BINARY | _O_SHORT_LIVED | _O_NOINHERIT | _O_EXCL |
 			(expanded_string && !unlink_flag ? 0 : _O_TEMPORARY),
-			_SH_DENYRW, _S_IREAD | _S_IWRITE);
+			_SH_DENYRW, _S_IREAD|_S_IWRITE);
 		if ((int)result != -1 || (errno != EACCES && errno != EEXIST))
 			break;
 		randomness++;
 	}
 	if ((int)result == -1) return result;
 	if (stdio_flag) {
-		if (!(result = fdopen((int) result, "w+b")))
+		if (!(result = ib_fdopen((int) result, "w+b")))
 			return (void *)-1;
 	}
 #else
 	TEXT file_name[MAXPATHLEN];
 	strcpy(file_name, directory);
-	if (file_name[strlen(file_name) - 1] != '/')
+	if (file_name[strlen(file_name)-1] != '/')
 		strcat(file_name, "/");
 	strcat(file_name, string);
 	strcat(file_name, TEMP_PATTERN);
 	
 #ifdef HAVE_MKSTEMP
-	result = (void *)(IPTR)mkstemp(file_name);
+	result = (void *)mkstemp(file_name);
 #else
 	if (mktemp(file_name) == (char *)0)
 		return (void *)-1;
 
 	do {
-		result = (void *)open(file_name, O_RDWR | O_EXCL | O_CREAT);
+		result = (void *)open(file_name, O_RDWR | O_EXCL| O_CREAT);
 	} while (result == (void *)-1 && errno == EINTR);
 #endif
 	if (result == (void *)-1)
 		return result;
 
 	if (stdio_flag)
-		if (!(result = fdopen((int)(IPTR)result, "w+")))
+		if (!(result = ib_fdopen((int) result, "w+")))
 			return (void *)-1;
 
 	if (expanded_string)
@@ -2521,14 +2330,12 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
  *	Unregister a cleanup handler.
  *
  **************************************/
-	CLEAN clean;
+	CLEAN *clean_ptr, clean;
 
-	for (CLEAN* clean_ptr = &cleanup_handlers; clean = *clean_ptr;
-		 clean_ptr = &clean->clean_next) 
-	{
+	for (clean_ptr = &cleanup_handlers; clean = *clean_ptr;
+		 clean_ptr = &clean->clean_next) {
         if (clean->clean_routine == routine
-            && clean->clean_arg == arg) 
-		{
+            && clean->clean_arg == arg) {
 			*clean_ptr = clean->clean_next;
 			FREE_LIB_MEMORY(clean);
 			break;
@@ -2538,9 +2345,9 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
 
 
 #ifndef VMS
-BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
-										   const TEXT* ib_env_var,
-										   TEXT* resolved_module,
+BOOLEAN API_ROUTINE gds__validate_lib_path(TEXT * module,
+										   TEXT * ib_env_var,
+										   TEXT * resolved_module,
 										   SLONG length)
 {
 /**************************************
@@ -2558,44 +2365,40 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
  * 	else, if the module is not in the path return FALSE.
  *
  **************************************/
-	TEXT* ib_ext_lib_path = getenv(ib_env_var);
-	if (!ib_ext_lib_path) {
+	TEXT *p, *q;
+	TEXT *token;
+	TEXT abs_module[MAXPATHLEN];
+	TEXT abs_module_path[MAXPATHLEN];
+	TEXT abs_path[MAXPATHLEN];
+	TEXT path[MAXPATHLEN];
+	TEXT *ib_ext_lib_path = 0;
+
+	if (!(ib_ext_lib_path = getenv(ib_env_var))) {
 		strncpy(resolved_module, module, length);
-		return TRUE;		/* The variable is not defined. Return TRUE */
+		return TRUE;		/* The variable is not defined.  Retrun TRUE */
 	}
 
-	TEXT abs_module[MAXPATHLEN];
 	if (EXPAND_PATH(module, abs_module)) {
 		/* Extract the path from the absolute module name */
-		const TEXT* q = NULL;
-		for (const TEXT* mp = abs_module; *mp; mp++)
-			if ((*mp == '\\') || (*mp == '/'))
-				q = mp;
+		for (p = abs_module, q = NULL; *p; p++)
+			if ((*p == '\\') || (*p == '/'))
+				q = p;
 
-		TEXT abs_module_path[MAXPATHLEN];
 		memset(abs_module_path, 0, MAXPATHLEN);
 		strncpy(abs_module_path, abs_module, q - abs_module);
 
 		/* Check to see if the module path is in the lib path
-		   if it is return TRUE.  If it does not find it, then
+		   if it is return TURE.  If it does not find it, then
 		   the module path is not valid so return FALSE */
-
-		TEXT abs_path[MAXPATHLEN];
-		TEXT path[MAXPATHLEN];
-
-		// CVC: Warning, strtok is changing the environment variable!
-		// If this function is called again, only the first substring will be found.
-		// Multiple engines in the same machine => shudder.
-		const TEXT* token = strtok(ib_ext_lib_path, ";");
+		token = strtok(ib_ext_lib_path, ";");
 		while (token != NULL) {
 			strcpy(path, token);
 			/* make sure that there is no traing slash on the path */
-			TEXT* p = path + strlen(path);
+			p = path + strlen(path);
 			if ((p != path) && ((p[-1] == '/') || (p[-1] == '\\')))
 				p[-1] = 0;
 			if ((EXPAND_PATH(path, abs_path))
-				&& (!COMPARE_PATH(abs_path, abs_module_path))) 
-			{
+				&& (!COMPARE_PATH(abs_path, abs_module_path))) {
 				strncpy(resolved_module, abs_module, length);
 				return TRUE;
 			}
@@ -2608,9 +2411,9 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 
 
 #ifdef VMS
-BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
-										   const TEXT* ib_env_var,
-										   TEXT* resolved_module,
+BOOLEAN API_ROUTINE gds__validate_lib_path(TEXT * module,
+										   TEXT * ib_env_var,
+										   TEXT * resolved_module,
 										   SLONG length)
 {
 /**************************************
@@ -2639,14 +2442,11 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 		MAKE SURE THAT THIS FUNCTION WORKS THE SAME WAY
 		AS THE NON -
 		VMS ONE
-		DOES.
-	if (!
+		DOES.if (!
 				 (ISC_expand_logical_once
-				  (ib_env_var, strlen(ib_env_var) - 2, path, sizeof(path))))
-		return TRUE;
+				  (ib_env_var, strlen(ib_env_var) - 2, path))) return TRUE;
 
-	if (ISC_expand_logical_once(module, strlen(module) - 2, abs_module, sizeof(abs_module)))
-	{
+	if (ISC_expand_logical_once(module, strlen(module) - 2, abs_module)) {
 		/* Extract the path from the module name */
 		for (p = abs_module, q = NULL; *p; p++)
 			if (*p == ']')
@@ -2666,7 +2466,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 #endif
 
 
-SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
+SLONG API_ROUTINE gds__vax_integer(const UCHAR * ptr, SSHORT length)
 {
 /**************************************
  *
@@ -2679,8 +2479,10 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
  *	bytes.
  *
  **************************************/
-	SLONG value = 0;
-	SSHORT shift = 0;
+	SLONG value;
+	SSHORT shift;
+
+	value = shift = 0;
 
 	while (--length >= 0) {
 		value += ((SLONG) * ptr++) << shift;
@@ -2692,8 +2494,8 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
 
 
 void API_ROUTINE gds__vtof(
-						   const SCHAR* string,
-						   SCHAR* fieldL, USHORT length)
+						   SCHAR * string,
+						   SCHAR * field, USHORT length)
 {
 /**************************************
  *
@@ -2709,19 +2511,19 @@ void API_ROUTINE gds__vtof(
  **************************************/
 
 	while (*string) {
-		*fieldL++ = *string++;
+		*field++ = *string++;
 		if (--length <= 0)
 			return;
 	}
 
 	if (length > 0)
-		do {
-			*fieldL++ = ' ';
-		} while (--length);
+		do
+			*field++ = ' ';
+		while (--length);
 }
 
 
-void API_ROUTINE gds__vtov(const SCHAR* string, char* fieldL, SSHORT length)
+void API_ROUTINE gds__vtov(const SCHAR* string, char* field, SSHORT length)
 {
 /**************************************
  *
@@ -2732,22 +2534,22 @@ void API_ROUTINE gds__vtov(const SCHAR* string, char* fieldL, SSHORT length)
  * Functional description
  *	Move a null terminated string to a fixed length
  *	field.  The call is primarily generated  by the
- *	preprocessor.  Unless gds__vtof, the target string
+ *	preprocessor.  Until gds__vtof, the target string
  *	is null terminated.
  *
  **************************************/
 
 	--length;
 
-	while ((*fieldL++ = *string++) != 0)
+	while ((*field++ = *string++) != 0)
 		if (--length <= 0) {
-			*fieldL = 0;
+			*field = 0;
 			return;
 		}
 }
 
 
-void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, const ISC_STATUS* status)
+void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, ISC_STATUS * status)
 {
 /**************************************
  *
@@ -2760,19 +2562,16 @@ void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, const ISC_STATUS* status)
  *      Decide whether status is worth mentioning.
  *
  **************************************/
-	TEXT error_buffer[192];
+	TEXT error_buffer[192], *p;
 
 	sprintf(error_buffer, "SQLCODE: %d\nSQL ERROR:\n", sqlcode);
-	TEXT* p = error_buffer;
-	while (*p)
+	for (p = error_buffer; *p;)
 		p++;
-		
 	isc_sql_interprete(sqlcode, p,
 					   (SSHORT) (sizeof(error_buffer) - (p - error_buffer) -
 								 2));
 	while (*p)
 		p++;
-		
 	*p++ = '\n';
 	*p = 0;
 	gds__put_error(error_buffer);
@@ -2786,7 +2585,7 @@ void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, const ISC_STATUS* status)
 
 void API_ROUTINE isc_sql_interprete(
 									SSHORT sqlcode,
-									TEXT* buffer, SSHORT length)
+									TEXT * buffer, SSHORT length)
 {
 /**************************************
  *
@@ -2804,7 +2603,7 @@ void API_ROUTINE isc_sql_interprete(
  *	      an empty string instead of NULLs.
  *	      
  **************************************/
-	const TEXT* str = "";
+	TEXT *str = "";
 
 	if (sqlcode < 0)
 		gds__msg_format(0, 13, (USHORT) (1000 + sqlcode), length, buffer,
@@ -2816,7 +2615,7 @@ void API_ROUTINE isc_sql_interprete(
 
 
 #ifdef VMS
-int unlink(SCHAR* file)
+int unlink(SCHAR * file)
 {
 /**************************************
  *
@@ -2849,7 +2648,7 @@ int unlink(SCHAR* file)
 #endif
 
 
-static void blr_error(gds_ctl* control, const TEXT* string, ...)
+static void blr_error(CTL control, TEXT * string, ...)
 {
 /**************************************
  *
@@ -2864,16 +2663,15 @@ static void blr_error(gds_ctl* control, const TEXT* string, ...)
 	USHORT offset;
 	va_list args;
 
-	va_start(args, string);
+	VA_START(args, string);
 	blr_format(control, string, args);
-	va_end(args);
 	offset = 0;
-	blr_print_line(control, (SSHORT) offset);
-	Firebird::status_exception::raise();
+	PRINT_LINE;
+	Firebird::status_exception::raise(-1);
 }
 
 
-static void blr_format(gds_ctl* control, const char* string, ...)
+static void blr_format(CTL control, const char * string, ...)
 {
 /**************************************
  *
@@ -2887,15 +2685,14 @@ static void blr_format(gds_ctl* control, const char* string, ...)
  **************************************/
 	va_list ptr;
 
-	va_start(ptr, string);
-	Firebird::string temp;
-	temp.vprintf(string, ptr);
-	control->ctl_string += temp;
-	va_end(ptr);
+	VA_START(ptr, string);
+	vsprintf(control->ctl_ptr, string, ptr);
+	while (*control->ctl_ptr)
+		control->ctl_ptr++;
 }
 
 
-static void blr_indent(gds_ctl* control, SSHORT level)
+static void blr_indent(CTL control, SSHORT level)
 {
 /**************************************
  *
@@ -2915,7 +2712,7 @@ static void blr_indent(gds_ctl* control, SSHORT level)
 
 
 
-static void blr_print_blr(gds_ctl* control, UCHAR blr_operator)
+static void blr_print_blr(CTL control, UCHAR operator_)
 {
 /**************************************
  *
@@ -2927,20 +2724,18 @@ static void blr_print_blr(gds_ctl* control, UCHAR blr_operator)
  *	Print a blr item.
  *
  **************************************/
-	const char* p;
+	SCHAR *p;
 
-	if (blr_operator > FB_NELEM(blr_table) ||
-		!(p = blr_table[blr_operator].blr_string))
-	{
+	if (operator_ > FB_NELEM(blr_table) ||
+		!(p = (SCHAR *) /* const_cast */ blr_table[operator_].blr_string))
 		blr_error(control, "*** blr operator %d is undefined ***",
-				  (int) blr_operator);
-	}
+				  (int) operator_);
 
 	blr_format(control, "blr_%s, ", p);
 }
 
 
-static SCHAR blr_print_byte(gds_ctl* control)
+static SCHAR blr_print_byte(CTL control)
 {
 /**************************************
  *
@@ -2952,7 +2747,9 @@ static SCHAR blr_print_byte(gds_ctl* control)
  *	Print a byte as a numeric value and return same.
  *
  **************************************/
-	const UCHAR v = BLR_BYTE;
+	UCHAR v;
+
+	v = BLR_BYTE;
 	blr_format(control, (control->ctl_language) ? "chr(%d), " : "%d, ",
 			   (int) v);
 
@@ -2960,7 +2757,7 @@ static SCHAR blr_print_byte(gds_ctl* control)
 }
 
 
-static SCHAR blr_print_char(gds_ctl* control)
+static SCHAR blr_print_char(CTL control)
 {
 /**************************************
  *
@@ -2974,9 +2771,10 @@ static SCHAR blr_print_char(gds_ctl* control)
  **************************************/
 	SCHAR c;
 	UCHAR v;
+	SSHORT printable;
 
 	v = c = BLR_BYTE;
-	const bool printable = (c >= 'a' && c <= 'z') ||
+	printable = (c >= 'a' && c <= 'z') ||
 		(c >= 'A' && c <= 'Z') ||
 	    (c >= '0' && c <= '9') ||
 	     c == '$' ||
@@ -2993,7 +2791,7 @@ static SCHAR blr_print_char(gds_ctl* control)
 }
 
 
-static void blr_print_cond(gds_ctl* control)
+static bool blr_print_cond(CTL control)
 {
 /**************************************
  *
@@ -3007,41 +2805,55 @@ static void blr_print_cond(gds_ctl* control)
  **************************************/
 	SSHORT n;
 
-	const USHORT ctype = BLR_BYTE;
+	USHORT ctype = BLR_BYTE;
+	bool has_verb = false;
 
 	switch (ctype) {
 	case blr_gds_code:
 		blr_format(control, "blr_gds_code, ");
-		n = blr_print_byte(control);
+		n = PRINT_BYTE;
 		while (--n >= 0)
-			blr_print_char(control);
+			PRINT_CHAR;
 		break;
 
 	case blr_exception:
 		blr_format(control, "blr_exception, ");
-		n = blr_print_byte(control);
+		n = PRINT_BYTE;
 		while (--n >= 0)
-			blr_print_char(control);
+			PRINT_CHAR;
 		break;
 
 	case blr_sql_code:
 		blr_format(control, "blr_sql_code, ");
-		blr_print_word(control);
+		PRINT_WORD;
 		break;
 
 	case blr_default_code:
 		blr_format(control, "blr_default_code, ");
 		break;
 
+	case blr_raise:
+		blr_format(control, "blr_raise, ");
+		break;
+
+	case blr_exception_msg:
+		blr_format(control, "blr_exception_msg, ");
+		n = PRINT_BYTE;
+		while (--n >= 0)
+			PRINT_CHAR;
+		has_verb = true;
+		break;
+
 	default:
 		blr_error(control, "*** invalid condition type ***");
 		break;
 	}
-	return;
+
+	return has_verb;
 }
 
 
-static int blr_print_dtype(gds_ctl* control)
+static int blr_print_dtype(CTL control)
 {
 /**************************************
  *
@@ -3054,13 +2866,15 @@ static int blr_print_dtype(gds_ctl* control)
  *	data described.
  *
  **************************************/
+	USHORT dtype;
+	SCHAR *string;
 	SSHORT length;
+	UCHAR v1, v2;
 
-	const USHORT dtype = BLR_BYTE;
+	dtype = BLR_BYTE;
 
 /* Special case blob (261) to keep down the size of the
    jump table */
-	const TEXT* string;
 
 	switch (dtype) {
 	case blr_short:
@@ -3104,15 +2918,14 @@ static int blr_print_dtype(gds_ctl* control)
 		break;
 
 	case blr_double:
-		{
-			string = "double";
+		string = "double";
 
-			/* for double literal, return the length of the numeric string */
-			const UCHAR v1 = *(control->ctl_blr);
-			const UCHAR v2 = *(control->ctl_blr + 1);
-			length = ((v2 << 8) | v1) + 2;
-			break;
-		}
+		/* for double literal, return the length of the numeric string */
+
+		v1 = *(control->ctl_blr);
+		v2 = *(control->ctl_blr + 1);
+		length = ((v2 << 8) | v1) + 2;
+		break;
 
 	case blr_d_float:
 		string = "d_float";
@@ -3152,38 +2965,38 @@ static int blr_print_dtype(gds_ctl* control)
 
 	switch (dtype) {
 	case blr_text:
-		length = blr_print_word(control);
+		length = PRINT_WORD;
 		break;
 
 	case blr_varying:
-		length = blr_print_word(control) + 2;
+		length = PRINT_WORD + 2;
 		break;
 
 	case blr_short:
 	case blr_long:
 	case blr_quad:
 	case blr_int64:
-		blr_print_byte(control);
+		PRINT_BYTE;
 		break;
 
 	case blr_text2:
-		blr_print_word(control);
-		length = blr_print_word(control);
+		PRINT_WORD;
+		length = PRINT_WORD;
 		break;
 
 	case blr_varying2:
-		blr_print_word(control);
-		length = blr_print_word(control) + 2;
+		PRINT_WORD;
+		length = PRINT_WORD + 2;
 		break;
 
 	case blr_cstring2:
-		blr_print_word(control);
-		length = blr_print_word(control);
+		PRINT_WORD;
+		length = PRINT_WORD;
 		break;
 
 	default:
 		if (dtype == blr_cstring)
-			length = blr_print_word(control);
+			length = PRINT_WORD;
 		break;
 	}
 
@@ -3191,7 +3004,7 @@ static int blr_print_dtype(gds_ctl* control)
 }
 
 
-static void blr_print_join(gds_ctl* control)
+static void blr_print_join(CTL control)
 {
 /**************************************
  *
@@ -3203,9 +3016,10 @@ static void blr_print_join(gds_ctl* control)
  *	Print a join type.
  *
  **************************************/
-	const TEXT *string;
+	USHORT join_type;
+	SCHAR *string;
 
-	const USHORT join_type = BLR_BYTE;
+	join_type = BLR_BYTE;
 
 	switch (join_type) {
 	case blr_inner:
@@ -3233,7 +3047,7 @@ static void blr_print_join(gds_ctl* control)
 }
 
 
-static SLONG blr_print_line(gds_ctl* control, SSHORT offset)
+static SLONG blr_print_line(CTL control, SSHORT offset)
 {
 /**************************************
  *
@@ -3246,15 +3060,18 @@ static SLONG blr_print_line(gds_ctl* control, SSHORT offset)
  *
  **************************************/
 
-	(*control->ctl_routine)(control->ctl_user_arg, offset,
-							control->ctl_string.c_str());
-	control->ctl_string.erase();
+	*control->ctl_ptr = 0;
+
+#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
+
+	((void (*)(...)) (*control->ctl_routine)) (control->ctl_user_arg, offset, control->ctl_buffer);
+	control->ctl_ptr = control->ctl_buffer;
 
 	return control->ctl_blr - control->ctl_blr_start;
 }
 
 
-static void blr_print_verb(gds_ctl* control, SSHORT level)
+static void blr_print_verb(CTL control, SSHORT level)
 {
 /**************************************
  *
@@ -3266,37 +3083,39 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
  *	Primary recursive routine to print BLR.
  *
  **************************************/
-	SLONG offset = control->ctl_blr - control->ctl_blr_start;
-	blr_indent(control, level);
-	UCHAR blr_operator = BLR_BYTE;
+	SSHORT n, n2;
+	SLONG offset;
 
-	if ((SCHAR) blr_operator == (SCHAR) blr_end) {
+	offset = control->ctl_blr - control->ctl_blr_start;
+	blr_indent(control, level);
+	UCHAR operator_ = BLR_BYTE;
+
+	if ((SCHAR) operator_ == (SCHAR) blr_end) {
 		blr_format(control, "blr_end, ");
-		blr_print_line(control, (SSHORT) offset);
+		PRINT_LINE;
 		return;
 	}
 
-	blr_print_blr(control, blr_operator);
+	blr_print_blr(control, operator_);
 	level++;
-	const UCHAR* ops = blr_table[blr_operator].blr_operators;
-	SSHORT n;
+	const UCHAR *ops = blr_table[operator_].blr_operators;
 
 	while (*ops)
 		switch (*ops++) {
 		case op_verb:
-			blr_print_verb(control, level);
+			PRINT_VERB;
 			break;
 
 		case op_line:
-			offset = blr_print_line(control, (SSHORT) offset);
+			offset = PRINT_LINE;
 			break;
 
 		case op_byte:
-			n = blr_print_byte(control);
+			n = PRINT_BYTE;
 			break;
 
 		case op_word:
-			n = blr_print_word(control);
+			n = PRINT_WORD;
 			break;
 
 		case op_pad:
@@ -3304,43 +3123,50 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_dtype:
-			n = blr_print_dtype(control);
+			n = PRINT_DTYPE;
 			break;
 
 		case op_literal:
 			while (--n >= 0)
-				blr_print_char(control);
+				PRINT_CHAR;
 			break;
 
 		case op_join:
-			blr_print_join(control);
+			PRINT_JOIN;
 			break;
 
 		case op_message:
 			while (--n >= 0) {
 				blr_indent(control, level);
-				blr_print_dtype(control);
-				offset = blr_print_line(control, (SSHORT) offset);
+				PRINT_DTYPE;
+				offset = PRINT_LINE;
 			}
 			break;
 
 		case op_parameters:
 			level++;
 			while (--n >= 0)
-				blr_print_verb(control, level);
+				PRINT_VERB;
 			level--;
 			break;
 
 		case op_error_handler:
 			while (--n >= 0) {
 				blr_indent(control, level);
-				blr_print_cond(control);
-				offset = blr_print_line(control, (SSHORT) offset);
+				PRINT_COND;
+				offset = PRINT_LINE;
 			}
 			break;
 
 		case op_set_error:
-			blr_print_cond(control);
+			blr_indent(control, level);
+			if (PRINT_COND) {
+				level++;
+				offset = PRINT_LINE;
+				PRINT_VERB;
+				level--;
+			}
+			offset = PRINT_LINE;
 			break;
 
 		case op_indent:
@@ -3349,90 +3175,77 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 		case op_begin:
 			while ((SCHAR) * (control->ctl_blr) != (SCHAR) blr_end)
-				blr_print_verb(control, level);
+				PRINT_VERB;
 			break;
 
 		case op_map:
 			while (--n >= 0) {
 				blr_indent(control, level);
-				blr_print_word(control);
-				offset = blr_print_line(control, (SSHORT) offset);
-				blr_print_verb(control, level);
+				PRINT_WORD;
+				offset = PRINT_LINE;
+				PRINT_VERB;
 			}
 			break;
 
 		case op_args:
 			while (--n >= 0)
-				blr_print_verb(control, level);
+				PRINT_VERB;
 			break;
 
 		case op_literals:
 			while (--n >= 0) {
 				blr_indent(control, level);
-				SSHORT n2 = blr_print_byte(control);
+				n2 = PRINT_BYTE;
 				while (--n2 >= 0)
-					blr_print_char(control);
-				offset = blr_print_line(control, (SSHORT) offset);
+					PRINT_CHAR;
+				offset = PRINT_LINE;
 			}
 			break;
 
 		case op_union:
 			while (--n >= 0) {
-				blr_print_verb(control, level);
-				blr_print_verb(control, level);
+				PRINT_VERB;
+				PRINT_VERB;
 			}
 			break;
 
 		case op_relation:
-			blr_operator = BLR_BYTE;
-			blr_print_blr(control, blr_operator);
-			if (blr_operator != blr_relation && blr_operator != blr_rid)
+			operator_ = BLR_BYTE;
+			blr_print_blr(control, operator_);
+			if (operator_ != blr_relation && operator_ != blr_rid)
 				blr_error(control,
 						  "*** blr_relation or blr_rid must be object of blr_lock_relation, %d found ***",
-						  (int) blr_operator);
+						  (int) operator_);
 
-			if (blr_operator == blr_relation) {
-				n = blr_print_byte(control);
+			if (operator_ == blr_relation) {
+				n = PRINT_BYTE;
 				while (--n >= 0)
-					blr_print_char(control);
+					PRINT_CHAR;
 			}
 			else
-				blr_print_word(control);
+				PRINT_WORD;
 			break;
-		
-		case op_exec_into: {
-			blr_print_verb(control, level);
-			if (! blr_print_byte(control)) {
-				blr_print_verb(control, level);
-			}
-			while (n-- > 0) {
-				blr_print_verb(control, level);
-			}
-			break;
-		}
 
-		case op_cursor_stmt: {
-			blr_operator = blr_print_byte(control);
-			blr_print_word(control);
-			if (blr_operator == blr_cursor_fetch) {
-#ifdef SCROLLABLE_CURSORS
-				if (BLR_PEEK == blr_seek) {
-					blr_print_verb(control, level);
-				}
-#endif
+		case op_exec_into:
+			n = BLR_WORD /*e_exec_into_count*/ ;
+			PRINT_VERB;
+			if (! BLR_BYTE) {// ! singleton
+				PRINT_VERB;
 			}
-			offset = blr_print_line(control, (SSHORT) offset);
+			/*e_exec_into_list*/
+			while (n-- > 0) {
+				PRINT_VERB;
+			}
 			break;
-		}
 
 		default:
-			fb_assert(false);
+			assert(FALSE);
 			break;
 		}
 }
 
 
-static int blr_print_word(gds_ctl* control)
+static int blr_print_word(CTL control)
 {
 /**************************************
  *
@@ -3444,11 +3257,34 @@ static int blr_print_word(gds_ctl* control)
  *	Print a VAX word as a numeric value an return same.
  *
  **************************************/
-	const UCHAR v1 = BLR_BYTE;
-	const UCHAR v2 = BLR_BYTE;
+	UCHAR v1, v2;
+
+	v1 = BLR_BYTE;
+	v2 = BLR_BYTE;
 	blr_format(control,
 			   (control->ctl_language) ? "chr(%d),chr(%d), " : "%d,%d, ",
 			   (int) v1, (int) v2);
+
+	return (v2 << 8) | v1;
+}
+
+
+static int blr_get_word(CTL control)
+{
+/**************************************
+ *
+ *	b l r _ g e t _ w o r d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return a VAX word as a numeric value.
+ *
+ **************************************/
+	UCHAR v1, v2;
+
+	v1 = BLR_BYTE;
+	v2 = BLR_BYTE;
 
 	return (v2 << 8) | v1;
 }
@@ -3466,6 +3302,10 @@ void gds__cleanup(void)
  *	Exit handler for image exit.
  *
  **************************************/
+	CLEAN clean;
+	FPTR_VOID_PTR routine;
+	void *arg;
+
 #ifdef UNIX
 	if (gds_pid != getpid())
 		return;
@@ -3473,12 +3313,10 @@ void gds__cleanup(void)
 
 	gds__msg_close(NULL);
 
-	CLEAN clean;
-
 	while (clean = cleanup_handlers) {
 		cleanup_handlers = clean->clean_next;
-		FPTR_VOID_PTR routine = clean->clean_routine;
-		void* arg = clean->clean_arg;
+		routine = clean->clean_routine;
+		arg = clean->clean_arg;
 
 		/* We must free the handler before calling it because there
 		   may be a handler (and is) that frees all memory that has
@@ -3486,13 +3324,15 @@ void gds__cleanup(void)
 
 		FREE_LIB_MEMORY(clean);
 
-		(*routine)(arg);
+#pragma FB_COMPILER_MESSAGE("Fix! Ugly function pointer cast!")
+
+		((void (*)(void *)) (*routine)) (arg);
 	}
 
 #ifdef V4_THREADING
 /* V4_DESTROY; */
 #endif
-	initialized = false;
+	initialized = 0;
 }
 
 
@@ -3508,6 +3348,10 @@ static void init(void)
  *	Do anything necessary to initialize module/system.
  *
  **************************************/
+#if defined(VMS)
+	ISC_STATUS status;
+#endif
+
 	if (initialized)
 		return;
 
@@ -3522,7 +3366,7 @@ static void init(void)
 	exit_description.exit_handler = cleanup;
 	exit_description.args = 1;
 	exit_description.arg[0] = &exit_status;
-	ISC_STATUS status = sys$dclexh(&exit_description);
+	status = sys$dclexh(&exit_description);
 #endif
 
 #ifdef UNIX
@@ -3533,21 +3377,20 @@ static void init(void)
 		/* Increase max open files to hard limit for Unix
 		   platforms which are known to have low soft limits. */
 
-		struct rlimit old;
+		struct rlimit old, new_;
 
 		if (!getrlimit(RLIMIT_NOFILE, &old) && old.rlim_cur < old.rlim_max) {
-			struct rlimit new_max;
-			new_max.rlim_cur = new_max.rlim_max = old.rlim_max;
-			if (!setrlimit(RLIMIT_NOFILE, &new_max))
+			new_.rlim_cur = new_.rlim_max = old.rlim_max;
+			if (!setrlimit(RLIMIT_NOFILE, &new_))
 			{
 #if _FILE_OFFSET_BITS == 64 && defined SOLARIS
 				gds__log("64 bit i/o support is on.");
 				gds__log("Open file limit increased from %lld to %lld",
-						 old.rlim_cur, new_max.rlim_cur);
+						 old.rlim_cur, new_.rlim_cur);
 		       
 #else
 				gds__log("Open file limit increased from %d to %d",
-						 old.rlim_cur, new_max.rlim_cur);
+						 old.rlim_cur, new_.rlim_cur);
 #endif
 			}
 		}
@@ -3558,9 +3401,9 @@ static void init(void)
 
 	atexit(gds__cleanup);
 
-	initialized = true;
+	initialized = 1;
 
-	gdsPrefixInit();
+    gdsPrefixInit();
 
 #ifndef REQUESTER
 	ISC_signal_init();
@@ -3569,7 +3412,155 @@ static void init(void)
 	/* V4_GLOBAL_MUTEX_UNLOCK; */
 }
 
-static void sanitize(TEXT* locale)
+
+static int yday(struct tm *times)
+{
+/**************************************
+ *
+ *	y d a y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Convert a calendar date to the day-of-year.
+ *
+ *	The unix time structure considers
+ *	january 1 to be Year day 0, although it
+ *	is day 1 of the month.   (Note that QLI,
+ *	when printing Year days takes the other
+ *	view.)   
+ *
+ **************************************/
+	SSHORT day, month, year;
+	const BYTE *days;
+	static const BYTE month_days[] =
+		{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+	day = times->tm_mday;
+	month = times->tm_mon;
+	year = times->tm_year + 1900;
+
+	--day;
+
+	for (days = month_days; days < month_days + month; days++)
+		day += *days;
+
+	if (month < 2)
+		return day;
+
+/* Add a day as we're past the leap-day */
+	if (!(year % 4))
+		day++;
+
+/* Ooops - year's divisible by 100 aren't leap years */
+	if (!(year % 100))
+		day--;
+
+/* Unless they are also divisible by 400! */
+	if (!(year % 400))
+		day++;
+
+	return day;
+}
+
+
+static void ndate(SLONG nday, struct tm *times)
+{
+/**************************************
+ *
+ *	n d a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Convert a numeric day to [day, month, year].
+ *
+ * Calenders are divided into 4 year cycles.
+ * 3 Non-Leap years, and 1 leap year.
+ * Each cycle takes 365*4 + 1 == 1461 days.
+ * There is a further cycle of 100 4 year cycles.
+ * Every 100 years, the normally expected leap year
+ * is not present.  Every 400 years it is.
+ * This cycle takes 100 * 1461 - 3 == 146097 days
+ * The origin of the constant 2400001 is unknown.
+ * The origin of the constant 1721119 is unknown.
+ * The difference between 2400001 and 1721119 is the
+ * number of days From 0/0/0000 to our base date of
+ * 11/xx/1858. (678882)
+ * The origin of the constant 153 is unknown.
+ *
+ * This whole routine has problems with ndates
+ * less than -678882 (Approx 2/1/0000).
+ *
+ **************************************/
+	SLONG year, month, day;
+	SLONG century;
+
+	nday -= 1721119 - 2400001;
+	century = (4 * nday - 1) / 146097;
+	nday = 4 * nday - 1 - 146097 * century;
+	day = nday / 4;
+
+	nday = (4 * day + 3) / 1461;
+	day = 4 * day + 3 - 1461 * nday;
+	day = (day + 4) / 4;
+
+	month = (5 * day - 3) / 153;
+	day = 5 * day - 3 - 153 * month;
+	day = (day + 5) / 5;
+
+	year = 100 * century + nday;
+
+	if (month < 10)
+		month += 3;
+	else {
+		month -= 9;
+		year += 1;
+	}
+
+	times->tm_mday = (int) day;
+	times->tm_mon = (int) month - 1;
+	times->tm_year = (int) year - 1900;
+}
+
+
+static GDS_DATE nday(struct tm *times)
+{
+/**************************************
+ *
+ *	n d a y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Convert a calendar date to a numeric day
+ *	(the number of days since the base date).
+ *
+ **************************************/
+	SSHORT day, month, year;
+	SLONG c, ya;
+
+	day = times->tm_mday;
+	month = times->tm_mon + 1;
+	year = times->tm_year + 1900;
+
+	if (month > 2)
+		month -= 3;
+	else {
+		month += 9;
+		year -= 1;
+	}
+
+	c = year / 100;
+	ya = year - 100 * c;
+
+	return (GDS_DATE) (((SINT64) 146097 * c) / 4 +
+					   (1461 * ya) / 4 +
+					   (153 * month + 2) / 5 + day + 1721119 - 2400001);
+}
+
+
+static void sanitize(TEXT * locale)
 {
 /**************************************
  *
@@ -3601,8 +3592,7 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
  *
  * Functional description
  *	Safely appends appendString to resultString using paths rules.
- *  resultString must be at most MAXPATHLEN size.
- *	Thread/signal safe code.
+ *  resultString must be at least MAXPATHLEN size.
  *
  **************************************/
 	int len = strlen(resultString);
@@ -3613,56 +3603,53 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
 	int alen = strlen(appendString);
 	if (len + alen > MAXPATHLEN - 1)
 		alen = MAXPATHLEN - 1 - len;
-	fb_assert(alen >= 0);
+	assert(alen >= 0);
 	memcpy(&resultString[len], appendString, alen);
 	resultString[len + alen] = 0;
-}
-
-
-void gds__default_printer(void* arg, SSHORT offset, const TEXT* line)
-{
-	printf("%4d %s\n", offset, line);
-}
-
-
-void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
-{
-	// Assume that line is not too long
-	char buffer[PRETTY_BUFFER_SIZE + 10];
-	char* p = buffer;
-	gds__ulstr(p, offset, 4, ' ');
-	p += strlen(p);
-	*p++ = ' ';
-	strcpy(p, line); p += strlen(p);
-	*p++ = '\n';
-	*p = 0;
-	gds__trace_raw(buffer);
 }
 
 #undef gds__alloc
 
 void* API_ROUTINE gds__alloc(SLONG size_request)
 {
-	return getDefaultMemoryPool()->allocate_nothrow(size_request, 0
+	return getDefaultMemoryPool()->allocate(size_request, 0
 #ifdef DEBUG_GDS_ALLOC
 		, __FILE__, __LINE__
 #endif
 	);
 }
 
+} // extern "C"
 
 class InitPrefix
 {
+private:
+	static size_t copyTo(const Firebird::string& from, char* to, size_t toSize)
+	{
+		fb_assert(to);
+		fb_assert(toSize);
+		if (--toSize > from.length())
+		{
+			toSize = from.length();
+		}
+		memcpy(to, from.c_str(), toSize);
+		to[toSize] = 0;
+		return toSize;
+	}
 public:
 	static void init()
 	{
 		// Get ib_prefix value from config file
-		Firebird::PathName prefix(Config::getRootDirectory());
-		if (prefix.isEmpty())
+#ifdef BOOT_BUILD
+		Firebird::string prefix(getenv(FB_ENV) ? getenv(FB_ENV) : "");
+#else
+		Firebird::string prefix(Config::getRootDirectory());
+#endif
+		if (prefix.length() == 0)
 		{
 			prefix = FB_PREFIX;
 		}
-		prefix.copyTo(ib_prefix_val, sizeof(ib_prefix_val));
+		copyTo(prefix, ib_prefix_val, sizeof(ib_prefix_val));
 		ib_prefix = ib_prefix_val;
 
 		// Find appropiate temp directory
@@ -3688,16 +3675,14 @@ public:
 
 #ifdef EMBEDDED
 		// Generate filename based on the current PID
-		Firebird::PathName buf;
-		buf.printf(FB_PID_FILE, getpid());
-		buf.copyTo(fbEmbeddedRoot, sizeof(fbEmbeddedRoot));
+		snprintf(fbEmbeddedRoot, sizeof(fbEmbeddedRoot), FB_PID_FILE, getpid());
 #endif
 
 		// Find appropriate Firebird lock file prefix
 		// Override conditional defines with the enviroment
 		// variable FIREBIRD_LOCK if it is set.
-		Firebird::PathName lockPrefix(getenv(FB_LOCK_ENV) ? getenv(FB_LOCK_ENV) : "");
-		if (lockPrefix.isEmpty()) 
+		Firebird::string lockPrefix(getenv(FB_LOCK_ENV) ? getenv(FB_LOCK_ENV) : "");
+		if (lockPrefix.length() == 0) 
 		{
 #ifdef EMBEDDED
 			lockPrefix = tempDir;
@@ -3705,16 +3690,16 @@ public:
 			lockPrefix = prefix;
 #endif
 		}
-		lockPrefix.copyTo(ib_prefix_lock_val, sizeof(ib_prefix_lock_val));
+		copyTo(lockPrefix, ib_prefix_lock_val, sizeof(ib_prefix_lock_val));
 		ib_prefix_lock = ib_prefix_lock_val;
 
 		// Find appropriate Firebird message file prefix.
-		Firebird::PathName msgPrefix(getenv(FB_MSG_ENV) ? getenv(FB_MSG_ENV) : "");
-		if (msgPrefix.isEmpty()) 
+		Firebird::string msgPrefix(getenv(FB_MSG_ENV) ? getenv(FB_MSG_ENV) : "");
+		if (msgPrefix.length() == 0) 
 		{
 			msgPrefix = prefix;
 		}
-		msgPrefix.copyTo(ib_prefix_msg_val, sizeof(ib_prefix_msg_val));
+		copyTo(msgPrefix, ib_prefix_msg_val, sizeof(ib_prefix_msg_val));
 		ib_prefix_msg = ib_prefix_msg_val;
 	}
 	static void cleanup()

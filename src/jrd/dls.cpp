@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Access Method
- *      MODULE:         dls.cpp
+ *      MODULE:         dls.c
  *      DESCRIPTION:    Temporary file management
  *			The file contains set of functions that
  *			are used to manage directory list.
@@ -35,11 +35,9 @@
 #include "../jrd/file_params.h"
 #include "../common/config/dir_list.h"
 
-using namespace Jrd;
+static MDLS DLS_cfg_tmpdir = { NULL, FALSE };	/* directory list object */
 
-static mutexed_dir_list DLS_cfg_tmpdir;	/* directory list object */
-
-/*  Note that the only kind of writing permitted on the function_dir_list is
+/*  Note that the only kind of writing permitted on the fdls list is
  *  appending a new entry to the existing (possibly empty) list.
  *  Therefore, we only need a write-lock to protect against
  *  simultaneous updates: readers don't need a lock because they'll
@@ -53,7 +51,7 @@ static mutexed_dir_list DLS_cfg_tmpdir;	/* directory list object */
  */
 
 
-bool DLS_get_temp_space(ULONG size, sort_work_file* sfb)
+BOOLEAN DLS_get_temp_space(ULONG size, SFB sfb)
 {
 /**************************************
  *
@@ -66,39 +64,38 @@ bool DLS_get_temp_space(ULONG size, sort_work_file* sfb)
  *
  **************************************/
 
-	bool result = false;
+	MDLS *ptr;
+	BOOLEAN result = FALSE;
 
-	fb_assert(size > (ULONG) 0);
-	fb_assert(sfb);
+	assert(size > (ULONG) 0);
+	assert(sfb);
 
-	mutexed_dir_list* ptr = DLS_get_access();
+	ptr = DLS_get_access();
 
 #ifdef V4_THREADING
 	if (!ptr->mdls_mutex_init) {
 		V4_MUTEX_INIT(ptr->mdls_mutex);
-		ptr->mdls_mutex_init = true;
+		ptr->mdls_mutex_init = TRUE;
 	}
 
 	V4_MUTEX_LOCK(ptr->mdls_mutex);
 #endif
 	if (!sfb->sfb_dls) {
-		/* allocate temp. space starting search from the begining of the dir_list */
+		/* allocate temp. space starting search from the begining of the dls list */
 		for (sfb->sfb_dls = ptr->mdls_dls;
 			 sfb->sfb_dls;
 			 sfb->sfb_dls = sfb->sfb_dls->dls_next)
-		{
-			if (size <= (sfb->sfb_dls->dls_size - sfb->sfb_dls->dls_inuse)) {
+  if (size <= (sfb->sfb_dls->dls_size - sfb->sfb_dls->dls_inuse)) {
 				sfb->sfb_dls->dls_inuse += size;
-				result = true;
+				result = TRUE;
 				break;
 			}
-		}
 	}
 	else {
-		/* allocate temp. space from the current dir_list entry */
+		/* allocate temp. space from the current dls entry */
 		if (size <= (sfb->sfb_dls->dls_size - sfb->sfb_dls->dls_inuse)) {
 			sfb->sfb_dls->dls_inuse += size;
-			result = true;
+			result = TRUE;
 		}
 	}
 #ifdef V4_THREADING
@@ -109,7 +106,7 @@ bool DLS_get_temp_space(ULONG size, sort_work_file* sfb)
 }
 
 
-void DLS_put_temp_space(sort_work_file* sfb)
+void DLS_put_temp_space(SFB sfb)
 {
 /**************************************
  *
@@ -121,13 +118,16 @@ void DLS_put_temp_space(sort_work_file* sfb)
  *	Release disk space occupied by sort file
  *
  **************************************/
+
+	MDLS *ptr;
+
 	if (sfb && sfb->sfb_dls) {
-		mutexed_dir_list* ptr = DLS_get_access();
+		ptr = DLS_get_access();
 #ifdef V4_THREADING
-		fb_assert(ptr->mdls_mutex_init);
+		assert(ptr->mdls_mutex_init);
 		V4_MUTEX_LOCK(ptr->mdls_mutex);
 #endif
-		fb_assert(sfb->sfb_dls->dls_inuse >= sfb->sfb_file_size);
+		assert(sfb->sfb_dls->dls_inuse >= sfb->sfb_file_size);
 		if (sfb->sfb_dls->dls_inuse > sfb->sfb_file_size)
 			sfb->sfb_dls->dls_inuse -= sfb->sfb_file_size;
 		else
@@ -139,7 +139,7 @@ void DLS_put_temp_space(sort_work_file* sfb)
 }
 
 
-bool DLS_add_dir(ULONG size, const TEXT* dir_name)
+BOOLEAN API_ROUTINE DLS_add_dir(ULONG size, const TEXT * dir_name)
 {
 /**************************************
  *
@@ -152,28 +152,31 @@ bool DLS_add_dir(ULONG size, const TEXT* dir_name)
  *
  **************************************/
 
-/* allocate dir_list structure */
+	MDLS *mdls;
+	DLS new_dls, dls;
 
-	dir_list* new_dls = (dir_list*) gds__alloc((SLONG) (sizeof(dir_list) +
+/* allocate dls structure */
+
+	new_dls = (DLS) gds__alloc((SLONG) (sizeof(struct dls) +
 										sizeof(TEXT) * strlen(dir_name)));
 	if (!new_dls)
-		return false;
+		return FALSE;
 
 	strcpy(new_dls->dls_directory, dir_name);
 	new_dls->dls_size = size;
 	new_dls->dls_inuse = 0;
-	new_dls->dls_next = NULL;
+	new_dls->dls_next = (DLS) NULL;
 
 /* get access to directory list object */
 
-	mutexed_dir_list* mdls = DLS_get_access();
+	mdls = DLS_get_access();
 
 #ifdef V4_THREADING
 /* lock mutex, initialize it in case of the first access */
 
 	if (!mdls->mdls_mutex_init) {
 		V4_MUTEX_INIT(mdls->mdls_mutex);
-		mdls->mdls_mutex_init = true;
+		mdls->mdls_mutex_init = TRUE;
 	}
 
 	V4_MUTEX_LOCK(mdls->mdls_mutex);
@@ -185,10 +188,10 @@ bool DLS_add_dir(ULONG size, const TEXT* dir_name)
 		mdls->mdls_dls = new_dls;
 	}
 	else {
-		dir_list* dls_iterator = mdls->mdls_dls;
-		while (dls_iterator->dls_next)
-			dls_iterator = dls_iterator->dls_next;
-		dls_iterator->dls_next = new_dls;
+		dls = mdls->mdls_dls;
+		while (dls->dls_next)
+			dls = dls->dls_next;
+		dls->dls_next = new_dls;
 	}
 
 #ifdef V4_THREADING
@@ -197,11 +200,11 @@ bool DLS_add_dir(ULONG size, const TEXT* dir_name)
 	V4_MUTEX_UNLOCK(mdls->mdls_mutex);
 #endif
 
-	return true;
+	return TRUE;
 }
 
 
-mutexed_dir_list* DLS_get_access(void)
+MDLS *DLS_get_access(void)
 {
 /**************************************
  *
@@ -217,12 +220,12 @@ mutexed_dir_list* DLS_get_access(void)
 	static bool is_initialized = false;
 	if (!is_initialized) {
 		is_initialized = true;
-		Firebird::TempDirectoryList dir_list;
+		TempDirectoryList dir_list;
 		for (int i = 0; i < dir_list.Count(); i++) {
-			DLS_add_dir(dir_list[i].second, dir_list[i].first.c_str());
+			TempDirectoryList::Item item = dir_list[i];
+			DLS_add_dir(item.size, item.dir.c_str());
 		}
 	}
 
 	return (&DLS_cfg_tmpdir);
 }
-

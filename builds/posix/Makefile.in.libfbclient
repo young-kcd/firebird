@@ -27,11 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.29 2005-05-27 22:16:08 asfernandes Exp $
+#  $Id: Makefile.in.libfbclient,v 1.14.2.5 2004-10-07 21:34:24 skidder Exp $
 #
 ROOT=..
-ObjModuleType=superclient
-CFLAGS+=-DSUPERCLIENT @PTHREAD_CFLAGS@
+ObjModuleName=libfbclient
+CFLAGS:=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -42,7 +42,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 # These are deliberatly unexported otherwise gbak and others will try and check
-# the userid against the security2.fdb database, which doesn't exist at this stage
+# the userid against the security.fdb database, which doesn't exist at this stage 
 # in the build. MOD 11-July-2002
 
 unexport ISC_USER
@@ -71,8 +71,12 @@ GPRELIB_ClientSources = $(addprefix gpre/, $(GPRELIB_ClientFiles))
 GPRELIB_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRELIB_ClientSources))))
 
 
-SECURITY_ClientSources_gsec = $(addprefix utilities/gsec/, $(SECURITY_ClientFiles_gsec))
-SECURITY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_ClientSources_gsec))))
+WAL_ClientSources = $(addprefix wal/, $(WAL_ClientFiles))
+WAL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WAL_ClientSources))))
+
+
+SECURITY_ClientSources = $(addprefix utilities/, $(SECURITY_ClientFiles))
+SECURITY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_ClientSources))))
 
 
 FBUTIL_ClientSources = $(addprefix fbutil/, $(FBUTIL_ClientFiles))
@@ -89,13 +93,13 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(DSQL_ClientObjects) \
 					$(REMOTE_ClientObjects) \
 					$(GPRELIB_ClientObjects) \
+					$(WAL_ClientObjects) \
 					$(SECURITY_ClientObjects) \
 					$(FBUTIL_ClientObjects) \
 					$(FBCOMMON_ClientObjects)\
 					$(FBCLASSES_ClientObjects)\
 					$(OS_SPECIFIC_Objects)\
-					$(FBCONFIG_Objects) \
-					$(CLUMPLETS_Objects) \
+					$(FBCONFIG_Objects)\
 					$(SMD_Objects)
 
 
@@ -114,10 +118,11 @@ $(LIBFBCLIENT_SONAME):	$(LIBFBCLIENT_SOBASENAME)
 	(cd $(LIB) && $(LN) -f $(ClientLibraryNameMajor) $(ClientLibraryName) )
 endif
 
+$(LIBFBCLIENT_SO):	LINK_PROD=$(ClientLibraryNameMajor)
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
-	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
-$(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib \
--o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+#	$(LIB_LINK) -Wl,-soname,libfbclient.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
+	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_SHLIB_LINK_OPTIONS) $(LIB_CLIENT_LINK_OPTIONS) \
+		$(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 AllObjects = $(FBCLIENT_Objects)

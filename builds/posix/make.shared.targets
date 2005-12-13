@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: make.shared.targets,v 1.20 2005-06-10 10:32:51 aafemt Exp $
+#  $Id: make.shared.targets,v 1.13.2.1 2003-07-19 04:57:38 bellardo Exp $
 #
 
 
@@ -46,8 +46,8 @@
 
 $(SRC_ROOT)/dsql/parse.cpp: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/parse.sed
 	$(YACC) -l -d $<
-	$(MV) $(GEN_ROOT)/y.tab.c $(SRC_ROOT)/dsql/dsql.tab.c
-	$(MV) $(GEN_ROOT)/y.tab.h $(SRC_ROOT)/dsql/dsql.tab.h
+	$(MV) $(SRC_ROOT)/y.tab.c $(SRC_ROOT)/dsql/dsql.tab.c
+	$(MV) $(SRC_ROOT)/y.tab.h $(SRC_ROOT)/dsql/dsql.tab.h
 	sed -e 's/\\r//g' $(SRC_ROOT)/dsql/parse.sed > $(SRC_ROOT)/dsql/parse2.sed
 	sed -f $(SRC_ROOT)/dsql/parse2.sed <$(SRC_ROOT)/dsql/dsql.tab.c > $@  
 	-$(RM) $(SRC_ROOT)/dsql/parse2.sed
@@ -61,9 +61,9 @@ $(SRC_ROOT)/gpre/gpre_meta.cpp:  $(SRC_ROOT)/gpre/gpre_meta.epp
 	$(GPRE_BOOT) -lang_internal $(GPRE_FLAGS) $< $@
 
 
-buildb: security2.fdb yachts.lnk help.fdb
+buildb: security.fdb yachts.lnk help.fdb
 
-security2.fdb : $(ISC_GDB)
+security.fdb : $(ISC_GDB)
 	-$(LN) -f $(ISC_GDB) $@
 
 yachts.lnk: 
@@ -93,18 +93,18 @@ $(BLRTABLE): $(BLRTABLE_Objects)
 # Adding resources as prerequisite for some files
 
 $(FilesToAddVersionInfo): $(GEN_ROOT)/jrd/version.res
-$(FilesToAddDialog): $(GEN_ROOT)/remote/os/win32/window.res
-$(FilesToAddDialog2): $(GEN_ROOT)/iscguard/iscguard.res
+$(FilesToAddDialog): $(GEN_ROOT)/remote/window.res
 
 # Explicit dependence of resource script
-$(GEN_ROOT)/remote/os/win32/window.res: $(SRC_ROOT)/remote/os/win32/window.rc $(SRC_ROOT)/remote/os/win32/window.rh \
- $(SRC_ROOT)/jrd/version.rc $(SRC_ROOT)/jrd/build_no.h $(SRC_ROOT)/remote/os/win32/property.rc \
- $(SRC_ROOT)/remote/os/win32/property.rh $(SRC_ROOT)/remote/os/win32/ibconfig.rc
+$(GEN_ROOT)/remote/window.res: $(SRC_ROOT)/remote/window.rc $(SRC_ROOT)/remote/window.rh \
+ $(SRC_ROOT)/jrd/version.rc $(SRC_ROOT)/jrd/build_no.h $(SRC_ROOT)/remote/property.rc \
+ $(SRC_ROOT)/remote/property.rh $(SRC_ROOT)/remote/ibconfig.rc
 
-$(GEN_ROOT)/iscguard/iscguard.res: $(SRC_ROOT)/iscguard/iscguard.rc $(SRC_ROOT)/iscguard/iscguard.rh \
- $(SRC_ROOT)/jrd/version.rc 
+.PHONY: clean FORCE
 
-.PHONY: FORCE
+clean:
+	-$(RM) $(AllObjects)
+	-$(RM) $(Dependancies)
 
 
 # This target is used in the generated dependancy xxx.d files which are
