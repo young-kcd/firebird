@@ -1,3 +1,75 @@
+2005-12-12 19:39  dimitr
+
+	* firebird2/src/jrd/blb.cpp (1.109):
+	
+	Fixed one more compatibility issue with arrays.
+
+2005-12-12 18:36  dimitr
+
+	* firebird2/src/dsql/make.cpp (1.107):
+	
+	Fixed a few wrong error messages + minor cleanup.
+
+2005-12-12 18:27  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.252):
+	
+	Ported solution for SF #1371274 from Yaffil + minor cleanup.
+
+2005-12-12 14:58  dimitr
+
+	* firebird2/src/jrd/: dfw.epp (1.169), met.epp (1.177), trig.h
+	(1.19):
+	
+	Fixed SF #1191206.
+
+2005-12-12 14:54  dimitr
+
+	* firebird2/: src/msgs/facilities.sql (1.47), src/msgs/messages.sql
+	(1.59), src/msgs/system_errors.sql (1.26),
+	src/include/gen/codetext.h (1.36), src/include/gen/iberror.h
+	(1.35), src/include/gen/msgs.h (1.47), src/include/gen/rdb_codes.h
+	(1.35), src/include/gen/sql_code.h (1.39),
+	lang_helpers/gds_codes.ftn (1.29), lang_helpers/gds_codes.pas
+	(1.29):
+	
+	More error messages.
+
+2005-12-12 11:57  dimitr
+
+	* firebird2/src/msgs/: facilities.sql (1.46), messages.sql (1.58),
+	system_errors.sql (1.25):
+	
+	Added new error messages.
+
+2005-12-12 11:55  dimitr
+
+	* firebird2/src/jrd/blb.cpp (1.108):
+	
+	Better error reporting.
+
+2005-12-12 11:52  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.93):
+	
+	Fixed SF #1292106.
+
+2005-12-12 11:50  dimitr
+
+	* firebird2/: src/include/gen/codetext.h (1.35),
+	src/include/gen/iberror.h (1.34), src/include/gen/msgs.h (1.46),
+	src/include/gen/rdb_codes.h (1.34), src/include/gen/sql_code.h
+	(1.38), lang_helpers/gds_codes.ftn (1.28),
+	lang_helpers/gds_codes.pas (1.28):
+	
+	Added new error messages.
+
+2005-12-12 11:01  dimitr
+
+	* firebird2/src/jrd/trig.h (1.18):
+	
+	Fixed SF #609538.
+
 2005-12-11 14:42  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.161):
