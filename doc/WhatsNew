@@ -1,4 +1,326 @@
   **************
+  * v2.0 Beta 2
+  **************
+
+    * Enhanced CAST function (SF #1371274)
+        Now it's possible to use CAST to advise the engine about parameter types,
+        hence avoiding the famous "Datatype unknown" error
+      Example(s):
+        SELECT CAST(? AS INT) FROM RDB$DATABASE
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #1191206
+        A few constraint issues
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #1292106
+        ORDER BY with FOR UPDATE WITH LOCK crashes index
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #609538
+        Alter Index FK - bad error message
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Added new charset
+        Charset WIN1258 for Vietnamese language
+      Contributor(s):
+        Nguyen The Phuong <phuongthe at gmail.com>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        GPRE is unable to generate more than 32K identifiers
+      Contributor(s):
+        Ann Harrison <aharrison at ibphoenix.com>
+
+    * Fixed Beta 1 bug
+        Datatype changes of index-constrained columns are allowed
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Wrong result for STARTING WITH and subquery containing CASE function
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed Beta 1 bug
+        Backup of the security database is not allowed using Services API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Cleaned up ibase.h
+        Public headers don't contain private declarations anymore
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Wrong error can be reported when you access not active contexts
+        in multi-action triggers
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF #1368741
+        Wrong result for UPPER()
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Enhanced API call
+        isc_blob_lookup_desc() now also describes blobs
+        that are outputs of stored procedures
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed Beta 1 bug
+        Server crashes when TRIM function is used in aggregation
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Column names are lost in case of UNION containing derived fields
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Beta 1 bug
+        Server crashes when a few expression indices are used simultaneously
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed SF bug #1175157
+        Error in thread scheduler causes server to lockup
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        Wrong ISQL metadata extraction for triggers, check constraints
+        and views with check option
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Server crash when attempting to load metadata for expression index
+        that belong to a not scanned table
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        Internal error is reported when attempting to pass/return blobs
+        to/from string functions inside PSQL
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Corrupted IDs of system generators after restore
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Explicit plan could be rejected/ignored in ODS11 databases
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Root directory lookup change
+        Registry is no longer used by the server processes
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bugs
+        1) Improper thread data operations during the protocol port cleanup
+        2) No transaction rollback / attachment cleanup for broken TCP connections
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Wrong error message is decoded when firebird.msg is missing or outdated
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Memory corruption and server crash caused by buffer overflows
+        inside the BLR->ASCII blob filter
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Bad optimization of joins order
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Incorrect source SQL is stored in the metadata for DEFAULT CURRENT_TIME[STAMP]
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Column defaults remain cached after DROP DEFAULT statement
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Enhanced SET TRANSACTION statement
+        All TPB options are now supported:
+          - NO AUTO UNDO
+          - IGNORE LIMBO
+          - LOCK TIMEOUT <number>
+      Example(s):
+        SET TRANSACTION WAIT SNAPSHOT NO AUTO UNDO LOCK TIMEOUT 10
+      See also:
+        doc/sql.extensions/README.set_transaction.txt
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Beta 1 bug
+        Server crash caused by invalid reference to RDB$ROLES.RDB$SYSTEM_FLAG
+        in ODS10 databases
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Beta 1 bug
+        Corrupted incremental backups are created after changes in large blobs
+      Contributor(s):
+        Nickolay Samofatov <nickolay at broadviewsoftware.com>
+
+    * Fixed unregistered bug
+        Server crash when attempting to restore a database backup with corrupted VARCHAR data
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        A successful status vector could be reported to the user
+        after a failed DDL operation
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        Threading issues in the DSQL metadata cache causing unexpected
+        "invalid transaction handle" errors under load
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Incorrect checking of subquries/derived tables in the HAVING clause
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug
+        Wrong result by the division operation after DDL changes
+      Example(s):
+        create table test(fld numeric(18, 2));
+        insert into test (fld) values (1);
+        commit;
+        alter domain numericdomain type numeric(18,3);
+        select fld/3 from test; -- returns 0.033 instead of expected 0.333
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Memory corruption causing server to crash when using CURRENT_TIME[STAMP]
+        in some complex cases (nested procedure calls or views)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #1184099
+        Incorrectly padding when using charset OCTETS
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        Unexpected errors caused by improperly handled dead record versions
+        created by the system transaction during DDL operations
+      Contributor(s):
+        Ann Harrison <aharrison at ibphoenix.com>
+
+    * Further optimizer improvements
+        Better cost-based calculation
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Beta 1 bug
+        ALTER TABLE SET DEFAULT incorrectly modifies RDB$FIELDS instead of RDB$RELATION_FIELDS
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Beta 1 bug
+        Index is not rebuilt after a datatype change
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Beta 1 bug (SF #1192225)
+        Automatic NOT NULL in PK columns incomplete
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregister bug
+        GBAK adds garbage bytes to SPB when called in the -SE mode
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Claudio Valderrama <cvalde at usa.net>
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Added new DDL statement
+        RECREATE TRIGGER statement is now available in DDL
+      Note(s):
+        Semantics is the same as for other RECREATE statements
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregister bug
+        SuperServer deadlock in the DSQL metadata cache
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        Server crashes during some DDL actions
+      Example(s):
+        alter table rdb$relations add rdb$garbage varchar(30);
+      Contributor(s):
+        Jim Starkey <jas at netfrastructure.com>
+
+    * Fixed SF bug #223060
+        Slow processing of GREATER-THEN operator
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        Check constraints are not SQL compliant in regard to the NULL handling
+      Example(s):
+        CHECK (DEPTNO IN (10, 20, 30)) should allow NULL values
+        in the DEPTNO column but it does not
+      Contributor(s):
+        Paul Ruizendaal <pnr at janus-software.com>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Primary key could be created on a column having NULL values
+      Example(s):
+        create table bug (f1 int not null, f2 int not null);
+        insert into bug (f1, f2) values (1, 1);
+        commit;
+        alter table bug add pk int not null primary key;
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Alpha 3 bug
+        Wrong access permissions to the QLI help database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed Alpha 3 bug
+        OLD/NEW context references are improperly recognized as matching another table
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed SF bug #1334034
+        REVOKE damages ACL
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************
   * v2.0 Beta 1
   **************
 
@@ -455,7 +777,8 @@
         Claudio Valderrama <cvalde at usa.net>
 
     * DDL enhancement
-        Implemented ALTER EXTERNAL FUNCTION to change the entry_point or the module_name when the UDF cannot be dropped due to existing dependecies
+        Implemented ALTER EXTERNAL FUNCTION to change the entry_point or the module_name
+        when the UDF cannot be dropped due to existing dependecies
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
@@ -485,7 +808,8 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed unregistered bug
-        After an attempt to "create view v(c1) as select 1 from v" all clones of system request remained active forever
+        After an attempt to "create view v(c1) as select 1 from v" all clones of system request
+        remained active forever
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -571,7 +895,8 @@
 
     * Fixed unregistered bug
         Fix for the -b (Bail On Error) option when SQL commands are	issued and no db connection exists yet.
-        Apply Miroslav Penchev's patch for bug with -Q always returning 1 to the operating system, discovered by Ivan Prenosil.
+        Apply Miroslav Penchev's patch for bug with -Q always returning 1
+        to the operating system, discovered by Ivan Prenosil.
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
@@ -616,7 +941,8 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * INTL plugins
-        Character sets and collations are installed using a manifest file. Server write to the log when conflicts exist.
+        Character sets and collations are installed using a manifest file.
+        Server write to the log when conflicts exist.
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -656,7 +982,8 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed unregistered bug
-        Query produce different result depending on index presence when the last character of the string is the first character of a compression pair
+        Query produce different result depending on index presence
+        when the last character of the string is the first character of a compression pair
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -671,7 +998,8 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed unregistered bug
-        It's not safe to connect with MBCS if database has columns using different character set
+        It's not safe to connect with MBCS if database has columns
+        using different character set
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -680,7 +1008,8 @@
   **************
 
     * Fixed bug (SF #1016969)
-        Unknown datatype for parameters in result of searched CASE expression
+        Unknown datatype for parameters in result of
+        searched CASE expression
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
@@ -695,7 +1024,8 @@
         Arno Brinkman <firebird at abvisie.nl>
 
     * Fixed Alpha 1 bug
-        Bug with VALUE keyword in check constraint and bug with VALUE keyword where VALUE represents a column
+        Bug with VALUE keyword in check constraint and bug
+        with VALUE keyword where VALUE represents a column
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
@@ -759,7 +1089,8 @@
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Added new GBAK switch -RECREATE_DATABASE [OVERWRITE]
-        Simple RECREATE_DATABASE is equal to CREATE_DATABASE, RECREATE_DATABASE OVERWRITE is equal to REPLACE_DATABASE
+        Simple RECREATE_DATABASE is equal to CREATE_DATABASE
+        RECREATE_DATABASE OVERWRITE is equal to REPLACE_DATABASE
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -947,7 +1278,8 @@
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Changed view updates logic
-        Apply NOT NULL constraints to base tables only, ignoring the ones inherited by view columns from domain definitions
+        Apply NOT NULL constraints to base tables only, ignoring the ones inherited
+        by view columns from domain definitions
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -962,12 +1294,14 @@
         Claudio Valderrama <cvalde at usa.net>
 
     * Fixed unregistered bug
-        Possible server lockup/crash when 'RELEASE SAVEPOINT xxx ONLY' syntax is used or when existing savepoint name is reused in transaction context
+        Possible server lockup/crash when 'RELEASE SAVEPOINT xxx ONLY' syntax
+        is used or when existing savepoint name is reused in transaction context
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Improved configuration
-        Allow the first path of ExternalFilesAccess to be used as default when external file is to be created
+        Allow the first path of ExternalFilesAccess to be used as default
+        when external file is to be created
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -987,7 +1321,8 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed unregistered bug
-        Usage of an invalid index in an explicit plan causes garbage to be shown in the error message instead of the rejected index name
+        Usage of an invalid index in an explicit plan causes garbage to be shown
+        in the error message instead of the rejected index name
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
@@ -1017,7 +1352,8 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Cleanup
-        Command line switch L for SuperServer is no longer recognized as the old local protocol was deleted
+        Command line switch L for SuperServer is no longer recognized
+        as the old local protocol was deleted
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -1086,7 +1422,8 @@
         Claudio Valderrama <cvalde at usa.net>
 
     * Context variables
-        Added support for context variables via RDB$GET_CONTEXT and RDB$SET_CONTEXT system functions
+        Added support for context variables via RDB$GET_CONTEXT
+        and RDB$SET_CONTEXT system functions
       See also:
         /doc/sql.extentions/README.context_variables2
       Contributor(s):
@@ -1114,7 +1451,8 @@
         Claudio Valderrama <cvalde at usa.net>
 
     * Fixed unregistered bug
-        System users "AUTHENTICATOR" and "SWEEPER" were lost, causing "SQL SERVER" to be reported instead
+        System users "AUTHENTICATOR" and "SWEEPER" were lost,
+        causing "SQL SERVER" to be reported instead
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -1170,7 +1508,8 @@
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * SQL improvement
-        Added an equivalence predicate which behaves exactly as equality/inequality, but treats NULL = NULL as TRUE
+        Added an equivalence predicate which behaves exactly as equality/inequality,
+        but treats NULL = NULL as TRUE
       Syntax:
         A IS [NOT] DISTINCT FROM B
       See also:
@@ -1273,7 +1612,9 @@
         Claudio Valderrama <cvalde at usa.net>
 
     * ODS change
-        Introduced a concept of ODS type to be able to distinguish between InterBase databases, Firebird databases, databases created by debug builds of Firebird and private forks
+        Introduced a concept of ODS type to be able to distinguish between
+        InterBase databases, Firebird databases, databases created by
+        debug builds of Firebird and private forks
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
@@ -1296,7 +1637,8 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * IIF builtin function
-        Added IIF (<search_condition>, <value1>, <value2>) as a shortcut for CASE WHEN <search_condition> THEN <value1> ELSE <value2> END
+        Added IIF (<search_condition>, <value1>, <value2>)
+        as a shortcut for CASE WHEN <search_condition> THEN <value1> ELSE <value2> END
       See also:
         /doc/sql.extentions/README.iif
       Contributor(s):
@@ -1391,7 +1733,8 @@
     * Improved ISQL
         1) Fixed bug SF #910430 - ISQL and database dialect
         2) Add SET HEADING ON/OFF option
-        3) Add -M2 command-line option to send output of statistics and plans to the same file than the rest of the output
+        3) Add -M2 command-line option to send output of statistics
+           and plans to the same file than the rest of the output
       See also:
         /doc/README.isql_enhancements.txt
       Contributor(s):
@@ -1403,7 +1746,8 @@
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Fixed unregistered bug
-        Wrong counting of line numbers in DSQL parser when multi-line literals and identifiers are used
+        Wrong counting of line numbers in DSQL parser
+        when multi-line literals and identifiers are used
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
@@ -1423,7 +1767,8 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * User-defined plans improvements
-        1) Propagate plan fragments to nested levels of joins, thus allowing to manually optimize complex outer joins
+        1) Propagate plan fragments to nested levels of joins,
+           thus allowing to manually optimize complex outer joins
         2) Check the user-supplied plan for correctness in outer joins
         3) Added short-circuit optimization for user-supplied plans
       Contributor(s):
@@ -1480,7 +1825,8 @@
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * DSQL parser changed
-        It now always detects table aliases ambiguity and abandoned support for implicit double table aliases
+        It now always detects table aliases ambiguity and abandoned support
+        for implicit double table aliases
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
@@ -1500,7 +1846,8 @@
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Per-segment index selectivity maintenance
-        Per-segment selectivity information is now available to the optimizer opening possibilities for more clever access path decisions
+        Per-segment selectivity information is now available to the optimizer
+        opening possibilities for more clever access path decisions
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
         Arno Brinkman <firebird at abvisie.nl>
@@ -1511,7 +1858,8 @@
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Re-worked logic of updatable views
-        This solves problems with views that are implicitly updatable, but still have update triggers
+        This solves problems with views that are implicitly updatable,
+        but still have update triggers
       See also:
         /doc/sql.extentions/README.view_updates
       Contributor(s):
@@ -1545,12 +1893,14 @@
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Fixed unregistered bug
-        Fixed server crash with explicit plans used in subqueries, when outer aggregation is performed.
+        Fixed server crash with explicit plans used in subqueries,
+        when outer aggregation is performed.
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Nulls ordering is changed to be SQL200X-compliant (SF #225218)
-        Implemented nulls placement behavior is MSSQL-like, works on ODS11 databases only since it requires new indices for operation. 
+        Implemented nulls placement behavior is MSSQL-like, works on ODS11 databases only
+        since it requires new indices for operation. 
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
@@ -1561,7 +1911,8 @@
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * New indices code
-        Very fast, nicely tolerates large amount of duplicates, limit of 256 bytes key length removed
+        Very fast, nicely tolerates large amount of duplicates,
+        limit of 256 bytes key length removed
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
@@ -1635,15 +1986,18 @@
         Claudio Valderrama <cvalde at usa.net>
 
     * Slightly reworked synchronization logic
-        1) Significantly reduce thread lock contention in lock manager and in SuperServer thread pool manager
-        2) Fix rare race condition that could cause SS engine to hang during request processing until next request arrival
+        1) Significantly reduce thread lock contention in lock manager
+           and in SuperServer thread pool manager
+        2) Fix rare race condition that could cause SS engine to hang
+           during request processing until next request arrival
         3) Make lock manager memory dumps more informative (OWN_hung is detected correctly)
         4) Decouple lock manager synchronization objects for different engine instances
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Derived tables support
-        Implemented support for derived tables in DSQL (subqueries in FROM clause) as defined by SQL200X
+        Implemented support for derived tables in DSQL (subqueries in FROM clause)
+        as defined by SQL200X
       See also:
         /doc/sql.extentions/README.derived_tables.txt
       Contributor(s):
@@ -1667,13 +2021,15 @@
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Generic cleanup.
-        Various cleaning and tidying up of code, warnings removal, 64-bitness cleanup, numerous minor bugfixes
+        Various cleaning and tidying up of code, warnings removal,
+        64-bitness cleanup, numerous minor bugfixes
       Contributor(s):
         Blas Rodriguez Somoza <blas at puertareal.com>
         Dmitry Yemanov <yemanov at yandex.ru>
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
     * Generic cleanup
-        Large amount of ongoing code cleanup and style standardization. In particular, broken WAL and journalling code is fully cleaned out
+        Large amount of ongoing code cleanup and style standardization. In particular,
+        broken WAL and journalling code is fully cleaned out
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
