@@ -305,12 +305,12 @@
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
-    * Fixed Alpha 3 bug
+    * Fixed Beta 1 bug
         Wrong access permissions to the QLI help database
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
-    * Fixed Alpha 3 bug
+    * Fixed Beta 1 bug
         OLD/NEW context references are improperly recognized as matching another table
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
