@@ -1,3 +1,35 @@
+2005-12-14 03:20  robocop
+
+	* firebird2/: doc/WhatsNew (1.75), src/msgs/history.sql (1.26):
+	
+	Misc.
+
+2005-12-14 01:06  arnobrinkman
+
+	* firebird2/src/jrd/validation.cpp (1.11):
+	
+	Fix incorrect report of corrupt-message on primary/unique index
+	validation. Reported by Vlad.
+
+2005-12-14 00:19  arnobrinkman
+
+	* firebird2/src/jrd/Optimizer.cpp (1.48):
+	
+	Another "workaround" for prepared statements on empty tables.  To
+	be reviewed by Dmitry Yemanov.
+
+2005-12-13 16:41  dimitr
+
+	* firebird2/doc/WhatsNew (1.74):
+	
+	Misc.
+
+2005-12-13 15:20  dimitr
+
+	* firebird2/doc/WhatsNew (1.73):
+	
+	Described changes for Beta 2.
+
 2005-12-12 19:39  dimitr
 
 	* firebird2/src/jrd/blb.cpp (1.109):
