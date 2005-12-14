@@ -202,7 +202,7 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed Beta 1 bug
-        Incorrect checking of subquries/derived tables in the HAVING clause
+        Incorrect checking of subqueries/derived tables in the HAVING clause
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
