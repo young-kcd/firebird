@@ -1620,8 +1620,11 @@ static RTN walk_index(thread_db* tdbb, VDR control, jrd_rel* relation,
 
 				// Only check record-number if this isn't the first page in 
 				// the level and it isn't a MARKER.
+				// Also don't check on primary/unique keys, because duplicates aren't
+				// sorted on recordnumber, except for NULL keys.
 				if (useAllRecordNumbers && down_page->btr_left_sibling &&
-					!(downNode.isEndBucket || downNode.isEndLevel)) 
+					!(downNode.isEndBucket || downNode.isEndLevel) &&
+					(!unique || (unique && nullKeyNode)) ) 
 				{
 					// Check record number if key is equal with node on
 					// pointer page. In that case record number on page 
