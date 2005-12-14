@@ -1,3 +1,9 @@
+2005-12-13 11:32  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.1.2.32):
+	
+	Updated buildno.
+
 2005-12-09 03:23  robocop
 
 	* firebird2/: doc/WhatsNew (1.36.2.53), src/gpre/c_cxx.cpp
