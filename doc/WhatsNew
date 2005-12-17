@@ -78,6 +78,12 @@
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
+    * Fixed unregistered bug
+        Server crashes when manipulating input DPB due to memory corruption
+        in Parameter Blocks management
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * Fixed Beta 1 bug
         Column names are lost in case of UNION containing derived fields
       Contributor(s):
