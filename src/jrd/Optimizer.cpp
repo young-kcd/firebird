@@ -1639,7 +1639,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				// indexes are chosen by the optimizer. This avoids some slowdown
 				// statements on growing tables.
 				if (invCandidate->selectivity <= 0) {
-					invCandidate->selectivity = MAXIMUM_SELECTIVITY / 2.0;
+					invCandidate->selectivity = MAXIMUM_SELECTIVITY / 2;
 				}
 				// Calculate the cost (only index pages) for this index. 
 				// The constant DEFAULT_INDEX_COST 1 is an average for 
@@ -1885,27 +1885,23 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		return NULL;
 	}
 
-	// This constant disables our smart index selection algorithm. When we
-	// deal with a system request, most probably it's being cached at the
-	// first invocation and hence it may have out-of-date plan at runtime.
-	// An example is a database restore process which starts with almost
-	// empty system tables which may significantly grow later. So, as a
-	// practical rule, we use all available indices for any system request.
-	// Another special case is an explicit (i.e. user specified) plan which
+	// This flag disables our smart index selection algorithm. 
+	// It's set for any explicit (i.e. user specified) plan which
 	// requires all existing indices to be considered for a retrieval.
 	const bool acceptAll = csb->csb_rpt[stream].csb_plan;
-	double streamCard = csb->csb_rpt[stream].csb_cardinality;
-	// When the cardinality is zero the statement prepared on an empty table,
-	// which would meant no indexes will be used at all. The prepared 
-	// statement could be cached (such as in system restore process) and
-	// cause slowdown when the table grows. Set the cardinality to a value
-	// so that at least some indexes are chosen.
-	if (streamCard <= 0) {
-		streamCard = 5;
+
+	double streamCardinality = csb->csb_rpt[stream].csb_cardinality;
+	// When the cardinality is very small then the statement is being
+	// prepared on an almost empty table, which would meant no indexes
+	// will be used at all. The prepared statement could be cached
+	// (such as in system restore process) and cause slowdown when the
+	// table grows. Set the cardinality to a value so that at least
+	// some indexes are chosen.
+	if (streamCardinality <= 5) {
+		streamCardinality = 5;
 	}
 
 	double totalSelectivity = MAXIMUM_SELECTIVITY; // worst selectivity
-	double totalCost = 0;
 	double totalIndexCost = 0;
 
 	// Allow indexes also to be used on very small tables. Limit starts
@@ -1913,10 +1909,16 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	// Also when the table is small and a statement is prepared, but would grow
 	// while inserting data into this would really slow down the statement.
 	// An example here is with system tables and the restore process of gbak.
-	const double maximumCost = (DEFAULT_INDEX_COST * 5) + (streamCard * 0.95);
+	//
+	// dimitr: TO BE REVIEWED!!!
+	//
+	const double maximumCost = (DEFAULT_INDEX_COST * 5) + (streamCardinality * 0.95);
+	const double minimumSelectivity = 1 / streamCardinality;
+
 	double previousTotalCost = maximumCost;
 
-	const double minimumSelectivity = streamCard ? 1 / streamCard : 0;
+	// Force to always chose at least one index
+	bool firstCandidate = true;
 
 	int i = 0;
 	InversionCandidate* invCandidate = NULL;
@@ -2027,9 +2029,9 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 						else if (currentInv->dependencies == bestCandidate->dependencies) {
 
 							double bestCandidateCost = bestCandidate->cost + 
-								(bestCandidate->selectivity * streamCard);
+								(bestCandidate->selectivity * streamCardinality);
 							double currentCandidateCost = currentInv->cost +
-								(currentInv->selectivity * streamCard);
+								(currentInv->selectivity * streamCardinality);
 
 							// Do we have very similar costs?
 							double diffCost = currentCandidateCost;
@@ -2120,21 +2122,24 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 			}
 			*/
 
-			double newTotalSelectivity = bestCandidate->selectivity * totalSelectivity;
-			double newTotalDataCost = newTotalSelectivity * streamCard;
-			double newTotalIndexCost = totalIndexCost + bestCandidate->cost;
-			totalCost = newTotalDataCost + newTotalIndexCost;
+			const double newTotalSelectivity = bestCandidate->selectivity * totalSelectivity;
+			const double newTotalDataCost = newTotalSelectivity * streamCardinality;
+			const double newTotalIndexCost = totalIndexCost + bestCandidate->cost;
+			const double totalCost = newTotalDataCost + newTotalIndexCost;
 
 			// Test if the new totalCost will be higher than the previous totalCost 
 			// and if the current selectivity (without the bestCandidate) is already good enough.
-			if (acceptAll || ((totalCost < previousTotalCost) &&
-				(!totalSelectivity || totalSelectivity > minimumSelectivity)))
+			if (acceptAll || firstCandidate ||
+				((totalCost < previousTotalCost) &&
+				(totalSelectivity > minimumSelectivity)))
 			{
 				// Exclude index from next pass
 				bestCandidate->used = true;
+
+				firstCandidate = false;
+
 				previousTotalCost = totalCost;
 				totalIndexCost = newTotalIndexCost; 
-
 				totalSelectivity = newTotalSelectivity;
 
 				if (!invCandidate) {
