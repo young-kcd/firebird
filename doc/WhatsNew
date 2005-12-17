@@ -218,7 +218,7 @@
         create table test(fld numeric(18, 2));
         insert into test (fld) values (1);
         commit;
-        alter domain numericdomain type numeric(18,3);
+        alter table test alter fld type numeric(18,3);
         select fld/3 from test; -- returns 0.033 instead of expected 0.333
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
