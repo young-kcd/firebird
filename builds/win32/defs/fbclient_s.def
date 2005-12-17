@@ -41,6 +41,7 @@ EXPORTS
 	isc_detach_database@8		PRIVATE
 	isc_drop_database@8			PRIVATE
 	isc_dsql_allocate_statement@12	PRIVATE
+	isc_dsql_alloc_statement2@12	PRIVATE
 	isc_dsql_describe@16		PRIVATE
 	isc_dsql_describe_bind@16	PRIVATE
 	isc_dsql_exec_immed2@32		PRIVATE
