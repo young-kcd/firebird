@@ -54,6 +54,41 @@ typedef long ISC_STATUS;
 	#define  ISC_EXPORT_VARARG
 #endif
 
+/*
+ * It is difficult to detect 64-bit long from the redistributable header
+ * we do not care of 16-bit platforms anymore thus we may use plain "int"
+ * which is 32-bit on all platforms we support
+ *
+ * We'll move to this definition in future API releases.
+ *
+ */
+
+#if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
+typedef	int		ISC_LONG;
+typedef	unsigned int	ISC_ULONG;
+#else
+typedef	signed long	ISC_LONG;
+typedef	unsigned long	ISC_ULONG;
+#endif
+
+typedef	signed short	ISC_SHORT;
+typedef	unsigned short	ISC_USHORT;
+
+typedef	unsigned char	ISC_UCHAR;
+typedef char		ISC_SCHAR;
+
+/*******************************************************************/
+/* 64 bit Integers                                                 */
+/*******************************************************************/
+
+#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__)) && !defined(__GNUC__)
+typedef __int64				ISC_INT64;
+typedef unsigned __int64	ISC_UINT64;
+#else
+typedef long long int			ISC_INT64;
+typedef unsigned long long int	ISC_UINT64;
+#endif
+
 /*******************************************************************/
 /* Time & Date support                                             */
 /*******************************************************************/
