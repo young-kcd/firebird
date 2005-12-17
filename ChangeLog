@@ -1,3 +1,10 @@
+2005-12-17 03:26  robocop
+
+	* firebird2/src/utilities/gstat/dba.epp (1.62):
+	
+	Gstat should display the Win32 error text, not the error code in
+	English versions.
+
 2005-12-14 03:20  robocop
 
 	* firebird2/: doc/WhatsNew (1.75), src/msgs/history.sql (1.26):
