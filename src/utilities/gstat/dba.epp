@@ -1356,14 +1356,23 @@ static void db_error( SLONG status)
 	tddba->page_number = -1;
 
 	if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-					   NULL,
-					   status,
-					   GetUserDefaultLangID(),
-					   s,
-					   sizeof(s),
-					   NULL))
-			sprintf(s, "unknown Windows NT error %ld", status);
-
+						NULL,
+						status,
+						GetUserDefaultLangID(),
+						s,
+						sizeof(s),
+						NULL)
+		&& !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+						NULL,
+						status,
+						0, // TMN: Fallback to system known language
+						s,
+						sizeof(s),
+						NULL))
+	{
+		sprintf(s, "unknown Windows NT error %ld", status);
+	}
+	
 	FPRINTF(tddba->sw_outfile, "%s\n", s);
 	dba_exit(FINI_ERROR, tddba);
 }
