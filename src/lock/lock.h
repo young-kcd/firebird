@@ -124,18 +124,18 @@ const UCHAR type_own	= 8;
 const UCHAR type_MAX		= type_own;
 
 #if SIZEOF_VOID_P == 8
-const int PLATFORM_LHB_VERSION	= 200;	// 64-bit target
+const UCHAR PLATFORM_LHB_VERSION	= 128;	// 64-bit target
 #else
-const int PLATFORM_LHB_VERSION	= 0;	// 32-bit target
+const UCHAR PLATFORM_LHB_VERSION	= 0;	// 32-bit target
 #endif
 
-const int CLASSIC_LHB_VERSION	= PLATFORM_LHB_VERSION + 16; // Firebird 2.0
-const int SS_LHB_VERSION		= CLASSIC_LHB_VERSION + 100;
+const UCHAR CLASSIC_LHB_VERSION	= PLATFORM_LHB_VERSION + 16; // Firebird 2.0
+const UCHAR SS_LHB_VERSION		= CLASSIC_LHB_VERSION + 100;
 
 #ifdef SUPERSERVER
-const int LHB_VERSION			= SS_LHB_VERSION;
+const UCHAR LHB_VERSION			= SS_LHB_VERSION;
 #else
-const int LHB_VERSION			= CLASSIC_LHB_VERSION;
+const UCHAR LHB_VERSION			= CLASSIC_LHB_VERSION;
 #endif
 
 const SLONG LHB_PATTERN			= 123454321;
