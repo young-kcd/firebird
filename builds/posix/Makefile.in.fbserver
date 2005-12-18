@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbserver,v 1.21 2005-08-17 14:07:19 alexpeshkoff Exp $
+#  $Id: Makefile.in.fbserver,v 1.22 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=superserver
@@ -43,7 +43,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 SERVER_Files = $(OS_ServerFiles) server.cpp server_stub.cpp
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
-SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources)))) $(LIBFBSERVER_Objects)
+SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources)))) $(LIBFBSERVER_Objects) $(COMMON_Objects)
 
 .PHONY: fbserver
 
@@ -51,7 +51,7 @@ SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Source
 fbserver : $(FB_SUPER_SERVER)
 
 $(FB_SUPER_SERVER):	$(SERVER_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ -lfbcommon $(ICU_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ $(ICU_LIBS)
 
 AllObjects = $(SERVER_Objects)
 

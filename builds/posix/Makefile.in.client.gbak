@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gbak,v 1.13 2005-10-22 12:35:03 aafemt Exp $
+#  $Id: Makefile.in.client.gbak,v 1.14 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 
 ROOT=..
@@ -64,8 +64,8 @@ all: gbak gsplit
 
 gbak : $(LIBFBCLIENT_SO) $(GBAK)
 
-$(GBAK):	$(GBAK_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon -lfbclient $(LINK_LIBS)
+$(GBAK):	$(GBAK_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 
 gsplit : $(LIBFBCLIENT_SO) $(GSPLIT)

@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.gbak,v 1.11 2005-06-10 10:32:51 aafemt Exp $
+#  $Id: Makefile.in.static.gbak,v 1.12 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=boot
@@ -57,8 +57,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 gbak_static : $(GBAK_STATIC)
 
-$(GBAK_STATIC) : $(GBAKSTATIC_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
-	$(CXX) $(LINK_OPTS) $(GBAKSTATIC_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
+$(GBAK_STATIC) : $(GBAKSTATIC_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
+	$(CXX) $(LINK_OPTS) $(GBAKSTATIC_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 
 # Darwin may need this link as well
 #$(COREFOUNDATION_LINK)

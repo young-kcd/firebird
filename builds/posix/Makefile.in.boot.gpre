@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.boot.gpre,v 1.24 2005-08-08 13:47:25 alexpeshkoff Exp $
+#  $Id: Makefile.in.boot.gpre,v 1.25 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=boot
@@ -69,8 +69,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 gpre_boot : $(GPRE_BOOT)
 
-$(GPRE_BOOT):	$(GPREBOOT_Objects) $(LIB)/libfbcommon.a  
-	$(LD) $(LINK_OPTS) $(GPREBOOT_Objects) -o $@ -L$(LIB) -lfbcommon  $(LINK_LIBS)
+$(GPRE_BOOT):	$(GPREBOOT_Objects) $(COMMON_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
 	-$(RM) $(GPRE_CURRENT)
 	(cd $(@D); $(LN) $(@F) $(notdir $(GPRE_CURRENT)))
 

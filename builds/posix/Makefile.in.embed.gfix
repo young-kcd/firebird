@@ -63,8 +63,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 gfix : $(LIBFBEMBED_SO) $(GFIX)
 
-$(GFIX):	$(GFIX_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon -lfbembed $(LINK_LIBS)
+$(GFIX):	$(GFIX_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

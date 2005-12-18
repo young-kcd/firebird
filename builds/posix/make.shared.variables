@@ -300,6 +300,13 @@ OS_SPECIFIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(OS_SPECI
 #________________________________________________________________________
 #
 
+# These objects are needed in any target
+
+COMMON_Objects = $(FBCLASSES_Objects) \
+				$(FBCOMMON_Objects) \
+				$(CONFIG_Objects) \
+				$(VULCAN_Objects)
+
 # These are the lists of object/shared object files that will go into libgds.a
 # and libgds.$(SHRLIB_EXT).
 
@@ -321,9 +328,7 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
 # both refer to the same thing. (better way always possible) 
 # MOD 29-July-2002
 
-LIBFBSERVER_Objects =$(LIBFBEMBED_Objects) \
-                $(FBCLASSES_Objects) \
-                $(FBCOMMON_Objects)
+LIBFBSERVER_Objects =$(LIBFBEMBED_Objects)
 
 
 # The following library is a 'reduced' set (although not that reduced) 

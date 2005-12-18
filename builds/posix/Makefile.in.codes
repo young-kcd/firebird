@@ -21,7 +21,7 @@
 #   Contributor(s): ______________________________________.
 # 
 #
-#  $Id: Makefile.in.codes,v 1.19 2005-06-10 10:32:50 aafemt Exp $
+#  $Id: Makefile.in.codes,v 1.20 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -62,8 +62,8 @@ build_codes: $(BIN)/codes$(EXEC_EXT) msg.fdb
 $(SRC_ROOT)/misc/codes.cpp: $(SRC_ROOT)/misc/codes.epp
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
-$(BIN)/codes$(EXEC_EXT): $(CODES_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A)
-	$(CXX) $(LINK_OPTS) $(CODES_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
+$(BIN)/codes$(EXEC_EXT): $(CODES_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A)
+	$(CXX) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) $(ICU_LIBS)
 
 
 # Rebuild ids.h

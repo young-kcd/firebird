@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.static.isql,v 1.10 2005-06-10 10:32:51 aafemt Exp $
+#  $Id: Makefile.in.static.isql,v 1.11 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=boot
@@ -58,8 +58,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 isql_static : $(ISQL_STATIC)
 
-$(ISQL_STATIC):	$(ISQL_Objects) $(LIBFBCOMMON_A) $(LIBFBSTATIC_A) 
-	$(LD) $(LINK_OPTS) $(ISQL_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
+$(ISQL_STATIC):	$(ISQL_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
+	$(LD) $(LINK_OPTS) $(ISQL_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

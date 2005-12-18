@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.16 2005-06-10 10:32:51 aafemt Exp $
+#  $Id: Makefile.in.msgs,v 1.17 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -98,36 +98,36 @@ do_check: $(CHECK_MESSAGES) $(BUILD_FILE)
 
 check_messages : $(CHECK_MESSAGES) 
 
-$(CHECK_MESSAGES):	$(CHECK_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(LD) $(LINK_OPTS) $(CHECK_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
+$(CHECK_MESSAGES):	$(CHECK_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A)
+	$(LD) $(LINK_OPTS) $(CHECK_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 	$(CHMOD_7) $@
 
 
 build_file : $(BUILD_FILE) 
 
-$(BUILD_FILE):	$(BUILD_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(LD) $(LINK_OPTS) $(BUILD_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
+$(BUILD_FILE):	$(BUILD_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A)
+	$(LD) $(LINK_OPTS) $(BUILD_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 	$(CHMOD_7) $@
 
 
 enter_messages : $(ENTER_MESSAGES)
 
-$(ENTER_MESSAGES):	$(ENTER_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(LD) $(LINK_OPTS) $(ENTER_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
+$(ENTER_MESSAGES):	$(ENTER_Objects) $(LIBFBSTATIC_A)
+	$(LD) $(LINK_OPTS) $(ENTER_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 	$(CHMOD_7) $@
 
 
 modify_messages: $(MODIFY_MESSAGES) 
 
-$(MODIFY_MESSAGES):	$(MODIFY_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(LD) $(LINK_OPTS) $(MODIFY_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
+$(MODIFY_MESSAGES):	$(MODIFY_Objects) $(LIBFBSTATIC_A) 
+	$(LD) $(LINK_OPTS) $(MODIFY_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 	$(CHMOD_7) $@
 
 
 change_messages: $(CHANGE_MESSAGES)
 
-$(CHANGE_MESSAGES):	$(CHANGE_Objects) $(LIBFBSTATIC_A) $(LIBFBCOMMON_A)
-	$(LD) $(LINK_OPTS) $(CHANGE_Objects) -o $@ -L$(LIB) -lfbstatic -lfbcommon $(LINK_LIBS) $(ICU_LIBS)
+$(CHANGE_MESSAGES):	$(CHANGE_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A)
+	$(LD) $(LINK_OPTS) $(CHANGE_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 	$(CHMOD_7) $@
 
 

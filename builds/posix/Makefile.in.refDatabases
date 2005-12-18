@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.28 2005-06-10 10:32:51 aafemt Exp $
+#  $Id: Makefile.in.refDatabases,v 1.29 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -66,6 +66,7 @@ MSG_FILES = $(addprefix $(SRC_ROOT)/msgs/, $(MSG_SCRIPTS))
 empty_db : empty.fdb yachts.lnk
 
 empty.fdb : $(CREATE_DB)
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $(BIN)/create_db
 	-$(RM) $@
 	$(BIN)/create_db $@
 	$(TOUCH) $@

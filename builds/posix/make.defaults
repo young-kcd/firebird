@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.42 2005-07-22 10:26:16 aafemt Exp $
+#   $Id: make.defaults,v 1.43 2005-12-18 17:56:43 alexpeshkoff Exp $
 # 
 
 
@@ -172,7 +172,6 @@ LIBFBCLIENT_SONAME=$(LIB)/$(ClientLibraryName)
 
 LIBFBINTL_SO = $(FIREBIRD)/intl/$(LIB_PREFIX)fbintl.$(SHRLIB_EXT)
 
-LIBFBCOMMON_A = $(LIB)/libfbcommon.a
 LIBFBSTATIC_A = $(LIB)/libfbstatic.a
 LIBEDITLINE_A = $(LIB)/libeditline.a
 LIBICU_SO = $(LIB)/$(LIB_PREFIX)icuuc.$(SHRLIB_EXT) \

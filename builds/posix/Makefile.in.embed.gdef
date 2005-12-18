@@ -62,8 +62,8 @@ all:	gdef
 
 gdef:   $(GDEF)
 
-$(GDEF): $(GDEF_Objects) $(CLUMPLETS_Objects) $(LIBFBEMBED_SO) 
-	$(LD) $(LINK_OPTS) $(GDEF_Objects) $(CLUMPLETS_Objects) -o $@ -L$(LIB) -lfbcommon -lfbembed $(LINK_LIBS)
+$(GDEF): $(GDEF_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 
 
 

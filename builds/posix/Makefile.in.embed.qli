@@ -60,8 +60,8 @@ all:	qli
 
 qli : create_yachts $(LIBFBEMBED_SO) $(QLI)
 
-$(QLI): $(QLI_Objects) $(CLUMPLETS_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbcommon -lfbembed $(LINK_LIBS)
+$(QLI): $(QLI_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS)
 	$(CHMOD_S7) $@
 
 # EKU: At this point yachts.lnk is a link to empty.fdb, but gpre will fail
