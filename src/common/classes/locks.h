@@ -51,7 +51,7 @@ namespace Firebird {
 #ifdef MULTI_THREAD
 #ifdef WIN_NT
 
-/* Process-local spinlock. Used to manage memory heaps in threaded environment. */
+// Process-local spinlock. Used to manage memory heaps in threaded environment.
 // Windows version of the class
 
 typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
@@ -76,60 +76,35 @@ public:
 	}
 };
 
-#else
+#else //WIN_NT
 
-/* Process-local spinlock. Used to manage memory heaps in threaded environment. */
-// Pthreads version of the class
-#if !defined(SOLARIS_MT) && !defined(DARWIN) && !defined(FREEBSD) && !defined(NETBSD)
-class Mutex {
-private:
-	pthread_spinlock_t spinlock;
-public:
-	Mutex() {
-		if (pthread_spin_init(&spinlock, false))
-			system_call_failed::raise("pthread_spin_init");
-	}
-	~Mutex() {
-		if (pthread_spin_destroy(&spinlock))
-			system_call_failed::raise("pthread_spin_destroy");
-	}
-	void enter() {
-		if (pthread_spin_lock(&spinlock))
-			system_call_failed::raise("pthread_spin_lock");
-	}
-	void leave() {
-		if (pthread_spin_unlock(&spinlock))
-			system_call_failed::raise("pthread_spin_unlock");
-	}
-};
-#else
 #ifdef SOLARIS_MT
-/* Who knows why Solaris 2.6 have not THIS funny spins?
-Konstantin */
-
 
 class Mutex {
 private:
-	mutex_t spinlock;
+	mutex_t mlock;
 public:
 	Mutex() {
-		if (mutex_init(&spinlock, USYNC_PROCESS, NULL))
+		if (mutex_init(&mlock, USYNC_PROCESS, NULL))
 			system_call_failed::raise("mutex_init");
 	}
 	~Mutex() {
-		if (mutex_destroy(&spinlock))
+		if (mutex_destroy(&mlock))
 			system_call_failed::raise("mutex_destroy");
 	}
 	void enter() {
-		if (mutex_lock(&spinlock))
+		if (mutex_lock(&mlock))
 			system_call_failed::raise("mutex_lock");
 	}
 	void leave() {
-		if (mutex_unlock(&spinlock))
+		if (mutex_unlock(&mlock))
 			system_call_failed::raise("mutex_unlock");
 	}
 };
-#else  // DARWIN and FREEBSD and NETBSD
+
+#else  //SOLARIS_MT
+
+// Pthreads version of the class
 class Mutex {
 private:
 	pthread_mutex_t mlock;
@@ -151,11 +126,13 @@ public:
 			system_call_failed::raise("pthread_mutex_unlock");
 	}
 };
-#endif
 
-#endif
-#endif
-#else
+#endif //SOLARIS_MT
+
+#endif //WIN_NT
+
+#else //MULTI_THREAD
+
 // Non-MT version
 class Mutex {
 public:
@@ -169,7 +146,7 @@ public:
 	}
 };
 
-#endif /* MULTI_THREAD */
+#endif //MULTI_THREAD
 
 // RAII holder of mutex lock
 class MutexLockGuard {
