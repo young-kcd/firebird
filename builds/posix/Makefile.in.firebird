@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.66 2005-12-05 12:57:15 dimitr Exp $
+#  $Id: Makefile.in.firebird,v 1.67 2005-12-18 17:56:17 alexpeshkoff Exp $
 #
 
 ROOT=..
@@ -207,18 +207,15 @@ endif
 # $(BIN)/gpre_static).
 #
 .PHONY: boot_phase1 boot_phase1_build
-.PHONY: libfbcommon libfbstatic gpre_boot gpre_static
+.PHONY: libfbstatic gpre_boot gpre_static
 
 boot_phase1: $(GPRE_STATIC)
 
 $(GPRE_STATIC):
 	$(MAKE) boot_phase1_build
 
-boot_phase1_build: libfbcommon gpre_boot libfbstatic gpre_static @MANAGER_PROCESS_TARGET@
+boot_phase1_build: gpre_boot libfbstatic gpre_static @MANAGER_PROCESS_TARGET@
 
-
-libfbcommon:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbcommon $@
 
 gpre_boot:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.boot.gpre $@
@@ -253,7 +250,7 @@ lock_mgr :
 
 .PHONY: create_db empty_db gbak_static isql_static ref_databases
 
-boot_phase2 : libfbcommon libfbstatic $(ISC_GDB)
+boot_phase2 : libfbstatic $(ISC_GDB)
 
 $(ISC_GDB):
 	$(MAKE) boot_phase2_build
@@ -298,8 +295,8 @@ security2.fdb: gdef isql 		# build the security database
 
 .PHONY: ref_databases msgs msgs_intl generated_headers intl extlib includes
 
-basic_targets: libfbcommon ref_databases msgs msgs_intl generated_headers \
-               intl extlib includes examples_cp otherfiles
+basic_targets: ref_databases msgs msgs_intl generated_headers \
+               intl extlib includes otherfiles examples_cp
 
 # hack to make code regeneration work
 generated_headers :
@@ -434,9 +431,14 @@ include_generic: $(INCLUDE_DEST)/ib_util.h  \
 
 IBASE_ExtraFiles = include/types_pub.h dsql/sqlda_pub.h jrd/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h 
 SRC_IBASE_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(IBASE_ExtraFiles))
+MAKE_HEADER_Src = $(addprefix $(SRC_ROOT)/, misc/makeHeader.cpp)
+MAKE_HEADER_Bin = ./makeHeader
 
 $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
-	$(CAT) $^ |grep -v '^#include' > $@
+	$(CXX) -o $(MAKE_HEADER_Bin) $(MAKE_HEADER_Src)
+	$(CP) $^ .
+	$(MAKE_HEADER_Bin) <ibase.h >$@
+	$(RM) -f ibase.h
 
 # Copy all the other headers to the distribution directory.  we use
 # ib_util.h as the marker for all the files.
