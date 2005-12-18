@@ -53,6 +53,11 @@ fixFilePermissions() {
     	    chmod ug+s $i
 		fi
     done
+	
+	# set up defaults for libraries
+	cd $FBRootDir
+	cd lib
+	chmod a=rx lib*
 
     # Fix lock files
     cd $FBRootDir
