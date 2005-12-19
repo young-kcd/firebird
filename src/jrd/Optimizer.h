@@ -241,7 +241,7 @@ public:
 	bool	used;
 
 	IndexedRelationships indexedRelationships;
-	Firebird::Array<int> previousExpectedStreams;
+	int previousExpectedStreams;
 };
 
 typedef Firebird::HalfStaticArray<InnerJoinStreamInfo*, 8> StreamInfoList;

@@ -1462,6 +1462,11 @@ InversionCandidate* OptimizerRetrieval::getCost()
 		invCandidate->indexes = 0;
 		invCandidate->selectivity = MAXIMUM_SELECTIVITY;
 		invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
+		OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+		for (; tail < optimizer->opt_conjuncts.end(); tail++) {
+			findDependentFromStreams(tail->opt_conjunct_node,
+									 &invCandidate->dependentFromStreams);
+		}
 		return invCandidate;
 	}
 }
@@ -1917,7 +1922,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 	double previousTotalCost = maximumCost;
 
-	// Force to always chose at least one index
+	// Force to always choose at least one index
 	bool firstCandidate = true;
 
 	int i = 0;
@@ -2795,7 +2800,7 @@ IndexRelationship::IndexRelationship()
 
 
 InnerJoinStreamInfo::InnerJoinStreamInfo(MemoryPool& p) :
-	indexedRelationships(p), previousExpectedStreams(p)
+	indexedRelationships(p)
 {
 /**************************************
  *
@@ -2814,7 +2819,7 @@ InnerJoinStreamInfo::InnerJoinStreamInfo(MemoryPool& p) :
 	used = false;
 
 	indexedRelationships.shrink(0);
-	previousExpectedStreams.shrink(0);
+	previousExpectedStreams = 0;
 }
 
 bool InnerJoinStreamInfo::independent() const
@@ -2832,7 +2837,7 @@ bool InnerJoinStreamInfo::independent() const
  *
  **************************************/
 	return (indexedRelationships.getCount() == 0) &&
-		(previousExpectedStreams.getCount() == 0);
+		(previousExpectedStreams == 0);
 }
 
 
@@ -2979,8 +2984,8 @@ void OptimizerInnerJoin::calculateStreamInfo()
 					break;
 				}
 				// Next those with the lowest previous expected streams
-				int compare = innerStreams[i]->previousExpectedStreams.getCount() -
-					tempStreams[index]->previousExpectedStreams.getCount();
+				int compare = innerStreams[i]->previousExpectedStreams -
+					tempStreams[index]->previousExpectedStreams;
 				if (compare < 0) {
 					break;
 				}
@@ -3243,7 +3248,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 				for (index = 0; index < processList->getCount(); index++) {
 					if (relationStreamInfo->stream == relationships[index]->stream) {
 						// If the cost of this relationship is cheaper then remove the
-						// old realtionship and add this one.
+						// old relationship and add this one.
 						if (cheaperRelationship(relationship, relationships[index])) {
 							processList->remove(index);
 							break;
@@ -3335,25 +3340,27 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 
 	size_t pos;
 	if (candidate->dependentFromStreams.find(baseStream->stream, pos)) {
-		// If we could use more conjunctions on the testing stream with the base stream
-		// active as without the base stream then the test stream has a indexed
-		// relationship with the base stream.
-		IndexRelationship* indexRelationship = FB_NEW(pool) IndexRelationship();
-		indexRelationship->stream = testStream->stream;
-		indexRelationship->unique = candidate->unique;
-		indexRelationship->cost = cost;
-		indexRelationship->cardinality = csb_tail->csb_cardinality;
+		if (candidate->indexes) {
+			// If we could use more conjunctions on the testing stream
+			// with the base stream active as without the base stream
+			// then the test stream has a indexed relationship with the base stream.
+			IndexRelationship* indexRelationship = FB_NEW(pool) IndexRelationship();
+			indexRelationship->stream = testStream->stream;
+			indexRelationship->unique = candidate->unique;
+			indexRelationship->cost = cost;
+			indexRelationship->cardinality = csb_tail->csb_cardinality;
 
-		// indexRelationship are kept sorted on cost and unique in the indexRelations array.
-		// The unqiue and cheapest indexed relatioships are on the first position.
-		int index = 0;
-		for (; index < baseStream->indexedRelationships.getCount(); index++) {
-			if (cheaperRelationship(indexRelationship, baseStream->indexedRelationships[index])) {
-				break;
+			// indexRelationship are kept sorted on cost and unique in the indexRelations array.
+			// The unique and cheapest indexed relatioships are on the first position.
+			int index = 0;
+			for (; index < baseStream->indexedRelationships.getCount(); index++) {
+				if (cheaperRelationship(indexRelationship, baseStream->indexedRelationships[index])) {
+					break;
+				}
 			}
+			baseStream->indexedRelationships.insert(index, indexRelationship);
 		}
-		baseStream->indexedRelationships.insert(index, indexRelationship);
-		testStream->previousExpectedStreams.add(baseStream->stream);
+		testStream->previousExpectedStreams++;
 	}
 	delete candidate;
 	delete optimizerRetrieval;
