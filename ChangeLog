@@ -1,3 +1,59 @@
+2005-12-18 18:56  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.25),
+	Makefile.in.client.gbak (1.14), Makefile.in.client.gdef (1.13),
+	Makefile.in.client.gfix (1.16), Makefile.in.client.gpre (1.20),
+	Makefile.in.client.gsec (1.7), Makefile.in.client.isql (1.12),
+	Makefile.in.client.qli (1.8), Makefile.in.client.util (1.31),
+	Makefile.in.codes (1.20), Makefile.in.embed.gbak (1.15),
+	Makefile.in.embed.gdef (1.11), Makefile.in.embed.gfix (1.18),
+	Makefile.in.embed.gpre (1.20), Makefile.in.embed.isql (1.12),
+	Makefile.in.embed.lockmgr (1.10), Makefile.in.embed.qli (1.18),
+	Makefile.in.embed.util (1.28), Makefile.in.examples (1.8),
+	Makefile.in.fbserver (1.22), Makefile.in.libfbembed (1.17),
+	Makefile.in.msgs (1.17), Makefile.in.refDatabases (1.29),
+	Makefile.in.static.gbak (1.12), Makefile.in.static.gpre (1.19),
+	Makefile.in.static.isql (1.11), make.defaults (1.43),
+	make.shared.targets (1.21), make.shared.variables (1.59):
+	
+	deleted libfbcommon as was suggested by Jim
+
+2005-12-18 18:56  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.67):
+	
+	correctly build public ibase.h
+
+2005-12-18 18:49  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.libfbcommon (1.11):
+	
+	deleted libfbcommon as was suggested by Jim
+
+2005-12-18 18:47  alexpeshkoff
+
+	* firebird2/src/misc/makeHeader.cpp (1.1):
+	
+	simple utility to build public ibase.h
+
+2005-12-18 17:10  alexpeshkoff
+
+	* firebird2/src/common/classes/locks.h (1.22):
+	
+	use mutex instead of spin lock
+
+2005-12-18 17:08  alexpeshkoff
+
+	* firebird2/src/lock/lock.h (1.33):
+	
+	avoid overflows in UCHAR lhb_version
+
+2005-12-18 16:23  alexpeshkoff
+
+	* firebird2/builds/install/misc/classicLibrary.sh.in (1.4):
+	
+	let all users run applications
+
 2005-12-17 13:59  aafemt
 
 	* firebird2/builds/win32/defs/fbclient_s.def (1.3):
