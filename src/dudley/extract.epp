@@ -547,6 +547,8 @@ static void extract_database(const TEXT * DB_file_nameL)
 /* print log info. */
 
 #ifdef NOT_USED_OR_REPLACED
+// code commented in addition to ifdef to avoid warnings during compilation
+/*
 		if (EXT_capabilities & EXT_v4) {
 			bool first_time = true;
 			bool need_close = false;
@@ -625,6 +627,7 @@ static void extract_database(const TEXT * DB_file_nameL)
 				fprintf(output_file, "\n\tgroup_commit_wait_time %"SLONGFORMAT,
 						   grp_commit);
 		}
+ */
 #endif
 
 	fprintf(output_file, ";\n");
