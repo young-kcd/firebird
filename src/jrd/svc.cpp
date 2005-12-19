@@ -997,12 +997,12 @@ ISC_STATUS SVC_query2(Service* service,
 				break;
 			}
 #endif
-/*
+
 		case isc_info_svc_get_config:
 			// TODO: iterate through all integer-based config values
 			//		 and return them to the client
 			break;
-
+/*
 		case isc_info_svc_default_config:
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
