@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.gfix,v 1.16 2005-12-18 17:56:43 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.gfix,v 1.17 2005-12-20 12:14:52 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -58,7 +58,7 @@ Dependencies = $(AllObjects:.o=.d)
 gfix : $(LIBFBCLIENT_SO) $(GFIX)
 
 $(GFIX):	$(GFIX_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 include $(ROOT)/gen/make.shared.targets
