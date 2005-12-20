@@ -2,6 +2,34 @@
   * v2.0 Beta 2
   **************
 
+    * Fixed Beta 1 bug
+        Unexpected warnings about missing UDF libraries during restore on Win32
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Linux SS performance degradation related to the threads management
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        Incorrect Win32 error output by GSTAT
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Beta 1 bug
+        Incorrect report by GFIX validation about corruption of primary/unique indices
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed Beta 1 bugs
+        1) Long restore for complex interdependent metadata
+        2) Indices not used for small tables
+        3) Bad join order for non-indexed relationships
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Enhanced CAST function (SF #1371274)
         Now it's possible to use CAST to advise the engine about parameter types,
         hence avoiding the famous "Datatype unknown" error
