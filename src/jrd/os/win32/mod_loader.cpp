@@ -42,9 +42,7 @@ void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 
 ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
-	HMODULE module = GetModuleHandle(modPath.c_str());
-	if (!module)
-		module = LoadLibrary(modPath.c_str());
+	HMODULE module = LoadLibrary(modPath.c_str());
 	if (!module)
 		return 0;
 	
