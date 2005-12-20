@@ -1,3 +1,22 @@
+2005-12-19 17:24  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.162):
+	
+	fixed server properties info using ibExpert
+
+2005-12-19 14:59  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.50), Optimizer.h (1.13):
+	
+	Fixed the issue related to non-indexed relationships (reported in
+	fb-devel).
+
+2005-12-19 11:02  alexpeshkoff
+
+	* firebird2/src/dudley/extract.epp (1.43):
+	
+	fixed warning
+
 2005-12-18 18:56  alexpeshkoff
 
 	* firebird2/builds/posix/: Makefile.in.boot.gpre (1.25),
