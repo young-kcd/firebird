@@ -1,3 +1,39 @@
+2005-12-20 21:36  kkuznetsov
+
+	* firebird2/extern/icu/source/configure (1.4):
+	
+	
+	
+	reflect changes to configure.in for sun threading
+
+2005-12-20 14:24  dimitr
+
+	* firebird2/doc/WhatsNew (1.78):
+	
+	Updated.
+
+2005-12-20 13:14  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.gbak (1.15),
+	Makefile.in.client.gdef (1.14), Makefile.in.client.gfix (1.17),
+	Makefile.in.client.gpre (1.21), Makefile.in.client.gsec (1.8),
+	Makefile.in.client.isql (1.13), Makefile.in.client.qli (1.9),
+	Makefile.in.client.util (1.32):
+	
+	fix non-nptl SS build
+
+2005-12-20 12:12  dimitr
+
+	* firebird2/src/jrd/os/win32/mod_loader.cpp (1.8):
+	
+	Fixed win32 implementation of ModuleLoader::Module.
+
+2005-12-20 09:18  aafemt
+
+	* firebird2/configure.in (1.236):
+	
+	deleted libfbcommon as was suggested by Jim
+
 2005-12-19 17:24  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.162):
