@@ -1174,14 +1174,14 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dpb_wal_grp_cmt_wait          46
 #define isc_dpb_lc_messages               47
 #define isc_dpb_lc_ctype                  48
-#define isc_dpb_cache_manager		  49
-#define isc_dpb_shutdown		  50
-#define isc_dpb_online			  51
-#define isc_dpb_shutdown_delay		  52
-#define isc_dpb_reserved		  53
-#define isc_dpb_overwrite		  54
-#define isc_dpb_sec_attach		  55
-#define isc_dpb_disable_wal		  56
+#define isc_dpb_cache_manager             49
+#define isc_dpb_shutdown                  50
+#define isc_dpb_online                    51
+#define isc_dpb_shutdown_delay            52
+#define isc_dpb_reserved                  53
+#define isc_dpb_overwrite                 54
+#define isc_dpb_sec_attach                55
+#define isc_dpb_disable_wal               56
 #define isc_dpb_connect_timeout           57
 #define isc_dpb_dummy_packet_interval     58
 #define isc_dpb_gbak_attach               59
@@ -1191,11 +1191,12 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dpb_sql_dialect               63
 #define isc_dpb_set_db_readonly           64
 #define isc_dpb_set_db_sql_dialect        65
-#define isc_dpb_gfix_attach		  66
-#define isc_dpb_gstat_attach		  67
-#define isc_dpb_set_db_charset			68
-#define isc_dpb_gsec_attach         69
-#define isc_dpb_address_path			70
+#define isc_dpb_gfix_attach               66
+#define isc_dpb_gstat_attach              67
+#define isc_dpb_set_db_charset            68
+#define isc_dpb_gsec_attach               69
+#define isc_dpb_address_path              70
+#define isc_dpb_remote_attachment         71
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -1340,6 +1341,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_spb_verbose                   107
 #define isc_spb_options                   108
 #define isc_spb_address_path              109
+#define isc_spb_remote_attachment         110
 
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout
