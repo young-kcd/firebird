@@ -121,7 +121,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #endif
 	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0},		// bitmask
 	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) false},	// let use old passwd hash verification
-	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault}	// garbage collection policy
+	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
+	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false}
 };
 
 /******************************************************************************
@@ -501,3 +502,7 @@ const char *Config::getGCPolicy()
 	return (const char *) sysConfig.values[KEY_GC_POLICY];
 }
 
+bool Config::getRedirection()
+{
+	return (bool) sysConfig.values[KEY_REDIRECTION];
+}

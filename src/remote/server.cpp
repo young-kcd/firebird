@@ -55,6 +55,7 @@
 #include "../jrd/why_proto.h"
 #include "../common/classes/semaphore.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/config/config.h"
 #ifdef DEBUG
 #include "gen/iberror.h"
 #endif
@@ -119,6 +120,18 @@ typedef struct srvr
 	USHORT			srvr_flags;
 } *SRVR;
 
+namespace {
+	// this sets of parameters help use same functions
+	// for both services and databases attachments
+	struct ParametersSet {
+		UCHAR address_path, remote_attachment;
+	};
+	const ParametersSet dpbParam = {isc_dpb_address_path, 
+									isc_dpb_remote_attachment};
+	const ParametersSet spbParam = {isc_spb_address_path, 
+									isc_spb_remote_attachment};
+}
+
 static bool	accept_connection(rem_port*, P_CNCT*, PACKET*);
 static ISC_STATUS	allocate_statement(rem_port*, P_RLSE*, PACKET*);
 #ifdef MULTI_THREAD
@@ -131,7 +144,7 @@ static void		aux_connect(rem_port*, P_REQ*, PACKET*);
 #endif
 static void		aux_request(rem_port*, P_REQ*, PACKET*);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
-static void		addRemoteAddress(Firebird::ClumpletWriter&, UCHAR, const rem_port*);
+static void		addClumplets(Firebird::ClumpletWriter&, const ParametersSet&, const rem_port*);
 
 #ifdef CANCEL_OPERATION
 static void	cancel_operation(rem_port*);
@@ -445,7 +458,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			extra_threads = threads_waiting - pending_requests;
 			if (extra_threads < 0) {
 				gds__thread_start(	loopThread,
-									(void*)(ULONG) flags,
+									(void*)(IPTR) flags,
 									THREAD_medium,
 									THREAD_ast,
 									0);
@@ -729,20 +742,23 @@ static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que_inst)
 }
 #endif
 
-static void addRemoteAddress(Firebird::ClumpletWriter& dpb_buffer, UCHAR par, const rem_port* port)
+static void addClumplets(Firebird::ClumpletWriter& dpb_buffer, 
+						 const ParametersSet& par, 
+						 const rem_port* port)
 {
 /**************************************
  *
- *	a d d R e m o t e A d d r e s s
+ *	a d d C l u m p l e t s
  *
  **************************************
  *
  * Functional description
  *	Insert remote endpoint data into DPB address stack
+ *  If configured, insert remote_attachment into dpb
  *
  **************************************/
 	Firebird::ClumpletWriter address_stack_buffer(Firebird::ClumpletReader::UnTagged, MAX_UCHAR - 2);
-	if (dpb_buffer.find(par)) {
+	if (dpb_buffer.find(par.address_path)) {
 		address_stack_buffer.reset(dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
 		dpb_buffer.deleteClumplet();
 	}
@@ -761,7 +777,7 @@ static void addRemoteAddress(Firebird::ClumpletWriter& dpb_buffer, UCHAR par, co
 	address_stack_buffer.insertBytes(isc_dpb_address, 
 		address_record.getBuffer(), address_record.getBufferLength());
 
-	dpb_buffer.insertBytes(par, address_stack_buffer.getBuffer(), 
+	dpb_buffer.insertBytes(par.address_path, address_stack_buffer.getBuffer(), 
 								address_stack_buffer.getBufferLength());
 
 	// Remove all remaining isc_*pb_address_path clumplets. 	
@@ -774,10 +790,17 @@ static void addRemoteAddress(Firebird::ClumpletWriter& dpb_buffer, UCHAR par, co
 	// can do about it.
 
 	while (!dpb_buffer.isEof()) {
-		if (dpb_buffer.getClumpTag() == par)
+		if (dpb_buffer.getClumpTag() == par.address_path)
 			dpb_buffer.deleteClumplet();
 		else
 			dpb_buffer.moveNext();
+	}
+	
+	// Add marker to know later that this attachment is remote
+	if (!Config::getRedirection()) {
+		if (! dpb_buffer.find(par.remote_attachment)) {
+			dpb_buffer.insertTag(par.remote_attachment);
+		}
 	}
 }
 
@@ -820,8 +843,8 @@ static ISC_STATUS attach_database(
 			string->str_data, string->str_length);
 	}
 
-	// Now, insert remote endpoint data into DPB address stack
-	addRemoteAddress(dpb_buffer, isc_dpb_address_path, port);
+	// Now insert additional clumplets into dpb
+	addClumplets(dpb_buffer, dpbParam, port);
 	
 /* Disable remote gsec attachments */
 	for (dpb_buffer.setCurOffset(1); !dpb_buffer.isEof(); ) {
@@ -4329,8 +4352,8 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
 			string->str_data, string->str_length);
 	}
 
-	// Now, insert remote endpoint data into DPB address stack
-	addRemoteAddress(spb, isc_spb_address_path, this);
+    // Now insert additional clumplets into spb
+	addClumplets(spb, spbParam, this);
 	
 	/* See if user has specified parameters relevent to the connection,
 	   they will be stuffed in the SPB if so. */

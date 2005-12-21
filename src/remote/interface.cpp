@@ -65,6 +65,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/config/config.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -105,18 +106,20 @@ namespace {
 	// for both services and databases attachments
 	struct ParametersSet {
 		UCHAR dummy_packet_interval, user_name, sys_user_name, 
-			  password, password_enc;
+			  password, password_enc, remote_attachment;
 	};
 	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval, 
 									isc_dpb_user_name, 
 									isc_dpb_sys_user_name, 
 									isc_dpb_password, 
-									isc_dpb_password_enc};
+									isc_dpb_password_enc,
+									isc_dpb_remote_attachment};
 	const ParametersSet spbParam = {isc_spb_dummy_packet_interval, 
 									isc_spb_user_name, 
 									isc_spb_sys_user_name, 
 									isc_spb_password, 
-									isc_spb_password_enc};
+									isc_spb_password_enc,
+									isc_spb_remote_attachment};
 }
 
 static RVNT add_event(rem_port*);
@@ -5571,9 +5574,15 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb,
  *
  * Functional description
  *	Fetch user_string out of dpb.
- *	(Based on JRD get_options())
+ *	Analyze and prepare dpb for attachment to remote server.
  *
  **************************************/
+    if (!Config::getRedirection()) {
+	    if (dpb.find(par.remote_attachment)) {
+			throw Firebird::status_exception(isc_unavailable, isc_arg_end);
+		}
+	}
+	
 #ifndef NO_PASSWORD_ENCRYPTION
 	if (dpb.find(par.password))
 	{

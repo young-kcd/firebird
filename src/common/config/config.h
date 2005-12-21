@@ -110,7 +110,8 @@ class Config
  		KEY_BUGCHECK_ABORT,							// 40
 		KEY_TRACE_DSQL,								// 41
 		KEY_LEGACY_HASH,							// 42
-		KEY_GC_POLICY								// 43
+		KEY_GC_POLICY,								// 43
+		KEY_REDIRECTION								// 44
 	};
 
 public:
@@ -339,6 +340,11 @@ public:
 		GC policy
 	*/
 	static const char *getGCPolicy();
+
+	/*
+		Redirection
+	*/
+	static bool getRedirection();
 };
 
 namespace Firebird {
