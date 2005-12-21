@@ -2107,20 +2107,17 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						node = node->nod_arg[e_cursor_stmt_seek];
 						break;
 					}
-				case jrd_req::req_return:
-					if (!request->req_records_affected.hasCursor()) {
-						// fetch one record
-						if (RSE_get_record(tdbb, rsb,
+					// fetch one record
+					if (RSE_get_record(tdbb, rsb,
 #ifdef SCROLLABLE_CURSORS
-										   RSE_get_next))
+									   RSE_get_next))
 #else
-										   RSE_get_forward))
+									   RSE_get_forward))
 #endif
-						{
-							node = node->nod_arg[e_cursor_stmt_into];
-							request->req_operation = jrd_req::req_evaluate;
-							break;
-						}
+					{
+						node = node->nod_arg[e_cursor_stmt_into];
+						request->req_operation = jrd_req::req_evaluate;
+						break;
 					}
 					request->req_operation = jrd_req::req_return;
 				default:
