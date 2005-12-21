@@ -2,6 +2,17 @@
   * v2.0 Beta 2
   **************
 
+    * Security enhancements
+        1) Active protection from brute-force attack in services API
+        2) Redirection of remote requests is controlled by firebird.conf
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        Incorrect encryption of password in embedded services manager
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Fixed Beta 1 bug
         Unexpected warnings about missing UDF libraries during restore on Win32
       Contributor(s):
