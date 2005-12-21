@@ -498,6 +498,15 @@ bool NAV_get_record(thread_db* tdbb,
 	}
 #endif
 
+	// If we alredy reached end of the stream, return
+	if ((direction == RSE_get_forward &&
+		impure->irsb_flags & irsb_eof) ||
+		(direction == RSE_get_backward &&
+		impure->irsb_flags & irsb_bof))
+	{
+		return false;
+	}
+
 	init_fetch(impure);
 	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
