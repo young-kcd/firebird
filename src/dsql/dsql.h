@@ -436,7 +436,7 @@ public:
 	class dsql_blb* req_blob;			//!< Blob info for blob requests
 	FB_API_HANDLE	req_handle;				//!< OSRI request handle
 	//dsql_str*	req_blr_string;			//!< String block during BLR generation
-	Firebird::HalfStaticArray<BLOB_PTR, 256> req_blr_data;
+	Firebird::HalfStaticArray<BLOB_PTR, 1024> req_blr_data;
 	class dsql_msg* req_send;		//!< Message to be sent to start request
 	class dsql_msg* req_receive;	//!< Per record message to be received
 	class dsql_msg* req_async;		//!< Message for sending scrolling information
