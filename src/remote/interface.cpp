@@ -5579,7 +5579,7 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb,
  **************************************/
     if (!Config::getRedirection()) {
 	    if (dpb.find(par.remote_attachment)) {
-			throw Firebird::status_exception(isc_unavailable, isc_arg_end);
+			Firebird::status_exception::raise(isc_unavailable, isc_arg_end);
 		}
 	}
 	
