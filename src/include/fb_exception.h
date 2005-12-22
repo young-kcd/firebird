@@ -77,7 +77,6 @@ public:
 	explicit status_exception(const ISC_STATUS *status_vector) throw();
 	
 	// These versions of constructor clone passed transient strings
-	status_exception(ISC_STATUS status, va_list status_args);
 	status_exception(ISC_STATUS status, ...);
 	
 	// Create exception with undefined status vector, this constructor allows to use this
@@ -110,6 +109,7 @@ private:
 	bool m_strings_permanent;
 	bool m_status_known;
 	void fill_status(ISC_STATUS status, va_list status_args);
+	status_exception(ISC_STATUS status, va_list status_args);
 };
 
 class system_call_failed : public status_exception
