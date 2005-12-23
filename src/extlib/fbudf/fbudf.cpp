@@ -545,34 +545,100 @@ FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, const int& nhours)
 
 FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc)
 {
-	//time_t now;
-	//time(&now);
-#if defined(_WIN32)
-	_timeb timebuffer;
-	_ftime(&timebuffer);
-	// localtime uses thread local storage in NT, no need to lock threads.
-	// Of course, this facility is only available in multithreaded builds.
-	tm times = *localtime(&timebuffer.time);
-	isc_encode_timestamp(&times, rc);
-	rc->timestamp_time += timebuffer.millitm * 10;
+#if defined(HAVE_GETTIMEOFDAY)
+	timeval tv;
+	GETTIMEOFDAY(&tv);
+	const time_t seconds = tv.tv_sec;
+
+#if defined(HAVE_LOCALTIME_R)
+	tm timex;
+	tm* times = localtime_r(&seconds, &timex);
 #else
 
+#FB_COMPILER_MESSAGE("Someone should make this code work properly or use a mutex")
 #ifdef HAVE_PTHREAD_H
     pthread_mutex_t loctimelock =  PTHREAD_MUTEX_INITIALIZER;
 	pthread_mutex_lock(&loctimelock);  // ctime critical section start
 #endif
 
-	timeval tv;
-	GETTIMEOFDAY(&tv);
-
-	tm times = *localtime(reinterpret_cast<const time_t*>(&tv.tv_sec));
+	tm* times = localtime(&seconds);
 
 #ifdef HAVE_PTHREAD_H
 	pthread_mutex_unlock(&loctimelock);  // ctime critical section end
 #endif
+#endif // localtime_r
 
-	isc_encode_timestamp(&times, rc);
-	rc->timestamp_time += tv.tv_usec / 100;
+	if (times)
+	{
+		isc_encode_timestamp(times, rc);
+		rc->timestamp_time += tv.tv_usec / 100;
+	}
+	else
+		rc->timestamp_date = rc->timestamp_time = 0;
+
+#else // gettimeofday
+	_timeb timebuffer;
+	_ftime(&timebuffer);
+	// localtime uses thread local storage in NT, no need to lock threads.
+	// Of course, this facility is only available in multithreaded builds.
+	tm* times = localtime(&timebuffer.time);
+	if (times)
+	{
+		isc_encode_timestamp(times, rc);
+		rc->timestamp_time += timebuffer.millitm * 10;
+	}
+	else
+		rc->timestamp_date = rc->timestamp_time = 0;
+#endif
+	return;
+}
+
+FBUDF_API void getExactTimestampUTC(ISC_TIMESTAMP* rc)
+{
+#if defined(HAVE_GETTIMEOFDAY)
+	timeval tv;
+	GETTIMEOFDAY(&tv);
+	const time_t seconds = tv.tv_sec;
+
+#if defined(HAVE_GMTIME_R)
+	tm timex;
+	tm* times = gmtime_r(&seconds, &timex);
+#else
+
+#FB_COMPILER_MESSAGE("Someone should make this code work properly or use a mutex")
+#ifdef HAVE_PTHREAD_H
+    pthread_mutex_t loctimelock =  PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_lock(&loctimelock);  // ctime critical section start
+#endif
+
+	tm* times = gmtime(&seconds);
+
+#ifdef HAVE_PTHREAD_H
+	pthread_mutex_unlock(&loctimelock);  // ctime critical section end
+#endif
+#endif // gmtime_r
+
+	if (times)
+	{
+		isc_encode_timestamp(times, rc);
+		rc->timestamp_time += tv.tv_usec / 100;
+	}
+	else
+		rc->timestamp_date = rc->timestamp_time = 0;
+
+#else // gettimeofday
+	_timeb timebuffer;
+	_ftime(&timebuffer);
+	// gmtime uses thread local storage in NT, no need to lock threads.
+	// Of course, this facility is only available in multithreaded builds.
+	tm* times = gmtime(&timebuffer.time);
+	if (times)
+	{
+		isc_encode_timestamp(times, rc);
+		rc->timestamp_time += timebuffer.millitm * 10;
+	}
+	else
+		rc->timestamp_date = rc->timestamp_time = 0;
 #endif
 	return;
 }

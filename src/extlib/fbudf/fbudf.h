@@ -76,6 +76,7 @@ FBUDF_API ISC_TIMESTAMP* addMinute(ISC_TIMESTAMP* v, const int& nminutes);
 FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, const int& nhours);
 
 FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc);
+FBUDF_API void getExactTimestampUTC(ISC_TIMESTAMP* rc);
 
 FBUDF_API int isLeapYear(const ISC_TIMESTAMP* v);
 

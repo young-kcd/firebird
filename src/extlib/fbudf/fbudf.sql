@@ -153,6 +153,13 @@ timestamp
 returns parameter 1
 entry_point 'getExactTimestamp' module_name 'fbudf';
 
+--It will work only with Win32 until it's ported to another OS.
+--FBUDF_API void getExactTimestampUTC(ISC_TIMESTAMP* rc);
+declare external function getExactTimestampUTC
+timestamp
+returns parameter 1
+entry_point 'getExactTimestampUTC' module_name 'fbudf';
+
 --FBUDF_API int isLeapYear(const ISC_TIMESTAMP* v);
 declare external function isLeapYear
 timestamp
