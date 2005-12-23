@@ -77,7 +77,7 @@ public:
 	explicit status_exception(const ISC_STATUS *status_vector) throw();
 	
 	// These versions of constructor clone passed transient strings
-	status_exception(ISC_STATUS status, ...);
+	explicit status_exception(ISC_STATUS status, ...);
 	
 	// Create exception with undefined status vector, this constructor allows to use this
 	// class as jmpbuf replacement for transitional period

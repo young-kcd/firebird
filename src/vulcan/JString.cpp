@@ -190,7 +190,7 @@ void JString::Format (const char* stuff, ...)
 }
 
 
-JString::operator bool ()
+JString::operator bool () const
 {
 /**************************************
  *
@@ -207,7 +207,7 @@ JString::operator bool ()
 }
 
 
-bool JString::operator ! ()
+bool JString::operator ! () const
 {
 /**************************************
  *
@@ -338,7 +338,7 @@ void JString::release ()
 	string = NULL;
 }
 
-bool JString::operator ==(const char * stuff)
+bool JString::operator ==(const char * stuff) const
 {
 	if (string)
 		return strcmp (string, stuff) == 0;
@@ -346,20 +346,13 @@ bool JString::operator ==(const char * stuff)
 	return strcmp ("", stuff) == 0;
 }
 
-bool JString::operator !=(const char * stuff)
+bool JString::operator !=(const char * stuff) const
 {
 	if (string)
 		return strcmp (string, stuff) != 0;
 
 	return strcmp ("", stuff) != 0;
 }
-
-/***
-bool JString::operator !=(const char * string)
-{
-	return strcmp (start, string) != 0;
-}
-***/
 
 /***
 void JString::set(int length, const char * stuff)
@@ -372,7 +365,7 @@ void JString::set(int length, const char * stuff)
 }
 ***/
 
-JString JString::before(char c)
+JString JString::before(char c) const
 {
 	const char *p;
 
@@ -388,7 +381,7 @@ JString JString::before(char c)
 	return stuff;
 }
 
-const char* JString::after(char c)
+const char* JString::after(char c) const
 {
 	const char *p;
 
@@ -398,7 +391,7 @@ const char* JString::after(char c)
 	return p;
 }
 
-bool JString::IsEmpty()
+bool JString::IsEmpty() const
 {
 	return !string || !string [0];
 }
@@ -420,7 +413,7 @@ int JString::hash(const char * string, int tableSize)
 	return value % tableSize;
 }
 
-int JString::hash(int tableSize)
+int JString::hash(int tableSize) const
 {
 	if (!string)
 		return 0;
@@ -510,7 +503,7 @@ void JString::alloc(int len)
 	string [len] = 0;
 }
 
-bool JString::equalsNoCase(const char * string2)
+bool JString::equalsNoCase(const char * string2) const
 {
 	if (!string)
 		return string2 [0] == 0;
@@ -524,7 +517,7 @@ bool JString::equalsNoCase(const char * string2)
 	return *p == *string2;
 }
 
-int JString::length()
+int JString::length() const
 {
 	if (!string)
 		return 0;

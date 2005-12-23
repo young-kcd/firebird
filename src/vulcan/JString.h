@@ -36,7 +36,7 @@ class JString
 public:
 	JString (const char *source, int length);
 	JString();
-	JString (const char *string);
+	explicit JString (const char *string);
 	JString(const JString& stringSrc);
 	~JString();
 
@@ -46,26 +46,26 @@ public:
 
 	void		releaseBuffer ();
 	char*		getBuffer (int length);
-	int			length();
-	bool		equalsNoCase (const char *string2);
+	int			length() const;
+	bool		equalsNoCase (const char *string2) const;
 	static		JString upcase (const char *source);
 	static int	findSubstring (const char *string, const char *sub);
-	int			hash (int tableSize);
+	int			hash (int tableSize) const;
 	static int	hash (const char *string, int tableSize);
-	bool		IsEmpty();
-	const char* after (char c);
-	JString		before (char c);
+	bool		IsEmpty() const;
+	const char* after (char c) const;
+	JString		before (char c) const;
 	void		append (const char*);
 	void		setString (const char*);
 	void		setString (const char *source, int length);
 	void		Format (const char*, ...);
 	
-	inline const char	*getString()
+	inline const char	*getString() const
 		{
 		return (string) ? string : "";
 		}
 
-	inline 	operator const char*()
+	inline 	operator const char*() const
 		{
 		return (string) ? string : "";
 		}
@@ -73,11 +73,11 @@ public:
 	//void set (int length, const char *stuff);
 	//void		setString (const WCHAR *wString, int len);
 	
-	bool		operator == (const char *string);
-	bool		operator != (const char *stuff);
+	bool		operator == (const char *string) const;
+	bool		operator != (const char *stuff) const;
 	//JString		operator + (const char *string);
-				operator bool();
-	bool		operator !();
+				operator bool() const;
+	bool		operator !() const;
 	JString&	operator = (const char *string);
 	JString&	operator = (const JString& string);
 	JString&	operator+=(const char *string);

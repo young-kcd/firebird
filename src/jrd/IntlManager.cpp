@@ -98,7 +98,7 @@ bool IntlManager::initialize()
 					Element* module = el->findChild("intl_module");
 					if (module)
 					{
-						JString moduleName = module->getAttributeName(0);
+						JString moduleName(module->getAttributeName(0));
 						ConfObj objModule = configFile.findObject("intl_module", moduleName);
 						filename = objModule->getValue("filename", "");
 

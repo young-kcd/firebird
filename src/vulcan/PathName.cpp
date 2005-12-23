@@ -92,7 +92,7 @@ int PathName::findWorkingDirectory(int dpbLength, const UCHAR* dpb, int bufferLe
 	
 	for (; p < end; p += length)
 		{
-		UCHAR verb = *p++;
+		const UCHAR verb = *p++;
 		length = *p++;
 		length += (*p++) << 8;
 		
@@ -139,7 +139,7 @@ int PathName::merge(const char* fileName, const char* workingDirectory, int buff
 {
 	const char *p;
 	char *q = buffer;
-	char *endBuffer = buffer + bufferLength - 1;
+	const char *endBuffer = buffer + bufferLength - 1;
 	
 	if (isAbsolute (fileName))
 		{
@@ -211,7 +211,7 @@ bool PathName::isAbsolute(const char* fileName)
 #endif
 }
 
-char* PathName::copyCanonical(const char* fileName, char* buffer, char* endBuffer)
+char* PathName::copyCanonical(const char* fileName, char* buffer, const char* endBuffer)
 {
 	char *q = buffer;
 	const char *p = fileName;
