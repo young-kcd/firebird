@@ -378,11 +378,29 @@ changeDBAPassword() {
 # The two host names that are needed there are 
 # localhost.localdomain and whatever hostname returns.
 
-# automatically adding HostsEquiv file was security risk,
-# therefore it was disabled. AP.
+# Automatically adding /etc/hosts.equiv file was security risk,
+# therefore it was disabled. But in order to let anonymous
+# services operate, we need /etc/gds_hosts.equiv instead.
+# I hope nobody except firebird understands it.
 
 updateHostsDotFile() {
-	return 0
+	hostEquivFile=/etc/gds_hosts.equiv
+
+	if [ ! -f $hostEquivFile ]
+	then
+		touch $hostEquivFile
+		chown root:root $hostEquivFile
+		chmod u=rw,go=r $hostEquivFile
+	fi
+
+	newLine="localhost"
+	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
+
+	newLine="localhost.localdomain"
+	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
+
+	newLine="`hostname`"
+	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
 }
 
 
