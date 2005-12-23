@@ -1,3 +1,26 @@
+2005-12-23 02:42  robocop
+
+	* firebird2/src/: include/fb_exception.h (1.18),
+	jrd/IntlManager.cpp (1.6), vulcan/JString.cpp (1.5),
+	vulcan/JString.h (1.5), vulcan/PathName.cpp (1.4),
+	vulcan/PathName.h (1.4):
+	
+	Const correctness and the like.
+
+2005-12-22 07:22  robocop
+
+	* firebird2/src/include/fb_exception.h (1.17):
+	
+	This alternative constructor shouldn't be public, but MSVC6 doesn't
+	obey the private clause if there's another constructor made public.
+	Maybe no compiler does.
+
+2005-12-22 07:02  robocop
+
+	* firebird2/src/remote/interface.cpp (1.111):
+	
+	Fix for crash in Alex' disable multi-hop config param.
+
 2005-12-21 22:59  dimitr
 
 	* firebird2/src/jrd/exe.cpp (1.167):
