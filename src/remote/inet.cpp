@@ -543,8 +543,9 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 
 		port = inet_try_connect(packet, rdb, file_name,
 								node_name, status_vector, dpb, dpb_length);
-		if (!port)
+		if (!port) {
 			return NULL;
+		}
 	}
 
 	if (packet->p_operation == op_reject && !uv_flag)
@@ -1138,7 +1139,6 @@ static int accept_connection(rem_port* port,
 	}
 
 /* See if user exists.  If not, reject connection */
-
 	if (user_verification) {
 		eff_gid = eff_uid = -1;
 		port->port_flags |= PORT_not_trusted;
@@ -1192,8 +1192,9 @@ static int accept_connection(rem_port* port,
 		{
 			if (check_proxy(port, host, name))
 				passwd = getpwnam(name.c_str());
-			if (!passwd)
+			if (!passwd) {
 				return FALSE;
+			}
 #ifndef HAVE_INITGROUPS
 			eff_gid = passwd->pw_gid;
 #else
@@ -1660,7 +1661,7 @@ static int check_host(
 
 		result = parse_hosts(hosts_file, host_name, user);
 		if (result == -1)
-			result = FALSE;
+			result = 0;
 	}
 	return result;
 }

@@ -4768,10 +4768,11 @@ static rem_port* analyze_service(Firebird::PathName& service_name,
 	}
 #endif
 	if (!port) {
-		if (ISC_analyze_tcp(service_name, node_name))
+		if (ISC_analyze_tcp(service_name, node_name)) {
 			port = INET_analyze(service_name, status_vector,
 								node_name.c_str(), user_string, uv_flag, dpb,
 								dpb_length);
+		}
 	}
 
 #if defined(XNET)
