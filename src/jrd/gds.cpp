@@ -2561,6 +2561,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 	TEXT* ib_ext_lib_path = getenv(ib_env_var);
 	if (!ib_ext_lib_path) {
 		strncpy(resolved_module, module, length);
+		resolved_module[length - 1] = 0;
 		return TRUE;		/* The variable is not defined. Return TRUE */
 	}
 
@@ -2583,10 +2584,11 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 		TEXT abs_path[MAXPATHLEN];
 		TEXT path[MAXPATHLEN];
 
-		// CVC: Warning, strtok is changing the environment variable!
-		// If this function is called again, only the first substring will be found.
-		// Multiple engines in the same machine => shudder.
-		const TEXT* token = strtok(ib_ext_lib_path, ";");
+		// Let's not modify envvar with strtok!
+		TEXT temp_path[MAXPATHLEN];
+		strncpy(temp_path, ib_ext_lib_path, sizeof(temp_path));
+		temp_path[sizeof(temp_path) - 1] = 0;
+		const TEXT* token = strtok(temp_path, ";");
 		while (token != NULL) {
 			strcpy(path, token);
 			/* make sure that there is no traing slash on the path */
@@ -2597,6 +2599,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 				&& (!COMPARE_PATH(abs_path, abs_module_path))) 
 			{
 				strncpy(resolved_module, abs_module, length);
+				resolved_module[length - 1] = 0;
 				return TRUE;
 			}
 			token = strtok(NULL, ";");
