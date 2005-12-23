@@ -50,7 +50,7 @@ void ClumpletWriter::initNewBuffer(UCHAR tag)
 		case SpbAttach:
 			if (tag != isc_spb_version1)
 			{
-				dynamic_buffer.push(isc_spb_version1);
+				dynamic_buffer.push(isc_spb_version);
 			}
 			dynamic_buffer.push(tag);
 			break;
