@@ -36,7 +36,7 @@ class JString
 public:
 	JString (const char *source, int length);
 	JString();
-	explicit JString (const char *string);
+	JString (const char *string);
 	JString(const JString& stringSrc);
 	~JString();
 
