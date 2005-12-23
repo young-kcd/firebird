@@ -160,6 +160,7 @@
 #undef HAVE_MKSTEMP
 #undef HAVE_LLRINT
 #undef HAVE_LOCALTIME_R
+#undef HAVE_GMTIME_R
 
 
 /* Types */
