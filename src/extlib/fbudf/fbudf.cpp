@@ -48,6 +48,11 @@ be easy to add needed headers to stdafx.h after a makefile is built.
 
 #include "fbudf.h"
 
+#if defined(HAVE_GETTIMEOFDAY) && (!(defined (HAVE_LOCALTIME_R) && defined (HAVE_GMTIME_R)))
+#define NEED_TIME_MUTEX
+#include "../common/classes/locks.h"
+#endif
+
 
 //Original code for this library was written by Claudio Valderrama
 // on July 2001 for IBPhoenix.
@@ -543,6 +548,10 @@ FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, const int& nhours)
 	return internal::addTenthMSec(v, nhours, 3600 * ISC_TIME_SECONDS_PRECISION);
 }
 
+#ifdef NEED_TIME_MUTEX
+Firebird::Mutex timeMutex;
+#endif
+
 FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc)
 {
 #if defined(HAVE_GETTIMEOFDAY)
@@ -554,18 +563,9 @@ FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc)
 	tm timex;
 	tm* times = localtime_r(&seconds, &timex);
 #else
-
-#FB_COMPILER_MESSAGE("Someone should make this code work properly or use a mutex")
-#ifdef HAVE_PTHREAD_H
-    pthread_mutex_t loctimelock =  PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_lock(&loctimelock);  // ctime critical section start
-#endif
-
+	timeMutex.enter();
 	tm* times = localtime(&seconds);
-
-#ifdef HAVE_PTHREAD_H
-	pthread_mutex_unlock(&loctimelock);  // ctime critical section end
-#endif
+	timeMutex.leave();
 #endif // localtime_r
 
 	if (times)
@@ -604,18 +604,9 @@ FBUDF_API void getExactTimestampUTC(ISC_TIMESTAMP* rc)
 	tm timex;
 	tm* times = gmtime_r(&seconds, &timex);
 #else
-
-#FB_COMPILER_MESSAGE("Someone should make this code work properly or use a mutex")
-#ifdef HAVE_PTHREAD_H
-    pthread_mutex_t loctimelock =  PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_lock(&loctimelock);  // ctime critical section start
-#endif
-
+	timeMutex.enter();
 	tm* times = gmtime(&seconds);
-
-#ifdef HAVE_PTHREAD_H
-	pthread_mutex_unlock(&loctimelock);  // ctime critical section end
-#endif
+	timeMutex.leave();
 #endif // gmtime_r
 
 	if (times)
