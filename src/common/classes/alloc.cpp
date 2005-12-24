@@ -966,6 +966,9 @@ void MemoryPool::print_contents(const char* filename, bool used_only,
 	const char* filter_path)
 {
 	FILE *out = fopen(filename, "w");
+	if (!out)
+		return;
+
 	print_contents(out, used_only, filter_path);
 	fclose(out);
 }
