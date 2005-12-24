@@ -1,3 +1,63 @@
+2005-12-24 00:32  robocop
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.98):
+	
+	Make sure gmtime_r is marked as missing in Win32.
+
+2005-12-24 00:11  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.182):
+	
+	Fix the non-VMS version of gds__validate_lib_path: We shouldn't
+	modify the result from getenv().  Also, fix some null terminator
+	issues.
+
+2005-12-24 00:08  robocop
+
+	* firebird2/src/extlib/fbudf/: fbudf.cpp (1.22), fbudf.h (1.9),
+	fbudf.sql (1.9):
+	
+	Add getExactTimestampUTC and put some indications. Alex will fix my
+	stub code.  It seems gmtime doesn't work as expected at least with
+	VC6.
+
+2005-12-23 16:39  dimitr
+
+	* firebird2/doc/README.incompatibilities.txt (1.1):
+	
+	Added some docs.
+
+2005-12-23 12:42  alexpeshkoff
+
+	* firebird2/builds/install/: misc/posixLibrary.sh.in (1.4),
+	arch-specific/linux/super/postinstall.sh.in (1.10):
+	
+	fix fbmgr operation
+
+2005-12-23 10:40  alexpeshkoff
+
+	* firebird2/src/vulcan/JString.h (1.6):
+	
+	fixed posix build
+
+2005-12-23 10:21  alexpeshkoff
+
+	* firebird2/configure.in (1.237):
+	
+	test presence of gmtime_r()
+
+2005-12-23 09:52  alexpeshkoff
+
+	* firebird2/src/remote/: inet.cpp (1.148), interface.cpp (1.112):
+	
+	Misc
+
+2005-12-23 09:24  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletWriter.cpp (1.13):
+	
+	fixed problems with empty SPB
+
 2005-12-23 02:42  robocop
 
 	* firebird2/src/: include/fb_exception.h (1.18),
