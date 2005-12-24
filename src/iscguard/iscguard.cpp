@@ -821,8 +821,8 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	case WM_INITDIALOG:
 		{
 			char szText[256];
-			char szWindowText[256];
-			char szFullPath[256];
+			char szWindowText[MAXPATHLEN];
+			char szFullPath[MAXPATHLEN];
 			int index = 0;
 			const int NCOLS = 3;
 
@@ -833,7 +833,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 
 			/* get the path to the exe.  
 			   Make sure that it is null terminated */
-			GetModuleFileName(hInstance, szWindowText, 256);
+			GetModuleFileName(hInstance, szWindowText, sizeof(szWindowText));
 			char* pszPtr = strrchr(szWindowText, '\\');
 			*(pszPtr + 1) = 0x00;
 
