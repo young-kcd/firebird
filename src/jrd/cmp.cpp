@@ -490,6 +490,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone->req_impure_size = request->req_impure_size;
 	clone->req_top_node = request->req_top_node;
 	clone->req_trg_name = request->req_trg_name;
+	clone->req_procedure = request->req_procedure;
 	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
 	clone->req_last_xcp = request->req_last_xcp;
 
