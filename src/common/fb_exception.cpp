@@ -19,7 +19,8 @@ typedef Firebird::CircularStringsBuffer<ENGINE_FAILURE_SPACE> CircularBuffer;
 
 class InterlockedStringsBuffer : public CircularBuffer {
 public:
-	virtual char* alloc(const char* string, size_t length) {
+	virtual char* alloc(const char* string, size_t length) 
+	{
 		buffer_lock.enter();
 		char* new_string = CircularBuffer::alloc(string, length);
 		buffer_lock.leave();
@@ -110,7 +111,8 @@ status_exception::status_exception(ISC_STATUS status, ...)
 	va_end(args);
 }
 
-status_exception::~status_exception() throw() {
+status_exception::~status_exception() throw() 
+{
 	if (m_strings_permanent)
 		return;
 	
@@ -137,7 +139,8 @@ status_exception::~status_exception() throw() {
 	} while (true);
 }
 
-void fatal_exception::raiseFmt(const char* format, ...) {
+void fatal_exception::raiseFmt(const char* format, ...) 
+{
 	va_list args;
 	va_start(args, format);
 	char buffer[1024];

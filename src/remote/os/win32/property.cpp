@@ -197,10 +197,10 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			SetDlgItemText(hDlg, IDC_PRODNAME, szText);
 
 			char szWindowText[WIN_TEXTLEN];
-			MakeVersionString(szWindowText, WIN_TEXTLEN, usServerFlags);
+			MakeVersionString(szWindowText, sizeof(szWindowText), usServerFlags);
 			SetDlgItemText(hDlg, IDC_PROTOCOLS, szWindowText);
 
-			GetModuleFileName(hInstance, szWindowText, WIN_TEXTLEN);
+			GetModuleFileName(hInstance, szWindowText, sizeof(szWindowText));
 			char* pszPtr = strrchr(szWindowText, '\\');
 			*(pszPtr + 1) = 0x00;
 
