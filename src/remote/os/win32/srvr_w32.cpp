@@ -109,11 +109,12 @@
 #include "../jrd/file_params.h"
 #include "../common/config/config.h"
 
+
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM);
-static HANDLE parse_args(LPSTR, USHORT*);
+static HANDLE parse_args(LPCSTR, USHORT*);
 static void service_connection(rem_port*);
 
 static HINSTANCE hInst;
@@ -131,7 +132,7 @@ static const SERVICE_TABLE_ENTRY service_table[] =
 static const int SIGSHUT = 666;
 static int shutdown_pid = 0;
 
-const char* const FBCLIENTDLL = "fbclient.dll";
+//const char* const FBCLIENTDLL = "fbclient.dll";
 
 
 int WINAPI WinMain(HINSTANCE	hThisInst,
@@ -150,16 +151,35 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
  *      pipes and/or TCP/IP sockets.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
-	HANDLE connection_handle;
-	rem_port* port;
-	int nReturnValue = 0;
-
 	hInst = hThisInst;
 
 	// We want server to crash without waiting for feedback from the user
-	if (!Config::getBugcheckAbort())
-		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+	try 
+	{
+		if (!Config::getBugcheckAbort())
+			SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+	}
+	catch(Firebird::fatal_exception& e)
+	{
+		MessageBox(NULL, e.what(), "Firebird server failure", 
+			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
+		return STARTUP_ERROR; // see /jrd/common.h
+	}
+	catch(Firebird::status_exception& e)
+	{
+		TEXT buffer[1024];
+        const ISC_STATUS* vector = 0;
+		if (! (e.status_known() && (vector = e.value()) &&
+			  fb_interpret(buffer, sizeof(buffer), &vector)))
+		{
+			strcpy(buffer, "Unknown internal failure");
+		}
+
+		MessageBox(NULL, buffer, "Firebird server failure", 
+			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
+		return STARTUP_ERROR; // see /jrd/common.h
+	}
+
 
 #ifdef SUPERSERVER
 	server_flag = SRVR_multi_client;
@@ -194,7 +214,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
 
-	connection_handle = parse_args(lpszArgs, &server_flag);
+	HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
 
 	if (shutdown_pid) {
 		ISC_kill(shutdown_pid, SIGSHUT, 0);
@@ -231,11 +251,17 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
    Setup sig_mutex for the process
 */
 	ISC_signal_init();
+
 #ifdef SUPERSERVER
 	ISC_enter();
 #endif
 
-	if (connection_handle != INVALID_HANDLE_VALUE) {
+	int nReturnValue = 0;
+	ISC_STATUS_ARRAY status_vector;
+
+	if (connection_handle != INVALID_HANDLE_VALUE) 
+	{
+		rem_port* port = 0;
 		THREAD_ENTER();
 		if (server_flag & SRVR_inet)
 			port = INET_reconnect(connection_handle, status_vector);
@@ -248,7 +274,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			service_connection(port);
 		}
 	}
-	else if (!(server_flag & SRVR_non_service)) {
+	else if (!(server_flag & SRVR_non_service)) 
+	{
 		CNTL_init(start_connections_thread, REMOTE_SERVICE);
 //
 // BRS There is a error in MinGW (3.1.0) headers 
@@ -265,7 +292,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			server_flag |= SRVR_non_service;
 		}
 	}
-	else {
+	else 
+	{
 		if (server_flag & SRVR_inet) {
 			gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0,
 							  0);
@@ -345,14 +373,13 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
  *
  **************************************/
 	void *thread = NULL; // silence non initialized warning
-	ISC_STATUS_ARRAY status_vector;
-	rem_port* port;
-
 	if (!(server_flag & SRVR_non_service))
 		thread = CNTL_insert_thread();
 
+	ISC_STATUS_ARRAY status_vector;
+
 	THREAD_ENTER();
-	port = INET_connect(protocol_inet, 0, status_vector, server_flag, 0, 0);
+	rem_port* port = INET_connect(protocol_inet, 0, status_vector, server_flag, 0, 0);
 	THREAD_EXIT();
 	if (port)
 		SRVR_multi_thread(port, server_flag);
@@ -377,12 +404,12 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  *
  **************************************/
 	void *thread = NULL; // silence non initialized warning
-	ISC_STATUS_ARRAY status_vector;
 
 	if (!(server_flag & SRVR_non_service)) {
 		thread = CNTL_insert_thread();
 	}
 
+	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
 		THREAD_ENTER();
@@ -476,7 +503,7 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 }
 
 
-static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
+static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 {
 /**************************************
  *
@@ -493,14 +520,13 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
  *      INVALID_HANDLE_VALUE otherwise.
  *
  **************************************/
-	TEXT *p, c;
 	TEXT buffer[32];
-	HANDLE connection_handle;
 
-	connection_handle = INVALID_HANDLE_VALUE;
+	HANDLE connection_handle = INVALID_HANDLE_VALUE;
 
-	p = lpszArgs;
+	const TEXT* p = lpszArgs;
 	while (*p) {
+		TEXT c;
 		if (*p++ == '-')
 			while ((*p) && (c = *p++) && (c != ' '))
 				switch (UPPER(c)) {
@@ -585,8 +611,10 @@ static HANDLE parse_args( LPSTR lpszArgs, USHORT * pserver_flag)
 					break;
 
 				case 'Z':
-					printf("Firebird remote server version %s\n",
-							  FB_VERSION);
+					// CVC: printf doesn't work because we don't have a console attached.
+					//printf("Firebird remote server version %s\n",  FB_VERSION);
+					MessageBox(NULL, FB_VERSION, "Firebird server version", 
+						MB_OK | MB_ICONINFORMATION | MB_TOPMOST | MB_DEFAULT_DESKTOP_ONLY);
 					exit(FINI_OK);
 
 				default:
