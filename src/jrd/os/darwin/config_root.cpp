@@ -43,8 +43,7 @@
 
 typedef Firebird::string string;
 
-static const char *CONFIG_FILE = "firebird.conf";
-
+#error This file needs revision, check the header file jrd/os/config_root.h
 ConfigRoot::ConfigRoot()
 {
 	// Check the environment variable
@@ -80,12 +79,9 @@ ConfigRoot::ConfigRoot()
 	root_dir = FB_PREFIX;
 }
 
-const char *ConfigRoot::getRootDirectory() const
-{
-	return root_dir.c_str();
-}
-
-const char *ConfigRoot::getConfigFile() const
+// This function is already defined in the header, once the constructor problem
+// is straightened it should disappear.
+const char *ConfigRoot::getConfigFilePath() const
 {
 	static string file = root_dir + string(CONFIG_FILE);
 	return file.c_str();
