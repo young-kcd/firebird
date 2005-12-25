@@ -1,3 +1,28 @@
+2005-12-24 18:05  alexpeshkoff
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp (1.23):
+	
+	make fbudf use fb2 class Mutex, when needed
+
+2005-12-24 18:03  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.client.fbudf (1.6):
+	
+	fixed fbudf
+
+2005-12-24 08:29  robocop
+
+	* firebird2/src/iscguard/iscguard.cpp (1.44):
+	
+	Misc.
+
+2005-12-24 08:28  robocop
+
+	* firebird2/src/common/classes/alloc.cpp (1.78):
+	
+	Don't crash the debug build if the allocations report file cannot
+	be opened.
+
 2005-12-24 00:32  robocop
 
 	* firebird2/src/include/gen/autoconfig_msvc.h (1.98):
