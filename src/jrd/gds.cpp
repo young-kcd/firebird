@@ -255,6 +255,10 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 	const ISC_STATUS** const vector, bool legacy = false);
 static void safe_strncpy(char* target, const char* source, int bs);
 
+// Useful only in Windows. The hardcoded definition for the English-only version
+// is too crude.
+static bool GetProgramFilesDir(Firebird::PathName& output);
+
 
 /* Generic cleanup handlers */
 
@@ -3667,15 +3671,14 @@ public:
 		try
 		{
 			prefix = Config::getRootDirectory();
-			if (prefix.isEmpty())
-			{
+			if (prefix.isEmpty() && !GetProgramFilesDir(prefix))
 				prefix = FB_PREFIX;
-			}
 		}
 		catch (Firebird::fatal_exception&)
 		{
 			// CVC: Presumably here we failed because the config file can't be located.
-			prefix = FB_PREFIX;
+			if (!GetProgramFilesDir(prefix))
+				prefix = FB_PREFIX;
 		}
 		prefix.copyTo(ib_prefix_val, sizeof(ib_prefix_val));
 		ib_prefix = ib_prefix_val;
@@ -3758,3 +3761,43 @@ static void gdsPrefixInit()
  **************************************/
 	initPrefix.init();
 }
+
+
+// We try to see if the registry has the information for the Program Files
+// directory, that follows the boot partition and is localized.
+static bool GetProgramFilesDir(Firebird::PathName& output)
+{
+#ifdef WIN_NT
+	const char* pdir = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion";
+	const char* pvalue = "ProgramFilesDir";
+	
+	HKEY hkey;
+	LONG rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, pdir, 0, KEY_READ, &hkey);
+	if (rc != ERROR_SUCCESS)
+		return false;
+
+	DWORD type, size = 0;
+	rc = RegQueryValueEx(hkey, pvalue, NULL, &type, NULL, &size);
+	if (rc != ERROR_SUCCESS || type != REG_SZ || !size)
+	{
+		RegCloseKey(hkey);
+		return false;
+	}
+	
+	output.reserve(size);
+	BYTE* answer = reinterpret_cast<BYTE*>(output.begin());
+	rc = RegQueryValueEx(hkey, pvalue, NULL, &type, answer, &size);
+	if (rc != ERROR_SUCCESS)
+	{
+		RegCloseKey(hkey);
+		return false;
+	}
+	RegCloseKey(hkey);
+	output.recalculate_length();
+	output += "\\Firebird\\";
+	return true;
+#else
+	return false
+#endif
+}
+
