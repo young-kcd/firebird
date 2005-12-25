@@ -91,7 +91,7 @@ public:
 
 
 protected:
-	const char *getConfigFile() const {
+	const char *getConfigFilePath() const {
 		return config_file.c_str();
 	}
 
