@@ -29,7 +29,7 @@ namespace Firebird {
 class Syslog {
 public:
 	enum Severity {Warning, Error};
-	static void Record(Severity, string);
+	static void Record(Severity, const string&);
 };
 } // namespace Firebird
 

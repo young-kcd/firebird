@@ -53,10 +53,11 @@ public:
 	~SyslogAccess() {
 		DeleteCriticalSection(&cs);
 	}
-	void Record(WORD wType, Firebird::string Msg);
+	void Record(WORD wType, const Firebird::string& Msg);
 };
 
-void SyslogAccess::Record(WORD wType, Firebird::string Msg) {
+void SyslogAccess::Record(WORD wType, const Firebird::string& Msg) 
+{
 	EnterCriticalSection(&cs);
 	if (! InitFlag) {
 		InitFlag = true;
@@ -86,7 +87,8 @@ class SyslogAccess iSyslogAccess;
 } // namespace
 
 namespace Firebird {
-	void Syslog::Record(Severity level, Firebird::string Msg) {
+	void Syslog::Record(Severity level, const Firebird::string& Msg) 
+	{
 		WORD wType = EVENTLOG_ERROR_TYPE;
 		switch (level) {
 		case Warning:

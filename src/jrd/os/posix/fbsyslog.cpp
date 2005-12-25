@@ -24,7 +24,7 @@
 #include <syslog.h>
 
 namespace Firebird {
-void Syslog::Record(Severity level, string Msg)
+void Syslog::Record(Severity level, const string& Msg)
 {
 	int priority = LOG_ERR;
 	switch (level) {
