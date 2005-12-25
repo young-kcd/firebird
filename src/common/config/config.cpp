@@ -139,20 +139,22 @@ static Firebird::Mutex config_init_lock;
 
 const ConfigImpl& ConfigImpl::instance()
 {
-	if (!sys_config) {
+	if (!sys_config) 
+	{
 #ifdef MULTI_THREAD
 		try {
 			config_init_lock.enter();
 			if (!sys_config) {
-#endif
 				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl(*getDefaultMemoryPool());
-#ifdef MULTI_THREAD
 			}
 		} catch(const std::exception&) {
 			config_init_lock.leave();
 			throw;
 		}
 		config_init_lock.leave();
+#else
+		sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl(*getDefaultMemoryPool());
+
 #endif
 	}
 	return *sys_config;
@@ -175,7 +177,7 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 	values = FB_NEW(p) ConfigValue[size];
 
 	string val_sep = ",";
-	file.setConfigFile(getConfigFile());
+	file.setConfigFilePath(getConfigFilePath());
 
 	/* Iterate through the known configuration entries */
 

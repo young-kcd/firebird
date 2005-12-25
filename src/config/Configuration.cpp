@@ -63,7 +63,7 @@ void Configuration::loadConfigFile(void)
 		configFile = new ConfigFile (0);
 }
 
-void Configuration::setConfigFile(const char* filename)
+void Configuration::setConfigFilePath(const char* filename)
 {
 	if (!configFile)
 		configFile = new ConfigFile (filename, 0);

@@ -36,7 +36,7 @@ bool ResolveDatabaseAlias(const string& alias, string& database)
 	string alias_filename;
 	Firebird::Prefix(alias_filename, ALIAS_FILE);
 	ConfigFile aliasConfig(false);
-	aliasConfig.setConfigFile(alias_filename);
+	aliasConfig.setConfigFilePath(alias_filename);
 
 	const char correct_dir_sep = PathUtils::dir_sep;
 	const char incorrect_dir_sep = (correct_dir_sep == '/') ? '\\' : '/';

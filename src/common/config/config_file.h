@@ -68,8 +68,8 @@ public:
 		  fExceptionOnError(ExceptionOnError), parameters(getPool()) {}
 
 	// configuration file management
-    const string getConfigFile() { return configFile; }
-    void setConfigFile(const string& newFile) { configFile = newFile; }
+    const string getConfigFilePath() const { return configFile; }
+    void setConfigFilePath(const string& newFile) { configFile = newFile; }
 
     bool isLoaded() const { return isLoadedFlg; }
 

@@ -41,7 +41,7 @@ public:
 	static ConfObject* findObject(const char* objectType, const char* objectName);
 	static const char* getRootDirectory(void);
 	static void loadConfigFile(void);
-	static void setConfigFile (const char* filename);
+	static void setConfigFilePath(const char* filename);
 	static ConfObject* getObject(const char* objectType);
 	static ConfObject* getObject(const char* objectType, const char* objectName);
 };
