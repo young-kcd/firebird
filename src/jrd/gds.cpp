@@ -3660,9 +3660,21 @@ public:
 	static void init()
 	{
 		// Get ib_prefix value from config file
-		Firebird::PathName prefix(Config::getRootDirectory());
-		if (prefix.isEmpty())
+		// CVC: I put this protection block because we can't raise exceptions
+		// if exceptions are already raised due to the same reason:
+		// config file not found.
+		Firebird::PathName prefix;
+		try
 		{
+			prefix = Config::getRootDirectory();
+			if (prefix.isEmpty())
+			{
+				prefix = FB_PREFIX;
+			}
+		}
+		catch (Firebird::fatal_exception&)
+		{
+			// CVC: Presumably here we failed because the config file can't be located.
 			prefix = FB_PREFIX;
 		}
 		prefix.copyTo(ib_prefix_val, sizeof(ib_prefix_val));
