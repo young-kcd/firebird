@@ -498,15 +498,6 @@ bool NAV_get_record(thread_db* tdbb,
 	}
 #endif
 
-	// If we alredy reached end of the stream, return
-	if ((direction == RSE_get_forward &&
-		impure->irsb_flags & irsb_eof) ||
-		(direction == RSE_get_backward &&
-		impure->irsb_flags & irsb_bof))
-	{
-		return false;
-	}
-
 	init_fetch(impure);
 	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
@@ -630,7 +621,9 @@ bool NAV_get_record(thread_db* tdbb,
 #endif
 		{
 			if (node.isEndLevel) {
+#ifdef SCROLLABLE_CURSORS
 				impure->irsb_flags |= irsb_eof;
+#endif
 				break;
 			}
 			if (node.isEndBucket) {
@@ -1478,7 +1471,11 @@ static UCHAR* get_position(
 	SET_TDBB(tdbb);
 
 	// If this is the first time, start at the beginning (or the end)
+#ifdef SCROLLABLE_CURSORS
 	if (!window->win_page || impure->irsb_flags & (irsb_bof | irsb_eof)) {
+#else
+	if (!window->win_page) {
+#endif
 		return nav_open(tdbb, rsb, impure, window, direction, expanded_node);
 	}
 
@@ -1617,11 +1614,13 @@ static bool get_record(
 		tdbb->tdbb_attachment->att_flags |= ATT_no_cleanup;	// HACK
 	}
 
+#ifdef SCROLLABLE_CURSORS
 	// the attempt to get a record, whether successful or not, takes
 	// us off bof or eof (otherwise we will keep trying to retrieve
 	// the first record)
 
 	impure->irsb_flags &= ~(irsb_bof | irsb_eof);
+#endif
 
 	result =
 		VIO_get(tdbb,
@@ -1715,12 +1714,14 @@ static UCHAR* nav_open(
 	impure->irsb_nav_page = 0;
 	impure->irsb_nav_length = 0;
 
+#ifdef SCROLLABLE_CURSORS
 	if (direction == RSE_get_forward) {
 		impure->irsb_flags |= irsb_bof;
 	}
 	else if (direction == RSE_get_backward) {
 		impure->irsb_flags |= irsb_eof;
 	}
+#endif
 
 	// Find the starting leaf page
 	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
