@@ -5366,6 +5366,7 @@ static SSHORT lock_buffer(
 		/* CCH_unwind releases all the BufferDesc's and calls ERR_punt()
 		   ERR_punt will longjump. */
 
+		DebugBreak();
 		CCH_unwind(tdbb, true);
 	}
 
@@ -5412,6 +5413,7 @@ static SSHORT lock_buffer(
 						ERR_cstring(errmsg), 0);
 	ERR_log(JRD_BUGCHK, 216, errmsg);	/* msg 216 page %ld, page type %ld lock denied */
 
+	DebugBreak();
 	CCH_unwind(tdbb, true);
 	return 0;					/* Added to get rid of Compiler Warning */
 #endif
