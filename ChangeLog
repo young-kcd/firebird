@@ -1,3 +1,79 @@
+2005-12-26 00:12  hvlad
+
+	* firebird2/src/jrd/cmp.cpp (1.187):
+	
+	Missing assignment
+
+2005-12-25 08:43  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.184):
+	
+	Do not use the harcoded c:\Program Files path while possible: it
+	doesn't have to live in the C: partition and it's localized in
+	non-English Windows versions.
+
+2005-12-25 08:40  robocop
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp (1.30):
+	
+	- Handle gracefully the exceptions that happen at startup in
+	Windows.  - Show the version string if asked explicitly.  - Some
+	minor cleanup.
+
+2005-12-25 05:42  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.183):
+	
+	Solve chicken and egg problem: when we can't locate the config
+	file, we throw an exception but if we try to trap and decode the
+	failure in another place, it tries to know the location of the
+	messages file (to interpret the status vector), which in turn
+	requires to locate the config file. Therefore, we crash
+	mysteriously.
+
+2005-12-25 05:38  robocop
+
+	* firebird2/src/jrd/os/: posix/fbsyslog.cpp (1.4),
+	win32/fbsyslog.cpp (1.5), fbsyslog.h (1.5):
+	
+	Agreed with Dmitry: when we are reporting an error, we don't know
+	how critical it is. No need to copy/clone the string and risk more
+	failures, since we don't need to change it to send it to the
+	operating system.
+
+2005-12-25 05:36  robocop
+
+	* firebird2/src/jrd/os/darwin/config_root.cpp (1.4):
+	
+	Mark this Darwin-specific file as out of sync WRT the
+	platform-neutral header file config_root.h: has a duplicate
+	function and the constructor doesn't match.
+
+2005-12-25 05:29  robocop
+
+	* firebird2/src/jrd/os/config_root.h (1.10):
+	
+	[s|g]etConfigFile renamed [s|g]setConfigFilePath. Clearer, since we
+	have a class named ConfigFile but the function only returns a
+	string with the path, not an object.
+
+2005-12-25 05:01  robocop
+
+	* firebird2/src/: common/fb_exception.cpp (1.17),
+	remote/os/win32/property.cpp (1.15):
+	
+	Misc.
+
+2005-12-25 04:59  robocop
+
+	* firebird2/src/: common/config/config.cpp (1.64),
+	common/config/config_file.h (1.13), config/Configuration.cpp (1.3),
+	config/Configuration.h (1.3), jrd/db_alias.cpp (1.18):
+	
+	[s|g]etConfigFile renamed [s|g]setConfigFilePath. Clearer, since we
+	have a class named ConfigFile but the function only returns a
+	string with the path, not an object.
+
 2005-12-24 18:05  alexpeshkoff
 
 	* firebird2/src/extlib/fbudf/fbudf.cpp (1.23):
