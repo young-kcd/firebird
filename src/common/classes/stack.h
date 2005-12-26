@@ -111,20 +111,27 @@ namespace Firebird {
 		}; // class Entry
 
 		Entry* stk;
+		Entry* stk_cache;
 
 	public:
 		explicit Stack<Object, Capacity>(MemoryPool& p) 
-			: AutoStorage(p), stk(0) { }
+			: AutoStorage(p), stk(0), stk_cache(0) { }
 
-		Stack<Object, Capacity>() : AutoStorage(), stk(0) { }
+		Stack<Object, Capacity>() : AutoStorage(), stk(0), stk_cache(0) { }
 
 		~Stack<Object, Capacity>()
 		{
 			delete stk;
+			delete stk_cache;
 		}
 
 		void push(Object e)
 		{
+			if (!stk && stk_cache) 
+			{
+				stk = stk_cache;
+				stk_cache = 0;
+			}
 			stk = stk ? stk->push(e, getPool()) 
 					  : FB_NEW(getPool()) Entry(e, 0);
 		}
@@ -134,10 +141,17 @@ namespace Firebird {
 			fb_assert(stk);
 			Object tmp = stk->pop();
 			if (!stk->getCount()) {
-				Entry *oldEntry = stk;
+				fb_assert(!stk_cache);
+				stk_cache = stk;
 				stk = stk->next;
-				oldEntry->next = 0;
-				delete oldEntry;
+				stk_cache->next = 0;
+
+				// don't delete last empty Entry
+				if (stk) 
+				{
+					delete stk_cache;
+					stk_cache = 0;
+				}
 			}
 			return tmp;
 		}
@@ -152,6 +166,12 @@ namespace Firebird {
 			delete stk;
 			stk = s.stk;
 			s.stk = 0;
+
+			if (stk)
+			{
+				delete stk_cache;
+				stk_cache = 0;
+			}
 		}
 
 		class iterator;
@@ -388,6 +408,12 @@ namespace Firebird {
 			}
 			*e = s.stk;
 			s.stk = 0;
+
+			if (stk) 
+			{
+				delete stk_cache;
+				stk_cache = 0;
+			}
 			return rc;
 		}
 
@@ -425,6 +451,12 @@ namespace Firebird {
 				(*toSplit)->split(mark.elem, newEntry);
 				s.stk = *toSplit;
 				*toSplit = newEntry;
+			}
+
+			if (s.stk) 
+			{
+				delete s.stk_cache;
+				s.stk_cache = 0;
 			}
 		}
 
@@ -522,6 +554,12 @@ namespace Firebird {
 		void assign(Stack<Object, Capacity>& v) {
 			delete stk;
 			stk = v.stk ? v.stk->dup(getPool()) : 0;
+			
+			if (stk) 
+			{
+				delete stk_cache;
+				stk_cache = 0;
+			}
 		}
 
 		void clear()
