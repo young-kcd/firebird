@@ -14,17 +14,18 @@ INSTALLATION/CONFIGURATION
 --------------------------
 
   * Security database is renamed to security2.fdb. If you upgrade the existing
-    installation, please be sure you restore/copy your security database using
-    the new name. It's recommended to upgrade the security database using the
-    provided script in order to use more advanced accounts protection, but this
-    is not strictly required.
+    installation, please be sure to upgrade the security database using the
+    provided script in order to keep your users' logins. For more details see
+    $FBROOT/upgrade/security_database.txt. 
+    Simple 'cp security.fdb security2.fdb' makes is impossible to attach 
+    to the firebird server !
 
   * Password hashes are now generated using the SHA-1 algorithm instead of the
     old DES one. If you want to preserve the already existing security database
-    (i.e. just migrate it using backup/restore), you'll need to set the
-    LegacyHash config option to 1 (TRUE). However, it's recommended to recreate
-    your user accounts from scratch in order to generate stronger hashes for
-    the stored passwords.
+    (i.e. upgrade it using security_database.sql script), you'll need to set the
+    LegacyHash config option to 1 (TRUE). However, it's recommended to return
+    it's value back to default (after changing user's passwords) in order 
+    to keep your installation safe.
 
   * The new client library is not compatible with the older server (and vice
     versa) in regard to the local protocol, as the transport internals has been
@@ -37,12 +38,20 @@ SECURITY
 
   * Direct connections to the security database are not allowed anymore. This is
     done for security reasons and also in order to isolate authentication
-    mechanisms from the implementation. You should use GSTAT or the Services API
-    to configurate user accounts instead.
+    mechanisms from the implementation. You should use Services API or GSEC 
+    to configurate user accounts instead. To backup the security database always
+    use Services API. Switch -SE of gbak utility may be used for this purpose.
 
   * Non-SYSDBA users no longer can see accounts of other users in the security
-    database. A non-privileges user can only retrieve/modify its own account,
+    database. A non-privileged user can only retrieve/modify its own account,
     including a password change.
+
+  * Remote attachments to the server without login/password are prohibited.
+    It means, particularly, that all attachments to SuperServer (even by root
+    without explicit localhost: in database name) without correct login will
+    be rejected by remote interface. Embedded access without login/password
+    works fine (unix user name is used to validate access to database's 
+    objects).
 
 UTILITIES
 --------------------------
@@ -65,6 +74,13 @@ SQL CHECKING
     name, e.g. "SELECT TAB.A FROM TAB T". You should use the table alias
     instead: "SELECT T.A FROM TAB T". Such behaviour is declared by the SQL
     specification.
+
+SQL SYNTAX
+--------------------------
+
+  * CLOSE became reserved keyword according to SQL standard (CLOSE CURSOR).
+    It's now prohibited to use it as general purpose identifier without quotes.
+    For example, 'declare variable close smallint;' results in error.
 
 SQL EXECUTION RESULTS
 --------------------------
@@ -107,7 +123,7 @@ PERFORMANCE
     slower when there are enough old record versions in the affected tables
     (this is especially true for ODS10 and below databases which has ineffective
     garbage collection in indices). Please note the new behaviour generally
-    guarantees better overall performance as the garbage collation is performed
+    guarantees better overall performance as the garbage collection is performed
     online and it prevents version chains from growing under high load. But you
     can rollback to the older behaviour using the GCPolicy config option.
 
@@ -115,3 +131,9 @@ PERFORMANCE
     performance degradation for some your queries. This is done to fix known
     bugs causing wrong results returned by this predicate in cases when index
     was involved.
+
+FIREBIRD.CONF
+--------------------------
+
+  * Parameter DeadThreadsCollection is deprecated and will be ignored if set.
+    Current firebird version efficiently performs it without delay.
