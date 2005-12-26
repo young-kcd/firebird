@@ -4447,7 +4447,7 @@ void ISQL_get_version(bool call_by_create_db)
 	char server_version[256];
 
 	const UCHAR* p = buffer;
-	while (*p != isc_info_end && *p != isc_info_truncated) {
+	while (*p != isc_info_end && *p != isc_info_truncated && p < buffer + sizeof(buffer)) {
 		const UCHAR item = (UCHAR) *p++;
 		const USHORT length = gds__vax_integer(p, sizeof(USHORT));
 		p += sizeof(USHORT);
@@ -4545,10 +4545,8 @@ void ISQL_get_version(bool call_by_create_db)
 			break;
 
 		default:
-			{
-				isqlGlob.printf("Internal error: Unexpected isc_info_value %d%s",
-								item, NEWLINE);
-			}
+			isqlGlob.printf("Internal error: Unexpected isc_info_value %d%s",
+							item, NEWLINE);
 			break;
 		}
 		p += length;
