@@ -1,3 +1,50 @@
+2005-12-26 22:18  hvlad
+
+	* firebird2/src/common/classes/stack.h (1.18):
+	
+	Avoid frequent (unneeded and inefficient) allocation\deallocation
+	of stack entryes
+
+2005-12-26 22:17  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.123):
+	
+	Restored accidentally committed wrong file
+
+2005-12-26 22:13  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.122):
+	
+	Avoid frequent (unneeded and inefficient) allocation \ deallocation
+	of stack entryes
+
+2005-12-26 17:10  alexpeshkoff
+
+	* firebird2/src/isql/isql.epp (1.161):
+	
+	Fixed buffer overrun in case of bad data returned by
+	isc_database_info()
+
+2005-12-26 12:59  alexpeshkoff
+
+	* firebird2/doc/README.incompatibilities.txt (1.2):
+	
+	Misc
+
+2005-12-26 11:30  dimitr
+
+	* firebird2/src/: misc/codes.epp (1.19), include/gen/iberror.h
+	(1.36):
+	
+	Continued fixing public headers.
+
+2005-12-26 10:47  dimitr
+
+	* firebird2/src/jrd/nav.cpp (1.52):
+	
+	Never rely on eof/bof markers for non-scrollable-cursors code. 
+	This fixes the newly introduced bug as well as the original issue.
+
 2005-12-26 00:12  hvlad
 
 	* firebird2/src/jrd/cmp.cpp (1.187):
