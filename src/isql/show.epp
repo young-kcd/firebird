@@ -525,7 +525,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	prev_user_type = -1;
 	char priv_string[MAX_PRIV_LIST] = "";
 	char col_string[BUFFER_LENGTH128] = "";
-	char with_option[18] = "";
+	char with_option[19] = "";
 	USHORT priv_flags = 0;
 	SSHORT prev_field_null = -1;
 
@@ -913,7 +913,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
  *	All membership privilege may have the with_admin option set.
  *
  **************************************/
-	char with_option[18];
+	char with_option[19];
 	char user_string[44];
 
 	// process role "object"
