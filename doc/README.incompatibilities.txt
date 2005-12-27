@@ -17,7 +17,7 @@ INSTALLATION/CONFIGURATION
     installation, please be sure to upgrade the security database using the
     provided script in order to keep your users' logins. For more details see
     $FBROOT/upgrade/security_database.txt. 
-    Simple 'cp security.fdb security2.fdb' makes is impossible to attach 
+    Simple 'cp security.fdb security2.fdb' makes it impossible to attach 
     to the firebird server !
 
   * Password hashes are now generated using the SHA-1 algorithm instead of the

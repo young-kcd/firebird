@@ -138,6 +138,7 @@ static const SCHAR *gds_c_boiler_plate[] = {
 	"",
 };
 
+/* It's used only in code that's commented now: build_codes_h().
 static const SCHAR *gds_cpp_boiler_plate[] = {
 	"const SLONG gds_arg_end			= 0;	// end of argument list",
 	"const SLONG gds_arg_gds			= 1;	// generic DSRI status value",
@@ -159,6 +160,7 @@ static const SCHAR *gds_cpp_boiler_plate[] = {
 	"const SLONG gds_arg_warning		= 18;	// warning argument",
 	"",
 };
+*/
 
 // At first glance, it wasn't evident why isc_facility had to be undefined,
 // but it turns that this file includes ibase.h, 
