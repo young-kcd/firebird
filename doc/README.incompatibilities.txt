@@ -33,6 +33,10 @@ INSTALLATION/CONFIGURATION
     protocol, please ensure your server and client binaries are of the same
     version.
 
+  * Parameter DeadThreadsCollection of firebird.conf is deprecated and will be
+    ignored if set. Current Firebird version efficiently performs it without
+    delay.
+
 SECURITY
 --------------------------
 
@@ -67,6 +71,15 @@ UTILITIES
     Those using the full syntax are expected to know what this restore mode
     actually means.
 
+SQL SYNTAX
+--------------------------
+
+  * A number of new reserved keywords are introduced. The full list is available
+    here: /doc/sql.extentions/README.keywords. Please ensure your DSQL
+    statements and procedure/trigger sources don't contain those keywords as
+    identifiers. Otherwise, you'll need to either use them quoted (in Dialect 3
+    only) or rename them.
+
 SQL CHECKING
 --------------------------
 
@@ -75,12 +88,18 @@ SQL CHECKING
     instead: "SELECT T.A FROM TAB T". Such behaviour is declared by the SQL
     specification.
 
-SQL SYNTAX
---------------------------
+  * User-specified plans are validated more strictly than previously. So, if you
+    get an error related to plans (e.g. "table T is not referenced in plan"),
+    please look through your procedures and triggers and adjust the plans to be
+    semantically correct. Such errors could also appear during the restore
+    process (when you migrate databases to the new version) and you'll need to
+    change the original database before attempting to perform a backup/restore
+    cycle.
 
-  * CLOSE became reserved keyword according to SQL standard (CLOSE CURSOR).
-    It's now prohibited to use it as general purpose identifier without quotes.
-    For example, 'declare variable close smallint;' results in error.
+  * Assignments to OLD contexts are now prohibited for all kinds of triggers.
+    Also, assignments to NEW contexts in AFTER-triggers are prohibited as well.
+    So, if you get an unexpected error "cannot update a read-only column", this
+    is exactly the reason.
 
 SQL EXECUTION RESULTS
 --------------------------
@@ -131,9 +150,3 @@ PERFORMANCE
     performance degradation for some your queries. This is done to fix known
     bugs causing wrong results returned by this predicate in cases when index
     was involved.
-
-FIREBIRD.CONF
---------------------------
-
-  * Parameter DeadThreadsCollection is deprecated and will be ignored if set.
-    Current firebird version efficiently performs it without delay.
