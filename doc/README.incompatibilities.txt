@@ -100,6 +100,11 @@ SQL CHECKING
     Also, assignments to NEW contexts in AFTER-triggers are prohibited as well.
     So, if you get an unexpected error "cannot update a read-only column", this
     is exactly the reason.
+    
+  * It's now forbidden to try to insert into the same column more than once in
+    the same insert statement: INSERT INTO T(A, B, A) ...
+    It's now forbidden to try to update the same column more than once in
+    the same update statement: UPDATE T SET A = x, B = y, A = z
 
 SQL EXECUTION RESULTS
 --------------------------
