@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.32 2005-12-20 12:14:52 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.util,v 1.33 2005-12-28 06:09:42 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -177,7 +177,7 @@ $(INSTREG):	$(INSTREG_Objects)
 
 instsvc: $(INSTSVC)
 
-$(INSTSVC):	$(INSTSVC_Objects) $(COMMON_Objects)
+$(INSTSVC):	$(INSTSVC_Objects)
 	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) 
 
 # This one needs a bit of work.
