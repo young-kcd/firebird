@@ -3797,7 +3797,7 @@ static bool GetProgramFilesDir(Firebird::PathName& output)
 	output += "\\Firebird\\";
 	return true;
 #else
-	return false
+	return false;
 #endif
 }
 
