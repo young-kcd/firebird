@@ -155,3 +155,9 @@ PERFORMANCE
     performance degradation for some your queries. This is done to fix known
     bugs causing wrong results returned by this predicate in cases when index
     was involved.
+
+API
+--------------------------
+
+  * isc_interprete() is deprecated as dangerous. Use fb_interpret() instead.
+  * Events callback routine declaration fixed.
