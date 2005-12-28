@@ -732,19 +732,14 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 
-			RSE_open(tdbb, reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]));
-			value =
-				RSE_get_record(tdbb,
-							   reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]),
-							   g_RSE_get_mode);
+			RecordSource* urs = reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]);
+			RSE_open(tdbb, urs);
+			value = RSE_get_record(tdbb, urs, g_RSE_get_mode);
 			if (value)
 			{
-				value =
-				!RSE_get_record(tdbb,
-								reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]),
-								g_RSE_get_mode);
+				value = !RSE_get_record(tdbb, urs, g_RSE_get_mode);
 			}
-			RSE_close(tdbb, reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]));
+			RSE_close(tdbb, urs);
 
 			/* If this is an invariant node, save the return value. */
 
