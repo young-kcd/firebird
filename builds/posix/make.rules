@@ -26,15 +26,8 @@
 #   Contributor(s):
 #
 #
-#   $Id: make.rules,v 1.27 2005-07-22 10:26:16 aafemt Exp $
+#   $Id: make.rules,v 1.28 2005-12-28 06:58:28 aafemt Exp $
 #
-
-#____________________________________________________________________________
-
-IsProdTypeBuild = @PROD_BUILD_FLG@
-                           # If this is defined then we are building a production
-                           # release with debug and optimization
-
 
 #____________________________________________________________________________
 

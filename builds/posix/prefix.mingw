@@ -35,7 +35,8 @@ LIB_LINK_OPTIONS+=-Wl,--enable-stdcall-fixup
 
 # Strip symbols from release versions to decrease size
 ifeq ($(IsProdTypeBuild),Y)
-LINK_OPTS += -Wl,-s
+LINK_OPTS+=-Wl,-s
+LIB_LINK_OPTIONS+=-Wl,-s
 endif
 # Generation of fbclient_ms.lib
 LIB_LINK_IMPLIB:=-Wl,--out-implib,firebird/lib/fbclient_ms.lib
