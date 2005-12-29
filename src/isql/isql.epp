@@ -4443,9 +4443,6 @@ void ISQL_get_version(bool call_by_create_db)
 		return;
 	}
 	
-	// We assume the version information provided by the server is less than 200 bytes.
-	char server_version[256];
-
 	const UCHAR* p = buffer;
 	while (*p != isc_info_end && *p != isc_info_truncated && p < buffer + sizeof(buffer)) {
 		const UCHAR item = (UCHAR) *p++;
@@ -4537,10 +4534,20 @@ void ISQL_get_version(bool call_by_create_db)
 			}
 			break;
 		case isc_info_firebird_version:
-			strcpy(server_version, "Server: ");
-			strncat(server_version, (char*) &p[2], (length - 2));
-			if (Version_info)  {
-				isqlGlob.printf("%s%s", server_version, NEWLINE);
+			{
+				const char *server = "Server: ";
+				// We don't assume the version information provided by the server is small - 
+				// with redirection it may be rather long.
+				char *server_version = (char*) malloc(strlen(server) + length);
+				if (server_version) {
+					memset(server_version, 0, strlen(server) + length);
+					strcpy(server_version, server);
+					strncat(server_version, (char*) &p[2], (length - 2));
+					if (Version_info)  {
+						isqlGlob.printf("%s%s", server_version, NEWLINE);
+					}
+					free(server_version);
+				}
 			}
 			break;
 

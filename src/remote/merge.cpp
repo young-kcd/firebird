@@ -28,7 +28,7 @@
 #include "../remote/merge_proto.h"
 #include "../jrd/gds_proto.h"
 
-#define PUT_WORD(ptr, value)	{*(ptr)++ = value; *(ptr)++ = value >> 8;}
+#define PUT_WORD(ptr, value)	{*(ptr)++ = static_cast<UCHAR>(value); *(ptr)++ = static_cast<UCHAR>(value >> 8);}
 #define PUT(ptr, value)		*(ptr)++ = value;
 
 #ifdef NOT_USED_OR_REPLACED
@@ -110,7 +110,7 @@ USHORT MERGE_database_info(const UCHAR* in,
 				out[-1] = isc_info_truncated;
 				return 0;
 			}
-			PUT_WORD(out, (UCHAR) length);
+			PUT_WORD(out, length);
 			if (length)
 				do {
 					*out++ = *in++;
@@ -185,7 +185,7 @@ static ISC_STATUS merge_setup(
 
 	*in += 2;
 	const USHORT count = 1 + *(*in)++;
-	PUT_WORD(*out, (UCHAR) new_length);
+	PUT_WORD(*out, new_length);
 	PUT(*out, (UCHAR) count);
 
 /* Copy data portion of information sans original count */
