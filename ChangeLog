@@ -1,3 +1,52 @@
+2005-12-28 11:07  dimitr
+
+	* firebird2/src/jrd/gds.cpp (1.185):
+	
+	Fixed POSIX builds.
+
+2005-12-28 08:11  aafemt
+
+	* firebird2/doc/README.build.mingw.html (1.16):
+	
+	Misc
+
+2005-12-28 07:58  aafemt
+
+	* firebird2/builds/posix/: make.defaults (1.44), make.rules (1.28),
+	prefix.mingw (1.43):
+	
+	Strip executables in prod build
+
+2005-12-28 07:42  robocop
+
+	* firebird2/src/jrd/evl.cpp (1.159):
+	
+	Misc.
+
+2005-12-28 07:09  aafemt
+
+	* firebird2/builds/posix/Makefile.in.client.util (1.33):
+	
+	Redundant objects
+
+2005-12-28 07:08  aafemt
+
+	* firebird2/builds/posix/prefix.mingw (1.42):
+	
+	Adapted for GCC 3.4
+
+2005-12-28 07:07  aafemt
+
+	* firebird2/doc/README.build.mingw.html (1.15):
+	
+	Update
+
+2005-12-28 07:06  aafemt
+
+	* firebird2/doc/README.incompatibilities.txt (1.6):
+	
+	More info
+
 2005-12-28 03:21  robocop
 
 	* firebird2/doc/README.incompatibilities.txt (1.5):
