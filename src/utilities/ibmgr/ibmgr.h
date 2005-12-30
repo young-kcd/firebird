@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	InterBase server manager
  *	MODULE:		ibmgr.h
- *	DESCRIPTION:	Header file for the IBMGR program
+ *	DESCRIPTION:	Header file for the FBMGR program
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgr.h,v 1.10 2005-05-27 22:45:23 asfernandes Exp $
+ * $Id: ibmgr.h,v 1.11 2005-12-30 15:59:19 alexpeshkoff Exp $
  */
 
 #ifndef UTILITIES_IBMGR_H
@@ -99,7 +99,7 @@ struct ibmgr_data_t {
 	
 /* Messages tag definitions
 */
-const USHORT MSG_PROMPT		= 1;	/* "IBMGR> "  (the prompt) */
+const USHORT MSG_PROMPT		= 1;	/* "FBMGR> "  (the prompt) */
 const USHORT MSG_VERSION	= 2;	/* ibmgr version */
 
 const USHORT MSG_OPSPEC		= 5;	/* operation already specified */

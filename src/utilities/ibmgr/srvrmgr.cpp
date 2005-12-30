@@ -205,7 +205,7 @@ gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
 	
 	switch (number) {
 	case MSG_PROMPT:
-		rs = "IBMGR>";
+		rs = "FBMGR>";
 		break;
 	case MSG_OPSPEC:
 		rs = "operation already specified";
