@@ -4406,11 +4406,11 @@ void ISQL_get_version(bool call_by_create_db)
  *	V4 or newer as well as other info.
  *
  **************************************/
-	static const UCHAR db_version_info[] = {
+	const UCHAR db_version_info[] = {
 		isc_info_ods_version,
 		//isc_info_ods_minor_version,
 		isc_info_db_sql_dialect,
-		isc_info_firebird_version,
+		Version_info ? isc_info_firebird_version: isc_info_end,
 		isc_info_end
 	};
 	/*
@@ -4429,7 +4429,7 @@ void ISQL_get_version(bool call_by_create_db)
 	// Now we are also getting the Firebird server version which is a
 	// string the above calculation does not apply.	 NM 03-Oct-2001
 
-	UCHAR buffer[BUFFER_LENGTH512];
+	UCHAR buffer[PRINT_BUFFER_LENGTH];
 	char bad_dialect_buf[BUFFER_LENGTH512];
 	bool print_warning = false;
 
@@ -4444,7 +4444,8 @@ void ISQL_get_version(bool call_by_create_db)
 	}
 	
 	const UCHAR* p = buffer;
-	while (*p != isc_info_end && *p != isc_info_truncated && p < buffer + sizeof(buffer)) {
+	while (*p != isc_info_end && *p != isc_info_truncated && p < buffer + sizeof(buffer))
+	{
 		const UCHAR item = (UCHAR) *p++;
 		const USHORT length = gds__vax_integer(p, sizeof(USHORT));
 		p += sizeof(USHORT);
@@ -4503,7 +4504,8 @@ void ISQL_get_version(bool call_by_create_db)
 				// must be an old or non Firebird server 
 				break;
 			}
-			if (isqlGlob.SQL_dialect && isqlGlob.SQL_dialect != SQL_DIALECT_V5 && Warnings) {
+			if (isqlGlob.SQL_dialect && isqlGlob.SQL_dialect != SQL_DIALECT_V5 && Warnings)
+			{
 				isqlGlob.printf(NEWLINE);
 				if (call_by_create_db)
 					sprintf(bad_dialect_buf, "%s%s%d%s%s",
@@ -4534,19 +4536,22 @@ void ISQL_get_version(bool call_by_create_db)
 			}
 			break;
 		case isc_info_firebird_version:
-			if (Version_info) {
-				// We don't assume the version information provided by the server is small - 
-				// with redirection it may be rather long.
-				char *server_version = (char*) malloc(length - 1);
-				if (server_version) {
-					memcpy(server_version, &p[2], length - 2);
-					server_version[length - 2] = 0;
-					char *sep;
-					while ((sep = strchr(server_version, '<'))) {
-						*sep = '\n';
-					}
-					isqlGlob.printf("Server: %s%s", server_version, NEWLINE);
-					free(server_version);
+			if (Version_info)
+			{
+				// This information will be skipped if the server isn't given enough buffer
+				// to put it all. It's a FULL or NOTHING answer. It grows with redirection.
+				// The command SHOW version that calls isc_version() will return more info.
+				isqlGlob.printf("Server version:%s", NEWLINE);
+				const UCHAR* q = p; // We don't want to spoil p with a wrong calculation.
+				const UCHAR* limit = q + length;
+				for (int times = *q++; times && q < limit; --times)
+				{
+					int l = *q++;
+					if (l > limit - q)
+						l = limit - q;
+						
+					isqlGlob.printf("%.*s%s", l, q, NEWLINE);
+					q += l;
 				}
 			}
 			break;

@@ -1048,6 +1048,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		TEXT msg_string[MSG_LENGTH];
 		ISQL_msg_get(VERSION, msg_string, FB_VERSION);
 		isqlGlob.printf("%s%s", msg_string, NEWLINE);
+		isqlGlob.printf("Server version:%s", NEWLINE);
 		isc_version(&DB, local_fprintf, NULL);
 	}
 	else if (!strcmp(cmd[1], "SQL"))
