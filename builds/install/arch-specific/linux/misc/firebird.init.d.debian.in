@@ -8,8 +8,8 @@
 # Firebird/interbase database server daemon 
 
 
-# This init script contains functions specific for redhat
-# and mandrake init scripts.
+# This init script contains functions specific for debian
+# init scripts.
 
 # Source function library.
 #. /etc/rc.d/init.d/functions
@@ -36,7 +36,7 @@ MANAGER=$FIREBIRD/bin/fbmgr.bin
 case "$1" in
   start)
 	echo -n "Starting Firebird server: "
-	start-stop-daemon --start --quiet --oknodo --user $FBRunUser --exec $MANAGER -- $FB_OPTS
+	start-stop-daemon --start --quiet --oknodo --chuid $FBRunUser --exec $MANAGER -- $FB_OPTS
 	RETVAL=$?
 	;;
   stop)
