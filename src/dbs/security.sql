@@ -40,7 +40,7 @@ CREATE TABLE RDB$USERS (
 	RDB$GROUP_NAME		RDB$USER_NAME,
 	RDB$UID 			RDB$UID,
 	RDB$GID 			RDB$GID,
-	RDB$PASSWD 			RDB$PASSWD,
+	RDB$PASSWD 			RDB$PASSWD NOT NULL,
 
 	/* Privilege level of user - mark a user as having DBA privilege */
 	RDB$PRIVILEGE 		RDB$USER_PRIVILEGE,
