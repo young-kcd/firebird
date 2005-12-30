@@ -1,3 +1,15 @@
+2005-12-29 10:32  alexpeshkoff
+
+	* firebird2/src/isql/isql.epp (1.163):
+	
+	make server-version output a bit more readable
+
+2005-12-29 09:06  alexpeshkoff
+
+	* firebird2/src/: remote/merge.cpp (1.20), isql/isql.epp (1.162):
+	
+	fixed bugs in server version reporting
+
 2005-12-28 11:07  dimitr
 
 	* firebird2/src/jrd/gds.cpp (1.185):
