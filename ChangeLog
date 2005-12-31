@@ -1,3 +1,31 @@
+2005-12-30 17:08  alexpeshkoff
+
+	* firebird2/src/dbs/security.sql (1.8):
+	
+	fixed SF bug 229237
+
+2005-12-30 16:59  alexpeshkoff
+
+	* firebird2/src/utilities/ibmgr/: ibmgr.cpp (1.17), ibmgr.h (1.11),
+	srvrmgr.cpp (1.28):
+	
+	front-ported one forgotten 1.5 commit to 2.0
+
+2005-12-30 16:13  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.d
+	ebian.in (1.4):
+	
+	fixed runuser problem on Debian
+
+2005-12-30 07:57  robocop
+
+	* firebird2/src/isql/: isql.epp (1.164), show.epp (1.82):
+	
+	Parse the server version output (that can be large with
+	redirection) correctly when isql -z is used.
+
 2005-12-29 10:32  alexpeshkoff
 
 	* firebird2/src/isql/isql.epp (1.163):
