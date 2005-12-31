@@ -223,7 +223,7 @@ gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
 		rs = "can not change host, password or user";
 		break;
 	case MSG_VERSION:
-		rs = "ibmgr version";
+		rs = "fbmgr version";
 		break;
 	case MSG_INVSW:
 		rs = "invalid switch";
