@@ -2246,10 +2246,12 @@ static bool get_record(thread_db*	tdbb,
 	switch (rsb->rsb_type)
 	{
 	case rsb_sequential:
+#ifdef SCROLLABLE_CURSORS
 		if (impure->irsb_flags & irsb_bof)
 		{
 			rpb->rpb_number.setValue(BOF_NUMBER);
 		}
+#endif
 
 #ifdef PC_ENGINE
 		if (mode == RSE_get_current)
@@ -2270,7 +2272,11 @@ static bool get_record(thread_db*	tdbb,
 								rsb,
 								request->req_transaction,
 								request->req_pool,
+#ifdef SCROLLABLE_CURSORS
 								(mode == RSE_get_backward),
+#else
+								false,
+#endif
 								false))
 			{
 				 return false;
@@ -2620,6 +2626,7 @@ static bool get_record(thread_db*	tdbb,
 				return false;
 			break;
 
+#ifdef SCROLLABLE_CURSORS
 		case RSE_get_current:
 			if (((irsb_first_n*) impure)->irsb_count <= 0)
 				return false;
@@ -2632,11 +2639,13 @@ static bool get_record(thread_db*	tdbb,
 			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
+#endif
 		}
 		break;
 
 	case rsb_skip:
 		switch (mode) {
+#ifdef SCROLLABLE_CURSORS
 		case RSE_get_backward:
 			if (((irsb_skip_n*) impure)->irsb_count > 0)
 				return false;
@@ -2650,6 +2659,14 @@ static bool get_record(thread_db*	tdbb,
 				return false;
 			break;
 
+		case RSE_get_current:
+			if (((irsb_skip_n*) impure)->irsb_count >= 1)
+				return false;
+			else if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				return false;
+			break;
+#endif
+
 		case RSE_get_forward:
 			while (((irsb_skip_n*) impure)->irsb_count > 1) {
 				((irsb_skip_n*) impure)->irsb_count--;
@@ -2660,12 +2677,6 @@ static bool get_record(thread_db*	tdbb,
 			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
-
-		case RSE_get_current:
-			if (((irsb_skip_n*) impure)->irsb_count >= 1)
-				return false;
-			else if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
-				return false;
 		}
 		break;
 

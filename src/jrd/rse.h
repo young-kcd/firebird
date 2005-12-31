@@ -247,17 +247,21 @@ const ULONG irsb_first = 1;
 const ULONG irsb_joined = 2;				// set in left join when current record has been joined to something
 const ULONG irsb_mustread = 4;				// set in left join when must read a record from left stream
 const ULONG irsb_open = 8;					// indicated rsb is open
+#ifdef SCROLLABLE_CURSORS
 const ULONG irsb_backwards = 16;			// backwards navigation has been performed on this stream
+#endif
 const ULONG irsb_in_opened = 32;			// set in outer join when inner stream has been opened
 const ULONG irsb_join_full = 64;			// set in full join when left join has completed
 const ULONG irsb_checking_singular = 128;	// fetching to verify singleton select
 const ULONG irsb_singular_processed = 256;	// singleton stream already delivered one record
+#ifdef SCROLLABLE_CURSORS
 const ULONG irsb_last_backwards = 512;		// rsb was last scrolled in the backward direction
 const ULONG irsb_bof = 1024;				// rsb is at beginning of stream
 const ULONG irsb_eof = 2048;				// rsb is at end of stream
 const ULONG irsb_crack = 4096;				// the record at our current position is missing
 const ULONG irsb_forced_crack = 8192;		// the above-mentioned crack was forced by user
 const ULONG irsb_refresh = 16384;			// enter records into refresh range
+#endif
 const ULONG irsb_key_changed = 32768;		// key has changed since record last returned from rsb
 
 
@@ -430,12 +434,15 @@ const USHORT bkm_forced_crack = 8;
 // types for navigating through a stream
 
 enum rse_get_mode {
-	RSE_get_forward,
+	RSE_get_forward
+#ifdef SCROLLABLE_CURSORS
+	,
 	RSE_get_backward,
 	RSE_get_current,
 	RSE_get_first,
 	RSE_get_last,
 	RSE_get_next
+#endif
 };
 
 typedef rse_get_mode RSE_GET_MODE;

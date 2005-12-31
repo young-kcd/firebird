@@ -504,6 +504,7 @@ bool NAV_get_record(thread_db* tdbb,
 	// The bitmap is only valid when we are continuing on in one 
 	// direction.  It is of no help when we change direction,
 	// and so we need to reset in that case.
+#ifdef SCROLLABLE_CURSORS
 	if (((impure->irsb_flags & irsb_backwards)
 		 && direction != RSE_get_backward)
 		|| (!(impure->irsb_flags & irsb_backwards)
@@ -518,6 +519,7 @@ bool NAV_get_record(thread_db* tdbb,
 	else if (direction == RSE_get_backward) {
 		impure->irsb_flags |= irsb_backwards;
 	}
+#endif
 
 	// find the last fetched position from the index
 	WIN window(impure->irsb_nav_page);
@@ -532,8 +534,12 @@ bool NAV_get_record(thread_db* tdbb,
 		(IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
 
 	// set the upper (or lower) limit for navigational retrieval
-	temporary_key upper, lower;
-	if ((direction == RSE_get_forward) && retrieval->irb_upper_count) {
+	temporary_key upper;
+#ifdef SCROLLABLE_CURSORS
+	temporary_key lower;
+#endif
+	if ((direction == RSE_get_forward) && retrieval->irb_upper_count) 
+	{
 		upper.key_length = impure->irsb_nav_upper_length;
 #ifdef SCROLLABLE_CURSORS
 		MOVE_FAST(
@@ -547,13 +553,16 @@ bool NAV_get_record(thread_db* tdbb,
 				  upper.key_length);
 #endif
 	}
-	else if ((direction == RSE_get_backward) && retrieval->irb_lower_count) {
+#ifdef SCROLLABLE_CURSORS
+	else if ((direction == RSE_get_backward) && retrieval->irb_lower_count) 
+	{
 		lower.key_length = impure->irsb_nav_lower_length;
 		MOVE_FAST(
 				  (impure->irsb_nav_data +
 				   (IPTR) rsb->rsb_arg[RSB_NAV_key_length]), lower.key_data,
 				  lower.key_length);
 	}
+#endif
 
 	// In the case of a DISTINCT, we must detect whether the key changed since the last 
 	// time a record was returned from the rsb.  It is not good enough to know whether the 
@@ -717,6 +726,7 @@ bool NAV_get_record(thread_db* tdbb,
 			break;
 		}
 
+#ifdef SCROLLABLE_CURSORS
 		if ((direction == RSE_get_backward) && retrieval->irb_lower_count &&
 			compare_keys(idx, key.key_data, key.key_length, &lower,
 						 retrieval->irb_generic & (irb_descending |
@@ -726,6 +736,7 @@ bool NAV_get_record(thread_db* tdbb,
 			RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
 			break;
 		}
+#endif
 
 		// skip this record if:
 		// 1) there is an inversion tree for this index and this record
@@ -740,13 +751,17 @@ bool NAV_get_record(thread_db* tdbb,
 			|| ((rsb->rsb_flags & rsb_project)
 				&& !(impure->irsb_flags & irsb_key_changed))) 
 		{
+#ifdef SCROLLABLE_CURSORS
 			if (direction == RSE_get_backward) {
 				nextPointer = BTreeNode::previousNode(&node, pointer, flags, &expanded_node);
 				expanded_next = expanded_node;
 				continue;
 			}
-			else if (direction == RSE_get_forward
+			if (direction == RSE_get_forward
 					 && !(impure->irsb_flags & irsb_forced_crack)) 
+#else
+			if (direction == RSE_get_forward)
+#endif
 			{
 				nextPointer = BTreeNode::nextNode(&node, pointer, flags, &expanded_node);
 				expanded_next = expanded_node;
@@ -1526,11 +1541,14 @@ static UCHAR* get_position(
 		// The new way of doing things is to have the current
 		// nav_offset be the last node fetched.  Go forward or
 		// backward from that point accordingly.
+#ifdef SCROLLABLE_CURSORS
 		if (direction == RSE_get_backward) {
 			pointer = BTreeNode::previousNode(&node, pointer, flags, expanded_node);
 			//node = (btree_nod*) BTR_previous_node( (UCHAR*)node, expanded_node);
 		}
-		else if (direction == RSE_get_forward) {
+		else
+#endif
+			if (direction == RSE_get_forward) {
 			pointer = BTreeNode::nextNode(&node, pointer, flags, expanded_node);
 		}
 		return pointer;
@@ -1547,11 +1565,14 @@ static UCHAR* get_position(
 	page = (Ods::btree_page*) window->win_buffer;
 	if (pointer) {
 		*expanded_node = find_current(window->win_expanded_buffer, page, pointer);
+#ifdef SCROLLABLE_CURSORS
 		if (direction == RSE_get_backward) {
 			pointer = BTreeNode::previousNode(&node, pointer, flags, expanded_node);
 			//node = (btree_nod*) BTR_previous_node((UCHAR*) node, expanded_node);
 		}
-		else if (direction == RSE_get_forward && found) {
+		else
+#endif
+			if (direction == RSE_get_forward && found) {
 			// in the forward case, seek to the next node only if we found
 			// the actual node on page; if we did not find it, we are already
 			// at the next node (such as when the node is garbage collected)
@@ -1729,8 +1750,13 @@ static UCHAR* nav_open(
 		(IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
 	index_desc* idx = (index_desc*) ((SCHAR *) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 	temporary_key lower, upper;
+#ifdef SCROLLABLE_CURSORS
 	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower,
 		&upper, (direction == RSE_get_backward));
+#else
+	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower,
+		&upper, false);
+#endif
 	impure->irsb_nav_page = window->win_page;
 
 
