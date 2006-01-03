@@ -33,27 +33,37 @@ namespace Firebird {
 
 	MetaName& MetaName::assign(const char* s, size_t l)
 	{
-		adjustLength(s, l);
 		init();
-		count = l;
-		memcpy(data, s, l);
+		if (s)
+		{
+			adjustLength(s, l);
+			count = l;
+			memcpy(data, s, l);
+		}
+		else {
+			count = 0;
+		}
 		return *this;
 	}
 
 	int MetaName::compare(const char* s, size_t l) const 
 	{
-		adjustLength(s, l);
-		size_t x = length() < l ? length() : l;
-		int rc = memcmp(c_str(), s, x);
-		if (rc)
+		if (s)
 		{
-			return rc;
+			adjustLength(s, l);
+			size_t x = length() < l ? length() : l;
+			int rc = memcmp(c_str(), s, x);
+			if (rc)
+			{
+				return rc;
+			}
 		}
 		return length() - l;
 	}
 
 	void MetaName::adjustLength(const char* const s, size_t& l)
 	{
+		fb_assert(s);
 		if (l > MAX_SQL_IDENTIFIER_LEN)
 		{
 			l = MAX_SQL_IDENTIFIER_LEN;

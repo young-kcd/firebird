@@ -63,7 +63,7 @@ public:
 	MetaName(MemoryPool&, const string& s) { assign(s.c_str(), s.length()); }
 	
 	MetaName& assign(const char* s, size_t l);
-	MetaName& assign(const char* s) { return assign(s, strlen(s)); }
+	MetaName& assign(const char* s) { return assign(s, s ? strlen(s) : 0); }
 	MetaName& operator=(const char* s) { return assign(s); }
 	MetaName& operator=(const string& s) { return assign(s.c_str(), s.length()); }
 	MetaName& operator=(const MetaName& m) { return set(m); }
@@ -73,7 +73,7 @@ public:
 	const char* c_str() const { return data; }
 
 	int compare(const char* s, size_t l) const;
-	int compare(const char* s) const { return compare(s, strlen(s)); }
+	int compare(const char* s) const { return compare(s, s ? strlen(s) : 0); }
 	int compare(const MetaName& m) const { return memcmp(data, m.data, MAX_SQL_IDENTIFIER_SIZE); }
 
 	bool operator==(const char* s) const { return compare(s) == 0; }
