@@ -84,12 +84,12 @@ DATABASE DB = FILENAME "ODS.RDB";
 static bool check_hex(const UCHAR*, USHORT);
 static bool check_number(const UCHAR*, USHORT);
 static bool check_user_group(const UCHAR*, USHORT, const ULONG);
-static bool check_string(const UCHAR*, const TEXT*);
+static bool check_string(const UCHAR*, const Firebird::MetaName&);
 static SecurityClass::flags_t compute_access(thread_db*, const SecurityClass*,
-	const jrd_rel*,	const TEXT*, const TEXT*);
+	const jrd_rel*,	const Firebird::MetaName&, const Firebird::MetaName&);
 static TEXT* save_string(const TEXT*, TEXT**);
 static SecurityClass::flags_t walk_acl(thread_db*, const UCHAR*, const jrd_rel*,
-	const TEXT*, const TEXT*, const ULONG);
+	const Firebird::MetaName&, const Firebird::MetaName&, const ULONG);
 
 static inline void check_and_move(UCHAR*& to, UCHAR from, UCharBuffer& start, ULONG* length_ptr)
 {
@@ -125,11 +125,11 @@ static const P_NAMES p_names[] =
 
 void SCL_check_access(const SecurityClass* s_class,
 					  SLONG view_id,
-					  const TEXT* trg_name,
-					  const TEXT* prc_name,
+					  const Firebird::MetaName& trg_name,
+					  const Firebird::MetaName& prc_name,
 					  SecurityClass::flags_t mask,
 					  const TEXT* type,
-					  const TEXT* name)
+					  const Firebird::MetaName& name)
 {
 /**************************************
  *
@@ -159,13 +159,22 @@ void SCL_check_access(const SecurityClass* s_class,
 		return;
 	}
 
-	Attachment* attachment = tdbb->tdbb_attachment;
+	const Attachment* const attachment = tdbb->tdbb_attachment;
 
-	const SecurityClass* att_class = attachment->att_security_class;
+	// Allow the database owner to back up a database even if he does not have
+	// read access to all the tables in the database
+
+	if ((attachment->att_flags & ATT_gbak_attachment) && (mask & SCL_read))
+	{
+		return;
+	}
+
+	bool denied_db = false;
+
+	const SecurityClass* const att_class = attachment->att_security_class;
 	if (att_class && !(att_class->scl_flags & mask))
 	{
-		type = "DATABASE";
-		name = "";
+		denied_db = true;
 	}
 	else
 	{
@@ -176,19 +185,11 @@ void SCL_check_access(const SecurityClass* s_class,
 		if (view_id) {
 			view = MET_lookup_relation_id(tdbb, view_id, false);
 		}
-		if ((view || trg_name || prc_name) &&
+		if ((view || trg_name.length() || prc_name.length()) &&
 			 (compute_access(tdbb, s_class, view, trg_name, prc_name) & mask))
 		{
 			return;
 		}
-	}
-
-	// Allow the database owner to back up a database even if he does not have
-	// read access to all the tables in the database
-
-	if ((attachment->att_flags & ATT_gbak_attachment) && (mask & SCL_read))
-	{
-		return;
 	}
 
 	const P_NAMES* names;
@@ -200,11 +201,20 @@ void SCL_check_access(const SecurityClass* s_class,
 		}
 	}
 
-	ERR_post(isc_no_priv,
-			 isc_arg_string, names->p_names_string,
-			 isc_arg_string, type,
-			 isc_arg_string, ERR_cstring(name),
-			 0);
+	if (denied_db) {
+		ERR_post(isc_no_priv,
+				isc_arg_string, names->p_names_string,
+				isc_arg_string, "DATABASE",
+				isc_arg_string, "",
+				0);
+	}
+	else {
+		ERR_post(isc_no_priv,
+				isc_arg_string, names->p_names_string,
+				isc_arg_string, type,
+				isc_arg_string, ERR_cstring(name.c_str()),
+				0);
+	}
 }
 
 
@@ -289,7 +299,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 		return;
 	}
 
-	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, reln_name.c_str());
+	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, reln_name);
 
 	request = NULL;
 
@@ -374,7 +384,7 @@ void SCL_check_procedure(const dsc* dsc_name, SecurityClass::flags_t mask)
 	if (!REQUEST(irq_p_security))
 		REQUEST(irq_p_security) = request;
 
-	SCL_check_access(s_class, 0, NULL, name.c_str(), mask, object_procedure, name.c_str());
+	SCL_check_access(s_class, 0, NULL, name, mask, object_procedure, name);
 }
 
 
@@ -418,7 +428,7 @@ void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
 	if (!REQUEST(irq_v_security))
 		REQUEST(irq_v_security) = request;
 
-	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, name.c_str());
+	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, name);
 }
 
 
@@ -841,8 +851,7 @@ SecurityClass* SCL_recompute_class(thread_db* tdbb, const TEXT* string)
 		return NULL;
 	}
 
-	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL,
-												 NULL);
+	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL, NULL);
 
 	if (s_class->scl_flags & SCL_exists) {
 		return s_class;
@@ -1008,7 +1017,7 @@ static bool check_user_group(const UCHAR* acl,
 }
 
 
-static bool check_string(const UCHAR* acl, const TEXT* string)
+static bool check_string(const UCHAR* acl, const Firebird::MetaName& string)
 {
 /**************************************
  *
@@ -1021,44 +1030,20 @@ static bool check_string(const UCHAR* acl, const TEXT* string)
  *	return true.
  *
  **************************************/
-	// Add these asserts to catch calls to this function with NULL,
-	// the caller to this function must check to ensure that the arguments are not
-	// NULL  - Shaunak Mistry 03-May-99.
+	fb_assert(acl);
 
-	fb_assert(string != NULL);
-	fb_assert(acl != NULL);
+	const size_t length = *acl++;
+	const TEXT* const ptr = (TEXT*) acl;
 
-	// JPN: Since Kanji User names are not allowed, no need to fix this UPPER loop
-
-	USHORT l = *acl++;
-	if (l)
-	{
-		do {
-			const TEXT c1 = *acl++;
-			const TEXT c2 = *string++;
-			if (UPPER7(c1) != UPPER7(c2)) {
-				return true;
-			}
-		} while (--l);
-	}
-
-	// CVC: This was the original check made obsolete by dialect 3.
-    // Need to check all since can have embedded spaces.
-
-    while (*string) {
-        if (*string++ != ' ') {
-            return true;
-        }
-    }
-    return false;
+    return (string.compare(ptr, length) != 0);
 }
 
 
 static SecurityClass::flags_t compute_access(thread_db* tdbb,
 							const SecurityClass* s_class,
 							const jrd_rel* view,
-							const TEXT* trg_name,
-							const TEXT* prc_name)
+							const Firebird::MetaName& trg_name,
+							const Firebird::MetaName& prc_name)
 {
 /**************************************
  *
@@ -1163,8 +1148,8 @@ static TEXT* save_string(const TEXT* string, TEXT** ptr)
 static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					  const UCHAR* acl,
 					  const jrd_rel* view,
-					  const TEXT* trg_name,
-					  const TEXT* prc_name,
+					  const Firebird::MetaName& trg_name,
+					  const Firebird::MetaName& prc_name,
 					  const ULONG length)
 {
 /**************************************
@@ -1247,7 +1232,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					break;
 
 				case id_sql_role:
-					if (role_name == NULL || check_string(acl, role_name))
+					if (!role_name || check_string(acl, role_name))
 						hit = false;
 					else
 					{
@@ -1283,17 +1268,17 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					break;
 
 				case id_view:
-					if (!view || check_string(acl, view->rel_name.c_str()))
+					if (!view || check_string(acl, view->rel_name))
 						hit = false;
 					break;
 
 				case id_procedure:
-					if (!prc_name || check_string(acl, prc_name))
+					if (check_string(acl, prc_name))
 						hit = false;
 					break;
 
 				case id_trigger:
-					if (!trg_name || check_string(acl, trg_name))
+					if (check_string(acl, trg_name))
 					{
 						hit = false;
 					}

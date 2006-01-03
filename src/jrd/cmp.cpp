@@ -354,8 +354,8 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 			SCL_check_access(sec_class,
 							(access->acc_view_id) ? access->acc_view_id : 
 								(view ? view->rel_id : 0),
-							t.request->req_trg_name.c_str(), 0, access->acc_mask,
-							access->acc_type, access->acc_name.c_str());
+							t.request->req_trg_name, NULL, access->acc_mask,
+							access->acc_type, access->acc_name);
 		}
 	}
 }
@@ -386,8 +386,8 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 				 access++) 
 			{
 				const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
-				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name.c_str(), 
-								 access->acc_mask, access->acc_type, access->acc_name.c_str());
+				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name, 
+								 access->acc_mask, access->acc_type, access->acc_name);
 			}
 		} else {
 			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
@@ -420,8 +420,8 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 		access++) 
 	{
 		const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
-		SCL_check_access(sec_class, access->acc_view_id, NULL, NULL, 
-						 access->acc_mask, access->acc_type, access->acc_name.c_str());
+		SCL_check_access(sec_class, access->acc_view_id, NULL, NULL,
+						 access->acc_mask, access->acc_type, access->acc_name);
 	}
 }
 
@@ -464,9 +464,8 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 				(procedure->prc_security_name.length() > 0 ?
 				procedure->prc_security_name.c_str() : NULL);
 			const SecurityClass* sec_class = SCL_get_class(prc_sec_name);
-			SCL_check_access(sec_class, 0, 0,
-							 0, SCL_execute, object_procedure,
-							 procedure->prc_name.c_str());
+			SCL_check_access(sec_class, 0, NULL, NULL, SCL_execute,
+							 object_procedure, procedure->prc_name);
 		}
 
 		CMP_verify_access(tdbb, request);
