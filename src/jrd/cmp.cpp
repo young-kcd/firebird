@@ -354,7 +354,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 			SCL_check_access(sec_class,
 							(access->acc_view_id) ? access->acc_view_id : 
 								(view ? view->rel_id : 0),
-							t.request->req_trg_name, 0, access->acc_mask,
+							t.request->req_trg_name.c_str(), 0, access->acc_mask,
 							access->acc_type, access->acc_name.c_str());
 		}
 	}

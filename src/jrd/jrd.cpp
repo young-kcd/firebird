@@ -248,10 +248,8 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			throw;
 		}
 		
-		if (name.length()) 
-		{
-			request->req_trg_name = name.c_str();
-		}
+		request->req_trg_name = name;
+
 		if (sys_trigger)
 		{
 			request->req_flags |= req_sys_trigger;

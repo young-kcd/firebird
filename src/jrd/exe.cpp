@@ -1832,10 +1832,10 @@ static void stuff_stack_trace(const jrd_req* request)
 	for (const jrd_req* req = request; req; req = req->req_caller)
 	{
 		Firebird::string name;
-		
-		if (req->req_trg_name) {
+
+		if (req->req_trg_name.length()) {
 			name = "At trigger '";
-			name += req->req_trg_name;
+			name += req->req_trg_name.c_str();
 		}
 		else if (req->req_procedure) {
 			name = "At procedure '";
@@ -4229,11 +4229,9 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 	if (trigger->req_flags & req_leave)
 	{
 		trigger->req_flags &= ~req_leave;
-		const TEXT* msg;
-		if (trigger->req_trg_name &&
-			(msg = MET_trigger_msg(tdbb,
-									trigger->req_trg_name,
-									trigger->req_label)))
+		const TEXT* msg =
+			MET_trigger_msg(tdbb, trigger->req_trg_name, trigger->req_label);
+		if (msg)
 		{
 			if (trigger->req_flags & req_sys_trigger)
 			{
