@@ -689,16 +689,13 @@ dsql_str* METD_get_default_charset(dsql_req* request)
  *	Find the default character set for a database
  *
  **************************************/
-	dsql_dbb* dbb;
-	USHORT length;
-
 	ISC_STATUS_ARRAY isc_status = {0};
-	dbb = request->req_dbb;
+	dsql_dbb* dbb = request->req_dbb;
 	if (dbb->dbb_flags & DBB_no_charset)
 		return NULL;
 
 	if (dbb->dbb_dfl_charset)
-		return request->req_dbb->dbb_dfl_charset;
+		return dbb->dbb_dfl_charset;
 
 // Now see if it is in the database 
 
@@ -714,7 +711,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 
         // Terminate ASCIIZ string on first trailing blank 
         fb_utils::exact_name(DBB.RDB$CHARACTER_SET_NAME);
-        length = strlen(DBB.RDB$CHARACTER_SET_NAME);
+        USHORT length = strlen(DBB.RDB$CHARACTER_SET_NAME);
         dbb->dbb_dfl_charset = FB_NEW_RPT(*dbb->dbb_pool, length) dsql_str;
         dbb->dbb_dfl_charset->str_length = length;
         dbb->dbb_dfl_charset->str_charset = NULL;
