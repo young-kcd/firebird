@@ -143,6 +143,7 @@ static RecordSource* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCH
 							RecordSource*, jrd_nod*, bool);
 static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverStack&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
+static void get_expression_streams(const jrd_nod*, Firebird::SortedArray<int>&);
 static void get_inactivities(const CompilerScratch*, ULONG*);
 static jrd_nod* get_unmapped_node(thread_db*, jrd_nod*, jrd_nod*, UCHAR, bool);
 static IndexedRelationship* indexed_relationship(thread_db*, OptimizerBlk*, USHORT);
@@ -1735,14 +1736,15 @@ static void check_sorts(RecordSelExpr* rse)
 	// if all the fields in the sort list are from one stream, check the stream is
 	// the most outer stream, if true update rse and ignore the sort
 	if (sort && !project) {
-		UCHAR sort_stream = 0;
+		int sort_stream = 0;
 		bool usableSort = true;
 		const jrd_nod* const* sort_ptr = sort->nod_arg;
 		const jrd_nod* const* const sort_end = sort_ptr + sort->nod_count;
 		for (; sort_ptr < sort_end; sort_ptr++) {
 			if ((*sort_ptr)->nod_type == nod_field) {
 				// Get stream for this field at this position.
-				const UCHAR current_stream = (UCHAR)(IPTR)(*sort_ptr)->nod_arg[e_fld_stream];
+				const int current_stream =
+					(int)(IPTR)(*sort_ptr)->nod_arg[e_fld_stream];
 				// If this is the first position node, save this stream.
 				if (sort_ptr == sort->nod_arg) {
 			    	sort_stream = current_stream;
@@ -1755,10 +1757,25 @@ static void check_sorts(RecordSelExpr* rse)
 				}
 			}
 			else {
-				// This position doesn't use a simple field, thus we can't use
-				// any index for the sort.
-				usableSort = false;
-				break;
+				// If this is not the first position node, reject this sort.
+				// Two expressions cannot be mapped to a single index.
+				if (sort_ptr > sort->nod_arg) {
+					usableSort = false;
+					break;
+				}
+				// This position doesn't use a simple field, thus we should
+				// check the expression internals.
+				Firebird::SortedArray<int> streams;
+				get_expression_streams(*sort_ptr, streams);
+				// We can use this sort only if there's a single stream
+				// referenced by the expression.
+				if (streams.getCount() == 1) {
+					sort_stream = streams[0];
+				}
+				else {
+					usableSort = false;
+					break;
+				}
 			}
 		}
 
@@ -1787,7 +1804,7 @@ static void check_sorts(RecordSelExpr* rse)
 							for (int i = 0; i < new_rse->rse_count; i++) {
 								jrd_nod* subNode = (jrd_nod*) new_rse->rse_relation[i];
 								if (subNode->nod_type == nod_relation &&
-									((USHORT)(IPTR)subNode->nod_arg[e_rel_stream]) == sort_stream &&
+									((int)(IPTR)subNode->nod_arg[e_rel_stream]) == sort_stream &&
 									new_rse != rse)
 								{
 									// We have found the correct stream
@@ -1813,7 +1830,7 @@ static void check_sorts(RecordSelExpr* rse)
 				}
 				else {
 					if (node->nod_type == nod_relation &&
-						((USHORT)(IPTR)node->nod_arg[e_rel_stream]) == sort_stream &&
+						((int)(IPTR)node->nod_arg[e_rel_stream]) == sort_stream &&
 						new_rse && new_rse != rse)
 					{
 						// We have found the correct stream, thus apply the sort here
@@ -1825,8 +1842,6 @@ static void check_sorts(RecordSelExpr* rse)
 			}
 		}
 	}
-
-
 }
 
 
@@ -5840,6 +5855,169 @@ static RecordSource* gen_union(thread_db* tdbb,
 		*rsb_ptr++ = (RecordSource*)(IPTR) *streams++;
 	}
 	return rsb;
+}
+
+
+static void get_expression_streams(const jrd_nod* node,
+								   Firebird::SortedArray<int>& streams)
+{
+/**************************************
+ *
+ *  g e t _ e x p r e s s i o n _ s t r e a m s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Return all streams referenced by the expression.
+ *
+ **************************************/
+	DEV_BLKCHK(node, type_nod);
+
+	if (!node) {
+		return;
+	}
+
+	RecordSelExpr* rse = NULL;
+
+	int n;
+	size_t pos;
+
+	switch (node->nod_type) {
+
+		case nod_field:
+			n = (int)(IPTR) node->nod_arg[e_fld_stream];
+			if (!streams.find(n, pos))
+				streams.add(n);
+			break;
+
+		case nod_rec_version:
+		case nod_dbkey:
+			n = (int)(IPTR) node->nod_arg[0];
+			if (!streams.find(n, pos))
+				streams.add(n);
+			break;
+
+		case nod_cast:
+			get_expression_streams(node->nod_arg[e_cast_source], streams);
+			break;
+
+		case nod_extract:
+			get_expression_streams(node->nod_arg[e_extract_value], streams);
+			break;
+
+		case nod_strlen:
+			get_expression_streams(node->nod_arg[e_strlen_value], streams);
+			break;
+
+		case nod_function:
+			get_expression_streams(node->nod_arg[e_fun_args], streams);
+			break;
+
+		case nod_procedure:
+			get_expression_streams(node->nod_arg[e_prc_inputs], streams);
+			break;
+
+		case nod_any:
+		case nod_unique:
+		case nod_ansi_any:
+		case nod_ansi_all:
+		case nod_exists:
+			get_expression_streams(node->nod_arg[e_any_rse], streams);
+			break;
+
+		case nod_argument:
+		case nod_current_date:
+		case nod_current_role:
+		case nod_current_time:
+		case nod_current_timestamp:
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_internal_info:
+		case nod_literal:
+		case nod_null:
+		case nod_user_name:
+		case nod_variable:
+			break;
+
+		case nod_rse:
+			rse = (RecordSelExpr*) node;
+			break;
+
+		case nod_average:
+		case nod_count:
+		case nod_count2:
+		case nod_from:
+		case nod_max:
+		case nod_min:
+		case nod_total:
+			get_expression_streams(node->nod_arg[e_stat_rse], streams);
+			get_expression_streams(node->nod_arg[e_stat_value], streams);
+			break;
+
+		// go into the node arguments
+		case nod_add:
+		case nod_add2:
+		case nod_agg_average:
+		case nod_agg_average2:
+		case nod_agg_average_distinct:
+		case nod_agg_average_distinct2:
+		case nod_agg_max:
+		case nod_agg_min:
+		case nod_agg_total:
+		case nod_agg_total2:
+		case nod_agg_total_distinct:
+		case nod_agg_total_distinct2:
+		case nod_concatenate:
+		case nod_divide:
+		case nod_divide2:
+		case nod_multiply:
+		case nod_multiply2:
+		case nod_negate:
+		case nod_subtract:
+		case nod_subtract2:
+
+		case nod_upcase:
+		case nod_lowcase:
+		case nod_substr:
+		case nod_trim:
+
+		case nod_like:
+		case nod_between:
+		case nod_sleuth:
+		case nod_missing:
+		case nod_value_if:
+		case nod_matches:
+		case nod_contains:
+		case nod_starts:
+		case nod_equiv:
+		case nod_eql:
+		case nod_neq:
+		case nod_geq:
+		case nod_gtr:
+		case nod_lss:
+		case nod_leq:
+		{
+			const jrd_nod* const* ptr = node->nod_arg;
+			// Check all sub-nodes of this node.
+			for (const jrd_nod* const* const end = ptr + node->nod_count;
+				ptr < end; ptr++)
+			{
+				get_expression_streams(*ptr, streams);
+			}
+			break;
+		}
+
+		default:
+			break;
+	}
+
+	if (rse) {
+		get_expression_streams(rse->rse_first, streams);
+		get_expression_streams(rse->rse_skip, streams);
+		get_expression_streams(rse->rse_boolean, streams);
+		get_expression_streams(rse->rse_sorted, streams);
+		get_expression_streams(rse->rse_projection, streams);
+	}
 }
 
 
