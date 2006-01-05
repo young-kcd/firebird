@@ -1056,10 +1056,10 @@ ISC_LONG ISC_EXPORT isc_reset_fpe(ISC_USHORT);
 #define ADD_SPB_LENGTH(p, length)	{*(p)++ = (length); \
     					 *(p)++ = (length) >> 8;}
 
-#define ADD_SPB_NUMERIC(p, data)	{*(p)++ = (SCHAR) (data); \
-    					 *(p)++ = (SCHAR) ((data) >> 8); \
-					 *(p)++ = (SCHAR) ((data) >> 16); \
-					 *(p)++ = (SCHAR) ((data) >> 24);}
+#define ADD_SPB_NUMERIC(p, data)	{*(p)++ = (ISC_SCHAR) (data); \
+    					 *(p)++ = (ISC_SCHAR) ((data) >> 8); \
+					 *(p)++ = (ISC_SCHAR) ((data) >> 16); \
+					 *(p)++ = (ISC_SCHAR) ((data) >> 24);}
 
 ISC_STATUS ISC_EXPORT isc_service_attach(ISC_STATUS*,
 										 unsigned short,
