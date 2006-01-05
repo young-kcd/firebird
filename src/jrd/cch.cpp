@@ -2442,10 +2442,7 @@ void CCH_unwind(thread_db* tdbb, bool punt)
 			release_bdb(tdbb, bdb, true, false, false);
 		}
 		if (bdb->bdb_exclusive == tdbb) {
-			/* The sanity check below can't be enforced for the log page because
-			   the ail.c code does IO while having the log page marked (should be
-			   fixed in the future). */
-			if ((bdb->bdb_flags & BDB_marked) && (bdb->bdb_page != LOG_PAGE)) {
+			if (bdb->bdb_flags & BDB_marked) {
 				cache_bugcheck(268);	/* msg 268 buffer marked during cache unwind */
 			}
 			bdb->bdb_flags &= ~(BDB_writer | BDB_faked | BDB_must_write);
