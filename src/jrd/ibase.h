@@ -1196,7 +1196,6 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dpb_set_db_charset            68
 #define isc_dpb_gsec_attach               69
 #define isc_dpb_address_path              70
-#define isc_dpb_remote_attachment         71
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -1341,7 +1340,6 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_spb_verbose                   107
 #define isc_spb_options                   108
 #define isc_spb_address_path              109
-#define isc_spb_remote_attachment         110
 
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout

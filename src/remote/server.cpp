@@ -124,12 +124,10 @@ namespace {
 	// this sets of parameters help use same functions
 	// for both services and databases attachments
 	struct ParametersSet {
-		UCHAR address_path, remote_attachment;
+		UCHAR address_path;
 	};
-	const ParametersSet dpbParam = {isc_dpb_address_path, 
-									isc_dpb_remote_attachment};
-	const ParametersSet spbParam = {isc_spb_address_path, 
-									isc_spb_remote_attachment};
+	const ParametersSet dpbParam = {isc_dpb_address_path};
+	const ParametersSet spbParam = {isc_spb_address_path};
 }
 
 static bool	accept_connection(rem_port*, P_CNCT*, PACKET*);
@@ -794,13 +792,6 @@ static void addClumplets(Firebird::ClumpletWriter& dpb_buffer,
 			dpb_buffer.deleteClumplet();
 		else
 			dpb_buffer.moveNext();
-	}
-	
-	// Add marker to know later that this attachment is remote
-	if (!Config::getRedirection()) {
-		if (! dpb_buffer.find(par.remote_attachment)) {
-			dpb_buffer.insertTag(par.remote_attachment);
-		}
 	}
 }
 

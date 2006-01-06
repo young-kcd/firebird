@@ -106,20 +106,20 @@ namespace {
 	// for both services and databases attachments
 	struct ParametersSet {
 		UCHAR dummy_packet_interval, user_name, sys_user_name, 
-			  password, password_enc, remote_attachment;
+			  password, password_enc, address_path;
 	};
 	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval, 
 									isc_dpb_user_name, 
 									isc_dpb_sys_user_name, 
 									isc_dpb_password, 
 									isc_dpb_password_enc,
-									isc_dpb_remote_attachment};
+									isc_dpb_address_path};
 	const ParametersSet spbParam = {isc_spb_dummy_packet_interval, 
 									isc_spb_user_name, 
 									isc_spb_sys_user_name, 
 									isc_spb_password, 
 									isc_spb_password_enc,
-									isc_spb_remote_attachment};
+									isc_spb_address_path};
 }
 
 static RVNT add_event(rem_port*);
@@ -5579,7 +5579,7 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb,
  *
  **************************************/
     if (!Config::getRedirection()) {
-	    if (dpb.find(par.remote_attachment)) {
+	    if (dpb.find(par.address_path)) {
 			ISC_STATUS_ARRAY local_status;
 			local_status[0] = isc_arg_gds;
 			local_status[1] = isc_unavailable;
