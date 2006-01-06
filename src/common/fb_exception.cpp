@@ -241,13 +241,14 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 			if (c_ex.strings_permanent()) 
 			{
 				// Copy status vector
+				ISC_STATUS *sv = status_vector;
 				do {
-					const ISC_STATUS type = *status_vector++ = *ptr++;
+					const ISC_STATUS type = *sv++ = *ptr++;
 					if (type == isc_arg_end)
 						break;
 					if (type == isc_arg_cstring)
-						*status_vector++ = *ptr++;
-					*status_vector++ = *ptr++;
+						*sv++ = *ptr++;
+					*sv++ = *ptr++;
 				} while (true);
 			}
 			else {

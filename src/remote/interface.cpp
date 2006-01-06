@@ -5580,7 +5580,11 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb,
  **************************************/
     if (!Config::getRedirection()) {
 	    if (dpb.find(par.remote_attachment)) {
-			Firebird::status_exception::raise(isc_unavailable, isc_arg_end);
+			ISC_STATUS_ARRAY local_status;
+			local_status[0] = isc_arg_gds;
+			local_status[1] = isc_unavailable;
+			local_status[2] = isc_arg_end;
+			Firebird::status_exception::raise(local_status);
 		}
 	}
 	
