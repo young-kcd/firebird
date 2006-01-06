@@ -1,3 +1,22 @@
+2006-01-05 18:30  alexpeshkoff
+
+	* firebird2/src/jrd/ibase.h (1.110):
+	
+	don't use internal type in public file
+
+2006-01-05 18:13  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.252):
+	
+	Allowed expression indices to be used for navigation on outer
+	streams.
+
+2006-01-05 11:10  dimitr
+
+	* firebird2/src/jrd/cch.cpp (1.124):
+	
+	Little cleanup.
+
 2006-01-04 06:55  robocop
 
 	* firebird2/src/dsql/metd.epp (1.84):
