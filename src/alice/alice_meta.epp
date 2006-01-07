@@ -27,14 +27,14 @@
  *
  *____________________________________________________________
  *
- *	$Id: alice_meta.epp,v 1.45 2005-05-27 22:37:41 asfernandes Exp $
+ *	$Id: alice_meta.epp,v 1.46 2006-01-07 00:31:10 robocop Exp $
  */
 
 #include "firebird.h"
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../jrd/license.h"
+//#include "../jrd/license.h"
 #include "../alice/alice.h"
 #include "../alice/all.h"
 #include "../alice/alice_meta.h"
@@ -490,7 +490,6 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 //  get the blob into the buffer, if it fits 
 
 	USHORT returned_length;
-	ISC_STATUS status;
 
 	TEXT* ptr = buffer;
 	const TEXT* const end = buffer + buffer_length;
@@ -499,7 +498,7 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 			break;
 		if (!(buffer_length = end - ptr))
 			break;
-		status = isc_get_segment(gds_status, &blob, &returned_length,
+		ISC_STATUS status = isc_get_segment(gds_status, &blob, &returned_length,
 								  buffer_length, ptr);
 		if (status && status != isc_segment)
 			break;
@@ -510,7 +509,7 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 
 	if (!buffer_length)
 		for (;;) {
-			status = isc_get_segment(gds_status, &blob, &returned_length,
+			ISC_STATUS status = isc_get_segment(gds_status, &blob, &returned_length,
 									  buffer_length, buffer);
 			if (status && status != isc_segment)
 				break;

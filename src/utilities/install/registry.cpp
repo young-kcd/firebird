@@ -30,7 +30,7 @@
 #include "../jrd/isc_proto.h"
 #include <stdlib.h>
 #include <windows.h>
-#include "../jrd/license.h"
+//#include "../jrd/license.h"
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/regis_proto.h"
 #include "../utilities/install/registry.h"

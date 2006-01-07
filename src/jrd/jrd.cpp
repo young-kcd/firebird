@@ -60,7 +60,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/nbak.h"
 #include "../jrd/scl.h"
-#include "../jrd/license.h"
+//#include "../jrd/license.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/ods.h"
 #include "../jrd/exe.h"

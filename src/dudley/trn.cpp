@@ -26,7 +26,7 @@
 #include <string.h>
 #include "../jrd/ibase.h"
 #include "../dudley/ddl.h"
-#include "../jrd/license.h"
+//#include "../jrd/license.h"
 #include "../dudley/gener_proto.h"
 #include "../dudley/lex_proto.h"
 #include "../dudley/trn_proto.h"

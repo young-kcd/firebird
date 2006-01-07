@@ -70,7 +70,7 @@
 #include "../jrd/os/pio.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/license.h"
+//#include "../jrd/license.h"
 #include "../jrd/lck.h"
 #include "../jrd/sdw.h"
 #include "../jrd/cch.h"

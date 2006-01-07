@@ -24,7 +24,7 @@
 #include "firebird.h"
 #include <string.h>
 #include "../dudley/ddl.h"
-#include "../jrd/license.h"
+//#include "../jrd/license.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
 #include "../jrd/acl.h"

@@ -30,7 +30,7 @@
 #include <ntsecapi.h>
 #include <aclapi.h>
 #include "../jrd/common.h"
-#include "../jrd/license.h"
+//#include "../jrd/license.h"
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/servi_proto.h"
 #include "../utilities/install/registry.h"

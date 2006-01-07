@@ -57,7 +57,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/irq.h"
 #include "../jrd/drq.h"
-#include "../jrd/license.h"
+//#include "../jrd/license.h"
 #include "../jrd/intl.h"
 #include "../jrd/rng.h"
 #include "../jrd/btr.h"
