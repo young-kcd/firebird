@@ -237,11 +237,11 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 	try {
 		const status_exception& c_ex = dynamic_cast<const status_exception&>(ex);
 		if (c_ex.status_known()) {
+			ISC_STATUS *sv = status_vector;
 			const ISC_STATUS *ptr = c_ex.value();
 			if (c_ex.strings_permanent()) 
 			{
 				// Copy status vector
-				ISC_STATUS *sv = status_vector;
 				do {
 					const ISC_STATUS type = *sv++ = *ptr++;
 					if (type == isc_arg_end)
@@ -254,27 +254,27 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 			else {
 				// Move in status and clone transient strings
 				do {
-					const ISC_STATUS type = *status_vector++ = *ptr++;		
+					const ISC_STATUS type = *sv++ = *ptr++;
 					if (type == isc_arg_end)
 						break;
 
 					switch (type) {
 					case isc_arg_cstring: 
 						{				
-							const UCHAR len = *status_vector++ = *ptr++;
+							const UCHAR len = *sv++ = *ptr++;
 							char *temp = reinterpret_cast<char*>(*ptr++);
-							*status_vector++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, len));
+							*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, len));
 							break;
 						}
 					case isc_arg_string:
 					case isc_arg_interpreted:
 						{
 							char *temp = reinterpret_cast<char*>(*ptr++);
-							*status_vector++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, strlen(temp)));
+							*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, strlen(temp)));
 							break;
 						}
 					default:
-						*status_vector++ = *ptr++;
+						*sv++ = *ptr++;
 						break;
 					}
 				} while (true);
