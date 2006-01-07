@@ -30,6 +30,47 @@ private:
 	Firebird::Mutex buffer_lock;
 };
 
+ISC_STATUS dupStringTemp(const char* s)
+{
+	const size_t len = strlen(s);
+	char *string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
+	memcpy(string, s, len + 1);
+	return (ISC_STATUS)(IPTR)(string);
+}
+
+void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
+{
+	// Move in status and clone transient strings
+	*ptr++ = isc_arg_gds;
+	*ptr++ = status;
+	do {
+		const ISC_STATUS type = *ptr++ = va_arg(status_args, ISC_STATUS);
+		if (type == isc_arg_end) 
+			break;
+
+		switch (type) {
+		case isc_arg_cstring: 
+			{				
+				const size_t len = *ptr++ = va_arg(status_args, ISC_STATUS);
+				char *string = FB_NEW(*getDefaultMemoryPool()) char[len];
+				const char *temp = reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS));
+				memcpy(string, temp, len);
+				*ptr++ = (ISC_STATUS)(IPTR)(string);
+				break;
+			}
+		case isc_arg_string:
+		case isc_arg_interpreted:
+			{
+				*ptr++ = dupStringTemp(reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS)));
+				break;
+			}
+		default:
+			*ptr++ = va_arg(status_args, ISC_STATUS);
+			break;
+		}
+	} while (true);	
+}
+
 } // namespace
 
 namespace Firebird {
@@ -42,8 +83,8 @@ status_exception::status_exception() throw() :
 	memset(m_status_vector, 0, sizeof(m_status_vector));
 }
 
-status_exception::status_exception(const ISC_STATUS *status_vector) throw() : 
-	m_strings_permanent(true), m_status_known(status_vector != NULL)
+status_exception::status_exception(const ISC_STATUS *status_vector, bool permanent) throw() : 
+	m_strings_permanent(permanent), m_status_known(status_vector != NULL)
 {
 	if (m_status_known) {
 		ISC_STATUS *ptr = m_status_vector;
@@ -58,62 +99,17 @@ status_exception::status_exception(const ISC_STATUS *status_vector) throw() :
 	}
 }
 	
-void status_exception::fill_status(ISC_STATUS status, va_list status_args)
+void status_exception::set_status(ISC_STATUS *new_vector, bool permanent) throw()
 {
-	m_strings_permanent = false;
-	m_status_known = true;
-	// Move in status and clone transient strings
-	ISC_STATUS *ptr = m_status_vector;
-	*ptr++ = isc_arg_gds;
-	*ptr++ = status;
-	do {
-		const ISC_STATUS type = *ptr++ = va_arg(status_args, ISC_STATUS);
-		if (type == isc_arg_end) 
-			break;
-
-		switch (type) {
-		case isc_arg_cstring: 
-			{				
-				const UCHAR len = *ptr++ = va_arg(status_args, ISC_STATUS);
-				char *string = FB_NEW(*getDefaultMemoryPool()) char[len];
-				const char *temp = reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS));
-				memcpy(string, temp, len);
-				*ptr++ = (ISC_STATUS)(IPTR)(string);
-				break;
-			}
-		case isc_arg_string:
-		case isc_arg_interpreted:
-			{
-				const char *temp = reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS));
-				const size_t len = strlen(temp);
-				char *string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
-				memcpy(string, temp, len + 1);
-				*ptr++ = (ISC_STATUS)(IPTR)(string);
-				break;
-			}
-		default:
-			*ptr++ = va_arg(status_args, ISC_STATUS);
-			break;
-		}
-	} while (true);	
+	release_vector();
+	m_status_known = (new_vector != NULL); 
+	m_strings_permanent = permanent;
+	memcpy(m_status_vector, new_vector, sizeof(m_status_vector));
 }
 
-status_exception::status_exception(ISC_STATUS status, va_list status_args) 
+void status_exception::release_vector() throw()
 {
-	fill_status(status, status_args);
-}
-
-status_exception::status_exception(ISC_STATUS status, ...) 
-{
-	va_list args;
-	va_start(args, status);
-	fill_status(status, args);
-	va_end(args);
-}
-
-status_exception::~status_exception() throw() 
-{
-	if (m_strings_permanent)
+	if (m_strings_permanent || (!m_status_known))
 		return;
 	
 	// Free owned strings
@@ -139,6 +135,11 @@ status_exception::~status_exception() throw()
 	} while (true);
 }
 
+status_exception::~status_exception() throw() 
+{
+	release_vector();
+}
+
 void fatal_exception::raiseFmt(const char* format, ...) 
 {
 	va_list args;
@@ -157,23 +158,30 @@ void status_exception::raise()
 	
 void status_exception::raise(const ISC_STATUS *status_vector) 
 {
-	throw status_exception(status_vector);
+	throw status_exception(status_vector, true);
 }
 	
 void status_exception::raise(ISC_STATUS status, ...) 
 {
 	va_list args;
 	va_start(args, status);
-	status_exception ex(status, args);
+	ISC_STATUS_ARRAY temp;
+	fill_status(temp, status, args);
 	va_end(args);
-	throw ex;
+	throw status_exception(temp, false);
 }
 
 /********************************* system_call_failed ****************************/
 
 system_call_failed::system_call_failed(const char* v_syscall, int v_error_code) : 
-	status_exception(isc_sys_request, isc_arg_string, v_syscall, SYS_ARG, v_error_code, isc_arg_end)
-{	
+	status_exception(0, false)
+{
+	ISC_STATUS temp[] = {isc_arg_gds, 
+						isc_sys_request, 
+						isc_arg_string, dupStringTemp(v_syscall), 
+						SYS_ARG, v_error_code, 
+						isc_arg_end};
+	set_status(temp, false);
 }
 
 void system_call_failed::raise(const char* syscall, int error_code)
@@ -194,15 +202,20 @@ void system_call_failed::raise(const char* syscall)
 /********************************* fatal_exception ********************************/
 
 fatal_exception::fatal_exception(const char* message) :
-	status_exception(isc_random, isc_arg_string, message, isc_arg_end)
+	status_exception(0, false)
 {
+	ISC_STATUS temp[] = {isc_arg_gds, 
+						isc_random, 
+						isc_arg_string, dupStringTemp(message), 
+						isc_arg_end};
+	set_status(temp, false);
 }
 
 // Moved to the header due to gpre. Gpre non-static can't receive it, but we
 // want to avoid problems with picky compilers that can't find what().
 // We can't link this file into normal gpre.
 // Keep in sync with the constructor above, please; "message" becomes 4th element
-// after status_exception's constructor invokes fill_status().
+// after initialization of status vector.
 //const char* fatal_exception::what() const throw()
 //{
 //	return reinterpret_cast<const char*>(value()[3]);
