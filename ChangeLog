@@ -1,3 +1,55 @@
+2006-01-07 02:32  robocop
+
+	* firebird2/src/: alice/alice_meta.epp (1.47),
+	gpre/gpre_meta_boot.cpp (1.50):
+	
+	Misc.
+
+2006-01-07 01:34  robocop
+
+	* firebird2/src/common/fb_exception.cpp (1.19):
+	
+	Complete Alex fix.
+
+2006-01-07 01:33  robocop
+
+	* firebird2/src/jrd/os/config_root.h (1.11):
+	
+	Totally misc.
+
+2006-01-07 01:31  robocop
+
+	* firebird2/src/: alice/alice_meta.epp (1.46), dudley/exe.epp
+	(1.60), dudley/trn.cpp (1.36), gpre/gpre_meta.epp (1.54),
+	gpre/gpre_meta_boot.cpp (1.49), jrd/cmp.cpp (1.190), jrd/dyn.epp
+	(1.80), jrd/intl.cpp (1.83), jrd/jrd.cpp (1.230), jrd/pag.cpp
+	(1.93), qli/command.cpp (1.24), qli/meta.epp (1.58),
+	remote/os/win32/srvr_w32.cpp (1.31), utilities/install/install.cpp
+	(1.8), utilities/install/registry.cpp (1.12),
+	utilities/install/services.cpp (1.19):
+	
+	Comment excessive dependencies on license.h.
+
+2006-01-06 23:42  robocop
+
+	* firebird2/src/remote/mgr.cpp (1.10):
+	
+	Remove leftover from Apollo.
+
+2006-01-06 13:27  alexpeshkoff
+
+	* firebird2/src/: jrd/ibase.h (1.111), remote/interface.cpp
+	(1.114), remote/server.cpp (1.111):
+	
+	simpler way to detect redirection attempt
+
+2006-01-06 12:21  alexpeshkoff
+
+	* firebird2/src/: remote/interface.cpp (1.113),
+	common/fb_exception.cpp (1.18):
+	
+	fixed "invalid database handle" error
+
 2006-01-05 18:30  alexpeshkoff
 
 	* firebird2/src/jrd/ibase.h (1.110):
