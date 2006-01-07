@@ -32,7 +32,6 @@
 
 #include <exception>
 #include <stddef.h>
-#include <stdarg.h>
 #include <string.h>
 #include "fb_types.h"
 
@@ -72,44 +71,45 @@ private:
 class status_exception : public std::exception
 {
 public:
-	// This version of constructor receives status vector pointing to permanent strings
-	// which may be returned to user in status vector directly without transfer of string ownership
-	explicit status_exception(const ISC_STATUS *status_vector) throw();
-	
-	// These versions of constructor clone passed transient strings
-	explicit status_exception(ISC_STATUS status, ...);
-	
-	// Create exception with undefined status vector, this constructor allows to use this
-	// class as jmpbuf replacement for transitional period
-	status_exception() throw();
-
+	// This version of constructor receives status vector pointing to permanent or 
+	// temp strings, depending upon second parameter.
+	status_exception(const ISC_STATUS *status_vector, bool permanent) throw();
 	virtual ~status_exception() throw();
-	virtual const char* what() const throw()
-		{ return "Firebird::status_exception"; }
-	const ISC_STATUS* value() const { return m_status_vector; }
+	
+	virtual const char* what() const throw() { return "Firebird::status_exception"; }
+	const ISC_STATUS* value() const throw() { return m_status_vector; }
 
 	// Returns true if strings contained in status vector are located in magical 
 	// permanent circular buffer. False means that exception object owns strings 
 	// and is about to deallocate them in its destructor
-	bool strings_permanent() const { return m_strings_permanent; }
+	bool strings_permanent() const throw() { return m_strings_permanent; }
 
 	// Returns true if exception class holds status vector for the error.
 	// Returns false when status vector is passed "by magic", probably 
 	// somewhere in tdbb_status_vector
-	bool status_known() const { return m_status_known; }
+	bool status_known() const throw() { return m_status_known; }
 
 	// Takes permanent strings
 	static void raise(const ISC_STATUS *status_vector);
+	
+	// Used as jmpbuf to unwind when needed
 	static void raise();
 	
 	// Take transient strings
 	static void raise(ISC_STATUS status, ...);
+	
+protected:
+	// Create exception with undefined status vector, this constructor allows 
+	// derived classes create empty exception ...
+	status_exception() throw();
+	// .. and adjust it later using somehow created status vector.
+	void set_status(ISC_STATUS *new_vector, bool permanent) throw();
+	
 private:
 	ISC_STATUS_ARRAY m_status_vector;
 	bool m_strings_permanent;
 	bool m_status_known;
-	void fill_status(ISC_STATUS status, va_list status_args);
-	status_exception(ISC_STATUS status, va_list status_args);
+	void release_vector() throw();
 };
 
 class system_call_failed : public status_exception
@@ -128,7 +128,7 @@ public:
 	explicit fatal_exception(const char* message);
 	static void raiseFmt(const char* format, ...);
 	// Keep in sync with the constructor above, please; "message" becomes 4th element
-	// after status_exception's constructor invokes fill_status().
+	// after initialization of status vector in constructor.
 	const char* what() const throw()
 	{
 		return reinterpret_cast<const char*>(value()[3]);
