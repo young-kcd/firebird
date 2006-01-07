@@ -48,7 +48,7 @@ static const char* CONFIG_FILE	= "firebird.conf";
 		3. Otherwise, return parent directory of this path.
 
 	Pathname of the configuration file is platform-specific and defined by
-	getConfigFile() member function.
+	getConfigFilePath() member function.
 **/
 
 class ConfigRoot : public Firebird::PermanentStorage
