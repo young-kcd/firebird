@@ -34,6 +34,7 @@
 #include <stddef.h>
 #undef __need_size_t
 #endif
+#include <stdarg.h>
 
 #include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"

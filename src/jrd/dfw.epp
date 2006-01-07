@@ -509,7 +509,7 @@ void DFW_perform_work(jrd_tra* transaction)
 			}
 			if (!phase) {
 				Firebird::stuff_exception(tdbb->tdbb_status_vector, 
-					Firebird::status_exception(err_status));
+					Firebird::status_exception(err_status, true));
 				ERR_punt();
 			}
 			++phase;

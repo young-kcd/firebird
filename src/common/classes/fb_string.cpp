@@ -30,6 +30,7 @@
 #include "../common/classes/fb_string.h"
 
 #include <ctype.h>
+#include <stdarg.h>
 
 #ifdef HAVE_STRCASECMP
 #define STRNCASECMP strncasecmp

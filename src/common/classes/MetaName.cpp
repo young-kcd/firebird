@@ -27,6 +27,9 @@
  */
  
 #include "firebird.h"
+
+#include <stdarg.h>
+
 #include "../common/classes/MetaName.h"
 
 namespace Firebird {
