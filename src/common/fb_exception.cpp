@@ -99,12 +99,13 @@ status_exception::status_exception(const ISC_STATUS *status_vector, bool permane
 	}
 }
 	
-void status_exception::set_status(ISC_STATUS *new_vector, bool permanent) throw()
+void status_exception::set_status(const ISC_STATUS *new_vector, bool permanent) throw()
 {
 	release_vector();
 	m_status_known = (new_vector != NULL); 
 	m_strings_permanent = permanent;
-	memcpy(m_status_vector, new_vector, sizeof(m_status_vector));
+	if (m_status_known)
+		memcpy(m_status_vector, new_vector, sizeof(m_status_vector));
 }
 
 void status_exception::release_vector() throw()

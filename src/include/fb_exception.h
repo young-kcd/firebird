@@ -103,7 +103,7 @@ protected:
 	// derived classes create empty exception ...
 	status_exception() throw();
 	// .. and adjust it later using somehow created status vector.
-	void set_status(ISC_STATUS *new_vector, bool permanent) throw();
+	void set_status(const ISC_STATUS *new_vector, bool permanent) throw();
 	
 private:
 	ISC_STATUS_ARRAY m_status_vector;
