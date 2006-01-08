@@ -3252,7 +3252,6 @@ static SLONG fast_load(thread_db* tdbb,
 					BUGCHECK(205);	// msg 205 index bucket overfilled
 				}
 
-
 				// Allocate new bucket.
 				btree_page* split = (btree_page*) DPM_allocate(tdbb, &split_window);
 				bucket->btr_sibling = split_window.win_page;
@@ -3412,25 +3411,36 @@ static SLONG fast_load(thread_db* tdbb,
 			key->key_length = isr->isr_key_length;
 			memcpy(key->key_data, record, key->key_length);
 
-			if (useJumpInfo && (newAreaPointers[0] < pointer) &&
-				(bucket->btr_length + totalJumpSize[0] + newNode.prefix + 6 < lp_fill_limit)) 
+			if (useJumpInfo && (newAreaPointers[0] < pointer))
 			{
 				// Create a jumpnode
 				IndexJumpNode jumpNode;
 				jumpNode.prefix = BTreeNode::computePrefix(jumpKey->keyData,
 					jumpKey->keyLength, key->key_data, newNode.prefix);
 				jumpNode.length = newNode.prefix - jumpNode.prefix;
-				jumpNode.offset = (newNode.nodePointer - (UCHAR*)bucket);
-				jumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
-				memcpy(jumpNode.data, key->key_data + jumpNode.prefix, jumpNode.length);
-				// Push node on end in list
-				leafJumpNodes->add(jumpNode);
-				// Store new data in jumpKey, so a new jump node can calculate prefix
-				memcpy(jumpKey->keyData + jumpNode.prefix, jumpNode.data, jumpNode.length);
-				jumpKey->keyLength = jumpNode.length + jumpNode.prefix;
-				// Set new position for generating jumpnode
-				newAreaPointers[0] += jumpInfo.jumpAreaSize;
-				totalJumpSize[0] += BTreeNode::getJumpNodeSize(&jumpNode, flags);
+
+				const USHORT jumpNodeSize =
+					BTreeNode::getJumpNodeSize(&jumpNode, flags);
+				// Ensure the new jumpnode fits in the bucket
+				if (bucket->btr_length + totalJumpSize[0] + jumpNodeSize
+					< lp_fill_limit)
+				{
+					// Initialize the rest of the jumpnode
+					jumpNode.offset = (newNode.nodePointer - (UCHAR*)bucket);
+					jumpNode.data =
+						FB_NEW(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
+					memcpy(jumpNode.data, key->key_data + jumpNode.prefix,
+						   jumpNode.length);
+					// Push node on end in list
+					leafJumpNodes->add(jumpNode);
+					// Store new data in jumpKey, so a new jump node can calculate prefix
+					memcpy(jumpKey->keyData + jumpNode.prefix, jumpNode.data,
+						   jumpNode.length);
+					jumpKey->keyLength = jumpNode.length + jumpNode.prefix;
+					// Set new position for generating jumpnode
+					newAreaPointers[0] += jumpInfo.jumpAreaSize;
+					totalJumpSize[0] += jumpNodeSize;
+				}
 			}
 
 			// If there wasn't a split, we're done.  If there was, propagate the
@@ -3552,7 +3562,6 @@ static SLONG fast_load(thread_db* tdbb,
 						BUGCHECK(205);	// msg 205 index bucket overfilled
 					}
 
-
 					btree_page* split = (btree_page*) DPM_allocate(tdbb, &split_window);
 					bucket->btr_sibling = split_window.win_page;
 					split->btr_left_sibling = window->win_page;
@@ -3623,28 +3632,38 @@ static SLONG fast_load(thread_db* tdbb,
 				bucket->btr_prefix_total += prefix;
 				levelPointer = BTreeNode::writeNode(&levelNode[level], levelPointer, flags, false);
 
-				if (useJumpInfo && (newAreaPointers[level] < levelPointer) &&
-					(bucket->btr_length + totalJumpSize[level] + 
-					levelNode[level].prefix + 6 < pp_fill_limit)) 
+				if (useJumpInfo && (newAreaPointers[level] < levelPointer))
 				{
 					// Create a jumpnode
 					IndexJumpNode jumpNode;
 					jumpNode.prefix = BTreeNode::computePrefix(pageJumpKey->keyData,
-						pageJumpKey->keyLength, temp_key.key_data, levelNode[level].prefix);
+						pageJumpKey->keyLength, temp_key.key_data,
+						levelNode[level].prefix);
 					jumpNode.length = levelNode[level].prefix - jumpNode.prefix;
-					jumpNode.offset = (levelNode[level].nodePointer - (UCHAR*)bucket);
-					jumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
-					memcpy(jumpNode.data, temp_key.key_data + jumpNode.prefix, 
-						jumpNode.length);
-					// Push node on end in list
-					pageJumpNodes->add(jumpNode);
-					// Store new data in jumpKey, so a new jump node can calculate prefix
-					memcpy(pageJumpKey->keyData + jumpNode.prefix, jumpNode.data, 
-						jumpNode.length);
-					pageJumpKey->keyLength = jumpNode.length + jumpNode.prefix;
-					// Set new position for generating jumpnode
-					newAreaPointers[level] += jumpInfo.jumpAreaSize;
-					totalJumpSize[level] += BTreeNode::getJumpNodeSize(&jumpNode, flags);
+
+					const USHORT jumpNodeSize =
+						BTreeNode::getJumpNodeSize(&jumpNode, flags);
+					// Ensure the new jumpnode fits in the bucket
+					if (bucket->btr_length + totalJumpSize[level] + jumpNodeSize
+						< pp_fill_limit)
+					{
+						// Initialize the rest of the jumpnode
+						jumpNode.offset =
+							(levelNode[level].nodePointer - (UCHAR*)bucket);
+						jumpNode.data =
+							FB_NEW(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
+						memcpy(jumpNode.data, temp_key.key_data + jumpNode.prefix, 
+							   jumpNode.length);
+						// Push node on end in list
+						pageJumpNodes->add(jumpNode);
+						// Store new data in jumpKey, so a new jump node can calculate prefix
+						memcpy(pageJumpKey->keyData + jumpNode.prefix, jumpNode.data, 
+							   jumpNode.length);
+						pageJumpKey->keyLength = jumpNode.length + jumpNode.prefix;
+						// Set new position for generating jumpnode
+						newAreaPointers[level] += jumpInfo.jumpAreaSize;
+						totalJumpSize[level] += jumpNodeSize;
+					}
 				}
 
 				// Now restore the current key value and save this node as the 
@@ -3678,6 +3697,9 @@ static SLONG fast_load(thread_db* tdbb,
 
 			// and update the final page length
 			bucket->btr_length = pointer - (UCHAR*)bucket;
+			if (bucket->btr_length > dbb->dbb_page_size) {
+				BUGCHECK(205);		// msg 205 index bucket overfilled
+			}
 
 			// Store jump nodes on page if needed.
 			jumpNodeList* pageJumpNodes = (*jumpNodes)[level];
