@@ -1,3 +1,36 @@
+2006-01-08 02:11  robocop
+
+	* firebird2/src/: common/fb_exception.cpp (1.21),
+	include/fb_exception.h (1.20):
+	
+	Avoid a crash.
+
+2006-01-07 17:57  alexpeshkoff
+
+	* firebird2/src/: common/utils.cpp (1.15),
+	common/classes/MetaName.cpp (1.6), common/classes/fb_string.cpp
+	(1.30), isql/isql.epp (1.165), jrd/dfw.epp (1.170):
+	
+	fixed compilation after changes in exception
+
+2006-01-07 17:55  alexpeshkoff
+
+	* firebird2/src/common/fb_exception.cpp (1.20):
+	
+	avoid vararg constructors in status_exception
+
+2006-01-07 17:53  alexpeshkoff
+
+	* firebird2/src/remote/interface.cpp (1.115):
+	
+	rollback temporary fix after fixing status_exception
+
+2006-01-07 17:50  alexpeshkoff
+
+	* firebird2/src/include/fb_exception.h (1.19):
+	
+	avoid vararg constructors in status_exception
+
 2006-01-07 02:32  robocop
 
 	* firebird2/src/: alice/alice_meta.epp (1.47),
