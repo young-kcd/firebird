@@ -1,3 +1,9 @@
+2006-01-08 09:21  dimitr
+
+	* firebird2/src/jrd/btr.cpp (1.156):
+	
+	Fixed BUGCHECK(205) related to ODS11 index changes.
+
 2006-01-08 02:11  robocop
 
 	* firebird2/src/: common/fb_exception.cpp (1.21),
