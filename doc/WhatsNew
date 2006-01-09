@@ -2,6 +2,37 @@
   * v2.0 Beta 2
   **************
 
+    * Fixed Beta 1 bug
+        Bugcheck #205 (index bucket overfilled) during restore
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Expression indices cannot be used for navigation in outer joins
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        Wrong (incomplete) error are reported by system triggers
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #229237
+        Blank passwords poorly supported
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bugs
+        A few buffer overruns in ISQL
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 1 bug
+        An infinite fetch from explicit PSQL cursors based on a navigationally sorted stream
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Security enhancements
         1) Active protection from brute-force attack in services API
         2) Redirection of remote requests is controlled by firebird.conf
@@ -94,6 +125,7 @@
         Public headers don't contain private declarations anymore
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed unregistered bug
         Wrong error can be reported when you access not active contexts
