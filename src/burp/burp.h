@@ -660,10 +660,9 @@ const int MAX_FILE_NAME_SIZE		= 256;
 #include "../jrd/svc.h"
 #include "../jrd/svc_proto.h"
 
-// typedef the file descriptor type to make things cleaner 
+#include "../burp/std_desc.h"
 
 #ifdef WIN_NT
-typedef void* DESC;
 
 inline static void close_platf(DESC file)
 {
@@ -680,9 +679,7 @@ inline static void flush_platf(DESC file)
 	FlushFileBuffers(file);
 }
 
-#else
-
-typedef int DESC;
+#else // WIN_NT
 
 inline static void close_platf(DESC file)
 {
@@ -699,6 +696,7 @@ inline static void flush_platf(DESC file)
 }
 
 const int INVALID_HANDLE_VALUE	= -1;
+
 #endif // WIN_NT 
 
 // File block -- for multi-file databases 
