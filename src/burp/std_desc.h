@@ -33,7 +33,7 @@
 
 #include <windows.h>
 
-typedef void* DESC;
+typedef HANDLE DESC;
 
 static inline DESC GBAK_STDIN_DESC(void)
 {
