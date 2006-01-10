@@ -13,7 +13,7 @@
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed Beta 1 bug
-        Wrong (incomplete) error are reported by system triggers
+        Wrong (incomplete) errors are reported by system triggers
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -27,6 +27,7 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
         Dmitry Yemanov <yemanov at yandex.ru>
+        Claudio Valderrama <cvalde at usa.net>
 
     * Fixed Beta 1 bug
         An infinite fetch from explicit PSQL cursors based on a navigationally sorted stream
