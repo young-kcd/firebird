@@ -31,7 +31,13 @@ Syntax rules:
     <table name> | <joined table> | <derived table>
 
   <joined table> ::=
-    <table expression> [{INNER | {LEFT | RIGHT | FULL} [OUTER] | CROSS}] JOIN <table expression>
+    {<cross join> | <qualified join>}
+
+  <cross join> ::=
+    <table expression> CROSS JOIN <table expression>
+
+  <qualified join> ::=
+    <table expression> [{INNER | {LEFT | RIGHT | FULL} [OUTER]}] JOIN <table expression>
     ON <join condition>
 
   <derived table> ::=
@@ -39,7 +45,7 @@ Syntax rules:
 
 Conclusions:
 
-  * For update mode and row locking can only be performed for a final dataset,
+  * FOR UPDATE mode and row locking can only be performed for a final dataset,
     they cannot be applied to a subquery
   * Unions are allowed inside any subquery
   * Clauses FIRST, SKIP, PLAN, ORDER BY, ROWS are allowed for any subquery
