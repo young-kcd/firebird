@@ -1,3 +1,28 @@
+2006-01-09 20:57  dimitr
+
+	* firebird2/src/burp/: burp.cpp (1.106), burp.h (1.69), std_desc.h
+	(1.6):
+	
+	Minor cleanup + solved one of the GCC4 compile issues.
+
+2006-01-09 15:17  dimitr
+
+	* firebird2/doc/WhatsNew (1.80):
+	
+	More docs.
+
+2006-01-09 13:45  dimitr
+
+	* firebird2/doc/sql.extensions/README.select_expressions (1.2):
+	
+	More docs.
+
+2006-01-09 11:13  dimitr
+
+	* firebird2/doc/README.xnet (1.2):
+	
+	Added description of XNET.
+
 2006-01-08 09:21  dimitr
 
 	* firebird2/src/jrd/btr.cpp (1.156):
