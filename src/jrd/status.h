@@ -30,6 +30,7 @@
 #define FB_MISC_STATUS_H
 
 #include <stdlib.h>				// size_t
+#include <stdarg.h>			//va_list
 #include "../jrd/common.h"		// ISC_STATUS
 
 const int MAX_ERRMSG_LEN	= 128;

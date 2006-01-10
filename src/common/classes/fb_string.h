@@ -31,6 +31,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
+
  
 #include "../include/fb_types.h"
 #include "../include/fb_exception.h"
