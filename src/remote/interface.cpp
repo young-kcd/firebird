@@ -4780,7 +4780,7 @@ static rem_port* analyze_service(Firebird::PathName& service_name,
 /* all remote attempts have failed, so access locally through the
    interprocess server */
 
-	if (!port) {
+	if (!port && node_name.isEmpty()) {
 		port = XNET_analyze(service_name, status_vector,
 							node_name.c_str(), user_string, uv_flag);
 	}
