@@ -45,5 +45,5 @@ const char TERMINAL				= '\0';
 
 typedef int FILE_DESC;
 
-const FILE_DESC GBAK_STDIN_DESC		= 0;	// standart input file descriptor
-const FILE_DESC GBAK_STDOUT_DESC	= 1;	// standart output file descriptor
+const FILE_DESC GBAK_STDIN_DESC		= 0;	// standard input file descriptor
+const FILE_DESC GBAK_STDOUT_DESC	= 1;	// standard output file descriptor
