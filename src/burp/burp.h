@@ -695,8 +695,6 @@ inline static void flush_platf(DESC file)
 {
 }
 
-const int INVALID_HANDLE_VALUE	= -1;
-
 #endif // WIN_NT 
 
 // File block -- for multi-file databases 

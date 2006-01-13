@@ -37,7 +37,7 @@ typedef HANDLE DESC;
 
 static inline DESC GBAK_STDIN_DESC(void)
 {
-	return GetStdHandle(STD_INPUT_HANDLE); // standart input  file descriptor 
+	return GetStdHandle(STD_INPUT_HANDLE); // standart input file descriptor 
 }
 static inline DESC GBAK_STDOUT_DESC(void)
 {
@@ -50,12 +50,14 @@ typedef int DESC;
 
 static inline DESC GBAK_STDIN_DESC(void)
 {
-	return 0;	// standart input  file descriptor 
+	return 0;	// standart input file descriptor 
 }
 static inline DESC GBAK_STDOUT_DESC(void)
 {
 	return 1;	// standart output file descriptor 
 }
+
+const int INVALID_HANDLE_VALUE = -1;
 
 #endif //WIN_NT
 
