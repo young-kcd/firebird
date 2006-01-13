@@ -1,3 +1,9 @@
+2006-01-12 14:21  dimitr
+
+	* firebird2/src/remote/interface.cpp (1.116):
+	
+	Fixed the wrong local connection.
+
 2006-01-10 23:20  robocop
 
 	* firebird2/doc/WhatsNew (1.81):
