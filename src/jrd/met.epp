@@ -3411,8 +3411,17 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 				break;
 
 			case RSR_base_field:
-				field->fld_source =
-					PAR_make_field(tdbb, csb, view_context, (TEXT*)p);
+				if (dependencies) {
+					csb->csb_g_flags |= csb_get_dependencies;
+					field->fld_source =
+						PAR_make_field(tdbb, csb, view_context, (TEXT*)p);
+					Firebird::MetaName depName(REL.RDB$RELATION_NAME);
+					store_dependencies(tdbb, csb, depName, obj_view);
+				}
+				else {
+					field->fld_source =
+						PAR_make_field(tdbb, csb, view_context, (TEXT*)p);
+				}
 				break;
 
 			case RSR_computed_blr:

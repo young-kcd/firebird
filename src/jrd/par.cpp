@@ -468,6 +468,10 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 		field = (*relation->rel_fields)[id];
 	}
 
+	if (csb->csb_g_flags & csb_get_dependencies) {
+		par_dependency(tdbb, csb, stream, id, base_field);
+	}
+
 	jrd_nod* temp_node = PAR_gen_field(tdbb, stream, id);
 	/*
 	if (param)
