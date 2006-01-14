@@ -1,3 +1,23 @@
+2006-01-13 23:25  robocop
+
+	* firebird2/src/burp/: spit.h (1.10), std_desc.h (1.9):
+	
+	Totally misc.
+
+2006-01-13 10:33  dimitr
+
+	* firebird2/src/jrd/: met.epp (1.178), par.cpp (1.126):
+	
+	Fixed SF #1404215.
+
+2006-01-13 08:36  dimitr
+
+	* firebird2/src/burp/: burp.h (1.70), spit.cpp (1.31), spit.h
+	(1.9), std_desc.h (1.8):
+	
+	1) Fixed stdin/stdout redirection in win32 gsplit 2) Make the code
+	more GCC4 friendly
+
 2006-01-12 14:21  dimitr
 
 	* firebird2/src/remote/interface.cpp (1.116):
