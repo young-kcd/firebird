@@ -215,7 +215,16 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
 
 	if (shutdown_pid) {
-		ISC_kill(shutdown_pid, SIGSHUT, 0);
+		int rc = ISC_kill(shutdown_pid, SIGSHUT, 0);
+		if (rc < 0)
+		{
+			char buffer[100];
+			sprintf(buffer, "Cannot terminate process with pid = %d", shutdown_pid);
+			MessageBox(NULL, buffer,
+				"Firebird server failure", 
+				MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
+			return STARTUP_ERROR; // see /jrd/common.h
+		}
 		return 0;
 	}
 
