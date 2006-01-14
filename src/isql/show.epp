@@ -2869,14 +2869,12 @@ static processing_state show_indices(const SCHAR* const* cmd)
 			show_index (IDX1.RDB$RELATION_NAME, IDX1.RDB$INDEX_NAME,
 						IDX1.RDB$UNIQUE_FLAG, IDX1.RDB$INDEX_TYPE, IDX1.RDB$INDEX_INACTIVE);
 
-#ifdef EXPRESSION_INDICES
 			if (!IDX1.RDB$EXPRESSION_BLR.NULL) {
 				isqlGlob.printf(" COMPUTED BY ");
 				if (!IDX1.RDB$EXPRESSION_SOURCE.NULL)
 					SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX1.RDB$EXPRESSION_SOURCE);
 				isqlGlob.printf(NEWLINE);
 			}
-#endif
 
 			first = false;
 		END_FOR
@@ -2901,14 +2899,12 @@ static processing_state show_indices(const SCHAR* const* cmd)
 			show_index (IDX2.RDB$RELATION_NAME, IDX2.RDB$INDEX_NAME,
 						IDX2.RDB$UNIQUE_FLAG, IDX2.RDB$INDEX_TYPE, IDX2.RDB$INDEX_INACTIVE);
 
-#ifdef EXPRESSION_INDICES
 			if (!IDX2.RDB$EXPRESSION_BLR.NULL) {
 				isqlGlob.printf(" COMPUTED BY ");
 				if (!IDX2.RDB$EXPRESSION_SOURCE.NULL)
 					SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX2.RDB$EXPRESSION_SOURCE);
 				isqlGlob.printf(NEWLINE);
 			}
-#endif
 
 		END_FOR
 		ON_ERROR

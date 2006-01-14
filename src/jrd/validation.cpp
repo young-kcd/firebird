@@ -1401,19 +1401,16 @@ static RTN walk_index(thread_db* tdbb, VDR control, jrd_rel* relation,
 	temporary_key nullKey, *null_key = 0;
 	if (unique && tdbb->tdbb_database->dbb_ods_version >= ODS_VERSION11)
 	{
-#ifdef EXPRESSION_INDICES
 		const bool isExpression = root_page.irt_rpt[id].irt_flags & irt_expression;
 		if (isExpression)
 			root_page.irt_rpt[id].irt_flags &= ~irt_expression;
-#endif
+
 		index_desc idx;
 		BTR_description(tdbb, relation, &root_page, &idx, id);
-
-#ifdef EXPRESSION_INDICES
 		if (isExpression)
 			root_page.irt_rpt[id].irt_flags |= irt_expression;
-#endif
-		null_key = &nullKey; 
+
+		null_key = &nullKey;
 		BTR_make_null_key(tdbb, &idx, null_key);
 	}
 

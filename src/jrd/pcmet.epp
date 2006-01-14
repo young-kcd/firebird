@@ -56,7 +56,6 @@ using namespace Jrd;
 DATABASE DB = FILENAME "ODS.RDB";
 
 
-#ifdef EXPRESSION_INDICES
 bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 							jrd_tra* transaction)
 {
@@ -73,7 +72,6 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_rel* relation;
 	index_desc idx;
 	JrdMemoryPool* new_pool = NULL;
-	CompilerScratch* csb;
 	jrd_req* current_request, *request;
 	jrd_tra* current_transaction;
 
@@ -151,6 +149,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				if (IDX.RDB$INDEX_TYPE == 1)
 					idx.idx_flags |= idx_descending;
 
+				CompilerScratch* csb = 0;
 				/* allocate a new pool to contain the expression tree 
 				   for the expression index */
 				new_pool = JrdMemoryPool::createPool();
@@ -225,10 +224,8 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	return false;
 }
-#endif
 
 
-#ifdef EXPRESSION_INDICES
 void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 {
 /**************************************
@@ -242,8 +239,6 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
  *	the metadata cache if possible.
  *
  **************************************/
-	CompilerScratch* csb = NULL;
-
 	SET_TDBB(tdbb);
 	const Database* dbb = tdbb->tdbb_database;
 
@@ -273,6 +268,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		MET_scan_relation(tdbb, relation);
 	}
 
+	CompilerScratch* csb = NULL;
 	jrd_req* request = CMP_find_request(tdbb, irq_l_exp_index, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
@@ -335,5 +331,4 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 	MOVE_FAST(&idx->idx_expression_desc, &index_block->idb_expression_desc,
 			  sizeof(struct dsc));
 }
-#endif
 

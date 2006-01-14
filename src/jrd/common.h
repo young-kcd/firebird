@@ -92,7 +92,6 @@
 #define FB_ARCHITECTURE isc_info_db_class_classic_access
 #endif
 
-#define EXPRESSION_INDICES
 
 /*****************************************************
 * Linux for Intel platforms 

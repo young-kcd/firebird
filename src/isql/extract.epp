@@ -2359,7 +2359,6 @@ static void list_index()
 
 		// Get index expression or column names 
 
-#ifdef EXPRESSION_INDICES
 		if (!IDX.RDB$EXPRESSION_BLR.NULL)
 		{
 			isqlGlob.printf(" COMPUTED BY ");
@@ -2367,9 +2366,7 @@ static void list_index()
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &IDX.RDB$EXPRESSION_SOURCE);
 			isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 		}
-		else
-#endif
-		if (ISQL_get_index_segments (collist, sizeof(collist), IDX.RDB$INDEX_NAME, true))
+		else if (ISQL_get_index_segments (collist, sizeof(collist), IDX.RDB$INDEX_NAME, true))
 		{
 			isqlGlob.printf(" (%s)%s%s", collist, isqlGlob.global_Term, NEWLINE);
 		}

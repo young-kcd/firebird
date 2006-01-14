@@ -526,14 +526,12 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 		/* msg 48: "Index not found" */
 	}
 
-#ifdef EXPRESSION_INDICES
 	if (!is_expression)
-#endif
-	if (!delete_index_segment_records(gbl, idx_name))
-	{
-		DYN_error_punt(false, 50, NULL, NULL, NULL, NULL, NULL);
-		/* msg 50: "No segments found for index" */
-	}
+		if (!delete_index_segment_records(gbl, idx_name))
+		{
+			DYN_error_punt(false, 50, NULL, NULL, NULL, NULL, NULL);
+			/* msg 50: "No segments found for index" */
+		}
 
 	while (*(*ptr)++ != isc_dyn_end) {
 		--(*ptr);

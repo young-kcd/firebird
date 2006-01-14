@@ -245,7 +245,6 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 	return result;
 }
 
-#ifdef EXPRESSION_INDICES
 
 // Try to merge this function with node_equality() into 1 function.
 
@@ -583,7 +582,6 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 	return false;
 }
-#endif
 
 
 double OPT_getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
@@ -1332,13 +1330,11 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 			continue;
 		}
 
-#ifdef EXPRESSION_INDICES
 		if (idx->idx_flags & idx_expressn)
 		{
 			if (sortPtr->nod_count != 1)
 				continue;
 		}
-#endif
 
 		// check to see if the fields in the sort match the fields in the index 
 		// in the exact same order--we used to check for ascending/descending prior 
@@ -1352,7 +1348,6 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 			ptr++, idx_tail++)
 		{
 			jrd_nod* node = *ptr;
-#ifdef EXPRESSION_INDICES
 			if (idx->idx_flags & idx_expressn)
 			{
 				if (!OPT_expression_equal(tdbb, optimizer, idx, node, stream))
@@ -1361,9 +1356,7 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 					break;
 				}
 			}
-			else
-#endif
-			if (node->nod_type != nod_field
+			else if (node->nod_type != nod_field
 				|| (USHORT)(IPTR) node->nod_arg[e_fld_stream] != stream
 				|| (USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field)
 			{
@@ -2245,7 +2238,6 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 	jrd_nod* match = boolean->nod_arg[0];
 	jrd_nod* value = (boolean->nod_count < 2) ? NULL : boolean->nod_arg[1];
 
-#ifdef EXPRESSION_INDICES
 	if (indexScratch->idx->idx_flags & idx_expressn)
 	{
 		// see if one side or the other is matchable to the index expression
@@ -2269,8 +2261,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 		}
 	}
 	else {
-#endif
-		// If left side is not a field, swap sides. 
+		// If left side is not a field, swap sides.
 		// If left side is still not a field, give up
 
 		if (match->nod_type != nod_field ||
@@ -2288,9 +2279,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 			}
 			forward = false;
 		}
-#ifdef EXPRESSION_INDICES
 	}
-#endif
 
 	// match the field to an index, if possible, and save the value to be matched 
 	// as either the lower or upper bound for retrieval, or both
@@ -2300,10 +2289,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 	IndexScratchSegment** segment = indexScratch->segments.begin();
 	for (int i = 0; i < indexScratch->idx->idx_count; i++) {
 
-		if (
-#ifdef EXPRESSION_INDICES
-			(indexScratch->idx->idx_flags & idx_expressn) ||
-#endif
+		if ((indexScratch->idx->idx_flags & idx_expressn) ||
 			 (USHORT)(IPTR) match->nod_arg[e_fld_id] == indexScratch->idx->idx_rpt[i].idx_field)
 		{
 
@@ -2712,9 +2698,8 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
 	jrd_nod* field = boolean->nod_arg[0];
 	jrd_nod* value = boolean->nod_arg[1];
 
-#ifdef EXPRESSION_INDICES
-	if (indexScratch->idx->idx_flags & idx_expressn) {
-
+	if (indexScratch->idx->idx_flags & idx_expressn)
+	{
 		// AB: What if the expression contains a number/float etc.. and
 		// we use starting with against it? Is that allowed?
 		fb_assert(indexScratch->idx->idx_expression != NULL);
@@ -2736,7 +2721,6 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
 		}
 	}
 	else
-#endif
 	{
 		if (field->nod_type != nod_field) {
 			// dimitr:	any idea how we can use an index in this case?

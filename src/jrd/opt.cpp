@@ -4434,13 +4434,11 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 		return NULL;
 	}
 
-#ifdef EXPRESSION_INDICES
 	if (idx->idx_flags & idx_expressn)
 	{
 		if (sort->nod_count != 1)
 			return NULL;
 	}
-#endif
 
 	// check to see if the fields in the sort match the fields in the index
 	// in the exact same order--we used to check for ascending/descending prior
@@ -4457,15 +4455,12 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 		ptr++, idx_tail++)
 	{
 		jrd_nod* node = *ptr;
-#ifdef EXPRESSION_INDICES
 		if (idx->idx_flags & idx_expressn)
 		{
 			if (!OPT_expression_equal(tdbb, opt, idx, node, stream))
 				return NULL;
 		}
-		else
-#endif
-		if (node->nod_type != nod_field
+		else if (node->nod_type != nod_field
 			|| (USHORT)(IPTR) node->nod_arg[e_fld_stream] != stream
 			|| (USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field )
 		{
@@ -6588,7 +6583,6 @@ static jrd_nod* make_missing(thread_db* tdbb,
 
 	jrd_nod* field = boolean->nod_arg[0];
 
-#ifdef EXPRESSION_INDICES
 	if (idx->idx_flags & idx_expressn)
 	{
 		fb_assert(idx->idx_expression != NULL);
@@ -6599,20 +6593,17 @@ static jrd_nod* make_missing(thread_db* tdbb,
 	}
 	else
 	{
-#endif
-	if (field->nod_type != nod_field)
-	{
-		return NULL;
-	}
+		if (field->nod_type != nod_field)
+		{
+			return NULL;
+		}
 
-	if ((USHORT)(IPTR) field->nod_arg[e_fld_stream] != stream ||
-		(USHORT)(IPTR) field->nod_arg[e_fld_id] != idx->idx_rpt[0].idx_field)
-	{
-		return NULL;
+		if ((USHORT)(IPTR) field->nod_arg[e_fld_stream] != stream ||
+			(USHORT)(IPTR) field->nod_arg[e_fld_id] != idx->idx_rpt[0].idx_field)
+		{
+			return NULL;
+		}
 	}
-#ifdef EXPRESSION_INDICES
-	}
-#endif
 
 	jrd_nod* node = make_index_node(tdbb, relation, opt->opt_csb, idx);
 	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
@@ -6674,7 +6665,6 @@ static jrd_nod* make_starts(thread_db* tdbb,
 	jrd_nod* field = boolean->nod_arg[0];
 	jrd_nod* value = boolean->nod_arg[1];
 
-#ifdef EXPRESSION_INDICES
 	if (idx->idx_flags & idx_expressn)
 	{
 		fb_assert(idx->idx_expression != NULL);
@@ -6694,46 +6684,45 @@ static jrd_nod* make_starts(thread_db* tdbb,
 		}
 	}
 	else
-#endif
 	{
-	if (field->nod_type != nod_field)
-	{
-		// dimitr:	any idea how we can use an index in this case?
-		//			The code below produced wrong results.
-		return NULL;
-		/*
-		if (value->nod_type != nod_field)
+		if (field->nod_type != nod_field)
+		{
+			// dimitr:	any idea how we can use an index in this case?
+			//			The code below produced wrong results.
 			return NULL;
-		field = value;
-		value = boolean->nod_arg[0];
-		*/
-	}
+			/*
+			if (value->nod_type != nod_field)
+				return NULL;
+			field = value;
+			value = boolean->nod_arg[0];
+			*/
+		}
 
-/* Every string starts with an empty string so
-   don't bother using an index in that case. */
+	/* Every string starts with an empty string so
+	   don't bother using an index in that case. */
 
-	if (value->nod_type == nod_literal)
-	{
-		const dsc* literal_desc = &((Literal*) value)->lit_desc;
-		if ((literal_desc->dsc_dtype == dtype_text &&
-			 literal_desc->dsc_length == 0) ||
-			(literal_desc->dsc_dtype == dtype_varying &&
-			 literal_desc->dsc_length == sizeof(USHORT)))
+		if (value->nod_type == nod_literal)
+		{
+			const dsc* literal_desc = &((Literal*) value)->lit_desc;
+			if ((literal_desc->dsc_dtype == dtype_text &&
+				 literal_desc->dsc_length == 0) ||
+				(literal_desc->dsc_dtype == dtype_varying &&
+				 literal_desc->dsc_length == sizeof(USHORT)))
+			{
+				return NULL;
+			}
+		}
+
+		if ((USHORT)(IPTR) field->nod_arg[e_fld_stream] != stream ||
+			(USHORT)(IPTR) field->nod_arg[e_fld_id] != idx->idx_rpt[0].idx_field
+			|| !(idx->idx_rpt[0].idx_itype == idx_string
+				 || idx->idx_rpt[0].idx_itype == idx_byte_array
+				 || idx->idx_rpt[0].idx_itype == idx_metadata
+				 || idx->idx_rpt[0].idx_itype >= idx_first_intl_string)
+			|| !OPT_computable(opt->opt_csb, value, stream, false, false))
 		{
 			return NULL;
 		}
-	}
-
-	if ((USHORT)(IPTR) field->nod_arg[e_fld_stream] != stream ||
-		(USHORT)(IPTR) field->nod_arg[e_fld_id] != idx->idx_rpt[0].idx_field
-		|| !(idx->idx_rpt[0].idx_itype == idx_string
-			 || idx->idx_rpt[0].idx_itype == idx_byte_array
-			 || idx->idx_rpt[0].idx_itype == idx_metadata
-			 || idx->idx_rpt[0].idx_itype >= idx_first_intl_string)
-		|| !OPT_computable(opt->opt_csb, value, stream, false, false))
-	{
-		return NULL;
-	}
 	}
 
 	jrd_nod* node = make_index_node(tdbb, relation, opt->opt_csb, idx);
@@ -6913,7 +6902,6 @@ static SSHORT match_index(thread_db* tdbb,
 	jrd_nod* match = boolean->nod_arg[0];
 	jrd_nod* value = (boolean->nod_count < 2) ? NULL : boolean->nod_arg[1];
 
-#ifdef EXPRESSION_INDICES
 	if (idx->idx_flags & idx_expressn)
 	{
 		// see if one side or the other is matchable to the index expression
@@ -6935,7 +6923,6 @@ static SSHORT match_index(thread_db* tdbb,
 		}
 	}
 	else {
-#endif
 		// If left side is not a field, swap sides.
 		// If left side is still not a field, give up
 
@@ -6954,9 +6941,7 @@ static SSHORT match_index(thread_db* tdbb,
 			}
 			forward = false;
 		}
-#ifdef EXPRESSION_INDICES
 	}
-#endif
 
 /* match the field to an index, if possible, and save the value to be matched
    as either the lower or upper bound for retrieval, or both */
@@ -6966,10 +6951,7 @@ static SSHORT match_index(thread_db* tdbb,
 	for (OptimizerBlk::opt_segment* ptr = opt->opt_segments; i < idx->idx_count;
 		i++, ptr++)
 	{
-		if (
-#ifdef EXPRESSION_INDICES
-			(idx->idx_flags & idx_expressn) ||
-#endif
+		if ((idx->idx_flags & idx_expressn) ||
 			 (USHORT)(IPTR) match->nod_arg[e_fld_id] == idx->idx_rpt[i].idx_field)
 		{
 			++count;

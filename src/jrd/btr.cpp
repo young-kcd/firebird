@@ -395,13 +395,11 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 	}
 	idx->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
 
-#ifdef EXPRESSION_INDICES
 	if (idx->idx_flags & idx_expressn)
 	{
 		PCMET_lookup_index(tdbb, relation, idx);
 		fb_assert(idx->idx_expression != NULL);
 	}
-#endif
 
 	return true;
 }
@@ -1001,7 +999,6 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 
 		if (idx->idx_count == 1) {
 			bool isNull;
-#ifdef EXPRESSION_INDICES
 			// for expression indices, compute the value of the expression
 			if (idx->idx_flags & idx_expressn) 
 			{
@@ -1010,7 +1007,6 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				isNull = !notNull;
 			}
 			else
-#endif
 			{
 				desc_ptr = &desc;
 				// In order to "map a null to a default" value (in EVL_field()), 
@@ -1154,7 +1150,6 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 			break;
 
 		default:
-#ifdef EXPRESSION_INDICES
 			if (idx->idx_flags & idx_expressn)
 			{
 				fb_assert(idx->idx_expression != NULL);
@@ -1165,7 +1160,6 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 				}
 			}
 			else
-#endif
 			{
 				length = format->fmt_desc[tail->idx_field].dsc_length;
 				if (format->fmt_desc[tail->idx_field].dsc_dtype == dtype_varying) {

@@ -2203,10 +2203,8 @@ static void define_index(dsql_req* request)
 						((dsql_str*) (*ptr)->nod_arg[1])->str_data);
 		}
 	}
-#ifdef EXPRESSION_INDICES
 	else if (field_list->nod_type == nod_def_computed)
 		define_computed(request, relation_node, NULL, field_list);
-#endif
 
 // check for a unique index
 
