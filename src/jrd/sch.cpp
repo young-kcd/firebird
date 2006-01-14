@@ -623,7 +623,8 @@ bool SCH_validate(void)
 
 	if (!init_flag || !active_thread) {
 		gds__log("SCH_validate -- not entered");
-		if (getenv("ISC_PUNT"))
+		// CVC: No need to replace by fb_utils::readenv() I think.
+		if (getenv("ISC_PUNT")) 
 			abort();
 		return false;
 	}

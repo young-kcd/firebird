@@ -39,6 +39,8 @@ namespace fb_utils
 	}
 	char* exact_name_limit(char* const str, size_t bufsize);
 	int name_length(const TEXT* const name);
+	bool readenv(const char* env_name, Firebird::string& env_value);
+	bool readenv(const char* env_name, Firebird::PathName& env_value);
 	int snprintf(char* buffer, size_t count, const char* format...);
 } // namespace fb_utils
 

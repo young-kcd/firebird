@@ -131,6 +131,46 @@ int name_length(const TEXT* const name)
 }
 
 
+//***************
+// r e a d e n v
+//***************
+// Goes to read directly the environment variables from the operating system on Windows
+// and provides a stub for UNIX.
+bool readenv(const char* env_name, Firebird::string& env_value)
+{
+#ifdef WIN_NT
+	const DWORD rc = GetEnvironmentVariable(env_name, NULL, 0);
+	if (rc)
+	{
+		env_value.reserve(rc - 1);
+		DWORD rc2 = GetEnvironmentVariable(env_name, env_value.begin(), rc);
+		if (rc2 < rc && rc2 != 0)
+		{
+			env_value.recalculate_length();
+			return true;
+		}
+	}
+#else
+	const char* p = getenv(env_name);
+	if (p)
+		return env_value.assign(p).length() != 0;
+#endif
+	// Not found, clear the output var.
+	env_value.begin()[0] = 0;
+	env_value.recalculate_length();
+	return false;
+}
+
+
+bool readenv(const char* env_name, Firebird::PathName& env_value)
+{
+	Firebird::string result;
+	bool rc = readenv(env_name, result);
+	env_value.assign(result.c_str(), result.length());
+	return rc;
+}
+
+
 // ***************
 // s n p r i n t f
 // ***************

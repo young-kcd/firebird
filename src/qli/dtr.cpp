@@ -53,6 +53,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/perf_proto.h"
 #include "../include/fb_exception.h"
+#include "../common/utils_proto.h"
 
 #ifdef VMS
 const char* STARTUP_FILE	= "QLI_STARTUP";
@@ -104,20 +105,15 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 // Look at options, if any 
 
-	const TEXT* startup_file = STARTUP_FILE;
+	Firebird::PathName startup_file = STARTUP_FILE;
 
 #ifdef UNIX
 // If a Unix system, get home directory from environment 
 	SCHAR home_directory[MAXPATHLEN];
-	startup_file = getenv("HOME");
-	if (startup_file == NULL) {
+	if (!fb_utils::readenv("HOME", startup_file))
 		startup_file = ".qli_startup";
-	}
-	else {
-		strcpy(home_directory, startup_file);
-		strcat(home_directory, "/.qli_startup");
-		startup_file = home_directory;
-	}
+	else
+		startup_file.append("/.qli_startup");
 #endif
 
 	const TEXT* application_file = NULL;
@@ -181,7 +177,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 			case 'I':
 				if (argv >= arg_end || **argv == '-')
-					startup_file = NULL;
+					startup_file = "";
 				else
 					startup_file = *argv++;
 				break;
@@ -256,19 +252,18 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	if (application_file)
 		LEX_push_file(application_file, true);
 
-	if (startup_file)
-		LEX_push_file(startup_file, false);
+	if (startup_file.length())
+		LEX_push_file(startup_file.c_str(), false);
 
 #ifdef VMS
 	bool vms_tryagain_flag = false;
-	if (startup_file)
-		vms_tryagain_flag = LEX_push_file(startup_file, false);
+	if (startup_file.length())
+		vms_tryagain_flag = LEX_push_file(startup_file.c_str(), false);
 
 /* If default value of startup file wasn't altered by the use of -i,
-   and LEX returned FALSE (above), try the old logical name, QLI_INIT */
+   and LEX returned false (above), try the old logical name, QLI_INIT */
 
-	if (!vms_tryagain_flag && startup_file
-		&& !(strcmp(startup_file, STARTUP_FILE)))
+	if (!vms_tryagain_flag && startup_file == STARTUP_FILE)
 	{
 		LEX_push_file("QLI_INIT", false);
 	}

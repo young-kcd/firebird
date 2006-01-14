@@ -629,13 +629,13 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
  *	Edit a file.
  *
  **************************************/
-	const TEXT* editor;
+	Firebird::string editor;
 
 #ifndef WIN_NT
-	if (!(editor = getenv("VISUAL")) && !(editor = getenv("EDITOR")))
+	if (!fb_utils::readenv("VISUAL", editor) && !fb_utils::readenv("EDITOR", editor))
 		editor = "vi";
 #else
-	if (!(editor = getenv("EDITOR")))
+	if (!fb_utils::readenv("EDITOR", editor))
 		editor = "Notepad";
 #endif
 
@@ -644,7 +644,7 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
 	// The path of the editor + the path of the file + quotes + one space.
 	// We aren't using quotes around the editor for now.
 	TEXT buffer[MAXPATHLEN * 2 + 5];
-	fb_utils::snprintf(buffer, sizeof(buffer), "%s \"%s\"", editor, file_name);
+	fb_utils::snprintf(buffer, sizeof(buffer), "%s \"%s\"", editor.c_str(), file_name);
 
 	system(buffer);
 
@@ -1053,10 +1053,8 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 
 /* look for the environment variables */
 
-	const TEXT* username = getenv("ISC_USER");
-	const TEXT* password = getenv("ISC_PASSWORD");
-
-	if (!username && !password)
+	Firebird::string username, password;
+	if (!fb_utils::readenv("ISC_USER", username) && !fb_utils::readenv("ISC_PASSWORD", password))
 		return;
 
 /* figure out whether the username or 
@@ -1090,18 +1088,19 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 		}
 	}
 
-	if (username && !user_seen) {
-		if (password && !password_seen)
+	if (username.length() && !user_seen) 
+	{
+		if (password.length() && !password_seen)
 			isc_expand_dpb_internal(dpb, dpb_size,
-						   isc_dpb_user_name, username, isc_dpb_password,
-						   password, 0);
+						   isc_dpb_user_name, username.c_str(), isc_dpb_password,
+						   password.c_str(), 0);
 		else
 			isc_expand_dpb_internal(dpb, dpb_size,
-						   isc_dpb_user_name, username, 0);
+						   isc_dpb_user_name, username.c_str(), 0);
 	}
-	else if (password && !password_seen)
+	else if (password.length() && !password_seen)
 		isc_expand_dpb_internal(dpb, dpb_size,
-					   isc_dpb_password, password, 0);
+					   isc_dpb_password, password.c_str(), 0);
 #endif
 }
 
@@ -1124,8 +1123,8 @@ BOOLEAN API_ROUTINE isc_set_path(TEXT* file_name,
 /* look for the environment variables to tack 
    onto the beginning of the database path */
 
-	const TEXT* pathname = getenv("ISC_PATH");
-	if (!pathname)
+	Firebird::PathName pathname;
+	if (!fb_utils::readenv("ISC_PATH", pathname))
 		return FALSE;
 
 	if (!file_length)
@@ -1144,7 +1143,7 @@ BOOLEAN API_ROUTINE isc_set_path(TEXT* file_name,
 
 /* concatenate the strings */
 
-	strcpy(expanded_name, pathname);
+	strcpy(expanded_name, pathname.c_str());
 
     /* CVC: Make the concatenation work if no slash is present. */
     p = expanded_name + (strlen (expanded_name) - 1);
@@ -2438,16 +2437,16 @@ inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
 
 void setLogin(Firebird::ClumpletWriter& dpb)
 {
-	const TEXT* username = getenv("ISC_USER");
-	if (username && !dpb.find(isc_dpb_sys_user_name))
+	Firebird::string username;
+	if (fb_utils::readenv("ISC_USER", username) && !dpb.find(isc_dpb_sys_user_name))
 	{
-		setTag(dpb, isc_dpb_user_name, username);
+		setTag(dpb, isc_dpb_user_name, username.c_str());
 	}
 
-	const TEXT* password = getenv("ISC_PASSWORD");
-	if (password && !dpb.find(isc_dpb_password_enc))
+	Firebird::string password;
+	if (fb_utils::readenv("ISC_PASSWORD", password) && !dpb.find(isc_dpb_password_enc))
 	{
-		setTag(dpb, isc_dpb_password, password);
+		setTag(dpb, isc_dpb_password, password.c_str());
 	}
 }
 

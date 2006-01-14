@@ -634,6 +634,7 @@ rem_port* INET_connect(const TEXT* name,
 			fflush(stdout);
 		}
 		INET_start_time = inet_debug_timer();
+		// CVC: I don't see the point in replacing this with fb_utils::readenv().
 		const char* p = getenv("INET_force_error");
 		if (p != NULL) {
 			INET_force_error = atoi(p);
@@ -1244,10 +1245,11 @@ static int accept_connection(rem_port* port,
  * is activiated for the production product.
  * 1995-February-27 David Schnepper
  */
-		const char* home = getenv("ISC_INET_SERVER_HOME");
-		if (home) {
-			if (chdir(home)) {
-				gds__log("inet_server: unable to cd to %s errno %d\n", home,
+		Firebird::PathName home;
+		if (fb_utils::readenv("ISC_INET_SERVER_HOME", home))
+		{
+			if (chdir(home.c_str())) {
+				gds__log("inet_server: unable to cd to %s errno %d\n", home.c_str(),
 						 INET_ERRNO);
 				/* We continue after the error */
 			}

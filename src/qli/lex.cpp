@@ -40,6 +40,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../common/utils_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -896,14 +897,17 @@ qli_tok* LEX_token(void)
 	token->tok_length = p - token->tok_string;
 	*p = '\0';
 
-	if (token->tok_string[0] == '$' &&
-		trans_limit < TRANS_LIMIT && (p = getenv(token->tok_string + 1)))
+	if (token->tok_string[0] == '$' && trans_limit < TRANS_LIMIT)
 	{
-		LEX_push_string(p);
-		++trans_limit;
-		token = LEX_token();
-		--trans_limit;
-		return token;
+		Firebird::string s;
+		if (fb_utils::readenv(token->tok_string + 1, s))
+		{
+			LEX_push_string(s.c_str());
+			++trans_limit;
+			token = LEX_token();
+			--trans_limit;
+			return token;
+		}
 	}
 
     qli_symbol* symbol = HSH_lookup(token->tok_string, token->tok_length);

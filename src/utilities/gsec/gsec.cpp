@@ -45,6 +45,7 @@
 #include "../common/classes/ClumpletWriter.h"
 
 #include "../utilities/gsec/call_service.h"
+#include "../common/utils_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -150,13 +151,9 @@ inline void envPick(TEXT* dest, size_t size, const TEXT* var)
 {
 	if (dest && (!dest[0]))
 	{
-		const TEXT* val = getenv(var);
-		if (val)
-		{
-			--size;
-			strncpy(dest, val, size);
-			dest[size] = 0;
-		}
+		Firebird::string val;
+		if (fb_utils::readenv(var, val))
+			val.copyTo(dest, size);
 	}
 }
 

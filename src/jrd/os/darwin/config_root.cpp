@@ -47,8 +47,8 @@ typedef Firebird::string string;
 ConfigRoot::ConfigRoot()
 {
 	// Check the environment variable
-	const char* envPath = getenv("FIREBIRD");
-	if (envPath != NULL && strcmp("", envPath))
+	Firebird::PathName envPath;
+	if (fb_utils::readenv("FIREBIRD", envPath))
 	{
 		root_dir = envPath;
 		return;

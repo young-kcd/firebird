@@ -39,6 +39,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/opt_proto.h"
 #include "../jrd/vio_proto.h"
+#include "../common/utils_proto.h"
 
 #include rms
 
@@ -174,9 +175,10 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
    logical name is defined and it is not READONLY, then let there be
    an error. */
 
-	const UCHAR* lognam = getenv("GDS_RMSACCESS");
-	if (lognam) {
-		if (strcmp(lognam, "READONLY") == 0)
+	Firebird::string lognam;
+	if (fb_utils::readenv("GDS_RMSACCESS", lognam))
+	{
+		if (lognam == "READONLY")
 			fab.fab$b_fac = FAB$M_GET;
 	}
 	else

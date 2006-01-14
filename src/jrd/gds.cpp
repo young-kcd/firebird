@@ -246,7 +246,7 @@ static void		blr_print_verb(gds_ctl*, SSHORT);
 static int		blr_print_word(gds_ctl*);
 
 static void		init(void);
-static void		sanitize(TEXT*);
+static void		sanitize(Firebird::string& locale);
 
 static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
 
@@ -1500,10 +1500,10 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 	if (!messageL && !(messageL = global_default_msg)) {
 		/* Try environment variable setting first */
 
-		TEXT* p = getenv("ISC_MSGS");
-		if (p == NULL ||
+		Firebird::string p;
+		if (!fb_utils::readenv("ISC_MSGS", p) ||
 			(status =
-			 gds__msg_open(reinterpret_cast<void**>(&messageL), p)))
+			 gds__msg_open(reinterpret_cast<void**>(&messageL), p.c_str())))
 		{
 			TEXT translated_msg_file[sizeof(MSG_FILE_LANG) + LOCALE_MAX + 1];
 
@@ -1516,11 +1516,11 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			if (!msg_file)		/* NOMEM: */
 				return -2;
 
-			p = getenv("LC_MESSAGES");
-			if (p != NULL) {
-				sanitize(p); // CVC: Sanitizing environment variable???
+			if (fb_utils::readenv("LC_MESSAGES", p))
+			{
+				sanitize(p);
 				fb_utils::snprintf(translated_msg_file,
-					sizeof(translated_msg_file), MSG_FILE_LANG, p);
+					sizeof(translated_msg_file), MSG_FILE_LANG, p.c_str());
 				gds__prefix_msg(msg_file, translated_msg_file);
 				status =
 					gds__msg_open(reinterpret_cast<void**>(&messageL),
@@ -2562,8 +2562,9 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
  * 	else, if the module is not in the path return FALSE.
  *
  **************************************/
-	TEXT* ib_ext_lib_path = getenv(ib_env_var);
-	if (!ib_ext_lib_path) {
+	Firebird::string ib_ext_lib_path;
+	if (!fb_utils::readenv(ib_env_var, ib_ext_lib_path))
+	{
 		strncpy(resolved_module, module, length);
 		resolved_module[length - 1] = 0;
 		return TRUE;		/* The variable is not defined. Return TRUE */
@@ -2588,13 +2589,11 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 		TEXT abs_path[MAXPATHLEN];
 		TEXT path[MAXPATHLEN];
 
-		// Let's not modify envvar with strtok!
-		TEXT temp_path[MAXPATHLEN];
-		strncpy(temp_path, ib_ext_lib_path, sizeof(temp_path));
-		temp_path[sizeof(temp_path) - 1] = 0;
-		const TEXT* token = strtok(temp_path, ";");
+		// Warning: ib_ext_lib_path.length() is not coherent since strtok is applied to it.
+		const TEXT* token = strtok(ib_ext_lib_path.begin(), ";");
 		while (token != NULL) {
-			strcpy(path, token);
+			strncpy(path, token, sizeof(path));
+			path[sizeof(path) - 1] = 0;
 			/* make sure that there is no traing slash on the path */
 			TEXT* p = path + strlen(path);
 			if ((p != path) && ((p[-1] == '/') || (p[-1] == '\\')))
@@ -3576,7 +3575,7 @@ static void init(void)
 	/* V4_GLOBAL_MUTEX_UNLOCK; */
 }
 
-static void sanitize(TEXT* locale)
+static void sanitize(Firebird::string& locale)
 {
 /**************************************
  *
@@ -3591,10 +3590,10 @@ static void sanitize(TEXT* locale)
  *
  **************************************/
 
-	while (*locale) {
-		if (*locale == '.')
-			*locale = '_';
-		locale++;
+	for (Firebird::string::pointer p = locale.begin(); *p; ++p)
+	{
+		if (*p == '.')
+			*p = '_';
 	}
 }
 
@@ -3684,8 +3683,8 @@ public:
 		ib_prefix = ib_prefix_val;
 
 		// Find appropiate temp directory
-		const char* tempDir = getenv(FB_TMP_ENV);
-		if (!tempDir) 
+		Firebird::PathName tempDir;
+		if (!fb_utils::readenv(FB_TMP_ENV, tempDir)) 
 		{
 #ifdef WIN_NT
 			const DWORD len = GetTempPath(sizeof(fbTempDir), fbTempDir);
@@ -3695,14 +3694,14 @@ public:
 				tempDir = fbTempDir;
 			}
 #else
-			tempDir = getenv("TMP");
+			fb_utils::readenv("TMP", tempDir);
 #endif
 		}
-		if (!tempDir || strlen(tempDir) >= MAXPATHLEN)
+		if (!tempDir.length() || tempDir.length() >= MAXPATHLEN)
 		{
 			tempDir = WORKFILE;
 		}
-		strcpy(fbTempDir, tempDir);
+		strcpy(fbTempDir, tempDir.c_str());
 
 #ifdef EMBEDDED
 		// Generate filename based on the current PID
@@ -3714,8 +3713,8 @@ public:
 		// Find appropriate Firebird lock file prefix
 		// Override conditional defines with the enviroment
 		// variable FIREBIRD_LOCK if it is set.
-		Firebird::PathName lockPrefix(getenv(FB_LOCK_ENV) ? getenv(FB_LOCK_ENV) : "");
-		if (lockPrefix.isEmpty()) 
+		Firebird::PathName lockPrefix;
+		if (!fb_utils::readenv(FB_LOCK_ENV, lockPrefix))
 		{
 #ifdef EMBEDDED
 			lockPrefix = tempDir;
@@ -3727,8 +3726,8 @@ public:
 		ib_prefix_lock = ib_prefix_lock_val;
 
 		// Find appropriate Firebird message file prefix.
-		Firebird::PathName msgPrefix(getenv(FB_MSG_ENV) ? getenv(FB_MSG_ENV) : "");
-		if (msgPrefix.isEmpty()) 
+		Firebird::PathName msgPrefix;
+		if (!fb_utils::readenv(FB_MSG_ENV, msgPrefix))
 		{
 			msgPrefix = prefix;
 		}

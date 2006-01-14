@@ -23,7 +23,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.17 2005-12-30 15:59:19 alexpeshkoff Exp $
+ * $Id: ibmgr.cpp,v 1.18 2006-01-14 04:48:59 robocop Exp $
  */
 
 #include "firebird.h"
@@ -104,12 +104,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 /* Let's see if we have something in
    environment variables
 */
-	const TEXT* user = getenv("ISC_USER");
-	const TEXT* password = getenv("ISC_PASSWORD");
+	Firebird::string user, password;
+	fb_utils::readenv("ISC_USER", user);
+	fb_utils::readenv("ISC_PASSWORD", password);
 
-	const TEXT* host = NULL;	// pointer for getenv
+	Firebird::string host;
 /* MMM - do not allow to change host now
-	host = getenv("ISC_HOST");
+	fb_utils::readenv("ISC_HOST", host);
 */
 
 	TEXT msg[MSG_LEN];
@@ -141,16 +142,16 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		copy_str_upper(ibmgr_data.user, pw->pw_name);
 
 
-	if (user)
-		copy_str_upper(ibmgr_data.user, user);
+	if (user.length())
+		copy_str_upper(ibmgr_data.user, user.c_str());
 
-	if (password)
-		strcpy(ibmgr_data.password, password);
+	if (password.length())
+		strcpy(ibmgr_data.password, password.c_str());
 	else
 		ibmgr_data.password[0] = '\0';
 
-	if (host)
-		strcpy(ibmgr_data.host, host);
+	if (host.length())
+		strcpy(ibmgr_data.host, host.c_str());
 	else
 		strcpy(ibmgr_data.host, "localhost");
 

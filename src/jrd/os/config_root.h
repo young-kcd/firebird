@@ -30,6 +30,7 @@
 #include "../common/classes/fb_string.h"
 
 #include "../jrd/os/path_utils.h"
+#include "../common/utils_proto.h"
 
 static const char* CONFIG_FILE	= "firebird.conf";
 
@@ -104,11 +105,12 @@ private:
 			root_dir += PathUtils::dir_sep;
 		}
 	}
-	bool getRootFromEnvironment(const char* envName) {
-		const char* envValue = getenv(envName);
-		if (! envValue) {
+	bool getRootFromEnvironment(const char* envName)
+	{
+		string envValue;
+		if (!fb_utils::readenv(envName, envValue))
 			return false;
-		}
+
 		root_dir = envValue;
 		addSlash();
 		return true;

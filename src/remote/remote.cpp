@@ -209,6 +209,7 @@ const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 
 #ifdef DEBUG
 	{
+		// CVC: I don't see the point in replacing this with fb_utils::readenv().
 		const char* p = getenv("DEBUG_BATCH_SIZE");
 		if (p)
 			result = atoi(p);

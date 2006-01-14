@@ -66,6 +66,8 @@
 #include "../utilities/common/cmd_util_proto.h"
 #endif
 
+#include "../common/utils_proto.h"
+
 #ifdef UNIX
 #include <unistd.h>
 #endif
@@ -89,6 +91,7 @@
 #include <sys/types.h>
 #include <sys/file.h>
 #endif
+
 
 // The following structure in only needed if we are building a local exe
 // I've commented it out to make it clear since this global variable is
@@ -374,21 +377,21 @@ static int api_gbak(int argc,
 	BurpGlobals::putSpecific(tdgbl);
 	tdgbl->output_proc = output_main;
 
-    const TEXT* usr;
+    Firebird::string usr;
 	if (!user)
-		usr = getenv("ISC_USER");
+		fb_utils::readenv("ISC_USER", usr);
 	else
 		usr = user;
 
-	const TEXT* pswd;
+	Firebird::string pswd;
 	if (!password)
-		pswd = getenv("ISC_PASSWORD");
+		fb_utils::readenv("ISC_PASSWORD", pswd);
 	else
 		pswd = password;
 
-	char *const spb = (char *) gds__alloc((SLONG) (2 + 2 + ((usr) ? strlen(usr) : 0) +
-									   2 + ((pswd) ? strlen(pswd) : 0)) +
-									   2 + length);
+	char *const spb = (char *) gds__alloc((SLONG) (2 + 2 + usr.length() +
+									   2 + pswd.length() +
+									   2 + length));
 	/* 'isc_spb_version'
 	   'isc_spb_current_version'
 	   'isc_spb_user_name'
@@ -415,20 +418,20 @@ static int api_gbak(int argc,
 	*spb_ptr++ = isc_spb_version;
 	*spb_ptr++ = isc_spb_current_version;
 
-	if (usr) {
+	if (usr.length()) {
 		*spb_ptr++ = isc_spb_user_name;
-		*spb_ptr++ = strlen(usr);
-		MEMMOVE(usr, spb_ptr, strlen(usr));
-		spb_ptr += strlen(usr);
+		*spb_ptr++ = usr.length();
+		MEMMOVE(usr.c_str(), spb_ptr, usr.length());
+		spb_ptr += usr.length();
 		if (user)
 			*user = '\0';
 	}
 
-	if (pswd) {
+	if (pswd.length()) {
 		*spb_ptr++ = isc_spb_password;
-		*spb_ptr++ = strlen(pswd);
-		MEMMOVE(pswd, spb_ptr, strlen(pswd));
-		spb_ptr += strlen(pswd);
+		*spb_ptr++ = pswd.length();
+		MEMMOVE(pswd.c_str(), spb_ptr, pswd.length());
+		spb_ptr += pswd.length();
 		if (password)
 			*password = '\0';
 	}
