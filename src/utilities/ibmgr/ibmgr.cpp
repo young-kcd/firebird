@@ -23,7 +23,6 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
- * $Id: ibmgr.cpp,v 1.18 2006-01-14 04:48:59 robocop Exp $
  */
 
 #include "firebird.h"
