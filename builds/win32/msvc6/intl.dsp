@@ -653,6 +653,14 @@ SOURCE=..\..\..\src\intl\collations\undef.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\intl\collations\win_cz.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\win_cz_ci_ai.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\collations\win1251_ua.h
 # End Source File
 # Begin Source File

@@ -137,6 +137,8 @@ EXTERN_texttype(WIN1250_c3_init);
 EXTERN_texttype(WIN1250_c4_init);
 EXTERN_texttype(WIN1250_c5_init);
 EXTERN_texttype(WIN1250_c6_init);
+EXTERN_texttype(WIN1250_c7_init);
+EXTERN_texttype(WIN1250_c8_init);
 
 EXTERN_texttype(WIN1251_c0_init);
 EXTERN_texttype(WIN1251_c1_init);

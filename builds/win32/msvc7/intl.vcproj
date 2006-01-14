@@ -574,6 +574,12 @@
 				RelativePath="..\..\..\src\intl\collations\undef.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\intl\collations\win_cz.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\win_cz_ci_ai.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\collations\win1251_ua.h">
 			</File>
 			<File

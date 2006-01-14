@@ -426,6 +426,30 @@ TEXTTYPE_ENTRY(WIN1250_c6_init)
 }
 
 
+TEXTTYPE_ENTRY(WIN1250_c7_init)
+{
+	static const ASCII POSIX[] = "WIN_CZ.WIN1250";
+
+#include "../intl/collations/win_cz.h"
+
+	return FAMILY3(cache, CC_CZECH, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
+TEXTTYPE_ENTRY(WIN1250_c8_init)
+{
+	static const ASCII POSIX[] = "WIN_CZ_CI_AI.WIN1250";
+
+#include "../intl/collations/win_cz_ci_ai.h"
+
+	return FAMILY3(cache, CC_CZECH, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
 TEXTTYPE_ENTRY(WIN1251_c1_init)
 {
 	static const ASCII POSIX[] = "PXW_CYRL.WIN1251";
