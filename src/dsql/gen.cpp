@@ -611,7 +611,9 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 			USHORT fromCharSetBPC = METD_get_charset_bpc(request, fromCharSet);
 			USHORT toCharSetBPC = METD_get_charset_bpc(request, toCharSet);
 
-			INTL_ASSIGN_TTYPE(&parameter->par_desc, toCharSet);
+			INTL_ASSIGN_TTYPE(&parameter->par_desc, INTL_CS_COLL_TO_TTYPE(toCharSet,
+				(fromCharSet == toCharSet ? INTL_GET_COLLATE(&parameter->par_desc) : 0)));
+
 			parameter->par_desc.dsc_length =
 				UTLD_char_length_to_byte_length(parameter->par_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
 

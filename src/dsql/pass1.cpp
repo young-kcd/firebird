@@ -8056,7 +8056,9 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 						USHORT fromCharSetBPC = METD_get_charset_bpc(request, fromCharSet);
 						USHORT toCharSetBPC = METD_get_charset_bpc(request, toCharSet);
 
-						INTL_ASSIGN_TTYPE(&in_node->nod_desc, toCharSet);
+						INTL_ASSIGN_TTYPE(&in_node->nod_desc, INTL_CS_COLL_TO_TTYPE(toCharSet,
+							(fromCharSet == toCharSet ? INTL_GET_COLLATE(&in_node->nod_desc) : 0)));
+
 						in_node->nod_desc.dsc_length =
 							UTLD_char_length_to_byte_length(in_node->nod_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
 					}
