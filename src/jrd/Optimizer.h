@@ -29,7 +29,7 @@
 #ifndef OPTIMIZER_H
 #define OPTIMIZER_H
 
-//#define OPT_DEBUG
+#define OPT_DEBUG
 //#define OPT_DEBUG_RETRIEVAL
 
 //#ifdef OPT_DEBUG
@@ -106,8 +106,11 @@ public:
 	IndexScratchSegment(MemoryPool& p);
 	IndexScratchSegment(MemoryPool& p, IndexScratchSegment* segment);
 
+
 	jrd_nod* lowerValue;		// lower bound on index value
 	jrd_nod* upperValue;		// upper bound on index value
+	bool excludeLower;			// exclude lower bound value from scan 
+	bool excludeUpper;			// exclude upper bound value from scan
 	int scope;					// highest scope level
 	segmentScanType scanType;	// scan type
 
@@ -129,9 +132,6 @@ public:
 	int upperCount;					//
 	int nonFullMatchedSegments;		//
 	double cardinality;				// Estimated cardinality when using the whole index
-
-	bool excludeLower;				//  
-	bool excludeUpper;				//
 
 	Firebird::Array<IndexScratchSegment*> segments;
 };

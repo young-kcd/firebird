@@ -756,6 +756,8 @@ IndexScratchSegment::IndexScratchSegment(MemoryPool& p) :
  **************************************/
 	lowerValue = NULL;
 	upperValue = NULL;
+	excludeLower = false;
+	excludeUpper = false;
 	scope = 0;
 	scanType = segmentScanNone;
 }
@@ -774,6 +776,8 @@ IndexScratchSegment::IndexScratchSegment(MemoryPool& p, IndexScratchSegment* seg
  **************************************/
 	lowerValue = segment->lowerValue;
 	upperValue = segment->upperValue;
+	excludeLower = segment->excludeLower;
+	excludeUpper = segment->excludeUpper;
 	scope = segment->scope;
 	scanType = segment->scanType;
 
@@ -802,9 +806,6 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 	lowerCount = 0;
 	upperCount = 0;
 	nonFullMatchedSegments = 0;
-
-	excludeLower = false;
-	excludeUpper = false;
 
 	segments.grow(idx->idx_count);
 
@@ -854,9 +855,6 @@ IndexScratch::IndexScratch(MemoryPool& p, IndexScratch* scratch) :
 	upperCount = scratch->upperCount;
 	nonFullMatchedSegments = scratch->nonFullMatchedSegments;
 	idx = scratch->idx;
-
-	excludeLower = scratch->excludeLower;
-	excludeUpper = scratch->excludeUpper;
 
 	// Allocate needed segments
 	segments.grow(scratch->segments.getCount());
@@ -1770,8 +1768,16 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	}
 
 	i = std::max(indexScratch->lowerCount, indexScratch->upperCount) - 1;
-	if ((i >= 0) && (segment[i]->scanType == segmentScanStarting)) {
-		retrieval->irb_generic |= irb_starting;
+	if (i >= 0)  
+	{
+		if (segment[i]->scanType == segmentScanStarting) 
+			retrieval->irb_generic |= irb_starting;
+
+		if (segment[i]->excludeLower)
+			retrieval->irb_generic |= irb_exclude_lower;
+
+		if (segment[i]->excludeUpper)
+			retrieval->irb_generic |= irb_exclude_upper;		
 	}
 
 	for (IndexScratchSegment** tail = indexScratch->segments.begin();
@@ -1847,13 +1853,6 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 		if (retrieval->irb_upper_count < idx->idx_count) {
 			retrieval->irb_generic |= irb_partial;
 		}
-	}
-
-	if (indexScratch->excludeLower) {
-		retrieval->irb_generic |= irb_exclude_lower;
-	}
-	if (indexScratch->excludeUpper) {
-		retrieval->irb_generic |= irb_exclude_upper;
 	}
 
 	// mark the index as utilized for the purposes of this compile
@@ -2311,8 +2310,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 						segment[i]->lowerValue = value;
 						segment[i]->upperValue = boolean->nod_arg[2];
 						segment[i]->scanType = segmentScanBetween;
-						indexScratch->excludeLower = false;
-						indexScratch->excludeUpper = false;
+						segment[i]->excludeLower = false;
+						segment[i]->excludeUpper = false;
 					}
 					break;
 
@@ -2323,8 +2322,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 					if (!(segment[i]->scanType == segmentScanEqual)) {
 						segment[i]->lowerValue = segment[i]->upperValue = value;
 						segment[i]->scanType = segmentScanEquivalent;
-						indexScratch->excludeLower = false;
-						indexScratch->excludeUpper = false;
+						segment[i]->excludeLower = false;
+						segment[i]->excludeUpper = false;
 					}
 					break;
 
@@ -2332,8 +2331,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 					segment[i]->matches.add(boolean);
 					segment[i]->lowerValue = segment[i]->upperValue = value;
 					segment[i]->scanType = segmentScanEqual;
-					indexScratch->excludeLower = false;
-					indexScratch->excludeUpper = false;
+					segment[i]->excludeLower = false;
+					segment[i]->excludeUpper = false;
 					break;
 
 				case nod_gtr:
@@ -2343,30 +2342,26 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 						(segment[i]->scanType == segmentScanEquivalent) ||
 						(segment[i]->scanType == segmentScanBetween))) 
 					{
-						if (boolean->nod_type == nod_gtr) {
-							if (forward != isDesc) // (forward && !isDesc || !forward && isDesc)
-								indexScratch->excludeLower = true;
-							else
-								indexScratch->excludeUpper = true;
-						}
+						if (forward != isDesc) // (forward && !isDesc || !forward && isDesc)
+							segment[i]->excludeLower = (boolean->nod_type == nod_gtr);
+						else
+							segment[i]->excludeUpper = (boolean->nod_type == nod_gtr);
 						
-						if (forward) {
+						if (forward) 
+						{
 							segment[i]->lowerValue = value;
-							if (segment[i]->scanType == segmentScanLess) {
+							if (segment[i]->scanType == segmentScanLess)
                         		segment[i]->scanType = segmentScanBetween;
-							}
-							else {
+							else
                         		segment[i]->scanType = segmentScanGreater;
-							}
 						}
-						else {
+						else 
+						{
 							segment[i]->upperValue = value;
-							if (segment[i]->scanType == segmentScanGreater) {
+							if (segment[i]->scanType == segmentScanGreater)
 								segment[i]->scanType = segmentScanBetween;
-							}
-							else {
+							else
 								segment[i]->scanType = segmentScanLess;
-							}
 						}
 					}
 					break;
@@ -2378,30 +2373,26 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 						(segment[i]->scanType == segmentScanEquivalent) ||
 						(segment[i]->scanType == segmentScanBetween))) 
 					{
-						if (boolean->nod_type == nod_lss) {
-							if (forward != isDesc)
-								indexScratch->excludeUpper = true;
-							else
-								indexScratch->excludeLower = true;
-						}
+						if (forward != isDesc)
+							segment[i]->excludeUpper = (boolean->nod_type == nod_lss);
+						else
+							segment[i]->excludeLower = (boolean->nod_type == nod_lss);
 
-						if (forward) {
+						if (forward) 
+						{
 							segment[i]->upperValue = value;
-							if (segment[i]->scanType == segmentScanGreater) {
+							if (segment[i]->scanType == segmentScanGreater)
 								segment[i]->scanType = segmentScanBetween;
-							}
-							else {
+							else
 								segment[i]->scanType = segmentScanLess;
-							}
 						}
-						else {
+						else 
+						{
 							segment[i]->lowerValue = value;
-							if (segment[i]->scanType == segmentScanLess) {
+							if (segment[i]->scanType == segmentScanLess)
                         		segment[i]->scanType = segmentScanBetween;
-							}
-							else {
+							else
                         		segment[i]->scanType = segmentScanGreater;
-							}
 						}
 					}
 					break;
@@ -2418,8 +2409,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 					{
 						segment[i]->lowerValue = segment[i]->upperValue = value;
 						segment[i]->scanType = segmentScanStarting;
-						indexScratch->excludeLower = false;
-						indexScratch->excludeUpper = false;
+						segment[i]->excludeLower = false;
+						segment[i]->excludeUpper = false;
 					}
 					break;
 
@@ -2430,8 +2421,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 					{
 						segment[i]->lowerValue = segment[i]->upperValue = value;
 						segment[i]->scanType = segmentScanMissing;
-						indexScratch->excludeLower = false;
-						indexScratch->excludeUpper = false;
+						segment[i]->excludeLower = false;
+						segment[i]->excludeUpper = false;
 					}
 					break;
 
