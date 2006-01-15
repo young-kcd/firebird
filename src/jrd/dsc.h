@@ -99,9 +99,26 @@ typedef struct alt_dsc {
 	USHORT dsc_flags;			/* Not currently used */
 } ALT_DSC;
 
-inline bool DSC_EQUIV(const dsc* d1, const dsc* d2) {
-	return ((((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type) && 
-		((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_varying));
+inline bool DSC_EQUIV(const dsc* d1, const dsc* d2, bool check_collate) {
+	if (((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type) {
+		if (d1->dsc_dtype >= dtype_text && d1->dsc_dtype <= dtype_varying) {
+			if (DSC_GET_CHARSET(d1) == DSC_GET_CHARSET(d2)) {
+				if (check_collate) {
+					return (DSC_GET_COLLATE(d1) == DSC_GET_COLLATE(d2));
+				}
+				else {
+					return true;
+				}
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			return true;
+		}
+	}
+	return false;
 }
 //#define DSC_EQUIV(d1,d2) ((((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type) && 
 //			  ((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_any_text))

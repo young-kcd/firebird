@@ -722,7 +722,7 @@ void MOVQ_move(const dsc* from, dsc* to)
    optimal, it would cost more to find the fast move than the
    fast move would gain. */
 
-	if (DSC_EQUIV(from, to))
+	if (DSC_EQUIV(from, to, false))
 /*
 if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 */

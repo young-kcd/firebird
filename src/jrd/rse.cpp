@@ -3343,7 +3343,7 @@ static void proc_assignment(
 		desc1.dsc_address = msg + (IPTR) desc1.dsc_address;
 		desc2 = *to_desc;
 		desc2.dsc_address = record->rec_data + (IPTR) desc2.dsc_address;
-		if (!DSC_EQUIV((&desc1), (&desc2)))
+		if (!DSC_EQUIV((&desc1), (&desc2), false))
 			MOV_move(&desc1, &desc2);
 
 		else if (desc1.dsc_dtype == dtype_short)

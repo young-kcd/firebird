@@ -377,7 +377,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 #endif
 			BLB_move(tdbb, from_desc, to_desc, to);
 
-		else if (!DSC_EQUIV(from_desc, to_desc))
+		else if (!DSC_EQUIV(from_desc, to_desc, false))
 			MOV_move(from_desc, to_desc);
 
 		else if (from_desc->dsc_dtype == dtype_short) {

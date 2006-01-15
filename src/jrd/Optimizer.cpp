@@ -330,7 +330,7 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 			CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
 			CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
 
-			if (DSC_EQUIV(desc1, desc2) && 
+			if (DSC_EQUIV(desc1, desc2, true) && 
 				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_cast_source],
 								  node2, stream))
 			{
@@ -343,7 +343,7 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 			CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
 			CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
 
-			if (DSC_EQUIV(desc1, desc2) &&
+			if (DSC_EQUIV(desc1, desc2, true) &&
 				OPT_expression_equal2(tdbb, opt, node1,
 								  node2->nod_arg[e_cast_source], stream))
 			{
@@ -409,15 +409,6 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 				if ((node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) &&
 					(fld_stream == stream))
 				{
-					/*
-					dsc dsc1, dsc2; 
-					dsc *desc1 = &dsc1, *desc2 = &dsc2; 
-
-					CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
-					CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
-
-					if (DSC_GET_COLLATE(desc1) == DSC_GET_COLLATE(desc2))
-					*/	
 					return true;
 				}
 			}
@@ -503,15 +494,6 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 			if (OPT_expression_equal2(tdbb, opt, node1->nod_arg[0],
 								  node2->nod_arg[0], stream))
 			{
-				/*
-				dsc dsc1, dsc2; 
-				dsc *desc1 = &dsc1, *desc2 = &dsc2; 
-
-				CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
-				CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
-
-				if (DSC_GET_COLLATE(desc1) == DSC_GET_COLLATE(desc2))
-				*/
 				return true;
 			}
 			break;
@@ -524,7 +506,7 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 				CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
 				CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
 
-				if (DSC_EQUIV(desc1, desc2) &&
+				if (DSC_EQUIV(desc1, desc2, true) &&
 					OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_cast_source],
 									  node2->nod_arg[e_cast_source], stream)) 
 				{
