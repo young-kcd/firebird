@@ -48,7 +48,7 @@
 #include "../utilities/ibmgr/ibmgrswi.h"
 #include "../jrd/license.h"
 #include "../utilities/ibmgr/srvrmgr_proto.h"
-
+#include "../common/utils_proto.h"
 
 
 const int MAXARGS		= 20;		/* max number of args allowed on command line */
@@ -159,7 +159,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
    But obviously we will need attachment. 
 */
 	ibmgr_data.shutdown = false;
-	ibmgr_data.attached = NULL;
+	ibmgr_data.attached = 0;
 	ibmgr_data.reattach |= (REA_HOST | REA_USER | REA_PASSWORD);
 
 

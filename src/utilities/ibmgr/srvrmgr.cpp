@@ -384,7 +384,7 @@ static bool detach_service( ibmgr_data_t* data)
 	fb_assert(data->attached);
 
 	isc_service_detach(status, &data->attached);
-	data->attached = NULL;
+	data->attached = 0;
 
 	if (status[0] == 1 && status[1] > 0) {
 /* If as a result of detach_service server has been
@@ -602,7 +602,7 @@ static bool server_is_up( ibmgr_data_t* data)
  **************************************/
 	ISC_STATUS_ARRAY status;
 	TEXT svc_name[128];
-	isc_svc_handle svc_handle = NULL;
+	isc_svc_handle svc_handle = 0;
 
 /* Obviously we should not be already attached to service
 */
