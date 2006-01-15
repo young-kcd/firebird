@@ -175,7 +175,7 @@ class jrd_req : public pool_alloc_rpt<record_param, type_req>
 public:
 	jrd_req(JrdMemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
-		req_fors(*pool), req_invariants(*pool), req_trg_name(*pool),
+		req_trg_name(*pool), req_fors(*pool), req_invariants(*pool),
 		req_timestamp(true) {}
 
 	Attachment*	req_attachment;		// database attachment
