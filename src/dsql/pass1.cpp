@@ -2351,8 +2351,8 @@ static void field_duplication(const TEXT* qualifier_name, const TEXT* field_name
 
 	if (qualifier_name)
 	{
-		sprintf(field_buffer, "%.*s.%.*s", MAX_SQL_IDENTIFIER_LEN, qualifier_name,
-				MAX_SQL_IDENTIFIER_LEN, field_name);
+		sprintf(field_buffer, "%.*s.%.*s", (int) MAX_SQL_IDENTIFIER_LEN, qualifier_name,
+				(int) MAX_SQL_IDENTIFIER_LEN, field_name);
 		field_name = field_buffer;
 	}
 
@@ -2386,8 +2386,8 @@ static void field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
 
 	if (qualifier_name)
 	{
-		sprintf(field_buffer, "%.*s.%.*s", MAX_SQL_IDENTIFIER_LEN, qualifier_name,
-				MAX_SQL_IDENTIFIER_LEN, field_name ? field_name : "*");
+		sprintf(field_buffer, "%.*s.%.*s", (int) MAX_SQL_IDENTIFIER_LEN, qualifier_name,
+				(int) MAX_SQL_IDENTIFIER_LEN, field_name ? field_name : "*");
 		field_name = field_buffer;
 	}
 

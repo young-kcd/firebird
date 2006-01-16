@@ -91,7 +91,7 @@ static const UCHAR blr_bpb[] = {
 	isc_bpb_target_type, 1, isc_blob_blr
 };
 
-static void check_array(dsql_req*, const SCHAR*, dsql_fld*);
+//static void check_array(dsql_req*, const SCHAR*, dsql_fld*);
 static void convert_dtype(dsql_fld*, SSHORT);
 static void	free_function (dsql_udf*);
 static void free_procedure(dsql_prc*);
@@ -1858,9 +1858,11 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
+/* - to make gpre happy too
 static void check_array(dsql_req* request, const TEXT* field_name, dsql_fld* field)
 {
-/**************************************
+ **************************************
  *
  *	c h e c k _ a r r a y
  *
@@ -1871,7 +1873,7 @@ static void check_array(dsql_req* request, const TEXT* field_name, dsql_fld* fie
  *	defined in the meta-data).  If we're not successful, indicate
  *	so in the database block to avoid wasting further effort.
  *
- **************************************/
+ **************************************
 	dsql_dbb* dbb;
 
 	ISC_STATUS_ARRAY isc_status = {0};
@@ -1902,7 +1904,8 @@ static void check_array(dsql_req* request, const TEXT* field_name, dsql_fld* fie
 
 	THREAD_ENTER();
 }
-
+*/
+#endif
 
 static void convert_dtype(dsql_fld* field, SSHORT field_type)
 {
