@@ -1,4 +1,4 @@
-Firebird Database Server 2.0 ALPHA 3
+Firebird Database Server 2.0 BETA 1
 ==================================================
 
   ** IMPORTANT **
@@ -10,7 +10,7 @@ Firebird Database Server 2.0 ALPHA 3
   ** ********* **
 
 This document is a guide to installing this package of
-Firebird 2.0 Alpha 3 on the Win32 platform. These notes
+Firebird 2.0 Beta 1 on the Win32 platform. These notes
 refer to the installation package itself, rather than
 Firebird 2.0 in general.
 
@@ -42,11 +42,11 @@ fbclient.dll and gds32.dll are removed from <system32>.
 New ODS 11.0
 ------------
 
-Alpha 3 features a new ODS 11.0 which is wholly
+Beta 1 features a new ODS 11.0 which is wholly
 incompatible with the ODS 11.0 used by the previous
 alpha releases.
 
-If you are installing Alpha 3 for the first time and
+If you are installing Beta 1 for the first time and
 you already have a Firebird 2 alpha installed it is
 recommended that you install into a fresh directory.
 This is because an uninstall will preserve the existing
@@ -78,7 +78,7 @@ Installing on systems with Firebird 2.0
 
 In addition to the ODS change please note that the
 installer cannot automatically detect if a
-Firebird 2.0 Alpha 1,2 or 3 server is running
+Firebird 2.0 Alpha 1,2,3 or Beta 1 server is running
 as a service. Therefore you will receive no warning
 until the installer attempts to overwrite an active
 file.

@@ -16,16 +16,16 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to the third Alpha release of Firebird 2.0.
+Welcome to the first Beta release of Firebird 2.0.
 
 
 Intended Users
 ==============
 
-This alpha release is not intended for production use.
+This beta release is not intended for production use.
 It is released for evaluation purposes and is expected
 to be tested by experienced users of Firebird. It is
-hoped that all alpha testers will read the release
+hoped that all beta testers will read the release
 notes first.
 
  o DO NOT install this version if you have never used

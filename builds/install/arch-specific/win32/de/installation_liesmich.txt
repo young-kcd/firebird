@@ -1,4 +1,4 @@
-Firebird Datenbank Server 2.0 ALPHA 1
+Firebird Datenbank Server 2.0 Beta 1
 ==================================================
 
   ** WICHTIG **
@@ -9,7 +9,7 @@ Firebird Datenbank Server 2.0 ALPHA 1
   ** ******* **
 
 Dieses Dokument ist eine Hilfestellung um dieses Paket
-von Firebird 2.0 Alpha 1 auf einer Win32 Plattform zu
+von Firebird 2.0 Beta 1 auf einer Win32 Plattform zu
 installieren. Diese Hinweise beziehen sich ausschließlich
 auf das Installationspaket, und nicht auf Firebird 2.0
 allgemein.
@@ -55,11 +55,11 @@ Test-Release wird sich mit diesem Benutzermigrationsproblem
 genauer auseinandersetzen.
 
 
-Installation auf Systemen mit Firebird 2.0 Alpha 1
---------------------------------------------------
+Installation auf Systemen mit Firebird 2.0
+-------------------------------------------
 
 Diese Installationsroutine wird einen laufenden Firebird 2.0
-Alpha 1 Server nicht automatisch erkennen. Daher bekommen Sie
+Server nicht automatisch erkennen. Daher bekommen Sie
 keine Warnung, bis der Installer versucht aktive Dateien zu
 überschreiben.
 
@@ -147,4 +147,4 @@ Nähere Informationen dazu finden Sie in:
 
 
 
- 
+

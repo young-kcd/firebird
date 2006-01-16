@@ -16,17 +16,17 @@ o Neue Features vorschlagen
 Einführung
 ==========
 
-Herzlich willkommen zum ersten Alpha Release von Firebird 2.0.
+Herzlich willkommen zum ersten Beta Release von Firebird 2.0.
 
 
 Verwendungszweck
 ================
 
-Dieses Alpha Release ist nicht für die Verwendung in einer
+Dieses Beta Release ist nicht für die Verwendung in einer
 Produktionsumgebung bestimmt. Es wurde der Öffentlichkeit zu
 Evaluierungszwecken zur Verfügung gestellt, und wird von
 erfahrenen Firebird Benutzern getestet. Es wird darauf
-vertraut, dass jeder Alpha Tester zuerst die Release Notes
+vertraut, dass jeder Beta Tester zuerst die Release Notes
 liest.
 
  o Installieren Sie diese Version NICHT, falls Sie Firebird vorher
@@ -109,4 +109,4 @@ Liste einzusehen:
   http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
 
 
- 
+
