@@ -27,8 +27,6 @@
 #include "cv_unicode_fss.h"
 #include "ld_proto.h"
 
-static SSHORT wc_mbtowc(TEXTTYPE obj, USHORT* wc, const UCHAR* p, USHORT n);
-
 static inline bool FAMILY_UNICODE_WIDE_BIN(TEXTTYPE cache,
 										   SSHORT country,
 										   const ASCII* POSIX,

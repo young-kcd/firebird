@@ -128,7 +128,7 @@ static void set_signal(int, void (*)(int));
 static void signal_handler(int);
 
 #if (defined SUPERSERVER && defined UNIX )
-static void signal_sigpipe_handler(int);
+//static void signal_sigpipe_handler(int);
 #endif
 
 #ifdef SHUTDOWN_THREAD
@@ -503,6 +503,7 @@ static void signal_handler(int)
 	++INET_SERVER_start;
 }
 
+#ifdef NOT_USED_OR_REPLACED
 #if (defined SUPERSERVER && defined UNIX )
 static void signal_sigpipe_handler(int)
 {
@@ -522,6 +523,7 @@ static void signal_sigpipe_handler(int)
 		("Super Server/main: Bad client socket, send() resulted in SIGPIPE, caught by server\n                   client exited improperly or crashed ????");
 }
 #endif //SUPERSERVER && UNIX
+#endif
 
 #ifdef SHUTDOWN_THREAD
 static Firebird::Semaphore shutSem;

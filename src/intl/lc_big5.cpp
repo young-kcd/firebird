@@ -62,6 +62,7 @@ TEXTTYPE_ENTRY(BIG5_init)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
@@ -126,3 +127,4 @@ static ULONG big5_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG
 		return (INTL_BAD_STR_LENGTH);			/* Must have ran out of output space */
 	return (pOutStr - p);
 }
+#endif //NOT_USED_OR_REPLACED

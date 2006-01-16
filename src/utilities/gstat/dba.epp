@@ -948,7 +948,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		tdba::restoreSpecific();
 
 #ifdef SERVICE_THREAD
-		return (THREAD_ENTRY_RETURN)(exit_code);
+		return (THREAD_ENTRY_RETURN)(IPTR)(exit_code);
 #else
 		exit(exit_code);
 #endif

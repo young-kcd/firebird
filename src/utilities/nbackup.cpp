@@ -421,7 +421,7 @@ void nbackup::pr_error (const ISC_STATUS* status, const char* operation)
 
     isc_print_status(status);
 
-    printf("SQLCODE:%ld\n", isc_sqlcode(status));
+    printf("SQLCODE:%"SLONGFORMAT"\n", isc_sqlcode(status));
 
     printf("]\n");
 

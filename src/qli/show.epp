@@ -443,11 +443,11 @@ static void array_dimensions( DBB database, const TEXT * field_name)
 			SORTED BY D.RDB$DIMENSION
 
 		if (D.RDB$LOWER_BOUND != 1) {
-			sprintf(p, "%ld:", D.RDB$LOWER_BOUND);
+			sprintf(p, "%"SLONGFORMAT":", D.RDB$LOWER_BOUND);
 			while (*++p);
 		}
 
-		sprintf(p, "%ld, ", D.RDB$UPPER_BOUND);
+		sprintf(p, "%"SLONGFORMAT", ", D.RDB$UPPER_BOUND);
 		while (*++p);
 	END_FOR;
 

@@ -29,8 +29,8 @@
 #include "cv_jis.h"
 #include "ld_proto.h"
 
-static ULONG sjis_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
-static ULONG sjis_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
+//static ULONG sjis_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
+//static ULONG sjis_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
 
 static inline bool FAMILY_MULTIBYTE(TEXTTYPE cache,
 									SSHORT country,
@@ -85,6 +85,7 @@ TEXTTYPE_ENTRY(JIS230_init)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
@@ -149,3 +150,4 @@ static ULONG sjis_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG
 		return (INTL_BAD_STR_LENGTH);			/* Must have ran out of output space */
 	return (pOutStr - p);
 }
+#endif

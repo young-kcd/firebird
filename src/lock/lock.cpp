@@ -1910,7 +1910,7 @@ static void bug_assert( const TEXT* string, ULONG line)
 	TEXT buffer[MAXPATHLEN + 100];
 	lhb LOCK_header_copy;
 
-	sprintf((char *) buffer, "%s %ld: lock assertion failure: %.60s\n",
+	sprintf((char *) buffer, "%s %"ULONGFORMAT": lock assertion failure: %.60s\n",
 			__FILE__, line, string);
 
 /* Copy the shared memory so we can examine its state when we crashed */

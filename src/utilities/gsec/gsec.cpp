@@ -108,7 +108,7 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 /* If service is detached, cleanup memory being used by service. */
 	SVC_finish(service, Jrd::SVC_finished);
 
-	return (THREAD_ENTRY_RETURN)(exit_code);
+	return (THREAD_ENTRY_RETURN)(IPTR)(exit_code);
 }
 
 #else

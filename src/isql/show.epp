@@ -378,7 +378,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 
 		case isc_info_page_size:
 			value_out = isc_vax_integer(d, length);
-			sprintf(info, "PAGE_SIZE %ld %s", value_out, NEWLINE);
+			sprintf(info, "PAGE_SIZE %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_db_size_in_pages:
@@ -388,7 +388,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
-				sprintf(info, "Number of DB pages allocated = %ld %s",
+				sprintf(info, "Number of DB pages allocated = %"SLONGFORMAT" %s",
 						value_out, NEWLINE);
 			break;
 
@@ -399,7 +399,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
-				sprintf(info, "Sweep interval = %ld %s", value_out, NEWLINE);
+				sprintf(info, "Sweep interval = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_forced_writes:
@@ -409,22 +409,22 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 
 		case isc_info_oldest_transaction :
 			value_out = isc_vax_integer (d, length);
-			sprintf(info, "Transaction - oldest = %ld %s", value_out, NEWLINE);
+			sprintf(info, "Transaction - oldest = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_oldest_active :
 			value_out = isc_vax_integer (d, length);
-			sprintf(info, "Transaction - oldest active = %ld %s", value_out, NEWLINE);
+			sprintf(info, "Transaction - oldest active = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_oldest_snapshot :
 			value_out = isc_vax_integer (d, length);
-			sprintf(info, "Transaction - oldest snapshot = %ld %s", value_out, NEWLINE);
+			sprintf(info, "Transaction - oldest snapshot = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_next_transaction :
 			value_out = isc_vax_integer (d, length);
-			sprintf (info, "Transaction - Next = %ld %s", value_out, NEWLINE);
+			sprintf (info, "Transaction - Next = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_base_level:
@@ -434,7 +434,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
-				sprintf(info, "Base level = %ld %s", value_out, NEWLINE);
+				sprintf(info, "Base level = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_limbo:
@@ -444,7 +444,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
-				sprintf(info, "Transaction in limbo = %ld %s",
+				sprintf(info, "Transaction in limbo = %"SLONGFORMAT" %s",
 						value_out, NEWLINE);
 			break;
 
@@ -453,7 +453,8 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			break;
 		case isc_info_ods_minor_version:
 			value_out = isc_vax_integer(d, length);
-			sprintf(info, "ODS = %ld.%ld%s", (SLONG) isqlGlob.major_ods, value_out, NEWLINE);
+			sprintf(info, "ODS = %"SLONGFORMAT".%"SLONGFORMAT"%s", 
+					(SLONG) isqlGlob.major_ods, value_out, NEWLINE);
 			break;
 		}
 		

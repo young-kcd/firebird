@@ -809,7 +809,7 @@ static void format_index( qli_print_item* item, qli_nod* field, const bool print
 		qli_nod* subscript = *ptr;
 		switch (subscript->nod_type) {
 		case nod_constant:
-			sprintf(s, "%ld", MOVQ_get_long(&subscript->nod_desc, 0));
+			sprintf(s, "%"SLONGFORMAT, MOVQ_get_long(&subscript->nod_desc, 0));
 			q = s;
 			l = strlen(s);
 			break;

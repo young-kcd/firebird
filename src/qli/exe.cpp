@@ -1114,19 +1114,19 @@ static void print_counts( qli_req* request)
 		if (number)
 			switch (item) {
 			case isc_info_req_select_count:
-				printf("\nrecords selected: %ld\n", number);
+				printf("\nrecords selected: %"SLONGFORMAT"\n", number);
 				break;
 
 			case isc_info_req_insert_count:
-				printf("records inserted: %ld\n", number);
+				printf("records inserted: %"SLONGFORMAT"\n", number);
 				break;
 
 			case isc_info_req_update_count:
-				printf("records updated: %ld\n", number);
+				printf("records updated: %"SLONGFORMAT"\n", number);
 				break;
 
 			case isc_info_req_delete_count:
-				printf("records deleted: %ld\n", number);
+				printf("records deleted: %"SLONGFORMAT"\n", number);
 				break;
 
 			default:
