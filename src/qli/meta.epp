@@ -2448,7 +2448,7 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
 			ON_ERROR
 				if (target->rel_database->dbb_meta_trans)
 					rollback_update(target->rel_database);
-				rollback_update((DBB) source->rel_database->dbb_meta_trans);
+				rollback_update(source->rel_database);
 				ERRQ_database_error(source->rel_database, gds_status);
 			END_ERROR;
 		}
