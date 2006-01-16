@@ -49,6 +49,7 @@ public:
 
 	// Constructor prepares an object from plain PB
 	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
+	virtual ~ClumpletReader() { }
 
 	// Navigation in clumplet buffer
 	bool isEof() const { return cur_offset >= getBufferLength(); }

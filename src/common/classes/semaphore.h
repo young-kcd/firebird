@@ -303,6 +303,7 @@ public:
 			return false;
 		}
 		system_call_failed::raise("sem_timedwait");
+		return false;	// avoid warnings
 	}
 	
 	void enter() {
