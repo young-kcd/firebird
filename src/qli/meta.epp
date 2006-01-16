@@ -1839,7 +1839,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
 	if (isc_open_blob(status_vector, &DB, &source_dbb->dbb_meta_trans,
 					   &source_blob, source_blob_id))
 	{
-		rollback_update((DBB) DB);
+		rollback_update(source_dbb);
 		ERRQ_database_error(source_dbb, status_vector);
 	}
 
@@ -1872,7 +1872,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
 	}
 
 	if (status_vector[1] != isc_segstr_eof) {
-		rollback_update((DBB) DB);
+		rollback_update(source_dbb);
 		if (buffer != fixed_buffer)
 			gds__free(buffer);
 		ERRQ_database_error(source_dbb, status_vector);
@@ -1882,7 +1882,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD* source_blob_id)
 		gds__free(buffer);
 
 	if (isc_close_blob(status_vector, &source_blob)) {
-		rollback_update((DBB) DB);
+		rollback_update(source_dbb);
 		ERRQ_database_error(source_dbb, status_vector);
 	}
 
