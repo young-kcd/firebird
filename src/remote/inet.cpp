@@ -116,6 +116,7 @@ const int INET_RETRY_CALL	= 5;
 
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 
 #if (defined hpux || defined SCO_UNIX)
