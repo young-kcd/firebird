@@ -1094,10 +1094,10 @@ static void print_counts( qli_req* request)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	SCHAR count_buffer[COUNT_ITEMS * 7 + 1];
+	UCHAR count_buffer[COUNT_ITEMS * 7 + 1];
 	if (isc_request_info(status_vector, &request->req_handle, 0,
 						  sizeof(count_info), count_info,
-						  sizeof(count_buffer), count_buffer))
+						  sizeof(count_buffer), (SCHAR*) count_buffer))
 	{
 		return;
 	}
@@ -1105,28 +1105,28 @@ static void print_counts( qli_req* request)
 // print out the counts of any records affected
 
 	int length = 0;
-	for (SCHAR* c = count_buffer; *c != isc_info_end; c += length) {
+	for (UCHAR* c = count_buffer; *c != isc_info_end; c += length) {
 		UCHAR item = *c++;
-		length = gds__vax_integer((UCHAR*) c, 2);
+		length = gds__vax_integer(c, 2);
 		c += 2;
-		const ULONG number = gds__vax_integer((UCHAR*) c, length);
+		const ULONG number = gds__vax_integer(c, length);
 
 		if (number)
 			switch (item) {
 			case isc_info_req_select_count:
-				printf("\nrecords selected: %"SLONGFORMAT"\n", number);
+				printf("\nrecords selected: %"ULONGFORMAT"\n", number);
 				break;
 
 			case isc_info_req_insert_count:
-				printf("records inserted: %"SLONGFORMAT"\n", number);
+				printf("records inserted: %"ULONGFORMAT"\n", number);
 				break;
 
 			case isc_info_req_update_count:
-				printf("records updated: %"SLONGFORMAT"\n", number);
+				printf("records updated: %"ULONGFORMAT"\n", number);
 				break;
 
 			case isc_info_req_delete_count:
-				printf("records deleted: %"SLONGFORMAT"\n", number);
+				printf("records deleted: %"ULONGFORMAT"\n", number);
 				break;
 
 			default:
