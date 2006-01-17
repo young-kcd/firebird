@@ -111,7 +111,8 @@ class Config
 		KEY_TRACE_DSQL,								// 41
 		KEY_LEGACY_HASH,							// 42
 		KEY_GC_POLICY,								// 43
-		KEY_REDIRECTION								// 44
+		KEY_REDIRECTION,								// 44
+		KEY_OLD_COLUMN_NAMING						// 45
 	};
 
 public:
@@ -345,6 +346,12 @@ public:
 		Redirection
 	*/
 	static bool getRedirection();
+
+	/*
+		Use old column naming rules (does not conform to SQL standard)
+	*/
+	static bool getOldColumnNaming();
+
 };
 
 namespace Firebird {

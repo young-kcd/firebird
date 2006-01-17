@@ -122,7 +122,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0},		// bitmask
 	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) false},	// let use old passwd hash verification
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
-	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false}
+	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
+	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false}	// if true use old style concatenation
 };
 
 /******************************************************************************
@@ -508,3 +509,9 @@ bool Config::getRedirection()
 {
 	return (bool) sysConfig.values[KEY_REDIRECTION];
 }
+
+bool Config::getOldColumnNaming()
+{
+	return (bool) sysConfig.values[KEY_OLD_COLUMN_NAMING];
+}
+

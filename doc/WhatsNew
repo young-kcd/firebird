@@ -2,6 +2,11 @@
   * v2.0 Beta 2
   **************
 
+    * Forward port from 1.5.3
+        Added OldColumnNaming support
+      Contributor:
+        Paul Reeves <paul_reeves at ibphoenix.com>
+
     * Fixed Beta 1 bug
         Problem causing collation to be lost in sqlsubtype when using dynamic charset
       Contributor(s):
