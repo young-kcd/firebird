@@ -29,7 +29,7 @@
 #ifndef OPTIMIZER_H
 #define OPTIMIZER_H
 
-#define OPT_DEBUG
+//#define OPT_DEBUG
 //#define OPT_DEBUG_RETRIEVAL
 
 //#ifdef OPT_DEBUG
