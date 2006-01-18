@@ -48,9 +48,11 @@
 #include "../jrd/event.h"
 #include "../jrd/alt_proto.h"
 
+#if !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)
 #if !defined(BOOT_BUILD)
 static ISC_STATUS executeSecurityCommand(ISC_STATUS*, const USER_SEC_DATA*, internal_user_data&);
 #endif // BOOT_BUILD
+#endif
 
 SLONG API_ROUTINE_VARARG isc_event_block(SCHAR** event_buffer,
 										 SCHAR** result_buffer,

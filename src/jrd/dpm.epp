@@ -667,8 +667,8 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES) {
-		printf("DPM_delete (record_param %"QUADFORMAT"d, prior_page %"QUADFORMAT
-				  "d)\n", rpb->rpb_number.getValue(), prior_page);
+		printf("DPM_delete (record_param %"QUADFORMAT", prior_page %"SLONGFORMAT")\n",
+		           rpb->rpb_number.getValue(), prior_page);
 	}
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf

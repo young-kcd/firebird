@@ -969,8 +969,10 @@ void dsc::address32bit() const
  *	Validates dsc_address member to fit into 4-byte integer.
  *
  **************************************/
-	UINT64 addr = (UINT64)dsc_address;
+#if SIZEOF_VOID_P > 4
+	UINT64 addr = (UINT64)(IPTR)dsc_address;
 	fb_assert(addr == (addr & 0xFFFFFFFF));
+#endif
 }
 
 

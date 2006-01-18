@@ -1463,7 +1463,7 @@ void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
 		break;
 	default:
 		sprintf(log_msg, "%s Unknown Exception.\n"
-				"\t\tException number %ld."
+				"\t\tException number %"ULONGFORMAT"."
 				"\tThis exception will cause the Firebird server\n"
 				"\tto terminate abnormally.", err_msg, sig_num);
 		break;

@@ -173,6 +173,7 @@ static fss_size_t fss_wctomb(UCHAR * s, fss_wchar_t wc)
 	return -1;
 }
 
+#ifdef NOT_USED_OR_REPLACED
 static SSHORT internal_fss_mbtowc(TEXTTYPE obj,
 						   USHORT* wc, const UCHAR* p, USHORT n)
 {
@@ -200,6 +201,7 @@ static SSHORT internal_fss_mbtowc(TEXTTYPE obj,
 
 	return fss_mbtowc(wc, p, n);
 }
+#endif
 
 static ULONG internal_fss_to_unicode(TEXTTYPE obj,
 									 ULONG src_len,
@@ -1602,6 +1604,7 @@ static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const USHORT* pS
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 								 ULONG nDest, UCHAR* pDest,
 								 USHORT* err_code, ULONG* err_position)
@@ -1651,6 +1654,7 @@ static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 
 	return ((pDest - pStart) * sizeof(*pDest));
 }
+#endif
 
 
 static ULONG cvt_unicode_to_utf8(csconvert* obj,
@@ -1935,6 +1939,7 @@ static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* charset_name)
  *      Start of Conversion entries
  */
 
+#ifdef NOT_USED_OR_REPLACED
 static USHORT cvt_ascii_utf_init(csconvert* csptr)
 {
 /**************************************
@@ -1950,6 +1955,7 @@ static USHORT cvt_ascii_utf_init(csconvert* csptr)
 	common_convert_init(csptr, cvt_utffss_to_ascii);
 	return true;
 }
+#endif
 
 
 INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name)

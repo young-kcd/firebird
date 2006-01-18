@@ -51,7 +51,7 @@
 
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
-#define VIO_DEBUG				/* remove this for production build */
+//#define VIO_DEBUG				/* remove this for production build */
 #else /* PROD */
 #define DEBUG
 #undef VIO_DEBUG

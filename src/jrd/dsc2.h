@@ -492,7 +492,7 @@ inline bool dsc::canDivide() const {return isANumber();}
 inline bool dsc::canMultiply() const {return isANumber();}
 
 
-const int ISC_TIME_SECONDS_PRECISION		= 10000L;
+const int ISC_TIME_SECONDS_PRECISION		= 10000;
 const int ISC_TIME_SECONDS_PRECISION_SCALE	= -4;
 
 
