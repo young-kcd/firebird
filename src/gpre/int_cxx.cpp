@@ -296,7 +296,7 @@ static void gen_compile( const gpre_req* request, int column)
 	fprintf(gpreGlob.out_file, "if (!%s)", request->req_handle);
 	align(column);
 	fprintf(gpreGlob.out_file,
-			   "%s = CMP_compile2 (tdbb, (UCHAR*)jrd_%d, TRUE);",
+			   "%s = CMP_compile2 (tdbb, (UCHAR*)jrd_%"ULONGFORMAT", TRUE);",
 			   request->req_handle, request->req_ident);
 }
 
@@ -481,7 +481,7 @@ static void gen_receive( const gpre_req* request, const gpre_port* port)
 {
 
 	fprintf(gpreGlob.out_file,
-			   "EXE_receive (tdbb, %s, %d, %d, (UCHAR*)&jrd_%d);",
+			   "EXE_receive (tdbb, %s, %d, %d, (UCHAR*)&jrd_%"ULONGFORMAT");",
 			   request->req_handle, port->por_msg_number, port->por_length,
 			   port->por_ident);
 }
@@ -499,7 +499,7 @@ static void gen_request( const gpre_req* request)
 		fprintf(gpreGlob.out_file, "static void\t*%s;\t// request handle \n",
 				   request->req_handle);
 
-	fprintf(gpreGlob.out_file, "static const UCHAR\tjrd_%d [%d] =",
+	fprintf(gpreGlob.out_file, "static const UCHAR\tjrd_%"ULONGFORMAT" [%d] =",
 			   request->req_ident, request->req_length);
 	align(INDENT);
 	fprintf(gpreGlob.out_file, "{\t// blr string \n");
@@ -592,7 +592,7 @@ static void gen_send( const gpre_req* request, const gpre_port* port,
 	}
 	align(column);
 
-	fprintf(gpreGlob.out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*)&jrd_%d);",
+	fprintf(gpreGlob.out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*)&jrd_%"ULONGFORMAT");",
 			   request->req_handle,
 			   port->por_msg_number, port->por_length, port->por_ident);
 }
@@ -731,7 +731,7 @@ static void make_port( gpre_port* port, int column)
 		}
 	}
 	align(column);
-	fprintf(gpreGlob.out_file, "} jrd_%d;", port->por_ident);
+	fprintf(gpreGlob.out_file, "} jrd_%"ULONGFORMAT";", port->por_ident);
 }
 
 
