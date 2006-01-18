@@ -1,3 +1,151 @@
+2006-01-17 10:20  robocop
+
+	* firebird2/doc/WhatsNew (1.85):
+	
+	Restore missing WhatsNew entries that I deleted on bad merge.
+
+2006-01-17 08:52  robocop
+
+	* firebird2/src/: intl/lc_big5.h (1.7), jrd/dsc.h (1.26),
+	qli/exe.cpp (1.48):
+	
+	Misc.
+
+2006-01-17 08:39  robocop
+
+	* firebird2/src/jrd/Optimizer.h (1.16):
+	
+	Disable the debug info for the optimizer in the public repository
+	as it might produce release builds that create an output file with
+	that information.
+
+2006-01-17 08:37  robocop
+
+	* firebird2/doc/WhatsNew (1.84):
+	
+	Fix my previous entry in the WhatsNew.
+
+2006-01-17 05:40  paul_reeves
+
+	* firebird2/: builds/install/misc/firebird.conf (1.18),
+	doc/WhatsNew (1.83), src/common/config/config.cpp (1.65),
+	src/common/config/config.h (1.38), src/dsql/make.cpp (1.108):
+	
+	Forward port OldColumnNaming from Fb 1.5.3
+
+2006-01-16 18:17  dimitr
+
+	* firebird2/doc/WhatsNew (1.82):
+	
+	Updated the docs.
+
+2006-01-16 17:48  alexpeshkoff
+
+	* firebird2/src/: remote/inet_server.cpp (1.58),
+	utilities/nbackup.cpp (1.48), utilities/gsec/gsec.cpp (1.50),
+	utilities/gstat/dba.epp (1.63):
+	
+	fixed gcc warning(s)
+
+2006-01-16 17:46  alexpeshkoff
+
+	* firebird2/src/qli/meta.epp (1.60):
+	
+	ported fix from vulcan
+
+2006-01-16 17:45  alexpeshkoff
+
+	* firebird2/src/: lock/lock.cpp (1.113), qli/exe.cpp (1.47),
+	qli/format.cpp (1.32), qli/show.epp (1.40):
+	
+	fixed gcc warning(s)
+
+2006-01-16 17:41  alexpeshkoff
+
+	* firebird2/src/: intl/lc_big5.cpp (1.13), intl/lc_big5.h (1.6),
+	intl/lc_jis.cpp (1.13), intl/lc_unicode_ucs2.cpp (1.11),
+	isql/show.epp (1.84):
+	
+	fixed gcc warning(s)
+
+2006-01-16 17:31  alexpeshkoff
+
+	* firebird2/src/dsql/: dsql.cpp (1.161), metd.epp (1.85), pass1.cpp
+	(1.254):
+	
+	fixed gcc warning(s)
+
+2006-01-16 16:38  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.82), burp/burp.cpp (1.108),
+	common/classes/ClumpletReader.h (1.15), common/classes/semaphore.h
+	(1.23):
+	
+	fixed gcc warning(s)
+
+2006-01-16 16:21  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/: Readme.txt (1.8),
+	installation_readme.txt (1.8), ba/Instalacija_ProcitajMe.txt (1.4),
+	de/installation_liesmich.txt (1.3), de/liesmich.txt (1.3),
+	pl/instalacja_czytajto.txt (1.3):
+	
+	Catch up with commit of some win32 install docs that were part of
+	beta 1
+
+2006-01-16 11:01  alexpeshkoff
+
+	* firebird2/src/qli/meta.epp (1.59):
+	
+	ported fix from vulcan
+
+2006-01-16 09:47  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.150):
+	
+	fixed posix build
+
+2006-01-15 19:11  asfernandes
+
+	* firebird2/src/dsql/: gen.cpp (1.95), pass1.cpp (1.253):
+	
+	Fixed problem causing collation lost in sqlsubtype when using
+	dynamic charset - reported by Ivan Prenosil
+
+2006-01-15 17:04  dimitr
+
+	* firebird2/src/: jrd/Optimizer.cpp (1.53), jrd/cvt.cpp (1.67),
+	jrd/dsc.h (1.25), jrd/exe.cpp (1.169), jrd/rse.cpp (1.95),
+	qli/mov.cpp (1.38):
+	
+	Fixed bug related to expression indices vs. collates, reported by
+	Ivan.
+
+2006-01-15 14:39  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.client.util (1.34):
+	
+	fixed posix build
+
+2006-01-15 14:34  alexpeshkoff
+
+	* firebird2/src/utilities/ibmgr/: ibmgr.cpp (1.20), srvrmgr.cpp
+	(1.30):
+	
+	fixed posix build and warnings
+
+2006-01-15 14:19  arnobrinkman
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.52), Optimizer.h (1.15):
+	
+	Fix bug with lower/upper -exlude flag for indexes
+
+2006-01-15 13:48  alexpeshkoff
+
+	* firebird2/src/jrd/req.h (1.50):
+	
+	fixed gcc warning
+
 2006-01-14 19:03  asfernandes
 
 	* firebird2/: builds/install/misc/fbintl.conf (1.9),
