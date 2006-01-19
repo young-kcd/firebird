@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.fbudf,v 1.6 2005-12-24 17:03:32 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.fbudf,v 1.7 2006-01-19 14:32:45 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -81,7 +81,7 @@ ifeq ($(PLATFORM),win32)
 -L$(LIB) -lfbclient -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -lfbclient -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -L$(LIB) -lfbclient -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 endif
 
 
