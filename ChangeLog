@@ -1,3 +1,18 @@
+2006-01-18 12:54  alexpeshkoff
+
+	* firebird2/src/gpre/int_cxx.cpp (1.41):
+	
+	fixed gcc warning(s)
+
+2006-01-18 11:43  alexpeshkoff
+
+	* firebird2/src/jrd/: alt.cpp (1.59), dpm.epp (1.62), dsc.cpp
+	(1.28), dsc2.h (1.8), dsc_pub.h (1.7), filters.cpp (1.47),
+	intl_builtin.cpp (1.28), isc_sync.cpp (1.99), jrd.h (1.142),
+	perf.cpp (1.34):
+	
+	fixed gcc warning(s)
+
 2006-01-17 10:20  robocop
 
 	* firebird2/doc/WhatsNew (1.85):
