@@ -55,7 +55,6 @@
 #include <xutility>
 #endif
 
-
 namespace Jrd {
 
 bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
@@ -1435,11 +1434,13 @@ InversionCandidate* OptimizerRetrieval::getCost()
 		invCandidate->indexes = 0;
 		invCandidate->selectivity = MAXIMUM_SELECTIVITY;
 		invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
+/*
 		OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
 		for (; tail < optimizer->opt_conjuncts.end(); tail++) {
 			findDependentFromStreams(tail->opt_conjunct_node,
 									 &invCandidate->dependentFromStreams);
 		}
+*/
 		return invCandidate;
 	}
 }
@@ -3297,7 +3298,7 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 
 	size_t pos;
 	if (candidate->dependentFromStreams.find(baseStream->stream, pos)) {
-		if (candidate->indexes) {
+//		if (candidate->indexes) {
 			// If we could use more conjunctions on the testing stream
 			// with the base stream active as without the base stream
 			// then the test stream has a indexed relationship with the base stream.
@@ -3316,7 +3317,7 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 				}
 			}
 			baseStream->indexedRelationships.insert(index, indexRelationship);
-		}
+//		}
 		testStream->previousExpectedStreams++;
 	}
 	delete candidate;
