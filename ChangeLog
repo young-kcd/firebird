@@ -1,3 +1,16 @@
+2006-01-19 17:53  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.54):
+	
+	Temporary rolled back one one of my previous fixes due to
+	discovered issues.
+
+2006-01-19 15:32  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.client.fbudf (1.7):
+	
+	applied patch from Michal Kubecek
+
 2006-01-18 12:54  alexpeshkoff
 
 	* firebird2/src/gpre/int_cxx.cpp (1.41):
