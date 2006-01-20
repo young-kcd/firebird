@@ -1486,7 +1486,7 @@ input_proc_parameters	: input_proc_parameter
 		;
 
 input_proc_parameter	: simple_column_def_name non_array_type
-				begin_trigger default_par_opt end_trigger 
+				begin_trigger default_par_opt end_default_opt
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
 				$1, $4, $5, NULL, NULL, NULL, NULL); }   
 		;
