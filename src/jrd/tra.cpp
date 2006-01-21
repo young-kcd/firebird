@@ -1768,6 +1768,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 /* If the transaction block is getting out of hand, force a sweep */
 
 	if (dbb->dbb_sweep_interval &&
+		!(tdbb->tdbb_attachment->att_flags & ATT_no_cleanup) &&
 		(trans->tra_oldest_active - trans->tra_oldest >
 		 dbb->dbb_sweep_interval) && oldest_state != tra_limbo)
 	{
