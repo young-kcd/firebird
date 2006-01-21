@@ -1,3 +1,17 @@
+2006-01-20 14:32  hvlad
+
+	* firebird2/src/dsql/: parse.cpp (1.172), dsql.tab.h (1.65):
+	
+	Regenerated parser files after parse.y change By bison 2.1 now
+
+2006-01-20 14:31  hvlad
+
+	* firebird2/src/dsql/parse.y (1.199):
+	
+	Again fix issue with parser and not correctly stored source for
+	CURRENT_TIME\CURRENT_TIMESTAMP in procedure parameters default
+	values. Reported by Martijn Tonies
+
 2006-01-19 17:53  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.54):
