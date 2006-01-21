@@ -1798,10 +1798,10 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		node->nod_desc.dsc_flags = DSC_nullable;
 	}
 
-	// check if the field is CHAR/VARCHAR CHARACTER SET UNICODE_FSS and if it's from a system table
-	if (node->nod_desc.dsc_dtype <= dtype_varying &&
-		INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA &&
-		field->fld_relation && field->fld_relation->rel_id < static_cast<int>(rel_MAX))
+	// check if the field is a system domain and and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
+	if ((field->fld_flags & FLD_system) &&
+		node->nod_desc.dsc_dtype <= dtype_varying &&
+		INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA)
 	{
 		USHORT adjust = 0;
 
