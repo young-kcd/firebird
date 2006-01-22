@@ -3054,6 +3054,7 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	dsql_nod* select_expr = MAKE_node(nod_select_expr, e_sel_count);
 	select_expr->nod_arg[e_sel_query_spec] = query_spec;
 
+	const DsqlContextStack::iterator base(*request->req_context);
 	dsql_nod* rse = PASS1_rse(request, select_expr, NULL);
 
 	// create a conjunct to be injected
@@ -3066,6 +3067,9 @@ static dsql_nod* pass1_any( dsql_req* request, dsql_nod* input, NOD_TYPE ntype)
 	// create output node
 	dsql_nod* node = MAKE_node(ntype, 1);
 	node->nod_arg[0] = rse;
+
+	// Finish off by cleaning up contexts
+	request->req_context->clear(base);
 
 	return node;
 }
