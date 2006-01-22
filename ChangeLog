@@ -1,3 +1,27 @@
+2006-01-21 16:30  hvlad
+
+	* firebird2/src/utilities/gstat/dba.epp (1.64):
+	
+	1. Add isc_dpb_no_garbage_collect to gfix attachment to not force a
+	sweep 2. Fix unregistered bug - wrong statistics if relation\index
+	data is longer than 2^32 bytes length 3. Fix unregistered bug -
+	average index key length rounded to integer value
+
+2006-01-21 16:29  hvlad
+
+	* firebird2/src/jrd/tra.cpp (1.108):
+	
+	Attachment with isc_dpb_no_garbage_collect option will not force a
+	sweep
+
+2006-01-21 15:55  asfernandes
+
+	* firebird2/src/dsql/: dsql.h (1.89), make.cpp (1.109), metd.epp
+	(1.86):
+	
+	Fixed problem caused by usage of UNICODE_FSS system domains in
+	users views and tables - thanks to Dmitry
+
 2006-01-20 14:32  hvlad
 
 	* firebird2/src/dsql/: parse.cpp (1.172), dsql.tab.h (1.65):
