@@ -1,3 +1,15 @@
+2006-01-22 20:14  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.255):
+	
+	Fix incorrect "Ambiguous field name error" reported by Ivan
+	Prenosil:
+	
+	SELECT	   (SELECT RDB$FIELD_NAME   FROM RDB$RELATION_FIELDS	  
+	WHERE RDB$FIELD_SOURCE = RDB$FIELDS.RDB$FIELD_NAME)   FROM
+	RDB$FIELDS  WHERE RDB$FIELD_NAME NOT IN     (SELECT
+	RDB$FIELD_SOURCE FROM RDB$RELATION_FIELDS)
+
 2006-01-21 16:30  hvlad
 
 	* firebird2/src/utilities/gstat/dba.epp (1.64):
