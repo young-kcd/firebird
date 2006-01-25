@@ -94,8 +94,6 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/intlobj_new.h"
 
-static void	yyerror(const TEXT*);
-
 /* since UNIX isn't standard, we have to define
    stuff which is in <limits.h> (which isn't available
    on all UNIXes... */
@@ -127,6 +125,9 @@ typedef dsql_nod* YYSTYPE;
 #define YYDEBUG		1
 #endif
 
+#define YYMALLOC gds__alloc
+#define YYFREE gds__free
+
 static const char INTERNAL_FIELD_NAME[] = "DSQL internal"; /* NTX: placeholder */
 static const char NULL_STRING[] = "";
 
@@ -138,7 +139,6 @@ inline SLONG trigger_type_suffix(const int slot1, const int slot2, const int slo
 
 dsql_nod* DSQL_parse;
 
-//static void	yyerror(const TEXT*); redeclaration.
 
 #define YYPARSE_PARAM_TYPE
 #define YYPARSE_PARAM USHORT client_dialect, USHORT db_dialect, USHORT parser_version, bool* stmt_ambiguous
@@ -163,7 +163,9 @@ static bool	short_int(dsql_nod*, SLONG*, SSHORT);
 #endif
 static void	stack_nodes (dsql_nod*, DsqlNodStack&);
 inline static int	yylex (USHORT, USHORT, USHORT, bool*);
-static void	yyabandon (SSHORT, ISC_STATUS);
+
+static void	yyerror(const TEXT*);
+static void	yyabandon (SLONG, ISC_STATUS);
 
 inline void check_bound(const char* const to, const char* const string)
 {
@@ -4867,7 +4869,8 @@ int LexerState::yylex (
 			continue;
 		}
 
-		if ((c == '-') && (*ptr == '-')) {
+		if ((c == '-') && (*ptr == '-'))
+		{
 			
 			/* single-line */
 			
@@ -4883,10 +4886,12 @@ int LexerState::yylex (
 				return -1;
 			continue;
 		}
-		else if ((c == '/') && (*ptr == '*')) {
+		else if ((c == '/') && (*ptr == '*'))
+		{
 			
 			/* multi-line */
 			
+			const TEXT& start_block = ptr[-1];
 			ptr++;
 			while (ptr < end) {
 				if ((c = *ptr++) == '*') {
@@ -4900,7 +4905,13 @@ int LexerState::yylex (
 				}
 			}
 			if (ptr >= end)
+			{
+				// I need this to report the correct beginning of the block,
+				// since it's not a token really.
+				last_token = &start_block;
+				yyerror("unterminated block comment");
 				return -1;
+			}
 			ptr++;
 			continue;
 		}
@@ -4953,6 +4964,7 @@ int LexerState::yylex (
 			{
 				if (buffer != string)
 					gds__free (buffer);
+				yyerror("unterminated string");
 				return -1;
 			}
 			// Care about multi-line constants and identifiers
@@ -5013,7 +5025,7 @@ int LexerState::yylex (
 		}
 		yylval = (dsql_nod*) MAKE_string(buffer, p - buffer);
 		if (buffer != string)
-		gds__free (buffer);
+			gds__free (buffer);
 		return STRING;
 	}
 												 
@@ -5431,7 +5443,7 @@ static void yyerror(const TEXT* error_string)
 }
 
 
-static void yyabandon (SSHORT		sql_code,
+static void yyabandon (SLONG		sql_code,
 					   ISC_STATUS	error_symbol)
 {
 /**************************************
@@ -5445,6 +5457,6 @@ static void yyabandon (SSHORT		sql_code,
  *
  **************************************/
 
-	ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) sql_code, 
+	ERRD_post (isc_sqlerr, isc_arg_number, sql_code,
 		isc_arg_gds, error_symbol, 0);
 }
