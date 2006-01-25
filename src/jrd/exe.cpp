@@ -976,6 +976,8 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_records_inserted = 0;
 	request->req_records_deleted = 0;
 
+	request->req_records_affected.clear();
+
 /* CVC: set up to count virtual operations on SQL views. */
 
 	request->req_view_flags = 0;
@@ -1905,8 +1907,6 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		transaction->tra_save_point->sav_number : 0;
 
 	jrd_nod* node = in_node;
-
-	request->req_records_affected.clear();
 
 	// Catch errors so we can unwind cleanly
 
