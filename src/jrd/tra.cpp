@@ -105,9 +105,9 @@ static SLONG bump_transaction_id(thread_db*, WIN *);
 #else
 static header_page* bump_transaction_id(thread_db*, WIN *);
 #endif
-static void retain_context(thread_db*, jrd_tra*, const bool);
+static void retain_context(thread_db*, jrd_tra*, bool, SSHORT);
 #ifdef VMS
-static void compute_oldest_retaining(thread_db*, jrd_tra*, const bool);
+static void compute_oldest_retaining(thread_db*, jrd_tra*, bool);
 #endif
 #ifdef PC_ENGINE
 static int downgrade_lock(void*);
@@ -468,7 +468,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 #endif
 
 	if (retaining_flag) {
-		retain_context(tdbb, transaction, true);
+		retain_context(tdbb, transaction, true, tra_committed);
 		return;
 	}
 
@@ -1173,8 +1173,6 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 
 	EXT_trans_rollback(transaction);
 
-/* If no writes have been made, commit the transaction instead. */
-
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, false);
 
@@ -1244,6 +1242,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		}
 	}
 
+	SSHORT state = tra_dead;
+
 	// Only transaction savepoint could be there
 	if (transaction->tra_save_point)
 	{
@@ -1267,15 +1267,9 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			else
 				VIO_verb_cleanup(tdbb, transaction);
 
-			/* If this a abort retaining transaction, do not
-			 * set the TIP bits.  That will be done in retain_context ().
-			 * Only ExpressLink runs in this mode and only DDL is
-			 * executed in this manner.
-			 */
-
-			if (!retaining_flag)
-				TRA_set_state(tdbb, transaction, transaction->tra_number,
-							  tra_committed);
+			// All changes are undone, so we may mark the transaction
+			// as committed
+			state = tra_committed;
 		}
 		catch (const std::exception&) {
 			/* Prevent a bugcheck in TRA_set_state to cause a loop */
@@ -1283,13 +1277,12 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			tdbb->tdbb_status_vector[0] = isc_arg_gds;
 			tdbb->tdbb_status_vector[1] = 0;
 			tdbb->tdbb_status_vector[2] = isc_arg_end;
-			TRA_set_state(tdbb, transaction, transaction->tra_number,
-						  tra_dead);
 		}
 	}
-	else {
-		/* Set the state on the inventory page to be dead */
-		TRA_set_state(tdbb, transaction, transaction->tra_number, tra_dead);
+	else if (!(transaction->tra_flags & TRA_write)) {
+		// There were no changes within the transaction, so we may mark it
+		// as committed
+		state = tra_committed;
 	}
 
 /* if this is a rollback retain (used only by ExpressLink), abort
@@ -1297,8 +1290,11 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
  */
 
 	if (retaining_flag) {
-		retain_context(tdbb, transaction, false);
+		retain_context(tdbb, transaction, false, state);
 		return;
+	}
+	else {
+		TRA_set_state(tdbb, transaction, transaction->tra_number, state);
 	}
 
 	TRA_release_transaction(tdbb, transaction);
@@ -2588,7 +2584,8 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
 }
 
 
-static void retain_context(thread_db* tdbb, jrd_tra* transaction, const bool commit)
+static void retain_context(thread_db* tdbb, jrd_tra* transaction,
+						   bool commit, SSHORT state)
 {
 /**************************************
  *
@@ -2678,10 +2675,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, const bool com
 
 	if (!(dbb->dbb_flags & DBB_read_only)) {
 		/* Set the state on the inventory page */
-		if (commit)
-			TRA_set_state(tdbb, transaction, old_number, tra_committed);
-		else
-			TRA_set_state(tdbb, transaction, old_number, tra_dead);
+		TRA_set_state(tdbb, transaction, old_number, state);
 	}
 	transaction->tra_number = new_number;
 
