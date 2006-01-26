@@ -1,3 +1,35 @@
+2006-01-25 13:20  dimitr
+
+	* firebird2/src/jrd/tra.cpp (1.109):
+	
+	Fixed a number of inconsistencies in the rollback code.
+
+2006-01-25 13:11  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.170):
+	
+	Fixed the issue with ROW_COUNT being cleared after SUSPEND.
+
+2006-01-25 10:48  dimitr
+
+	* firebird2/src/msgs/messages.sql (1.60):
+	
+	A small correction.
+
+2006-01-25 09:40  robocop
+
+	* firebird2/src/dsql/: parse.cpp (1.173), parse.y (1.200):
+	
+	Fix SF Bug# 1408079 and also the same problem with unterminated
+	comment blocks /* ...
+
+2006-01-25 08:04  robocop
+
+	* firebird2/src/utilities/gstat/dba.epp (1.65):
+	
+	I want to continue compiling FB2 successfully with my tools, if you
+	don't object.  :-)
+
 2006-01-22 20:14  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp (1.255):
