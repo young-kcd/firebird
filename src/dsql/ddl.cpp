@@ -3697,6 +3697,10 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 	{
 		dsql_nod* field_node = *i_ptr;
 
+		if (field_node->nod_type == nod_alias) {
+			field_node = field_node->nod_arg[e_alias_value];
+		}
+
 		// check if this is a field or an expression
 
 		const dsql_fld* field = NULL;
