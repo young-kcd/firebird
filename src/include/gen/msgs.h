@@ -635,7 +635,7 @@ static const struct {
 	{336068820, "Zero length identifiers are not allowed"},		/* 611, dyn_zero_len_id */
 	{336330753, "found unknown switch"},		/* 612, gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* 613, gbak_page_size_missing */
-	{336330755, "Page size specified (%ld) greater than limit (8192 bytes)"},		/* 614, gbak_page_size_toobig */
+	{336330755, "Page size specified (%ld) greater than limit (16384 bytes)"},		/* 614, gbak_page_size_toobig */
 	{336330756, "redirect location for output is not specified"},		/* 615, gbak_redir_ouput_missing */
 	{336330757, "conflicting switches for backup/restore"},		/* 616, gbak_switches_conflict */
 	{336330758, "device type %s not known"},		/* 617, gbak_unknown_device */
