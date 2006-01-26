@@ -87,7 +87,6 @@ LRESULT CALLBACK GeneralPage(HWND, UINT, WPARAM, LPARAM);
 
 HINSTANCE hInstance_gbl;
 HWND hPSDlg, hWndGbl;
-static DWORD ServerPid = 0;
 static int nRestarts = 0;		/* the number of times the server was restarted */
 bool service_flag = true;
 /* unsigned short shutdown_flag = FALSE; */
@@ -114,7 +113,6 @@ int WINAPI WinMain(
 *     The main routine for Windows based server guardian.
 *
 **************************************/
-
 
 	OSVERSIONINFO OsVersionInfo;
 
@@ -184,10 +182,9 @@ static bool parse_args(LPCSTR lpszArgs, bool* pserver_flag)
 	bool return_value = true;
 
 	for (const char* p = lpszArgs; *p; p++) {
-		if (*p++ == '-')
+		if (*p++ == '-') {
 			while (c = *p++) {
-				switch (c) {
-				case 'a':
+				switch (UPPER(c)) {
 				case 'A':
 					return_value = false;
 					break;
@@ -197,6 +194,7 @@ static bool parse_args(LPCSTR lpszArgs, bool* pserver_flag)
 					break;
 				}
 			}
+		}
 	}
 	return return_value;
 }
@@ -394,10 +392,6 @@ static LRESULT CALLBACK WindowFunc(
 				PostMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_PROPERTIES, 0);
 			}
 			return TRUE;
-
-		case IDM_SET_SERVER_PID:
-			ServerPid = (DWORD) lParam;
-			return TRUE;
 		}
 		break;
 
@@ -587,7 +581,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 			success = StartService(hService, 0, NULL);
 			if (success != TRUE)
 				error = GetLastError();
-			/* if the server is alrady running, then inform it that it should
+			/* if the server is already running, then inform it that it should
 			 * open the guardian mutex so that it may be governed. */
 			if ((!error) || (error == ERROR_SERVICE_ALREADY_RUNNING)) {
 				/* Make sure that it is actually ready to receive commands.
@@ -622,17 +616,18 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				CloseHandle(pi.hThread);
 			}
 			else {
-				SendMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_GUARDED,
-							(LPARAM) hWndGbl);
-				if (
-					(procHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE,
-								 ServerPid)) == NULL)
-				{
+				SendMessage(hTmpWnd, WM_COMMAND, (WPARAM) IDM_GUARDED, 0);
+				DWORD server_pid;
+				GetWindowThreadProcessId(hTmpWnd, &server_pid);
+				procHandle = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION,
+										 FALSE, server_pid);
+				if (procHandle == NULL) {
 					error = GetLastError();
 					success = FALSE;
 				}
-				else
+				else {
 					success = TRUE;
+				}
 			}
 		}
 

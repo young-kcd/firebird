@@ -37,7 +37,6 @@ produced by Borland Resource Workshop
 #define IDM_PROPERTIES	10
 #define IDM_STARTUPCFG	11
 #define IDM_GUARDED	14
-#define IDM_SET_SERVER_PID	15
 
 /* Defines for String Table */
 #define IDS_PNP1		200

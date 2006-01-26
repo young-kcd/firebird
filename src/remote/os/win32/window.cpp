@@ -289,9 +289,6 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				nid.uFlags = 0;
 				Shell_NotifyIcon(NIM_DELETE, &nid);
 			}
-			SendMessage((HWND) lParam, WM_COMMAND,
-						(WPARAM) IDM_SET_SERVER_PID,
-						(LPARAM) GetCurrentProcessId());
 			return TRUE;
 		}
 		break;
