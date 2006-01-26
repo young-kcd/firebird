@@ -2009,26 +2009,43 @@ static bool create_relation(thread_db*	tdbb,
 
 		if (!REQUEST(irq_c_relation))
 			REQUEST(irq_c_relation) = request;
+			
+		/* if this is not a view, create the relation */
 
-		/* If relation wasn't found, don't do anymore. This can happen
-		   when the relation is created and deleted in the same transaction. */
+		if (rel_id && blob_id.isEmpty() && !external_flag)
+		{
+			relation = MET_relation(tdbb, rel_id);
+			DPM_create_relation(tdbb, relation);
+		}
 
-		if (!rel_id)
-			break;
+		return true;
+
+	case 4:			
 
 		/* get the relation and flag it to check for dependencies
 		   in the view blr (if it exists) and any computed fields */
 
-		relation = MET_relation(tdbb, rel_id);
-		relation->rel_flags |= REL_get_dependencies;
+		request = CMP_find_request(tdbb, irq_c_relation2, IRQ_REQUESTS);
 
-		/* if this is not a view, create the relation */
+		FOR(REQUEST_HANDLE request)
+			X IN RDB$RELATIONS WITH
+				X.RDB$RELATION_NAME EQ work->dfw_name.c_str()
 
-		if (blob_id.isEmpty())
-		{
-			if (!external_flag)
-				DPM_create_relation(tdbb, relation);
-		}
+			if (!REQUEST(irq_c_relation2))
+				REQUEST(irq_c_relation2) = request;
+
+			rel_id = X.RDB$RELATION_ID;
+			relation = MET_relation(tdbb, rel_id);
+			relation->rel_flags |= REL_get_dependencies;
+
+			relation->rel_flags &= ~REL_scanned;
+			DFW_post_work(transaction, dfw_scan_relation, NULL, rel_id);
+
+		END_FOR;
+
+		if (!REQUEST(irq_c_relation2))
+			REQUEST(irq_c_relation2) = request;
+
 		break;
 	}
 
@@ -4426,6 +4443,14 @@ static bool scan_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return true;
 
 	case 3:
+		// dimitr:	I suspect that nobody expects an updated format to
+		//			appear at stage 3, so the logic would work reliably
+		//			if this line is removed (and hence we rely on the
+		//			4th stage only). But I leave it here for the time being.
+		MET_scan_relation(tdbb, MET_relation(tdbb, work->dfw_id));
+		return true;
+
+	case 4:
 		MET_scan_relation(tdbb, MET_relation(tdbb, work->dfw_id));
 		break;
 	}
