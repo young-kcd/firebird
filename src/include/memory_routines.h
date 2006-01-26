@@ -27,7 +27,7 @@
 #define MEMORY_ROUTINES_H
 
 
-inline SSHORT get_short(const SCHAR* p)
+inline USHORT get_short(const UCHAR* p)
 {
 /**************************************
  *
@@ -36,32 +36,30 @@ inline SSHORT get_short(const SCHAR* p)
  **************************************
  *
  * Functional description
- *    gather one short int from two chars
- *
- * Based on BTR_get_quad
+ *    Gather one unsigned short int
+ *    from two chars
  *
  **************************************/
-
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS) || defined(AMD64)
-	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	// According to CTO32L definition in common.h this trick works for VAX/VMS
-	return *reinterpret_cast<const SSHORT*>(p);
+#ifndef WORDS_BIGENDIAN
+	// little-endian
+	USHORT temp;
+	memcpy(&temp, p, sizeof(USHORT));
+	return temp;
 #else
-	// Non-IA32
+	// big-endian
+	union {
+		USHORT n;
+		UCHAR c[2];
+	} temp;
 
-union {
- SSHORT n;
- SCHAR c[2]; } value;
+	temp.c[0] = p[0];
+	temp.c[1] = p[1];
 
-	value.c[0] = p[0];
-	value.c[1] = p[1];
-
-	return value.n;
-
-#endif	// endianness
+	return temp.n;
+#endif
 }
 
-inline SLONG get_long(const SCHAR* p)
+inline SLONG get_long(const UCHAR* p)
 {
 /**************************************
  *
@@ -70,133 +68,91 @@ inline SLONG get_long(const SCHAR* p)
  **************************************
  *
  * Functional description
- *    gather one long int from four chars
- *
- * Based on BTR_get_quad
- *
- **************************************/
-
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS) || defined(AMD64)
-	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	return *reinterpret_cast<const SLONG*>(p);
-#else
-	// Non-IA32
-
-union {
- SLONG n;
- SCHAR c[4]; } value;
-
-	value.c[0] = p[0];
-	value.c[1] = p[1];
-	value.c[2] = p[2];
-	value.c[3] = p[3];
-
-	return value.n;
-
-#endif	// endianness
-}
-
-inline SLONG get_long(const UCHAR* p)
-{
-/**************************************
- *
- *      g e t _ l o n g (overloaded)
- *
- **************************************
- *
- * Functional description
- *    gather one unsigned long int from
- *    four unsigned chars
- *
- * Based on get_long and CTO32L macro
+ *    Gather one signed long int
+ *    from four chars
  *
  **************************************/
-
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS) || defined(AMD64)
-	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	return *reinterpret_cast<const SLONG*>(p);
-#else
-	// Non-IA32 a bit slower implementation but faster than using union
 #ifndef WORDS_BIGENDIAN
-	return (p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0];
+	// little-endian
+	SLONG temp;
+	memcpy(&temp, p, sizeof(SLONG));
+	return temp;
 #else
-	return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
-#endif // WORDS_BIGENDIAN
+	// big-endian
+	union {
+		SLONG n;
+		UCHAR c[4];
+	} temp;
+
+	temp.c[0] = p[0];
+	temp.c[1] = p[1];
+	temp.c[2] = p[2];
+	temp.c[3] = p[3];
+
+	return temp.n;
 #endif
 }
 
-inline SSHORT gather_short(const SCHAR*& p)
+inline void put_short(UCHAR* p, USHORT value)
 {
 /**************************************
  *
- *      g a t h e r _ s h o r t
+ *      p u t _ s h o r t
  *
  **************************************
  *
  * Functional description
- *    gather one short int from two chars
- *    and advance the pointer
- *
- * Based on BTR_get_quad
+ *    Store one unsigned short int as
+ *    two chars
  *
  **************************************/
-
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS) || defined(AMD64)
-	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	const SSHORT value = *reinterpret_cast<const SSHORT*>(p);
-	p += 2;
-	return value;
+#ifndef WORDS_BIGENDIAN
+	// little-endian
+	memcpy(p, &value, sizeof(USHORT));
 #else
-	// Non-IA32
+	// big-endian
+	union {
+		USHORT n;
+		UCHAR c[2];
+	} temp;
 
-union {
- SSHORT n;
- SCHAR c[2]; } value;
+	temp.n = value;
 
-	value.c[0] = *p++;
-	value.c[1] = *p++;
-
-	return value.n;
-
-#endif	// endianness
+	p[0] = temp.c[0];
+	p[1] = temp.c[1];
+#endif
 }
 
-inline SLONG gather_long(const SCHAR*& p)
+inline void put_long(UCHAR* p, SLONG value)
 {
 /**************************************
  *
- *      g a t h e r _ l o n g
+ *      p u t _ l o n g
  *
  **************************************
  *
  * Functional description
- *    gather one long int from four chars
- *    and advance the pointer
- *
- * Based on BTR_get_quad
+ *    Store one signed long int as
+ *    four chars
  *
  **************************************/
-
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS) || defined(AMD64)
-	// For IA32 (little-endian) this optimization is a _very_ large speed-up!
-	const SLONG value = *reinterpret_cast<const SLONG*>(p);
-	p += 4;
-	return value;
+#ifndef WORDS_BIGENDIAN
+	// little-endian
+	memcpy(p, &value, sizeof(SLONG));
 #else
-	// Non-IA32
+	// big-endian
+	union {
+		SLONG n;
+		UCHAR c[4];
+	} temp;
 
-union {
- SLONG n;
- SCHAR c[4]; } value;
+	temp.n = value;
 
-	value.c[0] = *p++;
-	value.c[1] = *p++;
-	value.c[2] = *p++;
-	value.c[3] = *p++;
-
-	return value.n;
-
-#endif	// endianness
+	p[0] = temp.c[0];
+	p[1] = temp.c[1];
+	p[2] = temp.c[2];
+	p[3] = temp.c[3];
+#endif
 }
 
 #endif // MEMORY_ROUTINES_H

@@ -488,32 +488,6 @@ UCHAR* previousNode(IndexNode* node, UCHAR* pointer,
 }
 
 
-void quad_put(SLONG value, UCHAR* data)
-{
-/**************************************
- *
- *	q u a d _ p u t
- *
- **************************************
- *
- * Functional description
- *	Move SLONG to a four byte vector.
- *
- **************************************/
-
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(VMS) || defined(AMD64)
-	*reinterpret_cast<SLONG*>(data) = value;
-#else
-	const UCHAR* p = (UCHAR*) &value;
-
-	data[0] = p[0];
-	data[1] = p[1];
-	data[2] = p[2];
-	data[3] = p[3];
-#endif
-}
-
-
 UCHAR* readJumpInfo(IndexJumpInfo* jumpInfo, UCHAR* pagePointer)
 {
 /**************************************
@@ -529,12 +503,11 @@ UCHAR* readJumpInfo(IndexJumpInfo* jumpInfo, UCHAR* pagePointer)
  *  the read.
  *
  **************************************/
-	jumpInfo->firstNodeOffset = *reinterpret_cast<const USHORT*>(pagePointer);
+	jumpInfo->firstNodeOffset = get_short(pagePointer);
 	pagePointer += sizeof(USHORT);
-	jumpInfo->jumpAreaSize = *reinterpret_cast<const USHORT*>(pagePointer);
+	jumpInfo->jumpAreaSize = get_short(pagePointer);
 	pagePointer += sizeof(USHORT);
-	jumpInfo->jumpers = (USHORT)(*pagePointer);
-	++pagePointer;
+	jumpInfo->jumpers = (USHORT)(*pagePointer++);
 	return pagePointer;
 }
 
@@ -557,31 +530,25 @@ UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer,
 	jumpNode->nodePointer = pagePointer;
 	if (flags & btr_large_keys) {
 		// Get prefix
-		UCHAR tmp = *pagePointer;
-		pagePointer++;
+		UCHAR tmp = *pagePointer++;
 		jumpNode->prefix = (tmp & 0x7F);
 		if (tmp & 0x80) {
-			tmp = *pagePointer;
-			pagePointer++;
+			tmp = *pagePointer++;
 			jumpNode->prefix |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 		}
 		// Get length
-		tmp = *pagePointer;
-		pagePointer++;
+		tmp = *pagePointer++;
 		jumpNode->length = (tmp & 0x7F);
 		if (tmp & 0x80) {
-			tmp = *pagePointer;
-			pagePointer++;
+			tmp = *pagePointer++;
 			jumpNode->length |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 		}
 	}
 	else {
-		jumpNode->prefix = (USHORT)(*pagePointer);
-		pagePointer++;
-		jumpNode->length = (USHORT)(*pagePointer);
-		pagePointer++;
+		jumpNode->prefix = (USHORT)(*pagePointer++);
+		jumpNode->length = (USHORT)(*pagePointer++);
 	}
-	jumpNode->offset = *reinterpret_cast<const USHORT*>(pagePointer);
+	jumpNode->offset = get_short(pagePointer);
 	pagePointer += sizeof(USHORT);
 	jumpNode->data = pagePointer;
 	pagePointer += jumpNode->length;
@@ -608,10 +575,9 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 
 		// Get first byte that contains internal flags and 6 bits from number
 		UCHAR* localPointer = pagePointer;
-		UCHAR internalFlags = *localPointer;
+		UCHAR internalFlags = *localPointer++;
 		SINT64 number = (internalFlags & 0x1F);
 		internalFlags = ((internalFlags & 0xE0) >> 5);
-		localPointer++;
 
 		indexNode->isEndLevel = (internalFlags == BTN_END_LEVEL_FLAG);
 		indexNode->isEndBucket = (internalFlags == BTN_END_BUCKET_FLAG);
@@ -626,37 +592,30 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		}
 
 		// Get remaining bits for number
-		ULONG tmp = *localPointer;
+		ULONG tmp = *localPointer++;
 		number |= (tmp & 0x7F) << 5;
 		if (tmp >= 128) {
-			localPointer++;
-			tmp = *localPointer;
+			tmp = *localPointer++;
 			number |= (tmp & 0x7F) << 12;
 			if (tmp >= 128) {
-				localPointer++;
-				tmp = *localPointer;
+				tmp = *localPointer++;
 				number |= (tmp & 0x7F) << 19;
 				if (tmp >= 128) {
-					localPointer++;
-					tmp = *localPointer;
+					tmp = *localPointer++;
 					number |= (UINT64) (tmp & 0x7F) << 26;
 					if (tmp >= 128) {
-						localPointer++;
-						tmp = *localPointer;
+						tmp = *localPointer++;
 						number |= (UINT64) (tmp & 0x7F) << 33;
 /*
 	Uncomment this if you need more bits in record number
 						if (tmp >= 128) {
-							localPointer++;
-							tmp = *localPointer;
+							tmp = *localPointer++;
 							number |= (UINT64) (tmp & 0x7F) << 40;
 							if (tmp >= 128) {
-								localPointer++;
-								tmp = *localPointer;
+								tmp = *localPointer++;
 								number |= (UINT64) (tmp & 0x7F) << 47;
 								if (tmp >= 128) {
-									localPointer++;
-									tmp = *localPointer;
+									tmp = *localPointer++;
 									number |= (UINT64) (tmp & 0x7F) << 54; // We get 61 bits at this point!
 								}
 							}
@@ -666,48 +625,39 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 				}
 			}
 		}
-		localPointer++;
 		indexNode->recordNumber.setValue(number);
 
 		if (!leafNode) {
 			// Get page number for non-leaf pages
-			tmp = *localPointer;
+			tmp = *localPointer++;
 			number = (tmp & 0x7F);
 			if (tmp >= 128) {
-				localPointer++;
-				tmp = *localPointer;
+				tmp = *localPointer++;
 				number |= (tmp & 0x7F) << 7;
 				if (tmp >= 128) {
-					localPointer++;
-					tmp = *localPointer;
+					tmp = *localPointer++;
 					number |= (tmp & 0x7F) << 14;
 					if (tmp >= 128) {
-						localPointer++;
-						tmp = *localPointer;
+						tmp = *localPointer++;
 						number |= (tmp & 0x7F) << 21;
 						if (tmp >= 128) {
-							localPointer++;
-							tmp = *localPointer;
+							tmp = *localPointer++;
 							number |= (tmp & 0x0F) << 28;
 /*
 	Change number to 64-bit type and enable this for 64-bit support
 
-							number |= (*localPointer & 0x7F) << 28;
+							number |= (*tmp & 0x7F) << 28;
 							if (tmp >= 128) {
-								tmp = *localPointer;
-								localPointer++;
+								tmp = *localPointer++;
 								number |= (*localPointer & 0x7F) << 35;
 								if (tmp >= 128) {
-									tmp = *localPointer;
-									localPointer++;
+									tmp = *localPointer++;
 									number |= (*localPointer & 0x7F) << 42;
 									if (tmp >= 128) {
-										tmp = *localPointer;
-										localPointer++;
+										tmp = *localPointer++;
 										number |= (*localPointer & 0x7F) << 49;
 										if (tmp >= 128) {
-											tmp = *localPointer;
-											localPointer++;
+											tmp = *localPointer++;
 											number |= (*localPointer & 0x7F) << 56; // We get 63 bits at this point!
 										}
 									}
@@ -718,7 +668,6 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 					}
 				}
 			}
-			localPointer++;
 			indexNode->pageNumber = number;
 		}
 
@@ -728,14 +677,12 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		}
 		else {
 			// Get prefix
-			tmp = *localPointer;
+			tmp = *localPointer++;
 			indexNode->prefix = (tmp & 0x7F);
-			if (*localPointer & 0x80) {
-				localPointer++;
-				tmp = *localPointer;
+			if (tmp & 0x80) {
+				tmp = *localPointer++;
 				indexNode->prefix |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 			}
-			localPointer++;
 		}
 
 		if ((internalFlags == BTN_ZERO_LENGTH_FLAG) ||
@@ -750,14 +697,12 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		}
 		else {
 			// Get length
-			tmp = *localPointer;
+			tmp = *localPointer++;
 			indexNode->length = (tmp & 0x7F);
-			if (*localPointer & 0x80) {
-				localPointer++;
-				tmp = *localPointer;
+			if (tmp & 0x80) {
+				tmp = *localPointer++;
 				indexNode->length |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 			}
-			localPointer++;
 		}
 
 		// Get pointer where data starts
@@ -767,10 +712,8 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 		return localPointer;
 	}
 	else {
-		indexNode->prefix = *pagePointer;
-		pagePointer++;
-		indexNode->length = *pagePointer;
-		pagePointer++;
+		indexNode->prefix = *pagePointer++;
+		indexNode->length = *pagePointer++;
 		if (leafNode) {
 			// Nice sign extension should happen here
 			indexNode->recordNumber.setValue(get_long(pagePointer));
@@ -782,7 +725,7 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 			indexNode->isEndLevel = (indexNode->pageNumber == END_LEVEL);
 			indexNode->isEndBucket = (indexNode->pageNumber == END_BUCKET);
 		}
-		pagePointer += 4;
+		pagePointer += sizeof(SLONG);
 
 		indexNode->data = pagePointer;
 		pagePointer += indexNode->length;
@@ -794,7 +737,7 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 			 (leafNode && indexNode->isEndBucket && (indexNode->length == 0)))) 
 		{
 			indexNode->recordNumber.setValue(get_long(pagePointer));
-			pagePointer += 4;
+			pagePointer += sizeof(SLONG);
 		}
 	}
 	return pagePointer;
@@ -815,12 +758,11 @@ UCHAR* writeJumpInfo(btree_page* page, const IndexJumpInfo* jumpInfo)
  *
  **************************************/
 	UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
-	*reinterpret_cast<USHORT*>(pointer) = jumpInfo->firstNodeOffset;
+	put_short(pointer, jumpInfo->firstNodeOffset);
 	pointer += sizeof(USHORT);
-	*reinterpret_cast<USHORT*>(pointer) = jumpInfo->jumpAreaSize;
+	put_short(pointer, jumpInfo->jumpAreaSize);
 	pointer += sizeof(USHORT);
-	*pointer = (UCHAR) jumpInfo->jumpers;
-	pointer++;
+	*pointer++ = (UCHAR) jumpInfo->jumpers;
 	return pointer;
 }
 
@@ -848,12 +790,10 @@ UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer,
 		if (number > 0) {
 			tmp |= 0x80;
 		}
-		*pagePointer = tmp;
-		pagePointer++;
+		*pagePointer++ = tmp;
 		if (tmp & 0x80) {
 			tmp = (number & 0x7F);
-			*pagePointer = tmp;
-			pagePointer++;
+			*pagePointer++ = tmp;
 		}
 
 		// Write length, maximum 14 bits
@@ -863,21 +803,17 @@ UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer,
 		if (number > 0) {
 			tmp |= 0x80;
 		}
-		*pagePointer = tmp;
-		pagePointer++;
+		*pagePointer++ = tmp;
 		if (tmp & 0x80) {
 			tmp = (number & 0x7F);
-			*pagePointer = tmp;
-			pagePointer++;
+			*pagePointer++ = tmp;
 		}
 	}
 	else {
-		*pagePointer = (UCHAR) jumpNode->prefix;
-		pagePointer++;
-		*pagePointer = (UCHAR) jumpNode->length;
-		pagePointer++;
+		*pagePointer++ = (UCHAR) jumpNode->prefix;
+		*pagePointer++ = (UCHAR) jumpNode->length;
 	}
-	*reinterpret_cast<USHORT*>(pagePointer) = jumpNode->offset;
+	put_short(pagePointer, jumpNode->offset);
 	pagePointer += sizeof(USHORT);
 	memmove(pagePointer, jumpNode->data, jumpNode->length);
 	pagePointer += jumpNode->length;
@@ -946,8 +882,7 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 		}
 		// Store internal flags + 6 bits from number
 		UCHAR tmp = internalFlags;
-		*pagePointer = ((tmp << 5) | (number & 0x1F));
-		pagePointer++;
+		*pagePointer++ = ((tmp << 5) | (number & 0x1F));
 
 		if (indexNode->isEndLevel) {
 			return pagePointer;
@@ -1034,37 +969,32 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 			if (number > 0) {
 				tmp |= 0x80;
 			}
-			*pagePointer = tmp;
-			pagePointer++;
+			*pagePointer++ = tmp;
 			if (number > 0) {
 				tmp = (number & 0x7F);
 				number >>= 7; //14
 				if (number > 0) {
 					tmp |= 0x80;
 				}
-				*pagePointer = tmp;
-				pagePointer++;
+				*pagePointer++ = tmp;
 				if (number > 0) {
 					tmp = (number & 0x7F);
 					number >>= 7; //21
 					if (number > 0) {
 						tmp |= 0x80;
 					}
-					*pagePointer = tmp;
-					pagePointer++;
+					*pagePointer++ = tmp;
 					if (number > 0) {
 						tmp = (number & 0x7F);
 						number >>= 7; //28
 						if (number > 0) {
 							tmp |= 0x80;
 						}
-						*pagePointer = tmp;
-						pagePointer++;
+						*pagePointer++ = tmp;
 						if (number > 0) {
 							tmp = (number & 0x0F);
 							number >>= 7; //35
-							*pagePointer = tmp;
-							pagePointer++;
+							*pagePointer++ = tmp;
 /*
 	Change number to 64-bit type and enable this for 64-bit support
 							tmp = (number & 0x7F);
@@ -1072,36 +1002,31 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 							if (number > 0) {
 								tmp |= 0x80;
 							}
-							*pagePointer = tmp;
-							pagePointer++;
+							*pagePointer++ = tmp;
 							if (number > 0) {
 								tmp = (number & 0x7F);
 								number >>= 7; //42
 								if (number > 0) {
 									tmp |= 0x80;
 								}
-								*pagePointer = tmp;
-								pagePointer++;
+								*pagePointer++ = tmp;
 								if (number > 0) {
 									tmp = (number & 0x7F);
 									number >>= 7; //49
 									if (number > 0) {
 										tmp |= 0x80;
 									}
-									*pagePointer = tmp;
-									pagePointer++;
+									*pagePointer++ = tmp;
 									if (number > 0) {
 										tmp = (number & 0x7F);
 										number >>= 7; //56
 										if (number > 0) {
 											tmp |= 0x80;
 										}
-										*pagePointer = tmp;
-										pagePointer++;
+										*pagePointer++ = tmp;
 										if (number > 0) {
 											tmp = (number & 0x7F);
-											*pagePointer = tmp;
-											pagePointer++;
+											*pagePointer++ = tmp;
 										}
 									}
 								}
@@ -1120,12 +1045,10 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 			if (number > 0) {
 				tmp |= 0x80;
 			}
-			*pagePointer = tmp;
-			pagePointer++;
+			*pagePointer++ = tmp;
 			if (number > 0) {
 				tmp = (number & 0x7F);
-				*pagePointer = tmp;
-				pagePointer++;
+				*pagePointer++ = tmp;
 			}
 		}
 
@@ -1140,12 +1063,10 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 			if (number > 0) {
 				tmp |= 0x80;
 			}
-			*pagePointer = tmp;
-			pagePointer++;
+			*pagePointer++ = tmp;
 			if (number > 0) {
 				tmp = (number & 0x7F);
-				*pagePointer = tmp;
-				pagePointer++;
+				*pagePointer++ = tmp;
 			}
 		}
 
@@ -1157,26 +1078,24 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 	}
 	else {
 		// Write prefix  
-		*pagePointer = (UCHAR)indexNode->prefix;
-		pagePointer++;
+		*pagePointer++ = (UCHAR)indexNode->prefix;
 		// Write length 
-		*pagePointer = (UCHAR)indexNode->length;
-		pagePointer++;
-		
+		*pagePointer++ = (UCHAR)indexNode->length;
+
 		if (indexNode->isEndLevel) {
-			quad_put(END_LEVEL, pagePointer);
+			put_long(pagePointer, END_LEVEL);
 		}
 		else if (indexNode->isEndBucket) {
-			quad_put(END_BUCKET, pagePointer);
+			put_long(pagePointer, END_BUCKET);
 		}
 		else {
 			if (leafNode) {
 				// Write record number
-				quad_put(indexNode->recordNumber.getValue(), pagePointer);
+				put_long(pagePointer, indexNode->recordNumber.getValue());
 			}
 			else {
 				// Write page number 
-				quad_put(indexNode->pageNumber, pagePointer);
+				put_long(pagePointer, indexNode->pageNumber);
 			}
 		}
 		pagePointer += sizeof(SLONG);	
@@ -1198,12 +1117,7 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 			(leafNode && indexNode->isEndBucket && (indexNode->length == 0)))) 
 		{
 			// Write record number 
-			//if (flags & btr_large_keys) {
-			//	*reinterpret_cast<SLONG*>(pagePointer) = indexNode->recordNumber.getValue();
-			//}
-			//else {
-			quad_put(indexNode->recordNumber.getValue(), pagePointer);
-			//}
+			put_long(pagePointer, indexNode->recordNumber.getValue());
 			pagePointer += sizeof(SLONG);
 		}
 	}
