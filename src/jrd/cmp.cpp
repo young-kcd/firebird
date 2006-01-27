@@ -3457,6 +3457,14 @@ static jrd_nod* pass1(thread_db* tdbb,
 					break;
 			}
 
+			// dimitr:	if we reference view columns, we need to pass them
+			//			as belonging to a view (in order to compute the access
+			//			permissions properly).
+			if (relation->rel_view_rse) {
+				view = relation;
+				view_stream = stream;
+			}
+
 			UCHAR local_map[MAP_LENGTH];
 			UCHAR* map = tail->csb_map;
 			if (!map) {
