@@ -1,3 +1,54 @@
+2006-01-26 13:23  dimitr
+
+	* firebird2/src/: iscguard/iscguard.cpp (1.45),
+	iscguard/iscguard.rh (1.2), remote/os/win32/window.cpp (1.15),
+	remote/os/win32/window.rh (1.2):
+	
+	Reduced dependencies upon window messages + cleanup.
+
+2006-01-26 12:21  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.168):
+	
+	CREATE VIEW should be aware that a column alias doesn't necessarily
+	mean an expression.
+
+2006-01-26 12:17  dimitr
+
+	* firebird2/src/jrd/: dfw.epp (1.172), irq.h (1.8):
+	
+	Hopefully, this should fix SF #1404157.
+
+2006-01-26 11:45  dimitr
+
+	* firebird2/src/jrd/btn.cpp (1.20):
+	
+	1) An attempt to fix the endianess/alignment issues in the b-tree
+	code.  2) Some adjustments in the pointers management.
+
+2006-01-26 11:41  dimitr
+
+	* firebird2/src/include/memory_routines.h (1.7):
+	
+	1) An attempt to fix the endianess/alignment issues in the b-tree
+	code.  2) Some adjustments in the pointers management.
+
+2006-01-26 09:00  robocop
+
+	* firebird2/src/qli/show.epp (1.41):
+	
+	Beware of PC_ENGINE in qli: it's used to protect code meant to be
+	marked with EXPRESSION_INDICES instead, therefore probably all
+	places should be enabled unconditionally. At least with one change
+	(this one) it now shows expression indices correctly.
+
+2006-01-26 08:21  robocop
+
+	* firebird2/src/: include/gen/msgs.h (1.48), msgs/history.sql
+	(1.27):
+	
+	Sync after Dmitry Yemanov's changes.
+
 2006-01-25 13:20  dimitr
 
 	* firebird2/src/jrd/tra.cpp (1.109):
