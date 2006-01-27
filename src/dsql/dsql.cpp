@@ -513,6 +513,12 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 		sing_status = 0;
 
 		dsql_req* request = *req_handle;
+		if (request->req_flags & REQ_orphan) 
+		{
+			ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
+			           isc_arg_gds, isc_bad_req_handle,
+				       0);
+		}
 		DsqlContextPoolHolder context(tdsql, &request->req_pool);
 
 		if ((SSHORT) in_msg_type == -1) {
@@ -1213,6 +1219,12 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 		init(0);
 
 		dsql_req* request = *req_handle;
+		if (request->req_flags & REQ_orphan) 
+		{
+			ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
+			           isc_arg_gds, isc_bad_req_handle,
+				       0);
+		}
 		DsqlContextPoolHolder context(tdsql, &request->req_pool);
 
 // if the cursor isn't open, we've got a problem 
