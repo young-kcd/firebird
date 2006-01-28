@@ -31,6 +31,17 @@
 
 struct TextTypeImpl
 {
+	TextTypeImpl()
+		: texttype_flags(0),
+		  texttype_bytes_per_key(0),
+		  texttype_collation_table(NULL),
+		  texttype_expand_table(NULL),
+		  texttype_compress_table(NULL),
+		  texttype_toupper_table(NULL),
+		  texttype_tolower_table(NULL)
+	{
+	}
+
 	USHORT texttype_flags;
 	BYTE texttype_bytes_per_key;
 	const BYTE* texttype_collation_table;

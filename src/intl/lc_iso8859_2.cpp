@@ -62,6 +62,7 @@ static inline bool FAMILY2(TEXTTYPE cache,
 	cache->texttype_impl->texttype_compress_table	= (const BYTE*) CompressTbl;
 	cache->texttype_impl->texttype_expand_table		= (const BYTE*) ExpansionTbl;
 	cache->texttype_impl->texttype_flags			= ((flags) & REVERSE) ? TEXTTYPE_reverse_secondary : 0;
+	cache->texttype_impl->texttype_bytes_per_key	= 0;
 
 	return true;
 }
