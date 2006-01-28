@@ -649,16 +649,16 @@ UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leaf
 							number |= (*tmp & 0x7F) << 28;
 							if (tmp >= 128) {
 								tmp = *localPointer++;
-								number |= (*localPointer & 0x7F) << 35;
+								number |= (*tmp & 0x7F) << 35;
 								if (tmp >= 128) {
 									tmp = *localPointer++;
-									number |= (*localPointer & 0x7F) << 42;
+									number |= (*tmp & 0x7F) << 42;
 									if (tmp >= 128) {
 										tmp = *localPointer++;
-										number |= (*localPointer & 0x7F) << 49;
+										number |= (*tmp & 0x7F) << 49;
 										if (tmp >= 128) {
 											tmp = *localPointer++;
-											number |= (*localPointer & 0x7F) << 56; // We get 63 bits at this point!
+											number |= (*tmp & 0x7F) << 56; // We get 63 bits at this point!
 										}
 									}
 								}
