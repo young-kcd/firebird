@@ -1768,15 +1768,12 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 		(trans->tra_oldest_active - trans->tra_oldest >
 		 dbb->dbb_sweep_interval) && oldest_state != tra_limbo)
 	{
-#ifndef SWEEP_THREAD
-
-		/* force a sweep */
-
-		TRA_sweep(tdbb, trans);
-
-#else
+#ifdef SWEEP_THREAD
 		// Why nobody checks the result? Changed the function to return nothing.
 		start_sweeper(tdbb, dbb);
+#else
+		// force a sweep
+		TRA_sweep(tdbb, trans);
 #endif
 	}
 

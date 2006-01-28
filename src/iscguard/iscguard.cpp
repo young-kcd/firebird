@@ -71,7 +71,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM);
 #ifdef NOT_USED_OR_REPLACED
 static void StartGuardian(HWND);
 #endif
-static bool parse_args(LPCSTR, bool*);
+static bool parse_args(LPCSTR);
 #ifdef NOT_USED_OR_REPLACED
 static void HelpCmd(HWND, HINSTANCE, WPARAM);
 #endif
@@ -124,8 +124,8 @@ int WINAPI WinMain(
 /* service_flag is TRUE for NT false for 95 */
 	service_flag = (OsVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 
-	if (service_flag == true)
-		service_flag = parse_args(lpszCmdLine, &service_flag);
+	if (service_flag)
+		service_flag = parse_args(lpszCmdLine);
 
 /* set the global HINSTANCE as we need it in WINDOW_main */
 	hInstance_gbl = hInstance;
@@ -136,7 +136,7 @@ int WINAPI WinMain(
 	log_entry->next = NULL;
 
 /* since the flag is set we run as a service */
-	if (service_flag == true) {
+	if (service_flag) {
 		CNTL_init(WINDOW_main, ISCGUARD_SERVICE);
 //
 // BRS There is a error in MinGW (3.1.0) headers 
@@ -160,7 +160,7 @@ int WINAPI WinMain(
 
 }
 
-static bool parse_args(LPCSTR lpszArgs, bool* pserver_flag)
+static bool parse_args(LPCSTR lpszArgs)
 {
 /**************************************
 *
@@ -173,16 +173,16 @@ static bool parse_args(LPCSTR lpszArgs, bool* pserver_flag)
 *      a cool argv.  Parse through the string and
 *      set the options.
 * Returns
-*      A value of TRUE or FALSE depending on if -s is specified.
+*      A value of true or false depending on if -s is specified.
 *      CVC: Service is the default for NT, use -a for application.
 *      
 *
 **************************************/
-	char c;
 	bool return_value = true;
 
 	for (const char* p = lpszArgs; *p; p++) {
 		if (*p++ == '-') {
+			char c;
 			while (c = *p++) {
 				switch (UPPER(c)) {
 				case 'A':
@@ -273,7 +273,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 		return 0;
 	}
 
-	if (service_flag == false) {
+	if (!service_flag) {
 		SendMessage(hWnd, WM_COMMAND, IDM_CANCEL, 0);
 		UpdateWindow(hWnd);
 	}
@@ -421,7 +421,7 @@ static LRESULT CALLBACK WindowFunc(
 		break;
 
 	case WM_CREATE:
-		if (service_flag == false) {
+		if (!service_flag) {
 			HICON hIcon = (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_IBGUARD),
 									  IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
 									  
@@ -558,7 +558,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 		BOOL success;
 		int error = 0;
 
-		if (service_flag == true) {
+		if (service_flag) {
 			if (hService) {
 				while ((QueryServiceStatus(hService, &ServiceStatus) == TRUE)
 					   && (ServiceStatus.dwCurrentState != SERVICE_STOPPED))
@@ -638,7 +638,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 			sprintf(out_buf, "%s : %s errno : %d", path, szMsgString, error);
 			write_log(IDS_CANT_START_THREAD, out_buf);
 
-			if (service_flag == true) {
+			if (service_flag) {
 				SERVICE_STATUS status_info;
 				/* wait a second to get the mutex handle (just in case) and
 				   then close it
@@ -667,7 +667,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 
 		/* wait for process to terminate */
 		DWORD exit_status;
-		if (service_flag == true) {
+		if (service_flag) {
 			while (WaitForSingleObject(procHandle, 500) == WAIT_OBJECT_0) {
 				ReleaseMutex(procHandle);
 				Sleep(100);
@@ -706,7 +706,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				write_log(IDS_LOG_TERM, out_buf);
 
 				/* switch the icons if the server restarted */
-				if (service_flag == false)
+				if (!service_flag)
 					PostMessage(hWndGbl, WM_SWITCHICONS, 0, 0);
 				if (option == START_FOREVER)
 					done = false;
@@ -727,7 +727,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 
 
 /* If on WINNT */
-	if (service_flag == true) {
+	if (service_flag) {
 		CloseServiceHandle(hScManager);
 		CloseServiceHandle(hService);
 		CNTL_stop_service(ISCGUARD_SERVICE);
@@ -1044,7 +1044,7 @@ void write_log(int log_action, const char* buff)
 		log_temp->next = tmp;
 	}
 
-	if (service_flag == true) {	/* on NT */
+	if (service_flag) {	/* on NT */
 		HANDLE hLog = RegisterEventSource(NULL, ISCGUARD_SERVICE);
 		if (!hLog)
 			gds__log("Error opening Windows NT Event Log");

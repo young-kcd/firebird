@@ -3060,10 +3060,10 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 	{
 		verify_request_synchronization(request, level);
 	
-	#ifdef SCROLLABLE_CURSORS
+#ifdef SCROLLABLE_CURSORS
 		if (direction)
 			EXE_seek(tdbb, request, direction, offset);
-	#endif
+#endif
 	
 		EXE_receive(tdbb, request, msg_type, msg_length,
 					reinterpret_cast<UCHAR*>(msg));

@@ -1487,10 +1487,11 @@ static UCHAR* get_position(
 
 	// If this is the first time, start at the beginning (or the end)
 #ifdef SCROLLABLE_CURSORS
-	if (!window->win_page || impure->irsb_flags & (irsb_bof | irsb_eof)) {
+	if (!window->win_page || impure->irsb_flags & (irsb_bof | irsb_eof))
 #else
-	if (!window->win_page) {
+	if (!window->win_page)
 #endif
+	{
 		return nav_open(tdbb, rsb, impure, window, direction, expanded_node);
 	}
 
