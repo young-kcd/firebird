@@ -1,3 +1,18 @@
+2006-01-27 08:59  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.191):
+	
+	Fixed bug reported in fb-support - wrong permission checks for view
+	columns.
+
+2006-01-27 08:36  hvlad
+
+	* firebird2/src/dsql/dsql.cpp (1.162):
+	
+	Fixed unregistered bug: AV in request driven by freed cursor (when
+	request is dropped flag REQ_orphan is set for child requests but
+	this flag is never checked)
+
 2006-01-26 13:23  dimitr
 
 	* firebird2/src/: iscguard/iscguard.cpp (1.45),
