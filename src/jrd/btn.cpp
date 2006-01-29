@@ -1030,7 +1030,8 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags,
 										}
 									}
 								}
-							} */
+							}
+*/
 						}
 					}
 				}
