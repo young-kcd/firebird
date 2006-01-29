@@ -2901,6 +2901,7 @@ void write_exceptions(void)
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$EXCEPTIONS
+		WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
 		put(tdgbl, rec_exception);
 		const SSHORT l = PUT_TEXT (att_exception_name, X.RDB$EXCEPTION_NAME);
 		MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
@@ -2917,6 +2918,7 @@ void write_exceptions(void)
 
 	MISC_release_request_silent(req_handle1);
 }
+
 
 void write_field_dimensions(void)
 {
@@ -2972,6 +2974,7 @@ void write_filters(void)
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$FILTERS
+		WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
 		put(tdgbl, rec_filter);
 		const SSHORT l = PUT_TEXT (att_filter_name, X.RDB$FUNCTION_NAME);
 		MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
@@ -2990,6 +2993,7 @@ void write_filters(void)
 
 	MISC_release_request_silent(req_handle1);
 }
+
 
 void write_functions(void)
 {
@@ -3034,6 +3038,7 @@ void write_functions(void)
 
 	MISC_release_request_silent(req_handle1);
 } 
+
 
 void write_function_args( GDS_NAME funcptr)
 {
@@ -3419,6 +3424,7 @@ void write_procedures(void)
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$PROCEDURES
+		WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
 		put(tdgbl, rec_procedure);
 		const SSHORT l = PUT_TEXT (att_procedure_name, X.RDB$PROCEDURE_NAME);
 		MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
