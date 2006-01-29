@@ -1,3 +1,30 @@
+2006-01-29 02:52  robocop
+
+	* firebird2/src/jrd/btn.cpp (1.22):
+	
+	Totally misc.
+
+2006-01-28 15:43  asfernandes
+
+	* firebird2/src/intl/: lc_iso8859_2.cpp (1.12), lc_narrow.h (1.5):
+	
+	Fixed problem "key size exceeds implementation restriction for
+	index ..." reported by Michal Kubecek in fb-devel
+
+2006-01-28 08:37  dimitr
+
+	* firebird2/src/jrd/btn.cpp (1.21):
+	
+	More fixes, thanks to Claudio.
+
+2006-01-28 05:12  robocop
+
+	* firebird2/src/: iscguard/iscguard.cpp (1.46), jrd/jrd.cpp
+	(1.231), jrd/nav.cpp (1.54), jrd/opt.cpp (1.254), jrd/tra.cpp
+	(1.110):
+	
+	Misc.
+
 2006-01-27 08:59  dimitr
 
 	* firebird2/src/jrd/cmp.cpp (1.191):
