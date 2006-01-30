@@ -1,3 +1,9 @@
+2006-01-29 04:23  robocop
+
+	* firebird2/src/burp/backup.epp (1.80):
+	
+	Skip system objects: exceptions, blob filters and procedures.
+
 2006-01-29 02:52  robocop
 
 	* firebird2/src/jrd/btn.cpp (1.22):
