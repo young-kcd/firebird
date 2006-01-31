@@ -1,4 +1,4 @@
-Servidor SQL Firbird 1.5.2 
+Servidor SQL Firbird 1.5.3 
 ==================================================
 
 Este documento constitui um guia para instalar o kit do
@@ -30,14 +30,14 @@ instalar este kit.
 Instalação em sistemas com o Firebird 2.0
 -----------------------------------------
 
-O processo de instalação do Firebird 1.5.2 não consegue 
+O processo de instalação do Firebird 1.5.3 não consegue 
 detectar uma versão em activa do Firebird 2.0 Instável.
 Se possui uma destas versões em execução é essencial 
 que interrompa o Servidor antes de tentar instalar o 
-Firebird 1.5.2.
+Firebird 1.5.3.
 
 
-Novas funcionalidades de instalação no Firebird 1.5.2
+Novas funcionalidades de instalação no Firebird 1.5.3
 -----------------------------------------------------
 
 Foi adicionado o suporte para diversos idiomas ao kit

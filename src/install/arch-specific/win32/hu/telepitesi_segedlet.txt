@@ -1,4 +1,4 @@
-Firebird Adatbázis Szerver 1.5.2
+Firebird Adatbázis Szerver 1.5.3
 ==================================================
 
 Ez a dokumentum egy telepítési segédlet a Win32
@@ -30,14 +30,14 @@ InterBase összes elõzõ verzióját.
 Telepítés már meglévõ Firebird 2.0 mellé
 ----------------------------------------
 
-A Firebird 1.5.2 telepítõje nem képes érzékelni a
+A Firebird 1.5.3 telepítõje nem képes érzékelni a
 Firebird 2.0 (nem stabil) futó változatát. Amennyiben a
 célgépen a Firebird 2.0 (nem stabil) változata fut, úgy
 ajánlatos a szervert leállítani, mielõtt megpróbálja
-telepíteni a Firebird 1.5.2-t.
+telepíteni a Firebird 1.5.3-t.
 
 
-Újdonságok a Firebird 1.5.2 telepítõjében
+Újdonságok a Firebird 1.5.3 telepítõjében
 -----------------------------------------
 
 A telepítõ immáron számos nyelven használható. A 

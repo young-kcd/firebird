@@ -1,4 +1,4 @@
-<div class="moz-text-flowed" style="font-family: -moz-fixed">Firebird SQL Relacijska Baza Podatkov 1.5.2 
+Firebird SQL Relacijska Baza Podatkov 1.5.3 
 ==================================================
 
 Ta dokument je navodilo za instalacijo programske opreme Firebird 1.5 za platformo Win32.
@@ -24,7 +24,7 @@ Priproèeno je, da se deinstalirajo vse starejše verzije Firebird 1.0, Firebird 1
 Instalacija na sistem z Firebird 2.0
 ------------------------------------
 
-Instalacije Firebird 1.5.2 ne zazna morebitne aktive verzije Firebird 2.0. Èe uporabljate verzijo Firebird 2.0, potem jo pred zagonom instalacije ustavite.
+Instalacije Firebird 1.5.3 ne zazna morebitne aktive verzije Firebird 2.0. Èe uporabljate verzijo Firebird 2.0, potem jo pred zagonom instalacije ustavite.
 
 
 Nove možnosti instalecijskega programa
@@ -145,7 +145,7 @@ Dovoljeni so naslednji parametri:
 
 
 /COPYFBCLIENT
-  Kopiraj knjižnico fbclient.dll v sistemski direktorij. To je priporoèljivo za instalacijo klienta, èe ste preprièani, da boste dostopali samo eno verzijo Firebird serverja (1.5.2). 
+  Kopiraj knjižnico fbclient.dll v sistemski direktorij. To je priporoèljivo za instalacijo klienta, èe ste preprièani, da boste dostopali samo eno verzijo Firebird serverja (1.5.3). 
   Glej
 
     doc/README.Win32LibraryInstallation.txt

@@ -1,4 +1,4 @@
-Firebird Datenbank Server 1.5.2 
+Firebird Datenbank Server 1.5.3 
 ==================================================
 
 Dieses Dokument ist ein Leitfaden, um dieses Paket
@@ -31,15 +31,15 @@ bevor Sie dieses Paket installieren.
 Installation auf einem System mit Firebird 2.0 Unstable
 -------------------------------------------------------
 
-Der Firebird 1.5.2 Installationsprozess kann eine
+Der Firebird 1.5.3 Installationsprozess kann eine
 laufende Version von Firebird 2.0 Unstable nicht
 erkennen. Falls Sie eine frühe, instabile Version
 von Firebird 2.0 laufen haben, dann ist es wichtig,
 dass Sie den Server stoppen, bevor Sie versuchen
-Firebird 1.5.2 zu installieren.
+Firebird 1.5.3 zu installieren.
 
 
-Neue Funktionen des Installers in Firebird 1.5.2
+Neue Funktionen des Installers in Firebird 1.5.3
 ------------------------------------------------
 
 Die Unterstützung für mehrere Sprachen wurde dem
