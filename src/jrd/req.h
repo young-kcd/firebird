@@ -49,9 +49,6 @@ class SaveRecordParam;
 template <typename T> class vec;
 class jrd_tra;
 class Savepoint;
-#ifdef PC_ENGINE
-class RefreshRange;
-#endif
 class RecordSource;
 
 /* record parameter block */

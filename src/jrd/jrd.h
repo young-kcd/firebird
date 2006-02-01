@@ -129,9 +129,6 @@ class ExternalFile;
 class ViewContext;
 class IndexBlock;
 class IndexLock;
-#ifdef PC_ENGINE
-class Bookmark;
-#endif
 class ArrayField;
 class BlobFilter;
 class PageControl;

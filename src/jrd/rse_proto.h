@@ -31,9 +31,6 @@ namespace Jrd {
 	class RecordSource;
 	struct record_param;
 	class jrd_nod;
-#ifdef PC_ENGINE
-	class Bookmark;
-#endif
 }
 
 void RSE_close(Jrd::thread_db*, Jrd::RecordSource*);

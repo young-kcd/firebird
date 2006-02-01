@@ -32,9 +32,6 @@ namespace Jrd {
 	struct record_param;
 	class jrd_nod;
 	class RecordSource;
-#ifdef PC_ENGINE
-	class Bookmark;
-#endif
 	struct win;
 	struct irsb_nav;
 }
