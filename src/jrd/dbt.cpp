@@ -55,7 +55,6 @@
 #include "../jrd/intl_classes.h"
 #include "../jrd/fil.h"
 #include "../jrd/tpc.h"
-#include "../jrd/rng.h"
 #include "../jrd/svc.h"
 #include "../jrd/blob_filter.h"
 // END
@@ -188,7 +187,7 @@ PageControl[] = {
 
 jrd_rel[] = {
 	"RELATION",
-		FLD(jrd_rel*, "%s", rel_name),
+		FLD(jrd_rel*, "%s", rel_name.c_str()),
 		FLD(jrd_rel*, "Id: %d", rel_id),
 		FLD(jrd_rel*, "Current format: %x", rel_current_format),
 		FLD(jrd_rel*, "Formats: %x", rel_formats),
@@ -328,7 +327,6 @@ blb[] = {
 		0
 },
 IndexRetrieval[] = {
-
 	"INDEX RETRIEVAL",
 		FLD(IndexRetrieval*, "index: %d", irb_index),
 		FLD(IndexRetrieval*, "relation: %x", irb_relation),
@@ -365,13 +363,13 @@ static TEXT_PTR dir_list[] = {	"DIR LIST BLOCK", 0};
 static TEXT_PTR jrd_prc[] =
 {
 	"PROCEDURE",
-		FLD(jrd_prc*, "%s", prc_name),
+		FLD(jrd_prc*, "%s", prc_name.c_str()),
 		FLD(jrd_prc*, "Id: %d", prc_id), 0
 };
-static TEXT_PTR prm[] = {	"PARAMETER", FLD(PRM, "%s", prm_name), 0};
+static TEXT_PTR Parameter[] = {	"PARAMETER", FLD(PRM, "%s", prm_name.c_str()), 0};
 static TEXT_PTR IndexBlock[] = {	"INDEX BLOCK", 0};
-static TEXT_PTR Bookmark[] = {	"BOOKMARK BLOCK", 0};
-static TEXT_PTR RefreshRange[] = {	"REFRESH RANGE BLOCK", 0};
+//static TEXT_PTR Bookmark[] = {	"BOOKMARK BLOCK", 0};
+//static TEXT_PTR RefreshRange[] = {	"REFRESH RANGE BLOCK", 0};
 static TEXT_PTR TxPageCache[] = {	"TIP CACHE BLOCK", 0};
 static TEXT_PTR PsqlException[] = {	"EXCEPTION LIST BLOCK", 0};
 static TEXT_PTR OptimizerBlk[] = {	"OPTIMIZATION BLOCK", 0};
@@ -425,7 +423,6 @@ static TEXT_PTR csconvert[] = {
 		0
 };
 static TEXT_PTR thread_db[] = {
-
 	"THREAD DATA BLOCK",
 		FLD(thread_db*, "Status vec: %x", tdbb_status_vector),
 		FLD(thread_db*, "Default: %x", getDefaultPool()),

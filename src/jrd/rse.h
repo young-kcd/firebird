@@ -403,34 +403,6 @@ public:
 };
 
 
-// bookmark block, used to hold information about the current position 
-// within an index; a pointer to this block is passed to the user as a
-// handle to facilitate returning to this position
-
-#ifdef PC_ENGINE
-class Bookmark : public pool_alloc_rpt<SCHAR, type_bkm>
-{
-public:
-	Bookmark* bkm_next;
-	dsc bkm_desc;				// bookmark descriptor describing the bookmark handle
-	ULONG bkm_handle;			// bookmark handle containing pointer to this block
-	SLONG bkm_number;			// current record number
-	SLONG bkm_page;				// current btree page
-	SLONG bkm_incarnation;		// last known incarnation number of current btree page
-	SLONG bkm_expanded_offset;	// offset into expanded index page (if it exists)
-	USHORT bkm_offset;			// offset into current btree page
-	USHORT bkm_flags;			// flag values indicated below
-	dsc bkm_key_desc;			// descriptor containing current key value
-	UCHAR bkm_key_data[1];		// current key value
-};
-
-
-const USHORT bkm_bof = 1;
-const USHORT bkm_eof = 2;
-const USHORT bkm_crack = 4;
-const USHORT bkm_forced_crack = 8;
-#endif
-
 // types for navigating through a stream
 
 enum rse_get_mode {

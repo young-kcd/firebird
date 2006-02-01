@@ -83,9 +83,9 @@ BLKDEF(type_prm, Parameter, 1)	/* parameter block */
 BLKDEF(type_sav, Savepoint, 0)	/* save points */
 BLKDEF(type_xcp, PsqlException, sizeof(((PsqlException*) NULL)->xcp_rpt[0]))	/* exception condition list */
 BLKDEF(type_idb, IndexBlock, 0)	/* index block for caching index info */
-BLKDEF(type_bkm, Bookmark, 1)	/* bookmark block for storing current location */
+//BLKDEF(type_bkm, Bookmark, 1)	// bookmark block. Obsolete. Used by PC_ENGINE.
 BLKDEF(type_tpc, TxPageCache, 1)	/* TIP page cache block */
-BLKDEF(type_rng, RefreshRange, 1)	// refresh range. Used by commented PC_ENGINE for ODAPI support.
+//BLKDEF(type_rng, RefreshRange, 1)	// refresh range. Obsolete. Used by PC_ENGINE for ODAPI support.
 BLKDEF(type_svc, Service, 1)	/* services */
 BLKDEF(type_lwt, LatchWait, 0)	/* latch wait block */
 BLKDEF(type_vcx, ViewContext, 0)	/* view context block */
