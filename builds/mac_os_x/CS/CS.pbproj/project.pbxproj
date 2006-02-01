@@ -3811,16 +3811,6 @@
 			path = blrtable.h;
 			refType = 4;
 		};
-		F616C5840200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = bookmark.cpp;
-			refType = 4;
-		};
-		F616C5850200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = bookmark.h;
-			refType = 4;
-		};
 		F616C5860200B0CF01EF0ADE = {
 			children = (
 				F616C5870200B0CF01EF0ADE,
@@ -5196,21 +5186,6 @@
 		F616C6A20200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = rlck_proto.h;
-			refType = 4;
-		};
-		F616C6A30200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = rng.cpp;
-			refType = 4;
-		};
-		F616C6A40200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = rng.h;
-			refType = 4;
-		};
-		F616C6A50200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = rng_proto.h;
 			refType = 4;
 		};
 		F616C6A60200B0D001EF0ADE = {

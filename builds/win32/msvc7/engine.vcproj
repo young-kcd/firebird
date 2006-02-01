@@ -322,9 +322,6 @@
 				RelativePath="..\..\..\src\jrd\rlck.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\rng.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\rpb_chain.cpp">
 			</File>
 			<File
@@ -447,9 +444,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\include\gen\blrtable.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\bookmark.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\btn.h">
@@ -882,12 +876,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rlck_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\rng.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\rng_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rpb_chain.h">

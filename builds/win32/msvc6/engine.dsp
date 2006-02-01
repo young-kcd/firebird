@@ -412,10 +412,6 @@ SOURCE=..\..\..\src\jrd\rlck.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\rng.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\rpb_chain.cpp
 # End Source File
 # Begin Source File
@@ -605,10 +601,6 @@ SOURCE=..\..\..\src\jrd\blr.h
 # Begin Source File
 
 SOURCE=..\..\..\src\include\gen\blrtable.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\bookmark.h
 # End Source File
 # Begin Source File
 
@@ -1153,14 +1145,6 @@ SOURCE=..\..\..\src\jrd\req.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\rlck_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\rng.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\rng_proto.h
 # End Source File
 # Begin Source File
 
