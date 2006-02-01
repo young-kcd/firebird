@@ -53,7 +53,6 @@
 #include "gen/iberror.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/all_proto.h"
-#include "../jrd/bookmark.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
