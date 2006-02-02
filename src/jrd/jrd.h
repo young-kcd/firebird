@@ -210,9 +210,6 @@ public:
 	USHORT dbb_max_idx;			/* max number of indexes on a root page */
 	USHORT dbb_use_count;		/* active count of threads */
 	USHORT dbb_shutdown_delay;	/* seconds until forced shutdown */
-#if defined(PC_ENGINE) || defined(SUPERSERVER)
-	USHORT dbb_refresh_ranges;	/* active count of refresh ranges */
-#endif
 	USHORT dbb_prefetch_sequence;	/* sequence to pace frequency of prefetch requests */
 	USHORT dbb_prefetch_pages;	/* prefetch pages per request */
 	Firebird::string dbb_spare_string;	/* random buffer */

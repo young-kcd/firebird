@@ -5261,32 +5261,6 @@ static SSHORT lock_buffer(
  **************************************/
 	SET_TDBB(tdbb);
 #ifdef PAGE_LATCHING
-	Database* dbb = tdbb->tdbb_database;
-
-	if (dbb->dbb_refresh_ranges && bdb->bdb_flags & BDB_writer &&
-		(page_type == pag_data || page_type == pag_index))
-	{
-		/* This gives refresh cache ranges the potential to work with page
-		 * latching by taking out a temporary page lock for notification
-		 * purposes.
-		 * Fix cache ranges on NetWare due to latching (bug 7199)
-		 * Marion change # 18270, 13-Oct-1994
-		 */
-
-		Lock refresh;
-
-		refresh.lck_dbb = dbb;
-		refresh.lck_type = LCK_bdb;
-		refresh.lck_owner_handle =
-			LCK_get_owner_handle(tdbb, refresh.lck_type);
-		refresh.lck_parent = dbb->dbb_lock;
-		refresh.lck_length = sizeof(SLONG);
-		refresh.lck_key.lck_long = bdb->bdb_page;
-
-		if (LCK_lock_non_blocking(tdbb, &refresh, LCK_write, -1))
-			LCK_release(tdbb, &refresh);
-	}
-
 	return ((bdb->bdb_flags & BDB_read_pending) ? 1 : 0);
 #else
 	const USHORT lock_type =
