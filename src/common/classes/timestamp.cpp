@@ -262,17 +262,29 @@ void TimeStamp::generate()
 #ifdef HAVE_LOCALTIME_R
 	struct tm times;
 	if (!localtime_r(&seconds, &times))
-		system_call_failed::raise("localtime_r");
+		report_error("localtime_r");
+
 	encode(&times);
 #else
 	struct tm *times = localtime(&seconds);
 	if (!times)
-		system_call_failed::raise("localtime");
+		report_error("localtime");
+		
 	encode(times);
 #endif
 
 	// Add fractions of second
 	mValue.timestamp_time += fractions * ISC_TIME_SECONDS_PRECISION / 1000;
+}
+
+void TimeStamp::report_error(const char* msg)
+{
+#ifdef FBUDF_EXPORTS
+	// Or set it to an invalid date that will force the engine to complain.
+	mValue.timestamp_date = mValue.timestamp_time = 0;
+#else
+	system_call_failed::raise(msg);
+#endif
 }
 
 }	// namespace

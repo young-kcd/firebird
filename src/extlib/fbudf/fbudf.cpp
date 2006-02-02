@@ -47,6 +47,7 @@ be easy to add needed headers to stdafx.h after a makefile is built.
 #endif
 
 #include "fbudf.h"
+#include "../common/classes/timestamp.h"
 
 #if defined(HAVE_GETTIMEOFDAY) && (!(defined (HAVE_LOCALTIME_R) && defined (HAVE_GMTIME_R)))
 #define NEED_TIME_MUTEX
@@ -110,28 +111,22 @@ namespace internal
 	/*
 	inline short get_varchar_len(const char* vchar) 
 	{
-		//return  static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
 		return reinterpret_cast<const vvary*>(vchar)->vary_length;
 	}
 	*/
 
 	inline short get_varchar_len(const unsigned char* vchar)
 	{
-		//return static_cast<short>((static_cast<short>(vchar[1]) << 8) + vchar[0]);
 		return reinterpret_cast<const vvary*>(vchar)->vary_length;
 	}
 
 	inline void set_varchar_len(char* vchar, const short len)
 	{
-		//vchar[1] = static_cast<char>(len >> 8);
-		//vchar[0] = static_cast<char>(len);
 		reinterpret_cast<vvary*>(vchar)->vary_length = len;
 	}
 	
 	inline void set_varchar_len(unsigned char* vchar, const short len)
 	{
-		//vchar[1] = static_cast<unsigned char>(len >> 8);
-		//vchar[0] = static_cast<unsigned char>(len);
 		reinterpret_cast<vvary*>(vchar)->vary_length = len;
 	}
 
@@ -380,6 +375,19 @@ FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 
 namespace internal
 {
+	void decode_timestamp(const GDS_TIMESTAMP* date, tm* times_arg)
+	{
+		Firebird::TimeStamp(*date).decode(times_arg);
+	}
+
+	void encode_timestamp(const tm* times_arg, GDS_TIMESTAMP* date)
+	{
+		Firebird::TimeStamp temp(false);
+		temp.encode(times_arg);
+		*date = temp.value();
+	}
+
+
 	enum day_format {day_short, day_long};
 	const size_t day_len[] = {4, 14};
 	const char* day_fmtstr[] = {"%a", "%A"};
@@ -387,12 +395,7 @@ namespace internal
 	char* get_DOW(const ISC_TIMESTAMP* v, char* rc, const day_format df)
 	{
 		tm times;
-		//ISC_TIMESTAMP timestamp;
-		//timestamp.timestamp_date = *v;
-		//timestamp.timestamp_time = 0;
-		//isc_decode_timestamp(&timestamp, &times);
-		isc_decode_timestamp(v, &times);
-		//isc_decode_sql_date(v, &times);
+		decode_timestamp(v, &times);
 		const int dow = times.tm_wday;
 		if (dow >= 0 && dow <= 6)
 		{
@@ -474,7 +477,7 @@ FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, const int& nweeks)
 FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const int& nmonths)
 {
 	tm times;
-	isc_decode_timestamp(v, &times);
+	internal::decode_timestamp(v, &times);
 	const int y = nmonths / 12, m = nmonths % 12;
 	times.tm_year += y;
 	if ((times.tm_mon += m) > 11)
@@ -492,16 +495,16 @@ FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const int& nmonths)
 	const int md[] = {31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 	if (times.tm_mday > md[times.tm_mon])
 		times.tm_mday = md[times.tm_mon];
-	isc_encode_timestamp(&times, v);
+	internal::encode_timestamp(&times, v);
 	return v;
 }
 
 FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, const int& nyears)
 {
 	tm times;
-	isc_decode_timestamp(v, &times);
+	internal::decode_timestamp(v, &times);
 	times.tm_year += nyears;
-	isc_encode_timestamp(&times, v);
+	internal::encode_timestamp(&times, v);
 	return v;
 }
 
@@ -570,7 +573,7 @@ FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc)
 
 	if (times)
 	{
-		isc_encode_timestamp(times, rc);
+		internal::encode_timestamp(times, rc);
 		rc->timestamp_time += tv.tv_usec / 100;
 	}
 	else
@@ -584,7 +587,7 @@ FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc)
 	tm* times = localtime(&timebuffer.time);
 	if (times)
 	{
-		isc_encode_timestamp(times, rc);
+		internal::encode_timestamp(times, rc);
 		rc->timestamp_time += timebuffer.millitm * 10;
 	}
 	else
@@ -611,7 +614,7 @@ FBUDF_API void getExactTimestampUTC(ISC_TIMESTAMP* rc)
 
 	if (times)
 	{
-		isc_encode_timestamp(times, rc);
+		internal::encode_timestamp(times, rc);
 		rc->timestamp_time += tv.tv_usec / 100;
 	}
 	else
@@ -625,7 +628,7 @@ FBUDF_API void getExactTimestampUTC(ISC_TIMESTAMP* rc)
 	tm* times = gmtime(&timebuffer.time);
 	if (times)
 	{
-		isc_encode_timestamp(times, rc);
+		internal::encode_timestamp(times, rc);
 		rc->timestamp_time += timebuffer.millitm * 10;
 	}
 	else
@@ -637,7 +640,7 @@ FBUDF_API void getExactTimestampUTC(ISC_TIMESTAMP* rc)
 FBUDF_API int isLeapYear(const ISC_TIMESTAMP* v)
 {
 	tm times;
-	isc_decode_timestamp(v, &times);
+	internal::decode_timestamp(v, &times);
 	const int ly = times.tm_year + 1900;
 	return ly % 4 == 0 && ly % 100 != 0 || ly % 400 == 0;
 }

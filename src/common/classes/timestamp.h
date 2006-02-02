@@ -83,7 +83,8 @@ public:
 
 	// Assign value of timestamp to current date/time if it is zero
 	void validate() {
-		if (isEmpty()) generate();
+		if (isEmpty())
+			generate();
 	}
 
 	// Encode timestamp from UNIX datetime structure
@@ -111,6 +112,7 @@ private:
 
 	// Assign value of timestamp to current date/time
 	void generate();
+	void report_error(const char* msg);
 };
 
 }	// namespace Firebird
