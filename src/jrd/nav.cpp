@@ -397,7 +397,6 @@ bool NAV_get_record(thread_db* tdbb,
 												   irb_partial |
 												   irb_starting)) > 0) 
 		{
-			RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
 			break;
 		}
 
@@ -408,7 +407,6 @@ bool NAV_get_record(thread_db* tdbb,
 												   irb_partial |
 												   irb_starting)) < 0) 
 		{
-			RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
 			break;
 		}
 #endif
@@ -967,18 +965,9 @@ static bool get_record(
 			result = false;
 		} 
 		else {
-			// the successful retrieval of a record
-			// means we are no longer on a crack
-
-			RSE_MARK_CRACK(tdbb, rsb, 0);
-
 			// mark in the navigational bitmap that we have visited this record
 			RBM_SET(tdbb->getDefaultPool(), &impure->irsb_nav_records_visited, rpb->rpb_number.getValue());
 		}
-	}
-
-	if (!result) {
-		RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
 	}
 
 	if (inhibit_cleanup) {

@@ -36,7 +36,6 @@ namespace Jrd {
 void RSE_close(Jrd::thread_db*, Jrd::RecordSource*);
 bool RSE_get_record(Jrd::thread_db*, Jrd::RecordSource*, Jrd::rse_get_mode);
 void RSE_open(Jrd::thread_db*, Jrd::RecordSource*);
-#define RSE_MARK_CRACK(t, var1, var2)
 
 #endif // JRD_RSE_PROTO_H
 
