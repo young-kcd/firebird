@@ -99,7 +99,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fbserver", "fbserver.vcproj
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fbudf", "fbudf.vcproj", "{9DC67B05-AC3E-49A3-B0CC-83B25D757445}"
 	ProjectSection(ProjectDependencies) = postProject
-		{492E7BDA-8948-408D-A43E-4C0A5B86AFB8} = {492E7BDA-8948-408D-A43E-4C0A5B86AFB8}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gbak", "gbak.vcproj", "{B732F5D2-B5D9-417F-B156-D790F466CB8E}"
