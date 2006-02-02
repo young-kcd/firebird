@@ -236,7 +236,7 @@ struct impure_agg_sort {
 };
 
 
-/* Various field positions */
+// Various field positions
 
 const int e_for_re			= 0;
 const int e_for_statement	= 1;
@@ -257,8 +257,7 @@ const int e_msg_length		= 3;
 
 const int e_fld_stream		= 0;
 const int e_fld_id			= 1;
-const int e_fld_default_value	= 2;	/* hold column default value info if any,
-								   (Literal*) */
+const int e_fld_default_value	= 2;	// hold column default value info if any, (Literal*)
 const int e_fld_length		= 3;
 
 const int e_sto_statement	= 0;
@@ -293,15 +292,15 @@ const int e_send_length		= 2;
 
 const int e_asgn_from		= 0;
 const int e_asgn_to			= 1;
-const int e_asgn_missing	= 2;	/* Value for comparison for missing */
-const int e_asgn_missing2	= 3;	/* Value for substitute for missing */
+const int e_asgn_missing	= 2;	// Value for comparison for missing
+const int e_asgn_missing2	= 3;	// Value for substitute for missing
 const int e_asgn_length		= 4;
 
 const int e_rel_stream		= 0;
 const int e_rel_relation	= 1;
-const int e_rel_view		= 2;	/* parent view for posting access */
-const int e_rel_alias		= 3;	/* SQL alias for the relation */
-const int e_rel_context		= 4;	/* user-specified context number for the relation reference */
+const int e_rel_view		= 2;	// parent view for posting access
+const int e_rel_alias		= 3;	// SQL alias for the relation
+const int e_rel_context		= 4;	// user-specified context number for the relation reference
 const int e_rel_length		= 5;
 
 const int e_idx_retrieval	= 0;
@@ -327,8 +326,8 @@ const int e_val_boolean		= 0;
 const int e_val_value		= 1;
 const int e_val_length		= 2;
 
-const int e_uni_stream		= 0;	/* Stream for union */
-const int e_uni_clauses		= 1;	/* RecordSelExpr's for union */
+const int e_uni_stream		= 0;	// Stream for union
+const int e_uni_clauses		= 1;	// RecordSelExpr's for union
 const int e_uni_length		= 2;
 
 const int e_agg_stream		= 0;
@@ -337,7 +336,7 @@ const int e_agg_group		= 2;
 const int e_agg_map			= 3;
 const int e_agg_length		= 4;
 
-/* Statistical expressions */
+// Statistical expressions
 
 const int e_stat_rse		= 0;
 const int e_stat_value		= 1;
@@ -345,7 +344,7 @@ const int e_stat_default	= 2;
 const int e_stat_rsb		= 3;
 const int e_stat_length		= 4;
 
-/* Execute stored procedure */
+// Execute stored procedure
 
 const int e_esp_inputs		= 0;
 const int e_esp_in_msg		= 1;
@@ -354,7 +353,7 @@ const int e_esp_out_msg		= 3;
 const int e_esp_procedure	= 4;
 const int e_esp_length		= 5;
 
-/* Stored procedure view */
+// Stored procedure view
 
 const int e_prc_inputs		= 0;
 const int e_prc_in_msg		= 1;
@@ -362,32 +361,32 @@ const int e_prc_stream		= 2;
 const int e_prc_procedure	= 3;
 const int e_prc_length		= 4;
 
-/* Function expression */
+// Function expression
 
 const int e_fun_args		= 0;
 const int e_fun_function	= 1;
 const int e_fun_length		= 2;
 
-/* Generate id */
+// Generate id
 
 const int e_gen_value		= 0;
 const int e_gen_relation	= 1;
-const int e_gen_id			= 1;	/* Generator id (replaces e_gen_relation) */
+const int e_gen_id			= 1;	// Generator id (replaces e_gen_relation)
 const int e_gen_length		= 2;
 
-/* Protection mask */
+// Protection mask
 
 const int e_pro_class		= 0;
 const int e_pro_relation	= 1;
 const int e_pro_length		= 2;
 
-/* Exception */
+// Exception
 
 const int e_xcp_desc		= 0;
 const int e_xcp_msg			= 1;
 const int e_xcp_length		= 2;
 
-/* Variable declaration */
+// Variable declaration
 
 const int e_var_id			= 0;
 const int e_var_variable	= 1;
@@ -395,14 +394,14 @@ const int e_var_length		= 2;
 
 const int e_dcl_id			= 0;
 const int e_dcl_desc		= 1;
-const int e_dcl_length		= (1 + sizeof (DSC) / sizeof(::Jrd::jrd_nod*));	/* Room for descriptor */
+const int e_dcl_length		= (1 + sizeof (DSC) / sizeof(::Jrd::jrd_nod*));	// Room for descriptor
 
-const int e_dep_object		= 0;	/* node for registering dependencies */
+const int e_dep_object		= 0;	// node for registering dependencies
 const int e_dep_object_type	= 1;
 const int e_dep_field		= 2;
 const int e_dep_length		= 3;
 
-const int e_scl_field		= 0;		/* Scalar expression (blr_index) */
+const int e_scl_field		= 0;	// Scalar expression (blr_index)
 const int e_scl_subscripts	= 1;
 const int e_scl_length		= 2;
 
@@ -414,74 +413,74 @@ const int e_err_action		= 0;
 const int e_err_conditions	= 1;
 const int e_err_length		= 2;
 
-/* Datatype cast operator */
+// Datatype cast operator
 
 const int e_cast_source		= 0;
 const int e_cast_fmt		= 1;
 const int e_cast_length		= 2;
 
-/* IDAPI semantics nodes */
+// IDAPI semantics nodes
 
-const int e_index_index		= 0;	/* set current index (blr_set_index) */
+const int e_index_index		= 0;	// set current index (blr_set_index)
 const int e_index_stream	= 1;
 const int e_index_rsb		= 2;
 const int e_index_length	= 3;
 
-const int e_seek_offset		= 0;	/* for seeking through a stream */
+const int e_seek_offset		= 0;	// for seeking through a stream
 const int e_seek_direction	= 1;
 const int e_seek_rse		= 2;
 const int e_seek_length		= 3;
 
-const int e_find_args		= 0;		/* for finding a key value in a stream */
+const int e_find_args		= 0;	// for finding a key value in a stream
 const int e_find_operator	= 1;
 const int e_find_direction	= 2;
 const int e_find_stream		= 3;
 const int e_find_rsb		= 4;
 const int e_find_length		= 5;
 
-const int e_bookmark_id		= 0;	/* nod_bookmark */
+const int e_bookmark_id		= 0;	// nod_bookmark
 const int e_bookmark_length	= 1;
 
-const int e_setmark_id		= 0;	/* nod_set_bookmark */
+const int e_setmark_id		= 0;	// nod_set_bookmark
 const int e_setmark_stream	= 1;
 const int e_setmark_rsb		= 2;
 const int e_setmark_length	= 3;
 
-const int e_getmark_stream	= 0;	/* nod_get_bookmark */
+const int e_getmark_stream	= 0;	// nod_get_bookmark
 const int e_getmark_rsb		= 1;
 const int e_getmark_length	= 2;
 
-const int e_relmark_id		= 0;	/* nod_release_bookmark */
+const int e_relmark_id		= 0;	// nod_release_bookmark
 const int e_relmark_length	= 1;
 
-const int e_lockrel_relation= 0;	/* nod_lock_relation */
+const int e_lockrel_relation= 0;	// nod_lock_relation
 const int e_lockrel_level	= 1;
 const int e_lockrel_length	= 2;
 
-const int e_lockrec_level	= 0;	/* nod_lock_record */
+const int e_lockrec_level	= 0;	// nod_lock_record
 const int e_lockrec_stream	= 1;
 const int e_lockrec_rsb		= 2;
 const int e_lockrec_length	= 3;
 
-const int e_brange_number	= 0;	/* nod_begin_range */
+const int e_brange_number	= 0;	// nod_begin_range
 const int e_brange_length	= 1;
 
-const int e_erange_number	= 0;	/* nod_end_range */
+const int e_erange_number	= 0;	// nod_end_range
 const int e_erange_length	= 1;
 
-const int e_drange_number	= 0;	/* nod_delete_range */
+const int e_drange_number	= 0;	// nod_delete_range
 const int e_drange_length	= 1;
 
-const int e_rellock_lock	= 0;	/* nod_release_lock */
+const int e_rellock_lock	= 0;	// nod_release_lock
 const int e_rellock_length	= 1;
 
-const int e_find_dbkey_dbkey	= 0;	/* double duty for nod_find_dbkey and nod_find_dbkey_version */
+const int e_find_dbkey_dbkey	= 0;	// double duty for nod_find_dbkey and nod_find_dbkey_version
 const int e_find_dbkey_version	= 1;
 const int e_find_dbkey_stream	= 2;
 const int e_find_dbkey_rsb		= 3;
 const int e_find_dbkey_length	= 4;
 
-const int e_range_relation_number	= 0;	/* nod_range_relation */
+const int e_range_relation_number	= 0;	// nod_range_relation
 const int e_range_relation_relation	= 1;
 const int e_range_relation_length	= 2;
 
@@ -505,11 +504,11 @@ const int e_card_stream		= 0;
 const int e_card_rsb		= 1;
 const int e_card_length		= 2;
 
-/* SQL Date supporting nodes */
-const int e_extract_value	= 0;	/* Node */
-const int e_extract_part	= 1;	/* Integer */
-const int e_extract_count	= 1;	/* Number of nodes */
-const int e_extract_length	= 2;	/* Number of entries in nod_args */
+// SQL Date supporting nodes
+const int e_extract_value	= 0;	// Node
+const int e_extract_part	= 1;	// Integer
+const int e_extract_count	= 1;	// Number of nodes
+const int e_extract_length	= 2;	// Number of entries in nod_args
 
 const int e_current_date_length		= 1;
 const int e_current_time_length		= 1;
@@ -573,7 +572,7 @@ struct Resource
 typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>, 
 	Resource, Firebird::DefaultKeyValue<Resource>, Resource> ResourceList;
 
-/* Access items */
+// Access items
 // In case we start to use MetaName with required pool parameter,
 // access item to be reworked!
 
@@ -655,7 +654,7 @@ struct ExternalAccess
 typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAccess>, 
 	ExternalAccess, Firebird::DefaultKeyValue<ExternalAccess>, ExternalAccess> ExternalAccessList;
 
-/* Compile scratch block */
+// Compile scratch block
 
 /*
  * TMN: I had to move the enclosed csb_repeat outside this class,
@@ -797,7 +796,7 @@ const int csb_unmatched		= 512;		// stream has conjuncts unmatched by any index
 const int csb_update		= 1024;		// erase or modify for relation
 const int csb_made_river	= 2048;		// stream has been included in a river
 
-/* Exception condition list */
+// Exception condition list
 
 struct xcp_repeat {
 	SSHORT xcp_type;

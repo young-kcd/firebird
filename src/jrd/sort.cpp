@@ -19,7 +19,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.76 2006-02-02 07:32:07 robocop Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *

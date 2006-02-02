@@ -174,6 +174,7 @@ static const VERB verbs[] =
 	PAIR(nod_begin_range, blr_begin_range, e_brange_length, 1, VALUE, OTHER),
 	PAIR(nod_end_range, blr_end_range, e_erange_length, 1, STATEMENT, STATEMENT),
 	PAIR(nod_delete_range, blr_delete_range, e_drange_length, 1, STATEMENT, STATEMENT),
+	// End ODAPI
 	PAIR(nod_map, blr_map, 0, 0, OTHER, OTHER),
 	PAIR(nod_union, blr_union, 0, 0, RELATION, OTHER),
 	PAIR(nod_aggregate, blr_aggregate, e_agg_length, 0, RELATION, OTHER),
@@ -211,6 +212,7 @@ static const VERB verbs[] =
 	PAIR(nod_force_crack, blr_force_crack, 2, 0, STATEMENT, OTHER),
 	PAIR(nod_reset_stream, blr_reset_stream, e_reset_length, 0, STATEMENT, OTHER),
 	PAIR(nod_release_bookmark, blr_release_bookmark, e_relmark_length, 1, STATEMENT, OTHER),
+	// End ODAPI
 	PAIR2(nod_set_generator, blr_set_generator, e_gen_length, 1, STATEMENT, VALUE),
 	PAIR(nod_ansi_any, blr_ansi_any, e_any_length, 1, TYPE_BOOL, TYPE_RSE),
 	PAIR(nod_exists, blr_exists, e_any_length, 1, TYPE_BOOL, TYPE_RSE),
