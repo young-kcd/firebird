@@ -562,12 +562,18 @@ FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc)
 	GETTIMEOFDAY(&tv);
 	const time_t seconds = tv.tv_sec;
 
-#if defined(HAVE_LOCALTIME_R)
 	tm timex;
+#if defined(HAVE_LOCALTIME_R)
 	tm* times = localtime_r(&seconds, &timex);
 #else
 	timeMutex.enter();
 	tm* times = localtime(&seconds);
+	if (tm)
+	{
+		// Copy to local variable before we exit the mutex.
+		timex = *tm;
+		tm = &timex;
+	}
 	timeMutex.leave();
 #endif // localtime_r
 
@@ -603,12 +609,18 @@ FBUDF_API void getExactTimestampUTC(ISC_TIMESTAMP* rc)
 	GETTIMEOFDAY(&tv);
 	const time_t seconds = tv.tv_sec;
 
-#if defined(HAVE_GMTIME_R)
 	tm timex;
+#if defined(HAVE_GMTIME_R)
 	tm* times = gmtime_r(&seconds, &timex);
 #else
 	timeMutex.enter();
 	tm* times = gmtime(&seconds);
+	if (tm)
+	{
+		// Copy to local variable before we exit the mutex.
+		timex = *tm;
+		tm = &timex;
+	}
 	timeMutex.leave();
 #endif // gmtime_r
 
