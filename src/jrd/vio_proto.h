@@ -40,9 +40,6 @@ void	VIO_backout(Jrd::thread_db*, Jrd::record_param*, const Jrd::jrd_tra*);
 void	VIO_bump_count(Jrd::thread_db*, USHORT, Jrd::jrd_rel*, bool);
 bool	VIO_chase_record_version(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*,
 									Jrd::jrd_tra*, JrdMemoryPool*, bool);
-#ifdef PC_ENGINE
-bool	VIO_check_if_updated(Jrd::thread_db*, Jrd::record_param*);
-#endif
 void	VIO_data(Jrd::thread_db*, Jrd::record_param*, JrdMemoryPool*);
 void	VIO_erase(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 #ifdef GARBAGE_THREAD

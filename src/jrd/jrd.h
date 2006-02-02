@@ -462,13 +462,6 @@ public:
 		att_event_session(0),
 		att_security_class(0),
 		att_security_classes(0),
-#ifdef PC_ENGINE
-		att_relation_locks(0),
-		att_bookmarks(0),
-		att_record_locks(0),
-		att_bkm_quick_ref(0),
-		att_lck_quick_ref(0),
-#endif
 		att_flags(0),
 		att_charset(0),
 		att_lc_messages(0),
@@ -495,13 +488,6 @@ public:
 	SecurityClass*	att_security_class;	// security class for database
 	SecurityClass*	att_security_classes;	// security classes
 	vcl*		att_counts[DBB_max_count];
-#ifdef PC_ENGINE
-	vec<Lock*>*	att_relation_locks;	// explicit persistent locks for relations
-	Bookmark*	att_bookmarks;		// list of bookmarks taken out using this attachment
-	Lock*		att_record_locks;	// explicit or implicit record locks taken out during attachment
-	vec<Bookmark*>*	att_bkm_quick_ref;	// correspondence table of bookmarks
-	vec<Lock*>*	att_lck_quick_ref;	// correspondence table of locks
-#endif
 	ULONG		att_flags;			// Flags describing the state of the attachment
 	SSHORT		att_charset;		// user's charset specified in dpb
 	Firebird::PathName	att_lc_messages;	// attachment's preference for message natural language
@@ -751,15 +737,6 @@ public:
 	SSHORT		rel_scan_count;		/* concurrent sequential scan count */
 
 	Lock*		rel_existence_lock;	/* existence lock, if any */
-#ifdef PC_ENGINE
-	Lock*		rel_interest_lock;	/* interest lock to ensure compatibility of relation and record locks */
-	Lock*		rel_record_locking;	/* lock to start record locking on relation */
-	ULONG		rel_explicit_locks;	/* count of records explicitly locked in relation */
-	ULONG		rel_read_locks;		/* count of records read locked in relation (implicit or explicit) */
-	ULONG		rel_write_locks;	/* count of records write locked in relation (implicit or explicit) */
-	ULONG		rel_lock_total;		/* count of records locked since database first attached */
-#endif
-
 	Lock*		rel_partners_lock;	/* partners lock */
 	IndexLock*	rel_index_locks;	/* index existence locks */
 	IndexBlock*	rel_index_blocks;	/* index blocks for caching index info */

@@ -523,10 +523,6 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 		if (attachment->att_id_lock)
 			LCK_release(tdbb, attachment->att_id_lock);
 
-#ifdef PC_ENGINE
-		RNG_shutdown_attachment(attachment);
-		RLCK_shutdown_attachment(attachment);
-#endif
 		TRA_shutdown_attachment(tdbb, attachment);
 	}
 
@@ -535,9 +531,6 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
    as, relation interest and record locking locks for PC semantic
    record locking. */
 
-#ifdef PC_ENGINE
-	RLCK_shutdown_database(dbb);
-#endif
 	CMP_shutdown_database(tdbb);
 
 /* If shutdown manager is here, leave enough database lock context

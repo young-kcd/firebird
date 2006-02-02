@@ -40,11 +40,5 @@ void EXE_unwind(Jrd::thread_db*, Jrd::jrd_req*);
 void EXE_seek(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG);
 #endif
 
-#ifdef PC_ENGINE
-bool EXE_crack(Jrd::thread_db*, Jrd::RecordSource*, USHORT);
-void EXE_mark_crack(Jrd::thread_db*, Jrd::RecordSource*, USHORT);
-#endif
-
-
 #endif // JRD_EXE_PROTO_H
 

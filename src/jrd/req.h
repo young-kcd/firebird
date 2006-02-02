@@ -200,10 +200,6 @@ public:
 #ifdef SCROLLABLE_CURSORS
 	jrd_nod*	req_async_message;	/* Asynchronous message (used in scrolling) */
 #endif
-#ifdef PC_ENGINE
-	vec<RefreshRange*>*	req_refresh_ranges;	/* Vector of refresh_ranges */
-	RefreshRange*	req_begin_ranges;	/* Vector of refresh_ranges */
-#endif
 	jrd_prc*	req_procedure;		/* procedure, if any */
 	Firebird::MetaName	req_trg_name;		/* name of request (trigger), if any */
 	USHORT		req_length;			/* message length for send/receive */

@@ -761,18 +761,6 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			}
 #endif
 
-#ifdef PC_ENGINE
-			/* for refresh ranges, we want to know about uncommitted record versions */
-
-			if (rsb) {
-				const jrd_req* request = tdbb->tdbb_request;
-				const irsb_nav* impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
-				if (impure->irsb_flags & irsb_refresh) {
-					RNG_add_uncommitted_record(rpb);
-				}
-			}
-#endif
-
 			/* we can't use this one so if there aren't any more just stop now. */
 
 			if (rpb->rpb_b_page == 0) {
@@ -960,103 +948,6 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 		}
 	}
 }
-
-
-#ifdef PC_ENGINE
-bool VIO_check_if_updated(thread_db* tdbb, record_param* rpb)
-{
-/**************************************
- *
- *	V I O _ c h e c k _ i f _ u p d a t e d
- *
- **************************************
- *
- * Functional description
- *	Check to see if the record specified in the passed
- *	rpb has been updated by an uncommitted transaction.
- *	This involves looking at the latest and greatest
- *	version of the record, checking its transaction id,
- *	then checking the TIP page to see if that transaction
- *	has been committed.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-/* loop through till we find a real version of the record;
-   one that isn't going to be garbage collected */
-
-	jrd_tra* transaction = tdbb->tdbb_request->req_transaction;
-
-	while (true) {
-		if (!DPM_get(tdbb, rpb, LCK_read)) {
-			return false;
-		}
-		else {
-			CCH_RELEASE(tdbb, &rpb->rpb_window);
-		}
-
-		/* if the system transaction updated this record,
-		   it automatically is considered committed */
-
-		if (!rpb->rpb_transaction_nr) {
-			return false;
-		}
-
-		if (rpb->rpb_transaction_nr == transaction->tra_number) {
-			return false;
-		}
-
-		/* get the state of the given transaction */
-
-		USHORT state = TRA_get_state(tdbb, rpb->rpb_transaction_nr);
-
-		/* Reset the garbage collect active flag if the transaction state is
-		   in a terminal state. If committed it must have been a precommitted
-		   transaction that was backing out a dead record version and the
-		   system crashed. Clear the flag and set the state to tra_dead to
-		   reattempt the backout. */
-
-		if (rpb->rpb_flags & rpb_gc_active) {
-			switch (state) {
-			case tra_committed:
-				state = tra_dead;
-				rpb->rpb_flags &= ~rpb_gc_active;
-				break;
-
-			case tra_dead:
-				rpb->rpb_flags &= ~rpb_gc_active;
-				break;
-
-			default:
-				break;
-			}
-		}
-
-		switch (state) {
-		case tra_committed:
-			return false;
-
-		case tra_active:
-			if (!(rpb->rpb_flags & rpb_gc_active)) {
-				return true;
-			}
-
-		case tra_precommitted:
-			THREAD_EXIT();
-			THREAD_SLEEP(100);	/* milliseconds */
-			THREAD_ENTER();
-			break;
-
-		case tra_limbo:
-			return true;
-
-		case tra_dead:
-			VIO_backout(tdbb, rpb, transaction);
-			break;
-		}
-	}
-}
-#endif
 
 
 void VIO_data(thread_db* tdbb, record_param* rpb, JrdMemoryPool* pool)
@@ -1804,12 +1695,6 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* tra
 		return false;
 	}
 
-#ifdef PC_ENGINE
-	if (rsb && rsb->rsb_flags & rsb_stream_type) {
-		RNG_add_page(rpb->rpb_page);
-	}
-#endif
-
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS_INFO) {
 		printf
@@ -2485,11 +2370,6 @@ bool VIO_next_record(thread_db* tdbb,
 		if (!DPM_next(tdbb, rpb, lock_type, backwards, onepage))
 			return false;
 	} while (!VIO_chase_record_version(tdbb, rpb, rsb, transaction, pool, false));
-
-#ifdef PC_ENGINE
-	if (rsb && rsb->rsb_flags & rsb_stream_type)
-		RNG_add_page(rpb->rpb_page);
-#endif
 
 	if (pool) {
 		VIO_data(tdbb, rpb, pool);

@@ -42,13 +42,5 @@ exp_index_buf* NAV_expand_index(Jrd::win*, Jrd::irsb_nav*);
 bool NAV_get_record(Jrd::thread_db* tdbb, Jrd::RecordSource*, Jrd::irsb_nav*, 
 					Jrd::record_param*, Jrd::rse_get_mode);
 
-#ifdef PC_ENGINE
-bool NAV_find_record(Jrd::RecordSource*, USHORT, USHORT, Jrd::jrd_nod*);
-void NAV_get_bookmark(Jrd::RecordSource*, Jrd::irsb_nav*, Bookmark*);
-bool NAV_reset_position(Jrd::RecordSource*, Jrd::record_param*);
-bool NAV_set_bookmark(Jrd::RecordSource*, Jrd::irsb_nav*, Jrd::record_param*, 
-					  Jrd::Bookmark*);
-#endif
-
 #endif // JRD_NAV_PROTO_H
 

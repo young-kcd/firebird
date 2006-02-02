@@ -2222,9 +2222,6 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
  * a rollback_retain ().  This will backout the
  * effects of the transaction, mark it dead and
  * start a new transaction.
-
- * For now only ExpressLink will use this feature.  Later
- * a new entry point may be added.
  */
 
 	if (transaction->tra_flags & TRA_perform_autocommit)
@@ -5726,32 +5723,6 @@ static void release_attachment(Attachment* attachment)
 		attachment->att_val_errors = NULL;
 	}
 
-#ifdef PC_ENGINE
-	// Release the persistent locks taken out during the attachment
-	vec<Lock*>* lock_vector = attachment->att_relation_locks;
-	if (lock_vector)
-	{
-		size_t i = 0;
-		for (vec<Lock*>::iterator lock = lock_vector->begin();
-			 i < lock_vector->count(); i++, lock++)
-		{
-			if (*lock)
-			{
-				LCK_release(tdbb, *lock);
-				delete *lock;
-			}
-		}
-		delete lock_vector;
-	}
-
-    Lock* record_lock;
-	for (record_lock = attachment->att_record_locks; record_lock;
-		 record_lock = record_lock->lck_att_next)
-	{
-		LCK_release(tdbb, record_lock);
-	}
-#endif
-
 /* bug #7781, need to null out the attachment pointer of all locks which
    were hung off this attachment block, to ensure that the attachment
    block doesn't get dereferenced after it is released */
@@ -6564,22 +6535,6 @@ static void purge_attachment(thread_db*		tdbb,
 				delete user;
 			}
 			
-#ifdef PC_ENGINE
-			Bookmark* bookmark;
-			while ( (bookmark = attachment->att_bookmarks) ) {
-				attachment->att_bookmarks = bookmark->bkm_next;
-				delete bookmark;
-			}
-			
-			if (attachment->att_bkm_quick_ref) {
-				delete attachment->att_bkm_quick_ref;
-			}
-
-			if (attachment->att_lck_quick_ref) {
-				delete attachment->att_lck_quick_ref;
-			}
-#endif
-
 			delete attachment;
 		}
 		else

@@ -109,9 +109,6 @@ static void retain_context(thread_db*, jrd_tra*, bool, SSHORT);
 #ifdef VMS
 static void compute_oldest_retaining(thread_db*, jrd_tra*, bool);
 #endif
-#ifdef PC_ENGINE
-static int downgrade_lock(void*);
-#endif
 static void expand_view_lock(jrd_tra*, jrd_rel*, SCHAR);
 static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, SLONG, USHORT);
 static SLONG inventory_page(thread_db*, SLONG);
@@ -459,12 +456,6 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 		CCH_flush(tdbb, FLUSH_SYSTEM, 0);
 	}
-#endif
-
-/* signal refresh range relations for ExpressLink */
-
-#ifdef PC_ENGINE
-	RLCK_signal_refresh(transaction);
 #endif
 
 	if (retaining_flag) {
@@ -1285,9 +1276,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		state = tra_committed;
 	}
 
-/* if this is a rollback retain (used only by ExpressLink), abort
- * this transaction and start a new one.
- */
+	// If this is a rollback retain abort this transaction and start a new one.
 
 	if (retaining_flag) {
 		retain_context(tdbb, transaction, false, state);
@@ -1584,12 +1573,6 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 
 	trans->tra_lock = lock;
 	lock->lck_key.lck_long = number;
-
-/* Support refresh range notification in ExpressLink */
-
-#ifdef PC_ENGINE
-	lock->lck_ast = downgrade_lock;
-#endif
 
 /* Put the TID of the oldest active transaction (from the header page)
    in the new transaction's lock. */
@@ -2330,60 +2313,6 @@ static void compute_oldest_retaining(
 }
 #endif
 
-#ifdef PC_ENGINE
-static int downgrade_lock(void* transaction_void)
-{
-/**************************************
- *
- *	d o w n g r a d e _ l o c k
- *
- **************************************
- *
- * Functional description
- *	Someone is trying to establish an interest
- *	lock in this transaction.  Downgrade to a
- *	shared write, to allow transactions to wait
- *	on this transaction or, alternatively, be
- *	notified if and when the transaction commits.
- *
- **************************************/
-	ISC_ast_enter();
-	jrd_tra* transaction = static_cast<jrd_tra*>(transaction_void);
-
-/* Since this routine will be called asynchronously, we must establish
-   a thread context. */
-
-	thread_db thd_context, *tdbb;
-	JRD_set_thread_data(tdbb, thd_context);
-
-/* Ignore the request if the transaction or lock block does not appear
-   to be valid or if the lock is not a write lock. */
-
-	if (transaction->tra_use_count);
-	else {
-		tdbb->tdbb_database = transaction->tra_attachment->att_database;
-		tdbb->tdbb_attachment = transaction->tra_attachment;
-		tdbb->tdbb_quantum = QUANTUM;
-		tdbb->tdbb_request = NULL;
-		tdbb->tdbb_transaction = transaction;
-
-		++transaction->tra_use_count;
-		Lock* lock = transaction->tra_lock;
-		if (lock && lock->lck_logical == LCK_write) {
-			lock->lck_ast = NULL;
-			LCK_convert(tdbb, lock, LCK_SW, TRUE);
-		}
-		--transaction->tra_use_count;
-	}
-
-/* Restore the prior thread context */
-
-	JRD_restore_thread_data();
-
-	ISC_ast_exit();
-	return 0;
-}
-#endif
 
 static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, SCHAR lock_type)
 {
@@ -2637,12 +2566,6 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 			TRA_transaction_lock(tdbb, transaction);
 		new_lock->lck_key.lck_long = new_number;
 		new_lock->lck_data = transaction->tra_lock->lck_data;
-
-		/* Support refresh range notification in ExpressLink */
-
-#ifdef PC_ENGINE
-		new_lock->lck_ast = downgrade_lock;
-#endif
 
 		if (!LCK_lock_non_blocking(tdbb, new_lock, LCK_write, LCK_WAIT)) {
 #ifndef SUPERSERVER_V2

@@ -45,9 +45,6 @@ Jrd::jrd_req* CMP_make_request(Jrd::thread_db*, Jrd::CompilerScratch*);
 void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const Firebird::MetaName&, SLONG,
 					 Jrd::SecurityClass::flags_t, const TEXT*, const Firebird::MetaName&);
 void CMP_post_resource(Jrd::ResourceList*, blk*, Jrd::Resource::rsc_s, USHORT);
-#ifdef PC_ENGINE
-void CMP_release_resource(Jrd::ResourceList&, Jrd::Resource::rsc_s, USHORT);
-#endif
 void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);
 void CMP_shutdown_database(Jrd::thread_db*);
 void CMP_verify_access(Jrd::thread_db* tdbb, Jrd::jrd_req* request);

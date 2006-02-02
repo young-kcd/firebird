@@ -216,15 +216,6 @@ inline void PreModifyEraseTriggers(thread_db*, trig_vec**, SSHORT, record_param*
 	Record*, jrd_req::req_ta);
 static void stuff_stack_trace(const jrd_req*);
 
-#ifdef PC_ENGINE
-static jrd_nod* find(thread_db*, jrd_nod*);
-static jrd_nod* find_dbkey(thread_db*, jrd_nod*);
-static Lock* implicit_record_lock(jrd_tra*, record_param*);
-static jrd_nod* release_bookmark(thread_db*, jrd_nod*);
-static jrd_nod* set_bookmark(thread_db*, jrd_nod*);
-static jrd_nod* set_index(thread_db*, jrd_nod*);
-static jrd_nod* stream(thread_db*, jrd_nod*);
-#endif
 
 /* macro definitions */
 
@@ -254,26 +245,6 @@ const size_t MAX_STACK_TRACE = 2048;
    locking a record */
 
 const int RECORD_LOCK_CHECK_INTERVAL	= 10;
-
-#ifdef PC_ENGINE
-// TMN: RAII class for Lock. Unlocks the Lock on destruction.
-class LCK_RAII_wrapper
-{
-	LCK_RAII_wrapper() : l(0) {}
-	~LCK_RAII_wrapper() {
-		if (l) {
-			RLCK_unlock_record_implicit(l, 0);
-		}
-	}
-	void assign(Lock* lock) { l = lock; }
-
-	Lock* l;
-
-private:
-	LCK_RAII_wrapper(const LCK_RAII_wrapper&);	// no impl.
-	void operator=(const LCK_RAII_wrapper&);	// no impl.
-};
-#endif
 
 
 void EXE_assignment(thread_db* tdbb, jrd_nod* node)
@@ -499,38 +470,6 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 }
 
 
-#ifdef PC_ENGINE
-bool EXE_crack(thread_db* tdbb, RecordSource* rsb, USHORT flags)
-{
-/**************************************
- *
- *	E X E _ c r a c k
- *
- **************************************
- *
- * Functional description
- *	Check whether stream is on a crack, BOF
- *	or EOF, according to the flags passed.
- *
- **************************************/
-	DEV_BLKCHK(rsb, type_rsb);
-
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-
-/* correct boolean rsbs to point to the "real" rsb */
-
-	if (rsb->rsb_type == rsb_boolean)
-		rsb = rsb->rsb_next;
-	irsb* impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
-
-/* if any of the passed flags are set, return true */
-
-	return (impure->irsb_flags & flags);
-}
-#endif
-
-
 jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 {
 /**************************************
@@ -600,42 +539,6 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 	THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_clone);
 	return clone;
 }
-
-
-#ifdef PC_ENGINE
-void EXE_mark_crack(thread_db* tdbb, RecordSource* rsb, USHORT flag)
-{
-/**************************************
- *
- *	E X E _ m a r k _ c r a c k
- *
- **************************************
- *
- * Functional description
- *	Mark a stream as being at a crack,
- *	plus report the fact in the status
- *	vector.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-	DEV_BLKCHK(rsb, type_rsb);
-
-/* correct boolean rsbs to point to the "real" rsb */
-
-	if (rsb->rsb_type == rsb_boolean)
-		rsb = rsb->rsb_next;
-
-	RSE_MARK_CRACK(tdbb, rsb, flag);
-
-	if (flag == irsb_eof)
-		ERR_warning(isc_stream_eof, 0);
-	else if (flag == irsb_bof)
-		ERR_warning(isc_stream_bof, 0);
-	else if (flag & irsb_crack)
-		ERR_warning(isc_stream_crack, 0);
-}
-#endif
 
 
 void EXE_receive(thread_db*		tdbb,
@@ -1203,16 +1106,6 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		ERR_post(isc_no_cur_rec, 0);
 	}
 
-#ifdef PC_ENGINE
-/* for navigational streams, retrieve the rsb */
-	RecordSource* rsb = NULL;
-	irsb* impure = NULL;
-	if (node->nod_arg[e_erase_rsb]) {
-		rsb = *(RecordSource**) node->nod_arg[e_erase_rsb];
-		impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
-	}
-#endif
-
 	switch (request->req_operation) {
 	case jrd_req::req_evaluate:
 		{
@@ -1234,17 +1127,6 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		return node->nod_parent;
 	}
 
-#ifdef PC_ENGINE
-/* if we are on a crack in a navigational stream, erase 
-   is not a valid operation */
-
-	if (rsb && EXE_crack(tdbb, rsb, irsb_bof | irsb_eof | irsb_crack)) {
-		EXE_mark_crack(tdbb, rsb, impure->irsb_flags);
-		request->req_operation = jrd_req::req_return;
-		return node->nod_parent;
-	}
-#endif
-
 	request->req_operation = jrd_req::req_return;
 	RLCK_reserve_relation(tdbb, transaction, relation, true, true);
 
@@ -1256,30 +1138,6 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		VIO_refetch_record(tdbb, rpb, transaction);
 		rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
-
-#ifdef PC_ENGINE
-/* set up to do record locking; in case of a consistency
-   mode transaction, we already have an exclusive lock on
-   the table, so don't bother */
-
-	LCK_RAII_wrapper implicit_lock;
-
-	if (!(transaction->tra_flags & TRA_degree3))
-	{
-		/* check whether record locking is turned on */
-
-		Lock* record_locking = RLCK_record_locking(relation);
-		if (record_locking->lck_physical != LCK_PR)
-		{
-			/* get an implicit lock on the record */
-
-			implicit_lock.assign(implicit_record_lock(transaction, rpb));
-
-			/* set up to catch any errors so that we can 
-			   release the implicit lock */
-		}
-	}
-#endif
 
 	if (transaction != dbb->dbb_sys_trans)
 		++transaction->tra_save_point->sav_verb_count;
@@ -1346,15 +1204,6 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	if (transaction != dbb->dbb_sys_trans) {
 		--transaction->tra_save_point->sav_verb_count;
 	}
-
-#ifdef PC_ENGINE
-
-/* if the stream is navigational, it is now positioned on a crack */
-
-	if (rsb) {
-		RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-	}
-#endif
 
 	return node->nod_parent;
 }
@@ -1655,172 +1504,6 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 		return trigger;
 	}
 }
-
-
-#ifdef PC_ENGINE
-static jrd_nod* find(thread_db* tdbb, jrd_nod* node)
-{
-/**************************************
- *
- *	f i n d
- *
- **************************************
- *
- * Functional description
- *	Find the given key value in a stream.
- *	Assume that the stream is open.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-	BLKCHK(node, type_nod);
-
-	if (request->req_operation == jrd_req::req_evaluate)
-	{
-		RecordSource* rsb = *((RecordSource**) node->nod_arg[e_find_rsb]);
-
-		const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_find_operator]);
-
-		const USHORT blr_operator = (desc && !(request->req_flags & req_null)) ?
-			(USHORT) MOV_get_long(desc, 0) : MAX_USHORT;
-
-		if (blr_operator != blr_equiv &&
-			blr_operator != blr_eql &&
-			blr_operator != blr_leq &&
-			blr_operator != blr_lss &&
-			blr_operator != blr_geq &&
-			blr_operator != blr_gtr)
-		{
-			ERR_post(isc_invalid_operator, 0);
-		}
-
-		desc = EVL_expr(tdbb, node->nod_arg[e_find_direction]);
-
-		const USHORT direction = (desc && !(request->req_flags & req_null)) ?
-			(USHORT) MOV_get_long(desc, 0) : MAX_USHORT;
-
-		if (direction != blr_backward &&
-			direction != blr_forward &&
-			direction != blr_backward_starting &&
-			direction != blr_forward_starting)
-		{
-			ERR_post(isc_invalid_direction, 0);
-		}
-
-		/* try to find the record; the position is defined to be on a crack 
-		   regardless of whether we are at BOF or EOF; also be sure to perpetuate
-		   the forced crack (bug #7024) */
-
-		if (!RSE_find_record(tdbb, rsb, blr_operator, direction,
-							 node->nod_arg[e_find_args]))
-		{
-			if (EXE_crack(tdbb, rsb, irsb_bof | irsb_eof | irsb_crack))
-			{
-				if (EXE_crack(tdbb, rsb, irsb_forced_crack)) {
-					EXE_mark_crack(tdbb, rsb, irsb_crack | irsb_forced_crack);
-				}
-				else if (EXE_crack(tdbb, rsb, irsb_bof)) {
-					EXE_mark_crack(tdbb, rsb, irsb_bof);
-				}
-				else if (EXE_crack(tdbb, rsb, irsb_eof)) {
-					EXE_mark_crack(tdbb, rsb, irsb_eof);
-				}
-				else {
-					EXE_mark_crack(tdbb, rsb, irsb_crack);
-				}
-			}
-		}
-		request->req_operation = jrd_req::req_return;
-	}
-
-	return node->nod_parent;
-}
-#endif
-
-
-#ifdef PC_ENGINE
-static jrd_nod* find_dbkey(thread_db* tdbb, jrd_nod* node)
-{
-/**************************************
- *
- *	f i n d _ d b k e y
- *
- **************************************
- *
- * Functional description
- *	Find the given dbkey in a navigational stream,
- *	resetting the position of the stream to that record.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-	BLKCHK(node, type_nod);
-
-	if (request->req_operation == jrd_req::req_evaluate)
-	{
-		RecordSource* rsb = *((RecordSource**) node->nod_arg[e_find_dbkey_rsb]);
-
-		if (!RSE_find_dbkey(tdbb,
-							rsb,
-							node->nod_arg[e_find_dbkey_dbkey],
-							node->nod_arg[e_find_dbkey_version]))
-		{
-			  EXE_mark_crack(tdbb, rsb, irsb_crack);
-		}
-
-		request->req_operation = jrd_req::req_return;
-	}
-
-	return node->nod_parent;
-}
-#endif
-
-
-
-#ifdef PC_ENGINE
-static Lock* implicit_record_lock(jrd_tra* transaction, record_param* rpb)
-{
-/**************************************
- *
- *	i m p l i c i t _ r e c o r d _ l o c k
- *
- **************************************
- *
- * Functional description
- *	An update to a record is being attempted and
- *	record locking has been initiated.  Take out
- *	an implicit record lock to prevent updating
- *	a record that someone has explicitly locked.
- *
- **************************************/
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-	DEV_BLKCHK(transaction, type_tra);
-
-	jrd_rel* relation = rpb->rpb_relation;
-	Lock* record_locking = relation->rel_record_locking;
-
-/* occasionally we should check whether we really still need to 
-   do record locking; this is defined as RECORD_LOCK_CHECK_INTERVAL--
-   if we can get a PR on the record locking lock there is no need
-   to do implicit locking anymore */
-
-	if ((record_locking->lck_physical == LCK_none) &&
-		!(relation->rel_lock_total % RECORD_LOCK_CHECK_INTERVAL) &&
-		LCK_lock_non_blocking(tdbb, record_locking, LCK_PR, LCK_NO_WAIT))
-	{
-		return NULL;
-	}
-
-	Lock* lock = RLCK_lock_record_implicit(transaction, rpb, LCK_SW, 0, 0);
-	if (!lock) {
-		ERR_post(isc_record_lock, 0);
-	}
-
-	return lock;
-}
-#endif
 
 
 static void stuff_stack_trace(const jrd_req* request)
@@ -2717,107 +2400,6 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			break;
 #endif
 
-#ifdef PC_ENGINE
-		case nod_stream:
-			node = stream(tdbb, node);
-			break;
-
-		case nod_find:
-			node = find(tdbb, node);
-			break;
-
-		case nod_find_dbkey:
-		case nod_find_dbkey_version:
-			node = find_dbkey(tdbb, node);
-			break;
-
-		case nod_set_index:
-			node = set_index(tdbb, node);
-			break;
-
-		case nod_set_bookmark:
-			node = set_bookmark(tdbb, node);
-			break;
-
-		case nod_release_bookmark:
-			node = release_bookmark(tdbb, node);
-			break;
-
-		case nod_end_range:
-			node = RNG_end(node);
-			break;
-
-		case nod_delete_range:
-			node = RNG_delete(node);
-			break;
-
-		case nod_delete_ranges:
-			if (request->req_operation == jrd_req::req_evaluate) {
-				RNG_delete_ranges(request);
-				request->req_operation = jrd_req::req_return;
-			}
-			node = node->nod_parent;
-			break;
-
-		case nod_range_relation:
-			node = RNG_add_relation(node);
-			break;
-
-		case nod_release_lock:
-			if (request->req_operation == jrd_req::req_evaluate) {
-				DSC *desc;
-
-				desc = EVL_expr(tdbb, node->nod_arg[e_rellock_lock]);
-#if SIZEOF_VOID_P != 8
-				RLCK_release_lock(*(Lock**) desc->dsc_address);
-#else
-				{
-					Attachment* attachment = tdbb->tdbb_attachment;
-
-					Lock* lock = NULL;
-					const ULONG slot = *(ULONG *) desc->dsc_address;
-					vec<Lock*>* vector = attachment->att_lck_quick_ref;
-					if (vector && slot < vector->count()) {
-						lock = (*vector)[slot];
-					}
-					RLCK_release_lock(lock);
-					(*vector)[slot] = NULL;
-				}
-#endif
-				request->req_operation = jrd_req::req_return;
-			}
-			node = node->nod_parent;
-			break;
-
-		case nod_release_locks:
-			if (request->req_operation == jrd_req::req_evaluate) {
-				RLCK_release_locks(request->req_attachment);
-				request->req_operation = jrd_req::req_return;
-			}
-			node = node->nod_parent;
-			break;
-
-		case nod_force_crack:
-			if (request->req_operation == jrd_req::req_evaluate) {
-				RSE_MARK_CRACK(tdbb, *(RecordSource**) node->nod_arg[1],
-							   irsb_crack | irsb_forced_crack);
-				request->req_operation = jrd_req::req_return;
-			}
-			node = node->nod_parent;
-			break;
-
-		case nod_reset_stream:
-			if (request->req_operation == jrd_req::req_evaluate) {
-				RSE_reset_position(tdbb,
-								   *(RecordSource**) node->nod_arg[e_reset_from_rsb],
-								   request->req_rpb +
-								   (USHORT)(ULONG) node->nod_arg[e_reset_to_stream]);
-				request->req_operation = jrd_req::req_return;
-			}
-			node = node->nod_parent;
-			break;
-#endif
-
 		case nod_set_generator:
 			if (request->req_operation == jrd_req::req_evaluate) {
 				dsc* desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
@@ -2981,25 +2563,6 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	const SSHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 	record_param* new_rpb = &request->req_rpb[new_stream];
 
-#ifdef PC_ENGINE
-/* for navigational streams, retrieve the rsb */
-	RecordSource* rsb = NULL;
-	IRSB irsb;
-
-	if (node->nod_arg[e_mod_rsb]) {
-		rsb = *(RecordSource**) node->nod_arg[e_mod_rsb];
-		irsb = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
-	}
-
-/* if we are on a crack in a navigational stream, modify is an illegal operation */
-
-	if (rsb && EXE_crack(tdbb, rsb, irsb_bof | irsb_eof | irsb_crack)) {
-		EXE_mark_crack(tdbb, rsb, irsb->irsb_flags);
-		request->req_operation = jrd_req::req_return;
-		return node->nod_parent;
-	}
-#endif
-
 	/* If the stream was sorted, the various fields in the rpb are
 	probably junk.  Just to make sure that everything is cool,
 	refetch and release the record. */
@@ -3028,24 +2591,6 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		/* CVC: This call made here to clear the record in each NULL field and
 				varchar field whose tail may contain garbage. */
 		cleanup_rpb(tdbb, new_rpb);
-
-#ifdef PC_ENGINE
-		/* check to see if record locking has been initiated in this database;
-		   if so then lock the record for shared write so that normal processing
-		   will be able to read or write the record but not when an explicit
-		   lock has been taken out */
-
-		LCK_RAII_wrapper implicit_lock;
-
-		if (!(transaction->tra_flags & TRA_degree3))
-		{
-			const Lock* record_locking = RLCK_record_locking(relation);
-			if (record_locking->lck_physical != LCK_PR)
-			{
-				implicit_lock.assign(implicit_record_lock(transaction, org_rpb));
-			}
-		}
-#endif
 
 		if (transaction != dbb->dbb_sys_trans)
 			++transaction->tra_save_point->sav_verb_count;
@@ -3112,17 +2657,6 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (transaction != dbb->dbb_sys_trans) {
 			--transaction->tra_save_point->sav_verb_count;
 		}
-
-#ifdef PC_ENGINE
-
-		/* if the stream is navigational, we must position the stream on the new 
-		   record version, but first set the record number  */
-
-		new_rpb->rpb_number = org_rpb->rpb_number;
-		if (rsb) {
-			RSE_reset_position(tdbb, rsb, new_rpb);
-		}
-#endif
 
 		/* CVC: Increment the counter only if we called VIO/EXT_modify() and
 				we were successful. */
@@ -3323,33 +2857,6 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 }
 
 
-#ifdef PC_ENGINE
-static jrd_nod* release_bookmark(thread_db* tdbb, jrd_nod* node)
-{
-/**************************************
- *
- *	r e l e a s e _ b o o k m a r k
- *
- **************************************
- *
- * Functional description
- *	Deallocate the passed bookmark.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-	BLKCHK(node, type_nod);
-
-	if (request->req_operation == jrd_req::req_evaluate) {
-		BKM_release(node->nod_arg[e_relmark_id]);
-		request->req_operation = jrd_req::req_return;
-	}
-
-	return node->nod_parent;
-}
-#endif
-
-
 static void release_proc_save_points(jrd_req* request)
 {
 /**************************************
@@ -3510,12 +3017,7 @@ static void seek_rsb(
 	switch (direction) {
 	case blr_forward:			/* go forward from the current location */
 
-#ifdef PC_ENGINE
-		if ((offset == 1) && request->req_begin_ranges)
-			impure->irsb_flags |= irsb_refresh;
-#endif
-
-		/* the rsb_backwards flag is used to indicate the direction to seek in; 
+		/* the rsb_backwards flag is used to indicate the direction to seek in;
 		   this is sticky in the sense that after the user has seek'ed in the 
 		   backward direction, the next retrieval from a blr_for loop will also 
 		   be in the backward direction--this allows us to continue scrolling 
@@ -3531,11 +3033,6 @@ static void seek_rsb(
 		break;
 
 	case blr_backward:			/* go backward from the current location */
-
-#ifdef PC_ENGINE
-		if ((offset == 1) && request->req_begin_ranges)
-			impure->irsb_flags |= irsb_refresh;
-#endif
 
 		impure->irsb_flags |= irsb_last_backwards;
 
@@ -3587,10 +3084,6 @@ static void seek_rsb(
 		// check above, but anyway...
 		BUGCHECK(232);
 	}
-
-#ifdef PC_ENGINE
-	impure->irsb_flags &= ~irsb_refresh;
-#endif
 }
 #endif
 
@@ -3666,59 +3159,6 @@ static jrd_nod* send_msg(thread_db* tdbb, jrd_nod* node)
 		return (node->nod_parent);
 	}
 }
-
-
-#ifdef PC_ENGINE
-static jrd_nod* set_bookmark(thread_db* tdbb, jrd_nod* node)
-{
-/**************************************
- *
- *	s e t _ b o o k m a r k
- *
- **************************************
- *
- * Functional description
- *	Set a stream to the location of the
- *	specified bookmark.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-	BLKCHK(node, type_nod);
-
-	if (request->req_operation == jrd_req::req_evaluate) {
-		Bookmark* bookmark = BKM_lookup(node->nod_arg[e_setmark_id]);
-		const USHORT stream = (USHORT)(ULONG) node->nod_arg[e_setmark_stream];
-		record_param* rpb = &request->req_rpb[stream];
-		RecordSource* rsb = *((RecordSource**) node->nod_arg[e_setmark_rsb]);
-		irsb* impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
-
-		/* check if the bookmark was at beginning or end of file 
-		   and flag the rsb accordingly */
-
-		RSE_MARK_CRACK(tdbb, rsb, 0);
-		if (bookmark->bkm_flags & bkm_bof)
-			RSE_MARK_CRACK(tdbb, rsb, irsb_bof);
-		else if (bookmark->bkm_flags & bkm_eof)
-			RSE_MARK_CRACK(tdbb, rsb, irsb_eof);
-		else if (bookmark->bkm_flags & bkm_crack) {
-			RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-			if (bookmark->bkm_flags & bkm_forced_crack)
-				RSE_MARK_CRACK(tdbb, rsb, irsb_forced_crack);
-		}
-
-		if (!RSE_set_bookmark(tdbb, rsb, rpb, bookmark)) {
-			EXE_mark_crack(tdbb, rsb,
-						   impure->irsb_flags & (irsb_crack | irsb_eof |
-												 irsb_bof));
-		}
-
-		request->req_operation = jrd_req::req_return;
-	}
-
-	return node->nod_parent;
-}
-#endif
 
 
 static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg_node)
@@ -3835,58 +3275,6 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 		fb_assert(false);
 	}
 }
-
-
-#ifdef PC_ENGINE
-static jrd_nod* set_index(thread_db* tdbb, jrd_nod* node)
-{
-/**************************************
- *
- *	s e t _ i n d e x
- *
- **************************************
- *
- * Functional description
- *	Execute a SET INDEX statement.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-	BLKCHK(node, type_nod);
-
-	if (request->req_operation == jrd_req::req_evaluate) {
-		const USHORT stream = (USHORT)(ULONG) node->nod_arg[e_index_stream];
-
-		record_param* rpb = &request->req_rpb[stream];
-		jrd_rel* relation = rpb->rpb_relation;
-
-		/* if id is non-zero, get the index definition;
-		   otherwise it indicates revert to natural order */
-
-		const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_index_index]);
-		const USHORT id = (desc && !(request->req_flags & req_null)) ?
-			MOV_get_long(desc, 0) : 0;
-
-		index_desc idx;
-		if (id && BTR_lookup(tdbb, relation, id - 1, &idx))
-		{
-			ERR_post(isc_indexnotdefined, isc_arg_string, relation->rel_name,
-					 isc_arg_number, (SLONG) id, 0);
-		}
-
-		/* generate a new rsb in place of the old */
-
-		RSE_close(tdbb, *(RecordSource**) node->nod_arg[e_index_rsb]);
-		OPT_set_index(tdbb, request, (RecordSource**) node->nod_arg[e_index_rsb],
-					  relation, id ? &idx : NULL);
-		RSE_open(tdbb, *(RecordSource**) node->nod_arg[e_index_rsb]);
-
-		request->req_operation = jrd_req::req_return;
-	}
-
-	return node->nod_parent;
-}
-#endif
 
 
 static jrd_nod* stall(thread_db* tdbb, jrd_nod* node)
@@ -4092,45 +3480,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 }
 
 
-#ifdef PC_ENGINE
-static jrd_nod* stream(thread_db* tdbb, jrd_nod* node)
-{
-/**************************************
- *
- *	s t r e a m
- *
- **************************************
- *
- * Functional description
- *	Execute a STREAM statement.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-	BLKCHK(node, type_nod);
-
-	RecordSource* rsb = ((RecordSelExpr*) node)->rse_rsb;
-
-	switch (request->req_operation) {
-	case jrd_req::req_evaluate:
-		RSE_open(tdbb, rsb);
-		request->req_operation = jrd_req::req_return;
-
-	case jrd_req::req_return:
-		node = node->nod_parent;
-		break;
-
-	default:
-		RSE_close(tdbb, rsb);
-		node = node->nod_parent;
-	}
-
-	return node;
-}
-#endif
-
-
-static bool test_and_fixup_error(thread_db* tdbb, const PsqlException* conditions, 
+static bool test_and_fixup_error(thread_db* tdbb, const PsqlException* conditions,
 								 jrd_req* request)
 {
 /**************************************

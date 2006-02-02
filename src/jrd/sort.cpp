@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: sort.cpp,v 1.75 2005-05-27 22:44:05 asfernandes Exp $
+ * $Id: sort.cpp,v 1.76 2006-02-02 07:32:07 robocop Exp $
  *
  * 2001-09-24  SJL - Temporary fix for large sort file bug
  *
@@ -623,17 +623,6 @@ void SORT_get(ISC_STATUS * status_vector,
 
 			scb->scb_next_pointer++;
 			break;
-
-#ifdef PC_ENGINE
-		case RSE_get_current:
-			if (scb->scb_next_pointer <= scb->scb_first_pointer ||
-				scb->scb_next_pointer > scb->scb_last_pointer)
-			{
-				record = NULL;
-			}
-			record = *scb->scb_next_pointer;
-			break;
-#endif
 
 		default:
 			fb_assert(FALSE);

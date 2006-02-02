@@ -34,26 +34,9 @@ namespace Jrd {
 }
 
 void RSE_close(Jrd::thread_db*, Jrd::RecordSource*);
-#ifdef PC_ENGINE
-bool RSE_find_dbkey(Jrd::thread_db*, Jrd::RecordSource*, Jrd::jrd_nod*, Jrd::jrd_nod*);
-bool RSE_find_record(Jrd::thread_db*, Jrd::RecordSource*, USHORT, USHORT, Jrd::jrd_nod*);
-#endif
 bool RSE_get_record(Jrd::thread_db*, Jrd::RecordSource*, Jrd::rse_get_mode);
-#ifdef PC_ENGINE
-Bookmark* RSE_get_bookmark(Jrd::thread_db*, Jrd::RecordSource*);
-void RSE_mark_crack(Jrd::thread_db*, Jrd::RecordSource*, USHORT);
-#endif
 void RSE_open(Jrd::thread_db*, Jrd::RecordSource*);
-#ifdef PC_ENGINE
-bool RSE_reset_position(Jrd::thread_db*, Jrd::RecordSource*, Jrd::record_param*);
-bool RSE_set_bookmark(Jrd::thread_db*, Jrd::RecordSource*, Jrd::record_param*, Jrd::Bookmark*);
-#endif
-
-#ifdef PC_ENGINE
-#define RSE_MARK_CRACK(t, var1, var2)	RSE_mark_crack (t, var1, var2)
-#else
 #define RSE_MARK_CRACK(t, var1, var2)
-#endif
 
 #endif // JRD_RSE_PROTO_H
 

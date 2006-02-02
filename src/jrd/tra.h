@@ -105,9 +105,6 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	Savepoint*	tra_save_point;	/* list of savepoints  */
 	SLONG tra_save_point_number;	/* next save point number to use */
 	ULONG tra_flags;
-#ifdef PC_ENGINE
-	SLONG tra_range_id;				/* unique id of cache range within transaction */
-#endif
 	class DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
 	ResourceList tra_resources;		/* resource existence list */
 	Firebird::StringMap tra_context_vars; // Context variables for the transaction

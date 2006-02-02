@@ -225,186 +225,6 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 }
 
 
-#ifdef PC_ENGINE
-bool RSE_find_dbkey(thread_db* tdbb, RecordSource* rsb, jrd_nod* find_key, jrd_nod* record_version)
-{
-/**************************************
- *
- *	R S E _ f i n d _ d b k e y
- *
- **************************************
- *
- * Functional description
- *	Find the passed dbkey in the stream
- *	with equivalent key values.  Optionally,
- *	check for a record version also.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-
-/* get the record number from the passed dbkey */
-
-	const dsc* desc = EVL_expr(tdbb, find_key);
-
-	ULONG dbkey[2];
-	dsc desc2;
-	desc2.dsc_address = (UCHAR *) dbkey;
-	desc2.dsc_length = sizeof(dbkey);
-	desc2.dsc_dtype = dtype_text;
-	desc2.dsc_scale = 0;
-	desc2.dsc_sub_type = ttype_binary;
-	desc2.dsc_flags = 0;
-
-	MOV_move(desc, &desc2);
-
-/* now get the record version to use in comparing
-   against the tid of the record */
-
-	ULONG version_number;
-	if (record_version) {
-		desc = EVL_expr(tdbb, record_version);
-
-		desc2.dsc_address = (UCHAR *) & version_number;
-		desc2.dsc_length = sizeof(version_number);
-		desc2.dsc_dtype = dtype_text;
-		desc2.dsc_scale = 0;
-		desc2.dsc_sub_type = ttype_binary;
-		desc2.dsc_flags = 0;
-
-		MOV_move(desc, &desc2);
-	}
-
-	record_param* rpb;
-	irsb_index* impure;
-	RecordBitmap* bitmap;
-
-	switch (rsb->rsb_type) {
-	case rsb_boolean:
-		if (!RSE_find_dbkey(tdbb, rsb->rsb_next, find_key, record_version))
-			return false;
-
-		if ((rsb->rsb_arg[0]) && (!EVL_boolean(tdbb, rsb->rsb_arg[0]))) {
-			RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-			return false;
-		}
-
-		return true;
-
-	case rsb_navigate:
-		rpb = request->req_rpb + rsb->rsb_stream;
-		rpb->rpb_number = dbkey[1] - 1;
-
-		/* first, fetch the indicated record */
-
-		if (!VIO_get
-			(tdbb, rpb, rsb, request->req_transaction,
-			 request->req_pool))
-		{
-			return false;
-		}
-		if (record_version && version_number != rpb->rpb_transaction_nr)
-			return false;
-
-		/* next, set the stream position to that of the fetched record */
-
-		RSE_MARK_CRACK(tdbb, rsb, 0);
-		if (NAV_reset_position(rsb, rpb))
-			return true;
-		RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-		return false;
-
-	case rsb_sequential:
-		rpb = request->req_rpb + rsb->rsb_stream;
-		rpb->rpb_number = dbkey[1] - 1;
-
-		RSE_MARK_CRACK(tdbb, rsb, 0);
-		if (VIO_get
-			(tdbb, rpb, rsb, request->req_transaction, request->req_pool)
-			&& (!record_version || version_number == rpb->rpb_transaction_nr))
-		{
-			return true;
-		}
-		RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-		return false;
-
-	case rsb_indexed:
-		rpb = request->req_rpb + rsb->rsb_stream;
-		rpb->rpb_number = dbkey[1] - 1;
-		impure = (irsb_index*) ((UCHAR *) request + rsb->rsb_impure);
-
-		RSE_MARK_CRACK(tdbb, rsb, 0);
-		if ((bitmap = impure->irsb_bitmap) &&
-			SBM_next(*bitmap, &rpb->rpb_number, RSE_get_current) &&
-			VIO_get(tdbb, rpb, rsb, request->req_transaction,
-					request->req_pool) &&
-			(!record_version || version_number == rpb->rpb_transaction_nr))
-		{
-				return true;
-		}
-		RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-		return false;
-
-	default:
-		BUGCHECK(166);			/* msg 166 invalid rsb type */
-		return false;			/* Added to remove compiler warnings */
-	}
-}
-#endif
-
-
-#ifdef PC_ENGINE
-bool RSE_find_record(thread_db* tdbb,
-						RecordSource* rsb,
-						USHORT blr_operator, USHORT direction, jrd_nod* find_key)
-{
-/**************************************
- *
- *	R S E _ f i n d _ r e c o r d
- *
- **************************************
- *
- * Functional description
- *	Find the record with the passed key
- *	value, using the passed operator to
- *	compare records with the key value.
- *	Search forwards or backwards.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-
-	switch (rsb->rsb_type) {
-	case rsb_indexed:
-		return RSE_find_record(tdbb, rsb->rsb_next, blr_operator, direction,
-							   find_key);
-
-	case rsb_boolean:
-		if (!RSE_find_record
-			(tdbb, rsb->rsb_next, blr_operator, direction, find_key))
-		{
-			return false;
-		}
-
-		if ((rsb->rsb_arg[0]) && (!EVL_boolean(tdbb, rsb->rsb_arg[0]))) {
-			RSE_MARK_CRACK(tdbb, rsb, irsb_crack);
-			return false;
-		}
-
-		return true;
-
-	case rsb_navigate:
-		return NAV_find_record(rsb, blr_operator, direction, find_key);
-
-	default:
-		BUGCHECK(166);			/* msg 166 invalid rsb type */
-		return false;			/* Added to remove compiler warnings */
-	}
-}
-#endif
-
-
 bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 {
 /**************************************
@@ -501,106 +321,6 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 
 	return result;
 }
-
-
-#ifdef PC_ENGINE
-Bookmark* RSE_get_bookmark(thread_db* tdbb, RecordSource* rsb)
-{
-/**************************************
- *
- *	R S E _ g e t _ b o o k m a r k
- *
- **************************************
- *
- * Functional description
- *	Return a descriptor whose value is a pointer
- *	to a bookmark describing the location of
- *	the current record in a navigational stream.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-	if (request->req_flags & req_abort)
-		return FALSE;
-
-	switch (rsb->rsb_type) {
-	case rsb_boolean:
-		return RSE_get_bookmark(rsb->rsb_next);
-
-	case rsb_navigate:
-		{
-			IRSB_NAV impure = (IRSB_NAV) ((UCHAR *) request + rsb->rsb_impure);
-			Bookmark* bookmark = BKM_allocate(rsb, impure->irsb_nav_length);
-			NAV_get_bookmark(rsb, impure, bookmark);
-			return bookmark;
-		}
-
-	case rsb_indexed:
-	case rsb_sequential:
-		{
-			record_param* rpb = request->req_rpb + rsb->rsb_stream;
-			Bookmark* bookmark = BKM_allocate(rsb, (USHORT) 0);
-			bookmark->bkm_number = rpb->rpb_number;
-			bookmark->bkm_key_desc.dsc_dtype = dtype_long;
-			bookmark->bkm_key_desc.dsc_length = sizeof(bookmark->bkm_number);
-			bookmark->bkm_key_desc.dsc_address = (UCHAR *) & bookmark->bkm_number;
-			return bookmark;
-		}
-
-	default:
-		BUGCHECK(166);			/* msg 166 invalid rsb type */
-		return FALSE;			/* Added to remove compiler warnings */
-	}
-}
-#endif
-
-
-#ifdef PC_ENGINE
-void RSE_mark_crack(thread_db* tdbb, RecordSource* rsb, USHORT flags)
-{
-/**************************************
- *
- *	R S E _ m a r k _ c r a c k
- *
- **************************************
- *
- * Functional description
- *	Position stream on a crack.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-
-/* correct boolean rsbs to point to the "real" rsb */
-
-	if (rsb->rsb_type == rsb_boolean)
-		rsb = rsb->rsb_next;
-
-/* clear all the flag bits first to make sure
-   no conflicting bits are set */
-
-	irsb* impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
-	impure->irsb_flags &=
-		~(irsb_bof | irsb_eof | irsb_crack | irsb_forced_crack);
-
-	impure->irsb_flags |= flags;
-
-/* release the current record to make sure
-   that no one erroneously tries to retrieve it */
-
-	if (flags) {
-		record_param* rpb = &request->req_rpb[rsb->rsb_stream];
-		if (rpb->rpb_record) {
-			delete rpb->rpb_record;
-			rpb->rpb_record = NULL;
-		}
-		if (rpb->rpb_copy) {
-			delete rpb->rpb_copy;
-			rpb->rpb_copy = NULL;
-		}
-	}
-}
-#endif
 
 
 void RSE_open(thread_db* tdbb, RecordSource* rsb)
@@ -806,129 +526,6 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 		}
 	}
 }
-
-
-#ifdef PC_ENGINE
-bool RSE_reset_position(thread_db* tdbb, RecordSource* rsb, record_param* new_rpb)
-{
-/**************************************
- *
- *	R S E _ r e s e t _ p o s i t i o n
- *
- **************************************
- *
- * Functional description
- *	Reset the position of a navigational stream to
- *	the position indicated by the passed record.
- *
- **************************************/
-	record_param* rpb;
-	irsb_index* impure;
-	RecordBitmap* bitmap;
-
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-	if (request->req_flags & req_abort)
-		return false;
-
-	switch (rsb->rsb_type) {
-	case rsb_boolean:
-		return RSE_reset_position(rsb->rsb_next, new_rpb);
-
-	case rsb_navigate:
-		RSE_MARK_CRACK(rsb, 0);
-		if (!(NAV_reset_position(rsb, new_rpb))) {
-			RSE_MARK_CRACK(rsb, irsb_crack);
-			return false;
-		}
-		return true;
-
-	case rsb_sequential:
-		RSE_MARK_CRACK(rsb, 0);
-		rpb = request->req_rpb + rsb->rsb_stream;
-		rpb->rpb_number = new_rpb->rpb_number;
-
-		if (!
-			(VIO_get
-			 (tdbb, rpb, rsb, request->req_transaction, request->req_pool)))
-		{
-			RSE_MARK_CRACK(rsb, irsb_crack);
-			return false;
-		}
-		return true;
-
-	case rsb_indexed:
-		RSE_MARK_CRACK(rsb, 0);
-		rpb = request->req_rpb + rsb->rsb_stream;
-		rpb->rpb_number = new_rpb->rpb_number;
-
-		impure = (irsb_index*) ((UCHAR *) request + rsb->rsb_impure);
-		if ((bitmap = impure->irsb_bitmap) &&
-			SBM_next(*bitmap, &rpb->rpb_number, RSE_get_current) &&
-			VIO_get(tdbb, rpb, rsb, request->req_transaction,
-					request->req_pool))
-		{
-			return true;
-		}
-
-		RSE_MARK_CRACK(rsb, irsb_crack);
-		return false;
-
-	default:
-		BUGCHECK(166);			/* msg 166 invalid rsb type */
-		return false;			/* Added to remove compiler warnings */
-	}
-}
-#endif
-
-
-#ifdef PC_ENGINE
-bool RSE_set_bookmark(thread_db* tdbb, RecordSource* rsb, record_param* rpb, Bookmark* bookmark)
-{
-/**************************************
- *
- *	R S E _ s e t _ b o o k m a r k
- *
- **************************************
- *
- * Functional description
- *	Set the location of a stream to the location
- *	specified by the given bookmark.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->tdbb_request;
-	if (request->req_flags & req_abort)
-		return false;
-
-	IRSB impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
-
-	switch (rsb->rsb_type) {
-	case rsb_boolean:
-		return RSE_set_bookmark(rsb->rsb_next, rpb, bookmark);
-
-	case rsb_navigate:
-		return NAV_set_bookmark(rsb, impure, rpb, bookmark);
-
-	case rsb_sequential:
-	case rsb_indexed:
-		rpb->rpb_number = bookmark->bkm_number;
-
-		if (impure->irsb_flags & (irsb_bof | irsb_eof | irsb_crack))
-			return false;
-
-		if (!(get_record(tdbb, rsb, NULL, RSE_get_current))) {
-			RSE_MARK_CRACK(rsb, irsb_crack);
-			return false;
-		}
-		return true;
-
-	default:
-		BUGCHECK(166);			/* msg 166 invalid rsb type */
-		return false;			/* Added to remove compiler warnings */
-	}
-}
-#endif
 
 
 static void close_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
@@ -2232,12 +1829,8 @@ static bool get_record(thread_db*	tdbb,
 	{
 		if (((mode == RSE_get_forward) && (impure->irsb_flags & irsb_eof)) ||
 			((mode == RSE_get_backward) && (impure->irsb_flags & irsb_bof)))
-#ifdef PC_ENGINE
-			||((mode == RSE_get_current)
-			   && (impure->irsb_flags & (irsb_bof | irsb_eof)))
-#endif
 		{
-				return false;
+			return false;
 		}
 	}
 #endif
@@ -2252,34 +1845,20 @@ static bool get_record(thread_db*	tdbb,
 		}
 #endif
 
-#ifdef PC_ENGINE
-		if (mode == RSE_get_current)
-		{
-			if (!VIO_get(tdbb,
-						rpb,
-						rsb,
-						request->req_transaction,
-						request->req_pool))
-			{
-				return false;
-			}
-		}
-		else
-#endif
-			if (!VIO_next_record(tdbb,
-								rpb,
-								rsb,
-								request->req_transaction,
-								request->req_pool,
+		if (!VIO_next_record(tdbb,
+							rpb,
+							rsb,
+							request->req_transaction,
+							request->req_pool,
 #ifdef SCROLLABLE_CURSORS
-								(mode == RSE_get_backward),
+							(mode == RSE_get_backward),
 #else
-								false,
+							false,
 #endif
-								false))
-			{
-				 return false;
-			}
+							false))
+		{
+			 return false;
+		}
 		break;
 
 	case rsb_indexed:
@@ -2398,10 +1977,6 @@ static bool get_record(thread_db*	tdbb,
 							any_true = true;
 							break;
 						}
-#ifdef PC_ENGINE
-						else if (mode == RSE_get_current)
-							break;
-#endif
 
 						/* check for select stream and nulls */
 
@@ -2458,10 +2033,6 @@ static bool get_record(thread_db*	tdbb,
 							result = true;
 							break;
 						}
-#ifdef PC_ENGINE
-						else if (mode == RSE_get_current)
-							break;
-#endif
 					}
 					request->req_flags &= ~req_null;
 					if (result)
@@ -2510,10 +2081,6 @@ static bool get_record(thread_db*	tdbb,
 								break;
 							}
 						}
-#ifdef PC_ENGINE
-						else if (mode == RSE_get_current)
-							break;
-#endif
 					}
 					request->req_flags &= ~req_null;
 					if (any_false)
@@ -2557,10 +2124,6 @@ static bool get_record(thread_db*	tdbb,
 								break;
 							}
 						}
-#ifdef PC_ENGINE
-						else if (mode == RSE_get_current)
-							break;
-#endif
 					}
 					request->req_flags &= ~req_null;
 					if (any_false)
@@ -2580,14 +2143,6 @@ static bool get_record(thread_db*	tdbb,
 						result = true;
 						break;
 					}
-#ifdef PC_ENGINE
-					/* If we are trying to "RSE_get_current" and there is a
-					   * "where" clause which is not true, someone must have
-					   * modified it after we positioned on the record
-					 */
-					else if (mode == RSE_get_current)
-						break;
-#endif
 
 					if (request->req_flags & req_null)
 						flag = true;
