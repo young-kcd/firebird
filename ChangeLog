@@ -1,3 +1,27 @@
+2006-01-31 11:44  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.10.2.24), FirebirdInstall_15.iss
+	(1.5.2.25), de/installation_liesmich.txt (1.1.2.4),
+	hu/telepitesi_segedlet.txt (1.1.2.2), pt/instalação_leia-me.txt
+	(1.1.2.3), si/instalacija_precitajMe.txt (1.1.2.3):
+	
+	Tidy up misc Win32 install stuff after 1.5.3 release
+
+2006-01-31 08:16  robocop
+
+	* firebird2/src/burp/backup.epp (1.24.2.7):
+	
+	Post v1.5.3 fix: gbak should skip all system objects when doing
+	backup.
+
+2006-01-31 08:15  robocop
+
+	* firebird2/src/utilities/dba.epp (1.27.2.7):
+	
+	Post v1.5.3 fix: gstat should print error from Windows instead of
+	"unknown Windows NT error."
+
 2005-12-13 11:32  dimitr
 
 	* firebird2/src/jrd/isc_version.h (1.1.2.32):
