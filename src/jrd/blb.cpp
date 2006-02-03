@@ -1013,7 +1013,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		if (!transaction->tra_blobs.locate(blob->blb_temp_id)) {
 			// If we didn't find materialized blob in transaction blob index it
 			// means memory structures are inconsistent and crash is appropriate
-			fb_assert(false);
+			BUGCHECK(305); // msg 305 Blobs accounting is inconsistent				}
 		}
 		blobIndex = &transaction->tra_blobs.current();
 
