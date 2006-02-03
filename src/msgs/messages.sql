@@ -2137,12 +2137,14 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('REPORT1', 'process_statement', 'isql.e', 'Each of these 4 items is followed by a newline (''\n'').', 17, 44, NULL, 'Current memory = !c
 Delta memory = !d
 Max memory = !x
-Elapsed time= !e sec', NULL, NULL);
+Elapsed time= !e sec
+', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('REPORT2', 'process_statement', 'isql.e', 'Each of these 5 items is followed by a newline (''\n'').', 17, 45, NULL, 'Cpu = !u sec
 Buffers = !b
 Reads = !r
 Writes = !w
-Fetches = !f', NULL, NULL);
+Fetches = !f
+', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('BLOB_SUBTYPE', 'ISQL_print_blob', 'isql.e', 'This message is followed by  one newline (''\n'').', 17, 46, NULL, 'BLOB display set to subtype %ld. This BLOB: subtype = %ld', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('DATE_ERR', 'add_row', 'isql.e', 'This message is followed by  one newline (''\n'').', 17, 50, NULL, 'Bad date %s', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('BLOB_PROMPT', 'add_row', 'isql.e', 'Do not translate the word "edit".', 17, 47, NULL, 'BLOB: %s, type ''edit'' or filename to load>', NULL, NULL);
@@ -2497,7 +2499,8 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('REPORT2_WINDOWS_ONLY', 'process_statement (WINDOWS_ONLY)', 'isql.e', NULL, 17, 93, NULL, 'Buffers = !b
 Reads = !r
 Writes !w
-Fetches = !f', NULL, NULL);
+Fetches = !f
+', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('', 'convert_sub_type', 'restore.e', NULL, 12, 235, NULL, 'Unknown V3 SUB_TYPE: %s in FIELD: %s.', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('', 'cvt_v3_to_v4_intl', 'restore.e', NULL, 12, 236, NULL, 'Converted V3 sub_type: %d to character_set_id: %d and collate_id: %d.', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('tra_must_sweep', 'TRA_start', 'tra.c', NULL, 0, 411, NULL, '', NULL, NULL);
