@@ -675,8 +675,8 @@ public:
 		csb_dependencies(0),
 #ifdef SCROLLABLE_CURSORS
 		csb_current_rse(0),
-#endif
 		csb_async_message(0),
+#endif
 		csb_count(0),
 		csb_n_stream(0),
 		csb_msg_number(0),
@@ -719,8 +719,8 @@ public:
 #ifdef SCROLLABLE_CURSORS
 	RecordSelExpr*	csb_current_rse;	/* this holds the RecordSelExpr currently being processed;
 									   unlike the current_rses stack, it references any expanded view RecordSelExpr */
-#endif
 	jrd_nod*		csb_async_message;	/* asynchronous message to send to request */
+#endif
 	USHORT			csb_n_stream;		/* Next available stream */
 	USHORT			csb_msg_number;		/* Highest used message number */
 	SLONG			csb_impure;			/* Next offset into impure area */
