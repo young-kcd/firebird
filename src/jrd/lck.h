@@ -47,7 +47,7 @@ enum lck_t {
 	LCK_expression,				/* Expression index caching mechanism */
 	LCK_record_locking,			/* Lock on existence of record locking for this database */
 	LCK_record,					/* Record Lock */
-	LCK_prc_exist,				/* Relation existence lock */
+	LCK_prc_exist,				/* Procedure existence lock */
 	LCK_range_relation,			/* Relation refresh range lock */
 	LCK_update_shadow,			/* shadow update sync lock */
 	LCK_backup_state,           /* Lock to synchronize for objects depending on backup status */
