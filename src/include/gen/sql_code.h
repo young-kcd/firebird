@@ -564,6 +564,7 @@ static const struct {
 	{335544861, -413}, /* 541 array_convert_error              */
 	{335544862, -904}, /* 542 record_lock_not_supp             */
 	{335544863, -904}, /* 543 partner_idx_not_found            */
+	{335544864, -904}, /* 544 tra_num_exc                      */
 	{335740929, -901}, /*   1 gfix_db_name                     */
 	{335740930, -901}, /*   2 gfix_invalid_sw                  */
 	{335740932, -901}, /*   4 gfix_incmp_sw                    */
