@@ -1530,7 +1530,6 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 	if (dbb->dbb_flags & DBB_read_only) {
 		number = ++dbb->dbb_next_transaction;
 		oldest = dbb->dbb_oldest_transaction;
-		active = MAX(dbb->dbb_oldest_active, dbb->dbb_oldest_transaction);
 		oldest_active = dbb->dbb_oldest_active;
 		oldest_snapshot = dbb->dbb_oldest_snapshot;
 	}
@@ -1538,11 +1537,13 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 		const header_page* header = bump_transaction_id(tdbb, &window);
 		number = header->hdr_next_transaction;
 		oldest = header->hdr_oldest_transaction;
-		active =
-			MAX(header->hdr_oldest_active, header->hdr_oldest_transaction);
 		oldest_active = header->hdr_oldest_active;
 		oldest_snapshot = header->hdr_oldest_snapshot;
 	}
+
+	// oldest (OIT) > oldest_active (OAT) if OIT was advanced by sweep 
+	// and no transactions was started after the sweep starts
+	active = MAX(oldest_active, oldest);
 
 #endif /* SUPERSERVER_V2 */
 
@@ -1574,10 +1575,14 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 	trans->tra_lock = lock;
 	lock->lck_key.lck_long = number;
 
-/* Put the TID of the oldest active transaction (from the header page)
-   in the new transaction's lock. */
+	// Put the TID of the oldest active transaction (from the header page)
+	// in the new transaction's lock. 
+	// hvlad: it is important to put transaction number for read-committed 
+	// transaction instead of oldest active to correctly calculate new oldest 
+	// active value (look at call to LCK_query_data below which will take into 
+	// account this new lock too)
 
-	lock->lck_data = active;
+	lock->lck_data = (trans->tra_flags & TRA_read_committed) ? number : active;
 	lock->lck_object = trans;
 
 	if (!LCK_lock_non_blocking(tdbb, lock, LCK_write, LCK_WAIT)) {
@@ -1684,11 +1689,17 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 		}
 	}
 
-/* Put the TID of the oldest active transaction (just calculated)
-   in the new transaction's lock. */
+	// Put the TID of the oldest active transaction (just calculated)
+	// in the new transaction's lock. 
+	// hvlad: for read-committed transaction put tra_number to prevent 
+	// unnecessary blocking of garbage collection by read-committed 
+	// transactions 
 
-	if (lock->lck_data != (SLONG) oldest_active)
-		LCK_write_data(lock, oldest_active);
+	const ULONG lck_data = 
+		(trans->tra_flags & TRA_read_committed) ? number : oldest_active;
+
+	if (lock->lck_data != (SLONG) lck_data)
+		LCK_write_data(lock, lck_data);
 
 /* Scan commit retaining transactions which have started after us but which
    want to preserve an oldest active from an already committed transaction.
