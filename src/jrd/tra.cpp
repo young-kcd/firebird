@@ -92,6 +92,7 @@ static const SCHAR lock_types[] =
 #endif /* VMS */
 
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
+static const SLONG MAX_TRA_NUMBER = MAX_SLONG - 1;
 
 using namespace Jrd;
 using namespace Ods;
@@ -2191,7 +2192,12 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
 			BUGCHECK(267);		/* next transaction older than oldest transaction */
 	}
 
-	const ULONG number = header->hdr_next_transaction + 1;
+	if (header->hdr_next_transaction >= MAX_TRA_NUMBER - 1) 
+	{
+		CCH_RELEASE(tdbb, window);
+		ERR_post(isc_imp_exc, isc_arg_gds, isc_tra_num_exc, 0);
+	}
+	const SLONG number = header->hdr_next_transaction + 1;
 
 /* If this is the first transaction on a TIP, allocate the TIP now. */
 

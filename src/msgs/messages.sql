@@ -3004,5 +3004,6 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('record_lock_not_supp', 'RSE_get_record', 'rse.cpp', NULL, 0, 542, NULL, 'Stream does not support record locking', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('partner_idx_not_found', NULL, NULL, NULL, 0, 543, NULL, 'Cannot create foreign key constraint %s. Partner index does not exist or is inactive.', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, NULL, NULL, NULL, 15, 305, NULL, 'Blobs accounting is inconsistent', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('tra_num_exc', 'bump_transaction_id', 'tra.cpp', NULL, 0, 544, NULL, 'Transactions count exceeded. Perform backup and restore to make database operable again', NULL, NULL);
 
 COMMIT WORK;
