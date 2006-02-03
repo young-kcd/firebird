@@ -24,8 +24,8 @@
          Arno Brinkman <firebird at abvisie.nl>
 
      * Added new collations
-         WIN_CZ for WIN1250 charset (Chezh language, case-insensitive)
-         WIN_CZ_CI_AI for WIN1250 charset (Chezh language, case-insensitive, accent-insensitive)
+         WIN_CZ for WIN1250 charset (Czech language, case-insensitive)
+         WIN_CZ_CI_AI for WIN1250 charset (Czech language, case-insensitive, accent-insensitive)
        Contributor(s):
          Ivan Prenosil <Ivan.Prenosil at seznam.cz>
          Adriano dos Santos Fernandes <adrianosf at uol.com.br>
