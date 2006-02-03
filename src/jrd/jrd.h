@@ -210,9 +210,10 @@ public:
 	USHORT dbb_max_idx;			/* max number of indexes on a root page */
 	USHORT dbb_use_count;		/* active count of threads */
 	USHORT dbb_shutdown_delay;	/* seconds until forced shutdown */
+#ifdef SUPERSERVER_V2
 	USHORT dbb_prefetch_sequence;	/* sequence to pace frequency of prefetch requests */
 	USHORT dbb_prefetch_pages;	/* prefetch pages per request */
-	Firebird::string dbb_spare_string;	/* random buffer */
+#endif
 	Firebird::PathName dbb_filename;	/* filename string */
 	Firebird::PathName dbb_database_name;	/* database ID (file name or alias) */
 	Firebird::string dbb_encrypt_key;	/* encryption key */
@@ -224,7 +225,7 @@ public:
 	typedef Firebird::vector<pool_ptr> pool_vec_type;
 
 	pool_vec_type dbb_pools;		/* pools */
-    USHORT dbb_next_pool_id;
+
 	vec<jrd_req*>*	dbb_internal;	/* internal requests */
 	vec<jrd_req*>*	dbb_dyn_req;	/* internal dyn requests */
 
@@ -239,15 +240,17 @@ public:
 	event_t dbb_writer_event[1];	/* Event to wake up cache writer */
 	event_t dbb_writer_event_init[1];	/* Event for initialization cache writer */
 	event_t dbb_writer_event_fini[1];	/* Event for finalization cache writer */
+#ifdef SUPERSERVER_V2
 	event_t dbb_reader_event[1];	/* Event to wake up cache reader */
+#endif
+
 #ifdef GARBAGE_THREAD
 	event_t dbb_gc_event[1];	/* Event to wake up garbage collector */
 	event_t dbb_gc_event_init[1];	/* Event for initialization garbage collector */
 	event_t dbb_gc_event_fini[1];	/* Event for finalization garbage collector */
 #endif
-	Attachment* dbb_update_attachment;	/* Attachment with update in process */
-	BlockingThread*	dbb_update_que;	/* Attachments waiting for update */
-	BlockingThread*	dbb_free_btbs;	/* Unused BlockingThread blocks */
+
+	BlockingThread*	dbb_free_btbs;	// Unused BlockingThread blocks
 
 	Firebird::MemoryStats dbb_memory_stats;
 	
@@ -266,10 +269,12 @@ public:
 	crypt_routine dbb_encrypt;		/* External encryption routine */
 	crypt_routine dbb_decrypt;		/* External decryption routine */
 
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	class blb_map *dbb_blob_map;	/* mapping of blobs for REPLAY */
 	struct log *dbb_log;		/* log file for REPLAY */
+#endif
+
 	Firebird::vector<CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
-//	struct wal *dbb_wal;		/* WAL handle for WAL API */
 	TxPageCache*	dbb_tip_cache;	/* cache of latest known state of all transactions in system */
 	vcl*		dbb_pc_transactions;	/* active precommitted transactions */
 	BackupManager *dbb_backup_manager; /* physical backup manager */
@@ -278,7 +283,6 @@ public:
 private:
 	explicit Database(MemoryPool& p)
 	:	modules(p),
-		dbb_spare_string(p),
 		dbb_filename(p),
 		dbb_database_name(p),
 		dbb_encrypt_key(p),

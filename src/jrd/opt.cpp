@@ -6080,7 +6080,7 @@ static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* 
 				relationship = FB_NEW(*tdbb->getDefaultPool()) IndexedRelationship();
 			}
 			if (idx->idx_flags & idx_unique) {
-				relationship->irl_unique = TRUE;
+				relationship->irl_unique = true;
 				break;
 			}
 		}

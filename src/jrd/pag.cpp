@@ -1291,9 +1291,10 @@ void PAG_init(void)
    transfer size. Double pages per prefetch request so that cache reader
    can overlap prefetch I/O with database computation over previously
    prefetched pages. */
-
+#ifdef SUPERSERVER_V2
 	dbb->dbb_prefetch_sequence = PREFETCH_MAX_TRANSFER / dbb->dbb_page_size;
 	dbb->dbb_prefetch_pages = dbb->dbb_prefetch_sequence * 2;
+#endif
 }
 
 

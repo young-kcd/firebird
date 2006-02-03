@@ -378,7 +378,7 @@ void LOG_init(const TEXT* name, USHORT length)
  *
  **************************************/
 	USHORT log_length;
-	TEXT file_name[256];
+	TEXT file_name[MAXPATHLEN];
 
 /* Get header page and look for logging entry */
 

@@ -307,7 +307,7 @@ class IndexedRelationship : public pool_alloc<type_irl>
 public:
 	IndexedRelationship*	irl_next;		// next IRL block for stream
 	USHORT					irl_stream;		// stream reachable by relation
-	USHORT					irl_unique;		// is this stream reachable by unique index?
+	bool					irl_unique;		// is this stream reachable by unique index?
 };
 
 
