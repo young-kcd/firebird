@@ -38,7 +38,7 @@
 #include "../jrd/thd.h"
 #include "../jrd/isc.h"
 #include "../jrd/license.h"
-#include "../jrd/jrd_time.h"
+#include "../common/classes/timestamp.h"
 #include "../remote/merge_proto.h"
 #include "../remote/parse_proto.h"
 #include "../remote/remot_proto.h"

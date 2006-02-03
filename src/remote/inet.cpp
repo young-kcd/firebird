@@ -54,7 +54,7 @@
 #include "../jrd/file_params.h"
 #include <stdarg.h>
 
-#include "../jrd/jrd_time.h"
+#include "../common/classes/timestamp.h"
 
 #ifdef HAVE_PWD_H
 #include <pwd.h>

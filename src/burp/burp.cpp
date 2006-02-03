@@ -48,7 +48,7 @@
 #include "../burp/std_desc.h"
 #include "../jrd/license.h"
 
-#include "../jrd/jrd_time.h"
+#include "../common/classes/timestamp.h"
 #include "../burp/burp_proto.h"
 #include "../burp/backu_proto.h"
 #include "../burp/mvol_proto.h"

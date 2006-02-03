@@ -31,7 +31,7 @@
 #include "../qli/err_proto.h"
 #include "../qli/picst_proto.h"
 #include "../qli/mov_proto.h"
-#include "../jrd/jrd_time.h"
+#include "../common/classes/timestamp.h"
 #include "../jrd/gds_proto.h"
 
 const int PRECISION	= 10000;

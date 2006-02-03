@@ -90,7 +90,7 @@ enum literal_string_type
 	INCOMPLETE_STRING		= 4
 };
 
-#include "../jrd/jrd_time.h"
+#include "../common/classes/timestamp.h"
 
 #include "../jrd/common.h"
 #if defined(WIN_NT)

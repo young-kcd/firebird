@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../qli/dtr.h"
-#include "../jrd/jrd_time.h"
+#include "../common/classes/timestamp.h"
 #include "../jrd/intl.h"
 #include "../qli/err_proto.h"
 #include "../jrd/gds_proto.h"

@@ -40,7 +40,7 @@
 
 
 #include "firebird.h"
-#include "../jrd/jrd_time.h"
+#include "../common/classes/timestamp.h"
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
