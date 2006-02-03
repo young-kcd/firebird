@@ -782,7 +782,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		dbb->dbb_file =
 			PIO_open(dbb, expanded_name, options.dpb_trace != 0, NULL, file_name);
 		SHUT_init(dbb);
-		PAG_header(file_name.c_str(), file_name.length());
+		PAG_header(file_name.c_str(), file_name.length(), false);
 		INI_init2();
 		PAG_init();
 		if (options.dpb_set_page_buffers) {

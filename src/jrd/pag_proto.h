@@ -44,7 +44,7 @@ void	PAG_format_header(void);
 void	PAG_format_log(void);
 void	PAG_format_pip(void);
 bool	PAG_get_clump(SLONG, USHORT, USHORT*, UCHAR*);
-void	PAG_header(const TEXT*, USHORT);
+void	PAG_header(const TEXT*, USHORT, bool);
 void	PAG_init(void);
 void	PAG_init2(USHORT);
 SLONG	PAG_last_page(void);

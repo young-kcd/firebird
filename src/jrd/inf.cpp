@@ -451,7 +451,7 @@ int INF_database_info(const SCHAR* items,
 			if (!header_refreshed)
 			{
 				const jrd_file* file = dbb->dbb_file;
-				PAG_header(file->fil_string, file->fil_length);
+				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
 			*p++ = (dbb->dbb_flags & DBB_force_write) ? 1 : 0;
@@ -683,7 +683,7 @@ int INF_database_info(const SCHAR* items,
 			if (!header_refreshed)
 			{
 				const jrd_file* file = dbb->dbb_file;
-				PAG_header(file->fil_string, file->fil_length);
+				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
 			length = INF_convert(dbb->dbb_oldest_transaction, buffer);
@@ -693,7 +693,7 @@ int INF_database_info(const SCHAR* items,
 			if (!header_refreshed)
 			{
 				const jrd_file* file = dbb->dbb_file;
-				PAG_header(file->fil_string, file->fil_length);
+				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
 		    length = INF_convert(dbb->dbb_oldest_active, buffer);
@@ -703,7 +703,7 @@ int INF_database_info(const SCHAR* items,
 			if (!header_refreshed)
 			{
 				const jrd_file* file = dbb->dbb_file;
-				PAG_header(file->fil_string, file->fil_length);
+				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
 			length = INF_convert(dbb->dbb_oldest_snapshot, buffer);
@@ -713,7 +713,7 @@ int INF_database_info(const SCHAR* items,
 			if (!header_refreshed)
 			{
 				const jrd_file* file = dbb->dbb_file;
-				PAG_header(file->fil_string, file->fil_length);
+				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
 			length = INF_convert(dbb->dbb_next_transaction, buffer);

@@ -1036,7 +1036,7 @@ bool PAG_get_clump(SLONG page_num, USHORT type, USHORT* len, UCHAR* entry)
 }
 
 
-void PAG_header(const TEXT* file_name, USHORT file_length)
+void PAG_header(const TEXT* file_name, USHORT file_length, bool info)
 {
 /**************************************
  *
@@ -1160,9 +1160,16 @@ is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 	dbb->dbb_page_size = header->hdr_page_size;
 	dbb->dbb_page_buffers = header->hdr_page_buffers;
 	dbb->dbb_next_transaction = header->hdr_next_transaction;
-	dbb->dbb_oldest_transaction = header->hdr_oldest_transaction;
-	dbb->dbb_oldest_active = header->hdr_oldest_active;
-	dbb->dbb_oldest_snapshot = header->hdr_oldest_snapshot;
+
+	if (!info || info && dbb->dbb_oldest_transaction < header->hdr_oldest_transaction) {
+		dbb->dbb_oldest_transaction = header->hdr_oldest_transaction;
+	}
+	if (!info || info && dbb->dbb_oldest_active < header->hdr_oldest_active) {
+		dbb->dbb_oldest_active = header->hdr_oldest_active;
+	}
+	if (!info || info && dbb->dbb_oldest_snapshot < header->hdr_oldest_snapshot) {
+		dbb->dbb_oldest_snapshot = header->hdr_oldest_snapshot;
+	}
 
 	dbb->dbb_attachment_id = header->hdr_attachment_id;
 
