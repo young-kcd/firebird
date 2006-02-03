@@ -1,3 +1,70 @@
+2006-02-03 03:28  robocop
+
+	* firebird2/src/jrd/: jrd.h (1.146), log.cpp (1.22), opt.cpp
+	(1.257), pag.cpp (1.94), rse.h (1.43):
+	
+	The files rng.cpp, rng.h, rng_proto.h, bookmark.cpp and bookmark.h
+	belong exclusively to PC_ENGINE, that's obsolete functionality. 
+	Ninth step: while doing cleanup, I discovered some data members
+	that aren't used anymore or that should be inside conditional code.
+	This is the result.
+
+2006-02-02 14:17  dimitr
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.26), fbudf.vcproj
+	(1.15):
+	
+	Fixed the win32 build.
+
+2006-02-02 13:56  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.256):
+	
+	Fixed a bug with NOT ANY/ALL reported by Alex.
+
+2006-02-02 08:57  robocop
+
+	* firebird2/src/jrd/: cch.cpp (1.125), jrd.h (1.145):
+	
+	The files rng.cpp, rng.h, rng_proto.h, bookmark.cpp and bookmark.h
+	belong exclusively to PC_ENGINE, that's obsolete functionality. 
+	Eighth step: dbb_refresh_ranges belongs to the obsolete
+	functionality and since it's never set but tested in cch.cpp with
+	two AND, the whole condition will be always false, hence remove the
+	code.
+
+2006-02-02 08:40  robocop
+
+	* firebird2/src/: jrd/exe.h (1.75), jrd/sort.cpp (1.77),
+	misc/blrtable.cpp (1.21):
+	
+	Misc.
+
+2006-02-02 08:37  robocop
+
+	* firebird2/src/jrd/: nav.cpp (1.57), rse_proto.h (1.15):
+	
+	The files rng.cpp, rng.h, rng_proto.h, bookmark.cpp and bookmark.h
+	belong exclusively to PC_ENGINE, that's obsolete functionality. 
+	Seventh step: since RSE_MARK_CRACK became a no-op, remove it from
+	the sources.
+
+2006-02-02 08:32  robocop
+
+	* firebird2/src/jrd/: cmp.cpp (1.193), cmp_proto.h (1.29), evl.cpp
+	(1.161), exe.cpp (1.172), exe_proto.h (1.14), jrd.cpp (1.232),
+	jrd.h (1.144), nav.cpp (1.56), nav_proto.h (1.17), opt.cpp (1.255),
+	opt_proto.h (1.14), par.cpp (1.127), req.h (1.52), rlck.cpp (1.34),
+	rlck_proto.h (1.14), rse.cpp (1.97), rse_proto.h (1.14), shut.cpp
+	(1.37), sort.cpp (1.76), tra.cpp (1.111), tra.h (1.50), vio.cpp
+	(1.144), vio_proto.h (1.27):
+	
+	The files rng.cpp, rng.h, rng_proto.h, bookmark.cpp and bookmark.h
+	belong exclusively to PC_ENGINE, that's obsolete functionality. 
+	Sixth step: remove the places protected by the macro PC_ENGINE.
+	More to come. (I guess all of you who have pending functional
+	changes to post will love this commit. <g>)
+
 2006-02-02 01:39  robocop
 
 	* firebird2/src/extlib/fbudf/fbudf.cpp (1.25):
