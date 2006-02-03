@@ -30,7 +30,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <limits.h>
-#include "../jrd/jrd_time.h"
+#include "../common/classes/timestamp.h"
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/perf.h"

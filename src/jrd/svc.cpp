@@ -33,7 +33,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../jrd/jrd_time.h"
+//#include "../common/classes/timestamp.h"
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
 #include "../jrd/file_params.h"

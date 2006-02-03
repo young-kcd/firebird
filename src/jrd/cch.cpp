@@ -69,7 +69,7 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/config/config.h"
-#include "../jrd/jrd_time.h"
+//#include "../common/classes/timestamp.h"
 
 using namespace Jrd;
 using namespace Ods;

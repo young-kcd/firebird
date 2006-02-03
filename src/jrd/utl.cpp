@@ -47,7 +47,7 @@
 #include "../jrd/common.h"
 #include "../jrd/license.h"
 #include <stdarg.h>
-#include "../jrd/jrd_time.h"
+//#include "../common/classes/timestamp.h"
 #include "../jrd/gdsassert.h"
 
 #include "../jrd/ibase.h"

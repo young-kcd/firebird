@@ -53,7 +53,7 @@
 #include <sys/pstat.h>
 #endif
 
-#include "../jrd/jrd_time.h"
+//#include "../common/classes/timestamp.h"
 #include "../jrd/common.h"
 #include "gen/iberror.h"
 #include "../jrd/isc.h"

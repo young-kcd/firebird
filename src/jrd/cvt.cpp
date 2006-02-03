@@ -38,7 +38,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
-#include "../jrd/jrd_time.h"
 #ifndef REQUESTER
 #include "../jrd/jrd.h"
 //#else

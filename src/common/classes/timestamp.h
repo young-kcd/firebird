@@ -39,6 +39,13 @@
 #endif
 #endif
 
+// MIN_YEAR and MAX_YEAR delimit the range for valid years
+// when either inserting data or performing date arithmetic
+
+const int MIN_YEAR = 0001;
+const int MAX_YEAR = 9999;
+
+
 namespace Firebird {
 
 // Wrapper class for ISC_TIMESTAMP supposed to implement date/time conversions

@@ -64,7 +64,6 @@
 #include <errno.h>
 
 #include <stdarg.h>
-#include "../jrd/jrd_time.h"
 
 #if defined(WIN_NT)
 #include <io.h> // umask, close, lseek, read, open, _sopen

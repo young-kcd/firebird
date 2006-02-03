@@ -38,7 +38,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/isc.h"
-#include "../jrd/jrd_time.h"
+//#include "../common/classes/timestamp.h"
 #include "../lock/lock.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/gds_proto.h"
@@ -596,8 +596,6 @@ static void prt_lock_activity(
  *	Print a time-series lock activity report 
  *
  **************************************/
-	ULONG i;
-
 	time_t clock = time(NULL);
 	tm d = *localtime(&clock);
 
@@ -628,7 +626,7 @@ static void prt_lock_activity(
 	if (intervals == 0)
 		memset(&base, 0, sizeof(base));
 
-	for (i = 0; i < intervals; i++) {
+	for (ULONG i = 0; i < intervals; i++) {
 #ifdef WIN_NT
 		Sleep((DWORD) seconds * 1000);
 #else
