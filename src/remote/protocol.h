@@ -149,6 +149,7 @@ const USHORT ptype_out_of_band	= 4;	/* Batch sends w/ out of band notification *
 
 typedef USHORT OBJCT;
 const int MAX_OBJCT_HANDLES	= 65000;
+const int INVALID_OBJECT = MAX_USHORT;
 
 /* Operation (packet) types */
 

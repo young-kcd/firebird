@@ -342,7 +342,6 @@ static void		unhook_disconnected_ports(rem_port*);
 
 static void		unhook_port(rem_port*, rem_port*);
 static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
-static bool_t	xdrinet_endofrecord(XDR *, bool_t);
 
 
 static XDR::xdr_ops inet_ops =
@@ -2680,7 +2679,7 @@ static int send_full( rem_port* port, PACKET * packet)
 	}
 #endif
 
-	return xdrinet_endofrecord(&port->port_send, TRUE);
+	return inet_write(&port->port_send, TRUE);
 }
 
 static int send_partial( rem_port* port, PACKET * packet)
@@ -2738,21 +2737,6 @@ static int xdrinet_create(
 	return TRUE;
 }
 
-static bool_t xdrinet_endofrecord( XDR * xdrs, bool_t flushnow)
-{
-/**************************************
- *
- *	x d r i n e t _ e n d o f r e c o r d
- *
- **************************************
- *
- * Functional description
- *	Write out the rest of a record.
- *
- **************************************/
-
-	return inet_write(xdrs, flushnow);
-}
 #ifdef HAVE_SETITIMER
 static void alarm_handler( int x)
 {

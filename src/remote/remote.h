@@ -324,17 +324,9 @@ enum blk_t
 
 enum rem_port_t
 {
-	port_mailbox,		/* Apollo mailbox */
-	port_pcic,			/* IBM PC interconnect */
 	port_inet,			/* Internet (TCP/IP) */
-	port_asyn_homebrew,	/* homebrew asynchronous connection */
-	port_decnet,		/* DECnet connection */
-	port_ipc,			/* NetIPC connection */
 	port_pipe,			/* Windows NT named pipe connection */
-	port_mslan,			/* Microsoft LanManager connection */
-	port_spx,			/* Novell SPX connection */
-	//port_ipserver,		// InterBase interprocess server
-	port_xnet			/* Windows NT named xnet connection */
+	port_xnet			/* Windows NT shared memory connection */
 };
 
 enum state_t

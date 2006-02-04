@@ -1639,7 +1639,7 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 		statement->rsr_message = statement->rsr_buffer;
 	}
 
-	const USHORT object = (statement) ? statement->rsr_id : (USHORT) - 1;
+	const USHORT object = (statement) ? statement->rsr_id : INVALID_OBJECT;
 
 	return this->send_response(sendL, object, 0, status_vector);
 }
@@ -2891,7 +2891,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 {
 /*****************************************
  *
- *	p r e p a r e _ s t a t m e n t
+ *	p r e p a r e _ s t a t e m e n t
  *
  *****************************************
  *

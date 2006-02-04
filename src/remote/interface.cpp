@@ -1999,7 +1999,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 		}
 
 		statement->rsr_handle = (FB_API_HANDLE) (IPTR) packet->p_resp.p_resp_object;
-		if (packet->p_resp.p_resp_object == 0xFFFF) {
+		if (packet->p_resp.p_resp_object == INVALID_OBJECT) {
 			release_sql_request(statement);
 			*stmt_handle = NULL;
 		}
@@ -5260,12 +5260,6 @@ static void disconnect( rem_port* port)
 		   M.  Romanini
 
 		 */
-		/* Win95 SPX does not like the server closing the connection, just as the client
-		   is attempting to send data. Such a scenario is caused by both sides trying to 
-		   perform a disconnect. So, disable client side disconnect for spx. Though, 
-		   this is really  not a NT issue, let me leave the same behaviour for NT & 95 
-		   RaviKumar Jan 3, 98
-		 */
 
 		PACKET* packet = &rdb->rdb_packet;
 		if (port->port_type != port_pipe) {
@@ -6298,7 +6292,7 @@ static bool release_object(RDB rdb,
  **************************************
  *
  * Functional description
- *	Tell the server to zap an object.  This doesn't not necessary
+ *	Tell the server to zap an object.  This doesn't necessary
  *	release the object, but usually does.
  *
  **************************************/
