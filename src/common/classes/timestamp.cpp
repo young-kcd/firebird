@@ -58,9 +58,9 @@ int TimeStamp::yday(const struct tm* times)
  *	view.)   
  *
  **************************************/
-	SSHORT day = times->tm_mday;
-	const SSHORT month = times->tm_mon;
-	const SSHORT year = times->tm_year + 1900;
+	int day = times->tm_mday;
+	const int month = times->tm_mon;
+	const int year = times->tm_year + 1900;
 
 	--day;
 
@@ -114,20 +114,20 @@ void TimeStamp::decode_date(ISC_DATE nday, struct tm* times)
 	if ((times->tm_wday = (nday + 3) % 7) < 0)
 		times->tm_wday += 7;
 
-	nday -= 1721119 - 2400001;
-	const SLONG century = (4 * nday - 1) / 146097;
+	nday += 2400001 - 1721119;
+	const int century = (4 * nday - 1) / 146097;
 	nday = 4 * nday - 1 - 146097 * century;
-	SLONG day = nday / 4;
+	int day = nday / 4;
 
 	nday = (4 * day + 3) / 1461;
 	day = 4 * day + 3 - 1461 * nday;
 	day = (day + 4) / 4;
 
-	SLONG month = (5 * day - 3) / 153;
+	int month = (5 * day - 3) / 153;
 	day = 5 * day - 3 - 153 * month;
 	day = (day + 5) / 5;
 
-	SLONG year = 100 * century + nday;
+	int year = 100 * century + nday;
 
 	if (month < 10)
 		month += 3;
@@ -136,9 +136,9 @@ void TimeStamp::decode_date(ISC_DATE nday, struct tm* times)
 		year += 1;
 	}
 
-	times->tm_mday = (int) day;
-	times->tm_mon = (int) month - 1;
-	times->tm_year = (int) year - 1900;
+	times->tm_mday = day;
+	times->tm_mon = month - 1;
+	times->tm_year = year - 1900;
 
 	times->tm_yday = yday(times);
 }
@@ -157,9 +157,9 @@ ISC_DATE TimeStamp::encode_date(const struct tm* times)
  *	(the number of days since the base date).
  *
  **************************************/
-	const SSHORT day = times->tm_mday;
-	SSHORT month = times->tm_mon + 1;
-	SSHORT year = times->tm_year + 1900;
+	const int day = times->tm_mday;
+	int month = times->tm_mon + 1;
+	int year = times->tm_year + 1900;
 
 	if (month > 2)
 		month -= 3;
@@ -168,13 +168,14 @@ ISC_DATE TimeStamp::encode_date(const struct tm* times)
 		year -= 1;
 	}
 
-	const SLONG c = year / 100;
-	const SLONG ya = year - 100 * c;
+	const int c = year / 100;
+	const int ya = year - 100 * c;
 
 	return (ISC_DATE) (((SINT64) 146097 * c) / 4 +
 					   (1461 * ya) / 4 +
 					   (153 * month + 2) / 5 + day + 1721119 - 2400001);
 }
+
 
 void TimeStamp::decode_time(
 	ISC_TIME ntime, int* hours, int* minutes, int* seconds, int* fractions)
@@ -279,7 +280,7 @@ void TimeStamp::generate()
 
 void TimeStamp::report_error(const char* msg)
 {
-#ifdef FBUDF_EXPORTS
+#ifdef SUPERCLIENT
 	// Or set it to an invalid date that will force the engine to complain.
 	mValue.timestamp_date = mValue.timestamp_time = 0;
 #else
@@ -288,3 +289,4 @@ void TimeStamp::report_error(const char* msg)
 }
 
 }	// namespace
+
