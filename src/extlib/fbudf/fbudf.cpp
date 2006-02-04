@@ -382,7 +382,7 @@ namespace internal
 
 	void encode_timestamp(const tm* times_arg, GDS_TIMESTAMP* date)
 	{
-		Firebird::TimeStamp temp(false);
+		Firebird::TimeStamp temp(true);
 		temp.encode(times_arg);
 		*date = temp.value();
 	}

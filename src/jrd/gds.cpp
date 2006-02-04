@@ -589,7 +589,7 @@ void API_ROUTINE isc_encode_date(const void* times_arg, ISC_QUAD* date)
  *	isc_encode_timestamp
  *
  **************************************/
-	Firebird::TimeStamp temp(false);
+	Firebird::TimeStamp temp(true);
 	temp.encode(static_cast<const tm*>(times_arg));
 	*date = (ISC_QUAD&)temp.value();
 }
@@ -645,7 +645,7 @@ void API_ROUTINE isc_encode_timestamp(const void* times_arg, GDS_TIMESTAMP* date
  *  utilities should be using TimeStamp class directly in type-safe manner.
  *
  **************************************/
-	Firebird::TimeStamp temp(false);
+	Firebird::TimeStamp temp(true);
 	temp.encode(static_cast<const tm*>(times_arg));
 	*date = temp.value();
 }
