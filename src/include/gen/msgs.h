@@ -565,7 +565,7 @@ static const struct {
 	{335544861, "Unsupported conversion to target type ARRAY"},		/* 541, array_convert_error */
 	{335544862, "Stream does not support record locking"},		/* 542, record_lock_not_supp */
 	{335544863, "Cannot create foreign key constraint %s. Partner index does not exist or is inactive."},		/* 543, partner_idx_not_found */
-	{335544864, "Transactions count exceeed. Perform backup and restore to make database operable again"},		/* 544, tra_num_exc */
+	{335544864, "Transactions count exceeded. Perform backup and restore to make database operable again"},		/* 544, tra_num_exc */
 	{335740929, "data base file name (%s) already given"},		/* 545, gfix_db_name */
 	{335740930, "invalid switch %s"},		/* 546, gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* 547, gfix_incmp_sw */
