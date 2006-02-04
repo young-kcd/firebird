@@ -384,14 +384,24 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		thread = CNTL_insert_thread();
 
 	ISC_STATUS_ARRAY status_vector;
-
-	THREAD_ENTER();
-	rem_port* port = INET_connect(protocol_inet, 0, status_vector, server_flag, 0, 0);
-	THREAD_EXIT();
-	if (port)
-		SRVR_multi_thread(port, server_flag);
-	else
-		gds__log_status(0, status_vector);
+	while (true)
+	{
+		THREAD_ENTER();
+		rem_port* port = INET_connect(protocol_inet, 0, status_vector, server_flag, 0, 0);
+		THREAD_EXIT();
+		if (!port) {
+			gds__log_status(0, status_vector);
+			break;
+		}
+		if (server_flag & SRVR_multi_client) {
+			SRVR_multi_thread(port, server_flag);
+			break;
+		}
+		else {
+			gds__thread_start(process_connection_thread, port,
+							  THREAD_medium, 0, 0);
+		}
+	}
 
 	if (!(server_flag & SRVR_non_service))
 		CNTL_remove_thread(thread);
@@ -431,8 +441,8 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 			}
 			break;
 		}
-		gds__thread_start(process_connection_thread, port, THREAD_medium, 0,
-						  0);
+		gds__thread_start(process_connection_thread, port,
+						  THREAD_medium, 0, 0);
 	}
 
 	if (!(server_flag & SRVR_non_service)) {
