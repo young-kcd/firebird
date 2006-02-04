@@ -78,11 +78,8 @@ static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, time_t, ISC_STATUS*);
 static bool make_map(ULONG, time_t, FILE_ID*, CADDR_T*);
 static XPM make_xpm(ULONG, time_t);
 static bool server_init();
-#ifdef SUPERSERVER
 static XPM get_free_slot(ULONG*, ULONG*, time_t*);
-#else
 static bool fork(ULONG, USHORT, ULONG*);
-#endif // SUPERSERVER
 #endif // SUPERCLIENT
 
 static int xdrxnet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
@@ -2172,7 +2169,6 @@ static bool server_init()
 	
 }
 
-#ifdef SUPERSERVER
 
 static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, time_t* timestamp)
 {
@@ -2237,7 +2233,6 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, time_t* timestamp)
 	return xpm;
 }
 
-#else // SUPERSERVER
 
 static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 {
@@ -2320,7 +2315,6 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 	return cp_result;
 }
 
-#endif // SUPERSERVER
 
 static rem_port* get_server_port(ULONG client_pid,
 								 XPM xpm,
@@ -2490,15 +2484,6 @@ void XNET_srv(USHORT flag)
  *	XNET server main thread
  *
  **************************************/
-
-#ifdef SUPERSERVER
-	rem_port* port;
-	ULONG map_num, slot_num;
-	XPM xpm = NULL;
-
-	ISC_STATUS* status_vector;
-#endif
-
 	current_process_id = getpid();
 	XNET_command_line[0] = 0;
 
@@ -2536,57 +2521,59 @@ void XNET_srv(USHORT flag)
 		presponse->pages_per_slot = global_pages_per_slot;
 		presponse->timestamp = time_t(0);
 
-#ifdef SUPERSERVER
+		if (flag & (SRVR_debug | SRVR_multi_client))
+		{
+			// searhing for free slot
+			ULONG map_num, slot_num;
+			time_t timestamp = time(NULL);
 
-		time_t timestamp = time(NULL);
-		// searhing for free slot
-		XNET_LOCK();
-		xpm = get_free_slot(&map_num, &slot_num, &timestamp);
-		XNET_UNLOCK();
+			XNET_LOCK();
+			XPM xpm = get_free_slot(&map_num, &slot_num, &timestamp);
+			XNET_UNLOCK();
 
-		// pack combined mapped area and number
-		if (xpm) {
-			presponse->proc_id = 0;
-			presponse->map_num = map_num;
-			presponse->slot_num = slot_num;
-			presponse->timestamp = timestamp;
+			// pack combined mapped area and number
+			if (xpm) {
+				presponse->proc_id = 0;
+				presponse->map_num = map_num;
+				presponse->slot_num = slot_num;
+				presponse->timestamp = timestamp;
 
-			try {
+				try {
 
-			status_vector = (ISC_STATUS*) ALLR_alloc(sizeof(ISC_STATUS_ARRAY));
+				ISC_STATUS* status_vector =
+					(ISC_STATUS*) ALLR_alloc(sizeof(ISC_STATUS_ARRAY));
 
-			port = get_server_port(client_pid, xpm, map_num, slot_num,
-				                   timestamp, status_vector);
+				rem_port* port =
+					get_server_port(client_pid, xpm, map_num, slot_num,
+								    timestamp, status_vector);
 
-			// start the thread for this client
-			gds__thread_start(process_connection_thread,
-							  port, THREAD_medium, 0, 0);
+				// start the thread for this client
+				gds__thread_start(process_connection_thread,
+								  port, THREAD_medium, 0, 0);
 
+				}
+				catch (const std::exception&) {
+					XNET_LOG_ERROR("failed to allocate server port for communication");
+					return;
+				}
 			}
-			catch (const std::exception&) {
-				XNET_LOG_ERROR("failed to allocate server port for communication");
+			else {
+				XNET_LOG_ERROR("get_free_slot() failed");
 				return;
 			}
+
+			SetEvent(xnet_response_event);
 		}
 		else {
-			XNET_LOG_ERROR("get_free_slot() failed");
-			return;
+			// in case process we'll fail to start child process
+			presponse->slot_num = 0;
+
+			// child process ID (presponse->map_num) used as map number
+			if (!fork(client_pid, flag, &presponse->map_num))
+				SetEvent(xnet_response_event);	// if fork successfully creates child process, then
+												// child process will call SetEvent(xnet_response_event)
+												// by itself
 		}
-
-		SetEvent(xnet_response_event);
-
-#else // CS
-
-		// in case process we'll fail to start child process
-		presponse->slot_num = 0;
-
-		// child process ID (presponse->map_num) used as map number
-		if (!fork(client_pid, flag, &presponse->map_num))
-			SetEvent(xnet_response_event);	// if fork successfully creates child process, then
-											// child process will call SetEvent(xnet_response_event)
-											// by itself
-#endif //SUPERSERVER
-
 	}
 }
 
