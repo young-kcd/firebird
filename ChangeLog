@@ -1,3 +1,42 @@
+2006-02-04 17:10  dimitr
+
+	* firebird2/src/remote/xnet.cpp (1.67):
+	
+	Implemented SRVR_debug for XNet connections on win32.
+
+2006-02-04 12:32  dimitr
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp (1.33):
+	
+	Fixed SRVR_debug for INet connections on win32.
+
+2006-02-04 11:37  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.152), interface.cpp (1.117),
+	protocol.h (1.26), remote.h (1.44), server.cpp (1.113):
+	
+	Minor cleanup.
+
+2006-02-04 05:38  robocop
+
+	* firebird2/: builds/win32/msvc6/fbudf.dsp (1.13),
+	src/common/classes/timestamp.cpp (1.11):
+	
+	Use SUPERCLIENT for fbudf for avoiding exception-related code.
+
+2006-02-04 05:20  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.30),
+	lang_helpers/gds_codes.pas (1.30), src/include/gen/msgs.h (1.50):
+	
+	Sync after Vlad's changes.
+
+2006-02-04 05:19  robocop
+
+	* firebird2/src/msgs/: facilities.sql (1.50), history.sql (1.28):
+	
+	Misc.
+
 2006-02-04 03:40  robocop
 
 	* firebird2/src/: extlib/fbudf/fbudf.cpp (1.26), jrd/gds.cpp
