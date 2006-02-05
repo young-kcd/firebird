@@ -387,7 +387,8 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	while (true)
 	{
 		THREAD_ENTER();
-		rem_port* port = INET_connect(protocol_inet, 0, status_vector, server_flag, 0, 0);
+		rem_port* port =
+			INET_connect(protocol_inet, NULL, status_vector, server_flag, 0, 0);
 		THREAD_EXIT();
 		if (!port) {
 			gds__log_status(0, status_vector);
@@ -430,7 +431,8 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	while (true)
 	{
 		THREAD_ENTER();
-		rem_port* port = WNET_connect(protocol_wnet, 0, status_vector, server_flag);
+		rem_port* port =
+			WNET_connect(protocol_wnet, NULL, status_vector, server_flag);
 		THREAD_EXIT();
 		if (!port) {
 			if (status_vector[1] != isc_io_error ||
@@ -469,9 +471,20 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	if (!(server_flag & SRVR_non_service))
 		thread = CNTL_insert_thread();
 
-	THREAD_ENTER();
-	XNET_srv(server_flag);
-	THREAD_EXIT();
+	ISC_STATUS_ARRAY status_vector;
+	while (true)
+	{
+		THREAD_ENTER();
+		rem_port* port =
+			XNET_connect(NULL, NULL, status_vector, server_flag);
+		THREAD_EXIT();
+		if (!port) {
+			gds__log_status(0, status_vector);
+			break;
+		}
+		gds__thread_start(process_connection_thread, port,
+						  THREAD_medium, 0, 0);
+	}
 
 	if (!(server_flag & SRVR_non_service))
 		CNTL_remove_thread(thread);

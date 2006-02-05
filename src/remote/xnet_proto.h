@@ -33,10 +33,9 @@
 #endif
 
 rem_port* XNET_analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*, bool);
-rem_port* XNET_connect(const TEXT*, struct packet*, ISC_STATUS*);
+rem_port* XNET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT);
 
 #ifndef SUPERCLIENT
-void XNET_srv(USHORT flag);
 rem_port* XNET_reconnect(ULONG, ISC_STATUS*);
 #endif
 
