@@ -8,7 +8,7 @@ New item for isc_database_info
 isc_info_active_tran_count : 
 	return number of currently active transactions
 
-New item for isc_transaction_info enhancements:
+New items for isc_transaction_info:
 	
 1. isc_info_tra_oldest_interesting :
 	return number of oldest interesting transaction when current
