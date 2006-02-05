@@ -500,6 +500,22 @@ int INF_database_info(const SCHAR* items,
 			}
 			continue;
 
+		case isc_info_active_tran_count:
+			if (!transaction)
+				transaction = TRA_start(tdbb, 0, NULL);
+			{ // scope
+				SLONG cnt = 0;
+				for (id = transaction->tra_oldest_active;
+					id < transaction->tra_number; id++) 
+				{
+					if (TRA_snapshot_state(tdbb, transaction, id) == tra_active) {
+						cnt++;
+					}
+				}
+				length = INF_convert(cnt, buffer);
+			}
+			break;
+
 		case isc_info_user_names:
 			for (att = dbb->dbb_attachments; att; att = att->att_next) {
 				if (att->att_flags & ATT_shutdown)
@@ -962,6 +978,56 @@ int INF_transaction_info(const jrd_tra* transaction,
 
 		case isc_info_tra_id:
 			length = INF_convert(transaction->tra_number, buffer);
+			break;
+
+		case isc_info_tra_oldest_interesting:
+			length = INF_convert(transaction->tra_oldest, buffer);
+			break;
+
+		case isc_info_tra_oldest_snapshot:
+			length = INF_convert(transaction->tra_oldest_active, buffer);
+			break;
+
+		case isc_info_tra_oldest_active:
+			length = INF_convert(
+				transaction->tra_lock ? transaction->tra_lock->lck_data : 0, 
+				buffer);
+			break;
+
+		case isc_info_tra_isolation:
+		{
+			SCHAR* p = buffer;
+			if (transaction->tra_flags & TRA_read_committed)
+			{
+				*p++ = isc_info_tra_read_committed;
+				if (transaction->tra_flags & TRA_rec_version)
+					*p++ = isc_info_tra_rec_version;
+				else
+					*p++ = isc_info_tra_no_rec_version;
+			}
+			else if (transaction->tra_flags & TRA_degree3)
+				*p++ = isc_info_tra_consistency;
+			else
+				*p++ = isc_info_tra_concurrency;
+
+			length = p - buffer;
+			break;
+		}
+
+		case isc_info_tra_access:
+		{
+			SCHAR* p = buffer;
+			if (transaction->tra_flags & TRA_readonly)
+				*p++ = isc_info_tra_readonly;
+			else
+				*p++ = isc_info_tra_readwrite;
+
+			length = p - buffer;
+			break;
+		}
+
+		case isc_info_tra_lock_timeout:
+			length = INF_convert(transaction->tra_lock_timeout, buffer);
 			break;
 
 		default:

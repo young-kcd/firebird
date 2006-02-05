@@ -119,6 +119,7 @@ enum db_info_types
 	isc_info_next_transaction = 107,
 	isc_info_db_provider = 108,
 	isc_info_active_transactions = 109,
+	isc_info_active_tran_count = 110,
 
 	isc_info_db_last_value   /* Leave this LAST! */
 };
@@ -311,7 +312,26 @@ enum info_db_provider
 /* Transaction information items */
 /*********************************/
 
-#define isc_info_tra_id		4
+#define isc_info_tra_id						4
+#define isc_info_tra_oldest_interesting		5
+#define isc_info_tra_oldest_snapshot		6
+#define isc_info_tra_oldest_active			7
+#define isc_info_tra_isolation				8
+#define isc_info_tra_access					9
+#define isc_info_tra_lock_timeout			10
+
+// isc_info_tra_isolation responses
+#define isc_info_tra_consistency		1
+#define isc_info_tra_concurrency		2
+#define isc_info_tra_read_committed		3
+
+// isc_info_tra_read_committed options
+#define isc_info_tra_no_rec_version		0
+#define isc_info_tra_rec_version		1
+
+// isc_info_tra_access responses
+#define isc_info_tra_readonly	0
+#define isc_info_tra_readwrite	1
 
 
 /*************************/
