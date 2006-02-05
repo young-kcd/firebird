@@ -92,7 +92,7 @@ static const SCHAR lock_types[] =
 #endif /* VMS */
 
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
-static const SLONG MAX_TRA_NUMBER = MAX_SLONG - 1;
+static const SLONG MAX_TRA_NUMBER = MAX_SLONG;
 
 using namespace Jrd;
 using namespace Ods;
@@ -2143,7 +2143,12 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const ULONG number = ++dbb->dbb_next_transaction;
+	if (dbb->dbb_next_transaction >= MAX_TRA_NUMBER - 1) 
+	{
+		CCH_RELEASE(tdbb, window);
+		ERR_post(isc_imp_exc, isc_arg_gds, isc_tra_num_exc, 0);
+	}
+	const SLONG number = ++dbb->dbb_next_transaction;
 
 /* No need to write TID onto the TIP page, for a RO DB */
 	if (dbb->dbb_flags & DBB_read_only)
