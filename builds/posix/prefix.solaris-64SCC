@@ -18,8 +18,11 @@ CC=cc
 CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP -Dsparc 
 
 # compile flags for SUNWspro/Forte/CC/Sun Studio compiler
-COMMON_CC_FLAGS=  -xM  -Xt -xstrconst -mt -K PIC -Bsymbolic -xport64 -xarch=v9 -D__sparcv9 
-DEBUG_CC_FLAGS=  -v -g -d+ -xs +w2
+COMMON_CC_FLAGS=  -xM  -mt -KPIC -Bsymbolic -xport64 -xarch=v9 -D__sparcv9  -libmil
+# -libmil means use the intrinsic library functions like strlen
+
+
+DEBUG_CC_FLAGS=  -v -g  -xs +w2
 #switch to dbx accoding SF gdb 64 bits mailfunction
 
 PROD_CC_FLAGS= -O2  -DNDEBUG
@@ -78,5 +81,7 @@ CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_l
 Physical_IO_Module=os/posix/unix.cpp
 
 LD=CC
+LDFLAGS=-xarch=v9
+
 #LDFLAGS=-m64 /usr/local/lib/gcc-lib/sparc-sun-solaris2.9/3.3.2/sparcv9/gmon.o
 #gmon.o is a work-a-round of SF Compile Farm gcc 3.3.2 (undefined symbol _mcount)
