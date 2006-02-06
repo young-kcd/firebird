@@ -22,9 +22,36 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+ 
+ 
+ 
+ 
 
 #ifndef MEMORY_ROUTINES_H
 #define MEMORY_ROUTINES_H
+
+
+template <typename T>
+inline void copy_toptr(void* to, T from)
+{
+#ifndef I386
+        memcpy(to, &from, sizeof(T));
+#else
+         *((T*) to) = from;
+#endif
+} 
+
+template <typename T>
+inline void copy_fromptr(T& to, const void* from)
+{
+#ifndef I386
+         memcpy(&to, from, sizeof(T));
+#else
+         to = *(T*)  from;
+#endif
+} 
+
+
 
 
 inline USHORT get_short(const UCHAR* p)
