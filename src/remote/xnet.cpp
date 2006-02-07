@@ -1095,6 +1095,10 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
  *	Establish a client side part of the connection
  *
  **************************************/
+#ifndef SUPERCLIENT
+	return NULL;
+#endif
+
 	if (!xnet_initialized) {
 		xnet_initialized = true;
 		current_process_id = getpid();
