@@ -1396,13 +1396,6 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 		rsb->rsb_arg[RSB_NAV_index] = (RecordSource*) makeIndexScanNode(indexScratch[i]);
 		rsb->rsb_arg[RSB_NAV_key_length] = (RecordSource*) (IPTR) key_length;
 
-		// if this is a blr_stream, adjust the allocated impure area 
-		// to be based on the maximum key size so that the index may be
-		// reset at any time to another index of larger key length
-		// without adjusting the impure area offsets
-		if (optimizer->opt_g_flags & opt_g_stream) {
-			key_length = MAX_KEY;
-		}
 		const USHORT size = OPT_nav_rsb_size(rsb, key_length, 0);
 		rsb->rsb_impure = CMP_impure(optimizer->opt_csb, size);
 		return rsb;

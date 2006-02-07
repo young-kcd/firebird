@@ -144,7 +144,8 @@ public:
 };
 
 
-const int rse_stream	= 1;	/* flags RecordSelExpr-type node as a blr_stream type */
+// First one is obsolete: was used for PC_ENGINE
+//const int rse_stream	= 1;	// flags RecordSelExpr-type node as a blr_stream type
 const int rse_singular	= 2;	/* flags RecordSelExpr-type node as from a singleton select */
 const int rse_variant	= 4;	/* flags RecordSelExpr as variant (not invariant?) */
 
@@ -419,70 +420,14 @@ const int e_cast_source		= 0;
 const int e_cast_fmt		= 1;
 const int e_cast_length		= 2;
 
-// IDAPI semantics nodes
 
-const int e_index_index		= 0;	// set current index (blr_set_index)
-const int e_index_stream	= 1;
-const int e_index_rsb		= 2;
-const int e_index_length	= 3;
-
+// CVC: These belong to SCROLLABLE_CURSORS, but I can't mark them with the macro
+// because e_seek_length is used in blrtable.h.
 const int e_seek_offset		= 0;	// for seeking through a stream
 const int e_seek_direction	= 1;
 const int e_seek_rse		= 2;
 const int e_seek_length		= 3;
 
-const int e_find_args		= 0;	// for finding a key value in a stream
-const int e_find_operator	= 1;
-const int e_find_direction	= 2;
-const int e_find_stream		= 3;
-const int e_find_rsb		= 4;
-const int e_find_length		= 5;
-
-const int e_bookmark_id		= 0;	// nod_bookmark
-const int e_bookmark_length	= 1;
-
-const int e_setmark_id		= 0;	// nod_set_bookmark
-const int e_setmark_stream	= 1;
-const int e_setmark_rsb		= 2;
-const int e_setmark_length	= 3;
-
-const int e_getmark_stream	= 0;	// nod_get_bookmark
-const int e_getmark_rsb		= 1;
-const int e_getmark_length	= 2;
-
-const int e_relmark_id		= 0;	// nod_release_bookmark
-const int e_relmark_length	= 1;
-
-const int e_lockrel_relation= 0;	// nod_lock_relation
-const int e_lockrel_level	= 1;
-const int e_lockrel_length	= 2;
-
-const int e_lockrec_level	= 0;	// nod_lock_record
-const int e_lockrec_stream	= 1;
-const int e_lockrec_rsb		= 2;
-const int e_lockrec_length	= 3;
-
-const int e_brange_number	= 0;	// nod_begin_range
-const int e_brange_length	= 1;
-
-const int e_erange_number	= 0;	// nod_end_range
-const int e_erange_length	= 1;
-
-const int e_drange_number	= 0;	// nod_delete_range
-const int e_drange_length	= 1;
-
-const int e_rellock_lock	= 0;	// nod_release_lock
-const int e_rellock_length	= 1;
-
-const int e_find_dbkey_dbkey	= 0;	// double duty for nod_find_dbkey and nod_find_dbkey_version
-const int e_find_dbkey_version	= 1;
-const int e_find_dbkey_stream	= 2;
-const int e_find_dbkey_rsb		= 3;
-const int e_find_dbkey_length	= 4;
-
-const int e_range_relation_number	= 0;	// nod_range_relation
-const int e_range_relation_relation	= 1;
-const int e_range_relation_length	= 2;
 
 // This is for the plan node
 const int e_retrieve_relation		= 0;
@@ -494,15 +439,6 @@ const int e_access_type_relation	= 0;
 const int e_access_type_index		= 1;
 const int e_access_type_index_name	= 2;
 const int e_access_type_length		= 3;
-
-const int e_reset_from_stream	= 0;
-const int e_reset_to_stream		= 1;
-const int e_reset_from_rsb		= 2;
-const int e_reset_length		= 3;
-
-const int e_card_stream		= 0;
-const int e_card_rsb		= 1;
-const int e_card_length		= 2;
 
 // SQL Date supporting nodes
 const int e_extract_value	= 0;	// Node
@@ -790,7 +726,8 @@ const int csb_trigger		= 8;		// NEW or OLD context in trigger
 const int csb_no_dbkey		= 16;		// stream doesn't have a dbkey
 const int csb_store			= 32;		// we are processing a store statement
 const int csb_modify		= 64;		// we are processing a modify
-const int csb_compute		= 128;		// compute cardinality for this stream
+// Obsolete: was used for PC_ENGINE
+//const int csb_compute		= 128;		// compute cardinality for this stream
 const int csb_erase			= 256;		// we are processing an erase
 const int csb_unmatched		= 512;		// stream has conjuncts unmatched by any index
 const int csb_update		= 1024;		// erase or modify for relation

@@ -868,10 +868,13 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 	case nod_agg_count:
 	case nod_agg_count2:
 	case nod_agg_count_distinct:
-	case nod_count2:
+	//case nod_count2:
 	case nod_count:
 	case nod_gen_id:
 	case nod_lock_state:
+#ifdef SCROLLABLE_CURSORS
+	case nod_seek:
+#endif
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(SLONG);
 		desc->dsc_scale = 0;
@@ -1835,14 +1838,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		CMP_get_desc(tdbb, csb, node->nod_arg[1], desc);
 		return;
 
-	case nod_bookmark:
-		desc->dsc_dtype = dtype_text;
-		desc->dsc_ttype() = ttype_binary;
-		desc->dsc_length = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		return;
-
 	default:
 		fb_assert(false);
 		break;
@@ -2626,7 +2621,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		return (node);
 
 	case nod_count:
-	case nod_count2:
+	//case nod_count2:
 	case nod_max:
 	case nod_min:
 	case nod_total:
@@ -2636,7 +2631,6 @@ static jrd_nod* copy(thread_db* tdbb,
 		break;
 
 	case nod_rse:
-	case nod_stream:
 		{
 			RecordSelExpr* old_rse = (RecordSelExpr*) input;
 			RecordSelExpr* new_rse =
@@ -3425,7 +3419,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 		break;
 
 	case nod_rse:
-	case nod_stream:
 		return (jrd_nod*) pass1_rse(tdbb, csb, (RecordSelExpr*) node, view, view_stream);
 
 	case nod_dcl_cursor:
@@ -3450,7 +3443,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_average:
 	case nod_from:
 	case nod_count:
-	case nod_count2:
+	//case nod_count2:
 	case nod_total:
 		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_stat_rse], view);
 		break;
@@ -3542,11 +3535,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_exists:
 	case nod_unique:
 		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_any_rse], view);
-		break;
-
-	case nod_cardinality:
-		stream = (USHORT)(IPTR) node->nod_arg[e_card_stream];
-		csb->csb_rpt[stream].csb_flags |= csb_compute;
 		break;
 
 	default:
@@ -4610,7 +4598,6 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 
 #ifdef SCROLLABLE_CURSORS
 	case nod_seek:
-	case nod_seek_no_warn:
 		// store the RecordSelExpr in whose scope we are defined
 		node->nod_arg[e_seek_rse] = (jrd_nod*) csb->csb_current_rse;
 		break;
@@ -4619,7 +4606,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_max:
 	case nod_min:
 	case nod_count:
-	case nod_count2:
+	//case nod_count2:
 	case nod_average:
 	case nod_total:
 	case nod_from:
@@ -4726,7 +4713,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_count:
 	case nod_agg_count2:
 	case nod_agg_count_distinct:
-	case nod_count2:
+	//case nod_count2:
 	case nod_agg_min:
 	case nod_agg_max:
 	case nod_agg_count:
@@ -4866,6 +4853,9 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_current_time:
 	case nod_current_timestamp:
 	case nod_current_date:
+#ifdef SCROLLABLE_CURSORS
+	case nod_seek:
+#endif
 		{
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);

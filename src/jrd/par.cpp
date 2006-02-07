@@ -2583,8 +2583,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			node->nod_arg[e_for_stall] = parse(tdbb, csb, STATEMENT);
 
 		if (BLR_PEEK == (UCHAR) blr_rse ||
-			BLR_PEEK == (UCHAR) blr_singular ||
-			BLR_PEEK == (UCHAR) blr_stream)
+			BLR_PEEK == (UCHAR) blr_singular)
 				node->nod_arg[e_for_re] = parse(tdbb, csb, TYPE_RSE);
 		else
 			node->nod_arg[e_for_re] = par_rse(tdbb, csb, blr_operator);
@@ -2877,28 +2876,15 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_total:
 	case blr_from:
 	case blr_via:
-		if (BLR_PEEK == (UCHAR) blr_stream)
-			node->nod_arg[e_stat_rse] = parse(tdbb, csb, OTHER);
-		else
-			node->nod_arg[e_stat_rse] = parse(tdbb, csb, TYPE_RSE);
+		node->nod_arg[e_stat_rse] = parse(tdbb, csb, TYPE_RSE);
 		if (blr_operator != blr_count)
 			node->nod_arg[e_stat_value] = parse(tdbb, csb, VALUE);
 		if (blr_operator == blr_via)
 			node->nod_arg[e_stat_default] = parse(tdbb, csb, VALUE);
 		break;
 
-		/* Client/Server Express Features */
-
-	case blr_stream:
-#ifdef PROD_BUILD
-		error(csb, isc_cse_not_supported, 0);
-#endif
-		node = par_stream(tdbb, csb);
-		break;
-
 #ifdef SCROLLABLE_CURSORS
 	case blr_seek:
-	case blr_seek_no_warn:
 		node->nod_arg[e_seek_direction] = parse(tdbb, csb, VALUE);
 		node->nod_arg[e_seek_offset] = parse(tdbb, csb, VALUE);
 		break;

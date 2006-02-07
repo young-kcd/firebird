@@ -258,9 +258,10 @@ const ULONG irsb_singular_processed = 256;	// singleton stream already delivered
 const ULONG irsb_last_backwards = 512;		// rsb was last scrolled in the backward direction
 const ULONG irsb_bof = 1024;				// rsb is at beginning of stream
 const ULONG irsb_eof = 2048;				// rsb is at end of stream
-const ULONG irsb_crack = 4096;				// the record at our current position is missing
-const ULONG irsb_forced_crack = 8192;		// the above-mentioned crack was forced by user
-const ULONG irsb_refresh = 16384;			// enter records into refresh range
+// Obsolete: they belonged to PC_ENGINE.
+//const ULONG irsb_crack = 4096;				// the record at our current position is missing
+//const ULONG irsb_forced_crack = 8192;		// the above-mentioned crack was forced by user
+//const ULONG irsb_refresh = 16384;			// enter records into refresh range
 #endif
 const ULONG irsb_key_changed = 32768;		// key has changed since record last returned from rsb
 
@@ -345,7 +346,7 @@ public:
 	SSHORT opt_base_parent_conjuncts;		// number of conjuncts in our rse + distributed with parent, next are parent
 	SSHORT opt_base_missing_conjuncts;		// number of conjuncts in our and parent rse, but without missing
 	USHORT opt_best_count;					// longest length of indexable streams
-	USHORT opt_g_flags;						// global flags
+	//USHORT opt_g_flags;						// global flags
 	// 01 Oct 2003. Nickolay Samofatov: this static array takes as much as 256 bytes.
 	// This is nothing compared to original Firebird 1.5 OptimizerBlk structure size of ~180k
 	// All other arrays had been converted to dynamic to preserve memory 
@@ -385,9 +386,11 @@ const USHORT opt_stream_used = 1;			// stream is used
 const USHORT opt_conjunct_used = 1;			// conjunct is used
 const USHORT opt_conjunct_matched = 2;		// conjunct matches an index segment
 
+
 // global optimizer bits used in opt_g_flags
 
-const USHORT opt_g_stream = 1;				// indicate that this is a blr_stream
+// Obsolete: it was for PC_ENGINE
+//const USHORT opt_g_stream = 1;				// indicate that this is a blr_stream
 
 
 // River block - used to hold temporary information about a group of streams

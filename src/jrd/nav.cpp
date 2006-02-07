@@ -430,11 +430,8 @@ bool NAV_get_record(thread_db* tdbb,
 				expanded_next = expanded_node;
 				continue;
 			}
-			if (direction == RSE_get_forward
-					 && !(impure->irsb_flags & irsb_forced_crack)) 
-#else
-			if (direction == RSE_get_forward)
 #endif
+			if (direction == RSE_get_forward)
 			{
 				nextPointer = BTreeNode::nextNode(&node, pointer, flags, &expanded_node);
 				expanded_next = expanded_node;

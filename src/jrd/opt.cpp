@@ -335,8 +335,6 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	try {
 
 	opt->opt_csb = csb;
-	if (rse->nod_flags & rse_stream)
-		opt->opt_g_flags |= opt_g_stream;
 
 	beds[0] = streams[0] = key_streams[0] = outer_streams[0] = sub_streams[0] = 0;
 	NodeStack conjunct_stack;
@@ -2902,7 +2900,7 @@ static bool expression_contains_stream(CompilerScratch* csb,
 
 		case nod_average:
 		case nod_count:
-		case nod_count2:
+		//case nod_count2:
 		case nod_from:
 		case nod_max:
 		case nod_min:
@@ -4112,20 +4110,6 @@ static void gen_join(thread_db*		tdbb,
 
 	// If there is only a single stream, don't bother with a join.
 	if (streams[0] == 1) {
-		// if a nod_cardinality references this stream,
-		// compute the cardinality even though we don't
-		// need it to optimize retrieval.
-
-		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[streams[1]];
-		fb_assert(csb_tail);
-		if (csb_tail->csb_flags & csb_compute) {
-			jrd_rel* relation = csb_tail->csb_relation;
-			fb_assert(relation);
-			const Format* format = CMP_format(tdbb, csb, streams[1]);
-			fb_assert(format);
-			csb_tail->csb_cardinality = OPT_getRelationCardinality(tdbb, relation, format);
-		}
-
 		River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) River();
 		river->riv_count = 1;
 
@@ -4415,13 +4399,6 @@ static RecordSource* gen_nav_rsb(thread_db* tdbb,
 	}
 #endif
 
-	// if this is a blr_stream, adjust the allocated impure area
-	// to be based on the maximum key size so that the index may be
-	// reset at any time to another index of larger key length
-	// without adjusting the impure area offsets
-	if (opt->opt_g_flags & opt_g_stream) {
-		key_length = MAX_KEY;
-	}
 	const USHORT size = OPT_nav_rsb_size(rsb, key_length, 0);
 	rsb->rsb_impure = CMP_impure(opt->opt_csb, size);
 	return rsb;
@@ -5088,15 +5065,6 @@ static RecordSource* gen_rsb(thread_db* tdbb,
 		rsb->rsb_stream = (UCHAR) stream;
 		rsb->rsb_relation = relation;
 		rsb->rsb_alias = alias;
-		// if this is a blr_stream, we need to leave room
-		// in the impure area for a navigational-type rsb;
-		// even if this is not currently a navigational rsb,
-		// OPT_set_index() could be used to convert it to one.
-		if (opt->opt_g_flags & opt_g_stream) {
-			size = sizeof(impure_inversion);
-			size = OPT_nav_rsb_size(rsb, MAX_KEY, size);
-		}
-
 		rsb->rsb_impure = CMP_impure(opt->opt_csb, size);
 	}
 
@@ -5104,7 +5072,6 @@ static RecordSource* gen_rsb(thread_db* tdbb,
 		rsb = gen_boolean(tdbb, opt, rsb, boolean);
 	}
 
-	// retain the cardinality for use at runtime by blr_cardinality
 	rsb->rsb_cardinality = (ULONG) cardinality;
 	return rsb;
 }
@@ -5793,7 +5760,7 @@ static void get_expression_streams(const jrd_nod* node,
 
 		case nod_average:
 		case nod_count:
-		case nod_count2:
+		//case nod_count2:
 		case nod_from:
 		case nod_max:
 		case nod_min:

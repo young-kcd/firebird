@@ -146,8 +146,8 @@
 #define blr_unique		(unsigned char)62
 #define blr_like		(unsigned char)63
 
-#define blr_stream      	(unsigned char)65	/* added from gds.h */
-#define blr_set_index   	(unsigned char)66	/* added from gds.h */
+//#define blr_stream      	(unsigned char)65
+//#define blr_set_index   	(unsigned char)66
 
 #define blr_rse			(unsigned char)67
 #define blr_first		(unsigned char)68
@@ -188,11 +188,11 @@
 #define blr_matching2		(unsigned char)106
 #define blr_index		(unsigned char)107
 #define blr_ansi_like		(unsigned char)108
-#define blr_bookmark		(unsigned char)109
-#define blr_crack		(unsigned char)110
-#define blr_force_crack		(unsigned char)111
+//#define blr_bookmark		(unsigned char)109
+//#define blr_crack		(unsigned char)110
+//#define blr_force_crack		(unsigned char)111
 #define blr_seek		(unsigned char)112
-#define blr_find		(unsigned char)113
+//#define blr_find		(unsigned char)113
 
 /* these indicate directions for blr_seek and blr_find */
 
@@ -202,17 +202,17 @@
 #define blr_bof_forward		(unsigned char)3
 #define blr_eof_backward	(unsigned char)4
 
-#define blr_lock_relation 	(unsigned char)114
-#define blr_lock_record		(unsigned char)115
-#define blr_set_bookmark 	(unsigned char)116
-#define blr_get_bookmark 	(unsigned char)117
+//#define blr_lock_relation 	(unsigned char)114
+//#define blr_lock_record		(unsigned char)115
+//#define blr_set_bookmark 	(unsigned char)116
+//#define blr_get_bookmark 	(unsigned char)117
 
 #define blr_run_count		(unsigned char)118	/* changed from 88 to avoid conflict with blr_parameter3 */
 #define blr_rs_stream		(unsigned char)119
 #define blr_exec_proc		(unsigned char)120
-#define blr_begin_range 	(unsigned char)121
-#define blr_end_range 		(unsigned char)122
-#define blr_delete_range 	(unsigned char)123
+//#define blr_begin_range 	(unsigned char)121
+//#define blr_end_range 		(unsigned char)122
+//#define blr_delete_range 	(unsigned char)123
 #define blr_procedure		(unsigned char)124
 #define blr_pid			(unsigned char)125
 #define blr_exec_pid		(unsigned char)126
@@ -222,13 +222,13 @@
 #define blr_error_handler	(unsigned char)130
 
 #define blr_cast		(unsigned char)131
-#define blr_release_lock	(unsigned char)132
-#define blr_release_locks	(unsigned char)133
+//#define blr_release_lock	(unsigned char)132
+//#define blr_release_locks	(unsigned char)133
 #define blr_start_savepoint	(unsigned char)134
 #define blr_end_savepoint	(unsigned char)135
-#define blr_find_dbkey		(unsigned char)136
-#define blr_range_relation	(unsigned char)137
-#define blr_delete_ranges	(unsigned char)138
+//#define blr_find_dbkey		(unsigned char)136
+//#define blr_range_relation	(unsigned char)137
+//#define blr_delete_ranges	(unsigned char)138
 
 #define blr_plan		(unsigned char)139	/* access plan items */
 #define blr_merge		(unsigned char)140
@@ -240,20 +240,20 @@
 
 #define blr_relation2		(unsigned char)146
 #define blr_rid2		(unsigned char)147
-#define blr_reset_stream	(unsigned char)148
-#define blr_release_bookmark	(unsigned char)149
+//#define blr_reset_stream	(unsigned char)148
+//#define blr_release_bookmark	(unsigned char)149
 
 #define blr_set_generator       (unsigned char)150
 
 #define blr_ansi_any		(unsigned char)151   /* required for NULL handling */
 #define blr_exists		(unsigned char)152   /* required for NULL handling */
-#define blr_cardinality		(unsigned char)153
+//#define blr_cardinality		(unsigned char)153
 
 #define blr_record_version	(unsigned char)154	/* get tid of record */
 #define blr_stall		(unsigned char)155	/* fake server stall */
 
-#define blr_seek_no_warn	(unsigned char)156	
-#define blr_find_dbkey_version	(unsigned char)157   /* find dbkey with record version */
+//#define blr_seek_no_warn	(unsigned char)156	
+//#define blr_find_dbkey_version	(unsigned char)157   /* find dbkey with record version */
 #define blr_ansi_all		(unsigned char)158   /* required for NULL handling */
 
 #define blr_extract		(unsigned char)159

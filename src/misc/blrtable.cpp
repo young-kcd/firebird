@@ -158,23 +158,10 @@ static const VERB verbs[] =
 	PAIR(nod_or, blr_or, 2, 2, TYPE_BOOL, TYPE_BOOL),
 	PAIR(nod_not, blr_not, 1, 1, TYPE_BOOL, TYPE_BOOL),
 	PAIR(nod_rse, blr_rse, 0, 0, TYPE_RSE, OTHER),
-	/* nodes for ODAPI support */
-	PAIR(nod_stream, blr_stream, 0, 0, STATEMENT, STATEMENT),
-	PAIR(nod_set_index, blr_set_index, e_index_length, 1, STATEMENT, STATEMENT),
+
+	// nodes for SCROLLABLE_CURSORS
 	PAIR(nod_seek, blr_seek, e_seek_length, 2, STATEMENT, VALUE),
-	PAIR(nod_seek_no_warn, blr_seek_no_warn, e_seek_length, 2, STATEMENT, VALUE),
-	PAIR(nod_find, blr_find, e_find_length, 3, STATEMENT, STATEMENT),
-	PAIR(nod_get_bookmark, blr_get_bookmark, e_getmark_length, 0, VALUE, VALUE),
-	PAIR(nod_set_bookmark, blr_set_bookmark, e_setmark_length, 1, STATEMENT, STATEMENT),
-	PAIR(nod_bookmark, blr_bookmark, e_bookmark_length, 1, VALUE, VALUE),
-	PAIR(nod_lock_relation, blr_lock_relation, e_lockrel_length, 2, VALUE, VALUE),
-	PAIR(nod_lock_record, blr_lock_record, e_lockrec_length, 1, VALUE, VALUE),
-	PAIR(nod_release_lock, blr_release_lock, e_rellock_length, 1, STATEMENT, STATEMENT),
-	PAIR(nod_release_locks, blr_release_locks, 0, 0, STATEMENT, STATEMENT),
-	PAIR(nod_begin_range, blr_begin_range, e_brange_length, 1, VALUE, OTHER),
-	PAIR(nod_end_range, blr_end_range, e_erange_length, 1, STATEMENT, STATEMENT),
-	PAIR(nod_delete_range, blr_delete_range, e_drange_length, 1, STATEMENT, STATEMENT),
-	// End ODAPI
+
 	PAIR(nod_map, blr_map, 0, 0, OTHER, OTHER),
 	PAIR(nod_union, blr_union, 0, 0, RELATION, OTHER),
 	PAIR(nod_aggregate, blr_aggregate, e_agg_length, 0, RELATION, OTHER),
@@ -192,11 +179,7 @@ static const VERB verbs[] =
 	PAIR(nod_rse, blr_singular, 0, 0, TYPE_RSE, OTHER),
 	PAIR(nod_start_savepoint, blr_start_savepoint, 1, 0, STATEMENT, OTHER),
 	PAIR(nod_end_savepoint, blr_end_savepoint, 1, 0, STATEMENT, OTHER),
-	/* more nodes for ODAPI support */
-	PAIR(nod_find_dbkey, blr_find_dbkey, e_find_dbkey_length, 1, STATEMENT, STATEMENT),
-	PAIR(nod_find_dbkey_version, blr_find_dbkey_version, e_find_dbkey_length, 2, STATEMENT, STATEMENT),
-	PAIR(nod_range_relation, blr_range_relation, e_range_relation_length, 1, STATEMENT, STATEMENT),
-	PAIR(nod_delete_ranges, blr_delete_ranges, 0, 0, STATEMENT, STATEMENT),
+
 	/* nodes for set plan */
 	PAIR(nod_plan, blr_plan, 1, 1, VALUE, VALUE),
 	PAIR(nod_merge, blr_merge, 0, 0, VALUE, VALUE),
@@ -207,19 +190,13 @@ static const VERB verbs[] =
 	PAIR(nod_retrieve, blr_retrieve, 2, 0, ACCESS_TYPE, VALUE),
 	PAIR(nod_relation, blr_relation2, 0, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_rid2, 0, 0, RELATION, OTHER),
-	/* yet more nodes for ODAPI */
-	PAIR(nod_crack, blr_crack, 2, 0, VALUE, OTHER),
-	PAIR(nod_force_crack, blr_force_crack, 2, 0, STATEMENT, OTHER),
-	PAIR(nod_reset_stream, blr_reset_stream, e_reset_length, 0, STATEMENT, OTHER),
-	PAIR(nod_release_bookmark, blr_release_bookmark, e_relmark_length, 1, STATEMENT, OTHER),
-	// End ODAPI
 	PAIR2(nod_set_generator, blr_set_generator, e_gen_length, 1, STATEMENT, VALUE),
 	PAIR(nod_ansi_any, blr_ansi_any, e_any_length, 1, TYPE_BOOL, TYPE_RSE),
 	PAIR(nod_exists, blr_exists, e_any_length, 1, TYPE_BOOL, TYPE_RSE),
-	PAIR(nod_cardinality, blr_cardinality, e_card_length, 0, VALUE, OTHER),
 	PAIR(nod_rec_version, blr_record_version, 1, 0, VALUE, VALUE),
 	PAIR(nod_stall, blr_stall, 1, 0, STATEMENT, STATEMENT),
 	PAIR(nod_ansi_all, blr_ansi_all, e_any_length, 1, TYPE_BOOL, TYPE_RSE),
+
 	/* Improved Date Support */
 	PAIR(nod_extract, blr_extract, e_extract_length, e_extract_count, VALUE, VALUE),
 	PAIR(nod_current_date, blr_current_date, e_current_date_length, 0, VALUE, OTHER),

@@ -993,7 +993,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 	case nod_max:
 	case nod_min:
 	case nod_count:
-	case nod_count2:
+	//case nod_count2:
 	case nod_average:
 	case nod_average2:
 	case nod_total:
@@ -3006,6 +3006,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		}
 		break;
 
+	/*
 	case nod_count2:
 		flag = 0;
 		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
@@ -3016,6 +3017,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			}
 		}
 		break;
+	*/
 
 	case nod_min:
 	case nod_max:

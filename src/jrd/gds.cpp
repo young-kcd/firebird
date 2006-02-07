@@ -344,7 +344,6 @@ static const UCHAR
 	field[]		= { op_byte, op_byte, op_literal, op_pad, op_line, 0},
 	byte[]		= { op_byte, op_line, 0},
 	byte_args[] = { op_byte, op_line, op_args, 0},
-	byte_byte[] = { op_byte, op_byte, op_line, 0},
 	byte_verb[] = { op_byte, op_line, op_verb, 0},
 	byte_verb_verb[] = { op_byte, op_line, op_verb, op_verb, 0},
 	byte_literal[] = { op_byte, op_literal, op_line, 0},
@@ -372,7 +371,6 @@ static const UCHAR
 	declare[]	= { op_word, op_dtype, op_line, 0},
 	variable[]	= { op_word, op_line, 0},
 	indx[]		= { op_line, op_verb, op_indent, op_byte, op_line, op_args, 0},
-	find[]		= { op_byte, op_verb, op_verb, op_indent, op_byte, op_line, op_args, 0},
 	seek[]		= { op_line, op_verb, op_verb, 0},
 	join[]		= { op_join, op_line, 0},
 	exec_proc[] = { op_byte, op_literal, op_line, op_indent, op_word, op_line,
@@ -385,8 +383,6 @@ static const UCHAR
 	set_error[] = { op_set_error, op_line, 0},
 	cast[]		= { op_dtype, op_line, op_verb, 0},
 	indices[]	= { op_byte, op_line, op_literals, 0},
-	lock_relation[] = { op_line, op_indent, op_relation, op_line, op_verb, 0},
-	range_relation[] = { op_line, op_verb, op_indent, op_relation, op_line, 0},
 	extract[]	= { op_line, op_byte, op_verb, 0},
 	user_savepoint[]	= { op_byte, op_byte, op_literal, op_line, 0},
 	exec_into[] = { op_word, op_line, op_indent, op_exec_into, 0},
@@ -3391,6 +3387,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 		case op_relation:
 			blr_operator = BLR_BYTE;
 			blr_print_blr(control, blr_operator);
+			// Strange message. Notice that blr_lock_relation was part of PC_ENGINE.
 			if (blr_operator != blr_relation && blr_operator != blr_rid)
 				blr_error(control,
 						  "*** blr_relation or blr_rid must be object of blr_lock_relation, %d found ***",
