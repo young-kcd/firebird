@@ -1,3 +1,32 @@
+2006-02-07 19:41  dimitr
+
+	* firebird2/src/remote/xnet.cpp (1.69):
+	
+	Fixed broken XNET logic. In fact, this affects all types of
+	connections as the security database is accessed locally.
+
+2006-02-07 18:21  hvlad
+
+	* firebird2/src/jrd/isc_sync.cpp (1.101):
+	
+	Fixed unregistered bug: fb_lock_print fails with message: The
+	requested operation cannot be performed on a file with a
+	user-mapped section open.
+
+2006-02-07 09:08  robocop
+
+	* firebird2/src/: jrd/Optimizer.cpp (1.55), jrd/blp.h (1.20),
+	jrd/blr.h (1.22), jrd/cmp.cpp (1.194), jrd/evl.cpp (1.163),
+	jrd/exe.h (1.77), jrd/gds.cpp (1.190), jrd/nav.cpp (1.58),
+	jrd/nod.h (1.17), jrd/opt.cpp (1.258), jrd/par.cpp (1.128),
+	jrd/rse.h (1.44), misc/blrtable.cpp (1.22):
+	
+	The files rng.cpp, rng.h, rng_proto.h, bookmark.cpp and bookmark.h
+	belong exclusively to PC_ENGINE, that's obsolete functionality. 
+	Tenth step: some code was tagged PC_ENGINE but was for
+	SCROLLABLE_CURSORS instead, hence restore it. Also, clean unused
+	data members, obsolete BLR verbs and the like.
+
 2006-02-06 17:13  kkuznetsov
 
 	* firebird2/extern/icu/source/config/mh-solaris (1.5):
