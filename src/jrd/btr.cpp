@@ -6337,6 +6337,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap,
 			}
 			else if (node.prefix <= prefix) {
 				prefix = node.prefix;
+				upperPrefix = prefix;
 				p = key->key_data + prefix;
 				const UCHAR* q = node.data;
 				USHORT l = node.length;
