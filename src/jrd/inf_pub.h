@@ -120,6 +120,7 @@ enum db_info_types
 	isc_info_db_provider = 108,
 	isc_info_active_transactions = 109,
 	isc_info_active_tran_count = 110,
+	isc_info_creation_date = 111,
 
 	isc_info_db_last_value   /* Leave this LAST! */
 };

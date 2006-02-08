@@ -185,6 +185,46 @@ USHORT INF_convert(SLONG number, SCHAR* buffer)
 }
 
 
+USHORT INF_convert(ISC_TIMESTAMP ts, SCHAR* buffer)
+{
+/**************************************
+ *
+ *	I N F _ c o n v e r t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Convert a number to VAX form -- least significant bytes first.
+ *	Return the length.
+ *
+ **************************************/
+	const SCHAR* p = reinterpret_cast<const SCHAR*>(&ts);
+
+#ifndef WORDS_BIGENDIAN
+	*buffer++ = *p++;
+	*buffer++ = *p++;
+	*buffer++ = *p++;
+	*buffer++ = *p++;
+	*buffer++ = *p++;
+	*buffer++ = *p++;
+	*buffer++ = *p++;
+	*buffer = *p;
+#else
+	p += 7;
+	*buffer++ = *p--;
+	*buffer++ = *p--;
+	*buffer++ = *p--;
+	*buffer++ = *p--;
+	*buffer++ = *p--;
+	*buffer++ = *p--;
+	*buffer++ = *p--;
+	*buffer = *p;
+#endif
+
+	return 8;
+}
+
+
 int INF_database_info(const SCHAR* items,
 					  const SSHORT item_length,
 					  SCHAR* info, const SSHORT output_length)
@@ -441,6 +481,19 @@ int INF_database_info(const SCHAR* items,
 				length = p - buffer;
 				break;
 			}
+
+		case isc_info_creation_date:
+			{
+				WIN window(HEADER_PAGE);
+				Ods::header_page* header = (Ods::header_page*) 
+					CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+
+				length = INF_convert(
+					*reinterpret_cast<ISC_TIMESTAMP*>(header->hdr_creation_date), 
+					buffer);
+				CCH_RELEASE(tdbb, &window);
+			}
+			break;
 
 		case isc_info_no_reserve:
 			*p++ = (dbb->dbb_flags & DBB_no_reserve) ? 1 : 0;
