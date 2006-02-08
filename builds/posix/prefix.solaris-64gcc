@@ -13,7 +13,7 @@
 #
 
 # Firebird defines specific to Solaris (and x86) build
-CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP
+CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP -Dsparc
 
 # compile flags for GCC compiler
 COMMON_GCC_FLAGS=  -MMD -p -fPIC -m64   -D__sparcv9   -mptr64 -mstack-bias -mno-v8plus -mcpu=v9 
@@ -50,10 +50,10 @@ SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
 PROD_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_FLAGS) $(PROD_GCC_FLAGS) \
-			$(LOCAL_CFLAGS)
+      $(LOCAL_CFLAGS)
 
 DEV_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_FLAGS) $(DEBUG_GCC_FLAGS) \
-			$(LOCAL_CFLAGS)
+      $(LOCAL_CFLAGS)
 
 # extra modules needed on this platform during bootstrap phase
 JRDBOOT_Extra_Files=isc_sync.cpp 

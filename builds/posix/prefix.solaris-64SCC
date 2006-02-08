@@ -18,11 +18,11 @@ CC=cc
 CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP -Dsparc 
 
 # compile flags for SUNWspro/Forte/CC/Sun Studio compiler
-COMMON_CC_FLAGS=  -xM  -mt -KPIC -Bsymbolic -xport64 -xarch=v9 -D__sparcv9  -libmil
+COMMON_CC_FLAGS=  -xM1  -mt -KPIC -Bsymbolic -xport64 -xarch=v9 -D__sparcv9  -libmil
 # -libmil means use the intrinsic library functions like strlen
 
 
-DEBUG_CC_FLAGS=  -v -g  -xs +w2
+DEBUG_CC_FLAGS=  -v -g  -xs 
 #switch to dbx accoding SF gdb 64 bits mailfunction
 
 PROD_CC_FLAGS= -O2  -DNDEBUG
