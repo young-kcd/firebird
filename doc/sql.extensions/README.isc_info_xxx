@@ -3,10 +3,23 @@ New information items
 Author:
 	Vlad Horsun <hvlad at users.sourceforge.net>
 
-New item for isc_database_info
+New items for isc_database_info
 
-isc_info_active_tran_count : 
+1. isc_info_active_tran_count : 
 	return number of currently active transactions
+
+2. isc_info_creation_date :
+	return date and time when database was created
+
+	To decode use 
+	a) isc_portable_integer and cast extracted 8 bytes to ISC_TIMESTAMP
+	   then call isc_decode_timestamp, 
+	or
+	b) isc_vax_integer and cast extracted 4 bytes to ISC_DATE then call
+	   isc_decode_sql_date to get date portion. Then extract next 4 bytes 
+	   with isc_vax_integer, cast it to ISC_TIME and call isc_decode_sql_time 
+	   to get time portion
+
 
 New items for isc_transaction_info:
 	
