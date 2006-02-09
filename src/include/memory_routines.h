@@ -1,7 +1,7 @@
 /*
- *	PROGRAM:	Client/Server Common Code
- *	MODULE:		memory_routines.h
- *	DESCRIPTION:	Misc memory content routines
+ *  PROGRAM:  Client/Server Common Code
+ *  MODULE:   memory_routines.h
+ *  DESCRIPTION:  Misc memory content routines
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -32,7 +32,7 @@
 
 
 template <typename T>
-inline void copy_toptr(void* to, T from)
+inline void copy_toptr(void* to, const T from)
 {
 #ifndef I386
         memcpy(to, &from, sizeof(T));
@@ -68,21 +68,21 @@ inline USHORT get_short(const UCHAR* p)
  *
  **************************************/
 #ifndef WORDS_BIGENDIAN
-	// little-endian
-	USHORT temp;
-	memcpy(&temp, p, sizeof(USHORT));
-	return temp;
+  // little-endian
+  USHORT temp;
+  memcpy(&temp, p, sizeof(USHORT));
+  return temp;
 #else
-	// big-endian
-	union {
-		USHORT n;
-		UCHAR c[2];
-	} temp;
+  // big-endian
+  union {
+    USHORT n;
+    UCHAR c[2];
+  } temp;
 
-	temp.c[0] = p[0];
-	temp.c[1] = p[1];
+  temp.c[0] = p[0];
+  temp.c[1] = p[1];
 
-	return temp.n;
+  return temp.n;
 #endif
 }
 
@@ -100,23 +100,23 @@ inline SLONG get_long(const UCHAR* p)
  *
  **************************************/
 #ifndef WORDS_BIGENDIAN
-	// little-endian
-	SLONG temp;
-	memcpy(&temp, p, sizeof(SLONG));
-	return temp;
+  // little-endian
+  SLONG temp;
+  memcpy(&temp, p, sizeof(SLONG));
+  return temp;
 #else
-	// big-endian
-	union {
-		SLONG n;
-		UCHAR c[4];
-	} temp;
+  // big-endian
+  union {
+    SLONG n;
+    UCHAR c[4];
+  } temp;
 
-	temp.c[0] = p[0];
-	temp.c[1] = p[1];
-	temp.c[2] = p[2];
-	temp.c[3] = p[3];
+  temp.c[0] = p[0];
+  temp.c[1] = p[1];
+  temp.c[2] = p[2];
+  temp.c[3] = p[3];
 
-	return temp.n;
+  return temp.n;
 #endif
 }
 
@@ -134,19 +134,19 @@ inline void put_short(UCHAR* p, USHORT value)
  *
  **************************************/
 #ifndef WORDS_BIGENDIAN
-	// little-endian
-	memcpy(p, &value, sizeof(USHORT));
+  // little-endian
+  memcpy(p, &value, sizeof(USHORT));
 #else
-	// big-endian
-	union {
-		USHORT n;
-		UCHAR c[2];
-	} temp;
+  // big-endian
+  union {
+    USHORT n;
+    UCHAR c[2];
+  } temp;
 
-	temp.n = value;
+  temp.n = value;
 
-	p[0] = temp.c[0];
-	p[1] = temp.c[1];
+  p[0] = temp.c[0];
+  p[1] = temp.c[1];
 #endif
 }
 
@@ -164,21 +164,21 @@ inline void put_long(UCHAR* p, SLONG value)
  *
  **************************************/
 #ifndef WORDS_BIGENDIAN
-	// little-endian
-	memcpy(p, &value, sizeof(SLONG));
+  // little-endian
+  memcpy(p, &value, sizeof(SLONG));
 #else
-	// big-endian
-	union {
-		SLONG n;
-		UCHAR c[4];
-	} temp;
+  // big-endian
+  union {
+    SLONG n;
+    UCHAR c[4];
+  } temp;
 
-	temp.n = value;
+  temp.n = value;
 
-	p[0] = temp.c[0];
-	p[1] = temp.c[1];
-	p[2] = temp.c[2];
-	p[3] = temp.c[3];
+  p[0] = temp.c[0];
+  p[1] = temp.c[1];
+  p[2] = temp.c[2];
+  p[3] = temp.c[3];
 #endif
 }
 
