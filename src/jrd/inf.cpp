@@ -185,46 +185,6 @@ USHORT INF_convert(SLONG number, SCHAR* buffer)
 }
 
 
-USHORT INF_convert(ISC_TIMESTAMP ts, SCHAR* buffer)
-{
-/**************************************
- *
- *	I N F _ c o n v e r t
- *
- **************************************
- *
- * Functional description
- *	Convert a number to VAX form -- least significant bytes first.
- *	Return the length.
- *
- **************************************/
-	const SCHAR* p = reinterpret_cast<const SCHAR*>(&ts);
-
-#ifndef WORDS_BIGENDIAN
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer = *p;
-#else
-	p += 7;
-	*buffer++ = *p--;
-	*buffer++ = *p--;
-	*buffer++ = *p--;
-	*buffer++ = *p--;
-	*buffer++ = *p--;
-	*buffer++ = *p--;
-	*buffer++ = *p--;
-	*buffer = *p;
-#endif
-
-	return 8;
-}
-
-
 int INF_database_info(const SCHAR* items,
 					  const SSHORT item_length,
 					  SCHAR* info, const SSHORT output_length)
@@ -488,9 +448,9 @@ int INF_database_info(const SCHAR* items,
 				Ods::header_page* header = (Ods::header_page*) 
 					CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 
-				length = INF_convert(
-					*reinterpret_cast<ISC_TIMESTAMP*>(header->hdr_creation_date), 
-					buffer);
+				length = INF_convert(header->hdr_creation_date[0], p); 
+				p += length;
+				length += INF_convert(header->hdr_creation_date[1], p);
 				CCH_RELEASE(tdbb, &window);
 			}
 			break;
