@@ -10,15 +10,9 @@ New items for isc_database_info
 
 2. isc_info_creation_date :
 	return date and time when database was created
-
-	To decode use 
-	a) isc_portable_integer and cast extracted 8 bytes to ISC_TIMESTAMP
-	   then call isc_decode_timestamp, 
-	or
-	b) isc_vax_integer and cast extracted 4 bytes to ISC_DATE then call
-	   isc_decode_sql_date to get date portion. Then extract next 4 bytes 
-	   with isc_vax_integer, cast it to ISC_TIME and call isc_decode_sql_time 
-	   to get time portion
+	To decode call isc_vax_integer twice to extract (first) date
+	and (second) time portions of ISC_TIMESTAMP. Then use
+	isc_decode_timestamp as usual
 
 
 New items for isc_transaction_info:
