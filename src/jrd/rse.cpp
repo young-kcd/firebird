@@ -35,6 +35,7 @@
 #include "../jrd/common.h"
 #include <stdio.h>
 #include <string.h>
+#include "memory_routines.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
@@ -2511,6 +2512,7 @@ static void map_sort_data(jrd_req* request, SortMap* map, UCHAR * data)
  *
  **************************************/
 	DSC from, to;
+	SINT64 tmp;
 
 	const smb_repeat* const end_item = map->smb_rpt + map->smb_count;
 
@@ -2541,9 +2543,14 @@ static void map_sort_data(jrd_req* request, SortMap* map, UCHAR * data)
 		const SSHORT id = item->smb_field_id;
 		if (id < 0) {
 			if (id == SMB_TRANS_ID)
-				rpb->rpb_transaction_nr = *(SLONG *) (from.dsc_address);
+				
+				//rpb->rpb_transaction_nr = *(SLONG *) (from.dsc_address);
+				copy_fromptr(rpb->rpb_transaction_nr, from.dsc_address); 
 			else
-				rpb->rpb_number.setValue(*(SINT64 *) (from.dsc_address));
+				
+				copy_fromptr(tmp, from.dsc_address);
+				//rpb->rpb_number.setValue(*(SINT64 *) (from.dsc_address));
+				 rpb->rpb_number.setValue(tmp);
 			rpb->rpb_stream_flags |= RPB_s_refetch;
 			continue;
 		}
@@ -2773,9 +2780,11 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 				record_param* rpb = &request->req_rpb[item->smb_stream];
 				if (item->smb_field_id < 0) {
 					if (item->smb_field_id == SMB_TRANS_ID)
-						*(SLONG *) (to.dsc_address) = rpb->rpb_transaction_nr;
+						//*(SLONG *) (to.dsc_address) = rpb->rpb_transaction_nr;
+						copy_toptr(to.dsc_address,rpb->rpb_transaction_nr);
 					else
-						*(SINT64 *) (to.dsc_address) = rpb->rpb_number.getValue();
+						//*(SINT64 *) (to.dsc_address) = rpb->rpb_number.getValue();
+						copy_toptr(to.dsc_address,rpb->rpb_number.getValue());
 					continue;
 				}
 				if (!EVL_field
