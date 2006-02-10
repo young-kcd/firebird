@@ -1401,8 +1401,8 @@ static bool formatsAreEqual(const Format* old_format, const Format* new_format)
 			return false;
 		}
 
-		new_desc++;
-		old_desc++;
+		++new_desc;
+		++old_desc;
 	}
 
 	return true;
@@ -3559,7 +3559,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 	count = 0;
 	for (Format::fmt_desc_iterator desc2 = format->fmt_desc.begin();
 		 count < format->fmt_count;
-		 count++, desc2++)
+		 ++count, ++desc2)
 	{
 		if (desc2->dsc_dtype & COMPUTED_FLAG)
 		{
@@ -4406,7 +4406,7 @@ static void release_protect_lock(thread_db* tdbb, jrd_tra*	transaction, Lock* re
 	if (vector) {
 		vec<Lock*>::iterator lock = vector->begin();
 		for (ULONG i = 0; i < vector->count();
-			i++, lock++)
+			++i, ++lock)
 		{
 			if (*lock == relLock)
 			{

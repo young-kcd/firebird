@@ -4354,7 +4354,7 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 	if (procedures) {
 		vec<jrd_prc*>::iterator ptr, end;
 		for (ptr = procedures->begin(), end = procedures->end();
-					ptr < end; ptr++)
+					ptr < end; ++ptr)
 		{
 			const jrd_prc* procedure = *ptr;
 			if (procedure)

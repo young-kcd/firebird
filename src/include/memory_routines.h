@@ -47,7 +47,7 @@ inline void copy_fromptr(T& to, const void* from)
 #ifndef I386
          memcpy(&to, from, sizeof(T));
 #else
-         to = *(T*)  from;
+         to = *(T*) from;
 #endif
 } 
 

@@ -467,7 +467,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 					}
 				}
 
-				const NodeStack::iterator stackSavepoint(conjunct_stack);
+				//const NodeStack::iterator stackSavepoint(conjunct_stack);
 				NodeStack::const_iterator stack_end;
 				NodeStack deliverStack;
 

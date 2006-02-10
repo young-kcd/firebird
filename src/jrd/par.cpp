@@ -1343,20 +1343,20 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 	case dtype_sql_date:
 	case dtype_sql_time:
 		l = 4;
-		*(SLONG *) p = (SLONG) gds__vax_integer(q, l);
+		*(SLONG *) p = gds__vax_integer(q, l);
 		break;
 
 	case dtype_timestamp:
 		l = 8;
-		*(SLONG *) p = (SLONG) gds__vax_integer(q, 4);
+		*(SLONG *) p = gds__vax_integer(q, 4);
 		p += 4;
 		q += 4;
-		*(SLONG *) p = (SLONG) gds__vax_integer(q, 4);
+		*(SLONG *) p = gds__vax_integer(q, 4);
 		break;
 
 	case dtype_int64:
 		l = sizeof(SINT64);
-		*(SINT64 *) p = (SINT64) isc_portable_integer(q, l);
+		*(SINT64 *) p = isc_portable_integer(q, l);
 		break;
 
 	case dtype_double:
@@ -1383,7 +1383,7 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 
 	case dtype_text:
 		{
-			SSHORT ct = l;
+			int ct = l;
 			if (ct) {
 				do {
 					*p++ = *q++;
@@ -1474,7 +1474,7 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 	ULONG offset = 0;
 
 	Format::fmt_desc_iterator desc, end;
-	for (desc = format->fmt_desc.begin(), end = desc + n; desc < end; desc++) {
+	for (desc = format->fmt_desc.begin(), end = desc + n; desc < end; ++desc) {
 		const USHORT alignment = PAR_desc(csb, &*desc);
 		if (alignment)
 			offset = FB_ALIGN(offset, alignment);

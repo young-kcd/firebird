@@ -473,7 +473,7 @@ void EXT_store(record_param* rpb, int* transaction)
 	vec<jrd_fld*>::iterator field_ptr = relation->rel_fields->begin();
 	Format::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
 
-	for (USHORT i = 0; i < format->fmt_count; i++, field_ptr++, desc_ptr++)
+	for (USHORT i = 0; i < format->fmt_count; ++i, ++field_ptr, ++desc_ptr)
 	{
 		const jrd_fld* field = *field_ptr;
 		if (field &&

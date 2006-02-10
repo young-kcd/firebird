@@ -538,7 +538,7 @@ void INI_init(void)
 		Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 
 		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
-			 fld += RFLD_F_LENGTH, desc++, itr++)
+			 fld += RFLD_F_LENGTH, ++desc, ++itr)
 		{
 			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
@@ -654,7 +654,7 @@ void INI_init2(void)
 			format->fmt_length = (USHORT)FLAG_BYTES(n);
 			Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
-				 fld += RFLD_F_LENGTH, desc++)
+				 fld += RFLD_F_LENGTH, ++desc)
 			{
 				if (n-- > 0)
 				{

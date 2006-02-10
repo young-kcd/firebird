@@ -204,7 +204,7 @@ void MET_update_partners(thread_db* tdbb)
 	vec<jrd_rel*>* relations = dbb->dbb_relations;
 
 	vec<jrd_rel*>::iterator ptr = relations->begin();
-	for (const vec<jrd_rel*>::const_iterator end = relations->end(); ptr < end; ptr++)
+	for (const vec<jrd_rel*>::const_iterator end = relations->end(); ptr < end; ++ptr)
 	{
 		jrd_rel* relation = *ptr;
 		if (!relation) {
@@ -268,7 +268,7 @@ void MET_verify_cache(thread_db* tdbb)
 		vec<jrd_prc*>::iterator	ptr, end;
 
 		for (ptr = procedures->begin(), end = procedures->end();
-			ptr < end; ptr++)
+			ptr < end; ++ptr)
 		{
 			if ( (procedure = *ptr) && procedure->prc_request /*&&
 				 !(procedure->prc_flags & PRC_obsolete)*/ )
@@ -301,7 +301,7 @@ void MET_verify_cache(thread_db* tdbb)
 					procedure->prc_id, procedure->prc_name.c_str(), procedure->prc_use_count, procedure->prc_int_use_count);
 				vec<jrd_prc*>::const_iterator ptr2 = procedures->begin();
 				for (const vec<jrd_prc*>::const_iterator end2 = procedures->end();
-					ptr2 < end2; ptr2++)
+					ptr2 < end2; ++ptr2)
 				{
 					const jrd_prc* prc = *ptr2;
 					if (prc && prc->prc_request /*&&
@@ -364,7 +364,7 @@ void MET_clear_cache(thread_db* tdbb)
 	vec<jrd_rel*>* relations = dbb->dbb_relations;
 	{ // scope
 		vec<jrd_rel*>::iterator ptr, end;
-		for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
+		for (ptr = relations->begin(), end = relations->end(); ptr < end; ++ptr)
 		{
 			jrd_rel* relation = *ptr;
 			if (!relation)
@@ -385,7 +385,7 @@ void MET_clear_cache(thread_db* tdbb)
 		vec<jrd_prc*>::iterator ptr, end;
 		/* Walk procedures and calculate internal dependencies */
 		for (ptr = procedures->begin(), end = procedures->end();
-			ptr < end; ptr++)
+			ptr < end; ++ptr)
 		{
 			if ( (procedure = *ptr) && procedure->prc_request &&
 				 !(procedure->prc_flags & PRC_obsolete) )
@@ -479,7 +479,7 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 	vec<jrd_rel*>* relations = dbb->dbb_relations;
 	{ // scope
 	    vec<jrd_rel*>::iterator ptr, end;
-		for (ptr = relations->begin(), end = relations->end(); ptr < end; ptr++)
+		for (ptr = relations->begin(), end = relations->end(); ptr < end; ++ptr)
 		{
 			jrd_rel* relation = *ptr;
 			if (!relation) {
@@ -498,7 +498,7 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 	vec<jrd_prc*>::iterator ptr, end;
 	/* Walk procedures and calculate internal dependencies */
 	for (ptr = procedures->begin(), end = procedures->end();
-		ptr < end; ptr++)
+		ptr < end; ++ptr)
 	{
 		if ( (procedure = *ptr) && procedure->prc_request &&
 			 !(procedure->prc_flags & PRC_obsolete) )
@@ -1527,7 +1527,7 @@ int MET_lookup_field(thread_db* tdbb,
 		USHORT id = 0;
 		vec<jrd_fld*>::iterator fieldIter = vector->begin();
 
-		for (const vec<jrd_fld*>::const_iterator end = vector->end();  fieldIter < end; fieldIter++, id++)
+		for (const vec<jrd_fld*>::const_iterator end = vector->end();  fieldIter < end; ++fieldIter, ++id)
 		{
 			if (*fieldIter)
 			{
@@ -2064,7 +2064,7 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const Firebird::MetaName& name, b
 	if (procedures) {
         vec<jrd_prc*>::iterator ptr = procedures->begin();
 		for (const vec<jrd_prc*>::const_iterator end = procedures->end();
-					ptr < end; ptr++)
+					ptr < end; ++ptr)
 		{
 			jrd_prc* procedure = *ptr;
 			if (procedure && !(procedure->prc_flags & PRC_obsolete)
@@ -2211,7 +2211,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 	jrd_rel* check_relation = NULL;
 
 	vec<jrd_rel*>::iterator ptr = relations->begin();
-	for (const vec<jrd_rel*>::const_iterator end = relations->end(); ptr < end; ptr++)
+	for (const vec<jrd_rel*>::const_iterator end = relations->end(); ptr < end; ++ptr)
 	{
 		jrd_rel* relation = *ptr;
 		if (relation && (relation->rel_name.length() > 0)

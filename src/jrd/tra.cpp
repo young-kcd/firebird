@@ -886,7 +886,7 @@ bool TRA_precommited(thread_db* tdbb, SLONG old_number, SLONG new_number)
 	}
 
 	SLONG* zp = 0;
-	for (vcl::iterator p = vector->begin(), end = vector->end(); p < end; p++) {
+	for (vcl::iterator p = vector->begin(), end = vector->end(); p < end; ++p) {
 		if (*p == old_number)
 			return (*p = new_number) ? true : false;
 		if (!zp && !*p)

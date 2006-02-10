@@ -1853,7 +1853,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	const vcl::iterator end = vector->end();
 
 	if (blob->blb_level == 1) {
-		for (; ptr < end; ptr++) {
+		for (; ptr < end; ++ptr) {
 			if (*ptr) {
 				PAG_release_page(*ptr, prior_page);
 			}

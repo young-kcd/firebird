@@ -1323,7 +1323,7 @@ static void walk_generators(thread_db* tdbb, VDR control)
 	vcl* vector = dbb->dbb_gen_id_pages;
 	if (vector) {
         vcl::iterator ptr, end;
-		for (ptr = vector->begin(), end = vector->end(); ptr < end; ptr++) {
+		for (ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr) {
 			if (*ptr) {
 #ifdef DEBUG_VAL_VERBOSE
 				if (VAL_debug_level)

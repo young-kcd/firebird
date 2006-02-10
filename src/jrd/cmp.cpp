@@ -2323,7 +2323,7 @@ void CMP_shutdown_database(thread_db* tdbb)
 	// all existence locks that might have been taken
 
 	vec<jrd_rel*>::iterator ptr, end;
-	for (ptr = rvector->begin(), end = rvector->end(); ptr < end; ptr++) {
+	for (ptr = rvector->begin(), end = rvector->end(); ptr < end; ++ptr) {
 		jrd_rel* relation = *ptr;
 		if (relation) {
 			if (relation->rel_existence_lock) {
@@ -2353,7 +2353,7 @@ void CMP_shutdown_database(thread_db* tdbb)
 	// release all procedure existence locks that might have been taken
 
 	vec<jrd_prc*>::iterator pptr, pend;
-	for (pptr = pvector->begin(), pend = pvector->end(); pptr < pend; pptr++) {
+	for (pptr = pvector->begin(), pend = pvector->end(); pptr < pend; ++pptr) {
 		jrd_prc* procedure = *pptr;
 		if (procedure) {
 			if (procedure->prc_existence_lock) {
@@ -3011,7 +3011,7 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 	USHORT field_id = 0;
 	vec<jrd_fld*>::iterator ptr1 = vector->begin();
 	for (const vec<jrd_fld*>::const_iterator end = vector->end();
-	     ptr1 < end; ptr1++, field_id++)
+	     ptr1 < end; ++ptr1, ++field_id)
 	{
 		jrd_nod* value;
 		if (*ptr1 && (value = (*ptr1)->fld_default_value)) {
@@ -3071,7 +3071,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 	USHORT field_id = 0;
 	vec<jrd_fld*>::iterator ptr1 = vector->begin();
 	for (const vec<jrd_fld*>::const_iterator end = vector->end();
-		     ptr1 < end; ptr1++, field_id++)
+		     ptr1 < end; ++ptr1, ++field_id)
 	{
 		jrd_nod* validation;
 		if (*ptr1 && (validation = (*ptr1)->fld_validation)) {
@@ -3739,7 +3739,7 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 	USHORT id = 0, new_id = 0;
 	vec<jrd_fld*>::iterator ptr = fields->begin();
 	for (const vec<jrd_fld*>::const_iterator end = fields->end();
-			ptr < end; ptr++, id++)
+			ptr < end; ++ptr, ++id)
 	{
 		if (*ptr) {
 			if (remap) {
@@ -4780,7 +4780,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 			csb->csb_rpt[stream].csb_flags |= csb_update;
 			const Format* format = CMP_format(tdbb, csb, stream);
 			Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
-			for (ULONG id = 0; id < format->fmt_count; id++, desc++) {
+			for (ULONG id = 0; id < format->fmt_count; ++id, ++desc) {
 				if (desc->dsc_dtype) {
 					SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
 				}
@@ -5641,7 +5641,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 
 	Format::fmt_desc_iterator desc3 = format->fmt_desc.begin();
 	for (const Format::fmt_desc_const_iterator end_desc = format->fmt_desc.end();
-		 desc3 < end_desc; desc3++)
+		 desc3 < end_desc; ++desc3)
 	{
 		const USHORT align = type_alignments[desc3->dsc_dtype];
 		if (align) {

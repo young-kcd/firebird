@@ -2781,10 +2781,10 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 				if (item->smb_field_id < 0) {
 					if (item->smb_field_id == SMB_TRANS_ID)
 						//*(SLONG *) (to.dsc_address) = rpb->rpb_transaction_nr;
-						copy_toptr(to.dsc_address,rpb->rpb_transaction_nr);
+						copy_toptr(to.dsc_address, rpb->rpb_transaction_nr);
 					else
 						//*(SINT64 *) (to.dsc_address) = rpb->rpb_number.getValue();
-						copy_toptr(to.dsc_address,rpb->rpb_number.getValue());
+						copy_toptr(to.dsc_address, rpb->rpb_number.getValue());
 					continue;
 				}
 				if (!EVL_field

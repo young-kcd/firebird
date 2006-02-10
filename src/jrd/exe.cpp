@@ -2484,7 +2484,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		// Close active cursors
 		if (request->req_cursors) {
 			for (vec<RecordSource*>::iterator ptr = request->req_cursors->begin(),
-				end = request->req_cursors->end(); ptr < end; ptr++)
+				end = request->req_cursors->end(); ptr < end; ++ptr)
 			{
 				if (*ptr)
 					RSE_close(tdbb, *ptr);
