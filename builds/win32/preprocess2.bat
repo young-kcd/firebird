@@ -66,6 +66,7 @@ goto :EOF
 :MASTER_PROCESS
 @set GPRE=%ROOT_PATH%\gen\gpre_embed
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
+@for %%i in (backup, restore) do @call :PREPROCESS burp %%i
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
 @for %%i in (exe, extract) do @call :PREPROCESS dudley %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
@@ -73,6 +74,7 @@ goto :EOF
 @for %%i in (codes) do @call :PREPROCESS misc %%i
 @for %%i in (build_file) do @call :PREPROCESS msgs %%i
 @for %%i in (help, meta, proc, show) do @call :PREPROCESS qli %%i
+@for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
 @for %%i in (dba) do @call :PREPROCESS utilities/gstat %%i
 @for %%i in (security) do @call :PREPROCESS utilities/gsec %%i
 @for %%i in (stats) do @call :PREPROCESS utilities %%i

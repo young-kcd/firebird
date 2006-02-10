@@ -61,8 +61,8 @@ goto :EOF
 @set GPRE=%ROOT_PATH%\gen\gpre_static
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
 ::CVC - Comment these lines if you can't compile when new fields are added. See above.
-::@for %%i in (backup, restore) do @call :PREPROCESS burp %%i
-::@for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
+@for %%i in (backup, restore) do @call :PREPROCESS burp %%i
+@for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
 ::END
 @for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
 @for %%i in (exe, extract) do @call :PREPROCESS dudley %%i
