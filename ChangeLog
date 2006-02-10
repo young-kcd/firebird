@@ -1,3 +1,27 @@
+2006-02-09 16:50  kkuznetsov
+
+	* firebird2/src/jrd/rse.cpp (1.98):
+	
+	Fix aligment issues on Solaris sparc V9 (64 bits)
+
+2006-02-09 12:00  kkuznetsov
+
+	* firebird2/src/include/memory_routines.h (1.9):
+	
+	Minor fixes big thanks to Alex and Dmitry
+
+2006-02-09 08:48  hvlad
+
+	* firebird2/doc/sql.extensions/README.isc_info_xxx (1.4):
+	
+	Correct documentation for isc_info_creation_date
+
+2006-02-09 08:42  hvlad
+
+	* firebird2/src/jrd/inf.cpp (1.61):
+	
+	Correct way to work on big-endian systems
+
 2006-02-08 22:21  hvlad
 
 	* firebird2/doc/sql.extensions/README.isc_info_xxx (1.3):
