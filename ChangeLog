@@ -1,3 +1,28 @@
+2006-02-10 20:40  dimitr
+
+	* firebird2/builds/win32/: preprocess.bat (1.33), preprocess2.bat
+	(1.2):
+	
+	Committed changes for the win32 build process.
+
+2006-02-10 04:35  robocop
+
+	* firebird2/src/jrd/rse.cpp (1.100):
+	
+	This is why we put {} around if/else always: to avoid errors like
+	this one, where indentation is not what the compiler follows.
+
+2006-02-10 04:28  robocop
+
+	* firebird2/src/: include/memory_routines.h (1.10), jrd/blb.cpp
+	(1.112), jrd/cmp.cpp (1.195), jrd/dfw.epp (1.173), jrd/exe.cpp
+	(1.173), jrd/ext.cpp (1.63), jrd/ini.epp (1.74), jrd/jrd.cpp
+	(1.235), jrd/jrd.h (1.147), jrd/met.epp (1.179), jrd/opt.cpp
+	(1.259), jrd/par.cpp (1.129), jrd/rse.cpp (1.99), jrd/tra.cpp
+	(1.115), jrd/validation.cpp (1.13):
+	
+	Misc.
+
 2006-02-09 16:50  kkuznetsov
 
 	* firebird2/src/jrd/rse.cpp (1.98):
