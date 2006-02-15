@@ -5627,6 +5627,7 @@ static dsql_nod* pass1_not(dsql_req* request,
 		case nod_geq_all:
 			node_type = nod_lss_any;
 			break;
+/*
 		case nod_eql_any:
 			if (sub->nod_arg[1]->nod_type == nod_list) {
 				// this is NOT IN (<list>), don't change it
@@ -5651,6 +5652,7 @@ static dsql_nod* pass1_not(dsql_req* request,
 		case nod_geq_any:
 			node_type = nod_lss_all;
 			break;
+*/
 		case nod_between:
 			node_type = nod_or;
 			is_between = true;
