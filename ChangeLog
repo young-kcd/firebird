@@ -1,3 +1,17 @@
+2006-02-15 14:35  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.256):
+	
+	There's no need to transform NOT ANY to ALL, as NOT ANY effectively
+	uses indices.
+
+2006-02-15 14:34  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.196), rse.cpp (1.101):
+	
+	More clever solution for bug #459059.  Deoptimization of NOT ANY is
+	no longer necessary.
+
 2006-02-10 20:40  dimitr
 
 	* firebird2/builds/win32/: preprocess.bat (1.33), preprocess2.bat
