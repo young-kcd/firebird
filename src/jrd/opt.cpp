@@ -106,7 +106,7 @@ static SLONG decompose(thread_db*, jrd_nod*, NodeStack&, CompilerScratch*);
 static USHORT distribute_equalities(NodeStack&, CompilerScratch*, USHORT);
 static bool dump_index(const jrd_nod*, SCHAR**, SSHORT*);
 static bool dump_rsb(const jrd_req*, const RecordSource*, SCHAR**, SSHORT*);
-static bool estimate_cost(thread_db*, OptimizerBlk*, USHORT, double *, double *);
+static void estimate_cost(thread_db*, OptimizerBlk*, USHORT, double *, double *);
 static bool expression_possible_unknown(const jrd_nod*);
 static bool expression_contains_stream(CompilerScratch*, const jrd_nod*, UCHAR, bool*);
 static void find_best(thread_db*, OptimizerBlk*, USHORT, USHORT, const UCHAR*,
@@ -155,7 +155,7 @@ static jrd_nod* make_missing(thread_db*, OptimizerBlk*, jrd_rel*, jrd_nod*, USHO
 static jrd_nod* make_starts(thread_db*, OptimizerBlk*, jrd_rel*, jrd_nod*, USHORT, index_desc*);
 static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
 static void mark_indices(CompilerScratch::csb_repeat*, SSHORT);
-static SSHORT match_index(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, const index_desc*);
+static int match_index(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, const index_desc*);
 static bool match_indices(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, const index_desc*);
 static bool node_equality(const jrd_nod*, const jrd_nod*);
 static jrd_nod* optimize_like(thread_db*, CompilerScratch*, jrd_nod*);
@@ -1244,7 +1244,7 @@ int OPT_match_index(OptimizerBlk* opt, USHORT stream, index_desc* idx)
 	CompilerScratch* csb = opt->opt_csb;
 	const OptimizerBlk::opt_conjunct* const opt_end =
 		opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
-	USHORT n = 0;
+	int n = 0;
 	clear_bounds(opt, idx);
 
 	for (OptimizerBlk::opt_conjunct* tail = opt->opt_conjuncts.begin();
@@ -1258,7 +1258,7 @@ int OPT_match_index(OptimizerBlk* opt, USHORT stream, index_desc* idx)
 		}
 	}
 
-	return n; // implicit USHORT -> int
+	return n;
 }
 
 
@@ -2563,7 +2563,7 @@ static bool dump_rsb(const jrd_req* request,
 }
 
 
-static bool estimate_cost(thread_db* tdbb,
+static void estimate_cost(thread_db* tdbb,
 							 OptimizerBlk* opt,
 							 USHORT stream,
 							 double *cost, double *resulting_cardinality)
@@ -2602,7 +2602,7 @@ static bool estimate_cost(thread_db* tdbb,
 	if (opt->opt_conjuncts.getCount()) {
 		const index_desc* idx = csb_tail->csb_idx->items;
 		for (USHORT i = 0; i < csb_tail->csb_indices; i++) {
-			SSHORT n = 0;
+			int n = 0;
 			clear_bounds(opt, idx);
 			const OptimizerBlk::opt_conjunct* const opt_end =
 				opt->opt_conjuncts.end();
@@ -2639,7 +2639,7 @@ static bool estimate_cost(thread_db* tdbb,
 					s *= INVERSE_ESTIMATE;
 				}
 				index_selectivity *= s;
-				index_hits += MAX(count, n);
+				index_hits += MAX(count, (USHORT) n);
 			}
 			++idx;
 		}
@@ -2705,7 +2705,7 @@ static bool estimate_cost(thread_db* tdbb,
 	csb_tail->csb_flags |= csb_active;
 
 	// AB: Nice that we return a boolean, but do we ever need it?
-	return (indexes != 0);
+	//return (indexes != 0);
 }
 
 
@@ -6689,7 +6689,7 @@ static void mark_indices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_
 }
 
 
-static SSHORT match_index(thread_db* tdbb,
+static int match_index(thread_db* tdbb,
 						  OptimizerBlk* opt,
 						  SSHORT stream, jrd_nod* boolean,
 						  const index_desc* idx)
@@ -6766,8 +6766,8 @@ static SSHORT match_index(thread_db* tdbb,
 /* match the field to an index, if possible, and save the value to be matched
    as either the lower or upper bound for retrieval, or both */
 
-	SSHORT count = 0;
-	SSHORT i = 0;
+	int count = 0;
+	USHORT i = 0;
 	for (OptimizerBlk::opt_segment* ptr = opt->opt_segments; i < idx->idx_count;
 		i++, ptr++)
 	{
