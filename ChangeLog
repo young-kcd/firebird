@@ -1,3 +1,9 @@
+2006-02-19 00:39  robocop
+
+	* firebird2/src/jrd/opt.cpp (1.260):
+	
+	Misc.
+
 2006-02-15 14:35  dimitr
 
 	* firebird2/src/dsql/pass1.cpp (1.256):
