@@ -1295,6 +1295,9 @@ static void check_dependencies(thread_db* tdbb,
 			case obj_udf:
 				obj_type = isc_udf_name;
 				break;
+			case obj_index:
+				obj_type = isc_index_name;
+				break;
 			default:
 				fb_assert(FALSE);
 				break;
@@ -2434,6 +2437,18 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return false;
 
 	case 1:
+	{
+		const DeferredWork* arg = work->dfw_args;
+		while (arg && (arg->dfw_type != dfw_arg_index_name)) 
+			arg = arg->dfw_next;
+
+		fb_assert(arg);
+
+		check_dependencies(tdbb, arg->dfw_name.c_str(), NULL,
+						   obj_index, transaction);
+		return true;
+	}
+
 	case 2:
 		return true;
 

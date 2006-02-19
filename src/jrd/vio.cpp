@@ -1211,20 +1211,15 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_idx_id, &desc2);
 			if ( (id = MOV_get_long(&desc2, 0)) ) {
 				if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2))
-				{
-					work = DFW_post_work(transaction, dfw_delete_expression_index,
-								  &desc, id);
-
-					// add expression index name to correctly delete dependencies
-					DSC idx_name;
-					EVL_field(0, rpb->rpb_record, f_idx_name, &idx_name);
-					DeferredWork* arg = DFW_post_work_arg(transaction, work, &idx_name, id);
-					arg->dfw_type = dfw_arg_index_name;
-				}
+					work = DFW_post_work(transaction, dfw_delete_expression_index, &desc, id);
 				else
-				{
 					work = DFW_post_work(transaction, dfw_delete_index, &desc, id);
-				}
+
+				// add index name to correctly delete dependencies
+				DSC idx_name;
+				EVL_field(0, rpb->rpb_record, f_idx_name, &idx_name);
+				DeferredWork* arg = DFW_post_work_arg(transaction, work, &idx_name, id);
+				arg->dfw_type = dfw_arg_index_name;
 			}
 			
 			// get partner relation for FK index
