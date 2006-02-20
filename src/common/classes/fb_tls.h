@@ -93,7 +93,7 @@ private:
 //# define TLS_SET(NAME, VALUE) NAME = (VALUE)
 #else
 
-#if not (defined SOLARIS_MT)
+#ifndef SOLARIS_MT)
 
 #include <pthread.h>
 
