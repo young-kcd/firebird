@@ -68,7 +68,25 @@ static const UCHAR* compile(const UCHAR*, sdl_arg*);
 static ISC_STATUS error(ISC_STATUS*, ...);
 static bool execute(sdl_arg*);
 static const UCHAR* get_range(const UCHAR*, array_range*, SLONG*, SLONG*);
-static SSHORT get_word(const UCHAR*&);
+//static SSHORT get_word(const UCHAR*&);
+inline SSHORT get_word(const UCHAR*& ptr)
+{
+/**************************************
+ *
+ * g e t _ w o r d
+ *
+ **************************************
+ *
+ * Functional description
+ *	gather a int16 from two little-endian
+ *  unsigned chars and advance the pointer
+ *
+ **************************************/
+   SSHORT n = *ptr++;
+   n |= (*ptr++) << 8;
+
+   return n;
+};
 static const UCHAR* sdl_desc(const UCHAR*, DSC*);
 static IPTR* stuff(IPTR, sdl_arg*);
 
@@ -877,24 +895,7 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 	}
 }
 
-inline SSHORT get_word(const UCHAR*& ptr)
-{
-/**************************************
- *
- * g e t _ w o r d
- *
- **************************************
- *
- * Functional description
- *	gather a int16 from two little-endian
- *  unsigned chars and advance the pointer
- *
- **************************************/
-   SSHORT n = *ptr++;
-   n |= (*ptr++) << 8;
 
-   return n;
-}
 
 static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 {
