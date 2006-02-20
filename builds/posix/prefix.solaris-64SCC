@@ -9,21 +9,22 @@
 # 30-Dec-2002  nmcc FB2 initial working build on Solaris8 with gcc 3.2.1
 # 07-Apr-2005  kkuznetsov starting moving to sparc 64
 
-CC=cc
 
 #-Dsparc -D__sparc__ -D__sparc -D__arch64__ -Acpu=sparc64 -Amachine=sparcv9 -D__sparcv9   -mptr64 -mstack-bias -mno-v8plus -mcpu=v9
 #
 
 # Firebird defines specific to Solaris (sparc) build
-CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP -Dsparc 
+CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP -Dsparc -DSUNCC
+#-DSUNCC - correcting gnuc C++ extentions
 
 # compile flags for SUNWspro/Forte/CC/Sun Studio compiler
-COMMON_CC_FLAGS=  -xM1  -mt -KPIC -Bsymbolic -xport64 -xarch=v9 -D__sparcv9  -libmil
+COMMON_CC_FLAGS=  -xM1  -mt -KPIC -Bsymbolic  -xarch=v9 -D__sparcv9  -libmil
 # -libmil means use the intrinsic library functions like strlen
 
 
-DEBUG_CC_FLAGS=  -v -g  -xs 
+DEBUG_CC_FLAGS=  -g  -xs -xport64
 #switch to dbx accoding SF gdb 64 bits mailfunction
+#-xport64 - porting to 64 bits warnings
 
 PROD_CC_FLAGS= -O2  -DNDEBUG
 
