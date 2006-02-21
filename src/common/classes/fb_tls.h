@@ -1,7 +1,7 @@
 /*
- *  PROGRAM:    Client/Server Common Code
- *  MODULE:     fb_tls.h
- *  DESCRIPTION:  Thread-local storage handlers
+ *	PROGRAM:		Client/Server Common Code
+ *	MODULE:			fb_tls.h
+ *	DESCRIPTION:	Thread-local storage handlers
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -53,27 +53,27 @@ namespace Firebird {
 template <typename T>
 class Win32Tls {
 public:
-  Win32Tls() {
-    if ((key = TlsAlloc()) == 0xFFFFFFFF)
-      system_call_failed::raise("TlsAlloc");
-  }
-  const T get() {
-    LPVOID value = TlsGetValue(key);
-    if ((value == NULL) && (GetLastError() != NO_ERROR))
-      system_call_failed::raise("TlsGetValue");
-//    return reinterpret_cast<T>(value);
-    return (T)value;
-  }
-  void set(const T value) {
-    if (TlsSetValue(key, (LPVOID)value) == 0)
-      system_call_failed::raise("TlsSetValue");
-  }
-  ~Win32Tls() {
-    if (TlsFree(key) == 0)
-      system_call_failed::raise("TlsFree");
-  }
+	Win32Tls() {
+		if ((key = TlsAlloc()) == 0xFFFFFFFF)
+			system_call_failed::raise("TlsAlloc");
+	}
+	const T get() {
+	 	LPVOID value = TlsGetValue(key);
+		if ((value == NULL) && (GetLastError() != NO_ERROR))
+			system_call_failed::raise("TlsGetValue");
+//		return reinterpret_cast<T>(value);
+		return (T)value;
+	}
+	void set(const T value) {
+		if (TlsSetValue(key, (LPVOID)value) == 0)
+			system_call_failed::raise("TlsSetValue");
+	}
+	~Win32Tls() {
+		if (TlsFree(key) == 0)
+			system_call_failed::raise("TlsFree");
+	}
 private:
-  DWORD key;  
+	DWORD key;	
 };
 } // namespace Firebird
 # define TLS_DECLARE(TYPE, NAME) ::Firebird::Win32Tls<TYPE> NAME
@@ -103,25 +103,25 @@ namespace Firebird {
 template <typename T>
 class TlsValue {
 public:
-  TlsValue() {
-    if (pthread_key_create(&key, NULL))
-      system_call_failed::raise("pthread_key_create");
-  }
-  const T get() {
-    // We use double C-style cast to allow using scalar datatypes
-    // with sizes up to size of pointer without warnings
-    return (T)(IPTR)pthread_getspecific(key);
-  }
-  void set(const T value) {
-    if (pthread_setspecific(key, (void*)(IPTR)value))
-      system_call_failed::raise("pthread_setspecific");
-  }
-  ~TlsValue() {
-    if (pthread_key_delete(key))
-      system_call_failed::raise("pthread_key_delete");
-  }
+	TlsValue() {
+		if (pthread_key_create(&key, NULL))
+			system_call_failed::raise("pthread_key_create");
+	}
+	const T get() {
+		// We use double C-style cast to allow using scalar datatypes
+		// with sizes up to size of pointer without warnings
+		return (T)(IPTR)pthread_getspecific(key);
+	}
+	void set(const T value) {
+		if (pthread_setspecific(key, (void*)(IPTR)value))
+			system_call_failed::raise("pthread_setspecific");
+	}
+	~TlsValue() {
+		if (pthread_key_delete(key))
+			system_call_failed::raise("pthread_key_delete");
+	}
 private:
-  pthread_key_t key;  
+	pthread_key_t key;	
 };
 #else //SOLARIS_MT
 #include <thread.h>
@@ -133,37 +133,37 @@ namespace Firebird {
 template <typename T>
 class TlsValue {
 public:
-  static void  TlsV_on_thread_exit (void * pval) {
-  /* Usually should delete pval like this
-    T * ptempT= (T*) pval ;
-    delete ptempT;
-  */
+	static void  TlsV_on_thread_exit (void * pval) {
+	/* Usually should delete pval like this
+		T * ptempT= (T*) pval ;
+		delete ptempT;
+	*/
 
-  }
+	}
 
-  TlsValue() {
-    if (thr_keycreate(&key, TlsV_on_thread_exit) )
-      system_call_failed::raise("thr_key_create");
-  }
-  const T get() {
-    // We use double C-style cast to allow using scalar datatypes
-    // with sizes up to size of pointer without warnings
-    T  * valuep;
-    if (thr_getspecific(key, (void **) &valuep) == 0)
-      return (T)(IPTR) (valuep) ;
-    else
-      system_call_failed::raise("thr_getspecific");
-      return (T)NULL;
-  }
-  void set(const T value) {
-    if (thr_setspecific(key, (void*)(IPTR)value))
-      system_call_failed::raise("thr_setspecific");
-  }
-  ~TlsValue() {
-    /* Do nothing if no pthread_key_delete */
-  }
+	TlsValue() {
+		if (thr_keycreate(&key, TlsV_on_thread_exit) )
+			system_call_failed::raise("thr_key_create");
+	}
+	const T get() {
+		// We use double C-style cast to allow using scalar datatypes
+		// with sizes up to size of pointer without warnings
+		T  * valuep;
+		if (thr_getspecific(key, (void **) &valuep) == 0)
+			return (T)(IPTR) (valuep) ;
+		else
+			system_call_failed::raise("thr_getspecific");
+			return (T)NULL;
+	}
+	void set(const T value) {
+		if (thr_setspecific(key, (void*)(IPTR)value))
+			system_call_failed::raise("thr_setspecific");
+	}
+	~TlsValue() {
+		/* Do nothing if no pthread_key_delete */
+	}
 private:
-  thread_key_t key; 
+	thread_key_t key;	
 };
 
 
