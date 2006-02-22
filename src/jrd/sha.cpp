@@ -157,44 +157,44 @@ nether regions of the anatomy...
 
 #if (SHA_BYTE_ORDER == 4321)
 #define SWAP_DONE
-    for (i = 0; i < 16; ++i) {
-	T = *((LONG *) dp);
-	dp += 4;
-	W[i] = T32(T);
-    }
+	for (i = 0; i < 16; ++i) {
+		T = *((LONG *) dp);
+		dp += 4;
+		W[i] = T32(T);
+	}
 #endif /* SHA_BYTE_ORDER == 4321 */
 
 #if (SHA_BYTE_ORDER == 12345678)
 #define SWAP_DONE
-    for (i = 0; i < 16; i += 2) {
-	T = *((LONG *) dp);
-	dp += 8;
-	W[i] =  ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
-		((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
-	T >>= 32;
-	W[i + 1] = ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
-		 ((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
+	for (i = 0; i < 16; i += 2) {
+		T = *((LONG *) dp);
+		dp += 8;
+		W[i] =  ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
+			((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
+		T >>= 32;
+		W[i + 1] = ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
+			((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
     }
 #endif /* SHA_BYTE_ORDER == 12345678 */
 
 #if (SHA_BYTE_ORDER == 87654321)
 #define SWAP_DONE
-    for (i = 0; i < 16; i += 2) {
-	T = *((LONG *) dp);
-	dp += 8;
-	W[i] = T32(T >> 32);
-	W[i + 1] = T32(T);
-    }
+	for (i = 0; i < 16; i += 2) {
+		T = *((LONG *) dp);
+		dp += 8;
+		W[i] = T32(T >> 32);
+		W[i + 1] = T32(T);
+	}
 #endif /* SHA_BYTE_ORDER == 87654321 */
 
 #ifndef SWAP_DONE
 #error Unknown byte order -- you need to add code here
 #endif /* SWAP_DONE */
 
-    for (i = 16; i < 80; ++i) {
-	W[i] = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
+	for (i = 16; i < 80; ++i) {
+		W[i] = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
 #if (SHA_VERSION == 1)
-	W[i] = R32(W[i], 1);
+		W[i] = R32(W[i], 1);
 #endif /* SHA_VERSION */
     }
     LONG A = sha_info->digest[0];
@@ -259,35 +259,36 @@ void sha_init(SHA_INFO *sha_info)
 
 void sha_update(SHA_INFO *sha_info, const BYTE *buffer, int count)
 {
-    const LONG clo = T32(sha_info->count_lo + ((LONG) count << 3));
-    if (clo < sha_info->count_lo) {
-	++sha_info->count_hi;
-    }
-    sha_info->count_lo = clo;
-    sha_info->count_hi += (LONG) count >> 29;
-    if (sha_info->local) {
-	int i = SHA_BLOCKSIZE - sha_info->local;
-	if (i > count) {
-	    i = count;
+	const LONG clo = T32(sha_info->count_lo + ((LONG) count << 3));
+	if (clo < sha_info->count_lo) {
+		++sha_info->count_hi;
 	}
-	memcpy(sha_info->data + sha_info->local, buffer, i);
-	count -= i;
-	buffer += i;
-	sha_info->local += i;
-	if (sha_info->local == SHA_BLOCKSIZE) {
-	    sha_transform(sha_info);
-	} else {
-	    return;
+	sha_info->count_lo = clo;
+	sha_info->count_hi += (LONG) count >> 29;
+	if (sha_info->local) {
+		int i = SHA_BLOCKSIZE - sha_info->local;
+		if (i > count) {
+			i = count;
+		}
+		memcpy(sha_info->data + sha_info->local, buffer, i);
+		count -= i;
+		buffer += i;
+		sha_info->local += i;
+		if (sha_info->local == SHA_BLOCKSIZE) {
+			sha_transform(sha_info);
+		}
+		else {
+			return;
+		}
 	}
-    }
-    while (count >= SHA_BLOCKSIZE) {
-	memcpy(sha_info->data, buffer, SHA_BLOCKSIZE);
-	buffer += SHA_BLOCKSIZE;
-	count -= SHA_BLOCKSIZE;
-	sha_transform(sha_info);
-    }
-    memcpy(sha_info->data, buffer, count);
-    sha_info->local = count;
+	while (count >= SHA_BLOCKSIZE) {
+		memcpy(sha_info->data, buffer, SHA_BLOCKSIZE);
+		buffer += SHA_BLOCKSIZE;
+		count -= SHA_BLOCKSIZE;
+		sha_transform(sha_info);
+	}
+	memcpy(sha_info->data, buffer, count);
+	sha_info->local = count;
 }
 
 /* finish computing the SHA digest */
@@ -299,12 +300,12 @@ void sha_final(unsigned char digest[SHA_DIGESTSIZE], SHA_INFO *sha_info)
     int count = (int) ((lo_bit_count >> 3) & 0x3f);
     sha_info->data[count++] = 0x80;
     if (count > SHA_BLOCKSIZE - 8) {
-	memset(sha_info->data + count, 0, SHA_BLOCKSIZE - count);
-	sha_transform(sha_info);
-	memset(sha_info->data, 0, SHA_BLOCKSIZE - 8);
-    } else {
-	memset(sha_info->data + count, 0,
-	    SHA_BLOCKSIZE - 8 - count);
+		memset(sha_info->data + count, 0, SHA_BLOCKSIZE - count);
+		sha_transform(sha_info);
+		memset(sha_info->data, 0, SHA_BLOCKSIZE - 8);
+    }
+	else {
+		memset(sha_info->data + count, 0, SHA_BLOCKSIZE - 8 - count);
     }
     sha_info->data[56] = (unsigned char) ((hi_bit_count >> 24) & 0xff);
     sha_info->data[57] = (unsigned char) ((hi_bit_count >> 16) & 0xff);
@@ -353,8 +354,7 @@ void base64(Firebird::string& b64, const BinHash& bin)
 	{
 		if (i >= 3)
 		{
-			const ULONG l = (ULONG(f[0]) << 16) |
-					  (ULONG(f[1]) <<  8) | f[2];
+			const ULONG l = (ULONG(f[0]) << 16) | (ULONG(f[1]) <<  8) | f[2];
 			b64 += conv_bin2ascii(l >> 18);
 			b64 += conv_bin2ascii(l >> 12);
 			b64 += conv_bin2ascii(l >> 6);
