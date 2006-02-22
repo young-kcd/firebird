@@ -1,3 +1,124 @@
+  **************************
+  * v2.0 Release Candidate 1
+  **************************
+
+    * Fixed unregistered bug
+        A few types of subqueries are wrongly treated as being variant,
+        causing performance issues
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 2 bug (SF #$1433583)
+        Unexpected error "key size exceeds implementation restriction" for UTF-8 charset
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        Indices used in explicit plans inside	PSQL could be dropped, thus causing restore issues
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        fb_lock_print fails with message:
+        "the requested operation cannot be performed on a file with a user-mapped section open".
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Information API enhancements
+        1) isc_info_active_transactions_count returns number of active transactions (SF #1315814)
+        2) isc_transaction_info returns transaction isolation level and options (SF #1089646)
+        3) isc_info_creation_date returns creation date of the database
+      See also:
+        /doc/sql.extensions/README.isc_info_xxx
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        Transaction ID cannot silently (and dangerously) overflow anymore (the limit is still 2^31)
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        Read committed transactions block garbage collection
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        ALL predicate may return wrong results
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Thread safety issues in datetime functions of the FBUDF library
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Build improvement
+        FBUDF library no longer depends on FBCLIENT
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed unregistered bug
+        Permissions are not checked for view columns
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Server crashes if positioned UPDATE/DELETE is executed via DSQL
+        and it references a cursor which is already released.
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed SF bug #1404157
+        DFW is not ready for RECREATE TABLE/VIEW
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Restored the code which replaces ROLLBACK with COMMIT if a transaction
+        has not modified any data
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        ROW_COUNT is cleared after SUSPEND execution
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF bug #1408079
+        Parser does not validate string literal markers
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed Beta 2 bug
+        Incorrect ambiguity error raised for quantified predicates (ANY/ALL/IN)
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bugs
+        1) Wrong statistics if relation\index data is longer than 2^32 bytes length
+        2) Wrong statistics: average index key length rounded to integer value
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        Attachments with isc_dpb_no_garbage_collect option force the sweep
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Beta 2 bug
+        Wrong string length calculated for UNICODE_FSS system domains
+        in users views and tables
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 2 bug
+        Incorrectly stored source for CURRENT_TIME\CURRENT_TIMESTAMP
+        in procedure parameters default values
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
   **************
   * v2.0 Beta 2
   **************
