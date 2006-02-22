@@ -519,7 +519,7 @@ UnicodeUtil::Utf16Collation::~Utf16Collation()
 
 USHORT UnicodeUtil::Utf16Collation::keyLength(USHORT len)
 {
-	return MAX(256, 4 * len);
+	return (len / 4) * 6;
 }
 
 
