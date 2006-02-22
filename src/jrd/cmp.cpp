@@ -144,7 +144,7 @@ static RecordSource* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static SSHORT strcmp_space(const char*, const char*);
-static bool stream_in_rse(CompilerScratch*, USHORT, RecordSelExpr*);
+static bool stream_in_rse(USHORT, RecordSelExpr*);
 static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request);
 static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view);
 
@@ -3232,7 +3232,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 					 i_node >= csb->csb_current_nodes.begin(); i_node--) 
 				{
 					if ((*i_node)->nod_type == nod_rse) {
-						if (stream_in_rse(csb, stream, reinterpret_cast<RecordSelExpr*>(*i_node))) {
+						if (stream_in_rse(stream, reinterpret_cast<RecordSelExpr*>(*i_node))) {
 							break;
 						}
 						reinterpret_cast<RecordSelExpr*>(*i_node)->nod_flags |= rse_variant;
@@ -5669,7 +5669,7 @@ static SSHORT strcmp_space(const char* p, const char* q)
 }
 
 
-static bool stream_in_rse(CompilerScratch* csb, USHORT stream, RecordSelExpr* rse)
+static bool stream_in_rse(USHORT stream, RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -5695,7 +5695,7 @@ static bool stream_in_rse(CompilerScratch* csb, USHORT stream, RecordSelExpr* rs
 		// for RecordSelExpr, just recurse
 		if (sub->nod_type == nod_rse)
 		{
-			if (stream_in_rse(csb, stream, (RecordSelExpr*) sub))
+			if (stream_in_rse(stream, (RecordSelExpr*) sub))
 			{
 				return true;		// do not mark as variant
 			}
@@ -5713,7 +5713,7 @@ static bool stream_in_rse(CompilerScratch* csb, USHORT stream, RecordSelExpr* rs
 			for (const jrd_nod* const* const end = ptr + clauses->nod_count;
 				ptr < end; ptr += 2)
 			{
-				if (stream_in_rse(csb, stream, (RecordSelExpr*) *ptr))
+				if (stream_in_rse(stream, (RecordSelExpr*) *ptr))
 				{
 					return true;	// do not mark as variant
 				}
@@ -5727,7 +5727,7 @@ static bool stream_in_rse(CompilerScratch* csb, USHORT stream, RecordSelExpr* rs
 			{
 				return true;		// do not mark as variant
 			}
-			if (stream_in_rse(csb, stream, (RecordSelExpr*) sub->nod_arg[e_agg_rse]))
+			if (stream_in_rse(stream, (RecordSelExpr*) sub->nod_arg[e_agg_rse]))
 			{
 				return true;		// do not mark as variant
 			}
