@@ -144,7 +144,7 @@ static RecordSource* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static SSHORT strcmp_space(const char*, const char*);
-static bool stream_in_rse(USHORT, RecordSelExpr*);
+static bool stream_in_rse(CompilerScratch*, USHORT, RecordSelExpr*);
 static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request);
 static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view);
 
@@ -3232,7 +3232,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 					 i_node >= csb->csb_current_nodes.begin(); i_node--) 
 				{
 					if ((*i_node)->nod_type == nod_rse) {
-						if (stream_in_rse(stream, reinterpret_cast<RecordSelExpr*>(*i_node))) {
+						if (stream_in_rse(csb, stream, reinterpret_cast<RecordSelExpr*>(*i_node))) {
 							break;
 						}
 						reinterpret_cast<RecordSelExpr*>(*i_node)->nod_flags |= rse_variant;
@@ -3242,6 +3242,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 					}
 				}
 			}
+
 			jrd_fld* field;
 			tail = &csb->csb_rpt[stream];
 			jrd_rel* relation = tail->csb_relation;
@@ -5668,7 +5669,7 @@ static SSHORT strcmp_space(const char* p, const char* q)
 }
 
 
-static bool stream_in_rse(USHORT stream, RecordSelExpr* rse)
+static bool stream_in_rse(CompilerScratch* csb, USHORT stream, RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -5683,7 +5684,7 @@ static bool stream_in_rse(USHORT stream, RecordSelExpr* rse)
  **************************************/
 	DEV_BLKCHK(rse, type_nod);
 
-	// look through all relation nodes in this RecordSelExpr to see 
+	// look through all relation nodes in this RecordSelExpr to see
 	// if the field references this instance of the relation
 	jrd_nod** ptr = rse->rse_relation;
 	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end;
@@ -5691,22 +5692,55 @@ static bool stream_in_rse(USHORT stream, RecordSelExpr* rse)
 	{
 		jrd_nod* sub = *ptr;
 
-		// for aggregates, check current RecordSelExpr, if not found then check 
-		// the sub-rse
-		if (sub->nod_type == nod_aggregate) {
-			if ((stream == (USHORT)(IPTR) sub->nod_arg[e_rel_stream]) ||
-				(stream_in_rse(stream, (RecordSelExpr*) sub->nod_arg[e_agg_rse])))
+		// for RecordSelExpr, just recurse
+		if (sub->nod_type == nod_rse)
+		{
+			if (stream_in_rse(csb, stream, (RecordSelExpr*) sub))
 			{
-				return true;	// do not mark as variant
+				return true;		// do not mark as variant
 			}
 		}
-
-		if ((sub->nod_type == nod_relation) &&
-			(stream == (USHORT)(IPTR) sub->nod_arg[e_rel_stream]))
+		// for unions, check current RecordSelExpr, if not found then check
+		// all sub-rse's
+		else if (sub->nod_type == nod_union)
 		{
-			return true;		// do not mark as variant
+			if (stream == (USHORT)(IPTR) sub->nod_arg[e_uni_stream])
+			{
+				return true;		// do not mark as variant
+			}
+			const jrd_nod* clauses = sub->nod_arg[e_uni_clauses];
+			const jrd_nod* const* ptr = clauses->nod_arg;
+			for (const jrd_nod* const* const end = ptr + clauses->nod_count;
+				ptr < end; ptr += 2)
+			{
+				if (stream_in_rse(csb, stream, (RecordSelExpr*) *ptr))
+				{
+					return true;	// do not mark as variant
+				}
+			}
+		}
+		// for aggregates, check current RecordSelExpr, if not found then check
+		// the sub-rse
+		else if (sub->nod_type == nod_aggregate)
+		{
+			if (stream == (USHORT)(IPTR) sub->nod_arg[e_agg_stream])
+			{
+				return true;		// do not mark as variant
+			}
+			if (stream_in_rse(csb, stream, (RecordSelExpr*) sub->nod_arg[e_agg_rse]))
+			{
+				return true;		// do not mark as variant
+			}
+		}
+		// the simplest case - relations
+		else if (sub->nod_type == nod_relation)
+		{
+			if (stream == (USHORT)(IPTR) sub->nod_arg[e_rel_stream])
+			{
+				return true;		// do not mark as variant
+			}
 		}
 	}
 
-	return false;				// mark this RecordSelExpr as variant
+	return false;					// mark this RecordSelExpr as variant
 }
