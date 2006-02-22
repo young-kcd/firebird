@@ -1721,6 +1721,10 @@ static bool create_index(	thread_db*	tdbb,
 		partner_relation = NULL;
 		try	
 		{
+			// Protect relation from modifying to create consistent index
+			relationLock =
+				protect_relation(tdbb, transaction, relation, releaseRelationLock);
+									
 			if (idx.idx_flags & idx_foreign)
 			{
 				idx.idx_id = MAX_USHORT;
@@ -1743,9 +1747,6 @@ static bool create_index(	thread_db*	tdbb,
 				// defined enforces a foreign key constraint. This will prevent
 				// the constraint from being violated during index construction. 
 				
-				relationLock =
-					protect_relation(tdbb, transaction,
-									 relation, releaseRelationLock);
 				partnerLock =
 					protect_relation(tdbb, transaction,
 									 partner_relation, releasePartnerLock);
@@ -4335,7 +4336,7 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 * Functional description
 *	Lock relation with protected_read level or raise existing relation lock 
 * to this level to ensure nobody can write to this relation. 
-* Used when new FK index to be build. 
+* Used when new index to be build. 
 * releaseLock set to true if there was no existing lock before
 *
 **************************************/
