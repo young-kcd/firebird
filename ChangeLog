@@ -1,3 +1,16 @@
+2006-02-22 03:50  asfernandes
+
+	* firebird2/src/jrd/unicode_util.cpp (1.5):
+	
+	Fixed SF field-test $1433583 - key size exceeds implementation
+	restriction
+
+2006-02-21 05:29  robocop
+
+	* firebird2/src/common/classes/: fb_tls.h (1.15), tree.h (1.49):
+	
+	The whole indentation was screwed in those files.
+
 2006-02-20 14:20  kkuznetsov
 
 	* firebird2/src/jrd/sdl.cpp (1.43):
