@@ -2,6 +2,17 @@
   * v2.0 Release Candidate 1
   **************************
 
+    * Fixed SF #1436066
+        Adding index during DB activity causes GFIX errors
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed Beta2 bug
+        Wrong processing (missing records) of GREATER-THEN operator for compound indices
+        in some cases
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
     * Fixed unregistered bug
         A few types of subqueries are wrongly treated as being variant,
         causing performance issues
