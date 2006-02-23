@@ -35,9 +35,7 @@
  * 2002.10.30 Sean Leyne - Code Cleanup, removed obsolete "SUN3_3" port
  *
  */
-/*
-$Id: isc.cpp,v 1.57 2006-02-23 05:07:45 robocop Exp $
-*/
+
 #ifdef DARWIN
 #define _STLP_CCTYPE
 #endif

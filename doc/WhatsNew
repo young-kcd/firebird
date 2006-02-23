@@ -8,7 +8,7 @@
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed Beta2 bug
-        Wrong processing (missing records) of GREATER-THEN operator for compound indices
+        Wrong processing (missing records) of GREATER-THAN operator for compound indices
         in some cases
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
@@ -25,7 +25,7 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed unregistered bug
-        Indices used in explicit plans inside	PSQL could be dropped, thus causing restore issues
+        Indices used in explicit plans inside PSQL could be dropped, thus causing restore issues
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
