@@ -67,7 +67,9 @@
 #include "../jrd/val.h"
 #include "../jrd/rse.h"
 #include "../jrd/all.h"
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 #include "../jrd/log.h"
+#endif
 #include "../jrd/fil.h"
 #include "../jrd/sbm.h"
 #include "../jrd/svc.h"
@@ -153,7 +155,6 @@ const SSHORT WAIT_PERIOD	= -1;
 
 #ifdef SUPERSERVER
 #define V4_THREADING
-
 #endif /* SUPERSERVER */
 
 # ifdef V4_THREADING
@@ -2338,7 +2339,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 #endif
 
 #ifdef GOVERNOR
-	const USHORT attachment_flags = (USHORT) attachment->att_flags;
+	const ULONG attachment_flags = attachment->att_flags;
 #endif
 
 	purge_attachment(tdbb, user_status, attachment, false);
@@ -2822,7 +2823,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 						jrd_tra** tra_handle,
 						USHORT length,
-						UCHAR * msg)
+						const UCHAR* msg)
 {
 /**************************************
  *
@@ -4257,7 +4258,7 @@ bool JRD_getdir(Firebird::PathName& buf)
 #endif /* SUPERSERVER */
 
 
-void JRD_mutex_lock(MUTX mutex)
+void JRD_mutex_lock(MUTX_PTR mutex)
 {
 /**************************************
  *
@@ -4271,12 +4272,12 @@ void JRD_mutex_lock(MUTX mutex)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	INUSE_insert(&tdbb->tdbb_mutexes, (void *) mutex, true);
+	INUSE_insert(&tdbb->tdbb_mutexes, mutex, true);
 	THD_MUTEX_LOCK(mutex);
 }
 
 
-void JRD_mutex_unlock(MUTX mutex)
+void JRD_mutex_unlock(MUTX_PTR mutex)
 {
 /**************************************
  *
@@ -4290,7 +4291,7 @@ void JRD_mutex_unlock(MUTX mutex)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	INUSE_remove(&tdbb->tdbb_mutexes, (void *) mutex, false);
+	INUSE_remove(&tdbb->tdbb_mutexes, mutex, false);
 	THD_MUTEX_UNLOCK(mutex);
 }
 
@@ -4363,7 +4364,7 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 								procedure->prc_name->c_str() : "NULL",
 							procedure->prc_id,
 							procedure->prc_flags, procedure->prc_use_count,
-							procedure->prc_alter_count);
+							0); // procedure->prc_alter_count
 		}
 	}
 	else
@@ -4506,14 +4507,16 @@ void JRD_restore_context(void)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	bool cleaned_up =
-		INUSE_cleanup(&tdbb->tdbb_mutexes, (FPTR_VOID) THD_mutex_unlock);
+		INUSE_cleanup(&tdbb->tdbb_mutexes, (FPTR_VOID_PTR) THD_mutex_unlock);
 	// Logical OR would use short circuit boolean: function may not be called.
 	// Left as bitwise OR. Condition may be reversed to use logical OR.
-	cleaned_up |=
-		INUSE_cleanup(&tdbb->tdbb_rw_locks, (FPTR_VOID) THD_wlck_unlock);
+
+	//cleaned_up |=
+	//	INUSE_cleanup(&tdbb->tdbb_rw_locks, (FPTR_VOID_PTR) THD_wlck_unlock);
+
 
 /* Charlie will fill this in
-cleaned_up |= INUSE_cleanup (&tdbb->tdbb_pages, (FPTR_VOID) CCH_?);
+cleaned_up |= INUSE_cleanup (&tdbb->tdbb_pages, (FPTR_VOID_PTR) CCH_?);
 */
 	ThreadData::restoreSpecific();
 
@@ -4544,8 +4547,10 @@ void JRD_inuse_clear(thread_db* tdbb)
  **************************************/
 
 	INUSE_clear(&tdbb->tdbb_mutexes);
-	INUSE_clear(&tdbb->tdbb_rw_locks);
-	INUSE_clear(&tdbb->tdbb_pages);
+
+	//INUSE_clear(&tdbb->tdbb_rw_locks);
+
+	//INUSE_clear(&tdbb->tdbb_pages); // Unused
 }
 
 
@@ -4628,9 +4633,7 @@ void jrd_vtof(const char* string, char* field, SSHORT length)
 	}
 
 	if (length) {
-		do {
-			*field++ = ' ';
-		} while (--length);
+		memset(field, ' ', length);
 	}
 }
 
@@ -5472,7 +5475,7 @@ static Database* init(thread_db*	tdbb,
  *
  **************************************/
 	MUTX_T temp_mutx[DBB_MUTX_max];
-	WLCK_T temp_wlck[DBB_WLCK_max];
+//	wlck_t temp_wlck[DBB_WLCK_max];
 
 	SET_TDBB(tdbb);
 
@@ -5549,7 +5552,7 @@ static Database* init(thread_db*	tdbb,
 	//temp.blk_type = type_dbb;
 	dbb->dbb_permanent = perm;
 	dbb->dbb_mutexes = temp_mutx;
-	dbb->dbb_rw_locks = temp_wlck;
+	//dbb->dbb_rw_locks = temp_wlck;
 	tdbb->tdbb_database = dbb;
 
 	ALL_init();
@@ -5560,7 +5563,7 @@ static Database* init(thread_db*	tdbb,
 	databases = dbb;
 
 	dbb->dbb_mutexes = FB_NEW(*dbb->dbb_permanent) MUTX_T[DBB_MUTX_max];
-	dbb->dbb_rw_locks = FB_NEW(*dbb->dbb_permanent) WLCK_T[DBB_WLCK_max];
+	// dbb->dbb_rw_locks = FB_NEW(*dbb->dbb_permanent) wlck_t[DBB_WLCK_max]; // unused
 	dbb->dbb_internal = vec<jrd_req*>::newVector(*dbb->dbb_permanent, irq_MAX);
 	dbb->dbb_dyn_req = vec<jrd_req*>::newVector(*dbb->dbb_permanent, drq_MAX);
 	dbb->dbb_flags |= DBB_exclusive;
@@ -5972,12 +5975,15 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	for (i = 0; i < DBB_MUTX_max; i++) {
 		INUSE_remove(&tdbb->tdbb_mutexes, dbb->dbb_mutexes + i, true);
 	}
-	for (i = 0; i < DBB_WLCK_max; i++) {
-		INUSE_remove(&tdbb->tdbb_rw_locks, dbb->dbb_rw_locks + i, true);
-	}
+
+//	for (i = 0; i < DBB_WLCK_max; i++) {
+//		INUSE_remove(&tdbb->tdbb_rw_locks, dbb->dbb_rw_locks + i, true);
+//	}
+
 
 	delete[] dbb->dbb_mutexes;
-	delete[] dbb->dbb_rw_locks;
+//	delete[] dbb->dbb_rw_locks;
+
 #ifdef SUPERSERVER
 	if (dbb->dbb_flags & DBB_sp_rec_mutex_init) {
 		THD_rec_mutex_destroy(&dbb->dbb_sp_rec_mutex);
@@ -6068,12 +6074,6 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
  *	release memory allocated for local buffer).
  *
  **************************************/
-	USHORT num_dbs = 0;
-	USHORT num_att = 0;
-	USHORT total = 0;
-	ULONG drive_mask = 0L;
-	db_file* dbf = NULL;
-	db_file* dbfp = NULL;
 
 /* protect against NULL value for buf */
 
@@ -6094,6 +6094,13 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 		}
 	}
 #endif
+
+	USHORT num_dbs = 0;
+	USHORT num_att = 0;
+	USHORT total = 0;
+	ULONG drive_mask = 0L;
+	db_file* dbf = NULL;
+	db_file* dbfp = NULL;
 
 	THREAD_ENTER();
 

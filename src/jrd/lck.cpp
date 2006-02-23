@@ -542,7 +542,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_expression:
 	case LCK_record_locking:
 	case LCK_prc_exist:
-	case LCK_range_relation:
+	//case LCK_range_relation: // PC_ENGINE
 	case LCK_backup_state:
 	case LCK_backup_alloc:
 	case LCK_backup_database:
@@ -1096,8 +1096,6 @@ static Lock* find_block(Lock* lock, USHORT level)
 	if (!attachment)
 		return NULL;
 
-	const char* const end = lock->lck_key.lck_string + lock->lck_length;
-
 	for (Lock* next = attachment->att_long_locks; next; next = next->lck_next)
 		if (lock->lck_type == next->lck_type &&
 			lock->lck_parent && next->lck_parent &&
@@ -1106,10 +1104,7 @@ static Lock* find_block(Lock* lock, USHORT level)
 			lock->lck_attachment != next->lck_attachment &&
 			!compatible(next, lock, level))
 		{
-			const char* p1 = lock->lck_key.lck_string;
-			const char* p2 = next->lck_key.lck_string;
-			while (p1 < end && *p1++ == *p2++); // empty body
-			if (p1[-1] == p2[-1])
+			if (!memcmp(lock->lck_key.lck_string, next->lck_key.lck_string, lock->lck_length))
 				return next;
 		}
 
@@ -1227,13 +1222,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT * hash_slot, Lock*** prior)
 		{
 			/* check that the keys are the same */
 
-			const char* p = lock->lck_key.lck_string;
-			const char* q = collision->lck_key.lck_string;
-			SSHORT l;
-			for (l = lock->lck_length; l; l--)
-				if (*p++ != *q++)
-					break;
-			if (!l)
+			if (!memcmp(lock->lck_key.lck_string, collision->lck_key.lck_string, lock->lck_length))
 				return collision;
 		}
 

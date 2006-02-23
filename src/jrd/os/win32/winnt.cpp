@@ -1033,26 +1033,28 @@ static jrd_file* setup_file(Database*					dbb,
 	UCHAR lock_string[32];
 	UCHAR* p = lock_string;
 
+	// The identifier is [nFileIndexHigh, nFileIndexLow]
+	// MSDN says: After a process opens a file, the identifier is constant until
+	// the file is closed. An application can use this identifier and the
+	// volume serial number to determine whether two handles refer to the same file.
 	const UCHAR* q = (UCHAR *) &file_info.dwVolumeSerialNumber;
 	size_t l = sizeof(file_info.dwVolumeSerialNumber);
-	do {
-		*p++ = *q++;
-	} while (--l);
+	memcpy(p, q, l);
+	p += l;
 
 	q = (UCHAR *) &file_info.nFileIndexHigh;
 	l = sizeof(file_info.nFileIndexHigh);
-	do {
-		*p++ = *q++;
-	} while (--l);
+	memcpy(p, q, l);
+	p += l;
 
 	q = (UCHAR *) &file_info.nFileIndexLow;
 	l = sizeof(file_info.nFileIndexLow);
-	do {
-		*p++ = *q++;
-	} while (--l);
+	memcpy(p, q, l);
+	p += l;
 
 	// We know p only was incremented, so can use safely size_t instead of ptrdiff_t
 	l = p - lock_string;
+	fb_assert(l <= sizeof(lock_string)); // In case we continue adding information.
 
 	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, l) Lock;
 	dbb->dbb_lock = lock;

@@ -45,14 +45,16 @@ const ULONG SERVICE_VERSION			= 2;
 const int SVC_STDOUT_BUFFER_SIZE	= 1024;
 
 /* Flag of capabilities supported by the server */
-//const ULONG WAL_SUPPORT					= 0x1L;	/* Write Ahead Log */
+//const ULONG WAL_SUPPORT					= 0x1L;	// Write Ahead Log
 const ULONG MULTI_CLIENT_SUPPORT		= 0x2L;	/* SuperServer model (vs. multi-inet) */
 const ULONG REMOTE_HOP_SUPPORT			= 0x4L;	/* Server can connect to other server */
-const ULONG NO_SVR_STATS_SUPPORT		= 0x8L;	/* Does not support statistics */
-const ULONG NO_DB_STATS_SUPPORT			= 0x10L;	/* Does not support statistics */
-const ULONG LOCAL_ENGINE_SUPPORT		= 0x20L;	/* The local 16 bit engine */
-const ULONG NO_FORCED_WRITE_SUPPORT		= 0x40L;	/* Can not configure sync writes */
-const ULONG NO_SHUTDOWN_SUPPORT			= 0x80L;	/* Can not shutdown/restart databases */
+//const ULONG NO_SVR_STATS_SUPPORT		= 0x8L;	// Does not support statistics
+
+//const ULONG NO_DB_STATS_SUPPORT			= 0x10L;	// Does not support statistics
+// Really the 16 bit LIBS here?
+//const ULONG LOCAL_ENGINE_SUPPORT		= 0x20L;	// The local 16 bit engine
+//const ULONG NO_FORCED_WRITE_SUPPORT		= 0x40L;	// Can not configure sync writes 
+//const ULONG NO_SHUTDOWN_SUPPORT			= 0x80L;	// Can not shutdown/restart databases 
 const ULONG NO_SERVER_SHUTDOWN_SUPPORT	= 0x100L;	/* Can not shutdown server */
 const ULONG SERVER_CONFIG_SUPPORT		= 0x200L;	/* Can configure server */
 const ULONG QUOTED_FILENAME_SUPPORT		= 0x400L;	/* Can pass quoted filenames in */
@@ -134,7 +136,7 @@ public:
 
 /* Bitmask values for the svc_flags variable */
 
-const int SVC_eof			= 1;
+//const int SVC_eof			= 1;
 const int SVC_timeout		= 2;
 const int SVC_forked		= 4;
 const int SVC_detached		= 8;

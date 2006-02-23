@@ -148,23 +148,27 @@ SLONG LOCK_enq(PTR prior_request,
  *	be granted because of deadlock, return NULL.
  *
  **************************************/
-	int status, lock_id, lock_type, flags;
-	UCHAR buffer[256], *p;
+	int lock_id, lock_type, flags;
+	UCHAR buffer[256];
 	lock_status lksb;
 	struct dsc$descriptor_s desc;
 	if (prior_reqeust)
-	LOCK_deq(prior_request); p = buffer; *p++ = series; if (length)
-	do {
-		*p++ = *value++;
-	} while (--length);
+	LOCK_deq(prior_request);
+	UCHAR* p = buffer;
+	*p++ = series;
+	fb_assert(length < sizeof(buffer));
+	if (length)
+		memcpy(p, value, length);
+		
+	p += length;
 	desc.dsc$b_class = DSC$K_CLASS_S;
 	desc.dsc$b_dtype = DSC$K_DTYPE_T;
 	desc.dsc$w_length = p - buffer;
 	desc.dsc$a_pointer = buffer;
 	flags =
-	(wait) ? LCK$M_SYSTEM | LCK$M_VALBLK : LCK$M_SYSTEM |
-	LCK$M_NOQUEUE; lock_type = lock_types[type];
-	status =
+		(wait) ? LCK$M_SYSTEM | LCK$M_VALBLK : LCK$M_SYSTEM |
+		LCK$M_NOQUEUE; lock_type = lock_types[type];
+	int status =
 	sys$enq(EVENT_FLAG, lock_type, &lksb, flags, &desc, parent_request, gds__completion_ast,	/* AST routine when granted */
 		   ast_argument, ast_routine, PSL$C_USER, NULL);
 	if (status & 1)

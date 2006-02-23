@@ -1114,9 +1114,9 @@ static void dump_blr(void* arg, SSHORT offset, const char* line)
 	BlobControl* control = static_cast<BlobControl*>(arg);
 	TEXT buffer[BUFFER_SMALL];
 
-	const SLONG l = (USHORT) control->ctl_data[3] + strlen(line);
-	TEXT* const temp = (l < (SLONG) sizeof(buffer)) ?
-		buffer : (TEXT*) gds__alloc((SLONG) l + 1);
+	const size_t data_len = (size_t) control->ctl_data[3];
+	const size_t l = data_len + strlen(line);
+	TEXT* const temp = (l < sizeof(buffer)) ? buffer : (TEXT*) gds__alloc((SLONG) l + 1);
 /* FREE: at procedure exit */
 	if (!temp) {				/* NOMEM: */
 		/* No memory left - ignore the padding spaces and put the data */
@@ -1125,11 +1125,8 @@ static void dump_blr(void* arg, SSHORT offset, const char* line)
 	}
 
 /* Pad out to indent length with spaces */
-	TEXT* p = temp;
-	for (const TEXT* const end = p + (USHORT) control->ctl_data[3]; p < end;)
-		*p++ = ' ';
-
-	sprintf(p, "%s", line);
+	memset(temp, ' ', data_len);
+	sprintf(temp + data_len, "%s", line);
 	string_put(control, temp);
 
 	if (temp != buffer)
@@ -1150,9 +1147,7 @@ static void move(const char* from, char* to, USHORT length)
  *
  **************************************/
 	if (length)
-		do {
-			*to++ = *from++;
-		} while (--length);
+		memcpy(to, from, length);
 }
 
 

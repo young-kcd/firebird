@@ -37,13 +37,15 @@ struct sdl_info {
 	SLONG			sdl_info_upper[16];
 };
 
+
 struct array_slice {
+	enum slice_dir_t { slc_reading_array, slc_writing_array };
 	DSC slice_desc;
 	const BLOB_PTR* slice_end;
 	const BLOB_PTR* slice_high_water;
 	BLOB_PTR* slice_base;
 	USHORT slice_element_length;
-	USHORT slice_direction;
+	slice_dir_t slice_direction;
 	SLONG slice_count;
 };
 

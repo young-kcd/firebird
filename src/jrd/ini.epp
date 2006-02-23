@@ -434,9 +434,8 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	*acl++ = (UCHAR)length;
 	if (length)
 	{
-		do {
-			*acl++ = *p_1++;
-		} while (--length);
+		memcpy(acl, p_1, length);
+		acl += length;
 	}
 	*acl++ = ACL_end;
 	*acl++ = ACL_priv_list;
@@ -650,7 +649,7 @@ void INI_init2(void)
 			}
 
 			relation->rel_fields->resize(n);
-			format->fmt_count = n; // ??? This doesn't enlarge the vector.
+			format->fmt_count = n; // We are using less than the allocated members.
 			format->fmt_length = (USHORT)FLAG_BYTES(n);
 			Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];

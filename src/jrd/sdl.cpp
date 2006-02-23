@@ -40,7 +40,7 @@ const int COMPILE_SIZE	= 256;
 using namespace Jrd;
 
 struct sdl_arg {
-	USHORT sdl_arg_mode;
+	//USHORT sdl_arg_mode; // unused
 	Ods::InternalArrayDesc* sdl_arg_desc;
 	const UCHAR* sdl_arg_sdl;
 	UCHAR* sdl_arg_array;
@@ -68,7 +68,7 @@ static const UCHAR* compile(const UCHAR*, sdl_arg*);
 static ISC_STATUS error(ISC_STATUS*, ...);
 static bool execute(sdl_arg*);
 static const UCHAR* get_range(const UCHAR*, array_range*, SLONG*, SLONG*);
-//static SSHORT get_word(const UCHAR*&);
+
 inline SSHORT get_word(const UCHAR*& ptr)
 {
 /**************************************
@@ -82,11 +82,12 @@ inline SSHORT get_word(const UCHAR*& ptr)
  *  unsigned chars and advance the pointer
  *
  **************************************/
-   SSHORT n = *ptr++;
-   n |= (*ptr++) << 8;
+	SSHORT n = *ptr++;
+	n |= (*ptr++) << 8;
 
-   return n;
-};
+	return n;
+}
+
 static const UCHAR* sdl_desc(const UCHAR*, DSC*);
 static IPTR* stuff(IPTR, sdl_arg*);
 
@@ -334,7 +335,7 @@ const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
 
 int	SDL_walk(ISC_STATUS* status_vector,
 		const UCHAR* sdl,
-		bool mode,
+		//bool mode, // Unused, always got true, passed to sdl_arg_mode that's unused
 		UCHAR* array,
 		Ods::InternalArrayDesc* array_desc,
 		SLONG* variables,
@@ -355,7 +356,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 	USHORT n, offset;
 	sdl_arg arg;
 
-	arg.sdl_arg_mode = mode ? TRUE: FALSE;
+	//arg.sdl_arg_mode = mode ? TRUE: FALSE; // Unused
 	arg.sdl_arg_array = array;
 	arg.sdl_arg_sdl = sdl;
 	arg.sdl_arg_desc = array_desc;
@@ -740,7 +741,7 @@ static bool execute(sdl_arg* arg)
 
 		case op_element:
 			count = *next++;
-			if (arg->sdl_arg_argument->slice_direction) {
+			if (arg->sdl_arg_argument->slice_direction == array_slice::slc_writing_array) {
 				/* Storing INTO array */
 
 				 (*arg->sdl_arg_callback) (arg->sdl_arg_argument,

@@ -50,8 +50,10 @@ void		CCH_mark_must_write(Jrd::thread_db*, Jrd::win*);
 void		CCH_must_write(Jrd::win*);
 Jrd::Lock*	CCH_page_lock(Jrd::thread_db*);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, SLONG);
+#ifdef SUPERSERVER_V2
 void		CCH_prefetch(Jrd::thread_db*, SLONG*, SSHORT);
 bool		CCH_prefetch_pages(Jrd::thread_db*);
+#endif
 void		CCH_release(Jrd::thread_db*, Jrd::win*, bool);
 void		CCH_release_and_free(Jrd::win*);
 void		CCH_release_exclusive(Jrd::thread_db*);
@@ -134,10 +136,12 @@ inline void CCH_MARK_MUST_WRITE(Jrd::thread_db* tdbb, Jrd::win * window)
 	CCH_mark_must_write(tdbb, window);
 }
 
+#ifdef SUPERSERVER_V2
 inline void CCH_PREFETCH(Jrd::thread_db* tdbb, SLONG * pages, SSHORT count)
 {
 	CCH_prefetch (tdbb, pages, count);
 }
+#endif
 
 //#define CCH_FETCH(tdbb, window, lock, type)		  CCH_fetch (tdbb, window, lock, type, 1, 1, true)
 //#define CCH_FETCH_NO_SHADOW(tdbb, window, lock, type)		  CCH_fetch (tdbb, window, lock, type, 1, 1, false)

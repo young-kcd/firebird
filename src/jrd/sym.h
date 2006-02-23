@@ -29,30 +29,34 @@
 namespace Jrd {
 /* symbol definitions */
 
+class UserFunction;
+
+// This "Symbol" became a mere container for UDFs. DSQL has another Symbol class.
+
 class Symbol : public pool_alloc<type_sym>
 {
 private:	
-	Symbol*	sym_collision;	/* collision pointer */
+	Symbol*	sym_collision;	// collision pointer 
 
 public:
-	enum sym_t {
-		rel,					/* relation block */
-		fld,					/* field block */
-		fun,					/* UDF function block */
-		prc,					/* stored procedure block */
-		sql,					/* SQL request cache block */
-		blr,					/* BLR request cache block */
-		label					/* CVC: I need to track labels if LEAVE is implemented. */
-	};
+	//enum sym_t {
+		//rel,					// relation block
+		//fld,					// field block
+		//fun						// UDF function block
+		//prc,					// stored procedure block
+		//sql,					// SQL request cache block
+		//blr,					// BLR request cache block
+		//label					// CVC: I need to track labels if LEAVE is implemented.
+	//};
 	Firebird::MetaName	sym_string;	// symbol value
-	sym_t	sym_type;		/* symbol type */
-	BLK		sym_object;		/* general pointer to object */
-	Symbol*	sym_homonym;	/* homonym pointer */
+	//sym_t	sym_type;			// symbol type 
+	UserFunction* sym_object;	// pointer to UDF object
+	Symbol*	sym_homonym;		// homonym pointer
 
 public:
-	explicit Symbol(MemoryPool& p, const Firebird::MetaName& val,
-					sym_t type, BLK object)
-		: sym_collision(0), sym_string(p, val), sym_type(type), 
+	explicit Symbol(MemoryPool& p, const Firebird::MetaName& val, //sym_t type, 
+					UserFunction* object)
+		: sym_collision(0), sym_string(p, val), //sym_type(type), 
 		sym_object(object),	sym_homonym(0) { }
 	void insert();
 	static Symbol* lookup(const Firebird::MetaName&);

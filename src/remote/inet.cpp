@@ -1142,7 +1142,7 @@ static int accept_connection(rem_port* port,
 /* See if user exists.  If not, reject connection */
 	if (user_verification) {
 		eff_gid = eff_uid = -1;
-		port->port_flags |= PORT_not_trusted;
+		port->port_flags |= PORT_not_trusted; // never tested
 	}
 
 #if !defined(WIN_NT)
@@ -1158,7 +1158,7 @@ static int accept_connection(rem_port* port,
 
 		if (trusted == -1) {
 			eff_gid = eff_uid = -1;
-			port->port_flags |= PORT_not_trusted;
+			port->port_flags |= PORT_not_trusted; // never tested
 		}
 		else
 		{
@@ -1187,7 +1187,7 @@ static int accept_connection(rem_port* port,
 
 		if (trusted == -1) {
 			eff_gid = eff_uid = -1;
-			port->port_flags |= PORT_not_trusted;
+			port->port_flags |= PORT_not_trusted; // never tested
 		}
 		else
 		{

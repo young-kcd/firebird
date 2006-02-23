@@ -320,9 +320,6 @@ const int e_if_true			= 1;
 const int e_if_false		= 2;
 const int e_if_length		= 3;
 
-const int e_hnd_statement	= 0;
-const int e_hnd_length		= 1;
-
 const int e_val_boolean		= 0;
 const int e_val_value		= 1;
 const int e_val_length		= 2;

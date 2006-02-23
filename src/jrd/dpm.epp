@@ -446,10 +446,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 	release_dcc(dcc.dcc_next);
 
 	if (fill) {
-		UCHAR* p = header->rhd_data + size;
-		do {
-			*p++ = 0;
-		} while (--fill);
+		memset(header->rhd_data + size, 0, fill);
 	}
 
 	CCH_RELEASE(tdbb, &org_rpb->rpb_window);
@@ -1931,10 +1928,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 #endif
 
 	if (fill) {
-		UCHAR* p = header->rhd_data + size;
-		do {
-			*p++ = 0;
-		} while (--fill);
+		 memset(header->rhd_data + size, 0, fill);
 	}
 
 	CCH_RELEASE(tdbb, &rpb->rpb_window);
@@ -2203,10 +2197,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 #endif
 
 	if (fill) {
-		UCHAR* p = header->rhd_data + size;
-		do {
-			*p++ = 0;
-		} while (--fill);
+		memset(header->rhd_data + size, 0, fill);
 	}
 
 	CCH_RELEASE(tdbb, &rpb->rpb_window);

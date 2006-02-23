@@ -908,17 +908,16 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 
 	const UCHAR* q = (UCHAR *) & statistics.st_dev;
 	USHORT l = sizeof(statistics.st_dev);
-	do {
-		*p++ = *q++;
-	} while (--l);
+	memcpy(p, q, l);
+	p += l;
 
 	q = (UCHAR *) & statistics.st_ino;
 	l = sizeof(statistics.st_ino);
-	do {
-		*p++ = *q++;
-	} while (--l);
+	memcpy(p, q, l);
+	p += l;
 
 	l = p - lock_string;
+	fb_assert(l <= sizeof(lock_string)); // In case we add more information.
 
 	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, l) Lock();
 	dbb->dbb_lock = lock;

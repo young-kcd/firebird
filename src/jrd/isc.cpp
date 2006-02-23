@@ -36,7 +36,7 @@
  *
  */
 /*
-$Id: isc.cpp,v 1.56 2005-08-23 14:25:48 dimitr Exp $
+$Id: isc.cpp,v 1.57 2006-02-23 05:07:45 robocop Exp $
 */
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -385,8 +385,11 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
  *      Get host name.
  *
  **************************************/
-
-	gethostname(string, length);
+	// See http://www.opengroup.org/onlinepubs/007908799/xns/gethostname.html
+	if (gethostname(string, length))
+		string[0] = 0; // failure
+	else
+		string[length - 1] = 0; // truncation doesn't guarantee null termination
 
 	return string;
 }

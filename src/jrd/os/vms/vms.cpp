@@ -693,11 +693,7 @@ static bool extend_file(jrd_file* file, ISC_STATUS* status_vector)
 
 /* Get current size */
 
-	char* p = &fib;
-	size_t l = sizeof(fib);
-	do {
-		*p++ = 0;
-	} while (--l);
+	memset(&fib, 0, sizeof(fib));
 
 	MOVE_FAST(file->fil_did, fib.fib$w_did, sizeof(fib.fib$w_did));
 	MOVE_FAST(file->fil_fid, fib.fib$w_fid, sizeof(fib.fib$w_fid));
@@ -844,18 +840,12 @@ static jrd_file* setup_file(Database* dbb,
 
 	UCHAR lock_id[64];
 	UCHAR* p = lock_id;
-	const UCHAR* q = devlock;
 	if (l)
-		do {
-			*p++ = *q++;
-		} while (--l);
-
-	q = &nam->nam$w_fid;
-	l = 6;
-	do {
-		*p++ = *q++;
-	} while (--l);
-	l = p - lock_id;
+		memcpy(p, devlock, l);
+		
+	p += l;
+	memcpy(p, &nam->nam$w_fid, 6);
+	l = p + 6 - lock_id;
 
 	Lock* lock = FB_NEW_RPT(dbb->dbb_permanent, l) Lock();
 	dbb->dbb_lock = lock;

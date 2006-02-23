@@ -183,7 +183,7 @@ struct rem_fmt
 	USHORT		fmt_net_length;
 	USHORT		fmt_count;
 	USHORT		fmt_version;
-	USHORT		fmt_flags;
+	USHORT		fmt_flags; // unused
 	struct dsc	fmt_desc[1];
 };
 
@@ -222,7 +222,7 @@ typedef struct rpr
 	message*	rpr_out_msg;	/* output message */
 	rem_fmt*	rpr_in_format;	/* Format of input message */
 	rem_fmt*	rpr_out_format;	/* Format of output message */
-	USHORT		rpr_flags;
+	USHORT		rpr_flags; // unused
 } *RPR;
 
 // rpr_flags (not used)
@@ -259,9 +259,11 @@ struct rrq
 };
 
 // rrq_flags
+#ifdef SCROLLABLE_CURSORS
 const USHORT RRQ_backward			= 1;	/* the cache was created in the backward direction */ 
 const USHORT RRQ_absolute_backward	= 2;	/* rrq_absolute is measured from the end of the stream */
 const USHORT RRQ_last_backward		= 4;	/* last time, the next level up asked for us to scroll in the backward direction */
+#endif
 
 /* remote SQL request */
 
@@ -483,9 +485,11 @@ const USHORT PORT_broken		= 8;	/* Connect is broken */
 const USHORT PORT_async			= 16;	/* Port is asynchronous channel for events */
 const USHORT PORT_no_oob		= 32;	/* Don't send out of band data */
 const USHORT PORT_disconnect	= 64;	/* Disconnect is in progress */
-const USHORT PORT_pend_rec		= 128;	/* A record is pending on the port */
+//const USHORT PORT_pend_rec		= 128;	// A record is pending on the port
+// This is set only in inet.cpp but never tested.
 const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
-const USHORT PORT_impersonate	= 512;	/* A remote user is being impersonated */
+// This is tested only in wnet.cpp but never set.
+//const USHORT PORT_impersonate	= 512;	// A remote user is being impersonated
 const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
 
 

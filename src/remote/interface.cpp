@@ -2774,8 +2774,8 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
-				   RTR * rtr_handle, USHORT msg_length, UCHAR * msg)
+ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status,
+				   RTR* rtr_handle, USHORT msg_length, const UCHAR* msg)
 {
 /**************************************
  *
@@ -2818,7 +2818,7 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 		packet->p_operation = op_prepare2;
 		packet->p_prep.p_prep_transaction = transaction->rtr_id;
 		packet->p_prep.p_prep_data.cstr_length = msg_length;
-		packet->p_prep.p_prep_data.cstr_address = msg;
+		packet->p_prep.p_prep_data.cstr_address = const_cast<UCHAR*>(msg);
 
 		if (!send_packet(rdb->rdb_port, packet, user_status) ||
 			!receive_response(rdb, packet))

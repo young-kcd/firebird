@@ -85,7 +85,7 @@ inline void msg_get(USHORT number, TEXT* msg);
 void inline gsec_exit(int code, tsec* tdsec)
 {
 	tdsec->tsec_exit_code = code;
-	if (tdsec->tsec_env != NULL)
+	if (tdsec->tsec_throw)
 		throw std::exception();
 }
 
@@ -177,7 +177,6 @@ int common_main(int argc,
  *
  **************************************/
 	TEXT stuff[MAXSTUFF];		/* a place to put stuff */
-	JMP_BUF env;
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -196,7 +195,7 @@ int common_main(int argc,
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
-	tdsec->tsec_env = &env;
+	tdsec->tsec_throw = true;
 	tdsec->tsec_interactive = true;
 	internal_user_data* user_data = tdsec->tsec_user_data;
 
@@ -433,7 +432,7 @@ int common_main(int argc,
 	catch (const std::exception&) {
 		/* All calls to gsec_exit(), normal and error exits, wind up here */
 		tdsec->tsec_service_blk->svc_started();
-		tdsec->tsec_env = NULL;
+		tdsec->tsec_throw = false;
 		const int exit_code = tdsec->tsec_exit_code;
 
 		/* All returns occur from this point - even normal returns */

@@ -489,11 +489,8 @@ void EXT_store(record_param* rpb, int* transaction)
 				MOV_move(&literal->lit_desc, &desc);
 			}
 			else {
-				USHORT l = desc_ptr->dsc_length;
 				const UCHAR pad = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;
-				do {
-					*p++ = pad;
-				} while (--l);
+				memset(p, pad, desc_ptr->dsc_length);
 			}
 		}
 	}

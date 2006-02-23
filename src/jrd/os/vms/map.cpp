@@ -160,10 +160,7 @@ int MAP_gds_to_rdb(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
 			if (l > desc->msg_length - 1)
 				l = desc->msg_length - 1;
 			if (avary->vary_length = l) {
-				UCHAR* p = avary->vary_data;
-				do {
-					*p++ = *q++;
-				} while (--l);
+				memcpy(avary->vary_data, q, l);
 			}
 			break;
 
@@ -181,9 +178,7 @@ int MAP_gds_to_rdb(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
 
 		default:
 			if (l = desc->msg_length)
-				do {
-					*to++ = *from++;
-				} while (--l);
+				memcpy(to, from, l);
 		}
 	}
 
@@ -328,12 +323,9 @@ int MAP_rdb_to_gds(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
 			to += desc->msg_length;
 			l = MIN(avary->vary_length, desc->msg_length - 1);
 			if (l) {
-				const UCHAR* q = avary->vary_data;
-				do {
-					*p++ = *q++;
-				} while (--l);
+				memcpy(p, avary->vary_data, l);
 			}
-			*p = 0;
+			p[l] = 0;
 			break;
 
 		case blr_timestamp:
@@ -350,9 +342,7 @@ int MAP_rdb_to_gds(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
 
 		default:
 			if (l = desc->msg_length)
-				do {
-					*to++ = *from++;
-				} while (--l);
+				memcpy(to, from, l);
 		}
 	}
 

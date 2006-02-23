@@ -29,8 +29,9 @@
 void	ISC_ast_enter(void);
 void	ISC_ast_exit(void);
 bool	ISC_check_process_existence(SLONG, SLONG, bool);
-void	ISC_get_config(TEXT *, struct ipccfg *);
-int		ISC_set_config(TEXT *, struct ipccfg *);
+// There's no body for those functions.
+//void	ISC_get_config(TEXT *, struct ipccfg *);
+//int		ISC_set_config(TEXT *, struct ipccfg *);
 TEXT*	ISC_get_host(TEXT *, USHORT);
 int		ISC_get_user(TEXT*, int*, int*, TEXT*,
 											 TEXT*, int*, const TEXT*);

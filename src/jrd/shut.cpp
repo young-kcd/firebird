@@ -102,12 +102,14 @@ bool SHUT_blocking_ast(Database* dbb)
 			break;
 		}
 					
-		dbb->dbb_shutdown_delay = 0;
+		dbb->dbb_shutdown_delay = 0; // not tested anywhere
+		/* CVC: We never set it, so how could we need to unset ATT_shutdown_modify?
 		for (Attachment* attachment = dbb->dbb_attachments; attachment;
 			 attachment = attachment->att_next)
 		{
 			 attachment->att_flags &= ~ATT_shutdown_notify;
 		}
+		*/
 		return false;
 	}
 
@@ -120,7 +122,7 @@ bool SHUT_blocking_ast(Database* dbb)
 			dbb->dbb_ast_flags |= DBB_shut_force;
 		if (flag & isc_dpb_shut_transaction)
 			dbb->dbb_ast_flags |= DBB_shut_tran;
-		dbb->dbb_shutdown_delay = delay;
+		dbb->dbb_shutdown_delay = delay; // not tested anywhere
 		return false;
 	}
 }

@@ -54,9 +54,9 @@ typedef ULONG SORTP;
 
 typedef IPTR sort_ptr_t;
 
-/* # of 32 bit longs in a pointer (ie 1 on 32 bit machines 2 on 64 bit)*/
+// # of 32 bit longs in a pointer (ie 1 on 32 bit machines 2 on 64 bit)
 #define LONGS_PER_POINTER       (sizeof (SLONG*) / sizeof (SLONG))
-/* the size of sr_bckptr in # of 32 bit longwords */
+// the size of sr_bckptr in # of 32 bit longwords
 #define SIZEOF_SR_BCKPTR_IN_LONGS  LONGS_PER_POINTER
 
 #define PREV_RUN_RECORD(record) (((SORTP *) record - scb->scb_longs))
@@ -69,7 +69,7 @@ typedef IPTR sort_ptr_t;
 
 /* macro to point to the next/previous  record for sorting.
    still using scb_longs as we cannot do record++ */
-#define PREV_RECORD(record) ((SR*)((SORTP *) record + scb->scb_longs))
+//#define PREV_RECORD(record) ((SR*)((SORTP *) record + scb->scb_longs))
 #define NEXT_RECORD(record) ((SR*)((SORTP *) record - scb->scb_longs))
 
 /* structure containing the key and data part of the sort record,
@@ -144,6 +144,7 @@ struct sort_key_def
 	USHORT	skd_vary_offset;	/* Offset to varying/cstring length */
 };
 
+
 /* skd_dtype */
 
 const int SKD_long			= 1;
@@ -173,19 +174,23 @@ const int SKD_date	= SKD_timestamp1;
 
 const UCHAR SKD_ascending		= 0;	/* default initializer */
 const UCHAR SKD_descending	= 1;
-const UCHAR SKD_insensitive	= 2;
+//const UCHAR SKD_insensitive	= 2;
 const UCHAR SKD_binary		= 4;
 
-const int TYPE_RUN	= 0;
-const int TYPE_MRG	= 1;
 
 /* Run/merge common block header */
 
 struct run_merge_hdr
 {
-	SSHORT		rmh_type;			/* TYPE_RUN or TYPE_MRG */
+	SSHORT		rmh_type;
 	merge_control*	rmh_parent;
 };
+
+// rmh_type
+
+const int RMH_TYPE_RUN	= 0;
+const int RMH_TYPE_MRG	= 1;
+
 
 /* Run control block */
 
@@ -262,13 +267,13 @@ struct sort_context
 #ifdef SCROLLABLE_CURSORS
 	SORTP **scb_last_pointer;	/* Address for last pointer in block */
 #endif
-	USHORT scb_length;			/* Record length */
+	//USHORT scb_length;			// Record length. Unused.
 	USHORT scb_longs;			/* Length of record in longwords */
 	ULONG scb_keys;				/* Number of keys */
 	ULONG scb_key_length;		/* Key length */
 	ULONG scb_unique_length;	/* Unique key length, used when duplicates eliminated */
 	ULONG scb_records;			/* Number of records */
-	UINT64 scb_max_records;		/* Maximum number of records to store */
+	//UINT64 scb_max_records;		// Maximum number of records to store . Unused.
 	sort_work_file*	scb_sfb;		/* ALLOC: List of scratch files, if open */
 	run_control*	scb_runs;		/* ALLOC: Run on scratch file, if any */
 	merge_control*	scb_merge;		/* Top level merge block */
@@ -278,7 +283,7 @@ struct sort_context
 	ISC_STATUS *scb_status_vector;	/* Status vector for errors */
 	FPTR_REJECT_DUP_CALLBACK scb_dup_callback;	/* Duplicate handling callback */
 	void* scb_dup_callback_arg;	/* Duplicate handling callback arg */
-	dir_list*	scb_dls;
+	//dir_list*	scb_dls;		// Unused
 	merge_control*	scb_merge_pool;	/* ALLOC: pool of merge_control blocks */
 	Attachment*	scb_attachment;	/* back pointer to attachment */
 	irsb_sort* scb_impure;	/* back pointer to request's impure area */

@@ -26,7 +26,9 @@
 
 #include "../include/fb_blk.h"
 #include "../jrd/os/pio.h"
+#ifdef SUPERSERVER_V2
 #include "../jrd/sbm.h"
+#endif
 
 struct exp_index_buf;
 
@@ -41,7 +43,7 @@ class Precedence;
 class thread_db;
 struct que;
 class BufferDesc;
-class BlockingThread;
+//class BlockingThread;
 class Database;
 
 /* Page buffer cache size constraints. */
@@ -78,7 +80,9 @@ public:
 	SSHORT		bcb_free_minimum;	/* Threshold to activate cache writer */
 	ULONG		bcb_count;			/* Number of buffers allocated */
 	ULONG		bcb_checkpoint;		/* Count of buffers to checkpoint */
-	PageBitmap*	bcb_prefetch;	/* Bitmap of pages to prefetch */
+#ifdef SUPERSERVER_V2
+	PageBitmap*	bcb_prefetch;		/* Bitmap of pages to prefetch */
+#endif
 	bcb_repeat	bcb_rpt[1];
 };
 
@@ -86,8 +90,10 @@ const int BCB_keep_pages	= 1;	/* set during btc_flush(), pages not removed from 
 const int BCB_cache_writer	= 2;	/* cache writer thread has been started */
 //const int BCB_checkpoint_db	= 4;	// WAL has requested a database checkpoint
 const int BCB_writer_active	= 8;	/* no need to post writer event count */
+#ifdef SUPERSERVER_V2
 const int BCB_cache_reader	= 16;	/* cache reader thread has been started */
 const int BCB_reader_active	= 32;	/* cache reader not blocked on event */
+#endif
 const int BCB_free_pending	= 64;	/* request cache writer to free pages */
 
 
@@ -104,7 +110,7 @@ class BufferDesc : public pool_alloc<type_bdb>
 	que			bdb_in_use;				/* queue of buffers in use */
 	Ods::pag*	bdb_buffer;				/* Actual buffer */
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
-	BlockingThread*	bdb_blocked;		/* Blocked attachments block */
+	//BlockingThread*	bdb_blocked;		// Blocked attachments block 
 	SLONG		bdb_page;				/* Database page number in buffer */
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
@@ -122,8 +128,8 @@ class BufferDesc : public pool_alloc<type_bdb>
 	USHORT		bdb_flags;
 	SSHORT		bdb_use_count;			/* Number of active users */
 	SSHORT		bdb_scan_count;			/* concurrent sequential scans */
-	USHORT		bdb_write_direction;    /* Where to write buffer */
-	ULONG       bdb_difference_page;    /* Number of page in difference file */
+	USHORT		bdb_write_direction;    // Where to write buffer, NBAK
+	ULONG       bdb_difference_page;    // Number of page in difference file, NBAK
 	SLONG       bdb_diff_generation;    /* Number of backup lock/unlock (NBAK) cycle for 
 										   this database in current process.
 										   Used in CS only. */
@@ -138,7 +144,7 @@ const int BDB_writer			= 4;		/* someone is updating the page */
 const int BDB_marked			= 8;		/* page has been updated */
 const int BDB_must_write		= 16;		/* forces a write as soon as the page is released */
 const int BDB_faked				= 32;		/* page was just allocated */
-//const int BDB_journal			= 64;		/* Journal buffer */
+//const int BDB_journal			= 64;		// Journal buffer
 const int BDB_system_dirty 		= 128;		/* system transaction has marked dirty */
 const int BDB_io_error	 		= 256;		/* page i/o error */
 const int BDB_read_pending 		= 512;		/* read is pending */
@@ -233,6 +239,7 @@ const int PREFETCH_MAX_PAGES	= (2 * PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE);	/* m
 
 /* Prefetch block */
 
+#ifdef SUPERSERVER_V2
 class Prefetch : public pool_alloc<type_prf>
 {
     public:
@@ -249,6 +256,7 @@ class Prefetch : public pool_alloc<type_prf>
 };
 
 const int PRF_active	= 1;			/* prefetch block currently in use */
+#endif
 
 } //namespace Jrd
 

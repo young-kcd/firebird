@@ -81,9 +81,8 @@ void main( int argc, char **argv)
  *
  **************************************/
 	UCHAR op[500], arg[500];
-	SSHORT type, slot, n, agg;
-	SLONG lock, parent, data;
-	ISC_STATUS status;
+	SSHORT type, n, agg;
+	SLONG lock, data;
 	ISC_STATUS_ARRAY status_vector;
 
 	printf("\nStand alone Lock Manager driver program.\n");
@@ -100,11 +99,11 @@ void main( int argc, char **argv)
 
 	wait = 1;
 	sw_release = 1;
-	slot = 0;
+	SSHORT slot = 0;
 
 /* Force a dummy parent lock to test query data functionality */
 
-	parent = LOCK_enq(NULL,		/* prior request */
+	SLONG parent = LOCK_enq(NULL,		/* prior request */
 					  NULL,		/* parent request */
 					  0,		/* series */
 					  "parent",	/* value */
@@ -115,7 +114,7 @@ void main( int argc, char **argv)
 
 	while (true) {
 		printf("Request: ");
-		status = scanf("%s%s", op, arg);
+		ISC_STATUS status = scanf("%s%s", op, arg);
 		if (status == EOF)
 			continue;
 		if (!strcmp(op, "rel")) {

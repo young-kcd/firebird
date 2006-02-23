@@ -129,8 +129,8 @@ int THD_mutex_unlock(MUTX_T * mutex)
 #endif //NOT_USED_OR_REPLACED
 
 
-
-int THD_wlck_lock(WLCK_T* wlock, WLCK_type type)
+#ifdef V4_THREADING
+int THD_wlck_lock(wlck_t* wlock, WLCK_type type)
 {
 /**************************************
  *
@@ -170,7 +170,7 @@ int THD_wlck_lock(WLCK_T* wlock, WLCK_type type)
 }
 
 
-int THD_wlck_unlock(WLCK_T* wlock)
+int THD_wlck_unlock(wlck_t* wlock)
 {
 /**************************************
  *
@@ -199,6 +199,7 @@ int THD_wlck_unlock(WLCK_T* wlock)
 
 	return 0;
 }
+#endif // V4_THREADING
 
 
 #ifdef SUPERSERVER

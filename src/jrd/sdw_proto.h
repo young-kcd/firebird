@@ -39,7 +39,8 @@ void	SDW_init(bool, bool);
 bool	SDW_lck_update(SLONG);
 void	SDW_notify(void);
 bool	SDW_rollover_to_shadow(Jrd::jrd_file*, const bool);
-void	SDW_shutdown_shadow(Jrd::Shadow*);
+// It's never called directly, but through SDW_check().
+//void	SDW_shutdown_shadow(Jrd::Shadow*);
 void	SDW_start(const TEXT*, USHORT, USHORT, bool);
 int		SDW_start_shadowing(void*);
 

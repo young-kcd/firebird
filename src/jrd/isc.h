@@ -39,7 +39,7 @@
 /* Defines for semaphore and shared memory removal */
 
 const USHORT ISC_SEM_REMOVE		= 1;
-const USHORT ISC_MEM_REMOVE		= 2;
+const USHORT ISC_MEM_REMOVE		= 2; // tested but never set
 
 /* InterBase platform-specific synchronization data structures */
 
@@ -96,11 +96,11 @@ struct sh_mem {
 	SLONG sh_mem_handle;
 	SLONG sh_mem_retadr[2];
 	SLONG sh_mem_channel;
-	TEXT sh_mem_filename[128];
+	TEXT sh_mem_filename[MAXPATHLEN];
 };
 typedef struct sh_mem SH_MEM_T;
 typedef struct sh_mem* SH_MEM;
-#endif
+#endif // VMS
 
 
 #ifdef UNIX
@@ -145,10 +145,6 @@ struct mtx {
 };
 typedef mtx MTX_T;
 typedef mtx* MTX;
-#endif /* ANY_THREADING */
-
-
-#ifdef ANY_THREADING
 
 struct event_t
 {
@@ -164,7 +160,7 @@ struct event_t
 	SLONG event_count;
 	SSHORT event_semnum;
 };
-#endif /* ANY_THREADING */
+#endif // ANY_THREADING
 
 
 #define SH_MEM_STRUCTURE_DEFINED
@@ -178,7 +174,7 @@ struct sh_mem
 };
 typedef sh_mem SH_MEM_T;
 typedef sh_mem *SH_MEM;
-#endif /* UNIX */
+#endif // UNIX
 
 
 #ifdef WIN_NT
@@ -211,13 +207,13 @@ struct sh_mem
 	void*	sh_mem_interest;
 	void*	sh_mem_hdr_object;
 	SLONG*	sh_mem_hdr_address;
-	TEXT	sh_mem_name[256];
+	TEXT	sh_mem_name[MAXPATHLEN];
 };
 typedef sh_mem SH_MEM_T;
 typedef sh_mem *SH_MEM;
 #define THREAD_HANDLE_DEFINED
 typedef void *THD_T;
-#endif
+#endif // WIN_NT
 
 
 #ifndef MTX_STRUCTURE_DEFINED
@@ -254,18 +250,22 @@ typedef ULONG THD_T;
 #undef THREAD_HANDLE_DEFINED
 
 
-/* Interprocess communication configuration structure */
+// Interprocess communication configuration structure
+// This was used to read to and write from the Config dialog when the server
+//  or the guardian is showing an icon in the tray.
 
+/*
 struct ipccfg
 {
 	const char*	ipccfg_keyword;
 	SCHAR		ipccfg_key;
 	SLONG*		ipccfg_variable;
-	SSHORT		ipccfg_parent_offset;	/* Relative offset of parent keyword */
-	USHORT		ipccfg_found;		/* TRUE when keyword has been set */
+	SSHORT		ipccfg_parent_offset;	// Relative offset of parent keyword
+	USHORT		ipccfg_found;		// TRUE when keyword has been set
 };
 
 typedef ipccfg *IPCCFG;
+*/
 
 /* AST thread scheduling macros */
 

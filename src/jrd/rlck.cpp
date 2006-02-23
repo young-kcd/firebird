@@ -88,11 +88,15 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 
 	if (level <= lock->lck_logical)
 		return lock;
+
+	/* Nobody activates it. Same in FB1.
 	if (transaction->tra_flags & TRA_reserving)
 	{
 		ERR_post(isc_unres_rel, isc_arg_string, 
 				relation->rel_name.c_str(), 0);
 	}
+	*/
+
 /* get lock */
 	USHORT result;
 	if (lock->lck_logical)

@@ -1949,6 +1949,7 @@ void CCH_precedence(thread_db* tdbb, WIN * window, SLONG page)
 }
 
 
+#ifdef CACHE_READER
 void CCH_prefetch(thread_db* tdbb, SLONG * pages, SSHORT count)
 {
 /**************************************
@@ -1964,7 +1965,6 @@ void CCH_prefetch(thread_db* tdbb, SLONG * pages, SSHORT count)
  *	as well.
  *
  **************************************/
-#ifdef CACHE_READER
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	BufferControl* bcb = dbb->dbb_bcb;
@@ -2004,7 +2004,6 @@ void CCH_prefetch(thread_db* tdbb, SLONG * pages, SSHORT count)
 		prefetch_io(&prefetch, tdbb->tdbb_status_vector);
 		prefetch_epilogue(&prefetch, tdbb->tdbb_status_vector);
 	}
-#endif
 }
 
 
@@ -2028,6 +2027,7 @@ bool CCH_prefetch_pages(thread_db* tdbb)
 
 	return false;
 }
+#endif // CACHE_READER
 
 
 void invalidate_and_release_buffer(thread_db* tdbb, BufferDesc* bdb)
@@ -5718,7 +5718,7 @@ static void prefetch_prologue(Prefetch* prefetch, SLONG* start_page)
 
 	--(*start_page);
 }
-#endif
+#endif // CACHE_READER
 
 
 static SSHORT related(const BufferDesc* low, const BufferDesc* high, SSHORT limit)

@@ -16,9 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-/*
-$Id: align.cpp,v 1.10 2005-05-27 22:44:39 asfernandes Exp $
-*/
+
 
 #include "firebird.h"
 #include <signal.h>
@@ -56,8 +54,6 @@ static const alignment rules[] = {
 static void check_byte_order(void);
 static int check_double(void);
 static void handler(void);
-
-static JMP_BUF env;
 
 
 int main(int argc, char *argv[])

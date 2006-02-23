@@ -2780,7 +2780,8 @@ UCHAR* ISC_map_file(
 			(shmem_data->sh_mem_handle, length, NULL,
 			 FILE_BEGIN) == 0xFFFFFFFF
 			|| !SetEndOfFile(shmem_data->sh_mem_handle)
-			|| !FlushViewOfFile(shmem_data->sh_mem_address, 0)) {
+			|| !FlushViewOfFile(shmem_data->sh_mem_address, 0))
+		{
 			error(status_vector, "SetFilePointer", GetLastError());
 			return NULL;
 		}
@@ -3799,7 +3800,7 @@ void ISC_unmap_file(ISC_STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 
 	if (flag & ISC_SEM_REMOVE)
 		semctl(shmem_data->sh_mem_mutex_arg, 0, IPC_RMID, arg);
-	if (flag & ISC_MEM_REMOVE)
+	if (flag & ISC_MEM_REMOVE) // never set
 		ftruncate(shmem_data->sh_mem_handle, 0L);
 	close(shmem_data->sh_mem_handle);
 }
@@ -3829,7 +3830,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data, USHORT flag)
 	shmdt(shmem_data->sh_mem_address);
 	if (flag & ISC_SEM_REMOVE)
 		semctl(shmem_data->sh_mem_mutex_arg, 0, IPC_RMID, arg);
-	if (flag & ISC_MEM_REMOVE)
+	if (flag & ISC_MEM_REMOVE) // never set
 		shmctl(shmem_data->sh_mem_handle, IPC_RMID, &buf);
 }
 #endif
@@ -3858,7 +3859,7 @@ void ISC_unmap_file(ISC_STATUS * status_vector,
 	CloseHandle((HANDLE) shmem_data->sh_mem_mutex_arg);
 	UnmapViewOfFile(shmem_data->sh_mem_address);
 	CloseHandle(shmem_data->sh_mem_object);
-	if (flag & ISC_MEM_REMOVE)
+	if (flag & ISC_MEM_REMOVE) // never set
 		if (SetFilePointer(shmem_data->sh_mem_handle, 0, NULL, FILE_BEGIN) != 0xFFFFFFFF)
 			SetEndOfFile(shmem_data->sh_mem_handle);
 	    

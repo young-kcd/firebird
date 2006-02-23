@@ -466,9 +466,8 @@ void IDX_create_index(
 				q += l;
 			}
 			if ( (l = key_length - key.key_length) ) {
-				do {
-					*p++ = pad;
-				} while (--l);
+				memset(p, pad, l);
+				p += l;
 			}
 			index_sort_record* isr = (index_sort_record*) p;
 			isr->isr_record_number = primary.rpb_number;
@@ -1530,20 +1529,8 @@ static bool key_equal(const temporary_key* key1, const temporary_key* key2)
  *	Compare two keys for equality.
  *
  **************************************/
-    USHORT l = key1->key_length;
-	if (l != key2->key_length)
-		return false;
-
-	if (l) {
-		const UCHAR* p = key1->key_data;
-		const UCHAR* q = key2->key_data;
-		do {
-			if (*p++ != *q++)
-				return false;
-		} while (--l);
-	}
-
-	return true;
+	USHORT l = key1->key_length;
+	return (l == key2->key_length && !memcmp(key1->key_data, key2->key_data, l));
 }
 
 

@@ -53,7 +53,7 @@
 
 using namespace Jrd;
 
-#define MOVE_BYTE(x_from, x_to)	*x_to++ = *x_from++;
+//#define MOVE_BYTE(x_from, x_to)	*x_to++ = *x_from++;
 
 static int compare_keys(const index_desc*, const UCHAR*, USHORT, 
 						const temporary_key*, USHORT);
@@ -370,22 +370,13 @@ bool NAV_get_record(thread_db* tdbb,
 		if (expanded_node) {
 			USHORT l = node.length + node.prefix;
 			if (l) {
-				UCHAR* p = key.key_data;
-				const UCHAR* q = expanded_node->btx_data;
-				do {
-					*p++ = *q++;
-				} while (--l);
+				memcpy(key.key_data, expanded_node->btx_data, l);
 			}
-
 		}
 		else {
 			USHORT l = node.length;
 			if (l) {
-				UCHAR* p = key.key_data + node.prefix;
-				const UCHAR* q = node.data;
-				do {
-					*p++ = *q++;
-				} while (--l);
+				memcpy(key.key_data + node.prefix, node.data, l);
 			}
 		}
 		key.key_length = node.length + node.prefix;
@@ -613,17 +604,8 @@ static void expand_index(WIN * window)
 			pointer = BTreeNode::readNode(&node, pointer, flags);
 		}
 
-		UCHAR* p = key.key_data + node.prefix;
-		const UCHAR* q = node.data;
-		USHORT l;
-		for (l = node.length; l; l--) {
-			*p++ = *q++;
-		}		
-		p = expanded_node->btx_data;
-		q = key.key_data;
-		for (l = node.length + node.prefix; l; l--) {
-			*p++ = *q++;
-		}
+		memcpy(key.key_data + node.prefix, node.data, node_length);
+		memcpy(expanded_node->btx_data, key.key_data, node.length + node.prefix);
 
 		// point back to the prior nodes on the expanded page and the btree page
 		expanded_node->btx_btr_previous_length =
@@ -736,11 +718,7 @@ static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
 			// maintain the running key value and compare it with the stored value
 			USHORT l = node.length;
 			if (l) {
-				UCHAR* p = key.key_data + node.prefix;
-				const UCHAR* q = node.data;
-				do {
-					*p++ = *q++;
-				} while (--l);
+				memcpy(key.key_data + node.prefix, node.data, l);
 			}
 			key.key_length = node.length + node.prefix;
 			const int result = compare_keys(idx, impure->irsb_nav_data,
@@ -920,7 +898,7 @@ static bool get_record(
 	jrd_req* request = tdbb->tdbb_request;
 	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
-	USHORT old_att_flags = 0;
+	ULONG old_att_flags = 0;
 	bool result = false;
 
 	try {
@@ -931,8 +909,7 @@ static bool get_record(
 		// There are cases when we are called here and have a window locked 
 		// HACK for bug 7041
 
-		old_att_flags = 
-			static_cast<USHORT>(tdbb->tdbb_attachment->att_flags & ATT_no_cleanup);
+		old_att_flags = (tdbb->tdbb_attachment->att_flags & ATT_no_cleanup);
 		tdbb->tdbb_attachment->att_flags |= ATT_no_cleanup;	// HACK
 	}
 
@@ -969,15 +946,14 @@ static bool get_record(
 
 	if (inhibit_cleanup) {
 		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
-		tdbb->tdbb_attachment->att_flags |= (old_att_flags & ATT_no_cleanup);
+		tdbb->tdbb_attachment->att_flags |= old_att_flags;
 	}
 
 	}	// try
 	catch (const std::exception&) {
 		// Cleanup the HACK should there be an error
 		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
-		tdbb->tdbb_attachment->att_flags |=
-			(old_att_flags & ATT_no_cleanup);
+		tdbb->tdbb_attachment->att_flags |= old_att_flags;
 		throw;
 	}
 

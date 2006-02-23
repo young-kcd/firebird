@@ -128,15 +128,16 @@ const SLONG TRA_system_transaction = 0;
 // Flag definitions for tra_flags.
 
 const ULONG TRA_system			= 1L;		/* system transaction */
-const ULONG TRA_update			= 2L;		/* update is permitted */
+//const ULONG TRA_update			= 2L;		// update is permitted 
 const ULONG TRA_prepared		= 4L;		/* transaction is in limbo */
 const ULONG TRA_reconnected		= 8L;		/* reconnect in progress */
-const ULONG TRA_reserving		= 16L;		/* relations explicityly locked */
+// How can RLCK_reserve_relation test for it if it's not set anywhere?
+//const ULONG TRA_reserving		= 16L;		// relations explicityly locked
 const ULONG TRA_degree3			= 32L;		/* serializeable transaction */
-const ULONG TRA_committing		= 64L;		/* commit in progress */
+//const ULONG TRA_committing		= 64L;		// commit in progress
 const ULONG TRA_write			= 128L;		/* transaction has written */
 const ULONG TRA_readonly		= 256L;		/* transaction is readonly */
-//const ULONG TRA_nowait			= 512L;		/* don't wait on relations, give up */
+//const ULONG TRA_nowait			= 512L;		// don't wait on relations, give up
 const ULONG TRA_prepare2		= 1024L;	/* transaction has updated RDB$TRANSACTIONS */
 const ULONG TRA_ignore_limbo	= 2048L;	/* ignore transactions in limbo */
 const ULONG TRA_invalidated 	= 4096L;	/* transaction invalidated by failed write */
@@ -149,12 +150,13 @@ const ULONG TRA_perform_autocommit	= 262144L;	/* indicates autocommit is necessa
 const ULONG TRA_rec_version			= 524288L;	/* don't wait for uncommitted versions */
 const ULONG TRA_restart_requests	= 1048576L;	/* restart all requests in attachment */
 const ULONG TRA_no_auto_undo		= 2097152L;	/* don't start a savepoint in TRA_start */
-const ULONG TRA_sweep_at_startup	= 4194304L;	/* sweep done at startup */
+// Obsolete, this was for LIBS on 16-bit.
+//const ULONG TRA_sweep_at_startup	= 4194304L;	// sweep done at startup 
 const ULONG TRA_precommitted		= 8388608L;	/* transaction committed at startup */
 
 const int TRA_MASK				= 3;
-const int TRA_BITS_PER_TRANS	= 2;
-const int TRA_TRANS_PER_BYTE	= 4;
+//const int TRA_BITS_PER_TRANS	= 2;
+//const int TRA_TRANS_PER_BYTE	= 4;
 const int TRA_SHIFT				= 2;
 
 #define TRANS_SHIFT(number)	(((number) & TRA_MASK) << 1)
@@ -228,7 +230,7 @@ enum dfw_t {
 	dfw_create_trigger,
 	dfw_delete_trigger,
 	dfw_modify_trigger,
-	dfw_load_triggers,
+	//dfw_load_triggers,
 	dfw_grant,
 	dfw_revoke,
 	dfw_scan_relation,
@@ -239,7 +241,7 @@ enum dfw_t {
 	dfw_delete_procedure,
 	dfw_delete_prm, 
 	dfw_delete_exception, 
-	dfw_unlink_file,
+	//dfw_unlink_file,
 	dfw_delete_generator,
 	dfw_modify_generator,
 	dfw_delete_udf,
@@ -248,7 +250,7 @@ enum dfw_t {
 	dfw_begin_backup,
 	dfw_end_backup,
 
-	// deffered works argument types
+	// deferred works argument types
 	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory
 	dfw_arg_partner_rel_id,	// partner relation id for dfw_delete_index if index is FK, optional
 	dfw_arg_proc_name		// procedure name for dfw_delete_prm, mandatory

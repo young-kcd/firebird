@@ -555,12 +555,12 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
 #endif
 	for (Symbol* symbol = Symbol::lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
-	    if (symbol->sym_type == Symbol::fun) {
+		//if (symbol->sym_type == Symbol::fun) {
 #ifdef V4_THREADING
 			V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 #endif
 			return (UserFunction*) symbol->sym_object;
-		}
+		//}
 	}
 
 	fun_repeat temp[MAX_UDF_ARGUMENTS + 1];
@@ -634,7 +634,8 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
 		{
 			prior = function;
 			Symbol* new_symbol = FB_NEW(*dbb->dbb_permanent) 
-				Symbol(*dbb->dbb_permanent, name, Symbol::fun, function);
+				Symbol(*dbb->dbb_permanent, name, //Symbol::fun,
+				function);
 			function->fun_symbol = new_symbol;
 			new_symbol->insert();
 		}

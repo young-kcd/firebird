@@ -78,10 +78,10 @@ extern double	MTH$CVT_G_D();
 
 const int MAX_LEVELS	= 16;
 
-inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
-{
-	*x_to++ = *x_from++;
-}
+//inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
+//{
+//	*x_to++ = *x_from++;
+//}
 
 #define OVERSIZE	(MAX_PAGE_SIZE + BTN_PAGE_SIZE + MAX_KEY + sizeof (SLONG) - 1) / sizeof (SLONG)
 
@@ -2022,11 +2022,7 @@ void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 			key.key_length = l;
 			l = node.length;
 			if (l) {
-				UCHAR* p = key.key_data + node.prefix;
-				const UCHAR* q = node.data;
-				do {
-					*p++ = *q++;
-				} while (--l);
+				memcpy(key.key_data + node.prefix, node.data, l);
 			}
 			pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		}

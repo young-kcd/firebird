@@ -194,12 +194,13 @@ class IndexRetrieval : public pool_alloc_rpt<jrd_nod*, type_irb>
 	jrd_nod* irb_value[1];
 };
 
+// Flag values for irb_generic
 const int irb_partial	= 1;				/* Partial match: not all segments or starting of key only */
 const int irb_starting	= 2;				/* Only compute "starting with" key for index segment */
 const int irb_equality	= 4;				/* Probing index for equality match */
-const int irb_ignore_null_value_key  = 8;	/* if lower bound is specified and upper bound unspecified,
-											* ignore looking at null value keys */
-const int irb_descending= 16;				/* ?Base index uses descending order */
+const int irb_ignore_null_value_key  = 8;	// if lower bound is specified and upper bound unspecified,
+											// ignore looking at null value keys
+const int irb_descending	= 16;			// Base index uses descending order
 const int irb_exclude_lower	= 32;			// exclude lower bound keys while scanning index
 const int irb_exclude_upper	= 64;			// exclude upper bound keys while scanning index
 

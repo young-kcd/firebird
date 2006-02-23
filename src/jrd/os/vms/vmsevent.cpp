@@ -449,16 +449,12 @@ static UCHAR *alloc(USHORT size)
  *
  **************************************/
 	UCHAR* const block = gds__alloc((SLONG) size);
-	UCHAR* p = block;
 /* FREE: handled by caller */
 /* NOMEM: handled by caller */
 	if (!block)
 		return block;
 
-	do {
-		*p++ = 0;
-	} while (--size);
-
+	memset(block, 0, size);
 	return block;
 }
 

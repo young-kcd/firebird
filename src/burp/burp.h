@@ -816,7 +816,7 @@ public:
 	ACT			action;
 	ULONG		io_buffer_size;
 	redirect_vals	sw_redirect;
-	UCHAR*		burp_env;
+	bool		burp_throw;
 	UCHAR*		io_ptr;
 	int			io_cnt;
 	burp_rel*	relations;

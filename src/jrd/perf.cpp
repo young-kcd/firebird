@@ -194,9 +194,7 @@ int API_ROUTINE perf_format(
 	*p = 0;
 	const int length = p - buffer;
 	if (buffer_length && (buffer_length -= length) >= 0) {
-		do {
-			*p++ = ' ';
-		} while (--buffer_length);
+		memset(p, ' ', buffer_length);
 	}
 
 	return length;
@@ -228,11 +226,7 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 /* If there isn't a database, zero everything out */
 
 	if (!*handle) {
-		char* p = (SCHAR *) perf;
-		size_t l = sizeof(PERF);
-		do {
-			*p++ = 0;
-		} while (--l);
+		memset(perf, 0, sizeof(PERF));
 	}
 
 /* Get system times */

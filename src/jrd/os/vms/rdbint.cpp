@@ -574,7 +574,7 @@ int RDB_open_blob(int *user_status,
 }
 
 
-int RDB_prepare_transaction(int *user_status, HND_TRA* tra_handle)
+int RDB_prepare_transaction(int *user_status, HND_TRA* tra_handle) // outdated signature
 {
 /**************************************
  *

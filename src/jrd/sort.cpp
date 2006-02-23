@@ -723,14 +723,14 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
 	memset((UCHAR*) scb, 0, SCB_LEN(keys));
 
 	scb->scb_status_vector = status_vector;
-	scb->scb_length = record_length;
+	//scb->scb_length = record_length;
 	scb->scb_longs =
 		ROUNDUP(record_length + sizeof(SLONG*), sizeof(SLONG*)) >> SHIFTLONG;
 	scb->scb_dup_callback = call_back;
 	scb->scb_dup_callback_arg = user_arg;
 	scb->scb_keys = keys;
 
-	scb->scb_max_records = max_records;
+	//scb->scb_max_records = max_records;
 
 	fb_assert(unique_keys <= keys);
 	sort_key_def* p = scb->scb_description;
@@ -1096,16 +1096,16 @@ bool SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 
 		while (count >= 2) {
 			merge = merge_pool++;
-			merge->mrg_header.rmh_type = TYPE_MRG;
+			merge->mrg_header.rmh_type = RMH_TYPE_MRG;
 
-			fb_assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
-				   ((*m1)->rmh_type == TYPE_RUN));
+			fb_assert(((*m1)->rmh_type == RMH_TYPE_MRG) ||	// garbage watch
+				   ((*m1)->rmh_type == RMH_TYPE_RUN));
 
 			(*m1)->rmh_parent = merge;
 			merge->mrg_stream_a = *m1++;
 
-			fb_assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
-				   ((*m1)->rmh_type == TYPE_RUN));
+			fb_assert(((*m1)->rmh_type == RMH_TYPE_MRG) ||	// garbage watch
+				   ((*m1)->rmh_type == RMH_TYPE_RUN));
 
 			(*m1)->rmh_parent = merge;
 			merge->mrg_stream_b = *m1++;
@@ -1909,7 +1909,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 	while (merge) {
 		// If node is a run_control, get the next record (or not) and back to parent
 
-		if (merge->mrg_header.rmh_type == TYPE_RUN) {
+		if (merge->mrg_header.rmh_type == RMH_TYPE_RUN) {
 			run_control* run = (run_control*) merge;
 			merge = run->run_header.rmh_parent;
 
@@ -2359,16 +2359,16 @@ static void merge_runs(sort_context* scb, USHORT n)
 	for (count = n, merge = blks; count > 1;) {
 		run_merge_hdr** m2 = m1 = streams;
 		while (count >= 2) {
-			merge->mrg_header.rmh_type = TYPE_MRG;
+			merge->mrg_header.rmh_type = RMH_TYPE_MRG;
 
-			fb_assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
-				   ((*m1)->rmh_type == TYPE_RUN));
+			fb_assert(((*m1)->rmh_type == RMH_TYPE_MRG) ||	// garbage watch
+				   ((*m1)->rmh_type == RMH_TYPE_RUN));
 
 			(*m1)->rmh_parent = merge;
 			merge->mrg_stream_a = *m1++;
 
-			fb_assert(((*m1)->rmh_type == TYPE_MRG) ||	// garbage watch
-				   ((*m1)->rmh_type == TYPE_RUN));
+			fb_assert(((*m1)->rmh_type == RMH_TYPE_MRG) ||	// garbage watch
+				   ((*m1)->rmh_type == RMH_TYPE_RUN));
 
 			(*m1)->rmh_parent = merge;
 			merge->mrg_stream_b = *m1++;
@@ -2460,7 +2460,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 		gds__free(run->run_buffer);
 		run->run_buff_alloc = 0;
 	}
-	temp_run.run_header.rmh_type = TYPE_RUN;
+	temp_run.run_header.rmh_type = RMH_TYPE_RUN;
 	temp_run.run_depth = run->run_depth;
 	*run = temp_run;
 	run->run_next = scb->scb_runs;
@@ -2763,7 +2763,7 @@ static void put_run(sort_context* scb)
 
 	run->run_next = scb->scb_runs;
 	scb->scb_runs = run;
-	run->run_header.rmh_type = TYPE_RUN;
+	run->run_header.rmh_type = RMH_TYPE_RUN;
 	run->run_depth = 0;
 
 	// Do the in-core sort. The first phase a duplicate handling we be performed

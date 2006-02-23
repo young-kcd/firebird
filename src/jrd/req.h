@@ -202,11 +202,11 @@ public:
 #endif
 	jrd_prc*	req_procedure;		/* procedure, if any */
 	Firebird::MetaName	req_trg_name;		/* name of request (trigger), if any */
-	USHORT		req_length;			/* message length for send/receive */
-	USHORT		req_nmsgs;			/* number of message types */
-	USHORT		req_mmsg;			/* highest message type */
-	USHORT		req_msend;			/* longest send message */
-	USHORT		req_mreceive;		/* longest receive message */
+	//USHORT		req_length;			// message length for send/receive
+	//USHORT		req_nmsgs;			// number of message types
+	//USHORT		req_mmsg;			// highest message type
+	//USHORT		req_msend;			// longest send message
+	//USHORT		req_mreceive;		// longest receive message
 
 	ULONG		req_records_selected;	/* count of records selected by request (meeting selection criteria) */
 	ULONG		req_records_inserted;	/* count of records inserted by request */
@@ -268,7 +268,7 @@ const ULONG req_leave			= 0x4L;
 const ULONG req_async_processing= 0x8L;
 #endif
 const ULONG req_null			= 0x10L;
-const ULONG req_broken			= 0x20L;
+//const ULONG req_broken			= 0x20L;
 const ULONG req_abort			= 0x40L;
 const ULONG req_internal		= 0x80L;
 const ULONG req_warning			= 0x100L;

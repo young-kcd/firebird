@@ -2877,17 +2877,23 @@ static void proc_assignment(
 	MOV_move(&desc1, &desc2);
 	if (indicator) {
 		SET_NULL(record, to_id);
-		SSHORT l = to_desc->dsc_length; // it seems safer to use USHORT
-		fb_assert(l); // l == 0 would produce undesirable results here
+		const USHORT l = to_desc->dsc_length;
 		UCHAR* p = record->rec_data + (IPTR) to_desc->dsc_address;
 		switch (to_desc->dsc_dtype) {
 		case dtype_text:
 			/* YYY - not necessarily the right thing to do */
 			/* YYY for text formats that don't have trailing spaces */
 			if (l) {
-				do {
-					*p++ = ' ';
-				} while (--l);
+				const CHARSET_ID chid = DSC_GET_CHARSET(to_desc);
+				/*
+				CVC: I don't know if we have to check for dynamic-127 charset here.
+				If that is needed, the line above should be replaced by the ccmmented code here.
+				CHARSET_ID chid = INTL_TTYPE(to_desc);
+				if (chid == ttype_dynamic)
+					chid = INTL_charset(tdbb, chid);
+				*/
+				const char pad = chid == ttype_binary ? '\0' : ' ';
+				memset(p, pad, l);
 			}
 			break;
 
@@ -2900,9 +2906,8 @@ static void proc_assignment(
 			break;
 
 		default:
-			do {
-				*p++ = 0;
-			} while (--l);
+			if (l)
+				memset(p, 0, l);
 			break;
 		}
 		to_desc->dsc_flags |= DSC_null;

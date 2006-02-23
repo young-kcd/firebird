@@ -1721,7 +1721,7 @@ static bool create_index(	thread_db*	tdbb,
 		partner_relation = NULL;
 		try	
 		{
-			// Protect relation from modifying to create consistent index
+			// Protect relation from modification to create consistent index
 			relationLock =
 				protect_relation(tdbb, transaction, relation, releaseRelationLock);
 									
@@ -1861,6 +1861,7 @@ static bool create_procedure(	thread_db*	tdbb,
 			if (!procedure) {
 				return false;
 			}
+			// Never used.
 			procedure->prc_flags |= PRC_create;
 		}
 		break;
@@ -4336,7 +4337,7 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 * Functional description
 *	Lock relation with protected_read level or raise existing relation lock 
 * to this level to ensure nobody can write to this relation. 
-* Used when new index to be build. 
+* Used when new index is built. 
 * releaseLock set to true if there was no existing lock before
 *
 **************************************/
@@ -4387,23 +4388,18 @@ static void put_summary_record(blb*		blob,
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
+	fb_assert(length < MAX_USHORT); // otherwise length + 1 wraps. Or do we bugcheck???
 	UCHAR temp[129];
 
 	UCHAR* const buffer = ((size_t) (length + 1) > sizeof(temp)) ?
 		FB_NEW(*getDefaultMemoryPool()) UCHAR[length + 1] : temp;
 
 	UCHAR* p = buffer;
-
 	*p++ = (UCHAR) type;
-
-	if (length) {
-		do {
-			*p++ = *data++;
-		} while (--length);
-	}
+	memcpy(p, data, length);
 
 	try {
-		BLB_put_segment(tdbb, blob, buffer, (USHORT)(p - buffer));
+		BLB_put_segment(tdbb, blob, buffer, length + 1);
 	}
 	catch (const std::exception&) {
 		if (buffer != temp)

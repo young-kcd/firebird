@@ -254,12 +254,12 @@ private:
 			: Module(p, nameL), symbols(p) {}
 		
 	private:
-		typedef Firebird::Pair<Firebird::Left<Firebird::string, void*> > Symbol;
-		typedef Firebird::FirstKey<Symbol> SymbolKey;
-		typedef Firebird::SortedArray<Symbol, 
-			Firebird::EmptyStorage<Symbol>, 
-			Firebird::string, SymbolKey> Symbols;
-		Symbols symbols;
+		typedef Firebird::Pair<Firebird::Left<Firebird::string, void*> > PMSymbol;
+		typedef Firebird::FirstKey<PMSymbol> PMSymbolKey;
+		typedef Firebird::SortedArray<PMSymbol, 
+			Firebird::EmptyStorage<PMSymbol>, 
+			Firebird::string, PMSymbolKey> PMSymbols;
+		PMSymbols symbols;
 		
 		void *lookupSymbol(const Firebird::string&);
 	};

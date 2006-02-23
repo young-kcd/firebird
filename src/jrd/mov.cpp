@@ -75,6 +75,7 @@ double MOV_date_to_double(const dsc* desc)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 // Strange, I don't see this function surfaced as public.
 void MOV_double_to_date2(double real, dsc* desc)
 {
@@ -107,6 +108,7 @@ void MOV_double_to_date2(double real, dsc* desc)
 		break;
 	}
 }
+#endif
 
 
 void MOV_double_to_date(double real, SLONG fixed[2])
@@ -247,7 +249,7 @@ void MOV_fill(SLONG* to, ULONG length)
 			*p++ = 0;
 		to = (SLONG *) p;
 		fb_assert(!(((U_IPTR) to) & (sizeof(ULONG) - 1))	/* We're now aligned ULONG */
-			   ||!length);		/* Or already completed */
+			   || !length);		/* Or already completed */
 	}
 
 /* Fill in chunks of 8 longwords == 32 bytes == 2**5 bytes */

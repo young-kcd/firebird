@@ -66,8 +66,8 @@ LRESULT APIENTRY InterbasePage(HWND, UINT, WPARAM, LPARAM);
 LRESULT APIENTRY OSPage(HWND, UINT, WPARAM, LPARAM);
 
 // Static functions for reading and writing settings
-static BOOL ReadIBSettings(HWND);
-static BOOL WriteIBSettings(HWND);
+static BOOL ReadFBSettings(HWND);
+static BOOL WriteFBSettings(HWND);
 #ifdef NOT_USED_OR_REPLACED
 static BOOL ReadOSSettings(HWND);
 static BOOL WriteOSSettings(HWND);
@@ -170,7 +170,7 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	switch (unMsg) {
 	case WM_INITDIALOG:
 		{
-			if (!ReadIBSettings(hDlg))
+			if (!ReadFBSettings(hDlg))
 				return FALSE;
 			RefreshIBControls(hDlg, FALSE);
 			bModifyMode = false;
@@ -220,7 +220,7 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			{
 				bModifyMode = false;
 				bDirty = false;
-				ReadIBSettings(hDlg);
+				ReadFBSettings(hDlg);
 				RefreshIBControls(hDlg, FALSE);
 				PropSheet_UnChanged(GetParent(hDlg), hDlg);
 				SetFocus(GetDlgItem(hDlg, IDC_MODRES));
@@ -269,11 +269,11 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			}
 		case PSN_APPLY:		// When 'OK' or 'Apply Now' are clicked
 			if (bDirty)
-				if (WriteIBSettings(hDlg))	// Values written successfully
+				if (WriteFBSettings(hDlg))	// Values written successfully
 				{
 					bModifyMode = false;
 					bDirty = false;
-					ReadIBSettings(hDlg);
+					ReadFBSettings(hDlg);
 					RefreshIBControls(hDlg, FALSE);
 					SetFocus(GetDlgItem(hDlg, IDC_MODRES));
 				}
@@ -292,11 +292,11 @@ LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	return FALSE;
 }
 
-BOOL ReadIBSettings(HWND hDlg)
+BOOL ReadFBSettings(HWND hDlg)
 {
 /******************************************************************************
  *
- *  R e a d I B S e t t i n g s
+ *  R e a d F B S e t t i n g s
  *
  ******************************************************************************
  *
@@ -304,7 +304,7 @@ BOOL ReadIBSettings(HWND hDlg)
  *
  *  Return: void
  *
- *  Description: This method calls the ISC_get_config() function to read the
+ *  Description: This method uses the Services API to read the
  *               current IB settings in the config file and then sets these
  *               values to the corresponding controls.
  *****************************************************************************/
@@ -431,11 +431,11 @@ void RefreshIBControls(HWND hDlg, BOOL bEnable)
 
 }
 
-BOOL WriteIBSettings(HWND hDlg)
+BOOL WriteFBSettings(HWND hDlg)
 {
 /******************************************************************************
  *
- *  W r i t e I B S e t t i n g s
+ *  W r i t e F B S e t t i n g s
  *
  ******************************************************************************
  *
@@ -443,8 +443,9 @@ BOOL WriteIBSettings(HWND hDlg)
  *
  *  Return: void
  *
- *  Description: This method calls the ISC_set_config() function to write the
+ *  Description: This method calls the Services API to write the
  *               current OS settings in the config file.
+ *               It's disabled for now.
  *****************************************************************************/
 	ISC_STATUS_ARRAY pdwStatus;
 	isc_svc_handle hService = NULL;

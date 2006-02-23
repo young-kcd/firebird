@@ -38,7 +38,7 @@
 /* Temporary workfile directory list. */
 
 struct dir_list {
-	SLONG dls_header;
+	SLONG dls_header;           // Never referenced directly.
 	dir_list* dls_next;
 	ULONG dls_size;				/* Maximum size in the directory */
 	ULONG dls_inuse;			/* Occupied space in the directory */

@@ -33,7 +33,6 @@ namespace Jrd {
 
 extern "C" {
 Jrd::Service* SVC_attach(USHORT, const TEXT*, USHORT, const SCHAR*);
-void   SVC_cleanup(Jrd::Service*);
 void   SVC_detach(Jrd::Service*);
 void   SVC_fprintf(Jrd::Service*, const SCHAR*, ...);
 void   SVC_putc(Jrd::Service*, const UCHAR);
@@ -43,8 +42,7 @@ ISC_STATUS SVC_query2(Jrd::Service*, Jrd::thread_db*, USHORT, const SCHAR*,
 	USHORT, const SCHAR*, USHORT, SCHAR*);
 void*  SVC_start(Jrd::Service*, USHORT, const SCHAR*);
 void   SVC_finish(Jrd::Service*, USHORT);
-THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM);
-const TEXT* SVC_err_string(const TEXT*, USHORT);
+THREAD_ENTRY_DECLARE SVC_read_fb_log(THREAD_ENTRY_PARAM);
 int SVC_output(Jrd::Service*, const UCHAR*);
 
 #ifdef SERVER_SHUTDOWN

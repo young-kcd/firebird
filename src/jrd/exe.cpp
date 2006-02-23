@@ -400,9 +400,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 					chid = INTL_charset(tdbb, chid);
 				*/
 				const char pad = chid == ttype_binary ? '\0' : ' ';
-				do {
-					*p++ = pad;
-				} while (--l);
+				memset(p, pad, l);
 			}
 			break;
 
@@ -415,9 +413,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 			break;
 
 		default:
-			do {
-				*p++ = 0;
-			} while (--l);
+			memset(p, 0, l);
 			break;
 		}
 		to_desc->dsc_flags |= DSC_null;
@@ -1025,9 +1021,7 @@ static void cleanup_rpb(thread_db* tdbb, record_param* rpb)
 		{
 			USHORT length = desc->dsc_length;
 			if (length) {
-				do {
-					*p++ = 0;
-				} while (--length);
+				memset(p, 0, length);
 			}
 		}
 		else if (desc->dsc_dtype == dtype_varying)
@@ -1038,9 +1032,7 @@ static void cleanup_rpb(thread_db* tdbb, record_param* rpb)
 			{
 				p = reinterpret_cast<UCHAR*>(varying->vary_string + varying->vary_length);
 				length -= varying->vary_length;
-				do {
-					*p++ = 0;
-				} while (--length);
+				memset(p, 0, length);
 			}
 		}
 	}
@@ -2743,9 +2735,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 					if (new_desc.dsc_dtype) {
 						UCHAR* p = new_desc.dsc_address;
 						USHORT n = new_desc.dsc_length;
-						do {
-							*p++ = 0;
-						} while (--n);
+						memset(p, 0, n);
 					}
 				}				/* if (org_record) */
 			}					/* if (new_record) */
@@ -3459,21 +3449,13 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			bug with incorrect blob sharing during insertion in
 			a stored procedure. */
 
-	UCHAR* p = record->rec_data;
-	{ // scope
-		const UCHAR* const data_end = p + rpb->rpb_length;
-		while (p < data_end)
-			*p++ = 0;
-	} // scope
+	memset(record->rec_data, 0, rpb->rpb_length);
 
 /* Initialize all fields to missing */
 
-	p = record->rec_data;
 	SSHORT n = (format->fmt_count + 7) >> 3;
 	if (n) {
-		do {
-			*p++ = 0xff;
-		} while (--n);
+		memset(record->rec_data, 0xff, n);
 	}
 
 	return node->nod_arg[e_sto_statement];

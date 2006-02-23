@@ -846,11 +846,8 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 			*public_handle = database->public_handle;
 			TEXT* p = database->db_path;
-			for (const TEXT* q = expanded_filename; length; length--)
-			{
-				*p++ = *q++;
-			}
-			*p = 0;
+			memcpy(p, expanded_filename, length);
+			p[length] = 0;
 
 			database->cleanup = NULL;
 			status[0] = isc_arg_gds;
@@ -1481,13 +1478,11 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 #ifdef WIN_NT
             /* for (q = (*handle)->dbb_filename->str_data; length; length--) */
-            for (const TEXT* q = expanded_filename; length; length--)
-                *p++ = *q++;
+            memcpy(p, expanded_filename, length);
 #else
-            for (const TEXT* q = temp_filename; length; length--)
-                *p++ = *q++;
+			memcpy(p, temp_filename, length);
 #endif
-			*p = 0;
+			p[length] = 0;
 
 			database->cleanup = NULL;
 			status[0] = isc_arg_gds;
@@ -5338,10 +5333,7 @@ static void event_ast(void* buffer_void,
  *	We're had an event complete.
  *
  **************************************/
-	UCHAR* buffer = static_cast<UCHAR*>(buffer_void);
-	while (length--) {
-		*buffer++ = *items++;
-	}
+	memcpy(buffer_void, items, length);
 	ISC_event_post(why_event);
 }
 #endif
@@ -5432,16 +5424,23 @@ static int get_database_info(ISC_STATUS * status,
  *	description record.
  *
  **************************************/
-	TEXT* p = *ptr;
 
+	// Look at the changed code: we don't support here more than 254 bytes in the path
+	// so it's better to truncate or we'll have corrupt data in the trans desc record:
+	// the length in one byte would wrap and we would copy more bytes that expected.
+	// Our caller (prepare) assumed each call consumes at most 256 bytes (item, len, data)
+	// hence if we don't check here, we have a B.O.
+	TEXT* p = *ptr;
 	WHY_DBB database = transaction->parent;
 	const TEXT* q = database->db_path;
 	*p++ = TDR_DATABASE_PATH;
-	*p++ = (TEXT) strlen(q);
-	while (*q)
-		*p++ = *q++;
-
-	*ptr = p;
+	size_t len = strlen(q);
+	if (len > 254)
+		len = 254;
+		
+	*p++ = (TEXT) len;
+	memcpy(p, q, len);
+	*ptr = p + len;
 
 	return FB_SUCCESS;
 }
@@ -5570,18 +5569,16 @@ static ISC_STATUS get_transaction_info(ISC_STATUS * status,
 		return status[1];
 	}
 
-	TEXT* q = buffer + 3;
+	const TEXT* q = buffer + 3;
 	*p++ = TDR_TRANSACTION_ID;
 
-	USHORT length = (USHORT)gds__vax_integer(reinterpret_cast<UCHAR*>(buffer + 1), 2);
-	*p++ = length;
+	const USHORT length = (USHORT)gds__vax_integer(reinterpret_cast<UCHAR*>(buffer + 1), 2);
+	*p++ = length; // Warning: USHORT coerced to char
 	if (length) {
-		do {
-			*p++ = *q++;
-		} while (--length);
+		memcpy(p, q, length);
 	}
 
-	*ptr = p;
+	*ptr = p + length;
 
 	CHECK_STATUS_SUCCESS(status);
 	return FB_SUCCESS;
@@ -5759,13 +5756,22 @@ static ISC_STATUS prepare(ISC_STATUS * status,
  **************************************/
 	WHY_TRA sub;
 	TEXT tdr_buffer[1024];
-	USHORT length = 0;
+	int length = 0, transcount = 0;
 
 	for (sub = transaction->next; sub; sub = sub->next)
+	{
 		length += 256;
+		++transcount;
+	}
+	// To do: use transcount to check the maximum allowed dbs in a two phase commit.
 
+	TEXT host[64];
+	ISC_get_host(host, sizeof(host));
+	const size_t hostlen = strlen(host);
+	length += hostlen + 3; // TDR_version + TDR_host_site + UCHAR(strlen(host))
+	
 	TEXT* const description = (length > sizeof(tdr_buffer)) ?
-		(TEXT *) gds__alloc((SLONG) length) : tdr_buffer;
+		(TEXT *) gds__alloc(length) : tdr_buffer;
 
 /* build a transaction description record containing 
    the host site and database/transaction
@@ -5779,13 +5785,12 @@ static ISC_STATUS prepare(ISC_STATUS * status,
 		CHECK_STATUS(status);
 		return status[1];
 	}
+	
 	*p++ = TDR_VERSION;
-
-	ISC_get_host(p + 2, length - 16);
 	*p++ = TDR_HOST_SITE;
-	*p = (UCHAR) strlen(p + 1);
-
-	while (*++p);
+	*p++ = UCHAR(hostlen);
+	memcpy(p, host, hostlen);
+	p += hostlen;
 
 /* Get database and transaction stuff for each sub-transaction */
 

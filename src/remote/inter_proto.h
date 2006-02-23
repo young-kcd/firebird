@@ -72,7 +72,7 @@ ISC_STATUS	REM_get_slice(ISC_STATUS*, struct rdb**, struct rtr**, BID, USHORT,
 	const UCHAR*, USHORT, const UCHAR*, SLONG, UCHAR*, SLONG*);
 ISC_STATUS	REM_open_blob2(ISC_STATUS*, struct rdb**, struct rtr**,
 	struct rbl**, BID, USHORT, const UCHAR*);
-ISC_STATUS	REM_prepare_transaction(ISC_STATUS *, struct rtr **, USHORT, UCHAR *);
+ISC_STATUS	REM_prepare_transaction(ISC_STATUS *, struct rtr **, USHORT, const UCHAR*);
 ISC_STATUS	REM_put_segment(ISC_STATUS*, struct rbl**, USHORT, const UCHAR*);
 ISC_STATUS	REM_put_slice(ISC_STATUS*, struct rdb**, struct rtr**, BID, USHORT,
 	const UCHAR*, USHORT, const UCHAR*, SLONG, UCHAR*);

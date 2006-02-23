@@ -51,7 +51,7 @@
 
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
-//#define VIO_DEBUG				/* remove this for production build */
+//#define VIO_DEBUG				// remove this for production build
 #else /* PROD */
 #define DEBUG
 #undef VIO_DEBUG
@@ -81,7 +81,7 @@
 #define DEV_BLKCHK(blk,type)
 //#define DEV_BLKCHK(blk, type)    if (blk) {BLKCHK (blk, type);}
 #else
-#define DEV_BLKCHK(blk, type)	/* nothing */
+#define DEV_BLKCHK(blk, type)	// nothing
 #endif
 
 
@@ -176,47 +176,49 @@ public:
 		JrdMemoryPool::noDbbDeletePool(perm);
 	}
 	
-	Database*	dbb_next;		/* Next database block in system */
-	Attachment* dbb_attachments;	/* Active attachments */
-	BufferControl*	dbb_bcb;		/* Buffer control block */
-	vec<jrd_rel*>*	dbb_relations;	/* relation vector */
-	vec<jrd_prc*>*	dbb_procedures;	/* scanned procedures */
-	Lock* 		dbb_lock;		/* granddaddy lock */
-	jrd_tra*	dbb_sys_trans;	/* system transaction */
-	jrd_file*	dbb_file;		/* files for I/O operations */
-	Shadow*		dbb_shadow;		/* shadow control block */
-	Lock*		dbb_shadow_lock;	/* lock for synchronizing addition of shadows */
-	SLONG dbb_shadow_sync_count;	/* to synchronize changes to shadows */
-	Lock*		dbb_retaining_lock;	/* lock for preserving commit retaining snapshot */
-	PageControl*	dbb_pcontrol;	/* page control */
-	vcl*		dbb_t_pages;	/* pages number for transactions */
-	vcl*		dbb_gen_id_pages;	/* known pages for gen_id */
-	BlobFilter*	dbb_blob_filters;	/* known blob filters */
+	Database*	dbb_next;		// Next database block in system
+	Attachment* dbb_attachments;	// Active attachments
+	BufferControl*	dbb_bcb;		// Buffer control block
+	vec<jrd_rel*>*	dbb_relations;	// relation vector
+	vec<jrd_prc*>*	dbb_procedures;	// scanned procedures
+	Lock* 		dbb_lock;		// granddaddy lock
+	jrd_tra*	dbb_sys_trans;	// system transaction
+	jrd_file*	dbb_file;		// files for I/O operations
+	Shadow*		dbb_shadow;		// shadow control block
+	Lock*		dbb_shadow_lock;	// lock for synchronizing addition of shadows
+	//SLONG dbb_shadow_sync_count;	// to synchronize changes to shadows
+	Lock*		dbb_retaining_lock;	// lock for preserving commit retaining snapshot
+	PageControl*	dbb_pcontrol;	// page control
+	vcl*		dbb_t_pages;	// pages number for transactions
+	vcl*		dbb_gen_id_pages;	// known pages for gen_id
+	BlobFilter*	dbb_blob_filters;	// known blob filters
 
-	DatabaseModules	modules;	/* external function/filter modules */
-	MUTX_T *dbb_mutexes;		/* Database block mutexes */
-	WLCK_T *dbb_rw_locks;		/* Database block read/write locks */
-	REC_MUTX_T dbb_sp_rec_mutex;	/* Recursive mutex for accessing/updating stored procedure metadata */
-	SLONG dbb_sort_size;		/* Size of sort space per sort */
+	DatabaseModules	modules;	// external function/filter modules
+	MUTX_T *dbb_mutexes;		// Database block mutexes
+	// Very strange usage, only to print the contents in debug mode???
+	//wlck_t *dbb_rw_locks;		// Database block read/write locks.
+	REC_MUTX_T dbb_sp_rec_mutex;	// Recursive mutex for accessing/updating stored procedure metadata
+	//SLONG dbb_sort_size;		// Size of sort space per sort, unused for now
 
-	UATOM dbb_ast_flags;		/* flags modified at AST level */
+	UATOM dbb_ast_flags;		// flags modified at AST level
 	ULONG dbb_flags;
-	USHORT dbb_ods_version;		/* major ODS version number */
-	USHORT dbb_minor_version;	/* minor ODS version number */
-	USHORT dbb_minor_original;	/* minor ODS version at creation */
-	USHORT dbb_page_size;		/* page size */
-	USHORT dbb_dp_per_pp;		/* data pages per pointer page */
-	USHORT dbb_max_records;		/* max record per data page */
-	USHORT dbb_max_idx;			/* max number of indexes on a root page */
-	USHORT dbb_use_count;		/* active count of threads */
-	USHORT dbb_shutdown_delay;	/* seconds until forced shutdown */
+	USHORT dbb_ods_version;		// major ODS version number
+	USHORT dbb_minor_version;	// minor ODS version number
+	USHORT dbb_minor_original;	// minor ODS version at creation
+	USHORT dbb_page_size;		// page size
+	USHORT dbb_dp_per_pp;		// data pages per pointer page
+	USHORT dbb_max_records;		// max record per data page
+	USHORT dbb_max_idx;			// max number of indexes on a root page
+	USHORT dbb_use_count;		// active count of threads
+	USHORT dbb_shutdown_delay;	// seconds until forced shutdown.
+	                            // Set in shut.cpp but not tested yet.
 #ifdef SUPERSERVER_V2
-	USHORT dbb_prefetch_sequence;	/* sequence to pace frequency of prefetch requests */
-	USHORT dbb_prefetch_pages;	/* prefetch pages per request */
+	USHORT dbb_prefetch_sequence;	// sequence to pace frequency of prefetch requests
+	USHORT dbb_prefetch_pages;	// prefetch pages per request
 #endif
-	Firebird::PathName dbb_filename;	/* filename string */
-	Firebird::PathName dbb_database_name;	/* database ID (file name or alias) */
-	Firebird::string dbb_encrypt_key;	/* encryption key */
+	Firebird::PathName dbb_filename;	// filename string
+	Firebird::PathName dbb_database_name;	// database ID (file name or alias)
+	Firebird::string dbb_encrypt_key;	// encryption key
 
 	JrdMemoryPool* dbb_permanent;
 	JrdMemoryPool* dbb_bufferpool;
@@ -224,30 +226,30 @@ public:
 	typedef JrdMemoryPool* pool_ptr;
 	typedef Firebird::vector<pool_ptr> pool_vec_type;
 
-	pool_vec_type dbb_pools;		/* pools */
+	pool_vec_type dbb_pools;		// pools
 
-	vec<jrd_req*>*	dbb_internal;	/* internal requests */
-	vec<jrd_req*>*	dbb_dyn_req;	/* internal dyn requests */
+	vec<jrd_req*>*	dbb_internal;	// internal requests
+	vec<jrd_req*>*	dbb_dyn_req;	// internal dyn requests
 
-	SLONG dbb_oldest_active;	/* Cached "oldest active" transaction */
-	SLONG dbb_oldest_transaction;	/* Cached "oldest interesting" transaction */
-	SLONG dbb_oldest_snapshot;	/* Cached "oldest snapshot" of all active transactions */
-	SLONG dbb_next_transaction;	/* Next transaction id used by NETWARE */
-	SLONG dbb_attachment_id;	/* Next attachment id for ReadOnly DB's */
-	SLONG dbb_page_incarnation;	/* Cache page incarnation counter */
-	ULONG dbb_page_buffers;		/* Page buffers from header page */
+	SLONG dbb_oldest_active;	// Cached "oldest active" transaction
+	SLONG dbb_oldest_transaction;	// Cached "oldest interesting" transaction
+	SLONG dbb_oldest_snapshot;	// Cached "oldest snapshot" of all active transactions
+	SLONG dbb_next_transaction;	// Next transaction id used by NETWARE
+	SLONG dbb_attachment_id;	// Next attachment id for ReadOnly DB's
+	SLONG dbb_page_incarnation;	// Cache page incarnation counter
+	ULONG dbb_page_buffers;		// Page buffers from header page
 
-	event_t dbb_writer_event[1];	/* Event to wake up cache writer */
-	event_t dbb_writer_event_init[1];	/* Event for initialization cache writer */
-	event_t dbb_writer_event_fini[1];	/* Event for finalization cache writer */
+	event_t dbb_writer_event[1];	// Event to wake up cache writer
+	event_t dbb_writer_event_init[1];	// Event for initialization cache writer
+	event_t dbb_writer_event_fini[1];	// Event for finalization cache writer
 #ifdef SUPERSERVER_V2
-	event_t dbb_reader_event[1];	/* Event to wake up cache reader */
+	event_t dbb_reader_event[1];	// Event to wake up cache reader
 #endif
 
 #ifdef GARBAGE_THREAD
-	event_t dbb_gc_event[1];	/* Event to wake up garbage collector */
-	event_t dbb_gc_event_init[1];	/* Event for initialization garbage collector */
-	event_t dbb_gc_event_fini[1];	/* Event for finalization garbage collector */
+	event_t dbb_gc_event[1];	// Event to wake up garbage collector
+	event_t dbb_gc_event_init[1];	// Event for initialization garbage collector
+	event_t dbb_gc_event_fini[1];	// Event for finalization garbage collector
 #endif
 
 	BlockingThread*	dbb_free_btbs;	// Unused BlockingThread blocks
@@ -325,7 +327,7 @@ private:
 //
 // bit values for dbb_flags
 //
-const ULONG DBB_no_garbage_collect	= 0x1L;
+//const ULONG DBB_no_garbage_collect	= 0x1L; // Obsolete.
 const ULONG DBB_damaged				= 0x2L;
 const ULONG DBB_exclusive			= 0x4L;	/* Database is accessed in exclusive mode */
 const ULONG DBB_bugcheck			= 0x8L;	/* Bugcheck has occurred */
@@ -347,7 +349,7 @@ const ULONG DBB_lck_init_done		= 0x10000L;	/* LCK_init() called for the database
 const ULONG DBB_sp_rec_mutex_init	= 0x20000L;	/* Stored procedure mutex initialized */
 const ULONG DBB_sweep_in_progress	= 0x40000L;	/* A database sweep operation is in progress */
 const ULONG DBB_security_db			= 0x80000L;	/* ISC security database */
-const ULONG DBB_sweep_thread_started	= 0x100000L;	/* A database sweep thread has been started */
+//const ULONG DBB_sweep_thread_started	= 0x100000L;	// A database sweep thread has been started
 const ULONG DBB_suspend_bgio		= 0x200000L;	/* Suspend I/O by background threads */
 const ULONG DBB_being_opened		= 0x400000L;	/* database is being attached to */
 const ULONG DBB_gc_cooperative		= 0x0800000L;	/* cooperative garbage collection */
@@ -383,16 +385,17 @@ const int DBB_max_count				= 8;
 // Database mutexes and read/write locks
 //
 const int DBB_MUTX_init_fini		= 0;	// During startup and shutdown
-const int DBB_MUTX_statistics		= 1;	// Memory size and counts
-const int DBB_MUTX_replay			= 2;	// Replay logging
+//const int DBB_MUTX_statistics		= 1;	// Memory size and counts
+//const int DBB_MUTX_replay			= 2;	// Replay logging
 const int DBB_MUTX_dyn				= 3;	// Dynamic ddl
-const int DBB_MUTX_cache			= 4;	// Process-private cache management
+//const int DBB_MUTX_cache			= 4;	// Process-private cache management
 const int DBB_MUTX_clone			= 5;	// Request cloning
 const int DBB_MUTX_cmp_clone		= 6;	// Compiled request cloning
 const int DBB_MUTX_flush_count		= 7;	// flush count/time
 const int DBB_MUTX_max				= 8;
+
 const int DBB_WLCK_pools			= 0;	// Pool manipulation
-const int DBB_WLCK_files			= 1;	// DB and shadow file manipulation
+//const int DBB_WLCK_files			= 1;	// DB and shadow file manipulation
 const int DBB_WLCK_max				= 2;
 
 //
@@ -491,13 +494,15 @@ public:
 	vcl*		att_counts[DBB_max_count];
 	ULONG		att_flags;			// Flags describing the state of the attachment
 	SSHORT		att_charset;		// user's charset specified in dpb
+	// The following data member is set but never used, so the DPB to set the location of a
+	// customized firebird.msg file doesn't work; the only way is to use an env var.
 	Firebird::PathName	att_lc_messages;	// attachment's preference for message natural language
 	Lock*		att_long_locks;		// outstanding two phased locks
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	vcl*		att_val_errors;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
 	Firebird::PathName	att_filename;			// alias used to attach the database
-	Firebird::TimeStamp	att_timestamp;	// connection date and time
+	Firebird::TimeStamp	att_timestamp;	// Connection date and time. Unused for now.
 	Firebird::StringMap att_context_vars;  // Context variables for the connection
 	Firebird::string att_network_protocol; // Network protocol used by client for connection
 	Firebird::string att_remote_address; // Protocol-specific addess of remote client
@@ -508,14 +513,16 @@ public:
 
 const ULONG ATT_no_cleanup			= 1;	// Don't expunge, purge, or garbage collect
 const ULONG ATT_shutdown			= 2;	// attachment has been shutdown
-const ULONG ATT_shutdown_notify		= 4;	// attachment has notified client of shutdown
+//const ULONG ATT_shutdown_notify		= 4;	// attachment has notified client of shutdown
 const ULONG ATT_shutdown_manager	= 8;	// attachment requesting shutdown
 const ULONG ATT_lck_init_done		= 16;	// LCK_init() called for the attachment
 const ULONG ATT_exclusive			= 32;	// attachment wants exclusive database access
 const ULONG ATT_attach_pending		= 64;	// Indicate attachment is only pending
 const ULONG ATT_exclusive_pending	= 128;	// Indicate exclusive attachment pending
 const ULONG ATT_gbak_attachment		= 256;	// Indicate GBAK attachment
+#ifdef GOVERNOR
 const ULONG ATT_security_db			= 512;	// Indicates an implicit attachment to the security db
+#endif
 #ifdef GARBAGE_THREAD
 const ULONG ATT_notify_gc			= 1024;	// Notify garbage collector to expunge, purge ..
 const ULONG ATT_disable_notify_gc	= 2048;	// Temporarily perform own garbage collection
@@ -545,7 +552,7 @@ class jrd_prc : public pool_alloc<type_prc>
 	USHORT prc_inputs;
 	USHORT prc_defaults;
 	USHORT prc_outputs;
-	jrd_nod*	prc_input_msg;
+	jrd_nod*	prc_input_msg;	// It's set once by met.epp and never used.
 	jrd_nod*	prc_output_msg;
 	Format*		prc_input_fmt;
 	Format*		prc_output_fmt;
@@ -562,7 +569,9 @@ class jrd_prc : public pool_alloc<type_prc>
 	Lock* prc_existence_lock;	/* existence lock, if any */
 	Firebird::MetaName prc_security_name;	/* security class name for procedure */
 	Firebird::MetaName prc_name;	/* ascic name */
-	USHORT prc_alter_count;		/* No. of times the procedure was altered */
+	// No. of times the procedure was altered
+	// It's shown in internal debug code in jrd.cpp but it's never incremented.
+	//USHORT prc_alter_count;		
 
 	public:
 	explicit jrd_prc(MemoryPool& p) : prc_security_name(p), prc_name(p) {}
@@ -571,11 +580,11 @@ class jrd_prc : public pool_alloc<type_prc>
 // prc_flags
 
 const USHORT PRC_scanned			= 1;	/* Field expressions scanned */
-const USHORT PRC_system				= 2;
+const USHORT PRC_system				= 2;	// Set in met.epp, never tested.
 const USHORT PRC_obsolete			= 4;	/* Procedure known gonzo */
 const USHORT PRC_being_scanned		= 8;	/* New procedure needs dependencies during scan */
-const USHORT PRC_blocking			= 16;	/* Blocking someone from dropping procedure */
-const USHORT PRC_create				= 32;	/* Newly created */
+//const USHORT PRC_blocking			= 16;	// Blocking someone from dropping procedure 
+const USHORT PRC_create				= 32;	// Newly created. Set in met.epp, never tested or disabled.
 const USHORT PRC_being_altered		= 64;	/* Procedure is getting altered */
 									// This flag is used to make sure that MET_remove_procedure
 									// does not delete and remove procedure block from cache
@@ -584,7 +593,7 @@ const USHORT PRC_being_altered		= 64;	/* Procedure is getting altered */
 
 const USHORT PRC_check_existence	= 128;	/* Existence lock released */
 
-//const USHORT MAX_PROC_ALTER			= 64;	/* No. of times an in-cache procedure can be altered */
+//const USHORT MAX_PROC_ALTER			= 64;	// No. of times an in-cache procedure can be altered
 
 
 
@@ -611,7 +620,6 @@ struct prim {
 	vec<int>* prim_indexes;
 };
 
-//typedef prim *PRIM;
 
 /* Foreign references to other relations' primary/unique keys */
 
@@ -621,9 +629,9 @@ struct frgn {
 	vec<int>* frgn_indexes;
 };
 
-//typedef frgn *FRGN;
 
 // Relation trigger definition
+
 class Trigger {
 public:
 	Firebird::HalfStaticArray<UCHAR, 128> blr;	// BLR code
@@ -675,7 +683,7 @@ public:
 
 	void getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm);
 	
-	SLONG minTranID() 
+	SLONG minTranID() const
 	{ return (array.getCount() > 0) ? array[0].tran : MAX_SLONG; }
 };
 
@@ -804,7 +812,7 @@ public:
 	jrd_req*	idb_expression_request;	/* request in which index expression is evaluated */
 	dsc			idb_expression_desc;	/* descriptor for expression result */
 	Lock*		idb_lock;				/* lock to synchronize changes to index */
-	UCHAR idb_id;
+	USHORT		idb_id;
 };
 
 
@@ -908,7 +916,6 @@ private:
     vcl(MemoryPool& p, int len) : vec_base<SLONG, type_vcl>(p, len) {}
     vcl(MemoryPool& p, const vcl& base) : vec_base<SLONG, type_vcl>(p, base) {}
 };
-//typedef vcl* VCL;
 
 //#define TEST_VECTOR(vector, number)      ((vector && number < vector->count()) ?
 //					  (*vector)[number] : NULL)
@@ -991,7 +998,6 @@ public:
 		tdbb_transaction = 0;
 		tdbb_request = 0;
 		tdbb_status_vector = 0;
-		tdbb_setjmp = 0;
 		tdbb_quantum = 0;
 		tdbb_flags = 0;
 		JRD_inuse_clear(this);
@@ -1001,12 +1007,13 @@ public:
 	jrd_tra*	tdbb_transaction;
 	jrd_req*	tdbb_request;
 	ISC_STATUS*	tdbb_status_vector;
-	void*		tdbb_setjmp;
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
 	struct iuo	tdbb_mutexes;
+#ifdef V4_THREADING
 	struct iuo	tdbb_rw_locks;
-	struct iuo	tdbb_pages;
+#endif
+	// struct iuo	tdbb_pages;		// Unused, we'll never know what was the purpose.
 
 #if defined(UNIX) && defined(SUPERSERVER)
     sigjmp_buf tdbb_sigsetjmp;
@@ -1028,13 +1035,6 @@ const USHORT TDBB_backup_merge			= 16;	/* Merging changes from difference file *
 const USHORT TDBB_stack_trace_done		= 32;	/* PSQL stack trase is added into status-vector */
 const USHORT TDBB_shutdown_manager		= 64;	/* Server shutdown thread */
 
-/* List of internal database handles */
-
-struct ihndl
-{
-	ihndl*	ihndl_next;
-	void*	ihndl_object;
-};
 
 // duplicate context of firebird string to store in jrd_nod::nod_arg
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)

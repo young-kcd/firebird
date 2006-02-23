@@ -1932,27 +1932,21 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 	if (VIO_sweep(tdbb, transaction)) {
 		const ULONG base = transaction->tra_oldest & ~TRA_MASK;
-		ULONG active;
-
-		if (transaction->tra_flags & TRA_sweep_at_startup)
-			active = transaction->tra_oldest_active;
-		else {
-			for (active = transaction->tra_oldest;
-				 active < (ULONG) transaction->tra_top; active++) 
-			{
-				if (transaction->tra_flags & TRA_read_committed) {
-					if (TPC_cache_state(tdbb, active) == tra_limbo)
-						break;
-				}
-				else {
-					const ULONG byte = TRANS_OFFSET(active - base);
-					const USHORT shift = TRANS_SHIFT(active);
-					if (
-						((transaction->tra_transactions[byte] >> shift) &
-						 TRA_MASK) == tra_limbo) 
-					{
-						break;
-					}
+		ULONG active = transaction->tra_oldest;
+		for (; active < (ULONG) transaction->tra_top; active++) 
+		{
+			if (transaction->tra_flags & TRA_read_committed) {
+				if (TPC_cache_state(tdbb, active) == tra_limbo)
+					break;
+			}
+			else {
+				const ULONG byte = TRANS_OFFSET(active - base);
+				const USHORT shift = TRANS_SHIFT(active);
+				if (
+					((transaction->tra_transactions[byte] >> shift) &
+					 TRA_MASK) == tra_limbo) 
+				{
+					break;
 				}
 			}
 		}

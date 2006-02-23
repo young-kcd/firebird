@@ -211,7 +211,7 @@ public:
 	tdba()
 		: ThreadData(tddDBA) 
 	{
-		dba_env = 0;
+		//dba_throw = false;
 		files = 0;
 		relations = 0;
 		page_size = 0;
@@ -232,7 +232,7 @@ public:
 		dba_status = dba_status_vector;
 	}
 
-	UCHAR *dba_env;
+	//bool dba_throw;
 	dba_fil* files;
 	dba_rel* relations;
 	SSHORT page_size;
@@ -330,9 +330,8 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		user_buff;
 
 	tdba thd_context, *tddba;
-	JMP_BUF env;
 	tdba::putSpecific(tddba, &thd_context);
-	tddba->dba_env = (UCHAR *) env;
+	//tddba->dba_throw = true;
 
 #ifdef SERVICE_THREAD
 /* Reinitialize static variables for multi-threading */
@@ -641,19 +640,6 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	dba_print(9, current->fil_string,
 		 (const TEXT*)((current == tddba->files) ? "only" : "last"), 0, 0, 0);
 		 // msg 9: File %s is the %s file\n
-
-// print log page, deprecated.
-/*
-	page = LOG_PAGE;
-	do {
-		const log_info_page* logp = (const log_info_page*) db_read((SLONG) page);
-		PPG_print_log(logp, page, sw_nocreation, sw_outfile);
-		page = logp->log_next_page;
-	} while (page);
-
-	if (sw_log)
-		dba_exit(FINI_OK, tddba);
-*/
 
 /* Check to make sure that the user accessing the database is either
  * SYSDBA or owner of the database */

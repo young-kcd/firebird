@@ -226,7 +226,7 @@ ENTRYPOINT( "gds_prepare_transaction",
 			PSI5_prepare_transaction,
 		  "_jrd8_prepare_transaction",
 			 IPI_prepare_transaction,
-			 (ISC_STATUS*, jrd_tra**, USHORT, UCHAR*))
+			 (ISC_STATUS*, jrd_tra**, USHORT, const UCHAR*))
 
 ENTRYPOINT( "gds_put_segment",
 		    jrd8_put_segment,

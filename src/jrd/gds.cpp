@@ -2126,14 +2126,12 @@ SLONG API_ROUTINE gds__ftof(const SCHAR* string,
 
 	USHORT l = MIN(length1, length2);
 	if (l > 0)
-		do {
-			*fieldL++ = *string++;
-		} while (--l);
+		memcpy(fieldL, string, l);
+
+	fieldL += l;
 
 	if (fill > 0)
-		do {
-			*fieldL++ = ' ';
-		} while (--fill);
+		memset(fieldL, ' ', fill);
 
 	return 0;
 }
@@ -2716,9 +2714,7 @@ void API_ROUTINE gds__vtof(
 	}
 
 	if (length > 0)
-		do {
-			*fieldL++ = ' ';
-		} while (--length);
+		memset(fieldL, ' ', length);
 }
 
 

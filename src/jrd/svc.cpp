@@ -234,6 +234,8 @@ struct Serv_param_block {
 };
 
 
+static const TEXT* error_string(const TEXT* data, USHORT length);
+static const TEXT* error_string(const Firebird::string& s);
 static void conv_switches(Firebird::ClumpletReader&, Firebird::string&);
 static const TEXT* find_switch(int, const in_sw_tab_t*);
 static bool process_switches(Firebird::ClumpletReader&, Firebird::string&);
@@ -258,6 +260,7 @@ static void service_fork(ThreadEntryPoint*, Service*);
 #ifndef WIN_NT
 static void timeout_handler(void* service);
 #endif
+static void cleanup(Service* service);
 static void service_fork(TEXT*, Service*);
 static void io_error(const TEXT*, SLONG, const TEXT*, ISC_STATUS);
 #endif
@@ -309,10 +312,6 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 #define MAIN_GSEC		NULL
 #endif
 
-static inline const TEXT* SVC_err_string(const Firebird::string& s)
-{
-	return SVC_err_string(s.c_str(), s.length());
-}
 
 void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value)
 {
@@ -328,7 +327,7 @@ void SVC_STATUS_ARG(ISC_STATUS*& status, USHORT type, const void* value)
 			{
 				*status++ = type;
 				const char* s = static_cast<const char*>(value);
-				*status++ = (ISC_STATUS) SVC_err_string(s, strlen(s));
+				*status++ = (ISC_STATUS) error_string(s, strlen(s));
 			}
 			break;
 		default:
@@ -387,7 +386,7 @@ static serv_entry services[] =
 	{ isc_action_svc_properties, "Database Properties", NULL, "bin/gfix",	MAIN_GFIX, 0 },
 	{ isc_action_svc_lock_stats, "Lock Stats", NULL, "bin/fb_lock_print",	TEST_THREAD, 0 },
 	{ isc_action_svc_db_stats, "Database Stats", NULL, "bin/gstat",	MAIN_GSTAT, 0 },
-	{ isc_action_svc_get_ib_log, "Get Log File", NULL, NULL,	SVC_read_ib_log, 0 },
+	{ isc_action_svc_get_fb_log, "Get Log File", NULL, NULL,	SVC_read_fb_log, 0 },
 /* actions with no names are undocumented */
 	{ isc_action_svc_set_config, NULL, NULL, NULL,	TEST_THREAD, 0 },
 	{ isc_action_svc_default_config, NULL, NULL, NULL,	TEST_THREAD, 0 },
@@ -454,7 +453,7 @@ Service* SVC_attach(USHORT	service_length,
 				 0);
 #else
 		ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnotdef,
-				 isc_arg_string, SVC_err_string(misc_buf),
+				 isc_arg_string, error_string(misc_buf),
 				 0);
 #endif
 
@@ -652,24 +651,9 @@ void SVC_detach(Service* service)
 #else
 
 /* Go ahead and cleanup memory being used by service */
-	SVC_cleanup(service);
+	cleanup(service);
 
 #endif
-}
-
-const TEXT* SVC_err_string(const TEXT* data, USHORT length)
-{
-/********************************************
- *
- *   S V C _ e r r _ s t r i n g
- *
- ********************************************
- *
- * Functional Description:
- *     Uses ERR_string to save string data for the
- *     status vector
- ********************************************/
-	return ERR_string(data, length);
 }
 
 
@@ -764,6 +748,7 @@ int SVC_output(Service* output_data, const UCHAR* output_buf)
 	return 0;
 }
 #endif /*SERVICE_THREAD*/
+
 
 ISC_STATUS SVC_query2(Service* service,
 					  thread_db* tdbb,
@@ -1233,6 +1218,7 @@ ISC_STATUS SVC_query2(Service* service,
 	return tdbb->tdbb_status_vector[1];
 }
 
+
 void SVC_query(Service*		service,
 			   USHORT	send_item_length,
 			   const SCHAR*	send_items,
@@ -1682,7 +1668,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 	if (service->svc_flags & SVC_thd_running) {
 		THD_MUTEX_UNLOCK(thd_mutex);
 		ERR_post(isc_svc_in_use, isc_arg_string,
-				 SVC_err_string(serv->serv_name, strlen(serv->serv_name)),
+				 error_string(serv->serv_name, strlen(serv->serv_name)),
 				 0);
 	}
 	/* Another service may have been started with this service block.
@@ -1747,7 +1733,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 
 // All services except for get_ib_log require switches
 	spb.rewind();
-	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_ib_log) {
+	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log) {
 		ERR_post(isc_bad_spb_form, 0);
 	}
 		
@@ -1891,7 +1877,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 	{
 		ERR_post(isc_svcnotdef,
 				isc_arg_string,
-				SVC_err_string(serv->serv_name, strlen(serv->serv_name)),
+				error_string(serv->serv_name, strlen(serv->serv_name)),
 				0);
 	}
 
@@ -1907,7 +1893,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 }
 
 
-THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
+THREAD_ENTRY_DECLARE SVC_read_fb_log(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
@@ -1973,7 +1959,7 @@ THREAD_ENTRY_DECLARE SVC_read_ib_log(THREAD_ENTRY_PARAM arg)
 #ifdef SERVICE_THREAD
 	SVC_finish(service, SVC_finished);
 #else
-	SVC_cleanup(service);
+	cleanup(service);
 #endif
 	return (FINI_OK);
 }
@@ -2696,11 +2682,11 @@ static void timeout_handler(void* service)
 #endif // SERVICE_THREAD
 
 
-void SVC_cleanup(Service* service)
+static void cleanup(Service* service)
 {
 /**************************************
  *
- *	S V C _ c l e a n u p
+ *	c l e a n u p
  *
  **************************************
  *
@@ -2736,7 +2722,7 @@ void SVC_finish(Service* service, USHORT flag)
 		if ((service->svc_flags & SVC_finished) &&
 			(service->svc_flags & SVC_detached))
 		{
-			SVC_cleanup(service);
+			cleanup(service);
 		}
 		else if (service->svc_flags & SVC_finished)
 		{
@@ -2754,6 +2740,28 @@ void SVC_finish(Service* service, USHORT flag)
 		}
 	}
 	THD_MUTEX_UNLOCK(svc_mutex);
+}
+
+
+static const TEXT* error_string(const TEXT* data, USHORT length)
+{
+/********************************************
+ *
+ *   e r r o r _ s t r i n g
+ *
+ ********************************************
+ *
+ * Functional Description:
+ *     Uses ERR_string to save string data for the
+ *     status vector
+ ********************************************/
+	return ERR_string(data, length);
+}
+
+
+static const TEXT* error_string(const Firebird::string& s)
+{
+	return ERR_string(s.c_str(), s.length());
 }
 
 
@@ -2890,7 +2898,7 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 						/* unexpected service parameter block:
 						   expected %d, encountered %d */
 						ERR_post(isc_unexp_spb_form, isc_arg_string,
-								 SVC_err_string(SPB_SEC_USERNAME,
+								 error_string(SPB_SEC_USERNAME,
 												strlen(SPB_SEC_USERNAME)),
 								 0);
 					}

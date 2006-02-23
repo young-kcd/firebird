@@ -587,8 +587,6 @@ int common_main(int		argc,
  **************************************/
 	const TEXT* file2 = NULL;
 
-  	JMP_BUF					env;
-
 // TMN: This variable should probably be removed, but I left it in 
 // in case some platform should redefine the BURP BurpGlobals::putSpecific. 
 //BurpGlobals	thd_context;
@@ -598,7 +596,7 @@ int common_main(int		argc,
 	BurpGlobals *tdgbl = &sgbl;
 
 	BurpGlobals::putSpecific(tdgbl);
-	tdgbl->burp_env = reinterpret_cast<UCHAR*>(env);
+	tdgbl->burp_throw = true;
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
 	tdgbl->output_proc = output_proc;
 	tdgbl->output_data = output_data;
@@ -1163,7 +1161,7 @@ int common_main(int		argc,
 	{
 		// All calls to exit_local(), normal and error exits, wind up here 
 
-		tdgbl->burp_env = NULL;
+		tdgbl->burp_throw = false;
 		const int exit_code = tdgbl->exit_code;
 
 		// Close the gbak file handles if they still open 
@@ -1324,7 +1322,7 @@ void BURP_error_redirect(const ISC_STATUS* status_vector,
 void BURP_exit_local(int code, BurpGlobals* tdgbl)
 {
 	tdgbl->exit_code = code;
-	if (tdgbl->burp_env != NULL)
+	if (tdgbl->burp_throw)
 		throw std::exception();
 }
 

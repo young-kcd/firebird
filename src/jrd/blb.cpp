@@ -725,13 +725,13 @@ SLONG BLB_get_slice(thread_db* tdbb,
 	arg.slice_end = slice_addr + slice_length;
 	arg.slice_count = 0;
 	arg.slice_element_length = info.sdl_info_element.dsc_length;
-	arg.slice_direction = FALSE;	/* fetching from array */
+	arg.slice_direction = array_slice::slc_reading_array;	// fetching from array
 	arg.slice_high_water = data + length;
 	arg.slice_base = data + offset;
 
 	status = SDL_walk(tdbb->tdbb_status_vector,
 					  sdl,
-					  true,
+					  //true,
 					  data,
 					  desc,
 					  variables,
@@ -1485,7 +1485,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	arg.slice_end = slice_addr + slice_length;
 	arg.slice_count = 0;
 	arg.slice_element_length = info.sdl_info_element.dsc_length;
-	arg.slice_direction = TRUE;	/* storing INTO array */
+	arg.slice_direction = array_slice::slc_writing_array;	// storing INTO array
 	arg.slice_base = array->arr_data;
 
 	SLONG variables[64];
@@ -1493,7 +1493,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 
 	if (SDL_walk(tdbb->tdbb_status_vector,
 				 sdl,
-				 true,
+				 //true,
 				 array->arr_data,
 				 &array_desc->arr_desc,
 				 variables,
@@ -2387,7 +2387,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 	if (array_desc->dsc_address < arg->slice_base)
 		ERR_error(198);			/* msg 198 array subscript computation error */
 
-	if (arg->slice_direction) {
+	if (arg->slice_direction == array_slice::slc_writing_array) {
 
 		/* Storing INTO array */
 		/* FROM slice_desc TO array_desc */

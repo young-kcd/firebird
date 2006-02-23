@@ -25,21 +25,23 @@
 #define JRD_IBSETJMP_H
 
 
+#if defined(UNIX) && defined(SUPERSERVER)
 #ifdef HAVE_SETJMP_H
 #include <setjmp.h>
 #endif
 
-#define SETJMP	setjmp
-#define LONGJMP	longjmp
-#define	JMP_BUF	jmp_buf
+//#define SETJMP	setjmp
+//#define LONGJMP	longjmp
+//#define	JMP_BUF	jmp_buf
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
 
 #define SIGSETJMP 	sigsetjmp
-#define SIGLONGJMP 	siglongjmp
+//#define SIGLONGJMP 	siglongjmp
 #define	SIGJMP_BUF	sigjmp_buf
+#endif // UNIX and SUPERSERVER
 
 #ifdef UNIX
 #ifdef SUPERSERVER

@@ -91,7 +91,7 @@ public:
 	USHORT rsb_count;					// number of sub arguments
 	USHORT rsb_flags;
 	ULONG rsb_impure;					// offset to impure area
-	ULONG rsb_cardinality;				// estimated cardinality of stream
+	ULONG rsb_cardinality;				// estimated cardinality of stream, unused for now.
 	ULONG rsb_record_count;				// count of records returned from rsb (not candidate records processed)
 	RecordSource* rsb_next;				// next rsb, if appropriate
 	jrd_rel*	rsb_relation;			// relation, if appropriate
@@ -114,7 +114,7 @@ public:
 // bits for the rsb_flags field
 
 const USHORT rsb_singular = 1;			// singleton select, expect 0 or 1 records
-const USHORT rsb_stream_type = 2;		// rsb is for stream type request
+//const USHORT rsb_stream_type = 2;		// rsb is for stream type request, PC_ENGINE
 const USHORT rsb_descending = 4;		// an ascending index is being used for a descending sort or vice versa
 const USHORT rsb_project = 8;			// projection on this stream is requested
 const USHORT rsb_writelock = 16;		// records should be locked for writing
@@ -164,19 +164,19 @@ typedef irsb *IRSB;
 
 struct irsb_first_n {
 	ULONG irsb_flags;
-	SLONG irsb_number;
+	//SLONG irsb_number;
     SINT64 irsb_count;
 };
 
 struct irsb_skip_n {
     ULONG irsb_flags;
-    SLONG irsb_number;
+    //SLONG irsb_number;
     SINT64 irsb_count;
 };
 
 struct irsb_index {
 	ULONG irsb_flags;
-	SLONG irsb_number;
+	//SLONG irsb_number;
 	SLONG irsb_prefetch_number;
 	RecordBitmap**	irsb_bitmap;
 };
@@ -296,7 +296,7 @@ const SSHORT SMB_TRANS_ID = -2;	// transaction id of record
 // bits for the smb_flags field
 
 const USHORT SMB_project = 1;	// sort is really a project
-const USHORT SMB_tag = 2;		// beast is a tag sort
+//const USHORT SMB_tag = 2;		// beast is a tag sort. What is this?
 
 
 // Blocks used to compute optimal join order:

@@ -62,8 +62,8 @@ class UserId : public pool_alloc_rpt<SCHAR, type_usr>
 	const TEXT *usr_user_name;	/* User name */
 	TEXT *usr_sql_role_name;	/* Role name */
 	TEXT *usr_project_name;		/* Project name */
-	TEXT *usr_org_name;			/* Organizaion name */
-	TEXT *usr_node_name;		/* Network node name */
+	TEXT *usr_org_name;			/* Organization name */
+	//TEXT *usr_node_name;		// Network node name
 	USHORT usr_user_id;			/* User id */
 	USHORT usr_group_id;		/* Group id */
 	USHORT usr_node_id;			/* Node id */

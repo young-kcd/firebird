@@ -50,7 +50,9 @@
 #include "../jrd/ext.h"
 #include "../jrd/met.h"
 #include "../jrd/sdw.h"
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 #include "../jrd/log.h"
+#endif
 #include "../jrd/intl.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/fil.h"
@@ -213,9 +215,9 @@ jrd_req[] = {
 		FLD(jrd_req*, "Next req: %x", req_request),
 		FLD(jrd_req*, "Msg: %x", req_message),
 		FLD(jrd_req*, "Length: %x", req_length),
-		FLD(jrd_req*, "#msgs: %x", req_nmsgs),
-		FLD(jrd_req*, "Max send: %x", req_msend),
-		FLD(jrd_req*, "Max receive: %x", req_mreceive),
+		//FLD(jrd_req*, "#msgs: %x", req_nmsgs),
+		//FLD(jrd_req*, "Max send: %x", req_msend),
+		//FLD(jrd_req*, "Max receive: %x", req_mreceive),
 		FLD(jrd_req*, "Top: %x", req_top_node),
 		FLD(jrd_req*, "Next: %x", req_next),
 		FLD(jrd_req*, "Label: %x", req_label),
@@ -358,7 +360,9 @@ static TEXT_PTR BlockingThread[] = {	"BLOCKED THREAD", 0};
 static TEXT_PTR BlobFilter[] = {	"BLOB FILTER", 0};
 static TEXT_PTR ArrayField[] = {	"ARRAY DESCRIPTION", 0};
 static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 static TEXT_PTR fblog[] = {	"LOG BLOCK", 0};
+#endif
 static TEXT_PTR dir_list[] = {	"DIR LIST BLOCK", 0};
 static TEXT_PTR jrd_prc[] =
 {
@@ -373,7 +377,9 @@ static TEXT_PTR IndexBlock[] = {	"INDEX BLOCK", 0};
 static TEXT_PTR TxPageCache[] = {	"TIP CACHE BLOCK", 0};
 static TEXT_PTR PsqlException[] = {	"EXCEPTION LIST BLOCK", 0};
 static TEXT_PTR OptimizerBlk[] = {	"OPTIMIZATION BLOCK", 0};
+#ifdef SUPERSERVER_V2
 static TEXT_PTR Prefetch[] = {	"PRF", 0};
+#endif
 static TEXT_PTR RecordSelExpr[] = {	"RECORD SELECTION EXPRESSION", 0};
 static TEXT_PTR Literal[] = {	"LITERAL", 0};
 static TEXT_PTR AggregateSort[] = {	"AggregateSort", 0};

@@ -33,8 +33,10 @@ namespace Jrd {
 class ExternalFile : public pool_alloc_rpt<SCHAR, type_ext>
 {
     public:
+#ifdef VMS
 	Format*	ext_format;			/* External format */
-	UCHAR*	ext_stuff;			/* Random stuff */
+#endif
+	//UCHAR*	ext_stuff;			// Random stuff
 	USHORT	ext_flags;			/* Misc and cruddy flags */
 #ifdef VMS
 	int		ext_ifi;			/* Internal file identifier */
@@ -43,30 +45,36 @@ class ExternalFile : public pool_alloc_rpt<SCHAR, type_ext>
 	FILE*	ext_ifi;			/* Internal file identifier */
 	//int*	ext_isi;			// Internal stream (default)
 #endif
-	USHORT	ext_record_length;	/* Record length */
+	//USHORT	ext_record_length;	// Record length
+#ifdef VMS
 	USHORT	ext_file_type;		/* File type */
+	
 	USHORT	ext_index_count;	/* Number of indices */
 	UCHAR*	ext_indices;		/* Index descriptions */
 	UCHAR	ext_dbkey[8];		/* DBKEY */
+#endif
 	UCHAR	ext_filename[1];
 };
 
-const int EXT_opened	= 1;	/* File has been opened */
+//const int EXT_opened	= 1;	// File has been opened
 const int EXT_eof		= 2;	/* Positioned at EOF */
 const int EXT_readonly	= 4;	/* File could only be opened for read */
 
+#ifdef VMS
 struct irsb_ext {
 	USHORT irsb_flags;			/* flags (a whole word!) */
 	UCHAR irsb_ext_dbkey[8];	/* DBKEY */
 };
+#endif
 
-typedef irsb_ext* IRSB_EXT;
 
 /* Overload record parameter block with external file stuff */
 
 #define rpb_ext_pos	rpb_page
+#ifdef VMS
 #define rpb_ext_isi	rpb_f_page
 #define rpb_ext_dbkey	rpb_b_page
+#endif
 
 } //namespace Jrd
 

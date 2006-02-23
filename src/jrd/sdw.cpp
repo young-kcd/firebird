@@ -57,6 +57,8 @@ using namespace Jrd;
 using namespace Ods;
 
 
+// Out of alpha order because the first one was public.
+static void shutdown_shadow(Shadow* shadow);
 static void activate_shadow(void);
 static Shadow* allocate_shadow(jrd_file*, USHORT, USHORT);
 static bool check_for_file(const SCHAR*, USHORT);
@@ -323,7 +325,7 @@ void SDW_check(void)
 		   the shadow block */
 
 		if (shadow->sdw_flags & SDW_shutdown)
-			SDW_shutdown_shadow(shadow);
+			shutdown_shadow(shadow);
 	}
 
 	if (SDW_check_conditional()) {
@@ -851,11 +853,12 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 }
 
 
-void SDW_shutdown_shadow(Shadow* shadow)
+// It's never called directly, but through SDW_check().
+static void shutdown_shadow(Shadow* shadow)
 {
 /**************************************
  *
- *	S D W _ s h u t d o w n _ s h a d o w
+ *	s h u t d o w n _ s h a d o w
  *
  **************************************
  *
@@ -1097,6 +1100,8 @@ int SDW_start_shadowing(void* ast_object)
  *
  **************************************/
 	Database* new_dbb = static_cast<Database*>(ast_object);
+
+	// Shouldn't we find a way to call check_if_got_ast() here?
 
 	Lock* lock = new_dbb->dbb_shadow_lock;
 	if (lock->lck_physical != LCK_SR)

@@ -1369,6 +1369,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_action_svc_remove_license 10	/* Removes a license from the license file */
 #define isc_action_svc_db_stats	      11	/* Retrieves database statistics */
 #define isc_action_svc_get_ib_log     12	/* Retrieves the InterBase log file from the server */
+#define isc_action_svc_get_fb_log     12	/* Retrieves the Firebird log file from the server */
 
 /*****************************
  * Service information items *

@@ -657,16 +657,10 @@ static bool compare(const UCHAR* string1, const UCHAR* string2, USHORT length)
  **************************************
  *
  * Functional description
- *	Compare two strings for equality.
+ *	Compare two strings for equality. Return true if they are different.
  *
  **************************************/
-
-	do {
-		if (*string1++ != *string2++)
-			return true;
-	} while (--length);
-
-	return false;
+	return memcmp(string1, string2, length) != 0;
 }
 
 
@@ -1276,9 +1270,7 @@ static void set_missing(jrd_rel* relation, Record* record)
 			}
 			else {
 				const UCHAR pad = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;
-				do {
-					*p++ = pad;
-				} while (--l);
+				memset(p, pad, l);
 			}
 		}
 	}

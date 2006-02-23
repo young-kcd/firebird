@@ -1382,15 +1382,10 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 		break;
 
 	case dtype_text:
-		{
-			int ct = l;
-			if (ct) {
-				do {
-					*p++ = *q++;
-				} while (--ct);
-			}
-			break;
+		if (l) {
+			memcpy(p, q, l);
 		}
+		break;
 
 	default:
 		fb_assert(FALSE);

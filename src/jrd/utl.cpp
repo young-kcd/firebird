@@ -898,10 +898,10 @@ void API_ROUTINE isc_event_counts(
  *
  **************************************/
 	ULONG* vec = result_vector;
-	TEXT* p = event_buffer;
+	const UCHAR* p = reinterpret_cast<UCHAR*>(event_buffer);
 	const UCHAR* q = result_buffer;
 	USHORT length = buffer_length;
-	const TEXT* const end = p + length;
+	const UCHAR* const end = p + length;
 
 /* analyze the event blocks, getting the delta for each event */
 
@@ -916,11 +916,9 @@ void API_ROUTINE isc_event_counts(
 
 		/* get the change in count */
 
-		const ULONG initial_count =
-			gds__vax_integer(reinterpret_cast<const UCHAR*>(p), sizeof(SLONG));
+		const ULONG initial_count = gds__vax_integer(p, sizeof(SLONG));
 		p += sizeof(SLONG);
-		const ULONG new_count =
-			gds__vax_integer(q, sizeof(SLONG));
+		const ULONG new_count = gds__vax_integer(q, sizeof(SLONG));
 		q += sizeof(SLONG);
 		*vec++ = new_count - initial_count;
 	}
@@ -928,11 +926,7 @@ void API_ROUTINE isc_event_counts(
 /* copy over the result to the initial block to prepare
    for the next call to gds__event_wait */
 
-	p = event_buffer;
-	q = result_buffer;
-	do {
-		*p++ = *q++;
-	} while (--length);
+	memcpy(event_buffer, result_buffer, length);
 }
 
 
@@ -1547,18 +1541,14 @@ int API_ROUTINE blob__dump(
  **************************************/
 	// CVC: The old logic passed garbage to BLOB_dump if !*name_length
 	TEXT temp[129];
-	TEXT* p = temp;
 	USHORT l = *name_length;
 	if (l != 0) {
         if (l >= sizeof(temp))
 			l = sizeof(temp) - 1;
 			
-		const TEXT* q = file_name;
-		do {
-			*p++ = *q++;
-		} while (--l);
+		memcpy(temp, file_name, l);
 	}
-	*p = 0;
+	temp[l] = 0;
 
 	return BLOB_dump(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
 					 *transaction, temp);
@@ -1728,18 +1718,14 @@ int API_ROUTINE blob__load(
  **************************************/
 	// CVC: The old logic passed garbage to BLOB_load if !*name_length
 	TEXT temp[129];
-	TEXT* p = temp;
 	USHORT l = *name_length;
 	if (l != 0) {
         if (l >= sizeof(temp))
 			l = sizeof(temp) - 1;
 			
-		const TEXT* q = file_name;
-		do {
-			*p++ = *q++;
-		} while (--l);
+		memcpy(temp, file_name, l);
 	}
-	*p = 0;
+	temp[l] = 0;
 
 	return BLOB_load(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
 					 *transaction, temp);

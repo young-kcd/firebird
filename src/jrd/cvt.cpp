@@ -2364,9 +2364,8 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 
 	if (to->dsc_dtype == dtype_text) {
 		if ((l = to->dsc_length - length) > 0) {
-			do {
-				*q++ = ' ';
-			} while (--l);
+			// Suspcious pad: probably we need to check the charset
+			memset(q, ' ', l);
 		}
 		return;
 	}
@@ -2376,7 +2375,8 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		return;
 	}
 
-	*(SSHORT *) (to->dsc_address) = q - to->dsc_address - sizeof(SSHORT);
+	// dtype_varying
+	*(USHORT*) (to->dsc_address) = q - to->dsc_address - sizeof(SSHORT);
 }
 
 

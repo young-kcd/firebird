@@ -86,7 +86,7 @@ ISC_STATUS jrd8_open_blob2(ISC_STATUS*, Jrd::Attachment**,
 										 Jrd::jrd_tra**, Jrd::blb**,
 										 Jrd::bid*, USHORT, const UCHAR*);
 ISC_STATUS jrd8_prepare_transaction(ISC_STATUS *, Jrd::jrd_tra **,
-												  USHORT, UCHAR *);
+												  USHORT, const UCHAR*);
 ISC_STATUS jrd8_put_segment(ISC_STATUS*, Jrd::blb**, USHORT,
 										  const UCHAR*);
 ISC_STATUS jrd8_put_slice(ISC_STATUS*, Jrd::Attachment**,

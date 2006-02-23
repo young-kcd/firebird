@@ -37,7 +37,7 @@ static MUTX_T inuse_mutex[1];
 static bool initialized = false;
 
 
-bool INUSE_cleanup(IUO inuse, void (*cleanup_routine) ())
+bool INUSE_cleanup(IUO inuse, FPTR_VOID_PTR cleanup_routine)
 {
 /**************************************
  *
@@ -60,7 +60,7 @@ bool INUSE_cleanup(IUO inuse, void (*cleanup_routine) ())
 			ptr < end; ptr++)
 		{
 			if (*ptr) {
-				reinterpret_cast<FPTR_VOID_PTR>(*cleanup_routine) (*ptr);
+				(*cleanup_routine) (*ptr);
 				needed_cleaning = true;
 			}
 		}

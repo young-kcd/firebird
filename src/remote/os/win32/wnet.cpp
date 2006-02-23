@@ -852,11 +852,13 @@ static void disconnect(rem_port* port)
 	{
 		FlushFileBuffers(port->port_handle);
 		DisconnectNamedPipe(port->port_handle);
+		/* CVC: It's never set, so how could it be active?
 		if (port->port_flags & PORT_impersonate)
 		{
 			RevertToSelf();
 			port->port_flags &= ~PORT_impersonate;
 		}
+		*/
 	}
 #endif /* REQUESTER */
 	if (port->port_handle) {

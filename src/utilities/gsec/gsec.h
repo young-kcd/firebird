@@ -116,7 +116,7 @@ public:
 	{
 		tsec_user_data = 0;
 		tsec_exit_code = 0;
-		tsec_env = 0;
+		tsec_throw = false;
 		tsec_status = tsec_status_vector;
 		tsec_interactive = false;
 		tsec_sw_version = false;
@@ -128,7 +128,7 @@ public:
 
 	internal_user_data*	tsec_user_data;
 	int					tsec_exit_code;
-	jmp_buf*			tsec_env;
+	bool				tsec_throw;
 	ISC_STATUS*			tsec_status;
 	ISC_STATUS_ARRAY	tsec_status_vector;
 	bool				tsec_interactive;

@@ -3852,9 +3852,15 @@ rel_exit:
 					   !(dbb->dbb_flags & DBB_gc_pending))
 				{
 
+#ifdef SUPERSERVER_V2
 					if (CCH_free_page(tdbb) || CCH_prefetch_pages(tdbb)) {
 						continue;
 					}
+#else
+					if (CCH_free_page(tdbb)) {
+						continue;
+					}
+#endif
 					if (flush) {
 						/* As a last resort, flush garbage collected pages to
 						   disk. This isn't strictly necessary but contributes

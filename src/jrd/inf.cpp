@@ -849,19 +849,23 @@ int INF_request_info(const jrd_req* request,
 			break;
 
 		case isc_info_number_messages:
-			length = INF_convert(request->req_nmsgs, buffer_ptr);
+			//length = INF_convert(request->req_nmsgs, buffer_ptr);
+			length = INF_convert(0, buffer_ptr); // never used
 			break;
 
 		case isc_info_max_message:
-			length = INF_convert(request->req_mmsg, buffer_ptr);
+			//length = INF_convert(request->req_mmsg, buffer_ptr);
+			length = INF_convert(0, buffer_ptr); // never used
 			break;
 
 		case isc_info_max_send:
-			length = INF_convert(request->req_msend, buffer_ptr);
+			//length = INF_convert(request->req_msend, buffer_ptr);
+			length = INF_convert(0, buffer_ptr); // never used
 			break;
 
 		case isc_info_max_receive:
-			length = INF_convert(request->req_mreceive, buffer_ptr);
+			//length = INF_convert(request->req_mreceive, buffer_ptr);
+			length = INF_convert(0, buffer_ptr); // never used
 			break;
 
 		case isc_info_req_select_count:

@@ -24,7 +24,7 @@
 #ifndef JRD_INUSE_PROTO_H
 #define JRD_INUSE_PROTO_H
 
-bool INUSE_cleanup(struct iuo*, FPTR_VOID);
+bool INUSE_cleanup(struct iuo*, FPTR_VOID_PTR);
 void INUSE_clear(struct iuo*);
 bool INUSE_insert(struct iuo*, void*, bool);
 bool INUSE_remove(struct iuo*, void*, bool);
