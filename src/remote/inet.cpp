@@ -293,7 +293,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
 										size_t							nEntries);
 
-static void		inet_copy(const SCHAR*, SCHAR*, int);
+static void		inet_copy(const void*, UCHAR*, int);
 static int		inet_destroy(XDR *);
 static void		inet_gen_error(rem_port*, ISC_STATUS, ...);
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
@@ -316,7 +316,7 @@ static rem_port*		inet_try_connect(	PACKET*,
 									const SCHAR*,
 									SSHORT);
 static bool_t	inet_write(XDR *, int);
-static void		inet_zero(SCHAR *, int);
+static void		inet_zero(sockaddr_in*, int);
 #if !(defined WIN_NT)
 static int		parse_hosts(const TEXT*, const TEXT*, const TEXT*);
 static int		parse_line(const TEXT*, const TEXT*, const TEXT*, const TEXT*);
@@ -372,7 +372,7 @@ static XDR::xdr_ops inet_ops =
 #define	FD_SET(n, p)	((p)->fds_bits[(n) / NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n) / NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n) / NFDBITS] & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)	inet_zero((SCHAR *)(p), sizeof(*(p)))
+#define FD_ZERO(p)	inet_zero(p, sizeof(*(p)))
 #endif
 #endif
 
@@ -695,7 +695,7 @@ rem_port* INET_connect(const TEXT* name,
 /* Set up Inter-Net socket address */
 
 	struct sockaddr_in address;
-	inet_zero((SCHAR *) &address, sizeof(address));
+	inet_zero(&address, sizeof(address));
 
 #ifdef VMS
 	/* V M S */
@@ -750,8 +750,8 @@ rem_port* INET_connect(const TEXT* name,
 		host_addr = get_bind_address();
 	}
 
-	inet_copy(reinterpret_cast<const SCHAR*>(&host_addr),
-				(SCHAR*) &address.sin_addr,
+	inet_copy(&host_addr,
+				(UCHAR*) &address.sin_addr,
 				sizeof(address.sin_addr));
 
 	THREAD_EXIT();
@@ -1117,13 +1117,9 @@ static int accept_connection(rem_port* port,
 		case CNCT_group:
 			{
 				int length = id.getClumpLength();
-				const UCHAR* q = id.getBytes();
-				UCHAR* p = reinterpret_cast<UCHAR *>(&eff_gid);
 				if (length != 0) {
 					eff_gid = 0;
-					do {
-						*p++ = *q++;
-					} while (--length);
+					memcpy(&eff_gid, id.getBytes(), length);
 					eff_gid = ntohl(eff_gid);
 				}
 				break;
@@ -1270,7 +1266,7 @@ static int accept_connection(rem_port* port,
 	struct sockaddr_in address;
 	socklen_t l = sizeof(address);
 
-	inet_zero((SCHAR *) &address, sizeof(address));
+	inet_zero(&address, sizeof(address));
 	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
 	if (status == 0) {
 		Firebird::string addr_str;
@@ -1445,7 +1441,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
  * should be configured to be a fixed port number in the server configuration.
  */
 
-	inet_zero((SCHAR *) &address, sizeof(address));
+	inet_zero(&address, sizeof(address));
 	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
 	if (status != 0) {
 		inet_error(port, "socket", isc_net_event_connect_err, INET_ERRNO);
@@ -1510,8 +1506,8 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 
 	address.sin_family = AF_INET;
 	in_addr bind_addr = get_bind_address();
-	inet_copy(reinterpret_cast<const SCHAR*>(&bind_addr),
-				(SCHAR*) &address.sin_addr,
+	inet_copy(&bind_addr,
+				(UCHAR*) &address.sin_addr,
 				sizeof(address.sin_addr));
 	address.sin_port = htons(Config::getRemoteAuxPort());
 
@@ -1558,15 +1554,15 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		inet_error(port, "getsockname", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
 	}
-	inet_copy(reinterpret_cast<SCHAR*>(&port_address.sin_addr),
-				(SCHAR*) &address.sin_addr,
+	inet_copy(&port_address.sin_addr,
+				(UCHAR*) &address.sin_addr,
 				sizeof(address.sin_addr));
 
 	response->p_resp_data.cstr_address = 
 			reinterpret_cast<UCHAR*>(& response->p_resp_blob_id);
 	response->p_resp_data.cstr_length = sizeof(response->p_resp_blob_id);
-	inet_copy(reinterpret_cast<const SCHAR*>(&address),
-			  reinterpret_cast<char*>(response->p_resp_data.cstr_address),
+	inet_copy(&address,
+			  response->p_resp_data.cstr_address,
 			  response->p_resp_data.cstr_length);
 
 	return new_port;
@@ -2088,7 +2084,7 @@ static in_addr get_host_address(const TEXT* name)
 		}
 
 		if (host) {
-			inet_copy(host->h_addr, (SCHAR*) &address, sizeof(address));
+			inet_copy(host->h_addr, (UCHAR*) &address, sizeof(address));
 		}
 	}
 
@@ -2111,7 +2107,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 }
 
 
-static void inet_copy(const SCHAR* from, SCHAR* to, int length)
+static void inet_copy(const void* from, UCHAR* to, int length)
 {
 /**************************************
  *
@@ -2123,15 +2119,10 @@ static void inet_copy(const SCHAR* from, SCHAR* to, int length)
  *	Copy a number of bytes;
  *
  **************************************/
-
-	if (length) {
-		do {
-			*to++ = *from++;
-		} while ((--length) != 0);
-	}
+	memcpy(to, from, length);
 }
 
-static void inet_zero( SCHAR* address, int length)
+static void inet_zero(sockaddr_in* address, int length)
 {
 /**************************************
  *
@@ -2143,12 +2134,7 @@ static void inet_zero( SCHAR* address, int length)
  *	Zero a block of memory.
  *
  **************************************/
-
-	if (length) {
-		do {
-			*address++ = 0;
-		} while ((--length) != 0);
-	}
+	memset(address, 0, length);
 }
 
 #if !(defined WIN_NT)

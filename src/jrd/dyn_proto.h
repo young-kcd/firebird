@@ -24,7 +24,13 @@
 #ifndef JRD_DYN_PROTO_H
 #define JRD_DYN_PROTO_H
 
-void	DYN_ddl(class Jrd::Attachment*, class Jrd::jrd_tra*, USHORT, const UCHAR*);
+namespace Jrd
+{
+	class Jrd::Attachment;
+	class Jrd::jrd_tra;
+}
+
+void	DYN_ddl(Jrd::Attachment*, Jrd::jrd_tra*, USHORT, const UCHAR*);
 
 #endif // JRD_DYN_PROTO_H
 

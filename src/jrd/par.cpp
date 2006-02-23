@@ -1382,9 +1382,7 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 		break;
 
 	case dtype_text:
-		if (l) {
-			memcpy(p, q, l);
-		}
+		memcpy(p, q, l);
 		break;
 
 	default:

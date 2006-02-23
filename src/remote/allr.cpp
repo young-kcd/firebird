@@ -196,18 +196,13 @@ BLK ALLR_block(UCHAR type, ULONG count)
 //
 BLK ALLR_clone(BLK block)
 {
-	USHORT l = block->blk_length;
-	BLK clone = (BLK) ALLR_alloc((ULONG) l);
+	ULONG l = block->blk_length;
+	BLK clone = (BLK) ALLR_alloc(l);
 
 	// NOMEM: ALLR_alloc() handled
 	// FREE:  caller must handle  - use ALLR_release
 
-	UCHAR* p = (UCHAR*)clone;
-	const UCHAR* q = (UCHAR*)block;
-	do {
-		*p++ = *q++;
-	} while (--l);
-
+	memcpy(clone, block, l);
 	return clone;
 }
 

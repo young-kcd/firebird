@@ -840,9 +840,7 @@ static jrd_file* setup_file(Database* dbb,
 
 	UCHAR lock_id[64];
 	UCHAR* p = lock_id;
-	if (l)
-		memcpy(p, devlock, l);
-		
+	memcpy(p, devlock, l);
 	p += l;
 	memcpy(p, &nam->nam$w_fid, 6);
 	l = p + 6 - lock_id;

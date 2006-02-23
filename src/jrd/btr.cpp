@@ -2020,10 +2020,7 @@ void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 
 			// keep the key value current for comparison with the next key
 			key.key_length = l;
-			l = node.length;
-			if (l) {
-				memcpy(key.key_data + node.prefix, node.data, l);
-			}
+			memcpy(key.key_data + node.prefix, node.data, node.length);
 			pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		}
 
@@ -2348,7 +2345,7 @@ static void compress(thread_db* tdbb,
 					length = sizeof(key->key_data) - 1;
 				}
 			}
-			memcpy(p, ptr, length);	
+			memcpy(p, ptr, length);
 			p += length; 
 		}
 		else {
@@ -3910,8 +3907,7 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 		while (true) {
 			// Pick up data from node
 			if (value && node.length) {
-				UCHAR* r = value + node.prefix;
-				memcpy(r, node.data, node.length);
+				memcpy(value + node.prefix, node.data, node.length);
 			}
 
 			// If the record number is -1, the node is the last in the level
@@ -4016,8 +4012,7 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 			// Pick up data from node
 
 			if (value && node->btn_length) {
-				UCHAR* r = value + node->btn_prefix;
-				memcpy(r, node->btn_data, node->btn_length);
+				memcpy(value + node->btn_prefix, node->btn_data, node->btn_length);
 			}
 
 			// If the page/record number is -1, the node is the last in the level
@@ -4147,14 +4142,12 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 			BTreeNode::readNode(&node, (UCHAR*)bucket + jumpNode.offset, flags, leafPage);
 
 			// jumpKey will hold complete data off referenced node 
-			UCHAR* q = jumpKey.key_data + jumpNode.prefix;
-			memcpy(q, jumpNode.data, jumpNode.length);
-			q = jumpKey.key_data + node.prefix;
-			memcpy(q, node.data, node.length);
+			memcpy(jumpKey.key_data + jumpNode.prefix, jumpNode.data, jumpNode.length);
+			memcpy(jumpKey.key_data + node.prefix, node.data, node.length);
 			jumpKey.key_length = node.prefix + node.length;
 
 			keyPointer = key->key_data + jumpNode.prefix;
-			q = jumpKey.key_data + jumpNode.prefix;
+			const UCHAR* q = jumpKey.key_data + jumpNode.prefix;
 			const UCHAR* const nodeEnd = jumpKey.key_data + jumpKey.key_length;
 			bool done = false;
 
@@ -4280,8 +4273,7 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 				prefix = MIN(jumpNode.length + jumpNode.prefix, testPrefix);
 				if (value && (jumpNode.length + jumpNode.prefix)) {
 					// Copy prefix data from referenced node to value
-					UCHAR* r = value;
-					memcpy(r, jumpKey.key_data, jumpNode.length + jumpNode.prefix);
+					memcpy(value, jumpKey.key_data, jumpNode.length + jumpNode.prefix);
 				}
 				prevJumpNode = jumpNode;
 			}
@@ -4829,10 +4821,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 				(UCHAR*)left_page + jumpNode.offset, flags, leafPage);
 
 			if (!(leftNode.isEndBucket || leftNode.isEndLevel)) {
-				if (jumpNode.length) {
-					memcpy(lastKey.key_data + jumpNode.prefix, jumpNode.data,
-						jumpNode.length);
-				}
+				memcpy(lastKey.key_data + jumpNode.prefix, jumpNode.data, jumpNode.length);
 				leftPointer = (UCHAR*)left_page + jumpNode.offset;
 				lastKey.key_length = jumpNode.prefix + jumpNode.length;
 			}
@@ -4850,8 +4839,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		}
 		// Save data
 		if (leftNode.length) {
-			UCHAR* p = lastKey.key_data + leftNode.prefix;
-			memcpy(p, leftNode.data, leftNode.length);
+			memcpy(lastKey.key_data + leftNode.prefix, leftNode.data, leftNode.length);
 			lastKey.key_length = leftNode.prefix + leftNode.length;
 		}
 	}
@@ -4898,7 +4886,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		const USHORT jumpersOriginalSize = jumpInfo.firstNodeOffset - headerSize;
 
 		// Copy header and data
-		memcpy(newBucket, (UCHAR*)left_page, headerSize);
+		memcpy(newBucket, left_page, headerSize);
 		memcpy((UCHAR*)newBucket + headerSize, 
 			(UCHAR*)left_page + jumpInfo.firstNodeOffset, 
 			left_page->btr_length - jumpInfo.firstNodeOffset);
@@ -5467,10 +5455,7 @@ static SLONG insert_node(thread_db* tdbb,
 	// Update the values for the next node after our new node.
 	// First, store needed data for beforeInsertNode into tempData.
 	UCHAR* tempData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLength];
-	{ // scope
-		const UCHAR* p = beforeInsertNode.data + newPrefix - beforeInsertNode.prefix;
-		memcpy(tempData, p, newLength);
-	} // scope
+	memcpy(tempData, beforeInsertNode.data + newPrefix - beforeInsertNode.prefix, newLength);
 
 	beforeInsertNode.prefix = newPrefix;
 	beforeInsertNode.length = newLength;
@@ -5676,10 +5661,8 @@ static SLONG insert_node(thread_db* tdbb,
 		{
 			// Copy data from inserted key and this key will we the END_BUCKET marker
 			// as the first key on the next page.
-			const UCHAR* p = key->key_data;
-			UCHAR* q = new_key->key_data;
 			const USHORT l = new_key->key_length = key->key_length;
-			memcpy(q, p, l);
+			memcpy(new_key->key_data, key->key_data, l);
 			prefix_total = newBucket->btr_prefix_total - beforeInsertNode.prefix;
 			splitJumpNodeIndex = 0;
 		}
@@ -5708,8 +5691,7 @@ static SLONG insert_node(thread_db* tdbb,
 			// Get data from node.
 			splitpoint = (UCHAR*)newBucket + jn->offset;
 			splitpoint = BTreeNode::readNode(&node, splitpoint, flags, leafPage);
-			UCHAR* q = new_key->key_data + node.prefix;
-			memcpy(q, node.data, node.length);
+			memcpy(new_key->key_data + node.prefix, node.data, node.length);
 			new_key->key_length = node.prefix + node.length;
 			prefix_total = newPrefixTotalBySplit;
 
@@ -5769,9 +5751,8 @@ static SLONG insert_node(thread_db* tdbb,
 		while (splitpoint < midpoint) {
 			splitpoint = BTreeNode::readNode(&node, splitpoint, flags, leafPage);
 			prefix_total += node.prefix;
-			UCHAR* q = new_key->key_data + node.prefix;
 			new_key->key_length = node.prefix + node.length;
-			memcpy(q, node.data, node.length);
+			memcpy(new_key->key_data + node.prefix, node.data, node.length);
 		}
 	}
 

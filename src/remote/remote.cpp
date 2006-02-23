@@ -683,8 +683,8 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 			if (attach_failures_ptr + l > attach_failures + ATTACH_FAILURE_SPACE)
 				attach_failures_ptr = attach_failures;
 			*vector++ = (ISC_STATUS) attach_failures_ptr;
-			while (l--)
-				*attach_failures_ptr++ = *p++;
+			memcpy(attach_failures_ptr, p, l);
+			attach_failures_ptr += l;
 			break;
 
 		default:

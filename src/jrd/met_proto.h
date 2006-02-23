@@ -41,6 +41,8 @@ namespace Jrd {
 	class Database;
 	struct bid;
 	struct index_desc;
+	class jrd_fld;
+	class Shadow;
 }
 
 struct SubtypeInfo
@@ -66,7 +68,7 @@ bool		MET_get_char_coll_subtype_info(Jrd::thread_db*, SSHORT, SubtypeInfo* info)
 Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
 								Jrd::CompilerScratch**, Firebird::MetaName&, USHORT, USHORT);
-class Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);
+Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);
 void		MET_get_shadow_files(Jrd::thread_db*, bool);
 void		MET_load_trigger(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&, Jrd::trig_vec**);
 void		MET_lookup_cnstrt_for_index(Jrd::thread_db*, Firebird::MetaName& constraint, const Firebird::MetaName& index_name);
@@ -103,7 +105,7 @@ void		MET_remove_procedure(Jrd::thread_db*, int, Jrd::jrd_prc*);
 void		MET_revoke(Jrd::thread_db*, Jrd::jrd_tra*, const TEXT*, const TEXT*, const TEXT*);
 void		MET_scan_relation(Jrd::thread_db*, Jrd::jrd_rel*);
 const TEXT* MET_trigger_msg(Jrd::thread_db*, const Firebird::MetaName&, USHORT);
-void		MET_update_shadow(Jrd::thread_db*, class Jrd::Shadow*, USHORT);
+void		MET_update_shadow(Jrd::thread_db*, Jrd::Shadow*, USHORT);
 void		MET_update_transaction(Jrd::thread_db*, Jrd::jrd_tra*, const bool);
 void		MET_update_partners(Jrd::thread_db*);
 

@@ -5432,8 +5432,8 @@ static int get_database_info(ISC_STATUS * status,
 	// hence if we don't check here, we have a B.O.
 	TEXT* p = *ptr;
 	WHY_DBB database = transaction->parent;
-	const TEXT* q = database->db_path;
 	*p++ = TDR_DATABASE_PATH;
+	const TEXT* q = database->db_path;
 	size_t len = strlen(q);
 	if (len > 254)
 		len = 254;
@@ -5574,10 +5574,7 @@ static ISC_STATUS get_transaction_info(ISC_STATUS * status,
 
 	const USHORT length = (USHORT)gds__vax_integer(reinterpret_cast<UCHAR*>(buffer + 1), 2);
 	*p++ = length; // Warning: USHORT coerced to char
-	if (length) {
-		memcpy(p, q, length);
-	}
-
+	memcpy(p, q, length);
 	*ptr = p + length;
 
 	CHECK_STATUS_SUCCESS(status);

@@ -28,6 +28,7 @@
 #include "../include/fb_blk.h"
 
 namespace Jrd {
+	class jrd_file;
 
 /* Shadowing block */
 
@@ -35,8 +36,8 @@ class Shadow : public pool_alloc<type_sdw>
 {
     public:
 	Shadow* sdw_next;				// next in linked list
-	class jrd_file* sdw_file;	// Stack of shadow files
-	USHORT sdw_number;			// number of shadow
+	jrd_file* sdw_file;				// Stack of shadow files
+	USHORT sdw_number;				// number of shadow
 	USHORT sdw_flags;
 };
 

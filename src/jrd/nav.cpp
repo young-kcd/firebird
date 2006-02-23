@@ -368,16 +368,10 @@ bool NAV_get_record(thread_db* tdbb,
 
 		// Build the current key value from the prefix and current node data.
 		if (expanded_node) {
-			USHORT l = node.length + node.prefix;
-			if (l) {
-				memcpy(key.key_data, expanded_node->btx_data, l);
-			}
+			memcpy(key.key_data, expanded_node->btx_data, node.length + node.prefix);
 		}
 		else {
-			USHORT l = node.length;
-			if (l) {
-				memcpy(key.key_data + node.prefix, node.data, l);
-			}
+			memcpy(key.key_data + node.prefix, node.data, node.length);
 		}
 		key.key_length = node.length + node.prefix;
 
@@ -716,10 +710,7 @@ static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
 			}
 
 			// maintain the running key value and compare it with the stored value
-			USHORT l = node.length;
-			if (l) {
-				memcpy(key.key_data + node.prefix, node.data, l);
-			}
+			memcpy(key.key_data + node.prefix, node.data, node.length);
 			key.key_length = node.length + node.prefix;
 			const int result = compare_keys(idx, impure->irsb_nav_data,
 						impure->irsb_nav_length, &key, 0);

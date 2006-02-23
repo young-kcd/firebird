@@ -89,7 +89,7 @@ static void		packet_print(const TEXT*, const UCHAR*, const int);
 #endif
 static int		packet_receive(rem_port*, UCHAR *, SSHORT, SSHORT *);
 static int		packet_send(rem_port*, const SCHAR*, SSHORT);
-static void		wnet_copy(const SCHAR*, SCHAR*, int);
+static void		wnet_copy(const UCHAR*, SCHAR*, int);
 static void		wnet_make_file_name(TEXT *, DWORD);
 
 static xdr_t::xdr_ops wnet_ops =
@@ -699,12 +699,12 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 	P_RESP* response = &packet->p_resp;
 
 	TEXT str_pid[32];
-	TEXT* p = 0;
+	const TEXT* p = 0;
 	if (response->p_resp_data.cstr_length) {
-		wnet_copy(reinterpret_cast<const char*>(response->p_resp_data.cstr_address),
-				  str_pid,
-				  response->p_resp_data.cstr_length);
-		str_pid[response->p_resp_data.cstr_length] = 0;
+		// Avoid B.O.
+		size_t len = MIN(response->p_resp_data.cstr_length, sizeof(str_pid) - 1);
+		wnet_copy(response->p_resp_data.cstr_address, str_pid, len);
+		str_pid[len] = 0;
 		p = str_pid;
 	}
 
@@ -787,7 +787,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 
 	P_RESP* response = &packet->p_resp;
 	response->p_resp_data.cstr_length = strlen(str_pid);
-	wnet_copy(str_pid,
+	wnet_copy(reinterpret_cast<UCHAR*>(str_pid),
 			  reinterpret_cast<char*>(response->p_resp_data.cstr_address),
 			  response->p_resp_data.cstr_length);
 
@@ -1620,7 +1620,7 @@ static int packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_lengt
 }
 
 
-static void wnet_copy(const SCHAR* from, SCHAR* to, int length)
+static void wnet_copy(const UCHAR* from, SCHAR* to, int length)
 {
 /**************************************
  *
@@ -1632,12 +1632,7 @@ static void wnet_copy(const SCHAR* from, SCHAR* to, int length)
  *      Copy a number of bytes;
  *
  **************************************/
-
-	if (length) {
-		do {
-			*to++ = *from++;
-		} while ((--length) != 0);
-	}
+	memcpy(to, from, length);
 }
 
 
@@ -1659,7 +1654,7 @@ static void wnet_make_file_name( TEXT* name, DWORD number)
 	sprintf(temp, "%lu", number);
 
 	USHORT length = strlen(temp);
-	if ((length) < 8) {
+	if (length < 8) {
 		strcpy(name, temp);
 		return;
 	}

@@ -460,10 +460,8 @@ void IDX_create_index(
 			USHORT l = key.key_length;
 
 			if (l > 0) {
-                const UCHAR* q = key.key_data;
-				memcpy(p, q, l);
+				memcpy(p, key.key_data, l);
 				p += l;
-				q += l;
 			}
 			if ( (l = key_length - key.key_length) ) {
 				memset(p, pad, l);

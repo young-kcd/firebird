@@ -45,7 +45,6 @@ using namespace Jrd;
 
 static ISC_STATUS caller(USHORT, BlobControl*, USHORT, UCHAR*, USHORT*);
 static void dump_blr(void*, SSHORT, const char*);
-static void move(const char*, char*, USHORT);
 static ISC_STATUS string_filter(USHORT, BlobControl*);
 static void string_put(BlobControl*, const char*);
 
@@ -310,7 +309,7 @@ ISC_STATUS filter_format(USHORT action, BlobControl* control)
 		length = control->ctl_buffer_length;
 
 	control->ctl_segment_length = length;
-	move(temp2, reinterpret_cast<char*>(control->ctl_buffer), length);
+	memcpy(control->ctl_buffer, temp2, length);
 
 	return FB_SUCCESS;
 }
@@ -448,8 +447,7 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 	}
 
 	control->ctl_segment_length = length;
-	move(line, reinterpret_cast<char*>(control->ctl_buffer),
-		 control->ctl_segment_length);
+	memcpy(control->ctl_buffer, line, length);
 
 	return status;
 }
@@ -962,8 +960,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 	const USHORT unused_len = (err_code == 0) ?	0 : length - err_position;
 	control->ctl_segment_length = result_length;
 	if (unused_len) {
-		move((TEXT *) (aux->ctlaux_buffer1 + err_position),
-			 (TEXT *) aux->ctlaux_buffer1, unused_len);
+		memcpy(aux->ctlaux_buffer1, aux->ctlaux_buffer1 + err_position, unused_len);
 	}
 	aux->ctlaux_buffer1_unused = unused_len;
 
@@ -1134,23 +1131,6 @@ static void dump_blr(void* arg, SSHORT offset, const char* line)
 }
 
 
-static void move(const char* from, char* to, USHORT length)
-{
-/**************************************
- *
- *	m o v e
- *
- **************************************
- *
- * Functional description
- *	Move some bytes.
- *
- **************************************/
-	if (length)
-		memcpy(to, from, length);
-}
-
-
 static ISC_STATUS string_filter(USHORT action, BlobControl* control)
 {
 /**************************************
@@ -1181,8 +1161,8 @@ static ISC_STATUS string_filter(USHORT action, BlobControl* control)
 		length = string->tmp_length - control->ctl_data[2];
 		if (length > control->ctl_buffer_length)
 			length = control->ctl_buffer_length;
-		move(string->tmp_string + (USHORT) control->ctl_data[2],
-			 reinterpret_cast<char*>(control->ctl_buffer), length);
+		memcpy(control->ctl_buffer,
+			string->tmp_string + (USHORT) control->ctl_data[2], length);
 		control->ctl_data[2] += length;
 		if (control->ctl_data[2] == string->tmp_length) {
 			control->ctl_data[1] = (IPTR) string->tmp_next;
@@ -1229,7 +1209,7 @@ static void string_put(BlobControl* control, const char* line)
 	}
 	string->tmp_next = NULL;
 	string->tmp_length = l;
-	move(line, string->tmp_string, l);
+	memcpy(string->tmp_string, line, l);
 
 	TMP prior;
 	if (prior = (TMP) control->ctl_data[1])

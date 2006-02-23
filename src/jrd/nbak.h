@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: nbak.h,v 1.17 2005-11-21 23:33:20 hvlad Exp $
+ *  $Id: nbak.h,v 1.18 2006-02-23 06:51:46 robocop Exp $
  *
  */
  
@@ -57,6 +57,8 @@ namespace Jrd {
 class Lock;
 class Record;
 class thread_db;
+class Database;
+class jrd_file;
 
 class AllocItem {
 public:
@@ -80,7 +82,7 @@ typedef Firebird::BePlusTree<AllocItem, ULONG, MemoryPool, AllocItem> AllocItemT
 class BackupManager {
 public:
 	// Subsystem initialization
-	BackupManager(thread_db* tdbb, class Database* _database, int ini_state);
+	BackupManager(thread_db* tdbb, Database* _database, int ini_state);
 	// Release locks in response to shutdown AST
 	void shutdown_locks(thread_db* tdbb) throw();
 	// Set difference file name in header. 
@@ -150,8 +152,8 @@ public:
 	}
 #endif
 private:
-	class Database* database;
-	class jrd_file* diff_file;
+	Database* database;
+	jrd_file* diff_file;
 	AllocItemTree* alloc_table; // Cached allocation table of pages in difference file
 	volatile SATOM backup_state;
 	ULONG last_allocated_page; // Last physical page allocated in the difference file

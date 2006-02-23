@@ -906,14 +906,12 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 	UCHAR lock_string[32];
 	UCHAR* p = lock_string;
 
-	const UCHAR* q = (UCHAR *) & statistics.st_dev;
 	USHORT l = sizeof(statistics.st_dev);
-	memcpy(p, q, l);
+	memcpy(p, &statistics.st_dev, l);
 	p += l;
 
-	q = (UCHAR *) & statistics.st_ino;
 	l = sizeof(statistics.st_ino);
-	memcpy(p, q, l);
+	memcpy(p, &statistics.st_ino, l);
 	p += l;
 
 	l = p - lock_string;

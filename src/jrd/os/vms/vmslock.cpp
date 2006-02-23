@@ -157,9 +157,7 @@ SLONG LOCK_enq(PTR prior_request,
 	UCHAR* p = buffer;
 	*p++ = series;
 	fb_assert(length < sizeof(buffer));
-	if (length)
-		memcpy(p, value, length);
-		
+	memcpy(p, value, length);
 	p += length;
 	desc.dsc$b_class = DSC$K_CLASS_S;
 	desc.dsc$b_dtype = DSC$K_DTYPE_T;

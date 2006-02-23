@@ -322,9 +322,7 @@ int MAP_rdb_to_gds(USHORT number, map_msg* msg, UCHAR * from, UCHAR * to)
 			p = to;
 			to += desc->msg_length;
 			l = MIN(avary->vary_length, desc->msg_length - 1);
-			if (l) {
-				memcpy(p, avary->vary_data, l);
-			}
+			memcpy(p, avary->vary_data, l);
 			p[l] = 0;
 			break;
 

@@ -1037,19 +1037,16 @@ static jrd_file* setup_file(Database*					dbb,
 	// MSDN says: After a process opens a file, the identifier is constant until
 	// the file is closed. An application can use this identifier and the
 	// volume serial number to determine whether two handles refer to the same file.
-	const UCHAR* q = (UCHAR *) &file_info.dwVolumeSerialNumber;
 	size_t l = sizeof(file_info.dwVolumeSerialNumber);
-	memcpy(p, q, l);
+	memcpy(p, &file_info.dwVolumeSerialNumber, l);
 	p += l;
 
-	q = (UCHAR *) &file_info.nFileIndexHigh;
 	l = sizeof(file_info.nFileIndexHigh);
-	memcpy(p, q, l);
+	memcpy(p, &file_info.nFileIndexHigh, l);
 	p += l;
 
-	q = (UCHAR *) &file_info.nFileIndexLow;
 	l = sizeof(file_info.nFileIndexLow);
-	memcpy(p, q, l);
+	memcpy(p, &file_info.nFileIndexLow, l);
 	p += l;
 
 	// We know p only was incremented, so can use safely size_t instead of ptrdiff_t
