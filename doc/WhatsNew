@@ -540,7 +540,7 @@
         Jim Starkey <jas at netfrastructure.com>
 
     * Fixed SF bug #223060
-        Slow processing of GREATER-THEN operator
+        Slow processing of GREATER-THAN operator
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
