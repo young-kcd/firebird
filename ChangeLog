@@ -1,3 +1,11 @@
+2006-02-22 08:46  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.70.2.6.2.1), interface.cpp
+	(1.48.2.3.2.1), server.cpp (1.34.2.4.2.1):
+	
+	Commit into a custom branch.  First step of the defered packets
+	implementation.
+
 2006-01-31 11:44  paul_reeves
 
 	* firebird2/src/install/arch-specific/win32/:
