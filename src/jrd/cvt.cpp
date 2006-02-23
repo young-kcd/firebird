@@ -2365,7 +2365,8 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 
 	if (to->dsc_dtype == dtype_text)
 	{
-		if ((l = to->dsc_length - length) > 0)
+		int trailing = to->dsc_length - length;
+		if (trailing > 0)
 		{
 #if !defined(REQUESTER) && !defined(SUPERCLIENT)
 			CHARSET_ID chid;
@@ -2377,7 +2378,7 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 			const CHARSET_ID chid = DSC_GET_CHARSET(to);
 #endif
 			const char pad = chid == ttype_binary ? '\0' : ' ';
-			memset(q, pad, l);
+			memset(q, pad, trailing);
 		}
 		return;
 	}
