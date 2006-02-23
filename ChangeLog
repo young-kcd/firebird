@@ -1,3 +1,53 @@
+2006-02-22 16:25  hvlad
+
+	* firebird2/doc/WhatsNew (1.88):
+	
+	Update WhatsNew
+
+2006-02-22 15:55  hvlad
+
+	* firebird2/src/jrd/dfw.epp (1.175):
+	
+	Fixed SF #1436066 : Adding index during DB activity causes GFIX
+	errors
+
+2006-02-22 14:55  dimitr
+
+	* firebird2/doc/WhatsNew (1.87):
+	
+	An update.
+
+2006-02-22 08:22  robocop
+
+	* firebird2/src/jrd/mem.cpp (1.4):
+	
+	Remove obsolete file.
+
+2006-02-22 08:21  robocop
+
+	* firebird2/builds/mac_os_x/CS/CS.pbproj/project.pbxproj (1.13):
+	
+	This was the only project file referencing legacy mem.cpp.
+
+2006-02-22 08:19  robocop
+
+	* firebird2/src/jrd/sha.cpp (1.7):
+	
+	This file lacked indentation.
+
+2006-02-22 08:11  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.198):
+	
+	Sorry, the unused code has been committed.
+
+2006-02-22 06:30  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.197):
+	
+	Fixed imcomplete invariants tracking for subqueries.  Views are
+	still a problem, so more to follow.
+
 2006-02-22 03:50  asfernandes
 
 	* firebird2/src/jrd/unicode_util.cpp (1.5):
