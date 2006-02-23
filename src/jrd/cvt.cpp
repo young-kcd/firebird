@@ -331,7 +331,7 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 			TEXT buffer[50];	/* must hold ascii of largest double */
 			const char* p;
 
-			const SSHORT length =
+			const USHORT length =
 				CVT_make_string(desc, ttype_ascii,
 								&p,
 								(vary*) buffer, sizeof(buffer), err);
@@ -487,7 +487,6 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 
 	double d, eps;
 	SINT64 val64;
-	USHORT length;
 	TEXT buffer[50];			/* long enough to represent largest long in ASCII */
 
 /* adjust exact numeric values to same scaling */
@@ -598,10 +597,12 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	case dtype_varying:
 	case dtype_cstring:
 	case dtype_text:
-		length =
-			CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
+		{
+			USHORT length =
+				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
 							sizeof(buffer), err);
-		scale -= decompose(p, length, dtype_long, &value, err);
+			scale -= decompose(p, length, dtype_long, &value, err);
+		}
 		break;
 
 	case dtype_blob:
@@ -790,7 +791,6 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	SLONG fraction;
 #endif
 	double d;
-	USHORT length;
 	TEXT buffer[50];			/* long enough to represent largest quad in ASCII */
 
 /* adjust exact numeric values to same scaling */
@@ -864,10 +864,12 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	case dtype_varying:
 	case dtype_cstring:
 	case dtype_text:
-		length =
-			CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
+		{
+			USHORT length =
+				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
 							sizeof(buffer), err);
-		scale -= decompose(p, length, dtype_quad, &value.high, err);
+			scale -= decompose(p, length, dtype_quad, &value.high, err);
+		}
 		break;
 
 	case dtype_blob:
@@ -947,7 +949,6 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	SINT64 value;
 	SLONG fraction;
 	double d, eps;
-	USHORT length;
 	TEXT buffer[50];			/* long enough to represent largest SINT64 in ASCII */
 
 	/* adjust exact numeric values to same scaling */
@@ -1025,10 +1026,12 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	case dtype_varying:
 	case dtype_cstring:
 	case dtype_text:
-		length =
-			CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
+		{
+			USHORT length =
+				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
 							sizeof(buffer), err);
-		scale -= decompose(p, length, dtype_int64, (SLONG *) & value, err);
+			scale -= decompose(p, length, dtype_int64, (SLONG *) & value, err);
+		}
 		break;
 
 	case dtype_blob:
@@ -1532,15 +1535,13 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 #ifndef REQUESTER
 #ifndef SUPERCLIENT
-			if ((INTL_TTYPE(from) == ttype_dynamic) &&
-				(err == ERR_post))
-					charset1 = INTL_charset(NULL, INTL_TTYPE(from));
+			if ((INTL_TTYPE(from) == ttype_dynamic) && (err == ERR_post))
+				charset1 = INTL_charset(NULL, INTL_TTYPE(from));
 			else
 				charset1 = INTL_TTYPE(from);
 
-			if ((INTL_TTYPE(to) == ttype_dynamic) &&
-				(err == ERR_post))
-					charset2 = INTL_charset(NULL, INTL_TTYPE(to));
+			if ((INTL_TTYPE(to) == ttype_dynamic) && (err == ERR_post))
+				charset2 = INTL_charset(NULL, INTL_TTYPE(to));
 			else
 				charset2 = INTL_TTYPE(to);
 
@@ -2258,7 +2259,7 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		(*err) (isc_badblk, 0);	/* internal error */
 #endif
 
-	SSHORT pad = 0, decimal = 0, neg = 0;
+	SSHORT pad_count = 0, decimal = 0, neg = 0;
 
 /* Save (or compute) scale of source.  Then convert source to ordinary
    longword or int64. */
@@ -2266,7 +2267,7 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 	SCHAR scale = from->dsc_scale;
 
 	if (scale > 0)
-		pad = scale;
+		pad_count = scale;
 	else if (scale < 0)
 		decimal = 1;
 
@@ -2316,12 +2317,12 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
    fits.  Keep in mind that routine handles both string and varying
    string fields. */
 
-	const SSHORT length = l + neg + decimal + pad;
+	const USHORT length = l + neg + decimal + pad_count;
 
 	if ((to->dsc_dtype == dtype_text && length > to->dsc_length) ||
 		(to->dsc_dtype == dtype_cstring && length >= to->dsc_length) ||
 		(to->dsc_dtype == dtype_varying
-		 && length > (SSHORT) (to->dsc_length - sizeof(USHORT))))
+		 && length > (to->dsc_length - sizeof(USHORT))))
 	{
 	    conversion_error(from, err);
 	}
@@ -2354,18 +2355,29 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 
 /* If padding is required, do it now. */
 
-	if (pad)
+	if (pad_count)
 		do {
 			*q++ = '0';
-		} while (--pad);
+		} while (--pad_count);
 
 /* Finish up by padding (if fixed) or computing the actual length
    (varying string) */
 
-	if (to->dsc_dtype == dtype_text) {
-		if ((l = to->dsc_length - length) > 0) {
-			// Suspcious pad: probably we need to check the charset
-			memset(q, ' ', l);
+	if (to->dsc_dtype == dtype_text)
+	{
+		if ((l = to->dsc_length - length) > 0)
+		{
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+			CHARSET_ID chid;
+			if ((INTL_TTYPE(to) == ttype_dynamic) && (err == ERR_post))
+				chid = INTL_charset(NULL, INTL_TTYPE(to));
+			else
+				chid = INTL_TTYPE(to);
+#else
+			const CHARSET_ID chid = DSC_GET_CHARSET(to);
+#endif
+			const char pad = chid == ttype_binary ? '\0' : ' ';
+			memset(q, pad, l);
 		}
 		return;
 	}
