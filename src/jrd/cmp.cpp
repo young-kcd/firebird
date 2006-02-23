@@ -144,7 +144,7 @@ static RecordSource* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static SSHORT strcmp_space(const char*, const char*);
-static bool stream_in_rse(USHORT, RecordSelExpr*);
+static bool stream_in_rse(USHORT, const RecordSelExpr*);
 static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request);
 static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view);
 
@@ -5669,7 +5669,7 @@ static SSHORT strcmp_space(const char* p, const char* q)
 }
 
 
-static bool stream_in_rse(USHORT stream, RecordSelExpr* rse)
+static bool stream_in_rse(USHORT stream, const RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -5686,59 +5686,56 @@ static bool stream_in_rse(USHORT stream, RecordSelExpr* rse)
 
 	// look through all relation nodes in this RecordSelExpr to see
 	// if the field references this instance of the relation
-	jrd_nod** ptr = rse->rse_relation;
-	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end;
-		 ptr++)
+	for (int i = 0; i < rse->rse_count; ++i)
 	{
-		jrd_nod* sub = *ptr;
+		const jrd_nod* sub = rse->rse_relation[i];
 
 		// for RecordSelExpr, just recurse
-		if (sub->nod_type == nod_rse)
+		switch (sub->nod_type)
 		{
-			if (stream_in_rse(stream, (RecordSelExpr*) sub))
+		case nod_rse:
+			if (stream_in_rse(stream, (const RecordSelExpr*) sub))
 			{
 				return true;		// do not mark as variant
 			}
-		}
+			break;
 		// for unions, check current RecordSelExpr, if not found then check
 		// all sub-rse's
-		else if (sub->nod_type == nod_union)
-		{
-			if (stream == (USHORT)(IPTR) sub->nod_arg[e_uni_stream])
+		case nod_union:
 			{
-				return true;		// do not mark as variant
-			}
-			const jrd_nod* clauses = sub->nod_arg[e_uni_clauses];
-			const jrd_nod* const* ptr = clauses->nod_arg;
-			for (const jrd_nod* const* const end = ptr + clauses->nod_count;
-				ptr < end; ptr += 2)
-			{
-				if (stream_in_rse(stream, (RecordSelExpr*) *ptr))
+				if (stream == (USHORT)(IPTR) sub->nod_arg[e_uni_stream])
 				{
-					return true;	// do not mark as variant
+					return true;		// do not mark as variant
+				}
+				const jrd_nod* clauses = sub->nod_arg[e_uni_clauses];
+				for (int j = 0; j < clauses->nod_count; j += 2)
+				{
+					if (stream_in_rse(stream, (const RecordSelExpr*) clauses->nod_arg[j]))
+					{
+						return true;	// do not mark as variant
+					}
 				}
 			}
-		}
+			break;
 		// for aggregates, check current RecordSelExpr, if not found then check
 		// the sub-rse
-		else if (sub->nod_type == nod_aggregate)
-		{
+		case nod_aggregate:
 			if (stream == (USHORT)(IPTR) sub->nod_arg[e_agg_stream])
 			{
 				return true;		// do not mark as variant
 			}
-			if (stream_in_rse(stream, (RecordSelExpr*) sub->nod_arg[e_agg_rse]))
+			if (stream_in_rse(stream, (const RecordSelExpr*) sub->nod_arg[e_agg_rse]))
 			{
 				return true;		// do not mark as variant
 			}
-		}
+			break;
 		// the simplest case - relations
-		else if (sub->nod_type == nod_relation)
-		{
+		case nod_relation:
 			if (stream == (USHORT)(IPTR) sub->nod_arg[e_rel_stream])
 			{
 				return true;		// do not mark as variant
 			}
+			break;
 		}
 	}
 
