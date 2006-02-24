@@ -201,6 +201,7 @@ const int NO_PROCS					= 88;		// There are no stored procedures in this database
 const int NO_TRIGGERS_ON_REL		= 89;		// There are no triggers on table %s in this database 
 const int NO_REL_OR_TRIGGER			= 90;		// There is no table or trigger %s in this database 
 const int NO_TRIGGERS				= 91;		// There are no triggers in this database 
+const int NO_TRIGGER                = 121;      // There is no trigger %s in this database
 const int NO_CHECKS_ON_REL			= 92;		// There are no check constraints on table %s in this database 
 const int NO_COMMENTS				= 115;		// There are no comments for objects in this database.
 const int BUFFER_OVERFLOW			= 94;		// An isql command exceeded maximum buffer size 

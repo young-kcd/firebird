@@ -1356,6 +1356,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		if (ret == OBJECT_NOT_FOUND)
 		{
 			if (*cmd[2]) {
+				/*
 				FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ cmd[2];
 					key = NO_TRIGGERS_ON_REL;
 				END_FOR
@@ -1364,6 +1365,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 				END_ERROR;
 				if (!key)
 					key = NO_REL_OR_TRIGGER;
+				*/
+				key = NO_TRIGGER;
 			}
 			else
 				key = NO_TRIGGERS;
@@ -3582,7 +3585,7 @@ static processing_state show_trigger(
  **************************************
  *
  * Functional description
- *	Show triggers in general or  for the named object or trigger
+ *	Show triggers in general or for the named object or trigger
  *
  **************************************/
 	bool first = true;
