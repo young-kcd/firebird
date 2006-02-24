@@ -66,11 +66,11 @@ public:
 
 		~Utf16Collation();
 
-		USHORT keyLength(USHORT len);
+		USHORT keyLength(USHORT len) const;
 		USHORT stringToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, UCHAR* dst,
-						   USHORT key_type);
+						   USHORT key_type) const;
 		SSHORT compare(ULONG len1, const USHORT* str1, ULONG len2, const USHORT* str2,
-					   INTL_BOOL* error_flag);
+					   INTL_BOOL* error_flag) const;
 
 	private:
 		void* collator;

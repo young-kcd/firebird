@@ -517,7 +517,7 @@ UnicodeUtil::Utf16Collation::~Utf16Collation()
 }
 
 
-USHORT UnicodeUtil::Utf16Collation::keyLength(USHORT len)
+USHORT UnicodeUtil::Utf16Collation::keyLength(USHORT len) const
 {
 	return (len / 4) * 6;
 }
@@ -525,7 +525,7 @@ USHORT UnicodeUtil::Utf16Collation::keyLength(USHORT len)
 
 USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src,
 												USHORT dstLen, UCHAR* dst,
-												USHORT key_type)
+												USHORT key_type) const
 {
 	fb_assert(src != NULL && dst != NULL);
 	fb_assert(srcLen % sizeof(*src) == 0);
@@ -536,13 +536,14 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 		return INTL_BAD_KEY_LENGTH;
 	}
 
-	return ucol_getSortKey((UCollator*)collator, reinterpret_cast<const UChar *>(src), srcLen / sizeof(*src), dst, dstLen);
+	return ucol_getSortKey(static_cast<const UCollator*>(collator),
+		reinterpret_cast<const UChar*>(src), srcLen / sizeof(*src), dst, dstLen);
 }
 
 
 SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 											ULONG len2, const USHORT* str2,
-											INTL_BOOL* error_flag)
+											INTL_BOOL* error_flag) const
 {
 	fb_assert(len1 % sizeof(*str1) == 0 && len2 % sizeof(*str2) == 0);
 	fb_assert(str1 != NULL && str2 != NULL);
@@ -550,7 +551,7 @@ SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 
 	*error_flag = false;
 
-	return (SSHORT)ucol_strcoll((UCollator*)collator,
+	return (SSHORT)ucol_strcoll(static_cast<const UCollator*>(collator),
 								reinterpret_cast<const UChar*>(str1), len1 / sizeof(*str1), 
 								reinterpret_cast<const UChar*>(str2), len2 / sizeof(*str2));
 }
