@@ -1,3 +1,108 @@
+2006-02-24 02:33  asfernandes
+
+	* firebird2/src/jrd/: unicode_util.cpp (1.6), unicode_util.h (1.4):
+	
+	Constify
+
+2006-02-24 02:04  robocop
+
+	* firebird2/src/jrd/isc.h (1.22):
+	
+	Fix compile-time error reported by Michal Kubecek.
+
+2006-02-23 08:36  robocop
+
+	* firebird2/src/jrd/cvt.cpp (1.71):
+	
+	Better play safe with int.
+
+2006-02-23 08:30  robocop
+
+	* firebird2/src/jrd/cvt.cpp (1.70):
+	
+	Try to put the correct pad character.
+
+2006-02-23 08:22  robocop
+
+	* firebird2/src/jrd/nbak.h (1.19):
+	
+	Misc.
+
+2006-02-23 08:13  hvlad
+
+	* firebird2/doc/WhatsNew (1.90):
+	
+	Misc
+
+2006-02-23 07:51  robocop
+
+	* firebird2/src/: jrd/btr.cpp (1.160), jrd/dyn_proto.h (1.12),
+	jrd/filters.cpp (1.49), jrd/idx.cpp (1.103), jrd/met_proto.h
+	(1.49), jrd/nav.cpp (1.60), jrd/nbak.h (1.18), jrd/par.cpp (1.131),
+	jrd/sdw.h (1.8), jrd/why.cpp (1.97), jrd/os/pio_proto.h (1.16),
+	jrd/os/posix/unix.cpp (1.42), jrd/os/vms/map.cpp (1.13),
+	jrd/os/vms/vms.cpp (1.25), jrd/os/vms/vmslock.cpp (1.11),
+	jrd/os/win32/winnt.cpp (1.30), remote/allr.cpp (1.31),
+	remote/inet.cpp (1.154), remote/remote.cpp (1.41),
+	remote/os/win32/wnet.cpp (1.35):
+	
+	More cleanup.
+
+2006-02-23 06:21  robocop
+
+	* firebird2/: src/jrd/isc.cpp (1.58), doc/WhatsNew (1.89):
+	
+	Misc.
+
+2006-02-23 06:07  robocop
+
+	* firebird2/src/: burp/burp.cpp (1.110), burp/burp.h (1.71),
+	common/config/config_impl.h (1.16), jrd/blb.cpp (1.113),
+	jrd/btr.cpp (1.159), jrd/btr.h (1.43), jrd/cch.cpp (1.127),
+	jrd/cch.h (1.28), jrd/cch_proto.h (1.24), jrd/cvt.cpp (1.69),
+	jrd/dbt.cpp (1.34), jrd/dfw.epp (1.176), jrd/dpm.epp (1.63),
+	jrd/entry.h (1.20), jrd/exe.cpp (1.174), jrd/exe.h (1.78),
+	jrd/ext.cpp (1.64), jrd/ext.h (1.12), jrd/fil.h (1.14),
+	jrd/filters.cpp (1.48), jrd/fun.epp (1.72), jrd/gds.cpp (1.191),
+	jrd/ibase.h (1.112), jrd/ibsetjmp.h (1.8), jrd/idx.cpp (1.102),
+	jrd/inf.cpp (1.62), jrd/ini.epp (1.75), jrd/inuse.cpp (1.9),
+	jrd/inuse_proto.h (1.4), jrd/isc.cpp (1.57), jrd/isc.h (1.21),
+	jrd/isc_proto.h (1.13), jrd/isc_sync.cpp (1.102), jrd/jrd.cpp
+	(1.236), jrd/jrd.h (1.148), jrd/jrd_proto.h (1.40), jrd/lck.cpp
+	(1.51), jrd/lck.h (1.21), jrd/log.h (1.9), jrd/met.epp (1.180),
+	jrd/mov.cpp (1.25), jrd/nav.cpp (1.59), jrd/par.cpp (1.130),
+	jrd/perf.cpp (1.36), jrd/plugin_manager.h (1.20), jrd/req.h (1.53),
+	jrd/rlck.cpp (1.35), jrd/rse.cpp (1.102), jrd/rse.h (1.45),
+	jrd/scl.h (1.13), jrd/sdl.cpp (1.44), jrd/sdl.h (1.9),
+	jrd/sdl_proto.h (1.17), jrd/sdw.cpp (1.60), jrd/sdw_proto.h (1.14),
+	jrd/shut.cpp (1.38), jrd/smp_impl.h (1.6), jrd/sort.cpp (1.78),
+	jrd/sort.h (1.26), jrd/svc.cpp (1.164), jrd/svc.h (1.38),
+	jrd/svc_proto.h (1.19), jrd/sym.h (1.5), jrd/thd.cpp (1.45),
+	jrd/thd.h (1.42), jrd/tra.cpp (1.116), jrd/tra.h (1.51),
+	jrd/utl.cpp (1.87), jrd/validation.cpp (1.14), jrd/vio.cpp (1.146),
+	jrd/why.cpp (1.96), jrd/os/posix/unix.cpp (1.41),
+	jrd/os/vms/extvms.cpp (1.26), jrd/os/vms/map.cpp (1.12),
+	jrd/os/vms/rdbint.cpp (1.16), jrd/os/vms/vms.cpp (1.24),
+	jrd/os/vms/vmsevent.cpp (1.16), jrd/os/vms/vmslock.cpp (1.10),
+	jrd/os/win32/winnt.cpp (1.29), lock/driver.cpp (1.18),
+	misc/align.cpp (1.11), remote/inet.cpp (1.153),
+	remote/inter_proto.h (1.15), remote/interface.cpp (1.118),
+	remote/remote.h (1.45), remote/os/win32/ibconfig.cpp (1.15),
+	remote/os/win32/wnet.cpp (1.34), utilities/gsec/gsec.cpp (1.51),
+	utilities/gsec/gsec.h (1.24), utilities/gstat/dba.epp (1.67),
+	utilities/gstat/ppg.cpp (1.29), utilities/gstat/ppg_proto.h (1.12):
+	
+	Mark unused data members, discover more code associated to
+	conditional compilation, clean some places, replace custom loops by
+	memcpy and memset when possible, etc.
+
+2006-02-23 06:03  robocop
+
+	* firebird2/src/jrd/cmp.cpp (1.199):
+	
+	We better do not have loop variables with the same name in nested
+	loops.	:-)
+
 2006-02-22 16:25  hvlad
 
 	* firebird2/doc/WhatsNew (1.88):
