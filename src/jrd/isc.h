@@ -145,7 +145,9 @@ struct mtx {
 };
 typedef mtx MTX_T;
 typedef mtx* MTX;
+#endif // ANY_THREADING
 
+#ifdef ANY_THREADING
 struct event_t
 {
 	SLONG event_semid;
