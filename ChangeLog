@@ -1,3 +1,10 @@
+2006-02-24 10:21  robocop
+
+	* firebird2/src/: isql/isql.h (1.51), isql/show.epp (1.85),
+	msgs/facilities.sql (1.51), msgs/messages.sql (1.64):
+	
+	Fix misleading error message reported by Michal Kubecek.
+
 2006-02-24 02:33  asfernandes
 
 	* firebird2/src/jrd/: unicode_util.cpp (1.6), unicode_util.h (1.4):
