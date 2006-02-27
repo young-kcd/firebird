@@ -1,3 +1,33 @@
+2006-02-26 15:53  hvlad
+
+	* firebird2/src/remote/: interface.cpp (1.48.2.3.2.4), server.cpp
+	(1.34.2.4.2.4):
+	
+	Fix and enable defered statement allocation
+
+2006-02-26 15:50  hvlad
+
+	* firebird2/src/jrd/svc.cpp (1.67.2.7.2.2):
+	
+	Correction
+
+2006-02-26 13:10  hvlad
+
+	* firebird2/src/remote/: interface.cpp (1.48.2.3.2.3), server.cpp
+	(1.34.2.4.2.3):
+	
+	1. Undo previous Dmitry's commit due to problems found 2. Remote
+	server sends info packet of real used length (not user buffer's
+	full length). This is reduced network traffic and can be used even
+	with old client (tested with FB 1.5 fbclient)
+
+2006-02-26 13:02  hvlad
+
+	* firebird2/src/: dsql/dsql.cpp (1.54.2.4.4.1), jrd/gdsold.h
+	(1.23.2.1.4.1), jrd/svc.cpp (1.67.2.7.2.1):
+	
+	Implement gds_info_length - used length of an info buffer
+
 2006-02-23 13:25  dimitr
 
 	* firebird2/src/remote/: interface.cpp (1.48.2.3.2.2), server.cpp
