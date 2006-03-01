@@ -90,7 +90,8 @@ static void preKmp(const CharType *x, int m, SLONG kmpNext[])
 {
 	SLONG i = 0;
 	SLONG j = kmpNext[0] = -1;
-	while (i < m) {
+
+	while (i < m - 1) {
 		while (j > -1 && x[i] != x[j])
 			j = kmpNext[j];
 		i++;
@@ -100,6 +101,11 @@ static void preKmp(const CharType *x, int m, SLONG kmpNext[])
 		else
 			kmpNext[i] = j;
 	}
+
+	while (j > -1 && x[i] != x[j])
+		j = kmpNext[j];
+
+	kmpNext[++i] = ++j;
 }
 
 class StaticAllocator {
