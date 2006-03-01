@@ -1,3 +1,10 @@
+2006-02-28 17:23  hvlad
+
+	* firebird2/src/remote/server.cpp (1.34.2.4.2.5):
+	
+	Better compatibility with old (current) clients Don't send to
+	client what it does not understand ;)
+
 2006-02-26 15:53  hvlad
 
 	* firebird2/src/remote/: interface.cpp (1.48.2.3.2.4), server.cpp
