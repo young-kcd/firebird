@@ -1,3 +1,9 @@
+2006-03-01 23:58  asfernandes
+
+	* firebird2/src/jrd/evl_string.h (1.22):
+	
+	Fix AV in Knuth-Morris-Pratt algorithm implementation
+
 2006-02-24 10:21  robocop
 
 	* firebird2/src/: isql/isql.h (1.51), isql/show.epp (1.85),
