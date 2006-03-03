@@ -441,19 +441,19 @@ void operator delete(void* mem) throw();
 void operator delete[](void* mem) throw();
 
 #ifdef DEBUG_GDS_ALLOC
-static inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
+inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
 	return pool.allocate(s, 0, file, line);
 }
-static inline void* operator new[](size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
+inline void* operator new[](size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
 	return pool.allocate(s, 0, file, line);
 }
 #define FB_NEW(pool) new(pool, __FILE__, __LINE__)
 #define FB_NEW_RPT(pool, count) new(pool, count, __FILE__, __LINE__)
 #else
-static inline void* operator new(size_t s, Firebird::MemoryPool& pool) {
+inline void* operator new(size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
 }
-static inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
+inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 	return pool.allocate(s);
 }
 #define FB_NEW(pool) new(pool)
