@@ -32,6 +32,7 @@
 #include "../jrd/common.h"
 #include "../remote/remote_def.h"
 #include "../jrd/thd.h"
+#include "../common/classes/objects_array.h"
 
 /* Include some apollo include files for tasking */
 
@@ -393,9 +394,10 @@ struct rem_port
 	rem_port*		(*port_receive_packet)(rem_port*, PACKET*);
 	XDR_INT			(*port_send_packet)(rem_port*, PACKET*);
 	XDR_INT			(*port_send_partial)(rem_port*, PACKET*);
-	t_port_connect	port_connect;	/* Establish secondary connection */
+	t_port_connect	port_connect;		/* Establish secondary connection */
 	rem_port*		(*port_request)(rem_port*, PACKET*);	/* Request to establish secondary connection */
-
+	rem_port*		(*port_select_multi)(rem_port*, UCHAR*, SSHORT, SSHORT*);	// get packet from active port
+									
 	rdb*			port_context;
 	t_event_ast		port_ast;		/* AST for events */
 	XDR				port_receive;
@@ -420,6 +422,10 @@ struct rem_port
 	USHORT			port_iosb[4];
 #endif
 	void*			port_xcc;              /* interprocess structure */
+#ifdef SUPERSERVER
+	Firebird::ObjectsArray< Firebird::Array< char > >*	port_queue;
+	size_t			port_qoffset;			// current packet in the queue
+#endif
 	UCHAR			port_buffer[1];
 
 	/* TMN: Beginning of C++ port */
@@ -431,7 +437,8 @@ struct rem_port
 	XDR_INT	send_partial(PACKET* pckt);
 	rem_port*	connect(PACKET* pckt, t_event_ast);
 	rem_port*	request(PACKET* pckt);
-
+	rem_port*   select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length);
+	
 	/* TMN: The following member functions are conceptually private
 	 *      to server.cpp and should be _made_ private in due time!
 	 *      That is, if we don't factor these method out.
@@ -491,6 +498,7 @@ const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
 // This is tested only in wnet.cpp but never set.
 //const USHORT PORT_impersonate	= 512;	// A remote user is being impersonated
 const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
+const USHORT PORT_partial_data  = 2048;	/* Physical packet doesn't contain all API packet */
 
 
 /* Misc declarations */

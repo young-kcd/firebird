@@ -332,6 +332,7 @@ static rem_port*		receive(rem_port*, PACKET *);
 static rem_port*		select_accept(rem_port*);
 
 static rem_port*		select_port(rem_port*, SLCT *);
+static rem_port*        select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length);
 static int		select_wait(rem_port*, SLCT *);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
@@ -348,7 +349,11 @@ static XDR::xdr_ops inet_ops =
 {
 	inet_getlong,
 	inet_putlong,
+#ifdef SUPERSERVER
+	REMOTE_getbytes,
+#else
 	inet_getbytes,
+#endif
 	inet_putbytes,
 	inet_getpostn,
 	inet_setpostn,
@@ -1363,6 +1368,7 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_accept = accept_connection;
 	port->port_disconnect = disconnect;
 	port->port_receive_packet = receive;
+	port->port_select_multi = select_multi;
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
 	port->port_connect = aux_connect;
@@ -1378,6 +1384,12 @@ static rem_port* alloc_port( rem_port* parent)
 					port, port->port_buffer,
 					0,
 					XDR_DECODE);
+
+#ifdef SUPERSERVER
+	port->port_queue = FB_NEW(*getDefaultMemoryPool())
+			Firebird::ObjectsArray< Firebird::Array< char > >(*getDefaultMemoryPool());
+	port->port_qoffset = 0;
+#endif
 
 	return port;
 }
@@ -1883,6 +1895,10 @@ static void cleanup_port( rem_port* port)
 		ALLR_free((UCHAR *) port->port_packet_vector);
 #endif
 
+#ifdef SUPERSERVER
+	delete port->port_queue;
+#endif
+
 	ALLR_release((UCHAR *) port);
 	return;
 }
@@ -2289,10 +2305,12 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
  *
  **************************************/
 
+#ifndef SUPERSERVER
 /* If this isn't a multi-client server, just do the operation and get it
    over with */
 
 	if (!(main_port->port_server_flags & SRVR_multi_client)) {
+#endif //SUPERSERVER
 		/* loop as long as we are receiving dummy packets, just
 		   throwing them away--note that if we are a server we won't
 		   be receiving them, but it is better to check for them at
@@ -2302,7 +2320,9 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 		do {
 			if (!xdr_protocol(&main_port->port_receive, packet))
 			{
-				packet->p_operation = op_exit;
+				packet->p_operation = main_port->port_flags & PORT_partial_data ? 
+									  op_partial : op_exit;
+				main_port->port_flags &= ~PORT_partial_data;
 				break;
 			}
 #ifdef DEBUG
@@ -2321,6 +2341,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 		while (packet->p_operation == op_dummy);
 
 		return main_port;
+#ifndef SUPERSERVER
 	}
 
 /* Multi-client server multiplexes all known ports for incoming packets. */
@@ -2372,6 +2393,64 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 		}
 		if (!select_wait(main_port, &INET_select))
 			return NULL;
+	}
+#endif //SUPERSERVER
+}
+
+static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSHORT* length)
+{
+/**************************************
+ *
+ *	s e l e c t _ m u l t i
+ *
+ **************************************
+ *
+ * Functional description
+ *	Receive an IP packet from a port or clients of a port.
+ *  Used only by the multiclient server on main server's port.
+ *	If a connection request comes in, generate a new port
+ *	block for the client.
+ *
+ **************************************/
+	fb_assert(main_port->port_server_flags & SRVR_multi_client);
+	
+	for (;;) 
+	{
+		rem_port* port = select_port(main_port, &INET_select);
+		if (port == main_port) 
+		{
+			if (port = select_accept(main_port)) 
+			{
+				if (!packet_receive(port, buffer, bufsize, length))
+				{
+					*length = 0;
+				}
+				return port;
+			}
+			
+			continue;
+		}
+		if (port) 
+		{
+			if (port->port_dummy_timeout < 0) 
+			{
+				port->port_dummy_timeout = port->port_dummy_packet_interval;
+				if (port->port_flags & PORT_async ||
+					port->port_protocol < PROTOCOL_VERSION8) continue;
+				*length = 0;
+				return port;
+			}
+			
+			if (!packet_receive(port, buffer, bufsize, length))
+			{
+				*length = 0;
+			}
+			return port;
+		}
+		if (!select_wait(main_port, &INET_select))
+		{
+			return NULL;
+		}
 	}
 }
 

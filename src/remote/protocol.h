@@ -263,6 +263,12 @@ typedef enum
 	op_service_start		= 85,
 
 	op_rollback_retaining	= 86,
+// Two following opcode are used in vulcan.
+// No plans to implement protocol 11, where they are used,
+// place here only for informational reasons and to have common op-space.
+//	op_update_account_info	= 87,
+//	op_authenticate_user	= 88,
+	op_partial				= 89,	// packet is not complete - delay processing
 
 	op_max
 } P_OP;

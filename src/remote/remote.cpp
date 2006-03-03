@@ -809,6 +809,11 @@ rem_port* rem_port::receive(PACKET* pckt)
 	return (*this->port_receive_packet)(this, pckt);
 }
 
+rem_port* rem_port::select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length)
+{
+	return (*this->port_select_multi)(this, buffer, bufsize, length);
+}
+
 XDR_INT rem_port::send(PACKET* pckt)
 {
 	return (*this->port_send_packet)(this, pckt);
@@ -829,3 +834,51 @@ rem_port* rem_port::request(PACKET* pckt)
 	return (*this->port_request)(this, pckt);
 }
 
+#ifdef SUPERSERVER
+bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
+{
+/**************************************
+ *
+ *	R E M O T E  _ g e t b y t e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get a bunch of bytes from a port buffer
+ *
+ **************************************/
+	SLONG bytecount = count;
+
+/* Use memcpy to optimize bulk transfers. */
+
+	while (bytecount > 0) {
+		if (xdrs->x_handy >= bytecount) {
+			memcpy(buff, xdrs->x_private, bytecount);
+			xdrs->x_private += bytecount;
+			xdrs->x_handy -= bytecount;
+			break;
+		}
+		else {
+			if (xdrs->x_handy > 0) {
+				memcpy(buff, xdrs->x_private, xdrs->x_handy);
+				xdrs->x_private += xdrs->x_handy;
+				buff += xdrs->x_handy;
+				bytecount -= xdrs->x_handy;
+				xdrs->x_handy = 0;
+			}
+			rem_port* port = (rem_port*) xdrs->x_public;
+			if (port->port_qoffset >= port->port_queue->getCount()) {
+				port->port_flags |= PORT_partial_data;
+				return FALSE;
+			}
+			xdrs->x_handy = (*port->port_queue)[port->port_qoffset].getCount();
+			fb_assert(xdrs->x_handy <= port->port_buff_size);
+			memcpy(xdrs->x_base, (*port->port_queue)[port->port_qoffset].begin(), xdrs->x_handy);
+			++(port->port_qoffset);
+			xdrs->x_private = xdrs->x_base;
+		}
+	}
+	
+	return TRUE;
+}
+#endif //SUPERSERVER

@@ -38,6 +38,7 @@ void		REMOTE_reset_request (struct rrq *, struct message *);
 void		REMOTE_reset_statement (struct rsr *);
 void		REMOTE_save_status_strings (ISC_STATUS *);
 OBJCT		REMOTE_set_object (rem_port*, blk*, OBJCT);
+bool_t		REMOTE_getbytes (XDR*, SCHAR*, u_int);
 
 #endif // REMOTE_REMOT_PROTO_H
 

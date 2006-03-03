@@ -130,6 +130,10 @@ namespace {
 	const ParametersSet spbParam = {isc_spb_address_path};
 }
 
+static void free_request(SERVER_REQ);
+static SERVER_REQ alloc_request();
+static bool link_request(SERVER_REQ, rem_port*, SERVER_REQ, const char *);
+
 static bool	accept_connection(rem_port*, P_CNCT*, PACKET*);
 static ISC_STATUS	allocate_statement(rem_port*, P_RLSE*, PACKET*);
 #ifdef MULTI_THREAD
@@ -256,6 +260,131 @@ void SRVR_main(rem_port* main_port, USHORT flags)
 }
 
 
+#ifdef MULTI_THREAD
+static void free_request(SERVER_REQ request)
+{
+/**************************************
+ *
+ *	f r e e  _ r e q u e s t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	request->req_next = free_requests;
+	free_requests = request;
+}
+
+
+static SERVER_REQ alloc_request()
+{
+/**************************************
+ *
+ *	a l l o c _ r e q u e s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get request block from the free blocks list,
+ *	if empty - allocate the new one.
+ *
+ **************************************/
+	SERVER_REQ request = free_requests;
+#if defined(DEV_BUILD) && defined(DEBUG)
+	int request_count = 0;
+#endif
+	
+	/* Allocate a memory block to store the request in */
+	if (request)
+	{
+		free_requests = request->req_next;
+	}
+	else
+	{
+		/* No block on the free list - allocate some new memory */
+
+		while (!(request = (SERVER_REQ) gds__alloc((SLONG) sizeof(struct server_req_t))))
+		{
+#if defined(DEV_BUILD) && defined(DEBUG)
+			if (request_count >  4)
+				throw std::bad_alloc();
+#endif
+
+			/* System is out of memory, let's delay processing this
+			   request and hope another thread will free memory or
+			   request blocks that we can then use. */
+
+			THREAD_EXIT();
+			THREAD_SLEEP(1 * 1000);
+			THREAD_ENTER();
+		}
+		zap_packet(&request->req_send, true);
+		zap_packet(&request->req_receive, true);
+#ifdef DEBUG_REMOTE_MEMORY
+		printf("alloc_request         allocate request %x\n", request);
+#endif
+	}
+	
+	request->req_next = NULL;
+	request->req_chain = NULL;
+	return request;
+}
+
+
+static bool link_request(SERVER_REQ queue, 
+						 rem_port* port, 
+						 SERVER_REQ request, 
+						 const char *
+#ifdef DEBUG_REMOTE_MEMORY
+									 kind
+#endif
+)
+{
+/**************************************
+ *
+ *	l i n k _ r e q u e s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Search for a port in a queue, 
+ *	if found - append new request to it.
+ *
+ **************************************/
+	for (; queue; queue = queue->req_next) 
+	{
+		if (queue->req_port == port) 
+		{
+		 	P_OP operation = request->req_receive.p_operation;
+	
+			// Don't queue a dummy keepalive packet if there is a request on this port
+			if (operation == op_dummy) {
+				free_request(request->req_next);
+				return true;
+			}
+			
+			port->port_requests_queued++;
+			append_request_chain(request, &queue->req_chain);
+#ifdef DEBUG_REMOTE_MEMORY
+			printf
+				("link_request    %s    request_queued %d\n",
+				 kind, port->port_requests_queued);
+			 fflush(stdout);
+#endif
+#ifdef CANCEL_OPERATION
+			if (operation == op_exit || operation == op_disconnect)
+				cancel_operation(port);
+#endif
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif //MULTI_THREAD
+
+
 void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 {
 #ifdef MULTI_THREAD
@@ -269,15 +398,9 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
  *	Multi-threaded flavor of server.
  *
  **************************************/
-	SERVER_REQ request = NULL, active;
-	rem_port* port = NULL; // Was volatile PORT port = NULL;
+	SERVER_REQ request = 0;
+	rem_port* port = 0;		// Was volatile PORT port = NULL;
 	SLONG pending_requests;
-	P_OP operation;
-#ifdef DEV_BUILD
-#ifdef DEBUG
-	SSHORT request_count = 0;
-#endif /* DEBUG */
-#endif /* DEV_BUILD */
 	ISC_STATUS_ARRAY status_vector;
 	trdb thd_context(status_vector);
 	trdb* tdrdb;
@@ -290,7 +413,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 	try {
 
-	set_server(main_port, flags);
+		set_server(main_port, flags);
 
 /* We need to have this error handler as there is so much underlaying code
  * that is depending on it being there.  The expected failure
@@ -304,232 +427,169 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
  * server.
  */
 
-	try {
+		try {
 
-/* When this loop exits, the server will no longer receive requests */
-	while (true)
-	{
-		port = NULL;
-
-		/* Allocate a memory block to store the request in */
-
-		if (request = free_requests)
-		{
-			free_requests = request->req_next;
-		}
-		else
-		{
-			/* No block on the free list - allocate some new memory */
-
-			request = (SERVER_REQ) gds__alloc((SLONG) sizeof(struct server_req_t));
-			if (request)
+			// When this loop exits, the server will no longer receive requests
+			while (true)
 			{
-				zap_packet(&request->req_send, true);
-				zap_packet(&request->req_receive, true);
-#ifdef DEBUG_REMOTE_MEMORY
-				printf("SRVR_multi_thread         allocate request %x\n",
-						  request);
-#endif
-			}
-			else
-			{
-				/* System is out of memory, let's delay processing this
-				   request and hope another thread will free memory or
-				   request blocks that we can then use. */
 
-				THREAD_EXIT();
-				THREAD_SLEEP(1 * 1000);
-				THREAD_ENTER();
-				continue;
-			}
-		}
+				// Allocate a memory block to store the request in
+				request = alloc_request();
 
-#ifdef DEV_BUILD
-#ifdef DEBUG
-		if ((request_count++ % 4) == 0)
-			throw std::bad_alloc();
-#endif /* DEBUG */
-#endif /* DEV_BUILD */
-
-		if (request) {
-			request->req_next = NULL;
-			request->req_chain = NULL;
-
-			/* We have a request block - now get some information to stick into it */
-			if (!(port = main_port->receive(&request->req_receive)))
-			{
-				gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
-				THREAD_EXIT();
-				REM_restore_thread_data();
-				return;
-			}
-
-			request->req_port = port;
-			operation = request->req_receive.p_operation;
-
-#ifdef DEV_BUILD
-#ifdef DEBUG
-			if ((request_count % 5) == 0)
-				throw std::bad_alloc();
-#endif /* DEBUG */
-#endif /* DEV_BUILD */
-
-			/* If port has an active request, link this one in */
-
-			for (active = active_requests; active; active = active->req_next)
-				if (active->req_port == port) {
-					/* Don't queue a dummy keepalive packet if there is
-					   an active request running on this port. */
-
-					if (operation == op_dummy) {
-						request->req_next = free_requests;
-						free_requests = request;
-						goto finished;
-					}
-					port->port_requests_queued++;
-					append_request_chain(request, &active->req_chain);
-#ifdef DEBUG_REMOTE_MEMORY
-					printf
-						("SRVR_multi_thread    ACTIVE     request_queued %d\n",
-						 port->port_requests_queued);
-					fflush(stdout);
-#endif
-#ifdef CANCEL_OPERATION
-					if (operation == op_exit || operation == op_disconnect)
-						cancel_operation(port);
-#endif
-					goto finished;
-				}
-
-			/* If port has an pending request, link this one in */
-
-			for (active = request_que; active; active = active->req_next)
-			{
-				if (active->req_port == port)
+				// We have a request block - now get some information to stick into it
+				UCHAR buffer[32767];
+				SSHORT dataSize = main_port->port_buff_size > sizeof(buffer) ? 
+								  sizeof(buffer) : main_port->port_buff_size;
+				if (! port) 
 				{
-					/* Don't queue a dummy keepalive packet if there is
-					   a pending request against this port. */
-
-					if (operation == op_dummy) {
-						request->req_next = free_requests;
-						free_requests = request;
-						goto finished;
+					if (!(port = main_port->select_multi(buffer, dataSize, &dataSize)))
+					{
+						gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
+						THREAD_EXIT();
+						REM_restore_thread_data();
+						return;
 					}
+					if (dataSize)
+					{
+						memcpy(port->port_queue->add().getBuffer(dataSize), buffer, dataSize);
+					}
+				}
+				else
+				{
+					dataSize = port->port_receive.x_handy;
+				}
+				
+//				gds__log("queue=%d", port->port_queue->getCount());
+				if (dataSize) {
+					port->receive(&request->req_receive);
+					port->port_qoffset = 0;
+//					gds__log("dats=%d", dataSize);
+					if (request->req_receive.p_operation == op_partial)
+					{
+//						gds__log("Partial");
+						free_request(request);
+						request = 0;
+						port = 0;
+						continue;
+					}
+				}
+				else
+				{
+					request->req_receive.p_operation = op_exit;
+				}
+//				gds__log("op=%d ds=%d", request->req_receive.p_operation, dataSize);
+
+				port->port_queue->clear();
+				request->req_port = port;
+
+				// If port has an active request, link this one in
+				if ((!link_request(active_requests, port, request, "ACTIVE ")) &&
+					// If port has a pending request, link this one in
+					(!link_request(request_que, port, request, "PENDING")))
+				{
+					/* No port to assign request to, add it to the waiting queue and wake up a
+					 * thread to handle it 
+					 */
+					REMOTE_TRACE(("Enqueue request %p", request));
+					pending_requests = append_request_next(request, &request_que);
+					request = 0;
 					port->port_requests_queued++;
-					append_request_chain(request, &active->req_chain);
 #ifdef DEBUG_REMOTE_MEMORY
 					printf
-						("SRVR_multi_thread    PENDING     request_queued %d\n",
+						("SRVR_multi_thread    APPEND_PENDING     request_queued %d\n",
 						 port->port_requests_queued);
 					fflush(stdout);
 #endif
-#ifdef CANCEL_OPERATION
-					if (operation == op_exit || operation == op_disconnect)
-						cancel_operation(port);
-#endif
-					goto finished;
+
+					/* 
+					 * NOTE: we really *should* have something that limits how many
+					 * total threads we allow in the system.  As each thread will
+					 * eat up memory that other threads could use to complete their work
+					 *
+					 * NOTE: The setting up of extra_threads variable is done below to let waiting
+					 * threads know if their services may be needed for the current set
+					 * of requests.  Otherwise, some idle threads may leave the system 
+					 * freeing up valuable memory.
+					 */
+					extra_threads = threads_waiting - pending_requests;
+					if (extra_threads < 0) {
+						gds__thread_start(	loopThread,
+											(void*)(IPTR) flags,
+											THREAD_medium,
+											THREAD_ast,
+											0);
+					}
+
+					REMOTE_TRACE(("Post event"));
+					requests_semaphore.release();
+				}
+				request = 0;
+
+				// Port may have some data in xdr buffer. 
+				// If not, we will select another one.
+				if (port->port_receive.x_handy <= 0)
+				{
+					port = 0;
 				}
 			}
 
-			/* No port to assign request to, add it to the waiting queue and wake up a
-			 * thread to handle it 
-			 */
-			REMOTE_TRACE(("Enqueue request %p", request));
-			pending_requests = append_request_next(request, &request_que);
-			port->port_requests_queued++;
-#ifdef DEBUG_REMOTE_MEMORY
-			printf
-				("SRVR_multi_thread    APPEND_PENDING     request_queued %d\n",
-				 port->port_requests_queued);
-			fflush(stdout);
-#endif
-
-			/* NOTE: we really *should* have something that limits how many
-			 * total threads we allow in the system.  As each thread will
-			 * eat up memory that other threads could use to complete their work
-			 */
-			/* NOTE: The setting up of extra_threads variable is done below to let waiting
-			   threads know if their services may be needed for the current set
-			   of requests.  Otherwise, some idle threads may leave the system 
-			   freeing up valuable memory.
-			 */
-			extra_threads = threads_waiting - pending_requests;
-			if (extra_threads < 0) {
-				gds__thread_start(	loopThread,
-									(void*)(IPTR) flags,
-									THREAD_medium,
-									THREAD_ast,
-									0);
-			}
-
-			REMOTE_TRACE(("Post event"));
-			requests_semaphore.release();
 		}
-	  finished:
-		;
-	}
-
-	}	// try
-	catch (const std::exception&)
-	{
-		/* If we got as far as having a port allocated before the error, disconnect it
-		 * gracefully.
-		 */
-		if (port != NULL)
+		catch (const std::exception&)
 		{
+			/* If we got as far as having a port allocated before the error, disconnect it
+			 * gracefully.
+			 */
+			if (port != NULL)
+			{
 /*
-#ifdef DEV_BUILD
-#ifdef DEBUG
+#if defined(DEV_BUILD) && defined(DEBUG)
 			ConsolePrintf("%%ISERVER-F-NOPORT, no port in a storm\r\n");
 #endif 
-#endif 
 */
-			gds__log("SRVR_multi_thread: forcefully disconnecting a port");
+				gds__log("SRVR_multi_thread: forcefully disconnecting a port");
 
-			/* To handle recursion within the error handler */
-			try {
-				/* If we have a port, request really should be non-null, but just in case ... */
-				if (request != NULL) {
-					/* Send client a real status indication of why we disconnected them */
-					/* Note that send_response() can post errors that wind up in this same handler */
+				/* To handle recursion within the error handler */
+				try {
+					/* If we have a port, request really should be non-null, but just in case ... */
+					if (request != NULL) {
+						/* Send client a real status indication of why we disconnected them */
+						/* Note that send_response() can post errors that wind up in this same handler */
 /*
-#ifdef DEV_BUILD
-#ifdef DEBUG
-					ConsolePrintf
-						("%%ISERVER-F-NOMEM, virtual memory exhausted\r\n");
-#endif 
+#if defined(DEV_BUILD) && defined(DEBUG)
+						ConsolePrintf
+							("%%ISERVER-F-NOMEM, virtual memory exhausted\r\n");
 #endif 
 */
-					port->send_response(&request->req_send, 0, 0,
+						port->send_response(&request->req_send, 0, 0,
 								  status_vector);
-					port->disconnect(&request->req_send, &request->req_receive);
-				}
-				else {
-					/* Can't tell the client much, just make 'em go away.  Their side should detect
-					 * a network error
-					 */
-					port->disconnect(NULL, NULL);
-				}
-				port = NULL;
+						port->disconnect(&request->req_send, &request->req_receive);
+					}
+					else {
+						/* Can't tell the client much, just make 'em go away.  Their side should detect
+						 * a network error
+						 */
+						port->disconnect(NULL, NULL);
+					}
+					port = NULL;
 
-			}	// try
-			catch (const std::exception&) {
-				port->disconnect(NULL, NULL);
-				port = NULL;
+				}	// try
+				catch (const std::exception&) {
+					port->disconnect(NULL, NULL);
+					port = NULL;
+				}
+			}
+
+			/* There was an error in the processing of the request, if we have allocated
+			 * a request, free it up and continue.
+			 */
+			if (request != NULL) {
+				request->req_next = free_requests;
+				free_requests = request;
+				request = NULL;
 			}
 		}
 
-		/* There was an error in the processing of the request, if we have allocated
-		 * a request, free it up and continue.
-		 */
-		if (request != NULL) {
-			request->req_next = free_requests;
-			free_requests = request;
-			request = NULL;
-		}
 	}
-
-	}	// try
 	catch (const std::exception&) {
 		/* Some kind of unhandled error occured during server setup.  In lieu
 		 * of anything we CAN do, log something (and we might be so hosed
