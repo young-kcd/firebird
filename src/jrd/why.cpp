@@ -5138,7 +5138,7 @@ static void check_status_vector(const ISC_STATUS* status,
  *
  **************************************/
 
-#define SV_MSG(x)	{ fprintf (stderr, "%s %d check_status_vector: %s\n", __FILE__, __LINE__, (x)); BREAKPOINT (__LINE__); }
+#define SV_MSG(x)	{ gds__log ("%s %d check_status_vector: %s", __FILE__, __LINE__, (x)); BREAKPOINT (__LINE__); }
 
 	const ISC_STATUS* s = status;
 	if (!s) {
