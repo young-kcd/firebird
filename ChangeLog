@@ -1,3 +1,36 @@
+2006-03-03 17:20  alexpeshkoff
+
+	* firebird2/src/remote/: inet.cpp (1.155), protocol.h (1.27),
+	remot_proto.h (1.10), remote.cpp (1.42), remote.h (1.46),
+	server.cpp (1.114):
+	
+	Fixed SF bug 1385092
+
+2006-03-03 17:08  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.98):
+	
+	don't let printf() damage sockets in debug build
+
+2006-03-03 17:06  alexpeshkoff
+
+	* firebird2/src/jrd/err.cpp (1.61):
+	
+	slightly better diagnostic in log
+
+2006-03-03 17:03  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.h (1.61):
+	
+	let's try to make gcc4 happy
+
+2006-03-03 11:56  kkuznetsov
+
+	* firebird2/builds/posix/: prefix.solaris (1.19),
+	prefix.solaris-64gcc (1.6):
+	
+	Removed profile gcc flag
+
 2006-03-01 23:58  asfernandes
 
 	* firebird2/src/jrd/evl_string.h (1.22):
