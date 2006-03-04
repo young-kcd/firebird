@@ -1,3 +1,16 @@
+2006-03-03 14:37  hvlad
+
+	* firebird2/src/dsql/dsql.cpp (1.54.2.4.4.2):
+	
+	More bugfix: when the engine call xxx_info functions itself it must
+	take care about gds_info_length prefix
+
+2006-03-03 08:34  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solaris (1.5.2.9):
+	
+	Removed profile gcc flag noticed by Douglas.K.Moore
+
 2006-03-01 23:18  hvlad
 
 	* firebird2/src/remote/server.cpp (1.34.2.4.2.6):
