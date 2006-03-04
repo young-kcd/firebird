@@ -2438,7 +2438,10 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 		{
 			record = FB_NEW_RPT(rpb->rpb_record->rec_pool, format->fmt_length) 
 				Record(rpb->rpb_record->rec_pool);
-			memcpy(record, rpb->rpb_record, sizeof(Record) + sizeof(SCHAR) * rpb->rpb_record->rec_length);
+			record->rec_precedence.takeOwnership(rpb->rpb_record->rec_precedence);
+			// start copying at rec_format, to not mangle record->rec_precedence
+			memcpy(&record->rec_format, &rpb->rpb_record->rec_format,
+				sizeof(Record) - ((UCHAR*)&record->rec_format - (UCHAR*)record) + rpb->rpb_record->rec_length);
 			delete rpb->rpb_record;
 			rpb->rpb_record = record;
 		}

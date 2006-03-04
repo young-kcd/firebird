@@ -115,10 +115,12 @@ const USHORT DPM_other		= 3;		/* Independent (or don't care) record */
 class Record : public pool_alloc_rpt<SCHAR, type_rec>
 {
 public:
-	MemoryPool& rec_pool;		// pool where record to be expanded
 	Record(MemoryPool& p) : rec_pool(p), rec_precedence(p) { }
-	const Format* rec_format;	/* what the data looks like */
+	// ASF: Record is memcopied in VIO_record, starting at rec_format.
+	// rec_precedence has destructor, so don't move it to after rec_format.
+	MemoryPool& rec_pool;		// pool where record to be expanded
 	PageStack rec_precedence;	/* stack of higher precedence pages */
+	const Format* rec_format;	/* what the data looks like */
 	USHORT rec_length;			/* how much there is */
 	const Format* rec_fmt_bk;   // backup format to cope with Borland's ill null signaling
 	UCHAR rec_flags;			/* misc record flags */
