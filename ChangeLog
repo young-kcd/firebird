@@ -1,3 +1,9 @@
+2006-03-04 19:24  asfernandes
+
+	* firebird2/src/jrd/: req.h (1.54), vio.cpp (1.147):
+	
+	Fix SF field-test #1439268 - Sequence of commands crash FB server
+
 2006-03-03 17:20  alexpeshkoff
 
 	* firebird2/src/remote/: inet.cpp (1.155), protocol.h (1.27),
