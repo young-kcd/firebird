@@ -307,7 +307,7 @@ static SERVER_REQ alloc_request()
 		while (!(request = (SERVER_REQ) gds__alloc((SLONG) sizeof(struct server_req_t))))
 		{
 #if defined(DEV_BUILD) && defined(DEBUG)
-			if (request_count >  4)
+			if (request_count++ > 4)
 				throw std::bad_alloc();
 #endif
 
