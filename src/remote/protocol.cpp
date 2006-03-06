@@ -1327,12 +1327,19 @@ static bool_t xdr_request(
 		return TRUE;
 
 	rem_port* port = (rem_port*) xdrs->x_public;
+
+	if (request_id < 0 || request_id >= port->port_object_vector->vec_count)
+		return FALSE;
+
 	rrq* request = (rrq*) port->port_objects[request_id];
 
 	if (!request)
 		return FALSE;
 
 	if (incarnation && !(request = REMOTE_find_request(request, incarnation)))
+		return FALSE;
+
+	if (message_number < 0 || message_number > request->rrq_max_msg)
 		return FALSE;
 
 	rrq::rrq_repeat* tail = &request->rrq_rpt[message_number];
@@ -1618,6 +1625,8 @@ static bool_t xdr_sql_blr(
 	rem_port* port = (rem_port*) xdrs->x_public;
 	RSR statement;
 	if (statement_id >= 0) {
+		if (statement_id >= port->port_object_vector->vec_count)
+			return FALSE;
 		if (!(statement = (RSR) port->port_objects[statement_id]))
 			return FALSE;
 	}
@@ -1708,11 +1717,15 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 
 	rem_port* port = (rem_port*) xdrs->x_public;
 	if (statement_id >= 0) {
-		if (!(statement = (RSR) port->port_objects[statement_id]))
+		if (statement_id >= port->port_object_vector->vec_count)
 			return FALSE;
+		statement = (RSR) port->port_objects[statement_id];
 	}
 	else
 		statement = port->port_statement;
+
+	if (!statement)
+		return FALSE;
 
 	if ((message = statement->rsr_buffer) != 0) {
 		statement->rsr_buffer = message->msg_next;

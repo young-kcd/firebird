@@ -260,7 +260,7 @@ void SRVR_main(rem_port* main_port, USHORT flags)
 }
 
 
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 static void free_request(SERVER_REQ request)
 {
 /**************************************
@@ -382,12 +382,12 @@ static bool link_request(SERVER_REQ queue,
 
 	return false;
 }
-#endif //MULTI_THREAD
+#endif //SUPERSERVER
 
 
 void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 {
-#ifdef MULTI_THREAD
+#ifdef SUPERSERVER
 /**************************************
  *
  *	S R V R _ m u l t i _ t h r e a d
@@ -601,7 +601,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 	THREAD_EXIT();
 	REM_restore_thread_data();
-#endif
+#endif //SUPERSERVER
 }
 
 
@@ -3616,6 +3616,14 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 	USHORT count, count2;
 	count2 = count =
 		(this->port_flags & PORT_rpc) ? 1 : data->p_data_messages;
+	
+	if (msg_number > requestL->rrq_max_msg)
+	{
+		status_vector[0] = isc_arg_gds;
+		status_vector[1] = isc_badmsgnum;
+		status_vector[2] = isc_arg_end;
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
 	rrq::rrq_repeat* tail = requestL->rrq_rpt + msg_number;
 	const rem_fmt* format = tail->rrq_format;
 
@@ -4190,6 +4198,13 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
 
 	const USHORT number = data->p_data_message_number;
 	requestL = REMOTE_find_request(requestL, data->p_data_incarnation);
+	if (number > requestL->rrq_max_msg)
+	{
+		status_vector[0] = isc_arg_gds;
+		status_vector[1] = isc_badmsgnum;
+		status_vector[2] = isc_arg_end;
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
 	REM_MSG message = requestL->rrq_rpt[number].rrq_message;
 	const rem_fmt* format = requestL->rrq_rpt[number].rrq_format;
 
@@ -4630,6 +4645,14 @@ ISC_STATUS rem_port::start_and_send(P_OP	operation,
 
 	requestL = REMOTE_find_request(requestL, data->p_data_incarnation);
 	const USHORT number = data->p_data_message_number;
+
+	if (number > requestL->rrq_max_msg)
+	{
+		status_vector[0] = isc_arg_gds;
+		status_vector[1] = isc_badmsgnum;
+		status_vector[2] = isc_arg_end;
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
 	REM_MSG message = requestL->rrq_rpt[number].rrq_message;
 	const rem_fmt* format = requestL->rrq_rpt[number].rrq_format;
 	REMOTE_reset_request(requestL, message);
