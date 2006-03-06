@@ -1,3 +1,15 @@
+2006-03-06 02:00  asfernandes
+
+	* firebird2/doc/README.user.embedded (1.5):
+	
+	Document files required for fbembed.dll
+
+2006-03-05 11:26  alexpeshkoff
+
+	* firebird2/src/remote/server.cpp (1.115):
+	
+	fixed debugging code - thanks to Claudio
+
 2006-03-04 19:24  asfernandes
 
 	* firebird2/src/jrd/: req.h (1.54), vio.cpp (1.147):
