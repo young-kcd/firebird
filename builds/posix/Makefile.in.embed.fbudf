@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.embed.fbudf,v 1.3 2004-04-30 23:02:07 brodsom Exp $
+#  $Id: Makefile.in.embed.fbudf,v 1.4 2006-03-06 17:49:47 alexpeshkoff Exp $
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleType=superclient
+CFLAGS+=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -41,9 +42,9 @@ include     $(ROOT)/gen/make.shared.variables
 
 UDF=	$(FIREBIRD)/UDF
 
-
+FBUDF_Other_Sources = common/classes/timestamp.cpp
 FBUDF_Files = fbudf.cpp
-FBUDF_Sources = $(addprefix extlib/fbudf/, $(FBUDF_Files))
+FBUDF_Sources = $(addprefix extlib/fbudf/, $(FBUDF_Files)) $(FBUDF_Other_Sources)
 FBUDF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUDF_Sources))))
 
 UTIL_Files = ib_util.c
@@ -69,7 +70,8 @@ $(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(FBUTIL_Objects)
 ifeq ($(PLATFORM),win32)
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) -L$(LIB) -lfbembed -o $@ $^
 else
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -lm -o $@ $^
 endif
 
 
