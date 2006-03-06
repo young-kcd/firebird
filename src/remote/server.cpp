@@ -437,7 +437,8 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				request = alloc_request();
 
 				// We have a request block - now get some information to stick into it
-				UCHAR buffer[32767];
+				const size_t MAX_PACKET_SIZE = 32767;
+				UCHAR buffer[MAX_PACKET_SIZE];
 				SSHORT dataSize = main_port->port_buff_size > sizeof(buffer) ? 
 								  sizeof(buffer) : main_port->port_buff_size;
 				if (! port) 
