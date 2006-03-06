@@ -1328,7 +1328,7 @@ static bool_t xdr_request(
 
 	rem_port* port = (rem_port*) xdrs->x_public;
 
-	if (request_id < 0 || request_id >= port->port_object_vector->vec_count)
+	if (request_id >= port->port_object_vector->vec_count)
 		return FALSE;
 
 	rrq* request = (rrq*) port->port_objects[request_id];
@@ -1339,7 +1339,7 @@ static bool_t xdr_request(
 	if (incarnation && !(request = REMOTE_find_request(request, incarnation)))
 		return FALSE;
 
-	if (message_number < 0 || message_number > request->rrq_max_msg)
+	if (message_number > request->rrq_max_msg)
 		return FALSE;
 
 	rrq::rrq_repeat* tail = &request->rrq_rpt[message_number];
