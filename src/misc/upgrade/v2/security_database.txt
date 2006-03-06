@@ -6,11 +6,14 @@ you must run appropriate upgrade script - security_database.sql. To do so:
   1. Put your old security database in some known to you place (not new home
 directory). Always have a copy of it!
   2. Start firebird using it's new, native security2.fdb.
-  3. Connect to your old security database as SYSDBA and run the script.
-  4. Stop firebird.
-  5. Copy upgraded database to firebird's home directory (as security2.fdb).
-  6. Set LegacyHash parameter in firebird.conf to 1.
-  7. Start firebird.
+  3. Convert your old security database to ODS11 (i.e. backup and restore it 
+using gbak from firebird 2.0). Without this step you will get failure running 
+security_database.sql!
+  4. Connect to restored database as SYSDBA and run the script.
+  5. Stop firebird.
+  6. Copy upgraded database to firebird's home directory (as security2.fdb).
+  7. Set LegacyHash parameter in firebird.conf to 1.
+  8. Start firebird.
 
   Now you should be able to connect to firebird 2.0 server using your old 
 logins and passwords. But be careful - as long as you have LegacyHash = 1,
