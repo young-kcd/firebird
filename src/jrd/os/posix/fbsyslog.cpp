@@ -22,6 +22,7 @@
 #include "../jrd/os/fbsyslog.h"
 
 #include <syslog.h>
+#include <unistd.h>
 
 namespace Firebird {
 void Syslog::Record(Severity level, const string& Msg)
@@ -37,6 +38,18 @@ void Syslog::Record(Severity level, const string& Msg)
 		break;
 	}
 	syslog(priority | LOG_LOCAL3, "%s (%m)", Msg.c_str());
+	
+	// try to put it also on controlling tty
+	int fd = 2;
+	if (! isatty(fd))
+	{
+		fd = 1;
+	}
+	if (isatty(fd))
+	{
+		write(fd, Msg.c_str(), Msg.length());
+		write(fd, "\n", 1);
+	}
 }
 } // namespace Firebird
 
