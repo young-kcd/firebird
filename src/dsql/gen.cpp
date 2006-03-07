@@ -76,6 +76,7 @@ static void gen_sort(dsql_req*, dsql_nod*);
 static void gen_table_lock(dsql_req*, const dsql_nod*, USHORT);
 static void gen_udf(dsql_req*, const dsql_nod*);
 static void gen_union(dsql_req*, const dsql_nod*);
+static void stuff_context(dsql_req*, const dsql_ctx*);
 static void stuff_cstring(dsql_req*, const char*);
 static void stuff_word(dsql_req*, USHORT);
 
@@ -138,14 +139,14 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		node = node->nod_arg[0];
 		context = (dsql_ctx*) node->nod_arg[e_rel_context];
 		stuff(request, blr_dbkey);
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 		return;
 
 	case nod_rec_version:
 		node = node->nod_arg[0];
 		context = (dsql_ctx*) node->nod_arg[e_rel_context];
 		stuff(request, blr_record_version);
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 		return;
 
 	case nod_dom_value:
@@ -233,7 +234,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		map = (dsql_map*) node->nod_arg[e_map_map];
 		context = (dsql_ctx*) node->nod_arg[e_map_context];
 		stuff(request, blr_fid);
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 		stuff_word(request, map->map_position);
 		return;
 
@@ -960,13 +961,13 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		temp = node->nod_arg[e_era_relation];
 		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
 		stuff(request, blr_erase);
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 		return;
 
 	case nod_erase_current:
 		stuff(request, blr_erase);
 		context = (dsql_ctx*) node->nod_arg[e_erc_context];
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 		return;
 
 	case nod_exec_block:
@@ -1055,20 +1056,20 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		stuff(request, blr_modify);
 		temp = node->nod_arg[e_mod_source];
 		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 		temp = node->nod_arg[e_mod_update];
 		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 		GEN_statement(request, node->nod_arg[e_mod_statement]);
 		return;
 
 	case nod_modify_current:
 		stuff(request, blr_modify);
 		context = (dsql_ctx*) node->nod_arg[e_mdc_context];
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 		temp = node->nod_arg[e_mdc_update];
 		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 		GEN_statement(request, node->nod_arg[e_mdc_statement]);
 		return;
 
@@ -1346,7 +1347,7 @@ static void gen_aggregate( dsql_req* request, const dsql_nod* node)
 {
 	const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
 	stuff(request, blr_aggregate);
-	stuff(request, context->ctx_context);
+	stuff_context(request, context);
 	gen_rse(request, node->nod_arg[e_agg_rse]);
 
 // Handle GROUP BY clause 
@@ -1784,12 +1785,12 @@ static void gen_field( dsql_req* request, const dsql_ctx* context,
 
 	if (DDL_ids(request)) {
 		stuff(request, blr_fid);
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 		stuff_word(request, field->fld_id);
 	}
 	else {
 		stuff(request, blr_field);
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 		stuff_cstring(request, field->fld_name);
 	}
 
@@ -2114,7 +2115,7 @@ static void gen_relation( dsql_req* request, dsql_ctx* context)
 
 		if (context->ctx_alias)
 			stuff_cstring(request, context->ctx_alias);
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 	}
 	else if (procedure) {
 		if (DDL_ids(request)) {
@@ -2125,7 +2126,7 @@ static void gen_relation( dsql_req* request, dsql_ctx* context)
 			stuff(request, blr_procedure);
 			stuff_cstring(request, procedure->prc_name);
 		}
-		stuff(request, context->ctx_context);
+		stuff_context(request, context);
 
 		dsql_nod* inputs = context->ctx_proc_inputs;
 		if (inputs) {
@@ -2515,13 +2516,13 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 		if (context = parameter->par_dbkey_ctx) {
 			stuff(request, blr_assignment);
 			stuff(request, blr_dbkey);
-			stuff(request, context->ctx_context);
+			stuff_context(request, context);
 			gen_parameter(request, parameter);
 		}
 		if (context = parameter->par_rec_version_ctx) {
 			stuff(request, blr_assignment);
 			stuff(request, blr_record_version);
-			stuff(request, context->ctx_context);
+			stuff_context(request, context);
 			gen_parameter(request, parameter);
 		}
 	}
@@ -2719,7 +2720,7 @@ static void gen_union( dsql_req* request, const dsql_nod* union_node)
 		map_item = map_item->nod_arg[e_alias_value]; 
 	}
 	dsql_ctx* union_context = (dsql_ctx*) map_item->nod_arg[e_map_context];
-	stuff(request, union_context->ctx_context);
+	stuff_context(request, union_context);
 
 	dsql_nod* streams = union_node->nod_arg[e_rse_streams];
 	stuff(request, streams->nod_count);	// number of substreams 
@@ -2743,6 +2744,27 @@ static void gen_union( dsql_req* request, const dsql_nod* union_node)
 			count++;
 		}
 	}
+}
+
+
+/**
+  
+ 	stuff_context
+  
+    @brief	Write a context number into the BLR buffer.
+			Check for possible overflow.
+ 
+
+    @param request
+    @param context
+
+ **/
+static void stuff_context(dsql_req* request, const dsql_ctx* context)
+{
+	if (context->ctx_context > MAX_UCHAR) {
+		ERRD_post(isc_too_many_contexts, 0);
+	}
+	stuff(request, context->ctx_context);
 }
 
 
@@ -2785,4 +2807,3 @@ static void stuff_word( dsql_req* request, USHORT word)
 	stuff(request, word);
 	stuff(request, word >> 8);
 }
-
