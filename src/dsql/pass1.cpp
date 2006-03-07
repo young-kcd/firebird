@@ -6110,7 +6110,7 @@ static dsql_nod* pass1_returning(dsql_req* request,
 		dsql_nod** dst = target->nod_arg;
 		dsql_nod** ptr = node->nod_arg;
 		for (const dsql_nod* const* const end = ptr + node->nod_count;
-			ptr < end; src++, ptr++)
+			ptr < end; src++, dst++, ptr++)
 		{
 			dsql_nod* temp = MAKE_node(nod_assign, 2);
 			temp->nod_arg[0] = *src;
