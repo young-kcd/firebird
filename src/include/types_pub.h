@@ -43,6 +43,9 @@ typedef void*		FB_API_HANDLE;
 
 typedef long ISC_STATUS;
 
+#define ISC_STATUS_LENGTH	20
+typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
+
 /******************************************************************/
 /* Define type, export and other stuff based on c/c++ and Windows */
 /******************************************************************/

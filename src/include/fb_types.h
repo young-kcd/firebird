@@ -94,9 +94,6 @@ struct lstring
 	UCHAR*	lstr_address;
 };
 
-#define ISC_STATUS_LENGTH	20
-typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
-
 typedef unsigned char BOOLEAN;
 typedef char TEXT;				/* To be expunged over time */
 /*typedef unsigned char STEXT;	Signed text - not used
