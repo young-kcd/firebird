@@ -1692,7 +1692,7 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 
 	TRANSLATE_HANDLE(*handle, dbb, HANDLE_database, isc_bad_db_handle);
 
-#ifdef SUPERSERVER
+#if defined(SUPERSERVER) && !defined(EMBEDDED)
 
 /* Drop all DSQL statements to reclaim DSQL memory pools. */
 
@@ -1819,7 +1819,7 @@ ISC_STATUS API_ROUTINE GDS_DROP_DATABASE(ISC_STATUS * user_status,
 	WHY_ATT dbb;
 	TRANSLATE_HANDLE(*handle, dbb, HANDLE_database, isc_bad_db_handle);
 
-#ifdef SUPERSERVER
+#if defined(SUPERSERVER) && !defined(EMBEDDED)
 
 /* Drop all DSQL statements to reclaim DSQL memory pools. */
 
