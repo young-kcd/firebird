@@ -1279,7 +1279,8 @@ static RTN walk_data_page(thread_db* tdbb,
 					walk_record(tdbb, control, relation, header,
 								line->dpg_length, number, false);
 				if ((result == rtn_corrupt)
-					&& (control->vdr_flags & vdr_repair)) {
+					&& (control->vdr_flags & vdr_repair))
+				{
 					CCH_MARK(tdbb, &window);
 					header->rhd_flags |= rhd_damaged;
 				}
@@ -1912,7 +1913,10 @@ static RTN walk_record(thread_db* tdbb,
 
 	if (header->rhd_flags & (rhd_fragment | rhd_deleted) ||
 		!((header->rhd_flags & rhd_large) ||
-		  (control && (control->vdr_flags & vdr_records)))) return rtn_ok;
+		  (control && (control->vdr_flags & vdr_records))))
+	{
+		return rtn_ok;
+	}
 
 /* Pick up what length there is on the fragment */
 
@@ -1955,7 +1959,8 @@ static RTN walk_record(thread_db* tdbb,
 		fetch_page(tdbb, control, page_number, pag_data, &window, &page);
 		const data_page::dpg_repeat* line = &page->dpg_rpt[line_number];
 		if (page->dpg_relation != relation->rel_id ||
-			line_number >= page->dpg_count || !(length = line->dpg_length)) {
+			line_number >= page->dpg_count || !(length = line->dpg_length))
+		{
 			corrupt(tdbb, control, VAL_REC_FRAGMENT_CORRUPT, relation,
 					number);
 			CCH_RELEASE(tdbb, &window);

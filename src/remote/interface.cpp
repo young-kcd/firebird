@@ -2500,7 +2500,9 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 				if (l) {
 					if (((U_IPTR) buffer & (ALIGNMENT - 1))
 						|| ((U_IPTR) p & (ALIGNMENT - 1)))
+					{
 						memcpy(buffer, p, l);
+					}
 					else
 						mov_faster((SLONG *) p, (SLONG *) buffer, l);
 				}

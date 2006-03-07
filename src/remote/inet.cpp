@@ -323,7 +323,7 @@ static int		parse_line(const TEXT*, const TEXT*, const TEXT*, const TEXT*);
 #endif
 
 #ifdef DEBUG
-static void packet_print(const TEXT*, const UCHAR*, int, int);
+static void packet_print(const TEXT*, const UCHAR*, int, ULONG);
 #endif
 
 static bool_t	packet_receive(rem_port*, UCHAR*, SSHORT, SSHORT*);
@@ -866,7 +866,6 @@ rem_port* INET_connect(const TEXT* name,
 /* We're a server, so wait for a host to show up */
 
 	if (flag & SRVR_multi_client) {
-		socklen_t optlen;
 		struct linger lingerInfo;
 
 		lingerInfo.l_onoff = 0;
@@ -885,7 +884,7 @@ rem_port* INET_connect(const TEXT* name,
 		/* Get any values for SO_LINGER so that they can be reset during
 		 * disconnect.  SO_LINGER should be set by default on the socket
 		 */
-		optlen = sizeof(port->port_linger);
+		socklen_t optlen = sizeof(port->port_linger);
 		n = getsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
 					   (SCHAR *) & port->port_linger, &optlen);
 
@@ -2309,8 +2308,9 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 /* If this isn't a multi-client server, just do the operation and get it
    over with */
 
-	if (!(main_port->port_server_flags & SRVR_multi_client)) {
+	if (!(main_port->port_server_flags & SRVR_multi_client))
 #endif //SUPERSERVER
+	{
 		/* loop as long as we are receiving dummy packets, just
 		   throwing them away--note that if we are a server we won't
 		   be receiving them, but it is better to check for them at
@@ -2341,9 +2341,9 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 		while (packet->p_operation == op_dummy);
 
 		return main_port;
-#ifndef SUPERSERVER
 	}
 
+#ifndef SUPERSERVER
 /* Multi-client server multiplexes all known ports for incoming packets. */
 
 	for (;;) {
@@ -2357,7 +2357,10 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 			if (port->port_dummy_timeout < 0) {
 				port->port_dummy_timeout = port->port_dummy_packet_interval;
 				if (port->port_flags & PORT_async ||
-					port->port_protocol < PROTOCOL_VERSION8) continue;
+					port->port_protocol < PROTOCOL_VERSION8)
+				{
+					continue;
+				}
 				packet->p_operation = op_dummy;
 				return port;
 			}
@@ -3375,7 +3378,7 @@ xdrs->x_handy += JAP_decode (aux_buffer, length, p2);
 #ifdef DEBUG
 static void packet_print(
 						 const TEXT* string,
-						 const UCHAR* packet, int length, int counter)
+						 const UCHAR* packet, int length, ULONG counter)
 {
 /**************************************
  *
@@ -3395,7 +3398,7 @@ static void packet_print(
 		} while (--l);
 
 	fprintf(stdout,
-			   "%05lu:    PKT %s\t(%4d): length = %4d, checksum = %d\n",
+			   "%05lu:    PKT %s\t(%lu): length = %4d, checksum = %d\n",
 			   inet_debug_timer(), string, counter, length, sum);
 	fflush(stdout);
 }
