@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.17 2005-12-18 17:56:43 alexpeshkoff Exp $
+#  $Id: Makefile.in.libfbembed,v 1.18 2006-03-07 11:21:55 kkuznetsov Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -53,7 +53,11 @@ SERVER_Files = $(OS_ServerFiles) server.cpp
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 
-AllObjects = $(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects)
+SMD_Sources = $(addprefix remote/,$(Server_main_dummy))
+SMD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SMD_Sources))))
+
+
+AllObjects = $(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects) $(SMD_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -61,15 +65,15 @@ Dependencies = $(AllObjects:.o=.d)
 
 libfbembed : $(LIBFBEMBED_SONAME)
 
-$(LIBFBEMBED_SO):	$(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects)
-	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) \
+$(LIBFBEMBED_SO): $(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects)
+  $(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) \
 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
 
-$(LIBFBEMBED_SOBASENAME):	$(LIBFBEMBED_SO)
-	(cd $(LIB) && $(LN) -f $(SharedLibraryName) $(SharedLibrarySoName) )
+$(LIBFBEMBED_SOBASENAME): $(LIBFBEMBED_SO)
+  (cd $(LIB) && $(LN) -f $(SharedLibraryName) $(SharedLibrarySoName) )
 
-$(LIBFBEMBED_SONAME):	$(LIBFBEMBED_SOBASENAME)
-	(cd $(LIB) && $(LN) -f $(SharedLibrarySoName) $(SharedLibraryBaseName) )
+$(LIBFBEMBED_SONAME): $(LIBFBEMBED_SOBASENAME)
+  (cd $(LIB) && $(LN) -f $(SharedLibrarySoName) $(SharedLibraryBaseName) )
 
 include $(ROOT)/gen/make.shared.targets
 
