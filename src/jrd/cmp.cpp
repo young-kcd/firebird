@@ -3426,6 +3426,9 @@ static jrd_nod* pass1(thread_db* tdbb,
 		node->nod_arg[e_dcl_cursor_rse] =
 			pass1(tdbb, csb, node->nod_arg[e_dcl_cursor_rse], view, view_stream,
 				  validate_expr);
+		node->nod_arg[e_dcl_cursor_refs] =
+			pass1(tdbb, csb, node->nod_arg[e_dcl_cursor_refs], view, view_stream,
+				  validate_expr);
 		break;
 
 	case nod_cursor_stmt:
@@ -4575,6 +4578,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 #ifdef SCROLLABLE_CURSORS
 		csb->csb_current_rse = rse_node;
 #endif
+		pass2(tdbb, csb, node->nod_arg[e_dcl_cursor_refs], node);
 		break;
 
 	case nod_cursor_stmt:

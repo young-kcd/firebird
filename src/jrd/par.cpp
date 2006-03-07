@@ -2584,8 +2584,17 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		break;
 
 	case blr_dcl_cursor:
-		node->nod_arg[e_dcl_cursor_number] = (jrd_nod*) (IPTR) BLR_WORD;
-		node->nod_arg[e_dcl_cursor_rse] = parse(tdbb, csb, TYPE_RSE);
+		{
+			node->nod_arg[e_dcl_cursor_number] = (jrd_nod*) (IPTR) BLR_WORD;
+			node->nod_arg[e_dcl_cursor_rse] = parse(tdbb, csb, TYPE_RSE);
+			n = BLR_WORD;
+			jrd_nod* temp = PAR_make_node(tdbb, n);
+			temp->nod_type = nod_list;
+			for (jrd_nod** ptr = temp->nod_arg; n; n--) {
+				*ptr++ = parse(tdbb, csb, VALUE);
+			}
+			node->nod_arg[e_dcl_cursor_refs] = temp;
+		}
 		break;
 
 	case blr_cursor_stmt:

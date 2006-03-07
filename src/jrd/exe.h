@@ -450,7 +450,8 @@ const int e_current_timestamp_length= 1;
 const int e_dcl_cursor_number	= 0;
 const int e_dcl_cursor_rse		= 1;
 const int e_dcl_cursor_rsb		= 2;
-const int e_dcl_cursor_length	= 3;
+const int e_dcl_cursor_refs		= 3;
+const int e_dcl_cursor_length	= 4;
 
 const int e_cursor_stmt_op		= 0;
 const int e_cursor_stmt_number	= 1;

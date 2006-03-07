@@ -1278,6 +1278,13 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		stuff(request, blr_dcl_cursor);
 		stuff_word(request, (int) (IPTR) node->nod_arg[e_cur_number]);
 		GEN_expr(request, node->nod_arg[e_cur_rse]);
+		temp = node->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
+		stuff_word(request, temp->nod_count);
+		ptr = temp->nod_arg;
+		end = ptr + temp->nod_count;
+		while (ptr < end) {
+			GEN_expr(request, *ptr++);
+		}
 		return;
 
 	case nod_cursor_open:
