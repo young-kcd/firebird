@@ -441,7 +441,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				UCHAR buffer[MAX_PACKET_SIZE];
 				SSHORT dataSize = main_port->port_buff_size > sizeof(buffer) ? 
 								  sizeof(buffer) : main_port->port_buff_size;
-				if (! port) 
+				if (!port) 
 				{
 					if (!(port = main_port->select_multi(buffer, dataSize, &dataSize)))
 					{
