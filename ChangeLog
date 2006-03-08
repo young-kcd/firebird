@@ -1,3 +1,90 @@
+2006-03-08 04:11  robocop
+
+	* firebird2/src/: msgs/facilities.sql (1.52), msgs/history.sql
+	(1.29), include/gen/msgs.h (1.51):
+	
+	Sync after Dmitry's changes.
+
+2006-03-08 04:10  robocop
+
+	* firebird2/src/jrd/: gds.cpp (1.192), gds_proto.h (1.40):
+	
+	Misc.
+
+2006-03-08 03:06  asfernandes
+
+	* firebird2/builds/posix/Makefile.in.libfbembed (1.20):
+	
+	Use tab instead of spaces
+
+2006-03-07 18:51  dimitr
+
+	* firebird2/src/: jrd/cmp.cpp (1.200), jrd/exe.h (1.79),
+	jrd/par.cpp (1.132), dsql/gen.cpp (1.97):
+	
+	Fixed yet another bug in explicit cursors.  Unfortunately, BLR
+	compatibility is not provided, so users have to recompile their
+	SPs/triggers.
+
+2006-03-07 15:43  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.56):
+	
+	More precise calculation of index cardinalities.
+
+2006-03-07 15:42  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.257):
+	
+	Fixed bug in RETURNING INTO code.
+
+2006-03-07 15:39  dimitr
+
+	* firebird2/src/msgs/messages.sql (1.65):
+	
+	Fixed the error message.
+
+2006-03-07 14:01  kkuznetsov
+
+	* firebird2/builds/posix/Makefile.in.libfbembed (1.19):
+	
+	Temporally comment out my previous commit
+
+2006-03-07 12:21  kkuznetsov
+
+	* firebird2/builds/posix/Makefile.in.libfbembed (1.18):
+	
+	Fix make process on Solaris OSes
+
+2006-03-07 11:20  dimitr
+
+	* firebird2/src/dsql/gen.cpp (1.96):
+	
+	Added a context overflow check to DSQL as well.  Based on a
+	bugreport by Volker Rehn.
+
+2006-03-07 10:23  dimitr
+
+	* firebird2/src/jrd/why.cpp (1.99):
+	
+	Fixed SF #1435997.
+
+2006-03-07 07:11  robocop
+
+	*
+	firebird2/src/install/arch-specific/win32/fr/documents-en-francais.
+	txt (1.1):
+	
+	file documents-en-francais.txt was initially added on branch
+	B1_5_Release.
+
+2006-03-07 06:44  robocop
+
+	* firebird2/src/: remote/inet.cpp (1.156), remote/interface.cpp
+	(1.119), jrd/validation.cpp (1.15):
+	
+	Style.
+
 2006-03-07 04:12  asfernandes
 
 	* firebird2/src/remote/server.cpp (1.118):
