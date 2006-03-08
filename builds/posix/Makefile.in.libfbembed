@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.19 2006-03-07 13:01:53 kkuznetsov Exp $
+#  $Id: Makefile.in.libfbembed,v 1.20 2006-03-08 02:06:50 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -70,10 +70,10 @@ $(LIBFBEMBED_SO): $(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects) # $(
 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
 
 $(LIBFBEMBED_SOBASENAME): $(LIBFBEMBED_SO)
-  (cd $(LIB) && $(LN) -f $(SharedLibraryName) $(SharedLibrarySoName) )
+	(cd $(LIB) && $(LN) -f $(SharedLibraryName) $(SharedLibrarySoName) )
 
 $(LIBFBEMBED_SONAME): $(LIBFBEMBED_SOBASENAME)
-  (cd $(LIB) && $(LN) -f $(SharedLibrarySoName) $(SharedLibraryBaseName) )
+	(cd $(LIB) && $(LN) -f $(SharedLibrarySoName) $(SharedLibraryBaseName) )
 
 include $(ROOT)/gen/make.shared.targets
 
