@@ -501,7 +501,7 @@ static const struct {
 	{335544797, "user name and password are required while attaching to the services manager"},		/* 477, svcnouser */
 	{335544798, "You created an indirect dependency on uncommitted metadata. You must roll back the current transaction."},		/* 478, depend_on_uncommitted_rel */
 	{335544799, "The service name was not specified."},		/* 479, svc_name_missing */
-	{335544800, "Too many Contexts of Relation/Procedure/Views. Maximum allowed is 127"},		/* 480, too_many_contexts */
+	{335544800, "Too many Contexts of Relation/Procedure/Views. Maximum allowed is 255"},		/* 480, too_many_contexts */
 	{335544801, "data type not supported for arithmetic"},		/* 481, datype_notsup */
 	{335544802, "Database dialect being changed from 3 to 1"},		/* 482, dialect_reset_warning */
 	{335544803, "Database dialect not changed."},		/* 483, dialect_not_changed */
