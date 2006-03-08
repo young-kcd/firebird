@@ -1,3 +1,20 @@
+2006-03-07 07:11  robocop
+
+	*
+	firebird2/src/install/arch-specific/win32/fr/documents-en-francais.
+	txt (1.1):
+	
+	file documents-en-francais.txt was initially added on branch
+	B1_5_Release.
+
+2006-03-07 07:11  robocop
+
+	* firebird2/src/install/arch-specific/win32/fr/:
+	documents-en-francais.txt (1.1.2.1), documents-en-français.txt
+	(1.1.2.4):
+	
+	Changed problematic document's name.
+
 2006-03-03 14:37  hvlad
 
 	* firebird2/src/dsql/dsql.cpp (1.54.2.4.4.2):
