@@ -148,7 +148,7 @@ UCHAR*   mmap_anon(SLONG);
 
 
 #ifdef VMS
-int		unlink(SCHAR*);
+int		unlink(const SCHAR*);
 #endif
 
 

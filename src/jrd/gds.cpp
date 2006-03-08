@@ -2813,7 +2813,7 @@ void API_ROUTINE isc_sql_interprete(
 
 
 #ifdef VMS
-int unlink(SCHAR* file)
+int unlink(const SCHAR* file)
 {
 /**************************************
  *
