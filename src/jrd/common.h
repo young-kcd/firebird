@@ -441,6 +441,10 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 #ifdef sparc
 //#define ALIGNMENT       4
 //#define DOUBLE_ALIGN    8
+#define ODS_ALIGNMENT           8
+/* Misaligment ODS on Sparc 32 platform causes a lot of memory aligment problems (BUS Errors) 
+This is quickfix. 2006.03.07. kkuznetsov */
+
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
 #else /* sparc */
 
