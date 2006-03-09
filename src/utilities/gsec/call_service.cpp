@@ -369,7 +369,6 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		const char request[] = {isc_info_svc_get_users};
 		int startQuery = 0;
 		internal_user_data uData;
-		memset(&uData, 0, sizeof uData);
 		uData.user_name_entered = false;
 
 		for (;;)

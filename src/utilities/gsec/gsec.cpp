@@ -188,7 +188,6 @@ int common_main(int argc,
 
 	internal_user_data u;
 	tdsec->tsec_user_data = &u;
-	memset((void *) tdsec->tsec_user_data, 0, sizeof(internal_user_data));
 
 	try {
 /* Perform some special handling when run as an Interbase service.  The

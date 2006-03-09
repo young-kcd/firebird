@@ -100,6 +100,12 @@ struct internal_user_data {
 	TEXT	database_name [DATABASE_LEN];	/* database to manage name */
 	bool	database_name_entered;		/* database entered flag */
 	bool	database_name_specified;		/* database specified flag */
+
+	// force NULLs in this ugly structure to avoid foolish bugs
+	internal_user_data() 
+	{
+		memset(this, 0, sizeof *this);
+	}
 };
 
 #ifndef SERVICE_THREAD
