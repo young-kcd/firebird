@@ -745,7 +745,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
 		xcc->xcc_map_num = parent_xcc->xcc_map_num;
 		xcc->xcc_slot = parent_xcc->xcc_slot;
-		xcc->xcc_proc_h = parent_xcc->xcc_proc_h;
+		DuplicateHandle(GetCurrentProcess(), parent_xcc->xcc_proc_h,
+						GetCurrentProcess(), &xcc->xcc_proc_h,
+						0, FALSE, DUPLICATE_SAME_ACCESS);
 		xcc->xcc_flags = 0;
 		xcc->xcc_map_handle = parent_xcc->xcc_map_handle;
 		xcc->xcc_mapped_addr = parent_xcc->xcc_mapped_addr;
@@ -805,8 +807,6 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		new_port->port_flags = port->port_flags & PORT_no_oob;
 		new_port->port_flags |= PORT_async;
 		new_port->port_xcc = (void *) xcc;
-
-		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, new_port);
 
 		return new_port;
 	}
@@ -871,7 +871,9 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
 		xcc->xcc_map_num = parent_xcc->xcc_map_num;
 		xcc->xcc_slot = parent_xcc->xcc_slot;
-		xcc->xcc_proc_h = parent_xcc->xcc_proc_h;
+		DuplicateHandle(GetCurrentProcess(), parent_xcc->xcc_proc_h,
+						GetCurrentProcess(), &xcc->xcc_proc_h,
+						0, FALSE, DUPLICATE_SAME_ACCESS);
 		xcc->xcc_flags = 0;
 		xcc->xcc_map_handle = parent_xcc->xcc_map_handle;
 		xcc->xcc_mapped_addr = parent_xcc->xcc_mapped_addr;
