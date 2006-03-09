@@ -935,7 +935,7 @@ case "$PLATFORM" in
       ],[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
     ;;
 
-  solx86)
+  solx86|SOLARIS)
     AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/pkginfo.in
                      gen/install/Prototype:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/prototype.in
                      gen/install/Preinstall:builds/install/arch-specific/solx86gcc/${ARCH_TYPE_SUFFIX}/preinstall.in
