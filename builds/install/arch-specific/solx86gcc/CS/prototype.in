@@ -156,7 +156,7 @@ f none @prefix@/examples/dyn/dynfull.e=$SRCDIR/examples/dyn/dynfull.e 0644 root 
 
 d none @prefix@/examples/empbuild 0755 root root
 f none @prefix@/examples/empbuild/employee.fdb=$SRCDIR/examples/empbuild/employee.fdb 0644 root root
-f none @prefix@/examples/empbuild/employe2.sql=$SRCDIR/examples/empbuild/employe2.sql 0644 root root
+#f none @prefix@/examples/empbuild/employe2.sql=$SRCDIR/examples/empbuild/employe2.sql 0644 root root
 
 
 d none @prefix@/examples/include 0755 root root
@@ -215,8 +215,8 @@ s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.2
 #f none @prefix@/lib/libeditline.a=$SRCDIR/lib/libeditline.a 0644 root root
 #f none @prefix@/lib/libfbcommon.a=$SRCDIR/lib/libfbcommon.a 0666 root root
 #f none @prefix@/lib/libfbstatic.a=$SRCDIR/lib/libfbstatic.a 0666 root root
-f none @prefix@/lib/libib_util.so=$SRCDIR/lib/lib/libib_util.so 0755 root root
-s none @prefix@/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
+f none @prefix@/lib/libib_util.so=$SRCDIR/lib/libib_util.so 0755 root root
+
 
 
 #ICU
