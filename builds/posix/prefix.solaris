@@ -64,7 +64,7 @@ GFIX_Other_Sources= jrd/isc_sync.cpp jrd/os/posix/isc_ipc.cpp
 DROP_Other_Sources= jrd/ThreadData.cpp
 LOCKPRINT_Other_Sources= jrd/ThreadData.cpp
 Server_main_dummy = os/sun/server_main_dummy.cpp
-OS_ServerFiles=
+OS_ServerFiles=inet_server.cpp
 
 LIB_LINK_OPTIONS:= -G
 LIB_LINK_RPATH:=-R
