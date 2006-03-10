@@ -3285,15 +3285,19 @@ static dsql_nod* pass1_collate( dsql_req* request, dsql_nod* sub1,
     @param constant
 
  **/
-static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* constant)
+static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 {
 
 	DEV_BLKCHK(request, dsql_type_req);
-	DEV_BLKCHK(constant, dsql_type_nod);
+	DEV_BLKCHK(input, dsql_type_nod);
 
-	if (constant->nod_desc.dsc_dtype > dtype_any_text) {
-		return constant;
+	if (input->nod_desc.dsc_dtype > dtype_any_text) {
+		return input;
 	}
+
+	dsql_nod* constant = MAKE_node(input->nod_type, 1);
+	constant->nod_arg[0] = input->nod_arg[0];
+	constant->nod_desc = input->nod_desc;
 
 	const dsql_str* string = (dsql_str*) constant->nod_arg[0];
 	DEV_BLKCHK(string, dsql_type_str);
