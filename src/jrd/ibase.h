@@ -479,13 +479,13 @@ void ISC_EXPORT isc_encode_sql_time(const void*,
 void ISC_EXPORT isc_encode_timestamp(const void*,
 									 ISC_TIMESTAMP*);
 
-ISC_LONG ISC_EXPORT_VARARG isc_event_block(ISC_SCHAR**,
-										   ISC_SCHAR**,
+ISC_LONG ISC_EXPORT_VARARG isc_event_block(ISC_UCHAR**,
+										   ISC_UCHAR**,
 										   unsigned short, ...);
 
 void ISC_EXPORT isc_event_counts(ISC_ULONG*,
 								 short,
-								 ISC_SCHAR*,
+								 ISC_UCHAR*,
 								 const ISC_UCHAR *);
 
 /* 17 May 2001 - isc_expand_dpb is DEPRECATED */
@@ -571,7 +571,7 @@ ISC_STATUS ISC_EXPORT isc_que_events(ISC_STATUS*,
 									 isc_db_handle*,
 									 ISC_LONG*,
 									 short,
-									 const ISC_SCHAR*,
+									 const ISC_UCHAR*,
 									 ISC_EVENT_CALLBACK,
 									 void*);
 
@@ -744,8 +744,8 @@ ISC_STATUS ISC_EXPORT isc_unwind_request(ISC_STATUS *,
 ISC_STATUS ISC_EXPORT isc_wait_for_event(ISC_STATUS*,
 										 isc_db_handle*,
 										 short,
-										 const ISC_SCHAR*,
-										 ISC_SCHAR*);
+										 const ISC_UCHAR*,
+										 ISC_UCHAR*);
 
 
 /*****************************/

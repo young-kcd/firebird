@@ -247,7 +247,7 @@ ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS*, FB_API_HANDLE*, SSHORT,
 ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS*, FB_API_HANDLE*, SSHORT);
 #ifndef REQUESTER
 ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS*, FB_API_HANDLE*, USHORT,
-										const SCHAR*, SCHAR*);
+										const UCHAR*, UCHAR*);
 #endif
 
 #endif	/* JRD_IBASE_H */

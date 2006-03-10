@@ -3506,7 +3506,7 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 	isc_que_events(status_vector, &rdb->rdb_handle, &event->rvnt_id,
 				   stuff->p_event_items.cstr_length,
-				   reinterpret_cast<const char*>(stuff->p_event_items.cstr_address),
+				   stuff->p_event_items.cstr_address,
 				   server_ast,
 				   event);
 	THREAD_ENTER();

@@ -34,11 +34,11 @@ int		API_ROUTINE gds__blob_size(FB_API_HANDLE*, SLONG *, SLONG *, SLONG *);
 void	API_ROUTINE_VARARG isc_expand_dpb(SCHAR**, SSHORT*, ...);
 int		API_ROUTINE isc_modify_dpb(SCHAR**, SSHORT*, USHORT, const SCHAR*, SSHORT);
 int		API_ROUTINE gds__edit(const TEXT*, USHORT);
-SLONG	API_ROUTINE_VARARG isc_event_block(SCHAR**, SCHAR**, USHORT, ...);
+SLONG	API_ROUTINE_VARARG isc_event_block(UCHAR**, UCHAR**, USHORT, ...);
 USHORT	API_ROUTINE isc_event_block_a(SCHAR**, SCHAR**, USHORT, TEXT**);
 void	API_ROUTINE isc_event_block_s(SCHAR**, SCHAR**, USHORT, TEXT**, USHORT*);
 
-void	API_ROUTINE isc_event_counts(ULONG*, SSHORT, SCHAR*, const UCHAR*);
+void	API_ROUTINE isc_event_counts(ULONG*, SSHORT, UCHAR*, const UCHAR*);
 void	API_ROUTINE isc_get_client_version(SCHAR *);
 int		API_ROUTINE isc_get_client_major_version();
 int		API_ROUTINE isc_get_client_minor_version();

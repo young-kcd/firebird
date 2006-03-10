@@ -54,8 +54,8 @@ static ISC_STATUS executeSecurityCommand(ISC_STATUS*, const USER_SEC_DATA*, inte
 #endif // BOOT_BUILD
 #endif
 
-SLONG API_ROUTINE_VARARG isc_event_block(SCHAR** event_buffer,
-										 SCHAR** result_buffer,
+SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
+										 UCHAR** result_buffer,
 										 USHORT count, ...)
 {
 /**************************************
@@ -88,11 +88,11 @@ SLONG API_ROUTINE_VARARG isc_event_block(SCHAR** event_buffer,
 	}
 	va_end(ptr);
 
-	char* p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
+	UCHAR* p = *event_buffer = (UCHAR *) gds__alloc((SLONG) length);
 /* FREE: apparently never freed */
 	if (!*event_buffer)			/* NOMEM: */
 		return 0;
-	if ((*result_buffer = (SCHAR *) gds__alloc((SLONG) length)) == NULL) {	/* NOMEM: */
+	if ((*result_buffer = (UCHAR *) gds__alloc((SLONG) length)) == NULL) {	/* NOMEM: */
 		/* FREE: apparently never freed */
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
@@ -490,12 +490,12 @@ ISC_STATUS API_ROUTINE gds__que_events(ISC_STATUS* status_vector,
 								   FB_API_HANDLE* db_handle,
 								   SLONG* event_id,
 								   SSHORT events_length,
-								   const SCHAR* events,
+								   const UCHAR* events,
 								   FPTR_EVENT_CALLBACK ast_address,
 								   void* ast_argument)
 {
 	return isc_que_events(status_vector, db_handle, event_id, events_length,
-						  events, ast_address, (int *) ast_argument);
+						  events, ast_address, ast_argument);
 }
 
 ISC_STATUS API_ROUTINE gds__receive(ISC_STATUS * status_vector,
@@ -611,7 +611,7 @@ ISC_STATUS API_ROUTINE gds__ddl(ISC_STATUS* status_vector,
 void API_ROUTINE gds__event_counts(
 								  ULONG* result_vector,
 								  SSHORT length,
-								  SCHAR* before, const UCHAR* after)
+								  UCHAR* before, const UCHAR* after)
 {
 	isc_event_counts(result_vector, length, before, after);
 }
@@ -707,7 +707,7 @@ ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS * status_vector,
 									  UCHAR* events_update)
 {
 	return isc_wait_for_event(status_vector, db_handle, events_length,
-						   (const SCHAR*) events, (SCHAR*) events_update);
+						   events, events_update);
 }
 #endif
 

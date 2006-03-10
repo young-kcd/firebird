@@ -692,8 +692,8 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
 }
 #endif
 
-SLONG API_ROUTINE gds__event_block(SCHAR ** event_buffer,
-								   SCHAR ** result_buffer,
+SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
+								   UCHAR ** result_buffer,
 								   USHORT count, ...)
 {
 /**************************************
@@ -711,8 +711,9 @@ SLONG API_ROUTINE gds__event_block(SCHAR ** event_buffer,
  *	created for any reason.
  *
  **************************************/
-	SCHAR *p, *q;
-	SCHAR *end;
+	UCHAR *p;
+	SCHAR *q;
+	const SCHAR *end;
 	SLONG length;
 	va_list ptr;
 	USHORT i;
@@ -731,11 +732,11 @@ SLONG API_ROUTINE gds__event_block(SCHAR ** event_buffer,
 	}
 
 	p = *event_buffer =
-		(SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
+		(UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * length));
 /* FREE: unknown */
 	if (!*event_buffer)			/* NOMEM: */
 		return 0;
-	*result_buffer = (SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
+	*result_buffer = (UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * length));
 /* FREE: unknown */
 	if (!*result_buffer) {		/* NOMEM: */
 		gds__free(*event_buffer);
@@ -882,7 +883,7 @@ void API_ROUTINE gds__event_block_s(
 void API_ROUTINE isc_event_counts(
 					ULONG* result_vector,
 					SSHORT buffer_length,
-					SCHAR* event_buffer,
+					UCHAR* event_buffer,
 					const UCHAR* result_buffer)
 {
 /**************************************
@@ -898,7 +899,7 @@ void API_ROUTINE isc_event_counts(
  *
  **************************************/
 	ULONG* vec = result_vector;
-	const UCHAR* p = reinterpret_cast<UCHAR*>(event_buffer);
+	const UCHAR* p = event_buffer;
 	const UCHAR* q = result_buffer;
 	USHORT length = buffer_length;
 	const UCHAR* const end = p + length;

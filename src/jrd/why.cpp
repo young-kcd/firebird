@@ -1665,7 +1665,6 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
 	WHY_REQ request;
-	WHY_STMT statement;
 	WHY_BLB blob;
 	//CLEAN clean;
 
@@ -1696,6 +1695,7 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 
 /* Drop all DSQL statements to reclaim DSQL memory pools. */
 
+	WHY_STMT statement;
 	while (statement = dbb->statements) {
 		FB_API_HANDLE temp_handle;
 
@@ -1727,6 +1727,7 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 	}
 
 #ifndef SUPERSERVER
+	WHY_STMT statement;
 	while (statement = dbb->statements) {
 		dbb->statements = statement->next;
 		if (statement->user_handle) {
@@ -1811,7 +1812,6 @@ ISC_STATUS API_ROUTINE GDS_DROP_DATABASE(ISC_STATUS * user_status,
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
 	WHY_REQ request;
-	WHY_STMT statement;
 	WHY_BLB blob;
 	CLEAN clean;
 
@@ -1823,7 +1823,7 @@ ISC_STATUS API_ROUTINE GDS_DROP_DATABASE(ISC_STATUS * user_status,
 
 /* Drop all DSQL statements to reclaim DSQL memory pools. */
 
-
+	WHY_STMT statement;
 	while (statement = dbb->statements) {
 		FB_API_HANDLE temp_handle;
 
@@ -1857,6 +1857,7 @@ ISC_STATUS API_ROUTINE GDS_DROP_DATABASE(ISC_STATUS * user_status,
 	}
 
 #ifndef SUPERSERVER
+	WHY_STMT statement;
 	while (statement = dbb->statements) {
 		dbb->statements = statement->next;
 		if (statement->user_handle)
@@ -3489,8 +3490,8 @@ int API_ROUTINE gds__enable_subsystem(TEXT * subsystem)
 ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 									  FB_API_HANDLE * handle,
 									  USHORT length,
-									  const SCHAR* events,
-									  SCHAR* buffer)
+									  const UCHAR* events,
+									  UCHAR* buffer)
 {
 /**************************************
  *
@@ -3518,7 +3519,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 	value = ISC_event_clear(why_event);
 
 	if (GDS_QUE_EVENTS
-		(status, handle, &id, length, (const UCHAR*) events, event_ast, (UCHAR*) buffer))
+		(status, handle, &id, length, events, event_ast, buffer))
 	{
 		 return error2(status, local);
 	}

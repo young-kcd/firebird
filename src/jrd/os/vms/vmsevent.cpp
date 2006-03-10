@@ -110,10 +110,10 @@ static void deliver(EVNT);
 static void deliver_request(VMS_REQ);
 static void delivery_thread(void);
 static ISC_STATUS error(ISC_STATUS *, TEXT *, ISC_STATUS);
-static EVNT find_event(USHORT, TEXT *, EVNT);
+static EVNT find_event(USHORT, const TEXT*, EVNT);
 static void free(SCHAR *);
 static RINT historical_interest(SES, EVNT);
-static EVNT make_event(USHORT, TEXT *, EVNT);
+static EVNT make_event(USHORT, const TEXT*, EVNT);
 static void poke_ast(POKE);
 static bool request_completed(VMS_REQ);
 static int return_ok(ISC_STATUS *);
@@ -243,7 +243,10 @@ EVH EVENT_init(ISC_STATUS* status_vector, bool server_flag)
 int EVENT_post(
 			   ISC_STATUS * status_vector,
 			   USHORT major_length,
-			   TEXT * major, USHORT minor_length, TEXT * minor, USHORT count)
+			   const TEXT* major,
+			   USHORT minor_length,
+			   const TEXT* minor,
+			   USHORT count)
 {
 /**************************************
  *
@@ -323,9 +326,9 @@ int EVENT_post(
 SLONG EVENT_que(ISC_STATUS * status_vector,
 				SLONG session_id,
 				USHORT string_length,
-				TEXT * string,
+				const TEXT* string,
 				USHORT events_length,
-				UCHAR * events,
+				const UCHAR* events,
 				FPTR_EVENT_CALLBACK ast_routine,
 				void *ast_arg)
 {
@@ -382,7 +385,7 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 /* Process event block */
 
 	RINT* ptr = &request->req_interests;
-	UCHAR* p = events + 1;
+	const UCHAR* p = events + 1;
 	const UCHAR* const end = events + events_length;
 	bool flag = false;
 
@@ -394,9 +397,9 @@ SLONG EVENT_que(ISC_STATUS * status_vector,
 		const UCHAR* find_end;
 		for (find_end = p + count; --find_end >= p && *find_end == ' ';);
 		const USHORT len = find_end - p + 1;
-		EVNT event = find_event(len, p, parent);
+		EVNT event = find_event(len, (const char*) p, parent);
 		if (!event)
-			event = make_event(len, p, parent);
+			event = make_event(len, (const char*) p, parent);
 		p += count;
 		RINT interest = historical_interest(session, event);
 		if (interest) {
@@ -747,7 +750,7 @@ static ISC_STATUS error(ISC_STATUS * status_vector,
 
 
 static EVNT find_event(USHORT length,
-					   TEXT * string,
+					   const TEXT* string,
 					   EVNT parent) 
 {
 /**************************************
@@ -812,7 +815,7 @@ static RINT historical_interest(SES session,
 
 
 static EVNT make_event(USHORT length,
-					   TEXT * string,
+					   const TEXT* string,
 					   EVNT parent) 
 {
 /**************************************

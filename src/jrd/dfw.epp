@@ -587,7 +587,7 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 		{
 			EVENT_post(	status,
 						lock->lck_length,
-						(TEXT *) & lock->lck_key,
+						(const TEXT*) & lock->lck_key,
 						work->dfw_name.length(),
 						work->dfw_name.c_str(),
 						work->dfw_count);

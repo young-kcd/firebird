@@ -73,7 +73,7 @@ ISC_STATUS	API_ROUTINE gds__database_info(ISC_STATUS*, FB_API_HANDLE*, SSHORT,
 
 ISC_STATUS	API_ROUTINE gds__detach_database(ISC_STATUS*, FB_API_HANDLE*);
 
-void		API_ROUTINE gds__event_counts(ULONG*, SSHORT, SCHAR*, const UCHAR*);
+void		API_ROUTINE gds__event_counts(ULONG*, SSHORT, UCHAR*, const UCHAR*);
 
 void		API_ROUTINE gds__get_client_version(SCHAR*);
 
@@ -113,7 +113,7 @@ ISC_STATUS	API_ROUTINE gds__put_slice( ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDL
 					    SSHORT, const SLONG*, SLONG, void*);
 
 ISC_STATUS	API_ROUTINE gds__que_events(	ISC_STATUS*, FB_API_HANDLE*, SLONG*, 
-						SSHORT, const SCHAR*,
+						SSHORT, const UCHAR*,
 						FPTR_EVENT_CALLBACK, void*);
 
 ISC_STATUS	API_ROUTINE gds__receive(ISC_STATUS*, FB_API_HANDLE*, 
@@ -170,7 +170,7 @@ void		API_ROUTINE gds__set_debug(int);
 // isc_ functions which are not mapped to gds_ functions (the gds_ ones are in utl.cpp)
 // Should be analyzed
 //
-SLONG		API_ROUTINE_VARARG isc_event_block(SCHAR**, SCHAR**, USHORT, ...);
+SLONG		API_ROUTINE_VARARG isc_event_block(UCHAR**, UCHAR**, USHORT, ...);
 
 USHORT		API_ROUTINE isc_event_block_a(SCHAR**, SCHAR**, USHORT, TEXT**);
 
