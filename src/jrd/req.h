@@ -116,7 +116,7 @@ class Record : public pool_alloc_rpt<SCHAR, type_rec>
 {
 public:
 	Record(MemoryPool& p) : rec_pool(p), rec_precedence(p) { }
-	// ASF: Record is memcopied in VIO_record, starting at rec_format.
+	// ASF: Record is memcopied in realloc_record (vio.cpp), starting at rec_format.
 	// rec_precedence has destructor, so don't move it to after rec_format.
 	MemoryPool& rec_pool;		// pool where record to be expanded
 	PageStack rec_precedence;	/* stack of higher precedence pages */

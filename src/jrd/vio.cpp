@@ -109,6 +109,7 @@ static void list_staying(thread_db*, record_param*, RecordStack&);
 #ifdef GARBAGE_THREAD
 static void notify_garbage_collector(thread_db*, record_param *, SLONG = -1);
 #endif
+static Record* realloc_record(Record*& record, USHORT fmt_length);
 
 const int PREPARE_OK		= 0;
 const int PREPARE_CONFLICT	= 1;
@@ -2435,16 +2436,7 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 								  format->fmt_length);
 		}
 		else
-		{
-			record = FB_NEW_RPT(rpb->rpb_record->rec_pool, format->fmt_length) 
-				Record(rpb->rpb_record->rec_pool);
-			record->rec_precedence.takeOwnership(rpb->rpb_record->rec_precedence);
-			// start copying at rec_format, to not mangle record->rec_precedence
-			memcpy(&record->rec_format, &rpb->rpb_record->rec_format,
-				sizeof(Record) - ((UCHAR*)&record->rec_format - (UCHAR*)record) + rpb->rpb_record->rec_length);
-			delete rpb->rpb_record;
-			rpb->rpb_record = record;
-		}
+			record = realloc_record(rpb->rpb_record, format->fmt_length);
 
 		record->rec_length = format->fmt_length;
 		if (rpb->rpb_prior == old) {
@@ -4116,6 +4108,33 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 #endif
 
 
+static Record* realloc_record(Record*& record, USHORT fmt_length)
+{
+/**************************************
+ *
+ *	r e a l l o c _ r e c o r d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Realloc a record to accomodate longer length format.
+ *
+ **************************************/
+	Record* new_record = FB_NEW_RPT(record->rec_pool, fmt_length)
+		Record(record->rec_pool);
+
+	new_record->rec_precedence.takeOwnership(record->rec_precedence);
+	// start copying at rec_format, to not mangle source->rec_precedence
+	memcpy(&new_record->rec_format, &record->rec_format,
+		sizeof(Record) - ((UCHAR*)&new_record->rec_format - (UCHAR*)new_record) + record->rec_length);
+
+	delete record;
+	record = new_record;
+
+	return new_record;
+}
+
+
 static int prepare_update(	thread_db*		tdbb,
 							jrd_tra*		transaction,
 							SLONG			commit_tid_read,
@@ -4600,13 +4619,9 @@ static Record* replace_gc_record(jrd_rel* relation, Record** gc_record, USHORT l
 					++rec_ptr)
 	{
 		if (*rec_ptr == *gc_record) {
-			Record* temp = FB_NEW_RPT((*gc_record)->rec_pool, length) Record((*gc_record)->rec_pool);
-			memcpy(temp, *rec_ptr, sizeof(Record) + sizeof(SCHAR) * (*gc_record)->rec_length);
-			delete *rec_ptr;
-			*rec_ptr = temp;
-			// 26 Sep 2002, SKIDDER: Failure to do so causes nasty memory corruption in 
+			// 26 Sep 2002, SKIDDER: Failure to do so (*gc_record = ...) causes nasty memory corruption in 
 			// some cases.
-			*gc_record = temp;
+			*gc_record = realloc_record(*rec_ptr, length);
 /*	V4_MUTEX_UNLOCK (&relation->rel_mutex); */
 			return *rec_ptr;
 		}
