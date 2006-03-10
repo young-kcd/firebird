@@ -27,8 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbembed,v 1.21 2006-03-09 09:34:55 kkuznetsov Exp $
-#
 ROOT=..
 ObjModuleType=std
 ArchType=classic
