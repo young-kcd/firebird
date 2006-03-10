@@ -490,6 +490,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	// We are cloning full lists here, not assigning pointers
 	clone->req_invariants = request->req_invariants;
 	clone->req_fors = request->req_fors;
+	clone->req_exec_sta = request->req_exec_sta;
 
 	record_param* rpb1 = clone->req_rpb;
 	const record_param* const end = rpb1 + clone->req_count;
@@ -1957,6 +1958,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	jrd_nod* node = pass1(tdbb, csb, csb->csb_node, 0, 0, false);
 	csb->csb_node = node;
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * csb->csb_n_stream;
+	csb->csb_exec_sta.clear();
 	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
 
 	if (csb->csb_impure > MAX_REQUEST_SIZE) {
@@ -2057,6 +2059,9 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	// make a vector of all used RSEs
 	request->req_fors = csb->csb_fors;
+
+	// make a vector of all used ExecuteStatements into
+	request->req_exec_sta = csb->csb_exec_sta;
 
 	// make a vector of all invariant-type nodes, so that we will
 	// be able to easily reinitialize them when we restart the request
@@ -4967,6 +4972,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 
 	case nod_exec_into:
 		csb->csb_impure += sizeof(ExecuteStatement);
+		csb->csb_exec_sta.push(node);
 		break;
 
 	default:

@@ -621,6 +621,7 @@ public:
 		csb_resources(p),
 		csb_dependencies(p),
 		csb_fors(p),
+		csb_exec_sta(p),
 		csb_invariants(p),
 		csb_current_nodes(p),
 		csb_pool(p),
@@ -648,6 +649,7 @@ public:
 	ResourceList	csb_resources;		/* Resources (relations and indexes) */
 	NodeStack		csb_dependencies;	/* objects this request depends upon */
 	Firebird::Array<RecordSource*> csb_fors;	/* stack of fors */
+    Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
 	Firebird::Array<jrd_nod*> csb_invariants;	/* stack of invariant nodes */
 	Firebird::Array<jrd_node_base*> csb_current_nodes;	/* RecordSelExpr's and other invariant candidates within whose scope we are */
 #ifdef SCROLLABLE_CURSORS

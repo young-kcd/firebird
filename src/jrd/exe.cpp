@@ -967,6 +967,23 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 			tdbb->tdbb_request = old_request;
 			tdbb->tdbb_transaction = old_transaction;
 		}
+		if (request->req_exec_sta.getCount()) {
+			Jrd::ContextPoolHolder context(tdbb, request->req_pool);
+			jrd_req* old_request = tdbb->tdbb_request;
+			tdbb->tdbb_request = request;
+			jrd_tra* old_transaction = tdbb->tdbb_transaction;
+			tdbb->tdbb_transaction = request->req_transaction;
+
+			for (int i = 0; i < request->req_exec_sta.getCount(); ++i)
+			{
+				jrd_nod* node = request->req_exec_sta[i];
+				ExecuteStatement* impure =
+					(ExecuteStatement*)	((char *) request + node->nod_impure);
+				impure->Close(tdbb);
+			}
+			tdbb->tdbb_request = old_request;
+			tdbb->tdbb_transaction = old_transaction;
+		}
 		release_blobs(tdbb, request);
 	}
 

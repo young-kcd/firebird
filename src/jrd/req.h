@@ -174,7 +174,7 @@ class jrd_req : public pool_alloc_rpt<record_param, type_req>
 public:
 	jrd_req(JrdMemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
-		req_trg_name(*pool), req_fors(*pool), req_invariants(*pool),
+		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool), req_invariants(*pool),
 		req_timestamp(true) {}
 
 	Attachment*	req_attachment;		// database attachment
@@ -225,8 +225,9 @@ public:
 	jrd_nod*	req_top_node;		/* top of execution tree */
 	jrd_nod*	req_next;			/* next node for execution */
 	Firebird::Array<RecordSource*> req_fors;	/* Vector of for loops, if any */
-	vec<RecordSource*>* 	req_cursors;		/* Vector of named cursors, if any */
-	Firebird::Array<jrd_nod*> req_invariants;	/* Vector of invariant nodes, if any */
+	Firebird::Array<jrd_nod*>	req_exec_sta;	// Array of exec_into nodes
+	vec<RecordSource*>* 		req_cursors;	/* Vector of named cursors, if any */
+	Firebird::Array<jrd_nod*>	req_invariants;	/* Vector of invariant nodes, if any */
 	USHORT		req_label;			/* label for leave */
 	ULONG		req_flags;			/* misc request flags */
 	Savepoint*	req_proc_sav_point;	/* procedure savepoint list */
