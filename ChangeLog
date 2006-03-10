@@ -1,3 +1,68 @@
+2006-03-10 03:05  asfernandes
+
+	* firebird2/builds/posix/Makefile.in.libfbembed (1.22):
+	
+	Misc
+
+2006-03-10 01:23  asfernandes
+
+	* firebird2/src/jrd/: vio.cpp (1.148), req.h (1.55):
+	
+	Fix SF Field-test #1439268 - Sequence of commands crash FB server -
+	second part - thanks to Claudio
+
+2006-03-10 01:08  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.258):
+	
+	Fix incorrect malformed string error, reported by Richard Wesley
+
+2006-03-09 18:52  dimitr
+
+	* firebird2/src/remote/xnet.cpp (1.70):
+	
+	Fixed an exception during events shutdown, reported in fb-devel.
+
+2006-03-09 16:24  kkuznetsov
+
+	* firebird2/builds/install/arch-specific/solx86gcc/CS/prototype.in
+	(1.5):
+	
+	Update solaris packaging
+
+2006-03-09 14:26  kkuznetsov
+
+	* firebird2/configure.in (1.238):
+	
+	Fix packaging on SOLARIS sparc port
+
+2006-03-09 11:27  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/: call_service.cpp (1.10), gsec.cpp
+	(1.52), gsec.h (1.25):
+	
+	always fill internal_user_data with 0's on creation
+
+2006-03-09 10:42  kkuznetsov
+
+	* firebird2/src/jrd/common.h (1.135):
+	
+	Set ODS aligment to 8 on Solaris sparc 32 bits port to avoid a lot
+	of aligment problems.
+
+2006-03-09 10:34  kkuznetsov
+
+	* firebird2/builds/posix/: Makefile.in.libfbembed (1.21),
+	prefix.solaris (1.21):
+	
+	Minor cleanup
+
+2006-03-09 10:23  kkuznetsov
+
+	* firebird2/builds/posix/prefix.solaris (1.20):
+	
+	Fix Solaris sparc 32 bit gcc port
+
 2006-03-08 04:11  robocop
 
 	* firebird2/src/: msgs/facilities.sql (1.52), msgs/history.sql
