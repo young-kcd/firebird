@@ -1,3 +1,11 @@
+2006-03-09 23:28  hvlad
+
+	* firebird2/src/jrd/why.cpp (1.23.2.4.2.1):
+	
+	Request at prepare time describe, describe_bind and statement_type
+	info. Cache it to avoid subsequent calls of remote server.  This is
+	reduced network roundtrips and protocol independent
+
 2006-03-07 07:11  robocop
 
 	*
