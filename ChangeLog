@@ -1,3 +1,19 @@
+2006-03-10 18:46  alexpeshkoff
+
+	* firebird2/src/jrd/: cmp.cpp (1.201), exe.cpp (1.175), exe.h
+	(1.80), req.h (1.56):
+	
+	fixed memory leak - SF#1422471
+
+2006-03-10 09:23  robocop
+
+	* firebird2/src/: jrd/alt.cpp (1.60), jrd/alt_proto.h (1.14),
+	jrd/dfw.epp (1.177), jrd/ibase.h (1.113), jrd/utl.cpp (1.88),
+	jrd/utl_proto.h (1.20), jrd/why.cpp (1.100), jrd/why_proto.h
+	(1.25), remote/server.cpp (1.119), jrd/os/vms/vmsevent.cpp (1.17):
+	
+	Commit correct signature for events-related calls.
+
 2006-03-10 03:05  asfernandes
 
 	* firebird2/builds/posix/Makefile.in.libfbembed (1.22):
