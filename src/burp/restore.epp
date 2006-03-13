@@ -6778,6 +6778,23 @@ bool restore (const TEXT* file_name,
 
 	MISC_release_request_silent(req_handle5);
 
+	// update statistics for system indices 
+	FOR (REQUEST_HANDLE req_handle5)
+		IND IN RDB$INDICES WITH IND.RDB$SYSTEM_FLAG EQ 1
+		MODIFY IND;
+			IND.RDB$STATISTICS.NULL = FALSE;
+			IND.RDB$STATISTICS = -1;
+		END_MODIFY;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	END_FOR;
+	ON_ERROR
+		general_on_error ();
+	END_ERROR;
+
+	MISC_release_request_silent(req_handle5);
+
 	return true;
 }
 
