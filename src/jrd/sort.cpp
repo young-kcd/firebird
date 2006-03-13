@@ -2550,7 +2550,7 @@ static void quick(SLONG size, SORTP** pointers, ULONG length)
 			while (**i < key)
 				i++;
 			if (**i == key)
-				while (true) {
+				while (i <= *su) {
 					const SORTP* p = *i;
 					const SORTP* q = *r;
 					ULONG tl = length - 1;
@@ -2828,8 +2828,8 @@ static void sort(sort_context* scb)
 	quick(n, j, scb->scb_longs);
 
 	// Scream through and correct any out of order pairs
-
-	while (j < (SORTP **) scb->scb_next_pointer) {
+	// hvlad: don't compare user keys against high_key
+	while (j < (SORTP **) scb->scb_next_pointer - 1) {
 		SORTP** i = j;
 		j++;
 		if (**i >= **j) {
@@ -2867,7 +2867,8 @@ static void sort(sort_context* scb)
 
 	j = reinterpret_cast<SORTP**>(scb->scb_first_pointer + 1);
 
-	while (j < (SORTP **) scb->scb_next_pointer) {
+	// hvlad: don't compare user keys against high_key
+	while (j < ((SORTP **) scb->scb_next_pointer) - 1) {
 		SORTP** i = j;
 		j++;
 		if (**i != **j)
