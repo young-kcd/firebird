@@ -2871,8 +2871,20 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 	}
 
 	// Handle derived fields.
-	if ((node1->nod_type == nod_derived_field) || (node2->nod_type == nod_derived_field)) {
-		if ((node1->nod_type == nod_derived_field) && (node2->nod_type == nod_derived_field)) {
+	if ((node1->nod_type == nod_derived_field) || (node2->nod_type == nod_derived_field)) 
+	{
+		if ((node1->nod_type == nod_derived_field) && (node2->nod_type == nod_derived_field)) 
+		{
+			const USHORT scope_level1 = (USHORT)(U_IPTR)node1->nod_arg[e_derived_field_scope];
+			const USHORT scope_level2 = (USHORT)(U_IPTR)node2->nod_arg[e_derived_field_scope];
+			if (scope_level1 != scope_level2)
+				return false;
+
+			dsql_str* alias1 = (dsql_str*) node1->nod_arg[e_derived_field_name];
+			dsql_str* alias2 = (dsql_str*) node2->nod_arg[e_derived_field_name];
+			if (strcmp(alias1->str_data, alias2->str_data))
+				return false;
+
 			return node_match(node1->nod_arg[e_derived_field_value],
 				node2->nod_arg[e_derived_field_value], ignore_map_cast);
 		}
