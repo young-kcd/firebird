@@ -781,6 +781,8 @@ public:
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
 			&veryEnd - reinterpret_cast<char*>(&gbl_database_file_name));
+		exit_code = FINI_ERROR;	// prevent FINI_OK in case of unknown error thrown
+								// would be set to FINI_OK (==0) in exit_local
 	}
 
 	const TEXT*	gbl_database_file_name;

@@ -168,7 +168,9 @@ public:
 		output_proc(outProc), 
 		output_data(outData),
 		db_handle(0),
-		tr_handle(0)
+		tr_handle(0),
+		exit_code(FINI_ERROR)	// prevent FINI_OK in case of unknown error thrown
+								// would be set to FINI_OK (==0) in exit_local
 	{
 	}
 
