@@ -120,7 +120,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
  	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false},	// whether to abort() engine when internal error is found
 #endif
 	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0},		// bitmask
-	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) false},	// let use old passwd hash verification
+	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) true},	// let use old passwd hash verification
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
 	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false}	// if true use old style concatenation

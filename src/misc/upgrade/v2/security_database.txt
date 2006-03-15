@@ -12,11 +12,7 @@ security_database.sql!
   4. Connect to restored database as SYSDBA and run the script.
   5. Stop firebird.
   6. Copy upgraded database to firebird's home directory (as security2.fdb).
-  7. Set LegacyHash parameter in firebird.conf to 1.
-  8. Start firebird.
+  7. Start firebird.
 
   Now you should be able to connect to firebird 2.0 server using your old 
-logins and passwords. But be careful - as long as you have LegacyHash = 1,
-firebird's security doesn't work completely. You must change SYSDBA password,
-let users change their passwords (yes, since 2.0 each user can change his 
-password himself) and set LegacyHash back to default value of 0.
+logins and passwords. 
