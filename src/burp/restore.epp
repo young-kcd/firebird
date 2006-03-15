@@ -6462,7 +6462,7 @@ bool restore (const TEXT* file_name,
  *
  **************************************/
 	ATT_TYPE	attribute;
-	isc_req_handle  req_handle1 = 0, req_handle2 = 0, req_handle3 = 0,
+	isc_req_handle  req_handle2 = 0, req_handle3 = 0,
 					req_handle5 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
@@ -6569,7 +6569,6 @@ bool restore (const TEXT* file_name,
 		}
 	}
 
-	MISC_release_request_silent(req_handle1);
 	MISC_release_request_silent(req_handle2);
 	MISC_release_request_silent(req_handle3);
 
