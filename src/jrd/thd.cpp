@@ -251,10 +251,19 @@ int THD_rec_mutex_lock(REC_MUTX_T * rec_mutex)
 	int ret;
 
 	if (rec_mutex->rec_mutx_id == ThreadData::getId())
+	{
 		rec_mutex->rec_mutx_count++;
-	else {
-		if (ret = THD_mutex_lock(rec_mutex->rec_mutx_mtx))
-			return ret;
+	}
+	else 
+	{
+	    try 
+		{
+			rec_mutex->rec_mutx_mtx->enter();
+		}
+		catch (const Firebird::system_call_failed& e)
+		{
+			return e.getErrorCode();
+		}
 		rec_mutex->rec_mutx_id = ThreadData::getId();
 		rec_mutex->rec_mutx_count = 1;
 	}
@@ -279,12 +288,19 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
 
 	rec_mutex->rec_mutx_count--;
 
-	if (rec_mutex->rec_mutx_count)
-		return 0;
-	else {
+	if (rec_mutex->rec_mutx_count == 0)
+	{
 		rec_mutex->rec_mutx_id = 0;
-		return THD_mutex_unlock(rec_mutex->rec_mutx_mtx);
+	    try 
+		{
+			rec_mutex->rec_mutx_mtx->leave();
+		}
+		catch (const Firebird::system_call_failed& e)
+		{
+			return e.getErrorCode();
+		}
 	}
+	return 0;
 }
 #endif /* SUPERSERVER */
 

@@ -36,24 +36,19 @@
 #include "../common/classes/alloc.h"
 
 
-inline int THD_mutex_lock(Firebird::Mutex* m) {
+inline void THD_mutex_lock(Firebird::Mutex* m) {
 	m->enter();
-	return 0;
 }
-
-inline int THD_mutex_unlock(Firebird::Mutex* m) {
+inline void THD_mutex_unlock(Firebird::Mutex* m) {
 	m->leave();
-	return 0;
 }
 
 extern	Firebird::Mutex ib_mutex;
 inline void	THD_mutex_lock_global(void) {
 	ib_mutex.enter();
-	//return 0;
 }
 inline void THD_mutex_unlock_global(void) {
 	ib_mutex.leave();
-	//return 0;
 }
 
 // recursive mutex

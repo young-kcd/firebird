@@ -76,6 +76,8 @@ static bool schedule(void);
 static bool schedule_active(bool);
 static void stall(THREAD);
 static void stall_ast(THREAD);
+static void sch_mutex_lock(Firebird::Mutex*);
+static void sch_mutex_unlock(Firebird::Mutex*);
 
 static THREAD free_threads = NULL;
 static THREAD active_thread = NULL;
@@ -83,7 +85,6 @@ static THREAD ast_thread = NULL;
 static MUTX_T thread_mutex[1];
 volatile static bool init_flag = false;
 static USHORT enabled = FALSE;
-
 
 #ifdef VMS
 int API_ROUTINE gds__ast_active(void)
@@ -238,15 +239,12 @@ void SCH_abort(void)
 
 /* We're on the list but not active.  Remove from list */
 
-	int mutex_state = THD_mutex_lock(thread_mutex);
-	if (mutex_state)
-		mutex_bugcheck("mutex lock", mutex_state);
+	sch_mutex_lock(thread_mutex);
 	thread->thread_prior->thread_next = thread->thread_next;
 	thread->thread_next->thread_prior = thread->thread_prior;
 	thread->thread_next = free_threads;
 	free_threads = thread;
-	if (mutex_state = THD_mutex_unlock(thread_mutex))
-		mutex_bugcheck("mutex unlock", mutex_state);
+	sch_mutex_unlock(thread_mutex);
 }
 
 
@@ -282,9 +280,7 @@ void SCH_ast(enum ast_t action)
 	if (!init_flag)
 		SCH_init();
 
-	int mutex_state = THD_mutex_lock(thread_mutex);
-	if (mutex_state)
-		mutex_bugcheck("mutex lock", mutex_state);
+	sch_mutex_lock(thread_mutex);
 
 	switch (action) {
 		/* Check into thread scheduler as AST thread */
@@ -356,8 +352,7 @@ void SCH_ast(enum ast_t action)
 		break;
 	}
 
-	if (mutex_state = THD_mutex_unlock(thread_mutex))
-		mutex_bugcheck("mutex unlock", mutex_state);
+	sch_mutex_unlock(thread_mutex);
 }
 
 
@@ -412,10 +407,7 @@ void SCH_enter(void)
 
 /* Get mutex on scheduler data structures to prevent tragic misunderstandings */
 
-	int mutex_state = THD_mutex_lock(thread_mutex);
-	if (mutex_state) {
-		mutex_bugcheck("mutex lock", mutex_state);
-	}
+	sch_mutex_lock(thread_mutex);
 
 	THREAD thread = alloc_thread();
 	thread->thread_id = ThreadData::getId();
@@ -446,9 +438,7 @@ void SCH_enter(void)
 	}
 
 	stall(thread);
-	if (mutex_state = THD_mutex_unlock(thread_mutex)) {
-		mutex_bugcheck("mutex unlock", mutex_state);
-	}
+	sch_mutex_unlock(thread_mutex);
 }
 
 
@@ -472,9 +462,7 @@ void SCH_exit(void)
 	active_thread = NULL;
 	free_threads->thread_next = NULL;
 #else
-	int mutex_state = THD_mutex_lock(thread_mutex);
-	if (mutex_state)
-		mutex_bugcheck("mutex lock", mutex_state);
+	sch_mutex_lock(thread_mutex);
 
 	ast_enable();				/* Reenable AST delivery */
 
@@ -485,8 +473,7 @@ void SCH_exit(void)
 	// handler there calls THREAD_EXIT without preceding THREAD_ENTER
 	// in this case (during shutdown of CACHE_WRITER or CACHE_READER)
 	if (!thread) {
-		if (mutex_state = THD_mutex_unlock(thread_mutex))
-			mutex_bugcheck("mutex unlock", mutex_state);
+		sch_mutex_unlock(thread_mutex);
 		return; 
 	}
 
@@ -505,8 +492,7 @@ void SCH_exit(void)
 	free_threads = thread;
 	schedule();
 
-	if (mutex_state = THD_mutex_unlock(thread_mutex))
-		mutex_bugcheck("mutex unlock", mutex_state);
+	sch_mutex_unlock(thread_mutex);
 #endif
 }
 
@@ -789,7 +775,7 @@ static void cleanup(void *arg)
 
 #ifdef SUPERCLIENT
 /* use locks */
-	THD_mutex_lock(thread_mutex);
+	thread_mutex->enter();
 
 	if (!init_flag)
 		return;
@@ -831,7 +817,7 @@ static void cleanup(void *arg)
 
 	}
 
-	THD_mutex_unlock(thread_mutex);
+	thread_mutex->leave();
 #endif /* SUPERCLIENT */
 
 	init_flag = false;
@@ -915,9 +901,7 @@ static bool schedule_active(bool hiber_flag)
 	if (!active_thread)
 		return false;
 
-	int mutex_state = THD_mutex_lock(thread_mutex);
-	if (mutex_state)
-		mutex_bugcheck("mutex lock", mutex_state);
+	sch_mutex_lock(thread_mutex);
 
 /* Take this opportunity to check for pending ASTs
    and deliver them. */
@@ -940,8 +924,7 @@ static bool schedule_active(bool hiber_flag)
 		ret = true;
 	}
 
-	if (mutex_state = THD_mutex_unlock(thread_mutex))
-		mutex_bugcheck("mutex unlock", mutex_state);
+	sch_mutex_unlock(thread_mutex);
 
 	return ret;
 #endif
@@ -971,13 +954,10 @@ static void stall(THREAD thread)
 			{
 				break;
 			}
-			int mutex_state = THD_mutex_unlock(thread_mutex);
-			if (mutex_state)
-				mutex_bugcheck("mutex unlock", mutex_state);
+			sch_mutex_unlock(thread_mutex);
 			event_t* ptr = thread->thread_stall;
 			ISC_event_wait(1, &ptr, &value, 0, 0, 0);
-			if (mutex_state = THD_mutex_lock(thread_mutex))
-				mutex_bugcheck("mutex lock", mutex_state);
+			sch_mutex_lock(thread_mutex);
 		}
 
 /* Explicitly disable AST delivery for active thread */
@@ -1007,13 +987,10 @@ static void stall_ast(THREAD thread)
 				SLONG value = ISC_event_clear(thread->thread_stall);
 				if (!(ast_thread->thread_flags & THREAD_ast_disabled))
 					break;
-				int mutex_state = THD_mutex_unlock(thread_mutex);
-				if (mutex_state)
-					mutex_bugcheck("mutex unlock", mutex_state);
+				sch_mutex_unlock(thread_mutex);
 				event_t* ptr = thread->thread_stall;
 				ISC_event_wait(1, &ptr, &value, 0, 0, 0);
-				if (mutex_state = THD_mutex_lock(thread_mutex))
-					mutex_bugcheck("mutex lock", mutex_state);
+				sch_mutex_lock(thread_mutex);
 			}
 	}
 	else {
@@ -1031,13 +1008,10 @@ static void stall_ast(THREAD thread)
 				SLONG value = ISC_event_clear(thread->thread_stall);
 				if (!(ast_thread->thread_flags & THREAD_ast_active))
 					break;
-				int mutex_state = THD_mutex_unlock(thread_mutex);
-				if (mutex_state)
-					mutex_bugcheck("mutex unlock", mutex_state);
+				sch_mutex_unlock(thread_mutex);
 				event_t* ptr = thread->thread_stall;
 				ISC_event_wait(1, &ptr, &value, 0, 0, 0);
-				if (mutex_state = THD_mutex_lock(thread_mutex))
-					mutex_bugcheck("mutex lock", mutex_state);
+				sch_mutex_lock(thread_mutex);
 			}
 		/* Unlink thread block from ast thread queue */
 
@@ -1046,3 +1020,48 @@ static void stall_ast(THREAD thread)
 	}
 }
 
+
+static void sch_mutex_lock(Firebird::Mutex* mtx)
+{
+/**************************************
+ *
+ *	s c h _ m u t e x _ l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Enters mutex, on error bugcheks.
+ *
+ **************************************/
+	try
+	{
+		mtx->enter();
+	}
+	catch (const Firebird::system_call_failed& e)
+	{
+		mutex_bugcheck("mutex lock", e.getErrorCode());
+	}
+}
+
+
+static void sch_mutex_unlock(Firebird::Mutex* mtx)
+{
+/**************************************
+ *
+ *	s c h _ m u t e x _ u n l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Leaves mutex, on error bugcheks.
+ *
+ **************************************/
+	try
+	{
+		mtx->leave();
+	}
+	catch (const Firebird::system_call_failed& e)
+	{
+		mutex_bugcheck("mutex unlock", e.getErrorCode());
+	}
+}
