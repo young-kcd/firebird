@@ -189,6 +189,8 @@ enum  info_db_implementations
 
 	isc_info_db_impl_linux_sparc = 65,
 	isc_info_db_impl_linux_amd64 = 66,
+	
+	isc_info_db_impl_freebsd_amd64 = 67,
 
 	isc_info_db_impl_last_value   /* Leave this LAST! */
 };

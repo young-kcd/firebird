@@ -136,9 +136,10 @@ static const int CLASS_FREEBSD_I386 = 21; // FreeBSD/i386
 static const int CLASS_NETBSD_I386 = 22;  // NetBSD/i386
 static const int CLASS_DARWIN_PPC = 23;   // Darwin/PowerPC
 static const int CLASS_LINUX_AMD64 = 24;  // LINUX on AMD64 systems
+static const int CLASS_FREEBSD_AMD64 = 25;// FreeBSD/amd64
 
-static const int CLASS_MAX10 = CLASS_LINUX_AMD64;
-static const int CLASS_MAX = CLASS_LINUX_AMD64;
+static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
+static const int CLASS_MAX = CLASS_FREEBSD_AMD64;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -218,7 +219,8 @@ static ArchitectureType archMatrix[CLASS_MAX + 1] = {
 	archLittleEndian, // CLASS_FREEBSD_I386
     archLittleEndian, // CLASS_NETBSD_I386
 	archBigEndian,    // CLASS_DARWIN_PPC
-	archLittleEndian  // CLASS_LINUX_AMD64
+	archLittleEndian, // CLASS_LINUX_AMD64
+	archLittleEndian  // CLASS_FREEBSD_AMD64
 };
 
 #ifdef sun
@@ -266,7 +268,13 @@ const SSHORT CLASS		= CLASS_LINUX_SPARC;
 #endif
 
 #ifdef FREEBSD
+#if defined(i386)
 const SSHORT CLASS		= CLASS_FREEBSD_I386;
+#elif defined(AMD64)
+const SSHORT CLASS		= CLASS_FREEBSD_AMD64;
+#else
+forced error: no support on other hardware for FreeBSD
+#endif
 #endif
 
 #ifdef NETBSD

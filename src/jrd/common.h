@@ -306,8 +306,13 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 #define UNIX
 #define IEEE
+
+#ifdef AMD64
+#define IMPLEMENTATION  isc_info_db_impl_freebsd_amd64 /* 67 */
+#else
 #define I386
 #define IMPLEMENTATION    isc_info_db_impl_freebsd   /* 61 */
+#endif
 
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
