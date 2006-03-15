@@ -114,11 +114,18 @@ private:
 
 class system_call_failed : public status_exception
 {
+private:
+	int errorCode;
 public:
 	system_call_failed(const char* v_syscall, int v_error_code);
 
 	static void raise(const char* syscall, int error_code);
 	static void raise(const char* syscall);
+	
+	int getErrorCode() const
+	{
+		return errorCode;
+	}
 };
 
 // Moved what() here due to gpre. Didn't want to use macros for gpre_static.

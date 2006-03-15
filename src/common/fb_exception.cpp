@@ -175,12 +175,12 @@ void status_exception::raise(ISC_STATUS status, ...)
 /********************************* system_call_failed ****************************/
 
 system_call_failed::system_call_failed(const char* v_syscall, int v_error_code) : 
-	status_exception(0, false)
+	status_exception(0, false), errorCode(v_error_code)
 {
 	ISC_STATUS temp[] = {isc_arg_gds, 
 						isc_sys_request, 
 						isc_arg_string, dupStringTemp(v_syscall), 
-						SYS_ARG, v_error_code, 
+						SYS_ARG, errorCode, 
 						isc_arg_end};
 	set_status(temp, false);
 }
