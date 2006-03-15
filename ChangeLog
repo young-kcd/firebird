@@ -1,3 +1,10 @@
+2006-03-14 11:57  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.259):
+	
+	Fix node compare function for derived fields.  Fixes field
+	test-item #1449377.
+
 2006-03-13 15:39  hvlad
 
 	* firebird2/src/burp/restore.epp (1.100):
