@@ -3883,9 +3883,10 @@ rel_exit:
 			}
 		}
     }
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
 		/* Perfunctory error reporting -- got any better ideas ? */
 
+		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 		if (relation && relation->rel_sweep_count) {
 			--relation->rel_sweep_count;
@@ -3917,9 +3918,10 @@ gc_exit:
 		THREAD_EXIT();
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const std::exception& ex) {
 		/* Perfunctory error reporting -- got any better ideas ? */
 
+		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
 	}
 	return 0;

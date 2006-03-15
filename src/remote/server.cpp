@@ -535,7 +535,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			}
 
 		}
-		catch (const std::exception&)
+		catch (const std::exception& e)
 		{
 			/* If we got as far as having a port allocated before the error, disconnect it
 			 * gracefully.
@@ -551,6 +551,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 				/* To handle recursion within the error handler */
 				try {
+					Firebird::stuff_exception(status_vector, e);
 					/* If we have a port, request really should be non-null, but just in case ... */
 					if (request != NULL) {
 						/* Send client a real status indication of why we disconnected them */
