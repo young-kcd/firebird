@@ -934,10 +934,9 @@ static void exit_handler( rem_port* main_port)
 }
 
 
-static rem_str* make_pipe_name(
-						  const TEXT* connect_name,
-						  const TEXT* suffix_name,
-						  const TEXT* str_pid)
+static rem_str* make_pipe_name(const TEXT* connect_name,
+							   const TEXT* suffix_name,
+							   const TEXT* str_pid)
 {
 /**************************************
  *
@@ -952,18 +951,15 @@ static rem_str* make_pipe_name(
  *	If a server pid != 0, append it to pipe name  as <>/<pid>
  *
  **************************************/
-	TEXT buffer[BUFFER_TINY];
+	Firebird::string buffer("\\\\");
 
 	const TEXT* p = connect_name;
-	TEXT* q = buffer;
 
 	if (!p || *p++ != '\\' || *p++ != '\\')
 		p = ".";
 
-	*q++ = '\\';
-	*q++ = '\\';
 	while (*p && *p != '\\' && *p != '@')
-		*q++ = *p++;
+		buffer += *p++;
 
 	const TEXT* protocol = NULL;
 	if (!*p)
@@ -976,26 +972,22 @@ static rem_str* make_pipe_name(
 				protocol = p;
 	}
 
-	*q++ = '\\';
-	strcpy(q, PIPE_PREFIX);
-	q += strlen(PIPE_PREFIX);
-	*q++ = '\\';
+	buffer += '\\';
+	buffer += PIPE_PREFIX;
+	buffer += '\\';
 	const char *pipe_name = Config::getRemotePipeName();
-	strcpy(q, pipe_name);
-	q += strlen(pipe_name);
-	*q++ = '\\';
-	strcpy(q, suffix_name);
-	q += strlen(suffix_name);
-	*q++ = '\\';
-	strcpy(q, protocol);
+	buffer += pipe_name;
+	buffer += '\\';
+	buffer += suffix_name;
+	buffer += '\\';
+	buffer += protocol;
 
 	if (str_pid) {
-		TEXT pid[32];
-		sprintf(pid, "\\%s", str_pid);
-		strcat(buffer, pid);
+		buffer += '\\';
+		buffer += str_pid;
 	}
 
-	return REMOTE_make_string(buffer);
+	return REMOTE_make_string(buffer.c_str());
 }
 
 
