@@ -1153,6 +1153,10 @@ Reads = !r
 Writes !w
 Fetches = !f', NULL, NULL, 'c_pg');
 INSERT INTO HISTORY (CHANGE_NUMBER, CHANGE_WHO, CHANGE_DATE, FAC_CODE, NUMBER, OLD_TEXT, OLD_ACTION, OLD_EXPLANATION, LOCALE) VALUES (1152, 'dimitr', '2006-03-07 10:54:00', 0, 480, 'Too many Contexts of Relation/Procedure/Views. Maximum allowed is 127', NULL, NULL, 'c_pg');
+INSERT INTO HISTORY (CHANGE_NUMBER, CHANGE_WHO, CHANGE_DATE, FAC_CODE, NUMBER, OLD_TEXT, OLD_ACTION, OLD_EXPLANATION, LOCALE) VALUES (1153, 'mkubecek', '2006-03-14 09:40:20', 17, 11, '     [-x|-a] [-d <target db>] [-u <user>] [-p <password>]', NULL, NULL, 'c_pg');
+INSERT INTO HISTORY (CHANGE_NUMBER, CHANGE_WHO, CHANGE_DATE, FAC_CODE, NUMBER, OLD_TEXT, OLD_ACTION, OLD_EXPLANATION, LOCALE) VALUES (1154, 'mkubecek', '2006-03-14 09:45:22', 17, 1, 'isql [<database>] [-e] [-t <terminator>] [-i <inputfile>] [-o <outputfile>]', NULL, NULL, 'c_pg');
+INSERT INTO HISTORY (CHANGE_NUMBER, CHANGE_WHO, CHANGE_DATE, FAC_CODE, NUMBER, OLD_TEXT, OLD_ACTION, OLD_EXPLANATION, LOCALE) VALUES (1155, 'mkubecek', '2006-03-14 09:51:23', 17, 104, '     [-r|-r2 <rolename>] [-c <num cache buffers>] [-now] [-z]', NULL, NULL, 'c_pg');
+INSERT INTO HISTORY (CHANGE_NUMBER, CHANGE_WHO, CHANGE_DATE, FAC_CODE, NUMBER, OLD_TEXT, OLD_ACTION, OLD_EXPLANATION, LOCALE) VALUES (1156, 'mkubecek', '2006-03-14 09:55:55', 17, 111, '     [-page <pagelength>] [-n] [-m] [-m2] [-q] [-s <sql_dialect>] [-b]', NULL, NULL, 'c_pg');
 
 COMMIT WORK;
 

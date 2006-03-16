@@ -441,6 +441,33 @@ static FILE* create_temp_file(const TEXT* string, TEXT* expanded_string)
 #define gds__temp_file(flag, string, expanded_string) create_temp_file(string, expanded_string)
 #endif
 
+// usage text lines
+static const int usage_msgs[] = {
+	USAGE_ALL,
+	USAGE_BAIL,
+	USAGE_CACHE,
+	USAGE_CHARSET,
+	USAGE_DATABASE,
+	USAGE_ECHO,
+	USAGE_EXTRACT,
+	USAGE_INPUT,
+	USAGE_MERGE,
+	USAGE_MERGE2,
+	USAGE_NOAUTOCOMMIT,
+	USAGE_NOWARN,
+	USAGE_OUTPUT,
+	USAGE_PAGE,
+	USAGE_PASSWORD,
+	USAGE_QUIET,
+	USAGE_ROLE,
+	USAGE_ROLE2,
+	USAGE_SQLDIALECT,
+	USAGE_TERM,
+	USAGE_USER,
+	USAGE_XTRACT,
+	USAGE_VERSION
+};
+
 
 int CLIB_ROUTINE main(int argc,
 					  char* argv[])
@@ -580,14 +607,13 @@ int ISQL_main(int argc,
 	case ps_ERR:
 	    {
 			TEXT helpstring[155];
-			ISQL_msg_get(USAGE1, sizeof(helpstring), helpstring, NULL);
+			ISQL_msg_get(USAGE, sizeof(helpstring), helpstring, NULL);
 			STDERROUT(helpstring);
-			ISQL_msg_get(USAGE2, sizeof(helpstring), helpstring, NULL);
-			STDERROUT(helpstring);
-			ISQL_msg_get(USAGE3, sizeof(helpstring), helpstring, NULL);
-			STDERROUT(helpstring);
-			ISQL_msg_get(USAGE4, sizeof(helpstring), helpstring, NULL);
-			STDERROUT(helpstring);
+			//STDERROUT("");
+			for (int i = 0; i < FB_NELEM(usage_msgs); i++) {
+				ISQL_msg_get(usage_msgs[i], sizeof(helpstring), helpstring, NULL);
+				STDERROUT(helpstring);
+			}
 			Exit_value = FINI_ERROR;
 			break;
 		}

@@ -105,8 +105,7 @@ const int MSG_LENGTH	= 1024;
 const int ISQL_MSG_FAC	= 17;
 
 const int GEN_ERR 					= 0;	// General non-zero SQLCODE error 
-const int USAGE1 					= 1;	// Usage message 1 
-const int SWITCH 					= 2;	// Bad command line arg 
+const int SWITCH 					= 2;	// Bad command line arg
 const int NO_DB 					= 3;	// No database specified 
 const int FILE_OPEN_ERR				= 4;	// Can't open specified file 
 const int COMMIT_PROMPT				= 5;	// Commit or rollback question 
@@ -115,8 +114,7 @@ const int ROLLBACK_MSG				= 7;	// Rolling back
 const int CMD_ERR					= 8;	// Unknown frontend command 
 const int ADD_PROMPT				= 9;	// Prompt for add function 
 const int VERSION					= 10;		// Version string for -z 
-const int USAGE2 					= 11;		// Usage message 2 
-const int NUMBER_PAGES				= 12;		// Number of DB pages allocated = %d \n 
+const int NUMBER_PAGES				= 12;		// Number of DB pages allocated = %d \n
 const int SWEEP_INTERV				= 13;		// Sweep interval = %d \n 
 //const int NUM_WAL_BUFF				= 14;		// Number of wal buffers = %d \n
 //const int WAL_BUFF_SIZE				= 15;		// Wal buffer size = %d \n
@@ -218,14 +216,12 @@ const int UNEXPECTED_EOF			= 98;		// Expected end of statement, encountered EOF
 const int TIME_ERR					= 101;		// Bad TIME: %s\n 
 const int HLP_OBJTYPE3				= 102;		// Some more objects 
 const int NO_ROLE					= 103;		// There is no role %s in this database
-const int USAGE4 					= 104;		// Usage message 4
-const int INCOMPLETE_STR			= 105;		// Incomplete string in %s 
+const int INCOMPLETE_STR			= 105;		// Incomplete string in %s
 const int HLP_SETSQLDIALECT			= 106;		// \tSET SQL DIALECT <n>    -- set sql dialect to <n>
 const int NO_GRANT_ON_ANY			= 107;		// There is no privilege granted in this database. 
 const int HLP_SETPLANONLY			= 108;		// toggle display of query plan without executing
 const int HLP_SETHEADING			= 109;		// toggle display of query column titles
 const int HLP_SETBAIL				= 110;		// toggle bailing out on errors in non-interactive mode
-const int USAGE3 					= 111;		// Usage message 3
 const int TIME_PROMPT				= 112;		// Enter %s as H:M:S>
 const int TIMESTAMP_PROMPT			= 113;		// Enter %s as Y/MON/D H:MIN:S[.MSEC]>
 const int TIMESTAMP_ERR				= 114;		// Bad TIMESTAMP: %s\n
@@ -234,6 +230,30 @@ const int MSG_TABLES				= 117;		// Tables:
 const int MSG_FUNCTIONS				= 118;		// Functions:
 const int EXACTLINE					= 119;		// At line %d in file %s
 const int AFTERLINE					= 120;		// After line %d in file %s
+const int USAGE						= 1;		// usage: syntax
+const int USAGE_ALL					= 11;		// usage: -a
+const int USAGE_BAIL				= 104;		// usage: -b(ail)
+const int USAGE_CACHE				= 111;		// usage: -c(ache)
+const int USAGE_CHARSET				= 122;		// usage: -ch(arset)
+const int USAGE_DATABASE			= 123;		// usage: -d
+const int USAGE_ECHO				= 124;		// usage: -e(cho)
+const int USAGE_EXTRACT				= 125;		// usage: -ex(tract)
+const int USAGE_INPUT				= 126;		// usage: -i(nput)
+const int USAGE_MERGE				= 127;		// usage: -m(erge)
+const int USAGE_MERGE2				= 128;		// usage: -m2
+const int USAGE_NOAUTOCOMMIT		= 129;		// usage: -n(oautocommit)
+const int USAGE_NOWARN				= 130;		// usage: -now(arn)
+const int USAGE_OUTPUT				= 131;		// usage: -o(utput)
+const int USAGE_PAGE				= 132;		// usage: -page
+const int USAGE_PASSWORD			= 133;		// usage: -p(assword)
+const int USAGE_QUIET				= 134;		// usage: -q(uiet)
+const int USAGE_ROLE				= 135;		// usage: -r(ole)
+const int USAGE_ROLE2				= 136;		// usage: -r2
+const int USAGE_SQLDIALECT			= 137;		// usage: -s
+const int USAGE_TERM				= 138;		// usage: -t
+const int USAGE_USER				= 139;		// usage: -u(ser)
+const int USAGE_XTRACT				= 140;		// usage: -x
+const int USAGE_VERSION				= 141;		// usage: -z
 
 // Initialize types
 
