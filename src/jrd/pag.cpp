@@ -273,7 +273,7 @@ const SSHORT CLASS		= CLASS_FREEBSD_I386;
 #elif defined(AMD64)
 const SSHORT CLASS		= CLASS_FREEBSD_AMD64;
 #else
-forced error: no support on other hardware for FreeBSD
+#error no support on other hardware for FreeBSD
 #endif
 #endif
 
