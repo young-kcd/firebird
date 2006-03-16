@@ -86,6 +86,7 @@ static MUTX_T thread_mutex[1];
 volatile static bool init_flag = false;
 static USHORT enabled = FALSE;
 
+
 #ifdef VMS
 int API_ROUTINE gds__ast_active(void)
 {
@@ -275,7 +276,9 @@ void SCH_ast(enum ast_t action)
 	if (ast_thread && action == AST_check)
 		if (!(ast_thread->thread_flags & THREAD_ast_pending) ||
 			ast_thread->thread_count > 1)
+		{
 			return;
+		}
 
 	if (!init_flag)
 		SCH_init();
@@ -347,7 +350,7 @@ void SCH_ast(enum ast_t action)
 		for (THREAD thread = ast_thread->thread_next; thread != ast_thread;
 			 thread = thread->thread_next)
 		{
-				 ISC_event_post(thread->thread_stall);
+			 ISC_event_post(thread->thread_stall);
 		}
 		break;
 	}
@@ -810,8 +813,7 @@ static void cleanup(void *arg)
 			/* the thread structures are freed as a part of the 
 			 * gds_alloc cleanup, so do not worry about them here
 			 */
-		}
-		while (temp_thread->thread_next != temp_thread
+		} while (temp_thread->thread_next != temp_thread
 			   && (temp_thread = temp_thread->thread_next));
 
 
@@ -839,7 +841,7 @@ static void mutex_bugcheck(const TEXT* string, int mutex_state)
  **************************************/
 	TEXT msg[128];
 
-	sprintf(msg, "SCH: %s error, status = %d", string, mutex_state);
+	sprintf(msg, "SCH: %.93s error, status = %d", string, mutex_state);
 	gds__log(msg);
 	fprintf(stderr, "%s\n", msg);
 
@@ -945,6 +947,7 @@ static void stall(THREAD thread)
  **************************************/
 	if (thread != active_thread || thread->thread_flags & THREAD_hiber ||
 		(ast_thread && ast_thread->thread_flags & THREAD_ast_active))
+	{
 		for (;;) {
 			SLONG value = ISC_event_clear(thread->thread_stall);
 			if (thread == active_thread
@@ -959,6 +962,7 @@ static void stall(THREAD thread)
 			ISC_event_wait(1, &ptr, &value, 0, 0, 0);
 			sch_mutex_lock(thread_mutex);
 		}
+	}
 
 /* Explicitly disable AST delivery for active thread */
 
