@@ -233,7 +233,7 @@ static const TEXT* const impl_implementation[] = {
     "Firebird/SINIX-Z",	/* 64 */
     "Firebird/linux Sparc",	/* 65 */
     "Firebird/linux AMD64",	/* 66 */
-    "Firebird/FreeBSD Amd64"	/* 67 */
+    "Firebird/FreeBSD/amd64"	/* 67 */
 };
 
 
