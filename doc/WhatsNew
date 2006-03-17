@@ -21,7 +21,7 @@
     * New port
         Introduced AMD64 port for FreeBSD
       Contributor(s):
-        Sergey Skvortsov <???>
+        Sergey Skvortsov <skv at protey.ru>
         Alex Peshkov <peshkoff at mail.ru>
 
     * Security change
@@ -48,6 +48,31 @@
         Incorrect malformed string error
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed Beta 2 bug
+        Wrong behaviour on OS error in critical mutexes
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed Beta 2 bug
+        Unexpected exception (like out of memory condition) lost in gbak
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        Possible buffer overflow in WNET
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed Beta 2 bug
+        Legacy users' management API failed due to not initialized memory
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Diagnostic enhancement
+        Syslog messages also go to user's tty if process attached to it
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed Beta 2 bug
         "invalid handle" exception during events shutdown (local protocol only)
