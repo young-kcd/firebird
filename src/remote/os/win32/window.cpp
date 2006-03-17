@@ -329,10 +329,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 			nid.uFlags = NIF_TIP | NIF_ICON | NIF_MESSAGE;
 			nid.uCallbackMessage = ON_NOTIFYICON;
 			nid.hIcon = hIcon;
-
-	    	lstrcpy(nid.szTip, APP_LABEL);
-			lstrcat(nid.szTip, "-");
-			lstrcat(nid.szTip, GDS_VERSION);
+			lstrcpy(nid.szTip, GDS_VERSION);
 
 			// This will be true in the explorer interface 
 			bInTaskBar = Shell_NotifyIcon(NIM_ADD, &nid);
