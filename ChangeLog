@@ -1,3 +1,102 @@
+2006-03-16 14:45  alexpeshkoff
+
+	* firebird2/src/jrd/utl.cpp (1.90):
+	
+	misc
+
+2006-03-16 10:07  robocop
+
+	* firebird2/src/: msgs/facilities.sql (1.53), msgs/history.sql
+	(1.30), msgs/messages.sql (1.66), isql/isql.epp (1.167),
+	isql/isql.h (1.52):
+	
+	Give isql a more useful help when receiving incorrect command line
+	arguments, in sync with other utilities. Courtesy of Michal
+	Kubecek.  Example: isql -?
+
+2006-03-16 09:55  robocop
+
+	* firebird2/src/jrd/sch.cpp (1.34):
+	
+	1.- Style.  2.- Don't overflow in case of long error message.
+
+2006-03-16 09:53  robocop
+
+	* firebird2/builds/install/misc/firebird.conf (1.20):
+	
+	Misc.
+
+2006-03-16 03:26  asfernandes
+
+	* firebird2/src/jrd/pag.cpp (1.98):
+	
+	Misc
+
+2006-03-15 18:34  alexpeshkoff
+
+	* firebird2/src/jrd/: sch.cpp (1.33), thd.cpp (1.46), thd.h (1.43):
+	
+	fixed bugcheck in case of OS error in mutex
+
+2006-03-15 18:32  alexpeshkoff
+
+	* firebird2/src/jrd/: common.h (1.136), inf_pub.h (1.9), pag.cpp
+	(1.97), utl.cpp (1.89):
+	
+	applied patch of Sergey Skvortsov - port for FreeBSD AMD64
+
+2006-03-15 18:28  alexpeshkoff
+
+	* firebird2/src/: include/fb_exception.h (1.21),
+	common/fb_exception.cpp (1.22):
+	
+	better support for OS error code in system_call_failed
+
+2006-03-15 18:27  alexpeshkoff
+
+	* firebird2/src/: alice/alice.h (1.48), burp/burp.cpp (1.111),
+	burp/burp.h (1.72):
+	
+	return error in case of unexpected status_exception
+
+2006-03-15 18:25  alexpeshkoff
+
+	* firebird2/src/: jrd/vio.cpp (1.149), remote/server.cpp (1.120):
+	
+	we should not loose status vector held in status_exception
+
+2006-03-15 18:23  alexpeshkoff
+
+	* firebird2/src/misc/upgrade/v2/security_database.txt (1.4):
+	
+	change default value of LegacyHash
+
+2006-03-15 18:19  alexpeshkoff
+
+	* firebird2/: builds/install/misc/firebird.conf (1.19),
+	src/common/config/config.cpp (1.66):
+	
+	change default value of LegacyHash
+
+2006-03-15 15:03  paul_reeves
+
+	* firebird2/src/jrd/isc_version.h (1.8):
+	
+	Use different release number in ISC_FILE_VER_XXXX to distinguish
+	between Fb 1.5 and Fb 2.0. Bump the build number at the same time.
+
+2006-03-15 05:22  robocop
+
+	* firebird2/src/remote/os/win32/wnet.cpp (1.36):
+	
+	Commit Alex' fix for a buffer overrun.
+
+2006-03-15 05:21  robocop
+
+	* firebird2/src/burp/restore.epp (1.101):
+	
+	Get rid of unused handle.
+
 2006-03-14 11:57  arnobrinkman
 
 	* firebird2/src/dsql/pass1.cpp (1.259):
