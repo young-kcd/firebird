@@ -281,7 +281,7 @@ blb* BLB_create2(thread_db* tdbb,
 // This function makes linear stacks lookup. Therefore
 // in case of big stacks garbage collection speed may become
 // real problem. Stacks should be sorted before run?
-//
+// 2006.03.17 hvlad: it is sorted now
 void BLB_garbage_collect(
 						 thread_db* tdbb,
 						 RecordStack& going,
@@ -305,63 +305,78 @@ void BLB_garbage_collect(
  *              purge           -- removing all but top version of a record
  *              update_in_place -- replace the top level record.
  *
+ *	hvlad: note that same blob_id can be reused by the staying record version 
+ *		in the different field than it was in going record. This is happened 
+ *		with 3 blob fields and update_in_place
  *
  **************************************/
 	DSC desc1, desc2;
 
 	SET_TDBB(tdbb);
 
-/* Loop thru records on the way out looking for blobs to garbage collect */
+	Firebird::SparseBitmap<UINT64> bmGoing;
+	ULONG cntGoing = 0;
 
-	for (RecordStack::iterator stack1(going); stack1.hasData(); ++stack1) {
-		Record* rec1 = stack1.object();
-		if (!rec1)
+	// Loop thru records on the way out looking for blobs to garbage collect 
+	for (RecordStack::iterator stack1(going); stack1.hasData(); ++stack1) 
+	{
+		Record* rec = stack1.object();
+		if (!rec)
 			continue;
-		const Format* format = rec1->rec_format;
 
-		/* Look for active blob records */
-
-		for (USHORT id = 0; id < format->fmt_count; id++) {
-			if (!DTYPE_IS_BLOB(format->fmt_desc[id].dsc_dtype)
-				|| !EVL_field(0, rec1, id, &desc1))
+		// Look for active blob records 
+		const Format* format = rec->rec_format;
+		for (USHORT id = 0; id < format->fmt_count; id++) 
+		{
+			DSC desc;
+			if (DTYPE_IS_BLOB(format->fmt_desc[id].dsc_dtype) &&
+				EVL_field(0, rec, id, &desc))
 			{
-				continue;
+				const bid* blob = (bid*) desc.dsc_address;
+				bmGoing.set(blob->bid_int64);
+				cntGoing++;
 			}
-			const bid* blob = (bid*) desc1.dsc_address;
-
-			/* Got active blob, cancel it out of any remaining records on the way out */
-
-			for (RecordStack::iterator stack2(stack1); stack2.hasData(); ++stack2) {
-				Record* rec2 = stack2.object();
-				if (!EVL_field(0, rec2, id, &desc2))
-					continue;
-				const bid* blob2 = (bid*) desc2.dsc_address;
-				if (*blob == *blob2)
-				{
-					SET_NULL(rec2, id);
-				}
-			}
-
-			/* Make sure the blob doesn't stack in any record remaining */
-
-			RecordStack::iterator stack3(staying);
-			for (; stack3.hasData(); ++stack3) {
-				Record* rec3 = stack3.object();
-				if (!EVL_field(0, rec3, id, &desc2))
-					continue;
-				const bid* blob3 = (bid*) desc2.dsc_address;
-				if (*blob == *blob3)
-				{
-					break;
-				}
-			}
-			if (stack3.hasData())
-				continue;
-
-			/* Get rid of blob */
-
-			delete_blob_id(tdbb, blob, prior_page, relation);
 		}
+	}
+
+	if (!cntGoing)
+		return;
+
+	// Make sure the blob doesn't stack in any record remaining 
+	for (RecordStack::iterator stack2(staying); stack2.hasData(); ++stack2) 
+	{
+		Record* rec = stack2.object();
+		if (!rec)
+			continue;
+
+		const Format* format = rec->rec_format;
+		for (USHORT id = 0; id < format->fmt_count; id++) 
+		{
+			DSC desc;
+			if (DTYPE_IS_BLOB(format->fmt_desc[id].dsc_dtype) &&
+				EVL_field(0, rec, id, &desc))
+			{
+				const bid* blob = (bid*) desc.dsc_address;
+				if (bmGoing.test(blob->bid_int64)) 
+				{
+					bmGoing.clear(blob->bid_int64);
+					if (!--cntGoing)
+						return;
+				}
+			}
+		}
+	}
+
+	// Get rid of blob
+	if (bmGoing.getFirst()) {
+		do {
+			UINT64 id = bmGoing.current();
+
+			bid blob;
+			blob.bid_int64 = id;
+
+			delete_blob_id(tdbb, &blob, prior_page, relation);
+		} while (bmGoing.getNext());
 	}
 }
 
