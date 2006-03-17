@@ -2,6 +2,12 @@
   * v2.0 Release Candidate 1
   **************************
 
+    * Enhancement
+        Isql now shows the command line parameters and their explanations instead
+        of a simple list of switches when unknown parameters are used.
+      Contributor(s):
+        Michal Kubecek <mike at mk-sys.cz>
+
     * Fixed SF #1446987
         BLOB not found
       Contributor(s):
