@@ -1210,7 +1210,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_idx_relation, &desc);
 			SCL_check_relation(&desc, SCL_control);
 			EVL_field(0, rpb->rpb_record, f_idx_id, &desc2);
-			if ( (id = MOV_get_long(&desc2, 0)) ) {
+			if ( (id = MOV_get_long(&desc2, 0)) ) 
+			{
 				if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2))
 					work = DFW_post_work(transaction, dfw_delete_expression_index, &desc, id);
 				else
@@ -1221,35 +1222,36 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				EVL_field(0, rpb->rpb_record, f_idx_name, &idx_name);
 				DeferredWork* arg = DFW_post_work_arg(transaction, work, &idx_name, id);
 				arg->dfw_type = dfw_arg_index_name;
-			}
 			
-			// get partner relation for FK index
-			if (EVL_field(0, rpb->rpb_record, f_idx_foreign, &desc2))
-			{
-				MOV_get_metadata_str(&desc, relation_name, sizeof(relation_name));
-
-				DSC desc3;
-				EVL_field(0, rpb->rpb_record, f_idx_name, &desc3);
-
-				SqlIdentifier idx_name;
-				MOV_get_metadata_str(&desc3, idx_name, sizeof(idx_name));
-
-				jrd_rel *partner;
-				index_desc idx;
-
-				if ((r2 = MET_lookup_relation(tdbb, relation_name)) && 
-					(BTR_lookup(tdbb, r2, id-1, &idx) == FB_SUCCESS) && 
-					(MET_lookup_partner(tdbb, r2, &idx, idx_name)) &&
-					(partner = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
+				// get partner relation for FK index
+				if (EVL_field(0, rpb->rpb_record, f_idx_foreign, &desc2))
 				{
-					DeferredWork* arg = DFW_post_work_arg(transaction, work, 0, partner->rel_id);
-					arg->dfw_type = dfw_arg_partner_rel_id;
-				}
-				else {	// can't find partner relation - impossible ?
-					// add empty argument to let DFW know dropping
-					// index was bound with FK
-					DeferredWork* arg = DFW_post_work_arg(transaction, work, 0, 0);
-					arg->dfw_type = dfw_arg_partner_rel_id;
+					MOV_get_metadata_str(&desc, relation_name, sizeof(relation_name));
+
+					DSC desc3;
+					EVL_field(0, rpb->rpb_record, f_idx_name, &desc3);
+
+					SqlIdentifier idx_name;
+					MOV_get_metadata_str(&desc3, idx_name, sizeof(idx_name));
+
+					jrd_rel *partner;
+					index_desc idx;
+
+					if ((r2 = MET_lookup_relation(tdbb, relation_name)) && 
+						(BTR_lookup(tdbb, r2, id-1, &idx) == FB_SUCCESS) && 
+						(MET_lookup_partner(tdbb, r2, &idx, idx_name)) &&
+						(partner = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
+					{
+						DeferredWork* arg = DFW_post_work_arg(transaction, work, 0, partner->rel_id);
+						arg->dfw_type = dfw_arg_partner_rel_id;
+					}
+					else 
+					{	// can't find partner relation - impossible ?
+						// add empty argument to let DFW know dropping
+						// index was bound with FK
+						DeferredWork* arg = DFW_post_work_arg(transaction, work, 0, 0);
+						arg->dfw_type = dfw_arg_partner_rel_id;
+					}
 				}
 			}
 			break;
