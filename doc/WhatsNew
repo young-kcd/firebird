@@ -2,6 +2,11 @@
   * v2.0 Release Candidate 1
   **************************
 
+    * Fixed SF #1446987
+        BLOB not found
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
     * Fixed Beta 2 bug
         Server crashes when dropping a constraint based on inactive index
       Contributor(s):
