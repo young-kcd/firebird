@@ -2,6 +2,82 @@
   * v2.0 Release Candidate 1
   **************************
 
+    * Fixed Beta 2 bug
+        Server crashes when dropping a constraint based on inactive index
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * New port
+        Introduced AMD64 port for FreeBSD
+      Contributor(s):
+        Sergey Skvortsov <???>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Security change
+        LegacyHash config option now defaults to 1 (TRUE)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed Beta 2 bug (SF #1449377)
+        Wrong sum result of derived table with no cast union select
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed SF #1434147
+        Bugs with COUNT (DISTINCT XXX) when XXXX is a high integer
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed SF #1422471
+        Memory leak in EXECUTE STATEMENT
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed Beta 2 bug
+        Incorrect malformed string error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed Beta 2 bug
+        "invalid handle" exception during events shutdown (local protocol only)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 2 bug
+        PSQL cursors return incorrect results in case of sorting/aggregation
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed Beta 2 bug
+        RETURNING INTO returns incorrect results
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF #1435997
+        Close database error -901 for embedded server
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed SF #1260310
+        Nessus scan causes server to drop connections
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed Beta 2 bug (SF #$1439268)
+        Sequence of commands crash FB server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed SF #1385092
+        Firebird 1.5 SS freezes on terminated connection on blob
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed Beta 2 bug
+        Server crashes due to bug in the Knuth-Morris-Pratt algorithm (LIKE implementation)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Fixed SF #1436066
         Adding index during DB activity causes GFIX errors
       Contributor(s):
@@ -139,44 +215,44 @@
       Contributor:
         Paul Reeves <paul_reeves at ibphoenix.com>
         
-     * Fixed Beta 1 bug
-         Problem causing collation to be lost in sqlsubtype when using dynamic charset
-       Contributor(s):
-         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+    * Fixed Beta 1 bug
+        Problem causing collation to be lost in sqlsubtype when using dynamic charset
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
-     * Fixed Beta 1 bug
-         Expression indices work incorrectly with the COLLATE clause
-       Contributor(s):
-         Dmitry Yemanov <yemanov at yandex.ru>
+    * Fixed Beta 1 bug
+        Expression indices work incorrectly with the COLLATE clause
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
 
-     * Fixed Beta 1 bug
-         Wrong results when a few candidate predicates have different matching rules
-         to lower/upper bounds of the index
-       Contributor(s):
-         Arno Brinkman <firebird at abvisie.nl>
+    * Fixed Beta 1 bug
+        Wrong results when a few candidate predicates have different matching rules
+        to lower/upper bounds of the index
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
 
-     * Added new collations
-         WIN_CZ for WIN1250 charset (Czech language, case-insensitive)
-         WIN_CZ_CI_AI for WIN1250 charset (Czech language, case-insensitive, accent-insensitive)
-       Contributor(s):
-         Ivan Prenosil <Ivan.Prenosil at seznam.cz>
-         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+    * Added new collations
+        WIN_CZ for WIN1250 charset (Czech language, case-insensitive)
+        WIN_CZ_CI_AI for WIN1250 charset (Czech language, case-insensitive, accent-insensitive)
+      Contributor(s):
+        Ivan Prenosil <Ivan.Prenosil at seznam.cz>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
-     * Fixed unregistered bug
-         The client library doesn't react on setting envvars via SetEnvironmentVariable()
-       Contributor(s):
-         Claudio Valderrama <cvalde at usa.net>
+    * Fixed unregistered bug
+        The client library doesn't react on setting envvars via SetEnvironmentVariable()
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
 
-     * Fixed SF bug #1404215
-         Column dependencies are not stored for views
-       Contributor(s):
-         Dmitry Yemanov <yemanov at yandex.ru>
+    * Fixed SF bug #1404215
+        Column dependencies are not stored for views
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
 
-     * Fixed Beta 1 bug
-         Remote connections to the Services API performed with a wrong host are in fact served
-         by the local protocol instead of throwing an error
-       Contributor(s):
-         Dmitry Yemanov <yemanov at yandex.ru>
+    * Fixed Beta 1 bug
+        Remote connections to the Services API performed with a wrong host are in fact served
+        by the local protocol instead of throwing an error
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed Beta 1 bug
         Bugcheck #205 (index bucket overfilled) during restore
