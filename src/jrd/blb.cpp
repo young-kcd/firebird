@@ -306,7 +306,7 @@ void BLB_garbage_collect(
  *              update_in_place -- replace the top level record.
  *
  *	hvlad: note that same blob_id can be reused by the staying record version 
- *		in the different field than it was in going record. This is happened 
+ *		in the different field than it was in going record. This is happening
  *		with 3 blob fields and update_in_place
  *
  **************************************/
@@ -340,7 +340,7 @@ void BLB_garbage_collect(
 	if (!cntGoing)
 		return;
 
-	// Make sure the blob doesn't stack in any record remaining 
+	// Make sure the blob doesn't stay in any record remaining 
 	for (RecordStack::iterator stack2(staying); stack2.hasData(); ++stack2) 
 	{
 		Record* rec = stack2.object();
