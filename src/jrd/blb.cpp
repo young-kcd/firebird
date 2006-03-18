@@ -310,8 +310,6 @@ void BLB_garbage_collect(
  *		with 3 blob fields and update_in_place
  *
  **************************************/
-	DSC desc1, desc2;
-
 	SET_TDBB(tdbb);
 
 	Firebird::SparseBitmap<UINT64> bmGoing;
