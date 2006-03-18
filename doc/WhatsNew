@@ -99,7 +99,7 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
-    * Fixed Beta 2 bug (SF #$1439268)
+    * Fixed Beta 2 bug (SF #1439268)
         Sequence of commands crash FB server
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
