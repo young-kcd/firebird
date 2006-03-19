@@ -50,6 +50,16 @@ case "$target" in
     SHRLIB_EXT=so
     ;;
 
+  amd64-*-freebsd*)
+    MAKEFILE_PREFIX=freebsd
+    PLATFORM=FREEBSD
+    AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
+    AC_DEFINE(AMD64, 1, [Define this if CPU is amd64])
+    LOCK_MANAGER_FLG=Y
+    EDITLINE_FLG=N
+    SHRLIB_EXT=so
+    ;;
+
   *-*-freebsd*)
     MAKEFILE_PREFIX=freebsd 
     PLATFORM=FREEBSD
