@@ -56,7 +56,7 @@ case "$target" in
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
     AC_DEFINE(AMD64, 1, [Define this if CPU is amd64])
     LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=N
+    EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
 
@@ -65,7 +65,7 @@ case "$target" in
     PLATFORM=FREEBSD
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
     LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=N
+    EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
 
