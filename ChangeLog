@@ -1,3 +1,22 @@
+2006-03-19 16:37  alexpeshkoff
+
+	* firebird2/configure.in (1.240):
+	
+	Let FreeBSD use editline by default
+
+2006-03-19 16:32  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.qli (1.10),
+	Makefile.in.embed.qli (1.19):
+	
+	removed absolutely unneeded setuid - thanks to Sergey Skvortsov
+
+2006-03-19 14:56  alexpeshkoff
+
+	* firebird2/configure.in (1.239):
+	
+	fixing build on FreeBSD/amd64
+
 2006-03-18 07:22  robocop
 
 	* firebird2/src/jrd/blb.cpp (1.116):
