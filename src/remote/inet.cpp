@@ -1413,7 +1413,11 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
 	if (port->port_server_flags) {
+	
+		THREAD_EXIT();
 		SOCKET n = accept(port->port_channel, (struct sockaddr *) &address, &l);
+		THREAD_ENTER();
+		
 		if (n == INVALID_SOCKET) {
 			inet_error(port, "accept", isc_net_event_connect_err, INET_ERRNO);
 			SOCLOSE(port->port_channel);
