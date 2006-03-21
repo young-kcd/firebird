@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.qli,v 1.10 2006-03-19 15:32:00 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
