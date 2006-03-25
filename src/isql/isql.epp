@@ -135,6 +135,80 @@ const int UNKNOWN_LEN		= 20;	// Unknown type: %d
 
 const int MAX_TERMS		= 10;	// max # of terms in an interactive cmd
 
+
+enum switch_argtype {
+	SWARG_NONE,
+	SWARG_STRING,
+	SWARG_INTEGER
+};
+
+enum switch_id {
+	SWITCH_EXTRACTALL,
+	SWITCH_BAIL,
+	SWITCH_CACHE,
+	SWITCH_CHARSET,
+	SWITCH_DATABASE,
+	SWITCH_ECHO,
+	SWITCH_EXTRACT,
+	SWITCH_INPUT,
+	SWITCH_MERGE,
+	SWITCH_MERGE2,
+	SWITCH_NOAUTOCOMMIT,
+	SWITCH_NOWARN,
+	SWITCH_OUTPUT,
+	SWITCH_PAGE,
+	SWITCH_PASSWORD,
+	SWITCH_QUIET,
+	SWITCH_ROLE,
+	SWITCH_ROLE2,
+	SWITCH_SQLDIALECT,
+	SWITCH_TERM,
+	SWITCH_USER,
+	SWITCH_VERSION,
+#ifdef DEV_BUILD
+	SWITCH_EXTRACTTBL,
+#endif
+	SWITCH_UNKNOWN
+};
+
+struct switch_info {
+	switch_id id;                // switch id
+	const char* text;            // canonical switch name
+	unsigned short abbrlen;      // minimum abbreviation length
+	switch_argtype argtype;      // argument type (SWARG_NONE if none)
+	int usage_id;                // message id for usage text
+};
+
+switch_info switches[] = {
+#ifdef DEV_BUILD
+	{ SWITCH_EXTRACTTBL,   "xt",             2, SWARG_NONE,     -1 },
+#endif
+	{ SWITCH_EXTRACTALL,   "a",              1, SWARG_NONE,     11 },
+	{ SWITCH_BAIL,         "bail",           1, SWARG_NONE,    104 },
+	{ SWITCH_CACHE,        "cache",          1, SWARG_INTEGER, 111 },
+	{ SWITCH_CHARSET,      "charset",        2, SWARG_STRING,  122 },
+	{ SWITCH_DATABASE,     "d",              1, SWARG_STRING,  123 },
+	{ SWITCH_ECHO,         "echo",           1, SWARG_NONE,    124 },
+	{ SWITCH_EXTRACT,      "extract",        2, SWARG_NONE,    125 },
+	{ SWITCH_INPUT,        "input",          1, SWARG_STRING,  126 },
+	{ SWITCH_MERGE,        "merge",          1, SWARG_NONE,    127 },
+	{ SWITCH_MERGE2,       "m2",             2, SWARG_NONE,    128 },
+	{ SWITCH_NOAUTOCOMMIT, "noautocommit",   1, SWARG_NONE,    129 },
+	{ SWITCH_NOWARN,       "nowarn",         3, SWARG_NONE,    130 },
+	{ SWITCH_OUTPUT,       "output",         1, SWARG_STRING,  131 },
+	{ SWITCH_PAGE,         "page",           3, SWARG_INTEGER, 132 },
+	{ SWITCH_PASSWORD,     "password",       1, SWARG_STRING,  133 },
+	{ SWITCH_QUIET,        "quiet",          1, SWARG_NONE,    134 },
+	{ SWITCH_ROLE,         "role",           1, SWARG_STRING,  135 },
+	{ SWITCH_ROLE2,        "r2",             2, SWARG_STRING,  136 },
+	{ SWITCH_SQLDIALECT,   "s",              1, SWARG_INTEGER, 137 },
+	{ SWITCH_TERM,         "term",           1, SWARG_STRING,  138 },
+	{ SWITCH_USER,         "user",           1, SWARG_STRING,  139 },
+	{ SWITCH_EXTRACT,      "x",              1, SWARG_NONE,    140 },
+	{ SWITCH_VERSION,      "z",              1, SWARG_NONE,    141 }
+};
+
+
 static inline bool commit_trans(isc_tr_handle* x)
 {
 	if (isc_commit_transaction (isc_status, x)) {
@@ -251,7 +325,7 @@ static void print_set(const char* str, bool v);
 static processing_state print_sets();
 static processing_state help(const TEXT*);
 static bool isyesno(const TEXT*);
-static processing_state newdb(TEXT*, const TEXT*, const TEXT*, const TEXT*, const TEXT*, bool);
+static processing_state newdb(TEXT*, const TEXT*, const TEXT*, int, const TEXT*, bool);
 static processing_state newinput(const TEXT*);
 static processing_state newoutput(const TEXT*);
 static processing_state newsize(const TEXT*, const TEXT*);
@@ -296,7 +370,7 @@ bool fAnsiCP;
 // Utility transaction handle 
 static isc_tr_handle D__trans;
 static isc_tr_handle M__trans;
-static SCHAR global_Numbufs[16];	/* # of cache buffers on connect */
+static int global_numbufs;	/* # of cache buffers on connect */
 static isc_stmt_handle global_Stmt;
 static FILE* Ofp;
 //static FILE* Ifp;
@@ -441,33 +515,6 @@ static FILE* create_temp_file(const TEXT* string, TEXT* expanded_string)
 #define gds__temp_file(flag, string, expanded_string) create_temp_file(string, expanded_string)
 #endif
 
-// usage text lines
-static const int usage_msgs[] = {
-	USAGE_ALL,
-	USAGE_BAIL,
-	USAGE_CACHE,
-	USAGE_CHARSET,
-	USAGE_DATABASE,
-	USAGE_ECHO,
-	USAGE_EXTRACT,
-	USAGE_INPUT,
-	USAGE_MERGE,
-	USAGE_MERGE2,
-	USAGE_NOAUTOCOMMIT,
-	USAGE_NOWARN,
-	USAGE_OUTPUT,
-	USAGE_PAGE,
-	USAGE_PASSWORD,
-	USAGE_QUIET,
-	USAGE_ROLE,
-	USAGE_ROLE2,
-	USAGE_SQLDIALECT,
-	USAGE_TERM,
-	USAGE_USER,
-	USAGE_XTRACT,
-	USAGE_VERSION
-};
-
 
 int CLIB_ROUTINE main(int argc,
 					  char* argv[])
@@ -591,7 +638,7 @@ int ISQL_main(int argc,
 		if (*isqlGlob.global_Db_name) {
 			// Let's use user and password if provided.
 			// This should solve bug #112263 FSG 28.Jan.2001
-			if (newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_Numbufs,
+			if (newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_numbufs,
 				isqlGlob.Role, false) == SKIP)
 			{
 				LegacyTables flag = ret == EXTRACT ? SQL_objects : ALL_objects;
@@ -609,10 +656,11 @@ int ISQL_main(int argc,
 			TEXT helpstring[155];
 			ISQL_msg_get(USAGE, sizeof(helpstring), helpstring, NULL);
 			STDERROUT(helpstring);
-			//STDERROUT("");
-			for (int i = 0; i < FB_NELEM(usage_msgs); i++) {
-				ISQL_msg_get(usage_msgs[i], sizeof(helpstring), helpstring, NULL);
-				STDERROUT(helpstring);
+			for (int i = 0; i < FB_NELEM(switches); i++) {
+				if (switches[i].usage_id >= 0) {
+					ISQL_msg_get(switches[i].usage_id, sizeof(helpstring), helpstring, NULL);
+					STDERROUT(helpstring);
+				}
 			}
 			Exit_value = FINI_ERROR;
 			break;
@@ -3066,7 +3114,7 @@ static void do_isql()
 	// the file containing the script.
 	//
 
-	newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_Numbufs, isqlGlob.Role, true);
+	newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_numbufs, isqlGlob.Role, true);
 
 	// If that failed or no Dbname was specified
 
@@ -3670,7 +3718,7 @@ static processing_state frontend(const TEXT* statement)
 		const TEXT* psw = NULL;
 		const TEXT* usr = NULL;
 		const TEXT* sql_role_nm = NULL;
-		const TEXT* numbufs = NULL;
+		int numbufs = 0;
 
 		/* if a parameter is given in the command more than once, the
 		   last one will be used. The parameters can appear each any
@@ -3681,7 +3729,13 @@ static processing_state frontend(const TEXT* statement)
 		{
 			if (!strcmp(parms[i], "CACHE") && *lparms[i + 1])
 			{
-				numbufs = lparms[i + 1];
+				char* err;
+				long value = strtol(lparms[i + 1], &err, 10);
+				if (*err || (value <= 0) || (value >= INT_MAX)) {
+					ret = ps_ERR;
+					break;
+				}
+				numbufs = (int) value;
 				i += 2;
 			}
 			else if (!strcmp(parms[i], "USER") && *lparms[i + 1])
@@ -4973,7 +5027,7 @@ static bool isyesno(const TEXT* buffer)
 static processing_state newdb(TEXT* dbname,
 					const TEXT* usr,
 					const TEXT* psw,
-					const TEXT* numbufs,
+					int numbufs,
 					const TEXT* sql_role_nm,
 					bool start_user_trans)
 {
@@ -4990,7 +5044,7 @@ static processing_state newdb(TEXT* dbname,
  *	Parameters:	dbname	  -- Name of database to open
  *			usr		 -- user name, if given
  *			psw		 -- password, if given
- *			numbufs	 -- # of connection cache buffers, if given
+ *			numbufs	 -- # of connection cache buffers, if given, 0 if not
  *			sql_role_nm -- sql role name
  *
  **************************************/
@@ -5024,15 +5078,11 @@ static processing_state newdb(TEXT* dbname,
 	local_usr[0] = 0;
 	local_sql_role[0] = 0;
 	
-	TEXT local_numbufs[BUFFER_LENGTH128];
-	local_numbufs[0] = '\0';
-
 	// Strip quotes if well-intentioned
 
 	strip_quotes(dbname, isqlGlob.global_Db_name);
 	strip_quotes(usr, local_usr);
 	strip_quotes(psw, local_psw);
-	strip_quotes(numbufs, local_numbufs);
 
 	/* if local user is not specified, see if global options are
 	   specified - don't let a global role setting carry forward if a
@@ -5063,8 +5113,9 @@ static processing_state newdb(TEXT* dbname,
 	if (!(strlen(local_psw)) && global_psw)
 		strcpy(local_psw, Password);
 
-	if (!(strlen(local_numbufs)) && has_global_numbufs)
-		strcpy(local_numbufs, global_Numbufs);
+	int local_numbufs = numbufs;
+	if ((local_numbufs == 0) && has_global_numbufs)
+		local_numbufs = global_numbufs;
 
 	// Build up a dpb
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
@@ -5087,8 +5138,8 @@ static processing_state newdb(TEXT* dbname,
 		dpb.insertString(isc_dpb_sql_role_name, local_sql_role, l);
 	}
 
-	if (l = strlen(local_numbufs)) {
-		dpb.insertInt(isc_dpb_num_buffers, atoi(local_numbufs));
+	if (local_numbufs > 0) {
+		dpb.insertInt(isc_dpb_num_buffers, local_numbufs);
 	}
 
 	{ // scope
@@ -5460,7 +5511,7 @@ static processing_state parse_arg(int argc,
 	Password[0] = '\0';
 	isqlGlob.User[0] = '\0';
 	isqlGlob.Role[0] = '\0';
-	global_Numbufs[0] = 0;
+	global_numbufs = 0;
 	Quiet = false;
 	Exit_value = FINI_OK;
 
@@ -5517,176 +5568,197 @@ static processing_state parse_arg(int argc,
 		   ** for extract switch or error.
 		 */
 		if (*s == switchchar) {
-			const int c = UPPER(s[1]);
-			if (c == 'X' || (c == 'E' && UPPER(s[2]) == 'X')) {
-#ifdef DEV_BUILD
-				if (UPPER(s[2]) == 'T')
-					istable = true;
-#endif
-				ret = EXTRACT;
-			}
-			else if (c == 'A')
-				ret = EXTRACTALL;
-			else if (c == 'B')
-				BailOnError = true;
-			else if (c == 'E')
-				Echo = true;
-			else if (c == 'M' && s[2] == '2') // It must be before single M option.
-			    Merge_diagnostic = true;
-			else if (c == 'M')
-				Merge_stderr = true;
-			else if (c == 'N' && UPPER(s[2]) == 'O' && UPPER(s[3]) == 'W')
-				Warnings = false;
-			else if (c == 'N' &&
-					 (!s[2] || (UPPER(s[2]) == 'O' && !s[3]) ||
-					  (UPPER(s[2]) == 'O' && UPPER(s[3]) == 'A')))
-			{
-				Autocommit = false;
-			}
-			else if (c == 'O') {
-				// Alternate output file 
 
-				if ((s = argv[++i]) && (newoutput(s) != FAIL))
-					;
-				else
-					ret = ps_ERR;
-			}
-			else if (c == 'I') {
-				// Alternate input file 
-
-				if ((s = argv[++i]) && (newinput(s) == SKIP))
-					Interactive = false;
-				else
-					ret = ps_ERR;
-				// CVC: Set by newinput() above only if successful.
-				//Input_file = true;
-			}
-			else if (c == 'T') {
-				// The next string is the proposed terminator 
-
-				if ((s = argv[++i]) && *s) {
-					Termlen = strlen(s);
-					if (Termlen >= MAXTERM_SIZE)
-						Termlen = MAXTERM_SIZE - 1;
-
-					STRARGNCPY(isqlGlob.global_Term, s, Termlen);
-				}
-				else
-					ret = ps_ERR;
-			}
-			else if (c == 'D') {
-				// advance to the next word for target db name 
-
-				if ((s = argv[++i]) && *s)
-					STRARGNCPY(isqlGlob.global_Target_db, s, sizeof(isqlGlob.global_Target_db) - 1);
-				else
-					ret = ps_ERR;
-			}
-			else if (c == 'P' && UPPER(s[2]) == 'A' && UPPER(s[3]) == 'G') {
-				// Change the page length 
-
-				if ((s = argv[++i]) && (Pagelength = atoi(s)));
-				else
-					ret = ps_ERR;
-			}
-			// This has to be after "PAGE" 
-			else if (c == 'P') {
-				if ((s = argv[++i]) && *s) {
-					STRARGNCPY(Password, s, sizeof(Password) - 1);
-					global_psw = true;
-				}
-				else
-					ret = ps_ERR;
-			}
-			else if (c == 'U') {
-				if ((s = argv[++i]) && *s) {
-					STRARGNCPY(isqlGlob.User, s, sizeof(isqlGlob.User) - 1);
-					global_usr = true;
-				}
-				else
-					ret = ps_ERR;
-			}
-			else if (c == 'R') {
-				const bool keepLower = s[2] == '2';
-				if ((s = argv[++i]) && *s) {
-					if (keepLower)
-					{
-						strcpy(isqlGlob.Role, "\"");
-						STRARGNCPY(isqlGlob.Role + 1, s, sizeof(isqlGlob.Role) - 3);
-						strcat(isqlGlob.Role, "\"");
-					}
-					else
-						STRARGNCPY(isqlGlob.Role, s, sizeof(isqlGlob.Role) - 1);
-					global_role = true;
-				}
-				else
-					ret = ps_ERR;
-			}
-			// number of cache buffers
-			else if (c == 'C'
-				&& (!s[2] || UPPER(s[2]) == 'A'))
-			{
-				if ((s = argv[++i]) && *s) {
-					STRARGNCPY(global_Numbufs, s, sizeof(global_Numbufs) - 1);
-					has_global_numbufs = true;
-				}
-				else
-					ret = ps_ERR;
-			}
-			// conection character set
-			else if (c == 'C' && UPPER(s[2]) == 'H') {
-				if ((s = argv[++i]) && *s) {
-					STRARGNCPY(Charset, s, sizeof(Charset) - 1);
-					const size_t lgth = strlen(Charset);
-					if (lgth < MAXCHARSET_SIZE)
-						strcpy(ISQL_charset, Charset);
-					else
-					{
-						strncpy(ISQL_charset, Charset, MAXCHARSET_SIZE - 1);
-						ISQL_charset[MAXCHARSET_SIZE - 1] = 0;
-					}
-				}
-				else
-					ret = ps_ERR;
-			}
-			else if (c == 'Q')
-				// Quiet flag 
-				Quiet = true;
-			else if (c == 'Z') {
-				Version_info = true;
-				ISQL_msg_get(VERSION, errbuf, FB_VERSION);
-				isqlGlob.printf("%s%s", errbuf, NEWLINE);
-			}
-			else if (c == 'S') {
-				// isqlGlob.SQL_dialect value 
-				if ((s = argv[++i]) && (requested_SQL_dialect = atoi(s))) {
-					if (requested_SQL_dialect < SQL_DIALECT_V5 ||
-						requested_SQL_dialect > SQL_DIALECT_CURRENT)
-					{
-						ret = ps_ERR;
-					}
-					else {
-						/* requested_SQL_dialect is used to specify the database dialect
-						 * if SQL dialect was not specified.  Since it is possible to
-						 * have a client dialect of 2, force the database dialect to 3, but
-						 * leave the client dialect as 2
-						 */
-						isqlGlob.SQL_dialect = requested_SQL_dialect;
-						if (requested_SQL_dialect == SQL_DIALECT_V6_TRANSITION)
-						{
-							Merge_stderr = true;
-							requested_SQL_dialect = SQL_DIALECT_V6;
+			switch_id swid = SWITCH_UNKNOWN;
+			int swarg_int = 0;
+			const char* swarg_str = NULL;
+			unsigned int swlen = strlen(s + 1);
+			for (int j = 0; j < FB_NELEM(switches); j++) {
+				if (!fb_utils::strnicmp(s + 1, switches[j].text, swlen) && (swlen >= switches[j].abbrlen)) {
+					swid = switches[j].id;
+					if (switches[j].argtype != SWARG_NONE) {
+						swarg_str = argv[++i];
+						if (!swarg_str || !*swarg_str) {
+							ISQL_msg_get(USAGE_NOARG, errbuf, s + 1);
+							STDERROUT(errbuf);
+							ret = ps_ERR;
+						}
+						else if (switches[j].argtype == SWARG_INTEGER) {
+							char* err;
+							long value = strtol(swarg_str, &err, 10);
+							if (*err) {
+								// conversion error
+								ISQL_msg_get(USAGE_NOTINT, errbuf, swarg_str);
+								STDERROUT(errbuf);
+								ret = ps_ERR;
+							}
+							else if ((value < INT_MIN) || (value > INT_MAX)) {
+								ISQL_msg_get(USAGE_RANGE, errbuf, swarg_str);
+								STDERROUT(errbuf);
+								ret = ps_ERR;
+							}
+							else {
+								swarg_int = (int) value;
+							}
 						}
 					}
+					break; // switch found, exit the loop
 				}
-				else
-					ret = ps_ERR;
 			}
-			else {				// This is an unknown flag 
 
-				ISQL_msg_get(SWITCH, errbuf, s + 1);
-				STDERROUT(errbuf);
-				ret = ps_ERR;
+			if (ret != ps_ERR) {
+				switch(swid) {
+#ifdef DEV_BUILD
+					case SWITCH_EXTRACTTBL:
+						istable = true;
+						ret = EXTRACT;
+						break;
+#endif
+					case SWITCH_EXTRACT:
+						ret = EXTRACT;
+						break;
+
+					case SWITCH_EXTRACTALL:
+						ret = EXTRACTALL;
+						break;
+
+					case SWITCH_BAIL:
+						BailOnError = true;
+						break;
+
+					case SWITCH_ECHO:
+						Echo = true;
+						break;
+
+					case SWITCH_MERGE:
+						Merge_stderr = true;
+						break;
+
+					case SWITCH_MERGE2:
+						Merge_diagnostic = true;
+						break;
+
+					case SWITCH_NOAUTOCOMMIT:
+						Autocommit = false;
+						break;
+
+					case SWITCH_NOWARN:
+						Warnings = false;
+						break;
+
+					case SWITCH_OUTPUT:
+						if (newoutput(swarg_str) == FAIL) {
+							ret = ps_ERR;
+						}
+						break;
+
+					case SWITCH_INPUT:
+						if (newinput(swarg_str) == SKIP) {
+							Interactive = false;
+						} else {
+							ret = ps_ERR;
+						}
+						// CVC: Set by newinput() above only if successful.
+						// Input_file = true;
+						break;
+
+					case SWITCH_TERM:
+						Termlen = strlen(swarg_str);
+						if (Termlen >= MAXTERM_SIZE) {
+							Termlen = MAXTERM_SIZE - 1;
+						}
+						STRARGNCPY(isqlGlob.global_Term, swarg_str, Termlen);
+						break;
+
+					case SWITCH_DATABASE:
+						STRARGNCPY(isqlGlob.global_Target_db, swarg_str, sizeof(isqlGlob.global_Target_db) - 1);
+						break;
+
+					case SWITCH_PAGE:
+						Pagelength = swarg_int;
+						break;
+
+					case SWITCH_PASSWORD:
+						STRARGNCPY(Password, swarg_str, sizeof(Password) - 1);
+						global_psw = true;
+						break;
+
+					case SWITCH_USER:
+						STRARGNCPY(isqlGlob.User, swarg_str, sizeof(isqlGlob.User) - 1);
+						global_usr = true;
+						break;
+
+					case SWITCH_ROLE:
+						STRARGNCPY(isqlGlob.Role, swarg_str, sizeof(isqlGlob.Role) - 1);
+						global_role = true;
+						break;
+
+					case SWITCH_ROLE2:
+						strcpy(isqlGlob.Role, "\"");
+						STRARGNCPY(isqlGlob.Role + 1, swarg_str, sizeof(isqlGlob.Role) - 3);
+						strcat(isqlGlob.Role, "\"");
+						global_role = true;
+						break;
+
+					case SWITCH_CACHE:
+						if (swarg_int <= 0) {
+							ISQL_msg_get(USAGE_RANGE, errbuf, swarg_str);
+							STDERROUT(errbuf);
+							ret = ps_ERR;
+						}
+						global_numbufs = swarg_int;
+						has_global_numbufs = true;
+						break;
+
+					case SWITCH_CHARSET:
+						STRARGNCPY(Charset, swarg_str, sizeof(Charset) - 1);
+						const size_t lgth = strlen(Charset);
+						if (lgth < MAXCHARSET_SIZE) {
+							strcpy(ISQL_charset, Charset);
+						} else {
+							strncpy(ISQL_charset, Charset, MAXCHARSET_SIZE - 1);
+							ISQL_charset[MAXCHARSET_SIZE - 1] = '\0';
+						}
+						break;
+
+					case SWITCH_QUIET:
+						Quiet = true;
+						break;
+
+					case SWITCH_VERSION:
+						Version_info = true;
+						ISQL_msg_get(VERSION, errbuf, FB_VERSION);
+						isqlGlob.printf("%s%s", errbuf, NEWLINE);
+						break;
+
+					case SWITCH_SQLDIALECT:
+						requested_SQL_dialect = swarg_int;
+						if (requested_SQL_dialect < SQL_DIALECT_V5 ||
+							requested_SQL_dialect > SQL_DIALECT_CURRENT)
+						{
+							ret = ps_ERR;
+						}
+						else {
+							/* requested_SQL_dialect is used to specify the database dialect
+							 * if SQL dialect was not specified.  Since it is possible to
+							 * have a client dialect of 2, force the database dialect to 3, but
+							 * leave the client dialect as 2
+							 */
+							isqlGlob.SQL_dialect = requested_SQL_dialect;
+							if (requested_SQL_dialect == SQL_DIALECT_V6_TRANSITION)
+							{
+								Merge_stderr = true;
+								requested_SQL_dialect = SQL_DIALECT_V6;
+							}
+						}
+						break;
+
+					default: // unknown switch
+						ISQL_msg_get(SWITCH, errbuf, s + 1);
+						STDERROUT(errbuf);
+						ret = ps_ERR;
+
+				}
 			}
 		}
 		else

@@ -231,29 +231,9 @@ const int MSG_FUNCTIONS				= 118;		// Functions:
 const int EXACTLINE					= 119;		// At line %d in file %s
 const int AFTERLINE					= 120;		// After line %d in file %s
 const int USAGE						= 1;		// usage: syntax
-const int USAGE_ALL					= 11;		// usage: -a
-const int USAGE_BAIL				= 104;		// usage: -b(ail)
-const int USAGE_CACHE				= 111;		// usage: -c(ache)
-const int USAGE_CHARSET				= 122;		// usage: -ch(arset)
-const int USAGE_DATABASE			= 123;		// usage: -d
-const int USAGE_ECHO				= 124;		// usage: -e(cho)
-const int USAGE_EXTRACT				= 125;		// usage: -ex(tract)
-const int USAGE_INPUT				= 126;		// usage: -i(nput)
-const int USAGE_MERGE				= 127;		// usage: -m(erge)
-const int USAGE_MERGE2				= 128;		// usage: -m2
-const int USAGE_NOAUTOCOMMIT		= 129;		// usage: -n(oautocommit)
-const int USAGE_NOWARN				= 130;		// usage: -now(arn)
-const int USAGE_OUTPUT				= 131;		// usage: -o(utput)
-const int USAGE_PAGE				= 132;		// usage: -page
-const int USAGE_PASSWORD			= 133;		// usage: -p(assword)
-const int USAGE_QUIET				= 134;		// usage: -q(uiet)
-const int USAGE_ROLE				= 135;		// usage: -r(ole)
-const int USAGE_ROLE2				= 136;		// usage: -r2
-const int USAGE_SQLDIALECT			= 137;		// usage: -s
-const int USAGE_TERM				= 138;		// usage: -t
-const int USAGE_USER				= 139;		// usage: -u(ser)
-const int USAGE_XTRACT				= 140;		// usage: -x
-const int USAGE_VERSION				= 141;		// usage: -z
+const int USAGE_NOARG				= 142;		// usage: missing argument of "%s"
+const int USAGE_NOTINT				= 143;		// usage: argument "%s" is not an integer
+const int USAGE_RANGE				= 144;		// usage: value %s is out of range
 
 // Initialize types
 
