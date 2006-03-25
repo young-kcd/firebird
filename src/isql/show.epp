@@ -1001,7 +1001,7 @@ void SHOW_print_metadata_text_blob(FILE* fp,
 		{
 			for (const UCHAR* p = (UCHAR*) buffer; *p; ++p)
 			{
-			    if (*p == '\'')
+				if (*p == SINGLE_QUOTE)
 			        fputc(*p, fp);
 			    fputc(*p, fp);
 			}

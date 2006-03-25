@@ -248,8 +248,6 @@ int THD_rec_mutex_lock(REC_MUTX_T * rec_mutex)
  * Functional description
  *
  **************************************/
-	int ret;
-
 	if (rec_mutex->rec_mutx_id == ThreadData::getId())
 	{
 		rec_mutex->rec_mutx_count++;
