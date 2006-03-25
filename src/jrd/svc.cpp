@@ -64,6 +64,7 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/ibase.h"
+#include "../common/utils_proto.h"
 
 #ifdef SERVER_SHUTDOWN
 #include "../jrd/jrd_proto.h"
@@ -518,7 +519,7 @@ Service* SVC_attach(USHORT	service_length,
 		}
 
 /* Check that the validated user has the authority to access this service */
-		if (fb_stricmp(options.spb_user_name.c_str(), SYSDBA_USER_NAME))
+		if (fb_utils::stricmp(options.spb_user_name.c_str(), SYSDBA_USER_NAME))
 		{
 			user_flag = SVC_user_any;
 		}

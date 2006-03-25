@@ -28,7 +28,9 @@
 #ifndef INCLUDE_UTILS_PROTO_H
 #define INCLUDE_UTILS_PROTO_H
 
+#include <string.h>
 #include "../common/classes/fb_string.h"
+
 
 namespace fb_utils
 {
@@ -42,6 +44,42 @@ namespace fb_utils
 	bool readenv(const char* env_name, Firebird::string& env_value);
 	bool readenv(const char* env_name, Firebird::PathName& env_value);
 	int snprintf(char* buffer, size_t count, const char* format...);
+
+// Warning: Only wrappers:
+
+	// ********************
+	// s t r i c m p
+	// ********************
+	// Abstraction of incompatible routine names
+	// for case insensitive comparison.
+	inline int stricmp(const char* a, const char* b)
+	{
+#if defined(HAVE_STRCASECMP)
+		return ::strcasecmp(a, b);
+#elif defined(HAVE_STRICMP)
+		return ::stricmp(a, b);
+#else
+#error dont know how to compare strings case insensitive on this system
+#endif
+	}
+
+
+	// ********************
+	// s t r n i c m p
+	// ********************
+	// Abstraction of incompatible routine names
+	// for counted length and case insensitive comparison.
+	inline int strnicmp(const char* a, const char* b, size_t count)
+	{
+#if defined(HAVE_STRNCASECMP)
+		return ::strncasecmp(a, b, count);
+#elif defined(HAVE_STRNICMP)
+		return ::strnicmp(a, b, count);
+#else
+#error dont know how to compare counted length strings case insensitive on this system
+#endif
+	}
+
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

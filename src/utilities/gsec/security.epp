@@ -39,6 +39,7 @@
 #include "../common/classes/fb_string.h"
 #include "../jrd/jrd_pwd.h"
 #endif
+#include "../common/utils_proto.h"
 
 DATABASE DB = STATIC FILENAME "security2.fdb";
 
@@ -257,7 +258,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 		found = false;
 		/* Do not allow SYSDBA user to be deleted */
-		if (!fb_stricmp(io_user_data->user_name, SYSDBA_USER_NAME))
+		if (!fb_utils::stricmp(io_user_data->user_name, SYSDBA_USER_NAME))
 			ret = GsecMsg23;
 		else {
 			FOR U IN USERS WITH U.USER_NAME EQ io_user_data->user_name

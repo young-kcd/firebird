@@ -1091,26 +1091,5 @@ static const TEXT* FB_LONG_MONTHS_UPPER[] =
 	0
 };
 
-
-
-// ======================================
-// BEGIN AUTOCONF ABSTRACTION LAYER
-// CVC: It's unacceptable that we pollute all the sources with the
-// #ifdef HAVE_<something> feature. While the function prototypes are
-// compatible or the extra params are ignored or we can pass default values,
-// we must wrap those functions in FB names.
-
-#include <string.h>
-inline int fb_stricmp(const char* a, const char* b)
-{
-#if defined(HAVE_STRCASECMP)
-	return strcasecmp(a, b);
-#elif defined(HAVE_STRICMP)
-	return stricmp(a, b);
-#else
-#error dont know how to compare strings case insensitive on this system
-#endif
-}
-
 #endif /* JRD_COMMON_H */
 
