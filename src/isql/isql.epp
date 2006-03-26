@@ -172,11 +172,11 @@ enum switch_id {
 };
 
 struct switch_info {
-	switch_id id;                // switch id
-	const char* text;            // canonical switch name
-	unsigned short abbrlen;      // minimum abbreviation length
-	switch_argtype argtype;      // argument type (SWARG_NONE if none)
-	int usage_id;                // message id for usage text
+	switch_id id;				// switch id
+	const char* text;			// canonical switch name
+	unsigned int abbrlen;		// minimum abbreviation length
+	switch_argtype argtype;		// argument type (SWARG_NONE if none)
+	int usage_id;				// message id for usage text
 };
 
 switch_info switches[] = {
@@ -5563,20 +5563,22 @@ static processing_state parse_arg(int argc,
 	int i = 1;
 	const char* s = argv[i];
 	while (i < argc) {
-		/* Look at flags to find unique match.  If the flag has an arg,
-		   ** advance the pointer (and i).  Only change the return value
-		   ** for extract switch or error.
-		 */
-		if (*s == switchchar) {
+		// Look at flags to find unique match.  If the flag has an arg,
+		// advance the pointer (and i).  Only change the return value
+		// for extract switch or error.
+		if (*s == switchchar)
+		{
 			switch_id swid = SWITCH_UNKNOWN;
 			int swarg_int = 0;
 			const char* swarg_str = NULL;
 			unsigned int swlen = strlen(s + 1);
 
 			for (int j = 0; j < FB_NELEM(switches); j++) {
-				if (!fb_utils::strnicmp(s + 1, switches[j].text, swlen) && (swlen >= switches[j].abbrlen)) {
+				if (!fb_utils::strnicmp(s + 1, switches[j].text, swlen) && (swlen >= switches[j].abbrlen))
+				{
 					swid = switches[j].id;
-					if (switches[j].argtype != SWARG_NONE) {
+					if (switches[j].argtype != SWARG_NONE)
+					{
 						swarg_str = argv[++i];
 						if (!swarg_str || !*swarg_str) {
 							ISQL_msg_get(USAGE_NOARG, errbuf, s + 1);
@@ -5606,166 +5608,170 @@ static processing_state parse_arg(int argc,
 				}
 			}
 
-			if (ret != ps_ERR) {
-				switch(swid) {
+			// Quit the loop of interpreting if we got an error
+			if (ret == ps_ERR)
+				break;
+
+			switch(swid)
+			{
 #ifdef DEV_BUILD
-					case SWITCH_EXTRACTTBL:
-						istable = true;
-						ret = EXTRACT;
-						break;
+				case SWITCH_EXTRACTTBL:
+					istable = true;
+					ret = EXTRACT;
+					break;
 #endif
-					case SWITCH_EXTRACT:
-						ret = EXTRACT;
-						break;
+				case SWITCH_EXTRACT:
+					ret = EXTRACT;
+					break;
 
-					case SWITCH_EXTRACTALL:
-						ret = EXTRACTALL;
-						break;
+				case SWITCH_EXTRACTALL:
+					ret = EXTRACTALL;
+					break;
 
-					case SWITCH_BAIL:
-						BailOnError = true;
-						break;
+				case SWITCH_BAIL:
+					BailOnError = true;
+					break;
 
-					case SWITCH_ECHO:
-						Echo = true;
-						break;
+				case SWITCH_ECHO:
+					Echo = true;
+					break;
 
-					case SWITCH_MERGE:
-						Merge_stderr = true;
-						break;
+				case SWITCH_MERGE:
+					Merge_stderr = true;
+					break;
 
-					case SWITCH_MERGE2:
-						Merge_diagnostic = true;
-						break;
+				case SWITCH_MERGE2:
+					Merge_diagnostic = true;
+					break;
 
-					case SWITCH_NOAUTOCOMMIT:
-						Autocommit = false;
-						break;
+				case SWITCH_NOAUTOCOMMIT:
+					Autocommit = false;
+					break;
 
-					case SWITCH_NOWARN:
-						Warnings = false;
-						break;
+				case SWITCH_NOWARN:
+					Warnings = false;
+					break;
 
-					case SWITCH_OUTPUT:
-						if (newoutput(swarg_str) == FAIL) {
-							ret = ps_ERR;
-						}
-						break;
-
-					case SWITCH_INPUT:
-						if (newinput(swarg_str) == SKIP) {
-							Interactive = false;
-						} else {
-							ret = ps_ERR;
-						}
-						// CVC: Set by newinput() above only if successful.
-						// Input_file = true;
-						break;
-
-					case SWITCH_TERM:
-						Termlen = strlen(swarg_str);
-						if (Termlen >= MAXTERM_SIZE) {
-							Termlen = MAXTERM_SIZE - 1;
-						}
-						STRARGNCPY(isqlGlob.global_Term, swarg_str, Termlen);
-						break;
-
-					case SWITCH_DATABASE:
-						STRARGNCPY(isqlGlob.global_Target_db, swarg_str, sizeof(isqlGlob.global_Target_db) - 1);
-						break;
-
-					case SWITCH_PAGE:
-						Pagelength = swarg_int;
-						break;
-
-					case SWITCH_PASSWORD:
-						STRARGNCPY(Password, swarg_str, sizeof(Password) - 1);
-						global_psw = true;
-						break;
-
-					case SWITCH_USER:
-						STRARGNCPY(isqlGlob.User, swarg_str, sizeof(isqlGlob.User) - 1);
-						global_usr = true;
-						break;
-
-					case SWITCH_ROLE:
-						STRARGNCPY(isqlGlob.Role, swarg_str, sizeof(isqlGlob.Role) - 1);
-						global_role = true;
-						break;
-
-					case SWITCH_ROLE2:
-						strcpy(isqlGlob.Role, "\"");
-						STRARGNCPY(isqlGlob.Role + 1, swarg_str, sizeof(isqlGlob.Role) - 3);
-						strcat(isqlGlob.Role, "\"");
-						global_role = true;
-						break;
-
-					case SWITCH_CACHE:
-						if (swarg_int <= 0) {
-							ISQL_msg_get(USAGE_RANGE, errbuf, swarg_str);
-							STDERROUT(errbuf);
-							ret = ps_ERR;
-						}
-						global_numbufs = swarg_int;
-						has_global_numbufs = true;
-						break;
-
-					case SWITCH_CHARSET:
-					{
-						STRARGNCPY(Charset, swarg_str, sizeof(Charset) - 1);
-						const size_t lgth = strlen(Charset);
-						if (lgth < MAXCHARSET_SIZE) {
-							strcpy(ISQL_charset, Charset);
-						} else {
-							strncpy(ISQL_charset, Charset, MAXCHARSET_SIZE - 1);
-							ISQL_charset[MAXCHARSET_SIZE - 1] = '\0';
-						}
-						break;
+				case SWITCH_OUTPUT:
+					if (newoutput(swarg_str) == FAIL) {
+						ret = ps_ERR;
 					}
+					break;
 
-					case SWITCH_QUIET:
-						Quiet = true;
-						break;
+				case SWITCH_INPUT:
+					if (newinput(swarg_str) == SKIP) {
+						Interactive = false;
+					}
+					else {
+						ret = ps_ERR;
+					}
+					// CVC: Set by newinput() above only if successful.
+					// Input_file = true;
+					break;
 
-					case SWITCH_VERSION:
-						Version_info = true;
-						ISQL_msg_get(VERSION, errbuf, FB_VERSION);
-						isqlGlob.printf("%s%s", errbuf, NEWLINE);
-						break;
+				case SWITCH_TERM:
+					Termlen = strlen(swarg_str);
+					if (Termlen >= MAXTERM_SIZE) {
+						Termlen = MAXTERM_SIZE - 1;
+					}
+					STRARGNCPY(isqlGlob.global_Term, swarg_str, Termlen);
+					break;
 
-					case SWITCH_SQLDIALECT:
-						requested_SQL_dialect = swarg_int;
-						if (requested_SQL_dialect < SQL_DIALECT_V5 ||
-							requested_SQL_dialect > SQL_DIALECT_CURRENT)
-						{
-							ret = ps_ERR;
-						}
-						else {
-							/* requested_SQL_dialect is used to specify the database dialect
-							 * if SQL dialect was not specified.  Since it is possible to
-							 * have a client dialect of 2, force the database dialect to 3, but
-							 * leave the client dialect as 2
-							 */
-							isqlGlob.SQL_dialect = requested_SQL_dialect;
-							if (requested_SQL_dialect == SQL_DIALECT_V6_TRANSITION)
-							{
-								Merge_stderr = true;
-								requested_SQL_dialect = SQL_DIALECT_V6;
-							}
-						}
-						break;
+				case SWITCH_DATABASE:
+					STRARGNCPY(isqlGlob.global_Target_db, swarg_str, sizeof(isqlGlob.global_Target_db) - 1);
+					break;
 
-					default: // unknown switch
-						ISQL_msg_get(SWITCH, errbuf, s + 1);
+				case SWITCH_PAGE:
+					Pagelength = swarg_int;
+					break;
+
+				case SWITCH_PASSWORD:
+					STRARGNCPY(Password, swarg_str, sizeof(Password) - 1);
+					global_psw = true;
+					break;
+
+				case SWITCH_USER:
+					STRARGNCPY(isqlGlob.User, swarg_str, sizeof(isqlGlob.User) - 1);
+					global_usr = true;
+					break;
+
+				case SWITCH_ROLE:
+					STRARGNCPY(isqlGlob.Role, swarg_str, sizeof(isqlGlob.Role) - 1);
+					global_role = true;
+					break;
+
+				case SWITCH_ROLE2:
+					strcpy(isqlGlob.Role, "\"");
+					STRARGNCPY(isqlGlob.Role + 1, swarg_str, sizeof(isqlGlob.Role) - 3);
+					strcat(isqlGlob.Role, "\"");
+					global_role = true;
+					break;
+
+				case SWITCH_CACHE:
+					if (swarg_int <= 0) {
+						ISQL_msg_get(USAGE_RANGE, errbuf, swarg_str);
 						STDERROUT(errbuf);
 						ret = ps_ERR;
+					}
+					global_numbufs = swarg_int;
+					has_global_numbufs = true;
+					break;
 
+				case SWITCH_CHARSET:
+				{
+					STRARGNCPY(Charset, swarg_str, sizeof(Charset) - 1);
+					const size_t lgth = strlen(Charset);
+					if (lgth < MAXCHARSET_SIZE) {
+						strcpy(ISQL_charset, Charset);
+					}
+					else {
+						strncpy(ISQL_charset, Charset, MAXCHARSET_SIZE - 1);
+						ISQL_charset[MAXCHARSET_SIZE - 1] = '\0';
+					}
+					break;
 				}
+
+				case SWITCH_QUIET:
+					Quiet = true;
+					break;
+
+				case SWITCH_VERSION:
+					Version_info = true;
+					ISQL_msg_get(VERSION, errbuf, FB_VERSION);
+					isqlGlob.printf("%s%s", errbuf, NEWLINE);
+					break;
+
+				case SWITCH_SQLDIALECT:
+					requested_SQL_dialect = swarg_int;
+					if (requested_SQL_dialect < SQL_DIALECT_V5 ||
+						requested_SQL_dialect > SQL_DIALECT_CURRENT)
+					{
+						ret = ps_ERR;
+					}
+					else {
+						// requested_SQL_dialect is used to specify the database dialect
+						// if SQL dialect was not specified.  Since it is possible to
+						// have a client dialect of 2, force the database dialect to 3, but
+						// leave the client dialect as 2
+						isqlGlob.SQL_dialect = requested_SQL_dialect;
+						if (requested_SQL_dialect == SQL_DIALECT_V6_TRANSITION)
+						{
+							Merge_stderr = true;
+							requested_SQL_dialect = SQL_DIALECT_V6;
+						}
+					}
+					break;
+
+				default: // unknown switch
+					ISQL_msg_get(SWITCH, errbuf, s + 1);
+					STDERROUT(errbuf);
+					ret = ps_ERR;
+
 			}
 		}
 		else
-			// This is not a switch, it is a db_name 
 		{
+			// This is not a switch, it is a db_name
 			STRARGNCPY(isqlGlob.global_Db_name, s, sizeof(isqlGlob.global_Db_name) - 1);
 #ifdef DEV_BUILD
 			// If there is a table name, it follows 
@@ -5774,11 +5780,10 @@ static processing_state parse_arg(int argc,
 #endif
 		}
 
-
-		// Quit the loop of interpreting if we got an error 
-
+		// Quit the loop of interpreting if we got an error
 		if (ret == ps_ERR)
 			break;
+			
 		s = argv[++i];
 	}
 
