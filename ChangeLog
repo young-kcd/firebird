@@ -1,3 +1,28 @@
+2006-03-26 00:41  mkubecek
+
+	* firebird2/src/: isql/isql.epp (1.168), isql/isql.h (1.53),
+	msgs/facilities.sql (1.54), msgs/messages.sql (1.67):
+	
+	Fix of isql command line parser: allow only abbreviations of
+	standard switch names, check integer arguments to be integers.
+
+2006-03-25 08:07  robocop
+
+	* firebird2/: configure.in (1.241), src/common/utils_proto.h
+	(1.11), src/include/gen/autoconfig_msvc.h (1.99), src/jrd/common.h
+	(1.137), src/jrd/svc.cpp (1.165), src/utilities/gsec/security.epp
+	(1.16):
+	
+	Only strcmp and strncmp have common names across all plartforms.
+	Cater for differences in strcasecmp/stricmp and
+	strncasecmp/strnicmp.
+
+2006-03-25 08:01  robocop
+
+	* firebird2/src/: isql/show.epp (1.86), jrd/thd.cpp (1.47):
+	
+	Misc.
+
 2006-03-21 02:55  asfernandes
 
 	* firebird2/builds/posix/Makefile.in.client.qli (1.11):
