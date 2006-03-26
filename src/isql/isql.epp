@@ -5568,11 +5568,11 @@ static processing_state parse_arg(int argc,
 		   ** for extract switch or error.
 		 */
 		if (*s == switchchar) {
-
 			switch_id swid = SWITCH_UNKNOWN;
 			int swarg_int = 0;
 			const char* swarg_str = NULL;
 			unsigned int swlen = strlen(s + 1);
+
 			for (int j = 0; j < FB_NELEM(switches); j++) {
 				if (!fb_utils::strnicmp(s + 1, switches[j].text, swlen) && (swlen >= switches[j].abbrlen)) {
 					swid = switches[j].id;
@@ -5711,6 +5711,7 @@ static processing_state parse_arg(int argc,
 						break;
 
 					case SWITCH_CHARSET:
+					{
 						STRARGNCPY(Charset, swarg_str, sizeof(Charset) - 1);
 						const size_t lgth = strlen(Charset);
 						if (lgth < MAXCHARSET_SIZE) {
@@ -5720,6 +5721,7 @@ static processing_state parse_arg(int argc,
 							ISQL_charset[MAXCHARSET_SIZE - 1] = '\0';
 						}
 						break;
+					}
 
 					case SWITCH_QUIET:
 						Quiet = true;
