@@ -1,3 +1,39 @@
+2006-03-26 22:51  hvlad
+
+	* firebird2/doc/README.garbage_collector (1.1):
+	
+	Documentation for garbage collector
+
+2006-03-26 14:10  alexpeshkoff
+
+	* firebird2/src/auth/trusted/AuthSspi.h (1.1):
+	
+	file AuthSspi.h was initially added on branch B_2_0_Trusted_Auth.
+
+2006-03-26 14:10  alexpeshkoff
+
+	* firebird2/src/auth/trusted/AuthSspi.cpp (1.1):
+	
+	file AuthSspi.cpp was initially added on branch B_2_0_Trusted_Auth.
+
+2006-03-26 07:58  robocop
+
+	* firebird2/src/isql/isql.epp (1.170):
+	
+	- Misc.  - Style - Avoiding one indentation level.
+
+2006-03-26 06:58  robocop
+
+	* firebird2/src/msgs/history.sql (1.31):
+	
+	Misc.
+
+2006-03-26 05:34  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.169):
+	
+	Correction
+
 2006-03-26 00:41  mkubecek
 
 	* firebird2/src/: isql/isql.epp (1.168), isql/isql.h (1.53),
