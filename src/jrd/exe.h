@@ -520,6 +520,12 @@ struct AccessItem
 
 	static bool greaterThan(const AccessItem& i1, const AccessItem& i2) {
 		int v;
+
+		// Relations and procedures should be sorted before
+		// columns, hence such a tricky inverted condition
+		if ((v = -strcmp(i1.acc_type, i2.acc_type)) != 0) 
+			return v > 0;
+
 		if ((v = i1.acc_security_name.compare(i2.acc_security_name)) != 0)
 			return v > 0;
 
@@ -528,9 +534,6 @@ struct AccessItem
 
 		if (i1.acc_mask != i2.acc_mask)
 			return i1.acc_mask > i2.acc_mask;
-
-		if ((v = strcmp(i1.acc_type, i2.acc_type)) != 0) 
-			return v > 0;
 
 		if ((v = i1.acc_name.compare(i2.acc_name)) != 0)
 			return v > 0;
