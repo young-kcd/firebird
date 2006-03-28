@@ -1140,6 +1140,8 @@ C --
       PARAMETER (GDS__partner_idx_not_found            = 335544863)
       INTEGER*4 GDS__tra_num_exc                     
       PARAMETER (GDS__tra_num_exc                      = 335544864)
+      INTEGER*4 GDS__field_disappeared               
+      PARAMETER (GDS__field_disappeared                = 335544865)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

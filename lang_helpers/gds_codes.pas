@@ -577,6 +577,7 @@ const
 	gds_record_lock_not_supp             = 335544862;
 	gds_partner_idx_not_found            = 335544863;
 	gds_tra_num_exc                      = 335544864;
+	gds_field_disappeared                = 335544865;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
