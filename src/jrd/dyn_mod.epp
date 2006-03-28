@@ -1219,8 +1219,8 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 
 	if (!found)
 	{
-		DYN_error_punt(false, 93, NULL, NULL, NULL, NULL, NULL);
-		// msg 93: "Index field not found"
+		DYN_error_punt(false, 48, NULL, NULL, NULL, NULL, NULL);
+		/* msg 48: "Index not found" */
 	}
 }
 
