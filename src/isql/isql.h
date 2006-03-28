@@ -231,9 +231,11 @@ const int MSG_FUNCTIONS				= 118;		// Functions:
 const int EXACTLINE					= 119;		// At line %d in file %s
 const int AFTERLINE					= 120;		// After line %d in file %s
 const int USAGE						= 1;		// usage: syntax
-const int USAGE_NOARG				= 142;		// usage: missing argument of "%s"
-const int USAGE_NOTINT				= 143;		// usage: argument "%s" is not an integer
-const int USAGE_RANGE				= 144;		// usage: value %s is out of range
+const int USAGE_NOARG				= 142;		// usage: missing argument for "%s"
+const int USAGE_NOTINT				= 143;		// usage: argument "%s" for switch "%s" is not an integer
+const int USAGE_RANGE				= 144;		// usage: value "%s" for switch "%s" is out of range
+const int USAGE_DUPSW				= 145;		// usage: switch "%s" or its equivalent used more than once
+const int USAGE_DUPDB				= 146;		// usage: more than one database name: "%s", "%s"
 
 // Initialize types
 
