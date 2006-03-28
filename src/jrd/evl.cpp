@@ -244,8 +244,18 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 	case nod_field:
 		record =
 			request->req_rpb[(int) (IPTR) node->nod_arg[e_fld_stream]].rpb_record;
-		EVL_field(0, record, (USHORT)(IPTR) node->nod_arg[e_fld_id],
-				  &impure->vlu_desc);
+		if (!EVL_field(0, record, (USHORT)(IPTR) node->nod_arg[e_fld_id],
+					   &impure->vlu_desc))
+		{
+			// The below condition means that EVL_field() returned
+			// a read-only dummy value which cannot be assigned to.
+			// The usual reason is a field being unexpectedly dropped.
+			if (impure->vlu_desc.dsc_address &&
+				!(impure->vlu_desc.dsc_flags & DSC_null))
+			{
+				ERR_post(isc_field_disappeared, 0);
+			}
+		}
 		if (!impure->vlu_desc.dsc_address)
 			ERR_post(isc_read_only_field, 0);
 		return &impure->vlu_desc;
