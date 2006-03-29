@@ -205,7 +205,7 @@ static const VERB verbs[] =
 	PAIR(nod_current_timestamp, blr_current_timestamp, e_current_timestamp_length, 0, VALUE, OTHER),
 	PAIR(nod_current_timestamp, blr_current_timestamp2, e_current_timestamp_length, 0, VALUE, OTHER),
 	PAIR(nod_current_role, blr_current_role, 1, 0, VALUE, VALUE),
-	PAIR(nod_dcl_cursor, blr_dcl_cursor, e_dcl_cursor_length, 0, STATEMENT, OTHER),
+	PAIR(nod_dcl_cursor, blr_dcl_cursor, e_dcl_cursor_length, 2, STATEMENT, OTHER),
 	PAIR(nod_cursor_stmt, blr_cursor_stmt, e_cursor_stmt_length, 0, STATEMENT, OTHER),
 	PAIR(nod_lowcase, blr_lowcase, 1, 1, VALUE, VALUE),
 	PAIR(nod_strlen, blr_strlen, e_strlen_length, e_strlen_count, VALUE, VALUE),
