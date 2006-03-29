@@ -1,0 +1,127 @@
+
+==================================
+Firebird 2.0.0       (Win32 Build)
+==================================
+
+o Introduzione
+o A chi è rivolta questa versione
+o Caratteristiche di questa versione (per tutte le
+  piattaforme)
+o Errori corretti in questa versione
+o Installazione automatica
+o Problemi aperti
+o Segnalazione di errori
+o Richiesta di nuove funzionalità
+
+
+Introduzione
+============
+
+Benvenuti alla seconda versione Beta di Firebird 2.0.
+
+
+A chi è rivolta questa versione
+===============================
+
+Questa versione beta non è destinata all'uso in
+produzione. Si tratta di una versione rilasciata a
+scopo test e valutazione da parte di utenti già
+esperti di Firebird. Si auspica che tutti gli utenti
+che proveranno questa versione leggano prima le note
+sul rilascio.
+
+ o NON installate questa versione se non avete mai
+   usato Firebird prima d'ora. In questo caso,
+   installate Firebird 1.5.3.
+
+ o Se avete provato precedenti versioni Alpha o Beta
+   di Firebird 2.0, accertatevi di leggere la
+   documentazione disponibile e le note sul rilascio.
+
+
+Caratteristiche di questa versione
+(per tutte le piattaforme)
+==================================
+
+Fate riferimento a:
+
+  doc/Firebird_v2.0.0.ReleaseNotes.pdf
+
+per maggiori informazioni.
+
+
+Errori corretti in questa versione
+==================================
+
+Fate riferimento a:
+
+  doc/Firebird_v2.0.0.ReleaseNotes.pdf
+
+per maggiori informazioni.
+
+
+Installazione automatica
+========================
+
+Lanciate il file seguibile e seguite le istruzioni a
+video.
+
+
+Problemi aperti
+===============
+
+ o Il programma di installazione non è in grado di
+   rilevare un'istanza di Firebird 2.0 eventualmente
+   già in esecuzione sul computer. In questa
+   evenienza, l'installazione fallirà a causa
+   dell'impossibilità di sovrascrivere un file in uso.
+
+ o Il database degli utenti ha cambiato nome e
+   formato! Fate riferimento alla cartella DOC per
+   maggiori dettagli. Per convertire un database degli
+   utenti dal vecchio al nuovo formato si può usare lo
+   script in misc/upgrade/security.
+
+Segnalazione di errori
+======================
+
+o Siete sicuri di conoscere il funzionamento di
+  Firebird?
+
+  Forse ciò che state osservando come errore è il
+  comportamento corretto, e avete in realtà bisogno di
+  inoltrare una richiesta di supporto. In questo caso,
+  potete usare la mailing list Firebird-support. Per
+  iscrivervi:
+  
+    mailto:firebird-support-subscribe@yahoogroups.com
+
+
+o Pensate ancora che si tratti di un errore?
+
+  Per prima cosa, controllate che il problema non sia
+  già stato segnalato nel Field Test Bug Tracker:
+
+    http://sourceforge.net/tracker/?atid=593943&group_id=9028&func=browse
+
+  Questo Bug Tracker è dedicato specificamente alla
+  segnalazione di problemi in versioni Alpha e Beta di
+  Firebird.
+  
+  È anche opportuno consultare l'elenco di problemi
+  aperti nelle versioni finali (stabili) di Firebird:
+
+    http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
+
+
+Richiesta di nuove funzionalità
+===============================
+
+Prima di inoltrare richieste per nuove funzionalità,
+è opportuno consultare l'elenco di richieste già
+ricevute. È probabile che qualcun altro abbia avuto
+la vostra stessa idea. Le richieste di nuove
+funzionalità sono registrate nel Feature Request
+Tracker:
+
+  http://sourceforge.net/tracker/?atid=359028&group_id=9028&func=browse
