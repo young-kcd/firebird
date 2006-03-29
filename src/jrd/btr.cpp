@@ -3619,6 +3619,12 @@ static SLONG fast_load(thread_db* tdbb,
 				bucket->btr_prefix_total += prefix;
 				levelPointer = BTreeNode::writeNode(&levelNode[level], levelPointer, flags, false);
 
+				// Update the length of the page.
+				bucket->btr_length = levelPointer - (UCHAR*) bucket;				
+				if (bucket->btr_length > dbb->dbb_page_size) {
+					BUGCHECK(205);	// msg 205 index bucket overfilled
+				}
+
 				if (useJumpInfo && (newAreaPointers[level] < levelPointer))
 				{
 					// Create a jumpnode
@@ -3657,10 +3663,6 @@ static SLONG fast_load(thread_db* tdbb,
 				// current node on this level; also calculate the new page length.
 				copy_key(&temp_key, key);
 				pointers[level] = levelPointer;
-				bucket->btr_length = levelPointer - (UCHAR*) bucket;				
-				if (bucket->btr_length > dbb->dbb_page_size) {
-					BUGCHECK(205);	// msg 205 index bucket overfilled
-				}
 			}
 
 #ifdef SUPERSERVER
