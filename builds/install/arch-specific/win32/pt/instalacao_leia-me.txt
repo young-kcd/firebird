@@ -1,4 +1,4 @@
-Servidor SQL Firbird 2.0 ALFA 3
+Servidor SQL Firebird 2.0 ALFA 3
 ==================================================
 
   ** IMPORTANTE **
