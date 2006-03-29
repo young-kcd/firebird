@@ -748,6 +748,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 			DEV_BLKCHK(field, dsql_type_fld);
 			DEV_BLKCHK(temp, dsql_type_nod);
+
+			field->fld_flags |= FLD_nullable;
 			MAKE_desc_from_field(&(desc_node->nod_desc), field);
 			set_parameter_type(request, temp, desc_node.get(), false);
 		} // end scope
