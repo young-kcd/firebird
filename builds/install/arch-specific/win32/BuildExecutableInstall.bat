@@ -235,7 +235,7 @@ for %%v in (fbclient ib_util) do (
 )
 
 @echo   Copying udf library scripts...
-for %%v in ( ib_udf.sql ) do (
+for %%v in ( ib_udf.sql ib_udf2.sql ) do (
   copy %ROOT_PATH%\src\extlib\%%v  %FBBUILD_OUTPUT%\UDF\%%v > nul
   @if %ERRORLEVEL% GEQ 1 (
     call :ERROR Copying %ROOT_PATH%\src\extlib\%%v failed.
@@ -279,7 +279,7 @@ mkdir %FBBUILD_OUTPUT%\misc\upgrade\ib_udf 2>nul
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Copying doc\sql.extensions failed  ) & (goto :EOF))
 
 @echo   Copying pdf docs...
-@for %%v in ( Firebird-1.5-QuickStart.pdf Firebird_v1.5.ReleaseNotes.pdf Firebird_v1.5.1.ReleaseNotes.pdf Firebird_v1.5.2.ReleaseNotes.pdf Firebird_v2.0.0.ReleaseNotes.pdf ) do (
+@for %%v in ( Firebird-1.5-QuickStart.pdf Firebird_v1.5.3.ReleaseNotes.pdf Firebird_v2.0.0.ReleaseNotes.pdf ) do (
   @echo     ... %%v
   (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FBBUILD_OUTPUT%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
 )

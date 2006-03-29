@@ -1,16 +1,16 @@
-Firebird Database Server 2.0 BETA 1
+Firebird Database Server 2.0 Release Candidate 1
 ==================================================
 
   ** IMPORTANT **
 
-  The ODS has changed. See the notes below regarding
-  the new ODS and installation over older versions
-  of Firebird.
+  The ODS has changed since Firebird 1.5. See the notes
+  below regarding the new ODS and installation over 
+  older versions of Firebird.
 
   ** ********* **
 
 This document is a guide to installing this package of
-Firebird 2.0 Beta 1 on the Win32 platform. These notes
+Firebird 2.0 RC1 on the Win32 platform. These notes
 refer to the installation package itself, rather than
 Firebird 2.0 in general.
 
@@ -42,17 +42,17 @@ fbclient.dll and gds32.dll are removed from <system32>.
 New ODS 11.0
 ------------
 
-Beta 1 features a new ODS 11.0 which is wholly
+Firebird 2.0 features a new ODS 11.0 which is wholly
 incompatible with the ODS 11.0 used by the previous
 alpha releases.
 
-If you are installing Beta 1 for the first time and
-you already have a Firebird 2 alpha installed it is
-recommended that you install into a fresh directory.
-This is because an uninstall will preserve the existing
-security2 database. However this older version uses
-an incompatible ODS so you will be unable to connect to
-the server.
+If you are installing this release of Firebird 2.0 for 
+the first time over a previously installed Firebird 2 
+alpha it is recommended that you install into a fresh 
+directory. This is because an uninstall will preserve 
+the existing security2 database. However this older 
+version uses an incompatible ODS so you will be unable 
+to connect to the server.
 
 
 Installation on systems with Firebird 1.5
@@ -62,15 +62,14 @@ The security database has been changed. The new
 database is called security2.fdb and uses a
 strengthened password encryption algorithm. You can
 find out more info about the new security features in
-doc/README.sha1.txt.
+the release notes.
 
 The new database structure and the changed encryption
 presents several migration problems for sites that have
 many user ids. The installer makes no attempt to carry
-out this migration.  For Alpha 1 it must be done
-manually. A possible migration technique is available
-in misc/upgrade/security/. A future test release will
-address the issue of user migration more fully.
+out this migration.  This must be done manually. A 
+possible migration technique is available in 
+misc/upgrade/security/. 
 
 
 Installing on systems with Firebird 2.0
@@ -78,7 +77,7 @@ Installing on systems with Firebird 2.0
 
 In addition to the ODS change please note that the
 installer cannot automatically detect if a
-Firebird 2.0 Alpha 1,2,3 or Beta 1 server is running
+Firebird 2.0 Alpha or Beta server is running
 as a service. Therefore you will receive no warning
 until the installer attempts to overwrite an active
 file.
@@ -101,6 +100,12 @@ o If an existing firebird.conf is detected the
 o Support for several languages has been added to the
   installer. This support extends ONLY to the
   installation process.
+  
+  NOTE: The available languages are determined by
+  the localized version of Windows that you are 
+  running. This means, for example, that Western 
+  European users will not normally see the slavic
+  languages available.
 
 
 Known installation problems
@@ -108,9 +113,9 @@ Known installation problems
 
 A client-only install is in fact installing the
 server executable. This will be fixed in a future
-beta release. In the meantime the work-around is
-to delete the .exe. This can be automated by using
-a scripted install.
+release. In the meantime the work-around is to delete 
+the .exe. This can be automated by using a scripted 
+install.
 
 
 Uninstallation

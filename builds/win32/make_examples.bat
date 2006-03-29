@@ -69,12 +69,12 @@ if defined FB2_INTLEMP (
 @echo path = %DB_PATH%/gen/examples
 @echo   Preprocessing empbuild.e...
 @echo.
-@%ROOT_PATH%\gen\gpre_embed.exe -r -m -n -z %ROOT_PATH%\examples\empbuild\empbuild.e %ROOT_PATH%\gen\examples\empbuild.c -b %SERVER_NAME%:%DB_PATH%/gen/examples/
+@%ROOT_PATH%\gen\gpre_embed.exe -r -m -n -z %ROOT_PATH%\examples\empbuild\empbuild.e %ROOT_PATH%\gen\examples\empbuild.c -b %DB_PATH%/gen/examples/
 
 if defined FB2_INTLEMP (
 @echo   Preprocessing intlbld.e...
 @echo.
-@%ROOT_PATH%\gen\gpre_embed.exe -r -m -n -z %ROOT_PATH%\examples\empbuild\intlbld.e %ROOT_PATH%\gen\examples\intlbld.c -b %SERVER_NAME%:%DB_PATH%/gen/examples/
+@%ROOT_PATH%\gen\gpre_embed.exe -r -m -n -z %ROOT_PATH%\examples\empbuild\intlbld.e %ROOT_PATH%\gen\examples\intlbld.c -b %DB_PATH%/gen/examples/
 )
 
 @goto :EOF

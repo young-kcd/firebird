@@ -16,24 +16,25 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to the first Beta release of Firebird 2.0.
+Welcome to Firebird 2.0 Release Candidate 1.
 
 
 Intended Users
 ==============
 
-This beta release is not intended for production use.
-It is released for evaluation purposes and is expected
-to be tested by experienced users of Firebird. It is
-hoped that all beta testers will read the release
-notes first.
+This release candidate is not intended for production 
+use although it is expected to be nearly production
+ready. However, it is released for evaluation purposes 
+and is expected to be tested by experienced users of 
+Firebird. It is hoped that all field testers will read 
+the release notes first.
 
  o DO NOT install this version if you have never used
-   Firebird before. Use Firebird v1.5.2 instead.
+   Firebird before. Use Firebird v1.5.3 instead.
 
- o If you have been testing earlier Alpha releases
-   please make sure you read the installation readme and the
-   release notes.
+ o If you have been testing earlier Alpha or Beta 
+   releases please make sure you read the installation 
+   readme and the release notes.
 
 
 Features in this release (all platforms)
@@ -71,6 +72,7 @@ Known Issues
    migrate an old security database to the new format
    can use the upgrade script in misc/upgrade/security
 
+
 Reporting Bugs
 ==============
 
@@ -99,7 +101,15 @@ o Still think it is a bug?
 
     http://sourceforge.net/tracker/?atid=109028&group_id=9028&func=browse
 
+Please do not use the bug tracker to get technical
+support. If in doubt subscribe to the support list 
+first at
 
+  mailto:firebird-support-subscribe@yahoogroups.com
+  
+and ask your question there.
+
+	
 Requesting New Features
 =======================
 
