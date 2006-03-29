@@ -1,3 +1,54 @@
+2006-03-28 12:16  dimitr
+
+	* firebird2/src/jrd/dyn_mod.epp (1.67):
+	
+	Misc.
+
+2006-03-28 11:55  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.164):
+	
+	Protected from assignments to not existing fields.
+
+2006-03-28 11:54  dimitr
+
+	* firebird2/src/msgs/: facilities.sql (1.56), messages.sql (1.69),
+	system_errors.sql (1.28):
+	
+	Added new error message.
+
+2006-03-28 11:51  dimitr
+
+	* firebird2/: src/include/gen/codetext.h (1.38),
+	src/include/gen/iberror.h (1.39), src/include/gen/msgs.h (1.52),
+	src/include/gen/rdb_codes.h (1.37), src/include/gen/sql_code.h
+	(1.41), lang_helpers/gds_codes.ftn (1.31),
+	lang_helpers/gds_codes.pas (1.31):
+	
+	Added new error message.
+
+2006-03-28 11:36  dimitr
+
+	* firebird2/src/jrd/exe.h (1.81):
+	
+	Fixed a minor regression in the permission checking logic.  Let's
+	first check the relation privileges and only then the column ones.
+
+2006-03-28 06:31  mkubecek
+
+	* firebird2/src/: isql/isql.epp (1.171), isql/isql.h (1.54),
+	msgs/facilities.sql (1.55), msgs/history.sql (1.32),
+	msgs/messages.sql (1.68):
+	
+	Fix of isql command line parser: check for repeated switches or
+	database name.
+
+2006-03-28 06:04  robocop
+
+	* firebird2/doc/README.garbage_collector (1.2):
+	
+	Misc.
+
 2006-03-26 22:51  hvlad
 
 	* firebird2/doc/README.garbage_collector (1.1):
