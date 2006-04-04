@@ -280,7 +280,8 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const ULONG switches
 	if (isc_database_info(status_vector, &handle, sizeof(limbo_info),
 						   reinterpret_cast<const char*>(limbo_info),
 						   sizeof(buffer),
-						   reinterpret_cast<char*>(buffer))) {
+						   reinterpret_cast<char*>(buffer)))
+	{
 		ALICE_print_status(status_vector);
 		return;
 	}

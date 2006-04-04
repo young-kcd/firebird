@@ -60,8 +60,8 @@ enum alice_shut_mode {
 struct user_action
 {
 	ULONG ua_switches;
-	UCHAR* ua_user;
-	UCHAR* ua_password;
+	const UCHAR* ua_user;
+	const UCHAR* ua_password;
 	bool ua_use;
 	bool ua_force;
 	bool ua_read_only;

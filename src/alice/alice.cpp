@@ -324,7 +324,8 @@ int common_main(int			argc,
 			ALICE_print(3, GDS_VERSION, 0, 0, 0, 0);	// msg 3: gfix version %s
 		}
 		if ((table->in_sw_incompatibilities & switches) ||
-			(table->in_sw_requires && !(table->in_sw_requires & switches))) {
+			(table->in_sw_requires && !(table->in_sw_requires & switches)))
+		{
 			ALICE_print(4, 0, 0, 0, 0, 0);	// msg 4: incompatible switch combination
 			error = true;
 			break;
