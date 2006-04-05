@@ -5425,20 +5425,16 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, ULONG number)
 			}
 
 			do {
-				try {
-					memory = (UCHAR *)gds__alloc(memory_size);
+				if ( (memory = (UCHAR *)gds__alloc(memory_size)) )
 					break;
-				}
-				catch(const std::exception&) {
-					/* Either there's not enough virtual memory or there is
-					   but it's not virtually contiguous. Let's find out by
-					   cutting the size in half to see if the buffers can be
-					   scattered over the remaining virtual address space. */
-					memory_size >>= 1;
-					if (memory_size < MIN_BUFFER_SEGMENT) {
-						/* Diminishing returns */
-						return buffers;
-					}
+				/* Either there's not enough virtual memory or there is
+				   but it's not virtually contiguous. Let's find out by
+				   cutting the size in half to see if the buffers can be
+				   scattered over the remaining virtual address space. */
+				memory_size >>= 1;
+				if (memory_size < MIN_BUFFER_SEGMENT) {
+					/* Diminishing returns */
+					return buffers;
 				}
 			} while (true);
 
