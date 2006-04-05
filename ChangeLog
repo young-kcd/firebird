@@ -1,3 +1,16 @@
+2006-04-05 00:48  robocop
+
+	* firebird2/src/alice/: alice.cpp (1.83), alice.h (1.49), tdr.cpp
+	(1.48):
+	
+	Misc.
+
+2006-03-30 07:59  kkuznetsov
+
+	* firebird2/extern/SfIO/read.me (1.1):
+	
+	Add readme
+
 2006-03-29 19:47  dimitr
 
 	* firebird2/src/: jrd/cmp.cpp (1.202), jrd/exe.h (1.82),
