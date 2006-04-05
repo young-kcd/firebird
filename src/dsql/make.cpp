@@ -578,11 +578,11 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		}
 
 		dtype1 = desc1.dsc_dtype;
-		if (DTYPE_IS_EXACT(dtype1) || DTYPE_IS_TEXT(dtype1))
+		if (dtype_int64 == dtype1 || DTYPE_IS_TEXT(dtype1))
 			dtype1 = dtype_double;
 
 		dtype2 = desc2.dsc_dtype;
-		if (DTYPE_IS_EXACT(dtype2) || DTYPE_IS_TEXT(dtype2))
+		if (dtype_int64 == dtype2 || DTYPE_IS_TEXT(dtype2))
 			dtype2 = dtype_double;
 
 		dtype = MAX(dtype1, dtype2);
@@ -1001,11 +1001,11 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		}
 
 		dtype1 = desc1.dsc_dtype;
-		if (DTYPE_IS_EXACT(dtype1) || DTYPE_IS_TEXT(dtype1))
+		if (dtype_int64 == dtype1 || DTYPE_IS_TEXT(dtype1))
 			dtype1 = dtype_double;
 
 		dtype2 = desc2.dsc_dtype;
-		if (DTYPE_IS_EXACT(dtype2) || DTYPE_IS_TEXT(dtype2))
+		if (dtype_int64 == dtype2 || DTYPE_IS_TEXT(dtype2))
 			dtype2 = dtype_double;
 
 		dtype = MAX(dtype1, dtype2);
