@@ -900,8 +900,6 @@ rem_port* INET_connect(const TEXT* name,
 			return NULL;
 		}
 
-#ifdef SET_TCP_NO_DELAY
-
 		if (Config::getTcpNoNagle()) {
 
 			int optval = TRUE;
@@ -920,8 +918,6 @@ rem_port* INET_connect(const TEXT* name,
 				gds__log("inet log: disabled Nagle algorithm \n");
 			}
 		}
-#endif
-
 	}
 
 	n = bind((SOCKET) port->port_handle,
@@ -1015,6 +1011,23 @@ rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 
 	port->port_handle = handle;
 	port->port_server_flags |= SRVR_server;
+
+	int n = 0, optval = TRUE;
+	n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
+					SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
+	if (n == -1) {
+		gds__log("inet server err: setting KEEPALIVE socket option \n");
+	}	
+
+	if (Config::getTcpNoNagle()) {
+		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
+						TCP_NODELAY, (SCHAR*) &optval, sizeof(optval));
+
+		if (n == -1) {
+			gds__log("inet server err: setting NODELAY socket option \n");
+		}
+		gds__log("inet log: disabled Nagle algorithm \n");
+	}
 
 	return port;
 }
