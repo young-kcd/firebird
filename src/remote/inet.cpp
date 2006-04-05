@@ -914,9 +914,6 @@ rem_port* INET_connect(const TEXT* name,
 					return NULL;
 				}
 			}
-			else {			
-				gds__log("inet log: disabled Nagle algorithm \n");
-			}
 		}
 	}
 
@@ -1026,7 +1023,6 @@ rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 		if (n == -1) {
 			gds__log("inet server err: setting NODELAY socket option \n");
 		}
-		gds__log("inet log: disabled Nagle algorithm \n");
 	}
 
 	return port;
@@ -1063,9 +1059,6 @@ rem_port* INET_server(int sock)
 	if (Config::getTcpNoNagle()) {
 		n = setsockopt(sock, SOL_SOCKET, TCP_NODELAY, 
 			   (SCHAR *) &optval, sizeof(optval));
-#ifdef DEBUG
-		gds__log("inet log: disabled Nagle algorithm \n");
-#endif
 		if (n == -1) {
 			gds__log("inet server err: setting NODELAY socket option \n");
 		}
