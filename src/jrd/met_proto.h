@@ -63,8 +63,8 @@ void		MET_delete_dependencies(Jrd::thread_db*, const Firebird::MetaName&, USHORT
 void		MET_delete_shadow(Jrd::thread_db*, USHORT);
 void		MET_error(const TEXT*, ...);
 Jrd::Format*	MET_format(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
-bool		MET_get_char_coll_subtype(Jrd::thread_db*, SSHORT*, const UCHAR*, USHORT);
-bool		MET_get_char_coll_subtype_info(Jrd::thread_db*, SSHORT, SubtypeInfo* info);
+bool		MET_get_char_coll_subtype(Jrd::thread_db*, USHORT*, const UCHAR*, USHORT);
+bool		MET_get_char_coll_subtype_info(Jrd::thread_db*, USHORT, SubtypeInfo* info);
 Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
 								Jrd::CompilerScratch**, Firebird::MetaName&, USHORT, USHORT);

@@ -119,12 +119,12 @@ static int blocking_ast_procedure(void*);
 static int blocking_ast_relation(void*);
 static int partners_ast_relation(void*);
 static void get_trigger(thread_db*, jrd_rel*, bid*, trig_vec**, const TEXT*, UCHAR, bool, USHORT);
-static bool get_type(thread_db*, SSHORT*, const UCHAR*, const TEXT*);
+static bool get_type(thread_db*, USHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
 static jrd_nod* parse_param_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
 static jrd_nod* parse_procedure_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
 static bool par_messages(thread_db*, const UCHAR*, USHORT, jrd_prc*, CompilerScratch*);
-static bool resolve_charset_and_collation(thread_db*, SSHORT*, const UCHAR*,
+static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*,
 											 const UCHAR*);
 static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, blb*,
 	const TEXT*, UCHAR, bool, USHORT);
@@ -894,7 +894,7 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 
 
 bool MET_get_char_coll_subtype(thread_db* tdbb,
-							 SSHORT* id, const UCHAR* name, USHORT length)
+							 USHORT* id, const UCHAR* name, USHORT length)
 {
 /**************************************
  *
@@ -957,7 +957,7 @@ bool MET_get_char_coll_subtype(thread_db* tdbb,
 }
 
 
-bool MET_get_char_coll_subtype_info(thread_db* tdbb, SSHORT id, SubtypeInfo* info)
+bool MET_get_char_coll_subtype_info(thread_db* tdbb, USHORT id, SubtypeInfo* info)
 {
 /**************************************
  *
@@ -3822,7 +3822,7 @@ static void get_trigger(thread_db* tdbb, jrd_rel* relation,
 }
 
 
-static bool get_type(thread_db* tdbb, SSHORT* id, const UCHAR* name, const TEXT* field)
+static bool get_type(thread_db* tdbb, USHORT* id, const UCHAR* name, const TEXT* field)
 {
 /**************************************
  *
@@ -4086,7 +4086,7 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
 
 static bool resolve_charset_and_collation(
 											 thread_db* tdbb,
-											 SSHORT* id,
+											 USHORT* id,
 											 const UCHAR* charset,
 											 const UCHAR* collation)
 {
@@ -4138,7 +4138,7 @@ static bool resolve_charset_and_collation(
 		if (charset == NULL)
 			charset = (const UCHAR*) DEFAULT_CHARACTER_SET_NAME;
 
-		SSHORT charset_id = 0;
+		USHORT charset_id = 0;
 		if (get_type(tdbb, &charset_id, charset, "RDB$CHARACTER_SET_NAME"))
 		{
 			*id = charset_id;

@@ -5000,7 +5000,7 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const Dat
 		return;
 	}
 
-	SSHORT id;
+	USHORT id;
 
 	const UCHAR* lc_ctype =
 		reinterpret_cast<const UCHAR*>(options->dpb_lc_ctype.c_str());
