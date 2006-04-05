@@ -151,7 +151,6 @@ enum backup_capabilities
 	BCK_ods9			= 4096,	// SQL roles
 	BCK_ods10			= 8192,	// FIELD_PRECISION
 	BCK_ods11           = 16384 // rdb$description in rdb$roles and rdb$generators
-								// rdb$filename in rdb$character_sets and rdb$collations
 								// rdb$base_collation_name and rdb$specific_attributes in rdb$collations
 };
 
