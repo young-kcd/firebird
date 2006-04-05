@@ -432,18 +432,51 @@ void* MemoryPool::external_alloc(size_t &size)
 	size = FB_ALIGN(size, map_page_size);
 	return VirtualAlloc(NULL, size, MEM_COMMIT, 
 						PAGE_READWRITE);
-# elif defined HAVE_MMAP
+# elif defined (HAVE_MMAP) && !defined(SOLARIS)
 	size = FB_ALIGN(size, map_page_size);
 #  ifdef MAP_ANONYMOUS
 	return  mmap(NULL, size, PROT_READ | PROT_WRITE, 
-		MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+				MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#  else	
+	// This code is needed for Solaris 2.6, AFAIK  (only?)
+	if (dev_zero_fd < 0)
+		dev_zero_fd = open("/dev/zero", O_RDWR);
+	return mmap(NULL, size, PROT_READ | PROT_WRITE, 
+				MAP_PRIVATE, dev_zero_fd, 0);
+#  endif //MAP_ANONYMOUS
+# elif  defined(SOLARIS)
+
+// No successful return from mmap()  will  return    the value MAP_FAILED.
+//The  symbol  MAP_FAILED  is  defined  in  the header     <sys/mman.h>
+//Solaris 2.9 #define MAP_FAILED      ((void *) -1)
+
+
+	size = FB_ALIGN(size, map_page_size);
+	void *result = NULL;
+#  ifdef MAP_ANONYMOUS
+    
+	result = mmap(0, size, PROT_READ | PROT_WRITE, 
+					MAP_PRIVATE | MAP_ANON , -1, 0);
+	if (result == MAP_FAILED) {
+	//sheet happens!
+		return NULL;
+	}	
+	else {
+		return result;	
+	}	
 #  else	
 	// This code is needed for Solaris 2.6, AFAIK
 	if (dev_zero_fd < 0)
 		dev_zero_fd = open("/dev/zero", O_RDWR);
-	return mmap(NULL, size, PROT_READ | PROT_WRITE, 
-		MAP_PRIVATE, dev_zero_fd, 0);
-#  endif
+	result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
+					MAP_PRIVATE, dev_zero_fd, 0);
+	if (result == MAP_FAILED) {
+		return NULL;
+	}	
+	else {
+		return result;	
+	}			
+#  endif //MAP_ANONYMOUS
 # else
 	return malloc(size);
 # endif
