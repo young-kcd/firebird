@@ -250,9 +250,9 @@ static void		sanitize(Firebird::string& locale);
 static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
 
 // New functions that try to be safe.
-static SLONG safe_interpret(char* const s, const int bufsize,
+static SLONG safe_interpret(char* const s, const size_t bufsize,
 	const ISC_STATUS** const vector, bool legacy = false);
-static void safe_strncpy(char* target, const char* source, int bs);
+static void safe_strncpy(char* target, const char* source, size_t bs);
 
 // Useful only in Windows. The hardcoded definition for the English-only version
 // is too crude.
@@ -430,7 +430,7 @@ void gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler)
 	do {
 		*--p = '0' + (value % 10);
 		value = value / 10;
-	} while(value);
+	} while (value);
 
 	while (p != buffer) {
 		*--p = filler;
@@ -763,7 +763,7 @@ fb_interpret
 	    that was filled by an API call that reported an error. The function
 	    positions the pointer on the next element of the vector.
 **/
-SLONG API_ROUTINE fb_interpret(char* s, int bufsize, const ISC_STATUS** vector)
+SLONG API_ROUTINE fb_interpret(char* s, unsigned int bufsize, const ISC_STATUS** vector)
 {
 	return safe_interpret(s, bufsize, vector);
 }
@@ -811,7 +811,7 @@ safe_interpret
 	    positions the pointer on the next element of the vector.
 
 **/
-static SLONG safe_interpret(char* const s, const int bufsize,
+static SLONG safe_interpret(char* const s, const size_t bufsize,
 	const ISC_STATUS** const vector, bool legacy)
 {
 	// CVC: It doesn't make sense to provide a buffer smaller than 50 bytes.
@@ -1025,8 +1025,11 @@ static SLONG safe_interpret(char* const s, const int bufsize,
 // ***********************
 // Done exclusively because in legacy mode, safe_interpret cannot fill the
 // string up to the end by calling strncpy.
-static void safe_strncpy(char* target, const char* source, int bs)
+static void safe_strncpy(char* target, const char* source, size_t bs)
 {
+	if (!bs)
+		return;
+
 	for (--bs; bs > 0 && *source; --bs)
 		*target++ = *source++;
 
