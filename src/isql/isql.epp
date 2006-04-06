@@ -205,7 +205,7 @@ switch_info switches[] = {
 	{ SWITCH_QUIET,        "quiet",          1, SWARG_NONE,    134, false },
 	{ SWITCH_ROLE,         "role",           1, SWARG_STRING,  135, false },
 	{ SWITCH_ROLE2,        "r2",             2, SWARG_STRING,  136, false },
-	{ SWITCH_SQLDIALECT,   "s",              1, SWARG_INTEGER, 137, false },
+	{ SWITCH_SQLDIALECT,   "sqldialect",     1, SWARG_INTEGER, 137, false },
 	{ SWITCH_TERM,         "term",           1, SWARG_STRING,  138, false },
 	{ SWITCH_USER,         "user",           1, SWARG_STRING,  139, false },
 	{ SWITCH_EXTRACT,      "x",              1, SWARG_NONE,    140, false },
