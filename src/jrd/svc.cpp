@@ -2596,7 +2596,7 @@ static void service_get(
 	while (!timeout || iter) {
 		const int c = getc((FILE *) service->svc_input);
 		if (c != EOF) {
-			*buf++ = c;
+			*buf++ = c != '\n' ? c : ' ';	// to be consistent with SERVICE_THREAD case
 			if (!(--length))
 				break;
 			if (((flags & GET_LINE) && c == '\n') ||
