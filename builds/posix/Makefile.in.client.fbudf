@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.fbudf,v 1.8 2006-03-06 17:49:47 alexpeshkoff Exp $
+#  $Id: Makefile.in.client.fbudf,v 1.9 2006-04-06 04:19:00 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=superclient
@@ -51,7 +51,11 @@ UTIL_Files = ib_util.c
 UTIL_Sources = $(addprefix extlib/, $(UTIL_Files))
 UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Sources))))
 
-AllObjects = $(FBUDF_Objects) $(FBUTIL_Objects)
+CLASSES_Files = timestamp.cpp
+CLASSES_Sources = $(addprefix common/classes/, $(CLASSES_Files))
+CLASSES_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CLASSES_Sources))))
+
+AllObjects = $(FBUDF_Objects) $(FBUTIL_Objects) $(CLASSES_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -75,10 +79,10 @@ all: lib_fbudf
 
 lib_fbudf: $(UDF)/fbudf.$(SHRLIB_EXT) 
 
-$(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(FBUTIL_Objects)
+$(UDF)/fbudf.$(SHRLIB_EXT):	$(AllObjects)
 ifeq ($(PLATFORM),win32)
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
--L$(LIB) -lfbclient -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+-o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -L$(LIB) -lm -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
