@@ -174,11 +174,23 @@ static REM_MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
 #endif
 
 static void	server_ast(void*, USHORT, const UCHAR*);
-static void		success(ISC_STATUS *);
+static void		success(ISC_STATUS*);
 #ifdef MULTI_THREAD
 static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM);
 #endif
 static void		zap_packet(PACKET*, bool);
+
+static bool bad_port_context(ISC_STATUS*, RDB, const ISC_LONG);
+
+inline bool bad_db(ISC_STATUS* status_vector, RDB rdb)
+{
+	return bad_port_context(status_vector, rdb, isc_bad_db_handle);
+}
+
+inline bool bad_service(ISC_STATUS* status_vector, RDB rdb)
+{
+	return bad_port_context(status_vector, rdb, isc_bad_svc_handle);
+}
 
 
 // static data - NOT THREAD SAFE!
@@ -715,6 +727,12 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = port->port_context;
+	
+	if (bad_db(status_vector, rdb))
+	{
+		return port->send_response(send, 0, 0, status_vector);
+	}
+	
 	FB_API_HANDLE handle = 0;
 
 	THREAD_EXIT();
@@ -991,12 +1009,18 @@ static void aux_request( rem_port* port, P_REQ * request, PACKET* send)
 /* We do this silliness with buffer because the SPX protocol
    requires a 12 byte buffer to be sent back.  Other protocols
    can do what they want to with cstr_address. */
-
 	CSTRING save_cstring = send->p_resp.p_resp_data;
 	UCHAR buffer[12];
 	send->p_resp.p_resp_data.cstr_address = buffer;
+
 	rem_port* aux_port = port->request(send);
 	RDB rdb = port->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		// who has any idea what else to do with such attempt
+		return;
+	}
+	
 	port->send_response(send, rdb->rdb_id,
 				  send->p_resp.p_resp_data.cstr_length, status_vector);
 
@@ -1032,10 +1056,15 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
  *	Cancel events.
  *
  **************************************/
-
+    ISC_STATUS_ARRAY status_vector;
+	
 /* Which database ? */
 
 	RDB rdb = port->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return port->send_response(send, 0, 0, status_vector);
+	}
 
 /* Find the event */
 
@@ -1044,8 +1073,6 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 		if (event->rvnt_rid == stuff->p_event_rid)
 			break;
 
-	ISC_STATUS_ARRAY status_vector;
-	
 /* If no event found, pretend it was cancelled */
 
 	if (!event)
@@ -1202,6 +1229,11 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
+
 	FB_API_HANDLE handle = 0;
 	const UCHAR* blr = compileL->p_cmpl_blr.cstr_address;
 	USHORT blr_length = compileL->p_cmpl_blr.cstr_length;
@@ -1293,6 +1325,11 @@ ISC_STATUS rem_port::ddl(P_DDL* ddlL, PACKET* sendL)
 						isc_bad_trans_handle);
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
+
 	const UCHAR* blr = ddlL->p_ddl_blr.cstr_address;
 	const USHORT blr_length = ddlL->p_ddl_blr.cstr_length;
 
@@ -1489,6 +1526,11 @@ void rem_port::drop_database(P_RLSE* release, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		this->send_response(sendL, 0, 0, status_vector);
+		return;
+	}
 
 	THREAD_EXIT();
 	isc_drop_database(status_vector, &rdb->rdb_handle);
@@ -1601,6 +1643,10 @@ ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
 
 	THREAD_EXIT();
 	isc_detach_database(status_vector, &rdb->rdb_handle);
@@ -1782,6 +1828,10 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
 	if (this->port_objects && exnow->p_sqlst_transaction) {
@@ -2535,6 +2585,11 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
+
 	CHECK_HANDLE_MEMBER(transaction,
 						RTR,
 						type_rtr,
@@ -2615,6 +2670,10 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
 
 /* Make sure there is a suitable temporary blob buffer */
 
@@ -2859,6 +2918,11 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 						isc_bad_trans_handle);
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
+
 	FB_API_HANDLE handle = 0;
 	USHORT bpb_length = 0;
 	const UCHAR* bpb = NULL;
@@ -3442,6 +3506,10 @@ ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* sendL)
 						isc_bad_trans_handle);
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
 
 	THREAD_EXIT();
 	sendL->p_resp.p_resp_blob_id = stuff->p_slc_id;
@@ -3470,7 +3538,13 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
  * Functional description
  *
  **************************************/
+	ISC_STATUS_ARRAY status_vector;
+
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
 
 /* Find unused event block or, if necessary, a new one */
 
@@ -3505,7 +3579,6 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	event->rvnt_rdb = rdb;
 
 	THREAD_EXIT();
-	ISC_STATUS_ARRAY status_vector;
 	isc_que_events(status_vector, &rdb->rdb_handle, &event->rvnt_id,
 				   stuff->p_event_items.cstr_length,
 				   stuff->p_event_items.cstr_address,
@@ -4464,10 +4537,14 @@ ISC_STATUS rem_port::service_end(P_RLSE * release, PACKET* sendL)
  *	Close down a service.
  *
  **************************************/
-	RDB rdb = this->port_context;
-
-	ISC_STATUS_ARRAY status_vector;
+    ISC_STATUS_ARRAY status_vector;
 	
+	RDB rdb = this->port_context;
+	if (bad_service(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
+
 	THREAD_EXIT();
 	isc_service_detach(status_vector, &rdb->rdb_handle);
 	THREAD_ENTER();
@@ -4488,9 +4565,13 @@ ISC_STATUS rem_port::service_start(P_INFO * stuff, PACKET* sendL)
  *	Start a service on the server
  *
  **************************************/
+    ISC_STATUS_ARRAY status_vector;
+	
 	RDB rdb = this->port_context;
-
-	ISC_STATUS_ARRAY status_vector;
+	if (bad_service(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
 	
 	THREAD_EXIT();
 	SLONG* reserved = 0;		// reserved for future use
@@ -4693,6 +4774,11 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
+	
 	FB_API_HANDLE handle = 0;
 
 	THREAD_EXIT();
@@ -4968,6 +5054,11 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 						isc_bad_trans_handle);
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(sendL, 0, 0, status_vector);
+	}
+	
 	const UCHAR* blr = trrq->p_trrq_blr.cstr_address;
 	const USHORT blr_length = trrq->p_trrq_blr.cstr_length;
 	RPR procedure = this->port_rpr;
@@ -5032,3 +5123,26 @@ static void zap_packet(PACKET* packet,
 	}
 }
 
+static bool bad_port_context(ISC_STATUS* status_vector, 
+							 RDB rdb, 
+							 const ISC_LONG error)
+{
+/**************************************
+ *
+ *	b a d _ p o r t _ c o n t e x t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check rdb pointer, in case of error create status vector
+ *
+ **************************************/
+	if (rdb)
+	{
+		return false;
+	}
+	status_vector[0] = isc_arg_gds;
+	status_vector[1] = isc_bad_svc_handle;
+	status_vector[2] = isc_arg_end;
+	return true;
+}
