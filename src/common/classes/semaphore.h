@@ -231,7 +231,8 @@ public:
 				}
 
 				mutex_unlock(&mu);
-			} else {
+			} 
+			else {
 				//gds__log("Error on semaphore.h: release");
 				system_call_failed::raise("mutex_lock");
 			}

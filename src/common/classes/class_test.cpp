@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  * 
  *
- *  $Id: class_test.cpp,v 1.25 2005-05-27 22:38:22 asfernandes Exp $
+ *  $Id: class_test.cpp,v 1.26 2006-04-06 08:18:10 robocop Exp $
  *
  */
 
@@ -117,7 +117,8 @@ void testBitmap() {
 			bool result = bitmap.clear(v1[i]);
 			tree.fastRemove();
 			fb_assert(result == true);
-		} else {
+		} 
+		else {
 			bool result = bitmap.clear(v1[i]);
 			fb_assert(result == false);
 		}		
@@ -360,7 +361,8 @@ void testBePlusTree() {
 			if (tree1.fastRemove()) {
 				if (tree1.current().value != nextValue)
 					passed = false;
-			} else {
+			} 
+			else {
 				if (nextValue >= 0)
 					passed = false;
 			}
@@ -379,7 +381,8 @@ void testBePlusTree() {
 			if (tree2.fastRemove()) {
 				if (tree2.current().value != nextValue)
 					passed = false;
-			} else {
+			} 
+			else {
 				if (nextValue >= 0)
 					passed = false;
 			}
@@ -450,7 +453,8 @@ void testBePlusTree() {
 			if (tree1.fastRemove()) {
 				if (tree1.current().value != nextValue)
 					passed = false;
-			} else {
+			} 
+			else {
 				if (nextValue >= 0)
 					passed = false;
 			}
@@ -469,7 +473,8 @@ void testBePlusTree() {
 			if (tree2.fastRemove()) {
 				if (tree2.current().value != nextValue)
 					passed = false;
-			} else {
+			} 
+			else {
 				if (nextValue >= 0)
 					passed = false;
 			}

@@ -56,7 +56,7 @@ void try_fc(char* c, FUN_PTR f)
 void my_err()
 {
 	printf("Error routine called!\n");
-};
+}
 
 int main(int argc, char** argv)
 {
@@ -67,7 +67,7 @@ int main(int argc, char** argv)
 	if (argc <= 1) {
 		printf("usage: dtest Intl_module_name\n");
 		return (1);
-	};
+	}
 	char** vector = argv;
 #endif
 
@@ -75,7 +75,7 @@ int main(int argc, char** argv)
 	for (int i = 1; i < argc; i++) {
 		const int t_type = atoi(vector[i]);
 		INTL_fn_init(t_type, &this_textobj, my_err);
-	};
+	}
 	return (0);
 }
 

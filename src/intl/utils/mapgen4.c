@@ -89,7 +89,7 @@ main(int argc, char *argv[])
 	if (!f) {
 		fprintf(stderr, "Unable to open file '%s'\n", filename);
 		exit(1);
-	};
+	}
 
 	memset((void *) &codepoint_conversion, 0, sizeof(codepoint_conversion));
 	memset((void *) &unicode_conversion, 0, sizeof(unicode_conversion));
@@ -133,7 +133,7 @@ main(int argc, char *argv[])
 				fprintf(stderr, "Problem in input file - line %d\n",
 						   linecount);
 				exit(1);
-			};
+			}
 			p = strchr(p, '\t') + 1;
 		}
 
@@ -142,7 +142,7 @@ main(int argc, char *argv[])
 			fprintf(stderr, "Problem in input file - line %d\n",
 					   linecount);
 			exit(1);
-		};
+		}
 		p = strchr(p, '\t') + 1;
 
 		if (option_euc)
@@ -252,7 +252,7 @@ void declare(unsigned short codepoint, unsigned short unicode, char *name)
 						   unicode, codepoint,
 						   unicode_conversion.table[unicode].equivilant);
 		}
-	};
+	}
 }
 
 
@@ -297,7 +297,7 @@ void print_indexed_table(char *name, TABLE * table,
 		if (!table->table[codepoint].exists) {
 			codepoint++;
 			continue;
-		};
+		}
 		upper_byte[codepoint / 256] = index;
 		while ((index % 256) < (codepoint % 256)) {
 			if (replacement == UNICODE_REPLACEMENT_CHARACTER)
@@ -370,7 +370,7 @@ void print_condensed_indexed_table(
 		if (!table->table[codepoint].exists) {
 			codepoint++;
 			continue;
-		};
+		}
 		upper_byte[codepoint / 256] = index;
 
 		printf("\n");

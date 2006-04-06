@@ -1694,14 +1694,15 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	if (control && (control->vdr_flags & vdr_records)) {
 		THREAD_EXIT();
 		RecordBitmap::Accessor accessor(control->vdr_rel_records);
-		if (accessor.getFirst()) do	{
-			SINT64 next_number = accessor.current();
-			if (!RecordBitmap::test(control->vdr_idx_records, next_number)) {
-				THREAD_ENTER();
-				return corrupt(tdbb, control, VAL_INDEX_MISSING_ROWS,
-							   relation, id + 1);
-			}
-		} while (accessor.getNext());
+		if (accessor.getFirst()) 
+			do {
+				SINT64 next_number = accessor.current();
+				if (!RecordBitmap::test(control->vdr_idx_records, next_number)) {
+					THREAD_ENTER();
+					return corrupt(tdbb, control, VAL_INDEX_MISSING_ROWS,
+								   relation, id + 1);
+				}
+			} while (accessor.getNext());
 		THREAD_ENTER();
 	}
 

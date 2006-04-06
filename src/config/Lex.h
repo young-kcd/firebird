@@ -76,12 +76,12 @@ public:
 	JString getName();
 	JString reparseFilename();
 	bool match (const char *word);
-	bool isKeyword (const char *word);
+	bool isKeyword (const char *word) const;
 	void setCommentString (const char *start, const char *end);
 	void setLineComment (const char *string);
 	void setCharacters (int type, const char *characters);
 	void getToken();
-	bool match (const char *pattern, const char *string);
+	static bool match (const char *pattern, const char *string);
 	void skipWhite();
 	Lex(const char *punctuation, int debugFlags);
 	virtual ~Lex();

@@ -169,7 +169,8 @@ void TRA_detach_request(Jrd::jrd_req* request) {
 	if (request->req_tra_prev) {
 		fb_assert(request->req_tra_prev->req_tra_next == request);
 		request->req_tra_prev->req_tra_next = request->req_tra_next;
-	} else {
+	} 
+	else {
 		fb_assert(request->req_transaction->tra_requests == request);
 		request->req_transaction->tra_requests = request->req_tra_next;
 	}
@@ -1060,18 +1061,21 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (transaction->tra_blobs.getFirst()) do {
-		BlobIndex *current = &transaction->tra_blobs.current();
-		if (current->bli_materialized) {
-			if (!transaction->tra_blobs.getNext())
-				break;
-		} else {
-			ULONG temp_id = current->bli_temp_id;
-			BLB_cancel(tdbb, current->bli_blob_object);
-			if (!transaction->tra_blobs.locate(Firebird::locGreat, temp_id))
-				break;
+	if (transaction->tra_blobs.getFirst()) 
+		while (true) 
+		{
+			BlobIndex *current = &transaction->tra_blobs.current();
+			if (current->bli_materialized) {
+				if (!transaction->tra_blobs.getNext())
+					break;
+			} 
+			else {
+				ULONG temp_id = current->bli_temp_id;
+				BLB_cancel(tdbb, current->bli_blob_object);
+				if (!transaction->tra_blobs.locate(Firebird::locGreat, temp_id))
+					break;
+			}
 		}
-	} while (true);
 
 	while (transaction->tra_arrays)
 		BLB_release_array(transaction->tra_arrays);

@@ -458,7 +458,7 @@ void* MemoryPool::external_alloc(size_t &size)
 	result = mmap(0, size, PROT_READ | PROT_WRITE, 
 					MAP_PRIVATE | MAP_ANON , -1, 0);
 	if (result == MAP_FAILED) {
-	//sheet happens!
+		// failure happens!
 		return NULL;
 	}	
 	else {
@@ -746,30 +746,31 @@ bool MemoryPool::verify_pool(bool fast_checks_only) {
 	size_t blk_mapped_memory = 0;
 
 	// Verify that free blocks tree is consistent and indeed contains free memory blocks
-	if (freeBlocks.getFirst()) do {
-		BlockInfo *current = &freeBlocks.current();
+	if (freeBlocks.getFirst()) 
+		do {
+			BlockInfo *current = &freeBlocks.current();
 
-		// Verify that head of free blocks list set correctly
-		mem_assert(current->bli_fragments);
-		mem_assert(ptrToBlock(current->bli_fragments)->mbk_prev_fragment == NULL);
-	
-		// Look over all blocks in list checking that things look kosher
-		for (FreeMemoryBlock *fragment = current->bli_fragments; 
-			 fragment; fragment = fragment->fbk_next_fragment)
-		{
-			// Make sure that list is actually doubly linked
-			if (fragment->fbk_next_fragment)
-				mem_assert(ptrToBlock(fragment->fbk_next_fragment)->mbk_prev_fragment == fragment);
+			// Verify that head of free blocks list set correctly
+			mem_assert(current->bli_fragments);
+			mem_assert(ptrToBlock(current->bli_fragments)->mbk_prev_fragment == NULL);
+		
+			// Look over all blocks in list checking that things look kosher
+			for (FreeMemoryBlock *fragment = current->bli_fragments; 
+				 fragment; fragment = fragment->fbk_next_fragment)
+			{
+				// Make sure that list is actually doubly linked
+				if (fragment->fbk_next_fragment)
+					mem_assert(ptrToBlock(fragment->fbk_next_fragment)->mbk_prev_fragment == fragment);
 
-			MemoryBlock *blk = ptrToBlock(fragment);
+				MemoryBlock *blk = ptrToBlock(fragment);
 
-			// Check block flags for correctness
-			mem_assert(!(blk->mbk_flags & (MBK_LARGE | MBK_PARENT | MBK_USED | MBK_DELAYED)));
+				// Check block flags for correctness
+				mem_assert(!(blk->mbk_flags & (MBK_LARGE | MBK_PARENT | MBK_USED | MBK_DELAYED)));
 
-			// Check block length
-			mem_assert(blk->small.mbk_length == current->bli_length);
-		}
-	} while (freeBlocks.getNext());
+				// Check block length
+				mem_assert(blk->small.mbk_length == current->bli_length);
+			}
+		} while (freeBlocks.getNext());
 
 	// check each block in each segment for consistency with free blocks structure
 	for (MemoryExtent *extent = extents; extent; extent = extent->mxt_next) {
@@ -846,7 +847,8 @@ bool MemoryPool::verify_pool(bool fast_checks_only) {
 				if (fast_checks_only) {
 					foundTree = !(blk->mbk_flags & MBK_USED) && 
 						(blk->mbk_prev_fragment || ptrToBlock(freeBlocks.current().bli_fragments) == blk);
-				} else {
+				} 
+				else {
 					for (FreeMemoryBlock* freeBlk = freeBlocks.current().bli_fragments; freeBlk; freeBlk = freeBlk->fbk_next_fragment)
 						if (ptrToBlock(freeBlk) == blk) {
 							mem_assert(!foundTree); // Block may be present in free blocks tree only once
@@ -1295,14 +1297,16 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 				ptrToBlock(next_free)->mbk_prev_fragment = NULL;
 				current->bli_fragments = next_free;
 				addFreeBlock(current_block);
-			} else {
+			} 
+			else {
 				// This is special handling of case when we have single large fragment and
 				// cut off small pieces from it. This is common and we avoid modification 
 				// of free blocks tree in this case.
 				bool get_prev_succeeded = freeBlocks.getPrev();
 				if (!get_prev_succeeded || freeBlocks.current().bli_length < current_block->small.mbk_length) {
 					current->bli_length = current_block->small.mbk_length;
-				} else {
+				} 
+				else {
 					// Moderately expensive case. We need to modify tree for sure
 					if (get_prev_succeeded) {
 						// Recover tree position after failed shortcut attempt

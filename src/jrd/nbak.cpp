@@ -498,7 +498,8 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 		CCH_flush_database(tdbb); // This may release database lock
 		if (ast_status[1])
 			gds__log_status(new_dbb->dbb_file->fil_string, ast_status);				
-	} else {
+	} 
+	else {
 		LCK_release(tdbb, lock);
 	}
 

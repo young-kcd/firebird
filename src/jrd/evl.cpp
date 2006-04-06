@@ -448,7 +448,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 							impure->vlu_desc.dsc_dtype = desc[0]->dsc_dtype;
 							impure->vlu_desc.dsc_sub_type = desc[0]->dsc_sub_type;
 							impure->vlu_desc.dsc_scale = desc[0]->dsc_scale;
-						} else {
+						} 
+						else {
 							// Indicate we do not know type of expression.
 							// This code will force pattern recompile for the next non-null value
 							impure->vlu_desc.dsc_dtype = 0;
@@ -4226,7 +4227,8 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 				l2 =
 					MOV_get_string(desc2, &p2, reinterpret_cast<vary*>(temp2),
 								sizeof(temp2));
-			} else {
+			} 
+			else {
 				l2 =
 					MOV_make_string2(desc2, type1, &p2, match_str);
 			}

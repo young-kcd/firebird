@@ -121,6 +121,7 @@ void Lex::skipWhite()
 
 }
 
+// Just another custom memcmp-like routine.
 bool Lex::match(const char *pattern, const char *string)
 {
 	while (*pattern && *string)
@@ -231,7 +232,7 @@ void Lex::setCommentString(const char *start, const char *cend)
 }
 
 
-bool Lex::isKeyword(const char *word)
+bool Lex::isKeyword(const char *word) const
 {
 	return strcmp (token, word) == 0;
 }

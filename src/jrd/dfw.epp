@@ -2503,7 +2503,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			fb_assert(work->dfw_args);
 
 			const DeferredWork* arg = work->dfw_args;
-			while(arg && (arg->dfw_type != dfw_arg_index_name)) 
+			while (arg && (arg->dfw_type != dfw_arg_index_name)) 
 			{
 				arg = arg->dfw_next;
 			}
@@ -2516,7 +2516,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		// if index was bound to deleted FK constraint 
 		// then work->dfw_args was set in VIO_erase
 		const DeferredWork* arg = work->dfw_args;
-		while(arg && (arg->dfw_type != dfw_arg_partner_rel_id)) 
+		while (arg && (arg->dfw_type != dfw_arg_partner_rel_id)) 
 		{
 			arg = arg->dfw_next;
 		}
@@ -3649,7 +3649,8 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 							blob,
 							reinterpret_cast<const UCHAR*>(&(format->fmt_desc[0])),
 							(USHORT)(format->fmt_count * sizeof(dsc)));
-		} else {
+		} 
+		else {
 			// Use generic representation of formats with 32-bit offsets
 			
 			Firebird::Array<Ods::Descriptor> odsDescs;

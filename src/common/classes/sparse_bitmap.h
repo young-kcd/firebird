@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: sparse_bitmap.h,v 1.12 2005-05-27 22:38:22 asfernandes Exp $
+ *  $Id: sparse_bitmap.h,v 1.13 2006-04-06 08:18:10 robocop Exp $
  *
  */
 
@@ -109,7 +109,8 @@ public:
 			bucket.start_value = singular_value & ~(T) (BUNCH_BITS - 1);
 			bucket.bits = BUNCH_ONE << (singular_value - bucket.start_value);
 			tree.add(bucket);
-		} else {
+		} 
+		else {
 			if (tree.isEmpty()) {
 				singular = true;
 				singular_value = value;
@@ -121,7 +122,8 @@ public:
 		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 		if (tree.locate(val_aligned)) {
 			tree.current().bits |= bit_mask;
-		} else {
+		} 
+		else {
 			Bucket bucket;
 			bucket.start_value = val_aligned;
 			bucket.bits = bit_mask;
@@ -302,7 +304,8 @@ public:
 					if (treeAccessor.current().start_value == key_aligned) {
 						current_value = key;
 						bit_mask = BUNCH_ONE << (key - key_aligned);
-					} else {
+					} 
+					else {
 						current_value = treeAccessor.current().start_value;
 						bit_mask = BUNCH_ONE;
 					}
@@ -339,7 +342,8 @@ public:
 					if (treeAccessor.current().start_value == key_aligned) {
 						current_value = key;
 						bit_mask = BUNCH_ONE << (key - key_aligned);
-					} else {
+					} 
+					else {
 						current_value = treeAccessor.current().start_value;
 						bit_mask = BUNCH_ONE << (BUNCH_BITS - 1);
 					}
@@ -583,7 +587,8 @@ SparseBitmap<T, InternalTypes>::bit_or(
 		dest = map2;
 		source = map1;
 		result = bitmap2;
-	} else {
+	} 
+	else {
 		dest = map1;
 		source = map2;
 		result = bitmap1;
@@ -642,7 +647,8 @@ SparseBitmap<T, InternalTypes>::bit_or(
 					break;
 				}
 			}
-		} else {
+		} 
+		else {
 			// Add remaining buckets to destination tree and get out
 			do {
 				dest->tree.add(source->tree.current());
@@ -695,7 +701,8 @@ SparseBitmap<T, InternalTypes>::bit_and(
 		dest = map2;
 		source = map1;
 		result = bitmap2;
-	} else {
+	} 
+	else {
 		dest = map1;
 		source = map2;
 		result = bitmap1;
@@ -748,7 +755,8 @@ SparseBitmap<T, InternalTypes>::bit_and(
 			// if (sourceValue > destValue)
 			if ((destFound = dest->tree.fastRemove()))
 				destValue = dest->tree.current().start_value;
-		} else {
+		} 
+		else {
 			// Trim out remaining values from destination list and get out
 			while (dest->tree.fastRemove()) 
 			{ }

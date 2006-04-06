@@ -5163,30 +5163,31 @@ static RecordSource* gen_sort(thread_db* tdbb,
 	for (ptr = &streams[1]; ptr <= end_ptr; ptr++) {
 		UInt32Bitmap::Accessor accessor(csb->csb_rpt[*ptr].csb_fields);
 
-		if (accessor.getFirst()) do	{
-			const ULONG id = accessor.current();
-			items++;
-			id_stack.push(id);
-			stream_stack.push(*ptr);
-			for (jrd_nod** node_ptr = sort->nod_arg; node_ptr < end_node; node_ptr++)
-			{
-				jrd_nod* node = *node_ptr;
-				if (node->nod_type == nod_field
-					&& (USHORT)(IPTR) node->nod_arg[e_fld_stream] == *ptr
-					&& (USHORT)(IPTR) node->nod_arg[e_fld_id] == id)
+		if (accessor.getFirst()) 
+			do {
+				const ULONG id = accessor.current();
+				items++;
+				id_stack.push(id);
+				stream_stack.push(*ptr);
+				for (jrd_nod** node_ptr = sort->nod_arg; node_ptr < end_node; node_ptr++)
 				{
-					dsc* desc = &descriptor;
-					CMP_get_desc(tdbb, csb, node, desc);
-					/* International type text has a computed key */
-					if (IS_INTL_DATA(desc))
+					jrd_nod* node = *node_ptr;
+					if (node->nod_type == nod_field
+						&& (USHORT)(IPTR) node->nod_arg[e_fld_stream] == *ptr
+						&& (USHORT)(IPTR) node->nod_arg[e_fld_id] == id)
+					{
+						dsc* desc = &descriptor;
+						CMP_get_desc(tdbb, csb, node, desc);
+						/* International type text has a computed key */
+						if (IS_INTL_DATA(desc))
+							break;
+						--items;
+						id_stack.pop();
+						stream_stack.pop();
 						break;
-					--items;
-					id_stack.pop();
-					stream_stack.pop();
-					break;
+					}
 				}
-			}
-		} while (accessor.getNext());
+			} while (accessor.getNext());
 	}
 
 /* Now that we know the number of items, allocate a sort map block.  Allocate

@@ -2824,30 +2824,33 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 
 		/* Release blobs bound to this request */
 
-		if (request->req_blobs.getFirst()) do {
-			const ULONG blob_temp_id = request->req_blobs.current();
-			if (transaction->tra_blobs.locate(blob_temp_id)) {
-				BlobIndex *current = &transaction->tra_blobs.current();
-				if (current->bli_materialized)
-					transaction->tra_blobs.fastRemove();
+		if (request->req_blobs.getFirst()) 
+			while (true) 
+			{
+				const ULONG blob_temp_id = request->req_blobs.current();
+				if (transaction->tra_blobs.locate(blob_temp_id)) {
+					BlobIndex *current = &transaction->tra_blobs.current();
+					if (current->bli_materialized)
+						transaction->tra_blobs.fastRemove();
+					else {
+						// Blob was created by request, is accounted for internal needs, 
+						// but is not materialized. Get rid of it.
+						BLB_cancel(tdbb, current->bli_blob_object);
+						// Since the routine above modifies req_blobs 
+						// we need to reestablish accessor position
+						if (request->req_blobs.locate(Firebird::locGreat, blob_temp_id))
+							continue;
+						else
+							break;
+					}
+				} 
 				else {
-					// Blob was created by request, is accounted for internal needs, 
-					// but is not materialized. Get rid of it.
-					BLB_cancel(tdbb, current->bli_blob_object);
-					// Since the routine above modifies req_blobs 
-					// we need to reestablish accessor position
-					if (request->req_blobs.locate(Firebird::locGreat, blob_temp_id))
-						continue;
-					else
-						break;
+					// Blob accounting inconsistent
+					fb_assert(false);
 				}
-			} else {
-				// Blob accounting inconsistent
-				fb_assert(false);
+				if (!request->req_blobs.getNext())
+					break;
 			}
-			if (!request->req_blobs.getNext())
-				break;
-		} while (true);
 
 		request->req_blobs.clear();
 

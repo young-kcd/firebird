@@ -1874,27 +1874,28 @@ static bool get_record(thread_db*	tdbb,
 			// while (SBM_next(*bitmap, &rpb->rpb_number, mode))
 			// We assume mode = RSE_get_forward because we do not support
 			// scrollable cursors at the moment.
-			if (rpb->rpb_number.isBof() ? bitmap->getFirst() : bitmap->getNext()) do {
-				rpb->rpb_number.setValue(bitmap->current());
-#ifdef SUPERSERVER_V2
-				/* Prefetch next set of data pages from bitmap. */
+			if (rpb->rpb_number.isBof() ? bitmap->getFirst() : bitmap->getNext()) 
+				do {
+					rpb->rpb_number.setValue(bitmap->current());
+	#ifdef SUPERSERVER_V2
+					/* Prefetch next set of data pages from bitmap. */
 
-				if (rpb->rpb_number >
-					((irsb_index*) impure)->irsb_prefetch_number &&
-					(mode == RSE_get_forward))
-				{
-					((irsb_index*) impure)->irsb_prefetch_number =
-						DPM_prefetch_bitmap(tdbb, rpb->rpb_relation,
-											*bitmap, rpb->rpb_number);
-				}
-#endif
-				if (VIO_get(tdbb, rpb, rsb, request->req_transaction,
-							request->req_pool))
-				{
-					result = true;
-					break;
-				}
-			} while (bitmap->getNext());
+					if (rpb->rpb_number >
+						((irsb_index*) impure)->irsb_prefetch_number &&
+						(mode == RSE_get_forward))
+					{
+						((irsb_index*) impure)->irsb_prefetch_number =
+							DPM_prefetch_bitmap(tdbb, rpb->rpb_relation,
+												*bitmap, rpb->rpb_number);
+					}
+	#endif
+					if (VIO_get(tdbb, rpb, rsb, request->req_transaction,
+								request->req_pool))
+					{
+						result = true;
+						break;
+					}
+				} while (bitmap->getNext());
 
 			if (result)
 				break;

@@ -955,7 +955,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	blb* blob = NULL;
 	bool materialized_blob; // Set if we materialized temporary blob in this routine
 
-	do {
+	 while (true) 
+	 {
 		materialized_blob = false;
 		blobIndex = NULL;
 		if (source->bid_internal.bid_relation_id)
@@ -1014,7 +1015,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		}
 
 		break;
-	} while (true);
+	}
 
 	blob->blb_relation = relation;
 	destination->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, record));
@@ -1036,7 +1037,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		jrd_req* own_request;
 		if (blobIndex->bli_request) {
 			own_request = blobIndex->bli_request;
-		} else {
+		} 
+		else {
 			own_request = request;
 			while (own_request->req_caller)
 				own_request = own_request->req_caller;
@@ -2307,7 +2309,8 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 				if (blob_request) {
 					if (blob_request->req_blobs.locate(blob_temp_id)) {
 						blob_request->req_blobs.fastRemove();
-					} else {
+					} 
+					else {
 						// We should never get here because when bli_request is assigned
 						// item should be added to req_blobs array
 						fb_assert(false);
@@ -2354,14 +2357,16 @@ static void release_blob(blb* blob, const bool purge_flag)
 			if (blob_request) {
 				if (blob_request->req_blobs.locate(blob->blb_temp_id)) {
 					blob_request->req_blobs.fastRemove();
-				} else {
+				} 
+				else {
 					// We should never get here because when bli_request is assigned
 					// item should be added to req_blobs array
 					fb_assert(false);
 				}
 			}
 			transaction->tra_blobs.fastRemove();
-		} else {
+		} 
+		else {
 			// We should never get here because allocate_blob stores each blob object
 			// in tra_blobs
 			fb_assert(false);

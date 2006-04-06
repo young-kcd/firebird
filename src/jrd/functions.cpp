@@ -321,7 +321,8 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 		return att->att_context_vars.put(name_str,
 			Firebird::string(value_vary->vary_string, value_vary->vary_length));
-	} else if (ns_str == USER_TRANSACTION_NAMESPACE) {
+	} 
+	else if (ns_str == USER_TRANSACTION_NAMESPACE) {
 		jrd_tra* tra = tdbb->tdbb_transaction;
 
 		if (!tra) {
@@ -339,7 +340,8 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 		return tra->tra_context_vars.put(name_str,
 			Firebird::string(value_vary->vary_string, value_vary->vary_length));
-	} else {
+	} 
+	else {
 		// "Invalid namespace name %s passed to %s"
 		ERR_post(isc_ctx_namespace_invalid,
 			isc_arg_string, ERR_cstring(ns_str.c_str()),

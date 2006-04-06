@@ -3343,7 +3343,8 @@ bool process_packet(rem_port* port,
 
 		if (tdrdb->trdb_status_vector) {
 			status_ptr = tdrdb->trdb_status_vector;
-		} else {
+		} 
+		else {
 			status_ptr = local_status;
 		}
 
@@ -4297,9 +4298,9 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 							*sp++ = p;
 							v = (ISC_STATUS*) sp;
 							status_vector++;
-							USHORT l = (USHORT) (*status_vector++);
+							SLONG l = (*status_vector++);
 							const TEXT* q = (TEXT*) * status_vector++;
-							if (l)
+							if (l > 0)
 								do {
 									*p++ = *q++;
 								} while (--l && (p < bufferEnd - 1));
@@ -4317,8 +4318,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 			*v++ = *status_vector++;
 			continue;
 		}
-		const USHORT l = p < bufferEnd ?
-			(USHORT) fb_interpret(p, bufferEnd - p, &status_vector) : 0;
+		const int  l = p < bufferEnd ? fb_interpret(p, bufferEnd - p, &status_vector) : 0;
 		if (l == 0)
 			break;
 

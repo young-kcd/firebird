@@ -854,7 +854,8 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 					break;
 				}
 			}
-		} else {
+		} 
+		else {
 			// Use generic representation of formats with 32-bit offsets
 
 			const USHORT count = blob->blb_length / sizeof(Ods::Descriptor);

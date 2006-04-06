@@ -696,7 +696,7 @@ ULONG LC_NARROW_canonical(TEXTTYPE obj, ULONG srcLen, const UCHAR* src, ULONG ds
 		}
 		else
 			*dst++ = coll->Primary;
-	};
+	}
 
 	return src - inbuff;
 }

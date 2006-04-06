@@ -177,7 +177,7 @@ static void testAllocatorOverhead() {
 	if (items.getFirst()) do {
 		items.current();
 		n++;
-	} while (n < ALLOC_ITEMS/2 && items.getNext());	
+	} while (n < ALLOC_ITEMS / 2 && items.getNext());	
 	// Allocate big items
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
@@ -214,7 +214,7 @@ static void testAllocatorMemoryPool() {
 	if (items.getFirst()) do {
 		pool->deallocate(items.current().item);
 		n++;
-	} while (n < ALLOC_ITEMS/2 && items.getNext());	
+	} while (n < ALLOC_ITEMS / 2 && items.getNext());	
 	// Allocate big items
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
@@ -251,7 +251,7 @@ static void testAllocatorMalloc() {
 	if (items.getFirst()) do {
 		free(items.current().item);
 		n++;
-	} while (n < ALLOC_ITEMS/2 && items.getNext());	
+	} while (n < ALLOC_ITEMS / 2 && items.getNext());	
 	// Allocate big items
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;
@@ -289,7 +289,7 @@ static void testAllocatorMalloc() {
 	if (items.getFirst()) do {
 		pool->deallocate(items.current().item);
 		n++;
-	} while (n < ALLOC_ITEMS/2 && items.getNext());	
+	} while (n < ALLOC_ITEMS / 2 && items.getNext());	
 	// Allocate big items
 	for (i=0;i<BIG_ITEMS;i++) {
 		n = n * 47163 - 57412;

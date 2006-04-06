@@ -371,7 +371,7 @@ extern "C" {
 		int l = VSNPRINTF(temp, tempsize, format, params);
 		if (l < 0) {
 			size_type n = sizeof(temp);
-			do {
+			while (true) {
 				n *= 2;
 				if (n > max_length())
 					n = max_length();
@@ -382,7 +382,7 @@ extern "C" {
 					stringBuffer[max_length()] = 0;
 					return;
 				}
-			} while (true);
+			}
 			resize(l);
 			return;	
 		}

@@ -43,7 +43,8 @@ void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
 	// Move in status and clone transient strings
 	*ptr++ = isc_arg_gds;
 	*ptr++ = status;
-	do {
+	while (true) 
+	{
 		const ISC_STATUS type = *ptr++ = va_arg(status_args, ISC_STATUS);
 		if (type == isc_arg_end) 
 			break;
@@ -68,7 +69,7 @@ void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
 			*ptr++ = va_arg(status_args, ISC_STATUS);
 			break;
 		}
-	} while (true);	
+	}	
 }
 
 } // namespace
@@ -88,14 +89,15 @@ status_exception::status_exception(const ISC_STATUS *status_vector, bool permane
 {
 	if (m_status_known) {
 		ISC_STATUS *ptr = m_status_vector;
-		do {
+		 while (true) 
+		 {
 			const ISC_STATUS type = *ptr++ = *status_vector++;
 			if (type == isc_arg_end)
 				break;
 			if (type == isc_arg_cstring)
 				*ptr++ = *status_vector++;
 			*ptr++ = *status_vector++;
-		} while (true);
+		}
 	}
 }
 	
@@ -115,7 +117,8 @@ void status_exception::release_vector() throw()
 	
 	// Free owned strings
 	ISC_STATUS *ptr = m_status_vector;
-	do {
+	 while (true) 
+	 {
 		const ISC_STATUS type = *ptr++;
 		if (type == isc_arg_end)
 			break;
@@ -133,7 +136,7 @@ void status_exception::release_vector() throw()
 			ptr++;
 			break;
 		}		
-	} while (true);
+	}
 }
 
 status_exception::~status_exception() throw() 
@@ -256,18 +259,20 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 			if (c_ex.strings_permanent()) 
 			{
 				// Copy status vector
-				do {
+				 while (true) 
+				 {
 					const ISC_STATUS type = *sv++ = *ptr++;
 					if (type == isc_arg_end)
 						break;
 					if (type == isc_arg_cstring)
 						*sv++ = *ptr++;
 					*sv++ = *ptr++;
-				} while (true);
+				}
 			}
 			else {
 				// Move in status and clone transient strings
-				do {
+				 while (true) 
+				 {
 					const ISC_STATUS type = *sv++ = *ptr++;
 					if (type == isc_arg_end)
 						break;
@@ -291,7 +296,7 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 						*sv++ = *ptr++;
 						break;
 					}
-				} while (true);
+				}
 			}
 		}
 		return status_vector[1];

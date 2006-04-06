@@ -815,7 +815,8 @@ static void get_range(
 		get_switch(*argv, token);
 		if (token->swc_switch)
 			return;
-		if ((*token->swc_string == ':') || (*token->swc_string == ',')) {
+		if ((*token->swc_string == ':') || (*token->swc_string == ',')) 
+		{
 			const TEXT* p = token->swc_string;
 			if (*++p) {
 				if (*p == '*')

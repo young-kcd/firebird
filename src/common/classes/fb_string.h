@@ -115,7 +115,8 @@ namespace Firebird
 			if (len < INLINE_BUFFER_SIZE) {
 				stringBuffer = inlineBuffer;
 				bufferSize = INLINE_BUFFER_SIZE;
-			} else {				
+			} 
+			else {				
 				stringBuffer = NULL; // Be safe in case of exception
 				checkLength(len);
 

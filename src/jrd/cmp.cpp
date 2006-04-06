@@ -383,7 +383,8 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name, 
 								 access->acc_mask, access->acc_type, access->acc_name);
 			}
-		} else {
+		} 
+		else {
 			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
 			jrd_rel* view = NULL;
 			if (item->exa_view_id)

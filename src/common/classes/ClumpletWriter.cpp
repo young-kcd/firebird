@@ -45,7 +45,7 @@ ClumpletWriter::ClumpletWriter(Kind k, size_t limit, UCHAR tag) :
  
 void ClumpletWriter::initNewBuffer(UCHAR tag)
 {
-	switch(kind)
+	switch (kind)
 	{
 		case SpbAttach:
 			if (tag != isc_spb_version1)
@@ -290,7 +290,8 @@ void ClumpletWriter::deleteClumplet()
 	if (buffer_end - clumplet < 2) {
 		// It appears we're erasing EOF marker
 		dynamic_buffer.shrink(cur_offset);
-	} else {
+	} 
+	else {
 		dynamic_buffer.removeCount(cur_offset, getClumpletSize(true, true, true));
 	}
 }

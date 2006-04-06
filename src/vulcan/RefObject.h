@@ -42,7 +42,7 @@ public:
 	virtual void addRef();
 	RefObject();
 	virtual ~RefObject();
-
+private:
 	int useCount;
 };
 

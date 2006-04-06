@@ -133,7 +133,7 @@ UCHAR ClumpletReader::getBufferTag() const
 	const UCHAR* buffer_end = getBufferEnd();
 	const UCHAR* buffer_start = getBuffer();
 	
-	switch(kind) 
+	switch (kind) 
 	{
 	case Tpb:
 	case Tagged:
@@ -199,7 +199,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			return SingleTpb;
 		case isc_action_svc_backup:
 		case isc_action_svc_restore:
-			switch(tag) 
+			switch (tag) 
 			{
 			case isc_spb_bkp_file:
 			case isc_spb_dbname:
@@ -219,7 +219,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			invalid_structure("unknown parameter for backup/restore");
 			break;
 		case isc_action_svc_repair:
-			switch(tag) 
+			switch (tag) 
 			{
 			case isc_spb_dbname:
 			case isc_spb_tra_host_site:
@@ -251,7 +251,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 		case isc_action_svc_delete_user:
 		case isc_action_svc_modify_user:
 		case isc_action_svc_display_user:
-			switch(tag) 
+			switch (tag) 
 			{
 			case isc_spb_dbname:
 			case isc_spb_sql_role_name:
@@ -269,7 +269,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			invalid_structure("unknown parameter for security database operation");
 			break;
 		case isc_action_svc_properties:
-			switch(tag) 
+			switch (tag) 
 			{
 			case isc_spb_dbname:
 				return StringSpb;
@@ -291,7 +291,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 //		case isc_action_svc_add_license:
 //		case isc_action_svc_remove_license:
 		case isc_action_svc_db_stats:
-			switch(tag) 
+			switch (tag) 
 			{
 			case isc_spb_dbname:
 				return StringSpb;

@@ -5424,7 +5424,8 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, ULONG number)
 				memory_size = page_size * (number + 1);
 			}
 
-			do {
+			while (true) 
+			{
 				if ( (memory = (UCHAR *)gds__alloc(memory_size)) )
 					break;
 				/* Either there's not enough virtual memory or there is
@@ -5436,7 +5437,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, ULONG number)
 					/* Diminishing returns */
 					return buffers;
 				}
-			} while (true);
+			}
 
 			bcb->bcb_memory.push(memory);
 			memory_end = memory + memory_size;

@@ -519,7 +519,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 			{
 				const UCHAR *p = node.data, *q = lower.key_data + node.prefix;
 				const UCHAR *const end = lower.key_data + lower.key_length;
-				while(q < end)
+				while (q < end)
 				{
 					if (*p++ != *q++) {
 						skipLowerKey = false;

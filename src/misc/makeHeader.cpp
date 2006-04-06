@@ -8,7 +8,7 @@ void ProcessFile(FILE *in, bool stripFirstComment)
 {
 	char s[256];
 	bool striping = false;
-	while(fgets(s, sizeof(s), in)) {
+	while (fgets(s, sizeof(s), in)) {
 		if (stripFirstComment) {
 			char *x = strstr(s, "/*");
 			if (x) {

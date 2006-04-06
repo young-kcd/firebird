@@ -353,7 +353,8 @@ public:
 				tree->_removePage(0, curr);
 				curr = temp;
 				// The code below will adjust current position if needed
-			} else {
+			} 
+			else {
 				if ( (temp = curr->next) && NEED_MERGE(temp->getCount() + curr->getCount(), LeafCount) ) {
 					curr->join(*temp);
 					tree->_removePage(0, temp);
@@ -405,7 +406,8 @@ public:
 					curr = curr->prev;
 					if (!curr) return false;
 					curPos = curr->getCount() - 1;
-				} else
+				} 
+				else
 				  curPos--;
 				return true;
 			case locGreat:
@@ -451,7 +453,8 @@ public:
 				if (curr->next) {
 					curr = curr->next;
 					curPos = 0;
-				} else {
+				} 
+				else {
 					// If we reached end of the list just return false and do not invalidate position
 					curPos--;
 					return false;
@@ -466,7 +469,8 @@ public:
 				if (curr->prev) {
 					curr = curr->prev;
 					curPos = curr->getCount() - 1;
-				} else {
+				} 
+				else {
 					// If we reached beginning of the list just return false and do not invalidate position
 					curPos = 0;
 					return false;
@@ -678,7 +682,8 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 			void *lower;
 		    if (recovery_map[curLevel] < 0) {
 				lower = (*itemL)[0];
-			} else {
+			} 
+			else {
 				lower = (*itemL->prev)[recovery_map[curLevel]];
 				itemL->prev->remove(recovery_map[curLevel]);
 				itemL->prev->insert(itemL->prev->getCount(), (*itemL)[0]);

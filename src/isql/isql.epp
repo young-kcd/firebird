@@ -5628,7 +5628,7 @@ static processing_state parse_arg(int argc,
 			if (ret == ps_ERR)
 				break;
 
-			switch(swid)
+			switch (swid)
 			{
 #ifdef DEV_BUILD
 				case SWITCH_EXTRACTTBL:

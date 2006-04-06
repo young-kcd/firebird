@@ -2882,121 +2882,123 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 			rpb.rpb_window.win_flags = 0;
 			rpb.rpb_transaction_nr = transaction->tra_number;
 
-			if (sav_point->sav_verb_count) {
+			if (sav_point->sav_verb_count) 
+			{
 				/* This savepoint needs to be undone because the
 				   verb_count is not zero. */
 
 				RecordBitmap::Accessor accessor(action->vct_records);
-				if (accessor.getFirst()) do	{
-					rpb.rpb_number.setValue(accessor.current());
-					if (!DPM_get(tdbb, &rpb, LCK_write)) {
-						BUGCHECK(186);	/* msg 186 record disappeared */
-					}
-					if (rpb.rpb_flags & rpb_delta) {
-						VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
-					}
-					else {
-						CCH_RELEASE(tdbb, &rpb.rpb_window);
-					}
-					if (rpb.rpb_transaction_nr != transaction->tra_number) {
-						BUGCHECK(185);	/* msg 185 wrong record version */
-					}
-					if (!action->vct_undo ||
-						!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
-					{
-						VIO_backout(tdbb, &rpb, transaction);
-					}
-					else {
-						Record* record = action->vct_undo->current().rec_data;
-						const bool same_tx = (record->rec_flags & REC_same_tx) != 0;
-
-						/* Have we done BOTH an update and delete to this record
-						   in the same transaction? */
-
-						if (same_tx) {
+				if (accessor.getFirst()) 
+					do {
+						rpb.rpb_number.setValue(accessor.current());
+						if (!DPM_get(tdbb, &rpb, LCK_write)) {
+							BUGCHECK(186);	/* msg 186 record disappeared */
+						}
+						if (rpb.rpb_flags & rpb_delta) {
+							VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
+						}
+						else {
+							CCH_RELEASE(tdbb, &rpb.rpb_window);
+						}
+						if (rpb.rpb_transaction_nr != transaction->tra_number) {
+							BUGCHECK(185);	/* msg 185 wrong record version */
+						}
+						if (!action->vct_undo ||
+							!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
+						{
 							VIO_backout(tdbb, &rpb, transaction);
-							/* Nickolay Samofatov, 01 Mar 2003: 
-							  If we don't have data for the record and
-							  it was modified and deleted under our savepoint
-							  we need to back it out to the state as it were
-							  before our transaction started */
-							if (record->rec_length == 0 && record->rec_flags & REC_new_version)
-							{
-								if (!DPM_get(tdbb, &rpb, LCK_write)) {
-									BUGCHECK(186);	/* msg 186 record disappeared */
+						}
+						else {
+							Record* record = action->vct_undo->current().rec_data;
+							const bool same_tx = (record->rec_flags & REC_same_tx) != 0;
+
+							/* Have we done BOTH an update and delete to this record
+							   in the same transaction? */
+
+							if (same_tx) {
+								VIO_backout(tdbb, &rpb, transaction);
+								/* Nickolay Samofatov, 01 Mar 2003: 
+								  If we don't have data for the record and
+								  it was modified and deleted under our savepoint
+								  we need to back it out to the state as it were
+								  before our transaction started */
+								if (record->rec_length == 0 && record->rec_flags & REC_new_version)
+								{
+									if (!DPM_get(tdbb, &rpb, LCK_write)) {
+										BUGCHECK(186);	/* msg 186 record disappeared */
+									}
+									if (rpb.rpb_flags & rpb_delta) {
+										VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
+									}
+									else {
+										CCH_RELEASE(tdbb, &rpb.rpb_window);
+									}
+
+									VIO_backout(tdbb, &rpb, transaction);
 								}
-								if (rpb.rpb_flags & rpb_delta) {
+							}
+							if (record->rec_length != 0) {
+								Record* dead_record = rpb.rpb_record;
+								record_param new_rpb = rpb;
+								new_rpb.rpb_record = record;
+								new_rpb.rpb_address = record->rec_data;
+								new_rpb.rpb_length = record->rec_length;
+								if (!(rpb.rpb_flags & rpb_delta)) {
+									if (!DPM_get(tdbb, &rpb, LCK_write)) {
+										BUGCHECK(186);	/* msg 186 record disappeared */
+									}
 									VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
 								}
-								else {
-									CCH_RELEASE(tdbb, &rpb.rpb_window);
+								update_in_place(tdbb, transaction, &rpb, &new_rpb);
+								if (!(transaction->tra_flags & TRA_system)) {
+									garbage_collect_idx(tdbb, &rpb, &new_rpb, NULL);
 								}
-
-								VIO_backout(tdbb, &rpb, transaction);
+								rpb.rpb_record = dead_record;
 							}
 						}
-						if (record->rec_length != 0) {
-							Record* dead_record = rpb.rpb_record;
-							record_param new_rpb = rpb;
-							new_rpb.rpb_record = record;
-							new_rpb.rpb_address = record->rec_data;
-							new_rpb.rpb_length = record->rec_length;
-							if (!(rpb.rpb_flags & rpb_delta)) {
-								if (!DPM_get(tdbb, &rpb, LCK_write)) {
-									BUGCHECK(186);	/* msg 186 record disappeared */
-								}
-								VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
-							}
-							update_in_place(tdbb, transaction, &rpb, &new_rpb);
-							if (!(transaction->tra_flags & TRA_system)) {
-								garbage_collect_idx(tdbb, &rpb, &new_rpb, NULL);
-							}
-							rpb.rpb_record = dead_record;
-						}
-					}
-				} while (accessor.getNext());
+					} while (accessor.getNext());
 			}
 			else {
 				/* This savepoint needs to be posted to the previous savepoint. */
 
 				RecordBitmap::Accessor accessor(action->vct_records);
-				if (accessor.getFirst()) do
-				{
-					rpb.rpb_number.setValue(accessor.current());
-					if (!action->vct_undo ||
-						!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
-					{
-						verb_post(tdbb, transaction, &rpb, 0, 0, false, false);
-					}
-					else {
-						/* Setup more of rpb because verb_post is probably going to
-						   garbage-collect.  Note that the data doesn't need to be set up
-						   because old_data will be used.  (this guarantees that the
-						   rpb points to the first fragment of the record) */
+				if (accessor.getFirst()) 
+					do {
+						rpb.rpb_number.setValue(accessor.current());
+						if (!action->vct_undo ||
+							!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
+						{
+							verb_post(tdbb, transaction, &rpb, 0, 0, false, false);
+						}
+						else {
+							/* Setup more of rpb because verb_post is probably going to
+							   garbage-collect.  Note that the data doesn't need to be set up
+							   because old_data will be used.  (this guarantees that the
+							   rpb points to the first fragment of the record) */
 
-						if (!DPM_get(tdbb, &rpb, LCK_read)) {
-							BUGCHECK(186);	/* msg 186 record disappeared */
+							if (!DPM_get(tdbb, &rpb, LCK_read)) {
+								BUGCHECK(186);	/* msg 186 record disappeared */
+							}
+							CCH_RELEASE(tdbb, &rpb.rpb_window);
+							Record* record = action->vct_undo->current().rec_data;
+							const bool same_tx =
+								(record->rec_flags & REC_same_tx) != 0;
+							const bool new_ver =
+								(record->rec_flags & REC_new_version) != 0;
+							if (record->rec_length != 0) {
+								record_param new_rpb = rpb;
+								new_rpb.rpb_record = record;
+								new_rpb.rpb_address = record->rec_data;
+								new_rpb.rpb_length = record->rec_length;
+								verb_post(tdbb, transaction, &rpb, record,
+										  &new_rpb, same_tx, new_ver);
+							}
+							else if (same_tx) {
+								verb_post(tdbb, transaction, &rpb, 0,
+										  0, true, new_ver);
+							}
 						}
-						CCH_RELEASE(tdbb, &rpb.rpb_window);
-						Record* record = action->vct_undo->current().rec_data;
-						const bool same_tx =
-							(record->rec_flags & REC_same_tx) != 0;
-						const bool new_ver =
-							(record->rec_flags & REC_new_version) != 0;
-						if (record->rec_length != 0) {
-							record_param new_rpb = rpb;
-							new_rpb.rpb_record = record;
-							new_rpb.rpb_address = record->rec_data;
-							new_rpb.rpb_length = record->rec_length;
-							verb_post(tdbb, transaction, &rpb, record,
-									  &new_rpb, same_tx, new_ver);
-						}
-						else if (same_tx) {
-							verb_post(tdbb, transaction, &rpb, 0,
-									  0, true, new_ver);
-						}
-					}
-				} while (accessor.getNext());
+					} while (accessor.getNext());
 			}
 
 			if (rpb.rpb_record) {

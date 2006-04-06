@@ -351,7 +351,7 @@ int common_main(int argc,
 #endif //SUPERCLIENT
 			{
 				callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
-				if(status[1])
+				if (status[1])
 				{
 					GSEC_print_status(status);
 					ret = GsecMsg75;
@@ -384,7 +384,7 @@ int common_main(int argc,
 #endif //SUPERCLIENT
 					{
 						callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
-						if(status[1])
+						if (status[1])
 						{
 							GSEC_print_status(status);
 							ret = GsecMsg75;
