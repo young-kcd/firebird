@@ -1,3 +1,48 @@
+2006-04-05 18:34  asfernandes
+
+	* firebird2/src/jrd/: jrd.cpp (1.237), met.epp (1.181), met_proto.h
+	(1.50):
+	
+	Allow collation IDs greater than 127
+
+2006-04-05 18:24  asfernandes
+
+	* firebird2/src/burp/backup.epp (1.81):
+	
+	Remove obsolete comment
+
+2006-04-05 09:08  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.159):
+	
+	Nagle algorithm is now disabled by default, so there's no need to
+	print an appropriate message in the server log.
+
+2006-04-05 08:25  kkuznetsov
+
+	* firebird2/src/common/classes/alloc.cpp (1.79):
+	
+	Add check for result of mmap() on Solaris platforms
+
+2006-04-05 07:04  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.158):
+	
+	1) Set NoNagle depending on config only.  2) Set socket options for
+	Win32 CS.
+
+2006-04-05 06:38  dimitr
+
+	* firebird2/src/dsql/make.cpp (1.110):
+	
+	Fixed the regression caused by my changes re. Dialect 1.
+
+2006-04-05 06:36  dimitr
+
+	* firebird2/src/jrd/cch.cpp (1.128):
+	
+	gds_alloc() no longer throws exceptions. Let's handle it properly.
+
 2006-04-05 00:48  robocop
 
 	* firebird2/src/alice/: alice.cpp (1.83), alice.h (1.49), tdr.cpp
