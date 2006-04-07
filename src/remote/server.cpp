@@ -4391,7 +4391,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 			*v++ = *status_vector++;
 			continue;
 		}
-		const int  l = p < bufferEnd ? fb_interpret(p, bufferEnd - p, &status_vector) : 0;
+		const int l = (p < bufferEnd) ? fb_interpret(p, bufferEnd - p, &status_vector) : 0;
 		if (l == 0)
 			break;
 
@@ -5142,7 +5142,7 @@ static bool bad_port_context(ISC_STATUS* status_vector,
 		return false;
 	}
 	status_vector[0] = isc_arg_gds;
-	status_vector[1] = isc_bad_svc_handle;
+	status_vector[1] = error;
 	status_vector[2] = isc_arg_end;
 	return true;
 }
