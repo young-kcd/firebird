@@ -4373,11 +4373,13 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 							status_vector++;
 							SLONG l = (*status_vector++);
 							const TEXT* q = (TEXT*) * status_vector++;
-							if (l > 0)
-								do {
+							if (l > 0 && p < bufferEnd) // CVC: Avoid B.O.
+							{
+								while (l-- && (p < bufferEnd - 1))
 									*p++ = *q++;
-								} while (--l && (p < bufferEnd - 1));
-							*p++ = 0;
+
+								*p++ = 0;
+							}
 							continue;
 						}
 					}
