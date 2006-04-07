@@ -146,10 +146,9 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
  *	in the BLOB_DESC.	
  *
  ***********************************************/
-	if (DB && DB != *db_handle)
-		RELEASE_REQUESTS;
-
-	DB = *db_handle;
+	ISC_STATUS_ARRAY isc_status = {0};
+	isc_db_handle DB = *db_handle;
+	isc_req_handle handle = NULL;
 
     copy_exact_name (field_name, desc->blob_desc_field_name, 
                      sizeof(desc->blob_desc_field_name));
@@ -158,7 +157,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 
 	bool flag = false;
 
-	FOR (TRANSACTION_HANDLE *trans_handle)
+	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE *trans_handle)
 		X IN RDB$RELATION_FIELDS CROSS Y IN RDB$FIELDS
 		WITH X.RDB$FIELD_SOURCE EQ Y.RDB$FIELD_NAME AND
 		X.RDB$RELATION_NAME EQ desc->blob_desc_relation_name AND
@@ -175,12 +174,17 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
         }
 	END_FOR 
     ON_ERROR 
-		return UTLD_copy_status(gds_status, status);
+		isc_release_request(isc_status, &handle);
+		return UTLD_copy_status(isc_status, status);
 	END_ERROR;
+
+	isc_release_request(isc_status, &handle);
 
 	if (!flag)
 	{
-		FOR (TRANSACTION_HANDLE *trans_handle)
+		handle = NULL;
+
+		FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE *trans_handle)
 			X IN RDB$PROCEDURE_PARAMETERS CROSS Y IN RDB$FIELDS
 			WITH X.RDB$FIELD_SOURCE EQ Y.RDB$FIELD_NAME AND
 			X.RDB$PROCEDURE_NAME EQ desc->blob_desc_relation_name AND
@@ -197,8 +201,11 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 			}
 		END_FOR 
 		ON_ERROR 
-			return UTLD_copy_status(gds_status, status);
+			isc_release_request(isc_status, &handle);
+			return UTLD_copy_status(isc_status, status);
 		END_ERROR;
+
+		isc_release_request(isc_status, &handle);
 	}
 	
 	if (!flag)

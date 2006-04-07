@@ -166,9 +166,13 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
 		return status[1];
 	}
 
+	ISC_STATUS_ARRAY isc_status = {0};
+	isc_db_handle DB = *db_handle;
+	isc_req_handle handle = NULL;
+
 	ISC_ARRAY_BOUND* tail = desc->array_desc_bounds;
 
-	FOR (TRANSACTION_HANDLE *trans_handle)
+	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE *trans_handle)
 		X IN RDB$FIELD_DIMENSIONS
 		WITH X.RDB$FIELD_NAME EQ global
 		SORTED BY X.RDB$DIMENSION
@@ -177,9 +181,11 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
         ++tail;
 	END_FOR 
     ON_ERROR 
-        return UTLD_copy_status(gds_status, status);
+		isc_release_request(isc_status, &handle);
+		return UTLD_copy_status(isc_status, status);
 	END_ERROR;
 
+	isc_release_request(isc_status, &handle);
 	return status[1];
 }
 
@@ -516,22 +522,20 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
  * Functional description
  *
  **************************************/
-	if (DB && DB != *db_handle)
-		RELEASE_REQUESTS;
-
-	DB = *db_handle;
+	ISC_STATUS_ARRAY isc_status = {0};
+	isc_db_handle DB = *db_handle;
+	isc_req_handle handle = NULL;
 
     copy_exact_name (field_name, desc->array_desc_field_name,
                      sizeof(desc->array_desc_field_name));
     copy_exact_name (relation_name, desc->array_desc_relation_name,
                      sizeof(desc->array_desc_relation_name));
- 
 
 	desc->array_desc_flags = 0;
 
 	bool flag = false;
 
-	FOR (TRANSACTION_HANDLE *trans_handle)
+	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE *trans_handle)
 		X IN RDB$RELATION_FIELDS CROSS Y IN RDB$FIELDS
 		WITH X.RDB$FIELD_SOURCE EQ Y.RDB$FIELD_NAME AND
 		X.RDB$RELATION_NAME EQ desc->array_desc_relation_name AND
@@ -548,8 +552,11 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
  
 	END_FOR 
     ON_ERROR 
-        return UTLD_copy_status(gds_status, status);
+		isc_release_request(isc_status, &handle);
+		return UTLD_copy_status(isc_status, status);
 	END_ERROR;
+
+    isc_release_request(isc_status, &handle);
 
 	if (!flag)
 		return error(status, 5, (ISC_STATUS) isc_fldnotdef,
