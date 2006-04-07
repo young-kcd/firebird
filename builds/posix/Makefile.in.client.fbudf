@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.fbudf,v 1.9 2006-04-06 04:19:00 aafemt Exp $
 #
 ROOT=..
 ObjModuleType=superclient

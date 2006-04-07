@@ -1877,7 +1877,7 @@ static bool get_record(thread_db*	tdbb,
 			if (rpb->rpb_number.isBof() ? bitmap->getFirst() : bitmap->getNext()) 
 				do {
 					rpb->rpb_number.setValue(bitmap->current());
-	#ifdef SUPERSERVER_V2
+#ifdef SUPERSERVER_V2
 					/* Prefetch next set of data pages from bitmap. */
 
 					if (rpb->rpb_number >
@@ -1888,7 +1888,7 @@ static bool get_record(thread_db*	tdbb,
 							DPM_prefetch_bitmap(tdbb, rpb->rpb_relation,
 												*bitmap, rpb->rpb_number);
 					}
-	#endif
+#endif
 					if (VIO_get(tdbb, rpb, rsb, request->req_transaction,
 								request->req_pool))
 					{
