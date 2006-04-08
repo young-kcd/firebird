@@ -576,8 +576,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (header)
 		gds__free(header);
-	exit(FINI_OK);
-	return (FINI_OK); // make compiler happy
+
+	return FINI_OK;
 }
 
 
