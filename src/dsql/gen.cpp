@@ -1627,7 +1627,7 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 {
 	switch (desc->dsc_dtype) {
 	case dtype_text:
-		if (texttype || desc->dsc_ttype() == ttype_binary) {
+		if (texttype || desc->dsc_ttype() == ttype_binary || desc->dsc_ttype() == ttype_none) {
 			stuff(request, blr_text2);
 			stuff_word(request, desc->dsc_ttype());
 		}
@@ -1640,7 +1640,7 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 		break;
 
 	case dtype_varying:
-		if (texttype || desc->dsc_ttype() == ttype_binary) {
+		if (texttype || desc->dsc_ttype() == ttype_binary || desc->dsc_ttype() == ttype_none) {
 			stuff(request, blr_varying2);
 			stuff_word(request, desc->dsc_ttype());
 		}
