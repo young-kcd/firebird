@@ -172,44 +172,44 @@ enum switch_id {
 	SWITCH_UNKNOWN
 };
 
-bool switch_used[SWITCH_UNKNOWN];
-
 struct switch_info {
 	switch_id id;				// switch id
 	const char* text;			// canonical switch name
 	unsigned int abbrlen;		// minimum abbreviation length
 	switch_argtype argtype;		// argument type (SWARG_NONE if none)
 	int usage_id;				// message id for usage text
-	bool allow_dup;				// switch can be used more then once
+	//bool allow_dup;				// switch can be used more then once
 };
 
-switch_info switches[] = {
+const switch_info switches[] =
+{
 #ifdef DEV_BUILD
-	{ SWITCH_EXTRACTTBL,   "xt",             2, SWARG_NONE,     -1, false },
+	{ SWITCH_EXTRACTTBL,   "xt",             2, SWARG_NONE,     -1 },
 #endif
-	{ SWITCH_EXTRACTALL,   "a",              1, SWARG_NONE,     11, false },
-	{ SWITCH_BAIL,         "bail",           1, SWARG_NONE,    104, false },
-	{ SWITCH_CACHE,        "cache",          1, SWARG_INTEGER, 111, false },
-	{ SWITCH_CHARSET,      "charset",        2, SWARG_STRING,  122, false },
-	{ SWITCH_DATABASE,     "d",              1, SWARG_STRING,  123, false },
-	{ SWITCH_ECHO,         "echo",           1, SWARG_NONE,    124, false },
-	{ SWITCH_EXTRACT,      "extract",        2, SWARG_NONE,    125, false },
-	{ SWITCH_INPUT,        "input",          1, SWARG_STRING,  126, true  },
-	{ SWITCH_MERGE,        "merge",          1, SWARG_NONE,    127, false },
-	{ SWITCH_MERGE2,       "m2",             2, SWARG_NONE,    128, false },
-	{ SWITCH_NOAUTOCOMMIT, "noautocommit",   1, SWARG_NONE,    129, false },
-	{ SWITCH_NOWARN,       "nowarn",         3, SWARG_NONE,    130, false },
-	{ SWITCH_OUTPUT,       "output",         1, SWARG_STRING,  131, false },
-	{ SWITCH_PAGE,         "page",           3, SWARG_INTEGER, 132, false },
-	{ SWITCH_PASSWORD,     "password",       1, SWARG_STRING,  133, false },
-	{ SWITCH_QUIET,        "quiet",          1, SWARG_NONE,    134, false },
-	{ SWITCH_ROLE,         "role",           1, SWARG_STRING,  135, false },
-	{ SWITCH_ROLE2,        "r2",             2, SWARG_STRING,  136, false },
-	{ SWITCH_SQLDIALECT,   "sqldialect",     1, SWARG_INTEGER, 137, false },
-	{ SWITCH_TERM,         "term",           1, SWARG_STRING,  138, false },
-	{ SWITCH_USER,         "user",           1, SWARG_STRING,  139, false },
-	{ SWITCH_EXTRACT,      "x",              1, SWARG_NONE,    140, false },
-	{ SWITCH_VERSION,      "z",              1, SWARG_NONE,    141, false }
+	{ SWITCH_EXTRACTALL,   "all",            1, SWARG_NONE,     11 },
+	{ SWITCH_BAIL,         "bail",           1, SWARG_NONE,    104 },
+	{ SWITCH_CACHE,        "cache",          1, SWARG_INTEGER, 111 },
+	{ SWITCH_CHARSET,      "charset",        2, SWARG_STRING,  122 },
+	{ SWITCH_DATABASE,     "database",       1, SWARG_STRING,  123 },
+	{ SWITCH_ECHO,         "echo",           1, SWARG_NONE,    124 },
+	{ SWITCH_EXTRACT,      "extract",        2, SWARG_NONE,    125 },
+	{ SWITCH_INPUT,        "input",          1, SWARG_STRING,  126 },
+	{ SWITCH_MERGE,        "merge",          1, SWARG_NONE,    127 },
+	{ SWITCH_MERGE2,       "m2",             2, SWARG_NONE,    128 },
+	{ SWITCH_NOAUTOCOMMIT, "noautocommit",   1, SWARG_NONE,    129 },
+	{ SWITCH_NOWARN,       "nowarnings",     3, SWARG_NONE,    130 },
+	{ SWITCH_OUTPUT,       "output",         1, SWARG_STRING,  131 },
+	{ SWITCH_PAGE,         "pagelength",     3, SWARG_INTEGER, 132 },
+	{ SWITCH_PASSWORD,     "password",       1, SWARG_STRING,  133 },
+	{ SWITCH_QUIET,        "quiet",          1, SWARG_NONE,    134 },
+	{ SWITCH_ROLE,         "role",           1, SWARG_STRING,  135 },
+	{ SWITCH_ROLE2,        "r2",             2, SWARG_STRING,  136 },
+	{ SWITCH_SQLDIALECT,   "sqldialect",     1, SWARG_INTEGER, 137 },
+	{ SWITCH_SQLDIALECT,   "sql_dialect",    1, SWARG_INTEGER,  -1 },
+	{ SWITCH_TERM,         "terminator",     1, SWARG_STRING,  138 },
+	{ SWITCH_USER,         "user",           1, SWARG_STRING,  139 },
+	{ SWITCH_EXTRACT,      "x",              1, SWARG_NONE,    140 },
+	{ SWITCH_VERSION,      "z",              1, SWARG_NONE,    141 }
 };
 
 
@@ -234,7 +234,8 @@ static inline int fb_isspace(const SSHORT c)
 }
 
 
-class indev {
+class indev
+{
 public:
 	indev* indev_next;
 	FILE* indev_fpointer;
@@ -5564,8 +5565,9 @@ static processing_state parse_arg(int argc,
 	bool istable = false;
 #endif
 
-	for (int j = 0; j < SWITCH_UNKNOWN; j++) {
-		switch_used[j] = false;
+	bool switch_used[SWITCH_UNKNOWN];
+	for (int su = 0; su < SWITCH_UNKNOWN; ++su) {
+		switch_used[su] = false;
 	}
 
 	int i = 1;
@@ -5585,7 +5587,7 @@ static processing_state parse_arg(int argc,
 				if (!fb_utils::strnicmp(s + 1, switches[j].text, swlen) && (swlen >= switches[j].abbrlen))
 				{
 					swid = switches[j].id;
-					if (switch_used[swid] && !switches[j].allow_dup)
+					if (switch_used[swid]) // && !switches[j].allow_dup
 					{
 						ISQL_msg_get(USAGE_DUPSW, errbuf, s + 1);
 						STDERROUT(errbuf);
