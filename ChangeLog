@@ -1,3 +1,39 @@
+2006-04-08 02:03  robocop
+
+	* firebird2/src/: isql/isql.epp (1.174), msgs/facilities.sql
+	(1.57), msgs/history.sql (1.33), msgs/messages.sql (1.70):
+	
+	Adjust isql to the full words stated in the IB5 docs for the
+	command line options.
+
+2006-04-07 11:16  dimitr
+
+	* firebird2/src/dsql/: array.epp (1.37), blob.epp (1.20):
+	
+	More threading related fixes. As a side effect, it disables a
+	primitive client-side caching of a few predefined queries, but it
+	doesn't show any performance difference.
+
+2006-04-07 06:51  robocop
+
+	* firebird2/src/remote/server.cpp (1.124):
+	
+	I think I'm fixing a potential buffer overrun here.
+
+2006-04-07 04:57  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.client.fbudf (1.10),
+	src/common/classes/class_test.cpp (1.27),
+	src/common/classes/sparse_bitmap.h (1.14), src/jrd/rse.cpp (1.104):
+	
+	Misc
+
+2006-04-07 04:55  asfernandes
+
+	* firebird2/src/remote/server.cpp (1.123):
+	
+	Correction
+
 2006-04-06 16:43  alexpeshkoff
 
 	* firebird2/src/isql/isql.epp (1.173):
