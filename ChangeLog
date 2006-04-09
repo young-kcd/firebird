@@ -1,3 +1,11 @@
+2006-04-08 13:33  hvlad
+
+	* firebird2/src/jrd/why.cpp (1.23.2.4.2.3):
+	
+	Use bigger buffer (32K) for sql_info response in isc_dsql_prepare
+	to avoid additional roundtrips in isc_dsql_describe and
+	isc_dsql_describe_bind
+
 2006-03-27 23:09  hvlad
 
 	* firebird2/src/: dsql/dsql.cpp (1.54.2.4.4.3), jrd/svc.cpp
