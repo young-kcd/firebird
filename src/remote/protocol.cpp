@@ -1778,8 +1778,7 @@ static bool_t xdr_status_vector(
 		case isc_arg_interpreted:
 		case isc_arg_string:
 			if (xdrs->x_op == XDR_ENCODE) {
-				if (!xdr_wrapstring
-					(xdrs, reinterpret_cast<SCHAR**>(vector++)))
+				if (!xdr_wrapstring(xdrs, reinterpret_cast<SCHAR**>(vector++)))
 					return FALSE;
 			}
 			else {

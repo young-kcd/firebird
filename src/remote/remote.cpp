@@ -515,7 +515,7 @@ void REMOTE_release_request( rrq* request)
 
 	for (;;) {
 		rrq::rrq_repeat* tail = request->rrq_rpt;
-		rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
+		const rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
 		for (; tail <= end; tail++)
 		{
 		    REM_MSG message = tail->rrq_message;
@@ -557,7 +557,7 @@ void REMOTE_reset_request( rrq* request, REM_MSG active_message)
  *
  **************************************/
 	rrq::rrq_repeat* tail = request->rrq_rpt;
-	rrq::rrq_repeat* end = tail + request->rrq_max_msg;
+	const rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
 	for (; tail <= end; tail++) {
 	    REM_MSG message = tail->rrq_message;
 		if (message != NULL && message != active_message) {
@@ -874,7 +874,7 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 			xdrs->x_handy = (*port->port_queue)[port->port_qoffset].getCount();
 			fb_assert(xdrs->x_handy <= port->port_buff_size);
 			memcpy(xdrs->x_base, (*port->port_queue)[port->port_qoffset].begin(), xdrs->x_handy);
-			++(port->port_qoffset);
+			++port->port_qoffset;
 			xdrs->x_private = xdrs->x_base;
 		}
 	}

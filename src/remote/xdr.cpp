@@ -152,11 +152,15 @@ bool_t xdr_hyper( XDR * xdrs, SINT64 * pi64)
 #ifndef WORDS_BIGENDIAN
 		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]) &&
 			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]))
+		{
 			return TRUE;
+		}
 #else
 		if ((*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[0]) &&
 			(*xdrs->x_ops->x_putlong) (xdrs, &temp.temp_long[1]))
+		{
 			return TRUE;
+		}
 #endif
 		return FALSE;
 
@@ -164,11 +168,15 @@ bool_t xdr_hyper( XDR * xdrs, SINT64 * pi64)
 #ifndef WORDS_BIGENDIAN
 		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]) ||
 			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]))
+		{
 			return FALSE;
+		}
 #else
 		if (!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[0]) ||
 			!(*xdrs->x_ops->x_getlong) (xdrs, &temp.temp_long[1]))
+		{
 			return FALSE;
+		}
 #endif
 		*pi64 = temp.temp_int64;
 		return TRUE;
@@ -681,7 +689,9 @@ bool_t xdr_string(XDR * xdrs,
 		if (length > maxlength ||
 			!PUTLONG(xdrs, reinterpret_cast<SLONG*>(&length)) ||
 			!PUTBYTES(xdrs, *sp, length))
+		{
 			return FALSE;
+		}
 		if ((length = (4 - length) & 3) != 0)
 			return PUTBYTES(xdrs, filler, length);
 		return TRUE;
@@ -697,7 +707,9 @@ bool_t xdr_string(XDR * xdrs,
 		}
 		if (!GETLONG(xdrs, reinterpret_cast<SLONG*>(&length)) ||
 			length > maxlength || !GETBYTES(xdrs, *sp, length))
+		{
 			return FALSE;
+		}
 		(*sp)[length] = 0;
 		if ((length = (4 - length) & 3) != 0)
 			return GETBYTES(xdrs, trash, length);
@@ -1008,12 +1020,8 @@ static caddr_t mem_inline( XDR * xdrs, u_int bytecount)
  *
  **************************************/
 
-	if (bytecount >
-		(u_int) ((xdrs->x_private + xdrs->x_handy) -
-				 xdrs->x_base))
-	{
+	if (bytecount > (u_int) ((xdrs->x_private + xdrs->x_handy) - xdrs->x_base))
 		return FALSE;
-	}
 
 	return xdrs->x_base + bytecount;
 }

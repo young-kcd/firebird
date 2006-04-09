@@ -1732,6 +1732,7 @@ static bool check_proxy(rem_port* port,
 		*p = 0;
 		if (sscanf(line, " %[^:]:%s%s", source_host, source_user, target_user)
 			>= 3)
+		{
 			if ((!strcmp(source_host, host_name) || !strcmp(source_host, "*"))
 				&& (!strcmp(source_user, user_name.c_str())
 					|| !strcmp(source_user, "*")))
@@ -1746,6 +1747,7 @@ static bool check_proxy(rem_port* port,
 				result = true;
 				break;
 			}
+		}
 		if (c == EOF)
 			break;
 	}
@@ -1985,13 +1987,13 @@ static int fork( SOCKET old_handle, USHORT flag)
 			(service =
 			 OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG)))
 		{
-			LPQUERY_SERVICE_CONFIG config;
 			SCHAR buffer[1024];
 			DWORD config_len;
 
-			config = (LPQUERY_SERVICE_CONFIG) buffer;
+			LPQUERY_SERVICE_CONFIG config = (LPQUERY_SERVICE_CONFIG) buffer;
 			if (!QueryServiceConfig
-				(service, config, sizeof(buffer), &config_len)) {
+				(service, config, sizeof(buffer), &config_len))
+			{
 				THREAD_ENTER();
 				config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
 				/* NOMEM: ALLR_alloc handled */
@@ -2248,14 +2250,17 @@ static int parse_line(
 /* if we don't have a host_name match, don't bother */
 
 	if (strcmp(entry1, host_name))
+	{
 #if (defined UNIX) && !(defined SINIXZ) && !(defined NETBSD)
-		if (entry1[1] == '@') {
+		if (entry1[1] == '@')
+		{
 			if (!innetgr(&entry1[2], host_name, 0, 0))
 				return -1;
 		}
 		else
 #endif
 			return -1;
+	}
 
 /* if we have a host_name match and an exclude symbol - they're out */
 
@@ -2921,9 +2926,9 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 	if (xdrs->x_handy >= bytecount) {
 		xdrs->x_handy -= bytecount;
-		do
+		while (bytecount--)
 			*buff++ = *xdrs->x_private++;
-		while (--bytecount);
+
 		return TRUE;
 	}
 
@@ -2998,7 +3003,7 @@ static void inet_handler(void* port_void)
 /* If there isn't any out of band data, this signal isn't for us */
 	SCHAR junk;
 	const int n = recv((SOCKET) port->port_handle, &junk, 1, MSG_OOB);
-	if ((n) < 0) {
+	if (n < 0) {
 		return;
 	}
 	
@@ -3119,9 +3124,9 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 
 	if (xdrs->x_handy >= bytecount) {
 		xdrs->x_handy -= bytecount;
-		do {
+		while (bytecount--)
 			*xdrs->x_private++ = *buff++;
-		} while (--bytecount);
+			
 		return TRUE;
 	}
 
@@ -3191,13 +3196,14 @@ if (port->port_flags & PORT_pend_ack)
 	while (true) {
 		SSHORT length = end - p;
 		if (!packet_receive
-			(port, reinterpret_cast<UCHAR*>(p), length, &length)) {
+			(port, reinterpret_cast<UCHAR*>(p), length, &length))
+		{
 			return FALSE;
-	/***
-	if (!packet_send (port, 0, 0))
-	    return FALSE;
-	continue;
-	***/
+			/***
+			if (!packet_send (port, 0, 0))
+			    return FALSE;
+			continue;
+			***/
 		}
 		if (length >= 0) {
 			p += length;
@@ -3401,11 +3407,8 @@ static void packet_print(
  *
  **************************************/
 	int sum = 0;
-	int l = length;
-	if (l)
-		do {
-			sum += *packet++;
-		} while (--l);
+	for (int l = length; l > 0; --l)
+		sum += *packet++;
 
 	fprintf(stdout,
 			   "%05lu:    PKT %s\t(%lu): length = %4d, checksum = %d\n",
