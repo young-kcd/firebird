@@ -65,29 +65,30 @@ USHORT MERGE_database_info(const UCHAR* in,
 	const UCHAR* const end = out + out_length;
 
 	for (;;)
-		switch (*out++ = *in++) {
+		switch (*out++ = *in++)
+		{
 		case isc_info_end:
 		case isc_info_truncated:
 			return out - start;
 
 		case isc_info_firebird_version:
 			l = strlen((char *) (p = version));
+			if (l > MAX_UCHAR)
+			    l = MAX_UCHAR;
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
-			if ((*out++ = (UCHAR) l) != 0)
-				do {
-					*out++ = *p++;
-				} while (--l);
+			for (*out++ = (UCHAR) l; l; --l)
+				*out++ = *p++;
 			break;
 
 		case isc_info_db_id:
 			l = strlen((SCHAR *) (p = id));
+			if (l > MAX_UCHAR)
+				l = MAX_UCHAR;
 			if (merge_setup(&in, &out, end, l + 1))
 				return 0;
-			if ((*out++ = (UCHAR) l) != 0)
-				do {
-					*out++ = *p++;
-				} while (--l);
+			for (*out++ = (UCHAR) l; l; --l)
+				*out++ = *p++;
 			break;
 
 		case isc_info_implementation:
@@ -111,10 +112,8 @@ USHORT MERGE_database_info(const UCHAR* in,
 				return 0;
 			}
 			PUT_WORD(out, length);
-			if (length)
-				do {
-					*out++ = *in++;
-				} while (--length);
+			while (length--)
+				*out++ = *in++;
 			break;
 		}
 }
