@@ -1,3 +1,31 @@
+2006-04-09 02:53  robocop
+
+	* firebird2/src/remote/server.cpp (1.125):
+	
+	Refactor this damn unreadable code and take into account the
+	problem Adriano found with zero length file names in my previous
+	commit.
+
+2006-04-08 05:29  robocop
+
+	* firebird2/src/lock/print.cpp (1.48):
+	
+	Misc.
+
+2006-04-08 05:28  robocop
+
+	* firebird2/src/msgs/messages.sql (1.71):
+	
+	Correction.
+
+2006-04-08 05:09  asfernandes
+
+	* firebird2/src/dsql/gen.cpp (1.98):
+	
+	Fix problem which occur when select a field with NONE charset when
+	using another connection charset - second part of problem reported
+	by Michal Kubecek
+
 2006-04-08 02:03  robocop
 
 	* firebird2/src/: isql/isql.epp (1.174), msgs/facilities.sql
