@@ -4322,70 +4322,75 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 
 	for (bool sw = true; *status_vector && sw;)
 	{
-		switch ((USHORT) * status_vector)
+		switch (*status_vector)
 		{
 		case isc_arg_warning:
 		case isc_arg_gds:
+			/* When talking with older (pre 6.0) clients, do not send
+			 * warnings.
+			 */
+
+			if (*status_vector == isc_arg_warning &&
+				this->port_protocol < PROTOCOL_VERSION10)
 			{
-				/* When talking with older (pre 6.0) clients, do not send
-				 * warnings.
-				 */
-
-				if (*status_vector == isc_arg_warning &&
-					this->port_protocol < PROTOCOL_VERSION10)
-				{
-					sw = false;
-					continue;
-				}
-
-				*v++ = *status_vector++;
-
-				/* The status codes are converted to their offsets so that they
-				 * were compatible with the RDB implementation.  This was fine
-				 * when status codes were restricted to a single facility.  Now
-				 * that the facility is part of the status code we need to know
-				 * this on the client side, thus when talking with 6.0 and newer
-				 * clients, do not decode the status code, just send it to the
-				 * client.  The same check is made in interface.cpp::check_response
-				 */
-
-				if (this->port_protocol < PROTOCOL_VERSION10) {
-					USHORT fac = 0, code_class = 0;
-					*v++ = gds__decode(*status_vector++, &fac, &code_class);
-				}
-				else {
-					*v++ = *status_vector++;
-				}
-				for (;;) {
-					switch (*status_vector) {
-					case isc_arg_string:
-					case isc_arg_number:
-						*v++ = *status_vector++;
-						*v++ = *status_vector++;
-						continue;
-
-					case isc_arg_cstring:
-						{
-							*v++ = isc_arg_string;
-							TEXT** sp = (TEXT**) v;
-							*sp++ = p;
-							v = (ISC_STATUS*) sp;
-							status_vector++;
-							SLONG l = (*status_vector++);
-							const TEXT* q = (TEXT*) * status_vector++;
-							if (l > 0 && p < bufferEnd) // CVC: Avoid B.O.
-							{
-								while (l-- && (p < bufferEnd - 1))
-									*p++ = *q++;
-
-								*p++ = 0;
-							}
-							continue;
-						}
-					}
-					break;
-				}
+				sw = false;
+				continue;
 			}
+
+			*v++ = *status_vector++;
+
+			/* The status codes are converted to their offsets so that they
+			 * were compatible with the RDB implementation.  This was fine
+			 * when status codes were restricted to a single facility.  Now
+			 * that the facility is part of the status code we need to know
+			 * this on the client side, thus when talking with 6.0 and newer
+			 * clients, do not decode the status code, just send it to the
+			 * client.  The same check is made in interface.cpp::check_response
+			 */
+
+			if (this->port_protocol < PROTOCOL_VERSION10) {
+				USHORT fac = 0, code_class = 0;
+				*v++ = gds__decode(*status_vector++, &fac, &code_class);
+			}
+			else {
+				*v++ = *status_vector++;
+			}
+			for (;;)
+			{
+				switch (*status_vector)
+				{
+				case isc_arg_string:
+				case isc_arg_number:
+					*v++ = *status_vector++;
+					*v++ = *status_vector++;
+					continue;
+
+				case isc_arg_cstring:
+					++status_vector;
+					*v++ = isc_arg_string;
+					if (p < bufferEnd) // CVC: Avoid B.O.
+					{
+						TEXT** sp = (TEXT**) v;
+						*sp++ = p;
+						v = (ISC_STATUS*) sp;
+						SLONG l = *status_vector++;
+						const TEXT* q = (TEXT*) *status_vector++;
+						while (l-- > 0 && (p < bufferEnd - 1))
+							*p++ = *q++;
+
+						*p++ = 0;
+					}
+					else
+					{
+						TEXT** sp = (TEXT**) v;
+						*sp++ = const_cast<char*>("Not enough buffer for message");
+						v = (ISC_STATUS*) sp;
+						status_vector += 2;
+					}
+					continue;
+				} // switch
+				break;
+			} // for (;;)
 			continue;
 
 		case isc_arg_interpreted:
@@ -4393,6 +4398,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 			*v++ = *status_vector++;
 			continue;
 		}
+		
 		const int l = (p < bufferEnd) ? fb_interpret(p, bufferEnd - p, &status_vector) : 0;
 		if (l == 0)
 			break;
