@@ -68,6 +68,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
+#include "../jrd/jrd_pwd.h"
 #include "../common/config/config.h"
 
 #if defined(SIG_RESTART) || defined(UNIX) 
@@ -4077,13 +4078,32 @@ static SLONG create_semaphores(
 		
 		// Try to create new semaphore set
 		semid = semget(key, semaphores, IPC_CREAT | IPC_EXCL | PRIV);
-		if (semid != -1) 
+		if (semid != -1)
+		{
+			// We want to limit access to semaphores, created here
+			// Reasonable access rights to them - exactly like security database has
+			char secDb[MAXPATHLEN];
+			SecurityDatabase::getPath(secDb);
+			struct stat st;
+			if (stat(secDb, &st) == 0)
+			{
+				union semun arg;
+				semid_ds ds;
+				arg.buf = &ds;
+				ds.sem_perm.uid = geteuid() == 0 ? st.st_uid : geteuid();
+				ds.sem_perm.gid = st.st_gid;
+				ds.sem_perm.mode = st.st_mode;
+				semctl(semid, 0, IPC_SET, arg);
+			}
 			return semid;
+		}
 		else
+		{
 			if (errno != EEXIST) {
 				error(status_vector, "semget", errno);
 				return -1;
 			}
+		}
 	}
 }
 #endif
