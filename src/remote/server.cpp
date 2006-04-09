@@ -4382,8 +4382,13 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 					}
 					else
 					{
+						// See if we can honor zero length strings, else use an error msg
 						TEXT** sp = (TEXT**) v;
-						*sp++ = const_cast<char*>("Not enough buffer for message");
+						if (!*status_vector) // this is the length
+							*sp++ = const_cast<char*>("");
+						else
+							*sp++ = const_cast<char*>("Not enough buffer for message");
+							
 						v = (ISC_STATUS*) sp;
 						status_vector += 2;
 					}
