@@ -34,7 +34,7 @@
 
 
 const int HASH_SIZE = 1021;
-static SSHORT hash(const SCHAR*, USHORT);
+static USHORT hash(const SCHAR*, USHORT);
 static bool remove_symbol(dsql_sym**, dsql_sym*);
 static bool scompare(const TEXT*, USHORT, const TEXT*, const USHORT);
 
@@ -227,7 +227,7 @@ void HSHD_finish( const void* database)
 void HSHD_insert(DSQL_SYM symbol)
 {
 	lock_hash();
-	const SSHORT h = hash(symbol->sym_string, symbol->sym_length);
+	const USHORT h = hash(symbol->sym_string, symbol->sym_length);
 	const void* database = symbol->sym_dbb;
 
 	fb_assert(symbol->sym_type >= SYM_statement && symbol->sym_type <= SYM_eof);
@@ -272,7 +272,7 @@ DSQL_SYM HSHD_lookup(const void*    database,
 {
 
 	lock_hash();
-	const SSHORT h = hash(string, length);
+	const USHORT h = hash(string, length);
 	for (DSQL_SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
 	{
 		if ((database == symbol->sym_dbb) &&
@@ -317,7 +317,7 @@ DSQL_SYM HSHD_lookup(const void*    database,
 void HSHD_remove(DSQL_SYM symbol)
 {
 	lock_hash();
-	const SSHORT h = hash(symbol->sym_string, symbol->sym_length);
+	const USHORT h = hash(symbol->sym_string, symbol->sym_length);
 
 	for (DSQL_SYM* collision = &hash_table[h]; *collision;
 		 collision = &(*collision)->sym_collision)
@@ -376,7 +376,7 @@ void HSHD_set_flag(
 	}
 
 	lock_hash();
-	const SSHORT h = hash(string, length);
+	const USHORT h = hash(string, length);
 	for (DSQL_SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
 	{
 		if (symbol->sym_dbb && (database != symbol->sym_dbb) &&
@@ -429,16 +429,16 @@ void HSHD_set_flag(
     @param 
 
  **/
-static SSHORT hash(const SCHAR* string, USHORT length)
+static USHORT hash(const SCHAR* string, USHORT length)
 {
-	SLONG value = 0;
+	ULONG value = 0;
 
 	while (length--) {
 		const SCHAR c = *string++;
-		value = (value << 1) + c;
+		value = (value << 1) + static_cast<UCHAR>(c);
 	}
 
-	return ((value >= 0) ? value : -value) % HASH_SIZE;
+	return value % HASH_SIZE;
 }
 
 
