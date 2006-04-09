@@ -47,8 +47,20 @@
 #include "sch_proto.h"
 #include "os/isc_i_proto.h"
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
 #endif
 
 #ifdef NBAK_DEBUG
@@ -556,6 +568,27 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		// Create file
 		NBAK_TRACE(("Creating difference file %s", diff_name));
 		diff_file = PIO_create(database, diff_name, true);
+#ifdef UNIX 
+		// adjust difference file access rights to make it match main DB ones
+		if (diff_file && geteuid() == 0) {
+			struct stat st;
+			while (fstat(database->dbb_file->fil_desc, &st) != 0) {
+				if (errno != EINTR) {
+					Firebird::system_call_failed::raise("fstat");
+				}
+			}
+			while (fchown(diff_file->fil_desc, st.st_uid, st.st_gid) != 0) {
+				if (errno != EINTR) {
+					Firebird::system_call_failed::raise("fchown");
+				}
+			}
+			while (fchmod(diff_file->fil_desc, st.st_mode) != 0) {
+				if (errno != EINTR) {
+					Firebird::system_call_failed::raise("fchmod");
+				}
+			}
+		}
+#endif
 		// Zero out first page (empty allocation table)
 		BufferDesc temp_bdb;
 		temp_bdb.bdb_page = 0;
