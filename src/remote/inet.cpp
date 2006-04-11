@@ -1978,42 +1978,7 @@ static int fork( SOCKET old_handle, USHORT flag)
  *
  **************************************/
 	if (!INET_command_line[0]) {
-
-#ifdef CMDLINE_VIA_SERVICE_MANAGER
-
-		SC_HANDLE service;
-		SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-		if (manager &&
-			(service =
-			 OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG)))
-		{
-			SCHAR buffer[1024];
-			DWORD config_len;
-
-			LPQUERY_SERVICE_CONFIG config = (LPQUERY_SERVICE_CONFIG) buffer;
-			if (!QueryServiceConfig
-				(service, config, sizeof(buffer), &config_len))
-			{
-				THREAD_ENTER();
-				config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
-				/* NOMEM: ALLR_alloc handled */
-				/* FREE:  later in this block */
-				QueryServiceConfig(service, config, config_len, &config_len);
-			}
-			strcpy(INET_command_line, config->lpBinaryPathName);
-			if ((SCHAR *) config != buffer) {
-				ALLR_free(config);
-				THREAD_EXIT();
-			}
-			CloseServiceHandle(service);
-		}
-		else {
-			strcpy(INET_command_line, GetCommandLine());
-		}
-		CloseServiceHandle(manager);
-#else
 		strcpy(INET_command_line, GetCommandLine());
-#endif
 		INET_p = INET_command_line + strlen(INET_command_line);
 	}
 

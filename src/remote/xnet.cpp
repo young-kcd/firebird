@@ -2409,38 +2409,7 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
  *
  **************************************/
 	if (!XNET_command_line[0]) {
-
-#ifdef CMDLINE_VIA_SERVICE_MANAGER
-
-		SC_HANDLE service;
-		SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-		if ((manager) &&
-			(service = OpenService(manager, REMOTE_SERVICE, SERVICE_QUERY_CONFIG)))
-		{
-			SCHAR buffer[BUFFER_LARGE];
-			DWORD config_len;
-
-			LPQUERY_SERVICE_CONFIG config = (LPQUERY_SERVICE_CONFIG) buffer;
-			THREAD_EXIT();
-			if (!QueryServiceConfig(service, config, sizeof(buffer), &config_len))
-			{
-				config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
-				QueryServiceConfig(service, config, config_len, &config_len);
-			}
-			strcpy(XNET_command_line, config->lpBinaryPathName);
-			if ((SCHAR *) config != buffer) {
-				ALLR_free(config);
-			}
-			CloseServiceHandle(service);
-			THREAD_ENTER();
-		}
-		else {
-			strcpy(XNET_command_line, GetCommandLine());
-		}
-		CloseServiceHandle(manager);
-#else
 		strcpy(XNET_command_line, GetCommandLine());
-#endif
 		XNET_p = XNET_command_line + strlen(XNET_command_line);
 	}
 

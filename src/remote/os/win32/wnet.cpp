@@ -426,47 +426,7 @@ rem_port* WNET_connect(const TEXT*		name,
 
 		if (!command_line[0])
 		{
-
-#ifdef CMDLINE_VIA_SERVICE_MANAGER
-
-			SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-			SC_HANDLE service = 0;
-			if (manager) {
-				service = OpenService(	manager,
-										REMOTE_SERVICE,
-										SERVICE_QUERY_CONFIG);
-			}
-
-			if (manager && service)
-			{
-				SCHAR buffer[1024];
-				DWORD config_len;
-
-				LPQUERY_SERVICE_CONFIG config = (LPQUERY_SERVICE_CONFIG) buffer;
-				if (!QueryServiceConfig
-					(service, config, sizeof(buffer), &config_len))
-				{
-					THREAD_ENTER();
-					config = (LPQUERY_SERVICE_CONFIG) ALLR_alloc(config_len);
-					/* NOMEM: handled by ALLR_alloc, FREE: in this block */
-					QueryServiceConfig(service, config, config_len,
-									   &config_len);
-				}
-				sprintf(command_line, "%s -s", config->lpBinaryPathName);
-				if ((SCHAR *) config != buffer) {
-					ALLR_free(config);
-					THREAD_EXIT();
-				}
-				CloseServiceHandle(service);
-			}
-			else
-			{
-				strcpy(command_line, GetCommandLine());
-			}
-			CloseServiceHandle(manager);
-#else
 			strcpy(command_line, GetCommandLine());
-#endif
 			p = command_line + strlen(command_line);
 		}
 
