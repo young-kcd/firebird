@@ -107,11 +107,29 @@ template <typename Value, typename Key = Value, typename Allocator = MallocAlloc
 	int NodeCount = NODE_PAGE_SIZE / sizeof(void*)>
 class BePlusTree {
 public:
-	BePlusTree(Allocator *_pool) : pool(_pool), level(0), root(NULL), defaultAccessor(this)	{ }
+	BePlusTree(Allocator *_pool)
+		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
+	{ }
+
+	BePlusTree(Allocator *_pool, const BePlusTree& from)
+		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
+	{
+		append(from);
+	}
+
+	BePlusTree& operator=(const BePlusTree& from) {
+		clear();
+		append(from);
+	}
 
 	void clear() {
-		// We delete tree which was not fully created
-		if (!root) return;
+		// Do not deallocate root page if tree is shallow
+		if (level == 0) {
+			if (root) {
+				((ItemList*) root)->clear();
+			}
+			return;
+		}
 		
 		// Find first items page
 		void *temp = root;
@@ -147,6 +165,7 @@ public:
 
     ~BePlusTree() {
 		clear();
+		pool->deallocate(root);
 	}
 
 	bool isEmpty() const {
@@ -227,7 +246,18 @@ public:
 		fb_assert(bytes_per_node);
 		return ((NodeList*)root)->getCount() * bytes_per_node;
 	}
-	
+
+	void append(const BePlusTree& from) {
+		// This is slow approach especially when used for assignment. 
+		// Optimize it when need arises.
+		Accessor accessor(&from);
+		if (accessor.getFirst()) {
+			do {
+				add(accessor.current());
+			} while (accessor.getNext());
+		}
+	}
+
 private:
 	BePlusTree(Allocator *_pool, void *rootPage) : 	pool(_pool), level(0), 
 		root(new(rootPage) ItemList()), defaultAccessor(this) {}

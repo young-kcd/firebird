@@ -366,7 +366,7 @@ extern "C" {
 #error For example, consider importing library from http://www.ijs.si/software/snprintf/
 #error to Firebird src\extern repository
 #endif
-		enum {tempsize = 256};
+		enum {tempsize = 4096};
 		char temp[tempsize];
 		int l = VSNPRINTF(temp, tempsize, format, params);
 		if (l < 0) {
