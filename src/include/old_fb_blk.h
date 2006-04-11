@@ -9,7 +9,7 @@ typedef struct blk
 {
 	UCHAR	blk_type;
 	UCHAR	blk_pool_id;
-	USHORT	blk_length;
+	ULONG	blk_length;
 } *BLK;
 
 
