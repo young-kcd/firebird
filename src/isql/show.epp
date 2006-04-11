@@ -2724,7 +2724,7 @@ static processing_state show_generators(const SCHAR* object)
 
 		fb_utils::exact_name(GEN.RDB$GENERATOR_NAME);
 
-		if ((!*object && (GEN.RDB$SYSTEM_FLAG.NULL || GEN.RDB$SYSTEM_FLAG.NULL == 0)) ||
+		if ((!*object && (GEN.RDB$SYSTEM_FLAG.NULL || GEN.RDB$SYSTEM_FLAG == 0)) ||
 			!strcmp(GEN.RDB$GENERATOR_NAME, object))
 		{
 			// Get the current id for each generator
