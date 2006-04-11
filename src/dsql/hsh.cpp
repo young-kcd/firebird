@@ -434,8 +434,8 @@ static USHORT hash(const SCHAR* string, USHORT length)
 	ULONG value = 0;
 
 	while (length--) {
-		const SCHAR c = *string++;
-		value = (value << 1) + static_cast<UCHAR>(c);
+		UCHAR c = *string++;
+		value = (value << 1) + c;
 	}
 
 	return value % HASH_SIZE;
