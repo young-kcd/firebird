@@ -2705,7 +2705,7 @@ static processing_state show_generators(const SCHAR* object)
  **************************************
  *
  * Functional description
- *	Show generators including the next number they return
+ *	Show generators including the current number they return
  *      We do this by selecting the GEN_ID of each one,
  *         incrementing by 0 to not change the current value.
  *
@@ -2724,8 +2724,8 @@ static processing_state show_generators(const SCHAR* object)
 
 		fb_utils::exact_name(GEN.RDB$GENERATOR_NAME);
 
-		if ((!*object && GEN.RDB$SYSTEM_FLAG.NULL) ||
-			(!strcmp (GEN.RDB$GENERATOR_NAME, object)))
+		if ((!*object && (GEN.RDB$SYSTEM_FLAG.NULL || GEN.RDB$SYSTEM_FLAG.NULL == 0)) ||
+			!strcmp(GEN.RDB$GENERATOR_NAME, object))
 		{
 			// Get the current id for each generator
 
