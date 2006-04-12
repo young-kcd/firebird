@@ -1,3 +1,91 @@
+2006-04-12 03:57  asfernandes
+
+	* firebird2/src/common/classes/fb_string.cpp (1.33):
+	
+	Misc
+
+2006-04-11 10:21  robocop
+
+	* firebird2/src/isql/show.epp (1.88):
+	
+	Correction.
+
+2006-04-11 09:30  robocop
+
+	* firebird2/src/isql/show.epp (1.87):
+	
+	Adriano reported a problem with SHOW GENERATORS skipping the
+	required object because an old db had NULL in the sysflag column.
+	Using his proposed fix, committed only to the HEAD.
+
+2006-04-11 09:18  robocop
+
+	* firebird2/src/remote/: inet.cpp (1.161), xnet.cpp (1.71),
+	os/win32/wnet.cpp (1.37):
+	
+	Delete dead code after checking with Dmitry.  The B.O. are still
+	there when copying the result of GetCommandLine().
+
+2006-04-11 09:16  robocop
+
+	* firebird2/src/: remote/allr.cpp (1.32), include/old_fb_blk.h
+	(1.5):
+	
+	Solve a possible truncation problem due to USHORT<->ULONG issues. 
+	Tweak for embedded so it doesn't crash when handling an error.
+
+2006-04-11 09:14  robocop
+
+	* firebird2/src/dsql/hsh.cpp (1.32):
+	
+	Misc.
+
+2006-04-11 08:46  dimitr
+
+	* firebird2/src/common/classes/: fb_string.cpp (1.32), tree.h
+	(1.51):
+	
+	Sync with BV branch. Committed on behalf of George Sergeev.
+
+2006-04-09 17:46  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.103):
+	
+	make CS lock manager semaphores have correct access rights
+
+2006-04-09 14:47  alexpeshkoff
+
+	* firebird2/src/dsql/hsh.cpp (1.31):
+	
+	fixed AV during massive addition of relations to DSQL hash
+
+2006-04-09 12:59  alexpeshkoff
+
+	* firebird2/src/jrd/nbak.cpp (1.52):
+	
+	fixed access rights to delta file
+
+2006-04-09 08:53  robocop
+
+	* firebird2/src/remote/server.cpp (1.126):
+	
+	Handle zero-length strings even if we have our buffer full.
+
+2006-04-09 08:50  robocop
+
+	* firebird2/src/remote/merge.cpp (1.21):
+	
+	We can't handle more than 255 bytes for some items when merging
+	information. Let's be consistent between the length indicator and
+	the bytes we put in the buffer.
+
+2006-04-09 08:46  robocop
+
+	* firebird2/src/remote/: inet.cpp (1.160), protocol.cpp (1.52),
+	remote.cpp (1.43), xdr.cpp (1.22):
+	
+	Style.
+
 2006-04-09 02:53  robocop
 
 	* firebird2/src/remote/server.cpp (1.125):
