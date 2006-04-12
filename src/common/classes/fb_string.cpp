@@ -364,7 +364,7 @@ extern "C" {
 #error NS: I am lazy to implement version of this routine based on plain vsprintf.
 #error Please find an implementation of vsnprintf function for your platform.
 #error For example, consider importing library from http://www.ijs.si/software/snprintf/
-#error to Firebird src\extern repository
+#error to Firebird extern repository
 #endif
 		enum {tempsize = 4096};
 		char temp[tempsize];
