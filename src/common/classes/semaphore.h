@@ -114,12 +114,12 @@ public:
 		err = mutex_init(&mu, USYNC_PROCESS, NULL);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: constructor");
-			system_call_failed::raise("mutex_init", err);
+			system_call_failed::raise("Semaphore:init:mutex_init", err);
 		}
 		err = cond_init(&cv, USYNC_PROCESS, NULL);
 		if ( err != 0) {
 			//gds__log("Error on semaphore.h: constructor");
-			system_call_failed::raise("cond_init",err);
+			system_call_failed::raise("Semaphore:init:cond_init",err);
 		}
 		init = true;
 	}
@@ -130,12 +130,12 @@ public:
 		err = mutex_destroy(&mu);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: destructor");
-			system_call_failed::raise("mutex_destroy",err);
+			system_call_failed::raise("Semaphore:~mutex_destroy",err);
 		}
 		err = cond_destroy(&cv);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: destructor");
-			system_call_failed::raise("cond_destroy",err);
+			system_call_failed::raise("Semaphore:~cond_destroy",err);
 		}
 		
 		init = false;
@@ -171,7 +171,7 @@ public:
 				return rt;
 			}
 			
-			system_call_failed::raise("mutex_trylock", err2);
+			system_call_failed::raise("Semaphore:tryEnter:mutex_trylock", err2);
 		}
 		if (seconds < 0) {
 			// Unlimited wait, like enter()
@@ -196,7 +196,7 @@ public:
 				return rt;
 			}
 			else 
-				system_call_failed::raise("mutex_lock", err2);
+				system_call_failed::raise("Semaphore:tryEnter:mutex_lock", err2);
 			
 		} //seconds < 0 
 		// Wait with timeout
@@ -224,7 +224,7 @@ public:
 			return rt;
   		}
 		else
-			system_call_failed::raise("mutex_lock", err2);
+			system_call_failed::raise("Semaphore:tryEnter:mutex_lock", err2);
 	}
 	
 	void enter() {
@@ -242,7 +242,7 @@ public:
 				mutex_unlock(&mu);
 			}
 			else 
-				system_call_failed::raise("mutex_lock", err2);
+				system_call_failed::raise("Semaphore:enter:mutex_lock", err2);
 
 	}
 	
@@ -254,14 +254,14 @@ public:
 			if (err2 != 0) {
 				err = cond_broadcast(&cv);
 				if (err != 0) {
-					system_call_failed::raise("cond_signal", err);
+					system_call_failed::raise("Semaphore:release:cond_signal", err);
 				}
 
 				mutex_unlock(&mu);
 			} 
 			else {
 				//gds__log("Error on semaphore.h: release");
-				system_call_failed::raise("mutex_lock", err2);
+				system_call_failed::raise("Semaphore:release:mutex_lock", err2);
 			}
 	}
 };
