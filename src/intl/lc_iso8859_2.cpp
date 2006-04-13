@@ -68,26 +68,37 @@ static inline bool FAMILY2(TEXTTYPE cache,
 }
 
 
-TEXTTYPE_ENTRY (ISO88592_c1_init)
+TEXTTYPE_ENTRY(ISO88592_c1_init)
 {
-static const ASCII	POSIX[] = "cs_CZ.ISO8859_2";
+	static const ASCII POSIX[] = "cs_CZ.ISO8859_2";
 
 #include "../intl/collations/xx88592czech.h"
 
-return FAMILY2(cache, CC_CZECH, LDRV_TIEBREAK,
-		NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
-		CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+	return FAMILY2(cache, CC_CZECH, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
-TEXTTYPE_ENTRY (ISO88592_c2_init)
+TEXTTYPE_ENTRY(ISO88592_c2_init)
 {
-static const ASCII  POSIX[] = "ISO_HUN.ISO8859_2";
+	static const ASCII POSIX[] = "ISO_HUN.ISO8859_2";
 
 #include "../intl/collations/xx88592hun.h"
 
-return FAMILY2(cache, CC_HUNGARY, LDRV_TIEBREAK,
-		NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
-		CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+	return FAMILY2(cache, CC_HUNGARY, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+TEXTTYPE_ENTRY(ISO88592_c3_init)
+{
+	static const ASCII POSIX[] = "ISO_PLK.ISO8859_2";
+
+#include "../intl/collations/xx88592plk.h"
+
+	return FAMILY2(cache, CC_POLAND, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
 
 /*
