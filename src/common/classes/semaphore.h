@@ -79,7 +79,7 @@ public:
 	1) Old (~1985) troubles reported to Borland about semaphores on Solaris
 	2) No gds_lock_manager
 	3) No sem_timedwait on Solaris
-	4) thread functions does not garantie setting errno 12 apr 2006
+	4) thread functions do not guarantee setting errno 12 apr 2006
  Readings is:
 	1) http://www.freebsd.org/cgi/cvsweb.cgi/src/lib/libpthread/thread/thr_sem.c?rev=1.15
 	2) http://docs.sun.com/app/docs/doc/802-5747-03/6i9g1bhqp?a=view
@@ -119,7 +119,7 @@ public:
 		err = cond_init(&cv, USYNC_PROCESS, NULL);
 		if ( err != 0) {
 			//gds__log("Error on semaphore.h: constructor");
-			system_call_failed::raise("Semaphore:init:cond_init",err);
+			system_call_failed::raise("Semaphore:init:cond_init", err);
 		}
 		init = true;
 	}
@@ -130,12 +130,12 @@ public:
 		err = mutex_destroy(&mu);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: destructor");
-			system_call_failed::raise("Semaphore:~mutex_destroy",err);
+			system_call_failed::raise("Semaphore:~mutex_destroy", err);
 		}
 		err = cond_destroy(&cv);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: destructor");
-			system_call_failed::raise("Semaphore:~cond_destroy",err);
+			system_call_failed::raise("Semaphore:~cond_destroy", err);
 		}
 		
 		init = false;
@@ -203,7 +203,7 @@ public:
 		timestruc_t timeout;
 		timeout.tv_sec = time(NULL) + seconds;
 		timeout.tv_nsec = 0;
-		err2 = mutex_lock(&mu) ;
+		err2 = mutex_lock(&mu);
 		if (err2 != 0) {
 			do {
 				err = cond_timedwait(&cv, &mu, &timeout);
