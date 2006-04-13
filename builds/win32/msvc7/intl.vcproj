@@ -597,6 +597,12 @@
 			<File
 				RelativePath="..\..\..\src\intl\collations\xx88592czech.h">
 			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\xx88592hun.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\xx88592plk.h">
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource files"

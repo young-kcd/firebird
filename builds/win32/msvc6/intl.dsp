@@ -683,6 +683,14 @@ SOURCE=..\..\..\src\intl\collations\xx885913lt.h
 
 SOURCE=..\..\..\src\intl\collations\xx88592czech.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\xx88592hun.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\collations\xx88592plk.h
+# End Source File
 # End Group
 # Begin Group "Resource files"
 
