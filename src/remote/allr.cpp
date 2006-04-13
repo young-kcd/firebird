@@ -153,23 +153,18 @@ BLK ALLR_block(UCHAR type, ULONG count)
 		throw std::bad_alloc();
 	}
 
-#pragma FB_COMPILER_MESSAGE("Warning: outdated assumption for 16-bit platforms")
-	// Compute block length, recasting count to make sure the calculation
-	// comes out right on 16-bit platforms (like MS-DOS or Win16).
+	ULONG size		= REM_block_sizes[type].typ_root_length;
+	ULONG tail		= REM_block_sizes[type].typ_tail_length;
 
-	const USHORT ucount	= (USHORT)count;
-	USHORT size		= REM_block_sizes[type].typ_root_length;
-	USHORT tail		= REM_block_sizes[type].typ_tail_length;
-
-	if (tail && ucount >= 1) {
-		size += (ucount - 1) * tail;
+	if (tail && count >= 1) {
+		size += (count - 1) * tail;
 	}
 
 	BLK block = (BLK)
 #ifdef DEBUG_GDS_ALLOC
-		ALLR_alloc_debug((ULONG) size, FileName, LineNumber);
+		ALLR_alloc_debug(size, FileName, LineNumber);
 #else
-		ALLR_alloc((ULONG) size);
+		ALLR_alloc(size);
 #endif
 
 	// NOMEM: callee handled
