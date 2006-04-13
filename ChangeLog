@@ -1,3 +1,47 @@
+2006-04-13 13:00  alexpeshkoff
+
+	* firebird2/src/remote/allr.cpp (1.31.4.1):
+	
+	removed 16-bit support, breaking big-blocks allocation
+
+2006-04-13 05:29  asfernandes
+
+	* firebird2/: builds/install/misc/fbintl.conf (1.9.4.1),
+	builds/win32/msvc6/intl.dsp (1.27.4.1),
+	builds/win32/msvc7/intl.vcproj (1.22.4.1),
+	src/intl/lc_iso8859_2.cpp (1.12.4.1), src/intl/ld.cpp (1.18.4.1),
+	src/intl/collations/xx88592plk.h (1.1.2.2), src/jrd/intlnames.h
+	(1.19.4.1):
+	
+	Backport Polish collation ISO_PLK for ISO8859_2 charset -
+	contributed by Jaroslaw Glowacki
+
+2006-04-13 05:28  asfernandes
+
+	* firebird2/src/isql/show.epp (1.86.2.1):
+	
+	Backport fix for SHOW GENERATOR
+
+2006-04-13 05:04  asfernandes
+
+	* firebird2/src/intl/collations/xx88592plk.h (1.1.2.1):
+	
+	file xx88592plk.h was added on branch B2_0_Release on 2006-04-13
+	03:29:49 +0000
+
+2006-04-13 05:04  asfernandes
+
+	* firebird2/src/intl/collations/xx88592plk.h (1.1):
+	
+	Polish collation ISO_PLK for ISO8859_2 charset - contributed by
+	Jaroslaw Glowacki
+
+2006-04-12 09:36  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletReader.h (1.15.4.1):
+	
+	turn of debugging in release
+
 2006-04-09 17:46  alexpeshkoff
 
 	* firebird2/src/jrd/isc_sync.cpp (1.103):
