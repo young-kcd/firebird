@@ -1,3 +1,32 @@
+2006-04-13 05:59  robocop
+
+	* firebird2/src/common/classes/semaphore.h (1.27):
+	
+	Misc.
+
+2006-04-13 05:04  asfernandes
+
+	* firebird2/: builds/install/misc/fbintl.conf (1.10),
+	builds/win32/msvc6/intl.dsp (1.28), builds/win32/msvc7/intl.vcproj
+	(1.23), src/intl/lc_iso8859_2.cpp (1.13), src/intl/ld.cpp (1.19),
+	src/intl/collations/xx88592plk.h (1.1), src/jrd/intlnames.h (1.20):
+	
+	Polish collation ISO_PLK for ISO8859_2 charset - contributed by
+	Jaroslaw Glowacki
+
+2006-04-12 13:54  kkuznetsov
+
+	* firebird2/src/common/classes/semaphore.h (1.26):
+	
+	Correct messages from Semaphore exceptions
+
+2006-04-12 11:25  kkuznetsov
+
+	* firebird2/src/common/classes/semaphore.h (1.25):
+	
+	Rewiev semaphore on Solaris platform: add some fixes and loop on
+	EINTR
+
 2006-04-12 03:57  asfernandes
 
 	* firebird2/src/common/classes/fb_string.cpp (1.33):
