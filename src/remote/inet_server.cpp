@@ -561,6 +561,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 	{
 		alreadyClosing = true;
 		JRD_shutdown_all(false);
+		SRVR_shutdown();
 		exit(0);
 	}
 	return 0;	//make compilers happy
