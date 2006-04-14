@@ -91,9 +91,7 @@ if "%ERRLEV%"=="1" goto :END
 @call :codes
 if "%ERRLEV%"=="1" goto :END
 ::=======
-@echo Building message file and codes header...
-@%ROOT_PATH%\gen\build_msg -f %DB_PATH%/gen/firebird.msg -D %DB_PATH%/gen/dbs/msg.fdb
-@%ROOT_PATH%\gen\codes %ROOT_PATH%\src\include\gen %ROOT_PATH%\lang_helpers
+@call create_msgs.bat msg
 ::=======
 @call :NEXT_STEP
 @goto END:
@@ -276,25 +274,7 @@ goto :EOF
 
 @%ROOT_PATH%\gen\gbak_embed -r %ROOT_PATH%\builds\misc\metadata.gbak %DB_PATH%\gen\dbs\metadata.fdb
 
-@echo create database '%DB_PATH%\gen\dbs\msg.fdb'; | "%ROOT_PATH%\gen\isql_embed" -q
-@set MSG_ISQL=@"%ROOT_PATH%\gen\isql_embed" -q %DB_PATH%\gen\dbs\msg.fdb -i %ROOT_PATH%\src\msgs\
-@%MSG_ISQL%msg.sql
-@%MSG_ISQL%facilities.sql
-@echo.
-@echo loading locales
-@%MSG_ISQL%locales.sql
-@echo loading history
-@%MSG_ISQL%history.sql
-@echo loading messages
-@%MSG_ISQL%messages.sql
-@echo loading symbols
-@%MSG_ISQL%symbols.sql
-@echo loading system errors
-@%MSG_ISQL%system_errors.sql
-@echo loading French translation
-@%MSG_ISQL%transmsgs.fr_FR.sql
-@echo loading German translation
-@%MSG_ISQL%transmsgs.de_DE.sql
+@call create_msgs.bat db
 
 @%ROOT_PATH%\gen\gbak_embed -r %ROOT_PATH%\builds\misc\help.gbak %DB_PATH%\gen\dbs\help.fdb
 @copy %ROOT_PATH%\gen\dbs\metadata.fdb %ROOT_PATH%\gen\dbs\yachts.lnk > nul
