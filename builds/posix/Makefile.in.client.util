@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.client.util,v 1.35 2006-04-16 12:58:26 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std

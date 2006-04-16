@@ -31,7 +31,6 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postinstall.sh.in,v 1.14 2006-04-16 12:58:22 alexpeshkoff Exp $
 # 
 
 # The post install script for Firebird Classic

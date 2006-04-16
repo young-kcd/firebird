@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.10 2006-04-16 15:27:00 asfernandes Exp $
+ *
  */
  /* contains the main() and not shared routines for ibguard */
 
