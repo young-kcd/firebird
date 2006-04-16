@@ -230,10 +230,10 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_tra_id:
 			case isc_spb_single_tra_id:
 			case isc_spb_multi_tra_id:
-				return IntSpb;
 			case isc_spb_rpr_commit_trans:
 			case isc_spb_rpr_rollback_trans:
 			case isc_spb_rpr_recover_two_phase:
+				return IntSpb;
 			case isc_spb_tra_state:
 			case isc_spb_tra_state_limbo:
 			case isc_spb_tra_state_commit:
@@ -294,6 +294,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			switch (tag) 
 			{
 			case isc_spb_dbname:
+			case isc_spb_command_line:
 				return StringSpb;
 			case isc_spb_options:
 				return IntSpb;
