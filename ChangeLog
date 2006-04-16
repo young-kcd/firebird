@@ -1,3 +1,9 @@
+2006-04-14 17:43  alexpeshkoff
+
+	* firebird2/src/include/old_fb_blk.h (1.4.12.1):
+	
+	backported recommended by Claudio fix
+
 2006-04-13 13:00  alexpeshkoff
 
 	* firebird2/src/remote/allr.cpp (1.31.4.1):
