@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.8.12.1 2006-04-16 11:48:20 alexpeshkoff Exp $
+ * $Id: guard.cpp,v 1.8.12.2 2006-04-16 15:29:20 asfernandes Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -177,7 +177,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			}
 			else {
 				gds__log("%s: guardian could not open %s for writing, error %d\n", 
-						 pidfilename, 
+						 prog_name, pidfilename, 
 #ifdef HAVE_ERRNO_H
 						 errno
 #else
