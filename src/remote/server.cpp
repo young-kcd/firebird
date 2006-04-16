@@ -5078,7 +5078,7 @@ void SRVR_shutdown()
 	}
 	
 	// let them terminate
-	sleep(1);
+	THREAD_SLEEP(1 * 1000);
 #endif
 }
 
