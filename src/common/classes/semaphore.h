@@ -115,7 +115,7 @@ public:
 			system_call_failed::raise("mutex_init", err);
 		}
 		err = cond_init(&cv, USYNC_PROCESS, NULL);
-		if ( err != 0) {
+		if (err != 0) {
 			//gds__log("Error on semaphore.h: constructor");
 			system_call_failed::raise("cond_init", err);
 		}
@@ -229,19 +229,18 @@ public:
 		fb_assert(init == true);
 		int err = 0;
 		int	err2 = mutex_lock(&mu);
-			if (err2 != 0) {
-				do {
-					err = cond_wait(&cv, &mu);
-					if (err == 0) {
-					   break;
-					}
-				} while (err == EINTR);
-				
-				mutex_unlock(&mu);
-			}
-			else 
-				system_call_failed::raise("mutex_lock", err2);
-
+		if (err2 != 0) {
+			do {
+				err = cond_wait(&cv, &mu);
+				if (err == 0) {
+				   break;
+				}
+			} while (err == EINTR);
+			
+			mutex_unlock(&mu);
+		}
+		else 
+			system_call_failed::raise("mutex_lock", err2);
 	}
 	
 	void release(SLONG count = 1) {
@@ -350,7 +349,9 @@ public:
 			if (sem_post(&sem) == -1) {
 				//gds__log("Error on semaphore.h: release");
 				system_call_failed::raise("sem_post");
-			};
+			}
+	}
+};
 
 } // namespace Firebird
 
