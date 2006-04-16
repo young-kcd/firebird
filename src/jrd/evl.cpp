@@ -3569,7 +3569,7 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 		TextType* textType = INTL_texttype_lookup(tdbb, value->dsc_blob_ttype());
 		CharSet* charSet = textType->getCharSet();
 
-		blb* blob =	BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
