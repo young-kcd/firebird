@@ -43,6 +43,7 @@
 #include "../burp/mvol_proto.h"
 #include "../burp/resto_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/constants.h"
 #include "../remote/protocol.h"
 #ifdef DEBUG
 #include "../gpre/prett_proto.h"
@@ -69,7 +70,6 @@ const int DB_VERSION_DDL4		= 4;  // ods4 db
 const int DB_VERSION_DDL5		= 5;  // ods5 db 
 const int DB_VERSION_DDL8		= 8;  // ods8 db 
 const int DB_VERSION_CURRENT	= DB_VERSION_DDL8;  // v4.0 is ods8 
-const char* FOREIGN_KEY			= "FOREIGN KEY";
 
 const int DEFERRED_ACTIVE		= 3;	/* RDB$INDEX_INACTIVE setting for Foreign Keys
 										* This setting is used temporarily while
@@ -113,7 +113,7 @@ bool	get_field_dimensions();
 bool	get_files();
 bool	get_filter();
 bool	get_function();
-void	get_function_arg ();
+void	get_function_arg (bool dummy);
 bool get_generator();
 bool get_global_field();
 bool get_index (const burp_rel*);
@@ -3272,6 +3272,8 @@ bool get_function()
 	SSHORT		l;
 	scan_attr_t	scan_next_attr;
 
+	bool existFlag = false;
+
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
@@ -3325,17 +3327,24 @@ bool get_function()
 	strcpy (function_name, X.RDB$FUNCTION_NAME);
 	END_STORE;
 	ON_ERROR
-		general_on_error ();
+		if (gds_status[1] != isc_no_dup)
+		{
+			general_on_error ();
+		}
+		else
+		{
+			existFlag = true;
+		}
 	END_ERROR;
 
 	// at the end of args for a function is the rec_function_end marker 
 	while (get(tdgbl) == rec_function_arg)
-		get_function_arg();
+		get_function_arg(existFlag);
 
 	return true;
 }
 
-void get_function_arg()
+void get_function_arg(bool dummy)
 {
 /**************************************
  *
@@ -3351,8 +3360,61 @@ void get_function_arg()
 	SSHORT		l;
 	TEXT		temp[GDS_NAME_LEN];
 	scan_attr_t		scan_next_attr;
-
+	
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+
+	if (dummy)
+	{
+		char buf[MAX_SQL_IDENTIFIER_SIZE];
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		{
+			switch (attribute)
+			{
+			case att_functionarg_name:
+				GET_TEXT(buf);
+				break;
+
+			case att_functionarg_position:
+				get_numeric();
+				break;
+
+			case att_functionarg_mechanism:
+				get_numeric();
+				break;
+
+			case att_functionarg_field_type:
+				get_numeric();
+				break;
+
+			case att_functionarg_field_scale:
+				get_numeric();
+				break;
+
+			case att_functionarg_field_length:
+				get_numeric();
+				break;
+
+			case att_functionarg_field_sub_type:
+				get_numeric();
+				break;
+
+			case att_functionarg_character_set:
+				get_numeric();
+				break;
+
+			case att_functionarg_field_precision:
+				get_numeric();
+				break;
+
+			default:
+				bad_attribute (scan_next_attr, attribute, 90);
+				// msg 90 function argument 
+				break;
+			}
+		}
+		return;
+	}
 
 	if (tdgbl->RESTORE_format >= 6)
 	{
