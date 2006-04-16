@@ -471,7 +471,9 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 	case nod_lowcase:
     case nod_substr:
 		MAKE_desc(request, &desc1, node->nod_arg[0], null_replacement);
-		if (desc1.dsc_dtype <= dtype_any_text) {
+		if (desc1.dsc_dtype <= dtype_any_text ||
+			(node->nod_type != nod_substr && desc1.dsc_dtype == dtype_blob))
+		{
 			*desc = desc1;
 			return;
 		}

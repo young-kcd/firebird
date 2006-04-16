@@ -153,6 +153,9 @@ static dsc* get_mask(thread_db*, jrd_nod*, impure_value*);
 static SINT64 get_timestamp_to_isc_ticks(const dsc* d);
 static void init_agg_distinct(thread_db*, const jrd_nod*);
 static dsc* lock_state(thread_db*, jrd_nod*, impure_value*);
+static dsc* low_up_case(thread_db*, const dsc*, impure_value*,
+						int (*intl_str_to_case)(thread_db*, DSC*),
+						ULONG (TextType::*tt_str_to_case)(ULONG, const UCHAR*, ULONG, UCHAR*));
 static dsc* multiply(const dsc*, impure_value*, const jrd_nod*);
 static dsc* multiply2(const dsc*, impure_value*, const jrd_nod*);
 static dsc* divide2(const dsc*, impure_value*, const jrd_nod*);
@@ -166,8 +169,6 @@ static bool string_function(thread_db*, jrd_nod*, SLONG, const UCHAR*, SLONG, co
 static dsc* string_length(thread_db*, jrd_nod*, impure_value*);
 static dsc* substring(thread_db*, impure_value*, dsc*, SLONG, SLONG);
 static dsc* trim(thread_db*, jrd_nod*, impure_value*);
-static dsc* upcase(thread_db*, const dsc*, impure_value*);
-static dsc* lowcase(thread_db*, const dsc*, impure_value*);
 static dsc* internal_info(thread_db*, const dsc*, impure_value*);
 
 
@@ -1090,10 +1091,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 				MOV_get_long(values[1], 0), MOV_get_long(values[2], 0));
 
 		case nod_upcase:
-			return upcase(tdbb, values[0], impure);
+			return low_up_case(tdbb, values[0], impure, INTL_str_to_upper, &TextType::str_to_upper);
 
 		case nod_lowcase:
-			return lowcase(tdbb, values[0], impure);
+			return low_up_case(tdbb, values[0], impure, INTL_str_to_lower, &TextType::str_to_lower);
 
 		case nod_cast:
 			return cast(tdbb, values[0], node, impure);
@@ -1787,6 +1788,11 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 	case dtype_varying:
 	case dtype_cstring:
 		break;
+
+	case dtype_blob:
+		value->vlu_misc.vlu_bid = *(bid*)from.dsc_address;
+		return;
+
 	default:
 		fb_assert(false);
 		break;
@@ -3537,6 +3543,89 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 }
 
 
+static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
+						int (*intl_str_to_case)(thread_db*, DSC*),
+						ULONG (TextType::*tt_str_to_case)(ULONG, const UCHAR*, ULONG, UCHAR*))
+{
+/**************************************
+ *
+ *      l o w _ u p _ c a s e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Low/up case a string.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	if (value->dsc_dtype == dtype_blob)
+	{
+		EVL_make_value(tdbb, value, impure);
+
+		if (value->dsc_sub_type != isc_blob_text)
+			return &impure->vlu_desc;
+
+		TextType* textType = INTL_texttype_lookup(tdbb, value->dsc_blob_ttype());
+		CharSet* charSet = textType->getCharSet();
+
+		blb* blob =	BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+			reinterpret_cast<bid*>(value->dsc_address));
+
+		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+		fb_assert(BUFFER_SMALL % 4 == 0);	// 4 is our maximum character length
+
+		if (charSet->isMultiByte())
+			buffer.getBuffer(blob->blb_length);	// alloc space to put entire blob in memory
+
+		blb* newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+			reinterpret_cast<bid*>(impure->vlu_desc.dsc_address));
+
+		while (!(blob->blb_flags & BLB_eof))
+		{
+			SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+
+			if (len)
+			{
+				len = (textType->*tt_str_to_case)(len, buffer.begin(), len, buffer.begin());
+				BLB_put_segment(tdbb, newBlob, buffer.begin(), len);
+			}
+		}
+
+		BLB_close(tdbb, newBlob);
+		BLB_close(tdbb, blob);
+	}
+	else
+	{
+		USHORT temp[16];
+		USHORT ttype;
+		dsc desc;
+
+		desc.dsc_length =
+			MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
+							reinterpret_cast<vary*>(temp), sizeof(temp));
+		desc.dsc_dtype = dtype_text;
+		INTL_ASSIGN_TTYPE(&desc, ttype);
+		EVL_make_value(tdbb, &desc, impure);
+
+		if ((desc.dsc_ttype() == ttype_ascii) ||
+			(desc.dsc_ttype() == ttype_none))
+		{
+			UCHAR* p = impure->vlu_desc.dsc_address;
+			for (const UCHAR* const end = p + impure->vlu_desc.dsc_length;
+				p < end; p++)
+			{
+				*p = LOWWER7(*p);
+			}
+		}
+		else
+			intl_str_to_case(tdbb, &impure->vlu_desc);
+	}
+
+	return &impure->vlu_desc;
+}
+
+
 static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 {
 /**************************************
@@ -4929,88 +5018,6 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		impure->vlu_desc.dsc_length, impure->vlu_desc.dsc_address,
 		offsetLead / tt->getCanonicalWidth(),
 		(offsetTrail - offsetLead) / tt->getCanonicalWidth());
-
-	return &impure->vlu_desc;
-}
-
-
-static dsc* upcase(thread_db* tdbb, const dsc* value, impure_value* impure)
-{
-/**************************************
- *
- *      u p c a s e
- *
- **************************************
- *
- * Functional description
- *      Upcase a string.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	USHORT temp[16];
-	USHORT ttype;
-	dsc desc;
-	desc.dsc_length =
-		MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
-						   reinterpret_cast<vary*>(temp), sizeof(temp));
-	desc.dsc_dtype = dtype_text;
-	INTL_ASSIGN_TTYPE(&desc, ttype);
-	EVL_make_value(tdbb, &desc, impure);
-
-	if ((desc.dsc_ttype() == ttype_ascii) ||
-		(desc.dsc_ttype() == ttype_none))
-	{
-		UCHAR* p = impure->vlu_desc.dsc_address;
-		for (const UCHAR* const end = p + impure->vlu_desc.dsc_length;
-			p < end; p++)
-		{
-			*p = UPPER7(*p);
-		}
-	}
-	else
-		INTL_str_to_upper(tdbb, &impure->vlu_desc);
-
-	return &impure->vlu_desc;
-}
-
-
-static dsc* lowcase(thread_db* tdbb, const dsc* value, impure_value* impure)
-{
-/**************************************
- *
- *      l o w c a s e
- *
- **************************************
- *
- * Functional description
- *      Lowcase a string.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	USHORT temp[16];
-	USHORT ttype;
-	dsc desc;
-	desc.dsc_length =
-		MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
-						   reinterpret_cast<vary*>(temp), sizeof(temp));
-	desc.dsc_dtype = dtype_text;
-	INTL_ASSIGN_TTYPE(&desc, ttype);
-	EVL_make_value(tdbb, &desc, impure);
-
-	if ((desc.dsc_ttype() == ttype_ascii) ||
-		(desc.dsc_ttype() == ttype_none))
-	{
-		UCHAR* p = impure->vlu_desc.dsc_address;
-		for (const UCHAR* const end = p + impure->vlu_desc.dsc_length;
-			p < end; p++)
-		{
-			*p = LOWWER7(*p);
-		}
-	}
-	else
-		INTL_str_to_lower(tdbb, &impure->vlu_desc);
 
 	return &impure->vlu_desc;
 }

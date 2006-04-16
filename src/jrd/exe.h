@@ -32,6 +32,7 @@
 #define JRD_EXE_H
 
 #include "../jrd/jrd_blks.h"
+#include "../jrd/blb.h"
 #include "../common/classes/array.h"
 #include "../common/classes/MetaName.h"
 
@@ -210,6 +211,7 @@ struct impure_value {
 		GDS_TIMESTAMP vlu_timestamp;
 		GDS_TIME vlu_sql_time;
 		GDS_DATE vlu_sql_date;
+		bid vlu_bid;
 		void* vlu_invariant; // Pre-compiled invariant object for nod_like and other string functions
 	} vlu_misc;
 };
