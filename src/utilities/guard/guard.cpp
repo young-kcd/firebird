@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.8 2004-05-18 00:45:46 brodsom Exp $
+ * $Id: guard.cpp,v 1.9 2006-04-16 12:58:28 alexpeshkoff Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -35,7 +35,16 @@
 #include <sys/stat.h>
 #endif
 
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include "../jrd/common.h"
+#include "../jrd/divorce.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/file_params.h"
@@ -71,6 +80,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT option = FOREVER;	/* holds FOREVER or ONETIME  or IGNORE */
 	bool done = true;
 	const TEXT* prog_name = argv[0];
+	TEXT* pidfilename = 0;
 
 	const TEXT* const* const end = argc + argv;
 	argv++;
@@ -87,9 +97,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			case 'S':
 				option = IGNORE;
 				break;
+			case 'P':
+				pidfilename = *argv++;
+				break;
 			default:
 				fprintf(stderr,
-						   "Usage: %s [-signore | -onetime | -forever (default)]\n",
+						   "Usage: %s [-signore | -onetime | -forever (default)] [-pidfile filename]\n",
 						   prog_name);
 				exit(-1);
 				break;
@@ -136,6 +149,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	server_args[0] = process_name;
 	server_args[1] = NULL;
 
+// detach from controlling tty
+	divorce_terminal(0);
+
 	do {
 		int ret_code;
 
@@ -150,6 +166,25 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					   server_args[1] ? server_args[1] : SUPER_SERVER_BINARY);
 			UTIL_ex_unlock(fd_guard);
 			exit(-4);
+		}
+		
+		if (pidfilename) {
+			FILE *pf = fopen(pidfilename, "w");
+			if (pf)
+			{
+				fprintf(pf, "%d", child_pid);
+				fclose(pf);
+			}
+			else {
+				gds__log("%s: guardian could not open %s for writing, error %d\n", 
+						 pidfilename, 
+#ifdef HAVE_ERRNO_H
+						 errno
+#else
+						 -1
+#endif
+						 );
+			}
 		}
 
 		/* wait for child to die, and evaluate exit status */
@@ -193,6 +228,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 	} while (!done);
 
+#ifdef HAVE_UNISTD_H
+	if (pidfilename) {
+		unlink(pidfilename);
+	}
+#endif
 	UTIL_ex_unlock(fd_guard);
 	exit(0);
 }								/* main */

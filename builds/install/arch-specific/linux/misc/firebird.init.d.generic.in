@@ -11,13 +11,7 @@
 
 FIREBIRD=@prefix@
 FBRunUser=firebird
-# WARNING: in a real-world installation, you should not put the 
-# SYSDBA password in a publicly-readable file. 
-# Eventually this file should not need to contain any passwords.
-# as root user alone should be sufficient privledge to stop/start 
-# the server. 
-
-
+pidfile=/var/run/firebird/`basename $0`.pid
 export FIREBIRD 
 
 
@@ -30,14 +24,16 @@ export FIREBIRD
 case "$1" in
   start)
 	echo -n "Starting Firebird server: "
-        echo '$FIREBIRD/bin/fbmgr -start -forever' | su $FBRunUser
+	echo '$FIREBIRD/bin/fbmgr -pidfile $pidfile -start -forever' | su $FBRunUser
 	RETVAL=$?
 	;;
   stop)
 	echo -n "Stopping Firebird server: "
-	killall fbserver
+	if [ -f $pidfile ]
+	then
+		kill `cat $pidfile`
+	fi
 	RETVAL=$?
-#	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/identd
 	;;
   status)
 	RETVAL=0

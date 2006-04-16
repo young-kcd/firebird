@@ -34,3 +34,8 @@ then
         rm -f /etc/rc.d/init.d/firebird
     fi
 fi        
+
+if [ -d $PidDir ]
+then
+    rm -rf $PidDir
+fi

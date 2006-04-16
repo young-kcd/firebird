@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: ibmgrswi.h,v 1.4 2004-05-17 00:28:58 brodsom Exp $
+ * $Id: ibmgrswi.h,v 1.5 2006-04-16 12:58:29 alexpeshkoff Exp $
  */
 
 #ifndef IBMGR_IBMGRSWI_H
@@ -55,6 +55,9 @@ const int IN_SW_IBMGR_POOL		= 18;	/* Print pool */
 
 const int IN_SW_IBMGR_SIGNORE	= 19;	/* start server, restart when it dies, even if it was a start up error */
 
+// Let startup script specify file to save fbserver's pid - AP 2006
+const int IN_SW_IBMGR_PIDFILE	= 20;	/* Pid file name */
+
 
 const int IN_SW_IBMGR_AMBIG		= 99;	/* ambiguous switch */
 
@@ -75,6 +78,7 @@ static const struct in_sw_tab_t ibmgr_in_sw_table [] =
 /*    {IN_SW_IBMGR_IGNORE,	0,	"IGN",		0, 0, 0, FALSE,	0,	1,      NULL},  *//* do not shutdown */
     {IN_SW_IBMGR_PASSWORD,	0,	"PASSWORD",	0, 0, 0, FALSE,	0,	2,      NULL},	/* DB admin's password */
     {IN_SW_IBMGR_USER,		0,	"USER",		0, 0, 0, FALSE,	0,	1,      NULL},   /* user's name */
+    {IN_SW_IBMGR_PIDFILE,	0,	"PIDFILE",		0, 0, 0, FALSE,	0,	1,      NULL},   /* file for fbserver's PID */
 
 /* We can shutdown any server, but can start only local
    thus we do not allow to change host for time being

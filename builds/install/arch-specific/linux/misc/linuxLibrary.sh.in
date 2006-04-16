@@ -2,6 +2,10 @@
 
 RunUser=firebird
 export RunUser
+RunGroup=firebird
+export RunGroup
+PidDir=/var/run/firebird
+export PidDir
 
 #------------------------------------------------------------------------
 #  Add new user and group
@@ -114,7 +118,7 @@ stopSuperServerIfRunning() {
     then
 		init_d=`getInitScriptLocation`
 
-        if [ $init_d ]
+        if [ -x "$init_d" ]
 		then
        	    $init_d stop
 		fi

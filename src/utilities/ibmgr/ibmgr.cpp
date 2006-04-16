@@ -162,6 +162,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	ibmgr_data.attached = 0;
 	ibmgr_data.reattach |= (REA_HOST | REA_USER | REA_PASSWORD);
 
+/* No pidfile by default
+*/
+	ibmgr_data.pidfile[0] = 0;
 
 
 
@@ -379,6 +382,13 @@ static SSHORT get_switches(
 				ibmgr_data->reattach |= REA_USER;
 				break;
 
+			case IN_SW_IBMGR_PIDFILE:
+			{
+				Firebird::PathName pf(string);
+				pf.copyTo(ibmgr_data->pidfile, sizeof(ibmgr_data->pidfile));
+				break;
+			}
+			
 			case IN_SW_IBMGR_0:
 				SRVRMGR_msg_get(MSG_INVPAR, msg);
 				fprintf(OUTFILE, "%s\n", msg);
@@ -781,6 +791,7 @@ static void print_help(void)
 	fprintf(OUTFILE, "		show			show host and user\n");
 	fprintf(OUTFILE, "		user <user_name>	set user name\n");
 	fprintf(OUTFILE, "		password <password>	set DBA password\n");
+	fprintf(OUTFILE, "		pidfile <filename>	file to save fbserver's PID\n");
 	fprintf(OUTFILE, "		help			prints help text\n");
 	fprintf(OUTFILE, "		quit			quit prompt mode\n\n");
 	fprintf(OUTFILE,
