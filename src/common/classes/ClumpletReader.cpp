@@ -294,6 +294,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			switch (tag) 
 			{
 			case isc_spb_dbname:
+			case isc_spb_command_line:
 				return StringSpb;
 			case isc_spb_options:
 				return IntSpb;
