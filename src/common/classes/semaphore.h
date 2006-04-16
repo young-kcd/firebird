@@ -105,37 +105,34 @@ private:
 	mutex_t	mu;
 	cond_t	cv;
 	bool	init;
-	int		err; //thread functions does not garantie setting errno
 public:
 	Semaphore() : init(false) {
 		/* USINC_PROCESS got  ability to syncronise Classic
 		*/
-		err = 0;	
-		err = mutex_init(&mu, USYNC_PROCESS, NULL);
+		int err = mutex_init(&mu, USYNC_PROCESS, NULL);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: constructor");
-			system_call_failed::raise("Semaphore:init:mutex_init", err);
+			system_call_failed::raise("mutex_init", err);
 		}
 		err = cond_init(&cv, USYNC_PROCESS, NULL);
 		if ( err != 0) {
 			//gds__log("Error on semaphore.h: constructor");
-			system_call_failed::raise("Semaphore:init:cond_init", err);
+			system_call_failed::raise("cond_init", err);
 		}
 		init = true;
 	}
 	
 	~Semaphore() {
 		fb_assert(init == true);
-		err = 0;
-		err = mutex_destroy(&mu);
+		int err = mutex_destroy(&mu);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: destructor");
-			system_call_failed::raise("Semaphore:~mutex_destroy", err);
+			system_call_failed::raise("mutex_destroy", err);
 		}
 		err = cond_destroy(&cv);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: destructor");
-			system_call_failed::raise("Semaphore:~cond_destroy", err);
+			system_call_failed::raise("cond_destroy", err);
 		}
 		
 		init = false;
@@ -145,6 +142,7 @@ public:
 	bool tryEnter(int seconds = 0) {
 		bool rt = false;
 		int err2 = 0;
+		int err = 0;
 		// Return true in case of success
 		fb_assert(init == true);
 		if (seconds == 0) {
@@ -171,7 +169,7 @@ public:
 				return rt;
 			}
 			
-			system_call_failed::raise("Semaphore:tryEnter:mutex_trylock", err2);
+			system_call_failed::raise("mutex_trylock", err2);
 		}
 		if (seconds < 0) {
 			// Unlimited wait, like enter()
@@ -196,7 +194,7 @@ public:
 				return rt;
 			}
 			else 
-				system_call_failed::raise("Semaphore:tryEnter:mutex_lock", err2);
+				system_call_failed::raise("mutex_lock", err2);
 			
 		} //seconds < 0 
 		// Wait with timeout
@@ -224,13 +222,13 @@ public:
 			return rt;
   		}
 		else
-			system_call_failed::raise("Semaphore:tryEnter:mutex_lock", err2);
+			system_call_failed::raise("mutex_lock", err2);
 	}
 	
 	void enter() {
 		fb_assert(init == true);
-		int err2 = 0;
-			err2 = mutex_lock(&mu);
+		int err = 0;
+		int	err2 = mutex_lock(&mu);
 			if (err2 != 0) {
 				do {
 					err = cond_wait(&cv, &mu);
@@ -242,27 +240,29 @@ public:
 				mutex_unlock(&mu);
 			}
 			else 
-				system_call_failed::raise("Semaphore:enter:mutex_lock", err2);
+				system_call_failed::raise("mutex_lock", err2);
 
 	}
 	
 	void release(SLONG count = 1) {
-		int err2 = 0;
+		int err = 0;
 		fb_assert(init == true);
 		for (int i = 0; i < count; i++) 
-			err2 = mutex_lock(&mu) ;
-			if (err2 != 0) {
+		{
+			err = mutex_lock(&mu) ;
+			if (err != 0) {
 				err = cond_broadcast(&cv);
 				if (err != 0) {
-					system_call_failed::raise("Semaphore:release:cond_signal", err);
+					system_call_failed::raise("cond_signal", err);
 				}
 
 				mutex_unlock(&mu);
 			} 
 			else {
 				//gds__log("Error on semaphore.h: release");
-				system_call_failed::raise("Semaphore:release:mutex_lock", err2);
+				system_call_failed::raise("mutex_lock", err);
 			}
+		}	
 	}
 };
 
@@ -350,9 +350,7 @@ public:
 			if (sem_post(&sem) == -1) {
 				//gds__log("Error on semaphore.h: release");
 				system_call_failed::raise("sem_post");
-			}
-	}
-};
+			};
 
 } // namespace Firebird
 
