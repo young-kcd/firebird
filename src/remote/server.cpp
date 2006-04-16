@@ -32,6 +32,9 @@
 #include "../jrd/common.h"
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include "../jrd/ibase.h"
 #include "../jrd/gdsassert.h"
 #include "../remote/remote.h"
@@ -200,6 +203,7 @@ static SLONG		extra_threads		= 0;
 static SERVER_REQ	request_que			= NULL;
 static SERVER_REQ	free_requests		= NULL;
 static SERVER_REQ	active_requests		= NULL;
+static bool			shutting_down		= false;
 static SRVR			servers;
 
 #ifdef MULTI_THREAD
@@ -5029,6 +5033,10 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 			else {
 				REMOTE_TRACE(("got it"));
 			}
+			if (shutting_down)
+			{
+				return 0;
+			}
 			THREAD_ENTER();
 			--threads_waiting;
 		}
@@ -5044,6 +5052,35 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 	return 0;
 }
 #endif
+
+
+void SRVR_shutdown()
+{
+/**************************************
+ *
+ *	S R V R _ s h u t d o w n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Shutdown working threads, waiting for work
+ *  Function is called when shutdowm thread ENTERed,
+ *	and will never EXIT
+ *
+ **************************************/
+	shutting_down = true;
+
+#ifdef MULTI_THREAD
+	int limit = threads_waiting;
+	for (int i=0; i<limit; i++)
+	{
+		requests_semaphore.release();
+	}
+	
+	// let them terminate
+	sleep(1);
+#endif
+}
 
 
 ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)

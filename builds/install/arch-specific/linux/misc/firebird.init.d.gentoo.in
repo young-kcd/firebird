@@ -11,15 +11,14 @@
 
 FIREBIRD=@prefix@
 FBRunUser=firebird
+pidfile=/var/run/firebird/`basename $0`.pid
+FB_OPTS="-pidfile $pidfile -start -forever"
 
-# WARNING: in a real-world installation, you should not put the 
-# SYSDBA password in a publicly-readable file. 
-# Eventually this file should not need to contain any passwords.
-# as root user alone should be sufficient privledge to stop/start 
-# the server.
- 
-#  NOTE: make sure you have localhost in your hosts.equiv file see next 2 
-#  lines for example of hosts.equiv contents
+#  NOTE: Normally firebird installation creates /etc/gds_hosts.equiv,
+#  making it possible normal startup procedure to run. 
+#  In case of manually copying, make sure you have localhost in your 
+#  /etc/gds_hosts.equiv (or hosts.equiv) file.
+#  See next 2 lines for example of hosts.equiv contents:
 #localhost.localdomain
 #localhost
 
@@ -28,12 +27,14 @@ export FIREBIRD
 
 MANAGER=$FIREBIRD/bin/fbmgr.bin
 
-    start(){
-        echo -n "Starting Firebird server: "
-    	echo $MANAGER -start -forever | su $FBRunUser
-    }
+start(){
+	ebegin "Starting firebird server"
+	start-stop-daemon --oknodo --start --pidfile $pidfile --chuid $FBRunUser --startas $MANAGER -- $FB_OPTS
+	eend $?
+}
 
-    stop(){
-		echo -n "Stopping Firebird server: "
-		killall fbserver
-    }
+stop(){
+	ebegin "Stopping firebird"
+	start-stop-daemon --stop --pidfile $pidfile --oknodo
+	eend $?
+}

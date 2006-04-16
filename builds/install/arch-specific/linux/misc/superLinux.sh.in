@@ -70,7 +70,7 @@ installInitdScript() {
     # Install the firebird init.d script
     cp  $FBRootDir/misc/$srcScript $initScript
     chown root:root $initScript
-    chmod ug=rx,o= $initScript  # contains password hence no world read.
+    chmod ug=rx,o=r $initScript
 
 
     # RedHat and Mandrake specific 
@@ -101,6 +101,9 @@ installInitdScript() {
         cp $FBRootDir/misc/rc.config.firebird /etc/sysconfig/firebird
     fi
 
+    # Create directory to store pidfile
+    mkdir $PidDir
+    chown $RunUser:$RunGroup $PidDir
 }
 
 

@@ -40,7 +40,7 @@ fixFilePermissions() {
     
     # Security database
     # Nobody besides firebird permitted to even read this file
-    chown $RunUser.$RunUser $SecurityDatabase
+    chown $RunUser:$RunUser $SecurityDatabase
     chmod 0600 $SecurityDatabase
 
 	# fix up examples' permissions
@@ -61,7 +61,7 @@ fixFilePermissions() {
     # make examples db's writable by group
     for i in `find . -name '*.fdb' -print`
     do
-		chown $RunUser.$RunUser $i
+		chown $RunUser:$RunUser $i
         chmod ug=rw,o= $i
     done
 	

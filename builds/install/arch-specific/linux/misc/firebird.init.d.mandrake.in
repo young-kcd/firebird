@@ -17,6 +17,7 @@
 
 FIREBIRD=@prefix@
 FBRunUser=firebird
+pidfile=/var/run/firebird/`basename $0`.pid
 
 export FIREBIRD 
 
@@ -31,14 +32,17 @@ case "$1" in
   start)
 	echo -n "Starting Firebird server: "
 
-	daemon --user $FBRunUser $FIREBIRD/bin/fbmgr -start -forever
+	daemon --user $FBRunUser $FIREBIRD/bin/fbmgr -pidfile $pidfile -start -forever
 	RETVAL=$?
 	echo
 	;;
   stop)
 	echo -n "Stopping Firebird server: "
 
-	killall fbserver
+	if [ -f $pidfile ]
+	then
+	    kill `cat $pidfile`
+	fi
 	RETVAL=$?
 #	echo
 #	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/identd

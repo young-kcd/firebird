@@ -93,6 +93,7 @@ struct ibmgr_data_t {
 					   passwd or user has been changed */
     isc_svc_handle	attached;	/* !=NULL if we attached to service */
     TEXT		print_file[MAXPATHLEN];/* Dump file name */
+    TEXT		pidfile[MAXPATHLEN];	// fbserver's PID file name
 
 };
 

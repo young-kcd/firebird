@@ -483,8 +483,9 @@ static bool start_server( ibmgr_data_t* data)
 	static char option_o[] = "-o";
 	static char option_s[] = "-s";
 	static char option_f[] = "-f";
+	static char option_p[] = "-p";
 
-	TEXT *argv[4];
+	TEXT *argv[5];
 	argv[0] = path;
 	if (data->suboperation == SOP_START_ONCE)
 		argv[1] = option_o;
@@ -494,6 +495,11 @@ static bool start_server( ibmgr_data_t* data)
 		argv[1] = option_f;
 	argv[2] = NULL;
 	argv[3] = NULL;
+	if (data->pidfile[0]) {
+		argv[2] = option_p;
+		argv[3] = data->pidfile;
+	}
+	argv[4] = NULL;
 
 #ifdef DEBUG
 	printf("Argument list:\n\"%s\"\n\"%s\"\n", argv[0], argv[1]);

@@ -17,7 +17,8 @@
 
 FIREBIRD=@prefix@
 FBRunUser=firebird
-FB_OPTS="-start -forever"
+pidfile=/var/run/firebird/`basename $0`.pid
+FB_OPTS="-pidfile $pidfile -start -forever"
 # WARNING: in a real-world installation, you should not put the 
 # SYSDBA password in a publicly-readable file. 
 # Eventually this file should not need to contain any passwords.
@@ -41,7 +42,10 @@ case "$1" in
 	;;
   stop)
 	echo -n "Stopping Firebird server: "
-	killall fbserver
+	if [ -f $pidfile ]
+	then
+		kill `cat $pidfile`
+	fi
 	RETVAL=$?
 	;;
   restart|reload)

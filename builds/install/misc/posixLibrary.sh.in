@@ -497,7 +497,7 @@ removeLinksForBackCompatibility() {
 
 MakeFileFirebirdWritable() {
     FileName=$1
-    chown $RunUser.$RunUser $FileName
+    chown $RunUser:$RunUser $FileName
     chmod 0644 $FileName
 }
 

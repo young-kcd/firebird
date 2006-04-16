@@ -102,7 +102,7 @@ fixFilePermissions() {
     # make examples db's writable by group
     for i in `find . -name '*.fdb' -print`
     do
-		chown $RunUser.$RunUser $i
+		chown $RunUser:$RunUser $i
         chmod ug=rw,o= $i
     done
 	
