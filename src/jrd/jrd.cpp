@@ -4960,7 +4960,9 @@ static ISC_STATUS error(ISC_STATUS* user_status)
 /* This is debugging code which is meant to verify that
    the database use count is cleared on exit from the
    engine. Database shutdown cannot succeed if the database
-   use count is erroneously left set. */
+   use count is erroneously left set. 
+
+   This check happened to be incompatible with EXECUTE STATEMENT
 
 #if (defined DEV_BUILD && !defined MULTI_THREAD)
 	if (dbb && dbb->dbb_use_count && !(dbb->dbb_flags & DBB_security_db)) {
@@ -4973,7 +4975,7 @@ static ISC_STATUS error(ISC_STATUS* user_status)
 		*p = isc_arg_end;
 	}
 #endif
-
+ */
 	return user_status[1];
 }
 
@@ -5786,8 +5788,10 @@ static ISC_STATUS return_success(thread_db* tdbb)
 /* Decrement count of active threads in database */
 
 	Database* dbb = tdbb->tdbb_database;
-	if (dbb)
+	if (dbb) 
+	{
 		--dbb->dbb_use_count;
+	}
 
 	ISC_STATUS* const user_status = tdbb->tdbb_status_vector;
 	ISC_STATUS* p = user_status;
@@ -5810,8 +5814,10 @@ static ISC_STATUS return_success(thread_db* tdbb)
 /* This is debugging code which is meant to verify that
    the database use count is cleared on exit from the
    engine. Database shutdown cannot succeed if the database
-   use count is erroneously left set. */
+   use count is erroneously left set.
 
+   This check happened to be incompatible with EXECUTE STATEMENT
+   
 #if (defined DEV_BUILD && !defined MULTI_THREAD)
 	if (dbb && dbb->dbb_use_count && !(dbb->dbb_flags & DBB_security_db)) {
 		dbb->dbb_use_count = 0;
@@ -5823,7 +5829,7 @@ static ISC_STATUS return_success(thread_db* tdbb)
 		*p = isc_arg_end;
 	}
 #endif
-
+ */
 	return user_status[1];
 }
 
