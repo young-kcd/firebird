@@ -1,3 +1,84 @@
+2006-04-16 21:56  kkuznetsov
+
+	* firebird2/src/common/classes/semaphore.h (1.24.2.1):
+	
+	Backported from HEAD solaris changes
+
+2006-04-16 19:10  asfernandes
+
+	* firebird2/src/remote/server.cpp (1.126.2.2):
+	
+	Use THREAD_SLEEP as sleep don't exist in WIN32
+
+2006-04-16 19:01  alexpeshkoff
+
+	* firebird2/src/jrd/execute_statement.cpp (1.14.4.1):
+	
+	Fixed bug in VC7.1 builds, reported by Ivan Prenosil
+
+2006-04-16 18:08  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.18.2.2):
+	
+	fixed undocumented use of isc_spb_command_line in db_stat
+
+2006-04-16 17:29  asfernandes
+
+	* firebird2/src/utilities/guard/guard.cpp (1.8.12.2):
+	
+	Correction
+
+2006-04-16 16:35  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.18.2.1):
+	
+	fixed bug, noticed by Roman Rokytskyy with commit/rollback in
+	repair
+
+2006-04-16 14:28  alexpeshkoff
+
+	* firebird2/src/burp/restore.epp (1.101.4.1):
+	
+	make it possible to restore files, created by gbak 1.5.3 and server
+	2.0
+
+2006-04-16 13:55  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.client.util (1.34.4.1):
+	
+	fixed a couple of issues with firebird SS
+	install/startup/shutdown/uninstall
+
+2006-04-16 13:51  alexpeshkoff
+
+	* firebird2/builds/install/:
+	arch-specific/linux/classic/postinstall.sh.in (1.13.4.1),
+	arch-specific/linux/misc/firebird.init.d.debian.in (1.4.4.1),
+	arch-specific/linux/misc/firebird.init.d.generic.in (1.3.4.1),
+	arch-specific/linux/misc/firebird.init.d.gentoo.in (1.2.4.1),
+	arch-specific/linux/misc/firebird.init.d.mandrake.in (1.4.4.1),
+	arch-specific/linux/misc/firebird.init.d.suse.in (1.4.4.1),
+	arch-specific/linux/misc/linuxLibrary.sh.in (1.3.4.1),
+	arch-specific/linux/misc/superLinux.sh.in (1.2.4.1),
+	arch-specific/linux/super/postuninstall.sh.in (1.4.4.1),
+	misc/classicLibrary.sh.in (1.4.4.1), misc/posixLibrary.sh.in
+	(1.4.4.1), misc/superLibrary.sh.in (1.1.6.1):
+	
+	fixed a couple of issues with firebird SS
+	install/startup/shutdown/uninstall
+
+2006-04-16 13:48  alexpeshkoff
+
+	* firebird2/src/: remote/inet_server.cpp (1.58.4.1),
+	remote/serve_proto.h (1.9.12.1), remote/server.cpp (1.126.2.1),
+	utilities/guard/guard.cpp (1.8.12.1), utilities/ibmgr/ibmgr.cpp
+	(1.20.4.1), utilities/ibmgr/ibmgr.h (1.12.4.1),
+	utilities/ibmgr/ibmgrswi.h (1.4.12.1), utilities/ibmgr/srvrmgr.cpp
+	(1.30.4.1):
+	
+	fixed a couple of issues with firebird SS
+	install/startup/shutdown/uninstall
+
 2006-04-14 17:43  alexpeshkoff
 
 	* firebird2/src/include/old_fb_blk.h (1.4.12.1):
