@@ -3598,7 +3598,12 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		}
 #endif
 		SSHORT n = -1;
+#ifndef SOLARIS	
+//known Solaris versions have not MSG_NOSIGNAL	
 		n = send((SOCKET) port->port_handle, data, length, MSG_NOSIGNAL);
+#else
+		n = send((SOCKET) port->port_handle, data, length, 0);
+#endif		
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations) {
 			fprintf(stdout, "After Send n is %d\n", n);
@@ -3639,7 +3644,11 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 #else
 		const char* b = buffer;
 #endif
-		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB | MSG_NOSIGNAL)) == -1 &&
+		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB
+#ifndef SOLARIS								 
+								 | MSG_NOSIGNAL
+#endif								 
+								 )) == -1 &&
 				(INET_ERRNO == ENOBUFS || INTERRUPT_ERROR(INET_ERRNO)))
 		{
 			if (count++ > 20) {
