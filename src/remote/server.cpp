@@ -32,9 +32,6 @@
 #include "../jrd/common.h"
 #include <stdio.h>
 #include <string.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #include "../jrd/ibase.h"
 #include "../jrd/gdsassert.h"
 #include "../remote/remote.h"
