@@ -15,13 +15,16 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.14 2004-03-25 23:12:31 skidder Exp $
+#$Id: prefix.darwin,v 1.15 2006-04-18 10:12:27 alexpeshkoff Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 OS_ServerFiles=inet_server.cpp
 
-PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -MMD -p -fPIC
-DEV_FLAGS=-ggdb -DDARWIN -pipe -MMD -p -fPIC -Wall
+COMMON_FLAGS=-DDARWIN -DFB_SEND_FLAGS=SO_NOSIGPIPE -pipe -MMD -fPIC
+
+PROD_FLAGS=-O3 -DNDEBUG $(COMMON_FLAGS)
+DEV_FLAGS=-ggdb -p -Wall $(COMMON_FLAGS)
+
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
 CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
