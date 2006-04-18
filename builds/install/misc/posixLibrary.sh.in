@@ -260,7 +260,7 @@ replaceLineInFile() {
 	    # The \n is needed, some /etc/services files are missing a trailing
     	# line feed - MOD 12-Dec-2003
 		echo "" >>$TmpFile
-        mv $TmpFile $FileName || rm -f $TmpFile
+        cp $TmpFile $FileName && rm -f $TmpFile
         echo "Updated $1"
     fi
 }
