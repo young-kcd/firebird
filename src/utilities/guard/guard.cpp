@@ -39,10 +39,6 @@
 #include <errno.h>
 #endif
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 #include "../jrd/common.h"
 #include "../jrd/divorce.h"
 #include "../jrd/isc_proto.h"
@@ -225,11 +221,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 	} while (!done);
 
-#ifdef HAVE_UNISTD_H
 	if (pidfilename) {
-		unlink(pidfilename);
+		remove(pidfilename);
 	}
-#endif
 	UTIL_ex_unlock(fd_guard);
 	exit(0);
 }								/* main */
