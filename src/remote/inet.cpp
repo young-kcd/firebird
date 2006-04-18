@@ -3568,6 +3568,10 @@ static int packet_receive(
 	return TRUE;
 }
 
+#ifndef FB_SEND_FLAGS
+#define FB_SEND_FLAGS 0
+#endif
+
 static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_length)
 {
 /**************************************
@@ -3588,14 +3592,6 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 	const char* data = buffer;
 #endif
 
-#if defined(SOLARIS) || defined(WIN_NT)
-//known Solaris versions and other OS don't have MSG_NOSIGNAL
-const int MSG_NOSIGNAL = 0;
-#elif defined(DARWIN)
-//http://lists.apple.com/archives/macnetworkprog/2002/Dec/msg00091.html
-const int MSG_NO_SIGNAL = SO_NOSIGPIPE;
-#endif
-
 	SSHORT length = buffer_length;
 
 	while (length) {
@@ -3607,7 +3603,7 @@ const int MSG_NO_SIGNAL = SO_NOSIGPIPE;
 		}
 #endif
 		SSHORT n = -1;
-		n = send((SOCKET) port->port_handle, data, length, MSG_NOSIGNAL);
+		n = send((SOCKET) port->port_handle, data, length, FB_SEND_FLAGS);
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations) {
 			fprintf(stdout, "After Send n is %d\n", n);
@@ -3648,7 +3644,7 @@ const int MSG_NO_SIGNAL = SO_NOSIGPIPE;
 #else
 		const char* b = buffer;
 #endif
-		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB | MSG_NOSIGNAL)) == -1 &&
+		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB | FB_SEND_FLAGS)) == -1 &&
 				(INET_ERRNO == ENOBUFS || INTERRUPT_ERROR(INET_ERRNO)))
 		{
 			if (count++ > 20) {
