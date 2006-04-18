@@ -80,7 +80,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT option = FOREVER;	/* holds FOREVER or ONETIME  or IGNORE */
 	bool done = true;
 	const TEXT* prog_name = argv[0];
-	TEXT* pidfilename = 0;
+	const TEXT* pidfilename = 0;
 
 	const TEXT* const* const end = argc + argv;
 	argv++;
@@ -176,14 +176,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				fclose(pf);
 			}
 			else {
-				gds__log("%s: guardian could not open %s for writing, error %d\n", 
-						 prog_name, pidfilename, 
-#ifdef HAVE_ERRNO_H
-						 errno
-#else
-						 -1
+#ifndef HAVE_ERRNO_H
+				int errno = -1;
 #endif
-						 );
+				gds__log("%s: guardian could not open %s for writing, error %d\n",
+						 prog_name, pidfilename, errno);
 			}
 		}
 
