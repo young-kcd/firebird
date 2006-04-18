@@ -1,3 +1,22 @@
+2006-04-17 20:39  kkuznetsov
+
+	* firebird2/src/remote/inet.cpp (1.163):
+	
+	
+	Fix compile error on Solaris
+
+2006-04-17 17:52  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.162):
+	
+	Don't raise SIGPIPE when other side terminated connection
+
+2006-04-17 12:40  alexpeshkoff
+
+	* firebird2/src/remote/server.cpp (1.129):
+	
+	removed unneeded h-file
+
 2006-04-17 00:11  asfernandes
 
 	* firebird2/:
