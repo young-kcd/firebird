@@ -15,11 +15,13 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux_sparc32,v 1.6 2005-05-27 22:16:09 asfernandes Exp $
+#$Id: prefix.linux_sparc32,v 1.7 2006-04-18 09:44:41 alexpeshkoff Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
-PROD_FLAGS=-m32 -mcpu=ultrasparc -mtune=ultrasparc -O3 -DNDEBUG -DLINUX -pipe -MMD -fPIC -Dsparc
-DEV_FLAGS=-ggdb -m32 -DLINUX -pipe -MMD -p -fPIC -Wall -Wno-switch -Dsparc
+COMMON_FLAGS=-m32 -DLINUX -pipe -MMD -fPIC -Dsparc -DFB_SEND_FLAGS=MSG_NOSIGNAL
+
+PROD_FLAGS=-mcpu=ultrasparc -mtune=ultrasparc -O3 -DNDEBUG $(COMMON_FLAGS)
+DEV_FLAGS=-ggdb -p -Wall -Wno-switch  $(COMMON_FLAGS)
 
 OS_ServerFiles=inet_server.cpp
 

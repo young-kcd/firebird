@@ -17,7 +17,7 @@
 #
 # Erik Kunze, Philosys GmbH, <kunze@philosys.de>
 #
-# $Id: prefix.sinixz,v 1.24 2004-05-06 12:49:34 eku Exp $
+# $Id: prefix.sinixz,v 1.25 2006-04-18 09:44:41 alexpeshkoff Exp $
 #
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
@@ -25,7 +25,7 @@
 ifneq ($(APC),)
 APC_FLAGS=-I$(APC)/Headers
 endif
-COMMON_FLAGS=-DSINIXZ $(APC_FLAGS)
+COMMON_FLAGS=-DSINIXZ -DFB_SEND_FLAGS=SO_NOSIGPIPE $(APC_FLAGS)
 
 PROD_WARNINGS=-w
 DEV_WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wno-unknown-pragmas
