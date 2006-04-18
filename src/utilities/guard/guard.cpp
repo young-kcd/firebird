@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * $Id: guard.cpp,v 1.8.12.2 2006-04-16 15:29:20 asfernandes Exp $
+ * $Id: guard.cpp,v 1.8.12.3 2006-04-18 08:56:34 alexpeshkoff Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -37,10 +37,6 @@
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
-#endif
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
 #endif
 
 #include "../jrd/common.h"
@@ -228,11 +224,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 	} while (!done);
 
-#ifdef HAVE_UNISTD_H
 	if (pidfilename) {
-		unlink(pidfilename);
+		remove(pidfilename);
 	}
-#endif
 	UTIL_ex_unlock(fd_guard);
 	exit(0);
 }								/* main */
