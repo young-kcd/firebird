@@ -3573,13 +3573,12 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 			reinterpret_cast<bid*>(value->dsc_address));
 
 		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-		fb_assert(BUFFER_SMALL % 4 == 0);	// 4 is our maximum character length
 
 		if (charSet->isMultiByte())
 			buffer.getBuffer(blob->blb_length);	// alloc space to put entire blob in memory
 
 		blb* newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
-			reinterpret_cast<bid*>(impure->vlu_desc.dsc_address));
+			&impure->vlu_misc.vlu_bid);
 
 		while (!(blob->blb_flags & BLB_eof))
 		{
@@ -3608,18 +3607,7 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 		INTL_ASSIGN_TTYPE(&desc, ttype);
 		EVL_make_value(tdbb, &desc, impure);
 
-		if ((desc.dsc_ttype() == ttype_ascii) ||
-			(desc.dsc_ttype() == ttype_none))
-		{
-			UCHAR* p = impure->vlu_desc.dsc_address;
-			for (const UCHAR* const end = p + impure->vlu_desc.dsc_length;
-				p < end; p++)
-			{
-				*p = LOWWER7(*p);
-			}
-		}
-		else
-			intl_str_to_case(tdbb, &impure->vlu_desc);
+		intl_str_to_case(tdbb, &impure->vlu_desc);
 	}
 
 	return &impure->vlu_desc;
