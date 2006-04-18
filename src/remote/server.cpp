@@ -5069,7 +5069,7 @@ void SRVR_shutdown()
 
 #ifdef MULTI_THREAD
 	int limit = threads_waiting;
-	for (int i=0; i<limit; i++)
+	for (int i = 0; i < limit; i++)
 	{
 		requests_semaphore.release();
 	}
