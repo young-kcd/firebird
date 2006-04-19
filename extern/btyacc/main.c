@@ -1,9 +1,10 @@
 #include "defs.h"
 #include <signal.h>
 #include <stdio.h>
-#include <io.h>
 
-#if !defined(WIN32)
+#if defined(WIN32)
+#include <io.h>
+#else
 #include <unistd.h>
 #endif
 
