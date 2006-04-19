@@ -1,3 +1,9 @@
+2006-04-18 13:22  hvlad
+
+	* firebird2/src/jrd/why.cpp (1.23.2.4.2.4):
+	
+	Bug fix : get database handle from statement, not transaction
+
 2006-04-08 13:33  hvlad
 
 	* firebird2/src/jrd/why.cpp (1.23.2.4.2.3):
