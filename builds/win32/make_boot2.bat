@@ -40,6 +40,15 @@ for %%v in ( alice burp dsql dudley gpre isql journal jrd misc msgs qli examples
 @mkdir %ROOT_PATH%\gen\utilities\gsec 2>nul
 
 ::=======
+call :btyacc
+if "%ERRLEV%"=="1" goto :END
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\btyacc.exe %ROOT_PATH%\gen\ > nul
+
+@echo Generating DSQL parser...
+@call parse.bat
+if "%ERRLEV%"=="1" goto :END
+
+::=======
 @echo.
 @echo Building BLR Table
 @call blrtable.bat
@@ -96,6 +105,19 @@ if "%ERRLEV%"=="1" goto :END
 @call :NEXT_STEP
 @goto END:
 
+
+::===================
+:: BUILD btyacc
+:btyacc
+@echo.
+@echo Building btyacc...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "btyacc - Win32 Release"  %CLEAN% /OUT btyacc.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project btyacc %CLEAN% release /OUT btyacc.log
+)
+if errorlevel 1 call :boot2 btyacc
+goto :EOF
 
 ::===================
 :: BUILD gpre_boot_release
