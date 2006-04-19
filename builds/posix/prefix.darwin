@@ -15,7 +15,6 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin,v 1.15 2006-04-18 10:12:27 alexpeshkoff Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 OS_ServerFiles=inet_server.cpp

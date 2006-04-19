@@ -15,7 +15,6 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux_generic,v 1.3 2006-04-18 09:44:41 alexpeshkoff Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
 COMMON_FLAGS=-DLINUX -pipe -MMD -fPIC -DFB_SEND_FLAGS=MSG_NOSIGNAL
