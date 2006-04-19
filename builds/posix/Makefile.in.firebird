@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.67 2005-12-18 17:56:17 alexpeshkoff Exp $
+#  $Id: Makefile.in.firebird,v 1.68 2006-04-19 11:45:05 dimitr Exp $
 #
 
 ROOT=..
@@ -131,7 +131,7 @@ export LD_LIBRARY_PATH
 # MOD 28-July-2002)
 .PHONY: all firebird firebird_boot firebird_basic 
 .PHONY: firebird_embedded firebird_server classic_programs super_programs
-.PHONY: firebird_super firebird_classic
+.PHONY: firebird_super firebird_classic btyacc_binary
 
 
 # The main targets are firebird_embedded or firebird_server
@@ -155,7 +155,7 @@ firebird_super firebird_server: firebird_basic super_targets
 # some complications particularly for super in needing to start the server
 # that you are currently building. MOD 28-July-2002
 
-firebird_basic: external_libraries firebird_boot basic_targets
+firebird_basic: btyacc_binary external_libraries firebird_boot basic_targets
 
 firebird_boot: updateBuildNum boot_phase1 boot_phase2 
 
@@ -190,6 +190,11 @@ external_libraries:
 ifeq ($(EDITLINE_FLG),Y)
 	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
 endif
+
+btyacc_binary: $(BTYACC)
+
+$(BTYACC): 
+	$(MAKE) -C $(ROOT)/extern/btyacc
 
 #---------------------------------------------------------------------------
 # Phase1: make a gpre_static from scratch so we can parse .e and .epp files

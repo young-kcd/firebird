@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.44 2005-12-28 06:58:28 aafemt Exp $
+#   $Id: make.defaults,v 1.45 2006-04-19 11:45:05 dimitr Exp $
 # 
 
 
@@ -114,6 +114,7 @@ AR=			ar crsu
 LN=			@LN_S@
 RANLIB=			@RANLIB@
 YACC=			@YACC@
+BTYACC=$(ROOT)/extern/btyacc/btyacc
 
 # Default extensions
 
