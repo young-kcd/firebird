@@ -97,7 +97,7 @@ namespace BTreeNode {
 	UCHAR* previousNode(Ods::IndexNode* node, UCHAR* pointer,
 				UCHAR flags,  btree_exp** expanded_node);
 
-	void quad_put(SLONG value, UCHAR *data);
+	//void quad_put(SLONG value, UCHAR *data);
 
 	UCHAR* readJumpInfo(Ods::IndexJumpInfo* jumpInfo, UCHAR* pagePointer);
 	UCHAR* readJumpNode(Ods::IndexJumpNode* jumpNode, UCHAR* pagePointer, UCHAR flags);
