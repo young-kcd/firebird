@@ -273,7 +273,7 @@ bool NAV_get_record(thread_db* tdbb,
 	Ods::IndexNode node;
 	while (true) {
 		Ods::btree_page* page = (Ods::btree_page*) window.win_buffer;
-		const SCHAR flags = page->btr_header.pag_flags;
+		const UCHAR flags = page->btr_header.pag_flags;
 
 		UCHAR* pointer = nextPointer;
 		btree_exp* expanded_node = expanded_next;
@@ -589,7 +589,7 @@ static void expand_index(WIN * window)
 	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
 	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 
-	const SCHAR flags = page->pag_flags;
+	const UCHAR flags = page->pag_flags;
 	IndexNode node, priorNode;
 
 	while (pointer < endPointer) {
@@ -646,7 +646,7 @@ static btree_exp* find_current(exp_index_buf* expanded_page, Ods::btree_page* pa
 	}
 
 	btree_exp* expanded_node = expanded_page->exp_nodes;
-	const SCHAR flags = page->btr_header.pag_flags;
+	const UCHAR flags = page->btr_header.pag_flags;
 	UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
 	const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 	Ods::IndexNode node;
@@ -690,7 +690,7 @@ static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
 	// looking for the node (in case the page has split);
 	// the inner loop goes through the nodes on each page
 	temporary_key key;
-	const SCHAR flags = page->btr_header.pag_flags;
+	const UCHAR flags = page->btr_header.pag_flags;
 	Ods::IndexNode node;
 	while (true) {
 		UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
@@ -790,7 +790,7 @@ static UCHAR* get_position(
 #endif
 
 	UCHAR* pointer = 0;
-	const SCHAR flags = page->btr_header.pag_flags;
+	const UCHAR flags = page->btr_header.pag_flags;
 	const SLONG incarnation = CCH_get_incarnation(window);
 	Ods::IndexNode node;
 	if (incarnation == impure->irsb_nav_incarnation) {

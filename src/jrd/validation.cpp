@@ -657,8 +657,8 @@ static void garbage_collect(thread_db*, vdr*);
 #ifdef DEBUG_VAL_VERBOSE
 static void print_rhd(USHORT, const rhd*);
 #endif
-static RTN walk_blob(thread_db*, vdr*, jrd_rel*, BLH, USHORT, SLONG);
-static RTN walk_chain(thread_db*, vdr*, jrd_rel*, RHD, SLONG);
+static RTN walk_blob(thread_db*, vdr*, jrd_rel*, blh*, USHORT, SLONG);
+static RTN walk_chain(thread_db*, vdr*, jrd_rel*, rhd*, SLONG);
 static void walk_database(thread_db*, vdr*);
 static RTN walk_data_page(thread_db*, vdr*, jrd_rel*, SLONG, SLONG);
 static void walk_generators(thread_db*, vdr*);
@@ -667,7 +667,7 @@ static RTN walk_index(thread_db*, vdr*, jrd_rel*, index_root_page&, USHORT);
 static void walk_log(thread_db*, vdr*);
 static void walk_pip(thread_db*, vdr*);
 static RTN walk_pointer_page(thread_db*, vdr*, jrd_rel*, int);
-static RTN walk_record(thread_db*, vdr*, jrd_rel*, RHD, USHORT, SLONG, bool);
+static RTN walk_record(thread_db*, vdr*, jrd_rel*, rhd*, USHORT, SLONG, bool);
 static RTN walk_relation(thread_db*, vdr*, jrd_rel*);
 static RTN walk_root(thread_db*, vdr*, jrd_rel*);
 static RTN walk_tip(thread_db*, vdr*, SLONG);
@@ -957,8 +957,7 @@ static void print_rhd(USHORT length, const rhd* header)
 		fprintf(stdout, "BP %d/%d flags 0x%x ",
 				   header->rhd_b_page, header->rhd_b_line, header->rhd_flags);
 		if (header->rhd_flags & rhd_incomplete) {
-			RHDF fragment;
-			fragment = (RHDF) header;
+			rhdf* fragment = (rhdf*) header;
 			fprintf(stdout, "FP %d/%d ",
 					   fragment->rhdf_f_page, fragment->rhdf_f_line);
 		}
@@ -985,7 +984,7 @@ static void print_rhd(USHORT length, const rhd* header)
 
 static RTN walk_blob(thread_db* tdbb,
 					 vdr* control,
-					 jrd_rel* relation, BLH header, USHORT length, SLONG number)
+					 jrd_rel* relation, blh* header, USHORT length, SLONG number)
 {
 /**************************************
  *
@@ -1065,7 +1064,7 @@ static RTN walk_blob(thread_db* tdbb,
 
 static RTN walk_chain(thread_db* tdbb,
 					  vdr* control,
-					  jrd_rel* relation, RHD header, SLONG head_number)
+					  jrd_rel* relation, rhd* header, SLONG head_number)
 {
 /**************************************
  *
@@ -1097,7 +1096,7 @@ static RTN walk_chain(thread_db* tdbb,
 		data_page* page = 0;
 		fetch_page(tdbb, control, page_number, pag_data, &window, &page);
 		const data_page::dpg_repeat* line = &page->dpg_rpt[line_number];
-		header = (RHD) ((UCHAR *) page + line->dpg_offset);
+		header = (rhd*) ((UCHAR *) page + line->dpg_offset);
 		if (page->dpg_count <= line_number ||
 			!line->dpg_length ||
 			(header->rhd_flags & (rhd_blob | rhd_fragment)) ||
@@ -1224,7 +1223,7 @@ static RTN walk_data_page(thread_db* tdbb,
 		}
 #endif
 		if (line->dpg_length) {
-			rhd* header = (RHD) ((UCHAR *) page + line->dpg_offset);
+			rhd* header = (rhd*) ((UCHAR *) page + line->dpg_offset);
 			if ((UCHAR *) header < (UCHAR *) end ||
 				(UCHAR *) header + line->dpg_length > end_page)
 			{
@@ -1274,7 +1273,7 @@ static RTN walk_data_page(thread_db* tdbb,
 				 (control->vdr_flags & vdr_records)))
 			{
 				const RTN result = (header->rhd_flags & rhd_blob) ?
-					walk_blob(tdbb, control, relation, (BLH) header,
+					walk_blob(tdbb, control, relation, (blh*) header,
 							  line->dpg_length, number) :
 					walk_record(tdbb, control, relation, header,
 								line->dpg_length, number, false);
@@ -1427,11 +1426,12 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	bool nullKeyNode = false;			// current node is a null key of unique index
 	bool nullKeyHandled = !(unique && null_key);	// null key of unique index was handled
 
-	SCHAR flags = 0;
+	UCHAR flags = 0;
 	UCHAR* pointer;
 	IndexNode node, lastNode;
 
-	while (next) {
+	while (next)
+	{
 		WIN window(-1);
 		btree_page* page = 0;
 		fetch_page(tdbb, control, next, pag_index, &window, &page);
@@ -1865,7 +1865,7 @@ static RTN walk_pointer_page(	thread_db*	tdbb,
 static RTN walk_record(thread_db* tdbb,
 					   vdr* control,
 					   jrd_rel* relation,
-					   RHD header,
+					   rhd* header,
 					   USHORT length, SLONG number, bool delta_flag)
 {
 /**************************************
@@ -1921,17 +1921,17 @@ static RTN walk_record(thread_db* tdbb,
 
 /* Pick up what length there is on the fragment */
 
-	RHDF fragment = (RHDF) header;
+	const rhdf* fragment = (rhdf*) header;
 
-	char* p;
+	const char* p;
 	const char* end;
 	if (header->rhd_flags & rhd_incomplete) {
 		p = (SCHAR *) fragment->rhdf_data;
-		end = p + length - OFFSETA(RHDF, rhdf_data);
+		end = p + length - OFFSETA(rhdf*, rhdf_data);
 	}
 	else {
 		p = (SCHAR *) header->rhd_data;
-		end = p + length - OFFSETA(RHD, rhd_data);
+		end = p + length - OFFSETA(rhd*, rhd_data);
 	}
 
 	USHORT record_length = 0;
@@ -1952,7 +1952,7 @@ static RTN walk_record(thread_db* tdbb,
 
 	SLONG page_number = fragment->rhdf_f_page;
 	USHORT line_number = fragment->rhdf_f_line;
-	UCHAR flags = fragment->rhdf_flags;
+	USHORT flags = fragment->rhdf_flags;
 
 	data_page* page = 0;
 	while (flags & rhd_incomplete) {
@@ -1967,21 +1967,21 @@ static RTN walk_record(thread_db* tdbb,
 			CCH_RELEASE(tdbb, &window);
 			return rtn_corrupt;
 		}
-		fragment = (RHDF) ((UCHAR *) page + line->dpg_offset);
+		fragment = (rhdf*) ((UCHAR *) page + line->dpg_offset);
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level) {
 			fprintf(stdout, "fragment: pg %d/%d ",
 					   page_number, line_number);
-			print_rhd(line->dpg_length, (RHD) fragment);
+			print_rhd(line->dpg_length, (rhd*) fragment);
 		}
 #endif
 		if (fragment->rhdf_flags & rhd_incomplete) {
 			p = (SCHAR *) fragment->rhdf_data;
-			end = p + line->dpg_length - OFFSETA(RHDF, rhdf_data);
+			end = p + line->dpg_length - OFFSETA(rhdf*, rhdf_data);
 		}
 		else {
-			p = (SCHAR *) ((RHD) fragment)->rhd_data;
-			end = p + line->dpg_length - OFFSETA(RHD, rhd_data);
+			p = (SCHAR *) ((rhd*) fragment)->rhd_data;
+			end = p + line->dpg_length - OFFSETA(rhd*, rhd_data);
 		}
 		while (p < end) {
 			const char c = *p++;

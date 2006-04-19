@@ -521,11 +521,11 @@ static void dmp_data(const data_page* page)
 			fprintf(dbg_file, "\n\t%d - (empty)\n", i);
 			continue;
 		}
-		const rhd* header = (RHD) ((SCHAR *) page + index->dpg_offset);
-		const rhdf* fragment = (RHDF) header;
+		const rhd* header = (rhd*) ((SCHAR *) page + index->dpg_offset);
+		const rhdf* fragment = (rhdf*) header;
 		if (header->rhd_flags & rhd_blob)
 		{
-			const blh* blob = (BLH) header;
+			const blh* blob = (blh*) header;
 			fprintf(dbg_file,
 					   "\n\t%d - (blob) offset: %d, length: %d, flags: %x\n",
 					   i, index->dpg_offset, index->dpg_length,
@@ -548,12 +548,12 @@ static void dmp_data(const data_page* page)
 			{
 				if (header->rhd_flags & rhd_incomplete)
 				{
-					length = index->dpg_length - OFFSETA(RHDF, rhdf_data);
-					p = (SCHAR *) ((RHDF) header)->rhdf_data;
+					length = index->dpg_length - OFFSETA(rhdf*, rhdf_data);
+					p = (SCHAR *) ((rhdf*) header)->rhdf_data;
 				}
 				else
 				{
-					length = index->dpg_length - OFFSETA(RHD, rhd_data);
+					length = index->dpg_length - OFFSETA(rhd*, rhd_data);
 					p = (SCHAR *) header->rhd_data;
 				}
 				const char* q = p;
@@ -780,7 +780,7 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 			(USHORT)((ULONG) ((page_size - OFFSETA(pointer_page*, ppg_page)) * 8) /
 						(BITS_PER_LONG + 2));
 	const USHORT max_records = (page_size - sizeof(data_page)) /
-								(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
+								(sizeof(data_page::dpg_repeat) + OFFSETA(rhd*, rhd_data));
 
 	const btree_nod* const end  = (btree_nod*) ((UCHAR *) page + page->btr_length);
 	btree_nod* node = (btree_nod*) page->btr_nodes;

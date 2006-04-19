@@ -80,13 +80,13 @@ DATABASE DB = FILENAME "ODS.RDB";
 using namespace Jrd;
 using namespace Ods;
 
-static void delete_tail(thread_db*, RHDF, USHORT);
+static void delete_tail(thread_db*, rhdf*, USHORT);
 static void fragment(thread_db*, record_param*, SSHORT, DataComprControl*, SSHORT, const jrd_tra*);
 static void extend_relation(thread_db*, jrd_rel*, WIN *);
 static UCHAR* find_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
 static bool get_header(WIN *, SSHORT, record_param*);
 static pointer_page* get_pointer_page(thread_db*, jrd_rel*, WIN *, USHORT, USHORT);
-static RHD locate_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
+static rhd* locate_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
 static void mark_full(thread_db*, record_param*);
 static void release_dcc(DataComprControl*);
 static void store_big_record(thread_db*, record_param*, PageStack&, DataComprControl*, USHORT);
@@ -158,7 +158,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 	*index1 = *index2;
 	index2->dpg_offset = index2->dpg_length = 0;
 
-	rhd* header = (RHD) ((SCHAR *) page + index1->dpg_offset);
+	rhd* header = (rhd*) ((SCHAR *) page + index1->dpg_offset);
 	header->rhd_flags &= ~(rhd_chain | rhd_gc_active);
 
 #ifdef VIO_DEBUG
@@ -428,14 +428,14 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 	new_rpb->rpb_line = org_rpb->rpb_line;
 
 	data_page::dpg_repeat* index2 = page->dpg_rpt + org_rpb->rpb_line;
-	rhd* header = (RHD) ((SCHAR *) page + index2->dpg_offset);
+	rhd* header = (rhd*) ((SCHAR *) page + index2->dpg_offset);
 	header->rhd_flags |= rhd_chain;
 	page->dpg_rpt[slot] = *index2;
 
 	index2->dpg_offset = space;
 	index2->dpg_length = RHD_SIZE + size + fill;
 
-	header = (RHD) ((SCHAR *) page + space);
+	header = (rhd*) ((SCHAR *) page + space);
 	header->rhd_flags = new_rpb->rpb_flags;
 	header->rhd_transaction = new_rpb->rpb_transaction_nr;
 	header->rhd_format = new_rpb->rpb_format_number;
@@ -880,10 +880,10 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
 				{
 					if (line->dpg_length)
 					{
-						rhd* header = (RHD) ((UCHAR *) dpage + line->dpg_offset);
+						rhd* header = (rhd*) ((UCHAR *) dpage + line->dpg_offset);
 						if (header->rhd_flags & rhd_large)
 						{
-							delete_tail(tdbb, (RHDF)header, line->dpg_length);
+							delete_tail(tdbb, (rhdf*)header, line->dpg_length);
 						}
 					}
 				}
@@ -1379,7 +1379,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		goto punt;
 	}
 
-	blh* header = (BLH) ((SCHAR *) page + index->dpg_offset);
+	blh* header = (blh*) ((SCHAR *) page + index->dpg_offset);
 	if (!(header->blh_flags & rhd_blob)) {
 		goto punt;
 	}
@@ -1645,7 +1645,7 @@ bool DPM_next(thread_db* tdbb,
 			}
 		}
 
-		const SSHORT flags = ppage->ppg_header.pag_flags;
+		const UCHAR flags = ppage->ppg_header.pag_flags;
 		if (backwards) {
 			pp_sequence--;
 			slot = ppage->ppg_count - 1;
@@ -1987,7 +1987,7 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 /* Locate space to store blob */
 
 	rpb.rpb_relation = blob->blb_relation;
-	blh* header = (BLH) locate_space(tdbb,
+	blh* header = (blh*) locate_space(tdbb,
 								&rpb,
 								(SSHORT)(BLH_SIZE + length),
 								stack,
@@ -2055,7 +2055,7 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 
 	WIN* window = &rpb->rpb_window;
 	data_page* page = (data_page*) window->win_buffer;
-	rhd* header = (RHD) ((SCHAR *) page + page->dpg_rpt[rpb->rpb_line].dpg_offset);
+	rhd* header = (rhd*) ((SCHAR *) page + page->dpg_rpt[rpb->rpb_line].dpg_offset);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO) {
@@ -2174,7 +2174,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 	page->dpg_rpt[slot].dpg_offset = space;
 	page->dpg_rpt[slot].dpg_length = RHD_SIZE + size + fill;
 
-	rhd* header = (RHD) ((SCHAR *) page + space);
+	rhd* header = (rhd*) ((SCHAR *) page + space);
 	header->rhd_flags = rpb->rpb_flags;
 	header->rhd_transaction = rpb->rpb_transaction_nr;
 	header->rhd_format = rpb->rpb_format_number;
@@ -2204,7 +2204,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 }
 
 
-static void delete_tail( thread_db* tdbb, RHDF header, USHORT length)
+static void delete_tail( thread_db* tdbb, rhdf* header, USHORT length)
 {
 /**************************************
  *
@@ -2242,7 +2242,7 @@ static void delete_tail( thread_db* tdbb, RHDF header, USHORT length)
 		while (true) {
 			window.win_page = page_number;
 			data_page* dpage = (data_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_data);
-			header = (RHDF) ((UCHAR *) dpage + dpage->dpg_rpt[0].dpg_offset);
+			header = (rhdf*) ((UCHAR *) dpage + dpage->dpg_rpt[0].dpg_offset);
 			const USHORT flags = header->rhdf_flags;
 			page_number = header->rhdf_f_page;
 			CCH_RELEASE_TAIL(tdbb, &window);
@@ -2256,7 +2256,7 @@ static void delete_tail( thread_db* tdbb, RHDF header, USHORT length)
 
 /* Object is a blob, and a big one at that */
 
-	blh* blob = (BLH) header;
+	blh* blob = (blh*) header;
 	const SLONG* page1 = blob->blh_page;
 	const SLONG* const end1 = page1 + (length - BLH_SIZE) / sizeof(SLONG);
 
@@ -2376,20 +2376,20 @@ static void fragment(
 
 	rhdf* header;
 	if (transaction->tra_number != rpb->rpb_transaction_nr) {
-		header = (RHDF) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
+		header = (rhdf*) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
 		header->rhdf_transaction = transaction->tra_number;
 		header->rhdf_flags |= rhd_gc_active;
 		page->dpg_rpt[line].dpg_length = available_space = length;
 	}
 	else {
 		if (rpb->rpb_flags & rpb_delta) {
-			header = (RHDF) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
+			header = (rhdf*) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
 			header->rhdf_flags |= rpb_delta;
 			page->dpg_rpt[line].dpg_length = available_space = length;
 		}
 		else {
 			const SSHORT space = DPM_compress(tdbb, page) - available_space;
-			header = (RHDF) ((SCHAR *) page + space);
+			header = (rhdf*) ((SCHAR *) page + space);
 			header->rhdf_flags = rhd_deleted;
 			header->rhdf_f_page = header->rhdf_f_line = 0;
 			page->dpg_rpt[line].dpg_offset = space;
@@ -2447,7 +2447,7 @@ static void fragment(
 	CCH_precedence(tdbb, window, tail_rpb.rpb_page);
 	CCH_MARK(tdbb, window);
 
-	header = (RHDF) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
+	header = (rhdf*) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
 	header->rhdf_flags = rhd_incomplete | rpb->rpb_flags;
 	header->rhdf_transaction = rpb->rpb_transaction_nr;
 	header->rhdf_format = rpb->rpb_format_number;
@@ -2689,7 +2689,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 			space = MIN(space, index->dpg_offset);
 			used += ROUNDUP(index->dpg_length, ODS_ALIGNMENT);
 			if (type == DPM_primary && reserving) {
-				const rhd* header = (RHD) ((SCHAR *) page + index->dpg_offset);
+				const rhd* header = (rhd*) ((SCHAR *) page + index->dpg_offset);
 				if (!header->rhd_b_page &&
 					!(header->rhd_flags & (rhd_chain | rhd_blob |
 										   rhd_deleted | rhd_fragment)))
@@ -2775,7 +2775,7 @@ static bool get_header( WIN * window, SSHORT line, record_param* rpb)
 		return false;
 	}
 
-	rhdf* header = (RHDF) ((SCHAR *) page + index->dpg_offset);
+	rhdf* header = (rhdf*) ((SCHAR *) page + index->dpg_offset);
 	rpb->rpb_page = window->win_page;
 	rpb->rpb_line = line;
 	rpb->rpb_flags = header->rhdf_flags;
@@ -2794,7 +2794,7 @@ static bool get_header( WIN * window, SSHORT line, record_param* rpb)
 		rpb->rpb_length = index->dpg_length - RHDF_SIZE;
 	}
 	else {
-		rpb->rpb_address = ((RHD) header)->rhd_data;
+		rpb->rpb_address = ((rhd*) header)->rhd_data;
 		rpb->rpb_length = index->dpg_length - RHD_SIZE;
 	}
 
@@ -2857,7 +2857,7 @@ static pointer_page* get_pointer_page(
 }
 
 
-static RHD locate_space(
+static rhd* locate_space(
 						thread_db* tdbb,
 						record_param* rpb,
 						SSHORT size, PageStack& stack, Record* record, USHORT type)
@@ -2898,7 +2898,7 @@ static RHD locate_space(
 				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
 				UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
 				if (space)
-					return (RHD) space;
+					return (rhd*) space;
 			}
 			else {
 				CCH_RELEASE(tdbb, window);
@@ -2925,7 +2925,7 @@ static RHD locate_space(
 				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
 				UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
 				if (space)
-					return (RHD) space;
+					return (rhd*) space;
 				window->win_page = pp_number;
 				ppage = (pointer_page*) CCH_FETCH(tdbb, window, LCK_read, pag_pointer);
 			}
@@ -2966,7 +2966,7 @@ static RHD locate_space(
 	}
 #endif
 
-	return (RHD) space;
+	return (rhd*) space;
 }
 
 
@@ -3139,7 +3139,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 		page->dpg_header.pag_flags = dpg_orphan | dpg_full;
 		page->dpg_relation = rpb->rpb_relation->rel_id;
 		page->dpg_count = 1;
-		rhdf* header = (RHDF) & page->dpg_rpt[1];
+		rhdf* header = (rhdf*) & page->dpg_rpt[1];
 		page->dpg_rpt[0].dpg_offset = (UCHAR *) header - (UCHAR *) page;
 		page->dpg_rpt[0].dpg_length = max_data + RHDF_SIZE;
 		header->rhdf_flags = (prior) ?
@@ -3216,7 +3216,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 	size =
 		SQZ_length(tdbb, (SCHAR*) rpb->rpb_address, in - (SCHAR *) rpb->rpb_address,
 				   head_dcc);
-	rhdf* header = (RHDF)locate_space(tdbb, rpb, (SSHORT)(RHDF_SIZE + size), stack,
+	rhdf* header = (rhdf*)locate_space(tdbb, rpb, (SSHORT)(RHDF_SIZE + size), stack,
 								NULL, DPM_other);
 
 	header->rhdf_flags = rhd_incomplete | rhd_large | rpb->rpb_flags;

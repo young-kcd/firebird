@@ -1280,7 +1280,7 @@ void PAG_init(void)
    gives an artificially high number, reducing the density of db_keys. */
 
 	dbb->dbb_max_records = (dbb->dbb_page_size - sizeof(data_page)) /
-		(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
+		(sizeof(data_page::dpg_repeat) + OFFSETA(rhd*, rhd_data));
 
 	// Artifically reduce density of records to test high bits of record number
 	// dbb->dbb_max_records = 32000;

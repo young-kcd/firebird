@@ -176,7 +176,7 @@ enum contents {
 
 typedef contents CONTENTS;
 
-static SLONG add_node(thread_db*, WIN*, index_insertion*, temporary_key*, RecordNumber*, 
+static SLONG add_node(thread_db*, WIN*, index_insertion*, temporary_key*, RecordNumber*,
 					  SLONG*, SLONG*);
 static void compress(thread_db*, const dsc*, temporary_key*, USHORT, bool, bool, USHORT);
 static USHORT compress_root(thread_db*, index_root_page*);
@@ -552,7 +552,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 		skipLowerKey = false;
 	}
 
-	const SCHAR flags = page->btr_header.pag_flags;
+	const UCHAR flags = page->btr_header.pag_flags;
 	// if there is an upper bound, scan the index pages looking for it
 	if (retrieval->irb_upper_count)	{
 		while (scan(tdbb, pointer, bitmap, &idx, retrieval, prefix, &upper, flags, 
@@ -892,7 +892,7 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	}
 
 	// hvlad: save some info from bucket for latter use before releasing a page
-	const SCHAR flags = bucket->btr_header.pag_flags;
+	const UCHAR flags = bucket->btr_header.pag_flags;
 	const USHORT btr_relation = bucket->btr_relation;
 	const UCHAR btr_level = bucket->btr_level + 1;
 	const UCHAR btr_id = bucket->btr_id;
@@ -1248,10 +1248,10 @@ UCHAR *BTR_last_node(btree_page* page, exp_index_buf* expanded_page, btree_exp**
 	// starting at the end of the page, find the
 	// first node that is not an end marker
 	UCHAR *pointer = ((UCHAR*)page + page->btr_length);
-	const SCHAR flags = page->pag_flags;
+	const UCHAR flags = page->pag_flags;
 	IndexNode node;
 	while (true) {
-		pointer = BTR_previousNode(&node, pointer, flags, &enode);
+		pointer = BTreeNode::previousNode(&node, pointer, flags, &enode);
 		if (!node.isEndBucket && !node.isEndLevel) {
 			if (expanded_node) {
 				*expanded_node = enode;
@@ -1620,55 +1620,6 @@ bool BTR_next_index(thread_db* tdbb,
 }
 
 
-UCHAR* BTR_nextNode(IndexNode* node, UCHAR* pointer,
-					SCHAR flags,  btree_exp** expanded_node)
-{
-/**************************************
- *
- *	B T R _ n e x t N o d e
- *
- **************************************
- *
- * Functional description                               
- *	Find the next node on both the index page
- *	and its associated expanded buffer.
- *
- **************************************/
-
-	pointer = BTreeNode::readNode(node, pointer, flags, true);
-
-	if (*expanded_node) {
-		*expanded_node = (btree_exp*) ((UCHAR*) (*expanded_node)->btx_data +
-			node->prefix + node->length);
-	}
-
-	return pointer;
-}
-
-
-UCHAR *BTR_previousNode(IndexNode* node, UCHAR* pointer,
-					SCHAR flags,  btree_exp** expanded_node)
-{
-/**************************************
- *
- *	B T R _ p r e v i o u s N o d e
- *
- **************************************
- *
- * Functional description                               
- *	Find the previous node on a page.  Used when walking
- *	an index backwards.  
- *
- **************************************/
-
-	pointer = (pointer - (*expanded_node)->btx_btr_previous_length);
-
-	*expanded_node = (btree_exp*) ((UCHAR*) *expanded_node - (*expanded_node)->btx_previous_length);
-
-	return pointer;
-}
-
-
 void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 {
 /**************************************
@@ -1717,7 +1668,7 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 		// get the page number of the child, and check to make sure 
 		// the page still has only one node on it
 		UCHAR *pointer = BTreeNode::getPointerFirstNode(page);
-		const SCHAR flags = page->btr_header.pag_flags;
+		const UCHAR flags = page->btr_header.pag_flags;
 		IndexNode pageNode;
 		pointer = BTreeNode::readNode(&pageNode, pointer, flags, false);
 
@@ -1901,7 +1852,7 @@ void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 	btree_page* bucket = (btree_page*) CCH_HANDOFF(tdbb, &window, page, LCK_read, pag_index);
-	SCHAR flags = bucket->btr_header.pag_flags;
+	UCHAR flags = bucket->btr_header.pag_flags;
 
 	// go down the left side of the index to leaf level
 	UCHAR* pointer = BTreeNode::getPointerFirstNode(bucket);
@@ -2730,7 +2681,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 
 	CCH_MARK(tdbb, window);
 
-	const SCHAR flags = page->btr_header.pag_flags;
+	const UCHAR flags = page->btr_header.pag_flags;
 	const bool leafPage = (page->btr_level == 0);
 	const bool useJumpInfo = (flags & btr_jump_info);
 	//const SLONG nodeOffset = pointer - (UCHAR*)page;
@@ -2862,7 +2813,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 	// check to see if the page is now empty
 	pointer = BTreeNode::getPointerFirstNode(page);
 	//bool leafPage = (page->btr_level == 0);
-	//const SCHAR flags = page->pag_flags;
+	//const UCHAR flags = page->pag_flags;
 	IndexNode node;
 	pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
 	if (node.isEndBucket || node.isEndLevel) {
@@ -3869,7 +3820,7 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
  *
  **************************************/
 
-	const SCHAR flags = bucket->btr_header.pag_flags;
+	const UCHAR flags = bucket->btr_header.pag_flags;
 	USHORT prefix = 0;
 	const UCHAR* const key_end = key->key_data + key->key_length;
 	if (!(flags & btr_all_record_number)) {
@@ -4123,7 +4074,7 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
  *  a node at a specific offset.
  *
  **************************************/
-	const SCHAR flags = bucket->btr_header.pag_flags;
+	const UCHAR flags = bucket->btr_header.pag_flags;
 	UCHAR *pointer;
 	USHORT prefix = 0;
 	if (flags & btr_jump_info) {
@@ -4325,7 +4276,7 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
  *
  **************************************/
 
-	const SCHAR flags = bucket->btr_header.pag_flags;
+	const UCHAR flags = bucket->btr_header.pag_flags;
 	const bool leafPage = (bucket->btr_level == 0);
 	bool firstPass = true;
 	const bool descending = (idx_flags & idx_descending);
@@ -4738,7 +4689,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		}
 	}
 
-	const SCHAR flags = gc_page->btr_header.pag_flags;
+	const UCHAR flags = gc_page->btr_header.pag_flags;
 	// Check if flags are valid.
 	if ((parent_page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) !=
 		(flags & BTR_FLAG_COPY_MASK))
@@ -4860,7 +4811,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 
 	// see if there's enough space on the left page to move all the nodes to it
 	// and leave some extra space for expansion (at least one key length)
-	const SCHAR gcFlags = gc_page->btr_header.pag_flags;
+	const UCHAR gcFlags = gc_page->btr_header.pag_flags;
 	UCHAR* gcPointer = BTreeNode::getPointerFirstNode(gc_page);
 	IndexNode gcNode;
 	BTreeNode::readNode(&gcNode, gcPointer, gcFlags, leafPage);
@@ -4907,7 +4858,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		// Update leftPointer to scratch page. 
 		leftPointer = (UCHAR*)newBucket + (leftPointer - (UCHAR*)left_page) - 
 			jumpersOriginalSize;
-		const SCHAR flags2 = newBucket->btr_header.pag_flags;
+		const UCHAR flags2 = newBucket->btr_header.pag_flags;
 		gcPointer = BTreeNode::getPointerFirstNode(gc_page);
 		//
 		BTreeNode::readNode(&leftNode, leftPointer, flags2, leafPage);
@@ -5189,7 +5140,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 
 	IndexJumpInfo jumpInfo;
 	BTreeNode::getPointerFirstNode(page, &jumpInfo);
-	const SCHAR flags = page->btr_header.pag_flags;
+	const UCHAR flags = page->btr_header.pag_flags;
 	const bool leafPage = (page->btr_level == 0);
 
 	*jumpersSize = 0;
@@ -5351,7 +5302,7 @@ static SLONG insert_node(thread_db* tdbb,
 
 	// find the insertion point for the specified key
 	btree_page* bucket = (btree_page*) window->win_buffer;
-	const SCHAR flags = bucket->btr_header.pag_flags;
+	const UCHAR flags = bucket->btr_header.pag_flags;
 	temporary_key* key = insertion->iib_key;
 
 	const bool unique = (insertion->iib_descriptor->idx_flags & idx_unique);
@@ -5980,6 +5931,58 @@ static INT64_KEY make_int64_key(SINT64 q, SSHORT scale)
 }
 
 
+// CVC: Those two functions were superseded by BtreeNode functions in btn.cpp.
+#ifdef NOT_USED_OR_REPLACED
+static UCHAR* nextNode(IndexNode* node, UCHAR* pointer,
+					UCHAR flags,  btree_exp** expanded_node)
+{
+/**************************************
+ *
+ *	n e x t N o d e - Obsolete
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find the next node on both the index page
+ *	and its associated expanded buffer.
+ *
+ **************************************/
+
+	pointer = BTreeNode::readNode(node, pointer, flags, true);
+
+	if (*expanded_node) {
+		*expanded_node = (btree_exp*) ((UCHAR*) (*expanded_node)->btx_data +
+			node->prefix + node->length);
+	}
+
+	return pointer;
+}
+
+
+static UCHAR *previousNode(IndexNode* node, UCHAR* pointer,
+					UCHAR flags, btree_exp** expanded_node)
+{
+/**************************************
+ *
+ *	p r e v i o u s N o d e - Obsolete
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find the previous node on a page.  Used when walking
+ *	an index backwards.
+ *
+ **************************************/
+
+	pointer = (pointer - (*expanded_node)->btx_btr_previous_length);
+
+	*expanded_node = (btree_exp*) ((UCHAR*) *expanded_node - (*expanded_node)->btx_previous_length);
+
+	return pointer;
+}
+#endif
+
+
 #ifdef DEBUG_INDEXKEY
 static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
 {
@@ -6110,7 +6113,7 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 	}
 
 	// Make sure first node looks ok
-	const SCHAR flags = page->btr_header.pag_flags;
+	const UCHAR flags = page->btr_header.pag_flags;
 	IndexNode node;
 	pointer = BTreeNode::readNode(&node, pointer, flags, true);
 	if (prefix > node.prefix

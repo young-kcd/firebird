@@ -81,7 +81,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
  *
  **************************************/
 	const bool leafPage = (page->btr_level == 0);
-	const SCHAR flags = page->btr_header.pag_flags;
+	const UCHAR flags = page->btr_header.pag_flags;
 	//const UCHAR* endPointer = (UCHAR*)page + page->btr_length;
 
 	IndexNode node, previousNode;
@@ -130,7 +130,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
 }
 
 
-USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, SCHAR flags)
+USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, UCHAR flags)
 {
 /**************************************
  *
@@ -185,7 +185,7 @@ USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, SCHAR flags)
 }
 
 
-USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode)
+USHORT getNodeSize(const IndexNode* indexNode, UCHAR flags, bool leafNode)
 {
 /**************************************
  *
@@ -422,7 +422,7 @@ UCHAR* lastNode(btree_page* page, exp_index_buf* expanded_page, btree_exp** expa
 	// starting at the end of the page, find the
 	// first node that is not an end marker
 	UCHAR* pointer = ((UCHAR*) page + page->btr_length);
-	const SCHAR flags = page->pag_flags;
+	const UCHAR flags = page->pag_flags;
 	IndexNode node;
 	while (true) {
 		pointer = previousNode(&node, pointer, flags, &enode);
@@ -440,7 +440,7 @@ UCHAR* lastNode(btree_page* page, exp_index_buf* expanded_page, btree_exp** expa
 
 
 UCHAR* nextNode(IndexNode* node, UCHAR* pointer, 
-					SCHAR flags,  btree_exp** expanded_node)
+					UCHAR flags,  btree_exp** expanded_node)
 {
 /**************************************
  *
@@ -466,7 +466,7 @@ UCHAR* nextNode(IndexNode* node, UCHAR* pointer,
 
 
 UCHAR* previousNode(IndexNode* node, UCHAR* pointer,
-					SCHAR flags,  btree_exp** expanded_node)
+					UCHAR flags,  btree_exp** expanded_node)
 {
 /**************************************
  *
@@ -513,7 +513,7 @@ UCHAR* readJumpInfo(IndexJumpInfo* jumpInfo, UCHAR* pagePointer)
 
 
 UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, 
-					SCHAR flags)
+					UCHAR flags)
 {
 /**************************************
  *
@@ -556,7 +556,7 @@ UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer,
 }
 
 
-UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leafNode)
+UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags, bool leafNode)
 {
 /**************************************
  *
@@ -768,7 +768,7 @@ UCHAR* writeJumpInfo(btree_page* page, const IndexJumpInfo* jumpInfo)
 
 
 UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, 
-						SCHAR flags)
+						UCHAR flags)
 {
 /**************************************
  *
@@ -821,7 +821,7 @@ UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer,
 }
 
 
-UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, 
+UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags,
 	bool leafNode, bool withData)
 {
 /**************************************
