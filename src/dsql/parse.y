@@ -196,13 +196,8 @@ struct LexerState {
 	const TEXT* line_start_bk;
 	SSHORT	lines, att_charset;
 	SSHORT	lines_bk;
-	int  prev_keyword, prev_prev_keyword;
+	int  prev_keyword;
 	USHORT	param_number;
-	/* Fields to handle FIRST/SKIP as non-reserved keywords */
-	bool limit_clause; /* We are inside of limit clause. Need to detect SKIP after FIRST */
-	bool first_detection; /* Detect FIRST unconditionally */
-	/* Fields to handle INSERTING/UPDATING/DELETING as non-reserved keywords */
-	bool brace_analysis; /* When this is true lexer is informed not to swallow braces around INSERTING/UPDATING/DELETING */
 	
 	int yylex (
 		USHORT	client_dialect,
@@ -483,11 +478,6 @@ static LexerState lex;
 %token INSERTING
 %token UPDATING
 %token DELETING
-/* Special pseudo-tokens introduced to handle case 
-	when our grammar is not LARL(1) */
-%token KW_INSERTING
-%token KW_UPDATING
-%token KW_DELETING
 
 /* tokens added for Firebird 2.0 */
 
@@ -3005,25 +2995,9 @@ query_spec	: SELECT limit_clause
 					$2, $3, $4, $5, $6, $7, $8, $9); }
 		;											   
 
-begin_limit	: 
-			{ lex.limit_clause = true; }
-		;
-
-end_limit	:
-			{ lex.limit_clause = false; }
-		;
-		
-begin_first	: 
-			{ lex.first_detection = true; }
-		;
-
-end_first	:
-			{ lex.first_detection = false; }
-		;
-		
-limit_clause	: first_clause skip_clause end_limit
+limit_clause	: first_clause skip_clause
 			{ $$ = make_node (nod_limit, (int) e_limit_count, $2, $1); }
-		|   first_clause end_limit
+		|   first_clause
 			{ $$ = make_node (nod_limit, (int) e_limit_count, NULL, $1); }
 		|   skip_clause 
 			{ $$ = make_node (nod_limit, (int) e_limit_count, $1, NULL); }
@@ -3031,18 +3005,18 @@ limit_clause	: first_clause skip_clause end_limit
 			{ $$ = 0; }
 		;
 
-first_clause	: FIRST long_integer begin_limit
+first_clause	: FIRST long_integer
 			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
-		| FIRST '(' value ')' begin_limit
+		| FIRST '(' value ')'
 			{ $$ = $3; }
-		| FIRST parameter begin_limit
+		| FIRST parameter
 			{ $$ = $2; }
 		;
 
 skip_clause	: SKIP long_integer
 			{ $$ = MAKE_constant ((dsql_str*) $2, CONSTANT_SLONG); }
-		| SKIP '(' end_limit value ')'
-			{ $$ = $4; }
+		| SKIP '(' value ')'
+			{ $$ = $3; }
 		| SKIP parameter
 			{ $$ = $2; }
 		;
@@ -3313,8 +3287,8 @@ nulls_placement : FIRST
 			{ $$ = MAKE_constant((dsql_str*) NOD_NULLS_LAST, CONSTANT_SLONG); }
 		;
 
-nulls_clause : NULLS begin_first nulls_placement end_first
-			{ $$ = $3; }
+nulls_clause : NULLS nulls_placement
+			{ $$ = $2; }
 		|
 			{ $$ = 0; }
 		;
@@ -3508,35 +3482,12 @@ Update...set column = expr, without qualifier for the column. */
 
 /* boolean expressions */
 
-search_condition : trigger_action_predicate
-		| NOT trigger_action_predicate
-			{ $$ = make_node (nod_not, 1, $2); }
-		| simple_search_condition
+search_condition : predicate
 		| search_condition OR search_condition
 			{ $$ = make_node (nod_or, 2, $1, $3); }
 		| search_condition AND search_condition
 			{ $$ = make_node (nod_and, 2, $1, $3); }
-		;
-
-bracable_search_condition : simple_search_condition
-		| NOT trigger_action_predicate
-			{ $$ = make_node (nod_not, 1, $2); }
-		| bracable_search_condition OR search_condition
-			{ $$ = make_node (nod_or, 2, $1, $3); }
-		| bracable_search_condition AND search_condition
-			{ $$ = make_node (nod_and, 2, $1, $3); }
-		/* Special cases. Need help from lexer to parse the grammar */
-		/*| special_trigger_action_predicate -- handled by lexer */
-		| special_trigger_action_predicate OR search_condition
-			{ $$ = make_node (nod_or, 2, $1, $3); }
-		| special_trigger_action_predicate AND search_condition
-			{ $$ = make_node (nod_and, 2, $1, $3); }			
-		;
-
-simple_search_condition : predicate
-		| '(' bracable_search_condition ')'
-			{ $$ = $2; }
-		| NOT simple_search_condition
+		| NOT search_condition
 			{ $$ = make_node (nod_not, 1, $2); }
 		;
 
@@ -3550,7 +3501,11 @@ predicate : comparison_predicate
 		| exists_predicate
 		| containing_predicate
 		| starting_predicate
-		| singular_predicate;
+		| singular_predicate
+		| trigger_action_predicate
+		| '(' search_condition ')'
+			{ $$ = $2; }
+		;
 
 
 /* comparisons */
@@ -3687,23 +3642,6 @@ trigger_action_predicate	: INSERTING
 						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
 						MAKE_constant ((dsql_str*) 2, CONSTANT_SLONG)); }
 	| DELETING
-		{ $$ = make_node (nod_eql, 2,
-					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((dsql_str*) 3, CONSTANT_SLONG)); }
-	;
-
-special_trigger_action_predicate	: KW_INSERTING
-		{ $$ = make_node (nod_eql, 2,
-					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((dsql_str*) 1, CONSTANT_SLONG)); }
-	| KW_UPDATING
-		{ $$ = make_node (nod_eql, 2,
-					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
-						MAKE_constant ((dsql_str*) 2, CONSTANT_SLONG)); }
-	| KW_DELETING
 		{ $$ = make_node (nod_eql, 2,
 					make_node (nod_internal_info, (int) e_internal_info_count,
 						MAKE_constant ((dsql_str*) internal_trigger_action, CONSTANT_SLONG)),
@@ -4329,7 +4267,8 @@ non_reserved_word :
 	| INSERTING
 	| UPDATING
 	| DELETING
-/*  | FIRST | SKIP -- this is handled by the lexer. */
+	| FIRST
+	| SKIP
 	| BLOCK
 	// | ACCENT	// FB_NEW_INTL_ALLOW_NOT_READY				/* added in FB 2.0 */
 	| BACKUP
@@ -4417,10 +4356,6 @@ void LEX_string (
 	lex.lines_bk = lex.lines;
 	lex.param_number = 1;
 	lex.prev_keyword = -1;
-	lex.prev_prev_keyword = -1;
-	lex.limit_clause = false;	
-	lex.first_detection = false;
-	lex.brace_analysis = false;
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 32)
 		dsql_trace("Source DSQL string:\n%.*s", (int)length, string);
@@ -4826,11 +4761,9 @@ inline static int yylex (
 	USHORT	parser_version,
 	bool* stmt_ambiguous)
 {
-	const int temp =
+	lex.prev_keyword =
 		lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
-	lex.prev_prev_keyword = lex.prev_keyword;
-	lex.prev_keyword = temp;
-	return temp;
+	return lex.prev_keyword;
 }
 
 int LexerState::yylex (
@@ -5231,79 +5164,13 @@ int LexerState::yylex (
 		*p = 0;
 		dsql_sym* sym =
 			HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
-		if (sym)
+		if (sym && (sym->sym_keyword != COMMENT || prev_keyword == -1))
 		{
-		/* 13 June 2003. Nickolay Samofatov
-		 * Detect INSERTING/UPDATING/DELETING as non-reserved keywords.
-		 * We need to help parser from lexer because our grammar is not LARL(1) in this case
-		 */
-			if (prev_keyword == '(' && !brace_analysis &&
-				(sym->sym_keyword == INSERTING ||
-				 sym->sym_keyword == UPDATING ||
-				 sym->sym_keyword == DELETING
-				) &&
-				/* Produce special_trigger_action_predicate only where we can handle it -
-				  in search conditions */
-				(prev_prev_keyword == '(' || prev_prev_keyword == NOT || prev_prev_keyword == AND ||
-				 prev_prev_keyword == OR || prev_prev_keyword == ON || prev_prev_keyword == HAVING ||
-				 prev_prev_keyword == WHERE || prev_prev_keyword == WHEN) )
-			{			
-				const LexerState savedState = lex;
-				const int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
-				lex = savedState;
-				if (nextToken == OR || nextToken == AND) {
-					switch (sym->sym_keyword) {
-					case INSERTING:
-						yylval = (dsql_nod*) sym->sym_object;
-						return KW_INSERTING;
-					case UPDATING:
-						yylval = (dsql_nod*) sym->sym_object;
-						return KW_UPDATING;
-					case DELETING:
-						yylval = (dsql_nod*) sym->sym_object;
-						return KW_DELETING;
-					}
-				}
-			}
-			/* 23 May 2003. Nickolay Samofatov
-			 * Detect FIRST/SKIP as non-reserved keywords
-			 * 1. We detect FIRST or SKIP as keywords if they appear just after SELECT and
-			 *   immediately before parameter mark ('?'), opening brace ('(') or number
-			 * 2. We detect SKIP as a part of FIRST/SKIP clause the same way
-			 * 3. We detect FIRST if we are explicitly asked for (such as in NULLS FIRST/LAST clause)
-			 * 4. In all other cases we return them as SYMBOL
-			 */
-			if ((sym->sym_keyword == FIRST && !first_detection) ||
-				sym->sym_keyword == SKIP)
-			{
-				if (prev_keyword == SELECT || limit_clause) {
-					const LexerState savedState = lex;
-					const int nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
-					lex = savedState;
-					if (nextToken != NUMBER && nextToken != '?' && nextToken != '(') {
-						yylval = (dsql_nod*) MAKE_string(string, p - string);
-						last_token_bk = last_token;
-						line_start_bk = line_start;
-						lines_bk = lines;
-						return SYMBOL;
-					}
-					else {
-						yylval = (dsql_nod*) sym->sym_object;
-						last_token_bk = last_token;
-						line_start_bk = line_start;
-						lines_bk = lines;
-						return sym->sym_keyword;
-					}
-				} /* else fall down and return token as SYMBOL */
-			}
-			else if (sym->sym_keyword != COMMENT || prev_keyword == -1)
-			{
-				yylval = (dsql_nod*) sym->sym_object;
-				last_token_bk = last_token;
-				line_start_bk = line_start;
-				lines_bk = lines;
-				return sym->sym_keyword;
-			}
+			yylval = (dsql_nod*) sym->sym_object;
+			last_token_bk = last_token;
+			line_start_bk = line_start;
+			lines_bk = lines;
+			return sym->sym_keyword;
 		}
 		yylval = (dsql_nod*) MAKE_string(string, p - string);
 		last_token_bk = last_token;
@@ -5325,84 +5192,13 @@ int LexerState::yylex (
 		}
 	}
 		
-	/* We need to swallow braces around INSERTING/UPDATING/DELETING keywords */
-	/* This algorithm is not perfect, but it is ok for now. 
-	  It should be dropped when BOOLEAN datatype is introduced in Firebird */
-	if ( c == '(' && !brace_analysis && 
-		/* 1) We need to swallow braces in all boolean expressions
-		   2) We may swallow braces in ordinary expressions 
-		   3) We should not swallow braces after special tokens 
-			 like IF, FIRST, SKIP, VALUES and 30 more other	   
-		*/
-		(prev_keyword == '(' || prev_keyword == NOT || prev_keyword == AND || prev_keyword == OR ||
-		 prev_keyword == ON || prev_keyword == HAVING || prev_keyword == WHERE || prev_keyword == WHEN) )
-	{
-		LexerState savedState = lex;	
-		brace_analysis = true;
-		int openCount = 0;
-		int nextToken;
-		do {
-			openCount++;
-			nextToken = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
-		} while (nextToken == '(');
-		dsql_nod* temp_val = yylval;
-		if (nextToken == INSERTING || nextToken == UPDATING || nextToken == DELETING)
-		{
-			/* Skip closing braces. */
-			while ( openCount &&
-					yylex(client_dialect, db_dialect,
-						  parser_version, stmt_ambiguous) == ')')
-			{
-				openCount--;
-			}
-			if (openCount) {
-				/* Not enough closing braces. Restore status quo. */
-				lex = savedState;
-			}
-			else {
-				/* Cool! We successfully swallowed braces ! */
-				brace_analysis = false;
-				yylval = temp_val;
-				/* Check if we need to handle LR(2) grammar case */
-				if (prev_keyword == '(' &&
-					/* Produce special_trigger_action_predicate only where we can handle it -
-					  in search conditions */
-					(prev_prev_keyword == '(' || prev_prev_keyword == NOT || prev_prev_keyword == AND ||
-					 prev_prev_keyword == OR || prev_prev_keyword == ON || prev_prev_keyword == HAVING ||
-					 prev_prev_keyword == WHERE || prev_prev_keyword == WHEN) )
-				{
-					savedState = lex;
-					const int token = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
-					lex = savedState;
-					if (token == OR || token == AND) {
-						switch (nextToken) {
-						case INSERTING:
-							return KW_INSERTING;
-						case UPDATING:
-							return KW_UPDATING;
-						case DELETING:
-							return KW_DELETING;
-						}
-					}
-				}
-				return nextToken;
-			}
-		}
-		else {
-			/* Restore status quo. */
-			lex = savedState;
-		}
-	}
-
 	/* Single character punctuation are simply passed on */
 
 	return c;
 }
 
 
-// The argument passed to this function is ignored. Therefore, messages like
-// "syntax error" and "yacc stack overflow" are never seen.
-static void yyerror(const TEXT* error_string)
+static void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&)
 {
 /**************************************
  *
@@ -5440,6 +5236,16 @@ static void yyerror(const TEXT* error_string)
 			isc_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token,
 			0);
 	}
+}
+
+
+// The argument passed to this function is ignored. Therefore, messages like
+// "syntax error" and "yacc stack overflow" are never seen.
+static void yyerror(const TEXT* error_string)
+{
+	YYSTYPE errt_value =  0;
+	YYPOSN errt_posn = -1;
+	yyerror_detailed(error_string, -1, errt_value, errt_posn);
 }
 
 
