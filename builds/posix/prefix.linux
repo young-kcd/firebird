@@ -15,6 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
+#
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
 # -fno-builtin is used because GCC 3.0-3.2.2 had bug with builtins expansion

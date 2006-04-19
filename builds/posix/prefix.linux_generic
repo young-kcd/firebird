@@ -15,6 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
+#
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
 COMMON_FLAGS=-DLINUX -pipe -MMD -fPIC -DFB_SEND_FLAGS=MSG_NOSIGNAL
