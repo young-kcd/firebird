@@ -1,3 +1,61 @@
+2006-04-18 14:45  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.163):
+	
+	Bug fix: don't use page buffer after page was released - it can be
+	replaced by another page and may lead to serious corruptions
+
+2006-04-18 14:40  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.168):
+	
+	Corrections - thanks to Claudio
+
+2006-04-18 12:12  alexpeshkoff
+
+	* firebird2/builds/posix/: prefix.darwin (1.15), prefix.sinixz
+	(1.26):
+	
+	correcting my previous commit - thanks to Claudio
+
+2006-04-18 11:44  alexpeshkoff
+
+	* firebird2/builds/posix/: prefix.linux (1.28), prefix.linux_amd64
+	(1.5), prefix.linux_generic (1.3), prefix.linux_sparc32 (1.7),
+	prefix.sinixz (1.25):
+	
+	set FB_SEND_FLAGS for known platforms
+
+2006-04-18 11:43  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.165):
+	
+	avoid too much #ifdef's inside the file
+
+2006-04-18 10:55  alexpeshkoff
+
+	* firebird2/src/utilities/guard/guard.cpp (1.13):
+	
+	Better way to delete pidfile, thanks to Claudio
+
+2006-04-18 06:50  robocop
+
+	* firebird2/src/remote/server.cpp (1.130):
+	
+	Style.
+
+2006-04-18 06:49  robocop
+
+	* firebird2/src/utilities/guard/guard.cpp (1.12):
+	
+	I think this way is more readable.
+
+2006-04-18 06:48  robocop
+
+	* firebird2/src/remote/inet.cpp (1.164):
+	
+	Restore Win32 port to compilable state.
+
 2006-04-17 20:39  kkuznetsov
 
 	* firebird2/src/remote/inet.cpp (1.163):
