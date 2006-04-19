@@ -201,8 +201,10 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				case 'M':
 					INET_SERVER_flag |= SRVR_multi_client;
 					if (argv < end)
+					{
 						if (clients = atoi(*argv))
 							argv++;
+					}
 					multi_client = standalone = true;
 					break;
 
