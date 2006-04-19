@@ -15,11 +15,12 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
+#
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 OS_ServerFiles=inet_server.cpp
 
-COMMON_FLAGS=-DDARWIN -DFB_SEND_FLAGS=SO_NOSIGPIPE -pipe -MMD -fPIC
+COMMON_FLAGS=-DDARWIN -DFB_SETOPT_FLAGS=SO_NOSIGPIPE -pipe -MMD -fPIC
 
 PROD_FLAGS=-O3 -DNDEBUG $(COMMON_FLAGS)
 DEV_FLAGS=-ggdb -p -Wall $(COMMON_FLAGS)

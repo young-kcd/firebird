@@ -187,6 +187,14 @@ const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
 #define ENOBUFS	0
 #endif
 
+#ifndef FB_SEND_FLAGS
+#define FB_SEND_FLAGS 0
+#endif
+
+#ifndef FB_SETOPT_FLAGS
+#define FB_SETOPT_FLAGS 0
+#endif
+
 SLONG INET_remote_buffer;
 SLONG INET_max_data;
 static bool first_time = true;
@@ -3568,9 +3576,6 @@ static int packet_receive(
 	return TRUE;
 }
 
-#ifndef FB_SEND_FLAGS
-#define FB_SEND_FLAGS 0
-#endif
 
 static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_length)
 {
