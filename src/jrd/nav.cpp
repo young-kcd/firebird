@@ -595,7 +595,7 @@ static void expand_index(WIN * window)
 	while (pointer < endPointer) {
 
 		if (!priorPointer) {
-			pointer = BTreeNode::readNode(&node, pointer, flags);
+			pointer = BTreeNode::readNode(&node, pointer, flags, true);
 		}
 
 		memcpy(key.key_data + node.prefix, node.data, node_length);
