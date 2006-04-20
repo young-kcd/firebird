@@ -12,5 +12,7 @@
 @if errorlevel 1 (exit /B 1)
 @copy y_tab.h %ROOT_PATH%\src\dsql\dsql.tab.h > nul
 @copy y_tab.c %ROOT_PATH%\src\dsql\parse.cpp > nul
+@del y_tab.h
+@del y_tab.c
 
 :END
