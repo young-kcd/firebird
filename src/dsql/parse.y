@@ -5202,7 +5202,7 @@ static void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYP
 {
 /**************************************
  *
- *	y y e r r o r
+ *	y y e r r o r _ d e t a i l e d
  *
  **************************************
  *
