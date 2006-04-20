@@ -30,8 +30,8 @@
 typedef USHORT (*pfnSvcError)(SLONG, const TEXT*, SC_HANDLE);
 
 USHORT	SERVICES_install(SC_HANDLE, const char*, const char*, const char*,
-	const TEXT*, const TEXT*, const TEXT*, USHORT, const TEXT*, const TEXT*,
-	bool, pfnSvcError);
+	const TEXT*, const TEXT*, const TEXT*, const TEXT*, USHORT, const TEXT*,
+	const TEXT*, bool, pfnSvcError);
 
 USHORT	SERVICES_remove(SC_HANDLE, const char*, const char*, pfnSvcError);
 

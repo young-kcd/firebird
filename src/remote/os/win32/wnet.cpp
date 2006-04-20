@@ -430,7 +430,7 @@ rem_port* WNET_connect(const TEXT*		name,
 			p = command_line + strlen(command_line);
 		}
 
-		sprintf(p, " -s -w -h %"SLONGFORMAT, (SLONG) port->port_handle);
+		sprintf(p, " -w -h %"SLONGFORMAT, (SLONG) port->port_handle);
 		STARTUPINFO           start_crud;
 		PROCESS_INFORMATION   pi;
 		start_crud.cb = sizeof(STARTUPINFO);

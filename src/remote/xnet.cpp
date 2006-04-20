@@ -2413,7 +2413,7 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 		XNET_p = XNET_command_line + strlen(XNET_command_line);
 	}
 
-	sprintf(XNET_p, " -s -x -h %"ULONGFORMAT, (ULONG) client_pid);
+	sprintf(XNET_p, " -x -h %"ULONGFORMAT, (ULONG) client_pid);
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);

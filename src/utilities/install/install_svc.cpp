@@ -74,6 +74,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT sw_arch = ARCH_SS;
 	bool sw_interactive = false;
 
+	const TEXT *instance = DEFAULT_INSTANCE;
+
 	TEXT *username = 0;
 	TEXT *password = 0;
 
@@ -174,6 +176,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					sw_interactive = true;
 					break;
 
+				case 'N':
+					if (++argv < end)
+						instance = *argv;
+					break;
+
 				default:
 					printf("Unknown switch \"%s\"\n", p);
 					usage_exit();
@@ -259,88 +266,115 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT status, status2;
 	SC_HANDLE service;
 
+	Firebird::string guard_service_name, guard_display_name;
+	guard_service_name.printf(ISCGUARD_SERVICE, instance);
+	guard_display_name.printf(ISCGUARD_DISPLAY_NAME, instance);
+
+	Firebird::string remote_service_name, remote_display_name;
+	remote_service_name.printf(REMOTE_SERVICE, instance);
+	remote_display_name.printf(REMOTE_DISPLAY_NAME, instance);
+
+	Firebird::string switches;
+	switches.printf(" -s %s", instance);
+
 	switch (sw_command)
 	{
 		case COMMAND_INSTALL:
 			/* First, lets do the guardian, if it has been specified */
 			if (sw_guardian)
 			{
-				status = SERVICES_install(manager, ISCGUARD_SERVICE,
-					ISCGUARD_DISPLAY_NAME, ISCGUARD_DISPLAY_DESCR,
-					ISCGUARD_EXECUTABLE, directory, NULL, sw_startup,
-					username, password, false, svc_error);
+				status = SERVICES_install(manager, guard_service_name.c_str(),
+					guard_display_name.c_str(), ISCGUARD_DISPLAY_DESCR,
+					ISCGUARD_EXECUTABLE, directory, switches.c_str(), NULL,
+					sw_startup, username, password, false, svc_error);
 
 				status2 = FB_SUCCESS;
 
 				if (username != 0)
 				{
-					status2 = SERVICES_grant_access_rights(ISCGUARD_SERVICE,
-						username, svc_error);
+					status2 =
+						SERVICES_grant_access_rights(guard_service_name.c_str(),
+													 username, svc_error);
 				}
 
 				if (status == FB_SUCCESS && status2 == FB_SUCCESS)
-					printf("Service \"%s\" successfully created.\n", ISCGUARD_DISPLAY_NAME);
+				{
+					printf("Service \"%s\" successfully created.\n",
+						   guard_display_name.c_str());
+				}
 
 				/* Set sw_startup to manual in preparation for install the service */
 				sw_startup = STARTUP_DEMAND;
 			}
 
 			/* do the install of the server */
-			status = SERVICES_install(manager, REMOTE_SERVICE,
-				REMOTE_DISPLAY_NAME, REMOTE_DISPLAY_DESCR, REMOTE_EXECUTABLE,
-				directory, NULL, sw_startup, username, password,
-				sw_interactive, svc_error);
+			status = SERVICES_install(manager, remote_service_name.c_str(),
+				remote_display_name.c_str(), REMOTE_DISPLAY_DESCR,
+				REMOTE_EXECUTABLE, directory, switches.c_str(), NULL,
+				sw_startup, username, password, sw_interactive, svc_error);
 
 			status2 = FB_SUCCESS;
 
 			if (username != 0)
 			{
-				status2 = SERVICES_grant_access_rights(REMOTE_SERVICE,
-					username, svc_error);
+				status2 =
+					SERVICES_grant_access_rights(remote_service_name.c_str(),
+												 username, svc_error);
 			}
 
 			if (status == FB_SUCCESS && status2 == FB_SUCCESS)
-				printf("Service \"%s\" successfully created.\n", REMOTE_DISPLAY_NAME);
+			{
+				printf("Service \"%s\" successfully created.\n",
+					   remote_display_name.c_str());
+			}
 
 			break;
 
 		case COMMAND_REMOVE:
-			service = OpenService(manager, ISCGUARD_SERVICE, SERVICE_ALL_ACCESS);
+			service = OpenService(manager, guard_service_name.c_str(),
+								  SERVICE_ALL_ACCESS);
 			if (service)
 			{
 				CloseServiceHandle(service);
 
-				status = SERVICES_remove(manager, ISCGUARD_SERVICE,
-					ISCGUARD_DISPLAY_NAME, svc_error);
+				status =
+					SERVICES_remove(manager, guard_service_name.c_str(),
+									guard_display_name.c_str(), svc_error);
 
 				if (status == FB_SUCCESS)
 				{
-					printf("Service \"%s\" successfully deleted.\n", ISCGUARD_DISPLAY_NAME);
+					printf("Service \"%s\" successfully deleted.\n",
+						   guard_display_name.c_str());
 				}
 				else if (status == IB_SERVICE_RUNNING)
 				{
-					printf("Service \"%s\" not deleted.\n", ISCGUARD_DISPLAY_NAME);
+					printf("Service \"%s\" not deleted.\n",
+						   guard_display_name.c_str());
 					printf("You must stop it before attempting to delete it.\n\n");
 				}
 			}
 			else
 				status = FB_FAILURE;
 
-			service = OpenService(manager, REMOTE_SERVICE, SERVICE_ALL_ACCESS);
+			service = OpenService(manager, remote_service_name.c_str(),
+								  SERVICE_ALL_ACCESS);
 			if (service)
 			{
 				CloseServiceHandle(service);
 
-				status2 = SERVICES_remove(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
-										 svc_error);
+				status2 =
+					SERVICES_remove(manager, remote_service_name.c_str(),
+									remote_display_name.c_str(), svc_error);
 
 				if (status2 == FB_SUCCESS)
 				{
-				    printf("Service \"%s\" successfully deleted.\n", REMOTE_DISPLAY_NAME);
+				    printf("Service \"%s\" successfully deleted.\n",
+						   remote_display_name.c_str());
 				}
 				else if (status2 == IB_SERVICE_RUNNING)
 				{
-					printf("Service \"%s\" not deleted.\n", REMOTE_DISPLAY_NAME);
+					printf("Service \"%s\" not deleted.\n",
+						   remote_display_name.c_str());
 					printf("You must stop it before attempting to delete it.\n\n");
 				}
 			}
@@ -354,57 +388,77 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 		case COMMAND_START:
 			/* Test for use of the guardian. If so, start the guardian else start the server */
-			service = OpenService(manager, ISCGUARD_SERVICE, SERVICE_ALL_ACCESS);
+			service = OpenService(manager, guard_service_name.c_str(),
+								  SERVICE_ALL_ACCESS);
 			if (service)
 			{
 				CloseServiceHandle(service);
 
-				status = SERVICES_start(manager, ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME,
-										sw_mode, svc_error);
+				status =
+					SERVICES_start(manager, guard_service_name.c_str(),
+								   guard_display_name.c_str(), sw_mode, svc_error);
 
 				if (status == FB_SUCCESS)
-				    printf("Service \"%s\" successfully started.\n", ISCGUARD_DISPLAY_NAME);
+				{
+				    printf("Service \"%s\" successfully started.\n",
+						   guard_display_name.c_str());
+				}
 			}
 			else
 			{
 				CloseServiceHandle(service);
 
-				status = SERVICES_start(manager, REMOTE_SERVICE, REMOTE_DISPLAY_NAME,
-										sw_mode, svc_error);
+				status =
+					SERVICES_start(manager, remote_service_name.c_str(),
+								   remote_display_name.c_str(), sw_mode, svc_error);
 
 				if (status == FB_SUCCESS)
-					printf("Service \"%s\" successfully started.\n", REMOTE_DISPLAY_NAME);
+				{
+					printf("Service \"%s\" successfully started.\n",
+						   remote_display_name.c_str());
+				}
 			}
 			break;
 
 		case COMMAND_STOP:
 			/* Test for use of the guardian. If so, stop the guardian else stop the server */
-			service = OpenService(manager, ISCGUARD_SERVICE, SERVICE_ALL_ACCESS);
+			service = OpenService(manager, guard_service_name.c_str(),
+								  SERVICE_ALL_ACCESS);
 			if (service)
 			{
 				CloseServiceHandle(service);
 
-				status = SERVICES_stop(manager, ISCGUARD_SERVICE,
-					ISCGUARD_DISPLAY_NAME, svc_error);
+				status =
+					SERVICES_stop(manager, guard_service_name.c_str(),
+								  guard_display_name.c_str(), svc_error);
 
 				if (status == FB_SUCCESS)
-					printf("Service \"%s\" successfully stopped.\n", ISCGUARD_DISPLAY_NAME);
+				{
+					printf("Service \"%s\" successfully stopped.\n",
+						   guard_display_name.c_str());
+				}
 			}
 			else
 			{
 				CloseServiceHandle(service);
 
-				status = SERVICES_stop(manager, REMOTE_SERVICE,
-					REMOTE_DISPLAY_NAME, svc_error);
+				status =
+					SERVICES_stop(manager, remote_service_name.c_str(),
+								  remote_display_name.c_str(), svc_error);
 
 				if (status == FB_SUCCESS)
-					printf("Service \"%s\" successfully stopped.\n", REMOTE_DISPLAY_NAME);
+				{
+					printf("Service \"%s\" successfully stopped.\n",
+						   remote_display_name.c_str());
+				}
 			}
 			break;
 
 		case COMMAND_QUERY:
-			svc_query(ISCGUARD_SERVICE, ISCGUARD_DISPLAY_NAME, manager);
-			svc_query(REMOTE_SERVICE, REMOTE_DISPLAY_NAME, manager);
+			svc_query(guard_service_name.c_str(), guard_display_name.c_str(),
+					  manager);
+			svc_query(remote_service_name.c_str(), remote_display_name.c_str(),
+					  manager);
 			status = FB_SUCCESS;
 			break;
 
@@ -552,6 +606,7 @@ static void usage_exit(void)
 	printf("                    [ -a[uto]* | -d[emand] ]\n");
 	printf("                    [ -g[uardian] ]\n");
 	printf("                    [ -l[ogin] username [password] ]\n");
+	printf("                    [ -n[ame] ]\n");
 	printf("                    [ -i[nteractive] ]\n\n");
 	printf("          sta[rt]   [ -b[oostpriority] ]\n");
 	printf("          sto[p]\n");

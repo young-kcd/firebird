@@ -28,7 +28,7 @@
 
 void	CNTL_init(ThreadEntryPoint*, const TEXT*);
 void*	CNTL_insert_thread(void);
-void	CNTL_main_thread(SLONG, SCHAR* []);
+void	WINAPI CNTL_main_thread(DWORD, char* []);
 void	CNTL_remove_thread(void*);
 void	CNTL_shutdown_service(const TEXT*);
 void	CNTL_stop_service(const TEXT*);

@@ -35,19 +35,17 @@
 #include "../utilities/install/servi_proto.h"
 #include "../utilities/install/registry.h"
 
-/* Defines */
-const char* RUNAS_SERVICE = " -s";
-
 USHORT SERVICES_install(SC_HANDLE manager,
 						const char* service_name,
 						const char* display_name,
 						const char* display_description,
 						const char* executable,
-						const TEXT* directory,
-						const TEXT* dependencies,
+						const char* directory,
+						const char* switches,
+						const char* dependencies,
 						USHORT sw_startup,
-						const TEXT* nt_user_name,
-						const TEXT* nt_user_password,
+						const char* nt_user_name,
+						const char* nt_user_password,
 						bool interactive_mode,
 						pfnSvcError err_handler)
 {
@@ -72,9 +70,12 @@ USHORT SERVICES_install(SC_HANDLE manager,
 		path_name[len] = 0;
 	}
 
+	// Again, no check for a buffer overrun!!!
 	strcpy(path_name + len, executable);
 	strcat(path_name, ".exe");
-	strcat(path_name, RUNAS_SERVICE);
+	if (switches) {
+		strcat(path_name, switches);
+	}
 
 	DWORD dwServiceType = SERVICE_WIN32_OWN_PROCESS;
 	if (nt_user_name != 0)

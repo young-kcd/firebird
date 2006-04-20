@@ -24,18 +24,22 @@
 #ifndef UTILITIES_INSTALL_NT_H
 #define UTILITIES_INSTALL_NT_H
 
-static const char* REMOTE_SERVICE			= "FirebirdServerDefaultInstance";
-static const char* REMOTE_DISPLAY_NAME		= "Firebird Server - DefaultInstance";
+static const char* REMOTE_SERVICE			= "FirebirdServer%s";
+static const char* REMOTE_DISPLAY_NAME		= "Firebird Server - %s";
 static const char* REMOTE_DISPLAY_DESCR		= "Firebird Database Server - www.firebirdsql.org";
 static const char* REMOTE_SS_EXECUTABLE		= "bin\\fbserver";
 static const char* REMOTE_CS_EXECUTABLE		= "bin\\fb_inet_server";
 
-static const char* ISCGUARD_SERVICE			= "FirebirdGuardianDefaultInstance";
-static const char* ISCGUARD_DISPLAY_NAME	= "Firebird Guardian - DefaultInstance";
+static const char* ISCGUARD_SERVICE			= "FirebirdGuardian%s";
+static const char* ISCGUARD_DISPLAY_NAME	= "Firebird Guardian - %s";
 static const char* ISCGUARD_DISPLAY_DESCR	= "Firebird Server Guardian - www.firebirdsql.org";
 static const char* ISCGUARD_EXECUTABLE		= "bin\\fbguard";
-static const char* GUARDIAN_MUTEX			= "FirebirdGuardianMutex";
-// Starting with 128 the service prams are user defined
+
+static const char* GUARDIAN_MUTEX			= "FirebirdGuardianMutex%s";
+
+static const char* DEFAULT_INSTANCE			= "DefaultInstance";
+
+// Starting with 128 the service params are user defined
 const DWORD SERVICE_CREATE_GUARDIAN_MUTEX	= 128;
 //#define REMOTE_DEPENDENCIES		"Tcpip\0\0"
 

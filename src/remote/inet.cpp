@@ -1995,7 +1995,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 					GetCurrentProcess(), &new_handle, 0, TRUE,
 					DUPLICATE_SAME_ACCESS);
 
-	sprintf(INET_p, " -s -i -h %"SLONGFORMAT, (SLONG) new_handle);
+	sprintf(INET_p, " -i -h %"SLONGFORMAT, (SLONG) new_handle);
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
 	start_crud.lpReserved = NULL;

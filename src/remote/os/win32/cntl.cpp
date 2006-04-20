@@ -48,13 +48,12 @@ typedef struct thread {
 static void WINAPI control_thread(DWORD);
 static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM);
 
-static void parse_switch(const TEXT*, int*);
 static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 
-static DWORD current_state;
 static ThreadEntryPoint* main_handler;
-static SERVICE_STATUS_HANDLE global_service_handle;
-static const TEXT* global_service_name;
+static SERVICE_STATUS_HANDLE service_handle;
+static Firebird::string* service_name = NULL;
+static Firebird::string* mutex_name = NULL;
 static HANDLE stop_event_handle;
 static MUTX_T thread_mutex[1];
 static THREAD threads;
@@ -75,7 +74,11 @@ void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
  **************************************/
 
 	main_handler = handler;
-	global_service_name = name;
+	MemoryPool& pool = *getDefaultMemoryPool();
+	service_name = FB_NEW(pool) Firebird::string(pool);
+	service_name->printf(REMOTE_SERVICE, name);
+	mutex_name = FB_NEW(pool) Firebird::string(pool);
+	mutex_name->printf(GUARDIAN_MUTEX, name);
 }
 
 
@@ -120,9 +123,9 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
  * Functional description
  *
  **************************************/
-	global_service_handle =
-		RegisterServiceCtrlHandler(global_service_name, control_thread);
-	if (!global_service_handle)
+	service_handle =
+		RegisterServiceCtrlHandler(service_name->c_str(), control_thread);
+	if (!service_handle)
 		return;
 
 #if (defined SUPERCLIENT || defined SUPERSERVER)
@@ -131,23 +134,13 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	int flag = 0;
 #endif
 
-/* Parse the command line looking for any additional arguments. */
-
-	argv++;
-
-	while (--argc) {
-		const TEXT* p = *argv++;
-		if (*p++ == '-') // replaced assignment by comparison
-			parse_switch(p, &flag);
-	}
-
 	int status = 1;
 	DWORD temp = 0;
 
 	if (report_status(SERVICE_START_PENDING, NO_ERROR, 1, 3000) &&
 		(stop_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL)) != NULL &&
 		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000) &&
-		!gds__thread_start(main_handler, (void *) flag, 0, 0, 0)
+		!gds__thread_start(main_handler, NULL, 0, 0, 0)
 		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
 	{
 		status = 0;
@@ -234,10 +227,10 @@ void CNTL_shutdown_service( const TEXT* message)
  **************************************/
 	const char* strings[2];
 
-	char buffer[BUFFER_SMALL];
-	sprintf(buffer, "%s error: %lu", REMOTE_SERVICE, GetLastError());
+	char buffer[BUFFER_LARGE];
+	sprintf(buffer, "%s error: %lu", service_name->c_str(), GetLastError());
 
-	HANDLE event_source = RegisterEventSource(NULL, REMOTE_SERVICE);
+	HANDLE event_source = RegisterEventSource(NULL, service_name->c_str());
 	if (event_source) {
 		strings[0] = buffer;
 		strings[1] = message;
@@ -284,7 +277,7 @@ static void WINAPI control_thread( DWORD action)
 
 #if (defined SUPERCLIENT || defined SUPERSERVER)
 	case SERVICE_CREATE_GUARDIAN_MUTEX:
-		hMutex = OpenMutex(SYNCHRONIZE, FALSE, GUARDIAN_MUTEX);
+		hMutex = OpenMutex(SYNCHRONIZE, FALSE, mutex_name->c_str());
 		if (hMutex) {
 			UINT error_mode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
 				SEM_NOOPENFILEERRORBOX | SEM_NOALIGNMENTFAULTEXCEPT;
@@ -353,50 +346,6 @@ static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
 }
 
 
-static void parse_switch( const TEXT* switches, int* flag)
-{
-/**************************************
- *
- *	p a r s e _ s w i t c h
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	TEXT c;
-
-	while (c = *switches++)
-		switch (UPPER(c)) {
-		case 'B':
-			*flag |= SRVR_high_priority;
-			break;
-
-		case 'I':
-			*flag |= SRVR_inet;
-			break;
-
-		case 'R':
-			*flag &= ~SRVR_high_priority;
-			break;
-
-		case 'W':
-			*flag |= SRVR_wnet;
-			break;
-
-		case 'X':
-			*flag |= SRVR_xnet;
-			break;
-		}
-
-#if (defined SUPERCLIENT || defined SUPERSERVER)
-	*flag |= SRVR_multi_client;
-#else
-	*flag &= ~SRVR_multi_client;
-#endif
-}
-
-
 static USHORT report_status(
 							DWORD state,
 							DWORD exit_code, DWORD checkpoint, DWORD hint)
@@ -421,12 +370,12 @@ static USHORT report_status(
 	else
 		status.dwControlsAccepted = SERVICE_ACCEPT_STOP;
 
-	status.dwCurrentState = current_state = state;
+	status.dwCurrentState = state;
 	status.dwWin32ExitCode = exit_code;
 	status.dwCheckPoint = checkpoint;
 	status.dwWaitHint = hint;
 
-	const USHORT ret = SetServiceStatus(global_service_handle, &status);
+	const USHORT ret = SetServiceStatus(service_handle, &status);
 	if (!ret)
 		CNTL_shutdown_service("SetServiceStatus");
 

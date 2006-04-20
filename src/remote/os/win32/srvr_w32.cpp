@@ -119,13 +119,8 @@ static HINSTANCE hInst;
 
 static TEXT protocol_inet[128];
 static TEXT protocol_wnet[128];
+static TEXT instance[MAXPATHLEN];
 static USHORT server_flag;
-
-static const SERVICE_TABLE_ENTRY service_table[] =
-{
-	{const_cast<TEXT*>(REMOTE_SERVICE), CNTL_main_thread},
-	{NULL, NULL}
-};
 
 static const int SIGSHUT = 666;
 static int shutdown_pid = 0;
@@ -165,7 +160,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 	catch(Firebird::status_exception& e)
 	{
-		TEXT buffer[1024];
+		TEXT buffer[BUFFER_LARGE];
         const ISC_STATUS* vector = 0;
 		if (! (e.status_known() && (vector = e.value()) &&
 			  fb_interpret(buffer, sizeof(buffer), &vector)))
@@ -211,6 +206,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
+
+	strcpy(instance, DEFAULT_INSTANCE);
 
 	HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
 
@@ -283,11 +280,19 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 	else if (!(server_flag & SRVR_non_service)) 
 	{
-		CNTL_init(start_connections_thread, REMOTE_SERVICE);
-//
-// BRS There is a error in MinGW (3.1.0) headers 
-// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
-//
+		Firebird::string service_name;
+		service_name.printf(REMOTE_SERVICE, instance);
+
+		CNTL_init(start_connections_thread, instance);
+
+        const SERVICE_TABLE_ENTRY service_table[] =
+		{
+			{const_cast<char*>(service_name.c_str()), CNTL_main_thread},
+			{NULL, NULL}
+		};
+
+		// BRS There is a error in MinGW (3.1.0) headers 
+		// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
 #if defined(MINGW)
 		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table))) {
 #else
@@ -630,6 +635,18 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 
 				case 'R':
 					*pserver_flag &= ~SRVR_high_priority;
+					break;
+
+				case 'S':
+					while (*p && *p == ' ')
+						p++;
+					if (*p && *p != '-') {
+						char *pi = instance;
+						while (*p && *p != ' ') {
+							*pi++ = *p++;
+						}
+						*pi++ = '\0';
+					}
 					break;
 
 				case 'W':
