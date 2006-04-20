@@ -891,35 +891,46 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 		BUGCHECK(204);	// msg 204 index inconsistent
 	}
 
+	// hvlad: save some info from bucket for latter use before releasing a page
+	const SCHAR flags = bucket->btr_header.pag_flags;
+	const USHORT btr_relation = bucket->btr_relation;
+	const UCHAR btr_level = bucket->btr_level + 1;
+	const UCHAR btr_id = bucket->btr_id;
+
+	const bool useJumpInfo = (flags & btr_jump_info);
+	IndexJumpInfo jumpInfo;
+	if (useJumpInfo) {
+		// First get jumpinfo from the level deeper, because we need 
+		// to know jumpAreaSize and keyLength.
+		BTreeNode::getPointerFirstNode(bucket, &jumpInfo);
+		jumpInfo.jumpers = 0;
+	}
+
+	// hvlad: don't even try to use page buffer after page was released
+	bucket = 0;
+
 	CCH_RELEASE(tdbb, &new_window);
 	CCH_RELEASE(tdbb, &window);
 
-	if ((bucket->btr_level + 1) > MAX_LEVELS) {
+	if (btr_level > MAX_LEVELS) {
 		// Maximum level depth reached.
 		// AB: !! NEW ERROR MESSAGE ? !!
 		BUGCHECK(204);	// msg 204 index inconsistent
 	}
 
 	// Allocate and format new bucket, this will always be a non-leaf page
-	const SCHAR flags = bucket->btr_header.pag_flags;
 	new_bucket = (btree_page*) DPM_allocate(tdbb, &new_window);
 	CCH_precedence(tdbb, &new_window, window.win_page);
 	new_bucket->btr_header.pag_type = pag_index;
-	new_bucket->btr_relation = bucket->btr_relation;
-	new_bucket->btr_level = bucket->btr_level + 1;
-	new_bucket->btr_id = bucket->btr_id;
-	new_bucket->btr_header.pag_flags |= (flags & BTR_FLAG_COPY_MASK);
+	new_bucket->btr_relation = btr_relation;
+	new_bucket->btr_level = btr_level;
+	new_bucket->btr_id = btr_id;
+	new_bucket->btr_header.pag_flags = (flags & BTR_FLAG_COPY_MASK);
 
 	UCHAR *pointer;
-	const bool useJumpInfo = (bucket->btr_header.pag_flags & btr_jump_info);
 	if (useJumpInfo) {
-		IndexJumpInfo jumpInfo;
-		// First get jumpinfo from the level deeper, because we need 
-		// to know jumpAreaSize and keyLength.
-		BTreeNode::getPointerFirstNode(bucket, &jumpInfo);
 		// Write uncomplete jumpinfo, so we can set the firstNodeOffset
 		// to the correct position.
-		jumpInfo.jumpers = 0;
 		pointer = BTreeNode::writeJumpInfo(new_bucket, &jumpInfo);
 		// Finally write correct jumpinfo.
 		jumpInfo.firstNodeOffset = (pointer - (UCHAR*)new_bucket);
@@ -5780,7 +5791,7 @@ static SLONG insert_node(thread_db* tdbb,
 	split->btr_level = bucket->btr_level;
 	split->btr_sibling = right_sibling;
 	split->btr_left_sibling = window->win_page;
-	split->btr_header.pag_flags |= (flags & BTR_FLAG_COPY_MASK);
+	split->btr_header.pag_flags = (flags & BTR_FLAG_COPY_MASK);
 
 	// Format the first node on the overflow page
 	BTreeNode::setNode(&newNode, 0, new_key->key_length, node.recordNumber, node.pageNumber);
