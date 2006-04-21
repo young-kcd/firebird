@@ -128,12 +128,6 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	if (!service_handle)
 		return;
 
-#if (defined SUPERCLIENT || defined SUPERSERVER)
-	int flag = SRVR_multi_client;
-#else
-	int flag = 0;
-#endif
-
 	int status = 1;
 	DWORD temp = 0;
 
