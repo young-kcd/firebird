@@ -74,6 +74,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	strcpy(path_name + len, executable);
 	strcat(path_name, ".exe");
 	if (switches) {
+		strcat(path_name, " ");
 		strcat(path_name, switches);
 	}
 

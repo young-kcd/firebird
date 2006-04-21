@@ -275,7 +275,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	remote_display_name.printf(REMOTE_DISPLAY_NAME, instance);
 
 	Firebird::string switches;
-	switches.printf(" -s %s", instance);
+	switches.printf("-s %s", instance);
 
 	switch (sw_command)
 	{
