@@ -1,3 +1,10 @@
+2006-04-20 11:55  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.1):
+	
+	Bug fix: don't use page buffer after page was released - it can be
+	replaced by another page and may lead to serious corruptions
+
 2006-04-18 11:57  alexpeshkoff
 
 	* firebird2/builds/install/misc/posixLibrary.sh.in (1.4.4.2):
