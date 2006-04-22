@@ -1,3 +1,16 @@
+2006-04-21 08:33  robocop
+
+	* firebird2/src/remote/os/win32/cntl.cpp (1.20):
+	
+	Delete obsolete code after Dmitry's changes.
+
+2006-04-21 04:52  asfernandes
+
+	* firebird2/src/utilities/install/: install_svc.cpp (1.23),
+	services.cpp (1.21):
+	
+	Move separation of app_name and switches to better place
+
 2006-04-20 12:37  dimitr
 
 	* firebird2/builds/win32/msvc7/fbguard.vcproj (1.21):
