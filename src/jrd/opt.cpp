@@ -755,65 +755,73 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 		fb_assert(streams[0] != 1 || csb->csb_rpt[streams[1]].csb_relation != 0);
 
-		// AB: Determine which streams have an index relationship
-		// with the currently active rivers. This is needed so that
-		// no merge is made between a new cross river and the
-		// currently active rivers. Where in the new cross river
-		// a stream depends (index) on the active rivers.
-		stream_array_t dependent_streams, free_streams;
-		dependent_streams[0] = free_streams[0] = 0;
-		find_index_relationship_streams(tdbb, opt, streams,
-			dependent_streams, free_streams);
+		// Walk until no dependent streams are left
+		while (true)
+		{
+			// AB: Determine which streams have an index relationship
+			// with the currently active rivers. This is needed so that
+			// no merge is made between a new cross river and the
+			// currently active rivers. Where in the new cross river
+			// a stream depends (index) on the active rivers.
+			stream_array_t dependent_streams, free_streams;
+			dependent_streams[0] = free_streams[0] = 0;
+			find_index_relationship_streams(tdbb, opt, streams,
+				dependent_streams, free_streams);
 
-		// If we have dependent and free streams then we can't rely on
-		// the sort node to be used for index navigation.
-		if (dependent_streams[0] && free_streams[0]) {
-			sort = NULL;
-			sort_can_be_used = false;
-		}
-
-		if (dependent_streams[0]) {
-			// copy free streams
-			for (i = 0; i <= free_streams[0]; i++) {
-				streams[i] = free_streams[i];
+			// If we have dependent and free streams then we can't rely on
+			// the sort node to be used for index navigation.
+			if (dependent_streams[0] && free_streams[0]) {
+				sort = NULL;
+				sort_can_be_used = false;
 			}
 
-			// Make rivers from the dependent streams
-			gen_join(tdbb, opt, dependent_streams, rivers_stack, &sort,
-				&project, rse->rse_plan);
+			if (dependent_streams[0]) {
+				// copy free streams
+				for (i = 0; i <= free_streams[0]; i++) {
+					streams[i] = free_streams[i];
+				}
 
-			// Generate 1 river which holds a cross join rsb between
-			// all currently available rivers.
+				// Make rivers from the dependent streams
+				gen_join(tdbb, opt, dependent_streams, rivers_stack, &sort,
+					&project, rse->rse_plan);
 
-			// First get total count of streams.
-			int count = 0;
-			RiverStack::iterator stack1(rivers_stack);
-			for (; stack1.hasData(); ++stack1) {
-				count += stack1.object()->riv_count;
+				// Generate 1 river which holds a cross join rsb between
+				// all currently available rivers.
+
+				// First get total count of streams.
+				int count = 0;
+				RiverStack::iterator stack1(rivers_stack);
+				for (; stack1.hasData(); ++stack1) {
+					count += stack1.object()->riv_count;
+				}
+
+				// Create river and copy the streams.
+				River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), count) River();
+				river->riv_count = (UCHAR) count;
+				UCHAR* stream_itr = river->riv_streams;
+				RiverStack::iterator stack2(rivers_stack);
+				for (; stack2.hasData(); ++stack2) {
+					River* subRiver = stack2.object();
+					MOVE_FAST(subRiver->riv_streams, stream_itr, subRiver->riv_count);
+					stream_itr += subRiver->riv_count;
+				}
+				river->riv_rsb = make_cross(tdbb, opt, rivers_stack);
+				rivers_stack.push(river);
+
+				// Mark the river as active.
+				set_made_river(opt, river);
+				set_active(opt, river);
 			}
+			else
+			{
+				if (free_streams[0]) {
+					// Deactivate streams
+					for (i = 1; i <= sub_streams[0]; i++) {
+						csb->csb_rpt[sub_streams[i]].csb_flags &= ~csb_active;
+					}
+				}
 
-			// Create river and copy the streams.
-			River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), count) River();
-			river->riv_count = (UCHAR) count;
-			UCHAR* stream_itr = river->riv_streams;
-			RiverStack::iterator stack2(rivers_stack);
-			for (; stack2.hasData(); ++stack2) {
-				River* subRiver = stack2.object();
-				MOVE_FAST(subRiver->riv_streams, stream_itr, subRiver->riv_count);
-				stream_itr += subRiver->riv_count;
-			}
-			river->riv_rsb = make_cross(tdbb, opt, rivers_stack);
-			rivers_stack.push(river);
-
-			// Mark the river as active.
-			set_made_river(opt, river);
-			set_active(opt, river);
-		}
-
-		if (free_streams[0]) {
-			// Deactivate streams
-			for (i = 1; i <= sub_streams[0]; i++) {
-				csb->csb_rpt[sub_streams[i]].csb_flags &= ~csb_active;
+				break;
 			}
 		}
 
