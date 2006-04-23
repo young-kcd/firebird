@@ -1,3 +1,11 @@
+2006-04-23 01:25  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.261.2.1):
+	
+	Fix "no current record .." bug when an undependent stream A is
+	dependent on stream B and B is dependent on stream C.  Stream A was
+	merged with the stream C and only B was correctly joined.
+
 2006-04-20 11:55  hvlad
 
 	* firebird2/src/jrd/btr.cpp (1.162.2.1):
