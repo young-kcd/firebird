@@ -101,6 +101,9 @@ getInitScriptLocation() {
     if [ -f /etc/rc.d/init.d/firebird ]
 	then
 		echo -n /etc/rc.d/init.d/firebird
+    elif [ -f /etc/rc.d/rc.firebird ]
+	then
+		echo -n /etc/rc.d/rc.firebird
     elif [ -f /etc/init.d/firebird ]
 	then
 		echo -n /etc/init.d/firebird

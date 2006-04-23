@@ -25,6 +25,9 @@ changeInitRunUser() {
 
 installInitdScript() {
 
+	srcScript=""
+	initScript=
+
 # This is for RH and MDK specific
 
     if [ -e /etc/rc.d/init.d/functions ]
@@ -50,6 +53,22 @@ installInitdScript() {
         rm -f /usr/sbin/rcfirebird
         ln -s ../../etc/init.d/firebird /usr/sbin/rcfirebird
 
+# Slackware specific
+
+    elif [ -r /etc/slackware-version ]
+    then
+        srcScript=firebird.init.d.slackware
+        initScript=/etc/rc.d/rc.firebird
+		rclocal=/etc/rc.d/rc.local
+		if ! grep -q "$initScript" $rclocal
+		then
+			cat >>$rclocal <<EOF
+if [ -x $initScript ] ; then
+	$initScript start
+fi
+EOF
+		fi
+
 # Gentoo specific
 
     elif [ -r /etc/gentoo-release ]
@@ -65,44 +84,60 @@ installInitdScript() {
         initScript=/etc/rc.d/init.d/firebird
     fi
 
-
-
-    # Install the firebird init.d script
-    cp  $FBRootDir/misc/$srcScript $initScript
-    chown root:root $initScript
-    chmod ug=rx,o=r $initScript
-
-
-    # RedHat and Mandrake specific 
-    if [ -x /sbin/chkconfig ]
-    then
-        /sbin/chkconfig --add firebird
-
-    # Suse (& Debian ?) specific 
-    elif [ -x /sbin/insserv ]
-    then
-        /sbin/insserv /etc/init.d/firebird
 	
-	# One more way to register service - used in Knoppix (& Debian ?)
-    elif [ -x /usr/sbin/update-rc.d ]
-    then
-		/usr/sbin/update-rc.d firebird start 14 2 3 5 . stop 20 0 1 6 .
-    fi
+	if [ "$initScript" ]
+	then
+	    # Install the firebird init.d script
+    	cp $FBRootDir/misc/$srcScript $initScript
+	    chown root:root $initScript
+    	chmod ug=rx,o=r $initScript
+
+
+	    # RedHat and Mandrake specific 
+    	if [ -x /sbin/chkconfig ]
+	    then
+    	    /sbin/chkconfig --add firebird
+
+	    # Gentoo specific 
+    	elif [ -x /sbin/rc-update ]
+	    then
+			/sbin/rc-update add firebird default
+
+	    # Suse (& Debian ?) specific 
+    	elif [ -x /sbin/insserv ]
+	    then
+    	    /sbin/insserv /etc/init.d/firebird
 	
-    # More SuSE - rc.config fillup
-    if [ -f /etc/rc.config ]
-    then
-      	if [ -x /bin/fillup ]
-        then
-          /bin/fillup -q -d = /etc/rc.config $FBRootDir/misc/rc.config.firebird
-        fi
-    elif [ -d /etc/sysconfig ]
-    then
-        cp $FBRootDir/misc/rc.config.firebird /etc/sysconfig/firebird
-    fi
+		# One more way to register service - used in Knoppix (& Debian ?)
+    	elif [ -x /usr/sbin/update-rc.d ]
+	    then
+			/usr/sbin/update-rc.d firebird start 14 2 3 5 . stop 20 0 1 6 .
+	    fi
+	
+    	# More SuSE - rc.config fillup
+	    if [ -f /etc/rc.config ]
+    	then
+      		if [ -x /bin/fillup ]
+	        then
+    	      /bin/fillup -q -d = /etc/rc.config $FBRootDir/misc/rc.config.firebird
+        	fi
+	    elif [ -d /etc/sysconfig ]
+    	then
+        	cp $FBRootDir/misc/rc.config.firebird /etc/sysconfig/firebird
+	    fi
+	
+	else
+		echo "Couldn't autodetect linux type. You must select"
+		echo "the most appropriate startup script in $FBRootDir/misc/"
+		echo "and manually register it in your OS."
+	fi
 
     # Create directory to store pidfile
-    mkdir $PidDir
+	if [ ! -d $PidDir ] 
+	then
+		[ -e $PidDir ] && rm -rf $PidDir
+		mkdir $PidDir
+	fi
     chown $RunUser:$RunGroup $PidDir
 }
 

@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# /etc/rc.d/rc.firebirdss
+#
+# Start/stop/restart the firebird super server.
+#
+
+export FIREBIRD=@prefix@
+FBRunUser=firebird
+pidfile=/var/run/firebird/`basename $0`.pid
+
+case "$1" in
+	'start')	echo -n "Starting Firebird server: "
+			echo $FIREBIRD/bin/fbmgr -pidfile $pidfile -start -forever | su $FBRunUser ;;
+	'stop')		echo -n "Stopping Firebird server: "
+			if [ -f $pidfile ]; then kill `cat $pidfile`; fi ;;
+	'restart')	$0 stop ; $0 start ;;
+	*)		echo "usage $0 start|stop|restart" ;;
+esac
