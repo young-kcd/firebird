@@ -101,7 +101,11 @@ static void find_clump_space(SLONG, WIN*, pag**, USHORT, SSHORT, const UCHAR*,
 static bool find_type(SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**,
 						 const UCHAR**);
 
-#define ERR_POST_IF_DATABASE_IS_READONLY(dbb)	{if (dbb->dbb_flags & DBB_read_only) ERR_post (isc_read_only_database, 0);}
+inline void err_post_if_database_is_readonly(const Database* dbb)
+{
+	if (dbb->dbb_flags & DBB_read_only)
+		ERR_post(isc_read_only_database, 0);
+}
 
 // Class definitions (obsolete platforms are commented out)
 // Class constant name consists of OS platform and CPU architecture.
@@ -318,7 +322,7 @@ void PAG_add_clump(
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
+	err_post_if_database_is_readonly(dbb);
 
 	pag* page;
 	header_page* header = 0;
@@ -439,7 +443,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
+	err_post_if_database_is_readonly(dbb);
 
 /* Find current last file */
 
@@ -556,7 +560,7 @@ int PAG_add_header_entry(header_page* header, USHORT type, SSHORT len, const UCH
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
+	err_post_if_database_is_readonly(dbb);
 
 	const UCHAR* q = entry;
 
@@ -625,7 +629,7 @@ int PAG_replace_entry_first(header_page* header, USHORT type, SSHORT len, const 
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
+	err_post_if_database_is_readonly(dbb);
 
 	const UCHAR* q = entry;
 
@@ -831,7 +835,7 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
+	err_post_if_database_is_readonly(dbb);
 
 	WIN window(page_num);
 
@@ -1573,7 +1577,7 @@ void PAG_set_force_write(Database* dbb, SSHORT flag)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
+	err_post_if_database_is_readonly(dbb);
 
 	WIN window(HEADER_PAGE);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
@@ -1623,7 +1627,7 @@ void PAG_set_no_reserve(Database* dbb, USHORT flag)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
+	err_post_if_database_is_readonly(dbb);
 
 	WIN window(HEADER_PAGE);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
@@ -1751,7 +1755,7 @@ void PAG_set_page_buffers(ULONG buffers)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	ERR_POST_IF_DATABASE_IS_READONLY(dbb);
+	err_post_if_database_is_readonly(dbb);
 
 	WIN window(HEADER_PAGE);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
