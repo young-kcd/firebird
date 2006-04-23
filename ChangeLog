@@ -1,3 +1,18 @@
+2006-04-23 01:00  robocop
+
+	* firebird2/builds/win32/msvc6/fbguard.dsp (1.21):
+	
+	Make FbGuardian a client utility as in VC7. However, I didn't need
+	to add more files to the project as in VC7 case.
+
+2006-04-22 23:18  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.262):
+	
+	Fix "no current record .." bug when an undependent stream A is
+	dependent on stream B and B is dependent on stream C.  Stream A was
+	merged with the stream C and only B was correctly joined.
+
 2006-04-21 08:33  robocop
 
 	* firebird2/src/remote/os/win32/cntl.cpp (1.20):
