@@ -265,9 +265,9 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
     // If we are ignoring NFS remote mounts then do not bother checking here
     // and pretend it's only local. MOD 16-Nov-2002
 	
-    if (Config::getRemoteFileOpenAbility()) {
-        return false;
-    }
+	if (Config::getRemoteFileOpenAbility()) {
+		return false;
+	}
 
 	tstring max_node, max_path;
 	size_t len = 0;
@@ -530,7 +530,7 @@ iscProtocol ISC_extract_host(Firebird::PathName& file_name,
 
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
-void ISC_expand_filename(tstring& buff, bool expand_mounts)
+bool ISC_expand_filename(tstring& buff, bool expand_mounts)
 {
 /**************************************
  *
@@ -545,6 +545,7 @@ void ISC_expand_filename(tstring& buff, bool expand_mounts)
  **************************************/
 
 	expand_filename2(buff, expand_mounts);
+	return true;
 }
 #endif
 
@@ -606,8 +607,8 @@ int ISC_expand_filename(const TEXT* file_name,
 
 static void translate_slashes(tstring& Path)
 {
-    const char sep = '\\';
-    const char bad_sep = '/';
+	const char sep = '\\';
+	const char bad_sep = '/';
 	for (char *p = Path.begin(), *q = Path.end(); p < q; p++)
 	{
 		if (*p == bad_sep) {
@@ -623,134 +624,157 @@ static void translate_slashes(tstring& Path)
 static bool ShortToLongPathName(tstring& Path)
 {
 	// Special characters.
-    const char sep = '\\';
-    const char colon = ':';
+	const char sep = '\\';
+	const char colon = ':';
 
-    // Copy the short path into the work buffer and convert forward 
-    // slashes to backslashes.
+	// Copy the short path into the work buffer and convert forward 
+	// slashes to backslashes.
 	translate_slashes(Path);
 
-    // We need a couple of markers for stepping through the path.
-    size left = 0;
-    size right = 0;
+	// We need a couple of markers for stepping through the path.
+	size left = 0;
+	size right = 0;
 
-    // Parse the first bit of the path.
-    if (Path.length() >= 2 && isalpha(Path[0]) && colon == Path[1]) // Drive letter?
-    {
-        if (Path.length() == 2) // 'bare' drive letter
-        {
-            right = npos; // skip main block
-        }
-        else if (sep == Path[2]) // drive letter + backslash
-        {
-            // FindFirstFile doesn't like "X:\"
-            if (Path.length() == 3)
-            {
-                right = npos; // skip main block
-            }
-            else
-            {
-                left = right = 3;
-            }
-        }
-        else
+	// Parse the first bit of the path.
+	// Notice that isalpha() is wrong here: it's locale dependent,
+	// whereas drive letters are limited to the ASCII sequence A..Z.
+	if (Path.length() >= 2 && isalpha(Path[0]) && colon == Path[1]) // Drive letter?
+	{
+		if (Path.length() == 2) // 'bare' drive letter
+		{
+			right = npos; // skip main block
+		}
+		else if (sep == Path[2]) // drive letter + backslash
+		{
+			// FindFirstFile doesn't like "X:\"
+			if (Path.length() == 3)
+			{
+				right = npos; // skip main block
+			}
+			else
+			{
+				left = right = 3;
+			}
+		}
+		else
 		{
 			return false; // parsing failure
 		}
-    }
-    else if (Path.length() >= 1 && sep == Path[0])
-    {
-        if (Path.length() == 1) // 'bare' backslash
-        {
-            right = npos;  // skip main block
-        }
-        else 
-        {
-            if (sep == Path[1]) // is it UNC?
-            {
-                // Find end of machine name
-                right = Path.find_first_of(sep, 2);
-                if (npos == right) 
+	}
+	else if (Path.length() >= 1 && sep == Path[0])
+	{
+		if (Path.length() == 1) // 'bare' backslash
+		{
+			right = npos;  // skip main block
+		}
+		else 
+		{
+			if (sep == Path[1]) // is it UNC?
+			{
+				// Find end of machine name
+				right = Path.find_first_of(sep, 2);
+				if (npos == right) 
 				{
-                    return false;
+					return false;
 				}
 
-                // Find end of share name
-                right = Path.find_first_of(sep, right + 1);
-                if (npos == right)
+				// Find end of share name
+				right = Path.find_first_of(sep, right + 1);
+				if (npos == right)
 				{
-                    return false;
+					return false;
 				}
-            }
-            ++right;
-        }
-    }
-    // else FindFirstFile will handle relative paths
+			}
+			++right;
+		}
+	}
+	// else FindFirstFile will handle relative paths
 
-    // The data block for FindFirstFile.
-    WIN32_FIND_DATA fd;
+	// The data block for FindFirstFile.
+	WIN32_FIND_DATA fd;
 
-    // Main parse block - step through path.
+	// Main parse block - step through path.
 	HANDLE hf = INVALID_HANDLE_VALUE;
-    while (npos != right)
-    {
-        left = right; // catch up
+	while (npos != right)
+	{
+		left = right; // catch up
 
-        // Find next separator.
-        right = Path.find_first_of(sep, right);
+		// Find next separator.
+		const size right2 = Path.find_first_of(sep, right);
 
-        // Temporarily replace the separator with a null character so that
-        // the path so far can be passed to FindFirstFile.
-        if (npos != right)
+		// Temporarily replace the separator with a null character so that
+		// the path so far can be passed to FindFirstFile.
+		if (npos != right2)
 		{
-            Path[right] = 0;
+			Path[right2] = 0;
 		}
 
-        // Call FindFirstFile on the path.
-        hf = FindFirstFile(Path.c_str(), &fd);
-
-        // Put back the separator.
-        if (npos != right)
+		// Prevent the directory traversal attack and other anomalies like
+		// duplicate directory names.
+		// Take advantage of the previous statement (truncation) to compare directly
+		// with the special directory names, avoiding the overhead of substr().
+		// Please note that we are more thorough than GetFullPathName but we yield
+		// here different results because that API function interprets "." and ".."
+		// but we skip them here.
+		tstring::const_pointer special_dir = &Path.at(right);
+		if (!strcmp(special_dir, ".") || !strcmp(special_dir, ".."))
 		{
-            Path[right] = sep;
+			Path.erase(right, (npos == right2) ? npos : right2 - right);
+			if (right >= Path.length())
+				right = npos;
+			else
+				Path[right] = sep;
+
+			continue;
 		}
 
-        // See what FindFirstFile makes of the path so far.
-        if (hf == INVALID_HANDLE_VALUE)
+		right = right2;
+
+		// Call FindFirstFile on the path.
+		hf = FindFirstFile(Path.c_str(), &fd);
+
+		// Put back the separator.
+		if (npos != right)
+		{
+			Path[right] = sep;
+		}
+
+		// See what FindFirstFile makes of the path so far.
+		if (hf == INVALID_HANDLE_VALUE)
 		{
 			break;
 		}
-        FindClose(hf);
+		FindClose(hf);
 
-        // The file was found - replace the short name with the long.
-        const size old_len = (npos == right) ? Path.length() - left : right - left;
-        const size new_len = strlen(fd.cFileName);
-        Path.replace(left, old_len, fd.cFileName, new_len);
+		// The file was found - replace the short name with the long.
+		const size old_len = (npos == right) ? Path.length() - left : right - left;
+		const size new_len = strlen(fd.cFileName);
+		Path.replace(left, old_len, fd.cFileName, new_len);
 
-        // More to do?
-        if (right != npos)
-        {
-            // Yes - move past separator .
-            right = left + new_len + 1;
+		// More to do?
+		if (right != npos)
+		{
+			// Yes - move past separator .
+			right = left + new_len + 1;
 
-            // Did we overshoot the end? (i.e. path ends with a separator).
-            if (right >= Path.length())
+			// Did we overshoot the end? (i.e. path ends with a separator).
+			if (right >= Path.length())
 			{
-                right = npos;
+				right = npos;
 			}
-        }
-    }
-
-	// We failed to find this file.
-    if (hf == INVALID_HANDLE_VALUE)
-	{
-        return false;
+		}
 	}
 
-    return true;
+	// We failed to find this file.
+	if (hf == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+
+	return true;
 }
 
-void ISC_expand_filename(tstring& file_name, bool expand_mounts)
+bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 {
 /**************************************
  *
@@ -766,7 +790,7 @@ void ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	// check for empty filename to avoid multiple checks later
 	if (file_name.isEmpty()) 
 	{
-		return;
+		return false;
 	}
 
 	bool fully_qualified_path = false;
@@ -774,9 +798,9 @@ void ISC_expand_filename(tstring& file_name, bool expand_mounts)
 
 	expand_share_name(temp);
 
-/* If there is an explicit node name of the form \\DOPEY or //DOPEY
-   assume named pipes.  Translate forward slashes to back slashes
-   and return with no further processing. */
+	// If there is an explicit node name of the form \\DOPEY or //DOPEY
+	// assume named pipes.  Translate forward slashes to back slashes
+	// and return with no further processing.
 
 	if ((file_name.length() >= 2) && 
 		((file_name[0] == '\\' && file_name[1] == '\\') ||
@@ -784,9 +808,9 @@ void ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	{
 		file_name = temp;
 
-		/* Translate forward slashes to back slashes */
+		// Translate forward slashes to back slashes
 		translate_slashes(file_name);
-		return;
+		return true;
 	}
 
 	tstring device;
@@ -796,13 +820,13 @@ void ISC_expand_filename(tstring& file_name, bool expand_mounts)
 		file_name = temp;
 		if (colon_pos != 1)
 		{
-			return;
+			return true;
 		}
 		device = temp.substr(0, 1) + ":\\";
 		const USHORT dtype = GetDriveType(device.c_str());
-		if (dtype <= 1)
+		if (dtype <= DRIVE_NO_ROOT_DIR)
 		{
-			return;
+			return true;
 		}
 
 		// This happen if remote interface of our server 
@@ -812,7 +836,7 @@ void ISC_expand_filename(tstring& file_name, bool expand_mounts)
 		{
 			ISC_expand_share(file_name);
 			translate_slashes(file_name);
-			return;
+			return true;
 		}
 		
 		if ((temp.length() >= 3) && (temp[2] == '/' || temp[2] == '\\'))
@@ -821,52 +845,47 @@ void ISC_expand_filename(tstring& file_name, bool expand_mounts)
 		}
 	}
 
-/* Translate forward slashes to back slashes */
+	// Translate forward slashes to back slashes
 
 	translate_slashes(temp);
 
-/* If there is an explicit node name of the form \\DOPEY don't do any
-   additional translations -- everything will need to be applied at
-   the other end */
+	// If there is an explicit node name of the form \\DOPEY don't do any
+	// additional translations -- everything will need to be applied at
+	// the other end.
 
 	if ((temp.length() >= 2) && (temp[0] == '\\' && temp[1] == '\\'))
 	{
 		file_name = temp;
-		return;
+		return true;
 	}
 	if (temp[0] == '\\' || temp[0] == '/')
 	{
 		fully_qualified_path = true;
 	}
-/* Expand the file name */
+
+	// Expand the file name 
 
 #ifdef SUPERSERVER
 	if ((!fully_qualified_path) && JRD_getdir(file_name))
 	{
-		/**
-	case where temp is of the form "c:foo.fdb" and
-	expanded_name is "c:\x\y".
-        **/
 		if (device.hasData() && device[0] == file_name[0]) {
+			// case where temp is of the form "c:foo.fdb" and
+			// expanded_name is "c:\x\y".
 			file_name += '\\';
 			file_name.append (temp, 2, npos);
 		}
-		/**
-	case where temp is of the form "foo.fdb" and
-	expanded_name is "c:\x\y".
-        **/
 		else if (device.empty()) {
+			// case where temp is of the form "foo.fdb" and
+			// expanded_name is "c:\x\y".
 			file_name += '\\';
 			file_name += temp;
 		}
 		else {
-		/**
-	case where temp is of the form "d:foo.fdb" and
-	expanded_name is "c:\x\y".
-	Discard expanded_name and use temp as it is.
-	**/
-			/* in this case use the temp but we need to ensure that we expand to
-			 * temp from "d:foo.fdb" to "d:\foo.fdb" */
+			// case where temp is of the form "d:foo.fdb" and
+			// expanded_name is "c:\x\y".
+			// Discard expanded_name and use temp as it is.
+			// In this case use the temp but we need to ensure that we expand to
+			// temp from "d:foo.fdb" to "d:\foo.fdb"
 			if (!get_full_path(temp, file_name))
 			{
 				file_name = temp;
@@ -876,20 +895,23 @@ void ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	else
 #endif
 	{
+		// Here we get "." and ".." translated by the API, but ONLY IF we are using
+		// local conection, because in that case, JRD_getdir() returns false.
 		if (!get_full_path(temp, file_name))
 		{
 			file_name = temp;
 		}
 	}
 
-	/* convert then name to its longer version ie. convert longfi~1.fdb
-	 * to longfilename.fdb */
-	ShortToLongPathName(file_name);
+	// convert then name to its longer version ie. convert longfi~1.fdb
+	// to longfilename.fdb
+	bool rc = ShortToLongPathName(file_name);
 
 	// Filenames are case insensitive on NT.  If filenames are
 	// typed in mixed cases, strcmp () used in various places
 	// results in incorrect behavior.
 	file_name.upper();
+	return rc;
 }
 #endif
 
@@ -1059,6 +1081,8 @@ void ISC_expand_share(tstring& file_name)
 }
 #endif	// WIN_NT
 
+#ifdef NOT_USED_OR_REPLACED
+// There's no signature for this function in any header file.
 #ifdef SUPERSERVER
 int ISC_strip_extension(TEXT* file_name)
 {
@@ -1098,6 +1122,7 @@ int ISC_strip_extension(TEXT* file_name)
 	return strlen(file_name);
 }
 #endif
+#endif
 
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD || defined SINIXZ)
@@ -1114,7 +1139,8 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
  *	shows up, stop translating.
  *
  **************************************/
-// If the filename contains a TCP node name, don't even try to expand it
+
+	// If the filename contains a TCP node name, don't even try to expand it
 	if (buff.find(INET_FLAG) != npos) 
 	{
 		return;
@@ -1124,7 +1150,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 	const char* from = src.c_str();
 	buff = "";
 
-// Handle references to default directories (tilde refs)
+	// Handle references to default directories (tilde refs)
 	if (*from == '~') 
 	{
 		++from;
@@ -1140,7 +1166,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 		}
 	}
 
-// If the file is local, expand partial pathnames with default directory
+	// If the file is local, expand partial pathnames with default directory
 	if (*from && *from != '/') 
 	{
 		if (! GETWD(buff)) 
@@ -1150,7 +1176,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 		buff += '/';
 	}
 
-// Process file name segment by segment looking for symbolic links.
+	// Process file name segment by segment looking for symbolic links.
 	while (*from) 
 	{
 
@@ -1222,12 +1248,12 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 			buff.replace(segment, buff.length() - segment, link);
 		}
 
-		/* Whole link needs translating -- recurse */
+		// Whole link needs translating -- recurse
 		expand_filename2(buff, expand_mounts);
 	}
 
-// If needed, call ISC_analyze_nfs to handle NFS mount points.
 #ifndef NO_NFS
+	// If needed, call ISC_analyze_nfs to handle NFS mount points.
 	if (expand_mounts)
 	{
 		tstring nfsServer;
@@ -1299,10 +1325,10 @@ static void expand_share_name(tstring& share_name)
 	if (ret == ERROR_MORE_DATA) {
 		d_size++;
 		data = (LPBYTE) gds__alloc((SLONG) d_size);
-		/* FREE: unknown */
-		if (!data) {			/* NOMEM: */
+		// FREE: unknown
+		if (!data) {			// NOMEM:
 			RegCloseKey(hkey);
-			return;				/* Error not really handled */
+			return;				// Error not really handled
 		}
 		ret =
 			RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
@@ -1313,15 +1339,15 @@ static void expand_share_name(tstring& share_name)
 			 s = (type_code == REG_MULTI_SZ) ? s + strlen(s) + 1 : NULL)
 		{
 			if (!strnicmp(s, "path", 4)) {
-		    /* CVC: Paranoid protection against buffer overrun.
-				    MAXPATHLEN minus NULL terminator, the possible backslash and p==db_name.
-					Otherwise, it's possible to create long share plus long db_name => crash. */
+				// CVC: Paranoid protection against buffer overrun.
+				// MAXPATHLEN minus NULL terminator, the possible backslash and p==db_name.
+				// Otherwise, it's possible to create long share plus long db_name => crash.
 				size_t idx = strlen(s + 5);
 				if (idx + 1 + (s[4 + idx] == '\\' ? 1 : 0) + strlen(p) >= MAXPATHLEN)
 					break;
 
-				strcpy(workspace, s + 5);	/* step past the "Path=" part */
-			    /* idx = strlen (workspace); Done previously. */
+				strcpy(workspace, s + 5);	// step past the "Path=" part
+				// idx = strlen (workspace); Done previously.
 				if (workspace[idx - 1] != '\\')
 					workspace[idx++] = '\\';
 				strcpy(workspace + idx, p);
@@ -1339,6 +1365,10 @@ static void expand_share_name(tstring& share_name)
 }
 
 
+// Expand the full file name for incomplete or relative paths in Windows.
+// Notice the API doesn't guarantee that the resulting path and filename are valid.
+// In this regard, our custom ShortToLongPathName() is more thorough, although
+// it produces different results, because it skips "." and ".." in the path.
 static bool get_full_path(const tstring& part, tstring& full)
 {
 	TEXT buf[MAXPATHLEN];
@@ -1555,8 +1585,8 @@ bool Mnt::get()
 		   NFS mount points */
 
 /****
-    if (strcmp (type, "nfs"))
-	continue;
+	if (strcmp (type, "nfs"))
+		continue;
 ****/
 
 		mount->mnt_node = p;
@@ -1771,8 +1801,8 @@ static void share_name_from_resource(tstring& file_name,
 		file_name.replace(0, 2, expanded_name);
 
 		/* If the expanded filename doesn't begin with a node name of the form
-		   \\NODE and it contains a ':', then it's probably an NFS mounted drive.
-		   Therefore we must convert any back slashes to forward slashes. */
+		\\NODE and it contains a ':', then it's probably an NFS mounted drive.
+		Therefore we must convert any back slashes to forward slashes. */
 
 		if ((file_name[0] != '\\' || file_name[1] != '\\')
 			&& (file_name.find(INET_FLAG) != npos)) 

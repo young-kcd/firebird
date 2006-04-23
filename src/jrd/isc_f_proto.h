@@ -38,7 +38,7 @@ bool		ISC_analyze_xnet(Firebird::PathName&, Firebird::PathName&);
 bool		ISC_check_if_remote(const Firebird::PathName&, bool);
 enum		iscProtocol {ISC_PROTOCOL_LOCAL, ISC_PROTOCOL_TCPIP, ISC_PROTOCOL_WLAN};
 iscProtocol	ISC_extract_host(Firebird::PathName&, Firebird::PathName&, bool);
-void		ISC_expand_filename(Firebird::PathName&, bool);
+bool		ISC_expand_filename(Firebird::PathName&, bool);
 
 // This form of ISC_expand_filename makes epp files happy
 inline int	ISC_expand_filename(const TEXT* unexpanded, 
@@ -50,6 +50,7 @@ inline int	ISC_expand_filename(const TEXT* unexpanded,
 	Firebird::PathName pn(unexpanded, 
 			len_unexpanded ? len_unexpanded : strlen(unexpanded));
 	ISC_expand_filename(pn, expand_share);
+	// What do I return here if the previous call returns false?
 	return pn.copyTo(expanded, len_expanded);
 }
 
