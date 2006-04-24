@@ -2,6 +2,46 @@
   * v2.0 Release Candidate 1
   **************************
 
+    * Fixed SF #1466193
+        Semaphore array`s permissions in fb_lock_mgr were 0666 - i.e. anyone 
+        cold lock them and block all future queries
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        2.0 regression - install of SuperServer over existing Classic was broken
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed SF #1456002
+        2.0 regression - gsec illegally reported error on attempt to use long 
+        (>8 characters) password
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed SF #1011401
+        start/stop script broke halt/reboot on slackware
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        2.0 regression - SuperServer startup script stopped all 'fbserver'
+        processes, being specially dangerous in case of running both 2.0
+        and 1.5 on the same box
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        fbguard did not detach from controlling terminal
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        2.0 regression - SuperServer did not shutdown properly due to 
+        unhandled exception in semaphore destructor
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Enhancement
         Isql now shows the command line parameters and their explanations instead
         of a simple list of switches when unknown parameters are used.
