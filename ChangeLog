@@ -1,3 +1,39 @@
+2006-04-24 04:09  asfernandes
+
+	* firebird2/builds/install/misc/posixLibrary.sh.in (1.4.4.4):
+	
+	Misc
+
+2006-04-23 15:28  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.s
+	lackware.in (1.1):
+	
+	file firebird.init.d.slackware.in was initially added on branch
+	B2_0_Release.
+
+2006-04-23 15:28  alexpeshkoff
+
+	* firebird2/builds/install/:
+	arch-specific/linux/classic/rpmheader.txt.in (1.3.4.1),
+	arch-specific/linux/misc/firebird.init.d.slackware.in (1.1.2.1),
+	arch-specific/linux/misc/linuxLibrary.sh.in (1.3.4.2),
+	arch-specific/linux/misc/superLinux.sh.in (1.2.4.2),
+	arch-specific/linux/super/rpmheader.txt.in (1.4.4.1),
+	misc/classicLibrary.sh.in (1.4.4.2), misc/posixLibrary.sh.in
+	(1.4.4.3), misc/superLibrary.sh.in (1.1.6.2):
+	
+	1. fixed some linux install scripts problems 2. added slackware
+	support
+
+2006-04-23 15:26  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.53.2.1):
+	
+	fixed illegal error reporting - warning about too long password is
+	a victim
+
 2006-04-23 01:25  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp (1.261.2.1):
