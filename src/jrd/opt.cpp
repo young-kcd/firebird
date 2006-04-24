@@ -2978,6 +2978,8 @@ static bool expression_contains_stream(CompilerScratch* csb,
 		case nod_agg_total2:
 		case nod_agg_total_distinct:
 		case nod_agg_total_distinct2:
+		case nod_agg_list:
+		case nod_agg_list_distinct:
 		case nod_concatenate:
 		case nod_divide:
 		case nod_divide2:
@@ -3894,7 +3896,8 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 			(from->nod_type == nod_agg_total_distinct)    ||
 			(from->nod_type == nod_agg_total_distinct2)   ||
 			(from->nod_type == nod_agg_average_distinct2) ||
-			(from->nod_type == nod_agg_average_distinct))
+			(from->nod_type == nod_agg_average_distinct)  ||
+			(from->nod_type == nod_agg_list_distinct))
 		{
 			const USHORT count = asb_delta + 1 +
 					(sizeof(sort_key_def) + sizeof(jrd_nod**) - 1) / sizeof(jrd_nod**);
@@ -3929,8 +3932,8 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 			sort_key->skd_flags = SKD_ascending;
 			asb->nod_impure = CMP_impure(csb, sizeof(impure_agg_sort));
 			asb->asb_desc = *desc;
-			from->nod_arg[1] = (jrd_nod*) asb;
-			from->nod_count = 2;
+			// store asb as a last argument
+			from->nod_arg[from->nod_count++] = (jrd_nod*) asb;
 		}
 	}
 
@@ -5816,6 +5819,8 @@ static void get_expression_streams(const jrd_nod* node,
 		case nod_agg_total2:
 		case nod_agg_total_distinct:
 		case nod_agg_total_distinct2:
+		case nod_agg_list:
+		case nod_agg_list_distinct:
 		case nod_concatenate:
 		case nod_divide:
 		case nod_divide2:

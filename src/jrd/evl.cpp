@@ -143,7 +143,7 @@ static void adjust_text_descriptor(thread_db*, dsc*);
 static dsc* binary_value(thread_db*, const jrd_nod*, impure_value*);
 static dsc* cast(thread_db*, const dsc*, const jrd_nod*, impure_value*);
 static void compute_agg_distinct(thread_db*, jrd_nod*);
-static dsc* concatenate(thread_db*, jrd_nod*, impure_value*);
+static dsc* concatenate(thread_db*, const dsc*, impure_value*);
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
 static dsc* eval_statistical(thread_db*, jrd_nod*, impure_value*);
 static dsc* extract(thread_db*, jrd_nod*, impure_value*);
@@ -827,6 +827,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 	case nod_subtract2:
 	case nod_divide2:
 	case nod_multiply2:
+	case nod_concatenate:
 		return binary_value(tdbb, node, impure);
 
 	case nod_argument:
@@ -855,9 +856,6 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 			return &impure->vlu_desc;
 		}
-
-	case nod_concatenate:
-		return concatenate(tdbb, node, impure);
 
 	case nod_dbkey:
 		return dbkey(tdbb, node, impure);
@@ -1427,12 +1425,24 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 				init_agg_distinct(tdbb, from);
 			break;
 
+		case nod_agg_list:
+		case nod_agg_list_distinct:
+			impure->vlu_desc.dsc_dtype = dtype_text;
+			impure->vlu_desc.dsc_length = 0;
+			impure->vlu_desc.dsc_sub_type = 0;
+			impure->vlu_desc.dsc_scale = 0;
+			impure->vlu_desc.dsc_address = (UCHAR*) "";
+			if (from->nod_type == nod_agg_list_distinct)
+				/* Initialize a sort to reject duplicate values */
+				init_agg_distinct(tdbb, from);
+			break;
+
 		case nod_literal:		/* pjpg 20001124 */
 			EXE_assignment(tdbb, *ptr);
 			break;
 
-                default:    /* Shut up some compiler warnings */
-                    break;
+		default:    // Shut up some compiler warnings
+			break;
 		}
 	}
 
@@ -1585,17 +1595,36 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 				++impure->vlu_misc.vlu_long;
 				break;
 
+			case nod_agg_list:
+				desc = EVL_expr(tdbb, from->nod_arg[0]);
+				if (request->req_flags & req_null)
+					break;
+				if (impure->vlux_count) {
+					const dsc* const delimiter =
+						EVL_expr(tdbb, from->nod_arg[1]);
+					if (request->req_flags & req_null) {
+						// mark the result as NULL
+						impure->vlu_desc.dsc_dtype = 0;
+						break;
+					}
+					concatenate(tdbb, delimiter, impure);
+				}
+				++impure->vlux_count;
+				concatenate(tdbb, desc, impure);
+				break;
+
 			case nod_agg_count_distinct:
 			case nod_agg_total_distinct:
 			case nod_agg_average_distinct:
 			case nod_agg_average_distinct2:
 			case nod_agg_total_distinct2:
+			case nod_agg_list_distinct:
 				{
 					desc = EVL_expr(tdbb, from->nod_arg[0]);
 					if (request->req_flags & req_null)
 						break;
 					/* "Put" the value to sort. */
-					AggregateSort* asb = (AggregateSort*) from->nod_arg[1];
+					AggregateSort* asb = (AggregateSort*) from->nod_arg[from->nod_count - 1];
 					impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 					UCHAR* data;
 					SORT_put(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle,
@@ -1621,8 +1650,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 
 /* Finish up any residual computations and get out */
 
-	if (vtemp.vlu_string)
-		delete vtemp.vlu_string;
+	delete vtemp.vlu_string;
 
 	dsc temp;
 	double d;
@@ -1647,8 +1675,11 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 		case nod_agg_total_distinct:
 		case nod_agg_total2:
 		case nod_agg_total_distinct2:
+		case nod_agg_list:
+		case nod_agg_list_distinct:
 			if ((from->nod_type == nod_agg_total_distinct) ||
-				(from->nod_type == nod_agg_total_distinct2))
+				(from->nod_type == nod_agg_total_distinct2) ||
+				(from->nod_type == nod_agg_list_distinct))
 			{
 				compute_agg_distinct(tdbb, from);
 			}
@@ -1719,8 +1750,8 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 			MOV_move(&temp, EVL_expr(tdbb, field));
 			break;
 
-                default: /* Shut up some compiler warnings */
-                    break;
+		default:	// Shut up some compiler warnings
+			break;
 		}
 	}
 
@@ -2660,6 +2691,9 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 	case nod_divide2:			/* dialect-3 semantics */
 		return divide2(desc2, impure, node);
 
+	case nod_concatenate:
+		return concatenate(tdbb, desc2, impure);
+
 	default:
 		BUGCHECK(232);			/* msg 232 EVL_expr: invalid operation */
 	}
@@ -2752,7 +2786,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 	DEV_BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->tdbb_request;
-	AggregateSort* asb = (AggregateSort*) node->nod_arg[1];
+	AggregateSort* asb = (AggregateSort*) node->nod_arg[node->nod_count - 1];
 	impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 	dsc* desc = &asb->asb_desc;
 	impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + node->nod_impure);
@@ -2801,14 +2835,28 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 			++impure->vlu_misc.vlu_long;
 			break;
 
-                default:  /* Shut up some warnings */
-                    break;
+		case nod_agg_list_distinct:
+			if (impure->vlux_count) {
+				const dsc* const delimiter = EVL_expr(tdbb, node->nod_arg[1]);
+				if (request->req_flags & req_null) {
+					// mark the result as NULL
+					impure->vlu_desc.dsc_dtype = 0;
+					break;
+				}
+				concatenate(tdbb, delimiter, impure);
+			}
+			++impure->vlux_count;
+			concatenate(tdbb, desc, impure);
+			break;
+
+		default:	// Shut up some warnings
+			break;
 		}
 	}
 }
 
 
-static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static dsc* concatenate(thread_db* tdbb, const dsc* value, impure_value* impure)
 {
 /**************************************
  *
@@ -2822,78 +2870,58 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
  **************************************/
 	SET_TDBB(tdbb);
 
-	DEV_BLKCHK(node, type_nod);
+	const dsc* const value1 = &impure->vlu_desc;
+	const dsc* const value2 = value;
 
-/* Evaluate sub expressions.  If either is missing, return NULL result. */
+	USHORT ttype1 = INTL_TTYPE(value1);
 
-	jrd_req* request = tdbb->tdbb_request;
-
-/* Evaluate arguments.  If either is null, result is null, but in
-   any case, evaluate both, since some expressions may later depend
-   on mappings which are developed here */
-
-	dsc* value1 = EVL_expr(tdbb, node->nod_arg[0]);
-	const ULONG flags = request->req_flags;
-	request->req_flags &= ~req_null;
-
-	dsc* value2 = EVL_expr(tdbb, node->nod_arg[1]);
-
-/* restore saved NULL state */
-
-	if (flags & req_null) {
-		request->req_flags |= req_null;
-		return value1;
-	}
-
-	if (request->req_flags & req_null)
-		return value2;
-
+ 	if ((value2->dsc_sub_type != CS_NONE) &&
+ 		((ttype1 == CS_NONE) || (ttype1 == CS_ASCII)))
 	{
-		USHORT ttype1 = INTL_TTYPE(value1);
+ 		ttype1 = value2->dsc_sub_type;
+ 	}
 
- 		if ((value2->dsc_sub_type != CS_NONE) &&
- 			((ttype1 == CS_NONE) || (ttype1 == CS_ASCII)))
-		{
- 			ttype1 = value2->dsc_sub_type;
- 		}
+	// Both values are present; build the concatenation
 
-/* Both values are present; build the concatenation */
-		UCHAR *address1;
-		MoveBuffer temp1;
-		USHORT length1 =
-			MOV_make_string2(value1, ttype1, &address1, temp1);
+	UCHAR *address1;
+	MoveBuffer temp1;
+	const USHORT length1 = MOV_make_string2(value1, ttype1, &address1, temp1);
 
-/* value2 will be converted to the same text type as value1 */
+	// value2 will be converted to the same text type as value1
 
-		UCHAR *address2;
-		MoveBuffer temp2;
-		USHORT length2 = MOV_make_string2(value2, ttype1, &address2, temp2);
+	UCHAR *address2;
+	MoveBuffer temp2;
+	const USHORT length2 = MOV_make_string2(value2, ttype1, &address2, temp2);
 
-		if ((ULONG) length1 + (ULONG) length2 > MAX_COLUMN_SIZE - sizeof(USHORT))
-		{
-		    ERR_post(isc_concat_overflow, 0);
-		    return NULL;
-		}
-
-		dsc desc;
-		desc.dsc_dtype = dtype_text;
-		desc.dsc_sub_type = 0;
-		desc.dsc_scale = 0;
-		desc.dsc_length = length1 + length2;
-		desc.dsc_address = NULL;
-		INTL_ASSIGN_TTYPE(&desc, ttype1);
-
-		EVL_make_value(tdbb, &desc, impure);
-		UCHAR* p = impure->vlu_desc.dsc_address;
-
-		if (length1) {
-			memcpy(p, address1, length1);
-			p += length1;
-		}
-		if (length2) {
-			memcpy(p, address2, length2);
-		}
+	if ((ULONG) length1 + (ULONG) length2 > MAX_COLUMN_SIZE - sizeof(USHORT))
+	{
+		ERR_post(isc_concat_overflow, 0);
+		return NULL;
 	}
+
+	dsc desc;
+	desc.dsc_dtype = dtype_text;
+	desc.dsc_sub_type = 0;
+	desc.dsc_scale = 0;
+	desc.dsc_length = length1 + length2;
+	desc.dsc_address = NULL;
+	INTL_ASSIGN_TTYPE(&desc, ttype1);
+
+	const VaryingString* const string = impure->vlu_string;
+	impure->vlu_string = NULL;
+	EVL_make_value(tdbb, &desc, impure);
+	UCHAR* p = impure->vlu_desc.dsc_address;
+
+	if (length1) {
+		memcpy(p, address1, length1);
+		p += length1;
+	}
+	if (length2) {
+		memcpy(p, address2, length2);
+	}
+
+	delete string;
+
 	return &impure->vlu_desc;
 }
 
@@ -3305,8 +3333,9 @@ static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
 		case nod_agg_average_distinct:
 		case nod_agg_average_distinct2:
 		case nod_agg_total_distinct2:
+		case nod_agg_list_distinct:
 			{
-			const AggregateSort* asb = (AggregateSort*) from->nod_arg[1];
+			const AggregateSort* asb = (AggregateSort*) from->nod_arg[from->nod_count - 1];
 			impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 			SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
 			asb_impure->iasb_sort_handle = NULL;
@@ -3462,7 +3491,7 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 
 	jrd_req* request = tdbb->tdbb_request;
 
-	const AggregateSort* asb = (AggregateSort*) node->nod_arg[1];
+	const AggregateSort* asb = (AggregateSort*) node->nod_arg[node->nod_count - 1];
 	impure_agg_sort* asb_impure = (impure_agg_sort*) ((char*) request + asb->nod_impure);
 	const sort_key_def* sort_key = asb->asb_key_desc;
 

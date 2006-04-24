@@ -317,6 +317,8 @@
 #define blr_cursor_stmt		(unsigned char)167
 #define blr_current_timestamp2	(unsigned char)168
 #define blr_current_time2	(unsigned char)169
+#define blr_agg_list		(unsigned char)170
+#define blr_agg_list_distinct	(unsigned char)171
 
 /* These codes are actions for user-defined savepoints */
 

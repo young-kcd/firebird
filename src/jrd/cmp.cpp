@@ -1011,6 +1011,18 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		}
 		break;
 
+	case nod_agg_list:
+	case nod_agg_list_distinct:
+		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
+		if (!DTYPE_IS_TEXT(desc->dsc_dtype)) {
+			desc->dsc_ttype() = ttype_ascii;
+		}
+		desc->dsc_dtype = dtype_varying;
+		desc->dsc_length = MAX_COLUMN_SIZE;
+		desc->dsc_scale = 0;
+		desc->dsc_flags = 0;
+		return;
+
 	case nod_add:
 	case nod_subtract:
 		{
@@ -4735,8 +4747,10 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_total:
 	case nod_agg_total2:
 	case nod_agg_total_distinct2:
+	case nod_agg_list:
+	case nod_agg_list_distinct:
 		{
-			node->nod_count = 0;
+//			node->nod_count = 0;
 			csb->csb_impure += sizeof(impure_value);
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
@@ -4746,7 +4760,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_agg_average2:
 	case nod_agg_average_distinct2:
 		{
-			node->nod_count = 0;
+//			node->nod_count = 0;
 			csb->csb_impure += sizeof(impure_value_ex);
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);

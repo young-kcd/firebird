@@ -2457,6 +2457,12 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		*arg++ = parse(tdbb, csb, sub_type);
 		break;
 
+	case blr_agg_list:
+	case blr_agg_list_distinct:
+		*arg++ = parse(tdbb, csb, sub_type);
+		*arg++ = parse(tdbb, csb, VALUE);
+		break;
+
 	case blr_exec_sql:
 		*arg++ = parse(tdbb, csb, sub_type);
 		break;
