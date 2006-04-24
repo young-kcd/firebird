@@ -1864,6 +1864,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_agg_total:
 		verb = "agg_total";
 		break;
+	case nod_agg_list:
+		verb = "agg_list";
+		break;
 	case nod_add:
 		verb = "add";
 		break;

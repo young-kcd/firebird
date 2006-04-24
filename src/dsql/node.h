@@ -341,7 +341,8 @@ enum nod_t
 	nod_returning,
 	nod_redef_trigger,
 	nod_tra_misc,
-	nod_lock_timeout
+	nod_lock_timeout,
+	nod_agg_list
 };
 
 typedef nod_t NOD_TYPE;
@@ -934,6 +935,7 @@ enum node_args {
 	e_cur_stmt_count,
 
 	e_agg_function_expression = 0,
+	e_agg_function_delimiter,
 	e_agg_function_scope_level,
 	e_agg_function_count,
 

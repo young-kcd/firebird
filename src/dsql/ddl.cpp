@@ -745,6 +745,7 @@ static bool is_array_or_blob(const dsql_nod* node)
 	case nod_agg_total:
 	case nod_agg_average2:
 	case nod_agg_total2:
+	case nod_agg_list:
 	case nod_upcase:
 	case nod_lowcase:
 	case nod_negate:

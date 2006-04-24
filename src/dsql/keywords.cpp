@@ -188,6 +188,7 @@ static const TOK tokens[] =
 	{LEVEL, "LEVEL", 1, false},
 	{LIKE, "LIKE", 1, false},
 	{LIMBO, "LIMBO", 2, true},
+	{LIST, "LIST", 2, false},
 	{LOCK, "LOCK", 2, true},
 	{KW_LONG, "LONG", 1, false},
 	{KW_LOWER, "LOWER", 2, false},

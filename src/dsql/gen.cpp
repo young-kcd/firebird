@@ -299,6 +299,11 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 			blr_agg_total_distinct : blr_agg_total;
 		break;
 
+	case nod_agg_list:
+		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
+			blr_agg_list_distinct : blr_agg_list;
+		break;
+
 	case nod_and:
 		blr_operator = blr_and;
 		break;
@@ -406,7 +411,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		blr_operator = blr_any;
 		break;
 	case nod_ansi_any:
-			blr_operator = blr_ansi_any;
+		blr_operator = blr_ansi_any;
 		break;
 	case nod_ansi_all:
 		blr_operator = blr_ansi_all;

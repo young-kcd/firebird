@@ -517,6 +517,10 @@ static LexerState lex;
 %token REQUESTS
 %token TIMEOUT
 
+/* tokens added for Firebird 2.1 */
+
+%token LIST
+
 /* precedence declarations for expression evaluation */
 
 %left	OR
@@ -3969,6 +3973,22 @@ aggregate_function	: COUNT '(' '*' ')'
 			{ $$ = make_node (nod_agg_max, 1, $4); }
 		| MAXIMUM '(' DISTINCT value ')'
 			{ $$ = make_node (nod_agg_max, 1, $4); }
+		| LIST '(' all_noise value delimiter_opt ')'
+			{ $$ = make_node (nod_agg_list, 2, $4, $5); }
+		| LIST '(' DISTINCT value delimiter_opt ')'
+			{ $$ = make_flag_node (nod_agg_list, NOD_AGG_DISTINCT, 2, $4, $5); }
+		;
+
+delimiter_opt	: ',' delimiter_value
+			{ $$ = $2; }
+		|
+			{ $$ = MAKE_str_constant (MAKE_cstring(","), lex.att_charset); }
+		;
+
+delimiter_value	: sql_string
+			{ $$ = MAKE_str_constant ((dsql_str*) $1, lex.att_charset); }
+		| parameter
+		| variable
 		;
 
 numeric_value_function	: extract_expression
@@ -4269,8 +4289,8 @@ non_reserved_word :
 	| DELETING
 	| FIRST
 	| SKIP
-	| BLOCK
-	// | ACCENT	// FB_NEW_INTL_ALLOW_NOT_READY				/* added in FB 2.0 */
+	| BLOCK					/* added in FB 2.0 */
+	// | ACCENT	// FB_NEW_INTL_ALLOW_NOT_READY
 	| BACKUP
 	| KW_DIFFERENCE
 	| IIF
@@ -4289,6 +4309,7 @@ non_reserved_word :
 	| UNDO
 	| REQUESTS
 	| TIMEOUT
+	| LIST					/* added in FB 2.1 */
 	;
 
 %%

@@ -279,6 +279,7 @@
 #define UNDO 532
 #define REQUESTS 533
 #define TIMEOUT 534
+#define LIST 535
 #define YYERRCODE 256
 
 #endif

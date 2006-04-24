@@ -868,6 +868,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_agg_total:
 	case nod_agg_average2:
 	case nod_agg_total2:
+	case nod_agg_list:
 		if (proc_flag) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					  isc_arg_gds, isc_dsql_command_err, 0);
@@ -885,11 +886,22 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node->nod_count = input->nod_count;  // Copy count, because this must be exactly the same as input.
 		node->nod_flags = input->nod_flags;
 		if (input->nod_count) {
-			node->nod_arg[e_agg_function_expression] = PASS1_node(request, input->nod_arg[0], proc_flag);
+			for (int i = 0; i < input->nod_count; i++) {
+				node->nod_arg[i] =
+					PASS1_node(request, input->nod_arg[i], proc_flag);
+
+				std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
+				desc_node->nod_desc.dsc_dtype = dtype_text;
+				desc_node->nod_desc.dsc_length = 1;
+				desc_node->nod_desc.dsc_sub_type = 0;
+				desc_node->nod_desc.dsc_scale = 0;
+				set_parameter_type(request, node->nod_arg[i], desc_node.get(), false);
+			}
 		}
 		else {
 			// Scope level is needed to determine to which context COUNT(*) belongs.
-			node->nod_arg[e_agg_function_scope_level] = (dsql_nod*)(IPTR) request->req_scope_level;
+			node->nod_arg[e_agg_function_scope_level] =
+				(dsql_nod*)(IPTR) request->req_scope_level;
 		}
 		return node;
 
@@ -1806,6 +1818,7 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 		case nod_agg_min:
 		case nod_agg_total:
 		case nod_agg_count:
+		case nod_agg_list:
 			if (!ignore_sub_selects)
 			{
 				if (node->nod_count) {
@@ -2611,6 +2624,7 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_agg_total:
 		case nod_agg_average2:
 		case nod_agg_total2:
+		case nod_agg_list:
 			if (!inside_own_map) {
 				// We are not in an aggregate from the same scope_level so
 				// check for valid fields inside this aggregate
@@ -4569,6 +4583,7 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 		case nod_agg_total:
 		case nod_agg_average2:
 		case nod_agg_total2:
+		case nod_agg_list:
 			{
 				bool field = false;
 				if (node->nod_count) {
@@ -4804,6 +4819,7 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_agg_total:
 		case nod_agg_average2:
 		case nod_agg_total2:
+		case nod_agg_list:
 			if (node->nod_count) {
 				found |= pass1_found_field(node->nod_arg[e_agg_function_expression],
 					check_scope_level, match_type, field);
@@ -4959,6 +4975,7 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 		case nod_agg_total:
 		case nod_agg_average2:
 		case nod_agg_total2:
+		case nod_agg_list:
 		case nod_map:
 
 		case nod_derived_field:
@@ -7670,6 +7687,7 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 		case nod_agg_total:
 		case nod_agg_average2:
 		case nod_agg_total2:
+		case nod_agg_list:
 			{
 				USHORT ldeepest_level = request->req_scope_level;
 				USHORT lcurrent_level = current_level;
@@ -8056,7 +8074,8 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 
 				MAKE_desc(request, &in_node->nod_desc, node, NULL);
 
-				if (in_node->nod_desc.dsc_dtype <= dtype_any_text && request->req_dbb->dbb_att_charset != CS_NONE &&
+				if (in_node->nod_desc.dsc_dtype <= dtype_any_text &&
+					request->req_dbb->dbb_att_charset != CS_NONE &&
 					request->req_dbb->dbb_att_charset != CS_BINARY)
 				{
 					int diff = 0;
@@ -8070,7 +8089,7 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 						break;
 					}
 					in_node->nod_desc.dsc_length -= diff;
-						
+
 					USHORT fromCharSet = INTL_GET_CHARSET(&in_node->nod_desc);
 					USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
 						fromCharSet : request->req_dbb->dbb_att_charset;
@@ -8168,6 +8187,7 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 		case nod_strlen:
 		case nod_limit:
 		case nod_rows:
+		case nod_agg_list:
 			{
 				bool result = false;
 				dsql_nod** ptr = in_node->nod_arg;
