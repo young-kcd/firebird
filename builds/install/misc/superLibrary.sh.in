@@ -78,13 +78,3 @@ updateInetdServiceEntry() {
 	# do nothing for SS
 	return 0
 }
-
-
-#------------------------------------------------------------------------
-#  resetXinetdServer
-#  Works for both inetd and xinetd
-
-resetInetdServer() {
-	# do nothing for SS
-	return 0
-}

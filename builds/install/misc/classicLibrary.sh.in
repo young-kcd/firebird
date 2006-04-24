@@ -158,59 +158,6 @@ updateInetdServiceEntry() {
 
 
 #------------------------------------------------------------------------
-#  resetInetdServer
-#  Works for both inetd and xinetd
-
-resetInetdServer() {
-	pid=`ps -efww | grep inetd | grep -v grep | awk '{print $2}'`
-    if [ ! -z $pid ]
-    then
-        kill -HUP $pid
-    fi
-}
-
-
-#------------------------------------------------------------------------
-# remove the xinetd config file
-
-removeXinetdEntry() {
-    if [ -f /etc/xinetd.d/firebird ] 
-    then
-        rm -f /etc/xinetd.d/firebird
-    fi
-}
-
-
-#------------------------------------------------------------------------
-# remove the line from inetd file
-
-removeInetdEntry() {
-    FileName=/etc/inetd.conf
-    oldLine=`grep "^gds_db" $FileName`
-    removeLineFromFile "$FileName" "$oldLine"
-}
-
-
-#------------------------------------------------------------------------
-#  Remove (x)inetd service entry and restart the service.
-#  Check to see if we have xinetd installed or plain inetd.  
-#  Install differs for each of them.
-
-removeInetdServiceEntry() {
-    if [ -d /etc/xinetd.d ] 
-    then
-        removeXinetdEntry
-    elif [ -f /etc/inetd.d ]
-	then
-        removeInetdEntry
-    fi
-
-    # Get (x)inetd to reread configuration
-	resetInetdServer
-}
-
-
-#------------------------------------------------------------------------
 #  change init.d RunUser
 
 changeInitRunUser() {

@@ -86,6 +86,7 @@ runSilent() {
 	return 0
 }
 
+
 #------------------------------------------------------------------------
 # Check for a user, running install, to be root
 
@@ -94,7 +95,7 @@ checkRootUser() {
     if [ "`whoami`" != "root" ];
       then
         echo ""
-        echo "--- Warning ----------------------------------------------"
+        echo "--- Stop ----------------------------------------------"
         echo ""
         echo "    You need to be 'root' user to do this change"
         echo ""
@@ -105,6 +106,60 @@ checkRootUser() {
 #alias
 checkInstallUser() {
 	checkRootUser
+}
+
+
+#------------------------------------------------------------------------
+#  resetInetdServer
+#  Works for both inetd and xinetd
+
+resetInetdServer() {
+	pid=`ps -efww | grep inetd | grep -v grep | awk '{print $2}'`
+    if [ "$pid" ]
+    then
+        kill -HUP $pid
+    fi
+}
+
+
+#------------------------------------------------------------------------
+# remove the xinetd config file(s)
+# take into account possible pre-firebird xinetd services
+
+removeXinetdEntry() {
+	for i in `grep -l "service gds_db" /etc/xinetd.d/*`
+	do
+        rm -f $i
+    done
+}
+
+
+#------------------------------------------------------------------------
+# remove the line from inetd file
+
+removeInetdEntry() {
+    FileName=/etc/inetd.conf
+    oldLine=`grep "^gds_db" $FileName`
+    removeLineFromFile "$FileName" "$oldLine"
+}
+
+
+#------------------------------------------------------------------------
+#  Remove (x)inetd service entry and restart the service.
+#  Check to see if we have xinetd installed or plain inetd.  
+#  Install differs for each of them.
+
+removeInetdServiceEntry() {
+    if [ -d /etc/xinetd.d ] 
+    then
+        removeXinetdEntry
+    elif [ -f /etc/inetd.conf ]
+	then
+        removeInetdEntry
+    fi
+
+    # make [x]inetd reload configuration
+	resetInetdServer
 }
 
 
@@ -122,7 +177,7 @@ checkIfServerRunning() {
 
     if [ ! -z "$checkString" ]
     then
-        echo "An instance of the Firebird/InterBase Super server seems to be running."
+        echo "An instance of the Firebird Super server seems to be running."
         echo "Please quit all interbase applications and then proceed"
         exit 1
     fi
@@ -131,7 +186,7 @@ checkIfServerRunning() {
 
     if [ ! -z "$checkString" ]
     then
-        echo "An instance of the Firebird/InterBase server seems to be running."
+        echo "An instance of the Firebird Classic server seems to be running."
         echo "Please quit all interbase applications and then proceed."
         exit 1
     fi
@@ -153,33 +208,14 @@ checkIfServerRunning() {
 
     if [ ! -z "$checkString" ] 
     then
-        echo "An instance of the Firebird/InterBase classic server seems to be running." 
+        echo "An instance of the Firebird/InterBase Classic server seems to be running." 
         echo "(the gds_inet_server or gds_pipe process was detected running on your system)"
         echo "Please quit all Firebird applications and then proceed." 
         exit 1 
     fi
 
-#	Moved here from postinstall.sh.in. It's really easy to add appropriate 
-#	(x)inetd stop commands sequence here now, but taking into account,
-#	that worked OK for a long time, but service port may be changed today,
-#	leave it commented here. AP, 2005.
-#
-#  This one is commented out, since it usually works out ok, we have
-#  checked that no procesers are active, but inetd/xinetd is still listening
-#  the best thing would be to turn the service off, but I don't have time
-#  to do all the xinetd/inetd stuff, see the preunistall.sh script for details
-#
-#    checkString=`netstat -an | egrep '3050.*LISTEN'`
-#
-#    if [ ! -z "$checkString" ] 
-#      then
-#        echo "An instance of the Firebird/InterBase server seems to be running." 
-#        echo "(netstat -an reports a process is already listening on port 3050)"
-#        echo "Please quit all Firebird applications and then proceed." 
-#        exit 1 
-#    fi
-
-
+	removeInetdServiceEntry
+	
 # Stop lock manager if it is the only thing running.
 
     for i in `ps -efww | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
@@ -260,7 +296,7 @@ replaceLineInFile() {
 	    # The \n is needed, some /etc/services files are missing a trailing
     	# line feed - MOD 12-Dec-2003
 		echo "" >>$TmpFile
-        mv $TmpFile $FileName || rm -f $TmpFile
+        cp $TmpFile $FileName && rm -f $TmpFile
         echo "Updated $1"
     fi
 }
@@ -279,6 +315,21 @@ editFile() {
 	AwkProgram="(\$1 == \"$Starting\") {\$0=\"$NewLine\"} {print \$0}"
 	MakeTemp
 	awk "$AwkProgram" <$FileName >$TmpFile && mv $TmpFile $FileName || rm -f $TmpFile
+}
+
+
+#------------------------------------------------------------------------
+# remove line from config file if it exists in it.
+
+removeLineFromFile() {
+    FileName=$1
+    oldLine=$2
+
+    if [ ! -z "$oldLine" ] 
+    then
+        cat $FileName | grep -v "$oldLine" > ${FileName}.tmp
+        cp ${FileName}.tmp $FileName && rm -f ${FileName}.tmp
+    fi
 }
 
 
@@ -630,22 +681,6 @@ archivePriorInstallSystemFiles() {
     fi
 
     cd $oldPWD
-}
-
-
-#------------------------------------------------------------------------
-# remove line from config file if it exists in it.
-
-removeLineFromFile() {
-    FileName=$1
-    oldLine=$2
-
-    if [ ! -z "$oldLine" ] 
-    then
-        cat $FileName | grep -v "$oldLine" > ${FileName}.tmp
-        mv ${FileName}.tmp $FileName
-        echo "Updated."
-    fi
 }
 
 

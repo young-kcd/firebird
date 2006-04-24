@@ -7,10 +7,11 @@ Group: Applications/Databases
 Source: Firebird-@FIREBIRD_VERSION@.@FB_BUILD_NUM@.tar.bz2
 URL: http://firebird.sourceforge.net 
 # Prefix: /
-AutoReqProv: no 
+AutoReqProv: no
 # BuildArchitectures: @CPU_TYPE@
-# BuildRoot: /var/tmp/%{name}-buildroot
 BuildRoot: @BUILD_ROOT_DIR@/gen/buildroot
+Requires: libncurses.so.5 libstdc++.so.5
+Provides: libfbclient.so.2 libgds.so
 
 %description
 Firebird is a powerful, high-performance relational database designed to be embedded into

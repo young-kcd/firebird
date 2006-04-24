@@ -19,13 +19,6 @@ FIREBIRD=@prefix@
 FBRunUser=firebird
 pidfile=/var/run/firebird/`basename $0`.pid
 FB_OPTS="-pidfile $pidfile -start -forever"
-# WARNING: in a real-world installation, you should not put the 
-# SYSDBA password in a publicly-readable file. 
-# Eventually this file should not need to contain any passwords.
-# as root user alone should be sufficient privledge to stop/start 
-# the server. 
-
-
 export FIREBIRD 
 
 
