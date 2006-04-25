@@ -1,3 +1,17 @@
+2006-04-24 18:11  alexpeshkoff
+
+	* firebird2/builds/install/misc/classicLibrary.sh.in (1.4.4.3):
+	
+	1. Fixed access to files in include directory 2. gds_drop is too
+	'strong' utility to be root SUID - let it    better be usable only
+	by root
+
+2006-04-24 10:23  alexpeshkoff
+
+	* firebird2/doc/WhatsNew (1.95.2.1):
+	
+	added my latest changes
+
 2006-04-24 04:09  asfernandes
 
 	* firebird2/builds/install/misc/posixLibrary.sh.in (1.4.4.4):
