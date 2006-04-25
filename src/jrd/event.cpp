@@ -174,7 +174,7 @@ SLONG EVENT_create_session(ISC_STATUS * status_vector)
  **************************************/
 // If we're not initialized, do so now.
 
-	if (!EVENT_header && !EVENT_init(status_vector, true))
+	if (!EVENT_header && !EVENT_init(status_vector))
 		return 0;
 
 	if (!EVENT_process_offset)
@@ -267,9 +267,7 @@ void EVENT_deliver()
 }
 
 
-// CVC: Contrary to the explanation, server_flag is not used!
-#pragma FB_COMPILER_MESSAGE("server_flag var is not honored: bug or deprecated?")
-EVH EVENT_init(ISC_STATUS* status_vector, bool server_flag)
+EVH EVENT_init(ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -278,9 +276,8 @@ EVH EVENT_init(ISC_STATUS* status_vector, bool server_flag)
  **************************************
  *
  * Functional description
- *	Initialize for access to shared global region.  If "server_flag" is true,
- *	create region if it doesn't exist.  Return address of header if region
- *	exits, otherwise return NULL.
+ *	Initialize for access to shared global region.
+ *	Return address of header.
  *
  **************************************/
 	TEXT buffer[MAXPATHLEN];
@@ -340,7 +337,7 @@ int EVENT_post(ISC_STATUS * status_vector,
 
 /* If we're not initialized, do so now */
 
-	if (!EVENT_header && !EVENT_init(status_vector, false))
+	if (!EVENT_header && !EVENT_init(status_vector))
 		return status_vector[1];
 
 	acquire();
