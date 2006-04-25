@@ -106,7 +106,6 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) -1},
 #endif
 	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
-	{TYPE_BOOLEAN,		"CreateInternalWindow",		(ConfigValue) true},
 	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation", (ConfigValue) false},
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
@@ -439,11 +438,6 @@ int Config::getMaxUnflushedWriteTime()
 int Config::getProcessPriorityLevel()
 {
 	return (int) sysConfig.values[KEY_PROCESS_PRIORITY_LEVEL];
-}
-
-bool Config::getCreateInternalWindow()
-{
-	return (bool) sysConfig.values[KEY_CREATE_INTERNAL_WINDOW];
 }
 
 bool Config::getCompleteBooleanEvaluation()
