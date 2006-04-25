@@ -104,6 +104,8 @@ static const VERB verbs[] =
 	PAIR2(nod_agg_total_distinct, blr_agg_total_distinct, 2, 1, VALUE, VALUE),
 	PAIR2(nod_agg_average, blr_agg_average, 1, 1, VALUE, VALUE),
 	PAIR2(nod_agg_average_distinct, blr_agg_average_distinct, 2, 1, VALUE, VALUE),
+	PAIR(nod_agg_list, blr_agg_list, 2, 2, VALUE, VALUE),
+	PAIR(nod_agg_list_distinct, blr_agg_list_distinct, 3, 2, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter, e_arg_length, 0, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter2, e_arg_length, 0, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter3, e_arg_length, 0, VALUE, VALUE),
