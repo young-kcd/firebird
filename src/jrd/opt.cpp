@@ -2056,7 +2056,7 @@ static SLONG decompose(thread_db*		tdbb,
 			while (or_stack.hasMore(0))
 			{
 				boolean_node->nod_arg[0] =
-					OPT_make_binary_node(nod_and, boolean_node->nod_arg[0], or_stack.pop(), true);				
+					OPT_make_binary_node(nod_and, boolean_node->nod_arg[0], or_stack.pop(), true);
 			}
 		}
 
