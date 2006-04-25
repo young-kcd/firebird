@@ -2,6 +2,12 @@
   * v2.0 Release Candidate 1
   **************************
 
+    * Fixed unregistered bug
+        AV when configured to use big (about 32K) TCP packets
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Fixed SF #1466193
         Semaphore array`s permissions in fb_lock_mgr were 0666 - i.e. anyone 
         cold lock them and block all future queries
