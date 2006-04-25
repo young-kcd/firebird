@@ -3004,13 +3004,13 @@ static SLONG fast_load(thread_db* tdbb,
 	// Just set this variable to false to disable jump information inside indices.
 	bool useJumpInfo = (dbb->dbb_ods_version >= ODS_VERSION11);
 
-	typedef Firebird::vector<jumpNodeList*> jumpNodeListContainer;
+	typedef Firebird::Array<jumpNodeList*> jumpNodeListContainer;
 	jumpNodeListContainer* jumpNodes = FB_NEW(*tdbb->getDefaultPool()) 
 		jumpNodeListContainer(*tdbb->getDefaultPool());
-	jumpNodes->push_back(FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
+	jumpNodes->push(FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
 
 	keyList* jumpKeys = FB_NEW(*tdbb->getDefaultPool()) keyList(*tdbb->getDefaultPool());
-	jumpKeys->push_back(FB_NEW(*tdbb->getDefaultPool()) dynKey);
+	jumpKeys->push(FB_NEW(*tdbb->getDefaultPool()) dynKey);
 	(*jumpKeys)[0]->keyData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
 
 	IndexJumpInfo jumpInfo;
@@ -3438,9 +3438,9 @@ static SLONG fast_load(thread_db* tdbb,
 					key->key_length = 0;
 
 					// Initialize jumpNodes variables for new level
-					jumpNodes->push_back(FB_NEW(*tdbb->getDefaultPool()) 
+					jumpNodes->push(FB_NEW(*tdbb->getDefaultPool()) 
 						jumpNodeList(*tdbb->getDefaultPool()));
-					jumpKeys->push_back(FB_NEW(*tdbb->getDefaultPool()) dynKey);
+					jumpKeys->push(FB_NEW(*tdbb->getDefaultPool()) dynKey);
 					(*jumpKeys)[level]->keyLength = 0;
 					(*jumpKeys)[level]->keyData = 
 						FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];

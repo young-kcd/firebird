@@ -1,7 +1,6 @@
 #ifndef INCLUDE_FB_BLK
 #define INCLUDE_FB_BLK
 
-#include <vector>
 #include "../common/classes/alloc.h"
 
 struct blk
@@ -72,21 +71,6 @@ private:
 	void* operator new(size_t s) { return 0; }
     void* operator new[](size_t s) { return 0; }
 };
-
-/* template<class BASE, class RPT, UCHAR BLOCK_TYPE>
-class vector_rpt : public BASE
-{
-    private:
-        MemoryPool::allocator<RPT> rptAllocator;
-        vector_rpt(int size, MemoryPool& pool)
-          : rptAllocator(pool, BLOCK_TYPE), rpt(size, rptAllocator) {}
-
-    public:
-        std::vector<RPT> rpt;
-
-        static vector_rpt<BASE, RPT, BLOCK_TYPE>* allocate(int size, MemoryPool& p)
-            { return new(p) vector_rpt<BASE, RPT, BLOCK_TYPE>(size, p); }
-}; */
 
 #endif	/* INCLUDE_FB_BLK */
 

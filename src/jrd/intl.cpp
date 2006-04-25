@@ -580,7 +580,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype)
 	if (id == CS_dynamic)
 		id = tdbb->tdbb_attachment->att_charset;
 
-	if (id >= dbb->dbb_charsets.size())
+	if (id >= dbb->dbb_charsets.getCount())
 		dbb->dbb_charsets.resize(id + 10);
 	else
 		cs = dbb->dbb_charsets[id];
@@ -776,7 +776,7 @@ static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
 
 void Database::destroyIntlObjects()
 {
-	for (size_t i = 0; i < dbb_charsets.size(); i++)
+	for (size_t i = 0; i < dbb_charsets.getCount(); i++)
 		if (dbb_charsets[i])
 			dbb_charsets[i]->destroy();
 }

@@ -29,7 +29,6 @@
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
-#include "../include/fb_vector.h"
 #include "../jrd/exe.h"
 #include "../jrd/ibase.h"
 

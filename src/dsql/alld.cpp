@@ -61,12 +61,12 @@ nested FOR loops are added.
 #include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 
-#include "../include/fb_vector.h"
+#include "../common/classes/array.h"
 
 DsqlMemoryPool* DSQL_permanent_pool = 0;
-typedef Firebird::vector<DsqlMemoryPool*> pool_vec_t;
+typedef Firebird::Array<DsqlMemoryPool*> pool_vec_t;
 static bool init_flag = false;
-static Firebird::vector<DsqlMemoryPool*> *pools = 0;
+static pool_vec_t *pools = 0;
 
 // Microsoft MSVC bug workaround
 #ifdef _MSC_VER
@@ -97,16 +97,11 @@ void ALLD_fini()
 
 void ALLD_init()
 {
-	// tsql* tdsql = DSQL_get_thread_data();
-
 	if (!init_flag)
 	{
 		init_flag = true;
 		DSQL_permanent_pool = DsqlMemoryPool::createPool();
-		pools = FB_NEW(*DSQL_permanent_pool) Firebird::vector<DsqlMemoryPool*>
-					(10, *DSQL_permanent_pool, dsql_type_vec);
-		// I don't catch why this happens only for !init_flag. Alex.
-		// tdsql->setDefaultPool(DSQL_permanent_pool);
+		pools = FB_NEW(*DSQL_permanent_pool) pool_vec_t(*DSQL_permanent_pool, 10);
 	}
 }
 
@@ -127,7 +122,7 @@ DsqlMemoryPool* DsqlMemoryPool::createPool()
 		}
 	}
 
-	pools->resize(pools->size() + 10);
+	pools->resize(pools->getCount() + 10);
 	for (pool_vec_t::iterator curr = pools->begin(); curr != pools->end(); ++curr)
 	{
 		if (!*curr)

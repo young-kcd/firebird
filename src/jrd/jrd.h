@@ -40,9 +40,9 @@
 #include <setjmp.h>
 #endif
 
-#include "../include/fb_vector.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
@@ -224,7 +224,7 @@ public:
 	JrdMemoryPool* dbb_bufferpool;
 
 	typedef JrdMemoryPool* pool_ptr;
-	typedef Firebird::vector<pool_ptr> pool_vec_type;
+	typedef Firebird::Array<pool_ptr> pool_vec_type;
 
 	pool_vec_type dbb_pools;		// pools
 
@@ -276,7 +276,7 @@ public:
 	struct log *dbb_log;		/* log file for REPLAY */
 #endif
 
-	Firebird::vector<CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
+	Firebird::Array<CharSetContainer*>		dbb_charsets;	/* intl character set descriptions */
 	TxPageCache*	dbb_tip_cache;	/* cache of latest known state of all transactions in system */
 	vcl*		dbb_pc_transactions;	/* active precommitted transactions */
 	BackupManager *dbb_backup_manager; /* physical backup manager */
@@ -288,16 +288,17 @@ private:
 		dbb_filename(p),
 		dbb_database_name(p),
 		dbb_encrypt_key(p),
-		dbb_pools(1, p, type_dbb),
+		dbb_pools(p, 4),
 		dbb_charsets(p)
 	{
+		dbb_pools.resize(1);
 	}
 
 	~Database()
 	{
 		destroyIntlObjects();
 
-		pool_vec_type::iterator itr = dbb_pools.begin();
+		pool_ptr* itr = dbb_pools.begin();
 		while (itr != dbb_pools.end())
 		{
 			if (*itr && *itr == dbb_bufferpool)
@@ -822,8 +823,8 @@ template <class T, USHORT TYPE = type_vec>
 class vec_base : protected pool_alloc<TYPE>
 {
 public:
-	typedef typename Firebird::vector<T>::iterator iterator;
-	typedef typename Firebird::vector<T>::const_iterator const_iterator;
+	typedef typename Firebird::Array<T>::iterator iterator;
+	typedef typename Firebird::Array<T>::const_iterator const_iterator;
 	/*
 	static vec_base* newVector(MemoryPool& p, int len)
 	{
@@ -836,34 +837,34 @@ public:
 	*/
 		
 	// CVC: This should be size_t instead of ULONG for maximum portability.
-	ULONG count() const { return vector.size(); }
-	T& operator[](size_t index) { return vector[index]; }
-	const T& operator[](size_t index) const { return vector[index]; }
+	ULONG count() const { return v.getCount(); }
+	T& operator[](size_t index) { return v[index]; }
+	const T& operator[](size_t index) const { return v[index]; }
 
-	iterator begin() { return vector.begin(); }
-	iterator end() { return vector.end(); }
+	iterator begin() { return v.begin(); }
+	iterator end() { return v.end(); }
 
-	const_iterator begin() const { return vector.begin(); }
-	const_iterator end() const { return vector.end(); }
+	const_iterator begin() const { return v.begin(); }
+	const_iterator end() const { return v.end(); }
 	
-	void clear() { vector.clear(); }
-	//void prepend(int n) { vector.insert(vector.begin(), n); }
+	void clear() { v.clear(); }
+	//void prepend(int n) { v.insert(v.begin(), n); }
 	
-//	T* memPtr() { return &*(vector.begin()); }
-	T* memPtr() { return &vector[0]; }
+//	T* memPtr() { return &*(v.begin()); }
+	T* memPtr() { return &v[0]; }
 
-	void resize(size_t n, T val = T()) { vector.resize(n, val); }
+	void resize(size_t n, T val = T()) { v.resize(n, val); }
 
 	void operator delete(void* mem) { MemoryPool::globalFree(mem); }
 
 protected:
 	vec_base(MemoryPool& p, int len)
-		: vector(len, p, TYPE) {}
+		: v(p, len) { v.resize(len); }
 	vec_base(MemoryPool& p, const vec_base& base)
-		: vector(p, TYPE) { vector = base.vector; }
+		: v(p) { v = base.v; }
 
 private:
-	Firebird::vector<T> vector;
+	Firebird::Array<T> v;
 };
 
 template <typename T>

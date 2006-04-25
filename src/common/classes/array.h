@@ -98,6 +98,8 @@ protected:
 			this->getPool().deallocate(data);
 	}
 public:
+	typedef T* iterator;
+	typedef const T* const_iterator;
 	Array<T, Storage>& operator =(const Array<T, Storage>& L) 
 	{
 		ensureCapacity(L.count);
@@ -187,6 +189,27 @@ public:
 		memset(data + count, 0, sizeof(T) * (newCount - count));
 		count = newCount;
 	}
+	// Resize array according to STL's vector::resize() rules
+	void resize(size_t newCount, const T& val) {
+		if (newCount > count) {
+			ensureCapacity(newCount);
+			while (count < newCount) {
+				data[count++] = val;
+			}
+		}
+		else {
+			count = newCount;
+		}
+	}
+	void resize(size_t newCount) {
+		if (newCount > count) {
+			grow(newCount);
+		}
+		else {
+			count = newCount;
+		}
+	}
+	// Resize array according to STL's vector::resize() rules
 	void join(const Array<T, Storage>& L) {
 		ensureCapacity(count + L.count);
 		memcpy(data + count, L.data, sizeof(T) * L.count);

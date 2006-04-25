@@ -24,7 +24,6 @@
 #define COMMON_CONFIG_H
 
 #include "../common/classes/fb_string.h"
-#include "fb_vector.h"
 #include "../jrd/os/path_utils.h"
 
 /**

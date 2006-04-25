@@ -32,8 +32,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
-
-#include <algorithm>
+#include "../common/classes/array.h"
 
 using namespace Jrd;
 
@@ -69,7 +68,7 @@ void ALL_check_memory()
 #endif
 
 	// walk through all the pools in the database
-	Firebird::vector<JrdMemoryPool*>::iterator itr;
+	Firebird::Array<JrdMemoryPool*>::iterator itr;
 	for (itr = dbb->dbb_pools.begin(); itr < dbb->dbb_pools.end(); ++itr)
 	{
 		JrdMemoryPool* pool = *itr;
@@ -104,15 +103,20 @@ JrdMemoryPool *JrdMemoryPool::createPool() {
 	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool), dbb->dbb_permanent);
 #endif
 	result->plb_dccs = NULL;
-	dbb->dbb_pools.push_back(result);
+	dbb->dbb_pools.push(result);
 	return result;
 }
 
 void JrdMemoryPool::deletePool(JrdMemoryPool* pool) {
 	Database* dbb = GET_DBB();
-	Database::pool_vec_type::iterator itr =
-		std::find(dbb->dbb_pools.begin(), dbb->dbb_pools.end(), pool);
-	if (itr != dbb->dbb_pools.end()) dbb->dbb_pools.erase(itr);
+	for (int n = 0; n < dbb->dbb_pools.getCount(); ++n)
+	{
+		if (dbb->dbb_pools[n] == pool)
+		{
+			dbb->dbb_pools.remove(n);
+			break;
+		}
+	}
 	MemoryPool::deletePool(pool);
 }
 
@@ -230,13 +234,12 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 	{
 		fprintf(fptr, "\n\t dbb%d -> %s\n", k, dbb->dbb_filename.c_str());
 		j = 0;
-
-		Firebird::vector<JrdMemoryPool*>::iterator itr;
-
-		for (itr = dbb->dbb_pools.begin(); itr != dbb->dbb_pools.end(); ++itr)
+		
+		int itr;
+		for (itr = 0; itr < dbb->dbb_pools.getCount(); ++itr)
 		{
-			JrdMemoryPool *myPool = *itr;
-			if (myPool) {
+			if (dbb->dbb_pools[itr]) 
+			{
 				++j;
 			}
 		}
@@ -246,14 +249,13 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 			j++;
 		}
 		fprintf(fptr, " and %d attachment(s)", j);
-		for (itr = dbb->dbb_pools.begin(); itr != dbb->dbb_pools.end(); ++itr)
+		for (itr = 0; itr < dbb->dbb_pools.getCount(); ++itr)
 		{
-			JrdMemoryPool *myPool = *itr;
-			if (!myPool) {
-				continue;
+			JrdMemoryPool *myPool = dbb->dbb_pools[itr];
+			if (myPool) 
+			{
+				myPool->print_contents(fptr, true);
 			}
-			
-			myPool->print_contents(fptr, true);
 		}
 	}
 }

@@ -32,7 +32,6 @@
 
 #include "../jrd/common.h"
 #include "../jrd/ods.h"
-#include "../include/fb_vector.h"
 #include "../common/classes/array.h"
 
 // format of expanded index node, used for backwards navigation
@@ -71,7 +70,7 @@ struct dynKey
 	UCHAR* keyData;
 };
 
-typedef Firebird::vector<dynKey*> keyList;
+typedef Firebird::Array<dynKey*> keyList;
 typedef Firebird::HalfStaticArray<Ods::IndexJumpNode, 32> jumpNodeList;
 
 namespace BTreeNode {
