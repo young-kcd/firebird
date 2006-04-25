@@ -178,7 +178,7 @@ checkIfServerRunning() {
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Super server seems to be running."
-        echo "Please quit all interbase applications and then proceed"
+        echo "Please quit all Firebird applications and then proceed."
         exit 1
     fi
 
@@ -187,7 +187,7 @@ checkIfServerRunning() {
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Classic server seems to be running."
-        echo "Please quit all interbase applications and then proceed."
+        echo "Please quit all Firebird applications and then proceed."
         exit 1
     fi
 
@@ -200,7 +200,7 @@ checkIfServerRunning() {
     then
         echo "An instance of the Firebird/InterBase Super server seems to be running." 
         echo "(the ibserver or ibguard process was detected running on your system)"
-        echo "Please quit all Firebird applications and then proceed"
+        echo "Please quit all Firebird applications and then proceed."
         exit 1 
     fi
 
