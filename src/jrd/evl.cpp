@@ -1624,7 +1624,9 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 					if (request->req_flags & req_null)
 						break;
 					/* "Put" the value to sort. */
-					AggregateSort* asb = (AggregateSort*) from->nod_arg[from->nod_count - 1];
+					const size_t asb_index =
+						(from->nod_type == nod_agg_list_distinct) ? 2 : 1;
+					AggregateSort* asb = (AggregateSort*) from->nod_arg[asb_index];
 					impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 					UCHAR* data;
 					SORT_put(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle,
@@ -2786,7 +2788,9 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 	DEV_BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->tdbb_request;
-	AggregateSort* asb = (AggregateSort*) node->nod_arg[node->nod_count - 1];
+	const size_t asb_index =
+		(node->nod_type == nod_agg_list_distinct) ? 2 : 1;
+	AggregateSort* asb = (AggregateSort*) node->nod_arg[asb_index];
 	impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 	dsc* desc = &asb->asb_desc;
 	impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + node->nod_impure);
@@ -3335,7 +3339,9 @@ static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
 		case nod_agg_total_distinct2:
 		case nod_agg_list_distinct:
 			{
-			const AggregateSort* asb = (AggregateSort*) from->nod_arg[from->nod_count - 1];
+			const size_t asb_index =
+				(from->nod_type == nod_agg_list_distinct) ? 2 : 1;
+			const AggregateSort* asb = (AggregateSort*) from->nod_arg[asb_index];
 			impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
 			SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
 			asb_impure->iasb_sort_handle = NULL;
@@ -3491,7 +3497,9 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 
 	jrd_req* request = tdbb->tdbb_request;
 
-	const AggregateSort* asb = (AggregateSort*) node->nod_arg[node->nod_count - 1];
+	const size_t asb_index =
+		(node->nod_type == nod_agg_list_distinct) ? 2 : 1;
+	const AggregateSort* asb = (AggregateSort*) node->nod_arg[asb_index];
 	impure_agg_sort* asb_impure = (impure_agg_sort*) ((char*) request + asb->nod_impure);
 	const sort_key_def* sort_key = asb->asb_key_desc;
 

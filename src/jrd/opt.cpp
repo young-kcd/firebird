@@ -3933,7 +3933,9 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 			asb->nod_impure = CMP_impure(csb, sizeof(impure_agg_sort));
 			asb->asb_desc = *desc;
 			// store asb as a last argument
-			from->nod_arg[from->nod_count++] = (jrd_nod*) asb;
+			const size_t asb_index =
+				(from->nod_type == nod_agg_list_distinct) ? 2 : 1;
+			from->nod_arg[asb_index] = (jrd_nod*) asb;
 		}
 	}
 
