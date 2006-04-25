@@ -213,7 +213,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	protocol_wnet[0] = 0;
 
 	HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
-
+/*
 	if (shutdown_pid) {
 		int rc = ISC_kill(shutdown_pid, SIGSHUT, 0);
 		if (rc < 0)
@@ -227,7 +227,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		}
 		return 0;
 	}
-
+*/
 	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0) {
 
 		if (ISC_is_WinNT())		/* True - NT, False - Win95 */
@@ -314,15 +314,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 							  0);
 		}
 		// No need to waste a thread if we are running as a window
-		if (Config::getCreateInternalWindow()) {
-			nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
-		}
-		else {
-			HANDLE hEvent =
-				ISC_make_signal(TRUE, TRUE, GetCurrentProcessId(), SIGSHUT);
-			WaitForSingleObject(hEvent, INFINITE);
-			JRD_shutdown_all(false);
-		}
+		nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
 	}
 
 #ifdef DEBUG_GDS_ALLOC
