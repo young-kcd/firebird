@@ -909,6 +909,7 @@ case "$PLATFORM" in
                      gen/install/misc/firebird.init.d.suse:builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
                      gen/install/misc/firebird.init.d.debian:builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
                      gen/install/misc/firebird.init.d.gentoo:builds/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
+                     gen/install/misc/firebird.init.d.slackware:builds/install/arch-specific/linux/misc/firebird.init.d.slackware.in
                      gen/install/misc/rc.config.firebird:builds/install/arch-specific/linux/misc/rc.config.firebird.in
                      gen/firebird/bin/changeDBAPassword.sh:builds/install/misc/changeDBAPassword.sh.in
                      gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
