@@ -693,7 +693,7 @@ static bool ast_enable(void)
  *
  * Functional description
  *	Enables AST delivery and returns
- *	TRUE is an AST is deliverable.
+ *	TRUE if an AST is deliverable.
  *
  **************************************/
 	if (!ast_thread)

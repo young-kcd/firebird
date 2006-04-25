@@ -28,12 +28,6 @@ inline void THREAD_EXIT() {
 //	return true;
 //}
 #endif // SUPERSERVER
-inline void THREAD_SLEEP(ULONG msecs) {
-	THD_sleep(msecs);
-}
-inline void THREAD_YIELD() {
-	THD_yield();
-}
 #else // MULTI_THREAD
 inline void THREAD_ENTER() {
 }
@@ -42,12 +36,13 @@ inline void THREAD_EXIT() {
 //inline bool THREAD_VALIDATE() {
 //	return true;
 //}
+#endif // MULTI_THREAD
+
 inline void THREAD_SLEEP(ULONG msecs) {
 	THD_sleep(msecs);
 }
 inline void THREAD_YIELD() {
 	THD_yield();
 }
-#endif // MULTI_THREAD
 
 #endif // JRD_THREAD_PROTO_H

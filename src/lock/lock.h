@@ -149,21 +149,20 @@ const SLONG LHB_PATTERN			= 123454321;
 #define USE_WAKEUP_EVENTS
 #endif
 
-// STATIC_SEMAPHORES - preallocate semaphores for UNIX events
-// if undefined UNIX events allocate semaphores dynamically
-#if defined UNIX && (!defined SUPERSERVER && !defined MULTI_THREAD)
-#define USE_STATIC_SEMAPHORES
-#endif
-
+#ifndef SUPERSERVER
+#ifdef MULTI_THREAD
 // USE_BLOCKING_THREAD - use thread to handle blocking ASTs
 //   real UNIX guys use signals instead  - but their CS is not MT
-#if (defined WIN_NT || defined SOLARIS_MT) && !defined SUPERSERVER
 #define USE_BLOCKING_THREAD
-#endif
-
+#else
 // USE_BLOCKING_SIGNALS - use UNIX signals to deliver blocking ASTs
-#if !defined WIN_NT && !defined SOLARIS_MT && !defined SUPERSERVER
 #define USE_BLOCKING_SIGNALS
+// STATIC_SEMAPHORES - preallocate semaphores for UNIX events
+// if undefined UNIX events allocate semaphores dynamically
+#ifdef UNIX
+#define USE_STATIC_SEMAPHORES
+#endif
+#endif
 #endif
 
 /* Lock header block -- one per lock file, lives up front */

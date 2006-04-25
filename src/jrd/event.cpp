@@ -730,16 +730,13 @@ static SLONG create_process(void)
 	EVENT_process_offset = SRQ_REL_PTR(process);
 
 #ifdef MULTI_THREAD
-
 #ifdef SOLARIS_MT
 	ISC_STATUS_ARRAY local_status;
 	ISC_event_init(process->prb_event, 0, EVENT_SIGNAL);
 	EVENT_process = (PRB) ISC_map_object(local_status, &EVENT_data,
 										 EVENT_process_offset,
 										 sizeof(prb));
-#endif
-
-#if !(defined SOLARIS_MT)
+#else
 	ISC_event_init(process->prb_event, EVENT_SIGNAL, 0);
 #endif
 #endif
@@ -887,30 +884,17 @@ static void delete_session(SLONG session_id)
  *	Delete a session.
  *
  **************************************/
-#ifdef MULTI_THREAD
-/*  This code is very Netware specific, so for now I've #ifdef'ed this
- *  variable out.  In the future, other platforms may find a need to
- *  use this as well.  --  Morgan Schweers, November 16, 1994
- */
-	USHORT kill_anyway = 0;		/*  Kill session despite session delivering. */
-	/*  (Generally means session's deliver is hung. */
-#endif
-
 	SES session = (SES) SRQ_ABS_PTR(session_id);
 
 #ifdef MULTI_THREAD
+	USHORT kill_anyway = 0;		/*  Kill session despite session delivering. */
 /*  delay gives up control for 250ms, so a 40 iteration timeout is a
  *  up to 10 second wait for session to finish delivering its message.
  */
 	while (session->ses_flags & SES_delivering && (++kill_anyway != 40)) {
 		release();
 		THREAD_EXIT();
-#ifdef WIN_NT
-		Sleep(250);
-#endif
-#if (defined SOLARIS_MT || defined LINUX)
-		sleep(1);
-#endif
+		THREAD_SLEEP(250);
 		THREAD_ENTER();
 		acquire();
 		session = (SES) SRQ_ABS_PTR(session_id);

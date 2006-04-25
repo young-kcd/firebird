@@ -4395,7 +4395,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  *
  **************************************/
 
-/* Force garbage colletion activity to yield the
+/* Force garbage collection activity to yield the
    processor in case client threads haven't had
    an opportunity to enter the scheduling queue. */
 
