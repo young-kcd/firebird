@@ -65,10 +65,6 @@
 #define MUTEX		event_mutex
 #endif
 
-#ifdef SERVER
-#undef MULTI_THREAD
-#endif
-
 #ifndef AST_TYPE
 #define AST_TYPE	void
 #endif
@@ -296,28 +292,7 @@ EVH EVENT_init(ISC_STATUS* status_vector, bool server_flag)
 
 	EVENT_default_size = Config::getEventMemSize();
 
-#ifdef SERVER
-	EVENT_data.sh_mem_address = EVENT_header =
-		(EVH) gds__alloc((SLONG) EVENT_default_size);
-/* FREE: apparently only freed at process exit */
-	if (!EVENT_header) {		/* NOMEM: */
-		status_vector[0] = isc_arg_gds;
-		status_vector[1] = isc_virmemexh;
-		status_vector[2] = isc_arg_end;
-		return NULL;
-	}
-#ifdef DEBUG_GDS_ALLOC
-/* This structure is apparently only freed when the process exits */
-/* 1994-October-25 David Schnepper */
-	gds_alloc_flag_unfreed((void *) EVENT_header);
-#endif /* DEBUG_GDS_ALLOC */
-
-	EVENT_data.sh_mem_length_mapped = EVENT_default_size;
-	EVENT_data.sh_mem_mutex_arg = 0;
-	init((SLONG) 0, &EVENT_data, true);
-#else
-
-#if (defined UNIX)
+#ifdef UNIX
 	EVENT_data.sh_mem_semaphores = SEMAPHORES;
 #endif
 
@@ -329,13 +304,8 @@ EVH EVENT_init(ISC_STATUS* status_vector, bool server_flag)
 											init, 0, EVENT_default_size,
 											&EVENT_data))) 
 	{
-#ifdef SERVER
-		gds__free(EVENT_data.sh_mem_address);
-#endif /* SERVER */
 		return NULL;
 	}
-
-#endif
 
 	gds__register_cleanup(exit_handler, 0);
 
@@ -536,10 +506,8 @@ static EVH acquire(void)
 	EVENT_header->evh_current_process = EVENT_process_offset;
 #else
 	if (++acquire_count == 1) {
-#ifndef SERVER
 		if (mutex_state = ISC_mutex_lock(MUTEX))
 			mutex_bugcheck("mutex lock", mutex_state);
-#endif
 		EVENT_header->evh_current_process = EVENT_process_offset;
 	}
 #endif
@@ -1078,13 +1046,11 @@ static void exit_handler(void* arg)
 
 	ISC_STATUS_ARRAY local_status;
 
-#ifndef SERVER
 #ifdef SOLARIS_MT
 	ISC_unmap_object(local_status, &EVENT_data, (UCHAR**)&EVENT_process,
 					 sizeof(prb));
 #endif
 	ISC_unmap_file(local_status, &EVENT_data, 0);
-#endif
 
 	EVENT_header = NULL;
 }
@@ -1231,11 +1197,9 @@ static void init(void* arg, SH_MEM shmem_data, bool initialize)
 	SRQ_INIT(EVENT_header->evh_processes);
 	SRQ_INIT(EVENT_header->evh_events);
 
-#ifndef SERVER
 #if !defined(WIN_NT)
 	if (mutex_state = ISC_mutex_init(MUTEX, shmem_data->sh_mem_mutex_arg))
 		mutex_bugcheck("mutex init", mutex_state);
-#endif
 #endif
 
 	FRB free = (FRB) ((UCHAR*) EVENT_header + sizeof(evh));
@@ -1339,10 +1303,6 @@ static void post_process(PRB process)
 	process->prb_flags |= PRB_pending;
 	release();
 
-#ifdef SERVER
-	deliver();
-#else
-
 #ifdef MULTI_THREAD
 	ISC_event_post(process->prb_event);
 #else
@@ -1354,7 +1314,6 @@ static void post_process(PRB process)
 
 #endif
 	acquire();
-#endif
 }
 
 
@@ -1428,10 +1387,8 @@ static void release(void)
 #else
 	if (!--acquire_count) {
 		EVENT_header->evh_current_process = 0;
-#ifndef SERVER
 		if (mutex_state = ISC_mutex_unlock(MUTEX))
 			mutex_bugcheck("mutex lock", mutex_state);
-#endif
 #ifdef UNIX
 		if (EVENT_process_offset) {
 			PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
