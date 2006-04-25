@@ -143,7 +143,7 @@ static void adjust_text_descriptor(thread_db*, dsc*);
 static dsc* binary_value(thread_db*, const jrd_nod*, impure_value*);
 static dsc* cast(thread_db*, const dsc*, const jrd_nod*, impure_value*);
 static void compute_agg_distinct(thread_db*, jrd_nod*);
-static dsc* concatenate(thread_db*, const dsc*, impure_value*);
+static dsc* concatenate(thread_db*, const dsc*, const dsc*, impure_value*);
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
 static dsc* eval_statistical(thread_db*, jrd_nod*, impure_value*);
 static dsc* extract(thread_db*, jrd_nod*, impure_value*);
@@ -1607,10 +1607,10 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 						impure->vlu_desc.dsc_dtype = 0;
 						break;
 					}
-					concatenate(tdbb, delimiter, impure);
+					concatenate(tdbb, &impure->vlu_desc, delimiter, impure);
 				}
 				++impure->vlux_count;
-				concatenate(tdbb, desc, impure);
+				concatenate(tdbb, &impure->vlu_desc, desc, impure);
 				break;
 
 			case nod_agg_count_distinct:
@@ -2660,6 +2660,12 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 	if (request->req_flags & req_null)
 		return NULL;
 
+	// special case: concatenation doesn't need its first argument
+	// being passed in the impure area, as it would double number
+	// of memory allocations
+	if (node->nod_type == nod_concatenate)
+		return concatenate(tdbb, desc1, desc2, impure);
+
 	EVL_make_value(tdbb, desc1, impure);
 
 	switch (node->nod_type) {
@@ -2692,9 +2698,6 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 
 	case nod_divide2:			/* dialect-3 semantics */
 		return divide2(desc2, impure, node);
-
-	case nod_concatenate:
-		return concatenate(tdbb, desc2, impure);
 
 	default:
 		BUGCHECK(232);			/* msg 232 EVL_expr: invalid operation */
@@ -2847,10 +2850,10 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 					impure->vlu_desc.dsc_dtype = 0;
 					break;
 				}
-				concatenate(tdbb, delimiter, impure);
+				concatenate(tdbb, &impure->vlu_desc, delimiter, impure);
 			}
 			++impure->vlux_count;
-			concatenate(tdbb, desc, impure);
+			concatenate(tdbb, &impure->vlu_desc, desc, impure);
 			break;
 
 		default:	// Shut up some warnings
@@ -2860,7 +2863,10 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 }
 
 
-static dsc* concatenate(thread_db* tdbb, const dsc* value, impure_value* impure)
+static dsc* concatenate(thread_db* tdbb,
+						const dsc* value1,
+						const dsc* value2,
+						impure_value* impure)
 {
 /**************************************
  *
@@ -2873,9 +2879,6 @@ static dsc* concatenate(thread_db* tdbb, const dsc* value, impure_value* impure)
  *
  **************************************/
 	SET_TDBB(tdbb);
-
-	const dsc* const value1 = &impure->vlu_desc;
-	const dsc* const value2 = value;
 
 	USHORT ttype1 = INTL_TTYPE(value1);
 
@@ -2911,8 +2914,13 @@ static dsc* concatenate(thread_db* tdbb, const dsc* value, impure_value* impure)
 	desc.dsc_address = NULL;
 	INTL_ASSIGN_TTYPE(&desc, ttype1);
 
-	const VaryingString* const string = impure->vlu_string;
-	impure->vlu_string = NULL;
+	const VaryingString* string = NULL;
+	if (value1->dsc_address == impure->vlu_desc.dsc_address ||
+		value2->dsc_address == impure->vlu_desc.dsc_address)
+	{
+		string = impure->vlu_string;
+		impure->vlu_string = NULL;
+	}
 	EVL_make_value(tdbb, &desc, impure);
 	UCHAR* p = impure->vlu_desc.dsc_address;
 
