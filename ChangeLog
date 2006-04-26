@@ -1,3 +1,77 @@
+2006-04-25 20:17  dimitr
+
+	* firebird2/src/jrd/: event.cpp (1.58), event_proto.h (1.14):
+	
+	Cleanup.
+
+2006-04-25 19:49  alexpeshkoff
+
+	* firebird2/src/: common/classes/array.h (1.35),
+	common/config/config.h (1.39), dsql/alld.cpp (1.31),
+	include/fb_blk.h (1.12), include/fb_vector.h (1.8), jrd/all.cpp
+	(1.43), jrd/btn.h (1.17), jrd/btr.cpp (1.165),
+	jrd/execute_statement.h (1.7), jrd/intl.cpp (1.84), jrd/jrd.h
+	(1.149), jrd/rpb_chain.h (1.12), jrd/val.h (1.33):
+	
+	Use Firebird::Array instead of STL's vector
+
+2006-04-25 19:06  alexpeshkoff
+
+	* firebird2/configure.in (1.242):
+	
+	added slackware support to configure.in
+
+2006-04-25 18:22  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.171):
+	
+	Restored performance of the regular concatenation.
+
+2006-04-25 16:17  dimitr
+
+	* firebird2/src/jrd/event.cpp (1.57):
+	
+	Removed the code under the SERVER macro as not used.
+
+2006-04-25 15:00  dimitr
+
+	* firebird2/src/common/classes/rwlock.h (1.26):
+	
+	Committed patch by Christian Barheine.
+
+2006-04-25 14:54  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.205), evl.cpp (1.170), opt.cpp
+	(1.265):
+	
+	Fixed a bugcheck by restoring to the old nod_count processing. 
+	Still clueless why it's done that way.
+
+2006-04-25 14:02  dimitr
+
+	* firebird2/src/misc/blrtable.cpp (1.24):
+	
+	Committed the forgotten file.
+
+2006-04-25 09:34  dimitr
+
+	* firebird2/src/: jrd/thread_proto.h (1.7), jrd/jrd.cpp (1.239),
+	lock/lock.h (1.34):
+	
+	Misc.
+
+2006-04-25 09:30  dimitr
+
+	* firebird2/src/jrd/: event.cpp (1.56), sch.cpp (1.35):
+	
+	Misc.
+
+2006-04-25 05:48  asfernandes
+
+	* firebird2/src/jrd/opt.cpp (1.264):
+	
+	Misc
+
 2006-04-25 04:16  asfernandes
 
 	* firebird2/builds/install/misc/posixLibrary.sh.in (1.7):
