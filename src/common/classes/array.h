@@ -201,6 +201,7 @@ public:
 			count = newCount;
 		}
 	}
+	// Resize array according to STL's vector::resize() rules
 	void resize(size_t newCount) {
 		if (newCount > count) {
 			grow(newCount);
@@ -209,7 +210,6 @@ public:
 			count = newCount;
 		}
 	}
-	// Resize array according to STL's vector::resize() rules
 	void join(const Array<T, Storage>& L) {
 		ensureCapacity(count + L.count);
 		memcpy(data + count, L.data, sizeof(T) * L.count);
