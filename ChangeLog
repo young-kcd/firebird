@@ -1,3 +1,16 @@
+2006-04-25 12:38  dimitr
+
+	* firebird2/src/install/misc/firebird.conf (1.28.2.8.2.1):
+	
+	Use TCP_NODELAY by default + allow it for POSIX CS builds.
+
+2006-04-25 12:35  dimitr
+
+	* firebird2/src/: common/config/config.cpp (1.40.2.7.2.1),
+	remote/inet.cpp (1.70.2.6.2.2):
+	
+	Use TCP_NODELAY by default + allow it for POSIX CS builds.
+
 2006-04-18 13:22  hvlad
 
 	* firebird2/src/jrd/why.cpp (1.23.2.4.2.4):
