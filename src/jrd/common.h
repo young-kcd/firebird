@@ -112,10 +112,6 @@
 //format for __LINE__
 #define LINEFORMAT "d"
 
-#ifdef SUPERSERVER
-#define SET_TCP_NO_DELAY
-#endif
-
 //#define KILLER_SIGNALS
 
 #define UNIX
@@ -219,10 +215,6 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
 
 //#define ALIGNMENT	4
 //#define DOUBLE_ALIGN	8
-
-#ifdef SUPERSERVER
-#define SET_TCP_NO_DELAY
-#endif
 
 //#define KILLER_SIGNALS
 
