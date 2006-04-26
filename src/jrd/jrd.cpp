@@ -4395,9 +4395,9 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  *
  **************************************/
 
-/* Force garbage collection activity to yield the
-   processor in case client threads haven't had
-   an opportunity to enter the scheduling queue. */
+	// Force garbage collection activity to yield the
+	// processor in case client threads haven't had
+	// an opportunity to enter the scheduling queue.
 
 	if (!(tdbb->tdbb_flags & TDBB_sweeper))
 		SCH_schedule();
@@ -4407,7 +4407,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		THREAD_ENTER();
 	}
 
-/* If database has been shutdown then get out */
+	// If database has been shutdown then get out
 
 	Database* dbb = tdbb->tdbb_database;
 	Attachment* attachment = tdbb->tdbb_attachment;
@@ -4450,9 +4450,9 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		}
 #ifdef CANCEL_OPERATION
 
-		/* If a cancel has been raised, defer its acknowledgement
-		   when executing in the context of an internal request or
-		   the system transaction. */
+		// If a cancel has been raised, defer its acknowledgement
+		// when executing in the context of an internal request or
+		// the system transaction.
 
 		if ((attachment->att_flags & ATT_cancel_raise) &&
 			!(attachment->att_flags & ATT_cancel_disable))
