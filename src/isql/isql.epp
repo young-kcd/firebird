@@ -3242,6 +3242,13 @@ static void do_isql()
 			done = true;
 			break;
 
+		case ERR_BUFFER_OVERFLOW:
+			if (ret>FAIL)
+			{
+				ISQL_msg_get(BUFFER_OVERFLOW, errbuf, NULL);
+				STDERROUT(errbuf);
+			}
+
 		case EXTRACT:
 		case EXTRACTALL:
 		default:
@@ -4189,6 +4196,7 @@ static processing_state get_statement(TEXT* const statement,
 				ISQL_msg_get(UNEXPECTED_EOF, errbuf, NULL);
 				STDERROUT(errbuf);
 				Exit_value = FINI_ERROR;
+				ret = FAIL;
 			}
 
 			// If we hit EOF at the top of the flist, exit time 
@@ -4349,10 +4357,7 @@ static processing_state get_statement(TEXT* const statement,
 
 		if (count > bufsize && !done)
 		{
-				TEXT errbuf[MSG_LENGTH];
-				ISQL_msg_get(BUFFER_OVERFLOW, errbuf, NULL);
-				STDERROUT(errbuf);
-				ret = SKIP;
+				ret = ERR_BUFFER_OVERFLOW;
 
 				// move some content to start of buffer just in case if
 				// the overflow has splitted terminator
@@ -4365,7 +4370,7 @@ static processing_state get_statement(TEXT* const statement,
 	}
 
 	// If this was a null statement, skip it
-	if (!*statement)
+	if (ret == CONT && !*statement)
 		ret = SKIP;
 
 	if (ret == CONT)
