@@ -4747,8 +4747,6 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_total:
 	case nod_agg_total2:
 	case nod_agg_total_distinct2:
-	case nod_agg_list:
-	case nod_agg_list_distinct:
 		{
 			node->nod_count = 0;
 			csb->csb_impure += sizeof(impure_value);
@@ -4759,6 +4757,8 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 
 	case nod_agg_average2:
 	case nod_agg_average_distinct2:
+	case nod_agg_list:
+	case nod_agg_list_distinct:
 		{
 			node->nod_count = 0;
 			csb->csb_impure += sizeof(impure_value_ex);
