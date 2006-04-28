@@ -3243,11 +3243,8 @@ static void do_isql()
 			break;
 
 		case ERR_BUFFER_OVERFLOW:
-			if (ret>FAIL)
-			{
-				ISQL_msg_get(BUFFER_OVERFLOW, errbuf, NULL);
-				STDERROUT(errbuf);
-			}
+			ISQL_msg_get(BUFFER_OVERFLOW, errbuf, NULL);
+			STDERROUT(errbuf);
 
 		case EXTRACT:
 		case EXTRACTALL:
