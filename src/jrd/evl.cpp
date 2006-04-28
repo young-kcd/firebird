@@ -4331,7 +4331,6 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		/* Source string is a blob, things get interesting */
 
 		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-		fb_assert(BUFFER_SMALL % 4 == 0);	// 4 is our maximum character length
 
 		if (desc1->dsc_sub_type == isc_blob_text)
 			type1 = desc1->dsc_blob_ttype();	/* pick up character set and collation of blob */
@@ -4708,7 +4707,6 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 				if (charSet->isMultiByte())
 				{
 					Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
-					fb_assert(BUFFER_LARGE % 4 == 0);	// 4 is our maximum character length
 
 					length = BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length), blob->blb_length, false);
 					length = charSet->length(tdbb, length, buffer.begin(), true);
@@ -4823,7 +4821,6 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 		else
 		{
 			Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
-			fb_assert(BUFFER_LARGE % 4 == 0);	// 4 is our maximum character length
 
 			ULONG datalen;
 			const ULONG totLen = length * charSet->maxBytesPerChar();
