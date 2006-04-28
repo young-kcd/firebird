@@ -1,3 +1,15 @@
+2006-04-27 13:50  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.206):
+	
+	Fixed one of the bugs in the LIST code.
+
+2006-04-27 12:57  aafemt
+
+	* firebird2/src/isql/: isql.epp (1.175), isql.h (1.55):
+	
+	Not elegant fix for treating too big statements as an error
+
 2006-04-26 11:57  dimitr
 
 	* firebird2/src/jrd/common.h (1.138):
