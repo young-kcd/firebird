@@ -154,6 +154,7 @@ SOURCE=..\..\..\extern\btyacc\defs.h
 # Begin Source File
 
 SOURCE=..\..\..\extern\btyacc\mstring.h
+# End Source File
 # End Group
 # End Target
 # End Project
