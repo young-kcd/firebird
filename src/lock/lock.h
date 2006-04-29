@@ -272,7 +272,7 @@ typedef struct lrq {
 	void* lrq_ast_argument;		/* Ast argument */
 } *LRQ;
 
-// lrw_flags
+// lrq_flags
 const USHORT LRQ_blocking		= 1;		/* Request is blocking */
 const USHORT LRQ_pending		= 2;		/* Request is pending */
 const USHORT LRQ_converting		= 4;		/* Request is pending conversion */
@@ -285,7 +285,7 @@ const USHORT LRQ_blocking_seen	= 256;		/* Blocking notification received by owne
 
 /* Owner block */
 
-typedef struct own
+struct own
 {
 	UCHAR own_type;				/* memory tag - always type_own */
 	UCHAR own_owner_type;		/* type of owner */
@@ -316,7 +316,7 @@ typedef struct own
 #endif
 	USHORT own_semaphore;		/* Owner semaphore -- see note below */
 	USHORT own_flags;			/* Misc stuff */
-} *OWN;
+};
 
 /* Flags in own_flags */
 const USHORT OWN_blocking	= 1;		// Owner is blocking

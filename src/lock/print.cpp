@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Lock Manager
- *      MODULE:         print.c
+ *      MODULE:         print.cpp
  *      DESCRIPTION:    Lock Table printer
  *
  * The contents of this file are subject to the Interbase Public
@@ -422,7 +422,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 #ifdef MANAGER_PROCESS
 	int manager_pid = 0;
 	if (LOCK_header->lhb_manager) {
-		OWN manager = (OWN) SRQ_ABS_PTR(LOCK_header->lhb_manager);
+		own* manager = (own*) SRQ_ABS_PTR(LOCK_header->lhb_manager);
 		manager_pid = manager->own_process_id;
 	}
 
@@ -498,9 +498,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 	prt_que(outfile, LOCK_header, "\tOwners", &LOCK_header->lhb_owners,
-			OFFSET(OWN, own_lhb_owners));
+			OFFSET(own*, own_lhb_owners));
 	prt_que(outfile, LOCK_header, "\tFree owners",
-			&LOCK_header->lhb_free_owners, OFFSET(OWN, own_lhb_owners));
+			&LOCK_header->lhb_free_owners, OFFSET(own*, own_lhb_owners));
 	prt_que(outfile, LOCK_header, "\tFree locks",
 			&LOCK_header->lhb_free_locks, OFFSET(LBL, lbl_lhb_hash));
 	prt_que(outfile, LOCK_header, "\tFree requests",
@@ -527,7 +527,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		SRQ_PTR least_owner_id = 0x7FFFFFFF;
 		const srq* least_owner_ptr = &LOCK_header->lhb_owners;
 		SRQ_LOOP(LOCK_header->lhb_owners, que_inst) {
-			OWN this_owner = (OWN) ((UCHAR*) que_inst - OFFSET(OWN, own_lhb_owners));
+			own* this_owner = (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners));
 			if (SRQ_REL_PTR(this_owner) < least_owner_id) {
 				least_owner_id = SRQ_REL_PTR(this_owner);
 				least_owner_ptr = que_inst;
@@ -537,14 +537,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		do {
 			if (que_inst != &LOCK_header->lhb_owners)
 				prt_owner(outfile, LOCK_header,
-						  (OWN) ((UCHAR*) que_inst - OFFSET(OWN, own_lhb_owners)),
+						  (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners)),
 						  sw_requests, sw_waitlist);
 			que_inst = SRQ_NEXT((*que_inst));
 		} while (que_inst != least_owner_ptr);
 #else
 		SRQ_LOOP(LOCK_header->lhb_owners, que_inst) {
 			prt_owner(outfile, LOCK_header,
-					  (OWN) ((UCHAR*) que_inst - OFFSET(OWN, own_lhb_owners)),
+					  (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners)),
 					  sw_requests, sw_waitlist);
 		}
 #endif /* SOLARIS_MT */
@@ -1129,7 +1129,7 @@ static void prt_owner_wait_cycle(
 				if (COMPATIBLE(owner_request->lrq_requested, lock_request->lrq_state)) 
 					continue;
 			}
-			const own* lock_owner = (OWN) SRQ_ABS_PTR(lock_request->lrq_owner);
+			const own* lock_owner = (own*) SRQ_ABS_PTR(lock_request->lrq_owner);
 			prt_owner_wait_cycle(outfile, LOCK_header, lock_owner, indent + 4,
 								 waiters);
 		}
