@@ -2914,11 +2914,10 @@ static dsc* concatenate(thread_db* tdbb,
 	desc.dsc_address = NULL;
 	INTL_ASSIGN_TTYPE(&desc, ttype1);
 
-	const VaryingString* string = NULL;
 	if (value1->dsc_address == impure->vlu_desc.dsc_address ||
 		value2->dsc_address == impure->vlu_desc.dsc_address)
 	{
-		string = impure->vlu_string;
+		delete impure->vlu_string;
 		impure->vlu_string = NULL;
 	}
 	EVL_make_value(tdbb, &desc, impure);
@@ -2931,8 +2930,6 @@ static dsc* concatenate(thread_db* tdbb,
 	if (length2) {
 		memcpy(p, address2, length2);
 	}
-
-	delete string;
 
 	return &impure->vlu_desc;
 }
