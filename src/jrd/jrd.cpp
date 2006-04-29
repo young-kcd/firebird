@@ -789,7 +789,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (options.dpb_set_page_buffers) {
 			dbb->dbb_page_buffers = options.dpb_page_buffers;
 		}
-		CCH_init(tdbb, (ULONG) options.dpb_buffers);
+		CCH_init(tdbb, options.dpb_buffers);
 		
 		// Initialize backup difference subsystem. This must be done before WAL and shadowing
 		// is enabled because nbackup it is a lower level subsystem
@@ -828,7 +828,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 
 	if (options.dpb_buffers && !dbb->dbb_page_buffers) {
-		CCH_expand(tdbb, (ULONG) options.dpb_buffers);
+		CCH_expand(tdbb, options.dpb_buffers);
 	}
 
 	if (!options.dpb_verify && CCH_exclusive(tdbb, LCK_PW, LCK_NO_WAIT))
@@ -1962,7 +1962,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	const jrd_file* first_dbb_file = dbb->dbb_file;
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
-	CCH_init(tdbb, (ULONG) options.dpb_buffers);
+	CCH_init(tdbb, options.dpb_buffers);
 	
 	// Initialize backup difference subsystem. This must be done before WAL and shadowing
 	// is enabled because nbackup it is a lower level subsystem
