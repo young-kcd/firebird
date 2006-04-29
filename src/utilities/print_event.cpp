@@ -22,14 +22,21 @@
  */
 
 #include "firebird.h"
+#include "fb_types.h"
 #include "../jrd/common.h"
 #include "../jrd/event.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/gds_proto.h"
 
-static void prt_que(const UCHAR*, const srq*);
-static void event_list(void);
-static void event_dump_list(void);
+#define isc_print_status gds__print_status
+
+
+
+static void prt_que(const char*, const srq*);
+static void event_list();
+static void event_dump_list();
+static void event_table_dump();
+
 
 static EVH EVENT_header = NULL;
 
@@ -113,7 +120,7 @@ static void event_list(void)
 				if (!interest->rint_request)
 					printf("(0)");
 				else {
-					jrd_req* request = (jrd_req*) SRQ_ABS_PTR(interest->rint_request);
+					evt_req* request = (evt_req*) SRQ_ABS_PTR(interest->rint_request);
 					PRB process = (PRB) SRQ_ABS_PTR(request->req_process);
 					printf("%6d ", process->prb_process_id);
 				}
@@ -143,7 +150,7 @@ static void event_list(void)
 					if (!interest->rint_request)
 						printf("(0)");
 					else {
-						jrd_req* request = (jrd_req*) SRQ_ABS_PTR(interest->rint_request);
+						evt_req* request = (evt_req*) SRQ_ABS_PTR(interest->rint_request);
 						PRB process = (PRB) SRQ_ABS_PTR(request->req_process);
 						printf("%6d ", process->prb_process_id);
 					}
@@ -169,13 +176,6 @@ static void event_table_dump(void)
  *	is not very readable by humans.
  *
  **************************************/
-	srq *que_inst;
-	PRB process;
-	FRB free;
-	EVNT event;
-	jrd_req* request;
-	SES session;
-	RINT interest;
 
 	printf("%.5d GLOBAL REGION HEADER\n", 0);
 	printf
@@ -187,73 +187,86 @@ static void event_table_dump(void)
 	prt_que("\tProcesses", &EVENT_header->evh_processes);
 	prt_que("\tEvents", &EVENT_header->evh_events);
 
+	event_hdr* block = 0;
 	for (SLONG offset = sizeof(evh); offset < EVENT_header->evh_length;
 		 offset += block->hdr_length) 
 	{
 		printf("\n%.5ld ", offset);
-		event_hdr* block = (event_hdr*) SRQ_ABS_PTR(offset);
+		block = (event_hdr*) SRQ_ABS_PTR(offset);
 		switch (block->hdr_type) {
 		case type_prb:
-			printf("PROCESS_BLOCK (%ld)\n", block->hdr_length);
-			process = (PRB) block;
-			printf("\tFlags: %d, pid: %d\n",
-					  process->prb_flags, process->prb_process_id);
-			prt_que("\tProcesses", &process->prb_processes);
-			prt_que("\tSessions", &process->prb_sessions);
+			{
+				printf("PROCESS_BLOCK (%ld)\n", block->hdr_length);
+				PRB process = (PRB) block;
+				printf("\tFlags: %d, pid: %d\n",
+						  process->prb_flags, process->prb_process_id);
+				prt_que("\tProcesses", &process->prb_processes);
+				prt_que("\tSessions", &process->prb_sessions);
+			}
 			break;
 
 		case type_frb:
-			printf("FREE BLOCK (%ld)\n", block->hdr_length);
-			free = (FRB) block;
-			printf("\tNext: %ld\n", free->frb_next);
+			{
+				printf("FREE BLOCK (%ld)\n", block->hdr_length);
+				FRB free = (FRB) block;
+				printf("\tNext: %ld\n", free->frb_next);
+			}
 			break;
 
-		case type_req:
-			printf("jrd_req* (%ld)\n", block->hdr_length);
-			request = (jrd_req*) block;
-			printf("\tProcess: %ld, interests: %ld, ast: %lx, arg: %lx\n",
-					  request->req_process, request->req_interests,
-					  request->req_ast, request->req_ast_arg);
-			printf("\tRequest id: %ld\n", request->req_request_id);
-			prt_que("\tRequests", &request->req_requests);
+		case type_reqb:
+			{
+				printf("evh_req* (%ld)\n", block->hdr_length);
+				evt_req* request = (evt_req*) block;
+				printf("\tProcess: %ld, interests: %ld, ast: %lx, arg: %lx\n",
+						  request->req_process, request->req_interests,
+						  request->req_ast, request->req_ast_arg);
+				printf("\tRequest id: %ld\n", request->req_request_id);
+				prt_que("\tRequests", &request->req_requests);
+			}
 			break;
 
 		case type_evnt:
-			printf("EVENT (%ld)\n", block->hdr_length);
-			event = (EVNT) block;
-			printf("\t\"%s\", count: %ld, parent: %ld\n",
-					  event->evnt_name, event->evnt_count,
-					  event->evnt_parent);
-			prt_que("\tInterests", &event->evnt_interests);
-			prt_que("\tEvents", &event->evnt_events);
+			{
+				printf("EVENT (%ld)\n", block->hdr_length);
+				EVNT event = (EVNT) block;
+				printf("\t\"%s\", count: %ld, parent: %ld\n",
+						  event->evnt_name, event->evnt_count,
+						  event->evnt_parent);
+				prt_que("\tInterests", &event->evnt_interests);
+				prt_que("\tEvents", &event->evnt_events);
+			}
 			break;
 
 		case type_ses:
-			printf("SESSION (%ld)\n", block->hdr_length);
-			session = (SES) block;
-			printf("\tInterests: %ld, process: %ld\n",
-					  session->ses_interests, session->ses_process);
-			prt_que("\tSessions", &session->ses_sessions);
-			prt_que("\tRequests", &session->ses_requests);
+			{
+				printf("SESSION (%ld)\n", block->hdr_length);
+				SES session = (SES) block;
+				printf("\tInterests: %ld, process: %ld\n",
+						  session->ses_interests, session->ses_process);
+				prt_que("\tSessions", &session->ses_sessions);
+				prt_que("\tRequests", &session->ses_requests);
+			}
 			break;
 
 		case type_rint:
-			printf("INTEREST (%ld)\n", block->hdr_length);
-			interest = (RINT) block;
-			if (interest->rint_event) {
-				event = (EVNT) SRQ_ABS_PTR(interest->rint_event);
-				if (event->evnt_parent) {
-					EVNT parent = (EVNT) SRQ_ABS_PTR(event->evnt_parent);
-					printf("\t\"%s\".\"%s\"\n", parent->evnt_name,
-							  event->evnt_name);
+			{
+				printf("INTEREST (%ld)\n", block->hdr_length);
+				RINT interest = (RINT) block;
+				if (interest->rint_event) {
+					EVNT event = (EVNT) SRQ_ABS_PTR(interest->rint_event);
+					if (event->evnt_parent) {
+						EVNT parent = (EVNT) SRQ_ABS_PTR(event->evnt_parent);
+						printf("\t\"%s\".\"%s\"\n", parent->evnt_name,
+								  event->evnt_name);
+					}
+					else
+						printf("\t\"%s\"\n", event->evnt_name);
 				}
-				else
-					printf("\t\"%s\"\n", event->evnt_name);
+				printf("\tEvent: %ld, request: %ld, next: %ld, count: %ld\n",
+						  interest->rint_event, interest->rint_request,
+						  interest->rint_next, interest->rint_count);
+				prt_que("\tInterests", &interest->rint_interests);
 			}
-			printf("\tEvent: %ld, request: %ld, next: %ld, count: %ld\n",
-					  interest->rint_event, interest->rint_request,
-					  interest->rint_next, interest->rint_count);
-			prt_que("\tInterests", &interest->rint_interests);
 			break;
 
 		default:
@@ -267,7 +280,7 @@ static void event_table_dump(void)
 }
 
 
-static void prt_que(const UCHAR* string, const srq* que_inst)
+static void prt_que(const char* string, const srq* que_inst)
 {
 /**************************************
  *
