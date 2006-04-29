@@ -617,6 +617,13 @@ static void translate_slashes(tstring& Path)
 	}
 }
 
+
+static bool isDriveLetter(const tstring::char_type letter)
+{
+	return letter >= 'A' && letter <= 'Z' || letter >= 'a' && letter <= 'z';
+}
+
+
 // Code of this function is a slightly changed version of this routine
 // from Jim Barry (jim.barry@bigfoot.com) published at 
 // http://www.geocities.com/SiliconValley/2060/articles/longpaths.html
@@ -634,11 +641,11 @@ static bool ShortToLongPathName(tstring& Path)
 	// We need a couple of markers for stepping through the path.
 	size left = 0;
 	size right = 0;
+	bool found_root = false;
 
 	// Parse the first bit of the path.
-	// Notice that isalpha() is wrong here: it's locale dependent,
-	// whereas drive letters are limited to the ASCII sequence A..Z.
-	if (Path.length() >= 2 && isalpha(Path[0]) && colon == Path[1]) // Drive letter?
+	// Probably has to change to use GetDriveType.
+	if (Path.length() >= 2 && isDriveLetter(Path[0]) && colon == Path[1]) // Drive letter?
 	{
 		if (Path.length() == 2) // 'bare' drive letter
 		{
@@ -654,6 +661,7 @@ static bool ShortToLongPathName(tstring& Path)
 			else
 			{
 				left = right = 3;
+				found_root = true;
 			}
 		}
 		else
@@ -685,16 +693,46 @@ static bool ShortToLongPathName(tstring& Path)
 					return false;
 				}
 			}
+			found_root = true;
 			++right;
 		}
 	}
 	// else FindFirstFile will handle relative paths
+	
+	if (npos != right)
+	{
+		// We don't allow wilcards as they will be processed by FindFirstFile
+		// and we would get the first matching file. Incidentally, we are disablimg
+		// escape sequences to produce long names beyond MAXPATHLEN with ??
+		if (Path.find_first_of("*") != npos || Path.find_first_of("?") != npos)
+		    right = npos;
+		else
+		{
+			// We'll assume there's a file at the end. If the user typed a dir,
+			// we'll go one dir above.
+			const size last = Path.find_last_of(sep);
+			if (npos != last)
+			{
+				Path[last] = 0;
+				const DWORD rc = GetFileAttributes(Path.c_str());
+				// Assuming the user included a file name (that's what we want),
+				// the path one level above should exist, should be a directory but
+				// shouldn't be a system object.
+				if (rc == 0xFFFFFFFF || !(rc & FILE_ATTRIBUTE_DIRECTORY) || rc & FILE_ATTRIBUTE_SYSTEM)
+					right = npos;
+					
+				Path[last] = sep;
+			}
+		}
+	}
 
 	// The data block for FindFirstFile.
 	WIN32_FIND_DATA fd;
 
 	// Main parse block - step through path.
 	HANDLE hf = INVALID_HANDLE_VALUE;
+	const size leftmost = right; 
+
 	while (npos != right)
 	{
 		left = right; // catch up
@@ -717,13 +755,26 @@ static bool ShortToLongPathName(tstring& Path)
 		// here different results because that API function interprets "." and ".."
 		// but we skip them here.
 		tstring::const_pointer special_dir = &Path.at(right);
-		if (!strcmp(special_dir, ".") || !strcmp(special_dir, ".."))
+		if (!strcmp(special_dir, ".") || (!found_root || right < 2) && !strcmp(special_dir, ".."))
 		{
-			Path.erase(right, (npos == right2) ? npos : right2 - right);
+			Path.erase(right, (npos == right2) ? npos : right2 - right + 1);
 			if (right >= Path.length())
 				right = npos;
-			else
-				Path[right] = sep;
+
+			continue;
+		}
+
+		if (found_root && !strcmp(special_dir, ".."))
+		{
+			// right being zero handled above
+			const size prev = Path.find_last_of(sep, right - 2);
+			if (prev >= leftmost && prev < right) // prev != npos implicit
+				right = prev + 1;
+
+			Path.erase(right, (npos == right2) ? npos : right2 - right + 1);
+
+			if (right >= Path.length())
+				right = npos;
 
 			continue;
 		}
