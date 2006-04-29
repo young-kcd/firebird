@@ -187,12 +187,11 @@ namespace Firebird {
 			lastpos = pos;
 		}
 		const_pointer start = c_str();
-		const_pointer endL = &start[lastpos];
-		while (endL >= start) {
+		for (const_pointer endL = &start[lastpos]; endL >= start; --endL)
+		{
 			if (memcmp(endL, s, l) == 0) {
 				return endL - start;
 			}
-			--endL;
 		}
 		return npos;
 	}
@@ -206,12 +205,11 @@ namespace Firebird {
 			lastpos = pos;
 		}
 		const_pointer start = c_str();
-		const_pointer endL = &start[lastpos];
-		while (endL >= start) {
+		for (const_pointer endL = &start[lastpos]; endL >= start; --endL)
+		{
 			if (*endL == c) {
 				return endL - start;
 			}
-			--endL;
 		}
 		return npos;
 	}
