@@ -881,8 +881,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			}
 
 			if (!relation || !(relation->rel_flags & REL_system))
+			{
 				if (impure->vlu_desc.dsc_dtype == dtype_text)
 					adjust_text_descriptor(tdbb, &impure->vlu_desc);
+			}
 
 			return &impure->vlu_desc;
 		}
