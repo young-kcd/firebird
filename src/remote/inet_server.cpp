@@ -19,8 +19,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001 
  *
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port

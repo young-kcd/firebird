@@ -18,8 +18,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001
+ *
  * 2001.07.28: John Bellardo:  Added blr_skip
  * 2001.09.18: Ann Harrison:   New info codes
  * 17-Oct-2001 Mike Nordell: CPU affinity

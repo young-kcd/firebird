@@ -19,8 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001 
+ *
  * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
  * 17-Oct-2001  Mike Nordell - CPU affinity
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port

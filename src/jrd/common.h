@@ -19,8 +19,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001
  *
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports

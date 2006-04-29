@@ -20,8 +20,6 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001
  * Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
  * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
  * 17-Oct-2001 Mike Nordell: CPU affinity

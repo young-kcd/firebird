@@ -19,8 +19,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Added TCP_NO_DELAY option for superserver on Linux
- * FSG 16.03.2001
  *
  * 2002.02.15 Sean Leyne - This module needs to be cleanedup to remove obsolete ports/defines:
  *                            - "EPSON", "XENIX" +++
