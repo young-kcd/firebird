@@ -135,8 +135,6 @@ void EVENT_cancel(SLONG request_id)
  *	Cancel an outstanding event.
  *
  **************************************/
-	srq *event_srq, *que2;
-
 	if (!EVENT_header)
 		return;
 
@@ -144,8 +142,10 @@ void EVENT_cancel(SLONG request_id)
 
 	PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 
+	srq* que2;
 	SRQ_LOOP(process->prb_sessions, que2) {
 		SES session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
+		srq* event_srq;
 		SRQ_LOOP(session->ses_requests, event_srq) {
 			EVT_REQ request = (EVT_REQ) ((UCHAR *) event_srq - OFFSET(EVT_REQ, req_requests));
 			if (request->req_request_id == request_id) {
@@ -238,7 +238,6 @@ void EVENT_deliver()
  *  for delivery with EVENT_post.
  *
  **************************************/
-	srq	*event_srq;
 
 	/* If we're not initialized, do so now */
 
@@ -253,6 +252,7 @@ void EVENT_deliver()
 
 	while (flag) {
 		flag = false;
+		srq* event_srq;
 		SRQ_LOOP (EVENT_header->evh_processes, event_srq)	{
 			PRB process = (PRB) ((UCHAR*) event_srq - OFFSET (PRB, prb_processes));
 			if (process->prb_flags & PRB_wakeup) {
@@ -333,7 +333,6 @@ int EVENT_post(ISC_STATUS * status_vector,
  *	Post an event.
  *
  **************************************/
-	srq *event_srq;
 
 /* If we're not initialized, do so now */
 
@@ -348,6 +347,7 @@ int EVENT_post(ISC_STATUS * status_vector,
 		(event = find_event(minor_length, minor_code, parent)))
 	{
 		event->evnt_count += count;
+		srq* event_srq;
 		SRQ_LOOP(event->evnt_interests, event_srq) {
 			RINT interest = (RINT) ((UCHAR *) event_srq - OFFSET(RINT, rint_interests));
 			if (interest->rint_request) {
@@ -712,9 +712,7 @@ static SLONG create_process(void)
 	release();
 
 #ifdef MULTI_THREAD
-	if (gds__thread_start
-		(watcher_thread, NULL,
-		 THREAD_medium, THREAD_blast, 0))
+	if (gds__thread_start(watcher_thread, NULL, THREAD_medium, THREAD_blast, 0))
 		ERR_bugcheck_msg("cannot start thread");
 #endif
 
@@ -904,8 +902,6 @@ static AST_TYPE deliver(void* arg)
  *	We've been poked -- deliver any satisfying requests.
  *
  **************************************/
-	srq *event_srq, *que2;
-
 #ifdef UNIX
 	if (acquire_count)
 		return;
@@ -915,6 +911,7 @@ static AST_TYPE deliver(void* arg)
 	PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 	process->prb_flags &= ~PRB_pending;
 
+	srq* que2;
 	SRQ_LOOP(process->prb_sessions, que2) {
 		SES session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
 #ifdef MULTI_THREAD
@@ -924,6 +921,7 @@ static AST_TYPE deliver(void* arg)
 		const SLONG que2_offset = SRQ_REL_PTR(que2);
 		for (bool flag = true; flag;) {
 			flag = false;
+			srq* event_srq;
 			SRQ_LOOP(session->ses_requests, event_srq) {
 				EVT_REQ request = (EVT_REQ) ((UCHAR *) event_srq - OFFSET(EVT_REQ, req_requests));
 				if (request_completed(request)) {
@@ -1065,10 +1063,9 @@ static EVNT find_event(USHORT length, const TEXT* string, EVNT parent)
  *	Lookup an event.
  *
  **************************************/
-	srq* event_srq;
-
 	SRQ_PTR parent_offset = (parent) ? SRQ_REL_PTR(parent) : 0;
 
+	srq* event_srq;
 	SRQ_LOOP(EVENT_header->evh_events, event_srq) {
 		EVNT event = (EVNT) ((UCHAR *) event_srq - OFFSET(EVNT, evnt_events));
 		if (event->evnt_parent == parent_offset &&
@@ -1177,9 +1174,9 @@ static void init(void* arg, SH_MEM shmem_data, bool initialize)
  *	Initialize global region header.
  *
  **************************************/
-	int mutex_state;
-
 #if defined(WIN_NT)
+	int mutex_state;
+	
 	if (mutex_state = ISC_mutex_init(MUTEX, EVENT_FILE))
 		mutex_bugcheck("mutex init", mutex_state);
 #endif

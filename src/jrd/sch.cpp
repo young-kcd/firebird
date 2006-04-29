@@ -224,7 +224,8 @@ void SCH_abort(void)
 
 	const FB_THREAD_ID id = ThreadData::getId();
 	THREAD thread;
-	for (THREAD* ptr = &active_thread; thread = *ptr; ptr = &thread->thread_next) {
+	for (THREAD* ptr = &active_thread; thread = *ptr; ptr = &thread->thread_next)
+	{
 		if (thread->thread_id == id)
 			break;
 		if (thread->thread_next == active_thread)
@@ -593,7 +594,6 @@ bool SCH_thread_enter_check(void)
 		return true;
 
 	return false;
-
 }
 
 
@@ -701,7 +701,9 @@ static bool ast_enable(void)
 
 	if (ast_thread->thread_flags & THREAD_ast_active &&
 		ast_thread->thread_id == ThreadData::getId())
+	{
 		return false;
+	}
 
 	if (!ast_thread->thread_count || !--ast_thread->thread_count) {
 		ast_thread->thread_flags &= ~THREAD_ast_disabled;
