@@ -27,7 +27,7 @@
 #include "../jrd/event_proto.h"
 #include "../jrd/gds_proto.h"
 
-static void prt_que(UCHAR *, srq *);
+static void prt_que(const UCHAR*, const srq*);
 static void event_list(void);
 static void event_dump_list(void);
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (!(EVENT_header = EVENT_init(status_vector, TRUE))) {
+	if (!(EVENT_header = EVENT_init(status_vector))) {
 		fprintf(stderr, "Can't access global event region\n");
 		isc_print_status(status_vector);
 		return 1;
@@ -80,16 +80,10 @@ static void event_list(void)
  *	This format is more readable for humans.
  *
  **************************************/
-	srq *que_inst;
-	EVNT event;
 	srq *database_que;
-	EVNT database_event;
 
 	SRQ_LOOP(EVENT_header->evh_events, database_que) {
-		UCHAR *p;
-		ULONG l;
-
-		database_event =
+		EVNT database_event =
 			(EVNT) ((UCHAR *) database_que - OFFSET(EVNT, evnt_events));
 
 		/* Skip non-database entries */
@@ -102,39 +96,36 @@ static void event_list(void)
 		   this is comprised of the device number and inode */
 
 		printf("Database: ");
-		p = (UCHAR *) database_event->evnt_name;
-		l = database_event->evnt_length;
-		while (l--)
+		const UCHAR* p = (UCHAR *) database_event->evnt_name;
+		for (ULONG l = database_event->evnt_length; l; --l)
 			printf("%02x", *p++);
+			
 		printf(" count: %6ld\n", database_event->evnt_count);
 
-		{
-			RINT interest;
+		{ // scope
 			srq *interest_que;
 			/* Print out the interest list for this event */
 
 			SRQ_LOOP(database_event->evnt_interests, interest_que) {
-				interest =
+				RINT interest =
 					(RINT) ((UCHAR *) interest_que -
 							OFFSET(RINT, rint_interests));
 				if (!interest->rint_request)
 					printf("(0)");
 				else {
-					jrd_req* request;
-					PRB process;
-
-					request = (jrd_req*) SRQ_ABS_PTR(interest->rint_request);
-					process = (PRB) SRQ_ABS_PTR(request->req_process);
+					jrd_req* request = (jrd_req*) SRQ_ABS_PTR(interest->rint_request);
+					PRB process = (PRB) SRQ_ABS_PTR(request->req_process);
 					printf("%6d ", process->prb_process_id);
 				}
 			}
-		}
+		} // scope
 
 		/* Print out each event belonging to this database */
 
+		srq* que_inst;
 		SRQ_LOOP(EVENT_header->evh_events, que_inst) {
 
-			event = (EVNT) ((UCHAR *) que_inst - OFFSET(EVNT, evnt_events));
+			EVNT event = (EVNT) ((UCHAR *) que_inst - OFFSET(EVNT, evnt_events));
 			fb_assert(event->evnt_header.hdr_type == type_evnt);
 			if (event->evnt_parent != SRQ_REL_PTR(database_event))
 				continue;
@@ -142,22 +133,18 @@ static void event_list(void)
 					  event->evnt_name, event->evnt_count);
 
 			{ // scope
-				RINT interest;
 				srq *interest_que;
 				/* Print out the interest list for this event */
 
 				SRQ_LOOP(event->evnt_interests, interest_que) {
-					interest =
+					RINT interest =
 						(RINT) ((UCHAR *) interest_que -
 								OFFSET(RINT, rint_interests));
 					if (!interest->rint_request)
 						printf("(0)");
 					else {
-						jrd_req* request;
-						PRB process;
-
-						request = (jrd_req*) SRQ_ABS_PTR(interest->rint_request);
-						process = (PRB) SRQ_ABS_PTR(request->req_process);
+						jrd_req* request = (jrd_req*) SRQ_ABS_PTR(interest->rint_request);
+						PRB process = (PRB) SRQ_ABS_PTR(request->req_process);
 						printf("%6d ", process->prb_process_id);
 					}
 				}
@@ -185,11 +172,10 @@ static void event_table_dump(void)
 	srq *que_inst;
 	PRB process;
 	FRB free;
-	EVNT event, parent;
+	EVNT event;
 	jrd_req* request;
 	SES session;
 	RINT interest;
-	SLONG offset;
 
 	printf("%.5d GLOBAL REGION HEADER\n", 0);
 	printf
@@ -201,7 +187,7 @@ static void event_table_dump(void)
 	prt_que("\tProcesses", &EVENT_header->evh_processes);
 	prt_que("\tEvents", &EVENT_header->evh_events);
 
-	for (offset = sizeof(evh); offset < EVENT_header->evh_length;
+	for (SLONG offset = sizeof(evh); offset < EVENT_header->evh_length;
 		 offset += block->hdr_length) 
 	{
 		printf("\n%.5ld ", offset);
@@ -257,7 +243,7 @@ static void event_table_dump(void)
 			if (interest->rint_event) {
 				event = (EVNT) SRQ_ABS_PTR(interest->rint_event);
 				if (event->evnt_parent) {
-					parent = (EVNT) SRQ_ABS_PTR(event->evnt_parent);
+					EVNT parent = (EVNT) SRQ_ABS_PTR(event->evnt_parent);
 					printf("\t\"%s\".\"%s\"\n", parent->evnt_name,
 							  event->evnt_name);
 				}
@@ -281,7 +267,7 @@ static void event_table_dump(void)
 }
 
 
-static void prt_que(UCHAR * string, srq * que_inst)
+static void prt_que(const UCHAR* string, const srq* que_inst)
 {
 /**************************************
  *
@@ -293,9 +279,7 @@ static void prt_que(UCHAR * string, srq * que_inst)
  *	Print the contents of a self-relative que.
  *
  **************************************/
-	SLONG offset;
-
-	offset = SRQ_REL_PTR(que_inst);
+	SLONG offset = SRQ_REL_PTR(que_inst);
 
 	if (offset == que_inst->srq_forward && offset == que_inst->srq_backward)
 		printf("%s: *empty*\n", string);
