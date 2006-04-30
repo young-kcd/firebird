@@ -927,25 +927,36 @@ void DYN_define_file(Global*		gbl,
 	try {
 
 	id = -1;
+	Firebird::PathName temp_f;
+	GET_STRING(ptr, temp_f);
+	if (!ISC_expand_filename(temp_f, false))
+		DYN_error_punt(false, 231, NULL, NULL, NULL, NULL, NULL);
+		// File name is invalid.
 
 	request = CMP_find_request(tdbb, id = drq_l_files, DYN_REQUESTS);
 
-	Firebird::PathName temp_f;
-	GET_STRING(ptr, temp_f);
-	ISC_expand_filename(temp_f, false);
 	if (dbb->dbb_filename == temp_f) {
 		DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 	}
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1 X IN RDB$FILES WITH X.RDB$FILE_NAME EQ temp_f.c_str()
+			if (!DYN_REQUEST(drq_l_files))
+				DYN_REQUEST(drq_l_files) = request;
+
 			DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 	END_FOR;
+	
+	if (!DYN_REQUEST(drq_l_files))
+		DYN_REQUEST(drq_l_files) = request;
 
 	request = CMP_find_request(tdbb, id = drq_s_files, DYN_REQUESTS);
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES
+		if (!DYN_REQUEST(drq_s_files))
+			DYN_REQUEST(drq_s_files) = request;
+
 		temp_f.copyTo(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
 		X.RDB$SHADOW_NUMBER = (SSHORT)shadow_number;
 		X.RDB$FILE_FLAGS = 0;
@@ -1001,7 +1012,9 @@ void DYN_define_file(Global*		gbl,
 		}
 		else
 		{
-			DYN_rundown_request(request, drq_s_files);
+			if (id != -1)
+				DYN_rundown_request(request, drq_s_files);
+
 			DYN_error_punt(true, msg, NULL, NULL, NULL, NULL, NULL);
 		}
 	}

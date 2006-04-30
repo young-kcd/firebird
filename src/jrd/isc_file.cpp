@@ -699,13 +699,18 @@ static bool ShortToLongPathName(tstring& Path)
 	}
 	// else FindFirstFile will handle relative paths
 	
+	bool error = false;
+
 	if (npos != right)
 	{
 		// We don't allow wilcards as they will be processed by FindFirstFile
 		// and we would get the first matching file. Incidentally, we are disablimg
 		// escape sequences to produce long names beyond MAXPATHLEN with ??
 		if (Path.find_first_of("*") != npos || Path.find_first_of("?") != npos)
+		{
 		    right = npos;
+			error = true;
+		}
 		else
 		{
 			// We'll assume there's a file at the end. If the user typed a dir,
@@ -719,7 +724,10 @@ static bool ShortToLongPathName(tstring& Path)
 				// the path one level above should exist, should be a directory but
 				// shouldn't be a system object.
 				if (rc == 0xFFFFFFFF || !(rc & FILE_ATTRIBUTE_DIRECTORY) || rc & FILE_ATTRIBUTE_SYSTEM)
+				{
 					right = npos;
+					error = true;
+				}
 					
 				Path[last] = sep;
 			}
@@ -731,7 +739,7 @@ static bool ShortToLongPathName(tstring& Path)
 
 	// Main parse block - step through path.
 	HANDLE hf = INVALID_HANDLE_VALUE;
-	const size leftmost = right; 
+	const size leftmost = right;
 
 	while (npos != right)
 	{
@@ -793,6 +801,7 @@ static bool ShortToLongPathName(tstring& Path)
 		// See what FindFirstFile makes of the path so far.
 		if (hf == INVALID_HANDLE_VALUE)
 		{
+			error = (npos != right);
 			break;
 		}
 		FindClose(hf);
@@ -817,7 +826,7 @@ static bool ShortToLongPathName(tstring& Path)
 	}
 
 	// We failed to find this file.
-	if (hf == INVALID_HANDLE_VALUE)
+	if (hf == INVALID_HANDLE_VALUE && error)
 	{
 		return false;
 	}
