@@ -1,6 +1,33 @@
   **************************
-  * v2.0 Release Candidate 1
+  * v2.0 Release Candidate 2
   **************************
+
+    * Fixed RC1 bug
+        Error "operating system directive ReleaseSemaphore failed" under heavy concurrent load
+      Contributor(s):
+        Christian Barheine <cbarheine at sympatec.com>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug
+        The INTL library (fbintl) cannot be loaded on some Windows distributions
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Configuration file change
+        Option CreateInternalWindow is no longer required to run a few server instances
+        and it has been removed
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug
+        MERGE plan is used for related streams, causing "no current record" error
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed unregistered bug
+        Index data corruption under heavy concurrent load
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed unregistered bug
         AV when configured to use big (about 32K) TCP packets
@@ -8,9 +35,15 @@
         Claudio Valderrama <cvalde at usa.net>
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Added new collation
+        ISO_PLK for ISO8859_2 charset (Polish language)
+      Contributor(s):
+        Jaroslaw Glowacki <joeaccord at plocman.pl>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Fixed SF #1466193
         Semaphore array`s permissions in fb_lock_mgr were 0666 - i.e. anyone 
-        cold lock them and block all future queries
+        could lock them and block all future queries
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -47,6 +80,55 @@
         unhandled exception in semaphore destructor
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed RC1 bug
+        Set up the permissions for NBAK delta files properly to avoid server lockups
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        Error "invalid transaction handle" when calling isc_array_lookup_bounds() from multiple threads
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed unregistered bug
+        Allow NO_NAGLE and KEEPALIVE socket options for CS builds
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug
+        Some integer operations delivered double precision result in Dialect 1
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug
+        Big number of buffer pages causes the server fault
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug
+        Wrong results by PSQL cursors that use a GROUP BY clause
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug
+        Missing nullability indicator in XSQLDA for EXECUTE BLOCK parameters
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed unregistered bug
+        Improperly allowed assignments to columns deleted by a concurrent transaction
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug
+        Permission checks performed in the wrong order (column level before table level)
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+  **************************
+  * v2.0 Release Candidate 1
+  **************************
 
     * Enhancement
         Isql now shows the command line parameters and their explanations instead
