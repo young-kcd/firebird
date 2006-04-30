@@ -5961,10 +5961,6 @@ static void subsystem_enter(void)
  *
  **************************************/
 
-#ifdef EMBEDDED
-	THD_INIT;
-#endif
-
 	THREAD_ENTER();
 #if !(defined REQUESTER || defined SUPERCLIENT || defined SUPERSERVER)
 	isc_enter_count++;

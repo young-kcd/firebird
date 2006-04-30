@@ -208,13 +208,11 @@ int		THD_wlck_unlock(wlck_t*);
 #endif // V4_THREADING
 
 #ifdef ANY_THREADING
-#define THD_INIT
 #define THD_GLOBAL_MUTEX_LOCK		THD_mutex_lock_global()
 #define THD_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()
 #define THD_MUTEX_LOCK(mutx)		THD_mutex_lock (mutx)
 #define THD_MUTEX_UNLOCK(mutx)		THD_mutex_unlock (mutx)
 #else
-#define THD_INIT
 #define THD_GLOBAL_MUTEX_LOCK
 #define THD_GLOBAL_MUTEX_UNLOCK
 #define THD_MUTEX_LOCK(mutx)

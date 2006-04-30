@@ -546,7 +546,6 @@ void SCH_init(void)
 			gds__register_cleanup(cleanup, 0);
 			init_flag = true;
 #ifdef MULTI_THREAD
-			THD_INIT;
 		}
 	} catch (const std::exception&) {
 		scheduler_init_lock.leave();

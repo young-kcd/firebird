@@ -236,7 +236,6 @@ static void init(void)
  **************************************/
 
 	if (!initialized) {
-		THD_INIT;
 		THD_GLOBAL_MUTEX_LOCK;
 		if (!initialized) {
 			gds__register_cleanup(cleanup, 0);

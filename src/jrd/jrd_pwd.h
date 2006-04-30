@@ -28,7 +28,6 @@
 #define JRD_PWD_H
 
 #include "../jrd/ibase.h"
-#include "../jrd/smp_impl.h"
 #include "../jrd/thd.h"
 #include "../jrd/sha.h"
 #ifdef HAVE_STDLIB_H
@@ -97,7 +96,7 @@ private:
 	static const UCHAR PWD_REQUEST[256];
 	static const UCHAR TPB[4];
 
-	V4Mutex mutex;
+	Firebird::Mutex mutex;
 
 	ISC_STATUS_ARRAY status;
 

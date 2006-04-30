@@ -158,7 +158,6 @@ const SSHORT WAIT_PERIOD	= -1;
 #endif /* SUPERSERVER */
 
 # ifdef V4_THREADING
-#  undef V4_INIT
 #  undef V4_GLOBAL_MUTEX_LOCK
 #  undef V4_GLOBAL_MUTEX_UNLOCK
 #  undef V4_MUTEX_INIT
@@ -167,7 +166,6 @@ const SSHORT WAIT_PERIOD	= -1;
 #  undef V4_MUTEX_DESTROY
 #  undef V4_JRD_MUTEX_LOCK
 #  undef V4_JRD_MUTEX_UNLOCK
-#  define V4_INIT			THD_INIT
 #  define V4_GLOBAL_MUTEX_LOCK	{THREAD_EXIT(); THD_GLOBAL_MUTEX_LOCK; THREAD_ENTER();}
 #  define V4_GLOBAL_MUTEX_UNLOCK	THD_GLOBAL_MUTEX_UNLOCK
 #  define V4_MUTEX_INIT(mutx)	THD_MUTEX_INIT (mutx)
@@ -5485,7 +5483,6 @@ static Database* init(thread_db*	tdbb,
    up a cleanup handler.  Regardless, then lock the database mutex. */
 
 	if (!initialized) {
-		THD_INIT;
 		THREAD_EXIT();
 		THD_GLOBAL_MUTEX_LOCK;
 		THREAD_ENTER();
