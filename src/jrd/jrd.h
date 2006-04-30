@@ -1005,9 +1005,6 @@ public:
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
 	struct iuo	tdbb_mutexes;
-#ifdef V4_THREADING
-	struct iuo	tdbb_rw_locks;
-#endif
 	// struct iuo	tdbb_pages;		// Unused, we'll never know what was the purpose.
 
 #if defined(UNIX) && defined(SUPERSERVER)

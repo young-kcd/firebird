@@ -158,8 +158,6 @@ const SSHORT WAIT_PERIOD	= -1;
 #endif /* SUPERSERVER */
 
 # ifdef V4_THREADING
-#  define V4_MUTEX_INIT(mutx)	THD_MUTEX_INIT (mutx)
-#  define V4_MUTEX_DESTROY(mutx)	THD_MUTEX_DESTROY (mutx)
 #  ifndef SUPERSERVER
 #   define V4_JRD_MUTEX_LOCK(mutx)	{THREAD_EXIT(); THD_JRD_MUTEX_LOCK (mutx); THREAD_ENTER();}
 #   define V4_JRD_MUTEX_UNLOCK(mutx) THD_JRD_MUTEX_UNLOCK (mutx)
@@ -4494,12 +4492,6 @@ void JRD_restore_context(void)
 
 	bool cleaned_up =
 		INUSE_cleanup(&tdbb->tdbb_mutexes, (FPTR_VOID_PTR) THD_mutex_unlock);
-	// Logical OR would use short circuit boolean: function may not be called.
-	// Left as bitwise OR. Condition may be reversed to use logical OR.
-
-	//cleaned_up |=
-	//	INUSE_cleanup(&tdbb->tdbb_rw_locks, (FPTR_VOID_PTR) THD_wlck_unlock);
-
 
 /* Charlie will fill this in
 cleaned_up |= INUSE_cleanup (&tdbb->tdbb_pages, (FPTR_VOID_PTR) CCH_?);
@@ -4533,8 +4525,6 @@ void JRD_inuse_clear(thread_db* tdbb)
  **************************************/
 
 	INUSE_clear(&tdbb->tdbb_mutexes);
-
-	//INUSE_clear(&tdbb->tdbb_rw_locks);
 
 	//INUSE_clear(&tdbb->tdbb_pages); // Unused
 }
@@ -4771,7 +4761,7 @@ static void cleanup(void* arg)
  *
  **************************************/
 #if defined(V4_THREADING) && !defined(SUPERSERVER)
-	V4_MUTEX_DESTROY(databases_mutex);
+	THD_MUTEX_DESTROY(databases_mutex);
 #endif
 	JRD_SS_DESTROY_MUTEX;
 	initialized = false;
@@ -5478,7 +5468,7 @@ static Database* init(thread_db*	tdbb,
 		PluginManager::load_engine_plugins();
 		if (!initialized) {
 #if defined(V4_THREADING) && !defined(SUPERSERVER)
-			V4_MUTEX_INIT(databases_mutex);
+			THD_MUTEX_INIT(databases_mutex);
 #endif
 			JRD_SS_INIT_MUTEX;
 			gds__register_cleanup(cleanup, 0);
@@ -5539,7 +5529,6 @@ static Database* init(thread_db*	tdbb,
 	//temp.blk_type = type_dbb;
 	dbb->dbb_permanent = perm;
 	dbb->dbb_mutexes = temp_mutx;
-	//dbb->dbb_rw_locks = temp_wlck;
 	tdbb->tdbb_database = dbb;
 
 	ALL_init();
@@ -5550,7 +5539,6 @@ static Database* init(thread_db*	tdbb,
 	databases = dbb;
 
 	dbb->dbb_mutexes = FB_NEW(*dbb->dbb_permanent) MUTX_T[DBB_MUTX_max];
-	// dbb->dbb_rw_locks = FB_NEW(*dbb->dbb_permanent) wlck_t[DBB_WLCK_max]; // unused
 	dbb->dbb_internal = vec<jrd_req*>::newVector(*dbb->dbb_permanent, irq_MAX);
 	dbb->dbb_dyn_req = vec<jrd_req*>::newVector(*dbb->dbb_permanent, drq_MAX);
 	dbb->dbb_flags |= DBB_exclusive;
@@ -5967,13 +5955,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		INUSE_remove(&tdbb->tdbb_mutexes, dbb->dbb_mutexes + i, true);
 	}
 
-//	for (i = 0; i < DBB_WLCK_max; i++) {
-//		INUSE_remove(&tdbb->tdbb_rw_locks, dbb->dbb_rw_locks + i, true);
-//	}
-
-
 	delete[] dbb->dbb_mutexes;
-//	delete[] dbb->dbb_rw_locks;
 
 #ifdef SUPERSERVER
 	if (dbb->dbb_flags & DBB_sp_rec_mutex_init) {
