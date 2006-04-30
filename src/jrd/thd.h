@@ -43,12 +43,12 @@ inline void THD_mutex_unlock(Firebird::Mutex* m) {
 	m->leave();
 }
 
-extern	Firebird::Mutex ib_mutex;
+extern	Firebird::Mutex global_mutex;
 inline void	THD_mutex_lock_global(void) {
-	ib_mutex.enter();
+	global_mutex.enter();
 }
 inline void THD_mutex_unlock_global(void) {
-	ib_mutex.leave();
+	global_mutex.leave();
 }
 
 // recursive mutex

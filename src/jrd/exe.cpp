@@ -482,9 +482,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 	DEV_BLKCHK(request, type_req);
 
 	SET_TDBB(tdbb);
-#ifdef ANY_THREADING
 	Database* dbb = tdbb->tdbb_database;
-#endif
 
 /* I found a core file from my test runs that came from a NULL request -
  * but have no idea what test was running.  Let's bugcheck so we can

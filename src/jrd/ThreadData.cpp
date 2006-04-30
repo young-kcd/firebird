@@ -64,7 +64,7 @@ ThreadData* gdbb;
 
 #include "../common/classes/locks.h"
 #include "../common/classes/rwlock.h"
-Firebird::Mutex ib_mutex;
+Firebird::Mutex global_mutex;
 
 namespace {
 
