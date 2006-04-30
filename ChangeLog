@@ -1,3 +1,72 @@
+2006-04-30 02:39  robocop
+
+	* firebird2/src/: jrd/dyn_def.epp (1.104), jrd/isc_file.cpp
+	(1.101), msgs/facilities.sql (1.58), msgs/messages.sql (1.72):
+	
+	Trying to solve the directory traversal issue again. The problem
+	would be better solved in the long term if ISC_expand_filename was
+	informed whether we need to verify the path and file is valid (we
+	are loading it) or only the path is valid (we are creating a new
+	file).
+
+2006-04-29 10:56  robocop
+
+	* firebird2/src/jrd/evl.cpp (1.175):
+	
+	Misc.
+
+2006-04-29 10:39  robocop
+
+	* firebird2/src/jrd/dbg_proto.h (1.11):
+	
+	Misc.
+
+2006-04-29 10:08  robocop
+
+	* firebird2/: builds/win32/msvc6/fb_event_print.dsp (1.1),
+	src/utilities/print_event.cpp (1.6):
+	
+	Finally I figured out how to update and compile the events printing
+	facility, but I'm still trying to figure out a linker problem.
+	Built with a small trick for now.
+
+2006-04-29 08:30  robocop
+
+	* firebird2/src/jrd/isc_file.cpp (1.100):
+	
+	It seems that I was able to tame hand-made directory parsing to
+	prevent directory traversal bugs. In the interim, I caused Jim
+	Barry (Nickolay's sources for the function) to revise his code,
+	although he ignores \.\ and \..\ instead of decoding them like us.
+
+2006-04-29 07:42  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.241):
+	
+	Delete redundant cast.
+
+2006-04-29 07:41  robocop
+
+	* firebird2/src/jrd/evl.cpp (1.174):
+	
+	I don't get Adriano's observation, but I assume it's true. I
+	restore Dmitry's code without the const: VC6 can't delete const
+	data.
+
+2006-04-29 05:01  robocop
+
+	* firebird2/src/: jrd/common.h (1.139), jrd/ibase.h (1.115),
+	jrd/isc.cpp (1.59), jrd/isc.h (1.23), remote/inet.cpp (1.168),
+	remote/inet_server.cpp (1.61), remote/protocol.h (1.28):
+	
+	Since TCP_NO_DELAY is gone, comments regarding it are obsolete.
+
+2006-04-29 04:48  robocop
+
+	* firebird2/src/jrd/: event.cpp (1.59), sch.cpp (1.36):
+	
+	Misc.
+
 2006-04-29 02:57  robocop
 
 	* firebird2/src/jrd/evl.cpp (1.173):
