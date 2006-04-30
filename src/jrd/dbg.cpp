@@ -1012,9 +1012,7 @@ int DBG_memory(void)
 	Database* dbb = GET_DBB();
 
 	fprintf(dbg_file, "MEMORY UTILIZATION for database\n\n");
-#ifdef V4_THREADING
-	V4_RW_LOCK_LOCK(dbb->dbb_rw_locks + DBB_WLCK_pools, WLCK_read);
-#endif
+
 /* walk through all the pools in the database */
 
 	perm_pool_mem = 0;
@@ -1070,9 +1068,6 @@ int DBG_memory(void)
 	fprintf(dbg_file, "Memory used of the malloc-ed memory = %ldk\n",
 			   gds_delta_alloc / 1024);
 
-#ifdef V4_THREADING
-	V4_RW_LOCK_UNLOCK(dbb->dbb_rw_locks + DBB_WLCK_pools);
-#endif
 	return TRUE;
 }
 

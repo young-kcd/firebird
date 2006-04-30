@@ -180,29 +180,6 @@ struct rec_mutx_t {
 typedef rec_mutx_t REC_MUTX_T;
 //typedef rec_mutx_t *REC_MUTX_PTR;
 
-
-#ifdef V4_THREADING
-// compatibility definitions
-enum	WLCK_type {WLCK_read = 1, WLCK_write = 2};
-
-/* Read/write lock structure */
-
-struct wlck_t {
-	Firebird::RWLock rwLock;
-	WLCK_type type;
-};
-
-//typedef struct wlck_t WLCK_T;
-//typedef struct wlck_t* WLCK;
-
-// compatibility definitions
-int		THD_wlck_lock(wlck_t*, enum WLCK_type);
-int		THD_wlck_unlock(wlck_t*);
-
-#define V4_RW_LOCK_LOCK(wlck, type)	THD_wlck_lock(wlck, type)
-#define V4_RW_LOCK_UNLOCK(wlck)		THD_wlck_unlock(wlck)
-#endif // V4_THREADING
-
 #ifdef ANY_THREADING
 #define THD_GLOBAL_MUTEX_LOCK		THD_mutex_lock_global()
 #define THD_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()

@@ -195,8 +195,6 @@ public:
 
 	DatabaseModules	modules;	// external function/filter modules
 	MUTX_T *dbb_mutexes;		// Database block mutexes
-	// Very strange usage, only to print the contents in debug mode???
-	//wlck_t *dbb_rw_locks;		// Database block read/write locks.
 	REC_MUTX_T dbb_sp_rec_mutex;	// Recursive mutex for accessing/updating stored procedure metadata
 	//SLONG dbb_sort_size;		// Size of sort space per sort, unused for now
 
@@ -394,10 +392,6 @@ const int DBB_MUTX_clone			= 5;	// Request cloning
 const int DBB_MUTX_cmp_clone		= 6;	// Compiled request cloning
 const int DBB_MUTX_flush_count		= 7;	// flush count/time
 const int DBB_MUTX_max				= 8;
-
-const int DBB_WLCK_pools			= 0;	// Pool manipulation
-//const int DBB_WLCK_files			= 1;	// DB and shadow file manipulation
-const int DBB_WLCK_max				= 2;
 
 //
 // Flags to indicate normal internal requests vs. dyn internal requests
