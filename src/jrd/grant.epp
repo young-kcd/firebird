@@ -161,18 +161,12 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			bool restrct = false;
 
 			Database* dbb = tdbb->tdbb_database;
-#ifdef V4_THREADING
-			THD_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_grant_priv);
-#endif
 			Firebird::MetaName s_class, owner, default_class;
 			bool view; // unused after being retrieved.
 			get_object_info(tdbb, work->dfw_name.c_str(), work->dfw_id, owner,
 							s_class, default_class, view);
 
 			if (s_class.length() == 0) {
-#ifdef V4_THREADING
-				V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_grant_priv);
-#endif
 				return false;
 			}
 
@@ -266,9 +260,6 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 									(USHORT)(acl - str_buffer.begin()));
 			}
 
-#ifdef V4_THREADING
-			THD_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_grant_priv);
-#endif
 			break;
 		}
 

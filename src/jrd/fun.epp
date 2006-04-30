@@ -550,15 +550,9 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
 	Database* dbb = tdbb->tdbb_database;
 
 /* Start by looking for already defined symbol */
-#ifdef V4_THREADING
-	THD_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
-#endif
 	for (Symbol* symbol = Symbol::lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
 		//if (symbol->sym_type == Symbol::fun) {
-#ifdef V4_THREADING
-			V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
-#endif
 			return (UserFunction*) symbol->sym_object;
 		//}
 	}
@@ -646,9 +640,6 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
 	if (!REQUEST(irq_l_args))
 		REQUEST(irq_l_args) = request_arg;
 
-#ifdef V4_THREADING
-	THD_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
-#endif
 	return prior;
 }
 
