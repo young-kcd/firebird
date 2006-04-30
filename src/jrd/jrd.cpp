@@ -4493,9 +4493,6 @@ void JRD_restore_context(void)
 	bool cleaned_up =
 		INUSE_cleanup(&tdbb->tdbb_mutexes, (FPTR_VOID_PTR) THD_mutex_unlock);
 
-/* Charlie will fill this in
-cleaned_up |= INUSE_cleanup (&tdbb->tdbb_pages, (FPTR_VOID_PTR) CCH_?);
-*/
 	ThreadData::restoreSpecific();
 
 #ifdef DEV_BUILD
@@ -4525,8 +4522,6 @@ void JRD_inuse_clear(thread_db* tdbb)
  **************************************/
 
 	INUSE_clear(&tdbb->tdbb_mutexes);
-
-	//INUSE_clear(&tdbb->tdbb_pages); // Unused
 }
 
 

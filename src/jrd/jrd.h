@@ -1005,7 +1005,6 @@ public:
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
 	struct iuo	tdbb_mutexes;
-	// struct iuo	tdbb_pages;		// Unused, we'll never know what was the purpose.
 
 #if defined(UNIX) && defined(SUPERSERVER)
     sigjmp_buf tdbb_sigsetjmp;
@@ -1154,19 +1153,9 @@ inline void SET_DBB(Jrd::Database* &dbb) {
 	CHECK_DBB(dbb);
 }
 
-#ifdef V4_THREADING
-#define V4_JRD_MUTEX_LOCK(mutx)         JRD_mutex_lock (mutx)
-#define V4_JRD_MUTEX_UNLOCK(mutx)       JRD_mutex_unlock (mutx)
-// BRS. 03/23/2003
-// Those empty defines was substituted with #ifdef V4_THREADING
-//#else
-//#define V4_JRD_MUTEX_LOCK(mutx)
-//#define V4_JRD_MUTEX_UNLOCK(mutx)
-#endif
-
 #ifdef ANY_THREADING
-#define THD_JRD_MUTEX_LOCK(mutx)        JRD_mutex_lock (mutx)
-#define THD_JRD_MUTEX_UNLOCK(mutx)      JRD_mutex_unlock (mutx)
+#define THD_JRD_MUTEX_LOCK(mutx)        JRD_mutex_lock(mutx)
+#define THD_JRD_MUTEX_UNLOCK(mutx)      JRD_mutex_unlock(mutx)
 #else
 #define THD_JRD_MUTEX_LOCK(mutx)
 #define THD_JRD_MUTEX_UNLOCK(mutx)
