@@ -27,6 +27,7 @@
 #include "../jrd/event.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../common/utils_proto.h"
 
 #define isc_print_status gds__print_status
 
@@ -63,12 +64,12 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	if ((argc == 2) && (strncmp(argv[1], "-d", 2) == 0))
-		event_table_dump();
+	if ((argc == 2) && fb_utils::strnicmp(argv[1], "-dump", MAX(strlen(argv[1]), 2)) == 0)
+			event_table_dump();
 	else if (argc == 1)
 		event_list();
 	else
-		fprintf(stderr, "usage: eventprint [-dump]\n");
+		fprintf(stderr, "usage: fb_event_print [-dump]\n");
 
 	return 0;
 }
@@ -215,7 +216,7 @@ static void event_table_dump(void)
 
 		case type_reqb:
 			{
-				printf("evh_req* (%ld)\n", block->hdr_length);
+				printf("REQUEST BLOCK (%ld)\n", block->hdr_length);
 				evt_req* request = (evt_req*) block;
 				printf("\tProcess: %ld, interests: %ld, ast: %lx, arg: %lx\n",
 						  request->req_process, request->req_interests,
