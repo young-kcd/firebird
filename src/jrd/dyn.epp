@@ -107,10 +107,6 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-#if defined(V4_THREADING) || (defined(SUPERSERVER) && defined(WIN_NT))
-	Database* dbb = tdbb->tdbb_database;
-#endif
-
 	const UCHAR* ptr = ddl;
 
 	if (*ptr++ != isc_dyn_version_1) {
@@ -129,17 +125,11 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	JrdMemoryPool* tempPool = JrdMemoryPool::createPool();
 	Jrd::ContextPoolHolder context(tdbb, tempPool);
 
+	Database* dbb = tdbb->tdbb_database;
+
 	try {
 
-#if defined(SUPERSERVER) && defined(WIN_NT)
-		THREAD_EXIT();
 		THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
-		THREAD_ENTER();
-#else
-#ifdef V4_THREADING
-		THD_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
-#endif
-#endif
 
 		VIO_start_save_point(tdbb, transaction);
 		transaction->tra_save_point->sav_verb_count++;
@@ -148,14 +138,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 		transaction->tra_save_point->sav_verb_count--;
 		VIO_verb_cleanup(tdbb, transaction);
 
-#if defined(SUPERSERVER) && defined(WIN_NT)
 		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
-#else
-#ifdef V4_THREADING
-		THD_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
-#endif
-#endif
-
 	}
 	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -170,18 +153,12 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 				VIO_verb_cleanup(tdbb, transaction);
 			}
 			catch (const std::exception&) {
+				THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
 				BUGCHECK(290);	/* msg 290 error during savepoint backout */
 			}
 		}
 
-#if defined(SUPERSERVER) && defined(WIN_NT)
 		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
-#else
-#ifdef V4_THREADING
-		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
-#endif
-#endif
-
 		ERR_punt();
 	}
 }
