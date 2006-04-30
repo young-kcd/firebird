@@ -2422,14 +2422,20 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	SET_TDBB(tdbb);
 
+	const DeferredWork* arg = work->dfw_args;
+	while (arg && (arg->dfw_type != dfw_arg_index_name)) 
+		arg = arg->dfw_next;
+
+	fb_assert(arg);
+
 	switch (phase)
 	{
 	case 0:
-		relation = MET_lookup_relation(tdbb, work->dfw_name);
+		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
 		if (!relation) {
 			return false;
 		}
-		id = work->dfw_id - 1;
+		id = arg->dfw_id - 1;
 		index = CMP_get_index_lock(tdbb, relation, id);
 		if (index) {
 			if (!index->idl_count) {
@@ -2439,17 +2445,9 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return false;
 
 	case 1:
-	{
-		const DeferredWork* arg = work->dfw_args;
-		while (arg && (arg->dfw_type != dfw_arg_index_name)) 
-			arg = arg->dfw_next;
-
-		fb_assert(arg);
-
 		check_dependencies(tdbb, arg->dfw_name.c_str(), NULL,
 						   obj_index, transaction);
 		return true;
-	}
 
 	case 2:
 		return true;
@@ -2458,14 +2456,14 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		/* Look up the relation.  If we can't find the relation,
 		   don't worry about the index. */
 
-		relation = MET_lookup_relation(tdbb, work->dfw_name);
+		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
 		if (!relation) {
 			return false;
 		}
 
 		/* Make sure nobody is currently using the index */
 
-		id = work->dfw_id - 1;
+		id = arg->dfw_id - 1;
 		index = CMP_get_index_lock(tdbb, relation, id);
 		if (index)
 		{
@@ -2487,35 +2485,22 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return true;
 
 	case 4:
-		relation = MET_lookup_relation(tdbb, work->dfw_name);
+		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
 		if (!relation) {
 			return false;
 		}
 
-		id = work->dfw_id - 1;
+		id = arg->dfw_id - 1;
 		index = CMP_get_index_lock(tdbb, relation, id);
 		IDX_delete_index(tdbb, relation, id);
 		if (work->dfw_type == dfw_delete_expression_index)
 		{
-			// for expression index there are dependencies  
-			// therefore work->dfw_args was set in VIO_erase
-			// to let us know that expression index name
-			fb_assert(work->dfw_args);
-
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_index_name)) 
-			{
-				arg = arg->dfw_next;
-			}
-
-			fb_assert(arg);
-			MET_delete_dependencies(tdbb,
-				arg->dfw_name, obj_expression_index);
+			MET_delete_dependencies(tdbb, arg->dfw_name, obj_expression_index);
 		}
 
 		// if index was bound to deleted FK constraint 
 		// then work->dfw_args was set in VIO_erase
-		const DeferredWork* arg = work->dfw_args;
+		arg = work->dfw_args;
 		while (arg && (arg->dfw_type != dfw_arg_partner_rel_id)) 
 		{
 			arg = arg->dfw_next;

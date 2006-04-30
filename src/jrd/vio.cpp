@@ -1212,22 +1212,29 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_idx_id, &desc2);
 			if ( (id = MOV_get_long(&desc2, 0)) ) 
 			{
-				if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2))
-					work = DFW_post_work(transaction, dfw_delete_expression_index, &desc, id);
-				else
-					work = DFW_post_work(transaction, dfw_delete_index, &desc, id);
+				MOV_get_metadata_str(&desc, relation_name, sizeof(relation_name));
+				r2 = MET_lookup_relation(tdbb, relation_name);
+				fb_assert(r2);
 
-				// add index name to correctly delete dependencies
+				if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2)) {
+					work = DFW_post_work(transaction, dfw_delete_expression_index,
+										 NULL, r2->rel_id);
+				}
+				else {
+					work = DFW_post_work(transaction, dfw_delete_index,
+										 NULL, r2->rel_id);
+				}
+
+				// add index id and name (the latter is required
+				// to delete dependencies correctly)
 				DSC idx_name;
 				EVL_field(0, rpb->rpb_record, f_idx_name, &idx_name);
 				DeferredWork* arg = DFW_post_work_arg(transaction, work, &idx_name, id);
 				arg->dfw_type = dfw_arg_index_name;
-			
+
 				// get partner relation for FK index
 				if (EVL_field(0, rpb->rpb_record, f_idx_foreign, &desc2))
 				{
-					MOV_get_metadata_str(&desc, relation_name, sizeof(relation_name));
-
 					DSC desc3;
 					EVL_field(0, rpb->rpb_record, f_idx_name, &desc3);
 
@@ -1237,12 +1244,12 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					jrd_rel *partner;
 					index_desc idx;
 
-					if ((r2 = MET_lookup_relation(tdbb, relation_name)) && 
-						(BTR_lookup(tdbb, r2, id-1, &idx) == FB_SUCCESS) && 
+					if ((BTR_lookup(tdbb, r2, id - 1, &idx) == FB_SUCCESS) && 
 						(MET_lookup_partner(tdbb, r2, &idx, idx_name)) &&
 						(partner = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
 					{
-						DeferredWork* arg = DFW_post_work_arg(transaction, work, 0, partner->rel_id);
+						DeferredWork* arg =
+							DFW_post_work_arg(transaction, work, 0, partner->rel_id);
 						arg->dfw_type = dfw_arg_partner_rel_id;
 					}
 					else 
