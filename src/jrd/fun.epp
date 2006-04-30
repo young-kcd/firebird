@@ -551,7 +551,7 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
 
 /* Start by looking for already defined symbol */
 #ifdef V4_THREADING
-	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
+	THD_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 #endif
 	for (Symbol* symbol = Symbol::lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
@@ -647,7 +647,7 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
 		REQUEST(irq_l_args) = request_arg;
 
 #ifdef V4_THREADING
-	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
+	THD_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_udf);
 #endif
 	return prior;
 }

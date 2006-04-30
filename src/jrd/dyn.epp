@@ -137,7 +137,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 		THREAD_ENTER();
 #else
 #ifdef V4_THREADING
-		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+		THD_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
 #endif
 #endif
 
@@ -152,7 +152,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
 #else
 #ifdef V4_THREADING
-		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+		THD_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
 #endif
 #endif
 
