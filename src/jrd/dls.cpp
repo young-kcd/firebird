@@ -73,14 +73,8 @@ bool DLS_get_temp_space(ULONG size, sort_work_file* sfb)
 
 	mutexed_dir_list* ptr = DLS_get_access();
 
-#ifdef V4_THREADING
-	if (!ptr->mdls_mutex_init) {
-		V4_MUTEX_INIT(ptr->mdls_mutex);
-		ptr->mdls_mutex_init = true;
-	}
+	Firebird::MutexLockGuard guard(ptr->mdls_mutex);
 
-	V4_MUTEX_LOCK(ptr->mdls_mutex);
-#endif
 	if (!sfb->sfb_dls) {
 		/* allocate temp. space starting search from the begining of the dir_list */
 		for (sfb->sfb_dls = ptr->mdls_dls;
@@ -101,11 +95,8 @@ bool DLS_get_temp_space(ULONG size, sort_work_file* sfb)
 			result = true;
 		}
 	}
-#ifdef V4_THREADING
-	V4_MUTEX_UNLOCK(ptr->mdls_mutex);
-#endif
 
-	return (result);
+	return result;
 }
 
 
@@ -123,18 +114,12 @@ void DLS_put_temp_space(sort_work_file* sfb)
  **************************************/
 	if (sfb && sfb->sfb_dls) {
 		mutexed_dir_list* ptr = DLS_get_access();
-#ifdef V4_THREADING
-		fb_assert(ptr->mdls_mutex_init);
-		V4_MUTEX_LOCK(ptr->mdls_mutex);
-#endif
+		Firebird::MutexLockGuard guard(ptr->mdls_mutex);
 		fb_assert(sfb->sfb_dls->dls_inuse >= sfb->sfb_file_size);
 		if (sfb->sfb_dls->dls_inuse > sfb->sfb_file_size)
 			sfb->sfb_dls->dls_inuse -= sfb->sfb_file_size;
 		else
 			sfb->sfb_dls->dls_inuse = 0;
-#ifdef V4_THREADING
-		V4_MUTEX_UNLOCK(ptr->mdls_mutex);
-#endif
 	}
 }
 
@@ -168,16 +153,7 @@ bool DLS_add_dir(ULONG size, const TEXT* dir_name)
 
 	mutexed_dir_list* mdls = DLS_get_access();
 
-#ifdef V4_THREADING
-/* lock mutex, initialize it in case of the first access */
-
-	if (!mdls->mdls_mutex_init) {
-		V4_MUTEX_INIT(mdls->mdls_mutex);
-		mdls->mdls_mutex_init = true;
-	}
-
-	V4_MUTEX_LOCK(mdls->mdls_mutex);
-#endif
+	Firebird::MutexLockGuard guard(mdls->mdls_mutex);
 
 /* add new entry to the end of list */
 
@@ -190,12 +166,6 @@ bool DLS_add_dir(ULONG size, const TEXT* dir_name)
 			dls_iterator = dls_iterator->dls_next;
 		dls_iterator->dls_next = new_dls;
 	}
-
-#ifdef V4_THREADING
-/* release lock */
-
-	V4_MUTEX_UNLOCK(mdls->mdls_mutex);
-#endif
 
 	return true;
 }

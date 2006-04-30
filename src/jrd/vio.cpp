@@ -1620,10 +1620,6 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-/* This will require mutex synchronization for pre-emptive multithreading. */
-
-/* V4_MUTEX_LOCK (&relation->rel_mutex); */
-
 /* Allocate a vector of garbage collect record blocks for relation. */
 	vec<Record*>* vector = relation->rel_gc_rec;
 	if (!vector) {
@@ -1638,7 +1634,6 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 		Record* record = *rec_ptr;
 		if (record && !(record->rec_flags & REC_gc_active)) {
 			record->rec_flags |= REC_gc_active;
-/*	V4_MUTEX_UNLOCK (&relation->rel_mutex); */
 			return record;
 		}
 	}
@@ -1659,7 +1654,6 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 	}
 	(*vector)[slot] = record;
 
-/* V4_MUTEX_UNLOCK (&relation->rel_mutex); */
 	return record;
 }
 
@@ -4624,8 +4618,6 @@ static Record* replace_gc_record(jrd_rel* relation, Record** gc_record, USHORT l
  *
  **************************************/
 
-/* V4_MUTEX_LOCK (&relation->rel_mutex); */
-
 	vec<Record*>* vector = relation->rel_gc_rec;
 	vec<Record*>::iterator rec_ptr, end;
 	for (rec_ptr = vector->begin(), end = vector->end(); rec_ptr < end;
@@ -4635,12 +4627,10 @@ static Record* replace_gc_record(jrd_rel* relation, Record** gc_record, USHORT l
 			// 26 Sep 2002, SKIDDER: Failure to do so (*gc_record = ...) causes nasty memory corruption in 
 			// some cases.
 			*gc_record = realloc_record(*rec_ptr, length);
-/*	V4_MUTEX_UNLOCK (&relation->rel_mutex); */
 			return *rec_ptr;
 		}
 	}
 
-/* V4_MUTEX_UNLOCK (&relation->rel_mutex); */
 	BUGCHECK(288);				/* msg 288 garbage collect record disappeared */
 	return NULL;			/* Added to remove compiler warnings */
 }

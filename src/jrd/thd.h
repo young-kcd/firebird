@@ -199,19 +199,15 @@ struct wlck_t {
 int		THD_wlck_lock(wlck_t*, enum WLCK_type);
 int		THD_wlck_unlock(wlck_t*);
 
-#define V4_MUTEX_LOCK(mutx)		THD_mutex_lock (mutx)
-#define V4_MUTEX_UNLOCK(mutx)		THD_mutex_unlock (mutx)
-#define V4_GLOBAL_MUTEX_LOCK		THD_mutex_lock_global()
-#define V4_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()
-#define V4_RW_LOCK_LOCK(wlck, type)	THD_wlck_lock (wlck, type)
-#define V4_RW_LOCK_UNLOCK(wlck)		THD_wlck_unlock (wlck)
+#define V4_RW_LOCK_LOCK(wlck, type)	THD_wlck_lock(wlck, type)
+#define V4_RW_LOCK_UNLOCK(wlck)		THD_wlck_unlock(wlck)
 #endif // V4_THREADING
 
 #ifdef ANY_THREADING
 #define THD_GLOBAL_MUTEX_LOCK		THD_mutex_lock_global()
 #define THD_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()
-#define THD_MUTEX_LOCK(mutx)		THD_mutex_lock (mutx)
-#define THD_MUTEX_UNLOCK(mutx)		THD_mutex_unlock (mutx)
+#define THD_MUTEX_LOCK(mutx)		THD_mutex_lock(mutx)
+#define THD_MUTEX_UNLOCK(mutx)		THD_mutex_unlock(mutx)
 #else
 #define THD_GLOBAL_MUTEX_LOCK
 #define THD_GLOBAL_MUTEX_UNLOCK

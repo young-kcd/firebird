@@ -47,11 +47,10 @@ struct dir_list {
 
 struct mutexed_dir_list {
 	dir_list* mdls_dls;				/* Pointer to the directory list */
-	bool mdls_mutex_init;
-	MUTX_T mdls_mutex[1];		/* Mutex for directory list. Must
+	MUTX_T mdls_mutex;				/* Mutex for directory list. Must
 								   be locked before list operations */
 	mutexed_dir_list()
-		: mdls_dls(0), mdls_mutex_init(false) {}
+		: mdls_dls(NULL) {}
 };
 
 /* external function directory list */
