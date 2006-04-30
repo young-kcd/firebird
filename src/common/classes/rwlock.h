@@ -35,6 +35,7 @@
 #include <limits.h>
 
 #include "../common/classes/fb_atomic.h"
+#include "../common/classes/locks.h"
 
 
 namespace Firebird
@@ -50,8 +51,9 @@ private:
 	           // -50000 - writer is active
 			   // 0 - noone owns the lock
 			   // positive value - number of concurrent readers
-	AtomicCounter blockedReaders;
+	long blockedReaders;
 	AtomicCounter blockedWriters;
+	Mutex blockedReadersLock;
 	HANDLE writers_event, readers_semaphore;
 
 	// Forbid copy constructor
@@ -86,11 +88,14 @@ public:
 			if (!SetEvent(writers_event))
 				system_call_failed::raise("SetEvent");
 		}
-		else
-			if (blockedReaders.value()) {
-				if (!ReleaseSemaphore(readers_semaphore, blockedReaders.value(), NULL))
-					system_call_failed::raise("ReleaseSemaphore");
+		else if (blockedReaders) {
+			MutexLockGuard guard(blockedReadersLock);
+			if (blockedReaders &&
+				!ReleaseSemaphore(readers_semaphore, blockedReaders, NULL))
+			{
+				system_call_failed::raise("ReleaseSemaphore");
 			}
+		}
 	}
 	bool tryBeginRead()
 	{
@@ -117,11 +122,18 @@ public:
 	void beginRead()
 	{
 		if (!tryBeginRead()) {
-			++blockedReaders;
-			while (!tryBeginRead())
+			{ // scope block
+				MutexLockGuard guard(blockedReadersLock);
+				++blockedReaders;
+			}
+			while (!tryBeginRead()) {
 				if (WaitForSingleObject(readers_semaphore, INFINITE) != WAIT_OBJECT_0)
 					system_call_failed::raise("WaitForSingleObject");
-			--blockedReaders; 
+			}
+			{ // scope block
+				MutexLockGuard guard(blockedReadersLock);
+				--blockedReaders;
+			}
 		}
 	}
 	void beginWrite()
