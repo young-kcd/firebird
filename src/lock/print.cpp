@@ -259,8 +259,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 					}
 				if (!sw_interactive)
 					sw_interactive =
-						(SW_I_ACQUIRE | SW_I_OPERATION | SW_I_TYPE |
-						 SW_I_WAIT);
+						(SW_I_ACQUIRE | SW_I_OPERATION | SW_I_TYPE | SW_I_WAIT);
 				sw_nobridge = true;
 				sw_seconds = sw_intervals = 1;
 				if (argc > 1) {
