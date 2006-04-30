@@ -9,6 +9,7 @@
 #include "../jrd/common.h"
 #include "../jrd/enc_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../common/classes/locks.h"
 
 /*
 #ifdef HAVE_UNISTD_H
@@ -426,6 +427,7 @@ static C_block CF6464[64 / CHUNKBITS][1 << CHUNKBITS];
 
 /* ==================================== */
 
+static Firebird::Mutex cryptMutex;
 
 static C_block constdatablock;	/* encryption constant */
 const static size_t RESULT_SIZE = (1 + 4 + 4 + 11 + 1);
@@ -437,6 +439,7 @@ const static size_t RESULT_SIZE = (1 + 4 + 4 + 11 + 1);
 void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 {
 	fb_assert(bufSize >= RESULT_SIZE);
+	Firebird::MutexLockGuard guard(cryptMutex);
 
 	SLONG i;
 	int t;
