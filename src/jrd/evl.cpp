@@ -2882,25 +2882,37 @@ static dsc* concatenate(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	USHORT ttype1 = INTL_TTYPE(value1);
+	const USHORT ttype1 =
+		DTYPE_IS_TEXT(value1->dsc_dtype) ? value1->dsc_ttype() : ttype_ascii;
+	const USHORT ttype2 =
+		DTYPE_IS_TEXT(value2->dsc_dtype) ? value2->dsc_ttype() : ttype_ascii;
 
- 	if ((value2->dsc_sub_type != CS_NONE) &&
- 		((ttype1 == CS_NONE) || (ttype1 == CS_ASCII)))
+	USHORT ttype;
+
+	if (ttype1 != ttype_none && ttype1 != ttype_ascii)
 	{
- 		ttype1 = value2->dsc_sub_type;
- 	}
+		ttype = ttype1;
+	}
+	else if (ttype2 != ttype_none && ttype2 != ttype_ascii)
+	{
+		ttype = ttype2;
+	}
+	else
+	{
+		ttype = ttype_ascii;
+	}
 
 	// Both values are present; build the concatenation
 
 	UCHAR *address1;
 	MoveBuffer temp1;
-	const USHORT length1 = MOV_make_string2(value1, ttype1, &address1, temp1);
+	const USHORT length1 = MOV_make_string2(value1, ttype, &address1, temp1);
 
 	// value2 will be converted to the same text type as value1
 
 	UCHAR *address2;
 	MoveBuffer temp2;
-	const USHORT length2 = MOV_make_string2(value2, ttype1, &address2, temp2);
+	const USHORT length2 = MOV_make_string2(value2, ttype, &address2, temp2);
 
 	if ((ULONG) length1 + (ULONG) length2 > MAX_COLUMN_SIZE - sizeof(USHORT))
 	{
@@ -2914,7 +2926,7 @@ static dsc* concatenate(thread_db* tdbb,
 	desc.dsc_scale = 0;
 	desc.dsc_length = length1 + length2;
 	desc.dsc_address = NULL;
-	INTL_ASSIGN_TTYPE(&desc, ttype1);
+	INTL_ASSIGN_TTYPE(&desc, ttype);
 
 	VaryingString* string = NULL;
 	if (value1->dsc_address == impure->vlu_desc.dsc_address ||
@@ -2923,6 +2935,7 @@ static dsc* concatenate(thread_db* tdbb,
 		string = impure->vlu_string;
 		impure->vlu_string = NULL;
 	}
+
 	EVL_make_value(tdbb, &desc, impure);
 	UCHAR* p = impure->vlu_desc.dsc_address;
 
