@@ -1176,9 +1176,9 @@ static void init(void* arg, SH_MEM shmem_data, bool initialize)
  *	Initialize global region header.
  *
  **************************************/
-#if defined(WIN_NT)
 	int mutex_state;
-	
+
+#if defined(WIN_NT)
 	if (mutex_state = ISC_mutex_init(MUTEX, EVENT_FILE))
 		mutex_bugcheck("mutex init", mutex_state);
 #endif
