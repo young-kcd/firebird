@@ -5632,7 +5632,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 
 	// flesh out the format of the record
 
-	format->fmt_length = (USHORT) FLAG_BYTES(format->fmt_count);
+	ULONG offset = FLAG_BYTES(format->fmt_count);
 
 	Format::fmt_desc_iterator desc3 = format->fmt_desc.begin();
 	for (const Format::fmt_desc_const_iterator end_desc = format->fmt_desc.end();
@@ -5640,11 +5640,16 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 	{
 		const USHORT align = type_alignments[desc3->dsc_dtype];
 		if (align) {
-			format->fmt_length = FB_ALIGN(format->fmt_length, align);
+			offset = FB_ALIGN(offset, align);
 		}
-		desc3->dsc_address = (UCHAR *) (IPTR) format->fmt_length;
-		format->fmt_length += desc3->dsc_length;
+		desc3->dsc_address = (UCHAR *) (IPTR) offset;
+		offset += desc3->dsc_length;
 	}
+
+	if (offset > MAX_FORMAT_SIZE)
+		ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
+
+	format->fmt_length = (USHORT) offset;
 }
 
 
