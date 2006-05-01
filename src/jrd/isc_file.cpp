@@ -620,7 +620,7 @@ static void translate_slashes(tstring& Path)
 
 static bool isDriveLetter(const tstring::char_type letter)
 {
-	return letter >= 'A' && letter <= 'Z' || letter >= 'a' && letter <= 'z';
+	return (letter >= 'A' && letter <= 'Z') || (letter >= 'a' && letter <= 'z');
 }
 
 
