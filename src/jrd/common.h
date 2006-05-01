@@ -367,11 +367,8 @@ static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
  * in Solaris
  */
 #define SOLARIS_MT
-
-#ifdef SOLARIS_MT
-#define ANY_THREADING
 #define MULTI_THREAD
-#endif
+
 /*  Define the following only on platforms whose standard I/O
  *  implementation is so weak that we wouldn't be able to fopen
  *  a file whose underlying file descriptor would be > 255.

@@ -112,13 +112,6 @@ using namespace NAMESPACE;
 # define MULTI_THREAD
 #endif
 
-#ifdef MULTI_THREAD
-#define ANY_THREADING
-#endif
-#ifdef V4_THREADING
-#define ANY_THREADING
-#endif
-
 #ifndef NULL
 #define NULL            0L
 #endif

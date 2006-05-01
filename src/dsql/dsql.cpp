@@ -157,7 +157,7 @@ static const UCHAR sql_records_info[] = {
 	isc_info_sql_records
 };
 
-#ifdef	ANY_THREADING
+#ifdef MULTI_THREAD
 static MUTX_T databases_mutex;
 static MUTX_T cursors_mutex;
 #endif
