@@ -106,6 +106,15 @@ int INF_blob_info(const blb* blob,
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
+	SCHAR* start_info;
+	
+	if (*items == isc_info_length) {
+		start_info = info;
+		items++;
+	}
+	else {
+		start_info = 0;
+	}
 
 	while (items < end_items && *items != isc_info_end) {
 		SCHAR item = *items++;
@@ -141,6 +150,14 @@ int INF_blob_info(const blb* blob,
 	}
 
 	*info++ = isc_info_end;
+
+	if (start_info && (end - info >= 7))
+	{
+		SLONG number = info - start_info;
+		memmove(start_info + 7, start_info, number);
+		USHORT length = INF_convert(number, buffer);
+		INF_put_item(isc_info_length, length, buffer, start_info, end);
+	}
 
 	return TRUE;
 }
@@ -838,6 +855,16 @@ int INF_request_info(const jrd_req* request,
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
+	SCHAR* start_info;
+	
+	if (*items == isc_info_length) {
+		start_info = info;
+		items++;
+	}
+	else {
+		start_info = 0;
+	}
+
 	SCHAR buffer[256];
 	memset(buffer, 0, sizeof(buffer));
 	SCHAR* buffer_ptr = buffer;
@@ -962,6 +989,14 @@ int INF_request_info(const jrd_req* request,
 
 	*info++ = isc_info_end;
 
+	if (start_info && (end - info >= 7))
+	{
+		SLONG number = info - start_info;
+		memmove(start_info + 7, start_info, number);
+		USHORT length = INF_convert(number, buffer);
+		INF_put_item(isc_info_length, length, buffer, start_info, end);
+	}
+
 	return TRUE;
 }
 
@@ -986,6 +1021,15 @@ int INF_transaction_info(const jrd_tra* transaction,
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
+	SCHAR* start_info;
+	
+	if (*items == isc_info_length) {
+		start_info = info;
+		items++;
+	}
+	else {
+		start_info = 0;
+	}
 
 	while (items < end_items && *items != isc_info_end) {
 		SCHAR item = *items++;
@@ -1058,6 +1102,14 @@ int INF_transaction_info(const jrd_tra* transaction,
 	}
 
 	*info++ = isc_info_end;
+
+	if (start_info && (end - info >= 7))
+	{
+		SLONG number = info - start_info;
+		memmove(start_info + 7, start_info, number);
+		USHORT length = INF_convert(number, buffer);
+		INF_put_item(isc_info_length, length, buffer, start_info, end);
+	}
 
 	return TRUE;
 }

@@ -355,7 +355,7 @@ static XDR::xdr_ops inet_ops =
 {
 	inet_getlong,
 	inet_putlong,
-#ifdef SUPERSERVER
+#if defined(SUPERSERVER) && !defined(EMBEDDED)
 	REMOTE_getbytes,
 #else
 	inet_getbytes,
@@ -510,7 +510,8 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_lazy_send, 3)
 #ifdef SCROLLABLE_CURSORS
 		,
 		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 3)
@@ -616,6 +617,10 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 
 	if (packet->p_acpt.p_acpt_type != ptype_out_of_band) {
 		port->port_flags |= PORT_no_oob;
+	}
+
+	if (packet->p_acpt.p_acpt_type == ptype_lazy_send) {
+		port->port_flags |= PORT_lazy;
 	}
 
 	return port;

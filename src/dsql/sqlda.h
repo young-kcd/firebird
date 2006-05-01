@@ -61,6 +61,9 @@ struct sqlda_sup
 		USHORT	dasup_blr_length;
 		USHORT	dasup_blr_buf_len;
 		USHORT	dasup_msg_buf_len;
+
+		SCHAR*	dasup_info_buf;
+		USHORT	dasup_info_len;
 	} dasup_clauses[2];
 
 	USHORT	dasup_dialect;		// Dialect associated with statement 

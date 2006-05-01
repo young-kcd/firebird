@@ -1581,6 +1581,14 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 	
 		const UCHAR* const end_items = items + item_length;
 		const UCHAR* const end_info = info + info_length;
+		UCHAR *start_info;
+		if (*items == isc_info_length) {
+			start_info = info;
+			items++;
+		}
+		else {
+			start_info = 0;
+		}
 
 		// CVC: Is it the idea that this pointer remains with its previous value
 		// in the loop or should it be made NULL in each iteration?
@@ -1760,6 +1768,14 @@ ISC_STATUS GDS_DSQL_SQL_INFO_CPP(	ISC_STATUS*		user_status,
 		}
 
 		*info++ = isc_info_end;
+
+		if (start_info && (end_info - info >= 7))
+		{
+			SLONG number = info - start_info;
+			memmove(start_info + 7, start_info, number);
+			USHORT length = convert(number, buffer);
+			put_item(isc_info_length, length, buffer, start_info, end_info);
+		}
 	}
 	catch(const std::exception& ex)
 	{
@@ -3649,6 +3665,7 @@ static USHORT get_plan_info(
 	SCHAR* plan;
 	for (int i = 0; i < 2; i++) {
 		const SCHAR* explain = explain_ptr;
+
 		if (*explain++ != isc_info_access_path)
 		{
 			// CVC: deallocate memory!

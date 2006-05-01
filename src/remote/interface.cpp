@@ -185,9 +185,7 @@ static ISC_STATUS send_and_receive(RDB, PACKET *, ISC_STATUS *);
 static ISC_STATUS send_blob(ISC_STATUS*, RBL, USHORT, const UCHAR*);
 static void send_cancel_event(RVNT);
 static bool send_packet(rem_port*, PACKET *, ISC_STATUS *);
-#ifdef NOT_USED_OR_REPLACED
 static bool send_partial_packet(rem_port*, PACKET *, ISC_STATUS *);
-#endif
 #ifdef MULTI_THREAD
 static void server_death(rem_port*);
 #endif
@@ -205,6 +203,16 @@ static ULONG remote_event_id = 0;
 #define NULL_CHECK(ptr, code)	if (*ptr) return handle_error (user_status, (ISC_STATUS) code)
 
 #define SET_OBJECT(rdb, object, id) REMOTE_set_object (rdb->rdb_port, (struct blk *) object, id)
+
+inline bool defer_packet(rem_port* port, const PACKET* packet, ISC_STATUS* status)
+{
+	rem_que_packet p;
+	p.packet = *packet;
+	p.sent = false;
+	port->port_defered_packets->add(p);
+
+	return clear_queue(port, status);
+}
 
 #define GDS_ATTACH_DATABASE	REM_attach_database
 #define GDS_BLOB_INFO		REM_blob_info
@@ -1225,26 +1233,35 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
 			return unsupported(user_status);
 
-		PACKET* packet = &rdb->rdb_packet;
-		packet->p_operation = op_allocate_statement;
-		packet->p_rlse.p_rlse_object = rdb->rdb_id;
+		RSR statement;
+		if (rdb->rdb_port->port_flags & PORT_lazy) {
+			*stmt_handle = statement = (RSR) ALLR_block(type_rsr, 0);
+			statement->rsr_rdb = rdb;
+			statement->rsr_id = INVALID_OBJECT;
+			statement->rsr_flags |= RSR_lazy;
+		}
+		else {
+			PACKET* packet = &rdb->rdb_packet;
+			packet->p_operation = op_allocate_statement;
+			packet->p_rlse.p_rlse_object = rdb->rdb_id;
 
-		if (send_and_receive(rdb, packet, user_status))
-			return error(user_status);
+			if (send_and_receive(rdb, packet, user_status))
+				return error(user_status);
 
-		/* Allocate SQL request block */
+			/* Allocate SQL request block */
 
-		RSR statement = (RSR) ALLR_block(type_rsr, 0);
-		*stmt_handle = statement;
-		statement->rsr_rdb = rdb;
-		statement->rsr_id = packet->p_resp.p_resp_object;
+			statement = (RSR) ALLR_block(type_rsr, 0);
+			*stmt_handle = statement;
+			statement->rsr_rdb = rdb;
+			statement->rsr_id = packet->p_resp.p_resp_object;
+
+			/* register the object */
+
+			SET_OBJECT(rdb, statement, statement->rsr_id);
+		}
+
 		statement->rsr_next = rdb->rdb_sql_requests;
-
 		rdb->rdb_sql_requests = statement;
-
-		/* register the object */
-
-		SET_OBJECT(rdb, statement, statement->rsr_id);
 	}
 	catch (const std::exception& ex)
 	{
@@ -1988,14 +2005,45 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 			return unsupported(user_status);
 		}
 
+		if (statement->rsr_flags & RSR_lazy) {
+			if (option == DSQL_drop) {
+				release_sql_request(statement);
+				*stmt_handle = NULL;
+			}
+			else {
+				statement->rsr_flags &= ~RSR_fetched;
+				statement->rsr_rtr = NULL;
+
+				if (!clear_queue(rdb->rdb_port, user_status))
+					return error(user_status);
+
+				REMOTE_reset_statement(statement);
+			}
+
+			return return_success(rdb);
+		}
+
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_free_statement;
 		P_SQLFREE* free_stmt = &packet->p_sqlfree;
 		free_stmt->p_sqlfree_statement = statement->rsr_id;
 		free_stmt->p_sqlfree_option = option;
 
-		if (send_and_receive(rdb, packet, user_status)) {
-			return error(user_status);
+		if (rdb->rdb_port->port_flags & PORT_lazy) {
+			if (!defer_packet(rdb->rdb_port, packet, user_status))
+				return error(user_status);
+
+			if (option == DSQL_drop) {
+				packet->p_resp.p_resp_object = INVALID_OBJECT;
+			}
+			else {
+				packet->p_resp.p_resp_object = statement->rsr_id;
+			}
+		}
+		else {
+			if (send_and_receive(rdb, packet, user_status)) {
+				return error(user_status);
+			}
 		}
 
 		statement->rsr_handle = (FB_API_HANDLE) (IPTR) packet->p_resp.p_resp_object;
@@ -2096,6 +2144,15 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 		/* set up the packet for the other guy... */
 
 		PACKET* packet = &rdb->rdb_packet;
+
+		if (statement->rsr_flags & RSR_lazy) {
+			packet->p_operation = op_allocate_statement;
+			packet->p_rlse.p_rlse_object = rdb->rdb_id;
+
+			if (!send_partial_packet(rdb->rdb_port, packet, user_status))
+				return error(user_status);
+		}
+
 		packet->p_operation = op_insert;
 		P_SQLDATA* sqldata = &packet->p_sqldata;
 		sqldata->p_sqldata_statement = statement->rsr_id;
@@ -2109,6 +2166,16 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 		}
 
 		message->msg_address = NULL;
+
+		if (statement->rsr_flags & RSR_lazy) {
+			if (!receive_response(rdb, packet))
+				return error(user_status);
+
+			statement->rsr_id = packet->p_resp.p_resp_object;
+			SET_OBJECT(rdb, statement, statement->rsr_id);
+
+			statement->rsr_flags &= ~RSR_lazy;
+		}
 
 		if (!receive_response(rdb, packet)) {
 			return error(user_status);
@@ -2185,6 +2252,15 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 		/* set up the packet for the other guy... */
 
 		PACKET* packet = &rdb->rdb_packet;
+
+		if (statement->rsr_flags & RSR_lazy) {
+			packet->p_operation = op_allocate_statement;
+			packet->p_rlse.p_rlse_object = rdb->rdb_id;
+
+			if (!send_partial_packet(rdb->rdb_port, packet, user_status))
+				return error(user_status);
+		}
+
 		packet->p_operation = op_prepare_statement;
 		P_SQLST* prepare = &packet->p_sqlst;
 		prepare->p_sqlst_transaction = (transaction) ? transaction->rtr_id : 0;
@@ -2203,6 +2279,16 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 		statement->rsr_flags &= ~RSR_blob;
 
 		/* Set up for the response packet. */
+
+		if (statement->rsr_flags & RSR_lazy) {
+			if (!receive_response(rdb, packet))
+				return error(user_status);
+
+			statement->rsr_id = packet->p_resp.p_resp_object;
+			SET_OBJECT(rdb, statement, statement->rsr_id);
+
+			statement->rsr_flags &= ~RSR_lazy;
+		}
 
 		P_RESP* response = &packet->p_resp;
 		CSTRING temp = response->p_resp_data;
@@ -5252,6 +5338,18 @@ static void disconnect( rem_port* port)
 
 	RDB rdb = port->port_context;
 	if (rdb) {
+		PACKET* packet = &rdb->rdb_packet;
+
+		// Deliver the pending defered packets
+
+		for (rem_que_packet* p = port->port_defered_packets->begin();
+			 p < port->port_defered_packets->end(); p++)
+		{
+			if (!p->sent) {
+				port->send(&p->packet);
+			}
+		}
+
 		/* BAND-AID:
 		   It seems as if we are disconnecting the port
 		   on both the server and client side.  For now
@@ -5263,13 +5361,16 @@ static void disconnect( rem_port* port)
 
 		 */
 
-		PACKET* packet = &rdb->rdb_packet;
 		if (port->port_type != port_pipe) {
 			packet->p_operation = op_disconnect;
 			port->send(packet);
 		}
 		REMOTE_free_packet(port, packet);
 	}
+
+	// Cleanup the queue
+
+	delete port->port_defered_packets;
 
 	// Clear context reference for the associated event handler
 	// to avoid SEGV during shutdown
@@ -5745,6 +5846,9 @@ static bool init(ISC_STATUS* user_status,
 	RDB rdb = port->port_context;
 	PACKET* packet = &rdb->rdb_packet;
 
+	MemoryPool& pool = *getDefaultMemoryPool();
+	port->port_defered_packets = FB_NEW(pool) PacketQueue(pool);
+
 /* Make attach packet */
 
 	P_ATCH* attach = &packet->p_atch;
@@ -6104,6 +6208,18 @@ static bool receive_packet_noqueue(rem_port* port,
 	user_status[1] = isc_net_read_err;
 	user_status[2] = isc_arg_end;
 
+	// Receive responses for all defered packets that were already sent
+
+	while (port->port_defered_packets->getCount())
+	{
+		rem_que_packet* p = port->port_defered_packets->begin();
+		if (!p->sent)
+			break;
+		if (!port->receive(packet))
+			return FALSE;
+		port->port_defered_packets->remove(p);
+	}
+
 	return (port->receive(packet));
 }
 
@@ -6302,7 +6418,20 @@ static bool release_object(RDB rdb,
 	packet->p_operation = op;
 	packet->p_rlse.p_rlse_object = id;
 
-	if (!send_packet(rdb->rdb_port, packet, rdb->rdb_status_vector))
+	ISC_STATUS* status = rdb->rdb_status_vector;
+
+	if (rdb->rdb_port->port_flags & PORT_lazy) {
+		switch (op) {
+			case op_close_blob:
+			case op_cancel_blob:
+			case op_release:
+				return defer_packet(rdb->rdb_port, packet, status);
+			default:
+				break;
+		}
+	}
+
+	if (!send_packet(rdb->rdb_port, packet, status))
 		return false;
 
 	return receive_response(rdb, packet);
@@ -6801,10 +6930,21 @@ static bool send_packet(rem_port* port,
 	user_status[1] = isc_net_write_err;
 	user_status[2] = isc_arg_end;
 
+	// Send packets that were defered
+
+	for (rem_que_packet* p = port->port_defered_packets->begin();
+		p < port->port_defered_packets->end(); p++)
+	{
+		if (!p->sent) {
+			if (!port->send_partial(&p->packet))
+				return FALSE;
+			p->sent = true;
+		}
+	}
+
 	return (port->send(packet));
 }
 
-#ifdef NOT_USED_OR_REPLACED
 static bool send_partial_packet(rem_port*		port,
 								PACKET*	packet,
 								ISC_STATUS*	user_status)
@@ -6834,13 +6974,20 @@ static bool send_partial_packet(rem_port*		port,
 	user_status[1] = isc_net_write_err;
 	user_status[2] = isc_arg_end;
 
-	if (!port->send_partial(packet)) {
-		return false;
+	// Send packets that were defered
+
+	for (rem_que_packet* p = port->port_defered_packets->begin();
+		p < port->port_defered_packets->end(); p++)
+	{
+		if (!p->sent) {
+			if (!port->send_partial(&p->packet))
+				return FALSE;
+			p->sent = true;
+		}
 	}
 
-	return true;
+	return (port->send_partial(packet));
 }
-#endif
 
 #ifdef MULTI_THREAD
 static void server_death(rem_port* port)

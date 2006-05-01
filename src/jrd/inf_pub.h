@@ -33,7 +33,8 @@
 #define isc_info_truncated		2
 #define isc_info_error			3
 #define isc_info_data_not_ready	          4
-#define isc_info_flag_end		  127
+#define isc_info_length			126
+#define isc_info_flag_end		127
 
 /******************************/
 /* Database information items */

@@ -829,9 +829,19 @@ ISC_STATUS SVC_query2(Service* service,
 /* Process the receive portion of the query now. */
 
 	const SCHAR* const end = info + buffer_length;
-
 	items = recv_items;
 	const SCHAR* const end_items2 = items + recv_item_length;
+
+	SCHAR* start_info;
+
+	if (*items == isc_info_length) {
+		start_info = info;
+		items++;
+	}
+	else {
+		start_info = 0;
+	}
+
 	while (items < end_items2 && *items != isc_info_end)
 	{
 		/*
@@ -1209,6 +1219,13 @@ ISC_STATUS SVC_query2(Service* service,
 	if (info < end)
 		*info = isc_info_end;
 
+	if (start_info && (end - info >= 7))
+	{
+		SLONG number = 1 + (info - start_info);
+		memmove(start_info + 7, start_info, number);
+		USHORT length = INF_convert(number, buffer);
+		INF_put_item(isc_info_length, length, buffer, start_info, end);
+	}
 
 	if (!(service->svc_flags & SVC_thd_running))
 	{

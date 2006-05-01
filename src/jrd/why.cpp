@@ -43,6 +43,7 @@
  */
 
 #include "firebird.h"
+#include "memory_routines.h"	// needed for get_long
 
 #include <stdlib.h>
 #include <string.h>
@@ -696,6 +697,39 @@ static const SCHAR describe_bind_info[] =
 	isc_info_sql_describe_end
 };
 
+static const SCHAR sql_prepare_info2[] = 
+{
+	isc_info_sql_stmt_type,
+
+	// describe_select_info
+	isc_info_sql_select,
+	isc_info_sql_describe_vars,
+	isc_info_sql_sqlda_seq,
+	isc_info_sql_type,
+	isc_info_sql_sub_type,
+	isc_info_sql_scale,
+	isc_info_sql_length,
+	isc_info_sql_field,
+	isc_info_sql_relation,
+	isc_info_sql_owner,
+	isc_info_sql_alias,
+	isc_info_sql_describe_end,
+
+	// describe_bind_info
+	isc_info_sql_bind,
+	isc_info_sql_describe_vars,
+	isc_info_sql_sqlda_seq,
+	isc_info_sql_type,
+	isc_info_sql_sub_type,
+	isc_info_sql_scale,
+	isc_info_sql_length,
+	isc_info_sql_field,
+	isc_info_sql_relation,
+	isc_info_sql_owner,
+	isc_info_sql_alias,
+	isc_info_sql_describe_end
+};
+
 
 ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 										   SSHORT	file_length,
@@ -830,13 +864,28 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			if (database)
 			{
 				database->db_path = (TEXT*) alloc((SLONG) (length + 1));
+				if (database->db_path) 
+				{
+					database->db_prepare_buffer = 
+						(SCHAR*) alloc((SLONG) DBB_PREPARE_BUFFER_SIZE);
+				}
 			}
-			if (!database || !database->db_path)
+			if (!database || !database->db_path || !database->db_prepare_buffer)
 			{
 				/* No memory. Make a half-hearted to detach and get out. */
 
 				if (database)
-					release_handle(database);
+				{
+					if (database->db_path) {
+						free_block(database->db_path);
+						database->db_path = 0;
+					}
+					if (database->db_prepare_buffer) {
+						free_block(database->db_prepare_buffer);
+						database->db_prepare_buffer = 0;
+					}
+ 					release_handle(database);
+				}
 				CALL(PROC_DETACH, n) (ptr, handle);
 				status[0] = isc_arg_gds;
 				status[1] = isc_virmemexh;
@@ -1454,15 +1503,30 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			if (database)
 			{
 				database->db_path = (TEXT *) alloc((SLONG) (length + 1));
+				if (database->db_path) 
+				{
+					database->db_prepare_buffer = 
+						(SCHAR*) alloc((SLONG) DBB_PREPARE_BUFFER_SIZE);
+				}
 			}
-			if (!database || !database->db_path)
+			if (!database || !database->db_path || !database->db_prepare_buffer)
 			{
 				/* No memory. Make a half-hearted to drop database. The
 				   database was successfully created but the user wouldn't
 				   be able to tell. */
 
 				if (database)
-					release_handle(database);
+				{
+					if (database->db_path) {
+						free_block(database->db_path);
+						database->db_path = 0;
+					}
+					if (database->db_prepare_buffer) {
+						free_block(database->db_prepare_buffer);
+						database->db_prepare_buffer = 0;
+					}
+ 					release_handle(database);
+				}
 				CALL(PROC_DROP_DATABASE, n) (ptr, handle);
 				status[0] = isc_arg_gds;
 				status[1] = isc_virmemexh;
@@ -1472,6 +1536,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 			fb_assert(database);
 			fb_assert(database->db_path);
+			fb_assert(database->db_prepare_buffer);
 
 			*public_handle = database->public_handle;
 			TEXT* p = database->db_path;
@@ -1716,8 +1781,14 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 
 /* Release associated request handles */
 
-	if (dbb->db_path)
+	if (dbb->db_path) {
 		free_block(dbb->db_path);
+		dbb->db_path = 0;
+	}
+	if (dbb->db_prepare_buffer) {
+		free_block(dbb->db_prepare_buffer);
+		dbb->db_prepare_buffer = 0;
+	}
 
 	while (request = dbb->requests) {
 		dbb->requests = request->next;
@@ -1846,8 +1917,14 @@ ISC_STATUS API_ROUTINE GDS_DROP_DATABASE(ISC_STATUS * user_status,
 
 /* Release associated request handles */
 
-	if (dbb->db_path)
-		free_block(dbb->db_path);
+	if (dbb->db_path) {
+ 		free_block(dbb->db_path);
+		dbb->db_path = 0;
+	}
+	if (dbb->db_prepare_buffer) {
+		free_block(dbb->db_prepare_buffer);
+		dbb->db_prepare_buffer = 0;
+	}
 
 	while (request = dbb->requests) {
 		dbb->requests = request->next;
@@ -2050,37 +2127,56 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
 	ISC_STATUS_ARRAY local;
 	USHORT buffer_len;
 	SCHAR *buffer, local_buffer[512];
+	WHY_STMT statement;
 
 	GET_STATUS;
+	TRANSLATE_HANDLE(*stmt_handle, statement, HANDLE_statement, isc_bad_stmt_handle);
 
-	if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
-									dialect, &buffer_len)))
-	{
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		return error2(status, local);
-	}
+	sqlda_sup::dasup_clause &clause = 
+		statement->das->dasup_clauses[DASUP_CLAUSE_select];
 
-	if (!GDS_DSQL_SQL_INFO(	status,
-							stmt_handle,
-							sizeof(describe_select_info),
-							describe_select_info,
-							buffer_len,
-							buffer))
+	if (clause.dasup_info_len && clause.dasup_info_buf)
 	{
 		iterative_sql_info(	status,
 							stmt_handle,
 							sizeof(describe_select_info),
 							describe_select_info,
-							buffer_len,
-							buffer,
+							clause.dasup_info_len,
+							clause.dasup_info_buf,
 							dialect,
 							sqlda);
 	}
+	else
+	{
+		if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
+										dialect, &buffer_len)))
+		{
+			status[0] = isc_arg_gds;
+			status[1] = isc_virmemexh;
+			status[2] = isc_arg_end;
+			return error2(status, local);
+		}
 
-	if (buffer != local_buffer) {
-		free_block(buffer);
+		if (!GDS_DSQL_SQL_INFO(	status,
+								stmt_handle,
+								sizeof(describe_select_info),
+								describe_select_info,
+								buffer_len,
+								buffer))
+		{
+			iterative_sql_info(	status,
+								stmt_handle,
+								sizeof(describe_select_info),
+								describe_select_info,
+								buffer_len,
+								buffer,
+								dialect,
+								sqlda);
+		}
+
+		if (buffer != local_buffer) {
+			free_block(buffer);
+		}
 	}
 
 	if (status[1]) {
@@ -2111,37 +2207,56 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 	ISC_STATUS_ARRAY local;
 	USHORT buffer_len;
 	SCHAR *buffer, local_buffer[512];
+	WHY_STMT statement;
 
 	GET_STATUS;
+	TRANSLATE_HANDLE(*stmt_handle, statement, HANDLE_statement, isc_bad_stmt_handle);
 
-	if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
-									dialect, &buffer_len)))
-	{
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
-		return error2(status, local);
-	}
+	sqlda_sup::dasup_clause &clause = 
+		statement->das->dasup_clauses[DASUP_CLAUSE_bind];
 
-	if (!GDS_DSQL_SQL_INFO(	status,
-							stmt_handle,
-							sizeof(describe_bind_info),
-							describe_bind_info,
-							buffer_len,
-							buffer))
+	if (clause.dasup_info_len && clause.dasup_info_buf)
 	{
 		iterative_sql_info(	status,
 							stmt_handle,
-							sizeof(describe_bind_info),
-							describe_bind_info,
-							buffer_len,
-							buffer,
+							sizeof(describe_select_info),
+							describe_select_info,
+							clause.dasup_info_len,
+							clause.dasup_info_buf,
 							dialect,
 							sqlda);
 	}
+	else
+	{
+		if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
+										dialect, &buffer_len)))
+		{
+			status[0] = isc_arg_gds;
+			status[1] = isc_virmemexh;
+			status[2] = isc_arg_end;
+			return error2(status, local);
+		}
 
-	if (buffer != local_buffer) {
-		free_block(buffer);
+		if (!GDS_DSQL_SQL_INFO(	status,
+								stmt_handle,
+								sizeof(describe_bind_info),
+								describe_bind_info,
+								buffer_len,
+								buffer))
+		{
+			iterative_sql_info(	status,
+								stmt_handle,
+								sizeof(describe_bind_info),
+								describe_bind_info,
+								buffer_len,
+								buffer,
+								dialect,
+								sqlda);
+		}
+
+		if (buffer != local_buffer) {
+			free_block(buffer);
+		}
 	}
 
 	if (status[1]) {
@@ -3242,13 +3357,19 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 	ISC_STATUS *status;
 	ISC_STATUS_ARRAY local;
 	USHORT buffer_len;
-	SCHAR *buffer, local_buffer[BUFFER_MEDIUM];
+	SCHAR *buffer, *local_buffer;
 	sqlda_sup* dasup;
 
 	GET_STATUS;
 
-	if (!(buffer = get_sqlda_buffer(local_buffer, sizeof(local_buffer), sqlda,
-									dialect, &buffer_len)))
+	WHY_STMT statement;
+	TRANSLATE_HANDLE(*stmt_handle, statement, HANDLE_statement, isc_bad_stmt_handle);
+
+	WHY_DBB	database = statement->parent;
+	local_buffer = database->db_prepare_buffer;
+
+	if (!(buffer = get_sqlda_buffer(local_buffer, DBB_PREPARE_BUFFER_SIZE, 
+						sqlda, dialect, &buffer_len))) 
 	{
 		status[0] = isc_arg_gds;
 		status[1] = isc_virmemexh;
@@ -3262,27 +3383,93 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 							length,
 							string,
 							dialect,
-							sizeof(sql_prepare_info),
-							sql_prepare_info,
+							sizeof(sql_prepare_info2),
+							sql_prepare_info2,
 							buffer_len,
 							buffer))
 	{
-		WHY_STMT statement = WHY_translate_handle(*stmt_handle);
+//		WHY_STMT statement = WHY_translate_handle(*stmt_handle);
 		release_dsql_support(statement->das);
 
-		if (!(dasup = (sqlda_sup*) alloc((SLONG) sizeof(sqlda_sup)))) {
+		if (!(dasup = (sqlda_sup*) alloc((SLONG) sizeof(sqlda_sup)))) 
+		{
 			statement->requests = 0;
 			status[0] = isc_arg_gds;
 			status[1] = isc_virmemexh;
 			status[2] = isc_arg_end;
 		}
-		else {
+		else 
+		{
 			statement->das = dasup;
 			dasup->dasup_dialect = dialect;
 
+			SCHAR* p = buffer;
+
+			dasup->dasup_stmt_type = 0;
+			if (*p == isc_info_sql_stmt_type)
+			{
+				const USHORT len = gds__vax_integer((UCHAR*)p + 1, 2);
+				dasup->dasup_stmt_type = gds__vax_integer((UCHAR*)p + 3, len);
+				p += 3 + len;
+			}
+
+			sqlda_sup::dasup_clause &das_select = dasup->dasup_clauses[DASUP_CLAUSE_select];
+			sqlda_sup::dasup_clause &das_bind = dasup->dasup_clauses[DASUP_CLAUSE_bind];
+			das_select.dasup_info_buf = das_bind.dasup_info_buf = 0;
+			das_select.dasup_info_len = das_bind.dasup_info_len = 0;
+
+			if (*p == isc_info_sql_select)
+				das_select.dasup_info_buf = p;
+
+			das_bind.dasup_info_buf = UTLD_skip_sql_info(p);
+
+			p = das_select.dasup_info_buf;
+			if (p)
+			{
+				SCHAR* p2 = das_bind.dasup_info_buf;
+				if (p2)
+				{
+					const SLONG len =  p2 - p;
+
+					p2 = alloc(len + 1);
+					memmove(p2, p, len);
+					p2[len] = isc_info_end;
+					das_select.dasup_info_buf = p2;
+					das_select.dasup_info_len = len + 1;
+				}
+				else 
+				{
+					das_select.dasup_info_buf = 0;
+					das_select.dasup_info_len = 0;
+				}
+			}
+
+			p = das_bind.dasup_info_buf;
+			if (p)
+			{
+				SCHAR* p2 = UTLD_skip_sql_info(p);
+				if (p2)
+				{
+					const SLONG len =  p2 - p;
+
+					p2 = alloc(len + 1);
+					memmove(p2, p, len);
+					p2[len] = isc_info_end;
+					das_bind.dasup_info_buf = p2;
+					das_bind.dasup_info_len = len + 1;
+				}
+				else 
+				{
+					das_bind.dasup_info_buf = 0;
+					das_bind.dasup_info_len = 0;
+				}
+			}
+
 			iterative_sql_info(status, stmt_handle, sizeof(sql_prepare_info),
-							   sql_prepare_info, buffer_len, buffer, dialect,
-							   sqlda);
+							   sql_prepare_info, // buffer_len, buffer, dialect,
+							   das_select.dasup_info_len,
+							   das_select.dasup_info_buf,
+							   dialect, sqlda);
 		}
 	}
 
@@ -3441,14 +3628,28 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 					   buffer_length, buffer);
 	else
 #endif
-		CALL(PROC_DSQL_SQL_INFO, statement->implementation) (status,
+	{
+		if (( (item_length == 1) && (items[0] == isc_info_sql_stmt_type) ||
+			  (item_length == 2) && (items[0] == isc_info_sql_stmt_type) && 
+			  (items[1] == isc_info_end || items[1] == 0) ) &&
+			statement->das && statement->das->dasup_stmt_type)
+		{
+			*buffer++ = isc_info_sql_stmt_type;
+			put_short((UCHAR*) buffer, 4);
+			buffer += 2;
+			put_long((UCHAR*) buffer, statement->das->dasup_stmt_type);
+		}
+		else 
+		{
+			CALL(PROC_DSQL_SQL_INFO, statement->implementation) (status,
 															 &statement->
 															 handle,
 															 item_length,
 															 items,
 															 buffer_length,
 															 buffer);
-
+		}
+	}
 	subsystem_exit();
 
 	if (status[1])
@@ -5529,6 +5730,9 @@ static SCHAR *get_sqlda_buffer(SCHAR * buffer,
 		n_variables = ((SQLDA *) sqlda)->sqln;
 
 	length = 32 + n_variables * 172;
+	if (length < local_buffer_length)
+		length = local_buffer_length;
+
 	*buffer_length = (USHORT)((length > 65500L) ? 65500L : length);
 	if (*buffer_length > local_buffer_length)
 		buffer = alloc((SLONG) * buffer_length);
@@ -5844,13 +6048,17 @@ static void release_dsql_support(sqlda_sup* dasup)
 		return;
 	}
 
-	/* for C++, add "dasup::" before "dasup_clause" */
+	/* for C++, add "sqlda_sup::" before "dasup_clause" */
 	sqlda_sup::dasup_clause* pClauses = dasup->dasup_clauses;
 
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_bind].dasup_blr);
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_select].dasup_blr);
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_bind].dasup_msg);
 	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_select].dasup_msg);
+
+	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_bind].dasup_info_buf);
+	why_priv_gds__free_if_set(pClauses[DASUP_CLAUSE_select].dasup_info_buf);
+
 	free_block(dasup);
 }
 

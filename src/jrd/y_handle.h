@@ -63,6 +63,7 @@ struct why_hndl
 	FB_API_HANDLE*		user_handle;
 	struct clean*		cleanup;
 	TEXT*				db_path;
+	SCHAR*				db_prepare_buffer;
 };
 
 typedef why_hndl *WHY_HNDL;
@@ -85,5 +86,7 @@ const int HANDLE_service		= 6;
 const int HANDLE_TRANSACTION_limbo	= 1;
 const int HANDLE_BLOB_filter		= 2;	/* Blob is locally filtered */
 const int HANDLE_STATEMENT_local	= 4;	/* Process DSQL statement locally */
+
+const SLONG DBB_PREPARE_BUFFER_SIZE	= 32768; // size of buffer used in isc_dsql_prepare call
 
 #endif // JRD_Y_HANDLE_H

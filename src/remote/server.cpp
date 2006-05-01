@@ -74,6 +74,10 @@
 
 #define CHECK_HANDLE(blk, cast, type, id, err)							\
 	{																\
+		if ((port->port_flags & PORT_lazy) && id == INVALID_OBJECT)	\
+		{															\
+			id = port->port_last_object_id;							\
+		}															\
 		if (id >= port->port_object_vector->vec_count ||			\
 			!(blk = (cast) port->port_objects [id]) ||				\
 			((BLK) blk)->blk_type != (UCHAR) type)					\
@@ -81,12 +85,17 @@
 			status_vector [0] = isc_arg_gds;						\
 			status_vector [1] = err;								\
 			status_vector [2] = isc_arg_end;						\
-			return port->send_response(sendL, 0, 0, status_vector);	\
+			return port->send_response(send, 0, 0, status_vector,	\
+									   false);						\
 		}															\
 	}
 
 #define CHECK_HANDLE_MEMBER(blk, cast, type, id, err)					\
 	{																\
+		if ((this->port_flags & PORT_lazy) && id == INVALID_OBJECT)	\
+		{															\
+			id = this->port_last_object_id;							\
+		}															\
 		if (id >= this->port_object_vector->vec_count ||			\
 			!(blk = (cast) this->port_objects [id]) ||				\
 			((BLK) blk)->blk_type != (UCHAR) type)					\
@@ -94,7 +103,8 @@
 			status_vector [0] = isc_arg_gds;						\
 			status_vector [1] = err;								\
 			status_vector [2] = isc_arg_end;						\
-			return this->send_response(sendL, 0, 0, status_vector);	\
+			return this->send_response(sendL, 0, 0, status_vector,	\
+									   false);						\
 		}															\
 	}
 
@@ -576,7 +586,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 #endif 
 */
 						port->send_response(&request->req_send, 0, 0,
-								  status_vector);
+								  status_vector, false);
 						port->disconnect(&request->req_send, &request->req_receive);
 					}
 					else {
@@ -676,7 +686,7 @@ static bool accept_connection(rem_port* port,
 			weight = protocol->p_cnct_weight;
 			version = protocol->p_cnct_version;
 			architecture = protocol->p_cnct_architecture;
-			type = MIN(protocol->p_cnct_max_type, ptype_out_of_band);
+			type = MIN(protocol->p_cnct_max_type, ptype_lazy_send);
 			send->p_operation = op_accept;
 		}
 	}
@@ -707,6 +717,9 @@ static bool accept_connection(rem_port* port,
 	if (type != ptype_out_of_band)
 		port->port_flags |= PORT_no_oob;
 
+	if (type == ptype_lazy_send)
+		port->port_flags |= PORT_lazy;
+
 	port->send(send);
 
 	return true;
@@ -731,7 +744,7 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 	
 	if (bad_db(status_vector, rdb))
 	{
-		return port->send_response(send, 0, 0, status_vector);
+		return port->send_response(send, 0, 0, status_vector, true);
 	}
 	
 	FB_API_HANDLE handle = 0;
@@ -767,7 +780,7 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 		}
 	}
 
-	return port->send_response(send, object, 0, status_vector);
+	return port->send_response(send, object, 0, status_vector, true);
 }
 
 
@@ -957,7 +970,7 @@ static ISC_STATUS attach_database(
 		rdb->rdb_handle = handle;
 	}
 
-	return port->send_response(send, 0, 0, status_vector);
+	return port->send_response(send, 0, 0, status_vector, false);
 }
 
 
@@ -1023,7 +1036,8 @@ static void aux_request( rem_port* port, P_REQ * request, PACKET* send)
 	}
 	
 	port->send_response(send, rdb->rdb_id,
-				  send->p_resp.p_resp_data.cstr_length, status_vector);
+				  send->p_resp.p_resp_data.cstr_length, 
+				  status_vector, false);
 
 	if (status_vector[1]) {
 		/* restore the port status vector */
@@ -1064,7 +1078,7 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 	RDB rdb = port->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return port->send_response(send, 0, 0, status_vector);
+		return port->send_response(send, 0, 0, status_vector, false);
 	}
 
 /* Find the event */
@@ -1077,7 +1091,7 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 /* If no event found, pretend it was cancelled */
 
 	if (!event)
-		return port->send_response(send, 0, 0, status_vector);
+		return port->send_response(send, 0, 0, status_vector, false);
 
 /* cancel the event */
 
@@ -1095,7 +1109,7 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 
 /* return response */
 
-	return port->send_response(send, 0, 0, status_vector);
+	return port->send_response(send, 0, 0, status_vector, false);
 }
 
 
@@ -1232,7 +1246,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 	FB_API_HANDLE handle = 0;
@@ -1245,7 +1259,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 	THREAD_ENTER();
 
 	if (status_vector[1])
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 
 /* Parse the request to find the messages */
 
@@ -1281,7 +1295,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_too_many_handles;
 		status_vector[2] = isc_arg_end;
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 	while (message) {
@@ -1300,7 +1314,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 		message = next;
 	}
 
-	return this->send_response(sendL, object, 0, status_vector);
+	return this->send_response(sendL, object, 0, status_vector, false);
 }
 
 
@@ -1328,7 +1342,7 @@ ISC_STATUS rem_port::ddl(P_DDL* ddlL, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 	const UCHAR* blr = ddlL->p_ddl_blr.cstr_address;
@@ -1339,7 +1353,7 @@ ISC_STATUS rem_port::ddl(P_DDL* ddlL, PACKET* sendL)
 			blr_length, reinterpret_cast<const char*>(blr));
 	THREAD_ENTER();
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -1529,7 +1543,7 @@ void rem_port::drop_database(P_RLSE* release, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		this->send_response(sendL, 0, 0, status_vector);
+		this->send_response(sendL, 0, 0, status_vector, false);
 		return;
 	}
 
@@ -1540,7 +1554,7 @@ void rem_port::drop_database(P_RLSE* release, PACKET* sendL)
 	if (status_vector[1]
 		&& (status_vector[1] != isc_drdb_completed_with_errs))
 	{
-		this->send_response(sendL, 0, 0, status_vector);
+		this->send_response(sendL, 0, 0, status_vector, false);
 		return;
 	}
 
@@ -1559,7 +1573,7 @@ void rem_port::drop_database(P_RLSE* release, PACKET* sendL)
 	if (this->port_statement)
 		release_statement(&this->port_statement);
 
-	this->send_response(sendL, 0, 0, status_vector);
+	this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -1625,7 +1639,7 @@ ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* sendL)
 		release_blob(blob);
 	}
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -1646,7 +1660,7 @@ ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 	THREAD_EXIT();
@@ -1654,7 +1668,7 @@ ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* sendL)
 	THREAD_ENTER();
 
 	if (status_vector[1])
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 
 	while (rdb->rdb_events)
 		release_event(rdb->rdb_events);
@@ -1671,7 +1685,7 @@ ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* sendL)
 	if (this->port_statement)
 		release_statement(&this->port_statement);
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -1703,7 +1717,7 @@ ISC_STATUS rem_port::end_request(P_RLSE * release, PACKET* sendL)
 	if (!status_vector[1])
 		release_request(requestL);
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, true);
 }
 
 
@@ -1735,7 +1749,7 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 	THREAD_ENTER();
 
 	if (status_vector[1])
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, true);
 
 	if (!statement->rsr_handle) {
 		release_sql_request(statement);
@@ -1750,7 +1764,7 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 
 	const USHORT object = (statement) ? statement->rsr_id : INVALID_OBJECT;
 
-	return this->send_response(sendL, object, 0, status_vector);
+	return this->send_response(sendL, object, 0, status_vector, true);
 }
 
 
@@ -1807,7 +1821,7 @@ ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* s
 			release_transaction(transaction);
 		}
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -1831,7 +1845,7 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
@@ -1956,7 +1970,8 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 	return this->send_response(	sendL,
 								(OBJCT) (transaction ? transaction->rtr_id : 0),
 								0,
-								status_vector);
+								status_vector, 
+								false);
 }
 
 
@@ -2072,7 +2087,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	return this->send_response(	sendL,
 								(OBJCT) (transaction ? transaction->rtr_id : 0),
 								0,
-								status_vector);
+								status_vector, 
+								false);
 }
 
 
@@ -2159,7 +2175,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		{
 			statement->rsr_flags &= ~RSR_stream_err;
 			return this->send_response(sendL, 0, 0,
-								 statement->rsr_status_vector);
+								 statement->rsr_status_vector,
+								 false);
 		}
 
 		message = statement->rsr_buffer;
@@ -2190,7 +2207,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 					break;
 				}
 				else {
-					return this->send_response(sendL, 0, 0, status_vector);
+					return this->send_response(sendL, 0, 0, status_vector, false);
 				}
 			}
 			message->msg_address = message->msg_buffer;
@@ -2343,7 +2360,7 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 		message->msg_address = NULL;
 	}
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -2382,13 +2399,15 @@ OBJCT rem_port::get_id(BLK block)
 	{
 		if (!*p) {
 			*p = block;
-			return (OBJCT) (p - vector->vec_object);
+			this->port_last_object_id = (OBJCT) (p - vector->vec_object);
+			return this->port_last_object_id;
 		}
 	}
 
 /* Vector is full -- somebody will need to expand it */
 
-	return REMOTE_set_object(this, block, (OBJCT) vector->vec_count);
+	return (this->port_last_object_id = 
+		REMOTE_set_object(this, block, (OBJCT) vector->vec_count));
 }
 
 
@@ -2501,7 +2520,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 						reinterpret_cast<char*>(buffer));
 		THREAD_ENTER();
 		const ISC_STATUS status =
-			this->send_response(sendL, blob->rbl_id, length, status_vector);
+			this->send_response(sendL, blob->rbl_id, length, status_vector, false);
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("get_segment(server)       free buffer      %x\n", buffer);
 #endif
@@ -2553,7 +2572,8 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 	const ISC_STATUS status = this->send_response(sendL,
 								(OBJCT)state,
 								(USHORT) (p - buffer),
-								status_vector);
+								status_vector, 
+								false);
 
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("get_segment(server)       free buffer      %x\n", buffer);
@@ -2588,7 +2608,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 	CHECK_HANDLE_MEMBER(transaction,
@@ -2628,7 +2648,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 
 	ISC_STATUS status;
 	if (status_vector[1])
-		status = this->send_response(sendL, 0, 0, status_vector);
+		status = this->send_response(sendL, 0, 0, status_vector, false);
 	else {
 		sendL->p_operation = op_slice;
 		response->p_slr_slice.lstr_address = slice;
@@ -2673,28 +2693,60 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 /* Make sure there is a suitable temporary blob buffer */
 
-	UCHAR* const buffer = ALLR_alloc((SLONG) stuff->p_info_buffer_length);
+	UCHAR* const buffer = ALLR_alloc(stuff->p_info_buffer_length);
 	memset(buffer, 0, stuff->p_info_buffer_length);
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("info(server)              allocate buffer  %x\n", buffer);
 #endif
 
+	SCHAR info[1024], *info_buffer;
+	SSHORT info_len;
 	UCHAR temp[1024];
 	UCHAR* temp_buffer;
-	if (op == op_info_database && stuff->p_info_buffer_length > sizeof(temp)) {
-	    temp_buffer = ALLR_alloc((SLONG) stuff->p_info_buffer_length);
+	temp_buffer = temp;
+	if (op == op_info_database)
+	{
+		info_len = 0;
+		info_buffer = 0;
+
+		if (stuff->p_info_buffer_length > sizeof(temp)) 
+		{
+			temp_buffer = ALLR_alloc((SLONG) stuff->p_info_buffer_length);
 #ifdef DEBUG_REMOTE_MEMORY
-	    printf("info(server)              allocate buffer  %x\n", temp_buffer);
+			printf("info(server)              allocate buffer  %x\n", temp_buffer);
 #endif
+		}
 	}
 	else
-    	temp_buffer = temp;
+	{
+		// stuff isc_info_length in front of info items buffer
+ 
+		CSTRING* info_string = (op == op_service_info) ? 
+			&stuff->p_info_recv_items : &stuff->p_info_items;
 
+		info_len = 1 + info_string->cstr_length;
+
+		if (info_len > sizeof(info))
+		{
+			info_buffer = (SCHAR*) ALLR_alloc((SLONG) info_len);
+#ifdef DEBUG_REMOTE_MEMORY
+			ib_printf("info(server)              allocate buffer  %x\n", info_buffer);
+#endif
+		}
+		else {
+			info_buffer = info;
+		}
+
+		*info_buffer = isc_info_length;
+		memmove(info_buffer + 1, info_string->cstr_address, info_len-1);
+	}
+
+	USHORT info_db_len = 0;
 	switch (op) {
 	case op_info_blob:
 		CHECK_HANDLE_MEMBER(blob,
@@ -2704,8 +2756,8 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 							isc_bad_segstr_handle);
 		THREAD_EXIT();
 		isc_blob_info(status_vector, &blob->rbl_handle,
-					  stuff->p_info_items.cstr_length,
-					  reinterpret_cast<char*>(stuff->p_info_items.cstr_address),
+					  info_len,
+					  info_buffer,
 					  stuff->p_info_buffer_length,
 					  reinterpret_cast<char*>(buffer));
 		THREAD_ENTER();
@@ -2720,9 +2772,9 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 						  reinterpret_cast<char*>(temp_buffer) /*temp*/);
 		if (!status_vector[1]) {
 			TEXT version[256];
-			sprintf(version, "%s/%s", GDS_VERSION,
-					this->port_version->str_data);
-			MERGE_database_info(temp_buffer /*temp*/, buffer, stuff->p_info_buffer_length,
+			sprintf(version, "%s/%s", GDS_VERSION, this->port_version->str_data);
+			info_db_len = MERGE_database_info(temp_buffer /*temp*/, 
+								buffer, stuff->p_info_buffer_length,
 								IMPLEMENTATION, 4, 1,
 								reinterpret_cast<const UCHAR*>(version),
 								reinterpret_cast<UCHAR*>(this->port_host->str_data),
@@ -2742,8 +2794,8 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 		THREAD_EXIT();
 		isc_request_info(status_vector, &requestL->rrq_handle,
 						 stuff->p_info_incarnation,
-						 stuff->p_info_items.cstr_length,
-						 reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
+						 info_len,
+						 info_buffer,
 						 stuff->p_info_buffer_length,
 						 reinterpret_cast<char*>(buffer));
 		THREAD_ENTER();
@@ -2758,8 +2810,8 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 							isc_bad_trans_handle);
 		THREAD_EXIT();
 		isc_transaction_info(status_vector, &transaction->rtr_handle,
-							 stuff->p_info_items.cstr_length,
-							 reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
+							 info_len,
+							 info_buffer,
 							 stuff->p_info_buffer_length,
 							 reinterpret_cast < char *>(buffer));
 		THREAD_ENTER();
@@ -2773,9 +2825,8 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 						  stuff->p_info_items.cstr_length,
 						  reinterpret_cast<
 						  const char*>(stuff->p_info_items.cstr_address),
-						  stuff->p_info_recv_items.cstr_length,
-						  reinterpret_cast<
-						  const char*>(stuff->p_info_recv_items.cstr_address),
+						  info_len,
+						  info_buffer,
 						  stuff->p_info_buffer_length,
 						  reinterpret_cast<char*>(buffer));
 		THREAD_ENTER();
@@ -2787,12 +2838,13 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 							type_rsr,
 							stuff->p_info_object,
 							isc_bad_req_handle);
+
 		THREAD_EXIT();
+
 		GDS_DSQL_SQL_INFO(status_vector,
 						  &statement->rsr_handle,
-						  stuff->p_info_items.cstr_length,
-						  reinterpret_cast<
-						  const char*>(stuff->p_info_items.cstr_address),
+						  info_len,
+						  info_buffer,
 						  stuff->p_info_buffer_length,
 						  reinterpret_cast < char *>(buffer));
 		THREAD_ENTER();
@@ -2806,12 +2858,34 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
     	ALLR_free(temp_buffer);
 	}
 
+	if (info_buffer && (info_buffer != info)) {
+#ifdef DEBUG_REMOTE_MEMORY
+    	printf ("info(server)              free buffer      %x\n", info_buffer);
+#endif
+    	ALLR_free(info_buffer);
+	}
+
 /* Send a response that includes the segment. */
 
-	sendL->p_resp.p_resp_data.cstr_address = buffer;
+	USHORT response_len = 
+		info_db_len ? info_db_len : stuff->p_info_buffer_length;
 
-	const ISC_STATUS status = this->send_response(sendL, stuff->p_info_object,
-						   stuff->p_info_buffer_length, status_vector);
+	SSHORT skip_len = 0;
+	if (*buffer == isc_info_length)
+	{
+		skip_len = gds__vax_integer(buffer + 1, 2);
+		SLONG val = gds__vax_integer(buffer + 3, skip_len);
+		skip_len += 3;
+		if (val && val <= response_len) {
+			response_len = val;
+		}
+	}
+
+	sendL->p_resp.p_resp_data.cstr_address = buffer + skip_len;
+
+	const ISC_STATUS status = this->send_response(sendL, stuff->p_info_object, 
+		response_len, status_vector, false);
+
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("info(server)              free buffer      %x\n", buffer);
 #endif
@@ -2864,7 +2938,7 @@ ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* sendL)
 					reinterpret_cast<const char*>(msg));
 	THREAD_ENTER();
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -2921,7 +2995,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 	FB_API_HANDLE handle = 0;
@@ -2976,7 +3050,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 		}
 	}
 
-	return this->send_response(sendL, object, 0, status_vector);
+	return this->send_response(sendL, object, 0, status_vector, false);
 }
 
 
@@ -3010,7 +3084,7 @@ ISC_STATUS rem_port::prepare(P_PREP * stuff, PACKET* sendL)
 	}
 	THREAD_ENTER();
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -3046,11 +3120,23 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 						isc_bad_req_handle);
 
 	UCHAR local_buffer[1024];
+	UCHAR *info, info_buffer[1024];
 	UCHAR* buffer;
 	if (prepareL->p_sqlst_buffer_length > sizeof(local_buffer))
 		buffer = ALLR_alloc((SLONG) prepareL->p_sqlst_buffer_length);
 	else
 		buffer = local_buffer;
+
+	// stuff isc_info_length in front of info items buffer
+	if (prepareL->p_sqlst_items.cstr_length + 1 > sizeof(info_buffer)) {
+		info = ALLR_alloc((SLONG) prepareL->p_sqlst_items.cstr_length + 1);
+	}
+	else {
+		info = info_buffer;
+	}
+	*info = isc_info_length;
+	memmove(info + 1, prepareL->p_sqlst_items.cstr_address, 
+		prepareL->p_sqlst_items.cstr_length);
 
 	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
 
@@ -3084,16 +3170,20 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 					 reinterpret_cast<const char*>(prepareL->p_sqlst_SQL_str.cstr_address),
 					 (USHORT) ((prepareL->p_sqlst_SQL_dialect * 10) +
 							   parser_version),
-					 prepareL->p_sqlst_items.cstr_length,
-					 reinterpret_cast<const char*>(prepareL->p_sqlst_items.cstr_address),
+					 prepareL->p_sqlst_items.cstr_length + 1,
+					 reinterpret_cast<const char*> (info),
 					 prepareL->p_sqlst_buffer_length,
 					 reinterpret_cast<char*>(buffer));
 	THREAD_ENTER();
 
+	if (info != info_buffer) {
+		ALLR_free(info);
+	}
+
 	if (status_vector[1]) {
 		if (buffer != local_buffer)
 			ALLR_free(buffer);
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 	REMOTE_reset_statement(statement);
@@ -3108,13 +3198,26 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 /* Send a response that includes the info requested. */
 
-	sendL->p_resp.p_resp_data.cstr_address = buffer;
+	USHORT response_len = prepareL->p_sqlst_buffer_length;
+	SSHORT skip_len = 0;
+	if (*buffer == isc_info_length)
+	{
+		skip_len = gds__vax_integer(buffer + 1, 2);
+		SLONG val = gds__vax_integer(buffer + 3, skip_len);
+		skip_len += 3;
+		if (val && val <= response_len) {
+			response_len = val;
+		}
+	}
+
+	sendL->p_resp.p_resp_data.cstr_address = buffer + skip_len;
 
 	const ISC_STATUS status =
 		this->send_response(sendL,
 							state,
-							prepareL->p_sqlst_buffer_length,
-							status_vector);
+							response_len,
+							status_vector,
+							false);
 
 	if (buffer != local_buffer) {
 		ALLR_free(buffer);
@@ -3418,7 +3521,7 @@ bool process_packet(rem_port* port,
 		gds__log_status("unknown, SERVER/process_packet", status_ptr);
 
 		/*  It would be nice to log an error to the user, instead of just terminating them!  */
-		port->send_response(sendL, 0, 0, status_ptr);
+		port->send_response(sendL, 0, 0, status_ptr, false);
 		port->disconnect(sendL, receive);	/*  Well, how about this...  */
 
 		ThreadData::restoreSpecific();
@@ -3462,7 +3565,7 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
 		isc_put_segment(status_vector, &blob->rbl_handle, length,
 						reinterpret_cast<const char*>(p));
 		THREAD_ENTER();
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 /* We've got a batch of segments.  This is only slightly more complicated */
@@ -3477,11 +3580,11 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
 						reinterpret_cast<const char*>(p));
 		THREAD_ENTER();
 		if (status_vector[1])
-			return this->send_response(sendL, 0, 0, status_vector);
+			return this->send_response(sendL, 0, 0, status_vector, false);
 		p += length;
 	}
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -3509,7 +3612,7 @@ ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 	THREAD_EXIT();
@@ -3524,7 +3627,7 @@ ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* sendL)
 				  stuff->p_slc_slice.lstr_address);
 	THREAD_ENTER();
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -3544,7 +3647,7 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 /* Find unused event block or, if necessary, a new one */
@@ -3592,7 +3695,7 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 		event->rvnt_id = 0;
 	}
 
-	return this->send_response(sendL, (OBJCT) id, 0, status_vector);
+	return this->send_response(sendL, (OBJCT) id, 0, status_vector, false);
 }
 
 
@@ -3625,7 +3728,7 @@ ISC_STATUS rem_port::receive_after_start(	P_DATA*	data,
 
 	USHORT msg_number;
 	if (!get_next_msg_no(requestL, level, &msg_number)) {
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 	sendL->p_operation = op_response_piggyback;
@@ -3699,7 +3802,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_badmsgnum;
 		status_vector[2] = isc_arg_end;
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 	rrq::rrq_repeat* tail = requestL->rrq_rpt + msg_number;
 	const rem_fmt* format = tail->rrq_format;
@@ -3751,7 +3854,8 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 			if (requestL->rrq_status_vector[1]) {
 				const ISC_STATUS res =
 					this->send_response(sendL, 0, 0,
-								  requestL->rrq_status_vector);
+								  requestL->rrq_status_vector, 
+								  false);
 				memset(requestL->rrq_status_vector, 0,
 					   sizeof(requestL->rrq_status_vector));
 				return res;
@@ -3768,7 +3872,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 #endif
 			THREAD_ENTER();
 			if (status_vector[1])
-				return this->send_response(sendL, 0, 0, status_vector);
+				return this->send_response(sendL, 0, 0, status_vector, false);
 
 #ifdef SCROLLABLE_CURSORS
 			/* set the appropriate flags according to the way we just scrolled 
@@ -4248,7 +4352,7 @@ ISC_STATUS rem_port::seek_blob(P_SEEK * seek, PACKET* sendL)
 
 	sendL->p_resp.p_resp_blob_id.bid_number = result;
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -4280,7 +4384,7 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_badmsgnum;
 		status_vector[2] = isc_arg_end;
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 	REM_MSG message = requestL->rrq_rpt[number].rrq_message;
 	const rem_fmt* format = requestL->rrq_rpt[number].rrq_format;
@@ -4292,14 +4396,15 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
 
 	message->msg_address = NULL;
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
 ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 							OBJCT	object,
 							USHORT	length,
-							const ISC_STATUS* status_vector)
+							const ISC_STATUS* status_vector,
+							bool defer_flag)
 {
 /**************************************
  *
@@ -4429,7 +4534,12 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 	response->p_resp_status_vector = new_vector;
 	response->p_resp_data.cstr_length = length;
 
-	this->send(sendL);
+	if ((this->port_flags & PORT_lazy) && defer_flag) {
+		this->send_partial(sendL);
+	}
+	else {
+		this->send(sendL);
+	}
 
 	return exit_code;
 }
@@ -4535,7 +4645,7 @@ ISC_STATUS rem_port::service_attach(P_ATCH* attach, PACKET* sendL)
 		rdb->rdb_flags |= RDB_service;
 	}
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -4556,14 +4666,14 @@ ISC_STATUS rem_port::service_end(P_RLSE * release, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_service(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 	THREAD_EXIT();
 	isc_service_detach(status_vector, &rdb->rdb_handle);
 	THREAD_ENTER();
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -4584,7 +4694,7 @@ ISC_STATUS rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_service(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 	
 	THREAD_EXIT();
@@ -4596,7 +4706,7 @@ ISC_STATUS rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 					  reinterpret_cast<char*>(stuff->p_info_items.cstr_address));
 	THREAD_ENTER();
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -4628,7 +4738,7 @@ ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* sendL)
 						sqlcur->p_sqlcur_type);
 	THREAD_ENTER();
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -4708,7 +4818,7 @@ ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* sendL)
 			return this->receive_after_start(data, sendL, status_vector);
 	}
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -4748,7 +4858,7 @@ ISC_STATUS rem_port::start_and_send(P_OP	operation,
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_badmsgnum;
 		status_vector[2] = isc_arg_end;
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 	REM_MSG message = requestL->rrq_rpt[number].rrq_message;
 	const rem_fmt* format = requestL->rrq_rpt[number].rrq_format;
@@ -4769,7 +4879,7 @@ ISC_STATUS rem_port::start_and_send(P_OP	operation,
 		}
 	}
 
-	return this->send_response(sendL, 0, 0, status_vector);
+	return this->send_response(sendL, 0, 0, status_vector, false);
 }
 
 
@@ -4790,7 +4900,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 	
 	FB_API_HANDLE handle = 0;
@@ -4849,7 +4959,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 		}
 	}
 
-	return this->send_response(sendL, object, 0, status_vector);
+	return this->send_response(sendL, object, 0, status_vector, false);
 }
 
 
@@ -5103,7 +5213,7 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
 	{
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 	
 	const UCHAR* blr = trrq->p_trrq_blr.cstr_address;
@@ -5131,7 +5241,7 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 	THREAD_ENTER();
 
 	if (status_vector[1])
-		return this->send_response(sendL, 0, 0, status_vector);
+		return this->send_response(sendL, 0, 0, status_vector, false);
 
 	P_DATA* data = &sendL->p_data;
 	sendL->p_operation = op_transact_response;
