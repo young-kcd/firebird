@@ -54,80 +54,6 @@
 #include <signal.h>
 #endif
 
-#ifdef NOT_USED_OR_REPLACED
-#ifdef VMS
-// THE SOLE PURPOSE OF THE FOLLOWING DECLARATION IS TO ALLOW THE VMS KIT TO
-// COMPILE.  IT IS NOT CORRECT AND MUST BE REMOVED AT SOME POINT.
-ThreadData* gdbb;
-#endif
-
-#ifdef VMS
-#define THREAD_MUTEXES_DEFINED
-int THD_mutex_destroy(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ d e s t r o y	( V M S )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return 0;
-}
-
-
-int THD_mutex_init(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ i n i t		( V M S )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return ISC_mutex_init(mutex, 0);
-}
-
-
-int THD_mutex_lock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ l o c k		( V M S )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return ISC_mutex_lock(mutex);
-}
-
-
-int THD_mutex_unlock(MUTX_T * mutex)
-{
-/**************************************
- *
- *	T H D _ m u t e x _ u n l o c k		( V M S )
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	return ISC_mutex_unlock(mutex);
-}
-#endif //VMS
-#endif //NOT_USED_OR_REPLACED
-
 
 #ifdef SUPERSERVER
 int THD_rec_mutex_destroy(REC_MUTX_T * rec_mutex)
@@ -395,25 +321,3 @@ void THD_yield(void)
 #endif
 #endif /* MULTI_THREAD */
 }
-
-#ifdef MULTI_THREAD
-#ifdef VMS
-#ifndef USE_POSIX_THREADS
-#define START_THREAD
-/**************************************
- *
- *	t h r e a d _ s t a r t		( V M S )
- *
- **************************************
- *
- * Functional description
- *	Start a new thread.  Return 0 if successful,
- *	status if not.  This routine is coded in macro.
- *
- **************************************/
-#endif
-#endif
-#endif
-
-
-
