@@ -1,3 +1,146 @@
+2006-04-30 21:22  dimitr
+
+	* firebird2/src/jrd/dyn.epp (1.82):
+	
+	Simplified the locking a bit.
+
+2006-04-30 21:20  dimitr
+
+	* firebird2/src/jrd/: thd.h (1.47), ThreadData.cpp (1.5), exe.cpp
+	(1.177):
+	
+	Misc.
+
+2006-04-30 20:51  dimitr
+
+	* firebird2/src/jrd/: fun.epp (1.74), grant.epp (1.55):
+	
+	Removed threading remainings from the Netware port.
+
+2006-04-30 20:15  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.245), jrd.h (1.153):
+	
+	Threading cleanup. More to follow.
+
+2006-04-30 20:13  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.176):
+	
+	More correct ttype handling for concatenation.
+
+2006-04-30 19:49  dimitr
+
+	* firebird2/src/jrd/: dyn.epp (1.81), fun.epp (1.73), grant.epp
+	(1.54):
+	
+	Threading cleanup. More to follow.
+
+2006-04-30 19:44  dimitr
+
+	* firebird2/src/jrd/jrd.h (1.152):
+	
+	Threading cleanup. More to follow.
+
+2006-04-30 19:40  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.244), jrd.h (1.151):
+	
+	Threading cleanup. More to follow.
+
+2006-04-30 19:30  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.243):
+	
+	Threading cleanup. More to follow.
+
+2006-04-30 19:29  dimitr
+
+	* firebird2/src/jrd/: all.cpp (1.44), dbg.cpp (1.33), thd.cpp
+	(1.48), thd.h (1.46), jrd.h (1.150):
+	
+	Removed unused code. When MT-safe logic is done, we should use
+	native classes instead of wrappers anyway.
+
+2006-04-30 19:02  dimitr
+
+	* firebird2/src/jrd/: dls.cpp (1.25), fil.h (1.15), thd.h (1.45),
+	vio.cpp (1.153):
+	
+	Threading cleanup. More to follow.
+
+2006-04-30 18:37  dimitr
+
+	* firebird2/src/jrd/enc.cpp (1.25):
+	
+	Protect global data (sync with Vulcan).
+
+2006-04-30 18:33  dimitr
+
+	* firebird2/src/jrd/: smp.h (1.5), smp_impl.h (1.7):
+	
+	SmpLock and V4Mutex replaced with native classes, they're no longer
+	needed.
+
+2006-04-30 18:28  dimitr
+
+	* firebird2/src/jrd/: all.h (1.22), block_cache.h (1.9):
+	
+	Threading cleanup. More to follow.
+
+2006-04-30 18:21  dimitr
+
+	* firebird2/src/jrd/: inuse.cpp (1.10), jrd.cpp (1.242), sch.cpp
+	(1.37), thd.h (1.44), why.cpp (1.101), jrd_pwd.h (1.19), pwd.cpp
+	(1.49):
+	
+	Threading cleanup. More to follow.
+
+2006-04-30 17:11  dimitr
+
+	* firebird2/src/jrd/btr.cpp (1.166):
+	
+	Const'ness.
+
+2006-04-30 08:43  robocop
+
+	* firebird2/: builds/win32/msvc6/Firebird2.dsw (1.39),
+	src/utilities/print_event.cpp (1.7):
+	
+	Integrate fb_event_print into the VC6 build. Time will say if it's
+	useful or not.
+
+2006-04-30 08:42  robocop
+
+	* firebird2/src/jrd/event.cpp (1.60):
+	
+	Tweak to be able to link after compiling print_event.cpp.
+
+2006-04-30 08:41  robocop
+
+	* firebird2/src/lock/print.cpp (1.50):
+	
+	Totally misc.
+
+2006-04-30 06:59  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.207):
+	
+	Prevent SUM from corrupting the impure area.
+
+2006-04-30 06:51  dimitr
+
+	* firebird2/src/jrd/: dfw.epp (1.179), vio.cpp (1.152):
+	
+	Fixed SF #1475979: Dropping and recreating a table in the same txn
+	disables PK.
+
+2006-04-30 06:36  dimitr
+
+	* firebird2/src/jrd/IntlManager.cpp (1.7):
+	
+	Sync with the 2.0 release branch.
+
 2006-04-30 02:39  robocop
 
 	* firebird2/src/: jrd/dyn_def.epp (1.104), jrd/isc_file.cpp
