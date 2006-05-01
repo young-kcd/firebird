@@ -930,8 +930,10 @@ void DYN_define_file(Global*		gbl,
 	Firebird::PathName temp_f;
 	GET_STRING(ptr, temp_f);
 	if (!ISC_expand_filename(temp_f, false))
+	{
 		DYN_error_punt(false, 231, NULL, NULL, NULL, NULL, NULL);
 		// File name is invalid.
+	}
 
 	request = CMP_find_request(tdbb, id = drq_l_files, DYN_REQUESTS);
 

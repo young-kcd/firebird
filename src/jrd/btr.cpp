@@ -114,7 +114,7 @@ struct INT64_KEY {
 };
 
 // I assume this wasn't done sizeof(INT64_KEY) on purpose, since alignment might affect it.
-const size_t INT64_KEY_LENGTH	= sizeof (double) + sizeof (SSHORT);
+const size_t INT64_KEY_LENGTH = sizeof (double) + sizeof (SSHORT);
 
 static const double pow10_table[] =
 {
