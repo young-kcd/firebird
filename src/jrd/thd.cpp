@@ -328,7 +328,7 @@ void THD_sleep(ULONG milliseconds)
 	SleepEx(milliseconds, FALSE);
 #else
 
-#ifdef ANY_THREADING
+#ifdef MULTI_THREAD
 	event_t timer;
 	event_t* timer_ptr = &timer;
 
@@ -337,7 +337,7 @@ void THD_sleep(ULONG milliseconds)
 
 	ISC_event_wait(1, &timer_ptr, &count, milliseconds * 1000, NULL, 0);
 	ISC_event_fini(&timer);
-#else /* !ANY_THREADING */
+#else // MULTI_THREAD
 	int seconds;
 
 /* Insure that process sleeps some amount of time. */
@@ -349,9 +349,9 @@ void THD_sleep(ULONG milliseconds)
 
 	while (seconds = sleep(seconds));
 
-#endif /* !ANY_THREADING */
+#endif // MULTI_THREAD
 
-#endif /* !WIN_NT */
+#endif // WIN_NT
 }
 
 
@@ -367,7 +367,7 @@ void THD_yield(void)
  *	Thread relinquishes the processor.
  *
  **************************************/
-#ifdef ANY_THREADING
+#ifdef MULTI_THREAD
 
 #ifdef USE_POSIX_THREADS
 /* use sched_yield() instead of pthread_yield(). Because pthread_yield() 
@@ -393,10 +393,10 @@ void THD_yield(void)
 #ifdef WIN_NT
 	SleepEx(0, FALSE);
 #endif
-#endif /* ANY_THREADING */
+#endif /* MULTI_THREAD */
 }
 
-#ifdef ANY_THREADING
+#ifdef MULTI_THREAD
 #ifdef VMS
 #ifndef USE_POSIX_THREADS
 #define START_THREAD

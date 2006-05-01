@@ -288,7 +288,7 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
 } // anonymous namespace 
 
 
-#ifdef ANY_THREADING
+#ifdef MULTI_THREAD
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
 void ThreadData::start(ThreadEntryPoint* routine,
@@ -507,7 +507,7 @@ void ThreadData::start(ThreadEntryPoint* routine,
 #endif
 
 
-#ifdef ANY_THREADING
+#ifdef MULTI_THREAD
 #ifdef VMS
 #ifndef USE_POSIX_THREADS
 #define START_THREAD

@@ -104,39 +104,6 @@
 
 #include "../common/config/config.h"
 
-// Turn on V4 mutex protection for gds__alloc/free 
-// 03/23/2003 BRS. Those defines don't do anything, V4_ macros are defined in thd.h 
-// but this file is included before this definition and so the macros are defined as empty
-// Those definitions are commented to allow V4_ macros to be inside V4_THREADING ifdefs
-// The include chain is
-// gdsassert.h -> gds_proto.h -> fil.h -> thd.h
-//
-//#ifdef WIN_NT
-//#define V4_THREADING
-//#endif
-//
-//#ifdef SOLARIS_MT
-//#define V4_THREADING
-//#endif
-//
-//#ifdef SUPERSERVER
-//#define V4_THREADING			// RFM: 9/22/2000 fix from Inprise tree,
-//								// Inprise bug 114840
-//#endif
-//
-// The following ifdef was added to build thread safe gds shared
-//  library on linux platform. It seems the gdslib works now (20020220)
-//  with thread enabled applications. Anyway, more tests should be 
-//  done as I don't have deep knowledge of the interbase/firebird 
-//  engine and this change may imply side effect I haven't known 
-//  about yet. Tomas Nejedlik (tomas@nejedlik.cz)
-//
-//#if ((defined(LINUX) || defined(FREEBSD)) && defined(SUPERCLIENT))
-//#define V4_THREADING
-//#endif
-//
-
-
 #ifdef SUPERSERVER
 static const TEXT gdslogid[] = " (Server)";
 #else
@@ -3490,9 +3457,6 @@ void gds__cleanup(void)
 		(*routine)(arg);
 	}
 
-#ifdef V4_THREADING
-/* V4_DESTROY; */
-#endif
 	initialized = false;
 }
 
@@ -3511,13 +3475,6 @@ static void init(void)
  **************************************/
 	if (initialized)
 		return;
-
-	/* V4_INIT; */
-	/* V4_GLOBAL_MUTEX_LOCK; */
-	if (initialized) {
-		/*  V4_GLOBAL_MUTEX_UNLOCK; */
-		return;
-	}
 
 #ifdef VMS
 	exit_description.exit_handler = cleanup;
@@ -3566,8 +3523,6 @@ static void init(void)
 #ifndef REQUESTER
 	ISC_signal_init();
 #endif
-
-	/* V4_GLOBAL_MUTEX_UNLOCK; */
 }
 
 static void sanitize(Firebird::string& locale)

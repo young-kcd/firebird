@@ -1153,7 +1153,7 @@ inline void SET_DBB(Jrd::Database* &dbb) {
 	CHECK_DBB(dbb);
 }
 
-#ifdef ANY_THREADING
+#ifdef MULTI_THREAD
 #define THD_JRD_MUTEX_LOCK(mutx)        JRD_mutex_lock(mutx)
 #define THD_JRD_MUTEX_UNLOCK(mutx)      JRD_mutex_unlock(mutx)
 #else

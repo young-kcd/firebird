@@ -35,7 +35,7 @@
 #include "../common/classes/rwlock.h"
 #include "../common/classes/alloc.h"
 
-
+#ifdef MULTI_THREAD
 inline void THD_mutex_lock(Firebird::Mutex* m) {
 	m->enter();
 }
@@ -50,6 +50,7 @@ inline void	THD_mutex_lock_global(void) {
 inline void THD_mutex_unlock_global(void) {
 	global_mutex.leave();
 }
+#endif
 
 // recursive mutex
 #ifdef SUPERSERVER
@@ -180,7 +181,7 @@ struct rec_mutx_t {
 typedef rec_mutx_t REC_MUTX_T;
 //typedef rec_mutx_t *REC_MUTX_PTR;
 
-#ifdef ANY_THREADING
+#ifdef MULTI_THREAD
 #define THD_GLOBAL_MUTEX_LOCK		THD_mutex_lock_global()
 #define THD_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()
 #define THD_MUTEX_LOCK(mutx)		THD_mutex_lock(mutx)

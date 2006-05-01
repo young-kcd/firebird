@@ -129,7 +129,7 @@ typedef struct sh_mem* SH_MEM;
 #define MUTEX_STRUCT SCHAR
 #endif
 
-#ifdef ANY_THREADING
+#ifdef MULTI_THREAD
 struct mtx {
 	MUTEX_STRUCT mtx_mutex[1];
 };
@@ -144,9 +144,9 @@ struct mtx {
 };
 typedef mtx MTX_T;
 typedef mtx* MTX;
-#endif // ANY_THREADING
+#endif // MULTI_THREAD
 
-#ifdef ANY_THREADING
+#ifdef MULTI_THREAD
 struct event_t
 {
 	SLONG event_semid;
@@ -161,7 +161,7 @@ struct event_t
 	SLONG event_count;
 	SSHORT event_semnum;
 };
-#endif // ANY_THREADING
+#endif // MULTI_THREAD
 
 
 #define SH_MEM_STRUCTURE_DEFINED
