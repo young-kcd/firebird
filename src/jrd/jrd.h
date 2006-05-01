@@ -381,7 +381,7 @@ const int DBB_expunge_count			= 7;
 const int DBB_max_count				= 8;
 
 //
-// Database mutexes and read/write locks
+// Database mutexes
 //
 const int DBB_MUTX_init_fini		= 0;	// During startup and shutdown
 //const int DBB_MUTX_statistics		= 1;	// Memory size and counts
