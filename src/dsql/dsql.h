@@ -86,26 +86,6 @@ const char* const OLD_CONTEXT		= "OLD";
 const char* const NEW_CONTEXT		= "NEW";
 const char* const TEMP_CONTEXT		= "TEMP";
 
-//! macros and block used to implement a generic stack mechanism
-#ifdef NOT_USED_OR_REPLACED
-class dsql_lls : public pool_alloc<dsql_type_lls>
-{
-public:
-	blk* lls_object;
-	dsql_lls* lls_next;
-};
-
-inline void LLS_PUSH(blk* object, dsql_lls** stack)
-{
-	DsqlMemoryPool::ALLD_push(object, stack);
-}
-
-inline blk* LLS_POP(dsql_lls** stack)
-{
-	return DsqlMemoryPool::ALLD_pop(stack);
-}
-#endif
-
 class dsql_ctx;
 class dsql_str;
 class dsql_nod;

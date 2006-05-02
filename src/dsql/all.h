@@ -39,12 +39,6 @@ public:
 	static DsqlMemoryPool* createPool();
 	
 	static void deletePool(DsqlMemoryPool* pool);
-
-//	static blk* ALLD_pop(class dsql_lls**);
-//	static void ALLD_push(blk*, class dsql_lls**);
-//
-//private:
-//	BlockCache<class dsql_lls> lls_cache;  // Was plb_lls
 };
 
 extern DsqlMemoryPool* DSQL_permanent_pool;
