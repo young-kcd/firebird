@@ -3,6 +3,11 @@
   **************************
 
     * Fixed RC1 bug
+        Embedded server cannot connect via TCP, error "connection rejected by remote interface"
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC1 bug
         Error "operating system directive ReleaseSemaphore failed" under heavy concurrent load
       Contributor(s):
         Christian Barheine <cbarheine at sympatec.com>
