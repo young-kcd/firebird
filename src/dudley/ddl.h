@@ -330,7 +330,7 @@ enum nod_t {
 	nod_label, nod_leave, nod_loop,
 	nod_max, nod_min, nod_count,
 	nod_total, nod_average, nod_list,
-	nod_defered, nod_between, nod_missing,
+	nod_deferred, nod_between, nod_missing,
 	nod_field_name, nod_name, nod_starts,
 	nod_from, nod_fid, nod_concatenate,
 	nod_abort, nod_null, nod_user_name,

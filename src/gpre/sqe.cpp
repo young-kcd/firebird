@@ -362,7 +362,7 @@ GPRE_NOD SQE_field(gpre_req* request,
 	}
 
 
-//  Note: We *always* want to make a defered name block - to handle
+//  Note: We *always* want to make a deferred name block - to handle
 //  scoping of alias names in subselects properly, when we haven't
 //  seen the list of relations (& aliases for them).  This occurs
 //  during the select list, but by the time we see the having, group,
@@ -374,10 +374,10 @@ GPRE_NOD SQE_field(gpre_req* request,
 //  1994-October-03 David Schnepper 
 //  
 
-//  if the request is null, make a defered name block 
+//  if the request is null, make a deferred name block
 
 	if (!request || !request->req_contexts || request->req_in_select_list) {
-		node = MSC_node(nod_defered, 3);
+		node = MSC_node(nod_deferred, 3);
 		node->nod_count = 0;
 		TOK f_token = (TOK) MSC_alloc(TOK_LEN);
 		node->nod_arg[0] = (GPRE_NOD) f_token;
@@ -814,7 +814,7 @@ void SQE_post_field( GPRE_NOD input, gpre_fld* field)
 
 	case nod_field:
 	case nod_literal:
-	case nod_defered:
+	case nod_deferred:
 	case nod_array:
 		return;
 
@@ -976,7 +976,7 @@ bool SQE_resolve(GPRE_NOD node,
 		return result;
 // ** End date/time/timestamp support *
 
-	case nod_defered:
+	case nod_deferred:
 		break;
 
 	default:
@@ -1034,7 +1034,7 @@ bool SQE_resolve(GPRE_NOD node,
 	reference->ref_slice = (slc*) slice_action;
 
 //  donot reinit if this is a nod_deffered type 
-	if (node->nod_type != nod_defered)
+	if (node->nod_type != nod_deferred)
 		node->nod_count = 0;
 
 

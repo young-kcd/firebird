@@ -354,7 +354,7 @@ typedef int HANDLE;
 struct p_cnct;
 struct rmtque;
 
-/* Queue of defered packets */
+/* Queue of deferred packets */
 
 struct rem_que_packet
 {
@@ -435,7 +435,7 @@ struct rem_port
 	USHORT			port_iosb[4];
 #endif
 	void*			port_xcc;              /* interprocess structure */
-	PacketQueue*	port_defered_packets;	/* queue of defered packets */
+	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
 	OBJCT			port_last_object_id;	/* cached last id */
 #ifdef SUPERSERVER
 	Firebird::ObjectsArray< Firebird::Array< char > >*	port_queue;
@@ -514,7 +514,7 @@ const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
 //const USHORT PORT_impersonate	= 512;	// A remote user is being impersonated
 const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
 const USHORT PORT_partial_data	= 2048;	/* Physical packet doesn't contain all API packet */
-const USHORT PORT_lazy			= 4096;	/* Defered operations are allowed */
+const USHORT PORT_lazy			= 4096;	/* Deferred operations are allowed */
 
 
 /* Misc declarations */

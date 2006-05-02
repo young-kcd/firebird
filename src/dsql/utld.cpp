@@ -86,7 +86,9 @@ SCHAR* UTLD_skip_sql_info(SCHAR* info)
 {
 	if (*info != isc_info_sql_select &&
 		*info != isc_info_sql_bind)
+	{
 		return 0;
+	}
 
 	info++;
 

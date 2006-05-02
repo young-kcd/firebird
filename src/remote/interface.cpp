@@ -209,7 +209,7 @@ inline bool defer_packet(rem_port* port, const PACKET* packet, ISC_STATUS* statu
 	rem_que_packet p;
 	p.packet = *packet;
 	p.sent = false;
-	port->port_defered_packets->add(p);
+	port->port_deferred_packets->add(p);
 
 	return clear_queue(port, status);
 }
@@ -5340,10 +5340,10 @@ static void disconnect( rem_port* port)
 	if (rdb) {
 		PACKET* packet = &rdb->rdb_packet;
 
-		// Deliver the pending defered packets
+		// Deliver the pending deferred packets
 
-		for (rem_que_packet* p = port->port_defered_packets->begin();
-			 p < port->port_defered_packets->end(); p++)
+		for (rem_que_packet* p = port->port_deferred_packets->begin();
+			 p < port->port_deferred_packets->end(); p++)
 		{
 			if (!p->sent) {
 				port->send(&p->packet);
@@ -5370,7 +5370,7 @@ static void disconnect( rem_port* port)
 
 	// Cleanup the queue
 
-	delete port->port_defered_packets;
+	delete port->port_deferred_packets;
 
 	// Clear context reference for the associated event handler
 	// to avoid SEGV during shutdown
@@ -5847,7 +5847,7 @@ static bool init(ISC_STATUS* user_status,
 	PACKET* packet = &rdb->rdb_packet;
 
 	MemoryPool& pool = *getDefaultMemoryPool();
-	port->port_defered_packets = FB_NEW(pool) PacketQueue(pool);
+	port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
 
 /* Make attach packet */
 
@@ -6208,16 +6208,16 @@ static bool receive_packet_noqueue(rem_port* port,
 	user_status[1] = isc_net_read_err;
 	user_status[2] = isc_arg_end;
 
-	// Receive responses for all defered packets that were already sent
+	// Receive responses for all deferred packets that were already sent
 
-	while (port->port_defered_packets->getCount())
+	while (port->port_deferred_packets->getCount())
 	{
-		rem_que_packet* p = port->port_defered_packets->begin();
+		rem_que_packet* p = port->port_deferred_packets->begin();
 		if (!p->sent)
 			break;
 		if (!port->receive(packet))
 			return FALSE;
-		port->port_defered_packets->remove(p);
+		port->port_deferred_packets->remove(p);
 	}
 
 	return (port->receive(packet));
@@ -6930,10 +6930,10 @@ static bool send_packet(rem_port* port,
 	user_status[1] = isc_net_write_err;
 	user_status[2] = isc_arg_end;
 
-	// Send packets that were defered
+	// Send packets that were deferred
 
-	for (rem_que_packet* p = port->port_defered_packets->begin();
-		p < port->port_defered_packets->end(); p++)
+	for (rem_que_packet* p = port->port_deferred_packets->begin();
+		p < port->port_deferred_packets->end(); p++)
 	{
 		if (!p->sent) {
 			if (!port->send_partial(&p->packet))
@@ -6974,10 +6974,10 @@ static bool send_partial_packet(rem_port*		port,
 	user_status[1] = isc_net_write_err;
 	user_status[2] = isc_arg_end;
 
-	// Send packets that were defered
+	// Send packets that were deferred
 
-	for (rem_que_packet* p = port->port_defered_packets->begin();
-		p < port->port_defered_packets->end(); p++)
+	for (rem_que_packet* p = port->port_deferred_packets->begin();
+		p < port->port_deferred_packets->end(); p++)
 	{
 		if (!p->sent) {
 			if (!port->send_partial(&p->packet))

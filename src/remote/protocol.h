@@ -142,7 +142,7 @@ const USHORT ptype_page			= 1;	/* Page server protocol */
 const USHORT ptype_rpc			= 2;	/* Simple remote procedure call */
 const USHORT ptype_batch_send	= 3;	/* Batch sends, no asynchrony */
 const USHORT ptype_out_of_band	= 4;	/* Batch sends w/ out of band notification */
-const USHORT ptype_lazy_send	= 5;	/* Defered packets delivery */
+const USHORT ptype_lazy_send	= 5;	/* Deferred packets delivery */
 
 /* Generic object id */
 

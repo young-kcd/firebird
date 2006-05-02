@@ -2743,7 +2743,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 		}
 
 		*info_buffer = isc_info_length;
-		memmove(info_buffer + 1, info_string->cstr_address, info_len-1);
+		memmove(info_buffer + 1, info_string->cstr_address, info_len - 1);
 	}
 
 	USHORT info_db_len = 0;

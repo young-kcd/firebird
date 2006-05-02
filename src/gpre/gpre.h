@@ -228,7 +228,7 @@ typedef enum nod_t {
 	nod_label, nod_leave, nod_loop,
 	nod_max, nod_min, nod_count,
 	nod_total, nod_average, nod_list,
-	nod_defered, nod_missing, nod_between,
+	nod_deferred, nod_missing, nod_between,
 	nod_union, nod_map, nod_starting,
 	nod_like, nod_agg_count, nod_agg_max,
 	nod_agg_min, nod_agg_total, nod_agg_average,
