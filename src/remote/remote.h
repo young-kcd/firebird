@@ -434,7 +434,7 @@ struct rem_port
 #ifdef VMS
 	USHORT			port_iosb[4];
 #endif
-	void*			port_xcc;              /* interprocess structure */
+	void*			port_xcc;				/* interprocess structure */
 	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
 	OBJCT			port_last_object_id;	/* cached last id */
 #ifdef SUPERSERVER

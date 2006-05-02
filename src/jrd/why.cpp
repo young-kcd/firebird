@@ -3391,7 +3391,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 //		WHY_STMT statement = WHY_translate_handle(*stmt_handle);
 		release_dsql_support(statement->das);
 
-		if (!(dasup = (sqlda_sup*) alloc((SLONG) sizeof(sqlda_sup)))) 
+		if (!(dasup = (sqlda_sup*) alloc((SLONG) sizeof(sqlda_sup))))
 		{
 			statement->requests = 0;
 			status[0] = isc_arg_gds;
