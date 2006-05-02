@@ -3627,14 +3627,15 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 	for (const jrd_nod* const* const end = ptr1 + list->nod_count;
 		 ptr1 < end; ptr1++)
 	{
-		if (!EVL_boolean(tdbb, (*ptr1)->nod_arg[e_val_boolean]))
+		jrd_req* request = tdbb->tdbb_request;
+		if (!EVL_boolean(tdbb, (*ptr1)->nod_arg[e_val_boolean]) &&
+			!(request->req_flags & req_null))
 		{
 			/* Validation error -- report result */
 			const char* value;
 			TEXT temp[128];
 
 			jrd_nod* node = (*ptr1)->nod_arg[e_val_value];
-			jrd_req* request = tdbb->tdbb_request;
 			const dsc* desc = EVL_expr(tdbb, node);
 			const USHORT length = (desc && !(request->req_flags & req_null)) ?
 				MOV_make_string(desc, ttype_dynamic, &value,
