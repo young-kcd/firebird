@@ -1,3 +1,122 @@
+2006-05-02 03:32  asfernandes
+
+	* firebird2/src/: jrd/why.cpp (1.103), remote/remote.h (1.49):
+	
+	Misc
+
+2006-05-02 03:01  robocop
+
+	* firebird2/src/jrd/: lck.cpp (1.52), lck.h (1.22):
+	
+	Misc and check lock's string length.
+
+2006-05-02 02:25  asfernandes
+
+	* firebird2/src/jrd/: thd.cpp (1.51), thd.h (1.49):
+	
+	Misc
+
+2006-05-02 02:15  asfernandes
+
+	* firebird2/src/: dsql/utld_proto.h (1.14), jrd/cmp.cpp (1.209):
+	
+	Misc
+
+2006-05-02 02:11  robocop
+
+	* firebird2/src/: dsql/all.h (1.13), dsql/dsql.h (1.90),
+	jrd/block_cache.h (1.10):
+	
+	Remove unused code.
+
+2006-05-02 02:04  robocop
+
+	* firebird2/src/: dudley/ddl.h (1.35), gpre/gpre.h (1.82),
+	gpre/sqe.cpp (1.41), remote/interface.cpp (1.121),
+	remote/protocol.h (1.30), remote/remote.h (1.48), remote/server.cpp
+	(1.132), dsql/utld.cpp (1.38):
+	
+	I don't want another "interprete", so I rename "defered" to
+	"deferred".
+
+2006-05-02 00:23  hvlad
+
+	* firebird2/src/: dsql/dsql.cpp (1.165), dsql/sqlda.h (1.11),
+	dsql/utld.cpp (1.37), dsql/utld_proto.h (1.13), jrd/inf.cpp (1.63),
+	jrd/inf_pub.h (1.10), jrd/svc.cpp (1.167), jrd/why.cpp (1.102),
+	jrd/y_handle.h (1.14), remote/inet.cpp (1.169),
+	remote/interface.cpp (1.120), remote/protocol.h (1.29),
+	remote/remote.h (1.47), remote/server.cpp (1.131):
+	
+	Merge B1_5_Remote_LazyPort branch into HEAD
+
+2006-05-01 08:10  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.208):
+	
+	Fixed memory corruption caused by aggregates whose map format
+	exceeds the size limit.  As a side effect, it makes impossible to
+	use more than one LIST function in the select list. What a cruel
+	world.
+
+2006-05-01 07:11  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.246), jrd_proto.h (1.41):
+	
+	Threading cleanup. Restored the V4_THREADING code to the state it
+	was before Blas' cleanup. It's not used but preserved as a
+	self-documentation.
+
+2006-05-01 06:42  dimitr
+
+	* firebird2/src/jrd/jrd.h (1.155):
+	
+	Misc.
+
+2006-05-01 06:41  dimitr
+
+	* firebird2/src/: jrd/common.h (1.140), include/firebird.h (1.39),
+	dsql/dsql.cpp (1.164):
+	
+	Threading cleanup. More to follow.
+
+2006-05-01 06:21  dimitr
+
+	* firebird2/src/jrd/thd.cpp (1.50):
+	
+	Threading cleanup. More to follow.
+
+2006-05-01 06:12  dimitr
+
+	* firebird2/src/jrd/jrd.h (1.154):
+	
+	Threading cleanup. More to follow.
+
+2006-05-01 06:08  dimitr
+
+	* firebird2/src/jrd/: gds.cpp (1.194), inuse.cpp (1.11), isc.h
+	(1.24), ThreadData.cpp (1.6), thd.cpp (1.49), thd.h (1.48):
+	
+	Threading cleanup. More to follow.
+
+2006-05-01 04:41  asfernandes
+
+	* firebird2/src/jrd/: fil.h (1.16), isc_file.cpp (1.102):
+	
+	Misc
+
+2006-05-01 04:30  asfernandes
+
+	* firebird2/src/jrd/event.cpp (1.61):
+	
+	Be compilable in non WIN_NT platforms
+
+2006-05-01 04:26  asfernandes
+
+	* firebird2/src/jrd/: btr.cpp (1.167), dyn_def.epp (1.105):
+	
+	Misc
+
 2006-04-30 21:22  dimitr
 
 	* firebird2/src/jrd/dyn.epp (1.82):
