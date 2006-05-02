@@ -29,6 +29,8 @@ struct blk;
 namespace Jrd {
 
 class BlockingThread;
+class Database;
+class Attachment;
 
 /* Lock types */
 
@@ -65,9 +67,10 @@ enum lck_owner_t {
 	LCK_OWNER_transaction		/* A transaction is the owner of the lock */
 };
 
+// This is defined in dbt.cpp and nobody calls it.
 void MP_GDB_print(MemoryPool*);
 
-class Lock : public pool_alloc_rpt<SCHAR, type_lck>
+class Lock : public pool_alloc_rpt<UCHAR, type_lck>
 {
 public:
 	Lock()
@@ -106,12 +109,12 @@ public:
 	Lock*	lck_prior;
 	Lock*	lck_collision;	/* collisions in compatibility table */
 	Lock*	lck_identical;	/* identical locks in compatibility table */
-	class Database*	lck_dbb;		/* database object is contained in */
+	Database*	lck_dbb;	/* database object is contained in */
 	blk*	lck_object;		/* argument to be passed to ast */
 	blk*	lck_owner;		/* Logical owner block (transaction, etc.) */
 	blk*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
 	blk*	lck_compatible2;	/* Sub-level for internal compatibility */
-	class Attachment* lck_attachment;	/* Attachment that owns lock, set only using set_lock_attachment */
+	Attachment* lck_attachment;	/* Attachment that owns lock, set only using set_lock_attachment */
 	BlockingThread* lck_blocked_threads;	/* Threads blocked by lock */
 	lock_ast_t	lck_ast;	        /* Blocking AST routine */
 	SLONG		lck_id;				/* Lock id from lock manager */
@@ -123,10 +126,10 @@ public:
 	SLONG		lck_data;				/* Data associated with a lock */
 	enum lck_t lck_type;
 	union {
-		SCHAR lck_string[1];
+		UCHAR lck_string[1];
 		SLONG lck_long;
 	} lck_key;
-	SCHAR lck_tail[1];			/* Makes the allocator happy */
+	UCHAR lck_tail[1];			/* Makes the allocator happy */
 };
 
 } //namespace Jrd

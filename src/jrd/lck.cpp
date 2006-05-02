@@ -63,11 +63,11 @@
 
 using namespace Jrd;
 
-static void bug_lck(TEXT*);
+static void bug_lck(const TEXT*);
 #ifdef MULTI_THREAD
 static void check_lock(Lock*, USHORT);
 #endif
-static bool compatible(Lock*, Lock*, USHORT);
+static bool compatible(const Lock*, const Lock*, USHORT);
 static void enqueue(thread_db*, Lock*, USHORT, SSHORT);
 static int external_ast(void*);
 #ifdef MULTI_THREAD
@@ -75,11 +75,11 @@ static Lock* find_block(Lock*, USHORT);
 #endif
 static USHORT hash_func(const UCHAR*, USHORT);
 static void hash_allocate(Lock*);
-static Lock* hash_get_lock(Lock*, USHORT *, Lock***);
+static Lock* hash_get_lock(Lock*, USHORT*, Lock***);
 static void hash_insert_lock(Lock*);
 static bool hash_remove_lock(Lock*, Lock**);
 static void internal_ast(Lock*);
-static bool internal_compatible(Lock*, Lock*, USHORT);
+static bool internal_compatible(Lock*, const Lock*, USHORT);
 static void internal_dequeue(thread_db*, Lock*);
 static USHORT internal_downgrade(thread_db*, Lock*);
 static bool internal_enqueue(thread_db*, Lock*, USHORT, SSHORT, bool);
@@ -211,10 +211,16 @@ JMB: As part of the c++ conversion I removed the check for Lock block type.
  Here is the line I removed from the macro:
 				 (l->blk_type == type_lck) && \
  */
-#define LCK_CHECK_LOCK(l)	(((l) != NULL) && \
-				 (l->lck_dbb != NULL) && \
-				 (l->lck_test_field == 666) && \
-				 (l->lck_id || (l->lck_physical == LCK_none)))
+#define LCK_CHECK_LOCK checkLock
+
+inline bool checkLock(const Lock* l)
+{
+	return (l != NULL &&
+			l->lck_length <= MAX_UCHAR &&
+			l->lck_dbb != NULL &&
+			l->lck_test_field == 666 &&
+			(l->lck_id || l->lck_physical == LCK_none));
+}
 
 /* The following check should be part of LCK_CHECK_LOCK, but it fails
    when the exclusive attachment to a database is changed to a shared
@@ -231,11 +237,11 @@ JMB: As part of the c++ conversion I removed the check for Lock block type.
 #define LCK_CHECK_LOCK(x)		(TRUE)	/* nothing */
 #endif
 
-void LCK_ast_inhibit() {
+inline void LCK_ast_inhibit() {
 	LOCK_ast_inhibit();
 }
 
-void LCK_ast_enable() {
+inline void LCK_ast_enable() {
 	LOCK_ast_enable();
 }
 
@@ -262,7 +268,7 @@ void LCK_assert(thread_db* tdbb, Lock* lock)
 	}
 
 	if (!LCK_lock(tdbb, lock, lock->lck_logical, LCK_WAIT))
-		BUGCHECK(159);			/* msg 159 cannot fb_assert logical lock */
+		BUGCHECK(159);			// msg 159 cannot assert logical lock
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 }
@@ -920,7 +926,7 @@ void LCK_write_data(Lock* lock, SLONG data)
 }
 
 
-static void bug_lck(TEXT* string)
+static void bug_lck(const TEXT* string)
 {
 /**************************************
  *
@@ -935,7 +941,7 @@ static void bug_lck(TEXT* string)
  **************************************/
 	TEXT s[128];
 
-	sprintf(s, "Fatal lock interface error: %s", string);
+	sprintf(s, "Fatal lock interface error: %.96s", string);
 	gds__log(s);
 	ERR_post(isc_db_corrupt, isc_arg_string, string, 0);
 }
@@ -965,7 +971,7 @@ static void check_lock(Lock* lock, USHORT level)
 #endif
 
 
-static bool compatible(Lock* lock1, Lock* lock2, USHORT level2)
+static bool compatible(const Lock* lock1, const Lock* lock2, USHORT level2)
 {
 /**************************************
  *
@@ -1169,7 +1175,7 @@ static void hash_allocate(Lock* lock)
 }
 
 
-static Lock* hash_get_lock(Lock* lock, USHORT * hash_slot, Lock*** prior)
+static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 {
 /**************************************
  *
@@ -1368,7 +1374,7 @@ static void internal_ast(Lock* lock)
 
 
 
-static bool internal_compatible(Lock* match, Lock* lock, USHORT level)
+static bool internal_compatible(Lock* match, const Lock* lock, USHORT level)
 {
 /**************************************
  *
