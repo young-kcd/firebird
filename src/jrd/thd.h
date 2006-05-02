@@ -50,7 +50,7 @@ inline void	THD_mutex_lock_global(void) {
 inline void THD_mutex_unlock_global(void) {
 	global_mutex.leave();
 }
-#endif
+#endif // MULTI_THREAD
 
 // recursive mutex
 #ifdef SUPERSERVER
@@ -186,12 +186,12 @@ typedef rec_mutx_t REC_MUTX_T;
 #define THD_GLOBAL_MUTEX_UNLOCK		THD_mutex_unlock_global()
 #define THD_MUTEX_LOCK(mutx)		THD_mutex_lock(mutx)
 #define THD_MUTEX_UNLOCK(mutx)		THD_mutex_unlock(mutx)
-#else
+#else // MULTI_THREAD
 #define THD_GLOBAL_MUTEX_LOCK
 #define THD_GLOBAL_MUTEX_UNLOCK
 #define THD_MUTEX_LOCK(mutx)
 #define THD_MUTEX_UNLOCK(mutx)
-#endif
+#endif // MULTI_THREAD
 
 extern "C" {
 	int		API_ROUTINE gds__thread_start(ThreadEntryPoint*, void*, int, int,

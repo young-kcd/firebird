@@ -153,7 +153,7 @@ int THD_rec_mutex_unlock(REC_MUTX_T * rec_mutex)
 	}
 	return 0;
 }
-#endif /* SUPERSERVER */
+#endif // SUPERSERVER
 
 
 #ifdef WIN_NT
@@ -309,7 +309,7 @@ void THD_yield(void)
 	sched_yield();
 #else
 	pthread_yield();
-#endif /* _POSIX_PRIORITY_SCHEDULING */
+#endif // _POSIX_PRIORITY_SCHEDULING
 #endif
 
 #ifdef SOLARIS_MT
@@ -319,5 +319,5 @@ void THD_yield(void)
 #ifdef WIN_NT
 	SleepEx(0, FALSE);
 #endif
-#endif /* MULTI_THREAD */
+#endif // MULTI_THREAD
 }
