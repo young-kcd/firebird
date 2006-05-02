@@ -349,7 +349,7 @@ static XDR::xdr_ops inet_ops =
 {
 	inet_getlong,
 	inet_putlong,
-#ifdef SUPERSERVER
+#if defined(SUPERSERVER) && !defined(EMBEDDED)
 	REMOTE_getbytes,
 #else
 	inet_getbytes,
