@@ -3,6 +3,11 @@
   **************************
 
     * Fixed RC1 bug
+        Domain level CHECK constraints don't allow NULL values
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC1 bug
         Embedded server cannot connect via TCP, error "connection rejected by remote interface"
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
