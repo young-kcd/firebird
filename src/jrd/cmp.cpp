@@ -5545,7 +5545,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
  **************************************
  *
  * Functional description
- *	Translate a map block into a format.  If the format is
+ *	Translate a map block into a format.  If the format
  *	is missing or incomplete, extend it.
  *
  **************************************/
