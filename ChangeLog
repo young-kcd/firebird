@@ -1,3 +1,28 @@
+2006-05-02 15:55  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.5):
+	
+	More docs.
+
+2006-05-02 15:51  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.176.2.1):
+	
+	Fixed the CHECK bug reported by Ivan Prenosil.
+
+2006-05-02 12:57  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.4):
+	
+	More docs.
+
+2006-05-02 11:54  hvlad
+
+	* firebird2/src/remote/inet.cpp (1.160.2.1):
+	
+	Fixed RC1 bug : embedded can't connect to remote server via TCP\IP
+	(connection rejected by remote interface)
+
 2006-04-30 11:52  dimitr
 
 	* firebird2/doc/WhatsNew (1.95.2.3):
