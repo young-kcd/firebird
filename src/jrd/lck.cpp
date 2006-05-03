@@ -237,11 +237,12 @@ inline bool checkLock(const Lock* l)
 #define LCK_CHECK_LOCK(x)		(TRUE)	/* nothing */
 #endif
 
-inline void LCK_ast_inhibit() {
+// Is there any reason why cch, jrd and nbak don't call LOCK_ast... directly?
+void LCK_ast_inhibit() {
 	LOCK_ast_inhibit();
 }
 
-inline void LCK_ast_enable() {
+void LCK_ast_enable() {
 	LOCK_ast_enable();
 }
 
