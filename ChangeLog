@@ -1,3 +1,15 @@
+2006-05-03 04:09  robocop
+
+	* firebird2/src/jrd/lck.cpp (1.53):
+	
+	Don't know why only the Release build showed my mistake.
+
+2006-05-02 15:53  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.178):
+	
+	Fixed the CHECK bug reported by Ivan Prenosil.
+
 2006-05-02 03:32  asfernandes
 
 	* firebird2/src/: jrd/why.cpp (1.103), remote/remote.h (1.49):
