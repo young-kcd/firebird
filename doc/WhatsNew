@@ -3,6 +3,11 @@
   **************************
 
     * Fixed RC1 bug
+        SuperServer performs slower than v1.5 on SMP machines
+      Contributor(s):
+        Arno Brinkman <firebird at abvisie.nl>
+
+    * Fixed RC1 bug
         Domain level CHECK constraints don't allow NULL values
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
@@ -49,6 +54,11 @@
         ISO_PLK for ISO8859_2 charset (Polish language)
       Contributor(s):
         Jaroslaw Glowacki <joeaccord at plocman.pl>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed RC1 bug
+        SHOW GENERATORS doesn't work in ISQL
+      Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed SF #1466193
