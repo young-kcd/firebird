@@ -1176,7 +1176,7 @@ void MemoryPool::deletePool(MemoryPool* pool)
 	pool->decrement_mapping(pool->mapped_memory);
 	
 	// Free mutex
-	pool->lock.~Spinlock();
+	pool->lock.~Mutex();
 	
 	// Order of deallocation is of significance because
 	// we delete our pool in process

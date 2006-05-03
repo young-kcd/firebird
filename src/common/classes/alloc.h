@@ -225,8 +225,8 @@ private:
 	// accounted locally, i.e. redirect_amount and parent_redirected linked list
 	// are synchronized with parent pool mutex only. All other pool members are 
 	// synchronized with this mutex.
-	Spinlock lock;
-	
+	Mutex lock;
+
 	// Current usage counters for pool. Used to move pool to different statistics group
 	AtomicCounter used_memory;
 
