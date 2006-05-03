@@ -1597,7 +1597,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 	case nod_upcase:
 	case nod_lowcase:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		if (desc->dsc_dtype > dtype_varying) {
+		if (desc->dsc_dtype > dtype_varying && desc->dsc_dtype != dtype_blob) {
 			desc->dsc_length = DSC_convert_to_text_length(desc->dsc_dtype);
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_ttype() = ttype_ascii;
