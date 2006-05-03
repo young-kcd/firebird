@@ -63,13 +63,13 @@ public:
 	Mutex() {
 		InitializeCriticalSection(&spinlock);
 	}
-	virtual ~Mutex() {
+	~Mutex() {
 		DeleteCriticalSection(&spinlock);
 	}
-	virtual void enter() {
+	void enter() {
 		EnterCriticalSection(&spinlock);
 	}
-	virtual void leave() {
+	void leave() {
 		LeaveCriticalSection(&spinlock);
 	}
 };
