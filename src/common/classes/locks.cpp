@@ -40,6 +40,7 @@ tSetCriticalSectionSpinCount*
 
 Mutex::Mutex() {
 	InitializeCriticalSection(&spinlock);
+/*
 	if (SetCriticalSectionSpinCount == MISS_SPIN_COUNT)
 		return;
 	if (SetCriticalSectionSpinCount == INIT_SPIN_COUNT) {
@@ -57,6 +58,7 @@ Mutex::Mutex() {
 		}
 	}
 	SetCriticalSectionSpinCount(&spinlock, 4000);
+*/
 }
 
 #endif  // WIN_NT
