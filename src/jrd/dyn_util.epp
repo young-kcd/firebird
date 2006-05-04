@@ -182,7 +182,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 	
 	do {
 		id = drq_g_nxt_con;
-		buffer.printf("INTEG_%" QUADFORMAT "d",
+		buffer.printf("INTEG_%" SQUADFORMAT,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_con,
@@ -259,7 +259,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 
 	do {
 		id = drq_g_nxt_fld;
-		buffer.printf("RDB$%" QUADFORMAT "d",
+		buffer.printf("RDB$%" SQUADFORMAT,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_fld,
@@ -371,11 +371,11 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 	do {
 		const SCHAR* format;
 		if (verb == isc_dyn_def_primary_key)
-			format = "RDB$PRIMARY%" QUADFORMAT "d";
+			format = "RDB$PRIMARY%" SQUADFORMAT;
 		else if (verb == isc_dyn_def_foreign_key)
-			format = "RDB$FOREIGN%" QUADFORMAT "d";
+			format = "RDB$FOREIGN%" SQUADFORMAT;
 		else
-			format = "RDB$%" QUADFORMAT "d";
+			format = "RDB$%" SQUADFORMAT;
 		id = drq_g_nxt_idx;
 		buffer.printf(format,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
@@ -434,7 +434,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 
 	do {
 		id = drq_g_nxt_trg;
-		buffer.printf("CHECK_%" QUADFORMAT "d",
+		buffer.printf("CHECK_%" SQUADFORMAT,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_trg,

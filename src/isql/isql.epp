@@ -2379,7 +2379,7 @@ static processing_state add_row(TEXT* tabname)
 						}
 					}
 					// sscanf assumes a 64-bit integer target
-					else if (sscanf(lastInputLine, "%" QUADFORMAT "d", &n) != 1)
+					else if (sscanf(lastInputLine, "%" SQUADFORMAT, &n) != 1)
 					{
 						STDERROUT("Input parsing problem");
 						done = true;
@@ -6368,13 +6368,13 @@ static void print_item_numeric(SINT64 value,
 	if (scale >= 0) {
 		if (scale > 0)
 			value *= (SINT64) pow(10.0, (double) scale);
-		sprintf(buf, "%*" QUADFORMAT "d", length, value);
+		sprintf(buf, "%*" SQUADFORMAT, length, value);
 		return;
 	}
 
 	// Use one less space than allowed, to leave room for '.'
 	length--;
-	sprintf(buf, "%*" QUADFORMAT "d", length, value);
+	sprintf(buf, "%*" SQUADFORMAT, length, value);
 
 	// start from LSByte towards MSByte
 	SSHORT from = length - 1;

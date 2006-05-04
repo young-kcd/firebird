@@ -486,7 +486,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	}
 	else {
 		char psz[64];
-		sprintf(psz, "%" QUADFORMAT "d", cumul_count);
+		sprintf(psz, "%" SQUADFORMAT, cumul_count);
 		BURP_verbose(283, psz, NULL, NULL, NULL, NULL);
 		// msg 283 closing file, committing, and finishing.  %s bytes written 
 	}

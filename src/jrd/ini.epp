@@ -1089,7 +1089,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 	BLB_put_segment(tdbb, blob, acl, acl_length);
 	BLB_close(tdbb, blob);
 
-	default_class.printf("%s%" QUADFORMAT "d", DEFAULT_CLASS,
+	default_class.printf("%s%" SQUADFORMAT, DEFAULT_CLASS,
 			DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS),
 					   false, (SINT64) 1));
 

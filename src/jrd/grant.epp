@@ -299,7 +299,7 @@ static void define_default_class(
 	Database* dbb = tdbb->tdbb_database;
 
 	if (default_class.length() == 0) {
-		default_class.printf("%s%" QUADFORMAT "d", DEFAULT_CLASS,
+		default_class.printf("%s%" SQUADFORMAT, DEFAULT_CLASS,
 				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), false,
 						   (SINT64) 1));
 
@@ -871,7 +871,7 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 					MODIFY RFR
 						while (!unique)
 						{
-							sprintf(RFR.RDB$SECURITY_CLASS, "%s%" QUADFORMAT "d", "SQL$GRANT",
+							sprintf(RFR.RDB$SECURITY_CLASS, "%s%" SQUADFORMAT, "SQL$GRANT",
 								DPM_gen_id(tdbb, MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), 
 										   false, (SINT64) 1));
 

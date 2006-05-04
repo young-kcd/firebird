@@ -1840,7 +1840,7 @@ static void set_field_class_name(Global*					gbl,
 		MODIFY RFR
 			while (!unique)
 		    {
-				sprintf(RFR.RDB$SECURITY_CLASS, "%s%" QUADFORMAT "d", "SQL$GRANT", 
+				sprintf(RFR.RDB$SECURITY_CLASS, "%s%" SQUADFORMAT, "SQL$GRANT",
 				DPM_gen_id(tdbb, 
 					MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), false, (SINT64) 1));
 
