@@ -622,7 +622,8 @@ enum RTN {
 
 #pragma FB_COMPILER_MESSAGE("This table goes to gds__log and it's not localized")
 
-static const TEXT msg_table[][66] = {
+static const TEXT msg_table[VAL_MAX_ERROR][66] =
+{
 	"Page %ld wrong type (expected %d encountered %d)",	// 0 
 	"Checksum error on page %ld",
 	"Page %ld doubly allocated",
@@ -651,7 +652,7 @@ static const TEXT msg_table[][66] = {
 };
 
 
-static RTN corrupt(thread_db*, vdr*, USHORT, jrd_rel*, ...);
+static RTN corrupt(thread_db*, vdr*, USHORT, const jrd_rel*, ...);
 static FETCH_CODE fetch_page(thread_db*, vdr*, SLONG, USHORT, WIN *, void *);
 static void garbage_collect(thread_db*, vdr*);
 #ifdef DEBUG_VAL_VERBOSE
@@ -746,7 +747,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 	return true;
 }
 
-static RTN corrupt(thread_db* tdbb, vdr* control, USHORT err_code, jrd_rel* relation, ...)
+static RTN corrupt(thread_db* tdbb, vdr* control, USHORT err_code, const jrd_rel* relation, ...)
 {
 /**************************************
  *
