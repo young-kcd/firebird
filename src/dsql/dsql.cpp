@@ -4597,11 +4597,10 @@ static dsql_req* prepare(
 				   const TEXT* string,
 				   USHORT client_dialect, USHORT parser_version)
 {
-	ISC_STATUS_ARRAY local_status;
-
 	tsql* tdsql = DSQL_get_thread_data();
 
-	MOVE_CLEAR(local_status, sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
+	ISC_STATUS_ARRAY local_status;
+	MOVE_CLEAR(local_status, sizeof(local_status));
 
 	if (client_dialect > SQL_DIALECT_CURRENT)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,

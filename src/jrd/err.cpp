@@ -454,17 +454,16 @@ static void internal_post(ISC_STATUS status, va_list args)
  *  Used in ERR_post and ERR_post_nothrow
  *
  **************************************/
-	ISC_STATUS_ARRAY tmp_status, warning_status;
-	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
-	int warning_count = 0, warning_indx = 0;
 
 	ISC_STATUS* status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
 
 /* stuff the status into temp buffer */
+	ISC_STATUS_ARRAY tmp_status;
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
 	STUFF_STATUS_function(tmp_status, status, args);
 
 /* calculate length of the status */
+	int tmp_status_len = 0, warning_indx = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 
@@ -478,11 +477,13 @@ static void internal_post(ISC_STATUS status, va_list args)
 		return;
 	}
 
+	int status_len = 0;
 	PARSE_STATUS(status_vector, status_len, warning_indx);
 	if (status_len)
 		--status_len;
 
-/* check for duplicated error code */
+	/* check for duplicated error code */
+	int i;
 	for (i = 0; i < ISC_STATUS_LENGTH; i++) {
 		if (status_vector[i] == isc_arg_end && i == status_len)
 			break;				/* end of argument list */
@@ -502,9 +503,12 @@ static void internal_post(ISC_STATUS status, va_list args)
 	}
 
 /* if the status_vector has only warnings then adjust err_status_len */
-	if ((err_status_len = i) == 2 && warning_indx)
+	int err_status_len = i;
+	if (err_status_len == 2 && warning_indx)
 		err_status_len = 0;
 
+	ISC_STATUS_ARRAY warning_status;
+	int warning_count = 0;
 	if (warning_indx) {
 		/* copy current warning(s) to a temp buffer */
 		MOVE_CLEAR(warning_status, sizeof(warning_status));

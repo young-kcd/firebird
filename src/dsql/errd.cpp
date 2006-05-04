@@ -267,8 +267,6 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
  **/
 void ERRD_post(ISC_STATUS status, ...)
 {
-	int warning_indx = 0;
-
 	ISC_STATUS* status_vector = ((tsql*) DSQL_get_thread_data())->tsql_status;
 
 // stuff the status into temp buffer 
@@ -277,7 +275,7 @@ void ERRD_post(ISC_STATUS status, ...)
 	STUFF_STATUS(tmp_status, status);
 
 // calculate length of the status 
-	int tmp_status_len = 0;
+	int tmp_status_len = 0, warning_indx = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 

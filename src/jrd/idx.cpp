@@ -1241,11 +1241,6 @@ static IDX_E check_partner_index(
  *	record appears in the partner index.
  *
  **************************************/
-	index_desc partner_idx;
-	index_insertion insertion;
-	temporary_key key;
-	IndexRetrieval retrieval;
-
 	SET_TDBB(tdbb);
 
 	IDX_E result = idx_e_ok;
@@ -1257,6 +1252,7 @@ static IDX_E check_partner_index(
 
 /* get the description of the partner index */
 
+	index_desc partner_idx;
 	if (!BTR_description(tdbb, partner_relation, root, &partner_idx, index_id))
 		BUGCHECK(175);			/* msg 175 partner index description not found */
 
@@ -1284,6 +1280,7 @@ static IDX_E check_partner_index(
 	// unique index, because a comparison is done on both keys.
 	index_desc tmpIndex = *idx;
 	tmpIndex.idx_flags |= idx_unique;
+	temporary_key key;
 	result = BTR_key(tdbb, relation, record, &tmpIndex, &key, 0, fuzzy);
 	CCH_RELEASE(tdbb, &window);
 
@@ -1293,6 +1290,7 @@ static IDX_E check_partner_index(
 		/* fill out a retrieval block for the purpose of 
 		   generating a bitmap of duplicate records  */
 
+		IndexRetrieval retrieval;
 		MOVE_CLEAR(&retrieval, sizeof(IndexRetrieval));
 		//retrieval.blk_type = type_irb;
 		retrieval.irb_index = partner_idx.idx_id;
@@ -1317,6 +1315,7 @@ static IDX_E check_partner_index(
 		/* if there is a bitmap, it means duplicates were found */
 
 		if (bitmap) {
+			index_insertion insertion;
 			insertion.iib_descriptor = &partner_idx;
 			insertion.iib_relation = partner_relation;
 			insertion.iib_number.setValue(BOF_NUMBER);

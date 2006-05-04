@@ -65,9 +65,7 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
  *
  **************************************/
 
-	ISC_STATUS_ARRAY tmp_status, warning_status;
-	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
-	int warning_count = 0, warning_indx = 0;
+	ISC_STATUS_ARRAY tmp_status;
 	bool duplicate = false;
 
 	/* stuff the status into temp buffer */
@@ -76,7 +74,7 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 	ISC_STATUS *status = tmp_status;
 	*status++ = isc_arg_gds;
 	*status++ = ENCODE_ISC_MSG(errcode, facility);
-	tmp_status_len = 3;
+	int tmp_status_len = 3;
 
 	if (arg1) {
 		SVC_STATUS_ARG(status, arg1_t, arg1);
@@ -108,11 +106,13 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 		MOVE_FASTER(tmp_status, svc_status, sizeof(ISC_STATUS) * tmp_status_len);
 	}
 	else {
+		int status_len = 0, warning_indx = 0;
 		PARSE_STATUS(svc_status, status_len, warning_indx);
 		if (status_len)
 			--status_len;
 
 		/* check for duplicated error code */
+		int i;
 		for (i = 0; i < ISC_STATUS_LENGTH; i++) {
 			if (svc_status[i] == isc_arg_end && i == status_len)
 				break;			/* end of argument list */
@@ -124,7 +124,8 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 				svc_status[i - 1] != isc_arg_warning &&
 				i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 				(memcmp(&svc_status[i], &tmp_status[1],
-						sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0)) {
+						sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
+			{
 				/* duplicate found */
 				duplicate = true;
 				break;
@@ -132,9 +133,12 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 		}
 		if (!duplicate) {
 			/* if the status_vector has only warnings then adjust err_status_len */
-			if ((err_status_len = i) == 2 && warning_indx)
+			int err_status_len = i;
+			if (err_status_len == 2 && warning_indx)
 				err_status_len = 0;
 
+			ISC_STATUS_ARRAY warning_status;
+			int warning_count = 0;
 			if (warning_indx) {
 				/* copy current warning(s) to a temp buffer */
 				MOVE_CLEAR(warning_status, sizeof(warning_status));
