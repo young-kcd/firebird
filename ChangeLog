@@ -1,3 +1,11 @@
+2006-05-04 04:57  robocop
+
+	* firebird2/src/: utilities/common/cmd_util.cpp (1.11),
+	dsql/dsql.cpp (1.166), dsql/errd.cpp (1.38), jrd/err.cpp (1.62),
+	jrd/idx.cpp (1.104):
+	
+	Misc.
+
 2006-05-04 02:03  robocop
 
 	* firebird2/src/jrd/validation.cpp (1.18):
