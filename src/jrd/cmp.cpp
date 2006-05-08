@@ -1793,6 +1793,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 					rc_len = length;
 				}
 			}
+
 			if (desc->dsc_dtype == dtype_blob)
 			{
 				if (!rc_len && !(desc->dsc_flags & DSC_null))
@@ -1802,6 +1803,16 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				}
 				desc->dsc_dtype = dtype_varying;
 				desc->dsc_ttype() = desc->dsc_blob_ttype();
+				desc->dsc_scale = 0;
+				desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
+			}
+			else if (!DTYPE_IS_TEXT(desc->dsc_dtype))
+			{
+				if (!rc_len && !(desc->dsc_flags & DSC_null))
+					rc_len = DSC_string_length(desc);
+
+				desc->dsc_dtype = dtype_varying;
+				desc->dsc_ttype() = ttype_ascii;
 				desc->dsc_scale = 0;
 				desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
 			}
