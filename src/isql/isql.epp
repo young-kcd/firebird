@@ -24,7 +24,7 @@
  *
  */
 /*
-  $Id: isql.epp,v 1.32.2.18 2005-12-08 10:47:36 dimitr Exp $
+  $Id: isql.epp,v 1.32.2.19 2006-05-08 11:26:49 paulbeach Exp $
   Revision 1.5  2000/11/18 16:49:24  fsg
   Increased PRINT_BUFFER_LENGTH to 2048 to show larger plans
   Fixed Bug #122563 in extract.e get_procedure_args
@@ -3748,7 +3748,7 @@ static SSHORT get_statement(TEXT ** statement_ref,
  **************************************/
 	TEXT *p, *q;
 	TEXT *statement, *statement2;
-	SSHORT c, blank, done, start_quoted_string;
+	SSHORT c, blank, done;
 	USHORT count, bufsize, bufsize2;
 	SSHORT ret = CONT;
 	INDEV flist, oflist;
@@ -4018,14 +4018,9 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			/* check if this quote ends an open quote */
 			if (!incomment && !in_double_quoted_string)
 				if (in_single_quoted_string) {
-					if (count && (*(p - 1) != SINGLE_QUOTE) ||
-						(count == start_quoted_string + 1))
-						/* for strings such as '' which are empty strings, 
-						   we need to reset the in_single_quoted_string flag */
 						in_single_quoted_string = FALSE;
 				}
 				else {
-					start_quoted_string = count;
 					in_single_quoted_string = TRUE;
 				}
 			*p++ = c;
@@ -4037,14 +4032,9 @@ static SSHORT get_statement(TEXT ** statement_ref,
 			/* check if this double quote ends an open double quote */
 			if (!incomment && !in_single_quoted_string)
 				if (in_double_quoted_string) {
-					if (count && (*(p - 1) != '\"') ||
-						(count == start_quoted_string + 1))
-						/* for strings such as "" which are empty strings, 
-						   we need to reset the in_single_quoted_string flag */
 						in_double_quoted_string = FALSE;
 				}
 				else {
-					start_quoted_string = count;
 					in_double_quoted_string = TRUE;
 				}
 			*p++ = c;
@@ -4080,6 +4070,8 @@ static SSHORT get_statement(TEXT ** statement_ref,
 									(TEXT*) NULL_PTR, (TEXT*) NULL_PTR, (TEXT*) NULL_PTR);
 					STDERROUT(errbuf, 1);
 					ISQL_FREE(errbuf);
+					ret = FAIL;
+					return ret;
 				}
 				ret = SKIP;
 				ISQL_FREE(statement);
@@ -4093,7 +4085,6 @@ static SSHORT get_statement(TEXT ** statement_ref,
 #endif
 				*statement_ref = statement;
 				*statement_buffer = 512;
-				in_single_quoted_string = in_double_quoted_string = FALSE;
 				count = 0;
 				p = statement;
 				*p = '\0';
