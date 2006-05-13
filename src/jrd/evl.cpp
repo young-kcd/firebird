@@ -2882,10 +2882,8 @@ static dsc* concatenate(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	const USHORT ttype1 =
-		DTYPE_IS_TEXT(value1->dsc_dtype) ? value1->dsc_ttype() : ttype_ascii;
-	const USHORT ttype2 =
-		DTYPE_IS_TEXT(value2->dsc_dtype) ? value2->dsc_ttype() : ttype_ascii;
+	const USHORT ttype1 = INTL_TEXT_TYPE(*value1);
+	const USHORT ttype2 = INTL_TEXT_TYPE(*value2);
 
 	USHORT ttype;
 
@@ -4986,8 +4984,9 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	if (request->req_flags & req_null)
 		return value;
 
-	USHORT ttype = INTL_TTYPE(value);
+	USHORT ttype = INTL_TEXT_TYPE(*value);
 	TextType* tt = INTL_texttype_lookup(tdbb, ttype);
+	CharSet* cs = tt->getCharSet();
 
 	const UCHAR* charactersAddress;
 	MoveBuffer charactersBuffer;
@@ -5006,27 +5005,32 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		charactersAddress = tt->getCharSet()->getSpace();
 	}
 
-	UCHAR* valueAddress;
-	MoveBuffer valueBuffer;
-	USHORT valueLength =
-		MOV_make_string2(value, ttype, &valueAddress, valueBuffer);
-
-	dsc desc;
-	desc.dsc_dtype = dtype_text;
-	desc.dsc_sub_type = 0;
-	desc.dsc_scale = 0;
-	desc.dsc_length = valueLength;
-	desc.dsc_address = NULL;
-	INTL_ASSIGN_TTYPE(&desc, ttype);
-	EVL_make_value(tdbb, &desc, impure);
-
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> charactersCanonical;
 	charactersCanonical.getBuffer(charactersLength / tt->getCharSet()->minBytesPerChar() * tt->getCanonicalWidth());
 	const SLONG charactersCanonicalLen = tt->canonical(charactersLength, charactersAddress,
 		charactersCanonical.getCount(), charactersCanonical.begin()) * tt->getCanonicalWidth();
 
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> blobBuffer;
+	MoveBuffer valueBuffer;
+	UCHAR* valueAddress;
+	ULONG valueLength;
+
+	if (value->dsc_dtype == dtype_blob)
+	{
+		// Source string is a blob, things get interesting.
+		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
+            reinterpret_cast<bid*>(value->dsc_address));
+
+		// It's very difficult (and probably not very efficient) to trim a blob in chunks.
+		// So go simple way and always read entire blob in memory.
+		valueAddress = blobBuffer.getBuffer(blob->blb_length);
+		valueLength = BLB_get_data(tdbb, blob, valueAddress, blob->blb_length, true);
+	}
+	else
+		valueLength = MOV_make_string2(value, ttype, &valueAddress, valueBuffer);
+
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> valueCanonical;
-	valueCanonical.getBuffer(valueLength / tt->getCharSet()->minBytesPerChar() * tt->getCanonicalWidth());
+	valueCanonical.getBuffer(valueLength / cs->minBytesPerChar() * tt->getCanonicalWidth());
 	const SLONG valueCanonicalLen = tt->canonical(valueLength, valueAddress,
 		valueCanonical.getCount(), valueCanonical.begin()) * tt->getCanonicalWidth();
 
@@ -5059,10 +5063,40 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		}
 	}
 
-	impure->vlu_desc.dsc_length = tt->getCharSet()->substring(tdbb, valueLength, valueAddress,
-		impure->vlu_desc.dsc_length, impure->vlu_desc.dsc_address,
-		offsetLead / tt->getCanonicalWidth(),
-		(offsetTrail - offsetLead) / tt->getCanonicalWidth());
+	if (value->dsc_dtype == dtype_blob)
+	{
+		// We have valueCanonical already allocated.
+		// Use it to get the substring that will be written to the new blob.
+		ULONG len = cs->substring(tdbb, valueLength, valueAddress,
+			valueCanonical.getCapacity(), valueCanonical.begin(),
+			offsetLead / tt->getCanonicalWidth(),
+			(offsetTrail - offsetLead) / tt->getCanonicalWidth());
+
+		EVL_make_value(tdbb, value, impure);
+
+		blb* newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+			&impure->vlu_misc.vlu_bid);
+
+		BLB_put_segment(tdbb, newBlob, valueCanonical.begin(), len);
+
+		BLB_close(tdbb, newBlob);
+	}
+	else
+	{
+		dsc desc;
+		desc.dsc_dtype = dtype_text;
+		desc.dsc_sub_type = 0;
+		desc.dsc_scale = 0;
+		desc.dsc_length = valueLength;
+		desc.dsc_address = NULL;
+		INTL_ASSIGN_TTYPE(&desc, ttype);
+		EVL_make_value(tdbb, &desc, impure);
+
+		impure->vlu_desc.dsc_length = cs->substring(tdbb, valueLength, valueAddress,
+			impure->vlu_desc.dsc_length, impure->vlu_desc.dsc_address,
+			offsetLead / tt->getCanonicalWidth(),
+			(offsetTrail - offsetLead) / tt->getCanonicalWidth());
+	}
 
 	return &impure->vlu_desc;
 }

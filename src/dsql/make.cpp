@@ -536,19 +536,24 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		else
 			desc2.dsc_flags = 0;
 
-		if (desc1.dsc_dtype <= dtype_any_text) {
+		if (desc1.dsc_dtype == dtype_blob)
+			*desc = desc1;
+		else if (desc1.dsc_dtype <= dtype_any_text)
+		{
 			*desc = desc1;
 			desc->dsc_dtype = dtype_varying;
 			desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
 			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-			return;
+		}
+		else
+		{
+			desc->dsc_dtype = dtype_varying;
+			desc->dsc_scale = 0;
+			desc->dsc_ttype() = ttype_ascii;
+			desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
+			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		}
 
-		desc->dsc_dtype = dtype_varying;
-		desc->dsc_scale = 0;
-		desc->dsc_ttype() = ttype_ascii;
-		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
-		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		return;
 
 	case nod_cast:
