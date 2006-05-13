@@ -824,7 +824,6 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			}
 		}
 
-
 		// attempt to form joins in decreasing order of desirability
 		gen_join(tdbb, opt, streams, rivers_stack, &sort, &project,
 				 rse->rse_plan);
