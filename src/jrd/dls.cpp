@@ -188,7 +188,7 @@ mutexed_dir_list* DLS_get_access(void)
 	if (!is_initialized) {
 		is_initialized = true;
 		Firebird::TempDirectoryList dir_list;
-		for (int i = 0; i < dir_list.Count(); i++) {
+		for (int i = 0; i < dir_list.getCount(); i++) {
 			DLS_add_dir(dir_list[i].second, dir_list[i].first.c_str());
 		}
 	}

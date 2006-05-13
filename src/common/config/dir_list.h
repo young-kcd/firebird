@@ -131,7 +131,7 @@ public:
 	{
 		return items[i];
 	}
-	int Count() const
+	int getCount() const
 	{
 		return items.getCount();
 	}
