@@ -24,6 +24,8 @@
 #ifndef JRD_INTL_H
 #define JRD_INTL_H
 
+#include "../jrd/dsc.h"
+#include "../jrd/ibase.h"
 #include "../intl/charsets.h"
 
 #define ASCII_SPACE     32		/* ASCII code for space */
@@ -92,7 +94,20 @@
 #define IS_INTL_DATA(d)		((d)->dsc_dtype <= dtype_any_text &&    \
 				 (((USHORT)((d)->dsc_ttype())) > ttype_last_internal))
 
-#define INTL_TEXT_TYPE(desc)    ((DTYPE_IS_TEXT((desc).dsc_dtype)) ? INTL_TTYPE (&(desc)) : ttype_ascii)
+inline USHORT INTL_TEXT_TYPE(const dsc& desc)
+{
+	if (DTYPE_IS_TEXT(desc.dsc_dtype))
+		return INTL_TTYPE(&desc);
+	else if (desc.dsc_dtype == dtype_blob || desc.dsc_dtype == dtype_quad)
+	{
+		if (desc.dsc_sub_type == isc_blob_text)
+			return desc.dsc_blob_ttype();
+		else
+			return ttype_binary;
+	}
+	else
+		return ttype_ascii;
+}
 
 #define INTL_DYNAMIC_CHARSET(desc)	(INTL_GET_CHARSET(desc) == CS_dynamic)
 
