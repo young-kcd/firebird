@@ -3645,7 +3645,7 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 			if (len)
 			{
 				len = (textType->*tt_str_to_case)(len, buffer.begin(), len, buffer.begin());
-				BLB_put_segment(tdbb, newBlob, buffer.begin(), len);
+				BLB_put_data(tdbb, newBlob, buffer.begin(), len);
 			}
 		}
 
@@ -5077,7 +5077,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		blb* newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
 			&impure->vlu_misc.vlu_bid);
 
-		BLB_put_segment(tdbb, newBlob, valueCanonical.begin(), len);
+		BLB_put_data(tdbb, newBlob, valueCanonical.begin(), len);
 
 		BLB_close(tdbb, newBlob);
 	}

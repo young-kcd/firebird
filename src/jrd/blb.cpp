@@ -1229,6 +1229,35 @@ blb* BLB_open2(thread_db* tdbb,
 }
 
 
+void BLB_put_data(thread_db* tdbb, blb* blob, const UCHAR* buffer, SLONG length)
+{
+/**************************************
+ *
+ *      B L B _ p u t _ d a t a
+ *
+ **************************************
+ *
+ * Functional description
+ *      Write data to a blob.
+ *      Don't worry about segment boundaries.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	const BLOB_PTR* p = buffer;
+
+	while (length > 0)
+	{
+		// ASF: the comment below was copied from BLB_get_data
+		// I have no idea why this limit is 32768 instead of 32767
+		// 1994-August-12 David Schnepper
+		USHORT n = (USHORT) MIN(length, (SLONG) 32768);
+		BLB_put_segment(tdbb, blob, p, n);
+		p += n;
+		length -= n;
+	}
+}
+
+
 void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segment_length)
 {
 /**************************************
