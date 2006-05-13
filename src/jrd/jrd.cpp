@@ -4410,7 +4410,11 @@ void JRD_restore_context(void)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	bool cleaned_up =
+#ifdef MULTI_THREAD
 		INUSE_cleanup(&tdbb->tdbb_mutexes, (FPTR_VOID_PTR) THD_mutex_unlock);
+#else
+		false;
+#endif
 
 	ThreadData::restoreSpecific();
 
