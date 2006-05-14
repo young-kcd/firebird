@@ -1820,23 +1820,32 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		}
 
 	case nod_trim:
-		CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_value], desc);
-
-		if (desc->dsc_dtype != dtype_blob)
 		{
-			USHORT length = DSC_string_length(desc);
+			CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_value], desc);
 
-			if (!DTYPE_IS_TEXT(desc->dsc_dtype))
+			if (node->nod_arg[e_trim_characters])
 			{
-				desc->dsc_ttype() = ttype_ascii;
-				desc->dsc_scale = 0;
+				DSC desc1;
+				CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_characters], &desc1);
+				desc->dsc_flags |= desc1.dsc_flags & DSC_null;
 			}
 
-			desc->dsc_dtype = dtype_varying;
-			desc->dsc_length = length + sizeof(USHORT);
-		}
+			if (desc->dsc_dtype != dtype_blob)
+			{
+				USHORT length = DSC_string_length(desc);
 
-		return;
+				if (!DTYPE_IS_TEXT(desc->dsc_dtype))
+				{
+					desc->dsc_ttype() = ttype_ascii;
+					desc->dsc_scale = 0;
+				}
+
+				desc->dsc_dtype = dtype_varying;
+				desc->dsc_length = length + sizeof(USHORT);
+			}
+
+			return;
+		}
 
 	case nod_function:
 		{
