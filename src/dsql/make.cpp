@@ -537,7 +537,10 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 			desc2.dsc_flags = 0;
 
 		if (desc1.dsc_dtype == dtype_blob)
+		{
 			*desc = desc1;
+			desc->dsc_flags |= (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+		}
 		else if (desc1.dsc_dtype <= dtype_any_text)
 		{
 			*desc = desc1;
