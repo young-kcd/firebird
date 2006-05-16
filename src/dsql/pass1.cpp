@@ -7326,18 +7326,78 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
+	// NOTE!!!	Macro SQL_COMPLIANT_UPDATE shows what code should be
+	//			enabled and what one should be removed when we decide
+	//			to make our UPDATE statements SQL-compliant. Currently,
+	//			it's targeted for Firebird 3.0.
+
+	// Separate old and new context references
+
+	Firebird::Array<dsql_nod*> org_values, new_values;
+
+	dsql_nod* list = input->nod_arg[e_upd_statement];
+	fb_assert(list->nod_type == nod_list);
+
+	for (int i = 0; i < list->nod_count; ++i)
+	{
+		const dsql_nod* const assign = list->nod_arg[i];
+		fb_assert(assign->nod_type == nod_assign);
+		org_values.add(assign->nod_arg[0]);
+		new_values.add(assign->nod_arg[1]);
+	}
+
+	dsql_nod** ptr;
+
 	dsql_nod* cursor = input->nod_arg[e_upd_cursor];
 	dsql_nod* relation = input->nod_arg[e_upd_relation];
+
 	if (cursor && proc_flag) {
 		dsql_nod* anode = MAKE_node(nod_modify_current, e_mdc_count);
-		anode->nod_arg[e_mdc_context] =
-			(dsql_nod*) pass1_cursor_context(request, cursor, relation);
-		anode->nod_arg[e_mdc_update] = PASS1_node(request, relation, false);
-		anode->nod_arg[e_mdc_statement] =
-			PASS1_statement(request, input->nod_arg[e_upd_statement], false);
-		// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
-		field_appears_once(anode->nod_arg[e_mdc_statement], input->nod_arg[e_upd_statement], false);
+		dsql_ctx* context = pass1_cursor_context(request, cursor, relation);
+		anode->nod_arg[e_mdc_context] = (dsql_nod*) context;
+#ifdef SQL_COMPLIANT_UPDATE
+		// Process old context values
+		request->req_context->push(context);
+		request->req_scope_level++;
+		ptr = org_values.begin();
+		for (; ptr < org_values.end(); ++ptr)
+		{
+			*ptr = PASS1_node(request, *ptr, false);
+		}
+		request->req_scope_level--;
 		request->req_context->pop();
+#endif
+		// Process relation
+		anode->nod_arg[e_mdc_update] = PASS1_node(request, relation, false);
+#ifndef SQL_COMPLIANT_UPDATE
+		// Process old context values
+		ptr = org_values.begin();
+		for (; ptr < org_values.end(); ++ptr)
+		{
+			*ptr = PASS1_node(request, *ptr, false);
+		}
+#endif
+		// Process new context values
+		ptr = new_values.begin();
+		for (; ptr < new_values.end(); ++ptr)
+		{
+			*ptr = PASS1_node(request, *ptr, false);
+		}
+		request->req_context->pop();
+		// Recreate list of assignments
+		anode->nod_arg[e_mdc_statement] = list =
+			MAKE_node(nod_list, list->nod_count);
+		for (int i = 0; i < list->nod_count; ++i)
+		{
+			dsql_nod* assign = MAKE_node(nod_assign, 2);
+			assign->nod_arg[0] = org_values[i];
+			assign->nod_arg[1] = new_values[i];
+			list->nod_arg[i] = assign;
+		}
+		// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
+		field_appears_once(anode->nod_arg[e_mdc_statement],
+						   input->nod_arg[e_upd_statement],
+						   false);
 		return anode;
 	}
 
@@ -7345,24 +7405,35 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 
 	dsql_nod* node = MAKE_node(nod_modify, e_mod_count);
 	node->nod_arg[e_mod_update] = PASS1_node(request, relation, false);
-	node->nod_arg[e_mod_statement] =
-		PASS1_statement(request, input->nod_arg[e_upd_statement], false);
-	// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
-	field_appears_once(node->nod_arg[e_mod_statement], input->nod_arg[e_upd_statement], false);
 
-	set_parameters_name(node->nod_arg[e_mod_statement],
-						node->nod_arg[e_mod_update]);
+#ifndef SQL_COMPLIANT_UPDATE
+	// Process old context values
+	ptr = org_values.begin();
+	for (; ptr < org_values.end(); ++ptr)
+	{
+		*ptr = PASS1_node(request, *ptr, false);
+	}
+#endif
+	// Process new context values
+	ptr = new_values.begin();
+	for (; ptr < new_values.end(); ++ptr)
+	{
+		*ptr = PASS1_node(request, *ptr, false);
+	}
+
+	request->req_context->pop();
 
 	// Generate record selection expression
 
 	dsql_nod* rse;
-	if (cursor)
+	if (cursor) {
 		rse = pass1_cursor_reference(request, cursor, relation);
+	}
 	else {
 		rse = MAKE_node(nod_rse, e_rse_count);
 		dsql_nod* temp = MAKE_node(nod_list, 1);
 		rse->nod_arg[e_rse_streams] = temp;
-		temp->nod_arg[0] = node->nod_arg[e_mod_update];
+		temp->nod_arg[0] = PASS1_node(request, relation, false);
 
 		if ( (temp = input->nod_arg[e_upd_boolean]) ) {
 			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp, false);
@@ -7387,7 +7458,35 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 	node->nod_arg[e_mod_source] = rse->nod_arg[e_rse_streams]->nod_arg[0];
 	node->nod_arg[e_mod_rse] = rse;
 
+#ifdef SQL_COMPLIANT_UPDATE
+	// Process old context values
+	ptr = org_values.begin();
+	for (; ptr < org_values.end(); ++ptr)
+	{
+		*ptr = PASS1_node(request, *ptr, false);
+	}
+#endif
 	request->req_context->pop();
+
+	// Recreate list of assignments
+	node->nod_arg[e_mod_statement] = list =
+		MAKE_node(nod_list, list->nod_count);
+	for (int i = 0; i < list->nod_count; ++i)
+	{
+		dsql_nod* assign = MAKE_node(nod_assign, 2);
+		assign->nod_arg[0] = org_values[i];
+		assign->nod_arg[1] = new_values[i];
+		list->nod_arg[i] = assign;
+	}
+
+	// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
+	field_appears_once(node->nod_arg[e_mod_statement],
+					   input->nod_arg[e_upd_statement],
+					   false);
+
+	set_parameters_name(node->nod_arg[e_mod_statement],
+						node->nod_arg[e_mod_update]);
+
 	return node;
 }
 
