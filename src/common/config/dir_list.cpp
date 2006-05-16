@@ -262,7 +262,7 @@ void TempDirectoryList::initTemp()
 
 	// Iterate through directories to parse them
 	// and fill the "items" vector
-	for (size_t i = 0; i < ((inherited*)this)->getCount(); i++) {
+	for (size_t i = 0; i < inherited::getCount(); i++) {
 		PathName dir = (*(inherited*)this)[i];
 		size_t pos = dir.rfind(" ");
 		long size = atol(dir.substr(pos + 1, PathName::npos).c_str());
