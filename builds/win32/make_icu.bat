@@ -57,7 +57,7 @@ if errorlevel 1 call :ERROR Release build failed
 if "%VS_VER%"=="msvc6" (
 	@msdev %ROOT_PATH%\extern\icu\source\allinone\allinone.dsw /MAKE "all - Win32 Debug" %CLEAN% /OUT make_icu.log
 ) else (
-	@devenv %ROOT_PATH%\extern\icu\source\allinone\allinone.sln %CLEAN% release /OUT make_icu.log
+	@devenv %ROOT_PATH%\extern\icu\source\allinone\allinone.sln %CLEAN% debug /OUT make_icu.log
 )
 if errorlevel 1 call :ERROR Debug build failed
 @goto :EOF
