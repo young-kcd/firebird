@@ -7359,8 +7359,7 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 		// Process old context values
 		request->req_context->push(context);
 		request->req_scope_level++;
-		ptr = org_values.begin();
-		for (; ptr < org_values.end(); ++ptr)
+		for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
 		{
 			*ptr = PASS1_node(request, *ptr, false);
 		}
@@ -7371,15 +7370,13 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 		anode->nod_arg[e_mdc_update] = PASS1_node(request, relation, false);
 #ifndef SQL_COMPLIANT_UPDATE
 		// Process old context values
-		ptr = org_values.begin();
-		for (; ptr < org_values.end(); ++ptr)
+		for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
 		{
 			*ptr = PASS1_node(request, *ptr, false);
 		}
 #endif
 		// Process new context values
-		ptr = new_values.begin();
-		for (; ptr < new_values.end(); ++ptr)
+		for (ptr = new_values.begin(); ptr < new_values.end(); ++ptr)
 		{
 			*ptr = PASS1_node(request, *ptr, false);
 		}
@@ -7408,15 +7405,13 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 
 #ifndef SQL_COMPLIANT_UPDATE
 	// Process old context values
-	ptr = org_values.begin();
-	for (; ptr < org_values.end(); ++ptr)
+	for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
 	{
 		*ptr = PASS1_node(request, *ptr, false);
 	}
 #endif
 	// Process new context values
-	ptr = new_values.begin();
-	for (; ptr < new_values.end(); ++ptr)
+	for (ptr = new_values.begin(); ptr < new_values.end(); ++ptr)
 	{
 		*ptr = PASS1_node(request, *ptr, false);
 	}
@@ -7460,8 +7455,7 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 
 #ifdef SQL_COMPLIANT_UPDATE
 	// Process old context values
-	ptr = org_values.begin();
-	for (; ptr < org_values.end(); ++ptr)
+	for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
 	{
 		*ptr = PASS1_node(request, *ptr, false);
 	}
