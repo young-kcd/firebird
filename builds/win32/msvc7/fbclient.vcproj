@@ -177,9 +177,6 @@
 				RelativePath="..\..\..\src\jrd\cvt.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dls.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\dsc.cpp">
 			</File>
 			<File

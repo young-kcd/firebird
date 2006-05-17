@@ -153,9 +153,6 @@
 			Name="JRD files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\dls.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File
