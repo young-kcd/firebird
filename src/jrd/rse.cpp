@@ -2498,7 +2498,9 @@ static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, StreamStack* strea
 			record = VIO_record(tdbb, rpb, format, tdbb->getDefaultPool());
 		}
 
-        record->rec_fmt_bk = record->rec_format;
+		if (record->rec_format) {
+			record->rec_fmt_bk = record->rec_format;
+		}
 		record->rec_format = NULL;
 	}
 }
@@ -2564,9 +2566,10 @@ static void map_sort_data(jrd_req* request, SortMap* map, UCHAR * data)
 		}
 		Record* record = rpb->rpb_record;
 
-        if (record && !flag && !record->rec_format && record->rec_fmt_bk) {
-            record->rec_format = record->rec_fmt_bk; // restore the format
-        }
+		if (record && !flag && !record->rec_format) {
+			fb_assert(record->rec_fmt_bk);
+			record->rec_format = record->rec_fmt_bk; // restore the format
+		}
 
 		EVL_field(0, record, id, &to);
 
