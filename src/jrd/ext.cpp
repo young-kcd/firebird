@@ -54,7 +54,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
-#include "../jrd/dls_proto.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"

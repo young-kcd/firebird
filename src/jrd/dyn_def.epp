@@ -63,7 +63,6 @@
 #include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
-#include "../jrd/dls_proto.h"
 #include "../jrd/dyn_proto.h"
 #include "../jrd/dyn_df_proto.h"
 #include "../jrd/dyn_ut_proto.h"

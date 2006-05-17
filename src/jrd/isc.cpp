@@ -54,23 +54,6 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 
-/* Temporary file management specific stuff */
-
-#include "../jrd/fil.h"
-#include "../jrd/dls_proto.h"
-
-// I can't find where these are used.
-//static BOOLEAN dls_init = FALSE;
-//#if defined(SUPERSERVER) || !defined(SUPERCLIENT)
-//static BOOLEAN dls_flag = FALSE;
-//#endif
-//static BOOLEAN fdls_init = FALSE;
-//#ifdef SUPERSERVER
-//static BOOLEAN fdls_flag = FALSE;
-//#endif
-
-/* End of temporary file management specific stuff */
-
 #ifdef SOLARIS
 #include <sys/utsname.h>
 #endif
