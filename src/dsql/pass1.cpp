@@ -7467,9 +7467,15 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 		MAKE_node(nod_list, list->nod_count);
 	for (int i = 0; i < list->nod_count; ++i)
 	{
+		dsql_nod* const sub1 = org_values[i];
+		dsql_nod* const sub2 = new_values[i];
+		if (!set_parameter_type(request, sub1, sub2, false))
+		{
+			set_parameter_type(request, sub2, sub1, false);
+		}
 		dsql_nod* assign = MAKE_node(nod_assign, 2);
-		assign->nod_arg[0] = org_values[i];
-		assign->nod_arg[1] = new_values[i];
+		assign->nod_arg[0] = sub1;
+		assign->nod_arg[1] = sub2;
 		list->nod_arg[i] = assign;
 	}
 
