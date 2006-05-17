@@ -256,6 +256,25 @@ USHORT BTR_all(thread_db*		tdbb,
 }
 
 
+void BTR_complement_key(temporary_key* key)
+{
+/**************************************
+ *
+ *	B T R _ c o m p l e m e n t _ k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Negate a key for descending index.
+ *
+ **************************************/
+	UCHAR* p = key->key_data;
+	for (const UCHAR* const end = p + key->key_length; p < end; p++) {
+		*p ^= -1;
+	}
+}
+
+
 void BTR_create(thread_db* tdbb,
 				jrd_rel* relation,
 				index_desc* idx,
@@ -2019,6 +2038,54 @@ void BTR_selectivity(thread_db* tdbb, const jrd_rel* relation, USHORT id,
 }
 
 
+bool BTR_types_comparable(const dsc& target, const dsc& source)
+{
+/**************************************
+ *
+ *	B T R _ t y p e s _ c o m p a r a b l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return whether two datatypes are comparable in terms of the CVT rules.
+ *  The purpose is to ensure that compress() converts datatypes in the same
+ *  direction as CVT2_compare(), thus causing index scans to always deliver
+ *  the same results as the generic boolean evaluation.
+ *
+ **************************************/
+	if (DTYPE_IS_TEXT(target.dsc_dtype))
+	{
+		// should we also check for the INTL stuff here?
+		return (DTYPE_IS_TEXT(source.dsc_dtype));
+	}
+	else if (DTYPE_IS_NUMERIC(target.dsc_dtype))
+	{
+		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
+			DTYPE_IS_NUMERIC(source.dsc_dtype));
+	}
+	else if (target.dsc_dtype == dtype_sql_date)
+	{
+		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
+			source.dsc_dtype == dtype_sql_date);
+	}
+	else if (target.dsc_dtype == dtype_sql_time)
+	{
+		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
+			source.dsc_dtype == dtype_sql_time);
+	}
+	else if (target.dsc_dtype == dtype_timestamp)
+	{
+		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
+			DTYPE_IS_DATE(source.dsc_dtype));
+	}
+	else
+	{
+		fb_assert(DTYPE_IS_BLOB(target.dsc_dtype));
+		return false;
+	}
+}
+
+
 static SLONG add_node(thread_db* tdbb,
 					  WIN * window,
 					  index_insertion* insertion,
@@ -2131,25 +2198,6 @@ static SLONG add_node(thread_db* tdbb,
 		*sibling_page = sibling_page2;
 	}
 	return split;
-}
-
-
-void BTR_complement_key(temporary_key* key)
-{
-/**************************************
- *
- *	B T R _ c o m p l e m e n t _ k e y
- *
- **************************************
- *
- * Functional description
- *	Negate a key for descending index.
- *
- **************************************/
-	UCHAR* p = key->key_data;
-	for (const UCHAR* const end = p + key->key_length; p < end; p++) {
-		*p ^= -1;
-	}
 }
 
 

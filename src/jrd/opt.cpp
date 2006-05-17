@@ -6803,6 +6803,17 @@ static int match_index(thread_db* tdbb,
 		}
 	}
 
+/* check datatypes to ensure that the index scan is guaranteed
+   to deliver correct results */
+
+	if (value) {
+		dsc desc1, desc2;
+		CMP_get_desc(tdbb, opt->opt_csb, match, &desc1);
+		CMP_get_desc(tdbb, opt->opt_csb, value, &desc2);
+		if (!BTR_types_comparable(desc1, desc2))
+			return 0;
+	}
+
 /* match the field to an index, if possible, and save the value to be matched
    as either the lower or upper bound for retrieval, or both */
 

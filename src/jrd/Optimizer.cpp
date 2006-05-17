@@ -1182,10 +1182,14 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 		tail += optimizer->opt_base_parent_conjuncts;
 	}
 	for (; tail < opt_end; tail++) {
+		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
+			continue;
+		}
+		jrd_nod* const node = tail->opt_conjunct_node;
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			tail->opt_conjunct_node && (tail->opt_conjunct_node->nod_type != nod_or)) 
+			node && (node->nod_type != nod_or)) 
 		{
-			matchOnIndexes(&indexScratches, tail->opt_conjunct_node, 1);
+			matchOnIndexes(&indexScratches, node, 1);
 		}
 	}
 	getInversionCandidates(&inversions, &indexScratches, 1);
@@ -1201,12 +1205,16 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 		tail += optimizer->opt_base_parent_conjuncts;
 	}
 	for (; tail < opt_end; tail++) {
+		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
+			continue;
+		}
+		jrd_nod* const node = tail->opt_conjunct_node;
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			tail->opt_conjunct_node && (tail->opt_conjunct_node->nod_type == nod_or)) 
+			node && (node->nod_type == nod_or)) 
 		{
-			invCandidate = matchOnIndexes(&indexScratches, tail->opt_conjunct_node, 1);
+			invCandidate = matchOnIndexes(&indexScratches, node, 1);
 			if (invCandidate) {
-				invCandidate->boolean = tail->opt_conjunct_node;
+				invCandidate->boolean = node;
 				inversions.add(invCandidate);
 			}
 		}
@@ -2253,6 +2261,17 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 			}
 			forward = false;
 		}
+	}
+
+	// check datatypes to ensure that the index scan is guaranteed
+	// to deliver correct results
+
+	if (value) {
+		dsc desc1, desc2;
+		CMP_get_desc(tdbb, optimizer->opt_csb, match, &desc1);
+		CMP_get_desc(tdbb, optimizer->opt_csb, value, &desc2);
+		if (!BTR_types_comparable(desc1, desc2))
+			return false;
 	}
 
 	// match the field to an index, if possible, and save the value to be matched 

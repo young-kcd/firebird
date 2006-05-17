@@ -33,6 +33,7 @@ struct btree_exp;
 struct exp_index_buf;
 
 USHORT	BTR_all(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::IndexDescAlloc**);
+void	BTR_complement_key(Jrd::temporary_key*);
 void	BTR_create(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, USHORT, Jrd::sort_context*, Jrd::SelectivityList&);
 void	BTR_delete_index(Jrd::thread_db*, Jrd::win*, USHORT);
 //USHORT	BTR_delete_node(Jrd::thread_db*, Ods::btree_page*, USHORT);
@@ -55,7 +56,7 @@ bool	BTR_next_index(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::jrd_tra*, Jrd::index_de
 void	BTR_remove(Jrd::thread_db*, Jrd::win*, Jrd::index_insertion*);
 void	BTR_reserve_slot(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::jrd_tra*, Jrd::index_desc*);
 void	BTR_selectivity(Jrd::thread_db*, const Jrd::jrd_rel*, USHORT, Jrd::SelectivityList&);
-void	BTR_complement_key(Jrd::temporary_key*);
+bool	BTR_types_comparable(const dsc& target, const dsc& source);
 
 #endif // JRD_BTR_PROTO_H
 
