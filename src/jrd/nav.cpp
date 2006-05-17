@@ -68,7 +68,7 @@ static bool get_record(RecordSource*, IRSB_NAV, record_param*, temporary_key*, b
 static void init_fetch(IRSB_NAV);
 static UCHAR* nav_open(thread_db*, RecordSource*, IRSB_NAV, WIN *, RSE_GET_MODE, btree_exp**);
 static void set_position(IRSB_NAV, record_param*, WIN*, const UCHAR*, btree_exp*, const UCHAR*, USHORT);
-static void setup_bitmaps(RecordSource*, IRSB_NAV);
+static bool setup_bitmaps(RecordSource*, IRSB_NAV);
 
 
 #ifdef SCROLLABLE_CURSORS
@@ -209,6 +209,8 @@ bool NAV_get_record(thread_db* tdbb,
 	btree_exp* expanded_next = NULL;
 	UCHAR* nextPointer = get_position(tdbb, rsb, impure, &window, 
 		direction, &expanded_next);
+	if (!nextPointer)
+		return false;
 	temporary_key key;
 	MOVE_FAST(impure->irsb_nav_data, key.key_data, impure->irsb_nav_length);
 	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
@@ -436,6 +438,8 @@ bool NAV_get_record(thread_db* tdbb,
 		}
 
 		nextPointer = get_position(tdbb, rsb, impure, &window, direction, &expanded_next);
+		if (!nextPointer)
+			return false;
 	}
 
 	CCH_RELEASE(tdbb, &window);
@@ -990,7 +994,9 @@ static UCHAR* nav_open(
 	SET_TDBB(tdbb);
 
 	// initialize for a retrieval
-	setup_bitmaps(rsb, impure);
+	if (!setup_bitmaps(rsb, impure))
+		return NULL;
+
 	impure->irsb_nav_page = 0;
 	impure->irsb_nav_length = 0;
 
@@ -1172,7 +1178,7 @@ static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
 }
 
 
-static void setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
+static bool setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
 {
 /**************************************
  *
@@ -1202,6 +1208,9 @@ static void setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
 		// done in EVL_bitmap ().
 		impure->irsb_nav_bitmap = EVL_bitmap(tdbb,
 				reinterpret_cast<jrd_nod*>(rsb->rsb_arg[RSB_NAV_inversion]));
+		return (*impure->irsb_nav_bitmap != NULL);
 	}
+
+	return true;
 }
 
