@@ -265,10 +265,7 @@ void TempDirectoryList::initTemp()
 	for (size_t i = 0; i < getCount(); i++) {
 		PathName dir = (*this)[i];
 		size_t pos = dir.rfind(" ");
-		remove(i);
-		insert(i, ParsedPath(dir.substr(0, pos)));
-//		the assignment below doesn't work, waiting for comments by Alex
-//		(*this)[i] = ParsedPath(dir.substr(0, pos));
+		(*this)[i] = ParsedPath(dir.substr(0, pos));
 	}
 }
 
