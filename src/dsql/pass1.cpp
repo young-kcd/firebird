@@ -7465,10 +7465,10 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 	// Recreate list of assignments
 	node->nod_arg[e_mod_statement] = list =
 		MAKE_node(nod_list, list->nod_count);
-	for (int i = 0; i < list->nod_count; ++i)
+	for (int j = 0; j < list->nod_count; ++j)
 	{
-		dsql_nod* const sub1 = org_values[i];
-		dsql_nod* const sub2 = new_values[i];
+		dsql_nod* const sub1 = org_values[j];
+		dsql_nod* const sub2 = new_values[j];
 		if (!set_parameter_type(request, sub1, sub2, false))
 		{
 			set_parameter_type(request, sub2, sub1, false);
@@ -7476,7 +7476,7 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 		dsql_nod* assign = MAKE_node(nod_assign, 2);
 		assign->nod_arg[0] = sub1;
 		assign->nod_arg[1] = sub2;
-		list->nod_arg[i] = assign;
+		list->nod_arg[j] = assign;
 	}
 
 	// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
