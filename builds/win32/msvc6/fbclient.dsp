@@ -296,10 +296,6 @@ SOURCE=..\..\..\src\jrd\db_alias.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\dls_proto.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\dsc.h
 # End Source File
 # Begin Source File
