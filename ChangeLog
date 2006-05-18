@@ -1,3 +1,218 @@
+2006-05-18 10:40  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.216):
+	
+	Just an extra protection from double pool reallocation.
+
+2006-05-18 10:36  dimitr
+
+	* firebird2/src/: jrd/dls.cpp (1.27), common/config/dir_list.cpp
+	(1.29), common/config/dir_list.h (1.17):
+	
+	Temporary commit with the fixed (hopefully) TempDirList class.
+
+2006-05-18 08:31  robocop
+
+	* firebird2/builds/win32/msvc6/fbclient.dsp (1.53):
+	
+	Misc.
+
+2006-05-18 08:26  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.265):
+	
+	Cope with old compilers.
+
+2006-05-18 08:25  robocop
+
+	* firebird2/builds/win32/msvc6/: fb_lock_print.dsp (1.20),
+	fbclient.dsp (1.52), fbclient_static.dsp (1.19), gpre_boot.dsp
+	(1.24):
+	
+	Copy Dmitry's changes to MSVC6.
+
+2006-05-18 08:24  robocop
+
+	* firebird2/src/jrd/: exe.cpp (1.179), nav.cpp (1.64):
+	
+	Delete obsolete comments. Crack was a feature of PC_ENGINE.
+
+2006-05-18 08:23  robocop
+
+	* firebird2/src/common/config/dir_list.cpp (1.28):
+	
+	Revert to old cumbersome notation so MSVC6 can call the inherited
+	function.
+
+2006-05-18 04:32  asfernandes
+
+	* firebird2/builds/win32/msvc7/fbclient.vcproj (1.41):
+	
+	Misc
+
+2006-05-17 21:15  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.57), btr.cpp (1.168),
+	btr_proto.h (1.37), opt.cpp (1.267):
+	
+	1) Fixed wrong ALL results in the ODS11 optimizer.  2) Fixed SF
+	#527681 -- Strange/Inconsistent query results
+
+2006-05-17 18:25  asfernandes
+
+	* firebird2/src/jrd/cvt2.cpp (1.54):
+	
+	Remove code duplication
+
+2006-05-17 15:55  dimitr
+
+	* firebird2/src/jrd/: dyn_def.epp (1.106), ext.cpp (1.65), flu.cpp
+	(1.53), isc.cpp (1.60):
+	
+	Remove DLS where it's not used.
+
+2006-05-17 15:45  dimitr
+
+	* firebird2/src/jrd/nav.cpp (1.63):
+	
+	Don't scan the entire index if there's an inversion and its bitmap
+	contains no matching records.
+
+2006-05-17 15:24  dimitr
+
+	* firebird2/builds/win32/msvc7/: fb_lock_print.vcproj (1.22),
+	fbclient.vcproj (1.40), fbclient_static.vcproj (1.18),
+	gpre_boot.vcproj (1.24):
+	
+	Remove DLS where it's not used.
+
+2006-05-17 13:14  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.105):
+	
+	Bugfix by George Sergeev.
+
+2006-05-17 06:33  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.264):
+	
+	Fixed the regression reported by Adriano.
+
+2006-05-17 04:43  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.263):
+	
+	Misc
+
+2006-05-16 21:17  asfernandes
+
+	* firebird2/builds/win32/: make_icu.bat (1.7), prepare.bat (1.44):
+	
+	Build DEBUG version of ICU when asked to do it in MSVC7 build
+
+2006-05-16 21:09  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.215):
+	
+	Misc
+
+2006-05-16 13:55  dimitr
+
+	* firebird2/src/common/config/dir_list.cpp (1.27):
+	
+	Fixed the code to please Claudio :-)
+
+2006-05-16 11:09  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.262):
+	
+	Committed the correct UPDATE behaviour. Disabled so far.
+
+2006-05-14 16:47  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.214):
+	
+	More corrections to TRIM and NULLs
+
+2006-05-14 16:32  asfernandes
+
+	* firebird2/src/dsql/make.cpp (1.114):
+	
+	Fix problem when trimming not-nullable blobs
+
+2006-05-14 06:39  dimitr
+
+	* firebird2/src/common/config/dir_list.cpp (1.26):
+	
+	Fixed the bug I introduced yesterday.
+
+2006-05-14 05:36  robocop
+
+	* firebird2/src/jrd/: block_cache.h (1.10), smp.h (1.5), smp_impl.h
+	(1.7):
+	
+	Remove files that reappeared like ghosts after SF's CVS crash.
+
+2006-05-13 20:35  asfernandes
+
+	* firebird2/src/jrd/: blb.cpp (1.119), blb_proto.h (1.24), evl.cpp
+	(1.178):
+	
+	BLB_put_segment can't write more than 64K in one shot.	Create
+	BLB_put_data and use it. Thanks to Claudio.
+
+2006-05-13 07:50  robocop
+
+	* firebird2/: builds/install/arch-specific/win32/i18n_readme.txt
+	(1.3), src/misc/src_bundle.sh (1.3):
+	
+	Fixing docs and scripts.
+
+2006-05-13 07:02  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.247):
+	
+	Fixed the posix build.
+
+2006-05-13 06:57  dimitr
+
+	* firebird2/src/jrd/: opt.cpp (1.266), cmp.cpp (1.213):
+	
+	Misc.
+
+2006-05-13 06:57  dimitr
+
+	* firebird2/src/: common/config/dir_list.h (1.16), jrd/dls.cpp
+	(1.26):
+	
+	Let our naming conventions be consistent.
+
+2006-05-13 03:27  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.113), jrd/cmp.cpp (1.212),
+	jrd/evl.cpp (1.177):
+	
+	Make TRIM of blob work - returning a blob
+
+2006-05-13 03:24  asfernandes
+
+	* firebird2/src/jrd/blb.cpp (1.118):
+	
+	Make everything that is convertible to string convertible to blob
+	too
+
+2006-05-13 03:19  asfernandes
+
+	* firebird2/src/jrd/intl.h (1.12):
+	
+	Make INTL_TEXT_TYPE works with blobs
+
+2006-05-08 05:04  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.211):
+	
+	Correct compute descriptor of SUBSTRING of non-string
+
 2006-05-04 04:57  robocop
 
 	* firebird2/src/: utilities/common/cmd_util.cpp (1.11),
@@ -83,8 +298,7 @@
 
 2006-05-02 02:11  robocop
 
-	* firebird2/src/: dsql/all.h (1.13), dsql/dsql.h (1.90),
-	jrd/block_cache.h (1.10):
+	* firebird2/src/dsql/: all.h (1.13), dsql.h (1.90):
 	
 	Remove unused code.
 
@@ -252,13 +466,6 @@
 	* firebird2/src/jrd/enc.cpp (1.25):
 	
 	Protect global data (sync with Vulcan).
-
-2006-04-30 18:33  dimitr
-
-	* firebird2/src/jrd/: smp.h (1.5), smp_impl.h (1.7):
-	
-	SmpLock and V4Mutex replaced with native classes, they're no longer
-	needed.
 
 2006-04-30 18:28  dimitr
 
