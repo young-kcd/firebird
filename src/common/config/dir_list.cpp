@@ -262,7 +262,10 @@ void TempDirectoryList::initTemp()
 
 	// Iterate through directories to parse them
 	// and fill the "items" vector
-	for (size_t i = 0; i < inherited::getCount(); i++) {
+	// CVC: Changing ((inherited*)this)-> to inherited:: causes MSVC6 to ignore
+	// the inherited static method and call our own getCount instead.
+	for (size_t i = 0; i < ((inherited*)this)->getCount(); i++)
+	{
 		PathName dir = (*(inherited*)this)[i];
 		size_t pos = dir.rfind(" ");
 		long size = atol(dir.substr(pos + 1, PathName::npos).c_str());
@@ -278,9 +281,9 @@ void TempDirectoryList::initTemp()
 
 const PathName TempDirectoryList::getConfigString() const
 {
-	const char* value;
 	char tmp_buf[MAXPATHLEN];
-	if (!(value = Config::getTempDirectories())) {
+	const char* value = Config::getTempDirectories();
+	if (!value) {
 		// Temporary directory configuration has not been defined.
 		// Let's make default configuration.
 		gds__temp_dir(tmp_buf);
@@ -290,3 +293,4 @@ const PathName TempDirectoryList::getConfigString() const
 }
 
 } //namespace Firebird
+
