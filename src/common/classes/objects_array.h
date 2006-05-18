@@ -252,6 +252,25 @@ namespace Firebird
 			}
 			inherited::clear(); 
 		}
+		ObjectsArray<T, A>& operator =(const ObjectsArray<T, A>& L) 
+		{
+			while (count > L.count) 
+			{
+				delete inherited::pop();
+			}
+			for (size_t i = 0; i < L.count; i++) 
+			{
+				if (i < count)
+				{
+					(*this)[i] = L[i];
+				}
+				else 
+				{
+					add(L[i]);
+				}
+			}
+			return *this;
+		}
 	};
 
 	// Template to convert object value to index directly
