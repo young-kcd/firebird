@@ -187,9 +187,10 @@ mutexed_dir_list* DLS_get_access(void)
 	static bool is_initialized = false;
 	if (!is_initialized) {
 		is_initialized = true;
-		Firebird::TempDirectoryList dir_list;
+		Firebird::TempDirectoryList dir_list(*getDefaultMemoryPool());
 		for (int i = 0; i < dir_list.getCount(); i++) {
-			DLS_add_dir(dir_list[i].second, dir_list[i].first.c_str());
+			const Firebird::PathName& path = dir_list[i];
+			DLS_add_dir(ALLROOM, path.c_str());
 		}
 	}
 

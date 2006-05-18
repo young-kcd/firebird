@@ -52,7 +52,7 @@ public:
 	{ 
 		parse(path);
 	}
-		// Take new path inside
+	// Take new path inside
 	void parse(const PathName& path);
 	// Convert internal representation to traditional one
 	operator PathName() const;
@@ -107,7 +107,7 @@ public:
 	// Check, whether Path is inside this DirectoryList
 	bool isPathInList(const PathName& path) const;
 
-	// Search for file Name in all direcories of DirectoryList.
+	// Search for file Name in all directories of DirectoryList.
 	// If found, return full path to it in Path. 
 	// Otherwise Path = Name.
 	bool expandFileName(PathName& path, 
@@ -119,25 +119,10 @@ public:
 						const PathName& name) const;
 };
 
-class TempDirectoryList : protected DirectoryList {
-	typedef DirectoryList inherited;
+class TempDirectoryList : public DirectoryList {
 public:
-	// directory list item(s)
-	typedef Pair<Left<PathName, size_t> > Item;
-	typedef ObjectsArray<Item> Items;
-
-	// public functions
-	const Item& operator[](size_t i) const
-	{
-		return items[i];
-	}
-	int getCount() const
-	{
-		return items.getCount();
-	}
-
 	explicit TempDirectoryList(MemoryPool& p) 
-		: DirectoryList(p), items(p)
+		: DirectoryList(p)
 	{
 		initTemp();
 	}
@@ -145,17 +130,11 @@ public:
 	{
 		initTemp();
 	}
-	~TempDirectoryList() {
-		items.clear();
-	}
 
 private:
 	// implementation of the inherited function
 	const PathName getConfigString() const;
 	
-	// private data
-	Items items;
-
 	// load items from DirectoryList
 	void initTemp();
 };

@@ -262,20 +262,13 @@ void TempDirectoryList::initTemp()
 
 	// Iterate through directories to parse them
 	// and fill the "items" vector
-	// CVC: Changing ((inherited*)this)-> to inherited:: causes MSVC6 to ignore
-	// the inherited static method and call our own getCount instead.
-	for (size_t i = 0; i < ((inherited*)this)->getCount(); i++)
-	{
-		PathName dir = (*(inherited*)this)[i];
+	for (size_t i = 0; i < getCount(); i++) {
+		PathName dir = (*this)[i];
 		size_t pos = dir.rfind(" ");
-		long size = atol(dir.substr(pos + 1, PathName::npos).c_str());
-		if (pos != PathName::npos && !size) {
-			pos = PathName::npos;
-		}
-		if (size <= 0) {
-			size = ALLROOM;
-		}
-		items.add(Item(dir.substr(0, pos), size));
+		remove(i);
+		insert(i, ParsedPath(dir.substr(0, pos)));
+//		the assignment below doesn't work, waiting for comments by Alex
+//		(*this)[i] = ParsedPath(dir.substr(0, pos));
 	}
 }
 
