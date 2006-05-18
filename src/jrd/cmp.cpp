@@ -2250,6 +2250,7 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	{
 		if (procedure->prc_request) {
 			CMP_release(tdbb, procedure->prc_request);
+			procedure->prc_request = NULL;
 		}
 		procedure->prc_flags &= ~PRC_being_altered;
 		MET_remove_procedure(tdbb, procedure->prc_id, procedure);
