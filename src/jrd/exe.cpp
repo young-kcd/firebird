@@ -2944,9 +2944,8 @@ static void seek_rsb(
  *
  * Functional description
  *	Allow scrolling through a stream as defined 
- *	by the input rsb.  Handles cracks, refresh 
- *	ranges, and multiple seeking.  Uses RSE_get_record ()
- *	to do the actual work.
+ *	by the input rsb.  Handles multiple seeking.
+ *	Uses RSE_get_record() to do the actual work.
  *
  **************************************/
 	SET_TDBB(tdbb);

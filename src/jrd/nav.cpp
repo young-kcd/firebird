@@ -160,7 +160,7 @@ bool NAV_get_record(thread_db* tdbb,
  *	Get a record from a stream, either in
  *	the forward or backward direction, or the
  *	current record.  This routine must set 
- *	BOF, EOF, or CRACK properly.
+ *	BOF or EOF properly.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -444,7 +444,7 @@ bool NAV_get_record(thread_db* tdbb,
 
 	CCH_RELEASE(tdbb, &window);
 
-	// crack, bof, or eof must have been set at this point
+	// bof or eof must have been set at this point
 	return false;
 }
 
@@ -886,7 +886,6 @@ static bool get_record(
  *
  * Functional description
  *	Get the record indicated by the passed rpb.
- *	This routine must set or clear the CRACK flag.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
