@@ -101,10 +101,6 @@ SOURCE=..\..\..\src\jrd\db_alias.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\dls_proto.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\dsc.h
 # End Source File
 # Begin Source File
@@ -258,10 +254,6 @@ SOURCE=..\..\..\src\jrd\cvt.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\db_alias.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\dls.cpp
 # End Source File
 # Begin Source File
 

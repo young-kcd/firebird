@@ -118,10 +118,6 @@ SOURCE=..\..\..\src\jrd\cvt.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\dls.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\dsc.cpp
 # End Source File
 # Begin Source File
