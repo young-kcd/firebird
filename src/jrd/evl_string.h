@@ -152,7 +152,7 @@ public:
 
 	void reset() {
 		offset = 0;
-		result = false;
+		result = (pattern_len == 0);
 	}
 
 	bool getResult() {
