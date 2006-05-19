@@ -1,3 +1,28 @@
+2006-05-19 03:35  asfernandes
+
+	* firebird2/src/common/config/dir_list.cpp (1.31):
+	
+	Misc
+
+2006-05-18 16:16  alexpeshkoff
+
+	* firebird2/src/common/config/dir_list.cpp (1.30):
+	
+	restored normal processing way after fixing ObjectsArray
+
+2006-05-18 16:15  alexpeshkoff
+
+	* firebird2/src/common/classes/objects_array.h (1.17):
+	
+	added missing operator= to ObjectsArray
+
+2006-05-18 15:16  asfernandes
+
+	* firebird2/src/jrd/evl_string.h (1.23):
+	
+	Fix FB2 regression - '' CONTAINING '' should return true - thanks
+	to Arno
+
 2006-05-18 10:40  dimitr
 
 	* firebird2/src/jrd/cmp.cpp (1.216):
