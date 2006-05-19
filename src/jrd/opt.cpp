@@ -3660,9 +3660,22 @@ static void form_rivers(thread_db*		tdbb,
 		// at this point we must have a retrieval node, so put
 		// the stream into the river.
 		fb_assert(plan_node->nod_type == nod_retrieve);
-		temp[0]++;
 		const jrd_nod* relation_node = plan_node->nod_arg[e_retrieve_relation];
-		temp[temp[0]] = (UCHAR)(IPTR) relation_node->nod_arg[e_rel_stream];
+		const UCHAR stream = (UCHAR)(IPTR) relation_node->nod_arg[e_rel_stream];
+		// dimitr:	the plan may contain more retrievals than the "streams"
+		//			array (some streams could already be joined to the active
+		//			rivers), so we populate the "temp" array only with the
+		//			streams that appear in both the plan and the "streams"
+		//			array.
+		const UCHAR* ptr_stream = streams + 1;
+		const UCHAR* const end_stream = ptr_stream + streams[0];
+		while (ptr_stream < end_stream) {
+			if (*ptr_stream++ == stream) {
+				temp[0]++;
+				temp[temp[0]] = stream;
+				break;
+			}
+		}
 	}
 
 	// just because the user specified a join does not mean that
