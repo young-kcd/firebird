@@ -1973,9 +1973,7 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	else {
 		vector = blob->blb_pages;
 		length = vector->count() * sizeof(SLONG);
-		// JMB: Not such a good thing with std::vector
-		q = (UCHAR *) &*(vector->begin());
-//		q = (UCHAR *) &(vector->[0]);
+		q = (UCHAR *) (vector->begin());
 		/* Figure out precedence pages, if any */
 		vcl::iterator ptr, end;
 		for (ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr) {

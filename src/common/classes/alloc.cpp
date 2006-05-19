@@ -131,13 +131,6 @@ const size_t REDIRECT_THRESHOLD = 32768;
 // Declare thread-specific variable for context memory pool
 TLS_DECLARE(MemoryPool*, contextPool);
 
-// Helper function to reduce code size, since many compilers
-// generate quite a bit of code at the point of the throw.
-void pool_out_of_memory()
-{
-	throw std::bad_alloc();
-}
-
 // Support for memory mapping facilities
 #if defined(WIN_NT)
 size_t get_page_size()
@@ -522,7 +515,7 @@ void* MemoryPool::tree_alloc(size_t size) {
 			spareLeafs.getCount()) 
 		{
 			if (!spareLeafs.getCount())
-				pool_out_of_memory();
+				Firebird::BadAlloc::raise();
 			void *temp = spareLeafs[spareLeafs.getCount() - 1];
 			spareLeafs.shrink(spareLeafs.getCount() - 1);
 			needSpare = true;
@@ -530,7 +523,7 @@ void* MemoryPool::tree_alloc(size_t size) {
 		}
 	if (size == sizeof(FreeBlocksTree::NodeList)) {
 		if (!spareNodes.getCount())
-			pool_out_of_memory();
+			Firebird::BadAlloc::raise();
 		void *temp = spareNodes[spareNodes.getCount() - 1];
 		spareNodes.shrink(spareNodes.getCount() - 1);
 		needSpare = true;
@@ -734,7 +727,7 @@ void* MemoryPool::allocate(size_t size, SSHORT type
 #endif
 	);
 	if (!result)
-		pool_out_of_memory();
+		Firebird::BadAlloc::raise();
 	return result;
 }
 
@@ -1060,7 +1053,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 		void* mem = parent->internal_alloc(instance_size + sizeof(MemoryRedirectList), TYPE_POOL);
 		if (!mem) {
 			parent->lock.leave();
-			pool_out_of_memory();
+			Firebird::BadAlloc::raise();
 		}
 		pool = new(mem) MemoryPool(parent, stats, NULL, NULL);
 		
@@ -1095,7 +1088,7 @@ MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent
 		fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size
 	
 		if (!mem)
-			pool_out_of_memory();
+			Firebird::BadAlloc::raise();
 		((MemoryExtent *)mem)->mxt_next = NULL;
 		((MemoryExtent *)mem)->mxt_prev = NULL;
 		
@@ -1446,7 +1439,7 @@ inline void MemoryPool::addFreeBlock(MemoryBlock *blk)
 	BlockInfo info = {blk->small.mbk_length, fragmentToAdd};
 	try {
 		freeBlocks.add(info);
-	} catch(const std::exception&) {
+	} catch(const Firebird::Exception&) {
 		// Add item to the list of pending free blocks in case of critically-low memory condition
 		PendingFreeBlock* temp = blockToPtr<PendingFreeBlock*>(blk);
 		temp->next = pendingFree;

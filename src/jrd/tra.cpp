@@ -1267,7 +1267,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			// as committed
 			state = tra_committed;
 		}
-		catch (const std::exception&) {
+		catch (const Firebird::Exception&) {
 			/* Prevent a bugcheck in TRA_set_state to cause a loop */
 			/* Clear the error because the rollback will succeed. */
 			tdbb->tdbb_status_vector[0] = isc_arg_gds;
@@ -1987,7 +1987,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
 	tdbb->tdbb_transaction = tdbb_old_trans;
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		try {
 			if (!trans)
@@ -1998,7 +1998,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 			tdbb->tdbb_flags &= ~TDBB_sweeper;
 			tdbb->tdbb_transaction = tdbb_old_trans;
 		}
-		catch (const std::exception& ex2) {
+		catch (const Firebird::Exception& ex2) {
 			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex2);
 			LCK_release(tdbb, &temp_lock);
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;

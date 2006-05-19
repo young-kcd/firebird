@@ -92,7 +92,7 @@ const int ALICE_MSG_FAC = 3;
 static inline void exit_local(int code, AliceGlobals* tdgbl)
 {
 	tdgbl->exit_code = code;
-	Firebird::status_exception::raise();
+    Firebird::LongJump::raise();
 }
 
 #if defined (WIN95)
@@ -605,7 +605,7 @@ int common_main(int			argc,
 	exit_local(FINI_OK, tdgbl);
 
 	}	// try
-	catch (const std::exception&)
+	catch (const Firebird::Exception&)
 	{
 		// All "calls" to exit_local(), normal and error exits, wind up here
 

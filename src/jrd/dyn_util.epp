@@ -208,7 +208,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 	} while (found);
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 131, NULL, NULL, NULL, NULL, NULL);
@@ -284,7 +284,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 	} while (found);
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 81, NULL, NULL, NULL, NULL, NULL);
@@ -336,7 +336,7 @@ void DYN_UTIL_generate_field_position(
 	*field_pos = field_position;
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 162, NULL, NULL, NULL, NULL, NULL);
@@ -401,7 +401,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 82, NULL, NULL, NULL, NULL, NULL);
@@ -458,7 +458,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 83, NULL, NULL, NULL, NULL, NULL);
@@ -508,7 +508,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 	DYN_rundown_request(request, drq_l_prot_mask);
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_l_prot_mask);
 		return false;
@@ -551,7 +551,7 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
 		DYN_REQUEST(drq_s_chk_con) = request;
 	}
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_s_chk_con);
 		DYN_error_punt(true, 122, NULL, NULL, NULL, NULL, NULL);
@@ -596,7 +596,7 @@ bool DYN_UTIL_is_array(thread_db* tdbb,
 			
 		return rc;
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_dom_is_array);
@@ -748,7 +748,7 @@ void DYN_UTIL_copy_domain(thread_db* tdbb,
 		//	DYN_REQUEST(drq_dom_copy) = request;
 
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1); //drq_dom_copy);

@@ -758,7 +758,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		database->dbb_permanent->deallocate(data);
 		throw;
 	}

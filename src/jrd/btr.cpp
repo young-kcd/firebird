@@ -1121,7 +1121,7 @@ IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 		return result;
 
 	}	// try
-	catch(const std::exception& ex) {
+	catch(const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		key->key_length = 0;
 		return idx_e_conversion;
@@ -3769,7 +3769,7 @@ static SLONG fast_load(thread_db* tdbb,
 
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		error = true;
 	}
@@ -3806,7 +3806,7 @@ static SLONG fast_load(thread_db* tdbb,
 		return window->win_page;
 
 	}	// try
-	catch(const std::exception& ex) {
+	catch(const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (!error) {
 			error = true;

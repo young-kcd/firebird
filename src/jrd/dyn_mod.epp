@@ -151,7 +151,7 @@ void DYN_modify_charset(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_chset))
 			DYN_REQUEST(drq_m_chset) = request;
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 85, NULL, NULL, NULL, NULL, NULL);
@@ -214,7 +214,7 @@ void DYN_modify_collation(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_coll))
 			DYN_REQUEST(drq_m_coll) = request;
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 86, NULL, NULL, NULL, NULL, NULL);
@@ -318,7 +318,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_database) = request;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 84, NULL, NULL, NULL, NULL, NULL);
@@ -391,7 +391,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_xcp) = request;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 145, NULL, NULL, NULL, NULL, NULL);
@@ -455,7 +455,7 @@ void DYN_modify_filter(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_bfil))
 			DYN_REQUEST(drq_m_bfil) = request;
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 88, NULL, NULL, NULL, NULL, NULL);
@@ -529,7 +529,7 @@ void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_fun))
 			DYN_REQUEST(drq_m_fun) = request;
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 92, NULL, NULL, NULL, NULL, NULL);
@@ -591,7 +591,7 @@ void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_gen))
 			DYN_REQUEST(drq_m_gen) = request;
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 94, NULL, NULL, NULL, NULL, NULL);
@@ -1125,7 +1125,7 @@ void DYN_modify_global_field(Global* gbl,
 		DYN_REQUEST(drq_m_gfield) = request;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 87, NULL, NULL, NULL, NULL, NULL);
@@ -1210,7 +1210,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_index) = request;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 91, NULL, NULL, NULL, NULL, NULL);
@@ -1403,7 +1403,7 @@ void DYN_modify_local_field(
 
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 95, NULL, NULL, NULL, NULL, NULL);
@@ -1477,7 +1477,7 @@ void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_prm))
 			DYN_REQUEST(drq_m_prm) = request;
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 100, NULL, NULL, NULL, NULL, NULL);
@@ -1611,7 +1611,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_prcs) = request;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 141, NULL, NULL, NULL, NULL, NULL);
@@ -1709,7 +1709,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_relation) = request;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 99, NULL, NULL, NULL, NULL, NULL);
@@ -1771,7 +1771,7 @@ void DYN_modify_role(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_rol))
 			DYN_REQUEST(drq_m_rol) = request;
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 158, NULL, NULL, NULL, NULL, NULL);
@@ -1912,7 +1912,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_trigger) = request;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 102, NULL, NULL, NULL, NULL, NULL);
@@ -1987,7 +1987,7 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 		DYN_REQUEST(drq_m_trg_msg) = request;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 105, NULL, NULL, NULL, NULL, NULL);
@@ -2107,7 +2107,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_view) = request;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 99, NULL, NULL, NULL, NULL, NULL);
@@ -2188,7 +2188,7 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 	}
 	
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_d_difference); 
 		DYN_error_punt(true, 63, NULL, NULL, NULL, NULL, NULL);
@@ -2215,7 +2215,7 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 			DYN_REQUEST(drq_s_difference) = request;
 		}		
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_s_difference);
 		DYN_error_punt(true, 150, NULL, NULL, NULL, NULL, NULL);
@@ -2344,7 +2344,7 @@ static void modify_lfield_position(thread_db* tdbb,
 
 	CMP_release(tdbb, request);
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 95, NULL, NULL, NULL, NULL, NULL);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
@@ -3067,7 +3067,7 @@ void DYN_modify_sql_field(Global*					gbl,
 						orig_fld.dyn_fld_name);
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 95, NULL, NULL, NULL, NULL, NULL);
 		// msg 95: "MODIFY RDB$RELATION_FIELDS failed"

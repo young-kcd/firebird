@@ -622,7 +622,7 @@ void EXE_receive(thread_db*		tdbb,
 	execute_looper(tdbb, request, transaction, jrd_req::req_proceed);
 
 	}	//try
-	catch (const std::exception&)
+	catch (const Firebird::Exception&)
 	{
 		if (request->req_flags & req_proc_fetch)
 		{
@@ -1395,7 +1395,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		tdbb->tdbb_request = request;
 		EXE_unwind(tdbb, proc_request);
 		proc_request->req_attachment = NULL;
@@ -1498,7 +1498,7 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 
 		return result;
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		delete null_rec;
 		if (vector != *triggers) {
@@ -2432,7 +2432,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		}
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 
@@ -3700,7 +3700,7 @@ inline void verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 	try {
 	    VIO_verb_cleanup(tdbb, transaction);
     }
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		if (tdbb->tdbb_database->dbb_flags & DBB_bugcheck) {
 			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 		}

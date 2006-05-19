@@ -490,7 +490,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 		}
 
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		XNET_LOG_ERROR("Unable to initialize child process");
 		status_vector[1] = isc_unavailable;
 
@@ -565,7 +565,7 @@ static bool connect_init()
 
 		return true;
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		connect_fini();
 		return false;
 	}
@@ -810,7 +810,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 
 		return new_port;
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 
 		XNET_LOG_ERROR("aux_connect() failed");
 
@@ -944,7 +944,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 
 		return new_port;
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 
 		XNET_LOG_ERROR("aux_request() failed");
 
@@ -1220,7 +1220,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 
 		}
-		catch (const std::exception&) {
+		catch (const Firebird::Exception&) {
 			XNET_UNLOCK();
 			throw;
 		}
@@ -1310,7 +1310,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		xps->xps_channels[XPS_CHANNEL_S2C_DATA].xch_client_ptr = (start_ptr + avail);
 
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 
 			if (file_handle) {
 				if (mapped_address) {
@@ -1429,7 +1429,7 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 				return port;
 
 				}
-				catch (const std::exception&) {
+				catch (const Firebird::Exception&) {
 					XNET_LOG_ERROR("failed to allocate server port for communication");
 					break;
 				}
@@ -2234,7 +2234,7 @@ static XPM make_xpm(ULONG map_number, time_t timestamp)
 	return xpm;
 
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		return NULL;
 	}
 }
@@ -2318,7 +2318,7 @@ static bool server_init()
 			Firebird::system_call_failed::raise("MapViewOfFile");
 		}
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		connect_fini();
 		XNET_LOG_ERROR("XNET server initialization failed");
 		return false;
@@ -2573,7 +2573,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
 
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		if (xcc) {
 			if (xcc->xcc_proc_h) {
 				CloseHandle(xcc->xcc_proc_h);

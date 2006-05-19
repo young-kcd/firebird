@@ -568,7 +568,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 		delete csb;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
 		if (request) {
 			CMP_release(tdbb, request);
@@ -2113,7 +2113,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	tdbb->tdbb_request = old_request;
 
 	} // try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
 		tdbb->tdbb_request = old_request;
 		ERR_punt();

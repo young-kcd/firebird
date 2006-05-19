@@ -100,7 +100,7 @@ void missing_parameter_for_switch(const char* sw) {
 	usage();
 } 
 
-class b_error : public std::exception
+class b_error : public Firebird::LongJump
 {
 public:
 	explicit b_error(const char* message) {
@@ -487,10 +487,8 @@ void nbackup::lock_database()
 	attach_database();
 	try {
 		internal_lock_database();
-	} catch(const std::exception& ex) {
-		if (typeid(ex) != typeid(b_error)) {
-			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
-		}
+	} 
+	catch(const Firebird::Exception&) {
 		detach_database();		
 		throw;
 	}
@@ -502,10 +500,8 @@ void nbackup::unlock_database()
 	attach_database();
 	try {
 		internal_unlock_database();
-	} catch(const std::exception& ex) {
-		if (typeid(ex) != typeid(b_error)) {
-			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
-		}
+	} 
+	catch(const Firebird::Exception&) {
 		detach_database();		
 		throw;
 	}
@@ -742,12 +738,10 @@ void nbackup::backup_database(int level, const char* fname)
 		if (isc_commit_transaction(status, &trans))
 			pr_error(status, "commit history insert");
 		
-	} catch (const std::exception& ex) {
-		if (typeid(ex) != typeid(b_error)) {
-			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
-		}
+	} 
+	catch (const Firebird::Exception&) {
 		if (delete_backup)
-			unlink(bakname.c_str());
+			remove(bakname.c_str());
 		if (trans) {
 			if (isc_rollback_transaction(status, &trans))
 				pr_error(status, "rollback transaction");
@@ -785,7 +779,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 					{
 						close_database();
 						if (!curLevel) {
-							unlink(dbname.c_str());
+							remove(dbname.c_str());
 							b_error::raise("Level 0 backup is not restored");
 						}
 						fixup_database();
@@ -795,7 +789,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 					try {
 						open_backup_scan();
 						break;
-					} catch (const std::exception& e) {
+					} catch (const Firebird::Exception& e) {
 						printf("%s\n", e.what());
 					}
 #ifdef WIN_NT
@@ -909,13 +903,11 @@ void nbackup::restore_database(int filecount, const char* const* files)
 			close_backup();
 			curLevel++;
 		}
-	} catch(const std::exception& ex) {
-		if (typeid(ex) != typeid(b_error)) {
-			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
-		}
+	} 
+	catch(const Firebird::Exception&) {
 		delete[] page_buffer;
 		if (delete_database)
-			unlink(dbname.c_str());
+			remove(dbname.c_str());
 		throw;
 	}
 }
@@ -1062,7 +1054,7 @@ int main( int argc, char *argv[] )
 				nbackup(database, username, password).restore_database(filecount, backup_files);
 				break;
 		}
-	} catch (const std::exception&) {
+	} catch (const Firebird::Exception&) {
 		// It must have been printed out. No need to repeat the task
 		return EXIT_ERROR;
 	}

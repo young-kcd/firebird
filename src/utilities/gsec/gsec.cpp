@@ -86,7 +86,7 @@ void inline gsec_exit(int code, tsec* tdsec)
 {
 	tdsec->tsec_exit_code = code;
 	if (tdsec->tsec_throw)
-		throw std::exception();
+		Firebird::LongJump::raise();
 }
 
 #ifdef SERVICE_THREAD
@@ -428,7 +428,7 @@ int common_main(int argc,
 	return ret;					// silence compiler warning
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		/* All calls to gsec_exit(), normal and error exits, wind up here */
 		tdsec->tsec_service_blk->svc_started();
 		tdsec->tsec_throw = false;

@@ -140,7 +140,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 
 		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		const Savepoint* savepoint = transaction->tra_save_point;
 		if (savepoint && savepoint->sav_verb_count)
@@ -152,7 +152,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 			try {
 				VIO_verb_cleanup(tdbb, transaction);
 			}
-			catch (const std::exception&) {
+			catch (const Firebird::Exception&) {
 				THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
 				BUGCHECK(290);	/* msg 290 error during savepoint backout */
 			}
@@ -752,7 +752,7 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
@@ -799,7 +799,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id, USHORT bp
 		}
 		BLB_close(tdbb, blob);
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
@@ -1140,7 +1140,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	}	// for (...)
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already
@@ -1448,7 +1448,7 @@ static bool grantor_can_grant(Global*					gbl,
 	// all done.
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, err_num, NULL, NULL, NULL, NULL, NULL);
@@ -1782,7 +1782,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	}
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already 
@@ -1917,7 +1917,7 @@ static void store_privilege(Global*						gbl,
 			DYN_REQUEST(drq_s_grant) = request;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 79, NULL, NULL, NULL, NULL, NULL);

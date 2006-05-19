@@ -1157,7 +1157,7 @@ int common_main(int		argc,
 	return result;
 	}	// try
 
-	catch (const std::exception&)
+	catch (const Firebird::Exception&)
 	{
 		// All calls to exit_local(), normal and error exits, wind up here 
 
@@ -1323,7 +1323,7 @@ void BURP_exit_local(int code, BurpGlobals* tdgbl)
 {
 	tdgbl->exit_code = code;
 	if (tdgbl->burp_throw)
-		throw std::exception();
+		throw Firebird::LongJump();
 }
 
 

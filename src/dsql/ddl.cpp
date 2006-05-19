@@ -1984,7 +1984,7 @@ static void define_field(
 
 	} // try
 
-	catch (const std::exception&)
+	catch (const Firebird::Exception&)
 	{
 		clearPermanentField(relation, permanent);
 		throw;
@@ -5539,7 +5539,7 @@ static void modify_relation( dsql_req* request)
 	request->append_uchar(isc_dyn_end);
 
 	}	// try
-	catch (const std::exception&)
+	catch (const Firebird::Exception&)
 	{
 		METD_drop_relation(request, relation_name);
 		request->req_relation = 0;
@@ -6391,7 +6391,7 @@ static void modify_field(dsql_req*	request,
 		request->append_uchar(isc_dyn_end);
 	} // try
 
-	catch (const std::exception&)
+	catch (const Firebird::Exception&)
 	{
 		clearPermanentField(relation, permanent);
 		throw;

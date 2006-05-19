@@ -2770,7 +2770,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 		delete rpb.rpb_record;
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		delete rpb.rpb_record;
 		if (relation)
 		{
@@ -3676,7 +3676,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		ISC_event_post(dbb->dbb_gc_event_init);
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		goto gc_exit;
 	}
 
@@ -3888,7 +3888,7 @@ rel_exit:
 			}
 		}
     }
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		/* Perfunctory error reporting -- got any better ideas ? */
 
 		Firebird::stuff_exception(status_vector, ex);
@@ -3923,7 +3923,7 @@ gc_exit:
 		THREAD_EXIT();
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		/* Perfunctory error reporting -- got any better ideas ? */
 
 		Firebird::stuff_exception(status_vector, ex);

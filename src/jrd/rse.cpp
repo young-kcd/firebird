@@ -1741,7 +1741,7 @@ static bool get_procedure(thread_db*			tdbb,
 	try {
 		EXE_receive(tdbb, proc_request, 1, oml, om);
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		close_procedure(tdbb, rsb);
 		throw;
 	}
@@ -2697,7 +2697,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 			EXE_send(tdbb, proc_request, 0, iml, im);
 		}
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		close_procedure(tdbb, rsb);
 		throw;
 	}

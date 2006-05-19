@@ -341,7 +341,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_s_colls))
 			DYN_REQUEST(drq_s_colls) = request;
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_colls);
@@ -457,7 +457,7 @@ void DYN_define_constraint(Global*		gbl,
 	}
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		SSHORT local_id = -1;
 		USHORT number;
@@ -703,7 +703,7 @@ void DYN_define_constraint(Global*		gbl,
 	}
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		SSHORT local_id = -1;
 		USHORT number;
@@ -809,7 +809,7 @@ void DYN_define_dimension(Global*		gbl,
 	END_STORE;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_dims);
@@ -885,7 +885,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_xcp) = request;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
@@ -1004,7 +1004,7 @@ void DYN_define_file(Global*		gbl,
 	}
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_l_files)
 		{
@@ -1080,7 +1080,7 @@ void DYN_define_difference(Global*		gbl,
 	}
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_difference)
 		{
@@ -1186,7 +1186,7 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_filters) = request;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_filters);
@@ -1285,7 +1285,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_funcs) = request;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_funcs);
@@ -1415,7 +1415,7 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 	}
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (request) {
 			DYN_rundown_request(request, drq_s_func_args);
@@ -1469,7 +1469,7 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_gens) = request;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_gens);
@@ -1743,7 +1743,7 @@ void DYN_define_global_field(Global*		gbl,
 	}
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_gfields);
@@ -2278,7 +2278,7 @@ void DYN_define_index(Global*		gbl,
 	}
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_indices) {
 			DYN_rundown_request(request, id);
@@ -2630,7 +2630,7 @@ void DYN_define_local_field(Global*		gbl,
 	}
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_lfields) {
 			DYN_rundown_request(request, id);
@@ -2872,7 +2872,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 	}
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_prms) {
 			DYN_rundown_request(request, drq_s_prms);
@@ -3021,7 +3021,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	}
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_prcs) {
 			DYN_rundown_request(request, id);
@@ -3251,7 +3251,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 		}
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_rels) {
 			DYN_rundown_request(request, id);
@@ -3386,7 +3386,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 			goto do_error_punt_9;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (request) {
 			DYN_rundown_request(request, drq_role_gens);
@@ -3462,7 +3462,7 @@ void DYN_define_security_class( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_classes) = request;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_classes);
@@ -3767,7 +3767,7 @@ void DYN_define_sql_field(Global*		gbl,
 		DYN_REQUEST(drq_s_sql_lfld) = request;
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_sql_lfld) {
 			DYN_rundown_request(request, id);
@@ -3819,7 +3819,7 @@ void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_l_shadow) = request;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_l_shadow);
 		DYN_error_punt(true, 164, NULL, NULL, NULL, NULL, NULL);
@@ -4016,7 +4016,7 @@ void DYN_define_trigger(Global*						gbl,
 	}
 
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_triggers);
@@ -4090,7 +4090,7 @@ void DYN_define_trigger_msg(Global* gbl, const UCHAR** ptr, const Firebird::Meta
 			DYN_REQUEST(drq_s_trg_msgs) = request;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
@@ -4192,7 +4192,7 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 			DYN_REQUEST(drq_s_view_rels) = request;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, id);
@@ -4270,7 +4270,7 @@ static void check_unique_name(	thread_db*	tdbb,
 			DYN_REQUEST(drq_l_prc_name) = request;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		if (!proc_flag)
@@ -4369,7 +4369,7 @@ static bool find_field_source(thread_db*	tdbb,
 			}
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 80, NULL, NULL, NULL, NULL, NULL);
@@ -4408,7 +4408,7 @@ static bool get_who( thread_db* tdbb, Global* gbl, Firebird::MetaName& output_na
 
 		DYN_rundown_request(request, drq_l_user_name);
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_l_user_name);
 		return false;
@@ -4481,7 +4481,7 @@ bool is_it_user_name(Global* gbl, const Firebird::MetaName& role_name, thread_db
 			DYN_REQUEST(drq_get_rel_owner) = request;
 		}
 	}
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (request) {
 			DYN_rundown_request(request, request_id);

@@ -81,7 +81,7 @@ static const rfr_tab_t rfr_table[] = {
 static inline void return_error(const ISC_STATUS* user_status)
 {
 	ALICE_print_status(gds_status);
-	Firebird::status_exception::raise();
+	Firebird::LongJump::raise();
 }
 
 /*____________________________________________________________

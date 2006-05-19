@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: evl_string_test.cpp,v 1.7 2004-07-07 16:06:19 skidder Exp $
+ *  $Id: evl_string_test.cpp,v 1.8 2006-05-19 15:16:45 alexpeshkoff Exp $
  *
  */
 
@@ -34,7 +34,7 @@
 const isc_like_escape_invalid = 1;
 
 void ERR_post(...) {
-	throw std::exception();
+	throw Firebird::Exception();
 }
 
 #include "evl_string.h"
@@ -124,7 +124,7 @@ int main() {
 	try {
 		StringLikeEvaluator t7(p, "%sosome_text\\?", '\\');
 		assert(false);
-	} catch (const std::exception&) {
+	} catch (const Firebird::Exception&) {
 	}
 
 	// Test single '%' pattern

@@ -45,7 +45,7 @@ public:
 					C::init();
 					flag = true;
 				}
-			} catch(const std::exception&) {
+			} catch(const Firebird::Exception&) {
 				leave();
 				throw;
 			}
@@ -60,7 +60,7 @@ public:
 					C::cleanup();
 					flag = false;
 				}
-			} catch(const std::exception&) {
+			} catch(const Firebird::Exception&) {
 				leave();
 				throw;
 			}
@@ -96,7 +96,7 @@ public:
 					instance = C::init();
 					flag = true;
 				}
-			} catch(const std::exception&) {
+			} catch(const Firebird::Exception&) {
 				leave();
 				throw;
 			}

@@ -41,7 +41,7 @@
 #include "../jrd/thd.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
-#include <memory>
+#include "../common/classes/auto.h"
 
 using namespace Jrd;
 
@@ -245,7 +245,7 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 			// receiver of this (ptr) checks its type.
 			// Please review this. This lock has _nothing_ to do in the
 			// permanent pool!
-			std::auto_ptr<Lock> temp_lock(FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock);
+			Firebird::AutoPtr<Lock> temp_lock(FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock);
 
 			//temp_lock.blk_type = type_lck;
 			temp_lock->lck_dbb = dbb;
@@ -258,13 +258,13 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 
 			/* If we can't get a lock on the transaction, it must be active. */
 
-			if (!LCK_lock_non_blocking(tdbb, temp_lock.get(), LCK_read, LCK_NO_WAIT)) {
+			if (!LCK_lock_non_blocking(tdbb, temp_lock, LCK_read, LCK_NO_WAIT)) {
 				INIT_STATUS(tdbb->tdbb_status_vector);
 				return tra_active;
 			}
 
 			INIT_STATUS(tdbb->tdbb_status_vector);
-			LCK_release(tdbb, temp_lock.get());
+			LCK_release(tdbb, temp_lock);
 
 			/* as a last resort we must look at the TIP page to see
 			   whether the transaction is committed or dead; to minimize 

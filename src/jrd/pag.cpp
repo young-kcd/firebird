@@ -1227,7 +1227,7 @@ is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 	if (temp_buffer)
 		delete[] temp_buffer;
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		if (temp_buffer)
 			delete[] temp_buffer;
 		throw;
@@ -1466,7 +1466,7 @@ void PAG_init2(USHORT shadow_number)
 	if (temp_buffer)
 		delete[] temp_buffer;
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		if (temp_buffer)
 			delete[] temp_buffer;
 		throw;

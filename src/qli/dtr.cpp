@@ -276,7 +276,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			memcpy(QLI_env, env, sizeof(QLI_env));
 			PAR_token();
 		}
-		catch (const std::exception&) {
+		catch (const Firebird::Exception&) {
 			// try again 
 			got_started = false;
 			ERRQ_pending();
@@ -371,7 +371,7 @@ static bool process_statement(bool flush_flag)
 // Enable error unwinding and enable the unwinding environment 
 
 	try {
-
+	
 	memcpy(QLI_env, env, sizeof(QLI_env));
 
 /* Set up the appropriate prompt and get the first significant token.  If
@@ -496,9 +496,9 @@ static bool process_statement(bool flush_flag)
 	return false;
 
 	}	// try
-	catch (const Firebird::status_exception& e) {
+	catch (const Firebird::Exception&) {
 		GEN_release();
-		return e.value();
+		return true;
 	}
 }
 

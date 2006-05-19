@@ -508,7 +508,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 		request->req_flags &= ~req_null;
 
 	} // try
-	catch (const std::exception&) 
+	catch (const Firebird::Exception&) 
 	{
 		// CVC: Maybe we should loop here trying to close blobs from blob_stack, too.
 		while (array_stack.hasData()) {

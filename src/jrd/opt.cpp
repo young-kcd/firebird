@@ -933,7 +933,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 #endif
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		for (SSHORT i = 0; i < streams[0]; i++) {
 			const SSHORT stream = streams[i + 1];
 			delete csb->csb_rpt[stream].csb_idx;

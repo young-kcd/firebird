@@ -272,7 +272,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 	CCH_release_exclusive(tdbb);
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return false;
 	}
@@ -390,7 +390,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 	SHUT_blocking_ast(dbb);
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return false;
 	}

@@ -2162,7 +2162,7 @@ int API_ROUTINE gds__print_blr(
 	blr_print_line(control, (SSHORT) offset);
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::LongJump&) {
 		return -1;
 	}
 
@@ -2836,7 +2836,7 @@ static void blr_error(gds_ctl* control, const TEXT* string, ...)
 	va_end(args);
 	offset = 0;
 	blr_print_line(control, (SSHORT) offset);
-	Firebird::status_exception::raise();
+	Firebird::LongJump::raise();
 }
 
 

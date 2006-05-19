@@ -602,7 +602,7 @@ Service* SVC_attach(USHORT	service_length,
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		delete service;
 		throw;
 	}
@@ -1902,7 +1902,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 #endif /* SERVICE_THREAD */
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		delete service;
 		throw;
 	}
@@ -2613,7 +2613,7 @@ static void service_get(
 	while (!timeout || iter) {
 		const int c = getc((FILE *) service->svc_input);
 		if (c != EOF) {
-			*buf++ = c != '\n' ? c : ' ';	// to be consistent with SERVICE_THREAD case
+			*buf++ = (flags & GET_LINE) && (c == '\n') ? ' ' : c;
 			if (!(--length))
 				break;
 			if (((flags & GET_LINE) && c == '\n') ||

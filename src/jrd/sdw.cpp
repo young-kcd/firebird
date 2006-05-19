@@ -276,7 +276,7 @@ else
 		delete[] spare_buffer;
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		if (spare_buffer)
 			delete[] spare_buffer;
 		throw;
@@ -1058,7 +1058,7 @@ void SDW_start(const TEXT* file_name,
 		delete[] spare_buffer;
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (header_fetched) {
 			CCH_RELEASE(tdbb, &window);
@@ -1237,7 +1237,7 @@ static bool check_for_file(const SCHAR* name, USHORT length)
 		jrd_file* temp_file = PIO_open(dbb, path, false, 0, path);
 		PIO_close(temp_file);
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return false;
 	}

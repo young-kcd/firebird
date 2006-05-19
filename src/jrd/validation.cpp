@@ -736,7 +736,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		JrdMemoryPool::deletePool(val_pool);
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
@@ -2085,7 +2085,7 @@ static RTN walk_relation(thread_db* tdbb, vdr* control, jrd_rel* relation)
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		const char* msg = relation->rel_name.length() > 0 ?
 			"bugcheck during scan of table %d (%s)" :
 			"bugcheck during scan of table %d";

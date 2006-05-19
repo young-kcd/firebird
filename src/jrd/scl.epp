@@ -336,7 +336,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 
 	CMP_release(tdbb, request);
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		if (request) {
 			CMP_release(tdbb, request);
 		}

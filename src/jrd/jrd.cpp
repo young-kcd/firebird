@@ -226,7 +226,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			PAR_blr(tdbb, relation, blr.begin(),  NULL, NULL, &request, true,
 					par_flags);
 		}
-		catch (const std::exception&) {
+		catch (const Firebird::Exception&) {
 			compile_in_progress = false;
 			if (request) {
 				CMP_release(tdbb, request);
@@ -345,7 +345,7 @@ static ISC_STATUS	check_database(thread_db*, Attachment*, ISC_STATUS*);
 static void		cleanup(void*);
 static ISC_STATUS	commit(ISC_STATUS*, jrd_tra**, const bool);
 static bool		drop_files(const jrd_file*);
-static ISC_STATUS	error(ISC_STATUS*, const std::exception& ex);
+static ISC_STATUS	error(ISC_STATUS*, const Firebird::Exception& ex);
 static ISC_STATUS	error(ISC_STATUS*);
 static void		find_intl_charset(thread_db*, Attachment*, const DatabaseOptions*);
 static jrd_tra*		find_transaction(thread_db*, jrd_tra*, ISC_STATUS);
@@ -1231,7 +1231,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	return return_success(tdbb);
 
 	}	// try
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		ISC_STATUS_ARRAY temp_status;
 		try
@@ -1259,7 +1259,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			}
 			V4_JRD_MUTEX_UNLOCK(databases_mutex);
 		}	// try
-		catch (const std::exception&) {}
+		catch (const Firebird::Exception&) {}
 		tdbb->tdbb_status_vector = status;
 		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status, ex);
@@ -1303,7 +1303,7 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 
 		INF_blob_info(blob, items, item_length, buffer, buffer_length);
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -1344,7 +1344,7 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, blb** blob_handle)
 			BLB_cancel(tdbb, blob);
 			*blob_handle = NULL;
 		}
-		catch (const std::exception& ex)
+		catch (const Firebird::Exception& ex)
 		{
 			return error(user_status, ex);
 		}
@@ -1387,7 +1387,7 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
 
 		EVENT_cancel(*id);
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -1491,7 +1491,7 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, blb** blob_handle)
 		BLB_close(tdbb, blob);
 		*blob_handle = NULL;
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -1590,7 +1590,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		LOG_call(log_handle_returned, *req_handle);
 	#endif
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -1645,7 +1645,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 		LOG_call(log_handle_returned, blob_id->bid_stuff.bid_temp_id);
 	#endif
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2020,7 +2020,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	return return_success(tdbb);
 
 	}	// try
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		ISC_STATUS_ARRAY temp_status;
 		try
@@ -2048,7 +2048,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 			}
 			V4_JRD_MUTEX_UNLOCK(databases_mutex);
 		}
-		catch (const std::exception&) {}
+		catch (const Firebird::Exception&) {}
 		tdbb->tdbb_status_vector = status;
 		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status, ex);
@@ -2091,7 +2091,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 
 		INF_database_info(items, item_length, buffer, buffer_length);
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2139,7 +2139,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 				reinterpret_cast<const UCHAR*>(ddl));
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		return error(user_status, ex);
 	}
 
@@ -2159,13 +2159,13 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 		try {
 			TRA_commit(tdbb, transaction, true);
 		}
-		catch (const std::exception& ex) {
+		catch (const Firebird::Exception& ex) {
 			ISC_STATUS_ARRAY temp_status;
 			tdbb->tdbb_status_vector = temp_status;
 			try {
 				TRA_rollback(tdbb, transaction, true, false);
 			}
-			catch (const std::exception&) {
+			catch (const Firebird::Exception&) {
 			    // CVC, TMN: Do nothing, see FB1 code, this will fall into
 			    // the two lines below, achieving the same logic than going
 			    // back to the SETJMP(env) in FB1.
@@ -2282,7 +2282,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 	return return_success(tdbb);
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		V4_JRD_MUTEX_LOCK(databases_mutex);
 		dbb->dbb_flags &= ~DBB_not_in_use;
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
@@ -2382,7 +2382,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 			V4_JRD_MUTEX_LOCK(databases_mutex);
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 		}
-		catch(const std::exception& ex)
+		catch(const Firebird::Exception& ex)
 		{
 			return error(user_status, ex);
 		}
@@ -2412,7 +2412,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 			CCH_RELEASE(tdbb, &window);
 
 		}	// try
-		catch (const std::exception& ex) {
+		catch (const Firebird::Exception& ex) {
 			V4_JRD_MUTEX_UNLOCK(databases_mutex);
 			V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 			JRD_SS_MUTEX_UNLOCK;
@@ -2461,7 +2461,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status, ex);
 	}
@@ -2541,7 +2541,7 @@ ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
 				break;
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2599,7 +2599,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 			return (user_status[1] = isc_segment);
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2663,7 +2663,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 									   reinterpret_cast<const SLONG*>(param),
 									   slice_length, slice);
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2718,7 +2718,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 		LOG_call(log_handle_returned, *blob_handle);
 	#endif
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2798,7 +2798,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 	{
 		BLB_put_segment(tdbb, blob, buffer, buffer_length);
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2853,7 +2853,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 				  param_length,
 				  reinterpret_cast<const SLONG*>(param), slice_length, slice);
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2914,7 +2914,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 		LOG_call(log_handle_returned, *id);
 	#endif
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -2980,7 +2980,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3030,7 +3030,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 		LOG_call(log_handle_returned, *tra_handle);
 	#endif
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3073,7 +3073,7 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, jrd_req** req_handle)
 		CMP_release(tdbb, request);
 		*req_handle = NULL;
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3123,7 +3123,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 
 		INF_request_info(request, items, item_length, buffer, buffer_length);
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3236,7 +3236,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 	{
 		*result = BLB_lseek(blob, mode, offset);
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3292,7 +3292,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3333,7 +3333,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	
 		*svc_handle = SVC_attach(service_length, service_name, spb_length, spb);
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3371,7 +3371,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, Service** svc_handle)
 	
 		*svc_handle = NULL;
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3447,7 +3447,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 				return error(user_status);
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3505,7 +3505,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 			return error(user_status);
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3568,7 +3568,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 			return error(user_status);
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3626,7 +3626,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 			return error(user_status);
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -3695,7 +3695,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	}
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 		if (prior) {
@@ -3880,7 +3880,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	return return_success(tdbb);
 
 	}	// try
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		/* Set up to trap error in case release pool goes wrong. */
 
@@ -3892,7 +3892,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 				JrdMemoryPool::deletePool(new_pool);
 			}
 		}	// try
-		catch (const std::exception&) {
+		catch (const Firebird::Exception&) {
 		}
 
 		return error(user_status, ex);
@@ -3939,7 +3939,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 		INF_transaction_info(transaction, items, item_length, buffer,
 						 buffer_length);
 	}
-	catch (const std::exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
@@ -4030,7 +4030,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 		return (user_status[1] = FB_SUCCESS);
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(user_status, ex);
 		JRD_restore_context();
 		return user_status[1];
@@ -4736,7 +4736,7 @@ static ISC_STATUS commit(
 	return return_success(tdbb);
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
 		return error(user_status, ex);
@@ -4810,7 +4810,7 @@ static jrd_tra* find_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_STAT
 }
 
 
-static ISC_STATUS error(ISC_STATUS* user_status, const std::exception& ex)
+static ISC_STATUS error(ISC_STATUS* user_status, const Firebird::Exception& ex)
 {
 /**************************************
  *
@@ -5509,7 +5509,7 @@ static Database* init(thread_db*	tdbb,
 	return dbb;
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(user_status, ex);
 		return 0;
 	}
@@ -5547,7 +5547,7 @@ static ISC_STATUS prepare(thread_db*		tdbb,
 	}
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
 		Database* dbb = tdbb->tdbb_database;
 		--dbb->dbb_use_count;
@@ -5745,7 +5745,7 @@ static bool rollback(thread_db*	tdbb,
 		--dbb->dbb_use_count;
 
 		}	// try
-		catch (const std::exception& ex) {
+		catch (const Firebird::Exception& ex) {
 			Firebird::stuff_exception(status_vector, ex);
 			status_vector = local_status;
 			Database* dbb = tdbb->tdbb_database;
@@ -6009,7 +6009,9 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 													 sizeof(TEXT) *
 													 dbb->dbb_filename.length()));
 					if (!dbfp)
-						throw std::bad_alloc();
+					{
+						Firebird::BadAlloc::raise();
+					}
 					dbf = dbfp;
 				}
 				else {
@@ -6018,8 +6020,10 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 								   (sizeof(db_file) +
 									sizeof(TEXT) *
 									dbb->dbb_filename.length()));
-					if (!dbfp)
-						throw std::bad_alloc();
+					if (!dbfp->dbf_next)
+					{
+						Firebird::BadAlloc::raise();
+					}
 					dbfp = dbfp->dbf_next;
 				}
 				if (dbfp) {
@@ -6227,7 +6231,7 @@ ISC_STATUS shutdown_all()
 					purge_attachment(tdbb, user_status, attach, true);
 					V4_JRD_MUTEX_UNLOCK(databases_mutex);
 				}	// try
-				catch (const std::exception& ex) {
+				catch (const Firebird::Exception& ex) {
 					if (initialized) {
 						JRD_SS_MUTEX_UNLOCK;
 					}

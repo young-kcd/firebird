@@ -1555,7 +1555,7 @@ extern GpreGlobals gpreGlob;
 #define assert_IS_ACT(x) fb_assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
 
 
-class gpre_exception: public std::exception
+class gpre_exception: public Firebird::LongJump
 {
 	char msg[MAXPATHLEN << 1];
 public:
@@ -1570,7 +1570,7 @@ public:
 	}
 	const char* what() const throw()
 	{
-		return msg;
+		return msg[0] ? msg : "gpre_exception";
 	}
 };
 

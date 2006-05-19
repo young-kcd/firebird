@@ -206,7 +206,7 @@ void PARSE_error( USHORT number, const TEXT* arg1, const TEXT* arg2)
  **************************************/
 
 	DDL_err(number, arg1, arg2, NULL, NULL, NULL);
-	Firebird::status_exception::raise();
+	Firebird::LongJump::raise();
 }
 
 
@@ -3052,7 +3052,7 @@ static bool parse_action(void)
 	return false;
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		if (dudleyGlob.DDL_interactive)
 			LEX_flush();
 		else

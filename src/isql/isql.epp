@@ -796,7 +796,6 @@ bool ISQL_dbcheck()
 		return true;
 }
 
-//static std::string userPrompt;
 static char userPrompt2[MSG_LENGTH];
 static const char* const userPrompt = userPrompt2;
 static char* lastInputLine = NULL;

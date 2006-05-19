@@ -139,7 +139,6 @@
 
 #include "firebird.h"
 #include <string.h>
-#include <memory>
 #include <stdio.h>
 #include "../jrd/ibase.h"
 #include "../dsql/dsql.h"
@@ -160,6 +159,7 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../common/classes/array.h"
+#include "../common/classes/auto.h"
 #include "../common/utils_proto.h"
 
 #ifdef DEV_BUILD
@@ -479,7 +479,7 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 			if (count)
 			{
 				// Initialize this stack variable, and make it look like a node
-				std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*tdsql->getDefaultPool(), 0) dsql_nod);
+				Firebird::AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*tdsql->getDefaultPool(), 0) dsql_nod);
 
 				dsql_nod* const* input = context->ctx_proc_inputs->nod_arg;
 				for (dsql_fld* field = procedure->prc_inputs;
@@ -489,7 +489,7 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 					DEV_BLKCHK(*input, dsql_type_nod);
 					MAKE_desc_from_field(&desc_node->nod_desc, field);
 					//	set_parameter_type(request, *input, &desc_node, false);
-					set_parameter_type(request, *input, desc_node.get(), false);
+					set_parameter_type(request, *input, desc_node, false);
 				}
 			}
 		}
@@ -744,14 +744,14 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		{ // scope
 			dsql_nod *temp	= node->nod_arg[e_prm_val_val];
 			// Initialize this stack variable, and make it look like a node
-			std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
+			Firebird::AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
 
 			DEV_BLKCHK(field, dsql_type_fld);
 			DEV_BLKCHK(temp, dsql_type_nod);
 
 			field->fld_flags |= FLD_nullable;
 			MAKE_desc_from_field(&(desc_node->nod_desc), field);
-			set_parameter_type(request, temp, desc_node.get(), false);
+			set_parameter_type(request, temp, desc_node, false);
 		} // end scope
 
 		return node;
@@ -890,12 +890,12 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				node->nod_arg[i] =
 					PASS1_node(request, input->nod_arg[i], proc_flag);
 
-				std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
+				Firebird::AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
 				desc_node->nod_desc.dsc_dtype = dtype_text;
 				desc_node->nod_desc.dsc_length = 1;
 				desc_node->nod_desc.dsc_sub_type = 0;
 				desc_node->nod_desc.dsc_scale = 0;
-				set_parameter_type(request, node->nod_arg[i], desc_node.get(), false);
+				set_parameter_type(request, node->nod_arg[i], desc_node, false);
 			}
 		}
 		else {
@@ -1327,7 +1327,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 			if (count) {
 				// Initialize this stack variable, and make it look like a node
-	            std::auto_ptr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
+	            Firebird::AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
 
 				dsql_nod* const* ptr = node->nod_arg[e_exe_inputs]->nod_arg;
 				for (const dsql_fld* field = procedure->prc_inputs;
@@ -1337,7 +1337,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 					DEV_BLKCHK(*ptr, dsql_type_nod);
 					MAKE_desc_from_field(&desc_node->nod_desc, field);
 					// set_parameter_type(*ptr, &desc_node, false);
-					set_parameter_type(request, *ptr, desc_node.get(), false);
+					set_parameter_type(request, *ptr, desc_node, false);
 				}
 			}
 

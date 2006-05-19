@@ -547,7 +547,7 @@ void SCH_init(void)
 			init_flag = true;
 #ifdef MULTI_THREAD
 		}
-	} catch (const std::exception&) {
+	} catch (const Firebird::Exception&) {
 		scheduler_init_lock.leave();
 		throw;
 	}

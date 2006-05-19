@@ -512,7 +512,7 @@ void DFW_perform_work(jrd_tra* transaction)
 			}
 			++phase;
 		}	
-		catch (const std::exception& ex) {
+		catch (const Firebird::Exception& ex) {
 			/* Do any necessary cleanup */
 			if (!phase) {
 				Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -1066,7 +1066,7 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 			check_filename(work->dfw_name, true);
 			dbb->dbb_backup_manager->set_difference(tdbb, work->dfw_name.c_str());
-		} catch(const std::exception&) {
+		} catch(const Firebird::Exception&) {
 			dbb->dbb_backup_manager->unlock_state(tdbb);
 			throw;
 		}
@@ -1114,7 +1114,7 @@ static bool delete_difference(	thread_db*	tdbb,
 						 isc_arg_gds, isc_wrong_backup_state, 0);
 			}
 			dbb->dbb_backup_manager->set_difference(tdbb, NULL);
-		} catch(const std::exception&) {
+		} catch(const Firebird::Exception&) {
 			dbb->dbb_backup_manager->unlock_state(tdbb);
 			throw;
 		}
@@ -1813,7 +1813,7 @@ static bool create_index(	thread_db*	tdbb,
 				release_protect_lock(tdbb, transaction, partnerLock);
 			}
 		}
-		catch(const std::exception&) 
+		catch(const Firebird::Exception&) 
 		{
 			if (relationLock && releaseRelationLock) {
 				release_protect_lock(tdbb, transaction, relationLock);
@@ -4123,7 +4123,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 		procedure->prc_flags &= ~(PRC_obsolete | PRC_being_altered);
 
 		}	// try
-		catch (const std::exception& ex)
+		catch (const Firebird::Exception& ex)
 		{
 			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 #ifdef SUPERSERVER
@@ -4301,7 +4301,7 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id)
 		length = (USHORT)BLB_get_data(tdbb, blr, buffer, (SLONG) length);
 		put_summary_record(blob, type, buffer, length);
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		if (buffer != temp)
 			delete[] buffer;
 		throw;
@@ -4387,7 +4387,7 @@ static void put_summary_record(blb*		blob,
 	try {
 		BLB_put_segment(tdbb, blob, buffer, length + 1);
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		if (buffer != temp)
 			delete[] buffer;
 		throw;

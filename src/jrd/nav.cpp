@@ -944,7 +944,7 @@ static bool get_record(
 	}
 
 	}	// try
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		// Cleanup the HACK should there be an error
 		tdbb->tdbb_attachment->att_flags &= ~ATT_no_cleanup;
 		tdbb->tdbb_attachment->att_flags |= old_att_flags;

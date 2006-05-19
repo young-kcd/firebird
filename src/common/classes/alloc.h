@@ -35,7 +35,7 @@
 #ifndef CLASSES_ALLOC_H
 #define CLASSES_ALLOC_H
 
-#include <cstddef>
+//#include <cstddef>
 
 #include "../../include/fb_types.h"
 #include "../../include/firebird.h"
@@ -52,7 +52,7 @@
 #ifdef _MSC_VER
 #define THROW_BAD_ALLOC
 #else
-#define THROW_BAD_ALLOC throw (std::bad_alloc)
+#define THROW_BAD_ALLOC throw (Firebird::BadAlloc)
 #endif
 
 #ifdef USE_VALGRIND
@@ -324,7 +324,7 @@ public:
 	static void deletePool(MemoryPool* pool);
 
 	// Allocate memory block. Result is not zero-initialized.
-	// It case of problems this method throws std::bad_alloc
+	// It case of problems this method throws Firebird::BadAlloc
 	void* allocate(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
@@ -490,7 +490,7 @@ inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 **/
 namespace Firebird
 {
-
+/*
 #ifndef TESTING_ONLY
 
 	template <class T>
@@ -551,8 +551,8 @@ namespace Firebird
 		SSHORT type;
 	};
 
-#endif /*TESTING_ONLY*/
-
+#endif //TESTING_ONLY
+*/
 	// Permanent storage is used as base class for all objects,
 	// performing memory allocation in methods other than 
 	// constructors of this objects. Permanent means that pool,

@@ -194,7 +194,7 @@ void SortMem::allocate(size_t size)
 					mem_allocated = true;
 				}
 				// Not enough memory to allocate block
-				catch (std::bad_alloc)
+				catch (Firebird::BadAlloc)
 				{
 					// Check whether we can try to allocate less memory
 					if (smart_size > size)
@@ -207,7 +207,7 @@ void SortMem::allocate(size_t size)
 								MemoryBlock(tail, smart_size);
 							mem_allocated = true;
 						}
-						catch (std::bad_alloc) {}
+						catch (Firebird::BadAlloc) {}
 					}
 				}
 				if (mem_allocated)

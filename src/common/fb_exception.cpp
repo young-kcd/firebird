@@ -79,40 +79,37 @@ namespace Firebird {
 /********************************* status_exception *******************************/
 
 status_exception::status_exception() throw() : 
-	m_strings_permanent(true), m_status_known(false) 
+	m_strings_permanent(true)
 {
 	memset(m_status_vector, 0, sizeof(m_status_vector));
 }
 
 status_exception::status_exception(const ISC_STATUS *status_vector, bool permanent) throw() : 
-	m_strings_permanent(permanent), m_status_known(status_vector != NULL)
+	m_strings_permanent(permanent)
 {
-	if (m_status_known) {
-		ISC_STATUS *ptr = m_status_vector;
-		 while (true) 
-		 {
-			const ISC_STATUS type = *ptr++ = *status_vector++;
-			if (type == isc_arg_end)
-				break;
-			if (type == isc_arg_cstring)
-				*ptr++ = *status_vector++;
+	ISC_STATUS *ptr = m_status_vector;
+	while (true) 
+	{
+		const ISC_STATUS type = *ptr++ = *status_vector++;
+		if (type == isc_arg_end)
+			break;
+		if (type == isc_arg_cstring)
 			*ptr++ = *status_vector++;
-		}
+		*ptr++ = *status_vector++;
 	}
 }
 	
 void status_exception::set_status(const ISC_STATUS *new_vector, bool permanent) throw()
 {
 	release_vector();
-	m_status_known = (new_vector != NULL); 
 	m_strings_permanent = permanent;
-	if (m_status_known)
-		memcpy(m_status_vector, new_vector, sizeof(m_status_vector));
+	fb_assert(new_vector != 0);
+	memcpy(m_status_vector, new_vector, sizeof(m_status_vector));
 }
 
 void status_exception::release_vector() throw()
 {
-	if (m_strings_permanent || (!m_status_known))
+	if (m_strings_permanent)
 		return;
 	
 	// Free owned strings
@@ -155,11 +152,6 @@ void fatal_exception::raiseFmt(const char* format, ...)
 	throw fatal_exception(buffer);
 }
 
-void status_exception::raise() 
-{
-	throw status_exception();
-}
-	
 void status_exception::raise(const ISC_STATUS *status_vector) 
 {
 	throw status_exception(status_vector, true);
@@ -173,6 +165,20 @@ void status_exception::raise(ISC_STATUS status, ...)
 	fill_status(temp, status, args);
 	va_end(args);
 	throw status_exception(temp, false);
+}
+
+/********************************* BadAlloc ****************************/
+
+void BadAlloc::raise()
+{
+	throw BadAlloc();
+}
+
+/********************************* LongJump ****************************/
+
+void LongJump::raise()
+{
+	throw LongJump();
 }
 
 /********************************* system_call_failed ****************************/
@@ -234,7 +240,7 @@ void fatal_exception::raise(const char* message)
 
 static InterlockedStringsBuffer engine_failures;
 
-ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, StringsBuffer *sb) throw() 
+ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, const Exception& ex, StringsBuffer *sb) throw() 
 {
 	// Note that this function will call unexpected() that will terminate process 
 	// if exception appears during status vector serialization
@@ -242,21 +248,21 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 	if (!sb)
 		sb = &engine_failures;
 	
-	const std::type_info& ex_type = typeid(ex);
-	
-	if (ex_type == typeid(std::bad_alloc)) {
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_virmemexh;
-		*status_vector++ = isc_arg_end;
-		return isc_virmemexh;
-	}
-	
-	try {
-		const status_exception& c_ex = dynamic_cast<const status_exception&>(ex);
-		if (c_ex.status_known()) {
-			ISC_STATUS *sv = status_vector;
-			const ISC_STATUS *ptr = c_ex.value();
-			if (c_ex.strings_permanent()) 
+	ISC_STATUS *sv = status_vector;
+
+	switch (ex.kind())
+	{
+	case Exception::ExMemory:
+		*sv++ = isc_arg_gds;
+		*sv++ = isc_virmemexh;
+		*sv++ = isc_arg_end;
+		break;
+
+	case Exception::ExStatus:
+		{
+			const status_exception* c_ex = reinterpret_cast<const status_exception*>(&ex);
+			const ISC_STATUS *ptr = c_ex->value();
+			if (c_ex->strings_permanent()) 
 			{
 				// Copy status vector
 				 while (true) 
@@ -299,23 +305,28 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 				}
 			}
 		}
-		return status_vector[1];
-	} 
-	catch (const std::bad_cast&) {
-	}
+		break;
+		
+	case Exception::ExJump:
+		break;	// keep SV 'as is'
 	
-	// Other random C++ exceptions
-	char temp[256];
-	SNPRINTF(temp, sizeof(temp) - 1,
-		"Unexpected C++ exception (class=\"%s\", what()=\"%s\")",
-		ex_type.name(), ex.what());
-	temp[sizeof(temp) - 1] = 0;
-	*status_vector++ = isc_arg_gds;
-	*status_vector++ = isc_random;
-	*status_vector++ = isc_arg_string;
-	*status_vector++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, strlen(temp)));
-	*status_vector++ = isc_arg_end;	
-	return isc_random;
+	default:
+		{
+			char temp[256];
+			SNPRINTF(temp, sizeof(temp) - 1,
+				"Unexpected Firebird::Exception (kind=%d what()=\"%s\")",
+				ex.kind(), ex.what());
+			temp[sizeof(temp) - 1] = 0;
+			*sv++ = isc_arg_gds;
+			*sv++ = isc_random;
+			*sv++ = isc_arg_string;
+			*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, strlen(temp)));
+			*sv++ = isc_arg_end;
+		}
+		break;
+	} 
+	
+	return status_vector[1];
 }
 
 

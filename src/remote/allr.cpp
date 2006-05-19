@@ -94,7 +94,7 @@ UCHAR* ALLR_alloc(ULONG size)
 	// NOMEM: post a user level error, if we have a status vector,
 	//        otherwise just an error return
 
-	throw std::bad_alloc();
+	Firebird::BadAlloc::raise();
 	return NULL;	/* compiler silencer */
 }
 
@@ -151,9 +151,9 @@ BLK ALLR_block(UCHAR type, ULONG count)
 			// Therefore, the solution for embedded was to hardcode bugcheck 150.
 			status_vector[3] = (ISC_STATUS) "request to allocate invalid block type";
 #endif
-			Firebird::status_exception::raise();
+			Firebird::status_exception::raise(status_vector);
 		}
-		throw std::bad_alloc();
+		Firebird::BadAlloc::raise();
 	}
 
 	ULONG size		= REM_block_sizes[type].typ_root_length;

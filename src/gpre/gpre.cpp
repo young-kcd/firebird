@@ -890,7 +890,7 @@ int main(int argc, char* argv[])
 		while (end_position = compile_module(end_position, filename_array[3]));
 		// empty loop body
 	}	// try
-	catch (const std::exception&) {}  // fall through to the cleanup code
+	catch (const Firebird::Exception&) {}  // fall through to the cleanup code
 
 #ifdef FTN_BLK_DATA
 	if (gpreGlob.sw_language == lang_fortran)
@@ -940,7 +940,7 @@ int main(int argc, char* argv[])
 void CPR_abort()
 {
 	++fatals_global;
-	//throw std::exception();
+	//throw Firebird::Exception();
 	throw gpre_exception("Program terminated.");
 }
 

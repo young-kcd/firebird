@@ -331,7 +331,7 @@ static SERVER_REQ alloc_request()
 		{
 #if defined(DEV_BUILD) && defined(DEBUG)
 			if (request_count++ > 4)
-				throw std::bad_alloc();
+				Firebird::BadAlloc::raise();
 #endif
 
 			/* System is out of memory, let's delay processing this
@@ -558,7 +558,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			}
 
 		}
-		catch (const std::exception& e)
+		catch (const Firebird::Exception& e)
 		{
 			/* If we got as far as having a port allocated before the error, disconnect it
 			 * gracefully.
@@ -598,7 +598,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					port = NULL;
 
 				}	// try
-				catch (const std::exception&) {
+				catch (const Firebird::Exception&) {
 					port->disconnect(NULL, NULL);
 					port = NULL;
 				}
@@ -615,7 +615,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		}
 
 	}
-	catch (const std::exception&) {
+	catch (const Firebird::Exception&) {
 		/* Some kind of unhandled error occured during server setup.  In lieu
 		 * of anything we CAN do, log something (and we might be so hosed
 		 * we can't log anything) and give up.
@@ -3500,7 +3500,7 @@ bool process_packet(rem_port* port,
 			*result = port;
 
 	}	// try
-	catch (const std::exception& ex) {
+	catch (const Firebird::Exception& ex) {
 		// NS: trdb_status_vector is usually NULL at this point.
 		// This needs to be fixed, probably via eliminating trdb_status_vector
 		// completely, but this work is not for now.

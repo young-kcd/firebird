@@ -160,9 +160,9 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 // In GCC version 3.1-3.3 we need to install special error handler
 // in order to get meaningful terminate() error message on stderr. 
 // In GCC 3.4 or later this is the default.
-#if __GNUC__ == 3 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 4
-    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
-#endif
+//#if __GNUC__ == 3 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 4
+//    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
+//#endif
 
 #ifdef VMS
 	argc = VMS_parse(&argv, argc);
@@ -549,7 +549,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 	{
 		TEXT buffer[1024];
         const ISC_STATUS* vector = 0;
-		if (! (e.status_known() && (vector = e.value()) &&
+		if (! ((vector = e.value()) &&
 			  fb_interpret(buffer, sizeof(buffer), &vector)))
 		{
 			strcpy(buffer, "Unknown failure in semaphore::enter()");
@@ -587,7 +587,7 @@ static void signal_term(int)
 	{
 		TEXT buffer[1024];
         const ISC_STATUS* vector = 0;
-		if (! (e.status_known() && (vector = e.value()) &&
+		if (! ((vector = e.value()) &&
 			  fb_interpret(buffer, sizeof(buffer), &vector)))
 		{
 			strcpy(buffer, "Unknown failure in semaphore::release()");
