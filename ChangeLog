@@ -1,3 +1,10 @@
+2006-05-18 15:28  asfernandes
+
+	* firebird2/src/jrd/evl_string.h (1.22.4.1):
+	
+	Fix FB2 regression - '' CONTAINING '' should return true - thanks
+	to Arno
+
 2006-05-17 20:48  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.56.4.1):
