@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeInstallImage.sh.in,v 1.17 2005-10-27 13:51:35 alexpeshkoff Exp $
+#   $Id: makeInstallImage.sh.in,v 1.18 2006-05-19 11:42:47 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -141,6 +141,7 @@ copyFiles() {
     cp $BuiltFBDir/bin/gstat $DestDir/bin/gstat 
     copyIfExists $BuiltFBDir/bin/security.gbak $DestDir/bin/security.gbak 
     cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
+    cp $BuiltFBDir/bin/nbackup $DestDir/bin/nbackup
     copyIfExists $BuiltFBDir/bin/qli $DestDir/bin/qli 
 
 	# Append libraries to scripts
