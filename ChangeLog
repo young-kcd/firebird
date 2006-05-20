@@ -1,3 +1,17 @@
+2006-05-19 14:19  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/super/makeInstallImage
+	.sh.in (1.17.4.1):
+	
+	backported - added nbackup to SS binary packages
+
+2006-05-19 13:10  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.261.2.2):
+	
+	Fixed bug with explicit plans and dependent vs free streams.
+
 2006-05-18 15:28  asfernandes
 
 	* firebird2/src/jrd/evl_string.h (1.22.4.1):
