@@ -1066,7 +1066,8 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 			check_filename(work->dfw_name, true);
 			dbb->dbb_backup_manager->set_difference(tdbb, work->dfw_name.c_str());
-		} catch (const Firebird::Exception&) {
+		}
+		catch (const Firebird::Exception&) {
 			dbb->dbb_backup_manager->unlock_state(tdbb);
 			throw;
 		}
@@ -1114,7 +1115,8 @@ static bool delete_difference(	thread_db*	tdbb,
 						 isc_arg_gds, isc_wrong_backup_state, 0);
 			}
 			dbb->dbb_backup_manager->set_difference(tdbb, NULL);
-		} catch (const Firebird::Exception&) {
+		}
+		catch (const Firebird::Exception&) {
 			dbb->dbb_backup_manager->unlock_state(tdbb);
 			throw;
 		}
@@ -1813,7 +1815,7 @@ static bool create_index(	thread_db*	tdbb,
 				release_protect_lock(tdbb, transaction, partnerLock);
 			}
 		}
-		catch (const Firebird::Exception&) 
+		catch (const Firebird::Exception&)
 		{
 			if (relationLock && releaseRelationLock) {
 				release_protect_lock(tdbb, transaction, relationLock);

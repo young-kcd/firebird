@@ -223,7 +223,8 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
 	jrd_file *file;
 	try {
 		file = setup_file(dbb, workspace, desc);
-	} catch (const Firebird::Exception&) {
+	}
+	catch (const Firebird::Exception&) {
 		CloseHandle(desc);
 		throw;
 	}
@@ -540,7 +541,8 @@ jrd_file* PIO_open(Database* dbb,
 	jrd_file *file;
 	try {
 		file = setup_file(dbb, string, desc);
-	} catch (const Firebird::Exception&) {
+	}
+	catch (const Firebird::Exception&) {
 		CloseHandle(desc);
 		throw;
 	}
@@ -1083,7 +1085,8 @@ static jrd_file* setup_file(Database*					dbb,
 				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), 0);
 				dbb->dbb_file = NULL; // Will be set again later by the caller				
-			} catch (const Firebird::Exception&) {
+			}
+			catch (const Firebird::Exception&) {
 				delete dbb->dbb_lock;
 				dbb->dbb_lock = NULL;
 				delete file;

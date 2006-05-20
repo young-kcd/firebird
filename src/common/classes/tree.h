@@ -705,7 +705,8 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		nodeList->add(newNode);
 		this->root = nodeList;
 		this->level++;
-	} catch (const Firebird::Exception&) {
+	}
+	catch (const Firebird::Exception&) {
 		// Recover tree to innocent state
 		while (curLevel) {
 			NodeList *itemL = reinterpret_cast<NodeList*>(newNode);

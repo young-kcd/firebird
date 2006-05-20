@@ -263,7 +263,8 @@ why_hndl* WHY_alloc_handle(int implementation, int handle_type)
 			} while (!handleMapping->add(handle));
 
 			handleMappingLock.endWrite();
-		} catch (const Firebird::Exception&) {
+		}
+		catch (const Firebird::Exception&) {
 			// Handle out-of-memory conditions
 			handleMappingLock.endWrite();
 			free_block(handle);

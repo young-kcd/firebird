@@ -148,7 +148,8 @@ const ConfigImpl& ConfigImpl::instance()
 			if (!sys_config) {
 				sys_config = FB_NEW(*getDefaultMemoryPool()) ConfigImpl(*getDefaultMemoryPool());
 			}
-		} catch (const Firebird::Exception&) {
+		}
+		catch (const Firebird::Exception&) {
 			config_init_lock.leave();
 			throw;
 		}
