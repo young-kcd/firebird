@@ -281,7 +281,7 @@ bool PREPARSE_execute(
 							reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer()), 
 							0);
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(user_status, ex);
 		return true;

@@ -4558,7 +4558,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, rrq** req_handle, USHORT level)
 	{
 		// EXE_unwind (*req_handle);
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}

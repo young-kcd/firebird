@@ -487,7 +487,7 @@ void nbackup::lock_database()
 	try {
 		internal_lock_database();
 	} 
-	catch(const Firebird::Exception&) {
+	catch (const Firebird::Exception&) {
 		detach_database();		
 		throw;
 	}
@@ -500,7 +500,7 @@ void nbackup::unlock_database()
 	try {
 		internal_unlock_database();
 	} 
-	catch(const Firebird::Exception&) {
+	catch (const Firebird::Exception&) {
 		detach_database();		
 		throw;
 	}
@@ -903,7 +903,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 			curLevel++;
 		}
 	} 
-	catch(const Firebird::Exception&) {
+	catch (const Firebird::Exception&) {
 		delete[] page_buffer;
 		if (delete_database)
 			remove(dbname.c_str());

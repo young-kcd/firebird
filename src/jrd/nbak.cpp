@@ -759,7 +759,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		tdbb->tdbb_flags &= ~(TDBB_set_backup_state | TDBB_backup_merge);
 		unlock_state(tdbb);
 		
-	} catch(const Firebird::Exception&) {
+	} catch (const Firebird::Exception&) {
 		tdbb->tdbb_flags &= ~(TDBB_set_backup_state | TDBB_backup_merge);
 		unlock_state(tdbb);
 		throw;
@@ -936,7 +936,7 @@ ULONG BackupManager::allocate_difference_page(thread_db* tdbb, ULONG db_page) th
 	// Register new page in the alloc table
 	try {
 		alloc_table->add(AllocItem(db_page, last_allocated_page));
-	} catch(const Firebird::Exception& ex) {
+	} catch (const Firebird::Exception& ex) {
 		// Handle out of memory error
 		delete alloc_table;
 		alloc_table = NULL;
@@ -1195,7 +1195,7 @@ bool BackupManager::actualize_state(thread_db* tdbb) throw()
 		try {
 			NBAK_TRACE(("Open difference file"));
 			diff_file = PIO_open(database, diff_name, false, NULL, diff_name);
-		} catch(const Firebird::Exception& ex) {
+		} catch (const Firebird::Exception& ex) {
 #ifdef SUPERSERVER
 			adjust_state_lock->leave();
 #endif

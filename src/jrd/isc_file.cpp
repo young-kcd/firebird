@@ -1457,7 +1457,7 @@ osMtab::osMtab() : temp(0), context(0)
 	{
 		temp = FB_NEW(*getDefaultMemoryPool()) char[l];
 	}
-	catch(Firebird::BadAlloc)
+	catch (Firebird::BadAlloc)
 	{
 		temp = 0;
 		return;

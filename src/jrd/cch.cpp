@@ -1683,7 +1683,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	while (!bcb) {
 		try {
 			bcb = FB_NEW_RPT(*dbb->dbb_bufferpool, number) BufferControl(*dbb->dbb_bufferpool);
-		} catch(const Firebird::Exception& ex) {
+		} catch (const Firebird::Exception& ex) {
 			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 			/* If the buffer control block can't be allocated, memory is
 			very low. Recalculate the number of buffers to account for

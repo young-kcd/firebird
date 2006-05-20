@@ -2382,7 +2382,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 			V4_JRD_MUTEX_LOCK(databases_mutex);
 			V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 		}
-		catch(const Firebird::Exception& ex)
+		catch (const Firebird::Exception& ex)
 		{
 			return error(user_status, ex);
 		}
