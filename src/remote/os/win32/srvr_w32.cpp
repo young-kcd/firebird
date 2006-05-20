@@ -152,18 +152,17 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		if (!Config::getBugcheckAbort())
 			SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 	}
-	catch(Firebird::fatal_exception& e)
+	catch (Firebird::fatal_exception& e)
 	{
 		MessageBox(NULL, e.what(), "Firebird server failure", 
 			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
 		return STARTUP_ERROR; // see /jrd/common.h
 	}
-	catch(Firebird::status_exception& e)
+	catch (Firebird::status_exception& e)
 	{
 		TEXT buffer[BUFFER_LARGE];
-        const ISC_STATUS* vector = 0;
-		if (! ((vector = e.value()) &&
-			  fb_interpret(buffer, sizeof(buffer), &vector)))
+        const ISC_STATUS* vector = e.value();
+		if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
 		{
 			strcpy(buffer, "Unknown internal failure");
 		}

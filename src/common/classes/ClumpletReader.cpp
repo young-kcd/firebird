@@ -91,7 +91,7 @@ void ClumpletReader::dump() const
 				ClumpletDump::hexString(d.getBytes(), d.getClumpLength()).c_str());
 		}
 	}
-	catch(const fatal_exception& x) {
+	catch (const fatal_exception& x) {
 		gds__log("Fatal exception during clumplet dump: %s", x.what());
 		size_t l = getBufferLength() - getCurOffset();
 		const UCHAR *p = getBuffer() + getCurOffset();

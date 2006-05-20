@@ -788,7 +788,8 @@ void nbackup::restore_database(int filecount, const char* const* files)
 					try {
 						open_backup_scan();
 						break;
-					} catch (const Firebird::Exception& e) {
+					}
+					catch (const Firebird::Exception& e) {
 						printf("%s\n", e.what());
 					}
 #ifdef WIN_NT
@@ -1053,7 +1054,8 @@ int main( int argc, char *argv[] )
 				nbackup(database, username, password).restore_database(filecount, backup_files);
 				break;
 		}
-	} catch (const Firebird::Exception&) {
+	}
+	catch (const Firebird::Exception&) {
 		// It must have been printed out. No need to repeat the task
 		return EXIT_ERROR;
 	}

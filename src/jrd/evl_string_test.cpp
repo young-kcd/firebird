@@ -122,7 +122,8 @@ int main() {
 	try {
 		StringLikeEvaluator t7(p, "%sosome_text\\?", '\\');
 		assert(false);
-	} catch (const Firebird::Exception&) {
+	}
+	catch (const Firebird::Exception&) {
 	}
 
 	// Test single '%' pattern

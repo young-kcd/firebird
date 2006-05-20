@@ -1439,7 +1439,8 @@ inline void MemoryPool::addFreeBlock(MemoryBlock *blk)
 	BlockInfo info = {blk->small.mbk_length, fragmentToAdd};
 	try {
 		freeBlocks.add(info);
-	} catch(const Firebird::Exception&) {
+	}
+	catch (const Firebird::Exception&) {
 		// Add item to the list of pending free blocks in case of critically-low memory condition
 		PendingFreeBlock* temp = blockToPtr<PendingFreeBlock*>(blk);
 		temp->next = pendingFree;

@@ -582,7 +582,7 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 				return -1;
 			}
 		}
-		catch(size_t newOffset)
+		catch (size_t newOffset)
 		{
 			memmove(buf, --p, newOffset);
 			return newOffset;

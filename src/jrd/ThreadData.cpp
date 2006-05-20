@@ -94,7 +94,7 @@ int API_ROUTINE gds__thread_start(
 	try {
 		ThreadData::start(entrypoint, arg, priority, flags, thd_id);
 	}
-	catch(const Firebird::status_exception& status) {
+	catch (const Firebird::status_exception& status) {
 		rc = status.value()[1];
 	}
 	return rc;

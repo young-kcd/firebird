@@ -761,7 +761,7 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
 				if (m_Error_Status == FB_SUCCESS)
 					result = true;
 			}
-			catch( ... ) 
+			catch ( ... )
 			{
 			}
 		}
@@ -792,7 +792,7 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
 				CloseHandle(pi.hThread);
 			}
 		}
-		catch( ... )
+		catch ( ... )
 		{
 		}
 	}
