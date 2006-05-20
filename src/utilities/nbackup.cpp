@@ -44,7 +44,6 @@
 #include "../jrd/ibase.h"
 #include "../common/classes/array.h"
 #include "../common/classes/ClumpletWriter.h"
-#include <typeinfo>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

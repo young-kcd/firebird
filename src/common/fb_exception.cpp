@@ -3,7 +3,6 @@
 //#include "fb_exception.h"
 
 #include <string.h>
-#include <typeinfo>
 #include <errno.h>
 #include <stdarg.h>
 #include "gen/iberror.h"
