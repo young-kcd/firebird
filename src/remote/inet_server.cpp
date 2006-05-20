@@ -548,9 +548,8 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 	catch (Firebird::status_exception& e)
 	{
 		TEXT buffer[1024];
-        const ISC_STATUS* vector = 0;
-		if (! ((vector = e.value()) &&
-			  fb_interpret(buffer, sizeof(buffer), &vector)))
+        const ISC_STATUS* vector = e.value();
+		if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
 		{
 			strcpy(buffer, "Unknown failure in semaphore::enter()");
 		}
@@ -586,9 +585,8 @@ static void signal_term(int)
 	catch (Firebird::status_exception& e)
 	{
 		TEXT buffer[1024];
-        const ISC_STATUS* vector = 0;
-		if (! ((vector = e.value()) &&
-			  fb_interpret(buffer, sizeof(buffer), &vector)))
+        const ISC_STATUS* vector = e.value();
+		if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
 		{
 			strcpy(buffer, "Unknown failure in semaphore::release()");
 		}

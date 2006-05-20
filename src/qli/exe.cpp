@@ -942,7 +942,7 @@ static void execute_output( qli_nod* node)
 	qli_prt* print = (qli_prt*) node->nod_arg[e_out_print];
 	print->prt_file = EXEC_open_output(node);
 
-// Set up error handling
+	// Set up error handling
 
 	jmp_buf old_env;
 	jmp_buf env;
@@ -951,7 +951,7 @@ static void execute_output( qli_nod* node)
 
 	try {
 
-// Finally, execute the query
+		// Finally, execute the query
 
 		EXEC_execute(node->nod_arg[e_out_statement]);
 		memcpy(QLI_env, old_env, sizeof(QLI_env));
