@@ -162,7 +162,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	{
 		TEXT buffer[BUFFER_LARGE];
         const ISC_STATUS* vector = 0;
-		if (! (e.status_known() && (vector = e.value()) &&
+		if (! ((vector = e.value()) &&
 			  fb_interpret(buffer, sizeof(buffer), &vector)))
 		{
 			strcpy(buffer, "Unknown internal failure");
