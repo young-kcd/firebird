@@ -24,8 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: evl_string_test.cpp,v 1.8 2006-05-19 15:16:45 alexpeshkoff Exp $
- *
  */
 
 #include "../common/classes/alloc.h"
@@ -34,7 +32,7 @@
 const isc_like_escape_invalid = 1;
 
 void ERR_post(...) {
-	throw Firebird::Exception();
+	throw Firebird::LongJump();
 }
 
 #include "evl_string.h"
