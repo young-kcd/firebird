@@ -461,6 +461,9 @@ inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 #endif
 
 
+namespace Firebird
+{
+#ifdef NOT_USED_OR_REPLACED
 /**
 	This is the allocator template provided to be used with the STL.
 	Since the STL is the client of this class look to its documentation
@@ -488,9 +491,7 @@ inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 	std::vector<int, MemoryPool::allocator<int> > vec(MemoryPool::allocator<int>(poolRef, type));
 	The type is an optional parameter that defaults to 0.
 **/
-namespace Firebird
-{
-/*
+
 #ifndef TESTING_ONLY
 
 	template <class T>
@@ -551,8 +552,9 @@ namespace Firebird
 		SSHORT type;
 	};
 
-#endif //TESTING_ONLY
-*/
+#endif	// TESTING_ONLY
+#endif	// NOT_USED_OR_REPLACED
+
 	// Permanent storage is used as base class for all objects,
 	// performing memory allocation in methods other than 
 	// constructors of this objects. Permanent means that pool,
@@ -591,4 +593,3 @@ namespace Firebird
 
 
 #endif // CLASSES_ALLOC_H
-
