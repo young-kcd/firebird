@@ -1,3 +1,106 @@
+2006-05-20 03:53  asfernandes
+
+	* firebird2/src/: dsql/preparse.cpp (1.40), dsql/user_dsql.cpp
+	(1.45), jrd/btr.cpp (1.170), jrd/cch.cpp (1.131), jrd/dfw.epp
+	(1.181), jrd/isc_file.cpp (1.104), jrd/jrd.cpp (1.249),
+	jrd/nbak.cpp (1.54), jrd/why.cpp (1.105), jrd/os/posix/unix.cpp
+	(1.44), jrd/os/win32/winnt.cpp (1.32), misc/align.cpp (1.13),
+	remote/interface.cpp (1.123), utilities/nbackup.cpp (1.51):
+	
+	Misc
+
+2006-05-20 03:48  asfernandes
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp (1.36):
+	
+	Fix windows build
+
+2006-05-20 03:30  asfernandes
+
+	* firebird2/src/jrd/evl_string_test.cpp (1.9):
+	
+	Firebird::Exception is abstract. Throw Firebird::LongJump.
+
+2006-05-20 03:10  asfernandes
+
+	* firebird2/src/: common/fb_exception.cpp (1.25),
+	utilities/nbackup.cpp (1.50):
+	
+	Do not #include <typeinfo>
+
+2006-05-20 02:59  asfernandes
+
+	* firebird2/:
+	builds/install/arch-specific/linux/super/makeInstallImage.sh.in
+	(1.19), src/common/classes/alloc.h (1.65),
+	src/common/classes/init.h (1.5), src/common/classes/tree.h (1.53),
+	src/common/config/config.cpp (1.68), src/dsql/ddl.cpp (1.171),
+	src/dsql/dsql.cpp (1.168):
+	
+	Misc
+
+2006-05-19 17:16  alexpeshkoff
+
+	* firebird2/configure.in (1.243):
+	
+	avoid use of libstdc++ when not required
+
+2006-05-19 17:16  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.84), alice/alice.h (1.50),
+	alice/alice_meta.epp (1.48), burp/burp.cpp (1.112),
+	common/fb_exception.cpp (1.24), common/classes/alloc.cpp (1.83),
+	common/classes/alloc.h (1.64), common/classes/init.h (1.4),
+	common/classes/tree.h (1.52), common/config/config.cpp (1.67),
+	dsql/ddl.cpp (1.170), dsql/dsql.cpp (1.167), dsql/hsh.cpp (1.33),
+	dsql/pass1.cpp (1.266), dsql/preparse.cpp (1.39),
+	dsql/user_dsql.cpp (1.44), dudley/expand.cpp (1.27),
+	dudley/parse.cpp (1.49), gpre/gpre.cpp (1.76), gpre/gpre.h (1.83),
+	gpre/par.cpp (1.62), include/fb_exception.h (1.22), isql/isql.epp
+	(1.178), jrd/blb.cpp (1.120), jrd/btr.cpp (1.169), jrd/cch.cpp
+	(1.130), jrd/cmp.cpp (1.217), jrd/db_alias.cpp (1.19), jrd/dfw.epp
+	(1.180), jrd/dpm.epp (1.65), jrd/dyn.epp (1.84), jrd/dyn_def.epp
+	(1.107), jrd/dyn_del.epp (1.52), jrd/dyn_mod.epp (1.68),
+	jrd/dyn_util.epp (1.41), jrd/evl.cpp (1.179),
+	jrd/evl_string_test.cpp (1.8), jrd/exe.cpp (1.180), jrd/fun.epp
+	(1.75), jrd/gds.cpp (1.195), jrd/isc_file.cpp (1.103), jrd/jrd.cpp
+	(1.248), jrd/met.epp (1.183), jrd/nav.cpp (1.65), jrd/nbak.cpp
+	(1.53), jrd/opt.cpp (1.269), jrd/pag.cpp (1.101), jrd/rse.cpp
+	(1.106), jrd/sch.cpp (1.38), jrd/scl.epp (1.72), jrd/sdw.cpp
+	(1.61), jrd/shut.cpp (1.39), jrd/sort_mem.cpp (1.24), jrd/svc.cpp
+	(1.168), jrd/tpc.cpp (1.22), jrd/tra.cpp (1.118),
+	jrd/validation.cpp (1.19), jrd/vio.cpp (1.154), jrd/why.cpp
+	(1.104), jrd/os/posix/unix.cpp (1.43), jrd/os/win32/winnt.cpp
+	(1.31), misc/align.cpp (1.12), qli/dtr.cpp (1.41), qli/err.cpp
+	(1.19), qli/exe.cpp (1.49), remote/allr.cpp (1.33),
+	remote/inet_server.cpp (1.62), remote/interface.cpp (1.122),
+	remote/server.cpp (1.133), remote/xnet.cpp (1.73),
+	utilities/nbackup.cpp (1.49), utilities/gsec/gsec.cpp (1.55),
+	utilities/gstat/dba.epp (1.68):
+	
+	1. Avoid use of STL 2. Reworked exceptions to make status_exception
+	always hold correct status vector 3. Avoid use of RTTI
+
+2006-05-19 17:14  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.linux_amd64 (1.8):
+	
+	avoid use of RTTI
+
+2006-05-19 13:42  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/super/makeInstallImage
+	.sh.in (1.18):
+	
+	added nbackup to SS binary packages
+
+2006-05-19 13:09  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.268):
+	
+	Fixed bug with explicit plans and dependent vs free streams.
+
 2006-05-19 03:35  asfernandes
 
 	* firebird2/src/common/config/dir_list.cpp (1.31):
