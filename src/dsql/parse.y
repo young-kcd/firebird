@@ -516,6 +516,9 @@ static LexerState lex;
 %token UNDO
 %token REQUESTS
 %token TIMEOUT
+%token PRESERVE
+%token GLOBAL 
+%token TEMPORARY 
 
 /* tokens added for Firebird 2.1 */
 
@@ -845,6 +848,8 @@ create_clause	: EXCEPTION exception_clause
 			{ $$ = $2; }
 		| TABLE table_clause
 			{ $$ = $2; }
+		| GLOBAL TEMPORARY TABLE gtt_table_clause
+			{ $$ = $4; }
 		| TRIGGER trigger_clause
 			{ $$ = $2; }
 		| VIEW view_clause
@@ -1209,13 +1214,26 @@ page_noise	:
 /* CREATE TABLE */
 
 table_clause	: simple_table_name external_file '(' table_elements ')'
-			{ $$ = make_node (nod_def_relation, 
+			{ $$ = make_flag_node (nod_def_relation, NOD_PERMANENT_TABLE,
 				(int) e_drl_count, $1, make_list ($4), $2); }
 		;
 
 rtable_clause	: simple_table_name external_file '(' table_elements ')'
 			{ $$ = make_node (nod_redef_relation, 
 				(int) e_drl_count, $1, make_list ($4), $2); }
+		;
+
+gtt_table_clause :	simple_table_name '(' table_elements ')'
+			{ $$ = make_flag_node (nod_def_relation, NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS,
+				(int) e_drl_count, $1, make_list ($3), NULL); }
+
+		|	simple_table_name '(' table_elements ')' ON COMMIT PRESERVE ROWS
+			{ $$ = make_flag_node (nod_def_relation, NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS,
+				(int) e_drl_count, $1, make_list ($3), NULL); }
+
+		|	simple_table_name '(' table_elements ')' ON COMMIT KW_DELETE ROWS
+			{ $$ = make_flag_node (nod_def_relation, NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS,
+				(int) e_drl_count, $1, make_list ($3), NULL); }
 		;
 
 external_file	: EXTERNAL KW_FILE sql_string

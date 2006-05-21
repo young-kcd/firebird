@@ -96,6 +96,9 @@
 // Definition of DatabasePlugins
 #include "../jrd/flu.h"
 
+#include "../jrd/pag.h"
+
+class str;
 class CharSetContainer;
 struct dsc;
 struct thread;
@@ -183,12 +186,12 @@ public:
 	vec<jrd_prc*>*	dbb_procedures;	// scanned procedures
 	Lock* 		dbb_lock;		// granddaddy lock
 	jrd_tra*	dbb_sys_trans;	// system transaction
-	jrd_file*	dbb_file;		// files for I/O operations
+//	jrd_file*	dbb_file;		// files for I/O operations
 	Shadow*		dbb_shadow;		// shadow control block
 	Lock*		dbb_shadow_lock;	// lock for synchronizing addition of shadows
 	//SLONG dbb_shadow_sync_count;	// to synchronize changes to shadows
 	Lock*		dbb_retaining_lock;	// lock for preserving commit retaining snapshot
-	PageControl*	dbb_pcontrol;	// page control
+	PageManager dbb_page_manager;
 	vcl*		dbb_t_pages;	// pages number for transactions
 	vcl*		dbb_gen_id_pages;	// known pages for gen_id
 	BlobFilter*	dbb_blob_filters;	// known blob filters
@@ -287,7 +290,8 @@ private:
 		dbb_database_name(p),
 		dbb_encrypt_key(p),
 		dbb_pools(p, 4),
-		dbb_charsets(p)
+		dbb_charsets(p),
+		dbb_page_manager(p)
 	{
 		dbb_pools.resize(1);
 	}
@@ -481,6 +485,9 @@ public:
 	jrd_req*	att_requests;		// Requests belonging to attachment
 	sort_context*	att_active_sorts;	// Active sorts
 	Lock*		att_id_lock;		// Attachment lock (if any)
+#ifndef SUPERSERVER
+	Lock*		att_temp_pg_lock;	// temporary pagespace ID lock
+#endif
 	SLONG		att_attachment_id;	// Attachment ID
 	SLONG		att_lock_owner_handle;	// Handle for the lock manager
 	SLONG		att_event_session;	// Event session id, if any
@@ -702,6 +709,43 @@ public:
 typedef Firebird::SortedArray<ViewContext, Firebird::EmptyStorage<ViewContext>, 
 		USHORT, ViewContext> ViewContexts;
 
+class RelationPages
+{
+public:
+	vcl*	rel_pages;			// vector of pointer page numbers 
+	SLONG	rel_index_root;		// index root page number 
+	SLONG	rel_data_pages;		// count of relation data pages 
+	USHORT	rel_slot_space;		// lowest pointer page with slot space 
+	USHORT	rel_data_space;		// lowest pointer page with data page space 
+
+	SLONG	rel_instance_id;	// 0 or att_attachment_id or tra_number
+	USHORT	rel_pg_space_id;
+
+	RelationPages() 
+	{
+		rel_pages = 0;
+		rel_index_root = rel_data_pages = rel_instance_id = 0;
+		rel_slot_space = rel_data_space = 0;
+		rel_pg_space_id = DB_PAGE_SPACE;
+		rel_next_free = 0;
+		useCount = 0;
+	}
+
+	inline SLONG addRef() 
+	{ return useCount++; }
+
+	void free(RelationPages*& nextFree);
+
+	static inline SLONG generate(const void* , const RelationPages* item) 
+		{ return item->rel_instance_id; }
+
+private:
+	RelationPages*	rel_next_free; 
+	SLONG	useCount;
+
+friend class jrd_rel;
+};
+
 
 /* Relation block; one is created for each relation referenced
    in the database, though it is not really filled out until
@@ -717,7 +761,6 @@ public:
 	Firebird::MetaName	rel_name;		/* ascii relation name */
 	vec<Format*>*	rel_formats;		/* Known record formats */
 	Firebird::MetaName	rel_owner_name;	/* ascii owner */
-	vcl*			rel_pages;			/* vector of pointer page numbers */
 	vec<jrd_fld*>*	rel_fields;			/* vector of field blocks */
 
 	RecordSelExpr*	rel_view_rse;		/* view record select expression */
@@ -725,8 +768,6 @@ public:
 
 	Firebird::MetaName	rel_security_name;	/* security class name for relation */
 	ExternalFile* 	rel_file;			/* external file name */
-	SLONG			rel_index_root;		/* index root page number */
-	SLONG			rel_data_pages;		/* count of relation data pages */
 
 	vec<Record*>*	rel_gc_rec;			/* vector of records for garbage collection */
 #ifdef GARBAGE_THREAD
@@ -734,8 +775,6 @@ public:
 	RelationGarbage*	rel_garbage;	/* deffered gc bitmap's by tran numbers */
 #endif
 
-	USHORT		rel_slot_space;		/* lowest pointer page with slot space */
-	USHORT		rel_data_space;		/* lowest pointer page with data page space */
 	USHORT		rel_use_count;		/* requests compiled with relation */
 	USHORT		rel_sweep_count;	/* sweep and/or garbage collector threads active */
 	SSHORT		rel_scan_count;		/* concurrent sequential scan count */
@@ -752,6 +791,54 @@ public:
 	trig_vec*	rel_post_store;		/* Post-operation store trigger */
 	prim		rel_primary_dpnds;	/* foreign dependencies on this relation's primary key */
 	frgn		rel_foreign_refs;	/* foreign references to other relations' primary keys */
+
+	// global temporary relations attributes
+	RelationPages*	getPages(thread_db* tdbb, SLONG tran = -1, bool allocPages = true);
+	inline RelationPages* getBasePages() 
+	{ return &rel_pages_base; }
+
+	bool			delPages(thread_db* tdbb, SLONG tran = -1, RelationPages* aPages = 0);
+
+	void			getRelLockKey(thread_db* tdbb, UCHAR* key);
+	SSHORT			getRelLockKeyLength();
+
+	void			cleanUp();
+
+	class RelPagesSnapshot : public Firebird::Array<RelationPages*>
+	{
+	public:
+		typedef Firebird::Array<RelationPages*> inherited;
+
+		RelPagesSnapshot(thread_db* tdbb, jrd_rel* relation) {
+			spt_tdbb = tdbb;
+			spt_relation = relation;
+		}
+		
+		~RelPagesSnapshot() { 
+			clear(); 
+		}
+
+		void clear();
+	private:
+		thread_db*	spt_tdbb;
+		jrd_rel*	spt_relation;
+
+	friend class jrd_rel;
+	};
+
+	void fillPagesSnapshot(RelPagesSnapshot&, const bool AttachmentOnly = false);
+
+private:
+	typedef Firebird::SortedArray<
+				RelationPages*, 
+				Firebird::EmptyStorage<RelationPages*>, 
+				SLONG, 
+				RelationPages>
+			RelationPagesInstances;
+
+	RelationPagesInstances* rel_pages_inst;
+	RelationPages			rel_pages_base;
+	RelationPages*			rel_pages_free;
 
 public:
 	explicit jrd_rel(MemoryPool& p) 
@@ -773,6 +860,11 @@ const USHORT REL_check_partners			= 512;		/* Rescan primary dependencies and for
 const USHORT REL_being_scanned			= 1024;		/* relation scan in progress */
 const USHORT REL_sys_trigs_being_loaded	= 2048;		/* System triggers being loaded */
 const USHORT REL_deleting				= 4096;		/* relation delete in progress */
+
+const USHORT REL_temp_tran				= 0x2000;
+const USHORT REL_temp_conn				= 0x4000;
+
+const USHORT REL_IS_TEMP = REL_temp_tran | REL_temp_conn;
 
 
 /* Field block, one for each field in a scanned relation */
@@ -942,13 +1034,16 @@ class BlockingThread : public pool_alloc<type_btb>
 // of a struct.
 
 struct win {
-	SLONG win_page;
+	PageNumber win_page;
 	Ods::pag* win_buffer;
 	exp_index_buf* win_expanded_buffer;
 	class BufferDesc* win_bdb;
 	SSHORT win_scans;
 	USHORT win_flags;
-	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
+//	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
+	explicit win(const PageNumber& wp) : win_page(wp), win_flags(0) {}
+	win(const USHORT pageSpaceID, const SLONG pageNum) : 
+		win_page(pageSpaceID, pageNum), win_flags(0) {}
 };
 
 typedef win WIN;
@@ -962,7 +1057,7 @@ typedef win WIN;
 // may get the default value of -1 to "wp".
 struct win_for_array: public win
 {
-	win_for_array() : win(-1) {}
+	win_for_array() : win(DB_PAGE_SPACE, -1) {}
 };
 
 // win_flags
@@ -995,6 +1090,7 @@ public:
 		tdbb_status_vector = 0;
 		tdbb_quantum = 0;
 		tdbb_flags = 0;
+		tdbb_temp_attid = tdbb_temp_traid = 0;
 		JRD_inuse_clear(this);
 	}
 	Database*	tdbb_database;
@@ -1005,6 +1101,9 @@ public:
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
 	struct iuo	tdbb_mutexes;
+
+	SLONG		tdbb_temp_attid;	// current temporary table scope
+	SLONG		tdbb_temp_traid;	// current temporary table scope
 
 #if defined(UNIX) && defined(SUPERSERVER)
     sigjmp_buf tdbb_sigsetjmp;
@@ -1025,6 +1124,7 @@ const USHORT TDBB_set_backup_state		= 8;	/* Setting state for backup lock */
 const USHORT TDBB_backup_merge			= 16;	/* Merging changes from difference file */
 const USHORT TDBB_stack_trace_done		= 32;	/* PSQL stack trase is added into status-vector */
 const USHORT TDBB_shutdown_manager		= 64;	/* Server shutdown thread */
+const USHORT TDBB_deffered				= 128;	/* deffered work performed now */
 
 
 // duplicate context of firebird string to store in jrd_nod::nod_arg

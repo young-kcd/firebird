@@ -485,6 +485,7 @@ void DFW_perform_work(jrd_tra* transaction)
 	{
 		more = false;
 		try {
+			tdbb->tdbb_flags |= TDBB_deffered;
 			for (const deferred_task* task = task_table; 
 				task->task_type != dfw_null; ++task)
 			{
@@ -511,8 +512,11 @@ void DFW_perform_work(jrd_tra* transaction)
 				ERR_punt();
 			}
 			++phase;
+			tdbb->tdbb_flags &= ~TDBB_deffered;
 		}	
 		catch (const Firebird::Exception& ex) {
+			tdbb->tdbb_flags &= ~TDBB_deffered;
+
 			/* Do any necessary cleanup */
 			if (!phase) {
 				Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -758,7 +762,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_lock_timeout,
 					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(dbb->dbb_file->fil_string),
+					 isc_arg_string, ERR_cstring(dbb->dbb_filename.c_str()),
 					 0);
 			return false;
 		}
@@ -933,7 +937,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 									 isc_arg_gds, isc_lock_timeout,
 									 isc_arg_gds, isc_obj_in_use,
 									 isc_arg_string,
-									 ERR_cstring(dbb->dbb_file->fil_string),
+									 ERR_cstring(dbb->dbb_filename.c_str()),
 									 0);
 						add_file(tdbb, phase, work, NULL);
 						finished = true;
@@ -946,7 +950,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						ERR_post(isc_no_meta_update,
 								 isc_arg_gds, isc_obj_in_use,
 								 isc_arg_string,
-								 ERR_cstring(dbb->dbb_file->fil_string),
+								 ERR_cstring(dbb->dbb_filename.c_str()),
 								 0);
 					}
 					break;
@@ -1500,15 +1504,16 @@ static bool create_index(	thread_db*	tdbb,
 			{
 				relation = MET_lookup_relation(tdbb, IDXN.RDB$RELATION_NAME);
 
+				RelationPages* relPages = relation->getBasePages();
 				/* Fetch the root index page and mark MUST_WRITE, and then
 				   delete the index. It will also clean the index slot. Note
 				   that the previous fixed definition of MAX_IDX (64) has been
 				   dropped in favor of a computed value saved in the Database */
-				if (relation->rel_index_root)
+				if (relPages->rel_index_root)
 				{
 					if (work->dfw_id != dbb->dbb_max_idx)
 					{
-						WIN window(relation->rel_index_root);
+						WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
 						CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 						CCH_MARK_MUST_WRITE(tdbb, &window);
 						BTR_delete_index(tdbb, &window, work->dfw_id);
@@ -2910,11 +2915,12 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		    EXT_fini (relation);
 		}
 
-		if (relation->rel_index_root) {
-			IDX_delete_indices(tdbb, relation);
+		RelationPages* relPages = relation->getBasePages();
+		if (relPages->rel_index_root) {
+			IDX_delete_indices(tdbb, relation, relPages);
 		}
 
-		if (relation->rel_pages) {
+		if (relPages->rel_pages) {
 			DPM_delete_relation(tdbb, relation);
 		}
 

@@ -353,6 +353,77 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 }
 
 
+/*
+SELECT RLC_M.RDB$RELATION_NAME, REL_M.RDB$FLAGS, REL_C.RDB$FLAGS
+  FROM RDB$RELATION_CONSTRAINTS RLC_M,
+       RDB$RELATIONS REL_C,
+       RDB$RELATIONS REL_M
+ WHERE RLC_M.RDB$CONSTRAINT_TYPE IN ('UNIQUE', 'PRIMARY KEY')
+   AND RLC_M.RDB$INDEX_NAME = reffered_index_name
+   AND REL_C.RDB$RELATION_NAME = child_rel_name
+   AND REL_M.RDB$RELATION_NAME = RLC_M.RDB$RELATION_NAME
+*/
+
+static void check_fk_against_temp(thread_db* tdbb, Global* gbl, 
+				const TEXT*	child_rel_name, const TEXT* master_index_name)
+{
+	Database* dbb = tdbb->tdbb_database;
+
+	const SSHORT id = drq_l_rel_info;
+	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info, DYN_REQUESTS);
+	bool bErr = false;
+	char sMaster[256], sChild[256];
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		RLC_M IN RDB$RELATION_CONSTRAINTS CROSS
+		REL_C IN RDB$RELATIONS CROSS
+		REL_M IN RDB$RELATIONS 
+		WITH (RLC_M.RDB$CONSTRAINT_TYPE EQ UNIQUE_CNSTRT OR 
+			  RLC_M.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY)
+		 AND RLC_M.RDB$INDEX_NAME EQ master_index_name
+		 AND REL_C.RDB$RELATION_NAME EQ child_rel_name
+		 AND REL_M.RDB$RELATION_NAME EQ RLC_M.RDB$RELATION_NAME
+
+		bErr = ( (REL_M.RDB$FLAGS & REL_IS_GLOBAL_TEMP) != 
+				(REL_C.RDB$FLAGS & REL_IS_GLOBAL_TEMP) ) &&
+				!( (REL_M.RDB$FLAGS & REL_global_temp_preserve) && 
+					(REL_C.RDB$FLAGS & REL_global_temp_delete) );
+
+		if (bErr)
+		{
+			fb_utils::exact_name_limit(REL_M.RDB$RELATION_NAME, sizeof(REL_M.RDB$RELATION_NAME));
+			fb_utils::exact_name_limit(REL_C.RDB$RELATION_NAME, sizeof(REL_C.RDB$RELATION_NAME));
+
+			char *scope = NULL;
+			if (REL_M.RDB$FLAGS & REL_global_temp_preserve)
+				scope = "global temporary table \"%s\" of type on commit preserve rows";
+			else if (REL_M.RDB$FLAGS & REL_global_temp_delete)
+				scope = "global temporary table \"%s\" of type on commit delete rows";
+			else
+				scope = "persistent table \"%s\"";
+
+			snprintf(sMaster, sizeof(sMaster)-1, scope, REL_M.RDB$RELATION_NAME);
+
+			if (REL_C.RDB$FLAGS & REL_global_temp_preserve)
+				scope = "global temporary table \"%s\" of type on commit preserve rows";
+			else if (REL_C.RDB$FLAGS & REL_global_temp_delete)
+				scope = "global temporary table \"%s\" of type on commit delete rows";
+			else
+				scope = "persistent table \"%s\"";
+			
+			snprintf(sChild, sizeof(sChild)-1, scope, REL_C.RDB$RELATION_NAME);
+		}
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_l_rel_info))
+		DYN_REQUEST(drq_l_rel_info) = request;
+
+	if (bErr) {
+		DYN_error_punt(false, 231, // Msg 231 : "%s can't reference %s"
+			sChild, sMaster, NULL, NULL, NULL);
+	}
+}
+
 void DYN_define_constraint(Global*		gbl,
 						   const UCHAR**	ptr,
 						   const Firebird::MetaName*	relation_name,
@@ -444,6 +515,9 @@ void DYN_define_constraint(Global*		gbl,
 			strcpy(CRT.RDB$INDEX_NAME, index_name.c_str());
 			CRT.RDB$INDEX_NAME.NULL = FALSE;
 
+			check_fk_against_temp(tdbb, gbl, 
+				relation_name->c_str(), referred_index_name.c_str());
+
 			/* check that we have references permissions on the table and
 			   fields that the index:referred_index_name is on. */
 
@@ -465,12 +539,14 @@ void DYN_define_constraint(Global*		gbl,
 		// msg 124: "A column name is repeated in the definition of constraint: %s"
 		// msg 125: "Integrity constraint lookup failed"
 		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
+		// msg 231: "%s cannot reference %s"
 		switch (id) {
 			case drq_s_rel_con:	number = 121;	local_id = id;	break;
 			case drq_s_ref_con:	number = 127;	local_id = id;	break;
 			case drq_c_unq_nam:	number = 121;					break;
 			case drq_n_idx_seg:	number = 124;					break;
 			case drq_c_dup_con:	number = 125;					break;
+			case drq_l_rel_info: number = 231;					break;
 			default:			number = 125;					break;
 		}
 
@@ -478,7 +554,7 @@ void DYN_define_constraint(Global*		gbl,
 
 		DYN_error_punt(true,
 						number,
-						number == 124 ? constraint_name.c_str() : NULL,
+						(number == 124 || number == 231) ? constraint_name.c_str() : NULL,
 						NULL,
 						NULL,
 						NULL,
@@ -3158,6 +3234,22 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 			case isc_dyn_rel_sql_protection:
 				REL.RDB$FLAGS |= REL_sql;
 				sql_prot = (bool) DYN_get_number(ptr);
+				break;
+
+			case isc_dyn_rel_temporary:
+				switch (DYN_get_number(ptr))
+				{
+					case isc_dyn_rel_temp_global_preserve:
+						REL.RDB$FLAGS |= REL_global_temp_preserve;
+						break;
+
+					case isc_dyn_rel_temp_global_delete:
+						REL.RDB$FLAGS |= REL_global_temp_delete;
+						break;
+
+					default:
+						fb_assert(false);
+				}
 				break;
 
 			default:

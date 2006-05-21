@@ -294,13 +294,13 @@ void TRA_cleanup(thread_db* tdbb)
 			return;
 	}
 
-	const SLONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
+	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 
 /* Read header page and allocate transaction number.  Since
    the transaction inventory page was initialized to zero, it
    transaction is automatically marked active. */
 
-	WIN window(HEADER_PAGE);
+	WIN window(HEADER_PAGE_NUMBER);
 	const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	const SLONG ceiling = header->hdr_next_transaction;
 	const SLONG active = header->hdr_oldest_active;
@@ -505,7 +505,7 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence, WIN * precedence_window)
 
 /* Start by fetching prior transaction page, if any */
 	tx_inv_page* prior_tip;
-	WIN prior_window(-1);
+	WIN prior_window(DB_PAGE_SPACE, -1);
 	if (sequence) {
 		prior_tip =
 			fetch_inventory_page(tdbb, &prior_window, (SLONG) (sequence - 1),
@@ -513,7 +513,7 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence, WIN * precedence_window)
 	}
 
 /* Allocate and format new page */
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 	tx_inv_page* tip = (tx_inv_page*) DPM_allocate(tdbb, &window);
 	tip->tip_header.pag_type = pag_transactions;
 
@@ -524,7 +524,7 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence, WIN * precedence_window)
 
 	if (sequence) {
 		CCH_MARK_MUST_WRITE(tdbb, &prior_window);
-		prior_tip->tip_next = window.win_page;
+		prior_tip->tip_next = window.win_page.getPageNum();
 		CCH_RELEASE(tdbb, &prior_window);
 	}
 
@@ -532,11 +532,11 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence, WIN * precedence_window)
 
 	vcl* vector = dbb->dbb_t_pages =
 		vcl::newVector(*dbb->dbb_permanent, dbb->dbb_t_pages, sequence + 1);
-	(*vector)[sequence] = window.win_page;
+	(*vector)[sequence] = window.win_page.getPageNum();
 
 /* Write into pages relation */
 
-	DPM_pages(tdbb, 0, pag_transactions, sequence, window.win_page);
+	DPM_pages(tdbb, 0, pag_transactions, sequence, window.win_page.getPageNum());
 }
 
 
@@ -561,9 +561,9 @@ int TRA_fetch_state(thread_db* tdbb, SLONG number)
 /* locate and fetch the proper TIP page */
 
     const ULONG tip_number = (ULONG) number;
-	const SLONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
+	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	const ULONG tip_seq = tip_number / trans_per_tip;
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 	const tx_inv_page* tip = fetch_inventory_page(tdbb, &window, tip_seq, LCK_read);
 
 /* calculate the state of the desired transaction */
@@ -598,13 +598,13 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, ULONG base, ULONG top
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
+	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	ULONG sequence = base / trans_per_tip;
 	const ULONG last = top / trans_per_tip;
 
 /* fetch the first inventory page */
 
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 	const tx_inv_page* tip =
 		fetch_inventory_page(tdbb, &window, (SLONG) sequence++, LCK_read);
 
@@ -1101,6 +1101,19 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 		}
 	}
 
+	{
+		vec<jrd_rel*>* rels = tdbb->tdbb_database->dbb_relations;
+		for (size_t i = 0; i < rels->count(); i++)
+		{
+			jrd_rel* relation = (jrd_rel*) (*rels)[i];
+			if (relation && (relation->rel_flags & REL_temp_tran))
+			{
+				relation->delPages(tdbb, transaction->tra_number);
+			}
+		}
+
+	}
+
 /* Release the locks associated with the transaction */
 
 	vec<Lock*>* vector = transaction->tra_relation_locks;
@@ -1327,13 +1340,13 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 		return;
 	}
 
-	ULONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
+	ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	const SLONG sequence = number / trans_per_tip;
-	trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
+	//trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	const ULONG byte = TRANS_OFFSET(number % trans_per_tip);
 	const SSHORT shift = TRANS_SHIFT(number);
 
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 	tx_inv_page* tip = fetch_inventory_page(tdbb, &window, (SLONG) sequence, LCK_write);
 
 #ifdef SUPERSERVER_V2
@@ -1497,7 +1510,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const SCHAR* tpb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	Attachment* attachment = tdbb->tdbb_attachment;
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran) {
 		ERR_post(isc_shutinprog, isc_arg_cstring,
@@ -1965,7 +1978,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 		CCH_flush(tdbb, FLUSH_SWEEP, 0);
 
-		WIN window(HEADER_PAGE);
+		WIN window(HEADER_PAGE_NUMBER);
 		header_page* header =
 			(header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
@@ -2155,10 +2168,10 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
 /* If this is the first transaction on a TIP, allocate the TIP now. */
 
 	const bool new_tip = 
-		(number == 1 || (number % dbb->dbb_pcontrol->pgc_tpt) == 0);
+		(number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
 	if (new_tip) {
 		TRA_extend_tip(tdbb,
-					   (ULONG) (number / dbb->dbb_pcontrol->pgc_tpt), window);
+					   (ULONG) (number / dbb->dbb_page_manager.transPerTIP), window);
 	}
 
 	return number;
@@ -2183,7 +2196,7 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	window->win_page = HEADER_PAGE;
+	window->win_page = HEADER_PAGE_NUMBER;
 	header_page* header = (header_page*) CCH_FETCH(tdbb, window, LCK_write, pag_header);
 
 /* Before incrementing the next transaction Id, make sure the current one is valid */
@@ -2205,10 +2218,10 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
 /* If this is the first transaction on a TIP, allocate the TIP now. */
 
 	const bool new_tip = 
-		(number == 1 || (number % dbb->dbb_pcontrol->pgc_tpt) == 0);
+		(number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
 	if (new_tip) {
 		TRA_extend_tip(tdbb,
-					   (ULONG) (number / dbb->dbb_pcontrol->pgc_tpt), window);
+					   (ULONG) (number / dbb->dbb_page_manager.transPerTIP), window);
 	}
 
 /* Extend, if necessary, has apparently succeeded.  Next, update header
@@ -2426,7 +2439,7 @@ static SLONG inventory_page(thread_db* tdbb, SLONG sequence)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 	vcl* vector = dbb->dbb_t_pages;
 	while (!vector || sequence >= (SLONG) vector->count()) {
 		DPM_scan_pages(tdbb);
@@ -2445,7 +2458,7 @@ static SLONG inventory_page(thread_db* tdbb, SLONG sequence)
 		tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_transactions);
 		CCH_RELEASE(tdbb, &window);
 		DPM_pages(tdbb, 0, pag_transactions, vector->count(),
-				  window.win_page);
+				  window.win_page.getPageNum());
 	}
 
 	return (*vector)[sequence];
@@ -2472,12 +2485,12 @@ static SSHORT limbo_transaction(thread_db* tdbb, SLONG id)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const SLONG trans_per_tip = dbb->dbb_pcontrol->pgc_tpt;
+	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 
 	const SLONG page = id / trans_per_tip;
 	const SLONG number = id % trans_per_tip;
 
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 	const tx_inv_page* tip = fetch_inventory_page(tdbb, &window, page, LCK_write);
 
 	const SLONG trans_offset = TRANS_OFFSET(number);
@@ -2566,7 +2579,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 /* Create a new transaction lock, inheriting oldest active
    from transaction being committed. */
 
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 	SLONG new_number;
 #ifdef SUPERSERVER_V2
 	new_number = bump_transaction_id(tdbb, &window);

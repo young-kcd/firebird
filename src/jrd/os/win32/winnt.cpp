@@ -92,6 +92,9 @@ static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
 #endif
 #endif
 
+static const DWORD g_dwShareTempFlags = FILE_SHARE_READ;
+static const DWORD g_dwExtraTempFlags = FILE_ATTRIBUTE_TEMPORARY |
+										FILE_FLAG_DELETE_ON_CLOSE;
 
 
 int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& file_name, SLONG start)
@@ -108,7 +111,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
  *	sequence of 0.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, false);
+	jrd_file* new_file = PIO_create(dbb, file_name, false, false);
 	if (!new_file) {
 		return 0;
 	}
@@ -181,7 +184,7 @@ int PIO_connection(const Firebird::PathName& file_name)
 
 
 
-jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite)
+jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite, bool temporary)
 {
 /**************************************
  *
@@ -197,11 +200,12 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
 
 	const HANDLE desc = CreateFile(file_name,
 					  GENERIC_READ | GENERIC_WRITE,
-					  g_dwShareFlags,
+					  (temporary ? g_dwShareTempFlags : g_dwShareFlags),
 					  NULL,
 					  (overwrite ? CREATE_ALWAYS : CREATE_NEW),
 					  FILE_ATTRIBUTE_NORMAL |
-					  g_dwExtraFlags,
+					  g_dwExtraFlags | 
+					  (temporary ? g_dwExtraTempFlags : 0),
 					  0);
 
 	if (desc == INVALID_HANDLE_VALUE)
@@ -349,7 +353,8 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
  *  callers should not rely on this behavior
  *
  **************************************/
-	jrd_file* file = dbb->dbb_file;
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	jrd_file* file = pageSpace->file;
 	HANDLE desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
 					 file->fil_force_write_desc : file->fil_desc);
 
@@ -437,7 +442,8 @@ SLONG PIO_max_alloc(Database* dbb)
  *	Compute last physically allocated page of database.
  *
  **************************************/
-	jrd_file* file = dbb->dbb_file;
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	jrd_file* file = pageSpace->file;
 
 	while (file->fil_next) {
 		file = file->fil_next;
@@ -467,7 +473,8 @@ SLONG PIO_act_alloc(Database* dbb)
  **  Traverse the linked list of files and add up the number of pages
  **  in each file
  **/
-	for (const jrd_file* file = dbb->dbb_file; file != NULL; file = file->fil_next) {
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	for (const jrd_file* file = pageSpace->file; file != NULL; file = file->fil_next) {
 		tot_pages += get_number_of_pages(file, dbb->dbb_page_size);
 	}
 
@@ -533,7 +540,8 @@ jrd_file* PIO_open(Database* dbb,
 			 * the Header Page flag setting to make sure that the database is set
 			 * ReadOnly.
 			 */
-			if (!dbb->dbb_file)
+			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+			if (!pageSpace->file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
 		}
 	}
@@ -924,7 +932,7 @@ static jrd_file* seek_file(jrd_file*			file,
  *
  **************************************/
 	Database* dbb = bdb->bdb_dbb;
-	ULONG page = bdb->bdb_page;
+	ULONG page = bdb->bdb_page.getPageNum();
 
 	for (;; file = file->fil_next) {
 		if (!file) {
@@ -1019,7 +1027,8 @@ static jrd_file* setup_file(Database*					dbb,
 
 /* If this isn't the primary file, we're done */
 
-	if (dbb->dbb_file)
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	if (pageSpace && pageSpace->file)
 		return file;
 
 /* Set a local variable that indicates whether we're running
@@ -1079,18 +1088,19 @@ static jrd_file* setup_file(Database*					dbb,
 			SCHAR spare_memory[MIN_PAGE_SIZE*2];
 			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
 		
+			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			try {
-				dbb->dbb_file = file;
+				pageSpace->file = file;
 				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
 				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), 0);
-				dbb->dbb_file = NULL; // Will be set again later by the caller				
+				pageSpace->file = NULL; // Will be set again later by the caller				
 			}
 			catch (const Firebird::Exception&) {
 				delete dbb->dbb_lock;
 				dbb->dbb_lock = NULL;
 				delete file;
-				dbb->dbb_file = NULL; // Will be set again later by the caller
+				pageSpace->file = NULL; // Will be set again later by the caller
 				throw;
 			}
 		}

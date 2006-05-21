@@ -760,7 +760,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		LCK_init(tdbb, LCK_OWNER_database);
 		dbb->dbb_flags |= DBB_lck_init_done;
 		INI_init();
-		dbb->dbb_file =
+
+		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+		pageSpace->file =
 			PIO_open(dbb, expanded_name, options.dpb_trace != 0, NULL, file_name);
 		SHUT_init(dbb);
 		PAG_header(file_name.c_str(), file_name.length(), false);
@@ -776,7 +778,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_unknown);
 		
 		PAG_init2(0);		
-		
+
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 		LOG_init(expanded_name, length_expanded);
 #endif
@@ -1850,10 +1852,11 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	initing_security = false;
 	V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
 
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	try
 	{
 		// try to create with overwrite = false
-		dbb->dbb_file = PIO_create(dbb, expanded_name, false);
+		pageSpace->file = PIO_create(dbb, expanded_name, false, false);
 	}
 	catch (Firebird::status_exception)
 	{
@@ -1882,8 +1885,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 			if (allow_overwrite)
 			{
 				// file is a database and the user (SYSDBA or owner) has right to overwrite
-				dbb->dbb_file =
-					PIO_create(dbb, expanded_name, options.dpb_overwrite);
+				pageSpace->file =
+					PIO_create(dbb, expanded_name, options.dpb_overwrite, false);
 			}
 			else
 			{
@@ -1898,7 +1901,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 			throw;
 	}
 
-	const jrd_file* first_dbb_file = dbb->dbb_file;
+	const jrd_file* first_dbb_file = pageSpace->file;
+
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
 	CCH_init(tdbb, options.dpb_buffers);
@@ -1910,7 +1914,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	PAG_format_header();
 	INI_init2();
 	PAG_format_log();
-	PAG_format_pip();
+	PAG_format_pip(tdbb, *pageSpace);
 
 	if (options.dpb_set_page_buffers)
 		PAG_set_page_buffers(options.dpb_page_buffers);
@@ -2405,7 +2409,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
    process can attach to this database once we release our exclusive
    lock and start dropping files. */
 
-		   	WIN window(HEADER_PAGE);
+		   	WIN window(HEADER_PAGE_NUMBER);
 			Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 			CCH_MARK_MUST_WRITE(tdbb, &window);
 			header->hdr_ods_version = 0;
@@ -2432,7 +2436,8 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 		V4_JRD_MUTEX_UNLOCK(databases_mutex);
 
-		const jrd_file* file = dbb->dbb_file;
+		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+		const jrd_file* file = pageSpace->file;
 		const Shadow* shadow = dbb->dbb_shadow;
 
 #ifdef GOVERNOR
@@ -4772,7 +4777,8 @@ static bool drop_files(const jrd_file* file)
 							   SYS_ERR, errno,
 							   0);
 			Database* dbb = GET_DBB();
-			gds__log_status(dbb->dbb_file->fil_string, status);
+			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+			gds__log_status(pageSpace->file->fil_string, status);
 		}
 	}
 
@@ -5586,11 +5592,29 @@ static void release_attachment(Attachment* attachment)
 		return;
 	}
 
+#ifdef SUPERSERVER
+	vec<jrd_rel*>* rels = dbb->dbb_relations;
+	for (size_t i = 1; i < rels->count(); i++)
+	{
+		jrd_rel* relation = (jrd_rel*) (*rels)[i];
+		if (relation && (relation->rel_flags & REL_temp_conn) &&
+			!(relation->rel_flags & (REL_deleted | REL_deleting)) )
+		{
+			relation->delPages(tdbb);
+		}
+	}
+#endif
+
 	if (attachment->att_event_session)
 		EVENT_delete_session(attachment->att_event_session);
 
 	if (attachment->att_id_lock)
 		LCK_release(tdbb, attachment->att_id_lock);
+
+#ifndef SUPERSERVER
+	if (attachment->att_temp_pg_lock)
+		LCK_release(tdbb, attachment->att_temp_pg_lock);
+#endif
 
 	for (vcl** vector = attachment->att_counts;
 		 vector < attachment->att_counts + DBB_max_count; ++vector)
@@ -5993,7 +6017,8 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 
 		if (flag == JRD_info_drivemask)
 		{
-			for (jrd_file* files = dbb->dbb_file; files; files = files->fil_next)
+			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+			for (jrd_file* files = pageSpace->file; files; files = files->fil_next)
 				ExtractDriveLetter(files->fil_string, &drive_mask);
 		}
 #endif

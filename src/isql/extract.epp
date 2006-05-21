@@ -300,6 +300,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 	bool first = true;
 	SCHAR char_sets[86];
+	USHORT rel_flags = 0;
 	//bool intchar = false;
 	// CVC: shouldn't this var be initialized inside the FOR statement instead?
 	// CVC: 2004.12.03: I discovered someone made this variable obsolete;
@@ -331,17 +332,30 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					 relation_name,
 					 REL.RDB$OWNER_NAME,
 					 NEWLINE);
+					 
+			rel_flags = REL.RDB$FLAGS;
+			if (rel_flags & REL_IS_GLOBAL_TEMP)
+			{
+				isqlGlob.printf("CREATE GLOBAL TEMPORARY TABLE ");
+			}
+			else 
+			{
+				isqlGlob.printf("CREATE TABLE ");
+			}
+			
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				if (new_name)
 					ISQL_copy_SQL_id (new_name, SQL_identifier, DBL_QUOTE);
 				else
 					ISQL_copy_SQL_id (relation_name, SQL_identifier, DBL_QUOTE);
-				isqlGlob.printf("CREATE TABLE %s ", SQL_identifier);
+				isqlGlob.printf("%s ", SQL_identifier);
 			}
-			else
-				isqlGlob.printf("CREATE TABLE %s ",
-						 new_name ? new_name : relation_name);
+			else 
+			{
+				isqlGlob.printf("%s ", new_name ? new_name : relation_name);
+			}
+			
 			if (!REL.RDB$EXTERNAL_FILE.NULL)
 			{
 				ISQL_copy_SQL_id (REL.RDB$EXTERNAL_FILE, SQL_identifier2,
@@ -642,7 +656,19 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	if (first) // we extracted nothing
 		return FINI_ERROR;
 
-	isqlGlob.printf(")%s%s", isqlGlob.global_Term, NEWLINE);
+	if (rel_flags & REL_global_temp_preserve)
+	{
+		isqlGlob.printf(")%sON COMMIT PRESERVE ROWS", NEWLINE);
+	}
+	else if (rel_flags & REL_global_temp_delete)
+	{
+		isqlGlob.printf(")%sON COMMIT DELETE ROWS", NEWLINE);
+	}
+	else
+	{
+		isqlGlob.printf(")");
+	}
+	isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	return FINI_OK;
 }
 

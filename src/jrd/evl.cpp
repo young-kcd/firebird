@@ -3575,7 +3575,7 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		impure->vlu_misc.vlu_long = 0;
 	else {
 		const SLONG id = MOV_get_long(desc, 0);
-		if (id == PAG_attachment_id())
+		if (id == PAG_attachment_id(tdbb))
 			impure->vlu_misc.vlu_long = 2;
 		else {
 			Lock temp_lock;
@@ -5123,7 +5123,7 @@ static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impur
 	switch (id)
 	{
 	case internal_connection_id:
-		impure->vlu_misc.vlu_long = PAG_attachment_id();
+		impure->vlu_misc.vlu_long = PAG_attachment_id(tdbb);
 		break;
 	case internal_transaction_id:
 		impure->vlu_misc.vlu_long = tdbb->tdbb_transaction->tra_number;

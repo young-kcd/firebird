@@ -36,7 +36,7 @@ struct blk;
 
 int		PIO_add_file(Jrd::Database*, Jrd::jrd_file*, const Firebird::PathName&, SLONG);
 void	PIO_close(Jrd::jrd_file*);
-Jrd::jrd_file*	PIO_create(Jrd::Database*, const Firebird::PathName&, bool);
+Jrd::jrd_file*	PIO_create(Jrd::Database*, const Firebird::PathName&, bool, bool);
 int		PIO_connection(const Firebird::PathName&);
 int		PIO_expand(const TEXT*, USHORT, TEXT*, size_t);
 void	PIO_flush(Jrd::jrd_file*);

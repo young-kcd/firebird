@@ -34,6 +34,7 @@
  */
 
 #include "firebird.h"
+#include "memory_routines.h"
 #include <string.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
@@ -80,11 +81,12 @@ inline bool SEGMENTED(const blb* blob)
 static ArrayField* alloc_array(jrd_tra*, Ods::InternalArrayDesc*);
 static blb* allocate_blob(thread_db*, jrd_tra*);
 static ISC_STATUS blob_filter(USHORT, BlobControl*, SSHORT, SLONG);
-static blb* copy_blob(thread_db*, const bid*, bid*, USHORT, const UCHAR*);
+static blb* copy_blob(thread_db*, const bid*, bid*, USHORT, const UCHAR*, USHORT);
 static void delete_blob(thread_db*, blb*, ULONG);
 static void delete_blob_id(thread_db*, const bid*, SLONG, jrd_rel*);
 static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
+static USHORT gen_bpb_from_descs(const dsc*, const dsc*, UCHAR*);
 static blob_page* get_next_page(thread_db*, blb*, WIN *);
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 static void get_replay_blob(thread_db*, const bid*);
@@ -211,8 +213,16 @@ blb* BLB_create2(thread_db* tdbb,
 						   reinterpret_cast<USHORT*>(&to_charset));
 	blb* blob = allocate_blob(tdbb, transaction);
 
-	if (type)
+	if (type & isc_bpb_type_stream)
 		blob->blb_flags |= BLB_stream;
+
+	if (type & isc_bpb_storage_temp) {
+		// must be the same value as in VIO\jrd_rel::getPages
+		blob->blb_pg_space_id = dbb->dbb_page_manager.getTempPageSpaceID(tdbb);
+	}
+	else {
+		blob->blb_pg_space_id = DB_PAGE_SPACE;
+	}
 
 	blob->blb_source_interp = from_charset;
 	blob->blb_target_interp = to_charset;
@@ -536,7 +546,8 @@ USHORT BLB_get_segment(thread_db* tdbb,
 	const BLOB_PTR* from = blob->blb_segment;
 	USHORT length = blob->blb_space_remaining;
 	bool active_page = false;
-	WIN window(-1); // there was no initialization of win_page here.
+	fb_assert(blob->blb_pg_space_id);
+	WIN window(blob->blb_pg_space_id, -1); // there was no initialization of win_page here.
 	if (blob->blb_flags & BLB_large_scan) {
 		window.win_flags = WIN_large_scan;
 		window.win_scans = 1;
@@ -912,6 +923,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	const USHORT id = (USHORT) (IPTR) field->nod_arg[e_fld_id];
 	record_param* rpb = &request->req_rpb[(IPTR)field->nod_arg[e_fld_stream]];
 	jrd_rel* relation = rpb->rpb_relation;
+	RelationPages* relPages = relation->getPages(tdbb);
 	Record* record = rpb->rpb_record;
 
 /* If either the source value is null or the blob id itself is null (all
@@ -949,25 +961,16 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	blb* blob = NULL;
 	bool materialized_blob; // Set if we materialized temporary blob in this routine
 
-	 while (true) 
-	 {
+	UCHAR bpb[16];
+	USHORT bpb_length = gen_bpb_from_descs(from_desc, to_desc, bpb);
+
+	while (true) 
+	{
 		materialized_blob = false;
 		blobIndex = NULL;
 		if (source->bid_internal.bid_relation_id)
 		{
-			UCHAR bpb[] = {isc_bpb_version1,
-						   isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
-						   isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
-			USHORT bpb_length = 0;
-
-			if (from_desc->dsc_sub_type == isc_blob_text && to_desc->dsc_sub_type == isc_blob_text)
-			{
-				bpb[6] = from_desc->dsc_scale;	// source charset
-				bpb[12] = to_desc->dsc_scale;	// destination charset
-				bpb_length = sizeof(bpb);
-			}
-
-			blob = copy_blob(tdbb, source, destination, bpb_length, bpb);
+			blob = copy_blob(tdbb, source, destination, bpb_length, bpb, relPages->rel_pg_space_id);
 		}
 		else if ((to_desc->dsc_dtype == dtype_array) &&
 				 (array = find_array(transaction, source)) &&
@@ -999,6 +1002,36 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 				else {
 					materialized_blob = true;
 					blob = blobIndex->bli_blob_object;
+
+					if (!blob || !(blob->blb_flags & BLB_closed))
+					{
+						ERR_post(isc_bad_segstr_id, 0);
+					}
+
+					if (blob->blb_level && 
+						(blob->blb_pg_space_id != relPages->rel_pg_space_id) ) 
+					{
+						const ULONG oldTempID = blob->blb_temp_id;
+						blb* newBlob = copy_blob(tdbb, source, destination, bpb_length, bpb, relPages->rel_pg_space_id);
+
+						transaction->tra_blobs.locate(newBlob->blb_temp_id);
+						BlobIndex* newBlobIndex = &transaction->tra_blobs.current();
+
+						transaction->tra_blobs.locate(oldTempID);
+						blobIndex = &transaction->tra_blobs.current();
+
+						newBlobIndex->bli_blob_object = blob;
+						blobIndex->bli_blob_object = newBlob;
+
+						blob->blb_temp_id = newBlob->blb_temp_id;
+						newBlob->blb_temp_id = oldTempID;
+
+						BLB_cancel(tdbb, blob);
+						blob = newBlob;
+
+						transaction->tra_blobs.locate(blob->blb_temp_id);
+						blobIndex = &transaction->tra_blobs.current();
+					}
 				}
 			}
 		}
@@ -1044,6 +1077,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		if (array)
 			array->arr_request = own_request;
 	}
+
 	release_blob(blob, !materialized_blob);
 }
 
@@ -1181,6 +1215,7 @@ blb* BLB_open2(thread_db* tdbb,
 			blob->blb_max_segment = new_blob->blb_max_segment;
 			blob->blb_level = new_blob->blb_level;
 			blob->blb_flags = new_blob->blb_flags & BLB_stream;
+			blob->blb_pg_space_id = new_blob->blb_pg_space_id;
 			const vcl* pages = new_blob->blb_pages;
 			if (pages) {
 				vcl* new_pages = vcl::newVector(*transaction->tra_pool, *pages);
@@ -1209,6 +1244,7 @@ blb* BLB_open2(thread_db* tdbb,
 			ERR_post(isc_bad_segstr_id, 0);
 	}
 
+	blob->blb_pg_space_id = blob->blb_relation->getPages(tdbb)->rel_pg_space_id;
 	DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), false, (SLONG) 0);
 
 /* If the blob is known to be damaged, ignore it. */
@@ -1815,7 +1851,9 @@ static ISC_STATUS blob_filter(	USHORT	action,
 }
 
 
-static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination, USHORT bpb_length, const UCHAR* bpb)
+static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination, 
+					  USHORT bpb_length, const UCHAR* bpb,
+					  USHORT destPageSpaceID)
 {
 /**************************************
  *
@@ -1833,6 +1871,9 @@ static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination, USHO
 	blb* input = BLB_open2(tdbb, request->req_transaction, source, bpb_length, bpb);
 	blb* output = BLB_create(tdbb, request->req_transaction, destination);
 	output->blb_sub_type = input->blb_sub_type;
+	if (destPageSpaceID) {
+		output->blb_pg_space_id = destPageSpaceID;
+	}
 
 	if (input->blb_flags & BLB_stream) {
 		output->blb_flags |= BLB_stream;
@@ -1884,6 +1925,8 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	if (blob->blb_level == 0)
 		return;
 
+	const USHORT pageSpaceID = blob->blb_pg_space_id;
+
 /* Level 1 blobs just need the root page level released */
 
 	vcl* vector = blob->blb_pages;
@@ -1893,7 +1936,8 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	if (blob->blb_level == 1) {
 		for (; ptr < end; ++ptr) {
 			if (*ptr) {
-				PAG_release_page(*ptr, prior_page);
+				PAG_release_page(PageNumber(pageSpaceID, *ptr), 
+					PageNumber(pageSpaceID, prior_page));
 			}
 		}
 		return;
@@ -1903,7 +1947,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
    in order.  The basic problem is that the pointer page has to be
    released before the data pages that it points to.  Sigh. */
 
-	WIN window(-1);
+	WIN window(pageSpaceID, -1);
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 
@@ -1912,14 +1956,16 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 			blob_page* page = (blob_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_blob);
 			MOVE_FASTER(page, blob->blb_data, dbb->dbb_page_size);
 			CCH_RELEASE_TAIL(tdbb, &window);
-			PAG_release_page(*ptr, prior_page);
+			PAG_release_page(PageNumber(pageSpaceID, *ptr), 
+				PageNumber(pageSpaceID, prior_page));
 			page = (blob_page*) blob->blb_data;
 			SLONG* ptr2 = page->blp_page;
 			for (const SLONG* const end2 = ptr2 + blob->blb_pointers;
 				 ptr2 < end2; ptr2++)
 			{
 				if (*ptr2) {
-					PAG_release_page(*ptr2, *ptr);
+					PAG_release_page(PageNumber(pageSpaceID, *ptr2), 
+						PageNumber(pageSpaceID, *ptr));
 				}
 			}
 		}
@@ -1956,6 +2002,7 @@ static void delete_blob_id(
 
 	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans); 
 	blob->blb_relation = relation;
+	blob->blb_pg_space_id = relation->getPages(tdbb)->rel_pg_space_id;
 	prior_page =
 		DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), true,
 					 prior_page);
@@ -2024,6 +2071,37 @@ static BlobFilter* find_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 	}
 
 	return cache;
+}
+
+
+USHORT gen_bpb_from_descs(const dsc* from_desc, const dsc* to_desc, UCHAR* bpb)
+{
+	UCHAR* p = bpb;
+	*p++ = isc_bpb_version1;
+
+	*p++ = isc_bpb_source_type;
+	*p++ = 2;
+	put_short(p, from_desc->dsc_sub_type);
+	p +=2;
+	if (from_desc->dsc_sub_type == isc_blob_text)
+	{
+		*p++ = isc_bpb_source_interp;
+		*p++ = 1;
+		*p++ = from_desc->dsc_scale;	// source charset
+	}
+
+	*p++ = isc_bpb_target_type;
+	*p++ = 2;
+	put_short(p, to_desc->dsc_sub_type);
+	p +=2;
+	if (to_desc->dsc_sub_type == isc_blob_text)
+	{
+		*p++ = isc_bpb_target_interp;
+		*p++ = 1;
+		*p++ = to_desc->dsc_scale;	// target charset
+	}
+
+	return p - bpb;
 }
 
 
@@ -2178,12 +2256,14 @@ static void insert_page(thread_db* tdbb, blb* blob)
 /* Allocate a page for the now full blob data page.  Move the page
    image to the buffer, and release the page.  */
 
-	WIN window(-1);
+	const USHORT pageSpaceID = blob->blb_pg_space_id;
+
+	WIN window(pageSpaceID, -1);
 	blob_page* page = (blob_page*) DPM_allocate(tdbb, &window);
-	const ULONG page_number = window.win_page;
+	const PageNumber page_number = window.win_page;
 
 	if (blob->blb_sequence == 0)
-		blob->blb_lead_page = page_number;
+		blob->blb_lead_page = page_number.getPageNum();
 
 	// Page header is partially populated by DPM_allocate. Preserve it.
 	MOVE_FASTER(
@@ -2210,7 +2290,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 			if (blob->blb_sequence >= vector->count()) {
 				vector->resize(blob->blb_sequence + 1);
 			}
-			(*vector)[blob->blb_sequence] = page_number;
+			(*vector)[blob->blb_sequence] = page_number.getPageNum();
 			return;
 		}
 
@@ -2224,7 +2304,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 		page->blp_length = vector->count() << SHIFTLONG;
 		MOVE_FASTER(vector->memPtr(), page->blp_page, page->blp_length);
 		vector->resize(1);
-		(*vector)[0] = window.win_page;
+		(*vector)[0] = window.win_page.getPageNum();
 		CCH_RELEASE(tdbb, &window);
 	}
 
@@ -2244,7 +2324,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 		page->blp_header.pag_type = pag_blob;
 		page->blp_lead_page = blob->blb_lead_page;
 		vector->resize(l + 1);
-		(*vector)[l] = window.win_page;
+		(*vector)[l] = window.win_page.getPageNum();
 	}
 	else {
 		ERR_post(isc_imp_exc, isc_arg_gds, isc_blobtoobig, 0);
@@ -2253,7 +2333,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 	CCH_precedence(tdbb, &window, page_number);
 	CCH_MARK(tdbb, &window);
 	l = blob->blb_sequence % blob->blb_pointers;
-	page->blp_page[l] = page_number;
+	page->blp_page[l] = page_number.getPageNum();
 	page->blp_length = (l + 1) << SHIFTLONG;
 	CCH_RELEASE(tdbb, &window);
 }

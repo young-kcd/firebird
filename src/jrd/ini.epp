@@ -743,7 +743,7 @@ void INI_update_database()
 	   doing the update so that no other process can see the new minor
 	   version but not the update. */
 
-	WIN window(HEADER_PAGE);
+	WIN window(HEADER_PAGE_NUMBER);
 	Ods::header_page* header =
 		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK(tdbb, &window);

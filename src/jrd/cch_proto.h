@@ -50,6 +50,7 @@ void		CCH_mark_must_write(Jrd::thread_db*, Jrd::win*);
 void		CCH_must_write(Jrd::win*);
 Jrd::Lock*	CCH_page_lock(Jrd::thread_db*);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, SLONG);
+void		CCH_precedence(Jrd::thread_db*, Jrd::win*, Jrd::PageNumber);
 #ifdef SUPERSERVER_V2
 void		CCH_prefetch(Jrd::thread_db*, SLONG*, SSHORT);
 bool		CCH_prefetch_pages(Jrd::thread_db*);

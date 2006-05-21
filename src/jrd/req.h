@@ -50,11 +50,15 @@ template <typename T> class vec;
 class jrd_tra;
 class Savepoint;
 class RecordSource;
+class thread_db;
 
 /* record parameter block */
 
 struct record_param {
-	record_param() : rpb_window(-1) {}
+	record_param() : 
+		rpb_window(DB_PAGE_SPACE, -1),
+		rpb_relation(0)
+		{}
 	RecordNumber rpb_number;	/* record number in relation */
 	SLONG rpb_transaction_nr;	/* transaction number */
 	jrd_rel*	rpb_relation;	/* relation of record */
@@ -73,11 +77,22 @@ struct record_param {
 	SLONG rpb_b_page;			/* back page */
 	USHORT rpb_b_line;			/* back line */
 
-	UCHAR*	rpb_address;		/* address of record sans header */
+	UCHAR* rpb_address;			/* address of record sans header */
 	USHORT rpb_length;			/* length of record */
 	USHORT rpb_flags;			/* record ODS flags replica */
 	USHORT rpb_stream_flags;	/* stream flags */
 	SSHORT rpb_org_scans;		/* relation scan count at stream open */
+
+	inline WIN& getWindow(thread_db* tdbb) {
+		if (rpb_relation) {
+			rpb_window.win_page.setPageSpaceID(
+				rpb_relation->getPages(tdbb)->rel_pg_space_id);
+		}
+
+		return rpb_window;
+	}
+
+private:
 	struct win rpb_window;
 };
 

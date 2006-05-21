@@ -882,16 +882,20 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
 	SET_TDBB(tdbb);
 
 	Database* dbb = tdbb->tdbb_database;
-	PageControl* pgc = dbb->dbb_pcontrol;
-	WIN window(-1);
+
+	PageManager& pageSpaceMgr = dbb->dbb_page_manager;
+	PageSpace* pageSpace = pageSpaceMgr.findPageSpace(DB_PAGE_SPACE);
+	fb_assert(pageSpace);
+	
+	WIN window(DB_PAGE_SPACE, -1);
 
 	for (SLONG sequence = 0, number = 0; number < control->vdr_max_page; sequence++) 
 	{
-		const SLONG page_number = (sequence) ? sequence * pgc->pgc_ppp - 1 : pgc->pgc_pip;
+		const SLONG page_number = (sequence) ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->ppFirst;
 		page_inv_page* page = 0;
 		fetch_page(tdbb, 0, page_number, pag_pages, &window, &page);
 		UCHAR* p = page->pip_bits;
-		const UCHAR* const end = p + pgc->pgc_bytes;
+		const UCHAR* const end = p + pageSpaceMgr.bytesBitPIP;
 		while (p < end && number < control->vdr_max_page) {
 			UCHAR byte = *p++;
 			for (int i = 8; i; --i, byte >>= 1, number++) {
@@ -1017,7 +1021,7 @@ static RTN walk_blob(thread_db* tdbb,
 		return rtn_ok;
 
 /* Level 1 blobs are a little more complicated */
-	WIN window1(-1), window2(-1);
+	WIN window1(DB_PAGE_SPACE, -1), window2(DB_PAGE_SPACE, -1);
 
 	const SLONG* pages1 = header->blh_page;
 	const SLONG* const end1 = pages1 + ((USHORT) (length - BLH_SIZE) >> SHIFTLONG);
@@ -1085,7 +1089,7 @@ static RTN walk_chain(thread_db* tdbb,
 
 	SLONG page_number = header->rhd_b_page;
 	USHORT line_number = header->rhd_b_line;
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 
 	while (page_number) {
 		const bool delta_flag = (header->rhd_flags & rhd_delta) ? true : false;
@@ -1141,7 +1145,7 @@ static void walk_database(thread_db* tdbb, vdr* control)
 #endif
 
 	DPM_scan_pages(tdbb);
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 	header_page* page = 0;
 	fetch_page(tdbb, control, (SLONG) HEADER_PAGE, pag_header, &window,
 			   &page);
@@ -1185,7 +1189,7 @@ static RTN walk_data_page(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 	data_page* page = 0;
 	fetch_page(tdbb, control, page_number, pag_data, &window, &page);
 
@@ -1317,7 +1321,7 @@ static void walk_generators(thread_db* tdbb, vdr* control)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 
 	vcl* vector = dbb->dbb_gen_id_pages;
 	if (vector) {
@@ -1355,7 +1359,7 @@ static void walk_header(thread_db* tdbb, vdr* control, SLONG page_num)
 		if (VAL_debug_level)
 			fprintf(stdout, "walk_header: page %d\n", page_num);
 #endif
-		WIN window(-1);
+		WIN window(DB_PAGE_SPACE, -1);
 		header_page* page = 0;
 		fetch_page(tdbb, control, page_num, pag_header, &window, &page);
 		page_num = page->hdr_next_page;
@@ -1433,7 +1437,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 
 	while (next)
 	{
-		WIN window(-1);
+		WIN window(DB_PAGE_SPACE, -1);
 		btree_page* page = 0;
 		fetch_page(tdbb, control, next, pag_index, &window, &page);
 		if ((next != page_number) &&
@@ -1591,7 +1595,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				// Note: control == 0 for the fetch_page() call here 
 				// as we don't want to mark the page as visited yet - we'll 
 				// mark it when we visit it for real later on
-				WIN down_window(-1);
+				WIN down_window(DB_PAGE_SPACE, -1);
 				btree_page* down_page = 0;
 				fetch_page(tdbb, 0, down_number, pag_index, &down_window,
 					&down_page);
@@ -1728,7 +1732,7 @@ static void walk_log(thread_db* tdbb, vdr* control)
 	SET_TDBB(tdbb);
 
 	while (page_num) {
-		WIN window(-1);
+		WIN window(DB_PAGE_SPACE, -1);
 		fetch_page(tdbb, control, page_num, pag_log, &window, &page);
 		page_num = page->log_next_page;
 		CCH_RELEASE(tdbb, &window);
@@ -1751,19 +1755,22 @@ static void walk_pip(thread_db* tdbb, vdr* control)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	PageControl* pgc = dbb->dbb_pcontrol;
+	PageManager& pageSpaceMgr = dbb->dbb_page_manager;
+	PageSpace* pageSpace = pageSpaceMgr.findPageSpace(DB_PAGE_SPACE);
+	fb_assert(pageSpace);
+
 	page_inv_page* page = 0;
 
 	for (USHORT sequence = 0;; sequence++) {
 		const SLONG page_number =
-			(sequence) ? sequence * pgc->pgc_ppp - 1 : pgc->pgc_pip;
+			(sequence) ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->ppFirst;
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			fprintf(stdout, "walk_pip: page %d\n", page_number);
 #endif
-		WIN window(-1);
+		WIN window(DB_PAGE_SPACE, -1);
 		fetch_page(tdbb, control, page_number, pag_pages, &window, &page);
-		const UCHAR byte = page->pip_bits[pgc->pgc_bytes - 1];
+		const UCHAR byte = page->pip_bits[pageSpaceMgr.bytesBitPIP - 1];
 		CCH_RELEASE(tdbb, &window);
 		if (byte & 0x80)
 			break;
@@ -1790,14 +1797,14 @@ static RTN walk_pointer_page(	thread_db*	tdbb,
 
 	Database* dbb = tdbb->tdbb_database;
 
-	const vcl* vector = relation->rel_pages;
+	const vcl* vector = relation->getBasePages()->rel_pages;
 
 	if (!vector || sequence >= static_cast<int>(vector->count())) {
 		return corrupt(tdbb, control, VAL_P_PAGE_LOST, relation, sequence);
 	}
 
 	pointer_page* page = 0;
-	WIN window(-1);
+	WIN window(DB_PAGE_SPACE, -1);
 	fetch_page(	tdbb,
 				control,
 				(*vector)[sequence],
@@ -1957,7 +1964,7 @@ static RTN walk_record(thread_db* tdbb,
 
 	data_page* page = 0;
 	while (flags & rhd_incomplete) {
-		WIN window(-1);
+		WIN window(DB_PAGE_SPACE, -1);
 		fetch_page(tdbb, control, page_number, pag_data, &window, &page);
 		const data_page::dpg_repeat* line = &page->dpg_rpt[line_number];
 		if (page->dpg_relation != relation->rel_id ||
@@ -2116,14 +2123,15 @@ static RTN walk_root(thread_db* tdbb, vdr* control, jrd_rel* relation)
 	SET_TDBB(tdbb);
 
 /* If the relation has an index root, walk it */
+	RelationPages* relPages = relation->getBasePages();
 
-	if (!relation->rel_index_root) {
+	if (!relPages->rel_index_root) {
 		return corrupt(tdbb, control, VAL_INDEX_ROOT_MISSING, relation);
 	}
 
 	index_root_page* page = 0;
-	WIN window(-1);
-	fetch_page(tdbb, control, relation->rel_index_root, pag_root, &window,
+	WIN window(DB_PAGE_SPACE, -1);
+	fetch_page(tdbb, control, relPages->rel_index_root, pag_root, &window,
 			   &page);
 
 	for (USHORT i = 0; i < page->irt_count; i++) {
@@ -2158,7 +2166,7 @@ static RTN walk_tip(thread_db* tdbb, vdr* control, SLONG transaction)
 	}
 
 	tx_inv_page* page = 0;
-	const ULONG pages = transaction / dbb->dbb_pcontrol->pgc_tpt;
+	const ULONG pages = transaction / dbb->dbb_page_manager.transPerTIP;
 
 	for (ULONG sequence = 0; sequence <= pages; sequence++) {
 		if (!(*vector)[sequence] || sequence >= vector->count()) {
@@ -2169,7 +2177,7 @@ static RTN walk_tip(thread_db* tdbb, vdr* control, SLONG transaction)
 			vector = dbb->dbb_t_pages;
 		}
 
-		WIN window(-1);
+		WIN window(DB_PAGE_SPACE, -1);
 		fetch_page(	tdbb,
 					control,
 					(*vector)[sequence],

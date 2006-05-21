@@ -509,7 +509,10 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 		ast_status[1] = 0;
 		CCH_flush_database(tdbb); // This may release database lock
 		if (ast_status[1])
-			gds__log_status(new_dbb->dbb_file->fil_string, ast_status);				
+		{
+			jrd_file* main_file = new_dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
+			gds__log_status(main_file->fil_string, ast_status);				
+		}
 	} 
 	else {
 		LCK_release(tdbb, lock);
@@ -538,7 +541,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 	NBAK_TRACE(("begin_backup"));
 
 	// Lock header page first to prevent possible deadlock
-	WIN window(HEADER_PAGE);
+	WIN window(HEADER_PAGE_NUMBER);
 	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	bool state_locked = false, header_locked = true, database_locked = false;
 	try {
@@ -567,7 +570,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		}
 		// Create file
 		NBAK_TRACE(("Creating difference file %s", diff_name));
-		diff_file = PIO_create(database, diff_name, true);
+		diff_file = PIO_create(database, diff_name, true, false);
 #ifdef UNIX 
 		// adjust difference file access rights to make it match main DB ones
 		if (diff_file && geteuid() == 0) {
@@ -668,7 +671,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 						// that times.
 
 	// Lock header page first to prevent possible deadlock
-	WIN window(HEADER_PAGE);
+	WIN window(HEADER_PAGE_NUMBER);
 	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	bool state_locked = false, header_locked = true;
 
@@ -748,7 +751,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		
 		if (all.getFirst()) {
 			do {
-				WIN window2(all.current().db_page);
+				WIN window2(DB_PAGE_SPACE, all.current().db_page); //vlad ??
 				NBAK_TRACE(("Merge page %d, diff=%d", all.current().db_page, all.current().diff_page));
 				Ods::pag* page = CCH_FETCH(tdbb, &window2, LCK_write, pag_undefined);
 				if (page->pag_scn != current_scn)
@@ -769,7 +772,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 	}
 	
 	// We finished. We need to reflect it in our database header page
-	window.win_page = HEADER_PAGE;
+	window.win_page = HEADER_PAGE_NUMBER;
 	window.win_flags = 0;
 	header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	state_locked = false;
@@ -855,10 +858,12 @@ bool BackupManager::actualize_alloc(thread_db* tdbb) throw()
 		
 			if (!PIO_read(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 				return false;
-			for (ULONG i = last_allocated_page - temp_bdb.bdb_page; i < alloc_buffer[0]; i++)
+			for (ULONG i = last_allocated_page - temp_bdb.bdb_page.getPageNum(); 
+					i < alloc_buffer[0]; i++)
 			{
 				NBAK_TRACE(("alloc item page=%d, diff=%d", alloc_buffer[i + 1], temp_bdb.bdb_page + i + 1));
-				if (!alloc_table->add(AllocItem(alloc_buffer[i + 1], temp_bdb.bdb_page + i + 1)))
+				if (!alloc_table->add(AllocItem(alloc_buffer[i + 1], 
+						temp_bdb.bdb_page.getPageNum() + i + 1)))
 				{
 					database->dbb_flags |= DBB_bugcheck;
 					status_vector[0] = isc_arg_gds;
@@ -870,7 +875,7 @@ bool BackupManager::actualize_alloc(thread_db* tdbb) throw()
 					return false;
 				}
 			}
-			last_allocated_page = temp_bdb.bdb_page + alloc_buffer[0];
+			last_allocated_page = temp_bdb.bdb_page.getPageNum() + alloc_buffer[0];
 			if (alloc_buffer[0] == database->dbb_page_size / sizeof(ULONG) - 1)
 				// if page is full adjust position for next pointer page
 				last_allocated_page++;
@@ -1068,7 +1073,7 @@ BackupManager::~BackupManager()
 void BackupManager::set_difference(thread_db* tdbb, const char* filename) 
 {
 	if (filename) {
-		WIN window(HEADER_PAGE);
+		WIN window(HEADER_PAGE_NUMBER);
 		Ods::header_page* header =
 			(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
@@ -1098,17 +1103,18 @@ bool BackupManager::actualize_state(thread_db* tdbb) throw()
 	SSHORT retryCount = 0;
 	Ods::header_page* header = reinterpret_cast<Ods::header_page*>(spare_buffer);
 	BufferDesc temp_bdb;
-	temp_bdb.bdb_page = HEADER_PAGE;
+	temp_bdb.bdb_page = HEADER_PAGE_NUMBER;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(header);
-	jrd_file* file = database->dbb_file;
+	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	jrd_file* file = pageSpace->file;
 	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status)) {
 		if (!CCH_rollover_to_shadow(database, file, false)) {
 			NBAK_TRACE(("Shadow change error"));
 			return false;
 		}
-		if (file != database->dbb_file)
-			file = database->dbb_file;
+		if (file != pageSpace->file)
+			file = pageSpace->file;
 		else {
 			if (retryCount++ == 3) {
 				NBAK_TRACE(("IO error"));

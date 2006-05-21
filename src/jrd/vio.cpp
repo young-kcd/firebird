@@ -82,13 +82,13 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/pag_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sqz_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
-
 
 using namespace Jrd;
 
@@ -276,11 +276,11 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		temp.rpb_b_line != rpb->rpb_b_line ||
 		temp.rpb_transaction_nr != rpb->rpb_transaction_nr)
 	{
-		CCH_RELEASE(tdbb, &temp.rpb_window);
+		CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 		return;
 	}
 	if (temp.rpb_flags & rpb_deleted)
-		CCH_RELEASE(tdbb, &temp.rpb_window);
+		CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 	else {
 		temp.rpb_record = VIO_gc_record(tdbb, relation);
 		VIO_data(tdbb, &temp, dbb->dbb_permanent);
@@ -306,14 +306,14 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 			temp.rpb_b_line != rpb->rpb_b_line ||
 			temp.rpb_transaction_nr != rpb->rpb_transaction_nr)
 		{
-			CCH_RELEASE(tdbb, &temp.rpb_window);
+			CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 			goto gc_cleanup;
 		}
 		if (temp.rpb_flags & rpb_delta)
 			temp.rpb_prior = data;
 		DPM_fetch_back(tdbb, &temp, LCK_read, 1);
 		if (temp.rpb_flags & rpb_deleted)
-			CCH_RELEASE(tdbb, &temp.rpb_window);
+			CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 		else
 			VIO_data(tdbb, &temp, dbb->dbb_permanent);
 		gc_rec1 = temp.rpb_record;
@@ -342,7 +342,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		rpb->rpb_b_line != temp2.rpb_b_line ||
 		rpb->rpb_transaction_nr != temp2.rpb_transaction_nr)
 	{
-		CCH_RELEASE(tdbb, &rpb->rpb_window);
+		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		goto gc_cleanup;
 	}
 
@@ -577,7 +577,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 		}
 #endif
 		if (rpb->rpb_flags & rpb_damaged) {
-			CCH_RELEASE(tdbb, &rpb->rpb_window);
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 			return false;
 		}
 		if (state == tra_limbo
@@ -595,7 +595,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			(!(transaction->tra_flags & TRA_rec_version) || writelock))
 		{
 			if (state == tra_limbo) {
-				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				state =
 					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
 							 jrd_tra::tra_wait);
@@ -614,7 +614,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 					 * to next version
 					 */
 					if (!(transaction->tra_flags & TRA_ignore_limbo)) {
-						CCH_RELEASE(tdbb, &rpb->rpb_window);
+						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 						ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, 0);
 					}
 
@@ -627,7 +627,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 				   it shouldn't wait if this is a transient fragmented backout
 				   of a dead record version. */
 
-				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				state =
 					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
 							 jrd_tra::tra_wait);
@@ -677,7 +677,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 				rpb->rpb_flags & (rpb_chained | rpb_gc_active))
 			{
 				if (rpb->rpb_b_page == 0) {
-					CCH_RELEASE(tdbb, &rpb->rpb_window);
+					CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 					return false;
 				}
 				record_param temp = *rpb;
@@ -699,7 +699,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 						rpb->rpb_f_line != temp.rpb_f_line ||
 						rpb->rpb_flags != temp.rpb_flags)
 					{
-						CCH_RELEASE(tdbb, &rpb->rpb_window);
+						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 						if (!DPM_get(tdbb, rpb, LCK_read)) {
 							return false;
 						}
@@ -709,7 +709,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 						break;
 					}
 					if (rpb->rpb_b_page == 0) {
-						CCH_RELEASE(tdbb, &rpb->rpb_window);
+						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 						return false;
 					}
 					if (rpb->rpb_flags & rpb_delta) {
@@ -727,7 +727,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 				break;
 			}
 
-			CCH_RELEASE(tdbb, &rpb->rpb_window);
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 			VIO_backout(tdbb, rpb, transaction);
 			if (!DPM_get(tdbb, rpb, LCK_read)) {
 				return false;
@@ -747,7 +747,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 #endif
 
 			if (!(transaction->tra_flags & TRA_ignore_limbo)) {
-				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				ERR_post(isc_rec_in_limbo,
 						 isc_arg_number, (SLONG) rpb->rpb_transaction_nr, 0);
 			}
@@ -765,7 +765,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			/* we can't use this one so if there aren't any more just stop now. */
 
 			if (rpb->rpb_b_page == 0) {
-				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				return false;
 			}
 			if (!(rpb->rpb_flags & rpb_delta)) {
@@ -812,14 +812,14 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 						break;	/* start from the primary version again */
 					}
 					if (rpb->rpb_transaction_nr != temp.rpb_transaction_nr) {
-						CCH_RELEASE(tdbb, &rpb->rpb_window);
+						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 						if (!DPM_get(tdbb, rpb, LCK_read)) {
 							return false;
 						}
 						break;
 					}
 					if (rpb->rpb_b_page == 0) {
-						CCH_RELEASE(tdbb, &rpb->rpb_window);
+						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 						return false;
 					}
 					if (!(rpb->rpb_flags & rpb_delta))
@@ -847,7 +847,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 #endif
 
 			if (rpb->rpb_flags & rpb_deleted) {
-				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				return false;
 			}
 			return true;
@@ -868,19 +868,21 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 					!(attachment->att_flags & ATT_no_cleanup))
 				{
 #ifdef GARBAGE_THREAD
-					if (!gcPolicyCooperative && (attachment->att_flags & ATT_notify_gc)) {
+					if (!gcPolicyCooperative && (attachment->att_flags & ATT_notify_gc) &&
+						!(rpb->rpb_relation->rel_flags & REL_IS_TEMP)) 
+					{
 						notify_garbage_collector(tdbb, rpb);
-						CCH_RELEASE(tdbb, &rpb->rpb_window);
+						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 					}
 					else
 #endif
 					{
-						CCH_RELEASE(tdbb, &rpb->rpb_window);
+						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 						expunge(tdbb, rpb, transaction, (SLONG) 0);
 					}
 					return false;
 				}
-				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				return false;
 			}
 
@@ -912,7 +914,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			/* Garbage collect. */
 
 #ifdef GARBAGE_THREAD
-			if (!gcPolicyCooperative && (attachment->att_flags & ATT_notify_gc)) {
+			if (!gcPolicyCooperative && (attachment->att_flags & ATT_notify_gc) &&
+				!(rpb->rpb_relation->rel_flags & REL_IS_TEMP)) 
+			{
 				notify_garbage_collector(tdbb, rpb);
 				return true;
 			}
@@ -1047,7 +1051,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, JrdMemoryPool* pool)
 		rpb->rpb_b_line = back_line;
 	}
 
-	CCH_RELEASE(tdbb, &rpb->rpb_window);
+	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 
 /* If this is a delta version, apply changes */
 	USHORT length;
@@ -1244,7 +1248,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					jrd_rel *partner;
 					index_desc idx;
 
-					if ((BTR_lookup(tdbb, r2, id - 1, &idx) == FB_SUCCESS) && 
+					if ((BTR_lookup(tdbb, r2, id - 1, &idx, r2->getPages(tdbb)) == FB_SUCCESS) && 
 						(MET_lookup_partner(tdbb, r2, &idx, idx_name)) &&
 						(partner = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
 					{
@@ -1378,7 +1382,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	temp.rpb_length = 0;
 	temp.rpb_flags = rpb_deleted;
 	temp.rpb_format_number = rpb->rpb_format_number;
-	temp.rpb_window.win_flags = WIN_secondary;
+	temp.getWindow(tdbb).win_flags = WIN_secondary;
 
 	const SLONG tid_fetch = rpb->rpb_transaction_nr;
 	if (DPM_chain(tdbb, rpb, &temp))
@@ -1450,8 +1454,11 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	
 #ifdef GARBAGE_THREAD
 	// VIO_erase
-	if (tdbb->tdbb_database->dbb_flags & DBB_gc_background)
+	if ((tdbb->tdbb_database->dbb_flags & DBB_gc_background) &&
+		!(rpb->rpb_relation->rel_flags & REL_IS_TEMP))
+	{
 		notify_garbage_collector(tdbb, rpb, transaction->tra_number);
+	}
 #endif
 }
 
@@ -1534,7 +1541,7 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb,
 	{
 		if (rpb->rpb_flags & rpb_damaged)
 		{
-			CCH_RELEASE(tdbb, &rpb->rpb_window);
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 			return false;
 		}
 
@@ -1566,7 +1573,7 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb,
 
 		if (state == tra_dead)
 		{
-			CCH_RELEASE(tdbb, &rpb->rpb_window);
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 			VIO_backout(tdbb, rpb, transaction);
 		}
 		else
@@ -1579,7 +1586,7 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb,
 				}
 				else
 				{
-					CCH_RELEASE(tdbb, &rpb->rpb_window);
+					CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 					expunge(tdbb, rpb, transaction, (SLONG) 0);
 					return false;
 				}
@@ -1775,7 +1782,7 @@ bool VIO_get_current(
 		/* Get data if there is data. */
 
 		if (rpb->rpb_flags & rpb_deleted) {
-			CCH_RELEASE(tdbb, &rpb->rpb_window);
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		}
 		else {
 			VIO_data(tdbb, rpb, pool);
@@ -1887,14 +1894,14 @@ bool VIO_get_current(
 			 */
 
 			if (tid_fetch != rpb->rpb_transaction_nr) {
-				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				continue;
 			}
 
 			/* Get latest data if there is data. */
 
 			if (rpb->rpb_flags & rpb_deleted) {
-				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				return false;
 			}
 
@@ -1925,7 +1932,7 @@ bool VIO_get_current(
 				{
 					return false; // record deleted 
 				}
-
+ 
 				// if record was changed between reads  
 				// start all over again
 				if (old_rpb->rpb_b_page != rpb->rpb_b_page ||
@@ -2118,10 +2125,11 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	}
 #endif
 
+	jrd_rel* relation = org_rpb->rpb_relation;
 	transaction->tra_flags |= TRA_write;
 	new_rpb->rpb_transaction_nr = transaction->tra_number;
 	new_rpb->rpb_flags = 0;
-	new_rpb->rpb_window.win_flags = WIN_secondary;
+	new_rpb->getWindow(tdbb).win_flags = WIN_secondary;
 
 /* If the stream was sorted, the various fields in the rpb are
    probably junk.  Just to make sure that everything is cool,
@@ -2135,7 +2143,6 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 /* If we're the system transaction, modify stuff in place.  This saves
    endless grief on cleanup */
 
-	jrd_rel* relation = org_rpb->rpb_relation;
 	VIO_bump_count(tdbb, DBB_update_count, relation, false);
 
 	if (transaction->tra_flags & TRA_system) {
@@ -2317,8 +2324,11 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 
 #ifdef GARBAGE_THREAD
 	// VIO_modify
-	if (tdbb->tdbb_database->dbb_flags & DBB_gc_background)
+	if ((tdbb->tdbb_database->dbb_flags & DBB_gc_background) &&
+		!(org_rpb->rpb_relation->rel_flags & REL_IS_TEMP))
+	{
 		notify_garbage_collector(tdbb, org_rpb, transaction->tra_number);
+	}
 #endif
 }
 
@@ -2656,7 +2666,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	rpb->rpb_b_line = 0;
 	rpb->rpb_flags = 0;
 	rpb->rpb_transaction_nr = transaction->tra_number;
-	rpb->rpb_window.win_flags = 0;
+	rpb->getWindow(tdbb).win_flags = 0;
 	rpb->rpb_record->rec_precedence.push(-rpb->rpb_transaction_nr);
 	DPM_store(tdbb, rpb, rpb->rpb_record->rec_precedence, DPM_primary);
 
@@ -2722,7 +2732,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 	record_param rpb;
 	rpb.rpb_record = NULL;
 	rpb.rpb_stream_flags = 0;
-	rpb.rpb_window.win_flags = WIN_large_scan;
+	rpb.getWindow(tdbb).win_flags = WIN_large_scan;
 	
 	jrd_rel* relation = 0; // wasn't initialized: memory problem in catch() part.
 	vec<jrd_rel*>* vector = 0;
@@ -2731,7 +2741,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 
 		for (size_t i = 1; (vector = dbb->dbb_relations) && i < vector->count(); i++)
 		{
-			if ((relation = (*vector)[i]) && relation->rel_pages &&
+			if ((relation = (*vector)[i]) && relation->getPages(tdbb)->rel_pages &&
 				!(relation->rel_flags & (REL_deleted | REL_deleting)))
 			{
 				rpb.rpb_relation = relation;
@@ -2751,7 +2761,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 										false,
 										false))
 				{
-					CCH_RELEASE(tdbb, &rpb.rpb_window);
+					CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
 					if (relation->rel_flags & REL_deleting) {
 						break;
 					}
@@ -2873,149 +2883,160 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 
 	record_param rpb;
 	VerbAction* action;
-	while ( (action = sav_point->sav_verb_actions) ) {
-		sav_point->sav_verb_actions = action->vct_next;
-		jrd_rel* relation = action->vct_relation;
-		if (sav_point->sav_verb_count || transaction->tra_save_point) {
-			rpb.rpb_relation = relation;
-			rpb.rpb_number.setValue(BOF_NUMBER);
-			rpb.rpb_record = NULL;
-			rpb.rpb_window.win_flags = 0;
-			rpb.rpb_transaction_nr = transaction->tra_number;
+	jrd_tra* old_tran = tdbb->tdbb_transaction;
+	try {
+		if (old_tran != transaction)
+			tdbb->tdbb_transaction = transaction;
 
-			if (sav_point->sav_verb_count) 
-			{
-				/* This savepoint needs to be undone because the
-				   verb_count is not zero. */
+		while ( (action = sav_point->sav_verb_actions) ) {
+			sav_point->sav_verb_actions = action->vct_next;
+			jrd_rel* relation = action->vct_relation;
+			if (sav_point->sav_verb_count || transaction->tra_save_point) {
+				rpb.rpb_relation = relation;
+				rpb.rpb_number.setValue(BOF_NUMBER);
+				rpb.rpb_record = NULL;
+				rpb.getWindow(tdbb).win_flags = 0;
+				rpb.rpb_transaction_nr = transaction->tra_number;
 
-				RecordBitmap::Accessor accessor(action->vct_records);
-				if (accessor.getFirst()) 
-					do {
-						rpb.rpb_number.setValue(accessor.current());
-						if (!DPM_get(tdbb, &rpb, LCK_write)) {
-							BUGCHECK(186);	/* msg 186 record disappeared */
-						}
-						if (rpb.rpb_flags & rpb_delta) {
-							VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
-						}
-						else {
-							CCH_RELEASE(tdbb, &rpb.rpb_window);
-						}
-						if (rpb.rpb_transaction_nr != transaction->tra_number) {
-							BUGCHECK(185);	/* msg 185 wrong record version */
-						}
-						if (!action->vct_undo ||
-							!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
-						{
-							VIO_backout(tdbb, &rpb, transaction);
-						}
-						else {
-							Record* record = action->vct_undo->current().rec_data;
-							const bool same_tx = (record->rec_flags & REC_same_tx) != 0;
+				if (sav_point->sav_verb_count) 
+				{
+					/* This savepoint needs to be undone because the
+					verb_count is not zero. */
 
-							/* Have we done BOTH an update and delete to this record
-							   in the same transaction? */
-
-							if (same_tx) {
-								VIO_backout(tdbb, &rpb, transaction);
-								/* Nickolay Samofatov, 01 Mar 2003: 
-								  If we don't have data for the record and
-								  it was modified and deleted under our savepoint
-								  we need to back it out to the state as it were
-								  before our transaction started */
-								if (record->rec_length == 0 && record->rec_flags & REC_new_version)
-								{
-									if (!DPM_get(tdbb, &rpb, LCK_write)) {
-										BUGCHECK(186);	/* msg 186 record disappeared */
-									}
-									if (rpb.rpb_flags & rpb_delta) {
-										VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
-									}
-									else {
-										CCH_RELEASE(tdbb, &rpb.rpb_window);
-									}
-
-									VIO_backout(tdbb, &rpb, transaction);
-								}
-							}
-							if (record->rec_length != 0) {
-								Record* dead_record = rpb.rpb_record;
-								record_param new_rpb = rpb;
-								new_rpb.rpb_record = record;
-								new_rpb.rpb_address = record->rec_data;
-								new_rpb.rpb_length = record->rec_length;
-								if (!(rpb.rpb_flags & rpb_delta)) {
-									if (!DPM_get(tdbb, &rpb, LCK_write)) {
-										BUGCHECK(186);	/* msg 186 record disappeared */
-									}
-									VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
-								}
-								update_in_place(tdbb, transaction, &rpb, &new_rpb);
-								if (!(transaction->tra_flags & TRA_system)) {
-									garbage_collect_idx(tdbb, &rpb, &new_rpb, NULL);
-								}
-								rpb.rpb_record = dead_record;
-							}
-						}
-					} while (accessor.getNext());
-			}
-			else {
-				/* This savepoint needs to be posted to the previous savepoint. */
-
-				RecordBitmap::Accessor accessor(action->vct_records);
-				if (accessor.getFirst()) 
-					do {
-						rpb.rpb_number.setValue(accessor.current());
-						if (!action->vct_undo ||
-							!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
-						{
-							verb_post(tdbb, transaction, &rpb, 0, 0, false, false);
-						}
-						else {
-							/* Setup more of rpb because verb_post is probably going to
-							   garbage-collect.  Note that the data doesn't need to be set up
-							   because old_data will be used.  (this guarantees that the
-							   rpb points to the first fragment of the record) */
-
-							if (!DPM_get(tdbb, &rpb, LCK_read)) {
+					RecordBitmap::Accessor accessor(action->vct_records);
+					if (accessor.getFirst()) 
+						do {
+							rpb.rpb_number.setValue(accessor.current());
+							if (!DPM_get(tdbb, &rpb, LCK_write)) {
 								BUGCHECK(186);	/* msg 186 record disappeared */
 							}
-							CCH_RELEASE(tdbb, &rpb.rpb_window);
-							Record* record = action->vct_undo->current().rec_data;
-							const bool same_tx =
-								(record->rec_flags & REC_same_tx) != 0;
-							const bool new_ver =
-								(record->rec_flags & REC_new_version) != 0;
-							if (record->rec_length != 0) {
-								record_param new_rpb = rpb;
-								new_rpb.rpb_record = record;
-								new_rpb.rpb_address = record->rec_data;
-								new_rpb.rpb_length = record->rec_length;
-								verb_post(tdbb, transaction, &rpb, record,
-										  &new_rpb, same_tx, new_ver);
+							if (rpb.rpb_flags & rpb_delta) {
+								VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
 							}
-							else if (same_tx) {
-								verb_post(tdbb, transaction, &rpb, 0,
-										  0, true, new_ver);
+							else {
+								CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
 							}
-						}
-					} while (accessor.getNext());
-			}
+							if (rpb.rpb_transaction_nr != transaction->tra_number) {
+								BUGCHECK(185);	/* msg 185 wrong record version */
+							}
+							if (!action->vct_undo ||
+								!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
+							{
+								VIO_backout(tdbb, &rpb, transaction);
+							}
+							else {
+								Record* record = action->vct_undo->current().rec_data;
+								const bool same_tx = (record->rec_flags & REC_same_tx) != 0;
 
-			if (rpb.rpb_record) {
-				delete rpb.rpb_record;
+								/* Have we done BOTH an update and delete to this record
+								in the same transaction? */
+
+								if (same_tx) {
+									VIO_backout(tdbb, &rpb, transaction);
+									/* Nickolay Samofatov, 01 Mar 2003: 
+									If we don't have data for the record and
+									it was modified and deleted under our savepoint
+									we need to back it out to the state as it were
+									before our transaction started */
+									if (record->rec_length == 0 && record->rec_flags & REC_new_version)
+									{
+										if (!DPM_get(tdbb, &rpb, LCK_write)) {
+											BUGCHECK(186);	/* msg 186 record disappeared */
+										}
+										if (rpb.rpb_flags & rpb_delta) {
+											VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
+										}
+										else {
+											CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
+										}
+
+										VIO_backout(tdbb, &rpb, transaction);
+									}
+								}
+								if (record->rec_length != 0) {
+									Record* dead_record = rpb.rpb_record;
+									record_param new_rpb = rpb;
+									new_rpb.rpb_record = record;
+									new_rpb.rpb_address = record->rec_data;
+									new_rpb.rpb_length = record->rec_length;
+									if (!(rpb.rpb_flags & rpb_delta)) {
+										if (!DPM_get(tdbb, &rpb, LCK_write)) {
+											BUGCHECK(186);	/* msg 186 record disappeared */
+										}
+										VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
+									}
+									update_in_place(tdbb, transaction, &rpb, &new_rpb);
+									if (!(transaction->tra_flags & TRA_system)) {
+										garbage_collect_idx(tdbb, &rpb, &new_rpb, NULL);
+									}
+									rpb.rpb_record = dead_record;
+								}
+							}
+						} while (accessor.getNext());
+				}
+				else {
+					/* This savepoint needs to be posted to the previous savepoint. */
+
+					RecordBitmap::Accessor accessor(action->vct_records);
+					if (accessor.getFirst()) 
+						do {
+							rpb.rpb_number.setValue(accessor.current());
+							if (!action->vct_undo ||
+								!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
+							{
+								verb_post(tdbb, transaction, &rpb, 0, 0, false, false);
+							}
+							else {
+								/* Setup more of rpb because verb_post is probably going to
+								garbage-collect.  Note that the data doesn't need to be set up
+								because old_data will be used.  (this guarantees that the
+								rpb points to the first fragment of the record) */
+
+								if (!DPM_get(tdbb, &rpb, LCK_read)) {
+									BUGCHECK(186);	/* msg 186 record disappeared */
+								}
+								CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
+								Record* record = action->vct_undo->current().rec_data;
+								const bool same_tx =
+									(record->rec_flags & REC_same_tx) != 0;
+								const bool new_ver =
+									(record->rec_flags & REC_new_version) != 0;
+								if (record->rec_length != 0) {
+									record_param new_rpb = rpb;
+									new_rpb.rpb_record = record;
+									new_rpb.rpb_address = record->rec_data;
+									new_rpb.rpb_length = record->rec_length;
+									verb_post(tdbb, transaction, &rpb, record,
+											&new_rpb, same_tx, new_ver);
+								}
+								else if (same_tx) {
+									verb_post(tdbb, transaction, &rpb, 0,
+											0, true, new_ver);
+								}
+							}
+						} while (accessor.getNext());
+				}
+
+				if (rpb.rpb_record) {
+					delete rpb.rpb_record;
+				}
 			}
-		}
-		delete action->vct_records;
-		if (action->vct_undo) {
-			if (action->vct_undo->getFirst()) {
-				do {
-					delete action->vct_undo->current().rec_data;
-				} while (action->vct_undo->getNext());
+			delete action->vct_records;
+			if (action->vct_undo) {
+				if (action->vct_undo->getFirst()) {
+					do {
+						delete action->vct_undo->current().rec_data;
+					} while (action->vct_undo->getNext());
+				}
+				delete action->vct_undo;
 			}
-			delete action->vct_undo;
+			delete action;
 		}
-		delete action;
+		tdbb->tdbb_transaction = old_tran;
+	}
+	catch(...) {
+		tdbb->tdbb_transaction = old_tran;
+		throw;
 	}
 
 	delete sav_point;
@@ -3478,7 +3499,7 @@ static void expunge(thread_db* tdbb, record_param* rpb,
 			notify_garbage_collector(tdbb, rpb);
 #endif
 
-		CCH_RELEASE(tdbb, &rpb->rpb_window);
+		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		return;
 	}
 
@@ -3667,7 +3688,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		tdbb->tdbb_attachment->att_filename = dbb->dbb_filename;
 		tdbb->tdbb_attachment->att_flags = ATT_garbage_collector;
 
-		rpb.rpb_window.win_flags = WIN_garbage_collector;
+		rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
 
 		LCK_init(tdbb, LCK_OWNER_attachment);
 
@@ -3740,6 +3761,10 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			vec<jrd_rel*>* vector = dbb->dbb_relations;
 			for (ULONG id = 0; vector && id < vector->count(); ++id) {
 				relation = (*vector)[id];
+
+				//jrd_rel::RelPagesSnapshot pagesSnapshot(tdbb, relation);
+				//relation->fillPagesSnapshot(pagesSnapshot);
+
 				RelationGarbage *relGarbage = 
 					relation ? (RelationGarbage*)relation->rel_garbage : NULL;
 
@@ -3793,7 +3818,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 						while (VIO_next_record(tdbb, &rpb, NULL, transaction,
 							NULL, false, true))
 						{
-							CCH_RELEASE(tdbb, &rpb.rpb_window);
+							CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
 
 							if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 								--relation->rel_sweep_count;
@@ -3851,7 +3876,6 @@ rel_exit:
 				while (dbb->dbb_flags & DBB_garbage_collector &&
 					   !(dbb->dbb_flags & DBB_gc_pending))
 				{
-
 #ifdef SUPERSERVER_V2
 					if (CCH_free_page(tdbb) || CCH_prefetch_pages(tdbb)) {
 						continue;
@@ -3892,7 +3916,8 @@ rel_exit:
 		/* Perfunctory error reporting -- got any better ideas ? */
 
 		Firebird::stuff_exception(status_vector, ex);
-		gds__log_status(dbb->dbb_file->fil_string, status_vector);
+		jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
+		gds__log_status(file->fil_string, status_vector);
 		if (relation && relation->rel_sweep_count) {
 			--relation->rel_sweep_count;
 		}
@@ -3927,7 +3952,8 @@ gc_exit:
 		/* Perfunctory error reporting -- got any better ideas ? */
 
 		Firebird::stuff_exception(status_vector, ex);
-		gds__log_status(dbb->dbb_file->fil_string, status_vector);
+		jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
+		gds__log_status(file->fil_string, status_vector);
 	}
 	return 0;
 }
@@ -4017,7 +4043,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			next_line = temp.rpb_b_line;
 			temp.rpb_record = NULL;
 			if (temp.rpb_flags & rpb_deleted) {
-				CCH_RELEASE(tdbb, &temp.rpb_window);
+				CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 			}
 			else {
 				VIO_data(tdbb, &temp, tdbb->getDefaultPool());
@@ -4029,7 +4055,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 				break;
 		}
 		else {
-			CCH_RELEASE(tdbb, &temp.rpb_window);
+			CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 			break;
 		}
 	}
@@ -4068,6 +4094,9 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 	Database* dbb = tdbb->tdbb_database;
 	jrd_rel* relation = rpb->rpb_relation;
 
+	if (relation->rel_flags & REL_IS_TEMP)
+		return;
+
 	if (tranid == -1)
 		tranid = rpb->rpb_transaction_nr;
 
@@ -4079,8 +4108,8 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
    of the data page to the LRU tail until the garbage collector
    can garbage collect the page. */
 
-	if (rpb->rpb_window.win_flags & WIN_large_scan) {
-		rpb->rpb_window.win_flags |= WIN_garbage_collect;
+	if (rpb->getWindow(tdbb).win_flags & WIN_large_scan) {
+		rpb->getWindow(tdbb).win_flags |= WIN_garbage_collect;
 	}
 
 /* A relation's garbage collect bitmap is allocated
@@ -4325,7 +4354,7 @@ static int prepare_update(	thread_db*		tdbb,
 			}
 #endif
 			if (rpb->rpb_flags & rpb_deleted) {
-				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				/* get rid of the back records we just created */
 				if (!
 					(transaction->
@@ -4351,7 +4380,7 @@ static int prepare_update(	thread_db*		tdbb,
 			if ((transaction->tra_flags & TRA_read_committed) &&
 				(commit_tid_read != rpb->rpb_transaction_nr))
 			{
-				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				if (!DPM_fetch(tdbb, temp, LCK_write)) {
 					BUGCHECK(291);	/* msg 291 cannot find record back version */
 				}
@@ -4395,7 +4424,7 @@ static int prepare_update(	thread_db*		tdbb,
 				   aren't, so get rid of the record we created and try again
 				 */
 
-				CCH_RELEASE(tdbb, &rpb->rpb_window);
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				if (!
 					(transaction->
 					 tra_attachment->att_flags & ATT_no_cleanup))
@@ -4430,7 +4459,7 @@ static int prepare_update(	thread_db*		tdbb,
 			}
 
 #endif
-			CCH_RELEASE(tdbb, &rpb->rpb_window);
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 
 			/* Wait as long as it takes for an active transaction which has modified
 			   the record. If an active transaction has used its TID to safely
@@ -4499,7 +4528,7 @@ static int prepare_update(	thread_db*		tdbb,
 					 rpb->rpb_transaction_nr, transaction->tra_number);
 			}
 #endif
-			CCH_RELEASE(tdbb, &rpb->rpb_window);
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 			break;
 		}
 
@@ -4582,7 +4611,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 		temp.rpb_b_line != rpb->rpb_b_line ||
 		temp.rpb_b_page != rpb->rpb_b_page || rpb->rpb_b_page == 0)
 	{
-		CCH_RELEASE(tdbb, &rpb->rpb_window);
+		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		gc_rec->rec_flags &= ~REC_gc_active;
 		return; // true;
 	}
@@ -4590,9 +4619,9 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	rpb->rpb_b_page = 0;
 	rpb->rpb_b_line = 0;
 	rpb->rpb_flags &= ~(rpb_delta | rpb_gc_active);
-	CCH_MARK(tdbb, &rpb->rpb_window);
+	CCH_MARK(tdbb, &rpb->getWindow(tdbb));
 	DPM_rewrite_header(tdbb, rpb);
-	CCH_RELEASE(tdbb, &rpb->rpb_window);
+	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 
 	RecordStack staying;
 	staying.push(record);
@@ -5052,3 +5081,251 @@ void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 
 #endif //GARBAGE_THREAD
 
+RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)
+{
+	if (!(rel_flags & REL_IS_TEMP)) 
+		return &rel_pages_base;
+
+	if (tdbb->tdbb_flags & TDBB_deffered)
+		return &rel_pages_base;
+
+	Database* dbb = tdbb->tdbb_database;
+	SLONG inst_id;
+	if (rel_flags & REL_temp_tran) 
+	{
+		if (tran > 0)
+			inst_id = tran;
+		else if (tdbb->tdbb_temp_traid)
+			inst_id = tdbb->tdbb_temp_traid;
+		else if (tdbb->tdbb_transaction)
+			inst_id = tdbb->tdbb_transaction->tra_number;
+		else // called without transaction, maybe from OPT or CMP ?
+			return &rel_pages_base;
+	}
+	else 
+	{
+		if (tdbb->tdbb_temp_attid)
+			inst_id = tdbb->tdbb_temp_attid;
+		else
+			inst_id = PAG_attachment_id(tdbb);
+	}
+
+	if (!rel_pages_inst) 
+	{
+		JrdMemoryPool* pool = dbb->dbb_permanent;
+		rel_pages_inst = FB_NEW(*pool) RelationPagesInstances(*pool);
+	}
+
+	size_t pos;
+	if (!rel_pages_inst->find(inst_id, pos))
+	{
+		if (allocPages) 
+		{
+			RelationPages* newPages = rel_pages_free;
+			if (!newPages) 
+			{
+				const size_t BULK_ALLOC = 8;
+				
+				RelationPages* allocPages = newPages = 
+					FB_NEW(*dbb->dbb_permanent) RelationPages[BULK_ALLOC];
+
+				rel_pages_free = ++allocPages;
+				for(size_t i=1; i<BULK_ALLOC-1; i++, allocPages++)
+					allocPages->rel_next_free = allocPages+1;
+			}
+			else 
+			{
+				rel_pages_free = newPages->rel_next_free;
+				newPages->rel_next_free = 0;
+			}
+
+			fb_assert(newPages->useCount == 0);
+
+			newPages->addRef();
+			newPages->rel_instance_id = inst_id;
+			newPages->rel_pg_space_id = dbb->dbb_page_manager.getTempPageSpaceID(tdbb);
+			PAG_attach_temp_pages(tdbb, newPages->rel_pg_space_id);
+			rel_pages_inst->add(newPages);
+
+			// create primary pointer page and index root page
+			DPM_create_relation_pages(tdbb, this, newPages);
+/*
+			gds__log("jrd_rel::getPages inst %"SLONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n", 
+				newPages->rel_instance_id, 
+				newPages->rel_pages ? (*newPages->rel_pages)[0] : 0, 
+				newPages->rel_index_root,
+				newPages);
+*/
+			// create indexes
+			JrdMemoryPool *pool = tdbb->getDefaultPool();
+			const bool poolCreated = !pool;
+
+			if (poolCreated)
+				pool = JrdMemoryPool::createPool();
+			Jrd::ContextPoolHolder context(tdbb, pool);
+
+			SelectivityList selectivity(*pool);
+
+			USHORT idx_id = 0;
+			while(true) 
+			{
+				index_desc idx;
+				if (BTR_lookup(tdbb, this, idx_id, &idx, &rel_pages_base) != FB_SUCCESS)
+					break;
+
+				Firebird::MetaName idx_name;
+				MET_lookup_index(tdbb, idx_name, this->rel_name, idx_id+1);
+
+				idx.idx_root = 0;
+				IDX_create_index(tdbb, this, &idx, idx_name.c_str(), NULL, 
+					tdbb->tdbb_transaction, selectivity);
+/*
+				gds__log("jrd_rel::getPages inst %"SLONGFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n", 
+					newPages->rel_instance_id, 
+					newPages->rel_index_root,
+					idx_id,
+					idx.idx_root,
+					newPages);
+*/
+				idx_id++;
+			}
+
+			if (poolCreated)
+				JrdMemoryPool::deletePool(pool);
+
+			return newPages;
+		} // allocPages
+		else {
+			return 0;
+		}
+	}
+	else {
+		RelationPages* pages = (*rel_pages_inst)[pos];
+		fb_assert(pages->rel_instance_id == inst_id);
+		return pages;
+	}
+}
+
+bool jrd_rel::delPages(thread_db* tdbb, SLONG tran, RelationPages* aPages)
+{
+	RelationPages* pages = aPages ? aPages : getPages(tdbb, tran, false);
+	if (!pages || !pages->rel_instance_id)
+		return false;
+
+	fb_assert((tran <= 0) || ((tran > 0) && (pages->rel_instance_id == tran)));
+	
+	fb_assert(pages->useCount > 0);
+
+	if(--pages->useCount)
+		return false;
+/*
+	gds__log("jrd_rel::delPages inst %"SLONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n", 
+		pages->rel_instance_id, 
+		pages->rel_pages ? (*pages->rel_pages)[0] : 0, 
+		pages->rel_index_root,
+		pages);
+*/
+	size_t pos;
+	const bool found = rel_pages_inst->find(pages->rel_instance_id, pos);
+	fb_assert(found && ((*rel_pages_inst)[pos] == pages) );
+
+	rel_pages_inst->remove(pos);
+
+	if (pages->rel_index_root) {
+		IDX_delete_indices(tdbb, this, pages);
+	}
+
+	if (pages->rel_pages) {
+		DPM_delete_relation_pages(tdbb, this, pages);
+	}
+
+	pages->free(rel_pages_free);
+	return true;
+}
+
+void jrd_rel::getRelLockKey(thread_db* tdbb, UCHAR* key)
+{
+	*(USHORT*)key = rel_id;
+	key += sizeof(USHORT);
+
+	const SLONG inst_id = getPages(tdbb)->rel_instance_id;
+	*(SLONG*)key = inst_id;
+}
+
+SSHORT jrd_rel::getRelLockKeyLength()
+{
+	return sizeof(USHORT) + sizeof(SLONG);
+}
+
+void jrd_rel::cleanUp()
+{
+	if (rel_pages_inst)
+		delete rel_pages_inst;
+}
+
+	
+void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool AttachmentOnly)
+{
+	if (rel_pages_inst)
+	{
+		for(size_t i=0; i<rel_pages_inst->getCount(); i++)
+		{
+			RelationPages* relPages = (*rel_pages_inst)[i];
+
+			if (!AttachmentOnly) 
+			{
+				snapshot.add(relPages);
+				relPages->addRef();
+			}
+			else if ((rel_flags & REL_temp_conn) && 
+					 (PAG_attachment_id(snapshot.spt_tdbb) == relPages->rel_instance_id)) 
+			{
+				snapshot.add(relPages);
+				relPages->addRef();
+			}
+			else if (rel_flags & REL_temp_tran) 
+			{
+				const jrd_tra* tran = snapshot.spt_tdbb->tdbb_attachment->att_transactions;
+				for(; tran; tran = tran->tra_next)
+					if (tran->tra_number == relPages->rel_instance_id) 
+					{
+						snapshot.add(relPages);
+						relPages->addRef();
+					}
+			}
+		}
+	}
+	else
+		snapshot.add(&rel_pages_base);
+}
+
+void jrd_rel::RelPagesSnapshot::clear()
+{
+#ifdef DEV_BUILD
+	thread_db* tdbb = 0;;
+	SET_TDBB(tdbb);
+	fb_assert(tdbb == spt_tdbb);
+#endif
+
+	for(size_t i=0; i<getCount(); i++)
+	{
+		RelationPages* relPages = (*this)[i];
+		(*this)[i] = NULL;
+
+		spt_relation->delPages(spt_tdbb, -1, relPages);
+	}
+
+	inherited::clear();
+}
+
+void RelationPages::free(RelationPages*& nextFree) 
+{
+	rel_next_free = nextFree;
+	nextFree = this;
+
+	if (rel_pages)
+		rel_pages->clear();
+
+	rel_index_root = rel_data_pages = 0;
+	rel_slot_space = rel_data_space = rel_instance_id = 0;
+}

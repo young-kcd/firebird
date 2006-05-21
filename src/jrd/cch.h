@@ -28,6 +28,7 @@
 #include "../jrd/os/pio.h"
 #ifdef SUPERSERVER_V2
 #include "../jrd/sbm.h"
+#include "../jrd/pag.h"
 #endif
 
 struct exp_index_buf;
@@ -103,7 +104,9 @@ const int BDB_max_shared	= 20;	/* maximum number of shared latch owners per Buff
 
 class BufferDesc : public pool_alloc<type_bdb>
 {
-    public:
+public:
+	BufferDesc() : bdb_page(0, 0) {};
+
 	Database*	bdb_dbb;				/* Database block (for ASTs) */
 	Lock*		bdb_lock;				/* Lock block for buffer */
 	que			bdb_que;				/* Buffer que */
@@ -111,7 +114,8 @@ class BufferDesc : public pool_alloc<type_bdb>
 	Ods::pag*	bdb_buffer;				/* Actual buffer */
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
 	//BlockingThread*	bdb_blocked;		// Blocked attachments block 
-	SLONG		bdb_page;				/* Database page number in buffer */
+//	SLONG		bdb_page;				/* Database page number in buffer */
+	PageNumber	bdb_page;				/* Database page number in buffer */
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
 	SLONG		bdb_mark_transaction;	/* hi-water mark transaction to defer header page I/O */

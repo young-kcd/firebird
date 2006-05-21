@@ -1317,9 +1317,12 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_bpb_source_interp             4
 #define isc_bpb_target_interp             5
 #define isc_bpb_filter_parameter          6
+#define isc_bpb_storage                   7
 
 #define isc_bpb_type_segmented            0
 #define isc_bpb_type_stream               1
+#define isc_bpb_storage_main              0
+#define isc_bpb_storage_temp              2
 
 
 /*********************************/
@@ -1678,6 +1681,10 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dyn_rel_sql_protection        69
 #define isc_dyn_rel_constraint            162
 #define isc_dyn_delete_rel_constraint     163
+
+#define isc_dyn_rel_temporary            224
+#define isc_dyn_rel_temp_global_preserve	1
+#define isc_dyn_rel_temp_global_delete		2
 
 /************************************/
 /* Global field specific attributes */

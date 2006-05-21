@@ -152,6 +152,7 @@ class blb : public pool_alloc_rpt<UCHAR, type_blb>
 	USHORT blb_source_interp;	/* source interp (for writing) */
 	USHORT blb_target_interp;	/* destination interp (for reading) */
 	SSHORT blb_sub_type;		/* Blob's declared sub-type */
+	USHORT blb_pg_space_id;		// page space
 	ULONG blb_sequence;			/* Blob page sequence */
 	ULONG blb_max_sequence;		/* Number of data pages */
 	ULONG blb_count;			/* Number of segments */

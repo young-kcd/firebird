@@ -55,7 +55,8 @@ enum lck_t {
 	LCK_backup_state,           /* Lock to synchronize for objects depending on backup status */
 	LCK_backup_alloc,           /* Lock for page allocation table in backup spare file */
 	LCK_backup_database,        /* Lock to protect writing to database file */
-	LCK_rel_partners			/* Relation partners lock */
+	LCK_rel_partners,			/* Relation partners lock */
+	LCK_page_space				/* Page space ID lock */
 };
 
 /* Lock owner types */

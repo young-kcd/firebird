@@ -249,7 +249,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 
 	++dbb->dbb_use_count;
 	dbb->dbb_ast_flags &= ~(DBB_shut_force | DBB_shut_attach | DBB_shut_tran);
-	WIN window(HEADER_PAGE);
+	WIN window(HEADER_PAGE_NUMBER);
 	Ods::header_page* header =
 		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
@@ -359,7 +359,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 
 	/* Clear shutdown flag on database header page */
 
-	WIN window(HEADER_PAGE);
+	WIN window(HEADER_PAGE_NUMBER);
 	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header

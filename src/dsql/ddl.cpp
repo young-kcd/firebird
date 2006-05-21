@@ -2806,6 +2806,19 @@ static void define_relation( dsql_req* request)
 	}
 	request->append_number(isc_dyn_rel_sql_protection, 1);
 
+	switch(ddl_node->nod_flags)
+	{
+		case NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS:
+			request->append_number(isc_dyn_rel_temporary, 
+				isc_dyn_rel_temp_global_preserve);
+			break;
+
+		case NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS:
+			request->append_number(isc_dyn_rel_temporary, 
+				isc_dyn_rel_temp_global_delete);
+			break;
+	}
+
 	// now do the actual metadata definition
 
 	dsql_nod* elements = ddl_node->nod_arg[e_drl_elements];

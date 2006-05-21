@@ -2049,7 +2049,8 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 			break;
 
 		case isc_bpb_type:
-			type = (USHORT) gds__vax_integer(p, length);
+		case isc_bpb_storage:
+			type |= (USHORT) gds__vax_integer(p, length);
 			break;
 
 		case isc_bpb_source_interp:

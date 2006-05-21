@@ -204,7 +204,8 @@ bool NAV_get_record(thread_db* tdbb,
 #endif
 
 	// find the last fetched position from the index
-	WIN window(impure->irsb_nav_page);
+	const USHORT pageSpaceID = rpb->rpb_relation->getPages(tdbb)->rel_pg_space_id; 
+	WIN window(pageSpaceID, impure->irsb_nav_page);
 
 	btree_exp* expanded_next = NULL;
 	UCHAR* nextPointer = get_position(tdbb, rsb, impure, &window, 
@@ -771,9 +772,9 @@ static UCHAR* get_position(
 
 	// If this is the first time, start at the beginning (or the end)
 #ifdef SCROLLABLE_CURSORS
-	if (!window->win_page || impure->irsb_flags & (irsb_bof | irsb_eof))
+	if (!window->win_page.getPageNum() || impure->irsb_flags & (irsb_bof | irsb_eof))
 #else
-	if (!window->win_page)
+	if (!window->win_page.getPageNum())
 #endif
 	{
 		return nav_open(tdbb, rsb, impure, window, direction, expanded_node);
@@ -1021,7 +1022,7 @@ static UCHAR* nav_open(
 	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower,
 		&upper, false);
 #endif
-	impure->irsb_nav_page = window->win_page;
+	impure->irsb_nav_page = window->win_page.getPageNum();
 
 
 #ifdef SCROLLABLE_CURSORS
@@ -1156,7 +1157,7 @@ static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
 	// We can actually set position without having a data page
 	// fetched; if not, just set the incarnation to the lowest possible
 	impure->irsb_nav_incarnation = CCH_get_incarnation(window);
-	impure->irsb_nav_page = window->win_page;
+	impure->irsb_nav_page = window->win_page.getPageNum();
 	impure->irsb_nav_number = rpb->rpb_number;
 
 	// save the current key value if it hasn't already been saved 

@@ -161,7 +161,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 			{
 				jrd_req* request = tdbb->tdbb_request;
 				record_param* rpb = &request->req_rpb[rsb->rsb_stream];
-				if (rpb->rpb_window.win_flags & WIN_large_scan &&
+				if (rpb->getWindow(tdbb).win_flags & WIN_large_scan &&
 					rpb->rpb_relation->rel_scan_count)
 						--rpb->rpb_relation->rel_scan_count;
 				return;
@@ -359,7 +359,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 		impure->irsb_flags &=
 			~(irsb_singular_processed | irsb_checking_singular);
 		record_param* rpb = &request->req_rpb[rsb->rsb_stream];
-		rpb->rpb_window.win_flags = 0;
+		rpb->getWindow(tdbb).win_flags = 0;
 
 		switch (rsb->rsb_type) {
 		case rsb_indexed:
@@ -397,10 +397,10 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 					   is equal to that of a single large relation. */
 
 					if (attachment->att_flags & ATT_gbak_attachment ||
-						DPM_data_pages(tdbb,
-									   rpb->rpb_relation) > (SLONG) bcb->bcb_count)
+						DPM_data_pages(tdbb, 
+							rpb->rpb_relation) > (SLONG) bcb->bcb_count)
 					{
-						rpb->rpb_window.win_flags = WIN_large_scan;
+						rpb->getWindow(tdbb).win_flags = WIN_large_scan;
 						rpb->rpb_org_scans =
 							rpb->rpb_relation->rel_scan_count++;
 					}

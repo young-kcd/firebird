@@ -222,7 +222,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			// This synchronization is necessary to keep SuperServer happy.
 			// PAG_attachment_id() may modify database header, call lock manager, etc
 			THREAD_ENTER();
-			SLONG att_id = PAG_attachment_id();
+			SLONG att_id = PAG_attachment_id(0);
 			THREAD_EXIT();
 
 			session_id.printf("%d", att_id);

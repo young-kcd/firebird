@@ -128,7 +128,7 @@ static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*,
 											 const UCHAR*);
 static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, blb*,
 	const TEXT*, UCHAR, bool, USHORT);
-static void store_dependencies(thread_db*, CompilerScratch*, const Firebird::MetaName&, USHORT);
+static void store_dependencies(thread_db*, CompilerScratch*, const jrd_rel*, const Firebird::MetaName&, USHORT);
 static bool verify_TRG_ignore_perm(thread_db*, const Firebird::MetaName&);
 
 
@@ -570,7 +570,8 @@ void MET_activate_shadow( thread_db* tdbb)
 
 	CMP_release(tdbb, handle);
 
-	const char* dbb_file_name = dbb->dbb_file->fil_string;
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	const char* dbb_file_name = pageSpace->file->fil_string;
 
 /* go through files looking for any that expand to the current database name */
 	SCHAR expanded_name[MAXPATHLEN];
@@ -1116,7 +1117,7 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 		CMP_release(tdbb, handle);
 	}
 
-	store_dependencies(tdbb, csb, object_name, type);
+	store_dependencies(tdbb, csb, relation, object_name, type);
 
 	if (csb_ptr)
 	{
@@ -3302,6 +3303,16 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		{
 			relation->rel_flags |= REL_sql_relation;
 		}
+
+		if (REL.RDB$FLAGS & REL_global_temp_delete) 
+		{
+			relation->rel_flags |= REL_temp_tran;
+		} 
+		else if (REL.RDB$FLAGS & REL_global_temp_preserve) 
+		{
+			relation->rel_flags |= REL_temp_conn;
+		}
+
 		if (!REL.RDB$VIEW_BLR.isEmpty())
 		{
 			/* parse the view blr, getting dependencies on relations, etc. at the same time */
@@ -3418,7 +3429,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 					field->fld_source =
 						PAR_make_field(tdbb, csb, view_context, (TEXT*)p);
 					Firebird::MetaName depName(REL.RDB$RELATION_NAME);
-					store_dependencies(tdbb, csb, depName, obj_view);
+					store_dependencies(tdbb, csb, 0, depName, obj_view); 
 				}
 				else {
 					field->fld_source =
@@ -4237,10 +4248,27 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 }
 
 
-static void store_dependencies(thread_db*					tdbb,
-							   CompilerScratch*				csb,
-							   const Firebird::MetaName&	object_name,
-							   USHORT						dependency_type)
+const Trigger* findTrigger(trig_vec* triggers, const Firebird::MetaName& trig_name)
+{
+	if (triggers)
+	{
+		trig_vec::iterator t = triggers->begin();
+		for(; t != triggers->end(); t++)
+		{
+			if (t->name.compare(trig_name) == 0)
+				return &(*t);
+		}
+	}
+
+	return NULL;
+}
+
+
+static void store_dependencies(thread_db*	tdbb,
+							   CompilerScratch*	csb,
+							   const jrd_rel*	dep_rel,
+							   const Firebird::MetaName& object_name,
+							   USHORT		dependency_type)
 {
 /**************************************
  *
@@ -4259,6 +4287,19 @@ static void store_dependencies(thread_db*					tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
+	const Trigger* t;
+	const bool checkTableScope = 
+		(dependency_type == obj_computed) ||
+		(dependency_type == obj_trigger) &&
+		(dep_rel != 0) && (
+			(t = findTrigger(dep_rel->rel_pre_erase, object_name)) ||
+			(t = findTrigger(dep_rel->rel_pre_modify, object_name)) ||
+			(t = findTrigger(dep_rel->rel_pre_store, object_name)) ||
+			(t = findTrigger(dep_rel->rel_post_erase, object_name)) ||
+			(t = findTrigger(dep_rel->rel_post_modify, object_name)) ||
+			(t = findTrigger(dep_rel->rel_post_store, object_name)) 
+		) && t && (t->sys_trigger);
+
 	while (csb->csb_dependencies.hasData())
 	{
 		jrd_nod* node = csb->csb_dependencies.pop();
@@ -4274,6 +4315,43 @@ static void store_dependencies(thread_db*					tdbb,
         case obj_relation:
 			relation = (jrd_rel*) node->nod_arg[e_dep_object];
 			dpdo_name = &relation->rel_name;
+
+			fb_assert(checkTableScope && dep_rel || !checkTableScope);
+
+			if (checkTableScope && 
+				( (dep_rel->rel_flags & REL_IS_TEMP) !=
+				  (relation->rel_flags & REL_IS_TEMP) ))
+			{
+				if( !( (dep_rel->rel_flags & REL_temp_tran) &&
+						(relation->rel_flags & REL_temp_conn) ))
+				{
+					char sMaster[256], sChild[256];
+					char *scope = NULL;
+					if (relation->rel_flags & REL_temp_conn)
+						scope = "global temporary table \"%s\" of type on commit preserve rows";
+					else if (relation->rel_flags & REL_temp_tran)
+						scope = "global temporary table \"%s\" of type on commit delete rows";
+					else
+						scope = "persistent table \"%s\"";
+
+					snprintf(sMaster, sizeof(sMaster)-1, scope, relation->rel_name);
+
+					if (dep_rel->rel_flags & REL_temp_conn)
+						scope = "global temporary table \"%s\" of type on commit preserve rows";
+					else if (dep_rel->rel_flags & REL_temp_tran)
+						scope = "global temporary table \"%s\" of type on commit delete rows";
+					else
+						scope = "persistent table \"%s\"";
+
+					snprintf(sChild, sizeof(sChild)-1, scope, dep_rel->rel_name);
+
+					ERR_post(isc_no_meta_update, isc_arg_gds, isc_met_wrong_gtt_scope, 
+						isc_arg_string, ERR_cstring(sChild),
+						isc_arg_string, ERR_cstring(sMaster),
+						0);
+				}
+			}
+
             break;
         case obj_procedure:
             procedure = (jrd_prc*) node->nod_arg[e_dep_object];

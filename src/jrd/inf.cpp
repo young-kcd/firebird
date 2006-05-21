@@ -325,7 +325,7 @@ int INF_database_info(const SCHAR* items,
 #endif
 
 		case isc_info_attachment_id:
-			length = INF_convert(PAG_attachment_id(), buffer);
+			length = INF_convert(PAG_attachment_id(tdbb), buffer);
 			break;
 
 		case isc_info_ods_version:
@@ -461,7 +461,7 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_creation_date:
 			{
-				WIN window(HEADER_PAGE);
+				WIN window(HEADER_PAGE_NUMBER);
 				Ods::header_page* header = (Ods::header_page*) 
 					CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 
@@ -480,7 +480,8 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_forced_writes:
 			if (!header_refreshed)
 			{
-				const jrd_file* file = dbb->dbb_file;
+				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+				const jrd_file* file = pageSpace->file;
 				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
@@ -728,7 +729,8 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_transaction:
 			if (!header_refreshed)
 			{
-				const jrd_file* file = dbb->dbb_file;
+				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+				const jrd_file* file = pageSpace->file;
 				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
@@ -738,7 +740,8 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_active:
 			if (!header_refreshed)
 			{
-				const jrd_file* file = dbb->dbb_file;
+				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+				const jrd_file* file = pageSpace->file;
 				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
@@ -748,7 +751,8 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_oldest_snapshot:
 			if (!header_refreshed)
 			{
-				const jrd_file* file = dbb->dbb_file;
+				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+				const jrd_file* file = pageSpace->file;
 				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}
@@ -758,7 +762,8 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_next_transaction:
 			if (!header_refreshed)
 			{
-				const jrd_file* file = dbb->dbb_file;
+				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+				const jrd_file* file = pageSpace->file;
 				PAG_header(file->fil_string, file->fil_length, true);
 				header_refreshed = true;
 			}

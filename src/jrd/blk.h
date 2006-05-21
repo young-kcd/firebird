@@ -97,3 +97,6 @@ BLKDEF(type_lit, Literal, 0)
 BLKDEF(type_asb, AggregateSort, 0)
 //BLKDEF(type_srl, srl, 0) // Obsolete, apparently deleted by Sean's cleanup.
 BLKDEF(type_ctl, BlobControl, 0)
+
+BLKDEF(type_PageSpace, PageSpace, 0)
+BLKDEF(type_PageManager, PageManager, 0)
