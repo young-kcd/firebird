@@ -1,3 +1,94 @@
+2006-05-21 02:24  asfernandes
+
+	* firebird2/builds/win32/msvc7/: alice.vcproj (1.17),
+	alice_classic.vcproj (1.17), burp.vcproj (1.20),
+	burp_classic.vcproj (1.20), common.vcproj (1.23),
+	common_classic.vcproj (1.20), config.vcproj (1.3),
+	dsql_server.vcproj (1.18), dsql_server_classic.vcproj (1.18),
+	engine.vcproj (1.51), engine_classic.vcproj (1.51),
+	engine_embed.vcproj (1.40), fb2control.vcproj (1.4),
+	fb_inet_server.vcproj (1.20), fb_lock_print.vcproj (1.23),
+	fbclient.vcproj (1.42), fbembed.vcproj (1.31), fbguard.vcproj
+	(1.22), fbserver.vcproj (1.21), fbudf.vcproj (1.17), gbak.vcproj
+	(1.19), gdef.vcproj (1.21), gds32.vcproj (1.20), gfix.vcproj
+	(1.20), gpre.vcproj (1.24), gpre_boot.vcproj (1.25), gsec.vcproj
+	(1.21), gsplit.vcproj (1.13), gstat.vcproj (1.23), ib_udf.vcproj
+	(1.19), ib_util.vcproj (1.18), instclient.vcproj (1.6),
+	instreg.vcproj (1.18), instsvc.vcproj (1.18), intl.vcproj (1.24),
+	isql.vcproj (1.20), lock.vcproj (1.17), lock_classic.vcproj (1.17),
+	nbackup.vcproj (1.8), qli.vcproj (1.21), remote.vcproj (1.22),
+	remote_classic.vcproj (1.23), utilities.vcproj (1.21),
+	utilities_classic.vcproj (1.21), utilities_embed.vcproj (1.2):
+	
+	Disable RTTI in MSVC7 build
+
+2006-05-20 08:11  robocop
+
+	* firebird2/builds/win32/msvc6/Firebird2Boot2.dsw (1.1):
+	
+	Work in progress.
+
+2006-05-20 08:11  robocop
+
+	* firebird2/builds/win32/msvc6/Firebird2Boot.dsw (1.5):
+	
+	No need to have btyacc here.
+
+2006-05-20 08:10  robocop
+
+	* firebird2/builds/win32/msvc6/: alice.dsp (1.18),
+	alice_classic.dsp (1.14), burp.dsp (1.19), burp_classic.dsp (1.17),
+	common.dsp (1.32), common_classic.dsp (1.26), config.dsp (1.3),
+	dsql_server.dsp (1.22), dsql_server_classic.dsp (1.18),
+	empbuild.dsp (1.3), engine.dsp (1.61), engine_classic.dsp (1.57),
+	engine_embed.dsp (1.36), fb2control.dsp (1.6), fb_event_print.dsp
+	(1.2), fb_inet_server.dsp (1.23), fb_lock_print.dsp (1.21),
+	fbclient.dsp (1.54), fbembed.dsp (1.37), fbguard.dsp (1.22),
+	fbserver.dsp (1.37), fbudf.dsp (1.14), gbak.dsp (1.22), gdef.dsp
+	(1.19), gds32.dsp (1.24), gfix.dsp (1.21), gpre.dsp (1.25),
+	gsec.dsp (1.19), gsplit.dsp (1.9), gstat.dsp (1.20), ib_udf.dsp
+	(1.19), ib_util.dsp (1.17), instclient.dsp (1.5), instreg.dsp
+	(1.15), instsvc.dsp (1.16), intl.dsp (1.29), intlbld.dsp (1.3),
+	isql.dsp (1.24), lock.dsp (1.14), lock_classic.dsp (1.12),
+	nbackup.dsp (1.4), qli.dsp (1.18), remote.dsp (1.23),
+	remote_classic.dsp (1.20), utilities.dsp (1.17),
+	utilities_classic.dsp (1.15):
+	
+	Disable RTTI after Alex' source code changes.
+
+2006-05-20 06:21  robocop
+
+	* firebird2/src/: common/classes/ClumpletReader.cpp (1.20),
+	common/classes/alloc.cpp (1.84), jrd/ThreadData.cpp (1.7),
+	jrd/evl_string_test.cpp (1.10), jrd/sch.cpp (1.39),
+	misc/makeHeader.cpp (1.3), remote/os/win32/srvr_w32.cpp (1.37),
+	utilities/nbackup.cpp (1.52), utilities/fbcpl/fbdialog.cpp (1.6),
+	utilities/gsec/call_service.cpp (1.11):
+	
+	Misc.
+
+2006-05-20 05:55  robocop
+
+	* firebird2/src/common/classes/: init.h (1.6), tree.h (1.54):
+	
+	Misc.
+
+2006-05-20 05:51  robocop
+
+	* firebird2/src/: common/config/config.cpp (1.69), jrd/cch.cpp
+	(1.132), jrd/dfw.epp (1.182), jrd/nbak.cpp (1.55), jrd/why.cpp
+	(1.106), jrd/os/posix/unix.cpp (1.45), jrd/os/win32/winnt.cpp
+	(1.33):
+	
+	Misc.
+
+2006-05-20 05:29  robocop
+
+	* firebird2/src/: qli/exe.cpp (1.50), remote/inet_server.cpp
+	(1.63), utilities/gstat/ppg.cpp (1.30):
+	
+	Misc.
+
 2006-05-20 03:53  asfernandes
 
 	* firebird2/src/: dsql/preparse.cpp (1.40), dsql/user_dsql.cpp
