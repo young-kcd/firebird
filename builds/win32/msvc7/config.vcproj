@@ -33,7 +33,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB;NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\config/common.pch"
 				AssemblerListingLocation="..\..\..\temp\release\config/"
 				ObjectFile="..\..\..\temp\release\config/"

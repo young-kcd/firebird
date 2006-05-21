@@ -31,7 +31,7 @@
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gpre_boot/gpre_boot.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gpre_boot/"
 				ObjectFile="..\..\..\temp\release\gpre_boot/"

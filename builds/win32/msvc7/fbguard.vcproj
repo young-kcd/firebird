@@ -32,7 +32,7 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbguard/fbguard.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbguard/"
 				ObjectFile="..\..\..\temp\release\fbguard/"

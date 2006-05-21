@@ -32,7 +32,7 @@
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\intl/intl.pch"
 				AssemblerListingLocation="..\..\..\temp\release\intl/"
 				ObjectFile="..\..\..\temp\release\intl/"
@@ -574,12 +574,6 @@
 				RelativePath="..\..\..\src\intl\collations\undef.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\collations\win_cz.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\collations\win_cz_ci_ai.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\collations\win1251_ua.h">
 			</File>
 			<File
@@ -590,6 +584,12 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\win1257_lv.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\win_cz.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\win_cz_ci_ai.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\xx885913lt.h">

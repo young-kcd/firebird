@@ -85,7 +85,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\engine_ss/engine.pch"
 				AssemblerListingLocation="..\..\..\temp\release\engine_ss/"

@@ -31,6 +31,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;WINVER=0x400"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
+				RuntimeTypeInfo="FALSE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\fb2control/fb2control.pch"
 				AssemblerListingLocation=".\..\..\..\temp\release\fb2control/"

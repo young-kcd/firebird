@@ -95,7 +95,7 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\release\nbackup/nbackup.pch"
 				AssemblerListingLocation="..\..\..\temp\release\nbackup/"
 				ObjectFile="..\..\..\temp\release\nbackup/"
