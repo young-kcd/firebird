@@ -28,7 +28,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\nbackup/nbackup.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\nbackup/"
 				ObjectFile="..\..\..\temp\debug\nbackup/"

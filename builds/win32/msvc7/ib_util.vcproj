@@ -98,7 +98,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\ib_util/ib_util.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\ib_util/"
 				ObjectFile="..\..\..\temp\debug\ib_util/"

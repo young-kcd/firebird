@@ -89,6 +89,7 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_CONSOLE,SUPERCLIENT,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\instclient/instclient.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\instclient/"
 				ObjectFile="..\..\..\temp\debug\instclient/"

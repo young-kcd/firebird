@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gstat/gstat.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gstat/"
 				ObjectFile="..\..\..\temp\debug\gstat/"

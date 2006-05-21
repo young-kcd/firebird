@@ -86,7 +86,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\debug\config/config.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\config/"

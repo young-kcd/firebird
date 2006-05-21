@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\isql/isql.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\isql/"
 				ObjectFile="..\..\..\temp\debug\isql/"

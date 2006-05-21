@@ -93,7 +93,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\instsvc/instsvc.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\instsvc/"
 				ObjectFile="..\..\..\temp\debug\instsvc/"

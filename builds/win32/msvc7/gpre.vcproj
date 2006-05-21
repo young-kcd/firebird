@@ -93,7 +93,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gpre/gpre.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gpre/"
 				ObjectFile="..\..\..\temp\debug\gpre/"

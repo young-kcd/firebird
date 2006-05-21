@@ -100,7 +100,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fb_inet_server\fb_inet_server.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fb_inet_server/"
 				ObjectFile="..\..\..\temp\debug\fb_inet_server/"

@@ -86,7 +86,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\alice_ss/alice.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\alice_ss/"
 				ObjectFile="..\..\..\temp\debug\alice_ss/"

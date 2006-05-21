@@ -97,7 +97,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbudf\fbudf.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbudf/"
 				ObjectFile="..\..\..\temp\debug\fbudf/"

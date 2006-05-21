@@ -85,7 +85,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\remote_cs/remote_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\remote_cs/"
 				ObjectFile="..\..\..\temp\debug\remote_cs/"

@@ -85,7 +85,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\dsql_server_cs/dsql_server_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\dsql_server_cs/"
 				ObjectFile="..\..\..\temp\debug\dsql_server_cs/"

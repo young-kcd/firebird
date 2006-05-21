@@ -86,7 +86,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\burp_ss/burp.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\burp_ss/"
 				ObjectFile="..\..\..\temp\debug\burp_ss/"

@@ -98,7 +98,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\intl/intl.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\intl/"
 				ObjectFile="..\..\..\temp\debug\intl/"

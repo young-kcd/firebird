@@ -86,7 +86,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\engine_cs/engine_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\engine_cs/"
 				ObjectFile="..\..\..\temp\debug\engine_cs/"

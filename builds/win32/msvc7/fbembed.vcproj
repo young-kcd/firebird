@@ -28,7 +28,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbembed/fbembed.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbembed/"
 				ObjectFile="..\..\..\temp\debug\fbembed/"

@@ -102,6 +102,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="FALSE"
 				AssemblerListingLocation=".\..\..\..\temp\debug\fb2control/"
 				ObjectFile=".\..\..\..\temp\debug\fb2control/"
 				ProgramDataBaseFileName=".\..\..\..\temp\debug\fb2control/"

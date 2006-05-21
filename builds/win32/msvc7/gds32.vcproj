@@ -98,7 +98,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gds32/gds32.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gds32/"
 				ObjectFile="..\..\..\temp\debug\gds32/"

@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gbak/gbak.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gbak/"
 				ObjectFile="..\..\..\temp\debug\gbak/"

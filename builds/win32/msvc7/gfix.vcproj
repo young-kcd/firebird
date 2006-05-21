@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="FALSE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gfix/gfix.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gfix/"
 				ObjectFile="..\..\..\temp\debug\gfix/"
