@@ -600,6 +600,7 @@ const ISC_LONG isc_record_lock_not_supp             = 335544862L;
 const ISC_LONG isc_partner_idx_not_found            = 335544863L;
 const ISC_LONG isc_tra_num_exc                      = 335544864L;
 const ISC_LONG isc_field_disappeared                = 335544865L;
+const ISC_LONG isc_met_wrong_gtt_scope              = 335544866L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -668,6 +669,7 @@ const ISC_LONG isc_dyn_char_fld_too_small           = 336068816L;
 const ISC_LONG isc_dyn_invalid_dtype_conversion     = 336068817L;
 const ISC_LONG isc_dyn_dtype_conv_invalid           = 336068818L;
 const ISC_LONG isc_dyn_zero_len_id                  = 336068820L;
+const ISC_LONG isc_dyn_wrong_gtt_scope              = 336068839L;
 const ISC_LONG isc_gbak_unknown_switch              = 336330753L;
 const ISC_LONG isc_gbak_page_size_missing           = 336330754L;
 const ISC_LONG isc_gbak_page_size_toobig            = 336330755L;
@@ -818,7 +820,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 763;
+const ISC_LONG isc_err_max                          = 765;
 
 #else /* c definitions */
 
@@ -1388,6 +1390,7 @@ const ISC_LONG isc_err_max                          = 763;
 #define isc_partner_idx_not_found            335544863L
 #define isc_tra_num_exc                      335544864L
 #define isc_field_disappeared                335544865L
+#define isc_met_wrong_gtt_scope              335544866L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1456,6 +1459,7 @@ const ISC_LONG isc_err_max                          = 763;
 #define isc_dyn_invalid_dtype_conversion     336068817L
 #define isc_dyn_dtype_conv_invalid           336068818L
 #define isc_dyn_zero_len_id                  336068820L
+#define isc_dyn_wrong_gtt_scope              336068839L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -1606,7 +1610,7 @@ const ISC_LONG isc_err_max                          = 763;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          763
+#define isc_err_max                          765
 
 #endif
 
