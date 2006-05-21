@@ -262,35 +262,6 @@ EXTERN_convert(CVJIS_sjis_x_eucj);
 #endif
 
 
-#ifdef DEV_BUILD
-void LD_assert(const SCHAR* filename, int lineno)
-{
-/**************************************
- *
- *	L D _ a s s e r t
- *
- **************************************
- *
- * Functional description
- *
- *	Utility function for fb_assert() macro
- *	Defined locally (clone from jrd/err.c) as ERR_assert isn't
- *	a shared module entry point on all platforms, whereas gds__log is.
- *
- **************************************/
-	char buffer[MAXPATHLEN];
-
-	sprintf(buffer,
-			"Assertion failed: component intl, file \"%s\", line %d\n",
-			filename, lineno);
-#if !(defined VMS || defined WIN_NT)
-/*	gds__log(buffer); -- see note above */
-#endif
-	printf(buffer);
-}
-#endif
-
-
 /* Note: Cannot use a lookup table here as SUN4 cannot init pointers inside
  * shared libraries
  */

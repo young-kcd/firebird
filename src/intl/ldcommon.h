@@ -24,11 +24,9 @@
 #ifndef INTL_LDCOMMON_H
 #define INTL_LDCOMMON_H
 
-/* #include "../jrd/gdsassert.h" */
-/* Put the assert in here */
-
 #include "../jrd/intlobj_new.h"
 #include "../jrd/constants.h"
+#include "../jrd/gdsassert.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
 #include "../intl/ld.h"
@@ -36,20 +34,6 @@
 #undef DEBUG
 
 typedef USHORT UNICODE;
-
-/* Redirect the assertion code defined by gdsassert.h to a local routine */
-#ifdef fb_assert
-#undef fb_assert
-#endif
-#ifndef DEV_BUILD
-#define ERR_assert				/* nothing */
-#define fb_assert(ex)				/* nothing */
-#else
-#include <stdlib.h> /* prototype for abort() */
-#define ERR_assert	LD_assert
-#define fb_assert(ex)	{if (!(ex)) {LD_assert (__FILE__, __LINE__); abort();}}
-
-#endif
 
 #ifndef MIN
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
@@ -81,4 +65,3 @@ typedef USHORT UNICODE;
 void CV_convert_init(csconvert*, pfn_INTL_convert, const void*, const void*);
 
 #endif /* INTL_LDCOMMON_H */
-
