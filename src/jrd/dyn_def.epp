@@ -408,7 +408,7 @@ static void check_fk_against_temp(thread_db* tdbb, Global* gbl,
 		DYN_REQUEST(drq_l_rel_info) = request;
 
 	if (bErr) {
-		DYN_error_punt(false, 231, // Msg 231 : "%s can't reference %s"
+		DYN_error_punt(false, 232, // Msg 232 : "%s can't reference %s"
 			sChild, sMaster, NULL, NULL, NULL);
 	}
 }
