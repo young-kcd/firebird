@@ -73,17 +73,16 @@ protected:
 	Exception() throw() { }
 public:
 	virtual ~Exception() throw() { }
-	enum Kind {ExStatus, ExMemory, ExJump};
-	virtual Kind kind() const throw() = 0;
-	virtual const char* what() const throw() { return "Firebird::Exception"; }
+	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw() = 0;
+	virtual const char* what() const throw() = 0;
 };
 
 // Used as jmpbuf to unwind when needed
 class LongJump : public Exception
 {
 public:
+	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw();
 	virtual const char* what() const throw() { return "Firebird::LongJump"; }
-	virtual Kind kind() const throw() { return ExJump; }
 	static void raise();
 	LongJump() throw() : Exception() { }
 };
@@ -92,8 +91,8 @@ public:
 class BadAlloc : public Exception
 {
 public:
+	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw();
 	virtual const char* what() const throw() { return "Firebird::BadAlloc"; }
-	virtual Kind kind() const throw() { return ExMemory; }
 	static void raise();
 	BadAlloc() throw() : Exception() { }
 };
@@ -107,8 +106,8 @@ public:
 	status_exception(const ISC_STATUS *status_vector, bool permanent) throw();
 	virtual ~status_exception() throw();
 
+	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw();
 	virtual const char* what() const throw() { return "Firebird::status_exception"; }
-	virtual Kind kind() const throw() { return ExStatus; }
 
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
 

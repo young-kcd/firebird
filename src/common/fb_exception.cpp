@@ -71,6 +71,8 @@ void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
 	}	
 }
 
+InterlockedStringsBuffer engine_failures;
+
 } // namespace
 
 namespace Firebird {
@@ -166,6 +168,61 @@ void status_exception::raise(ISC_STATUS status, ...)
 	throw status_exception(temp, false);
 }
 
+ISC_STATUS status_exception::stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb) const throw()
+{
+	const ISC_STATUS *ptr = value();
+	ISC_STATUS *sv = status_vector;
+	if (!sb)
+	{
+		sb = &engine_failures;
+	}
+
+	if (strings_permanent()) 
+	{
+		// Copy status vector
+		while (true) 
+		{
+			const ISC_STATUS type = *sv++ = *ptr++;
+			if (type == isc_arg_end)
+				break;
+			if (type == isc_arg_cstring)
+				*sv++ = *ptr++;
+			*sv++ = *ptr++;
+		}
+	}
+	else {
+		// Move in status and clone transient strings
+		while (true) 
+		{
+			const ISC_STATUS type = *sv++ = *ptr++;
+			if (type == isc_arg_end)
+				break;
+
+			switch (type) {
+			case isc_arg_cstring: 
+				{				
+					const UCHAR len = *sv++ = *ptr++;
+					char *temp = reinterpret_cast<char*>(*ptr++);
+					*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, len));
+				}
+				break;
+			case isc_arg_string:
+			case isc_arg_interpreted:
+				{
+					char *temp = reinterpret_cast<char*>(*ptr++);
+					*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, strlen(temp)));
+				}
+				break;
+			default:
+				*sv++ = *ptr++;
+				break;
+			}
+		}
+	}
+
+	return status_vector[1];
+}
+
 /********************************* BadAlloc ****************************/
 
 void BadAlloc::raise()
@@ -173,11 +230,48 @@ void BadAlloc::raise()
 	throw BadAlloc();
 }
 
+ISC_STATUS BadAlloc::stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb) const throw()
+{
+	ISC_STATUS *sv = status_vector;
+
+	*sv++ = isc_arg_gds;
+	*sv++ = isc_virmemexh;
+	*sv++ = isc_arg_end;
+
+	return status_vector[1];
+}
+
 /********************************* LongJump ****************************/
 
 void LongJump::raise()
 {
 	throw LongJump();
+}
+
+ISC_STATUS LongJump::stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb) const throw()
+{
+   /*
+	* Do nothing for a while - not all utilities are ready, 
+	* status_vector is passed in them by other means.
+	* Ideally status_exception should be always used for it,
+	* and we should activate the following code:
+
+	ISC_STATUS *sv = status_vector;
+	if (!sb)
+	{
+		sb = &engine_failures;
+	}
+	
+	const char *temp = "Unexpected Firebird::LongJump";
+
+	*sv++ = isc_arg_gds;
+	*sv++ = isc_random;
+	*sv++ = isc_arg_string;
+	*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, strlen(temp)));
+	*sv++ = isc_arg_end;
+	*/
+	
+	return status_vector[1];
 }
 
 /********************************* system_call_failed ****************************/
@@ -237,98 +331,6 @@ void fatal_exception::raise(const char* message)
 
 /************************** exception handling routines ***************************/
 
-static InterlockedStringsBuffer engine_failures;
-
-ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, const Exception& ex, StringsBuffer *sb) throw() 
-{
-	// Note that this function will call unexpected() that will terminate process 
-	// if exception appears during status vector serialization
-
-	if (!sb)
-		sb = &engine_failures;
-	
-	ISC_STATUS *sv = status_vector;
-
-	switch (ex.kind())
-	{
-	case Exception::ExMemory:
-		*sv++ = isc_arg_gds;
-		*sv++ = isc_virmemexh;
-		*sv++ = isc_arg_end;
-		break;
-
-	case Exception::ExStatus:
-		{
-			const status_exception* c_ex = reinterpret_cast<const status_exception*>(&ex);
-			const ISC_STATUS *ptr = c_ex->value();
-			if (c_ex->strings_permanent()) 
-			{
-				// Copy status vector
-				 while (true) 
-				 {
-					const ISC_STATUS type = *sv++ = *ptr++;
-					if (type == isc_arg_end)
-						break;
-					if (type == isc_arg_cstring)
-						*sv++ = *ptr++;
-					*sv++ = *ptr++;
-				}
-			}
-			else {
-				// Move in status and clone transient strings
-				 while (true) 
-				 {
-					const ISC_STATUS type = *sv++ = *ptr++;
-					if (type == isc_arg_end)
-						break;
-
-					switch (type) {
-					case isc_arg_cstring: 
-						{				
-							const UCHAR len = *sv++ = *ptr++;
-							char *temp = reinterpret_cast<char*>(*ptr++);
-							*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, len));
-							break;
-						}
-					case isc_arg_string:
-					case isc_arg_interpreted:
-						{
-							char *temp = reinterpret_cast<char*>(*ptr++);
-							*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, strlen(temp)));
-							break;
-						}
-					default:
-						*sv++ = *ptr++;
-						break;
-					}
-				}
-			}
-		}
-		break;
-		
-	case Exception::ExJump:
-		break;	// keep SV 'as is'
-	
-	default:
-		{
-			char temp[256];
-			SNPRINTF(temp, sizeof(temp) - 1,
-				"Unexpected Firebird::Exception (kind=%d what()=\"%s\")",
-				ex.kind(), ex.what());
-			temp[sizeof(temp) - 1] = 0;
-			*sv++ = isc_arg_gds;
-			*sv++ = isc_random;
-			*sv++ = isc_arg_string;
-			*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, strlen(temp)));
-			*sv++ = isc_arg_end;
-		}
-		break;
-	} 
-	
-	return status_vector[1];
-}
-
-
 const char* status_string(const char* string) 
 {
 	return status_nstring(string, strlen(string));
@@ -337,6 +339,12 @@ const char* status_string(const char* string)
 const char* status_nstring(const char* string, size_t length) 
 {
 	return engine_failures.alloc(string, length);
+}
+
+// Serialize exception into status_vector, put transient strings from exception into given StringsBuffer
+ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex, StringsBuffer* sb) throw()
+{
+	return ex.stuff_exception(status_vector, sb);
 }
 
 }	// namespace Firebird
