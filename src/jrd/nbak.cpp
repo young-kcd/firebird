@@ -575,7 +575,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		// adjust difference file access rights to make it match main DB ones
 		if (diff_file && geteuid() == 0) {
 			struct stat st;
-			while (fstat(database->dbb_file->fil_desc, &st) != 0) {
+			while (fstat(database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file->fil_desc, &st) != 0) {
 				if (errno != EINTR) {
 					Firebird::system_call_failed::raise("fstat");
 				}

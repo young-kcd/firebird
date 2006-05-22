@@ -159,7 +159,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
  *	have been locked before entry.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, false);
+	jrd_file* new_file = PIO_create(dbb, file_name, false, false);
 	if (!new_file)
 		return 0;
 
@@ -227,7 +227,7 @@ int PIO_connection(const Firebird::PathName& file_name)
 }
 
 
-jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite)
+jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite, bool /*temporary*/)
 {
 /**************************************
  *
@@ -397,7 +397,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	int i;
 	UINT64 bytes;
 
-	jrd_file* file = dbb->dbb_file;
+	jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
 
 	ISC_inhibit();
 
@@ -485,7 +485,7 @@ SLONG PIO_max_alloc(Database* dbb)
  **************************************/
 	jrd_file* file;
 
-	for (file = dbb->dbb_file; file->fil_next; file = file->fil_next);
+	for (file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file; file->fil_next; file = file->fil_next);
 
 	if (file->fil_desc == -1) {
 		ISC_inhibit();
@@ -533,7 +533,7 @@ SLONG PIO_act_alloc(Database* dbb)
  **  Traverse the linked list of files and add up the number of pages
  **  in each file
  **/
-	for (jrd_file* file = dbb->dbb_file; file != NULL; file = file->fil_next) {
+	for (jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file; file != NULL; file = file->fil_next) {
 		if (file->fil_desc == -1) {
 			ISC_inhibit();
 			unix_error("fstat", file, isc_io_access_err, 0);
@@ -606,7 +606,7 @@ jrd_file* PIO_open(Database* dbb,
 			 * the Header Page flag setting to make sure that the database is set
 			 * ReadOnly.
 			 */
-			if (!dbb->dbb_file)
+			if (!dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
 		}
 	}
@@ -824,7 +824,7 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, UINT64* offset,
  *
  **************************************/
 	Database* dbb = bdb->bdb_dbb;
-	ULONG page = bdb->bdb_page;
+	ULONG page = bdb->bdb_page.getPageNum();
 
 	for (;; file = file->fil_next)
 	{
@@ -897,7 +897,7 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 
 /* If this isn't the primary file, we're done */
 
-	if (dbb->dbb_file)
+	if (dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file)
 		return file;
 
 /* Build unique lock string for file and construct lock block */
@@ -943,7 +943,7 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
 		
 			try {
-				dbb->dbb_file = file;
+				dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file = file;
 				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
 				/* Rewind file pointer */
 				if (lseek (file->fil_desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
@@ -954,13 +954,13 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 						isc_arg_unix, errno, 0);
 				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), 0);
-				dbb->dbb_file = NULL; // Will be set again later by the caller				
+				dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file = NULL; // Will be set again later by the caller				
 			}
 			catch (const Firebird::Exception&) {
 				delete dbb->dbb_lock;
 				dbb->dbb_lock = NULL;
 				delete file;
-				dbb->dbb_file = NULL; // Will be set again later by the caller
+				dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file = NULL; // Will be set again later by the caller
 				throw;
 			}
 		}
