@@ -1,3 +1,81 @@
+2006-05-22 03:29  asfernandes
+
+	* firebird2/src/: dsql/parse.y (1.205), jrd/blb.cpp (1.122),
+	jrd/btr.cpp (1.172):
+	
+	Misc
+
+2006-05-22 02:14  asfernandes
+
+	* firebird2/src/dsql/keywords.cpp (1.51):
+	
+	New keywords is using tok_version = 2
+
+2006-05-22 00:14  hvlad
+
+	* firebird2/src/: dsql/dsql.tab.h (1.68), dsql/parse.cpp (1.177),
+	include/gen/codetext.h (1.39), include/gen/iberror.h (1.40),
+	include/gen/msgs.h (1.53), include/gen/rdb_codes.h (1.38),
+	include/gen/sql_code.h (1.42):
+	
+	Regenerate parser and error codes files (after GTT)
+
+2006-05-22 00:07  hvlad
+
+	* firebird2/src/: dsql/ddl.cpp (1.172), dsql/keywords.cpp (1.50),
+	dsql/node.h (1.72), dsql/parse.y (1.204), isql/extract.epp (1.67),
+	jrd/blb.cpp (1.121), jrd/blb.h (1.23), jrd/blk.h (1.27),
+	jrd/btr.cpp (1.171), jrd/btr_proto.h (1.38), jrd/cch.cpp (1.133),
+	jrd/cch.h (1.29), jrd/cch_proto.h (1.25), jrd/dfw.epp (1.183),
+	jrd/dpm.epp (1.66), jrd/dpm_proto.h (1.19), jrd/drq.h (1.13),
+	jrd/dyn_def.epp (1.108), jrd/evl.cpp (1.180), jrd/flags.h (1.6),
+	jrd/functions.cpp (1.25), jrd/gds.cpp (1.196), jrd/ibase.h (1.116),
+	jrd/idx.cpp (1.105), jrd/idx_proto.h (1.24), jrd/inf.cpp (1.64),
+	jrd/ini.epp (1.77), jrd/jrd.cpp (1.250), jrd/jrd.h (1.156),
+	jrd/lck.cpp (1.54), jrd/lck.h (1.23), jrd/met.epp (1.184),
+	jrd/nav.cpp (1.66), jrd/nbak.cpp (1.56), jrd/pag.cpp (1.102),
+	jrd/pag.h (1.6), jrd/pag_proto.h (1.15), jrd/req.h (1.57),
+	jrd/rlck.cpp (1.36), jrd/rse.cpp (1.107), jrd/sdw.cpp (1.62),
+	jrd/shut.cpp (1.40), jrd/tpc.cpp (1.23), jrd/tra.cpp (1.119),
+	jrd/validation.cpp (1.20), jrd/vio.cpp (1.155), jrd/os/pio_proto.h
+	(1.17), jrd/os/win32/winnt.cpp (1.34), msgs/facilities.sql (1.59),
+	msgs/messages.sql (1.73), msgs/system_errors.sql (1.29):
+	
+	Global temporary tables implementation
+
+2006-05-21 21:25  asfernandes
+
+	* firebird2/: builds/win32/msvc7/intl.vcproj (1.26),
+	src/intl/ld.cpp (1.20), src/intl/ld_proto.h (1.7),
+	src/intl/ldcommon.h (1.23):
+	
+	Remove hacks and make fb_assert work in INTL.  DEV_BUILD should be
+	turned on in MSVC6 intl.dsp debug configuration.
+
+2006-05-21 17:17  asfernandes
+
+	* firebird2/builds/win32/msvc7/: alice.vcproj (1.18),
+	alice_classic.vcproj (1.18), burp.vcproj (1.21),
+	burp_classic.vcproj (1.21), common.vcproj (1.24),
+	common_classic.vcproj (1.21), config.vcproj (1.4),
+	dsql_server.vcproj (1.19), dsql_server_classic.vcproj (1.19),
+	engine.vcproj (1.52), engine_classic.vcproj (1.52),
+	engine_embed.vcproj (1.41), fb2control.vcproj (1.5),
+	fb_inet_server.vcproj (1.21), fb_lock_print.vcproj (1.24),
+	fbclient.vcproj (1.43), fbembed.vcproj (1.32), fbguard.vcproj
+	(1.23), fbserver.vcproj (1.22), fbudf.vcproj (1.18), gbak.vcproj
+	(1.20), gdef.vcproj (1.22), gds32.vcproj (1.21), gfix.vcproj
+	(1.21), gpre.vcproj (1.25), gpre_boot.vcproj (1.26), gsec.vcproj
+	(1.22), gsplit.vcproj (1.14), gstat.vcproj (1.24), ib_udf.vcproj
+	(1.20), ib_util.vcproj (1.19), instclient.vcproj (1.7),
+	instreg.vcproj (1.19), instsvc.vcproj (1.19), intl.vcproj (1.25),
+	isql.vcproj (1.21), lock.vcproj (1.18), lock_classic.vcproj (1.18),
+	nbackup.vcproj (1.9), qli.vcproj (1.22), remote.vcproj (1.23),
+	remote_classic.vcproj (1.24), utilities.vcproj (1.22),
+	utilities_classic.vcproj (1.22), utilities_embed.vcproj (1.3):
+	
+	Remove RTTI in MSVC7 debug build too - thanks to Claudio
+
 2006-05-21 02:24  asfernandes
 
 	* firebird2/builds/win32/msvc7/: alice.vcproj (1.17),
