@@ -3248,7 +3248,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 				("    getWindow(tdbb) page %"SLONGFORMAT
 				 ", max_data %d, \n\trhdf_flags %d, prior %"SLONGFORMAT"\n",
 				 rpb->getWindow(tdbb).win_page.getPageNum(), max_data, header->rhdf_flags,
-				 prior);
+				 prior.getPageNum());
 		}
 #endif
 
@@ -3300,4 +3300,3 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 	}
 }
-
