@@ -516,13 +516,13 @@ static LexerState lex;
 %token UNDO
 %token REQUESTS
 %token TIMEOUT
-%token PRESERVE
-%token GLOBAL 
-%token TEMPORARY 
 
 /* tokens added for Firebird 2.1 */
 
 %token LIST
+%token PRESERVE
+%token GLOBAL 
+%token TEMPORARY 
 
 /* precedence declarations for expression evaluation */
 

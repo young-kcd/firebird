@@ -1009,7 +1009,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 					}
 
 					if (blob->blb_level && 
-						(blob->blb_pg_space_id != relPages->rel_pg_space_id) ) 
+						(blob->blb_pg_space_id != relPages->rel_pg_space_id))
 					{
 						const ULONG oldTempID = blob->blb_temp_id;
 						blb* newBlob = copy_blob(tdbb, source, destination, bpb_length, bpb, relPages->rel_pg_space_id);
@@ -1990,7 +1990,7 @@ static void delete_blob_id(
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-/* If the blob is null, don't bother to delete it.  Reasonable? */
+	/* If the blob is null, don't bother to delete it.  Reasonable? */
 
 	if (blob_id->isEmpty())
 		return;
@@ -1998,7 +1998,7 @@ static void delete_blob_id(
 	if (blob_id->bid_internal.bid_relation_id != relation->rel_id)
 		CORRUPT(200);			/* msg 200 invalid blob id */
 
-/* Fetch blob */
+	/* Fetch blob */
 
 	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans); 
 	blob->blb_relation = relation;
@@ -2082,7 +2082,7 @@ USHORT gen_bpb_from_descs(const dsc* from_desc, const dsc* to_desc, UCHAR* bpb)
 	*p++ = isc_bpb_source_type;
 	*p++ = 2;
 	put_short(p, from_desc->dsc_sub_type);
-	p +=2;
+	p += 2;
 	if (from_desc->dsc_sub_type == isc_blob_text)
 	{
 		*p++ = isc_bpb_source_interp;
@@ -2093,7 +2093,7 @@ USHORT gen_bpb_from_descs(const dsc* from_desc, const dsc* to_desc, UCHAR* bpb)
 	*p++ = isc_bpb_target_type;
 	*p++ = 2;
 	put_short(p, to_desc->dsc_sub_type);
-	p +=2;
+	p += 2;
 	if (to_desc->dsc_sub_type == isc_blob_text)
 	{
 		*p++ = isc_bpb_target_interp;
