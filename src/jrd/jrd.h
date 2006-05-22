@@ -285,13 +285,13 @@ public:
 
 private:
 	explicit Database(MemoryPool& p)
-	:	modules(p),
+	:	dbb_page_manager(p),
+		modules(p),
 		dbb_filename(p),
 		dbb_database_name(p),
 		dbb_encrypt_key(p),
 		dbb_pools(p, 4),
-		dbb_charsets(p),
-		dbb_page_manager(p)
+		dbb_charsets(p)
 	{
 		dbb_pools.resize(1);
 	}

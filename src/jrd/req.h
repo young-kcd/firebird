@@ -56,8 +56,8 @@ class thread_db;
 
 struct record_param {
 	record_param() : 
-		rpb_window(DB_PAGE_SPACE, -1),
-		rpb_relation(0)
+		rpb_relation(0),
+		rpb_window(DB_PAGE_SPACE, -1)
 		{}
 	RecordNumber rpb_number;	/* record number in relation */
 	SLONG rpb_transaction_nr;	/* transaction number */
