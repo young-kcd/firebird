@@ -353,17 +353,6 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 }
 
 
-/*
-SELECT RLC_M.RDB$RELATION_NAME, REL_M.RDB$FLAGS, REL_C.RDB$FLAGS
-  FROM RDB$RELATION_CONSTRAINTS RLC_M,
-       RDB$RELATIONS REL_C,
-       RDB$RELATIONS REL_M
- WHERE RLC_M.RDB$CONSTRAINT_TYPE IN ('UNIQUE', 'PRIMARY KEY')
-   AND RLC_M.RDB$INDEX_NAME = reffered_index_name
-   AND REL_C.RDB$RELATION_NAME = child_rel_name
-   AND REL_M.RDB$RELATION_NAME = RLC_M.RDB$RELATION_NAME
-*/
-
 static void check_fk_against_temp(thread_db* tdbb, Global* gbl, 
 				const TEXT*	child_rel_name, const TEXT* master_index_name)
 {
