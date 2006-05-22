@@ -804,7 +804,7 @@ retry_after_latch_timeout:
 		printf
 			("\tDPM_delete:  page %"SLONGFORMAT
 			 " is empty and about to be released from relation %d\n",
-			 window->win_page, rpb->rpb_relation->rel_id);
+			 window->win_page.getPageNum(), rpb->rpb_relation->rel_id);
 	}
 #endif
 
@@ -1697,8 +1697,8 @@ bool DPM_next(thread_db* tdbb,
 		else {
 			CCH_RELEASE(tdbb, window);
 		}
-		if (flags & ppg_eof || onepage) { 
-			return FALSE;
+		if (flags & ppg_eof || onepage) {
+			return false;
 		}
 	}
 }
@@ -1858,7 +1858,7 @@ void DPM_scan_pages( thread_db* tdbb)
 		if (!REQUEST(irq_r_pages))
 			REQUEST(irq_r_pages) = request;
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
-		RelationPages* relPages = relation->getBasePages();
+		relPages = relation->getBasePages();
 		sequence = X.RDB$PAGE_SEQUENCE;
 		switch (X.RDB$PAGE_TYPE) {
 		case pag_root:
@@ -2239,7 +2239,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 }
 
 
-static void delete_tail( thread_db* tdbb, rhdf* header, const USHORT page_space, USHORT length)
+static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, USHORT length)
 {
 /**************************************
  *
@@ -2443,7 +2443,7 @@ static void fragment(
 			("    rhdf_transaction %"SLONGFORMAT", window record %"SLONGFORMAT
 			 ":%d, available_space %d, rhdf_flags %d, rhdf_f record %"
 			 SLONGFORMAT":%d, rhdf_b record %"SLONGFORMAT":%d\n",
-			 header->rhdf_transaction, window->win_page, line,
+			 header->rhdf_transaction, window->win_page.getPageNum(), line,
 			 available_space, header->rhdf_flags, header->rhdf_f_page,
 			 header->rhdf_f_line, header->rhdf_b_page, header->rhdf_b_line);
 	}
@@ -2508,7 +2508,7 @@ static void fragment(
 			("    rhdf_trans %"SLONGFORMAT", window record %"SLONGFORMAT
 			 ":%d, dpg_length %d\n\trhdf_flags %d, rhdf_f record %"SLONGFORMAT
 			 ":%d, rhdf_b record %"SLONGFORMAT":%d\n",
-			 header->rhdf_transaction, window->win_page, line,
+			 header->rhdf_transaction, window->win_page.getPageNum(), line,
 			 page->dpg_rpt[line].dpg_length, header->rhdf_flags,
 			 header->rhdf_f_page, header->rhdf_f_line, header->rhdf_b_page,
 			 header->rhdf_b_line);
@@ -2678,7 +2678,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf("   extended_relation (relation %d, window_page %"SLONGFORMAT")\n",
-				  relation->rel_id, window->win_page);
+				  relation->rel_id, window->win_page.getPageNum());
 	}
 #endif
 }
@@ -3006,7 +3006,7 @@ static rhd* locate_space(
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf("    extended relation %d with page %"SLONGFORMAT" to get %d bytes\n",
-				  relation->rel_id, window->win_page, size);
+				  relation->rel_id, window->win_page.getPageNum(), size);
 	}
 #endif
 
@@ -3247,7 +3247,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 			printf
 				("    getWindow(tdbb) page %"SLONGFORMAT
 				 ", max_data %d, \n\trhdf_flags %d, prior %"SLONGFORMAT"\n",
-				 rpb->getWindow(tdbb).win_page, max_data, header->rhdf_flags,
+				 rpb->getWindow(tdbb).win_page.getPageNum(), max_data, header->rhdf_flags,
 				 prior);
 		}
 #endif
@@ -3285,7 +3285,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 			("    rhdf_trans %"SLONGFORMAT", rpb_window record %"SLONGFORMAT
 			 ":%d, dpg_length %d \n\trhdf_flags %d, rhdf_f record %"SLONGFORMAT
 			 ":%d, rhdf_b record %"SLONGFORMAT":%d\n",
-			 header->rhdf_transaction, rpb->getWindow(tdbb).win_page,
+			 header->rhdf_transaction, rpb->getWindow(tdbb).win_page.getPageNum(),
 			 rpb->rpb_line, page->dpg_rpt[rpb->rpb_line].dpg_length,
 			 header->rhdf_flags, header->rhdf_f_page, header->rhdf_f_line,
 			 header->rhdf_b_page, header->rhdf_b_line);
