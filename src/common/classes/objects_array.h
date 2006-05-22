@@ -254,13 +254,13 @@ namespace Firebird
 		}
 		ObjectsArray<T, A>& operator =(const ObjectsArray<T, A>& L) 
 		{
-			while (count > L.count) 
+			while (this->count > L.count) 
 			{
 				delete inherited::pop();
 			}
 			for (size_t i = 0; i < L.count; i++) 
 			{
-				if (i < count)
+				if (i < this->count)
 				{
 					(*this)[i] = L[i];
 				}
