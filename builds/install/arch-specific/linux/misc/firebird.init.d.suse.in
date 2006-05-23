@@ -41,7 +41,7 @@ test "$START_FIREBIRD" = yes || exit 0
 
 FIREBIRD=@prefix@
 FBRunUser=firebird
-pidfile=/var/run/firebird/`basename $0`.pid
+pidfile=/var/run/firebird/firebird.pid
 
 export FIREBIRD
 
@@ -87,7 +87,7 @@ case "$1" in
 
 	# NOTE: startproc return 0, even if service is
 	# already running to match LSB spec.
-	startproc -u $FBRunUser $FIREBIRD/bin/fbmgr -pidfile $pidfile -start -forever
+	startproc -u $FBRunUser $FIREBIRD/bin/fbguard -pidfile $pidfile -forever
 
 	# Remember status and be verbose
 	rc_status -v
