@@ -2219,6 +2219,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 
 	jrd_nod* match = boolean->nod_arg[0];
 	jrd_nod* value = (boolean->nod_count < 2) ? NULL : boolean->nod_arg[1];
+	jrd_nod* value2 =
+		(boolean->nod_type == nod_between) ? boolean->nod_arg[2] : NULL;
 
 	if (indexScratch->idx->idx_flags & idx_expressn)
 	{
@@ -2270,8 +2272,38 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 		dsc desc1, desc2;
 		CMP_get_desc(tdbb, optimizer->opt_csb, match, &desc1);
 		CMP_get_desc(tdbb, optimizer->opt_csb, value, &desc2);
+
 		if (!BTR_types_comparable(desc1, desc2))
 			return false;
+
+		// if the indexed column is of type int64, we need to inject an
+		// extra cast to deliver the scale value to the BTR level
+
+		if (desc1.dsc_dtype == dtype_int64)
+		{
+			Format* format = Format::newFormat(*tdbb->getDefaultPool(), 1);
+			format->fmt_length = desc1.dsc_length;
+			format->fmt_desc[0] = desc1;
+
+			jrd_nod* cast = PAR_make_node(tdbb, e_cast_length);
+			cast->nod_type = nod_cast;
+			cast->nod_count = 1;
+			cast->nod_arg[e_cast_source] = value;
+			cast->nod_arg[e_cast_fmt] = (jrd_nod*) format;
+			cast->nod_impure = CMP_impure(optimizer->opt_csb, sizeof(impure_value));
+			value = cast;
+
+			if (value2)
+			{
+				cast = PAR_make_node(tdbb, e_cast_length);
+				cast->nod_type = nod_cast;
+				cast->nod_count = 1;
+				cast->nod_arg[e_cast_source] = value2;
+				cast->nod_arg[e_cast_fmt] = (jrd_nod*) format;
+				cast->nod_impure = CMP_impure(optimizer->opt_csb, sizeof(impure_value));
+				value2 = cast;
+			}
+		}
 	}
 
 	// match the field to an index, if possible, and save the value to be matched 
@@ -2290,8 +2322,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 
 				case nod_between:
 					if (!forward || 
-						!OPT_computable(optimizer->opt_csb, boolean->nod_arg[2],
-						            stream, true, false))
+						!OPT_computable(optimizer->opt_csb, value2,
+										stream, true, false))
 					{
 						return false;
 					}
@@ -2302,7 +2334,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 						(segment[i]->scanType == segmentScanEquivalent))) 
 					{
 						segment[i]->lowerValue = value;
-						segment[i]->upperValue = boolean->nod_arg[2];
+						segment[i]->upperValue = value2;
 						segment[i]->scanType = segmentScanBetween;
 						segment[i]->excludeLower = false;
 						segment[i]->excludeUpper = false;
