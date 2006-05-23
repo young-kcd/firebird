@@ -615,6 +615,16 @@ int PAG_add_header_entry(header_page* header, USHORT type, SSHORT len, const UCH
 
 void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 {
+/***********************************************
+ *
+ *	P A G _ a t t a c h _ t e m p _ p a g e s
+ *
+ ***********************************************
+ *
+ * Functional description
+ *	Attach a temporary page space
+ *
+ **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
@@ -640,7 +650,7 @@ void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 		
 		long hash = 0;
 		TEXT* p = dbb->dbb_filename.begin(), *const e = dbb->dbb_filename.end();
-		for(int i = 0; p < e; p++)
+		for (int i = 0; p < e; p++)
 		{
 			hash += *p << i;
 			i = (i + 8) % 32;
