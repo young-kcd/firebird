@@ -26,7 +26,6 @@
 
 #include "../jrd/jrd.h"
 #include "../common/classes/alloc.h"
-//#include "../jrd/block_cache.h"
 #include "../jrd/lls.h"
 #include "../common/classes/fb_string.h"
 
@@ -60,8 +59,6 @@ public:
 
 	Jrd::DataComprControl* plb_dccs;
 };
-
-TEXT* ALL_cstring(JrdMemoryPool* pool, const Firebird::string& in_string);
 
 #endif	// JRD_ALL_H
 

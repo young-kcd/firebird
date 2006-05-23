@@ -116,25 +116,6 @@ void JrdMemoryPool::noDbbDeletePool(JrdMemoryPool* pool) {
 	MemoryPool::deletePool(pool);
 }
 
-TEXT* ALL_cstring(JrdMemoryPool* pool, const Firebird::string& in_string)
-{
-/**************************************
- *
- *	A L L _ c s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Copy a stack local string to an allocated
- *	string so it doesn't disappear before we 
- *	return to the user or where ever.
- *
- **************************************/
-	TEXT* p = FB_NEW(*pool) TEXT[in_string.length() + 1];
-	strcpy(p, in_string.c_str());
-	return p;
-}
-
 
 void ALL_fini(void)
 {

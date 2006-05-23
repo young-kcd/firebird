@@ -54,7 +54,6 @@
 #include "../jrd/blb.h"
 #include "../jrd/intl.h"
 #include "../jrd/met.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/err_proto.h"
@@ -1690,7 +1689,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 				access_type->nod_arg[e_access_type_relation] = (jrd_nod*) (IPTR) relation_id;
 				access_type->nod_arg[e_access_type_index] = (jrd_nod*) (IPTR) index_id;
-				idx_name = ALL_cstring(tdbb->getDefaultPool(), name.c_str());
+				idx_name = stringDup(*tdbb->getDefaultPool(), name.c_str());
 				access_type->nod_arg[e_access_type_index_name] = (jrd_nod*) idx_name;
 
 				if (csb->csb_g_flags & csb_get_dependencies)
@@ -1755,7 +1754,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 					*arg++ = (jrd_nod*) (IPTR) relation_id;
 					*arg++ = (jrd_nod*) (IPTR) index_id;
-					idx_name = ALL_cstring(tdbb->getDefaultPool(), name.c_str());
+					idx_name = stringDup(*tdbb->getDefaultPool(), name.c_str());
 					*arg++ = (jrd_nod*) idx_name;
 
 					if (csb->csb_g_flags & csb_get_dependencies)
@@ -2523,7 +2522,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			*arg++ = (jrd_nod*) (IPTR) BLR_BYTE;
 			Firebird::MetaName name;
 			par_name(csb, name);
-			*arg++ = (jrd_nod*) ALL_cstring(tdbb->getDefaultPool(), name.c_str());
+			*arg++ = (jrd_nod*) stringDup(*tdbb->getDefaultPool(), name.c_str());
 			break;
 		}
 
