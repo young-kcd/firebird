@@ -44,7 +44,6 @@
 #include "../jrd/dls_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sort_proto.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 

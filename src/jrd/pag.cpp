@@ -85,7 +85,6 @@
 #include "../jrd/vio_debug.h"
 #include "../jrd/all.h"
 #endif
-#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dls_proto.h"
 #include "../jrd/dpm_proto.h"

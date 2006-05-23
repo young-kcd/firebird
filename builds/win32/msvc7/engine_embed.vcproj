@@ -420,9 +420,6 @@
 				RelativePath="..\..\..\src\jrd\all.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\all_proto.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\ansi.h">
 			</File>
 			<File

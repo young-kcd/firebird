@@ -81,7 +81,6 @@
 #include "../intl/charsets.h"
 #include "../jrd/sort.h"
 
-#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"

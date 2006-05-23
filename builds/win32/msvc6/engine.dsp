@@ -564,10 +564,6 @@ SOURCE=..\..\..\src\jrd\all.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\all_proto.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\ansi.h
 # End Source File
 # Begin Source File
