@@ -635,7 +635,7 @@ static const struct {
 	{336068817, -829}, /* 209 dyn_invalid_dtype_conversion     */
 	{336068818, -829}, /* 210 dyn_dtype_conv_invalid           */
 	{336068820, -901}, /* 212 dyn_zero_len_id                  */
-	{336068839, -901}, /* 231 dyn_wrong_gtt_scope              */
+	{336068840, -901}, /* 232 dyn_wrong_gtt_scope              */
 	{336330753, -901}, /*   1 gbak_unknown_switch              */
 	{336330754, -901}, /*   2 gbak_page_size_missing           */
 	{336330755, -901}, /*   3 gbak_page_size_toobig            */

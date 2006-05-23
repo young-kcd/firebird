@@ -636,7 +636,7 @@ static const struct {
 	{336068817, "Cannot change datatype for %s.  Conversion from base type %s to %s is not supported."},		/* 612, dyn_invalid_dtype_conversion */
 	{336068818, "Cannot change datatype for column %s from a character type to a non-character type."},		/* 613, dyn_dtype_conv_invalid */
 	{336068820, "Zero length identifiers are not allowed"},		/* 614, dyn_zero_len_id */
-	{336068839, "File name is invalid"},		/* 615, dyn_wrong_gtt_scope */
+	{336068840, "%s cannot reference %s"},		/* 615, dyn_wrong_gtt_scope */
 	{336330753, "found unknown switch"},		/* 616, gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* 617, gbak_page_size_missing */
 	{336330755, "Page size specified (%ld) greater than limit (16384 bytes)"},		/* 618, gbak_page_size_toobig */

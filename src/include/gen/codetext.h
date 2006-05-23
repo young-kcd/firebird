@@ -636,7 +636,7 @@ static const struct {
 	{"dyn_invalid_dtype_conversion", 336068817},
 	{"dyn_dtype_conv_invalid", 336068818},
 	{"dyn_zero_len_id", 336068820},
-	{"dyn_wrong_gtt_scope", 336068839},
+	{"dyn_wrong_gtt_scope", 336068840},
 	{"gbak_unknown_switch", 336330753},
 	{"gbak_page_size_missing", 336330754},
 	{"gbak_page_size_toobig", 336330755},
