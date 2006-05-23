@@ -1,3 +1,52 @@
+2006-05-22 21:43  asfernandes
+
+	* firebird2/src/jrd/dyn_def.epp (1.110):
+	
+	Correct error code
+
+2006-05-22 19:41  asfernandes
+
+	* firebird2/src/jrd/dpm.epp (1.68):
+	
+	Fix of VIO_DEBUG code
+
+2006-05-22 13:44  alexpeshkoff
+
+	* firebird2/src/: include/fb_exception.h (1.23),
+	common/fb_exception.cpp (1.26):
+	
+	avoid reinterpret_cast in exception's handler
+
+2006-05-22 13:42  alexpeshkoff
+
+	* firebird2/src/jrd/: nbak.cpp (1.57), os/posix/unix.cpp (1.46):
+	
+	fix posix build after introducing PageManager
+
+2006-05-22 12:41  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.h (1.157), req.h (1.58):
+	
+	fixed gcc warnings
+
+2006-05-22 11:33  alexpeshkoff
+
+	* firebird2/src/common/classes/objects_array.h (1.18):
+	
+	make it compilable with fresh gcc
+
+2006-05-22 05:04  asfernandes
+
+	* firebird2/src/jrd/: dyn_def.epp (1.109), ibase.h (1.117):
+	
+	Misc
+
+2006-05-22 04:36  asfernandes
+
+	* firebird2/src/jrd/dpm.epp (1.67):
+	
+	Misc
+
 2006-05-22 03:29  asfernandes
 
 	* firebird2/src/: dsql/parse.y (1.205), jrd/blb.cpp (1.122),
