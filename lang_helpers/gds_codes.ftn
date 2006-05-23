@@ -1142,6 +1142,8 @@ C --
       PARAMETER (GDS__tra_num_exc                      = 335544864)
       INTEGER*4 GDS__field_disappeared               
       PARAMETER (GDS__field_disappeared                = 335544865)
+      INTEGER*4 GDS__met_wrong_gtt_scope             
+      PARAMETER (GDS__met_wrong_gtt_scope              = 335544866)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1278,6 +1280,8 @@ C --
       PARAMETER (GDS__dyn_dtype_conv_invalid           = 336068818)
       INTEGER*4 GDS__dyn_zero_len_id                 
       PARAMETER (GDS__dyn_zero_len_id                  = 336068820)
+      INTEGER*4 GDS__dyn_wrong_gtt_scope             
+      PARAMETER (GDS__dyn_wrong_gtt_scope              = 336068840)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

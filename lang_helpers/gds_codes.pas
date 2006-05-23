@@ -578,6 +578,7 @@ const
 	gds_partner_idx_not_found            = 335544863;
 	gds_tra_num_exc                      = 335544864;
 	gds_field_disappeared                = 335544865;
+	gds_met_wrong_gtt_scope              = 335544866;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
@@ -646,6 +647,7 @@ const
 	gds_dyn_invalid_dtype_conversion     = 336068817;
 	gds_dyn_dtype_conv_invalid           = 336068818;
 	gds_dyn_zero_len_id                  = 336068820;
+	gds_dyn_wrong_gtt_scope              = 336068840;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;
