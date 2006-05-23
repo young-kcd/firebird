@@ -48,7 +48,6 @@
 #include "../jrd/req.h"
 #include "../jrd/tra.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/enc_proto.h"

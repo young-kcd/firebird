@@ -54,7 +54,6 @@
 #ifdef VIO_DEBUG
 #include "../jrd/vio_debug.h"
 #endif
-#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"

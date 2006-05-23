@@ -43,7 +43,6 @@
 #include "../jrd/req.h"
 #include "../jrd/rse.h"
 #include "../jrd/tra.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/met_proto.h"
 #endif

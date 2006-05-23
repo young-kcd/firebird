@@ -52,7 +52,6 @@
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc_s_proto.h"
-#include "../jrd/all_proto.h"
 #include "gen/iberror.h"
 
 using namespace Jrd;

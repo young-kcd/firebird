@@ -109,7 +109,6 @@
 #ifdef INTL_BUILTIN
 #include "../intl/ld_proto.h"
 #endif
-#include "../jrd/all_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/fun_proto.h"

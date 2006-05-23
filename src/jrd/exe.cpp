@@ -70,7 +70,6 @@
 #include "../jrd/sbm.h"
 #include "../jrd/blb.h"
 #include "../jrd/blr.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cmp_proto.h"

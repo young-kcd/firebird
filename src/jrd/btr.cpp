@@ -45,7 +45,6 @@
 #include "../jrd/cch.h"
 #include "../jrd/sort.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dpm_proto.h"

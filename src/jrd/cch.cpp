@@ -49,7 +49,6 @@
 #include "../jrd/btn.h"
 #include "../jrd/nbak.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"

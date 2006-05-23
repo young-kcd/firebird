@@ -27,7 +27,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/sqz.h"
 #include "../jrd/req.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sqz_proto.h"

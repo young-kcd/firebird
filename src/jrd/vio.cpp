@@ -66,7 +66,6 @@
 #include "../jrd/all.h"
 #include "../jrd/vio_debug.h"
 #endif
-#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"

@@ -84,7 +84,6 @@
 #include "../jrd/tra.h"
 #include "../jrd/gdsassert.h"
 #include "../common/classes/timestamp.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cvt_proto.h"

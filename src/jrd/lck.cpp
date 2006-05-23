@@ -33,7 +33,6 @@
 #include "../jrd/lck.h"
 #include "gen/iberror.h"
 #include "../jrd/iberr.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/jrd_proto.h"

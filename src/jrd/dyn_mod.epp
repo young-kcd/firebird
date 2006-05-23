@@ -55,7 +55,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/dyn.h"
 #include "../jrd/ods.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dyn_proto.h"

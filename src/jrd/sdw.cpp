@@ -38,7 +38,6 @@
 #include "../jrd/sdw.h"
 #include "../jrd/sbm.h"
 #include "../jrd/flags.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"

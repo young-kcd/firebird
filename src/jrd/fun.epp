@@ -47,7 +47,6 @@
 #include "../jrd/common.h"
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/irq.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dsc_proto.h"

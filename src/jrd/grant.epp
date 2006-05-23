@@ -40,7 +40,6 @@
 #include "../jrd/val.h"
 #include "../jrd/met.h"
 #include "../jrd/intl.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dfw_proto.h"

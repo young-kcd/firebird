@@ -53,7 +53,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/cch.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/blf_proto.h"
 #include "../jrd/cch_proto.h"

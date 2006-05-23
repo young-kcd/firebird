@@ -557,7 +557,6 @@ VI. ADDITIONAL NOTES
 #include "../jrd/rse.h"
 #include "../jrd/sbm.h"
 #include "../jrd/tra.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dbg_proto.h"

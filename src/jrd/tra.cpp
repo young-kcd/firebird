@@ -42,7 +42,6 @@
 #include "../jrd/rse.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/thd.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"

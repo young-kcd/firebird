@@ -32,7 +32,6 @@
 #include "../jrd/req.h"
 #include "gen/iberror.h"
 #include "../jrd/all.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/isc_proto.h"
 

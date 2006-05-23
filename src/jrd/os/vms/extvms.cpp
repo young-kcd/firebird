@@ -32,7 +32,6 @@
 #include "../jrd/tra.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/ext_proto.h"

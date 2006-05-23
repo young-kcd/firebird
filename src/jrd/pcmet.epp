@@ -36,7 +36,6 @@
 #include "../jrd/exe.h"
 #include "../jrd/met.h"
 #include "../jrd/lck.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dfw_proto.h"
 #include "../jrd/err_proto.h"

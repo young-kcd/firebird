@@ -30,7 +30,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/log.h"
 #include "../jrd/ods.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/log_proto.h"
 #include "../jrd/pag_proto.h"

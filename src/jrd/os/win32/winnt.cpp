@@ -42,7 +42,6 @@
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "gen/iberror.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/isc_proto.h"

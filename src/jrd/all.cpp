@@ -30,7 +30,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/all.h"
 #include "../jrd/tra.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../common/classes/array.h"
 

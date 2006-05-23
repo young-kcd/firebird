@@ -61,7 +61,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/btr.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/all_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/err_proto.h"
