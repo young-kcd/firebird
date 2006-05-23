@@ -1126,8 +1126,14 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 
 	const SSHORT context = (unsigned int) BLR_BYTE;
 
-	if (context >= csb->csb_rpt.getCount() || 
+	if (context >= csb->csb_rpt.getCount())/* ||
 		!(csb->csb_rpt[context].csb_flags & csb_used) )
+
+		dimitr:	commented out to support system triggers implementing
+				WITH CHECK OPTION. They reference the relation stream (#2)
+				directly, without a DSQL context. It breaks the layering,
+				but we must support legacy BLR.
+		*/
 	{
 		error(csb, isc_ctxnotdef, 0);
 	}
