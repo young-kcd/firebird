@@ -73,6 +73,7 @@
 #include "../jrd/pag.h"
 #include "../jrd/ods.h"
 #include "../jrd/os/pio.h"
+#include "../jrd/os/path_utils.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gdsassert.h"
 //#include "../jrd/license.h"
@@ -647,8 +648,8 @@ void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 		}
 
 		Firebird::PathName file_name(dir->dls_directory);
-		if (file_name.at(file_name.length() - 1) != '\\') {
-			file_name += '\\';
+		if (file_name.at(file_name.length() - 1) != PathUtils::dir_sep) {
+			file_name += PathUtils::dir_sep;
 		}
 
 		file_name.printf("%sfb_tmp_%x_%x", file_name.c_str(), (unsigned int)pageSpaceID, hash);
