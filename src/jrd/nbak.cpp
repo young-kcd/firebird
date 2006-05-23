@@ -511,7 +511,7 @@ int BackupManager::backup_database_ast(void *ast_object) throw()
 		if (ast_status[1])
 		{
 			jrd_file* main_file = new_dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
-			gds__log_status(main_file->fil_string, ast_status);				
+			gds__log_status(main_file->fil_string, ast_status);
 		}
 	} 
 	else {

@@ -612,6 +612,7 @@ int PAG_add_header_entry(header_page* header, USHORT type, SSHORT len, const UCH
 	return FALSE;				/* Added to remove compiler warning */
 }
 
+
 void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 {
 	SET_TDBB(tdbb);
@@ -627,7 +628,7 @@ void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 		fb_assert(dirs->mdls_dls);
 		dir_list* dir = dirs->mdls_dls;
 		ULONG max_size = 0;
-		for(dir_list* d = dir; d; d = d->dls_next)
+		for (dir_list* d = dir; d; d = d->dls_next)
 		{
 			const ULONG dir_size = d->dls_size - d->dls_inuse;
 			if (max_size < dir_size)
@@ -639,14 +640,14 @@ void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 		
 		long hash = 0;
 		TEXT* p = dbb->dbb_filename.begin(), *const e = dbb->dbb_filename.end();
-		for(int i=0; p < e; p++)
+		for(int i = 0; p < e; p++)
 		{
 			hash += *p << i;
 			i = (i + 8) % 32;
 		}
 
 		Firebird::PathName file_name(dir->dls_directory);
-		if (file_name.at(file_name.length()-1) != '\\') {
+		if (file_name.at(file_name.length() - 1) != '\\') {
 			file_name += '\\';
 		}
 
@@ -656,6 +657,7 @@ void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 		PAG_format_pip(tdbb, *pageSpaceTemp);
 	}
 }
+
 
 int PAG_replace_entry_first(header_page* header, USHORT type, SSHORT len, const UCHAR* entry)
 {
@@ -1604,7 +1606,7 @@ void PAG_release_page(PageNumber number, PageNumber prior_page)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
-		printf("\tPAG_release_page:  about to release page %"SLONGFORMAT"\n", number);
+		printf("\tPAG_release_page:  about to release page %"SLONGFORMAT"\n", number.getPageNumber());
 #endif
 
 	PageManager& pageMgr = dbb->dbb_page_manager;
@@ -2147,7 +2149,7 @@ void PageManager::delPageSpace(const USHORT pageSpace)
 
 void PageManager::closeAll()
 {
-	for(size_t i=0; i < pageSpaces.getCount(); i++)
+	for (size_t i = 0; i < pageSpaces.getCount(); i++)
 		if (pageSpaces[i]->file) {
 			PIO_close(pageSpaces[i]->file);
 		}
@@ -2171,7 +2173,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 		lock->lck_dbb = dbb;
 
 		srand(PAG_attachment_id(tdbb));
-		while(true)
+		while (true)
 		{
 			const USHORT tmp = (rand() * (MAX_USHORT - TEMP_PAGE_SPACE - 1)) / (RAND_MAX + 1) + TEMP_PAGE_SPACE + 1;
 			lock->lck_key.lck_long = tmp;

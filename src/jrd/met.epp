@@ -4252,8 +4252,8 @@ const Trigger* findTrigger(trig_vec* triggers, const Firebird::MetaName& trig_na
 {
 	if (triggers)
 	{
-		trig_vec::iterator t = triggers->begin();
-		for(; t != triggers->end(); t++)
+		for (trig_vec::iterator t = triggers->begin();
+			 t != triggers->end(); t++)
 		{
 			if (t->name.compare(trig_name) == 0)
 				return &(*t);
@@ -4334,7 +4334,7 @@ static void store_dependencies(thread_db*	tdbb,
 					else
 						scope = "persistent table \"%s\"";
 
-					snprintf(sMaster, sizeof(sMaster)-1, scope, relation->rel_name);
+					snprintf(sMaster, sizeof(sMaster) - 1, scope, relation->rel_name);
 
 					if (dep_rel->rel_flags & REL_temp_conn)
 						scope = "global temporary table \"%s\" of type on commit preserve rows";
@@ -4343,7 +4343,7 @@ static void store_dependencies(thread_db*	tdbb,
 					else
 						scope = "persistent table \"%s\"";
 
-					snprintf(sChild, sizeof(sChild)-1, scope, dep_rel->rel_name);
+					snprintf(sChild, sizeof(sChild) - 1, scope, dep_rel->rel_name);
 
 					ERR_post(isc_no_meta_update, isc_arg_gds, isc_met_wrong_gtt_scope, 
 						isc_arg_string, ERR_cstring(sChild),

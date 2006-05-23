@@ -621,7 +621,7 @@ IDX_E IDX_erase(thread_db* tdbb,
 	index_desc idx;
 
 	SET_TDBB(tdbb);
- 
+
 	IDX_E error_code = idx_e_ok;
 	idx.idx_id = (USHORT) -1;
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
@@ -1213,7 +1213,7 @@ static IDX_E check_foreign_key(
 				jrd_rel::RelPagesSnapshot pagesSnapshot(tdbb, partner_relation);
 				partner_relation->fillPagesSnapshot(pagesSnapshot, true);
 
-				for(size_t i=0; i<pagesSnapshot.getCount(); i++)
+				for (size_t i = 0; i < pagesSnapshot.getCount(); i++)
 				{
 					RelationPages* partnerPages = pagesSnapshot[i];
 					tdbb->tdbb_temp_traid = partnerPages->rel_instance_id;
