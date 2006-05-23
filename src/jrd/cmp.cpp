@@ -5221,34 +5221,12 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(plan, type_nod);
 
-	if (plan->nod_type == nod_join || plan->nod_type == nod_merge)
-	{
-		rse->rse_plan = NULL;
-
-		if (rse->nod_type == nod_rse)
+	if (plan->nod_type == nod_join || plan->nod_type == nod_merge) {
+		for (jrd_nod** ptr = plan->nod_arg, **end = ptr + plan->nod_count;
+			ptr < end; ptr++)
 		{
-			if (rse->rse_count == 1)
-			{
-				// dummy inner join over an outer one, go deeper
-				plan_set(csb, (RecordSelExpr*) rse->rse_relation[0], plan);
-				return;
-			}
-			else if (rse->rse_count == plan->nod_count)
-			{
-				// save the join plan to be used later in opt.cpp
-				rse->rse_plan = plan;
-			}
+			plan_set(csb, rse, *ptr);
 		}
-
-        jrd_nod** ptr = plan->nod_arg;
-
-		for (const jrd_nod* const* const end = ptr + plan->nod_count; ptr < end;
-			 ptr++)
-		{
-			plan_set(csb, rse->rse_plan ?
-				(RecordSelExpr*) rse->rse_relation[ptr - plan->nod_arg] : rse, *ptr);
-		}
-		return;
 	}
 
 	if (plan->nod_type != nod_retrieve) {
