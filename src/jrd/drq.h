@@ -194,7 +194,8 @@ const int drq_m_view        = 143;  // modify view
 const int drq_s_colls		= 144;  /* store collations */
 const int drq_l_colls		= 145;	/* lookup collations */
 const int drq_dom_is_array 	= 146;  // lookup domain to see if it's an array
-const int drq_l_rel_info	= 147;	// lookup relations flags
-const int drq_MAX			= 148;
+const int drq_l_rel_info	= 147;	// lookup name and flags of one master relation
+const int drq_l_rel_info2	= 148;	// lookup names and flags of all master relations 
+const int drq_MAX			= 149;
 
 #endif /* JRD_DRQ_H */

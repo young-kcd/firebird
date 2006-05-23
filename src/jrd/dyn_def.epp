@@ -121,6 +121,9 @@ static bool get_who(thread_db*, Global*, Firebird::MetaName&);
 static bool is_it_user_name(Global*, const Firebird::MetaName&, thread_db*);
 static USHORT skip_blr_blob(const UCHAR** ptr);
 
+static void check_foreign_key_temp_scope(thread_db*, Global*, const TEXT*, const TEXT*);
+static void check_relation_temp_scope(thread_db*, Global*, const TEXT*, const SSHORT);
+static void make_relation_scope_name(const TEXT*, const SSHORT, Firebird::string&);
 
 void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 {
@@ -352,66 +355,6 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 }
 
 
-static void check_fk_against_temp(thread_db* tdbb, Global* gbl, 
-				const TEXT*	child_rel_name, const TEXT* master_index_name)
-{
-	Database* dbb = tdbb->tdbb_database;
-
-	const SSHORT id = drq_l_rel_info;
-	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info, DYN_REQUESTS);
-	bool bErr = false;
-	char sMaster[256], sChild[256];
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		RLC_M IN RDB$RELATION_CONSTRAINTS CROSS
-		REL_C IN RDB$RELATIONS CROSS
-		REL_M IN RDB$RELATIONS 
-		WITH (RLC_M.RDB$CONSTRAINT_TYPE EQ UNIQUE_CNSTRT OR 
-			  RLC_M.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY)
-		 AND RLC_M.RDB$INDEX_NAME EQ master_index_name
-		 AND REL_C.RDB$RELATION_NAME EQ child_rel_name
-		 AND REL_M.RDB$RELATION_NAME EQ RLC_M.RDB$RELATION_NAME
-
-		bErr = ( (REL_M.RDB$FLAGS & REL_IS_GLOBAL_TEMP) != 
-				(REL_C.RDB$FLAGS & REL_IS_GLOBAL_TEMP) ) &&
-				!( (REL_M.RDB$FLAGS & REL_global_temp_preserve) && 
-					(REL_C.RDB$FLAGS & REL_global_temp_delete) );
-
-		if (bErr)
-		{
-			fb_utils::exact_name_limit(REL_M.RDB$RELATION_NAME, sizeof(REL_M.RDB$RELATION_NAME));
-			fb_utils::exact_name_limit(REL_C.RDB$RELATION_NAME, sizeof(REL_C.RDB$RELATION_NAME));
-
-			char *scope = NULL;
-			if (REL_M.RDB$FLAGS & REL_global_temp_preserve)
-				scope = "global temporary table \"%s\" of type on commit preserve rows";
-			else if (REL_M.RDB$FLAGS & REL_global_temp_delete)
-				scope = "global temporary table \"%s\" of type on commit delete rows";
-			else
-				scope = "persistent table \"%s\"";
-
-			snprintf(sMaster, sizeof(sMaster)-1, scope, REL_M.RDB$RELATION_NAME);
-
-			if (REL_C.RDB$FLAGS & REL_global_temp_preserve)
-				scope = "global temporary table \"%s\" of type on commit preserve rows";
-			else if (REL_C.RDB$FLAGS & REL_global_temp_delete)
-				scope = "global temporary table \"%s\" of type on commit delete rows";
-			else
-				scope = "persistent table \"%s\"";
-			
-			snprintf(sChild, sizeof(sChild)-1, scope, REL_C.RDB$RELATION_NAME);
-		}
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_l_rel_info))
-		DYN_REQUEST(drq_l_rel_info) = request;
-
-	if (bErr) {
-		DYN_error_punt(false, 232, // Msg 232 : "%s can't reference %s"
-			sChild, sMaster, NULL, NULL, NULL);
-	}
-}
-
 void DYN_define_constraint(Global*		gbl,
 						   const UCHAR**	ptr,
 						   const Firebird::MetaName*	relation_name,
@@ -503,7 +446,7 @@ void DYN_define_constraint(Global*		gbl,
 			strcpy(CRT.RDB$INDEX_NAME, index_name.c_str());
 			CRT.RDB$INDEX_NAME.NULL = FALSE;
 
-			check_fk_against_temp(tdbb, gbl, 
+			check_foreign_key_temp_scope(tdbb, gbl, 
 				relation_name->c_str(), referred_index_name.c_str());
 
 			/* check that we have references permissions on the table and
@@ -527,14 +470,14 @@ void DYN_define_constraint(Global*		gbl,
 		// msg 124: "A column name is repeated in the definition of constraint: %s"
 		// msg 125: "Integrity constraint lookup failed"
 		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
-		// msg 231: "%s cannot reference %s"
+		// msg 232: "%s cannot reference %s"
 		switch (id) {
 			case drq_s_rel_con:	number = 121;	local_id = id;	break;
 			case drq_s_ref_con:	number = 127;	local_id = id;	break;
 			case drq_c_unq_nam:	number = 121;					break;
 			case drq_n_idx_seg:	number = 124;					break;
 			case drq_c_dup_con:	number = 125;					break;
-			case drq_l_rel_info: number = 231;					break;
+			case drq_l_rel_info: number = 232;					break;
 			default:			number = 125;					break;
 		}
 
@@ -542,7 +485,7 @@ void DYN_define_constraint(Global*		gbl,
 
 		DYN_error_punt(true,
 						number,
-						(number == 124 || number == 231) ? constraint_name.c_str() : NULL,
+						number == 124 ? constraint_name.c_str() : NULL,
 						NULL,
 						NULL,
 						NULL,
@@ -3246,6 +3189,10 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 					DYN_execute(gbl, ptr, &tmp, &field_name, NULL, NULL, NULL);
 			}
 
+		check_relation_temp_scope(tdbb, gbl, 
+			REL.RDB$RELATION_NAME, 
+			REL.RDB$FLAGS);
+		
 		if (sql_prot) {
 			if (!get_who(tdbb, gbl, owner_name))
 				DYN_error_punt(true, 115, NULL, NULL, NULL, NULL, NULL);
@@ -4599,3 +4546,139 @@ static USHORT skip_blr_blob(const UCHAR** ptr)
 	return length;
 }
 
+
+static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl, 
+				const TEXT*	child_rel_name, const TEXT* master_index_name)
+{
+/**********************************************************
+ *
+ *	c h e c k _ f o r e i g n _ k e y _ t e m p _ s c o p e
+ *
+ **********************************************************
+ *
+ * Functional description
+ *	Check temporary table reference rules between given child 
+ *	relation and master relation (owner of given PK\UK index)
+ *
+ **********************************************************/
+	Database* dbb = tdbb->tdbb_database;
+
+	const SSHORT id = drq_l_rel_info;
+	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info, DYN_REQUESTS);
+	bool bErr = false;
+	Firebird::string sMaster, sChild;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		RLC_M IN RDB$RELATION_CONSTRAINTS CROSS
+		REL_C IN RDB$RELATIONS CROSS
+		REL_M IN RDB$RELATIONS 
+		WITH (RLC_M.RDB$CONSTRAINT_TYPE EQ UNIQUE_CNSTRT OR 
+			  RLC_M.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY)
+		 AND RLC_M.RDB$INDEX_NAME EQ master_index_name
+		 AND REL_C.RDB$RELATION_NAME EQ child_rel_name
+		 AND REL_M.RDB$RELATION_NAME EQ RLC_M.RDB$RELATION_NAME
+
+		bErr = ( (REL_M.RDB$FLAGS & REL_IS_GLOBAL_TEMP) != 
+				(REL_C.RDB$FLAGS & REL_IS_GLOBAL_TEMP) ) &&
+				!( (REL_M.RDB$FLAGS & REL_global_temp_preserve) && 
+					(REL_C.RDB$FLAGS & REL_global_temp_delete) );
+
+		if (bErr)
+		{
+			fb_utils::exact_name_limit(REL_M.RDB$RELATION_NAME, sizeof(REL_M.RDB$RELATION_NAME));
+			fb_utils::exact_name_limit(REL_C.RDB$RELATION_NAME, sizeof(REL_C.RDB$RELATION_NAME));
+
+			make_relation_scope_name(REL_M.RDB$RELATION_NAME, REL_M.RDB$FLAGS, sMaster);
+			make_relation_scope_name(REL_C.RDB$RELATION_NAME, REL_C.RDB$FLAGS, sChild);
+		}
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_l_rel_info))
+		DYN_REQUEST(drq_l_rel_info) = request;
+
+	if (bErr) {
+		DYN_error_punt(false, 232, // Msg 232 : "%s can't reference %s"
+			sChild.c_str(), sMaster.c_str(), NULL, NULL, NULL);
+	}
+}
+
+
+static void check_relation_temp_scope(thread_db* tdbb, Global* gbl, 
+				const TEXT*	child_rel_name, const SSHORT child_rel_flags)
+{
+/****************************************************
+ *
+ *	c h e c k _ r e l a t i o n _ t e m p _ s c o p e
+ *
+ ****************************************************
+ *
+ * Functional description
+ *	Check temporary table reference rules between just
+ *	created child relation and all its master relations
+ *
+ ****************************************************/
+	Database* dbb = tdbb->tdbb_database;
+
+	const SSHORT id = drq_l_rel_info2;
+	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info2, DYN_REQUESTS);
+	bool bErr = false;
+	Firebird::string sMaster, sChild;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		RLC_C IN RDB$RELATION_CONSTRAINTS CROSS
+		IND_C IN RDB$INDICES CROSS
+		IND_M IN RDB$INDICES CROSS
+		REL_M IN RDB$RELATIONS 
+		WITH RLC_C.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY
+		 AND RLC_C.RDB$RELATION_NAME EQ child_rel_name
+		 AND IND_C.RDB$INDEX_NAME EQ RLC_C.RDB$INDEX_NAME
+		 AND IND_M.RDB$INDEX_NAME EQ IND_C.RDB$FOREIGN_KEY
+		 AND IND_M.RDB$RELATION_NAME EQ REL_M.RDB$RELATION_NAME
+
+		bErr = ( (REL_M.RDB$FLAGS & REL_IS_GLOBAL_TEMP) != 
+				(child_rel_flags & REL_IS_GLOBAL_TEMP) ) &&
+				!( (REL_M.RDB$FLAGS & REL_global_temp_preserve) && 
+					(child_rel_flags & REL_global_temp_delete) );
+		if (bErr)
+		{
+			fb_utils::exact_name_limit(REL_M.RDB$RELATION_NAME, sizeof(REL_M.RDB$RELATION_NAME));
+
+			make_relation_scope_name(REL_M.RDB$RELATION_NAME, REL_M.RDB$FLAGS, sMaster);
+			make_relation_scope_name(child_rel_name, child_rel_flags, sChild);
+		}
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_l_rel_info2))
+		DYN_REQUEST(drq_l_rel_info2) = request;
+
+	if (bErr) {
+		DYN_error_punt(false, 232, // Msg 232 : "%s can't reference %s"
+			sChild.c_str(), sMaster.c_str(), NULL, NULL, NULL);
+	}
+}
+
+
+static void make_relation_scope_name(const TEXT* rel_name, const SSHORT rel_flags, 
+	Firebird::string& str)
+{
+/**************************************************
+ *
+ *	m a k e _ r e l a t i o n _ s c o p e _ n a m e
+ *
+ **************************************************
+ *
+ * Functional description
+ *	Make string with relation name and type 
+ *	of its temporary scope
+ *
+ **************************************************/
+	char *scope = NULL;
+	if (rel_flags & REL_global_temp_preserve)
+		scope = "global temporary table \"%s\" of type on commit preserve rows";
+	else if (rel_flags & REL_global_temp_delete)
+		scope = "global temporary table \"%s\" of type on commit delete rows";
+	else
+		scope = "persistent table \"%s\"";
+
+	str.printf(scope, rel_name);
+}
