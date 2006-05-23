@@ -85,27 +85,37 @@ status_exception::status_exception() throw() :
 	memset(m_status_vector, 0, sizeof(m_status_vector));
 }
 
-status_exception::status_exception(const ISC_STATUS *status_vector, bool permanent) throw() : 
-	m_strings_permanent(permanent)
+status_exception::status_exception(const ISC_STATUS *status_vector, bool permanent) throw()
 {
-	ISC_STATUS *ptr = m_status_vector;
-	while (true) 
+	if (! status_vector)
 	{
-		const ISC_STATUS type = *ptr++ = *status_vector++;
-		if (type == isc_arg_end)
-			break;
-		if (type == isc_arg_cstring)
-			*ptr++ = *status_vector++;
-		*ptr++ = *status_vector++;
+		m_strings_permanent = true;		// No strings at all in fact, better treat as permanent
+		m_status_vector[0] = isc_arg_end;
+	}
+	else 
+	{
+		set_status(status_vector, permanent);	
 	}
 }
 	
 void status_exception::set_status(const ISC_STATUS *new_vector, bool permanent) throw()
 {
-	release_vector();
-	m_strings_permanent = permanent;
 	fb_assert(new_vector != 0);
-	memcpy(m_status_vector, new_vector, sizeof(m_status_vector));
+
+	release_vector();
+
+	m_strings_permanent = permanent;
+
+	ISC_STATUS *ptr = m_status_vector;
+	while (true) 
+	{
+		const ISC_STATUS type = *ptr++ = *new_vector++;
+		if (type == isc_arg_end)
+			break;
+		if (type == isc_arg_cstring)
+			*ptr++ = *new_vector++;
+		*ptr++ = *new_vector++;
+	}
 }
 
 void status_exception::release_vector() throw()
@@ -115,8 +125,8 @@ void status_exception::release_vector() throw()
 	
 	// Free owned strings
 	ISC_STATUS *ptr = m_status_vector;
-	 while (true) 
-	 {
+	while (true) 
+	{
 		const ISC_STATUS type = *ptr++;
 		if (type == isc_arg_end)
 			break;
@@ -201,7 +211,7 @@ ISC_STATUS status_exception::stuff_exception(ISC_STATUS* const status_vector, St
 			switch (type) {
 			case isc_arg_cstring: 
 				{				
-					const UCHAR len = *sv++ = *ptr++;
+					const size_t len = *sv++ = *ptr++;
 					char *temp = reinterpret_cast<char*>(*ptr++);
 					*sv++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, len));
 				}
