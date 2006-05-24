@@ -1682,7 +1682,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dyn_rel_constraint            162
 #define isc_dyn_delete_rel_constraint     163
 
-#define isc_dyn_rel_temporary            224
+#define isc_dyn_rel_temporary				238
 #define isc_dyn_rel_temp_global_preserve	1
 #define isc_dyn_rel_temp_global_delete		2
 
@@ -1906,7 +1906,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 /* Last $dyn value assigned */
 /****************************/
 
-#define isc_dyn_last_dyn_value            237
+#define isc_dyn_last_dyn_value            238
 
 /******************************************/
 /* Array slice description language (SDL) */
