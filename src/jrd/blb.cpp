@@ -960,8 +960,23 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	blb* blob = NULL;
 	bool materialized_blob; // Set if we materialized temporary blob in this routine
 
-	UCHAR bpb[16];
-	USHORT bpb_length = gen_bpb_from_descs(from_desc, to_desc, bpb);
+	UCHAR bpb[] = {isc_bpb_version1,
+		isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
+		isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
+	USHORT bpb_length = 0;
+
+	if (from_desc->dsc_sub_type == isc_blob_text && 
+		to_desc->dsc_sub_type == isc_blob_text)
+	{
+		bpb[6] = from_desc->dsc_scale; // source charset
+		bpb[12] = to_desc->dsc_scale; // destination charset
+		bpb_length = sizeof(bpb);
+	}
+
+// hvlad: replace the code above to make blob filters work
+//	when blob of one type copied into blob of another type
+//	UCHAR bpb[16];
+//	USHORT bpb_length = gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 	while (true) 
 	{
@@ -1321,7 +1336,7 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 		return;
 	}
 
-/* Account for new segment */
+	/* Account for new segment */
 
 	blob->blb_count++;
 	blob->blb_length += segment_length;
@@ -1925,6 +1940,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 		return;
 
 	const USHORT pageSpaceID = blob->blb_pg_space_id;
+	const PageNumber prior(pageSpaceID, prior_page);
 
 /* Level 1 blobs just need the root page level released */
 
@@ -1935,8 +1951,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	if (blob->blb_level == 1) {
 		for (; ptr < end; ++ptr) {
 			if (*ptr) {
-				PAG_release_page(PageNumber(pageSpaceID, *ptr), 
-					PageNumber(pageSpaceID, prior_page));
+				PAG_release_page(PageNumber(pageSpaceID, *ptr), prior);
 			}
 		}
 		return;
@@ -1955,16 +1970,16 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 			blob_page* page = (blob_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_blob);
 			MOVE_FASTER(page, blob->blb_data, dbb->dbb_page_size);
 			CCH_RELEASE_TAIL(tdbb, &window);
-			PAG_release_page(PageNumber(pageSpaceID, *ptr), 
-				PageNumber(pageSpaceID, prior_page));
+			
+			const PageNumber page1(pageSpaceID, *ptr);
+			PAG_release_page(page1, prior);
 			page = (blob_page*) blob->blb_data;
 			SLONG* ptr2 = page->blp_page;
 			for (const SLONG* const end2 = ptr2 + blob->blb_pointers;
 				 ptr2 < end2; ptr2++)
 			{
 				if (*ptr2) {
-					PAG_release_page(PageNumber(pageSpaceID, *ptr2), 
-						PageNumber(pageSpaceID, *ptr));
+					PAG_release_page(PageNumber(pageSpaceID, *ptr2), page1);
 				}
 			}
 		}

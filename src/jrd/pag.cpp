@@ -1598,7 +1598,7 @@ SLONG PAG_last_page(void)
 }
 
 
-void PAG_release_page(PageNumber number, PageNumber prior_page)
+void PAG_release_page(const PageNumber& number, const PageNumber& prior_page)
 {
 /**************************************
  *

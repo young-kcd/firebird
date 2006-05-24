@@ -52,7 +52,7 @@ void	PAG_header(const TEXT*, USHORT, bool);
 void	PAG_init(void);
 void	PAG_init2(USHORT);
 SLONG	PAG_last_page(void);
-void	PAG_release_page(Jrd::PageNumber, Jrd::PageNumber);
+void	PAG_release_page(const Jrd::PageNumber&, const Jrd::PageNumber&);
 void	PAG_set_force_write(Jrd::Database*, SSHORT);
 void	PAG_set_no_reserve(Jrd::Database*, USHORT);
 void	PAG_set_db_readonly(Jrd::Database*, bool);

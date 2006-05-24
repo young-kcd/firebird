@@ -85,7 +85,7 @@ public:
 		return (pageSpaceID >= TEMP_PAGE_SPACE);
 	}
 
-	static inline const SLONG generate(const void* , const PageSpace* Item) {
+	static inline SLONG generate(const void* , const PageSpace* Item) {
 		return Item->pageSpaceID;
 	}
 };
@@ -108,10 +108,10 @@ public:
 
 	~PageManager()
 	{
-		while (pageSpaces.getCount())
+		for (int i = pageSpaces.getCount() - 1; i >= 0; --i)
 		{
-			PageSpace* pageSpace = pageSpaces[0];
-			pageSpaces.remove((size_t) 0);
+			PageSpace* pageSpace = pageSpaces[i];
+			pageSpaces.remove(i);
 			delete pageSpace;
 		}
 	}
