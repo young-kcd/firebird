@@ -396,7 +396,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 					   is equal to that of a single large relation. */
 
 					if (attachment->att_flags & ATT_gbak_attachment ||
-						DPM_data_pages(tdbb, 
+						DPM_data_pages(tdbb,
 							rpb->rpb_relation) > (SLONG) bcb->bcb_count)
 					{
 						rpb->getWindow(tdbb).win_flags = WIN_large_scan;

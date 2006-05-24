@@ -753,7 +753,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	// code must be executed for valid active attachments only.
 	if (tdbb->tdbb_attachment->att_flags & ATT_lck_init_done) {
 		if (update_lock->lck_physical != LCK_EX ||
-			file != pageSpace->file || !SDW_lck_update(sdw_update_flags)) 
+			file != pageSpace->file || !SDW_lck_update(sdw_update_flags))
 		{
 			LCK_release(tdbb, update_lock);
 			LCK_lock(tdbb, update_lock, LCK_SR, LCK_NO_WAIT);

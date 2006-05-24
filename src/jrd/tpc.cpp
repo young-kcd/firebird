@@ -127,7 +127,7 @@ void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
  * most recent transaction
  */
 
-	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP ;
+	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 
 	TxPageCache** tip_cache_ptr;
 	for (tip_cache_ptr = &dbb->dbb_tip_cache; *tip_cache_ptr;
@@ -161,7 +161,7 @@ void TPC_set_state(thread_db* tdbb, SLONG number, SSHORT state)
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP ;
+	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	const ULONG byte = TRANS_OFFSET(number % trans_per_tip);
 	const SSHORT shift = TRANS_SHIFT(number);
 
@@ -301,7 +301,7 @@ void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG s
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP ; // pgc_tpt is ULONG!!!
+	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP; // transPerTIP is ULONG!!!
 	const SLONG first_trans = sequence * trans_per_tip;
 
 /* while we're in the area we can check to see if there are 
@@ -354,7 +354,7 @@ static TxPageCache* allocate_tpc(thread_db* tdbb, ULONG base)
  *
  **************************************/
 	Database* dbb = tdbb->tdbb_database;
-	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP ;
+	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 
 /* allocate a TIP cache block with enough room for 
    all desired transactions */
@@ -403,7 +403,7 @@ static void cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
 /* allocate TxPageCache blocks to hold all transaction states --
    assign one TxPageCache block per page to simplify cache maintenance */
 
-	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP ;
+	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	if (!tip_cache_ptr)
 		tip_cache_ptr = &dbb->dbb_tip_cache;
 
@@ -437,7 +437,7 @@ static int extend_cache(thread_db* tdbb, SLONG number)
  *
  **************************************/
 	Database* dbb = tdbb->tdbb_database;
-	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP ;
+	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 
 /* find the end of the linked list, and cache
    all transactions from that point up to the

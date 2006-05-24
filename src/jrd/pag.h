@@ -67,10 +67,10 @@ class PageSpace : public pool_alloc<type_PageSpace>
 public:
 	PageSpace(USHORT aPageSpaceID) 
 	{
-	  pageSpaceID = aPageSpaceID;
-	  pipHighWater = 0;
-	  ppFirst = 0;
-	  file = 0;
+		pageSpaceID = aPageSpaceID;
+		pipHighWater = 0;
+		ppFirst = 0;
+		file = 0;
 	}
 
 	~PageSpace();
@@ -85,29 +85,30 @@ public:
 		return (pageSpaceID >= TEMP_PAGE_SPACE);
 	}
 
-	static inline const SLONG generate(const void* , const PageSpace* Item) 
-	{ return Item->pageSpaceID; }
+	static inline const SLONG generate(const void* , const PageSpace* Item) {
+		return Item->pageSpaceID;
+	}
 };
 
 class PageManager : public pool_alloc<type_PageManager>
 {
 public:
 	PageManager(Firebird::MemoryPool& aPool) : 
-	  pageSpaces(aPool),
-	  pool(aPool)
+		pageSpaces(aPool),
+		pool(aPool)
 	{
-	  pagesPerPIP = 0;
-	  bytesBitPIP = 0;
-	  transPerTIP = 0;
-	  gensPerPage = 0;
-
-	  dbPageSpace = addPageSpace(DB_PAGE_SPACE);
-//	  addPageSpace(TEMP_PAGE_SPACE);
+		pagesPerPIP = 0;
+		bytesBitPIP = 0;
+		transPerTIP = 0;
+		gensPerPage = 0;
+		
+		dbPageSpace = addPageSpace(DB_PAGE_SPACE);
+		// addPageSpace(TEMP_PAGE_SPACE);
 	}
 
 	~PageManager()
 	{
-		while(pageSpaces.getCount())
+		while (pageSpaces.getCount())
 		{
 			PageSpace* pageSpace = pageSpaces[0];
 			pageSpaces.remove((size_t) 0);
@@ -145,12 +146,12 @@ public:
 		pageSpaceID = aPageSpace;
 		pageNum	= aPageNum;
 	}
-/*
+	/*
 	inline PageNumber(const SLONG aPageNum) {
 		pageSpaceID = DB_PAGE_SPACE;
 		pageNum	= aPageNum;
 	}
-*/
+	*/
 	inline PageNumber(const PageNumber& from) {
 		pageSpaceID = from.pageSpaceID;
 		pageNum	= from.pageNum;
@@ -216,11 +217,11 @@ public:
 		return !(*this > other);
 	}
 
-/*
+	/*
 	inline operator SLONG() const {
 		return pageNum;
 	}
-*/
+	*/
 private:
 	SLONG	pageNum;
 	USHORT	pageSpaceID;

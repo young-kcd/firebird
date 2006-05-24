@@ -1931,7 +1931,7 @@ bool VIO_get_current(
 				{
 					return false; // record deleted 
 				}
- 
+
 				// if record was changed between reads  
 				// start all over again
 				if (old_rpb->rpb_b_page != rpb->rpb_b_page ||
@@ -3033,7 +3033,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 		}
 		tdbb->tdbb_transaction = old_tran;
 	}
-	catch(...) {
+	catch (...) {
 		tdbb->tdbb_transaction = old_tran;
 		throw;
 	}
@@ -5129,8 +5129,8 @@ RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)
 					FB_NEW(*dbb->dbb_permanent) RelationPages[BULK_ALLOC];
 
 				rel_pages_free = ++allocPages;
-				for(size_t i=1; i<BULK_ALLOC-1; i++, allocPages++)
-					allocPages->rel_next_free = allocPages+1;
+				for (size_t i = 1; i < BULK_ALLOC - 1; i++, allocPages++)
+					allocPages->rel_next_free = allocPages + 1;
 			}
 			else 
 			{
@@ -5148,13 +5148,18 @@ RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)
 
 			// create primary pointer page and index root page
 			DPM_create_relation_pages(tdbb, this, newPages);
-/*
-			gds__log("jrd_rel::getPages inst %"SLONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n", 
-				newPages->rel_instance_id, 
-				newPages->rel_pages ? (*newPages->rel_pages)[0] : 0, 
-				newPages->rel_index_root,
-				newPages);
-*/
+
+#ifdef VIO_DEBUG
+			if (debug_flag > DEBUG_WRITES)
+			{
+				printf("jrd_rel::getPages inst %"SLONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+					newPages->rel_instance_id,
+					newPages->rel_pages ? (*newPages->rel_pages)[0] : 0,
+					newPages->rel_index_root,
+					newPages);
+			}
+#endif
+			
 			// create indexes
 			JrdMemoryPool *pool = tdbb->getDefaultPool();
 			const bool poolCreated = !pool;
@@ -5166,26 +5171,31 @@ RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)
 			SelectivityList selectivity(*pool);
 
 			USHORT idx_id = 0;
-			while(true) 
+			while (true) 
 			{
 				index_desc idx;
 				if (BTR_lookup(tdbb, this, idx_id, &idx, &rel_pages_base) != FB_SUCCESS)
 					break;
 
 				Firebird::MetaName idx_name;
-				MET_lookup_index(tdbb, idx_name, this->rel_name, idx_id+1);
+				MET_lookup_index(tdbb, idx_name, this->rel_name, idx_id + 1);
 
 				idx.idx_root = 0;
 				IDX_create_index(tdbb, this, &idx, idx_name.c_str(), NULL, 
 					tdbb->tdbb_transaction, selectivity);
-/*
-				gds__log("jrd_rel::getPages inst %"SLONGFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n", 
-					newPages->rel_instance_id, 
-					newPages->rel_index_root,
-					idx_id,
-					idx.idx_root,
-					newPages);
-*/
+
+#ifdef VIO_DEBUG
+				if (debug_flag > DEBUG_WRITES)
+				{
+					printf("jrd_rel::getPages inst %"SLONGFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
+						newPages->rel_instance_id,
+						newPages->rel_index_root,
+						idx_id,
+						idx.idx_root,
+						newPages);
+				}
+#endif
+
 				idx_id++;
 			}
 
@@ -5217,13 +5227,18 @@ bool jrd_rel::delPages(thread_db* tdbb, SLONG tran, RelationPages* aPages)
 
 	if(--pages->useCount)
 		return false;
-/*
-	gds__log("jrd_rel::delPages inst %"SLONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n", 
-		pages->rel_instance_id, 
-		pages->rel_pages ? (*pages->rel_pages)[0] : 0, 
-		pages->rel_index_root,
-		pages);
-*/
+
+#ifdef VIO_DEBUG
+	if (debug_flag > DEBUG_WRITES)
+	{
+		printf("jrd_rel::delPages inst %"SLONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+			pages->rel_instance_id,
+			pages->rel_pages ? (*pages->rel_pages)[0] : 0,
+			pages->rel_index_root,
+			pages);
+	}
+#endif
+
 	size_t pos;
 	const bool found = rel_pages_inst->find(pages->rel_instance_id, pos);
 	fb_assert(found && ((*rel_pages_inst)[pos] == pages) );
@@ -5263,15 +5278,15 @@ void jrd_rel::cleanUp()
 }
 
 	
-void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool AttachmentOnly)
+void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmentOnly)
 {
 	if (rel_pages_inst)
 	{
-		for(size_t i=0; i<rel_pages_inst->getCount(); i++)
+		for (size_t i = 0; i < rel_pages_inst->getCount(); i++)
 		{
 			RelationPages* relPages = (*rel_pages_inst)[i];
 
-			if (!AttachmentOnly) 
+			if (!attachmentOnly) 
 			{
 				snapshot.add(relPages);
 				relPages->addRef();
@@ -5286,11 +5301,13 @@ void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool Attachmen
 			{
 				const jrd_tra* tran = snapshot.spt_tdbb->tdbb_attachment->att_transactions;
 				for(; tran; tran = tran->tra_next)
+				{
 					if (tran->tra_number == relPages->rel_instance_id) 
 					{
 						snapshot.add(relPages);
 						relPages->addRef();
 					}
+				}
 			}
 		}
 	}
@@ -5306,7 +5323,7 @@ void jrd_rel::RelPagesSnapshot::clear()
 	fb_assert(tdbb == spt_tdbb);
 #endif
 
-	for(size_t i=0; i<getCount(); i++)
+	for(size_t i = 0; i < getCount(); i++)
 	{
 		RelationPages* relPages = (*this)[i];
 		(*this)[i] = NULL;
