@@ -3541,8 +3541,19 @@ static jrd_nod* pass1(thread_db* tdbb,
 			  validate_expr);
 		break;
 
+	case nod_not:
+		sub = node->nod_arg[0];
+		if (sub->nod_type == nod_ansi_any)
+			sub->nod_flags |= nod_deoptimize;
+		break;
+
 	case nod_ansi_all:
+		node->nod_flags |= nod_deoptimize;
+		// fall into
+	case nod_ansi_any:
+		if (node->nod_flags & nod_deoptimize)
 		{
+			node->nod_flags &= ~nod_deoptimize;
 			// Deoptimize the conjunct, not the ALL node itself
 			jrd_nod* boolean =
 				((RecordSelExpr*) (node->nod_arg[e_any_rse]))->rse_boolean;
@@ -3558,7 +3569,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 		}
 		// fall into
 
-	case nod_ansi_any:
 	case nod_any:
 	case nod_exists:
 	case nod_unique:
