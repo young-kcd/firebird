@@ -1950,11 +1950,6 @@ static bool get_record(thread_db*	tdbb,
 				{
 					select_node = NULL;
 				}
-
-				EVL_expr(tdbb, column_node->nod_arg[0]);
-				if (request->req_flags & req_null) {
-					return false;
-				}
 			}
 			if (column_node && (request->req_flags & req_ansi_any))
 			{
