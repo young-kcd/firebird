@@ -2884,8 +2884,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 	VerbAction* action;
 	jrd_tra* old_tran = tdbb->tdbb_transaction;
 	try {
-		if (old_tran != transaction)
-			tdbb->tdbb_transaction = transaction;
+		tdbb->tdbb_transaction = transaction;
 
 		while ( (action = sav_point->sav_verb_actions) ) {
 			sav_point->sav_verb_actions = action->vct_next;
