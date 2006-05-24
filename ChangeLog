@@ -1,3 +1,25 @@
+2006-05-23 15:11  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.s
+	use.in (1.4.4.2):
+	
+	backported fix
+
+2006-05-23 09:51  dimitr
+
+	* firebird2/src/jrd/par.cpp (1.132.4.1):
+	
+	Removed one of the Nickolay's protections in order to be able to
+	restore databases containing views with check option.
+
+2006-05-23 05:52  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.203.2.1):
+	
+	Restored the old plan distribution rules in v2.0. The new ones are
+	neither complete nor reliable. To be revisited in HEAD.
+
 2006-05-19 14:19  alexpeshkoff
 
 	*
