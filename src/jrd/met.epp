@@ -120,6 +120,7 @@ static int partners_ast_relation(void*);
 static void get_trigger(thread_db*, jrd_rel*, bid*, trig_vec**, const TEXT*, UCHAR, bool, USHORT);
 static bool get_type(thread_db*, USHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
+static void make_relation_scope_name(const TEXT*, const USHORT, Firebird::string& str);
 static jrd_nod* parse_param_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
 static jrd_nod* parse_procedure_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
 static bool par_messages(thread_db*, const UCHAR*, USHORT, jrd_prc*, CompilerScratch*);
@@ -3924,6 +3925,32 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
 }
 
 
+static void make_relation_scope_name(const TEXT* rel_name, 
+	const USHORT rel_flags, Firebird::string& str)
+{
+/**************************************
+ *
+ *	m a k e _ r e l a t i o n _ s c o p e _ n a m e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Make string with relation name and type 
+ *	of its temporary scope
+ *
+ **************************************/
+	const char *scope = NULL;
+	if (rel_flags & REL_temp_conn)
+		scope = REL_SCOPE_GTT_PRESERVE;
+	else if (rel_flags & REL_temp_tran)
+		scope = REL_SCOPE_GTT_DELETE;
+	else
+		scope = REL_SCOPE_PERSISTENT;
+
+	str.printf(scope, rel_name);
+}
+
+
 static jrd_nod* parse_param_blr(thread_db* tdbb,
 		jrd_prc* procedure, bid* blob_id, CompilerScratch* csb)
 {
@@ -4324,29 +4351,16 @@ static void store_dependencies(thread_db*	tdbb,
 				if( !( (dep_rel->rel_flags & REL_temp_tran) &&
 						(relation->rel_flags & REL_temp_conn) ))
 				{
-					char sMaster[256], sChild[256];
-					char *scope = NULL;
-					if (relation->rel_flags & REL_temp_conn)
-						scope = "global temporary table \"%s\" of type on commit preserve rows";
-					else if (relation->rel_flags & REL_temp_tran)
-						scope = "global temporary table \"%s\" of type on commit delete rows";
-					else
-						scope = "persistent table \"%s\"";
+					Firebird::string sMaster, sChild;
 
-					snprintf(sMaster, sizeof(sMaster) - 1, scope, relation->rel_name);
-
-					if (dep_rel->rel_flags & REL_temp_conn)
-						scope = "global temporary table \"%s\" of type on commit preserve rows";
-					else if (dep_rel->rel_flags & REL_temp_tran)
-						scope = "global temporary table \"%s\" of type on commit delete rows";
-					else
-						scope = "persistent table \"%s\"";
-
-					snprintf(sChild, sizeof(sChild) - 1, scope, dep_rel->rel_name);
+					make_relation_scope_name(relation->rel_name.c_str(), 
+						relation->rel_flags, sMaster);
+					make_relation_scope_name(dep_rel->rel_name.c_str(), 
+						dep_rel->rel_flags, sChild);
 
 					ERR_post(isc_no_meta_update, isc_arg_gds, isc_met_wrong_gtt_scope, 
-						isc_arg_string, ERR_cstring(sChild),
-						isc_arg_string, ERR_cstring(sMaster),
+						isc_arg_string, ERR_cstring(sChild.c_str()),
+						isc_arg_string, ERR_cstring(sMaster.c_str()),
 						0);
 				}
 			}

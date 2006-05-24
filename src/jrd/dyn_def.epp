@@ -4658,8 +4658,8 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
 }
 
 
-static void make_relation_scope_name(const TEXT* rel_name, const SSHORT rel_flags, 
-	Firebird::string& str)
+static void make_relation_scope_name(const TEXT* rel_name, 
+	const SSHORT rel_flags, Firebird::string& str)
 {
 /**************************************************
  *
@@ -4672,13 +4672,13 @@ static void make_relation_scope_name(const TEXT* rel_name, const SSHORT rel_flag
  *	of its temporary scope
  *
  **************************************************/
-	char *scope = NULL;
+	const char *scope = NULL;
 	if (rel_flags & REL_global_temp_preserve)
-		scope = "global temporary table \"%s\" of type on commit preserve rows";
+		scope = REL_SCOPE_GTT_PRESERVE;
 	else if (rel_flags & REL_global_temp_delete)
-		scope = "global temporary table \"%s\" of type on commit delete rows";
+		scope = REL_SCOPE_GTT_DELETE;
 	else
-		scope = "persistent table \"%s\"";
+		scope = REL_SCOPE_PERSISTENT;
 
 	str.printf(scope, rel_name);
 }
