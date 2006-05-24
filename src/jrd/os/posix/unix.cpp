@@ -941,8 +941,9 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 			SCHAR spare_memory[MIN_PAGE_SIZE * 2];
 			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
 		
+			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			try {
-				dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file = file;
+				pageSpace->file = file;
 				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
 				/* Rewind file pointer */
 				if (lseek (file->fil_desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
@@ -953,13 +954,13 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 						isc_arg_unix, errno, 0);
 				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), 0);
-				dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file = NULL; // Will be set again later by the caller				
+				pageSpace->file = NULL; // Will be set again later by the caller				
 			}
 			catch (const Firebird::Exception&) {
 				delete dbb->dbb_lock;
 				dbb->dbb_lock = NULL;
 				delete file;
-				dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file = NULL; // Will be set again later by the caller
+				pageSpace->file = NULL; // Will be set again later by the caller
 				throw;
 			}
 		}
