@@ -807,7 +807,7 @@ public:
 	bool			delPages(thread_db* tdbb, SLONG tran = -1, RelationPages* aPages = 0);
 
 	void			getRelLockKey(thread_db* tdbb, UCHAR* key);
-	SSHORT			getRelLockKeyLength();
+	SSHORT			getRelLockKeyLength() const;
 
 	void			cleanUp();
 

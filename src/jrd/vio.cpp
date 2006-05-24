@@ -5265,7 +5265,7 @@ void jrd_rel::getRelLockKey(thread_db* tdbb, UCHAR* key)
 	*(SLONG*)key = inst_id;
 }
 
-SSHORT jrd_rel::getRelLockKeyLength()
+SSHORT jrd_rel::getRelLockKeyLength() const
 {
 	return sizeof(USHORT) + sizeof(SLONG);
 }
