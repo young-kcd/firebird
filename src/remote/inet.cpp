@@ -349,6 +349,7 @@ static void		unhook_disconnected_ports(rem_port*);
 
 static void		unhook_port(rem_port*, rem_port*);
 static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
+static bool		setNoNagleOption(rem_port*);
 
 
 static XDR::xdr_ops inet_ops =
@@ -911,20 +912,11 @@ rem_port* INET_connect(const TEXT* name,
 			return NULL;
 		}
 
-		if (Config::getTcpNoNagle()) {
-
-			int optval = TRUE;
-			n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
-						   TCP_NODELAY, (SCHAR*) &optval, sizeof(optval));
-
-			if (n == -1) {
-				if (INET_ERRNO != EACCES) {		// not enough rights
-					inet_error(port, "setsockopt TCP_NODELAY",
-						   isc_net_connect_listen_err, INET_ERRNO);
-					disconnect(port);
-					return NULL;
-				}
-			}
+		if (! setNoNagleOption(port)) {
+			inet_error(port, "setsockopt TCP_NODELAY",
+					   isc_net_connect_listen_err, INET_ERRNO);
+			disconnect(port);
+			return NULL;
 		}
 	}
 
@@ -1027,13 +1019,8 @@ rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
 	}	
 
-	if (Config::getTcpNoNagle()) {
-		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
-						TCP_NODELAY, (SCHAR*) &optval, sizeof(optval));
-
-		if (n == -1) {
-			gds__log("inet server err: setting NODELAY socket option \n");
-		}
+	if (! setNoNagleOption(port)) {
+		gds__log("inet server err: setting NODELAY socket option \n");
 	}
 
 	return port;
@@ -1067,12 +1054,8 @@ rem_port* INET_server(int sock)
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
 	}	
 
-	if (Config::getTcpNoNagle()) {
-		n = setsockopt(sock, SOL_SOCKET, TCP_NODELAY, 
-			   (SCHAR *) &optval, sizeof(optval));
-		if (n == -1) {
-			gds__log("inet server err: setting NODELAY socket option \n");
-		}
+	if (! setNoNagleOption(port)) {
+		gds__log("inet server err: setting NODELAY socket option \n");
 	}
 
 	return port;
@@ -3789,4 +3772,29 @@ static void unhook_disconnected_ports(rem_port* main_port)
 }
 #endif
 
+static bool setNoNagleOption(rem_port* port)
+{
+/**************************************
+ *
+ *      s e t N o N a g l e O p t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *      Set TCP_NODELAY, return false 
+ *		in case of unexpected error
+ *
+ **************************************/
+	if (Config::getTcpNoNagle()) 
+	{
+		int optval = TRUE;
+		int n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
+					TCP_NODELAY, (SCHAR*) &optval, sizeof(optval));
 
+		if (n == -1 && INET_ERRNO != EACCES)
+		{
+			return false;
+		}
+	}
+	return true;
+}
