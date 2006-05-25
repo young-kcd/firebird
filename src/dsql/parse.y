@@ -4328,6 +4328,9 @@ non_reserved_word :
 	| REQUESTS
 	| TIMEOUT
 	| LIST					/* added in FB 2.1 */
+	| PRESERVE
+	| GLOBAL
+	| TEMPORARY
 	;
 
 %%
