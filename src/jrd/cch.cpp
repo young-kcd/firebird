@@ -5228,7 +5228,7 @@ static SSHORT latch_bdb(
 #else
 static SSHORT latch_bdb(
 						thread_db* tdbb,
-						LATCH type, BufferDesc* bdb, PageNumber page, SSHORT latch_wait)
+						LATCH type, BufferDesc* bdb, const PageNumber page, SSHORT latch_wait)
 {
 /**************************************
  *

@@ -5592,10 +5592,10 @@ static void release_attachment(Attachment* attachment)
 	}
 
 #ifdef SUPERSERVER
-	vec<jrd_rel*>* rels = dbb->dbb_relations;
-	for (size_t i = 1; i < rels->count(); i++)
+	vec<jrd_rel*>& rels = *dbb->dbb_relations;
+	for (size_t i = 1; i < rels.count(); i++)
 	{
-		jrd_rel* relation = (jrd_rel*) (*rels)[i];
+		jrd_rel* relation = rels[i];
 		if (relation && (relation->rel_flags & REL_temp_conn) &&
 			!(relation->rel_flags & (REL_deleted | REL_deleting)) )
 		{

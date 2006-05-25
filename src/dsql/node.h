@@ -412,7 +412,7 @@ enum nod_flags_vals {
 
 	NOD_DT_IGNORE_COLUMN_CHECK	= 1, // nod_cursor, see pass1_cursor_name
 
-	NOD_PERMANENT_TABLE			= 1,
+	NOD_PERMANENT_TABLE			= 1, // nod_def_relation
 	NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS	= 2,
 	NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS	= 3
 };

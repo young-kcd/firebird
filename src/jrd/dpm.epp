@@ -664,12 +664,6 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
  *	page when we're done.
  *
  **************************************/
-	pointer_page* ppage;
-	SSHORT slot, count;
-	USHORT pp_sequence;
-	SLONG *ptr;
-	jrd_rel* relation;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
@@ -723,6 +717,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 			break;
 	}
 
+	USHORT count;
 	page->dpg_count = count = index - page->dpg_rpt;
 
 /* If the page is not empty and used to be marked as full, change the
@@ -759,8 +754,13 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 		return;
 	}
 
-/* Data page has gone empty.  Refetch page thru pointer page.  If it's
-   still empty, remove page from relation. */
+	// Data page has gone empty.  Refetch page thru pointer page.  If it's
+	// still empty, remove page from relation.
+	
+	pointer_page* ppage;
+	SSHORT slot;
+	USHORT pp_sequence;
+	SLONG *ptr;
 
 	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
 
@@ -826,7 +826,7 @@ retry_after_latch_timeout:
 		count--;
 	}
 	ppage->ppg_min_space = MIN(ppage->ppg_min_space, count);
-	relation = rpb->rpb_relation;
+	//jrd_rel* relation = rpb->rpb_relation;
 
 	relPages->rel_slot_space = MIN(relPages->rel_slot_space, pp_sequence);
 	if (relPages->rel_data_pages) {
@@ -866,7 +866,8 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
 	jrd_req* handle = NULL;
 
 	FOR(REQUEST_HANDLE handle) X IN RDB$PAGES WITH
-		X.RDB$RELATION_ID EQ relation->rel_id ERASE X;
+		X.RDB$RELATION_ID EQ relation->rel_id
+			ERASE X;
 	END_FOR;
 
 	CMP_release(tdbb, handle);
@@ -2613,7 +2614,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 							   pp_sequence + 1);
 			(*vector)[pp_sequence] = new_pp_window.win_page.getPageNum();
 
-			// hvlad: temporary tables don't save it's pointer pages in RDB$PAGES
+			// hvlad: temporary tables don't save their pointer pages in RDB$PAGES
 			if (relation->rel_id && (relPages->rel_instance_id == 0))
 				DPM_pages(tdbb, relation->rel_id, pag_pointer,
 						  (SLONG) pp_sequence, new_pp_window.win_page.getPageNum());
@@ -2879,7 +2880,7 @@ static pointer_page* get_pointer_page(
 			if (!next_ppg)
 				return NULL;
 
-			// hvlad: temporary tables don't save it's pointer pages in RDB$PAGES
+			// hvlad: temporary tables don't save their pointer pages in RDB$PAGES
 			if (relPages->rel_instance_id == 0)
 				DPM_pages(tdbb, relation->rel_id, pag_pointer, vector->count(),
 						  next_ppg);

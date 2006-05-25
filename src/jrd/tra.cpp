@@ -1101,10 +1101,10 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 	}
 
 	{
-		vec<jrd_rel*>* rels = tdbb->tdbb_database->dbb_relations;
-		for (size_t i = 0; i < rels->count(); i++)
+		vec<jrd_rel*>& rels = *tdbb->tdbb_database->dbb_relations;
+		for (size_t i = 0; i < rels.count(); i++)
 		{
-			jrd_rel* relation = (jrd_rel*) (*rels)[i];
+			jrd_rel* relation = rels[i];
 			if (relation && (relation->rel_flags & REL_temp_tran))
 			{
 				relation->delPages(tdbb, transaction->tra_number);
@@ -1339,7 +1339,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 		return;
 	}
 
-	ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
+	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	const SLONG sequence = number / trans_per_tip;
 	//trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	const ULONG byte = TRANS_OFFSET(number % trans_per_tip);

@@ -186,7 +186,7 @@ static DSC *eval(thread_db*, jrd_nod*, DSC*, bool*);
 static SLONG fast_load(thread_db*, jrd_rel*, index_desc*, USHORT, sort_context*,
 					   SelectivityList&);
 
-static index_root_page* fetch_root(thread_db*, WIN *, const jrd_rel*, RelationPages*);
+static index_root_page* fetch_root(thread_db*, WIN*, const jrd_rel*, const RelationPages*);
 static UCHAR* find_node_start_point(btree_page*, temporary_key*, UCHAR*, USHORT*, 
 									bool, bool, bool = false, RecordNumber = NO_VALUE);
 
@@ -342,12 +342,12 @@ void BTR_delete_index(thread_db* tdbb, WIN * window, USHORT id)
 	else {
 		index_root_page::irt_repeat* irt_desc = root->irt_rpt + id;
 		CCH_MARK(tdbb, window);
-		PageNumber next(window->win_page.getPageSpaceID(), irt_desc->irt_root);
+		const PageNumber next(window->win_page.getPageSpaceID(), irt_desc->irt_root);
 
 		// remove the pointer to the top-level index page before we delete it
 		irt_desc->irt_root = 0;
 		irt_desc->irt_flags = 0;
-		PageNumber prior = window->win_page;
+		const PageNumber prior = window->win_page;
 		const USHORT relation_id = root->irt_relation;
 
 		CCH_RELEASE(tdbb, window);
@@ -3845,8 +3845,8 @@ static SLONG fast_load(thread_db* tdbb,
 }
 
 
-static index_root_page* fetch_root(thread_db* tdbb, WIN * window, const jrd_rel* relation, 
-								   RelationPages* relPages)
+static index_root_page* fetch_root(thread_db* tdbb, WIN* window, const jrd_rel* relation, 
+								   const RelationPages* relPages)
 {
 /**************************************
  *

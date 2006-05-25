@@ -4279,7 +4279,7 @@ const Trigger* findTrigger(trig_vec* triggers, const Firebird::MetaName& trig_na
 	if (triggers)
 	{
 		for (trig_vec::iterator t = triggers->begin();
-			 t != triggers->end(); t++)
+			 t != triggers->end(); ++t)
 		{
 			if (t->name.compare(trig_name) == 0)
 				return &(*t);
@@ -4313,7 +4313,7 @@ static void store_dependencies(thread_db*	tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	const Trigger* t;
+	const Trigger* t = 0;
 	const bool checkTableScope = 
 		(dependency_type == obj_computed) ||
 		(dependency_type == obj_trigger) &&

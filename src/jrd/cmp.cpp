@@ -640,7 +640,7 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 	// Request exists and is in use. Look for clones until we find
 	// one that is available.
 
-	for (USHORT n = 1; true; n++) {
+	for (int n = 1; true; n++) {
 		if (n > MAX_RECURSION) {
 			THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
 			ERR_post(isc_no_meta_update,
