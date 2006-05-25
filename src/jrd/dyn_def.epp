@@ -3110,6 +3110,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
+		{
 			switch (verb)
 			{
 			case isc_dyn_system_flag:
@@ -3188,6 +3189,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 				MetaTmp(REL.RDB$RELATION_NAME)
 					DYN_execute(gbl, ptr, &tmp, &field_name, NULL, NULL, NULL);
 			}
+		}
 
 		check_relation_temp_scope(tdbb, gbl, 
 			REL.RDB$RELATION_NAME, 
@@ -4578,6 +4580,9 @@ static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl,
 		 AND REL_C.RDB$RELATION_NAME EQ child_rel_name
 		 AND REL_M.RDB$RELATION_NAME EQ RLC_M.RDB$RELATION_NAME
 
+		if (!DYN_REQUEST(drq_l_rel_info))
+			DYN_REQUEST(drq_l_rel_info) = request;
+
 		bErr = ( (REL_M.RDB$FLAGS & REL_IS_GLOBAL_TEMP) != 
 				(REL_C.RDB$FLAGS & REL_IS_GLOBAL_TEMP) ) &&
 				!( (REL_M.RDB$FLAGS & REL_global_temp_preserve) && 
@@ -4634,6 +4639,9 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
 		 AND IND_C.RDB$INDEX_NAME EQ RLC_C.RDB$INDEX_NAME
 		 AND IND_M.RDB$INDEX_NAME EQ IND_C.RDB$FOREIGN_KEY
 		 AND IND_M.RDB$RELATION_NAME EQ REL_M.RDB$RELATION_NAME
+
+		if (!DYN_REQUEST(drq_l_rel_info2))
+			DYN_REQUEST(drq_l_rel_info2) = request;
 
 		bErr = ( (REL_M.RDB$FLAGS & REL_IS_GLOBAL_TEMP) != 
 				(child_rel_flags & REL_IS_GLOBAL_TEMP) ) &&

@@ -5322,7 +5322,7 @@ void jrd_rel::RelPagesSnapshot::clear()
 	fb_assert(tdbb == spt_tdbb);
 #endif
 
-	for(size_t i = 0; i < getCount(); i++)
+	for (size_t i = 0; i < getCount(); i++)
 	{
 		RelationPages* relPages = (*this)[i];
 		(*this)[i] = NULL;

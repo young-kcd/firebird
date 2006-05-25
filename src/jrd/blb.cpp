@@ -973,10 +973,10 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		bpb_length = sizeof(bpb);
 	}
 
-// hvlad: replace the code above to make blob filters work
-//	when blob of one type copied into blob of another type
-//	UCHAR bpb[16];
-//	USHORT bpb_length = gen_bpb_from_descs(from_desc, to_desc, bpb);
+	// hvlad: replace the code above to make blob filters work
+	//	when blob of one type copied into blob of another type
+	//	UCHAR bpb[16];
+	//	USHORT bpb_length = gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 	while (true) 
 	{

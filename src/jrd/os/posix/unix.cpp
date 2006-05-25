@@ -396,7 +396,8 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	int i;
 	UINT64 bytes;
 
-	jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	jrd_file* file = pageSpace->file;
 
 	ISC_inhibit();
 
@@ -482,9 +483,12 @@ SLONG PIO_max_alloc(Database* dbb)
  *	Compute last physically allocated page of database.
  *
  **************************************/
-	jrd_file* file;
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	jrd_file* file = pageSpace->file;
 
-	for (file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file; file->fil_next; file = file->fil_next);
+	while (file->fil_next) {
+		file = file->fil_next;
+	}
 
 	if (file->fil_desc == -1) {
 		ISC_inhibit();
@@ -532,7 +536,9 @@ SLONG PIO_act_alloc(Database* dbb)
  **  Traverse the linked list of files and add up the number of pages
  **  in each file
  **/
-	for (jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file; file != NULL; file = file->fil_next) {
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+
+	for (jrd_file* file = pageSpace->file; file != NULL; file = file->fil_next) {
 		if (file->fil_desc == -1) {
 			ISC_inhibit();
 			unix_error("fstat", file, isc_io_access_err, 0);
@@ -605,7 +611,8 @@ jrd_file* PIO_open(Database* dbb,
 			 * the Header Page flag setting to make sure that the database is set
 			 * ReadOnly.
 			 */
-			if (!dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file)
+			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+			if (!pageSpace->file)
 				dbb->dbb_flags |= DBB_being_opened_read_only;
 		}
 	}
@@ -896,7 +903,8 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 
 /* If this isn't the primary file, we're done */
 
-	if (dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file)
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	if (pageSpace && pageSpace->file)
 		return file;
 
 /* Build unique lock string for file and construct lock block */

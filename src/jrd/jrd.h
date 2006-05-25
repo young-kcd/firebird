@@ -854,21 +854,21 @@ public:
 
 // rel_flags
 
-const USHORT REL_scanned				= 0x0001;		/* Field expressions scanned (or being scanned) */
+const USHORT REL_scanned				= 0x0001;	/* Field expressions scanned (or being scanned) */
 const USHORT REL_system					= 0x0002;
-const USHORT REL_deleted				= 0x0004;		/* Relation known gonzo */
-const USHORT REL_get_dependencies		= 0x0008;		/* New relation needs dependencies during scan */
-const USHORT REL_force_scan				= 0x0010;		/* system relation has been updated since ODS change, force a scan */
-const USHORT REL_check_existence		= 0x0020;		/* Existence lock released pending drop of relation */
-const USHORT REL_blocking				= 0x0040;		/* Blocking someone from dropping relation */
-const USHORT REL_sys_triggers			= 0x0080;		/* The relation has system triggers to compile */
-const USHORT REL_sql_relation			= 0x0100;		/* Relation defined as sql table */
-const USHORT REL_check_partners			= 0x0200;		/* Rescan primary dependencies and foreign references */
-const USHORT REL_being_scanned			= 0x0400;		/* relation scan in progress */
-const USHORT REL_sys_trigs_being_loaded	= 0x0800;		/* System triggers being loaded */
-const USHORT REL_deleting				= 0x1000;		/* relation delete in progress */
-const USHORT REL_temp_tran				= 0x2000;
-const USHORT REL_temp_conn				= 0x4000;
+const USHORT REL_deleted				= 0x0004;	/* Relation known gonzo */
+const USHORT REL_get_dependencies		= 0x0008;	/* New relation needs dependencies during scan */
+const USHORT REL_force_scan				= 0x0010;	/* system relation has been updated since ODS change, force a scan */
+const USHORT REL_check_existence		= 0x0020;	/* Existence lock released pending drop of relation */
+const USHORT REL_blocking				= 0x0040;	/* Blocking someone from dropping relation */
+const USHORT REL_sys_triggers			= 0x0080;	/* The relation has system triggers to compile */
+const USHORT REL_sql_relation			= 0x0100;	/* Relation defined as sql table */
+const USHORT REL_check_partners			= 0x0200;	/* Rescan primary dependencies and foreign references */
+const USHORT REL_being_scanned			= 0x0400;	/* relation scan in progress */
+const USHORT REL_sys_trigs_being_loaded	= 0x0800;	/* System triggers being loaded */
+const USHORT REL_deleting				= 0x1000;	/* relation delete in progress */
+const USHORT REL_temp_tran				= 0x2000;	/* relation is a GTT delete rows */
+const USHORT REL_temp_conn				= 0x4000;	/* relation is a GTT preserve rows */
 
 const USHORT REL_IS_TEMP				= REL_temp_tran | REL_temp_conn;
 
