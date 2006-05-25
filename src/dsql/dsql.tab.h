@@ -279,10 +279,10 @@
 #define UNDO 532
 #define REQUESTS 533
 #define TIMEOUT 534
-#define PRESERVE 535
-#define GLOBAL 536
-#define TEMPORARY 537
-#define LIST 538
+#define LIST 535
+#define PRESERVE 536
+#define GLOBAL 537
+#define TEMPORARY 538
 #define YYERRCODE 256
 
 #endif
