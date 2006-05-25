@@ -29,10 +29,6 @@
 #include "../jrd/lls.h"
 #include "../common/classes/fb_string.h"
 
-void ALL_fini(void);
-void ALL_init(void);
-
-struct blk;
 
 namespace Jrd {
 	class Database;

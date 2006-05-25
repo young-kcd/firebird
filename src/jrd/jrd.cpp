@@ -5446,7 +5446,12 @@ static Database* init(thread_db*	tdbb,
 	dbb->dbb_mutexes = temp_mutx;
 	tdbb->tdbb_database = dbb;
 
-	ALL_init();
+	//ALL_init();
+	//JrdMemoryPool* perm = dbb->dbb_permanent;
+	//tdbb->setDefaultPool(perm); Only on demand through ContextPoolHolder class.
+	dbb->dbb_pools[0] = perm;
+	dbb->dbb_bufferpool = JrdMemoryPool::createPool();
+
 	// provide context pool for the rest stuff
 	Jrd::ContextPoolHolder context(tdbb, perm);
 
