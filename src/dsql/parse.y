@@ -2131,6 +2131,7 @@ keyword_or_column	: valid_symbol_name
 		// | SENSITIVE		// FB_NEW_INTL_ALLOW_NOT_READY
 		| TRAILING
 		| TRIM
+		| GLOBAL				/* added in FB 2.1 */
 		;
 
 col_opt	: ALTER
@@ -4329,7 +4330,6 @@ non_reserved_word :
 	| TIMEOUT
 	| LIST					/* added in FB 2.1 */
 	| PRESERVE
-	| GLOBAL
 	| TEMPORARY
 	;
 
