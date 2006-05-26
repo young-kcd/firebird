@@ -3120,7 +3120,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 			
 			// Make sure refetched record still fulfills search condition
 			RecordSource* r;
-			for (r = rsb; r && r->rsb_type != rsb_boolean ; r = r->rsb_next); // empty loop body
+			for (r = rsb; r && r->rsb_type != rsb_boolean; r = r->rsb_next); // empty loop body
 			if (r && !EVL_boolean(tdbb, (jrd_nod*) r->rsb_arg[0]))
 				return false;
 		}
@@ -5058,7 +5058,7 @@ void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 {
 	while (array.getCount() > 0)
 	{
-		TranGarbage &garbage = array[0];
+		TranGarbage& garbage = array[0];
 
 		if (garbage.tran >= oldest_snapshot)
 			break;
@@ -5084,7 +5084,7 @@ RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)
 	if (!(rel_flags & REL_IS_TEMP)) 
 		return &rel_pages_base;
 
-	if (tdbb->tdbb_flags & TDBB_deffered)
+	if (tdbb->tdbb_flags & TDBB_deferred)
 		return &rel_pages_base;
 
 	Database* dbb = tdbb->tdbb_database;
@@ -5224,7 +5224,7 @@ bool jrd_rel::delPages(thread_db* tdbb, SLONG tran, RelationPages* aPages)
 	
 	fb_assert(pages->useCount > 0);
 
-	if(--pages->useCount)
+	if (--pages->useCount)
 		return false;
 
 #ifdef VIO_DEBUG
@@ -5299,7 +5299,7 @@ void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmen
 			else if (rel_flags & REL_temp_tran) 
 			{
 				const jrd_tra* tran = snapshot.spt_tdbb->tdbb_attachment->att_transactions;
-				for(; tran; tran = tran->tra_next)
+				for (; tran; tran = tran->tra_next)
 				{
 					if (tran->tra_number == relPages->rel_instance_id) 
 					{

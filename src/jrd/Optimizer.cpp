@@ -943,13 +943,13 @@ OptimizerRetrieval::~OptimizerRetrieval()
  **************************************/
 	IndexScratch** indexScratch = indexScratches.begin();
 	int i = 0;
-	for (; i < indexScratches.getCount() ; ++i) {
+	for (; i < indexScratches.getCount(); ++i) {
 		delete indexScratch[i];
 	}
 	
 	InversionCandidate** invCandidate = inversionCandidates.begin();
 	i = 0;
-	for (; i < inversionCandidates.getCount() ; ++i) {
+	for (; i < inversionCandidates.getCount(); ++i) {
 		delete inversionCandidates[i];
 	}
 }
@@ -1290,7 +1290,7 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 	jrd_nod* sortPtr = *sort;
 	IndexScratch** indexScratch = indexScratches.begin();
 	int i = 0;
-	for (; i < indexScratches.getCount() ; ++i) {
+	for (; i < indexScratches.getCount(); ++i) {
 
 		index_desc* idx = indexScratch[i]->idx;
 		
@@ -2868,7 +2868,7 @@ OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, UCHAR*	
 
 	innerStreams.grow(streams[0]);
 	InnerJoinStreamInfo** innerStream = innerStreams.begin();
-	for (int i = 0; i < innerStreams.getCount() ; i++) {
+	for (int i = 0; i < innerStreams.getCount(); i++) {
 		innerStream[i] = FB_NEW(p) InnerJoinStreamInfo(p);
 		innerStream[i]->stream = streams[i + 1];
 	}

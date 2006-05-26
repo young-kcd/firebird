@@ -2473,7 +2473,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		break;
 
 	case blr_exec_into:
-		n = BLR_WORD + 2 /*e_exec_into_count - 1*/ ;
+		n = BLR_WORD + 2; // e_exec_into_count - 1
 		node = PAR_make_node(tdbb, n);
 		arg = node->nod_arg;
 		*arg++ = parse(tdbb, csb, VALUE);

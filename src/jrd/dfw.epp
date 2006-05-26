@@ -484,7 +484,7 @@ void DFW_perform_work(jrd_tra* transaction)
 	{
 		more = false;
 		try {
-			tdbb->tdbb_flags |= TDBB_deffered;
+			tdbb->tdbb_flags |= TDBB_deferred;
 			for (const deferred_task* task = task_table; 
 				task->task_type != dfw_null; ++task)
 			{
@@ -511,10 +511,10 @@ void DFW_perform_work(jrd_tra* transaction)
 				ERR_punt();
 			}
 			++phase;
-			tdbb->tdbb_flags &= ~TDBB_deffered;
+			tdbb->tdbb_flags &= ~TDBB_deferred;
 		}	
 		catch (const Firebird::Exception& ex) {
-			tdbb->tdbb_flags &= ~TDBB_deffered;
+			tdbb->tdbb_flags &= ~TDBB_deferred;
 
 			/* Do any necessary cleanup */
 			if (!phase) {

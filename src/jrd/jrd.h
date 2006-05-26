@@ -776,7 +776,7 @@ public:
 	vec<Record*>*	rel_gc_rec;			/* vector of records for garbage collection */
 #ifdef GARBAGE_THREAD
 	PageBitmap*		rel_gc_bitmap;		/* garbage collect bitmap of data page sequences */
-	RelationGarbage*	rel_garbage;	/* deffered gc bitmap's by tran numbers */
+	RelationGarbage*	rel_garbage;	/* deferred gc bitmap's by tran numbers */
 #endif
 
 	USHORT		rel_use_count;		/* requests compiled with relation */
@@ -1130,7 +1130,7 @@ const USHORT TDBB_set_backup_state		= 8;	/* Setting state for backup lock */
 const USHORT TDBB_backup_merge			= 16;	/* Merging changes from difference file */
 const USHORT TDBB_stack_trace_done		= 32;	/* PSQL stack trase is added into status-vector */
 const USHORT TDBB_shutdown_manager		= 64;	/* Server shutdown thread */
-const USHORT TDBB_deffered				= 128;	/* deffered work performed now */
+const USHORT TDBB_deferred				= 128;	/* deferred work performed now */
 
 
 // duplicate context of firebird string to store in jrd_nod::nod_arg
