@@ -39,38 +39,7 @@ static bool remove_symbol(dsql_sym**, dsql_sym*);
 static bool scompare(const TEXT*, USHORT, const TEXT*, const USHORT);
 
 static DSQL_SYM* hash_table;
-
-/*
-   SUPERSERVER can end up with many hands in the pie, so some
-   protection is provided via a mutex.   This ensures the integrity
-   of lookups, inserts and removals, and also allows teh traversing
-   of symbol chains for marking of relations and procedures.
-   Otherwise, one DSQL user won't know what the other is doing
-   to the same object.
-*/
-
-#ifdef  SUPERSERVER
-static MUTX_T hash_mutex;
-static USHORT hash_mutex_inited = 0;
-static inline void lock_hash()
-{
-	THD_mutex_lock (&hash_mutex);
-}
-
-static inline void unlock_hash()
-{
-	THD_mutex_unlock (&hash_mutex);
-}
-#else
-static inline void lock_hash()
-{
-}
-
-static inline void unlock_hash()
-{
-}
-#endif
-
+static Firebird::Mutex hash_mutex;
 
 /**
   
@@ -83,12 +52,6 @@ static inline void unlock_hash()
  **/
 void HSHD_init(void)
 {
-#ifdef SUPERSERVER
-	if (!hash_mutex_inited) {
-		hash_mutex_inited = 1;
-	}
-#endif
-
 	UCHAR* p = (UCHAR *) gds__alloc(sizeof(DSQL_SYM) * HASH_SIZE);
 	// This is appropriate to throw exception here, callers check for it
 	if (!p)
@@ -117,15 +80,14 @@ void HSHD_init(void)
  **/
 void HSHD_debug(void)
 {
-// dump each hash table entry 
+	Firebird::MutexLockGuard guard(hash_mutex);
 
-	lock_hash();
+	// dump each hash table entry 
 	for (SSHORT h = 0; h < HASH_SIZE; h++) {
 		for (DSQL_SYM collision = hash_table[h]; collision;
 			 collision = collision->sym_collision)
 		{
 			// check any homonyms first 
-
 			fprintf(stderr, "Symbol type %d: %s %p\n",
 					   collision->sym_type, collision->sym_string,
 					   collision->sym_dbb);
@@ -138,7 +100,6 @@ void HSHD_debug(void)
 			}
 		}
 	}
-	unlock_hash();
 }
 #endif
 
@@ -179,13 +140,12 @@ void HSHD_fini(void)
  **/
 void HSHD_finish( const void* database)
 {
-// check each hash table entry 
+	Firebird::MutexLockGuard guard(hash_mutex);
 
-	lock_hash();
+	// check each hash table entry 
 	for (SSHORT h = 0; h < HASH_SIZE; h++) {
 		for (DSQL_SYM* collision = &hash_table[h]; *collision;) {
 			// check any homonyms first 
-
 			DSQL_SYM chain = *collision;
 			for (DSQL_SYM* homptr = &chain->sym_homonym; *homptr;) {
 				DSQL_SYM symbol = *homptr;
@@ -198,7 +158,6 @@ void HSHD_finish( const void* database)
 			}
 
 			// now, see if the root entry has to go 
-
 			if (chain->sym_dbb == database) {
 				if (chain->sym_homonym) {
 					chain->sym_homonym->sym_collision = chain->sym_collision;
@@ -212,7 +171,6 @@ void HSHD_finish( const void* database)
 				collision = &chain->sym_collision;
 		}
 	}
-	unlock_hash();
 }
 
 
@@ -228,7 +186,8 @@ void HSHD_finish( const void* database)
  **/
 void HSHD_insert(DSQL_SYM symbol)
 {
-	lock_hash();
+	Firebird::MutexLockGuard guard(hash_mutex);
+
 	const USHORT h = hash(symbol->sym_string, symbol->sym_length);
 	const void* database = symbol->sym_dbb;
 
@@ -241,13 +200,11 @@ void HSHD_insert(DSQL_SYM symbol)
 		{
 			symbol->sym_homonym = old->sym_homonym;
 			old->sym_homonym = symbol;
-			unlock_hash();
 			return;
 		}
 
 	symbol->sym_collision = hash_table[h];
 	hash_table[h] = symbol;
-	unlock_hash();
 }
 
 
@@ -272,8 +229,8 @@ DSQL_SYM HSHD_lookup(const void*    database,
 				SYM_TYPE type,
 				USHORT   parser_version)
 {
+	Firebird::MutexLockGuard guard(hash_mutex);
 
-	lock_hash();
 	const USHORT h = hash(string, length);
 	for (DSQL_SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
 	{
@@ -284,7 +241,6 @@ DSQL_SYM HSHD_lookup(const void*    database,
 			while (symbol && symbol->sym_type != type) {
 				symbol = symbol->sym_homonym;
 			}
-			unlock_hash();
 
 			/* If the symbol found was not part of the list of keywords for the
 			 * client connecting, then assume nothing was found
@@ -301,7 +257,6 @@ DSQL_SYM HSHD_lookup(const void*    database,
 		}
 	}
 
-	unlock_hash();
 	return NULL;
 }
 
@@ -318,19 +273,18 @@ DSQL_SYM HSHD_lookup(const void*    database,
  **/
 void HSHD_remove(DSQL_SYM symbol)
 {
-	lock_hash();
+	Firebird::MutexLockGuard guard(hash_mutex);
+
 	const USHORT h = hash(symbol->sym_string, symbol->sym_length);
 
 	for (DSQL_SYM* collision = &hash_table[h]; *collision;
 		 collision = &(*collision)->sym_collision)
 	{
 		if (remove_symbol(collision, symbol)) {
-			unlock_hash();
 			return;
 		}
 	}
 
-	unlock_hash();
 	ERRD_error(-1, "HSHD_remove failed");
 }
 
@@ -377,7 +331,7 @@ void HSHD_set_flag(
 		return;
 	}
 
-	lock_hash();
+	Firebird::MutexLockGuard guard(hash_mutex);
 	const USHORT h = hash(string, length);
 	for (DSQL_SYM symbol = hash_table[h]; symbol; symbol = symbol->sym_collision)
 	{
@@ -416,7 +370,6 @@ void HSHD_set_flag(
 			}
 		}
 	}
-	unlock_hash();
 }
 
 
