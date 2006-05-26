@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbclient,v 1.29 2005-05-27 22:16:08 asfernandes Exp $
+#  $Id: Makefile.in.libfbclient,v 1.30 2006-05-26 15:38:43 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=superclient
@@ -117,7 +117,7 @@ endif
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
 	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
 $(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib \
--o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+-o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ -lsupc++
 
 
 AllObjects = $(FBCLIENT_Objects)
