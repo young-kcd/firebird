@@ -446,8 +446,11 @@ void DYN_define_constraint(Global*		gbl,
 			strcpy(CRT.RDB$INDEX_NAME, index_name.c_str());
 			CRT.RDB$INDEX_NAME.NULL = FALSE;
 
+			SSHORT old_id = id;
+			id = drq_l_rel_info;
 			check_foreign_key_temp_scope(tdbb, gbl, 
 				relation_name->c_str(), referred_index_name.c_str());
+			id = old_id;
 
 			/* check that we have references permissions on the table and
 			   fields that the index:referred_index_name is on. */
@@ -3191,9 +3194,12 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 			}
 		}
 
+		SSHORT old_id = id;
+		id = drq_l_rel_info2;
 		check_relation_temp_scope(tdbb, gbl, 
 			REL.RDB$RELATION_NAME, 
 			REL.RDB$FLAGS);
+		id = old_id;
 		
 		if (sql_prot) {
 			if (!get_who(tdbb, gbl, owner_name))
@@ -3300,6 +3306,8 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 		else if (id == drq_l_view_rels)
 			DYN_error_punt(true, 115, NULL, NULL, NULL, NULL, NULL);
 		/* msg 115: "CREATE VIEW failed" */
+		else if (id == drq_l_rel_info2)
+			ERR_punt();
 
 		/* Control should never reach this point, because id should
 		   always have one of the values test-for above. */
