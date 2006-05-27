@@ -1,6 +1,6 @@
 @echo off
 
-@call setenvvar2.bat
+@call setenvvar.bat
 @if errorlevel 1 (goto :END)
 
 @if "%1"=="msg" goto MSG

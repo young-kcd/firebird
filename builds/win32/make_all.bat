@@ -2,12 +2,7 @@
 set ERRLEV=0
 
 :: Set env vars
-if not DEFINED FB2_EMBED_BOOT (set FB2_EMBED_BOOT=1)
-@if %FB2_EMBED_BOOT% equ 1 (
-@call setenvvar2.bat
-) else (
 @call setenvvar.bat
-)
 
 @if errorlevel 1 (call :ERROR Executing setenvvar.bat failed & goto :EOF)
 

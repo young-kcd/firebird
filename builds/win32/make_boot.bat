@@ -11,9 +11,6 @@ set ERRLEV=0
 @call setenvvar.bat
 @if errorlevel 1 (goto :END)
 
-:: verify that prepare was run before
-@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP & goto :END)
-
 ::===========
 :: Read input values
 @set DBG=
@@ -31,11 +28,9 @@ set ERRLEV=0
 @del %ROOT_PATH%\src\include\gen\autoconfig.h 2> nul
 @copy %ROOT_PATH%\src\include\gen\autoconfig_msvc.h %ROOT_PATH%\src\include\gen\autoconfig.h > nul
 @echo Creating directories
-:: Don't rmdir gen, it contains the dbs, only the exe files
-@del gen\*.exe 2>nul
+@rmdir /s /q %ROOT_PATH%\gen 2>nul
 :: Remove previously generated output, and recreate the directory hierarchy. Note the exceptions to the rule!
 for %%v in ( alice burp dsql dudley gpre isql journal jrd misc msgs qli examples ) do (
-  @rmdir /s /q %ROOT_PATH%\gen\%%v 2>nul
   if NOT "%%v"=="journal" (@mkdir %ROOT_PATH%\gen\%%v 2>nul)
 )
 
@@ -43,6 +38,20 @@ for %%v in ( alice burp dsql dudley gpre isql journal jrd misc msgs qli examples
 @mkdir %ROOT_PATH%\gen\utilities 2>nul
 @mkdir %ROOT_PATH%\gen\utilities\gstat 2>nul
 @mkdir %ROOT_PATH%\gen\utilities\gsec 2>nul
+
+::=======
+call :btyacc
+if "%ERRLEV%"=="1" goto :END
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\btyacc.exe %ROOT_PATH%\gen\ > nul
+
+@echo Generating DSQL parser...
+@call parse.bat
+if "%ERRLEV%"=="1" goto :END
+
+::=======
+@echo.
+@echo Building BLR Table
+@call blrtable.bat
 
 ::=======
 @if "%DBG%"=="" (
@@ -53,16 +62,35 @@ for %%v in ( alice burp dsql dudley gpre isql journal jrd misc msgs qli examples
 if "%ERRLEV%"=="1" goto :END
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gpre_boot.exe %ROOT_PATH%\gen\ > nul
 ::=======
-@echo Preprocessing the source files needed to build gpre_static...
+@echo Preprocessing the source files needed to build gbak_embed, gpre_embed and isql_embed...
 @call preprocess.bat BOOT
 ::=======
 @if "%DBG%"=="" (
-	call :gpre_static_release
+	call :gbak_embed_release
+	if "%ERRLEV%"=="1" goto :END
+	call :gpre_embed_release
+	if "%ERRLEV%"=="1" goto :END
+	call :isql_embed_release
+	if "%ERRLEV%"=="1" goto :END
 ) else (
-	call :gpre_static_debug
+	call :gbak_embed_debug
+	if "%ERRLEV%"=="1" goto :END
+	call :gpre_embed_debug
+	if "%ERRLEV%"=="1" goto :END
+	call :isql_embed_debug
+	if "%ERRLEV%"=="1" goto :END
 )
-if "%ERRLEV%"=="1" goto :END
-@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gpre_static.exe   %ROOT_PATH%\gen\ > nul
+
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gbak_embed.exe %ROOT_PATH%\gen > nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gpre_embed.exe %ROOT_PATH%\gen > nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\isql_embed.exe %ROOT_PATH%\gen > nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\fbembed.dll %ROOT_PATH%\gen > nul
+@copy %ROOT_PATH%\extern\icu\bin\icuuc30.dll %ROOT_PATH%\gen >nul
+@copy %ROOT_PATH%\extern\icu\bin\icudt30.dll %ROOT_PATH%\gen >nul
+@copy %ROOT_PATH%\extern\icu\bin\icuin30.dll %ROOT_PATH%\gen >nul
+
+::=======
+@call :databases
 ::=======
 @echo Preprocessing the entire source tree...
 @call preprocess.bat
@@ -72,16 +100,24 @@ if "%ERRLEV%"=="1" goto :END
 @call :codes
 if "%ERRLEV%"=="1" goto :END
 ::=======
-@echo Building message file and codes header...
-@%ROOT_PATH%\gen\build_msg -f %DB_PATH%/gen/firebird.msg -D %SERVER_NAME%:%DB_PATH%/gen/dbs/msg.fdb
-@%ROOT_PATH%\gen\codes %ROOT_PATH%\src\include\gen %ROOT_PATH%\lang_helpers
+@call create_msgs.bat msg
 ::=======
-@echo.
-@echo Building BLR Table
-@call blrtable.bat
 @call :NEXT_STEP
 @goto END:
 
+
+::===================
+:: BUILD btyacc
+:btyacc
+@echo.
+@echo Building btyacc...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "btyacc - Win32 Release"  %CLEAN% /OUT btyacc.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project btyacc %CLEAN% release /OUT btyacc.log
+)
+if errorlevel 1 call :boot2 btyacc
+goto :EOF
 
 ::===================
 :: BUILD gpre_boot_release
@@ -89,9 +125,9 @@ if "%ERRLEV%"=="1" goto :END
 @echo.
 @echo Building gpre_boot (release)...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Release"  %CLEAN% /OUT gpre_boot.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gpre_boot - Win32 Release"  %CLEAN% /OUT gpre_boot.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot %CLEAN% release /OUT gpre_boot.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gpre_boot %CLEAN% release /OUT gpre_boot.log
 )
 if errorlevel 1 goto :gpre_boot2
 goto :EOF
@@ -102,9 +138,9 @@ goto :EOF
 @echo.
 @echo Building gpre_boot (debug)...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Debug"  %CLEAN% /OUT gpre_boot.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gpre_boot - Win32 Debug"  %CLEAN% /OUT gpre_boot.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot %CLEAN% debug /OUT gpre_boot.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gpre_boot %CLEAN% debug /OUT gpre_boot.log
 )
 if errorlevel 1 goto :gpre_boot2
 goto :EOF
@@ -118,37 +154,93 @@ echo.
 set ERRLEV=1
 goto :EOF
 
+
 ::===================
-:: BUILD gpre_static_release
-:gpre_static_release
+:: BUILD gbak_embed_release
+:gbak_embed_release
 @echo.
-@echo Building gpre_static (release)...
+@echo Building gbak_embed (release)...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Release"  %CLEAN% /OUT gpre_static.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gbak_embed - Win32 Release"  %CLEAN% /OUT gbak_embed.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static %CLEAN% release /OUT gpre_static.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gbak_embed %CLEAN% release /OUT gbak_embed.log
 )
-if errorlevel 1 goto :gpre_static2
+if errorlevel 1 call :boot2 gbak_embed
 @goto :EOF
 
 ::===================
-:: BUILD gpre_static_debug
-:gpre_static_debug
+:: BUILD gbak_embed_debug
+:gbak_embed_debug
 @echo.
-@echo Building gpre_static (debug)...
+@echo Building gbak_embed (debug)...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Debug"  %CLEAN% /OUT gpre_static.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gbak_embed - Win32 Debug"  %CLEAN% /OUT gbak_embed.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static %CLEAN% debug /OUT gpre_static.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gbak_embed %CLEAN% debug /OUT gbak_embed.log
 )
-if errorlevel 1 goto :gpre_static2
+if errorlevel 1 call :boot2 gbak_embed
+@goto :EOF
+
+
+::===================
+:: BUILD gpre_embed_release
+:gpre_embed_release
+@echo.
+@echo Building gpre_embed (release)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gpre_embed - Win32 Release"  %CLEAN% /OUT gpre_embed.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gpre_embed %CLEAN% release /OUT gpre_embed.log
+)
+if errorlevel 1 call :boot2 gpre_embed
 @goto :EOF
 
 ::===================
-:: ERROR gpre_static
-:gpre_static2
+:: BUILD gpre_embed_debug
+:gpre_embed_debug
+@echo.
+@echo Building gpre_embed (debug)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gpre_embed - Win32 Debug"  %CLEAN% /OUT gpre_embed.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gpre_embed %CLEAN% debug /OUT gpre_embed.log
+)
+if errorlevel 1 call :boot2 gpre_embed
+@goto :EOF
+
+
+::===================
+:: BUILD isql_embed_release
+:isql_embed_release
+@echo.
+@echo Building isql_embed (release)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "isql_embed - Win32 Release"  %CLEAN% /OUT isql_embed.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project isql_embed %CLEAN% release /OUT isql_embed.log
+)
+if errorlevel 1 call :boot2 isql_embed
+@goto :EOF
+
+::===================
+:: BUILD isql_embed_debug
+:isql_embed_debug
+@echo.
+@echo Building isql_embed (debug)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "isql_embed - Win32 Debug"  %CLEAN% /OUT isql_embed.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project isql_embed %CLEAN% debug /OUT isql_embed.log
+)
+if errorlevel 1 call :boot2 isql_embed
+@goto :EOF
+
+
+::===================
+:: ERROR boot
+:boot2
 echo.
-echo Error building gpre_static, see gpre_static.log
+echo Error building %1, see %1.log
 echo.
 set ERRLEV=1
 goto :EOF
@@ -160,9 +252,9 @@ goto :EOF
 @echo.
 @echo Building build_msg...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" /OUT build_msg.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "build_msg - Win32 Release" /OUT build_msg.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project build_msg %CLEAN% release /OUT build_msg.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project build_msg %CLEAN% release /OUT build_msg.log
 )
 if errorlevel 1 goto :msgs2
 @copy %ROOT_PATH%\temp\release\build_msg\build_msg.exe   %ROOT_PATH%\gen\ > nul
@@ -180,9 +272,9 @@ goto :EOF
 @echo.
 @echo Building codes...
 if "%VS_VER%"=="msvc6" (
-	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "codes - Win32 Release" /OUT codes.log
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "codes - Win32 Release" /OUT codes.log
 ) else (
-	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project codes %CLEAN% release /OUT codes.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project codes %CLEAN% release /OUT codes.log
 )
 if errorlevel 1 goto :codes2
 @copy %ROOT_PATH%\temp\release\codes\codes.exe   %ROOT_PATH%\gen\ > nul
@@ -195,19 +287,29 @@ set ERRLEV=1
 goto :EOF
 
 ::==============
+:databases
+@rmdir /s /q %ROOT_PATH%\gen\dbs 2>nul
+@mkdir %ROOT_PATH%\gen\dbs 2>nul
+
+@echo create database '%DB_PATH%\gen\dbs\security2.fdb'; | "%ROOT_PATH%\gen\isql_embed" -q
+@"%ROOT_PATH%\gen\isql_embed" -q %DB_PATH%\gen\dbs\security2.fdb -i %ROOT_PATH%\src\dbs\security.sql
+
+@%ROOT_PATH%\gen\gbak_embed -r %ROOT_PATH%\builds\misc\metadata.gbak %DB_PATH%\gen\dbs\metadata.fdb
+
+@call create_msgs.bat db
+
+@%ROOT_PATH%\gen\gbak_embed -r %ROOT_PATH%\builds\misc\help.gbak %DB_PATH%\gen\dbs\help.fdb
+@copy %ROOT_PATH%\gen\dbs\metadata.fdb %ROOT_PATH%\gen\dbs\yachts.lnk > nul
+
+@goto :EOF
+
+
+::==============
 :NEXT_STEP
 @echo.
 @echo    You may now run make_all.bat [DEBUG] [CLEAN]
 @echo.
 @goto :EOF
-
-::==============
-:HELP
-@echo.
-@echo    You must run prepare.bat before running this script
-@echo.
-@goto :EOF
-
 
 :END
 

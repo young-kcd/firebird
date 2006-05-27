@@ -11,13 +11,8 @@ if DEFINED VS71COMNTOOLS (
 )
 @echo.
 
-if not DEFINED FB2_EMBED_BOOT (set FB2_EMBED_BOOT=1)
 :: Set env vars
-@if %FB2_EMBED_BOOT% equ 1 (
-@call setenvvar2.bat
-) else (
 @call setenvvar.bat
-)
 
 ::===========
 :: Read input values
