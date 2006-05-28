@@ -676,6 +676,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 						desc->dsc_dtype = dtype_long;
 						desc->dsc_length = sizeof(SLONG);
 						desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
+						desc->dsc_sub_type = dsc_num_type_numeric;
 					}
 					else {
 						fb_assert(dtype == dtype_timestamp);
@@ -696,11 +697,10 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 					ERRD_post(isc_expression_eval_err, 0);
 				}
 			}
-			else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
-					 /* <date> +/- <non-date> */
-					 (node->nod_type == nod_add))
-				/* <non-date> + <date> */
+			else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add))
 			{
+				// <date> +/- <non-date>
+				// <non-date> + <date>
 				desc->dsc_dtype = desc1.dsc_dtype;
 				if (!DTYPE_IS_DATE(desc->dsc_dtype))
 					desc->dsc_dtype = desc2.dsc_dtype;
@@ -837,12 +837,14 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 						desc->dsc_dtype = dtype_long;
 						desc->dsc_length = sizeof(SLONG);
 						desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
+						desc->dsc_sub_type = dsc_num_type_numeric;
 					}
 					else {
 						fb_assert(dtype == dtype_timestamp);
 						desc->dsc_dtype = dtype_int64;
 						desc->dsc_length = sizeof(SINT64);
 						desc->dsc_scale = -9;
+						desc->dsc_sub_type = dsc_num_type_numeric;
 					}
 				}
 				else if (is_date_and_time(desc1, desc2)) {
@@ -857,11 +859,10 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 					ERRD_post(isc_expression_eval_err, 0);
 				}
 			}
-			else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
-					 /* <date> +/- <non-date> */
-					 (node->nod_type == nod_add2))
-				/* <non-date> + <date> */
+			else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add2))
 			{
+				// <date> +/- <non-date>
+				// <non-date> + <date>
 				desc->dsc_dtype = desc1.dsc_dtype;
 				if (!DTYPE_IS_DATE(desc->dsc_dtype))
 					desc->dsc_dtype = desc2.dsc_dtype;
