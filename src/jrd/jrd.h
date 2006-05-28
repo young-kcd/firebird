@@ -797,7 +797,7 @@ public:
 	frgn		rel_foreign_refs;	/* foreign references to other relations' primary keys */
 
 	// global temporary relations attributes
-	RelationPages*	getPages(thread_db* tdbb, SLONG tran = -1, bool allocPages = true);
+	inline RelationPages* getPages(thread_db* tdbb, SLONG tran = -1, bool allocPages = true);
 
 	inline RelationPages* getBasePages()
 	{
@@ -846,6 +846,8 @@ private:
 	RelationPagesInstances* rel_pages_inst;
 	RelationPages			rel_pages_base;
 	RelationPages*			rel_pages_free;
+
+	RelationPages*	getPagesInternal(thread_db* tdbb, SLONG tran, bool allocPages);
 
 public:
 	explicit jrd_rel(MemoryPool& p) 
