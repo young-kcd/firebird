@@ -5079,14 +5079,6 @@ void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 
 #endif //GARBAGE_THREAD
 
-inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)
-{
-	if (!(rel_flags & REL_IS_TEMP)) 
-		return &rel_pages_base;
-	else
-		return getPagesInternal(tdbb, tran, allocPages);
-}
-
 RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool allocPages)
 {
 	if (tdbb->tdbb_flags & TDBB_deferred)

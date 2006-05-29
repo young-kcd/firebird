@@ -875,6 +875,15 @@ const USHORT REL_temp_conn				= 0x4000;	/* relation is a GTT preserve rows */
 const USHORT REL_IS_TEMP				= REL_temp_tran | REL_temp_conn;
 
 
+inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)
+{
+	if (!(rel_flags & REL_IS_TEMP)) 
+		return &rel_pages_base;
+	else
+		return getPagesInternal(tdbb, tran, allocPages);
+}
+
+
 /* Field block, one for each field in a scanned relation */
 
 class jrd_fld : public pool_alloc<type_fld>
