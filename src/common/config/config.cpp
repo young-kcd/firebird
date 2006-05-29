@@ -311,7 +311,12 @@ bool Config::getOldParameterOrdering()
 
 int Config::getTcpRemoteBufferSize()
 {
-	return (int) sysConfig.values[KEY_TCP_REMOTE_BUFFER_SIZE];
+	int rc = (int) sysConfig.values[KEY_TCP_REMOTE_BUFFER_SIZE];
+	if (rc < 1448)
+		rc = 1448;
+	if (rc > MAX_SSHORT)
+		rc = MAX_SSHORT;
+	return rc;
 }
 
 bool Config::getTcpNoNagle()
