@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef RELATION_H
-#define RELATION_H
+#ifndef JRD_RELATION_H
+#define JRD_RELATION_H
 
 #include "../jrd/jrd.h"
 #include "../jrd/pag.h"
@@ -299,4 +299,4 @@ public:
 
 }
 
-#endif
+#endif	// JRD_RELATION_H
