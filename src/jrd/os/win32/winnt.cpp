@@ -211,15 +211,13 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
 	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "CreateFile (create)",
-				 isc_arg_cstring,
-				 string.length(),
-				 ERR_cstring(string),
-				 isc_arg_gds,
-				 isc_io_create_err, isc_arg_win32, GetLastError(), 0);
+				 isc_arg_cstring, string.length(), ERR_cstring(string),
+				 isc_arg_gds, isc_io_create_err, isc_arg_win32, GetLastError(),
+				 0);
 	}
 
 /* File open succeeded.  Now expand the file name. */
-/* workspace is the exapnded name here */
+/* workspace is the expanded name here */
 
 	Firebird::PathName workspace(string);
 	ISC_expand_filename(workspace, false);
