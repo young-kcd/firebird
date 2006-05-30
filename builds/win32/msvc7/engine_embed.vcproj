@@ -323,6 +323,9 @@
 				RelativePath="..\..\..\src\jrd\pwd.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\Relation.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\rlck.cpp">
 			</File>
 			<File
@@ -624,7 +627,7 @@
 				RelativePath="..\..\..\src\jrd\iberr_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\iberror.h">
+				RelativePath="..\..\..\src\include\gen\iberror.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ibsetjmp.h">
@@ -865,6 +868,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rec_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\Relation.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\relations.h">
