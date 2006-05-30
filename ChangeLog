@@ -1,3 +1,249 @@
+2006-05-29 18:36  alexpeshkoff
+
+	* firebird2/src/remote/protocol.cpp (1.54):
+	
+	Fixed my previous commit
+
+2006-05-29 18:34  alexpeshkoff
+
+	* firebird2/src/remote/protocol.cpp (1.53):
+	
+	Report failure instead of having AV in case of too many suggested
+	protocol versions
+
+2006-05-29 18:28  alexpeshkoff
+
+	* firebird2/: builds/install/misc/firebird.conf (1.21),
+	src/common/config/config.cpp (1.70):
+	
+	Limit packet size which we can process correctly
+
+2006-05-29 09:41  hvlad
+
+	* firebird2/src/jrd/: jrd.h (1.163), vio.cpp (1.163):
+	
+	Move jrd_rel::getPages into jrd.h to make it inline not only in
+	vio.cpp. Noted by Adriano
+
+2006-05-29 00:50  asfernandes
+
+	* firebird2/builds/posix/Makefile.in.libfbclient (1.31):
+	
+	Misc
+
+2006-05-29 00:07  asfernandes
+
+	* firebird2/builds/win32/preprocess.bat (1.35):
+	
+	GDEF isn't needed in boot phase - noted by Claudio
+
+2006-05-28 13:54  hvlad
+
+	* firebird2/src/jrd/: jrd.h (1.162), vio.cpp (1.162):
+	
+	Optimize jrd_rel::getPages a bit
+
+2006-05-28 09:46  robocop
+
+	* firebird2/src/dsql/make.cpp (1.115):
+	
+	Tag time differences and timestamp differences as NUMERIC sub_type
+	if they produce exact numeric results.
+
+2006-05-28 09:43  robocop
+
+	* firebird2/builds/win32/make_all.bat (1.40):
+	
+	Disable obsolete or problematic projects in MSVC6.
+
+2006-05-28 09:42  robocop
+
+	* firebird2/builds/win32/msvc6/: btyacc.dsp (1.3), build_msg.dsp
+	(1.9), codes.dsp (1.9), common_static.dsp (1.9),
+	fbclient_static.dsp (1.20), gpre_boot.dsp (1.25), gpre_embed.dsp
+	(1.2), gpre_static.dsp (1.9):
+	
+	Disable RTTI in the boot build, too.
+
+2006-05-28 02:54  asfernandes
+
+	* firebird2/builds/win32/run_all.bat (1.7):
+	
+	Fix run_all.bat
+
+2006-05-28 02:41  asfernandes
+
+	* firebird2/doc/: README.build.msvc.html (1.12),
+	README.build.mingw.html (1.17), README.build.msvc.html (1.13):
+	
+	Misc
+
+2006-05-27 23:19  hvlad
+
+	* firebird2/src/jrd/dyn_def.epp (1.115):
+	
+	Correct GTT's error reporting code as Claudio suggested
+
+2006-05-27 20:07  asfernandes
+
+	* firebird2/doc/README.build.msvc.html (1.11):
+	
+	Update MSVC build instructions
+
+2006-05-27 20:06  asfernandes
+
+	* firebird2/builds/win32/: create_msgs.bat (1.2), make_all.bat
+	(1.39), make_boot.bat (1.28), make_boot2.bat (1.5),
+	make_examples.bat (1.17), make_icu.bat (1.8), prepare.bat (1.45),
+	preprocess.bat (1.34), preprocess2.bat (1.3), setenvvar2.bat (1.4):
+	
+	Remove the old build system. Make the new one as: make_icu.bat,
+	make_boot.bat, make_all.bat.
+
+2006-05-27 03:33  asfernandes
+
+	* firebird2/builds/win32/msvc7/: btyacc.vcproj (1.3),
+	build_msg.vcproj (1.6), codes.vcproj (1.6), common_static.vcproj
+	(1.10), gbak_embed.vcproj (1.2), gpre_embed.vcproj (1.2),
+	isql_embed.vcproj (1.2):
+	
+	Disable RTTI in MSVC7 boot-build projects
+
+2006-05-26 17:38  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.libfbclient (1.30):
+	
+	statically link C++ runtime in client
+
+2006-05-26 08:11  dimitr
+
+	* firebird2/src/dsql/hsh.cpp (1.34):
+	
+	MT related cleanup.
+
+2006-05-26 07:19  robocop
+
+	* firebird2/src/jrd/: dfw.epp (1.185), idx.cpp (1.108), jrd.h
+	(1.161), met.epp (1.189), Optimizer.cpp (1.59), par.cpp (1.136),
+	vio.cpp (1.161):
+	
+	Style and typo correction.
+
+2006-05-26 05:52  robocop
+
+	* firebird2/builds/win32/msvc6/: Firebird2Boot2.dsw (1.2),
+	gbak_embed.dsp (1.1), gpre_embed.dsp (1.1), isql_embed.dsp (1.1),
+	utilities_embed.dsp (1.1):
+	
+	Finally got the new Windows build system working also in VC6.
+	Thanks to Adriano.
+
+2006-05-26 03:01  asfernandes
+
+	* firebird2/src/dsql/parse.cpp (1.179):
+	
+	Regenerate parse.cpp
+
+2006-05-26 02:59  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.207):
+	
+	GLOBAL is reserved word in SQL2003. Move from non_reserved_word to
+	keyword_or_column.
+
+2006-05-25 12:20  robocop
+
+	* firebird2/src/jrd/: all.cpp (1.47), all.h (1.24), jrd.cpp
+	(1.253):
+	
+	Cleanup done and tree is buildable again.  :-)
+
+2006-05-25 10:40  robocop
+
+	* firebird2/src/: dsql/node.h (1.73), jrd/btr.cpp (1.174),
+	jrd/cch.cpp (1.135), jrd/cmp.cpp (1.221), jrd/dpm.epp (1.70),
+	jrd/jrd.cpp (1.252), jrd/met.epp (1.188), jrd/tra.cpp (1.121):
+	
+	Misc.
+
+2006-05-25 10:01  dimitr
+
+	* firebird2/src/dsql/: dsql.tab.h (1.69), parse.cpp (1.178):
+	
+	Updated parse.cpp
+
+2006-05-25 09:05  robocop
+
+	* firebird2/src/dsql/parse.y (1.206):
+	
+	Introduce the new v2.1 keywords as non-reserved words. Someone with
+	the new build system (btyacc) please regenerate the files.
+
+2006-05-25 05:15  asfernandes
+
+	* firebird2/src/jrd/: blb.cpp (1.125), dyn_def.epp (1.114), jrd.h
+	(1.160), vio.cpp (1.160), os/posix/unix.cpp (1.49):
+	
+	Misc
+
+2006-05-24 22:43  hvlad
+
+	* firebird2/src/jrd/: constants.h (1.25), dyn_def.epp (1.113),
+	met.epp (1.187):
+	
+	Refactor common code and constants
+
+2006-05-24 16:08  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.170):
+	
+	common code to set NODELAY option
+
+2006-05-24 15:18  dimitr
+
+	* firebird2/src/: dsql/pass1.cpp (1.267), jrd/cmp.cpp (1.220):
+	
+	Restored my previous solution. The final decision is that NOT IN
+	cannot be index-optimized reliably.
+
+2006-05-24 13:38  hvlad
+
+	* firebird2/src/jrd/: blb.cpp (1.124), pag.cpp (1.107), pag.h
+	(1.8), pag_proto.h (1.16):
+	
+	Changes noted by Claudio
+
+2006-05-24 11:28  robocop
+
+	* firebird2/src/jrd/: jrd.h (1.159), vio.cpp (1.159):
+	
+	Misc.
+
+2006-05-24 11:25  robocop
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.48):
+	
+	Use the same code as in the Windows version.
+
+2006-05-24 10:29  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.158):
+	
+	Removed unneeded if. Noted by Claudio
+
+2006-05-24 08:46  hvlad
+
+	* firebird2/src/jrd/ibase.h (1.118):
+	
+	Correct dyn codes. Thanks to Claudio
+
+2006-05-24 05:03  asfernandes
+
+	* firebird2/src/jrd/: pag.h (1.7), rse.cpp (1.109), sdw.cpp (1.64),
+	tpc.cpp (1.25), vio.cpp (1.157):
+	
+	Misc
+
 2006-05-23 22:01  hvlad
 
 	* firebird2/src/jrd/: drq.h (1.14), dyn_def.epp (1.112):
