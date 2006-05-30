@@ -74,6 +74,7 @@ public:
 
 	private:
 		void* collator;
+		void* partialCollator;
 	};
 };
 
