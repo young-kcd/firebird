@@ -395,6 +395,10 @@ SOURCE=..\..\..\src\jrd\pwd.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\Relation.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\rlck.cpp
 # End Source File
 # Begin Source File
@@ -1106,6 +1110,10 @@ SOURCE=..\..\..\src\jrd\que.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\rec_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\Relation.h
 # End Source File
 # Begin Source File
 
