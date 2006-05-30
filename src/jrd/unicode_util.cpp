@@ -499,13 +499,23 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(const char* locale)
 {
 	UErrorCode status = U_ZERO_ERROR;
-	UCollator* collator = ucol_open(locale, &status);
 
+	UCollator* collator = ucol_open(locale, &status);
 	if (!collator)
 		return NULL;
 
+	UCollator* partialCollator = ucol_open(locale, &status);
+	if (!partialCollator)
+	{
+		ucol_close(collator);
+		return NULL;
+	}
+
+	ucol_setAttribute(partialCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
+
 	Utf16Collation* obj = new Utf16Collation();
 	obj->collator = collator;
+	obj->partialCollator = partialCollator;
 
 	return obj;
 }
@@ -514,6 +524,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(const char* loc
 UnicodeUtil::Utf16Collation::~Utf16Collation()
 {
 	ucol_close((UCollator*)collator);
+	ucol_close((UCollator*)partialCollator);
 }
 
 
@@ -536,7 +547,8 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 		return INTL_BAD_KEY_LENGTH;
 	}
 
-	return ucol_getSortKey(static_cast<const UCollator*>(collator),
+	return ucol_getSortKey(static_cast<const UCollator*>(
+		(key_type == INTL_KEY_PARTIAL ? partialCollator : collator)),
 		reinterpret_cast<const UChar*>(src), srcLen / sizeof(*src), dst, dstLen);
 }
 
