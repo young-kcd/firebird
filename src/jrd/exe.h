@@ -33,6 +33,7 @@
 
 #include "../jrd/jrd_blks.h"
 #include "../jrd/blb.h"
+#include "../jrd/Relation.h"
 #include "../common/classes/array.h"
 #include "../common/classes/MetaName.h"
 
