@@ -51,7 +51,9 @@ public:
 								texttype* tt);
 
 private:
-	static bool registerCharSetCollation(const Firebird::string& name, const Firebird::PathName& filename);
+	static bool registerCharSetCollation(const Firebird::string& name,
+										 const Firebird::PathName& filename,
+										 const Firebird::string& externalName);
 };
 
 }	// namespace Jrd
