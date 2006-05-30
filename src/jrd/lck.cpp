@@ -149,16 +149,15 @@ inline SLONG* LCK_OWNER_HANDLE_ATT(Attachment* attachment) {
 
 static const UCHAR compatibility[] = {
 
-/*				Shared	Prot	Shared	Prot
-		none	null	 Read	Read	Write	Write	Exclusive */
-
-/* none */ 1, 1, 1, 1, 1, 1, 1,
-/* null */ 1, 1, 1, 1, 1, 1, 1,
-/* SR */ 1, 1, 1, 1, 1, 1, 0,
-/* PR */ 1, 1, 1, 1, 0, 0, 0,
-/* SW */ 1, 1, 1, 0, 1, 0, 0,
-/* PW */ 1, 1, 1, 0, 0, 0, 0,
-/* EX */ 1, 1, 0, 0, 0, 0, 0
+/*							Shared	Prot	Shared	Prot
+			none	null	Read	Read	Write	Write	Exclusive */
+/* none */	1,		1,		1,		1,		1,		1,		1,
+/* null */	1,		1,		1,		1,		1,		1,		1,
+/* SR	*/	1,		1,		1,		1,		1,		1,		0,
+/* PR	*/	1,		1,		1,		1,		0,		0,		0,
+/* SW	*/	1,		1,		1,		0,		1,		0,		0,
+/* PW	*/	1,		1,		1,		0,		0,		0,		0,
+/* EX	*/	1,		1,		0,		0,		0,		0,		0
 };
 
 #define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]

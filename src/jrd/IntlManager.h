@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD International support
  *	MODULE:		IntlManager.h
- *	DESCRIPTION:	
+ *	DESCRIPTION:	INTL Manager
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
