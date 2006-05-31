@@ -173,8 +173,9 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
                              sizeof(Y.RDB$FIELD_NAME));
         }
 	END_FOR 
-    ON_ERROR 
-		isc_release_request(isc_status, &handle);
+    ON_ERROR
+		ISC_STATUS_ARRAY temp_status;
+		isc_release_request(temp_status, &handle);
 		return UTLD_copy_status(isc_status, status);
 	END_ERROR;
 
@@ -200,8 +201,9 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 								sizeof(Y.RDB$FIELD_NAME));
 			}
 		END_FOR 
-		ON_ERROR 
-			isc_release_request(isc_status, &handle);
+		ON_ERROR
+			ISC_STATUS_ARRAY temp_status;
+			isc_release_request(temp_status, &handle);
 			return UTLD_copy_status(isc_status, status);
 		END_ERROR;
 
