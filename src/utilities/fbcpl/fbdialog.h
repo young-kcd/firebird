@@ -172,6 +172,7 @@ public:
 
 //Get Stuff
 
+	CString GetServiceName(const char* name) const;
 	HWND GetSuperServerHandle() const;
 #ifdef MANAGE_CLASSIC
 	HWND GetClassicServerHandle() const;
