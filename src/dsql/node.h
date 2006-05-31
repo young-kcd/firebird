@@ -609,24 +609,29 @@ enum node_args {
 	e_del_sort,
 	e_del_rows,
 	e_del_cursor,
+	e_del_return,
 	e_del_count,
 
 	e_era_relation = 0,		// nod_erase
 	e_era_rse,
+	e_era_return,
 	e_era_count,
 
 	e_erc_context = 0,		// nod_erase_current
+	e_erc_return,
 	e_erc_count,
 
 	e_mod_source = 0,		// nod_modify
 	e_mod_update,
 	e_mod_statement,
 	e_mod_rse,
+	e_mod_return,
 	e_mod_count,
 
 	e_mdc_context = 0,		// nod_modify_current
 	e_mdc_update,
 	e_mdc_statement,
+	e_mdc_return,
 	e_mdc_count,
 
 	e_upd_relation = 0,		// nod_update
@@ -636,6 +641,7 @@ enum node_args {
 	e_upd_sort,
 	e_upd_rows,
 	e_upd_cursor,
+	e_upd_return,
 	e_upd_count,
 
 	e_map_context = 0,		// nod_map

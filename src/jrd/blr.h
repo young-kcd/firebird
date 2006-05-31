@@ -319,6 +319,7 @@
 #define blr_current_time2	(unsigned char)169
 #define blr_agg_list		(unsigned char)170
 #define blr_agg_list_distinct	(unsigned char)171
+#define blr_modify2			(unsigned char)172
 
 /* These codes are actions for user-defined savepoints */
 

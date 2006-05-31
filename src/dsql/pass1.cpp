@@ -3725,6 +3725,8 @@ static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input, bool proc_fla
 		dsql_nod* anode = MAKE_node(nod_erase_current, e_erc_count);
 		anode->nod_arg[e_erc_context] =
 			(dsql_nod*) pass1_cursor_context(request, cursor, relation);
+		anode->nod_arg[e_erc_return] =
+			PASS1_node(request, input->nod_arg[e_del_return], proc_flag);
 		return anode;
 	}
 
@@ -3764,6 +3766,9 @@ static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input, bool proc_fla
 
 	node->nod_arg[e_era_rse] = rse;
 	node->nod_arg[e_era_relation] = rse->nod_arg[e_rse_streams]->nod_arg[0];
+
+	node->nod_arg[e_era_return] =
+		PASS1_node(request, input->nod_arg[e_del_return], proc_flag);
 
 	request->req_context->pop();
 	return node;
@@ -6179,7 +6184,6 @@ static dsql_nod* pass1_returning(dsql_req* request,
 
 	if (!proc_flag)
 	{
-		fb_assert(request->req_type == REQ_INSERT);
 		request->req_type = REQ_EXEC_PROCEDURE;
 	}
 
@@ -7389,6 +7393,8 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 			assign->nod_arg[1] = new_values[i];
 			list->nod_arg[i] = assign;
 		}
+		anode->nod_arg[e_mdc_return] =
+			PASS1_node(request, input->nod_arg[e_upd_return], proc_flag);
 		// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
 		field_appears_once(anode->nod_arg[e_mdc_statement],
 						   input->nod_arg[e_upd_statement],
@@ -7476,6 +7482,9 @@ static dsql_nod* pass1_update( dsql_req* request, dsql_nod* input, bool proc_fla
 		assign->nod_arg[1] = sub2;
 		list->nod_arg[j] = assign;
 	}
+
+	node->nod_arg[e_mod_return] =
+		PASS1_node(request, input->nod_arg[e_upd_return], proc_flag);
 
 	// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
 	field_appears_once(node->nod_arg[e_mod_statement],

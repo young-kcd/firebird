@@ -61,7 +61,7 @@ static void gen_constant(dsql_req*, dsc*, bool);
 static void gen_descriptor(dsql_req*, const dsc*, bool);
 static void gen_error_condition(dsql_req*, const dsql_nod*);
 static void gen_field(dsql_req*, const dsql_ctx*, const dsql_fld*, dsql_nod*);
-static void gen_for_select(dsql_req*, dsql_nod*);
+static void gen_for_select(dsql_req*, const dsql_nod*);
 static void gen_gen_id(dsql_req*, const dsql_nod*);
 static void gen_join_rse(dsql_req*, const dsql_nod*);
 static void gen_map(dsql_req*, dsql_map*);
@@ -73,6 +73,7 @@ static void gen_searched_case(dsql_req*, const dsql_nod*);
 static void gen_select(dsql_req*, dsql_nod*);
 static void gen_simple_case(dsql_req*, const dsql_nod*);
 static void gen_sort(dsql_req*, dsql_nod*);
+static void gen_statement(dsql_req*, const dsql_nod*);
 static void gen_table_lock(dsql_req*, const dsql_nod*, USHORT);
 static void gen_udf(dsql_req*, const dsql_nod*);
 static void gen_union(dsql_req*, const dsql_nod*);
@@ -920,7 +921,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
  	GEN_statement
   
     @brief	Generate blr for an arbitrary expression.
- 
+
 
     @param request
     @param node
@@ -931,9 +932,6 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 	dsql_nod* temp;
 	dsql_nod** ptr;
 	const dsql_nod* const* end;
-	dsql_ctx* context;
-	dsql_msg* message;
-	dsql_str* name;
 	dsql_str* string;
 	ULONG id_length;
 
@@ -958,67 +956,8 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		stuff(request, blr_end);
 		return;
 
-	case nod_erase:
-		if ((temp = node->nod_arg[e_era_rse]) != NULL) {
-			stuff(request, blr_for);
-			GEN_expr(request, temp);
-		}
-		temp = node->nod_arg[e_era_relation];
-		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
-		stuff(request, blr_erase);
-		stuff_context(request, context);
-		return;
-
-	case nod_erase_current:
-		stuff(request, blr_erase);
-		context = (dsql_ctx*) node->nod_arg[e_erc_context];
-		stuff_context(request, context);
-		return;
-
 	case nod_exec_block:
 		DDL_gen_block(request, node);
-		return;
-
-	case nod_exec_procedure:
-		if (request->req_type == REQ_EXEC_PROCEDURE) {
-			if ( (message = request->req_receive) ) {
-				stuff(request, blr_begin);
-				stuff(request, blr_send);
-				stuff(request, message->msg_number);
-			}
-		}
-		else {
-			message = NULL;
-		}
-		stuff(request, blr_exec_proc);
-		name = (dsql_str*) node->nod_arg[e_exe_procedure];
-		stuff_cstring(request, name->str_data);
-
-		if (temp = node->nod_arg[e_exe_inputs]) {
-			stuff_word(request, temp->nod_count);
-			for (ptr = temp->nod_arg, end = ptr + temp->nod_count;
-				 ptr < end; ptr++)
- 			{
- 				GEN_expr(request, *ptr);
- 			}
-		}
-		else {
-			stuff_word(request, 0);
-		}
-		if (temp = node->nod_arg[e_exe_outputs]) {
-			stuff_word(request, temp->nod_count);
-			for (ptr = temp->nod_arg, end = ptr + temp->nod_count;
-				 ptr < end; ptr++)
-			{
-				GEN_expr(request, *ptr);
-			}
-		}
-		else {
-			stuff_word(request, 0);
-		}
-		if (message) {
-			stuff(request, blr_end);
-		}
 		return;
 
 	case nod_for_select:
@@ -1053,29 +992,13 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		stuff(request, blr_end);
 		return;
 
+	case nod_erase:
+	case nod_erase_current:
 	case nod_modify:
-		if ((temp = node->nod_arg[e_mod_rse]) != NULL) {
-			stuff(request, blr_for);
-			GEN_expr(request, temp);
-		}
-		stuff(request, blr_modify);
-		temp = node->nod_arg[e_mod_source];
-		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
-		stuff_context(request, context);
-		temp = node->nod_arg[e_mod_update];
-		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
-		stuff_context(request, context);
-		GEN_statement(request, node->nod_arg[e_mod_statement]);
-		return;
-
 	case nod_modify_current:
-		stuff(request, blr_modify);
-		context = (dsql_ctx*) node->nod_arg[e_mdc_context];
-		stuff_context(request, context);
-		temp = node->nod_arg[e_mdc_update];
-		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
-		stuff_context(request, context);
-		GEN_statement(request, node->nod_arg[e_mdc_statement]);
+	case nod_store:
+	case nod_exec_procedure:
+		gen_statement(request, node);
 		return;
 
 	case nod_on_error:
@@ -1148,37 +1071,6 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
         stuff(request, blr_leave);
         stuff(request, (int) (IPTR) node->nod_arg[e_breakleave_label]->nod_arg[e_label_number]);
         return;
-
-	case nod_store:
-		if (request->req_type == REQ_EXEC_PROCEDURE) {
-			if ( (message = request->req_receive) ) {
-				stuff(request, blr_begin);
-				stuff(request, blr_send);
-				stuff(request, message->msg_number);
-			}
-		}
-		else {
-			message = NULL;
-		}
-		if ( (temp = node->nod_arg[e_sto_rse]) ) {
-			stuff(request, blr_for);
-			GEN_expr(request, temp);
-		}
-		if (node->nod_arg[e_sto_return]) {
-			stuff(request, blr_store2);
-			GEN_expr(request, node->nod_arg[e_sto_relation]);
-			GEN_statement(request, node->nod_arg[e_sto_statement]);
-			GEN_statement(request, node->nod_arg[e_sto_return]);
-		}
-		else {
-			stuff(request, blr_store);
-			GEN_expr(request, node->nod_arg[e_sto_relation]);
-			GEN_statement(request, node->nod_arg[e_sto_statement]);
-		}
-		if (message) {
-			stuff(request, blr_end);
-		}
-		return;
 
 	case nod_abort:
 		stuff(request, blr_leave);
@@ -1829,7 +1721,7 @@ static void gen_field( dsql_req* request, const dsql_ctx* context,
     @param for_select
 
  **/
-static void gen_for_select( dsql_req* request, dsql_nod* for_select)
+static void gen_for_select( dsql_req* request, const dsql_nod* for_select)
 {
 	dsql_nod* rse = for_select->nod_arg[e_flp_select];
 
@@ -2622,6 +2514,164 @@ static void gen_sort( dsql_req* request, dsql_nod* list)
 		else
 			stuff(request, blr_ascending);
 		GEN_expr(request, (*ptr)->nod_arg[e_order_field]);
+	}
+}
+
+
+/**
+  
+ 	gen_statement
+  
+    @brief	Generate BLR for DML statements.
+ 
+
+    @param request
+    @param node
+
+ **/
+static void gen_statement(dsql_req* request, const dsql_nod* node)
+{
+	const dsql_msg* message = NULL;
+
+	if (request->req_type == REQ_EXEC_PROCEDURE) {
+		if ( (message = request->req_receive) ) {
+			stuff(request, blr_begin);
+			stuff(request, blr_send);
+			stuff(request, message->msg_number);
+		}
+	}
+
+	dsql_nod* rse = NULL;
+
+	switch (node->nod_type) {
+	case nod_store:
+		rse = node->nod_arg[e_sto_rse];
+		break;
+	case nod_modify:
+		rse = node->nod_arg[e_mod_rse];
+		break;
+	case nod_erase:
+		rse = node->nod_arg[e_era_rse];
+		break;
+	default:
+		break;
+	}
+
+	if (rse) {
+		stuff(request, blr_for);
+		GEN_expr(request, rse);
+	}
+
+	dsql_nod* temp;
+	dsql_ctx* context;
+	dsql_str* name;
+
+	switch (node->nod_type) {
+	case nod_store:
+		stuff(request, message ? blr_store2 : blr_store);
+		GEN_expr(request, node->nod_arg[e_sto_relation]);
+		GEN_statement(request, node->nod_arg[e_sto_statement]);
+		if (message) {
+			GEN_statement(request, node->nod_arg[e_sto_return]);
+		}
+		break;
+
+	case nod_modify:
+		stuff(request, message ? blr_modify2 : blr_modify);
+		temp = node->nod_arg[e_mod_source];
+		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
+		stuff_context(request, context);
+		temp = node->nod_arg[e_mod_update];
+		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
+		stuff_context(request, context);
+		GEN_statement(request, node->nod_arg[e_mod_statement]);
+		if (message) {
+			GEN_statement(request, node->nod_arg[e_mod_return]);
+		}
+		break;
+
+	case nod_modify_current:
+		stuff(request, message ? blr_modify2 : blr_modify);
+		context = (dsql_ctx*) node->nod_arg[e_mdc_context];
+		stuff_context(request, context);
+		temp = node->nod_arg[e_mdc_update];
+		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
+		stuff_context(request, context);
+		GEN_statement(request, node->nod_arg[e_mdc_statement]);
+		if (message) {
+			GEN_statement(request, node->nod_arg[e_mdc_return]);
+		}
+		break;
+
+	case nod_erase:
+		temp = node->nod_arg[e_era_relation];
+		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
+		if (message) {
+			stuff(request, blr_begin);
+			GEN_statement(request, node->nod_arg[e_era_return]);
+			stuff(request, blr_erase);
+			stuff_context(request, context);
+			stuff(request, blr_end);
+		}
+		else {
+			stuff(request, blr_erase);
+			stuff_context(request, context);
+		}
+		break;
+
+	case nod_erase_current:
+		context = (dsql_ctx*) node->nod_arg[e_erc_context];
+		if (message) {
+			stuff(request, blr_begin);
+			GEN_statement(request, node->nod_arg[e_erc_return]);
+			stuff(request, blr_erase);
+			stuff_context(request, context);
+			stuff(request, blr_end);
+		}
+		else {
+			stuff(request, blr_erase);
+			stuff_context(request, context);
+		}
+		break;
+
+	case nod_exec_procedure:
+		stuff(request, blr_exec_proc);
+		name = (dsql_str*) node->nod_arg[e_exe_procedure];
+		stuff_cstring(request, name->str_data);
+		// Input parameters
+		if ( (temp = node->nod_arg[e_exe_inputs]) ) {
+			stuff_word(request, temp->nod_count);
+			dsql_nod** ptr = temp->nod_arg;
+			const dsql_nod* const* end = ptr + temp->nod_count;
+			while (ptr < end)
+			{
+				GEN_expr(request, *ptr++);
+			}
+		}
+		else {
+			stuff_word(request, 0);
+		}
+		// Output parameters
+		if ( ( temp = node->nod_arg[e_exe_outputs]) ) {
+			stuff_word(request, temp->nod_count);
+			dsql_nod** ptr = temp->nod_arg;
+			const dsql_nod* const* end = ptr + temp->nod_count;
+			while (ptr < end)
+			{
+				GEN_expr(request, *ptr++);
+			}
+		}
+		else {
+			stuff_word(request, 0);
+		}
+		break;
+
+	default:
+		fb_assert(false);
+	}
+
+	if (message) {
+		stuff(request, blr_end);
 	}
 }
 
