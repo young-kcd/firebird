@@ -868,7 +868,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 				{
 #ifdef GARBAGE_THREAD
 					if (!gcPolicyCooperative && (attachment->att_flags & ATT_notify_gc) &&
-						!(rpb->rpb_relation->rel_flags & REL_IS_TEMP)) 
+						!rpb->rpb_relation->isTemporary()) 
 					{
 						notify_garbage_collector(tdbb, rpb);
 						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
@@ -914,7 +914,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 
 #ifdef GARBAGE_THREAD
 			if (!gcPolicyCooperative && (attachment->att_flags & ATT_notify_gc) &&
-				!(rpb->rpb_relation->rel_flags & REL_IS_TEMP)) 
+				!rpb->rpb_relation->isTemporary()) 
 			{
 				notify_garbage_collector(tdbb, rpb);
 				return true;
@@ -1454,7 +1454,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 #ifdef GARBAGE_THREAD
 	// VIO_erase
 	if ((tdbb->tdbb_database->dbb_flags & DBB_gc_background) &&
-		!(rpb->rpb_relation->rel_flags & REL_IS_TEMP))
+		!rpb->rpb_relation->isTemporary())
 	{
 		notify_garbage_collector(tdbb, rpb, transaction->tra_number);
 	}
@@ -2324,7 +2324,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 #ifdef GARBAGE_THREAD
 	// VIO_modify
 	if ((tdbb->tdbb_database->dbb_flags & DBB_gc_background) &&
-		!(org_rpb->rpb_relation->rel_flags & REL_IS_TEMP))
+		!org_rpb->rpb_relation->isTemporary())
 	{
 		notify_garbage_collector(tdbb, org_rpb, transaction->tra_number);
 	}
@@ -4092,7 +4092,7 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 	Database* dbb = tdbb->tdbb_database;
 	jrd_rel* relation = rpb->rpb_relation;
 
-	if (relation->rel_flags & REL_IS_TEMP)
+	if (relation->isTemporary())
 		return;
 
 	if (tranid == -1)

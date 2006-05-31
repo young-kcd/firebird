@@ -144,6 +144,7 @@ struct frgn {
 	vec<int>* frgn_indexes;
 };
 
+
 // Relation block; one is created for each relation referenced
 // in the database, though it is not really filled out until
 // the relation is scanned 
@@ -188,6 +189,9 @@ public:
 	trig_vec*	rel_post_store;		// Post-operation store trigger 
 	prim		rel_primary_dpnds;	// foreign dependencies on this relation's primary key 
 	frgn		rel_foreign_refs;	// foreign references to other relations' primary keys 
+
+	inline bool isTemporary() const;
+	inline bool isVirtual() const;
 
 	// global temporary relations attributes
 	inline RelationPages* getPages(thread_db* tdbb, SLONG tran = -1, bool allocPages = true);
@@ -264,18 +268,26 @@ const USHORT REL_sys_trigs_being_loaded	= 0x0800;	// System triggers being loade
 const USHORT REL_deleting				= 0x1000;	// relation delete in progress 
 const USHORT REL_temp_tran				= 0x2000;	// relation is a GTT delete rows 
 const USHORT REL_temp_conn				= 0x4000;	// relation is a GTT preserve rows 
+const USHORT REL_virtual				= 0x8000;	// relation is virtual
 
-const USHORT REL_IS_TEMP				= REL_temp_tran | REL_temp_conn;
 
+inline bool jrd_rel::isTemporary() const
+{
+	return (rel_flags & (REL_temp_tran | REL_temp_conn));
+}
+
+inline bool jrd_rel::isVirtual() const
+{
+	return (rel_flags & REL_virtual);
+}
 
 inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)
 {
-	if (!(rel_flags & REL_IS_TEMP)) 
+	if (!isTemporary()) 
 		return &rel_pages_base;
 	else
 		return getPagesInternal(tdbb, tran, allocPages);
 }
-
 
 // Field block, one for each field in a scanned relation 
 
