@@ -34,10 +34,7 @@
 #include "../jrd/cvt_proto.h"
 #include "../jrd/cvt2_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/gds_proto.h"
 #include "../jrd/mov_proto.h"
-#include "gen/iberror.h"
-#include "../common/classes/timestamp.h"
 
 
 int MOV_compare(const dsc* arg1, const dsc* arg2)
@@ -565,26 +562,4 @@ void MOV_move(const dsc* from, dsc* to)
  **************************************/
 
 	CVT_move(from, to, ERR_post);
-}
-
-
-void MOV_time_stamp(GDS_TIMESTAMP* datetime)
-{
-/**************************************
- *
- *	M O V _ t i m e _ s t a m p
- *
- **************************************
- *
- * Functional description
- *	Get the current timestamp in gds format.
- *
- **************************************/
-
-	*datetime = Firebird::TimeStamp().value();
-	// CVC: This function is used only by PAG_add_file (for raw devices support)
-	// and PAG_format_header. In late FB v2, timestamp started returning
-	// milliseconds, so if some unexpected incompatbility arises, uncomment
-	// the following line that will get rid of the milliseconds.
-	//Firebird::TimeStamp::round_time(datetime->timestamp_time, 0);
 }

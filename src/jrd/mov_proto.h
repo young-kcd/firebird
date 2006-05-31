@@ -52,7 +52,5 @@ GDS_TIMESTAMP	MOV_get_timestamp(const dsc*);
 int		MOV_make_string(const dsc*, USHORT, const char**, vary*, USHORT);
 int		MOV_make_string2(const dsc*, USHORT, UCHAR**, Jrd::MoveBuffer&);
 void	MOV_move(const dsc*, dsc*);
-void	MOV_time_stamp(GDS_TIMESTAMP*);
-
 
 #endif // JRD_MOV_PROTO_H
