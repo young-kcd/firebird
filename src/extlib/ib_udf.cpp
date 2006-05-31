@@ -136,7 +136,7 @@ double EXPORT IB_UDF_cot( double *a)
 double EXPORT IB_UDF_div( long *a, long *b)
 {
 	if (*b != 0) {
-		div_t div_result = div(*a, *b);
+		div_t div_result = div((int) *a, (int) *b);
 		return (div_result.quot);
 	}
 	else
@@ -248,7 +248,7 @@ char *EXPORT IB_UDF_ltrim( const char *s)
 double EXPORT IB_UDF_mod( long *a, long *b)
 {
 	if (*b != 0) {
-		div_t div_result = div(*a, *b);
+		div_t div_result = div((int) *a, (int) *b);
 		return (div_result.rem);
 	}
 	else
