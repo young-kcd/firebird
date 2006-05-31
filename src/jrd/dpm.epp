@@ -51,6 +51,7 @@
 #include "../jrd/cch.h"
 #include "../jrd/pag.h"
 #include "../jrd/rse.h"
+#include "../jrd/val.h"
 #ifdef VIO_DEBUG
 #include "../jrd/vio_debug.h"
 #endif
