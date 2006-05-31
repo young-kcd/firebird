@@ -295,13 +295,11 @@ void IDX_create_index(
 	void* callback_arg =
 		(idx->idx_flags & idx_unique) ? &ifl_data : NULL;
 
-	sort_context* sort_handle = SORT_init(tdbb->tdbb_status_vector,
-							key_length + sizeof(index_sort_record),
-							2, 1, key_desc, callback, callback_arg,
-							tdbb->tdbb_attachment, 0);
+	sort_context* sort_handle =
+		SORT_init(tdbb, key_length + sizeof(index_sort_record),
+				  2, 1, key_desc, callback, callback_arg, 0);
 
-	if (!sort_handle)
-		ERR_punt();
+	try {
 
 	jrd_rel* partner_relation = 0;
 	USHORT partner_index_id = 0;
@@ -335,9 +333,8 @@ void IDX_create_index(
 
 /* Loop thru the relation computing index keys.  If there are old versions,
    find them, too. */
-	bool cancel = false;
 	temporary_key key;
-	while (!cancel && DPM_next(tdbb, &primary, LCK_read, false, false)) {
+	while (DPM_next(tdbb, &primary, LCK_read, false, false)) {
 		if (transaction && !VIO_garbage_collect(tdbb, &primary, transaction))
 			continue;
 		if (primary.rpb_flags & rpb_deleted)
@@ -475,7 +472,7 @@ void IDX_create_index(
 
 #ifdef SUPERSERVER
 		if (--tdbb->tdbb_quantum < 0)
-			cancel = JRD_reschedule(tdbb, 0, false);
+			JRD_reschedule(tdbb, 0, true);
 #endif
 	}
 
@@ -483,15 +480,18 @@ void IDX_create_index(
 	if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 		--relation->rel_scan_count;
 
-	if (cancel || !SORT_sort(tdbb->tdbb_status_vector, sort_handle)) {
-		SORT_fini(sort_handle, tdbb->tdbb_attachment);
-		ERR_punt();
-	}
+	SORT_sort(tdbb->tdbb_status_vector, sort_handle);
 
 	if (ifl_data.ifl_duplicates > 0) {
-		SORT_fini(sort_handle, tdbb->tdbb_attachment);
 		ERR_post(isc_no_dup, isc_arg_string,
 				 ERR_cstring(index_name), 0);
+	}
+
+	}
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		SORT_fini(sort_handle, tdbb->tdbb_attachment);
+		ERR_punt();
 	}
 
 	BTR_create(tdbb, relation, idx, key_length, sort_handle, selectivity);

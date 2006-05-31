@@ -76,7 +76,6 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gdsassert.h"
-//#include "../jrd/license.h"
 #include "../jrd/lck.h"
 #include "../jrd/sdw.h"
 #include "../jrd/cch.h"
@@ -86,7 +85,6 @@
 #include "../jrd/all.h"
 #endif
 #include "../jrd/cch_proto.h"
-#include "../jrd/dls_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
@@ -98,6 +96,7 @@
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/isc_f_proto.h"
+#include "../jrd/TempSpace.h"
 
 using namespace Jrd;
 using namespace Ods;
@@ -299,6 +298,7 @@ const SSHORT CLASS		= CLASS_DARWIN_PPC;
 const SSHORT CLASS		= CLASS_LINUX_AMD64;
 #endif
 
+static const char* const SCRATCH = "fb_table_";
 
 // CVC: Since nobody checks the result from this function (strange!), I changed
 // bool to void as the return type but left the result returned as comment.
@@ -493,7 +493,10 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 #ifdef SUPPORT_RAW_DEVICES
 /* The following lines (taken from PAG_format_header) are needed to identify
    this file in raw_devices_validate_database as a valid database attachment. */
-	MOV_time_stamp(reinterpret_cast<ISC_TIMESTAMP*>(header->hdr_creation_date));
+	*(ISC_TIMESTAMP*)header->hdr_creation_date = Firebird::TimeStamp().value();
+	// should we include milliseconds or not?
+	//Firebird::TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
+
 	header->hdr_ods_version        = ODS_VERSION | ODS_FIREBIRD_FLAG;
 	header->hdr_implementation     = CLASS;
 	header->hdr_ods_minor          = ODS_CURRENT;
@@ -632,38 +635,8 @@ void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 	PageSpace* pageSpaceTemp = dbb->dbb_page_manager.addPageSpace(pageSpaceID);
 	if (!pageSpaceTemp->file)
 	{
-		mutexed_dir_list* dirs = DLS_get_access();
-
-		fb_assert(dirs);
-		fb_assert(dirs->mdls_dls);
-		dir_list* dir = dirs->mdls_dls;
-		ULONG max_size = 0;
-		for (dir_list* d = dir; d; d = d->dls_next)
-		{
-			const ULONG dir_size = d->dls_size - d->dls_inuse;
-			if (max_size < dir_size)
-			{
-				max_size = dir_size;
-				dir = d;
-			}
-		}
-		
-		long hash = 0;
-		TEXT* p = dbb->dbb_filename.begin(), *const e = dbb->dbb_filename.end();
-		for (int i = 0; p < e; p++)
-		{
-			hash += *p << i;
-			i = (i + 8) % 32;
-		}
-
-		Firebird::PathName file_name(dir->dls_directory);
-		if (file_name.at(file_name.length() - 1) != PathUtils::dir_sep) {
-			file_name += PathUtils::dir_sep;
-		}
-
-		file_name.printf("%sfb_tmp_%x_%x", file_name.c_str(), (unsigned int)pageSpaceID, hash);
-
-		pageSpaceTemp->file = PIO_create(dbb, file_name, false, true);
+		Firebird::PathName file_name = TempFile::create(SCRATCH);
+		pageSpaceTemp->file = PIO_create(dbb, file_name, true, true);
 		PAG_format_pip(tdbb, *pageSpaceTemp);
 	}
 }
@@ -972,7 +945,9 @@ void PAG_format_header(void)
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
 	header->hdr_header.pag_scn = 0;
-	MOV_time_stamp(reinterpret_cast<ISC_TIMESTAMP*>(header->hdr_creation_date));
+	*(ISC_TIMESTAMP*)header->hdr_creation_date = Firebird::TimeStamp().value();
+	// should we include milliseconds or not?
+	//Firebird::TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
 	header->hdr_header.pag_type = pag_header;
 	header->hdr_page_size = dbb->dbb_page_size;
 	header->hdr_ods_version = ODS_VERSION | ODS_FIREBIRD_FLAG;
@@ -1523,11 +1498,7 @@ void PAG_init2(USHORT shadow_number)
 				isc_arg_end);
 		}
 
-		file->fil_next = PIO_open(dbb,
-								  file_name,
-								  false,
-								  0,
-								  file_name);
+		file->fil_next = PIO_open(dbb, file_name, false, file_name);
 		file->fil_max_page = last_page;
 		file = file->fil_next;
 		if (dbb->dbb_flags & DBB_force_write)

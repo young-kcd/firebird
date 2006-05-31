@@ -50,7 +50,6 @@
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/tra.h"
-#include "../jrd/sort_mem.h"
 #include "gen/iberror.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/dpm_proto.h"
@@ -560,12 +559,7 @@ static void close_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		merge_file* mfb = &tail->irsb_mrg_file;
 		sort_work_file* sfb = mfb->mfb_sfb;
 		if (sfb) {
-			if (sfb->sfb_file_name) {
-				close(sfb->sfb_file);
-				unlink(sfb->sfb_file_name);
-				delete[] sfb->sfb_file_name;
-			}
-			delete sfb->sfb_mem;
+			delete sfb->sfb_space;
 			delete sfb;
 			mfb->mfb_sfb = 0;
 		}
@@ -1949,11 +1943,6 @@ static bool get_record(thread_db*	tdbb,
 				{
 					select_node = NULL;
 				}
-
-				EVL_expr(tdbb, column_node->nod_arg[0]);
-				if (request->req_flags & req_null) {
-					return false;
-				}
 			}
 			if (column_node && (request->req_flags & req_ansi_any))
 			{
@@ -2413,11 +2402,9 @@ static UCHAR *get_sort(thread_db* tdbb, RecordSource* rsb
 
 	ULONG* data = 0;
 #ifdef SCROLLABLE_CURSORS
-	SORT_get(tdbb->tdbb_status_vector, impure->irsb_sort_handle,
-			 &data, mode);
+	SORT_get(tdbb->tdbb_status_vector, impure->irsb_sort_handle, &data, mode);
 #else
-	SORT_get(tdbb->tdbb_status_vector, impure->irsb_sort_handle,
-			 &data);
+	SORT_get(tdbb->tdbb_status_vector, impure->irsb_sort_handle, &data);
 #endif
 
 	return reinterpret_cast<UCHAR*>(data);
@@ -2736,20 +2723,17 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 	// Initialize for sort. If this is really a project operation,
 	// establish a callback routine to reject duplicate records.
 
-	sort_context* handle = SORT_init(tdbb->tdbb_status_vector,
-						   map->smb_length,
-						   map->smb_keys,
-						   map->smb_keys,
-						   map->smb_key_desc,
-         				   ((map->smb_flags & SMB_project) ? reject : NULL), 0,
-						   tdbb->tdbb_attachment, max_records);
-
-	if (!(impure->irsb_sort_handle = handle))
-		ERR_punt();
+	impure->irsb_sort_handle = 
+		SORT_init(tdbb, map->smb_length, map->smb_keys,
+				  map->smb_keys, map->smb_key_desc,
+         		  ((map->smb_flags & SMB_project) ? reject : NULL),
+				  0, max_records);
 
 	// Mark sort_context with the impure area pointer
 
-	handle->scb_impure = impure;
+	impure->irsb_sort_handle->scb_impure = impure;
+
+	try {
 
 	// Pump the input stream dry while pushing records into sort. For
 	// each record, map all fields into the sort record. The reverse
@@ -2765,7 +2749,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 
 		UCHAR* data = 0;
 		SORT_put(tdbb->tdbb_status_vector, impure->irsb_sort_handle,
-				(ULONG **) &data);
+				 (ULONG **) &data);
 
 		// Zero out the sort key. This solve a multitude of problems.
 
@@ -2822,8 +2806,15 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 		}
 	}
 
-	if (!SORT_sort(tdbb->tdbb_status_vector, impure->irsb_sort_handle))
+	SORT_sort(tdbb->tdbb_status_vector, impure->irsb_sort_handle);
+
+	}
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		SORT_fini(impure->irsb_sort_handle, tdbb->tdbb_attachment);
+		impure->irsb_sort_handle = NULL;
 		ERR_punt();
+	}
 
 	// For the sake of prudence, set all record parameter blocks to contain
 	// the most recent format. This is will guarentee that all fields mapped
@@ -3184,12 +3175,12 @@ static ULONG read_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
  *
  **************************************/
 
-	fb_assert(mfb->mfb_sfb && mfb->mfb_sfb->sfb_file_name);
+	fb_assert(mfb->mfb_sfb);
 
-	mfb->mfb_sfb->sfb_mem->read(tdbb->tdbb_status_vector,
-								mfb->mfb_block_size * block,
-								reinterpret_cast<char*>(mfb->mfb_block_data),
-								mfb->mfb_block_size);
+	SORT_read_block(tdbb->tdbb_status_vector, mfb->mfb_sfb,
+					mfb->mfb_block_size * block,
+					(UCHAR*) mfb->mfb_block_data,
+					mfb->mfb_block_size);
 
 	return block;
 }
@@ -3389,26 +3380,14 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
  **************************************/
 	sort_work_file* sfb = mfb->mfb_sfb;
 	if (!sfb) {
-		sfb = mfb->mfb_sfb = FB_NEW(*getDefaultMemoryPool()) sort_work_file;
+		MemoryPool& pool = *getDefaultMemoryPool();
+		sfb = mfb->mfb_sfb = FB_NEW(pool) sort_work_file;
 		memset(sfb, 0, sizeof(sort_work_file));
-	}
-	if (!sfb->sfb_file_name) {
-		TEXT file_name[MAXPATHLEN];
-
-		// Cast is ok because stdio_flag is false
-		sfb->sfb_file = (int) (IPTR) gds__temp_file(FALSE, SCRATCH, file_name);
-		if (sfb->sfb_file == -1)
-			SORT_error(tdbb->tdbb_status_vector, sfb, "open", isc_io_error,
-					   errno);
-		sfb->sfb_file_name =
-			FB_NEW(*getDefaultMemoryPool()) char[strlen(file_name) + 1];
-		strcpy(sfb->sfb_file_name, file_name);
-
-		sfb->sfb_mem = FB_NEW (*getDefaultMemoryPool()) SortMem(sfb, mfb->mfb_block_size);
+		sfb->sfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
 	}
 
-	sfb->sfb_mem->write(tdbb->tdbb_status_vector,
-						 mfb->mfb_block_size * block,
-						 reinterpret_cast<char*>(mfb->mfb_block_data),
-						 mfb->mfb_block_size);
+	SORT_write_block(tdbb->tdbb_status_vector, sfb,
+					 mfb->mfb_block_size * block,
+					 (UCHAR*) mfb->mfb_block_data,
+					 mfb->mfb_block_size);
 }

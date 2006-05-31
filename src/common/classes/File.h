@@ -1,0 +1,42 @@
+/*
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
+ *
+ *  The Original Code was created by Dmitry Yemanov
+ *  for the Firebird Open Source RDBMS project.
+ *
+ *  Copyright (c) 2006 Dmitry Yemanov <dimitr@users.sf.net>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
+ */
+
+#ifndef FILE_H
+#define FILE_H
+
+typedef UINT64 offset_t;
+
+namespace Firebird {
+
+class File {
+public:
+	virtual size_t read(offset_t, void*, size_t) = 0;
+	virtual size_t write(offset_t, void*, size_t) = 0;
+
+	virtual void unlink() = 0;
+
+	virtual offset_t getSize() const = 0;
+};
+
+} // namespace
+
+#endif // FILE_H

@@ -34,14 +34,12 @@
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sort.h"
-#include "../jrd/sort_mem.h"
 #include "gen/iberror.h"
 #include "../jrd/intl.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/rse.h"
 #include "../jrd/val.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/dls_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/sch_proto.h"
@@ -123,9 +121,9 @@ static void diddle_key(UCHAR *, sort_context*, bool);
 static sort_record*	get_merge(merge_control*, sort_context*);
 #endif
 
-static UCHAR* sort_alloc(sort_context*, ULONG);
+static void error(ISC_STATUS*);
 static void error_memory(sort_context*);
-static ULONG find_file_space(sort_context*, ULONG, sort_work_file**);
+static ULONG find_file_space(sort_context*, ULONG);
 static void free_file_space(sort_context*, sort_work_file*, ULONG, ULONG);
 static void init(sort_context*);
 static bool local_fini(sort_context*, Attachment*);
@@ -138,12 +136,6 @@ static void sort(sort_context*);
 #ifdef DEBUG
 static void validate(sort_context*);
 #endif
-#endif
-
-#ifdef DEBUG_SORT_TRACE
-static void write_trace(UCHAR*, sort_work_file*, ULONG, BLOB_PTR*, ULONG);
-#include <stdio.h>
-FILE *trace_file = NULL;
 #endif
 
 #ifdef SMALL_FILE_NAMES
@@ -492,43 +484,6 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 #endif
 
 
-void SORT_error(ISC_STATUS* status_vector,
-				sort_work_file* sfb, TEXT* string, ISC_STATUS operation, int errcode)
-{
-/**************************************
- *
- *       S O R T _ e r r o r
- *
- **************************************
- *
- * Functional description
- *      Report fatal error.
- *
- **************************************/
-
-	fb_assert(status_vector != NULL);
-
-	*status_vector++ = isc_arg_gds;
-	*status_vector++ = isc_io_error;
-	*status_vector++ = isc_arg_string;
-// CVC: Warning, converting pointer to ISC_STATUS => SLONG in 32 bits.
-	*status_vector++ = (ISC_STATUS) string;
-	*status_vector++ = isc_arg_string;
-	*status_vector++ = (ISC_STATUS) (U_IPTR) ERR_cstring(sfb->sfb_file_name);
-	*status_vector++ = isc_arg_gds;
-	*status_vector++ = operation;
-	if (errcode) {
-		*status_vector++ = SYS_ERR;
-		*status_vector++ = errcode;
-	}
-	*status_vector++ = isc_arg_gds;
-	*status_vector++ = isc_sort_err;	// Msg355: sort error
-	*status_vector = isc_arg_end;
-
-	ERR_punt();
-}
-
-
 void SORT_fini(sort_context* scb, Attachment* att)
 {
 /**************************************
@@ -543,13 +498,15 @@ void SORT_fini(sort_context* scb, Attachment* att)
  **************************************/
 
 	if (scb && local_fini(scb, att))
-		gds__free(scb);
+		delete scb;
 }
 
 
 #ifdef SCROLLABLE_CURSORS
-void SORT_get(ISC_STATUS * status_vector,
-			  sort_context* scb, ULONG ** record_address, RSE_GET_MODE mode)
+void SORT_get(ISC_STATUS* status_vector,
+			  sort_context* scb,
+			  ULONG ** record_address,
+			  RSE_GET_MODE mode)
 {
 /**************************************
  *
@@ -633,7 +590,9 @@ void SORT_get(ISC_STATUS * status_vector,
 	*record_address = (ULONG *) record;
 }
 #else
-void SORT_get(ISC_STATUS* status_vector, sort_context* scb, ULONG** record_address)
+void SORT_get(ISC_STATUS* status_vector,
+			  sort_context* scb,
+			  ULONG** record_address)
 {
 /**************************************
  *
@@ -675,15 +634,14 @@ void SORT_get(ISC_STATUS* status_vector, sort_context* scb, ULONG** record_addre
 #endif
 
 
-sort_context* SORT_init(ISC_STATUS* status_vector,
-			  USHORT record_length,
-			  USHORT keys,
-			  USHORT unique_keys,
-			  const sort_key_def* key_description,
-			  FPTR_REJECT_DUP_CALLBACK call_back,
-			  void* user_arg,
-			  Attachment* att,
-			  UINT64 max_records)
+sort_context* SORT_init(thread_db* tdbb,
+						USHORT record_length,
+						USHORT keys,
+						USHORT unique_keys,
+						const sort_key_def* key_description,
+						FPTR_REJECT_DUP_CALLBACK call_back,
+						void* user_arg,
+						UINT64 max_records)
 {
 /**************************************
  *
@@ -705,22 +663,22 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
  *		includes index key (which must be unique) and record numbers
  *
  **************************************/
+	SET_TDBB(tdbb);
+
+	MemoryPool* const pool = tdbb->getDefaultPool();
+	ISC_STATUS* status_vector = tdbb->tdbb_status_vector;
+	sort_context* scb = NULL;
+
+	try {
 
 	// Allocate and setup a sort context block, including copying the
 	// key description vector. Round the record length up to the next
 	// longword, and add a longword to a pointer back to the pointer slot.
 
-	sort_context* scb = (sort_context*) gds__alloc((SLONG) SCB_LEN(keys));
-	if (!scb) {
-		// FREE: scb is freed by SORT_fini(), called by higher level cleanup
-		// FREE: or later in this module in error cases
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_sort_mem_err;
-		*status_vector = isc_arg_end;
-		return NULL;
-	}
-	memset((UCHAR*) scb, 0, SCB_LEN(keys));
+	scb = (sort_context*) pool->allocate(SCB_LEN(keys));
+	memset(scb, 0, SCB_LEN(keys));
 
+	scb->scb_pool = pool;
 	scb->scb_status_vector = status_vector;
 	//scb->scb_length = record_length;
 	scb->scb_longs =
@@ -728,7 +686,6 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
 	scb->scb_dup_callback = call_back;
 	scb->scb_dup_callback_arg = user_arg;
 	scb->scb_keys = keys;
-
 	//scb->scb_max_records = max_records;
 
 	fb_assert(unique_keys <= keys);
@@ -754,37 +711,39 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
 	// To debug the merge algorithm, force the in-memory pool to be VERY small
 	scb->scb_size_memory = 2000;
 	scb->scb_memory =
-		(SORTP *) gds__alloc((SLONG) scb->scb_size_memory);
-	// FREE: scb_memory is freed by local_fini()
+		(SORTP *) scb->scb_pool->allocate(scb->scb_size_memory);
 #else
 	// Try to get a big chunk of memory, if we can't try smaller and
 	// smaller chunks until we can get the memory. If we get down to
 	// too small a chunk - punt and report not enough memory.
 
-	for (scb->scb_size_memory = MAX_SORT_BUFFER_SIZE;;
+	for (scb->scb_size_memory = MAX_SORT_BUFFER_SIZE;
+		scb->scb_size_memory >= MIN_SORT_BUFFER_SIZE;
 		scb->scb_size_memory -= SORT_BUFFER_CHUNK_SIZE)
 	{
-		if (scb->scb_size_memory < MIN_SORT_BUFFER_SIZE)
-			break;
-		else if ( (scb->scb_memory =
-			 (SORTP *) gds__alloc((SLONG) scb->scb_size_memory)) )
-		{
-		// FREE: scb_memory is freed by local_fini()
+		try {
+			scb->scb_memory =
+				(SORTP *) scb->scb_pool->allocate(scb->scb_size_memory);
 			break;
 		}
+		catch (const Firebird::BadAlloc&) {
+			// not enough memory, let's allocate smaller buffer
+		}
 	}
+
+	if (scb->scb_size_memory < MIN_SORT_BUFFER_SIZE)
+		Firebird::BadAlloc::raise();
 #endif // DEBUG_MERGE
-	if (!scb->scb_memory) {
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_sort_mem_err; // Msg356: sort error: not enough memory
-		*status_vector = isc_arg_end;
-		gds__free(scb);
-		return NULL;
-	}
 
 	scb->scb_end_memory =
 		(SORTP *) ((BLOB_PTR *) scb->scb_memory + scb->scb_size_memory);
 	scb->scb_first_pointer = (sort_record**) scb->scb_memory;
+
+	// Set up the temp space
+
+	scb->scb_sfb = (sort_work_file*) FB_NEW(*pool) sort_work_file;
+	memset(scb->scb_sfb, 0, sizeof(sort_work_file));
+	scb->scb_sfb->sfb_space = FB_NEW(*pool) TempSpace(*pool, SCRATCH);
 
 	// Set up to receive the first record
 
@@ -792,6 +751,7 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
 
 	// If a linked list pointer was given, link in new sort block
 
+	Attachment* att = tdbb->tdbb_attachment;
 	if (att) {
 		scb->scb_next = att->att_active_sorts;
 		att->att_active_sorts = scb;
@@ -799,6 +759,15 @@ sort_context* SORT_init(ISC_STATUS* status_vector,
 	}
 
 	return scb;
+
+	}
+	catch (const Firebird::BadAlloc&) {
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_sort_mem_err;
+		*status_vector = isc_arg_end;
+		delete scb;
+		return NULL;
+	}
 }
 
 
@@ -820,7 +789,6 @@ void SORT_put(ISC_STATUS * status_vector, sort_context* scb, ULONG ** record_add
  *      in the scratch files.  The runs are eventually merged.
  *
  **************************************/
-
 	scb->scb_status_vector = status_vector;
 
 	// Find the last record passed in, and zap the keys something comparable
@@ -829,6 +797,7 @@ void SORT_put(ISC_STATUS * status_vector, sort_context* scb, ULONG ** record_add
 	SR* record = scb->scb_last_record;
 
 	if (record != (SR *) scb->scb_end_memory)
+	{
 #ifdef SCROLLABLE_CURSORS
 		SORT_diddle_key((UCHAR *) (record->sr_sort_record.sort_record_key),
 						scb, true);
@@ -836,12 +805,12 @@ void SORT_put(ISC_STATUS * status_vector, sort_context* scb, ULONG ** record_add
 		diddle_key((UCHAR *) (record->sr_sort_record.sort_record_key), scb,
 				   true);
 #endif
+	}
 
-	// If there isn't room for the record, sort and write the run_control.
+	// If there isn't room for the record, sort and write the run.
 	// Check that we are not at the beginning of the buffer in addition
 	// to checking for space for the record. This avoids the pointer
 	// record from underflowing in the second condition.
-
 	if ((BLOB_PTR *) record < (BLOB_PTR *) (scb->scb_memory + scb->scb_longs)
 		|| (BLOB_PTR *) NEXT_RECORD(record) <= (BLOB_PTR *) (scb->scb_next_pointer + 1))
 	{
@@ -886,7 +855,9 @@ ULONG SORT_read_block(
 #endif
 						 ISC_STATUS* status_vector,
 						 sort_work_file* sfb,
-						 ULONG seek, BLOB_PTR * address, ULONG length)
+						 ULONG seek,
+						 BLOB_PTR* address,
+						 ULONG length)
 {
 /**************************************
  *
@@ -898,52 +869,15 @@ ULONG SORT_read_block(
  *      Read a block of stuff from a scratch file.
  *
  **************************************/
-	ULONG read_len, i;
-
-#ifdef DEBUG_SORT_TRACE
-	UCHAR *org_address;
-	ULONG org_length, org_seek;
-
-	org_address = address;
-	org_length = length;
-	org_seek = seek;
-#endif
-
-	// Checkout of engine on sort I/O
-
-	THREAD_EXIT();
-
-	// The following is a crock induced by a VMS C bug
-
-	while (length) {
-		const ULONG len = length;
-		for (i = 0; i < IO_RETRY; i++) {
-			if (lseek(sfb->sfb_file, LSEEK_OFFSET_CAST seek, SEEK_SET) == -1) {
-				THREAD_ENTER();
-				SORT_error(status_vector, sfb, "lseek", isc_io_read_err, errno);
-			}
-			if ((read_len = read(sfb->sfb_file, address, len)) == len)
-				break;
-			else if ((SSHORT) read_len == -1 && !SYSCALL_INTERRUPTED(errno)) {
-				THREAD_ENTER();
-				SORT_error(status_vector, sfb, "read", isc_io_read_err, errno);
-			}
-		}
-
-		if (i == IO_RETRY) {
-			THREAD_ENTER();
-			SORT_error(status_vector, sfb, "read", isc_io_read_err, errno);
-		}
-		length -= read_len;
-		address += read_len;
-		seek += read_len;
+	try {
+		const size_t bytes = sfb->sfb_space->read(seek, address, length);
+		fb_assert(bytes == length);
+		seek += bytes;
 	}
-
-	THREAD_ENTER();
-
-#ifdef DEBUG_SORT_TRACE
-	write_trace("Read", sfb, org_seek, org_address, org_length);
-#endif
+	catch (const Firebird::status_exception& ex) {
+		Firebird::stuff_exception(status_vector, ex);
+		error(status_vector);
+	}
 #ifndef SCROLLABLE_CURSORS
 	return seek;
 #endif
@@ -976,7 +910,7 @@ void SORT_shutdown(Attachment* att)
 }
 
 
-bool SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
+void SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 {
 /**************************************
  *
@@ -997,16 +931,19 @@ bool SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 
 	scb->scb_status_vector = status_vector;
 
+	try {
+
 	if (scb->scb_last_record != (SR *) scb->scb_end_memory)
+	{
 #ifdef SCROLLABLE_CURSORS
 		SORT_diddle_key((UCHAR *) KEYOF(scb->scb_last_record), scb, true);
 #else
 		diddle_key((UCHAR *) KEYOF(scb->scb_last_record), scb, true);
 #endif
+	}
 
 	// If there aren't any runs, things fit nicely in memory. Just sort the mess
 	// and we're ready for output.
-
 	if (!scb->scb_runs) {
 		sort(scb);
 #ifdef SCROLLABLE_CURSORS
@@ -1017,7 +954,7 @@ bool SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 		scb->scb_flags |= scb_initialized;
 #endif
 		scb->scb_flags |= scb_sorted;
-		return true;
+		return;
 	}
 
 	// Write the last records as a run_control
@@ -1031,26 +968,14 @@ bool SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 	ULONG run_count;
 	for (run_count = 0, run = scb->scb_runs; run; run = run->run_next) {
 		if (run->run_buff_alloc) {
-			gds__free(run->run_buffer);
-			run->run_buff_alloc = 0;
+			delete run->run_buffer;
+			run->run_buff_alloc = false;
 		}
 		++run_count;
 	}
 
-	run_merge_hdr* streams_local[200];
-	run_merge_hdr** streams;
-	if ((run_count * sizeof(run_merge_hdr*)) > sizeof(streams_local))
-		streams =
-			(run_merge_hdr**) gds__alloc((SLONG) run_count * sizeof(run_merge_hdr*));
-		// FREE: streams is freed later in this routine
-	else
-		streams = streams_local;
-	if (!streams) {
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_sort_mem_err;
-		*status_vector = isc_arg_end;
-		return false;
-	}
+	run_merge_hdr** streams =
+		(run_merge_hdr**) scb->scb_pool->allocate(run_count * sizeof(run_merge_hdr*));
 
 	run_merge_hdr** m1 = streams;
 	for (run = scb->scb_runs; run; run = run->run_next)
@@ -1062,18 +987,16 @@ bool SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 
 	if (count > 1) {
 		fb_assert(!scb->scb_merge_pool);	// shouldn't have a pool
-		scb->scb_merge_pool =
-			(merge_control*) gds__alloc((SLONG) (count - 1) * sizeof(merge_control));
-		// FREE: smb_merge_pool freed in local_fini() when the scb is released
-		merge_pool = scb->scb_merge_pool;
-		if (!merge_pool) {
-			gds__free(streams);
-			*status_vector++ = isc_arg_gds;
-			*status_vector++ = isc_sort_mem_err;
-			*status_vector = isc_arg_end;
-			return false;
+		try {
+			scb->scb_merge_pool =
+				(merge_control*) scb->scb_pool->allocate((count - 1) * sizeof(merge_control));
+			merge_pool = scb->scb_merge_pool;
+			memset(merge_pool, 0, (count - 1) * sizeof(merge_control));
 		}
-		memset(merge_pool, 0, (count - 1) * sizeof(merge_control));
+		catch (const Firebird::BadAlloc&) {
+			delete streams;
+			throw;
+		}
 	}
 	else {
 		// Merge of 1 or 0 runs doesn't make sense
@@ -1121,8 +1044,7 @@ bool SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 		count = m2 - streams;
 	}
 
-	if (streams != streams_local)
-		gds__free(streams);
+	delete streams;
 
 	SORTP* buffer = (SORTP *) scb->scb_first_pointer;
 	merge->mrg_header.rmh_parent = NULL;
@@ -1159,28 +1081,27 @@ bool SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 
 	for (; run; run = run->run_next) {
 		run->run_buffer =
-			(ULONG *) gds__alloc((SLONG) (size * sizeof(ULONG)));
-		// FREE: smb_merge_space freed in local_fini() when the scb is released
-		if (!run->run_buffer) {
-			*status_vector++ = isc_arg_gds;
-			*status_vector++ = isc_sort_mem_err;
-			*status_vector = isc_arg_end;
-			return false;
-		}
-		// Link the new buffer into the chain of buffers
-		run->run_buff_alloc = 1;
+			(ULONG*) scb->scb_pool->allocate(size * sizeof(ULONG));
+		run->run_buff_alloc = true;
 		run->run_record =
 			reinterpret_cast<sort_record*>(run->run_end_buffer =
 										   run->run_buffer + size);
 	}
 
 	scb->scb_flags |= scb_sorted;
-	return true;
+
+	}
+	catch (const Firebird::BadAlloc&) {
+		error_memory(scb);
+	}
 }
 
 
 ULONG SORT_write_block(ISC_STATUS* status_vector,
-					   sort_work_file* sfb, ULONG seek, BLOB_PTR* address, ULONG length)
+					   sort_work_file* sfb,
+					   ULONG seek,
+					   BLOB_PTR* address,
+					   ULONG length)
 {
 /**************************************
  *
@@ -1192,103 +1113,19 @@ ULONG SORT_write_block(ISC_STATUS* status_vector,
  *      Write a block of stuff to the scratch file.
  *
  **************************************/
-	ULONG write_len, i;
-
-#ifdef DEBUG_SORT_TRACE
-	write_trace("Write", sfb, seek, address, length);
-#endif
-
-	// Check out of engine on sort I/O
-
-	THREAD_EXIT();
-
-	// The following is a crock induced by a VMS C bug
-
-	while (length) {
-		ULONG len = length;
-		for (i = 0; i < IO_RETRY; i++) {
-			if (lseek(sfb->sfb_file, LSEEK_OFFSET_CAST seek, SEEK_SET) == -1) {
-				THREAD_ENTER();
-				SORT_error(status_vector, sfb, "lseek", isc_io_write_err,
-						   errno);
-			}
-			if ((write_len = write(sfb->sfb_file, address, len)) == len)
-				break;
-			else {
-				if (write_len >= 0)
-					// If write returns value that is not equal len, then
-					// most likely there is not enough space, try to write
-					// one more time to get meaningful errno
-					write_len = write(sfb->sfb_file, address + write_len,
-									  len - write_len);
-				if ((SSHORT) write_len == -1 && !SYSCALL_INTERRUPTED(errno)) {
-					THREAD_ENTER();
-					SORT_error(status_vector, sfb, "write", isc_io_write_err,
-							   errno);
-				}
-			}
-		}
-
-		if (i == IO_RETRY) {
-			THREAD_ENTER();
-			SORT_error(status_vector, sfb, "write", isc_io_write_err, errno);
-		}
-		length -= write_len;
-		address += write_len;
-		seek += write_len;
+	try {
+		const size_t bytes = sfb->sfb_space->write(seek, address, length);
+		fb_assert(bytes == length);
+		seek += bytes;
 	}
-
-	THREAD_ENTER();
+	catch (const Firebird::status_exception& ex) {
+		Firebird::stuff_exception(status_vector, ex);
+		error(status_vector);
+	}
 
 	return seek;
 }
 
-
-static UCHAR *sort_alloc(sort_context* scb, ULONG size)
-{
-/**************************************
- *
- *      a l l o c
- *
- **************************************
- *
- * Functional description
- *      Allocate and zero a block of memory.
- *
- *      Notes about memory management in this module.
- *        - Apparently this historical reason (from Deej) that this
- *          module uses ALL_malloc directly, instead of the JRD allocator
- *          is so a large sort will not push up the high-water mark of
- *          memory allocated to a request or attachment (recall this memory
- *          isn't released until the request/attachment finished)
- *        - As a result, the memory blocks allocated here don't have
- *          the blk_header structure (we'ld have to add it if we ever
- *          change this)
- *        - Most things allocated have pointers placed in the sort_context.
- *          (sort control block)
- *        - There is an error handler set up by our caller, which will
- *          call back to SORT_fini(), which frees all the memory
- *          chains that hang off the sort_context.
- *        - There are some short-term allocations done (for instance,
- *          when sorting a run_control before writing it to disk).  There appears
- *          to be no need to have an error handler to free them as
- *          no errors can be posted during the process.
- *
- *      1994-October-11 David Schnepper
- *
- **************************************/
-	UCHAR* const block =
-		reinterpret_cast<UCHAR*>(gds__alloc(size));
-	// FREE: caller responsible for freeing
-	if (!block)
-	{
-		error_memory(scb);
-		return NULL;
-	}
-
-	memset(block, 0, size);
-	return block;
-}
 
 #ifndef SCROLLABLE_CURSORS
 #ifdef WORDS_BIGENDIAN
@@ -1644,6 +1481,33 @@ static void diddle_key(UCHAR * record, sort_context* scb, bool direction)
 #endif
 
 
+void error(ISC_STATUS* status_vector)
+{
+/**************************************
+ *
+ *       e r r o r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Report fatal error.
+ *
+ **************************************/
+	fb_assert(status_vector);
+
+	ISC_STATUS_ARRAY local_status;
+	ISC_STATUS* status = local_status;
+	*status++ = isc_arg_gds;
+	*status++ = isc_sort_err;
+	*status = isc_arg_end;
+
+	Firebird::status_exception ex(local_status, false);
+	Firebird::stuff_exception(status_vector, ex);
+
+	ERR_punt();
+}
+
+
 static void error_memory(sort_context* scb)
 {
 /**************************************
@@ -1657,17 +1521,17 @@ static void error_memory(sort_context* scb)
  *
  **************************************/
 	ISC_STATUS* status_vector = scb->scb_status_vector;
-
-	fb_assert(status_vector != NULL);
+	fb_assert(status_vector);
 
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = isc_sort_mem_err;
 	*status_vector = isc_arg_end;
-	ERR_punt();
+
+	error(status_vector);
 }
 
 
-static ULONG find_file_space(sort_context* scb, ULONG size, sort_work_file** ret_sfb)
+static ULONG find_file_space(sort_context* scb, ULONG size)
 {
 /**************************************
  *
@@ -1681,124 +1545,52 @@ static ULONG find_file_space(sort_context* scb, ULONG size, sort_work_file** ret
  *      available, allocate space at the end.
  *
  **************************************/
-	TEXT file_name[MAXPATHLEN];
-
 	// Find the best available space. This is defined as the smallest free space
 	// that is big enough. This preserves large blocks.
 
 	work_file_space** best = NULL;
-	sort_work_file* last_sfb = NULL;
-	file_name[0] = '\0';
 
 	// Search through the available space in the work file list
 
-	sort_work_file* best_sfb = 0;
-	sort_work_file* sfb;
-	sort_work_file** sfb_ptr;
-	for (sfb_ptr = &scb->scb_sfb; (sfb = *sfb_ptr); sfb_ptr = &sfb->sfb_next) {
-		work_file_space* space;
-		for (work_file_space** ptr = &sfb->sfb_file_space; (space = *ptr);
-			 ptr = &(*ptr)->wfs_next)
+	sort_work_file* sfb = scb->scb_sfb;
+	work_file_space* space;
+
+	for (work_file_space** ptr = &sfb->sfb_file_space; (space = *ptr);
+		 ptr = &(*ptr)->wfs_next)
+	{
+		// If this is smaller than our previous best, use it
+
+		if (space->wfs_size >= size &&
+			(!best || (space->wfs_size < (*best)->wfs_size)))
 		{
-
-			// If this is smaller than our previous best, use it
-
-			if (space->wfs_size >= size &&
-                (!best || (space->wfs_size < (*best)->wfs_size)))
-			{
-				best = ptr;
-				best_sfb = sfb;
-			}
+			best = ptr;
 		}
-
-		// Save the previous sfb pointer because when we get out of this
-		// for loop, sfb would be a NULL pointer
-
-		last_sfb = sfb;
 	}
-	sfb = last_sfb;
 
 	// If we didn't find any space, allocate it at the end of the file
 
 	if (!best) {
-
-		// If there is no file allocated yet or the size requested is bigger
-		// than available space in the current directory, create a new file
-		// and return
-
-		if (!sfb || !DLS_get_temp_space(size, sfb) ||
-			(sfb->sfb_file_size + size >= MAX_TEMPFILE_SIZE))
-		{
-
-			sfb = (sort_work_file*) sort_alloc(scb, (ULONG) sizeof(sort_work_file));
-			// FREE: scb_sfb chain is freed in local_fini()
-
-			// Is the last dir_list at it's size limit? If so, add a new dir_list
-			// M.E.G
-
-			if (last_sfb && (last_sfb->sfb_dls->dls_inuse + size >= MAX_TEMPFILE_SIZE))
-				if (!DLS_add_dir(MAX_TEMPFILE_SIZE, last_sfb->sfb_dls->dls_directory))
-					error_memory(scb);
-
-			if (last_sfb)
-				last_sfb->sfb_next = sfb;
-			else
-				scb->scb_sfb = sfb;
-
-			// Find a free space
-
-			sfb->sfb_dls = NULL;
-			if (!DLS_get_temp_space(size, sfb))
-				// There is not enough space
-				error_memory(scb);
-
-			// Create a scratch file
-
-			sfb->sfb_file =
-				(int) (IPTR) gds__temp_file(FALSE, SCRATCH, file_name,
-									 sfb->sfb_dls->dls_directory, TRUE);
-
-			// allocate the file name even if the file is not open,
-			// because the error routine depends on it.
-			// This is released during local_fini()
-
-			sfb->sfb_file_name =
-				FB_NEW(*getDefaultMemoryPool()) char[strlen(file_name) + 1];
-			// FREE: sfb_file_name is freed in local_fini()
-
-			strcpy(sfb->sfb_file_name, file_name);
-
-			if (sfb->sfb_file == -1)
-				SORT_error(scb->scb_status_vector, sfb, "open",
-						   isc_io_open_err, errno);
-
-			sfb->sfb_mem = FB_NEW (*getDefaultMemoryPool()) SortMem(sfb, size);
-		}
-
-		*ret_sfb = sfb;
-		sfb->sfb_file_size += size;
-		return sfb->sfb_file_size - size;
+		sfb->sfb_space->extend(size);
+		return sfb->sfb_space->getSize() - size;
 	}
 
 	// Set up the return parameters
 
-	*ret_sfb = best_sfb;
-	work_file_space* space = *best;
+	space = *best;
 
 	// If the hunk was an exact fit, remove the work file space block from the
 	// list and splice it into the free list
 
 	if (space->wfs_size == size) {
 		*best = space->wfs_next;
-		space->wfs_next = best_sfb->sfb_free_wfs;
-		best_sfb->sfb_free_wfs = space;
+		space->wfs_next = sfb->sfb_free_wfs;
+		sfb->sfb_free_wfs = space;
 		return space->wfs_position;
 	}
 
 	// The best block is too big - chop the needed space off the end
 
 	space->wfs_size -= size;
-
 	return space->wfs_position + space->wfs_size;
 }
 
@@ -1816,17 +1608,21 @@ static void free_file_space(sort_context* scb, sort_work_file* sfb,
  *      Release a segment of work file.
  *
  **************************************/
-	work_file_space* space;
-	work_file_space** ptr;
-
 	fb_assert(size > 0);
-	fb_assert(position < sfb->sfb_file_size);	// Block starts in file
+	fb_assert(position < sfb->sfb_space->getSize());	// Block starts in file
 	const ULONG end = position + size;
-	fb_assert(end <= sfb->sfb_file_size);		// Block ends in file
+	fb_assert(end <= sfb->sfb_space->getSize());		// Block ends in file
+
+	try {
+
+	work_file_space** ptr;
+	work_file_space* space = NULL;
 
 	// Search through work file space blocks looking for an adjacent block
 
-	for (ptr = &sfb->sfb_file_space; (space = *ptr); ptr = &space->wfs_next) {
+	for (ptr = &sfb->sfb_file_space;
+		(space = *ptr); ptr = &space->wfs_next)
+	{
 		if (end >= space->wfs_position)
 			break;
 	}
@@ -1862,18 +1658,25 @@ static void free_file_space(sort_context* scb, sort_work_file* sfb,
 		fb_assert(position >= space->wfs_position + space->wfs_size);
 	}
 
-/* Block didn't seem to append nicely to an existing block */
+	// Block didn't seem to append nicely to an existing block
 
-	if ( (space = sfb->sfb_free_wfs) )
+	if ( (space = sfb->sfb_free_wfs) ) {
 		sfb->sfb_free_wfs = space->wfs_next;
-	else
-		space = (work_file_space*) sort_alloc(scb, (ULONG) sizeof(work_file_space));
-		// FREE: wfs_next chain is freed in local_fini()
+	}
+	else {
+		space = (work_file_space*) FB_NEW(*scb->scb_pool) work_file_space;
+		memset(space, 0, sizeof(work_file_space));
+	}
 
 	space->wfs_next = *ptr;
 	*ptr = space;
 	space->wfs_size = size;
 	space->wfs_position = position;
+
+	}
+	catch (const Firebird::BadAlloc&) {
+		error_memory(scb);
+	}
 }
 
 
@@ -1956,10 +1759,8 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 				n = run->run_records * scb->scb_longs * sizeof(ULONG);
 				l = MIN(l, n);
 				run->run_seek =
-					run->run_sfb->sfb_mem->read(scb->scb_status_vector,
-												run->run_seek,
-												reinterpret_cast<char*>(run->run_buffer),
-												l);
+					SORT_read_block(scb->scb_status_vector, scb->scb_sfb,
+									run->run_seek, (UCHAR*) run->run_buffer, l);
 #else
 			}
 			else {
@@ -1995,7 +1796,8 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 			else
 				run->run_seek -= l;
 
-			run->run_sfb->sfb_mem->read(run->run_seek, run->run_buffer, l);
+			SORT_read_block(scb->scb_status_vector, run->run_sfb,
+							run->run_seek, (UCHAR*) run->run_buffer, l);
 			run->run_cached = l;
 
 			if (mode == RSE_get_forward) {
@@ -2203,47 +2005,32 @@ static bool local_fini(sort_context* scb, Attachment* att)
 
 	// Loop through the sfb list and close work files
 
-	sort_work_file* sfb;
-	while ( (sfb = scb->scb_sfb) ) {
-		scb->scb_sfb = sfb->sfb_next;
-		DLS_put_temp_space(sfb);
+	delete scb->scb_sfb->sfb_space;
 
-		delete sfb->sfb_mem;
-
-		close(sfb->sfb_file);
-
-		if (sfb->sfb_file_name) {
-			delete[] sfb->sfb_file_name;
-			sfb->sfb_file_name = NULL;
-		}
-
-		while ( (space = sfb->sfb_free_wfs) ) {
-			sfb->sfb_free_wfs = space->wfs_next;
-			gds__free(space);
-		}
-
-		while ( (space = sfb->sfb_file_space) ) {
-			sfb->sfb_file_space = space->wfs_next;
-			gds__free(space);
-		}
-
-		gds__free(sfb);
+	while ( (space = scb->scb_sfb->sfb_free_wfs) ) {
+		scb->scb_sfb->sfb_free_wfs = space->wfs_next;
+		delete space;
 	}
+
+	while ( (space = scb->scb_sfb->sfb_file_space) ) {
+		scb->scb_sfb->sfb_file_space = space->wfs_next;
+		delete space;
+	}
+
+	delete scb->scb_sfb;
 
 	// Get rid of extra merge space
 
 	while ( (merge_buf = (ULONG **) scb->scb_merge_space) ) {
 		scb->scb_merge_space = *merge_buf;
-		gds__free(merge_buf);
+		delete merge_buf;
 	}
 
 	// If runs are allocated and not in the big block, release them.
 	// Then release the big block.
 
-	if (scb->scb_memory) {
-		gds__free(scb->scb_memory);
-		scb->scb_memory = NULL;
-	}
+	delete scb->scb_memory;
+	scb->scb_memory = NULL;
 
 	// Clean up the runs that were used
 
@@ -2251,8 +2038,8 @@ static bool local_fini(sort_context* scb, Attachment* att)
 	while ( (run = scb->scb_runs) ) {
 		scb->scb_runs = run->run_next;
 		if (run->run_buff_alloc)
-			gds__free(run->run_buffer);
-		gds__free(run);
+			delete run->run_buffer;
+		delete run;
 	}
 
 	// Clean up the free runs also
@@ -2260,14 +2047,12 @@ static bool local_fini(sort_context* scb, Attachment* att)
 	while ( (run = scb->scb_free_runs) ) {
 		scb->scb_free_runs = run->run_next;
 		if (run->run_buff_alloc)
-			gds__free(run->run_buffer);
-		gds__free(run);
+			delete run->run_buffer;
+		delete run;
 	}
 
-	if (scb->scb_merge_pool) {
-		gds__free(scb->scb_merge_pool);
-		scb->scb_merge_pool = NULL;
-	}
+	delete scb->scb_merge_pool;
+	scb->scb_merge_pool = NULL;
 
 	scb->scb_merge = NULL;
  	scb->scb_attachment = NULL;
@@ -2309,7 +2094,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 	temp_run.run_end_buffer =
 		(SORTP *) (buffer + (scb->scb_size_memory / rec_size) * rec_size);
 	temp_run.run_size = 0;
-	temp_run.run_buff_alloc = 0;
+	temp_run.run_buff_alloc = false;
 
 	run_merge_hdr* streams[32];
 	run_merge_hdr** m1 = streams;
@@ -2327,11 +2112,8 @@ static void merge_runs(sort_context* scb, USHORT n)
 		if (!size) {
 			if (!run->run_buff_alloc) {
 				run->run_buffer =
-					(ULONG *) gds__alloc((SLONG) rec_size * 2);
-				// FREE: smb_merge_space freed in local_fini() when sort_context released
-				if (!run->run_buffer)
-					error_memory(scb);
-				run->run_buff_alloc = 1;
+					(ULONG*) scb->scb_pool->allocate(rec_size * 2);
+				run->run_buff_alloc = true;
 			}
 			run->run_end_buffer =
 				reinterpret_cast<ULONG*>((BLOB_PTR *) run->run_buffer + (rec_size * 2));
@@ -2389,8 +2171,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 	// Merge records into run
 
 	sort_record* q = reinterpret_cast<sort_record*>(temp_run.run_buffer);
-	ULONG seek = temp_run.run_seek =
-		find_file_space(scb, temp_run.run_size, &temp_run.run_sfb);
+	ULONG seek = temp_run.run_seek = find_file_space(scb, temp_run.run_size);
 	temp_run.run_records = 0;
 
 	const sort_record* p;
@@ -2402,9 +2183,8 @@ static void merge_runs(sort_context* scb, USHORT n)
 	{
 		if (q >= (sort_record*) temp_run.run_end_buffer) {
 			size = (BLOB_PTR *) q - (BLOB_PTR *) temp_run.run_buffer;
-			seek = temp_run.run_sfb->sfb_mem->write(scb->scb_status_vector, seek,
-													reinterpret_cast<char*>(temp_run.run_buffer),
-													size);
+			seek = SORT_write_block(scb->scb_status_vector, scb->scb_sfb,
+									seek, (UCHAR*) temp_run.run_buffer, size);
 			q = reinterpret_cast<sort_record*>(temp_run.run_buffer);
 		}
 		count = scb->scb_longs;
@@ -2420,15 +2200,14 @@ static void merge_runs(sort_context* scb, USHORT n)
 	// Write the tail of the new run and return any unused space
 
 	if ( (size = (BLOB_PTR *) q - (BLOB_PTR *) temp_run.run_buffer) )
-		seek = temp_run.run_sfb->sfb_mem->write(scb->scb_status_vector, seek,
-												reinterpret_cast<char*>(temp_run.run_buffer),
-												size);
+		seek = SORT_write_block(scb->scb_status_vector, scb->scb_sfb,
+								seek, (UCHAR*) temp_run.run_buffer, size);
 
 	// If the records did not fill the allocated run (such as when duplicates are
 	// rejected), then free the remainder and diminish the size of the run accordingly
 
 	if (seek - temp_run.run_seek < temp_run.run_size) {
-		free_file_space(scb, temp_run.run_sfb, seek,
+		free_file_space(scb, scb->scb_sfb, seek,
 						temp_run.run_seek + temp_run.run_size - seek);
 		temp_run.run_size = seek - temp_run.run_seek;
 	}
@@ -2446,7 +2225,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 #endif
 		// Free the sort file space associated with the run
 
-		free_file_space(scb, run->run_sfb, seek, run->run_size);
+		free_file_space(scb, scb->scb_sfb, seek, run->run_size);
 
 		// Add run descriptor to list of unused run descriptor blocks
 
@@ -2456,8 +2235,8 @@ static void merge_runs(sort_context* scb, USHORT n)
 
 	scb->scb_free_runs = run->run_next;
 	if (run->run_buff_alloc) {
-		gds__free(run->run_buffer);
-		run->run_buff_alloc = 0;
+		delete run->run_buffer;
+		run->run_buff_alloc = false;
 	}
 	temp_run.run_header.rmh_type = RMH_TYPE_RUN;
 	temp_run.run_depth = run->run_depth;
@@ -2637,17 +2416,8 @@ static ULONG order(sort_context* scb)
 	sort_record* output = reinterpret_cast<sort_record*>(scb->scb_last_record);
 	sort_ptr_t* lower_limit = reinterpret_cast<sort_ptr_t*>(output);
 
-	ULONG temp[1024];
-	SORTP* buffer = 0;
-	if ((scb->scb_longs * sizeof(ULONG)) > sizeof(temp))
-		buffer =
-			(ULONG *) gds__alloc((SLONG) (scb->scb_longs * sizeof(ULONG)));
-		// FREE: buffer is freed later in this routine
-	else
-		buffer = temp;
-
-	if (!buffer)
-		error_memory(scb);
+	SORTP* buffer =
+		(SORTP*) scb->scb_pool->allocate(scb->scb_longs * sizeof(ULONG));
 
 	// Check out the engine
 
@@ -2718,16 +2488,11 @@ static ULONG order(sort_context* scb)
 			reinterpret_cast<sort_record*>((sort_ptr_t*) ((SORTP *) output + length));
 	}
 
+	delete buffer;
+
 	// Check back into the engine
 
 	THREAD_ENTER();
-
-	// It's OK to free this after checking back into the engine, there's
-	// only fatal failures possible there
-
-	if (buffer != temp)
-		if (buffer != NULL)
-			gds__free(buffer);
 
 	return (((SORTP *) output) -
 			((SORTP *) scb->scb_last_record)) / (scb->scb_longs -
@@ -2750,14 +2515,16 @@ static void put_run(sort_context* scb)
  *      were sorted.
  *
  **************************************/
+	try {
+
 	run_control* run = scb->scb_free_runs;
 
-	if (run)
+	if (run) {
 		scb->scb_free_runs = run->run_next;
+	}
 	else {
-		run = (run_control*) sort_alloc(scb, (ULONG) sizeof(run_control));
-		// FREE: run will be either on the scb_runs or scb_free_runs list,
-		//       which are freed in local_fini()
+		run = (run_control*) FB_NEW(*scb->scb_pool) run_control;
+		memset(run, 0, sizeof(run_control));
 	}
 
 	run->run_next = scb->scb_runs;
@@ -2786,10 +2553,15 @@ static void put_run(sort_context* scb)
 	run->run_size =
 		run->run_records * (scb->scb_longs -
 							SIZEOF_SR_BCKPTR_IN_LONGS) * sizeof(ULONG);
-	run->run_seek = find_file_space(scb, run->run_size, &run->run_sfb);
-	run->run_sfb->sfb_mem->write(scb->scb_status_vector, run->run_seek,
-								 reinterpret_cast<char*>(scb->scb_last_record),
-								 run->run_size);
+	run->run_seek = find_file_space(scb, run->run_size);
+	SORT_write_block(scb->scb_status_vector, scb->scb_sfb,
+					 run->run_seek, (UCHAR*) scb->scb_last_record,
+					 run->run_size);
+
+	}
+	catch (const Firebird::BadAlloc&) {
+		error_memory(scb);
+	}
 }
 
 
@@ -2935,52 +2707,3 @@ static void validate(sort_context* scb)
 }
 #endif
 #endif
-
-#ifdef DEBUG_SORT_TRACE
-static void write_trace(
-						UCHAR* operation,
-						sort_work_file* sfb, ULONG seek, BLOB_PTR* address,
-						ULONG length)
-{
-/**************************************
- *
- *      w r i t e _ t r a c e
- *
- **************************************
- *
- * Functional description
- *      Write a trace record.
- *
- **************************************/
-	UCHAR file_name[40];
-
-	if (!trace_file) {
-#if (defined WIN_NT)
-		strcpy(file_name, "/interbas/stXXXXXX");
-#else
-		strcpy(file_name, "/interbase/DEBUG_SORT_TRACE_XXXXXX");
-#endif
-#ifdef HAVE_MKSTEMP
-		const int fd = mkstemp(file_name);
-		trace_file = fdopen(fd, "w");
-#else
-		mktemp(file_name);
-		trace_file = fopen(file_name, "w");
-#endif
-	}
-
-	if (!trace_file)
-		return;
-
-	UCHAR data[41];
-	UCHAR* p;
-	for (p = data; p < data + sizeof(data) - 1; address++)
-		*p++ = (*address) ? *address : '.';
-
-	*p = 0;
-
-	fprintf(trace_file, "Fid: %d, %.5s %.7ld - %.7ld\t/%s/\n",
-			   sfb->sfb_file, operation, seek, seek + length, data);
-}
-#endif
-

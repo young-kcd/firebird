@@ -85,7 +85,6 @@
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dbg_proto.h"
-#include "../jrd/dls_proto.h"
 #include "../jrd/dyn_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
@@ -123,6 +122,7 @@
 #include "../jrd/flags.h"
 
 #include "../common/config/config.h"
+#include "../common/config/dir_list.h"
 #include "../jrd/plugin_manager.h"
 #include "../jrd/db_alias.h"
 #include "../jrd/IntlManager.h"
@@ -762,7 +762,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		pageSpace->file =
-			PIO_open(dbb, expanded_name, options.dpb_trace != 0, NULL, file_name);
+			PIO_open(dbb, expanded_name, options.dpb_trace != 0, file_name);
 		SHUT_init(dbb);
 		PAG_header(file_name.c_str(), file_name.length(), false);
 		INI_init2();
@@ -6075,24 +6075,10 @@ TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 				/* Get drive letters for temp directories */
 
 				if (flag == JRD_info_drivemask) {
-					mutexed_dir_list* ptr = DLS_get_access();
-					for (dir_list* dirs = ptr->mdls_dls; dirs; dirs = dirs->dls_next) {
-						ExtractDriveLetter(dirs->dls_directory, &drive_mask);
-					}
-				}
-
-				/* Get drive letters for sort files */
-
-				if (flag == JRD_info_drivemask)
-				{
-					for (const sort_context* scb = attach->att_active_sorts; scb; 
-						scb = scb->scb_next)
-					{
-						for (const sort_work_file* sfb = scb->scb_sfb; sfb;
-							sfb = sfb->sfb_next)
-						{
-							ExtractDriveLetter(sfb->sfb_file_name, &drive_mask);
-						}
+					const Firebird::TempDirectoryList dirList;
+					for (size_t i = 0; i < dirList.getCount(); i++) {
+						const Firebird::PathName& path = dirList[i];
+						ExtractDriveLetter(path.c_str(), &drive_mask);
 					}
 				}
 #endif

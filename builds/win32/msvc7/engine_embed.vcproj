@@ -173,9 +173,6 @@
 				RelativePath="..\..\..\src\jrd\divorce.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dls.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\gen\jrd\dpm.cpp">
 			</File>
 			<File
@@ -356,9 +353,6 @@
 				RelativePath="..\..\..\src\jrd\sort.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\sort_mem.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\sqz.cpp">
 			</File>
 			<File
@@ -369,6 +363,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sym.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\TempSpace.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\thd.cpp">
@@ -499,9 +496,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\divorce.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\dls_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dmp_proto.h">
@@ -958,6 +952,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sym_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\TempSpace.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\termtype.h">

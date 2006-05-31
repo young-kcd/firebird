@@ -37,10 +37,10 @@
 #include "../qli/hsh_proto.h"
 #include "../qli/lex_proto.h"
 #include "../qli/proc_proto.h"
-#include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/TempFile.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -59,11 +59,7 @@ const SLONG LIB$_INPSTRTRU	= 0x15821c;
 #include <io.h> // isatty
 #endif
 
-#ifdef SMALL_FILE_NAMES
-static const char* SCRATCH		= "fb_q";
-#else
 static const char* SCRATCH		= "fb_query_";
-#endif
 
 const char* FOPEN_INPUT_TYPE	= "r";
 
@@ -160,17 +156,16 @@ void LEX_edit( SLONG start, SLONG stop)
  *	push the scratch file on the input stack.
  *
  **************************************/
-	TEXT filename[MAXPATHLEN];
-
-	FILE* scratch = (FILE*) gds__temp_file(TRUE, SCRATCH, filename);
-	if (scratch == (FILE *) - 1)
+	const Firebird::PathName filename = TempFile::create(SCRATCH);
+	FILE* scratch = fopen(filename.c_str(), "w+b");
+	if (scratch == (FILE *) -1)
 		IBERROR(61);			// Msg 61 couldn't open scratch file
 #ifdef WIN_NT
 	stop--;
 #endif
 
 	if (fseek(trace_file, start, 0)) {
-		fseek(trace_file, (SLONG) 0, 2);
+		fseek(trace_file, 0, 2);
 		IBERROR(59);			// Msg 59 fseek failed
 	}
 
@@ -183,12 +178,12 @@ void LEX_edit( SLONG start, SLONG stop)
 
 	fclose(scratch);
 
-	if (gds__edit(filename, TRUE))
-		LEX_push_file(filename, true);
+	if (gds__edit(filename.c_str(), TRUE))
+		LEX_push_file(filename.c_str(), true);
 
-	unlink(filename);
+	unlink(filename.c_str());
 
-	fseek(trace_file, (SLONG) 0, 2);
+	fseek(trace_file, 0, 2);
 }
 
 
@@ -352,7 +347,7 @@ void LEX_fini(void)
  *
  **************************************/
 
-	if (trace_file && (trace_file != (FILE *) - 1)) {
+	if (trace_file) {
 		fclose(trace_file);
 		unlink(trace_file_name);
 	}
@@ -545,8 +540,10 @@ void LEX_init(void)
  *	scratch trace file to keep all input.
  *
  **************************************/
-	trace_file = (FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
-	if (trace_file == (FILE *) - 1)
+	const Firebird::PathName filename = TempFile::create(SCRATCH);
+	strcpy(trace_file_name, filename.c_str());
+	trace_file = fopen(trace_file_name, "w+b");
+	if (trace_file == (FILE *) -1)
 		IBERROR(61);			// Msg 61 couldn't open scratch file
 
 	QLI_token = (qli_tok*) ALLOCPV(type_tok, MAXSYMLEN);
@@ -726,7 +723,7 @@ void LEX_put_procedure(FB_API_HANDLE blob, SLONG start, SLONG stop)
 	ISC_STATUS_ARRAY status_vector;
 
 	if (fseek(trace_file, start, 0)) {
-		fseek(trace_file, (SLONG) 0, 2);
+		fseek(trace_file, 0, 2);
 		IBERROR(62);			// Msg 62 fseek failed
 	}
 
@@ -756,7 +753,7 @@ void LEX_put_procedure(FB_API_HANDLE blob, SLONG start, SLONG stop)
 				ERRQ_bugcheck(58);	// Msg 58 isc_put_segment failed
 	}
 
-	fseek(trace_file, (SLONG) 0, 2);
+	fseek(trace_file, 0, 2);
 }
 
 

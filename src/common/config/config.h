@@ -67,8 +67,8 @@ class Config
 	enum ConfigKey
 	{
 		KEY_ROOT_DIRECTORY,							// 0
-		KEY_SORT_MEM_BLOCK_SIZE,					// 1
-		KEY_SORT_MEM_UPPER_LIMIT,					// 2
+		KEY_TEMP_BLOCK_SIZE,						// 1
+		KEY_TEMP_CACHE_LIMIT,						// 2
 		KEY_REMOTE_FILE_OPEN_ABILITY,				// 3
 		KEY_GUARDIAN_OPTION,						// 4
 		KEY_CPU_AFFINITY_MASK,						// 5
@@ -127,14 +127,14 @@ public:
 	static const char* getRootDirectory();
 
 	/*
-		Block size for the sorting manager
+		Allocation chunk for the temporary spaces
 	*/
-	static int getSortMemBlockSize();
+	static int getTempBlockSize();
 
 	/*
-		Memory usage limit for the sorting manager
+		Caching limit for the temporary data
 	*/
-	static int getSortMemUpperLimit();
+	static int getTempCacheLimit();
 
 	/*
 		Whether remote (NFS) files can be opened

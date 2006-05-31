@@ -1206,7 +1206,7 @@ bool BackupManager::actualize_state(thread_db* tdbb) throw()
 #endif
 		try {
 			NBAK_TRACE(("Open difference file"));
-			diff_file = PIO_open(database, diff_name, false, NULL, diff_name);
+			diff_file = PIO_open(database, diff_name, false, diff_name);
 		}
 		catch (const Firebird::Exception& ex) {
 #ifdef SUPERSERVER

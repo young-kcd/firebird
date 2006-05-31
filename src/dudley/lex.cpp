@@ -36,17 +36,13 @@
 #include "../dudley/ddl_proto.h"
 #include "../dudley/hsh_proto.h"
 #include "../dudley/lex_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../common/classes/TempFile.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#ifdef SMALL_FILE_NAMES
-const char* SCRATCH = "fb_q";
-#else
 const char* SCRATCH = "fb_query_";
-#endif
 
 static int nextchar(void);
 static void retchar(SSHORT);
@@ -54,7 +50,7 @@ static int skip_white(void);
 
 /* Input line control */
 
-static FILE *input_file, *trace_file;
+static FILE *input_file, *trace_file = NULL;
 static TEXT *DDL_char, DDL_buffer[256], trace_file_name[MAXPATHLEN];
 
 enum chr_types {
@@ -152,10 +148,10 @@ void LEX_fini(void)
  *
  **************************************/
 
-	if (trace_file != NULL)
+	if (trace_file != NULL) {
 		fclose(trace_file);
-	if (trace_file_name[0])
 		unlink(trace_file_name);
+	}
 }
 
 
@@ -202,7 +198,7 @@ void LEX_get_text(UCHAR * buffer, TXT text)
 	length = text->txt_length;
 
 	if (fseek(trace_file, start, 0)) {
-		fseek(trace_file, (SLONG) 0, 2);
+		fseek(trace_file, 0, 2);
 		DDL_err(275, NULL, NULL, NULL, NULL, NULL);
 		/* msg 275: fseek failed */
 	}
@@ -211,7 +207,7 @@ void LEX_get_text(UCHAR * buffer, TXT text)
 	while (length--)
 		*p++ = getc(trace_file);
 
-	fseek(trace_file, (SLONG) 0, 2);
+	fseek(trace_file, 0, 2);
 }
 
 
@@ -228,13 +224,10 @@ void LEX_init( void *file)
  *	scratch trace file to keep all input.
  *
  **************************************/
-
-#if !(defined WIN_NT)
-	trace_file = (FILE*) gds__temp_file(TRUE, SCRATCH, 0);
-#else
-	trace_file = (FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
-#endif
-	if (trace_file == (FILE*) - 1)
+	const Firebird::PathName filename = TempFile::create(SCRATCH);
+	strcpy(trace_file_name, filename.c_str());
+	trace_file = fopen(trace_file_name, "w+b");
+	if (trace_file == (FILE*) -1)
 		DDL_err(276, NULL, NULL, NULL, NULL, NULL);
 		/* msg 276: couldn't open scratch file */
 
@@ -268,7 +261,7 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 	length = text->txt_length;
 
 	if (fseek(trace_file, start, 0)) {
-		fseek(trace_file, (SLONG) 0, 2);
+		fseek(trace_file, 0, 2);
 		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	
 		/* msg 275: fseek failed */
 	}
@@ -287,7 +280,7 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 		/* msg 277: isc_put_segment failed */
 	}
 
-	fseek(trace_file, (SLONG) 0, 2);
+	fseek(trace_file, 0, 2);
 }
 
 

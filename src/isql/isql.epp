@@ -61,6 +61,7 @@
 #include <errno.h>
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/classes/TempFile.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -504,21 +505,6 @@ static const ri_actions ri_actions_all[] =
 	{"", "", ""},
 	{0, 0, 0}
 };
-
-// We statically link ISQL against CLIB in MSVC6 and
-// hence we've got problems sharing file handles with FBCLIENT.
-// Since temp files are deleted by ISQL, let's create them here as well.
-#if defined(_MSC_VER) && (_MSC_VER <= 1200)
-static FILE* create_temp_file(const TEXT* string, TEXT* expanded_string)
-{
-	gds__temp_dir(expanded_string);
-	strcat(expanded_string, string);
-	strcat(expanded_string, TEMP_PATTERN);
-	mktemp(expanded_string);
-	return fopen(expanded_string, "w+b");
-}
-#define gds__temp_file(flag, string, expanded_string) create_temp_file(string, expanded_string)
-#endif
 
 
 int CLIB_ROUTINE main(int argc,
@@ -2753,12 +2739,12 @@ static processing_state copy_table(TEXT* source,
 	// If there is an alternate database, extract the domains
 	const bool domain_flag = otherdb[0];
 
-	TEXT ftmp[MAXPATHLEN];
-	isqlGlob.Out = (FILE*) gds__temp_file(TRUE, SCRATCH, ftmp);
-	if (isqlGlob.Out == (FILE*) - 1) {
+	Firebird::PathName ftmp = TempFile::create(SCRATCH);
+	isqlGlob.Out = fopen(ftmp.c_str(), "w+b");
+	if (isqlGlob.Out == (FILE*) -1) {
 		// If we can't open a temp file then bail 
 
-		ISQL_msg_get(FILE_OPEN_ERR, errbuf, ftmp);
+		ISQL_msg_get(FILE_OPEN_ERR, errbuf, ftmp.c_str());
 		STDERROUT(errbuf);
 		Exit_value = FINI_ERROR;
 		isqlGlob.Out = holdout;
@@ -2817,7 +2803,7 @@ static processing_state copy_table(TEXT* source,
 		}
 	}
 
-	unlink(ftmp);
+	unlink(ftmp.c_str());
 	isqlGlob.Out = holdout;
 
 	return (SKIP);
@@ -3097,8 +3083,10 @@ static void do_isql()
 
 	// File used to edit sessions
 
-	Ofp = (FILE*) gds__temp_file(TRUE, SCRATCH, Tmpfile);
-	if (Ofp == (FILE*) - 1)
+	const Firebird::PathName filename = TempFile::create(SCRATCH);
+	strcpy(Tmpfile, filename.c_str());
+	Ofp = fopen(Tmpfile, "w+b");
+	if (Ofp == (FILE*) -1)
 	{
 		// If we can't open a temp file then bail 
 

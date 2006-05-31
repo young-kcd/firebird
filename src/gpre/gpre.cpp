@@ -57,9 +57,9 @@
 #include "../gpre/gpre_meta.h"
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
-#include "../jrd/gds_proto.h"
 #include "../gpre/gpreswi.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/TempFile.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -75,14 +75,10 @@ extern "C" {
 // Globals
 GpreGlobals gpreGlob;
 
-#ifdef SMALL_FILE_NAMES
-const char* const SCRATCH		= "fb_q";
-#else
-const char* const SCRATCH		= "fb_query_";
-#endif
+const char* const SCRATCH = "fb_query_";
 
-const char* const FOPEN_READ_TYPE		= "r";
-const char* const FOPEN_WRITE_TYPE	= "w";
+const char* const FOPEN_READ_TYPE = "r";
+const char* const FOPEN_WRITE_TYPE = "w";
 
 static bool			all_digits(const char*);
 static bool			arg_is_string(SLONG, TEXT**, const TEXT*);
@@ -1387,16 +1383,11 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	fseek(input_file, start_position, 0);
 	input_char = input_buffer;
 
-#if !(defined WIN_NT)
-	trace_file = (FILE *) gds__temp_file(TRUE, SCRATCH, 0);
-#else
-//  PC-like platforms can't delete a file that is open.  Therefore
-//  we will save the name of the temp file for later deletion. 
+	Firebird::PathName filename = TempFile::create(SCRATCH);
+	strcpy(trace_file_name, filename.c_str());
+	trace_file = fopen(trace_file_name, "w+b");
 
-	trace_file = (FILE *) gds__temp_file(TRUE, SCRATCH, trace_file_name);
-#endif
-
-	if (trace_file == (FILE *) - 1) {
+	if (trace_file == (FILE *) -1) {
 		trace_file = NULL;
 		CPR_error("Couldn't open scratch file");
 		return 0;

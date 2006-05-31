@@ -161,28 +161,6 @@ void PIO_close(jrd_file* main_file)
 }
 
 
-int PIO_connection(const Firebird::PathName& file_name)
-{
-/**************************************
- *
- *	P I O _ c o n n e c t i o n
- *
- **************************************
- *
- * Functional description
- *	Analyze a file specification and determine whether a page/lock
- *	server is required and available.  If so, return a "connection"
- *	block.  If not, return NULL.
- *
- *	Note: The file name must have been expanded prior to this call.
- *
- **************************************/
-
-	return 0;
-}
-
-
-
 jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite, bool temporary)
 {
 /**************************************
@@ -482,7 +460,6 @@ SLONG PIO_act_alloc(Database* dbb)
 jrd_file* PIO_open(Database* dbb,
 			 const Firebird::PathName& string,
 			 bool trace_flag,
-			 blk* connection, 
 			 const Firebird::PathName& file_name)
 {
 /**************************************
@@ -492,9 +469,7 @@ jrd_file* PIO_open(Database* dbb,
  **************************************
  *
  * Functional description
- *	Open a database file. If a "connection"
- *	block is provided, use the connection
- *	to communicate with a page/lock server.
+ *	Open a database file.
  *
  **************************************/
 	const TEXT* ptr = (string.hasData() ? string : file_name).c_str();

@@ -187,6 +187,9 @@
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\TempFile.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.cpp">
 			</File>
 			<File
@@ -231,6 +234,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\MetaName.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\TempFile.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.h">

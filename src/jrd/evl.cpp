@@ -2801,10 +2801,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 
 /* Sort the values already "put" to sort */
 
-	if (!SORT_sort(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle))
-	{
-		ERR_punt();
-	}
+	SORT_sort(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle);
 
 /* Now get the sorted/projected values and compute the aggregate */
 
@@ -3523,14 +3520,9 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 	impure_agg_sort* asb_impure = (impure_agg_sort*) ((char*) request + asb->nod_impure);
 	const sort_key_def* sort_key = asb->asb_key_desc;
 
-	sort_context* handle =
-		SORT_init(tdbb->tdbb_status_vector,
-				  ROUNDUP_LONG(sort_key->skd_length), 1, 1, sort_key,
-				  reject_duplicate, 0,
-				  tdbb->tdbb_attachment, 0);
-
-	if (!(asb_impure->iasb_sort_handle = handle))
-		ERR_punt();
+	asb_impure->iasb_sort_handle =
+		SORT_init(tdbb, ROUNDUP_LONG(sort_key->skd_length),
+				  1, 1, sort_key, reject_duplicate, 0, 0);
 }
 
 

@@ -52,13 +52,13 @@ const char*	GCPolicyDefault	= GCPolicyCooperative;
 const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 {
 	{TYPE_STRING,		"RootDirectory",			(ConfigValue) 0},
-	{TYPE_INTEGER,		"SortMemBlockSize",			(ConfigValue) 1048576},		// bytes
+	{TYPE_INTEGER,		"TempBlockSize",			(ConfigValue) 1048576},		// bytes
 #ifdef SUPERSERVER
-	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 67108864},	// bytes
+	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 67108864},	// bytes
 #elif defined(WIN_NT) // win32 CS
-	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 8388608},		// bytes
+	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 8388608},		// bytes
 #else // non-win32 CS
-	{TYPE_INTEGER,		"SortMemUpperLimit",		(ConfigValue) 0},			// bytes
+	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 0},			// bytes
 #endif
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
@@ -279,14 +279,14 @@ const char* Config::getRootDirectory()
 	return result ? result : sysConfig.root_dir;
 }
 
-int Config::getSortMemBlockSize()
+int Config::getTempBlockSize()
 {
-	return (int) sysConfig.values[KEY_SORT_MEM_BLOCK_SIZE];
+	return (int) sysConfig.values[KEY_TEMP_BLOCK_SIZE];
 }
 
-int Config::getSortMemUpperLimit()
+int Config::getTempCacheLimit()
 {
-	return (int) sysConfig.values[KEY_SORT_MEM_UPPER_LIMIT];
+	return (int) sysConfig.values[KEY_TEMP_CACHE_LIMIT];
 }
 
 bool Config::getRemoteFileOpenAbility()
