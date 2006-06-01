@@ -457,11 +457,22 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool 
 	tdbb->tdbb_request->req_flags &= ~req_null;
 
 	DSC* result = 0;
-	{
+	try {
 		Jrd::ContextPoolHolder context(tdbb, tdbb->tdbb_request->req_pool);
 
 		if (!(result = EVL_expr(tdbb, idx->idx_expression)))
 			result = &idx->idx_expression_desc;
+	}
+	catch (const Firebird::Exception&) {
+/*
+		if (!already_attached) {
+			TRA_detach_request(expr_request);
+		}
+		tdbb->tdbb_request = expr_request->req_caller;
+		expr_request->req_caller = NULL;
+		expr_request->req_flags &= ~req_in_use;
+*/
+		throw;
 	}
 	notNull = !(tdbb->tdbb_request->req_flags & req_null);
 
