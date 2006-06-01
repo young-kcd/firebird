@@ -45,7 +45,7 @@ public:
 		init("", prefix);
 	}
 
-	~TempFile();
+	virtual ~TempFile();
 
 	size_t read(offset_t, void*, size_t);
 	size_t write(offset_t, void*, size_t);

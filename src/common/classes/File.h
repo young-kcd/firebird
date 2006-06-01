@@ -29,6 +29,8 @@ namespace Firebird {
 
 class File {
 public:
+	virtual ~File() {}
+
 	virtual size_t read(offset_t, void*, size_t) = 0;
 	virtual size_t write(offset_t, void*, size_t) = 0;
 

@@ -37,6 +37,8 @@
 #include <sys/types.h>
 #include <sys/timeb.h>
 #include <windows.h>
+#elif defined(HAVE_UNISTD_H)
+#include <unistd.h>
 #endif
 
 #include "../jrd/gdsassert.h"
@@ -83,7 +85,8 @@ Firebird::PathName TempFile::getTempPath()
 			path = temp_dir;
 		}
 #else
-		path = getenv("TMP");
+		env_temp = getenv(TMP)
+		path = env_temp ? env_temp : "";
 #endif
 	}
 	if (path.empty())
