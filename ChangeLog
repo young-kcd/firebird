@@ -1,3 +1,115 @@
+2006-06-01 04:01  asfernandes
+
+	* firebird2/builds/win32/defs/: fbclient.def (1.13), fbclient_s.def
+	(1.4), gds32.def (1.11), iutls.def (1.4):
+	
+	Remove obsolete functions from .def files
+
+2006-06-01 03:46  asfernandes
+
+	* firebird2/src/extlib/ib_udf.cpp (1.8):
+	
+	Misc
+
+2006-05-31 20:01  dimitr
+
+	* firebird2/src/: dsql/gen.cpp (1.100), dsql/node.h (1.74),
+	dsql/pass1.cpp (1.268), jrd/blr.h (1.24), misc/blrtable.cpp (1.25):
+	
+	Some preparation for RETURNING in UPDATE/DELETE.  To be completed
+	in v3.0.
+
+2006-05-31 18:57  dimitr
+
+	* firebird2/src/utilities/fbcpl/: fbdialog.cpp (1.7), fbdialog.h
+	(1.5):
+	
+	Fixed the CPL applet.
+
+2006-05-31 17:08  dimitr
+
+	* firebird2/src/extlib/ib_udf.cpp (1.7):
+	
+	VS8.0 has two implementations of div(). Let's explicitly use the
+	int-aware one.
+
+2006-05-31 14:04  dimitr
+
+	* firebird2/src/jrd/: Relation.h (1.3), met.epp (1.190), vio.cpp
+	(1.165):
+	
+	Misc.
+
+2006-05-31 11:10  dimitr
+
+	* firebird2/src/jrd/: mov.cpp (1.26), mov_proto.h (1.12):
+	
+	Cleanup.
+
+2006-05-31 10:53  dimitr
+
+	* firebird2/builds/win32/msvc7/: common.vcproj (1.25),
+	common_classic.vcproj (1.22), engine.vcproj (1.55),
+	engine_classic.vcproj (1.55), engine_embed.vcproj (1.44):
+	
+	1) Reworked memory management in SORT. Now we're pools aware there.
+	 2) Reworked error handling in SORT and its callers.  3) Replaced
+	DLS+SortMem with the generic TempSpace class.  4) Replaced GDS temp
+	file management with the TempFile class.  5) Various cleanup.
+
+2006-05-31 10:47  dimitr
+
+	* firebird2/src/: jrd/dls.cpp (1.28), jrd/dls_proto.h (1.13),
+	jrd/sort_mem.cpp (1.25), jrd/sort_mem.h (1.8), qli/lex.cpp (1.35),
+	gpre/gpre.cpp (1.77), dudley/lex.cpp (1.30), isql/isql.epp (1.179):
+	
+	1) Reworked memory management in SORT. Now we're pools aware there.
+	 2) Reworked error handling in SORT and its callers.  3) Replaced
+	DLS+SortMem with the generic TempSpace class.  4) Replaced GDS temp
+	file management with the TempFile class.  5) Various cleanup.
+
+2006-05-31 10:44  dimitr
+
+	* firebird2/src/: jrd/rse.cpp (1.110), jrd/sort.cpp (1.81),
+	jrd/sort.h (1.27), jrd/sort_proto.h (1.15),
+	common/config/config.cpp (1.71), common/config/config.h (1.40),
+	common/config/dir_list.cpp (1.32), common/classes/File.h (1.1),
+	common/classes/TempFile.cpp (1.1), common/classes/TempFile.h (1.1),
+	jrd/TempSpace.cpp (1.1), jrd/TempSpace.h (1.1):
+	
+	1) Reworked memory management in SORT. Now we're pools aware there.
+	 2) Reworked error handling in SORT and its callers.  3) Replaced
+	DLS+SortMem with the generic TempSpace class.  4) Replaced GDS temp
+	file management with the TempFile class.  5) Various cleanup.
+
+2006-05-31 10:37  dimitr
+
+	* firebird2/src/jrd/: gds.cpp (1.197), gds_proto.h (1.42), jrd.cpp
+	(1.254), nbak.cpp (1.59), pag.cpp (1.108), sdw.cpp (1.65), evl.cpp
+	(1.182), idx.cpp (1.109):
+	
+	1) Reworked memory management in SORT. Now we're pools aware there.
+	 2) Reworked error handling in SORT and its callers.  3) Replaced
+	DLS+SortMem with the generic TempSpace class.  4) Replaced GDS temp
+	file management with the TempFile class.  5) Various cleanup.
+
+2006-05-31 10:34  dimitr
+
+	* firebird2/src/jrd/os/: win32/winnt.cpp (1.37),
+	vms/dfloat_stub.cpp (1.12), posix/unix.cpp (1.50), pio_proto.h
+	(1.18):
+	
+	1) Reworked memory management in SORT. Now we're pools aware there.
+	 2) Reworked error handling in SORT and its callers.  3) Replaced
+	DLS+SortMem with the generic TempSpace class.  4) Replaced GDS temp
+	file management with the TempFile class.  5) Various cleanup.
+
+2006-05-31 10:29  dimitr
+
+	* firebird2/src/jrd/dpm.epp (1.71):
+	
+	Misc.
+
 2006-05-31 03:19  robocop
 
 	* firebird2/src/dsql/blob.epp (1.21):
