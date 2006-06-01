@@ -20,8 +20,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef TEMP_SPACE_H
-#define TEMP_SPACE_H
+#ifndef JRD_TEMP_SPACE_H
+#define JRD_TEMP_SPACE_H
 
 #include "firebird.h"
 #include "../common/classes/fb_string.h"
@@ -110,4 +110,4 @@ private:
 	static offset_t globalCacheUsage;
 };
 
-#endif // TEMP_SPACE_H
+#endif // JRD_TEMP_SPACE_H

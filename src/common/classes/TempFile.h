@@ -20,8 +20,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef TEMP_FILE_H
-#define TEMP_FILE_H
+#ifndef CLASSES_TEMP_FILE_H
+#define CLASSES_TEMP_FILE_H
 
 #include "firebird.h"
 #include "../common/classes/fb_string.h"
@@ -83,4 +83,4 @@ private:
 	bool doUnlink;
 };
 
-#endif // TEMP_FILE_H
+#endif // CLASSES_TEMP_FILE_H

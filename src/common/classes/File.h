@@ -20,8 +20,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef FILE_H
-#define FILE_H
+#ifndef CLASSES_FILE_H
+#define CLASSES_FILE_H
 
 #ifndef SOLARIS
 typedef UINT64 offset_t;
@@ -43,4 +43,4 @@ public:
 
 } // namespace
 
-#endif // FILE_H
+#endif // CLASSES_FILE_H
