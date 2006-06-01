@@ -3129,7 +3129,8 @@ static void do_isql()
 	// code tells us we are done
 
 	Firebird::Array<TEXT> stmt;
-	TEXT* statement = stmt.getBuffer(MAX_USHORT);
+	const size_t stmtLength = MAX_USHORT;
+	TEXT* statement = stmt.getBuffer(stmtLength);
 	processing_state ret;
 	
 	bool done = false;
@@ -3153,7 +3154,7 @@ static void do_isql()
 			break;
 		}
 
-		ret = get_statement(statement, sizeof(statement), sql_prompt);
+		ret = get_statement(statement, stmtLength, sql_prompt);
 
 		// If there is no database yet, remind us of the need to connect 
 
