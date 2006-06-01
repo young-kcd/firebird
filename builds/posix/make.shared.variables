@@ -16,7 +16,7 @@ WHY_Sources = why.cpp
 # why.cpp does the switch to determine the actual implementation to use
 
 
-JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp dls.cpp \
+JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp \
 		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
 		isc_sync.cpp perf.cpp sch.cpp sdl.cpp status.cpp \
 		ThreadData.cpp utl.cpp \
@@ -38,10 +38,10 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp inuse.cpp \
 		jrd.cpp lck.cpp log.cpp  \
 		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
-		ods.cpp plugin_manager.cpp pwd.cpp rlck.cpp \
+		ods.cpp plugin_manager.cpp pwd.cpp Relation.cpp rlck.cpp \
 		rpb_chain.cpp rse.cpp \
-		sdw.cpp shut.cpp sort.cpp sort_mem.cpp sqz.cpp \
-		svc.cpp sym.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
+		sdw.cpp shut.cpp sort.cpp sqz.cpp \
+		svc.cpp sym.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
 		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module) ThreadData.cpp thd.cpp \
 		unicode_util.cpp
 
@@ -213,7 +213,7 @@ FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Source
 #
 # common/classes
 
-FBCLASSES_ClientFiles=alloc.cpp locks.cpp fb_string.cpp timestamp.cpp
+FBCLASSES_ClientFiles=alloc.cpp locks.cpp fb_string.cpp timestamp.cpp TempFile.cpp
 FBCLASSES_ServerFiles=
 
 FBCLASSES_Files= $(FBCLASSES_ClientFiles) $(FBCLASSES_ServerFiles)

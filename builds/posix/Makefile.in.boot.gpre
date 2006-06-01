@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.boot.gpre,v 1.25 2005-12-18 17:56:43 alexpeshkoff Exp $
+#  $Id: Makefile.in.boot.gpre,v 1.26 2006-06-01 07:33:26 mkubecek Exp $
 #
 ROOT=..
 ObjModuleType=boot
@@ -41,7 +41,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-JRDBOOT_Files =	dsc.cpp gds.cpp isc.cpp dls.cpp isc_ipc.cpp $(JRDBOOT_Extra_Files)
+JRDBOOT_Files =	dsc.cpp gds.cpp isc.cpp isc_ipc.cpp $(JRDBOOT_Extra_Files)
 JRDBOOT_Sources = $(addprefix jrd/, $(JRDBOOT_Files))
 JRDBOOT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRDBOOT_Sources))))
 
