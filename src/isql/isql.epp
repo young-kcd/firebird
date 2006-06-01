@@ -60,6 +60,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include "../common/utils_proto.h"
+#include "../common/classes/array.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TempFile.h"
 
@@ -3127,7 +3128,8 @@ static void do_isql()
 	// Read statements and process them from Ifp until the ret
 	// code tells us we are done
 
-	TEXT statement[MAX_USHORT];
+	Firebird::Array<TEXT> stmt;
+	TEXT* statement = stmt.getBuffer(MAX_USHORT);
 	processing_state ret;
 	
 	bool done = false;
