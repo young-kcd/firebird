@@ -311,6 +311,9 @@
 				RelativePath="..\..\..\src\gpre\sql_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\TempFile.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\gpre\words.h">
 			</File>
 		</Filter>
@@ -331,6 +334,13 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
+			</File>
+		</Filter>
+		<Filter
+			Name="OTHER files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\common\classes\TempFile.cpp">
 			</File>
 		</Filter>
 	</Files>

@@ -143,6 +143,9 @@
 			Name="COMMON files"
 			Filter="cpp;c">
 			<File
+				RelativePath="..\..\..\src\common\classes\TempFile.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\utils.cpp">
 			</File>
 		</Filter>
@@ -314,6 +317,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\sql_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\TempFile.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\utils_proto.h">
