@@ -78,8 +78,8 @@ private:
 #endif
 
 	Firebird::PathName filename;
-	int position;
-	size_t size;
+	offset_t position;
+	offset_t size;
 	bool doUnlink;
 };
 

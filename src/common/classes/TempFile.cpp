@@ -246,11 +246,12 @@ void TempFile::seek(offset_t offset)
 		Firebird::system_call_failed::raise("SetFilePointer");
 	}
 #else
-	position = ::lseek(handle, offset, SEEK_SET);
-	if (position != offset)
+	int seek = ::lseek(handle, offset, SEEK_SET);
+	if (seek != offset)
 	{
 		Firebird::system_call_failed::raise("lseek");
 	}
+	position = seek;
 #endif
 	if (position > size)
 		size = position;
