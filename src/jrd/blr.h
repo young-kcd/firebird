@@ -273,6 +273,19 @@
 #define blr_current_timestamp	(unsigned char)161
 #define blr_current_time	(unsigned char)162
 
+/* These codes reuse BLR code space */
+
+#define blr_post_arg		(unsigned char)163
+#define blr_exec_into		(unsigned char)164
+#define blr_user_savepoint	(unsigned char)165
+#define blr_dcl_cursor		(unsigned char)166
+#define blr_cursor_stmt		(unsigned char)167
+#define blr_current_timestamp2	(unsigned char)168
+#define blr_current_time2	(unsigned char)169
+#define blr_agg_list		(unsigned char)170
+#define blr_agg_list_distinct	(unsigned char)171
+#define blr_modify2			(unsigned char)172
+
 /* FB 1.0 specific BLR */
 
 #define blr_current_role	(unsigned char)174
@@ -291,35 +304,21 @@
 #define blr_lowcase			(unsigned char)181
 #define blr_strlen			(unsigned char)182
 
-/* sub parameters for blr_length */
-
+/* sub parameter for blr_strlen */
 #define blr_strlen_bit		(unsigned char)0
 #define blr_strlen_char		(unsigned char)1
 #define blr_strlen_octet	(unsigned char)2
 
 #define blr_trim			(unsigned char)183
 
-/* sub parameters for blr_trim */
-
+/* first sub parameter for blr_trim */
 #define blr_trim_both		(unsigned char)0
 #define blr_trim_leading	(unsigned char)1
 #define blr_trim_trailing	(unsigned char)2
 
+/* second sub parameter for blr_trim */
 #define blr_trim_spaces		(unsigned char)0
 #define blr_trim_characters	(unsigned char)1
-
-/* These codes reuse BLR code space */
-
-#define blr_post_arg		(unsigned char)163
-#define blr_exec_into		(unsigned char)164
-#define blr_user_savepoint	(unsigned char)165
-#define blr_dcl_cursor		(unsigned char)166
-#define blr_cursor_stmt		(unsigned char)167
-#define blr_current_timestamp2	(unsigned char)168
-#define blr_current_time2	(unsigned char)169
-#define blr_agg_list		(unsigned char)170
-#define blr_agg_list_distinct	(unsigned char)171
-#define blr_modify2			(unsigned char)172
 
 /* These codes are actions for user-defined savepoints */
 

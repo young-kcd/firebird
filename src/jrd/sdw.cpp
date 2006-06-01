@@ -1231,9 +1231,9 @@ static bool check_for_file(const SCHAR* name, USHORT length)
 	const Firebird::PathName path(name, length);
 
 	try {
-//  This use of PIO_open is NOT checked against DatabaseAccess configuration
-// parameter. It's not required, because here we only check for presence of
-// existing file, never really use (or create) it.
+		// This use of PIO_open is NOT checked against DatabaseAccess configuration
+		// parameter. It's not required, because here we only check for presence of
+		// existing file, never really use (or create) it.
 		jrd_file* temp_file = PIO_open(dbb, path, false, path);
 		PIO_close(temp_file);
 	}	// try
