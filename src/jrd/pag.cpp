@@ -1130,12 +1130,14 @@ void PAG_header(const TEXT* file_name, USHORT file_length, bool info)
 														  file_length), 0);
 	}
 
+	const USHORT ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
+
 	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
 	{
 		ERR_post(isc_wrong_ods,
 				 isc_arg_cstring, file_length, ERR_string(file_name,
 														  file_length),
-				 isc_arg_number, (SLONG) (header->hdr_ods_version & ~ODS_FIREBIRD_FLAG),
+				 isc_arg_number, (SLONG) ods_version,
 				 isc_arg_number, (SLONG) header->hdr_ods_minor,
 				 isc_arg_number, (SLONG) ODS_VERSION,
 				 isc_arg_number, (SLONG) ODS_CURRENT,
@@ -1159,7 +1161,7 @@ is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 ****/
 
 	if (header->hdr_implementation != CLASS &&
-		DECODE_ODS_MAJOR(header->hdr_ods_version) < ODS_VERSION11 ?  
+		ods_version < ODS_VERSION11 ?  
 		  (header->hdr_implementation < 0 || header->hdr_implementation > CLASS_MAX10 ||
 		   archMatrix10[header->hdr_implementation] == archUnknown ||
 		   archMatrix10[header->hdr_implementation] != archMatrix10[CLASS])
@@ -1190,7 +1192,7 @@ is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 			BUGCHECK(267);		/* next transaction older than oldest transaction */
 	}
 
-	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
+	dbb->dbb_ods_version = ods_version;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
 	dbb->dbb_minor_original = header->hdr_ods_minor_original;
 
