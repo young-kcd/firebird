@@ -267,7 +267,7 @@ $(CREATE_DB):
 $(GBAK_STATIC): @MANAGER_PROCESS_TARGET@
 	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gbak $@
 
-$(ISQL_STATIC): 
+$(ISQL_STATIC): @MANAGER_PROCESS_TARGET@
 	$(MAKE) -f $(GEN_ROOT)/Makefile.static.isql $@
 
 empty_db :
