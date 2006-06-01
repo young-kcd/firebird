@@ -23,7 +23,9 @@
 #ifndef FILE_H
 #define FILE_H
 
+#ifndef SOLARIS
 typedef UINT64 offset_t;
+#endif
 
 namespace Firebird {
 
