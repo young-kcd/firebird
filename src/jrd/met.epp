@@ -4345,7 +4345,8 @@ static void store_dependencies(thread_db*	tdbb,
 			fb_assert(checkTableScope && dep_rel || !checkTableScope);
 
 			if (checkTableScope && 
-				( dep_rel->isTemporary() != relation->isTemporary() ))
+				( (dep_rel->rel_flags & (REL_temp_tran | REL_temp_conn)) !=
+				  (relation->rel_flags & (REL_temp_tran | REL_temp_conn)) ))
 			{
 				if ( !( (dep_rel->rel_flags & REL_temp_tran) &&
 						(relation->rel_flags & REL_temp_conn) ))
