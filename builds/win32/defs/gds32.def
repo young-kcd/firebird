@@ -238,7 +238,6 @@ EXPORTS
     isc_service_start=fbclient.isc_service_start @228
     isc_drop_database=fbclient.isc_drop_database @229
     isc_dsql_exec_immed3_m=fbclient.isc_dsql_exec_immed3_m @230
-    gds__temp_file=fbclient.gds__temp_file @231
     gds__transaction_cleanup=fbclient.gds__transaction_cleanup @235
     isc_blob_gen_bpb=fbclient.isc_blob_gen_bpb @236
     isc_blob_lookup_desc=fbclient.isc_blob_lookup_desc @237

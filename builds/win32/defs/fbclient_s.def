@@ -104,8 +104,6 @@ EXPORTS
 	gds__print_blr@16			PRIVATE
 	gds__print_status@4			PRIVATE
 	gds__register_cleanup@8		PRIVATE
-	gds__temp_dir@4				PRIVATE
-	gds__temp_file@20			PRIVATE
 	gds__thread_start@20		PRIVATE
 	gds__vax_integer@8			PRIVATE
 	gds__vtov@12				PRIVATE
