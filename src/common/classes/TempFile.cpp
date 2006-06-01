@@ -85,7 +85,7 @@ Firebird::PathName TempFile::getTempPath()
 			path = temp_dir;
 		}
 #else
-		env_temp = getenv(TMP)
+		env_temp = getenv("TMP");
 		path = env_temp ? env_temp : "";
 #endif
 	}
