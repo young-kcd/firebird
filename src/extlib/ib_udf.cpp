@@ -135,16 +135,20 @@ double EXPORT IB_UDF_cot( double *a)
 
 double EXPORT IB_UDF_div( long *a, long *b)
 {
-	if (*b != 0) {
+	if (*b != 0)
+	{
+		// VS8.0 has two implementations of div().
+		// Let's explicitly use the int-aware one.
 		div_t div_result = div((int) *a, (int) *b);
 		return (div_result.quot);
 	}
 	else
-		/* This is a Kludge!  We need to return INF, 
-		   but this seems to be the only way to do 
-		   it since there seens to be no constant for it. */
+	{
+		// This is a Kludge!  We need to return INF, 
+		// but this seems to be the only way to do 
+		// it since there seens to be no constant for it.
 		return (1 / tan(0.0));
-
+	}
 }
 
 double EXPORT IB_UDF_floor( double *a)
@@ -247,15 +251,20 @@ char *EXPORT IB_UDF_ltrim( const char *s)
 
 double EXPORT IB_UDF_mod( long *a, long *b)
 {
-	if (*b != 0) {
+	if (*b != 0)
+	{
+		// VS8.0 has two implementations of div().
+		// Let's explicitly use the int-aware one.
 		div_t div_result = div((int) *a, (int) *b);
 		return (div_result.rem);
 	}
 	else
-		/* This is a Kludge!  We need to return INF, 
-		   but this seems to be the only way to do 
-		   it since there seens to be no constant for it. */
+	{
+		// This is a Kludge!  We need to return INF, 
+		// but this seems to be the only way to do 
+		// it since there seens to be no constant for it.
 		return (1 / tan(0.0));
+	}
 }
 
 double EXPORT IB_UDF_pi()
