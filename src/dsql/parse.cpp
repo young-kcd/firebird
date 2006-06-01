@@ -10773,22 +10773,22 @@ break;
 case 807:
   if (!yytrial)
 { yyval = make_node (nod_delete, (int) e_del_count,
-				yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
+				yyvsp[-4], yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL, NULL); }
 break;
 case 808:
   if (!yytrial)
 { yyval = make_node (nod_delete, (int) e_del_count,
-				yyvsp[-1], NULL, NULL, NULL, NULL, yyvsp[0]); }
+				yyvsp[-1], NULL, NULL, NULL, NULL, yyvsp[0], NULL); }
 break;
 case 811:
   if (!yytrial)
 { yyval = make_node (nod_update, (int) e_upd_count,
-				yyvsp[-6], make_list (yyvsp[-4]), yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL); }
+				yyvsp[-6], make_list (yyvsp[-4]), yyvsp[-3], yyvsp[-2], yyvsp[-1], yyvsp[0], NULL, NULL); }
 break;
 case 812:
   if (!yytrial)
 { yyval = make_node (nod_update, (int) e_upd_count,
-				yyvsp[-3], make_list (yyvsp[-1]), NULL, NULL, NULL, NULL, yyvsp[0]); }
+				yyvsp[-3], make_list (yyvsp[-1]), NULL, NULL, NULL, NULL, yyvsp[0], NULL); }
 break;
 case 813:
   if (!yytrial)

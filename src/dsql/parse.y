@@ -3355,12 +3355,12 @@ delete		: delete_searched
 delete_searched	: KW_DELETE FROM table_name where_clause
 		plan_clause order_clause rows_clause
 			{ $$ = make_node (nod_delete, (int) e_del_count,
-				$3, $4, $5, $6, $7, NULL); }
+				$3, $4, $5, $6, $7, NULL, NULL); }
 		;
 
 delete_positioned : KW_DELETE FROM table_name cursor_clause
 			{ $$ = make_node (nod_delete, (int) e_del_count,
-				$3, NULL, NULL, NULL, NULL, $4); }
+				$3, NULL, NULL, NULL, NULL, $4, NULL); }
 		;
 
 
@@ -3373,12 +3373,12 @@ update		: update_searched
 update_searched	: UPDATE table_name SET assignments where_clause
 		plan_clause order_clause rows_clause
 			{ $$ = make_node (nod_update, (int) e_upd_count,
-				$2, make_list ($4), $5, $6, $7, $8, NULL); }
+				$2, make_list ($4), $5, $6, $7, $8, NULL, NULL); }
 		  	;
 
 update_positioned : UPDATE table_name SET assignments cursor_clause
 			{ $$ = make_node (nod_update, (int) e_upd_count,
-				$2, make_list ($4), NULL, NULL, NULL, NULL, $5); }
+				$2, make_list ($4), NULL, NULL, NULL, NULL, $5, NULL); }
 		;
 
 
