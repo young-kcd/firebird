@@ -352,7 +352,7 @@ TempFile* TempSpace::setupFile(size_t size)
 			Firebird::PathName dirname, filename;
 			PathUtils::splitLastComponent(dirname, filename,
 										  tempFiles[j]->getName());
-			PathUtils::concatPath(dirname, dirname, PathUtils::dir_sep);
+			PathUtils::ensureSeparator(dirname);
 			if (!directory.compare(dirname) &&
 				tempFiles[j]->getSize() + size <= MAX_FILE_SIZE)
 			{

@@ -118,7 +118,7 @@ public:
 	
 	/** Concatenates the two paths given in the second and third parameters,
 		and writes the resulting path into the first parameter.  The
-		two path input arguments (arg 2 and 3) are concatinated in the order
+		two path input arguments (arg 2 and 3) are concatenated in the order
 		arg2 arg3.  The concatenation is done is such a way as to remove
 		any duplicate directory separators that may have resulted from
 		a simple string concatenation of the arguments with the directory
@@ -126,6 +126,10 @@ public:
 	**/
 	static void concatPath(Firebird::PathName&, const Firebird::PathName&,
 					const Firebird::PathName&);
+
+	// Tries to ensure our path finishes with a platform-specific directory separator.
+	// We don't work correctly with MBCS.
+	static void PathUtils::ensureSeparator(Firebird::PathName& in_out);
 					
 	/** splitLastComponent takes a path as the third argument and
 		removes the last component in that path (usually a file or directory name).
