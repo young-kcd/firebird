@@ -84,7 +84,7 @@ set FBBUILD_PROD_STATUS=
 set FBBUILD_PROD_STATUS=DEV) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I ALPHA > nul && (
 set FBBUILD_PROD_STATUS=DEV) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I BETA > nul && (
 set FBBUILD_PROD_STATUS=PROD) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I "Release Candidate" > nul && (
-set FBBUILD_PROD_STATUS=PROD) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I "RC" > nul && (
+set FBBUILD_PROD_STATUS=PROD) || type %ROOT_PATH%\src\jrd\build_no.h | findstr "RC" > nul && (
 set FBBUILD_PROD_STATUS=PROD) || type %ROOT_PATH%\src\jrd\build_no.h | findstr /I "Final" > nul && (
 set FBBUILD_PROD_STATUS=PROD)
 
@@ -174,14 +174,14 @@ del %temp%.\b$?.txt
 if not exist %FBBUILD_OUTPUT%\system32 (mkdir %FBBUILD_OUTPUT%\system32)
 @if DEFINED MSDevDir (
   @if %MSVC_VERSION% EQU 6 (
-    @copy "%MSDevDir%\vcredist\msvcrt.dll" %FBBUILD_OUTPUT%\system32\ > nul
-    @copy "%MSDevDir%\vcredist\msvcp%MSVC_VERSION%0.dll" %FBBUILD_OUTPUT%\system32\ > nul
+    @copy "%MSDevDir%\vcredist\msvcrt.dll" %FBBUILD_OUTPUT%\bin\ > nul
+    @copy "%MSDevDir%\vcredist\msvcp%MSVC_VERSION%0.dll" %FBBUILD_OUTPUT%\bin\ > nul
   )
 ) else (
   @if DEFINED MSVCDir (
 	@if %MSVC_VERSION% EQU 7 (
-      @copy "%FrameworkSDKDir%\bin\msvcp%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\system32\ > nul
-      @copy "%FrameworkSDKDir%\bin\msvcr%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\system32\ > nul
+      @copy "%FrameworkSDKDir%\bin\msvcp%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\bin\ > nul
+      @copy "%FrameworkSDKDir%\bin\msvcr%MSVC_VERSION%?.dll" %FBBUILD_OUTPUT%\bin\ > nul
 	)
   )
 )
@@ -431,7 +431,7 @@ set FBBUILD_ZIP_PACK_ROOT=%ROOT_PATH%\builds\zip_pack
 if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_ZIP_PACK_ROOT%\ > nul
 @copy /Y %FBBUILD_OUTPUT% %FBBUILD_ZIP_PACK_ROOT% > nul
-for %%v in (bin doc doc\sql.extensions help include intl lib udf examples ) do (
+for %%v in (bin doc doc\sql.extensions help include intl lib udf examples misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\secuirty ) do (
 	@mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
 	@copy /Y %FBBUILD_OUTPUT%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
 )
@@ -555,12 +555,14 @@ goto :EOF
 ::Set file timestamp to something meaningful.
 ::While building and testing this feature might be annoying, so we don't do it.
 ::==========================================================
+setlocal
+set TIMESTRING=0%PRODUCT_VER_STRING:~0,1%:0%PRODUCT_VER_STRING:~2,1%:0%PRODUCT_VER_STRING:~4,1%
 @if /I "%BUILDTYPE%"=="release" (
-	(@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %FBBUILD_OUTPUT%\*.*)
-	(if %FBBUILD_EMB_PACK% EQU 1 (@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\emb_pack\*.*) )
-	(if %FBBUILD_ZIP_PACK% EQU 1 (@echo Touching release build files with 01:05:10 timestamp) & (touch -s -D -t01:05:10 %ROOT_PATH%\zip_pack\*.*) )
+	(@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %FBBUILD_OUTPUT%\*.*)
+	(if %FBBUILD_EMB_PACK% EQU 1 (@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %ROOT_PATH%\emb_pack\*.*) )
+	(if %FBBUILD_ZIP_PACK% EQU 1 (@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %ROOT_PATH%\zip_pack\*.*) )
 )
-
+endlocal
 ::End of TOUCH_ALL
 ::----------------
 @goto :EOF
@@ -599,10 +601,10 @@ if %FBBUILD_ISX_PACK% NEQ 1 goto :EOF
 @echo              (You need to set the INNO_SETUP_PATH environment variable.)
 @echo.
 @echo       ZIP    Create Zip package.
-@echo              (PKZIP is currently used and the PKZIP env var must be set.)
+@echo              (SEVENZIP is currently used and the SEVENZIP env var must be set.)
 @echo.
 @echo       EMB    Create Embedded package.
-@echo              (PKZIP is currently used and the PKZIP env var must be set.)
+@echo              (SEVENZIP is currently used and the SEVENZIP env var must be set.)
 @echo.
 @echo       ALL    Build InnoSetup, Zip and Embedded packages.
 @echo.
