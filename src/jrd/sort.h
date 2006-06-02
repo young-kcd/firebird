@@ -211,7 +211,7 @@ struct run_control
 	sort_record*	run_record;			/* Next record in run */
 	SORTP*		run_buffer;			/* Run buffer */
 	SORTP*		run_end_buffer;		/* End of buffer */
-	bool		run_buff_alloc;		/* ALlocated buffer flag */
+	bool		run_buff_alloc;		/* Allocated buffer flag */
 };
 
 /* Merge control block */
