@@ -40,25 +40,21 @@ const int EVENT_SEMAPHORES	= 1;
 #ifdef NOHOSTNAME
 static const char* EVENT_FILE	= "isc_event1";
 static const char* LOCK_FILE	= "isc_lock1.gbl";
-static const char* LOCK_HEADER	= "isc_config";
 static const char* INIT_FILE	= "isc_init1";
 static const char* GUARD_FILE	= "isc_guard1";
 #elif defined(VMS)
 static const char* EVENT_FILE	= "[000000]isc_event1.%s";
 static const char* LOCK_FILE	= "[000000]isc_lock1.%s";
-static const char* LOCK_HEADER	= "[000000]isc_config";
 static const char* INIT_FILE	= "[000000]isc_init1.%s";
 static const char* GUARD_FILE	= "[000000]isc_guard1.%s";
 #elif defined(WIN_NT)
 static const char* EVENT_FILE	= "%s.evn";
 static const char* LOCK_FILE	= "%s.lck";
-static const char* LOCK_HEADER	= "ibconfig";
 static const char* INIT_FILE	= "%s.int";
 static const char* GUARD_FILE	= "%s.grd";
 #else
 static const char* EVENT_FILE	= "isc_event1.%s";
 static const char* LOCK_FILE	= "isc_lock1.%s";
-static const char* LOCK_HEADER	= "isc_config";
 static const char* INIT_FILE	= "isc_init1.%s";
 static const char* GUARD_FILE	= "isc_guard1.%s";
 #endif
@@ -92,21 +88,18 @@ static const char* MSG_FILE		= "firebird.msg";
 static const char MSG_FILE_LANG[]= "intl/%.10s.msg";
 const int LOCALE_MAX	= 10;
 static const char* LOGFILE		= "firebird.log";
-#define TEMP_PATTERN	"_XXXXXX"
 #elif defined(WIN_NT)
 static const char* WORKFILE		= "c:\\temp\\";
 static const char* MSG_FILE		= "firebird.msg";
 static const char MSG_FILE_LANG[]= "intl/%.8s.msg";
 const int LOCALE_MAX	= 6;
 static const char* LOGFILE		= "firebird.log";
-#define TEMP_PATTERN	"XXXXXX"
 #elif defined(VMS)
 static const char* WORKFILE		= "SYS$SCRATCH:";
 static const char* MSG_FILE		= "[sysmsg]firebird_msg.dat";
 static const char MSG_FILE_LANG[]= "[sysmsg]firebird_%.10s.dat";
 const int LOCALE_MAX	= 10;
 static const char* LOGFILE		= "[syserr]firebird.log";
-#define TEMP_PATTERN	"_XXXXXX"
 
 static const char ISC_LOGICAL[]	= "interbase:";
 static const char ISC_LOGICAL_LOCK[]	= "interbase_lock:";
@@ -134,7 +127,6 @@ static const char* MSG_FILE		= "firebird.msg";
 static const char MSG_FILE_LANG[]= "intl/%.10s.msg";
 const int LOCALE_MAX	= 10;
 static const char* LOGFILE		= "firebird.log";
-#define TEMP_PATTERN	"_XXXXXX"
 #endif
 
 #endif /* JRD_FILE_PARAMS_H */

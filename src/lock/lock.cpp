@@ -891,8 +891,6 @@ void LOCK_manager( SRQ_PTR manager_owner_offset)
 
 /* Loop, waiting for something to happen */
 
-	chmod(LOCK_HEADER, 0444);
-	
 #ifdef VALIDATE_LOCK_TABLE
 	ULONG manager_counter = 0;
 #endif
@@ -975,7 +973,6 @@ void LOCK_manager( SRQ_PTR manager_owner_offset)
 	ISC_STATUS_ARRAY local_status;
 #ifdef TERMINATE_IDLE_LOCK_MANAGER
 	ISC_unmap_file(local_status, &LOCK_data, ISC_SEM_REMOVE);
-	chmod(LOCK_HEADER, 0664);
 #else
 	ISC_unmap_file(local_status, &LOCK_data, 0);
 #endif

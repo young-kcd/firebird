@@ -138,11 +138,7 @@ const USHORT MAX_PTYPE	= ptype_batch_send;
 #else
 const USHORT MAX_PTYPE	= ptype_out_of_band;
 #endif
-#ifdef SMALL_FILE_NAMES
-const char* GDS_HOSTS_FILE	= "/etc/gdshosts.eqv";
-#else
 const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
-#endif
 #endif // VMS
 
 #ifdef WIN_NT
