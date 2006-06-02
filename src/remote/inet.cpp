@@ -3788,10 +3788,10 @@ static bool setNoNagleOption(rem_port* port)
 	if (Config::getTcpNoNagle()) 
 	{
 		int optval = TRUE;
-		int n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
+		int n = setsockopt((SOCKET) port->port_handle, IPPROTO_TCP,
 					TCP_NODELAY, (SCHAR*) &optval, sizeof(optval));
 
-		if (n == -1 && INET_ERRNO != EACCES)
+		if (n == -1)
 		{
 			return false;
 		}
