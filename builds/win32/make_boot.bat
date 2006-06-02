@@ -67,19 +67,24 @@ if "%ERRLEV%"=="1" goto :END
 ::=======
 @if "%DBG%"=="" (
 	call :gbak_embed_release
-	if "%ERRLEV%"=="1" goto :END
-	call :gpre_embed_release
-	if "%ERRLEV%"=="1" goto :END
-	call :isql_embed_release
-	if "%ERRLEV%"=="1" goto :END
 ) else (
 	call :gbak_embed_debug
-	if "%ERRLEV%"=="1" goto :END
-	call :gpre_embed_debug
-	if "%ERRLEV%"=="1" goto :END
-	call :isql_embed_debug
-	if "%ERRLEV%"=="1" goto :END
 )
+if "%ERRLEV%"=="1" goto :END
+
+@if "%DBG%"=="" (
+	call :gpre_embed_release
+) else (
+	call :gpre_embed_debug
+)
+if "%ERRLEV%"=="1" goto :END
+
+@if "%DBG%"=="" (
+	call :isql_embed_release
+) else (
+	call :isql_embed_debug
+)
+if "%ERRLEV%"=="1" goto :END
 
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gbak_embed.exe %ROOT_PATH%\gen > nul
 @copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gpre_embed.exe %ROOT_PATH%\gen > nul
