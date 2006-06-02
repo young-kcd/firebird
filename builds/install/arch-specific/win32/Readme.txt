@@ -16,7 +16,7 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to Firebird 2.0 Release Candidate 1.
+Welcome to Firebird 2.0 Release Candidate 2.
 
 
 Intended Users

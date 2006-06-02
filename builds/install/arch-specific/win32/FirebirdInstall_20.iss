@@ -320,14 +320,14 @@ Source: output\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent;
 ; Deploy libraries from vcredist if MSVC6 is used. Use %FrameworkSDKDir% is compiling with Visual Studio.
 ; The BuildExecutableInstall.bat will attempt to locate them and place them in output\system32\
 #if msvc_version == 6
-Source: output\system32\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent;
-Source: output\system32\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
+Source: output\bin\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent;
+Source: output\bin\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
 #elif msvc_version == 7
-Source: output\system32\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent;
-Source: output\system32\msvcr{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+Source: output\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent;
+Source: output\bin\msvcr{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
 #endif
-Source: output\system32\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent;
-Source: output\system32\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
+Source: output\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent;
+Source: output\bin\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
 
 ;Docs
 Source: builds\install\arch-specific\win32\installation_scripted.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
