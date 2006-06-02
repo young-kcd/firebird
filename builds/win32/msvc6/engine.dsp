@@ -203,10 +203,6 @@ SOURCE=..\..\..\src\jrd\divorce.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\dls.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\dsc.cpp
 # End Source File
 # Begin Source File
@@ -466,10 +462,6 @@ SOURCE=..\..\..\src\jrd\sort.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\sort_mem.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\sqz.cpp
 # End Source File
 # Begin Source File
@@ -483,6 +475,10 @@ SOURCE=..\..\..\src\jrd\svc.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sym.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\TempSpace.cpp
 # End Source File
 # Begin Source File
 
@@ -677,10 +673,6 @@ SOURCE=..\..\..\src\jrd\dfw_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\divorce.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\dls_proto.h
 # End Source File
 # Begin Source File
 
@@ -1253,6 +1245,10 @@ SOURCE=..\..\..\src\jrd\syidef.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sym.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\TempSpace.h
 # End Source File
 # Begin Source File
 

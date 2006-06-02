@@ -145,6 +145,10 @@ SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\common\classes\TempFile.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\common\classes\timestamp.cpp
 # End Source File
 # Begin Source File
@@ -190,6 +194,10 @@ SOURCE=..\..\..\src\jrd\os\fbsyslog.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\MetaName.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\TempFile.h
 # End Source File
 # Begin Source File
 
