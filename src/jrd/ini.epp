@@ -428,11 +428,14 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	*acl++ = ACL_id_list;
 	*acl++ = id_person;
 
-	const TEXT* p_1 = string.c_str();
 	USHORT length = string.length();
+	if (length > MAX_UCHAR)
+		length = MAX_UCHAR;
+		
 	*acl++ = (UCHAR)length;
 	if (length)
 	{
+		const TEXT* p_1 = string.c_str();
 		memcpy(acl, p_1, length);
 		acl += length;
 	}
@@ -453,6 +456,9 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	length = acl - buffer;
 
 	add_security_to_sys_rel(tdbb, string, "RDB$ROLES", buffer, length);
+	add_security_to_sys_rel(tdbb, string, "RDB$PAGES", buffer, length);
+	// DFW writes here
+	add_security_to_sys_rel(tdbb, string, "RDB$FORMATS", buffer, length);
 
 }
 
