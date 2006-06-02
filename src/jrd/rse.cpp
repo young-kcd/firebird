@@ -3179,7 +3179,7 @@ static ULONG read_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 
 	SORT_read_block(tdbb->tdbb_status_vector, mfb->mfb_sfb,
 					mfb->mfb_block_size * block,
-					(UCHAR*) mfb->mfb_block_data,
+					mfb->mfb_block_data,
 					mfb->mfb_block_size);
 
 	return block;
@@ -3388,6 +3388,6 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 
 	SORT_write_block(tdbb->tdbb_status_vector, sfb,
 					 mfb->mfb_block_size * block,
-					 (UCHAR*) mfb->mfb_block_data,
+					 mfb->mfb_block_data,
 					 mfb->mfb_block_size);
 }
