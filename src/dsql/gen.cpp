@@ -1067,10 +1067,10 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		stuff(request, 0);
 		return;
 
-    case nod_breakleave:
-        stuff(request, blr_leave);
-        stuff(request, (int) (IPTR) node->nod_arg[e_breakleave_label]->nod_arg[e_label_number]);
-        return;
+	case nod_breakleave:
+		stuff(request, blr_leave);
+		stuff(request, (int) (IPTR) node->nod_arg[e_breakleave_label]->nod_arg[e_label_number]);
+		return;
 
 	case nod_abort:
 		stuff(request, blr_leave);
@@ -1725,12 +1725,12 @@ static void gen_for_select( dsql_req* request, const dsql_nod* for_select)
 {
 	dsql_nod* rse = for_select->nod_arg[e_flp_select];
 
-    /* CVC: Only put a label if this is not singular; otherwise,
-       what loop is the user trying to abandon? */
-    if (for_select->nod_arg[e_flp_action]) {
-        stuff(request, blr_label);
-        stuff(request, (int) (IPTR) for_select->nod_arg[e_flp_label]->nod_arg[e_label_number]);
-    }
+	// CVC: Only put a label if this is not singular; otherwise,
+	// what loop is the user trying to abandon?
+	if (for_select->nod_arg[e_flp_action]) {
+		stuff(request, blr_label);
+		stuff(request, (int) (IPTR) for_select->nod_arg[e_flp_label]->nod_arg[e_label_number]);
+	}
 
 // Generate FOR loop 
 
@@ -2167,10 +2167,10 @@ static void gen_rse( dsql_req* request, const dsql_nod* rse)
 		GEN_expr(request, node);
 	}
 
-    if ((node = rse->nod_arg[e_rse_skip]) != NULL) {
-        stuff(request, blr_skip);
-        GEN_expr (request, node);
-    }
+	if ((node = rse->nod_arg[e_rse_skip]) != NULL) {
+		stuff(request, blr_skip);
+		GEN_expr (request, node);
+	}
 
 	if ((node = rse->nod_arg[e_rse_boolean]) != NULL) {
 		stuff(request, blr_boolean);
@@ -2709,7 +2709,7 @@ static void gen_table_lock( dsql_req* request, const dsql_nod* tbl_lock,
 	const USHORT lock_mode = (flags & NOD_WRITE) ? 
 		isc_tpb_lock_write : isc_tpb_lock_read;
 
-    const dsql_nod* const* ptr = tbl_names->nod_arg;
+	const dsql_nod* const* ptr = tbl_names->nod_arg;
 	for (const dsql_nod* const* const end = ptr + tbl_names->nod_count;
 		 ptr < end; ptr++)
 	{
@@ -2787,7 +2787,7 @@ static void gen_union( dsql_req* request, const dsql_nod* union_node)
 	dsql_nod* streams = union_node->nod_arg[e_rse_streams];
 	stuff(request, streams->nod_count);	// number of substreams 
 
-    dsql_nod** ptr = streams->nod_arg;
+	dsql_nod** ptr = streams->nod_arg;
 	for (const dsql_nod* const* const end = ptr + streams->nod_count; ptr < end;
 		 ptr++)
 	{
