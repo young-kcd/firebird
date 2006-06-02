@@ -766,8 +766,10 @@ sort_context* SORT_init(thread_db* tdbb,
 		*status_vector++ = isc_sort_mem_err;
 		*status_vector = isc_arg_end;
 		delete scb;
-		return NULL;
+		ERR_punt();
 	}
+
+	return NULL;
 }
 
 
@@ -1527,7 +1529,7 @@ static void error_memory(sort_context* scb)
 	*status_vector++ = isc_sort_mem_err;
 	*status_vector = isc_arg_end;
 
-	error(status_vector);
+	ERR_punt();
 }
 
 
