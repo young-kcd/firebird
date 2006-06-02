@@ -3035,5 +3035,6 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'dyn_def.epp', 'DYN_define_file', NULL, 8, 231, NULL, 'File name is invalid', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dyn_wrong_gtt_scope', 'DYN_define_constraint', 'dyn_def.e', NULL, 8, 232, NULL, '%s cannot reference %s', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('met_wrong_gtt_scope', 'store_dependencies', 'met.e', NULL, 0, 546, NULL, '%s cannot depend on %s', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('subtype_for_internal_use', 'DDL_resolve_intl_type2', 'DSQL/ddl.cpp', NULL, 0, 547, NULL, 'Blob sub_types bigger than 1 (text) are for internal use only', NULL, NULL);
 
 COMMIT WORK;

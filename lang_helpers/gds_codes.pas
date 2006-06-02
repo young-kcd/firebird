@@ -579,6 +579,7 @@ const
 	gds_tra_num_exc                      = 335544864;
 	gds_field_disappeared                = 335544865;
 	gds_met_wrong_gtt_scope              = 335544866;
+	gds_subtype_for_internal_use         = 335544867;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

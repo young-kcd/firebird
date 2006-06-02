@@ -491,6 +491,12 @@ void DDL_resolve_intl_type2(dsql_req* request,
 			}
 			field->fld_sub_type = blob_sub_type;
 		}
+		if (field->fld_sub_type > isc_blob_text)
+		{
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
+						isc_dsql_datatype_err, isc_arg_gds,
+						isc_subtype_for_internal_use, 0);
+		}
 		if (field->fld_character_set && (field->fld_sub_type == isc_blob_untyped))
 		{
 			field->fld_sub_type = isc_blob_text;

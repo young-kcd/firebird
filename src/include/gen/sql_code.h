@@ -567,6 +567,7 @@ static const struct {
 	{335544864, -904}, /* 544 tra_num_exc                      */
 	{335544865, -904}, /* 545 field_disappeared                */
 	{335544866, -901}, /* 546 met_wrong_gtt_scope              */
+	{335544867, -204}, /* 547 subtype_for_internal_use         */
 	{335740929, -901}, /*   1 gfix_db_name                     */
 	{335740930, -901}, /*   2 gfix_invalid_sw                  */
 	{335740932, -901}, /*   4 gfix_incmp_sw                    */

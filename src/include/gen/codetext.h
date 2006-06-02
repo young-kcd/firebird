@@ -568,6 +568,7 @@ static const struct {
 	{"tra_num_exc", 335544864},
 	{"field_disappeared", 335544865},
 	{"met_wrong_gtt_scope", 335544866},
+	{"subtype_for_internal_use", 335544867},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
