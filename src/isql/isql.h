@@ -353,11 +353,7 @@ extern IsqlGlobals isqlGlob;
 #include <descrip.h>
 #endif
 
-#ifdef SMALL_FILE_NAMES
-static const char* SCRATCH		= "fb_q";
-#else
-static const char* SCRATCH		= "fb_query_";
-#endif
+static const char* SCRATCH = "fb_query_";
 
 inline void STDERROUT(const char* st, bool cr = true)
 {

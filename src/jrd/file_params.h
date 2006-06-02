@@ -43,12 +43,6 @@ static const char* LOCK_FILE	= "isc_lock1.gbl";
 static const char* LOCK_HEADER	= "isc_config";
 static const char* INIT_FILE	= "isc_init1";
 static const char* GUARD_FILE	= "isc_guard1";
-#elif defined(SMALL_FILE_NAMES)
-static const char* EVENT_FILE	= "isce1.%s";
-static const char* LOCK_FILE	= "iscl1.%s";
-static const char* LOCK_HEADER	= "isc_config";
-static const char* INIT_FILE	= "isci1.%s";
-static const char* GUARD_FILE	= "iscg1.%s";
 #elif defined(VMS)
 static const char* EVENT_FILE	= "[000000]isc_event1.%s";
 static const char* LOCK_FILE	= "[000000]isc_lock1.%s";

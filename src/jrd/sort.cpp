@@ -138,11 +138,7 @@ static void validate(sort_context*);
 #endif
 #endif
 
-#ifdef SMALL_FILE_NAMES
-static const char* SCRATCH		= "fb_s";
-#else
-static const char* SCRATCH		= "fb_sort_";
-#endif
+static const char* SCRATCH = "fb_sort_";
 
 #ifdef SCROLLABLE_CURSORS
 #ifdef WORDS_BIGENDIAN
