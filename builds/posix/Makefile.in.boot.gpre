@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.boot.gpre,v 1.26 2006-06-01 07:33:26 mkubecek Exp $
 #
 ROOT=..
 ObjModuleType=boot
