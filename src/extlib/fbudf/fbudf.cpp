@@ -104,7 +104,7 @@ namespace internal
 	// This definition comes from jrd\val.h and is used in helper
 	// functions {get/set}_varchar_len defined below.
 	struct vvary {
-		unsigned short	vary_length;
+		ISC_USHORT		vary_length;
 		unsigned char*	vary_string;
 	};
 
@@ -136,8 +136,8 @@ namespace internal
 		switch (v->dsc_dtype)
 		{
 		case dtype_short:
-			rc = *reinterpret_cast<short*>(v->dsc_address);
-			s = sizeof(short);
+			rc = *reinterpret_cast<ISC_SHORT*>(v->dsc_address);
+			s = sizeof(ISC_SHORT);
 			break;
 		case dtype_long:
 			rc = *reinterpret_cast<ISC_LONG*>(v->dsc_address);
@@ -158,7 +158,7 @@ namespace internal
 		switch (v->dsc_dtype)
 		{
 		case dtype_short:
-			*reinterpret_cast<short*>(v->dsc_address) = static_cast<short>(iv);
+			*reinterpret_cast<ISC_SHORT*>(v->dsc_address) = static_cast<ISC_SHORT>(iv);
 			break;
 		case dtype_long:
 			*reinterpret_cast<ISC_LONG*>(v->dsc_address) = static_cast<ISC_LONG>(iv);
@@ -432,7 +432,7 @@ FBUDF_API void SDOW(const ISC_TIMESTAMP* v, char* rc)
 	internal::get_DOW(v, rc, internal::day_short);
 }
 
-FBUDF_API void right(const paramdsc* v, const short& rl, paramdsc* rc)
+FBUDF_API void right(const paramdsc* v, const ISC_SHORT& rl, paramdsc* rc)
 {
 	if (internal::isnull(v))
 	{
@@ -455,26 +455,26 @@ FBUDF_API void right(const paramdsc* v, const short& rl, paramdsc* rc)
 	return;
 }
 
-FBUDF_API ISC_TIMESTAMP* addDay(ISC_TIMESTAMP* v, const int& ndays)
+FBUDF_API ISC_TIMESTAMP* addDay(ISC_TIMESTAMP* v, const ISC_LONG& ndays)
 {
 	v->timestamp_date += ndays;
 	return v;
 }
 
-FBUDF_API void addDay2(const ISC_TIMESTAMP* v0, const int& ndays,
+FBUDF_API void addDay2(const ISC_TIMESTAMP* v0, const ISC_LONG& ndays,
 	ISC_TIMESTAMP* v)
 {
 	*v = *v0;
 	v->timestamp_date += ndays;
 }
 
-FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, const int& nweeks)
+FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, const ISC_LONG& nweeks)
 {
 	v->timestamp_date += nweeks * 7;
 	return v;
 }
 
-FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const int& nmonths)
+FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const ISC_LONG& nmonths)
 {
 	tm times;
 	internal::decode_timestamp(v, &times);
@@ -499,7 +499,7 @@ FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const int& nmonths)
 	return v;
 }
 
-FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, const int& nyears)
+FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, const ISC_LONG& nyears)
 {
 	tm times;
 	internal::decode_timestamp(v, &times);
@@ -531,22 +531,22 @@ namespace internal
 	}
 } // namespace internal
 
-FBUDF_API ISC_TIMESTAMP* addMilliSecond(ISC_TIMESTAMP* v, const int& nmseconds)
+FBUDF_API ISC_TIMESTAMP* addMilliSecond(ISC_TIMESTAMP* v, const ISC_LONG& nmseconds)
 {
 	return internal::addTenthMSec(v, nmseconds, ISC_TIME_SECONDS_PRECISION / 1000);
 }
 
-FBUDF_API ISC_TIMESTAMP* addSecond(ISC_TIMESTAMP* v, const int& nseconds)
+FBUDF_API ISC_TIMESTAMP* addSecond(ISC_TIMESTAMP* v, const ISC_LONG& nseconds)
 {
 	return internal::addTenthMSec(v, nseconds, ISC_TIME_SECONDS_PRECISION);
 }
 
-FBUDF_API ISC_TIMESTAMP* addMinute(ISC_TIMESTAMP* v, const int& nminutes)
+FBUDF_API ISC_TIMESTAMP* addMinute(ISC_TIMESTAMP* v, const ISC_LONG& nminutes)
 {
 	return internal::addTenthMSec(v, nminutes, 60 * ISC_TIME_SECONDS_PRECISION);
 }
 
-FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, const int& nhours)
+FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, const ISC_LONG& nhours)
 {
 	return internal::addTenthMSec(v, nhours, 3600 * ISC_TIME_SECONDS_PRECISION);
 }
@@ -649,7 +649,7 @@ FBUDF_API void getExactTimestampUTC(ISC_TIMESTAMP* rc)
 	return;
 }
 
-FBUDF_API int isLeapYear(const ISC_TIMESTAMP* v)
+FBUDF_API ISC_LONG isLeapYear(const ISC_TIMESTAMP* v)
 {
 	tm times;
 	internal::decode_timestamp(v, &times);
