@@ -459,7 +459,6 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	add_security_to_sys_rel(tdbb, string, "RDB$PAGES", buffer, length);
 	// DFW writes here
 	add_security_to_sys_rel(tdbb, string, "RDB$FORMATS", buffer, length);
-
 }
 
 

@@ -345,7 +345,7 @@ TempFile* TempSpace::setupFile(size_t size)
 	for (size_t i = 0; i < tempDirs->getCount(); i++)
 	{
 		Firebird::PathName directory = (*tempDirs)[i];
-		PathUtils::concatPath(directory, directory, PathUtils::dir_sep);
+		PathUtils::ensureSeparator(directory);
 
 		for (size_t j = 0; j < tempFiles.getCount(); j++)
 		{

@@ -149,7 +149,7 @@ bool PathUtils::isRelative(const Firebird::PathName& path)
 				(('A' <= path[0] && path[0] <= 'Z') || 
 				 ('a' <= path[0] && path[0] <= 'z')))
 			{
-						ds = path[2];
+				ds = path[2];
 			}
 		}
 		return ds != PathUtils::dir_sep && ds != '/';
