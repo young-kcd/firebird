@@ -1,3 +1,45 @@
+2006-06-02 15:20  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstall_20.iss (1.12.2.1), Readme.txt (1.9.2.1),
+	installation_readme.txt (1.9.2.1):
+	
+	Misc
+
+2006-06-02 15:18  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall
+	.bat (1.15.2.1):
+	
+	Make sure that the zip kit contain the files in misc.  Other Minor
+	updates.
+
+2006-06-02 10:59  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.104.2.2):
+	
+	Backport George's bugfix into HEAD.
+
+2006-06-02 09:08  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.160.2.3):
+	
+	Fixed setsockopt() level - thanks to Fred
+
+2006-06-02 08:58  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.2):
+	
+	Fixed unregistered FB2 bug: endless loop when exception during
+	index's expression evaluation occured
+
+2006-06-02 08:53  dimitr
+
+	* firebird2/builds/install/misc/firebird.conf (1.20.4.3):
+	
+	Provided some self-docs about the possible XNET issues.
+
 2006-06-01 11:19  dimitr
 
 	* firebird2/src/jrd/pag.cpp (1.98.4.1):
