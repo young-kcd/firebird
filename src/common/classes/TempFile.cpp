@@ -212,15 +212,9 @@ void TempFile::init(const Firebird::PathName& directory,
 TempFile::~TempFile()
 {
 #if defined(WIN_NT)
-	if (!CloseHandle(handle))
-	{
-		Firebird::system_call_failed::raise("CloseHandle");
-	}
+	CloseHandle(handle);
 #else
-	if (::close(handle) == -1)
-	{
-		Firebird::system_call_failed::raise("close");
-	}
+	::close(handle);
 #endif
 	if (doUnlink)
 	{
@@ -236,23 +230,25 @@ TempFile::~TempFile()
 
 void TempFile::seek(offset_t offset)
 {
-	fb_assert(offset < MAX_SLONG);
 	if (position == offset)
 		return;
 #if defined(WIN_NT)
-	position = SetFilePointer(handle, offset, NULL, FILE_BEGIN);
-	if (position != offset)
+	LARGE_INTEGER liOffset;
+	liOffset.QuadPart = offset;
+	const DWORD seek = SetFilePointer(handle, (LONG) liOffset.LowPart,
+									  &liOffset.HighPart, FILE_BEGIN);
+	if (seek == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
 	{
 		Firebird::system_call_failed::raise("SetFilePointer");
 	}
 #else
-	int seek = ::lseek(handle, offset, SEEK_SET);
-	if (seek != offset)
+	const off_t seek = ::lseek(handle, (off_t) offset, SEEK_SET);
+	if (seek == (off_t) -1)
 	{
 		Firebird::system_call_failed::raise("lseek");
 	}
-	position = seek;
 #endif
+	position = offset;
 	if (position > size)
 		size = position;
 }
