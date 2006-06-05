@@ -1,3 +1,12 @@
+2006-06-05 03:13  asfernandes
+
+	* firebird2/: builds/install/misc/fbintl.conf (1.11),
+	src/intl/lc_iso8859_1.cpp (1.16), src/intl/ld.cpp (1.21),
+	src/jrd/intlnames.h (1.21):
+	
+	Add Spanish case-/accent-insensitive collation ES_ES_CI_AI for
+	ISO8859_1
+
 2006-06-04 03:19  asfernandes
 
 	* firebird2/builds/win32/msvc7/fbudf.vcproj (1.19):
