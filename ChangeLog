@@ -1,3 +1,12 @@
+2006-06-05 03:17  asfernandes
+
+	* firebird2/: builds/install/misc/fbintl.conf (1.9.4.2),
+	src/intl/lc_iso8859_1.cpp (1.15.4.1), src/intl/ld.cpp (1.18.4.2),
+	src/jrd/intlnames.h (1.19.4.2):
+	
+	Backport Spanish case-/accent-insensitive collation ES_ES_CI_AI for
+	ISO8859_1
+
 2006-06-02 15:20  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/:
