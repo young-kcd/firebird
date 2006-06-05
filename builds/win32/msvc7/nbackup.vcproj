@@ -180,6 +180,16 @@
 				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
 			</File>
 		</Filter>
+		<Filter
+			Name="COMMON files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\common\config\config.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\config\config_file.cpp">
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>
