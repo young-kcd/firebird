@@ -111,6 +111,7 @@ EXTERN_texttype(ISO88591_52_init);
 EXTERN_texttype(ISO88591_53_init);
 EXTERN_texttype(ISO88591_54_init);
 EXTERN_texttype(ISO88591_55_init);
+EXTERN_texttype(ISO88591_56_init);
 
 /* Latin 2 character set */
 EXTERN_texttype (ISO88592_cp_init);
