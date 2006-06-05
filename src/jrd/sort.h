@@ -203,10 +203,10 @@ struct run_control
 	ULONG		run_max_records;	/* total number of records in run */
 #endif
 	USHORT		run_depth;			/* Number of "elementary" runs */
-	ULONG		run_seek;			/* Offset in file of run */
-	ULONG		run_size;			/* Length of run in work file */
+	UINT64		run_seek;			/* Offset in file of run */
+	UINT64		run_size;			/* Length of run in work file */
 #ifdef SCROLLABLE_CURSORS
-	ULONG		run_cached;			/* amount of cached data from run file */
+	UINT64		run_cached;			/* amount of cached data from run file */
 #endif
 	sort_record*	run_record;			/* Next record in run */
 	SORTP*		run_buffer;			/* Run buffer */
@@ -230,8 +230,8 @@ struct merge_control
 struct work_file_space
 {
 	work_file_space*	wfs_next;
-	size_t			wfs_position;	/* Starting position of free space */
-	size_t			wfs_size;		/* Length of free space */
+	UINT64			wfs_position;	/* Starting position of free space */
+	UINT64			wfs_size;		/* Length of free space */
 };
 
 /* Sort work file control block */

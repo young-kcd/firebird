@@ -123,8 +123,8 @@ static sort_record*	get_merge(merge_control*, sort_context*);
 
 static void error(ISC_STATUS*);
 static void error_memory(sort_context*);
-static ULONG find_file_space(sort_context*, ULONG);
-static void free_file_space(sort_context*, sort_work_file*, ULONG, ULONG);
+static UINT64 find_file_space(sort_context*, ULONG);
+static void free_file_space(sort_context*, sort_work_file*, UINT64, ULONG);
 static void init(sort_context*);
 static bool local_fini(sort_context*, Attachment*);
 static void merge_runs(sort_context*, USHORT);
@@ -849,13 +849,13 @@ void SORT_put(ISC_STATUS * status_vector, sort_context* scb, ULONG ** record_add
 #ifdef SCROLLABLE_CURSORS
 void SORT_read_block(
 #else
-ULONG SORT_read_block(
+UINT64 SORT_read_block(
 #endif
-						 ISC_STATUS* status_vector,
-						 sort_work_file* sfb,
-						 ULONG seek,
-						 BLOB_PTR* address,
-						 ULONG length)
+						ISC_STATUS* status_vector,
+						sort_work_file* sfb,
+						UINT64 seek,
+						BLOB_PTR* address,
+						ULONG length)
 {
 /**************************************
  *
@@ -1095,11 +1095,11 @@ void SORT_sort(ISC_STATUS * status_vector, sort_context* scb)
 }
 
 
-ULONG SORT_write_block(ISC_STATUS* status_vector,
-					   sort_work_file* sfb,
-					   ULONG seek,
-					   BLOB_PTR* address,
-					   ULONG length)
+UINT64 SORT_write_block(ISC_STATUS* status_vector,
+						sort_work_file* sfb,
+						UINT64 seek,
+						BLOB_PTR* address,
+						ULONG length)
 {
 /**************************************
  *
@@ -1529,7 +1529,7 @@ static void error_memory(sort_context* scb)
 }
 
 
-static ULONG find_file_space(sort_context* scb, ULONG size)
+static UINT64 find_file_space(sort_context* scb, ULONG size)
 {
 /**************************************
  *
@@ -1594,7 +1594,7 @@ static ULONG find_file_space(sort_context* scb, ULONG size)
 
 
 static void free_file_space(sort_context* scb, sort_work_file* sfb,
-							ULONG position, ULONG size)
+							UINT64 position, ULONG size)
 {
 /**************************************
  *
@@ -2169,7 +2169,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 	// Merge records into run
 
 	sort_record* q = reinterpret_cast<sort_record*>(temp_run.run_buffer);
-	ULONG seek = temp_run.run_seek = find_file_space(scb, temp_run.run_size);
+	UINT64 seek = temp_run.run_seek = find_file_space(scb, temp_run.run_size);
 	temp_run.run_records = 0;
 
 	const sort_record* p;

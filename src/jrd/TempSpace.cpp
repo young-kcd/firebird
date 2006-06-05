@@ -31,10 +31,6 @@
 
 #include "../jrd/TempSpace.h"
 
-// Const definitions
-
-static const size_t MAX_FILE_SIZE = 1073741824; // 1GB
-
 // Static definitions/initializations
 
 Firebird::Mutex TempSpace::initMutex;
@@ -353,8 +349,7 @@ TempFile* TempSpace::setupFile(size_t size)
 			PathUtils::splitLastComponent(dirname, filename,
 										  tempFiles[j]->getName());
 			PathUtils::ensureSeparator(dirname);
-			if (!directory.compare(dirname) &&
-				tempFiles[j]->getSize() + size <= MAX_FILE_SIZE)
+			if (!directory.compare(dirname))
 			{
 				file = tempFiles[i];
 				break;
@@ -363,7 +358,6 @@ TempFile* TempSpace::setupFile(size_t size)
 
 		if (!file)
 		{
-			fb_assert(size <= MAX_FILE_SIZE);
 			file = FB_NEW(pool) TempFile(pool, filePrefix, directory);
 			tempFiles.add(file);
 		}
