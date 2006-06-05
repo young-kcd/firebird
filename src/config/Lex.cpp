@@ -107,7 +107,7 @@ void Lex::skipWhite()
 				ptr += 2;
 				++inputStream->lineNumber;
 				}
-			else if (charTable [*ptr] & WHITE)
+			else if (charTable [(UCHAR) *ptr] & WHITE)
 				{
 				if (*ptr++ == '\n')
 					{
@@ -157,7 +157,7 @@ void Lex::getToken()
 	char *endToken = token + sizeof (token);
 	char c = *p++ = *ptr++;
 
-	if (charTable [c] & PUNCT)
+	if (charTable [(UCHAR) c] & PUNCT)
 		tokenType = PUNCT;
 	else if (c == '\'' || c == '"')
 		{
@@ -181,10 +181,10 @@ void Lex::getToken()
 		++ptr;
 		tokenType = (c == '"') ? QUOTED_STRING : SINGLE_QUOTED_STRING;
 		}
-	else if (charTable [c] & DIGIT)
+	else if (charTable [(UCHAR) c] & DIGIT)
 		{
 		tokenType = NUMBER;
-		while (ptr < end && (charTable [*ptr] & DIGIT))
+		while (ptr < end && (charTable [(UCHAR) *ptr] & DIGIT))
 			*p++ = *ptr++;
 		}
 	else
@@ -193,14 +193,14 @@ void Lex::getToken()
 		if (flags & LEX_upcase)
 			{
 			p [-1] = UPCASE(c);
-			while (ptr < end && !(charTable [*ptr] & (WHITE | PUNCT)))
+			while (ptr < end && !(charTable [(UCHAR) *ptr] & (WHITE | PUNCT)))
 				{
 				c = *ptr++;
 				*p++ = UPCASE(c);
 				}
 			}
 		else
-			while (ptr < end && !(charTable [*ptr] & (WHITE | PUNCT)))
+			while (ptr < end && !(charTable [(UCHAR) *ptr] & (WHITE | PUNCT)))
 				*p++ = *ptr++;
 		}
 
@@ -210,7 +210,7 @@ void Lex::getToken()
 void Lex::setCharacters(int type, const char *characters)
 {
 	for (const char *p = characters; *p; ++p)
-		charTable [*p] |= type;
+		charTable [(UCHAR) *p] |= type;
 }
 
 /***
@@ -257,7 +257,7 @@ JString Lex::reparseFilename()
 	while (*p)
 		++p;
 
-	while (ptr < end && *ptr != '>' && !(charTable [*ptr] & WHITE))
+	while (ptr < end && *ptr != '>' && !(charTable [(UCHAR) *ptr] & WHITE))
 		*p++ = *ptr++;
 
 	*p = 0;
