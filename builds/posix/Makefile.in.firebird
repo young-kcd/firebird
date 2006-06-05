@@ -536,6 +536,7 @@ clean_config clean_all: clean clean_makefiles
 	$(RM) $(ROOT)/config.log
 	$(RM) $(ROOT)/config.status
 	$(RM) $(ROOT)/libtool
+	$(RM_R) $(ROOT)/autom4te.cache
 
 clean_dbs:
 	$(RM) *.fdb *.FDB msg.timestamp
