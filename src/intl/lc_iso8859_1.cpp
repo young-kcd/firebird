@@ -106,17 +106,16 @@ static inline bool FAMILY3(TEXTTYPE cache,
 				attributes & ~(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE),
 				specific_attributes, specific_attributes_length))
 	{
-		cache->texttype_impl->texttype_flags |= TEXTTYPE_ignore_specials;
-
 		if (!multiLevel)
 			cache->texttype_impl->texttype_flags |= TEXTTYPE_non_multi_level;
 
 		if (attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
 		{
+			cache->texttype_impl->texttype_flags |= TEXTTYPE_ignore_specials;
+
 			if (multiLevel)
 			{
-				if (attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
-					cache->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
+				cache->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
 
 				if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
 					TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
@@ -288,7 +287,7 @@ TEXTTYPE_ENTRY(ISO88591_49_init)
 
 #include "../intl/collations/bl88591es0.h"
 
-	return FAMILY2(cache, CC_SPAIN, LDRV_TIEBREAK,
+	return FAMILY3(cache, CC_SPAIN, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -349,6 +348,18 @@ TEXTTYPE_ENTRY(ISO88591_55_init)
 #include "../intl/collations/bl88591ptbr0.h"
 
 	return FAMILY3(cache, CC_BRAZIL, LDRV_TIEBREAK,
+			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
+}
+
+
+TEXTTYPE_ENTRY(ISO88591_56_init)
+{
+	static const ASCII POSIX[] = "es_ES_CI_AI.ISO8859_1";
+
+#include "../intl/collations/bl88591es0.h"
+
+	return FAMILY3(cache, CC_SPAIN, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
