@@ -37,6 +37,9 @@
 #include <sys/types.h>
 #include <sys/timeb.h>
 #include <windows.h>
+#ifndef INVALID_SET_FILE_POINTER
+#define INVALID_SET_FILE_POINTER	((DWORD)-1)
+#endif
 #elif defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
