@@ -47,14 +47,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
 
-#ifdef _MSC_VER
-#undef min
-#define min _cpp_min
-#undef max
-#define max _cpp_max
-#include <xutility>
-#endif
-
 namespace Jrd {
 
 bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
@@ -1631,7 +1623,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				invCandidate->nonFullMatchedSegments =
 					scratch[i]->nonFullMatchedSegments;
 				invCandidate->matchedSegments = 
-					std::max(scratch[i]->lowerCount, scratch[i]->upperCount);
+					MAX(scratch[i]->lowerCount, scratch[i]->upperCount);
 				invCandidate->indexes = 1;
 				invCandidate->scratch = scratch[i];
 				invCandidate->matches.join(matches);
@@ -1750,7 +1742,7 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 		}
 	}
 
-	i = std::max(indexScratch->lowerCount, indexScratch->upperCount) - 1;
+	i = MAX(indexScratch->lowerCount, indexScratch->upperCount) - 1;
 	if (i >= 0)  
 	{
 		if (segment[i]->scanType == segmentScanStarting) 
@@ -2165,7 +2157,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->indexes += bestCandidate->indexes;
 					invCandidate->nonFullMatchedSegments = 0;
 					invCandidate->matchedSegments = 
-						std::max(bestCandidate->matchedSegments, invCandidate->matchedSegments);
+						MAX(bestCandidate->matchedSegments, invCandidate->matchedSegments);
 					invCandidate->dependencies += bestCandidate->dependencies;
 					for (int j = 0; j < bestCandidate->matches.getCount(); j++) {
 						size_t pos;
@@ -2558,7 +2550,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			invCandidate->indexes = invCandidate1->indexes + invCandidate2->indexes;
 			invCandidate->nonFullMatchedSegments = 0;
 			invCandidate->matchedSegments = 
-				std::min(invCandidate1->matchedSegments, invCandidate2->matchedSegments);
+				MIN(invCandidate1->matchedSegments, invCandidate2->matchedSegments);
 			invCandidate->dependencies =
 				invCandidate1->dependencies + invCandidate2->dependencies;
 
