@@ -30,7 +30,6 @@
 #ifndef CLASSES_TREE_H
 #define CLASSES_TREE_H
 
-#include <exception>
 #include "../jrd/gdsassert.h"
 #include <string.h>
 #ifdef HAVE_STDLIB_H
@@ -38,7 +37,6 @@
 					   stdlib.h (EKU) */
 #endif
 #include "vector.h"
-#include <new>
 
 namespace Firebird {
 
