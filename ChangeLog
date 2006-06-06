@@ -1,3 +1,35 @@
+2006-06-05 16:39  dimitr
+
+	* firebird2/src/jrd/: TempSpace.cpp (1.4), sort.cpp (1.84), sort.h
+	(1.29), sort_proto.h (1.16):
+	
+	Support for 64bit I/O.
+
+2006-06-05 16:22  dimitr
+
+	* firebird2/src/common/classes/TempFile.cpp (1.5):
+	
+	Support for 64bit I/O.
+
+2006-06-05 15:01  asfernandes
+
+	* firebird2/src/config/Lex.cpp (1.4):
+	
+	Don't access negative elements in array
+
+2006-06-05 13:11  aafemt
+
+	* firebird2/configure.in (1.244):
+	
+	Get rid of YACC
+
+2006-06-05 13:10  aafemt
+
+	* firebird2/builds/posix/: Makefile.in.firebird (1.71),
+	make.defaults (1.47):
+	
+	Include autoconf cache to cleanup process Get rid of YACC
+
 2006-06-05 03:13  asfernandes
 
 	* firebird2/: builds/install/misc/fbintl.conf (1.11),
