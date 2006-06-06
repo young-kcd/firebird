@@ -1526,7 +1526,7 @@ int MET_lookup_field(thread_db* tdbb,
 
 	if (vector)
 	{
-		USHORT id = 0;
+		int id = 0;
 		vec<jrd_fld*>::iterator fieldIter = vector->begin();
 
 		for (const vec<jrd_fld*>::const_iterator end = vector->end();  fieldIter < end; ++fieldIter, ++id)
@@ -1551,7 +1551,7 @@ int MET_lookup_field(thread_db* tdbb,
 
 /* Not found.  Next, try system relations directly */
 
-	USHORT id = (USHORT) -1;
+	int id = -1;
 
 	if (relation->rel_name.length() == 0)
 	{
