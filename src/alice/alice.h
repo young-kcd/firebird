@@ -33,8 +33,6 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 
-#include <vector>
-
 #include "../alice/blk.h"
 
 enum val_errors {

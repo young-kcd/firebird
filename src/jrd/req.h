@@ -35,7 +35,6 @@
 #include "../jrd/RecordNumber.h"
 #include "../common/classes/timestamp.h"
 
-#include <vector>
 
 namespace Jrd {
 
