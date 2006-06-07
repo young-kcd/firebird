@@ -1,3 +1,55 @@
+2006-06-06 19:00  dimitr
+
+	* firebird2/src/jrd/met.epp (1.192):
+	
+	The callers check for "< 0" but we never could return a negative
+	value. -1 has been converted to 65535 before returning.
+
+2006-06-06 17:42  asfernandes
+
+	* firebird2/src/: common/classes/TempFile.cpp (1.6), isql/isql.epp
+	(1.183):
+	
+	Make compilable in MSVC6
+
+2006-06-06 13:30  alexpeshkoff
+
+	* firebird2/src/jrd/Optimizer.cpp (1.60):
+	
+	Use MIN/MAX from common.h instead of STL templates
+
+2006-06-06 13:22  alexpeshkoff
+
+	* firebird2/src/common/classes/tree.h (1.55):
+	
+	cleanup
+
+2006-06-06 13:21  alexpeshkoff
+
+	* firebird2/src/common/classes/: alloc.cpp (1.85), alloc.h (1.66):
+	
+	redefinition of new/delete in non-STL case
+
+2006-06-06 12:34  alexpeshkoff
+
+	* firebird2/src/jrd/req.h (1.59):
+	
+	cleanup
+
+2006-06-06 12:30  alexpeshkoff
+
+	* firebird2/src/: alice/alice.h (1.51),
+	common/config/config_file.cpp (1.28), common/config/config_file.h
+	(1.14), isql/isql.epp (1.182):
+	
+	cleanup
+
+2006-06-06 12:23  dimitr
+
+	* firebird2/src/jrd/dfw.epp (1.186):
+	
+	Report "feature not supported" for nbak operations on ODS10.
+
 2006-06-05 16:39  dimitr
 
 	* firebird2/src/jrd/: TempSpace.cpp (1.4), sort.cpp (1.84), sort.h
