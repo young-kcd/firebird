@@ -595,7 +595,7 @@ void API_ROUTINE isc_embed_dsql_length(const UCHAR* string, USHORT* length)
  **************************************/
 	const UCHAR* p;
 	for (p = string; *p && *p != ';'; p++)
-		if (classes[*p] & CHR_QUOTE) {
+		if (classes(*p) & CHR_QUOTE) {
 			for (UCHAR prev = 0, quote = *p++; *p == quote || prev == quote;)
 				prev = *p++;
 			p--;

@@ -393,7 +393,7 @@ static SSHORT get_next_token(
 			continue;
 		}
 		// CVC: End modification.
-		char_class = classes[c];
+		char_class = classes(c);
 		if (!(char_class & CHR_WHITE))
 			break;
 	}
@@ -429,7 +429,7 @@ static SSHORT get_next_token(
 /* Is it an integer? */
 
 	if (char_class & CHR_DIGIT) {
-		for (; s < stmt_end && (classes[c = *s] & CHR_DIGIT); ++s); // empty body
+		for (; s < stmt_end && (classes(c = *s) & CHR_DIGIT); ++s); // empty body
 		const ptrdiff_t length = (s - start_of_token);
 		*stmt = s;
 		if (length > MAX_TOKEN_SIZE) {
@@ -444,7 +444,7 @@ static SSHORT get_next_token(
 
 	if (char_class & CHR_LETTER) {
 		token += UPPER(c);
-		for (; s < stmt_end && (classes[static_cast<UCHAR>(*s)] & CHR_IDENT); s++) {
+		for (; s < stmt_end && (classes(*s) & CHR_IDENT); s++) {
 			token += UPPER(*s);
 		}
 

@@ -4440,9 +4440,9 @@ static bool long_int(dsql_nod* string,
  *************************************/
 
 	for (const UCHAR* p = (UCHAR*)((dsql_str*) string)->str_data; 
-		 classes[*p] & CHR_DIGIT; p++)
+		 classes(*p) & CHR_DIGIT; p++)
 	{
-		if (!(classes[*p] & CHR_DIGIT)) {
+		if (!(classes(*p) & CHR_DIGIT)) {
 			return false;
 		}
 	}
@@ -4681,9 +4681,9 @@ static bool short_int(dsql_nod* string,
 	}
 
 	for (UCHAR* p = (UCHAR*)((dsql_str*) string)->str_data; 
-		classes[*p] & CHR_DIGIT; p++)
+		classes(*p) & CHR_DIGIT; p++)
 	{
-		if (!(classes[*p] & CHR_DIGIT)) {
+		if (!(classes(*p) & CHR_DIGIT)) {
 			return false;
 		}
 	}
@@ -4891,7 +4891,7 @@ int LexerState::yylex (
 			continue;
 		}
 
-		tok_class = classes[c];
+		tok_class = classes(c);
 
 		if (!(tok_class & CHR_WHITE))
 			break;
@@ -4907,7 +4907,7 @@ int LexerState::yylex (
 		 * to become the name of the character set
 		 */
 		char* p = string;
-		for (; ptr < end && classes[static_cast<UCHAR>(*ptr)] & CHR_IDENT; ptr++)
+		for (; ptr < end && classes(*ptr) & CHR_IDENT; ptr++)
 		{
 			if (ptr >= end)
 				return -1;
@@ -5033,7 +5033,7 @@ int LexerState::yylex (
 	fb_assert(ptr <= end);
 
 	if ((tok_class & CHR_DIGIT) ||
-		((c == '.') && (ptr < end) && (classes[static_cast<UCHAR>(*ptr)] & CHR_DIGIT)))
+		((c == '.') && (ptr < end) && (classes(*ptr) & CHR_DIGIT)))
 	{
 		/* The following variables are used to recognize kinds of numbers. */
 
@@ -5049,11 +5049,11 @@ int LexerState::yylex (
 		for (--ptr ; ptr < end ; ptr++)
 		{
 			c = *ptr;
-			if (have_exp_digit && (! (classes[c]  & CHR_DIGIT)))
+			if (have_exp_digit && (! (classes(c) & CHR_DIGIT)))
 				/* First non-digit after exponent and digit terminates
 				 the token. */
 				break;
-			else if (have_exp_sign && (! (classes[c]  & CHR_DIGIT)))
+			else if (have_exp_sign && (! (classes(c) & CHR_DIGIT)))
 			{
 				/* only digits can be accepted after "1E-" */
 				have_error = true;
@@ -5064,7 +5064,7 @@ int LexerState::yylex (
 				/* We've seen e or E, but nothing beyond that. */
 				if ( ('-' == c) || ('+' == c) )
 					have_exp_sign = true;
-				else if ( classes[c]  & CHR_DIGIT )
+				else if ( classes(c) & CHR_DIGIT )
 					/* We have a digit: we haven't seen a sign yet,
 					but it's too late now. */
 					have_exp_digit = have_exp_sign  = true;
@@ -5085,7 +5085,7 @@ int LexerState::yylex (
 					break;
 				}
 			}
-			else if (classes[c] & CHR_DIGIT)
+			else if (classes(c) & CHR_DIGIT)
 			{
 				/* Before computing the next value, make sure there will be
 				   no overflow.  */
@@ -5195,7 +5195,7 @@ int LexerState::yylex (
 	{
 		char* p = string;
 		check_copy_incr(p, UPPER (c), string);
-		for (; ptr < end && classes[static_cast<UCHAR>(*ptr)] & CHR_IDENT; ptr++)
+		for (; ptr < end && classes(*ptr) & CHR_IDENT; ptr++)
 		{
 			if (ptr >= end)
 				return -1;
@@ -5236,7 +5236,7 @@ int LexerState::yylex (
 		
 	/* Single character punctuation are simply passed on */
 
-	return c;
+	return (UCHAR) c;
 }
 
 
