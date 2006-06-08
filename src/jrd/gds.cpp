@@ -1484,6 +1484,13 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			if (fb_utils::readenv("LC_MESSAGES", p))
 			{
 				sanitize(p);
+				Firebird::string::size_type pos = p.find_last_of('/');
+				if (pos == Firebird::string::npos)
+				    pos = p.find_last_of('\\');
+				    
+				if (pos != Firebird::string::npos)
+				    p.erase(0, pos + 1);
+				    
 				fb_utils::snprintf(translated_msg_file,
 					sizeof(translated_msg_file), MSG_FILE_LANG, p.c_str());
 				gds__prefix_msg(msg_file, translated_msg_file);
@@ -1493,6 +1500,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			}
 			else
 				status = 1;
+				
 			if (status) {
 				/* Default to standard message file */
 

@@ -91,7 +91,7 @@ static const char* LOGFILE		= "firebird.log";
 #elif defined(WIN_NT)
 static const char* WORKFILE		= "c:\\temp\\";
 static const char* MSG_FILE		= "firebird.msg";
-static const char MSG_FILE_LANG[]= "intl/%.8s.msg";
+static const char MSG_FILE_LANG[]= "intl\\%.8s.msg";
 const int LOCALE_MAX	= 6;
 static const char* LOGFILE		= "firebird.log";
 #elif defined(VMS)
