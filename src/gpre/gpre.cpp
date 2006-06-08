@@ -115,7 +115,28 @@ static SLONG prior_line_position;
 
 static act* global_last_action;
 static act* global_first_action;
-static UCHAR classes[256];
+static UCHAR classes_array[256];
+
+inline UCHAR classes(int idx)
+{
+	return classes_array[(UCHAR) idx];
+}
+
+inline UCHAR classes(UCHAR idx)
+{
+	return classes_array[idx];
+}
+
+inline void set_classes(int idx, UCHAR v)
+{
+	classes_array[(UCHAR) idx] = v;
+}
+
+inline void set_classes(UCHAR idx, UCHAR v)
+{
+	classes_array[idx] = v;
+}
+
 
 static TEXT input_buffer[512], *input_char;
 
@@ -220,15 +241,14 @@ static const ext_table_t dml_ext_table[] =
 	{ lang_undef, IN_SW_GPRE_0, NULL, NULL }
 };
 
-enum char_types {
-	CHR_LETTER	= 1,
-	CHR_DIGIT	= 2,
-	CHR_IDENT	= 4,
-	CHR_QUOTE	= 8,
-	CHR_WHITE	= 16,
-	CHR_INTRODUCER	= 32,
-	CHR_DBLQUOTE	= 64
-};
+const UCHAR CHR_LETTER	= 1;
+const UCHAR	CHR_DIGIT	= 2;
+const UCHAR CHR_IDENT	= 4;
+const UCHAR CHR_QUOTE	= 8;
+const UCHAR CHR_WHITE	= 16;
+const UCHAR CHR_INTRODUCER	= 32;
+const UCHAR CHR_DBLQUOTE	= 64;
+
 
 //  macro compares chars; case sensitive for some platforms 
 
@@ -270,30 +290,30 @@ int main(int argc, char* argv[])
 	//  Initialize character class table 
 	int i;
 	for (i = 0; i <= 127; ++i) {
-		classes[i] = 0;
+		set_classes(i, 0);
 	}
 	for (i = 128; i <= 255; ++i) {
-		classes[i] = CHR_LETTER | CHR_IDENT;
+		set_classes(i, CHR_LETTER | CHR_IDENT);
 	}
 	for (i = 'a'; i <= 'z'; ++i) {
-		classes[i] = CHR_LETTER | CHR_IDENT;
+		set_classes(i, CHR_LETTER | CHR_IDENT);
 	}
 	for (i = 'A'; i <= 'Z'; ++i) {
-		classes[i] = CHR_LETTER | CHR_IDENT;
+		set_classes(i, CHR_LETTER | CHR_IDENT);
 	}
 	for (i = '0'; i <= '9'; ++i) {
-		classes[i] = CHR_DIGIT | CHR_IDENT;
+		set_classes(i, CHR_DIGIT | CHR_IDENT);
 	}
 
-	classes[static_cast<UCHAR>('_')]	= CHR_LETTER | CHR_IDENT | CHR_INTRODUCER;
-	classes[static_cast<UCHAR>('$')]	= CHR_IDENT;
-	classes[static_cast<UCHAR>(' ')]	= CHR_WHITE;
-	classes[static_cast<UCHAR>('\t')]	= CHR_WHITE;
-	classes[static_cast<UCHAR>('\n')]	= CHR_WHITE;
-	classes[static_cast<UCHAR>('\r')]	= CHR_WHITE;
-	classes[static_cast<UCHAR>('\'')]	= CHR_QUOTE;
-	classes[static_cast<UCHAR>('\"')]	= CHR_DBLQUOTE;
-	classes[static_cast<UCHAR>('#')]	= CHR_IDENT;
+	set_classes('_', CHR_LETTER | CHR_IDENT | CHR_INTRODUCER);
+	set_classes('$', CHR_IDENT);
+	set_classes(' ', CHR_WHITE);
+	set_classes('\t', CHR_WHITE);
+	set_classes('\n', CHR_WHITE);
+	set_classes('\r', CHR_WHITE);
+	set_classes('\'', CHR_QUOTE);
+	set_classes('\"', CHR_DBLQUOTE);
+	set_classes('#', CHR_IDENT);
 
 //  zorch 0 through 7 in the fortran label vector 
 
@@ -1186,7 +1206,7 @@ void CPR_raw_read()
 	while (c = get_char(input_file))
 	{
 		position++;
-		if ((classes[c] == CHR_WHITE) && sw_trace && token_string) {
+		if ((classes(c) == CHR_WHITE) && sw_trace && token_string) {
 			*p = 0;
 			puts(token_string);
 			token_string[0] = 0;
@@ -1204,7 +1224,7 @@ void CPR_raw_read()
 		}
 		else {
 			line_position++;
-			if (classes[c] != CHR_WHITE)
+			if (classes(c) != CHR_WHITE)
 				continue_char = (gpreGlob.token_global.tok_keyword == KW_AMPERSAND);
 		}
 	}
@@ -1313,7 +1333,7 @@ TOK CPR_token()
 static bool all_digits(const char* str1)
 {
 	for (; *str1; str1++)
-		if (!(classes[static_cast<UCHAR>(*str1)] & CHR_DIGIT))
+		if (!(classes(*str1) & CHR_DIGIT))
 			return false;
 
 	return true;
@@ -2034,7 +2054,7 @@ static TOK get_token()
 
 	gpreGlob.token_global.tok_position = position;
 	gpreGlob.token_global.tok_white_space = 0;
-	UCHAR char_class = classes[c];
+	UCHAR char_class = classes(c);
 
 #ifdef GPRE_ADA
 	if ((gpreGlob.sw_language == lang_ada) && (c == '\'')) {
@@ -2051,7 +2071,7 @@ static TOK get_token()
 	bool label = false;
 
 	if (gpreGlob.sw_sql && (char_class & CHR_INTRODUCER)) {
-		while (classes[c = nextchar()] & CHR_IDENT) {
+		while (classes(c = nextchar()) & CHR_IDENT) {
 			if (p < end) {
 				*p++ = (TEXT) c;
 			}
@@ -2061,7 +2081,7 @@ static TOK get_token()
 	}
 	else if (char_class & CHR_LETTER) {
 		while (true) {
-			while (classes[c = nextchar()] & CHR_IDENT)
+			while (classes(c = nextchar()) & CHR_IDENT)
 				*p++ = (TEXT) c;
 			if (c != '-' || gpreGlob.sw_language != lang_cobol)
 				break;
@@ -2078,7 +2098,7 @@ static TOK get_token()
 		if (gpreGlob.sw_language == lang_fortran && line_position < 7)
 			label = true;
 #endif
-		while (classes[c = nextchar()] & CHR_DIGIT)
+		while (classes(c = nextchar()) & CHR_DIGIT)
 			*p++ = (TEXT) c;
 		if (label) {
 			*p = 0;
@@ -2086,7 +2106,7 @@ static TOK get_token()
 		}
 		if (c == '.') {
 			*p++ = (TEXT) c;
-			while (classes[c = nextchar()] & CHR_DIGIT)
+			while (classes(c = nextchar()) & CHR_DIGIT)
 				*p++ = (TEXT) c;
 		}
 		if (!label && (c == 'E' || c == 'e')) {
@@ -2096,7 +2116,7 @@ static TOK get_token()
 				*p++ = (TEXT) c;
 			else
 				return_char(c);
-			while (classes[c = nextchar()] & CHR_DIGIT)
+			while (classes(c = nextchar()) & CHR_DIGIT)
 				*p++ = (TEXT) c;
 		}
 		return_char(c);
@@ -2175,9 +2195,9 @@ static TOK get_token()
 		}
 	}
 	else if (c == '.') {
-		if (classes[c = nextchar()] & CHR_DIGIT) {
+		if (classes(c = nextchar()) & CHR_DIGIT) {
 			*p++ = (TEXT) c;
-			while (classes[c = nextchar()] & CHR_DIGIT)
+			while (classes(c = nextchar()) & CHR_DIGIT)
 				*p++ = (TEXT) c;
 			if ((c == 'E' || c == 'e')) {
 				*p++ = (TEXT) c;
@@ -2186,7 +2206,7 @@ static TOK get_token()
 					*p++ = (TEXT) c;
 				else
 					return_char(c);
-				while (classes[c = nextchar()] & CHR_DIGIT)
+				while (classes(c = nextchar()) & CHR_DIGIT)
 					*p++ = (TEXT) c;
 			}
 			return_char(c);
@@ -2762,7 +2782,7 @@ static void return_char( SSHORT c)
 
 static SSHORT skip_white()
 {
-	SSHORT c, next;
+	SSHORT c;
 
 	while (true) {
 		if ((c = nextchar()) == EOF)
@@ -2801,7 +2821,7 @@ static SSHORT skip_white()
 		}
 #endif
 
-		const UCHAR char_class = classes[c];
+		const UCHAR char_class = classes(c);
 
 		if (char_class & CHR_WHITE) {
 			continue;
@@ -2826,7 +2846,8 @@ static SSHORT skip_white()
 			(gpreGlob.sw_language == lang_c ||
 			 isLangCpp(gpreGlob.sw_language)))
 		{
-			if ((next = nextchar()) != '*') {
+			SSHORT next = nextchar();
+			if (next != '*') {
 				if (isLangCpp(gpreGlob.sw_language) && next == '/') {
 					while ((c = nextchar()) != '\n' && c != EOF);
 					continue;
@@ -2864,7 +2885,8 @@ static SSHORT skip_white()
 #endif
 
 		if (c == '-' && (gpreGlob.sw_sql || gpreGlob.sw_language == lang_ada)) {
-			if ((next = nextchar()) != '-') {
+			SSHORT next = nextchar();
+			if (next != '-') {
 				return_char(next);
 				return c;
 			}
@@ -2880,7 +2902,8 @@ static SSHORT skip_white()
 		}
 
 		if (c == '(' && gpreGlob.sw_language == lang_pascal) {
-			if ((next = nextchar()) != '*') {
+			SSHORT next = nextchar();
+			if (next != '*') {
 				return_char(next);
 				return c;
 			}

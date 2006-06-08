@@ -46,9 +46,9 @@
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_CTYPES_H
-#include <ctypes.h>
-#endif
+//#ifdef HAVE_CTYPES_H
+//#include <ctypes.h>
+//#endif
 
 #ifdef VMS
 #include <descrip.h>
@@ -86,8 +86,8 @@ const char CHR_white	= char(16);
 const char CHR_eol		= char(32);
 
 const char CHR_IDENT	= CHR_ident;
-const char CHR_LETTER	= CHR_letter + CHR_ident;
-const char CHR_DIGIT	= CHR_digit + CHR_ident;
+const char CHR_LETTER	= CHR_letter | CHR_ident;
+const char CHR_DIGIT	= CHR_digit | CHR_ident;
 const char CHR_QUOTE	= CHR_quote;
 const char CHR_WHITE	= CHR_white;
 const char CHR_EOL		= CHR_eol;
@@ -95,7 +95,9 @@ const char CHR_EOL		= CHR_eol;
 static const char* const eol_string = "end of line";
 static const char* const eof_string = "*end_of_file*";
 
-static const char classes[256] =
+// Do not reference the array directly; use the functions below.
+
+static const char classes_array[256] =
 {
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, CHR_WHITE, CHR_EOL, 0, 0, 0, 0, 0,
@@ -121,6 +123,16 @@ static const char classes[256] =
 		CHR_LETTER, CHR_LETTER,
 	CHR_LETTER, CHR_LETTER, CHR_LETTER, 0
 };
+
+inline char classes(int idx)
+{
+	return classes_array[(UCHAR) idx];
+}
+
+inline char classes(UCHAR idx)
+{
+	return classes_array[idx];
+}
 
 
 
@@ -214,9 +226,9 @@ qli_tok* LEX_edit_string(void)
 		return NULL;
 	}
 
-	while (!(classes[c] & (CHR_white | CHR_eol))) {
+	while (!(classes(c) & (CHR_white | CHR_eol))) {
 		*p++ = c;
-		if (classes[c] & CHR_quote)
+		if (classes(c) & CHR_quote)
 			for (;;) {
 				const SSHORT d = nextchar(false);
 				if (d == '\n') {
@@ -282,7 +294,7 @@ qli_tok* LEX_filename(void)
 // notice if this looks like a quoted file name
 
 	SSHORT save = 0;
-	if (classes[c] & CHR_quote) {
+	if (classes(c) & CHR_quote) {
 		token->tok_type = tok_quoted;
 		save = c;
 	}
@@ -291,12 +303,12 @@ qli_tok* LEX_filename(void)
 
 	for (;;) {
 		c = nextchar(true);
-		char char_class = classes[c];
+		char char_class = classes(c);
 		if (c == '"' && c != save) {
 			*p++ = c;
 			for (;;) {
 				c = nextchar(true);
-				char_class = classes[c];
+				char_class = classes(c);
 				if ((char_class & CHR_eol) || c == '"')
 					break;
 				*p++ = c;
@@ -839,10 +851,10 @@ qli_tok* LEX_token(void)
 
 // On end of file, generate furious but phone end of line tokens
 
-	char char_class = classes[c];
+	char char_class = classes(c);
 
 	if (char_class & CHR_letter) {
-		for (c = nextchar(true); classes[c] & CHR_ident; c = nextchar(true))
+		for (c = nextchar(true); classes(c) & CHR_ident; c = nextchar(true))
 			*p++ = c;
 		retchar();
 		token->tok_type = tok_ident;
@@ -1062,7 +1074,7 @@ static void next_line(const bool eof_ok)
 			}
 			if (flag) {
 				TEXT* q;
-				for (q = p; classes[static_cast<UCHAR>(*q)] & CHR_white; q++);
+				for (q = p; classes(*q) & CHR_white; q++);
 				if (*q == '@') {
 					TEXT filename[MAXPATHLEN];
 					for (p = q + 1, q = filename; *p && *p != '\n';)
@@ -1175,7 +1187,7 @@ static bool scan_number(SSHORT c,
 	if (c == '.') {
 		c = nextchar(true);
 		retchar();
-		if (!(classes[c] & CHR_digit))
+		if (!(classes(c) & CHR_digit))
 			return false;
 		dot = true;
 	}
@@ -1184,7 +1196,7 @@ static bool scan_number(SSHORT c,
 
 	for (;;) {
 		c = nextchar(true);
-		if (classes[c] & CHR_digit)
+		if (classes(c) & CHR_digit)
 			*p++ = c;
 		else if (!dot && c == '.') {
 			*p++ = c;
@@ -1203,7 +1215,7 @@ static bool scan_number(SSHORT c,
 			*p++ = c;
 			c = nextchar(true);
 		}
-		while (classes[c] & CHR_digit) {
+		while (classes(c) & CHR_digit) {
 			*p++ = c;
 			c = nextchar(true);
 		}
@@ -1232,7 +1244,7 @@ static int skip_white(void)
 
 	while (true) {
 		c = nextchar(true);
-		const char char_class = classes[c];
+		const char char_class = classes(c);
 		if (char_class & CHR_white)
 			continue;
 		if (c == '/') {

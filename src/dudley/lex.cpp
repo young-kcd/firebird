@@ -53,23 +53,23 @@ static int skip_white(void);
 static FILE *input_file, *trace_file = NULL;
 static TEXT *DDL_char, DDL_buffer[256], trace_file_name[MAXPATHLEN];
 
-enum chr_types {
-	CHR_ident = 1,
-	CHR_letter = 2,
-	CHR_digit = 4,
-	CHR_quote = 8,
-	CHR_white = 16,
-	CHR_eol = 32,
 
-	CHR_IDENT = CHR_ident,
-	CHR_LETTER = CHR_letter + CHR_ident,
-	CHR_DIGIT = CHR_digit + CHR_ident,
-	CHR_QUOTE = CHR_quote,
-	CHR_WHITE = CHR_white,
-	CHR_EOL = CHR_white
-};
+const SCHAR CHR_ident = 1;
+const SCHAR CHR_letter = 2;
+const SCHAR CHR_digit = 4;
+const SCHAR CHR_quote = 8;
+const SCHAR CHR_white = 16;
+const SCHAR CHR_eol = 32;
 
-static SCHAR classes[256] = {
+const SCHAR CHR_IDENT = CHR_ident;
+const SCHAR CHR_LETTER = CHR_letter | CHR_ident;
+const SCHAR CHR_DIGIT = CHR_digit | CHR_ident;
+const SCHAR CHR_QUOTE = CHR_quote;
+const SCHAR CHR_WHITE = CHR_white;
+const SCHAR CHR_EOL = CHR_eol; // CHR_white;
+
+
+static SCHAR classes_array[256] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, CHR_WHITE, CHR_EOL, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -94,6 +94,16 @@ static SCHAR classes[256] = {
 		CHR_LETTER, CHR_LETTER,
 	CHR_LETTER, CHR_LETTER, CHR_LETTER, 0
 };
+
+inline SCHAR classes(int idx)
+{
+	return classes_array[(UCHAR) idx];
+}
+
+inline SCHAR classes(UCHAR idx)
+{
+	return classes_array[idx];
+}
 
 
 
@@ -122,7 +132,7 @@ TOK LEX_filename(void)
 		return NULL;
 	}
 
-	while (!(classes[c = nextchar()] & (CHR_white | CHR_eol)))
+	while (!(classes(c = nextchar()) & (CHR_white | CHR_eol)))
 		*p++ = c;
 
 	retchar(c);
@@ -325,7 +335,7 @@ TOK LEX_token(void)
 
 /* On end of file, generate furious but phony end of line tokens */
 
-	TEXT char_class = classes[c];
+	TEXT char_class = classes(c);
 
 	if (dudleyGlob.DDL_eof) {
 		p = token->tok_string;
@@ -342,18 +352,18 @@ TOK LEX_token(void)
 		return NULL;
 	}
 	else if (char_class & CHR_letter) {
-		while (classes[c = nextchar()] & CHR_ident)
+		while (classes(c = nextchar()) & CHR_ident)
 			*p++ = c;
 
 		retchar(c);
 		token->tok_type = tok_ident;
 	}
 	else if (char_class & CHR_digit) {
-		while (classes[c = nextchar()] & CHR_digit)
+		while (classes(c = nextchar()) & CHR_digit)
 			*p++ = c;
 		if (c == '.') {
 			*p++ = c;
-			while (classes[c = nextchar()] & CHR_digit)
+			while (classes(c = nextchar()) & CHR_digit)
 				*p++ = c;
 		}
 		retchar(c);
@@ -509,7 +519,7 @@ static int skip_white(void)
 
 	while ((c = nextchar()) != EOF) {
 
-		const SSHORT char_class = classes[c];
+		const SSHORT char_class = classes(c);
 		if (char_class & CHR_white)
 			continue;
 		if (c == '/') {
