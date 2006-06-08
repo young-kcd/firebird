@@ -122,11 +122,7 @@ static void restore_record(record_param*);
 static void save_record(thread_db*, record_param*);
 static void write_merge_block(thread_db*, merge_file*, ULONG);
 
-#ifdef SMALL_FILE_NAMES
-static const char* SCRATCH		= "fb_m";
-#else
-static const char* SCRATCH		= "fb_merge_";
-#endif
+static const char* SCRATCH = "fb_merge_";
 
 
 
