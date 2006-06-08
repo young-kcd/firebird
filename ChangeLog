@@ -1,3 +1,16 @@
+2006-06-07 07:39  robocop
+
+	* firebird2/src/dsql/: chars.h (1.5), parse.cpp (1.181), parse.y
+	(1.209), preparse.cpp (1.41), user_dsql.cpp (1.46):
+	
+	Fix bug noticed by Dmitry Yemanov: sometimes, special characters
+	are detected and rejected. Other times, anything that follows them
+	is silenty ignored. Unacceptable. We were accesing an array out of
+	bounds.  update customers set city = 1<SC> where 1 = 0; In this
+	case, SC was a strange character in the range 127..255 (for
+	example, 238) and I had to use Windows' chcp 1251 and isql's set
+	names 1251 to see the problem.
+
 2006-06-06 19:00  dimitr
 
 	* firebird2/src/jrd/met.epp (1.192):
