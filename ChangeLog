@@ -1,3 +1,30 @@
+2006-06-08 07:15  robocop
+
+	* firebird2/src/: dudley/lex.cpp (1.31), gpre/gpre.cpp (1.78),
+	qli/lex.cpp (1.36):
+	
+	It seems that all of Jim's hand-made parsers have had the same bug
+	for 20 years in compilers that treat the "char" type as signed byte
+	internally: they get random character attributes because they apply
+	negative indices (obviously out of bounds) to the array of char
+	attributes for any char value greater than 127. And all of them do
+	their work in slightly but almost equal way... tell me about code
+	redundance! This without losing time fixing unused stuff like
+	jrd/jlx.c.
+
+2006-06-08 07:02  robocop
+
+	* firebird2/src/jrd/: file_params.h (1.25), gds.cpp (1.198):
+	
+	Make LC_MESSAGES env var work as expected (get only filename) for
+	an alternative messages file held in the INTL dir.
+
+2006-06-08 06:51  robocop
+
+	* firebird2/src/jrd/rse.cpp (1.112):
+	
+	Delenda est SMALL_FILE_NAMES.
+
 2006-06-07 07:39  robocop
 
 	* firebird2/src/dsql/: chars.h (1.5), parse.cpp (1.181), parse.y
