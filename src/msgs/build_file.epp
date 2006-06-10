@@ -61,13 +61,12 @@ static int global_file;
 
 #ifdef WIN_NT
 #include <io.h> // open, lseek, write, close
-const char* const locale_pattern = "%.10s.msg";
 const char path_separator = '\\';
 #else
-const char* const locale_pattern = "%.10s.msg";
 const char path_separator = '/';
 #endif
 
+const char* const locale_pattern = "%.10s.msg";
 const char* const FILENAME	= "firebird.msg";
 
 #ifdef VMS
