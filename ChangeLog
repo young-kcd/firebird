@@ -1,3 +1,10 @@
+2006-06-09 15:23  asfernandes
+
+	* firebird2/src/: jrd/file_params.h (1.26), msgs/build_file.epp
+	(1.27):
+	
+	Extend locale pattern of WIN32 to be equal to others platforms
+
 2006-06-08 07:15  robocop
 
 	* firebird2/src/: dudley/lex.cpp (1.31), gpre/gpre.cpp (1.78),
