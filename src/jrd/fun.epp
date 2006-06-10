@@ -96,6 +96,52 @@ struct udf_blob {
 	SLONG (*blob_seek) (blb*, USHORT, SLONG);
 };
 
+
+class OwnedBlobStack : public Firebird::Stack<blb*>
+{
+public:
+	OwnedBlobStack(thread_db* in_tdbb) :
+		m_blob_created(0), m_tdbb(in_tdbb) {}
+	~OwnedBlobStack();
+	void close();
+	void setBlobCreated(blb* b)
+	{
+		m_blob_created = b;
+	}
+private:
+	blb* m_blob_created;
+	thread_db* m_tdbb;
+};
+
+OwnedBlobStack::~OwnedBlobStack()
+{
+	while (this->hasData())
+	{
+		// We want to close blobs opened for reading
+		// and cancel blobs opened for writing.
+		blb* aux = this->pop();
+		try
+		{
+			if (aux != m_blob_created)
+				BLB_close(m_tdbb, aux);
+			else
+				BLB_cancel(m_tdbb, aux);
+		}
+		catch (const Firebird::Exception&)
+		{
+			// Ignore exception.
+		}
+	}
+}
+
+void OwnedBlobStack::close()
+{
+	while (this->hasData())
+		BLB_close(m_tdbb, this->pop());
+}
+
+
+
 static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
@@ -135,7 +181,9 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 
 	MOVE_CLEAR(args, sizeof(args));
 	UDF_ARG* arg_ptr = args;
-	Firebird::Stack<blb*> blob_stack;
+	//Firebird::Stack<blb*> blob_stack;
+	//blb* blob_created = 0;
+	OwnedBlobStack blob_stack(tdbb);
 	UCharStack array_stack;
 	
 	jrd_req* request = tdbb->tdbb_request;
@@ -431,6 +479,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 							BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
 									   (bid*) &value->vlu_misc);
 						return_blob_struct = blob_desc;
+						blob_stack.setBlobCreated(blob);
 					}
 					else
 					{
@@ -505,25 +554,21 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 	}
 	else
 		request->req_flags &= ~req_null;
-
-	} // try
-	catch (const Firebird::Exception&) 
-	{
-		// CVC: Maybe we should loop here trying to close blobs from blob_stack, too.
-		while (array_stack.hasData()) {
-			delete[] array_stack.pop();
-		}
-		throw;
-	}
-
-	while (blob_stack.hasData())
-	{
-		BLB_close(tdbb, blob_stack.pop());
-	}
-
+		
 	while (array_stack.hasData())
 	{
 		delete[] array_stack.pop();
+	}
+	blob_stack.close();
+
+	} // try
+	catch (const Firebird::Exception&)
+	{
+		while (array_stack.hasData()) {
+			delete[] array_stack.pop();
+		}
+
+		throw;
 	}
 
 	if (null_flag)
@@ -819,11 +864,21 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		from.dsc_address = data;
 		
 		// This loop may call ERR_post indirectly.
-		for (; n; --n, to.dsc_address += to.dsc_length,
-			 from.dsc_address += array_desc->iad_element_length)
+		try
 		{
-			MOV_move(&from, &to);
+			for (; n; --n, to.dsc_address += to.dsc_length,
+				 from.dsc_address += array_desc->iad_element_length)
+			{
+				MOV_move(&from, &to);
+			}
 		}
+		catch (const Firebird::Exception&)
+		{
+			delete[] data;
+			delete[] temp;
+			throw;
+		}
+		
 		delete[] data;
 		data = temp;
 	}
