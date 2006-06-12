@@ -1251,8 +1251,8 @@ uprv_tzname(int n)
     }
 #endif
 
-#if U_TZNAME + 1 != 1
-    return U_TZNAME[n];
+#ifdef U_TZNAME
+	return U_TZNAME[n];
 #else
     return "";
 #endif
