@@ -47,10 +47,10 @@ u_finit(FILE        *f,
         if (0 <= filenum && filenum <= 2) {
             /* stdin, stdout and stderr need to be special cased for Windows 98 */
 
-			// this don't compile in VS2005 Express
-			// result->fFile = &_iob[_fileno(f)];
-			//
-			// replace with code below
+            // this don't compile in VS2005 Express
+            // result->fFile = &_iob[_fileno(f)];
+            //
+            // replace with code below
             if (filenum == 0)
                 result->fFile = stdin;
             else if (filenum == 1)
