@@ -54,6 +54,8 @@ private:
 	static bool registerCharSetCollation(const Firebird::string& name,
 										 const Firebird::PathName& filename,
 										 const Firebird::string& externalName);
+
+	static bool validateCharSet(const Firebird::string& charSetName, charset* cs);
 };
 
 }	// namespace Jrd

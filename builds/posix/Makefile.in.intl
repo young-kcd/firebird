@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.intl,v 1.23 2005-09-24 22:50:21 asfernandes Exp $
+#  $Id: Makefile.in.intl,v 1.24 2006-06-13 02:35:39 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=superclient
@@ -50,7 +50,8 @@ INTL_Files1=	ld.cpp       cv_narrow.cpp \
 		cs_big5.cpp    cv_big5.cpp   lc_big5.cpp \
 		cs_gb2312.cpp  cv_gb2312.cpp lc_gb2312.cpp \
 		cs_jis.cpp     cv_jis.cpp    lc_jis.cpp \
-		cs_ksc.cpp     cv_ksc.cpp    lc_ksc.cpp
+		cs_ksc.cpp     cv_ksc.cpp    lc_ksc.cpp \
+		cs_icu.cpp     cv_icu.cpp    lc_icu.cpp
 
 
 # INTL_Sources =  $(INTL_Files1)
@@ -74,7 +75,7 @@ all : libfbintl
 
 libfbintl : $(LIBFBINTL_SO)
 
-$(LIBFBINTL_SO):	$(INTL_Objects)
+$(LIBFBINTL_SO):	$(INTL_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
 	$(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)libintl.$(SHRLIB_EXT).1 \
 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 

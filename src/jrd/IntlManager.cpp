@@ -207,7 +207,9 @@ bool IntlManager::lookupCharSet(const Firebird::string& charSetName, charset* cs
 				(pfn_INTL_lookup_charset)module->findSymbol(STRINGIZE(CHARSET_ENTRYPOINT));
 
 			if (lookupFunction && (*lookupFunction)(cs, externalInfo.name.c_str()))
-				return true;
+			{
+				return validateCharSet(charSetName, cs);
+			}
 		}
 #endif
 	}
@@ -278,6 +280,42 @@ bool IntlManager::registerCharSetCollation(const Firebird::string& name, const F
 
 	charSetCollations().put(name, ExternalInfo(filename, externalName));
 	return true;
+}
+
+
+bool IntlManager::validateCharSet(const Firebird::string& charSetName, charset* cs)
+{
+	bool valid = true;
+	string s;
+
+	string unsupportedMsg;
+	unsupportedMsg.printf("Unsupported character set %s.", charSetName.c_str());
+
+	if (!(cs->charset_flags & CHARSET_ASCII_BASED))
+	{
+		valid = false;
+		s.printf("%s. Only ASCII-based character sets are supported yet.",
+			unsupportedMsg.c_str());
+		gds__log(s.c_str());
+	}
+
+	if (cs->charset_min_bytes_per_char != 1)
+	{
+		valid = false;
+		s.printf("%s. Wide character sets are not supported yet.",
+			unsupportedMsg.c_str());
+		gds__log(s.c_str());
+	}
+
+	if (cs->charset_space_length != 1 || *cs->charset_space_character != ' ')
+	{
+		valid = false;
+		s.printf("%s. Only ASCII space is supported in charset_space_character yet.",
+			unsupportedMsg.c_str());
+		gds__log(s.c_str());
+	}
+
+	return valid;
 }
 
 

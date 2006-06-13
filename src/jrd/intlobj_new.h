@@ -44,10 +44,18 @@ typedef SCHAR ASCII;
 
 typedef USHORT INTL_BOOL;
 
+#ifdef __cplusplus
+namespace {
+#endif
+
 /* Forward declarations to be implemented in collation driver */
 struct TextTypeImpl;
 struct CharSetImpl;
 struct CsConvertImpl;
+
+#ifdef __cplusplus
+}
+#endif
 
 struct texttype; /* forward decl for the fc signatures before the struct itself. */
 struct csconvert;

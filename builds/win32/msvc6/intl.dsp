@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "INTL_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GR- /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FR /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FR /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird/intl/fbintl.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib icuuc.lib icuin.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"..\..\..\temp\debug\firebird/intl/fbintl.dll" /pdbtype:sept /libpath:../../../extern/icu/lib
 
 !ELSEIF  "$(CFG)" == "intl - Win32 Release"
 
@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_WINDOWS" /D "_USRDLL" /D "INTL_EXPORTS" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GR- /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "INTL_EXPORTS" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /I "../../../extern/icu/include" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "INTL_EXPORTS" /D "WINDOWS_ONLY" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib /nologo /dll /incremental:no /machine:I386 /out:"..\..\..\temp\release\firebird/intl/fbintl.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib advapi32.lib ws2_32.lib mpr.lib version.lib icuuc.lib icuin.lib /nologo /dll /incremental:no /machine:I386 /out:"..\..\..\temp\release\firebird/intl/fbintl.dll" /pdbtype:sept /libpath:../../../extern/icu/lib
 # SUBTRACT LINK32 /debug
 
 !ENDIF 
@@ -98,6 +98,10 @@ SOURCE=..\..\..\src\intl\cs_big5.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\cs_gb2312.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cs_icu.cpp
 # End Source File
 # Begin Source File
 
@@ -126,6 +130,10 @@ SOURCE=..\..\..\src\intl\cv_big5.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\cv_gb2312.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cv_icu.cpp
 # End Source File
 # Begin Source File
 
@@ -158,6 +166,10 @@ SOURCE=..\..\..\src\intl\lc_dos.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\lc_gb2312.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\lc_icu.cpp
 # End Source File
 # Begin Source File
 
@@ -341,6 +353,10 @@ SOURCE=..\..\..\src\intl\charsets\cs_gb2312.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\intl\cs_icu.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\charsets\cs_iso8859_1.h
 # End Source File
 # Begin Source File
@@ -390,6 +406,10 @@ SOURCE=..\..\..\src\intl\charsets\cs_w1253.h
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\charsets\cs_w1254.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\cv_icu.h
 # End Source File
 # Begin Source File
 
@@ -526,6 +546,10 @@ SOURCE=..\..\..\src\intl\collations\koi8u_ua.h
 # Begin Source File
 
 SOURCE=..\..\..\src\intl\langdrv.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\intl\lc_icu.h
 # End Source File
 # Begin Source File
 
@@ -698,6 +722,18 @@ SOURCE=..\..\..\src\intl\collations\xx88592plk.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\version.rc
+# End Source File
+# End Group
+# Begin Group "OTHER files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # End Group
 # Begin Source File

@@ -29,27 +29,30 @@
 #define TEXTTYPE_tertiary_insensitive			0x10	/* Don't use tertiary level for comparisions */
 #define TEXTTYPE_non_multi_level				0x20	/* Sortkey isn't more precise than equivalence class */
 
-struct TextTypeImpl
+namespace
 {
-	TextTypeImpl()
-		: texttype_flags(0),
-		  texttype_bytes_per_key(0),
-		  texttype_collation_table(NULL),
-		  texttype_expand_table(NULL),
-		  texttype_compress_table(NULL),
-		  texttype_toupper_table(NULL),
-		  texttype_tolower_table(NULL)
+	struct TextTypeImpl
 	{
-	}
+		TextTypeImpl()
+			: texttype_flags(0),
+			  texttype_bytes_per_key(0),
+			  texttype_collation_table(NULL),
+			  texttype_expand_table(NULL),
+			  texttype_compress_table(NULL),
+			  texttype_toupper_table(NULL),
+			  texttype_tolower_table(NULL)
+		{
+		}
 
-	USHORT texttype_flags;
-	BYTE texttype_bytes_per_key;
-	const BYTE* texttype_collation_table;
-	const BYTE* texttype_expand_table;
-	const BYTE* texttype_compress_table;
-	const BYTE* texttype_toupper_table;
-	const BYTE* texttype_tolower_table;
-};
+		USHORT texttype_flags;
+		BYTE texttype_bytes_per_key;
+		const BYTE* texttype_collation_table;
+		const BYTE* texttype_expand_table;
+		const BYTE* texttype_compress_table;
+		const BYTE* texttype_toupper_table;
+		const BYTE* texttype_tolower_table;
+	};
+}
 
 USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen);
 USHORT LC_NARROW_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,

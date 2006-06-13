@@ -23,10 +23,13 @@ static void internal_destroy(TEXTTYPE);
 static void unicode_destroy(TEXTTYPE obj);
 
 
-struct TextTypeImpl
+namespace
 {
-	BYTE texttype_pad_char;
-};
+	struct TextTypeImpl
+	{
+		BYTE texttype_pad_char;
+	};
+}
 
 
 static inline bool FAMILY_INTERNAL(TEXTTYPE cache,

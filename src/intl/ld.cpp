@@ -24,6 +24,9 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 #include "../intl/ld_proto.h"
+#include "../intl/cs_icu.h"
+#include "../intl/lc_icu.h"
+#include "../../include/fb_exception.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h> /* for MAXPATHLEN */
@@ -291,9 +294,15 @@ EXTERN_convert(CVJIS_sjis_x_eucj);
 
 INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name)
 {
-#define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, attr) \
-    if (strcmp(name, cs_name) == 0) \
-		return cs_symbol(cs, name);
+	try
+	{
+#define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, attr)	\
+	{																				\
+		EXTERN_charset((*lookup_symbol)) = cs_symbol;								\
+																					\
+		if (lookup_symbol && strcmp(name, cs_name) == 0)							\
+			return lookup_symbol(cs, name);											\
+	}
 #define CSALIAS(name, cs_id)
 #define COLLATION(name, cc_id, cs_id, coll_id, symbol, attr)
 #define COLLATE_ALIAS(name, coll_id)
@@ -309,26 +318,50 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name)
 #undef COLLATE_ALIAS
 #undef END_CHARSET
 
-	return (false);
+		return CSICU_charset_init(cs, name);
+	}
+	catch (Firebird::BadAlloc)
+	{
+		fb_assert(false);
+		return false;
+	}
 }
 
 INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 										   USHORT attributes, const UCHAR* specific_attributes,
 										   ULONG specific_attributes_length, INTL_BOOL ignore_attributes)
 {
-#define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, coll_attr) \
-	if (strcmp(charset_name, cs_name) == 0) { \
-    if (strcmp(texttype_name, cs_name) == 0) \
-	return cp_symbol(tt, texttype_name, charset_name, (ignore_attributes ? coll_attr : attributes), \
-					 (ignore_attributes ? NULL : specific_attributes), \
-					 (ignore_attributes ? 0 : specific_attributes_length));
+	try
+	{
+#define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, coll_attr)	\
+	if (strcmp(charset_name, cs_name) == 0) {											\
+	{																					\
+		EXTERN_texttype((*lookup_symbol)) = cp_symbol;									\
+																						\
+		if (lookup_symbol != NULL && strcmp(texttype_name, cs_name) == 0)				\
+		{																				\
+			return lookup_symbol(														\
+				tt, texttype_name, charset_name,										\
+				(ignore_attributes ? coll_attr : attributes),							\
+				(ignore_attributes ? NULL : specific_attributes),						\
+				(ignore_attributes ? 0 : specific_attributes_length));					\
+		}																				\
+	}
 #define CSALIAS(name, cs_id)
 #define END_CHARSET }
-#define COLLATION(tt_name, cc_id, cs_id, coll_id, symbol, coll_attr) \
-    if (strcmp(texttype_name, tt_name) == 0) \
-		return symbol(tt, texttype_name, charset_name, (ignore_attributes ? coll_attr : attributes), \
-					  (ignore_attributes ? NULL : specific_attributes), \
-					  (ignore_attributes ? 0 : specific_attributes_length));
+#define COLLATION(tt_name, cc_id, cs_id, coll_id, symbol, coll_attr)	\
+	{																	\
+		EXTERN_texttype((*lookup_symbol)) = symbol;						\
+																		\
+		if (lookup_symbol && strcmp(texttype_name, tt_name) == 0)		\
+		{																\
+			return lookup_symbol(										\
+				tt, texttype_name, charset_name,						\
+				(ignore_attributes ? coll_attr : attributes),			\
+				(ignore_attributes ? NULL : specific_attributes),		\
+				(ignore_attributes ? 0 : specific_attributes_length));	\
+		}																\
+	}
 #define COLLATE_ALIAS(name, coll_id)
 
 #define INTL_COMPONENT_FB
@@ -341,7 +374,16 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 #undef COLLATE_ALIAS
 #undef END_CHARSET
 
-	return (false);
+		return LCICU_texttype_init(
+			tt, texttype_name, charset_name, (ignore_attributes ? TEXTTYPE_ATTR_PAD_SPACE : attributes),
+			(ignore_attributes ? NULL : specific_attributes),
+			(ignore_attributes ? 0 : specific_attributes_length));
+	}
+	catch (Firebird::BadAlloc)
+	{
+		fb_assert(false);
+		return false;
+	}
 }
 
 #undef DRIVER
