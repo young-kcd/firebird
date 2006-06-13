@@ -1,4 +1,86 @@
   **************************
+  * v2.0 Release Candidate 3
+  **************************
+
+    * Fixed RC2 bug
+        GSTAT and NBAK should not require firebird.conf on Win32
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Added new collation
+        ES_ES_CI_AI (case- and accent-insensitive) for ISO8859_1 charset (Spanish language)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        Server crashes with complex joins or derived tables and grouping
+      Contributor(s):
+        George Sergeev <gsergeev at broadviewsoftware.com>
+
+    * Fixed RC2 bug
+        Server lockup when an exception occurs during expression index evaluation
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC2 bug
+        STARTS WITH not working properly on an indexed column with charset UTF8
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed unregistered bug
+        Don't crash if some bad client passes more than the supported number of
+        remote protocol versions
+      Contributor(s):
+        Aleksey Karyakin <karyakin at cmpmail.com>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        TCP buffer size bigger than 32K cannot be processed correctly
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed unregistered bug
+        NoNagle option for TCP sockets doesn't work properly
+      Contributor(s):
+        Fred Polizo <fpolizo at users.sourceforge.net> 
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed RC2 bug
+        Views WITH CHECK OPTION cannot be restored
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC2 bug
+        Server occasionally crashes when explicit plans present in procedures
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC2 bug
+        NBACKUP utility was missing in the Linux SS packages
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed RC2 bug
+        Suboptimal execution path is chosen if an explicit plan presents for a complex inner join
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC2 bug
+        Expression: '' CONTAINING '' wrongly returned FALSE
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed RC2 bug
+        Wrong results for ALL predicates in the ODS11 optimizer
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC2 bug
+        Wrong decoding of the SPB tags
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+  **************************
   * v2.0 Release Candidate 2
   **************************
 
