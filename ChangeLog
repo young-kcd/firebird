@@ -1,3 +1,30 @@
+2006-06-14 03:48  asfernandes
+
+	* firebird2/builds/posix/Makefile.in.intl (1.25):
+	
+	Misc
+
+2006-06-13 04:38  asfernandes
+
+	* firebird2/src/intl/: cs_icu.h (1.1), cv_icu.h (1.1), lc_icu.h
+	(1.1):
+	
+	Ability to use: 1) ICU charsets through fbintl 2) UNICODE collation
+	(charset_UNICODE) for all fbintl charsets
+
+2006-06-13 04:35  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.intl (1.24),
+	builds/win32/msvc6/intl.dsp (1.31), builds/win32/msvc7/intl.vcproj
+	(1.27), src/jrd/IntlManager.cpp (1.9), src/jrd/IntlManager.h (1.5),
+	src/jrd/intl_builtin.cpp (1.29), src/jrd/intlobj_new.h (1.14),
+	src/intl/cs_icu.cpp (1.1), src/intl/cv_icu.cpp (1.1),
+	src/intl/cv_narrow.h (1.5), src/intl/lc_icu.cpp (1.1),
+	src/intl/lc_narrow.h (1.6), src/intl/ld.cpp (1.22):
+	
+	Ability to use: 1) ICU charsets through fbintl 2) UNICODE collation
+	(charset_UNICODE) for all fbintl charsets
+
 2006-06-12 03:50  asfernandes
 
 	* firebird2/extern/icu/source/io/ufile.c (1.4):
