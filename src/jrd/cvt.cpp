@@ -282,7 +282,6 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
  *
  **************************************/
 	double value;
-	SSHORT scale;
 
 	switch (desc->dsc_dtype) {
 	case dtype_short:
@@ -336,7 +335,7 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 								&p,
 								(vary*) buffer, sizeof(buffer), err);
 			value = 0.0;
-			scale = 0;
+			int scale = 0;
 			SSHORT sign = 0;
 			bool digit_seen = false, past_sign = false, fraction = false;
 			const char* const end = p + length;
@@ -451,20 +450,21 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 
 /* Last, but not least, adjust for scale */
 
-	if ((scale = desc->dsc_scale) == 0)
+	const int dscale = desc->dsc_scale;
+	if (dscale == 0)
 		return value;
 
 /* if the scale is greater than the power of 10 representable
    in a double number, then something has gone wrong... let
    the user know... */
 
-	if (ABSOLUT(scale) > DBL_MAX_10_EXP)
+	if (ABSOLUT(dscale) > DBL_MAX_10_EXP)
 		(*err) (isc_arith_except, 0);
 
-	if (scale > 0)
-		value *= power_of_ten(scale);
-	else if (scale < 0)
-		value /= power_of_ten(-scale);
+	if (dscale > 0)
+		value *= power_of_ten(dscale);
+	else if (dscale < 0)
+		value /= power_of_ten(-dscale);
 
 	return value;
 }
@@ -483,7 +483,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
  *      scale.
  *
  **************************************/
-	SLONG value, high, fraction;
+	SLONG value, high;
 
 	double d, eps;
 	SINT64 val64;
@@ -510,10 +510,10 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 
 		/* adjust for scale first, *before* range-checking the value. */
 		if (scale > 0) {
-			fraction = 0;
+			SLONG fraction = 0;
 			do {
 				if (scale == 1)
-					fraction = (SLONG) (val64 % 10);
+					fraction = SLONG(val64 % 10);
 				val64 /= 10;
 			} while (--scale);
 			if (fraction > 4)
@@ -622,7 +622,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 
 	if (scale > 0) {
 		if (DTYPE_IS_EXACT(desc->dsc_dtype)) {
-			fraction = 0;
+			SLONG fraction = 0;
 			do {
 				if (scale == 1)
 					fraction = value % 10;
@@ -787,9 +787,6 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
  *
  **************************************/
 	SQUAD value;
-#ifdef NATIVE_QUAD
-	SLONG fraction;
-#endif
 	double d;
 	TEXT buffer[50];			/* long enough to represent largest quad in ASCII */
 
@@ -897,7 +894,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		if (desc->dsc_dtype == dtype_short ||
 			desc->dsc_dtype == dtype_long || desc->dsc_dtype == dtype_quad)
 		{
-			fraction = 0;
+			SLONG fraction = 0;
 			do {
 				if (scale == 1)
 					fraction = value % 10;
@@ -947,7 +944,6 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
  *
  **************************************/
 	SINT64 value;
-	SLONG fraction;
 	double d, eps;
 	TEXT buffer[50];			/* long enough to represent largest SINT64 in ASCII */
 
@@ -1053,7 +1049,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		if (desc->dsc_dtype == dtype_short ||
 			desc->dsc_dtype == dtype_long || desc->dsc_dtype == dtype_int64)
 		{
-			fraction = 0;
+			SLONG fraction = 0;
 			do {
 				if (scale == 1)
 					fraction = (SLONG) (value % 10);
@@ -1301,15 +1297,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
  *      Move (and possible convert) something to something else.
  *
  **************************************/
-	SSHORT fill;
 	SLONG l;
-	UCHAR *ptr;
-	USHORT strtype;
-#if !defined(REQUESTER) && !defined(SUPERCLIENT)
-	CHARSET_ID charset1, charset2;
-#endif
-	UCHAR fill_char;
-
 	SLONG length = from->dsc_length;
 	UCHAR* p = to->dsc_address;
 	const UCHAR* q = from->dsc_address;
@@ -1535,6 +1523,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 #ifndef REQUESTER
 #ifndef SUPERCLIENT
+			CHARSET_ID charset1, charset2;
 			if ((INTL_TTYPE(from) == ttype_dynamic) && (err == ERR_post))
 				charset1 = INTL_charset(NULL, INTL_TTYPE(from));
 			else
@@ -1569,17 +1558,26 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 #endif
 #endif
 
-			length = l =
-				CVT_get_string_ptr(from, &strtype, &ptr, NULL, 0, err);
-			q = ptr;
+			{ // scope
+				USHORT strtype_unused;
+				UCHAR *ptr;
+				length = l =
+					CVT_get_string_ptr(from, &strtype_unused, &ptr, NULL, 0, err);
+				q = ptr;
+			} // end scope
 
 			USHORT to_size = TEXT_LEN(to);
 			UCHAR* start = to->dsc_address;
+			UCHAR fill_char = ASCII_SPACE;
 #if !defined(REQUESTER) && !defined(SUPERCLIENT)
 			CharSet* toCharSet = (err != ERR_post || charset2 == ttype_dynamic || charset2 == CS_METADATA ?
 									NULL : INTL_charset_lookup(NULL, charset2));
+			if (charset2 == ttype_binary)
+				fill_char = 0x00;
+				
 			USHORT toLength;
 #endif
+			int fill;
 
 			switch (to->dsc_dtype) {
 			case dtype_text:
@@ -1593,18 +1591,10 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				l -= length;
 				/* TMN: Here we should really have the following fb_assert */
 				/* fb_assert((to->dsc_length - length) <= MAX_SSHORT); */
-				fill = (SSHORT) (to->dsc_length - length);
+				fill = to->dsc_length - length;
 
 				CVT_COPY_BUFF(q, p, length);
 				if (fill > 0) {
-#ifndef REQUESTER
-#ifndef SUPERCLIENT
-					if (charset2 == ttype_binary)
-						fill_char = 0x00;
-					else
-#endif
-#endif
-						fill_char = ASCII_SPACE;
 					do {
 						*p++ = fill_char;
 					} while (--fill);
@@ -1666,13 +1656,12 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 #endif
 
 			if (l) {
-				/* scan the truncated string to ensure only spaces lost */
-				/* Note: it  is correct only for narrow and multi-byte
-				   character sets which use ASCII for the SPACE
-				   character. */
+				// Scan the truncated string to ensure only spaces lost
+				// Warning: it is correct only for narrow and multi-byte
+				// character sets which use ASCII or NULL for the SPACE character
 
 				do {
-					if (*q++ != ASCII_SPACE)
+					if (*q++ != fill_char)
 						(*err) (isc_arith_except, 0);
 				} while (--l);
 			}
@@ -1757,8 +1746,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 	case dtype_real:
 		{
-			double d_value;
-			d_value = CVT_get_double(from, err);
+			double d_value = CVT_get_double(from, err);
 			if (ABSOLUT(d_value) > FLOAT_MAX)
 				(*err) (isc_arith_except, 0);
 			*(float*) p = (float) d_value;
@@ -1982,7 +1970,8 @@ static SSHORT decompose(const char* string,
 	errd.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(string));
 
 	SINT64 value = 0;
-	SSHORT scale = 0, sign = 0;
+	SSHORT scale = 0;
+	int sign = 0;
 	bool digit_seen = false, fraction = false;
 	const SINT64 lower_limit = (dtype == dtype_long) ? MIN_SLONG : MIN_SINT64;
 	const SINT64 upper_limit = (dtype == dtype_long) ? MAX_SLONG : MAX_SINT64;
@@ -2618,7 +2607,7 @@ static void string_to_datetime(
 		return;
 	}
 
-	tm times, times2;
+	tm times;
 	memset(&times, 0, sizeof(times));
 
 	if (expect_type != expect_sql_time) {
@@ -2679,6 +2668,7 @@ static void string_to_datetime(
 		times.tm_mday = components[position_day];
 
 		// Fetch current date/time
+		tm times2;
 		Firebird::TimeStamp().decode(&times2);
 
 		/* Handle defaulting of year */
@@ -2724,6 +2714,7 @@ static void string_to_datetime(
 
 	isc_encode_timestamp(&times, date);
 	if (expect_type != expect_sql_time) {
+		tm times2;
 		isc_decode_timestamp(date, &times2);
 
 		if ((times.tm_year + 1900) < MIN_YEAR
