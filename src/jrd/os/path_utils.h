@@ -129,7 +129,7 @@ public:
 
 	// Tries to ensure our path finishes with a platform-specific directory separator.
 	// We don't work correctly with MBCS.
-	static void PathUtils::ensureSeparator(Firebird::PathName& in_out);
+	static void ensureSeparator(Firebird::PathName& in_out);
 					
 	/** splitLastComponent takes a path as the third argument and
 		removes the last component in that path (usually a file or directory name).
