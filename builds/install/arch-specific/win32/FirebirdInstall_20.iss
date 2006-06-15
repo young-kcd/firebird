@@ -73,6 +73,16 @@
 #define examples
 #define compression
 
+;#define iss_debug
+
+#ifdef iss_debug
+;Useful for cases where engine is built without examples.
+#undef examples
+;We speed up compilation (and hence testing) by not compressing contents.
+#undef compression
+#endif
+
+
 ;-------end of Innosetup script debug flags section
 
 
@@ -189,31 +199,30 @@ LanguageCodePage=0
 #endif
 
 [Types]
-Name: SuperServerInstall; Description: {cm:SuperServerInstall}
-Name: ClassicServerInstall; Description: {cm:ClassicServerInstall}
+Name: ServerInstall; Description: {cm:ServerInstall}
 Name: DeveloperInstall; Description: {cm:DeveloperInstall}
 Name: ClientInstall; Description: {cm:ClientInstall}
 Name: CustomInstall; Description: {cm:CustomInstall}; Flags: iscustom;
 
 [Components]
-Name: SuperServerComponent; Description: {cm:SuperServerComponent}; Types: SuperServerInstall; Flags: exclusive;
-Name: ClassicServerComponent; Description: {cm:ClassicServerComponent}; Types: ClassicServerInstall; Flags: exclusive;
-Name: ServerComponent; Description: {cm:ServerComponent}; Types: SuperServerInstall ClassicServerInstall;
-Name: DevAdminComponent; Description: {cm:DevAdminComponent}; Types: SuperServerInstall ClassicServerInstall DeveloperInstall;
-Name: ClientComponent; Description: {cm:ClientComponent}; Types: SuperServerInstall ClassicServerInstall DeveloperInstall ClientInstall CustomInstall; Flags: fixed disablenouninstallwarning;
+Name: ServerComponent; Description: {cm:ServerComponent}; Types: ServerInstall;
+Name: ServerComponent\ClassicServerComponent; Description: {cm:ClassicServerComponent}; Types: ServerInstall; Flags: exclusive;
+Name: ServerComponent\SuperServerComponent; Description: {cm:SuperServerComponent}; Types: ServerInstall; Flags: exclusive;
+Name: DevAdminComponent; Description: {cm:DevAdminComponent}; Types: ServerInstall DeveloperInstall;
+Name: ClientComponent; Description: {cm:ClientComponent}; Types: ServerInstall DeveloperInstall ClientInstall CustomInstall; Flags: fixed disablenouninstallwarning;
 
 [Tasks]
 ;Server tasks
-Name: UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
+Name: UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent\SuperServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
 Name: UseApplicationTask; Description: {cm:UseApplicationTaskMsg}; GroupDescription: {cm:TaskGroupDescription}; Components: ServerComponent; MinVersion: 4,4; Flags: exclusive; Check: ConfigureFirebird;
 Name: UseServiceTask; Description: {cm:UseServiceTask}; GroupDescription: {cm:TaskGroupDescription}; Components: ServerComponent; MinVersion: 0,4; Flags: exclusive; Check: ConfigureFirebird;
 Name: AutoStartTask; Description: {cm:AutoStartTask}; Components: ServerComponent; MinVersion: 4,4; Check: ConfigureFirebird;
+;Allow user to not install cpl applet
+Name: InstallCPLAppletTask; Description: {cm:InstallCPLAppletTask}; Components: ServerComponent\SuperServerComponent; MinVersion: 4.0,4.0; Check: ShowInstallCPLAppletTask;
 ;Name: MenuGroupTask; Description: Create a Menu &Group; Components: DevAdminComponent; MinVersion: 4,4
 ;Copying of client libs to <sys>
 Name: CopyFbClientToSysTask; Description: {cm:CopyFbClientToSysTask}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ShowCopyFbClientLibTask;
 Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Components: ClientComponent; MinVersion: 4,4; Check: ShowCopyGds32Task;
-;Allow user to not install cpl applet
-Name: InstallCPLAppletTask; Description: {cm:InstallCPLAppletTask}; Components: SuperServerComponent; MinVersion: 4.0,4.0; Check: ShowInstallCPLAppletTask;
 
 
 [Run]
@@ -248,10 +257,9 @@ Root: HKLM; Subkey: "SOFTWARE\FirebirdSQL"; ValueType: none; Flags: deletekey;
 ; - except that this seems to be broken. Bah!
 ;Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; Valuetype: none; ValueName: 'Firebird'; ValueData: ''; flags: deletevalue; Check: IsNotAutoStartApp;
 [Icons]
-Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ClassicServerComponent; Comment: Run Firebird classic server (without guardian)
-Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
-Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
-Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -c; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ClassicServerComponent; Comment: Run Firebird Classic Server (with guardian)
+Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent\ClassicServerComponent; Comment: Run Firebird classic server
+Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
+Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 #define App_Name = SetupSetting("AppName")
 Name: {group}\Firebird 2.0.0 Release Notes; Filename: {app}\doc\Firebird_v2.0.0.ReleaseNotes.pdf; MinVersion: 4.0,4.0;  Comment: {#App_Name} {cm:ReleaseNotes}
@@ -299,10 +307,10 @@ Source: output\bin\gpre.exe; DestDir: {app}\bin; Components: DevAdminComponent; 
 Source: output\bin\gsec.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion
 Source: output\bin\gsplit.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: sharedfile ignoreversion
 Source: output\bin\gstat.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-Source: output\bin\fbguard.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: output\bin\fbguard.exe; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent; Flags: sharedfile ignoreversion
+Source: output\bin\fb_inet_server.exe; DestDir: {app}\bin; Components: ServerComponent\ClassicServerComponent; Flags: sharedfile ignoreversion uninsrestartdelete
+Source: output\bin\fbserver.exe; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent; Flags: sharedfile ignoreversion
 Source: output\bin\fb_lock_print.exe; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-Source: output\bin\fb_inet_server.exe; DestDir: {app}\bin; Components: ClassicServerComponent; Flags: sharedfile ignoreversion
-Source: output\bin\fbserver.exe; DestDir: {app}\bin; Components: SuperServerComponent; Flags: sharedfile ignoreversion
 Source: output\bin\ib_util.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: output\bin\instclient.exe; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile ignoreversion
 Source: output\bin\instreg.exe; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile ignoreversion
@@ -349,8 +357,8 @@ Source: output\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; 
 Source: output\misc\upgrade\ib_udf\*.*; DestDir: {app}\misc\upgrade\ib_udf; Components: ServerComponent; Flags: ignoreversion;
 
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
-Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
-Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Destname: FIREBI~1.CPL; Components: SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
+Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Components: ServerComponent\SuperServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
+Source: output\system32\Firebird2Control.cpl; DestDir: {sys}; Destname: FIREBI~1.CPL; Components: ServerComponent\SuperServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
 #endif
 
 #ifdef examples
@@ -366,8 +374,8 @@ Source: output\examples\udf\*.*; DestDir: {app}\examples\udf; Components: DevAdm
 
 #ifdef ship_pdb
 Source: output\bin\fbclient.pdb; DestDir: {app}\bin; Components: ClientComponent;
-Source: output\bin\fb_inet_server.pdb; DestDir: {app}\bin; Components: ClassicServerComponent;
-Source: output\bin\fbserver.pdb; DestDir: {app}\bin; Components: SuperServerComponent;
+Source: output\bin\fb_inet_server.pdb; DestDir: {app}\bin; Components: ServerComponent\ClassicServerComponent;
+Source: output\bin\fbserver.pdb; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent;
 #endif
 
 [UninstallRun]

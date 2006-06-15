@@ -1,4 +1,5 @@
 en.MyAppName=Firebird Database Server 2.0
+en.ServerInstall=Full installation of Server and development tools.
 en.SuperServerInstall=Full installation of Super Server and development tools.
 en.ClassicServerInstall=Full installation of Classic Server and development tools.
 en.DeveloperInstall=Installation of Client tools for Developers and database administrators.

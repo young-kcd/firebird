@@ -1,4 +1,5 @@
 hu.MyAppName=Firebird Adatbázis Szerver 2.0
+hu.ServerInstall=Teljes telepítése a Szervernek és fejlesztõi eszközöknek
 hu.SuperServerInstall=Teljes telepítése a Szuper Szervernek és fejlesztõi eszközöknek
 hu.ClassicServerInstall=Teljes telepítése a Hagyományos Szervernek és fejlesztõi eszközöknek
 hu.DeveloperInstall=Kliens eszközök telepítése fejlesztõk és adatbázis adminisztrátorok részére

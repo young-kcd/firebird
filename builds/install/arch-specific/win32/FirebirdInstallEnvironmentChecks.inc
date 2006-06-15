@@ -466,7 +466,7 @@ begin
   result := false;
 
   SelectedComponents := WizardSelectedComponents(false);
-  if pos(lowercase('ClassicServerComponent'),SelectedComponents) >0 then
+  if pos(lowercase('ServerComponent\ClassicServerComponent'),SelectedComponents) >0 then
     result := true;
 end;
 
@@ -668,7 +668,7 @@ function InstallCPLApplet: boolean;
 begin
   result := False;
   if ( (ConfigureFirebird) AND (not NoCPL) ) then
-     result := (ShouldProcessEntry('SuperServerComponent', 'InstallCPLAppletTask') = srYes) ;
+     result := (ShouldProcessEntry('ServerComponent\SuperServerComponent', 'InstallCPLAppletTask') = srYes) ;
 end;
 
 

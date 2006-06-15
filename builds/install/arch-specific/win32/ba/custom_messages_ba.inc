@@ -1,4 +1,5 @@
 ba.MyAppName=Firebird Database Server 2.0
+ba.ServerInstall=Puna instalacija Server-a i razvojnih alata.
 ba.SuperServerInstall=Puna instalacija Super Server-a i razvojnih alata.
 ba.ClassicServerInstall=Puna instalacijaClassic Server-a i razvojnih alata.
 ba.DeveloperInstall=Instalacija Client alata za Developere i database administratore.

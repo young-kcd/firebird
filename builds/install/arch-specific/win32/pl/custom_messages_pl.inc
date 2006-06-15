@@ -1,4 +1,5 @@
 pl.MyAppName=Firebird Database Server 2.0
+pl.ServerInstall=Pe³na instalacja Server'a i narzêdzi developera.
 pl.SuperServerInstall=Pe³na instalacja Super Server'a i narzêdzi developera.
 pl.ClassicServerInstall=Pe³na instalacja Classic Server'a i narzêdzi developera.
 pl.DeveloperInstall=Instalacja narzêdzi klienta dla developerów i administratorów bazy danych.

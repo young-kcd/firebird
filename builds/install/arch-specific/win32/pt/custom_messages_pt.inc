@@ -1,4 +1,5 @@
 pt.MyAppName=Servidor SQL Firebird 2.0
+pt.ServerInstall=Instalação completa do Server e ferramentas de desenvolvimento.
 pt.SuperServerInstall=Instalação completa do Super Server e ferramentas de desenvolvimento.
 pt.ClassicServerInstall=Instalação completa do Classic Server e ferramentas de desenvolvimento.
 pt.DeveloperInstall=Instalação das ferramentas do Cliente para programadores e administradores.

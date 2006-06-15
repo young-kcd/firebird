@@ -1,4 +1,5 @@
 es.MyAppName=Firebird 2.0
+es.ServerInstall=Instalación completa de Server y herramientas de desarrollo
 es.SuperServerInstall=Instalación completa de Super Server y herramientas de desarrollo
 es.ClassicServerInstall=Instalación completa de Classic Server y herramientas de desarrollo
 es.DeveloperInstall=Instalación de herramientas de cliente para desarrolladores y administradores
