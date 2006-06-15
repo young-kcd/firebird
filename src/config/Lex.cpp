@@ -57,7 +57,7 @@ Lex::Lex(const char *punctuation, int debugFlags)
 {
 	lineComment = NULL;
 	commentStart = NULL;
-	memset (charTable, 0, sizeof (charTable));
+	memset (charTableArray, 0, sizeof (charTableArray));
 	setCharacters (PUNCT, punctuation);
 	setCharacters (WHITE, WHITE_SPACE);
 	setCharacters (DIGIT, "0123456789");
@@ -107,7 +107,7 @@ void Lex::skipWhite()
 				ptr += 2;
 				++inputStream->lineNumber;
 				}
-			else if (charTable [(UCHAR) *ptr] & WHITE)
+			else if (charTable (*ptr) & WHITE)
 				{
 				if (*ptr++ == '\n')
 					{
@@ -157,7 +157,7 @@ void Lex::getToken()
 	char *endToken = token + sizeof (token);
 	char c = *p++ = *ptr++;
 
-	if (charTable [(UCHAR) c] & PUNCT)
+	if (charTable (c) & PUNCT)
 		tokenType = PUNCT;
 	else if (c == '\'' || c == '"')
 		{
@@ -181,10 +181,10 @@ void Lex::getToken()
 		++ptr;
 		tokenType = (c == '"') ? QUOTED_STRING : SINGLE_QUOTED_STRING;
 		}
-	else if (charTable [(UCHAR) c] & DIGIT)
+	else if (charTable (c) & DIGIT)
 		{
 		tokenType = NUMBER;
-		while (ptr < end && (charTable [(UCHAR) *ptr] & DIGIT))
+		while (ptr < end && (charTable (*ptr) & DIGIT))
 			*p++ = *ptr++;
 		}
 	else
@@ -193,14 +193,14 @@ void Lex::getToken()
 		if (flags & LEX_upcase)
 			{
 			p [-1] = UPCASE(c);
-			while (ptr < end && !(charTable [(UCHAR) *ptr] & (WHITE | PUNCT)))
+			while (ptr < end && !(charTable (*ptr) & (WHITE | PUNCT)))
 				{
 				c = *ptr++;
 				*p++ = UPCASE(c);
 				}
 			}
 		else
-			while (ptr < end && !(charTable [(UCHAR) *ptr] & (WHITE | PUNCT)))
+			while (ptr < end && !(charTable (*ptr) & (WHITE | PUNCT)))
 				*p++ = *ptr++;
 		}
 
@@ -210,7 +210,7 @@ void Lex::getToken()
 void Lex::setCharacters(int type, const char *characters)
 {
 	for (const char *p = characters; *p; ++p)
-		charTable [(UCHAR) *p] |= type;
+		charTable (*p) |= type;
 }
 
 /***
@@ -257,7 +257,7 @@ JString Lex::reparseFilename()
 	while (*p)
 		++p;
 
-	while (ptr < end && *ptr != '>' && !(charTable [(UCHAR) *ptr] & WHITE))
+	while (ptr < end && *ptr != '>' && !(charTable (*ptr) & WHITE))
 		*p++ = *ptr++;
 
 	*p = 0;
@@ -372,4 +372,9 @@ void Lex::captureStuff()
 			return;
 		stuff.putCharacter (*ptr++);
 		}
+}
+
+char& Lex::charTable(int ch)
+{
+	return charTableArray [static_cast<UCHAR>(ch)];
 }

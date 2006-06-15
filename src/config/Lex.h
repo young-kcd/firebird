@@ -69,6 +69,7 @@ class Lex
 {
 public:
 	void captureStuff();
+	char& charTable(int ch);
 	bool getSegment();
 	void pushStream (InputStream *stream);
 	void setContinuationChar (char c);
@@ -106,7 +107,7 @@ public:
 	const char	*commentStart;
 	const char	*commentEnd;
 	char		continuationChar;
-	char		charTable [256];
+	char		charTableArray [256];	// Don't use directly. Use through charTable.
 };
 
 END_NAMESPACE
