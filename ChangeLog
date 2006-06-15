@@ -1,3 +1,10 @@
+2006-06-14 16:42  dimitr
+
+	* firebird2/src/utilities/nbackup.cpp (1.48.4.1):
+	
+	I see no explicit need to emulate POSIX semantics and allow shared
+	deletes.
+
 2006-06-13 10:32  dimitr
 
 	* firebird2/doc/WhatsNew (1.95.2.7):
