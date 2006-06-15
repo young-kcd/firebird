@@ -223,6 +223,7 @@ static inline bool commit_trans(isc_tr_handle* x)
 	return true;
 }
 
+#if defined(_MSC_VER) && _MSC_VER < 1400
 static inline int fb_isspace(const char c)
 {
 	return isspace((int)(UCHAR)c);
@@ -232,6 +233,15 @@ static inline int fb_isspace(const SSHORT c)
 {
 	return isspace((int)(UCHAR)c);
 }
+
+static inline int fb_isdigit(const char c)
+{
+	return isspace((int)(UCHAR)c);
+}
+#else
+#define fb_isspace ::isspace
+#define fb_isdigit ::isdigit
+#endif
 
 
 class indev
@@ -1070,7 +1080,7 @@ void ISQL_errmsg(const ISC_STATUS* status)
 			/* CVC: Obsolete on 2005.10.06 because now line & column are numeric arguments.
 			if (s)
 			{
-				while (*s && !isdigit(*s))
+				while (*s && !fb_isdigit(*s))
 					++s;
 				if (isdigit(*s))
 				{
@@ -1701,7 +1711,7 @@ bool ISQL_is_domain(const TEXT* field_name)
 		FLD.RDB$FIELD_NAME EQ field_name
 
 		if (!(strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0 &&
-			  isdigit (FLD.RDB$FIELD_NAME[4]) &&
+			  fb_isdigit (FLD.RDB$FIELD_NAME[4]) &&
 			  FLD.RDB$SYSTEM_FLAG != 1))
 		{
 			is_domain = true;
@@ -2274,7 +2284,7 @@ static processing_state add_row(TEXT* tabname)
 						int count = 0;
 						for (; count < 4; ++count)
 						{
-							if (isdigit(msec_str[count]))
+							if (fb_isdigit(msec_str[count]))
 								msec = msec * 10 + msec_str[count] - '0';
 							else
 								break;
