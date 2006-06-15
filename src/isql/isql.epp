@@ -236,7 +236,7 @@ static inline int fb_isspace(const SSHORT c)
 
 static inline int fb_isdigit(const char c)
 {
-	return isspace((int)(UCHAR)c);
+	return isdigit((int)(UCHAR)c);
 }
 #else
 #define fb_isspace ::isspace
