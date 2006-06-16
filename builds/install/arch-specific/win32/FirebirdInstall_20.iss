@@ -331,10 +331,10 @@ Source: output\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent;
 Source: output\bin\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent;
 Source: output\bin\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
 #elif msvc_version == 7
-Source: output\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent;
+Source: output\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
 Source: output\bin\msvcr{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
 #endif
-Source: output\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent;
+Source: output\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: sharedfile;
 Source: output\bin\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
 
 ;Docs
