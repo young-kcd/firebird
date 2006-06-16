@@ -1,3 +1,19 @@
+2006-06-15 16:16  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstallEnvironmentChecks.inc (1.4.4.1),
+	FirebirdInstall_20.iss (1.12.2.2), custom_messages.inc (1.2.4.1),
+	ba/custom_messages_ba.inc (1.2.4.1), de/custom_messages_de.inc
+	(1.2.6.1), es/custom_messages_es.inc (1.1.6.1),
+	fr/custom_messages_fr.inc (1.2.6.1), hu/custom_messages_hu.inc
+	(1.2.6.1), it/custom_messages_it.inc (1.1.2.1),
+	pl/custom_messages_pl.inc (1.1.6.1), pt/custom_messages_pt.inc
+	(1.3.2.1), si/custom_messages_si.inc (1.2.6.1):
+	
+	Remove guardian from Windows classic server installs.  Fix bug in
+	client only install - server binary was being included.  Clean up
+	innosetup debugging support.
+
 2006-06-14 16:42  dimitr
 
 	* firebird2/src/utilities/nbackup.cpp (1.48.4.1):
