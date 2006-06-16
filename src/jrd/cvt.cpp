@@ -2474,7 +2474,8 @@ static void string_to_datetime(
 
 	const int start_component = (expect_type == expect_sql_time) ? 3 : 0;
 	int i;
-	for (i = start_component; i < 7; i++) {
+	for (i = start_component; i < 7; i++) 
+	{
 
 		/* Skip leading blanks.  If we run out of characters, we're done
 		   with parse.  */
@@ -2575,14 +2576,14 @@ static void string_to_datetime(
 
 		components[i] = n;
 
-		/* Grab whitespace following the number */
+		// Grab whitespace following the number
 		while (p < end && (*p == ' ' || *p == '\t'))
 			p++;
 
 		if (p == end)
 			break;
 
-		/* Grab a separator character */
+		// Grab a separator character
 		if (*p == '/' || *p == '-' || *p == ',' || *p == ':') {
 			p++;
 			continue;
@@ -2591,20 +2592,31 @@ static void string_to_datetime(
 			if (i <= 1)
 				dot_separator_seen = true;
 			p++;
-			continue;
+			//continue;
 		}
 	}
 
-/* User must provide at least 2 components */
+	// User must provide at least 2 components
 	if (i - start_component < 1) {
 		conversion_error(desc, err);
 		return;
 	}
 
-/* Dates cannot have a Time portion */
+	// Dates cannot have a Time portion
 	if (expect_type == expect_sql_date && i > 2) {
 		conversion_error(desc, err);
 		return;
+	}
+
+	// We won't allow random trash after the recognized string
+	while (p < end)
+	{
+		if (*p != ' ' && *p != '\t' && p != 0)
+		{
+			conversion_error(desc, err);
+			return;
+		}
+		++p;
 	}
 
 	tm times;
@@ -2704,7 +2716,10 @@ static void string_to_datetime(
 	if (((times.tm_hour = components[3]) > 23) ||
 		((times.tm_min = components[4]) > 59) ||
 		((times.tm_sec = components[5]) > 59) ||
-		(description[6] > -ISC_TIME_SECONDS_PRECISION_SCALE))
+		description[3] > 2 || description[3] == 0 ||
+		description[4] > 2 || description[4] == 0 ||
+		description[5] > 2 ||
+		description[6] > -ISC_TIME_SECONDS_PRECISION_SCALE)
 	{
 		conversion_error(desc, err);
 	}
