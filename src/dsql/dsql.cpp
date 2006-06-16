@@ -4762,8 +4762,7 @@ static dsql_req* prepare(
 // check for warnings 
 	if (tdsql->tsql_status[2] == isc_arg_warning) {
 		// save a status vector 
-		MOVE_FASTER(tdsql->tsql_status, local_status,
-					sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
+		MOVE_FASTER(tdsql->tsql_status, local_status, sizeof(ISC_STATUS_ARRAY));
 	}
 
 	THREAD_EXIT();

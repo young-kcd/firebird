@@ -1845,8 +1845,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
  * previous usage as well as init a status vector.
  */
 
-	memset((void *) service->svc_status, 0,
-		   ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
+	memset((void *) service->svc_status, 0, sizeof(ISC_STATUS_ARRAY));
 
 	if (service->svc_stdout)
 		gds__free(service->svc_stdout);

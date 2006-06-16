@@ -2031,7 +2031,7 @@ static gbak_action open_files(const TEXT* file1,
  * like it should have (if creating a database).
  */
 	if (tdgbl->gbl_sw_service_thd)
-		memset(tdgbl->status, 0, ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
+		memset(tdgbl->status, 0, sizeof(ISC_STATUS_ARRAY));
 
 // check the file size specification 
 	for (fil = tdgbl->gbl_sw_files; fil; fil = fil->fil_next) {

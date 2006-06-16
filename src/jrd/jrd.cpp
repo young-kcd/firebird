@@ -3443,8 +3443,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 							sizeof(ISC_STATUS) * len);
 	
 				/* Empty out the service status vector */
-				memset(service->svc_status, 0,
-					ISC_STATUS_LENGTH * sizeof(ISC_STATUS));
+				memset(service->svc_status, 0, sizeof(ISC_STATUS_ARRAY));
 			}
 	
 			if (user_status[1])
