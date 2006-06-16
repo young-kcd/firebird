@@ -25,6 +25,7 @@
  */
 
 #include "firebird.h"
+#include "../common/classes/alloc.h"
 #include "Configuration.h"
 #include "ConfigFile.h"
 

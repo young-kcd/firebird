@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <memory.h>
+#include "../common/classes/alloc.h"
 #include "firebird.h"
 #include "ConfigFile.h"
 #include "ConfObject.h"

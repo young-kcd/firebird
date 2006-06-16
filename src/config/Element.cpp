@@ -33,6 +33,7 @@
 //#include <stdlib.h>
 //#include "Engine.h"
 #include "firebird.h"
+#include "../common/classes/alloc.h"
 #include "Element.h"
 #include "Stream.h"
 #include "InputStream.h"
