@@ -1,3 +1,17 @@
+2006-06-16 15:59  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstallEnvironmentChecks.inc (1.4.4.2),
+	FirebirdInstall_20.iss (1.12.2.3):
+	
+	Update shared file list for fb2.0 win32 installs
+
+2006-06-16 15:51  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.53.2.2):
+	
+	restored warning about too long password
+
 2006-06-15 16:16  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/:
