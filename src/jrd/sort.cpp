@@ -121,7 +121,6 @@ static void diddle_key(UCHAR *, sort_context*, bool);
 static sort_record*	get_merge(merge_control*, sort_context*);
 #endif
 
-static void error(ISC_STATUS*);
 static void error_memory(sort_context*);
 static UINT64 find_file_space(sort_context*, ULONG);
 static void free_file_space(sort_context*, sort_work_file*, UINT64, ULONG);
@@ -874,7 +873,7 @@ UINT64 SORT_read_block(
 	}
 	catch (const Firebird::status_exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
-		error(status_vector);
+		ERR_post(isc_sort_err, 0);
 	}
 #ifndef SCROLLABLE_CURSORS
 	return seek;
@@ -1118,7 +1117,7 @@ UINT64 SORT_write_block(ISC_STATUS* status_vector,
 	}
 	catch (const Firebird::status_exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
-		error(status_vector);
+		ERR_post(isc_sort_err, 0);
 	}
 
 	return seek;
@@ -1477,33 +1476,6 @@ static void diddle_key(UCHAR * record, sort_context* scb, bool direction)
 }
 #endif
 #endif
-
-
-void error(ISC_STATUS* status_vector)
-{
-/**************************************
- *
- *       e r r o r
- *
- **************************************
- *
- * Functional description
- *      Report fatal error.
- *
- **************************************/
-	fb_assert(status_vector);
-
-	ISC_STATUS_ARRAY local_status;
-	ISC_STATUS* status = local_status;
-	*status++ = isc_arg_gds;
-	*status++ = isc_sort_err;
-	*status = isc_arg_end;
-
-	Firebird::status_exception ex(local_status, false);
-	Firebird::stuff_exception(status_vector, ex);
-
-	ERR_punt();
-}
 
 
 static void error_memory(sort_context* scb)
