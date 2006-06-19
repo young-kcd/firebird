@@ -1,3 +1,9 @@
+2006-06-18 12:43  dimitr
+
+	* firebird2/src/jrd/sort.cpp (1.85):
+	
+	Fixed a minor issue.
+
 2006-06-16 14:36  alexpeshkoff
 
 	* firebird2/src/config/: AdminException.cpp (1.6), ConfigFile.cpp
