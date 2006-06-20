@@ -647,10 +647,10 @@ static bool get_switches(
 			case IN_SW_GSEC_PASSWORD:
 				for (l = 0; l < 9 && string[l] && string[l] != ' '; l++)
 					user_data->password[l] = string[l];
-				/* if (l == 9) {
+				if ((l == 9) && !(tdsec->tsec_service_gsec)) {
 					GSEC_print(GsecMsg77, NULL, NULL, NULL, NULL, NULL);
 					// warning password maximum 8 significant bytes used
-				} */
+				}
 				user_data->password[l] = '\0';
 				user_data->password_entered = true;
 				break;
