@@ -3578,6 +3578,7 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 				LCK_get_owner_handle(tdbb, temp_lock.lck_type);
 			temp_lock.lck_length = sizeof(SLONG);
 			temp_lock.lck_key.lck_long = id;
+			temp_lock.lck_dbb = dbb;
 
 			if (LCK_lock(tdbb, &temp_lock, LCK_write, LCK_NO_WAIT)) {
 				impure->vlu_misc.vlu_long = 1;
