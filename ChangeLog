@@ -1,3 +1,15 @@
+2006-06-20 09:19  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.56):
+	
+	ported fix from release - restored warning about too long password
+
+2006-06-20 06:16  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.183):
+	
+	Fixed the bug reported by Adriano.
+
 2006-06-19 08:42  alexpeshkoff
 
 	* firebird2/src/vulcan/: JString.cpp (1.6), RefObject.cpp (1.3):
