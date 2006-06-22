@@ -259,7 +259,7 @@ why_hndl* WHY_alloc_handle(int implementation, int handle_type)
 				// Avoid generating NULL handle when sequence number wraps
 				if (!temp)
 					temp = ++handle_sequence_number;
-				handle->public_handle = reinterpret_cast<FB_API_HANDLE>(temp);
+				handle->public_handle = (FB_API_HANDLE)(IPTR)temp;
 			} while (!handleMapping->add(handle));
 
 			handleMappingLock.endWrite();
@@ -793,136 +793,147 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	subsystem_enter();
 	SUBSYSTEM_USAGE_INCR;
 
-	TEXT* temp_filename = temp_filebuf;
+	try {
 
-	ptr = status;
+		TEXT* temp_filename = temp_filebuf;
 
-	org_length = file_length;
+		ptr = status;
 
-	if (org_length)
-	{
-		const TEXT* p = file_name + org_length - 1;
-		while (*p == ' ')
+		org_length = file_length;
+
+		if (org_length)
 		{
-			--p;
+			const TEXT* p = file_name + org_length - 1;
+			while (*p == ' ')
+			{
+				--p;
+			}
+			org_length = p - file_name + 1;
 		}
-		org_length = p - file_name + 1;
-	}
 
 /* copy the file name to a temp buffer, since some of the following
    utilities can modify it */
 
-	temp_length = org_length ? org_length : strlen(file_name);
-	memcpy(temp_filename, file_name, temp_length);
-	temp_filename[temp_length] = '\0';
+		temp_length = org_length ? org_length : strlen(file_name);
+		memcpy(temp_filename, file_name, temp_length);
+		temp_filename[temp_length] = '\0';
 
-	if (!ISC_check_if_remote(temp_filename, true))
-	{
-		Firebird::PathName database;
-		if (ResolveDatabaseAlias(temp_filename, database))
+		if (!ISC_check_if_remote(temp_filename, true))
 		{
-			ISC_expand_filename(database, false);
-			strcpy(expanded_filename, database.c_str());
-		}
-		else if (isc_set_path(temp_filename, org_length, expanded_filename))
-		{
-			temp_filename = expanded_filename;
-			org_length = strlen(temp_filename);
+			Firebird::PathName database;
+			if (ResolveDatabaseAlias(temp_filename, database))
+			{
+				ISC_expand_filename(database, false);
+				strcpy(expanded_filename, database.c_str());
+			}
+			else if (isc_set_path(temp_filename, org_length, expanded_filename))
+			{
+				temp_filename = expanded_filename;
+				org_length = strlen(temp_filename);
+			}
+			else
+			{
+				ISC_expand_filename(temp_filename, org_length,
+									expanded_filename, sizeof(expanded_filename),
+									true);
+			}
 		}
 		else
 		{
-			ISC_expand_filename(temp_filename, org_length,
+			ISC_expand_filename(temp_filename, org_length, 
 								expanded_filename, sizeof(expanded_filename),
 								true);
 		}
-	}
-	else
-	{
-		ISC_expand_filename(temp_filename, org_length, 
-							expanded_filename, sizeof(expanded_filename),
-							true);
-	}
 
-	Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
-		reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+		Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
+			reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
 
-	setLogin(newDpb);
+		setLogin(newDpb);
 
-	for (n = 0; n < SUBSYSTEMS; n++)
-	{
-		if (why_enabled && !(why_enabled & (1 << n)))
+		for (n = 0; n < SUBSYSTEMS; n++)
 		{
-			continue;
-		}
-		WHY_ATT handle = NULL;
-		if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, org_length, temp_filename,
-											&handle, newDpb.getBufferLength(), 
-											reinterpret_cast<const char*>(newDpb.getBuffer()),
-											expanded_filename))
-		{
-			length = strlen(expanded_filename);
-			database = allocate_handle(n, handle, HANDLE_database);
-			if (database)
+			if (why_enabled && !(why_enabled & (1 << n)))
 			{
-				database->db_path = (TEXT*) alloc((SLONG) (length + 1));
-				if (database->db_path) 
-				{
-					database->db_prepare_buffer = 
-						(SCHAR*) alloc((SLONG) DBB_PREPARE_BUFFER_SIZE);
-				}
+				continue;
 			}
-			if (!database || !database->db_path || !database->db_prepare_buffer)
+			WHY_ATT handle = NULL;
+			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, org_length, temp_filename,
+												&handle, newDpb.getBufferLength(), 
+												reinterpret_cast<const char*>(newDpb.getBuffer()),
+												expanded_filename))
 			{
-				/* No memory. Make a half-hearted to detach and get out. */
-
+				length = strlen(expanded_filename);
+				database = allocate_handle(n, handle, HANDLE_database);
 				if (database)
 				{
-					if (database->db_path) {
-						free_block(database->db_path);
-						database->db_path = 0;
+					database->db_path = (TEXT*) alloc((SLONG) (length + 1));
+					if (database->db_path) 
+					{
+						database->db_prepare_buffer = 
+							(SCHAR*) alloc((SLONG) DBB_PREPARE_BUFFER_SIZE);
 					}
-					if (database->db_prepare_buffer) {
-						free_block(database->db_prepare_buffer);
-						database->db_prepare_buffer = 0;
-					}
- 					release_handle(database);
 				}
-				CALL(PROC_DETACH, n) (ptr, handle);
+				if (!database || !database->db_path || !database->db_prepare_buffer)
+				{
+					/* No memory. Make a half-hearted to detach and get out. */
+
+					if (database)
+					{
+						if (database->db_path) 
+						{
+							free_block(database->db_path);
+							database->db_path = 0;
+						}
+						if (database->db_prepare_buffer) 
+						{
+							free_block(database->db_prepare_buffer);
+							database->db_prepare_buffer = 0;
+						}
+ 						release_handle(database);
+					}
+					CALL(PROC_DETACH, n) (ptr, handle);
+					status[0] = isc_arg_gds;
+					status[1] = isc_virmemexh;
+					status[2] = isc_arg_end;
+					break;
+				}
+
+				*public_handle = database->public_handle;
+				TEXT* p = database->db_path;
+				memcpy(p, expanded_filename, length);
+				p[length] = 0;
+
+				database->cleanup = NULL;
 				status[0] = isc_arg_gds;
-				status[1] = isc_virmemexh;
-				status[2] = isc_arg_end;
-				break;
+				status[1] = 0;
+
+				/* Check to make sure that status[2] is not a warning.  If it is, then
+				 * the rest of the vector should be untouched.  If it is not, then make
+				 * this element isc_arg_end
+				 *
+				 * This cleanup is done to remove any erroneous errors from trying multiple
+				 * protocols for a database attach
+				 */
+				if (status[2] != isc_arg_warning) {
+					status[2] = isc_arg_end;
+				}
+
+				subsystem_exit();
+				CHECK_STATUS_SUCCESS(status);
+				return status[1];
 			}
-
-			*public_handle = database->public_handle;
-			TEXT* p = database->db_path;
-			memcpy(p, expanded_filename, length);
-			p[length] = 0;
-
-			database->cleanup = NULL;
-			status[0] = isc_arg_gds;
-			status[1] = 0;
-
-			/* Check to make sure that status[2] is not a warning.  If it is, then
-			 * the rest of the vector should be untouched.  If it is not, then make
-			 * this element isc_arg_end
-			 *
-			 * This cleanup is done to remove any erroneous errors from trying multiple
-			 * protocols for a database attach
-			 */
-			if (status[2] != isc_arg_warning) {
-				status[2] = isc_arg_end;
+			if (ptr[1] != isc_unavailable) 
+			{
+				ptr = temp;
 			}
-
-			subsystem_exit();
-			CHECK_STATUS_SUCCESS(status);
-			return status[1];
-		}
-		if (ptr[1] != isc_unavailable) {
-			ptr = temp;
 		}
 	}
-
+	catch(const Firebird::Exception& e)
+	{
+  		e.stuff_exception(status);
+		SUBSYSTEM_USAGE_DECR;
+		return error(status, local);
+	}
 	SUBSYSTEM_USAGE_DECR;
 	return error(status, local);
 }
@@ -1420,151 +1431,161 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	subsystem_enter();
 	SUBSYSTEM_USAGE_INCR;
+	try {
 
-	TEXT* temp_filename = temp_filebuf;
+		TEXT* temp_filename = temp_filebuf;
 
-	ptr = status;
+		ptr = status;
 
-	org_length = file_length;
+		org_length = file_length;
 
-	if (org_length)
-	{
-		const TEXT* p = file_name + org_length - 1;
-		while (*p == ' ')
-			--p;
-		org_length = p - file_name + 1;
-	}
+		if (org_length)
+		{
+			const TEXT* p = file_name + org_length - 1;
+			while (*p == ' ')
+			{
+				--p;
+			}
+			org_length = p - file_name + 1;
+		}
 
 /* copy the file name to a temp buffer, since some of the following
    utilities can modify it */
 
-	if (org_length)
-		temp_length = org_length;
-	else
-		temp_length = strlen(file_name);
+		if (org_length)
+			temp_length = org_length;
+		else
+			temp_length = strlen(file_name);
 		
-	memcpy(temp_filename, file_name, temp_length);
-	temp_filename[temp_length] = '\0';
+		memcpy(temp_filename, file_name, temp_length);
+		temp_filename[temp_length] = '\0';
 
-	if (!ISC_check_if_remote(temp_filename, true))
-	{
-		Firebird::PathName database;
-		if (ResolveDatabaseAlias(temp_filename, database))
+		if (!ISC_check_if_remote(temp_filename, true))
 		{
-			ISC_expand_filename(database, false);
-			strcpy(expanded_filename, database.c_str());
-		}
-		else if (isc_set_path(temp_filename, org_length, expanded_filename))
-		{
-			temp_filename = expanded_filename;
-			org_length = strlen(temp_filename);
+			Firebird::PathName database;
+			if (ResolveDatabaseAlias(temp_filename, database))
+			{
+				ISC_expand_filename(database, false);
+				strcpy(expanded_filename, database.c_str());
+			}
+			else if (isc_set_path(temp_filename, org_length, expanded_filename))
+			{
+				temp_filename = expanded_filename;
+				org_length = strlen(temp_filename);
+			}
+			else
+			{
+				ISC_expand_filename(temp_filename, org_length,
+									expanded_filename, sizeof(expanded_filename),
+									true);
+			}
 		}
 		else
 		{
-			ISC_expand_filename(temp_filename, org_length,
+			ISC_expand_filename(temp_filename, org_length, 
 								expanded_filename, sizeof(expanded_filename),
 								true);
 		}
-	}
-	else
-	{
-		ISC_expand_filename(temp_filename, org_length, 
-							expanded_filename, sizeof(expanded_filename),
-							true);
-	}
 
-	Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
-			reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+		Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
+				reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
 
-	setLogin(newDpb);
+		setLogin(newDpb);
 
-	for (n = 0; n < SUBSYSTEMS; n++)
-	{
-		if (why_enabled && !(why_enabled & (1 << n)))
-			continue;
-		WHY_ATT handle = NULL;
-		if (!CALL(PROC_CREATE_DATABASE, n) (ptr, org_length, temp_filename,
-											&handle, newDpb.getBufferLength(), 
-											reinterpret_cast<const char*>(newDpb.getBuffer()), 
-											0, expanded_filename))
+		for (n = 0; n < SUBSYSTEMS; n++)
 		{
-#ifdef WIN_NT
-            /* Now we can expand, the file exists. */
-            length = ISC_expand_filename (temp_filename, org_length, 
-				expanded_filename, sizeof(expanded_filename), true);
-#else
-			length = org_length;
-			if (!length) 
+			if (why_enabled && !(why_enabled & (1 << n)))
+				continue;
+			WHY_ATT handle = NULL;
+			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, org_length, temp_filename,
+												&handle, newDpb.getBufferLength(), 
+												reinterpret_cast<const char*>(newDpb.getBuffer()), 
+												0, expanded_filename))
 			{
-				length = strlen(temp_filename);
-			}
+#ifdef WIN_NT
+            	/* Now we can expand, the file exists. */
+	            length = ISC_expand_filename (temp_filename, org_length, 
+					expanded_filename, sizeof(expanded_filename), true);
+#else
+				length = org_length;
+				if (!length) 
+				{
+					length = strlen(temp_filename);
+				}
 #endif
 
-			database = allocate_handle(n, handle, HANDLE_database);
-			if (database)
-			{
-				database->db_path = (TEXT *) alloc((SLONG) (length + 1));
-				if (database->db_path) 
-				{
-					database->db_prepare_buffer = 
-						(SCHAR*) alloc((SLONG) DBB_PREPARE_BUFFER_SIZE);
-				}
-			}
-			if (!database || !database->db_path || !database->db_prepare_buffer)
-			{
-				/* No memory. Make a half-hearted to drop database. The
-				   database was successfully created but the user wouldn't
-				   be able to tell. */
-
+				database = allocate_handle(n, handle, HANDLE_database);
 				if (database)
 				{
-					if (database->db_path) {
-						free_block(database->db_path);
-						database->db_path = 0;
+					database->db_path = (TEXT *) alloc((SLONG) (length + 1));
+					if (database->db_path) 
+					{
+						database->db_prepare_buffer = 
+							(SCHAR*) alloc((SLONG) DBB_PREPARE_BUFFER_SIZE);
 					}
-					if (database->db_prepare_buffer) {
-						free_block(database->db_prepare_buffer);
-						database->db_prepare_buffer = 0;
-					}
- 					release_handle(database);
 				}
-				CALL(PROC_DROP_DATABASE, n) (ptr, handle);
-				status[0] = isc_arg_gds;
-				status[1] = isc_virmemexh;
-				status[2] = isc_arg_end;
-				break;
-			}
+				if (!database || !database->db_path || !database->db_prepare_buffer)
+				{
+					/* No memory. Make a half-hearted to drop database. The
+					   database was successfully created but the user wouldn't
+					   be able to tell. */
 
-			fb_assert(database);
-			fb_assert(database->db_path);
-			fb_assert(database->db_prepare_buffer);
+					if (database)
+					{
+						if (database->db_path) {
+							free_block(database->db_path);
+							database->db_path = 0;
+						}
+						if (database->db_prepare_buffer) {
+							free_block(database->db_prepare_buffer);
+							database->db_prepare_buffer = 0;
+						}
+ 						release_handle(database);
+					}
+					CALL(PROC_DROP_DATABASE, n) (ptr, handle);
+					status[0] = isc_arg_gds;
+					status[1] = isc_virmemexh;
+					status[2] = isc_arg_end;
+					break;
+				}
 
-			*public_handle = database->public_handle;
-			TEXT* p = database->db_path;
+				fb_assert(database);
+				fb_assert(database->db_path);
+				fb_assert(database->db_prepare_buffer);
+
+				*public_handle = database->public_handle;
+				TEXT* p = database->db_path;
 
 #ifdef WIN_NT
-            /* for (q = (*handle)->dbb_filename->str_data; length; length--) */
-            memcpy(p, expanded_filename, length);
+    	        /* for (q = (*handle)->dbb_filename->str_data; length; length--) */
+        	    memcpy(p, expanded_filename, length);
 #else
-			memcpy(p, temp_filename, length);
+				memcpy(p, temp_filename, length);
 #endif
-			p[length] = 0;
+				p[length] = 0;
 
-			database->cleanup = NULL;
-			status[0] = isc_arg_gds;
-			status[1] = 0;
-			if (status[2] != isc_arg_warning)
-				status[2] = isc_arg_end;
-			subsystem_exit();
-			CHECK_STATUS_SUCCESS(status);
-			return status[1];
+				database->cleanup = NULL;
+				status[0] = isc_arg_gds;
+				status[1] = 0;
+				if (status[2] != isc_arg_warning)
+					status[2] = isc_arg_end;
+				subsystem_exit();
+				CHECK_STATUS_SUCCESS(status);
+				return status[1];
+			}
+			if (ptr[1] != isc_unavailable)
+				ptr = temp;
 		}
-		if (ptr[1] != isc_unavailable)
-			ptr = temp;
-	}
 
-	SUBSYSTEM_USAGE_DECR;
-	return error(status, local);
+		SUBSYSTEM_USAGE_DECR;
+		return error(status, local);
+	}
+	catch(const Firebird::Exception& e)
+	{
+  		e.stuff_exception(status);
+		SUBSYSTEM_USAGE_DECR;
+		return error(status, local);
+	}
 }
 
 
