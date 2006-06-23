@@ -2377,7 +2377,7 @@ static SSHORT gen_event_block( const act* action)
 	gpre_nod* init = (GPRE_NOD) action->act_object;
 
 	int ident = CMP_next_ident();
-	init->nod_arg[2] = (GPRE_NOD) ident;
+	init->nod_arg[2] = (GPRE_NOD) (IPTR) ident;
 
 	printa(names[COLUMN_0], false, "01  %s%dA PIC S9(9) USAGE COMP.",
 		   names[isc_a_pos], ident);
@@ -2419,7 +2419,7 @@ static void gen_event_init( const act* action)
 	PAT args;
 	args.pat_database = (DBB) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) init->nod_arg[2];
+	args.pat_value1 = (int) (IPTR) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
 	args.pat_string1 = ISC_EVENT_BLOCK;
 	args.pat_string2 = ISC_EVENT_WAIT;
@@ -2490,7 +2490,7 @@ static void gen_event_wait( const act* action)
 		const gpre_nod* event_init = (GPRE_NOD) event_action->act_object;
 		const gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
-			ident = (int) event_init->nod_arg[2];
+			ident = (int) (IPTR) event_init->nod_arg[2];
 			database = (DBB) event_init->nod_arg[3];
 		}
 	}
@@ -3339,7 +3339,7 @@ static void gen_request( gpre_req* request)
 			printa(names[COLUMN_0], false, "01  %s%d.",
 				   names[isc_a_pos], blob->blb_bpb_ident);
 			gen_raw(blob->blb_bpb, request->req_type, blob->blb_bpb_length,
-					(int) request);
+					(int) (IPTR) request);
 			printa(names[COMMENT], false, " ");
 		}
 //  If this is a GET_SLICE/PUT_slice, allocate some variables 
@@ -3826,7 +3826,7 @@ static void gen_trans( const act* action)
 static void gen_type( const act* action)
 {
 
-	printa(names[COLUMN], true, "%ld", (SLONG) action->act_object);
+	printa(names[COLUMN], true, "%ld", (IPTR) action->act_object);
 }
 
 
