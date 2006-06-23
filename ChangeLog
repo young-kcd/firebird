@@ -1,3 +1,10 @@
+2006-06-22 11:42  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.107):
+	
+	1. Exception handlers in attach/create database.  2. Make it
+	compilable with gcc4.
+
 2006-06-20 09:19  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/gsec.cpp (1.56):
