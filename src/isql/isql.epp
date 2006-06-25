@@ -2805,7 +2805,7 @@ static processing_state copy_table(TEXT* source,
 		if (*otherdb)
 			altdb = otherdb;
 		TEXT cmd[MAXPATHLEN * 2 + 20];
-		sprintf(cmd, "isql -q %s -i %s", altdb, ftmp);
+		sprintf(cmd, "isql -q %s -i %s", altdb, ftmp.c_str());
 		if (system(cmd)) {
 			ISQL_msg_get(COPY_ERR, errbuf, destination, altdb);
 			STDERROUT(errbuf);
