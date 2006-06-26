@@ -54,7 +54,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include <signal.h>
 #include <limits.h>
 #include <math.h>
 #include <ctype.h>
@@ -69,6 +68,9 @@
 #endif
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
 #endif
 
 #ifdef WIN_NT
@@ -363,7 +365,11 @@ static SSHORT process_request_type();
 static SLONG* process_sqlda_buffer(XSQLDA* const sqlda, SSHORT nullind[]);
 static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], SLONG pad[]);
 static int process_statement(const TEXT*, XSQLDA**);
+#ifdef WIN_NT
+static BOOL CALLBACK query_abort(DWORD);
+#else
 static void CLIB_ROUTINE query_abort(int);
+#endif
 static void strip_quotes(const TEXT*, TEXT*);
 static processing_state do_set_command(const TEXT*, bool*);
 //#ifdef DEV_BUILD
@@ -399,6 +405,7 @@ static collist* global_Cols = NULL;
 static indev* Filelist;
 static TEXT Tmpfile[MAXPATHLEN];
 static bool Abort_flag = false;
+static bool Interrupt_flag = false;
 static bool Echo = false;
 static bool Time_display = false;
 static bool Sqlda_display = false;
@@ -3105,9 +3112,20 @@ static void do_isql()
 		return;
 	}
 
-	// Open database and start tansaction
-
+#ifdef WIN_NT
+	SetConsoleCtrlHandler(query_abort, TRUE);
+#elif defined(HAVE_SIGACTION)
+	struct sigaction sig_action;
+	if (sigaction(SIGINT, NULL, &sig_action) == 0) {
+		sig_action.sa_handler = query_abort;
+		sig_action.sa_flags |= SA_RESTART;
+		sigaction(SIGINT, &sig_action, NULL);
+	}
+#else
 	signal(SIGINT, query_abort);
+#endif
+
+	// Open database and start tansaction
 
 	//
 	// We will not execute this for now on WINDOWS. We are not prompting for
@@ -3160,6 +3178,31 @@ static void do_isql()
 			if (DB)
 				isc_detach_database(isc_status, &DB);
 			break;
+		}
+
+		if (Interrupt_flag)
+		{
+			// SIGINT caught in interactive mode
+			Interrupt_flag = false;
+
+			// close input files going back to stdin
+			while (Filelist && Filelist->indev_fpointer != stdin)
+			{
+				indev* const flist = Filelist->indev_next;
+				FILE* const p = Filelist->indev_fpointer;
+				if (p != stdin && p != Ofp)
+					fclose(p);
+				ISQL_FREE(Filelist);
+				Filelist = flist;
+			}
+
+			fb_assert(Filelist);
+
+			if (Ifp.indev_fpointer != stdin && Ifp.indev_fpointer != Ofp)
+				fclose(Ifp.indev_fpointer);
+
+			Ifp.copy_from(Filelist);
+			Input_file = false;
 		}
 
 		ret = get_statement(statement, stmtLength, sql_prompt);
@@ -6433,7 +6476,7 @@ static processing_state print_line(XSQLDA* sqlda,
 		for (const XSQLVAR* const end = var + sqlda->sqld; var < end;
 			 var++, i++)
 		{
-			if (!Abort_flag) {
+			if (!Interrupt_flag && !Abort_flag) {
 				// Save all the blob vars and print them at the end
 				// CVC: If varnum reaches 20, we must print an error instead of crashing.
 				const int rc = print_item(&p, var, pad[i]);
@@ -7255,9 +7298,21 @@ static int process_statement(const TEXT* string,
 	}
 	else {
 		// Otherwise fetch and print records until EOF
+
+#ifdef HAVE_TERMIOS_H
+		int out_fd = fileno(isqlGlob.Out);
+		if (isatty(out_fd)) {
+			struct termios tflags;
+			if (tcgetattr(out_fd, &tflags) == 0) {
+				tflags.c_lflag |= NOFLSH;
+				tcsetattr(out_fd, TCSANOW, &tflags);
+			}
+		}
+#endif
+
 		const bool printHead = !List && Heading;
 		SLONG lines;
-		for (lines = 0; !Abort_flag; ++lines) {
+		for (lines = 0; !Interrupt_flag && !Abort_flag; ++lines) {
 
 			// Fetch the current cursor 
 
@@ -7381,7 +7436,11 @@ static int process_statement(const TEXT* string,
 }
 
 
+#ifdef WIN_NT
+static BOOL CALLBACK query_abort(DWORD dwCtrlType)
+#else
 static void CLIB_ROUTINE query_abort(int)
+#endif
 {
 /**************************************
  *
@@ -7394,7 +7453,19 @@ static void CLIB_ROUTINE query_abort(int)
  *
  **************************************/
 
-	Abort_flag = true;
+#ifdef WIN_NT
+	if (dwCtrlType != CTRL_C_EVENT)
+		return FALSE;
+#endif
+
+	if (Interactive)
+		Interrupt_flag = true;
+	else
+		Abort_flag = true;
+
+#ifdef WIN_NT
+	return TRUE;
+#endif
 }
 
 
