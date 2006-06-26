@@ -1,3 +1,9 @@
+2006-06-25 15:21  mkubecek
+
+	* firebird2/src/isql/isql.epp (1.186):
+	
+	missing Firebird::PathName to C string conversion
+
 2006-06-23 10:33  alexpeshkoff
 
 	* firebird2/src/gpre/cob.cpp (1.62):
