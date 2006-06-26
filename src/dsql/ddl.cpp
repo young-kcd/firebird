@@ -165,7 +165,7 @@ static void process_role_nm_list(dsql_req*, SSHORT, dsql_nod*, dsql_nod*, NOD_TY
 static void put_descriptor(dsql_req*, const dsc*);
 static void put_dtype(dsql_req*, const dsql_fld*, bool);
 static void put_field(dsql_req*, dsql_fld*, bool);
-static void put_local_variable(dsql_req*, dsql_var*, dsql_nod*);
+static void put_local_variable(dsql_req*, dsql_var*, dsql_nod*, const dsql_str*);
 static void put_local_variables(dsql_req*, dsql_nod*, SSHORT);
 static void put_msg_field(dsql_req*, dsql_fld*);
 static dsql_nod* replace_field_names(dsql_nod*, dsql_nod*, dsql_nod*, bool, const char*);
@@ -2443,7 +2443,8 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			request->append_number(isc_dyn_prm_number, position);
 			request->append_number(isc_dyn_prm_type, 0);
 
-			DDL_resolve_intl_type(request, field, NULL);
+			DDL_resolve_intl_type(request, field,
+				reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
 			put_field(request, field, false);
 
 			// check for a parameter default value
@@ -2508,7 +2509,8 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 			request->append_cstring(isc_dyn_def_parameter, field->fld_name);
 			request->append_number(isc_dyn_prm_number, position);
 			request->append_number(isc_dyn_prm_type, 1);
-			DDL_resolve_intl_type(request, field, NULL);
+			DDL_resolve_intl_type(request, field,
+				reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
 			put_field(request, field, false);
 
 			*ptr = MAKE_variable(field, field->fld_name,
@@ -2583,7 +2585,7 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 		{
 			dsql_nod* parameter = *ptr;
 			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
-			put_local_variable(request, variable, 0);
+			put_local_variable(request, variable, 0, NULL);
 		}
 	}
 
@@ -2640,7 +2642,8 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 			dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
 			// parameter = (*ptr)->nod_arg[e_prm_val_val]; USELESS
 
-			DDL_resolve_intl_type(request, field, NULL);
+			DDL_resolve_intl_type(request, field,
+				reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
 
 			*ptr = MAKE_variable(field, field->fld_name,
 								 VAR_input, 0, (USHORT) (2 * position),
@@ -2660,7 +2663,8 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 		{
 			dsql_fld* field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
 
-			DDL_resolve_intl_type(request, field, NULL);
+			DDL_resolve_intl_type(request, field,
+				reinterpret_cast<const dsql_str*>((*ptr)->nod_arg[e_dfl_collate]));
 
 			*ptr = MAKE_variable(field, field->fld_name,
 								 VAR_output, 1, (USHORT) (2 * position),
@@ -2725,7 +2729,7 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 		{
 			dsql_nod* parameter = *ptr;
 			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
-			put_local_variable(request, variable, 0);
+			put_local_variable(request, variable, 0, NULL);
 		}
 	}
 
@@ -5837,7 +5841,7 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
 
 
 static void put_local_variable( dsql_req* request, dsql_var* variable,
-	dsql_nod* host_param)
+	dsql_nod* host_param, const dsql_str* collation_name)
 {
 /**************************************
  *
@@ -5854,7 +5858,7 @@ static void put_local_variable( dsql_req* request, dsql_var* variable,
 
 	request->append_uchar(blr_dcl_variable);
 	request->append_ushort(variable->var_variable_number);
-	DDL_resolve_intl_type(request, field, NULL);
+	DDL_resolve_intl_type(request, field, collation_name);
 
 	const USHORT dtype = field->fld_dtype;
 
@@ -5923,7 +5927,8 @@ static void put_local_variables(dsql_req* request, dsql_nod* parameters,
 									  locals);
 				*ptr = var_node;
 				dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
-				put_local_variable(request, variable, parameter);
+				put_local_variable(request, variable, parameter,
+					reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
 
 				// Some field attributes are calculated inside
 				// put_local_variable(), so we reinitialize the

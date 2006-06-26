@@ -1499,10 +1499,10 @@ input_proc_parameters	: input_proc_parameter
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-input_proc_parameter	: simple_column_def_name non_array_type
+input_proc_parameter	: simple_column_def_name non_array_type collate_clause
 				begin_trigger default_par_opt end_default_opt
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, $4, $5, NULL, NULL, NULL, NULL); }   
+				$1, $5, $6, NULL, $3, NULL, NULL); }   
 		;
 
 output_proc_parameters	: proc_parameter
@@ -1510,9 +1510,9 @@ output_proc_parameters	: proc_parameter
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-proc_parameter	: simple_column_def_name non_array_type
+proc_parameter	: simple_column_def_name non_array_type collate_clause
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, NULL, NULL, NULL, NULL, NULL, NULL); }   
+				$1, NULL, NULL, NULL, $3, NULL, NULL); }   
 		;
 
 default_par_opt	: DEFAULT begin_trigger default_value
@@ -1542,9 +1542,9 @@ local_declaration_item	: var_declaration_item
 		| cursor_declaration_item
 		;
 
-var_declaration_item	: column_def_name non_array_type var_init_opt
+var_declaration_item	: column_def_name non_array_type collate_clause var_init_opt
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, $3, NULL, NULL, NULL, NULL, NULL); }
+				$1, $4, NULL, NULL, $3, NULL, NULL); }
 		;
 
 var_decl_opt	: VARIABLE
