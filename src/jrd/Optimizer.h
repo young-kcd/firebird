@@ -48,9 +48,9 @@ namespace Jrd {
 
 // AB: 2005-11-05
 // Constants below needs some discussions and ideas
-const double REDUCE_SELECTIVITY_FACTOR_BETWEEN = 0.2;
-const double REDUCE_SELECTIVITY_FACTOR_LESS = 0.5;
-const double REDUCE_SELECTIVITY_FACTOR_GREATER = 0.5;
+const double REDUCE_SELECTIVITY_FACTOR_BETWEEN = 0.0025;
+const double REDUCE_SELECTIVITY_FACTOR_LESS = 0.05;
+const double REDUCE_SELECTIVITY_FACTOR_GREATER = 0.05;
 const double REDUCE_SELECTIVITY_FACTOR_STARTING = 0.01;
 
 const double MAXIMUM_SELECTIVITY = 1.0;
