@@ -2713,14 +2713,14 @@ static void string_to_datetime(
 /* Handle time values out of range - note possibility of 60 for
  * seconds value due to LEAP second (Not supported in V4.0).
  */
-	if  (i > 2 &&
+	if (i > 2 &&
 		(((times.tm_hour = components[3]) > 23) ||
-		((times.tm_min = components[4]) > 59) ||
-		((times.tm_sec = components[5]) > 59) ||
-		description[3] > 2 || description[3] == 0 ||
-		description[4] > 2 || description[4] == 0 ||
-		description[5] > 2 ||
-		description[6] > -ISC_TIME_SECONDS_PRECISION_SCALE))
+		 ((times.tm_min = components[4]) > 59) ||
+		 ((times.tm_sec = components[5]) > 59) ||
+		 description[3] > 2 || description[3] == 0 ||
+		 description[4] > 2 || description[4] == 0 ||
+		 description[5] > 2 ||
+		 description[6] > -ISC_TIME_SECONDS_PRECISION_SCALE))
 	{
 		conversion_error(desc, err);
 	}
