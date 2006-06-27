@@ -515,12 +515,8 @@ string& ClumpletReader::getString(string& str) const
 {
 	const UCHAR* ptr = getBytes();
 	size_t length = getClumpLength();
-	if (*ptr) {
-		str.assign(reinterpret_cast<const char*>(ptr), length);
-	}
-	else {
-		str.empty();
-	}
+	str.assign(reinterpret_cast<const char*>(ptr), length);
+	str.recalculate_length();
 	return str;
 }
 
@@ -529,6 +525,7 @@ PathName& ClumpletReader::getPath(PathName& str) const
 	const UCHAR* ptr = getBytes();
 	size_t length = getClumpLength();
 	str.assign(reinterpret_cast<const char*>(ptr), length);
+	str.recalculate_length();
 	return str;
 }
 
