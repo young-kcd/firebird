@@ -2,7 +2,7 @@ Summary: Firebird Relational Database Server and Client tools.
 Name: Firebird@ARCH_TYPE_SUFFIX@
 Version: @FIREBIRD_VERSION@.@FB_BUILD_NUM@
 Release: @FIREBIRD_PACKAGE_VERSION@
-Copyright: Distributable 
+License: Distributable 
 Group: Applications/Databases 
 Source: Firebird-@FIREBIRD_VERSION@.@FB_BUILD_NUM@.tar.bz2
 URL: http://firebird.sourceforge.net 

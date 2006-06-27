@@ -449,7 +449,6 @@ $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
 
 OtherDistribHeaders = extlib/ib_util.h \
 	               jrd/perf.h  \
-	               jrd/blr.h \
 	               include/gen/iberror.h
 
 SRC_OtherDistribHeaders = $(addprefix $(SRC_ROOT)/, $(OtherDistribHeaders))
