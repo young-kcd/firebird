@@ -516,6 +516,11 @@ string& ClumpletReader::getString(string& str) const
 	const UCHAR* ptr = getBytes();
 	size_t length = getClumpLength();
 	str.assign(reinterpret_cast<const char*>(ptr), length);
+	str.recalculate_length();
+	if (str.length() + 1 < length)
+	{
+		invalid_structure("string length doesn't match with clumplet");
+	}
 	return str;
 }
 
@@ -524,6 +529,11 @@ PathName& ClumpletReader::getPath(PathName& str) const
 	const UCHAR* ptr = getBytes();
 	size_t length = getClumpLength();
 	str.assign(reinterpret_cast<const char*>(ptr), length);
+	str.recalculate_length();
+	if (str.length() + 1 < length)
+	{
+		invalid_structure("string length doesn't match with clumplet");
+	}
 	return str;
 }
 
