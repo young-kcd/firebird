@@ -3120,10 +3120,13 @@ static void get_action_svc_string(const Firebird::ClumpletReader& spb,
  **************************************/
 	Firebird::string s;
 	spb.getString(s);
-	switches += SVC_TRMNTR;
-	switches += s;
-	switches += SVC_TRMNTR;
-	switches += ' ';
+	if (s.length())
+	{
+		switches += SVC_TRMNTR;
+		switches += s;
+		switches += SVC_TRMNTR;
+		switches += ' ';
+	}
 }
 
 

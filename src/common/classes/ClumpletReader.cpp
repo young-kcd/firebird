@@ -515,7 +515,12 @@ string& ClumpletReader::getString(string& str) const
 {
 	const UCHAR* ptr = getBytes();
 	size_t length = getClumpLength();
-	str.assign(reinterpret_cast<const char*>(ptr), length);
+	if (*ptr) {
+		str.assign(reinterpret_cast<const char*>(ptr), length);
+	}
+	else {
+		str.empty();
+	}
 	return str;
 }
 
