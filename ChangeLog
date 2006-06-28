@@ -1,3 +1,31 @@
+2006-06-27 11:23  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.166.2.3):
+	
+	rolled back Dmitry's changes in order to keep 1.5 behaviour for
+	well formed SPB
+
+2006-06-27 10:53  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.18.2.4):
+	
+	slightly better way to validate string length, passed by user
+
+2006-06-27 08:41  dimitr
+
+	* firebird2/src/: jrd/svc.cpp (1.166.2.2),
+	common/classes/ClumpletReader.cpp (1.18.2.3):
+	
+	Solution for CORE-1. Alex, it's up to you to agree or implement a
+	better fix.
+
+2006-06-27 08:39  dimitr
+
+	* firebird2/src/jrd/Optimizer.h (1.16.4.1):
+	
+	More optimistic selectivity estimations. In the worst case, it's
+	much easier to disable index usage rather then enable it.
+
 2006-06-21 14:59  alexpeshkoff
 
 	* firebird2/src/jrd/why.cpp (1.100.4.1):
