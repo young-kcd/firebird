@@ -33,9 +33,6 @@ const SSHORT IB_PREFIX_TYPE			= 0;
 const SSHORT IB_PREFIX_LOCK_TYPE	= 1;
 const SSHORT IB_PREFIX_MSG_TYPE		= 2;
 
-// Needed in common/config/dir_list.cpp
-const ULONG ALLROOM			= -1UL;	 /* use all available space */
-
 // flags for gds_alloc_report
 const ULONG ALLOC_dont_report	= 1L << 0;	/* Don't report this block */
 const ULONG ALLOC_silent		= 1L << 1;	/* Don't report new leaks */
