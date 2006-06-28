@@ -3186,22 +3186,30 @@ static void do_isql()
 			Interrupt_flag = false;
 
 			// close input files going back to stdin
+			indev* flist;
+
 			while (Filelist && Filelist->indev_fpointer != stdin)
 			{
-				indev* const flist = Filelist->indev_next;
 				FILE* const p = Filelist->indev_fpointer;
-				if (p != stdin && p != Ofp)
+				if (p != Ofp)
 					fclose(p);
+
+				flist = Filelist->indev_next;
 				ISQL_FREE(Filelist);
 				Filelist = flist;
 			}
 
-			fb_assert(Filelist);
+			// should have two stdin in Filelist
+			fb_assert(Filelist && Filelist->indev_next);
 
 			if (Ifp.indev_fpointer != stdin && Ifp.indev_fpointer != Ofp)
 				fclose(Ifp.indev_fpointer);
 
 			Ifp.copy_from(Filelist);
+
+			flist = Filelist->indev_next;
+			ISQL_FREE(Filelist);
+			Filelist = flist;
 			Input_file = false;
 		}
 
