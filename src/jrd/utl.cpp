@@ -1101,58 +1101,6 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 }
 
 
-BOOLEAN API_ROUTINE isc_set_path(TEXT* file_name,
-								 USHORT file_length, TEXT* expanded_name)
-{
-/**************************************
- *
- *	i s c _ s e t _ p a t h
- *
- **************************************
- *
- * Functional description
- *	Set a prefix to a filename based on 
- *	the ISC_PATH user variable.
- *
- **************************************/
-
-/* look for the environment variables to tack 
-   onto the beginning of the database path */
-
-	Firebird::PathName pathname;
-	if (!fb_utils::readenv("ISC_PATH", pathname))
-		return FALSE;
-
-	if (!file_length)
-		file_length = strlen(file_name);
-	else
-		file_name[file_length] = 0;
-
-/* if the file already contains a remote node
-   or any path at all forget it */
-
-	const TEXT* p;
-
-	for (p = file_name; *p; p++)
-		if (*p == ':' || *p == '/' || *p == '\\')
-			return FALSE;
-
-/* concatenate the strings */
-
-	strcpy(expanded_name, pathname.c_str());
-
-    /* CVC: Make the concatenation work if no slash is present. */
-    p = expanded_name + (strlen (expanded_name) - 1);
-    if (*p != ':' && *p != '/' && *p != '\\') {
-        strcat(expanded_name, "/");
-    }
-
-	strcat(expanded_name, file_name);
-
-	return TRUE;
-}
-
-
 void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
 									 SSHORT* dpb_size, const TEXT* single_user)
 {

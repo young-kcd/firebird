@@ -45,7 +45,6 @@ int		API_ROUTINE isc_get_client_minor_version();
 void	API_ROUTINE gds__map_blobs(int*, int*);
 void	API_ROUTINE isc_set_debug(int);
 void	API_ROUTINE isc_set_login(const UCHAR**, SSHORT*);
-BOOLEAN	API_ROUTINE isc_set_path(TEXT*, USHORT, TEXT*);
 void	API_ROUTINE isc_set_single_user(const UCHAR**, SSHORT*, const TEXT*);
 int		API_ROUTINE isc_version(FB_API_HANDLE*, FPTR_VERSION_CALLBACK, void*);
 void	API_ROUTINE isc_format_implementation(USHORT, USHORT, TEXT *,

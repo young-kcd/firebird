@@ -65,6 +65,7 @@
 #include "../jrd/flu.h"
 #include "../jrd/db_alias.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/utils_proto.h"
 
 /* includes specific for DSQL */
 
@@ -346,6 +347,7 @@ static ISC_STATUS prepare(ISC_STATUS *, WHY_TRA);
 static void release_dsql_support(sqlda_sup*);
 static void release_handle(WHY_HNDL);
 static void save_error_string(ISC_STATUS *);
+static bool set_path(const Firebird::PathName&, Firebird::PathName&);
 static void subsystem_enter(void);
 static void subsystem_exit(void);
 
@@ -754,7 +756,6 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	ISC_STATUS_ARRAY local, temp;
 	USHORT n, length, org_length, temp_length;
 	WHY_DBB database;
-	TEXT expanded_filename[MAXPATHLEN], temp_filebuf[MAXPATHLEN];
 #if defined(UNIX)
 	TEXT single_user[5];
 #endif
@@ -795,8 +796,6 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	try {
 
-		TEXT* temp_filename = temp_filebuf;
-
 		ptr = status;
 
 		org_length = file_length;
@@ -815,8 +814,8 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
    utilities can modify it */
 
 		temp_length = org_length ? org_length : strlen(file_name);
-		memcpy(temp_filename, file_name, temp_length);
-		temp_filename[temp_length] = '\0';
+		Firebird::PathName temp_filename(file_name, temp_length);
+		Firebird::PathName expanded_filename;
 
 		if (!ISC_check_if_remote(temp_filename, true))
 		{
@@ -824,25 +823,23 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			if (ResolveDatabaseAlias(temp_filename, database))
 			{
 				ISC_expand_filename(database, false);
-				strcpy(expanded_filename, database.c_str());
+				expanded_filename = database;
 			}
-			else if (isc_set_path(temp_filename, org_length, expanded_filename))
+			else if (set_path(temp_filename, expanded_filename))
 			{
 				temp_filename = expanded_filename;
-				org_length = strlen(temp_filename);
+				org_length = temp_filename.length();
 			}
 			else
 			{
-				ISC_expand_filename(temp_filename, org_length,
-									expanded_filename, sizeof(expanded_filename),
-									true);
+				expanded_filename = temp_filename;
+				ISC_expand_filename(expanded_filename, true);
 			}
 		}
 		else
 		{
-			ISC_expand_filename(temp_filename, org_length, 
-								expanded_filename, sizeof(expanded_filename),
-								true);
+			expanded_filename = temp_filename;
+			ISC_expand_filename(expanded_filename, true);
 		}
 
 		Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
@@ -857,12 +854,12 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				continue;
 			}
 			WHY_ATT handle = NULL;
-			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, org_length, temp_filename,
+			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, org_length, temp_filename.c_str(),
 												&handle, newDpb.getBufferLength(), 
 												reinterpret_cast<const char*>(newDpb.getBuffer()),
-												expanded_filename))
+												expanded_filename.c_str()))
 			{
-				length = strlen(expanded_filename);
+				length = expanded_filename.length();
 				database = allocate_handle(n, handle, HANDLE_database);
 				if (database)
 				{
@@ -900,7 +897,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 				*public_handle = database->public_handle;
 				TEXT* p = database->db_path;
-				memcpy(p, expanded_filename, length);
+				memcpy(p, expanded_filename.c_str(), length);
 				p[length] = 0;
 
 				database->cleanup = NULL;
@@ -1394,7 +1391,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY local, temp;
 	USHORT n, length, org_length, temp_length;
 	WHY_DBB database;
-	TEXT expanded_filename[MAXPATHLEN], temp_filebuf[MAXPATHLEN];
 #ifdef UNIX
 	TEXT single_user[5];
 #endif
@@ -1433,8 +1429,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	SUBSYSTEM_USAGE_INCR;
 	try {
 
-		TEXT* temp_filename = temp_filebuf;
-
 		ptr = status;
 
 		org_length = file_length;
@@ -1456,9 +1450,9 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			temp_length = org_length;
 		else
 			temp_length = strlen(file_name);
-		
-		memcpy(temp_filename, file_name, temp_length);
-		temp_filename[temp_length] = '\0';
+
+		Firebird::PathName temp_filename(file_name, temp_length);
+		Firebird::PathName expanded_filename;
 
 		if (!ISC_check_if_remote(temp_filename, true))
 		{
@@ -1466,25 +1460,23 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			if (ResolveDatabaseAlias(temp_filename, database))
 			{
 				ISC_expand_filename(database, false);
-				strcpy(expanded_filename, database.c_str());
+				expanded_filename = database;
 			}
-			else if (isc_set_path(temp_filename, org_length, expanded_filename))
+			else if (set_path(temp_filename, expanded_filename))
 			{
 				temp_filename = expanded_filename;
-				org_length = strlen(temp_filename);
+				org_length = temp_filename.length();
 			}
 			else
 			{
-				ISC_expand_filename(temp_filename, org_length,
-									expanded_filename, sizeof(expanded_filename),
-									true);
+				expanded_filename = temp_filename;
+				ISC_expand_filename(expanded_filename, true);
 			}
 		}
 		else
 		{
-			ISC_expand_filename(temp_filename, org_length, 
-								expanded_filename, sizeof(expanded_filename),
-								true);
+			expanded_filename = temp_filename;
+			ISC_expand_filename(expanded_filename, true);
 		}
 
 		Firebird::ClumpletWriter newDpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, 
@@ -1497,20 +1489,21 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			if (why_enabled && !(why_enabled & (1 << n)))
 				continue;
 			WHY_ATT handle = NULL;
-			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, org_length, temp_filename,
+			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, org_length, temp_filename.c_str(),
 												&handle, newDpb.getBufferLength(), 
 												reinterpret_cast<const char*>(newDpb.getBuffer()), 
-												0, expanded_filename))
+												0, expanded_filename.c_str()))
 			{
 #ifdef WIN_NT
             	/* Now we can expand, the file exists. */
-	            length = ISC_expand_filename (temp_filename, org_length, 
-					expanded_filename, sizeof(expanded_filename), true);
+				expanded_filename = temp_filename;
+	            ISC_expand_filename (expanded_filename, true);
+				length = expanded_filename.length();
 #else
 				length = org_length;
 				if (!length) 
 				{
-					length = strlen(temp_filename);
+					length = temp_filename.length();
 				}
 #endif
 
@@ -1558,9 +1551,9 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 #ifdef WIN_NT
     	        /* for (q = (*handle)->dbb_filename->str_data; length; length--) */
-        	    memcpy(p, expanded_filename, length);
+        	    memcpy(p, expanded_filename.c_str(), length);
 #else
-				memcpy(p, temp_filename, length);
+				memcpy(p, temp_filename.c_str(), length);
 #endif
 				p[length] = 0;
 
@@ -6175,6 +6168,48 @@ static void save_error_string(ISC_STATUS * status)
 			break;
 		}
 	}
+}
+
+
+static bool set_path(const Firebird::PathName& file_name, Firebird::PathName& expanded_name)
+{
+/**************************************
+ *
+ *	s e t _ p a t h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set a prefix to a filename based on 
+ *	the ISC_PATH user variable.
+ *
+ **************************************/
+
+	// look for the environment variables to tack 
+	// onto the beginning of the database path
+	Firebird::PathName pathname;
+	if (!fb_utils::readenv("ISC_PATH", pathname))
+		return false;
+
+	// if the file already contains a remote node
+	// or any path at all forget it
+	for (const TEXT* p = file_name.c_str(); *p; p++)
+		if (*p == ':' || *p == '/' || *p == '\\')
+			return false;
+
+	// concatenate the strings
+
+	expanded_name = pathname;
+
+    // CVC: Make the concatenation work if no slash is present.
+	char lastChar = expanded_name[expanded_name.length() - 1];
+	if (lastChar != ':' && lastChar != '/' && lastChar != '\\') {
+		expanded_name.append("/");
+	}
+
+	expanded_name.append(file_name);
+
+	return true;
 }
 
 
