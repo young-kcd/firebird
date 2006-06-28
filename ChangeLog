@@ -1,3 +1,27 @@
+2006-06-28 02:56  asfernandes
+
+	* firebird2/builds/win32/preprocess.bat (1.36):
+	
+	Only regenerate preprocessed files when needed to make builds
+	faster
+
+2006-06-27 13:07  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.21):
+	
+	Front-ported fix for CORE-1 to HEAD. Do not accept badly formed
+	clumplets any more.
+
+2006-06-27 12:31  mkubecek
+
+	* firebird2/builds/:
+	install/arch-specific/linux/classic/rpmheader.txt.in (1.5),
+	install/arch-specific/linux/super/rpmfiles.txt.in (1.10),
+	install/arch-specific/linux/super/rpmheader.txt.in (1.6),
+	posix/Makefile.in.firebird (1.72):
+	
+	compatibility with rpm 4.4
+
 2006-06-27 03:33  asfernandes
 
 	* firebird2/src/jrd/cvt.cpp (1.75):
