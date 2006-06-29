@@ -532,7 +532,7 @@ PathName& ClumpletReader::getPath(PathName& str) const
 	str.recalculate_length();
 	if (str.length() + 1 < length)
 	{
-		invalid_structure("string length doesn't match with clumplet");
+		invalid_structure("path length doesn't match with clumplet");
 	}
 	return str;
 }
