@@ -6194,14 +6194,16 @@ static bool set_path(const Firebird::PathName& file_name, Firebird::PathName& ex
 	// if the file already contains a remote node
 	// or any path at all forget it
 	for (const TEXT* p = file_name.c_str(); *p; p++)
+	{
 		if (*p == ':' || *p == '/' || *p == '\\')
 			return false;
+	}
 
 	// concatenate the strings
 
 	expanded_name = pathname;
 
-    // CVC: Make the concatenation work if no slash is present.
+	// CVC: Make the concatenation work if no slash is present.
 	char lastChar = expanded_name[expanded_name.length() - 1];
 	if (lastChar != ':' && lastChar != '/' && lastChar != '\\') {
 		expanded_name.append("/");
