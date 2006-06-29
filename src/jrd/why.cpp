@@ -64,6 +64,7 @@
 #include "../jrd/fil.h"
 #include "../jrd/flu.h"
 #include "../jrd/db_alias.h"
+#include "../jrd/os/path_utils.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
 
@@ -6206,7 +6207,7 @@ static bool set_path(const Firebird::PathName& file_name, Firebird::PathName& ex
 	// CVC: Make the concatenation work if no slash is present.
 	char lastChar = expanded_name[expanded_name.length() - 1];
 	if (lastChar != ':' && lastChar != '/' && lastChar != '\\') {
-		expanded_name.append("/");
+		expanded_name.append(PathUtils::dir_sep);
 	}
 
 	expanded_name.append(file_name);
