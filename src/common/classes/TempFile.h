@@ -32,15 +32,15 @@ public:
 	TempFile(MemoryPool& pool,
 			 const Firebird::PathName& prefix,
 			 const Firebird::PathName& directory,
-			 bool unlink = true)
-		: filename(pool), position(0), size(0), doUnlink(unlink)
+			 bool unlink_now = true)
+		: filename(pool), position(0), size(0), doUnlink(unlink_now)
 	{
 		init(directory, prefix);
 	}
 
 	TempFile(const Firebird::PathName& prefix,
-			 bool unlink = true)
-		: position(0), size(0), doUnlink(unlink)
+			 bool unlink_now = true)
+		: position(0), size(0), doUnlink(unlink_now)
 	{
 		init("", prefix);
 	}

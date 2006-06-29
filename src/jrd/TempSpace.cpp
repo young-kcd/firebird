@@ -73,7 +73,7 @@ size_t TempSpace::MemoryBlock::read(size_t offset, void* buffer, size_t length)
 	{
 		length = size - offset;
 	}
-	memcpy(buffer, (char*) ptr + offset, length);
+	memcpy(buffer, ptr + offset, length);
 	return length;
 }
 
@@ -83,7 +83,7 @@ size_t TempSpace::MemoryBlock::write(size_t offset, void* buffer, size_t length)
 	{
 		length = size - offset;
 	}
-	memcpy((char*) ptr + offset, buffer, length);
+	memcpy(ptr + offset, buffer, length);
 	return length;
 }
 
@@ -129,17 +129,17 @@ size_t TempSpace::FileBlock::write(size_t offset, void* buffer, size_t length)
 //
 
 TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix)
-		: pool(p), tempFiles(p),
-		  head(NULL), tail(NULL), filePrefix(p, prefix),
-		  logicalSize(0), physicalSize(0), localCacheUsage(0)
+		: pool(p), filePrefix(p, prefix),
+		  logicalSize(0), physicalSize(0), localCacheUsage(0),
+		  head(NULL), tail(NULL), tempFiles(p)
 {
 	if (!tempDirs)
 	{
 		Firebird::MutexLockGuard guard(initMutex);
 		if (!tempDirs)
 		{
-			MemoryPool& p = *getDefaultMemoryPool();
-			tempDirs = FB_NEW(p) Firebird::TempDirectoryList(p);
+			MemoryPool& def_pool = *getDefaultMemoryPool();
+			tempDirs = FB_NEW(def_pool) Firebird::TempDirectoryList(def_pool);
 			minBlockSize = Config::getTempBlockSize();
 		}
 	}

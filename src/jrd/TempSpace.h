@@ -71,7 +71,7 @@ private:
 		size_t write(size_t, void*, size_t);
 		
 	private:
-		void* ptr;
+		char* ptr;
 	};
 
 	class FileBlock : public Block {

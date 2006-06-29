@@ -238,9 +238,9 @@ void TempFile::seek(offset_t offset)
 #if defined(WIN_NT)
 	LARGE_INTEGER liOffset;
 	liOffset.QuadPart = offset;
-	const DWORD seek = SetFilePointer(handle, (LONG) liOffset.LowPart,
+	const DWORD seek_result = SetFilePointer(handle, (LONG) liOffset.LowPart,
 									  &liOffset.HighPart, FILE_BEGIN);
-	if (seek == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
+	if (seek_result == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
 	{
 		Firebird::system_call_failed::raise("SetFilePointer");
 	}
