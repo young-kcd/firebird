@@ -1,3 +1,28 @@
+2006-06-29 03:29  asfernandes
+
+	* firebird2/src/jrd/why.cpp (1.109):
+	
+	Misc
+
+2006-06-29 00:50  asfernandes
+
+	* firebird2/: builds/win32/defs/utls.def (1.2), src/jrd/utl.cpp
+	(1.91), src/jrd/utl_proto.h (1.21), src/jrd/why.cpp (1.108):
+	
+	Fix B.O. in y-valve
+
+2006-06-29 00:03  mkubecek
+
+	* firebird2/src/jrd/gds_proto.h (1.43):
+	
+	removed unused constant
+
+2006-06-28 20:33  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.188):
+	
+	Small correction thanks to Claudio
+
 2006-06-28 02:56  asfernandes
 
 	* firebird2/builds/win32/preprocess.bat (1.36):
