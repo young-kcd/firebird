@@ -1664,7 +1664,11 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			break;
 
 		case nod_erase:
-			if ((request->req_operation == jrd_req::req_return) &&
+			if (request->req_operation == jrd_req::req_unwind) {
+				node = node->nod_parent;
+				break;
+			}
+			else if ((request->req_operation == jrd_req::req_return) &&
 				(node->nod_arg[e_erase_sub_erase]))
 			{
 				if (!top_node) {
@@ -2258,7 +2262,11 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_modify:
 			{
 			impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
-			if ((request->req_operation == jrd_req::req_return) &&
+			if (request->req_operation == jrd_req::req_unwind) {
+				node = node->nod_parent;
+				break;
+			}
+			else if ((request->req_operation == jrd_req::req_return) &&
 				(!impure->sta_state) && (node->nod_arg[e_mod_sub_mod])) {
 				if (!top_node) {
 					top_node = node;
