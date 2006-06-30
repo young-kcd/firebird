@@ -2757,7 +2757,7 @@ static processing_state copy_table(TEXT* source,
 
 	Firebird::PathName ftmp = TempFile::create(SCRATCH);
 	isqlGlob.Out = fopen(ftmp.c_str(), "w+b");
-	if (isqlGlob.Out == (FILE*) -1) {
+	if (!isqlGlob.Out) {
 		// If we can't open a temp file then bail 
 
 		ISQL_msg_get(FILE_OPEN_ERR, errbuf, ftmp.c_str());
@@ -3102,7 +3102,7 @@ static void do_isql()
 	const Firebird::PathName filename = TempFile::create(SCRATCH);
 	strcpy(Tmpfile, filename.c_str());
 	Ofp = fopen(Tmpfile, "w+b");
-	if (Ofp == (FILE*) -1)
+	if (!Ofp)
 	{
 		// If we can't open a temp file then bail 
 
