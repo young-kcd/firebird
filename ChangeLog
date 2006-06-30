@@ -1,3 +1,35 @@
+2006-06-30 02:50  asfernandes
+
+	* firebird2/src/common/classes/TempFile.h (1.6):
+	
+	Misc
+
+2006-06-29 21:29  asfernandes
+
+	* firebird2/src/jrd/why.cpp (1.110):
+	
+	Use PathUtils::dir_sep instead of hardcoded '/'
+
+2006-06-29 11:06  aafemt
+
+	* firebird2/src/jrd/: IntlManager.cpp (1.10), TempSpace.cpp (1.5),
+	TempSpace.h (1.3):
+	
+	Warnings
+
+2006-06-29 11:02  aafemt
+
+	* firebird2/src/common/classes/: TempFile.cpp (1.7), TempFile.h
+	(1.5):
+	
+	Warnings
+
+2006-06-29 06:19  robocop
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.22):
+	
+	May be a better description.
+
 2006-06-29 03:29  asfernandes
 
 	* firebird2/src/jrd/why.cpp (1.109):
