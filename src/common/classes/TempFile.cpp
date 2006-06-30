@@ -245,8 +245,8 @@ void TempFile::seek(offset_t offset)
 		Firebird::system_call_failed::raise("SetFilePointer");
 	}
 #else
-	const off_t seek = ::lseek(handle, (off_t) offset, SEEK_SET);
-	if (seek == (off_t) -1)
+	const off_t seek_result = ::lseek(handle, (off_t) offset, SEEK_SET);
+	if (seek_result == (off_t) -1)
 	{
 		Firebird::system_call_failed::raise("lseek");
 	}
