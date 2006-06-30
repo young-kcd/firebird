@@ -1,3 +1,18 @@
+2006-06-29 14:25  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/: Readme.txt
+	(1.9.2.2), installation_readme.txt (1.9.2.2):
+	
+	Change rc2 -> rc3
+
+2006-06-29 14:11  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall
+	.bat (1.15.2.2):
+	
+	Fix typo
+
 2006-06-27 11:23  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.166.2.3):
