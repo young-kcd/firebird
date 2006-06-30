@@ -62,6 +62,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/TempFile.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -2042,40 +2043,28 @@ static int edit(ISC_QUAD* blob_id,
    Would have saved me a lot of time, if I had seen this earlier :-(
    FSG 15.Oct.2000
 */
-	TEXT file_name[50];
-	sprintf(file_name, "%sXXXXXX", buffer);
-
 	FILE* file;
-
-#ifdef HAVE_MKSTEMP
-	const int fd = mkstemp(file_name);
-	if (!(file = fdopen(fd, "w+"))) {
-		close(fd);
+	Firebird::PathName tmpf = TempFile::create(buffer);
+	if (tmpf.empty()) {
 		return FALSE;
 	}
-#else
-	if (mktemp(file_name) == (char *)0)
+	if (!(file = fopen(tmpf.c_str(), "w+"))) {
+		unlink(tmpf.c_str());
 		return FALSE;
-	if (!(file = fopen(file_name, FOPEN_WRITE_TYPE)))
-		return FALSE;
-	fclose(file);
-
-	if (!(file = fopen(file_name, FOPEN_WRITE_TYPE_TEXT)))
-		return FALSE;
-#endif
+	}
 
 	if (!dump(blob_id, database, transaction, file)) {
 		fclose(file);
-		unlink(file_name);
+		unlink(tmpf.c_str());
 		return FALSE;
 	}
 
 	fclose(file);
 
-	if (type = gds__edit(file_name, type)) {
+	if (type = gds__edit(tmpf.c_str(), type)) {
 
-		if (!(file = fopen(file_name, FOPEN_READ_TYPE_TEXT))) {
-			unlink(file_name);
+		if (!(file = fopen(tmpf.c_str(), FOPEN_READ_TYPE_TEXT))) {
+			unlink(tmpf.c_str());
 			return FALSE;
 		}
 
@@ -2085,7 +2074,7 @@ static int edit(ISC_QUAD* blob_id,
 
 	}
 
-	unlink(file_name);
+	unlink(tmpf.c_str());
 
 	return type;
 }

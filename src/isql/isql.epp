@@ -2201,15 +2201,14 @@ static processing_state add_row(TEXT* tabname)
 					if (!strcmp(cmd, "EDIT"))
 						// If edit, we edit a temp file 
 					{
-						// Documentation says:
-						// If string is not NULL, it is assumed to point to an array of
-						// at least L_tmpnam characters - or 2*L_tmpnam bytes.
-						// The value of L_tmpnam is defined in STDIO.H.
-						char bfile[L_tmpnam * 2];
-						tmpnam(bfile);
-						gds__edit(bfile, 0);
-						res = BLOB_text_load(blobid, DB, M__trans, bfile);
-						unlink(bfile);
+						Firebird::PathName ftmp = TempFile::create(SCRATCH);
+						if (ftmp.empty()) {
+							res = 0;
+						} else {
+							gds__edit(ftmp.c_str(), 0);
+							res = BLOB_text_load(blobid, DB, M__trans, ftmp.c_str());
+							unlink(ftmp.c_str());
+						}
 					}
 					else
 						// Otherwise just load the named file 
