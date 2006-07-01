@@ -1978,18 +1978,21 @@ static int dump(ISC_QUAD* blob_id,
 
 	for (;;) {
 		USHORT l = 0;
-		isc_get_segment(status_vector, &blob, &l,
-						 short_length, buffer);
+		isc_get_segment(status_vector, &blob, &l, short_length, buffer);
 		if (status_vector[1] && status_vector[1] != isc_segment) {
 			if (status_vector[1] != isc_segstr_eof)
 				isc_print_status(status_vector);
 			break;
 		}
+		/*
 		const TEXT* p = buffer;
 		if (l)
 			do {
 				fputc(*p++, file);
 			} while (--l);
+		*/
+		if (l)
+			fwrite(buffer, 1, l, file);
 	}
 
 /* Close the blob */
@@ -2043,12 +2046,13 @@ static int edit(ISC_QUAD* blob_id,
    Would have saved me a lot of time, if I had seen this earlier :-(
    FSG 15.Oct.2000
 */
-	FILE* file;
 	Firebird::PathName tmpf = TempFile::create(buffer);
 	if (tmpf.empty()) {
 		return FALSE;
 	}
-	if (!(file = fopen(tmpf.c_str(), "w+"))) {
+
+	FILE* file = fopen(tmpf.c_str(), FOPEN_WRITE_TYPE_TEXT);
+	if (!file) {
 		unlink(tmpf.c_str());
 		return FALSE;
 	}

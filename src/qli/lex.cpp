@@ -170,7 +170,7 @@ void LEX_edit( SLONG start, SLONG stop)
  **************************************/
 	const Firebird::PathName filename = TempFile::create(SCRATCH);
 	FILE* scratch = fopen(filename.c_str(), "w+b");
-	if (scratch == (FILE *) -1)
+	if (!scratch)
 		IBERROR(61);			// Msg 61 couldn't open scratch file
 #ifdef WIN_NT
 	stop--;
@@ -555,7 +555,7 @@ void LEX_init(void)
 	const Firebird::PathName filename = TempFile::create(SCRATCH);
 	strcpy(trace_file_name, filename.c_str());
 	trace_file = fopen(trace_file_name, "w+b");
-	if (trace_file == (FILE *) -1)
+	if (!trace_file)
 		IBERROR(61);			// Msg 61 couldn't open scratch file
 
 	QLI_token = (qli_tok*) ALLOCPV(type_tok, MAXSYMLEN);

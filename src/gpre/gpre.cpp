@@ -757,12 +757,14 @@ int main(int argc, char* argv[])
 	TEXT temp_name[MAXPATHLEN];
 
 #ifndef __ALPHA
+	// Replace this kludge with TempFile since gds__temp_file doesn't exist anymore.
 	temp = (FILE *) gds__temp_file(TRUE, "temp", 0);
 	strcpy(temp_name, "temporary file");
 #else
+	// Replace this kludge with TempFile since gds__temp_file doesn't exist anymore.
 	temp = (FILE *) gds__temp_file(TRUE, "temp", temp_name);
 #endif
-	if (temp != (FILE *) - 1) {
+	if (temp) {
 		SSHORT c;
 		while ((c = get_char(input_file)) != EOF)
 			putc(c, temp);
@@ -1407,7 +1409,7 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	strcpy(trace_file_name, filename.c_str());
 	trace_file = fopen(trace_file_name, "w+b");
 
-	if (trace_file == (FILE *) -1) {
+	if (!trace_file) {
 		trace_file = NULL;
 		CPR_error("Couldn't open scratch file");
 		return 0;
