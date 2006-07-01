@@ -1,3 +1,28 @@
+2006-06-30 21:09  mkubecek
+
+	* firebird2/src/: isql/isql.epp (1.190), jrd/utl.cpp (1.92):
+	
+	use TempFile to create temporary files
+
+2006-06-30 17:45  mkubecek
+
+	* firebird2/src/isql/isql.epp (1.189):
+	
+	fixed check of fopen() failure
+
+2006-06-30 16:57  asfernandes
+
+	* firebird2/src/jrd/exe.cpp (1.182):
+	
+	Let positioned update/delete unwind correct instead of leave the
+	request in inconsistent state
+
+2006-06-30 09:41  robocop
+
+	* firebird2/src/common/classes/TempFile.cpp (1.8):
+	
+	Consistence.
+
 2006-06-30 02:50  asfernandes
 
 	* firebird2/src/common/classes/TempFile.h (1.6):
