@@ -2202,22 +2202,21 @@ static processing_state add_row(TEXT* tabname)
 						// If edit, we edit a temp file 
 					{
 						Firebird::PathName ftmp = TempFile::create(SCRATCH);
-						if (ftmp.empty()) {
+						if (ftmp.empty())
 							res = 0;
-						} else {
+						else
+						{
 							gds__edit(ftmp.c_str(), 0);
 							res = BLOB_text_load(blobid, DB, M__trans, ftmp.c_str());
 							unlink(ftmp.c_str());
 						}
 					}
-					else
-						// Otherwise just load the named file 
-						/* We can't be sure if it's a TEXT or BINARY file
-						 * being loaded.  As we aren't sure, we'll
-						 * do binary operation - this is NEW data in
-						 * the database, not updating existing info
-						 */
+					else	// Otherwise just load the named file 
 					{
+						// We can't be sure if it's a TEXT or BINARY file
+						// being loaded.  As we aren't sure, we'll
+						// do binary operation - this is NEW data in
+						// the database, not updating existing info
 						res = BLOB_load(blobid, DB, M__trans, lastInputLine);
 					}
 
@@ -3318,7 +3317,7 @@ static void do_isql()
 	gds_trans = 0;
 
 	// Should have a valid Temp file pointer
-	fb_assert(Ofp != (FILE*) - 1);
+	fb_assert(Ofp);
 	fclose(Ofp);
 	unlink(Tmpfile);
 

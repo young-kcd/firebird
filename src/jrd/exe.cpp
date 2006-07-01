@@ -1669,7 +1669,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				break;
 			}
 			else if ((request->req_operation == jrd_req::req_return) &&
-				(node->nod_arg[e_erase_sub_erase]))
+					 (node->nod_arg[e_erase_sub_erase]))
 			{
 				if (!top_node) {
 					top_node = node;
@@ -2267,7 +2267,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				break;
 			}
 			else if ((request->req_operation == jrd_req::req_return) &&
-				(!impure->sta_state) && (node->nod_arg[e_mod_sub_mod])) {
+					 (!impure->sta_state) && (node->nod_arg[e_mod_sub_mod])) {
 				if (!top_node) {
 					top_node = node;
 					which_mod_trig = PRE_TRIG;
