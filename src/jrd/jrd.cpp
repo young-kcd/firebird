@@ -538,10 +538,14 @@ bool	JRD_get_thread_security_disabled()
 }
 
 
-void JRD_print_pools(const char* filename) {
-	FILE *out = fopen(filename, "w");
-	ALL_print_memory_pool_info(out, databases);
-	fclose(out);	
+void JRD_print_pools(const char* filename)
+{
+	FILE* out = fopen(filename, "w");
+	if (out)
+	{
+		ALL_print_memory_pool_info(out, databases);
+		fclose(out);
+	}
 }
 
 
@@ -4246,7 +4250,7 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 	gds__prefix(fname, "proc_info.log");
 	FILE* fptr = fopen(fname, "a+");
 	if (!fptr) {
-		char buff[256];
+		char buff[MAXPATHLEN + 25];
 		sprintf(buff, "Failed to open %s\n", fname);
 		gds__log(buff, 0);
 		return;

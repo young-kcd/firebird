@@ -471,9 +471,6 @@ USHORT BLB_get_segment(thread_db* tdbb,
  *      of bytes returned.
  *
  **************************************/
-	ISC_STATUS status;
-	USHORT l;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
@@ -492,9 +489,10 @@ USHORT BLB_get_segment(thread_db* tdbb,
 	if (blob->blb_filter) {
 		blob->blb_fragment_size = 0;
 		USHORT tmp_len = 0;
-		if ( (status =
-			BLF_get_segment(tdbb, &blob->blb_filter, &tmp_len, buffer_length,
-							segment)) )
+		const ISC_STATUS status =
+			BLF_get_segment(tdbb, &blob->blb_filter, &tmp_len, buffer_length, segment);
+			
+		if (status)
 		{
 			if (status == isc_segstr_eof)
 				blob->blb_flags |= BLB_eof;
@@ -516,7 +514,7 @@ USHORT BLB_get_segment(thread_db* tdbb,
 			blob->blb_flags |= BLB_eof;
 			return 0;
 		}
-		l = dbb->dbb_page_size - BLP_SIZE;
+		USHORT l = dbb->dbb_page_size - BLP_SIZE;
 		blob->blb_sequence = blob->blb_seek / l;
 		seek = (USHORT)(blob->blb_seek % l);	// safe cast
 		blob->blb_flags &= ~BLB_seek;
@@ -584,7 +582,7 @@ USHORT BLB_get_segment(thread_db* tdbb,
 		/* Figure out how much data can be moved.  Then account for the
 		   space, and move the data */
 
-		l = MIN(buffer_length, length);
+		USHORT l = MIN(buffer_length, length);
 
 		if (SEGMENTED(blob)) {
 			l = MIN(l, blob->blb_fragment_size);
@@ -679,8 +677,6 @@ SLONG BLB_get_slice(thread_db* tdbb,
  *      Fetch a slice of an array.
  *
  **************************************/
-	ISC_STATUS status;
-
 	SET_TDBB(tdbb);
     Database* database = GET_DBB();
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
@@ -752,7 +748,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 	arg.slice_high_water = data + length;
 	arg.slice_base = data + offset;
 
-	status = SDL_walk(tdbb->tdbb_status_vector,
+	ISC_STATUS status = SDL_walk(tdbb->tdbb_status_vector,
 					  sdl,
 					  //true,
 					  data,

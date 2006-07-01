@@ -1666,7 +1666,6 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_erase:
 			if (request->req_operation == jrd_req::req_unwind) {
 				node = node->nod_parent;
-				break;
 			}
 			else if ((request->req_operation == jrd_req::req_return) &&
 					 (node->nod_arg[e_erase_sub_erase]))
@@ -1753,68 +1752,68 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_cursor_stmt:
 			{
-			const UCHAR op = (UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op];
-			const USHORT number = (USHORT) (IPTR) node->nod_arg[e_cursor_stmt_number];
-			// get RecordSource and the impure area
-			fb_assert(request->req_cursors && number < request->req_cursors->count());
-			RecordSource* rsb = (*request->req_cursors)[number];
-			IRSB impure = (IRSB) ((UCHAR*) tdbb->tdbb_request + rsb->rsb_impure);
-			switch (op) {
-			case blr_cursor_open:
-				if (request->req_operation == jrd_req::req_evaluate) {
-					// check cursor state
-					if (impure->irsb_flags & irsb_open) {
-						ERR_post(isc_cursor_already_open, 0);
+				const UCHAR op = (UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op];
+				const USHORT number = (USHORT) (IPTR) node->nod_arg[e_cursor_stmt_number];
+				// get RecordSource and the impure area
+				fb_assert(request->req_cursors && number < request->req_cursors->count());
+				RecordSource* rsb = (*request->req_cursors)[number];
+				IRSB impure = (IRSB) ((UCHAR*) tdbb->tdbb_request + rsb->rsb_impure);
+				switch (op) {
+				case blr_cursor_open:
+					if (request->req_operation == jrd_req::req_evaluate) {
+						// check cursor state
+						if (impure->irsb_flags & irsb_open) {
+							ERR_post(isc_cursor_already_open, 0);
+						}
+						// open cursor
+						RSE_open(tdbb, rsb);
+						request->req_operation = jrd_req::req_return;
 					}
-					// open cursor
-					RSE_open(tdbb, rsb);
-					request->req_operation = jrd_req::req_return;
-				}
-				node = node->nod_parent;
-				break;
-			case blr_cursor_close:
-				if (request->req_operation == jrd_req::req_evaluate) {
-					// check cursor state
-					if (!(impure->irsb_flags & irsb_open)) {
-						ERR_post(isc_cursor_not_open, 0);
-					}
-					// close cursor
-					RSE_close(tdbb, rsb);
-					request->req_operation = jrd_req::req_return;
-				}
-				node = node->nod_parent;
-				break;
-			case blr_cursor_fetch:
-				switch (request->req_operation) {
-				case jrd_req::req_evaluate:
-					// check cursor state
-					if (!(impure->irsb_flags & irsb_open)) {
-						ERR_post(isc_cursor_not_open, 0);
-					}
-					request->req_records_affected.clear();
-					// perform preliminary navigation, if specified
-					if (node->nod_arg[e_cursor_stmt_seek]) {
-						node = node->nod_arg[e_cursor_stmt_seek];
-						break;
-					}
-					// fetch one record
-					if (RSE_get_record(tdbb, rsb,
-#ifdef SCROLLABLE_CURSORS
-									   RSE_get_next))
-#else
-									   RSE_get_forward))
-#endif
-					{
-						node = node->nod_arg[e_cursor_stmt_into];
-						request->req_operation = jrd_req::req_evaluate;
-						break;
-					}
-					request->req_operation = jrd_req::req_return;
-				default:
 					node = node->nod_parent;
+					break;
+				case blr_cursor_close:
+					if (request->req_operation == jrd_req::req_evaluate) {
+						// check cursor state
+						if (!(impure->irsb_flags & irsb_open)) {
+							ERR_post(isc_cursor_not_open, 0);
+						}
+						// close cursor
+						RSE_close(tdbb, rsb);
+						request->req_operation = jrd_req::req_return;
+					}
+					node = node->nod_parent;
+					break;
+				case blr_cursor_fetch:
+					switch (request->req_operation) {
+					case jrd_req::req_evaluate:
+						// check cursor state
+						if (!(impure->irsb_flags & irsb_open)) {
+							ERR_post(isc_cursor_not_open, 0);
+						}
+						request->req_records_affected.clear();
+						// perform preliminary navigation, if specified
+						if (node->nod_arg[e_cursor_stmt_seek]) {
+							node = node->nod_arg[e_cursor_stmt_seek];
+							break;
+						}
+						// fetch one record
+						if (RSE_get_record(tdbb, rsb,
+#ifdef SCROLLABLE_CURSORS
+										   RSE_get_next))
+#else
+										   RSE_get_forward))
+#endif
+						{
+							node = node->nod_arg[e_cursor_stmt_into];
+							request->req_operation = jrd_req::req_evaluate;
+							break;
+						}
+						request->req_operation = jrd_req::req_return;
+					default:
+						node = node->nod_parent;
+					}
+					break;
 				}
-				break;
-			}
 			}
 			break;
 
@@ -2209,23 +2208,23 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_list:
 			{
-			impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
-			switch (request->req_operation) {
-			case jrd_req::req_evaluate:
-				impure->sta_state = 0;
-			case jrd_req::req_return:
-			case jrd_req::req_sync:
-				if (impure->sta_state < node->nod_count) {
-					request->req_operation = jrd_req::req_evaluate;
-					node = node->nod_arg[impure->sta_state++];
-					break;
+				impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
+				switch (request->req_operation) {
+				case jrd_req::req_evaluate:
+					impure->sta_state = 0;
+				case jrd_req::req_return:
+				case jrd_req::req_sync:
+					if (impure->sta_state < node->nod_count) {
+						request->req_operation = jrd_req::req_evaluate;
+						node = node->nod_arg[impure->sta_state++];
+						break;
+					}
+					request->req_operation = jrd_req::req_return;
+				default:
+					node = node->nod_parent;
 				}
-				request->req_operation = jrd_req::req_return;
-			default:
-				node = node->nod_parent;
 			}
 			break;
-			}
 
 		case nod_loop:
 			switch (request->req_operation) {
@@ -2261,42 +2260,41 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_modify:
 			{
-			impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
-			if (request->req_operation == jrd_req::req_unwind) {
-				node = node->nod_parent;
-				break;
-			}
-			else if ((request->req_operation == jrd_req::req_return) &&
-					 (!impure->sta_state) && (node->nod_arg[e_mod_sub_mod])) {
-				if (!top_node) {
-					top_node = node;
-					which_mod_trig = PRE_TRIG;
+				impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
+				if (request->req_operation == jrd_req::req_unwind) {
+					node = node->nod_parent;
 				}
-				prev_node = node;
-				node = modify(tdbb, node, which_mod_trig);
-				if (which_mod_trig == PRE_TRIG) {
-					node = prev_node->nod_arg[e_mod_sub_mod];
-					node->nod_parent = prev_node;
-				}
-				if (top_node == prev_node && which_mod_trig == POST_TRIG) {
-					top_node = NULL;
-					which_mod_trig = ALL_TRIGS;
+				else if ((request->req_operation == jrd_req::req_return) &&
+						 (!impure->sta_state) && (node->nod_arg[e_mod_sub_mod])) {
+					if (!top_node) {
+						top_node = node;
+						which_mod_trig = PRE_TRIG;
+					}
+					prev_node = node;
+					node = modify(tdbb, node, which_mod_trig);
+					if (which_mod_trig == PRE_TRIG) {
+						node = prev_node->nod_arg[e_mod_sub_mod];
+						node->nod_parent = prev_node;
+					}
+					if (top_node == prev_node && which_mod_trig == POST_TRIG) {
+						top_node = NULL;
+						which_mod_trig = ALL_TRIGS;
+					}
+					else {
+						request->req_operation = jrd_req::req_evaluate;
+					}
 				}
 				else {
-					request->req_operation = jrd_req::req_evaluate;
-				}
-			}
-			else {
-				prev_node = node;
-				node = modify(tdbb, node, ALL_TRIGS);
-				if (!(prev_node->nod_arg[e_mod_sub_mod]) &&
-					which_mod_trig == PRE_TRIG)
-				{
-					which_mod_trig = POST_TRIG;
+					prev_node = node;
+					node = modify(tdbb, node, ALL_TRIGS);
+					if (!(prev_node->nod_arg[e_mod_sub_mod]) &&
+						which_mod_trig == PRE_TRIG)
+					{
+						which_mod_trig = POST_TRIG;
+					}
 				}
 			}
 			break;
-			}
 
 		case nod_nop:
 			request->req_operation = jrd_req::req_return;
@@ -2345,11 +2343,11 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_post:
 			{
-			DeferredWork* work = DFW_post_work(transaction, dfw_post_event,
-									 EVL_expr(tdbb, node->nod_arg[0]), 0);
-			if (node->nod_arg[1])
-				DFW_post_work_arg(transaction, work,
-								  EVL_expr(tdbb, node->nod_arg[1]), 0);
+				DeferredWork* work = DFW_post_work(transaction, dfw_post_event,
+										 EVL_expr(tdbb, node->nod_arg[0]), 0);
+				if (node->nod_arg[1])
+					DFW_post_work_arg(transaction, work,
+									  EVL_expr(tdbb, node->nod_arg[1]), 0);
 			}
 
 			// for an autocommit transaction, events can be posted
@@ -2377,36 +2375,36 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_store:
 			{
-			impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
-			if ((request->req_operation == jrd_req::req_return) &&
-				(!impure->sta_state) && (node->nod_arg[e_sto_sub_store]))
-			{
-				if (!top_node) {
-					top_node = node;
-					which_sto_trig = PRE_TRIG;
+				impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
+				if ((request->req_operation == jrd_req::req_return) &&
+					(!impure->sta_state) && (node->nod_arg[e_sto_sub_store]))
+				{
+					if (!top_node) {
+						top_node = node;
+						which_sto_trig = PRE_TRIG;
+					}
+					prev_node = node;
+					node = store(tdbb, node, which_sto_trig);
+					if (which_sto_trig == PRE_TRIG) {
+						node = prev_node->nod_arg[e_sto_sub_store];
+						node->nod_parent = prev_node;
+					}
+					if (top_node == prev_node && which_sto_trig == POST_TRIG) {
+						top_node = NULL;
+						which_sto_trig = ALL_TRIGS;
+					}
+					else
+						request->req_operation = jrd_req::req_evaluate;
 				}
-				prev_node = node;
-				node = store(tdbb, node, which_sto_trig);
-				if (which_sto_trig == PRE_TRIG) {
-					node = prev_node->nod_arg[e_sto_sub_store];
-					node->nod_parent = prev_node;
+				else {
+					prev_node = node;
+					node = store(tdbb, node, ALL_TRIGS);
+					if (!(prev_node->nod_arg[e_sto_sub_store]) &&
+						which_sto_trig == PRE_TRIG)
+						which_sto_trig = POST_TRIG;
 				}
-				if (top_node == prev_node && which_sto_trig == POST_TRIG) {
-					top_node = NULL;
-					which_sto_trig = ALL_TRIGS;
-				}
-				else
-					request->req_operation = jrd_req::req_evaluate;
-			}
-			else {
-				prev_node = node;
-				node = store(tdbb, node, ALL_TRIGS);
-				if (!(prev_node->nod_arg[e_sto_sub_store]) &&
-					which_sto_trig == PRE_TRIG)
-					which_sto_trig = POST_TRIG;
 			}
 			break;
-			}
 
 #ifdef SCROLLABLE_CURSORS
 		case nod_seek:
