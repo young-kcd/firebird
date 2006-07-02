@@ -238,8 +238,10 @@ void LEX_init( void *file)
 	strcpy(trace_file_name, filename.c_str());
 	trace_file = fopen(trace_file_name, "w+b");
 	if (!trace_file)
+	{
 		DDL_err(276, NULL, NULL, NULL, NULL, NULL);
 		/* msg 276: couldn't open scratch file */
+	}
 
 	input_file = (FILE*) file;
 	DDL_char = DDL_buffer;

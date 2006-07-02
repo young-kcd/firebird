@@ -1410,7 +1410,6 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	trace_file = fopen(trace_file_name, "w+b");
 
 	if (!trace_file) {
-		trace_file = NULL;
 		CPR_error("Couldn't open scratch file");
 		return 0;
 	}

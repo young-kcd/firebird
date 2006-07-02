@@ -155,7 +155,7 @@ bool LEX_active_procedure(void)
 }
 
 
-void LEX_edit( SLONG start, SLONG stop)
+void LEX_edit(SLONG start, SLONG stop)
 {
 /**************************************
  *
@@ -172,6 +172,7 @@ void LEX_edit( SLONG start, SLONG stop)
 	FILE* scratch = fopen(filename.c_str(), "w+b");
 	if (!scratch)
 		IBERROR(61);			// Msg 61 couldn't open scratch file
+
 #ifdef WIN_NT
 	stop--;
 #endif
