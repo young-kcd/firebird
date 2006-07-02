@@ -1,3 +1,31 @@
+2006-07-02 00:48  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.192):
+	
+	Correction
+
+2006-07-01 10:53  robocop
+
+	* firebird2/src/: dudley/lex.cpp (1.32), gpre/gpre.cpp (1.79),
+	jrd/utl.cpp (1.93), qli/lex.cpp (1.37):
+	
+	We had to bring new force to the project (Michal Kubecek) to
+	remember us that fopen() returns NULL on failure. After his fix, I
+	found more cases that we overlooked for years.
+
+2006-07-01 10:50  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.126), exe.cpp (1.184), jrd.cpp
+	(1.256):
+	
+	Misc.
+
+2006-07-01 04:21  asfernandes
+
+	* firebird2/src/: isql/isql.epp (1.191), jrd/exe.cpp (1.183):
+	
+	Misc
+
 2006-06-30 21:09  mkubecek
 
 	* firebird2/src/: isql/isql.epp (1.190), jrd/utl.cpp (1.92):
