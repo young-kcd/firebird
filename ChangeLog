@@ -1,3 +1,17 @@
+2006-07-03 03:28  asfernandes
+
+	* firebird2/src/dsql/hsh.cpp (1.35):
+	
+	Mark potential dropped UDFs as dropped as we do with procedures and
+	relations
+
+2006-07-03 00:42  asfernandes
+
+	* firebird2/src/: dudley/lex.cpp (1.33), gpre/gpre.cpp (1.80),
+	qli/lex.cpp (1.38):
+	
+	Misc
+
 2006-07-02 00:48  asfernandes
 
 	* firebird2/src/isql/isql.epp (1.192):
