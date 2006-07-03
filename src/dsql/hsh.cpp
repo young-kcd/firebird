@@ -294,17 +294,16 @@ void HSHD_remove(DSQL_SYM symbol)
  HSHD_set_flag
   
     @brief      Set a flag in all similar objects in a chain.   This
-       is used primarily to mark relations and procedures
+       is used primarily to mark relations, procedures and functions
        as deleted.   The object must have the same name and
        type, but not the same database, and must belong to
        some database.   Later access to such an object by
        another user or thread should result in that object's
-       being refreshed.   Note that even if the relation name
-       and ID, or the procedure name and ID both match, it
-       may still not represent an exact match.   This is because
-       there's no way at present for DSQL to tell if two databases
-       as represented in DSQL are attachments to the same physical
-       database.
+       being refreshed.   Note that even if the name and ID
+	   both match, it may still not represent an exact match.
+	   This is because there's no way at present for DSQL to tell
+	   if two databases as represented in DSQL are attachments to
+	   the same physical database.
  
 
     @param database
@@ -326,6 +325,7 @@ void HSHD_set_flag(
 	switch (type) {
 	case SYM_relation:
 	case SYM_procedure:
+	case SYM_udf:
 		break;
 	default:
 		return;
@@ -363,6 +363,13 @@ void HSHD_set_flag(
 						{
 							dsql_prc* sym_prc = (dsql_prc*) homonym->sym_object;
 							sym_prc->prc_flags |= flag;
+							break;
+						}
+
+					case SYM_udf:
+						{
+							dsql_udf* sym_udf = (dsql_udf*) homonym->sym_object;
+							sym_udf->udf_flags |= flag;
 							break;
 						}
 					}
