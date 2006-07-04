@@ -318,7 +318,7 @@ void HSHD_set_flag(
 				   const TEXT* string, SSHORT length, SYM_TYPE type, SSHORT flag)
 {
 /* as of now, there's no work to do if there is no database or if
-   the type is not a relation or procedure */
+   the type is not a relation, procedure or function */
 
 	if (!database)
 		return;
