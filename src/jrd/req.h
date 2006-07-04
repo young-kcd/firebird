@@ -247,6 +247,9 @@ public:
 	Savepoint*	req_proc_sav_point;	/* procedure savepoint list */
 	Firebird::TimeStamp	req_timestamp;		/* Start time of request */
 
+	USHORT	req_src_line;
+	USHORT	req_src_column;
+
 	enum req_ta {
 		req_trigger_insert = 1,
 		req_trigger_update = 2,

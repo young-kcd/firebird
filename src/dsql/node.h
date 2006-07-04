@@ -342,7 +342,8 @@ enum nod_t
 	nod_redef_trigger,
 	nod_tra_misc,
 	nod_lock_timeout,
-	nod_agg_list
+	nod_agg_list, 
+	nod_src_info
 };
 
 typedef nod_t NOD_TYPE;

@@ -896,6 +896,9 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 		VIO_start_save_point(tdbb, transaction);
 	}
 
+	request->req_src_line = 0;
+	request->req_src_column = 0;
+
 #ifdef WIN_NT
 	START_CHECK_FOR_EXCEPTIONS(NULL);
 #endif
@@ -1541,8 +1544,16 @@ static void stuff_stack_trace(const jrd_req* request)
 				isEmpty = false;
 				sTrace += name + "'";
 			}
-			else
+			else {
 				sTrace += "\n" + name + "'";
+			}
+
+			if (req->req_src_line)
+			{
+				Firebird::string src_info;
+				src_info.printf(" line: %u, col: %u", req->req_src_line, req->req_src_column);
+				sTrace += src_info;
+			}
 		}
 	}
 
@@ -2427,6 +2438,15 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				dsc* desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
 				DPM_gen_id(tdbb, (IPTR) node->nod_arg[e_gen_id], true,
 								  MOV_get_int64(desc, 0));
+				request->req_operation = jrd_req::req_return;
+			}
+			node = node->nod_parent;
+			break;
+
+		case nod_src_info:
+			if (request->req_operation == jrd_req::req_evaluate) {
+				request->req_src_line = (USHORT) (IPTR) node->nod_arg[0];
+				request->req_src_column = (USHORT) (IPTR) node->nod_arg[1];
 				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
@@ -3671,7 +3691,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 				if (vector && id < vector->count() &&
 					(field = (*vector)[id]))
 				{
-					name = field->fld_name.c_str();
+					name = ERR_cstring(field->fld_name.c_str());
 				}
 			}
 

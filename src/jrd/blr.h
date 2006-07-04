@@ -333,4 +333,9 @@
 #define blr_cursor_close		(unsigned char)1
 #define blr_cursor_fetch		(unsigned char)2
 
+/* FB 2.1 specific BLR */
+
+/* Source code line and column numbers */
+#define blr_src_info		(unsigned char)184
+
 #endif /* JRD_BLR_H */

@@ -356,7 +356,8 @@ static const UCHAR
 	dcl_cursor[] = { op_word, op_line, op_verb, 0},
 	cursor_stmt[] = { op_cursor_stmt, 0 },
 	strlength[] = { op_byte, op_line, op_verb, 0},
-	trim[] = { op_byte, op_byte, op_line, op_verb, 0};
+	trim[] = { op_byte, op_byte, op_line, op_verb, 0},
+	src_info[] = { op_word, op_word, op_line, 0};
 
 #include "../jrd/blp.h"
 

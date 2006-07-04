@@ -190,3 +190,5 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_equiv, equiv, " == ")
 
 		  NODE(nod_strlen, strlen, "STRLEN")
+
+		  NODE(nod_src_info, source_info, "")

@@ -1727,6 +1727,13 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		}
 		return input;
 
+	case nod_src_info:
+		{
+			input->nod_line = (USHORT) (IPTR) input->nod_arg[0];
+			input->nod_column = (USHORT) (IPTR) input->nod_arg[1];
+			return input;
+		}
+
 	default:
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  isc_arg_gds, isc_dsql_command_err,

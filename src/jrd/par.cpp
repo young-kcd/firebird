@@ -2903,6 +2903,11 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		break;
 #endif
 
+	case blr_src_info:
+		node->nod_arg[0] = (jrd_nod*) (IPTR) BLR_WORD;
+		node->nod_arg[1] = (jrd_nod*) (IPTR) BLR_WORD;
+		break;
+
 	default:
 		syntax_error(csb, elements[expected]);
 	}

@@ -1587,10 +1587,27 @@ proc_statements	: proc_block
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-proc_statement	: simple_proc_statement ';'
-		| complex_proc_statement
+proc_statement	: stmt_start_line stmt_start_column simple_proc_statement ';'
+			{ 
+				dsql_nod* src_info = make_node (nod_src_info, 2, $1, $2);
+				$$ = make_node (nod_list, 2, src_info, $3); 
+			}
+		| stmt_start_line stmt_start_column complex_proc_statement
+			{ 
+				dsql_nod* src_info = make_node (nod_src_info, 2, $1, $2);
+				$$ = make_node (nod_list, 2, src_info, $3); 
+			}
 		;
 
+stmt_start_line :
+		{ $$ = (dsql_nod*) (IPTR) lex.lines_bk; }
+
+stmt_start_column :
+		{ 
+			const USHORT column = (lex.last_token_bk - lex.line_start_bk + 1);
+			$$ = (dsql_nod*) (IPTR) column;
+		}
+		
 simple_proc_statement	: assignment
 		| insert
 		| update

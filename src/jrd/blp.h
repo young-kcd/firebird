@@ -212,6 +212,7 @@ static const struct
 	{"lowcase", one},
 	{"strlen", strlength},
 	{"trim", trim},
+	{"src_info", src_info},
 	{0, 0}
 };
 

@@ -1227,6 +1227,12 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		}
 		return;
 
+	case nod_src_info:
+		stuff(request, blr_src_info);
+		stuff_word(request, node->nod_line);
+		stuff_word(request, node->nod_column);
+		return;
+
 	default:
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  isc_arg_gds, isc_dsql_internal_err,
