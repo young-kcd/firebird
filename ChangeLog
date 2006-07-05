@@ -1,3 +1,40 @@
+2006-07-05 04:17  asfernandes
+
+	* firebird2/: builds/posix/make.rules (1.30), src/jrd/nod.h (1.20):
+	
+	Misc
+
+2006-07-04 16:49  hvlad
+
+	* firebird2/src/dsql/parse.cpp (1.183):
+	
+	Regenerate parser files
+
+2006-07-04 16:44  hvlad
+
+	* firebird2/src/: dsql/dsql.cpp (1.170), dsql/gen.cpp (1.102),
+	dsql/node.h (1.75), dsql/parse.y (1.211), dsql/pass1.cpp (1.269),
+	jrd/blp.h (1.21), jrd/blr.h (1.26), jrd/exe.cpp (1.185),
+	jrd/gds.cpp (1.199), jrd/nod.h (1.19), jrd/par.cpp (1.137),
+	jrd/req.h (1.60), misc/blrtable.cpp (1.26):
+	
+	Added blr_src_info. Error call stack now contains not only
+	procedures\triggers names but line\column numbers also.  Thanks to
+	Eugeney Putilin for idea
+
+2006-07-04 07:27  robocop
+
+	* firebird2/src/dsql/hsh.cpp (1.36):
+	
+	Totally misc.
+
+2006-07-04 06:05  aafemt
+
+	* firebird2/builds/posix/: make.defaults (1.48), make.rules (1.29),
+	prefix.mingw (1.44):
+	
+	Use linker to link DLLs on MinGW
+
 2006-07-03 03:28  asfernandes
 
 	* firebird2/src/dsql/hsh.cpp (1.35):
