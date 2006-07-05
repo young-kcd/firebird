@@ -1537,7 +1537,7 @@ static void stuff_stack_trace(const jrd_req* request)
 		{
 			name.trim();
 
-			if (sTrace.length() + name.length() > MAX_STACK_TRACE)
+			if (sTrace.length() + name.length() + 2 > MAX_STACK_TRACE)
 				break;
 
 			if (isEmpty) {
@@ -1552,7 +1552,11 @@ static void stuff_stack_trace(const jrd_req* request)
 			{
 				Firebird::string src_info;
 				src_info.printf(" line: %u, col: %u", req->req_src_line, req->req_src_column);
-				sTrace += src_info;
+
+				if (sTrace.length() + src_info.length() > MAX_STACK_TRACE)
+					break;
+				else 
+					sTrace += src_info;
 			}
 		}
 	}
