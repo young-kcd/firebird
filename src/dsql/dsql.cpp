@@ -2815,7 +2815,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 
 	case nod_src_info:
-		verb = "source_info"; 
+		verb = "src_info"; 
 		break;
 
 	default:
