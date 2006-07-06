@@ -1555,8 +1555,8 @@ static void stuff_stack_trace(const jrd_req* request)
 
 				if (sTrace.length() + src_info.length() > MAX_STACK_TRACE)
 					break;
-				else 
-					sTrace += src_info;
+
+				sTrace += src_info;
 			}
 		}
 	}
