@@ -315,9 +315,6 @@
 		<File
 			RelativePath="..\defs\fbclient.def">
 		</File>
-		<File
-			RelativePath="..\defs\fbclient.def">
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

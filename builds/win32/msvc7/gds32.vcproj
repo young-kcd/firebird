@@ -190,9 +190,6 @@
 		<File
 			RelativePath="..\defs\gds32.def">
 		</File>
-		<File
-			RelativePath="..\defs\gds32.def">
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
