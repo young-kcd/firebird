@@ -105,6 +105,18 @@ SOURCE=..\..\..\src\jrd\os\win32\ibinitdll.cpp
 SOURCE=..\..\..\src\jrd\isc_version.rc
 # End Source File
 # End Group
+# Begin Group "COMMON files"
+
+# PROP Default_Filter "cpp"
+# Begin Source File
+
+SOURCE=..\..\..\src\common\classes\alloc.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\common\fb_exception.cpp
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\defs\gds32.def
