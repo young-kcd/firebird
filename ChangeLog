@@ -1,3 +1,22 @@
+2006-07-06 20:35  asfernandes
+
+	* firebird2/builds/win32/msvc7/: fbclient.vcproj (1.44),
+	fbclient_static.vcproj (1.19), gds32.vcproj (1.23):
+	
+	Remove duplicate references to .def files - noted by Claudio
+
+2006-07-06 04:54  robocop
+
+	* firebird2/src/jrd/exe.cpp (1.187):
+	
+	Misc.
+
+2006-07-06 04:54  robocop
+
+	* firebird2/builds/win32/msvc6/gds32.dsp (1.25):
+	
+	Sync with VC7 just in case.
+
 2006-07-05 10:18  hvlad
 
 	* firebird2/src/jrd/exe.cpp (1.186):
