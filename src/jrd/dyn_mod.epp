@@ -2868,7 +2868,18 @@ void DYN_modify_sql_field(Global*					gbl,
 			const bool changeDefault = defVal || defSrc || dropDefault;
 			// If we are altering only the default, we need the old field settings.
 			if (changeDefault && !new_fld.dyn_dsc.dsc_dtype)
+			{
 				new_fld = orig_fld;
+				// We already called DSC_make_descriptor on orig_fld, so fix new_fld.
+				switch (new_fld.dyn_dtype)
+				{
+				case blr_text:
+				case blr_varying:
+				case blr_cstring:
+				    new_fld.dyn_dsc.dsc_length = DSC_string_length(&orig_fld.dyn_dsc);
+					break;
+				}
+			}
 
 			DSC_make_descriptor(&new_fld.dyn_dsc,
 								new_fld.dyn_dtype,
@@ -2983,6 +2994,11 @@ void DYN_modify_sql_field(Global*					gbl,
 					}
 					else
 					{
+						if (domain_is_computed)
+						{
+							DYN_error_punt(false, 233, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+							// msg 233: "Local column %s is computed, cannot set a default value"
+						}
 						if (defVal)
 						{
 							const UCHAR* p = defVal;
@@ -3190,16 +3206,17 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 		case blr_cstring:
 			{
 				/* CVC: Because our caller invoked DSC_make_descriptor() on new_fld previously,
-						we should have the added bytes for varchar. For cstring, we are used, since
+						we should have the added bytes for varchar. For cstring, we are done, since
 						DSC_make_descriptor(DSC_string_length) != DSC_string_length(DSC_make_descriptor). */
 
 				const USHORT maxflen = DSC_string_length(&orig_fld.dyn_dsc);
 
 				/* We can have this assertion since this case is for both string fields. */
-				fb_assert(DSC_string_length(&new_fld.dyn_dsc) - maxflen
-					== new_fld.dyn_charbytelen - orig_fld.dyn_charbytelen);
+				const ULONG new_len = DSC_string_length(&new_fld.dyn_dsc);
+				fb_assert(new_len - maxflen ==
+					new_fld.dyn_charbytelen - orig_fld.dyn_charbytelen);
 				// if (new_fld.dyn_dsc.dsc_length < maxflen)
-				if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
+				if (new_len < maxflen)
 					return isc_dyn_char_fld_too_small;
 				/* New size specified for column %s must be greater than %d characters. */
 			}
