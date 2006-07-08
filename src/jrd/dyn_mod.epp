@@ -2411,7 +2411,7 @@ static bool check_sptrig_dependency(thread_db* tdbb,
  *
  *  Functional Description:
  *	Checks to see if the given field is referenced in a stored procedure
- *	or trigger.  If the field is refereneced, return true, else return
+ *	or trigger.  If the field is referenced, return true, else return
  *  false, but true causes the function to punt instead.
  ***********************************************************/
 	jrd_req* request = NULL;
@@ -2616,6 +2616,7 @@ void DYN_modify_sql_field(Global*					gbl,
 		bool has_dimensions = false;
 		bool update_domain = false;
 		bool domain_has_default = false;
+		bool domain_is_computed = false;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE
@@ -2645,6 +2646,7 @@ void DYN_modify_sql_field(Global*					gbl,
 			}
 			
 			domain_has_default = !FLD.RDB$DEFAULT_VALUE.NULL;
+			domain_is_computed = !FLD.RDB$COMPUTED_BLR.NULL;
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end) {
@@ -3044,6 +3046,17 @@ void DYN_modify_sql_field(Global*					gbl,
 							else
 								FLD.RDB$FIELD_LENGTH = new_fld.dyn_dsc.dsc_length;
 							FLD.RDB$FIELD_LENGTH.NULL = FALSE;
+						}
+						
+						// For now the test is redundant: we just can wipe out the
+						// computed part because we don't allow to change the
+						// computed expression or to turn a physical field into
+						// a computed one. Therefore, if we came here,
+						// it's to get rid of the computed part unconditionally.
+						if (domain_is_computed)
+						{
+							FLD.RDB$COMPUTED_BLR.NULL = TRUE;
+							FLD.RDB$COMPUTED_SOURCE.NULL = TRUE;
 						}
 
 					END_MODIFY;
