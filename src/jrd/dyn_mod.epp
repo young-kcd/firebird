@@ -2620,17 +2620,17 @@ void DYN_modify_sql_field(Global*					gbl,
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE
-				// Get information about the original field type.  If a conversion
-				// can not be at any time made between the two datatypes, error.
-				DSC_make_descriptor(&orig_fld.dyn_dsc,
-									FLD.RDB$FIELD_TYPE,
-									FLD.RDB$FIELD_SCALE,
-									FLD.RDB$FIELD_LENGTH,
-									FLD.RDB$FIELD_SUB_TYPE,
-									FLD.RDB$CHARACTER_SET_ID,
-									FLD.RDB$COLLATION_ID);
+			// Get information about the original field type.  If a conversion
+			// can not be at any time made between the two datatypes, error.
+			DSC_make_descriptor(&orig_fld.dyn_dsc,
+								FLD.RDB$FIELD_TYPE,
+								FLD.RDB$FIELD_SCALE,
+								FLD.RDB$FIELD_LENGTH,
+								FLD.RDB$FIELD_SUB_TYPE,
+								FLD.RDB$CHARACTER_SET_ID,
+								FLD.RDB$COLLATION_ID);
 
-	        orig_fld.dyn_charbytelen = FLD.RDB$FIELD_LENGTH; 
+			orig_fld.dyn_charbytelen = FLD.RDB$FIELD_LENGTH; 
 			orig_fld.dyn_dtype = FLD.RDB$FIELD_TYPE;
 			orig_fld.dyn_precision = FLD.RDB$FIELD_PRECISION;
 			orig_fld.dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
@@ -2671,8 +2671,10 @@ void DYN_modify_sql_field(Global*					gbl,
 					fldlen = true;
 					new_fld.dyn_dsc.dsc_length = DYN_get_number(ptr);
 					if (++field_adjusted_count > 2)
+					{
 						DYN_error_punt(false, 149, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 						// msg 149: "Only one data type change to the field %s allowed at a time"
+					}
 
 					switch (new_fld.dyn_dtype)
 					{
@@ -2694,8 +2696,10 @@ void DYN_modify_sql_field(Global*					gbl,
 					dtype = true;
 					new_fld.dyn_dtype = DYN_get_number(ptr);
 					if (++field_adjusted_count > 2)
+					{
 						DYN_error_punt(false, 149, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 						// msg 149: "Only one data type change to the field %s allowed at a time"
+					}
 
 					switch (new_fld.dyn_dtype) {
 					case blr_text:
@@ -2980,11 +2984,15 @@ void DYN_modify_sql_field(Global*					gbl,
 						if (RFR.RDB$DEFAULT_VALUE.NULL)
 						{
 							if (sourceIsInternalDomain || !domain_has_default)
+							{
 								DYN_error_punt(false, 229, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 								// msg 229: "Local column %s doesn't have a default"
+							}
 							else if (domain_has_default)
+							{
 								DYN_error_punt(false, 230, orig_fld.dyn_fld_name.c_str(), orig_fld.dyn_fld_source.c_str(), NULL, NULL, NULL);
 								// msg 230: "Local column %s default belongs to domain %s"
+							}
 						}
 						else
 						{
