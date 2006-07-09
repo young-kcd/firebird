@@ -123,7 +123,7 @@ void DYN_modify_charset(Global* gbl, const UCHAR** ptr)
 			X IN RDB$CHARACTER_SETS
 				WITH X.RDB$CHARACTER_SET_NAME EQ t
 
-	        if (!DYN_REQUEST(drq_m_chset))
+			if (!DYN_REQUEST(drq_m_chset))
 				DYN_REQUEST(drq_m_chset) = request;
 
 			found = true;
@@ -186,7 +186,7 @@ void DYN_modify_collation(Global* gbl, const UCHAR** ptr)
 			X IN RDB$COLLATIONS
 				WITH X.RDB$COLLATION_NAME EQ t
 
-	        if (!DYN_REQUEST(drq_m_coll))
+			if (!DYN_REQUEST(drq_m_coll))
 				DYN_REQUEST(drq_m_coll) = request;
 
 			found = true;
@@ -264,8 +264,8 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		DBB IN RDB$DATABASE 
 
-        if (!DYN_REQUEST(drq_m_database))
-            DYN_REQUEST(drq_m_database) = request;
+		if (!DYN_REQUEST(drq_m_database))
+			DYN_REQUEST(drq_m_database) = request;
 
 		MODIFY DBB USING
 			UCHAR verb;
@@ -360,7 +360,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 		X IN RDB$EXCEPTIONS
 			WITH X.RDB$EXCEPTION_NAME EQ t.c_str()
 
-        if (!DYN_REQUEST(drq_m_xcp))
+		if (!DYN_REQUEST(drq_m_xcp))
 			DYN_REQUEST(drq_m_xcp) = request;
 
 		found = true;
@@ -426,7 +426,7 @@ void DYN_modify_filter(Global* gbl, const UCHAR** ptr)
 			X IN RDB$FILTERS
 				WITH X.RDB$FUNCTION_NAME EQ t
 
-	        if (!DYN_REQUEST(drq_m_bfil))
+			if (!DYN_REQUEST(drq_m_bfil))
 				DYN_REQUEST(drq_m_bfil) = request;
 
 			found = true;
@@ -491,7 +491,7 @@ void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 			X IN RDB$FUNCTIONS
 				WITH X.RDB$FUNCTION_NAME EQ t
 
-	        if (!DYN_REQUEST(drq_m_fun))
+			if (!DYN_REQUEST(drq_m_fun))
 				DYN_REQUEST(drq_m_fun) = request;
 
 			found = true;
@@ -563,7 +563,7 @@ void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 			X IN RDB$GENERATORS
 				WITH X.RDB$GENERATOR_NAME EQ t
 
-	        if (!DYN_REQUEST(drq_m_gen))
+			if (!DYN_REQUEST(drq_m_gen))
 				DYN_REQUEST(drq_m_gen) = request;
 
 			found = true;
@@ -655,8 +655,8 @@ void DYN_modify_global_field(Global* gbl,
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ orig_dom.dyn_fld_name.c_str()
 
-        if (!DYN_REQUEST(drq_m_gfield))
-            DYN_REQUEST(drq_m_gfield) = request;
+		if (!DYN_REQUEST(drq_m_gfield))
+			DYN_REQUEST(drq_m_gfield) = request;
 
 		found = true;
 
@@ -682,7 +682,7 @@ void DYN_modify_global_field(Global* gbl,
 			has_dimensions = true;
 		}
 
-        bool single_validate = false;
+		bool single_validate = false;
 
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -973,7 +973,7 @@ void DYN_modify_global_field(Global* gbl,
 		}
 
 
-	    /* Now that we have all of the information needed, let's check to see if the field type can be modifed.
+		/* Now that we have all of the information needed, let's check to see if the field type can be modifed.
 		 * Only do this, however, if we are actually modifying the datatype of the domain.
 		 */
 
@@ -985,7 +985,7 @@ void DYN_modify_global_field(Global* gbl,
 								new_dom.dyn_dsc.dsc_sub_type,
 								new_dom.dyn_charset, 
 								new_dom.dyn_collation);
-            const ULONG retval = check_update_fld_type(orig_dom, new_dom);
+			const ULONG retval = check_update_fld_type(orig_dom, new_dom);
 			if (retval != FB_SUCCESS)
 				modify_err_punt(tdbb, retval, orig_dom, new_dom);
 		}
@@ -1001,11 +1001,11 @@ void DYN_modify_global_field(Global* gbl,
 				request = NULL;
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					DOM IN RDB$RELATION_FIELDS 
-                    WITH DOM.RDB$FIELD_SOURCE EQ orig_dom.dyn_fld_name.c_str()
-                    modify_lfield_index(tdbb, dbb, gbl,
-                                        DOM.RDB$RELATION_NAME,
-                                        DOM.RDB$FIELD_NAME,
-                                        DOM.RDB$FIELD_NAME);
+					WITH DOM.RDB$FIELD_SOURCE EQ orig_dom.dyn_fld_name.c_str()
+					modify_lfield_index(tdbb, dbb, gbl,
+										DOM.RDB$RELATION_NAME,
+										DOM.RDB$FIELD_NAME,
+										DOM.RDB$FIELD_NAME);
 				END_FOR;
 
 				CMP_release(tdbb, request);
@@ -1167,7 +1167,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name.c_str()
 
-        if (!DYN_REQUEST(drq_m_index))
+		if (!DYN_REQUEST(drq_m_index))
 			DYN_REQUEST(drq_m_index) = request;
 
 		found = true;
@@ -1326,8 +1326,8 @@ void DYN_modify_local_field(
 			WITH FLD.RDB$FIELD_NAME EQ f.c_str() 
 			 AND FLD.RDB$RELATION_NAME EQ r.c_str()
 
-        if (!DYN_REQUEST(drq_m_lfield))
-            DYN_REQUEST(drq_m_lfield) = request;
+		if (!DYN_REQUEST(drq_m_lfield))
+			DYN_REQUEST(drq_m_lfield) = request;
 
 		found = true;
 
@@ -1441,7 +1441,7 @@ void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 			GET_STRING(ptr, p);
 		}
 		else
-		    DYN_unsupported_verb();
+			DYN_unsupported_verb();
 
 		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1449,7 +1449,7 @@ void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 			WITH X.RDB$PARAMETER_NAME EQ t
 			AND X.RDB$PROCEDURE_NAME EQ p
 
-	        if (!DYN_REQUEST(drq_m_prm))
+			if (!DYN_REQUEST(drq_m_prm))
 				DYN_REQUEST(drq_m_prm) = request;
 
 			found = true;
@@ -1521,7 +1521,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME = procedure_name.c_str()
 
-        if (!DYN_REQUEST(drq_m_prcs))
+		if (!DYN_REQUEST(drq_m_prcs))
 			DYN_REQUEST(drq_m_prcs) = request;
 			
 		found = true;
@@ -1534,7 +1534,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 		
 			if (**ptr == isc_dyn_description)
 			{
-			    ++*ptr;
+				++*ptr;
 				if (DYN_put_text_blob(gbl, ptr, &P.RDB$DESCRIPTION))
 					P.RDB$DESCRIPTION.NULL = FALSE;
 				else
@@ -1652,8 +1652,8 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ name.c_str()
 
-        if (!DYN_REQUEST(drq_m_relation))
-            DYN_REQUEST(drq_m_relation) = request;
+		if (!DYN_REQUEST(drq_m_relation))
+			DYN_REQUEST(drq_m_relation) = request;
 
 		if (!REL.RDB$VIEW_BLR.NULL)
 			DYN_error_punt(false, 177, NULL, NULL, NULL, NULL, NULL);
@@ -1743,7 +1743,7 @@ void DYN_modify_role(Global* gbl, const UCHAR** ptr)
 			X IN RDB$ROLES
 				WITH X.RDB$ROLE_NAME EQ t
 
-	        if (!DYN_REQUEST(drq_m_rol))
+			if (!DYN_REQUEST(drq_m_rol))
 				DYN_REQUEST(drq_m_rol) = request;
 
 			found = true;
@@ -1815,8 +1815,8 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ trigger_name.c_str()
 
-        if (!DYN_REQUEST(drq_m_trigger)) {
-            DYN_REQUEST(drq_m_trigger) = request;
+		if (!DYN_REQUEST(drq_m_trigger)) {
+			DYN_REQUEST(drq_m_trigger) = request;
 		}
 
 		// CVC: I think that we'll do well by hiding our automatic triggers from this function.
@@ -1959,8 +1959,8 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 		X IN RDB$TRIGGER_MESSAGES
 			WITH X.RDB$MESSAGE_NUMBER EQ number AND X.RDB$TRIGGER_NAME EQ t.c_str()
 
-        if (!DYN_REQUEST(drq_m_trg_msg))
-            DYN_REQUEST(drq_m_trg_msg) = request;
+		if (!DYN_REQUEST(drq_m_trg_msg))
+			DYN_REQUEST(drq_m_trg_msg) = request;
 
 		MODIFY X
 			UCHAR verb;
@@ -2030,7 +2030,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 			WITH REL.RDB$RELATION_NAME EQ view_name.c_str()
 				AND REL.RDB$VIEW_BLR NOT MISSING
 
-        if (!DYN_REQUEST(drq_m_view))
+		if (!DYN_REQUEST(drq_m_view))
 			DYN_REQUEST(drq_m_view) = request;
 
 		found = true;
@@ -2040,7 +2040,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 
 			if (**ptr == isc_dyn_description)
 			{
-			    ++*ptr;
+				++*ptr;
 				if (DYN_put_text_blob(gbl, ptr, &REL.RDB$DESCRIPTION))
 					REL.RDB$DESCRIPTION.NULL = FALSE;
 				else
@@ -2295,9 +2295,9 @@ static void modify_lfield_position(thread_db* tdbb,
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$RELATION_FIELDS 
-        WITH FLD.RDB$RELATION_NAME EQ relation_name.c_str() AND 
-        FLD.RDB$FIELD_POSITION >= MIN(new_position, existing_position) AND 
-        FLD.RDB$FIELD_POSITION <= MAX(new_position, existing_position)
+		WITH FLD.RDB$RELATION_NAME EQ relation_name.c_str() AND
+		FLD.RDB$FIELD_POSITION >= MIN(new_position, existing_position) AND
+		FLD.RDB$FIELD_POSITION <= MAX(new_position, existing_position)
 		MODIFY FLD USING
 			/* If the field is the one we want, change the position, otherwise
 			 * increase the value of RDB$FIELD_POSITION
@@ -2333,7 +2333,7 @@ static void modify_lfield_position(thread_db* tdbb,
 		FLD IN RDB$RELATION_FIELDS WITH FLD.RDB$RELATION_NAME EQ relation_name.c_str()
 			SORTED BY ASCENDING FLD.RDB$FIELD_POSITION
 
-        if (FLD.RDB$FIELD_POSITION != new_pos) {
+		if (FLD.RDB$FIELD_POSITION != new_pos) {
 			MODIFY FLD USING
 				FLD.RDB$FIELD_POSITION = new_pos;
 			END_MODIFY;
@@ -2383,7 +2383,7 @@ static bool check_view_dependency(thread_db* tdbb,
 			Y.RDB$RELATION_NAME EQ Z.RDB$VIEW_NAME AND
 			X.RDB$RELATION_NAME EQ Z.RDB$RELATION_NAME AND
 			Y.RDB$VIEW_CONTEXT EQ Z.RDB$VIEW_CONTEXT 
-        retval = true;
+		retval = true;
 		view_name = Z.RDB$VIEW_NAME;
 	END_FOR;
 
@@ -2423,7 +2423,7 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 			DEP IN RDB$DEPENDENCIES WITH
 			DEP.RDB$DEPENDED_ON_NAME EQ relation_name.c_str() AND
 			DEP.RDB$FIELD_NAME EQ field_name.c_str() 
-        retval = true;
+		retval = true;
 		dep_name = DEP.RDB$DEPENDENT_NAME;
 	END_FOR;
 
@@ -2500,7 +2500,7 @@ static bool field_exists(thread_db*					tdbb,
 		FLD IN RDB$RELATION_FIELDS WITH
 			FLD.RDB$RELATION_NAME EQ relation_name.c_str() AND
 			FLD.RDB$FIELD_NAME EQ field_name.c_str()
-        retval = true;
+		retval = true;
 	END_FOR;
 
 	CMP_release(tdbb, request);
@@ -2526,7 +2526,7 @@ static bool domain_exists(thread_db*				tdbb,
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ field_name.c_str()
-        retval = true;
+		retval = true;
 	END_FOR;
 
 	CMP_release(tdbb, request);
@@ -2609,7 +2609,7 @@ void DYN_modify_sql_field(Global*					gbl,
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS WITH RFR.RDB$RELATION_NAME = relation_name->c_str()
 			AND RFR.RDB$FIELD_NAME = orig_fld.dyn_fld_name.c_str()
-        first_request = request;
+		first_request = request;
 		request = NULL;
 
 		found = true;
@@ -2630,7 +2630,7 @@ void DYN_modify_sql_field(Global*					gbl,
 								FLD.RDB$CHARACTER_SET_ID,
 								FLD.RDB$COLLATION_ID);
 
-			orig_fld.dyn_charbytelen = FLD.RDB$FIELD_LENGTH; 
+			orig_fld.dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
 			orig_fld.dyn_dtype = FLD.RDB$FIELD_TYPE;
 			orig_fld.dyn_precision = FLD.RDB$FIELD_PRECISION;
 			orig_fld.dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
@@ -2848,7 +2848,7 @@ void DYN_modify_sql_field(Global*					gbl,
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					FLD IN RDB$FIELDS
 					WITH FLD.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE
-                    ERASE FLD;
+					ERASE FLD;
 				END_FOR;
 
 				CMP_release(tdbb, request);
@@ -2914,8 +2914,8 @@ void DYN_modify_sql_field(Global*					gbl,
 
 				STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					FLD IN RDB$FIELDS 
-                    FLD.RDB$SYSTEM_FLAG = 0;
-                    FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
+					FLD.RDB$SYSTEM_FLAG = 0;
+					FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
 					FLD.RDB$FIELD_SCALE.NULL = TRUE;
 					FLD.RDB$FIELD_PRECISION.NULL = TRUE;
 					FLD.RDB$FIELD_SUB_TYPE.NULL = TRUE;
@@ -3077,6 +3077,7 @@ void DYN_modify_sql_field(Global*					gbl,
 						// computed expression or to turn a physical field into
 						// a computed one. Therefore, if we came here,
 						// it's to get rid of the computed part unconditionally.
+
 						if (domain_is_computed)
 						{
 							FLD.RDB$COMPUTED_BLR.NULL = TRUE;
@@ -3280,7 +3281,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 				// CVC: Solve bug #910423, missing DSC_string_length call.
 				// if (new_fld.dyn_dsc.dsc_length < maxflen)
-                if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
+				if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
 				/* New size specified for column %s must be greater than %d characters. */
 			}
@@ -3389,7 +3390,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 				// CVC: Solve bug #910423, missing DSC_string_length call.
 				// if (new_fld.dyn_dsc.dsc_length < maxflen)
-                if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
+				if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
 				/* New size specified for column %s must be greater than %d characters. */
 			}

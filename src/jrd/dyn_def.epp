@@ -376,8 +376,6 @@ void DYN_define_constraint(Global*		gbl,
 	Firebird::MetaName constraint_name, index_name, referred_index_name;
 	Firebird::MetaName null_field_name, trigger_name;
 	MetaNameArray field_list;
-	int list_index = -1;
-	int all_count, unique_count;
 	bool primary_flag = false, foreign_flag = false;
 	UCHAR ri_action = 0;
 
@@ -530,7 +528,7 @@ void DYN_define_constraint(Global*		gbl,
 	id = drq_c_unq_nam;
 
 	bool not_null = true;
-	all_count = unique_count = 0;
+	int all_count = 0, unique_count = 0;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDS IN RDB$INDEX_SEGMENTS
 			CROSS RFR IN RDB$RELATION_FIELDS
@@ -595,7 +593,7 @@ void DYN_define_constraint(Global*		gbl,
 		id = drq_c_dup_con;
 
 		index_name = "";
-		list_index = -1;
+		int list_index = -1;
 		bool found  = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			CRT IN RDB$RELATION_CONSTRAINTS CROSS
@@ -1788,10 +1786,7 @@ void DYN_define_index(Global*		gbl,
 	Firebird::MetaName index_name;
 	Firebird::MetaName referenced_relation;
 	UCHAR verb;
-	UCHAR fld_count, seg_count;
 	MetaNameArray field_list, seg_list;
-	int list_index = -1;
-	USHORT key_length, length, referred_cols = 0;
 	Firebird::MetaName trigger_name;
 
 	if (ri_actionP != NULL) {
@@ -1820,7 +1815,7 @@ void DYN_define_index(Global*		gbl,
 	request = CMP_find_request(tdbb, drq_s_indices, DYN_REQUESTS);
 	id = drq_s_indices;
 
-	key_length = 0;
+	ULONG key_length = 0;
 	jrd_req* old_request = NULL;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1832,7 +1827,7 @@ void DYN_define_index(Global*		gbl,
 		IDX.RDB$FOREIGN_KEY.NULL = TRUE;
 		IDX.RDB$EXPRESSION_SOURCE.NULL = TRUE;
 		IDX.RDB$EXPRESSION_BLR.NULL = TRUE;
-		fld_count = seg_count = 0;
+		ULONG fld_count = 0, seg_count = 0;
 		strcpy(IDX.RDB$INDEX_NAME, index_name.c_str());
 		if (new_index_name)
 			*new_index_name = IDX.RDB$INDEX_NAME;
@@ -1854,10 +1849,14 @@ void DYN_define_index(Global*		gbl,
 		SSHORT old_id = id;
 		request = CMP_find_request(tdbb, drq_l_view_idx, DYN_REQUESTS);
 		id = drq_l_view_idx;
-
+		
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			VREL IN RDB$RELATIONS
 			WITH VREL.RDB$RELATION_NAME EQ IDX.RDB$RELATION_NAME
+			
+			if (!DYN_REQUEST(drq_l_view_idx))
+				DYN_REQUEST(drq_l_view_idx) = request;
+				
 			if (!VREL.RDB$VIEW_BLR.NULL)
 				DYN_error_punt(false, 181, NULL, NULL, NULL, NULL, NULL);
 			/* msg 181: "attempt to index a view" */
@@ -1869,7 +1868,7 @@ void DYN_define_index(Global*		gbl,
 		request = old_request;
 		id = old_id;
 
-		/* The previous 2 lines and the next two lines can
+		/* The previous 2 lines and the next two lines can be
 		 * deleted as long as no code is added in the middle.
 		 */
 
@@ -1877,6 +1876,8 @@ void DYN_define_index(Global*		gbl,
 		old_id = id;
 		request = CMP_find_request(tdbb, drq_l_lfield, DYN_REQUESTS);
 		id = drq_l_lfield;
+		
+		ULONG referred_cols = 0;
 
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
@@ -1907,6 +1908,8 @@ void DYN_define_index(Global*		gbl,
 						WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
 						F.RDB$FIELD_NAME EQ str.c_str() AND
 						IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
+						
+					ULONG length = 0;
 					if (!DYN_REQUEST(drq_l_lfield))
 					{
 						DYN_REQUEST(drq_l_lfield) = request;
@@ -2176,7 +2179,7 @@ void DYN_define_index(Global*		gbl,
 			id = drq_l_unq_idx;
 
 			index_name = "";
-			list_index = -1;
+			int list_index = -1;
 			bool found = false;
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			    X IN RDB$RELATION_CONSTRAINTS CROSS

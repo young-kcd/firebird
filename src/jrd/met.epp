@@ -4449,11 +4449,12 @@ static void store_dependencies(thread_db*	tdbb,
 				found = true;
 			END_FOR;
 
+			if (!REQUEST(irq_c_deps_f))
+				REQUEST(irq_c_deps_f) = request;
+
 			if (found) {
 				continue;
 			}
-			if (!REQUEST(irq_c_deps_f))
-				REQUEST(irq_c_deps_f) = request;
 		}
 		else
 		{
@@ -4472,11 +4473,12 @@ static void store_dependencies(thread_db*	tdbb,
 
 			END_FOR;
 
+			if (!REQUEST(irq_c_deps))
+				REQUEST(irq_c_deps) = request;
+
 			if (found) {
 				continue;
 			}
-			if (!REQUEST(irq_c_deps))
-				REQUEST(irq_c_deps) = request;
 		}
 
 		jrd_req* request = CMP_find_request(tdbb, irq_s_deps, IRQ_REQUESTS);
