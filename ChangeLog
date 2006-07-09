@@ -1,3 +1,16 @@
+2006-07-08 06:10  robocop
+
+	* firebird2/src/: jrd/dyn_mod.epp (1.71), msgs/facilities.sql
+	(1.61), msgs/messages.sql (1.75):
+	
+	Fix CORE-850
+
+2006-07-08 05:45  robocop
+
+	* firebird2/src/jrd/dyn_mod.epp (1.70):
+	
+	Fix CORE-847
+
 2006-07-06 20:35  asfernandes
 
 	* firebird2/builds/win32/msvc7/: fbclient.vcproj (1.44),
