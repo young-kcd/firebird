@@ -2858,6 +2858,11 @@ void DYN_modify_sql_field(Global*					gbl,
 			MODIFY RFR USING
 				strcpy(RFR.RDB$FIELD_SOURCE, dom_fld.dyn_fld_source.c_str());
 				RFR.RDB$FIELD_SOURCE.NULL = FALSE;
+				if (domain_is_computed)
+				{
+					RFR.RDB$UPDATE_FLAG.NULL = FALSE;
+					RFR.RDB$UPDATE_FLAG = 1;
+				}
 			END_MODIFY;
 			first_request = request;
 			request = NULL;
@@ -3087,6 +3092,16 @@ void DYN_modify_sql_field(Global*					gbl,
 					END_MODIFY;
 				END_FOR; // FLD in RDB$FIELDS
 				CMP_release(tdbb, request);
+				if (domain_is_computed)
+				{
+					request = first_request;
+					MODIFY RFR USING
+						RFR.RDB$UPDATE_FLAG.NULL = FALSE;
+						RFR.RDB$UPDATE_FLAG = 1;
+					END_MODIFY;
+					first_request = request;
+				}
+				
 				request = NULL;
 			}
 		} // else not a domain
