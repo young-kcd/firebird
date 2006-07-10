@@ -1,3 +1,23 @@
+2006-07-09 07:09  robocop
+
+	* firebird2/src/jrd/dyn_mod.epp (1.74):
+	
+	CORE-847 Reset rdb$update_flag for gpre usage (dsql doesn't care)
+	when changing from computed to physical (stored) field.
+
+2006-07-09 07:08  robocop
+
+	* firebird2/src/jrd/: dyn_def.epp (1.116), dyn_mod.epp (1.73),
+	met.epp (1.193):
+	
+	Misc.
+
+2006-07-09 04:41  asfernandes
+
+	* firebird2/src/jrd/dyn_mod.epp (1.72):
+	
+	Misc
+
 2006-07-08 06:10  robocop
 
 	* firebird2/src/: jrd/dyn_mod.epp (1.71), msgs/facilities.sql
