@@ -436,6 +436,16 @@ const int VAL_INDEX_ORPHAN_CHILD		= 24;
 const int VAL_MAX_ERROR					= 25;
 
 
+#ifndef SUPERSERVER
+struct DSqlCacheItem
+{
+	Lock* lock;
+	bool locked;
+	bool obsolete;
+};
+#endif
+
+
 //
 // the attachment block; one is created for each attachment to a database
 //
@@ -449,7 +459,13 @@ public:
 		att_filename(*dbb->dbb_permanent),
 		att_context_vars(*dbb->dbb_permanent),
 		att_network_protocol(*dbb->dbb_permanent),
-		att_remote_address(*dbb->dbb_permanent) { }
+		att_remote_address(*dbb->dbb_permanent)
+#ifndef SUPERSERVER
+		, att_dsql_cache(*dbb->dbb_permanent)
+#endif
+		{
+		}
+
 /*	Attachment()
 	:	att_database(0),
 		att_next(0),
@@ -487,6 +503,8 @@ public:
 	Lock*		att_id_lock;		// Attachment lock (if any)
 #ifndef SUPERSERVER
 	Lock*		att_temp_pg_lock;	// temporary pagespace ID lock
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::string, DSqlCacheItem*> > > att_dsql_cache;	// DSQL cache locks
 #endif
 	SLONG		att_attachment_id;	// Attachment ID
 	SLONG		att_lock_owner_handle;	// Handle for the lock manager

@@ -273,6 +273,10 @@ ISC_STATUS gds__handle_cleanup(ISC_STATUS*, FB_API_HANDLE*);
 #define INTL_FUNCTION_OCTET_LENGTH		2
 ISC_STATUS API_ROUTINE gds__intl_function(ISC_STATUS*, FB_API_HANDLE*, USHORT, UCHAR, USHORT, const UCHAR*, USHORT*);
 
+#define DSQL_CACHE_USE		1
+#define DSQL_CACHE_RELEASE	2
+ISC_STATUS API_ROUTINE gds__dsql_cache(ISC_STATUS*, FB_API_HANDLE*, USHORT, int, const char*, bool*);
+
 typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);
 ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 												   TransactionCleanupRoutine*, void*);

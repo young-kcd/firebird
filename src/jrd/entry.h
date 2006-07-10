@@ -783,6 +783,7 @@ ENTRYPOINT("gds_cancel_operation",
    /***     IPI_cancel_operation    ***/ y_valve_no_entrypoint,
 			   (ISC_STATUS *, Attachment**, USHORT))
 #endif
+
 ENTRYPOINT("gds_intl_function", jrd8_intl_function,
    /***    "jrd5_intl_function"  ***/ NULL,
    /***     REM_intl_function    ***/ y_valve_no_entrypoint,
@@ -794,6 +795,19 @@ ENTRYPOINT("gds_intl_function", jrd8_intl_function,
    /***    "_jrd8_intl_function" ***/ NULL,
    /***     IPI_intl_function    ***/ y_valve_no_entrypoint,
 			   (ISC_STATUS*, Attachment**, USHORT, UCHAR, USHORT, const UCHAR*, USHORT*))
+
+ENTRYPOINT("gds_dsql_cache", jrd8_dsql_cache,
+   /***    "jrd5_dsql_cache"  ***/ NULL,
+   /***     REM_dsql_cache    ***/ y_valve_no_entrypoint,
+   /***    "REM_dsql_cache"   ***/ NULL,
+   /***     CSI_dsql_cache    ***/ y_valve_no_entrypoint,
+   /***     RDB_dsql_cache    ***/ y_valve_no_entrypoint,
+   /***     PSI_dsql_cache    ***/ y_valve_no_entrypoint,
+   /***     PSI5_dsql_cache   ***/ y_valve_no_entrypoint,
+   /***    "_jrd8_dsql_cache" ***/ NULL,
+   /***     IPI_dsql_cache    ***/ y_valve_no_entrypoint,
+			   (ISC_STATUS*, Attachment**, USHORT, int, const char*, bool*))
+
 #undef ENTRYPOINT
 #else // 0/1
 
@@ -1462,6 +1476,7 @@ ENTRYPOINT( "gds_cancel_operation",
    /***    "_jrd8_cancel_operation" ***/  NULL,
    /***     IPI_cancel_operation    ***/  no_entrypoint)
 #endif
+
 ENTRYPOINT( "gds_intl_function",
             jrd8_intl_function,
    /***    "jrd5_intl_function"  ***/  NULL,
@@ -1473,6 +1488,18 @@ ENTRYPOINT( "gds_intl_function",
    /***     PSI5_intl_function   ***/  no_entrypoint,
    /***    "_jrd8_intl_function" ***/  NULL,
    /***     IPI_intl_function    ***/  no_entrypoint)
+
+ENTRYPOINT( "gds_dsql_cache",
+            jrd8_dsql_cache,
+   /***    "jrd5_dsql_cache"  ***/  NULL,
+   /***     REM_dsql_cache    ***/  no_entrypoint,
+   /***    "REM_dsql_cache"   ***/  NULL,
+   /***     CSI_dsql_cache    ***/  no_entrypoint,
+   /***     RDB_dsql_cache    ***/  no_entrypoint,
+   /***     PSI_dsql_cache    ***/  no_entrypoint,
+   /***     PSI5_dsql_cache   ***/  no_entrypoint,
+   /***    "_jrd8_dsql_cache" ***/  NULL,
+   /***     IPI_dsql_cache    ***/  no_entrypoint)
 
 #undef ENTRYPOINT
 #endif // 0/1

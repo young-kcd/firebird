@@ -341,12 +341,6 @@ public:
 	{ return Item->intlsym_charset_id; }
 };
 
-// values used in intlsym_type
-enum dsql_intlsym_type_vals {
-	DSQL_INTLSYM_collation	= 1,
-	DSQL_INTLSYM_charset	= 2
-};
-
 // values used in intlsym_flags
 
 

@@ -38,7 +38,8 @@ enum sym_type {
 	SYM_stream,
 	SYM_udf,
 	SYM_procedure,
-	SYM_intlsym,
+	SYM_intlsym_charset,
+	SYM_intlsym_collation,
 	SYM_eof
 };
 

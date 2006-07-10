@@ -339,6 +339,9 @@ public:
 	void get(const UCHAR*, USHORT);
 };
 
+#ifndef SUPERSERVER
+static int blocking_ast_dsql_cache(void*);
+#endif
 static blb*		check_blob(thread_db*, ISC_STATUS*, blb**);
 static ISC_STATUS	check_database(thread_db*, Attachment*, ISC_STATUS*);
 static void		cleanup(void*);
@@ -457,6 +460,7 @@ bool invalid_client_SQL_dialect = false;
 #define GDS_DETACH				jrd8_detach_database
 #define GDS_DROP_DATABASE		jrd8_drop_database
 #define GDS_INTL_FUNCTION		jrd8_intl_function
+#define GDS_DSQL_CACHE			jrd8_dsql_cache
 #define GDS_GET_SEGMENT			jrd8_get_segment
 #define GDS_GET_SLICE			jrd8_get_slice
 #define GDS_OPEN_BLOB2			jrd8_open_blob2
@@ -2558,6 +2562,91 @@ ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
 }
 
 
+ISC_STATUS GDS_DSQL_CACHE(ISC_STATUS* user_status, Attachment** handle,
+						  USHORT operation, int type, const char* name, bool* obsolete)
+{
+/**************************************
+ *
+ *	g d s _ d s q l _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Manage DSQL cache locks.
+ *  (candidate for removal when engine functions can be called by DSQL)
+ *
+ **************************************/
+	api_entry_point_init(user_status);
+
+	thread_db thd_context;
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
+
+	if (check_database(tdbb, *handle, user_status))
+		return user_status[1];
+
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
+#ifdef SUPERSERVER
+		if (obsolete)
+			*obsolete = false;
+#else
+		Database* dbb = tdbb->tdbb_database;
+
+		Firebird::string key((char*)&type, sizeof(type));
+		key.append(name);
+
+		DSqlCacheItem* item;
+		if (!tdbb->tdbb_attachment->att_dsql_cache.get(key, item))
+		{
+			item = FB_NEW(*dbb->dbb_permanent) DSqlCacheItem;
+			item->obsolete = false;
+			item->locked = false;
+			item->lock = FB_NEW_RPT(*dbb->dbb_permanent, key.length()) Lock();
+
+			item->lock->lck_type = LCK_dsql_cache;
+			item->lock->lck_owner_handle = LCK_get_owner_handle(tdbb, item->lock->lck_type);
+			item->lock->lck_parent = dbb->dbb_lock;
+			item->lock->lck_dbb = dbb;
+			item->lock->lck_object = (blk*)item;
+			item->lock->lck_ast = blocking_ast_dsql_cache;
+			item->lock->lck_length = key.length();
+			memcpy(item->lock->lck_key.lck_string, key.c_str(), key.length());
+
+			tdbb->tdbb_attachment->att_dsql_cache.put(key, item);
+		}
+
+		if (obsolete)
+			*obsolete = item->obsolete;
+
+		if (operation == DSQL_CACHE_USE && !item->locked)
+		{
+			// lock to be notified by others when we should mark as obsolete
+			LCK_lock(tdbb, item->lock, LCK_SR, LCK_WAIT);
+			item->locked = true;
+		}
+		else if (operation == DSQL_CACHE_RELEASE)
+		{
+			// notify others through AST to mark as obsolete
+			LCK_lock(tdbb, item->lock, LCK_EX, LCK_WAIT);
+
+			// release lock
+			LCK_release(tdbb, item->lock);
+			item->locked = false;
+		}
+
+		item->obsolete = false;
+#endif	// SUPERSERVER
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		return error(user_status, ex);
+	}
+
+	return return_success(tdbb);
+}
+
+
 ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 							blb** blob_handle,
 							USHORT * length,
@@ -4537,6 +4626,47 @@ void jrd_vtof(const char* string, char* field, SSHORT length)
 		memset(field, ' ', length);
 	}
 }
+
+#ifndef SUPERSERVER
+static int blocking_ast_dsql_cache(void* ast_object)
+{
+/**************************************
+ *
+ *	b l o c k i n g _ a s t _ d s q l _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Someone is trying to drop a item from the DSQL cache.
+ *	Mark the symbol as obsolete and release the lock.
+ *
+ **************************************/
+	DSqlCacheItem* item = static_cast<DSqlCacheItem*>(ast_object);
+	thread_db thd_context, *tdbb;
+
+	// Since this routine will be called asynchronously, we must establish
+	// a thread context.
+
+	JRD_set_thread_data(tdbb, thd_context);
+
+	tdbb->tdbb_database = item->lock->lck_dbb;
+	tdbb->tdbb_attachment = item->lock->lck_attachment;
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->tdbb_request = NULL;
+	tdbb->tdbb_transaction = NULL;
+	Jrd::ContextPoolHolder context(tdbb, 0);
+
+	item->obsolete = true;
+	item->locked = false;
+	LCK_release(tdbb, item->lock);
+
+	// Restore the prior thread context
+
+	JRD_restore_thread_data();
+	return 0;
+}
+#endif	// SUPERSERVER
+
 
 static blb* check_blob(thread_db* tdbb, ISC_STATUS* user_status, blb** blob_handle)
 {

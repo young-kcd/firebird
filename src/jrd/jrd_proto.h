@@ -76,6 +76,8 @@ ISC_STATUS jrd8_detach_database(ISC_STATUS *, Jrd::Attachment**);
 ISC_STATUS jrd8_drop_database(ISC_STATUS *, Jrd::Attachment**);
 ISC_STATUS jrd8_intl_function(ISC_STATUS *, Jrd::Attachment**,
 							  USHORT, UCHAR, USHORT, const UCHAR*, USHORT*);
+ISC_STATUS jrd8_dsql_cache(ISC_STATUS *, Jrd::Attachment**,
+						   USHORT, int, const char*, bool*);
 ISC_STATUS jrd8_get_segment(ISC_STATUS *, Jrd::blb**, USHORT *,
 										  USHORT, UCHAR *);
 ISC_STATUS jrd8_get_slice(ISC_STATUS*, Jrd::Attachment**,

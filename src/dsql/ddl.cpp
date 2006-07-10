@@ -87,6 +87,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/why_proto.h"
 
 #ifdef DSQL_DEBUG
 #include "../gpre/prett_proto.h"
@@ -286,7 +287,7 @@ void DDL_execute(dsql_req* request)
 
 	THREAD_EXIT();
 
-	const ISC_STATUS s =
+	ISC_STATUS s =
 		isc_ddl(tdsql->tsql_status, &request->req_dbb->dbb_database_handle,
 				&request->req_trans, length,
 				(const char*)(request->req_blr_data.begin()));
@@ -296,8 +297,12 @@ void DDL_execute(dsql_req* request)
 	// for delete & modify, get rid of the cached relation metadata
 
 	const dsql_str* string = NULL;
+	SYM_TYPE sym_type;
 	const dsql_nod* relation_node;
-	switch (request->req_ddl_node->nod_type)
+
+	const NOD_TYPE type = request->req_ddl_node->nod_type;
+
+	switch (type)
 	{
 		case nod_mod_relation:
 		case nod_redef_relation:
@@ -313,34 +318,47 @@ void DDL_execute(dsql_req* request)
 			break;
 	}
 	if (string) {
+		sym_type = SYM_relation;
 		METD_drop_relation(request, string);
 	}
 
 	// for delete & modify, get rid of the cached procedure metadata
 
-	const NOD_TYPE temp_type = request->req_ddl_node->nod_type;
-	if ((temp_type == nod_mod_procedure) ||
-	    (temp_type == nod_del_procedure) ||
-	    (temp_type == nod_replace_procedure) ||
-	    (temp_type == nod_redef_procedure))
+	if ((type == nod_mod_procedure) ||
+	    (type == nod_del_procedure) ||
+	    (type == nod_replace_procedure) ||
+	    (type == nod_redef_procedure))
 	{
 		string = (dsql_str*) request->req_ddl_node->nod_arg[e_prc_name];
+		sym_type = SYM_procedure;
 		METD_drop_procedure(request, string);
 	}
 
-// Signal UDF for obsolescence
+	// Signal UDF for obsolescence
 
-	if ((temp_type == nod_del_udf) ||
-		(temp_type == nod_mod_udf))
+	if ((type == nod_del_udf) ||
+		(type == nod_mod_udf))
 	{
 		string = (dsql_str*) request->req_ddl_node->nod_arg[e_udf_name];
+		sym_type = SYM_udf;
 		METD_drop_function (request, string);
 	}
 
-
-	if (s) {
+	if (s)
 		Firebird::status_exception::raise(tdsql->tsql_status);
+
+#ifndef SUPERSERVER
+	if (string)
+	{
+		THREAD_EXIT();
+		s = gds__dsql_cache(tdsql->tsql_status,
+			&request->req_dbb->dbb_database_handle, DSQL_CACHE_RELEASE, sym_type, string->str_data, NULL);
+		THREAD_ENTER();
+
+		if (s)
+			Firebird::status_exception::raise(tdsql->tsql_status);
 	}
+#endif	// SUPERSERVER
 }
 
 

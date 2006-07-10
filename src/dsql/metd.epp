@@ -48,6 +48,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../jrd/why_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/init.h"
 
@@ -96,6 +97,9 @@ static void convert_dtype(dsql_fld*, SSHORT);
 static void	free_function (dsql_udf*);
 static void free_procedure(dsql_prc*);
 static void free_relation(dsql_rel*);
+static void insert_symbol(dsql_dbb*, dsql_sym*);
+static dsql_sym* lookup_symbol(dsql_dbb*, USHORT, const char*, SYM_TYPE, USHORT = 0);
+static dsql_sym* lookup_symbol(dsql_dbb*, const dsql_str*, SYM_TYPE, USHORT = 0);
 
 namespace {
 #ifdef  SUPERSERVER
@@ -153,27 +157,14 @@ void METD_drop_function(dsql_req* request, const dsql_str* name)
  *	accessing it.
  *
  **************************************/
-    dsql_udf* userFunc;
-    dsql_sym* symbol;
-
     RecMutexHolder holder;
 
     // If the symbol wasn't defined, we've got nothing to do 
     
-    symbol = HSHD_lookup(request->req_dbb,
-						 reinterpret_cast<const TEXT*>(name->str_data),
-                         name->str_length, SYM_udf, 0);
-    for (; symbol; symbol = symbol->sym_homonym) {
-        if ((symbol->sym_type == SYM_udf) &&
-            ((userFunc = (dsql_udf*) symbol->sym_object) &&
-             (!(userFunc->udf_flags & UDF_dropped))))
-		{
-            break;
-        }
-    }
+    dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_udf);
     
     if (symbol) {
-        userFunc = (dsql_udf*) symbol->sym_object;
+        dsql_udf* userFunc = (dsql_udf*) symbol->sym_object;
         userFunc->udf_flags |= UDF_dropped;
     }
 
@@ -204,27 +195,18 @@ void METD_drop_procedure(dsql_req* request, const dsql_str* name)
  *	accessing it.
  *
  **************************************/
-	dsql_prc* procedure;
-	dsql_sym* symbol;
-
     RecMutexHolder holder;
 
-// If the symbol wasn't defined, we've got nothing to do 
+	// If the symbol wasn't defined, we've got nothing to do 
 
-	symbol = HSHD_lookup(request->req_dbb, (TEXT*)name->str_data,
-						 name->str_length, SYM_procedure, 0);
-	for (; symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_procedure) &&
-			((procedure = (dsql_prc*) symbol->sym_object) &&
-			 (!(procedure->prc_flags & PRC_dropped))))
-			break;
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_procedure);
 
 	if (symbol) {
-		procedure = (dsql_prc*) symbol->sym_object;
+		dsql_prc* procedure = (dsql_prc*) symbol->sym_object;
 		procedure->prc_flags |= PRC_dropped;
 	}
 
-// mark other potential candidates as maybe dropped 
+	// mark other potential candidates as maybe dropped 
 
 	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
 				  SYM_procedure, PRC_dropped);
@@ -250,27 +232,18 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
  *      accessing it.
  *
  **************************************/
-	dsql_rel* relation;
-	dsql_sym* symbol;
-
     RecMutexHolder holder;
 
-// If the symbol wasn't defined, we've got nothing to do 
+	// If the symbol wasn't defined, we've got nothing to do 
 
-	symbol = HSHD_lookup(request->req_dbb, (TEXT*)name->str_data,
-						 name->str_length, SYM_relation, 0);
-	for (; symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_relation) &&
-			((relation = (dsql_rel*) symbol->sym_object) &&
-			 (!(relation->rel_flags & REL_dropped))))
-			break;
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_relation);
 
 	if (symbol) {
-		relation = (dsql_rel*) symbol->sym_object;
+		dsql_rel* relation = (dsql_rel*) symbol->sym_object;
 		relation->rel_flags |= REL_dropped;
 	}
 
-// mark other potential candidates as maybe dropped 
+	// mark other potential candidates as maybe dropped 
 
 	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
 				  SYM_relation, REL_dropped);
@@ -293,31 +266,20 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-	dsql_dbb* dbb;
-	dsql_intlsym* iname;
-	dsql_sym* symbol;
+    RecMutexHolder holder;
 
-// Start by seeing if symbol is already defined 
+	// Start by seeing if symbol is already defined 
 
-	symbol = HSHD_lookup(request->req_dbb, (TEXT*)name->str_data,
-						 name->str_length, SYM_intlsym, 0);
-	for (; symbol; symbol = symbol->sym_homonym)
-	{
-		if ((symbol->sym_type == SYM_intlsym) &&
-			(((dsql_intlsym*) symbol->sym_object)->intlsym_type == DSQL_INTLSYM_collation) &&
-			(((dsql_intlsym*) symbol->sym_object)->intlsym_charset_id == charset_id))
-		{
-			 return (dsql_intlsym*) symbol->sym_object;
-		}
-	}
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_intlsym_collation, charset_id);
+	if (symbol)
+		return (dsql_intlsym*) symbol->sym_object;
 
-
-// Now see if it is in the database 
+	// Now see if it is in the database 
 
 	ISC_STATUS_ARRAY isc_status = {0};
-	dbb = request->req_dbb;
+	dsql_dbb* dbb = request->req_dbb;
 	isc_db_handle DB = dbb->dbb_database_handle;
-	iname = NULL;
+	dsql_intlsym* iname = NULL;
 
 	THREAD_EXIT();
 
@@ -331,7 +293,6 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 
 	iname = FB_NEW_RPT(*dbb->dbb_pool, name->str_length) dsql_intlsym;
 	strcpy(iname->intlsym_name, (TEXT *) name->str_data);
-	iname->intlsym_type = DSQL_INTLSYM_collation;
 	iname->intlsym_flags = 0;
 	iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
 	iname->intlsym_collate_id = X.RDB$COLLATION_ID;
@@ -353,15 +314,15 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 	if (!iname)
 		return NULL;
 
-// Store in the symbol table 
+	// Store in the symbol table 
 
 	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 	symbol->sym_object = (BLK) iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = name->str_length;
-	symbol->sym_type = SYM_intlsym;
+	symbol->sym_type = SYM_intlsym_collation;
 	symbol->sym_dbb = dbb;
-	HSHD_insert(symbol);
+	insert_symbol(request->req_dbb, symbol);
 
 	return iname;
 }
@@ -407,7 +368,7 @@ USHORT METD_get_col_default(dsql_req* request,
 	dbb = request->req_dbb;
 	isc_db_handle DB = dbb->dbb_database_handle;
 
-// V4.x multi threading requirements 
+	// V4.x multi threading requirements 
 	THREAD_EXIT();
 
 	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_col_default] TRANSACTION_HANDLE request->req_trans)
@@ -508,25 +469,20 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
  *	If it doesn't exist, return NULL.
  *
  **************************************/
-	dsql_dbb* dbb;
-	dsql_intlsym* iname;
-	dsql_sym* symbol;
+    RecMutexHolder holder;
 
-// Start by seeing if symbol is already defined 
+	// Start by seeing if symbol is already defined 
 
-	symbol = HSHD_lookup(request->req_dbb, name, length, SYM_intlsym, 0);
-	for (; symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_intlsym) &&
-			(((dsql_intlsym*) (symbol->sym_object))->intlsym_type ==
-			 DSQL_INTLSYM_charset)) return (dsql_intlsym*) symbol->sym_object;
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, length, name, SYM_intlsym_charset);
+	if (symbol)
+		return (dsql_intlsym*) symbol->sym_object;
 
-
-// Now see if it is in the database 
+	// Now see if it is in the database 
 
 	ISC_STATUS_ARRAY isc_status = {0};
-	dbb = request->req_dbb;
+	dsql_dbb* dbb = request->req_dbb;
 	isc_db_handle DB = dbb->dbb_database_handle;
-	iname = NULL;
+	dsql_intlsym* iname = NULL;
 
 	THREAD_EXIT();
 
@@ -543,7 +499,6 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 
         iname = FB_NEW_RPT(*dbb->dbb_pool, length) dsql_intlsym;
         strcpy(iname->intlsym_name, name);
-        iname->intlsym_type = DSQL_INTLSYM_charset;
         iname->intlsym_flags = 0;
         iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
         iname->intlsym_collate_id = X.RDB$COLLATION_ID;
@@ -566,15 +521,15 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 	if (!iname)
 		return NULL;
 
-// Store in the symbol table 
+	// Store in the symbol table 
 
 	symbol = iname->intlsym_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 	symbol->sym_object = (BLK) iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = length;
-	symbol->sym_type = SYM_intlsym;
+	symbol->sym_type = SYM_intlsym_charset;
 	symbol->sym_dbb = dbb;
-	HSHD_insert(symbol);
+	insert_symbol(request->req_dbb, symbol);
 
 	dbb->dbb_charsets_by_id.add(iname); 
 
@@ -697,7 +652,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 	if (dbb->dbb_dfl_charset)
 		return dbb->dbb_dfl_charset;
 
-// Now see if it is in the database 
+	// Now see if it is in the database 
 
 	isc_db_handle DB = dbb->dbb_database_handle;
 
@@ -828,7 +783,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 	isc_db_handle DB = dbb->dbb_database_handle;
 	USHORT result = 0;
 
-// V4.x multi threading requirements 
+	// V4.x multi threading requirements 
 	THREAD_EXIT();
 
 	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_domain_2] TRANSACTION_HANDLE request->req_trans)
@@ -968,38 +923,23 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
  *	return NULL.
  *
  **************************************/
-	dsql_udf* userFunc;
-	dsql_udf* temp;
-    dsql_nod* udf_param_node;
+	dsql_nod* udf_param_node;
 	dsql_nod** ptr;
 
     RecMutexHolder holder;
 
-// Start by seeing if symbol is already defined 
+	// Start by seeing if symbol is already defined 
 
-	dsql_sym* symbol = HSHD_lookup(request->req_dbb,
-						reinterpret_cast<const TEXT*>(name->str_data),
-						name->str_length, SYM_udf, 0);
-    if (symbol && (symbol->sym_type == SYM_udf) &&
-	    ((userFunc = (dsql_udf*) symbol->sym_object) &&
-         (!(userFunc->udf_flags & UDF_dropped))))
-	{
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_udf);
+	if (symbol)
         return (dsql_udf*) symbol->sym_object;
-	}
 
-
-/* This was the old code that didn't do the loop above to check for the flag.
-	if (symbol) {
-		return (dsql_udf*) symbol->sym_object;
-    }
-*/
-
-// Now see if it is in the database 
+	// Now see if it is in the database 
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
 	isc_db_handle DB = dbb->dbb_database_handle;
-	userFunc = NULL;
+	dsql_udf* userFunc = NULL;
     DsqlNodStack stack;
     USHORT return_arg;
 
@@ -1036,12 +976,12 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 		return NULL;
     }
     
-/* Note: The following two requests differ in the fields which are
- *	 new since ODS7 (DBB_v3 flag).  One of the two requests
- *	 here will be cached in dbb_requests[ird_func_return],
- *	 the one that is appropriate for the database we are
- *	 working against.
- */
+	// Note: The following two requests differ in the fields which are
+	// new since ODS7 (DBB_v3 flag).  One of the two requests
+	// here will be cached in dbb_requests[ird_func_return],
+	// the one that is appropriate for the database we are
+	// working against.
+
 	THREAD_EXIT();
 
 	FOR(REQUEST_HANDLE dbb->dbb_requests[irq_func_return] TRANSACTION_HANDLE request->req_trans)
@@ -1121,10 +1061,9 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 	THREAD_ENTER();
     
-/* Adjust the return type & length of the UDF to account for 
- * cstring & varying.  While a UDF can return CSTRING, we convert it
- * to VARCHAR for manipulation as CSTRING is not a SQL type.
- */
+	// Adjust the return type & length of the UDF to account for 
+	// cstring & varying.  While a UDF can return CSTRING, we convert it
+	// to VARCHAR for manipulation as CSTRING is not a SQL type.
 
 	if (userFunc->udf_dtype == dtype_cstring) {
 		userFunc->udf_dtype = dtype_varying;
@@ -1152,35 +1091,24 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 		if ((*ptr)->nod_desc.dsc_dtype == dtype_cstring)
 			(*ptr)->nod_desc.dsc_dtype = dtype_text;
     }
-    
-    
+
     /* Since we could give up control due to the THREAD_EXIT and THEAD_ENTER
      * calls, another thread may have added the same udf in the mean time
      */
-    
-    symbol = HSHD_lookup(request->req_dbb,
-						 reinterpret_cast<const TEXT*>(name->str_data),
-                         name->str_length, SYM_udf, 0);
 
-    for (; symbol; symbol = symbol->sym_homonym) {
-        if ((symbol->sym_type == SYM_udf) &&
-            ((temp = (dsql_udf*) symbol->sym_object) &&
-             (!(temp->udf_flags & UDF_dropped))))
-		{
-            // Get rid of all the stuff we just read in. Use existing one 
-            
-            free_function (userFunc);
-            return (dsql_udf*) symbol->sym_object;
-        }
+	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_udf)))
+	{
+		// Get rid of all the stuff we just read in. Use existing one 
+		free_function (userFunc);
+		return (dsql_udf*) symbol->sym_object;
     }
-    
+
     // Add udf in the front of the list. 
     userFunc->udf_next = dbb->dbb_functions;
     dbb->dbb_functions = userFunc;
-    
 
-// Store in the symbol table 
-// The UDF_new_udf flag is not used, so nothing extra to check. 
+	// Store in the symbol table 
+	// The UDF_new_udf flag is not used, so nothing extra to check. 
 
 	symbol = userFunc->udf_symbol = FB_NEW_RPT(*dbb->dbb_pool, 0) dsql_sym;
 	symbol->sym_object = (BLK) userFunc;
@@ -1188,7 +1116,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	symbol->sym_length = name->str_length;
 	symbol->sym_type = SYM_udf;
 	symbol->sym_dbb = dbb;
-	HSHD_insert(symbol);
+	insert_symbol(request->req_dbb, symbol);
 
 	return userFunc;
 }
@@ -1269,37 +1197,30 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 	dsql_dbb* dbb;
 	dsql_fld* parameter;
 	dsql_fld** ptr;
-	dsql_prc* procedure;
 	dsql_prc* temp;
 	SSHORT type, count, defaults;
 
     RecMutexHolder holder;
 
-// Start by seeing if symbol is already defined 
+	// Start by seeing if symbol is already defined 
 
-	dsql_sym* symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
-						 name->str_length, SYM_procedure, 0);
-	for (; symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_procedure) &&
-			((procedure = (dsql_prc*) symbol->sym_object) &&
-			 (!(procedure->prc_flags & PRC_dropped))))
-		{
-			return (dsql_prc*) symbol->sym_object;
-		}
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_procedure);
+	if (symbol)
+		return (dsql_prc*) symbol->sym_object;
 
-// see if the procedure is the one currently being defined in this request 
+	// see if the procedure is the one currently being defined in this request 
 
 	if (((temp = request->req_procedure) != NULL) &&
 		!strcmp((char*) temp->prc_name, (char*) name->str_data)) {
 		return temp;
 	}
 
-// now see if it is in the database 
+	// now see if it is in the database 
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dbb = request->req_dbb;
 	isc_db_handle DB = dbb->dbb_database_handle;
-	procedure = NULL;
+	dsql_prc* procedure = NULL;
 
 	THREAD_EXIT();
 
@@ -1334,7 +1255,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		return NULL;
 	}
 
-// Lookup parameter stuff 
+	// Lookup parameter stuff 
 
 	for (type = 0; type < 2; type++) {
 		if (type)
@@ -1410,25 +1331,18 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		}
 	}
 
-/* Since we could give up control due to the THREAD_EXIT and THEAD_ENTER
- * calls, another thread may have added the same procedure in the mean time
- */
+	// Since we could give up control due to the THREAD_EXIT and THEAD_ENTER
+	// calls, another thread may have added the same procedure in the mean time
 
-	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
-						 name->str_length, SYM_procedure, 0);
-	for (; symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_procedure) &&
-			((temp = (dsql_prc*) symbol->sym_object) &&
-			 (!(temp->prc_flags & PRC_dropped)))) {
-			// Get rid of all the stuff we just read in. Use existing one 
+	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_procedure)))
+	{
+		// Get rid of all the stuff we just read in. Use existing one 
+		free_procedure(procedure);
+		return (dsql_prc*) symbol->sym_object;
+	}
 
-			free_procedure(procedure);
-			return (dsql_prc*) symbol->sym_object;
-		}
-
-
-// store in the symbol table unless the procedure is not yet committed 
-// CVC: This is strange, because PRC_new_procedure is never set. 
+	// store in the symbol table unless the procedure is not yet committed 
+	// CVC: This is strange, because PRC_new_procedure is never set. 
 
 	if (!(procedure->prc_flags & PRC_new_procedure)) {
 		// add procedure in the front of the list 
@@ -1442,7 +1356,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		symbol->sym_length = name->str_length;
 		symbol->sym_type = SYM_procedure;
 		symbol->sym_dbb = dbb;
-		HSHD_insert(symbol);
+		insert_symbol(request->req_dbb, symbol);
 	}
 
 	return procedure;
@@ -1465,27 +1379,20 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	dsql_dbb* dbb;
 	dsql_fld* field;
 	dsql_fld** ptr;
-	dsql_rel* relation;
 	dsql_rel* temp;
-	dsql_sym* symbol;
 	tsql* tdsql;
 
 	tdsql = DSQL_get_thread_data();
 
     RecMutexHolder holder;
 
-// Start by seeing if symbol is already defined 
+	// Start by seeing if symbol is already defined 
 
-	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
-						 name->str_length, SYM_relation, 0);
-	for (; symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_relation) &&
-			((relation = (dsql_rel*) symbol->sym_object) &&
-			 (!(relation->rel_flags & REL_dropped)))) {
-			return (dsql_rel*) symbol->sym_object;
-		}
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_relation);
+	if (symbol)
+		return (dsql_rel*) symbol->sym_object;
 
-// See if the relation is the one currently being defined in this request 
+	// See if the relation is the one currently being defined in this request 
 
 	if (((temp = request->req_relation) != NULL) &&
 		!strcmp((char*) temp->rel_name, (char*) name->str_data)) {
@@ -1496,9 +1403,9 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	dbb = request->req_dbb;
 	isc_db_handle DB = dbb->dbb_database_handle;
 
-// If the relation id or any of the field ids have not yet been assigned,
-// and this is a type of request which does not use ids, prepare a
-// temporary relation block to provide information without caching it
+	// If the relation id or any of the field ids have not yet been assigned,
+	// and this is a type of request which does not use ids, prepare a
+	// temporary relation block to provide information without caching it
 
 	bool permanent = true;
 
@@ -1524,12 +1431,12 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	THREAD_ENTER();
 
-// Now see if it is in the database 
+	// Now see if it is in the database 
 
 	DsqlMemoryPool& pool =
 		permanent ? *dbb->dbb_pool : *tdsql->getDefaultPool();
 
-	relation = NULL;
+	dsql_rel* relation = NULL;
 
 	THREAD_EXIT();
 
@@ -1583,7 +1490,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		return NULL;
 	}
 
-// Lookup field stuff 
+	// Lookup field stuff 
 
 	ptr = &relation->rel_fields;
 
@@ -1671,20 +1578,16 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	THREAD_ENTER();
 
-// Since we could give up control due to the THREAD_EXIT and THREAD_ENTER,
-// another thread may have added the same table in the mean time
+	// Since we could give up control due to the THREAD_EXIT and THREAD_ENTER,
+	// another thread may have added the same table in the mean time
 
-	symbol = HSHD_lookup(request->req_dbb, (TEXT*) name->str_data,
-						 name->str_length, SYM_relation, 0);
-	for (; symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_relation) &&
-			((temp = (dsql_rel*) symbol->sym_object) &&
-			 (!(temp->rel_flags & REL_dropped)))) {
-			free_relation(relation);
-			return (dsql_rel*) symbol->sym_object;
-		}
+	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_relation)))
+	{
+		free_relation(relation);
+		return (dsql_rel*) symbol->sym_object;
+	}
 
-// Add relation to front of list 
+	// Add relation to front of list 
 
 	if (permanent) {
 		relation->rel_next = dbb->dbb_relations;
@@ -1698,7 +1601,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		symbol->sym_length = name->str_length;
 		symbol->sym_type = SYM_relation;
 		symbol->sym_dbb = dbb;
-		HSHD_insert(symbol);
+		insert_symbol(request->req_dbb, symbol);
 	}
 	else {
 		relation->rel_flags |= REL_new_relation;
@@ -2039,4 +1942,149 @@ static void free_relation(dsql_rel* relation)
 /* release the relation & symbol blocks */
 
 	delete relation;
+}
+
+
+static void insert_symbol(dsql_dbb* dbb, dsql_sym* symbol)
+{
+/**************************************
+ *
+ *	i n s e r t _ s y m b o l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Insert a symbol in the hash table and
+ *	inform the engine that we're using it.
+ *
+ **************************************/
+	HSHD_insert(symbol);
+
+#ifndef SUPERSERVER
+	ISC_STATUS_ARRAY status;
+
+	THREAD_EXIT();
+	const ISC_STATUS s = gds__dsql_cache(status, &dbb->dbb_database_handle,
+		DSQL_CACHE_USE, symbol->sym_type, symbol->sym_string, NULL);
+	THREAD_ENTER();
+
+	if (s)
+		ERRD_punt(status);
+#endif	// SUPERSERVER
+}
+
+
+static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name, SYM_TYPE type, USHORT charset_id)
+{
+/**************************************
+ *
+ *	l o o k u p _ s y m b o l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Lookup a symbol in the hash table and
+ *	inform the engine that we're using it.
+ *  The engine may inform that the symbol
+ *	is obsolete, in this case mark it as
+ *	dropped and return NULL.
+ *
+ **************************************/
+	dsql_intlsym* intlSym;
+	dsql_prc* procedure;
+	dsql_rel* relation;
+	dsql_udf* userFunc;
+
+    dsql_sym* symbol = HSHD_lookup(dbb, name, length, type, 0);
+
+    for (; symbol; symbol = symbol->sym_homonym)
+    {
+        if (symbol->sym_type == type)
+		{
+			if (type == SYM_intlsym_charset)
+				break;
+			else if (type == SYM_intlsym_collation &&
+					 (intlSym = (dsql_intlsym*) symbol->sym_object) &&
+					 (intlSym->intlsym_charset_id == charset_id))
+			{
+				break;
+			}
+			else if (type == SYM_procedure &&
+					 (procedure = (dsql_prc*) symbol->sym_object) &&
+					 (!(procedure->prc_flags & PRC_dropped)))
+			{
+				break;
+			}
+			else if (type == SYM_relation &&
+					 (relation = (dsql_rel*) symbol->sym_object) &&
+					 (!(relation->rel_flags & REL_dropped)))
+			{
+				break;
+			}
+			else if (type == SYM_udf &&
+					 (userFunc = (dsql_udf*) symbol->sym_object) &&
+					 (!(userFunc->udf_flags & UDF_dropped)))
+			{
+				break;
+			}
+		}
+    }
+
+#ifndef SUPERSERVER
+	if (symbol)
+	{
+		ISC_STATUS_ARRAY status;
+		bool obsolete;
+
+		THREAD_EXIT();
+		const ISC_STATUS s = gds__dsql_cache(status, &dbb->dbb_database_handle,
+			DSQL_CACHE_USE, type, name, &obsolete);
+		THREAD_ENTER();
+
+		if (s)
+			ERRD_punt(status);
+
+		if (obsolete)
+		{
+			switch (type)
+			{
+				case SYM_procedure:
+					procedure->prc_flags |= PRC_dropped;
+					break;
+
+				case SYM_relation:
+					relation->rel_flags |= REL_dropped;
+					break;
+
+				case SYM_udf:
+					userFunc->udf_flags |= UDF_dropped;
+					break;
+
+				default:
+					return symbol;
+			}
+
+			symbol = NULL;
+		}
+	}
+#endif	// SUPERSERVER
+
+	return symbol;    
+}
+
+
+static dsql_sym* lookup_symbol(dsql_dbb* dbb, const dsql_str* name, SYM_TYPE type, USHORT charset_id)
+{
+/**************************************
+ *
+ *	l o o k u p _ s y m b o l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Wrapper for the above function.
+ *
+ **************************************/
+	return lookup_symbol(dbb, name->str_length,
+		reinterpret_cast<const TEXT*>(name->str_data), type, charset_id);
 }
