@@ -1,3 +1,13 @@
+2006-07-10 05:12  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.175), dsql/dsql.h (1.91),
+	dsql/metd.epp (1.87), dsql/sym.h (1.11), jrd/entry.h (1.21),
+	jrd/jrd.cpp (1.257), jrd/jrd.h (1.165), jrd/jrd_proto.h (1.42),
+	jrd/lck.cpp (1.57), jrd/lck.h (1.24), jrd/why.cpp (1.111),
+	jrd/why_proto.h (1.26):
+	
+	Synchronization of DSQL metadata cache objects in classic-server
+
 2006-07-09 07:09  robocop
 
 	* firebird2/src/jrd/dyn_mod.epp (1.74):
