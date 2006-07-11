@@ -3731,8 +3731,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		FOR(REQUEST_HANDLE request_fmt1)
 			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ work->dfw_name.c_str()
-            if (!REQUEST(irq_format1)) {
-                REQUEST(irq_format1) = request_fmt1;
+			if (!REQUEST(irq_format1)) {
+				REQUEST(irq_format1) = request_fmt1;
 			}
 			relation =
 				 MET_lookup_relation_id(tdbb, REL.RDB$RELATION_ID, false);
@@ -3894,7 +3894,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					}
 
 					/* Make sure the text type specified is implemented */
-				    if (!(validate_text_type(tdbb, tfb)))
+					if (!(validate_text_type(tdbb, tfb)))
 					{
 						EXE_unwind(tdbb, request_fmt1);
 						EXE_unwind(tdbb, request_fmtx);
@@ -3976,6 +3976,18 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		if (!null_view)
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_view);
 
+		{ // begin scope
+			const DeferredWork* arg = work->dfw_args;
+			while (arg && (arg->dfw_type != dfw_force_computed))
+				arg = arg->dfw_next;
+
+			if (arg && arg->dfw_type == dfw_force_computed)
+			{
+				computed_field = true;
+				MET_delete_dependencies(tdbb, arg->dfw_name, obj_computed);
+			}
+		} // end scope
+
 		if (!null_view || computed_field)
 			relation->rel_flags |= REL_get_dependencies;
 
@@ -3984,8 +3996,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			jrd_req* temp = NULL;
 			FOR(REQUEST_HANDLE temp) FMTS IN RDB$FORMATS WITH
 				FMTS.RDB$RELATION_ID EQ relation->rel_id AND
-                FMTS.RDB$FORMAT EQ 0
-                ERASE FMTS;
+				FMTS.RDB$FORMAT EQ 0
+				ERASE FMTS;
 			END_FOR;
 			CMP_release(tdbb, temp);
 			make_format(tdbb, relation, 0, external);

@@ -43,6 +43,7 @@ namespace Jrd {
 	struct index_desc;
 	class jrd_fld;
 	class Shadow;
+	class DeferredWork;
 }
 
 struct SubtypeInfo
@@ -57,7 +58,7 @@ struct SubtypeInfo
 
 void		MET_activate_shadow(Jrd::thread_db*);
 ULONG		MET_align(Jrd::Database* dbb, const dsc*, ULONG);
-void		MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, const dsc*);
+Jrd::DeferredWork*	MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, const dsc*);
 Jrd::Format*	MET_current(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_delete_dependencies(Jrd::thread_db*, const Firebird::MetaName&, USHORT);
 void		MET_delete_shadow(Jrd::thread_db*, USHORT);

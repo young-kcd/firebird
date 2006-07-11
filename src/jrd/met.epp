@@ -634,7 +634,7 @@ ULONG MET_align(Database* dbb, const dsc* desc, ULONG value)
 }
 
 
-void MET_change_fields( thread_db* tdbb, jrd_tra* transaction, const dsc* field_source)
+DeferredWork* MET_change_fields( thread_db* tdbb, jrd_tra* transaction, const dsc* field_source)
 {
 /**************************************
  *
@@ -650,14 +650,15 @@ void MET_change_fields( thread_db* tdbb, jrd_tra* transaction, const dsc* field_
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-    dsc relation_name;
+	dsc relation_name;
+	DeferredWork* dw = 0;
 	jrd_req* request = CMP_find_request(tdbb, irq_m_fields, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$RELATION_FIELDS WITH
 			X.RDB$FIELD_SOURCE EQ field_source->dsc_address
 
-        if (!REQUEST(irq_m_fields))
+		if (!REQUEST(irq_m_fields))
 			REQUEST(irq_m_fields) = request;
 
 		relation_name.dsc_dtype = dtype_text;
@@ -665,11 +666,13 @@ void MET_change_fields( thread_db* tdbb, jrd_tra* transaction, const dsc* field_
 		relation_name.dsc_length = sizeof(X.RDB$RELATION_NAME);
 		relation_name.dsc_address = (UCHAR *) X.RDB$RELATION_NAME;
 		SCL_check_relation(&relation_name, SCL_control);
-		DFW_post_work(transaction, dfw_update_format, &relation_name, 0);
+		dw = DFW_post_work(transaction, dfw_update_format, &relation_name, 0);
 	END_FOR;
 
 	if (!REQUEST(irq_m_fields))
 		REQUEST(irq_m_fields) = request;
+		
+	return dw;
 }
 
 

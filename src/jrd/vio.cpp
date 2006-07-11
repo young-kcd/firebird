@@ -2198,11 +2198,23 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 			break;
 
 		case rel_fields:
-			check_control(tdbb);
-			EVL_field(0, org_rpb->rpb_record, f_fld_name, &desc1);
-			MET_change_fields(tdbb, transaction, &desc1);
-			EVL_field(0, new_rpb->rpb_record, f_fld_name, &desc2);
-			MET_change_fields(tdbb, transaction, &desc2);
+			{
+				check_control(tdbb);
+				EVL_field(0, org_rpb->rpb_record, f_fld_name, &desc1);
+				MET_change_fields(tdbb, transaction, &desc1);
+				EVL_field(0, new_rpb->rpb_record, f_fld_name, &desc2);
+				DeferredWork* dw = MET_change_fields(tdbb, transaction, &desc2);
+				// Did we convert computed field into physical, stored field?
+				// If we did, then force the deletion of the dependencies.
+				// Warning: getting the result of MET_change_fields is the last relation
+				// that was affected, but for computed fields, it's an implicit domain
+				// and hence it can be used only by a single field and therefore one relation.
+				dsc desc3, desc4;
+				bool rc1 = EVL_field(0, org_rpb->rpb_record, f_fld_computed, &desc3);
+				bool rc2 = EVL_field(0, new_rpb->rpb_record, f_fld_computed, &desc4);
+				if (rc1 != rc2 || rc1 && MOV_compare(&desc3, &desc4))
+					DFW_post_work_arg(transaction, dw, &desc1, 0)->dfw_type = dfw_force_computed;
+			}
 			break;
 
 		case rel_classes:
