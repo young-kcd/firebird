@@ -177,7 +177,7 @@ enum switch_id {
 struct switch_info {
 	switch_id id;				// switch id
 	const char* text;			// canonical switch name
-	unsigned int abbrlen;		// minimum abbreviation length
+	size_t abbrlen;				// minimum abbreviation length
 	switch_argtype argtype;		// argument type (SWARG_NONE if none)
 	int usage_id;				// message id for usage text
 	//bool allow_dup;				// switch can be used more then once
@@ -5633,10 +5633,10 @@ static processing_state parse_arg(int argc,
 			switch_id swid = SWITCH_UNKNOWN;
 			int swarg_int = 0;
 			const char* swarg_str = NULL;
-			unsigned int swlen = strlen(s + 1);
+			size_t swlen = strlen(s + 1);
 
 			for (int j = 0; j < FB_NELEM(switches); j++) {
-				if (!fb_utils::strnicmp(s + 1, switches[j].text, swlen) && (swlen >= switches[j].abbrlen))
+				if (swlen >= switches[j].abbrlen && !fb_utils::strnicmp(s + 1, switches[j].text, swlen))
 				{
 					swid = switches[j].id;
 					if (switch_used[swid]) // && !switches[j].allow_dup

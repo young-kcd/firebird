@@ -239,7 +239,7 @@ public:
 	{
 		role, table, view, system, index, domain, exception,
 		filter, function, generator, grant, procedure, trigger,
-		check, database, comment, wrong
+		check, database, comment, dependency, wrong
 	};
 	static show_commands getCommand(const char* cmd);
 
@@ -248,51 +248,54 @@ private:
 	{
 		show_commands kw;
 		const char* text;
+		size_t abbrlen;
 	};
 	static const map options[];
 };
 
 const ShowOptions::map ShowOptions::options[] =
 {
-	{role, "ROLE"},
-	{role, "ROLES"},
-	{table, "TABLE"},
-	{table, "TABLES"},
-	{view, "VIEW"},
-	{view, "VIEWS"},
-	{system, "SYSTEM"},
-	{system, "SYS"},
-	{index, "IND"},
-	{index, "INDEX"},
-	{index, "INDICES"},
-	{domain, "DOMAIN"},
-	{domain, "DOMAINS"},
-	{exception, "EXCEPTION"},
-	{exception, "EXCEPTIONS"},
-	{filter, "FILTER"},
-	{filter, "FILTERS"},
-	{function, "FUNCTION"},
-	{function, "FUNCTIONS"},
-	{generator, "GEN"},
-	{generator, "GENERATOR"},
-	{generator, "GENERATORS"},
-	{generator, "SEQ"},
-	{generator, "SEQUENCE"},
-	{generator, "SEQUENCES"},
-	{grant, "GRANT"},
-	{grant, "GRANTS"},
-	{procedure, "PROC"},
-	{procedure, "PROCEDURE"},
-	{procedure, "PROCEDURES"},
-	{trigger, "TRIG"},
-	{trigger, "TRIGGER"},
-	{trigger, "TRIGGERS"},
-	{check, "CHECK"},
-	{check, "CHECKS"},
-	{database, "DB"},
-	{database, "DATABASE"},
-	{comment, "COMMENT"},
-	{comment, "COMMENTS"}
+	//{role, "ROLE"},
+	{role, "ROLES", 4},
+	//{table, "TABLE"},
+	{table, "TABLES", 5},
+	//{view, "VIEW"},
+	{view, "VIEWS", 4},
+	//{system, "SYS"},
+	{system, "SYSTEM", 3},
+	//{index, "IND"},
+	{index, "INDEXES", 3},
+	{index, "INDICES", 7},
+	//{domain, "DOMAIN"},
+	{domain, "DOMAINS", 6},
+	//{exception, "EXCEPTION"},
+	{exception, "EXCEPTIONS", 5},
+	//{filter, "FILTER"},
+	{filter, "FILTERS", 6},
+	//{function, "FUNCTION"},
+	{function, "FUNCTIONS", 4},
+	//{generator, "GEN"},
+	//{generator, "GENERATOR"},
+	{generator, "GENERATORS", 3},
+	//{generator, "SEQ"},
+	//{generator, "SEQUENCE"},
+	{generator, "SEQUENCES", 3},
+	//{grant, "GRANT"},
+	{grant, "GRANTS", 5},
+	//{procedure, "PROC"},
+	//{procedure, "PROCEDURE"},
+	{procedure, "PROCEDURES", 4},
+	//{trigger, "TRIG"},
+	//{trigger, "TRIGGER"},
+	{trigger, "TRIGGERS", 4},
+	//{check, "CHECK"},
+	{check, "CHECKS", 5},
+	{database, "DB", 2},
+	{database, "DATABASE", 8},
+	//{comment, "COMMENT"},
+	{comment, "COMMENTS", 7}//,
+	//{dependency, "DEPENDENCY", 5},
+	//{dependency, "DEPENDENCIES", 5}
 };
 
 // Return the keyword associated with the string. There may be several strings
@@ -302,7 +305,8 @@ ShowOptions::show_commands ShowOptions::getCommand(const char* cmd)
 {
 	for (int i = 0; i < FB_NELEM(options); ++i)
 	{
-		if (!strcmp(cmd, options[i].text))
+		size_t swlen = strlen(cmd);
+		if (swlen >= options[i].abbrlen && !fb_utils::strnicmp(cmd, options[i].text, swlen))
 			return options[i].kw;
 	}
 	return wrong;
