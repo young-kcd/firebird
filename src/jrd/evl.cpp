@@ -4811,9 +4811,6 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 			(value->dsc_sub_type == isc_blob_text ? value->dsc_blob_ttype() : ttype_binary));
 		CharSet* charSet = textType->getCharSet();
 
-		if (length * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
-			ERR_post(isc_arith_except, 0);
-
 		blb* blob = BLB_open(tdbb, tdbb->tdbb_request->req_transaction,
 							reinterpret_cast<bid*>(value->dsc_address));
 		if (!blob->blb_length || blob->blb_length <= offset)
@@ -4828,7 +4825,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 			Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 
 			ULONG datalen;
-			const ULONG totLen = length * charSet->maxBytesPerChar();
+			const ULONG totLen = MIN(MAX_COLUMN_SIZE, length * charSet->maxBytesPerChar());
 
 			if (charSet->isMultiByte())
 			{
@@ -4926,11 +4923,8 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 		TextType* textType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&desc));
 		CharSet* charSet = textType->getCharSet();
 
-		if (length * charSet->maxBytesPerChar() > MAX_COLUMN_SIZE)
-			ERR_post(isc_arith_except, 0);
-
 		desc.dsc_address = NULL;
-		const ULONG totLen = length * charSet->maxBytesPerChar();
+		const ULONG totLen = MIN(MAX_COLUMN_SIZE, length * charSet->maxBytesPerChar());
 		desc.dsc_length = totLen;
 		EVL_make_value(tdbb, &desc, impure);
 
