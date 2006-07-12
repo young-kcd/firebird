@@ -2584,13 +2584,14 @@ ISC_STATUS GDS_DSQL_CACHE(ISC_STATUS* user_status, Attachment** handle,
 	if (check_database(tdbb, *handle, user_status))
 		return user_status[1];
 
+	tdbb->tdbb_status_vector = user_status;
+
+#ifdef SUPERSERVER
+	if (obsolete)
+		*obsolete = false;
+#else
 	try
 	{
-		tdbb->tdbb_status_vector = user_status;
-#ifdef SUPERSERVER
-		if (obsolete)
-			*obsolete = false;
-#else
 		Database* dbb = tdbb->tdbb_database;
 
 		Firebird::string key((char*)&type, sizeof(type));
@@ -2636,12 +2637,12 @@ ISC_STATUS GDS_DSQL_CACHE(ISC_STATUS* user_status, Attachment** handle,
 		}
 
 		item->obsolete = false;
-#endif	// SUPERSERVER
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		return error(user_status, ex);
 	}
+#endif	// SUPERSERVER
 
 	return return_success(tdbb);
 }

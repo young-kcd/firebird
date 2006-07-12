@@ -501,11 +501,6 @@ public:
 	jrd_req*	att_requests;		// Requests belonging to attachment
 	sort_context*	att_active_sorts;	// Active sorts
 	Lock*		att_id_lock;		// Attachment lock (if any)
-#ifndef SUPERSERVER
-	Lock*		att_temp_pg_lock;	// temporary pagespace ID lock
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::string, DSqlCacheItem*> > > att_dsql_cache;	// DSQL cache locks
-#endif
 	SLONG		att_attachment_id;	// Attachment ID
 	SLONG		att_lock_owner_handle;	// Handle for the lock manager
 	SLONG		att_event_session;	// Event session id, if any
@@ -526,6 +521,11 @@ public:
 	Firebird::StringMap att_context_vars;  // Context variables for the connection
 	Firebird::string att_network_protocol; // Network protocol used by client for connection
 	Firebird::string att_remote_address; // Protocol-specific addess of remote client
+#ifndef SUPERSERVER
+	Lock*		att_temp_pg_lock;	// temporary pagespace ID lock
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::string, DSqlCacheItem*> > > att_dsql_cache;	// DSQL cache locks
+#endif
 };
 
 
