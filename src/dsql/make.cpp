@@ -1219,8 +1219,10 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		desc->dsc_dtype = dtype_varying;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
-		desc->dsc_ttype() = ttype_dynamic;
-		desc->dsc_length = USERNAME_LENGTH + sizeof(USHORT);
+		desc->dsc_ttype() = ttype_metadata;
+		desc->dsc_length =
+			USERNAME_LENGTH * METD_get_charset_bpc(request, ttype_metadata) +
+			sizeof(USHORT);
 		return;
 
 	case nod_internal_info:

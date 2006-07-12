@@ -1649,6 +1649,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
     case nod_current_role:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = ttype_metadata;
+		// ASF: should be multiplied by maxBytesPerChar of ttype_metadata in the future
 		desc->dsc_length = USERNAME_LENGTH;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
