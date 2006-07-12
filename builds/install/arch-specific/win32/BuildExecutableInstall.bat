@@ -431,7 +431,7 @@ set FBBUILD_ZIP_PACK_ROOT=%ROOT_PATH%\builds\zip_pack
 if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_ZIP_PACK_ROOT%\ > nul
 @copy /Y %FBBUILD_OUTPUT% %FBBUILD_ZIP_PACK_ROOT% > nul
-for %%v in (bin doc doc\sql.extensions help include intl lib udf examples misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security ) do (
+for %%v in (bin doc doc\sql.extensions help include intl lib udf examples misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security system32 ) do (
 	@mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
 	@copy /Y %FBBUILD_OUTPUT%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
 )
