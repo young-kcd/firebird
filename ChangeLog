@@ -1,3 +1,26 @@
+2006-07-12 03:38  asfernandes
+
+	* firebird2/src/jrd/: dfw.epp (1.188), met.epp (1.195), tra.h
+	(1.53), vio.cpp (1.167):
+	
+	Misc
+
+2006-07-11 09:13  robocop
+
+	* firebird2/src/isql/: isql.epp (1.193), show.epp (1.89):
+	
+	Expand Michal Kubecek's idea to the SHOW command so the object
+	types have more flexibility in their abbreviations. Example: SHOW
+	EXCEP[TIONS] will do with every correct abbrev between 5 and 10
+	characters.
+
+2006-07-11 06:57  robocop
+
+	* firebird2/src/jrd/: dfw.epp (1.187), met.epp (1.194), met_proto.h
+	(1.51), tra.h (1.52), vio.cpp (1.166):
+	
+	CORE-847 Deleting dependencies for fields that WERE computed.
+
 2006-07-10 05:12  asfernandes
 
 	* firebird2/src/: dsql/ddl.cpp (1.175), dsql/dsql.h (1.91),
