@@ -2213,7 +2213,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 				bool rc1 = EVL_field(0, org_rpb->rpb_record, f_fld_computed, &desc3);
 				bool rc2 = EVL_field(0, new_rpb->rpb_record, f_fld_computed, &desc4);
 				if (rc1 != rc2 || rc1 && MOV_compare(&desc3, &desc4))
-					DFW_post_work_arg(transaction, dw, &desc1, 0)->dfw_type = dfw_force_computed;
+					DFW_post_work_arg(transaction, dw, &desc1, 0)->dfw_type = dfw_arg_force_computed;
 			}
 			break;
 

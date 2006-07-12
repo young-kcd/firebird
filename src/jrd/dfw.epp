@@ -3978,10 +3978,10 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		{ // begin scope
 			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_force_computed))
+			while (arg && (arg->dfw_type != dfw_arg_force_computed))
 				arg = arg->dfw_next;
 
-			if (arg && arg->dfw_type == dfw_force_computed)
+			if (arg && arg->dfw_type == dfw_arg_force_computed)
 			{
 				computed_field = true;
 				MET_delete_dependencies(tdbb, arg->dfw_name, obj_computed);

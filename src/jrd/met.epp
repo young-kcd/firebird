@@ -634,7 +634,7 @@ ULONG MET_align(Database* dbb, const dsc* desc, ULONG value)
 }
 
 
-DeferredWork* MET_change_fields( thread_db* tdbb, jrd_tra* transaction, const dsc* field_source)
+DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc* field_source)
 {
 /**************************************
  *
