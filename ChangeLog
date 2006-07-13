@@ -1,3 +1,22 @@
+2006-07-12 20:44  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.116), jrd/cmp.cpp (1.222),
+	jrd/constants.h (1.26):
+	
+	Correction for problem with CURRENT_USER/ROLE and client charset
+
+2006-07-12 20:42  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.184):
+	
+	Fix CORE-852 - substring(current_user from 4) without for fails
+
+2006-07-12 17:13  asfernandes
+
+	* firebird2/src/jrd/: jrd.cpp (1.258), jrd.h (1.166):
+	
+	Misc
+
 2006-07-12 03:38  asfernandes
 
 	* firebird2/src/jrd/: dfw.epp (1.188), met.epp (1.195), tra.h
