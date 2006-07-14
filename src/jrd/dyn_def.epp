@@ -2241,7 +2241,7 @@ void DYN_define_index(Global*		gbl,
 			}
 			else {
 				DYN_error_punt(false, 18, NULL, NULL, NULL, NULL, NULL);
-			/* msg 18: "could not find unique index with specified fields" */
+				// msg 18: "could not find UNIQUE or PRIMARY KEY constraint with specified fields"
 			}
 		}
 		else if (referenced_relation.length()) {

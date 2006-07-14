@@ -237,6 +237,7 @@ const int USAGE_NOTINT				= 143;		// usage: argument "%s" for switch "%s" is not
 const int USAGE_RANGE				= 144;		// usage: value "%s" for switch "%s" is out of range
 const int USAGE_DUPSW				= 145;		// usage: switch "%s" or its equivalent used more than once
 const int USAGE_DUPDB				= 146;		// usage: more than one database name: "%s", "%s"
+const int NO_DEPENDENCIES			= 147;		// No dependencies for %s were found
 
 // Initialize types
 
