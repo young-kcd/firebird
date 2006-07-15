@@ -1,3 +1,15 @@
+2006-07-14 08:57  robocop
+
+	* firebird2/src/: isql/isql.h (1.57), isql/show.epp (1.90),
+	jrd/dyn_def.epp (1.117), msgs/facilities.sql (1.62),
+	msgs/history.sql (1.34), msgs/messages.sql (1.76):
+	
+	- Fix message requesting a unique index to request a UK or PK
+	constraint to be able to create a FK: indexes manually created
+	aren't honored.  - Commit (without external or self documentation)
+	a debugging features in isql to show dependencies with cryptic. not
+	suite for end users output: SHOW DEPENendenc[y | ies] obj_name
+
 2006-07-12 20:44  asfernandes
 
 	* firebird2/src/: dsql/make.cpp (1.116), jrd/cmp.cpp (1.222),
