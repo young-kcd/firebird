@@ -2184,8 +2184,8 @@ static processing_state show_dependencies(const char* object, int obj_type)
 	bool target_done = false;
 
 	FOR DEP1 IN RDB$DEPENDENCIES
-	WITH DEP1.RDB$DEPENDED_ON_NAME EQ object
-	AND DEP1.RDB$DEPENDED_ON_TYPE EQ obj_type
+		WITH DEP1.RDB$DEPENDED_ON_NAME EQ object AND
+			 DEP1.RDB$DEPENDED_ON_TYPE EQ obj_type
 		if (missing1)
 			missing1 = false;
 		else
@@ -2216,8 +2216,8 @@ static processing_state show_dependencies(const char* object, int obj_type)
 	bool missing2 = true;
 	
 	FOR DEP2 IN RDB$DEPENDENCIES
-	WITH DEP2.RDB$DEPENDENT_NAME EQ object
-	AND DEP2.RDB$DEPENDENT_TYPE EQ obj_type
+		WITH DEP2.RDB$DEPENDENT_NAME EQ object AND
+			 DEP2.RDB$DEPENDENT_TYPE EQ obj_type
 		if (missing2)
 		{
 			if (!target_done)
@@ -2252,9 +2252,9 @@ static processing_state show_dependencies(const char* object, int obj_type)
 	bool is_table = false;
 	
 	FOR REL IN RDB$RELATIONS
-	WITH REL.RDB$RELATION_NAME = object
-	AND REL.RDB$VIEW_BLR MISSING
-	AND (REL.RDB$DBKEY_LENGTH MISSING OR REL.RDB$DBKEY_LENGTH = 8)
+		WITH REL.RDB$RELATION_NAME = object AND
+			 REL.RDB$VIEW_BLR MISSING AND
+			 (REL.RDB$DBKEY_LENGTH MISSING OR REL.RDB$DBKEY_LENGTH = 8)
 		is_table = true;
 	END_FOR
 	ON_ERROR
@@ -2265,13 +2265,14 @@ static processing_state show_dependencies(const char* object, int obj_type)
 	if (obj_type == obj_relation && is_table || obj_type == obj_view && !is_table)
 	{
 		FOR RFR IN RDB$RELATION_FIELDS
-		CROSS FLD IN RDB$FIELDS
-		CROSS DEP3 IN RDB$DEPENDENCIES
-		WITH RFR.RDB$RELATION_NAME = object
-		AND RFR.RDB$FIELD_SOURCE = FLD.RDB$FIELD_NAME
-		AND DEP3.RDB$DEPENDENT_NAME = RFR.RDB$FIELD_SOURCE
-		AND DEP3.RDB$DEPENDENT_TYPE EQ obj_computed
-		SORTED BY RFR.RDB$FIELD_POSITION
+			CROSS FLD IN RDB$FIELDS
+			CROSS DEP3 IN RDB$DEPENDENCIES
+			WITH RFR.RDB$RELATION_NAME = object AND
+				 RFR.RDB$FIELD_SOURCE = FLD.RDB$FIELD_NAME AND
+				 DEP3.RDB$DEPENDENT_NAME = RFR.RDB$FIELD_SOURCE AND
+				 DEP3.RDB$DEPENDENT_TYPE EQ obj_computed
+			SORTED BY RFR.RDB$FIELD_POSITION
+
 			if (FLD.RDB$COMPUTED_BLR.NULL) // redundant
 				continue;
 				
@@ -2306,13 +2307,13 @@ static processing_state show_dependencies(const char* object, int obj_type)
 	{
 		// This code shouldn't find anything under normal circumstances.
 		FOR PAR IN RDB$PROCEDURE_PARAMETERS
-		CROSS FLD IN RDB$FIELDS
-		CROSS DEP3 IN RDB$DEPENDENCIES
-		WITH PAR.RDB$PROCEDURE_NAME = object
-		AND PAR.RDB$FIELD_SOURCE = FLD.RDB$FIELD_NAME
-		AND DEP3.RDB$DEPENDENT_NAME = PAR.RDB$FIELD_SOURCE
-		AND DEP3.RDB$DEPENDENT_TYPE EQ obj_computed
-		SORTED BY PAR.RDB$PARAMETER_TYPE, PAR.RDB$PARAMETER_NUMBER
+			CROSS FLD IN RDB$FIELDS
+			CROSS DEP3 IN RDB$DEPENDENCIES
+			WITH PAR.RDB$PROCEDURE_NAME = object AND
+				 PAR.RDB$FIELD_SOURCE = FLD.RDB$FIELD_NAME AND
+				 DEP3.RDB$DEPENDENT_NAME = PAR.RDB$FIELD_SOURCE AND
+				 DEP3.RDB$DEPENDENT_TYPE EQ obj_computed
+			SORTED BY PAR.RDB$PARAMETER_TYPE, PAR.RDB$PARAMETER_NUMBER
 			if (FLD.RDB$COMPUTED_BLR.NULL) // redundant
 				continue;
 
