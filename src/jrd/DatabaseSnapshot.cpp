@@ -42,6 +42,7 @@
 
 using namespace Jrd;
 
+
 DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
 {
 	jrd_tra* transaction = tdbb->tdbb_transaction;
@@ -56,6 +57,7 @@ DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
 
 	return transaction->tra_db_snapshot;
 }
+
 
 RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb,
 											MemoryPool& pool,
@@ -73,6 +75,7 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb,
 
 	return buffer;
 }
+
 
 DatabaseSnapshot::DatabaseSnapshot(MemoryPool& pool, jrd_tra* tran)
 	: transaction(tran), snapshot(pool)
@@ -112,13 +115,14 @@ DatabaseSnapshot::DatabaseSnapshot(MemoryPool& pool, jrd_tra* tran)
 			request; request = request->req_request)
 		{
 			// Ignore GDML requests
-			if (request->req_sql_text.length() || request->req_caller)
+			if (request->req_sql_text.hasData() || request->req_caller)
 			{
 				putRequest(request, req_buffer);
 			}
 		}
 	}
 }
+
 
 DatabaseSnapshot::~DatabaseSnapshot()
 {
@@ -127,6 +131,7 @@ DatabaseSnapshot::~DatabaseSnapshot()
 		delete snapshot[i].data;
 	}
 }
+
 
 RecordBuffer* DatabaseSnapshot::getData(const jrd_rel* relation) const
 {
@@ -140,6 +145,16 @@ RecordBuffer* DatabaseSnapshot::getData(const jrd_rel* relation) const
 
 	return NULL;
 }
+
+
+void DatabaseSnapshot::clearRecord(Record* record)
+{
+	// Initialize all fields to NULLs
+	memset(record->rec_data, 0, record->rec_length);
+	const size_t null_bytes = (record->rec_format->fmt_count + 7) >> 3;
+	memset(record->rec_data, 0xFF, null_bytes);
+}
+
 
 void DatabaseSnapshot::putField(Record* record, int id, const void* source)
 {
@@ -228,6 +243,7 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source)
 	CLEAR_NULL(record, id);
 }
 
+
 void DatabaseSnapshot::putDatabase(Database* dbb, RecordBuffer* buffer)
 {
 	fb_assert(dbb && buffer);
@@ -238,14 +254,13 @@ void DatabaseSnapshot::putDatabase(Database* dbb, RecordBuffer* buffer)
 	const jrd_file* const file = pageSpace->file;
 	PAG_header(file->fil_string, file->fil_length, true);
 
-	// Initialize all fields to NULLs
 	Record* record = buffer->getTempRecord();
-	memset(record->rec_data, 0, record->rec_length);
-	const size_t null_bytes = (record->rec_format->fmt_count + 7) >> 3;
-	memset(record->rec_data, 0xFF, null_bytes);
+
+	// Initialize all fields to NULLs
+	clearRecord(record);
 
 	SSHORT temp_short;
-//	SLONG temp_long;
+	// SLONG temp_long;
 	SINT64 temp_int64;
 
 	// database name or alias
@@ -317,19 +332,19 @@ void DatabaseSnapshot::putDatabase(Database* dbb, RecordBuffer* buffer)
 	buffer->store(record);
 }
 
+
 void DatabaseSnapshot::putAttachment(Attachment* attachment, RecordBuffer* buffer)
 {
 	fb_assert(attachment && buffer);
 
-	// Initialize all fields to NULLs
 	Record* record = buffer->getTempRecord();
-	memset(record->rec_data, 0, record->rec_length);
-	const size_t null_bytes = (record->rec_format->fmt_count + 7) >> 3;
-	memset(record->rec_data, 0xFF, null_bytes);
+
+	// Initialize all fields to NULLs
+	clearRecord(record);
 
 	SSHORT temp_short;
 	SLONG temp_long;
-//	SINT64 temp_int64;
+	// SINT64 temp_int64;
 
 	// attachment id
 	temp_long = PAG_attachment_id(NULL);
@@ -358,19 +373,19 @@ void DatabaseSnapshot::putAttachment(Attachment* attachment, RecordBuffer* buffe
 	buffer->store(record);
 }
 
+
 void DatabaseSnapshot::putTransaction(jrd_tra* transaction, RecordBuffer* buffer)
 {
 	fb_assert(transaction && buffer);
 
-	// Initialize all fields to NULLs
 	Record* record = buffer->getTempRecord();
-	memset(record->rec_data, 0, record->rec_length);
-	const size_t null_bytes = (record->rec_format->fmt_count + 7) >> 3;
-	memset(record->rec_data, 0xFF, null_bytes);
+
+	// Initialize all fields to NULLs
+	clearRecord(record);
 
 	SSHORT temp_short;
-//	SLONG temp_long;
-//	SINT64 temp_int64;
+	// SLONG temp_long;
+	// SINT64 temp_int64;
 
 	// transaction id
 	putField(record, f_mon_tra_id, &transaction->tra_number);
@@ -409,19 +424,19 @@ void DatabaseSnapshot::putTransaction(jrd_tra* transaction, RecordBuffer* buffer
 	buffer->store(record);
 }
 
+
 void DatabaseSnapshot::putRequest(jrd_req* request, RecordBuffer* buffer)
 {
 	fb_assert(request && buffer);
 
-	// Initialize all fields to NULLs
 	Record* record = buffer->getTempRecord();
-	memset(record->rec_data, 0, record->rec_length);
-	const size_t null_bytes = (record->rec_format->fmt_count + 7) >> 3;
-	memset(record->rec_data, 0xFF, null_bytes);
+
+	// Initialize all fields to NULLs
+	clearRecord(record);
 
 	SSHORT temp_short;
-//	SLONG temp_long;
-//	SINT64 temp_int64;
+	// SLONG temp_long;
+	// SINT64 temp_int64;
 
 	// request id
 	putField(record, f_mon_stmt_id, &request->req_id);
@@ -452,7 +467,7 @@ void DatabaseSnapshot::putRequest(jrd_req* request, RecordBuffer* buffer)
 		putField(record, f_mon_stmt_caller_id, &request->req_caller->req_id);
 	}
 	// sql text
-	if (request->req_sql_text.length()) {
+	if (request->req_sql_text.hasData()) {
 		putField(record, f_mon_stmt_sql_text, request->req_sql_text.c_str());
 	}
 	// selects

@@ -20,8 +20,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef DATABASE_SNAPSHOT_H
-#define DATABASE_SNAPSHOT_H
+#ifndef JRD_DATABASE_SNAPSHOT_H
+#define JRD_DATABASE_SNAPSHOT_H
 
 #include "../common/classes/array.h"
 
@@ -49,6 +49,8 @@ private:
 
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 
+	void clearRecord(Record*);
+
 	void putField(Record*, int, const void*);
 
 	void putDatabase(Database*, RecordBuffer*);
@@ -59,4 +61,4 @@ private:
 
 } // namespace
 
-#endif // DATABASE_SNAPSHOT_H
+#endif // JRD_DATABASE_SNAPSHOT_H
