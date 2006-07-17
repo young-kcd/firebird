@@ -20,8 +20,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef VIRTUAL_TABLE_H
-#define VIRTUAL_TABLE_H
+#ifndef JRD_VIRTUAL_TABLE_H
+#define JRD_VIRTUAL_TABLE_H
 
 namespace Jrd {
 
@@ -42,4 +42,4 @@ void store(Jrd::record_param*);
 
 }; // namespace Jrd
 
-#endif // VIRTUAL_TABLE_H
+#endif // JRD_VIRTUAL_TABLE_H

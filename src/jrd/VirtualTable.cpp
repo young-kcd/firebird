@@ -38,6 +38,7 @@
 
 using namespace Jrd;
 
+
 void VirtualTable::close(thread_db* tdbb, RecordSource* rsb)
 {
 	SET_TDBB(tdbb);
@@ -48,10 +49,12 @@ void VirtualTable::close(thread_db* tdbb, RecordSource* rsb)
 	impure->irsb_record_buffer = NULL;
 }
 
+
 void VirtualTable::erase(record_param* rpb)
 {
 	ERR_post(isc_read_only, 0);
 }
+
 
 bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 {
@@ -69,10 +72,12 @@ bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 	return impure->irsb_record_buffer->fetch(rpb->rpb_record);
 }
 
+
 void VirtualTable::modify(record_param* org_rpb, record_param* new_rpb)
 {
 	ERR_post(isc_read_only, 0);
 }
+
 
 void VirtualTable::open(thread_db* tdbb, RecordSource* rsb)
 {
@@ -99,6 +104,7 @@ void VirtualTable::open(thread_db* tdbb, RecordSource* rsb)
 	impure->irsb_record_buffer = snapshot->getData(relation);
 }
 
+
 Jrd::RecordSource* VirtualTable::optimize(thread_db* tdbb, OptimizerBlk* opt, SSHORT stream)
 {
 	SET_TDBB(tdbb);
@@ -115,6 +121,7 @@ Jrd::RecordSource* VirtualTable::optimize(thread_db* tdbb, OptimizerBlk* opt, SS
 
 	return rsb;
 }
+
 
 void VirtualTable::store(record_param* rpb)
 {
