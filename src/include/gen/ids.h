@@ -17,344 +17,342 @@
  * Contributor(s): ______________________________________.
  */
 
+enum fids {
+	f_pag_page = 0,
+	f_pag_id,
+	f_pag_seq,
+	f_pag_type,
 
- 
+	f_dat_desc = 0,
+	f_dat_id,
+	f_dat_class,
+	f_dat_charset,
 
+	f_fld_name = 0,
+	f_fld_qname,
+	f_fld_v_blr,
+	f_fld_v_source,
+	f_fld_computed,
+	f_fld_csource,
+	f_fld_default,
+	f_fld_dsource,
+	f_fld_length,
+	f_fld_scale,
+	f_fld_type,
+	f_fld_sub_type,
+	f_fld_missing,
+	f_fld_msource,
+	f_fld_desc,
+	f_fld_sys_flag,
+	f_fld_qheader,
+	f_fld_seg_len,
+	f_fld_estring,
+	f_fld_ext_length,
+	f_fld_ext_scale,
+	f_fld_ext_type,
+	f_fld_dimensions,
+	f_fld_null_flag,
+	f_fld_char_length,
+	f_fld_coll_id,
+	f_fld_charset_id,
+	f_fld_precision,
 
+	f_seg_name = 0,
+	f_seg_field,
+	f_seg_position,
+	f_seg_statistics,
 
+	f_idx_name = 0,
+	f_idx_relation,
+	f_idx_id,
+	f_idx_flag,
+	f_idx_desc,
+	f_idx_count,
+	f_idx_inactive,
+	f_idx_type,
+	f_idx_foreign,
+	f_idx_sys_flag,
+	f_idx_exp_blr,
+	f_idx_exp_source,
+	f_idx_statistics,
 
+	f_rfr_fname = 0,
+	f_rfr_rname,
+	f_rfr_sname,
+	f_rfr_qname,
+	f_rfr_base,
+	f_rfr_estring,
+	f_rfr_position,
+	f_rfr_qheader,
+	f_rfr_flag,
+	f_rfr_id,
+	f_rfr_context,
+	f_rfr_desc,
+	f_rfr_default,
+	f_rfr_sys_flag,
+	f_rfr_class,
+	f_rfr_complex,
+	f_rfr_null_flag,
+	f_rfr_dsource,
+	f_rfr_coll_id,
 
+	f_rel_blr = 0,
+	f_rel_source,
+	f_rel_desc,
+	f_rel_id,
+	f_rel_sys_flag,
+	f_rel_key_len,
+	f_rel_format,
+	f_rel_field_id,
+	f_rel_name,
+	f_rel_class,
+	f_rel_ext_file,
+	f_rel_runtime,
+	f_rel_ext_desc,
+	f_rel_owner,
+	f_rel_def_class,
+	f_rel_flags,
+	f_rel_type,
 
+	f_vrl_vname = 0,
+	f_vrl_rname,
+	f_vrl_context,
+	f_vrl_cname,
 
-/*
- *	PROGRAM:	JRD Access Method
- *	MODULE:		relations.h
- *	DESCRIPTION:	System relation definitions
- *
- * The contents of this file are subject to the Interbase Public
- * License Version 1.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy
- * of the License at http://www.Inprise.com/IPL.html
- *
- * Software distributed under the License is distributed on an
- * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
- * or implied. See the License for the specific language governing
- * rights and limitations under the License.
- *
- * The Original Code was created by Inprise Corporation
- * and its predecessors. Portions created by Inprise Corporation are
- * Copyright (C) Inprise Corporation.
- *
- * All Rights Reserved.
- * Contributor(s): ______________________________________.
- */
+	f_fmt_rid = 0,
+	f_fmt_format,
+	f_fmt_desc,
 
+	f_cls_class = 0,
+	f_cls_acl,
+	f_cls_desc,
 
-				 
+	f_file_name = 0,
+	f_file_seq,
+	f_file_start,
+	f_file_length,
+	f_file_flags,
+	f_file_shad_num,
 
-				 
+	f_typ_field = 0,
+	f_typ_type,
+	f_typ_name,
+	f_typ_desc,
+	f_typ_sys_flag,
 
-																												 
+	f_trg_name = 0,
+	f_trg_rname,
+	f_trg_seq,
+	f_trg_type,
+	f_trg_source,
+	f_trg_blr,
+	f_trg_desc,
+	f_trg_inactive,
+	f_trg_sys_flag,
+	f_trg_flags,
 
-				 
+	f_dpd_name = 0,
+	f_dpd_o_name,
+	f_dpd_f_name,
+	f_dpd_type,
+	f_dpd_o_type,
 
-													 
+	f_fun_name = 0,
+	f_fun_type,
+	f_fun_qname,
+	f_fun_desc,
+	f_fun_module,
+	f_fun_entry,
+	f_fun_ret_arg,
+	f_fun_sys_flag,
 
-																			 
+	f_arg_fun_name = 0,
+	f_arg_pos,
+	f_arg_mech,
+	f_arg_type,
+	f_arg_scale,
+	f_arg_length,
+	f_arg_sub_type,
+	f_arg_charset_id,
+	f_arg_precision,
+	f_arg_char_length,
 
-																 
+	f_flt_name = 0,
+	f_flt_desc,
+	f_flt_module,
+	f_flt_entry,
+	f_flt_input,
+	f_flt_output,
+	f_flt_sys_flag,
 
-				 
+	f_msg_trigger = 0,
+	f_msg_number,
+	f_msg_msg,
 
-			
+	f_prv_user = 0,
+	f_prv_grantor,
+	f_prv_priv,
+	f_prv_grant,
+	f_prv_rname,
+	f_prv_fname,
+	f_prv_u_type,
+	f_prv_o_type,
 
-			 
+	f_trn_id = 0,
+	f_trn_state,
+	f_trn_time,
+	f_trn_desc,
 
-						 
+	f_gen_name = 0,
+	f_gen_id,
+	f_gen_sys_flag,
+	f_gen_desc,
 
-					 
+	f_dims_fname = 0,
+	f_dims_dim,
+	f_dims_lower,
+	f_dims_upper,
 
-										 
+	f_rcon_cname = 0,
+	f_rcon_ctype,
+	f_rcon_rname,
+	f_rcon_dfr,
+	f_rcon_idfr,
+	f_rcon_iname,
 
-					 
+	f_refc_cname = 0,
+	f_refc_uq,
+	f_refc_match,
+	f_refc_upd_rul,
+	f_refc_del_rul,
 
-								 
+	f_ccon_cname = 0,
+	f_ccon_tname,
 
-										 
+	f_log_name = 0,
+	f_log_seq,
+	f_log_length,
+	f_log_partitions,
+	f_log_p_offset,
+	f_log_flags,
 
-							 
+	f_prc_name = 0,
+	f_prc_id,
+	f_prc_inputs,
+	f_prc_outputs,
+	f_prc_desc,
+	f_prc_source,
+	f_prc_blr,
+	f_prc_class,
+	f_prc_owner,
+	f_prc_runtime,
+	f_prc_sys_flag,
+	f_prc_type,
 
-			 
+	f_prm_name = 0,
+	f_prm_procedure,
+	f_prm_number,
+	f_prm_type,
+	f_prm_sname,
+	f_prm_desc,
+	f_prm_sys_flag,
 
-								 
+	f_cs_cs_name = 0,
+	f_cs_form_of_use,
+	f_cs_num_chars,
+	f_cs_def_collate,
+	f_cs_id,
+	f_cs_sys_flag,
+	f_cs_desc,
+	f_cs_fun_name,
+	f_cs_bytes_char,
 
-				 
+	f_coll_name = 0,
+	f_coll_id,
+	f_coll_cs_id,
+	f_coll_attr,
+	f_coll_sys_flag,
+	f_coll_desc,
+	f_coll_fun_name,
+	f_coll_base_collation_name,
+	f_coll_specific_attr,
 
-				 
+	f_xcp_name = 0,
+	f_xcp_number,
+	f_xcp_msg,
+	f_xcp_desc,
+	f_xcp_sys_flag,
 
-				 
+	f_rol_name = 0,
+	f_rol_owner,
+	f_rol_desc,
+	f_rol_sys_flag,
 
-						 
+	f_backup_id = 0,
+	f_backup_time,
+	f_backup_level,
+	f_backup_guid,
+	f_backup_scn,
+	f_backup_name,
 
-					 
+	f_mon_db_name = 0,
+	f_mon_db_page_size,
+	f_mon_db_ods_major,
+	f_mon_db_ods_minor,
+	f_mon_db_oit,
+	f_mon_db_oat,
+	f_mon_db_ost,
+	f_mon_db_nt,
+	f_mon_db_page_bufs,
+	f_mon_db_dialect,
+	f_mon_db_shut_mode,
+	f_mon_db_sweep_int,
+	f_mon_db_read_only,
+	f_mon_db_forced_writes,
+	f_mon_db_res_space,
+	f_mon_db_created,
+	f_mon_db_size,
+	f_mon_db_cur_mem,
+	f_mon_db_max_mem,
+	f_mon_db_page_reads,
+	f_mon_db_page_writes,
+	f_mon_db_page_fetches,
+	f_mon_db_page_marks,
 
-		
+	f_mon_att_id = 0,
+	f_mon_att_server_pid,
+	f_mon_att_state,
+	f_mon_att_name,
+	f_mon_att_user,
+	f_mon_att_role,
+	f_mon_att_remote_proto,
+	f_mon_att_remote_addr,
+	f_mon_att_remote_pid,
+	f_mon_att_charset_id,
+	f_mon_att_timestamp,
+	f_mon_att_gc,
 
-						 
+	f_mon_tra_id = 0,
+	f_mon_tra_att_id,
+	f_mon_tra_timestamp,
+	f_mon_tra_top,
+	f_mon_tra_oit,
+	f_mon_tra_oat,
+	f_mon_tra_iso_mode,
+	f_mon_tra_lock_timeout,
+	f_mon_tra_read_only,
+	f_mon_tra_auto_commit,
+	f_mon_tra_auto_undo,
 
-											 
-
-							 
-
-									 
-
-									 
-
-					 
-
-				
-
-						
-
-const USHORT  f_pag_page = 0  ;
-const USHORT  f_pag_id = 1  ;
-const USHORT  f_pag_seq = 2  ;
-const USHORT  f_pag_type = 3  ;
-const USHORT  f_dat_desc = 0  ;
-const USHORT  f_dat_id = 1  ;
-const USHORT  f_dat_class = 2  ;
-const USHORT  f_dat_charset = 3  ;
-const USHORT  f_fld_name = 0  ;
-const USHORT  f_fld_qname = 1  ;
-const USHORT  f_fld_v_blr = 2  ;
-const USHORT  f_fld_v_source = 3  ;
-const USHORT  f_fld_computed = 4  ;
-const USHORT  f_fld_csource = 5  ;
-const USHORT  f_fld_default = 6  ;
-const USHORT  f_fld_dsource = 7  ;
-const USHORT  f_fld_length = 8  ;
-const USHORT  f_fld_scale = 9  ;
-const USHORT  f_fld_type = 10  ;
-const USHORT  f_fld_sub_type = 11  ;
-const USHORT  f_fld_missing = 12  ;
-const USHORT  f_fld_msource = 13  ;
-const USHORT  f_fld_desc = 14  ;
-const USHORT  f_fld_sys_flag = 15  ;
-const USHORT  f_fld_qheader = 16  ;
-const USHORT  f_fld_seg_len = 17  ;
-const USHORT  f_fld_estring = 18  ;
-const USHORT  f_fld_ext_length = 19  ;
-const USHORT  f_fld_ext_scale = 20  ;
-const USHORT  f_fld_ext_type = 21  ;
-const USHORT  f_fld_dimensions = 22  ;
-const USHORT  f_fld_null_flag = 23  ;
-const USHORT  f_fld_char_length = 24  ;
-const USHORT  f_fld_coll_id = 25  ;
-const USHORT  f_fld_charset_id = 26  ;
-const USHORT  f_fld_precision = 27  ;
-const USHORT  f_seg_name = 0  ;
-const USHORT  f_seg_field = 1  ;
-const USHORT  f_seg_position = 2  ;
-const USHORT  f_seg_statistics = 3  ;
-const USHORT  f_idx_name = 0  ;
-const USHORT  f_idx_relation = 1  ;
-const USHORT  f_idx_id = 2  ;
-const USHORT  f_idx_flag = 3  ;
-const USHORT  f_idx_desc = 4  ;
-const USHORT  f_idx_count = 5  ;
-const USHORT  f_idx_inactive = 6  ;
-const USHORT  f_idx_type = 7  ;
-const USHORT  f_idx_foreign = 8  ;
-const USHORT  f_idx_sys_flag = 9  ;
-const USHORT  f_idx_exp_blr = 10  ;
-const USHORT  f_idx_exp_source = 11  ;
-const USHORT  f_idx_statistics = 12  ;
-const USHORT  f_rfr_fname = 0  ;
-const USHORT  f_rfr_rname = 1  ;
-const USHORT  f_rfr_sname = 2  ;
-const USHORT  f_rfr_qname = 3  ;
-const USHORT  f_rfr_base = 4  ;
-const USHORT  f_rfr_estring = 5  ;
-const USHORT  f_rfr_position = 6  ;
-const USHORT  f_rfr_qheader = 7  ;
-const USHORT  f_rfr_flag = 8  ;
-const USHORT  f_rfr_id = 9  ;
-const USHORT  f_rfr_context = 10  ;
-const USHORT  f_rfr_desc = 11  ;
-const USHORT  f_rfr_default = 12  ;
-const USHORT  f_rfr_sys_flag = 13  ;
-const USHORT  f_rfr_class = 14  ;
-const USHORT  f_rfr_complex = 15  ;
-const USHORT  f_rfr_null_flag = 16  ;
-const USHORT  f_rfr_dsource = 17  ;
-const USHORT  f_rfr_coll_id = 18  ;
-const USHORT  f_rel_blr = 0  ;
-const USHORT  f_rel_source = 1  ;
-const USHORT  f_rel_desc = 2  ;
-const USHORT  f_rel_id = 3  ;
-const USHORT  f_rel_sys_flag = 4  ;
-const USHORT  f_rel_key_len = 5  ;
-const USHORT  f_rel_format = 6  ;
-const USHORT  f_rel_field_id = 7  ;
-const USHORT  f_rel_name = 8  ;
-const USHORT  f_rel_class = 9  ;
-const USHORT  f_rel_ext_file = 10  ;
-const USHORT  f_rel_runtime = 11  ;
-const USHORT  f_rel_ext_desc = 12  ;
-const USHORT  f_rel_owner = 13  ;
-const USHORT  f_rel_def_class = 14  ;
-const USHORT  f_rel_flags = 15  ;
-const USHORT  f_vrl_vname = 0  ;
-const USHORT  f_vrl_rname = 1  ;
-const USHORT  f_vrl_context = 2  ;
-const USHORT  f_vrl_cname = 3  ;
-const USHORT  f_fmt_rid = 0  ;
-const USHORT  f_fmt_format = 1  ;
-const USHORT  f_fmt_desc = 2  ;
-const USHORT  f_cls_class = 0  ;
-const USHORT  f_cls_acl = 1  ;
-const USHORT  f_cls_desc = 2  ;
-const USHORT  f_file_name = 0  ;
-const USHORT  f_file_seq = 1  ;
-const USHORT  f_file_start = 2  ;
-const USHORT  f_file_length = 3  ;
-const USHORT  f_file_flags = 4  ;
-const USHORT  f_file_shad_num = 5  ;
-const USHORT  f_typ_field = 0  ;
-const USHORT  f_typ_type = 1  ;
-const USHORT  f_typ_name = 2  ;
-const USHORT  f_typ_desc = 3  ;
-const USHORT  f_typ_sys_flag = 4  ;
-const USHORT  f_trg_name = 0  ;
-const USHORT  f_trg_rname = 1  ;
-const USHORT  f_trg_seq = 2  ;
-const USHORT  f_trg_type = 3  ;
-const USHORT  f_trg_source = 4  ;
-const USHORT  f_trg_blr = 5  ;
-const USHORT  f_trg_desc = 6  ;
-const USHORT  f_trg_inactive = 7  ;
-const USHORT  f_trg_sys_flag = 8  ;
-const USHORT  f_trg_flags = 9  ;
-const USHORT  f_dpd_name = 0  ;
-const USHORT  f_dpd_o_name = 1  ;
-const USHORT  f_dpd_f_name = 2  ;
-const USHORT  f_dpd_type = 3  ;
-const USHORT  f_dpd_o_type = 4  ;
-const USHORT  f_fun_name = 0  ;
-const USHORT  f_fun_type = 1  ;
-const USHORT  f_fun_qname = 2  ;
-const USHORT  f_fun_desc = 3  ;
-const USHORT  f_fun_module = 4  ;
-const USHORT  f_fun_entry = 5  ;
-const USHORT  f_fun_ret_arg = 6  ;
-const USHORT  f_fun_sys_flag = 7  ;
-const USHORT  f_arg_fun_name = 0  ;
-const USHORT  f_arg_pos = 1  ;
-const USHORT  f_arg_mech = 2  ;
-const USHORT  f_arg_type = 3  ;
-const USHORT  f_arg_scale = 4  ;
-const USHORT  f_arg_length = 5  ;
-const USHORT  f_arg_sub_type = 6  ;
-const USHORT  f_arg_charset_id = 7  ;
-const USHORT  f_arg_precision = 8  ;
-const USHORT  f_arg_char_length = 9  ;
-const USHORT  f_flt_name = 0  ;
-const USHORT  f_flt_desc = 1  ;
-const USHORT  f_flt_module = 2  ;
-const USHORT  f_flt_entry = 3  ;
-const USHORT  f_flt_input = 4  ;
-const USHORT  f_flt_output = 5  ;
-const USHORT  f_flt_sys_flag = 6  ;
-const USHORT  f_msg_trigger = 0  ;
-const USHORT  f_msg_number = 1  ;
-const USHORT  f_msg_msg = 2  ;
-const USHORT  f_prv_user = 0  ;
-const USHORT  f_prv_grantor = 1  ;
-const USHORT  f_prv_priv = 2  ;
-const USHORT  f_prv_grant = 3  ;
-const USHORT  f_prv_rname = 4  ;
-const USHORT  f_prv_fname = 5  ;
-const USHORT  f_prv_u_type = 6  ;
-const USHORT  f_prv_o_type = 7  ;
-const USHORT  f_trn_id = 0  ;
-const USHORT  f_trn_state = 1  ;
-const USHORT  f_trn_time = 2  ;
-const USHORT  f_trn_desc = 3  ;
-const USHORT  f_gen_name = 0  ;
-const USHORT  f_gen_id = 1  ;
-const USHORT  f_gen_sys_flag = 2  ;
-const USHORT  f_gen_desc = 3  ;
-const USHORT  f_dims_fname = 0  ;
-const USHORT  f_dims_dim = 1  ;
-const USHORT  f_dims_lower = 2  ;
-const USHORT  f_dims_upper = 3  ;
-const USHORT  f_rcon_cname = 0  ;
-const USHORT  f_rcon_ctype = 1  ;
-const USHORT  f_rcon_rname = 2  ;
-const USHORT  f_rcon_dfr = 3  ;
-const USHORT  f_rcon_idfr = 4  ;
-const USHORT  f_rcon_iname = 5  ;
-const USHORT  f_refc_cname = 0  ;
-const USHORT  f_refc_uq = 1  ;
-const USHORT  f_refc_match = 2  ;
-const USHORT  f_refc_upd_rul = 3  ;
-const USHORT  f_refc_del_rul = 4  ;
-const USHORT  f_ccon_cname = 0  ;
-const USHORT  f_ccon_tname = 1  ;
-const USHORT  f_log_name = 0  ;
-const USHORT  f_log_seq = 1  ;
-const USHORT  f_log_length = 2  ;
-const USHORT  f_log_partitions = 3  ;
-const USHORT  f_log_p_offset = 4  ;
-const USHORT  f_log_flags = 5  ;
-const USHORT  f_prc_name = 0  ;
-const USHORT  f_prc_id = 1  ;
-const USHORT  f_prc_inputs = 2  ;
-const USHORT  f_prc_outputs = 3  ;
-const USHORT  f_prc_desc = 4  ;
-const USHORT  f_prc_source = 5  ;
-const USHORT  f_prc_blr = 6  ;
-const USHORT  f_prc_class = 7  ;
-const USHORT  f_prc_owner = 8  ;
-const USHORT  f_prc_runtime = 9  ;
-const USHORT  f_prc_sys_flag = 10  ;
-const USHORT  f_prm_name = 0  ;
-const USHORT  f_prm_procedure = 1  ;
-const USHORT  f_prm_number = 2  ;
-const USHORT  f_prm_type = 3  ;
-const USHORT  f_prm_sname = 4  ;
-const USHORT  f_prm_desc = 5  ;
-const USHORT  f_prm_sys_flag = 6  ;
-const USHORT  f_cs_cs_name = 0  ;
-const USHORT  f_cs_form_of_use = 1  ;
-const USHORT  f_cs_num_chars = 2  ;
-const USHORT  f_cs_def_collate = 3  ;
-const USHORT  f_cs_id = 4  ;
-const USHORT  f_cs_sys_flag = 5  ;
-const USHORT  f_cs_desc = 6  ;
-const USHORT  f_cs_fun_name = 7  ;
-const USHORT  f_cs_bytes_char = 8  ;
-const USHORT  f_coll_name = 0  ;
-const USHORT  f_coll_id = 1  ;
-const USHORT  f_coll_cs_id = 2  ;
-const USHORT  f_coll_attr = 3  ;
-const USHORT  f_coll_sys_flag = 4  ;
-const USHORT  f_coll_desc = 5  ;
-const USHORT  f_coll_fun_name = 6  ;
-const USHORT  f_coll_base_collation_name = 7  ;
-const USHORT  f_coll_specific_attr = 8  ;
-const USHORT  f_xcp_name = 0  ;
-const USHORT  f_xcp_number = 1  ;
-const USHORT  f_xcp_msg = 2  ;
-const USHORT  f_xcp_desc = 3  ;
-const USHORT  f_xcp_sys_flag = 4  ;
-const USHORT  f_rol_name = 0  ;
-const USHORT  f_rol_owner = 1  ;
-const USHORT  f_rol_desc = 2  ;
-const USHORT  f_rol_sys_flag = 3  ;
-const USHORT  f_backup_id = 0  ;
-const USHORT  f_backup_time = 1  ;
-const USHORT  f_backup_level = 2  ;
-const USHORT  f_backup_guid = 3  ;
-const USHORT  f_backup_scn = 4  ;
-const USHORT  f_backup_name = 5  ;
+	f_mon_stmt_id = 0,
+	f_mon_stmt_att_id,
+	f_mon_stmt_tra_id,
+	f_mon_stmt_state,
+	f_mon_stmt_timestamp,
+	f_mon_stmt_caller_id,
+	f_mon_stmt_sql_text,
+	f_mon_stmt_rec_selects,
+	f_mon_stmt_rec_inserts,
+	f_mon_stmt_rec_updates,
+	f_mon_stmt_rec_deletes
+};

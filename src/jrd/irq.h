@@ -112,7 +112,8 @@ const int irq_m_index_seg		= 75;	/* modify per-segment index selectivity */
 
 const int irq_l_subtype		= 76;		/* lookup subtype (charset/collation) */
 const int irq_c_relation2	= 77;		/* create new relation */
+const int irq_r_type		= 78;		/* lookup relation type */
 
-const int irq_MAX			= 78;
+const int irq_MAX			= 79;
 
 #endif /* JRD_IRQ_H */

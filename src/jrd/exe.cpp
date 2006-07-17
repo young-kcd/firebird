@@ -100,6 +100,7 @@
 #include "../jrd/execute_statement.h"
 #include "../dsql/dsql_proto.h"
 #include "../jrd/rpb_chain.h"
+#include "../jrd/VirtualTable.h"
 
 
 using namespace Jrd;
@@ -1156,10 +1157,15 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 						   which_trig, rpb, NULL,
 						   jrd_req::req_trigger_delete);
 
-	if (relation->rel_file)
+	if (relation->rel_file) {
 		EXT_erase(rpb, reinterpret_cast<int*>(transaction));
-	else if (!relation->rel_view_rse)
+	}
+	else if (relation->isVirtual()) {
+		VirtualTable::erase(rpb);
+	}
+	else if (!relation->rel_view_rse) {
 		VIO_erase(tdbb, rpb, transaction);
+	}
 
 /* Handle post operation trigger */
 	jrd_req* trigger;
@@ -2644,6 +2650,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			EXT_modify(org_rpb, new_rpb,
 					   reinterpret_cast<int*>(transaction));
 		}
+		else if (relation->isVirtual()) {
+			VirtualTable::modify(org_rpb, new_rpb);
+		}
 		else if (!relation->rel_view_rse)
 		{
 			USHORT bad_index;
@@ -3417,6 +3426,9 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 		if (relation->rel_file) {
 			EXT_store(rpb, reinterpret_cast<int*>(transaction));
+		}
+		else if (relation->isVirtual()) {
+			VirtualTable::store(rpb);
 		}
 		else if (!relation->rel_view_rse)
 		{

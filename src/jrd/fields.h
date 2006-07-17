@@ -119,3 +119,25 @@
 	FIELD(fld_scn			, nam_scn			, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 
 	FIELD(fld_specific_attr	, nam_specific_attr	, dtype_blob	, BLOB_SIZE		, isc_blob_text			, 0, NULL)
+
+	FIELD(fld_r_type		, nam_r_type		, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
+	FIELD(fld_prc_type		, nam_prc_type		, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
+
+	FIELD(fld_att_id		, nam_att_id		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
+	FIELD(fld_stmt_id		, nam_stmt_id		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
+
+	FIELD(fld_pid			, nam_pid			, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
+	FIELD(fld_state			, nam_state			, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
+	FIELD(fld_ods_number	, nam_ods_number	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
+	FIELD(fld_page_size		, nam_page_size		, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
+	FIELD(fld_page_bufs		, nam_page_bufs		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
+	FIELD(fld_shut_mode		, nam_shut_mode		, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
+	FIELD(fld_sql_dialect	, nam_sql_dialect	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
+	FIELD(fld_sweep_int		, nam_sweep_int		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
+	FIELD(fld_counter		, nam_counter		, dtype_int64	, sizeof(SINT64), 0						, 0, NULL)
+
+	FIELD(fld_remote_proto	, nam_remote_proto	, dtype_varying	, 10			, 0						, 0, NULL)
+	FIELD(fld_remote_addr	, nam_remote_addr	, dtype_varying	, 30			, 0						, 0, NULL)
+
+	FIELD(fld_iso_mode		, nam_iso_mode		, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
+	FIELD(fld_lock_timeout	, nam_lock_timeout	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)

@@ -41,6 +41,8 @@
 #include "../jrd/blb.h" // For bid structure
 #include "../jrd/sbm.h" // For bid structure
 
+#include "../jrd/DatabaseSnapshot.h"
+
 namespace Jrd {
 
 class blb;
@@ -113,7 +115,9 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	UCHAR tra_callback_count;	/* callback count for 'execute statement' */
 	SSHORT tra_lock_timeout;	/* in seconds, -1 means infinite, 0 means NOWAIT */
 	ULONG tra_next_blob_id;     // ID of the previous blob or array created in this transaction
+	Firebird::TimeStamp tra_timestamp; // transaction start time
 	jrd_req* tra_requests;		// Doubly linked list of requests active in this transaction
+	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
 	UCHAR tra_transactions[1];
 
 	SSHORT getLockWait() const

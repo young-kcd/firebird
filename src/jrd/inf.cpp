@@ -461,14 +461,10 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_creation_date:
 			{
-				WIN window(HEADER_PAGE_NUMBER);
-				Ods::header_page* header = (Ods::header_page*) 
-					CCH_FETCH(tdbb, &window, LCK_read, pag_header);
-
-				length = INF_convert(header->hdr_creation_date[0], p); 
+				const ISC_TIMESTAMP ts = dbb->dbb_creation_date.value();
+				length = INF_convert(ts.timestamp_date, p); 
 				p += length;
-				length += INF_convert(header->hdr_creation_date[1], p);
-				CCH_RELEASE(tdbb, &window);
+				length += INF_convert(ts.timestamp_time, p);
 			}
 			break;
 

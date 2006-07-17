@@ -541,6 +541,8 @@ static bool shutdown_locks(Database* dbb, SSHORT flag)
 
 	if (!shut_attachment) {
 		CCH_shutdown_database(dbb);
+		if (dbb->dbb_increment_lock)
+			LCK_release(tdbb, dbb->dbb_increment_lock);
 		if (dbb->dbb_shadow_lock)
 			LCK_release(tdbb, dbb->dbb_shadow_lock);
 		if (dbb->dbb_retaining_lock)

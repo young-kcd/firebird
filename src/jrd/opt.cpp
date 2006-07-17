@@ -76,6 +76,7 @@
 #include "../jrd/par_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/dbg_proto.h"
+#include "../jrd/VirtualTable.h"
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"
 
@@ -572,7 +573,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		if (conjunct_count || sort || project || aggregate || parent_stack)
 		{
 			jrd_rel* relation = (jrd_rel*) node->nod_arg[e_rel_relation];
-			if (relation && !relation->rel_file)
+			if (relation && !relation->rel_file && !relation->isVirtual())
 			{
 				csb->csb_rpt[stream].csb_indices =
 					BTR_all(tdbb, relation, &csb->csb_rpt[stream].csb_idx);
@@ -4457,7 +4458,9 @@ static RecordSource* gen_nav_rsb(thread_db* tdbb,
 static RecordSource* gen_outer(thread_db* tdbb,
 					 OptimizerBlk* opt,
 					 RecordSelExpr* rse,
-					 RiverStack& river_stack, jrd_nod** sort_clause, jrd_nod** project_clause)
+					 RiverStack& river_stack,
+					 jrd_nod** sort_clause,
+					 jrd_nod** project_clause)
 {
 /**************************************
  *
@@ -4748,7 +4751,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 	Database* dbb = tdbb->tdbb_database;
 	const bool ods11orHigher = (dbb->dbb_ods_version >= ODS_VERSION11);
-	if (ods11orHigher && !relation->rel_file) {
+	if (ods11orHigher && !relation->rel_file && !relation->isVirtual()) {
 		// For ODS11 and higher databases we can use new calculations
 		OptimizerRetrieval* optimizerRetrieval = FB_NEW(*tdbb->getDefaultPool())
 			OptimizerRetrieval(*tdbb->getDefaultPool(), opt, stream, outer_flag, inner_flag, sort_ptr);
@@ -4762,6 +4765,10 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	else if (relation->rel_file) {
 		// External
 		rsb = EXT_optimize(opt, stream, sort_ptr ? sort_ptr : project_ptr);
+	}
+	else if (relation->isVirtual()) {
+		// Virtual
+		rsb = VirtualTable::optimize(tdbb, opt, stream);
 	}
 	else if (opt->opt_conjuncts.getCount() || (sort_ptr && *sort_ptr)
 	 //|| (project_ptr && *project_ptr)
@@ -5022,7 +5029,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	for (; tail < opt_end; tail++)
 	{
 		jrd_nod* node = tail->opt_conjunct_node;
-		if (!relation->rel_file) {
+		if (!relation->rel_file && !relation->isVirtual()) {
 			compose(&inversion, OPT_make_dbkey(opt, node, stream), nod_bit_and);
 		}
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used)
@@ -6277,7 +6284,7 @@ static jrd_nod* make_inversion(thread_db* tdbb, OptimizerBlk* opt,
 	CompilerScratch::csb_repeat* csb_tail = &opt->opt_csb->csb_rpt[stream];
 	jrd_rel* relation = csb_tail->csb_relation;
 
-	if ((!relation) || (relation->rel_file)) {
+	if (!relation || relation->rel_file || relation->isVirtual()) {
 		return NULL;
 	}
 

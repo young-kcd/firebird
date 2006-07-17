@@ -68,6 +68,7 @@
 #include "../jrd/sort_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
+#include "../jrd/VirtualTable.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -123,7 +124,6 @@ static void save_record(thread_db*, record_param*);
 static void write_merge_block(thread_db*, merge_file*, ULONG);
 
 static const char* SCRATCH = "fb_merge_";
-
 
 
 void RSE_close(thread_db* tdbb, RecordSource* rsb)
@@ -211,6 +211,10 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 		case rsb_ext_indexed:
 		case rsb_ext_dbkey:
 			EXT_close(rsb);
+			return;
+
+		case rsb_virt_sequential:
+			VirtualTable::close(tdbb, rsb);
 			return;
 
 		default:
@@ -493,6 +497,10 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 		case rsb_ext_indexed:
 		case rsb_ext_dbkey:
 			EXT_open(rsb);
+			return;
+
+		case rsb_virt_sequential:
+			VirtualTable::open(tdbb, rsb);
 			return;
 
 		case rsb_left_cross:
@@ -2327,6 +2335,11 @@ static bool get_record(thread_db*	tdbb,
 	case rsb_ext_indexed:
 	case rsb_ext_dbkey:
 		if (!EXT_get(rsb))
+			return false;
+		break;
+
+	case rsb_virt_sequential:
+		if (!VirtualTable::get(tdbb, rsb))
 			return false;
 		break;
 

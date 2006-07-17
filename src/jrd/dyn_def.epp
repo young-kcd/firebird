@@ -57,6 +57,7 @@
 #include "../jrd/all.h"
 #include "../jrd/met.h"
 #include "../jrd/btr.h"
+#include "../jrd/ini.h"
 #include "../jrd/intl.h"
 #include "../jrd/dyn.h"
 #include "../jrd/gdsassert.h"
@@ -2938,10 +2939,10 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	id = drq_l_prc_name;
 	check_unique_name(tdbb, gbl, procedure_name, true);
 	bool sql_prot = false;
+	prc_t prc_type = prc_legacy;
 
 	request = CMP_find_request(tdbb, drq_s_prcs, DYN_REQUESTS);
 	id = drq_s_prcs;
-
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURES
@@ -2989,6 +2990,10 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 				P.RDB$PROCEDURE_OUTPUTS.NULL = FALSE;
 				break;
 
+			case isc_dyn_prc_type:
+				prc_type = (prc_t) DYN_get_number(ptr);
+				break;
+
 			case isc_dyn_security_class:
 				GET_STRING(ptr, P.RDB$SECURITY_CLASS);
 				P.RDB$SECURITY_CLASS.NULL = FALSE;
@@ -3007,6 +3012,22 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 
 	if (!DYN_REQUEST(drq_s_prcs))
 		DYN_REQUEST(drq_s_prcs) = request;
+
+	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+	{
+		jrd_req* sub_request = NULL;
+
+		FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
+			P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ procedure_name.c_str()
+
+			MODIFY P USING
+				P.RDB$PROCEDURE_TYPE = prc_type;
+				P.RDB$PROCEDURE_TYPE.NULL = FALSE;
+			END_MODIFY;
+		END_FOR;
+
+		CMP_release(tdbb, sub_request);
+	}
 
 	if (sql_prot) {
 		Firebird::MetaName owner_name;
@@ -3096,7 +3117,8 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 	id = drq_l_rel_name;
 	check_unique_name(tdbb, gbl, relation_name, false);
-	bool sql_prot = false, is_a_view = false;
+	bool sql_prot = false;
+	rel_t rel_type = rel_persistent;
 
 	request = CMP_find_request(tdbb, drq_s_rels, DYN_REQUESTS);
 	id = drq_s_rels;
@@ -3130,7 +3152,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 			case isc_dyn_view_blr:
 				REL.RDB$VIEW_BLR.NULL = FALSE;
-				is_a_view = true;
+				rel_type = rel_view;
 				DYN_put_blr_blob(gbl, ptr, &REL.RDB$VIEW_BLR);
 				break;
 
@@ -3167,6 +3189,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 										false);
 				}
 				REL.RDB$EXTERNAL_FILE.NULL = FALSE;
+				rel_type = rel_external;
 				break;
 
 			case isc_dyn_rel_sql_protection:
@@ -3178,11 +3201,11 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 				switch (DYN_get_number(ptr))
 				{
 					case isc_dyn_rel_temp_global_preserve:
-						REL.RDB$FLAGS |= REL_global_temp_preserve;
+						rel_type = rel_global_temp_preserve;
 						break;
 
 					case isc_dyn_rel_temp_global_delete:
-						REL.RDB$FLAGS |= REL_global_temp_delete;
+						rel_type = rel_global_temp_delete;
 						break;
 
 					default:
@@ -3209,7 +3232,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 				DYN_error_punt(true, 115, NULL, NULL, NULL, NULL, NULL);
 			/* msg 115: "CREATE VIEW failed" */
 
-			if (is_a_view) {
+			if (rel_type == rel_view) {
 				jrd_req* old_request = request;
 				const SSHORT old_id = id;
 				request = CMP_find_request(tdbb, drq_l_view_rels, DYN_REQUESTS);
@@ -3267,6 +3290,22 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 	if (!DYN_REQUEST(drq_s_rels))
 		DYN_REQUEST(drq_s_rels) = request;
+
+	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+	{
+		jrd_req* sub_request = NULL;
+
+		FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
+			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ relation_name.c_str()
+
+			MODIFY REL USING
+				REL.RDB$RELATION_TYPE = rel_type;
+				REL.RDB$RELATION_TYPE.NULL = FALSE;
+			END_MODIFY;
+		END_FOR;
+
+		CMP_release(tdbb, sub_request);
+	}
 
 	if (sql_prot)
 		for (const TEXT* p = ALL_PRIVILEGES; *p; p++) {

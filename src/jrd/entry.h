@@ -1501,6 +1501,18 @@ ENTRYPOINT( "gds_dsql_cache",
    /***    "_jrd8_dsql_cache" ***/  NULL,
    /***     IPI_dsql_cache    ***/  no_entrypoint)
 
+ENTRYPOINT( "gds_sql_text",
+            jrd8_sql_text,
+   /***    "jrd5_sql_text"  ***/  NULL,
+   /***     REM_sql_text    ***/  no_entrypoint,
+   /***    "REM_sql_text"   ***/  NULL,
+   /***     CSI_sql_text    ***/  no_entrypoint,
+   /***     RDB_sql_text    ***/  no_entrypoint,
+   /***     PSI_sql_text    ***/  no_entrypoint,
+   /***     PSI5_sql_text   ***/  no_entrypoint,
+   /***    "_jrd8_sql_text" ***/  NULL,
+   /***     IPI_sql_text    ***/  no_entrypoint)
+
 #undef ENTRYPOINT
 #endif // 0/1
 

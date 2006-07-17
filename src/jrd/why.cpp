@@ -434,6 +434,7 @@ static const TEXT glbunknown[10] = "<unknown>";
 //#define GDS_EVENT_WAIT			gds__event_wait
 #define GDS_INTL_FUNCTION		gds__intl_function
 #define GDS_DSQL_CACHE			gds__dsql_cache
+#define GDS_SQL_TEXT			gds__sql_text
 #define GDS_GET_SEGMENT			isc_get_segment
 #define GDS_GET_SLICE			isc_get_slice
 #define GDS_OPEN_BLOB			isc_open_blob
@@ -563,8 +564,9 @@ const int PROC_ROLLBACK_RETAINING	= 52;
 const int PROC_CANCEL_OPERATION	= 53;
 const int PROC_INTL_FUNCTION	= 54;	// internal call
 const int PROC_DSQL_CACHE		= 55;	// internal call
+const int PROC_SQL_TEXT			= 56;	// internal call
 
-const int PROC_count			= 56;
+const int PROC_count			= 57;
 
 struct ENTRY
 {
@@ -3815,6 +3817,31 @@ ISC_STATUS API_ROUTINE GDS_DSQL_CACHE(ISC_STATUS * user_status,
 														 type,
 														 name,
 														 result))
+	{
+		return error(status, local);
+	}
+
+	RETURN_SUCCESS;
+}
+
+
+ISC_STATUS API_ROUTINE GDS_SQL_TEXT(ISC_STATUS * user_status,
+									FB_API_HANDLE* handle,
+									USHORT length,
+									const char* string)
+{
+	ISC_STATUS *status;
+	ISC_STATUS_ARRAY local;
+	WHY_REQ request;
+
+	GET_STATUS;
+	TRANSLATE_HANDLE(*handle, request, HANDLE_request, isc_bad_req_handle);
+	subsystem_enter();
+
+	if (CALL(PROC_SQL_TEXT, request->implementation) (status,
+													  &request->handle,
+													  length,
+													  string))
 	{
 		return error(status, local);
 	}

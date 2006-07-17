@@ -1152,6 +1152,10 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	delete transaction->tra_rpblist;
 
+/* Release the database snapshot, if any */
+
+	delete transaction->tra_db_snapshot;
+
 /* Release the transaction pool. */
 
 	JrdMemoryPool* tra_pool = transaction->tra_pool;

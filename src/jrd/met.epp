@@ -3268,13 +3268,13 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		triggers[itr] = NULL;
 	}
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-	blb* blob = 0;
+	blb* blob = NULL;
 
 /* If anything errors, catch it to reset the scan flag.  This will
    make sure that the error will be caught if the operation is tried
    again. */
 
-	jrd_req* request = 0;
+	jrd_req* request = NULL;
 
 	try {
 
@@ -3305,15 +3305,6 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		if (REL.RDB$FLAGS & REL_sql)
 		{
 			relation->rel_flags |= REL_sql_relation;
-		}
-
-		if (REL.RDB$FLAGS & REL_global_temp_delete) 
-		{
-			relation->rel_flags |= REL_temp_tran;
-		} 
-		else if (REL.RDB$FLAGS & REL_global_temp_preserve) 
-		{
-			relation->rel_flags |= REL_temp_conn;
 		}
 
 		if (!REL.RDB$VIEW_BLR.isEmpty())
@@ -3513,6 +3504,49 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		REQUEST(irq_r_fields) = request;
 
 	delete csb;
+
+	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+	{	
+		jrd_req* sub_request =
+			CMP_find_request(tdbb, irq_r_type, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE sub_request)
+			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_ID EQ relation->rel_id
+
+			if (!REQUEST(irq_r_type))
+				REQUEST(irq_r_type) = sub_request;
+
+			if (!REL.RDB$RELATION_TYPE.NULL)
+			{
+				switch (REL.RDB$RELATION_TYPE)
+				{
+					case rel_persistent:
+						break;
+					case rel_external:
+						fb_assert(relation->rel_file);
+						break;
+					case rel_view:
+						fb_assert(relation->rel_view_rse);
+						break;
+					case rel_virtual:
+						relation->rel_flags |= REL_virtual;
+						break;
+					case rel_global_temp_preserve:
+						relation->rel_flags |= REL_temp_conn;
+						break;
+					case rel_global_temp_delete:
+						relation->rel_flags |= REL_temp_tran;
+						break;
+					default:
+						fb_assert(false);
+				} 
+			}
+
+		END_FOR;
+
+		if (!REQUEST(irq_r_type))
+			REQUEST(irq_r_type) = sub_request;
+	}
 
 /* release any triggers in case of a rescan, but not if the rescan
    hapenned while system triggers were being loaded. */

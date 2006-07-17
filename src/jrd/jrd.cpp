@@ -461,6 +461,7 @@ bool invalid_client_SQL_dialect = false;
 #define GDS_DROP_DATABASE		jrd8_drop_database
 #define GDS_INTL_FUNCTION		jrd8_intl_function
 #define GDS_DSQL_CACHE			jrd8_dsql_cache
+#define GDS_SQL_TEXT			jrd8_sql_text
 #define GDS_GET_SEGMENT			jrd8_get_segment
 #define GDS_GET_SLICE			jrd8_get_slice
 #define GDS_OPEN_BLOB2			jrd8_open_blob2
@@ -2643,6 +2644,45 @@ ISC_STATUS GDS_DSQL_CACHE(ISC_STATUS* user_status, Attachment** handle,
 		return error(user_status, ex);
 	}
 #endif	// SUPERSERVER
+
+	return return_success(tdbb);
+}
+
+
+ISC_STATUS GDS_SQL_TEXT(ISC_STATUS* user_status, jrd_req** req_handle,
+						USHORT length, const char* string)
+{
+/**************************************
+ *
+ *	g d s _ r e q u e s t _ s q l _ t e x t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Stores the SQL text for the given request.
+ *  (candidate for removal when engine functions can be called by DSQL)
+ *
+ **************************************/
+	api_entry_point_init(user_status);
+
+	thread_db thd_context;
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
+
+	jrd_req* request = *req_handle;
+	CHECK_HANDLE(request, type_req, isc_bad_req_handle);
+
+	if (check_database(tdbb, request->req_attachment, user_status))
+		return user_status[1];
+
+	try
+	{
+		tdbb->tdbb_status_vector = user_status;
+		request->req_sql_text = Firebird::string(string, length);
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		return error(user_status, ex);
+	}
 
 	return return_success(tdbb);
 }
@@ -5972,6 +6012,9 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);
 	// FUN_fini(tdbb);
+
+	if (dbb->dbb_increment_lock)
+		LCK_release(tdbb, dbb->dbb_increment_lock);
 
 	if (dbb->dbb_shadow_lock)
 		LCK_release(tdbb, dbb->dbb_shadow_lock);

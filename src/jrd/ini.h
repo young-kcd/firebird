@@ -32,6 +32,25 @@
 #include "../jrd/obj.h"
 #include "../jrd/dflt.h"
 
+// relation types
+
+enum rel_t {
+	rel_persistent = 0,
+	rel_view = 1,
+	rel_external = 2,
+	rel_virtual = 3,
+	rel_global_temp_preserve = 4,
+	rel_global_temp_delete = 5
+};
+
+// procedure types
+
+enum prc_t {
+	prc_legacy = 0,
+	prc_selectable = 1,
+	prc_executable = 2
+};
+
 //******************************
 // names.h
 //******************************
@@ -60,8 +79,8 @@ static const TEXT* const names[] =
 //******************************
 // fields.h
 //******************************
-const UCHAR BLOB_SIZE		= 8;
-const UCHAR TIMESTAMP_SIZE	= 8;
+const USHORT BLOB_SIZE		= 8;
+const USHORT TIMESTAMP_SIZE	= 8;
 
 /* Pick up global ids */
 
@@ -77,15 +96,17 @@ typedef gflds GFLDS;
 /* Pick up actual global fields */
 
 #ifndef GPRE
-#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	{ (UCHAR) type, (UCHAR) name, dtype, length, sub_type, ods, dflt_blr, sizeof (dflt_blr) },
+#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	\
+	{ (int) type, (int) name, dtype, length, sub_type, ods, dflt_blr, sizeof(dflt_blr) },
 #else
-#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	{ (UCHAR) type, (UCHAR) name, dtype, length, sub_type, ods, NULL, 0 },
+#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	\
+	{ (int) type, (int) name, dtype, length, sub_type, ods, NULL, 0 },
 #endif
 
 struct gfld
 {
-	UCHAR gfld_type;
-	UCHAR gfld_name;
+	int gfld_type;
+	int gfld_name;
 	UCHAR gfld_dtype;
 	USHORT gfld_length;
 	UCHAR gfld_sub_type;	// mismatch; dsc2.h uses SSHORT.
@@ -106,7 +127,7 @@ static const struct gfld gfields[] = {
 
 /* Pick up relation ids */
 
-#define RELATION(name, id, ods) id,
+#define RELATION(name, id, ods, type) id,
 #define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)
 #define END_RELATION
 enum rids {
@@ -120,15 +141,16 @@ typedef rids RIDS;
 
 /* Pick up relations themselves */
 
-#define RELATION(name, id, ods)	(UCHAR) name,(UCHAR) id, ods,
+#define RELATION(name, id, ods, type)	(int) name, (int) id, ods, type,
 #define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)\
-				(UCHAR) name, (UCHAR) id, update, ods, (UCHAR) upd_id, upd_ods,
+				(int) name, (int) id, update, ods, (int) upd_id, upd_ods,
 #define END_RELATION		0,
 
 const int RFLD_R_NAME	= 0;
 const int RFLD_R_ID		= 1;
-const int RFLD_R_MINOR	= 2;
-const int RFLD_RPT		= 3;
+const int RFLD_R_ODS	= 2;
+const int RFLD_R_TYPE	= 3;
+const int RFLD_RPT		= 4;
 
 const int RFLD_F_NAME	= 0;
 const int RFLD_F_ID		= 1;
@@ -138,7 +160,7 @@ const int RFLD_F_UPD_ID	= 4;
 const int RFLD_F_UPD_MINOR	= 5;
 const int RFLD_F_LENGTH	= 6;
 
-static const UCHAR relfields[] =
+static const int relfields[] =
 {
 #include "../jrd/relations.h"
 	0

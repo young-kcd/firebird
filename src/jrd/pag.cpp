@@ -1229,6 +1229,7 @@ is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 	}
 
 	dbb->dbb_attachment_id = header->hdr_attachment_id;
+	dbb->dbb_creation_date = *(ISC_TIMESTAMP*) header->hdr_creation_date;
 
 	if (header->hdr_flags & hdr_read_only) {
 		/* If Header Page flag says the database is ReadOnly, gladly accept it. */

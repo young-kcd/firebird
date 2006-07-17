@@ -163,6 +163,9 @@
 				RelativePath="..\..\..\src\jrd\cvt2.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\DatabaseSnapshot.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\gen\jrd\dfw.cpp">
 			</File>
 			<File
@@ -316,6 +319,9 @@
 				RelativePath="..\..\..\src\jrd\pwd.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\RecordBuffer.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\Relation.cpp">
 			</File>
 			<File
@@ -389,6 +395,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\vio.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\VirtualTable.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\why.cpp">
@@ -480,6 +489,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\DatabaseSnapshot.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dbg.h">
@@ -863,6 +875,9 @@
 				RelativePath="..\..\..\src\jrd\rec_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\RecordBuffer.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\Relation.h">
 			</File>
 			<File
@@ -1002,6 +1017,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\vio_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\VirtualTable.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\vms.h">

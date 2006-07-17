@@ -26,7 +26,7 @@
 //
 //____________________________________________________________
 //
-//	$Id: jrdmet.cpp,v 1.19 2004-08-21 09:21:08 robocop Exp $
+//	$Id: jrdmet.cpp,v 1.20 2006-07-17 17:43:33 dimitr Exp $
 //
 
 #include "firebird.h"
@@ -50,7 +50,7 @@
 
 void JRDMET_init( DBB db)
 {
-	const UCHAR* relfld = relfields;
+	const int* relfld = relfields;
 
 	while (relfld[RFLD_R_NAME]) {
 		gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
@@ -66,7 +66,7 @@ void JRDMET_init( DBB db)
 		symbol->sym_string = names[relfld[RFLD_R_NAME]];
 		HSH_insert(symbol);
 
-		const UCHAR* fld = relfld + RFLD_RPT;
+		const int* fld = relfld + RFLD_RPT;
 		for (int n = 0; fld[RFLD_F_NAME]; ++n, fld += RFLD_F_LENGTH) 
 		{
 			const gfld* gfield = (fld[RFLD_F_UPD_MINOR]) ?

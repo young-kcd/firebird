@@ -4801,6 +4801,11 @@ static dsql_req* prepare(
 	if (status)
 		punt();
 
+	THREAD_EXIT();
+	gds__sql_text(tdsql->tsql_status, &request->req_handle,
+				  string_length, string);
+	THREAD_ENTER();
+
 	return request;
 }
 

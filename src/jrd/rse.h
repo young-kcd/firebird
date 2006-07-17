@@ -38,6 +38,8 @@
 #include "../jrd/lls.h"
 #include "../jrd/sbm.h"
 
+#include "../jrd/RecordBuffer.h"
+
 struct dsc;
 
 namespace Jrd {
@@ -72,7 +74,8 @@ enum rsb_t
 	rsb_ext_dbkey,						// external DB_KEY access
 	rsb_navigate,						// navigational walk on an index
 	rsb_left_cross,						// left outer join as a nested loop
-	rsb_procedure						// stored procedure
+	rsb_procedure,						// stored procedure
+	rsb_virt_sequential					// sequential access to a virtual table
 };
 
 
@@ -203,6 +206,11 @@ struct irsb_mrg {
 		SSHORT irsb_mrg_order;			// logical merge order by substream
 		merge_file irsb_mrg_file;		// merge equivalence file
 	} irsb_mrg_rpt[1];
+};
+
+struct irsb_virtual {
+	ULONG irsb_flags;
+	RecordBuffer* irsb_record_buffer;
 };
 
 /* CVC: Unused as of Nov-2005.

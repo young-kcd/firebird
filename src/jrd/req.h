@@ -189,9 +189,10 @@ public:
 	jrd_req(JrdMemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool), req_invariants(*pool),
-		req_timestamp(true) {}
+		req_timestamp(true), req_sql_text(*pool) {}
 
 	Attachment*	req_attachment;		// database attachment
+	SLONG		req_id;				// request identifier
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number
 	ULONG		req_impure_size;	// size of impure area
@@ -246,6 +247,7 @@ public:
 	ULONG		req_flags;			/* misc request flags */
 	Savepoint*	req_proc_sav_point;	/* procedure savepoint list */
 	Firebird::TimeStamp	req_timestamp;		/* Start time of request */
+	Firebird::string req_sql_text;
 
 	USHORT	req_src_line;
 	USHORT	req_src_column;
