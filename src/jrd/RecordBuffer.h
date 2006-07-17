@@ -20,8 +20,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef RECORD_BUFFER_H
-#define RECORD_BUFFER_H
+#ifndef JRD_RECORD_BUFFER_H
+#define JRD_RECORD_BUFFER_H
 
 #include "../jrd/TempSpace.h"
 
@@ -49,4 +49,4 @@ private:
 
 } // namespace
 
-#endif // RECORD_BUFFER_H
+#endif // JRD_RECORD_BUFFER_H
