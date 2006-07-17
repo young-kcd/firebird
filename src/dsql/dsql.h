@@ -473,7 +473,8 @@ enum req_flags_vals {
 	REQ_backwards			= 512,
 	REQ_blr_version4		= 1024,
 	REQ_blr_version5		= 2048,
-	REQ_block				= 4096
+	REQ_block				= 4096,
+	REQ_selectable			= 8192
 };
 
 //! Blob

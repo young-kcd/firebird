@@ -1576,6 +1576,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown
 					isc_arg_gds, isc_random, isc_arg_string, "SUSPEND", 0);
+		request->req_flags |= REQ_selectable;
 
 		input->nod_arg[e_rtn_procedure] =
 			request->req_ddl_node ? request->req_ddl_node : request->req_blk_node;

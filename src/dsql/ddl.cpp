@@ -2624,6 +2624,10 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	request->append_uchar(blr_end);
 	request->end_blr();
 
+	const UCHAR prc_type = (request->req_flags & REQ_selectable) ?
+		isc_dyn_prc_t_selectable : isc_dyn_prc_t_executable;
+	request->append_number(isc_dyn_prc_type, prc_type);
+
 	request->append_uchar(isc_dyn_end);
 }
 
@@ -3738,8 +3742,10 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		i_ptr < i_end; i_ptr++, position++)
 	{
 		dsql_nod* field_node = *i_ptr;
+		const dsql_str* alias_name = NULL;
 
 		if (field_node->nod_type == nod_alias) {
+			alias_name = (dsql_str*) field_node->nod_arg[e_alias_alias];
 			field_node = field_node->nod_arg[e_alias_value];
 		}
 
@@ -3754,9 +3760,21 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		else
 			updatable = false;
 
+		// determine the proper field name, replacing the default if necessary
+
+		if (alias_name) {
+			field_string = (TEXT*) alias_name->str_data;
+		}
+		else if (field) {
+			field_string = field->fld_name;
+		}
+		else {
+			field_string = NULL;
+		}
+
 		// if this is an expression, check to make sure there is a name specified
 
-		if (!ptr && !field)
+		if (!ptr && !field_string)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
@@ -3765,11 +3783,6 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 					  0);
 		}
 
-		// determine the proper field name, replacing the default if necessary
-
-		if (field) {
-			field_string = field->fld_name;
-		}
 		/* CVC: Small modification here to catch any mismatch between number of
 				explicit field names in a view and number of fields in the select expression,
 				see comment below. This closes Firebird Bug #223059. */

@@ -1733,7 +1733,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dyn_idx_type                  103
 #define isc_dyn_idx_foreign_key           104
 #define isc_dyn_idx_ref_column            105
-#define isc_dyn_idx_statistic		  204
+#define isc_dyn_idx_statistic             204
 
 /*******************************/
 /* Trigger specific attributes */
@@ -1789,7 +1789,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dyn_log_file_partitions       178
 #define isc_dyn_log_file_serial           179
 #define isc_dyn_log_file_overflow         200
-#define isc_dyn_log_file_raw		  201
+#define isc_dyn_log_file_raw              201
 */
 
 /***************************/
@@ -1817,15 +1817,15 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dyn_filter_out_subtype        153
 
 
-#define isc_dyn_description2		  154
-#define isc_dyn_fld_computed_source2	  155
-#define isc_dyn_fld_edit_string2	  156
-#define isc_dyn_fld_query_header2	  157
-#define isc_dyn_fld_validation_source2	  158
-#define isc_dyn_trg_msg2		  159
-#define isc_dyn_trg_source2		  160
-#define isc_dyn_view_source2		  161
-#define isc_dyn_xcp_msg2		  184
+#define isc_dyn_description2              154
+#define isc_dyn_fld_computed_source2      155
+#define isc_dyn_fld_edit_string2          156
+#define isc_dyn_fld_query_header2         157
+#define isc_dyn_fld_validation_source2    158
+#define isc_dyn_trg_msg2                  159
+#define isc_dyn_trg_source2               160
+#define isc_dyn_view_source2              161
+#define isc_dyn_xcp_msg2                  184
 
 /*********************************/
 /* Generator specific attributes */
@@ -1843,6 +1843,10 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dyn_prc_source                169
 #define isc_dyn_prc_blr                   170
 #define isc_dyn_prc_source2               171
+#define isc_dyn_prc_type                  239
+
+#define isc_dyn_prc_t_selectable          1
+#define isc_dyn_prc_t_executable          2
 
 /*********************************/
 /* Parameter specific attributes */
@@ -1906,7 +1910,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 /* Last $dyn value assigned */
 /****************************/
 
-#define isc_dyn_last_dyn_value            238
+#define isc_dyn_last_dyn_value            239
 
 /******************************************/
 /* Array slice description language (SDL) */
@@ -1964,27 +1968,27 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 
 /* types less than zero are reserved for customer use */
 
-#define isc_blob_untyped                   0
+#define isc_blob_untyped                  0
 
 /* internal subtypes */
 
-#define isc_blob_text                      1
-#define isc_blob_blr                       2
-#define isc_blob_acl                       3
-#define isc_blob_ranges                    4
-#define isc_blob_summary                   5
-#define isc_blob_format                    6
-#define isc_blob_tra                       7
-#define isc_blob_extfile                   8
-#define isc_blob_max_predefined_subtype    9
+#define isc_blob_text                     1
+#define isc_blob_blr                      2
+#define isc_blob_acl                      3
+#define isc_blob_ranges                   4
+#define isc_blob_summary                  5
+#define isc_blob_format                   6
+#define isc_blob_tra                      7
+#define isc_blob_extfile                  8
+#define isc_blob_max_predefined_subtype   9
 
 /* the range 20-30 is reserved for dBASE and Paradox types */
 
-#define isc_blob_formatted_memo            20
-#define isc_blob_paradox_ole               21
-#define isc_blob_graphic                   22
-#define isc_blob_dbase_ole                 23
-#define isc_blob_typed_binary              24
+#define isc_blob_formatted_memo           20
+#define isc_blob_paradox_ole              21
+#define isc_blob_graphic                  22
+#define isc_blob_dbase_ole                23
+#define isc_blob_typed_binary             24
 
 /* Deprecated definitions maintained for compatibility only */
 
