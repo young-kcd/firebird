@@ -287,7 +287,8 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 			DPM_create_relation(tdbb, MET_relation(tdbb, relfld[RFLD_R_ID]));
 		}
 
-		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH);
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+			;
 	}
 
 /* Store RELATIONS and RELATION_FIELDS */

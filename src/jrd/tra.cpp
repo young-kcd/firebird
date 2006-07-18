@@ -1085,7 +1085,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 			TRA_detach_request(transaction->tra_requests);
 	}
 
-/* Release interest in relation/procedure existence for transaction */
+	// Release interest in relation/procedure existence for transaction
 
 	for (Resource* rsc = transaction->tra_resources.begin();
 		rsc < transaction->tra_resources.end(); rsc++)
@@ -1113,7 +1113,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	}
 
-/* Release the locks associated with the transaction */
+	// Release the locks associated with the transaction
 
 	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector) {
@@ -1130,14 +1130,14 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 		LCK_release(tdbb, transaction->tra_lock);
 	--transaction->tra_use_count;
 
-/* release the sparse bit map used for commit retain transaction */
+	// release the sparse bit map used for commit retain transaction
 
 	delete transaction->tra_commit_sub_trans;
 
 	if (transaction->tra_flags & TRA_precommitted)
 		TRA_precommited(tdbb, transaction->tra_number, 0);
 
-/* Unlink the transaction from the database block */
+	// Unlink the transaction from the database block
 
 	for (jrd_tra** ptr = &tdbb->tdbb_attachment->att_transactions;
 							*ptr; ptr = &(*ptr)->tra_next) 
@@ -1148,15 +1148,15 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 		}
 	}
 
-/* Release transaction's under-modification-rpb list. */
+	// Release transaction's under-modification-rpb list.
 
 	delete transaction->tra_rpblist;
 
-/* Release the database snapshot, if any */
+	// Release the database snapshot, if any
 
 	delete transaction->tra_db_snapshot;
 
-/* Release the transaction pool. */
+	// Release the transaction pool.
 
 	JrdMemoryPool* tra_pool = transaction->tra_pool;
 	if (tra_pool)

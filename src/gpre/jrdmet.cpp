@@ -24,9 +24,6 @@
 //  There however is still a bunch of constness errors in this file
 //  
 //
-//____________________________________________________________
-//
-//	$Id: jrdmet.cpp,v 1.20 2006-07-17 17:43:33 dimitr Exp $
 //
 
 #include "firebird.h"

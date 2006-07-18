@@ -3722,7 +3722,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
    the rse node that was created from the select expression */
 
     const dsql_nod* const* ptr = NULL;
-	const dsql_nod* const* end =  NULL;
+	const dsql_nod* const* end = NULL;
 	const dsql_nod* view_fields = node->nod_arg[e_view_fields];
 	if (view_fields != NULL) {
 		ptr = view_fields->nod_arg;

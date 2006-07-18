@@ -678,7 +678,7 @@ rem_port* INET_connect(const TEXT* name,
 		}
 	}
 
-	if (host.length()) {
+	if (host.hasData()) {
 		if (port->port_connection) {
 			ALLR_free(port->port_connection);
 		}
@@ -688,14 +688,10 @@ rem_port* INET_connect(const TEXT* name,
 		host = port->port_host->str_data;
 	}
 
-	if (!protocol.length()) {
+	if (protocol.isEmpty()) {
 		const unsigned short port2 = Config::getRemoteServicePort();
 		if (port2) {
-			TEXT temp[BUFFER_TINY];
-			// EKU: since temp is 128 byte long, the port number will always
-			// fit into the buffer, hence snprintf replaced with sprintf
-			sprintf(temp, "%hu", port2);
-			protocol = temp;
+			protocol.printf("%hu", port2);
 		}
 		else {
 			protocol = Config::getRemoteServiceName();
