@@ -4632,6 +4632,7 @@ static rel_t get_relation_type(thread_db* tdbb, Global* gbl,
 	return rel_type;
 }
 
+
 static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl, 
 				const TEXT*	child_rel_name, const TEXT* master_index_name)
 {

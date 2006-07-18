@@ -4573,10 +4573,10 @@ bool get_procedure()
 
 				case att_procedure_inputs:
 					X.RDB$PROCEDURE_INPUTS = (USHORT) get_numeric();
-							if (X.RDB$PROCEDURE_INPUTS == 0)
-								X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
-							else
-								X.RDB$PROCEDURE_INPUTS.NULL = FALSE;
+					if (X.RDB$PROCEDURE_INPUTS == 0)
+						X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
+					else
+						X.RDB$PROCEDURE_INPUTS.NULL = FALSE;
 					break;
 
 				case att_procedure_outputs:
@@ -4658,10 +4658,10 @@ bool get_procedure()
 
 				case att_procedure_inputs:
 					X.RDB$PROCEDURE_INPUTS = (USHORT) get_numeric();
-							if (X.RDB$PROCEDURE_INPUTS == 0)
-								X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
-							else
-								X.RDB$PROCEDURE_INPUTS.NULL = FALSE;
+					if (X.RDB$PROCEDURE_INPUTS == 0)
+						X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
+					else
+						X.RDB$PROCEDURE_INPUTS.NULL = FALSE;
 					break;
 
 				case att_procedure_outputs:

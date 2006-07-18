@@ -152,7 +152,8 @@ enum backup_capabilities
 	BCK_ods10			= 8192,	// FIELD_PRECISION
 	BCK_ods11           = 16384,// rdb$description in rdb$roles and rdb$generators
 								// rdb$base_collation_name and rdb$specific_attributes in rdb$collations
-	BCK_ods11_1         = 32768 // rdb$relation_type and rdb$procedure_type
+	BCK_ods11_1         = 32768 // rdb$relation_type in rdb$relations
+								// rdb$procedure_type in rdb$procedures
 };
 
 #ifdef DEBUG
@@ -3660,11 +3661,13 @@ void write_relations(void)
 				&X.RDB$EXTERNAL_DESCRIPTION);
 			PUT_TEXT (att_relation_owner_name, X.RDB$OWNER_NAME);
 			if (!X.RDB$EXTERNAL_FILE.NULL)
+			{
 				if (!tdgbl->gbl_sw_convert_ext_tables)
 				{
 					PUT_TEXT(att_relation_ext_file_name, X.RDB$EXTERNAL_FILE); 
 					flags |= REL_external;
 				}
+			}
 
 			if (!X.RDB$RELATION_TYPE.NULL)
 				put_numeric (att_relation_type, X.RDB$RELATION_TYPE);
@@ -3753,8 +3756,8 @@ void write_relations(void)
 			{
 				FOR (REQUEST_HANDLE req_handle5)
 					R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME = X.RDB$RELATION_NAME
-						if (!X.RDB$RELATION_TYPE.NULL)
-							put_numeric (att_relation_type, R.RDB$RELATION_TYPE);
+					if (!X.RDB$RELATION_TYPE.NULL)
+						put_numeric (att_relation_type, R.RDB$RELATION_TYPE);
 				END_FOR;
 				ON_ERROR
 					general_on_error();

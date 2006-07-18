@@ -72,10 +72,7 @@ bool RecordBuffer::fetch(Record* record)
 {
 	fb_assert(record->rec_length == length);
 
-	if (!filled)
-	{
-		filled = true;
-	}
+	filled = true;
 
 	if (position == count)
 	{
