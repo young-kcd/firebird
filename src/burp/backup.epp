@@ -152,7 +152,7 @@ enum backup_capabilities
 	BCK_ods10			= 8192,	// FIELD_PRECISION
 	BCK_ods11           = 16384,// rdb$description in rdb$roles and rdb$generators
 								// rdb$base_collation_name and rdb$specific_attributes in rdb$collations
-	BCK_ods11_1         = 32768 // rdb$relation_name and rdb$procedure_name
+	BCK_ods11_1         = 32768 // rdb$relation_type and rdb$procedure_type
 };
 
 #ifdef DEBUG
