@@ -3591,15 +3591,15 @@ bool get_generator()
 			value = get_int64();
 			break;
 
-			case att_gen_description:
-				if (tdgbl->RESTORE_format >= 7)
-				{
-					get_source_blob (&gen_desc, false);
-					got_desc = gen_desc.gds_quad_high || gen_desc.gds_quad_low;
-				}
-				else
-					bad_attribute(scan_next_attr, attribute, 93);
-				break;
+		case att_gen_description:
+			if (tdgbl->RESTORE_format >= 7)
+			{
+				get_source_blob (&gen_desc, false);
+				got_desc = gen_desc.gds_quad_high || gen_desc.gds_quad_low;
+			}
+			else
+				bad_attribute(scan_next_attr, attribute, 93);
+			break;
 
 		default:
 			bad_attribute (scan_next_attr, attribute, 93);
@@ -4514,83 +4514,172 @@ bool get_procedure()
 	procedure->prc_next = tdgbl->procedures;
 	tdgbl->procedures = procedure;
 
-	STORE (TRANSACTION_HANDLE local_trans
-			REQUEST_HANDLE tdgbl->handles_get_procedure_req_handle1)
-		X IN RDB$PROCEDURES
-		X.RDB$PROCEDURE_SOURCE.NULL = TRUE;
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		X.RDB$SECURITY_CLASS.NULL = TRUE;
-		X.RDB$OWNER_NAME.NULL = TRUE;
-		skip_init(&scan_next_attr);
-		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-		{
-			switch (attribute)
+	if (tdgbl->RESTORE_format >= 8)
+	{
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_procedure_req_handle1)
+			X IN RDB$PROCEDURES
+			X.RDB$PROCEDURE_SOURCE.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$SECURITY_CLASS.NULL = TRUE;
+			X.RDB$OWNER_NAME.NULL = TRUE;
+			X.RDB$PROCEDURE_TYPE.NULL = TRUE;
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
-			case att_procedure_name:
-				l = GET_TEXT(X.RDB$PROCEDURE_NAME);
-						procedure->prc_name_length = l;
-						strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
-				MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
-				BURP_verbose (195, temp, NULL, NULL, NULL, NULL);
-				// msg 195 restoring stored procedure %s 
-				break;
+				switch (attribute)
+				{
+				case att_procedure_name:
+					l = GET_TEXT(X.RDB$PROCEDURE_NAME);
+							procedure->prc_name_length = l;
+							strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
+					MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
+					BURP_verbose (195, temp, NULL, NULL, NULL, NULL);
+					// msg 195 restoring stored procedure %s 
+					break;
 
-			case att_procedure_description:
-				get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				break;
+				case att_procedure_description:
+					get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
 
-			case att_procedure_description2:
-				get_source_blob (&X.RDB$DESCRIPTION, true);
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				break;
+				case att_procedure_description2:
+					get_source_blob (&X.RDB$DESCRIPTION, true);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
 
-			case att_procedure_source:
-				get_misc_blob (&X.RDB$PROCEDURE_SOURCE, 0, true);
-				X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
-				break;
+				case att_procedure_source:
+					get_misc_blob (&X.RDB$PROCEDURE_SOURCE, 0, true);
+					X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
+					break;
 
-			case att_procedure_source2:
-				get_source_blob (&X.RDB$PROCEDURE_SOURCE, true);
-				X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
-				break;
+				case att_procedure_source2:
+					get_source_blob (&X.RDB$PROCEDURE_SOURCE, true);
+					X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
+					break;
 
-			case att_procedure_blr:
-				get_blr_blob (&X.RDB$PROCEDURE_BLR, true);
-				break;
+				case att_procedure_blr:
+					get_blr_blob (&X.RDB$PROCEDURE_BLR, true);
+					break;
 
-			case att_procedure_security_class:
-				GET_TEXT(X.RDB$SECURITY_CLASS);
-				X.RDB$SECURITY_CLASS.NULL = FALSE;
-				break;
+				case att_procedure_security_class:
+					GET_TEXT(X.RDB$SECURITY_CLASS);
+					X.RDB$SECURITY_CLASS.NULL = FALSE;
+					break;
 
-			case att_procedure_owner_name:
-				GET_TEXT(procedure->prc_owner);
-				break;
+				case att_procedure_owner_name:
+					GET_TEXT(procedure->prc_owner);
+					break;
 
-			case att_procedure_inputs:
-				X.RDB$PROCEDURE_INPUTS = (USHORT) get_numeric();
-						if (X.RDB$PROCEDURE_INPUTS == 0)
-							X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
-						else
-							X.RDB$PROCEDURE_INPUTS.NULL = FALSE;
-				break;
+				case att_procedure_inputs:
+					X.RDB$PROCEDURE_INPUTS = (USHORT) get_numeric();
+							if (X.RDB$PROCEDURE_INPUTS == 0)
+								X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
+							else
+								X.RDB$PROCEDURE_INPUTS.NULL = FALSE;
+					break;
 
-			case att_procedure_outputs:
-				X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_numeric();
-				break;
+				case att_procedure_outputs:
+					X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_numeric();
+					break;
 
-			default:
-				bad_attribute (scan_next_attr, attribute, 89);
-				// msg 89 function 
-				break;
+				case att_procedure_type:
+					X.RDB$PROCEDURE_TYPE = (USHORT) get_numeric();
+					X.RDB$PROCEDURE_TYPE.NULL = FALSE;
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, 89);
+					// msg 89 function 
+					break;
+				}
 			}
-		}
-		strcpy (procedure_name, X.RDB$PROCEDURE_NAME);
-	END_STORE;
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
+			strcpy (procedure_name, X.RDB$PROCEDURE_NAME);
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else
+	{
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_procedure_req_handle1)
+			X IN RDB$PROCEDURES
+			X.RDB$PROCEDURE_SOURCE.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$SECURITY_CLASS.NULL = TRUE;
+			X.RDB$OWNER_NAME.NULL = TRUE;
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_procedure_name:
+					l = GET_TEXT(X.RDB$PROCEDURE_NAME);
+							procedure->prc_name_length = l;
+							strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
+					MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
+					BURP_verbose (195, temp, NULL, NULL, NULL, NULL);
+					// msg 195 restoring stored procedure %s 
+					break;
+
+				case att_procedure_description:
+					get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
+
+				case att_procedure_description2:
+					get_source_blob (&X.RDB$DESCRIPTION, true);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
+
+				case att_procedure_source:
+					get_misc_blob (&X.RDB$PROCEDURE_SOURCE, 0, true);
+					X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
+					break;
+
+				case att_procedure_source2:
+					get_source_blob (&X.RDB$PROCEDURE_SOURCE, true);
+					X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
+					break;
+
+				case att_procedure_blr:
+					get_blr_blob (&X.RDB$PROCEDURE_BLR, true);
+					break;
+
+				case att_procedure_security_class:
+					GET_TEXT(X.RDB$SECURITY_CLASS);
+					X.RDB$SECURITY_CLASS.NULL = FALSE;
+					break;
+
+				case att_procedure_owner_name:
+					GET_TEXT(procedure->prc_owner);
+					break;
+
+				case att_procedure_inputs:
+					X.RDB$PROCEDURE_INPUTS = (USHORT) get_numeric();
+							if (X.RDB$PROCEDURE_INPUTS == 0)
+								X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
+							else
+								X.RDB$PROCEDURE_INPUTS.NULL = FALSE;
+					break;
+
+				case att_procedure_outputs:
+					X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_numeric();
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, 89);
+					// msg 89 function 
+					break;
+				}
+			}
+			strcpy (procedure_name, X.RDB$PROCEDURE_NAME);
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}	
 
 	// at the end of prms for a procedure is the rec_procedure_end marker 
 
@@ -4771,8 +4860,8 @@ bool get_relation()
 	rec_type	record;
 	scan_attr_t		scan_next_attr;
 
-	SLONG		rel_flags = 0, sys_flag = 0;
-	bool		rel_flags_null = true, sys_flag_null = true;
+	SLONG		rel_flags = 0, sys_flag = 0, type = 0;
+	bool		rel_flags_null = true, sys_flag_null = true, type_null = true;
 	ISC_QUAD	view_blr = isc_blob_null, view_src = isc_blob_null,
 				rel_desc = isc_blob_null, ext_desc = isc_blob_null;
 	bool		view_blr_null = true, view_src_null = true, rel_desc_null = true,
@@ -4881,6 +4970,16 @@ bool get_relation()
 			GET_TEXT(ext_file_name);
 			break;
 
+		case att_relation_type:
+			if (tdgbl->RESTORE_format >= 8)
+			{
+				type_null = false;
+				type = get_numeric();
+			}
+			else
+				bad_attribute(scan_next_attr, attribute, 111);
+			break;
+
 		default:
 			bad_attribute (scan_next_attr, attribute, 111);
 			// msg 111 relation 
@@ -4895,35 +4994,73 @@ bool get_relation()
 	else
 		local_trans = tdgbl->global_trans;
 
-	STORE (TRANSACTION_HANDLE local_trans
-			REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
-		X IN RDB$RELATIONS
+	if (tdgbl->RESTORE_format >= 8)
+	{
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
+			X IN RDB$RELATIONS
 
-		X.RDB$SYSTEM_FLAG.NULL = sys_flag_null;
-		X.RDB$FLAGS.NULL = rel_flags_null;
-		X.RDB$SECURITY_CLASS.NULL = sec_class_null;
-		X.RDB$VIEW_BLR.NULL = view_blr_null;
-		X.RDB$VIEW_SOURCE.NULL = view_src_null;
-		X.RDB$DESCRIPTION.NULL = rel_desc_null;
-		X.RDB$RUNTIME.NULL = TRUE;
-		X.RDB$EXTERNAL_DESCRIPTION.NULL = ext_desc_null;
-		X.RDB$EXTERNAL_FILE.NULL = ext_file_name_null;
+			X.RDB$SYSTEM_FLAG.NULL = sys_flag_null;
+			X.RDB$FLAGS.NULL = rel_flags_null;
+			X.RDB$SECURITY_CLASS.NULL = sec_class_null;
+			X.RDB$VIEW_BLR.NULL = view_blr_null;
+			X.RDB$VIEW_SOURCE.NULL = view_src_null;
+			X.RDB$DESCRIPTION.NULL = rel_desc_null;
+			X.RDB$RUNTIME.NULL = TRUE;
+			X.RDB$EXTERNAL_DESCRIPTION.NULL = ext_desc_null;
+			X.RDB$EXTERNAL_FILE.NULL = ext_file_name_null;
+			X.RDB$RELATION_TYPE.NULL = type_null;
 
-		X.RDB$SYSTEM_FLAG = (USHORT) sys_flag;
-		X.RDB$FLAGS = (USHORT) rel_flags;
-		X.RDB$VIEW_BLR = view_blr;
-		X.RDB$VIEW_SOURCE = view_src;
-		X.RDB$DESCRIPTION = rel_desc;
-		X.RDB$EXTERNAL_DESCRIPTION = ext_desc;
+			X.RDB$SYSTEM_FLAG = (USHORT) sys_flag;
+			X.RDB$FLAGS = (USHORT) rel_flags;
+			X.RDB$VIEW_BLR = view_blr;
+			X.RDB$VIEW_SOURCE = view_src;
+			X.RDB$DESCRIPTION = rel_desc;
+			X.RDB$EXTERNAL_DESCRIPTION = ext_desc;
 
-		strcpy(X.RDB$SECURITY_CLASS, sec_class);
-		strcpy(X.RDB$RELATION_NAME, relation->rel_name);
-		strcpy(X.RDB$EXTERNAL_FILE, ext_file_name);
+			strcpy(X.RDB$SECURITY_CLASS, sec_class);
+			strcpy(X.RDB$RELATION_NAME, relation->rel_name);
+			strcpy(X.RDB$EXTERNAL_FILE, ext_file_name);
 
-	END_STORE;
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
+			X.RDB$RELATION_TYPE = (USHORT) type;
+
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else
+	{
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
+			X IN RDB$RELATIONS
+
+			X.RDB$SYSTEM_FLAG.NULL = sys_flag_null;
+			X.RDB$FLAGS.NULL = rel_flags_null;
+			X.RDB$SECURITY_CLASS.NULL = sec_class_null;
+			X.RDB$VIEW_BLR.NULL = view_blr_null;
+			X.RDB$VIEW_SOURCE.NULL = view_src_null;
+			X.RDB$DESCRIPTION.NULL = rel_desc_null;
+			X.RDB$RUNTIME.NULL = TRUE;
+			X.RDB$EXTERNAL_DESCRIPTION.NULL = ext_desc_null;
+			X.RDB$EXTERNAL_FILE.NULL = ext_file_name_null;
+
+			X.RDB$SYSTEM_FLAG = (USHORT) sys_flag;
+			X.RDB$FLAGS = (USHORT) rel_flags;
+			X.RDB$VIEW_BLR = view_blr;
+			X.RDB$VIEW_SOURCE = view_src;
+			X.RDB$DESCRIPTION = rel_desc;
+			X.RDB$EXTERNAL_DESCRIPTION = ext_desc;
+
+			strcpy(X.RDB$SECURITY_CLASS, sec_class);
+			strcpy(X.RDB$RELATION_NAME, relation->rel_name);
+			strcpy(X.RDB$EXTERNAL_FILE, ext_file_name);
+
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
 
 	// Eat up misc. records 
 	burp_fld* field = NULL;

@@ -179,7 +179,10 @@ and trigger-new is:
 			  RDB$FILE_NAME in character_sets and collations
 			  RDB$BASE_COLLATION_NAME and RDB$SPECIFIC_ATTRIBUTES in collations
  */
-const int ATT_BACKUP_FORMAT		= 7;	// ASF: when change this, change the text of the message gbak_inv_bkup_ver too
+
+/* Version 8: RDB$RELATION_TYPE and RDB$PROCEDURE_TYPE
+ */
+const int ATT_BACKUP_FORMAT		= 8;	// ASF: when change this, change the text of the message gbak_inv_bkup_ver too
 
 // format version number for ranges for arrays 
 
@@ -243,7 +246,8 @@ enum att_type {
 	att_relation_view_source2,
 	att_relation_ext_description2,
 	att_relation_flags,  
-	att_relation_ext_file_name, // name of file for external tables 
+	att_relation_ext_file_name, // name of file for external tables
+	att_relation_type,
 
 	// Field attributes (used for both global and local fields) 
 
@@ -447,6 +451,7 @@ enum att_type {
 	att_procedure_blr,
 	att_procedure_security_class,
 	att_procedure_owner_name,
+	att_procedure_type,
 
 	// Stored procedure parameter attributes 
 
