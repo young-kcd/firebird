@@ -45,6 +45,8 @@ using namespace Jrd;
 
 DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
 {
+	SET_TDBB(tdbb);
+
 	jrd_tra* transaction = tdbb->tdbb_transaction;
 	fb_assert(transaction);
 
@@ -52,7 +54,7 @@ DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
 	{	
 		MemoryPool& pool = *transaction->tra_pool;
 		transaction->tra_db_snapshot =
-			FB_NEW(pool) DatabaseSnapshot(pool, transaction);
+			FB_NEW(pool) DatabaseSnapshot(tdbb, pool, transaction);
 	}
 
 	return transaction->tra_db_snapshot;
@@ -77,10 +79,9 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb,
 }
 
 
-DatabaseSnapshot::DatabaseSnapshot(MemoryPool& pool, jrd_tra* tran)
+DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* tran)
 	: transaction(tran), snapshot(pool)
 {
-	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
 	// Database information

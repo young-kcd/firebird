@@ -41,7 +41,7 @@ public:
 	static DatabaseSnapshot* create(thread_db*);
 
 protected:
-	DatabaseSnapshot(MemoryPool&, jrd_tra*);
+	DatabaseSnapshot(thread_db*, MemoryPool&, jrd_tra*);
 
 private:
 	jrd_tra* transaction;
