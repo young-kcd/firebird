@@ -28,6 +28,7 @@
 #include "../jrd/req.h"
 #include "../jrd/rse.h"
 #include "../jrd/val.h"
+#include "../jrd/cmp_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/vio_proto.h"
@@ -116,8 +117,7 @@ Jrd::RecordSource* VirtualTable::optimize(thread_db* tdbb, OptimizerBlk* opt, SS
 	rsb->rsb_type = rsb_virt_sequential;
 	rsb->rsb_stream = stream;
 	rsb->rsb_relation = csb_tail->csb_relation;
-	rsb->rsb_impure = csb->csb_impure;
-	csb->csb_impure += sizeof(irsb);
+	rsb->rsb_impure = CMP_impure(csb, sizeof(irsb_virtual));
 
 	return rsb;
 }

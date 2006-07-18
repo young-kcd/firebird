@@ -46,6 +46,7 @@
 #include "../jrd/ext.h"
 #include "../jrd/tra.h"
 #include "gen/iberror.h"
+#include "../jrd/cmp_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/ext_proto.h"
 #include "../jrd/gds_proto.h"
@@ -401,15 +402,11 @@ if (opt->opt_count)
 	}
 */
 
-
 	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource;
 	rsb->rsb_type = rsb_ext_sequential;
-	const SSHORT size = sizeof(irsb);
-
 	rsb->rsb_stream = stream;
 	rsb->rsb_relation = relation;
-	rsb->rsb_impure = csb->csb_impure;
-	csb->csb_impure += size;
+	rsb->rsb_impure = CMP_impure(csb, sizeof(irsb));
 
 	return rsb;
 }
