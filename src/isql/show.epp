@@ -1413,7 +1413,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		break;
 		
 	case ShowOptions::dependency:
-		if (*cmd[3] == '"')
+		if (*cmd[2] == '"')
 		{
 			remove_delimited_double_quotes(lcmd[2]);
 			ret = show_dependencies(lcmd[2]);
