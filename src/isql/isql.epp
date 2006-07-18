@@ -399,7 +399,6 @@ static indev Ifp;
 static SCHAR Password[128];
 static SCHAR Charset[128];
 static bool Merge_stderr;
-//static USHORT minor_ods; CVC: We do nothing useful with it!
 
 static collist* global_Cols = NULL;
 static indev* Filelist;
@@ -556,7 +555,7 @@ int CLIB_ROUTINE main(int argc,
 #endif
 	// Initialize globals
 	isqlGlob.major_ods = 0;
-	//minor_ods = 0;
+	isqlGlob.minor_ods = 0;
 
 	return ISQL_main(argc, argv);
 }
@@ -4546,7 +4545,7 @@ void ISQL_get_version(bool call_by_create_db)
  **************************************/
 	const UCHAR db_version_info[] = {
 		isc_info_ods_version,
-		//isc_info_ods_minor_version,
+		isc_info_ods_minor_version,
 		isc_info_db_sql_dialect,
 		Version_info ? isc_info_firebird_version: isc_info_end,
 		isc_info_end
@@ -4591,9 +4590,9 @@ void ISQL_get_version(bool call_by_create_db)
 		case isc_info_ods_version:
 			isqlGlob.major_ods = gds__vax_integer(p, length);
 			break;
-		//case isc_info_ods_minor_version:
-		//	minor_ods = gds__vax_integer(p, length);
-		//	break;
+		case isc_info_ods_minor_version:
+			isqlGlob.minor_ods = gds__vax_integer(p, length);
+			break;
 		case isc_info_db_sql_dialect:
 			global_dialect_spoken = gds__vax_integer(p, length);
 			if (isqlGlob.major_ods < ODS_VERSION10) {

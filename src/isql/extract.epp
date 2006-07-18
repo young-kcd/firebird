@@ -52,6 +52,7 @@
 #include "../isql/extra_proto.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
+#include "../jrd/ini.h"
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
 #include "../common/utils_proto.h"
@@ -306,6 +307,22 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	// CVC: 2004.12.03: I discovered someone made this variable obsolete;
 	// it's set but never used. Hope the change was right. I commented it.
 
+	rel_t rel_type = rel_persistent;
+
+	if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
+	{
+		FOR RT IN RDB$RELATIONS
+			WITH RT.RDB$RELATION_NAME EQ relation_name
+			
+			rel_type = (rel_t) RT.RDB$RELATION_TYPE;
+
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return FINI_ERROR;
+		END_ERROR;
+	}
+
 // Query to obtain relation detail information 
 
 	FOR REL IN RDB$RELATIONS CROSS
@@ -333,12 +350,12 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					 REL.RDB$OWNER_NAME,
 					 NEWLINE);
 					 
-			rel_flags = REL.RDB$FLAGS;
-			if (rel_flags & REL_IS_GLOBAL_TEMP)
+			if (rel_type == rel_global_temp_preserve ||
+				rel_type == rel_global_temp_delete)
 			{
 				isqlGlob.printf("CREATE GLOBAL TEMPORARY TABLE ");
 			}
-			else 
+			else
 			{
 				isqlGlob.printf("CREATE TABLE ");
 			}
@@ -656,11 +673,11 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	if (first) // we extracted nothing
 		return FINI_ERROR;
 
-	if (rel_flags & REL_global_temp_preserve)
+	if (rel_type == rel_global_temp_preserve)
 	{
 		isqlGlob.printf(")%sON COMMIT PRESERVE ROWS", NEWLINE);
 	}
-	else if (rel_flags & REL_global_temp_delete)
+	else if (rel_type == rel_global_temp_delete)
 	{
 		isqlGlob.printf(")%sON COMMIT DELETE ROWS", NEWLINE);
 	}

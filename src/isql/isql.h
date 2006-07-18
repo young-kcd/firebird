@@ -344,6 +344,7 @@ public:
 	USHORT db_SQL_dialect;
 	// from isql.epp
 	USHORT major_ods;
+	USHORT minor_ods;
 	void printf(const char* buffer, ...);
 	void prints(const char* buffer);
 };
