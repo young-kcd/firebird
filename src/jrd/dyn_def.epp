@@ -122,9 +122,10 @@ static bool get_who(thread_db*, Global*, Firebird::MetaName&);
 static bool is_it_user_name(Global*, const Firebird::MetaName&, thread_db*);
 static USHORT skip_blr_blob(const UCHAR** ptr);
 
+static rel_t get_relation_type(thread_db*, Global*, const Firebird::MetaName&);
 static void check_foreign_key_temp_scope(thread_db*, Global*, const TEXT*, const TEXT*);
-static void check_relation_temp_scope(thread_db*, Global*, const TEXT*, const SSHORT);
-static void make_relation_scope_name(const TEXT*, const SSHORT, Firebird::string&);
+static void check_relation_temp_scope(thread_db*, Global*, const TEXT*, const rel_t);
+static void make_relation_scope_name(const TEXT*, const rel_t, Firebird::string&);
 
 void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 {
@@ -3222,9 +3223,8 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 		SSHORT old_id = id;
 		id = drq_l_rel_info2;
-		check_relation_temp_scope(tdbb, gbl, 
-			REL.RDB$RELATION_NAME, 
-			REL.RDB$FLAGS);
+		const rel_t rel_type = get_relation_type(tdbb, gbl, REL.RDB$RELATION_NAME);
+		check_relation_temp_scope(tdbb, gbl, REL.RDB$RELATION_NAME, rel_type);
 		id = old_id;
 		
 		if (sql_prot) {
@@ -4599,6 +4599,38 @@ static USHORT skip_blr_blob(const UCHAR** ptr)
 }
 
 
+static rel_t get_relation_type(thread_db* tdbb, Global* gbl,
+							   const Firebird::MetaName& rel_name)
+{
+	Database* dbb = tdbb->tdbb_database;
+
+	const USHORT major_version  = dbb->dbb_ods_version;
+	const USHORT minor_original = dbb->dbb_minor_original;
+
+	rel_t rel_type = rel_persistent;
+
+	if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
+	{
+		jrd_req* request = CMP_find_request(tdbb, drq_l_rel_type, DYN_REQUESTS);
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			REL IN RDB$RELATIONS
+			WITH REL.RDB$RELATION_NAME EQ rel_name.c_str()
+
+			if (!DYN_REQUEST(drq_l_rel_type))
+				DYN_REQUEST(drq_l_rel_type) = request;
+
+			rel_type = (rel_t) REL.RDB$RELATION_TYPE;
+
+		END_FOR;
+
+		if (!DYN_REQUEST(drq_l_rel_type))
+			DYN_REQUEST(drq_l_rel_type) = request;
+	}
+
+	return rel_type;
+}
+
 static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl, 
 				const TEXT*	child_rel_name, const TEXT* master_index_name)
 {
@@ -4615,7 +4647,6 @@ static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl,
  **********************************************************/
 	Database* dbb = tdbb->tdbb_database;
 
-	const SSHORT id = drq_l_rel_info;
 	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info, DYN_REQUESTS);
 	bool bErr = false;
 	Firebird::string sMaster, sChild;
@@ -4633,18 +4664,29 @@ static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl,
 		if (!DYN_REQUEST(drq_l_rel_info))
 			DYN_REQUEST(drq_l_rel_info) = request;
 
-		bErr = ( (REL_M.RDB$FLAGS & REL_IS_GLOBAL_TEMP) != 
-				(REL_C.RDB$FLAGS & REL_IS_GLOBAL_TEMP) ) &&
-				!( (REL_M.RDB$FLAGS & REL_global_temp_preserve) && 
-					(REL_C.RDB$FLAGS & REL_global_temp_delete) );
+		const rel_t master_type =
+			get_relation_type(tdbb, gbl, REL_M.RDB$RELATION_NAME);
+		fb_assert(master_type == rel_persistent ||
+				  master_type == rel_global_temp_preserve ||
+				  master_type == rel_global_temp_delete);
+
+		const rel_t child_type =
+			get_relation_type(tdbb, gbl, REL_C.RDB$RELATION_NAME);
+		fb_assert(child_type == rel_persistent ||
+				  child_type == rel_global_temp_preserve ||
+				  child_type == rel_global_temp_delete);
+
+		bErr = (master_type != child_type) &&
+				!( (master_type == rel_global_temp_preserve) && 
+					(child_type == rel_global_temp_delete) );
 
 		if (bErr)
 		{
 			fb_utils::exact_name_limit(REL_M.RDB$RELATION_NAME, sizeof(REL_M.RDB$RELATION_NAME));
 			fb_utils::exact_name_limit(REL_C.RDB$RELATION_NAME, sizeof(REL_C.RDB$RELATION_NAME));
 
-			make_relation_scope_name(REL_M.RDB$RELATION_NAME, REL_M.RDB$FLAGS, sMaster);
-			make_relation_scope_name(REL_C.RDB$RELATION_NAME, REL_C.RDB$FLAGS, sChild);
+			make_relation_scope_name(REL_M.RDB$RELATION_NAME, master_type, sMaster);
+			make_relation_scope_name(REL_C.RDB$RELATION_NAME, child_type, sChild);
 		}
 	END_FOR;
 
@@ -4659,7 +4701,7 @@ static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl,
 
 
 static void check_relation_temp_scope(thread_db* tdbb, Global* gbl, 
-				const TEXT*	child_rel_name, const SSHORT child_rel_flags)
+				const TEXT*	child_rel_name, const rel_t child_type)
 {
 /****************************************************
  *
@@ -4674,7 +4716,10 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
  ****************************************************/
 	Database* dbb = tdbb->tdbb_database;
 
-	const SSHORT id = drq_l_rel_info2;
+	fb_assert(child_type == rel_persistent ||
+			  child_type == rel_global_temp_preserve ||
+			  child_type == rel_global_temp_delete);
+
 	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info2, DYN_REQUESTS);
 	bool bErr = false;
 	Firebird::string sMaster, sChild;
@@ -4693,16 +4738,22 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
 		if (!DYN_REQUEST(drq_l_rel_info2))
 			DYN_REQUEST(drq_l_rel_info2) = request;
 
-		bErr = ( (REL_M.RDB$FLAGS & REL_IS_GLOBAL_TEMP) != 
-				(child_rel_flags & REL_IS_GLOBAL_TEMP) ) &&
-				!( (REL_M.RDB$FLAGS & REL_global_temp_preserve) && 
-					(child_rel_flags & REL_global_temp_delete) );
+		const rel_t master_type =
+			get_relation_type(tdbb, gbl, REL_M.RDB$RELATION_NAME);
+		fb_assert(master_type == rel_persistent ||
+				  master_type == rel_global_temp_preserve ||
+				  master_type == rel_global_temp_delete);
+
+		bErr = (master_type != child_type) &&
+				!( (master_type == rel_global_temp_preserve) && 
+					(child_type == rel_global_temp_delete) );
+
 		if (bErr)
 		{
 			fb_utils::exact_name_limit(REL_M.RDB$RELATION_NAME, sizeof(REL_M.RDB$RELATION_NAME));
 
-			make_relation_scope_name(REL_M.RDB$RELATION_NAME, REL_M.RDB$FLAGS, sMaster);
-			make_relation_scope_name(child_rel_name, child_rel_flags, sChild);
+			make_relation_scope_name(REL_M.RDB$RELATION_NAME, master_type, sMaster);
+			make_relation_scope_name(child_rel_name, child_type, sChild);
 		}
 	END_FOR;
 
@@ -4717,7 +4768,7 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
 
 
 static void make_relation_scope_name(const TEXT* rel_name, 
-	const SSHORT rel_flags, Firebird::string& str)
+	const rel_t rel_type, Firebird::string& str)
 {
 /**************************************************
  *
@@ -4731,9 +4782,9 @@ static void make_relation_scope_name(const TEXT* rel_name,
  *
  **************************************************/
 	const char *scope = NULL;
-	if (rel_flags & REL_global_temp_preserve)
+	if (rel_type == rel_global_temp_preserve)
 		scope = REL_SCOPE_GTT_PRESERVE;
-	else if (rel_flags & REL_global_temp_delete)
+	else if (rel_type == rel_global_temp_delete)
 		scope = REL_SCOPE_GTT_DELETE;
 	else
 		scope = REL_SCOPE_PERSISTENT;

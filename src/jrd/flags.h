@@ -48,10 +48,6 @@ const USHORT LOG_overflow	= 8;
 /* flags for RDB$RELATIONS */
 
 const USHORT REL_sql					= 0x0001;
-const USHORT REL_global_temp_preserve	= 0x0002;
-const USHORT REL_global_temp_delete		= 0x0004;
-
-const USHORT REL_IS_GLOBAL_TEMP = REL_global_temp_preserve | REL_global_temp_delete;
 
 /* flags for RDB$TRIGGERS */
 
