@@ -74,7 +74,6 @@ bool RecordBuffer::fetch(Record* record)
 
 	if (!filled)
 	{
-		position = 0;
 		filled = true;
 	}
 
