@@ -4616,6 +4616,7 @@ static rel_t get_relation_type(thread_db* tdbb, Global* gbl,
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			REL IN RDB$RELATIONS
 			WITH REL.RDB$RELATION_NAME EQ rel_name.c_str()
+			  AND REL.RDB$RELATION_TYPE NOT MISSING
 
 			if (!DYN_REQUEST(drq_l_rel_type))
 				DYN_REQUEST(drq_l_rel_type) = request;
