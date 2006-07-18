@@ -1431,6 +1431,15 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 				X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 				X.RDB$FIELD_SUB_TYPE = gfield->gfld_sub_type;
 			}
+			else if (gfield->gfld_sub_type == dsc_text_type_ascii)
+			{
+				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+				X.RDB$CHARACTER_SET_ID = CS_ASCII;
+				X.RDB$COLLATION_ID.NULL = FALSE;
+				X.RDB$COLLATION_ID = COLLATE_NONE;
+				X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
+				X.RDB$FIELD_SUB_TYPE = gfield->gfld_sub_type;
+			}
 			else if (gfield->gfld_sub_type == dsc_text_type_fixed)
 			{
 				X.RDB$CHARACTER_SET_ID.NULL = FALSE;

@@ -136,8 +136,8 @@
 	FIELD(fld_sweep_int		, nam_sweep_int		, dtype_long	, sizeof(SLONG)	, 0						, 0, NULL)
 	FIELD(fld_counter		, nam_counter		, dtype_int64	, sizeof(SINT64), 0						, 0, NULL)
 
-	FIELD(fld_remote_proto	, nam_remote_proto	, dtype_varying	, 10			, 0						, 0, NULL)
-	FIELD(fld_remote_addr	, nam_remote_addr	, dtype_varying	, 30			, 0						, 0, NULL)
+	FIELD(fld_remote_proto	, nam_remote_proto	, dtype_varying	, 10			, dsc_text_type_ascii	, 0, NULL)
+	FIELD(fld_remote_addr	, nam_remote_addr	, dtype_varying	, 255			, dsc_text_type_ascii	, 0, NULL)
 
 	FIELD(fld_iso_mode		, nam_iso_mode		, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
 	FIELD(fld_lock_timeout	, nam_lock_timeout	, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)

@@ -146,6 +146,7 @@ inline USHORT TEXT_LEN(const dsc* desc) {
 
 const SSHORT dsc_text_type_none		= 0;	/* Normal text */
 const SSHORT dsc_text_type_fixed	= 1;	/* strings can contain null bytes */
+const SSHORT dsc_text_type_ascii	= 2;	/* string contains only ASCII characters */
 const SSHORT dsc_text_type_metadata	= 3;	/* string represents system metadata */
 
 
