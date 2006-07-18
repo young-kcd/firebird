@@ -63,9 +63,9 @@ void RecordBuffer::store(const Record* record)
 
 	fb_assert(!filled);
 
-	space->write(position * length, (UCHAR*) record->rec_data, length);
+	space->write(count * length, (UCHAR*) record->rec_data, length);
 
-	position = ++count;
+	count++;
 }
 
 bool RecordBuffer::fetch(Record* record)
