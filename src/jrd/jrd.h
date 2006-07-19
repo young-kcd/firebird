@@ -103,6 +103,7 @@ class CharSetContainer;
 struct dsc;
 struct thread;
 struct mod;
+enum prc_t;
 
 namespace Jrd {
 
@@ -581,6 +582,7 @@ class jrd_prc : public pool_alloc<type_prc>
 	Format*		prc_format;
 	vec<Parameter*>*	prc_input_fields;	/* vector of field blocks */
 	vec<Parameter*>*	prc_output_fields;	/* vector of field blocks */
+	prc_t		prc_type;		/* procedure type */
 	jrd_req*	prc_request;	/* compiled procedure request */
 	USHORT prc_use_count;		/* requests compiled with procedure */
 	SSHORT prc_int_use_count;	/* number of procedures compiled with procedure, set and 

@@ -1146,6 +1146,8 @@ C --
       PARAMETER (GDS__met_wrong_gtt_scope              = 335544866)
       INTEGER*4 GDS__subtype_for_internal_use        
       PARAMETER (GDS__subtype_for_internal_use         = 335544867)
+      INTEGER*4 GDS__illegal_prc_type                
+      PARAMETER (GDS__illegal_prc_type                 = 335544868)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

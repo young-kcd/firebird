@@ -2719,6 +2719,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	{
 		jrd_req* request = CMP_find_request(tdbb, irq_r_procedure, IRQ_REQUESTS);
 		jrd_req* request2 = CMP_find_request(tdbb, irq_r_params, IRQ_REQUESTS);
+		jrd_req* request3 = CMP_find_request(tdbb, irq_p_type, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
 			P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_ID EQ procedure->prc_id
@@ -2829,6 +2830,31 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				}
 				format->fmt_length = (USHORT) length;
 			}
+
+			prc_t prc_type = prc_legacy;
+
+			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+			{
+				FOR(REQUEST_HANDLE request3)
+					PT IN RDB$PROCEDURES
+					WITH PT.RDB$PROCEDURE_ID EQ procedure->prc_id
+						AND PT.RDB$PROCEDURE_TYPE NOT MISSING
+
+					if (!REQUEST(irq_p_type))
+					{
+						REQUEST(irq_p_type) = request3;
+					}
+
+					prc_type = (prc_t) PT.RDB$PROCEDURE_TYPE;
+
+				END_FOR;
+
+				if (!REQUEST(irq_p_type)) {
+					REQUEST(irq_p_type) = request3;
+				}
+			}
+
+			procedure->prc_type = prc_type;
 
 			{
 				Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
