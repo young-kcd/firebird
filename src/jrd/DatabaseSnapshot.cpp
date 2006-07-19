@@ -287,13 +287,13 @@ void DatabaseSnapshot::putDatabase(Database* dbb, RecordBuffer* buffer)
 	putField(record, f_mon_db_dialect, &temp_short);
 	// shutdown mode
 	if (dbb->dbb_ast_flags & DBB_shutdown_full)
-		temp_short = 3;
+		temp_short = shut_mode_full;
 	else if (dbb->dbb_ast_flags & DBB_shutdown_single)
-		temp_short = 2;
+		temp_short = shut_mode_single;
 	else if (dbb->dbb_ast_flags & DBB_shutdown)
-		temp_short = 1;
+		temp_short = shut_mode_multi;
 	else
-		temp_short = 0;
+		temp_short = shut_mode_online;
 	putField(record, f_mon_db_shut_mode, &temp_short);
 	// sweep interval
 	putField(record, f_mon_db_sweep_int, &dbb->dbb_sweep_interval);
@@ -347,13 +347,13 @@ void DatabaseSnapshot::putAttachment(Attachment* attachment, RecordBuffer* buffe
 	SLONG temp_long;
 	// SINT64 temp_int64;
 
-	SSHORT state = 0; // idle
+	SSHORT state = att_s_idle;
 
 	for (jrd_tra* transaction = attachment->att_transactions;
 		 transaction; transaction = transaction->tra_next)
 	{
 		if (transaction->tra_requests)
-			state = 1; // active
+			state = att_s_active;
 	}
 
 	// attachment id
@@ -404,7 +404,7 @@ void DatabaseSnapshot::putTransaction(jrd_tra* transaction, RecordBuffer* buffer
 	// attachment id
 	putField(record, f_mon_tra_att_id, &transaction->tra_attachment->att_attachment_id);
 	// state
-	temp_short = transaction->tra_requests ? 1 : 0;
+	temp_short = transaction->tra_requests ? tra_s_active : tra_s_idle;
 	putField(record, f_mon_tra_state, &temp_short);
 	// timestamp
 	putField(record, f_mon_tra_timestamp, &transaction->tra_timestamp.value());
@@ -416,13 +416,12 @@ void DatabaseSnapshot::putTransaction(jrd_tra* transaction, RecordBuffer* buffer
 	putField(record, f_mon_tra_oat, &transaction->tra_oldest_active);
 	// isolation mode
 	if (transaction->tra_flags & TRA_degree3)
-		temp_short = 0;
-	else if (transaction->tra_flags & (TRA_read_committed | TRA_rec_version))
-		temp_short = 2;
+		temp_short = iso_mode_consistency;
 	else if (transaction->tra_flags & TRA_read_committed)
-		temp_short = 3;
+		temp_short = (transaction->tra_flags &  TRA_rec_version) ?
+			iso_mode_rc_version : iso_mode_rc_no_version;
 	else
-		temp_short = 1;
+		temp_short = iso_mode_concurrency;
 	putField(record, f_mon_tra_iso_mode, &temp_short);
 	// lock timeout
 	putField(record, f_mon_tra_lock_timeout, &transaction->tra_lock_timeout);
@@ -471,11 +470,11 @@ void DatabaseSnapshot::putRequest(jrd_req* request, RecordBuffer* buffer)
 	}
 	// state
 	if (request->req_flags & req_active)
-		temp_short = 2;
+		temp_short = stmt_s_active;
 	else if (request->req_flags & req_stall)
-		temp_short = 1;
+		temp_short = stmt_s_stalled;
 	else
-		temp_short = 0;
+		temp_short = stmt_s_idle;
 	putField(record, f_mon_stmt_state, &temp_short);
 	// caller
 	if (request->req_caller) {
