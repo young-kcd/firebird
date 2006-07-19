@@ -1513,6 +1513,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 
 	jrd_req* request = NULL;
 	bool found = false;
+	bool only_description = false;
 	prc_t prc_type = prc_legacy;
 
 	try {
@@ -1527,7 +1528,6 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_m_prcs) = request;
 			
 		found = true;
-		bool only_description = false;
 
 		/* Set NULL flags to TRUE only for fields which must be specified in the DYN string.
 		   Retain existing values on other fields (RDB$DESCRIPTION, RDB$SECURITY_CLASS),
@@ -1615,20 +1615,23 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_m_prcs))
 		DYN_REQUEST(drq_m_prcs) = request;
 
-	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+	if (!only_description)
 	{
-		jrd_req* sub_request = NULL;
+		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+		{
+			jrd_req* sub_request = NULL;
 
-		FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
-			P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ procedure_name.c_str()
+			FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
+				P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ procedure_name.c_str()
 
-			MODIFY P USING
-				P.RDB$PROCEDURE_TYPE = prc_type;
-				P.RDB$PROCEDURE_TYPE.NULL = FALSE;
-			END_MODIFY;
-		END_FOR;
+				MODIFY P USING
+					P.RDB$PROCEDURE_TYPE = prc_type;
+					P.RDB$PROCEDURE_TYPE.NULL = FALSE;
+				END_MODIFY;
+			END_FOR;
 
-		CMP_release(tdbb, sub_request);
+			CMP_release(tdbb, sub_request);
+		}
 	}
 
 	}
