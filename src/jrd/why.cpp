@@ -258,7 +258,7 @@ why_hndl* WHY_alloc_handle(int implementation, int handle_type)
 				// Avoid generating NULL handle when sequence number wraps
 				if (!temp)
 					temp = ++handle_sequence_number;
-				handle->public_handle = reinterpret_cast<FB_API_HANDLE>(temp);
+				handle->public_handle = (FB_API_HANDLE)(IPTR) temp;
 			} while (!handleMapping->add(handle));
 
 			handleMappingLock.endWrite();
