@@ -66,8 +66,9 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb,
 											int rel_id)
 {
 	jrd_rel* relation = MET_lookup_relation_id(tdbb, rel_id, false);
+	fb_assert(relation);
 	MET_scan_relation(tdbb, relation);
-	fb_assert(relation && relation->isVirtual());
+	fb_assert(relation->isVirtual());
 	Format* format = MET_current(tdbb, relation);
 	fb_assert(format);
 
