@@ -1,3 +1,90 @@
+2006-07-18 20:02  asfernandes
+
+	* firebird2/src/: burp/backup.epp (1.85), burp/restore.epp (1.104),
+	jrd/RecordBuffer.cpp (1.4), jrd/dyn_def.epp (1.121),
+	msgs/history.sql (1.35):
+	
+	Misc
+
+2006-07-18 18:01  asfernandes
+
+	* firebird2/src/isql/show.epp (1.92):
+	
+	Correction
+
+2006-07-18 15:29  dimitr
+
+	* firebird2/src/burp/backup.epp (1.84):
+	
+	Fixed typo.
+
+2006-07-18 13:17  dimitr
+
+	* firebird2/src/jrd/dyn_def.epp (1.120):
+	
+	More reliable code, just in case.
+
+2006-07-18 13:16  dimitr
+
+	* firebird2/src/: msgs/messages.sql (1.77), burp/backup.epp (1.83),
+	burp/burp.h (1.73), burp/restore.epp (1.103):
+	
+	Allow backup/restore of the new fields.
+
+2006-07-18 12:18  dimitr
+
+	* firebird2/src/isql/: extract.epp (1.68), isql.epp (1.194), isql.h
+	(1.58):
+	
+	Cleanup of some older remainings...
+
+2006-07-18 11:55  dimitr
+
+	* firebird2/src/jrd/: drq.h (1.15), dyn_def.epp (1.119), flags.h
+	(1.7):
+	
+	Cleanup of some older remainings...
+
+2006-07-18 09:08  dimitr
+
+	* firebird2/src/jrd/: dsc.h (1.27), fields.h (1.11), ini.epp
+	(1.83):
+	
+	A few changed based on Adriano's suggestions.
+
+2006-07-18 08:41  dimitr
+
+	* firebird2/src/jrd/RecordBuffer.cpp (1.3):
+	
+	no message
+
+2006-07-18 08:38  dimitr
+
+	* firebird2/src/jrd/RecordBuffer.cpp (1.2):
+	
+	A few changed based on Adriano's suggestions.
+
+2006-07-18 08:08  dimitr
+
+	* firebird2/src/jrd/: VirtualTable.cpp (1.3), ext.cpp (1.67):
+	
+	A few changed based on Adriano's suggestions.
+
+2006-07-18 08:00  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.3),
+	DatabaseSnapshot.h (1.3):
+	
+	A few changed based on Adriano's suggestions.
+
+2006-07-18 04:45  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.177), dsql/pass1.cpp (1.271),
+	gpre/jrdmet.cpp (1.21), jrd/ini.epp (1.82), jrd/tra.cpp (1.123),
+	jrd/why_proto.h (1.28), remote/inet.cpp (1.174):
+	
+	Misc
+
 2006-07-17 22:18  asfernandes
 
 	* firebird2/src/jrd/: VirtualTable.cpp (1.2), VirtualTable.h (1.2):
