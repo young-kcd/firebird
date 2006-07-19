@@ -57,7 +57,8 @@ enum lck_t {
 	LCK_backup_database,        /* Lock to protect writing to database file */
 	LCK_rel_partners,			/* Relation partners lock */
 	LCK_page_space,				/* Page space ID lock */
-	LCK_dsql_cache				/* DSQL cache lock */
+	LCK_dsql_cache,				/* DSQL cache lock */
+	LCK_counter					/* Lock holding a cross-process counter */
 };
 
 /* Lock owner types */
@@ -65,7 +66,7 @@ enum lck_t {
 enum lck_owner_t {
 	LCK_OWNER_process = 1,		/* A process is the owner of the lock */
 	LCK_OWNER_database,			/* A database is the owner of the lock */
-	LCK_OWNER_attachment,		/* An atttachment is the owner of the lock */
+	LCK_OWNER_attachment,		/* An attachment is the owner of the lock */
 	LCK_OWNER_transaction		/* A transaction is the owner of the lock */
 };
 

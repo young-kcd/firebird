@@ -551,6 +551,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_backup_state:
 	case LCK_backup_alloc:
 	case LCK_backup_database:
+	case LCK_counter:
 		return *LCK_OWNER_HANDLE_DBB(dbb);
 	case LCK_attachment:
 	case LCK_page_space:
@@ -567,6 +568,35 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 		/* Not Reached - bug_lck calls ERR_post */
 		return 0;
 	}
+}
+
+
+SLONG LCK_increment(Jrd::thread_db* tdbb, Jrd::Lock* lock)
+{
+/**************************************
+ *
+ *	L C K _ i n c r e m e n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Increment the lock data value.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	fb_assert(lock);
+
+	fb_assert(lock->lck_type == LCK_counter);
+	fb_assert(lock->lck_logical == LCK_SR);
+
+	LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);
+	SLONG data = LCK_read_data(lock);
+	LCK_write_data(lock, ++data);
+	fb_assert(LCK_read_data(lock) == data);
+	LCK_convert(tdbb, lock, LCK_SR, LCK_WAIT);
+
+	return data;
 }
 
 

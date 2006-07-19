@@ -351,6 +351,7 @@ static ISC_STATUS	error(ISC_STATUS*, const Firebird::Exception& ex);
 static ISC_STATUS	error(ISC_STATUS*);
 static void		find_intl_charset(thread_db*, Attachment*, const DatabaseOptions*);
 static jrd_tra*		find_transaction(thread_db*, jrd_tra*, ISC_STATUS);
+static void		init_database_locks(thread_db*, Database*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, thread_db*);
 static void		verify_request_synchronization(jrd_req*& request, SSHORT level);
 namespace {
@@ -767,6 +768,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		   database is shutdown() after the last detach. */
 		LCK_init(tdbb, LCK_OWNER_database);
 		dbb->dbb_flags |= DBB_lck_init_done;
+
+		/* Initialize locks */
+		init_database_locks(tdbb, dbb);
+
 		INI_init();
 
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
@@ -1844,6 +1849,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
    database is shutdown() after the last detach. */
 	LCK_init(tdbb, LCK_OWNER_database);
 	dbb->dbb_flags |= DBB_lck_init_done;
+
+/* Initialize locks */
+	init_database_locks(tdbb, dbb);
+
 	INI_init();
 	PAG_init();
 	V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -5700,6 +5709,32 @@ static Database* init(thread_db*	tdbb,
 }
 
 
+static void init_database_locks(thread_db* tdbb, Database* dbb)
+{
+/**************************************
+ *
+ *	i n i t _ d a t a b a s e _ l o c k s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize secondary database locks.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	fb_assert(dbb);
+
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+	dbb->dbb_increment_lock = lock;
+	lock->lck_type = LCK_counter;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_parent = dbb->dbb_lock;
+	lock->lck_length = sizeof(SLONG);
+	lock->lck_key.lck_long = -1;
+	lock->lck_dbb = dbb;
+	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
+}
 
 static ISC_STATUS prepare(thread_db*		tdbb,
 					  jrd_tra*		transaction,

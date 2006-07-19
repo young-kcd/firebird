@@ -437,6 +437,9 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 
 	SET_TDBB(tdbb);
 
+	Database* dbb = tdbb->tdbb_database;
+	fb_assert(dbb);
+
 	// find the request if we've got it
 
 	if (!level) {
@@ -478,6 +481,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone = FB_NEW_RPT(*request->req_pool, n) jrd_req(request->req_pool);
 	(*vector)[level] = clone;
 	clone->req_attachment = tdbb->tdbb_attachment;
+	clone->req_id = LCK_increment(tdbb, dbb->dbb_increment_lock);
 	clone->req_count = request->req_count;
 	clone->req_pool = request->req_pool;
 	clone->req_impure_size = request->req_impure_size;
@@ -1987,6 +1991,9 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	SET_TDBB(tdbb);
 
+	Database* dbb = tdbb->tdbb_database;
+	fb_assert(dbb);
+
 	jrd_req* old_request = tdbb->tdbb_request;
 	tdbb->tdbb_request = NULL;
 
@@ -2011,6 +2018,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	const SLONG n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
 	request = FB_NEW_RPT(*tdbb->getDefaultPool(), n) jrd_req(tdbb->getDefaultPool());
+	request->req_id = LCK_increment(tdbb, dbb->dbb_increment_lock);
 	request->req_count = csb->csb_n_stream;
 	request->req_pool = tdbb->getDefaultPool();
 	request->req_impure_size = csb->csb_impure;
