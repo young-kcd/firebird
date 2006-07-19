@@ -1833,8 +1833,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		options.dpb_page_size = DEFAULT_PAGE_SIZE;
 	}
 
-	USHORT page_size;
-	for (page_size = MIN_PAGE_SIZE; page_size < MAX_PAGE_SIZE; page_size <<= 1)
+	USHORT page_size = MIN_NEW_PAGE_SIZE;
+	for (; page_size < MAX_PAGE_SIZE; page_size <<= 1)
 	{
 		if (options.dpb_page_size < page_size << 1)
 			break;
