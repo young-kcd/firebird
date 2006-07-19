@@ -334,6 +334,7 @@ enum fids {
 
 	f_mon_tra_id = 0,
 	f_mon_tra_att_id,
+	f_mon_tra_state,
 	f_mon_tra_timestamp,
 	f_mon_tra_top,
 	f_mon_tra_oit,

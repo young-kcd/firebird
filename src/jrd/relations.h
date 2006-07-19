@@ -378,6 +378,7 @@ END_RELATION
 RELATION(nam_mon_transactions, rel_mon_transactions, ODS_11_1, rel_virtual)
 	FIELD(f_mon_tra_id, nam_mon_tra_id, fld_trans_id, 0, 0, 0, 0)
 	FIELD(f_mon_tra_att_id, nam_mon_att_id, fld_att_id, 0, 0, 0, 0)
+	FIELD(f_mon_tra_state, nam_mon_tra_state, fld_state, 0, 0, 0, 0)
 	FIELD(f_mon_tra_timestamp, nam_mon_timestamp, fld_time, 0, 0, 0, 0)
 	FIELD(f_mon_tra_top, nam_mon_top, fld_trans_id, 0, 0, 0, 0)
 	FIELD(f_mon_tra_oit, nam_mon_oit, fld_trans_id, 0, 0, 0, 0)

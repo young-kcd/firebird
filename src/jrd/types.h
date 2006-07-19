@@ -106,3 +106,25 @@ TYPE ("GLOBAL_TEMPORARY_DELETE", 5, nam_r_type)
 TYPE ("LEGACY", 0, nam_prc_type)
 TYPE ("SELECTABLE", 1, nam_prc_type)
 TYPE ("EXECUTABLE", 2, nam_prc_type)
+
+TYPE ("IDLE", 0, nam_mon_att_state)
+TYPE ("ACTIVE", 1, nam_mon_att_state)
+TYPE ("KILLED", 2, nam_mon_att_state)
+
+TYPE ("IDLE", 0, nam_mon_tra_state)
+TYPE ("ACTIVE", 1, nam_mon_tra_state)
+
+TYPE ("IDLE", 0, nam_mon_stmt_state)
+TYPE ("STALLED", 1, nam_mon_stmt_state)
+TYPE ("ACTIVE", 2, nam_mon_stmt_state)
+TYPE ("KILLED", 3, nam_mon_stmt_state)
+
+TYPE ("ONLINE", 0, nam_mon_shut_mode)
+TYPE ("SINGLE_USER_SHUTDOWN", 1, nam_mon_shut_mode)
+TYPE ("MULTI_USER_SHUTDOWN", 2, nam_mon_shut_mode)
+TYPE ("FULL_SHUTDOWN", 3, nam_mon_shut_mode)
+
+TYPE ("CONSISTENCY", 0, nam_mon_iso_mode)
+TYPE ("CONCURRENCY", 1, nam_mon_iso_mode)
+TYPE ("READ_COMMITTED_RECORD_VERSION", 2, nam_mon_iso_mode)
+TYPE ("READ_COMMITTED_NO_RECORD_VERSION", 3, nam_mon_iso_mode)

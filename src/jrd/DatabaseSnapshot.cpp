@@ -347,12 +347,23 @@ void DatabaseSnapshot::putAttachment(Attachment* attachment, RecordBuffer* buffe
 	SLONG temp_long;
 	// SINT64 temp_int64;
 
+	SSHORT state = 0; // idle
+
+	for (jrd_tra* transaction = attachment->att_transactions;
+		 transaction; transaction = transaction->tra_next)
+	{
+		if (transaction->tra_requests)
+			state = 1; // active
+	}
+
 	// attachment id
 	temp_long = PAG_attachment_id(NULL);
 	putField(record, f_mon_att_id, &temp_long);
 	// process id
 	temp_long = getpid();
 	putField(record, f_mon_att_server_pid, &temp_long);
+	// state
+	putField(record, f_mon_att_state, &state);
 	// attachment name
 	putField(record, f_mon_att_name, attachment->att_filename.c_str());
 	// user
@@ -392,6 +403,9 @@ void DatabaseSnapshot::putTransaction(jrd_tra* transaction, RecordBuffer* buffer
 	putField(record, f_mon_tra_id, &transaction->tra_number);
 	// attachment id
 	putField(record, f_mon_tra_att_id, &transaction->tra_attachment->att_attachment_id);
+	// state
+	temp_short = transaction->tra_requests ? 1 : 0;
+	putField(record, f_mon_tra_state, &temp_short);
 	// timestamp
 	putField(record, f_mon_tra_timestamp, &transaction->tra_timestamp.value());
 	// top transaction
