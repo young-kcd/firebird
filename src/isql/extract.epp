@@ -313,7 +313,8 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	{
 		FOR RT IN RDB$RELATIONS
 			WITH RT.RDB$RELATION_NAME EQ relation_name
-			
+				AND RT.RDB$RELATION_TYPE NOT MISSING
+
 			rel_type = (rel_t) RT.RDB$RELATION_TYPE;
 
 		END_FOR

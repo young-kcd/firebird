@@ -812,7 +812,6 @@ rem_port* INET_connect(const TEXT* name,
 					"INET/INET_connect: getservbyname failed, error code = %d",
 					H_ERRNO);
 			gds__log(msg, 0);
-			const rem_str* const string = REMOTE_make_string(protocol.c_str());
 			inet_gen_error(port,
 						   isc_network_error,
 						   isc_arg_string,
@@ -822,7 +821,7 @@ rem_port* INET_connect(const TEXT* name,
 						   isc_arg_gds,
 						   isc_service_unknown,
 						   isc_arg_string,
-						   string->str_data,
+						   protocol.c_str(),
 						   isc_arg_string, "tcp", 0);
 			return NULL;
 		}						/* else / not hardwired gds_db translation */
