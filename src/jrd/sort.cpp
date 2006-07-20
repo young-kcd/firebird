@@ -1446,12 +1446,7 @@ static void diddle_key(UCHAR * record, sort_context* scb, bool direction)
 #endif // IEEE
 
 		default:
-
-		// Don't want the debug version to
-        // stop because of skd_type = 0
-		// FSG 22.Dez.2000
-		//
-        //	fb_assert(false);
+			fb_assert(false);
 			break;
 		}
 		if (complement && n)

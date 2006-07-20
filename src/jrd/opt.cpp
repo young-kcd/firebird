@@ -64,6 +64,7 @@
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
+#include "../jrd/dsc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/ext_proto.h"
 #include "../jrd/evl_proto.h"
@@ -3930,16 +3931,14 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 
 			sort_key_def* sort_key = asb->asb_key_desc = (sort_key_def*) asb->asb_key_data;
 			sort_key->skd_offset = 0;
-// UCHAR desc->dsc_dtype is always >=0
-//			fb_assert(desc->dsc_dtype >= 0)
 			fb_assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
 			sort_key->skd_dtype = sort_dtypes[desc->dsc_dtype];
-			/* as it is legal to have skd_dtype = 0
-			   I have removed these asserts, to avoid
-			   server restarts in debug mode.
-			   FSG 18.Dec.2000
-			 */
-			/*fb_assert (sort_key->skd_dtype != 0); */
+			if (!sort_key->skd_dtype) {
+				ERR_post(isc_invalid_sort_datatype,
+						 isc_arg_string,
+						 DSC_dtype_tostring(desc->dsc_dtype),
+						 0);
+			}
 			sort_key->skd_length = desc->dsc_length;
 			sort_key->skd_flags = SKD_ascending;
 			asb->nod_impure = CMP_impure(csb, sizeof(impure_agg_sort));
@@ -5330,11 +5329,14 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		sort_key->skd_flags = SKD_ascending;
 		if (*(node_ptr + sort->nod_count))
 			sort_key->skd_flags |= SKD_descending;
-// UCHAR desc->dsc_dtype is always >=0
-//			fb_assert(desc->dsc_dtype >= 0);
 		fb_assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
 		sort_key->skd_dtype = sort_dtypes[desc->dsc_dtype];
-		/*fb_assert (sort_key->skd_dtype != 0); */
+		if (!sort_key->skd_dtype) {
+			ERR_post(isc_invalid_sort_datatype,
+					 isc_arg_string,
+					 DSC_dtype_tostring(desc->dsc_dtype),
+					 0);
+		}
 		if (sort_key->skd_dtype == SKD_varying ||
 			sort_key->skd_dtype == SKD_cstring)
 		{
@@ -5424,7 +5426,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 
 	const sort_key_def* const end_key = sort_key;
 	for (sort_key = map->smb_key_desc; sort_key < end_key; sort_key++) {
-		/*   fb_assert (sort_key->skd_dtype != 0); */
+		fb_assert(sort_key->skd_dtype != 0);
 		if (sort_key->skd_dtype == SKD_varying ||
 			sort_key->skd_dtype == SKD_cstring)
 		{
