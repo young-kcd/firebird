@@ -61,6 +61,10 @@
 
 #pragma warning(disable:4097)  // typedef-name '......' used as synonym for class-name '.....'
 
+// New MSVC8 warnings
+
+#pragma warning(disable:4996)  // 'identificator' was declared deprecated
+
 #ifndef _X86_
 #define _X86_
 #endif
