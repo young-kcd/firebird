@@ -28,6 +28,7 @@
 #include "../jrd/unicode_util.h"
 #include "../jrd/gdsassert.h"
 #include "unicode/ustring.h"
+#include "unicode/uchar.h"
 #include "unicode/ucnv.h"
 #include "unicode/ucol.h"
 
@@ -71,16 +72,23 @@ ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 	fb_assert(srcLen % sizeof(*src) == 0);
 	fb_assert(src != NULL && dst != NULL);
 
-	UErrorCode errorCode = U_ZERO_ERROR;
+	srcLen /= sizeof(*src);
+	dstLen /= sizeof(*dst);
 
-	int32_t length = u_strToLower(reinterpret_cast<UChar*>(dst), dstLen / sizeof(USHORT),
-								  reinterpret_cast<const UChar*>(src), srcLen / sizeof(USHORT),
-								  NULL, &errorCode);
+	ULONG n = 0;
 
-	if (errorCode > 0 || length > dstLen)
-		return INTL_BAD_STR_LENGTH;
-	else
-		return static_cast<ULONG>(length * sizeof(USHORT));
+	for (ULONG i = 0; i < srcLen;)
+	{
+		uint32_t c;
+		U16_NEXT(src, i, srcLen, c);
+
+		c = u_tolower(c);
+
+		bool error;
+		U16_APPEND(dst, n, dstLen, c, error);
+	}
+
+	return n * sizeof(*dst);
 }
 
 
@@ -89,16 +97,23 @@ ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 	fb_assert(srcLen % sizeof(*src) == 0);
 	fb_assert(src != NULL && dst != NULL);
 
-	UErrorCode errorCode = U_ZERO_ERROR;
+	srcLen /= sizeof(*src);
+	dstLen /= sizeof(*dst);
 
-	int32_t length = u_strToUpper(reinterpret_cast<UChar*>(dst), dstLen / sizeof(USHORT),
-								  reinterpret_cast<const UChar*>(src), srcLen / sizeof(USHORT),
-								  NULL, &errorCode);
+	ULONG n = 0;
 
-	if (errorCode > 0 || length > dstLen)
-		return INTL_BAD_STR_LENGTH;
-	else
-		return static_cast<ULONG>(length * sizeof(USHORT));
+	for (ULONG i = 0; i < srcLen;)
+	{
+		uint32_t c;
+		U16_NEXT(src, i, srcLen, c);
+
+		c = u_toupper(c);
+
+		bool error;
+		U16_APPEND(dst, n, dstLen, c, error);
+	}
+
+	return n * sizeof(*dst);
 }
 
 
@@ -451,7 +466,7 @@ INTL_BOOL UnicodeUtil::utf16WellFormed(ULONG len, const USHORT* str, ULONG* offe
 
 	len = len / sizeof(*str);
 
-	for (ULONG i = 0; i < len; i++)
+	for (ULONG i = 0; i < len;)
 	{
 		ULONG save_i = i;
 
