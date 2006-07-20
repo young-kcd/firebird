@@ -1,3 +1,15 @@
+2006-07-19 18:45  dimitr
+
+	* firebird2/src/jrd/why.cpp (1.100.4.2):
+	
+	Backport one of the GCC4 fixes. Now I could compile the tree.
+
+2006-07-19 13:51  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.203.2.3):
+	
+	Fixed crash when compiling old (wrongly generated) BLR.
+
 2006-07-12 15:20  paul_reeves
 
 	*
