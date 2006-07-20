@@ -69,6 +69,23 @@ USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, 
 
 ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst)
 {
+	// this is more correct but we don't support completely yet
+	/***
+	fb_assert(srcLen % sizeof(*src) == 0);
+	fb_assert(src != NULL && dst != NULL);
+
+	UErrorCode errorCode = U_ZERO_ERROR;
+
+	int32_t length = u_strToLower(reinterpret_cast<UChar*>(dst), dstLen / sizeof(USHORT),
+								  reinterpret_cast<const UChar*>(src), srcLen / sizeof(USHORT),
+								  NULL, &errorCode);
+
+	if (errorCode > 0 || length > dstLen)
+		return INTL_BAD_STR_LENGTH;
+	else
+		return static_cast<ULONG>(length * sizeof(USHORT));
+	***/
+
 	fb_assert(srcLen % sizeof(*src) == 0);
 	fb_assert(src != NULL && dst != NULL);
 
@@ -94,6 +111,23 @@ ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 
 ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst)
 {
+	// this is more correct but we don't support completely yet
+	/***
+	fb_assert(srcLen % sizeof(*src) == 0);
+	fb_assert(src != NULL && dst != NULL);
+
+	UErrorCode errorCode = U_ZERO_ERROR;
+
+	int32_t length = u_strToUpper(reinterpret_cast<UChar*>(dst), dstLen / sizeof(USHORT),
+								  reinterpret_cast<const UChar*>(src), srcLen / sizeof(USHORT),
+								  NULL, &errorCode);
+
+	if (errorCode > 0 || length > dstLen)
+		return INTL_BAD_STR_LENGTH;
+	else
+		return static_cast<ULONG>(length * sizeof(USHORT));
+	***/
+
 	fb_assert(srcLen % sizeof(*src) == 0);
 	fb_assert(src != NULL && dst != NULL);
 
