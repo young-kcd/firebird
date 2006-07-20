@@ -3039,5 +3039,6 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'dyn_mod.epp', 'DYN_modify_sql_field', NULL, 8, 233, NULL, 'Local column %s is computed, cannot set a default value', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('NO_DEPENDENCIES', 'SHOW_metadata', 'show.epp', NULL, 17, 147, NULL, 'No dependencies for %s were found', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('illegal_prc_type', 'par_procedure', 'par.cpp', NULL, 0, 548, NULL, 'Procedure %s is not selectable (it does not contain a SUSPEND statement)', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('invalid_sort_datatype', 'gen_sort', 'opt.cpp', NULL, 0, 549, NULL, 'Datatype %s is not supported for sorting operation', NULL, NULL);
 
 COMMIT WORK;
