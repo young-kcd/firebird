@@ -46,6 +46,8 @@ const UCHAR SPECIAL_DOUBLE	= dtype_d_float;
 
 #endif
 
+const ULONG MAX_FORMAT_SIZE	= 65535;
+
 namespace Jrd {
 
 #ifndef REQUESTER
@@ -78,8 +80,6 @@ public:
 	typedef Firebird::Array<dsc>::const_iterator fmt_desc_const_iterator;
 };
 #endif /* REQUESTER */
-
-const ULONG MAX_FORMAT_SIZE	= 65535;
 
 
 /* A macro to define a local vary stack variable of a given length
