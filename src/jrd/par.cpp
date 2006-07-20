@@ -1816,8 +1816,10 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	}
 
 	if (procedure->prc_type == prc_executable)
+	{
 		error(csb, isc_illegal_prc_type,
 			  isc_arg_string, ERR_string(procedure->prc_name), 0);
+	}
 
 	jrd_nod* node = PAR_make_node(tdbb, e_prc_length);
 	node->nod_type = nod_procedure;

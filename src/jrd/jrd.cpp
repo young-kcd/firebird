@@ -1850,7 +1850,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	LCK_init(tdbb, LCK_OWNER_database);
 	dbb->dbb_flags |= DBB_lck_init_done;
 
-/* Initialize locks */
+	// Initialize locks
 	init_database_locks(tdbb, dbb);
 
 	INI_init();
@@ -5735,6 +5735,7 @@ static void init_database_locks(thread_db* tdbb, Database* dbb)
 	lock->lck_dbb = dbb;
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 }
+
 
 static ISC_STATUS prepare(thread_db*		tdbb,
 					  jrd_tra*		transaction,
