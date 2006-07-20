@@ -4107,8 +4107,8 @@ static bool par_messages(thread_db*	tdbb,
 		USHORT count = BLR_BYTE;
 		count += (BLR_BYTE) << 8;
 		Format* format = Format::newFormat(*tdbb->getDefaultPool(), count);
-		// CVC: This offset should be protected against 32K overflow in the future
-		USHORT offset = 0;
+
+		ULONG offset = 0;
 		for (Format::fmt_desc_iterator desc = format->fmt_desc.begin(); count;
 			--count, ++desc)
 		{
@@ -4119,7 +4119,13 @@ static bool par_messages(thread_db*	tdbb,
 			desc->dsc_address = (UCHAR *) (IPTR) offset;
 			offset += desc->dsc_length;
 		}
-		format->fmt_length = offset;
+
+		if (offset > MAX_FORMAT_SIZE) {
+			ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
+		}
+
+		format->fmt_length = (USHORT) offset;
+
 		if (msg_number == 0)
 		{
 			procedure->prc_input_fmt = format;
