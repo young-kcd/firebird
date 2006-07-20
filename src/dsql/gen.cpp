@@ -40,6 +40,7 @@
 #include "../jrd/align.h"
 #include "../jrd/constants.h"
 #include "../jrd/intl.h"
+#include "../jrd/val.h"
 #include "../dsql/alld_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
@@ -594,6 +595,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 
     dsql_par* parameter;
 
+	ULONG offset = 0;
 	USHORT number = 0;
 	for (parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next)
@@ -652,17 +654,22 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 			}
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
 		if (align)
-			message->msg_length = FB_ALIGN(message->msg_length, align);
-		parameter->par_desc.dsc_address = (UCHAR*)(IPTR)message->msg_length;
-		// CVC: No check for overflow here? Should be < 64K
-		message->msg_length += parameter->par_desc.dsc_length;
+			offset = FB_ALIGN(offset, align);
+		parameter->par_desc.dsc_address = (UCHAR*)(IPTR) offset;
+		offset += parameter->par_desc.dsc_length;
 //		if (request->req_blr_string)
 			gen_descriptor(request, &parameter->par_desc, false);
 	}
 
+	if (offset > MAX_FORMAT_SIZE) {
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
+				  isc_arg_gds, isc_imp_exc, 0);
+	}
+
+	message->msg_length = (USHORT) offset;
+
 // Allocate buffer for message 
-	// CVC: again, final possibility of having overflow! Should be < 64K
-	const USHORT new_len = message->msg_length + DOUBLE_ALIGN - 1;
+	const ULONG new_len = message->msg_length + DOUBLE_ALIGN - 1;
 	dsql_str* buffer = FB_NEW_RPT(*tdsql->getDefaultPool(), new_len) dsql_str;
 	message->msg_buffer =
 		(UCHAR *) FB_ALIGN((U_IPTR) buffer->str_data, DOUBLE_ALIGN);
