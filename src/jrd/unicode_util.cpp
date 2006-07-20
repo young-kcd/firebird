@@ -28,6 +28,7 @@
 #include "../jrd/unicode_util.h"
 #include "../jrd/gdsassert.h"
 #include "unicode/ustring.h"
+#include "unicode/uchar.h"
 #include "unicode/ucnv.h"
 #include "unicode/ucol.h"
 
@@ -68,6 +69,8 @@ USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, 
 
 ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst)
 {
+	// this is more correct but we don't support completely yet
+	/***
 	fb_assert(srcLen % sizeof(*src) == 0);
 	fb_assert(src != NULL && dst != NULL);
 
@@ -81,11 +84,35 @@ ULONG UnicodeUtil::utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 		return INTL_BAD_STR_LENGTH;
 	else
 		return static_cast<ULONG>(length * sizeof(USHORT));
+	***/
+
+	fb_assert(srcLen % sizeof(*src) == 0);
+	fb_assert(src != NULL && dst != NULL);
+
+	srcLen /= sizeof(*src);
+	dstLen /= sizeof(*dst);
+
+	ULONG n = 0;
+
+	for (ULONG i = 0; i < srcLen;)
+	{
+		uint32_t c;
+		U16_NEXT(src, i, srcLen, c);
+
+		c = u_tolower(c);
+
+		bool error;
+		U16_APPEND(dst, n, dstLen, c, error);
+	}
+
+	return n * sizeof(*dst);
 }
 
 
 ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst)
 {
+	// this is more correct but we don't support completely yet
+	/***
 	fb_assert(srcLen % sizeof(*src) == 0);
 	fb_assert(src != NULL && dst != NULL);
 
@@ -99,6 +126,28 @@ ULONG UnicodeUtil::utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen,
 		return INTL_BAD_STR_LENGTH;
 	else
 		return static_cast<ULONG>(length * sizeof(USHORT));
+	***/
+
+	fb_assert(srcLen % sizeof(*src) == 0);
+	fb_assert(src != NULL && dst != NULL);
+
+	srcLen /= sizeof(*src);
+	dstLen /= sizeof(*dst);
+
+	ULONG n = 0;
+
+	for (ULONG i = 0; i < srcLen;)
+	{
+		uint32_t c;
+		U16_NEXT(src, i, srcLen, c);
+
+		c = u_toupper(c);
+
+		bool error;
+		U16_APPEND(dst, n, dstLen, c, error);
+	}
+
+	return n * sizeof(*dst);
 }
 
 
