@@ -6685,7 +6685,7 @@ bool restore (const TEXT* file_name,
 	{
 		BURP_error(44, true, isc_arg_number, (void*)(IPTR)tdgbl->RESTORE_format,
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
-		// msg 44 Expected backup version 1, 2, 3, 4, 5, 6, or 7.  Found %ld 
+		// msg 44 Expected backup version 1..8.  Found %ld
 	}
 
 	create_database (database_name);
