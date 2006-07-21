@@ -59,8 +59,8 @@ FBUDF_API paramdsc* dNullIf(paramdsc* v, paramdsc* v2);
 FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc);
 // END DEPRECATED FUNCTIONS.
 
-FBUDF_API void DOW(const ISC_TIMESTAMP* v, char* rc);
-FBUDF_API void SDOW(const ISC_TIMESTAMP* v, char* rc);
+FBUDF_API void DOW(const ISC_TIMESTAMP* v, paramvary* rc);
+FBUDF_API void SDOW(const ISC_TIMESTAMP* v, paramvary* rc);
 
 FBUDF_API void right(const paramdsc* v, const ISC_SHORT& rl, paramdsc* rc);
 

@@ -84,9 +84,12 @@ BOOL APIENTRY DllMain( HANDLE ,//hModule,
 
 // To do: go from C++ native types to abstract FB types.
 
+typedef ISC_USHORT fb_len;
+
 const long seconds_in_day = 86400;
 const long tenthmsec_in_day = seconds_in_day * ISC_TIME_SECONDS_PRECISION;
-const short varchar_indicator_size = sizeof(unsigned short);
+const int varchar_indicator_size = sizeof(ISC_USHORT);
+const int max_varchar_size = 65535 - varchar_indicator_size; // in theory
 
 
 #ifdef DEV_BUILD
@@ -99,40 +102,54 @@ FBUDF_API paramdsc* testreflect(paramdsc* rc)
 }
 #endif
 
+
 namespace internal
 {
 	// This definition comes from jrd\val.h and is used in helper
 	// functions {get/set}_varchar_len defined below.
-	struct vvary {
-		ISC_USHORT		vary_length;
-		unsigned char*	vary_string;
+	struct vvary
+	{
+		fb_len		vary_length;
+		ISC_UCHAR	vary_string[max_varchar_size];
 	};
 
 	/*
-	inline short get_varchar_len(const char* vchar) 
+	inline fb_len get_varchar_len(const char* vchar) 
 	{
 		return reinterpret_cast<const vvary*>(vchar)->vary_length;
 	}
 	*/
 
-	inline short get_varchar_len(const unsigned char* vchar)
+	inline fb_len get_varchar_len(const ISC_UCHAR* vchar)
 	{
 		return reinterpret_cast<const vvary*>(vchar)->vary_length;
 	}
 
-	inline void set_varchar_len(char* vchar, const short len)
+	inline void set_varchar_len(char* vchar, const fb_len len)
 	{
 		reinterpret_cast<vvary*>(vchar)->vary_length = len;
 	}
 	
-	inline void set_varchar_len(unsigned char* vchar, const short len)
+	inline void set_varchar_len(ISC_UCHAR* vchar, const fb_len len)
 	{
 		reinterpret_cast<vvary*>(vchar)->vary_length = len;
 	}
 
-	short get_int_type(const paramdsc* v, ISC_INT64& rc)
+	bool isnull(const paramdsc* v)
 	{
-		short s = -1;
+		return !v || !v->dsc_address || (v->dsc_flags & DSC_null);
+	}
+
+	paramdsc* setnull(paramdsc* v)
+	{
+		if (v)
+			v->dsc_flags |= DSC_null;
+		return v;
+	}
+
+	int get_int_type(const paramdsc* v, ISC_INT64& rc)
+	{
+		int s = -1;
 		switch (v->dsc_dtype)
 		{
 		case dtype_short:
@@ -169,9 +186,9 @@ namespace internal
 		}
 	}
 
-	short get_double_type(const paramdsc* v, double& rc)
+	int get_double_type(const paramdsc* v, double& rc)
 	{
-		short s = -1;
+		int s = -1;
 		switch (v->dsc_dtype)
 		{
 		case dtype_real:
@@ -201,9 +218,9 @@ namespace internal
 		}
 	}
 
-	short get_string_type(const paramdsc* v, unsigned char*& text)
+	int get_any_string_type(const paramdsc* v, ISC_UCHAR*& text)
 	{
-		short len = v->dsc_length;
+		int len = v->dsc_length;
 		switch (v->dsc_dtype)
 		{
 		case dtype_text:
@@ -213,18 +230,18 @@ namespace internal
 			text = v->dsc_address;
 			if (len && text)
 			{
-				const unsigned char* p = text; //strlen(v->dsc_address);
+				const ISC_UCHAR* p = text; //strlen(v->dsc_address);
 				while (*p)
 					++p; // couldn't use strlen!
 				if (p - text < len)
-					len = static_cast<short>(p - text);
+					len = p - text;
 			}
 			break;
 		case dtype_varying:
 			len -= varchar_indicator_size;
 			text = reinterpret_cast<vvary*>(v->dsc_address)->vary_string;
 			{
-				const short x = get_varchar_len(v->dsc_address);
+				const int x = get_varchar_len(v->dsc_address);
 				if (x < len)
 					len = x;
 			}
@@ -236,23 +253,32 @@ namespace internal
 		return len;
 	}
 
-	void set_string_type(paramdsc* v, const short len, unsigned char* text = 0)
+	void set_any_string_type(paramdsc* v, const int len0, ISC_UCHAR* text = 0)
 	{
+		fb_len len = static_cast<fb_len>(len0);
 		switch (v->dsc_dtype)
 		{
 		case dtype_text:
 			v->dsc_length = len;
 			if (text)
 				memcpy(v->dsc_address, text, len);
+			else
+				memset(v->dsc_address, ' ', len);
 			break;
 		case dtype_cstring:
 			v->dsc_length = len;
 			if (text)
 				memcpy(v->dsc_address, text, len);
+			else
+				v->dsc_length = len = 0;
 			v->dsc_address[len] = 0;
 			break;
 		case dtype_varying:
-			v->dsc_length = static_cast<short>(len + varchar_indicator_size);
+			if (!text)
+				len = 0;
+			else if (len > max_varchar_size)
+				len = max_varchar_size;
+			v->dsc_length = len + static_cast<fb_len>(varchar_indicator_size);
 			set_varchar_len(v->dsc_address, len);
 			if (text)
 				memcpy(v->dsc_address + varchar_indicator_size, text, len);
@@ -260,28 +286,16 @@ namespace internal
 		}
 	}
 
-	bool isnull(const paramdsc* v)
-	{
-		return !v || !v->dsc_address || (v->dsc_flags & DSC_null);
-	}
-
-	paramdsc* setnull(paramdsc* v)
-	{
-		if (v)
-			v->dsc_flags |= DSC_null;
-		return v;
-	}
-
-	short get_scaled_double(const paramdsc* v, double& rc)
+	int get_scaled_double(const paramdsc* v, double& rc)
 	{
 		ISC_INT64 iv;
-		short rct = get_int_type(v, iv);
+		int rct = get_int_type(v, iv);
 		if (rct < 0)
 			rct = get_double_type(v, rc);
 		else
 		{
 			rc = static_cast<double>(iv);
-			signed char scale = v->dsc_scale;
+			int scale = v->dsc_scale;
 			for (; scale < 0; ++scale)
 				rc /= 10;
 			for (; scale > 0; --scale)
@@ -304,16 +318,22 @@ FBUDF_API void sNvl(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 {
 	if (!internal::isnull(v))
 	{
-		unsigned char* sv = 0;
-		const short len = internal::get_string_type(v, sv);
-		internal::set_string_type(rc, len, sv);
+		ISC_UCHAR* sv = 0;
+		const int len = internal::get_any_string_type(v, sv);
+		if (len < 0)
+			internal::setnull(rc);
+		else
+			internal::set_any_string_type(rc, len, sv);
 		return;
 	}
 	if (!internal::isnull(v2))
 	{
-		unsigned char* sv2 = 0;
-		const short len = internal::get_string_type(v2, sv2);
-		internal::set_string_type(rc, len, sv2);
+		ISC_UCHAR* sv2 = 0;
+		const int len = internal::get_any_string_type(v2, sv2);
+		if (len < 0)
+			internal::setnull(rc);
+		else
+			internal::set_any_string_type(rc, len, sv2);
 		return;
 	}
 	internal::setnull(rc);
@@ -325,8 +345,8 @@ FBUDF_API paramdsc* iNullIf(paramdsc* v, paramdsc* v2)
 	if (internal::isnull(v) || internal::isnull(v2))
 		return 0;
 	ISC_INT64 iv, iv2;
-	const short rc = internal::get_int_type(v, iv);
-	const short rc2 = internal::get_int_type(v2, iv2);
+	const int rc = internal::get_int_type(v, iv);
+	const int rc2 = internal::get_int_type(v2, iv2);
 	if (rc < 0 || rc2 < 0)
 		return v;
 	if (iv == iv2 && v->dsc_scale == v2->dsc_scale)
@@ -339,8 +359,8 @@ FBUDF_API paramdsc* dNullIf(paramdsc* v, paramdsc* v2)
 	if (internal::isnull(v) || internal::isnull(v2))
 		return 0;
 	double iv, iv2;
-	const short rc = internal::get_double_type(v, iv);
-	const short rc2 = internal::get_double_type(v2, iv2);
+	const int rc = internal::get_double_type(v, iv);
+	const int rc2 = internal::get_double_type(v2, iv2);
 	if (rc < 0 || rc2 < 0)
 		return v;
 	if (iv == iv2) // && v->dsc_scale == v2->dsc_scale) double w/o scale
@@ -355,10 +375,10 @@ FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 		internal::setnull(rc);
 		return;
 	}
-	unsigned char* sv;
-	const short len = internal::get_string_type(v, sv);
-	unsigned char* sv2;
-	const short len2 = internal::get_string_type(v2, sv2);
+	ISC_UCHAR* sv;
+	const int len = internal::get_any_string_type(v, sv);
+	ISC_UCHAR* sv2;
+	const int len2 = internal::get_any_string_type(v2, sv2);
 	if (len < 0 || len2 < 0) // good luck with the result, we can't do more.
 		return;
 	if (len == len2 && (!len || !memcmp(sv, sv2, len)) &&
@@ -368,7 +388,7 @@ FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 		internal::setnull(rc);
 		return;
 	}
-	internal::set_string_type(rc, len, sv);
+	internal::set_any_string_type(rc, len, sv);
 	return;
 }
 // END DEPRECATED FUNCTIONS.
@@ -389,45 +409,43 @@ namespace internal
 
 
 	enum day_format {day_short, day_long};
-	const size_t day_len[] = {4, 14};
+	const fb_len day_len[] = {4, 14};
 	const char* day_fmtstr[] = {"%a", "%A"};
 
-	char* get_DOW(const ISC_TIMESTAMP* v, char* rc, const day_format df)
+	void get_DOW(const ISC_TIMESTAMP* v, paramvary* rc, const day_format df)
 	{
 		tm times;
 		decode_timestamp(v, &times);
 		const int dow = times.tm_wday;
 		if (dow >= 0 && dow <= 6)
 		{
-			size_t name_len = day_len[df];
+			fb_len name_len = day_len[df];
 			const char* name_fmt = day_fmtstr[df];
 			// There should be a better way to do this than to alter the thread's locale.
 			if (!strcmp(setlocale(LC_TIME, NULL), "C"))
 				setlocale(LC_ALL, "");
-			name_len = strftime(rc + varchar_indicator_size, name_len,
-				name_fmt, &times);
+			char* const target = reinterpret_cast<char*>(rc->vary_string);
+			name_len = strftime(target, name_len, name_fmt, &times);
 			if (name_len)
 			{
 				// There's no clarity in the docs whether '\0' is counted or not; be safe.
-				const char* p = rc + varchar_indicator_size + name_len - 1;
-				if (!*p)
+				if (!target[name_len - 1])
 					--name_len;
-				set_varchar_len(rc, static_cast<short>(name_len));
-				return rc;
+				rc->vary_length = name_len;
+				return;
 			}
 		}
-		set_varchar_len(rc, 5);
-		memcpy(rc + varchar_indicator_size, "ERROR", 5);
-		return rc;
+		rc->vary_length = 5;
+		memcpy(rc->vary_string, "ERROR", 5);
 	}
 } // namespace internal
 
-FBUDF_API void DOW(const ISC_TIMESTAMP* v, char* rc)
+FBUDF_API void DOW(const ISC_TIMESTAMP* v, paramvary* rc)
 {
 	internal::get_DOW(v, rc, internal::day_long);
 }
 
-FBUDF_API void SDOW(const ISC_TIMESTAMP* v, char* rc)
+FBUDF_API void SDOW(const ISC_TIMESTAMP* v, paramvary* rc)
 {
 	internal::get_DOW(v, rc, internal::day_short);
 }
@@ -439,9 +457,9 @@ FBUDF_API void right(const paramdsc* v, const ISC_SHORT& rl, paramdsc* rc)
 		internal::setnull(rc);
 		return;
 	}
-	unsigned char* text = 0;
-	short len = internal::get_string_type(v, text);
-	const short diff = static_cast<short>(len - rl);
+	ISC_UCHAR* text = 0;
+	int len = internal::get_any_string_type(v, text);
+	const int diff = len - rl;
 	if (rl < len)
 		len = rl;
 	if (len < 0)
@@ -451,7 +469,7 @@ FBUDF_API void right(const paramdsc* v, const ISC_SHORT& rl, paramdsc* rc)
 	}
 	if (diff > 0)
 		text += diff;
-	internal::set_string_type(rc, len, text);
+	internal::set_any_string_type(rc, len, text);
 	return;
 }
 
@@ -665,7 +683,7 @@ FBUDF_API void fbtruncate(const paramdsc* v, paramdsc* rc)
 		return;
 	}
 	ISC_INT64 iv;
-	const short rct = internal::get_int_type(v, iv);
+	const int rct = internal::get_int_type(v, iv);
 	if (rct < 0 || v->dsc_scale > 0)
 	{
 		internal::setnull(rc);
@@ -712,7 +730,7 @@ FBUDF_API void fbround(const paramdsc* v, paramdsc* rc)
 		return;
 	}
 	ISC_INT64 iv;
-	const short rct = internal::get_int_type(v, iv);
+	const int rct = internal::get_int_type(v, iv);
 	if (rct < 0 || v->dsc_scale > 0)
 	{
 		internal::setnull(rc);
@@ -764,10 +782,10 @@ FBUDF_API void power(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 		return;
 	}
 	double d, d2;
-	const short rct = internal::get_scaled_double(v, d);
-	const short rct2 = internal::get_scaled_double(v2, d2);
+	const int rct = internal::get_scaled_double(v, d);
+	const int rct2 = internal::get_scaled_double(v2, d2);
 
-	// If we cause a div by zero, SS shutdowns in response.
+	// If we cause a div by zero, SS shuts down in response.
 	// The doc I read says 0^0 will produce 1, so it's not tested below.
 	if (rct < 0 || rct2 < 0 || !d && d2 < 0)
 	{
@@ -787,9 +805,9 @@ FBUDF_API void string2blob(const paramdsc* v, blobcallback* outblob)
 	    outblob->blob_handle = 0; // hint for the engine, null blob.
 		return;
 	}
-	unsigned char* text = 0;
-	const short len = internal::get_string_type(v, text);
-	if (len < 0)
+	ISC_UCHAR* text = 0;
+	const int len = internal::get_any_string_type(v, text);
+	if (len < 0 && outblob)
 		outblob->blob_handle = 0; // hint for the engine, null blob.
 	if (!outblob || !outblob->blob_handle)
 		return;
