@@ -663,7 +663,9 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 
 	if (offset > MAX_FORMAT_SIZE) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
-				  isc_arg_gds, isc_imp_exc, 0);
+				  isc_arg_gds, isc_imp_exc,
+				  isc_arg_gds, isc_blktoobig,
+				  0);
 	}
 
 	message->msg_length = (USHORT) offset;
