@@ -1148,6 +1148,8 @@ C --
       PARAMETER (GDS__subtype_for_internal_use         = 335544867)
       INTEGER*4 GDS__illegal_prc_type                
       PARAMETER (GDS__illegal_prc_type                 = 335544868)
+      INTEGER*4 GDS__invalid_sort_datatype           
+      PARAMETER (GDS__invalid_sort_datatype            = 335544869)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

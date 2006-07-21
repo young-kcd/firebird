@@ -570,6 +570,7 @@ static const struct {
 	{"met_wrong_gtt_scope", 335544866},
 	{"subtype_for_internal_use", 335544867},
 	{"illegal_prc_type", 335544868},
+	{"invalid_sort_datatype", 335544869},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

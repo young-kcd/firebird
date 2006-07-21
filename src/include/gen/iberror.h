@@ -603,6 +603,7 @@ const ISC_LONG isc_field_disappeared                = 335544865L;
 const ISC_LONG isc_met_wrong_gtt_scope              = 335544866L;
 const ISC_LONG isc_subtype_for_internal_use         = 335544867L;
 const ISC_LONG isc_illegal_prc_type                 = 335544868L;
+const ISC_LONG isc_invalid_sort_datatype            = 335544869L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -822,7 +823,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 767;
+const ISC_LONG isc_err_max                          = 768;
 
 #else /* c definitions */
 
@@ -1395,6 +1396,7 @@ const ISC_LONG isc_err_max                          = 767;
 #define isc_met_wrong_gtt_scope              335544866L
 #define isc_subtype_for_internal_use         335544867L
 #define isc_illegal_prc_type                 335544868L
+#define isc_invalid_sort_datatype            335544869L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1614,7 +1616,7 @@ const ISC_LONG isc_err_max                          = 767;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          767
+#define isc_err_max                          768
 
 #endif
 
