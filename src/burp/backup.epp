@@ -150,9 +150,9 @@ enum backup_capabilities
 	BCK_ods8			= 2048,	// stored procedures & exceptions & constraints
 	BCK_ods9			= 4096,	// SQL roles
 	BCK_ods10			= 8192,	// FIELD_PRECISION
-	BCK_ods11           = 16384,// rdb$description in rdb$roles and rdb$generators
+	BCK_ods11			= 16384,// rdb$description in rdb$roles and rdb$generators
 								// rdb$base_collation_name and rdb$specific_attributes in rdb$collations
-	BCK_ods11_1         = 32768 // rdb$relation_type in rdb$relations
+	BCK_ods11_1			= 32768 // rdb$relation_type in rdb$relations
 								// rdb$procedure_type in rdb$procedures
 };
 

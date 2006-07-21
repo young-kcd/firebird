@@ -1,7 +1,7 @@
 :: This bat sets the environment values
 :: ROOT_PATH dos format path of the main directory
 :: DB_PATH unix format path of the main directory
-:: VS_VER VisualStudio version (msvc6|msvc7)
+:: VS_VER VisualStudio version (msvc6|msvc7|msvc8)
 :: SERVER_NAME server needed to connect to firebird (could include port)
 ::   Example : localhost/3051
 

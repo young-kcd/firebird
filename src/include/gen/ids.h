@@ -1,4 +1,8 @@
 /*
+ *	PROGRAM:	JRD Access Method
+ *	MODULE:		ids.h
+ *	DESCRIPTION:	System relations' field numeric identifiers (and positions)
+ *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy

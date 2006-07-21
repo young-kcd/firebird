@@ -1391,104 +1391,104 @@ ULONG DPM_get_blob(thread_db* tdbb,
 	// Do not delete this scope. It makes goto compatible with variables
 	// defined in their minimal scope.
 	{
-	const SLONG page_number = ppage->ppg_page[slot];
-	if (!page_number)
-	{
-		goto punt;
-	}
+		const SLONG page_number = ppage->ppg_page[slot];
+		if (!page_number)
+		{
+			goto punt;
+		}
 
-	data_page* page = (data_page*) CCH_HANDOFF(tdbb,
+		data_page* page = (data_page*) CCH_HANDOFF(tdbb,
 							&rpb.getWindow(tdbb),
 							page_number,
 							(SSHORT)((delete_flag) ? LCK_write : LCK_read),
 							pag_data);
-	if (line >= page->dpg_count) {
-		goto punt;
-	}
+		if (line >= page->dpg_count) {
+			goto punt;
+		}
 
-	data_page::dpg_repeat* index = &page->dpg_rpt[line];
-	if (index->dpg_offset == 0) {
-		goto punt;
-	}
+		data_page::dpg_repeat* index = &page->dpg_rpt[line];
+		if (index->dpg_offset == 0) {
+			goto punt;
+		}
 
-	blh* header = (blh*) ((SCHAR *) page + index->dpg_offset);
-	if (!(header->blh_flags & rhd_blob)) {
-		goto punt;
-	}
+		blh* header = (blh*) ((SCHAR *) page + index->dpg_offset);
+		if (!(header->blh_flags & rhd_blob)) {
+			goto punt;
+		}
 
-/* We've got the blob header and everything looks ducky.  Get the header
-   fields. */
+		// We've got the blob header and everything looks ducky.  Get the header
+		// fields.
 
-	blob->blb_lead_page = header->blh_lead_page;
-	blob->blb_max_sequence = header->blh_max_sequence;
-	blob->blb_count = header->blh_count;
-	blob->blb_length = header->blh_length;
-	blob->blb_max_segment = header->blh_max_segment;
-	blob->blb_level = header->blh_level;
-	blob->blb_sub_type = header->blh_sub_type;
+		blob->blb_lead_page = header->blh_lead_page;
+		blob->blb_max_sequence = header->blh_max_sequence;
+		blob->blb_count = header->blh_count;
+		blob->blb_length = header->blh_length;
+		blob->blb_max_segment = header->blh_max_segment;
+		blob->blb_level = header->blh_level;
+		blob->blb_sub_type = header->blh_sub_type;
 
-/* Unless this is the only attachment, don't allow the sequential scan
-   of very large blobs to flush pages used by other attachments. */
+		// Unless this is the only attachment, don't allow the sequential scan
+		// of very large blobs to flush pages used by other attachments.
 
-	Attachment* attachment = tdbb->tdbb_attachment;
-	if (attachment &&
-		(attachment != dbb->dbb_attachments || attachment->att_next))
-	{
-		/* If the blob has more pages than the page buffer cache then mark
-		   it as large. If this is a database backup then mark any blob as
-		   large as the cumulative effect of scanning many small blobs is
-		   equivalent to scanning single large blobs. */
-
-		if (blob->blb_max_sequence > dbb->dbb_bcb->bcb_count ||
-			attachment->att_flags & ATT_gbak_attachment)
+		Attachment* attachment = tdbb->tdbb_attachment;
+		if (attachment &&
+			(attachment != dbb->dbb_attachments || attachment->att_next))
 		{
-			blob->blb_flags |= BLB_large_scan;
+			/* If the blob has more pages than the page buffer cache then mark
+			   it as large. If this is a database backup then mark any blob as
+			   large as the cumulative effect of scanning many small blobs is
+			   equivalent to scanning single large blobs. */
+
+			if (blob->blb_max_sequence > dbb->dbb_bcb->bcb_count ||
+				attachment->att_flags & ATT_gbak_attachment)
+			{
+				blob->blb_flags |= BLB_large_scan;
+			}
 		}
-	}
 
-	if (header->blh_flags & rhd_stream_blob) {
-		blob->blb_flags |= BLB_stream;
-	}
-
-	if (header->blh_flags & rhd_damaged) {
-		goto punt;
-	}
-
-/* Retrieve the data either into page clump (level 0) or page vector (levels
-   1 and 2). */
-
-	const USHORT length = index->dpg_length - BLH_SIZE;
-	const UCHAR* q = (UCHAR *) header->blh_page;
-
-	if (blob->blb_level == 0) {
-		blob->blb_space_remaining = length;
-		UCHAR* p = blob->blb_data;
-		if (length) {
-			MOVE_FASTER(q, p, length);
+		if (header->blh_flags & rhd_stream_blob) {
+			blob->blb_flags |= BLB_stream;
 		}
-	}
-	else {
-		vcl* vector = blob->blb_pages;
-		if (!vector) {
-			vector = blob->blb_pages =
-				vcl::newVector(*blob->blb_transaction->tra_pool, 0);
+
+		if (header->blh_flags & rhd_damaged) {
+			goto punt;
 		}
-		vector->resize(length / sizeof(SLONG));
-		MOVE_FASTER(q, vector->memPtr(), length);
-	}
 
-	if (!delete_flag) {
-		CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
-		return 0UL;
-	}
+		// Retrieve the data either into page clump (level 0) or page vector (levels
+		// 1 and 2).
 
-/* We've been asked (nicely) to delete the blob.  So do so. */
+		const USHORT length = index->dpg_length - BLH_SIZE;
+		const UCHAR* q = (UCHAR *) header->blh_page;
 
-	rpb.rpb_relation = blob->blb_relation;
-	rpb.rpb_page = rpb.getWindow(tdbb).win_page.getPageNum();
-	rpb.rpb_line = line;
-	DPM_delete(tdbb, &rpb, prior_page);
-	return rpb.rpb_page;
+		if (blob->blb_level == 0) {
+			blob->blb_space_remaining = length;
+			UCHAR* p = blob->blb_data;
+			if (length) {
+				MOVE_FASTER(q, p, length);
+			}
+		}
+		else {
+			vcl* vector = blob->blb_pages;
+			if (!vector) {
+				vector = blob->blb_pages =
+					vcl::newVector(*blob->blb_transaction->tra_pool, 0);
+			}
+			vector->resize(length / sizeof(SLONG));
+			MOVE_FASTER(q, vector->memPtr(), length);
+		}
+
+		if (!delete_flag) {
+			CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
+			return 0UL;
+		}
+
+		// We've been asked (nicely) to delete the blob.  So do so.
+
+		rpb.rpb_relation = blob->blb_relation;
+		rpb.rpb_page = rpb.getWindow(tdbb).win_page.getPageNum();
+		rpb.rpb_line = line;
+		DPM_delete(tdbb, &rpb, prior_page);
+		return rpb.rpb_page;
 	} // scope
 
 punt:
@@ -2721,28 +2721,28 @@ static UCHAR* find_space(thread_db*	tdbb,
 	SSHORT space = dbb->dbb_page_size;
 	SSHORT slot = 0;
 	SSHORT used = HIGH_WATER(page->dpg_count);
-	SSHORT reserving = !(dbb->dbb_flags & DBB_no_reserve);
 
 	{ // scope
-	const data_page::dpg_repeat* index = page->dpg_rpt;
-	for (SSHORT i = 0; i < page->dpg_count; i++, index++) {
-		if (index->dpg_offset) {
-			space = MIN(space, index->dpg_offset);
-			used += ROUNDUP(index->dpg_length, ODS_ALIGNMENT);
-			if (type == DPM_primary && reserving) {
-				const rhd* header = (rhd*) ((SCHAR *) page + index->dpg_offset);
-				if (!header->rhd_b_page &&
-					!(header->rhd_flags & (rhd_chain | rhd_blob |
-										   rhd_deleted | rhd_fragment)))
-				{
-					used += SPACE_FUDGE;
+		const bool reserving = !(dbb->dbb_flags & DBB_no_reserve);
+		const data_page::dpg_repeat* index = page->dpg_rpt;
+		for (SSHORT i = 0; i < page->dpg_count; i++, index++) {
+			if (index->dpg_offset) {
+				space = MIN(space, index->dpg_offset);
+				used += ROUNDUP(index->dpg_length, ODS_ALIGNMENT);
+				if (type == DPM_primary && reserving) {
+					const rhd* header = (rhd*) ((SCHAR *) page + index->dpg_offset);
+					if (!header->rhd_b_page &&
+						!(header->rhd_flags & (rhd_chain | rhd_blob |
+											   rhd_deleted | rhd_fragment)))
+					{
+						used += SPACE_FUDGE;
+					}
 				}
 			}
+			else if (!slot) {
+				slot = i;
+			}
 		}
-		else if (!slot) {
-			slot = i;
-		}
-	}
 	} // scope
 
 	if (!slot) {

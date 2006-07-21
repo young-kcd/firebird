@@ -170,7 +170,7 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source)
 		return;
 	}
 
-	dsc desc = format->fmt_desc[id];
+	const dsc desc = format->fmt_desc[id];
 	UCHAR* const address = record->rec_data + (IPTR) desc.dsc_address;
 
 	switch (desc.dsc_dtype) {
