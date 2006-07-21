@@ -38,7 +38,37 @@
 
 #include "../common/classes/timestamp.h"
 
+// MIN_YEAR and MAX_YEAR delimit the range for valid years
+// when either inserting data or performing date arithmetic
+
+const int MIN_YEAR = 0001;
+const int MAX_YEAR = 9999;
+
 namespace Firebird {
+
+bool TimeStamp::isRangeValid() const
+{
+/**************************************
+ *
+ *	i s R a n g e V a l i d
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *  Validates the value being within the supported range.
+ *
+ *  The valid range for dates is 0001-01-01 to 9999-12-31.
+ **************************************/
+	if (!mValue.timestamp_date)
+		return true;
+
+	tm times;
+	decode(&times);
+
+	return (times.tm_year + 1900 >= MIN_YEAR &&
+			times.tm_year + 1900 <= MAX_YEAR);
+}
 
 int TimeStamp::yday(const struct tm* times)
 {
