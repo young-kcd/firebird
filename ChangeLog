@@ -1,3 +1,14 @@
+2006-07-20 18:36  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.110.2.1), jrd/constants.h
+	(1.24.4.1), jrd/evl.cpp (1.165.2.1), jrd/unicode_util.cpp
+	(1.6.4.2):
+	
+	Backport: 1) Fix for CORE-852 - substring(current_user from 4)
+	without for fails 2) Fix for CORE-857 - Containing not working
+	correctly 3) Correction for problem with CURRENT_USER/ROLE and
+	client charset
+
 2006-07-19 18:45  dimitr
 
 	* firebird2/src/jrd/why.cpp (1.100.4.2):
