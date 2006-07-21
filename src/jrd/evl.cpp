@@ -2191,27 +2191,6 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 	else
 		d2 = d1 + d2;
 
-/*
-   BUG: 68427
-   d2 should not be out of range  (0001 - 9999) for the year
-
-   The valid range for dates is 0001-01-01 to 9999-12-31.  If the
-   calculation extends this range, return an error
-*/
-
-	ISC_TIMESTAMP new_date;
-	new_date.timestamp_time = 0;
-	new_date.timestamp_date = d2;
-	tm times;
-	isc_decode_timestamp(&new_date, &times);
-
-	if ((times.tm_year + 1900) < MIN_YEAR
-		|| (times.tm_year) + 1900 > MAX_YEAR)
-	{
-		ERR_post(isc_expression_eval_err, isc_arg_gds,
-						   isc_date_range_exceeded, 0);
-	}
-
 	value->vlu_misc.vlu_sql_date = d2;
 
 	result->dsc_dtype = dtype_sql_date;
@@ -2521,25 +2500,6 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 	value->vlu_misc.vlu_timestamp.timestamp_date = d2 / (ISC_TICKS_PER_DAY);
 	value->vlu_misc.vlu_timestamp.timestamp_time = (d2 % ISC_TICKS_PER_DAY);
-
-/*
-   BUG: 68427
-   d2 should not be out of range  (0001 - 9999) for the year
-
-   The valid range for dates is 0001-01-01 to 9999-12-31.  If the
-   calculation extends this range, return an error
-*/
-
-	ISC_TIMESTAMP new_date;
-	new_date.timestamp_time = 0;
-	new_date.timestamp_date = value->vlu_misc.vlu_timestamp.timestamp_date;
-	tm times;
-	isc_decode_timestamp(&new_date, &times);
-
-	if ((times.tm_year + 1900) < MIN_YEAR || (times.tm_year) + 1900 > MAX_YEAR) {
-		ERR_post(isc_expression_eval_err, isc_arg_gds, isc_date_range_exceeded, 0);
-	}
-
 
 /* Make sure the TIME portion is non-negative */
 
@@ -3245,13 +3205,12 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		return &impure->vlu_desc;
 	}
 	tm times;
-	GDS_TIMESTAMP timestamp;
+	Firebird::TimeStamp timestamp(true);
 
 	switch (value->dsc_dtype) {
 	case dtype_sql_time:
-		timestamp.timestamp_time = *(GDS_TIME *) value->dsc_address;
-		timestamp.timestamp_date = 0;
-		isc_decode_timestamp(&timestamp, &times);
+		timestamp.value().timestamp_time = *(GDS_TIME *) value->dsc_address;
+		timestamp.decode(&times);
 		if (extract_part != blr_extract_hour &&
 			extract_part != blr_extract_minute &&
 			extract_part != blr_extract_second)
@@ -3260,9 +3219,8 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		}
 		break;
 	case dtype_sql_date:
-		timestamp.timestamp_date = *(GDS_DATE *) value->dsc_address;
-		timestamp.timestamp_time = 0;
-		isc_decode_timestamp(&timestamp, &times);
+		timestamp.value().timestamp_date = *(GDS_DATE *) value->dsc_address;
+		timestamp.decode(&times);
 		if (extract_part == blr_extract_hour ||
 			extract_part == blr_extract_minute ||
 			extract_part == blr_extract_second)
@@ -3271,8 +3229,8 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		}
 		break;
 	case dtype_timestamp:
-		timestamp = *((GDS_TIMESTAMP *) value->dsc_address);
-		isc_decode_timestamp(&timestamp, &times);
+		timestamp.value() = *(GDS_TIMESTAMP *) value->dsc_address;
+		timestamp.decode(&times);
 		break;
 	default:
 		ERR_post(isc_expression_eval_err, 0);
@@ -3304,7 +3262,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		impure->vlu_desc.dsc_length = sizeof(ULONG);
 		*(ULONG *) impure->vlu_desc.dsc_address =
 			times.tm_sec * ISC_TIME_SECONDS_PRECISION +
-			(timestamp.timestamp_time % ISC_TIME_SECONDS_PRECISION);
+			(timestamp.value().timestamp_time % ISC_TIME_SECONDS_PRECISION);
 		return &impure->vlu_desc;
 	case blr_extract_yearday:
 		part = times.tm_yday;

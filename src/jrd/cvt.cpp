@@ -1325,35 +1325,24 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		case dtype_text:
 			{
 				GDS_TIMESTAMP date;
-				tm times;
-
 				string_to_datetime(from, &date, expect_timestamp, err);
-
-				isc_decode_timestamp(&date, &times);
-				if ((times.tm_year + 1900) < MIN_YEAR
-					|| (times.tm_year) + 1900 > MAX_YEAR)
-				{
-					(*err) (isc_date_range_exceeded, 0);
-				}
-
-				((GDS_TIMESTAMP *) to->dsc_address)->timestamp_date = date.timestamp_date;
-				((GDS_TIMESTAMP *) to->dsc_address)->timestamp_time = date.timestamp_time;
+				*((GDS_TIMESTAMP *) to->dsc_address) = date;
 			}
 			return;
 
 		case dtype_sql_date:
 			((GDS_TIMESTAMP *) (to->dsc_address))->timestamp_date =
-				*(GDS_DATE *) (from->dsc_address);
+				*(GDS_DATE *) from->dsc_address;
 			((GDS_TIMESTAMP *) (to->dsc_address))->timestamp_time = 0;
 			return;
 
 		case dtype_sql_time:
 			((GDS_TIMESTAMP*) (to->dsc_address))->timestamp_date = 0;
 			((GDS_TIMESTAMP*) (to->dsc_address))->timestamp_time =
-				*(GDS_TIME*) (from->dsc_address);
+				*(GDS_TIME*) from->dsc_address;
 
 			/* Per SQL Specs, we need to set the DATE
-			   portion to the current date */
+				portion to the current date */
 			{
 				/** Cannot call JRD_get_thread_data because that macro calls
 				BUGCHECK i.e. ERR_bugcheck() which is not part of
@@ -1405,39 +1394,14 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		case dtype_text:
 			{
 				GDS_TIMESTAMP date;
-				tm times;
-
 				string_to_datetime(from, &date, expect_sql_date, err);
-				isc_decode_timestamp(&date, &times);
-				if ((times.tm_year + 1900) < MIN_YEAR
-					|| (times.tm_year) + 1900 > MAX_YEAR)
-				{
-					(*err) (isc_date_range_exceeded, 0);
-				}
-
 				*((GDS_DATE *) to->dsc_address) = date.timestamp_date;
 			}
 			return;
 
 		case dtype_timestamp:
-			{
-				GDS_TIMESTAMP new_date;
-				tm times;
-
-				new_date.timestamp_date =
-					((GDS_TIMESTAMP *) from->dsc_address)->timestamp_date;
-				new_date.timestamp_time = 0;
-
-				isc_decode_timestamp(&new_date, &times);
-				if ((times.tm_year + 1900) < MIN_YEAR
-					|| (times.tm_year) + 1900 > MAX_YEAR)
-				{
-					(*err) (isc_date_range_exceeded, 0);
-				}
-
-				*((GDS_DATE *) to->dsc_address) =
-					((GDS_TIMESTAMP *) from->dsc_address)->timestamp_date;
-			}
+			*((GDS_DATE *) to->dsc_address) =
+				((GDS_TIMESTAMP *) from->dsc_address)->timestamp_date;
 			return;
 
 		default:
@@ -1465,7 +1429,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			{
 				GDS_TIMESTAMP date;
 				string_to_datetime(from, &date, expect_sql_time, err);
-				*(GDS_TIME *) to->dsc_address = date.timestamp_time;
+				*((GDS_TIME *) to->dsc_address) = date.timestamp_time;
 			}
 			return;
 
@@ -1829,16 +1793,14 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 
 /* Convert a date or time value into a timestamp for manipulation */
 
-	GDS_TIMESTAMP date;
-	
+	Firebird::TimeStamp ts(true);
+
 	switch (from->dsc_dtype) {
 	case dtype_sql_time:
-		date.timestamp_date = 0;
-		date.timestamp_time = *(GDS_TIME *) from->dsc_address;
+		ts.value().timestamp_time = *(GDS_TIME *) from->dsc_address;
 		break;
 	case dtype_sql_date:
-		date.timestamp_date = *(GDS_DATE *) from->dsc_address;
-		date.timestamp_time = 0;
+		ts.value().timestamp_date = *(GDS_DATE *) from->dsc_address;
 		break;
 	case dtype_timestamp:
 		/** Cannot call JRD_get_thread_data because that macro calls 
@@ -1851,7 +1813,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 			version4 = (tdbb->tdbb_request->req_flags & req_blr_version4) ?
 				true : false;
 		}
-		date = *(GDS_TIMESTAMP *) from->dsc_address;
+		ts.value() = *(GDS_TIMESTAMP *) from->dsc_address;
 		break;
 	default:
 		fb_assert(false);
@@ -1862,7 +1824,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 /* Decode the timestamp into human readable terms */
 
 	tm times;
-	isc_decode_timestamp(&date, &times);
+	ts.decode(&times);
 	
 	TEXT temp[30];			/* yyyy-mm-dd hh:mm:ss.tttt  OR
 							dd-MMM-yyyy hh:mm:ss.tttt */
@@ -1898,17 +1860,17 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		if (from->dsc_dtype == dtype_sql_time || !version4) {
 			sprintf(p, "%2.2d:%2.2d:%2.2d.%4.4d",
 					times.tm_hour, times.tm_min, times.tm_sec,
-					(USHORT) (date.timestamp_time %
+					(USHORT) (ts.value().timestamp_time %
 							  ISC_TIME_SECONDS_PRECISION));
 		}
 		else if (times.tm_hour || times.tm_min || times.tm_sec
-				 || date.timestamp_time)
+				 || ts.value().timestamp_time)
 		{
 			/* Timestamp formating prior to BLR Version 5 is slightly
 			   different */
 			sprintf(p, " %d:%.2d:%.2d.%.4d",
 					times.tm_hour, times.tm_min, times.tm_sec,
-					(USHORT) (date.timestamp_time %
+					(USHORT) (ts.value().timestamp_time %
 							  ISC_TIME_SECONDS_PRECISION));
 		}
 		while (*p)
@@ -2728,26 +2690,29 @@ static void string_to_datetime(
 /* convert day/month/year to Julian and validate result
    This catches things like 29-Feb-1995 (not a leap year) */
 
-	isc_encode_timestamp(&times, date);
+	Firebird::TimeStamp ts(true);
+	ts.encode(&times);
+
+	if (!ts.isRangeValid()) {
+		(*err) (isc_date_range_exceeded, 0);
+	}
+
 	if (expect_type != expect_sql_time) {
 		tm times2;
-		isc_decode_timestamp(date, &times2);
-
-		if ((times.tm_year + 1900) < MIN_YEAR
-			|| (times.tm_year) + 1900 > MAX_YEAR)
-		{
-			(*err) (isc_date_range_exceeded, 0);
-		}
+		ts.decode(&times2);
 
 		if (times.tm_year != times2.tm_year ||
 			times.tm_mon != times2.tm_mon ||
 			times.tm_mday != times2.tm_mday ||
 			times.tm_hour != times2.tm_hour ||
-			times.tm_min != times2.tm_min || times.tm_sec != times2.tm_sec)
+			times.tm_min != times2.tm_min ||
+			times.tm_sec != times2.tm_sec)
 		{
 			conversion_error(desc, err);
 		}
 	}
+
+	*date = ts.value();
 
 /* Convert fraction of seconds */
 	while (description[6]++ < -ISC_TIME_SECONDS_PRECISION_SCALE)

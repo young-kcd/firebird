@@ -337,6 +337,31 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 			}
 		}
 
+		// Validate range for datetime values
+
+		if (DTYPE_IS_DATE(from_desc->dsc_dtype)) {
+			Firebird::TimeStamp ts(true);
+			switch (from_desc->dsc_dtype) {
+				case dtype_sql_date:
+					ts.value().timestamp_date =
+						*(GDS_DATE*) from_desc->dsc_address;
+					break;
+				case dtype_sql_time:
+					ts.value().timestamp_time =
+						*(GDS_TIME*) from_desc->dsc_address;
+					break;
+				case dtype_timestamp:
+					ts.value() = *(GDS_TIMESTAMP*) from_desc->dsc_address;
+					break;
+				default:
+					fb_assert(false);
+			}
+
+			if (!ts.isRangeValid()) {
+				ERR_post(isc_date_range_exceeded, 0);
+			}
+		}
+
 #ifndef VMS
 		if (DTYPE_IS_BLOB(to_desc->dsc_dtype))
 #else

@@ -34,7 +34,7 @@
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
-//#include "../common/classes/timestamp.h"
+#include "../common/classes/timestamp.h"
 #include "../jrd/tra.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dmp_proto.h"
@@ -665,8 +665,11 @@ static void dmp_header(const header_page* page)
 			   page->hdr_page_size, page->hdr_ods_version & ~ODS_FIREBIRD_FLAG, 
 			   minor_version, page->hdr_ods_minor_original, page->hdr_PAGES);
 
+	const Firebird::TimeStamp ts(*((GDS_TIMESTAMP *) page->hdr_creation_date));
+
 	struct tm time;
-	isc_decode_timestamp((GDS_TIMESTAMP *) page->hdr_creation_date, &time);
+	ts.decode(&time);
+
 	fprintf(dbg_file, "\tCreation date:\t%s %d, %d %d:%02d:%02d\n",
 			   FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			   time.tm_hour, time.tm_min, time.tm_sec);
