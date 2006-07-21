@@ -535,12 +535,12 @@ namespace internal
 		v->timestamp_date += days;
 		 // Time portion is unsigned, so we avoid unsigned rolling over negative values
 		// that only produce a new unsigned number with the wrong result.
-		if (secs < 0 && static_cast<unsigned long>(-secs) > v->timestamp_time)
+		if (secs < 0 && static_cast<ISC_ULONG>(-secs) > v->timestamp_time)
 		{
 			--v->timestamp_date;
 			v->timestamp_time += tenthmsec_in_day + secs;
 		}
-		else if ((v->timestamp_time += secs) >= static_cast<unsigned long>(tenthmsec_in_day))
+		else if ((v->timestamp_time += secs) >= static_cast<ISC_ULONG>(tenthmsec_in_day))
 		{
 			++v->timestamp_date;
 			v->timestamp_time -= tenthmsec_in_day;
@@ -699,7 +699,7 @@ FBUDF_API void fbtruncate(const paramdsc* v, paramdsc* rc)
 	// truncate(0.9)  =>  0
 	// truncate(-0.9) => -1
 	// truncate(-0.9) =>  0 ### SYMMETRIC_MATH defined.
-	signed char scale = v->dsc_scale;
+	int scale = v->dsc_scale;
 #if defined(SYMMETRIC_MATH)
 	while (scale++ < 0)
 		iv /= 10;
@@ -747,7 +747,7 @@ FBUDF_API void fbround(const paramdsc* v, paramdsc* rc)
 	// round(-0.3) => 0 ### round(-0.5) =>  0
 	// round(-0.3) => 0 ### round(-0.5) => -1 ### SYMMETRIC_MATH defined.
 	bool gt = false;
-	signed char scale = v->dsc_scale;
+	int scale = v->dsc_scale;
 	while (scale++ < 0)
 	{
 		if (!scale)
