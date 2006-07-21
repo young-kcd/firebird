@@ -23,6 +23,7 @@
 #ifndef JRD_RECORD_BUFFER_H
 #define JRD_RECORD_BUFFER_H
 
+#include "../common/classes/File.h"
 #include "../jrd/TempSpace.h"
 
 namespace Jrd {
@@ -36,12 +37,11 @@ public:
 	Record* getTempRecord() const;
 
 	void store(const Record*);
-	bool fetch(Record*);
+	bool fetch(offset_t, Record*);
 
 private:
 	size_t length;
-	size_t count;
-	size_t position;
+	offset_t count;
 	bool filled;
 	Record* record;
 	TempSpace* space;

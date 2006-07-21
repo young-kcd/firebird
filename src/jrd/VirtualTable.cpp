@@ -70,7 +70,10 @@ bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 	if (!impure->irsb_record_buffer)
 		return false;
 
-	return impure->irsb_record_buffer->fetch(rpb->rpb_record);
+	rpb->rpb_number.increment();
+
+	return impure->irsb_record_buffer->fetch(rpb->rpb_number.getValue(),
+											 rpb->rpb_record);
 }
 
 
@@ -100,6 +103,8 @@ void VirtualTable::open(thread_db* tdbb, RecordSource* rsb)
 	else {
 		format = record->rec_format;
 	}
+
+	rpb->rpb_number.setValue(BOF_NUMBER);
 
 	DatabaseSnapshot* snapshot = DatabaseSnapshot::create(tdbb);
 	impure->irsb_record_buffer = snapshot->getData(relation);
