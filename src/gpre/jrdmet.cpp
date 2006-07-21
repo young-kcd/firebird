@@ -29,6 +29,7 @@
 #include "firebird.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
+#include "../jrd/constants.h"
 #include "../jrd/ods.h"
 
 #include "../gpre/gpre.h"
