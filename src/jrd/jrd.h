@@ -103,7 +103,6 @@ class CharSetContainer;
 struct dsc;
 struct thread;
 struct mod;
-enum prc_t;
 
 namespace Jrd {
 

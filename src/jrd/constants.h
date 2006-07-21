@@ -151,4 +151,61 @@ const size_t DEFAULT_TIME_PRECISION		= 0;
 // Should be 6 as per SQL spec
 const size_t DEFAULT_TIMESTAMP_PRECISION	= 3;
 
+// relation types
+
+enum rel_t {
+	rel_persistent = 0,
+	rel_view = 1,
+	rel_external = 2,
+	rel_virtual = 3,
+	rel_global_temp_preserve = 4,
+	rel_global_temp_delete = 5
+};
+
+// procedure types
+
+enum prc_t {
+	prc_legacy = 0,
+	prc_selectable = 1,
+	prc_executable = 2
+};
+
+// states
+
+enum att_state_t {
+	att_s_idle = 0,
+	att_s_active = 1,
+	att_s_killed = 2
+};
+
+enum tra_state_t {
+	tra_s_idle = 0,
+	tra_s_active = 1,
+};
+
+enum stmt_state_t {
+	stmt_s_idle = 0,
+	stmt_s_stalled = 1,
+	stmt_s_active = 2,
+	stmt_s_killed = 3
+};
+
+// shutdown modes
+
+enum shut_mode_t {
+	shut_mode_online = 0,
+	shut_mode_single = 1,
+	shut_mode_multi = 2,
+	shut_mode_full = 3
+};
+
+// transaction isolation levels
+
+enum tra_iso_mode_t {
+	iso_mode_consistency = 0,
+	iso_mode_concurrency = 1,
+	iso_mode_rc_version = 2,
+	iso_mode_rc_no_version = 3
+};
+
 #endif // JRD_CONSTANTS_H
