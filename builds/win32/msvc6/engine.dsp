@@ -199,6 +199,10 @@ SOURCE=..\..\..\src\jrd\cvt2.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\DatabaseSnapshot.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\divorce.cpp
 # End Source File
 # Begin Source File
@@ -404,6 +408,10 @@ SOURCE=..\..\..\src\jrd\pwd.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\RecordBuffer.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\Relation.cpp
 # End Source File
 # Begin Source File
@@ -524,6 +532,10 @@ SOURCE=..\..\..\src\jrd\validation.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\vio.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\VirtualTable.cpp
 # End Source File
 # Begin Source File
 
@@ -649,6 +661,10 @@ SOURCE=..\..\..\src\jrd\cvt2_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\cvt_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\DatabaseSnapshot.h
 # End Source File
 # Begin Source File
 
@@ -1128,6 +1144,10 @@ SOURCE=..\..\..\src\jrd\que.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\RecordBuffer.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\Relation.h
 # End Source File
 # Begin Source File
@@ -1309,6 +1329,10 @@ SOURCE=..\..\..\src\jrd\vio_debug.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\vio_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\VirtualTable.h
 # End Source File
 # Begin Source File
 
