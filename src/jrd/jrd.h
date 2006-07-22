@@ -824,7 +824,7 @@ struct win_for_array: public win
 
 // win_flags
 
-const USHORT WIN_large_scan		= 1;		// large sequential scan
+const USHORT WIN_large_scan			= 1;	// large sequential scan
 const USHORT WIN_secondary			= 2;	// secondary stream
 const USHORT WIN_garbage_collector	= 4;	// garbage collector's window
 const USHORT WIN_garbage_collect	= 8;	// scan left a page for garbage collector

@@ -70,6 +70,7 @@ bool TimeStamp::isRangeValid() const
 			times.tm_year + 1900 <= MAX_YEAR);
 }
 
+
 int TimeStamp::yday(const struct tm* times)
 {
 /**************************************
