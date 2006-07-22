@@ -1,3 +1,72 @@
+2006-07-21 14:43  asfernandes
+
+	* firebird2/src/burp/restore.epp (1.105):
+	
+	Misc
+
+2006-07-21 11:31  dimitr
+
+	* firebird2/src/jrd/: RecordBuffer.cpp (1.5), RecordBuffer.h (1.3),
+	VirtualTable.cpp (1.4):
+	
+	Adjusted RecordBuffer and VirtualTable for 64-bit recno's and
+	concurrent operations. Thanks to Adriano.
+
+2006-07-21 10:23  dimitr
+
+	* firebird2/src/common/classes/: timestamp.cpp (1.12), timestamp.h
+	(1.12):
+	
+	1) Replace API encode/decode routines with TimeStamp methods 2)
+	Encapsulate range checks inside TimeStamp class 3) Fixed CORE-347
+
+2006-07-21 10:15  dimitr
+
+	* firebird2/src/jrd/: cvt.cpp (1.76), dmp.cpp (1.32), evl.cpp
+	(1.185), exe.cpp (1.189):
+	
+	1) Replace API encode/decode routines with TimeStamp methods 2)
+	Encapsulate range checks inside TimeStamp class 3) Fixed CORE-347
+
+2006-07-21 09:52  dimitr
+
+	* firebird2/src/: isql/extract.epp (1.70), gpre/jrdmet.cpp (1.22):
+	
+	Forward declaration of enums is not allowed in the C++ language,
+	even although being supported by MSVC.	This commit should fix GCC
+	compilation problems.
+
+2006-07-21 09:47  dimitr
+
+	* firebird2/src/jrd/: constants.h (1.27), ini.h (1.25), jrd.h
+	(1.170):
+	
+	Forward declaration of enums is not allowed in the C++ language,
+	even although being supported by MSVC.	This commit should fix GCC
+	compilation problems.
+
+2006-07-21 08:57  robocop
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp (1.29):
+	
+	CORE-858 Misc, related to the other data type changes.
+
+2006-07-21 08:55  robocop
+
+	* firebird2/src/extlib/fbudf/: fbudf.cpp (1.28), fbudf.h (1.11):
+	
+	CORE-858 In version 1.15, I fixed a bug but introduced a worse one.
+	It went unnoticed for more than two years, but fbudf has memory
+	problem when dealing with varchars due to a silly change in the
+	vary struct definition.  I think these h and cpp can be copied
+	safely from the HEAD to FB2.0.
+
+2006-07-21 06:15  dimitr
+
+	* firebird2/src/dsql/gen.cpp (1.104):
+	
+	Misc.
+
 2006-07-21 03:37  robocop
 
 	* firebird2/builds/win32/msvc6/: engine.dsp (1.65),
