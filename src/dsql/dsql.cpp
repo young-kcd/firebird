@@ -3999,6 +3999,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		case isc_info_rsb_sequential:
 		case isc_info_rsb_ext_sequential:
 		case isc_info_rsb_ext_indexed:
+		case isc_info_rsb_virt_sequential:
 			if (rsb_type == isc_info_rsb_indexed ||
 				rsb_type == isc_info_rsb_ext_indexed) 
 			{

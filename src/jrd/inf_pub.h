@@ -286,6 +286,7 @@ enum info_db_provider
 #define isc_info_rsb_once		20
 #define isc_info_rsb_procedure		21
 #define isc_info_rsb_skip		22
+#define isc_info_rsb_virt_sequential	23
 
 /**********************/
 /* Bitmap expressions */

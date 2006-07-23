@@ -573,7 +573,11 @@ double OPT_getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Form
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	if (relation->rel_file) {
+	if (relation->isVirtual()) {
+		// Just a dumb estimation
+		return (double) 100;
+	}
+	else if (relation->rel_file) {
 		// Is there really no way to do better?
 		// Don't we know the file-size and record-size?
 		return (double) 10000;

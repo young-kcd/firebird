@@ -2513,6 +2513,10 @@ static bool dump_rsb(const jrd_req* request,
 		*buffer++ = isc_info_rsb_left_cross;
 		break;
 
+	case rsb_virt_sequential:
+		*buffer++ = isc_info_rsb_virt_sequential;
+		break;
+
 	default:
 		*buffer++ = isc_info_rsb_unknown;
 		break;
