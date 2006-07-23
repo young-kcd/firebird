@@ -62,6 +62,8 @@ const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
 const size_t MAX_SQL_IDENTIFIER_LEN = MAX_SQL_IDENTIFIER_SIZE - 1;
 typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 
+const char* const NULL_STRING = "*** null ***";
+
 const char* const NULL_ROLE = "NONE";
 
 const char* const PRIMARY_KEY		= "PRIMARY KEY";

@@ -1243,7 +1243,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						{
 							ERR_post(isc_not_valid,
 									 isc_arg_string, temp_field->fld_name.c_str(),
-									 isc_arg_string, "*** null ***", 0);
+									 isc_arg_string, NULL_STRING, 0);
 						}
 
 						fb_assert(default_literal->nod_type == nod_literal);

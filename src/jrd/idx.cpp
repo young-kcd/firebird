@@ -405,7 +405,7 @@ void IDX_create_index(
 
 					ERR_post(isc_not_valid,
 						isc_arg_string, bad_fld->fld_name.c_str(),
-						isc_arg_string, "*** null ***", 0);
+						isc_arg_string, NULL_STRING, 0);
 				}
 			}
 			else {

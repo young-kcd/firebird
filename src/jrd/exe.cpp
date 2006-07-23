@@ -219,8 +219,6 @@ static void stuff_stack_trace(const jrd_req*);
 
 /* macro definitions */
 
-const char* NULL_STRING		= "*** null ***";
-
 #if (defined SUPERSERVER) && (defined WIN_NT || defined SOLARIS_MT)
 const int MAX_CLONES	= 750;
 #elif defined (HP10) && defined (SUPERSERVER)
@@ -3709,7 +3707,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 
 			if (!desc || (request->req_flags & req_null))
 			{
-				value = "*** null ***";
+				value = NULL_STRING;
 			}
 			else if (!length)
 			{

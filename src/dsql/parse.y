@@ -129,7 +129,6 @@ typedef dsql_nod* YYSTYPE;
 #define YYFREE gds__free
 
 static const char INTERNAL_FIELD_NAME[] = "DSQL internal"; /* NTX: placeholder */
-static const char NULL_STRING[] = "";
 
 inline SLONG trigger_type_suffix(const int slot1, const int slot2, const int slot3)
 {
