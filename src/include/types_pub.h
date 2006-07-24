@@ -27,6 +27,24 @@
 #ifndef INCLUDE_TYPES_PUB_H
 #define INCLUDE_TYPES_PUB_H
 
+#include <stddef.h>
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+
+#if !defined(_INTPTR_T_DEFINED)
+#if defined(_WIN64)
+typedef __int64 intptr_t;
+typedef unsigned __int64 uintptr_t;
+#else
+typedef long intptr_t;
+typedef unsigned long uintptr_t;
+#endif
+#endif
+
+#else
+#include <inttypes.h>
+#endif
+
 /******************************************************************/
 /* API handles                                                    */
 /******************************************************************/
@@ -41,7 +59,7 @@ typedef void*		FB_API_HANDLE;
 /* Status vector                                                  */
 /******************************************************************/
 
-typedef long ISC_STATUS;
+typedef intptr_t ISC_STATUS;
 
 #define ISC_STATUS_LENGTH	20
 typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];

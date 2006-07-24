@@ -32,16 +32,7 @@
 #ifndef INCLUDE_FB_TYPES_H
 #define INCLUDE_FB_TYPES_H
 
-/* Nickolay: it is easier to assume that integer is at least 32-bit.
- * This comes from limitation that we cannot reliably detect datatype size at
- *  compile time in cases when we do not control compilation (public headers) 
- *  We are not going to support 16-bit platforms, right?
- *
- * Temporarly restrict new definition until ULONG clash with Windows
- * type is solved. Win64 port is not possible before that point.
- * Cannot use SIZEOF_LONG define here because we are in a public header
- */
-#if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
+#if SIZEOF_LONG == 8
 	/* EKU: Firebird requires (S)LONG to be 32 bit */
 	typedef int SLONG;
 	typedef unsigned int ULONG;
@@ -100,8 +91,8 @@ typedef char TEXT;				/* To be expunged over time */
 typedef unsigned char UTEXT;	Unsigned text - not used */
 typedef unsigned char BYTE;		/* Unsigned byte - common */
 /*typedef char SBYTE;			Signed byte - not used */
-typedef long IPTR;
-typedef unsigned long U_IPTR;
+typedef intptr_t IPTR;
+typedef uintptr_t U_IPTR;
 
 typedef void (*FPTR_VOID) ();
 typedef void (*FPTR_VOID_PTR) (void*);
@@ -133,4 +124,3 @@ typedef IPTR FB_THREAD_ID;
 #define FB_ALIGN(n, b) ((n + b - 1) & ~(b - 1))
 
 #endif /* INCLUDE_FB_TYPES_H */
-
