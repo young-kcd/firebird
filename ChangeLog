@@ -1,3 +1,29 @@
+2006-07-23 18:40  asfernandes
+
+	* firebird2/src/jrd/intlnames.h (1.22):
+	
+	Misc
+
+2006-07-23 14:14  dimitr
+
+	* firebird2/src/: jrd/inf_pub.h (1.11), jrd/opt.cpp (1.274),
+	jrd/Optimizer.cpp (1.61), dsql/dsql.cpp (1.173):
+	
+	A few fixes for the monitoring tables.
+
+2006-07-23 13:14  dimitr
+
+	* firebird2/src/: jrd/constants.h (1.28), jrd/evl.cpp (1.186),
+	jrd/exe.cpp (1.190), jrd/idx.cpp (1.110), dsql/parse.y (1.212):
+	
+	Misc.
+
+2006-07-23 13:01  dimitr
+
+	* firebird2/src/jrd/met.epp (1.199):
+	
+	Fixed CORE-866.
+
 2006-07-22 05:54  asfernandes
 
 	* firebird2/src/: common/classes/timestamp.cpp (1.13), jrd/jrd.h
