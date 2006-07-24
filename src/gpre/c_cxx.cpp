@@ -1398,7 +1398,7 @@ static void gen_database( const act* action, int column)
 		   "isc_blob_null = {0, 0};\t/* initializer for blobs */");
 	if (gpreGlob.sw_language == lang_c)
 		printa(column,
-			   "static %slong *gds__null = 0;\t/* dummy status vector */",
+			   "static %sISC_STATUS *gds__null = 0;\t/* dummy status vector */",
 			   CONST_STR);
 
 	const TEXT* scope = "";
@@ -1436,7 +1436,7 @@ static void gen_database( const act* action, int column)
 		printa(column + INDENT, "%s;\t\t/* default transaction handle */",
 			   gpreGlob.transaction_name);
 
-	printa(column, "%slong", scope);
+	printa(column, "%sISC_STATUS", scope);
 	column += INDENT;
 	printa(column, "%s [20],\t/* status vector */", global_status_name);
 	printa(column, "%s2 [20];\t/* status vector */", global_status_name);
