@@ -1172,6 +1172,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		PAG_set_db_readonly(dbb, options.dpb_db_readonly);
 	}
 
+	PAG_attachment_id(tdbb);
+
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 	// don't record the attach until now in case the log is added during the attach
 
@@ -1982,7 +1984,9 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
         PAG_set_db_readonly (dbb, options.dpb_db_readonly);
     }
 
-    CCH_release_exclusive(tdbb);
+	PAG_attachment_id(tdbb);
+
+	CCH_release_exclusive(tdbb);
 
 	// Figure out what character set & collation this attachment prefers
 

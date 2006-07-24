@@ -358,8 +358,7 @@ void DatabaseSnapshot::putAttachment(Attachment* attachment, RecordBuffer* buffe
 	}
 
 	// attachment id
-	temp_long = PAG_attachment_id(NULL);
-	putField(record, f_mon_att_id, &temp_long);
+	putField(record, f_mon_att_id, &attachment->att_attachment_id);
 	// process id
 	temp_long = getpid();
 	putField(record, f_mon_att_server_pid, &temp_long);
