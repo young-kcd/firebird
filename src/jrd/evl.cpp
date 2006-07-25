@@ -2196,6 +2196,13 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 
 	value->vlu_misc.vlu_sql_date = d2;
 
+	Firebird::TimeStamp ts(true);
+	ts.value().timestamp_date = value->vlu_misc.vlu_sql_date;
+
+	if (!ts.isRangeValid()) {
+		ERR_post(isc_date_range_exceeded, 0);
+	}
+
 	result->dsc_dtype = dtype_sql_date;
 	result->dsc_length = type_lengths[result->dsc_dtype];
 	result->dsc_scale = 0;
@@ -2503,6 +2510,12 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 	value->vlu_misc.vlu_timestamp.timestamp_date = d2 / (ISC_TICKS_PER_DAY);
 	value->vlu_misc.vlu_timestamp.timestamp_time = (d2 % ISC_TICKS_PER_DAY);
+
+	Firebird::TimeStamp ts(value->vlu_misc.vlu_timestamp);
+
+	if (!ts.isRangeValid()) {
+		ERR_post(isc_date_range_exceeded, 0);
+	}
 
 /* Make sure the TIME portion is non-negative */
 
