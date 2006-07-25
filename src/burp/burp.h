@@ -830,6 +830,7 @@ public:
 	burp_prc*	procedures;
 	SLONG		BCK_capabilities;
 	USHORT		RESTORE_format;
+	int         RESTORE_ods;
 	ULONG		mvol_io_buffer_size;
 	ULONG		mvol_actual_buffer_size;
 	UINT64		mvol_cumul_count;

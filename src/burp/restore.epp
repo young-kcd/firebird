@@ -66,10 +66,14 @@ namespace // unnamed, private
 {
 
 
-const int DB_VERSION_DDL4		= 4;  // ods4 db 
-const int DB_VERSION_DDL5		= 5;  // ods5 db 
-const int DB_VERSION_DDL8		= 8;  // ods8 db 
-const int DB_VERSION_CURRENT	= DB_VERSION_DDL8;  // v4.0 is ods8 
+const int DB_VERSION_DDL4		= 40;  // ods4 db
+const int DB_VERSION_DDL5		= 50;  // ods5 db
+const int DB_VERSION_DDL8		= 80;  // ods8 db
+const int DB_VERSION_CURRENT	= DB_VERSION_DDL8;  // IB4.0 is ods8 
+const int DB_VERSION_DDL9       = 90;  // ods9 db, IB5
+const int DB_VERSION_DDL10      = 100; // ods10 db, IB6, FB1, FB1.5
+const int DB_VERSION_DDL11      = 110; // ods11 db, FB2
+const int DB_VERSION_DDL11_1    = 111; // ods11.1 db, FB2.1
 
 const int DEFERRED_ACTIVE		= 3;	/* RDB$INDEX_INACTIVE setting for Foreign Keys
 										* This setting is used temporarily while
@@ -91,7 +95,7 @@ enum scan_attr_t {
 
 void	add_files(const char*);
 void	bad_attribute(scan_attr_t, ATT_TYPE, USHORT);
-USHORT	check_db_version();
+void	check_db_version();
 void	create_database (const TEXT*);
 void	decompress(UCHAR*, USHORT);
 void	eat_blob();
@@ -781,7 +785,7 @@ void bad_attribute (scan_attr_t		scan_next_attr,
 	}
 }
 
-USHORT check_db_version()
+void check_db_version()
 {
 /**************************************
  *
@@ -790,34 +794,66 @@ USHORT check_db_version()
  **************************************
  *
  * Functional description
- *	Find the version number of the database.
+ *	Find the ODS version number of the database.
  *
  **************************************/
-	isc_req_handle  req_handle1 = 0, req_handle2 = 0;
+	struct rel_field_t
+	{
+		const char* rel;
+		const char* fld;
+		int ods_version;
+	};
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+	tdgbl->RESTORE_ods = DB_VERSION_DDL4;
 
-	USHORT db_version = DB_VERSION_DDL4;
-	FOR (REQUEST_HANDLE req_handle1)
-		FIRST 1 X IN RDB$RELATIONS
-		WITH X.RDB$RELATION_NAME = "RDB$TRIGGERS"
-		db_version = DB_VERSION_DDL5;
-	END_FOR;
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
-	MISC_release_request_silent(req_handle1);
-	FOR (REQUEST_HANDLE req_handle2)
-		FIRST 1 X IN RDB$RELATIONS
-		WITH X.RDB$RELATION_NAME = "RDB$PROCEDURES"
-		db_version = DB_VERSION_DDL8;
-	END_FOR;
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
+	const rel_field_t relations[] =
+	{
+		{"RDB$TRIGGERS",	0,	DB_VERSION_DDL5}, // IB3.3
+		{"RDB$PROCEDURES",	0,	DB_VERSION_DDL8}, // IB4
+		{"RDB$ROLES",		0,	DB_VERSION_DDL9}, // IB5
+		{0, 0, 0}
+	};
+
+	isc_req_handle req_handle = 0;
+	for (const rel_field_t* rel = relations; rel->rel; ++rel)
+	{
+		FOR (REQUEST_HANDLE req_handle)
+			FIRST 1 X IN RDB$RELATIONS
+			WITH X.RDB$RELATION_NAME = rel->rel
+			tdgbl->RESTORE_ods = rel->ods_version;
+		END_FOR;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	MISC_release_request_silent(req_handle);
+	
+	if (tdgbl->RESTORE_ods < DB_VERSION_DDL8)
+		return;
+
+	const rel_field_t rel_fields[] =
+	{
+		{"RDB$FIELDS",		"RDB$FIELD_PRECISION",	DB_VERSION_DDL10}, // FB1, FB1.5
+		{"RDB$ROLES",		"RDB$DESCRIPTION",		DB_VERSION_DDL11}, // FB2
+		{"RDB$RELATIONS",	"RDB$RELATION_TYPE",	DB_VERSION_DDL11_1}, // FB2.1
+		{0, 0, 0}
+	};
+		
+	isc_req_handle req_handle2 = 0;
+	for (const rel_field_t* rf = rel_fields; rf->rel; ++rf)
+	{
+		FOR (REQUEST_HANDLE req_handle2)
+			FIRST 1 X2 IN RDB$RELATION_FIELDS
+			WITH X2.RDB$RELATION_NAME = rf->rel
+			AND X2.RDB$FIELD_NAME = rf->fld
+			tdgbl->RESTORE_ods = rf->ods_version;
+		END_FOR;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
 	MISC_release_request_silent(req_handle2);
-
-	return db_version;
 }
 
 void create_database (const TEXT* file_name)
@@ -4523,7 +4559,8 @@ bool get_procedure()
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$SECURITY_CLASS.NULL = TRUE;
 			X.RDB$OWNER_NAME.NULL = TRUE;
-			X.RDB$PROCEDURE_TYPE.NULL = TRUE;
+			X.RDB$PROCEDURE_TYPE.NULL = FALSE;
+			X.RDB$PROCEDURE_TYPE = 0;
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
@@ -4585,7 +4622,6 @@ bool get_procedure()
 
 				case att_procedure_type:
 					X.RDB$PROCEDURE_TYPE = (USHORT) get_numeric();
-					X.RDB$PROCEDURE_TYPE.NULL = FALSE;
 					break;
 
 				default:
@@ -6701,10 +6737,10 @@ bool restore (const TEXT* file_name,
 
 	EXEC SQL SET TRANSACTION NAME tdgbl->global_trans ISOLATION LEVEL READ COMMITTED;
 
-	USHORT db_version = check_db_version();
-	if (db_version < DB_VERSION_CURRENT)
+	check_db_version();
+	if (tdgbl->RESTORE_ods < DB_VERSION_CURRENT)
 	{
-		BURP_error(51, true, isc_arg_number, (void*) (IPTR) db_version,
+		BURP_error(51, true, isc_arg_number, (void*) (IPTR) tdgbl->RESTORE_ods,
 					0, NULL, 0, NULL, 0, NULL, 0, NULL);
 		// msg 51 database format %ld is too old to restore to 
 	}
