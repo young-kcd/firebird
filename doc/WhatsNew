@@ -1,4 +1,28 @@
   **************************
+  * v2.0 Release Candidate 4
+  **************************
+
+    * Fixed RC3 bug (CORE-860)
+        Server crashes when attempting to restore a v1.5 backup  
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC3 bug (CORE-858)
+        Server crash when using UDF in PSQL
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Fixed RC3 bug (CORE-857)
+        CONTAINING not working correctly
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Fixed RC3 bug (CORE-852)
+        substring(current_user from 4) without "for" fails
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+  **************************
   * v2.0 Release Candidate 3
   **************************
 
