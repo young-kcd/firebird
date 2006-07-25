@@ -140,7 +140,7 @@ double EXPORT IB_UDF_div( ISC_LONG *a, ISC_LONG *b)
 	{
 		// VS8.0 has two implementations of div().
 		// Let's explicitly use the int-aware one.
-		div_t div_result = div((ISC_LONG) *a, (ISC_LONG) *b);
+		div_t div_result = div((int) *a, (int) *b);
 		return (div_result.quot);
 	}
 	else
@@ -256,7 +256,7 @@ double EXPORT IB_UDF_mod( ISC_LONG *a, ISC_LONG *b)
 	{
 		// VS8.0 has two implementations of div().
 		// Let's explicitly use the int-aware one.
-		div_t div_result = div((ISC_LONG) *a, (ISC_LONG) *b);
+		div_t div_result = div((int) *a, (int) *b);
 		return (div_result.rem);
 	}
 	else
