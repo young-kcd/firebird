@@ -104,8 +104,8 @@ namespace internal
 	// This definition comes from jrd\val.h and is used in helper
 	// functions {get/set}_varchar_len defined below.
 	struct vvary {
-		unsigned short	vary_length;
-		unsigned char*	vary_string;
+		ISC_USHORT	vary_length;
+		ISC_UCHAR	vary_string[1];
 	};
 
 	/*
