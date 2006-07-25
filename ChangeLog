@@ -1,3 +1,22 @@
+2006-07-24 17:56  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.8), jrd.cpp (1.264):
+	
+	More fixes for the monitoring stuff.
+
+2006-07-24 17:42  dimitr
+
+	* firebird2/src/include/: fb_types.h (1.51), types_pub.h (1.5):
+	
+	More patches for Win64 compatibility.
+
+2006-07-24 16:41  dimitr
+
+	* firebird2/src/gpre/c_cxx.cpp (1.67):
+	
+	Let's not rely on ISC_STATUS being always long. This is false for
+	Win64.
+
 2006-07-23 18:40  asfernandes
 
 	* firebird2/src/jrd/intlnames.h (1.22):
