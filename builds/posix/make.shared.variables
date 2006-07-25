@@ -28,7 +28,7 @@ JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp \
 JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
         grant.epp ini.epp met.epp pcmet.epp scl.epp \
-                   \
+        DatabaseSnapshot.cpp VirtualTable.cpp RecordBuffer.cpp \
         all.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
 		cch.cpp cmp.cpp cvt2.cpp \
 		dfw.cpp divorce.cpp \
