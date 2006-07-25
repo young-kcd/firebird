@@ -376,6 +376,7 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/timeb.h)
 AC_CHECK_HEADERS(sys/param.h)
 AC_CHECK_HEADERS(sys/ioctl.h)
+AC_CHECK_HEADERS(limits.h)
 AC_CHECK_HEADERS(setjmp.h)
 AC_CHECK_HEADERS(stdarg.h)
 AC_CHECK_HEADERS(stdlib.h)

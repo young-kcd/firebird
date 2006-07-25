@@ -49,6 +49,10 @@
 #include <sys/types.h>
 #endif
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h> /* On some systems for ULONG_MAX */
+#endif
+
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif

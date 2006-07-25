@@ -83,6 +83,7 @@
 #define HAVE_MATH_H
 #undef HAVE_PTHREAD_H
 #undef HAVE_SYS_TYPES_H
+#undef HAVE_LIMITS_H
 #define HAVE_SYS_STAT_H
 #undef HAVE_SYS_UIO_H
 #undef HAVE_SYS_WAIT_H
