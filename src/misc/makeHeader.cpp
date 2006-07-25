@@ -60,7 +60,7 @@ int main()
 	try {
 		ProcessFile(stdin, false);
 	}
-	catch (char* x)
+	catch (const char* x)
 	{
 		fprintf(stderr, "%s\n", x);
 		return 1;
