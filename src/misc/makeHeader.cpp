@@ -34,7 +34,7 @@ void ProcessFile(FILE *in, bool stripFirstComment)
 			fputs(s, stdout);
 			continue;
 		}
-		char *p = strchr(s, '"');
+		p = strchr(s, '"');
 		if (! p) {
 			throw "#include misses \" - start of filename";
 		}
