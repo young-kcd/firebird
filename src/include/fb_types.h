@@ -32,6 +32,8 @@
 #ifndef INCLUDE_FB_TYPES_H
 #define INCLUDE_FB_TYPES_H
 
+#include <gen/autoconfig.h>
+
 #if SIZEOF_LONG == 8
 	/* EKU: Firebird requires (S)LONG to be 32 bit */
 	typedef int SLONG;
