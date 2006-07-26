@@ -27,7 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.libfbstatic,v 1.9 2006-07-25 13:21:19 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=boot
