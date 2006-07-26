@@ -25,6 +25,7 @@
  *
  */
 
+#include "firebird.h"
 #include "../jrd/os/path_utils.h"
 #include <sys/types.h>
 #include <sys/stat.h>

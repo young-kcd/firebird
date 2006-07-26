@@ -19,6 +19,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/os/fbsyslog.h"
 
 #include <syslog.h>

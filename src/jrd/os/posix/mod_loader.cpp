@@ -25,6 +25,7 @@
  *
  */
 
+#include "firebird.h"
 #include "../jrd/os/mod_loader.h"
 #include "../../common.h"
 #ifdef HAVE_UNISTD_H
