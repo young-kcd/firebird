@@ -24,6 +24,7 @@
  *  Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"
 #include "../jrd/plugin_manager.h"
 #include "../jrd/os/path_utils.h"
 #include "../common/config/config.h"
