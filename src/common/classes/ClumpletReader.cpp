@@ -39,48 +39,48 @@
 
 namespace Firebird {
 
+class ClumpletDump : public ClumpletReader
+{
+public:
+	ClumpletDump(Kind k, const UCHAR* buffer, size_t buffLen)
+		: ClumpletReader(k, buffer, buffLen) { }
+	static string hexString(const UCHAR* b, size_t len)
+	{
+		string t1, t2;
+		for (; len > 0; --len, ++b) {
+			if (isprint(*b))
+				t2 += *b;
+			else {
+				t1.printf("<%02x>", *b);
+				t2 += t1;
+			}
+		}
+		return t2;
+	}
+protected:
+	virtual void usage_mistake(const char* what) const 
+	{
+		fatal_exception::raiseFmt(
+		        "Internal error when using clumplet API: %s", what);
+	}
+	virtual void invalid_structure(const char* what) const 
+	{
+		fatal_exception::raiseFmt(
+				"Invalid clumplet buffer structure: %s", what);
+	}
+};
+
 void ClumpletReader::dump() const
 {
 	static int dmp = 0;
 	gds__log("*** DUMP ***");
 	if (dmp) {
+		// Avoid infinite recursion during dump
 		gds__log("recursion");
 		return;
 	}
 	dmp++;
 	
-	// Avoid infinite recursion during dump
-	class ClumpletDump : public ClumpletReader
-	{
-	public:
-		ClumpletDump(Kind k, const UCHAR* buffer, size_t buffLen)
-			: ClumpletReader(k, buffer, buffLen) { }
-		static string hexString(const UCHAR* b, size_t len)
-		{
-			string t1, t2;
-			for (; len > 0; --len, ++b) {
-				if (isprint(*b))
-					t2 += *b;
-				else {
-					t1.printf("<%02x>", *b);
-					t2 += t1;
-				}
-			}
-			return t2;
-		}
-	protected:
-		virtual void usage_mistake(const char* what) const 
-		{
-			fatal_exception::raiseFmt(
-			        "Internal error when using clumplet API: %s", what);
-		}
-		virtual void invalid_structure(const char* what) const 
-		{
-			fatal_exception::raiseFmt(
-					"Invalid clumplet buffer structure: %s", what);
-		}
-	};
-
 	try {
 		ClumpletDump d(kind, getBuffer(), getBufferLength());
 		int t = (kind == SpbStart || kind == UnTagged) ? -1 : d.getBufferTag();
