@@ -24,12 +24,13 @@
  *  All Rights Reserved.
  */
 
+#include "firebird.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <memory.h>
 #include "../common/classes/alloc.h"
-#include "firebird.h"
 #include "ConfigFile.h"
 #include "ConfObject.h"
 #include "InputFile.h"
