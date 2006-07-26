@@ -1,3 +1,89 @@
+2006-07-26 03:06  asfernandes
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.102):
+	
+	MSVC have limits.h
+
+2006-07-25 16:07  alexpeshkoff
+
+	* firebird2/src/: dbs/security.sql (1.9),
+	misc/upgrade/v2/security_database.sql (1.3):
+	
+	Fixed problem with FullName and nulls
+
+2006-07-25 15:21  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.libfbstatic (1.9),
+	make.shared.targets (1.24), make.shared.variables (1.62):
+	
+	fixed posix build
+
+2006-07-25 15:06  alexpeshkoff
+
+	* firebird2/src/misc/makeHeader.cpp (1.6):
+	
+	Misc
+
+2006-07-25 15:03  kkuznetsov
+
+	* firebird2/: configure.in (1.245),
+	src/include/gen/autoconfig_msvc.h (1.101), src/jrd/sort.cpp (1.87):
+	
+	
+	
+	Fix compile error in sort.cpp
+
+2006-07-25 14:58  alexpeshkoff
+
+	* firebird2/src/include/fb_types.h (1.52):
+	
+	Always have correct SIZEOF_LONG
+
+2006-07-25 13:09  dimitr
+
+	* firebird2/src/misc/makeHeader.cpp (1.5):
+	
+	And one more patch. This one doesn't substitute #include <standard
+	header> with its body.
+
+2006-07-25 12:46  dimitr
+
+	* firebird2/src/misc/makeHeader.cpp (1.4):
+	
+	Patch by Vitaly Bodzhgua. The code ignored exceptions thrown from
+	ProcessFile().
+
+2006-07-25 10:58  dimitr
+
+	* firebird2/src/extlib/ib_udf.cpp (1.10):
+	
+	Fixed MSVC8 build once more :-)
+
+2006-07-25 07:35  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.188):
+	
+	Restored the evaluation-time checks I removed recently.
+
+2006-07-25 07:25  robocop
+
+	* firebird2/src/burp/: burp.h (1.74), restore.epp (1.106):
+	
+	Checking capabilities when restoring. Work in progress.
+
+2006-07-25 07:10  robocop
+
+	* firebird2/src/burp/backup.epp (1.87):
+	
+	We just need one field that may activate a particular flag (ods
+	level) in the capabilities.
+
+2006-07-25 07:08  robocop
+
+	* firebird2/src/jrd/evl.cpp (1.187):
+	
+	Workaround for CORE-870
+
 2006-07-24 17:56  dimitr
 
 	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.8), jrd.cpp (1.264):
