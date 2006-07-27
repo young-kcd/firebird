@@ -82,7 +82,7 @@ static processing_state show_dialect();
 static processing_state show_domains(const SCHAR*);
 static processing_state show_exceptions(const SCHAR*);
 static processing_state show_filters(const SCHAR*);
-static processing_state show_functions(const SCHAR*, const SSHORT = 0);
+static processing_state show_functions(const SCHAR*, const SSHORT = 0, const char* msg = 0);
 static processing_state show_generators(const SCHAR*);
 static void show_index(SCHAR*, SCHAR*, const SSHORT, const SSHORT, const SSHORT);
 static processing_state show_indices(const SCHAR* const*);
@@ -1167,8 +1167,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 			isqlGlob.printf("%s%s", msg, NEWLINE);
 			show_all_tables(1);
 			ISQL_msg_get(MSG_FUNCTIONS, msg, NULL);
-			isqlGlob.printf("%s%s", msg, NEWLINE);
-			show_functions("", 1);
+			show_functions("", 1, msg);
 		}
 		break;
 
@@ -2734,7 +2733,8 @@ static processing_state show_filters(const SCHAR* object)
 }
 
 
-static processing_state show_functions(const SCHAR* object, const SSHORT sys_flag)
+static processing_state show_functions(const SCHAR* object, const SSHORT sys_flag,
+	const char* msg)
 {
 /**************************************
  *
@@ -2774,7 +2774,12 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 				WITH FUN.RDB$SYSTEM_FLAG EQ sys_flag
 				SORTED BY FUN.RDB$FUNCTION_NAME
 
-				first = false;
+				if (first)
+				{
+					first = false;
+					if (msg)
+						isqlGlob.printf("%s%s", msg, NEWLINE);
+				}
 				isqlGlob.printf("%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
 				odd = !odd;
 			END_FOR
