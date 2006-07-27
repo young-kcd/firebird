@@ -99,6 +99,7 @@ void	check_db_version();
 void	create_database (const TEXT*);
 void	decompress(UCHAR*, USHORT);
 void	eat_blob();
+void	eat_text(BurpGlobals* tdgbl);
 burp_rel*	find_relation (const TEXT *);
 // CVC: when do these functions return false indeed???
 // get_acl and get_index are the only exceptions but ironically their
@@ -252,6 +253,7 @@ int RESTORE_restore (const TEXT* file_name,
 	tdgbl->relations = NULL;
 	tdgbl->procedures = NULL;
 	tdgbl->RESTORE_format = 0;
+	tdgbl->RESTORE_ods = 0;
 	tdgbl->global_trans = 0;
 
 	tdgbl->gbl_sw_transportable = tdgbl->gbl_sw_compress = false;
@@ -400,10 +402,10 @@ int RESTORE_restore (const TEXT* file_name,
 		
 			START_TRANSACTION activateIndexTran;
 			FOR (TRANSACTION_HANDLE activateIndexTran REQUEST_HANDLE req_handle5)
-			    IND1 IN RDB$INDICES WITH IND1.RDB$INDEX_NAME EQ IDS.RDB$INDEX_NAME
-               	MODIFY IND1 USING 
-            		IND1.RDB$INDEX_INACTIVE = FALSE;
-            	END_MODIFY;
+				IND1 IN RDB$INDICES WITH IND1.RDB$INDEX_NAME EQ IDS.RDB$INDEX_NAME
+				MODIFY IND1 USING
+						IND1.RDB$INDEX_INACTIVE = FALSE;
+				END_MODIFY;
 			END_FOR;
 			ON_ERROR
 				fError = true;
@@ -757,7 +759,7 @@ void bad_attribute (scan_attr_t		scan_next_attr,
 
 	if (!tdgbl->gbl_sw_skip_count)
 	{
-        TEXT t_name[128];
+		TEXT t_name[128];
 		gds__msg_format(NULL, 12, type, sizeof(t_name), t_name, NULL, NULL,
 						NULL, NULL, NULL);
 		BURP_print (80, t_name, (void*) bad_attr, NULL, NULL, NULL);
@@ -882,7 +884,7 @@ void create_database (const TEXT* file_name)
 	bool db_read_only = false, SQL_dialect_flag = false;
 	USHORT forced_writes = 2; // default for the current platform 
 	ULONG page_buffers = 0;
-    USHORT SQL_dialect = 0;
+	USHORT SQL_dialect = 0;
 
 	ATT_TYPE attribute;
 	rec_type record;
@@ -1066,7 +1068,7 @@ void decompress(UCHAR* buffer,
 		// This change was made to restore National Semi-Conductor's corrupted 
 		// gbak file and it is in the code base now.  -Andrew                  
 
-        // so count really only to 255
+		// so count really only to 255
 		SSHORT count = (SCHAR) get(tdgbl);
 		if (count > 0)
 		{
@@ -1117,6 +1119,17 @@ void eat_blob()
 	const SLONG length = get_numeric();
 
 	get_skip(tdgbl, length);
+}
+
+// *****************************
+// e a t _ t e x t
+// *****************************
+// Discard a text field from the backup file.
+void eat_text(BurpGlobals* tdgbl)
+{
+	const ULONG l = get(tdgbl);
+	if (l)
+		MVOL_skip_block(tdgbl, l);
 }
 
 burp_rel* find_relation (const TEXT* name)
@@ -2007,7 +2020,7 @@ void get_blr_blob (ISC_QUAD	*blob_id,
  *
  **************************************/
 	ISC_STATUS_ARRAY	status_vector;
-	UCHAR		*buffer, static_buffer[1024], *p;
+	UCHAR		*buffer, static_buffer[1024];
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -2041,7 +2054,7 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 
 	if (length)
 	{
-		p = get_block(tdgbl, buffer, length);
+		UCHAR* p = get_block(tdgbl, buffer, length);
 		// Make sure it has an eoc 
 		if (p[-1] != blr_eoc) {
 			p[0] = blr_eoc;
@@ -2199,7 +2212,7 @@ bool get_chk_constraint()
 
 			default:
 				bad_attribute (scan_next_attr, attribute, 208);
-				// msg 208 relation constraint 
+				// msg 208 table constraint
 				break;
 			}
 		}
@@ -2228,7 +2241,7 @@ bool get_collation()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->RESTORE_format >= 7)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
 			X IN RDB$COLLATIONS
@@ -2292,13 +2305,23 @@ bool get_collation()
 					break;
 
 				case att_coll_base_collation_name:
-					X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$BASE_COLLATION_NAME);
+					if (tdgbl->RESTORE_format >= 7)
+					{
+						X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
+						GET_TEXT(X.RDB$BASE_COLLATION_NAME);
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
 					break;
 
 				case att_coll_specific_attr:
-					X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
-					get_source_blob (&X.RDB$SPECIFIC_ATTRIBUTES, false);
+					if (tdgbl->RESTORE_format >= 7)
+					{
+						X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
+						get_source_blob (&X.RDB$SPECIFIC_ATTRIBUTES, false);
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
 					break;
 
 				default:
@@ -2373,6 +2396,20 @@ bool get_collation()
 				case att_coll_funct:
 					X.RDB$FUNCTION_NAME.NULL = FALSE;
 					GET_TEXT(X.RDB$FUNCTION_NAME);
+					break;
+
+				case att_coll_base_collation_name:
+					if (tdgbl->RESTORE_format >= 7)
+						eat_text(tdgbl);
+					else
+						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
+					break;
+
+				case att_coll_specific_attr:
+					if (tdgbl->RESTORE_format >= 7)
+						eat_blob();
+					else
+						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
 					break;
 
 				default:
@@ -3083,7 +3120,7 @@ burp_fld* get_field (burp_rel*	relation)
 
 			default:
 				bad_attribute (scan_next_attr, attribute, 84);
-				// msg 84 field
+				// msg 84 column
 				break;
 			}
 		}
@@ -3452,7 +3489,7 @@ void get_function_arg(bool dummy)
 		return;
 	}
 
-	if (tdgbl->RESTORE_format >= 6)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
 	{
 		// with RDB$FIELD_PRECISION 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
@@ -3504,8 +3541,13 @@ void get_function_arg(bool dummy)
 					break;
 
 				case att_functionarg_field_precision:
-					X.RDB$FIELD_PRECISION.NULL = FALSE;
-					X.RDB$FIELD_PRECISION = (USHORT) get_numeric();
+					if (tdgbl->RESTORE_format >= 6)
+					{
+						X.RDB$FIELD_PRECISION.NULL = FALSE;
+						X.RDB$FIELD_PRECISION = (USHORT) get_numeric();
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, 90);
 					break;
 
 				default:
@@ -3568,6 +3610,12 @@ void get_function_arg(bool dummy)
 					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric();
 					break;
+
+				case att_functionarg_field_precision:
+					if (tdgbl->RESTORE_format >= 6)
+						get_numeric();
+					else
+						bad_attribute (scan_next_attr, attribute, 90);
 
 				default:
 					bad_attribute (scan_next_attr, attribute, 90);
@@ -3675,7 +3723,7 @@ bool get_global_field()
 
 	GFLD gfield = NULL;
 
-	if (tdgbl->RESTORE_format >= 6)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
 	{
 		// with rdb$field_precision 
 		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
@@ -3930,13 +3978,18 @@ bool get_global_field()
 					break;
 
 				case att_field_precision:
-					X.RDB$FIELD_PRECISION.NULL = FALSE;
-					X.RDB$FIELD_PRECISION = (USHORT) get_numeric();
+					if (tdgbl->RESTORE_format >= 6)
+					{
+						X.RDB$FIELD_PRECISION.NULL = FALSE;
+						X.RDB$FIELD_PRECISION = (USHORT) get_numeric();
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, 92);
 					break;
 
 				default:
 					bad_attribute (scan_next_attr, attribute, 92);
-					// msg 92  global field 
+					// msg 92  domain
 					break;
 				}
 			}
@@ -3957,7 +4010,7 @@ bool get_global_field()
 		END_ERROR;
 
 	}
-	else /* RESTORE_format < 6 */
+	else // RESTORE_ods < DB_VERSION_DDL10
 	{
 		// without rdb$field_precision 
 
@@ -4211,9 +4264,16 @@ bool get_global_field()
 					X.RDB$COLLATION_ID = (USHORT) get_numeric();
 					break;
 
+				case att_field_precision:
+					if (tdgbl->RESTORE_format >= 6)
+						get_numeric();
+					else
+						bad_attribute (scan_next_attr, attribute, 92);
+					break;
+
 				default:
 					bad_attribute (scan_next_attr, attribute, 92);
-					// msg 92  global field 
+					// msg 92  domain
 					break;
 				}
 			}
@@ -4550,7 +4610,7 @@ bool get_procedure()
 	procedure->prc_next = tdgbl->procedures;
 	tdgbl->procedures = procedure;
 
-	if (tdgbl->RESTORE_format >= 8)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
 	{
 		STORE (TRANSACTION_HANDLE local_trans
 				REQUEST_HANDLE tdgbl->handles_get_procedure_req_handle1)
@@ -4621,7 +4681,10 @@ bool get_procedure()
 					break;
 
 				case att_procedure_type:
-					X.RDB$PROCEDURE_TYPE = (USHORT) get_numeric();
+					if (tdgbl->RESTORE_format >= 8)
+						X.RDB$PROCEDURE_TYPE = (USHORT) get_numeric();
+					else
+						bad_attribute (scan_next_attr, attribute, 89);
 					break;
 
 				default:
@@ -4702,6 +4765,13 @@ bool get_procedure()
 
 				case att_procedure_outputs:
 					X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_numeric();
+					break;
+
+				case att_procedure_type:
+					if (tdgbl->RESTORE_format >= 8)
+						get_numeric();
+					else
+						bad_attribute (scan_next_attr, attribute, 89);
 					break;
 
 				default:
@@ -4859,7 +4929,7 @@ bool get_ref_constraint()
 
 				default:
 					bad_attribute (scan_next_attr, attribute, 208);
-					// msg 208 relation constraint 
+					// msg 208 table constraint
 					break;
 			}
 		}
@@ -5018,7 +5088,7 @@ bool get_relation()
 
 		default:
 			bad_attribute (scan_next_attr, attribute, 111);
-			// msg 111 relation 
+			// msg 111 table
 			break;
 		}
 	}
@@ -5030,7 +5100,7 @@ bool get_relation()
 	else
 		local_trans = tdgbl->global_trans;
 
-	if (tdgbl->RESTORE_format >= 8)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
 	{
 		STORE (TRANSACTION_HANDLE local_trans
 				REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
@@ -5231,7 +5301,7 @@ bool get_rel_constraint()
 
 				default:
 					bad_attribute (scan_next_attr, attribute, 208);
-					// msg 208 relation constraint 
+					// msg 208 table constraint
 					break;
 			}
 		}
@@ -5277,7 +5347,7 @@ bool get_relation_data()
 
 		default:
 			bad_attribute (scan_next_attr, attribute, 111);
-			// msg 111 relation 
+			// msg 111 table
 			break;
 		}
 	}
@@ -5342,14 +5412,14 @@ bool get_sql_roles()
  *	Restore data for SQL roles
  *
  **************************************/
-	ATT_TYPE        attribute;
+	ATT_TYPE		attribute;
 	scan_attr_t		scan_next_attr;
-	TEXT            temp[GDS_NAME_LEN];
-	SSHORT          l;
+	TEXT			temp[GDS_NAME_LEN];
+	SSHORT			l;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->RESTORE_format >= 7)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_get_sql_roles_req_handle1)
 			X IN RDB$ROLES
@@ -5383,8 +5453,13 @@ bool get_sql_roles()
 					break;
 
 				case att_role_description:
-					get_source_blob (&X.RDB$DESCRIPTION, false);
-					X.RDB$DESCRIPTION.NULL = FALSE;
+					if (tdgbl->RESTORE_format >= 7)
+					{
+						get_source_blob (&X.RDB$DESCRIPTION, false);
+						X.RDB$DESCRIPTION.NULL = FALSE;
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, 250);
 				    break;
 
 				default:
@@ -5402,16 +5477,15 @@ bool get_sql_roles()
 			general_on_error ();
 		END_ERROR;
 	}
-	else
+	else if (tdgbl->RESTORE_ods >= DB_VERSION_DDL9)
 	{
+		// This is the first IB version (v5, ods9) where roles appeared.
+		// They remained unchanged for IB6 / FB1 and FB1.5 (ods10).
 		STORE (REQUEST_HANDLE tdgbl->handles_get_sql_roles_req_handle1)
 			X IN RDB$ROLES
 
 			X.RDB$ROLE_NAME.NULL = TRUE;
 			X.RDB$OWNER_NAME.NULL = TRUE;
-			X.RDB$DESCRIPTION.NULL = TRUE;
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			skip_init(&scan_next_attr);
 
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -5435,6 +5509,13 @@ bool get_sql_roles()
 					GET_TEXT(X.RDB$OWNER_NAME);
 					break;
 
+				case att_role_description:
+					if (tdgbl->RESTORE_format >= 7)
+						eat_blob();
+					else
+						bad_attribute (scan_next_attr, attribute, 250);
+					break;
+					
 				default:
 					/*************************************************
 					**
@@ -5449,6 +5530,38 @@ bool get_sql_roles()
 		ON_ERROR
 			general_on_error ();
 		END_ERROR;
+	}
+	else
+	{
+		// We say we support IB4, then we should skip roles.
+		skip_init(&scan_next_attr);
+
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		{
+			switch (attribute)
+			{
+			case att_role_name:
+			case att_role_owner_name:
+				eat_text(tdgbl);
+				break;
+
+			case att_role_description:
+				if (tdgbl->RESTORE_format >= 7)
+					eat_blob();
+				else
+					bad_attribute (scan_next_attr, attribute, 250);
+				break;
+
+			default:
+				/*************************************************
+				**
+				** msg 250, Bad attribute for restoring SQL role
+				**
+				**************************************************/
+				bad_attribute (scan_next_attr, attribute, 250);
+				break;
+			}
+		}
 	}
 
 	return true;
@@ -5469,8 +5582,8 @@ bool is_ascii_name (const TEXT *name, const SSHORT len)
 	SSHORT i = 0;
 
 	while (i < len &&
-		   ( (name[i] >= 'A' && name[i] <= 'Z') ||
-		     (name[i] >= '0' && name[i] <= '9') ||
+			( (name[i] >= 'A' && name[i] <= 'Z') ||
+			(name[i] >= '0' && name[i] <= '9') ||
 			  name[i] == '_' || name[i] == '$' ) )
 	{
 		++i;
@@ -5565,8 +5678,8 @@ bool get_security_class()
 }
 
 void get_source_blob (
-    ISC_QUAD	*blob_id,
-    bool	glb_trans)
+	ISC_QUAD	*blob_id,
+	bool	glb_trans)
 {
 /**************************************
  *
@@ -5634,8 +5747,8 @@ void get_source_blob (
 }
 
 USHORT get_text (
-    TEXT	*text,
-    ULONG	length)
+	TEXT	*text,
+	ULONG	length)
 {
 /**************************************
  *
@@ -6600,7 +6713,7 @@ void realign(UCHAR* buffer,
 		}
 	}
 
-	// If this is format version 2, build fields for null flags 
+	// If this is format version 2 or greater, build fields for null flags
 
 	if (tdgbl->RESTORE_format >= 2)
 	{
@@ -6696,10 +6809,6 @@ bool restore (const TEXT* file_name,
  *	Perform the body of restore.
  *
  **************************************/
-	ATT_TYPE	attribute;
-	isc_req_handle  req_handle2 = 0, req_handle3 = 0,
-					req_handle5 = 0;
-
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// Read burp record first 
@@ -6747,6 +6856,9 @@ bool restore (const TEXT* file_name,
 
 	BURP_verbose (129, NULL, NULL, NULL, NULL, NULL);
 	// msg 129 started transaction 
+
+	ATT_TYPE	attribute;
+	isc_req_handle  req_handle2 = 0, req_handle3 = 0;
 
 	while (get_attribute(&attribute, tdgbl) != att_end)
 	{
@@ -6997,8 +7109,10 @@ bool restore (const TEXT* file_name,
 	// Purge shadow metadata if necessary 
 
 	if (tdgbl->gbl_sw_kill)
-
-		FOR (REQUEST_HANDLE req_handle5)
+	{
+		isc_req_handle req_handle4 = 0;
+		
+		FOR (REQUEST_HANDLE req_handle4)
 			FIL IN RDB$FILES WITH FIL.RDB$SHADOW_NUMBER NOT MISSING
 			AND FIL.RDB$SHADOW_NUMBER NE 0
 		ERASE FIL;
@@ -7010,9 +7124,12 @@ bool restore (const TEXT* file_name,
 			general_on_error ();
 		END_ERROR;
 
-	MISC_release_request_silent(req_handle5);
+		MISC_release_request_silent(req_handle4);
+	}
 
-	// update statistics for system indices 
+	// update statistics for system indices
+	isc_req_handle req_handle5 = 0;
+
 	FOR (REQUEST_HANDLE req_handle5)
 		IND IN RDB$INDICES WITH IND.RDB$SYSTEM_FLAG EQ 1
 		MODIFY IND;
@@ -7149,7 +7266,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->RESTORE_format >= 7)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
 			X IN RDB$GENERATORS
@@ -7191,7 +7308,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 
 	// build the blr with the right relation name
 
-	if (tdgbl->RESTORE_format >= 6)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
 	{
 		add_byte(blr, blr_version5);
 	}
@@ -7200,7 +7317,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 		add_byte(blr, blr_version4);
 	}
 	add_byte(blr, blr_begin);
-	if (tdgbl->RESTORE_format >= 6)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
 	{
 		add_byte(blr, blr_dcl_variable);
 		add_word(blr, 0);
@@ -7218,7 +7335,7 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 	add_byte(blr, blr_assignment);
 	add_byte(blr, blr_gen_id);
 	add_string(blr, gen_name);
-	if (tdgbl->RESTORE_format >= 6)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
 	{
 		add_byte(blr, blr_literal);
 		add_byte(blr, blr_int64);
