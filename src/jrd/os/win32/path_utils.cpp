@@ -1,4 +1,5 @@
 
+#include "firebird.h"
 #include "../jrd/os/path_utils.h"
 #include <io.h> // _access
 

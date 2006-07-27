@@ -34,6 +34,7 @@
 #include <objbase.h>
 #include <stdio.h>
 
+#include "firebird.h"
 #include "../jrd/os/guid.h"
 #include "firebird.h"
 #include "fb_exception.h"
