@@ -2414,7 +2414,7 @@ static tx_inv_page* fetch_inventory_page(
  **************************************/
 	SET_TDBB(tdbb);
 
-	window->win_page = inventory_page(tdbb, (int) sequence);
+	window->win_page = inventory_page(tdbb, sequence);
 	tx_inv_page* tip =
 		(tx_inv_page*) CCH_FETCH(tdbb, window, lock_level, pag_transactions);
 
