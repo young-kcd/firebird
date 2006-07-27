@@ -1,3 +1,40 @@
+2006-07-26 12:00  alexpeshkoff
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.23):
+	
+	Changed program's structure to avoid errors in some compilers
+
+2006-07-26 11:33  alexpeshkoff
+
+	* firebird2/src/config/ConfigFile.cpp (1.4):
+	
+	each file must have firebird.h included first
+
+2006-07-26 11:27  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/: fbsyslog.cpp (1.6), guid.cpp (1.12),
+	mod_loader.cpp (1.8), path_utils.cpp (1.14):
+	
+	each file must have firebird.h included
+
+2006-07-26 11:26  alexpeshkoff
+
+	* firebird2/src/jrd/plugin_manager.cpp (1.23):
+	
+	each file must have firebird.hincluded
+
+2006-07-26 11:24  alexpeshkoff
+
+	* firebird2/src/include/fb_types.h (1.53):
+	
+	rollback my previous commit, check SIZEOF_LONG correctness
+
+2006-07-26 04:37  asfernandes
+
+	* firebird2/builds/posix/Makefile.in.libfbstatic (1.10):
+	
+	Misc
+
 2006-07-26 03:06  asfernandes
 
 	* firebird2/src/include/gen/autoconfig_msvc.h (1.102):
