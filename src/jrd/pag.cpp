@@ -146,9 +146,10 @@ static const int CLASS_NETBSD_I386 = 22;  // NetBSD/i386
 static const int CLASS_DARWIN_PPC = 23;   // Darwin/PowerPC
 static const int CLASS_LINUX_AMD64 = 24;  // LINUX on AMD64 systems
 static const int CLASS_FREEBSD_AMD64 = 25;// FreeBSD/amd64
+static const int CLASS_WINDOWS_AMD64 = 26;// Windows/amd64
 
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_FREEBSD_AMD64;
+static const int CLASS_MAX = CLASS_WINDOWS_AMD64;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -229,7 +230,8 @@ static ArchitectureType archMatrix[CLASS_MAX + 1] = {
     archLittleEndian, // CLASS_NETBSD_I386
 	archBigEndian,    // CLASS_DARWIN_PPC
 	archLittleEndian, // CLASS_LINUX_AMD64
-	archLittleEndian  // CLASS_FREEBSD_AMD64
+	archLittleEndian, // CLASS_FREEBSD_AMD64
+	archLittleEndian  // CLASS_WINDOWS_AMD64
 };
 
 #ifdef sun
@@ -257,7 +259,13 @@ const SSHORT CLASS		= CLASS_AIX_PPC;
 #endif
 
 #ifdef WIN_NT
+#if defined(I386)
 const SSHORT CLASS		= CLASS_WINDOWS_I386;
+#elif defined(AMD64)
+const SSHORT CLASS		= CLASS_WINDOWS_AMD64;
+#else
+#error no support on other hardware for Windows
+#endif
 #endif
 
 #ifdef SINIXZ
@@ -265,14 +273,14 @@ const SSHORT CLASS		= CLASS_LINUX_I386;
 #endif
 
 #ifdef LINUX
-#ifdef i386
+#if defined(i386) || defined(i586)
 const SSHORT CLASS		= CLASS_LINUX_I386;
-#endif
-#ifdef i586
-const SSHORT CLASS		= CLASS_LINUX_I386;
-#endif
-#ifdef sparc
+#elif defined(sparc)
 const SSHORT CLASS		= CLASS_LINUX_SPARC;
+#elif defined(AMD64)
+const SSHORT CLASS		= CLASS_LINUX_AMD64;
+#else
+#error no support on other hardware for Linux
 #endif
 #endif
 
@@ -292,10 +300,6 @@ const SSHORT CLASS		= CLASS_NETBSD_I386;
 
 #ifdef DARWIN
 const SSHORT CLASS		= CLASS_DARWIN_PPC;
-#endif
-
-#if defined LINUX && defined AMD64
-const SSHORT CLASS		= CLASS_LINUX_AMD64;
 #endif
 
 static const char* const SCRATCH = "fb_table_";
