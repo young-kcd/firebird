@@ -1338,6 +1338,7 @@ void put_blob( burp_fld* field, ISC_QUAD* blob_id, ULONG count)
  *
  * Functional description
  *	Write out a blob.  If, however, it's null, don't even bother.
+ *	This is for user data blobs.
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
@@ -2390,6 +2391,7 @@ bool put_source_blob(SCHAR		attribute,
  * Functional description
  *	Write out a source blob or query header if present.
  *	Return true is there was the blob was present, false otherwise.
+ *	Include the NULL character to separate each segment.
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
