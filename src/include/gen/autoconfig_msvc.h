@@ -83,7 +83,6 @@
 #define HAVE_MATH_H
 #undef HAVE_PTHREAD_H
 #undef HAVE_SYS_TYPES_H
-#define HAVE_LIMITS_H
 #define HAVE_SYS_STAT_H
 #undef HAVE_SYS_UIO_H
 #undef HAVE_SYS_WAIT_H
@@ -93,6 +92,7 @@
 #define HAVE_SYS_TIMEB_H
 #undef HAVE_SYS_PARAM_H
 #undef HAVE_SYS_IOCTL_H
+#define HAVE_LIMITS_H
 #define HAVE_SETJMP_H
 #define HAVE_STDARG_H
 #define HAVE_STDLIB_H
