@@ -337,7 +337,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 /* Reinitialize static variables for multi-threading */
 	Jrd::Service* service = (Jrd::Service*)arg;
 	int argc = service->svc_argc;
-	char** argv = service->svc_argv;
+	const char** argv = service->svc_argv.begin();
 #endif
 
 	ISC_STATUS* status_vector = NULL;

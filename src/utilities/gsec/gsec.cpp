@@ -69,7 +69,7 @@ const int MAXSTUFF	= 1000;		/* longest interactive command line */
 class tsec *gdsec;
 #endif
 
-static int common_main(int, char**, Jrd::pfn_svc_output, Jrd::Service*);
+static int common_main(int, const char**, Jrd::pfn_svc_output, Jrd::Service*);
 static void util_output(const SCHAR*, ...);
 
 static void data_print(void*, const internal_user_data*, bool);
@@ -101,7 +101,7 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
  *   Entrypoint for GSEC via the services manager
  **********************************************/
 	Jrd::Service* service = (Jrd::Service*)arg;
-	const int exit_code = common_main(service->svc_argc, service->svc_argv,
+	const int exit_code = common_main(service->svc_argc, service->svc_argv.begin(),
 						  SVC_output, service);
 
 /* Mark service thread as finished. */
@@ -113,7 +113,7 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 
 #else
 
-int CLIB_ROUTINE main( int argc, char* argv[])
+int CLIB_ROUTINE main( int argc, const char* argv[])
 {
 /**************************************
  *
@@ -160,7 +160,7 @@ inline void envPick(TEXT* dest, size_t size, const TEXT* var)
 #endif /* SERVICE_THREAD */
 
 int common_main(int argc,
-				char* argv[],
+				const char* argv[],
 				Jrd::pfn_svc_output output_proc,
 				Jrd::Service* output_data)
 {

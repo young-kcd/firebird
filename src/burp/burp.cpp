@@ -186,8 +186,9 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	Jrd::Service* service = (Jrd::Service*)arg;
-	const int exit_code = common_main(service->svc_argc, service->svc_argv,
-						  SVC_output, service);
+	const int exit_code = common_main(service->svc_argc, 
+									  const_cast<char**>(service->svc_argv.begin()),
+									  SVC_output, service);
 
 // Mark service thread as finished. 
 // If service is detached, cleanup memory being used by service. 
