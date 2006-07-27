@@ -85,14 +85,12 @@ status_exception::status_exception() throw() :
 	memset(m_status_vector, 0, sizeof(m_status_vector));
 }
 
-status_exception::status_exception(const ISC_STATUS *status_vector, bool permanent) throw()
+status_exception::status_exception(const ISC_STATUS *status_vector, bool permanent) throw() :
+	m_strings_permanent(true)
 {
-	if (! status_vector)
-	{
-		m_strings_permanent = true;		// No strings at all in fact, better treat as permanent
-		m_status_vector[0] = isc_arg_end;
-	}
-	else 
+	m_status_vector[0] = isc_arg_end;
+
+	if (status_vector)
 	{
 		set_status(status_vector, permanent);	
 	}
