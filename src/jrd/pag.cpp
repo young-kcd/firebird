@@ -266,7 +266,7 @@ const SSHORT CLASS		= CLASS_WINDOWS_AMD64;
 #else
 #error no support on other hardware for Windows
 #endif
-#endif
+#endif	// WIN_NT
 
 #ifdef SINIXZ
 const SSHORT CLASS		= CLASS_LINUX_I386;
@@ -282,7 +282,7 @@ const SSHORT CLASS		= CLASS_LINUX_AMD64;
 #else
 #error no support on other hardware for Linux
 #endif
-#endif
+#endif	// LINUX
 
 #ifdef FREEBSD
 #if defined(i386)

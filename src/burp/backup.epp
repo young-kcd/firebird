@@ -1346,12 +1346,12 @@ void put_blob( burp_fld* field, ISC_QUAD* blob_id, ULONG count)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-// If the blob is null, don't store it.  It will be restored as null. 
+	// If the blob is null, don't store it.  It will be restored as null. 
 
 	if (!blob_id->gds_quad_high && !blob_id->gds_quad_low)
 		return;
 
-// Open the blob and get it's vital statistics 
+	// Open the blob and get it's vital statistics 
 
 	FB_API_HANDLE blob = 0;
 
@@ -1487,12 +1487,12 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-// If the blob is null, don't store it.  It will be restored as null. 
+	// If the blob is null, don't store it.  It will be restored as null. 
 
 	if (!blob_id->gds_quad_high && !blob_id->gds_quad_low)
 		return false;
 
-// Open the blob and get it's vital statistics 
+	// Open the blob and get it's vital statistics 
 
 	FB_API_HANDLE blob = 0;
 
@@ -1546,14 +1546,14 @@ bool put_blr_blob( SCHAR attribute, ISC_QUAD * blob_id)
 		return false;
 	}
 
-// Rdb sometimes gets the length messed up 
+	// Rdb sometimes gets the length messed up 
 
 	if (length < max_segment)
 		length = max_segment;
 
 	put_numeric(attribute, (int) length);
 
-// Allocate a buffer large enough for the largest segment and start grinding. 
+	// Allocate a buffer large enough for the largest segment and start grinding. 
 
 	UCHAR* buffer;
 	if (!max_segment || max_segment <= sizeof(static_buffer))
@@ -1616,8 +1616,8 @@ void put_data(burp_rel* relation)
 	}
 	fb_assert(field_count > 0 && field_count * 9 > 0 && field_count * 9 + 200 > 0);
 
-/* Time to generate blr to fetch data.  Make sure we allocate a BLR buffer
-   large enough to handle the per field overhead */
+	// Time to generate blr to fetch data.  Make sure we allocate a BLR buffer
+	// large enough to handle the per field overhead
 	UCHAR* const blr_buffer = BURP_alloc(200 + field_count * 9);
 	UCHAR* blr = blr_buffer;
 	add_byte(blr, blr_version4);
@@ -1723,7 +1723,7 @@ void put_data(burp_rel* relation)
 		offset += length;
 	}
 
-// Next, build fields for null flags 
+	// Next, build fields for null flags 
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -1736,7 +1736,7 @@ void put_data(burp_rel* relation)
 		offset += sizeof(SSHORT);
 	}
 
-// Finally, make up an EOF field 
+	// Finally, make up an EOF field 
 
 	add_byte(blr, blr_short);			// eof field 
 	add_byte(blr, 0);					// scale for eof field 
@@ -1746,7 +1746,7 @@ void put_data(burp_rel* relation)
 	// To be used later for the buffer size to receive data
 	const FLD_LENGTH length = (USHORT) (eof_offset + sizeof(SSHORT));
 
-// Build FOR loop, body, and eof handler 
+	// Build FOR loop, body, and eof handler 
 
 	add_byte(blr, blr_for);
 	add_byte(blr, blr_rse);
@@ -1804,7 +1804,7 @@ void put_data(burp_rel* relation)
 #endif
 
 
-// Compile request 
+	// Compile request 
 
 	FB_API_HANDLE request = 0;
 	SSHORT blr_length = blr - blr_buffer;
@@ -1827,13 +1827,13 @@ void put_data(burp_rel* relation)
 		// msg 28 isc_start_request failed
 	}
 
-/* Here is the crux of the problem -- writing data.  All this work
-   for the following small loop. */
+	// Here is the crux of the problem -- writing data.  All this work
+	// for the following small loop.
 
 	UCHAR* buffer = BURP_alloc(length);
 	SSHORT* eof = (SSHORT *) (buffer + eof_offset);
 
-// the XDR representation may be even fluffier
+	// the XDR representation may be even fluffier
 	lstring xdr_buffer;
 	if (tdgbl->gbl_sw_transportable)
 	{
@@ -1909,7 +1909,7 @@ void put_data(burp_rel* relation)
 		BURP_free(xdr_buffer.lstr_address);
 
 	BURP_verbose(108, (void *) (IPTR) records, NULL, NULL, NULL, NULL);
-// msg 108 %ld records written 
+	// msg 108 %ld records written 
 
 	if (isc_release_request(status_vector, &request))
 		BURP_error_redirect(status_vector, 30, NULL, NULL);

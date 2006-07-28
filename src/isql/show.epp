@@ -2748,7 +2748,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
  **************************************/
 	bool first = true;
 
-// Show all functions
+	// Show all functions
 	if (!*object)
 	{
 		bool odd = true;

@@ -184,7 +184,6 @@ namespace Jrd {
 		
 		if (svc_parsed_sw.isEmpty())
 		{
-			svc_parsed_sw.c_str();
 			svc_argv.getBuffer(svc_argc + 1)[1] = 0;
 			return;
 		}
@@ -2176,10 +2175,10 @@ static void service_fork(ThreadEntryPoint* service_executable, Service* service)
  *
  **************************************/
 	TEXT* p;
-	
+
 /* Break up the command line into individual arguments. */
 	service->parseSwitches();
-	
+
 	USHORT argc = service->svc_argc;
 	service->svc_argv[0] = (TEXT *)(service_executable);
 

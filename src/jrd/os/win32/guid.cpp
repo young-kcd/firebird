@@ -36,7 +36,6 @@
 
 #include "firebird.h"
 #include "../jrd/os/guid.h"
-#include "firebird.h"
 #include "fb_exception.h"
 
 void GenerateRandomBytes(void* buffer, size_t size)
