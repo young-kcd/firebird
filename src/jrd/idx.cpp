@@ -235,6 +235,9 @@ void IDX_create_index(
 		ERR_post(isc_no_meta_update, isc_arg_gds, isc_extfile_uns_op,
 				 isc_arg_string, ERR_cstring(relation->rel_name), 0);
 	}
+	else if (relation->isVirtual()) {
+		ERR_post(isc_no_meta_update, isc_arg_gds, isc_wish_list, 0);
+	}
 
 	get_root_page(tdbb, relation);
 
