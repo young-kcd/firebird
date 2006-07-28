@@ -1,3 +1,82 @@
+2006-07-28 04:17  asfernandes
+
+	* firebird2/src/jrd/svc.cpp (1.172):
+	
+	Misc
+
+2006-07-28 03:44  asfernandes
+
+	* firebird2/src/: burp/backup.epp (1.89), isql/show.epp (1.94),
+	jrd/pag.cpp (1.112), jrd/svc.cpp (1.171), jrd/os/win32/guid.cpp
+	(1.13):
+	
+	Misc
+
+2006-07-27 16:23  alexpeshkoff
+
+	* firebird2/src/: utilities/gstat/dba.epp (1.69),
+	utilities/gsec/gsec.cpp (1.57), jrd/svc.cpp (1.170), jrd/svc.h
+	(1.39), burp/burp.cpp (1.114), alice/alice.cpp (1.85):
+	
+	fixed AV related with SVC_TRMNTR in services
+
+2006-07-27 16:17  alexpeshkoff
+
+	* firebird2/src/common/fb_exception.cpp (1.28):
+	
+	Always initialize required members of status_exception
+
+2006-07-27 14:19  asfernandes
+
+	* firebird2/src/jrd/os/win32/: fbsyslog.cpp (1.6), guid.cpp (1.12),
+	mod_loader.cpp (1.9), path_utils.cpp (1.16):
+	
+	Include firebird.h in WIN32 files
+
+2006-07-27 11:29  robocop
+
+	* firebird2/src/jrd/tra.cpp (1.124):
+	
+	Delete strange cast.
+
+2006-07-27 11:28  robocop
+
+	* firebird2/src/isql/show.epp (1.93):
+	
+	Misc: announce system functions only when we find them.
+
+2006-07-27 11:27  robocop
+
+	* firebird2/src/burp/backup.epp (1.88):
+	
+	Misc.
+
+2006-07-27 11:16  robocop
+
+	* firebird2/src/burp/restore.epp (1.107):
+	
+	Fix gbak to correct the wrong idea that by looking at the backup
+	level you can guess the target server version where the db
+	restoration will take place. Now it's possible to use FB2.1's gbak
+	to restore on FB2.1, FB2.0, FB1.5, FB1, IB6, IB5 and IB4. Spurious
+	tags for the current backup level are detected. Missing fields for
+	the target ODS are discarded.  Need to fix some historically wrong
+	messages and store always the sysflag (missed three cases last
+	year).
+
+2006-07-27 11:11  robocop
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.103):
+	
+	Put the manual Windows #defines in the same position as the
+	autoconf's AC_CHECKs for easy visual match.
+
+2006-07-27 10:11  dimitr
+
+	* firebird2/src/jrd/pag.cpp (1.111):
+	
+	More patches for Win64 compatibility.
+
 2006-07-26 12:00  alexpeshkoff
 
 	* firebird2/src/common/classes/ClumpletReader.cpp (1.23):
