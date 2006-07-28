@@ -4967,7 +4967,7 @@ bool get_relation()
 	scan_attr_t		scan_next_attr;
 
 	SLONG		rel_flags = 0, sys_flag = 0, type = 0;
-	bool		rel_flags_null = true, sys_flag_null = true, type_null = true;
+	bool		rel_flags_null = true, type_null = true;
 	ISC_QUAD	view_blr = isc_blob_null, view_src = isc_blob_null,
 				rel_desc = isc_blob_null, ext_desc = isc_blob_null;
 	bool		view_blr_null = true, view_src_null = true, rel_desc_null = true,
@@ -5053,7 +5053,6 @@ bool get_relation()
 			break;
 
 		case att_relation_system_flag:
-			sys_flag_null = false;
 			sys_flag = get_numeric();
 			break;
 
@@ -5106,7 +5105,7 @@ bool get_relation()
 				REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
 			X IN RDB$RELATIONS
 
-			X.RDB$SYSTEM_FLAG.NULL = sys_flag_null;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			X.RDB$FLAGS.NULL = rel_flags_null;
 			X.RDB$SECURITY_CLASS.NULL = sec_class_null;
 			X.RDB$VIEW_BLR.NULL = view_blr_null;
@@ -5141,7 +5140,7 @@ bool get_relation()
 				REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
 			X IN RDB$RELATIONS
 
-			X.RDB$SYSTEM_FLAG.NULL = sys_flag_null;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			X.RDB$FLAGS.NULL = rel_flags_null;
 			X.RDB$SECURITY_CLASS.NULL = sec_class_null;
 			X.RDB$VIEW_BLR.NULL = view_blr_null;
@@ -5801,6 +5800,8 @@ bool get_trigger_old (
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$TRIGGER_BLR.NULL = TRUE;
 		X.RDB$TRIGGER_SOURCE.NULL = TRUE;
+		X.RDB$SYSTEM_FLAG = 0;
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -5870,7 +5871,6 @@ bool get_trigger_old (
 		strncpy (X.RDB$RELATION_NAME, relation->rel_name, GDS_NAME_LEN);
 		strcpy (name, X.RDB$TRIGGER_NAME);
 		X.RDB$TRIGGER_SEQUENCE = TRIGGER_SEQUENCE_DEFAULT;
-		X.RDB$SYSTEM_FLAG = 0;   // restore as vanilla user type 
 
 	END_STORE;
 	ON_ERROR
@@ -6314,6 +6314,13 @@ bool get_user_privilege()
 			break;
 	}
 
+	if (tdgbl->RESTORE_ods <= DB_VERSION_DDL8)
+	{
+		// Discard roles for IB4.
+		if (user_type == obj_sql_role || object_type == obj_sql_role)
+			exists = false;
+	}
+	
 	if (exists)
 	{
 		if (!local_trans)
@@ -7272,6 +7279,8 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 			X IN RDB$GENERATORS
 			strcpy (X.RDB$GENERATOR_NAME, gen_name);
 			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			if (gen_desc)
 			{
 				X.RDB$DESCRIPTION = *gen_desc;
@@ -7287,6 +7296,8 @@ void store_blr_gen_id (const TEXT*	gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
 		STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
 			X IN RDB$GENERATORS
 			strcpy (X.RDB$GENERATOR_NAME, gen_name);
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		END_STORE;
 		ON_ERROR
 			general_on_error ();
