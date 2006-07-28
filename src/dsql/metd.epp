@@ -1560,7 +1560,8 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 				field->fld_collation_id = FLX.RDB$COLLATION_ID;
 
 			if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG)
-			/*XXX:IOL    || (relation->rel_flags & REL_view)*/) {
+				|| (relation->rel_flags & REL_view))
+			{
 				field->fld_flags |= FLD_nullable;
 			}
 
