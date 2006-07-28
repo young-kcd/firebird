@@ -38,6 +38,7 @@ int traRpbList::PushRpb(record_param* value)
 {
 	if (value->rpb_relation->rel_view_rse ||	// this is view
 		value->rpb_relation->rel_file ||		// this is external file
+		value->rpb_relation->isVirtual() ||		// this is virtual table
 		value->rpb_number.isEmpty() ||			// recno is empty
 		value->rpb_number.isBof())				// recno is a BOF marker
 	{

@@ -294,7 +294,11 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 			jrd_rel* relation = org_rpb->rpb_relation;
 
 			// Raise error if we cannot lock this kind of stream
-			if (!relation || relation->rel_view_rse || relation->rel_file) {
+			if (!relation ||
+				relation->rel_view_rse ||
+				relation->rel_file ||
+				relation->isVirtual())
+			{
 				ERR_post(isc_record_lock_not_supp, 0);
 			}
 

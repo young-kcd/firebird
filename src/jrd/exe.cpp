@@ -1206,7 +1206,9 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
    have fired. This is required for cascading referential integrity, which 
    can be implemented as post_erase triggers */
 
-	if (!relation->rel_file & !relation->rel_view_rse)
+	if (!relation->rel_file &&
+		!relation->rel_view_rse &&
+		!relation->isVirtual())
 	{
 		jrd_rel* bad_relation = 0;
 		USHORT bad_index;
@@ -2707,7 +2709,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		   have fired.  This is required for cascading referential integrity, 
 		   which can be implemented as post_erase triggers */
 
-		if (!relation->rel_file && !relation->rel_view_rse)
+		if (!relation->rel_file &&
+			!relation->rel_view_rse &&
+			!relation->isVirtual())
 		{
 			USHORT bad_index;
 			jrd_rel* bad_relation = 0;

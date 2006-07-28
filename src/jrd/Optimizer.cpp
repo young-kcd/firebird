@@ -1159,7 +1159,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
  * Functional description
  *
  **************************************/
-	if ((!relation) || (relation->rel_file)) {
+	if (!relation || relation->rel_file || relation->isVirtual())) {
 		return NULL;
 	}
 
