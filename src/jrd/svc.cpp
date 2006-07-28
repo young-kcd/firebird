@@ -2174,9 +2174,8 @@ static void service_fork(ThreadEntryPoint* service_executable, Service* service)
  *	Startup a service.
  *
  **************************************/
-	TEXT* p;
 
-/* Break up the command line into individual arguments. */
+	// Break up the command line into individual arguments.
 	service->parseSwitches();
 
 	USHORT argc = service->svc_argc;
