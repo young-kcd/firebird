@@ -1181,7 +1181,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 						   jrd_req::req_trigger_delete);
 
 	if (relation->rel_file) {
-		EXT_erase(rpb, reinterpret_cast<int*>(transaction));
+		EXT_erase(rpb, transaction);
 	}
 	else if (relation->isVirtual()) {
 		VirtualTable::erase(rpb);
@@ -2672,8 +2672,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 		if (relation->rel_file)
 		{
-			EXT_modify(org_rpb, new_rpb,
-					   reinterpret_cast<int*>(transaction));
+			EXT_modify(org_rpb, new_rpb, transaction);
 		}
 		else if (relation->isVirtual()) {
 			VirtualTable::modify(org_rpb, new_rpb);
@@ -3452,7 +3451,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		cleanup_rpb(tdbb, rpb);
 
 		if (relation->rel_file) {
-			EXT_store(rpb, reinterpret_cast<int*>(transaction));
+			EXT_store(rpb, transaction);
 		}
 		else if (relation->isVirtual()) {
 			VirtualTable::store(rpb);

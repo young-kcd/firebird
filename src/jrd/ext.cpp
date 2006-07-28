@@ -112,7 +112,7 @@ void EXT_close(RecordSource* rsb)
 }
 
 
-void EXT_erase(record_param* rpb, int* transaction)
+void EXT_erase(record_param* rpb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -299,7 +299,7 @@ bool EXT_get(RecordSource* rsb)
 }
 
 
-void EXT_modify(record_param* old_rpb, record_param* new_rpb, int* transaction)
+void EXT_modify(record_param* old_rpb, record_param* new_rpb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -427,7 +427,7 @@ void EXT_ready(jrd_rel* relation)
 }
 
 
-void EXT_store(record_param* rpb, int* transaction)
+void EXT_store(record_param* rpb, jrd_tra* transaction)
 {
 /**************************************
  *
