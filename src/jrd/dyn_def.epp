@@ -1353,6 +1353,7 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 		X.RDB$FIELD_PRECISION.NULL = TRUE;
+		X.RDB$CHARACTER_LENGTH.NULL = TRUE;
 
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
