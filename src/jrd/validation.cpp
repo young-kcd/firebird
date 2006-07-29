@@ -2050,7 +2050,7 @@ static RTN walk_relation(thread_db* tdbb, vdr* control, jrd_rel* relation)
 				   relation->rel_name.c_str(), relation->rel_owner_name.c_str());
 #endif
 
-/* If it's a view or external file, skip this */
+/* If it's a view, external file or virtual table, skip this */
 
 	if (relation->rel_view_rse || relation->rel_file || relation->isVirtual()) {
 		return rtn_ok;
