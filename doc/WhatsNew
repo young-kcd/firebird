@@ -2,6 +2,11 @@
   * v2.0 Release Candidate 4
   **************************
 
+    * Fixed FB2 bug (CORE-879)
+	Dependencies are not cleared when creation of expression index fails
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
     * Fixed RC3 bug (CORE-860)
         Server crashes when attempting to restore a v1.5 backup  
       Contributor(s):
