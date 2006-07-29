@@ -2162,7 +2162,7 @@ bool get_character_set()
 
 			default:
 				bad_attribute (scan_next_attr, attribute, msgErr_restore_charset);
-				// RDB$CHARSETS 
+				// 213 character set
 				break;
 			}
 		}
@@ -2195,6 +2195,7 @@ bool get_chk_constraint()
 		X IN RDB$CHECK_CONSTRAINTS
 		X.RDB$CONSTRAINT_NAME.NULL = TRUE;
 		X.RDB$TRIGGER_NAME.NULL = TRUE;
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -2211,8 +2212,8 @@ bool get_chk_constraint()
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 208);
-				// msg 208 table constraint
+				bad_attribute (scan_next_attr, attribute, 286);
+				// msg 286 check constraint
 				break;
 			}
 		}
@@ -2326,7 +2327,7 @@ bool get_collation()
 
 				default:
 					bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
-					// Bad RDB$COLLATION 
+					// Msg 215 collation
 					break;
 				}
 			}
@@ -2414,7 +2415,7 @@ bool get_collation()
 
 				default:
 					bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
-					// Bad RDB$COLLATION 
+					// Msg 215 collation
 					break;
 				}
 			}
@@ -2868,6 +2869,9 @@ bool get_exception(void)
 		X IN RDB$EXCEPTIONS
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$MESSAGE.NULL = TRUE;
+		X.RDB$SYSTEM_FLAG = 0;
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -2896,8 +2900,8 @@ bool get_exception(void)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 89);
-				// msg 89 function 
+				bad_attribute (scan_next_attr, attribute, 287);
+				// msg 287 exception
 				break;
 			}
 		}
@@ -2962,6 +2966,7 @@ burp_fld* get_field (burp_rel*	relation)
 		X.RDB$DEFAULT_VALUE.NULL = TRUE;
 		X.RDB$NULL_FLAG.NULL = TRUE;
 		X.RDB$COLLATION_ID.NULL = TRUE;
+
 		skip_init(&scan_next_attr);
 		while (get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -3152,6 +3157,7 @@ bool get_field_dimensions()
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_field_dimensions_req_handle1)
 		X IN RDB$FIELD_DIMENSIONS
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -3174,8 +3180,8 @@ bool get_field_dimensions()
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 58);
-				// msg 58 array 
+				bad_attribute (scan_next_attr, attribute, 288);
+				// msg 288 array dimensions
 				break;
 			}
 		}
@@ -3208,6 +3214,7 @@ bool get_files()
 	STORE (REQUEST_HANDLE tdgbl->handles_get_files_req_handle1)
 		X IN RDB$FILES
 		X.RDB$FILE_FLAGS = 0;
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -3276,6 +3283,9 @@ bool get_filter()
 	STORE (REQUEST_HANDLE tdgbl->handles_get_filter_req_handle1)
 		X IN RDB$FILTERS
 		X.RDB$DESCRIPTION.NULL = TRUE;
+		X.RDB$SYSTEM_FLAG = 0;
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -3351,6 +3361,9 @@ bool get_function()
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
 		X IN RDB$FUNCTIONS
+		X.RDB$SYSTEM_FLAG = 0;
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -3682,12 +3695,12 @@ bool get_generator()
 				got_desc = gen_desc.gds_quad_high || gen_desc.gds_quad_low;
 			}
 			else
-				bad_attribute(scan_next_attr, attribute, 93);
+				bad_attribute(scan_next_attr, attribute, 289);
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 93);
-			// msg 93 index
+			bad_attribute (scan_next_attr, attribute, 289);
+			// msg 289 generator
 			break;
 		}
 	}
@@ -3757,8 +3770,8 @@ bool get_global_field()
 			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 			X.RDB$COLLATION_ID.NULL = TRUE;
 			X.RDB$FIELD_PRECISION.NULL = TRUE;
-
 			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
+
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
@@ -4044,8 +4057,8 @@ bool get_global_field()
 			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 			X.RDB$COLLATION_ID.NULL = TRUE;
-
 			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
+			
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
@@ -4341,6 +4354,9 @@ bool get_index (const burp_rel* relation)
 		X.RDB$FOREIGN_KEY.NULL = TRUE;
 		X.RDB$EXPRESSION_SOURCE.NULL = TRUE;
 		X.RDB$EXPRESSION_BLR.NULL = TRUE;
+		X.RDB$SYSTEM_FLAG = 0;
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -4596,7 +4612,7 @@ bool get_procedure()
  *
  **************************************/
 	ATT_TYPE	attribute;
-	GDS_NAME	procedure_name;
+	GDS_NAME	procedure_name = "";
 	TEXT		temp[GDS_NAME_LEN];
 	SSHORT		l;
 	scan_attr_t		scan_next_attr;
@@ -4621,6 +4637,9 @@ bool get_procedure()
 			X.RDB$OWNER_NAME.NULL = TRUE;
 			X.RDB$PROCEDURE_TYPE.NULL = FALSE;
 			X.RDB$PROCEDURE_TYPE = 0;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
@@ -4684,12 +4703,12 @@ bool get_procedure()
 					if (tdgbl->RESTORE_format >= 8)
 						X.RDB$PROCEDURE_TYPE = (USHORT) get_numeric();
 					else
-						bad_attribute (scan_next_attr, attribute, 89);
+						bad_attribute (scan_next_attr, attribute, 290);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 89);
-					// msg 89 function 
+					bad_attribute (scan_next_attr, attribute, 290);
+					// msg 290 procedure
 					break;
 				}
 			}
@@ -4708,6 +4727,9 @@ bool get_procedure()
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$SECURITY_CLASS.NULL = TRUE;
 			X.RDB$OWNER_NAME.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
@@ -4771,12 +4793,12 @@ bool get_procedure()
 					if (tdgbl->RESTORE_format >= 8)
 						get_numeric();
 					else
-						bad_attribute (scan_next_attr, attribute, 89);
+						bad_attribute (scan_next_attr, attribute, 290);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 89);
-					// msg 89 function 
+					bad_attribute (scan_next_attr, attribute, 290);
+					// msg 290 procedure
 					break;
 				}
 			}
@@ -4825,6 +4847,9 @@ bool get_procedure_prm (GDS_NAME	procptr)
 		X IN RDB$PROCEDURE_PARAMETERS
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		strcpy (X.RDB$PROCEDURE_NAME, procptr);
+		X.RDB$SYSTEM_FLAG = 0;
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -4860,8 +4885,8 @@ bool get_procedure_prm (GDS_NAME	procptr)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 90);
-				// msg 90 function argument 
+				bad_attribute (scan_next_attr, attribute, 291);
+				// msg 291 procedure parameter
 				break;
 			}
 		}
@@ -4897,6 +4922,7 @@ bool get_ref_constraint()
 		X.RDB$MATCH_OPTION.NULL = TRUE;
 		X.RDB$UPDATE_RULE.NULL = TRUE;
 		X.RDB$DELETE_RULE.NULL = TRUE;
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -4928,8 +4954,8 @@ bool get_ref_constraint()
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 208);
-					// msg 208 table constraint
+					bad_attribute (scan_next_attr, attribute, 292);
+					// msg 292 referential constraint
 					break;
 			}
 		}
@@ -5263,6 +5289,7 @@ bool get_rel_constraint()
 		X.RDB$DEFERRABLE.NULL = TRUE;
 		X.RDB$INITIALLY_DEFERRED.NULL = TRUE;
 		X.RDB$INDEX_NAME.NULL = TRUE;
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -5428,8 +5455,8 @@ bool get_sql_roles()
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			
 			skip_init(&scan_next_attr);
-
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
 				switch (attribute)
@@ -5462,11 +5489,7 @@ bool get_sql_roles()
 				    break;
 
 				default:
-					/*************************************************
-					**
-					** msg 250, Bad attribute for restoring SQL role
-					**
-					**************************************************/
+					// msg 250 SQL role
 					bad_attribute (scan_next_attr, attribute, 250);
 					break;
 				}
@@ -5485,8 +5508,9 @@ bool get_sql_roles()
 
 			X.RDB$ROLE_NAME.NULL = TRUE;
 			X.RDB$OWNER_NAME.NULL = TRUE;
-			skip_init(&scan_next_attr);
+			// Here we didn't have RBD$SYSTEM_FLAG field.
 
+			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
 				switch (attribute)
@@ -5516,11 +5540,7 @@ bool get_sql_roles()
 					break;
 					
 				default:
-					/*************************************************
-					**
-					** msg 250, Bad attribute for restoring SQL role
-					**
-					**************************************************/
+					// msg 250 SQL role
 					bad_attribute (scan_next_attr, attribute, 250);
 					break;
 				}
@@ -5552,11 +5572,7 @@ bool get_sql_roles()
 				break;
 
 			default:
-				/*************************************************
-				**
-				** msg 250, Bad attribute for restoring SQL role
-				**
-				**************************************************/
+				// msg 250 SQL role
 				bad_attribute (scan_next_attr, attribute, 250);
 				break;
 			}
@@ -5612,6 +5628,7 @@ bool get_security_class()
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_security_class_req_handle1)
 		X IN RDB$SECURITY_CLASSES
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -5802,6 +5819,7 @@ bool get_trigger_old (
 		X.RDB$TRIGGER_SOURCE.NULL = TRUE;
 		X.RDB$SYSTEM_FLAG = 0;
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -5928,6 +5946,7 @@ bool get_trigger()
 		X.RDB$SYSTEM_FLAG = 0;
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		X.RDB$FLAGS.NULL = TRUE;
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -6142,6 +6161,7 @@ bool get_type()
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$SYSTEM_FLAG = 0;
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -6175,8 +6195,8 @@ bool get_type()
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 136);
-				// msg 136 trigger type 
+				bad_attribute (scan_next_attr, attribute, 293);
+				// msg 293 type (in RDB$TYPES)
 				break;
 			}
 		}
@@ -6429,6 +6449,7 @@ bool get_view (burp_rel*		relation)
 			REQUEST_HANDLE tdgbl->handles_get_view_req_handle1)
 		X IN RDB$VIEW_RELATIONS
 		strcpy (X.RDB$VIEW_NAME, relation->rel_name);
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{

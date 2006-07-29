@@ -698,13 +698,13 @@ static const struct {
 	{336330941, "password parameter missing"},		/* 674, gbak_missing_password */
 	{336330952, " missing parameter for the number of bytes to be skipped"},		/* 675, gbak_missing_skipped_bytes */
 	{336330953, "expected number of bytes to be skipped, encountered \"%s\""},		/* 676, gbak_inv_skipped_bytes */
-	{336330965, "Bad attribute for RDB$CHARACTER_SETS"},		/* 677, gbak_err_restore_charset */
-	{336330967, "Bad attribute for RDB$COLLATIONS"},		/* 678, gbak_err_restore_collation */
+	{336330965, "character set"},		/* 677, gbak_err_restore_charset */
+	{336330967, "collation"},		/* 678, gbak_err_restore_collation */
 	{336330972, "Unexpected I/O error while reading from backup file"},		/* 679, gbak_read_error */
 	{336330973, "Unexpected I/O error while writing to backup file"},		/* 680, gbak_write_error */
 	{336330985, "could not drop database %s (database might be in use)"},		/* 681, gbak_db_in_use */
 	{336330990, "System memory exhausted"},		/* 682, gbak_sysmemex */
-	{336331002, "Bad attributes for restoring SQL role"},		/* 683, gbak_restore_role_failed */
+	{336331002, "SQL role"},		/* 683, gbak_restore_role_failed */
 	{336331005, "SQL role parameter missing"},		/* 684, gbak_role_op_missing */
 	{336331010, "page buffers parameter missing"},		/* 685, gbak_page_buffers_missing */
 	{336331011, "expected page buffers, encountered \"%s\""},		/* 686, gbak_page_buffers_wrong_param */
