@@ -1,3 +1,77 @@
+2006-07-29 03:41  asfernandes
+
+	* firebird2/src/jrd/validation.cpp (1.23):
+	
+	Misc
+
+2006-07-28 23:12  hvlad
+
+	* firebird2/src/jrd/pcmet.epp (1.42):
+	
+	Fixed CORE-879 : Dependencies are not cleared when creation of
+	expression index fails
+
+2006-07-28 14:26  alexpeshkoff
+
+	* firebird2/src/jrd/dyn_def.epp (1.122):
+	
+	fix illegal RDB$CHARACTER_LENGTH in UDF arguments
+
+2006-07-28 14:11  dimitr
+
+	* firebird2/src/jrd/idx.cpp (1.111):
+	
+	More protections.
+
+2006-07-28 11:53  robocop
+
+	* firebird2/src/jrd/: exe.cpp (1.192), ext.cpp (1.68), ext_proto.h
+	(1.16), os/vms/extvms.cpp (1.28):
+	
+	Get rid of brain-dead historical signature and its companion casts.
+
+2006-07-28 11:35  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.63):
+	
+	Typo.
+
+2006-07-28 11:15  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.62), exe.cpp (1.191),
+	rpb_chain.cpp (1.12), rse.cpp (1.114):
+	
+	More protections.
+
+2006-07-28 10:29  dimitr
+
+	* firebird2/src/jrd/validation.cpp (1.22):
+	
+	Fixed validation for virtual tables.
+
+2006-07-28 10:29  robocop
+
+	* firebird2/src/burp/restore.epp (1.108):
+	
+	More backwards compatibility.  Store sysflag always. Cases that I
+	missed before.
+
+2006-07-28 09:45  robocop
+
+	* firebird2/src/dsql/metd.epp (1.88):
+	
+	Fix CORE-871 I did this fix for SF Bug #228135 in February 2002 to
+	FB1. On November 2002, for unknown reasons to me, Ignacio Ortega
+	made the fix a comment, so FB1.5, FB2 and FB2.1 have the bug again.
+	I'm fixing FB2.1 to close the same bug that now appears as
+	CORE-871. We need more regression tests.
+
+2006-07-28 09:08  dimitr
+
+	* firebird2/src/jrd/inf_pub.h (1.12):
+	
+	More patches for Win64 compatibility.
+
 2006-07-28 04:17  asfernandes
 
 	* firebird2/src/jrd/svc.cpp (1.172):
