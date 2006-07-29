@@ -2,8 +2,8 @@
   * v2.0 Release Candidate 4
   **************************
 
-    * Fixed FB2 bug (CORE-879)
-	Dependencies are not cleared when creation of expression index fails
+    * Fixed RC3 bug (CORE-879)
+        Dependencies are not cleared when creation of expression index fails
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
