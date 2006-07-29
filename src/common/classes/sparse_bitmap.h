@@ -117,11 +117,11 @@ public:
 			}
 		}
 
-		T val_aligned = value & ~(T) (BUNCH_BITS - 1);
-		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
+		const T val_aligned = value & ~(T) (BUNCH_BITS - 1);
+		const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 		if (tree.locate(val_aligned)) {
 			tree.current().bits |= bit_mask;
-		} 
+		}
 		else {
 			Bucket bucket;
 			bucket.start_value = val_aligned;
@@ -141,9 +141,9 @@ public:
 			return false;
 		}
 
-		T val_aligned = value & ~(T)(BUNCH_BITS-1);
-		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
+		const T val_aligned = value & ~(T)(BUNCH_BITS-1);
 		if (tree.locate(val_aligned)) {
+			const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 			Bucket *current_bucket = &tree.current();
 			if (current_bucket->bits & bit_mask) {
 				current_bucket->bits &= ~bit_mask;
@@ -158,13 +158,13 @@ public:
 	bool test(T value) {
 		if (singular) {
 			fb_assert(tree.isEmpty());
-			return value == singular_value;
+			return (value == singular_value);
 		}
 
-		T val_aligned = value & ~(T) (BUNCH_BITS - 1);
-		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
+		const T val_aligned = value & ~(T) (BUNCH_BITS - 1);
 		BitmapTreeAccessor i(&tree); // Use accessor to be const-correct
 		if (i.locate(val_aligned)) {
+			const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 			return i.current().bits & bit_mask;
 		}
 		return false;
@@ -376,6 +376,7 @@ public:
 				}
 			}
 			fb_assert(false); // Invalid constant is used ?
+			return false;
 		}
 
 		// If method returns false it means list is empty and 
