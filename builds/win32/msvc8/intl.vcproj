@@ -653,6 +653,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\IntlUtil.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\kanji.h"
 				>
 			</File>
@@ -874,6 +878,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\fb_exception.cpp"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="JRD files"
+			>
+			<File
+				RelativePath="..\..\..\src\jrd\IntlUtil.cpp"
 				>
 			</File>
 		</Filter>

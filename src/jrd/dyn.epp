@@ -723,6 +723,31 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool)
 }
 
 
+USHORT DYN_get_string(const TEXT** ptr, Firebird::Array<UCHAR>& array, size_t, bool err_flag)
+{
+/**************************************
+ *
+ *	D Y N _ g e t _ s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Pick up a string, move to a target. Return length 
+ *	of string. Copy all available data ignoring err_flag.
+ *
+ **************************************/
+	const TEXT* p = *ptr;
+	USHORT length = (UCHAR) *p++;
+	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
+
+	memcpy(array.getBuffer(length), p, length);
+	p += length;
+
+	*ptr = p;
+	return length;
+}
+
+
 USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 {
 /**************************************

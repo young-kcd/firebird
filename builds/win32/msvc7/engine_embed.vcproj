@@ -260,6 +260,9 @@
 				RelativePath="..\..\..\src\jrd\IntlManager.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\IntlUtil.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\inuse.cpp">
 			</File>
 			<File
@@ -673,6 +676,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\intlobj_new.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\IntlUtil.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\inuse_proto.h">

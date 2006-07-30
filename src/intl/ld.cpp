@@ -38,7 +38,7 @@
 void gds__log(UCHAR*, ...);
 */
 
-#define	EXTERN_texttype(name)	INTL_BOOL name (TEXTTYPE, const ASCII*, const ASCII*, USHORT, const UCHAR*, ULONG)
+#define	EXTERN_texttype(name)	INTL_BOOL name (TEXTTYPE, charset*, const ASCII*, const ASCII*, USHORT, const UCHAR*, ULONG)
 // #define EXTERN_convert(name)	INTL_BOOL name (csconvert*, const ASCII*, const ASCII*)
 #define EXTERN_charset(name)	INTL_BOOL name (charset*, const ASCII*)
 
@@ -334,32 +334,47 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 	try
 	{
 #define CHARSET(cs_name, cs_id, coll_id, bytes, num, cs_symbol, cp_symbol, coll_attr)	\
-	if (strcmp(charset_name, cs_name) == 0) {											\
+	if (strcmp(charset_name, cs_name) == 0)												\
 	{																					\
+		EXTERN_charset((*lookup_cs_symbol)) = cs_symbol;								\
 		EXTERN_texttype((*lookup_symbol)) = cp_symbol;									\
 																						\
-		if (lookup_symbol != NULL && strcmp(texttype_name, cs_name) == 0)				\
+		charset cs;																		\
+		memset(&cs, 0, sizeof(cs));														\
+																						\
+		if (lookup_cs_symbol != NULL && lookup_cs_symbol(&cs, charset_name) &&			\
+			lookup_symbol != NULL && strcmp(texttype_name, cs_name) == 0)				\
 		{																				\
-			return lookup_symbol(														\
-				tt, texttype_name, charset_name,										\
+			INTL_BOOL ret = lookup_symbol(												\
+				tt, &cs, texttype_name, charset_name,									\
 				(ignore_attributes ? coll_attr : attributes),							\
 				(ignore_attributes ? NULL : specific_attributes),						\
 				(ignore_attributes ? 0 : specific_attributes_length));					\
-		}																				\
-	}
+																						\
+			if (cs.charset_fn_destroy)													\
+				cs.charset_fn_destroy(&cs);												\
+																						\
+			return ret;																	\
+		}
 #define CSALIAS(name, cs_id)
-#define END_CHARSET }
+#define END_CHARSET	\
+	}
 #define COLLATION(tt_name, cc_id, cs_id, coll_id, symbol, coll_attr)	\
 	{																	\
 		EXTERN_texttype((*lookup_symbol)) = symbol;						\
 																		\
 		if (lookup_symbol && strcmp(texttype_name, tt_name) == 0)		\
 		{																\
-			return lookup_symbol(										\
-				tt, texttype_name, charset_name,						\
+			INTL_BOOL ret = lookup_symbol(								\
+				tt, &cs, texttype_name, charset_name,					\
 				(ignore_attributes ? coll_attr : attributes),			\
 				(ignore_attributes ? NULL : specific_attributes),		\
 				(ignore_attributes ? 0 : specific_attributes_length));	\
+																		\
+			if (cs.charset_fn_destroy)									\
+				cs.charset_fn_destroy(&cs);								\
+																		\
+			return ret;													\
 		}																\
 	}
 #define COLLATE_ALIAS(name, coll_id)

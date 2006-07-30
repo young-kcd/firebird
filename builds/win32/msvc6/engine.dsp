@@ -305,6 +305,10 @@ SOURCE=..\..\..\src\jrd\IntlManager.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\IntlUtil.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\inuse.cpp
 # End Source File
 # Begin Source File
@@ -909,6 +913,10 @@ SOURCE=..\..\..\src\jrd\intlnames.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\intlobj_new.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\IntlUtil.h
 # End Source File
 # Begin Source File
 

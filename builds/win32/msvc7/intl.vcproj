@@ -483,6 +483,9 @@
 				RelativePath="..\..\..\src\intl\collations\db866ru0.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\IntlUtil.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\intl\kanji.h">
 			</File>
 			<File
@@ -651,6 +654,16 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\fb_string.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="JRD files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\IntlUtil.cpp">
 			</File>
 		</Filter>
 		<File

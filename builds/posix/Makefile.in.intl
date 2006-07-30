@@ -50,7 +50,8 @@ INTL_Files1=	ld.cpp       cv_narrow.cpp \
 		cs_gb2312.cpp  cv_gb2312.cpp lc_gb2312.cpp \
 		cs_jis.cpp     cv_jis.cpp    lc_jis.cpp \
 		cs_ksc.cpp     cv_ksc.cpp    lc_ksc.cpp \
-		cs_icu.cpp     cv_icu.cpp    lc_icu.cpp
+		cs_icu.cpp     cv_icu.cpp    lc_icu.cpp \
+		../jrd/IntlUtil.cpp
 
 
 # INTL_Sources =  $(INTL_Files1)

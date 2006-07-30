@@ -24,7 +24,8 @@
 
 #include "firebird.h"
 #include "../intl/ldcommon.h"
-#include "ld_proto.h"
+#include "../intl/ld_proto.h"
+#include "../jrd/IntlUtil.h"
 
 static ULONG fam2_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
 static ULONG fam2_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
@@ -32,7 +33,11 @@ static ULONG fam2_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG
 #include "lc_narrow.h"
 #include "lc_dos.h"
 
+using namespace Firebird;
+
+
 static inline bool FAMILY2(TEXTTYPE cache,
+							charset* cs,
 							SSHORT country,
 							USHORT flags,
 							const SortOrderTblEntry* NoCaseOrderTbl,
@@ -44,10 +49,17 @@ static inline bool FAMILY2(TEXTTYPE cache,
 							USHORT attributes,
 							const UCHAR* specific_attributes,
 							ULONG specific_attributes_length)
-//#define FAMILY2(id_number, name, charset, country)
 {
 	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
 		return false;
+
+	IntlUtil::SpecificAttributesMap map;
+
+	if (!IntlUtil::parseSpecificAttributes(cs, specific_attributes_length, specific_attributes, &map) ||
+		map.count() != 0)
+	{
+		return false;
+	}
 
 	cache->texttype_version			= TEXTTYPE_VERSION_1;
 	cache->texttype_name			= POSIX;
@@ -73,6 +85,7 @@ static inline bool FAMILY2(TEXTTYPE cache,
 
 
 static inline bool FAMILY3(TEXTTYPE cache,
+							charset* cs,
 							SSHORT country,
 							USHORT flags,
 							const SortOrderTblEntry* NoCaseOrderTbl,
@@ -87,21 +100,28 @@ static inline bool FAMILY3(TEXTTYPE cache,
 {
 	bool multiLevel = false;
 
-	if (specific_attributes_length == 13)
+	IntlUtil::SpecificAttributesMap map;
+	if (!IntlUtil::parseSpecificAttributes(cs, specific_attributes_length, specific_attributes, &map))
+		return false;
+
+	string value;
+	if (map.get("MULTI-LEVEL", value))
 	{
-		if (memcmp(specific_attributes, "MULTI-LEVEL=0", 13) == 0)
-		{
+		if (value == "0")
 			multiLevel = false;
-			specific_attributes_length = 0;
-		}
-		else if (memcmp(specific_attributes, "MULTI-LEVEL=1", 13) == 0)
-		{
+		else if (value == "1")
 			multiLevel = true;
-			specific_attributes_length = 0;
-		}
+		else
+			return false;
+
+		map.remove("MULTI-LEVEL");
 	}
 
-	if (FAMILY2(cache, country, flags, NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
+	string newSpecificAttributes = IntlUtil::generateSpecificAttributes(cs, map);
+	specific_attributes = (const UCHAR*)newSpecificAttributes.begin();
+	specific_attributes_length = newSpecificAttributes.length();
+
+	if (FAMILY2(cache, cs, country, flags, NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 				CompressTbl, ExpansionTbl, POSIX,
 				attributes & ~(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE),
 				specific_attributes, specific_attributes_length))
@@ -154,7 +174,7 @@ TEXTTYPE_ENTRY(KOI8R_c1_init)
 
 #include "../intl/collations/koi8r_ru.h"
 
-	return FAMILY2(cache, CC_RUSSIA, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_RUSSIA, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -166,7 +186,7 @@ TEXTTYPE_ENTRY(KOI8U_c1_init)
 
 #include "../intl/collations/koi8u_ua.h"
 
-	return FAMILY2(cache, CC_INTL, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_INTL, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -178,7 +198,7 @@ TEXTTYPE_ENTRY(ISO88591_39_init)
 
 #include "../intl/collations/bl88591da0.h"
 
-	return FAMILY2(cache, CC_DENMARK, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_DENMARK, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -190,7 +210,7 @@ TEXTTYPE_ENTRY(ISO88591_40_init)
 
 #include "../intl/collations/bl88591nl0.h"
 
-	return FAMILY2(cache, CC_NEDERLANDS, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_NEDERLANDS, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -202,7 +222,7 @@ TEXTTYPE_ENTRY(ISO88591_41_init)
 
 #include "../intl/collations/bl88591fi0.h"
 
-	return FAMILY2(cache, CC_FINLAND, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_FINLAND, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -214,7 +234,7 @@ TEXTTYPE_ENTRY(ISO88591_42_init)
 
 #include "../intl/collations/bl88591fr0.h"
 
-	return FAMILY2(cache, CC_FRANCE, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_FRANCE, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -226,7 +246,7 @@ TEXTTYPE_ENTRY(ISO88591_43_init)
 
 #include "../intl/collations/bl88591ca0.h"
 
-	return FAMILY2(cache, CC_FRENCHCAN, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_FRENCHCAN, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -238,7 +258,7 @@ TEXTTYPE_ENTRY(ISO88591_44_init)
 
 #include "../intl/collations/bl88591de0.h"
 
-	return FAMILY2(cache, CC_GERMANY, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_GERMANY, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -250,7 +270,7 @@ TEXTTYPE_ENTRY(ISO88591_45_init)
 
 #include "../intl/collations/bl88591is0.h"
 
-	return FAMILY2(cache, CC_ICELAND, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_ICELAND, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -262,7 +282,7 @@ TEXTTYPE_ENTRY(ISO88591_46_init)
 
 #include "../intl/collations/bl88591it0.h"
 
-	return FAMILY2(cache, CC_ITALY, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_ITALY, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -275,7 +295,7 @@ TEXTTYPE_ENTRY(ISO88591_48_init)
 
 #include "../intl/collations/bl88591no0.h"
 
-	return FAMILY2(cache, CC_NORWAY, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_NORWAY, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -287,7 +307,7 @@ TEXTTYPE_ENTRY(ISO88591_49_init)
 
 #include "../intl/collations/bl88591es0.h"
 
-	return FAMILY3(cache, CC_SPAIN, LDRV_TIEBREAK,
+	return FAMILY3(cache, cs, CC_SPAIN, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -299,7 +319,7 @@ TEXTTYPE_ENTRY(ISO88591_51_init)
 
 #include "../intl/collations/bl88591sv0.h"
 
-	return FAMILY2(cache, CC_SWEDEN, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_SWEDEN, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -311,7 +331,7 @@ TEXTTYPE_ENTRY(ISO88591_52_init)
 
 #include "../intl/collations/bl88591uk0.h"
 
-	return FAMILY2(cache, CC_UK, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_UK, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -323,7 +343,7 @@ TEXTTYPE_ENTRY(ISO88591_53_init)
 
 #include "../intl/collations/bl88591us0.h"
 
-	return FAMILY2(cache, CC_US, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_US, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -335,7 +355,7 @@ TEXTTYPE_ENTRY(ISO88591_54_init)
 
 #include "../intl/collations/bl88591pt0.h"
 
-	return FAMILY2(cache, CC_PORTUGAL, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_PORTUGAL, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -347,7 +367,7 @@ TEXTTYPE_ENTRY(ISO88591_55_init)
 
 #include "../intl/collations/bl88591ptbr0.h"
 
-	return FAMILY3(cache, CC_BRAZIL, LDRV_TIEBREAK,
+	return FAMILY3(cache, cs, CC_BRAZIL, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -359,7 +379,7 @@ TEXTTYPE_ENTRY(ISO88591_56_init)
 
 #include "../intl/collations/bl88591es0.h"
 
-	return FAMILY3(cache, CC_SPAIN, LDRV_TIEBREAK,
+	return FAMILY3(cache, cs, CC_SPAIN, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -371,7 +391,7 @@ TEXTTYPE_ENTRY(WIN1250_c1_init)
 
 #include "../intl/collations/pw1250czech.h"
 
-	return FAMILY2(cache, CC_CZECH, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_CZECH, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -383,7 +403,7 @@ TEXTTYPE_ENTRY(WIN1250_c2_init)
 
 #include "../intl/collations/pw1250hundc.h"
 
-	return FAMILY2(cache, CC_HUNGARY, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_HUNGARY, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -395,7 +415,7 @@ TEXTTYPE_ENTRY(WIN1250_c3_init)
 
 #include "../intl/collations/pw1250polish.h"
 
-	return FAMILY2(cache, CC_POLAND, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_POLAND, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -407,7 +427,7 @@ TEXTTYPE_ENTRY(WIN1250_c4_init)
 
 #include "../intl/collations/pw1250slov.h"
 
-	return FAMILY2(cache, CC_YUGOSLAVIA, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_YUGOSLAVIA, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -419,7 +439,7 @@ TEXTTYPE_ENTRY (WIN1250_c5_init)
 
 #include "../intl/collations/pw1250hun.h"
 
-	return FAMILY2(cache, CC_HUNGARY, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_HUNGARY, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -431,7 +451,7 @@ TEXTTYPE_ENTRY(WIN1250_c6_init)
 
 #include "../intl/collations/win1250bsba.h"
 
-	return FAMILY2(cache, CC_YUGOSLAVIA, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_YUGOSLAVIA, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -443,7 +463,7 @@ TEXTTYPE_ENTRY(WIN1250_c7_init)
 
 #include "../intl/collations/win_cz.h"
 
-	return FAMILY3(cache, CC_CZECH, LDRV_TIEBREAK,
+	return FAMILY3(cache, cs, CC_CZECH, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -455,7 +475,7 @@ TEXTTYPE_ENTRY(WIN1250_c8_init)
 
 #include "../intl/collations/win_cz_ci_ai.h"
 
-	return FAMILY3(cache, CC_CZECH, LDRV_TIEBREAK,
+	return FAMILY3(cache, cs, CC_CZECH, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -467,7 +487,7 @@ TEXTTYPE_ENTRY(WIN1251_c1_init)
 
 #include "../intl/collations/pw1251cyrr.h"
 
-	return FAMILY2(cache, CC_RUSSIA, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_RUSSIA, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -479,7 +499,7 @@ TEXTTYPE_ENTRY(WIN1251_c2_init)
 
 #include "../intl/collations/xx1251_ua.h"
 
-	return FAMILY2(cache, CC_RUSSIA, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_RUSSIA, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -491,7 +511,7 @@ TEXTTYPE_ENTRY(WIN1252_c1_init)
 
 #include "../intl/collations/pw1252intl.h"
 
-	return FAMILY2(cache, CC_INTL, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_INTL, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -503,7 +523,7 @@ TEXTTYPE_ENTRY(WIN1252_c2_init)
 
 #include "../intl/collations/pw1252i850.h"
 
-	return FAMILY2(cache, CC_INTL, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_INTL, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -515,7 +535,7 @@ TEXTTYPE_ENTRY(WIN1252_c3_init)
 
 #include "../intl/collations/pw1252nor4.h"
 
-	return FAMILY2(cache, CC_NORDAN, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_NORDAN, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -527,7 +547,7 @@ TEXTTYPE_ENTRY(WIN1252_c4_init)
 
 #include "../intl/collations/pw1252span.h"
 
-	return FAMILY2(cache, CC_SPAIN, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_SPAIN, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -539,7 +559,7 @@ TEXTTYPE_ENTRY(WIN1252_c5_init)
 
 #include "../intl/collations/pw1252swfn.h"
 
-	return FAMILY2(cache, CC_SWEDFIN, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_SWEDFIN, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -551,7 +571,7 @@ TEXTTYPE_ENTRY(WIN1252_c6_init)
 
 #include "../intl/collations/pw1252ptbr.h"
 
-	return FAMILY3(cache, CC_BRAZIL, LDRV_TIEBREAK,
+	return FAMILY3(cache, cs, CC_BRAZIL, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -563,7 +583,7 @@ TEXTTYPE_ENTRY(WIN1253_c1_init)
 
 #include "../intl/collations/pw1253greek1.h"
 
-	return FAMILY2(cache, CC_GREECE, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_GREECE, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -575,7 +595,7 @@ TEXTTYPE_ENTRY(WIN1254_c1_init)
 
 #include "../intl/collations/pw1254turk.h"
 
-	return FAMILY2(cache, CC_TURKEY, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_TURKEY, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -587,7 +607,7 @@ TEXTTYPE_ENTRY(WIN1257_c1_init)
 
 #include "../intl/collations/win1257_ee.h"
 
-	return FAMILY2(cache, CC_INTL, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_INTL, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -599,7 +619,7 @@ TEXTTYPE_ENTRY(WIN1257_c2_init)
 
 #include "../intl/collations/win1257_lt.h"
 
-	return FAMILY2(cache, CC_INTL, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_INTL, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -611,7 +631,7 @@ TEXTTYPE_ENTRY(WIN1257_c3_init)
 
 #include "../intl/collations/win1257_lv.h"
 
-	return FAMILY2(cache, CC_INTL, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_INTL, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -623,7 +643,7 @@ TEXTTYPE_ENTRY(NEXT_c1_init)
 
 #include "../intl/collations/blNEXTus0.h"
 
-	return FAMILY2(cache, CC_US, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_US, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -635,7 +655,7 @@ TEXTTYPE_ENTRY(NEXT_c2_init)
 
 #include "../intl/collations/blNEXTde0.h"
 
-	return FAMILY2(cache, CC_GERMANY, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_GERMANY, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -647,7 +667,7 @@ TEXTTYPE_ENTRY(NEXT_c3_init)
 
 #include "../intl/collations/blNEXTfr0.h"
 
-	return FAMILY2(cache, CC_FRANCE, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_FRANCE, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }
@@ -659,7 +679,7 @@ TEXTTYPE_ENTRY(NEXT_c4_init)
 
 #include "../intl/collations/blNEXTit0.h"
 
-	return FAMILY2(cache, CC_ITALY, LDRV_TIEBREAK,
+	return FAMILY2(cache, cs, CC_ITALY, LDRV_TIEBREAK,
 			NoCaseOrderTbl, ToUpperConversionTbl, ToLowerConversionTbl,
 			CompressTbl, ExpansionTbl, POSIX, attributes, specific_attributes, specific_attributes_length);
 }

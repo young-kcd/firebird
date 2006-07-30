@@ -116,6 +116,16 @@ public:
 		return false;
 	}
 
+	bool getFirst() { return tree.getFirst(); }
+	
+	bool getLast() { return tree.getLast(); }
+	
+	bool getNext() { return tree.getNext(); }
+	
+	bool getPrev() { return tree.getPrev(); }
+
+	KeyValuePair* current() const { return tree.current(); }
+
 	bool exist(const KeyType& key)
 	{
 		return tree.locate(key);

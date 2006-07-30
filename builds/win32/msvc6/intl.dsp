@@ -529,6 +529,10 @@ SOURCE=..\..\..\src\intl\collations\db866ru0.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\IntlUtil.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\intl\kanji.h
 # End Source File
 # Begin Source File
@@ -734,6 +738,10 @@ SOURCE=..\..\..\src\common\classes\alloc.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\common\fb_exception.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\IntlUtil.cpp
 # End Source File
 # End Group
 # Begin Source File

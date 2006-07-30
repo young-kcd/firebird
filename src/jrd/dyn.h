@@ -87,6 +87,7 @@ void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebir
 SLONG	DYN_get_number(const UCHAR**);
 USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t, bool);
 USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, Firebird::Array<UCHAR>&, size_t, bool);
 USHORT	DYN_get_string(const TEXT**, TEXT*, size_t, bool);
 
 // This function is not defined anywhere.

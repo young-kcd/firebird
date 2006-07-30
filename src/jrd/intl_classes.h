@@ -211,13 +211,18 @@ public:
 	virtual ULONG length(thread_db* tdbb, ULONG srcLen, const UCHAR* src, bool countTrailingSpaces) const = 0;
 	virtual ULONG substring(thread_db* tdbb, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG length) const = 0;
 
+	charset* getObj()
+	{
+		return cs;
+	}
+
 private:
 	CHARSET_ID id;
+	charset* cs;
 	UCHAR sqlMatchAny[sizeof(ULONG)];
 	UCHAR sqlMatchOne[sizeof(ULONG)];
 	BYTE sqlMatchAnyLength;
 	BYTE sqlMatchOneLength;
-	charset* cs;
 };
 
 class TextType

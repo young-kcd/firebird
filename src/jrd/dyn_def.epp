@@ -80,6 +80,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../common/utils_proto.h"
 #include "../jrd/IntlManager.h"
+#include "../jrd/IntlUtil.h"
 
 using namespace Jrd;
 
@@ -171,12 +172,12 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$COLLATIONS
 
+			CharSet* cs = NULL;
 			SubtypeInfo info;
 			USHORT attributes_on = 0;
 			USHORT attributes_off = 0;
 			SSHORT specific_attributes_charset = CS_NONE;
-
-			info.attributes = 0;
+			Firebird::Array<UCHAR> specific_attributes;
 
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -191,6 +192,8 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 					{
 						X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 						X.RDB$CHARACTER_SET_ID = DYN_get_number(ptr);
+						
+						cs = INTL_charset_lookup(tdbb, X.RDB$CHARACTER_SET_ID);
 
 						// ASF: User collations are created with the last number available,
 						// to minimize the possibility of conflicts with future system collations.
@@ -241,13 +244,32 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 					}
 
 					case isc_dyn_coll_from:
+					{
 						//// TODO: verify return value
 						MET_get_char_coll_subtype_info(tdbb, DYN_get_number(ptr), &info);
+
+						fb_assert(cs);
+						if (cs)
+						{
+							if (info.specificAttributes.getCount() != 0)
+							{
+								Firebird::HalfStaticArray<UCHAR, 32> temp;
+								ULONG size = info.specificAttributes.getCount() * cs->maxBytesPerChar();
+
+								size = INTL_convert_bytes(tdbb, X.RDB$CHARACTER_SET_ID,
+														temp.getBuffer(size), size,
+														CS_METADATA, info.specificAttributes.begin(),
+														info.specificAttributes.getCount(), ERR_post);
+								temp.shrink(size);
+								info.specificAttributes = temp;
+							}
+						}
 
 						X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
 						strcpy(X.RDB$BASE_COLLATION_NAME, info.baseCollationName.c_str());
 
 						break;
+					}
 
 					case isc_dyn_coll_attribute:
 					{
@@ -278,20 +300,24 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 
 					case isc_dyn_coll_specific_attributes:
 					{
-						UCHAR bpb[] = {isc_bpb_version1,
-									   isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
-									   isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
+						GET_STRING_2(ptr, specific_attributes);
 
-						bpb[6] = specific_attributes_charset;	// from charset
-						bpb[12] = CS_METADATA;					// to charset
+						fb_assert(cs);
+						if (cs)
+						{
+							if (specific_attributes.getCount() != 0)
+							{
+								Firebird::Array<UCHAR> temp;
+								ULONG size = specific_attributes.getCount() * cs->maxBytesPerChar();
 
-						X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
-						DYN_put_text_blob(gbl, ptr, &X.RDB$SPECIFIC_ATTRIBUTES, sizeof(bpb), bpb);
-
-						// ASF: retrieve RDB$SPECIFIC_ATTRIBUTES with UNICODE_FSS character set
-						blb* blob = BLB_open(tdbb, gbl->gbl_transaction, &X.RDB$SPECIFIC_ATTRIBUTES);
-						BLB_get_data(tdbb, blob, info.specificAttributes.getBuffer(blob->blb_length),
-									 blob->blb_length);
+								size = INTL_convert_bytes(tdbb, X.RDB$CHARACTER_SET_ID,
+														temp.getBuffer(size), size,
+														specific_attributes_charset, specific_attributes.begin(),
+														specific_attributes.getCount(), ERR_post);
+								temp.shrink(size);
+								specific_attributes = temp;
+							}
+						}
 
 						break;
 					}
@@ -304,16 +330,37 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 			strcpy(X.RDB$COLLATION_NAME, collation_name.c_str());
 			X.RDB$COLLATION_ATTRIBUTES = (info.attributes | attributes_on) & (~attributes_off);
 
-			// If isc_dyn_coll_specific_attributes is not provided, then inherit from the base collation
-			if (X.RDB$SPECIFIC_ATTRIBUTES.NULL && info.specificAttributes.getCount() != 0)
+			fb_assert(cs);
+			if (cs)
+			{
+				Firebird::IntlUtil::SpecificAttributesMap map;
+
+				if (!Firebird::IntlUtil::parseSpecificAttributes(
+						cs->getObj(), info.specificAttributes.getCount(), info.specificAttributes.begin(), &map) ||
+					!Firebird::IntlUtil::parseSpecificAttributes(
+						cs->getObj(), specific_attributes.getCount(), specific_attributes.begin(), &map))
+				{
+					DYN_error_punt(false, 222, NULL, NULL, NULL, NULL, NULL);
+					// msg: 222: "Invalid collation attributes"
+				}
+
+				Firebird::string s = Firebird::IntlUtil::generateSpecificAttributes(cs->getObj(), map);
+				memcpy(specific_attributes.getBuffer(s.length()), s.begin(), s.length());
+			}
+			
+			if (specific_attributes.getCount() != 0)
 			{
 				X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
 
-				// ASF: Transliteration should not occur here because
-				// info.specificAttributes and X.RDB$SPECIFIC_ATTRIBUTES
-				// are already in UNICODE_FSS character set.
-				blb* blob = BLB_create(tdbb, gbl->gbl_transaction, &X.RDB$SPECIFIC_ATTRIBUTES);
-				BLB_put_segment(tdbb, blob, info.specificAttributes.begin(), info.specificAttributes.getCount());
+				UCHAR bpb[] = {isc_bpb_version1,
+							   isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
+							   isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
+
+				bpb[6] = X.RDB$CHARACTER_SET_ID;	// from charset
+				bpb[12] = CS_METADATA;				// to charset
+
+				blb* blob = BLB_create2(tdbb, gbl->gbl_transaction, &X.RDB$SPECIFIC_ATTRIBUTES, sizeof(bpb), bpb);
+				BLB_put_segment(tdbb, blob, specific_attributes.begin(), specific_attributes.getCount());
 				BLB_close(tdbb, blob);
 			}
 

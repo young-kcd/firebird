@@ -48,6 +48,12 @@ namespace Jrd {
 
 struct SubtypeInfo
 {
+	SubtypeInfo()
+		: attributes(0),
+		  ignoreAttributes(true)
+	{
+	}
+
 	Firebird::string charsetName;
 	Firebird::string collationName;
 	Firebird::string baseCollationName;
