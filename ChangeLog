@@ -1,3 +1,48 @@
+2006-07-30 04:03  asfernandes
+
+	* firebird2/src/: common/classes/sparse_bitmap.h (1.16),
+	intl/charsets.h (1.10), jrd/intlnames.h (1.24):
+	
+	Misc
+
+2006-07-29 22:59  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.225):
+	
+	Fixed CORE-881 - Singleton isn't respected in COMPUTED BY
+	expressions
+
+2006-07-29 20:28  asfernandes
+
+	* firebird2/: builds/install/misc/fbintl.conf (1.12),
+	src/intl/charsets.h (1.9), src/jrd/intlnames.h (1.23):
+	
+	Implementation of character sets TIS620 and GBK with collations
+	TIS620_UNICODE and GBK_UNICODE. They don't work with our current
+	stripped version of ICU.
+
+2006-07-29 09:18  dimitr
+
+	* firebird2/src/common/classes/sparse_bitmap.h (1.15):
+	
+	Misc.
+
+2006-07-29 09:03  dimitr
+
+	* firebird2/src/jrd/Optimizer.h (1.17):
+	
+	Forward-ported optimizer selectivity adjustments.
+
+2006-07-29 08:01  robocop
+
+	* firebird2/src/: burp/restore.epp (1.109), include/gen/msgs.h
+	(1.58), msgs/facilities.sql (1.66), msgs/history.sql (1.36),
+	msgs/messages.sql (1.80):
+	
+	Fix wrong gbak verbose messages due to Borland's copy/paste
+	(example: function instead of procedure).  Initialize more sysflags
+	to zero instead of NULL.
+
 2006-07-29 03:41  asfernandes
 
 	* firebird2/src/jrd/validation.cpp (1.23):
