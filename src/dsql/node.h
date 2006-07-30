@@ -71,70 +71,70 @@ enum nod_t
 	nod_def_procedure,
 	nod_mod_procedure,
 	nod_del_procedure,
-	nod_def_exception,  // 30
+	nod_def_exception,
 	nod_mod_exception,
 	nod_del_exception,
-	nod_def_generator,
+	nod_def_generator, //30
 	nod_del_generator,
 	nod_def_filter,
 	nod_del_filter,
 	nod_def_shadow,
 	nod_del_shadow,
 	nod_def_udf,
-	nod_del_udf,    // 40
+	nod_del_udf,
 	nod_grant,
 	nod_revoke,
-	nod_rel_constraint,
+	nod_rel_constraint, // 40
 	nod_delete_rel_constraint,
 	nod_primary,
 	nod_foreign,
 	nod_abort,
 	nod_references,
 	nod_proc_obj,
-	nod_trig_obj, // 50
+	nod_trig_obj,
 	nod_view_obj,
 	nod_list,	// SQL statements, mapped into GDML statements
-	nod_select,
+	nod_select, // 50
 	nod_insert,
 	nod_delete,
 	nod_update,
 	nod_close,
 	nod_open,
 	nod_all,	// ALL privileges
-	nod_execute, // 60 		// EXECUTE privilege
+	nod_execute,	// EXECUTE privilege
 	nod_store,
 	nod_modify,
-	nod_erase,
+	nod_erase, // 60
 	nod_assign,
 	nod_exec_procedure,
 	nod_return,	// Procedure statements
 	nod_exit,
 	nod_while,
 	nod_if,
-	nod_for_select, // 70
+	nod_for_select,
 	nod_erase_current,
 	nod_modify_current,
-	nod_post,
+	nod_post, // 70
 	nod_block,
 	nod_on_error,
 	nod_sqlcode,
 	nod_gdscode,
 	nod_exception,
 	nod_exception_stmt,
-	nod_default, // 80
+	nod_default,
 	nod_start_savepoint,
 	nod_end_savepoint,
-	nod_cursor,	// used to create record streams
+	nod_cursor,	//80	// used to create record streams
 	nod_relation,
 	nod_relation_name,
 	nod_procedure_name,
 	nod_rel_proc_name,
 	nod_rse,
 	nod_select_expr,
-	nod_union,                  // 90
+	nod_union,
 	nod_aggregate,
 	nod_order,
-	nod_flag,
+	nod_flag, // 90
 	nod_join,
 /* NOTE: when adding an expression node, be sure to
    test various combinations; in particular, think
@@ -147,10 +147,10 @@ enum nod_t
 	nod_gtr,
 	nod_geq,
 	nod_leq,
-	nod_lss,         // 100
+	nod_lss,
 	nod_between,
 	nod_like,
-	nod_missing,
+	nod_missing, // 100
 	nod_and,
 	nod_or,
 	nod_any,
@@ -160,7 +160,7 @@ enum nod_t
 	nod_starting,
 	nod_via,
 	nod_field,	// values
-	nod_dom_value,
+	nod_dom_value, // 110
 	nod_field_name,
 	nod_parameter,
 	nod_constant,
@@ -170,7 +170,7 @@ enum nod_t
 	nod_user_group,
 	nod_variable,
 	nod_var_name,
-	nod_array,
+	nod_array, // 120
 	nod_add,	// functions
 	nod_subtract,
 	nod_multiply,
@@ -180,7 +180,7 @@ enum nod_t
 	nod_substr,
 	nod_null,
 	nod_dbkey,
-	nod_udf,
+	nod_udf, // 130
 	nod_cast,
 	nod_upcase,
 	nod_lowcase,
@@ -190,18 +190,18 @@ enum nod_t
 	nod_subtract2,
 	nod_multiply2,
 	nod_divide2,
-	nod_gen_id2,
+	nod_gen_id2, // 140
 	nod_average,	// aggregates
 	nod_from,
 	nod_max,
 	nod_min,
 	nod_total,
-	nod_count,
+	//nod_count,    // obsolete
 	nod_exists,
 	nod_singular,
 	nod_agg_average,
 	nod_agg_max,
-	nod_agg_min,
+	nod_agg_min, // 150
 	nod_agg_total,
 	nod_agg_count,
 	nod_agg_average2,
@@ -211,7 +211,7 @@ enum nod_t
 	nod_join_inner,	// join types
 	nod_join_left,
 	nod_join_right,
-	nod_join_full,
+	nod_join_full, // 160
 	nod_join_cross,
 	// sql transaction support
 	nod_access,
@@ -223,7 +223,7 @@ enum nod_t
 	nod_reserve,
 	nod_retain,
 	// sql database stmts support
-	nod_page_size,
+	nod_page_size, // 170
 	nod_file_length,
 	nod_file_desc,
 	nod_dfl_charset,
@@ -237,7 +237,7 @@ enum nod_t
 	// access plan stuff
 	nod_plan_expr,
 	nod_plan_item,
-	nod_merge,
+	nod_merge, // 180
 	nod_natural,
 	nod_index,
 	nod_index_order,
@@ -249,7 +249,7 @@ enum nod_t
 	nod_idx_inactive,
 		// drop behaviour
 	nod_restrict,
-	nod_cascade,
+	nod_cascade, // 190
 	// set statistics
 	nod_set_statistics,
 	// record version
@@ -263,7 +263,7 @@ enum nod_t
 	nod_leq_any,
 	nod_lss_any,
 	// ALL keyword used
-	nod_ansi_all,
+	nod_ansi_all, // 200
 	nod_eql_all,
 	nod_neq_all,
 	nod_gtr_all,
@@ -275,7 +275,7 @@ enum nod_t
 	nod_ref_trig_action,
 	// SQL role support
 	nod_def_role,
-	nod_role_name,
+	nod_role_name, // 210
 	nod_grant_admin,
 	nod_del_role,
 	// SQL time & date support
@@ -287,7 +287,7 @@ enum nod_t
 	nod_mod_domain_type,
 	nod_mod_field_name,
 	nod_mod_field_type,
-	nod_mod_field_pos,
+	nod_mod_field_pos, // 220
 
 	// CVC: SQL requires that DROP VIEW and DROP table are independent.
 	nod_del_view,
@@ -299,7 +299,7 @@ enum nod_t
 	nod_redef_procedure, // allows silent creation/overwriting of a procedure.
 	nod_exec_sql, // EXECUTE STATEMENT
 	nod_internal_info, // internal engine info
-	nod_searched_case, // searched CASE function
+	nod_searched_case, // 230	// searched CASE function
 	nod_simple_case, // simple CASE function
 	nod_coalesce, // COALESCE function
 	nod_mod_view, // ALTER VIEW
@@ -309,7 +309,7 @@ enum nod_t
 	nod_redef_view, // allows silent creation/overwriting of a view
 	nod_for_update, // FOR UPDATE clause
 	nod_user_savepoint, // savepoints support
-	nod_release_savepoint,
+	nod_release_savepoint, // 240
 	nod_undo_savepoint,
 	nod_label, // label support
 	nod_exec_into, // EXECUTE STATEMENT INTO
@@ -319,7 +319,7 @@ enum nod_t
 	nod_end_backup,
 	nod_derived_table, // Derived table support
 	nod_derived_field,  // Derived table support
-	nod_cursor_open,
+	nod_cursor_open, // 250
 	nod_cursor_fetch,
 	nod_cursor_close,
 	nod_fetch_seek,
@@ -329,7 +329,7 @@ enum nod_t
 	nod_query_spec,
 	nod_equiv,  // IS DISTINCT FROM
 	nod_redef_exception, // RECREATE EXCEPTION
-	nod_replace_exception, // CREATE OR ALTER EXCEPTION
+	nod_replace_exception, // 260	// CREATE OR ALTER EXCEPTION
 	nod_comment,
 	nod_mod_udf,
     nod_def_collation,
@@ -339,7 +339,7 @@ enum nod_t
 	nod_strlen,
 	nod_trim,
 	nod_returning,
-	nod_redef_trigger,
+	nod_redef_trigger, // 270
 	nod_tra_misc,
 	nod_lock_timeout,
 	nod_agg_list, 

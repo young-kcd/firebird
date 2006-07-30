@@ -741,7 +741,7 @@ static bool is_array_or_blob(const dsql_nod* node)
 
 	switch (node->nod_type) {
 	case nod_agg_count:
-	case nod_count:
+	//case nod_count:
 	case nod_gen_id:
 	case nod_gen_id2:
 	case nod_dbkey:

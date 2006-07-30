@@ -451,7 +451,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		gen_searched_case(request, node);
 		return;
 	case nod_average:
-	case nod_count:
+	//case nod_count:
 	case nod_from:
 	case nod_max:
 	case nod_min:
@@ -460,12 +460,12 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		case nod_average:
 			blr_operator = blr_average;
 			break;
-		case nod_count:
-			blr_operator = blr_count;
-/* count2
-		blr_operator = node->nod_arg[0]->nod_arg[e_rse_items] ? blr_count2 : blr_count;
-*/
-			break;
+		//case nod_count:
+		//	blr_operator = blr_count;
+		// count2
+		//	blr_operator = node->nod_arg[0]->nod_arg[e_rse_items] ? blr_count2 : blr_count;
+
+		//	break;
 		case nod_from:
 			blr_operator = blr_from;
 			break;

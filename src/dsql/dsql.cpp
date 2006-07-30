@@ -1924,9 +1924,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_containing:
 		verb = "containing";
 		break;
-	case nod_count:
-		verb = "count";
-		break;
+	//case nod_count:
+	//	verb = "count";
+	//	break;
 	case nod_current_date:
 		verb = "current_date";
 		break;
