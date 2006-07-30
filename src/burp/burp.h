@@ -747,7 +747,7 @@ const size_t ACT_LEN = sizeof(act);
 
 const ULONG MAX_LENGTH = -1UL; // Keep in sync with burp_fil.fil_length
 
-// This structure has been cloned from spit.c 
+// This structure has been cloned from spit.cpp
 
 struct hdr_split {
 	TEXT hdr_split_tag[18];
@@ -978,7 +978,7 @@ inline static ULONG BURP_UP_TO_BLOCK(const ULONG size)
 	return (((size) + BURP_BLOCK - 1) & ~(BURP_BLOCK - 1));
 }
 
-/* Move the read and write mode declarations in here from burp.c
+/* Move the read and write mode declarations in here from burp.cpp
    so that other files can see them for multivolume opens */
 
 #ifdef WIN_NT
