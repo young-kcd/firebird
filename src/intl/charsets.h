@@ -90,7 +90,7 @@ CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 #define   CS_KOI8R              63	/* Russian KOI8R */
 #define   CS_KOI8U              64	/* Ukrainian KOI8U */
 
-#define   CS_WIN1258            65	/* Windows cp 1257  */
+#define   CS_WIN1258            65	/* Windows cp 1258  */
 
 #define   CS_TIS620             66	/* TIS620 */
 #define   CS_GBK                67	/* GBK */

@@ -141,7 +141,7 @@ public:
 			return false;
 		}
 
-		const T val_aligned = value & ~(T)(BUNCH_BITS-1);
+		const T val_aligned = value & ~(T)(BUNCH_BITS - 1);
 		if (tree.locate(val_aligned)) {
 			const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 			Bucket *current_bucket = &tree.current();
