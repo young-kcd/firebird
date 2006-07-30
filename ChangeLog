@@ -1,3 +1,22 @@
+2006-07-29 09:49  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.10):
+	
+	Misc.
+
+2006-07-29 09:43  hvlad
+
+	* firebird2/doc/WhatsNew (1.95.2.9):
+	
+	Update WhatsNew
+
+2006-07-29 09:39  hvlad
+
+	* firebird2/src/jrd/pcmet.epp (1.40.4.1):
+	
+	Backported fix for CORE-879 : Dependencies are not cleared when
+	creation of expression index fails
+
 2006-07-25 08:34  dimitr
 
 	* firebird2/doc/WhatsNew (1.95.2.8):
