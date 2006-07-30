@@ -731,64 +731,65 @@ static const struct {
 	{336397209, "At unknown line and column"},		/* 707, dsql_unknown_pos */
 	{336397210, "Column %s cannot be repeated in %s statement"},		/* 708, dsql_no_dup_name */
 	{336397211, "Too many values (more than %d) in member list to match against"},		/* 709, dsql_too_many_values */
-	{336723983, "unable to open database"},		/* 710, gsec_cant_open_db */
-	{336723984, "error in switch specifications"},		/* 711, gsec_switches_error */
-	{336723985, "no operation specified"},		/* 712, gsec_no_op_spec */
-	{336723986, "no user name specified"},		/* 713, gsec_no_usr_name */
-	{336723987, "add record error"},		/* 714, gsec_err_add */
-	{336723988, "modify record error"},		/* 715, gsec_err_modify */
-	{336723989, "find/modify record error"},		/* 716, gsec_err_find_mod */
-	{336723990, "record not found for user: %s"},		/* 717, gsec_err_rec_not_found */
-	{336723991, "delete record error"},		/* 718, gsec_err_delete */
-	{336723992, "find/delete record error"},		/* 719, gsec_err_find_del */
-	{336723996, "find/display record error"},		/* 720, gsec_err_find_disp */
-	{336723997, "invalid parameter, no switch defined"},		/* 721, gsec_inv_param */
-	{336723998, "operation already specified"},		/* 722, gsec_op_specified */
-	{336723999, "password already specified"},		/* 723, gsec_pw_specified */
-	{336724000, "uid already specified"},		/* 724, gsec_uid_specified */
-	{336724001, "gid already specified"},		/* 725, gsec_gid_specified */
-	{336724002, "project already specified"},		/* 726, gsec_proj_specified */
-	{336724003, "organization already specified"},		/* 727, gsec_org_specified */
-	{336724004, "first name already specified"},		/* 728, gsec_fname_specified */
-	{336724005, "middle name already specified"},		/* 729, gsec_mname_specified */
-	{336724006, "last name already specified"},		/* 730, gsec_lname_specified */
-	{336724008, "invalid switch specified"},		/* 731, gsec_inv_switch */
-	{336724009, "ambiguous switch specified"},		/* 732, gsec_amb_switch */
-	{336724010, "no operation specified for parameters"},		/* 733, gsec_no_op_specified */
-	{336724011, "no parameters allowed for this operation"},		/* 734, gsec_params_not_allowed */
-	{336724012, "incompatible switches specified"},		/* 735, gsec_incompat_switch */
-	{336724044, "Invalid user name (maximum 31 bytes allowed)"},		/* 736, gsec_inv_username */
-	{336724045, "Warning - maximum 8 significant bytes of password used"},		/* 737, gsec_inv_pw_length */
-	{336724046, "database already specified"},		/* 738, gsec_db_specified */
-	{336724047, "database administrator name already specified"},		/* 739, gsec_db_admin_specified */
-	{336724048, "database administrator password already specified"},		/* 740, gsec_db_admin_pw_specified */
-	{336724049, "SQL role name already specified"},		/* 741, gsec_sql_role_specified */
-	{336789504, "The license file does not exist or could not be opened for read"},		/* 742, license_no_file */
-	{336789523, "operation already specified"},		/* 743, license_op_specified */
-	{336789524, "no operation specified"},		/* 744, license_op_missing */
-	{336789525, "invalid switch"},		/* 745, license_inv_switch */
-	{336789526, "invalid switch combination"},		/* 746, license_inv_switch_combo */
-	{336789527, "illegal operation/switch combination"},		/* 747, license_inv_op_combo */
-	{336789528, "ambiguous switch"},		/* 748, license_amb_switch */
-	{336789529, "invalid parameter, no switch specified"},		/* 749, license_inv_parameter */
-	{336789530, "switch does not take any parameter"},		/* 750, license_param_specified */
-	{336789531, "switch requires a parameter"},		/* 751, license_param_req */
-	{336789532, "syntax error in command line"},		/* 752, license_syntx_error */
-	{336789534, "The certificate was not added.  A duplicate ID exists in the license file."},		/* 753, license_dup_id */
-	{336789535, "The certificate was not added.  Invalid certificate ID / Key combination."},		/* 754, license_inv_id_key */
-	{336789536, "The certificate was not removed.  The key does not exist or corresponds to a temporary evaluation license."},		/* 755, license_err_remove */
-	{336789537, "An error occurred updating the license file.  Operation cancelled."},		/* 756, license_err_update */
-	{336789538, "The certificate could not be validated based on the information given.  Please recheck the ID and key information."},		/* 757, license_err_convert */
-	{336789539, "Operation failed.  An unknown error occurred."},		/* 758, license_err_unk */
-	{336789540, "Add license operation failed, KEY: %s ID: %s"},		/* 759, license_svc_err_add */
-	{336789541, "Remove license operation failed, KEY: %s"},		/* 760, license_svc_err_remove */
-	{336789563, "The evaluation license has already been used on this server.  You need to purchase a non-evaluation license."},		/* 761, license_eval_exists */
-	{336920577, "found unknown switch"},		/* 762, gstat_unknown_switch */
-	{336920578, "please retry, giving a database name"},		/* 763, gstat_retry */
-	{336920579, "Wrong ODS version, expected %d, encountered %d"},		/* 764, gstat_wrong_ods */
-	{336920580, "Unexpected end of database file."},		/* 765, gstat_unexpected_eof */
-	{336920605, "Can't open database file %s"},		/* 766, gstat_open_err */
-	{336920606, "Can't read a database page"},		/* 767, gstat_read_err */
-	{336920607, "System memory exhausted"},		/* 768, gstat_sysmemex */
+	{336397212, "Array and BLOB data types not allowed in computed field"},		/* 710, dsql_no_array_computed */
+	{336723983, "unable to open database"},		/* 711, gsec_cant_open_db */
+	{336723984, "error in switch specifications"},		/* 712, gsec_switches_error */
+	{336723985, "no operation specified"},		/* 713, gsec_no_op_spec */
+	{336723986, "no user name specified"},		/* 714, gsec_no_usr_name */
+	{336723987, "add record error"},		/* 715, gsec_err_add */
+	{336723988, "modify record error"},		/* 716, gsec_err_modify */
+	{336723989, "find/modify record error"},		/* 717, gsec_err_find_mod */
+	{336723990, "record not found for user: %s"},		/* 718, gsec_err_rec_not_found */
+	{336723991, "delete record error"},		/* 719, gsec_err_delete */
+	{336723992, "find/delete record error"},		/* 720, gsec_err_find_del */
+	{336723996, "find/display record error"},		/* 721, gsec_err_find_disp */
+	{336723997, "invalid parameter, no switch defined"},		/* 722, gsec_inv_param */
+	{336723998, "operation already specified"},		/* 723, gsec_op_specified */
+	{336723999, "password already specified"},		/* 724, gsec_pw_specified */
+	{336724000, "uid already specified"},		/* 725, gsec_uid_specified */
+	{336724001, "gid already specified"},		/* 726, gsec_gid_specified */
+	{336724002, "project already specified"},		/* 727, gsec_proj_specified */
+	{336724003, "organization already specified"},		/* 728, gsec_org_specified */
+	{336724004, "first name already specified"},		/* 729, gsec_fname_specified */
+	{336724005, "middle name already specified"},		/* 730, gsec_mname_specified */
+	{336724006, "last name already specified"},		/* 731, gsec_lname_specified */
+	{336724008, "invalid switch specified"},		/* 732, gsec_inv_switch */
+	{336724009, "ambiguous switch specified"},		/* 733, gsec_amb_switch */
+	{336724010, "no operation specified for parameters"},		/* 734, gsec_no_op_specified */
+	{336724011, "no parameters allowed for this operation"},		/* 735, gsec_params_not_allowed */
+	{336724012, "incompatible switches specified"},		/* 736, gsec_incompat_switch */
+	{336724044, "Invalid user name (maximum 31 bytes allowed)"},		/* 737, gsec_inv_username */
+	{336724045, "Warning - maximum 8 significant bytes of password used"},		/* 738, gsec_inv_pw_length */
+	{336724046, "database already specified"},		/* 739, gsec_db_specified */
+	{336724047, "database administrator name already specified"},		/* 740, gsec_db_admin_specified */
+	{336724048, "database administrator password already specified"},		/* 741, gsec_db_admin_pw_specified */
+	{336724049, "SQL role name already specified"},		/* 742, gsec_sql_role_specified */
+	{336789504, "The license file does not exist or could not be opened for read"},		/* 743, license_no_file */
+	{336789523, "operation already specified"},		/* 744, license_op_specified */
+	{336789524, "no operation specified"},		/* 745, license_op_missing */
+	{336789525, "invalid switch"},		/* 746, license_inv_switch */
+	{336789526, "invalid switch combination"},		/* 747, license_inv_switch_combo */
+	{336789527, "illegal operation/switch combination"},		/* 748, license_inv_op_combo */
+	{336789528, "ambiguous switch"},		/* 749, license_amb_switch */
+	{336789529, "invalid parameter, no switch specified"},		/* 750, license_inv_parameter */
+	{336789530, "switch does not take any parameter"},		/* 751, license_param_specified */
+	{336789531, "switch requires a parameter"},		/* 752, license_param_req */
+	{336789532, "syntax error in command line"},		/* 753, license_syntx_error */
+	{336789534, "The certificate was not added.  A duplicate ID exists in the license file."},		/* 754, license_dup_id */
+	{336789535, "The certificate was not added.  Invalid certificate ID / Key combination."},		/* 755, license_inv_id_key */
+	{336789536, "The certificate was not removed.  The key does not exist or corresponds to a temporary evaluation license."},		/* 756, license_err_remove */
+	{336789537, "An error occurred updating the license file.  Operation cancelled."},		/* 757, license_err_update */
+	{336789538, "The certificate could not be validated based on the information given.  Please recheck the ID and key information."},		/* 758, license_err_convert */
+	{336789539, "Operation failed.  An unknown error occurred."},		/* 759, license_err_unk */
+	{336789540, "Add license operation failed, KEY: %s ID: %s"},		/* 760, license_svc_err_add */
+	{336789541, "Remove license operation failed, KEY: %s"},		/* 761, license_svc_err_remove */
+	{336789563, "The evaluation license has already been used on this server.  You need to purchase a non-evaluation license."},		/* 762, license_eval_exists */
+	{336920577, "found unknown switch"},		/* 763, gstat_unknown_switch */
+	{336920578, "please retry, giving a database name"},		/* 764, gstat_retry */
+	{336920579, "Wrong ODS version, expected %d, encountered %d"},		/* 765, gstat_wrong_ods */
+	{336920580, "Unexpected end of database file."},		/* 766, gstat_unexpected_eof */
+	{336920605, "Can't open database file %s"},		/* 767, gstat_open_err */
+	{336920606, "Can't read a database page"},		/* 768, gstat_read_err */
+	{336920607, "System memory exhausted"},		/* 769, gstat_sysmemex */
 	{0, NULL}
 };

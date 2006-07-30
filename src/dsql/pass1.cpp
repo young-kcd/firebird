@@ -3230,21 +3230,21 @@ static dsql_nod* pass1_coalesce( dsql_req* request, dsql_nod* input, bool proc_f
 	dsql_nod* node = MAKE_node(nod_coalesce, 2);
 
 	// Pass list of arguments 2..n on stack and make a list from it
-	{
-	DsqlNodStack stack;
-	pass1_put_args_on_stack(request, input->nod_arg[0], stack, proc_flag);
-	pass1_put_args_on_stack(request, input->nod_arg[1], stack, proc_flag);
-	node->nod_arg[0] = MAKE_list(stack);
-	}
+	{ // scope
+		DsqlNodStack stack;
+		pass1_put_args_on_stack(request, input->nod_arg[0], stack, proc_flag);
+		pass1_put_args_on_stack(request, input->nod_arg[1], stack, proc_flag);
+		node->nod_arg[0] = MAKE_list(stack);
+	} // end scope
 
 	// Parse the items again for the return values.
 	// We can't copy else we get an 'context in use error' with sub-selects.
-	{
-	DsqlNodStack stack;
-	pass1_put_args_on_stack(request, input->nod_arg[0], stack, proc_flag);
-	pass1_put_args_on_stack(request, input->nod_arg[1], stack, proc_flag);
-	node->nod_arg[1] = MAKE_list(stack);
-	}
+	{ // scope
+		DsqlNodStack stack;
+		pass1_put_args_on_stack(request, input->nod_arg[0], stack, proc_flag);
+		pass1_put_args_on_stack(request, input->nod_arg[1], stack, proc_flag);
+		node->nod_arg[1] = MAKE_list(stack);
+	} // end scope
 
 	// Set descriptor for output node
 	MAKE_desc(request, &node->nod_desc, node, NULL);

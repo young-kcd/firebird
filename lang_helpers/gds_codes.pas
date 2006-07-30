@@ -742,6 +742,7 @@ const
 	gds_dsql_unknown_pos                 = 336397209;
 	gds_dsql_no_dup_name                 = 336397210;
 	gds_dsql_too_many_values             = 336397211;
+	gds_dsql_no_array_computed           = 336397212;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

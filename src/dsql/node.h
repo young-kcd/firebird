@@ -677,17 +677,17 @@ enum node_args {
 	e_join_boolean,
 	e_join_count,
 
-	e_via_rse = 0, 			//
+	e_via_rse = 0, 			// nod_via
 	e_via_value_1,
 	e_via_value_2,
 	e_via_count,
 
-	e_if_condition = 0,		//
+	e_if_condition = 0,		// nod_if
 	e_if_true,
 	e_if_false,
 	e_if_count,
 
-	e_while_cond = 0,		//
+	e_while_cond = 0,		// nod_while
 	e_while_action,
 	e_while_label,
 	e_while_count,
@@ -756,7 +756,7 @@ enum node_args {
 	e_ref_del,
 	e_ref_upd_del_count,
 
-	e_ref_trig_action_count = 0,	//
+	e_ref_trig_action_count = 0,	// nod_ref_trig_action
 
 	e_cnstr_table = 0,		// nod_def_constraint
 	e_cnstr_type,

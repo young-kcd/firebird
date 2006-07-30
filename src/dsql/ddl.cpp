@@ -751,17 +751,18 @@ static bool is_array_or_blob(const dsql_nod* node)
 	case nod_constant:
 	case nod_strlen:
 	case nod_null:
-	case nod_via:
 	case nod_substr:
 	case nod_internal_info:
-	case nod_coalesce:
 		return false;
 
+	case nod_via:
+		return is_array_or_blob(node->nod_arg[e_via_value_1]);
+		
 	case nod_map:
-	{
-		const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map];
-		return is_array_or_blob(map->map_node);
-	}
+		{
+			const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map];
+			return is_array_or_blob(map->map_node);
+		}
 
 	case nod_agg_max:
 	case nod_agg_min:
@@ -776,15 +777,12 @@ static bool is_array_or_blob(const dsql_nod* node)
 		return is_array_or_blob(node->nod_arg[0]);
 
 	case nod_cast:
-	{
-		const dsql_fld* fld = (dsql_fld*) node->nod_arg[e_cast_target];
-		if ((fld->fld_dtype == dtype_blob) ||
-			(fld->fld_dtype == dtype_array))
 		{
-			return true;
+			const dsql_fld* fld = (dsql_fld*) node->nod_arg[e_cast_target];
+			if (fld->fld_dtype == dtype_blob || fld->fld_dtype == dtype_array)
+				return true;
 		}
 		return is_array_or_blob(node->nod_arg[e_cast_source]);
-	}
 
 	case nod_add:
 	case nod_subtract:
@@ -805,34 +803,33 @@ static bool is_array_or_blob(const dsql_nod* node)
 		return is_array_or_blob(node->nod_arg[e_alias_value]);
 
 	case nod_udf:
-	{
-		const dsql_udf* userFunc = (dsql_udf*) node->nod_arg[0];
-		if ((userFunc->udf_dtype == dtype_blob) ||
-			(userFunc->udf_dtype == dtype_array))
 		{
-			return true;
+			const dsql_udf* userFunc = (dsql_udf*) node->nod_arg[0];
+			if (userFunc->udf_dtype == dtype_blob || userFunc->udf_dtype == dtype_array)
+				return true;
 		}
 		// parameters to UDF don't need checking, a blob or array can be passed
 		return false;
-	}
 
 	case nod_extract:
 	case nod_list:
-	{
-		const dsql_nod* const* const end = node->nod_arg + node->nod_count;
-		for (const dsql_nod* const* ptr = node->nod_arg; ptr < end; ++ptr)
 		{
-			if (is_array_or_blob(*ptr)) {
-				return true;
+			const dsql_nod* const* const end = node->nod_arg + node->nod_count;
+			for (const dsql_nod* const* ptr = node->nod_arg; ptr < end; ++ptr)
+			{
+				if (is_array_or_blob(*ptr)) {
+					return true;
+				}
 			}
 		}
-	}
-
 		return false;
 
 	case nod_field:
-		if ((node->nod_desc.dsc_dtype == dtype_blob) ||
-			(node->nod_desc.dsc_dtype == dtype_array))
+	case nod_coalesce:
+	case nod_simple_case:
+	case nod_searched_case:
+		if (node->nod_desc.dsc_dtype == dtype_blob || 
+			node->nod_desc.dsc_dtype == dtype_array)
 		{
 			return true;
 		}
@@ -1038,7 +1035,7 @@ static void define_computed(dsql_req* request,
 	if (is_array_or_blob(input))
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-				  isc_arg_gds, isc_dsql_no_blob_array, 0);
+				  isc_arg_gds, isc_dsql_no_array_computed, 0);
 	}
 
 
