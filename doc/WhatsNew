@@ -2,6 +2,12 @@
   * v2.0 Release Candidate 4
   **************************
 
+    * Fixed RC3 bug (CORE-883)
+        The built-in BLR printer (isc_print_blr) doesn't support all FB2 features
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
     * Fixed RC3 bug (CORE-841)
         Access violation in services API (CORE-841)
       Contributor(s):
