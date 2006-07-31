@@ -880,6 +880,10 @@
 				RelativePath="..\..\..\src\common\fb_exception.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\fb_string.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="JRD files"
