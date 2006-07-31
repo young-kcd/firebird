@@ -193,9 +193,9 @@ static const struct
 	{"user_savepoint", user_savepoint},
 	{"dcl_cursor", dcl_cursor},
 	{"cursor_stmt", cursor_stmt},
+	{"current_timestamp2", byte},
+	{"current_time2", byte},
 	// These verbs were added in 6.0, primarily to support 64-bit integers, now obsolete
-	{"agg_total_distinct2", one},
-	{"agg_average2", one},
 	{"agg_average_distinct2", one},	// 170
 	{"average2", two}, 
 	{"gen_id2", gen_id}, 
