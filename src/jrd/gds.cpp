@@ -3143,6 +3143,11 @@ static int blr_print_dtype(gds_ctl* control)
 		string = "varying2";
 		break;
 
+	case blr_blob2:
+		string = "blob2";
+		length = 8;
+		break;
+
 	default:
 		blr_error(control, "*** invalid data type ***");
 		break;
@@ -3179,6 +3184,11 @@ static int blr_print_dtype(gds_ctl* control)
 	case blr_cstring2:
 		blr_print_word(control);
 		length = blr_print_word(control);
+		break;
+
+	case blr_blob2:
+		blr_print_word(control);
+		blr_print_word(control);
 		break;
 
 	default:
