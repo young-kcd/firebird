@@ -25,13 +25,13 @@
 #define JRD_SCL_PROTO_H
 
 #include "../jrd/scl.h"
+#include "../common/classes/array.h"
 
 //namespace Jrd {
 //	class SecurityClass;
 //}
 
 struct dsc;
-typedef Firebird::Array<UCHAR> UCharBuffer;
 
 void SCL_check_access(const Jrd::SecurityClass*, SLONG, const Firebird::MetaName&,
 					  const Firebird::MetaName&, Jrd::SecurityClass::flags_t,
@@ -43,7 +43,7 @@ Jrd::SecurityClass* SCL_get_class(const TEXT*);
 Jrd::SecurityClass::flags_t SCL_get_mask(const TEXT*, const TEXT*);
 void SCL_init(bool, const TEXT*, const TEXT*, const TEXT*, const TEXT*,
 	const TEXT*, Jrd::thread_db*);
-void SCL_move_priv(UCHAR**, Jrd::SecurityClass::flags_t, UCharBuffer&, ULONG*);
+void SCL_move_priv(UCHAR**, Jrd::SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
 Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
 void SCL_release(Jrd::SecurityClass*);
 

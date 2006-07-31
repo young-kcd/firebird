@@ -54,6 +54,7 @@
 #include "../jrd/scl_proto.h"
 #include "../jrd/thd.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/array.h"
 
 using namespace Jrd;
 
@@ -79,19 +80,19 @@ static void define_default_class(thread_db*, const TEXT*, Firebird::MetaName&, c
 #ifdef NOT_USED_OR_REPLACED
 static void delete_security_class(thread_db*, const TEXT*);
 #endif
-static void finish_security_class(UCHAR**, SecurityClass::flags_t, UCharBuffer&, ULONG*);
+static void finish_security_class(UCHAR**, SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
 static void get_object_info(thread_db*, const TEXT*, SSHORT,
 							Firebird::MetaName&, Firebird::MetaName&, Firebird::MetaName&, bool&);
 static SecurityClass::flags_t get_public_privs(thread_db*, const TEXT*, SSHORT);
 static void get_user_privs(thread_db*, UCHAR**, const TEXT*, SSHORT, const Firebird::MetaName&,
-							SecurityClass::flags_t, UCharBuffer&, ULONG*);
+							SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
 static void grant_user(UCHAR**, const Firebird::MetaName&, SSHORT, SecurityClass::flags_t,
-						UCharBuffer&, ULONG*);
+						Firebird::UCharBuffer&, ULONG*);
 #ifdef NOT_USED_OR_REPLACED
-static void grant_views(TEXT**, SecurityClass::flags_t, UCharBuffer&, ULONG*);
+static void grant_views(TEXT**, SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
 static void purge_default_class(TEXT*, SSHORT);
 #endif
-static SecurityClass::flags_t save_field_privileges(thread_db*, UCharBuffer&, UCHAR**,
+static SecurityClass::flags_t save_field_privileges(thread_db*, Firebird::UCharBuffer&, UCHAR**,
 									const TEXT*, const Firebird::MetaName&, 
 									SecurityClass::flags_t, ULONG*);
 static void save_security_class(thread_db*, const Firebird::MetaName&, const UCHAR*, USHORT);
@@ -100,7 +101,7 @@ static SecurityClass::flags_t squeeze_acl(UCHAR*, UCHAR**, const Firebird::MetaN
 static bool check_string(const UCHAR*, const Firebird::MetaName&);
 
 
-void GRANT_realloc_acl(UCharBuffer&	start_ptr,
+void GRANT_realloc_acl(Firebird::UCharBuffer&	start_ptr,
 					  UCHAR**	write_ptr,
 					  ULONG*	buffer_length)
 {
@@ -170,8 +171,8 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 
 			/* start the acl off by giving the owner all privileges */
-			UCharBuffer str_buffer;
-			UCharBuffer str_default_buffer;
+			Firebird::UCharBuffer str_buffer;
+			Firebird::UCharBuffer str_default_buffer;
 
 			UCHAR* acl = str_buffer.getBuffer(ACL_BUFFER_SIZE);
 			str_default_buffer.getBuffer(ACL_BUFFER_SIZE);
@@ -367,7 +368,7 @@ static void delete_security_class( thread_db* tdbb, const TEXT* s_class)
 
 static void finish_security_class(UCHAR**	acl_ptr,
 								  SecurityClass::flags_t public_priv,
-								  UCharBuffer&	start_ptr,
+								  Firebird::UCharBuffer& start_ptr,
 								  ULONG*	length_ptr)
 {
 /**************************************
@@ -508,7 +509,7 @@ static void get_user_privs(thread_db*					tdbb,
 						   SSHORT						obj_type,
 						   const Firebird::MetaName&	owner,
 						   SecurityClass::flags_t		public_priv,
-						   UCharBuffer&					start_ptr,
+						   Firebird::UCharBuffer&		start_ptr,
 						   ULONG*						length_ptr)
 {
 /**************************************
@@ -578,7 +579,7 @@ static void grant_user(UCHAR**						acl_ptr,
 					   const Firebird::MetaName&	user,
 					   SSHORT						user_type,
 					   SecurityClass::flags_t		privs,
-					   UCharBuffer&					start_ptr,
+					   Firebird::UCharBuffer&		start_ptr,
 					   ULONG*						length_ptr)
 {
 /**************************************
@@ -640,7 +641,7 @@ static void grant_user(UCHAR**						acl_ptr,
 #ifdef NOT_USED_OR_REPLACED
 static void grant_views(
 						UCHAR** acl_ptr,
-						SecurityClass::flags_t privs, UCharBuffer& start_ptr,
+						SecurityClass::flags_t privs, Firebird::UCharBuffer& start_ptr,
 						ULONG* length_ptr)
 {
 /**************************************
@@ -715,7 +716,7 @@ static void purge_default_class( TEXT* object_name, SSHORT obj_type)
 
 
 static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
-									UCharBuffer&				str_relation_buffer,
+									Firebird::UCharBuffer&		str_relation_buffer,
 									UCHAR**						acl_ptr,
 									const TEXT*					relation_name,
 									const Firebird::MetaName&	owner,
@@ -735,8 +736,8 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
  *	security class to be effective.
  *
  **************************************/
-	UCharBuffer str_field_buffer;
-	UCharBuffer str_field_buffer_start;
+	Firebird::UCharBuffer str_field_buffer;
+	Firebird::UCharBuffer str_field_buffer_start;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;

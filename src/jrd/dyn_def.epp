@@ -177,7 +177,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 			USHORT attributes_on = 0;
 			USHORT attributes_off = 0;
 			SSHORT specific_attributes_charset = CS_NONE;
-			Firebird::Array<UCHAR> specific_attributes;
+			Firebird::UCharBuffer specific_attributes;
 
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -252,7 +252,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						{
 							if (info.specificAttributes.getCount() != 0)
 							{
-								Firebird::HalfStaticArray<UCHAR, 32> temp;
+								Firebird::UCharBuffer temp;
 								ULONG size = info.specificAttributes.getCount() * cs->maxBytesPerChar();
 
 								size = INTL_convert_bytes(tdbb, X.RDB$CHARACTER_SET_ID,
@@ -304,7 +304,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						{
 							if (specific_attributes.getCount() != 0)
 							{
-								Firebird::Array<UCHAR> temp;
+								Firebird::UCharBuffer temp;
 								ULONG size = specific_attributes.getCount() * cs->maxBytesPerChar();
 
 								size = INTL_convert_bytes(tdbb, X.RDB$CHARACTER_SET_ID,

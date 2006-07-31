@@ -723,7 +723,7 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool)
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, Firebird::Array<UCHAR>& array, size_t, bool err_flag)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t, bool err_flag)
 {
 /**************************************
  *

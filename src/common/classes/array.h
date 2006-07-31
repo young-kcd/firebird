@@ -312,7 +312,8 @@ public:
 		Array<T, InlineStorage<T, InlineCapacity> > (InitialCapacity) {}
 };
 
+typedef HalfStaticArray<UCHAR, 16> UCharBuffer;
+
 }	// namespace Firebird
 
 #endif // CLASSES_ARRAY_H
-

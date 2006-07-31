@@ -653,7 +653,7 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 
 		if (TTYPE_TO_CHARSET(tt_id) != CS_METADATA)
 		{
-			Firebird::HalfStaticArray<UCHAR, 32> specificAttributes;
+			Firebird::UCharBuffer specificAttributes;
 			ULONG size = info.specificAttributes.getCount() * charset->maxBytesPerChar();
 
 			size = INTL_convert_bytes(tdbb, TTYPE_TO_CHARSET(tt_id),

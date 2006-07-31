@@ -59,7 +59,7 @@ struct SubtypeInfo
 	Firebird::string baseCollationName;
 	USHORT attributes;
 	bool ignoreAttributes;
-	Firebird::HalfStaticArray<UCHAR, 32> specificAttributes;
+	Firebird::UCharBuffer specificAttributes;
 };
 
 void		MET_activate_shadow(Jrd::thread_db*);
