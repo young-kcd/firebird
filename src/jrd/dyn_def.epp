@@ -341,10 +341,10 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 				}
 
 				Firebird::string s = Firebird::IntlUtil::generateSpecificAttributes(cs->getObj(), map);
-				memcpy(specific_attributes.getBuffer(s.length()), s.begin(), s.length());
+				memcpy(info.specificAttributes.getBuffer(s.length()), s.begin(), s.length());
 			}
 			
-			if (specific_attributes.getCount() != 0)
+			if (info.specificAttributes.getCount() != 0)
 			{
 				X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
 
@@ -356,7 +356,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 				bpb[12] = CS_METADATA;				// to charset
 
 				blb* blob = BLB_create2(tdbb, gbl->gbl_transaction, &X.RDB$SPECIFIC_ATTRIBUTES, sizeof(bpb), bpb);
-				BLB_put_segment(tdbb, blob, specific_attributes.begin(), specific_attributes.getCount());
+				BLB_put_segment(tdbb, blob, info.specificAttributes.begin(), info.specificAttributes.getCount());
 				BLB_close(tdbb, blob);
 			}
 
