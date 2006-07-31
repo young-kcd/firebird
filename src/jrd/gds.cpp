@@ -3041,7 +3041,8 @@ static int blr_print_dtype(gds_ctl* control)
 
 	case blr_blob2:
 		blr_print_word(control);
-		length = blr_print_word(control);
+		blr_print_word(control);
+		length = 0;
 		break;
 	}
 
