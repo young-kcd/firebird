@@ -737,11 +737,11 @@ SOURCE=..\..\..\src\common\classes\alloc.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\fb_exception.cpp
+SOURCE=..\..\..\src\common\classes\fb_string.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\fb_string.cpp
+SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
 # Begin Source File
 
