@@ -3013,6 +3013,10 @@ static int blr_print_dtype(gds_ctl* control)
 		length = blr_print_word(control) + 2;
 		break;
 
+	case blr_cstring:
+		length = blr_print_word(control);
+		break;
+
 	case blr_short:
 	case blr_long:
 	case blr_quad:
@@ -3038,11 +3042,6 @@ static int blr_print_dtype(gds_ctl* control)
 	case blr_blob2:
 		blr_print_word(control);
 		length = blr_print_word(control);
-		break;
-
-	default:
-		if (dtype == blr_cstring)
-			length = blr_print_word(control);
 		break;
 	}
 

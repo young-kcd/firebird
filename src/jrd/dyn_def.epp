@@ -244,7 +244,6 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 					}
 
 					case isc_dyn_coll_from:
-					{
 						//// TODO: verify return value
 						MET_get_char_coll_subtype_info(tdbb, DYN_get_number(ptr), &info);
 
@@ -269,7 +268,6 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						strcpy(X.RDB$BASE_COLLATION_NAME, info.baseCollationName.c_str());
 
 						break;
-					}
 
 					case isc_dyn_coll_attribute:
 					{
@@ -299,7 +297,6 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						break;
 
 					case isc_dyn_coll_specific_attributes:
-					{
 						GET_STRING_2(ptr, specific_attributes);
 
 						fb_assert(cs);
@@ -320,7 +317,6 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						}
 
 						break;
-					}
 
 					default:
 						DYN_unsupported_verb();

@@ -2356,7 +2356,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_constant:
 	case nod_null:
-			name_alias = "CONSTANT";
+		name_alias = "CONSTANT";
 		break;
 	case nod_add:
 	case nod_add2:
