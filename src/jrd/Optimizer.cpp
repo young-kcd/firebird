@@ -1273,27 +1273,18 @@ RecordSource* OptimizerRetrieval::generateNavigation()
  * Functional description
  *
  **************************************/
+	fb_assert(sort);
 
-	// not sure the significance of this magic number; if it's meant to 
-	// signify that we shouldn't navigate on a system table, our catalog 
-	// has grown beyond 16 tables--it doesn't seem like a problem 
-	// to allow navigating through system tables, so I won't bump the 
-	// number up, but I'll leave it at 16 for safety's sake--deej
-	if (!sort || !(*sort) || (relation->rel_id <= 16)) {
+	jrd_nod* sortPtr = *sort;
+	if (!sortPtr) {
 		return NULL;
 	}
 
-	jrd_nod* sortPtr = *sort;
 	IndexScratch** indexScratch = indexScratches.begin();
 	int i = 0;
 	for (; i < indexScratches.getCount(); ++i) {
 
 		index_desc* idx = indexScratch[i]->idx;
-		
-		// Check sort order against index.  If they don't match, give up and
-		// go home.  Also don't bother if we have a non-unique index.
-		// This is because null values aren't placed in a "good" spot in
-		// the index in versions prior to V3.2.
 
 		// if the number of fields in the sort is greater than the number of 
 		// fields in the index, the index will not be used to optimize the    
@@ -1312,6 +1303,8 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 			continue;
 		}
 
+		// only a single-column ORDER BY clause can be mapped to
+		// an expression index
 		if (idx->idx_flags & idx_expressn)
 		{
 			if (sortPtr->nod_count != 1)
