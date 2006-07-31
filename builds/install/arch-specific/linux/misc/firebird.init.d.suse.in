@@ -101,8 +101,9 @@ case "$1" in
 	if [ -f $pidfile ]
 	then
 		kill `cat $pidfile`
+		sleep 1
 	fi
-					
+		
 
 	# Remember status and be verbose
 	rc_status -v
