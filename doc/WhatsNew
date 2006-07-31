@@ -2,6 +2,11 @@
   * v2.0 Release Candidate 4
   **************************
 
+    * Fixed RC3 bug (CORE-841)
+        Access violation in services API (CORE-841)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Fixed RC3 bug (CORE-879)
         Dependencies are not cleared when creation of expression index fails
       Contributor(s):
