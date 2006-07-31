@@ -2,6 +2,11 @@
   * v2.0 Release Candidate 4
   **************************
 
+    * Fixed unregistered bug
+        Service didn't restart correctly on SUSE Linux
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Fixed RC3 bug (CORE-855)
         Aggregates in the WHERE clause vs derived tables
       Contributor(s):
