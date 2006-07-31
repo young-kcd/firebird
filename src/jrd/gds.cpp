@@ -353,7 +353,7 @@ static const UCHAR
 	extract[]	= { op_line, op_byte, op_verb, 0},
 	user_savepoint[]	= { op_byte, op_byte, op_literal, op_line, 0},
 	exec_into[] = { op_word, op_line, op_indent, op_exec_into, 0},
-	dcl_cursor[] = { op_word, op_line, op_verb, 0},
+	dcl_cursor[] = { op_word, op_line, op_verb, op_indent, op_word, op_line, op_args, 0},
 	cursor_stmt[] = { op_cursor_stmt, 0 },
 	strlength[] = { op_byte, op_line, op_verb, 0},
 	trim[] = { op_byte, op_byte, op_line, op_verb, 0},
