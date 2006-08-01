@@ -1,3 +1,55 @@
+2006-07-31 20:32  hvlad
+
+	* firebird2/src/jrd/gds.cpp (1.204):
+	
+	Make blr_blob2 handling in blr printer consistent with other data
+	types
+
+2006-07-31 17:43  asfernandes
+
+	* firebird2/src/: common/classes/array.h (1.37), jrd/dyn.epp
+	(1.87), jrd/dyn.h (1.29), jrd/dyn_def.epp (1.126), jrd/grant.epp
+	(1.58), jrd/grant_proto.h (1.13), jrd/intl.cpp (1.87),
+	jrd/met_proto.h (1.53), jrd/scl.epp (1.74), jrd/scl_proto.h (1.23):
+	
+	Create common UCharBuffer based on Claudio and Alex suggestions
+
+2006-07-31 14:35  asfernandes
+
+	* firebird2/src/jrd/dyn_def.epp (1.125):
+	
+	Correction
+
+2006-07-31 10:46  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.64):
+	
+	Cleanup.
+
+2006-07-31 10:29  dimitr
+
+	* firebird2/src/jrd/blp.h (1.23):
+	
+	More adjustments to the BLR printer.
+
+2006-07-31 10:07  dimitr
+
+	* firebird2/src/jrd/: blp.h (1.22), gds.cpp (1.203):
+	
+	Updated the BLR printer to handle all FB2 features.
+
+2006-07-31 09:42  robocop
+
+	* firebird2/doc/sql.extensions/README.execute_statement (1.5):
+	
+	Misc, adding example.
+
+2006-07-31 08:33  hvlad
+
+	* firebird2/src/jrd/gds.cpp (1.202):
+	
+	Fixed error noted by Adriano
+
 2006-07-31 03:46  asfernandes
 
 	* firebird2/src/: dsql/make.cpp (1.118), jrd/dyn_def.epp (1.124),
