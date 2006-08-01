@@ -80,20 +80,20 @@ const int MAX_HEADER_SIZE	= 512;
 
 static inline int get(BurpGlobals* tdgbl)
 {
-	return (--(tdgbl->mvol_io_cnt) >= 0 ? *(tdgbl->mvol_io_ptr)++ : 255);
+	return (--tdgbl->mvol_io_cnt >= 0 ? *tdgbl->mvol_io_ptr++ : 255);
 }
 
 static inline void put(BurpGlobals* tdgbl, UCHAR c)
 {
-	--(tdgbl->mvol_io_cnt);
-	*(tdgbl->mvol_io_ptr)++ = c;
+	--tdgbl->mvol_io_cnt;
+	*tdgbl->mvol_io_ptr++ = c;
 }
 
 #ifdef DEBUG
 static UCHAR debug_on = 0;		// able to turn this on in debug mode 
 #endif
 
-static void  bad_attribute(USHORT, USHORT);
+static void  bad_attribute(int, USHORT);
 static void  file_not_empty(void);
 static SLONG get_numeric(void);
 static int   get_text(UCHAR*, SSHORT);
@@ -748,7 +748,7 @@ const UCHAR *MVOL_write_block(BurpGlobals* tdgbl, const UCHAR * ptr, ULONG count
 // We ran into an unsupported attribute.  This shouldn't happen,
 // but it isn't the end of the world.
 //
-static void bad_attribute(USHORT attribute, USHORT type)
+static void bad_attribute(int attribute, USHORT type)
 {
 	TEXT name[128];
 
@@ -757,7 +757,7 @@ static void bad_attribute(USHORT attribute, USHORT type)
 	gds__msg_format(0, 12, type, sizeof(name), name, 0, 0, 0, 0, 0);
 	BURP_print(80, name, (void*) (IPTR) attribute, NULL, NULL, NULL);
 	// msg 80  don't recognize %s attribute %ld -- continuing 
-	SSHORT l = get(tdgbl);
+	int l = get(tdgbl);
 	if (l)
 	{
 		do {
@@ -1119,7 +1119,7 @@ static bool read_header(DESC	handle,
 		BURP_error_redirect(0, 45, NULL, NULL);
 		// msg 45 expected backup description record 
 
-	SSHORT l;
+	int l, maxlen;
 	int temp;
 	TEXT* p;
 	for (attribute = get(tdgbl); attribute != att_end; attribute = get(tdgbl))
@@ -1143,15 +1143,26 @@ static bool read_header(DESC	handle,
 		case att_backup_date:
 			l = get(tdgbl);
 			if (init_flag)
+			{
 				p = tdgbl->gbl_backup_start_time;
+				maxlen = sizeof(tdgbl->gbl_backup_start_time) - 1;
+			}
 			else
+			{
 				p = buffer;
+				maxlen = sizeof(buffer) - 1;
+			}
 			if (l)
 			{
-				// B.O.
 				do {
 					*p++ = get(tdgbl);
-				} while (--l);
+				} while (--l && --maxlen);
+				// Discard elements that don't fit in the buffer, possible corrupt backup
+				if (l > 0 && !maxlen)
+				{
+					while (l--)
+						get(tdgbl);
+				}
 			}
 			*p = 0;
 			if (!init_flag && strcmp(buffer, tdgbl->gbl_backup_start_time))
@@ -1169,17 +1180,24 @@ static bool read_header(DESC	handle,
 			if (init_flag)
 			{
 				p = tdgbl->mvol_db_name_buffer;
+				maxlen = sizeof(tdgbl->mvol_db_name_buffer) - 1;
 			}
 			else
 			{
 				p = buffer;
+				maxlen = sizeof(buffer) - 1;
 			}
 			if (l)
 			{
-				// B.O.
 				do {
 					*p++ = get(tdgbl);
-				} while (--l);
+				} while (--l && --maxlen);
+				// Discard elements that don't fit in the buffer, possible corrupt backup
+				if (l > 0 && !maxlen)
+				{
+					while (l--)
+						get(tdgbl);
+				}
 			}
 			*p = 0;
 			if (!init_flag && strcmp(buffer, tdgbl->gbl_database_file_name))
@@ -1224,9 +1242,7 @@ static bool read_header(DESC	handle,
 			break;
 
 		default:
-			// TMN: Here we should really have the following assert 
-			// fb_assert(attribute <= MAX_USHORT); 
-			bad_attribute((USHORT) attribute, 59);	// msg 59 backup 
+			bad_attribute(attribute, 59);	// msg 59 backup
 		}
 	}
 
