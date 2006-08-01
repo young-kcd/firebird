@@ -1,3 +1,60 @@
+2006-07-31 21:08  hvlad
+
+	* firebird2/src/jrd/gds.cpp (1.193.2.2):
+	
+	Updated the BLR printer to handle all FB2 features.
+
+2006-07-31 15:34  alexpeshkoff
+
+	* firebird2/doc/WhatsNew (1.95.2.14):
+	
+	misc
+
+2006-07-31 15:22  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.s
+	use.in (1.4.4.3):
+	
+	minimal fix for SUSE problems with restart
+
+2006-07-31 12:06  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.13):
+	
+	Updated docs.
+
+2006-07-31 11:38  arnobrinkman
+
+	* firebird2/src/dsql/pass1.cpp (1.260.2.2):
+	
+	Fix JIRA bug CORE-855 Aggregates on derived fields where allowed in
+	where clause
+
+2006-07-31 10:15  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.12):
+	
+	Updated docs.
+
+2006-07-31 10:00  dimitr
+
+	* firebird2/src/jrd/: blp.h (1.20.4.1), gds.cpp (1.193.2.1):
+	
+	Updated the BLR printer to handle all FB2 features.
+
+2006-07-31 09:43  alexpeshkoff
+
+	* firebird2/doc/WhatsNew (1.95.2.11):
+	
+	update info
+
+2006-07-31 09:43  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.166.2.4):
+	
+	Fixed bug CORE-841
+
 2006-07-29 09:49  dimitr
 
 	* firebird2/doc/WhatsNew (1.95.2.10):
