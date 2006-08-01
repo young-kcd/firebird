@@ -2787,7 +2787,12 @@ static void gen_udf( dsql_req* request, const dsql_nod* node)
  **/
 static void gen_union( dsql_req* request, const dsql_nod* union_node)
 {
-	stuff(request, blr_union);
+	if (union_node->nod_arg[0]->nod_flags & NOD_UNION_RECURSIVE) {
+		stuff(request, blr_recurse);
+	}
+	else {
+		stuff(request, blr_union);
+	}
 
 // Obtain the context for UNION from the first dsql_map* node
 	dsql_nod* items = union_node->nod_arg[e_rse_items];

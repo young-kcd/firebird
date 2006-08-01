@@ -391,7 +391,10 @@ public:
 		req_dt_context(p), 
 		req_blr_data(p),
 		req_labels(p), 
-		req_cursors(p) { }
+		req_cursors(p),
+		req_ctes(p),
+		req_cte_aliases(p),
+		req_curr_ctes(p) { }
 
 	dsql_req*	req_parent;		//!< Source request, if cursor update
 	dsql_req*	req_sibling;	//!< Next sibling request, if cursor update
@@ -449,10 +452,42 @@ public:
 	USHORT	req_in_outer_join;	//!< processing inside outer-join part
 	dsql_str*		req_alias_relation_prefix;	//!< prefix for every relation-alias.
 
+	void addCTEs(dsql_nod* list);
+	dsql_nod* findCTE(const dsql_str* name);
+	void clearCTEs();
+
+	// hvlad: each member of recursive CTE can refer to CTE itself (only once) via 
+	// CTE name or via alias. We need to substitute this aliases when processing CTE 
+	// member to resolve field names. Therefore we store all aliases in order of 
+	// occurence and later use it in backward order (since our parser is right-to-left). 
+	// We also need to repeat this process if main select expression contains union with 
+	// recursive CTE
+	void addCTEAlias(const dsql_str* alias) 
+	{
+		req_cte_aliases.add(alias);
+	}
+	const dsql_str* getNextCTEAlias()
+	{
+		return *(--req_curr_cte_alias);
+	}
+	void resetCTEAlias()
+	{
+		req_curr_cte_alias = req_cte_aliases.end();
+	}
+
+	DsqlNodStack req_curr_ctes;			// current processing CTE's
+	class dsql_ctx* req_recursive_ctx;	// context of recursive CTE
+	USHORT  req_recursive_ctx_id;		// id of recursive union stream context
+
 private:
 	// Request should never be destroyed using delete.
 	// It dies together with it's pool in release_request().
 	~dsql_req();
+
+	Firebird::HalfStaticArray<dsql_nod*, 4> req_ctes; // common table expressions
+	Firebird::HalfStaticArray<const dsql_str*, 4> req_cte_aliases; // CTE aliases in recursive members
+	const dsql_str* const* req_curr_cte_alias;
+
 	// To avoid posix warning about missing public destructor declare 
 	// MemoryPool as friend class. In fact IT releases request memory!
 	friend class MemoryPool;
@@ -474,7 +509,8 @@ enum req_flags_vals {
 	REQ_blr_version4		= 1024,
 	REQ_blr_version5		= 2048,
 	REQ_block				= 4096,
-	REQ_selectable			= 8192
+	REQ_selectable			= 8192,
+	REQ_CTE_recursive		= 16384
 };
 
 //! Blob

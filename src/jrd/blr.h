@@ -337,5 +337,6 @@
 
 /* Source code line and column numbers */
 #define blr_src_info		(unsigned char)184
+#define blr_recurse			(unsigned char)185
 
 #endif /* JRD_BLR_H */

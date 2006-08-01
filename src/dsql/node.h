@@ -342,8 +342,9 @@ enum nod_t
 	nod_redef_trigger, // 270
 	nod_tra_misc,
 	nod_lock_timeout,
-	nod_agg_list, 
-	nod_src_info
+	nod_agg_list,
+	nod_src_info,
+	nod_with
 };
 
 typedef nod_t NOD_TYPE;
@@ -370,6 +371,7 @@ enum nod_flags_vals {
 	NOD_AGG_DISTINCT		= 1, // nod_agg_...
 
 	NOD_UNION_ALL			= 1, // nod_list
+	NOD_UNION_RECURSIVE 	= 2,
 
 	NOD_READ_ONLY			= 1, // nod_access
 	NOD_READ_WRITE			= 2,
@@ -406,6 +408,7 @@ enum nod_flags_vals {
 
 	NOD_SELECT_EXPR_SINGLETON	= 1, // nod_select_expr
 	NOD_SELECT_EXPR_VALUE		= 2,
+	NOD_SELECT_EXPR_RECURSIVE	= 4, // recursive member of recursive CTE
 
 	NOD_CURSOR_EXPLICIT		= 1, // nod_cursor
 	NOD_CURSOR_FOR			= 2,
@@ -579,6 +582,7 @@ enum node_args {
 	e_sel_query_spec = 0,	// nod_select_expr
 	e_sel_order,
 	e_sel_rows,
+	e_sel_with_list,
 	e_sel_count,
 
 	e_qry_limit = 0,		// nod_query_spec

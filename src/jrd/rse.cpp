@@ -207,6 +207,10 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 			}
 			break;
 
+		case rsb_recurse:
+			RSBRecurse::close(tdbb, rsb, (irsb_recurse*)impure);
+			return;
+
 		case rsb_ext_sequential:
 		case rsb_ext_indexed:
 		case rsb_ext_dbkey:
@@ -487,6 +491,10 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 				rsb = rsb->rsb_arg[0];
 			}
 			break;
+
+		case rsb_recurse:
+			RSBRecurse::open(tdbb, rsb, (irsb_recurse*)impure);
+			return;
 
 		case rsb_aggregate:
 			((IRSB) impure)->irsb_count = 3;
@@ -2329,6 +2337,11 @@ static bool get_record(thread_db*	tdbb,
 			return false;
 		break;
 
+	case rsb_recurse:
+		if (!RSBRecurse::get(tdbb, rsb, (irsb_recurse*)impure))
+			return false;
+		break;
+
 	case rsb_aggregate:
 		if ( (impure->irsb_count = EVL_group(tdbb, rsb->rsb_next,
 										   (jrd_nod*) rsb->rsb_arg[0],
@@ -2973,6 +2986,7 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 	case rsb_ext_dbkey:
 	case rsb_navigate:
 	case rsb_union:
+	case rsb_recurse:
 	case rsb_aggregate:
 		{
 			record_param* rpb = request->req_rpb + rsb->rsb_stream;
@@ -3086,6 +3100,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 	case rsb_ext_dbkey:
 	case rsb_navigate:
 	case rsb_union:
+	case rsb_recurse:
 	case rsb_aggregate:
 		{
 			record_param* rpb = request->req_rpb + rsb->rsb_stream;
@@ -3403,4 +3418,176 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 					 mfb->mfb_block_size * block,
 					 mfb->mfb_block_data,
 					 mfb->mfb_block_size);
+}
+
+
+// hvlad: 
+// values of rsb_arg's:
+//	0 - 1st stream 
+//	1 - 1st stream map
+//	2 - 2nd stream 
+//	3 - 2nd stream map
+//	4 - count of the streams that make up the union 
+//	5..5+rsb_arg[4]-1	- numbers of the streams that make up the union 
+//	5+rsb_arg[4]		- inner impure area size
+void RSBRecurse::open(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
+{
+	SET_TDBB(tdbb);
+	jrd_req* request = tdbb->tdbb_request;
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+	VIO_record(tdbb, rpb, rsb->rsb_format, request->req_pool);
+
+	// Set up our instance data
+	irsb->irsb_mode  = root;
+	irsb->irsb_level = 1;
+	irsb->irsb_stack = NULL;
+	irsb->irsb_data  = NULL;
+
+	// Initialize the record number for both <root> and <child> stream
+	const USHORT streams = (USHORT) (U_IPTR) rsb->rsb_arg[rsb->rsb_count];
+	RecordSource **ptr = rsb->rsb_arg + rsb->rsb_count + 1;
+	const RecordSource *const *end = ptr + streams;
+	for (; ptr < end; ptr++) 
+	{
+		const USHORT stream = (USHORT) (U_IPTR) *ptr;
+		request->req_rpb[stream].rpb_number.setValue(BOF_NUMBER);
+	}
+	RSE_open(tdbb, rsb->rsb_arg[0]);
+}
+
+
+bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
+{
+	SET_TDBB(tdbb);
+	jrd_req* request = tdbb->tdbb_request;
+
+	const USHORT streams = (USHORT) (U_IPTR) rsb->rsb_arg[rsb->rsb_count];
+	const ULONG inner_size = (ULONG) (U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1]; 
+	const ULONG rpbs_size = sizeof(record_param) * streams;
+	RecordSource **rsb_ptr;
+ 
+	switch (irsb->irsb_mode) 
+	{
+	case root:
+		rsb_ptr = &rsb->rsb_arg[0];
+		break;
+
+	case recurse:
+		{
+			// Stop infinite recursion of bad queries 
+			if (irsb->irsb_level > MAX_RECURSE_LEVEL)
+				ERR_post(isc_req_max_clones_exceeded, 0);
+
+			// Save where we are
+			char *tmp = FB_NEW(*request->req_pool) char[inner_size + rpbs_size];
+			memcpy(tmp, irsb, inner_size);
+
+			char *p = tmp + inner_size;
+			RecordSource **ptr = rsb->rsb_arg + rsb->rsb_count + 1;
+			const RecordSource *const *end = ptr + streams;
+			for (; ptr < end; ptr++) 
+			{
+				const record_param* rpb = request->req_rpb + (USHORT) (U_IPTR) *ptr;
+				memmove(p, rpb, sizeof(record_param));
+				p += sizeof(record_param);
+			}
+			irsb->irsb_stack = tmp;
+
+			Record* record = request->req_rpb[rsb->rsb_stream].rpb_record;
+			irsb->irsb_data = FB_NEW(*request->req_pool) char[record->rec_length]; 
+			memcpy(irsb->irsb_data, record->rec_data, record->rec_length);
+
+			// (Re-)Open a new child stream & reset record number
+			rsb_ptr = &rsb->rsb_arg[2];
+			if (irsb->irsb_level > 1) {
+				RSE_close(tdbb, *rsb_ptr);
+			}
+
+			irsb_recurse r = *irsb;
+			memset(irsb, 0, inner_size);
+			*irsb = r;
+
+			RSE_open(tdbb, *rsb_ptr);
+
+			irsb->irsb_level++;
+		}
+		break;
+
+	default:
+		fb_assert(false);
+	}
+
+	// Get the data -- if there is none go back one level and when
+	// there isn't a previous level, we're done
+	while (!get_record(tdbb, *rsb_ptr, NULL, RSE_get_forward))
+	{
+		if (irsb->irsb_level == 1) 
+		{
+			return false;
+		}
+		else 
+		{
+			RSE_close(tdbb, *rsb_ptr);
+			delete[] irsb->irsb_data;
+
+			char* tmp = irsb->irsb_stack;
+			memcpy(irsb, tmp, inner_size);
+
+			char* p = tmp + inner_size;
+			RecordSource **ptr = rsb->rsb_arg + rsb->rsb_count + 1;
+			const RecordSource *const *end = ptr + streams;
+			for (; ptr < end; ptr++) 
+			{
+				record_param* rpb = request->req_rpb + (USHORT) (U_IPTR) *ptr;
+				memmove(rpb, p, sizeof(record_param));
+				p += sizeof(record_param);
+			}
+			delete[] tmp;
+		}
+
+		if (irsb->irsb_level > 1) 
+		{
+			rsb_ptr = &rsb->rsb_arg[2];
+
+			// Reset our record data so that recursive WHERE clauses work
+			Record* record = request->req_rpb[rsb->rsb_stream].rpb_record;
+			memcpy(record->rec_data, irsb->irsb_data, record->rec_length);
+		}
+		else 
+		{
+			rsb_ptr = &rsb->rsb_arg[0];
+		}
+	}
+	irsb->irsb_mode = recurse;
+
+	// We've got a record, map it into the target record
+	jrd_nod *map = (jrd_nod*) rsb_ptr[1]; 
+	jrd_nod **ptr = map->nod_arg; 
+	const jrd_nod *const *end = ptr + map->nod_count;
+	for (; ptr < end; ptr++) {
+		EXE_assignment(tdbb, *ptr);
+	}
+
+	return true;
+}
+
+
+void RSBRecurse::close(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
+{
+	SET_TDBB(tdbb);
+	jrd_req* request = tdbb->tdbb_request;
+	const USHORT streams = (USHORT) (U_IPTR) rsb->rsb_arg[rsb->rsb_count];
+	const ULONG inner_size = (ULONG) (U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1]; 
+
+	while (irsb->irsb_level > 1) 
+	{
+		RSE_close(tdbb, rsb->rsb_arg[2]);
+
+		delete[] irsb->irsb_data;
+
+		char* tmp = irsb->irsb_stack;
+		memcpy(irsb, tmp, inner_size);
+		delete[] tmp;
+	}
+    RSE_close(tdbb, rsb->rsb_arg[0]);
 }

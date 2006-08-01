@@ -213,6 +213,7 @@ static const struct
 	{"strlen", strlength},
 	{"trim", trim},
 	{"src_info", src_info},
+	{"recurse", union_ops},
 	{0, 0}
 };
 

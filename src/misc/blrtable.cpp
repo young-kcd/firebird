@@ -167,6 +167,7 @@ static const VERB verbs[] =
 
 	PAIR(nod_map, blr_map, 0, 0, OTHER, OTHER),
 	PAIR(nod_union, blr_union, 0, 0, RELATION, OTHER),
+	PAIR(nod_union, blr_recurse, 0, 0, RELATION, OTHER),
 	PAIR(nod_aggregate, blr_aggregate, e_agg_length, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_relation, 0, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_rid, 0, 0, RELATION, OTHER),

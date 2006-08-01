@@ -246,6 +246,7 @@ static const TOK tokens[] =
 	{REAL, "REAL", 1, false},
 	{VERSION, "RECORD_VERSION", 1, false},
 	{RECREATE, "RECREATE", 2, false},
+	{RECURSIVE, "RECURSIVE", 2, false},
 	{REFERENCES, "REFERENCES", 1, false},
 	{RELEASE, "RELEASE", 2, false},
 	{REQUESTS, "REQUESTS", 2, true},

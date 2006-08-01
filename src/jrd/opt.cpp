@@ -2489,6 +2489,10 @@ static bool dump_rsb(const jrd_req* request,
 		*buffer++ = isc_info_rsb_union;
 		break;
 
+	case rsb_recurse:
+		*buffer++ = isc_info_rsb_recursive;
+		break;
+
 	case rsb_aggregate:
 		*buffer++ = isc_info_rsb_aggregate;
 		break;
@@ -2545,6 +2549,7 @@ static bool dump_rsb(const jrd_req* request,
 		break;
 
 	case rsb_union:
+	case rsb_recurse:
 		*buffer++ = rsb->rsb_count / 2;
 		ptr = rsb->rsb_arg;
 		for (end = ptr + rsb->rsb_count; ptr < end; ptr++) {
@@ -3497,6 +3502,7 @@ static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb
 
 	switch (rsb->rsb_type) {
 		case rsb_union:
+		case rsb_recurse: 
 		case rsb_aggregate:
 		case rsb_procedure:
 			if (rsb_list) {
@@ -3572,6 +3578,7 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 		case rsb_procedure:
 		case rsb_sequential:
 		case rsb_union:
+		case rsb_recurse:
 			stream = rsb->rsb_stream;
 			found = true;
 			break;
@@ -5703,13 +5710,23 @@ static RecordSource* gen_union(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	jrd_nod* clauses = union_node->nod_arg[e_uni_clauses];
 	const USHORT count = clauses->nod_count;
+	const bool recurse = (union_node->nod_flags & nod_recurse);
 	CompilerScratch* csb = opt->opt_csb;
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), count + nstreams + 1) RecordSource();
-	rsb->rsb_type = rsb_union;
+	RecordSource* rsb = 
+		FB_NEW_RPT(*tdbb->getDefaultPool(), count + nstreams + 1 + (recurse ? 1 : 0)) RecordSource();
+	if (recurse)
+	{
+		rsb->rsb_type   = rsb_recurse;
+		rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb_recurse));
+	}
+	else 
+	{
+		rsb->rsb_type   = rsb_union;
+		rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
+	}
 	rsb->rsb_count = count;
 	rsb->rsb_stream = (UCHAR)(IPTR) union_node->nod_arg[e_uni_stream];
 	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
-	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
 	RecordSource** rsb_ptr = rsb->rsb_arg;
 	jrd_nod** ptr = clauses->nod_arg;
 	for (const jrd_nod* const* const end = ptr + count; ptr < end;) {
@@ -5719,11 +5736,22 @@ static RecordSource* gen_union(thread_db* tdbb,
 
 		// AB: Try to distribute booleans from the top rse for an UNION to
 		// the WHERE clause of every single rse.
+		// hvlad: don't do it for recursive unions else they will work wrong !
 		NodeStack deliverStack;
-		gen_deliver_unmapped(tdbb, &deliverStack, map, parent_stack, shellStream);
+		if (!recurse) {
+			gen_deliver_unmapped(tdbb, &deliverStack, map, parent_stack, shellStream);
+		}
 
 		*rsb_ptr++ = OPT_compile(tdbb, csb, rse, &deliverStack);
 		*rsb_ptr++ = (RecordSource*) map;
+
+		// hvlad: activate recursive union itself after processing first (non-recursive)
+		// member to allow recursive members be optimized
+		if (recurse)
+		{
+			const SSHORT stream = (USHORT)(IPTR) union_node->nod_arg[STREAM_INDEX(union_node)];
+			csb->csb_rpt[stream].csb_flags |= csb_active;
+		}
 	}
 
 /* Save the count and numbers of the streams that make up the union */
@@ -5731,6 +5759,11 @@ static RecordSource* gen_union(thread_db* tdbb,
 	*rsb_ptr++ = (RecordSource*)(IPTR) nstreams;
 	while (nstreams--) {
 		*rsb_ptr++ = (RecordSource*)(IPTR) *streams++;
+	}
+
+	// hvlad: save size of inner impure area for recursive processing later
+	if (recurse) {
+		*rsb_ptr = (RecordSource*)(IPTR) (csb->csb_impure - rsb->rsb_impure);
 	}
 	return rsb;
 }

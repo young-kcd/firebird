@@ -2856,6 +2856,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node = PAR_make_node(tdbb, e_uni_length);
 		node->nod_type = input->nod_type;
 		node->nod_count = 2;
+		node->nod_flags = input->nod_flags;
 		stream = (USHORT)(IPTR) input->nod_arg[e_uni_stream];
 		fb_assert(stream <= MAX_STREAMS);
 		new_stream = csb->nextStream();

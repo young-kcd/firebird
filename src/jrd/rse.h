@@ -75,7 +75,8 @@ enum rsb_t
 	rsb_navigate,						// navigational walk on an index
 	rsb_left_cross,						// left outer join as a nested loop
 	rsb_procedure,						// stored procedure
-	rsb_virt_sequential					// sequential access to a virtual table
+	rsb_virt_sequential,					// sequential access to a virtual table
+	rsb_recurse						// Recursive union
 };
 
 
@@ -155,6 +156,23 @@ struct merge_file {
 
 const ULONG MERGE_BLOCK_SIZE	= 65536;
 
+// forward declaration
+struct irsb_recurse;
+
+class RSBRecurse
+{
+public:
+	static void open(thread_db*, RecordSource*, irsb_recurse*);
+	static bool get(thread_db*, RecordSource*, irsb_recurse*);
+	static void close(thread_db*, RecordSource*, irsb_recurse*);
+	
+	enum mode { 
+		root, 
+		recurse
+	};
+
+	static const USHORT MAX_RECURSE_LEVEL = 1024;
+};
 
 // Impure area formats for the various RecordSource types
 
@@ -164,6 +182,14 @@ struct irsb {
 };
 
 typedef irsb *IRSB;
+
+struct irsb_recurse {
+	ULONG	irsb_flags;
+	USHORT	irsb_level;
+	RSBRecurse::mode irsb_mode;
+	char*	irsb_stack;
+	char*	irsb_data;
+};
 
 struct irsb_first_n {
 	ULONG irsb_flags;

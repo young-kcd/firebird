@@ -89,7 +89,7 @@ public:
 	jrd_nod*	nod_parent;
 	SLONG	nod_impure;			/* Inpure offset from request block */
 	NOD_T	nod_type;				/* Type of node */
-	UCHAR	nod_flags;
+	USHORT	nod_flags;
 	SCHAR	nod_scale;			/* Target scale factor */
 	USHORT	nod_count;			/* Number of arguments */
 };
@@ -120,6 +120,7 @@ const int nod_value		= 16;		/* full value area required in impure space */
 const int nod_deoptimize	= 32;	/* boolean which requires deoptimization */
 const int nod_agg_dbkey	= 64;		/* dbkey of an aggregate */
 const int nod_invariant	= 128;		/* node is recognized as being invariant */
+const int nod_recurse	= 256;		/* union node is a recursive union */
 
 
 /* Special RecordSelExpr node */

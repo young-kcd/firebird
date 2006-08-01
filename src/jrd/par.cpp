@@ -2656,6 +2656,11 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		node = par_union(tdbb, csb);
 		break;
 
+	case blr_recurse:
+		node = par_union(tdbb, csb);
+		node->nod_flags |= nod_recurse;
+		break;
+
 	case blr_aggregate:
 		node->nod_arg[e_agg_stream] = (jrd_nod*) (IPTR) par_context(csb, 0);
 		fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);

@@ -2818,6 +2818,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "src_info"; 
 		break;
 
+	case nod_with:
+		verb = "with";
+		break;
+
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);
 		verb = s;
@@ -3892,6 +3896,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			   we will know where to put the parentheses */
 
 		case isc_info_rsb_union:
+		case isc_info_rsb_recursive:
 
 			// put out all the substreams of the join 
 			{ // scope to have union_count, union_level and union_join_count local.
