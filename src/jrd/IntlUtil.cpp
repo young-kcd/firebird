@@ -85,7 +85,7 @@ bool IntlUtil::parseSpecificAttributes(
 	// Old attributes will be combined with the new ones.
 
 	const UCHAR* p = s;
-	const UCHAR* end = s + len;
+	const UCHAR* const end = s + len;
 	ULONG size = 0;
 
 	readChar(cs, &p, end, &size);
@@ -113,7 +113,8 @@ bool IntlUtil::parseSpecificAttributes(
 
 			if (uSize == INTL_BAD_STR_LENGTH)
 				return false;
-			else if (uSize == 2 &&
+				
+			if (uSize == 2 &&
 					 ((*(USHORT*)uc >= 'A' && *(USHORT*)uc <= 'Z') ||
 					  (*(USHORT*)uc >= 'a' && *(USHORT*)uc <= 'z') ||
 					  *(USHORT*)uc == '-' || *(USHORT*)uc == '_'))
@@ -158,7 +159,8 @@ bool IntlUtil::parseSpecificAttributes(
 
 			if (uSize == INTL_BAD_STR_LENGTH)
 				return false;
-			else if (uSize != 2 || *(USHORT*)uc != ';')
+				
+			if (uSize != 2 || *(USHORT*)uc != ';')
 			{
 				if (!readChar(cs, &p, end, &size))
 					break;
