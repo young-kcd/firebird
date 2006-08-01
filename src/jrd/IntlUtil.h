@@ -38,18 +38,23 @@ namespace Firebird {
 class IntlUtil
 {
 public:
-	typedef Firebird::Pair<Firebird::Full<
-		Firebird::string, Firebird::string> > SpecificAttribute;
-	typedef Firebird::GenericMap<SpecificAttribute> SpecificAttributesMap;
+	typedef Pair<Full<string, string> > SpecificAttribute;
+	typedef GenericMap<SpecificAttribute> SpecificAttributesMap;
 
 public:
-	static Firebird::string generateSpecificAttributes(
+	static string generateSpecificAttributes(
 		charset* cs, SpecificAttributesMap& map);
 	static bool parseSpecificAttributes(
 		charset* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map);
 
 private:
-	static bool readChar(charset* cs, const UCHAR** s, const UCHAR* end, ULONG* size);
+	static string escapeAttribute(charset* cs, const string& s);
+	static string unescapeAttribute(charset* cs, const string& s);
+
+	static bool isAttributeEscape(charset* cs, const UCHAR* s, ULONG size);
+
+	static bool readAttributeChar(charset* cs, const UCHAR** s, const UCHAR* end, ULONG* size, bool returnEscape);
+	static bool readOneChar(charset* cs, const UCHAR** s, const UCHAR* end, ULONG* size);
 };
 
 }	// namespace Firebird
