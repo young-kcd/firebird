@@ -75,8 +75,8 @@ enum rsb_t
 	rsb_navigate,						// navigational walk on an index
 	rsb_left_cross,						// left outer join as a nested loop
 	rsb_procedure,						// stored procedure
-	rsb_virt_sequential,					// sequential access to a virtual table
-	rsb_recurse						// Recursive union
+	rsb_virt_sequential,				// sequential access to a virtual table
+	rsb_recurse							// Recursive union
 };
 
 

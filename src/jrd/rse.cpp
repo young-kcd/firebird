@@ -3444,12 +3444,12 @@ void RSBRecurse::open(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 	irsb->irsb_data  = NULL;
 
 	// Initialize the record number for both <root> and <child> stream
-	const USHORT streams = (USHORT) (U_IPTR) rsb->rsb_arg[rsb->rsb_count];
-	RecordSource **ptr = rsb->rsb_arg + rsb->rsb_count + 1;
-	const RecordSource *const *end = ptr + streams;
+	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
+	RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
+	const RecordSource* const* end = ptr + streams;
 	for (; ptr < end; ptr++) 
 	{
-		const USHORT stream = (USHORT) (U_IPTR) *ptr;
+		const USHORT stream = (USHORT)(U_IPTR) *ptr;
 		request->req_rpb[stream].rpb_number.setValue(BOF_NUMBER);
 	}
 	RSE_open(tdbb, rsb->rsb_arg[0]);
@@ -3461,10 +3461,10 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->tdbb_request;
 
-	const USHORT streams = (USHORT) (U_IPTR) rsb->rsb_arg[rsb->rsb_count];
-	const ULONG inner_size = (ULONG) (U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1]; 
+	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
+	const ULONG inner_size = (ULONG)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1]; 
 	const ULONG rpbs_size = sizeof(record_param) * streams;
-	RecordSource **rsb_ptr;
+	RecordSource** rsb_ptr;
  
 	switch (irsb->irsb_mode) 
 	{
@@ -3479,22 +3479,22 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 				ERR_post(isc_req_max_clones_exceeded, 0);
 
 			// Save where we are
-			char *tmp = FB_NEW(*request->req_pool) char[inner_size + rpbs_size];
+			char* tmp = FB_NEW(*request->req_pool) char[inner_size + rpbs_size];
 			memcpy(tmp, irsb, inner_size);
 
-			char *p = tmp + inner_size;
-			RecordSource **ptr = rsb->rsb_arg + rsb->rsb_count + 1;
-			const RecordSource *const *end = ptr + streams;
+			char* p = tmp + inner_size;
+			RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
+			const RecordSource* const* end = ptr + streams;
 			for (; ptr < end; ptr++) 
 			{
-				const record_param* rpb = request->req_rpb + (USHORT) (U_IPTR) *ptr;
+				const record_param* rpb = request->req_rpb + (USHORT)(U_IPTR) *ptr;
 				memmove(p, rpb, sizeof(record_param));
 				p += sizeof(record_param);
 			}
 			irsb->irsb_stack = tmp;
 
 			Record* record = request->req_rpb[rsb->rsb_stream].rpb_record;
-			irsb->irsb_data = FB_NEW(*request->req_pool) char[record->rec_length]; 
+			irsb->irsb_data = FB_NEW(*request->req_pool) char[record->rec_length];
 			memcpy(irsb->irsb_data, record->rec_data, record->rec_length);
 
 			// (Re-)Open a new child stream & reset record number
@@ -3534,11 +3534,11 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			memcpy(irsb, tmp, inner_size);
 
 			char* p = tmp + inner_size;
-			RecordSource **ptr = rsb->rsb_arg + rsb->rsb_count + 1;
-			const RecordSource *const *end = ptr + streams;
+			RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
+			const RecordSource* const* end = ptr + streams;
 			for (; ptr < end; ptr++) 
 			{
-				record_param* rpb = request->req_rpb + (USHORT) (U_IPTR) *ptr;
+				record_param* rpb = request->req_rpb + (USHORT)(U_IPTR) *ptr;
 				memmove(rpb, p, sizeof(record_param));
 				p += sizeof(record_param);
 			}
@@ -3561,8 +3561,8 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 	irsb->irsb_mode = recurse;
 
 	// We've got a record, map it into the target record
-	jrd_nod *map = (jrd_nod*) rsb_ptr[1]; 
-	jrd_nod **ptr = map->nod_arg; 
+	jrd_nod* map = (jrd_nod*) rsb_ptr[1]; 
+	jrd_nod** ptr = map->nod_arg; 
 	const jrd_nod *const *end = ptr + map->nod_count;
 	for (; ptr < end; ptr++) {
 		EXE_assignment(tdbb, *ptr);
@@ -3576,8 +3576,8 @@ void RSBRecurse::close(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 {
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->tdbb_request;
-	const USHORT streams = (USHORT) (U_IPTR) rsb->rsb_arg[rsb->rsb_count];
-	const ULONG inner_size = (ULONG) (U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1]; 
+	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
+	const ULONG inner_size = (ULONG)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1];
 
 	while (irsb->irsb_level > 1) 
 	{
