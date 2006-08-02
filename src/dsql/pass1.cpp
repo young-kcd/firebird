@@ -331,7 +331,7 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 
 	DEV_BLKCHK(relation_name, dsql_type_str);
 
-	dsql_nod* cte = 0;
+	dsql_nod* cte = NULL;
 	if (relation_node->nod_type == nod_derived_table) {
 		// No processing needed here for derived tables.
 	}
@@ -350,7 +350,7 @@ dsql_ctx* PASS1_make_context(dsql_req* request, dsql_nod* relation_node)
 						0);
 		}
 	}
-	else if (cte = request->findCTE(relation_name))
+	else if ((cte = request->findCTE(relation_name)))
 	{
 		relation_node = cte;
 	}
@@ -661,7 +661,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				  isc_arg_gds, isc_dsql_command_err, 0);
 
 	case nod_derived_table:
-		return pass1_derived_table(request, input, proc_flag, 0);
+		return pass1_derived_table(request, input, proc_flag, NULL);
 
 	case nod_select_expr:
 		{
@@ -727,15 +727,18 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_relation_name:
 	case nod_rel_proc_name:
 	{
-		dsql_str* rel_name, *rel_alias;
+		dsql_str* rel_name;
+		dsql_str* rel_alias;
+
 		if (input->nod_type == nod_rel_proc_name) {
 			rel_name = (dsql_str*) input->nod_arg[e_rpn_name];
 			rel_alias = (dsql_str*) input->nod_arg[e_rpn_alias];
 		}
-		else {
+		else {	// nod_relation_name
 			rel_name = (dsql_str*) input->nod_arg[e_rln_name];
 			rel_alias = (dsql_str*) input->nod_arg[e_rln_alias];
 		}
+
 		if (!rel_alias) {
 			rel_alias = rel_name;
 		}
@@ -752,6 +755,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 						isc_arg_string, "Recursive CTE member can refer itself only in FROM clause",
 						0);
 			}
+
 			for (DsqlNodStack::iterator stack(request->req_curr_ctes); stack.hasData(); ++stack)
 			{
 				dsql_nod* cte1 = stack.object();
@@ -762,7 +766,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 						0);
 				}
 			}
-				
+
 			dsql_nod* const select_expr = cte->nod_arg[e_derived_table_rse];
 			dsql_nod* const query = select_expr->nod_arg[e_sel_query_spec];
 			const bool isRecursive = (query->nod_type == nod_list) && 
@@ -772,12 +776,12 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			if (!isRecursive) {
 				cte->nod_arg[e_derived_table_alias] = (dsql_nod*) rel_alias;
 			}
-			
+
 			request->req_curr_ctes.push(cte);
 
 			dsql_nod* node = pass1_derived_table(request, cte, proc_flag, 
-								isRecursive ? rel_alias : 0);
-			
+								isRecursive ? rel_alias : NULL);
+
 			if (!isRecursive) {
 				cte->nod_arg[e_derived_table_alias] = (dsql_nod*) cte_name;
 			}
@@ -3876,18 +3880,20 @@ static dsql_nod* pass1_delete( dsql_req* request, dsql_nod* input, bool proc_fla
  **/
 static bool pass1_relproc_is_recursive(dsql_req* request, dsql_nod* input)
 {
-	dsql_str* rel_name = 0, *rel_alias = 0;
+	dsql_str* rel_name = NULL;
+	dsql_str* rel_alias = NULL;
+
 	switch (input->nod_type)
 	{
 		case nod_rel_proc_name:
 			rel_name = (dsql_str*) input->nod_arg[e_rpn_name];
 			rel_alias = (dsql_str*) input->nod_arg[e_rpn_alias];
-		break;
+			break;
 
 		case nod_relation_name:
 			rel_name = (dsql_str*) input->nod_arg[e_rln_name];
 			rel_alias = (dsql_str*) input->nod_arg[e_rln_alias];
-		break;
+			break;
 
 		default:
 			return false;
@@ -3898,7 +3904,7 @@ static bool pass1_relproc_is_recursive(dsql_req* request, dsql_nod* input)
 	const dsql_str* cte_name = (dsql_str*) curr_cte->nod_arg[e_derived_table_alias];
 
 	const bool recursive = (cte_name->str_length == rel_name->str_length) && 
-		(strncmp(rel_name->str_data, cte_name->str_data, cte_name->str_length)) == 0;
+		(strncmp(rel_name->str_data, cte_name->str_data, cte_name->str_length) == 0);
 
 	if (recursive) {
 		request->addCTEAlias(rel_alias ? rel_alias : rel_name);
@@ -4258,6 +4264,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	dsql_nod* rse = NULL;
 	const bool isRecursive = 
 		(query->nod_type == nod_list) && (query->nod_flags & NOD_UNION_RECURSIVE);
+		
 	if (isRecursive)
 	{
 		// Create dummy, non-recursive select statement by doing a union of 
@@ -4279,7 +4286,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 		query->nod_flags |= NOD_UNION_RECURSIVE;
 
 		while (request->req_union_context.hasData() && 
-				request->req_union_context.object() != baseUnionCtx)
+			   request->req_union_context.object() != baseUnionCtx)
 		{
 			request->req_union_context.pop();
 		}
@@ -4488,13 +4495,12 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 			request->req_dt_context.push(temp.object());
 			context->ctx_childs_derived_table.push(temp.pop());
 		}
-		while (temp.hasData()) {
-			temp.pop();
-		}
+
+		temp.clear();
 
 		rse->nod_arg[e_rse_items] = context->ctx_rse->nod_arg[e_rse_items];
 		
-		dsql_nod* node2 = MAKE_node (nod_derived_table, e_derived_table_count);
+		dsql_nod* node2 = MAKE_node(nod_derived_table, e_derived_table_count);
 		*node2 = *node;
 		node2->nod_arg[e_derived_table_rse] = rse;
 		node = node2;
@@ -6710,6 +6716,7 @@ static dsql_nod* pass1_rse( dsql_req* request, dsql_nod* input, dsql_nod* order,
 {
 	TEXT* save_alias = 0;
 	const bool isRecursive = (input->nod_flags & NOD_SELECT_EXPR_RECURSIVE);
+
 	if (isRecursive)
 	{
 		fb_assert(request->req_recursive_ctx);
@@ -9025,6 +9032,7 @@ void dsql_req::addCTEs(dsql_nod* with)
 {
 	DEV_BLKCHK(with, dsql_type_nod);
 	fb_assert(with->nod_type == nod_with);
+
 	if (req_ctes.getCount()) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_random, 
@@ -9055,17 +9063,19 @@ void dsql_req::addCTEs(dsql_nod* with)
 
 dsql_nod* dsql_req::findCTE(const dsql_str* name)
 {
-	for(size_t i=0; i < req_ctes.getCount(); i++)
+	for (size_t i = 0; i < req_ctes.getCount(); i++)
 	{
 		dsql_nod* cte = req_ctes[i];
 		const dsql_str* cte_name = (dsql_str*) cte->nod_arg[e_derived_table_alias];
 
 		if (name->str_length == cte_name->str_length && 
 			strncmp(name->str_data, cte_name->str_data, cte_name->str_length) == 0)
+		{
 			return cte;
+		}
 	}
 
-	return 0;
+	return NULL;
 }
 
 

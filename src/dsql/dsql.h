@@ -477,7 +477,7 @@ public:
 
 	DsqlNodStack req_curr_ctes;			// current processing CTE's
 	class dsql_ctx* req_recursive_ctx;	// context of recursive CTE
-	USHORT  req_recursive_ctx_id;		// id of recursive union stream context
+	USHORT req_recursive_ctx_id;		// id of recursive union stream context
 
 private:
 	// Request should never be destroyed using delete.
