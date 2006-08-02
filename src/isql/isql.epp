@@ -6517,7 +6517,7 @@ static processing_state print_line(XSQLDA* sqlda,
 
 	for (int i = 0; i < varnum; i++) {
 		const XSQLVAR* var = varlist[i];
-		if (*var->sqlind == 0) {
+		if (!(var->sqltype & 1) || *var->sqlind == 0) {
 			// Print blob title 
 
 			isqlGlob.printf(
