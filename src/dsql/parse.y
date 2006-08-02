@@ -2149,6 +2149,7 @@ keyword_or_column	: valid_symbol_name
 		| TRAILING
 		| TRIM
 		| GLOBAL				/* added in FB 2.1 */
+		| RECURSIVE 
 		;
 
 col_opt	: ALTER
@@ -4365,7 +4366,6 @@ non_reserved_word :
 	| LIST					/* added in FB 2.1 */
 	| PRESERVE
 	| TEMPORARY
-	| RECURSIVE 
 	;
 
 %%
