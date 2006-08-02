@@ -171,7 +171,7 @@ public:
 		recurse
 	};
 
-	static const USHORT MAX_RECURSE_LEVEL = 1024;
+	static const USHORT MAX_RECURSE_LEVEL;
 };
 
 // Impure area formats for the various RecordSource types

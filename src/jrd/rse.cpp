@@ -3421,6 +3421,9 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 }
 
 
+const USHORT RSBRecurse::MAX_RECURSE_LEVEL = 1024;
+
+
 // hvlad: 
 // values of rsb_arg's:
 //	0 - 1st stream 
