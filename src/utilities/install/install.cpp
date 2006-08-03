@@ -118,6 +118,26 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 
 	DWORD targetverMS = 0, targetverLS = 0;
 	status = GetVersion(target, targetverMS, targetverLS, err_handler);
+	if (client == CLIENT_GDS)
+	{
+		//Our patching logic is to only change the Major.minor version 
+		//number from A.B to 6.3. This leaves the release.build number
+		//intact. Ie, after patching v1.5.3.3106 it will return v6.3.3.3106
+		//This means that when considering whether to install our new patched
+		//version our initial comparison of (newverMS =targetverMS) will always
+		//be true. So, we are left with comparing targetverLS against newverLS. 
+		//However, a gds32 installed from 1.5.3 is going to leave us with 
+		//a point release greater than the point release in v2.0.0 so our 
+		//comparison will fail and the new library will not be copied. To 
+		//avoind this we must mask out the point release and just work 
+		//on the build number when comparing the gds32 version.
+		//
+		//This solution will be fine as long as we don't reset the build number
+		//(unlikely for 2.0.) If we do reset the build number we will need to
+		//either increment GDSVER_MINOR or patch an altered point release value.
+		targetverLS = (targetverLS & 0x0000FFFF);
+	}
+
 	if (status == FB_FAILURE)
 		return FB_FAILURE;
 
