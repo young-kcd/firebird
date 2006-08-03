@@ -2,6 +2,12 @@
   * v2.0 Release Candidate 4
   **************************
 
+    * Fix Firebird 2.0 bug [CORE-839]
+        Instclient failed to install gds32 over
+        an existing version from V1.5.1 or later.
+      Contributor:
+        Paul Reeves <preeves at ibphoenix.com>
+
     * Fixed unregistered bug
         Service didn't restart correctly on SUSE Linux
       Contributor(s):
@@ -29,7 +35,7 @@
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed RC3 bug (CORE-860)
-        Server crashes when attempting to restore a v1.5 backup  
+        Server crashes when attempting to restore a v1.5 backup
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -92,7 +98,7 @@
     * Fixed unregistered bug
         NoNagle option for TCP sockets doesn't work properly
       Contributor(s):
-        Fred Polizo <fpolizo at users.sourceforge.net> 
+        Fred Polizo <fpolizo at users.sourceforge.net>
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed RC2 bug
@@ -194,7 +200,7 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Fixed SF #1466193
-        Semaphore array`s permissions in fb_lock_mgr were 0666 - i.e. anyone 
+        Semaphore array`s permissions in fb_lock_mgr were 0666 - i.e. anyone
         could lock them and block all future queries
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
@@ -205,7 +211,7 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed SF #1456002
-        2.0 regression - gsec illegally reported error on attempt to use long 
+        2.0 regression - gsec illegally reported error on attempt to use long
         (>8 characters) password
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
@@ -228,7 +234,7 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed unregistered bug
-        2.0 regression - SuperServer did not shutdown properly due to 
+        2.0 regression - SuperServer did not shutdown properly due to
         unhandled exception in semaphore destructor
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
@@ -530,7 +536,7 @@
         Added OldColumnNaming support
       Contributor:
         Paul Reeves <paul_reeves at ibphoenix.com>
-        
+
     * Fixed Beta 1 bug
         Problem causing collation to be lost in sqlsubtype when using dynamic charset
       Contributor(s):
@@ -1279,8 +1285,8 @@
         Arno Brinkman <firebird at abvisie.nl>
 
     * Fixed unregistered bug
-        Crash occured in service gfix code when it tried to reattach to currently 
-        unavailable database. Since service can't interact with end user an endless 
+        Crash occured in service gfix code when it tried to reattach to currently
+        unavailable database. Since service can't interact with end user an endless
         loop leads to overflow service buffer and crash as result.
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
@@ -1317,8 +1323,8 @@
   **************
 
     * DDL improvement
-        Allow to create foreign key constraints without need to get exclusive lock 
-        on whole database 
+        Allow to create foreign key constraints without need to get exclusive lock
+        on whole database
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -1377,7 +1383,7 @@
         1) KOI8-R (Russian language) and KOI8-U (Ukrainian language) charsets and dictionary collations
         2) WIN1257_LV (Latvian), WIN1257_LT (Lithuanian), WIN1257_EE (Estonian) collations
       Contributor(s):
-      	Oleg Loa <loa at mail.ru>
+        Oleg Loa <loa at mail.ru>
         Aleksey Karyakin <karyakin at cmpmail.com>
 
     * Parser improvement
@@ -1496,7 +1502,7 @@
     * Fixed Alpha 2 bug
         Problem with distributing sort to deeper RSE
       Example(s):
-	    SELECT RDB$RELATION_NAME FROM (SELECT FIRST 10 * FROM RDB$RELATIONS ORDER BY RDB$RELATION_NAME DESC) ORDER BY RDB$RELATION_NAME
+        SELECT RDB$RELATION_NAME FROM (SELECT FIRST 10 * FROM RDB$RELATIONS ORDER BY RDB$RELATION_NAME DESC) ORDER BY RDB$RELATION_NAME
       Contributor(s):
         Arno Brinkman <firebird at abvisie.nl>
 
@@ -1625,7 +1631,7 @@
         Problems when connecting using UNICODE
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
- 
+
     * Fixed SF #540547
         Concatenation, numeric fields & charset
       Contributor(s):
@@ -2150,7 +2156,7 @@
       See also:
         /doc/sql.extentions/README.select_expressions
       Contributor(s):
-      	Oleg Loa <loa at mail.ru>
+        Oleg Loa <loa at mail.ru>
 
     * 64-bit builds
         A number of changes (including ODS support) to support Firebird on 64-bit platforms
@@ -2165,7 +2171,7 @@
       See also:
         /doc/sql.extentions/README.distinct
       Contributor(s):
-      	Oleg Loa <loa at mail.ru>
+        Oleg Loa <loa at mail.ru>
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * SQL improvements
@@ -2197,7 +2203,7 @@
         1) Much faster algorithms to process the dirty pages tree
         2) Increased maximum page cache size to 128K pages (2GB for 16K page size)
       Contributor(s):
-      	Oleg Loa <loa at mail.ru>
+        Oleg Loa <loa at mail.ru>
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Security improvements
@@ -2282,7 +2288,7 @@
       See also:
         /doc/sql.extentions/README.expression_indices
       Contributor(s):
-      	Oleg Loa <loa at mail.ru>
+        Oleg Loa <loa at mail.ru>
         Aleksey Karyakin <karyakin at cmpmail.com>
         Dmitry Yemanov <yemanov at yandex.ru>
 
@@ -2292,7 +2298,7 @@
       See also:
         /doc/sql.extentions/README.iif
       Contributor(s):
-      	Oleg Loa <loa at mail.ru>
+        Oleg Loa <loa at mail.ru>
 
     * Fixed unregistered bug
         A number of possible server crashes, as reported by Valgrind
@@ -2302,7 +2308,7 @@
     * IN/OR improvements
         Constant IN predicate or multiple OR booleans are now evaluated faster
       Contributor(s):
-      	Oleg Loa <loa at mail.ru>
+        Oleg Loa <loa at mail.ru>
 
     * NULL becomes a syntactical value
         You may now specify A = NULL, B > NULL, etc (all of them evaluate to FALSE)
@@ -2314,7 +2320,7 @@
     * Concatenation overflow
         A compile-time check has been dropped in favour of the runtime one
       Contributor(s):
-      	Oleg Loa <loa at mail.ru>
+        Oleg Loa <loa at mail.ru>
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Fixed unregistered bug
@@ -2550,7 +2556,7 @@
 
     * Nulls ordering is changed to be SQL200X-compliant (SF #225218)
         Implemented nulls placement behavior is MSSQL-like, works on ODS11 databases only
-        since it requires new indices for operation. 
+        since it requires new indices for operation.
       Contributor(s):
         Nickolay Samofatov <nickolay at broadviewsoftware.com>
 
@@ -2603,7 +2609,7 @@
     * SUBSTRING enhanced
         SUBSTRING built-in function now supports arbitrary expressions in parameters
       Contributor(s):
-      	Oleg Loa <loa at mail.ru>
+        Oleg Loa <loa at mail.ru>
         Dmitry Yemanov <yemanov at yandex.ru>
 
     * Added LEAVE <label> syntax support
