@@ -2,9 +2,8 @@
   * v2.0 Release Candidate 4
   **************************
 
-    * Fix Firebird 2.0 bug [CORE-839]
-        Instclient failed to install gds32 over
-        an existing version from V1.5.1 or later.
+    * Fixed RC3 bug (CORE-839)
+        Instclient failed to install gds32 over an existing version from V1.5.1 or later
       Contributor:
         Paul Reeves <preeves at ibphoenix.com>
 
