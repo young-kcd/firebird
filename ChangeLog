@@ -1,3 +1,27 @@
+2006-08-02 21:45  asfernandes
+
+	* firebird2/src/jrd/: rse.cpp (1.117), rse.h (1.49):
+	
+	Fix MSVC6 build
+
+2006-08-02 14:50  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.195):
+	
+	Fix problem of not-nullable blobs being not printed
+
+2006-08-02 07:28  dimitr
+
+	* firebird2/src/include/types_pub.h (1.6):
+	
+	More patches for Win64 compatibility.
+
+2006-08-02 07:25  dimitr
+
+	* firebird2/src/remote/: protocol.h (1.31), remote_def.h (1.28):
+	
+	More patches for Win64 compatibility.
+
 2006-08-02 03:43  asfernandes
 
 	* firebird2/src/jrd/: rse.cpp (1.116), rse.h (1.48):
