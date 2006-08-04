@@ -5311,8 +5311,32 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 			break;
 
 		case nod_derived_field:
-			// This is a "virtual" field
-			*field = true;
+			{
+				// This is a "virtual" field
+				*field = true;
+				const USHORT df_scope_level =
+					(USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
+
+				switch (match_type) {
+				case FIELD_MATCH_TYPE_EQUAL:
+					return (df_scope_level == check_scope_level);
+
+				case FIELD_MATCH_TYPE_LOWER:
+					return (df_scope_level < check_scope_level);
+
+				case FIELD_MATCH_TYPE_LOWER_EQUAL:
+					return (df_scope_level <= check_scope_level);
+
+				case FIELD_MATCH_TYPE_HIGHER:
+					return (df_scope_level > check_scope_level);
+
+				case FIELD_MATCH_TYPE_HIGHER_EQUAL:
+					return (df_scope_level >= check_scope_level);
+
+				default:
+					fb_assert(false);
+				}
+			}
 			break;
 
 		case nod_aggregate:
