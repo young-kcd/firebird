@@ -1,3 +1,22 @@
+2006-08-03 08:53  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.16):
+	
+	Misc.
+
+2006-08-03 08:04  paul_reeves
+
+	* firebird2/doc/WhatsNew (1.95.2.15):
+	
+	Update
+
+2006-08-03 07:58  paul_reeves
+
+	* firebird2/src/utilities/install/install.cpp (1.8.4.1):
+	
+	Use more refined test to compare existing gds32 installed with
+	candidate version. [CORE-839]
+
 2006-07-31 21:08  hvlad
 
 	* firebird2/src/jrd/gds.cpp (1.193.2.2):
