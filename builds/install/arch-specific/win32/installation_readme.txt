@@ -1,4 +1,4 @@
-Firebird Database Server 2.0 Release Candidate 3
+Firebird Database Server 2.0 Release Candidate 4
 ==================================================
 
   ** IMPORTANT **
@@ -10,7 +10,7 @@ Firebird Database Server 2.0 Release Candidate 3
   ** ********* **
 
 This document is a guide to installing this package of
-Firebird 2.0 RC3 on the Win32 platform. These notes
+Firebird 2.0 RC4 on the Win32 platform. These notes
 refer to the installation package itself, rather than
 Firebird 2.0 in general.
 
