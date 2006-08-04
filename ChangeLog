@@ -1,3 +1,10 @@
+2006-08-03 11:13  paul_reeves
+
+	* firebird2/src/utilities/install/install.cpp (1.9):
+	
+	Use more refined test to compare existing gds32 installed with
+	candidate version.
+
 2006-08-02 21:45  asfernandes
 
 	* firebird2/src/jrd/: rse.cpp (1.117), rse.h (1.49):
