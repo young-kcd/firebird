@@ -2733,15 +2733,11 @@ static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_
 
 		impure->vlu_desc.dsc_address = string->str_data;
 	}
-	else if (impure->vlu_desc.dsc_dtype == dtype_blob &&
-		(impure->vlu_desc.dsc_scale != value->dsc_scale ||
-		 impure->vlu_desc.dsc_sub_type != value->dsc_sub_type ||
-		 impure->vlu_desc.dsc_sub_type != isc_blob_text))
-	{
-		ERR_post(isc_wish_list, 0);
-	}
 
-	MOV_move(value, &impure->vlu_desc);
+	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))
+		BLB_move(tdbb, const_cast<dsc*>(value), &impure->vlu_desc, NULL);
+	else
+		MOV_move(value, &impure->vlu_desc);
 
 	if (impure->vlu_desc.dsc_dtype == dtype_text)
 		adjust_text_descriptor(tdbb, &impure->vlu_desc);

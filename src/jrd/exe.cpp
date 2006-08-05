@@ -360,40 +360,36 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 			}
 		}
 
-#ifndef VMS
-		if (DTYPE_IS_BLOB(to_desc->dsc_dtype))
-#else
-		if (DTYPE_IS_BLOB(to_desc->dsc_dtype)
-			&& to_desc->dsc_dtype != dtype_d_float)
-#endif
+		if (DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype) ||
+			DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype))
+		{
 			BLB_move(tdbb, from_desc, to_desc, to);
-
+		}
 		else if (!DSC_EQUIV(from_desc, to_desc, false))
 			MOV_move(from_desc, to_desc);
-
-		else if (from_desc->dsc_dtype == dtype_short) {
+		else if (from_desc->dsc_dtype == dtype_short)
+		{
 			*((SSHORT *) to_desc->dsc_address) =
 				*((SSHORT *) from_desc->dsc_address);
 		}
-
-		else if (from_desc->dsc_dtype == dtype_long) {
+		else if (from_desc->dsc_dtype == dtype_long)
+		{
 			*((SLONG *) to_desc->dsc_address) =
 				*((SLONG *) from_desc->dsc_address);
 		}
-
-		else if (from_desc->dsc_dtype == dtype_int64) {
+		else if (from_desc->dsc_dtype == dtype_int64)
+		{
 			*((SINT64 *) to_desc->dsc_address) =
 				*((SINT64 *) from_desc->dsc_address);
 		}
-
 		else if (((U_IPTR) from_desc->dsc_address & (ALIGNMENT - 1)) ||
 				 ((U_IPTR) to_desc->dsc_address & (ALIGNMENT - 1)))
 		{
 			MOVE_FAST(from_desc->dsc_address, to_desc->dsc_address,
 					  from_desc->dsc_length);
 		}
-
-		else {
+		else
+		{
 			MOVE_FASTER(from_desc->dsc_address, to_desc->dsc_address,
 						from_desc->dsc_length);
 		}

@@ -61,6 +61,7 @@
 #include "../jrd/evl_proto.h"
 #include "../jrd/filte_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
@@ -68,8 +69,11 @@
 #include "../jrd/sdl_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/dsc_proto.h"
+#include "../common/classes/array.h"
 
 using namespace Jrd;
+using Firebird::UCharBuffer;
+
 typedef Ods::blob_page blob_page;
 
 inline bool SEGMENTED(const blb* blob)
@@ -85,13 +89,14 @@ static void delete_blob(thread_db*, blb*, ULONG);
 static void delete_blob_id(thread_db*, const bid*, SLONG, jrd_rel*);
 static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
-static USHORT gen_bpb_from_descs(const dsc*, const dsc*, UCHAR*);
+static void gen_bpb_from_descs(const dsc*, const dsc*, UCharBuffer& bpb);
 static blob_page* get_next_page(thread_db*, blb*, WIN *);
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 static void get_replay_blob(thread_db*, const bid*);
 #endif
 static void insert_page(thread_db*, blb*);
 static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, Jrd::jrd_nod*);
+static void move_to_string(Jrd::thread_db*, dsc*, dsc*);
 static void release_blob(blb*, const bool);
 static void slice_callback(array_slice*, ULONG, dsc*);
 static blb* store_array(thread_db*, jrd_tra*, bid*);
@@ -856,7 +861,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
  **************************************
  *
  * Functional description
- *      Perform an assignment to a blob field.  Unless the blob is null,
+ *      Perform an assignment to a blob field or a blob descriptor.
+ *      When assigning to a field, unless the blob is null,
  *      this requires that either a temporary blob be materialized or that
  *      a permanent blob be copied.  Note: it is illegal to have a blob
  *      field in a message.
@@ -873,45 +879,70 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			ERR_post(isc_array_convert_error, 0);
 		}
 	}
-	else if (to_desc->dsc_dtype == dtype_blob)
+	else if (DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype))
 	{
-		if (from_desc->dsc_dtype != dtype_quad &&
-			from_desc->dsc_dtype != dtype_blob &&
-			from_desc->dsc_dtype != dtype_array)
+		if (!DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype))
 		{
 			// anything that can be copied into a string can be copied into a blob
 			move_from_string(tdbb, from_desc, to_desc, field);
 			return;
 		}
 	}
-	else
+	else if (DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype))
 	{
+		move_to_string(tdbb, from_desc, to_desc);
+		return;
+	}
+	else
 		fb_assert(false);
+
+	bool onlyMove = true;
+
+	// If the target node is a field, we need more work to do.
+	if (field)
+	{
+		switch (field->nod_type)
+		{
+			case nod_field:
+				onlyMove = false;
+				break;
+			case nod_argument:
+			case nod_variable:
+				break;
+			default:
+				BUGCHECK(199);			/* msg 199 expected field node */
+		}
 	}
 
 	bid* source = (bid*) from_desc->dsc_address;
 	bid* destination = (bid*) to_desc->dsc_address;
 
-/* If nothing changed, do nothing.  If it isn't broken,
-   don't fix it. */
-
+	// If nothing changed, do nothing.  If it isn't broken,
+	// don't fix it.
 	if (*source == *destination)
-	{
 		return;
-	}
 
-/* If the target node is not a field, just copy the blob id
-   and return. */
+	// If the target node is not a field, just copy the blob id
+	// and return.
+	if (onlyMove)
+	{
+		// But if the sub_type or charset is diferrent, create a new blob.
+		if (DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype) &&
+			DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype) &&
+			to_desc->dsc_sub_type != isc_blob_untyped &&
+			(from_desc->dsc_sub_type != to_desc->dsc_sub_type ||
+			 (from_desc->dsc_scale != to_desc->dsc_scale &&
+			  to_desc->dsc_scale != CS_NONE && to_desc->dsc_scale != CS_BINARY)))
+		{
+			UCharBuffer bpb;
+			gen_bpb_from_descs(from_desc, to_desc, bpb);
 
-	switch (field->nod_type) {
-		case nod_field:
-			break;
-		case nod_argument:
-		case nod_variable:
+			copy_blob(tdbb, source, destination, bpb.getCount(), bpb.begin(), DB_PAGE_SPACE);
+		}
+		else
 			*destination = *source;
-			return;
-		default:
-			BUGCHECK(199);			/* msg 199 expected field node */
+
+		return;
 	}
 
 	jrd_req* request = tdbb->tdbb_request;
@@ -921,8 +952,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	RelationPages* relPages = relation->getPages(tdbb);
 	Record* record = rpb->rpb_record;
 
-/* If either the source value is null or the blob id itself is null (all
-   zeros, then the blob is null. */
+	// If either the source value is null or the blob id itself is null
+	// (all zeros), then the blob is null.
 
 	if ((request->req_flags & req_null) || source->isEmpty())
 	{
@@ -934,8 +965,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	CLEAR_NULL(record, id);
 	jrd_tra* transaction = request->req_transaction;
 
-/* If the target is a view, this must be from a view update trigger.
-   Just pass the blob id thru */
+	// If the target is a view, this must be from a view update trigger.
+	// Just pass the blob id thru.
 
 	if (relation->rel_view_rse) {
 		*destination = *source;
@@ -943,36 +974,21 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	}
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-/* for REPLAY, map blob id's from the original session */
+	// for REPLAY, map blob id's from the original session
 
 	get_replay_blob(tdbb, source);
 #endif
 
-/* If the source is a permanent blob, then the blob must be copied.
-   Otherwise find the temporary blob referenced.  */
+	// If the source is a permanent blob, then the blob must be copied.
+	// Otherwise find the temporary blob referenced.
 
 	ArrayField* array = NULL;
 	BlobIndex* blobIndex;
 	blb* blob = NULL;
 	bool materialized_blob; // Set if we materialized temporary blob in this routine
 
-	UCHAR bpb[] = {isc_bpb_version1,
-		isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
-		isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
-	USHORT bpb_length = 0;
-
-	if (from_desc->dsc_sub_type == isc_blob_text && 
-		to_desc->dsc_sub_type == isc_blob_text)
-	{
-		bpb[6] = from_desc->dsc_scale; // source charset
-		bpb[12] = to_desc->dsc_scale; // destination charset
-		bpb_length = sizeof(bpb);
-	}
-
-	// hvlad: replace the code above to make blob filters work
-	//	when blob of one type copied into blob of another type
-	//	UCHAR bpb[16];
-	//	USHORT bpb_length = gen_bpb_from_descs(from_desc, to_desc, bpb);
+	UCharBuffer bpb;
+	gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 	while (true) 
 	{
@@ -980,7 +996,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		blobIndex = NULL;
 		if (source->bid_internal.bid_relation_id)
 		{
-			blob = copy_blob(tdbb, source, destination, bpb_length, bpb, relPages->rel_pg_space_id);
+			blob = copy_blob(tdbb, source, destination, bpb.getCount(), bpb.begin(), relPages->rel_pg_space_id);
 		}
 		else if ((to_desc->dsc_dtype == dtype_array) &&
 				 (array = find_array(transaction, source)) &&
@@ -1022,7 +1038,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 						(blob->blb_pg_space_id != relPages->rel_pg_space_id))
 					{
 						const ULONG oldTempID = blob->blb_temp_id;
-						blb* newBlob = copy_blob(tdbb, source, destination, bpb_length, bpb, relPages->rel_pg_space_id);
+						blb* newBlob = copy_blob(tdbb, source, destination,
+							bpb.getCount(), bpb.begin(), relPages->rel_pg_space_id);
 
 						transaction->tra_blobs.locate(newBlob->blb_temp_id);
 						BlobIndex* newBlobIndex = &transaction->tra_blobs.current();
@@ -2084,34 +2101,69 @@ static BlobFilter* find_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 }
 
 
-USHORT gen_bpb_from_descs(const dsc* from_desc, const dsc* to_desc, UCHAR* bpb)
+static void gen_bpb_from_descs(const dsc* from_desc, const dsc* to_desc, UCharBuffer& bpb)
 {
-	UCHAR* p = bpb;
+	bpb.resize(15);
+
+	UCHAR* p = bpb.begin();
 	*p++ = isc_bpb_version1;
+
+	SSHORT sub_type;
+	SSHORT interp;
+
+	if (DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype))
+	{
+		sub_type = from_desc->dsc_sub_type;
+		interp = from_desc->dsc_scale;	// source charset
+	}
+	else
+	{
+		sub_type = isc_blob_text;
+
+		if (DTYPE_IS_TEXT(from_desc->dsc_dtype))
+			interp = DSC_GET_CHARSET(from_desc);
+		else
+			interp = CS_ASCII;
+	}
 
 	*p++ = isc_bpb_source_type;
 	*p++ = 2;
-	put_short(p, from_desc->dsc_sub_type);
+	put_short(p, sub_type);
 	p += 2;
-	if (from_desc->dsc_sub_type == isc_blob_text)
+	if (sub_type == isc_blob_text)
 	{
 		*p++ = isc_bpb_source_interp;
 		*p++ = 1;
-		*p++ = from_desc->dsc_scale;	// source charset
+		*p++ = interp;
+	}
+
+	if (DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype))
+	{
+		sub_type = to_desc->dsc_sub_type;
+		interp = to_desc->dsc_scale;	// target charset
+	}
+	else
+	{
+		sub_type = isc_blob_text;
+
+		if (DTYPE_IS_TEXT(to_desc->dsc_dtype))
+			interp = DSC_GET_CHARSET(to_desc);
+		else
+			interp = CS_ASCII;
 	}
 
 	*p++ = isc_bpb_target_type;
 	*p++ = 2;
-	put_short(p, to_desc->dsc_sub_type);
+	put_short(p, sub_type);
 	p += 2;
-	if (to_desc->dsc_sub_type == isc_blob_text)
+	if (sub_type == isc_blob_text)
 	{
 		*p++ = isc_bpb_target_interp;
 		*p++ = 1;
-		*p++ = to_desc->dsc_scale;	// target charset
+		*p++ = interp;	// target charset
 	}
 
-	return p - bpb;
+	bpb.shrink(p - bpb.begin());
 }
 
 
@@ -2377,29 +2429,26 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	MoveBuffer buffer;
 	int length = MOV_make_string2(from_desc, ttype, &fromstr, buffer);
 
-	UCHAR bpb[] = {isc_bpb_version1,
-					isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
-					isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
-	USHORT bpb_length = 0;
+	UCharBuffer bpb;
+	gen_bpb_from_descs(from_desc, to_desc, bpb);
 
-	if (to_desc->dsc_sub_type == isc_blob_text)
-	{
-		bpb[6] = ttype;					// from charset
-		bpb[12] = to_desc->dsc_scale;	// to charset
-		bpb_length = sizeof(bpb);
-	}
-
-	blob = BLB_create2(tdbb, tdbb->tdbb_request->req_transaction, &temp_bid, bpb_length, bpb);
+	blob = BLB_create2(tdbb, tdbb->tdbb_request->req_transaction, &temp_bid, bpb.getCount(), bpb.begin());
 
 	blob_desc.dsc_scale = to_desc->dsc_scale;	// blob charset
 	blob_desc.dsc_flags = (blob_desc.dsc_flags & 0xFF) | (to_desc->dsc_flags & 0xFF00);	// blob collation
 	blob_desc.dsc_sub_type = to_desc->dsc_sub_type;
 	blob_desc.dsc_dtype = dtype_blob;
+	blob_desc.dsc_length = sizeof(ISC_QUAD);
 	blob_desc.dsc_address = reinterpret_cast<UCHAR*>(&temp_bid);
 	BLB_put_segment(tdbb, blob, fromstr, length);
 	BLB_close(tdbb, blob);
 	ULONG blob_temp_id = blob->blb_temp_id;
 	BLB_move(tdbb, &blob_desc, to_desc, field);
+
+	// finish if we're just moving values in descriptors
+	if (!field || field->nod_type != nod_field)
+		return;
+
 	// 14-June-2004. Nickolay Samofatov
 	// The code below saves a lot of memory when bunches of records are
 	// converted to blobs from strings. If BLB_move is materialized blob we
@@ -2439,6 +2488,54 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 			}
 		}
 	}
+}
+
+
+static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
+{
+/**************************************
+ *
+ *      m o v e _ t o _ s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *      Perform an assignment from a blob to another datatype.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	fb_assert(DTYPE_IS_BLOB_OR_QUAD(fromDesc->dsc_dtype));
+
+	dsc blobAsText;
+	blobAsText.dsc_dtype = dtype_text;
+
+	if (DTYPE_IS_TEXT(toDesc->dsc_dtype))
+		blobAsText.dsc_ttype() = toDesc->dsc_ttype();
+	else
+		blobAsText.dsc_ttype() = ttype_ascii;
+
+	UCharBuffer bpb;
+	gen_bpb_from_descs(fromDesc, &blobAsText, bpb);
+
+	blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
+		(bid*) fromDesc->dsc_address, bpb.getCount(), bpb.begin());
+
+	CharSet* fromCharSet = INTL_charset_lookup(tdbb, fromDesc->dsc_scale);
+	CharSet* toCharSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&blobAsText));
+
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+	buffer.getBuffer((blob->blb_length / fromCharSet->minBytesPerChar()) *
+		toCharSet->maxBytesPerChar());
+	SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), true);
+
+	if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
+		ERR_post(isc_arith_except, 0);
+
+	blobAsText.dsc_address = buffer.begin();
+	blobAsText.dsc_length = (USHORT)len;
+
+	MOV_move(&blobAsText, toDesc);
 }
 
 

@@ -177,6 +177,11 @@ inline bool DTYPE_IS_BLOB(UCHAR d) {
 
 //#define DTYPE_IS_BLOB(d)        (((d) == dtype_blob) || ((d) == dtype_array))
 
+/* DTYPE_IS_BLOB_OR_QUAD includes both BLOB, QUAD and ARRAY since array's are implemented over blobs. */
+inline bool DTYPE_IS_BLOB_OR_QUAD(UCHAR d) {
+	return (((d) == dtype_blob) || ((d) == dtype_quad) || ((d) == dtype_array));
+}
+
 /* Exact numeric? */
 inline bool DTYPE_IS_EXACT(UCHAR d) {
 	return (((d) == dtype_int64) || ((d) == dtype_long) || ((d) == dtype_short));
