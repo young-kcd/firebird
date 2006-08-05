@@ -3920,6 +3920,7 @@ static bool pass1_relproc_is_recursive(dsql_req* request, dsql_nod* input)
 
     @brief	check if join have recursive members. If found remove this member
 		from join and return its boolean (to be added into WHERE clause).
+		We must remove member only if it is a table reference.
 		Punt if recursive reference is found in outer join or more than one 
 		recursive reference is found
 
@@ -3930,19 +3931,22 @@ static bool pass1_relproc_is_recursive(dsql_req* request, dsql_nod* input)
 static dsql_nod* pass1_join_is_recursive(dsql_req* request, dsql_nod*& input)
 {
 	const NOD_TYPE join_type = input->nod_arg[e_join_type]->nod_type;
+	bool remove = false;
 	
 	bool leftRecursive = false;
 	dsql_nod* leftBool = 0;
-	dsql_nod* join_table = input->nod_arg[e_join_left_rel];
-	if (join_table->nod_type == nod_join)
+	dsql_nod** join_table = &input->nod_arg[e_join_left_rel];
+	if ((*join_table)->nod_type == nod_join)
 	{
-		leftBool = pass1_join_is_recursive(request, join_table);
+		leftBool = pass1_join_is_recursive(request, *join_table);
 		leftRecursive = (leftBool != 0);
 	}
 	else
 	{
 		leftBool = input->nod_arg[e_join_boolean];
-		leftRecursive = pass1_relproc_is_recursive(request, join_table);
+		leftRecursive = pass1_relproc_is_recursive(request, *join_table);
+		if (leftRecursive)
+			remove = true;
 	}
 
 	if (leftRecursive && join_type != nod_join_inner) {
@@ -3954,16 +3958,18 @@ static dsql_nod* pass1_join_is_recursive(dsql_req* request, dsql_nod*& input)
 
 	bool rightRecursive = false;
 	dsql_nod* rightBool = 0;
-	join_table = input->nod_arg[e_join_rght_rel];
-	if (join_table->nod_type == nod_join)
+	join_table = &input->nod_arg[e_join_rght_rel];
+	if ((*join_table)->nod_type == nod_join)
 	{
-		rightBool = pass1_join_is_recursive(request, join_table);
+		rightBool = pass1_join_is_recursive(request, *join_table);
 		rightRecursive = (rightBool != 0);
 	}
 	else
 	{
 		rightBool = input->nod_arg[e_join_boolean];
-		rightRecursive = pass1_relproc_is_recursive(request, join_table);
+		rightRecursive = pass1_relproc_is_recursive(request, *join_table);
+		if (rightRecursive)
+			remove = true;
 	}
 
 	if (rightRecursive && join_type != nod_join_inner) {
@@ -3982,12 +3988,16 @@ static dsql_nod* pass1_join_is_recursive(dsql_req* request, dsql_nod*& input)
 
 	if (leftRecursive)
 	{
-		input = input->nod_arg[e_join_rght_rel];
+		if (remove)
+			input = input->nod_arg[e_join_rght_rel];
+
 		return leftBool;
 	}
 	if (rightRecursive)
 	{
-		input = input->nod_arg[e_join_left_rel];
+		if (remove)
+			input = input->nod_arg[e_join_left_rel];
+
 		return rightBool;
 	}
 
