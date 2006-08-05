@@ -1,3 +1,11 @@
+2006-08-04 15:02  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstall_20.iss (1.12.2.4), Readme.txt (1.9.2.3),
+	installation_readme.txt (1.9.2.3):
+	
+	Spelling.  Change references from RC3 to RC4
+
 2006-08-03 08:53  dimitr
 
 	* firebird2/doc/WhatsNew (1.95.2.16):
