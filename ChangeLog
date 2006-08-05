@@ -1,3 +1,9 @@
+2006-08-04 06:32  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.275):
+	
+	Ported fix for CORE-855 to HEAD.
+
 2006-08-03 11:13  paul_reeves
 
 	* firebird2/src/utilities/install/install.cpp (1.9):
