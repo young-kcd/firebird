@@ -3934,12 +3934,12 @@ static dsql_nod* pass1_join_is_recursive(dsql_req* request, dsql_nod*& input)
 	bool remove = false;
 	
 	bool leftRecursive = false;
-	dsql_nod* leftBool = 0;
+	dsql_nod* leftBool = NULL;
 	dsql_nod** join_table = &input->nod_arg[e_join_left_rel];
 	if ((*join_table)->nod_type == nod_join)
 	{
 		leftBool = pass1_join_is_recursive(request, *join_table);
-		leftRecursive = (leftBool != 0);
+		leftRecursive = (leftBool != NULL);
 	}
 	else
 	{
@@ -3957,12 +3957,12 @@ static dsql_nod* pass1_join_is_recursive(dsql_req* request, dsql_nod*& input)
 	}
 
 	bool rightRecursive = false;
-	dsql_nod* rightBool = 0;
+	dsql_nod* rightBool = NULL;
 	join_table = &input->nod_arg[e_join_rght_rel];
 	if ((*join_table)->nod_type == nod_join)
 	{
 		rightBool = pass1_join_is_recursive(request, *join_table);
-		rightRecursive = (rightBool != 0);
+		rightRecursive = (rightBool != NULL);
 	}
 	else
 	{

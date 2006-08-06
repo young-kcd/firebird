@@ -996,7 +996,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		blobIndex = NULL;
 		if (source->bid_internal.bid_relation_id)
 		{
-			blob = copy_blob(tdbb, source, destination, bpb.getCount(), bpb.begin(), relPages->rel_pg_space_id);
+			blob = copy_blob(tdbb, source, destination,
+				bpb.getCount(), bpb.begin(), relPages->rel_pg_space_id);
 		}
 		else if ((to_desc->dsc_dtype == dtype_array) &&
 				 (array = find_array(transaction, source)) &&
@@ -2163,6 +2164,7 @@ static void gen_bpb_from_descs(const dsc* from_desc, const dsc* to_desc, UCharBu
 		*p++ = interp;	// target charset
 	}
 
+	// set the array count to the number of bytes we used
 	bpb.shrink(p - bpb.begin());
 }
 
@@ -2506,6 +2508,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	SET_TDBB(tdbb);
 
 	fb_assert(DTYPE_IS_BLOB_OR_QUAD(fromDesc->dsc_dtype));
+	fb_assert(!DTYPE_IS_BLOB_OR_QUAD(toDesc->dsc_dtype));
 
 	dsc blobAsText;
 	blobAsText.dsc_dtype = dtype_text;
