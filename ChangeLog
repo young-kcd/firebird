@@ -1,3 +1,19 @@
+2006-08-05 23:56  hvlad
+
+	* firebird2/src/dsql/pass1.cpp (1.276):
+	
+	Corrected logic of removing recursive members from joins in
+	recursive CTE
+
+2006-08-05 21:52  asfernandes
+
+	* firebird2/src/jrd/: blb.cpp (1.127), dsc.h (1.28), evl.cpp
+	(1.189), exe.cpp (1.193):
+	
+	Work on CORE-655 - Blob Type 1 compatibility with VarChar:
+	Compatibility of blobs with others data types and different blob
+	sub_types in assignments and CAST.
+
 2006-08-04 06:32  dimitr
 
 	* firebird2/src/dsql/pass1.cpp (1.275):
