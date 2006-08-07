@@ -1258,11 +1258,8 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_def_collation:
-#ifdef FB_NEW_INTL_ALLOW_NOT_READY
+	case nod_del_collation:
 		request->req_type = REQ_DDL;
-#else
-		ERRD_post(isc_wish_list, 0);
-#endif
 		return input;
 
 	case nod_def_trigger:

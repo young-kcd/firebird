@@ -51,9 +51,7 @@ static const TOK tokens[] =
 	{EQL, "=", 1, false},
 	{GTR, ">", 1, false},
 	{GEQ, ">=", 1, false},
-#ifdef FB_NEW_INTL_ALLOW_NOT_READY
 	{ACCENT, "ACCENT", 2, true},
-#endif
 	{ACTION, "ACTION", 1, true},
 	{ACTIVE, "ACTIVE", 1, false},
 	{ADD, "ADD", 1, false},
@@ -169,9 +167,7 @@ static const TOK tokens[] =
 	{INDEX, "INDEX", 1, false},
 	{INNER, "INNER", 1, false},
 	{INPUT_TYPE, "INPUT_TYPE", 1, false},
-#ifdef FB_NEW_INTL_ALLOW_NOT_READY
 	{INSENSITIVE, "INSENSITIVE", 2, false},
-#endif
 	{INSERT, "INSERT", 1, false},
 	{INSERTING, "INSERTING", 2, true},
 	{KW_INT, "INT", 1, false},
@@ -224,9 +220,7 @@ static const TOK tokens[] =
 	{OUTER, "OUTER", 1, false},
 	{OUTPUT_TYPE, "OUTPUT_TYPE", 1, false},
 	{OVERFLOW, "OVERFLOW", 1, false},
-#ifdef FB_NEW_INTL_ALLOW_NOT_READY
 	{PAD, "PAD", 2, true},
-#endif
 	{PAGE, "PAGE", 1, false},
 	{PAGES, "PAGES", 1, false},
 	{KW_PAGE_SIZE, "PAGE_SIZE", 1, false},
@@ -270,9 +264,7 @@ static const TOK tokens[] =
 	{SECOND, "SECOND", 2, false},
 	{SEGMENT, "SEGMENT", 1, false},
 	{SELECT, "SELECT", 1, false},
-#ifdef FB_NEW_INTL_ALLOW_NOT_READY
 	{SENSITIVE, "SENSITIVE", 2, false},
-#endif
 	{SEQUENCE, "SEQUENCE", 2, true},
 	{SET, "SET", 1, false},
 	{SHADOW, "SHADOW", 1, false},
@@ -284,9 +276,7 @@ static const TOK tokens[] =
 	{SNAPSHOT, "SNAPSHOT", 1, false},
 	{SOME, "SOME", 1, false},
 	{SORT, "SORT", 1, false},
-#ifdef FB_NEW_INTL_ALLOW_NOT_READY
 	{SPACE, "SPACE", 2, true},
-#endif
 	{SQLCODE, "SQLCODE", 1, false},
 	{STABILITY, "STABILITY", 1, false},
 	{STARTING, "STARTING", 1, false},

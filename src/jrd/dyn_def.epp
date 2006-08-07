@@ -128,6 +128,7 @@ static void check_foreign_key_temp_scope(thread_db*, Global*, const TEXT*, const
 static void check_relation_temp_scope(thread_db*, Global*, const TEXT*, const rel_t);
 static void make_relation_scope_name(const TEXT*, const rel_t, Firebird::string&);
 
+
 void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
@@ -150,8 +151,8 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 	if (ENCODE_ODS(major_version, minor_original) < ODS_11_0)
 	{
 		DYN_error_punt(false, 220, NULL, NULL, NULL, NULL, NULL);
-		/* msg 220: "CREATE COLLATION statement is not supported in older versions of the database.
-					 A backup and restore is required." */
+		// msg 220: "CREATE COLLATION statement is not supported in older versions of the database.
+		//			 A backup and restore is required."
 	}
 
 	Firebird::MetaName collation_name;
@@ -199,11 +200,10 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						// to minimize the possibility of conflicts with future system collations.
 						// The greater available number is 126 to avoid signed/unsigned problems.
 
-						X.RDB$COLLATION_ID.NULL = FALSE;
+						X.RDB$COLLATION_ID.NULL = TRUE;
 						X.RDB$COLLATION_ID = 126;
 
 						jrd_req* request2 = CMP_find_request(tdbb, drq_l_colls, DYN_REQUESTS);
-						bool found = false;
 
 						FOR(REQUEST_HANDLE request2
 							TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -216,14 +216,15 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 							if (!DYN_REQUEST(drq_l_colls))
 								DYN_REQUEST(drq_l_colls) = request2;
 
-							if (found) {
+							if (!X.RDB$COLLATION_ID.NULL)
+							{
 								EXE_unwind(tdbb, request2);
 								break;
 							}
 
 							if (Y.RDB$COLLATION_ID + 1 <= X.RDB$COLLATION_ID)
 							{
-								found = true;
+								X.RDB$COLLATION_ID.NULL = FALSE;
 								charsetName = CS.RDB$CHARACTER_SET_NAME;
 							}
 							else
@@ -234,18 +235,18 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						if (!DYN_REQUEST(drq_l_colls))
 							DYN_REQUEST(drq_l_colls) = request2;
 
-						if (!found)
+						if (X.RDB$COLLATION_ID.NULL)
 						{
 							DYN_error_punt(false, 221, NULL, NULL, NULL, NULL, NULL);
-							/* msg 221: "Maximum number of collations per character set exceeded" */
+							// msg 221: "Maximum number of collations per character set exceeded"
 						}
 
 						break;
 					}
 
 					case isc_dyn_coll_from:
-						//// TODO: verify return value
-						MET_get_char_coll_subtype_info(tdbb, DYN_get_number(ptr), &info);
+						if (!MET_get_char_coll_subtype_info(tdbb, DYN_get_number(ptr), &info))
+							break;
 
 						fb_assert(cs);
 						if (cs)
@@ -267,6 +268,11 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
 						strcpy(X.RDB$BASE_COLLATION_NAME, info.baseCollationName.c_str());
 
+						break;
+
+					case isc_dyn_coll_from_external:
+						GET_STRING(ptr, X.RDB$BASE_COLLATION_NAME);
+						X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
 						break;
 
 					case isc_dyn_coll_attribute:
@@ -369,16 +375,15 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 			info.attributes = X.RDB$COLLATION_ATTRIBUTES;
 			info.ignoreAttributes = false;
 
-			if (!IntlManager::collationInstalled(info.baseCollationName, info.charsetName))
+			if (IntlManager::collationInstalled(info.baseCollationName.c_str(), info.charsetName.c_str()))
 			{
-				DYN_error_punt(false, 223, info.baseCollationName.c_str(), info.charsetName.c_str(), NULL, NULL, NULL);
-				/* msg: 223: "Collation %s not installed for character set %s" */
-			}
-
-			if (!INTL_texttype_validate(tdbb, &info))
-			{
-				DYN_error_punt(false, 222, NULL, NULL, NULL, NULL, NULL);
-				/* msg: 222: "Invalid collation attributes" */
+				// Let not installed collations be registered in the database.
+				// But not let invalid attributes pass here.
+				if (!INTL_texttype_validate(tdbb, &info))
+				{
+					DYN_error_punt(false, 222, NULL, NULL, NULL, NULL, NULL);
+					// msg: 222: "Invalid collation attributes"
+				}
 			}
 
 			b_ending_store = true;
@@ -388,12 +393,13 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_s_colls))
 			DYN_REQUEST(drq_s_colls) = request;
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_colls);
 			DYN_error_punt(true, 219, NULL, NULL, NULL, NULL, NULL);
-			/* msg 219: "DEFINE COLLATION failed" */
+			// msg 219: "DEFINE COLLATION failed"
 		}
 		throw;
 	}

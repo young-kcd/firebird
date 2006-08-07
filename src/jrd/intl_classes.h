@@ -40,6 +40,8 @@ typedef USHORT TTYPE_ID;
 
 namespace Jrd {
 
+class Lock;
+
 class LikeObject {
 public:
 	virtual void reset() = 0;
@@ -229,7 +231,7 @@ class TextType
 {
 public:
 	TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs)
-		: type(_type), tt(_tt), cs(_cs)
+		: type(_type), tt(_tt), cs(_cs), useCount(0), existenceLock(NULL), obsolete(false)
 	{
 		canonical(cs->getSqlMatchAnyLength(), cs->getSqlMatchAny(), sizeof(sqlMatchAnyCanonic), sqlMatchAnyCanonic);
 		canonical(cs->getSqlMatchOneLength(), cs->getSqlMatchOne(), sizeof(sqlMatchOneCanonic), sqlMatchOneCanonic);
@@ -591,12 +593,9 @@ public:
 		return tt->texttype_flags;
 	}
 
-	void destroy()
-	{
-		fb_assert(tt);
-		if (tt->texttype_fn_destroy)
-			tt->texttype_fn_destroy(tt);
-	}
+	void destroy();
+	void incUseCount(thread_db* tdbb);
+	void decUseCount(thread_db* tdbb);
 
 	virtual bool matches(thread_db* tdbb, const UCHAR* a, SLONG b, const UCHAR* c, SLONG d) = 0;
 
@@ -630,6 +629,12 @@ private:
 	UCHAR gdmlRParenCanonic[sizeof(ULONG)];
 	UCHAR gdmlUpperSCanonic[sizeof(ULONG)];
 	UCHAR gdmlLowerSCanonic[sizeof(ULONG)];
+
+public:
+	Firebird::MetaName name;
+	int useCount;
+	Lock* existenceLock;
+	bool obsolete;
 };
 
 } //namespace Jrd

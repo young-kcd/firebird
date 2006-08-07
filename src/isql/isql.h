@@ -238,6 +238,8 @@ const int USAGE_RANGE				= 144;		// usage: value "%s" for switch "%s" is out of 
 const int USAGE_DUPSW				= 145;		// usage: switch "%s" or its equivalent used more than once
 const int USAGE_DUPDB				= 146;		// usage: more than one database name: "%s", "%s"
 const int NO_DEPENDENCIES			= 147;		// No dependencies for %s were found
+const int NO_COLLATION				= 148;		// There is no collation %s in this database 
+const int NO_COLLATIONS				= 149;		// There are no collations in this database 
 
 // Initialize types
 

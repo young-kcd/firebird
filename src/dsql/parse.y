@@ -493,20 +493,16 @@ static LexerState lex;
 %token NEXT
 %token SEQUENCE
 %token RESTART
-// %token ACCENT		// FB_NEW_INTL_ALLOW_NOT_READY
+%token ACCENT
 %token BOTH
 %token COLLATION
 %token COMMENT
 %token BIT_LENGTH
 %token CHAR_LENGTH
 %token CHARACTER_LENGTH
-// %token INSENSITIVE	// FB_NEW_INTL_ALLOW_NOT_READY
 %token LEADING
 %token KW_LOWER
 %token OCTET_LENGTH
-// %token PAD			// FB_NEW_INTL_ALLOW_NOT_READY
-// %token SENSITIVE		// FB_NEW_INTL_ALLOW_NOT_READY
-// %token SPACE			// FB_NEW_INTL_ALLOW_NOT_READY
 %token TRAILING
 %token TRIM
 %token RETURNING
@@ -518,9 +514,13 @@ static LexerState lex;
 
 /* tokens added for Firebird 2.1 */
 
-%token LIST
-%token PRESERVE
 %token GLOBAL 
+%token INSENSITIVE
+%token LIST
+%token PAD
+%token PRESERVE
+%token SENSITIVE
+%token SPACE
 %token TEMPORARY 
 %token RECURSIVE 
 
@@ -866,10 +866,8 @@ create_clause	: EXCEPTION exception_clause
 			{ $$ = $2; }
 		| ROLE role_clause
 			{ $$ = $2; }
-		/*** FB_NEW_INTL_ALLOW_NOT_READY
 		| COLLATION collation_clause
 			{ $$ = $2; }
-		***/
 		;
 
 
@@ -1066,9 +1064,9 @@ role_clause : symbol_role_name
 
 /* CREATE COLLATION */
 
-/*** FB_NEW_INTL_ALLOW_NOT_READY
 collation_clause : symbol_collation_name FOR symbol_character_set_name
-		collation_sequence_definition collation_attribute_list_opt collation_specific_attribute_opt
+		collation_sequence_definition
+		collation_attribute_list_opt collation_specific_attribute_opt
 			{ $$ = make_node (nod_def_collation, 
 						(int) e_def_coll_count, $1, $3, $4, make_list($5), $6); }
 		;
@@ -1076,6 +1074,8 @@ collation_clause : symbol_collation_name FOR symbol_character_set_name
 collation_sequence_definition :
 		FROM symbol_collation_name
 			{ $$ = make_node(nod_collation_from, 1, $2); }
+		| FROM EXTERNAL '(' sql_string ')'
+			{ $$ = make_node(nod_collation_from_external, 1, $4); }
 		|
 			{ $$ = NULL; }
 		;
@@ -1086,8 +1086,8 @@ collation_attribute_list_opt :
 		;
 
 collation_attribute_list : collation_attribute
-		| collation_attribute_list ',' collation_attribute
-			{ $$ = make_node(nod_list, 2, $1, $3); }
+		| collation_attribute_list collation_attribute
+			{ $$ = make_node(nod_list, 2, $1, $2); }
 		;
 
 collation_attribute :
@@ -1117,9 +1117,9 @@ collation_accent_attribute : ACCENT SENSITIVE
 collation_specific_attribute_opt :
 			{ $$ = NULL; }
 		| sql_string
-			{ $$ = make_node(nod_collation_specific_attr, 1, MAKE_constant((dsql_str*)$1, CONSTANT_STRING)); }
+			{ $$ = make_node(nod_collation_specific_attr, 1,
+				MAKE_constant((dsql_str*)$1, CONSTANT_STRING)); }
 		;
-***/
 
 
 /* CREATE DATABASE */
@@ -2141,15 +2141,15 @@ keyword_or_column	: valid_symbol_name
 		| CHAR_LENGTH
 		| CHARACTER_LENGTH
 		| COMMENT
-		// | INSENSITIVE	// FB_NEW_INTL_ALLOW_NOT_READY
 		| LEADING
 		| KW_LOWER
 		| OCTET_LENGTH
-		// | SENSITIVE		// FB_NEW_INTL_ALLOW_NOT_READY
 		| TRAILING
 		| TRIM
 		| GLOBAL				/* added in FB 2.1 */
+		| INSENSITIVE
 		| RECURSIVE 
+		| SENSITIVE
 		;
 
 col_opt	: ALTER
@@ -2291,6 +2291,8 @@ drop_clause	: EXCEPTION symbol_exception_name
 			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
 		| SEQUENCE symbol_generator_name
 			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
+		| COLLATION symbol_collation_name
+			{ $$ = make_node (nod_del_collation, (int) 1, $2); }
 		;
 
 
@@ -4344,13 +4346,10 @@ non_reserved_word :
 	| FIRST
 	| SKIP
 	| BLOCK					/* added in FB 2.0 */
-	// | ACCENT	// FB_NEW_INTL_ALLOW_NOT_READY
 	| BACKUP
 	| KW_DIFFERENCE
 	| IIF
-	// | PAD	// FB_NEW_INTL_ALLOW_NOT_READY
 	| SCALAR_ARRAY
-	// | SPACE	// FB_NEW_INTL_ALLOW_NOT_READY
 	| WEEKDAY
 	| YEARDAY
 	| SEQUENCE
@@ -4363,8 +4362,11 @@ non_reserved_word :
 	| UNDO
 	| REQUESTS
 	| TIMEOUT
-	| LIST					/* added in FB 2.1 */
+	| ACCENT				/* added in FB 2.1 */
+	| LIST
+	| PAD
 	| PRESERVE
+	| SPACE
 	| TEMPORARY
 	;
 

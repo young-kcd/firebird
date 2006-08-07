@@ -116,9 +116,11 @@
 #include "../jrd/iberr_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/thd.h"
 #include "../jrd/evl_string.h"
+#include "../jrd/intlobj_new.h"
 #include "../jrd/jrd.h"
 #include "../jrd/evl_like.h"
 #include "../jrd/mov_proto.h"
@@ -131,18 +133,12 @@ using namespace Jrd;
 			 ((x)->dsc_dtype == dtype_varying)||\
 			 ((x)->dsc_dtype == dtype_cstring))
 
-#define TTYPE_TO_CHARSET(tt)    ((SSHORT)((tt) & 0x00FF))
-#define TTYPE_TO_COLLATION(tt)  ((SSHORT)((tt) >> 8))
-
 
 static bool all_spaces(thread_db*, CHARSET_ID, const BYTE*, ULONG, ULONG);
+static int blocking_ast_collation(void* ast_object);
 static void pad_spaces(thread_db*, CHARSET_ID, BYTE *, ULONG);
 static INTL_BOOL lookup_charset(charset* cs, const SubtypeInfo* info);
 static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info);
-
-// We need all the structure definitions from the old interface
-#define INTL_ENGINE_INTERNAL
-#include "../jrd/intlobj_new.h"
 
 
 // Classes and structures used internally to this file and intl implementation
@@ -162,10 +158,12 @@ public:
 	CharSet* getCharSet() { return cs; }
 
 	TextType* lookupCollation(thread_db* tdbb, USHORT tt_id);
+	void unloadCollation(thread_db* tdbb, USHORT tt_id);
 
 	CsConvert lookupConverter(thread_db* tdbb, CHARSET_ID to_cs);
 
-	static CharSetContainer* lookupCharset(thread_db* tdbb, SSHORT ttype);
+	static CharSetContainer* lookupCharset(thread_db* tdbb, USHORT ttype);
+	static Lock* createCollationLock(thread_db* tdbb, USHORT ttype);
 
 private:
 	Firebird::Array<TextType*> charset_collations;
@@ -486,6 +484,31 @@ public:
 	}
 };
 
+void TextType::destroy()
+{
+	fb_assert(tt);
+
+	if (tt->texttype_fn_destroy)
+		tt->texttype_fn_destroy(tt);
+
+	delete tt;
+	delete existenceLock;
+}
+
+void TextType::incUseCount(thread_db* tdbb)
+{
+	++useCount;
+}
+
+void TextType::decUseCount(thread_db* tdbb)
+{
+	if (--useCount == 0)
+	{
+		if (existenceLock)
+			LCK_re_post(existenceLock);
+	}
+}
+
 template <typename pContainsObjectImpl, typename pLikeObjectImpl,
 		  typename pMatchesObjectImpl, typename pSleuthObjectImpl>
 class CollationImpl : public TextType
@@ -548,7 +571,8 @@ typedef SleuthObjectImpl<CanonicalConverter<NullStrConverter>, ULONG> ulong_sleu
 typedef LikeObjectImpl<CanonicalConverter<NullStrConverter>, ULONG> ulong_like_canonical;
 typedef ContainsObjectImpl<CanonicalConverter<UpcaseConverter<NullStrConverter> >, ULONG> ulong_contains_canonical;
 
-CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype)
+
+CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 {
 /**************************************
  *
@@ -603,6 +627,31 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype)
 	return cs;
 }
 
+Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype)
+{
+/**************************************
+ *
+ *      c r e a t e C o l l a t i o n L o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *      Create a collation lock.
+ *
+ **************************************/
+	Lock* lock = FB_NEW_RPT(*tdbb->tdbb_database->dbb_permanent, 0) Lock;
+	lock->lck_parent = tdbb->tdbb_database->dbb_lock;
+	lock->lck_dbb = tdbb->tdbb_database;
+	lock->lck_key.lck_long = ttype;
+	lock->lck_length = sizeof(lock->lck_key.lck_long);
+	lock->lck_type = LCK_tt_exist;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_object = NULL;
+	lock->lck_ast = blocking_ast_collation;
+
+	return lock;
+}
+
 CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInfo* info) :
 	charset_collations(p),
 	cs(NULL)
@@ -644,7 +693,19 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 	const USHORT id = TTYPE_TO_COLLATION(tt_id);
 
 	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
-		return charset_collations[id];
+	{
+		if (charset_collations[id]->obsolete)
+		{
+			if (charset_collations[id]->existenceLock)
+				LCK_release(tdbb, charset_collations[id]->existenceLock);
+
+			charset_collations[id]->destroy();
+			delete charset_collations[id];
+			charset_collations[id] = NULL;
+		}
+		else
+			return charset_collations[id];
+	}
 
 	SubtypeInfo info;
 	if (MET_get_char_coll_subtype_info(tdbb, tt_id, &info))
@@ -678,78 +739,87 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		if (charset_collations.getCount() <= id)
 			charset_collations.grow(id + 1);
 
-		if (charset_collations[id] == NULL)
-		{
-			fb_assert((tt->texttype_canonical_width == 0 && tt->texttype_fn_canonical == NULL) ||
-					  (tt->texttype_canonical_width != 0 && tt->texttype_fn_canonical != NULL));
+		fb_assert((tt->texttype_canonical_width == 0 && tt->texttype_fn_canonical == NULL) ||
+				  (tt->texttype_canonical_width != 0 && tt->texttype_fn_canonical != NULL));
 
-			if (tt->texttype_canonical_width == 0)
+		if (tt->texttype_canonical_width == 0)
+		{
+			if (charset->isMultiByte())
+				tt->texttype_canonical_width = sizeof(ULONG);	// UTF-32
+			else
 			{
-				if (charset->isMultiByte())
-					tt->texttype_canonical_width = sizeof(ULONG);	// UTF-32
+				tt->texttype_canonical_width = charset->minBytesPerChar();
+				// canonical is equal to string, then TEXTTYPE_DIRECT_MATCH can be turned on
+				tt->texttype_flags |= TEXTTYPE_DIRECT_MATCH;
+			}
+		}
+
+		fb_assert(tt->texttype_canonical_width == 1 ||
+					tt->texttype_canonical_width == 2 ||
+					tt->texttype_canonical_width == 4);
+
+		switch (tt->texttype_canonical_width)
+		{
+			case 1:
+				if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
+				{
+					charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
+						CollationImpl<uchar_contains_direct, uchar_like_canonical,
+							uchar_matches_canonical, uchar_sleuth_canonical>(tt_id, tt, charset);
+				}
 				else
 				{
-					tt->texttype_canonical_width = charset->minBytesPerChar();
-					// canonical is equal to string, then TEXTTYPE_DIRECT_MATCH can be turned on
-					tt->texttype_flags |= TEXTTYPE_DIRECT_MATCH;
+					charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
+						CollationImpl<uchar_contains_canonical, uchar_like_canonical,
+							uchar_matches_canonical, uchar_sleuth_canonical>(tt_id, tt, charset);
 				}
-			}
+				break;
 
-			fb_assert(tt->texttype_canonical_width == 1 ||
-					  tt->texttype_canonical_width == 2 ||
-					  tt->texttype_canonical_width == 4);
+			case 2:
+				if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
+				{
+					charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
+						CollationImpl<uchar_contains_direct, ushort_like_canonical,
+							ushort_matches_canonical, ushort_sleuth_canonical>(tt_id, tt, charset);
+				}
+				else
+				{
+					charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
+						CollationImpl<ushort_contains_canonical, ushort_like_canonical,
+							ushort_matches_canonical, ushort_sleuth_canonical>(tt_id, tt, charset);
+				}
+				break;
 
-			switch (tt->texttype_canonical_width)
-			{
-				case 1:
-					if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
-					{
-						charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
-							CollationImpl<uchar_contains_direct, uchar_like_canonical,
-								uchar_matches_canonical, uchar_sleuth_canonical>(tt_id, tt, charset);
-					}
-					else
-					{
-						charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
-							CollationImpl<uchar_contains_canonical, uchar_like_canonical,
-								uchar_matches_canonical, uchar_sleuth_canonical>(tt_id, tt, charset);
-					}
-					break;
+			case 4:
+				if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
+				{
+					charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
+						CollationImpl<uchar_contains_direct, ulong_like_canonical,
+							ulong_matches_canonical, ulong_sleuth_canonical>(tt_id, tt, charset);
+				}
+				else
+				{
+					charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
+						CollationImpl<ulong_contains_canonical, ulong_like_canonical,
+							ulong_matches_canonical, ulong_sleuth_canonical>(tt_id, tt, charset);
+				}
+				break;
 
-				case 2:
-					if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
-					{
-						charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
-							CollationImpl<uchar_contains_direct, ushort_like_canonical,
-								ushort_matches_canonical, ushort_sleuth_canonical>(tt_id, tt, charset);
-					}
-					else
-					{
-						charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
-							CollationImpl<ushort_contains_canonical, ushort_like_canonical,
-								ushort_matches_canonical, ushort_sleuth_canonical>(tt_id, tt, charset);
-					}
-					break;
+			default:
+				fb_assert(false);
+				return NULL;
+		}
 
-				case 4:
-					if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
-					{
-						charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
-							CollationImpl<uchar_contains_direct, ulong_like_canonical,
-								ulong_matches_canonical, ulong_sleuth_canonical>(tt_id, tt, charset);
-					}
-					else
-					{
-						charset_collations[id] = FB_NEW(*tdbb->tdbb_database->dbb_permanent)
-							CollationImpl<ulong_contains_canonical, ulong_like_canonical,
-								ulong_matches_canonical, ulong_sleuth_canonical>(tt_id, tt, charset);
-					}
-					break;
+		charset_collations[id]->name = info.collationName;
 
-				default:
-					fb_assert(false);
-					return NULL;
-			}
+		// we don't need a lock in the charset
+		if (id != 0)
+		{
+			Lock* lock = charset_collations[id]->existenceLock =
+				CharSetContainer::createCollationLock(tdbb, tt_id);
+			lock->lck_object = (blk*)charset_collations[id];
+
+			LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 		}
 	}
 	else
@@ -759,15 +829,49 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 }
 
 
+void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
+{
+	const USHORT id = TTYPE_TO_COLLATION(tt_id);
+
+	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
+	{
+		if (charset_collations[id]->useCount != 0)
+		{
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, charset_collations[id]->name.c_str(),
+					 0);
+		}
+
+		if (charset_collations[id]->existenceLock)
+			LCK_convert_non_blocking(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
+
+		charset_collations[id]->obsolete = true;
+
+		if (charset_collations[id]->existenceLock)
+			LCK_release(tdbb, charset_collations[id]->existenceLock);
+	}
+	else
+	{
+		Lock* lock = CharSetContainer::createCollationLock(tdbb, tt_id);
+
+		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
+		LCK_release(tdbb, lock);
+
+		delete lock;
+	}
+}
+
+
 static INTL_BOOL lookup_charset(charset* cs, const SubtypeInfo* info)
 {
-	return IntlManager::lookupCharSet(info->charsetName, cs);
+	return IntlManager::lookupCharSet(info->charsetName.c_str(), cs);
 }
 
 
 static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
 {
-	return IntlManager::lookupCollation(info->baseCollationName, info->charsetName,
+	return IntlManager::lookupCollation(info->baseCollationName.c_str(), info->charsetName.c_str(),
 		info->attributes, info->specificAttributes.begin(),
 		info->specificAttributes.getCount(), info->ignoreAttributes, tt);
 }
@@ -852,7 +956,7 @@ int INTL_compare(thread_db* tdbb,
 /* YYY - by SQL II compare_type must be explicit in the
    SQL statement if there is any doubt */
 
-	SSHORT compare_type = MAX(t1, t2);	/* YYY */
+	USHORT compare_type = MAX(t1, t2);	/* YYY */
 	UCHAR buffer[MAX_KEY];
 
 	if (t1 != t2) {
@@ -1268,7 +1372,7 @@ int INTL_data_or_binary(const dsc* pText)
 }
 
 
-bool INTL_defined_type(thread_db* tdbb, SSHORT t_type)
+bool INTL_defined_type(thread_db* tdbb, USHORT t_type)
 {
 /**************************************
  *
@@ -1342,7 +1446,7 @@ USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 
 	fb_assert(idxType >= idx_first_intl_string);
 
-	const SSHORT ttype = INTL_INDEX_TO_TEXT(idxType);
+	const USHORT ttype = INTL_INDEX_TO_TEXT(idxType);
 
 	USHORT key_length;
 	if (ttype >= 0 && ttype <= ttype_last_internal)
@@ -1364,7 +1468,7 @@ USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 }
 
 
-CharSet* INTL_charset_lookup(thread_db* tdbb, SSHORT parm1)
+CharSet* INTL_charset_lookup(thread_db* tdbb, USHORT parm1)
 {
 /**************************************
  *
@@ -1392,7 +1496,7 @@ CharSet* INTL_charset_lookup(thread_db* tdbb, SSHORT parm1)
 
 
 TextType* INTL_texttype_lookup(thread_db* tdbb,
-								SSHORT parm1)
+								USHORT parm1)
 {
 /**************************************
  *
@@ -1426,8 +1530,39 @@ TextType* INTL_texttype_lookup(thread_db* tdbb,
 }
 
 
+void INTL_texttype_unload(thread_db* tdbb,
+						  USHORT ttype)
+{
+/**************************************
+ *
+ *      I N T L _ t e x t t y p e _ u n l o a d
+ *
+ **************************************
+ *
+ * Functional description
+ *  Unload a collation from memory.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	CharSetContainer* csc = CharSetContainer::lookupCharset(tdbb, ttype);
+	if (csc)
+		csc->unloadCollation(tdbb, ttype);
+}
+
+
 bool INTL_texttype_validate(Jrd::thread_db* tdbb, const SubtypeInfo* info)
 {
+/**************************************
+ *
+ *      I N T L _ t e x t t y p e _ v a l i d a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *  Check if collation attributes are valid.
+ *
+ **************************************/
 	SET_TDBB(tdbb);
 
 	texttype tt;
@@ -1486,7 +1621,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
  *
  **************************************/
 	UCHAR pad_char;
-	SSHORT ttype;
+	USHORT ttype;
 
 	SET_TDBB(tdbb);
 
@@ -1722,6 +1857,54 @@ static bool all_spaces(
 }
 
 
+static int blocking_ast_collation(void* ast_object)
+{
+/**************************************
+ *
+ *      b l o c k i n g _ a s t _ c o l l a t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *      Someone is trying to drop a collation. If there
+ *      are outstanding interests in the existence of
+ *      the collation then just mark as blocking and return.
+ *      Otherwise, mark the collation as obsolete
+ *      and release the collation existence lock.
+ *
+ **************************************/
+	if (!ast_object)
+		return 0;
+
+	TextType* tt = static_cast<TextType*>(ast_object);
+	thread_db thd_context, *tdbb;
+
+	// Since this routine will be called asynchronously, we must establish
+	// a thread context.
+	JRD_set_thread_data(tdbb, thd_context);
+
+	tdbb->tdbb_database = tt->existenceLock->lck_dbb;
+	tdbb->tdbb_attachment = tt->existenceLock->lck_attachment;
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->tdbb_request = NULL;
+	tdbb->tdbb_transaction = NULL;
+	Jrd::ContextPoolHolder context(tdbb, 0);
+
+	if (tt->useCount == 0)
+	{
+		tt->obsolete = true;
+
+		if (tt->existenceLock)
+			LCK_release(tdbb, tt->existenceLock);
+	}
+
+	// Restore the prior thread context
+	JRD_restore_thread_data();
+
+	return 0;
+}
+
+
 static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, ULONG len)
 {								/* byte count */
 /**************************************
@@ -1762,4 +1945,3 @@ static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, ULONG len
 		}
 	}
 }
-

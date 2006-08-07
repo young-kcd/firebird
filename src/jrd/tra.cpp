@@ -40,6 +40,7 @@
 #include "../jrd/req.h"
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
+#include "../jrd/intl_classes.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/thd.h"
 #include "../jrd/blb_proto.h"
@@ -826,7 +827,8 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 	for (Resource* rsc = resources.begin(); rsc < resources.end(); rsc++) 
 	{
 		if (rsc->rsc_type == Resource::rsc_relation ||
-			rsc->rsc_type == Resource::rsc_procedure)
+			rsc->rsc_type == Resource::rsc_procedure ||
+			rsc->rsc_type == Resource::rsc_ttype)
 		{
 			size_t i;
 			if (!transaction->tra_resources.find(*rsc, i)) 
@@ -847,6 +849,9 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 						JRD_print_procedure_info(tdbb, buffer);
 					}
 #endif
+					break;
+				case Resource::rsc_ttype:
+					rsc->rsc_tt->incUseCount(tdbb);
 					break;
 				default:   // shut up compiler warning
 					break;
@@ -1093,6 +1098,9 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 		switch (rsc->rsc_type) {
 		case Resource::rsc_procedure:
 			CMP_decrement_prc_use_count(tdbb, rsc->rsc_prc);
+			break;
+		case Resource::rsc_ttype:
+			rsc->rsc_tt->decUseCount(tdbb);
 			break;
 		default:
 			MET_release_existence(rsc->rsc_rel);

@@ -136,6 +136,7 @@ static void define_upd_cascade_trg(dsql_req*, const dsql_nod*, const dsql_nod*,
 	const dsql_nod*, const char*, const char*);
 static void define_view(dsql_req*, NOD_TYPE);
 static void define_view_trigger(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*);
+static void delete_collation(dsql_req*);
 static void delete_exception(dsql_req*, dsql_nod*, bool);
 static void delete_procedure(dsql_req*, dsql_nod*, bool);
 static void delete_relation_view(dsql_req*, dsql_nod*, bool);
@@ -329,9 +330,17 @@ void DDL_execute(dsql_req* request)
 	    (type == nod_replace_procedure) ||
 	    (type == nod_redef_procedure))
 	{
+		// for delete & modify, get rid of the cached procedure metadata
 		string = (dsql_str*) request->req_ddl_node->nod_arg[e_prc_name];
 		sym_type = SYM_procedure;
 		METD_drop_procedure(request, string);
+	}
+	else if (type == nod_del_collation)
+	{
+		// for delete, get rid of the cached collation metadata
+		string = (dsql_str*) request->req_ddl_node->nod_arg[e_del_coll_name];
+		sym_type = SYM_intlsym_collation;
+		METD_drop_collation(request, string);
 	}
 
 	// Signal UDF for obsolescence
@@ -2091,7 +2100,7 @@ static void define_collation( dsql_req* request)
  **************************************
  *
  * Function
- *	create a collation.
+ *	Create a collation.
  *
  **************************************/
 
@@ -2121,22 +2130,35 @@ static void define_collation( dsql_req* request)
 	request->append_cstring(isc_dyn_def_collation, coll_name->str_data);
 	request->append_number(isc_dyn_coll_for_charset, resolved_charset->intlsym_charset_id);
 
-	if (coll_from && coll_from->nod_type == nod_collation_from)
+	if (coll_from)
 	{
-		const dsql_intlsym* resolved_collation =
-			METD_get_collation(request, (dsql_str*)coll_from->nod_arg[0], resolved_charset->intlsym_charset_id);
-
-		if (!resolved_collation)
+		if (coll_from->nod_type == nod_collation_from)
 		{
-			// Specified collation not found
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
-					  isc_arg_gds, isc_collation_not_found,
-					  isc_arg_string, ((dsql_str*)coll_from->nod_arg[0])->str_data,
-					  isc_arg_string, resolved_charset->intlsym_name, 0);
-		}
+			const dsql_intlsym* resolved_collation =
+				METD_get_collation(request, (dsql_str*)coll_from->nod_arg[0],
+					resolved_charset->intlsym_charset_id);
 
-		request->append_number(isc_dyn_coll_from,
-			(resolved_collation->intlsym_collate_id << 8) | resolved_collation->intlsym_charset_id);
+			if (!resolved_collation)
+			{
+				// Specified collation not found
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
+						  isc_arg_gds, isc_collation_not_found,
+						  isc_arg_string, ((dsql_str*)coll_from->nod_arg[0])->str_data,
+						  isc_arg_string, resolved_charset->intlsym_name,
+						  0);
+			}
+
+			request->append_number(isc_dyn_coll_from,
+				INTL_CS_COLL_TO_TTYPE(resolved_collation->intlsym_charset_id,
+					resolved_collation->intlsym_collate_id));
+		}
+		else if (coll_from->nod_type == nod_collation_from_external)
+		{
+			request->append_cstring(isc_dyn_coll_from_external,
+				((dsql_str*)coll_from->nod_arg[0])->str_data);
+		}
+		else
+			fb_assert(false);
 	}
 
 	if (coll_attributes) {
@@ -4071,6 +4093,25 @@ static void define_view_trigger( dsql_req* request, dsql_nod* node, dsql_nod* rs
 }
 
 
+static void delete_collation(dsql_req* request)
+{
+/**************************************
+ *
+ *	d e l e t e _ c o l l a t i o n
+ *
+ **************************************
+ *
+ * Function
+ *	Delete a collation.
+ *
+ **************************************/
+
+	const dsql_str* coll_name = (dsql_str*) request->req_ddl_node->nod_arg[e_del_coll_name];
+	request->append_cstring(isc_dyn_del_collation, coll_name->str_data);
+	request->append_uchar(isc_dyn_end);
+}
+
+
 static void delete_exception (dsql_req*     request,
                               dsql_nod*     node,
                               bool silent_deletion)
@@ -4577,6 +4618,10 @@ static void generate_dyn( dsql_req* request, dsql_nod* node)
 
 	case nod_def_collation:
 		define_collation(request);
+		break;
+
+	case nod_del_collation:
+		delete_collation(request);
 		break;
 
 	default: // CVC: Shouldn't we complain here?

@@ -72,6 +72,7 @@ static void make_priv_string(USHORT, char*);
 static processing_state show_all_tables(SSHORT);
 static void show_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool, bool);
 static processing_state show_check(const SCHAR*);
+static processing_state show_collations(const SCHAR*);
 static void show_comment(const char* objtype, char* name1, char* name2,
 	ISC_QUAD* blobfld, const commentMode showextract, const char* banner);
 static processing_state show_comments(const commentMode showextract, const char* banner);
@@ -242,7 +243,7 @@ public:
 	{
 		role, table, view, system, index, domain, exception,
 		filter, function, generator, grant, procedure, trigger,
-		check, database, comment, dependency, wrong
+		check, database, comment, dependency, collation, wrong
 	};
 	static show_commands getCommand(const char* cmd);
 
@@ -298,7 +299,9 @@ const ShowOptions::map ShowOptions::options[] =
 	//{comment, "COMMENT"},
 	{comment, "COMMENTS", 7},
 	{dependency, "DEPENDENCY", 5},
-	{dependency, "DEPENDENCIES", 5}
+	{dependency, "DEPENDENCIES", 5},
+	{collation, "COLLATES", 7},
+	{collation, "COLLATIONS", 9}
 };
 
 // Return the keyword associated with the string. There may be several strings
@@ -1410,6 +1413,22 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		if (ret == OBJECT_NOT_FOUND)
 			key = NO_COMMENTS;
 		break;
+
+	case ShowOptions::collation:
+		if (*cmd[2] == '"') {
+			remove_delimited_double_quotes(lcmd[2]);
+			ret = show_collations(lcmd[2]);
+		}
+		else
+			ret = show_collations(cmd[2]);
+
+		if (ret == OBJECT_NOT_FOUND) {
+			if (*cmd[2])
+				key = NO_COLLATION;
+			else
+				key = NO_COLLATIONS;
+		}
+		break;
 		
 	case ShowOptions::dependency:
 		if (*cmd[2] == '"')
@@ -1696,6 +1715,78 @@ static processing_state show_check(const SCHAR* object)
 	if (first)
 		return (OBJECT_NOT_FOUND);
 	return (SKIP);
+}
+
+
+static processing_state show_collations(const SCHAR* object)
+{
+/**************************************
+ *
+ *	s h o w _ c o l l a t i o n s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Show collations.
+ *
+ **************************************/
+	bool found = false;
+
+	// Show all collations or named collation
+	FOR CL IN RDB$COLLATIONS CROSS
+		CS IN RDB$CHARACTER_SETS WITH
+		CS.RDB$CHARACTER_SET_ID EQ CL.RDB$CHARACTER_SET_ID
+		SORTED BY CL.RDB$COLLATION_NAME
+
+		fb_utils::exact_name(CL.RDB$COLLATION_NAME);
+
+		if ((!*object && (CL.RDB$SYSTEM_FLAG.NULL || CL.RDB$SYSTEM_FLAG == 0)) ||
+			!strcmp(CL.RDB$COLLATION_NAME, object))
+		{
+			found = true;
+
+			isqlGlob.printf("COLLATION %s", CL.RDB$COLLATION_NAME);
+
+			fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME);
+			isqlGlob.printf(", CHARACTER SET %s", CS.RDB$CHARACTER_SET_NAME);
+
+			if (!CL.RDB$BASE_COLLATION_NAME.NULL)
+			{
+				fb_utils::exact_name(CL.RDB$BASE_COLLATION_NAME);
+				isqlGlob.printf(", FROM EXTERNAL ('%s')", CL.RDB$BASE_COLLATION_NAME);
+			}
+
+			if (!CL.RDB$COLLATION_ATTRIBUTES.NULL)
+			{
+				if (CL.RDB$COLLATION_ATTRIBUTES & 0x01)	// TEXTTYPE_ATTR_PAD_SPACE
+					isqlGlob.printf(", PAD SPACE");
+
+				if (CL.RDB$COLLATION_ATTRIBUTES & 0x02)	// TEXTTYPE_ATTR_CASE_INSENSITIVE
+					isqlGlob.printf(", CASE INSENSITIVE");
+
+				if (CL.RDB$COLLATION_ATTRIBUTES & 0x04)	// TEXTTYPE_ATTR_ACCENT_INSENSITIVE
+					isqlGlob.printf(", ACCENT INSENSITIVE");
+			}
+
+			if (!CL.RDB$SPECIFIC_ATTRIBUTES.NULL)
+			{
+				isqlGlob.printf(", '");
+				SHOW_print_metadata_text_blob (isqlGlob.Out, &CL.RDB$SPECIFIC_ATTRIBUTES);
+				isqlGlob.printf("'");
+			}
+
+			isqlGlob.printf("%s", NEWLINE);
+		}
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
+		return ps_ERR;
+	END_ERROR;
+
+	if (!found)
+		return (OBJECT_NOT_FOUND);
+
+	return SKIP;
 }
 
 

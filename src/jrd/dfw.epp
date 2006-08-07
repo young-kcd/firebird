@@ -153,6 +153,7 @@ static bool scan_relation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_collation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_exception(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -233,6 +234,7 @@ static const deferred_task task_table[] =
 	{ dfw_delete_procedure, delete_procedure },
 	{ dfw_modify_procedure, modify_procedure },
 	{ dfw_delete_prm, delete_parameter },
+	{ dfw_delete_collation, delete_collation },
 	{ dfw_delete_exception, delete_exception },
     { dfw_delete_generator, delete_generator },
     { dfw_modify_generator, modify_generator },
@@ -1303,6 +1305,9 @@ static void check_dependencies(thread_db* tdbb,
 			case obj_procedure:
 				obj_type = isc_proc_name;
 				break;
+			case obj_collation:
+				obj_type = isc_collation_name;
+				break;
 			case obj_exception:
 				obj_type = isc_exception_name;
 				break;
@@ -2102,6 +2107,47 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		get_trigger_dependencies(work);
 		break;
 	}
+
+	return false;
+}
+
+
+static bool delete_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
+	jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	d e l e t e _ c o l l a t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check if it is allowable to delete
+ *	a collation, and if so, clean up after it.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+
+	switch (phase)
+	{
+	case 0:
+		return false;
+
+	case 1:
+		{
+		check_dependencies(tdbb, work->dfw_name.c_str(), NULL,
+						   obj_collation, transaction); 
+		return true;
+		}
+
+	case 2:
+		return true;
+
+	case 3:
+		INTL_texttype_unload(tdbb, work->dfw_id);
+		return true;
+    }
 
 	return false;
 }

@@ -770,6 +770,17 @@ static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
 
 	node->nod_arg[e_cast_source] = parse(tdbb, csb, VALUE);
 
+	if (DTYPE_IS_TEXT(desc->dsc_dtype) ||
+		((desc->dsc_dtype == dtype_blob || desc->dsc_dtype == dtype_quad) &&
+		 desc->dsc_sub_type == isc_blob_text))
+	{
+		jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
+		dep_node->nod_type = nod_dependency;
+		dep_node->nod_arg [e_dep_object] = (jrd_nod*)(IPTR) INTL_TEXT_TYPE(*desc);
+		dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_collation;
+		csb->csb_dependencies.push(dep_node);
+	}
+
 	return node;
 }
 

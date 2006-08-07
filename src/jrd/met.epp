@@ -153,7 +153,7 @@ static void inc_int_use_count(jrd_req* req)
 	// Increment int_use_count for all procedures in resource list of request
 	ResourceList& list = req->req_resources;
 	size_t i;
-	for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
+	for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
 	    i < list.getCount(); i++)
 	{
 		Resource& resource = list[i];
@@ -230,7 +230,7 @@ void adjust_dependencies(jrd_prc* procedure)
 		// Loop over procedures from resource list of prc_request
 		ResourceList& list = procedure->prc_request->req_resources;
 		size_t i;
-		for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
+		for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
 			 i < list.getCount(); i++)
 		{
 			Resource& resource = list[i];
@@ -310,7 +310,7 @@ void MET_verify_cache(thread_db* tdbb)
 						// Loop over procedures from resource list of prc_request
 						const ResourceList& list = prc->prc_request->req_resources;
 						size_t i;
-						for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL), i);
+						for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
 						     i < list.getCount(); i++)
 						{
 							const Resource& resource = list[i];
@@ -998,18 +998,12 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, USHORT id, SubtypeInfo* inf
 			found = true;
 
 			info->charsetName = CS.RDB$CHARACTER_SET_NAME;
-			info->charsetName.rtrim();
-
 			info->collationName = CL.RDB$COLLATION_NAME;
-			info->collationName.rtrim();
 
 			if (CL.RDB$BASE_COLLATION_NAME.NULL)
 				info->baseCollationName = info->collationName;
 			else
-			{
 				info->baseCollationName = CL.RDB$BASE_COLLATION_NAME;
-				info->baseCollationName.rtrim();
-			}
 
 			if (CL.RDB$SPECIFIC_ATTRIBUTES.NULL)
 				info->specificAttributes.clear();
@@ -1039,11 +1033,7 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, USHORT id, SubtypeInfo* inf
 			found = true;
 
 			info->charsetName = CS.RDB$CHARACTER_SET_NAME;
-			info->charsetName.rtrim();
-
 			info->collationName = CL.RDB$COLLATION_NAME;
-			info->collationName.rtrim();
-
 			info->baseCollationName = info->collationName;
 			info->specificAttributes.clear();
 			info->attributes = 0;
@@ -4405,12 +4395,13 @@ static void store_dependencies(thread_db*	tdbb,
 			continue;
 
 		const SSHORT dpdo_type = (SSHORT) (IPTR) node->nod_arg[e_dep_object_type];
-        jrd_rel* relation = NULL;
-        jrd_prc* procedure = NULL;
-        const Firebird::MetaName* dpdo_name = 0;
+		jrd_rel* relation = NULL;
+		jrd_prc* procedure = NULL;
+		const Firebird::MetaName* dpdo_name = 0;
+		SubtypeInfo info;
         
-        switch (dpdo_type) {
-        case obj_relation:
+		switch (dpdo_type) {
+		case obj_relation:
 			relation = (jrd_rel*) node->nod_arg[e_dep_object];
 			dpdo_name = &relation->rel_name;
 
@@ -4442,6 +4433,13 @@ static void store_dependencies(thread_db*	tdbb,
             procedure = (jrd_prc*) node->nod_arg[e_dep_object];
             dpdo_name = &procedure->prc_name;
             break;
+		case obj_collation:
+			{
+				const USHORT number = (IPTR) node->nod_arg[e_dep_object];
+				MET_get_char_coll_subtype_info(tdbb, number, &info);
+				dpdo_name = &info.collationName;
+				break;
+			}
         case obj_exception:
 			{
 				const SLONG number = (IPTR) node->nod_arg[e_dep_object];

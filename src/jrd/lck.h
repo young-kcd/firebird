@@ -58,7 +58,8 @@ enum lck_t {
 	LCK_rel_partners,			/* Relation partners lock */
 	LCK_page_space,				/* Page space ID lock */
 	LCK_dsql_cache,				/* DSQL cache lock */
-	LCK_counter					/* Lock holding a cross-process counter */
+	LCK_counter,				/* Lock holding a cross-process counter */
+	LCK_tt_exist				/* TextType existence lock */
 };
 
 /* Lock owner types */

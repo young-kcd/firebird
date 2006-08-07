@@ -28,6 +28,7 @@
 
 namespace Jrd {
 	class thread_db;
+	class Lock;
 }
 
 struct dsc;
@@ -41,11 +42,12 @@ Jrd::CsConvert	INTL_convert_lookup(Jrd::thread_db*, CHARSET_ID, CHARSET_ID);
 int			INTL_convert_string(dsc*, const dsc*, FPTR_ERROR);
 int			INTL_data(const dsc*);
 int			INTL_data_or_binary(const dsc*);
-bool		INTL_defined_type(Jrd::thread_db*, SSHORT);
+bool		INTL_defined_type(Jrd::thread_db*, USHORT);
 void		INTL_init(Jrd::thread_db*);
 USHORT		INTL_key_length(Jrd::thread_db*, USHORT, USHORT);
-Jrd::CharSet*	INTL_charset_lookup(Jrd::thread_db* tdbb, SSHORT parm1);
-Jrd::TextType*	INTL_texttype_lookup(Jrd::thread_db* tdbb, SSHORT parm1);
+Jrd::CharSet*	INTL_charset_lookup(Jrd::thread_db* tdbb, USHORT parm1);
+Jrd::TextType*	INTL_texttype_lookup(Jrd::thread_db* tdbb, USHORT parm1);
+void		INTL_texttype_unload(Jrd::thread_db*, USHORT);
 bool		INTL_texttype_validate(Jrd::thread_db*, const SubtypeInfo*);
 void		INTL_pad_spaces(Jrd::thread_db*, dsc*, UCHAR*, ULONG);
 USHORT		INTL_string_to_key(Jrd::thread_db*, USHORT, const dsc*, dsc*, USHORT);

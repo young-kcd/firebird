@@ -1901,6 +1901,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 #define isc_dyn_def_collation						231
 #define isc_dyn_coll_for_charset					232
 #define isc_dyn_coll_from							233
+#define isc_dyn_coll_from_external					239
 #define isc_dyn_coll_attribute						234
 #define isc_dyn_coll_specific_attributes_charset	235
 #define isc_dyn_coll_specific_attributes			236
@@ -1910,7 +1911,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 /* Last $dyn value assigned */
 /****************************/
 
-#define isc_dyn_last_dyn_value            239
+#define isc_dyn_last_dyn_value            240
 
 /******************************************/
 /* Array slice description language (SDL) */

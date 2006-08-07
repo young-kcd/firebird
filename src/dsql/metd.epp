@@ -139,6 +139,42 @@ namespace {
 }
 
 
+void METD_drop_collation(dsql_req* request, const dsql_str* name)
+{
+/**************************************
+ *
+ *	M E T D _ d r o p _ c o l l a t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Drop a collation from our metadata, and
+ *	the next caller who wants it will
+ *	look up the new version.
+ *
+ *	Dropping will be achieved by marking the collation
+ *	as dropped.  Anyone with current access can continue
+ *	accessing it.
+ *
+ **************************************/
+	RecMutexHolder holder;
+
+	// If the symbol wasn't defined, we've got nothing to do 
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_intlsym_collation, 0);
+    
+	if (symbol)
+	{
+		dsql_intlsym* intlsym = (dsql_intlsym*) symbol->sym_object;
+		intlsym->intlsym_flags |= INTLSYM_dropped;
+	}
+
+	// mark other potential candidates as maybe dropped 
+	HSHD_set_flag(request->req_dbb,
+				  reinterpret_cast<const TEXT*>(name->str_data),
+				  name->str_length, SYM_intlsym_collation, INTLSYM_dropped);
+}
+
+
 void METD_drop_function(dsql_req* request, const dsql_str* name)
 {
 /**************************************
@@ -2006,7 +2042,8 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name, S
 				break;
 			else if (type == SYM_intlsym_collation &&
 					 (intlSym = (dsql_intlsym*) symbol->sym_object) &&
-					 (intlSym->intlsym_charset_id == charset_id))
+					 (!(intlSym->intlsym_flags & INTLSYM_dropped)) &&
+					 (charset_id == 0 || intlSym->intlsym_charset_id == charset_id))
 			{
 				break;
 			}
@@ -2049,6 +2086,10 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name, S
 		{
 			switch (type)
 			{
+				case SYM_intlsym_collation:
+					intlSym->intlsym_flags |= INTLSYM_dropped;
+					break;
+
 				case SYM_procedure:
 					procedure->prc_flags |= PRC_dropped;
 					break;

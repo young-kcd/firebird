@@ -191,12 +191,15 @@ const int drq_m_gen         = 140;  // modify generator
 const int drq_m_prm         = 141;  // modify procedure's parameter
 const int drq_m_rol         = 142;  // modify sql role
 const int drq_m_view        = 143;  // modify view
-const int drq_s_colls		= 144;  /* store collations */
-const int drq_l_colls		= 145;	/* lookup collations */
+const int drq_s_colls		= 144;  // store collations
+const int drq_l_colls		= 145;	// lookup collations
 const int drq_dom_is_array 	= 146;  // lookup domain to see if it's an array
 const int drq_l_rel_info	= 147;	// lookup name and flags of one master relation
 const int drq_l_rel_info2	= 148;	// lookup names and flags of all master relations 
 const int drq_l_rel_type	= 149;	// lookup relation type
-const int drq_MAX			= 150;
+const int drq_e_colls		= 150;	// erase collations
+const int drq_l_rfld_coll	= 151;	// lookup relation field collation
+const int drq_l_fld_coll	= 152;	// lookup field collation
+const int drq_MAX			= 153;
 
 #endif /* JRD_DRQ_H */

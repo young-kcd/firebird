@@ -68,6 +68,7 @@
 #include "../jrd/fun_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/idx_proto.h"
+#include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 
 #include "../jrd/lck_proto.h"
@@ -2083,6 +2084,12 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 #endif
 				break;
 			}
+		case Resource::rsc_ttype:
+			{
+				TextType* ttype = resource->rsc_tt;
+				ttype->incUseCount(tdbb);
+				break;
+			}
 		default:
 			BUGCHECK(219);		// msg 219 request of unknown resource
 		}
@@ -2175,7 +2182,7 @@ void CMP_post_access(thread_db* tdbb,
 
 
 void CMP_post_resource(	ResourceList* rsc_ptr,
-						BLK rel_or_prc,
+						void* obj,
 						enum Resource::rsc_s type,
 						USHORT id)
 {
@@ -2190,14 +2197,17 @@ void CMP_post_resource(	ResourceList* rsc_ptr,
  *
  **************************************/
 	// Initialize resource block
-	Resource resource(type, id, NULL, NULL);
+	Resource resource(type, id, NULL, NULL, NULL);
 	switch (type) {
 	case Resource::rsc_relation:
 	case Resource::rsc_index:
-		resource.rsc_rel = (jrd_rel*) rel_or_prc;
+		resource.rsc_rel = (jrd_rel*) obj;
 		break;
 	case Resource::rsc_procedure:
-		resource.rsc_prc = (jrd_prc*) rel_or_prc;
+		resource.rsc_prc = (jrd_prc*) obj;
+		break;
+	case Resource::rsc_ttype:
+		resource.rsc_tt = (TextType*) obj;
 		break;
 	default:
 		BUGCHECK(220);			/* msg 220 unknown resource */
@@ -2312,6 +2322,12 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 			case Resource::rsc_procedure:
 				{
 					CMP_decrement_prc_use_count(tdbb, resource->rsc_prc);
+					break;
+				}
+			case Resource::rsc_ttype:
+				{
+					TextType* ttype = resource->rsc_tt;
+					ttype->decUseCount(tdbb);
 					break;
 				}
 			default:
@@ -3274,6 +3290,24 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_argument:
 		break;
 
+	case nod_cast:
+		{
+			dsc desc;
+			CMP_get_desc(tdbb, csb, node, &desc);
+
+			USHORT ttype = INTL_TEXT_TYPE(desc);
+
+			// Are we using a collation?
+			if (TTYPE_TO_COLLATION(ttype) != 0)
+			{
+				CMP_post_resource(&csb->csb_resources,
+					INTL_texttype_lookup(tdbb, ttype),
+					Resource::rsc_ttype, ttype);
+			}
+
+			break;
+		}
+
 	case nod_field:
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
@@ -3309,6 +3343,19 @@ static jrd_nod* pass1(thread_db* tdbb,
 								(USHORT)(IPTR) node->nod_arg[e_fld_id])))
 			{
 				break;
+			}
+
+			dsc desc;
+			CMP_get_desc(tdbb, csb, node, &desc);
+
+			USHORT ttype = INTL_TEXT_TYPE(desc);
+
+			// Are we using a collation?
+			if (TTYPE_TO_COLLATION(ttype) != 0)
+			{
+				CMP_post_resource(&csb->csb_resources,
+					INTL_texttype_lookup(tdbb, ttype),
+					Resource::rsc_ttype, ttype);
 			}
 
 			// if this is a modify or store, check REFERENCES access to any foreign keys

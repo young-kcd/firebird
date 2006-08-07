@@ -2790,6 +2790,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "def_collation";
 		break;
 
+	case nod_del_collation:
+		verb = "del_collation";
+		break;
+
 	case nod_collation_from:
 		verb = "collation_from";
 		break;

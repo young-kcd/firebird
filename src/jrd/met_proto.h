@@ -54,9 +54,9 @@ struct SubtypeInfo
 	{
 	}
 
-	Firebird::string charsetName;
-	Firebird::string collationName;
-	Firebird::string baseCollationName;
+	Firebird::MetaName charsetName;
+	Firebird::MetaName collationName;
+	Firebird::MetaName baseCollationName;
 	USHORT attributes;
 	bool ignoreAttributes;
 	Firebird::UCharBuffer specificAttributes;

@@ -343,6 +343,10 @@ public:
 
 // values used in intlsym_flags
 
+enum intlsym_flags_vals {
+	INTLSYM_dropped	= 1  //!< intlsym has been dropped
+};
+
 
 // Forward declaration.
 class dsql_par;

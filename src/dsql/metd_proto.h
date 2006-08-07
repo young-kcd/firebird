@@ -32,6 +32,7 @@
 class dsql_req;
 class dsql_str;
 
+void METD_drop_collation(dsql_req*, const dsql_str*);
 void METD_drop_function(dsql_req*, const dsql_str*);
 void METD_drop_procedure(dsql_req*, const dsql_str*);
 void METD_drop_relation(dsql_req*, const dsql_str*);
