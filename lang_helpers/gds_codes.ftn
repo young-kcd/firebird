@@ -1150,6 +1150,8 @@ C --
       PARAMETER (GDS__illegal_prc_type                 = 335544868)
       INTEGER*4 GDS__invalid_sort_datatype           
       PARAMETER (GDS__invalid_sort_datatype            = 335544869)
+      INTEGER*4 GDS__collation_name                  
+      PARAMETER (GDS__collation_name                   = 335544870)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

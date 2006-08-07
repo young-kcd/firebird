@@ -582,6 +582,7 @@ const
 	gds_subtype_for_internal_use         = 335544867;
 	gds_illegal_prc_type                 = 335544868;
 	gds_invalid_sort_datatype            = 335544869;
+	gds_collation_name                   = 335544870;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

@@ -570,6 +570,7 @@ static const struct {
 	{335544867, -204}, /* 547 subtype_for_internal_use         */
 	{335544868, -901}, /* 548 illegal_prc_type                 */
 	{335544869, -901}, /* 549 invalid_sort_datatype            */
+	{335544870, -901}, /* 550 collation_name                   */
 	{335740929, -901}, /*   1 gfix_db_name                     */
 	{335740930, -901}, /*   2 gfix_invalid_sw                  */
 	{335740932, -901}, /*   4 gfix_incmp_sw                    */
