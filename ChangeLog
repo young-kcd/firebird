@@ -1,3 +1,15 @@
+2006-08-06 20:03  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.277), jrd/blb.cpp (1.128):
+	
+	Misc
+
+2006-08-06 20:02  asfernandes
+
+	* firebird2/src/jrd/dsc.h (1.29):
+	
+	Remove obsolete definitions
+
 2006-08-05 23:56  hvlad
 
 	* firebird2/src/dsql/pass1.cpp (1.276):
