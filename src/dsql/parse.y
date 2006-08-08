@@ -493,7 +493,6 @@ static LexerState lex;
 %token NEXT
 %token SEQUENCE
 %token RESTART
-%token ACCENT
 %token BOTH
 %token COLLATION
 %token COMMENT
@@ -514,15 +513,16 @@ static LexerState lex;
 
 /* tokens added for Firebird 2.1 */
 
+%token ACCENT
 %token GLOBAL 
 %token INSENSITIVE
 %token LIST
 %token PAD
 %token PRESERVE
+%token RECURSIVE 
 %token SENSITIVE
 %token SPACE
 %token TEMPORARY 
-%token RECURSIVE 
 
 /* precedence declarations for expression evaluation */
 

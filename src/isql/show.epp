@@ -1741,7 +1741,7 @@ static processing_state show_collations(const SCHAR* object)
 		fb_utils::exact_name(CL.RDB$COLLATION_NAME);
 
 		if ((!*object && (CL.RDB$SYSTEM_FLAG.NULL || CL.RDB$SYSTEM_FLAG == 0)) ||
-			!strcmp(CL.RDB$COLLATION_NAME, object))
+			strcmp(CL.RDB$COLLATION_NAME, object) == 0)
 		{
 			found = true;
 

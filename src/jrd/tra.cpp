@@ -815,8 +815,8 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
  **************************************
  *
  * Functional description
- *	Post interest in relation/procedure existence to transaction.
- *	This guarantees that the relation/procedure won't be dropped
+ *	Post interest in relation/procedure/collation existence to transaction.
+ *	This guarantees that the relation/procedure/collation won't be dropped
  *	out from under the transaction.
  *
  **************************************/

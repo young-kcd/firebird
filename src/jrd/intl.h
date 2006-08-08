@@ -158,4 +158,4 @@ inline USHORT INTL_TEXT_TYPE(const dsc& desc)
 #define TTYPE_TO_CHARSET(tt)    ((USHORT)((tt) & 0x00FF))
 #define TTYPE_TO_COLLATION(tt)  ((USHORT)((tt) >> 8))
 
-#endif /* JRD_INTL_H */
+#endif	// JRD_INTL_H

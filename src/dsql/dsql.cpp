@@ -2798,6 +2798,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "collation_from";
 		break;
 
+	case nod_collation_from_external:
+		verb = "collation_from_external";
+		break;
+
 	case nod_collation_attr:
 		verb = "collation_attr";
 		break;

@@ -639,4 +639,4 @@ public:
 
 } //namespace Jrd
 
-#endif /* JRD_INTL_CLASSES_H */
+#endif	// JRD_INTL_CLASSES_H

@@ -323,8 +323,6 @@ void DDL_execute(dsql_req* request)
 		METD_drop_relation(request, string);
 	}
 
-	// for delete & modify, get rid of the cached procedure metadata
-
 	if ((type == nod_mod_procedure) ||
 	    (type == nod_del_procedure) ||
 	    (type == nod_replace_procedure) ||
