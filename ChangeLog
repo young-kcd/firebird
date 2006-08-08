@@ -1,3 +1,33 @@
+2006-08-07 18:40  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.37),
+	lang_helpers/gds_codes.pas (1.37), src/include/gen/codetext.h
+	(1.45), src/include/gen/iberror.h (1.46), src/include/gen/msgs.h
+	(1.60), src/include/gen/rdb_codes.h (1.43),
+	src/include/gen/sql_code.h (1.48):
+	
+	Regenerate files
+
+2006-08-07 18:39  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.180), dsql/dsql.cpp (1.176),
+	dsql/dsql.h (1.95), dsql/keywords.cpp (1.53), dsql/metd.epp (1.89),
+	dsql/metd_proto.h (1.25), dsql/node.h (1.79), dsql/parse.y (1.215),
+	dsql/pass1.cpp (1.278), jrd/cmp.cpp (1.227), jrd/cmp_proto.h
+	(1.30), jrd/dfw.epp (1.189), jrd/drq.h (1.16), jrd/dyn.epp (1.88),
+	jrd/dyn_def.epp (1.127), jrd/dyn_del.epp (1.54), jrd/dyn_dl_proto.h
+	(1.8), jrd/exe.h (1.86), jrd/ibase.h (1.120), jrd/intl.cpp (1.88),
+	jrd/intl.h (1.13), jrd/intl_classes.h (1.24), jrd/intl_proto.h
+	(1.19), jrd/lck.cpp (1.59), jrd/lck.h (1.26), jrd/met.epp (1.200),
+	jrd/met_proto.h (1.54), jrd/obj.h (1.6), jrd/par.cpp (1.141),
+	jrd/tra.cpp (1.125), jrd/tra.h (1.55), jrd/types.h (1.9),
+	jrd/vio.cpp (1.168), msgs/facilities.sql (1.68), msgs/messages.sql
+	(1.82), msgs/system_errors.sql (1.35), isql/extract.epp (1.71),
+	isql/isql.h (1.59), isql/show.epp (1.95):
+	
+	Implementation of CREATE/DROP COLLATION and ISQL show/extraction of
+	collations
+
 2006-08-06 20:03  asfernandes
 
 	* firebird2/src/: dsql/pass1.cpp (1.277), jrd/blb.cpp (1.128):
