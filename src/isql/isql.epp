@@ -6331,18 +6331,21 @@ static processing_state print_item_blob(FILE* fp,
 		// CVC: Adriano changed trans to D__trans with the following comment:
 		// Fix a bug that occur when a BLOB column is added after the start
 		// of the DML transaction.
-		if (!isc_blob_lookup_desc(isc_status, &DB, &D__trans,
+		if (isc_blob_lookup_desc(isc_status, &DB, &D__trans,
 			(const UCHAR*) var->relname, (const UCHAR*) var->sqlname,
-			&from_desc, NULL))
+			&from_desc, NULL) != 0)
 		{
-			ISC_BLOB_DESC to_desc;
-			isc_blob_default_desc(&to_desc, (const UCHAR*) var->relname, (const UCHAR*) var->sqlname);
-			if (!isc_blob_gen_bpb
-				(isc_status, &to_desc, &from_desc, sizeof(bpb_buffer),
-				 bpb_buffer, &bpb_length))
-			{
-				bpb = bpb_buffer;
-			}
+			from_desc.blob_desc_subtype = var->sqlsubtype;
+			from_desc.blob_desc_charset = var->sqlscale;
+		}
+
+		ISC_BLOB_DESC to_desc;
+		isc_blob_default_desc(&to_desc, (const UCHAR*) var->relname, (const UCHAR*) var->sqlname);
+		if (!isc_blob_gen_bpb
+			(isc_status, &to_desc, &from_desc, sizeof(bpb_buffer),
+				bpb_buffer, &bpb_length))
+		{
+			bpb = bpb_buffer;
 		}
 	}
 	else if (blob_subtype > isc_blob_text && blob_subtype < isc_blob_max_predefined_subtype)

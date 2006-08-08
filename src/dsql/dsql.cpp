@@ -5059,6 +5059,7 @@ static UCHAR* var_info(
 			case dtype_blob:
 				sql_type = SQL_BLOB;
 				sql_sub_type = param->par_desc.dsc_sub_type;
+				sql_scale = param->par_desc.dsc_scale;
 				break;
 
 			case dtype_varying:
