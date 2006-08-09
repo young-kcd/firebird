@@ -1,3 +1,17 @@
+2006-08-08 13:23  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.178), isql/isql.epp (1.196):
+	
+	Put blob charset in XSQLVAR::sqlscale
+
+2006-08-08 04:42  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.181), dsql/dsql.cpp (1.177),
+	dsql/parse.y (1.216), isql/show.epp (1.96), jrd/intl.h (1.14),
+	jrd/intl_classes.h (1.25), jrd/tra.cpp (1.126):
+	
+	Misc
+
 2006-08-07 18:40  asfernandes
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.37),
