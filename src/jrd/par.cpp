@@ -1580,6 +1580,33 @@ static USHORT par_name(CompilerScratch* csb, Firebird::MetaName& name)
 }
 
 
+static size_t par_name(CompilerScratch* csb, Firebird::string& name)
+{
+/**************************************
+ *
+ *	p a r _ n a m e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Parse a counted string of virtually unlimited size 
+ *  (up to 64K), returning count.
+ *
+ **************************************/
+	size_t l = BLR_BYTE;
+
+	name.assign(l, ' ');
+	char* s = name.begin();
+
+	while (l--) 
+	{
+		*s++ = BLR_BYTE;
+	}
+
+	return name.length();
+}
+
+
 static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
@@ -1996,11 +2023,11 @@ static jrd_nod* par_relation(
 
 /* Find relation either by id or by name */
 	jrd_rel* relation = 0;
-	Firebird::MetaName* alias_string = 0;
+	Firebird::string* alias_string = 0;
 	if (blr_operator == blr_rid || blr_operator == blr_rid2) {
 		const SSHORT id = BLR_WORD;
 		if (blr_operator == blr_rid2) {
-			alias_string = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
+			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
 			par_name(csb, *alias_string);
 		}
 		if (!(relation = MET_lookup_relation_id(tdbb, id, false))) {
@@ -2011,7 +2038,7 @@ static jrd_nod* par_relation(
 	else if (blr_operator == blr_relation || blr_operator == blr_relation2) {
 		par_name(csb, name);
 		if (blr_operator == blr_relation2) {
-			alias_string = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
+			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
 			par_name(csb, *alias_string);
 		}
 		if (!(relation = MET_lookup_relation(tdbb, name)))
