@@ -27,7 +27,49 @@
 #define JRD_DSC_H
 
 #include "../jrd/dsc_pub.h"
+#include "../jrd/ibase.h"
 #include "../jrd/ods.h"
+#include "../intl/charsets.h"
+
+/* Data type information */
+
+inline bool DTYPE_IS_TEXT(UCHAR d) {
+	return ((d >= dtype_text) && (d <= dtype_varying));
+}
+
+inline bool DTYPE_IS_DATE(UCHAR t) {
+	return ((t >= dtype_sql_date) && (t <= dtype_timestamp));
+}
+
+/* DTYPE_IS_BLOB includes both BLOB and ARRAY since array's are implemented over blobs. */
+inline bool DTYPE_IS_BLOB(UCHAR d) {
+	return ((d == dtype_blob) || (d == dtype_array));
+}
+
+/* DTYPE_IS_BLOB_OR_QUAD includes both BLOB, QUAD and ARRAY since array's are implemented over blobs. */
+inline bool DTYPE_IS_BLOB_OR_QUAD(UCHAR d) {
+	return ((d == dtype_blob) || (d == dtype_quad) || (d == dtype_array));
+}
+
+/* Exact numeric? */
+inline bool DTYPE_IS_EXACT(UCHAR d) {
+	return ((d == dtype_int64) || (d == dtype_long) || (d == dtype_short));
+}
+
+#ifdef VMS
+inline bool DTYPE_IS_APPROX(UCHAR d) {
+	return ((d == dtype_double) || (d == dtype_real) || (d == dtype_d_float));
+}
+#else
+inline bool DTYPE_IS_APPROX(UCHAR d) {
+	return ((d == dtype_double) || (d == dtype_real));
+}
+#endif
+
+
+inline bool DTYPE_IS_NUMERIC(UCHAR d) {
+	return (((d >= dtype_byte) && (d <= dtype_d_float)) || (d  == dtype_int64));
+}
 
 /* Descriptor format */
 
@@ -48,10 +90,78 @@ typedef struct dsc
 	SSHORT	dsc_sub_type;
 	USHORT	dsc_flags;
 	UCHAR*	dsc_address; // Used either as offset in a message or as a pointer
+
 #ifdef __cplusplus
 	SSHORT dsc_blob_ttype() const { return dsc_scale | (dsc_flags & 0xFF00);}
 	SSHORT& dsc_ttype() { return dsc_sub_type;}
 	SSHORT dsc_ttype() const { return dsc_sub_type;}
+
+	bool isBlob() const
+	{
+		return dsc_dtype == dtype_blob || dsc_dtype == dtype_quad;
+	}
+
+	bool isText() const
+	{
+		return (dsc_dtype >= dtype_text) && (dsc_dtype <= dtype_varying);
+	}
+
+	SSHORT getBlobSubType() const
+	{
+		if (isBlob())
+			return dsc_sub_type;
+		else if (isText())
+			return isc_blob_text;
+		else
+			return isc_blob_untyped;
+	}
+
+	void setBlobSubType(SSHORT subType)
+	{
+		if (isBlob())
+			dsc_sub_type = subType;
+	}
+
+	UCHAR getCharSet() const
+	{
+		if (isText())
+			return dsc_sub_type & 0xFF;
+		else if (isBlob())
+		{
+			if (dsc_sub_type == isc_blob_text)
+				return dsc_scale;
+			else
+				return CS_BINARY;
+		}
+		else
+			return CS_ASCII;
+	}
+
+	USHORT getTextType() const
+	{
+		if (isText())
+			return dsc_sub_type;
+		else if (isBlob())
+		{
+			if (dsc_sub_type == isc_blob_text)
+				return dsc_scale | (dsc_flags & 0xFF00);
+			else
+				return CS_BINARY;
+		}
+		else
+			return CS_ASCII;
+	}
+
+	void setTextType(USHORT ttype)
+	{
+		if (isText())
+			dsc_sub_type = ttype;
+		else if (isBlob() && dsc_sub_type == isc_blob_text)
+		{
+			dsc_scale = ttype & 0xFF;
+			dsc_flags = (dsc_flags & 0xFF) | (ttype & 0xFF00);
+		}
+	}
 #endif
 
 // this functions were added to have interoperability
@@ -152,46 +262,7 @@ const SSHORT dsc_num_type_none		= 0;	/* defined as SMALLINT or INTEGER */
 const SSHORT dsc_num_type_numeric	= 1;	/* defined as NUMERIC(n,m)        */
 const SSHORT dsc_num_type_decimal	= 2;	/* defined as DECIMAL(n,m)        */
 
-
 /* Date type information */
-
-inline bool DTYPE_IS_TEXT(UCHAR d) {
-	return ((d >= dtype_text) && (d <= dtype_varying));
-}
-
-inline bool DTYPE_IS_DATE(UCHAR t) {
-	return ((t >= dtype_sql_date) && (t <= dtype_timestamp));
-}
-
-/* DTYPE_IS_BLOB includes both BLOB and ARRAY since array's are implemented over blobs. */
-inline bool DTYPE_IS_BLOB(UCHAR d) {
-	return ((d == dtype_blob) || (d == dtype_array));
-}
-
-/* DTYPE_IS_BLOB_OR_QUAD includes both BLOB, QUAD and ARRAY since array's are implemented over blobs. */
-inline bool DTYPE_IS_BLOB_OR_QUAD(UCHAR d) {
-	return ((d == dtype_blob) || (d == dtype_quad) || (d == dtype_array));
-}
-
-/* Exact numeric? */
-inline bool DTYPE_IS_EXACT(UCHAR d) {
-	return ((d == dtype_int64) || (d == dtype_long) || (d == dtype_short));
-}
-
-#ifdef VMS
-inline bool DTYPE_IS_APPROX(UCHAR d) {
-	return ((d == dtype_double) || (d == dtype_real) || (d == dtype_d_float));
-}
-#else
-inline bool DTYPE_IS_APPROX(UCHAR d) {
-	return ((d == dtype_double) || (d == dtype_real));
-}
-#endif
-
-
-inline bool DTYPE_IS_NUMERIC(UCHAR d) {
-	return (((d >= dtype_byte) && (d <= dtype_d_float)) || (d  == dtype_int64));
-}
 
 inline SCHAR NUMERIC_SCALE(const dsc desc) {
 	return ((DTYPE_IS_TEXT(desc.dsc_dtype)) ? 0 : desc.dsc_scale);

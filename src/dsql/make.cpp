@@ -52,6 +52,7 @@
 #include "../dsql/metd_proto.h"
 #include "../dsql/misc_func.h"
 #include "../dsql/utld_proto.h"
+#include "../jrd/DataTypeUtil.h"
 #include "../jrd/ods.h"
 #include "../jrd/ini.h"
 #include "../jrd/thd.h"
@@ -447,34 +448,34 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 			MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
 			MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
-			desc->dsc_scale = 0;
-			desc->dsc_dtype = dtype_varying;
-
 			if (node->nod_arg[0]->nod_type == nod_null &&
 				node->nod_arg[1]->nod_type == nod_null)
 			{
 				// NULL || NULL = NULL of VARCHAR(1) CHARACTER SET NONE
+				desc->dsc_dtype = dtype_varying;
+				desc->dsc_scale = 0;
 				desc->dsc_ttype() = 0;
 				desc->dsc_length = sizeof(USHORT) + 1;
 				desc->dsc_flags |= DSC_nullable;
 				return;
 			}
 
-			if (desc1.dsc_dtype <= dtype_any_text)
-				desc->dsc_ttype() = desc1.dsc_ttype();
-			else
-				desc->dsc_ttype() = ttype_ascii;
+			Jrd::DataTypeUtil::makeConcatenate(desc, &desc1, &desc2);
 
-			ULONG length =
-				((node->nod_arg[0]->nod_type == nod_null) ? 0 : DSC_string_length(&desc1)) /
-				METD_get_charset_bpc(request, INTL_GET_CHARSET(&desc1));
+			if (desc->dsc_dtype == dtype_varying)
+			{
+				ULONG length =
+					((node->nod_arg[0]->nod_type == nod_null) ? 0 : DSC_string_length(&desc1)) /
+					METD_get_charset_bpc(request, INTL_GET_CHARSET(&desc1));
 
-			length +=
-				((node->nod_arg[1]->nod_type == nod_null) ? 0 : DSC_string_length(&desc2)) /
-				METD_get_charset_bpc(request, INTL_GET_CHARSET(&desc2));
+				length +=
+					((node->nod_arg[1]->nod_type == nod_null) ? 0 : DSC_string_length(&desc2)) /
+					METD_get_charset_bpc(request, INTL_GET_CHARSET(&desc2));
 
-			desc->dsc_length = UTLD_char_length_to_byte_length(
-				length, METD_get_charset_bpc(request, INTL_GET_CHARSET(desc))) + sizeof(USHORT);
+				desc->dsc_length = UTLD_char_length_to_byte_length(
+					length, METD_get_charset_bpc(request, INTL_GET_CHARSET(desc))) + sizeof(USHORT);
+			}
+
 			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 		}
 		return;

@@ -31,19 +31,19 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         DatabaseSnapshot.cpp VirtualTable.cpp RecordBuffer.cpp \
         all.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
 		cch.cpp cmp.cpp cvt2.cpp \
-		dfw.cpp divorce.cpp \
+		DataTypeUtil.cpp dfw.cpp divorce.cpp \
 		err.cpp iberr.cpp \
 		event.cpp evl.cpp exe.cpp ext.cpp \
 		execute_statement.cpp filters.cpp flu.cpp functions.cpp \
-		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp inuse.cpp \
-		jrd.cpp lck.cpp log.cpp  \
+		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp IntlUtil.cpp
+		inuse.cpp jrd.cpp lck.cpp log.cpp  \
 		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
 		ods.cpp plugin_manager.cpp pwd.cpp Relation.cpp rlck.cpp \
 		rpb_chain.cpp rse.cpp \
 		sdw.cpp shut.cpp sort.cpp sqz.cpp \
 		svc.cpp sym.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
 		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module) ThreadData.cpp thd.cpp \
-		unicode_util.cpp IntlUtil.cpp
+		unicode_util.cpp
 
 
 JRD_Files = $(JRD_ClientFiles) $(JRD_ServerFiles)

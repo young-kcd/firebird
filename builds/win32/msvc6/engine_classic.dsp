@@ -203,6 +203,10 @@ SOURCE=..\..\..\src\jrd\DatabaseSnapshot.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\DataTypeUtil.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\divorce.cpp
 # End Source File
 # Begin Source File
@@ -638,6 +642,10 @@ SOURCE=..\..\..\src\jrd\cvt_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\DatabaseSnapshot.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\DataTypeUtil.h
 # End Source File
 # Begin Source File
 

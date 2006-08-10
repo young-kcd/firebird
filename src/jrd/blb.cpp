@@ -89,7 +89,6 @@ static void delete_blob(thread_db*, blb*, ULONG);
 static void delete_blob_id(thread_db*, const bid*, SLONG, jrd_rel*);
 static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
-static void gen_bpb_from_descs(const dsc*, const dsc*, UCharBuffer& bpb);
 static blob_page* get_next_page(thread_db*, blb*, WIN *);
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 static void get_replay_blob(thread_db*, const bid*);
@@ -390,6 +389,46 @@ void BLB_garbage_collect(
 			delete_blob_id(tdbb, &blob, prior_page, relation);
 		} while (bmGoing.getNext());
 	}
+}
+
+
+void BLB_gen_bpb_from_descs(const dsc* fromDesc, const dsc* toDesc, Firebird::UCharBuffer& bpb)
+{
+	bpb.resize(15);
+
+	UCHAR* p = bpb.begin();
+	*p++ = isc_bpb_version1;
+
+	SSHORT subType = fromDesc->getBlobSubType();
+	UCHAR charSet = fromDesc->getCharSet();
+
+	*p++ = isc_bpb_source_type;
+	*p++ = 2;
+	put_short(p, subType);
+	p += 2;
+	if (subType == isc_blob_text)
+	{
+		*p++ = isc_bpb_source_interp;
+		*p++ = 1;
+		*p++ = charSet;
+	}
+
+	subType = toDesc->getBlobSubType();
+	charSet = toDesc->getCharSet();
+
+	*p++ = isc_bpb_target_type;
+	*p++ = 2;
+	put_short(p, subType);
+	p += 2;
+	if (subType == isc_blob_text)
+	{
+		*p++ = isc_bpb_target_interp;
+		*p++ = 1;
+		*p++ = charSet;
+	}
+
+	// set the array count to the number of bytes we used
+	bpb.shrink(p - bpb.begin());
 }
 
 
@@ -935,7 +974,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			  to_desc->dsc_scale != CS_NONE && to_desc->dsc_scale != CS_BINARY)))
 		{
 			UCharBuffer bpb;
-			gen_bpb_from_descs(from_desc, to_desc, bpb);
+			BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 			copy_blob(tdbb, source, destination, bpb.getCount(), bpb.begin(), DB_PAGE_SPACE);
 		}
@@ -988,7 +1027,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	bool materialized_blob; // Set if we materialized temporary blob in this routine
 
 	UCharBuffer bpb;
-	gen_bpb_from_descs(from_desc, to_desc, bpb);
+	BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 	while (true) 
 	{
@@ -2102,73 +2141,6 @@ static BlobFilter* find_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 }
 
 
-static void gen_bpb_from_descs(const dsc* from_desc, const dsc* to_desc, UCharBuffer& bpb)
-{
-	bpb.resize(15);
-
-	UCHAR* p = bpb.begin();
-	*p++ = isc_bpb_version1;
-
-	SSHORT sub_type;
-	SSHORT interp;
-
-	if (DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype))
-	{
-		sub_type = from_desc->dsc_sub_type;
-		interp = from_desc->dsc_scale;	// source charset
-	}
-	else
-	{
-		sub_type = isc_blob_text;
-
-		if (DTYPE_IS_TEXT(from_desc->dsc_dtype))
-			interp = DSC_GET_CHARSET(from_desc);
-		else
-			interp = CS_ASCII;
-	}
-
-	*p++ = isc_bpb_source_type;
-	*p++ = 2;
-	put_short(p, sub_type);
-	p += 2;
-	if (sub_type == isc_blob_text)
-	{
-		*p++ = isc_bpb_source_interp;
-		*p++ = 1;
-		*p++ = interp;
-	}
-
-	if (DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype))
-	{
-		sub_type = to_desc->dsc_sub_type;
-		interp = to_desc->dsc_scale;	// target charset
-	}
-	else
-	{
-		sub_type = isc_blob_text;
-
-		if (DTYPE_IS_TEXT(to_desc->dsc_dtype))
-			interp = DSC_GET_CHARSET(to_desc);
-		else
-			interp = CS_ASCII;
-	}
-
-	*p++ = isc_bpb_target_type;
-	*p++ = 2;
-	put_short(p, sub_type);
-	p += 2;
-	if (sub_type == isc_blob_text)
-	{
-		*p++ = isc_bpb_target_interp;
-		*p++ = 1;
-		*p++ = interp;	// target charset
-	}
-
-	// set the array count to the number of bytes we used
-	bpb.shrink(p - bpb.begin());
-}
-
-
 static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 {
 /**************************************
@@ -2432,7 +2404,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	int length = MOV_make_string2(from_desc, ttype, &fromstr, buffer);
 
 	UCharBuffer bpb;
-	gen_bpb_from_descs(from_desc, to_desc, bpb);
+	BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 	blob = BLB_create2(tdbb, tdbb->tdbb_request->req_transaction, &temp_bid, bpb.getCount(), bpb.begin());
 
@@ -2519,7 +2491,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 		blobAsText.dsc_ttype() = ttype_ascii;
 
 	UCharBuffer bpb;
-	gen_bpb_from_descs(fromDesc, &blobAsText, bpb);
+	BLB_gen_bpb_from_descs(fromDesc, &blobAsText, bpb);
 
 	blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
 		(bid*) fromDesc->dsc_address, bpb.getCount(), bpb.begin());

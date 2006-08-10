@@ -28,6 +28,8 @@
 extern "C" {
 #endif
 
+#ifndef JRD_IBASE_H
+
 ISC_STATUS API_ROUTINE gds__close(ISC_STATUS*, const SCHAR*);
 ISC_STATUS API_ROUTINE gds__declare(ISC_STATUS*, const SCHAR*, const SCHAR*);
 ISC_STATUS API_ROUTINE gds__describe(ISC_STATUS*, const SCHAR*, SQLDA*);
@@ -60,8 +62,6 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_describe(ISC_STATUS*, const SCHAR*, USHORT
 ISC_STATUS API_ROUTINE isc_embed_dsql_describe_bind(ISC_STATUS*, const SCHAR*, USHORT, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
 	USHORT, const SCHAR*, USHORT, XSQLDA*);
-ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed2(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
-	USHORT, const SCHAR*, USHORT, XSQLDA*, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_embed_dsql_execute(ISC_STATUS*, FB_API_HANDLE*,
 	const SCHAR*, USHORT, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_embed_dsql_execute2(ISC_STATUS*, FB_API_HANDLE*,
@@ -97,9 +97,13 @@ ISC_STATUS API_ROUTINE isc_prepare(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, 
 	const SCHAR*, SQLDA*);
 int    API_ROUTINE isc_to_sqlda(SQLDA*, int, SCHAR*, int, SCHAR*);
 
+#endif //  JRD_IBASE_H
+
+ISC_STATUS API_ROUTINE isc_embed_dsql_exec_immed2(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
+	USHORT, const SCHAR*, USHORT, XSQLDA*, XSQLDA*);
+
 #ifdef __cplusplus
 }	// extern "C" 
 #endif
 
-#endif //  DSQL_USER_PROTO_H 
-
+#endif //  DSQL_USER_PROTO_H

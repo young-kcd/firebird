@@ -82,6 +82,8 @@
 #include "../jrd/dbg_proto.h"	// DBG_supervisor
 #include "../jrd/execute_statement.h"
 
+#include "../jrd/DataTypeUtil.h"
+
 /* Pick up relation ids */
 #include "../jrd/ini.h"
 
@@ -1562,39 +1564,42 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			DSC desc1, desc2;
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-			desc->dsc_dtype = dtype_varying;
-			ULONG rc_len;
-			if (desc1.dsc_dtype <= dtype_varying)
+
+			DataTypeUtil::makeConcatenate(desc, &desc1, &desc2);
+
+			if (desc->dsc_dtype == dtype_varying)
 			{
-			    rc_len = DSC_string_length(&desc1);
-				desc->dsc_ttype() = desc1.dsc_ttype();
-			}
-			else
-			{
-			    rc_len = DSC_convert_to_text_length(desc1.dsc_dtype);
-				desc->dsc_ttype() = ttype_ascii;
-			}
-			if (desc2.dsc_dtype <= dtype_varying)
-			{
-				rc_len += DSC_string_length (&desc2);
-				if (((desc->dsc_ttype() == CS_ASCII) || (desc->dsc_ttype() == CS_NONE)) &&
-					(desc2.dsc_ttype() != CS_NONE)) 
+				ULONG len1;
+
+				if (desc1.dsc_dtype <= dtype_varying)
 				{
-					desc->dsc_ttype() = desc2.dsc_ttype();
+					len1 = DSC_string_length(&desc1) /
+						INTL_charset_lookup(tdbb, desc1.getCharSet())->maxBytesPerChar();
 				}
+				else
+					len1 = DSC_convert_to_text_length(desc1.dsc_dtype);
+
+				ULONG len2;
+
+				if (desc2.dsc_dtype <= dtype_varying)
+				{
+					len2 = DSC_string_length (&desc2) /
+						INTL_charset_lookup(tdbb, desc2.getCharSet())->maxBytesPerChar();
+				}
+				else
+					len2 = DSC_convert_to_text_length(desc2.dsc_dtype);
+
+				ULONG len = (len1 + len2) *
+					INTL_charset_lookup(tdbb, desc->getCharSet())->maxBytesPerChar();
+
+				if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
+				{
+					len = MAX_COLUMN_SIZE - sizeof(USHORT);
+					ERR_post_warning(isc_concat_overflow, 0);
+				}
+
+				desc->dsc_length = static_cast<USHORT>(len) + sizeof(USHORT);
 			}
-			else
-			{
-				rc_len += DSC_convert_to_text_length(desc2.dsc_dtype);
-			}
-			if (rc_len > MAX_COLUMN_SIZE - sizeof(USHORT))
-			{
-				rc_len = MAX_COLUMN_SIZE - sizeof(USHORT);
-				ERR_post_warning(isc_concat_overflow, 0);
-			}
-			desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
-			desc->dsc_scale = 0;
-			desc->dsc_flags = 0;
 			return;
 		}
 

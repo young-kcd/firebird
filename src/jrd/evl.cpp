@@ -87,6 +87,7 @@
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cvt_proto.h"
+#include "../jrd/DataTypeUtil.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/err_proto.h"
@@ -2845,75 +2846,122 @@ static dsc* concatenate(thread_db* tdbb,
  **************************************
  *
  * Functional description
- *      Concatenate two strings.
+ *      Concatenate two values.
  *
  **************************************/
 	SET_TDBB(tdbb);
 
-	const USHORT ttype1 = INTL_TEXT_TYPE(*value1);
-	const USHORT ttype2 = INTL_TEXT_TYPE(*value2);
-
-	USHORT ttype;
-
-	if (ttype1 != ttype_none && ttype1 != ttype_ascii)
-	{
-		ttype = ttype1;
-	}
-	else if (ttype2 != ttype_none && ttype2 != ttype_ascii)
-	{
-		ttype = ttype2;
-	}
-	else
-	{
-		ttype = ttype_ascii;
-	}
+	dsc desc;
+	DataTypeUtil::makeConcatenate(&desc, value1, value2);
 
 	// Both values are present; build the concatenation
 
-	UCHAR *address1;
 	MoveBuffer temp1;
-	const USHORT length1 = MOV_make_string2(value1, ttype, &address1, temp1);
+	UCHAR* address1 = NULL;
+	USHORT length1 = 0;
 
-	// value2 will be converted to the same text type as value1
+	if (!value1->isBlob())
+		length1 = MOV_make_string2(value1, desc.getTextType(), &address1, temp1);
 
-	UCHAR *address2;
 	MoveBuffer temp2;
-	const USHORT length2 = MOV_make_string2(value2, ttype, &address2, temp2);
+	UCHAR* address2 = NULL;
+	USHORT length2 = 0;
 
-	if ((ULONG) length1 + (ULONG) length2 > MAX_COLUMN_SIZE - sizeof(USHORT))
+	if (!value2->isBlob())
+		length2 = MOV_make_string2(value2, desc.getTextType(), &address2, temp2);
+
+	if (address1 && address2)
 	{
-		ERR_post(isc_concat_overflow, 0);
-		return NULL;
+		fb_assert(desc.dsc_dtype == dtype_varying);
+
+		if ((ULONG) length1 + (ULONG) length2 > MAX_COLUMN_SIZE - sizeof(USHORT))
+		{
+			ERR_post(isc_concat_overflow, 0);
+			return NULL;
+		}
+
+		desc.dsc_dtype = dtype_text;
+		desc.dsc_length = length1 + length2;
+		desc.dsc_address = NULL;
+
+		VaryingString* string = NULL;
+		if (value1->dsc_address == impure->vlu_desc.dsc_address ||
+			value2->dsc_address == impure->vlu_desc.dsc_address)
+		{
+			string = impure->vlu_string;
+			impure->vlu_string = NULL;
+		}
+
+		EVL_make_value(tdbb, &desc, impure);
+		UCHAR* p = impure->vlu_desc.dsc_address;
+
+		if (length1) {
+			memcpy(p, address1, length1);
+			p += length1;
+		}
+		if (length2) {
+			memcpy(p, address2, length2);
+		}
+
+		delete string;
 	}
-
-	dsc desc;
-	desc.dsc_dtype = dtype_text;
-	desc.dsc_sub_type = 0;
-	desc.dsc_scale = 0;
-	desc.dsc_length = length1 + length2;
-	desc.dsc_address = NULL;
-	INTL_ASSIGN_TTYPE(&desc, ttype);
-
-	VaryingString* string = NULL;
-	if (value1->dsc_address == impure->vlu_desc.dsc_address ||
-		value2->dsc_address == impure->vlu_desc.dsc_address)
+	else
 	{
-		string = impure->vlu_string;
-		impure->vlu_string = NULL;
-	}
+		fb_assert(desc.dsc_dtype == dtype_blob);
 
-	EVL_make_value(tdbb, &desc, impure);
-	UCHAR* p = impure->vlu_desc.dsc_address;
+		desc.dsc_address = (UCHAR*)&impure->vlu_misc.vlu_bid;
 
-	if (length1) {
-		memcpy(p, address1, length1);
-		p += length1;
+		blb* newBlob = BLB_create(tdbb, tdbb->tdbb_request->req_transaction,
+			&impure->vlu_misc.vlu_bid);
+
+		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+
+		if (address1)
+			BLB_put_data(tdbb, newBlob, address1, length1);	// first value is not a blob
+		else
+		{
+			Firebird::UCharBuffer bpb;
+			BLB_gen_bpb_from_descs(value1, &desc, bpb);
+
+			blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
+				reinterpret_cast<bid*>(value1->dsc_address), bpb.getCount(), bpb.begin());
+
+			while (!(blob->blb_flags & BLB_eof))
+			{
+				SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+
+				if (len)
+					BLB_put_data(tdbb, newBlob, buffer.begin(), len);
+			}
+
+			BLB_close(tdbb, blob);
+		}
+
+		if (address2)
+			BLB_put_data(tdbb, newBlob, address2, length2);	// second value is not a blob
+		else
+		{
+			Firebird::UCharBuffer bpb;
+			BLB_gen_bpb_from_descs(value2, &desc, bpb);
+
+			blb* blob = BLB_open2(tdbb, tdbb->tdbb_request->req_transaction,
+				reinterpret_cast<bid*>(value2->dsc_address), bpb.getCount(), bpb.begin());
+
+			while (!(blob->blb_flags & BLB_eof))
+			{
+				SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+
+				if (len)
+					BLB_put_data(tdbb, newBlob, buffer.begin(), len);
+			}
+
+			BLB_close(tdbb, blob);
+		}
+
+		BLB_close(tdbb, newBlob);
+
+		EVL_make_value(tdbb, &desc, impure);
 	}
-	if (length2) {
-		memcpy(p, address2, length2);
-	}
-	
-	delete string;
 
 	return &impure->vlu_desc;
 }

@@ -170,6 +170,9 @@
 				RelativePath="..\..\..\src\jrd\DatabaseSnapshot.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\DataTypeUtil.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\gen\jrd\dfw.cpp">
 			</File>
 			<File
@@ -496,6 +499,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\DatabaseSnapshot.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\DataTypeUtil.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dbg.h">
