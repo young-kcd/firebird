@@ -1,3 +1,17 @@
+2006-08-10 15:08  paul_reeves
+
+	* firebird2/src/jrd/isc_version.h (1.8.4.1):
+	
+	Bump the build number for the RC4 rebuild
+
+2006-08-10 14:02  alexpeshkoff
+
+	* firebird2/src/jrd/: exe.h (1.82.2.1), cmp.cpp (1.203.2.4),
+	par.cpp (1.132.4.2):
+	
+	Fixed unregistered bug - identifier too long error was thrown for
+	correct (but long) alias.
+
 2006-08-04 15:02  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/:
