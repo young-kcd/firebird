@@ -1,3 +1,10 @@
+2006-08-11 14:31  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.197):
+	
+	Get the blob charset of XSQLVAR only when relname is empty - thanks
+	to Claudio
+
 2006-08-10 13:29  aafemt
 
 	* firebird2/builds/posix/make.shared.variables (1.65):
