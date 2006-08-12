@@ -378,7 +378,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 			if (IntlManager::collationInstalled(info.baseCollationName.c_str(), info.charsetName.c_str()))
 			{
 				// Allow not yet installed collations be registered in the db.
-				// But do not allow invalid attributed here.
+				// But do not allow invalid attributes here.
 				if (!INTL_texttype_validate(tdbb, &info))
 				{
 					DYN_error_punt(false, 222, NULL, NULL, NULL, NULL, NULL);
