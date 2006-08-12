@@ -49,6 +49,7 @@
 #include "../jrd/constants.h"
 #include "../jrd/ibase.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/intlobj_new.h"
 #include "../isql/isql.h"
 #include "../isql/extra_proto.h"
 #include "../isql/isql_proto.h"
@@ -1392,13 +1393,13 @@ static void list_collations()
 
 		if (!CL.RDB$COLLATION_ATTRIBUTES.NULL)
 		{
-			if (CL.RDB$COLLATION_ATTRIBUTES & 0x01)	// TEXTTYPE_ATTR_PAD_SPACE
+			if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_PAD_SPACE)
 				isqlGlob.printf(" PAD SPACE");
 
-			if (CL.RDB$COLLATION_ATTRIBUTES & 0x02)	// TEXTTYPE_ATTR_CASE_INSENSITIVE
+			if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 				isqlGlob.printf(" CASE INSENSITIVE");
 
-			if (CL.RDB$COLLATION_ATTRIBUTES & 0x04)	// TEXTTYPE_ATTR_ACCENT_INSENSITIVE
+			if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
 				isqlGlob.printf(" ACCENT INSENSITIVE");
 		}
 
