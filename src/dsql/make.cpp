@@ -444,91 +444,35 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_concatenate:
-		{
-			MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
-			MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
-
-			if (node->nod_arg[0]->nod_type == nod_null &&
-				node->nod_arg[1]->nod_type == nod_null)
-			{
-				// NULL || NULL = NULL of VARCHAR(1) CHARACTER SET NONE
-				desc->dsc_dtype = dtype_varying;
-				desc->dsc_scale = 0;
-				desc->dsc_ttype() = 0;
-				desc->dsc_length = sizeof(USHORT) + 1;
-				desc->dsc_flags |= DSC_nullable;
-				return;
-			}
-
-			Jrd::DataTypeUtil::makeConcatenate(desc, &desc1, &desc2);
-
-			if (desc->dsc_dtype == dtype_varying)
-			{
-				ULONG length =
-					((node->nod_arg[0]->nod_type == nod_null) ? 0 : DSC_string_length(&desc1)) /
-					METD_get_charset_bpc(request, INTL_GET_CHARSET(&desc1));
-
-				length +=
-					((node->nod_arg[1]->nod_type == nod_null) ? 0 : DSC_string_length(&desc2)) /
-					METD_get_charset_bpc(request, INTL_GET_CHARSET(&desc2));
-
-				desc->dsc_length = UTLD_char_length_to_byte_length(
-					length, METD_get_charset_bpc(request, INTL_GET_CHARSET(desc))) + sizeof(USHORT);
-			}
-
-			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-		}
+		MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		DSqlDataTypeUtil(request).makeConcatenate(desc, &desc1, &desc2);
 		return;
 
 	case nod_derived_field:
 		MAKE_desc(request, desc, node->nod_arg[e_derived_field_value], null_replacement);
 		return;
 
-	case nod_upcase:
-	case nod_lowcase:
-    case nod_substr:
-		MAKE_desc(request, &desc1, node->nod_arg[0], null_replacement);
-		if (desc1.dsc_dtype <= dtype_any_text ||
-			(node->nod_type != nod_substr && desc1.dsc_dtype == dtype_blob))
-		{
-			*desc = desc1;
-			return;
-		}
-		desc->dsc_dtype = dtype_varying;
-		desc->dsc_scale = 0;
+ 	case nod_upcase:
+ 	case nod_lowcase:
+ 		MAKE_desc(request, &desc1, node->nod_arg[0], null_replacement);
+		if (desc1.dsc_dtype <= dtype_any_text || desc1.dsc_dtype == dtype_blob)
+ 		{
+ 			*desc = desc1;
+ 			return;
+ 		}
 
-		/* Beware that JRD treats substring() always as returning CHAR
-		instead	of VARCHAR for historical reasons. */
-		if (node->nod_type == nod_substr && desc1.dsc_dtype == dtype_blob)
-		{
-			dsql_nod* for_node = node->nod_arg[e_substr_length];
-			// Migrate the charset and collation from the blob to the string. 
-			desc->dsc_ttype() = desc1.dsc_blob_ttype();
-
-			USHORT maxBytesPerChar = METD_get_charset_bpc(request, desc1.dsc_scale);	// BLOB character set
-
-			// Set maximum possible length
-			SLONG length = UTLD_char_length_to_byte_length(MAX_COLUMN_SIZE - sizeof(USHORT), maxBytesPerChar);
-
-			if (for_node->nod_type == nod_constant &&
-				for_node->nod_desc.dsc_dtype == dtype_long)
-			{
-				// We have a constant passed as length, so
-				// use the real length
-				length = UTLD_char_length_to_byte_length(*(SLONG *) for_node->nod_desc.dsc_address, maxBytesPerChar);
-
-				if (length < 0 || length > MAX_COLUMN_SIZE - sizeof(USHORT))
-					length = UTLD_char_length_to_byte_length(MAX_COLUMN_SIZE - sizeof(USHORT), maxBytesPerChar);
-			}
-			desc->dsc_length = sizeof(USHORT) + length;
-		}
-		else
-		{
-			desc->dsc_ttype() = ttype_ascii;
-			desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
-		}
+ 		desc->dsc_dtype = dtype_varying;
+ 		desc->dsc_scale = 0;
+		desc->dsc_ttype() = ttype_ascii;
+		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
 		return;
+ 
+	case nod_substr:
+		MAKE_desc(request, &desc1, node->nod_arg[0], null_replacement);
+ 		DSqlDataTypeUtil(request).makeSubstr(desc, &desc1);
+  		return;
 
     case nod_trim:
 		MAKE_desc(request, &desc1, node->nod_arg[e_trim_value], null_replacement);

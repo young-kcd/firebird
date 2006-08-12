@@ -101,6 +101,11 @@ typedef struct dsc
 		return dsc_dtype == dtype_blob || dsc_dtype == dtype_quad;
 	}
 
+	bool isNull() const
+	{
+		return dsc_flags & DSC_null;
+	}
+
 	bool isText() const
 	{
 		return (dsc_dtype >= dtype_text) && (dsc_dtype <= dtype_varying);
@@ -162,6 +167,8 @@ typedef struct dsc
 			dsc_flags = (dsc_flags & 0xFF) | (ttype & 0xFF00);
 		}
 	}
+
+	int getStringLength() const;
 #endif
 
 // this functions were added to have interoperability

@@ -30,11 +30,11 @@
 #include "../jrd/dsc.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
+#include "../jrd/intl_proto.h"
+#include "../jrd/gdsassert.h"
 
-namespace Jrd {
 
-
-SSHORT DataTypeUtil::getResultBlobSubType(const dsc* value1, const dsc* value2)
+SSHORT DataTypeUtilBase::getResultBlobSubType(const dsc* value1, const dsc* value2)
 {	
 	SSHORT subType1 = value1->getBlobSubType();
 	SSHORT subType2 = value2->getBlobSubType();
@@ -46,7 +46,7 @@ SSHORT DataTypeUtil::getResultBlobSubType(const dsc* value1, const dsc* value2)
 }
 
 
-USHORT DataTypeUtil::getResultTextType(const dsc* value1, const dsc* value2)
+USHORT DataTypeUtilBase::getResultTextType(const dsc* value1, const dsc* value2)
 {
 	USHORT cs1 = value1->getCharSet();
 	USHORT cs2 = value2->getCharSet();
@@ -63,27 +63,109 @@ USHORT DataTypeUtil::getResultTextType(const dsc* value1, const dsc* value2)
 }
 
 
-// ASF: We don't calculate string lengths because we may be called
-// from the engine or DSQL, and charset max-bytes-per-char handling
-// is different (TextType->maxBytesPerChar() / METD_get_charset_bpc).
-// When DSQL is in the engine, we could calculate lengths directly
-// here instead of in jrd/cmp.cpp and dsql/make.cpp.
-
-
-void DataTypeUtil::makeConcatenate(dsc* result, const dsc* value1, const dsc* value2)
+void DataTypeUtilBase::clearDsc(dsc* desc)
 {
-	memset(result, 0, sizeof(*result));
+	memset(desc, 0, sizeof(*desc));
+}
 
-	if (value1->isBlob() || value2->isBlob())
+
+ULONG DataTypeUtilBase::convertLength(const dsc* src, const dsc* dst)
+{
+	fb_assert(dst->isText());
+
+	UCHAR dstCharSet = dst->getCharSet();
+
+	if (dstCharSet == CS_NONE || dstCharSet == CS_BINARY)
+		return src->getStringLength();
+	else
+	{
+		return (src->getStringLength() / maxBytesPerChar(src->getCharSet())) *
+			maxBytesPerChar(dstCharSet);
+	}
+}
+
+
+ULONG DataTypeUtilBase::fixLength(const dsc* desc, ULONG length)
+{
+	UCHAR bpc = maxBytesPerChar(desc->getCharSet());
+
+	return MIN(((MAX_COLUMN_SIZE - sizeof(USHORT)) / bpc) * bpc, length);
+}
+
+
+void DataTypeUtilBase::makeConcatenate(dsc* result, const dsc* value1, const dsc* value2)
+{
+	clearDsc(result);
+
+	if (value1->isNull() && value2->isNull())
+	{
+		makeNullString(result);
+		return;
+	}
+	else if (value1->isBlob() || value2->isBlob())
 	{
 		result->dsc_dtype = dtype_blob;
 		result->dsc_length = sizeof(ISC_QUAD);
 		result->setBlobSubType(getResultBlobSubType(value1, value2));
+		result->setTextType(getResultTextType(value1, value2));
 	}
 	else
+	{
 		result->dsc_dtype = dtype_varying;
+		result->setTextType(getResultTextType(value1, value2));
 
-	result->setTextType(getResultTextType(value1, value2));
+		ULONG length = fixLength(result,
+			convertLength(value1, result) + convertLength(value2, result));
+		result->dsc_length = length + sizeof(USHORT);
+	}
+
+	result->dsc_flags = (value1->dsc_flags | value2->dsc_flags) & DSC_nullable;
+}
+
+
+void DataTypeUtilBase::makeNullString(dsc* result)
+{
+	clearDsc(result);
+
+	// VARCHAR(1) CHARACTER SET NONE
+	result->dsc_dtype = dtype_varying;
+	result->setTextType(CS_NONE);
+	result->dsc_length = sizeof(USHORT) + 1;
+	result->dsc_flags = DSC_nullable | DSC_null;
+}
+
+
+void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value)
+{
+	clearDsc(result);
+
+	if (value->isBlob())
+	{
+		result->dsc_dtype = dtype_blob;
+		result->dsc_length = sizeof(ISC_QUAD);
+		result->setBlobSubType(value->getBlobSubType());
+	}
+	else
+	{
+		// Beware that JRD treats substring() always as returning CHAR
+		// instead of VARCHAR for historical reasons.
+		result->dsc_dtype = dtype_varying;
+	}
+
+	result->setTextType(value->getTextType());
+	result->dsc_flags = value->dsc_flags & DSC_nullable;
+
+	if (result->isText())
+		result->dsc_length = fixLength(result, convertLength(value, result)) + sizeof(USHORT);
+}
+
+
+namespace Jrd {
+
+
+UCHAR DataTypeUtil::maxBytesPerChar(UCHAR charSet)
+{
+	return INTL_charset_lookup(tdbb, charSet)->maxBytesPerChar();
 }
 
 

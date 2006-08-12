@@ -27,6 +27,10 @@
 #ifndef DSQL_UTLD_PROTO_H
 #define DSQL_UTLD_PROTO_H
 
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#include "../jrd/DataTypeUtil.h"
+#endif
+
 struct sqlda_sup;
 
 USHORT		UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPerChar);
@@ -36,6 +40,29 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS*, sqlda_sup* const, USHORT*, USHORT*,
 	USHORT*, USHORT, XSQLDA*, const USHORT);
 void		UTLD_save_status_strings(ISC_STATUS*);
 SCHAR*		UTLD_skip_sql_info(SCHAR*);
+
+
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+
+class dsql_req;
+
+class DSqlDataTypeUtil : public DataTypeUtilBase
+{
+public:
+	DSqlDataTypeUtil(dsql_req* request)
+		: request(request)
+	{
+	}
+
+public:
+	virtual UCHAR maxBytesPerChar(UCHAR charSet);
+
+private:
+	dsql_req* request;
+};
+
+#endif
+
 
 #endif //  DSQL_UTLD_PROTO_H
 

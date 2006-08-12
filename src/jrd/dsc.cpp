@@ -745,6 +745,12 @@ static bool validate_dsc_tables();
 
 
 
+int dsc::getStringLength() const
+{
+	return DSC_string_length(this);
+}
+
+
 USHORT DSC_convert_to_text_length(USHORT dsc_type)
 {
 	if (dsc_type < (sizeof(_DSC_convert_to_text_length) /

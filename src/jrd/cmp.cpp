@@ -1564,42 +1564,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			DSC desc1, desc2;
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-
-			DataTypeUtil::makeConcatenate(desc, &desc1, &desc2);
-
-			if (desc->dsc_dtype == dtype_varying)
-			{
-				ULONG len1;
-
-				if (desc1.dsc_dtype <= dtype_varying)
-				{
-					len1 = DSC_string_length(&desc1) /
-						INTL_charset_lookup(tdbb, desc1.getCharSet())->maxBytesPerChar();
-				}
-				else
-					len1 = DSC_convert_to_text_length(desc1.dsc_dtype);
-
-				ULONG len2;
-
-				if (desc2.dsc_dtype <= dtype_varying)
-				{
-					len2 = DSC_string_length (&desc2) /
-						INTL_charset_lookup(tdbb, desc2.getCharSet())->maxBytesPerChar();
-				}
-				else
-					len2 = DSC_convert_to_text_length(desc2.dsc_dtype);
-
-				ULONG len = (len1 + len2) *
-					INTL_charset_lookup(tdbb, desc->getCharSet())->maxBytesPerChar();
-
-				if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
-				{
-					len = MAX_COLUMN_SIZE - sizeof(USHORT);
-					ERR_post_warning(isc_concat_overflow, 0);
-				}
-
-				desc->dsc_length = static_cast<USHORT>(len) + sizeof(USHORT);
-			}
+			DataTypeUtil(tdbb).makeConcatenate(desc, &desc1, &desc2);
 			return;
 		}
 
@@ -1764,7 +1729,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			jrd_nod* length_node = node->nod_arg[2];
 			CMP_get_desc(tdbb, csb, length_node, &desc2);
 
-			ULONG rc_len = 0;
+			DataTypeUtil(tdbb).makeSubstr(desc, &desc1);
 
 			if (desc1.dsc_flags & DSC_null || desc2.dsc_flags & DSC_null)
 			{
@@ -1799,33 +1764,9 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 						ERR_post(isc_bad_substring_length,
 								 isc_arg_number, length, 0);
 					}
-					// Set up the given length
-					rc_len = length;
 				}
 			}
 
-			if (desc->dsc_dtype == dtype_blob)
-			{
-				if (!rc_len && !(desc->dsc_flags & DSC_null))
-				{
-					// We don't know how big will the resulting string be
-					rc_len = MAX_COLUMN_SIZE - sizeof(USHORT);
-				}
-				desc->dsc_dtype = dtype_varying;
-				desc->dsc_ttype() = desc->dsc_blob_ttype();
-				desc->dsc_scale = 0;
-				desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
-			}
-			else if (!DTYPE_IS_TEXT(desc->dsc_dtype))
-			{
-				if (!rc_len && !(desc->dsc_flags & DSC_null))
-					rc_len = DSC_string_length(desc);
-
-				desc->dsc_dtype = dtype_varying;
-				desc->dsc_ttype() = ttype_ascii;
-				desc->dsc_scale = 0;
-				desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
-			}
 			return;
 		}
 

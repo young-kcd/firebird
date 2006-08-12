@@ -41,6 +41,10 @@
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
 
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+#include "../dsql/metd_proto.h"
+#endif
+
 
 static void cleanup(void *);
 static ISC_STATUS error_dsql_804(ISC_STATUS *, ISC_STATUS);
@@ -1044,3 +1048,12 @@ static void xsqlvar_to_sqlvar( XSQLVAR * xsqlvar, SQLVAR * sqlvar)
 		sqlvar->sqllen = sizeof(ISC_QUAD) | (xsqlvar->sqlscale << 8);
 }
 
+
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
+
+UCHAR DSqlDataTypeUtil::maxBytesPerChar(UCHAR charSet)
+{
+	return METD_get_charset_bpc(request, charSet);
+}
+
+#endif

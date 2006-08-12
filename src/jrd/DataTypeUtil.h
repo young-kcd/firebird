@@ -29,15 +29,45 @@
 
 struct dsc;
 
-namespace Jrd {
-
-class DataTypeUtil
+class DataTypeUtilBase
 {
 public:
 	static SSHORT getResultBlobSubType(const dsc* value1, const dsc* value2);
 	static USHORT getResultTextType(const dsc* value1, const dsc* value2);
 
-	static void makeConcatenate(dsc* result, const dsc* value1, const dsc* value2);
+private:
+	static void clearDsc(dsc* desc);
+
+public:
+	ULONG convertLength(const dsc* src, const dsc* dst);
+	ULONG fixLength(const dsc* desc, ULONG length);
+
+	void makeConcatenate(dsc* result, const dsc* value1, const dsc* value2);
+	void makeNullString(dsc* result);
+	void makeSubstr(dsc* result, const dsc* value);
+
+public:
+	virtual UCHAR maxBytesPerChar(UCHAR charSet) = 0;
+};
+
+
+namespace Jrd {
+
+class thread_db;
+
+class DataTypeUtil : public DataTypeUtilBase
+{
+public:
+	DataTypeUtil(thread_db* tdbb)
+		: tdbb(tdbb)
+	{
+	}
+
+public:
+	virtual UCHAR maxBytesPerChar(UCHAR charSet);
+
+private:
+	thread_db* tdbb;
 };
 
 }	// namespace Jrd
