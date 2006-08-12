@@ -5397,6 +5397,7 @@ static SLONG insert_node(thread_db* tdbb,
 	const bool primary = (insertion->iib_descriptor->idx_flags & idx_primary);
 	const bool leafPage = (bucket->btr_level == 0);
 	const bool allRecordNumber = (flags & btr_all_record_number);
+	// hvlad: don't check unique index if key has only null values
 	const bool validateDuplicates = 
 		(unique && !(key->key_flags & key_all_nulls)) || primary;
 	USHORT prefix = 0;
@@ -5457,6 +5458,11 @@ static SLONG insert_node(thread_db* tdbb,
 				if (allRecordNumber && 
 					(newRecordNumber < beforeInsertNode.recordNumber)) 
 				{
+					if (leafPage && validateDuplicates) {
+						// Save the duplicate so the main caller can validate them.
+						RBM_SET(tdbb->getDefaultPool(), &insertion->iib_duplicates, 
+							beforeInsertNode.recordNumber.getValue());
+					}
 					break;
 				}
 				else {
@@ -5468,7 +5474,6 @@ static SLONG insert_node(thread_db* tdbb,
 			}
 			if (leafPage && validateDuplicates) {
 				// Save the duplicate so the main caller can validate them.
-				// hvlad: don't check unique index if key has only null values
 				RBM_SET(tdbb->getDefaultPool(), &insertion->iib_duplicates, 
 					beforeInsertNode.recordNumber.getValue());
 			}
