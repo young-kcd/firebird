@@ -1,4 +1,13 @@
   **************************
+  * v2.0 Release Candidate 5
+  **************************
+
+    * Fixed RC4 bug (CORE-895)
+        Possible unique index violation
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+  **************************
   * v2.0 Release Candidate 4
   **************************
 
