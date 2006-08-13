@@ -1,3 +1,31 @@
+2006-08-12 19:21  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.177):
+	
+	Fix for CORE-895: possible unique index violation
+
+2006-08-12 18:30  asfernandes
+
+	* firebird2/src/isql/: extract.epp (1.72), show.epp (1.97):
+	
+	Misc
+
+2006-08-12 18:12  asfernandes
+
+	* firebird2/src/jrd/: dyn_def.epp (1.128), dyn_def.epp (1.129):
+	
+	Misc
+
+2006-08-12 05:16  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.120), dsql/utld.cpp (1.39),
+	dsql/utld_proto.h (1.15), jrd/DataTypeUtil.cpp (1.2),
+	jrd/DataTypeUtil.h (1.2), jrd/cmp.cpp (1.229), jrd/dsc.cpp (1.29),
+	jrd/dsc.h (1.31), jrd/evl.cpp (1.191):
+	
+	1) Make SUBSTRING of BLOB work 2) More refactoration on describing
+	result of expressions (concatenate and substring)
+
 2006-08-11 14:31  asfernandes
 
 	* firebird2/src/isql/isql.epp (1.197):
