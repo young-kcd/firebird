@@ -141,7 +141,7 @@ static dsc* add_sql_time(const dsc*, const jrd_nod*, impure_value*);
 static dsc* add_timestamp(const dsc*, const jrd_nod*, impure_value*);
 static void adjust_text_descriptor(thread_db*, dsc*);
 static dsc* binary_value(thread_db*, const jrd_nod*, impure_value*);
-static dsc* cast(thread_db*, const dsc*, const jrd_nod*, impure_value*);
+static dsc* cast(thread_db*, dsc*, const jrd_nod*, impure_value*);
 static void compute_agg_distinct(thread_db*, jrd_nod*);
 static dsc* concatenate(thread_db*, const dsc*, const dsc*, impure_value*);
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
@@ -2684,7 +2684,7 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 }
 
 
-static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_value* impure)
+static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -2736,7 +2736,7 @@ static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_
 	}
 
 	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))
-		BLB_move(tdbb, const_cast<dsc*>(value), &impure->vlu_desc, NULL);
+		BLB_move(tdbb, value, &impure->vlu_desc, NULL);
 	else
 		MOV_move(value, &impure->vlu_desc);
 
