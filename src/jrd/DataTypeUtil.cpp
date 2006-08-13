@@ -41,8 +41,8 @@ SSHORT DataTypeUtilBase::getResultBlobSubType(const dsc* value1, const dsc* valu
 
 	if (subType1 == isc_blob_untyped)
 		return subType2;
-	else
-		return subType1;
+
+	return subType1;
 }
 
 
@@ -56,10 +56,11 @@ USHORT DataTypeUtilBase::getResultTextType(const dsc* value1, const dsc* value2)
 
 	if (cs1 == CS_NONE || cs2 == CS_BINARY)
 		return ttype2;
-	else if (cs1 == CS_ASCII && cs2 != CS_NONE)
+
+	if (cs1 == CS_ASCII && cs2 != CS_NONE)
 		return ttype2;
-	else
-		return ttype1;
+
+	return ttype1;
 }
 
 
@@ -77,11 +78,9 @@ ULONG DataTypeUtilBase::convertLength(const dsc* src, const dsc* dst)
 
 	if (dstCharSet == CS_NONE || dstCharSet == CS_BINARY)
 		return src->getStringLength();
-	else
-	{
-		return (src->getStringLength() / maxBytesPerChar(src->getCharSet())) *
-			maxBytesPerChar(dstCharSet);
-	}
+
+	return (src->getStringLength() / maxBytesPerChar(src->getCharSet())) *
+		maxBytesPerChar(dstCharSet);
 }
 
 
@@ -102,7 +101,8 @@ void DataTypeUtilBase::makeConcatenate(dsc* result, const dsc* value1, const dsc
 		makeNullString(result);
 		return;
 	}
-	else if (value1->isBlob() || value2->isBlob())
+
+	if (value1->isBlob() || value2->isBlob())
 	{
 		result->dsc_dtype = dtype_blob;
 		result->dsc_length = sizeof(ISC_QUAD);

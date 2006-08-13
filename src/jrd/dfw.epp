@@ -2135,11 +2135,9 @@ static bool delete_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return false;
 
 	case 1:
-		{
 		check_dependencies(tdbb, work->dfw_name.c_str(), NULL,
 						   obj_collation, transaction); 
 		return true;
-		}
 
 	case 2:
 		return true;

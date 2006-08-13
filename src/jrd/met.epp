@@ -4438,8 +4438,8 @@ static void store_dependencies(thread_db*	tdbb,
 				const USHORT number = (IPTR) node->nod_arg[e_dep_object];
 				MET_get_char_coll_subtype_info(tdbb, number, &info);
 				dpdo_name = &info.collationName;
-				break;
 			}
+			break;
         case obj_exception:
 			{
 				const SLONG number = (IPTR) node->nod_arg[e_dep_object];

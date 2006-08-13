@@ -1195,19 +1195,19 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_collations:
-		{
-			USHORT id;
+			{
+				USHORT id;
 
-			EVL_field(0, rpb->rpb_record, f_coll_cs_id, &desc2);
-			id = MOV_get_long(&desc2, 0);
+				EVL_field(0, rpb->rpb_record, f_coll_cs_id, &desc2);
+				id = MOV_get_long(&desc2, 0);
 
-			EVL_field(0, rpb->rpb_record, f_coll_id, &desc2);
-			id = INTL_CS_COLL_TO_TTYPE(id, MOV_get_long(&desc2, 0));
+				EVL_field(0, rpb->rpb_record, f_coll_id, &desc2);
+				id = INTL_CS_COLL_TO_TTYPE(id, MOV_get_long(&desc2, 0));
 
-			EVL_field(0, rpb->rpb_record, f_coll_name, &desc);
-			DFW_post_work(transaction, dfw_delete_collation, &desc, id);
-			break;
-		}
+				EVL_field(0, rpb->rpb_record, f_coll_name, &desc);
+				DFW_post_work(transaction, dfw_delete_collation, &desc, id);
+				break;
+			}
 
 		case rel_exceptions:
 			EVL_field(0, rpb->rpb_record, f_prc_name, &desc);

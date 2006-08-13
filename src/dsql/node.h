@@ -339,9 +339,9 @@ enum nod_t
 	nod_collation_attr,
 	nod_collation_specific_attr,
 	nod_strlen,
-	nod_trim,
+	nod_trim, // 270
 	nod_returning,
-	nod_redef_trigger, // 270
+	nod_redef_trigger,
 	nod_tra_misc,
 	nod_lock_timeout,
 	nod_agg_list,

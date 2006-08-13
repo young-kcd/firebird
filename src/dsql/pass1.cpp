@@ -1464,18 +1464,22 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		node->nod_arg[e_exe_blk_body] = input->nod_arg[e_exe_blk_body];
 
 		{ // scope
-			StrArray names( *getDefaultMemoryPool(),
+			const size_t ncount =
 				node->nod_arg[e_exe_blk_inputs] ?
 					node->nod_arg[e_exe_blk_inputs]->nod_count : 0 +
 				node->nod_arg[e_exe_blk_outputs] ?
 					node->nod_arg[e_exe_blk_outputs]->nod_count : 0 +
 				node->nod_arg[e_exe_blk_dcls] ?
-					node->nod_arg[e_exe_blk_dcls]->nod_count : 0
-				);
+					node->nod_arg[e_exe_blk_dcls]->nod_count : 0;
 
-			check_unique_fields_names(names, node->nod_arg[e_exe_blk_inputs]);
-			check_unique_fields_names(names, node->nod_arg[e_exe_blk_outputs]);
-			check_unique_fields_names(names, node->nod_arg[e_exe_blk_dcls]);
+			if (ncount)
+			{
+				StrArray names( *getDefaultMemoryPool(), ncount);
+
+				check_unique_fields_names(names, node->nod_arg[e_exe_blk_inputs]);
+				check_unique_fields_names(names, node->nod_arg[e_exe_blk_outputs]);
+				check_unique_fields_names(names, node->nod_arg[e_exe_blk_dcls]);
+			}
 		} // end scope
 		return node;
 
