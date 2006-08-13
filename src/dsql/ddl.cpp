@@ -309,46 +309,39 @@ void DDL_execute(dsql_req* request)
 		case nod_redef_relation:
 			relation_node = request->req_ddl_node->nod_arg[e_alt_name];
 			string = (dsql_str*) relation_node->nod_arg[e_rln_name];
-			break;
+			// fall into
 		case nod_mod_view:
 		case nod_replace_view:
 		case nod_redef_view:
 		case nod_del_relation:
 		case nod_del_view:
-			string = (dsql_str*) request->req_ddl_node->nod_arg[e_alt_name];
+			if (!string)
+				string = (dsql_str*) request->req_ddl_node->nod_arg[e_alt_name];
+			sym_type = SYM_relation;
+			METD_drop_relation(request, string);
 			break;
-	}
-	if (string) {
-		sym_type = SYM_relation;
-		METD_drop_relation(request, string);
-	}
-
-	if ((type == nod_mod_procedure) ||
-	    (type == nod_del_procedure) ||
-	    (type == nod_replace_procedure) ||
-	    (type == nod_redef_procedure))
-	{
-		// for delete & modify, get rid of the cached procedure metadata
-		string = (dsql_str*) request->req_ddl_node->nod_arg[e_prc_name];
-		sym_type = SYM_procedure;
-		METD_drop_procedure(request, string);
-	}
-	else if (type == nod_del_collation)
-	{
-		// for delete, get rid of the cached collation metadata
-		string = (dsql_str*) request->req_ddl_node->nod_arg[e_del_coll_name];
-		sym_type = SYM_intlsym_collation;
-		METD_drop_collation(request, string);
-	}
-
-	// Signal UDF for obsolescence
-
-	if ((type == nod_del_udf) ||
-		(type == nod_mod_udf))
-	{
-		string = (dsql_str*) request->req_ddl_node->nod_arg[e_udf_name];
-		sym_type = SYM_udf;
-		METD_drop_function (request, string);
+		case nod_mod_procedure:
+		case nod_del_procedure:
+		case nod_replace_procedure:
+		case nod_redef_procedure:
+			// for delete & modify, get rid of the cached procedure metadata
+			string = (dsql_str*) request->req_ddl_node->nod_arg[e_prc_name];
+			sym_type = SYM_procedure;
+			METD_drop_procedure(request, string);
+			break;
+		case nod_del_collation:
+			// for delete, get rid of the cached collation metadata
+			string = (dsql_str*) request->req_ddl_node->nod_arg[e_del_coll_name];
+			sym_type = SYM_intlsym_collation;
+			METD_drop_collation(request, string);
+			break;
+		case nod_del_udf:
+		case nod_mod_udf:
+			// Signal UDF for obsolescence
+			string = (dsql_str*) request->req_ddl_node->nod_arg[e_udf_name];
+			sym_type = SYM_udf;
+			METD_drop_function (request, string);
+			break;
 	}
 
 	if (s)
@@ -2443,9 +2436,12 @@ static void define_procedure( dsql_req* request, NOD_TYPE op)
 	{
 		fb_assert(source->str_length <= MAX_USHORT);
 		int j = find_start_of_body(source);
-		request->append_string(	isc_dyn_prc_source,
-								source->str_data + j,
-								source->str_length - j);
+		if (j < source->str_length)
+		{
+			request->append_string(	isc_dyn_prc_source,
+									source->str_data + j,
+									source->str_length - j);
+		}
 	}
 
 	// fill req_procedure to allow procedure to self reference
@@ -4286,17 +4282,20 @@ const dsql_nod* find_pk_columns(const dsql_nod* def_rel_elements)
 //
 static int find_start_of_body(const dsql_str* string)
 {
+	int j = 0;
 	for (int i = 0; i < string->str_length; ++i)
 	{
 		switch (string->str_data[i])
 		{
-		case ' ':
 		case '\n':
+			j = i + 1;
+			break;
+		case ' ':
 		case '\r':
 		case '\t':
 			break;
 		default:
-			return i;
+			return j;
 		}
 	}
 	return 0; // Something suspicious happened, better return zero than str_length.
