@@ -320,6 +320,7 @@ void DDL_execute(dsql_req* request)
 			sym_type = SYM_relation;
 			METD_drop_relation(request, string);
 			break;
+
 		case nod_mod_procedure:
 		case nod_del_procedure:
 		case nod_replace_procedure:
@@ -329,12 +330,14 @@ void DDL_execute(dsql_req* request)
 			sym_type = SYM_procedure;
 			METD_drop_procedure(request, string);
 			break;
+
 		case nod_del_collation:
 			// for delete, get rid of the cached collation metadata
 			string = (dsql_str*) request->req_ddl_node->nod_arg[e_del_coll_name];
 			sym_type = SYM_intlsym_collation;
 			METD_drop_collation(request, string);
 			break;
+
 		case nod_del_udf:
 		case nod_mod_udf:
 			// Signal UDF for obsolescence
@@ -4283,6 +4286,7 @@ const dsql_nod* find_pk_columns(const dsql_nod* def_rel_elements)
 static int find_start_of_body(const dsql_str* string)
 {
 	int j = 0;
+
 	for (int i = 0; i < string->str_length; ++i)
 	{
 		switch (string->str_data[i])
@@ -4298,6 +4302,7 @@ static int find_start_of_body(const dsql_str* string)
 			return j;
 		}
 	}
+
 	return 0; // Something suspicious happened, better return zero than str_length.
 }
 
