@@ -29,7 +29,9 @@
 
 #include <stddef.h>
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+#if defined(__GNUC__)
+#include <inttypes.h>
+#else
 
 #if !defined(_INTPTR_T_DEFINED)
 #if defined(_WIN64)
@@ -41,8 +43,6 @@ typedef unsigned long uintptr_t;
 #endif
 #endif
 
-#else
-#include <inttypes.h>
 #endif
 
 /******************************************************************/
