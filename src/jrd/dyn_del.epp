@@ -104,8 +104,9 @@ void DYN_delete_collation(Global* gbl, const UCHAR** ptr)
 
         FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
             COLL IN RDB$COLLATIONS
+            CROSS CS IN RDB$CHARACTER_SETS
             WITH COLL.RDB$COLLATION_NAME EQ collName.c_str() AND
-				 NOT COLL.RDB$COLLATION_ID EQ 0
+				 CS.RDB$CHARACTER_SET_ID EQ COLL.RDB$CHARACTER_SET_ID
 
             if (!DYN_REQUEST(drq_e_colls))
                 DYN_REQUEST(drq_e_colls) = request;
@@ -115,6 +116,18 @@ void DYN_delete_collation(Global* gbl, const UCHAR** ptr)
 				DYN_rundown_request(request, -1);
 				DYN_error_punt(false, 237, NULL, NULL, NULL, NULL, NULL);
 				// msg 237: "Cannot delete system collation"
+			}
+
+			if (COLL.RDB$COLLATION_ID == 0 ||
+				(!CS.RDB$DEFAULT_COLLATE_NAME.NULL &&
+					Firebird::MetaName(COLL.RDB$COLLATION_NAME) == Firebird::MetaName(CS.RDB$DEFAULT_COLLATE_NAME)))
+			{
+				fb_utils::exact_name_limit(CS.RDB$CHARACTER_SET_NAME,
+					sizeof(CS.RDB$CHARACTER_SET_NAME));
+
+				DYN_rundown_request(request, -1);
+				DYN_error_punt(false, 238, CS.RDB$CHARACTER_SET_NAME, NULL, NULL, NULL, NULL);
+				// msg 238: "Cannot delete default collation of CHARACTER SET %s"
 			}
 
 		    found = true;
