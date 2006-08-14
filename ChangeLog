@@ -1,3 +1,15 @@
+2006-08-13 20:02  hvlad
+
+	* firebird2/doc/WhatsNew (1.95.2.17):
+	
+	Update WhatsNew
+
+2006-08-13 19:57  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.3):
+	
+	Fix for CORE-895: possible unique index violation
+
 2006-08-10 15:08  paul_reeves
 
 	* firebird2/src/jrd/isc_version.h (1.8.4.1):
