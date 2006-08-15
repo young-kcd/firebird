@@ -3,7 +3,9 @@
   **************************
 
     * Fixed RC4 bug (CORE-895)
-        Possible unique index violation
+        In some rare cases unique index violation is possible. The case is when
+	existing index entry is the last entry on the page and inserted record
+	with the same key have a number less than in existing entry
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
