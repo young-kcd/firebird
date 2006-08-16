@@ -504,7 +504,7 @@ for %%v in ( doc intl udf ) do (@mkdir %FBBUILD_EMB_PACK_ROOT%\%%v 2>nul)
 @copy /Y %FBBUILD_OUTPUT%\doc\Firebird*.pdf %FBBUILD_EMB_PACK_ROOT%\doc\ > nul
 @copy /Y %FBBUILD_OUTPUT%\intl\*.* %FBBUILD_EMB_PACK_ROOT%\intl\ > nul
 @copy /Y %FBBUILD_OUTPUT%\udf\*.* %FBBUILD_EMB_PACK_ROOT%\udf\ > nul
-@copy /Y %FBBUILD_OUTPUT%\system32\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
+@copy /Y %FBBUILD_OUTPUT%\bin\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
 
 if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @copy /Y %ROOT_PATH%\temp\release\fbembed\fbembed.pdb %FBBUILD_EMB_PACK_ROOT% > nul
