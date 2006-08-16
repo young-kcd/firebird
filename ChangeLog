@@ -1,3 +1,12 @@
+2006-08-16 02:09  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.121), jrd/DataTypeUtil.cpp
+	(1.4), jrd/DataTypeUtil.h (1.3), jrd/cmp.cpp (1.230), jrd/dsc.h
+	(1.32), jrd/evl.cpp (1.193):
+	
+	Fixed CORE-896 - SUBSTRING with NULL offset or length don't return
+	NULL
+
 2006-08-14 20:49  asfernandes
 
 	* firebird2/src/: jrd/dyn_del.epp (1.55), msgs/facilities.sql
