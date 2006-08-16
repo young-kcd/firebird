@@ -120,7 +120,7 @@ pid_t UTIL_start_process(const char* process, char** argv)
 }
 
 
-int UTIL_wait_for_child( pid_t child_pid)
+int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_down)
 {
 /**************************************
  *
@@ -135,6 +135,7 @@ int UTIL_wait_for_child( pid_t child_pid)
  * Return code:
  *	0	Normal exit
  *	-1	Abnormal exit - unknown reason.
+ *	-2	TERM signal caught
  *	Other	Abnormal exit - process error code returned.
  *
  **************************************/
@@ -145,10 +146,14 @@ int UTIL_wait_for_child( pid_t child_pid)
 /* wait for the child process with child_pid to exit */
 
 	while (waitpid(child_pid, &child_exit_status, 0) == -1)
-		if (SYSCALL_INTERRUPTED(errno))
-			continue;
-		else
+		if (SYSCALL_INTERRUPTED(errno)) {
+			if (shutting_down)
+				return -2;
+			else
+				continue;
+		} else {
 			return (errno);
+		}
 
 /* Check for very specific conditions before we assume the child
    did a normal exit. */
@@ -166,6 +171,65 @@ int UTIL_wait_for_child( pid_t child_pid)
 	}
 
 	return (0);
+}
+
+
+void alrm_handler(int)
+{
+	// handler for SIGALRM
+	// doesn't do anything, just interrupts a syscall
+}
+
+
+int UTIL_shutdown_child(pid_t child_pid,
+	unsigned timeout_term, unsigned timeout_kill)
+{
+/**************************************
+ *
+ *      U T I L _ s h u t d o w n _ c h i l d
+ *
+ **************************************
+ *
+ * Functional description
+ *      
+ *     Terminates child using TERM signal, then KILL if it does not finish
+ *     within specified timeout
+ *
+ * Return code:
+ *	0	Child finished cleanly (TERM)
+ *	1	Child killed (KILL)
+ *	2	Child not killed by KILL
+ *	-1	Syscall failed
+ *
+ **************************************/
+
+	int R;
+	int child_status;
+
+	R = kill(child_pid, SIGTERM);
+	if (R < 0)
+		return ((errno == ESRCH) ? 0 : -1);
+
+	if (UTIL_set_handler(SIGALRM, alrm_handler, false) < 0)
+		return -1;
+	alarm(timeout_term);
+	R = waitpid(child_pid, &child_status, 0);
+	if ((R < 0) && !SYSCALL_INTERRUPTED(errno))
+		return -1;
+	if (R == child_pid)
+		return 0;
+
+	R = kill(child_pid, SIGKILL);
+	if (R < 0)
+		return ((errno == ESRCH) ? 0 : -1);
+	alarm(timeout_kill);
+	R = waitpid(child_pid, &child_status, 0);
+	if ((R < 0) && !SYSCALL_INTERRUPTED(errno))
+		return -1;
+	if (R == child_pid)
+		return 1;
+
+	return 2;
 }
 
 
@@ -252,5 +316,39 @@ void UTIL_ex_unlock( int fd_file)
 	flock(fd_file, LOCK_UN);
 #endif
 	close(fd_file);
+}
+
+
+int UTIL_set_handler(int sig, sighandler_t handler, bool restart)
+{
+/**************************************
+ *
+ *      U T I L _ s e t _ h a n d l e r      
+ *
+ **************************************
+ *
+ * Functional description
+ *  
+ *     This function sets signal handler
+ *
+ **************************************/
+
+#if defined(HAVE_SIGACTION)
+	struct sigaction sig_action;
+	if (sigaction(sig, NULL, &sig_action) < 0)
+		return -1;
+	sig_action.sa_handler = handler;
+	if (restart)
+		sig_action.sa_flags |= SA_RESTART;
+	else
+		sig_action.sa_flags &= ~SA_RESTART;
+	if (sigaction(sig, &sig_action, NULL) < 0)
+		return -1;
+#else
+	sighandler_t old_handler = signal(SIGTERM, TERM_handler);
+	if (old_handler == SIG_ERR)
+		return -1;
+#endif
+	return 0;
 }
 
