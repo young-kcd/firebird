@@ -1040,7 +1040,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	if (dbb->dbb_ast_flags & DBB_shutdown) {
 		// Allow only SYSDBA/owner to access database that is shut down
-		bool allow_access = attachment->att_user->usr_flags & (USR_locksmith | USR_owner);
+		bool allow_access = attachment->locksmith();
 		// Handle special shutdown modes
 		if (allow_access) {
 			if (dbb->dbb_ast_flags & DBB_shutdown_full) {
@@ -1118,7 +1118,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (((attachment->att_flags & ATT_gbak_attachment) ||
 		 (attachment->att_flags & ATT_gfix_attachment) ||
 		 (attachment->att_flags & ATT_gstat_attachment)) &&
-		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
+		!attachment->locksmith())
 	{
 		ERR_post(isc_adm_task_denied, 0);
 	}
@@ -1879,7 +1879,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 			if (*handle)
 			{
-				allow_overwrite = (*handle)->att_user->usr_flags & (USR_locksmith | USR_owner);
+				allow_overwrite = (*handle)->att_user->locksmith();
 				GDS_DETACH(user_status, handle);
 			}
 			else
@@ -2370,7 +2370,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		{
 			Firebird::PathName file_name = tdbb->tdbb_attachment->att_filename;
 
-			if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
+			if (!attachment->locksmith())
 				ERR_post(isc_no_priv,
 						 isc_arg_string, "drop",
 						 isc_arg_string, "database",
@@ -4809,7 +4809,7 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 	if (attachment->att_flags & ATT_shutdown ||
 		((dbb->dbb_ast_flags & DBB_shutdown) &&
 		 ((dbb->dbb_ast_flags & DBB_shutdown_full) ||
-		 !(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))))
+		 !attachment->locksmith())))
 	{
 		tdbb->tdbb_status_vector = ptr = user_status;
 		*ptr++ = isc_arg_gds;
@@ -6677,6 +6677,7 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
   
     @brief	Verify database name for open/create 
 	against given in conf file list of available directories
+	and security database name
 
     @param name
     @param status
@@ -6708,4 +6709,17 @@ static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS
 		return vdnFail;
 	}
 	return vdnOk;
+}
+
+
+/**
+  
+ 	Attachment::locksmith
+  
+    @brief	Validate - is attached user locksmith?
+
+ **/
+bool Attachment::locksmith() const
+{
+	return att_user->locksmith();
 }

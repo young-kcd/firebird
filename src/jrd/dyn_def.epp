@@ -980,6 +980,11 @@ void DYN_define_file(Global*		gbl,
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
+	if (!tdbb->tdbb_attachment->locksmith())
+	{
+		ERR_post(isc_adm_task_denied, 0);
+	}
+
 	jrd_req* request = NULL;
 
 	try {
@@ -1100,6 +1105,11 @@ void DYN_define_difference(Global*		gbl,
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 	jrd_req* request = NULL;
+
+	if (!tdbb->tdbb_attachment->locksmith())
+	{
+		ERR_post(isc_adm_task_denied, 0);
+	}
 
 	try {
 

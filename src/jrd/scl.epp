@@ -1188,7 +1188,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 		BUGCHECK(160);	// msg 160 wrong ACL version
 	}
 
-	if (user.usr_flags & USR_locksmith)
+	if (user.locksmith())
 	{
 		return -1 & ~SCL_corrupt;
 	}

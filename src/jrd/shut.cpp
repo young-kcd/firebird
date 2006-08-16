@@ -146,7 +146,8 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
 
-	if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
+	if (!attachment->locksmith()) 
+	{
 		return false;
 	}
 
@@ -318,7 +319,7 @@ bool SHUT_online(Database* dbb, SSHORT flag)
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
 
-	if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
+	if (!attachment->att_user->locksmith()) {
 		return false;
 	}
 	

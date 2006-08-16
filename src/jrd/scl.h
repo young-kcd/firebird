@@ -56,6 +56,10 @@ const SecurityClass::flags_t SCL_execute		= 8192;
 
 /* information about the user */
 
+const USHORT USR_locksmith	= 1;		/* User has great karma */
+const USHORT USR_dba		= 2;		/* User has DBA privileges */
+const USHORT USR_owner		= 4;		/* User owns database */
+
 class UserId : public pool_alloc_rpt<SCHAR, type_usr>
 {
     public:
@@ -69,11 +73,12 @@ class UserId : public pool_alloc_rpt<SCHAR, type_usr>
 	USHORT usr_node_id;			/* Node id */
 	USHORT usr_flags;			/* Misc. crud */
 	TEXT usr_data[2];
+	
+	bool locksmith() const
+	{
+		return usr_flags & (USR_locksmith | USR_owner);
+	}
 };
-
-const USHORT USR_locksmith	= 1;		/* User has great karma */
-const USHORT USR_dba		= 2;		/* User has DBA privileges */
-const USHORT USR_owner		= 4;		/* User owns database */
 
 /*
  * User name assigned to any user granted USR_locksmith rights.

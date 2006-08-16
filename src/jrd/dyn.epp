@@ -1290,7 +1290,7 @@ static bool grantor_can_grant(Global*					gbl,
 
 /* If the current user is locksmith - allow all grants to occur */
 
-	if (tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) {
+	if (tdbb->tdbb_attachment->locksmith()) {
 		return true;
 	}
 
@@ -1517,7 +1517,7 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 	if (DYN_is_it_sql_role(gbl, role_name, owner, tdbb))
 	{
 		// Both SYSDBA and the owner of this ROLE can grant membership
-		if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith)
+		if ((tdbb->tdbb_attachment->locksmith())
 			|| (owner == grantor))
 		{
 			return true;
@@ -1751,7 +1751,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 					if (!DYN_REQUEST(drq_e_grant1))
 						DYN_REQUEST(drq_e_grant1) = request;
 
-				if ((revoking_user->usr_flags & USR_locksmith) ||
+				if ((revoking_user->locksmith()) ||
 					(revoking_user_name == PRIV.RDB$GRANTOR))
 				{
 					ERASE PRIV;
@@ -1780,7 +1780,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				   in this table which have been granted the privilege, we
 				   erase the entries from RDB$USER_PRIVILEGES. */
 
-				if ((revoking_user->usr_flags & USR_locksmith) ||
+				if ((revoking_user->locksmith()) ||
 					(revoking_user_name == PRIV.RDB$GRANTOR))
 				{
 					ERASE PRIV;

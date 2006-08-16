@@ -1535,7 +1535,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 			found = true;
 			Firebird::MetaName role_owner = XX.RDB$OWNER_NAME;
 
-			if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) ||
+			if (tdbb->tdbb_attachment->locksmith() ||
 				(role_owner == user))
 			{
 				ERASE XX;
@@ -1652,16 +1652,10 @@ void DYN_delete_shadow( Global* gbl, const UCHAR** ptr)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
-/*****
-the code commented out in this routine was meant to delete the
-shadow files, however this cannot be done until the transaction
-is commited, which we cannot do automatically as the user may
-choose to roll it back.
-LLS	files;
-STR	file;
-
-files = NULL;
-*****/
+	if (!tdbb->tdbb_attachment->locksmith())
+	{
+		ERR_post(isc_adm_task_denied, 0);
+	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_shadow, DYN_REQUESTS);
 
@@ -1675,11 +1669,6 @@ files = NULL;
             DYN_REQUEST(drq_e_shadow) = request;
 
 		ERASE FIL;
-/****
-    file = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof (FIL.RDB$FILE_NAME) - 1) str();
-    strcpy (file->str_data, FIL.RDB$FILE_NAME);
-    LLS_PUSH (file, &files);
-****/
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_e_shadow))
@@ -1692,15 +1681,6 @@ files = NULL;
 		DYN_error_punt(true, 63, NULL, NULL, NULL, NULL, NULL);
 		/* msg 63: "ERASE RDB$FILES failed" */
 	}
-
-/****
-while (files)
-    {
-    file = LLS_POP (&files);
-    unlink (file->str_data);
-    ALL_release (file);
-    }
-****/
 
 	if (*(*ptr)++ != isc_dyn_end) {
 		DYN_unsupported_verb();

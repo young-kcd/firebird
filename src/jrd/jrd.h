@@ -528,6 +528,8 @@ public:
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::string, DSqlCacheItem*> > > att_dsql_cache;	// DSQL cache locks
 #endif
+
+	bool locksmith() const;
 };
 
 
@@ -959,7 +961,7 @@ public:
 
 #include "../jrd/thd.h"
 
-#ifdef DEV_BUILD
+#if defined(DEV_BUILD)
 #include "../jrd/err_proto.h"
 
 inline Jrd::thread_db* JRD_get_thread_data() {

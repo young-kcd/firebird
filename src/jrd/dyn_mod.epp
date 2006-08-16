@@ -2163,6 +2163,11 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->tdbb_database;
 
+	if (!tdbb->tdbb_attachment->locksmith())
+	{
+		ERR_post(isc_adm_task_denied, 0);
+	}
+
 	jrd_req* request = CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
 	bool found = false;
 
