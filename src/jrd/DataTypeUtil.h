@@ -44,7 +44,7 @@ public:
 
 	void makeConcatenate(dsc* result, const dsc* value1, const dsc* value2);
 	void makeNullString(dsc* result);
-	void makeSubstr(dsc* result, const dsc* value);
+	void makeSubstr(dsc* result, const dsc* value, const dsc* offset, const dsc* length);
 
 public:
 	virtual UCHAR maxBytesPerChar(UCHAR charSet) = 0;

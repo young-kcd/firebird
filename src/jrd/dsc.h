@@ -96,14 +96,27 @@ typedef struct dsc
 	SSHORT& dsc_ttype() { return dsc_sub_type;}
 	SSHORT dsc_ttype() const { return dsc_sub_type;}
 
-	bool isBlob() const
+	bool isNullable() const
 	{
-		return dsc_dtype == dtype_blob || dsc_dtype == dtype_quad;
+		return dsc_flags & DSC_nullable;
+	}
+
+	void setNullable(bool nullable)
+	{
+		if (nullable)
+			dsc_flags |= DSC_nullable;
+		else
+			dsc_flags &= ~DSC_nullable;
 	}
 
 	bool isNull() const
 	{
 		return dsc_flags & DSC_null;
+	}
+
+	bool isBlob() const
+	{
+		return dsc_dtype == dtype_blob || dsc_dtype == dtype_quad;
 	}
 
 	bool isText() const

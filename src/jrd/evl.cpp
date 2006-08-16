@@ -167,7 +167,7 @@ static bool sleuth(thread_db*, jrd_nod*, const dsc*, const dsc*);
 static bool string_boolean(thread_db*, jrd_nod*, dsc*, dsc*, bool);
 static bool string_function(thread_db*, jrd_nod*, SLONG, const UCHAR*, SLONG, const UCHAR*, USHORT, bool);
 static dsc* string_length(thread_db*, jrd_nod*, impure_value*);
-static dsc* substring(thread_db*, impure_value*, dsc*, SLONG, SLONG);
+static dsc* substring(thread_db*, impure_value*, dsc*, const dsc*, const dsc*);
 static dsc* trim(thread_db*, jrd_nod*, impure_value*);
 static dsc* internal_info(thread_db*, const dsc*, impure_value*);
 
@@ -1087,8 +1087,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			return negate_dsc(tdbb, values[0], impure);
 
 		case nod_substr:
-			return substring(tdbb, impure, values[0],
-				MOV_get_long(values[1], 0), MOV_get_long(values[2], 0));
+			return substring(tdbb, impure, values[0], values[1], values[2]);
 
 		case nod_upcase:
 			return low_up_case(tdbb, values[0], impure, INTL_str_to_upper, &TextType::str_to_upper);
@@ -4791,7 +4790,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 
 static dsc* substring(thread_db* tdbb, impure_value* impure,
-					  dsc* value, SLONG offset_arg, SLONG length_arg)
+					  dsc* value, const dsc* offset_value, const dsc* length_value)
 {
 /**************************************
  *
@@ -4805,8 +4804,8 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
  **************************************/
 	SET_TDBB(tdbb);
 
-	dsc desc;
-	DataTypeUtil(tdbb).makeSubstr(&desc, value);
+	SLONG offset_arg = MOV_get_long(offset_value, 0);
+	SLONG length_arg = MOV_get_long(length_value, 0);
 
 	ULONG offset = (ULONG) offset_arg;
 	ULONG length = (ULONG) length_arg;
@@ -4818,6 +4817,9 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 	{
 		ERR_post(isc_bad_substring_length, isc_arg_number, length_arg, 0);
 	}
+
+	dsc desc;
+	DataTypeUtil(tdbb).makeSubstr(&desc, value, offset_value, length_value);
 
 	TextType* textType = INTL_texttype_lookup(tdbb, value->getTextType());
 	CharSet* charSet = textType->getCharSet();

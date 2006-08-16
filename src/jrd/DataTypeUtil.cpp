@@ -135,9 +135,15 @@ void DataTypeUtilBase::makeNullString(dsc* result)
 }
 
 
-void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value)
+void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value, const dsc* offset, const dsc* length)
 {
 	clearDsc(result);
+
+	if (value->isNull())
+	{
+		makeNullString(result);
+		return;
+	}
 
 	if (value->isBlob())
 	{
@@ -153,7 +159,7 @@ void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value)
 	}
 
 	result->setTextType(value->getTextType());
-	result->dsc_flags = value->dsc_flags & DSC_nullable;
+	result->setNullable(value->isNullable() || offset->isNullable() || length->isNullable());
 
 	if (result->isText())
 		result->dsc_length = fixLength(result, convertLength(value, result)) + sizeof(USHORT);

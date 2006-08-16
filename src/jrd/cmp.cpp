@@ -1709,9 +1709,9 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_substr:
 		{
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
+			DSC desc0, desc1, desc2, desc3;
 
-			DSC desc1, desc2, desc3;
+			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc0);
 
 			jrd_nod* offset_node = node->nod_arg[1];
 			jrd_nod* decrement_node = NULL;
@@ -1729,7 +1729,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			jrd_nod* length_node = node->nod_arg[2];
 			CMP_get_desc(tdbb, csb, length_node, &desc2);
 
-			DataTypeUtil(tdbb).makeSubstr(desc, &desc1);
+			DataTypeUtil(tdbb).makeSubstr(desc, &desc0, &desc1, &desc2);
 
 			if (desc1.dsc_flags & DSC_null || desc2.dsc_flags & DSC_null)
 			{

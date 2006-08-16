@@ -300,7 +300,7 @@ dsql_str* MAKE_cstring(const char* str)
  **/
 void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 {
-	dsc desc1, desc2;
+	dsc desc1, desc2, desc3;
 	USHORT dtype, dtype1, dtype2;
 	dsql_map* map;
 	dsql_ctx* context;
@@ -471,7 +471,9 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
  
 	case nod_substr:
 		MAKE_desc(request, &desc1, node->nod_arg[0], null_replacement);
- 		DSqlDataTypeUtil(request).makeSubstr(desc, &desc1);
+		MAKE_desc(request, &desc2, node->nod_arg[1], null_replacement);
+		MAKE_desc(request, &desc3, node->nod_arg[2], null_replacement);
+ 		DSqlDataTypeUtil(request).makeSubstr(desc, &desc1, &desc2, &desc3);
   		return;
 
     case nod_trim:
