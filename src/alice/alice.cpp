@@ -205,11 +205,6 @@ int common_main(int					argc,
 //  first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
 //  by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
 
-	tdgbl->sw_service = false;
-	tdgbl->sw_service_thd = false;
-	tdgbl->service_blk = NULL;
-	tdgbl->status =	tdgbl->status_vector;
-
 	if (argc > 1 && !strcmp(argv[1], "-svc")) {
 		tdgbl->sw_service = true;
 		argv++;

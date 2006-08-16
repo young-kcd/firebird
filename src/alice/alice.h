@@ -167,9 +167,16 @@ public:
 								// would be set to FINI_OK (==0) in exit_local
 		output_proc(outProc), 
 		output_data(outData),
+		output_file(NULL),
+		service_blk(NULL),
 		db_handle(0),
-		tr_handle(0)
+		tr_handle(0),
+		status(status_vector),
+		sw_redirect(NOREDIRECT),
+		sw_service(false),
+		sw_service_thd(false)
 	{
+		memset(&ALICE_data, 0, sizeof(user_action));
 	}
 
 	AliceMemoryPool* getDefaultPool()
