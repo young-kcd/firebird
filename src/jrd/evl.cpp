@@ -4807,19 +4807,19 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 	SLONG offset_arg = MOV_get_long(offset_value, 0);
 	SLONG length_arg = MOV_get_long(length_value, 0);
 
-	ULONG offset = (ULONG) offset_arg;
-	ULONG length = (ULONG) length_arg;
-	if (offset_arg < 0 || offset > MAX_COLUMN_SIZE)
-	{
+	if (offset_arg < 0)
 		ERR_post(isc_bad_substring_offset, isc_arg_number, offset_arg + 1, 0);
-	}
-	else if (length_arg < 0 || length > MAX_COLUMN_SIZE)
-	{
+	else if (length_arg < 0)
 		ERR_post(isc_bad_substring_length, isc_arg_number, length_arg, 0);
-	}
 
 	dsc desc;
 	DataTypeUtil(tdbb).makeSubstr(&desc, value, offset_value, length_value);
+
+	ULONG offset = (ULONG) offset_arg;
+	ULONG length = (ULONG) length_arg;
+
+	if (desc.isText() && length > MAX_COLUMN_SIZE)
+		ERR_post(isc_bad_substring_length, isc_arg_number, length_arg, 0);
 
 	TextType* textType = INTL_texttype_lookup(tdbb, value->getTextType());
 	CharSet* charSet = textType->getCharSet();
