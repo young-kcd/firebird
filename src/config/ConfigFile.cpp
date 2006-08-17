@@ -237,7 +237,7 @@ const char* ConfigFile::getInstallDirectory(void)
 JString ConfigFile::expand(JString rawString)
 {
 	char temp [1024];
-	char *p = temp, *end = temp + sizeof(temp) - 1;
+	char *p = temp, *temp_end = temp + sizeof(temp) - 1;
 	bool change = false;
 	
 	for (const char *s = rawString; *s;)
@@ -256,11 +256,11 @@ JString ConfigFile::expand(JString rawString)
 				const char *subst = translate (name, NULL);
 				if (!subst)
 					throw AdminException ("can't substitute for \"%s\"", name);
-				for (const char *t = subst; *t && p < end;)
+				for (const char *t = subst; *t && p < temp_end;)
 					*p++ = *t++;					
 				}
 			}
-		else if (p < end)
+		else if (p < temp_end)
 			*p++ = c;
 		}
 	

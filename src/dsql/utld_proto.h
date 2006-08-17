@@ -49,8 +49,8 @@ class dsql_req;
 class DSqlDataTypeUtil : public DataTypeUtilBase
 {
 public:
-	DSqlDataTypeUtil(dsql_req* request)
-		: request(request)
+	DSqlDataTypeUtil(dsql_req* req)
+		: request(req)
 	{
 	}
 

@@ -1060,7 +1060,7 @@ static jrd_file* setup_file(Database*					dbb,
 			SCHAR spare_memory[MIN_PAGE_SIZE*2];
 			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
 		
-			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+			pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			try {
 				pageSpace->file = file;
 				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);

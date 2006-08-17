@@ -396,9 +396,9 @@ public:
 		req_blr_data(p),
 		req_labels(p), 
 		req_cursors(p),
+		req_curr_ctes(p),
 		req_ctes(p),
-		req_cte_aliases(p),
-		req_curr_ctes(p) { }
+		req_cte_aliases(p) { }
 
 	dsql_req*	req_parent;		//!< Source request, if cursor update
 	dsql_req*	req_sibling;	//!< Next sibling request, if cursor update

@@ -344,10 +344,10 @@ void Element::addAttribute(JString attributeName)
 	addAttribute (new Element (attributeName));
 }
 
-Element* Element::addAttribute(JString attributeName, int value)
+Element* Element::addAttribute(JString attributeName, int attributeValue)
 {
 	char buffer [32];
-	sprintf (buffer, "%d", value);
+	sprintf (buffer, "%d", attributeValue);
 	
 	return addAttribute (attributeName, buffer);
 }

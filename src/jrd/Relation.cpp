@@ -147,12 +147,12 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 			{
 				const size_t BULK_ALLOC = 8;
 				
-				RelationPages* allocPages = newPages = 
+				RelationPages* allocatedPages = newPages = 
 					FB_NEW(*dbb->dbb_permanent) RelationPages[BULK_ALLOC];
 
-				rel_pages_free = ++allocPages;
-				for (size_t i = 1; i < BULK_ALLOC - 1; i++, allocPages++)
-					allocPages->rel_next_free = allocPages + 1;
+				rel_pages_free = ++allocatedPages;
+				for (size_t i = 1; i < BULK_ALLOC - 1; i++, allocatedPages++)
+					allocatedPages->rel_next_free = allocatedPages + 1;
 			}
 			else 
 			{

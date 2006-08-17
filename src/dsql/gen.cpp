@@ -2315,11 +2315,11 @@ static void gen_select( dsql_req* request, dsql_nod* rse)
 	list = rse->nod_arg[e_rse_streams];
 
 	if (!rse->nod_arg[e_rse_reduced]) {
-		dsql_nod* const* ptr = list->nod_arg;
-		for (const dsql_nod* const* const end2 = ptr + list->nod_count; 
-			ptr < end2; ptr++) 
+		dsql_nod* const* ptr2 = list->nod_arg;
+		for (const dsql_nod* const* const end2 = ptr2 + list->nod_count; 
+			ptr2 < end2; ptr2++) 
 		{
-			dsql_nod* item = *ptr;
+			dsql_nod* item = *ptr2;
 			if (item && item->nod_type == nod_relation) {
 				context = (dsql_ctx*) item->nod_arg[e_rel_context];
 				if (relation = context->ctx_relation) {

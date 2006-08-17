@@ -779,15 +779,15 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 			request->req_curr_ctes.push(cte);
 
-			dsql_nod* node = pass1_derived_table(request, cte, proc_flag, 
-								isRecursive ? rel_alias : NULL);
+			dsql_nod* derived_node = pass1_derived_table(request, cte, proc_flag, 
+														isRecursive ? rel_alias : NULL);
 
 			if (!isRecursive) {
 				cte->nod_arg[e_derived_table_alias] = (dsql_nod*) cte_name;
 			}
 			request->req_curr_ctes.pop();
 
-			return node;
+			return derived_node;
 		}
 		else 
 		{
@@ -4256,11 +4256,11 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	// Put special contexts (NEW/OLD) also on the stack
 	for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
 	{
-	    dsql_ctx* context = stack.object();
-		if ((context->ctx_scope_level < request->req_scope_level) || 
-			(context->ctx_flags & CTX_system))
+	    dsql_ctx* local_context = stack.object();
+		if ((local_context->ctx_scope_level < request->req_scope_level) || 
+			(local_context->ctx_flags & CTX_system))
 		{
-			temp.push(context);
+			temp.push(local_context);
 		}
 	}
 	dsql_ctx* baseContext = NULL;
@@ -4418,12 +4418,12 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 				// Construct dummy fieldname
 				char fieldname[25];
 				sprintf (fieldname, "f%d", count);
-				dsql_str* alias = FB_NEW_RPT(*tdsql->getDefaultPool(),
+				dsql_str* field_alias = FB_NEW_RPT(*tdsql->getDefaultPool(),
 					strlen(fieldname)) dsql_str;
-				strcpy(alias->str_data, fieldname);
-				alias->str_length = strlen(fieldname);
+				strcpy(field_alias->str_data, fieldname);
+				field_alias->str_length = strlen(fieldname);
 
-				derived_field->nod_arg[e_derived_field_name] = (dsql_nod*) alias;
+				derived_field->nod_arg[e_derived_field_name] = (dsql_nod*) field_alias;
 				derived_field->nod_arg[e_derived_field_scope] =
 					(dsql_nod*)(IPTR) request->req_scope_level;
 				derived_field->nod_desc = select_item->nod_desc;

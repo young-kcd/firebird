@@ -58,8 +58,8 @@ class thread_db;
 class DataTypeUtil : public DataTypeUtilBase
 {
 public:
-	DataTypeUtil(thread_db* tdbb)
-		: tdbb(tdbb)
+	DataTypeUtil(thread_db* original_tdbb)
+		: tdbb(original_tdbb)
 	{
 	}
 

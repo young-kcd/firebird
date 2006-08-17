@@ -755,9 +755,9 @@ int common_main(int		argc,
 				if ((argv < end) && (**argv != *switch_char) ) {
 					// find optional BURP_SW_OVERWRITE parameter
 					TEXT c;
-					const TEXT* q = BURP_SW_OVERWRITE;
+					const TEXT* param_pattern = BURP_SW_OVERWRITE;
 					for (const TEXT *p = *argv; c = *p++;)
-						if (UPPER(c) != *q++)
+						if (UPPER(c) != *param_pattern++)
 							break;
 
 					if (!c) {

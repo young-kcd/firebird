@@ -224,8 +224,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		{
 			printf("Enter %s user password : ", oem_username);
 			p = keyb_password;
-			const TEXT* const end = p + sizeof(keyb_password) - 1;	// keep room for '\0'
-			while (p < end && (*p++ = getch()) != '\r')
+			const TEXT* const pass_end = p + sizeof(keyb_password) - 1;	// keep room for '\0'
+			while (p < pass_end && (*p++ = getch()) != '\r')
 				putch('*'); // Win32 only
 			*(p - 1) = '\0';	// Cuts at '\r'
 			printf("\n");
