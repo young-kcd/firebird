@@ -182,7 +182,7 @@ enum att_state_t {
 
 enum tra_state_t {
 	tra_s_idle = 0,
-	tra_s_active = 1,
+	tra_s_active = 1
 };
 
 enum stmt_state_t {
