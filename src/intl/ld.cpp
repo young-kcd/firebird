@@ -26,7 +26,7 @@
 #include "../intl/ld_proto.h"
 #include "../intl/cs_icu.h"
 #include "../intl/lc_icu.h"
-#include "../../include/fb_exception.h"
+#include "fb_exception.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h> /* for MAXPATHLEN */
