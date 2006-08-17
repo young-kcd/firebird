@@ -146,14 +146,17 @@ int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_d
 /* wait for the child process with child_pid to exit */
 
 	while (waitpid(child_pid, &child_exit_status, 0) == -1)
-		if (SYSCALL_INTERRUPTED(errno)) {
+	{
+		if (SYSCALL_INTERRUPTED(errno))
+		{
 			if (shutting_down)
 				return -2;
 			else
 				continue;
-		} else {
-			return (errno);
 		}
+		else
+			return (errno);
+	}
 
 /* Check for very specific conditions before we assume the child
    did a normal exit. */
@@ -203,30 +206,37 @@ int UTIL_shutdown_child(pid_t child_pid,
  *
  **************************************/
 
-	int R;
-	int child_status;
+	int r = kill(child_pid, SIGTERM);
 
-	R = kill(child_pid, SIGTERM);
-	if (R < 0)
+	if (r < 0)
 		return ((errno == ESRCH) ? 0 : -1);
 
 	if (UTIL_set_handler(SIGALRM, alrm_handler, false) < 0)
 		return -1;
+
 	alarm(timeout_term);
-	R = waitpid(child_pid, &child_status, 0);
-	if ((R < 0) && !SYSCALL_INTERRUPTED(errno))
+
+	int child_status;
+	r = waitpid(child_pid, &child_status, 0);
+
+	if ((r < 0) && !SYSCALL_INTERRUPTED(errno))
 		return -1;
-	if (R == child_pid)
+
+	if (r == child_pid)
 		return 0;
 
-	R = kill(child_pid, SIGKILL);
-	if (R < 0)
+	r = kill(child_pid, SIGKILL);
+
+	if (r < 0)
 		return ((errno == ESRCH) ? 0 : -1);
+
 	alarm(timeout_kill);
-	R = waitpid(child_pid, &child_status, 0);
-	if ((R < 0) && !SYSCALL_INTERRUPTED(errno))
+	r = waitpid(child_pid, &child_status, 0);
+
+	if ((r < 0) && !SYSCALL_INTERRUPTED(errno))
 		return -1;
-	if (R == child_pid)
+
+	if (r == child_pid)
 		return 1;
 
 	return 2;
@@ -351,4 +361,3 @@ int UTIL_set_handler(int sig, sighandler_t handler, bool restart)
 #endif
 	return 0;
 }
-
