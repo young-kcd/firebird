@@ -1,3 +1,12 @@
+2006-08-16 12:08  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall
+	.bat (1.15.2.4):
+	
+	Make sure that embedded kits really do contain the msvc* libraries
+	they depend on.
+
 2006-08-15 22:01  hvlad
 
 	* firebird2/doc/WhatsNew (1.95.2.18):
