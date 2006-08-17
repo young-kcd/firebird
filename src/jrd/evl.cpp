@@ -4819,7 +4819,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 	ULONG length = (ULONG) length_arg;
 
 	if (desc.isText() && length > MAX_COLUMN_SIZE)
-		ERR_post(isc_bad_substring_length, isc_arg_number, length_arg, 0);
+		length = MAX_COLUMN_SIZE;
 
 	TextType* textType = INTL_texttype_lookup(tdbb, value->getTextType());
 	CharSet* charSet = textType->getCharSet();
