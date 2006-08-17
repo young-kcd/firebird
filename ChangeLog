@@ -1,3 +1,36 @@
+2006-08-17 03:50  asfernandes
+
+	* firebird2/src/utilities/guard/util.cpp (1.11):
+	
+	Misc
+
+2006-08-16 17:15  alexpeshkoff
+
+	* firebird2/src/jrd/: dyn.epp (1.89), dyn_def.epp (1.130),
+	dyn_del.epp (1.56), dyn_mod.epp (1.77), jrd.cpp (1.265), jrd.h
+	(1.172), scl.epp (1.75), scl.h (1.14), shut.cpp (1.42):
+	
+	1. Centralized validation of attachment to be a super-user
+	attachment.  2. Fixed a couple of old problems, when sysdba could
+	perform operations, but    database owner - could not.	3. Fixed
+	CORE-84 - nbackup operations were allowed for everybody who can
+	login	 to the given database.  4. Disabled creating shadows and
+	adding additional DB-files for non super-user.
+
+2006-08-16 14:46  mkubecek
+
+	* firebird2/src/utilities/guard/: guard.cpp (1.14), util.cpp
+	(1.10), util_proto.h (1.4):
+	
+	shutdown fbserver when fbguard receives TERM or INT signal
+
+2006-08-16 11:08  hvlad
+
+	* firebird2/src/alice/: alice.cpp (1.86), alice.h (1.52):
+	
+	Fixed CORE-898: uininitialized variables cause a crash in alice.cpp
+	/ common_main
+
 2006-08-16 02:09  asfernandes
 
 	* firebird2/src/: dsql/make.cpp (1.121), jrd/DataTypeUtil.cpp
