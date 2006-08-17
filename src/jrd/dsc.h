@@ -27,7 +27,7 @@
 #define JRD_DSC_H
 
 #include "../jrd/dsc_pub.h"
-#include "../jrd/ibase.h"
+#include "consts_pub.h"
 #include "../jrd/ods.h"
 #include "../intl/charsets.h"
 
