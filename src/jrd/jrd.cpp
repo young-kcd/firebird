@@ -3465,17 +3465,20 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
 	tdbb->tdbb_status_vector = user_status;
+	tdbb->tdbb_database = NULL;
+
+	JRD_SS_MUTEX_LOCK;
 	try
 	{
-		tdbb->tdbb_database = NULL;
-	
 		*svc_handle = SVC_attach(service_length, service_name, spb_length, spb);
 	}
 	catch (const Firebird::Exception& ex)
 	{
+		JRD_SS_MUTEX_UNLOCK;
 		return error(user_status, ex);
 	}
 
+	JRD_SS_MUTEX_UNLOCK;
 	return return_success(tdbb);
 }
 
