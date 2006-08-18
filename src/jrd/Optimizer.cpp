@@ -2464,6 +2464,30 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 	return (count >= 1);
 }
 
+class IndexScratchListHolder
+{
+public:
+	IndexScratchListHolder (IndexScratchList& Scratches) :
+	  m_Scratches(Scratches) {};
+
+	~IndexScratchListHolder()
+	{ clear(); }
+
+	void clear()
+	{
+		for (int i = 0; i < m_Scratches.getCount(); i++) 
+		{
+			IndexScratch* s = m_Scratches[i];
+			m_Scratches[i] = 0;
+			delete s;
+		}
+		m_Scratches.clear();
+	}
+
+private:
+	IndexScratchList& m_Scratches;
+};
+
 InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 	IndexScratchList* indexScratches, jrd_nod* boolean, USHORT scope) const
 {
@@ -2490,6 +2514,8 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 		// Make list for index matches 
 		IndexScratchList indexOrScratches;
+		IndexScratchListHolder scratchHolder(indexOrScratches); 
+
 		// Copy information from caller
 		IndexScratch** indexScratch = indexScratches->begin();
 		int i = 0;		
@@ -2516,7 +2542,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		}
 
 		// Clear list to remove previously matched conjunctions
-		indexOrScratches.clear();
+		scratchHolder.clear();
 		// Copy information from caller
 		indexScratch = indexScratches->begin();
 		i = 0;		
