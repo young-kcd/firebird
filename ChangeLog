@@ -1,3 +1,60 @@
+2006-08-17 14:48  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.195):
+	
+	Don't generate error with large length even for substring of
+	string.  The substring will never be larger than the source string.
+
+2006-08-17 14:34  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.194):
+	
+	1) Allow large offset and length in substring of blob.	2) Don't
+	generate error in case of large offset of substring of string, it
+	will correctly return empty string.  Thanks to Claudio
+
+2006-08-17 14:08  aafemt
+
+	* firebird2/src/: burp/burp.cpp (1.115), config/ConfigFile.cpp
+	(1.5), config/Element.cpp (1.4), dsql/dsql.h (1.96), dsql/gen.cpp
+	(1.107), dsql/pass1.cpp (1.280), dsql/utld_proto.h (1.16),
+	jrd/DataTypeUtil.h (1.4), jrd/Relation.cpp (1.2),
+	jrd/os/win32/winnt.cpp (1.38), utilities/install/install_svc.cpp
+	(1.24):
+	
+	Warnings
+
+2006-08-17 11:51  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.266):
+	
+	Fixed CORE-900
+
+2006-08-17 07:59  aafemt
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.73):
+	
+	Add consts_pub.h to public ibase.h
+
+2006-08-17 07:57  aafemt
+
+	* firebird2/src/: include/consts_pub.h (1.1), jrd/dsc.h (1.33),
+	jrd/ibase.h (1.121):
+	
+	Separate header for public constants
+
+2006-08-17 07:56  aafemt
+
+	* firebird2/src/intl/ld.cpp (1.24):
+	
+	No need for full pathes
+
+2006-08-17 07:54  aafemt
+
+	* firebird2/src/jrd/constants.h (1.29):
+	
+	Extra comma
+
 2006-08-17 03:50  asfernandes
 
 	* firebird2/src/utilities/guard/util.cpp (1.11):
