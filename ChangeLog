@@ -1,3 +1,10 @@
+2006-08-17 08:46  hvlad
+
+	* firebird2/src/alice/: alice.cpp (1.83.2.1), alice.h (1.49.2.1):
+	
+	Backport fix for CORE-898: uininitialized variables cause a crash
+	in alice.cpp / common_main
+
 2006-08-16 12:08  paul_reeves
 
 	*
