@@ -483,6 +483,29 @@ void DDL_resolve_intl_type2(dsql_req* request,
  *
  **************************************/
 
+	if (field->fld_type_of_name)
+	{
+		if (ENCODE_ODS(request->req_dbb->dbb_ods_version, request->req_dbb->dbb_minor_version) < ODS_11_1)
+		{
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -804,
+					  isc_arg_gds, isc_dsql_feature_not_supported_ods,
+					  isc_arg_number, 11,
+					  isc_arg_number, 1,
+					  // Feature not supported on ODS version older than %d.%d
+					  0);
+		}
+
+		if (!METD_get_domain(request, field, field->fld_type_of_name))
+		{
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+					  isc_arg_gds, isc_dsql_command_err,
+					  isc_arg_gds, isc_dsql_domain_not_found,
+					  isc_arg_string, field->fld_type_of_name,
+					  // Specified domain or source field does not exist
+					  0);
+		}
+	}
+
 	if ((field->fld_dtype > dtype_any_text) && field->fld_dtype != dtype_blob)
 	{
 		if (field->fld_character_set || collation_name ||
@@ -671,6 +694,8 @@ void DDL_resolve_intl_type2(dsql_req* request,
 					  isc_collation_not_for_charset, isc_arg_string,
 					  collation_name->str_data, 0);
 		}
+
+		field->fld_explicit_collation = true;
 	}
 
     assign_field_length (field, resolved_type->intlsym_bytes_per_char);
@@ -1808,12 +1833,14 @@ static void define_field(
 		// Get the domain information
 
 		if (!(METD_get_domain(request, field, domain_name->str_data)))
+		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_dsql_domain_not_found,
 					  isc_arg_string, domain_name->str_data,
 					  // Specified domain or source field does not exist
 					  0);
+		}
 
 		DDL_resolve_intl_type(	request,
 								field,
@@ -5204,12 +5231,12 @@ static void modify_domain( dsql_req* request)
 			   correct type, length, scale, etc. */
 			if (!METD_get_domain(request, &local_field, domain_name->str_data))
 			{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-							  isc_arg_gds, isc_dsql_command_err,
-							  isc_arg_gds, isc_dsql_domain_not_found,
-                              isc_arg_string, domain_name->str_data,
-							  // Specified domain or source field does not exist
-							  0);
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+						  isc_arg_gds, isc_dsql_command_err,
+						  isc_arg_gds, isc_dsql_domain_not_found,
+						  isc_arg_string, domain_name->str_data,
+						  // Specified domain or source field does not exist
+						  0);
 			}
 			if (element->nod_arg[e_cnstr_condition])
 			{
@@ -5788,7 +5815,6 @@ static void put_descriptor(dsql_req* request, const dsc* desc)
 //
 static void put_dtype(dsql_req* request, const dsql_fld* field, bool use_subtype)
 {
-
 #ifdef DEV_BUILD
 // Check if the field describes a known datatype
 
@@ -5801,6 +5827,23 @@ static void put_dtype(dsql_req* request, const dsql_fld* field, bool use_subtype
 		ERRD_bugcheck(buffer);
 	}
 #endif
+
+	if (field->fld_type_of_name)
+	{
+		if (field->fld_explicit_collation)
+		{
+			request->append_uchar(blr_type_of2);
+			request->append_cstring(0, field->fld_type_of_name);
+			request->append_ushort(field->fld_ttype);
+		}
+		else
+		{
+			request->append_uchar(blr_type_of);
+			request->append_cstring(0, field->fld_type_of_name);
+		}
+
+		return;
+	}
 
 	if (field->fld_dtype == dtype_cstring || field->fld_dtype == dtype_text ||
 		field->fld_dtype == dtype_varying || field->fld_dtype == dtype_blob)
@@ -5859,6 +5902,16 @@ static void put_field( dsql_req* request, dsql_fld* field, bool udf_flag)
  *	or a procedure output.
  *
  **************************************/
+
+	if (field->fld_type_of_name)
+	{
+		request->append_cstring(isc_dyn_fld_source, field->fld_type_of_name);
+
+		if (field->fld_explicit_collation)
+			request->append_number(isc_dyn_fld_collation, field->fld_collation_id);
+
+		return;
+	}
 
 	request->append_number(isc_dyn_fld_type, blr_dtypes[field->fld_dtype]);
 	if (field->fld_dtype == dtype_blob)

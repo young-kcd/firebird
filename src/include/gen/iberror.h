@@ -605,6 +605,8 @@ const ISC_LONG isc_subtype_for_internal_use         = 335544867L;
 const ISC_LONG isc_illegal_prc_type                 = 335544868L;
 const ISC_LONG isc_invalid_sort_datatype            = 335544869L;
 const ISC_LONG isc_collation_name                   = 335544870L;
+const ISC_LONG isc_domain_name                      = 335544871L;
+const ISC_LONG isc_domnotdef                        = 335544872L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -656,6 +658,7 @@ const ISC_LONG isc_dsql_cursor_rel_ambiguous        = 336003093L;
 const ISC_LONG isc_dsql_cursor_rel_not_found        = 336003094L;
 const ISC_LONG isc_dsql_cursor_not_open             = 336003095L;
 const ISC_LONG isc_dsql_type_not_supp_ext_tab       = 336003096L;
+const ISC_LONG isc_dsql_feature_not_supported_ods   = 336003097L;
 const ISC_LONG isc_dyn_role_does_not_exist          = 336068796L;
 const ISC_LONG isc_dyn_no_grant_admin_opt           = 336068797L;
 const ISC_LONG isc_dyn_user_not_role_member         = 336068798L;
@@ -825,7 +828,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_err_max                          = 770;
+const ISC_LONG isc_err_max                          = 773;
 
 #else /* c definitions */
 
@@ -1400,6 +1403,8 @@ const ISC_LONG isc_err_max                          = 770;
 #define isc_illegal_prc_type                 335544868L
 #define isc_invalid_sort_datatype            335544869L
 #define isc_collation_name                   335544870L
+#define isc_domain_name                      335544871L
+#define isc_domnotdef                        335544872L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1451,6 +1456,7 @@ const ISC_LONG isc_err_max                          = 770;
 #define isc_dsql_cursor_rel_not_found        336003094L
 #define isc_dsql_cursor_not_open             336003095L
 #define isc_dsql_type_not_supp_ext_tab       336003096L
+#define isc_dsql_feature_not_supported_ods   336003097L
 #define isc_dyn_role_does_not_exist          336068796L
 #define isc_dyn_no_grant_admin_opt           336068797L
 #define isc_dyn_user_not_role_member         336068798L
@@ -1620,7 +1626,7 @@ const ISC_LONG isc_err_max                          = 770;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_err_max                          770
+#define isc_err_max                          773
 
 #endif
 

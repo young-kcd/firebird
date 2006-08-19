@@ -104,28 +104,29 @@ typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
 
 //! internal DSQL requests
 enum irq_type_t {
-    irq_relation    = 0,     //!< lookup a relation                     
-    irq_fields      = 1,     //!< lookup a relation's fields            
-    irq_dimensions  = 2,     //!< lookup a field's dimensions           
-    irq_primary_key = 3,     //!< lookup a primary key                  
-    irq_view        = 4,     //!< lookup a view's base relations        
-    irq_function    = 5,     //!< lookup a user defined function        
-    irq_func_return = 6,     //!< lookup a function's return argument   
-    irq_procedure   = 7,     //!< lookup a stored procedure             
-    irq_parameters  = 8,     //!< lookup a procedure's parameters       
-    irq_collation   = 9,     //!< lookup a collation name               
-    irq_charset     = 10,    //!< lookup a character set
-    irq_trigger     = 11,    //!< lookup a trigger                      
-    irq_domain      = 12,    //!< lookup a domain                       
-    irq_type        = 13,    //!< lookup a symbolic name in RDB$TYPES   
-    irq_col_default = 14,    //!< lookup default for a column           
-    irq_domain_2    = 15,    //!< lookup a domain
-    irq_exception   = 16,    //!< lookup an exception
-	irq_cs_name     = 17,    //!< lookup a charset name
-	irq_default_cs  = 18,    //!< lookup the default charset
-	irq_rel_ids		= 19,    //!< check relation/field ids
+    irq_relation,		//!< lookup a relation
+    irq_fields,			//!< lookup a relation's fields
+    irq_dimensions,		//!< lookup a field's dimensions
+    irq_primary_key,	//!< lookup a primary key
+    irq_view,			//!< lookup a view's base relations
+    irq_function,		//!< lookup a user defined function
+    irq_func_return,	//!< lookup a function's return argument
+    irq_procedure,		//!< lookup a stored procedure
+    irq_parameters,		//!< lookup a procedure's parameters
+    irq_parameters2,	//!< lookup a procedure's parameters (ODS 11.1)
+    irq_collation,		//!< lookup a collation name
+    irq_charset,		//!< lookup a character set
+    irq_trigger,		//!< lookup a trigger
+    irq_domain,			//!< lookup a domain
+    irq_type,			//!< lookup a symbolic name in RDB$TYPES
+    irq_col_default,	//!< lookup default for a column
+    irq_domain_2,		//!< lookup a domain
+    irq_exception,		//!< lookup an exception
+	irq_cs_name,		//!< lookup a charset name
+	irq_default_cs,		//!< lookup the default charset
+	irq_rel_ids,		//!< check relation/field ids
 
-    irq_MAX         = 20
+    irq_MAX
 };
 
 // dsql_nod definition
@@ -159,6 +160,8 @@ public:
 	USHORT			dbb_db_SQL_dialect;
 	SSHORT			dbb_att_charset;	//!< characterset at time of attachment
 	IntlSymArray	dbb_charsets_by_id;	// charsets sorted by charset_id
+	USHORT			dbb_ods_version;	// major ODS version number
+	USHORT			dbb_minor_version;	// minor ODS version number
 
 	dsql_dbb(DsqlMemoryPool& p) : 
 		dbb_charsets_by_id(p, 16) 
@@ -221,6 +224,8 @@ public:
 	SSHORT		fld_character_set_id;	//!< ID of field's character set
 	SSHORT		fld_collation_id;		//!< ID of field's collation
 	SSHORT		fld_ttype;				//!< ID of field's language_driver
+	TEXT*		fld_type_of_name;		//!< TYPE OF
+	bool		fld_explicit_collation;	//!< COLLATE was explicit specified
 	TEXT		fld_name[2];
 };
 

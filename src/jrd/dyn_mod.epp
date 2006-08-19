@@ -1533,7 +1533,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 		   Retain existing values on other fields (RDB$DESCRIPTION, RDB$SECURITY_CLASS),
 		   unless explicitly changed in the DYN string */
 		MODIFY P
-		
+
 			if (**ptr == isc_dyn_description)
 			{
 				++*ptr;
@@ -1627,6 +1627,9 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 				MODIFY P USING
 					P.RDB$PROCEDURE_TYPE = prc_type;
 					P.RDB$PROCEDURE_TYPE.NULL = FALSE;
+
+					P.RDB$VALID_BLR = TRUE;
+					P.RDB$VALID_BLR.NULL = FALSE;
 				END_MODIFY;
 			END_FOR;
 
@@ -1829,6 +1832,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
 	bool found = false;
+	bool only_description = false;
 
 	try {
 
@@ -1865,6 +1869,18 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 		found = true;
 		
 		MODIFY X
+
+			if (**ptr == isc_dyn_description)
+			{
+				++*ptr;
+				if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
+					X.RDB$DESCRIPTION.NULL = FALSE;
+				else
+					X.RDB$DESCRIPTION.NULL = TRUE;
+
+				if (**ptr == isc_dyn_end)
+					only_description = true;
+			}
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -1934,6 +1950,25 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 
 	if (!DYN_REQUEST(drq_m_trigger))
 		DYN_REQUEST(drq_m_trigger) = request;
+
+	if (!only_description)
+	{
+		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+		{
+			jrd_req* sub_request = NULL;
+
+			FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
+				TRG IN RDB$TRIGGERS WITH TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str()
+
+				MODIFY TRG USING
+					TRG.RDB$VALID_BLR = TRUE;
+					TRG.RDB$VALID_BLR.NULL = FALSE;
+				END_MODIFY;
+			END_FOR;
+
+			CMP_release(tdbb, sub_request);
+		}
+	}
 
 	}
 	catch (const Firebird::Exception& ex) {

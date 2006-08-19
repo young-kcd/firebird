@@ -58,6 +58,8 @@
 #define blr_sql_time		(unsigned char)13
 #define blr_int64               (unsigned char)16
 #define blr_blob2		(unsigned char)17
+#define blr_type_of		(unsigned char)18
+#define blr_type_of2	(unsigned char)19
 
 /* Historical alias for pre V6 applications */
 #define blr_date		blr_timestamp

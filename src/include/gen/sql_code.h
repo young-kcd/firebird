@@ -571,6 +571,8 @@ static const struct {
 	{335544868, -901}, /* 548 illegal_prc_type                 */
 	{335544869, -901}, /* 549 invalid_sort_datatype            */
 	{335544870, -901}, /* 550 collation_name                   */
+	{335544871, -901}, /* 551 domain_name                      */
+	{335544872, -219}, /* 552 domnotdef                        */
 	{335740929, -901}, /*   1 gfix_db_name                     */
 	{335740930, -901}, /*   2 gfix_invalid_sw                  */
 	{335740932, -901}, /*   4 gfix_incmp_sw                    */
@@ -622,6 +624,7 @@ static const struct {
 	{336003094, -502}, /*  22 dsql_cursor_rel_not_found        */
 	{336003095, -502}, /*  23 dsql_cursor_not_open             */
 	{336003096, -607}, /*  24 dsql_type_not_supp_ext_tab       */
+	{336003097, -804}, /*  25 dsql_feature_not_supported_ods   */
 	{336068796, -901}, /* 188 dyn_role_does_not_exist          */
 	{336068797, -901}, /* 189 dyn_no_grant_admin_opt           */
 	{336068798, -901}, /* 190 dyn_user_not_role_member         */

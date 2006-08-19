@@ -72,6 +72,7 @@ static void remove_delimited_double_quotes(TEXT*);
 static void make_priv_string(USHORT, char*);
 static processing_state show_all_tables(SSHORT);
 static void show_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool, bool);
+static void show_proc_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool, bool);
 static processing_state show_check(const SCHAR*);
 static processing_state show_collations(const SCHAR*);
 static void show_comment(const char* objtype, char* name1, char* name2,
@@ -115,7 +116,8 @@ static const SCHAR* Object_types[] = {
 	"SQL role",
 	"Generator",
 	"User defined function",
-	"Blob filter" // impossible to have explicit dependencies on it, but...
+	"Blob filter",	// impossible to have explicit dependencies on it, but...
+	"Collation"
 };
 
 
@@ -1662,6 +1664,99 @@ static void show_charsets(
 			ISQL_get_character_sets(char_set_id, collation, false, char_sets);
 	}
 	if (char_sets[0]) {
+		if (doIndent)
+			isqlGlob.printf(spaces);
+		isqlGlob.prints(char_sets);
+		if (doReturn)
+			isqlGlob.printf(NEWLINE);
+	}
+}
+
+
+static void show_proc_charsets(
+	const SCHAR* procedure_name,
+	const SCHAR* parameter_name,
+	bool show_charset,
+	bool show_collation,
+	bool doIndent,
+	bool doReturn)
+{
+	SSHORT collation, char_set_id;
+	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();
+
+	// If there is a procedure_name, this is a real column, look up collation
+	// in rdb$procedure_parameters
+
+	if (procedure_name)
+	{
+		FOR PRP IN RDB$PROCEDURE_PARAMETERS CROSS
+			FLD IN RDB$FIELDS
+			WITH PRP.RDB$PARAMETER_NAME EQ parameter_name AND
+			PRP.RDB$PROCEDURE_NAME EQ procedure_name AND
+			PRP.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME
+
+			char_set_id = 0;
+			if (!FLD.RDB$CHARACTER_SET_ID.NULL)
+				char_set_id = FLD.RDB$CHARACTER_SET_ID;
+
+			bool prp_collation_null = true;
+			collation = 0;
+
+			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
+			{
+				FOR PRP2 IN RDB$PROCEDURE_PARAMETERS
+					WITH PRP2.RDB$PROCEDURE_NAME EQ PRP.RDB$PROCEDURE_NAME AND
+						 PRP2.RDB$PARAMETER_NAME EQ PRP.RDB$PARAMETER_NAME
+
+					prp_collation_null = PRP2.RDB$COLLATION_ID.NULL;
+					collation = PRP2.RDB$COLLATION_ID;
+				END_FOR 
+			}
+
+			if (!prp_collation_null && !FLD.RDB$COLLATION_ID.NULL)
+				collation = FLD.RDB$COLLATION_ID;
+		END_FOR
+		ON_ERROR
+#ifdef DEV_BUILD
+			fprintf(stderr, "show_proc_charsets(%s %s) failed\n",
+					   procedure_name, parameter_name);
+#endif
+		END_ERROR;
+	}
+	else
+	{
+		FOR FLD IN RDB$FIELDS WITH
+			FLD.RDB$FIELD_NAME EQ parameter_name
+
+			char_set_id = 0;
+			collation = 0;
+			if (!FLD.RDB$CHARACTER_SET_ID.NULL)
+				char_set_id = FLD.RDB$CHARACTER_SET_ID;
+			if (!FLD.RDB$COLLATION_ID.NULL)
+				collation = FLD.RDB$COLLATION_ID;
+		END_FOR
+		ON_ERROR
+#ifdef DEV_BUILD
+			fprintf(stderr, "show_proc_charsets(NULL %s) failed\n",
+					   parameter_name);
+#endif
+		END_ERROR;
+	}
+
+	TEXT char_sets[86];			/* CHARACTER SET <name31> COLLATE <name31> */
+	char_sets[0] = 0;
+	if ((char_set_id != default_char_set_id) || collation)
+	{
+		if (show_charset && !show_collation)
+			ISQL_get_character_sets(char_set_id, 0, false, char_sets);
+		else if (!show_charset && show_collation)
+			ISQL_get_character_sets(char_set_id, collation, true, char_sets);
+		else
+			ISQL_get_character_sets(char_set_id, collation, false, char_sets);
+	}
+	
+	if (char_sets[0])
+	{
 		if (doIndent)
 			isqlGlob.printf(spaces);
 		isqlGlob.prints(char_sets);
@@ -3279,16 +3374,27 @@ static processing_state show_proc(const SCHAR* procname)
 
 			if (first_proc) {
 				isqlGlob.printf(
-						 "Procedure Name                    Dependency, Type%s", NEWLINE);
+						 "Procedure Name                    Invalid Dependency, Type%s", NEWLINE);
 				isqlGlob.printf(
-						 "================================= ======================================%s", NEWLINE);
+						 "================================= ======= =====================================%s", NEWLINE);
 				first_proc = false;
 			}
 
-		// Strip trailing blanks
+			const char* invalid = "        ";
+
+			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
+			{
+				FOR PRC2 IN RDB$PROCEDURES
+					WITH PRC2.RDB$PROCEDURE_NAME EQ PRC.RDB$PROCEDURE_NAME
+					if (!(PRC2.RDB$VALID_BLR.NULL || PRC2.RDB$VALID_BLR))
+						invalid = "   *    ";
+				END_FOR
+			}
+
+			// Strip trailing blanks
 
 			fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
-			isqlGlob.printf("%-34s", PRC.RDB$PROCEDURE_NAME);
+			isqlGlob.printf("%-34s%s", PRC.RDB$PROCEDURE_NAME, invalid);
 
 			bool first_dep = true;
 			FOR DEP IN RDB$DEPENDENCIES WITH
@@ -3297,9 +3403,9 @@ static processing_state show_proc(const SCHAR* procname)
 				SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
 
 				fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
-			// Get column type name to print
+				// Get column type name to print
 				if (!first_dep) {
-					isqlGlob.printf("%s%34s", NEWLINE, "");
+					isqlGlob.printf("%s%42s", NEWLINE, "");
 				}
 				first_dep = false;
 				isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
@@ -3423,9 +3529,19 @@ static processing_state show_proc(const SCHAR* procname)
 				strcpy(lenstring, "");
 			}
 
-			isqlGlob.printf("%-33s %s %s%s ", PRM.RDB$PARAMETER_NAME,
-					 (PRM.RDB$PARAMETER_TYPE ? "OUTPUT" : "INPUT"),
-					 type_name, lenstring);
+			isqlGlob.printf("%-33s %s ", PRM.RDB$PARAMETER_NAME,
+					 (PRM.RDB$PARAMETER_TYPE ? "OUTPUT" : "INPUT"));
+
+			// Decide if this is a user-created domain
+			if (!((strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0) &&
+				  isdigit (FLD.RDB$FIELD_NAME[4]) &&
+				  FLD.RDB$SYSTEM_FLAG != 1))
+			{
+				fb_utils::exact_name(FLD.RDB$FIELD_NAME);
+				isqlGlob.printf("(%s) ", FLD.RDB$FIELD_NAME);
+			}
+
+			isqlGlob.printf("%s%s ", type_name, lenstring);
 
 			// Show international character sets and collations
 
@@ -3433,12 +3549,32 @@ static processing_state show_proc(const SCHAR* procname)
 					   FLD.RDB$FIELD_TYPE == VARCHAR  ||
 					   FLD.RDB$FIELD_TYPE == BLOB)
 			{
-				show_charsets(NULL, FLD.RDB$FIELD_NAME, true, true, false, false);
+				show_proc_charsets(PRM.RDB$PROCEDURE_NAME, PRM.RDB$PARAMETER_NAME, true, true, false, false);
 			}
 			
 			if (PRM.RDB$PARAMETER_TYPE == 0) // input, try to show default and make Vlad happy.
 			{
-				if (!FLD.RDB$DEFAULT_SOURCE.NULL)
+				bool prm_default_source_null = true;
+				ISC_QUAD prm_default_source;
+
+				if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
+				{
+					FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
+						WITH PRM2.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
+							 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME
+
+						prm_default_source_null = PRM2.RDB$DEFAULT_SOURCE.NULL;
+						prm_default_source = PRM2.RDB$DEFAULT_SOURCE;
+					END_FOR 
+				}
+
+				if (!prm_default_source_null)
+				{
+					isqlGlob.printf(" ");
+					SHOW_print_metadata_text_blob(isqlGlob.Out, &prm_default_source);
+				}
+				else if (strncmp(IMPLICIT_DOMAIN_PREFIX, FLD.RDB$FIELD_NAME, IMPLICIT_DOMAIN_PREFIX_LEN) == 0 &&
+						 !FLD.RDB$DEFAULT_SOURCE.NULL)
 				{
 					isqlGlob.printf(" ");
 					SHOW_print_metadata_text_blob(isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
@@ -3937,18 +4073,30 @@ static processing_state show_trigger(
 			if (first)
 			{
 				isqlGlob.printf(
-						 "Table name                       Trigger name%s", NEWLINE);
+						 "Table name                       Trigger name                     Invalid%s", NEWLINE);
 				isqlGlob.printf(
-						 "===========                      ============%s", NEWLINE);
+						 "================================ ================================ =======%s", NEWLINE);
 				first = false;
+			}
+
+			const char* invalid = "        ";
+
+			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
+			{
+				FOR TRG2 IN RDB$TRIGGERS
+					WITH TRG2.RDB$TRIGGER_NAME EQ TRG.RDB$TRIGGER_NAME
+					if (!(TRG2.RDB$VALID_BLR.NULL || TRG2.RDB$VALID_BLR))
+						invalid = "    *   ";
+				END_FOR
 			}
 
 			fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
 			fb_utils::exact_name(TRG.RDB$RELATION_NAME);
-			isqlGlob.printf("%-32s %s%s%s",
+			isqlGlob.printf("%-32s %-32s%s%s%s",
 					 TRG.RDB$RELATION_NAME,
 					 TRG.RDB$TRIGGER_NAME,
-					 (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),
+					 invalid,
+					 (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),	// never used
 					 NEWLINE);
 		END_FOR
 		ON_ERROR

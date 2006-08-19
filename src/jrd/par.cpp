@@ -232,7 +232,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 }
 
 
-USHORT PAR_desc(CompilerScratch* csb, DSC* desc)
+USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc)
 {
 /**************************************
  *
@@ -251,7 +251,9 @@ USHORT PAR_desc(CompilerScratch* csb, DSC* desc)
 	desc->dsc_flags = 0;
 
 	const USHORT dtype = BLR_BYTE;
-	switch (dtype) {
+
+	switch (dtype)
+	{
 	case blr_text:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_flags |= DSC_no_subtype;
@@ -359,6 +361,50 @@ USHORT PAR_desc(CompilerScratch* csb, DSC* desc)
 			USHORT ttype = BLR_WORD;
 			desc->dsc_scale = ttype & 0xFF;		// BLOB character set
 			desc->dsc_flags = ttype & 0xFF00;	// BLOB collation
+			break;
+		}
+
+	case blr_type_of:
+	case blr_type_of2:
+		{
+			Firebird::MetaName* name = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
+			par_name(csb, *name);
+
+			if (!MET_get_domain_desc(tdbb, *name, desc))
+			{
+				error(csb, isc_domnotdef,
+					  isc_arg_string, ERR_cstring(name->c_str()), 0);
+			}
+
+			if (dtype == blr_type_of2)
+			{
+				USHORT ttype = BLR_WORD;
+
+				switch (desc->dsc_dtype)
+				{
+					case dtype_cstring:
+					case dtype_text:
+					case dtype_varying:
+						INTL_ASSIGN_TTYPE(desc, ttype);
+						break;
+
+					case dtype_blob:
+						desc->dsc_scale = ttype & 0xFF;		// BLOB character set
+						desc->dsc_flags = ttype & 0xFF00;	// BLOB collation
+						break;
+
+					default:
+						error(csb, isc_collation_requires_text, 0);
+						break;
+				}
+			}
+
+			jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
+			dep_node->nod_type = nod_dependency;
+			dep_node->nod_arg[e_dep_object] = (jrd_nod*) name;
+			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_field;
+			csb->csb_dependencies.push(dep_node);
+
 			break;
 		}
 
@@ -765,7 +811,7 @@ static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
 	node->nod_arg[e_cast_fmt] = (jrd_nod*) format;
 
 	dsc* desc = &format->fmt_desc[0];
-	PAR_desc(csb, desc);
+	PAR_desc(tdbb, csb, desc);
 	format->fmt_length = desc->dsc_length;
 
 	node->nod_arg[e_cast_source] = parse(tdbb, csb, VALUE);
@@ -1337,7 +1383,7 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 	SET_TDBB(tdbb);
 
 	DSC desc;
-	PAR_desc(csb, &desc);
+	PAR_desc(tdbb, csb, &desc);
 	const SSHORT count = lit_delta +
 		(desc.dsc_length + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
 	jrd_nod* node = PAR_make_node(tdbb, count);
@@ -1485,7 +1531,7 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 
 	Format::fmt_desc_iterator desc, end;
 	for (desc = format->fmt_desc.begin(), end = desc + n; desc < end; ++desc) {
-		const USHORT alignment = PAR_desc(csb, &*desc);
+		const USHORT alignment = PAR_desc(tdbb, csb, &*desc);
 		if (alignment)
 			offset = FB_ALIGN(offset, alignment);
 		desc->dsc_address = (UCHAR *) (IPTR) offset;
@@ -2769,7 +2815,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		{
 			n = BLR_WORD;
 			node->nod_arg[e_dcl_id] = (jrd_nod*) (IPTR) n;
-			PAR_desc(csb, (DSC *) (node->nod_arg + e_dcl_desc));
+			PAR_desc(tdbb, csb, (DSC *) (node->nod_arg + e_dcl_desc));
 			vec<jrd_nod*>* vector = csb->csb_variables =
 				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
 			(*vector)[n] = node;

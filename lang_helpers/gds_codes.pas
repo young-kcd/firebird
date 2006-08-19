@@ -583,6 +583,8 @@ const
 	gds_illegal_prc_type                 = 335544868;
 	gds_invalid_sort_datatype            = 335544869;
 	gds_collation_name                   = 335544870;
+	gds_domain_name                      = 335544871;
+	gds_domnotdef                        = 335544872;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
@@ -634,6 +636,7 @@ const
 	gds_dsql_cursor_rel_not_found        = 336003094;
 	gds_dsql_cursor_not_open             = 336003095;
 	gds_dsql_type_not_supp_ext_tab       = 336003096;
+	gds_dsql_feature_not_supported_ods   = 336003097;
 	gds_dyn_role_does_not_exist          = 336068796;
 	gds_dyn_no_grant_admin_opt           = 336068797;
 	gds_dyn_user_not_role_member         = 336068798;

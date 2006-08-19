@@ -1259,12 +1259,17 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			USHORT dtype1 = desc1.dsc_dtype;
 			USHORT dtype2 = desc2.dsc_dtype;
 
+			// In Dialect 2 or 3, strings can never partipate in addition / sub
+			// (use a specific cast instead)
+			if (DTYPE_IS_TEXT(dtype1) || DTYPE_IS_TEXT(dtype2))
+				ERR_post(isc_expression_eval_err, 0);
+
 			// Because dtype_int64 > dtype_double, we cannot just use the MAX macro to set
 			// the result dtype. The rule is that two exact numeric operands yield an int64
 			// result, while an approximate numeric and anything yield a double result.
 
-			if (DTYPE_IS_EXACT(desc1.dsc_dtype)
-				&& DTYPE_IS_EXACT(desc2.dsc_dtype))
+			if (DTYPE_IS_EXACT(desc1.dsc_dtype) &&
+				DTYPE_IS_EXACT(desc2.dsc_dtype))
 			{
 				dtype = dtype_int64;
 			}
@@ -1273,7 +1278,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			{
 				dtype = dtype_double;
 			}
-			else {
+			else
+			{
 				// mixed numeric and non-numeric:
 
 				fb_assert(COULD_BE_DATE(desc1) || COULD_BE_DATE(desc2));

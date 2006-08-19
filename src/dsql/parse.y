@@ -1312,6 +1312,11 @@ simple_column_def_name  : simple_column_name
 
 data_type_descriptor :	init_data_type data_type
 			{ $$ = $1; }
+		| TYPE OF column_def_name
+			{
+				((dsql_fld*) $3)->fld_type_of_name = ((dsql_fld*) $3)->fld_name;
+				$$ = $3;
+			}
 		;
 
 init_data_type :
@@ -1499,7 +1504,7 @@ input_proc_parameters	: input_proc_parameter
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-input_proc_parameter	: simple_column_def_name non_array_type collate_clause
+input_proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
 				begin_trigger default_par_opt end_default_opt
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
 				$1, $5, $6, NULL, $3, NULL, NULL); }   
@@ -1510,7 +1515,7 @@ output_proc_parameters	: proc_parameter
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-proc_parameter	: simple_column_def_name non_array_type collate_clause
+proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
 				$1, NULL, NULL, NULL, $3, NULL, NULL); }   
 		;
@@ -1542,7 +1547,7 @@ local_declaration_item	: var_declaration_item
 		| cursor_declaration_item
 		;
 
-var_declaration_item	: column_def_name non_array_type collate_clause var_init_opt
+var_declaration_item	: column_def_name domain_or_non_array_type collate_clause var_init_opt
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
 				$1, $4, NULL, NULL, $3, NULL, NULL); }
 		;
@@ -2300,6 +2305,14 @@ drop_clause	: EXCEPTION symbol_exception_name
 
 data_type	: non_array_type
 		| array_type
+		;
+
+domain_or_non_array_type	: non_array_type
+		| TYPE OF domain_type
+		;
+
+domain_type	: symbol_column_name
+			{ lex.g_field->fld_type_of_name = ((dsql_str*) $1)->str_data; }
 		;
 
 non_array_type	: simple_type
@@ -4515,6 +4528,8 @@ static dsql_fld* make_field (dsql_nod* field_name)
 	dsql_fld* field =
 		FB_NEW_RPT(*tdsql->getDefaultPool(), strlen ((SCHAR*) string->str_data)) dsql_fld;
 	strcpy (field->fld_name, (TEXT*) string->str_data);
+	field->fld_type_of_name = NULL;
+	field->fld_explicit_collation = false;
 
 	return field;
 }

@@ -1304,52 +1304,89 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_parameters] TRANSACTION_HANDLE request->req_trans)
 		    PR IN RDB$PROCEDURE_PARAMETERS CROSS
-			RFR IN RDB$FIELDS
-			WITH RFR.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE
+			FLD IN RDB$FIELDS
+			WITH FLD.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE
 			AND PR.RDB$PROCEDURE_NAME EQ name->str_data
 			AND PR.RDB$PARAMETER_TYPE = type
 			SORTED BY DESCENDING PR.RDB$PARAMETER_NUMBER 
+
+			SSHORT pr_collation_id_null = TRUE;
+			SSHORT pr_collation_id;
+			SSHORT pr_default_value_null = TRUE;
+			///SSHORT pr_null_flag_null = TRUE;
+			///SSHORT pr_null_flag;
+
+			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
+			{
+				FOR(REQUEST_HANDLE dbb->dbb_requests[irq_parameters2] TRANSACTION_HANDLE request->req_trans)
+					PR2 IN RDB$PROCEDURE_PARAMETERS
+					WITH PR2.RDB$PROCEDURE_NAME EQ PR.RDB$PROCEDURE_NAME AND
+						 PR2.RDB$PARAMETER_NAME EQ PR.RDB$PARAMETER_NAME
+
+					pr_collation_id_null = PR2.RDB$COLLATION_ID.NULL;
+					pr_collation_id = PR2.RDB$COLLATION_ID;
+
+					pr_default_value_null = PR2.RDB$DEFAULT_VALUE.NULL;
+
+					///pr_null_flag_null = PR2.RDB$NULL_FLAG.NULL;
+					///pr_null_flag = PR2.RDB$NULL_FLAG;
+
+				END_FOR
+			}
  
-            THREAD_ENTER();
+			THREAD_ENTER();
 
-		    count++;
-            // allocate the field block 
+			count++;
+			// allocate the field block 
 
-            fb_utils::exact_name(PR.RDB$PARAMETER_NAME);
-            parameter = FB_NEW_RPT(*dbb->dbb_pool,
-                                     strlen(PR.RDB$PARAMETER_NAME)) dsql_fld;
-            parameter->fld_next = *ptr;
-            *ptr = parameter;
-            
-            // get parameter information 
-            
-            strcpy(parameter->fld_name, PR.RDB$PARAMETER_NAME);
-            parameter->fld_id = PR.RDB$PARAMETER_NUMBER;
-            parameter->fld_length = RFR.RDB$FIELD_LENGTH;
-            parameter->fld_scale = RFR.RDB$FIELD_SCALE;
-            parameter->fld_sub_type = RFR.RDB$FIELD_SUB_TYPE;
-            parameter->fld_procedure = procedure;
-        
-            if (!RFR.RDB$CHARACTER_SET_ID.NULL)
-                parameter->fld_character_set_id = RFR.RDB$CHARACTER_SET_ID;
-            
-            if (!RFR.RDB$COLLATION_ID.NULL)
-                parameter->fld_collation_id = RFR.RDB$COLLATION_ID;
-            
-            convert_dtype(parameter, RFR.RDB$FIELD_TYPE);
-            
-            if (!RFR.RDB$NULL_FLAG)
-                parameter->fld_flags |= FLD_nullable;
+			fb_utils::exact_name(PR.RDB$PARAMETER_NAME);
+			parameter = FB_NEW_RPT(*dbb->dbb_pool,
+								   strlen(PR.RDB$PARAMETER_NAME)) dsql_fld;
+			parameter->fld_next = *ptr;
+			*ptr = parameter;
 
-            if (RFR.RDB$FIELD_TYPE == blr_blob) {
-                parameter->fld_seg_length = RFR.RDB$SEGMENT_LENGTH;
-            }
+			// get parameter information 
 
-			if (!RFR.RDB$DEFAULT_VALUE.NULL && (type == 0)) {
+			strcpy(parameter->fld_name, PR.RDB$PARAMETER_NAME);
+			parameter->fld_id = PR.RDB$PARAMETER_NUMBER;
+			parameter->fld_length = FLD.RDB$FIELD_LENGTH;
+			parameter->fld_scale = FLD.RDB$FIELD_SCALE;
+			parameter->fld_sub_type = FLD.RDB$FIELD_SUB_TYPE;
+			parameter->fld_procedure = procedure;
+
+			if (!FLD.RDB$CHARACTER_SET_ID.NULL)
+				parameter->fld_character_set_id = FLD.RDB$CHARACTER_SET_ID;
+
+			if (!pr_collation_id_null)
+				parameter->fld_collation_id = pr_collation_id;
+			else if (!FLD.RDB$COLLATION_ID.NULL)
+				parameter->fld_collation_id = FLD.RDB$COLLATION_ID;
+
+			convert_dtype(parameter, FLD.RDB$FIELD_TYPE);
+
+			/***            
+			if (!pr_null_flag_null)
+			{
+				if (!pr_null_flag)
+					parameter->fld_flags |= FLD_nullable;
+			}
+			else if (!FLD.RDB$NULL_FLAG)
+				parameter->fld_flags |= FLD_nullable;
+			***/
+			parameter->fld_flags |= FLD_nullable;
+
+			if (FLD.RDB$FIELD_TYPE == blr_blob)
+				parameter->fld_seg_length = FLD.RDB$SEGMENT_LENGTH;
+
+			if (type == 0 &&
+				(!pr_default_value_null ||
+				 (strncmp(IMPLICIT_DOMAIN_PREFIX, FLD.RDB$FIELD_NAME, IMPLICIT_DOMAIN_PREFIX_LEN) == 0 &&
+				  !FLD.RDB$DEFAULT_VALUE.NULL)))
+			{
 				defaults++;
-            }
+			}
 
-            THREAD_EXIT();
+			THREAD_EXIT();
 
 		END_FOR 
         ON_ERROR 

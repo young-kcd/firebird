@@ -114,7 +114,13 @@ const int irq_l_subtype		= 76;		/* lookup subtype (charset/collation) */
 const int irq_c_relation2	= 77;		/* create new relation */
 const int irq_r_type		= 78;		/* lookup relation type */
 const int irq_p_type		= 79;		/* lookup procedure type */
+const int irq_prc_validate	= 80;		/* procedure blr validate */
+const int irq_trg_validate	= 81;		/* trigger blr validate */
+const int irq_l_domain		= 82;		// lookup a domain
+const int irq_m_fields2		= 83;		// process a modification of RDB$FIELDS for procedures (ODS 11.1)
+const int irq_m_fields3		= 84;		// process a modification of RDB$FIELDS for triggers (ODS 11.1)
+const int irq_r_params2		= 85;		/* scan procedure parameters (ODS 11.1) */
 
-const int irq_MAX			= 80;
+const int irq_MAX			= 86;
 
 #endif /* JRD_IRQ_H */

@@ -138,6 +138,7 @@ static dsql_opn* open_cursors;
 static const SCHAR db_hdr_info_items[] = {
 	isc_info_db_sql_dialect,
 	isc_info_ods_version,
+	isc_info_ods_minor_version,
 	isc_info_base_level,
 	isc_info_db_read_only,
 	frb_info_att_charset,
@@ -4239,10 +4240,17 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 			break;
 
 		case isc_info_ods_version:
-			if (gds__vax_integer(data, l) <= 7)
+			database->dbb_ods_version = gds__vax_integer(data, l);
+			if (database->dbb_ods_version <= 7)
+			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
 				  isc_arg_gds, isc_dsql_too_old_ods,
 				  isc_arg_number, (SLONG) 8, 0);
+			}
+			break;
+
+		case isc_info_ods_minor_version:
+			database->dbb_minor_version = gds__vax_integer(data, l);
 			break;
 
 			/* This flag indicates the version level of the engine

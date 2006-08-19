@@ -2766,12 +2766,16 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 		TRUE;
 	f_precision_null = f_charset_null = f_collation_null = TRUE;
 	id = drq_s_prms;
+
+	Firebird::MetaName prc_name;
+
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURE_PARAMETERS USING
 		strcpy(P.RDB$PARAMETER_NAME, parameter_name.c_str());
 		if (procedure_name) {
 			P.RDB$PROCEDURE_NAME.NULL = FALSE;
 			strcpy(P.RDB$PROCEDURE_NAME, procedure_name->c_str());
+			prc_name = *procedure_name;
 		}
 		else
 			P.RDB$PROCEDURE_NAME.NULL = TRUE;
@@ -2784,6 +2788,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
+		{
 			switch (verb)
 			{
 			case isc_dyn_system_flag:
@@ -2804,6 +2809,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 			case isc_dyn_prc_name:
 				GET_STRING(ptr, P.RDB$PROCEDURE_NAME);
 				P.RDB$PROCEDURE_NAME.NULL = FALSE;
+				prc_name = P.RDB$PROCEDURE_NAME;
 				break;
 
 			case isc_dyn_fld_source:
@@ -2899,6 +2905,8 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 				--(*ptr);
 				DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, procedure_name);
 			}
+		}
+
 		if (P.RDB$FIELD_SOURCE.NULL) {
 			/* Need to store dummy global field */
 			id = drq_s_prm_src;
@@ -2922,19 +2930,22 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 				PS.RDB$CHARACTER_LENGTH.NULL = f_charlength_null;
 				PS.RDB$CHARACTER_SET_ID = f_charset;
 				PS.RDB$CHARACTER_SET_ID.NULL = f_charset_null;
-				PS.RDB$COLLATION_ID = f_collation;
-				PS.RDB$COLLATION_ID.NULL = f_collation_null;
 
-				PS.RDB$DEFAULT_VALUE.NULL = (default_value_ptr == NULL) ? TRUE : FALSE;
-				if (default_value_ptr) {
-					DYN_put_blr_blob(gbl, &default_value_ptr, &PS.RDB$DEFAULT_VALUE);
+				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) < ODS_11_1)
+				{
+					PS.RDB$COLLATION_ID = f_collation;
+					PS.RDB$COLLATION_ID.NULL = f_collation_null;
+
+					PS.RDB$DEFAULT_VALUE.NULL = (default_value_ptr == NULL) ? TRUE : FALSE;
+					if (default_value_ptr) {
+						DYN_put_blr_blob(gbl, &default_value_ptr, &PS.RDB$DEFAULT_VALUE);
+					}
+
+					PS.RDB$DEFAULT_SOURCE.NULL = (default_source_ptr == NULL) ? TRUE : FALSE;
+					if (default_source_ptr) {
+						DYN_put_text_blob(gbl, &default_source_ptr, &PS.RDB$DEFAULT_SOURCE);
+					}
 				}
-
-				PS.RDB$DEFAULT_SOURCE.NULL = (default_source_ptr == NULL) ? TRUE : FALSE;
-				if (default_source_ptr) {
-					DYN_put_text_blob(gbl, &default_source_ptr, &PS.RDB$DEFAULT_SOURCE);
-				}
-
 			END_STORE;
 			if (!DYN_REQUEST(drq_s_prm_src))
 				DYN_REQUEST(drq_s_prm_src) = request2;
@@ -2944,6 +2955,40 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 	if (!DYN_REQUEST(drq_s_prms)) {
 		DYN_REQUEST(drq_s_prms) = request;
+	}
+
+	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+	{
+		jrd_req* request2 = CMP_find_request(tdbb, drq_s_prms2, DYN_REQUESTS);
+
+		FOR(REQUEST_HANDLE request2)
+			P IN RDB$PROCEDURE_PARAMETERS WITH
+				P.RDB$PROCEDURE_NAME EQ prc_name.c_str() AND
+				P.RDB$PARAMETER_NAME EQ parameter_name.c_str()
+
+			if (!DYN_REQUEST(drq_s_prms2))
+				DYN_REQUEST(drq_s_prms2) = request2;
+
+			MODIFY P USING
+				P.RDB$COLLATION_ID.NULL = f_collation_null;
+				P.RDB$COLLATION_ID = f_collation;
+
+				P.RDB$DEFAULT_VALUE.NULL = (default_value_ptr == NULL) ? TRUE : FALSE;
+				if (default_value_ptr)
+					DYN_put_blr_blob(gbl, &default_value_ptr, &P.RDB$DEFAULT_VALUE);
+
+				P.RDB$DEFAULT_SOURCE.NULL = (default_source_ptr == NULL) ? TRUE : FALSE;
+				if (default_source_ptr)
+					DYN_put_text_blob(gbl, &default_source_ptr, &P.RDB$DEFAULT_SOURCE);
+
+				// we don't support not-nullable parameters yet
+				///P.RDB$NULL_FLAG.NULL = FALSE;
+				///P.RDB$NULL_FLAG = FALSE;
+			END_MODIFY
+		END_FOR
+
+		if (!DYN_REQUEST(drq_s_prms2))
+			DYN_REQUEST(drq_s_prms2) = request2;
 	}
 
 	}
@@ -3084,6 +3129,9 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 			MODIFY P USING
 				P.RDB$PROCEDURE_TYPE = prc_type;
 				P.RDB$PROCEDURE_TYPE.NULL = FALSE;
+
+				P.RDB$VALID_BLR = TRUE;
+				P.RDB$VALID_BLR.NULL = FALSE;
 			END_MODIFY;
 		END_FOR;
 
@@ -4152,6 +4200,22 @@ void DYN_define_trigger(Global*						gbl,
 
 	if (!DYN_REQUEST(drq_s_triggers)) {
 		DYN_REQUEST(drq_s_triggers) = request;
+	}
+
+	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+	{
+		jrd_req* sub_request = NULL;
+
+		FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
+			TRG IN RDB$TRIGGERS WITH TRG.RDB$TRIGGER_NAME EQ t.c_str()
+
+			MODIFY TRG USING
+				TRG.RDB$VALID_BLR = TRUE;
+				TRG.RDB$VALID_BLR.NULL = FALSE;
+			END_MODIFY;
+		END_FOR;
+
+		CMP_release(tdbb, sub_request);
 	}
 
 	}

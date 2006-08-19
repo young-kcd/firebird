@@ -2912,7 +2912,8 @@ static int blr_print_dtype(gds_ctl* control)
    jump table */
 	const TEXT* string;
 
-	switch (dtype) {
+	switch (dtype)
+	{
 	case blr_short:
 		string = "short";
 		length = 2;
@@ -2998,6 +2999,20 @@ static int blr_print_dtype(gds_ctl* control)
 		length = 8;
 		break;
 
+	case blr_type_of:
+		string = "type_of";
+		// Don't bother with this length.
+		// It will not be used for blr_type_of.
+		length = 0;
+		break;
+
+	case blr_type_of2:
+		string = "type_of2";
+		// Don't bother with this length.
+		// It will not be used for blr_type_of2.
+		length = 0;
+		break;
+
 	default:
 		blr_error(control, "*** invalid data type ***");
 		break;
@@ -3005,7 +3020,8 @@ static int blr_print_dtype(gds_ctl* control)
 
 	blr_format(control, "blr_%s, ", string);
 
-	switch (dtype) {
+	switch (dtype)
+	{
 	case blr_text:
 		length = blr_print_word(control);
 		break;
@@ -3044,6 +3060,20 @@ static int blr_print_dtype(gds_ctl* control)
 		blr_print_word(control);
 		blr_print_word(control);
 		break;
+
+	case blr_type_of:
+	case blr_type_of2:
+		{
+			UCHAR n = blr_print_byte(control);
+
+			while (n-- > 0)
+				blr_print_char(control);
+
+			if (dtype == blr_type_of2)
+				blr_print_word(control);
+
+			break;
+		}
 	}
 
 	return length;
@@ -3141,6 +3171,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 	SSHORT n;
 
 	while (*ops)
+	{
 		switch (*ops++) {
 		case op_verb:
 			blr_print_verb(control, level);
@@ -3289,6 +3320,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			fb_assert(false);
 			break;
 		}
+	}
 }
 
 
