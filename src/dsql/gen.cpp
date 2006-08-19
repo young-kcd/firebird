@@ -2136,7 +2136,7 @@ static void gen_rse( dsql_req* request, const dsql_nod* rse)
 {
 	if (rse->nod_flags & NOD_SELECT_EXPR_SINGLETON)
 	{
-			stuff(request, blr_singular);
+		stuff(request, blr_singular);
 	}
 
 	stuff(request, blr_rse);
@@ -2606,14 +2606,14 @@ static void gen_statement(dsql_req* request, const dsql_nod* node)
 		break;
 
 	case nod_modify_current:
-		stuff(request, message ? blr_modify2 : blr_modify);
+		stuff(request, node->nod_arg[e_mdc_return] ? blr_modify2 : blr_modify);
 		context = (dsql_ctx*) node->nod_arg[e_mdc_context];
 		stuff_context(request, context);
 		temp = node->nod_arg[e_mdc_update];
 		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
 		stuff_context(request, context);
 		GEN_statement(request, node->nod_arg[e_mdc_statement]);
-		if (message) {
+		if (node->nod_arg[e_mdc_return]) {
 			GEN_statement(request, node->nod_arg[e_mdc_return]);
 		}
 		break;
@@ -2621,7 +2621,7 @@ static void gen_statement(dsql_req* request, const dsql_nod* node)
 	case nod_erase:
 		temp = node->nod_arg[e_era_relation];
 		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
-		if (message) {
+		if (node->nod_arg[e_era_return]) {
 			stuff(request, blr_begin);
 			GEN_statement(request, node->nod_arg[e_era_return]);
 			stuff(request, blr_erase);
@@ -2636,7 +2636,7 @@ static void gen_statement(dsql_req* request, const dsql_nod* node)
 
 	case nod_erase_current:
 		context = (dsql_ctx*) node->nod_arg[e_erc_context];
-		if (message) {
+		if (node->nod_arg[e_erc_return]) {
 			stuff(request, blr_begin);
 			GEN_statement(request, node->nod_arg[e_erc_return]);
 			stuff(request, blr_erase);
