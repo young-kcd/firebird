@@ -1,3 +1,29 @@
+2006-08-19 03:07  asfernandes
+
+	* firebird2/src/jrd/Optimizer.cpp (1.66):
+	
+	Misc
+
+2006-08-18 22:48  hvlad
+
+	* firebird2/src/jrd/Optimizer.cpp (1.65):
+	
+	Fix for CORE-904: new ODS11 optimizer used unnecessary huge amount
+	of memory while processing IN list with large number of items
+
+2006-08-18 16:30  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.170):
+	
+	Fixed CORE-902: server crashed removing old record version if
+	record format was changed and new format have a greater length
+
+2006-08-18 05:46  aafemt
+
+	* firebird2/src/include/consts_pub.h (1.2):
+	
+	License added as Adriano requested
+
 2006-08-17 14:48  asfernandes
 
 	* firebird2/src/jrd/evl.cpp (1.195):
