@@ -2464,29 +2464,34 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 	return (count >= 1);
 }
 
-class IndexScratchListHolder
+namespace
 {
-public:
-	IndexScratchListHolder (IndexScratchList& Scratches) :
-	  m_Scratches(Scratches) {};
-
-	~IndexScratchListHolder()
-	{ clear(); }
-
-	void clear()
+	class IndexScratchListHolder
 	{
-		for (int i = 0; i < m_Scratches.getCount(); i++) 
+	public:
+		IndexScratchListHolder (IndexScratchList& Scratches) :
+		  m_Scratches(Scratches) {};
+	
+		~IndexScratchListHolder()
 		{
-			IndexScratch* s = m_Scratches[i];
-			m_Scratches[i] = 0;
-			delete s;
+			clear();
 		}
-		m_Scratches.clear();
-	}
-
-private:
-	IndexScratchList& m_Scratches;
-};
+	
+		void clear()
+		{
+			for (int i = 0; i < m_Scratches.getCount(); i++) 
+			{
+				IndexScratch* s = m_Scratches[i];
+				m_Scratches[i] = 0;
+				delete s;
+			}
+			m_Scratches.clear();
+		}
+	
+	private:
+		IndexScratchList& m_Scratches;
+	};
+}	// namespace
 
 InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 	IndexScratchList* indexScratches, jrd_nod* boolean, USHORT scope) const
