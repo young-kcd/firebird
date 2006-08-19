@@ -2583,16 +2583,16 @@ static void gen_statement(dsql_req* request, const dsql_nod* node)
 
 	switch (node->nod_type) {
 	case nod_store:
-		stuff(request, message ? blr_store2 : blr_store);
+		stuff(request, node->nod_arg[e_sto_return] ? blr_store2 : blr_store);
 		GEN_expr(request, node->nod_arg[e_sto_relation]);
 		GEN_statement(request, node->nod_arg[e_sto_statement]);
-		if (message) {
+		if (node->nod_arg[e_sto_return]) {
 			GEN_statement(request, node->nod_arg[e_sto_return]);
 		}
 		break;
 
 	case nod_modify:
-		stuff(request, message ? blr_modify2 : blr_modify);
+		stuff(request, node->nod_arg[e_mod_return] ? blr_modify2 : blr_modify);
 		temp = node->nod_arg[e_mod_source];
 		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
 		stuff_context(request, context);
@@ -2600,7 +2600,7 @@ static void gen_statement(dsql_req* request, const dsql_nod* node)
 		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
 		stuff_context(request, context);
 		GEN_statement(request, node->nod_arg[e_mod_statement]);
-		if (message) {
+		if (node->nod_arg[e_mod_return]) {
 			GEN_statement(request, node->nod_arg[e_mod_return]);
 		}
 		break;
