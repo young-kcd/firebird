@@ -1,3 +1,38 @@
+2006-08-19 20:18  asfernandes
+
+	* firebird2/src/dsql/gen.cpp (1.109):
+	
+	Fix problems of RETURNING...INTO of not yet existent constructions
+	(update/delete)
+
+2006-08-19 17:49  asfernandes
+
+	* firebird2/src/dsql/gen.cpp (1.108):
+	
+	Fixed INSERT...RETURNING...INTO not working
+
+2006-08-19 04:52  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.38),
+	lang_helpers/gds_codes.pas (1.38), src/dsql/ddl.cpp (1.184),
+	src/dsql/dsql.cpp (1.179), src/dsql/dsql.h (1.97),
+	src/dsql/metd.epp (1.90), src/dsql/parse.y (1.217),
+	src/include/gen/codetext.h (1.46), src/include/gen/iberror.h
+	(1.47), src/include/gen/msgs.h (1.61), src/include/gen/rdb_codes.h
+	(1.44), src/include/gen/sql_code.h (1.49), src/isql/extract.epp
+	(1.73), src/isql/show.epp (1.98), src/jrd/blr.h (1.28),
+	src/jrd/cmp.cpp (1.231), src/jrd/dfw.epp (1.191), src/jrd/drq.h
+	(1.17), src/jrd/dyn_def.epp (1.131), src/jrd/dyn_del.epp (1.57),
+	src/jrd/dyn_mod.epp (1.78), src/jrd/gds.cpp (1.205),
+	src/jrd/ini.epp (1.85), src/jrd/irq.h (1.11), src/jrd/met.epp
+	(1.202), src/jrd/met_proto.h (1.55), src/jrd/names.h (1.8),
+	src/jrd/par.cpp (1.142), src/jrd/par_proto.h (1.17),
+	src/jrd/relations.h (1.12), src/jrd/tra.h (1.56),
+	src/msgs/facilities.sql (1.70), src/msgs/messages.sql (1.84),
+	src/msgs/system_errors.sql (1.36):
+	
+	Allow usage of domains in PSQL (with TYPE OF syntax)
+
 2006-08-19 03:07  asfernandes
 
 	* firebird2/src/jrd/Optimizer.cpp (1.66):
