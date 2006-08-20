@@ -4780,6 +4780,9 @@ static dsql_req* prepare(
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 64) {
 		dsql_trace("Resulting BLR code for DSQL:");
+		gds__trace_raw("Statement:\n");
+		gds__trace_raw(string, string_length);
+		gds__trace_raw("\nBLR:\n");
 		gds__print_blr(request->req_blr_data.begin(),
 			gds__trace_printer, 0, 0);
 	}
