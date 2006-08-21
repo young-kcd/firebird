@@ -5429,9 +5429,11 @@ static SLONG insert_node(thread_db* tdbb,
 				if (allRecordNumber && 
 					(newRecordNumber < beforeInsertNode.recordNumber)) 
 				{
-					// Save the duplicate so the main caller can validate them.
-					RBM_SET(tdbb->getDefaultPool(), &insertion->iib_duplicates, 
-						beforeInsertNode.recordNumber.getValue());
+					if (leafPage && validateDuplicates) {
+						// Save the duplicate so the main caller can validate them.
+						RBM_SET(tdbb->getDefaultPool(), &insertion->iib_duplicates, 
+							beforeInsertNode.recordNumber.getValue());
+					}
 					break;
 				}
 				else {
