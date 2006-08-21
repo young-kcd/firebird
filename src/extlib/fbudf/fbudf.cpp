@@ -586,11 +586,11 @@ FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc)
 #else
 	timeMutex.enter();
 	tm* times = localtime(&seconds);
-	if (tm)
+	if (times)
 	{
 		// Copy to local variable before we exit the mutex.
-		timex = *tm;
-		tm = &timex;
+		timex = *times;
+		times = &timex;
 	}
 	timeMutex.leave();
 #endif // localtime_r
@@ -633,11 +633,11 @@ FBUDF_API void getExactTimestampUTC(ISC_TIMESTAMP* rc)
 #else
 	timeMutex.enter();
 	tm* times = gmtime(&seconds);
-	if (tm)
+	if (times)
 	{
 		// Copy to local variable before we exit the mutex.
-		timex = *tm;
-		tm = &timex;
+		timex = *times;
+		times = &timex;
 	}
 	timeMutex.leave();
 #endif // gmtime_r
