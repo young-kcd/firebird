@@ -1,3 +1,15 @@
+2006-08-22 13:11  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.237.2.1):
+	
+	Backported fix for CORE-900
+
+2006-08-21 17:23  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.4):
+	
+	Corrected fix for CORE-895
+
 2006-08-17 08:46  hvlad
 
 	* firebird2/src/alice/: alice.cpp (1.83.2.1), alice.h (1.49.2.1):
