@@ -1836,8 +1836,7 @@ static processing_state show_collations(const SCHAR* object)
 
 		fb_utils::exact_name(CL.RDB$COLLATION_NAME);
 
-		if ((!*object && (CL.RDB$SYSTEM_FLAG.NULL || CL.RDB$SYSTEM_FLAG == 0)) ||
-			strcmp(CL.RDB$COLLATION_NAME, object) == 0)
+		if (!*object || strcmp(CL.RDB$COLLATION_NAME, object) == 0)
 		{
 			found = true;
 
@@ -1870,6 +1869,9 @@ static processing_state show_collations(const SCHAR* object)
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &CL.RDB$SPECIFIC_ATTRIBUTES);
 				isqlGlob.printf("'");
 			}
+
+			if (!CL.RDB$SYSTEM_FLAG.NULL || CL.RDB$SYSTEM_FLAG != 0)
+				isqlGlob.printf(", SYSTEM");
 
 			isqlGlob.printf("%s", NEWLINE);
 		}
