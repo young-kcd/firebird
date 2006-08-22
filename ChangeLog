@@ -1,3 +1,27 @@
+2006-08-22 04:27  asfernandes
+
+	* firebird2/src/isql/show.epp (1.99):
+	
+	Display system collations in isql SHOW COLLATIONS
+
+2006-08-21 10:23  alexpeshkoff
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp (1.30):
+	
+	commited patch of Gerard Patel
+
+2006-08-20 21:26  asfernandes
+
+	* firebird2/src/dsql/dsql.cpp (1.180):
+	
+	Print the statement text before print the BLR
+
+2006-08-20 17:23  asfernandes
+
+	* firebird2/src/dsql/user__proto.h (1.10):
+	
+	Rollback change not necessary after creation of consts_pub.h
+
 2006-08-19 20:18  asfernandes
 
 	* firebird2/src/dsql/gen.cpp (1.109):
