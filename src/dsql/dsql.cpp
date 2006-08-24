@@ -3707,6 +3707,14 @@ static USHORT get_plan_info(
 			if (!get_rsb_item(&explain_length, &explain, &buffer_length, &plan,
 							  &join_count, &level)) 
 			{
+				// don't allocate buffer of the same length second time
+				if (buffer_ptr != *out_buffer) {
+					if (buffer_length) {
+						*plan++ = isc_info_truncated;
+					}
+					break;
+				}
+
 				// assume we have run out of room in the buffer, try again with a larger one 
 				char* temp = reinterpret_cast<char*>(gds__alloc(BUFFER_XLARGE));
 				if (!temp) {
@@ -3725,7 +3733,6 @@ static USHORT get_plan_info(
 		if (buffer_ptr == *out_buffer)
 			break;
 	}
-
 
 	if (explain_ptr != explain_buffer) {
 		gds__free(explain_ptr);
