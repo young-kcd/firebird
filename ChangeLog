@@ -1,3 +1,9 @@
+2006-08-24 15:28  hvlad
+
+	* firebird2/src/dsql/dsql.cpp (1.181):
+	
+	Fix for CORE-908: Garbage in plan output of complex statement
+
 2006-08-22 04:27  asfernandes
 
 	* firebird2/src/isql/show.epp (1.99):
