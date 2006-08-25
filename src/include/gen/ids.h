@@ -315,7 +315,7 @@ enum fids {
 	f_mon_db_forced_writes,
 	f_mon_db_res_space,
 	f_mon_db_created,
-	f_mon_db_size,
+	f_mon_db_pages,
 	f_mon_db_cur_mem,
 	f_mon_db_max_mem,
 	f_mon_db_page_reads,

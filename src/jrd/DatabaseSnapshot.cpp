@@ -311,7 +311,7 @@ void DatabaseSnapshot::putDatabase(Database* dbb, RecordBuffer* buffer)
 	putField(record, f_mon_db_created, &dbb->dbb_creation_date.value());
 	// database size
 	temp_int64 = PIO_act_alloc(dbb);
-	putField(record, f_mon_db_size, &temp_int64);
+	putField(record, f_mon_db_pages, &temp_int64);
 	// current memory usage
 	temp_int64 = dbb->dbb_memory_stats.get_current_usage();
 	putField(record, f_mon_db_cur_mem, &temp_int64);
