@@ -3331,7 +3331,6 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 		SSHORT old_id = id;
 		id = drq_l_rel_info2;
-		const rel_t rel_type = get_relation_type(tdbb, gbl, REL.RDB$RELATION_NAME);
 		check_relation_temp_scope(tdbb, gbl, REL.RDB$RELATION_NAME, rel_type);
 		id = old_id;
 		
