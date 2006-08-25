@@ -20,8 +20,6 @@
  *  Contributor(s): ______________________________________.
  */
 
-#include <process.h>
-
 #include "firebird.h"
 #include "ids.h"
 #include "../jrd/gdsassert.h"
@@ -39,6 +37,14 @@
 #include "../jrd/Relation.h"
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/DatabaseSnapshot.h"
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef WIN_NT
+#include <process.h>
+#endif
 
 using namespace Jrd;
 
