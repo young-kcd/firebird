@@ -811,7 +811,7 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 		(dbb->dbb_page_size - BTR_SIZE);
 }
 
-IndexScratch::IndexScratch(MemoryPool& p, IndexScratch* scratch) :
+IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& scratch) :
 	segments(p)
 {
 /**************************************
@@ -823,19 +823,19 @@ IndexScratch::IndexScratch(MemoryPool& p, IndexScratch* scratch) :
  * Functional description
  *
  **************************************/
-	selectivity = scratch->selectivity;
-	cardinality = scratch->cardinality;
-	candidate = scratch->candidate;
-	scopeCandidate = scratch->scopeCandidate;
-	lowerCount = scratch->lowerCount;
-	upperCount = scratch->upperCount;
-	nonFullMatchedSegments = scratch->nonFullMatchedSegments;
-	idx = scratch->idx;
+	selectivity = scratch.selectivity;
+	cardinality = scratch.cardinality;
+	candidate = scratch.candidate;
+	scopeCandidate = scratch.scopeCandidate;
+	lowerCount = scratch.lowerCount;
+	upperCount = scratch.upperCount;
+	nonFullMatchedSegments = scratch.nonFullMatchedSegments;
+	idx = scratch.idx;
 
 	// Allocate needed segments
-	segments.grow(scratch->segments.getCount());
+	segments.grow(scratch.segments.getCount());
 
-	IndexScratchSegment** scratchSegment = scratch->segments.begin();
+	IndexScratchSegment* const* scratchSegment = scratch.segments.begin();
 	IndexScratchSegment** segment = segments.begin();
 	for (int i = 0; i < segments.getCount(); i++) {
 		segment[i] = FB_NEW(p) IndexScratchSegment(p, scratchSegment[i]);
@@ -915,12 +915,13 @@ OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
 	relation = csb_tail->csb_relation;
 
 	// Allocate needed indexScratches
-	indexScratches.grow(csb_tail->csb_indices);
+	//indexScratches.grow(csb_tail->csb_indices);
 
-	IndexScratch** indexScratch = indexScratches.begin();
+	//IndexScratch** indexScratch = indexScratches.begin();
 	index_desc* idx = csb_tail->csb_idx->items;
 	for (int i = 0; i < csb_tail->csb_indices; ++i, ++idx) {
-		indexScratch[i] = FB_NEW(p) IndexScratch(p, tdbb, idx, csb_tail);
+		//indexScratch[i] = FB_NEW(p) IndexScratch(p, tdbb, idx, csb_tail);
+		indexScratches.add( IndexScratch(p, tdbb, idx, csb_tail) );
 	}
 
 	inversionCandidates.shrink(0);
@@ -937,14 +938,9 @@ OptimizerRetrieval::~OptimizerRetrieval()
  * Functional description
  *
  **************************************/
-	IndexScratch** indexScratch = indexScratches.begin();
-	int i = 0;
-	for (; i < indexScratches.getCount(); ++i) {
-		delete indexScratch[i];
-	}
 	
 	InversionCandidate** invCandidate = inversionCandidates.begin();
-	i = 0;
+	int i = 0;
 	for (; i < inversionCandidates.getCount(); ++i) {
 		delete inversionCandidates[i];
 	}
@@ -1280,11 +1276,10 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 		return NULL;
 	}
 
-	IndexScratch** indexScratch = indexScratches.begin();
 	int i = 0;
 	for (; i < indexScratches.getCount(); ++i) {
 
-		index_desc* idx = indexScratch[i]->idx;
+		index_desc* idx = indexScratches[i].idx;
 
 		// if the number of fields in the sort is greater than the number of 
 		// fields in the index, the index will not be used to optimize the    
@@ -1389,7 +1384,7 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 		rsb->rsb_relation = relation;
 		rsb->rsb_stream = (UCHAR) stream;
 		rsb->rsb_alias = getAlias();
-		rsb->rsb_arg[RSB_NAV_index] = (RecordSource*) makeIndexScanNode(indexScratch[i]);
+		rsb->rsb_arg[RSB_NAV_index] = (RecordSource*) makeIndexScanNode(&indexScratches[i]);
 		rsb->rsb_arg[RSB_NAV_key_length] = (RecordSource*) (IPTR) key_length;
 
 		const USHORT size = OPT_nav_rsb_size(rsb, key_length, 0);
@@ -1480,21 +1475,21 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 
 	// Walk through indexes to calculate selectivity / candidate
 	Firebird::Array<jrd_nod*> matches;
-	IndexScratch** scratch = indexScratches->begin();
 	int i = 0;
 	for (i = 0; i < indexScratches->getCount(); i++) {
-		scratch[i]->scopeCandidate = false;
-		scratch[i]->lowerCount = 0;
-		scratch[i]->upperCount = 0;
-		scratch[i]->nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
-		if (scratch[i]->candidate) {
+		IndexScratch& scratch = (*indexScratches)[i];
+		scratch.scopeCandidate = false;
+		scratch.lowerCount = 0;
+		scratch.upperCount = 0;
+		scratch.nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
+		if (scratch.candidate) {
 			matches.clear();
-			scratch[i]->selectivity = MAXIMUM_SELECTIVITY;
+			scratch.selectivity = MAXIMUM_SELECTIVITY;
 			bool unique = false;
-			for (int j = 0; j < scratch[i]->idx->idx_count; j++) {
-				IndexScratchSegment* segment = scratch[i]->segments[j];
+			for (int j = 0; j < scratch.idx->idx_count; j++) {
+				IndexScratchSegment* segment = scratch.segments[j];
 				if (segment->scope == scope) {
-					scratch[i]->scopeCandidate = true;
+					scratch.scopeCandidate = true;
 				}
 				// Check if this is the last usable segment
 				if (((segment->scanType == segmentScanEqual) ||
@@ -1502,10 +1497,10 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					(segment->scanType == segmentScanMissing))) 
 				{
 					// This is a perfect usable segment thus update root selectivity
-					scratch[i]->lowerCount++;
-					scratch[i]->upperCount++;
-					scratch[i]->selectivity = scratch[i]->idx->idx_rpt[j].idx_selectivity;
-					scratch[i]->nonFullMatchedSegments = scratch[i]->idx->idx_count - (j + 1);
+					scratch.lowerCount++;
+					scratch.upperCount++;
+					scratch.selectivity = scratch.idx->idx_rpt[j].idx_selectivity;
+					scratch.nonFullMatchedSegments = scratch.idx->idx_count - (j + 1);
 					// Add matches for this segment to the main matches list
 					matches.join(segment->matches);
 
@@ -1514,15 +1509,15 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					// any primary index.
 					const bool single_match =
 						((segment->scanType == segmentScanEqual &&
-						  scratch[i]->idx->idx_flags & idx_unique) ||
+						  scratch.idx->idx_flags & idx_unique) ||
 					    (segment->scanType == segmentScanEquivalent &&
-						  scratch[i]->idx->idx_flags & idx_primary));
+						  scratch.idx->idx_flags & idx_primary));
 
 					// dimitr: IS NULL scan against primary key is guaranteed
 					//		   to return zero rows. Do we need yet another
 					//		   special case here?
 
-					if (single_match && ((j + 1) == scratch[i]->idx->idx_count))
+					if (single_match && ((j + 1) == scratch.idx->idx_count))
 					{
 						// We have found a full equal matching index and it's unique,
 						// so we can stop looking further, because this is the best
@@ -1541,36 +1536,36 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				{
 					// This is our last segment that we can use,
 					// estimate the selectivity
-					double selectivity = scratch[i]->selectivity;
+					double selectivity = scratch.selectivity;
 					double factor = 1;
 					switch (segment->scanType) {
 						case segmentScanBetween:
-							scratch[i]->lowerCount++;
-							scratch[i]->upperCount++;
+							scratch.lowerCount++;
+							scratch.upperCount++;
 							selectivity =
-								scratch[i]->idx->idx_rpt[j].idx_selectivity;
+								scratch.idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_BETWEEN;
 							break;
 
 						case segmentScanLess:
-							scratch[i]->upperCount++;
+							scratch.upperCount++;
 							selectivity =
-								scratch[i]->idx->idx_rpt[j].idx_selectivity;
+								scratch.idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_LESS;
 							break;
 
 						case segmentScanGreater:
-							scratch[i]->lowerCount++;
+							scratch.lowerCount++;
 							selectivity =
-								scratch[i]->idx->idx_rpt[j].idx_selectivity;
+								scratch.idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_GREATER;
 							break;
 
 						case segmentScanStarting:
-							scratch[i]->lowerCount++;
-							scratch[i]->upperCount++;
+							scratch.lowerCount++;
+							scratch.upperCount++;
 							selectivity =
-								scratch[i]->idx->idx_rpt[j].idx_selectivity;
+								scratch.idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_STARTING;
 							break;
 
@@ -1582,25 +1577,25 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					// It should be better than the previous segment but worse
 					// than a full match.
 					const double diffSelectivity =
-						scratch[i]->selectivity - selectivity;
+						scratch.selectivity - selectivity;
 					selectivity += (diffSelectivity * factor);
-					fb_assert(selectivity <= scratch[i]->selectivity);
-					scratch[i]->selectivity = selectivity;
+					fb_assert(selectivity <= scratch.selectivity);
+					scratch.selectivity = selectivity;
 
 					if (segment->scanType != segmentScanNone) {
 						matches.join(segment->matches);
-						scratch[i]->nonFullMatchedSegments =
-							scratch[i]->idx->idx_count - j;
+						scratch.nonFullMatchedSegments =
+							scratch.idx->idx_count - j;
 					}
 					break;
 				}
 			}
 
-			if (scratch[i]->scopeCandidate) {
+			if (scratch.scopeCandidate) {
 				InversionCandidate* invCandidate =
 					FB_NEW(pool) InversionCandidate(pool);
 				invCandidate->unique = unique;
-				invCandidate->selectivity = scratch[i]->selectivity;
+				invCandidate->selectivity = scratch.selectivity;
 				// When selectivty is zero the statement is prepared on an
 				// empty table or the statistics aren't updated.
 				// Assume a half of the maximum selectivty, so at least some
@@ -1616,13 +1611,13 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				// cost is calculted to high. Better would be including
 				// the index-depth, but this is not possible due lack 
 				// on information at this time.
-				invCandidate->cost = DEFAULT_INDEX_COST + (scratch[i]->selectivity * scratch[i]->cardinality);
+				invCandidate->cost = DEFAULT_INDEX_COST + (scratch.selectivity * scratch.cardinality);
 				invCandidate->nonFullMatchedSegments =
-					scratch[i]->nonFullMatchedSegments;
+					scratch.nonFullMatchedSegments;
 				invCandidate->matchedSegments = 
-					MAX(scratch[i]->lowerCount, scratch[i]->upperCount);
+					MAX(scratch.lowerCount, scratch.upperCount);
 				invCandidate->indexes = 1;
-				invCandidate->scratch = scratch[i];
+				invCandidate->scratch = &scratch;
 				invCandidate->matches.join(matches);
 				for (int k = 0; k < invCandidate->matches.getCount(); k++) {
 					findDependentFromStreams(invCandidate->matches[k],
@@ -2464,35 +2459,6 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 	return (count >= 1);
 }
 
-namespace
-{
-	class IndexScratchListHolder
-	{
-	public:
-		IndexScratchListHolder (IndexScratchList& Scratches) :
-		  m_Scratches(Scratches) {};
-	
-		~IndexScratchListHolder()
-		{
-			clear();
-		}
-	
-		void clear()
-		{
-			for (int i = 0; i < m_Scratches.getCount(); i++) 
-			{
-				IndexScratch* s = m_Scratches[i];
-				m_Scratches[i] = 0;
-				delete s;
-			}
-			m_Scratches.clear();
-		}
-	
-	private:
-		IndexScratchList& m_Scratches;
-	};
-}	// namespace
-
 InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 	IndexScratchList* indexScratches, jrd_nod* boolean, USHORT scope) const
 {
@@ -2519,13 +2485,13 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 		// Make list for index matches 
 		IndexScratchList indexOrScratches;
-		IndexScratchListHolder scratchHolder(indexOrScratches); 
 
 		// Copy information from caller
-		IndexScratch** indexScratch = indexScratches->begin();
+		//IndexScratch** indexScratch = indexScratches->begin();
 		int i = 0;		
 		for (; i < indexScratches->getCount(); i++) {
-			indexOrScratches.add(FB_NEW(pool) IndexScratch(pool, indexScratch[i]));
+			IndexScratch& scratch = (*indexScratches)[i];
+			indexOrScratches.add(scratch);
 		}
 		// We use a scope variable to see on how 
 		// deep we are in a nested or conjunction.
@@ -2547,12 +2513,12 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		}
 
 		// Clear list to remove previously matched conjunctions
-		scratchHolder.clear();
+		indexOrScratches.clear();
 		// Copy information from caller
-		indexScratch = indexScratches->begin();
 		i = 0;		
 		for (; i < indexScratches->getCount(); i++) {
-			indexOrScratches.add(FB_NEW(pool) IndexScratch(pool, indexScratch[i]));
+			IndexScratch& scratch = (*indexScratches)[i];
+			indexOrScratches.add(scratch);
 		}
 		// Clear inversion list
 		inversions.clear();
@@ -2621,13 +2587,13 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 	}
 
 	// Walk through indexes
-	IndexScratch** indexScratch = indexScratches->begin();
 	for (int i = 0; i < indexScratches->getCount(); i++) {
+		IndexScratch& indexScratch = (*indexScratches)[i];
 		// Try to match the boolean against a index.
-		if (!(indexScratch[i]->idx->idx_runtime_flags & idx_plan_dont_use) ||
-			(indexScratch[i]->idx->idx_runtime_flags & idx_plan_navigate)) 
+		if (!(indexScratch.idx->idx_runtime_flags & idx_plan_dont_use) ||
+			(indexScratch.idx->idx_runtime_flags & idx_plan_navigate)) 
 		{
-			matchBoolean(indexScratch[i], boolean, scope); 
+			matchBoolean(&indexScratch, boolean, scope); 
 		}
 	}
 	return NULL;
