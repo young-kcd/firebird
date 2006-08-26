@@ -4639,6 +4639,7 @@ bool get_procedure()
 			X.RDB$PROCEDURE_TYPE = 0;
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$VALID_BLR.NULL = TRUE;
 		
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -4702,6 +4703,16 @@ bool get_procedure()
 				case att_procedure_type:
 					if (tdgbl->RESTORE_format >= 8)
 						X.RDB$PROCEDURE_TYPE = (USHORT) get_numeric();
+					else
+						bad_attribute (scan_next_attr, attribute, 290);
+					break;
+
+				case att_procedure_valid_blr:
+					if (tdgbl->RESTORE_format >= 8)
+					{
+						X.RDB$VALID_BLR.NULL = FALSE;
+						X.RDB$VALID_BLR = (USHORT) get_numeric();
+					}
 					else
 						bad_attribute (scan_next_attr, attribute, 290);
 					break;
@@ -4842,58 +4853,149 @@ bool get_procedure_prm (GDS_NAME	procptr)
 	isc_tr_handle local_trans =
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
-	STORE (TRANSACTION_HANDLE local_trans
-			REQUEST_HANDLE tdgbl->handles_get_procedure_prm_req_handle1)
-		X IN RDB$PROCEDURE_PARAMETERS
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		strcpy (X.RDB$PROCEDURE_NAME, procptr);
-		X.RDB$SYSTEM_FLAG = 0;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		
-		skip_init(&scan_next_attr);
-		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-		{
-			switch (attribute)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
+	{
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_procedure_prm_req_handle1)
+			X IN RDB$PROCEDURE_PARAMETERS
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			strcpy (X.RDB$PROCEDURE_NAME, procptr);
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$DEFAULT_VALUE.NULL = TRUE;
+			X.RDB$DEFAULT_SOURCE.NULL = TRUE;
+			X.RDB$COLLATION_ID.NULL = TRUE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
-			case att_procedureprm_name:
-				l = GET_TEXT(X.RDB$PARAMETER_NAME);
-				MISC_terminate (X.RDB$PARAMETER_NAME, temp, l, sizeof(temp));
-				BURP_verbose (196, temp, NULL, NULL, NULL, NULL);
-				// msg 196 restoring parameter %s for stored procedure 
-				break;
+				switch (attribute)
+				{
+				case att_procedureprm_name:
+					l = GET_TEXT(X.RDB$PARAMETER_NAME);
+					MISC_terminate (X.RDB$PARAMETER_NAME, temp, l, sizeof(temp));
+					BURP_verbose (196, temp, NULL, NULL, NULL, NULL);
+					// msg 196 restoring parameter %s for stored procedure 
+					break;
 
-			case att_procedureprm_type:
-				X.RDB$PARAMETER_TYPE= (USHORT) get_numeric();
-				break;
+				case att_procedureprm_type:
+					X.RDB$PARAMETER_TYPE= (USHORT) get_numeric();
+					break;
 
-			case att_procedureprm_number:
-				X.RDB$PARAMETER_NUMBER= (USHORT) get_numeric();
-				break;
+				case att_procedureprm_number:
+					X.RDB$PARAMETER_NUMBER= (USHORT) get_numeric();
+					break;
 
-			case att_procedureprm_field_source:
-				GET_TEXT(X.RDB$FIELD_SOURCE);
-				break;
+				case att_procedureprm_field_source:
+					GET_TEXT(X.RDB$FIELD_SOURCE);
+					break;
 
-			case att_procedureprm_description:
-				get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				break;
+				case att_procedureprm_description:
+					get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
 
-			case att_procedureprm_description2:
-				get_source_blob (&X.RDB$DESCRIPTION, true);
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				break;
+				case att_procedureprm_description2:
+					get_source_blob (&X.RDB$DESCRIPTION, true);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
 
-			default:
-				bad_attribute (scan_next_attr, attribute, 291);
-				// msg 291 procedure parameter
-				break;
+				case att_procedureprm_default_value:
+					if (tdgbl->RESTORE_format >= 8)
+					{
+						X.RDB$DEFAULT_VALUE.NULL = FALSE;
+						get_blr_blob (&X.RDB$DEFAULT_VALUE, true);
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, 291);
+					break;
+
+				case att_procedureprm_default_source:
+					if (tdgbl->RESTORE_format >= 8)
+					{
+						X.RDB$DEFAULT_SOURCE.NULL = FALSE;
+						get_source_blob (&X.RDB$DEFAULT_SOURCE, true);
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, 291);
+					break;
+
+				case att_procedureprm_collation_id:
+					if (tdgbl->RESTORE_format >= 8)
+					{
+						X.RDB$COLLATION_ID.NULL = FALSE;
+						X.RDB$COLLATION_ID = (USHORT) get_numeric();
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, 291);
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, 291);
+					// msg 291 procedure parameter
+					break;
+				}
 			}
-		}
-	END_STORE;
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else
+	{
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_procedure_prm_req_handle1)
+			X IN RDB$PROCEDURE_PARAMETERS
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			strcpy (X.RDB$PROCEDURE_NAME, procptr);
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_procedureprm_name:
+					l = GET_TEXT(X.RDB$PARAMETER_NAME);
+					MISC_terminate (X.RDB$PARAMETER_NAME, temp, l, sizeof(temp));
+					BURP_verbose (196, temp, NULL, NULL, NULL, NULL);
+					// msg 196 restoring parameter %s for stored procedure 
+					break;
+
+				case att_procedureprm_type:
+					X.RDB$PARAMETER_TYPE= (USHORT) get_numeric();
+					break;
+
+				case att_procedureprm_number:
+					X.RDB$PARAMETER_NUMBER= (USHORT) get_numeric();
+					break;
+
+				case att_procedureprm_field_source:
+					GET_TEXT(X.RDB$FIELD_SOURCE);
+					break;
+
+				case att_procedureprm_description:
+					get_misc_blob (&X.RDB$DESCRIPTION, 0, true);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
+
+				case att_procedureprm_description2:
+					get_source_blob (&X.RDB$DESCRIPTION, true);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, 291);
+					// msg 291 procedure parameter
+					break;
+				}
+			}
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
 
 	return true;
 }
@@ -5937,89 +6039,189 @@ bool get_trigger()
 	isc_tr_handle local_trans =
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
-	STORE (TRANSACTION_HANDLE local_trans
-			REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle1)
-		X IN RDB$TRIGGERS
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		X.RDB$TRIGGER_BLR.NULL = TRUE;
-		X.RDB$TRIGGER_SOURCE.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG = 0;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		X.RDB$FLAGS.NULL = TRUE;
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
+	{
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle1)
+			X IN RDB$TRIGGERS
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$TRIGGER_BLR.NULL = TRUE;
+			X.RDB$TRIGGER_SOURCE.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$FLAGS.NULL = TRUE;
+			X.RDB$VALID_BLR.NULL = TRUE;
 
-		skip_init(&scan_next_attr);
-		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-		{
-			switch (attribute)
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
-			case att_trig_type:
-				X.RDB$TRIGGER_TYPE = (USHORT) get_numeric();
-				break;
+				switch (attribute)
+				{
+				case att_trig_type:
+					X.RDB$TRIGGER_TYPE = (USHORT) get_numeric();
+					break;
 
-			case att_trig_flags:
-				X.RDB$FLAGS = (USHORT) get_numeric();
-				X.RDB$FLAGS.NULL = FALSE;
-				break;
+				case att_trig_flags:
+					X.RDB$FLAGS = (USHORT) get_numeric();
+					X.RDB$FLAGS.NULL = FALSE;
+					break;
 
-			case att_trig_blr:
-				X.RDB$TRIGGER_BLR.NULL = FALSE;
-				get_blr_blob (&X.RDB$TRIGGER_BLR, true);
-				break;
+				case att_trig_blr:
+					X.RDB$TRIGGER_BLR.NULL = FALSE;
+					get_blr_blob (&X.RDB$TRIGGER_BLR, true);
+					break;
 
-			case att_trig_source:
-				X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-				get_misc_blob (&X.RDB$TRIGGER_SOURCE, 1, true);
-				break;
+				case att_trig_source:
+					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
+					get_misc_blob (&X.RDB$TRIGGER_SOURCE, 1, true);
+					break;
 
-			case att_trig_source2:
-				X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-				get_source_blob (&X.RDB$TRIGGER_SOURCE, true);
-				break;
+				case att_trig_source2:
+					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
+					get_source_blob (&X.RDB$TRIGGER_SOURCE, true);
+					break;
 
-			case att_trig_name:
-				GET_TEXT(X.RDB$TRIGGER_NAME);
-				strcpy (name, X.RDB$TRIGGER_NAME);
-				BURP_verbose (126, X.RDB$TRIGGER_NAME, NULL, NULL, NULL, NULL);
-				// msg 126 restoring trigger %s 
-				break;
+				case att_trig_name:
+					GET_TEXT(X.RDB$TRIGGER_NAME);
+					strcpy (name, X.RDB$TRIGGER_NAME);
+					BURP_verbose (126, X.RDB$TRIGGER_NAME, NULL, NULL, NULL, NULL);
+					// msg 126 restoring trigger %s 
+					break;
 
-			case att_trig_relation_name:
-				GET_TEXT(X.RDB$RELATION_NAME);
-				break;
+				case att_trig_relation_name:
+					GET_TEXT(X.RDB$RELATION_NAME);
+					break;
 
-			case att_trig_sequence:
-				X.RDB$TRIGGER_SEQUENCE = (USHORT) get_numeric();
-				break;
+				case att_trig_sequence:
+					X.RDB$TRIGGER_SEQUENCE = (USHORT) get_numeric();
+					break;
 
-			case att_trig_description:
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_misc_blob (&X.RDB$DESCRIPTION, 1, true);
-				break;
+				case att_trig_description:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_misc_blob (&X.RDB$DESCRIPTION, 1, true);
+					break;
 
-			case att_trig_description2:
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_source_blob (&X.RDB$DESCRIPTION, true);
-				break;
+				case att_trig_description2:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_source_blob (&X.RDB$DESCRIPTION, true);
+					break;
 
-			case att_trig_system_flag:
-				X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
-				X.RDB$SYSTEM_FLAG.NULL = FALSE;
-				break;
+				case att_trig_system_flag:
+					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
+					X.RDB$SYSTEM_FLAG.NULL = FALSE;
+					break;
 
-			case att_trig_inactive:
-				X.RDB$TRIGGER_INACTIVE = (USHORT) get_numeric();
-				break;
+				case att_trig_inactive:
+					X.RDB$TRIGGER_INACTIVE = (USHORT) get_numeric();
+					break;
 
-			default:
-				bad_attribute (scan_next_attr, attribute, 134);
-				// msg 134 trigger 
-				break;
+				case att_trig_valid_blr:
+					if (tdgbl->RESTORE_format >= 8)
+					{
+						X.RDB$VALID_BLR.NULL = FALSE;
+						X.RDB$VALID_BLR = (USHORT) get_numeric();
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, 134);
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, 134);
+					// msg 134 trigger 
+					break;
+				}
 			}
-		}
-	END_STORE;
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else
+	{
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle1)
+			X IN RDB$TRIGGERS
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$TRIGGER_BLR.NULL = TRUE;
+			X.RDB$TRIGGER_SOURCE.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$FLAGS.NULL = TRUE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_trig_type:
+					X.RDB$TRIGGER_TYPE = (USHORT) get_numeric();
+					break;
+
+				case att_trig_flags:
+					X.RDB$FLAGS = (USHORT) get_numeric();
+					X.RDB$FLAGS.NULL = FALSE;
+					break;
+
+				case att_trig_blr:
+					X.RDB$TRIGGER_BLR.NULL = FALSE;
+					get_blr_blob (&X.RDB$TRIGGER_BLR, true);
+					break;
+
+				case att_trig_source:
+					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
+					get_misc_blob (&X.RDB$TRIGGER_SOURCE, 1, true);
+					break;
+
+				case att_trig_source2:
+					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
+					get_source_blob (&X.RDB$TRIGGER_SOURCE, true);
+					break;
+
+				case att_trig_name:
+					GET_TEXT(X.RDB$TRIGGER_NAME);
+					strcpy (name, X.RDB$TRIGGER_NAME);
+					BURP_verbose (126, X.RDB$TRIGGER_NAME, NULL, NULL, NULL, NULL);
+					// msg 126 restoring trigger %s 
+					break;
+
+				case att_trig_relation_name:
+					GET_TEXT(X.RDB$RELATION_NAME);
+					break;
+
+				case att_trig_sequence:
+					X.RDB$TRIGGER_SEQUENCE = (USHORT) get_numeric();
+					break;
+
+				case att_trig_description:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_misc_blob (&X.RDB$DESCRIPTION, 1, true);
+					break;
+
+				case att_trig_description2:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_source_blob (&X.RDB$DESCRIPTION, true);
+					break;
+
+				case att_trig_system_flag:
+					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric();
+					X.RDB$SYSTEM_FLAG.NULL = FALSE;
+					break;
+
+				case att_trig_inactive:
+					X.RDB$TRIGGER_INACTIVE = (USHORT) get_numeric();
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, 134);
+					// msg 134 trigger 
+					break;
+				}
+			}
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
 
 	if (tdgbl->gbl_sw_incremental)
 	{

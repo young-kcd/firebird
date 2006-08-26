@@ -180,7 +180,12 @@ and trigger-new is:
 			  RDB$BASE_COLLATION_NAME and RDB$SPECIFIC_ATTRIBUTES in collations
  */
 
-/* Version 8: RDB$RELATION_TYPE and RDB$PROCEDURE_TYPE
+/* Version 8: RDB$RELATION_TYPE in relations
+			  RDB$PROCEDURE_TYPE in procedures
+			  RDB$VALID_BLR in triggers
+			  RDB$VALID_BLR in procedures
+			  RDB$DEFAULT_VALUE, RDB$DEFAULT_SOURCE and RDB$COLLATION_ID in procedure_parameters
+
  */
 const int ATT_BACKUP_FORMAT		= 8;	// ASF: when change this, change the text of the message gbak_inv_bkup_ver too
 
@@ -366,7 +371,8 @@ enum att_type {
 	att_trig_inactive,
 	att_trig_source2,
 	att_trig_description2,
-	att_trig_flags,	 
+	att_trig_flags,
+	att_trig_valid_blr,
 
 	// Function attributes 
 
@@ -452,6 +458,7 @@ enum att_type {
 	att_procedure_security_class,
 	att_procedure_owner_name,
 	att_procedure_type,
+	att_procedure_valid_blr,
 
 	// Stored procedure parameter attributes 
 
@@ -461,6 +468,9 @@ enum att_type {
 	att_procedureprm_field_source,
 	att_procedureprm_description,
 	att_procedureprm_description2,
+	att_procedureprm_default_value,
+	att_procedureprm_default_source,
+	att_procedureprm_collation_id,
 
 	// Exception attributes 
 
