@@ -1,3 +1,28 @@
+2006-08-26 04:02  asfernandes
+
+	* firebird2/src/jrd/dyn_def.epp (1.133):
+	
+	Correction for default value of parameters
+
+2006-08-25 07:42  dimitr
+
+	* firebird2/src/jrd/dyn_def.epp (1.132):
+	
+	Fixed another bug reported in fb-devel.
+
+2006-08-25 06:57  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.10):
+	
+	Fixed a small issue noticed by Michal.
+
+2006-08-25 06:50  dimitr
+
+	* firebird2/src/: jrd/DatabaseSnapshot.cpp (1.9), include/gen/ids.h
+	(1.16):
+	
+	Fixed a small issue noticed by Michal.
+
 2006-08-24 15:28  hvlad
 
 	* firebird2/src/dsql/dsql.cpp (1.181):
