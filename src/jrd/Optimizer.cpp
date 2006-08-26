@@ -915,12 +915,9 @@ OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
 	relation = csb_tail->csb_relation;
 
 	// Allocate needed indexScratches
-	//indexScratches.grow(csb_tail->csb_indices);
 
-	//IndexScratch** indexScratch = indexScratches.begin();
 	index_desc* idx = csb_tail->csb_idx->items;
 	for (int i = 0; i < csb_tail->csb_indices; ++i, ++idx) {
-		//indexScratch[i] = FB_NEW(p) IndexScratch(p, tdbb, idx, csb_tail);
 		indexScratches.add( IndexScratch(p, tdbb, idx, csb_tail) );
 	}
 
@@ -2487,7 +2484,6 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		IndexScratchList indexOrScratches;
 
 		// Copy information from caller
-		//IndexScratch** indexScratch = indexScratches->begin();
 		int i = 0;		
 		for (; i < indexScratches->getCount(); i++) {
 			IndexScratch& scratch = (*indexScratches)[i];
