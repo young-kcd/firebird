@@ -2961,7 +2961,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 	{
 		jrd_req* request2 = CMP_find_request(tdbb, drq_s_prms2, DYN_REQUESTS);
 
-		FOR(REQUEST_HANDLE request2)
+		FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 			P IN RDB$PROCEDURE_PARAMETERS WITH
 				P.RDB$PROCEDURE_NAME EQ prc_name.c_str() AND
 				P.RDB$PARAMETER_NAME EQ parameter_name.c_str()
