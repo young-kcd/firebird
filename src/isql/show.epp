@@ -72,7 +72,7 @@ static void remove_delimited_double_quotes(TEXT*);
 static void make_priv_string(USHORT, char*);
 static processing_state show_all_tables(SSHORT);
 static void show_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool, bool);
-static void show_proc_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool, bool);
+static void show_proc_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool);
 static processing_state show_check(const SCHAR*);
 static processing_state show_collations(const SCHAR*);
 static void show_comment(const char* objtype, char* name1, char* name2,
@@ -1593,7 +1593,7 @@ static void show_charsets(
 	bool show_charset,
 	bool show_collation,
 	bool doIndent,
-	bool doReturn)
+	bool doNewLine)
 {
 /*************************************
 *
@@ -1667,7 +1667,7 @@ static void show_charsets(
 		if (doIndent)
 			isqlGlob.printf(spaces);
 		isqlGlob.prints(char_sets);
-		if (doReturn)
+		if (doNewLine)
 			isqlGlob.printf(NEWLINE);
 	}
 }
@@ -1678,8 +1678,7 @@ static void show_proc_charsets(
 	const SCHAR* parameter_name,
 	bool show_charset,
 	bool show_collation,
-	bool doIndent,
-	bool doReturn)
+	bool doIndent)
 {
 	SSHORT collation, char_set_id;
 	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();
@@ -1713,7 +1712,7 @@ static void show_proc_charsets(
 				END_FOR 
 			}
 
-			if (!prp_collation_null && !FLD.RDB$COLLATION_ID.NULL)
+			if (prp_collation_null && !FLD.RDB$COLLATION_ID.NULL)
 				collation = FLD.RDB$COLLATION_ID;
 		END_FOR
 		ON_ERROR
@@ -1760,8 +1759,6 @@ static void show_proc_charsets(
 		if (doIndent)
 			isqlGlob.printf(spaces);
 		isqlGlob.prints(char_sets);
-		if (doReturn)
-			isqlGlob.printf(NEWLINE);
 	}
 }
 
@@ -3543,7 +3540,7 @@ static processing_state show_proc(const SCHAR* procname)
 				isqlGlob.printf("(%s) ", FLD.RDB$FIELD_NAME);
 			}
 
-			isqlGlob.printf("%s%s ", type_name, lenstring);
+			isqlGlob.printf("%s%s", type_name, lenstring);
 
 			// Show international character sets and collations
 
@@ -3551,7 +3548,7 @@ static processing_state show_proc(const SCHAR* procname)
 					   FLD.RDB$FIELD_TYPE == VARCHAR  ||
 					   FLD.RDB$FIELD_TYPE == BLOB)
 			{
-				show_proc_charsets(PRM.RDB$PROCEDURE_NAME, PRM.RDB$PARAMETER_NAME, true, true, false, false);
+				show_proc_charsets(PRM.RDB$PROCEDURE_NAME, PRM.RDB$PARAMETER_NAME, true, true, false);
 			}
 			
 			if (PRM.RDB$PARAMETER_TYPE == 0) // input, try to show default and make Vlad happy.

@@ -530,7 +530,6 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
 	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_l_fld_src, DYN_REQUESTS);
-	USHORT id = drq_l_fld_src;
 	
 	bool found = false;
 
@@ -554,7 +553,6 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_l_fld_src) = request;
 
 	request = CMP_find_request(tdbb, drq_l_prp_src, DYN_REQUESTS);
-	id = drq_l_prp_src;
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -577,7 +575,6 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_l_prp_src) = request;
 
 	request = CMP_find_request(tdbb, drq_e_gfields, DYN_REQUESTS);
-	id = drq_e_gfields;
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -595,16 +592,8 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		if (id == drq_l_fld_src || id == drq_l_prp_src)
-		{
-			DYN_error_punt(true, 44, NULL, NULL, NULL, NULL, NULL);
-			/* msg 44: "ERASE RDB$FIELDS failed" */
-		}
-		else
-		{
-			DYN_error_punt(true, 45, NULL, NULL, NULL, NULL, NULL);
-			/* msg 45: "ERASE RDB$FIELDS failed" */
-		}
+		DYN_error_punt(true, 44, NULL, NULL, NULL, NULL, NULL);
+		/* msg 44: "ERASE RDB$FIELDS failed" */
 	}
 
 	if (!found) {

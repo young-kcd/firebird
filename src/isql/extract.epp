@@ -786,7 +786,7 @@ static void get_procedure_args(const char* proc_name)
 					isdigit (FLD.RDB$FIELD_NAME[4]) &&
 					FLD.RDB$SYSTEM_FLAG != 1))
 			{
-				isqlGlob.printf("TYPE OF ", SQL_identifier);
+				isqlGlob.printf("TYPE OF ");
 
 				fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
