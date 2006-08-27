@@ -154,6 +154,7 @@ enum fids {
 	f_trg_inactive,
 	f_trg_sys_flag,
 	f_trg_flags,
+	f_trg_valid_blr,
 
 	f_dpd_name = 0,
 	f_dpd_o_name,
@@ -252,6 +253,7 @@ enum fids {
 	f_prc_runtime,
 	f_prc_sys_flag,
 	f_prc_type,
+	f_prc_valid_blr,
 
 	f_prm_name = 0,
 	f_prm_procedure,
@@ -260,6 +262,10 @@ enum fids {
 	f_prm_sname,
 	f_prm_desc,
 	f_prm_sys_flag,
+	f_prm_default,
+	f_prm_dsource,
+	f_prm_coll_id,
+	///f_prm_null_flag,
 
 	f_cs_cs_name = 0,
 	f_cs_form_of_use,

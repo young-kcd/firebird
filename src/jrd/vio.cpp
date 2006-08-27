@@ -2602,7 +2602,19 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_prc_id, &desc2);
 			{ // scope
 				const USHORT id = MOV_get_long(&desc2, 0);
-				DFW_post_work(transaction, dfw_create_procedure, &desc, id);
+				DeferredWork* work = DFW_post_work(transaction, dfw_create_procedure, &desc, id);
+
+				SSHORT check_blr = TRUE;
+
+				if (ENCODE_ODS(tdbb->tdbb_database->dbb_ods_version,
+					tdbb->tdbb_database->dbb_minor_original) >= ODS_11_1)
+				{
+					if (EVL_field(0, rpb->rpb_record, f_prc_valid_blr, &desc2))
+						check_blr = MOV_get_long(&desc2, 0);
+				}
+
+				if (check_blr)
+					DFW_post_work_arg(transaction, work, NULL, 0)->dfw_type = dfw_arg_check_blr;
 			} // scope
 			set_system_flag(rpb, f_prc_sys_flag, 0);
 			break;
