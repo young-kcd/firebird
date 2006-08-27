@@ -181,9 +181,8 @@ and trigger-new is:
  */
 
 /* Version 8: RDB$RELATION_TYPE in relations
-			  RDB$PROCEDURE_TYPE in procedures
+			  RDB$PROCEDURE_TYPE and RDB$VALID_BLR in procedures
 			  RDB$VALID_BLR in triggers
-			  RDB$VALID_BLR in procedures
 			  RDB$DEFAULT_VALUE, RDB$DEFAULT_SOURCE and RDB$COLLATION_ID in procedure_parameters
 
  */

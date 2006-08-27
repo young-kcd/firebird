@@ -1708,7 +1708,8 @@ static void show_proc_charsets(
 						 PRP2.RDB$PARAMETER_NAME EQ PRP.RDB$PARAMETER_NAME
 
 					prp_collation_null = PRP2.RDB$COLLATION_ID.NULL;
-					collation = PRP2.RDB$COLLATION_ID;
+					if (!prp_collation_null)
+						collation = PRP2.RDB$COLLATION_ID;
 				END_FOR 
 			}
 

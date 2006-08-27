@@ -937,8 +937,7 @@ OptimizerRetrieval::~OptimizerRetrieval()
  **************************************/
 	
 	InversionCandidate** invCandidate = inversionCandidates.begin();
-	int i = 0;
-	for (; i < inversionCandidates.getCount(); ++i) {
+	for (int i = 0; i < inversionCandidates.getCount(); ++i) {
 		delete inversionCandidates[i];
 	}
 }
