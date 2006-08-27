@@ -1,3 +1,11 @@
+2006-08-26 13:25  hvlad
+
+	* firebird2/src/jrd/Optimizer.cpp (1.56.4.2):
+	
+	Backport fix for CORE-904: new ODS11 optimizer used unnecessary
+	huge amount of memory while processing IN list with large number of
+	items
+
 2006-08-22 13:11  alexpeshkoff
 
 	* firebird2/src/jrd/jrd.cpp (1.237.2.1):
