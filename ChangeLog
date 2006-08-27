@@ -1,3 +1,40 @@
+2006-08-27 03:09  asfernandes
+
+	* firebird2/src/: include/gen/ids.h (1.17), jrd/dfw.epp (1.192),
+	jrd/vio.cpp (1.171):
+	
+	Don't check procedure BLR when it's marked as invalid, to allow
+	restoration of backups with invalid procedures.
+
+2006-08-26 17:46  asfernandes
+
+	* firebird2/src/: isql/extract.epp (1.74), isql/show.epp (1.100),
+	jrd/dyn_del.epp (1.58):
+	
+	Corrections - thanks to Claudio
+
+2006-08-26 14:24  hvlad
+
+	* firebird2/src/jrd/Optimizer.cpp (1.68):
+	
+	Cleanup
+
+2006-08-26 14:12  hvlad
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.67), Optimizer.h (1.19):
+	
+	Proper but more complex fix for CORE-904: new ODS11 optimizer used
+	unnecessary huge amount of memory while processing IN list with
+	large number of items.	Use Firebird::ObjectsArray instead of
+	Firebird::Array and remove IndexScratchListHolder as unneeded
+
+2006-08-26 04:59  asfernandes
+
+	* firebird2/src/burp/: backup.epp (1.90), burp.h (1.76),
+	restore.epp (1.110):
+	
+	Backup the new fields added - thanks to Claudio
+
 2006-08-26 04:02  asfernandes
 
 	* firebird2/src/jrd/dyn_def.epp (1.133):
