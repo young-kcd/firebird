@@ -1,3 +1,10 @@
+2006-08-27 04:48  asfernandes
+
+	* firebird2/src/: burp/burp.h (1.77), isql/show.epp (1.101),
+	jrd/Optimizer.cpp (1.69):
+	
+	Misc
+
 2006-08-27 03:09  asfernandes
 
 	* firebird2/src/: include/gen/ids.h (1.17), jrd/dfw.epp (1.192),
