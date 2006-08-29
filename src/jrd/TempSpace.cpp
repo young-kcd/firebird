@@ -95,7 +95,10 @@ TempSpace::FileBlock::FileBlock(TempFile* f, Block* tail, size_t length)
 	: Block(tail, length), file(f)
 {
 	fb_assert(file);
-	seek = file->getSize();
+	
+	// FileBlock is created after file was extended by length (look at
+	// TempSpace::extend) so this FileBlock is already inside the file
+	seek = file->getSize() - length;
 }
 
 TempSpace::FileBlock::~FileBlock()
