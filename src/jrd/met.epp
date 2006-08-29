@@ -1219,25 +1219,6 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 		END_FOR;
 		CMP_release(tdbb, handle);
 	}
-	else if (type == (USHORT) obj_procedure)
-	{
-		jrd_req* handle = NULL;
-		FOR(REQUEST_HANDLE handle)
-			PPR IN RDB$PROCEDURE_PARAMETERS WITH
-				PPR.RDB$PROCEDURE_NAME EQ object_name.c_str()
-
-			Firebird::MetaName* name = FB_NEW(csb->csb_pool)
-				Firebird::MetaName(csb->csb_pool, PPR.RDB$FIELD_SOURCE);
-
-			jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
-			dep_node->nod_type = nod_dependency;
-			dep_node->nod_arg[e_dep_object] = (jrd_nod*) name;
-			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_field;
-			csb->csb_dependencies.push(dep_node);
-
-		END_FOR;
-		CMP_release(tdbb, handle);
-	}
 
 	store_dependencies(tdbb, csb, relation, object_name, type);
 
