@@ -252,7 +252,7 @@ void TempSpace::extend(size_t size)
 
 	if (logicalSize > physicalSize)
 	{
-		size = FB_ALIGN(size, minBlockSize);
+		size = FB_ALIGN(logicalSize - physicalSize, minBlockSize);
 		physicalSize += size;
 
 		Block* block = NULL;
