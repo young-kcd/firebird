@@ -32,7 +32,7 @@ ROOT=..
 SERVICES_THREADED=@service_thread_CS@
 ifeq ($(SERVICES_THREADED),true)
     ObjModuleType=superclient
-    CFLAGS+=-DSTD_UTIL
+    CFLAGS+=-DSTD_UTIL -DSUPERCLIENT
 else
     ObjModuleType=std
 endif

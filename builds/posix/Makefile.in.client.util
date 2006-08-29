@@ -178,7 +178,7 @@ $(INSTREG):	$(INSTREG_Objects)
 instsvc: $(INSTSVC)
 
 $(INSTSVC):	$(INSTSVC_Objects)
-	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) 
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(FBCLASSES_Objects) $(FBCOMMON_Objects) $(LINK_LIBS) 
 
 # This one needs a bit of work.
 
