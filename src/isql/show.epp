@@ -1868,7 +1868,7 @@ static processing_state show_collations(const SCHAR* object)
 				isqlGlob.printf("'");
 			}
 
-			if (!CL.RDB$SYSTEM_FLAG.NULL || CL.RDB$SYSTEM_FLAG != 0)
+			if (!CL.RDB$SYSTEM_FLAG.NULL && CL.RDB$SYSTEM_FLAG != 0)
 				isqlGlob.printf(", SYSTEM");
 
 			isqlGlob.printf("%s", NEWLINE);
