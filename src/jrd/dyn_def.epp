@@ -4841,9 +4841,12 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
  ****************************************************/
 	Database* dbb = tdbb->tdbb_database;
 
-	fb_assert(child_type == rel_persistent ||
-			  child_type == rel_global_temp_preserve ||
-			  child_type == rel_global_temp_delete);
+	if (child_type != rel_persistent &&
+		child_type != rel_global_temp_preserve &&
+		child_type != rel_global_temp_delete)
+	{
+		return;
+	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info2, DYN_REQUESTS);
 	bool bErr = false;
