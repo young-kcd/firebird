@@ -1005,8 +1005,17 @@ void VIO_data(thread_db* tdbb, record_param* rpb, JrdMemoryPool* pool)
 		tail = differences;
 		tail_end = differences + sizeof(differences);
 		if (prior != record)
+			if (record->rec_length < prior->rec_length) {
+				if (record->rec_flags & REC_gc_active) {
+					record = replace_gc_record(rpb->rpb_relation, 
+								&rpb->rpb_record, prior->rec_length);
+				}
+				else {
+					record = realloc_record(rpb->rpb_record, prior->rec_length);
+				}
+			}
 			MOVE_FASTER(prior->rec_data, record->rec_data,
-						format->fmt_length);
+						prior->rec_format->fmt_length);
 	}
 	else
 	{
@@ -3293,8 +3302,17 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page,
 			tail = differences;
 			tail_end = differences + sizeof(differences);
 			if (prior != record) {
+				if (record->rec_length < prior->rec_length) {
+					if (record->rec_flags & REC_gc_active) {
+						record = replace_gc_record(rpb->rpb_relation, 
+									&rpb->rpb_record, prior->rec_length);
+					}
+					else {
+						record = realloc_record(rpb->rpb_record, prior->rec_length);
+					}
+				}
 				MOVE_FASTER(prior->rec_data, record->rec_data,
-							record->rec_format->fmt_length);
+							prior->rec_format->fmt_length);
 			}
 		}
 		else {
