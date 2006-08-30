@@ -170,7 +170,7 @@ static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 /* ---------------------------------------------------------------- */
 
-static void check_dependencies(thread_db*, const TEXT*, const TEXT*, USHORT, jrd_tra*);
+static void check_dependencies(thread_db*, const TEXT*, const TEXT*, int, jrd_tra*);
 static void check_filename(const Firebird::string&, bool);
 static void check_system_generator(const TEXT*, const dfw_t);
 static bool formatsAreEqual(const Format*, const Format*);
@@ -1214,7 +1214,7 @@ static bool end_backup(	thread_db*	tdbb,
 static void check_dependencies(thread_db* tdbb,
 							   const TEXT* dpdo_name,
 							   const TEXT* field_name,
-							   USHORT dpdo_type,
+							   int dpdo_type,
 							   jrd_tra* transaction)
 {
 /**************************************
@@ -1231,9 +1231,9 @@ static void check_dependencies(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-	USHORT i;
-	USHORT dep_counts[obj_count];
-	for (i = 0; i < (USHORT) obj_count; i++)
+	int i;
+	SLONG dep_counts[obj_count];
+	for (i = 0; i < obj_count; i++)
 		dep_counts[i] = 0;
 
 	if (field_name)
@@ -1333,7 +1333,7 @@ static void check_dependencies(thread_db* tdbb,
 							isc_arg_gds, isc_field_name,
 							isc_arg_string, ERR_cstring(field_name),
 							isc_arg_gds, isc_dependency,
-							isc_arg_number, (SLONG) dep_counts[i],
+							isc_arg_number, dep_counts[i],
 							0);	/* Msg310: there are %ld dependencies */
 			}
 			else {
@@ -1342,7 +1342,7 @@ static void check_dependencies(thread_db* tdbb,
 							isc_arg_gds, obj_type,
 							isc_arg_string, ERR_cstring(dpdo_name),
 							isc_arg_gds, isc_dependency,
-							isc_arg_number, (SLONG) dep_counts[i],
+							isc_arg_number, dep_counts[i],
 							0);	/* there are %ld dependencies */
 			}
 		}
