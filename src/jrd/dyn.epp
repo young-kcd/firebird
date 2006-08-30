@@ -1517,11 +1517,8 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 	if (DYN_is_it_sql_role(gbl, role_name, owner, tdbb))
 	{
 		// Both SYSDBA and the owner of this ROLE can grant membership
-		if ((tdbb->tdbb_attachment->locksmith())
-			|| (owner == grantor))
-		{
+		if (tdbb->tdbb_attachment->locksmith() || owner == grantor)
 			return true;
-		}
 	}
 	else
 	{

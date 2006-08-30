@@ -1549,8 +1549,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 			found = true;
 			Firebird::MetaName role_owner = XX.RDB$OWNER_NAME;
 
-			if (tdbb->tdbb_attachment->locksmith() ||
-				(role_owner == user))
+			if (tdbb->tdbb_attachment->locksmith() || role_owner == user)
 			{
 				ERASE XX;
 			}

@@ -128,7 +128,7 @@ static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*,
 											 const UCHAR*);
 static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, blb*,
 	const TEXT*, UCHAR, bool, USHORT);
-static void store_dependencies(thread_db*, CompilerScratch*, const jrd_rel*, const Firebird::MetaName&, USHORT);
+static void store_dependencies(thread_db*, CompilerScratch*, const jrd_rel*, const Firebird::MetaName&, int);
 static bool verify_TRG_ignore_perm(thread_db*, const Firebird::MetaName&);
 
 
@@ -727,18 +727,18 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 				WITH DEP.RDB$DEPENDED_ON_NAME EQ field_source->dsc_address AND
 					 DEP.RDB$DEPENDED_ON_TYPE EQ obj_field AND
 					 DEP.RDB$DEPENDENT_TYPE EQ obj_procedure AND
-					 PRC.RDB$PROCEDURE_NAME EQ DEP.RDB$DEPENDENT_NAME
+					 DEP.RDB$DEPENDENT_NAME EQ PRC.RDB$PROCEDURE_NAME
 
 			if (!REQUEST(irq_m_fields2))
 				REQUEST(irq_m_fields2) = request;
 
-			Firebird::MetaName name(PRC.RDB$PROCEDURE_NAME);
+			Firebird::MetaName proc_name(PRC.RDB$PROCEDURE_NAME);
 
 			dsc desc;
 			desc.dsc_dtype = dtype_text;
 			INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
-			desc.dsc_length = name.length();
-			desc.dsc_address = (UCHAR*) name.c_str();
+			desc.dsc_length = proc_name.length();
+			desc.dsc_address = (UCHAR*) proc_name.c_str();
 
 			DeferredWork* dw2 =
 				DFW_post_work(transaction, dfw_modify_procedure, &desc, PRC.RDB$PROCEDURE_ID);
@@ -756,19 +756,19 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 				WITH DEP.RDB$DEPENDED_ON_NAME EQ field_source->dsc_address AND
 					 DEP.RDB$DEPENDED_ON_TYPE EQ obj_field AND
 					 DEP.RDB$DEPENDENT_TYPE EQ obj_trigger AND
-					 TRG.RDB$TRIGGER_NAME EQ DEP.RDB$DEPENDENT_NAME
+					 DEP.RDB$DEPENDENT_NAME EQ TRG.RDB$TRIGGER_NAME
 
 			if (!REQUEST(irq_m_fields3))
 				REQUEST(irq_m_fields3) = request;
 
-			Firebird::MetaName name(TRG.RDB$TRIGGER_NAME);
+			Firebird::MetaName trigger_name(TRG.RDB$TRIGGER_NAME);
 			Firebird::MetaName relation_name(TRG.RDB$RELATION_NAME);
 
 			dsc desc;
 			desc.dsc_dtype = dtype_text;
 			INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
-			desc.dsc_length = name.length();
-			desc.dsc_address = (UCHAR*) name.c_str();
+			desc.dsc_length = trigger_name.length();
+			desc.dsc_address = (UCHAR*) trigger_name.c_str();
 
 			DeferredWork* dw2 =
 				DFW_post_work(transaction, dfw_modify_trigger, &desc, 0);
@@ -812,7 +812,7 @@ Format* MET_current(thread_db* tdbb, jrd_rel* relation)
 
 void MET_delete_dependencies(thread_db*					tdbb,
 							 const Firebird::MetaName&	object_name,
-							 USHORT						dependency_type)
+							 int						dependency_type)
 {
 /**************************************
  *
@@ -1166,8 +1166,8 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 							  jrd_req**					request,
 							  CompilerScratch**			csb_ptr,
 							  Firebird::MetaName&		object_name,
-							  USHORT				type,
-							  USHORT				flags)
+							  int						type,
+							  USHORT					flags)
 {
 /**************************************
  *
@@ -1206,7 +1206,7 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 						   (type == obj_trigger));
 	}
 
-	if (type == (USHORT) obj_computed)
+	if (type == obj_computed)
 	{
 		jrd_req* handle = NULL;
 		FOR(REQUEST_HANDLE handle)
@@ -3038,9 +3038,9 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			// if the BLR was marked as invalid but the procedure was compiled,
 			// mark the BLR as valid
 
-			jrd_req* request4 = NULL;
+			jrd_req* request5 = NULL;
 
-			FOR(REQUEST_HANDLE request4)
+			FOR(REQUEST_HANDLE request5)
 				P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_ID EQ procedure->prc_id
 
 				MODIFY P USING
@@ -3049,7 +3049,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				END_MODIFY;
 			END_FOR;
 
-			CMP_release(tdbb, request4);
+			CMP_release(tdbb, request5);
 		}
 	} /* if !noscan */
 
@@ -3290,9 +3290,8 @@ void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
 
 /* deallocate input param structures */
 	vec<Parameter*>* vector;
-	SSHORT i;
 	if ((procedure->prc_inputs) && (vector = procedure->prc_input_fields)) {
-		for (i = 0; i < procedure->prc_inputs; i++)
+		for (int i = 0; i < procedure->prc_inputs; i++)
 		{
 			if ((*vector)[i])
 			{
@@ -3307,7 +3306,7 @@ void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
 /* deallocate output param structures */
 
 	if ((procedure->prc_outputs) && (vector = procedure->prc_output_fields)) {
-		for (i = 0; i < procedure->prc_outputs; i++)
+		for (int i = 0; i < procedure->prc_outputs; i++)
 		{
 			if ((*vector)[i])
 			{
@@ -4530,7 +4529,7 @@ static void store_dependencies(thread_db*	tdbb,
 							   CompilerScratch*	csb,
 							   const jrd_rel*	dep_rel,
 							   const Firebird::MetaName& object_name,
-							   USHORT		dependency_type)
+							   int dependency_type)
 {
 /**************************************
  *
@@ -4568,7 +4567,7 @@ static void store_dependencies(thread_db*	tdbb,
 		if (!node->nod_arg[e_dep_object])
 			continue;
 
-		const SSHORT dpdo_type = (SSHORT) (IPTR) node->nod_arg[e_dep_object_type];
+		const int dpdo_type = (int) (IPTR) node->nod_arg[e_dep_object_type];
 		jrd_rel* relation = NULL;
 		jrd_prc* procedure = NULL;
 		const Firebird::MetaName* dpdo_name = 0;
@@ -4621,10 +4620,10 @@ static void store_dependencies(thread_db*	tdbb,
 				dpdo_name = &name;
 			}
 			break;
-            // CVC: Here I'm going to track those pesky things named generators and UDFs.
         case obj_field:
 			dpdo_name = (Firebird::MetaName*) node->nod_arg[e_dep_object];
 			break;
+            // CVC: Here I'm going to track those pesky things named generators and UDFs.
 		case obj_generator:
 			{
 				const SLONG number = (IPTR) node->nod_arg[e_dep_object];

@@ -29,6 +29,7 @@ namespace Jrd {
 	class CompilerScratch;
 	class jrd_rel;
 	class jrd_req;
+	class thread_db;
 }
 
 struct dsc;

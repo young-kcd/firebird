@@ -2292,8 +2292,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 							dfw_end_backup,
 						&desc1, 0);
 				}
-				break;
 			}
+			break;
 
 		default:
 			break;
@@ -2652,35 +2652,35 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_files:
 			{
-			const bool name_defined =
-				EVL_field(0, rpb->rpb_record, f_file_name, &desc);
-			if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
-				MOV_get_long(&desc2, 0))
-			{
-				EVL_field(0, rpb->rpb_record, f_file_flags, &desc2);
-				if (!(MOV_get_long(&desc2, 0) & FILE_inactive)) {
-					DFW_post_work(transaction, dfw_add_shadow, &desc, 0);
-				}
-			}
-			else {
-				USHORT rel_flags;
-				if (EVL_field(0, rpb->rpb_record, f_file_flags, &desc2)
-					&& ((rel_flags = MOV_get_long(&desc2, 0)) & FILE_difference))
+				const bool name_defined =
+					EVL_field(0, rpb->rpb_record, f_file_name, &desc);
+				if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
+					MOV_get_long(&desc2, 0))
 				{
-					if (name_defined) {
-						DFW_post_work(transaction, dfw_add_difference, &desc, 0);
-					}
-					if (rel_flags & FILE_backing_up)
-					{
-						DFW_post_work(transaction, dfw_begin_backup, &desc, 0);
+					EVL_field(0, rpb->rpb_record, f_file_flags, &desc2);
+					if (!(MOV_get_long(&desc2, 0) & FILE_inactive)) {
+						DFW_post_work(transaction, dfw_add_shadow, &desc, 0);
 					}
 				}
 				else {
-					DFW_post_work(transaction, dfw_add_file, &desc, 0);
+					USHORT rel_flags;
+					if (EVL_field(0, rpb->rpb_record, f_file_flags, &desc2)
+						&& ((rel_flags = MOV_get_long(&desc2, 0)) & FILE_difference))
+					{
+						if (name_defined) {
+							DFW_post_work(transaction, dfw_add_difference, &desc, 0);
+						}
+						if (rel_flags & FILE_backing_up)
+						{
+							DFW_post_work(transaction, dfw_begin_backup, &desc, 0);
+						}
+					}
+					else {
+						DFW_post_work(transaction, dfw_add_file, &desc, 0);
+					}
 				}
 			}
 			break;
-			}
 
 		case rel_triggers:
 			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
