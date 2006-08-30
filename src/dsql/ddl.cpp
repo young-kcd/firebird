@@ -3862,7 +3862,8 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 			request->append_number(isc_dyn_view_context, (SSHORT) 0);
 		}
 
-		save_field(request, field_string);
+		if (field_string)
+			save_field(request, field_string);
 
 		request->append_number(isc_dyn_fld_position, position);
 		request->append_uchar(isc_dyn_end);
