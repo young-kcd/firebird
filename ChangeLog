@@ -1,3 +1,43 @@
+2006-08-29 23:48  hvlad
+
+	* firebird2/src/jrd/TempSpace.cpp (1.7):
+	
+	Mistake fixed
+
+2006-08-29 17:39  asfernandes
+
+	* firebird2/src/isql/show.epp (1.102):
+	
+	Correction - thanks to Claudio
+
+2006-08-29 14:16  asfernandes
+
+	* firebird2/src/jrd/met.epp (1.203):
+	
+	Don't store dependencies on auto-generated domains of procedure
+	parameters.  TYPE OF parameters is already catched by the BLR
+	parser.
+
+2006-08-29 10:37  aafemt
+
+	* firebird2/builds/posix/: Makefile.in.client.util (1.37),
+	Makefile.in.embed.gbak (1.16), Makefile.in.embed.gfix (1.19),
+	Makefile.in.embed.util (1.29), Makefile.in.intl (1.27):
+	
+	Fix MinGW SS build
+
+2006-08-29 09:09  hvlad
+
+	* firebird2/src/jrd/TempSpace.cpp (1.6):
+	
+	Don't allocate more space than needed in temp file
+
+2006-08-29 07:38  dimitr
+
+	* firebird2/src/jrd/dyn_def.epp (1.134):
+	
+	Fixed creation of views and external tables.
+
 2006-08-27 04:48  asfernandes
 
 	* firebird2/src/: burp/burp.h (1.77), isql/show.epp (1.101),
