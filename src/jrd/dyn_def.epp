@@ -2946,6 +2946,12 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 						DYN_put_text_blob(gbl, &default_source_ptr, &PS.RDB$DEFAULT_SOURCE);
 					}
 				}
+				else
+				{
+					PS.RDB$COLLATION_ID.NULL = TRUE;
+					PS.RDB$DEFAULT_VALUE.NULL = TRUE;
+					PS.RDB$DEFAULT_SOURCE.NULL = TRUE;
+				}
 			END_STORE;
 			if (!DYN_REQUEST(drq_s_prm_src))
 				DYN_REQUEST(drq_s_prm_src) = request2;
