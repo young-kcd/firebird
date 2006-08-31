@@ -240,6 +240,7 @@ const int USAGE_DUPDB				= 146;		// usage: more than one database name: "%s", "%
 const int NO_DEPENDENCIES			= 147;		// No dependencies for %s were found
 const int NO_COLLATION				= 148;		// There is no collation %s in this database 
 const int NO_COLLATIONS				= 149;		// There are no collations in this database 
+const int MSG_COLLATIONS			= 150;		// Collations:
 
 // Initialize types
 

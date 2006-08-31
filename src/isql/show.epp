@@ -74,7 +74,7 @@ static processing_state show_all_tables(SSHORT);
 static void show_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool, bool);
 static void show_proc_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool);
 static processing_state show_check(const SCHAR*);
-static processing_state show_collations(const SCHAR*);
+static processing_state show_collations(const SCHAR*, SSHORT sys_flag, const char* msg = 0);
 static void show_comment(const char* objtype, char* name1, char* name2,
 	ISC_QUAD* blobfld, const commentMode showextract, const char* banner);
 static processing_state show_comments(const commentMode showextract, const char* banner);
@@ -1167,6 +1167,27 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		break;
 
 	case ShowOptions::system:
+		if (*cmd[2])
+		{
+			switch (ShowOptions::getCommand(cmd[2]))
+			{
+			case ShowOptions::collation:
+				show_collations("", 1);
+				break;
+
+			case ShowOptions::function:
+				show_functions("", 1, NULL);
+				break;
+
+			case ShowOptions::table:
+				show_all_tables(1);
+				break;
+
+			default:
+				return ps_ERR;
+			}
+		}
+		else
 		{
 			TEXT msg[MSG_LENGTH];
 			ISQL_msg_get(MSG_TABLES, msg, NULL);
@@ -1174,6 +1195,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 			show_all_tables(1);
 			ISQL_msg_get(MSG_FUNCTIONS, msg, NULL);
 			show_functions("", 1, msg);
+			ISQL_msg_get(MSG_COLLATIONS, msg, NULL);
+			show_collations("", 1, msg);
 		}
 		break;
 
@@ -1420,10 +1443,10 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 	case ShowOptions::collation:
 		if (*cmd[2] == '"') {
 			remove_delimited_double_quotes(lcmd[2]);
-			ret = show_collations(lcmd[2]);
+			ret = show_collations(lcmd[2], -1);
 		}
 		else
-			ret = show_collations(cmd[2]);
+			ret = show_collations(cmd[2], 0);
 
 		if (ret == OBJECT_NOT_FOUND) {
 			if (*cmd[2])
@@ -1812,7 +1835,7 @@ static processing_state show_check(const SCHAR* object)
 }
 
 
-static processing_state show_collations(const SCHAR* object)
+static processing_state show_collations(const SCHAR* object, SSHORT sys_flag, const char* msg)
 {
 /**************************************
  *
@@ -1834,11 +1857,20 @@ static processing_state show_collations(const SCHAR* object)
 
 		fb_utils::exact_name(CL.RDB$COLLATION_NAME);
 
-		if (!*object || strcmp(CL.RDB$COLLATION_NAME, object) == 0)
+		if ((!*object &&
+			 (!CL.RDB$SYSTEM_FLAG.NULL && CL.RDB$SYSTEM_FLAG != 0 && sys_flag != 0 ||
+			  !(!CL.RDB$SYSTEM_FLAG.NULL && CL.RDB$SYSTEM_FLAG != 0) && sys_flag != 1)) ||
+			strcmp(CL.RDB$COLLATION_NAME, object) == 0)
 		{
-			found = true;
+			if (!found)
+			{
+				found = true;
 
-			isqlGlob.printf("COLLATION %s", CL.RDB$COLLATION_NAME);
+				if (msg)
+					isqlGlob.printf("%s%s", msg, NEWLINE);
+			}
+
+			isqlGlob.printf("       COLLATION %s", CL.RDB$COLLATION_NAME);
 
 			fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME);
 			isqlGlob.printf(", CHARACTER SET %s", CS.RDB$CHARACTER_SET_NAME);
@@ -1881,6 +1913,8 @@ static processing_state show_collations(const SCHAR* object)
 
 	if (!found)
 		return (OBJECT_NOT_FOUND);
+
+	isqlGlob.printf(NEWLINE);
 
 	return SKIP;
 }
