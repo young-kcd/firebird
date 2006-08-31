@@ -547,7 +547,7 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(false, 43, Y.RDB$FIELD_SOURCE, Y.RDB$RELATION_NAME,
 					   Y.RDB$FIELD_NAME, NULL, NULL);
-		/* msg 43: "field %s is used in relation %s (local name %s) and can not be dropped" */
+		/* msg 43: "Domain %s is used in relation %s (local name %s) and can not be dropped" */
 	END_FOR;
 	if (!DYN_REQUEST(drq_l_fld_src))
 		DYN_REQUEST(drq_l_fld_src) = request;
@@ -597,8 +597,8 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
 	}
 
 	if (!found) {
-		DYN_error_punt(false, 46, NULL, NULL, NULL, NULL, NULL);
-		/* msg 46: "Field not found" */
+		DYN_error_punt(false, 89, NULL, NULL, NULL, NULL, NULL);
+		/* msg 89: "Domain not found" */
 	}
 
 	while (*(*ptr)++ != isc_dyn_end) {
