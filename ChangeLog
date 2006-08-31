@@ -1,3 +1,9 @@
+2006-08-30 18:59  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.151.2.1):
+	
+	Backport fix for CORE-902
+
 2006-08-26 13:25  hvlad
 
 	* firebird2/src/jrd/Optimizer.cpp (1.56.4.2):
