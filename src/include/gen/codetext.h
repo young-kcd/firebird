@@ -736,6 +736,7 @@ static const struct {
 	{"dsql_no_dup_name", 336397210},
 	{"dsql_too_many_values", 336397211},
 	{"dsql_no_array_computed", 336397212},
+	{"dsql_implicit_domain_name", 336397213},
 	{"gsec_cant_open_db", 336723983},
 	{"gsec_switches_error", 336723984},
 	{"gsec_no_op_spec", 336723985},

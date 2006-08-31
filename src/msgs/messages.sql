@@ -3061,5 +3061,6 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('domnotdef', NULL, NULL, NULL, 0, 552, NULL, 'domain %s is not defined', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_feature_not_supported_ods', '', 'ddl.cpp', NULL, 7, 25, NULL, 'Feature not supported on ODS version older than %d.%d', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('', '', 'dyn_del.epp', NULL, 8, 239, NULL, 'Domain %s is used in procedure %s (parameter name %s) and cannot be dropped', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_implicit_domain_name', 'define_domain', 'ddl.cpp', NULL, 13, 925, NULL, 'Implicit domain name %s not allowed in user created domain', NULL, NULL);
 
 COMMIT WORK;

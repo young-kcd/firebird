@@ -88,6 +88,7 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/why_proto.h"
+#include "../common/utils_proto.h"
 
 #ifdef DSQL_DEBUG
 #include "../gpre/prett_proto.h"
@@ -1631,6 +1632,13 @@ static void define_domain(dsql_req* request)
 
 	dsql_nod* element = request->req_ddl_node;
 	dsql_fld* field = (dsql_fld*) element->nod_arg[e_dom_name];
+
+	if (fb_utils::implicit_domain(field->fld_name))
+	{
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
+				  isc_arg_gds, isc_dsql_implicit_domain_name,
+				  isc_arg_string, field->fld_name, 0);
+	}
 
 	request->append_cstring(isc_dyn_def_global_fld, field->fld_name);
 

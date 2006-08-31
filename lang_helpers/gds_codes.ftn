@@ -1480,6 +1480,8 @@ C --
       PARAMETER (GDS__dsql_too_many_values             = 336397211)
       INTEGER*4 GDS__dsql_no_array_computed          
       PARAMETER (GDS__dsql_no_array_computed           = 336397212)
+      INTEGER*4 GDS__dsql_implicit_domain_name       
+      PARAMETER (GDS__dsql_implicit_domain_name        = 336397213)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             
