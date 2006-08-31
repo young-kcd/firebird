@@ -1,3 +1,36 @@
+2006-08-30 08:14  robocop
+
+	* firebird2/src/jrd/: dfw.epp (1.193), met_proto.h (1.56):
+	
+	Misc.
+
+2006-08-30 06:55  robocop
+
+	* firebird2/src/jrd/dyn_def.epp (1.135):
+	
+	Make sure these domain fields remain NULL for the new ODS.
+
+2006-08-30 06:52  robocop
+
+	* firebird2/src/jrd/: dyn.epp (1.90), dyn_del.epp (1.59), met.epp
+	(1.204), par_proto.h (1.18), vio.cpp (1.172):
+	
+	Misc.
+
+2006-08-30 06:50  robocop
+
+	* firebird2/src/burp/backup.epp (1.91):
+	
+	We just need one field to identify a new ODS version.
+
+2006-08-30 04:31  asfernandes
+
+	* firebird2/src/dsql/ddl.cpp (1.185):
+	
+	Fixed crash with CREATE VIEW ... AS SELECT and the number of
+	columns of the SELECT is greated than the number of columns of the
+	VIEW
+
 2006-08-29 23:48  hvlad
 
 	* firebird2/src/jrd/TempSpace.cpp (1.7):
