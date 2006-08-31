@@ -65,7 +65,7 @@ static void execute_dynamic_ddl(DBB, qli_rlb*);
 static int field_length(USHORT, USHORT);
 static void get_database_type(DBB);
 static TEXT *get_query_header(DBB, ISC_QUAD*);
-static void install(DBB);
+static void install(dbb*);
 static qli_syntax* make_node(NOD_T, USHORT);
 static TEXT *make_string(TEXT*, SSHORT);
 static qli_symbol* make_symbol(TEXT *, SSHORT);
@@ -2112,8 +2112,8 @@ static void clone_fields( qli_rel* target, qli_rel* source)
 				AND Y.RDB$FIELD_SOURCE = F.RDB$FIELD_NAME
 				// If SQL made this field, create a new global field for it
 		if (F.RDB$COMPUTED_BLR.NULL &&
-			(strncmp("RDB$", Y.RDB$FIELD_NAME, 4)) &&
-			(!(strncmp("RDB$", F.RDB$FIELD_NAME, 4))))
+			!fb_utils::implicit_domain(Y.RDB$FIELD_NAME) &&
+			fb_utils::implicit_domain(F.RDB$FIELD_NAME))
 		{
 				STUFF(isc_dyn_def_sql_fld);
 				STUFF_STRING(Y.RDB$FIELD_NAME);
@@ -2293,8 +2293,8 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
 		WITH RFR.RDB$RELATION_NAME = source->rel_symbol->sym_string AND
 		Y.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE REDUCED TO Y.RDB$FIELD_NAME
 		if (!Y.RDB$COMPUTED_BLR.NULL ||
-			((strncmp("RDB$", RFR.RDB$FIELD_NAME, 4)) &&
-				(!(strncmp("RDB$", Y.RDB$FIELD_NAME, 4)))))
+			(!fb_utils::implicit_domain(RFR.RDB$FIELD_NAME) &&
+				fb_utils::implicit_domain(Y.RDB$FIELD_NAME)))
 		{
 			continue;
 		}
@@ -2779,7 +2779,7 @@ static TEXT *get_query_header( DBB database, ISC_QUAD* blob_id)
 }
 
 
-static void install( DBB old_dbb)
+static void install( dbb* old_dbb)
 {
 /**************************************
  *
@@ -2799,11 +2799,7 @@ static void install( DBB old_dbb)
 	SSHORT l = old_dbb->dbb_filename_length;
 	DBB new_dbb = (DBB) ALLOCPV(type_dbb, l);
 	new_dbb->dbb_filename_length = l;
-	TEXT* p = new_dbb->dbb_filename;
-	const TEXT* q = old_dbb->dbb_filename;
-	do {
-		*p++ = *q++;
-	} while (--l);
+	memcpy(new_dbb->dbb_filename, old_dbb->dbb_filename, l);
 	DB = new_dbb->dbb_handle = old_dbb->dbb_handle;
 	new_dbb->dbb_capabilities = old_dbb->dbb_capabilities;
 
@@ -2812,7 +2808,7 @@ static void install( DBB old_dbb)
 
 // If a name was given, make up a symbol for the database.
 
-	NAM name = (NAM) old_dbb->dbb_symbol;
+	nam* name = (nam*) old_dbb->dbb_symbol;
 	if (name) {
 		qli_symbol* asymbol = make_symbol(name->nam_string, name->nam_length);
 		new_dbb->dbb_symbol = asymbol;

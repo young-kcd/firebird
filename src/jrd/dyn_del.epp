@@ -837,8 +837,7 @@ void DYN_delete_local_field(Global* gbl,
             DYN_REQUEST(drq_e_l_idx) = request;
 
 		found = false;
-		if (strncmp(IMPLICIT_DOMAIN_PREFIX, IDX.RDB$INDEX_NAME,
-			IMPLICIT_DOMAIN_PREFIX_LEN) != 0)
+		if (!fb_utils::implicit_domain(IDX.RDB$INDEX_NAME))
 		{
 			old_request = request;
 
@@ -859,8 +858,9 @@ void DYN_delete_local_field(Global* gbl,
 		}
 		if (found) {
 			DYN_rundown_request(request, -1);
-			DYN_error_punt(false, 187, col_nm.c_str(), tbl_nm.c_str(), IDX.RDB$INDEX_NAME,
-						   NULL, NULL);
+			DYN_error_punt(false, 187, col_nm.c_str(), tbl_nm.c_str(),
+							fb_utils::exact_name_limit(IDX.RDB$INDEX_NAME, sizeof(IDX.RDB$INDEX_NAME)),
+							NULL, NULL);
 			/* msg 187: "field %s from relation %s is referenced in index %s" */
 		}
 	END_FOR;

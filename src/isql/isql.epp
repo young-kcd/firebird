@@ -1716,9 +1716,7 @@ bool ISQL_is_domain(const TEXT* field_name)
 	FOR FLD IN RDB$FIELDS WITH
 		FLD.RDB$FIELD_NAME EQ field_name
 
-		if (!(strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0 &&
-			  fb_isdigit (FLD.RDB$FIELD_NAME[4]) &&
-			  FLD.RDB$SYSTEM_FLAG != 1))
+		if (!(implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
 		{
 			is_domain = true;
 		}

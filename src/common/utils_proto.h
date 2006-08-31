@@ -40,6 +40,7 @@ namespace fb_utils
 		str.rtrim();
 	}
 	char* exact_name_limit(char* const str, size_t bufsize);
+	bool implicit_domain(const char* domain_name);
 	int name_length(const TEXT* const name);
 	bool readenv(const char* env_name, Firebird::string& env_value);
 	bool readenv(const char* env_name, Firebird::PathName& env_value);

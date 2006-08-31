@@ -2718,8 +2718,7 @@ void DYN_modify_sql_field(Global*					gbl,
 				switch (verb) {
 				case isc_dyn_fld_source:
 					GET_STRING(ptr, dom_fld.dyn_fld_source);
-					if (!strncmp(dom_fld.dyn_fld_source.c_str(),
-						IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN))
+					if (fb_utils::implicit_domain(dom_fld.dyn_fld_source.c_str()))
 					{
 						DYN_error_punt(false, 224, dom_fld.dyn_fld_source.c_str(), orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL);
 						// msg 224: "Cannot use the internal domain %s as new type for field %s".
@@ -2881,8 +2880,8 @@ void DYN_modify_sql_field(Global*					gbl,
 		CMP_release(tdbb, request);
 		request = NULL;
 
-		const bool sourceIsInternalDomain = !strncmp(orig_fld.dyn_fld_source.c_str(),
-			IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN);
+		const bool sourceIsInternalDomain =
+			fb_utils::implicit_domain(orig_fld.dyn_fld_source.c_str());
 					
 		// Now that we have all of the information needed, let's check to see
 		// if the field type can be modifed

@@ -38,6 +38,7 @@
 
 #include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
+#include "../jrd/constants.h"
 
 namespace fb_utils
 {
@@ -103,6 +104,29 @@ char* exact_name_limit(char* const str, size_t bufsize)
 		--p;
 	*(p + 1) = '\0';
 	return str;
+}
+
+
+// *****************************
+// i m p l i c i t _ d o m a i n
+// *****************************
+// Determines if a domain is of the form RDB$<n[...n]>[<spaces>]
+bool implicit_domain(const char* domain_name)
+{
+	if (strncmp(domain_name, IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN))
+		return false;
+		
+	int i = IMPLICIT_DOMAIN_PREFIX_LEN;
+	while (domain_name[i] >= '0' && domain_name[i] <= '9')
+		++i;
+		
+	if (i == IMPLICIT_DOMAIN_PREFIX_LEN) // 'RDB$' alone isn't valid
+		return false;
+		
+	while (domain_name[i] == ' ')
+		++i;
+		
+	return !domain_name[i]; // we reached null term
 }
 
 

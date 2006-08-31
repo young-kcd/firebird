@@ -3533,9 +3533,7 @@ static processing_state show_proc(const SCHAR* procname)
 					 (PRM.RDB$PARAMETER_TYPE ? "OUTPUT" : "INPUT"));
 
 			// Decide if this is a user-created domain
-			if (!((strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0) &&
-				  isdigit (FLD.RDB$FIELD_NAME[4]) &&
-				  FLD.RDB$SYSTEM_FLAG != 1))
+			if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
 			{
 				fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 				isqlGlob.printf("(%s) ", FLD.RDB$FIELD_NAME);
@@ -3573,8 +3571,7 @@ static processing_state show_proc(const SCHAR* procname)
 					isqlGlob.printf(" ");
 					SHOW_print_metadata_text_blob(isqlGlob.Out, &prm_default_source);
 				}
-				else if (strncmp(IMPLICIT_DOMAIN_PREFIX, FLD.RDB$FIELD_NAME, IMPLICIT_DOMAIN_PREFIX_LEN) == 0 &&
-						 !FLD.RDB$DEFAULT_SOURCE.NULL)
+				else if (fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && !FLD.RDB$DEFAULT_SOURCE.NULL)
 				{
 					isqlGlob.printf(" ");
 					SHOW_print_metadata_text_blob(isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
@@ -3769,9 +3766,7 @@ static processing_state show_table(
 		isqlGlob.printf("%-32s", RFR.RDB$FIELD_NAME);
 
 		// Decide if this is a user-created domain
-		if (!((strncmp (FLD.RDB$FIELD_NAME, "RDB$", 4) == 0) &&
-			  isdigit (FLD.RDB$FIELD_NAME[4]) &&
-			  FLD.RDB$SYSTEM_FLAG != 1))
+		if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
 		{
 			fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 			isqlGlob.printf("(%s) ", FLD.RDB$FIELD_NAME);
