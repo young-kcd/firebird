@@ -73,8 +73,8 @@ const char* const CHECK_CNSTRT		= "CHECK";
 const char* const NOT_NULL_CNSTRT	= "NOT NULL";
 
 const char* const REL_SCOPE_PERSISTENT		= "persistent table \"%s\"";
-const char* const REL_SCOPE_GTT_PRESERVE	= "global temporary table \"%s\" of type on commit preserve rows";
-const char* const REL_SCOPE_GTT_DELETE		= "global temporary table \"%s\" of type on commit delete rows";
+const char* const REL_SCOPE_GTT_PRESERVE	= "global temporary table \"%s\" of type ON COMMIT PRESERVE ROWS";
+const char* const REL_SCOPE_GTT_DELETE		= "global temporary table \"%s\" of type ON COMMIT DELETE ROWS";
 
 /* literal strings in rdb$ref_constraints to be used to identify
    the cascade actions for referential constraints. Used
