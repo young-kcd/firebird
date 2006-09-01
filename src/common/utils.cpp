@@ -113,7 +113,7 @@ char* exact_name_limit(char* const str, size_t bufsize)
 // Determines if a domain is of the form RDB$<n[...n]>[<spaces>]
 bool implicit_domain(const char* domain_name)
 {
-	if (strncmp(domain_name, IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN))
+	if (strncmp(domain_name, IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN) != 0)
 		return false;
 		
 	int i = IMPLICIT_DOMAIN_PREFIX_LEN;
