@@ -1,3 +1,72 @@
+2006-09-01 03:40  asfernandes
+
+	* firebird2/src/jrd/met.epp (1.206):
+	
+	Correction
+
+2006-09-01 03:27  asfernandes
+
+	* firebird2/src/: common/utils.cpp (1.18), jrd/dyn_del.epp (1.62),
+	msgs/facilities.sql (1.74):
+	
+	Misc
+
+2006-08-31 20:16  arnobrinkman
+
+	* firebird2/src/jrd/opt.cpp (1.276):
+	
+	Fix bug CORE-897
+
+2006-08-31 18:52  asfernandes
+
+	* firebird2/src/: isql/isql.h (1.60), isql/show.epp (1.104),
+	msgs/facilities.sql (1.73), msgs/messages.sql (1.87):
+	
+	Extend SHOW SYSTEM to accept parameters TABLES, FUNCTIONS and
+	COLLATIONS
+
+2006-08-31 11:09  robocop
+
+	* firebird2/src/jrd/constants.h (1.30):
+	
+	Make these messages clear by uppercasing the part that corresponds
+	to the SQL syntax. Anyway, these msgs shouldn't be there; they
+	should be in the messages db for localization instead!
+
+2006-08-31 11:06  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.39),
+	lang_helpers/gds_codes.pas (1.39), src/dsql/ddl.cpp (1.186),
+	src/include/gen/codetext.h (1.47), src/include/gen/iberror.h
+	(1.48), src/include/gen/msgs.h (1.62), src/include/gen/rdb_codes.h
+	(1.45), src/include/gen/sql_code.h (1.50), src/msgs/facilities.sql
+	(1.72), src/msgs/messages.sql (1.86), src/msgs/system_errors.sql
+	(1.37):
+	
+	Prevent users from creating explicit domains that resemble implicit
+	domains because this trick confuses our internal checks: SQL>
+	create domain rdb$1 int; Statement failed, SQLCODE = -637 Dynamic
+	SQL Error -SQL error code = -637 -Implicit domain name RDB$1 not
+	allowed in user created domain
+
+2006-08-31 10:24  robocop
+
+	* firebird2/src/: jrd/dyn_del.epp (1.61), msgs/history.sql (1.38),
+	msgs/messages.sql (1.85), msgs/facilities.sql (1.71):
+	
+	Fix two domain-related deletion messages; one of the fixes was
+	taken from Bill Oliver's commit.
+
+2006-08-31 10:01  robocop
+
+	* firebird2/src/: common/utils.cpp (1.17), common/utils_proto.h
+	(1.12), isql/extract.epp (1.75), isql/isql.epp (1.198),
+	isql/show.epp (1.103), jrd/dyn_del.epp (1.60), jrd/dyn_mod.epp
+	(1.79), jrd/met.epp (1.205), qli/meta.epp (1.61):
+	
+	Centralize detection of those pesky implicit domains.  There may be
+	more cases that can use the new function.
+
 2006-08-30 08:14  robocop
 
 	* firebird2/src/jrd/: dfw.epp (1.193), met_proto.h (1.56):
