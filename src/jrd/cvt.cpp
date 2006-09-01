@@ -2403,54 +2403,54 @@ static void string_to_datetime(
  *
  **************************************/
 
-/* Values inside of description
-     > 0 is number of digits 
-       0 means missing 
-     ENGLISH_MONTH for the presence of an English month name
-     SPECIAL       for a special date verb */
-#define		ENGLISH_MONTH	-1
-#define		SPECIAL		-2
-	USHORT position_year = 0;
-	USHORT position_month = 1;
-	USHORT position_day = 2;
+	// Values inside of description
+	// > 0 is number of digits
+	//   0 means missing
+	// ENGLISH_MONTH for the presence of an English month name
+	// SPECIAL       for a special date verb
+	const int ENGLISH_MONTH	= -1;
+	const int SPECIAL		= -2; // CVC: I see it set, but never tested.
+
+	unsigned int position_year = 0;
+	unsigned int position_month = 1;
+	unsigned int position_day = 2;
 	bool have_english_month = false;
 	bool dot_separator_seen = false;
-	TEXT buffer[100];			/* arbitrarily large */
+	TEXT buffer[100];			// arbitrarily large
 
-	const char* string;
+	const char* p = 0;
 	const USHORT length =
-		CVT_make_string(desc, ttype_ascii, &string,
-						(vary*) buffer, sizeof(buffer), err);
+		CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
 						
-	const char* p = string;
 	const char* const end = p + length;
 
 	USHORT n, components[7];
-	SSHORT description[7];
+	int description[7];
 	memset(components, 0, sizeof(components));
 	memset(description, 0, sizeof(description));
 
-/* Parse components */
-/* The 7 components are Year, Month, Day, Hours, Minutes, Seconds, Thou */
-/* The first 3 can be in any order */
+	// Parse components
+	// The 7 components are Year, Month, Day, Hours, Minutes, Seconds, Thou
+	// The first 3 can be in any order
 
 	const int start_component = (expect_type == expect_sql_time) ? 3 : 0;
 	int i;
 	for (i = start_component; i < 7; i++) 
 	{
 
-		/* Skip leading blanks.  If we run out of characters, we're done
-		   with parse.  */
+		// Skip leading blanks.  If we run out of characters, we're done
+		// with parse.
 
 		while (p < end && (*p == ' ' || *p == '\t'))
 			p++;
 		if (p == end)
 			break;
 
-		/* Handle digit or character strings */
+		// Handle digit or character strings
 
 		TEXT c = UPPER7(*p);
-		if (DIGIT(c)) {
+		if (DIGIT(c))
+		{
 			USHORT precision = 0;
 			n = 0;
 			while (p < end && DIGIT(*p)) {
@@ -2459,7 +2459,8 @@ static void string_to_datetime(
 			}
 			description[i] = precision;
 		}
-		else if (LETTER7(c) && !have_english_month) {
+		else if (LETTER7(c) && !have_english_month)
+		{
 			TEXT temp[sizeof(YESTERDAY) + 1];
 
 			TEXT* t = temp;
@@ -2472,7 +2473,7 @@ static void string_to_datetime(
 			}
 			*t = 0;
 
-			/* Insist on at least 3 characters for month names */
+			// Insist on at least 3 characters for month names
 			if (t - temp < 3) {
 				conversion_error(desc, err);
 				return;
@@ -2480,7 +2481,7 @@ static void string_to_datetime(
 
 			const TEXT* const* month_ptr = FB_LONG_MONTHS_UPPER;
 			while (true) {
-				/* Month names are only allowed in first 2 positions */
+				// Month names are only allowed in first 2 positions
 				if (*month_ptr && i < 2) {
 					t = temp;
 					const TEXT* m = *month_ptr++;
@@ -2492,8 +2493,8 @@ static void string_to_datetime(
 						break;
 				}
 				else {
-					/* it's not a month name, so it's either a magic word or
-					   a non-date string.  If there are more characters, it's bad */
+					// it's not a month name, so it's either a magic word or
+					// a non-date string.  If there are more characters, it's bad
 
 					description[i] = SPECIAL;
 
@@ -2501,7 +2502,7 @@ static void string_to_datetime(
 						if (*p != ' ' && *p != '\t' && *p != 0)
 							conversion_error(desc, err);
 
-					/* fetch the current time */
+					// fetch the current datetime
 					*date = Firebird::TimeStamp().value();
 
 					if (strcmp(temp, NOW) == 0)
@@ -2530,8 +2531,9 @@ static void string_to_datetime(
 			description[i] = ENGLISH_MONTH;
 			have_english_month = true;
 		}
-		else {					/* Not a digit and not a letter - must be punctuation */
-
+		else
+		{
+			// Not a digit and not a letter - must be punctuation
 			conversion_error(desc, err);
 			return;
 		}
@@ -2584,47 +2586,48 @@ static void string_to_datetime(
 	tm times;
 	memset(&times, 0, sizeof(times));
 
-	if (expect_type != expect_sql_time) {
-		/* Figure out what format the user typed the date in */
+	if (expect_type != expect_sql_time)
+	{
+		// Figure out what format the user typed the date in
 
-		/* A 4 digit number to start implies YYYY-MM-DD */
+		// A 4 digit number to start implies YYYY-MM-DD
 		if (description[0] >= 3) {
 			position_year = 0;
 			position_month = 1;
 			position_day = 2;
 		}
 
-		/* An English month to start implies MM-DD-YYYY */
+		// An English month to start implies MM-DD-YYYY
 		else if (description[0] == ENGLISH_MONTH) {
 			position_year = 2;
 			position_month = 0;
 			position_day = 1;
 		}
 
-		/* An English month in the middle implies DD-MM-YYYY */
+		// An English month in the middle implies DD-MM-YYYY
 		else if (description[1] == ENGLISH_MONTH) {
 			position_year = 2;
 			position_month = 1;
 			position_day = 0;
 		}
 
-		/* A period as a separator implies DD.MM.YYYY */
+		// A period as a separator implies DD.MM.YYYY
 		else if (dot_separator_seen) {
 			position_year = 2;
 			position_month = 1;
 			position_day = 0;
 		}
 
-		/* Otherwise assume MM-DD-YYYY */
+		// Otherwise assume MM-DD-YYYY
 		else {
 			position_year = 2;
 			position_month = 0;
 			position_day = 1;
 		}
 
-		/* Forbid years with more than 4 digits */
-		/* Forbid months or days with more than 2 digits */
-		/* Forbid months or days being missing */
+		// Forbid years with more than 4 digits
+		// Forbid months or days with more than 2 digits
+		// Forbid months or days being missing
 		if (description[position_year] > 4 ||
 			description[position_month] > 2
 			|| description[position_month] == 0
@@ -2635,7 +2638,7 @@ static void string_to_datetime(
 			return;
 		}
 
-		/* Slide things into day, month, year form */
+		// Slide things into day, month, year form
 
 		times.tm_year = components[position_year];
 		times.tm_mon = components[position_month];
@@ -2645,13 +2648,13 @@ static void string_to_datetime(
 		tm times2;
 		Firebird::TimeStamp().decode(&times2);
 
-		/* Handle defaulting of year */
+		// Handle defaulting of year
 
 		if (description[position_year] == 0) {
 			times.tm_year = times2.tm_year + 1900;
 		}
 
-		/* Handle conversion of 2-digit years */
+		// Handle conversion of 2-digit years
 
 		else if (description[position_year] <= 2) {
 			if (times.tm_year < (times2.tm_year - 50) % 100)
@@ -2664,17 +2667,16 @@ static void string_to_datetime(
 		times.tm_mon -= 1;
 	}
 	else {
-		/* The date portion isn't needed for time - but to
-		   keep the conversion in/out of isc_time clean lets
-		   intialize it properly anyway */
+		// The date portion isn't needed for time - but to
+		// keep the conversion in/out of isc_time clean lets
+		// initialize it properly anyway
 		times.tm_year = 0;
 		times.tm_mon = 0;
 		times.tm_mday = 1;
 	}
 
-/* Handle time values out of range - note possibility of 60 for
- * seconds value due to LEAP second (Not supported in V4.0).
- */
+	// Handle time values out of range - note possibility of 60 for
+	// seconds value due to LEAP second (Not supported in V4.0).
 	if (i > 2 &&
 		(((times.tm_hour = components[3]) > 23) ||
 		 ((times.tm_min = components[4]) > 59) ||
@@ -2687,8 +2689,8 @@ static void string_to_datetime(
 		conversion_error(desc, err);
 	}
 
-/* convert day/month/year to Julian and validate result
-   This catches things like 29-Feb-1995 (not a leap year) */
+	// convert day/month/year to Julian and validate result
+	// This catches things like 29-Feb-1995 (not a leap year)
 
 	Firebird::TimeStamp ts(true);
 	ts.encode(&times);
@@ -2714,7 +2716,7 @@ static void string_to_datetime(
 
 	*date = ts.value();
 
-/* Convert fraction of seconds */
+	// Convert fraction of seconds
 	while (description[6]++ < -ISC_TIME_SECONDS_PRECISION_SCALE)
 		components[6] *= 10;
 
