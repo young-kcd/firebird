@@ -57,20 +57,20 @@ Record* RecordBuffer::getTempRecord() const
 	return record;
 }
 
-void RecordBuffer::store(const Record* record)
+void RecordBuffer::store(const Record* new_record)
 {
-	fb_assert(record->rec_length == length);
+	fb_assert(new_record->rec_length == length);
 
 	fb_assert(!filled);
 
-	space->write(count * length, (UCHAR*) record->rec_data, length);
+	space->write(count * length, (UCHAR*) new_record->rec_data, length);
 
 	count++;
 }
 
-bool RecordBuffer::fetch(offset_t position, Record* record)
+bool RecordBuffer::fetch(offset_t position, Record* to_record)
 {
-	fb_assert(record->rec_length == length);
+	fb_assert(to_record->rec_length == length);
 
 	filled = true;
 
@@ -79,7 +79,7 @@ bool RecordBuffer::fetch(offset_t position, Record* record)
 		return false;
 	}
 
-	space->read(position * length, record->rec_data, length);
+	space->read(position * length, to_record->rec_data, length);
 
 	return true;
 }

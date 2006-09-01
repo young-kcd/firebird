@@ -1457,7 +1457,7 @@ InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
 }
 
 bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversions, 
-		IndexScratchList* indexScratches, USHORT scope) const
+		IndexScratchList* fromIndexScratches, USHORT scope) const
 {
 /**************************************
  *
@@ -1472,8 +1472,8 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 	// Walk through indexes to calculate selectivity / candidate
 	Firebird::Array<jrd_nod*> matches;
 	int i = 0;
-	for (i = 0; i < indexScratches->getCount(); i++) {
-		IndexScratch& scratch = (*indexScratches)[i];
+	for (i = 0; i < fromIndexScratches->getCount(); i++) {
+		IndexScratch& scratch = (*fromIndexScratches)[i];
 		scratch.scopeCandidate = false;
 		scratch.lowerCount = 0;
 		scratch.upperCount = 0;
@@ -2456,7 +2456,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 }
 
 InversionCandidate* OptimizerRetrieval::matchOnIndexes(
-	IndexScratchList* indexScratches, jrd_nod* boolean, USHORT scope) const
+	IndexScratchList* inputIndexScratches, jrd_nod* boolean, USHORT scope) const
 {
 /**************************************
  *
@@ -2484,8 +2484,8 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 		// Copy information from caller
 		int i = 0;		
-		for (; i < indexScratches->getCount(); i++) {
-			IndexScratch& scratch = (*indexScratches)[i];
+		for (; i < inputIndexScratches->getCount(); i++) {
+			IndexScratch& scratch = (*inputIndexScratches)[i];
 			indexOrScratches.add(scratch);
 		}
 		// We use a scope variable to see on how 
@@ -2511,8 +2511,8 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		indexOrScratches.clear();
 		// Copy information from caller
 		i = 0;		
-		for (; i < indexScratches->getCount(); i++) {
-			IndexScratch& scratch = (*indexScratches)[i];
+		for (; i < inputIndexScratches->getCount(); i++) {
+			IndexScratch& scratch = (*inputIndexScratches)[i];
 			indexOrScratches.add(scratch);
 		}
 		// Clear inversion list
@@ -2570,11 +2570,11 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		inversions.shrink(0);
 
 		InversionCandidate* invCandidate = 
-			matchOnIndexes(indexScratches, boolean->nod_arg[0], scope);
+			matchOnIndexes(inputIndexScratches, boolean->nod_arg[0], scope);
 		if (invCandidate) {
 			inversions.add(invCandidate);
 		}
-		invCandidate = matchOnIndexes(indexScratches, boolean->nod_arg[1], scope);
+		invCandidate = matchOnIndexes(inputIndexScratches, boolean->nod_arg[1], scope);
 		if (invCandidate) {
 			inversions.add(invCandidate);
 		}
@@ -2582,8 +2582,8 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 	}
 
 	// Walk through indexes
-	for (int i = 0; i < indexScratches->getCount(); i++) {
-		IndexScratch& indexScratch = (*indexScratches)[i];
+	for (int i = 0; i < inputIndexScratches->getCount(); i++) {
+		IndexScratch& indexScratch = (*inputIndexScratches)[i];
 		// Try to match the boolean against a index.
 		if (!(indexScratch.idx->idx_runtime_flags & idx_plan_dont_use) ||
 			(indexScratch.idx->idx_runtime_flags & idx_plan_navigate)) 
@@ -3225,13 +3225,13 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 				getStreamInfo(relationship->stream);
 			if (!relationStreamInfo->used) {
 				bool found = false;
-				IndexRelationship** relationships = processList->begin();
+				IndexRelationship** processRelationship = processList->begin();
 				int index;
 				for (index = 0; index < processList->getCount(); index++) {
-					if (relationStreamInfo->stream == relationships[index]->stream) {
+					if (relationStreamInfo->stream == processRelationship[index]->stream) {
 						// If the cost of this relationship is cheaper then remove the
 						// old relationship and add this one.
-						if (cheaperRelationship(relationship, relationships[index])) {
+						if (cheaperRelationship(relationship, processRelationship[index])) {
 							processList->remove(index);
 							break;
 						}

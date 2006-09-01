@@ -4382,7 +4382,7 @@ static int parse_sql_dtype( USHORT* length, USHORT* scale, USHORT* precision,
 			{
 				const bool l = (PAR_match(KW_MINUS)) ? true : false;
 				*scale = parse_ordinal();
-				if (*scale < 0 || *scale > 18 || *scale > logLength)
+				if (*scale > logLength)
 					ERRQ_syntax(510);  // Msg510 "Field scale exceeds allowed range"
 					
 				if (l || *scale > 0) // We need to have it negative in system tables.

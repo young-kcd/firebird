@@ -1449,7 +1449,7 @@ USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 	const USHORT ttype = INTL_INDEX_TO_TEXT(idxType);
 
 	USHORT key_length;
-	if (ttype >= 0 && ttype <= ttype_last_internal)
+	if (ttype <= ttype_last_internal)
 		key_length = iLength;
 	else {
 		TextType* obj = INTL_texttype_lookup(tdbb, ttype);

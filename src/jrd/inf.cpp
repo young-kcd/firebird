@@ -102,7 +102,7 @@ int INF_blob_info(const blb* blob,
  *
  **************************************/
 	SCHAR buffer[128];
-	SSHORT length;
+	USHORT length;
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
@@ -155,7 +155,7 @@ int INF_blob_info(const blb* blob,
 	{
 		SLONG number = info - start_info;
 		memmove(start_info + 7, start_info, number);
-		USHORT length = INF_convert(number, buffer);
+		length = INF_convert(number, buffer);
 		INF_put_item(isc_info_length, length, buffer, start_info, end);
 	}
 
@@ -994,7 +994,7 @@ int INF_request_info(const jrd_req* request,
 	{
 		SLONG number = info - start_info;
 		memmove(start_info + 7, start_info, number);
-		USHORT length = INF_convert(number, buffer);
+		length = INF_convert(number, buffer);
 		INF_put_item(isc_info_length, length, buffer, start_info, end);
 	}
 
@@ -1018,7 +1018,7 @@ int INF_transaction_info(const jrd_tra* transaction,
  *
  **************************************/
 	SCHAR buffer[128];
-	SSHORT length;
+	USHORT length;
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
@@ -1108,7 +1108,7 @@ int INF_transaction_info(const jrd_tra* transaction,
 	{
 		SLONG number = info - start_info;
 		memmove(start_info + 7, start_info, number);
-		USHORT length = INF_convert(number, buffer);
+		length = INF_convert(number, buffer);
 		INF_put_item(isc_info_length, length, buffer, start_info, end);
 	}
 

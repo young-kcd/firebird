@@ -2129,9 +2129,9 @@ void PageManager::delPageSpace(const USHORT pageSpace)
 	size_t pos;
 	if (pageSpaces.find(pageSpace, pos))
 	{
-		PageSpace* delPageSpace = pageSpaces[pos];
+		PageSpace* pageSpaceToDelete = pageSpaces[pos];
 		pageSpaces.remove(pos);
-		delete delPageSpace;
+		delete pageSpaceToDelete;
 	}
 }
 

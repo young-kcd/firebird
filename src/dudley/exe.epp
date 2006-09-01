@@ -223,7 +223,7 @@ void EXE_create_database( DBB dbb)
 		dpb.insertInt(isc_dpb_page_size, page_size);
 	}
 
-	USHORT len;
+	SLONG len;
 
 	if (len = dbb->dbb_chkptlen) {
 		dpb.insertInt(isc_dpb_wal_chkptlen, len);

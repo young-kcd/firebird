@@ -1278,8 +1278,8 @@ ISC_STATUS SVC_query2(Service* service,
 	{
 		SLONG number = 1 + (info - start_info);
 		memmove(start_info + 7, start_info, number);
-		USHORT length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
+		USHORT length2 = INF_convert(number, buffer);
+		INF_put_item(isc_info_length, length2, buffer, start_info, end);
 	}
 
 	if (!(service->svc_flags & SVC_thd_running))

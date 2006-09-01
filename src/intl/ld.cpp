@@ -361,11 +361,11 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 	}
 #define COLLATION(tt_name, cc_id, cs_id, coll_id, symbol, coll_attr)	\
 	{																	\
-		EXTERN_texttype((*lookup_symbol)) = symbol;						\
+		EXTERN_texttype((*coll_lookup_symbol)) = symbol;				\
 																		\
-		if (lookup_symbol && strcmp(texttype_name, tt_name) == 0)		\
+		if (coll_lookup_symbol && strcmp(texttype_name, tt_name) == 0)	\
 		{																\
-			INTL_BOOL ret = lookup_symbol(								\
+			INTL_BOOL ret = coll_lookup_symbol(							\
 				tt, &cs, texttype_name, charset_name,					\
 				(ignore_attributes ? coll_attr : attributes),			\
 				(ignore_attributes ? NULL : specific_attributes),		\

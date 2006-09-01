@@ -4821,8 +4821,6 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 	if (desc.isText() && length > MAX_COLUMN_SIZE)
 		length = MAX_COLUMN_SIZE;
 
-	TextType* textType = INTL_texttype_lookup(tdbb, value->getTextType());
-	CharSet* charSet = textType->getCharSet();
 	ULONG dataLen;
 
 	if (value->isBlob())
@@ -4840,6 +4838,8 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 							reinterpret_cast<bid*>(value->dsc_address));
 
 		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+		TextType* textType = INTL_texttype_lookup(tdbb, value->getTextType());
+		CharSet* charSet = textType->getCharSet();
 		const ULONG totLen = length * charSet->maxBytesPerChar();
 
 		if (charSet->isMultiByte())

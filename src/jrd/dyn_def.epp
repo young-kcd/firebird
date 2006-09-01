@@ -3347,7 +3347,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 			if (rel_type == rel_view) {
 				jrd_req* old_request = request;
-				const SSHORT old_id = id;
+				const SSHORT old_id2 = id;
 				request = CMP_find_request(tdbb, drq_l_view_rels, DYN_REQUESTS);
 				id = drq_l_view_rels;
 
@@ -3396,7 +3396,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 				if (!DYN_REQUEST(drq_l_view_rels))
 					DYN_REQUEST(drq_l_view_rels) = request;
 				request = old_request;
-				id = old_id;
+				id = old_id2;
 			}
 		}
 	END_STORE;

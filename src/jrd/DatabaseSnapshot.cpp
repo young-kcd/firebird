@@ -111,10 +111,10 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool, jrd_tra* t
 
 		// Transaction information
 
-		for (jrd_tra* transaction = attachment->att_transactions;
-			transaction; transaction = transaction->tra_next)
+		for (jrd_tra* transaction_itr = attachment->att_transactions;
+			transaction_itr; transaction_itr = transaction_itr->tra_next)
 		{
-			putTransaction(transaction, tra_buffer);
+			putTransaction(transaction_itr, tra_buffer);
 		}
 
 		// Request information
@@ -356,11 +356,14 @@ void DatabaseSnapshot::putAttachment(Attachment* attachment, RecordBuffer* buffe
 
 	SSHORT state = att_s_idle;
 
-	for (jrd_tra* transaction = attachment->att_transactions;
-		 transaction; transaction = transaction->tra_next)
+	for (jrd_tra* transaction_itr = attachment->att_transactions;
+		 transaction_itr; transaction_itr = transaction_itr->tra_next)
 	{
-		if (transaction->tra_requests)
+		if (transaction_itr->tra_requests)
+		{
 			state = att_s_active;
+			break;
+		}
 	}
 
 	// attachment id
@@ -392,9 +395,9 @@ void DatabaseSnapshot::putAttachment(Attachment* attachment, RecordBuffer* buffe
 }
 
 
-void DatabaseSnapshot::putTransaction(jrd_tra* transaction, RecordBuffer* buffer)
+void DatabaseSnapshot::putTransaction(jrd_tra* new_transaction, RecordBuffer* buffer)
 {
-	fb_assert(transaction && buffer);
+	fb_assert(new_transaction && buffer);
 
 	Record* record = buffer->getTempRecord();
 
@@ -406,39 +409,39 @@ void DatabaseSnapshot::putTransaction(jrd_tra* transaction, RecordBuffer* buffer
 	// SINT64 temp_int64;
 
 	// transaction id
-	putField(record, f_mon_tra_id, &transaction->tra_number);
+	putField(record, f_mon_tra_id, &new_transaction->tra_number);
 	// attachment id
-	putField(record, f_mon_tra_att_id, &transaction->tra_attachment->att_attachment_id);
+	putField(record, f_mon_tra_att_id, &new_transaction->tra_attachment->att_attachment_id);
 	// state
-	temp_short = transaction->tra_requests ? tra_s_active : tra_s_idle;
+	temp_short = new_transaction->tra_requests ? tra_s_active : tra_s_idle;
 	putField(record, f_mon_tra_state, &temp_short);
 	// timestamp
-	putField(record, f_mon_tra_timestamp, &transaction->tra_timestamp.value());
+	putField(record, f_mon_tra_timestamp, &new_transaction->tra_timestamp.value());
 	// top transaction
-	putField(record, f_mon_tra_top, &transaction->tra_top);
+	putField(record, f_mon_tra_top, &new_transaction->tra_top);
 	// oldest transaction
-	putField(record, f_mon_tra_oit, &transaction->tra_oldest);
+	putField(record, f_mon_tra_oit, &new_transaction->tra_oldest);
 	// oldest active transaction
-	putField(record, f_mon_tra_oat, &transaction->tra_oldest_active);
+	putField(record, f_mon_tra_oat, &new_transaction->tra_oldest_active);
 	// isolation mode
-	if (transaction->tra_flags & TRA_degree3)
+	if (new_transaction->tra_flags & TRA_degree3)
 		temp_short = iso_mode_consistency;
-	else if (transaction->tra_flags & TRA_read_committed)
-		temp_short = (transaction->tra_flags &  TRA_rec_version) ?
+	else if (new_transaction->tra_flags & TRA_read_committed)
+		temp_short = (new_transaction->tra_flags &  TRA_rec_version) ?
 			iso_mode_rc_version : iso_mode_rc_no_version;
 	else
 		temp_short = iso_mode_concurrency;
 	putField(record, f_mon_tra_iso_mode, &temp_short);
 	// lock timeout
-	putField(record, f_mon_tra_lock_timeout, &transaction->tra_lock_timeout);
+	putField(record, f_mon_tra_lock_timeout, &new_transaction->tra_lock_timeout);
 	// read only flag
-	temp_short = (transaction->tra_flags & TRA_readonly) ? 1 : 0;
+	temp_short = (new_transaction->tra_flags & TRA_readonly) ? 1 : 0;
 	putField(record, f_mon_tra_read_only, &temp_short);
 	// autocommit flag
-	temp_short = (transaction->tra_flags & TRA_autocommit) ? 1 : 0;
+	temp_short = (new_transaction->tra_flags & TRA_autocommit) ? 1 : 0;
 	putField(record, f_mon_tra_auto_commit, &temp_short);
 	// auto undo flag
-	temp_short = (transaction->tra_flags & TRA_no_auto_undo) ? 0 : 1;
+	temp_short = (new_transaction->tra_flags & TRA_no_auto_undo) ? 0 : 1;
 	putField(record, f_mon_tra_auto_undo, &temp_short);
 
 	buffer->store(record);

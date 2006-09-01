@@ -139,7 +139,7 @@ inline USHORT INTL_TEXT_TYPE(const dsc& desc)
  *	Index type, which is derived from the datatype of the target.
  *
  */
-#define INTL_INDEX_TO_TEXT(idxType) ((SSHORT)((idxType) - idx_offset_intl_range))
+#define INTL_INDEX_TO_TEXT(idxType) ((USHORT)((idxType) - idx_offset_intl_range))
 
 /* Maps a text_type to an index ID */
 #define INTL_TEXT_TO_INDEX(tType)   ((USHORT)((tType)   + idx_offset_intl_range))

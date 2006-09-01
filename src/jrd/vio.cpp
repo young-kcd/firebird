@@ -1206,16 +1206,16 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_collations:
 			{
-				USHORT id;
+				USHORT coll_id;
 
 				EVL_field(0, rpb->rpb_record, f_coll_cs_id, &desc2);
-				id = MOV_get_long(&desc2, 0);
+				coll_id = MOV_get_long(&desc2, 0);
 
 				EVL_field(0, rpb->rpb_record, f_coll_id, &desc2);
-				id = INTL_CS_COLL_TO_TTYPE(id, MOV_get_long(&desc2, 0));
+				coll_id = INTL_CS_COLL_TO_TTYPE(coll_id, MOV_get_long(&desc2, 0));
 
 				EVL_field(0, rpb->rpb_record, f_coll_name, &desc);
-				DFW_post_work(transaction, dfw_delete_collation, &desc, id);
+				DFW_post_work(transaction, dfw_delete_collation, &desc, coll_id);
 				break;
 			}
 
@@ -1266,26 +1266,26 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					DSC desc3;
 					EVL_field(0, rpb->rpb_record, f_idx_name, &desc3);
 
-					SqlIdentifier idx_name;
-					MOV_get_metadata_str(&desc3, idx_name, sizeof(idx_name));
+					SqlIdentifier index_name;
+					MOV_get_metadata_str(&desc3, index_name, sizeof(index_name));
 
 					jrd_rel *partner;
 					index_desc idx;
 
 					if ((BTR_lookup(tdbb, r2, id - 1, &idx, r2->getPages(tdbb)) == FB_SUCCESS) && 
-						(MET_lookup_partner(tdbb, r2, &idx, idx_name)) &&
+						(MET_lookup_partner(tdbb, r2, &idx, index_name)) &&
 						(partner = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
 					{
-						DeferredWork* arg =
+						DeferredWork* arg2 =
 							DFW_post_work_arg(transaction, work, 0, partner->rel_id);
-						arg->dfw_type = dfw_arg_partner_rel_id;
+						arg2->dfw_type = dfw_arg_partner_rel_id;
 					}
 					else 
 					{	// can't find partner relation - impossible ?
 						// add empty argument to let DFW know dropping
 						// index was bound with FK
-						DeferredWork* arg = DFW_post_work_arg(transaction, work, 0, 0);
-						arg->dfw_type = dfw_arg_partner_rel_id;
+						DeferredWork* arg2 = DFW_post_work_arg(transaction, work, 0, 0);
+						arg2->dfw_type = dfw_arg_partner_rel_id;
 					}
 				}
 			}

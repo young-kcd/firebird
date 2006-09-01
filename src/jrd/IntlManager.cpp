@@ -54,8 +54,8 @@ using namespace Firebird;
 
 struct ExternalInfo
 {
-	ExternalInfo(const PathName& moduleName, const string& a_name)
-		: moduleName(moduleName),
+	ExternalInfo(const PathName& a_moduleName, const string& a_name)
+		: moduleName(a_moduleName),
 		  name(a_name)
 	{
 	}

@@ -824,11 +824,11 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 		if (!ISC_check_if_remote(temp_filename, true))
 		{
-			Firebird::PathName database;
-			if (ResolveDatabaseAlias(temp_filename, database))
+			Firebird::PathName database_filename;
+			if (ResolveDatabaseAlias(temp_filename, database_filename))
 			{
-				ISC_expand_filename(database, false);
-				expanded_filename = database;
+				ISC_expand_filename(database_filename, false);
+				expanded_filename = database_filename;
 			}
 			else if (set_path(temp_filename, expanded_filename))
 			{
@@ -1461,11 +1461,11 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		if (!ISC_check_if_remote(temp_filename, true))
 		{
-			Firebird::PathName database;
-			if (ResolveDatabaseAlias(temp_filename, database))
+			Firebird::PathName database_filename;
+			if (ResolveDatabaseAlias(temp_filename, database_filename))
 			{
-				ISC_expand_filename(database, false);
-				expanded_filename = database;
+				ISC_expand_filename(database_filename, false);
+				expanded_filename = database_filename;
 			}
 			else if (set_path(temp_filename, expanded_filename))
 			{
