@@ -1380,7 +1380,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 			if (type == 0 &&
 				(!pr_default_value_null ||
-				 (strncmp(IMPLICIT_DOMAIN_PREFIX, FLD.RDB$FIELD_NAME, IMPLICIT_DOMAIN_PREFIX_LEN) == 0 &&
+				 (fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) &&
 				  !FLD.RDB$DEFAULT_VALUE.NULL)))
 			{
 				defaults++;
