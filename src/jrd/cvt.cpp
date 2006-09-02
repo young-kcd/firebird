@@ -2418,7 +2418,7 @@ static void string_to_datetime(
 	bool dot_separator_seen = false;
 	TEXT buffer[100];			// arbitrarily large
 
-	const char* p = 0;
+	const char* p = NULL;
 	const USHORT length =
 		CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
 						
