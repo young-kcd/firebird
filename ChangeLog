@@ -1,3 +1,33 @@
+2006-09-01 12:51  aafemt
+
+	* firebird2/src/: dudley/exe.epp (1.61), intl/ld.cpp (1.25),
+	jrd/DatabaseSnapshot.cpp (1.11), jrd/IntlManager.cpp (1.11),
+	jrd/Optimizer.cpp (1.70), jrd/RecordBuffer.cpp (1.6),
+	jrd/dyn_def.epp (1.136), jrd/evl.cpp (1.196), jrd/inf.cpp (1.66),
+	jrd/intl.cpp (1.89), jrd/intl.h (1.15), jrd/met.epp (1.207),
+	jrd/pag.cpp (1.113), jrd/svc.cpp (1.173), jrd/vio.cpp (1.173),
+	jrd/why.cpp (1.113), qli/parse.cpp (1.41):
+	
+	Warnings
+
+2006-09-01 12:50  aafemt
+
+	* firebird2/builds/win32/make_all.bat (1.42):
+	
+	Add consts_pub.h to public ibase.h
+
+2006-09-01 10:40  robocop
+
+	* firebird2/src/jrd/cvt.cpp (1.77):
+	
+	Misc.
+
+2006-09-01 04:42  robocop
+
+	* firebird2/src/dsql/metd.epp (1.91):
+	
+	Centralize detection of those pesky implicit domains.
+
 2006-09-01 03:40  asfernandes
 
 	* firebird2/src/jrd/met.epp (1.206):
