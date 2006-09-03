@@ -517,9 +517,11 @@ static LexerState lex;
 %token GLOBAL 
 %token INSENSITIVE
 %token LIST
+%token MATCHING
 %token PAD
 %token PRESERVE
 %token RECURSIVE 
+%token REPLACE
 %token SENSITIVE
 %token SPACE
 %token TEMPORARY 
@@ -563,6 +565,7 @@ statement	: alter
 		| comment
 		| commit
 		| create
+		| create_or_alter
 		| declare
 		| delete
 		| drop
@@ -891,7 +894,7 @@ recreate_clause	: PROCEDURE rprocedure_clause
 			{ $$ = $2; }
 		;
 
-replace	: CREATE OR ALTER replace_clause
+create_or_alter	: CREATE OR ALTER replace_clause
 			{ $$ = $4; }
 		;
 
@@ -1615,6 +1618,7 @@ stmt_start_column :
 		
 simple_proc_statement	: assignment
 		| insert
+		| replace
 		| update
 		| delete
 		| singleton_select
@@ -3423,13 +3427,34 @@ update		: update_searched
 update_searched	: UPDATE table_name SET assignments where_clause
 		plan_clause order_clause rows_clause
 			{ $$ = make_node (nod_update, (int) e_upd_count,
-				$2, make_list ($4), $5, $6, $7, $8, NULL, NULL); }
+				$2, make_list ($4), $5, $6, $7, $8, NULL, NULL, NULL); }
 		  	;
 
 update_positioned : UPDATE table_name SET assignments cursor_clause
 			{ $$ = make_node (nod_update, (int) e_upd_count,
-				$2, make_list ($4), NULL, NULL, NULL, NULL, $5, NULL); }
+				$2, make_list ($4), NULL, NULL, NULL, NULL, $5, NULL, NULL); }
 		;
+
+
+/* REPLACE statement */
+
+replace
+	:	REPLACE INTO simple_table_name ins_column_parens_opt
+			VALUES '(' value_list ')'
+			replace_matching_opt
+			returning_clause
+		{
+			$$ = make_node (nod_replace, (int) e_rep_count,
+				$3, make_list ($4), make_list ($7), $9, $10);
+		}
+	;
+
+replace_matching_opt
+	:	MATCHING ins_column_parens
+		{ $$ = $2; }
+	|
+		{ $$ = NULL; }
+	;
 
 
 returning_clause	: RETURNING value_list
@@ -4377,8 +4402,10 @@ non_reserved_word :
 	| TIMEOUT
 	| ACCENT				/* added in FB 2.1 */
 	| LIST
+	| MATCHING
 	| PAD
 	| PRESERVE
+	| REPLACE
 	| SPACE
 	| TEMPORARY
 	;
@@ -4610,12 +4637,12 @@ static dsql_nod* make_parameter (void)
  **************************************/
 	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), 1) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), e_par_count) dsql_nod;
 	node->nod_type = nod_parameter;
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
-	node->nod_count = 1;
-	node->nod_arg[0] = (dsql_nod*)(IPTR) lex.param_number++;
+	node->nod_count = e_par_count;
+	node->nod_arg[e_par_index] = (dsql_nod*)(IPTR) lex.param_number++;
 
 	return node;
 }

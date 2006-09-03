@@ -3063,5 +3063,9 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('', '', 'dyn_del.epp', NULL, 8, 239, NULL, 'Domain %s is used in procedure %s (parameter name %s) and cannot be dropped', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('dsql_implicit_domain_name', 'define_domain', 'ddl.cpp', NULL, 13, 925, NULL, 'Implicit domain name %s not allowed in user created domain', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('MSG_COLLATIONS', 'SHOW_metadata', 'show.epp', NULL, 17, 150, NULL, 'Collations:', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('primary_key_required', 'pass1_replace', 'pass1.cpp', NULL, 7, 26, NULL, 'Primary key required on table %s', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('replace_doesnt_match_pk', 'pass1_replace', 'pass1.cpp', NULL, 7, 27, NULL, 'REPLACE field list does not match primary key of table %s', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('replace_doesnt_match_matching', 'pass1_replace', 'pass1.cpp', NULL, 7, 28, NULL, 'REPLACE field list does not match MATCHING clause', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('replace_with_complex_view', 'pass1_replace', 'pass1.cpp', NULL, 7, 29, NULL, 'REPLACE without MATCHING could not be used with views based on more than one table', NULL, NULL);
 
 COMMIT WORK;

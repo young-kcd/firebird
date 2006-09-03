@@ -26,7 +26,12 @@
 #ifndef DSQL_METD_PROTO_H
 #define DSQL_METD_PROTO_H
 
+#include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/fb_pair.h"
+
+typedef Firebird::Pair<Firebird::Full<Firebird::MetaName, Firebird::MetaName> > MetaNamePair;
+typedef Firebird::GenericMap<MetaNamePair> MetaNamePairMap;
 
 // forward declarations
 class dsql_req;
@@ -52,6 +57,9 @@ dsql_prc* METD_get_procedure(dsql_req*, const dsql_str*);
 dsql_rel* METD_get_relation(dsql_req*, const dsql_str*);
 dsql_str*      METD_get_trigger_relation(dsql_req*, const dsql_str*, USHORT*);
 bool   METD_get_type(dsql_req*, const dsql_str*, char*, SSHORT*);
+dsql_rel* METD_get_view_base(dsql_req*   request,
+							 const char* view_name,	// UTF-8
+							 MetaNamePairMap& fields);
 dsql_rel* METD_get_view_relation(dsql_req*   request,
 								const char* view_name,         // UTF-8
 								const char* relation_or_alias, // UTF-8

@@ -2641,7 +2641,8 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		break;
 
 	case jrd_req::req_return:
-		if (impure->sta_state) {
+		if (impure->sta_state == 1)
+		{
 			impure->sta_state = 0;
 			Record* org_record = org_rpb->rpb_record;
 			const Record* new_record = new_rpb->rpb_record;
@@ -2651,97 +2652,106 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			return node->nod_arg[e_mod_statement];
 		}
 
-		/* CVC: This call made here to clear the record in each NULL field and
-				varchar field whose tail may contain garbage. */
-		cleanup_rpb(tdbb, new_rpb);
-
-		if (transaction != dbb->dbb_sys_trans)
-			++transaction->tra_save_point->sav_verb_count;
-
-		PreModifyEraseTriggers(tdbb, &relation->rel_pre_modify,
-							   which_trig, org_rpb, new_rpb->rpb_record, 
-							   jrd_req::req_trigger_update);
-
-		if (node->nod_arg[e_mod_validate]) {
-			validate(tdbb, node->nod_arg[e_mod_validate]);
-		}
-
-		if (relation->rel_file)
+		if (impure->sta_state == 0)
 		{
-			EXT_modify(org_rpb, new_rpb, transaction);
-		}
-		else if (relation->isVirtual()) {
-			VirtualTable::modify(org_rpb, new_rpb);
-		}
-		else if (!relation->rel_view_rse)
-		{
-			USHORT bad_index;
-			jrd_rel* bad_relation = 0;
+			/* CVC: This call made here to clear the record in each NULL field and
+					varchar field whose tail may contain garbage. */
+			cleanup_rpb(tdbb, new_rpb);
 
-			VIO_modify(tdbb, org_rpb, new_rpb, transaction);
-			const IDX_E error_code =
-				IDX_modify(tdbb, org_rpb, new_rpb, transaction,
-						   &bad_relation, &bad_index);
+			if (transaction != dbb->dbb_sys_trans)
+				++transaction->tra_save_point->sav_verb_count;
 
-			if (error_code) {
-				VIO_bump_count(tdbb, DBB_update_count, bad_relation, true);
-				ERR_duplicate_error(error_code, bad_relation, bad_index);
+			PreModifyEraseTriggers(tdbb, &relation->rel_pre_modify,
+								which_trig, org_rpb, new_rpb->rpb_record, 
+								jrd_req::req_trigger_update);
+
+			if (node->nod_arg[e_mod_validate]) {
+				validate(tdbb, node->nod_arg[e_mod_validate]);
 			}
-		}
 
-		jrd_req* trigger;
-		if (relation->rel_post_modify &&
-			which_trig != PRE_TRIG &&
-			(trigger = execute_triggers(tdbb, &relation->rel_post_modify,
-										org_rpb->rpb_record, new_rpb->rpb_record,
-										jrd_req::req_trigger_update)))
-		{
-			VIO_bump_count(tdbb, DBB_update_count, relation, true);
-			trigger_failure(tdbb, trigger);
-		}
+			if (relation->rel_file)
+			{
+				EXT_modify(org_rpb, new_rpb, transaction);
+			}
+			else if (relation->isVirtual()) {
+				VirtualTable::modify(org_rpb, new_rpb);
+			}
+			else if (!relation->rel_view_rse)
+			{
+				USHORT bad_index;
+				jrd_rel* bad_relation = 0;
 
-		/* now call IDX_modify_check_constrints after all post modify triggers 
-		   have fired.  This is required for cascading referential integrity, 
-		   which can be implemented as post_erase triggers */
+				VIO_modify(tdbb, org_rpb, new_rpb, transaction);
+				const IDX_E error_code =
+					IDX_modify(tdbb, org_rpb, new_rpb, transaction,
+							&bad_relation, &bad_index);
 
-		if (!relation->rel_file &&
-			!relation->rel_view_rse &&
-			!relation->isVirtual())
-		{
-			USHORT bad_index;
-			jrd_rel* bad_relation = 0;
+				if (error_code) {
+					VIO_bump_count(tdbb, DBB_update_count, bad_relation, true);
+					ERR_duplicate_error(error_code, bad_relation, bad_index);
+				}
+			}
 
-			const IDX_E error_code =
-				IDX_modify_check_constraints(tdbb, org_rpb, new_rpb, transaction,
-											 &bad_relation, &bad_index);
-
-			if (error_code) {
+			jrd_req* trigger;
+			if (relation->rel_post_modify &&
+				which_trig != PRE_TRIG &&
+				(trigger = execute_triggers(tdbb, &relation->rel_post_modify,
+											org_rpb->rpb_record, new_rpb->rpb_record,
+											jrd_req::req_trigger_update)))
+			{
 				VIO_bump_count(tdbb, DBB_update_count, relation, true);
-				ERR_duplicate_error(error_code, bad_relation, bad_index);
+				trigger_failure(tdbb, trigger);
 			}
-		}
 
-		if (transaction != dbb->dbb_sys_trans) {
-			--transaction->tra_save_point->sav_verb_count;
-		}
+			/* now call IDX_modify_check_constrints after all post modify triggers 
+			have fired.  This is required for cascading referential integrity, 
+			which can be implemented as post_erase triggers */
 
-		/* CVC: Increment the counter only if we called VIO/EXT_modify() and
-				we were successful. */
-		if (!(request->req_view_flags & req_first_modify_return)) {
-			request->req_view_flags |= req_first_modify_return;
-			if (relation->rel_view_rse) {
-				request->req_top_view_modify = relation;
+			if (!relation->rel_file &&
+				!relation->rel_view_rse &&
+				!relation->isVirtual())
+			{
+				USHORT bad_index;
+				jrd_rel* bad_relation = 0;
+
+				const IDX_E error_code =
+					IDX_modify_check_constraints(tdbb, org_rpb, new_rpb, transaction,
+												&bad_relation, &bad_index);
+
+				if (error_code) {
+					VIO_bump_count(tdbb, DBB_update_count, relation, true);
+					ERR_duplicate_error(error_code, bad_relation, bad_index);
+				}
 			}
-		}
-		if (relation == request->req_top_view_modify) {
-			if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
+
+			if (transaction != dbb->dbb_sys_trans) {
+				--transaction->tra_save_point->sav_verb_count;
+			}
+
+			/* CVC: Increment the counter only if we called VIO/EXT_modify() and
+					we were successful. */
+			if (!(request->req_view_flags & req_first_modify_return)) {
+				request->req_view_flags |= req_first_modify_return;
+				if (relation->rel_view_rse) {
+					request->req_top_view_modify = relation;
+				}
+			}
+			if (relation == request->req_top_view_modify) {
+				if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
+					request->req_records_updated++;
+					request->req_records_affected.bumpModified(true);
+				}
+			}
+			else if (relation->rel_file || !relation->rel_view_rse) {
 				request->req_records_updated++;
 				request->req_records_affected.bumpModified(true);
 			}
-		}
-		else if (relation->rel_file || !relation->rel_view_rse) {
-			request->req_records_updated++;
-			request->req_records_affected.bumpModified(true);
+
+			if (node->nod_arg[e_mod_statement2]) {
+				impure->sta_state = 2;
+				request->req_operation = jrd_req::req_evaluate;
+				return node->nod_arg[e_mod_statement2];
+			}
 		}
 
 		if (which_trig != PRE_TRIG) {

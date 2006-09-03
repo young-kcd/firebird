@@ -197,9 +197,13 @@ static const struct
 	{"current_time2", byte},
 	{"agg_list", two}, // 170
 	{"agg_list_distinct", two},
+	/***
 	// These verbs were added in 6.0, primarily to support 64-bit integers, now obsolete
 	{"gen_id2", gen_id}, 
 	{"set_generator2", gen_id},
+	***/
+	{"modify2", modify2},
+	{NULL, NULL},
 	// New BLR in FB1
 	{"current_role", zero},
 	{"skip", one},

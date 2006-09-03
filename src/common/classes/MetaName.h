@@ -71,6 +71,8 @@ public:
 
 	size_t length() const { return count; }
 	const char* c_str() const { return data; }
+	bool isEmpty() const { return count == 0; }
+	bool hasData() const { return count != 0; }
 
 	int compare(const char* s, size_t l) const;
 	int compare(const char* s) const { return compare(s, s ? strlen(s) : 0); }

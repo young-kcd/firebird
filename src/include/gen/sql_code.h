@@ -625,6 +625,10 @@ static const struct {
 	{336003095, -502}, /*  23 dsql_cursor_not_open             */
 	{336003096, -607}, /*  24 dsql_type_not_supp_ext_tab       */
 	{336003097, -804}, /*  25 dsql_feature_not_supported_ods   */
+	{336003098, -660}, /*  26 primary_key_required             */
+	{336003099, -313}, /*  27 replace_doesnt_match_pk          */
+	{336003100, -313}, /*  28 replace_doesnt_match_matching    */
+	{336003101, -817}, /*  29 replace_with_complex_view        */
 	{336068796, -901}, /* 188 dyn_role_does_not_exist          */
 	{336068797, -901}, /* 189 dyn_no_grant_admin_opt           */
 	{336068798, -901}, /* 190 dyn_user_not_role_member         */

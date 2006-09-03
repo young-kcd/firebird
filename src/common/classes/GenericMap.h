@@ -77,6 +77,11 @@ public:
 		}
 	}
 
+	// Clear the map
+	void clear() {
+		tree.clear();
+	}
+
 	// Returns true if value existed
 	bool remove(const KeyType& key) {
 

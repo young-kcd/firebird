@@ -109,6 +109,8 @@ enum irq_type_t {
     irq_dimensions,		//!< lookup a field's dimensions
     irq_primary_key,	//!< lookup a primary key
     irq_view,			//!< lookup a view's base relations
+    irq_view_base,		//!< lookup a view's base relations
+    irq_view_base_flds,	//!< lookup a view's base fields
     irq_function,		//!< lookup a user defined function
     irq_func_return,	//!< lookup a function's return argument
     irq_procedure,		//!< lookup a stored procedure

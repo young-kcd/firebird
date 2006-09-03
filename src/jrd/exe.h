@@ -284,13 +284,14 @@ const int e_sav_name		= 1;
 const int e_sav_length		= 2;
 
 const int e_mod_statement	= 0;
-const int e_mod_sub_mod		= 1;
-const int e_mod_validate	= 2;
-const int e_mod_map_view	= 3;
-const int e_mod_org_stream	= 4;
-const int e_mod_new_stream	= 5;
-const int e_mod_rsb			= 6;
-const int e_mod_length		= 7;
+const int e_mod_statement2	= 1;
+const int e_mod_sub_mod		= 2;
+const int e_mod_validate	= 3;
+const int e_mod_map_view	= 4;
+const int e_mod_org_stream	= 5;
+const int e_mod_new_stream	= 6;
+const int e_mod_rsb			= 7;
+const int e_mod_length		= 8;
 
 const int e_send_statement	= 0;
 const int e_send_message	= 1;

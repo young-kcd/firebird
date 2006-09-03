@@ -346,7 +346,8 @@ enum nod_t
 	nod_lock_timeout,
 	nod_agg_list,
 	nod_src_info,
-	nod_with
+	nod_with,
+	nod_replace
 };
 
 typedef nod_t NOD_TYPE;
@@ -538,7 +539,8 @@ enum node_args {
 	e_rows_length,
 	e_rows_count,
 
-	e_par_parameter = 0,	// nod_parameter
+	e_par_index = 0,		// nod_parameter
+	e_par_parameter,
 	e_par_count,
 
 	e_flp_select = 0,		// nod_for_select
@@ -610,6 +612,13 @@ enum node_args {
 	e_sto_return,
 	e_sto_count,
 
+	e_rep_relation = 0,		// nod_replace
+	e_rep_fields,
+	e_rep_values,
+	e_rep_matching,
+	e_rep_return,
+	e_rep_count,
+
 	e_del_relation = 0,		// nod_delete
 	e_del_boolean,
 	e_del_plan,
@@ -649,6 +658,7 @@ enum node_args {
 	e_upd_rows,
 	e_upd_cursor,
 	e_upd_return,
+	e_upd_rse_flags,
 	e_upd_count,
 
 	e_map_context = 0,		// nod_map

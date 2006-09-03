@@ -2546,16 +2546,6 @@ static void gen_sort( dsql_req* request, dsql_nod* list)
  **/
 static void gen_statement(dsql_req* request, const dsql_nod* node)
 {
-	const dsql_msg* message = NULL;
-
-	if (request->req_type == REQ_EXEC_PROCEDURE) {
-		if ( (message = request->req_receive) ) {
-			stuff(request, blr_begin);
-			stuff(request, blr_send);
-			stuff(request, message->msg_number);
-		}
-	}
-
 	dsql_nod* rse = NULL;
 
 	switch (node->nod_type) {
@@ -2575,6 +2565,16 @@ static void gen_statement(dsql_req* request, const dsql_nod* node)
 	if (rse) {
 		stuff(request, blr_for);
 		GEN_expr(request, rse);
+	}
+
+	const dsql_msg* message = NULL;
+
+	if (request->req_type == REQ_EXEC_PROCEDURE) {
+		if ( (message = request->req_receive) ) {
+			stuff(request, blr_begin);
+			stuff(request, blr_send);
+			stuff(request, message->msg_number);
+		}
 	}
 
 	dsql_nod* temp;

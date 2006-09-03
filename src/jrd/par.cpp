@@ -103,7 +103,7 @@ static jrd_nod* par_function(thread_db*, CompilerScratch*);
 static jrd_nod* par_literal(thread_db*, CompilerScratch*);
 static jrd_nod* par_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_message(thread_db*, CompilerScratch*);
-static jrd_nod* par_modify(thread_db*, CompilerScratch*);
+static jrd_nod* par_modify(thread_db*, CompilerScratch*, SSHORT);
 static USHORT par_name(CompilerScratch*, Firebird::MetaName&);
 static jrd_nod* par_plan(thread_db*, CompilerScratch*);
 static jrd_nod* par_procedure(thread_db*, CompilerScratch*, SSHORT);
@@ -1547,7 +1547,7 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb)
+static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_operator)
 {
 /**************************************
  *
@@ -1594,6 +1594,9 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb)
 	node->nod_arg[e_mod_org_stream] = (jrd_nod*) (IPTR) org_stream;
 	node->nod_arg[e_mod_new_stream] = (jrd_nod*) (IPTR) new_stream;
 	node->nod_arg[e_mod_statement] = parse(tdbb, csb, STATEMENT);
+
+	if (blr_operator == blr_modify2)
+		node->nod_arg[e_mod_statement2] = parse(tdbb, csb, STATEMENT);
 
 	return node;
 }
@@ -2624,7 +2627,8 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		break;
 	
 	case blr_modify:
-		node = par_modify(tdbb, csb);
+	case blr_modify2:
+		node = par_modify(tdbb, csb, blr_operator);
 		break;
 
 	case blr_exec_proc:

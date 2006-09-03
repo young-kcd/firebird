@@ -3,7 +3,7 @@ RETURNING clause
 ----------------
 
   Function:
-    Allow to return the column values actually stored in the table as a result of the INSERT statement.
+    Allow to return the column values actually stored in the table as a result of the INSERT and REPLACE statements.
     The most common usage is to retrieve the value of the primary key generated inside a BEFORE-trigger.
 
   Author:
@@ -11,6 +11,7 @@ RETURNING clause
 
   Syntax rules:
     INSERT INTO ... VALUES (...) [RETURNING <column_list> [INTO <variable_list>]]
+    REPLACE INTO ... VALUES (...) ... [RETURNING <column_list> [INTO <variable_list>]]
 
   Scope:
     DSQL, PSQL

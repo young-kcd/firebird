@@ -637,6 +637,10 @@ const
 	gds_dsql_cursor_not_open             = 336003095;
 	gds_dsql_type_not_supp_ext_tab       = 336003096;
 	gds_dsql_feature_not_supported_ods   = 336003097;
+	gds_primary_key_required             = 336003098;
+	gds_replace_doesnt_match_pk          = 336003099;
+	gds_replace_doesnt_match_matching    = 336003100;
+	gds_replace_with_complex_view        = 336003101;
 	gds_dyn_role_does_not_exist          = 336068796;
 	gds_dyn_no_grant_admin_opt           = 336068797;
 	gds_dyn_user_not_role_member         = 336068798;

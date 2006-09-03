@@ -1776,6 +1776,130 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT*
 }
 
 
+dsql_rel* METD_get_view_base(dsql_req* request,
+							 const char* view_name,	// UTF-8
+							 MetaNamePairMap& fields)
+{
+/**************************************
+ *
+ *	M E T D _ g e t _ v i e w _ b a s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return the base table of a view or NULL if there
+ *  is more than one.
+ *  If there is only one base, put in fields a map of
+ *  top view field name / bottom base field name.
+ *
+ **************************************/
+
+	dsql_rel* relation = NULL;
+
+	ISC_STATUS_ARRAY isc_status = {0};
+	dsql_dbb* dbb = request->req_dbb;
+	isc_db_handle DB = dbb->dbb_database_handle;
+	bool first = true;
+	bool cont = true;
+	MetaNamePairMap aux;
+
+	fields.clear();
+
+	while (cont)
+	{
+		THREAD_EXIT();
+
+		FOR(REQUEST_HANDLE dbb->dbb_requests[irq_view_base]
+			TRANSACTION_HANDLE request->req_trans)
+			X IN RDB$VIEW_RELATIONS
+			WITH X.RDB$VIEW_NAME EQ view_name
+
+			// return NULL if there is more than one context
+			if (X.RDB$VIEW_CONTEXT != 1)
+			{
+				relation = NULL;
+				cont = false;
+				break;
+			}
+
+			THREAD_ENTER();
+
+			fb_utils::exact_name(X.RDB$CONTEXT_NAME);
+			fb_utils::exact_name(X.RDB$RELATION_NAME);
+
+			dsql_str* relation_name =
+				MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
+			relation = METD_get_relation(request, relation_name);
+			delete relation_name;
+
+			THREAD_EXIT();
+
+			if (!relation)
+			{
+				cont = false;
+				break;
+			}
+
+			FOR(REQUEST_HANDLE dbb->dbb_requests[irq_view_base_flds]
+				TRANSACTION_HANDLE request->req_trans)
+				RFL IN RDB$RELATION_FIELDS
+				WITH RFL.RDB$RELATION_NAME EQ X.RDB$VIEW_NAME
+
+				THREAD_ENTER();
+
+				if (first)
+				{
+					fields.put(
+						(RFL.RDB$FIELD_NAME.NULL ? "" : RFL.RDB$FIELD_NAME),
+						(RFL.RDB$BASE_FIELD.NULL ? "" : RFL.RDB$BASE_FIELD));
+
+					aux.put(
+						(RFL.RDB$BASE_FIELD.NULL ? "" : RFL.RDB$BASE_FIELD),
+						(RFL.RDB$FIELD_NAME.NULL ? "" : RFL.RDB$FIELD_NAME));
+				}
+				else
+				{
+					Firebird::MetaName field;
+
+					if (aux.get(RFL.RDB$FIELD_NAME, field))
+					{
+						fields.put(field,
+							(RFL.RDB$BASE_FIELD.NULL ? "" : RFL.RDB$BASE_FIELD));
+
+						aux.remove(RFL.RDB$FIELD_NAME);
+						aux.put((RFL.RDB$BASE_FIELD.NULL ? "" : RFL.RDB$BASE_FIELD), field);
+					}
+				}
+
+				THREAD_EXIT();
+			END_FOR
+
+			if (relation->rel_flags & REL_view)
+				view_name = X.RDB$RELATION_NAME;
+			else
+			{
+				cont = false;
+				break;
+			}
+
+			first = false;
+
+		END_FOR 
+		ON_ERROR 
+			THREAD_ENTER();
+			ERRD_punt(isc_status);
+		END_ERROR;
+
+		THREAD_ENTER();
+	}
+
+	if (!relation)
+		fields.clear();
+
+	return relation;
+}
+
+
 dsql_rel* METD_get_view_relation(dsql_req* request,
 								const char* view_name,         // UTF-8
 								const char* relation_or_alias, // UTF-8
@@ -1794,7 +1918,7 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
  *
  **************************************/
 
-	dsql_rel* relation = 0;
+	dsql_rel* relation = NULL;
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	dsql_dbb* dbb = request->req_dbb;
@@ -1814,7 +1938,7 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
 			!strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
 		{
 			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME,
-		                                strlen(X.RDB$RELATION_NAME));
+										strlen(X.RDB$RELATION_NAME));
 			relation = METD_get_relation(request, relation_name);
 			delete relation_name;
 			return relation;
@@ -1822,7 +1946,7 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
 
 		relation =
 			METD_get_view_relation(request, X.RDB$RELATION_NAME,
-		                           relation_or_alias, (USHORT)level + 1);
+								   relation_or_alias, (USHORT)level + 1);
 		if (relation) {
 			return relation;
 		}

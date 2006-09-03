@@ -2724,7 +2724,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_parameter:
 		if (node->nod_column) {
 			trace_line("%sparameter: %d\n",	buffer,
-				(USHORT)(IPTR)node->nod_arg[e_par_parameter]);
+				(USHORT)(IPTR)node->nod_arg[e_par_index]);
 		}
 		else {
 			const dsql_par* param = (dsql_par*) node->nod_arg[e_par_parameter];
@@ -2829,6 +2829,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_with:
 		verb = "with";
+		break;
+
+	case nod_replace:
+		verb = "replace";
 		break;
 
 	default:

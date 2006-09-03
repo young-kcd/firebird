@@ -190,6 +190,7 @@ static const TOK tokens[] =
 	{KW_LONG, "LONG", 1, false},
 	{KW_LOWER, "LOWER", 2, false},
 	{MANUAL, "MANUAL", 1, false},
+	{MATCHING, "MATCHING", 2, false},
 	{MAXIMUM, "MAX", 1, false},
 	{MAX_SEGMENT, "MAXIMUM_SEGMENT", 1, false},
 	{MERGE, "MERGE", 1, false},
@@ -243,6 +244,7 @@ static const TOK tokens[] =
 	{RECURSIVE, "RECURSIVE", 2, false},
 	{REFERENCES, "REFERENCES", 1, false},
 	{RELEASE, "RELEASE", 2, false},
+	{REPLACE, "REPLACE", 2, false},
 	{REQUESTS, "REQUESTS", 2, true},
 	{RESERVING, "RESERV", 1, false},	// Alias of RESERVING
 	{RESERVING, "RESERVING", 1, false},
