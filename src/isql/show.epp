@@ -74,7 +74,7 @@ static processing_state show_all_tables(SSHORT);
 static void show_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool, bool);
 static void show_proc_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool);
 static processing_state show_check(const SCHAR*);
-static processing_state show_collations(const SCHAR*, SSHORT sys_flag, const char* msg = 0);
+static processing_state show_collations(const SCHAR*, SSHORT sys_flag, const char* msg = 0, bool compact = false);
 static void show_comment(const char* objtype, char* name1, char* name2,
 	ISC_QUAD* blobfld, const commentMode showextract, const char* banner);
 static processing_state show_comments(const commentMode showextract, const char* banner);
@@ -1196,7 +1196,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 			ISQL_msg_get(MSG_FUNCTIONS, msg, NULL);
 			show_functions("", 1, msg);
 			ISQL_msg_get(MSG_COLLATIONS, msg, NULL);
-			show_collations("", 1, msg);
+			show_collations("", 1, msg, true);
 		}
 		break;
 
@@ -1835,7 +1835,7 @@ static processing_state show_check(const SCHAR* object)
 }
 
 
-static processing_state show_collations(const SCHAR* object, SSHORT sys_flag, const char* msg)
+static processing_state show_collations(const SCHAR* object, SSHORT sys_flag, const char* msg, bool compact)
 {
 /**************************************
  *
@@ -1848,6 +1848,7 @@ static processing_state show_collations(const SCHAR* object, SSHORT sys_flag, co
  *
  **************************************/
 	bool found = false;
+	bool odd = true;
 
 	// Show all collations or named collation
 	FOR CL IN RDB$COLLATIONS CROSS
@@ -1870,40 +1871,48 @@ static processing_state show_collations(const SCHAR* object, SSHORT sys_flag, co
 					isqlGlob.printf("%s%s", msg, NEWLINE);
 			}
 
-			isqlGlob.printf("       COLLATION %s", CL.RDB$COLLATION_NAME);
-
-			fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME);
-			isqlGlob.printf(", CHARACTER SET %s", CS.RDB$CHARACTER_SET_NAME);
-
-			if (!CL.RDB$BASE_COLLATION_NAME.NULL)
+			if (compact)
 			{
-				fb_utils::exact_name(CL.RDB$BASE_COLLATION_NAME);
-				isqlGlob.printf(", FROM EXTERNAL ('%s')", CL.RDB$BASE_COLLATION_NAME);
+				isqlGlob.printf("       %-31s%s", CL.RDB$COLLATION_NAME, (odd ? " " : NEWLINE));
+				odd = !odd;
 			}
-
-			if (!CL.RDB$COLLATION_ATTRIBUTES.NULL)
+			else
 			{
-				if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_PAD_SPACE)
-					isqlGlob.printf(", PAD SPACE");
+				isqlGlob.printf("%s", CL.RDB$COLLATION_NAME);
 
-				if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_CASE_INSENSITIVE)
-					isqlGlob.printf(", CASE INSENSITIVE");
+				fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME);
+				isqlGlob.printf(", CHARACTER SET %s", CS.RDB$CHARACTER_SET_NAME);
 
-				if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
-					isqlGlob.printf(", ACCENT INSENSITIVE");
+				if (!CL.RDB$BASE_COLLATION_NAME.NULL)
+				{
+					fb_utils::exact_name(CL.RDB$BASE_COLLATION_NAME);
+					isqlGlob.printf(", FROM EXTERNAL ('%s')", CL.RDB$BASE_COLLATION_NAME);
+				}
+
+				if (!CL.RDB$COLLATION_ATTRIBUTES.NULL)
+				{
+					if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_PAD_SPACE)
+						isqlGlob.printf(", PAD SPACE");
+
+					if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_CASE_INSENSITIVE)
+						isqlGlob.printf(", CASE INSENSITIVE");
+
+					if (CL.RDB$COLLATION_ATTRIBUTES & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+						isqlGlob.printf(", ACCENT INSENSITIVE");
+				}
+
+				if (!CL.RDB$SPECIFIC_ATTRIBUTES.NULL)
+				{
+					isqlGlob.printf(", '");
+					SHOW_print_metadata_text_blob (isqlGlob.Out, &CL.RDB$SPECIFIC_ATTRIBUTES);
+					isqlGlob.printf("'");
+				}
+
+				if (!CL.RDB$SYSTEM_FLAG.NULL && CL.RDB$SYSTEM_FLAG != 0)
+					isqlGlob.printf(", SYSTEM");
+
+				isqlGlob.printf("%s", NEWLINE);
 			}
-
-			if (!CL.RDB$SPECIFIC_ATTRIBUTES.NULL)
-			{
-				isqlGlob.printf(", '");
-				SHOW_print_metadata_text_blob (isqlGlob.Out, &CL.RDB$SPECIFIC_ATTRIBUTES);
-				isqlGlob.printf("'");
-			}
-
-			if (!CL.RDB$SYSTEM_FLAG.NULL && CL.RDB$SYSTEM_FLAG != 0)
-				isqlGlob.printf(", SYSTEM");
-
-			isqlGlob.printf("%s", NEWLINE);
 		}
 	END_FOR
 	ON_ERROR
