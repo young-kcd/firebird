@@ -2119,9 +2119,8 @@ PageSpace* PageManager::findPageSpace(const USHORT pageSpace)
 	if (pageSpaces.find(pageSpace, pos)) {
 		return pageSpaces[pos];
 	}
-	else {
-		return 0;
-	}
+
+	return 0;
 }
 
 void PageManager::delPageSpace(const USHORT pageSpace)

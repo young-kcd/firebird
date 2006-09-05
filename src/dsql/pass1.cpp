@@ -6805,7 +6805,7 @@ static dsql_nod* pass1_replace(dsql_req* request, dsql_nod* input, bool proc_fla
 		fb_assert((*field_ptr)->nod_type == nod_field_name);
 
 		// When relation is a view and MATCHING was not specified, field_name
-		// store the base field name that is what we should find in the primary
+		// stores the base field name that is what we should find in the primary
 		// key of base table.
 		Firebird::MetaName field_name;
 
@@ -6871,18 +6871,17 @@ static dsql_nod* pass1_replace(dsql_req* request, dsql_nod* input, bool proc_fla
 	update->nod_arg[e_upd_relation] = input->nod_arg[e_rep_relation];
 	update->nod_arg[e_upd_statement] = MAKE_list(stack);
 	update->nod_arg[e_upd_boolean] = match;
-	if (input->nod_arg[e_rep_return])
-		update->nod_arg[e_upd_rse_flags] = (dsql_nod*) NOD_SELECT_EXPR_SINGLETON;
 
 	if (input->nod_arg[e_rep_return])
 	{
+		update->nod_arg[e_upd_rse_flags] = (dsql_nod*) NOD_SELECT_EXPR_SINGLETON;
 		dsql_nod* store_ret = insert->nod_arg[e_sto_return];
 
 		// nod_returning was already processed
 		fb_assert(store_ret->nod_type == nod_list);
 
 		// And we create an already processed RETURNING, because
-		// nod_returning create parameters and they're already
+		// nod_returning creates parameters and they're already
 		// created by the INSERT statement.
 		dsql_nod* update_ret = update->nod_arg[e_upd_return] =
 			MAKE_node(nod_list, store_ret->nod_count);
