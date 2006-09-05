@@ -1960,91 +1960,102 @@ void DYN_define_index(Global*		gbl,
 				break;
 
 			case isc_dyn_fld_name:
-			{
-				Firebird::MetaName& str = seg_list.add();
-				GET_STRING(ptr, str);
-				seg_count++;
-
-				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-					F IN RDB$RELATION_FIELDS CROSS GF IN RDB$FIELDS
-						WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
-						F.RDB$FIELD_NAME EQ str.c_str() AND
-						IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
-						
-					ULONG length = 0;
-					if (!DYN_REQUEST(drq_l_lfield))
+				{
+					Firebird::MetaName& str = seg_list.add();
+					GET_STRING(ptr, str);
+					// The famous brute force approach.
+					for (int iter = 0; iter < seg_count; ++iter)
 					{
-						DYN_REQUEST(drq_l_lfield) = request;
-					}
-
-					fld_count++;
-					if (GF.RDB$FIELD_TYPE == blr_blob)
-					{
-						DYN_error_punt(false, 116, IDX.RDB$INDEX_NAME, NULL,
-									   NULL, NULL, NULL);
-						/* msg 116 "attempt to index blob field in index %s" */
-					}
-					else if (!GF.RDB$DIMENSIONS.NULL)
-					{
-						DYN_error_punt(false, 117, IDX.RDB$INDEX_NAME, NULL,
-									   NULL, NULL, NULL);
-						/* msg 117 "attempt to index array field in index %s" */
-					}
-					else if (!GF.RDB$COMPUTED_BLR.NULL)
-					{
-						DYN_error_punt(false, 179, IDX.RDB$INDEX_NAME, NULL,
-									   NULL, NULL, NULL);
-						/* msg 179 "attempt to index COMPUTED BY field in index %s" */
-					}
-					else if (GF.RDB$FIELD_TYPE == blr_varying ||
-							 GF.RDB$FIELD_TYPE == blr_text)
-					{
-						/* Compute the length of the key segment allowing
-						   for international information.  Note that we
-						   must convert a <character set, collation> type
-						   to an index type in order to compute the length */
-						if (!F.RDB$COLLATION_ID.NULL)
+						if (seg_list[iter] == str)
 						{
-							length =
-								INTL_key_length(tdbb,
-									INTL_TEXT_TO_INDEX(
-										INTL_CS_COLL_TO_TTYPE(GF.RDB$CHARACTER_SET_ID,
-															  F.RDB$COLLATION_ID)),
-									GF.RDB$FIELD_LENGTH);
+							DYN_error_punt(false, 240, str.c_str(),
+								IDX.RDB$INDEX_NAME, NULL, NULL, NULL);
+							// msg 240 "Field %s cannot be used twice in index %s"
 						}
-						else if (!GF.RDB$COLLATION_ID.NULL)
+					}
+						
+					seg_count++;
+
+					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+						F IN RDB$RELATION_FIELDS CROSS GF IN RDB$FIELDS
+							WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
+							F.RDB$FIELD_NAME EQ str.c_str() AND
+							IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
+
+						ULONG length = 0;
+						if (!DYN_REQUEST(drq_l_lfield))
 						{
-							length =
-								INTL_key_length(tdbb,
-									INTL_TEXT_TO_INDEX(
-										INTL_CS_COLL_TO_TTYPE(GF.RDB$CHARACTER_SET_ID,
-											GF.RDB$COLLATION_ID)),
-									GF.RDB$FIELD_LENGTH);
+							DYN_REQUEST(drq_l_lfield) = request;
+						}
+
+						fld_count++;
+						if (GF.RDB$FIELD_TYPE == blr_blob)
+						{
+						DYN_error_punt(false, 116, IDX.RDB$INDEX_NAME, NULL,
+										   NULL, NULL, NULL);
+							/* msg 116 "attempt to index blob field in index %s" */
+						}
+						else if (!GF.RDB$DIMENSIONS.NULL)
+						{
+						DYN_error_punt(false, 117, IDX.RDB$INDEX_NAME, NULL,
+										   NULL, NULL, NULL);
+							/* msg 117 "attempt to index array field in index %s" */
+						}
+						else if (!GF.RDB$COMPUTED_BLR.NULL)
+						{
+						DYN_error_punt(false, 179, IDX.RDB$INDEX_NAME, NULL,
+										   NULL, NULL, NULL);
+							/* msg 179 "attempt to index COMPUTED BY field in index %s" */
+						}
+						else if (GF.RDB$FIELD_TYPE == blr_varying ||
+								 GF.RDB$FIELD_TYPE == blr_text)
+						{
+							/* Compute the length of the key segment allowing
+							   for international information.  Note that we
+							   must convert a <character set, collation> type
+							   to an index type in order to compute the length */
+							if (!F.RDB$COLLATION_ID.NULL)
+							{
+								length =
+									INTL_key_length(tdbb,
+										INTL_TEXT_TO_INDEX(
+											INTL_CS_COLL_TO_TTYPE(GF.RDB$CHARACTER_SET_ID,
+																  F.RDB$COLLATION_ID)),
+										GF.RDB$FIELD_LENGTH);
+							}
+							else if (!GF.RDB$COLLATION_ID.NULL)
+							{
+								length =
+									INTL_key_length(tdbb,
+										INTL_TEXT_TO_INDEX(
+											INTL_CS_COLL_TO_TTYPE(GF.RDB$CHARACTER_SET_ID,
+												GF.RDB$COLLATION_ID)),
+										GF.RDB$FIELD_LENGTH);
+							}
+							else
+							{
+								length = GF.RDB$FIELD_LENGTH;
+							}
 						}
 						else
 						{
-							length = GF.RDB$FIELD_LENGTH;
+							length = sizeof(double);
 						}
-					}
-					else
-					{
-						length = sizeof(double);
-					}
-					if (key_length)
-					{
-						key_length += ((length + STUFF_COUNT - 1) /
-									   (unsigned) STUFF_COUNT) *
-										(STUFF_COUNT + 1);
-					}
-					else
-					{
-						key_length = length;
-					}
-				END_FOR;
-				if (!DYN_REQUEST(drq_l_lfield))
-					DYN_REQUEST(drq_l_lfield) = request;
-				break;
-			}
+						if (key_length)
+						{
+							key_length += ((length + STUFF_COUNT - 1) /
+										   (unsigned) STUFF_COUNT) *
+											(STUFF_COUNT + 1);
+						}
+						else
+						{
+							key_length = length;
+						}
+					END_FOR;
+					if (!DYN_REQUEST(drq_l_lfield))
+						DYN_REQUEST(drq_l_lfield) = request;
+					break;
+				}
 
 				/* for expression indices, store the BLR and the source string */
 
@@ -2221,8 +2232,7 @@ void DYN_define_index(Global*		gbl,
 			id = old_id;
 		}
 		else if (IDX.RDB$EXPRESSION_BLR.NULL)
-			DYN_error_punt(false, 119, IDX.RDB$INDEX_NAME, NULL, NULL, NULL,
-						   NULL);
+			DYN_error_punt(false, 119, IDX.RDB$INDEX_NAME, NULL, NULL, NULL, NULL);
 		/* msg 119 "no keys for index %s" */
 
 		if (field_list.getCount()) {

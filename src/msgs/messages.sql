@@ -3067,5 +3067,6 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('replace_doesnt_match_pk', 'pass1_replace', 'pass1.cpp', NULL, 7, 27, NULL, 'REPLACE field list does not match primary key of table %s', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('replace_doesnt_match_matching', 'pass1_replace', 'pass1.cpp', NULL, 7, 28, NULL, 'REPLACE field list does not match MATCHING clause', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('replace_with_complex_view', 'pass1_replace', 'pass1.cpp', NULL, 7, 29, NULL, 'REPLACE without MATCHING could not be used with views based on more than one table', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'DYN_define_index', 'dyn_def.epp', NULL, 8, 240, NULL, 'Field %s cannot be used twice in index %s', NULL, NULL);
 
 COMMIT WORK;
