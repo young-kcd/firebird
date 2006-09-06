@@ -1,3 +1,10 @@
+2006-09-05 14:28  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.237.2.2):
+	
+	Rolled back my attempt to fix races in services - doesn't work on
+	WINNT
+
 2006-09-04 13:16  arnobrinkman
 
 	* firebird2/src/jrd/opt.cpp (1.261.2.3):
