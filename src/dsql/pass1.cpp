@@ -6875,6 +6875,7 @@ static dsql_nod* pass1_replace(dsql_req* request, dsql_nod* input, bool proc_fla
 	if (input->nod_arg[e_rep_return])
 	{
 		update->nod_arg[e_upd_rse_flags] = (dsql_nod*) NOD_SELECT_EXPR_SINGLETON;
+
 		dsql_nod* store_ret = insert->nod_arg[e_sto_return];
 
 		// nod_returning was already processed
