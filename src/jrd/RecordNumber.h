@@ -24,7 +24,6 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: RecordNumber.h,v 1.6 2006-09-07 01:55:46 asfernandes Exp $
  *
  */
 
