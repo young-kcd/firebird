@@ -6841,10 +6841,10 @@ static dsql_nod* pass1_replace(dsql_req* request, dsql_nod* input, bool proc_fla
 					if (match)
 					{
 						// It's a composed MATCHING. Build an AND.
-						dsql_nod* and = MAKE_node(nod_and, 2);
-						and->nod_arg[0] = match;
-						and->nod_arg[1] = eql;
-						match = and;
+						dsql_nod* and_node = MAKE_node(nod_and, 2);
+						and_node->nod_arg[0] = match;
+						and_node->nod_arg[1] = eql;
+						match = and_node;
 					}
 					else
 						match = eql;
