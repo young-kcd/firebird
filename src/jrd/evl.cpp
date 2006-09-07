@@ -2983,14 +2983,22 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 
 	DEV_BLKCHK(node, type_nod);
 
-/* Get request, record parameter block, and relation for stream */
+	// Get request, record parameter block, and relation for stream
 
 	jrd_req* request = tdbb->tdbb_request;
 	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
+
+	// If it don't point to a valid record, return NULL
+	if (!rpb->rpb_number.isValid())
+	{
+		request->req_flags |= req_null;
+		return NULL;
+	}
+
 	const jrd_rel* relation = rpb->rpb_relation;
 
-/* Format dbkey as vector of relation id, record number */
+	// Format dbkey as vector of relation id, record number
 
 	if (relation->rel_file) {
 		impure->vlu_misc.vlu_dbkey[0] = rpb->rpb_b_page;
@@ -3010,7 +3018,7 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 		temp.bid_encode(((UCHAR*)impure->vlu_misc.vlu_dbkey) + 3);
 	}
 
-/* Initialize descriptor */
+	// Initialize descriptor
 
 	impure->vlu_desc.dsc_address = (UCHAR *) impure->vlu_misc.vlu_dbkey;
 	impure->vlu_desc.dsc_dtype = dtype_text;

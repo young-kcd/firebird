@@ -5221,8 +5221,8 @@ static RecordSource* gen_sort(thread_db* tdbb,
 
 	CompilerScratch* csb = opt->opt_csb;
 	USHORT items =
-		sort->nod_count + (streams[0] * 2) +
-		(dbkey_streams ? dbkey_streams[0] : 0);
+		sort->nod_count + (streams[0] * 3) +
+		2 * (dbkey_streams ? dbkey_streams[0] : 0);
 	const UCHAR* const end_ptr = streams + streams[0];
 	const jrd_nod* const* const end_node = sort->nod_arg + sort->nod_count;
 	Firebird::Stack<SLONG> id_stack;
@@ -5420,10 +5420,11 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		map_length += desc->dsc_length;
 	}
 
-	if (dbkey_streams) {
-        ptr = &dbkey_streams[1];
-		for (const UCHAR* const end_ptrL = dbkey_streams + dbkey_streams[0];
-			ptr <= end_ptrL; ptr++, map_item++)
+	if (dbkey_streams)
+	{
+		const UCHAR* const end_ptrL = dbkey_streams + dbkey_streams[0];
+
+		for (ptr = &dbkey_streams[1]; ptr <= end_ptrL; ptr++, map_item++)
 		{
 			map_item->smb_field_id = SMB_DBKEY;
 			map_item->smb_stream = *ptr;
@@ -5433,7 +5434,32 @@ static RecordSource* gen_sort(thread_db* tdbb,
 			desc->dsc_address = (UCHAR *)(IPTR)map_length;
 			map_length += desc->dsc_length;
 		}
+
+		for (ptr = &dbkey_streams[1]; ptr <= end_ptrL; ptr++, map_item++)
+		{
+			map_item->smb_field_id = SMB_DBKEY_VALID;
+			map_item->smb_stream = *ptr;
+			dsc* desc = &map_item->smb_desc;
+			desc->dsc_dtype = dtype_text;
+			desc->dsc_ttype() = CS_BINARY;
+			desc->dsc_length = 1;
+			desc->dsc_address = (UCHAR *)(IPTR)map_length;
+			map_length += desc->dsc_length;
+		}
 	}
+
+	for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++) {
+		map_item->smb_field_id = SMB_DBKEY_VALID;
+		map_item->smb_stream = *ptr;
+		dsc* desc = &map_item->smb_desc;
+		desc->dsc_dtype = dtype_text;
+		desc->dsc_ttype() = CS_BINARY;
+		desc->dsc_length = 1;
+		desc->dsc_address = (UCHAR *)(IPTR)map_length;
+		map_length += desc->dsc_length;
+	}
+
+	map_length = ROUNDUP(map_length, sizeof(SLONG));
 
 /* Make fields to store varying and cstring length. */
 

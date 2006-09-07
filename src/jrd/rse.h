@@ -324,8 +324,9 @@ public:
 
 // values for smb_field_id
 
-const SSHORT SMB_DBKEY = -1;	// dbkey value
-const SSHORT SMB_TRANS_ID = -2;	// transaction id of record
+const SSHORT SMB_DBKEY = -1;		// dbkey value
+const SSHORT SMB_DBKEY_VALID = -2;	// dbkey valid flag
+const SSHORT SMB_TRANS_ID = -3;		// transaction id of record
 
 // bits for the smb_flags field
 

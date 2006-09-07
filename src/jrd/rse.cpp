@@ -109,6 +109,7 @@ static UCHAR* get_merge_data(thread_db*, merge_file*, SLONG);
 static bool get_procedure(thread_db*, RecordSource*, irsb_procedure*, record_param*);
 static bool get_record(thread_db*, RecordSource*, RecordSource*, RSE_GET_MODE);
 static bool get_union(thread_db*, RecordSource*, IRSB);
+static void invalidate_child_rpbs(thread_db*, RecordSource*);
 static void join_to_nulls(thread_db*, RecordSource*, StreamStack*);
 static void map_sort_data(jrd_req*, SortMap*, UCHAR *);
 static void open_merge(thread_db*, RecordSource*, irsb_mrg*);
@@ -138,6 +139,8 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
  *
  **************************************/
 	SET_TDBB(tdbb);
+
+	invalidate_child_rpbs(tdbb, rsb);
 
 	while (true) {
 		irsb_sort* impure = (irsb_sort*) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
@@ -1867,15 +1870,20 @@ static bool get_record(thread_db*	tdbb,
 #endif
 							false))
 		{
-			 return false;
+			rpb->rpb_number.setValid(false);
+			return false;
 		}
+		rpb->rpb_number.setValid(true);
 		break;
 
 	case rsb_indexed:
 		{
 			RecordBitmap **pbitmap = ((irsb_index*) impure)->irsb_bitmap, *bitmap;
 			if (!pbitmap || !(bitmap = *pbitmap))
+			{
+				rpb->rpb_number.setValid(false);
 				return false;
+			}
 
 			bool result = false;
 
@@ -1883,8 +1891,10 @@ static bool get_record(thread_db*	tdbb,
 			// while (SBM_next(*bitmap, &rpb->rpb_number, mode))
 			// We assume mode = RSE_get_forward because we do not support
 			// scrollable cursors at the moment.
-			if (rpb->rpb_number.isBof() ? bitmap->getFirst() : bitmap->getNext()) 
-				do {
+			if (rpb->rpb_number.isBof() ? bitmap->getFirst() : bitmap->getNext())
+			{
+				do
+				{
 					rpb->rpb_number.setValue(bitmap->current());
 #ifdef SUPERSERVER_V2
 					/* Prefetch next set of data pages from bitmap. */
@@ -1905,9 +1915,15 @@ static bool get_record(thread_db*	tdbb,
 						break;
 					}
 				} while (bitmap->getNext());
+			}
 
 			if (result)
+			{
+				rpb->rpb_number.setValid(true);
 				break;
+			}
+
+			rpb->rpb_number.setValid(false);
 			return false;
 		}
 
@@ -1920,8 +1936,10 @@ static bool get_record(thread_db*	tdbb,
 #endif
 		if (!NAV_get_record(tdbb, rsb, (IRSB_NAV) impure, rpb, mode))
 		{
+			rpb->rpb_number.setValid(false);
 			return false;
 		}
+		rpb->rpb_number.setValid(true);
 		break;
 
 	case rsb_boolean:
@@ -2027,7 +2045,10 @@ static bool get_record(thread_db*	tdbb,
 					if (any_null || any_true)
 						result = true;
 					else
+					{
+						invalidate_child_rpbs(tdbb, rsb);
 						return false;
+					}
 					break;
 				}
 				else
@@ -2048,6 +2069,8 @@ static bool get_record(thread_db*	tdbb,
 					request->req_flags &= ~req_null;
 					if (result)
 						break;
+
+					invalidate_child_rpbs(tdbb, rsb);
 					return false;
 				}
 			}
@@ -2095,7 +2118,11 @@ static bool get_record(thread_db*	tdbb,
 					}
 					request->req_flags &= ~req_null;
 					if (any_false)
+					{
+						invalidate_child_rpbs(tdbb, rsb);
 						return false;
+					}
+
 					result = true;
 					break;
 				}
@@ -2138,7 +2165,11 @@ static bool get_record(thread_db*	tdbb,
 					}
 					request->req_flags &= ~req_null;
 					if (any_false)
+					{
+						invalidate_child_rpbs(tdbb, rsb);
 						return false;
+					}
+
 					result = true;
 					break;
 				}
@@ -2163,6 +2194,8 @@ static bool get_record(thread_db*	tdbb,
 					request->req_flags |= req_null;
 				if (result)
 					break;
+
+				invalidate_child_rpbs(tdbb, rsb);
 				return false;
 			}
 		}
@@ -2185,7 +2218,10 @@ static bool get_record(thread_db*	tdbb,
 		switch (mode) {
 		case RSE_get_forward:
 			if (((irsb_first_n*) impure)->irsb_count <= 0)
+			{
+				invalidate_child_rpbs(tdbb, rsb);
 				return false;
+			}
 			((irsb_first_n*) impure)->irsb_count--;
 			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
@@ -2194,7 +2230,10 @@ static bool get_record(thread_db*	tdbb,
 #ifdef SCROLLABLE_CURSORS
 		case RSE_get_current:
 			if (((irsb_first_n*) impure)->irsb_count <= 0)
+			{
+				invalidate_child_rpbs(tdbb, rsb);
 				return false;
+			}
 			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
@@ -2213,10 +2252,15 @@ static bool get_record(thread_db*	tdbb,
 #ifdef SCROLLABLE_CURSORS
 		case RSE_get_backward:
 			if (((irsb_skip_n*) impure)->irsb_count > 0)
+			{
+				invalidate_child_rpbs(tdbb, rsb);
 				return false;
-			if (((irsb_skip_n*) impure)->irsb_count == 0) {
+			}
+			if (((irsb_skip_n*) impure)->irsb_count == 0)
+			{
 				((irsb_skip_n*) impure)->irsb_count++;
-				get_record(tdbb, rsb->rsb_next, NULL, mode);
+				if (get_record(tdbb, rsb->rsb_next, NULL, mode))
+					invalidate_child_rpbs(tdbb, rsb);
 				return false;
 			}
 			((irsb_skip_n*) impure)->irsb_count++;
@@ -2226,7 +2270,10 @@ static bool get_record(thread_db*	tdbb,
 
 		case RSE_get_current:
 			if (((irsb_skip_n*) impure)->irsb_count >= 1)
+			{
+				invalidate_child_rpbs(tdbb, rsb);
 				return false;
+			}
 			else if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
@@ -2251,12 +2298,18 @@ static bool get_record(thread_db*	tdbb,
 							, mode
 #endif
 			))
+		{
 			return false;
+		}
 		break;
 
 	case rsb_procedure:
 		if (!get_procedure(tdbb, rsb, (irsb_procedure*) impure, rpb))
+		{
+			rpb->rpb_number.setValid(false);
 			return false;
+		}
+		rpb->rpb_number.setValid(true);
 		break;
 
 	case rsb_sort:
@@ -2305,7 +2358,9 @@ static bool get_record(thread_db*	tdbb,
 								  , mode
 #endif
 					))
+				{
 					return false;
+				}
 			}
 			impure->irsb_flags &= ~irsb_first;
 			break;
@@ -2321,7 +2376,9 @@ static bool get_record(thread_db*	tdbb,
 							  , mode
 #endif
 				))
+			{
 				return false;
+			}
 		}
 
 		else if (!fetch_record(tdbb, rsb, rsb->rsb_count - 1
@@ -2329,7 +2386,9 @@ static bool get_record(thread_db*	tdbb,
 							   , mode
 #endif
 				 ))
+		{
 			return false;
+		}
 		break;
 
 	case rsb_union:
@@ -2345,19 +2404,30 @@ static bool get_record(thread_db*	tdbb,
 	case rsb_aggregate:
 		if ( (impure->irsb_count = EVL_group(tdbb, rsb->rsb_next,
 										   (jrd_nod*) rsb->rsb_arg[0],
-										   impure->irsb_count)) ) break;
+										   impure->irsb_count)) )
+		{
+			break;
+		}
 		return false;
 
 	case rsb_ext_sequential:
 	case rsb_ext_indexed:
 	case rsb_ext_dbkey:
 		if (!EXT_get(rsb))
+		{
+			rpb->rpb_number.setValid(false);
 			return false;
+		}
+		rpb->rpb_number.setValid(true);
 		break;
 
 	case rsb_virt_sequential:
 		if (!VirtualTable::get(tdbb, rsb))
+		{
+			rpb->rpb_number.setValid(false);
 			return false;
+		}
+		rpb->rpb_number.setValid(true);
 		break;
 
 	case rsb_left_cross:
@@ -2366,7 +2436,9 @@ static bool get_record(thread_db*	tdbb,
 						, mode
 #endif
 			))
+		{
 			return false;
+		}
 		break;
 
 	default:
@@ -2475,6 +2547,100 @@ static bool get_union(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 }
 
 
+static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
+{
+/**************************************
+ *
+ *	i n v a l i d a t e _ c h i l d _ r p b s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Mark child RPBs as invalid.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	while (true)
+	{
+		jrd_req* request = tdbb->tdbb_request;
+		record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+
+		switch (rsb->rsb_type)
+		{
+			case rsb_indexed:
+			case rsb_navigate:
+			case rsb_sequential:
+			case rsb_ext_sequential:
+			case rsb_ext_indexed:
+			case rsb_ext_dbkey:
+			case rsb_virt_sequential:
+			case rsb_procedure:
+				rpb->rpb_number.setValid(false);
+				return;
+
+			case rsb_first:
+			case rsb_skip:
+			case rsb_boolean:
+			case rsb_aggregate:
+			case rsb_sort:
+				rsb = rsb->rsb_next;
+				break;
+
+			case rsb_cross:
+				{
+					RecordSource** ptr = rsb->rsb_arg;
+					for (const RecordSource* const* const end = ptr + rsb->rsb_count;
+						ptr < end; ptr++)
+					{
+						invalidate_child_rpbs(tdbb, *ptr);
+					}
+					return;
+				}
+
+			case rsb_left_cross:
+				invalidate_child_rpbs(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
+				invalidate_child_rpbs(tdbb, rsb->rsb_arg[RSB_LEFT_inner]);
+				return;
+
+			case rsb_merge:
+				{
+					RecordSource** ptr = rsb->rsb_arg;
+
+					for (const RecordSource* const* const end = ptr + rsb->rsb_count * 2;
+						ptr < end; ptr += 2)
+					{
+						invalidate_child_rpbs(tdbb, *ptr);
+					}
+				}
+				return;
+
+			case rsb_union:
+				{
+					RecordSource** ptr = rsb->rsb_arg;
+
+					for (const RecordSource* const* end = ptr + rsb->rsb_count; ptr < end; ptr += 2)
+						invalidate_child_rpbs(tdbb, *ptr);
+				}
+				return;
+
+			case rsb_recurse:
+				{
+					const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
+					RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
+
+					for (const RecordSource* const* end = ptr + streams; ptr < end; ptr++) 
+						invalidate_child_rpbs(tdbb, *ptr);
+				}
+				return;
+
+			default:
+				BUGCHECK(166);		/* msg 166 invalid rsb type */
+		}
+	}
+}
+
+
 static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, StreamStack* stream)
 {
 /**************************************
@@ -2495,6 +2661,8 @@ static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, StreamStack* strea
 		stack.hasData(); ++stack)
 	{
 		record_param* rpb = &request->req_rpb[stack.object()];
+
+		rpb->rpb_number.setValid(false);
 
 		/* Make sure a record block has been allocated.  If there isn't
 		   one, first find the format, then allocate the record block */
@@ -2566,13 +2734,21 @@ static void map_sort_data(jrd_req* request, SortMap* map, UCHAR * data)
 				
 				//rpb->rpb_transaction_nr = *(SLONG *) (from.dsc_address);
 				copy_fromptr(rpb->rpb_transaction_nr, from.dsc_address); 
-			else
+			else if (id == SMB_DBKEY)
 			{
 				SINT64 tmp;
 				copy_fromptr(tmp, from.dsc_address);
 				//rpb->rpb_number.setValue(*(SINT64 *) (from.dsc_address));
-				 rpb->rpb_number.setValue(tmp);
+				rpb->rpb_number.setValue(tmp);
 			}
+			else if (id == SMB_DBKEY_VALID)
+			{
+				UCHAR tmp;
+				copy_fromptr(tmp, from.dsc_address);
+				rpb->rpb_number.setValid((bool) tmp);
+			}
+			else
+				fb_assert(false);
 			rpb->rpb_stream_flags |= RPB_s_refetch;
 			continue;
 		}
@@ -2800,11 +2976,21 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, UIN
 				record_param* rpb = &request->req_rpb[item->smb_stream];
 				if (item->smb_field_id < 0) {
 					if (item->smb_field_id == SMB_TRANS_ID)
+					{
 						//*(SLONG *) (to.dsc_address) = rpb->rpb_transaction_nr;
 						copy_toptr(to.dsc_address, rpb->rpb_transaction_nr);
-					else
+					}
+					else if (item->smb_field_id == SMB_DBKEY)
+					{
 						//*(SINT64 *) (to.dsc_address) = rpb->rpb_number.getValue();
 						copy_toptr(to.dsc_address, rpb->rpb_number.getValue());
+					}
+					else if (item->smb_field_id == SMB_DBKEY_VALID)
+					{
+						copy_toptr(to.dsc_address, (UCHAR) rpb->rpb_number.isValid());
+					}
+					else
+						fb_assert(false);
 					continue;
 				}
 				if (!EVL_field

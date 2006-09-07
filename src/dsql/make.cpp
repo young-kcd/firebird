@@ -1088,7 +1088,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 				desc->dsc_length = 8;
 			else
 				desc->dsc_length = relation->rel_dbkey_length;
-			desc->dsc_flags = 0;
+			desc->dsc_flags = DSC_nullable;
 			desc->dsc_ttype() = ttype_binary;
 		}
 		else {

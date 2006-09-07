@@ -3533,7 +3533,57 @@ static jrd_nod* pass1(thread_db* tdbb,
 			NodeStack stack;
 			expand_view_nodes(tdbb, csb, stream, stack, type);
 			if (stack.hasData())
+			{
+				// If that is a DB_KEY of a view, it's possible (in case of 
+				// outer joins) that some sub-stream have a NULL DB_KEY.
+				// In this case, we build a COALESCE(DB_KEY, _OCTETS ""),
+				// for the concatenation of sub DB_KEYs not result in NULL.
+				if (type == nod_dbkey && stack.getCount() > 1)
+				{
+					NodeStack stack2;
+
+					for (NodeStack::iterator i(stack); i.hasData(); ++i)
+					{
+						jrd_nod* new_node = PAR_make_node(tdbb, 1);
+						new_node->nod_type = nod_value_if;
+						new_node->nod_count = 3;
+
+						// build an IF (RDB$DB_KEY IS NOT NULL)
+						new_node->nod_arg[0] = PAR_make_node(tdbb, 1);
+						new_node->nod_arg[0]->nod_type = nod_not;
+						new_node->nod_arg[0]->nod_count = 1;
+						new_node->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 1);
+						new_node->nod_arg[0]->nod_arg[0]->nod_type = nod_missing;
+						new_node->nod_arg[0]->nod_arg[0]->nod_count = 1;
+						new_node->nod_arg[0]->nod_arg[0]->nod_arg[0] = i.object();
+
+						new_node->nod_arg[1] = i.object();	// THEN
+
+						const SSHORT count = lit_delta +
+							(0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
+						new_node->nod_arg[2] = PAR_make_node(tdbb, count);	// ELSE
+						new_node->nod_arg[2]->nod_type = nod_literal;
+						new_node->nod_arg[2]->nod_count = 0;
+						Literal* literal = (Literal*) new_node->nod_arg[2];
+						literal->lit_desc.dsc_dtype = dtype_text;
+						literal->lit_desc.dsc_ttype() = CS_BINARY;
+						literal->lit_desc.dsc_scale = 0;
+						literal->lit_desc.dsc_length = 0;
+						literal->lit_desc.dsc_address = reinterpret_cast<UCHAR*>(literal->lit_data);
+
+						stack2.push(new_node);
+					}
+
+					stack.clear();
+
+					// stack2 is in reverse order, pushing everything in stack
+					// will correct the order.
+					for (NodeStack::iterator i(stack2); i.hasData(); ++i)
+						stack.push(i.object());
+				}
+
 				return catenate_nodes(tdbb, stack);
+			}
 
 			// The user is asking for the dbkey/record version of an aggregate.
 			// Humor him with a key filled with zeros.
