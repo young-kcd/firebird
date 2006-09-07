@@ -115,9 +115,10 @@ public:
 		append(from);
 	}
 
-	BePlusTree& operator=(const BePlusTree& from) {
+	BePlusTree& operator =(BePlusTree& from) {
 		clear();
 		append(from);
+		return *this;
 	}
 
 	void clear() {
@@ -245,7 +246,7 @@ public:
 		return ((NodeList*)root)->getCount() * bytes_per_node;
 	}
 
-	void append(const BePlusTree& from) {
+	void append(BePlusTree& from) {
 		// This is slow approach especially when used for assignment. 
 		// Optimize it when need arises.
 		Accessor accessor(&from);

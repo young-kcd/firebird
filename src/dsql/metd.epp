@@ -1791,6 +1791,8 @@ dsql_rel* METD_get_view_base(dsql_req* request,
  *  is more than one.
  *  If there is only one base, put in fields a map of
  *  top view field name / bottom base field name.
+ *  Ignores the field in the case of a base field name
+ *  appearing more than one time in a level.
  *
  **************************************/
 
@@ -1801,7 +1803,7 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 	isc_db_handle DB = dbb->dbb_database_handle;
 	bool first = true;
 	bool cont = true;
-	MetaNamePairMap aux;
+	MetaNamePairMap previousAux;
 
 	fields.clear();
 
@@ -1832,6 +1834,9 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 			relation = METD_get_relation(request, relation_name);
 			delete relation_name;
 
+			Firebird::Array<Firebird::MetaName> ambiguities;
+			MetaNamePairMap currentAux;
+
 			THREAD_EXIT();
 
 			if (!relation)
@@ -1847,32 +1852,48 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 
 				THREAD_ENTER();
 
-				if (first)
-				{
-					fields.put(
-						(RFL.RDB$FIELD_NAME.NULL ? "" : RFL.RDB$FIELD_NAME),
-						(RFL.RDB$BASE_FIELD.NULL ? "" : RFL.RDB$BASE_FIELD));
+				if (RFL.RDB$BASE_FIELD.NULL)
+					RFL.RDB$BASE_FIELD[0] = '\0';
 
-					aux.put(
-						(RFL.RDB$BASE_FIELD.NULL ? "" : RFL.RDB$BASE_FIELD),
-						(RFL.RDB$FIELD_NAME.NULL ? "" : RFL.RDB$FIELD_NAME));
-				}
+				if (RFL.RDB$FIELD_NAME.NULL)
+					RFL.RDB$FIELD_NAME[0] = '\0';
+
+				if (currentAux.exist(RFL.RDB$BASE_FIELD))
+					ambiguities.add(RFL.RDB$BASE_FIELD);
 				else
 				{
-					Firebird::MetaName field;
-
-					if (aux.get(RFL.RDB$FIELD_NAME, field))
+					if (first)
 					{
-						fields.put(field,
-							(RFL.RDB$BASE_FIELD.NULL ? "" : RFL.RDB$BASE_FIELD));
+						fields.put(RFL.RDB$FIELD_NAME, RFL.RDB$BASE_FIELD);
+						currentAux.put(RFL.RDB$BASE_FIELD, RFL.RDB$FIELD_NAME);
+					}
+					else
+					{
+						Firebird::MetaName field;
 
-						aux.remove(RFL.RDB$FIELD_NAME);
-						aux.put((RFL.RDB$BASE_FIELD.NULL ? "" : RFL.RDB$BASE_FIELD), field);
+						if (previousAux.get(RFL.RDB$FIELD_NAME, field))
+						{
+							fields.put(field, RFL.RDB$BASE_FIELD);
+							currentAux.put(RFL.RDB$BASE_FIELD, field);
+						}
 					}
 				}
 
 				THREAD_EXIT();
 			END_FOR
+
+			for (Firebird::MetaName* i = ambiguities.begin(); i != ambiguities.end(); ++i)
+			{
+				Firebird::MetaName field;
+
+				if (currentAux.get(*i, field))
+				{
+					currentAux.remove(*i);
+					fields.remove(field);
+				}
+			}
+
+			previousAux.takeOwnership(currentAux);
 
 			if (relation->rel_flags & REL_view)
 				view_name = X.RDB$RELATION_NAME;
