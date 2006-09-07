@@ -1,3 +1,26 @@
+2006-09-07 04:10  asfernandes
+
+	* firebird2/src/jrd/RecordNumber.h (1.7):
+	
+	Misc
+
+2006-09-07 03:55  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.122), jrd/RecordNumber.h (1.6),
+	jrd/cmp.cpp (1.232), jrd/evl.cpp (1.198), jrd/exe.cpp (1.195),
+	jrd/opt.cpp (1.277), jrd/rse.cpp (1.118), jrd/rse.h (1.50):
+	
+	1) Fixed CORE-899 - Problems with explicit cursors in unwanted
+	states 2) Make RDB$DB_KEY in outer joins returns NULL when
+	appropriate
+
+2006-09-06 04:42  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.283), jrd/dyn_def.epp (1.138),
+	jrd/dyn_del.epp (1.63):
+	
+	Misc
+
 2006-09-05 11:04  robocop
 
 	* firebird2/src/: jrd/dyn_def.epp (1.137), msgs/facilities.sql
