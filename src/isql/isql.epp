@@ -391,7 +391,7 @@ bool fAnsiCP;
 // Utility transaction handle 
 static isc_tr_handle D__trans;
 static isc_tr_handle M__trans;
-static int global_numbufs;	/* # of cache buffers on connect */
+static int global_numbufs;	// # of cache buffers on connect
 static isc_stmt_handle global_Stmt;
 static FILE* Ofp;
 //static FILE* Ifp;
@@ -576,30 +576,21 @@ int ISQL_main(int argc,
  *
  **************************************/
 #ifdef MU_ISQL
-/*
-** This is code for QA Test bed Multiuser environment.
-**
-** Setup multi-user test environment.
-*/
+	// This is code for QA Test bed Multiuser environment.
+	// Setup multi-user test environment.
 	if (qa_mu_environment()) {
-		/*
-		   ** Initialize multi-user test manager only if in that
-		   ** environment.
-		 */
+		// Initialize multi-user test manager only if in that
+		// environment.
 		if (!qa_mu_init(argc, argv, 1)) {
-			/*
-			   ** Some problem in initializing multi-user test
-			   ** environment.
-			 */
+			// Some problem in initializing multi-user test
+			// environment.
 			qa_mu_cleanup();
 			exit(1);
 		}
 		else {
-			/*
-			   ** When invoked by MU, additional command-line argument
-			   ** was added at tail. ISQL is not interested in it so
-			   ** remove it.
-			 */
+			// When invoked by MU, additional command-line argument
+			// was added at tail. ISQL is not interested in it so
+			// remove it.
 			argv[argc - 1] = NULL;
 			argc--;
 		}
@@ -680,19 +671,16 @@ int ISQL_main(int argc,
 		break;
 	}
 #ifdef MU_ISQL
-/*
-** This is code for QA Test bed Multiuser environment.
-**
-** Do multi-user cleanup if running in multi-user domain.
-** qa_mu_cleanup() is NOP in non-multi-user domain.
-*/
+	// This is code for QA Test bed Multiuser environment.
+	// Do multi-user cleanup if running in multi-user domain.
+	// qa_mu_cleanup() is NOP in non-multi-user domain.
 	qa_mu_cleanup();
 #endif	// MU_ISQL 
 
 #ifdef DEBUG_GDS_ALLOC
-/* As ISQL can run under windows, all memory should be freed before
- * returning.  In debug mode this call will report unfreed blocks.
- */
+	// As ISQL can run under windows, all memory should be freed before
+	// returning.  In debug mode this call will report unfreed blocks.
+
 	//gds_alloc_report(0, __FILE__, __LINE__);
 	char fn[] = __FILE__;
 	fn[strlen(fn) - 8] = 0; // all isql files in gen dir
@@ -1283,7 +1271,7 @@ void ISQL_get_character_sets(
 			fb_utils::exact_name(COL.RDB$COLLATION_NAME);
 			fb_utils::exact_name(CST.RDB$DEFAULT_COLLATE_NAME);
 
-			/* Is specified collation the default collation for character set? */
+			// Is specified collation the default collation for character set?
 			if (strcmp (CST.RDB$DEFAULT_COLLATE_NAME, COL.RDB$COLLATION_NAME) == 0) {
 				if (!collate_only)
 					sprintf (string, " CHARACTER SET %s", CST.RDB$CHARACTER_SET_NAME);
@@ -1594,7 +1582,7 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
 
 				if (RFR.RDB$BASE_FIELD.NULL) {
 
-					/* Simple column. Did user define it not null?  */
+					// Simple column. Did user define it not null?
 
 					if (RFR.RDB$NULL_FLAG == 1)
 						null_flag = false;
@@ -1654,16 +1642,14 @@ void ISQL_disconnect_database(bool nQuietMode)
 	if (DB && (M__trans || D__trans))
 		end_trans();
 
-/*
- * Commit transaction that was started on behalf of the request
- * Don't worry about the error if one occurs it will be network
- * related and caught later.
- */
+	// Commit transaction that was started on behalf of the request
+	// Don't worry about the error if one occurs it will be network
+	// related and caught later.
 	if (DB && gds_trans)
 		isc_rollback_transaction(isc_status, &gds_trans);
 
-/* If there is  current user statement, free it
-   I think option 2 is the right one (DSQL_drop), but who knows */
+	// If there is  current user statement, free it
+	// I think option 2 is the right one (DSQL_drop), but who knows
 	if (global_Stmt)
 		isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_drop);
 
@@ -2072,19 +2058,17 @@ static processing_state add_row(TEXT* tabname)
 
 	XSQLDA* isqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(i_cols)));
 
-/* ISQL_ALLOC doesn't initialize the structure, so init everything
- * to avoid lots of problems.
- */
+	// ISQL_ALLOC doesn't initialize the structure, so init everything
+	// to avoid lots of problems.
+
 	memset(isqlda, 0, XSQLDA_LENGTH(i_cols));
 	isqlda->version = SQLDA_VERSION1;
 	isqlda->sqln = isqlda->sqld = i_cols;
 
 	SSHORT* nullind = (SSHORT*) ISQL_ALLOC((SLONG) (i_cols * sizeof(SSHORT)));
 
-/*
-**  For each column, get the type, and length then prompt for a value
-**  and scanf the resulting string into a buffer of the right type.
-*/
+	// For each column, get the type, and length then prompt for a value
+	// and scanf the resulting string into a buffer of the right type.
 
 	SCHAR infobuf[BUFFER_LENGTH180];
 	ISQL_msg_get(ADD_PROMPT, sizeof(infobuf), infobuf, NULL);
@@ -2138,7 +2122,7 @@ static processing_state add_row(TEXT* tabname)
 				break;
 			default:
 				ISQL_msg_get(NAME_PROMPT, msg, name);
-				/* Enter %s> */
+				// Enter %s>
 				break;
 			}
 
@@ -2886,11 +2870,10 @@ static processing_state create_db(const TEXT* statement,
 			p = strchr(q, quote);
 			if (p) {
 #if defined (WIN95)
-				/* If we are not using the ANSI codepage then we need to
-				 * translate the database name to ANSI from OEM.
-				 * We will translate (p - q) characters from (q) into
-				 * the proper offset in local_statement.
-				 */
+				// If we are not using the ANSI codepage then we need to
+				// translate the database name to ANSI from OEM.
+				// We will translate (p - q) characters from (q) into
+				// the proper offset in local_statement.
 				if (!fAnsiCP)
 					OemToAnsiBuff(q, local_statement + (q - statement),
 								  p - q);
@@ -3017,10 +3000,9 @@ static processing_state create_db(const TEXT* statement,
 		}
 	}
 
-	/* execute the create statement
-	 * If the isqlGlob.SQL_dialect is not set or set to 2, create the database
-	 * as a dialect 3 database.
-	 */
+	// execute the create statement
+	// If the isqlGlob.SQL_dialect is not set or set to 2, create the database
+	// as a dialect 3 database.
 	if (isqlGlob.SQL_dialect == 0 || isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION) {
 		if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0,
 									   local_statement, requested_SQL_dialect,
@@ -3164,10 +3146,8 @@ static void do_isql()
 				isc_rollback_transaction(isc_status, &M__trans);
 			if (gds_trans)
 				isc_rollback_transaction(isc_status, &gds_trans);
-			/*
-			 * If there is  current user statement, free it
-			 * option 2 does the drop
-			 */
+
+			// If there is current user statement, free it
 			if (global_Stmt)
 				isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_drop);
 			if (DB)
@@ -3258,10 +3238,9 @@ static void do_isql()
 				if (gds_trans)
 					commit_trans(&gds_trans);
 			}
-			/*
-			 * If there is  current user statement, free it
-			 * I think option 2 is the right one (DSQL_drop), but who knows
-			 */
+
+			// If there is  current user statement, free it
+			// I think DSQL_drop is the right one, but who knows
 			if (global_Stmt)
 				isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_drop);
 			if (DB) {
@@ -3277,10 +3256,9 @@ static void do_isql()
 				isc_rollback_transaction(isc_status, &M__trans);
 			if (gds_trans)
 				isc_rollback_transaction(isc_status, &gds_trans);
-			/*
-			 * If there is  current user statement, free it
-			 * I think option 2 is the right one (DSQL_drop), but who knows
-			 */
+
+			// If there is  current user statement, free it
+			// I think DSQL_drop is the right one, but who knows
 			if (global_Stmt)
 				isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_drop);
 			if (DB) {
@@ -3296,7 +3274,7 @@ static void do_isql()
 		case EXTRACT:
 		case EXTRACTALL:
 		default:
-			/* fb_assert (FALSE);  -- removed as finds too many problems */
+			// fb_assert (FALSE);  -- removed as finds too many problems
 		case ps_ERR:
 		case FAIL:
 			Exit_value = FINI_ERROR;
@@ -3364,7 +3342,7 @@ static processing_state drop_db()
 			return (FAIL);
 		}
 
-		// If error occured and drop database got aborted 
+		// If error occurred and drop database got aborted
 		if (DB)
 			return (FAIL);
 	}
@@ -3476,9 +3454,8 @@ static processing_state end_trans()
 	TEXT infobuf[BUFFER_LENGTH60];
 
 	processing_state ret = CONT;
-/* Give option of committing or rolling back before proceding unless
-**  the last command was a commit or rollback
-*/
+	// Give option of committing or rolling back before proceding unless
+	// the last command was a commit or rollback
 
 	if (M__trans) {
 		if (Interactive) {
@@ -3776,9 +3753,9 @@ static processing_state frontend(const TEXT* statement)
 		const TEXT* sql_role_nm = NULL;
 		int numbufs = 0;
 
-		/* if a parameter is given in the command more than once, the
-		   last one will be used. The parameters can appear each any
-		   order, but each must provide a value. */
+		// if a parameter is given in the command more than once, the
+		// last one will be used. The parameters can appear each any
+		// order, but each must provide a value.
 
 		ret = SKIP;
 		for (int i = 2; i < (MAX_TERMS - 1);)
@@ -4284,7 +4261,7 @@ static processing_state get_statement(TEXT* const statement,
 				state = normal;
 			}
 
-			/* Catch the help ? without a terminator */
+			// Catch the help ? without a terminator
 			if (*statement == '?' && count == 1) {
 				c = 0;
 				done = true;
@@ -4852,10 +4829,10 @@ static bool get_numeric(const UCHAR* string,
 		if (DIGIT(*p)) {
 			digit_seen = true;
 
-			/* Before computing the next value, make sure there will be
-			   no overflow. Trying to detect overflow after the fact is
-			   tricky: the value doesn't always become negative after an
-			   overflow!  */
+			// Before computing the next value, make sure there will be
+			// no overflow. Trying to detect overflow after the fact is
+			// tricky: the value doesn't always become negative after an
+			// overflow!
 
 			if (value >= INT64_LIMIT) {
 				// possibility of an overflow 
@@ -4868,8 +4845,8 @@ static bool get_numeric(const UCHAR* string,
 				}
 			}
 
-			/* Force the subtraction to be performed before the addition,
-			   thus preventing a possible signed arithmetic overflow.	*/
+			// Force the subtraction to be performed before the addition,
+			// thus preventing a possible signed arithmetic overflow.
 			value = value * 10 + (*p - '0');
 			if (fraction)
 				--local_scale;
@@ -4980,22 +4957,22 @@ static processing_state help(const TEXT* what)
 	// and 0 for an empty blank line
 	static const SSHORT help_ids[] = {
 		HLP_FRONTEND,			// Frontend commands: 
-		HLP_BLOBDMP,			/*BLOBDUMP <blobid> <file>   -- dump BLOB to a file */
-		HLP_BLOBVIEW,			/*BLOBVIEW <blobid>		  -- view BLOB in text editor */
-		HLP_EDIT,				/*EDIT	 [<filename>]	  -- edit SQL script file and execute */
-		HLP_EDIT2,				/*EDIT					   -- edit current command buffer and execute */
-		HLP_HELP,				/*HELP					   -- display this menu */
-		HLP_INPUT,				/*INput	<filename>		-- take input from the named SQL file */
-		HLP_OUTPUT,				/*OUTput   [<filename>]	  -- write output to named file */
-		HLP_OUTPUT2,			/*OUTput					 -- return output to stdout */
-		HLP_SET_ROOT,			/*SET	  <option>		  -- (use HELP SET for list) */
-		HLP_SHELL,				/*SHELL	<command>		 -- execute Operating System command in sub-shell */
-		HLP_SHOW,				/*SHOW	 <object> [<name>] -- display system information */
-		HLP_OBJTYPE,			/*	<object> = CHECK, DATABASE, DOMAIN, EXCEPTION, FILTER, FUNCTION, GENERATOR, */
-		HLP_OBJTYPE2,			/*			   GRANT, INDEX, PROCEDURE, ROLE, SQL DIALECT, SYSTEM, TABLE, */
-		HLP_OBJTYPE3,			/*			   TRIGGER, VERSION, VIEW */
-		HLP_EXIT,				/*EXIT					   -- exit and commit changes */
-		HLP_QUIT,				/*QUIT					   -- exit and roll back changes */
+		HLP_BLOBDMP,			// BLOBDUMP <blobid> <file>   -- dump BLOB to a file
+		HLP_BLOBVIEW,			// BLOBVIEW <blobid>		  -- view BLOB in text editor
+		HLP_EDIT,				// EDIT	 [<filename>]	  -- edit SQL script file and execute
+		HLP_EDIT2,				// EDIT					   -- edit current command buffer and execute
+		HLP_HELP,				// HELP					   -- display this menu
+		HLP_INPUT,				// INput	<filename>		-- take input from the named SQL file
+		HLP_OUTPUT,				// OUTput   [<filename>]	  -- write output to named file
+		HLP_OUTPUT2,			// OUTput					 -- return output to stdout
+		HLP_SET_ROOT,			// SET	  <option>		  -- (use HELP SET for list)
+		HLP_SHELL,				// SHELL	<command>		 -- execute Operating System command in sub-shell
+		HLP_SHOW,				// SHOW	 <object> [<name>] -- display system information
+		HLP_OBJTYPE,			//	<object> = CHECK, DATABASE, DOMAIN, EXCEPTION, FILTER, FUNCTION, GENERATOR,
+		HLP_OBJTYPE2,			//			   GRANT, INDEX, PROCEDURE, ROLE, SQL DIALECT, SYSTEM, TABLE,
+		HLP_OBJTYPE3,			//			   TRIGGER, VERSION, VIEW
+		HLP_EXIT,				// EXIT					   -- exit and commit changes
+		HLP_QUIT,				// QUIT					   -- exit and roll back changes
 		0,
 		HLP_ALL,				// All commands may be abbreviated to letters in CAPitals 
 		-1						// end of list 
@@ -5003,26 +4980,26 @@ static processing_state help(const TEXT* what)
 
 	static const SSHORT help_set_ids[] = {
 		HLP_SETCOM,				//Set commands: 
-		HLP_SET,				/*	SET					-- display current SET options */
-		HLP_SETAUTO,			/*	SET AUTOddl			-- toggle autocommit of DDL statements */
+		HLP_SET,				//	SET					-- display current SET options
+		HLP_SETAUTO,			//	SET AUTOddl			-- toggle autocommit of DDL statements
 #ifdef SCROLLABLE_CURSORS
-		HLP_SETFETCH,			/*	SET AUTOfetch		  -- toggle autofetch of records */
+		HLP_SETFETCH,			//	SET AUTOfetch		  -- toggle autofetch of records
 #endif
-		HLP_SETBAIL,			/*	SET BAIL		 -- toggle bailing out on errors in non-interactive mode */
-		HLP_SETBLOB,			/*	SET BLOB [ALL|<n>]	 -- display BLOBS of subtype <n> or ALL */
-		HLP_SETBLOB2,			/*	SET BLOB			   -- turn off BLOB display */
-		HLP_SETCOUNT,			/*	SET COUNT			  -- toggle count of selected rows on/off */
-		HLP_SETECHO,			/*	SET ECHO			   -- toggle command echo on/off */
+		HLP_SETBAIL,			//	SET BAIL		 -- toggle bailing out on errors in non-interactive mode
+		HLP_SETBLOB,			//	SET BLOB [ALL|<n>]	 -- display BLOBS of subtype <n> or ALL
+		HLP_SETBLOB2,			//	SET BLOB			   -- turn off BLOB display
+		HLP_SETCOUNT,			//	SET COUNT			  -- toggle count of selected rows on/off
+		HLP_SETECHO,			//	SET ECHO			   -- toggle command echo on/off
 		HLP_SETHEADING,			//  SET HEADING         -- toggle column titles display on/off
-		HLP_SETLIST,			/*	SET LIST			   -- toggle column or table display format */
-		HLP_SETNAMES,			/*	SET NAMES <csname>	 -- set name of runtime character set */
-		HLP_SETPLAN,			/*	SET PLAN			   -- toggle display of query access plan */
-		HLP_SETPLANONLY,		/* SET PLANONLY		  -- toggle display of query plan without executing*/
-		HLP_SETSQLDIALECT,		/* SET SQL DIALECT <n> -- set sql dialect to <n> */
-		HLP_SETSTAT,			/*	SET STATs			  -- toggle display of performance statistics */
-		HLP_SETTIME,			/*	SET TIME			   -- toggle display of timestamp with DATE values */
-		HLP_SETTERM,			/*	SET TERM <string>	  -- change statement terminator string */
-		HLP_SETWIDTH,			/*	SET WIDTH <col> [<n>]  -- set/unset print width to <n> for column <col> */
+		HLP_SETLIST,			//	SET LIST			   -- toggle column or table display format
+		HLP_SETNAMES,			//	SET NAMES <csname>	 -- set name of runtime character set
+		HLP_SETPLAN,			//	SET PLAN			   -- toggle display of query access plan
+		HLP_SETPLANONLY,		// SET PLANONLY		  -- toggle display of query plan without executing
+		HLP_SETSQLDIALECT,		// SET SQL DIALECT <n> -- set sql dialect to <n>
+		HLP_SETSTAT,			//	SET STATs			  -- toggle display of performance statistics
+		HLP_SETTIME,			//	SET TIME			   -- toggle display of timestamp with DATE values
+		HLP_SETTERM,			//	SET TERM <string>	  -- change statement terminator string
+		HLP_SETWIDTH,			//	SET WIDTH <col> [<n>]  -- set/unset print width to <n> for column <col>
 		0,
 		HLP_ALL,				// All commands may be abbreviated to letters in CAPitals 
 		-1						// end of list 
@@ -6012,9 +5989,9 @@ static SSHORT print_item(TEXT** s,
 						TEXT* dest = str_buf;
 						while (' ' == *src)
 							src++;
-						/* This is pretty much the same thing as a strcpy,
-						   but strcpy is not guaranteed to do the right thing
-						   when the source and destination overlap. :-( */
+						// This is pretty much the same thing as a strcpy,
+						// but strcpy is not guaranteed to do the right thing
+						// when the source and destination overlap. :-(
 						if (src != dest)
 							while (0 != (*dest++ = *src++));	// empty 
 					}
@@ -6322,10 +6299,10 @@ static processing_state print_item_blob(FILE* fp,
 	
 	const int blob_subtype = var->sqlsubtype;
 	if (blob_subtype == isc_blob_text) {
-		/* Lookup the remaining descriptor information for the BLOB field,
-		 * most specifically we're interested in the Character Set so
-		 * we can set up a BPB that requests character set transliteration
-		 */
+		// Lookup the remaining descriptor information for the BLOB field,
+		// most specifically we're interested in the Character Set so
+		// we can set up a BPB that requests character set transliteration
+
 		// CVC: Adriano changed trans to D__trans with the following comment:
 		// Fix a bug that occur when a BLOB column is added after the start
 		// of the DML transaction.
@@ -6556,10 +6533,10 @@ static void print_performance(perf* perf_before)
 		ISQL_msg_get(REPORT1, report_1, NULL);
 		// Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n
 		ISQL_msg_get(REPORT2, &report_1[strlen(report_1)], NULL);
-		/* For GUI_TOOLS:  Buffers = !b\nReads = !r\nWrites = !w\nFetches
-		   = !f\n */
-		/* Else:  Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetch
-		   es = !f\n */
+		// For GUI_TOOLS:  Buffers = !b\nReads = !r\nWrites = !w\nFetches
+		//   = !f\n
+		// Else:  Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetch
+		//   es = !f\n
 		have_report = true;
 	}
 	SCHAR statistics[256];
@@ -7213,9 +7190,9 @@ static int process_statement(const TEXT* string,
 
 //#ifdef DEV_BUILD
 
-	/* To facilitate debugging, the option
-	   SET SQLDA_DISPLAY ON
-	   will activate code to display the SQLDA after each statement. */
+	// To facilitate debugging, the option
+	// SET SQLDA_DISPLAY ON
+	// will activate code to display the SQLDA after each statement.
 
 	if (Sqlda_display)
 		print_sqlda_output(*sqlda);
@@ -7339,8 +7316,8 @@ static int process_statement(const TEXT* string,
 			else {
 				TEXT fetch_statement[BUFFER_LENGTH80];
 
-				/* if not autofetching, sit and wait for user to input
-				   NEXT, PRIOR, FIRST, LAST, ABSOLUTE <n>, or RELATIVE <n> */
+				// if not autofetching, sit and wait for user to input
+				// NEXT, PRIOR, FIRST, LAST, ABSOLUTE <n>, or RELATIVE <n>
 
 				const SSHORT fetch_ret =
 					get_statement(fetch_statement, sizeof(fetch_statement),
@@ -7366,9 +7343,9 @@ static int process_statement(const TEXT* string,
 			}
 #endif
 
-			/* Print the header every Pagelength number of lines for
-			   command-line ISQL only.  For WISQL, print the column
-			   headings only once. */
+			// Print the header every Pagelength number of lines for
+			// command-line ISQL only.  For WISQL, print the column
+			// headings only once.
 
 			if (printHead && (lines % Pagelength == 0)) {
 				isqlGlob.printf("%s%s%s%s%s",
