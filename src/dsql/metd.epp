@@ -1850,13 +1850,10 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 				RFL IN RDB$RELATION_FIELDS
 				WITH RFL.RDB$RELATION_NAME EQ X.RDB$VIEW_NAME
 
+				if (RFL.RDB$BASE_FIELD.NULL || RFL.RDB$FIELD_NAME.NULL)
+					continue;
+
 				THREAD_ENTER();
-
-				if (RFL.RDB$BASE_FIELD.NULL)
-					RFL.RDB$BASE_FIELD[0] = '\0';
-
-				if (RFL.RDB$FIELD_NAME.NULL)
-					RFL.RDB$FIELD_NAME[0] = '\0';
 
 				if (currentAux.exist(RFL.RDB$BASE_FIELD))
 					ambiguities.add(RFL.RDB$BASE_FIELD);
