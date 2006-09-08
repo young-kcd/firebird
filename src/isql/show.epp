@@ -3780,14 +3780,14 @@ static processing_state show_secclass(const char* object, const char* opt)
 	if (!object || !*object)
 		return ps_ERR;
 		
-	const bool detail = opt && (!stricmp(opt, "DETAIL") || !stricmp(opt, "DET"));
+	const bool detail = opt && (stricmp(opt, "DETAIL") == 0 || stricmp(opt, "DET") == 0);
 	XSQLVAR var; // To trick ISQL_print_item_blob()
 	memset(&var, 0, sizeof(var));
 	var.sqlsubtype = isc_blob_acl;
 	
 	int count = 0;
 
-	if (!strcmp(object, "*"))
+	if (strcmp(object, "*") == 0)
 	{
 		FOR D IN RDB$DATABASE
 		CROSS SC IN RDB$SECURITY_CLASSES
