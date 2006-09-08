@@ -99,12 +99,6 @@ static USHORT unicode_str2key(
 				&errorCode,
 				&offendingPos));
 
-		if (utf16Str.getCapacity() < unicode_keylength(tt, srcLen))
-		{
-			fb_assert(false);
-			return INTL_BAD_KEY_LENGTH;
-		}
-
 		ULONG utf16Len = cs->charset_to_unicode.csconvert_fn_convert(
 			&cs->charset_to_unicode,
 			srcLen,
@@ -113,6 +107,12 @@ static USHORT unicode_str2key(
 			utf16Str.begin(),
 			&errorCode,
 			&offendingPos);
+
+		if (dstLen < unicode_keylength(tt, srcLen))
+		{
+			fb_assert(false);
+			return INTL_BAD_KEY_LENGTH;
+		}
 
 		return ucol_getSortKey(
 			(key_type == INTL_KEY_PARTIAL ? tt->texttype_impl->partialCollator : tt->texttype_impl->collator),
