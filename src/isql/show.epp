@@ -100,7 +100,9 @@ static TEXT SQL_identifier[BUFFER_LENGTH128];
 
 // Initialize types
 
-static const SCHAR* Object_types[] = {
+// Keep this array in sync with obj.h in jrd.
+static const SCHAR* Object_types[] =
+{
 	"Table",
 	"View",
 	"Trigger",
@@ -1067,7 +1069,11 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 		ISQL_msg_get(VERSION, msg_string, FB_VERSION);
 		isqlGlob.printf("%s%s", msg_string, NEWLINE);
 		isqlGlob.printf("Server version:%s", NEWLINE);
-		isc_version(&DB, local_fprintf, NULL);
+		if (isc_version(&DB, local_fprintf, NULL))
+		{
+			ISQL_msg_get(CANNOT_GET_SRV_VER, msg_string, NULL);
+			STDERROUT(msg_string);
+		}
 	}
 	else if (!strcmp(cmd[1], "SQL"))
 	{
@@ -1352,7 +1358,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 					END_ERROR;
 				}
 				if (!key) {
-					FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ SQL_id_for_grant;
+					FOR FIRST 1 R IN RDB$ROLES
+					WITH R.RDB$ROLE_NAME EQ SQL_id_for_grant;
 						key = NO_GRANT_ON_ROL;
 					END_FOR
 					ON_ERROR

@@ -243,6 +243,7 @@ const int NO_COLLATIONS				= 149;		// There are no collations in this database
 const int MSG_COLLATIONS			= 150;		// Collations:
 const int NO_SECCLASS               = 151;      // There are no security classes for %s
 const int NO_DB_WIDE_SECCLASS       = 152;      // There is no database-wide security class
+const int CANNOT_GET_SRV_VER		= 153;		// Cannot get server version without database connection
 
 // Initialize types
 
