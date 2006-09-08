@@ -1412,8 +1412,8 @@ void DYN_modify_local_field(
 
 	if (!found)
 	{
-		DYN_error_punt(false, 96, f.c_str(), NULL, NULL, NULL, NULL);
-		/* msg 96: "Local column %s not found" */
+		DYN_error_punt(false, 176, f.c_str(), r.c_str(), NULL, NULL, NULL);
+		// msg 176: "column %s does not exist in table/view %s"
 	}
 }
 
@@ -3175,8 +3175,10 @@ void DYN_modify_sql_field(Global*					gbl,
 	request = NULL;
 
 	if (!found)
-		DYN_error_punt(false, 96, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
-		// msg 96: "Local column %s not found"
+	{
+		DYN_error_punt(false, 176, orig_fld.dyn_fld_name.c_str(), relation_name->c_str(), NULL, NULL, NULL);
+		// msg 176: "column %s does not exist in table/view %s"
+	}
 
 	// Update any indices that exist
 	modify_lfield_index(tdbb, dbb, gbl, *relation_name, orig_fld.dyn_fld_name,

@@ -937,8 +937,8 @@ void DYN_delete_local_field(Global* gbl,
 	}
 
 	if (!found) {
-		DYN_error_punt(false, 55, NULL, NULL, NULL, NULL, NULL);
-		/* msg 55: "Column not found for table" */
+		DYN_error_punt(false, 176, col_nm.c_str(), tbl_nm.c_str(), NULL, NULL, NULL);
+		// msg 176: "column %s does not exist in table/view %s"
 	}
 }
 
