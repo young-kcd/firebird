@@ -352,7 +352,6 @@ static processing_state parse_arg(int, SCHAR**, SCHAR*, FILE**);
 static processing_state passthrough(const char* cmd);
 #endif
 static SSHORT print_item(TEXT**, XSQLVAR*, const SLONG);
-static processing_state print_item_blob(FILE*, const XSQLVAR*, FB_API_HANDLE);
 static void print_item_numeric(SINT64, SSHORT, SSHORT, TEXT*);
 static processing_state print_line(XSQLDA*, const SLONG pad[], TEXT line[]);
 static void print_performance(perf* perf_before);
@@ -420,7 +419,7 @@ static bool Autofetch = true; // automatically fetch all records
 static USHORT fetch_direction = 0;
 static SLONG fetch_offset = 1;
 #endif
-static SSHORT Doblob = 1;		// Default to printing only text types 
+static int Doblob = 1;		// Default to printing only text types
 static bool List = false;
 static bool Docount = false;
 static bool Plan = false;
@@ -5961,7 +5960,7 @@ static SSHORT print_item(TEXT** s,
 			sprintf(p, "%17s ", blobbuf);
 			if (List) {
 				isqlGlob.printf("%s%s", blobbuf, NEWLINE);
-				dtype = print_item_blob(isqlGlob.Out, var, M__trans);
+				dtype = ISQL_print_item_blob(isqlGlob.Out, var, M__trans, Doblob);
 				isqlGlob.printf(NEWLINE);
 			}
 			break;
@@ -6255,19 +6254,20 @@ static SSHORT print_item(TEXT** s,
 
 	*s = p;
 
-	return (dtype);
+	return dtype;
 }
 
 
-static processing_state print_item_blob(FILE* fp,
+processing_state ISQL_print_item_blob(FILE* fp,
 						   const XSQLVAR* var,
-						   FB_API_HANDLE trans)
+						   FB_API_HANDLE trans,
+						   int subtype)
 {
-/**************************************
+/******************************************
  *
- *	p r i n t _ i t e m _ b l o b
+ *	I S Q L _ p r i n t _ i t e m _ b l o b
  *
- **************************************
+ ******************************************
  *
  * Functional description
  *	Print a User Selected BLOB field (as oppposed to
@@ -6284,8 +6284,8 @@ static processing_state print_item_blob(FILE* fp,
 	if (blobid->gds_quad_high == 0 && blobid->gds_quad_low == 0)
 		return CONT;
 
-	if ((var->sqlsubtype != Doblob) && (Doblob != ALL_BLOBS)) {
-		ISQL_msg_get(BLOB_SUBTYPE, msg, (TEXT*) (IPTR) Doblob,
+	if ((var->sqlsubtype != subtype) && (subtype != ALL_BLOBS)) {
+		ISQL_msg_get(BLOB_SUBTYPE, msg, (TEXT*) (IPTR) subtype,
 					 (TEXT*) (IPTR) var->sqlsubtype);
 		// Blob display set to subtype %d. This blob: subtype = %d\n 
 		ISQL_printf(fp, msg);
@@ -6506,7 +6506,7 @@ static processing_state print_line(XSQLDA* sqlda,
 					"==============================================================================%s",
 					NEWLINE);
 			isqlGlob.printf("%s:  %s", var->aliasname, NEWLINE);
-			if (print_item_blob(isqlGlob.Out, var, M__trans))
+			if (ISQL_print_item_blob(isqlGlob.Out, var, M__trans, Doblob) != CONT)
 				return (ps_ERR);
 			isqlGlob.printf(
 					"%s==============================================================================%s",

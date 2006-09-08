@@ -91,6 +91,7 @@ static void show_index(SCHAR*, SCHAR*, const SSHORT, const SSHORT, const SSHORT)
 static processing_state show_indices(const SCHAR* const*);
 static processing_state show_proc(const SCHAR*);
 static processing_state show_role(const SCHAR*);
+static processing_state show_secclass(const char* object, const char* opt);
 static processing_state show_table(const SCHAR*, bool);
 static processing_state show_trigger(const SCHAR*, bool, bool);
 const char* const spaces = "                                ";
@@ -246,7 +247,8 @@ public:
 	{
 		role, table, view, system, index, domain, exception,
 		filter, function, generator, grant, procedure, trigger,
-		check, database, comment, dependency, collation, wrong
+		check, database, comment, dependency, collation, security_class,
+		wrong
 	};
 	static show_commands getCommand(const char* cmd);
 
@@ -304,7 +306,9 @@ const ShowOptions::map ShowOptions::options[] =
 	{dependency, "DEPENDENCY", 5},
 	{dependency, "DEPENDENCIES", 5},
 	{collation, "COLLATES", 7},
-	{collation, "COLLATIONS", 9}
+	{collation, "COLLATIONS", 9},
+	{security_class, "SECURITY CLASSES", 12},
+	{security_class, "SECCLASSES", 6}
 };
 
 // Return the keyword associated with the string. There may be several strings
@@ -1467,6 +1471,24 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 			
 		if (ret == OBJECT_NOT_FOUND)
 			key = NO_DEPENDENCIES;
+		break;
+		
+	case ShowOptions::security_class:
+		if (*cmd[2] == '"')
+		{
+			remove_delimited_double_quotes(lcmd[2]);
+			ret = show_secclass(lcmd[2], cmd[3]);
+		}
+		else
+			ret = show_secclass(cmd[2], cmd[3]);
+
+		if (ret == OBJECT_NOT_FOUND)
+		{
+			if (!strcmp(cmd[2], "*"))
+				key = NO_DB_WIDE_SECCLASS;
+			else
+				key = NO_SECCLASS;
+		}
 		break;
 
 	default:
@@ -3701,11 +3723,11 @@ static processing_state show_role(const SCHAR* object)
 					else
 						strcpy(SQL_identifier, role_name);
 
-					isqlGlob.printf("Role %s is granted to:\n", SQL_identifier);
+					isqlGlob.printf("Role %s is granted to:%s", SQL_identifier, NEWLINE);
 				}
 
 				fb_utils::exact_name(PRV.RDB$USER);
-				isqlGlob.printf("%s\n", PRV.RDB$USER);
+				isqlGlob.printf("%s%s", PRV.RDB$USER, NEWLINE);
 
 			END_FOR
 			ON_ERROR
@@ -3723,7 +3745,7 @@ static processing_state show_role(const SCHAR* object)
 				else
 					strcpy(SQL_identifier, role_name);
 
-			    isqlGlob.printf("Role %s isn't granted to anyone.\n", SQL_identifier);
+			    isqlGlob.printf("Role %s isn't granted to anyone.%s", SQL_identifier, NEWLINE);
 			}
 
 		END_FOR
@@ -3737,6 +3759,125 @@ static processing_state show_role(const SCHAR* object)
 
 		return (SKIP);
 	}
+}
+
+
+// ***********************
+// s h o w _ s e c c l a s
+// ***********************
+// Show low-level, GDML security for an object. It may be table/view or procedure.
+// Using SHOW SECCLASS <name> DET[AIL] will print the contents of the sec blob.
+// Using SHOW SECCLASS * DET[AIL] will print the db-wide sec class in rdb$database.
+static processing_state show_secclass(const char* object, const char* opt)
+{
+	if (!object || !*object)
+		return ps_ERR;
+		
+	const bool detail = opt && (!stricmp(opt, "DETAIL") || !stricmp(opt, "DET"));
+	XSQLVAR var; // To trick ISQL_print_item_blob()
+	memset(&var, 0, sizeof(var));
+	var.sqlsubtype = isc_blob_acl;
+	
+	int count = 0;
+
+	if (!strcmp(object, "*"))
+	{
+		FOR D IN RDB$DATABASE
+		CROSS SC IN RDB$SECURITY_CLASSES
+		OVER RDB$SECURITY_CLASS
+			++count;
+			isqlGlob.printf("Database-wide's sec class %s%s",
+				fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
+			if (detail)
+			{
+				var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
+				ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+			}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR
+		
+		return count ? SKIP : OBJECT_NOT_FOUND;
+	}
+	
+	FOR REL IN RDB$RELATIONS
+	CROSS SC IN RDB$SECURITY_CLASSES
+	OVER RDB$SECURITY_CLASS
+	WITH REL.RDB$RELATION_NAME EQ object
+		++count;
+		isqlGlob.printf("%s's main sec class %s%s",
+			REL.RDB$VIEW_BLR.NULL ? "Table" : "View",
+			fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
+		if (detail)
+		{
+			var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
+			ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+		}
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
+		return ps_ERR;
+	END_ERROR
+
+	FOR REL2 IN RDB$RELATIONS
+	CROSS SC IN RDB$SECURITY_CLASSES
+	WITH REL2.RDB$RELATION_NAME EQ object
+	AND REL2.RDB$DEFAULT_CLASS EQ SC.RDB$SECURITY_CLASS
+		++count;
+		isqlGlob.printf("%s's default sec class %s%s",
+			REL2.RDB$VIEW_BLR.NULL ? "Table" : "View",
+			fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
+		if (detail)
+		{
+			var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
+			ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+		}
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
+		return ps_ERR;
+	END_ERROR
+
+	FOR RF IN RDB$RELATION_FIELDS
+	CROSS SC IN RDB$SECURITY_CLASSES
+	OVER RDB$SECURITY_CLASS
+	WITH RF.RDB$RELATION_NAME EQ object
+	SORTED BY RF.RDB$FIELD_POSITION
+		++count;
+		isqlGlob.printf("   Field %s - sec class %s%s", fb_utils::exact_name(RF.RDB$FIELD_NAME),
+			SC.RDB$SECURITY_CLASS, NEWLINE);
+		if (detail)
+		{
+			var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
+			ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+		}
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
+		return ps_ERR;
+	END_ERROR
+	
+	FOR PR IN RDB$PROCEDURES
+	CROSS SC IN RDB$SECURITY_CLASSES
+	OVER RDB$SECURITY_CLASS
+	WITH PR.RDB$PROCEDURE_NAME EQ object
+		++count;
+		isqlGlob.printf("Procedure's sec class %s%s",
+			fb_utils::exact_name(SC.RDB$SECURITY_CLASS), NEWLINE);
+		if (detail)
+		{
+			var.sqldata = reinterpret_cast<char*>(&SC.RDB$ACL);
+			ISQL_print_item_blob(isqlGlob.Out, &var, gds_trans, isc_blob_acl);
+		}
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(isc_status);
+		return ps_ERR;
+	END_ERROR
+
+	return count ? SKIP : OBJECT_NOT_FOUND;
 }
 
 
@@ -3769,7 +3910,7 @@ static processing_state show_table(
 		if (first) {
 			if (!REL.RDB$EXTERNAL_FILE.NULL)
 			{
-				isqlGlob.printf("External file: %s\n", REL.RDB$EXTERNAL_FILE);
+				isqlGlob.printf("External file: %s%s", REL.RDB$EXTERNAL_FILE, NEWLINE);
 			}
 		}
 		first = false;

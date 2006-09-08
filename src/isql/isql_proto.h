@@ -70,7 +70,8 @@ void	ISQL_reset_settings();
 void	ISQL_ri_action_print(const TEXT*, const TEXT*, bool);
 int		ISQL_sql_statement(TEXT*, FILE*, FILE*, FILE*);
 void	ISQL_truncate_term(TEXT*, USHORT);
-void	ISQL_win_err(const char*);
+//void	ISQL_win_err(const char*);
+processing_state ISQL_print_item_blob(FILE*, const XSQLVAR*, FB_API_HANDLE, int subtype);
 
 #endif // ISQL_ISQL_PROTO_H
 
