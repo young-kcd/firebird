@@ -333,7 +333,7 @@ bool LCICU_texttype_init(texttype* tt,
 
 	if (strcmp(name, charSetName) == 0)
 	{
-		return texttype_unicode_init(
+		return texttype_default_init(
 			tt, name, charSetName, attributes,
 			specificAttributes, specificAttributesLength);
 	}
