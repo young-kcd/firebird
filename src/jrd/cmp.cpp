@@ -3578,8 +3578,8 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 					// stack2 is in reverse order, pushing everything in stack
 					// will correct the order.
-					for (NodeStack::iterator i(stack2); i.hasData(); ++i)
-						stack.push(i.object());
+					for (NodeStack::iterator i2(stack2); i2.hasData(); ++i2)
+						stack.push(i2.object());
 				}
 
 				return catenate_nodes(tdbb, stack);
