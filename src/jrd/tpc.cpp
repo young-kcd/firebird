@@ -43,7 +43,7 @@
 #include <memory>
 
 static TPC allocate_tpc(TDBB, ULONG);
-static void cache_transactions(TDBB, TPC *, ULONG);
+static ULONG cache_transactions(TDBB, TPC *, ULONG);
 static int extend_cache(TDBB, SLONG);
 
 
@@ -371,7 +371,7 @@ static TPC allocate_tpc(TDBB tdbb, ULONG base)
 }
 
 
-static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
+static ULONG cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
 {
 /**************************************
  *
@@ -404,7 +404,8 @@ static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
 	window.win_flags = 0;
 	header = (HDR) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	top = header->hdr_next_transaction;
-	oldest = MAX(oldest, (ULONG) header->hdr_oldest_transaction);
+	const ULONG hdr_oldest = (ULONG) header->hdr_oldest_transaction;
+	oldest = MAX(oldest, hdr_oldest);
 	CCH_RELEASE(tdbb, &window);
 #endif
 
@@ -425,6 +426,12 @@ static void cache_transactions(TDBB tdbb, TPC * tip_cache_ptr, ULONG oldest)
    automatically fill in the tip cache pages */
 
 	TRA_get_inventory(tdbb, NULL, oldest, top);
+
+#ifdef SUPERSERVER_V2
+	return dbb->dbb_oldest_transaction;
+#else
+	return hdr_oldest;
+#endif
 }
 
 
@@ -457,8 +464,28 @@ static int extend_cache(TDBB tdbb, SLONG number)
 	for (tip_cache_ptr = &dbb->dbb_tip_cache; *tip_cache_ptr;
 		 tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)
 		tip_cache = *tip_cache_ptr;
-	cache_transactions(tdbb, tip_cache_ptr,
+
+	const ULONG oldest = cache_transactions(tdbb, tip_cache_ptr, 
 					   tip_cache->tpc_base + trans_per_tip);
+
+	// hvlad: cache_transactions returns number of oldest transaction
+	// just refreshed from header page. No need to cache TIP pages below it
+	// Moreover our tip cache can now contain an gap between last
+	// cached tip page and new pages if our process was idle for long time
+
+	for (tip_cache = dbb->dbb_tip_cache; 
+		 tip_cache && (tip_cache->tpc_base + trans_per_tip < oldest); 
+		 tip_cache = dbb->dbb_tip_cache) 
+	{
+		dbb->dbb_tip_cache = tip_cache->tpc_next;
+		
+		// hvlad: commented out in 1.5 release branch, enabled and required
+		// additional testing in 2.1
+		// delete tip_cache;
+	}
+
+	if (number < oldest)
+		return tra_committed;
 
 /* find the right block for this transaction and return the state */
 
