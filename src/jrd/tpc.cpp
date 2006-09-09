@@ -45,7 +45,7 @@
 using namespace Jrd;
 
 static TxPageCache* allocate_tpc(thread_db*, ULONG);
-static void cache_transactions(thread_db*, TxPageCache**, ULONG);
+static ULONG cache_transactions(thread_db*, TxPageCache**, ULONG);
 static int extend_cache(thread_db*, SLONG);
 
 
@@ -367,7 +367,7 @@ static TxPageCache* allocate_tpc(thread_db* tdbb, ULONG base)
 }
 
 
-static void cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr, 
+static ULONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr, 
 							   ULONG oldest)
 {
 /**************************************
@@ -396,7 +396,8 @@ static void cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
 	const Ods::header_page* header =
 		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	const ULONG top = header->hdr_next_transaction;
-	oldest = MAX(oldest, (ULONG) header->hdr_oldest_transaction);
+	const ULONG hdr_oldest = (ULONG) header->hdr_oldest_transaction;
+	oldest = MAX(oldest, hdr_oldest);
 	CCH_RELEASE(tdbb, &window);
 #endif
 
@@ -418,6 +419,12 @@ static void cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
    automatically fill in the tip cache pages */
 
 	TRA_get_inventory(tdbb, NULL, oldest, top);
+
+#ifdef SUPERSERVER_V2
+	return dbb->dbb_oldest_transaction;
+#else
+	return hdr_oldest;
+#endif
 }
 
 
@@ -450,8 +457,25 @@ static int extend_cache(thread_db* tdbb, SLONG number)
 	{
 		tip_cache = *tip_cache_ptr;
 	}
-	cache_transactions(tdbb, tip_cache_ptr,
-					   tip_cache->tpc_base + trans_per_tip);
+
+	const ULONG oldest = cache_transactions(tdbb, tip_cache_ptr, 
+							tip_cache->tpc_base + trans_per_tip);
+
+	// hvlad: cache_transactions returns number of oldest transaction
+	// just refreshed from header page. No need to cache TIP pages below it
+	// Moreover out tip cache can now contain an gap between last
+	// cached tip page and new pages if our process was idle for long time
+
+	for (tip_cache = dbb->dbb_tip_cache; 
+		 tip_cache && (tip_cache->tpc_base + trans_per_tip < oldest); 
+		 tip_cache = dbb->dbb_tip_cache) 
+	{
+		dbb->dbb_tip_cache = tip_cache->tpc_next;
+		delete tip_cache;
+	}
+
+	if (number < oldest)
+		return tra_committed;
 
 /* find the right block for this transaction and return the state */
 
