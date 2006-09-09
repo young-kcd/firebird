@@ -474,7 +474,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 					request->req_flags &= ~req_null;
 					return true;
 				}
-				else if ((flags & req_null) || (request->req_flags & req_null))
+
+				if ((flags & req_null) || (request->req_flags & req_null))
 				{
 					request->req_flags &= ~req_null;
 					return false;
@@ -580,7 +581,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			if ((!value && !firstnull) || (!value2 && !secondnull)) {
 				return false;	/* at least one operand was FALSE */
 			}
-			else if (value && value2) {
+
+			if (value && value2) {
 				return true;	/* both true */
 			}
 			request->req_flags |= req_null;
@@ -892,8 +894,6 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 	case nod_function:
 		FUN_evaluate(reinterpret_cast<UserFunction*>(node->nod_arg[e_fun_function]),
 				     node->nod_arg[e_fun_args], impure);
-		/*request->req_flags |= req_null; THIS IS A TEST ONLY.
-		return NULL;*/
 		return &impure->vlu_desc;
 
 	case nod_literal:
@@ -987,7 +987,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			if (tdbb->tdbb_attachment->att_user)
 			{
 				cur_role = tdbb->tdbb_attachment->att_user->usr_sql_role_name;
-				impure->vlu_desc.dsc_address = (UCHAR*) cur_role;
+				impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(cur_role);
 			}
 			if (cur_role)
 				impure->vlu_desc.dsc_length = strlen(cur_role);
@@ -1042,69 +1042,68 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
             break;
 	}
 
-	{
-/* Evaluate arguments */
+	// Evaluate arguments
 
-		dsc* values[3];
+	dsc* values[3];
 
-		if (node->nod_count) {
-			dsc** v = values;
-			jrd_nod** ptr = node->nod_arg;
-			for (const jrd_nod* const* const end = ptr + node->nod_count;
-				 ptr < end;)
-			{
-				*v++ = EVL_expr(tdbb, *ptr++);
-				if (request->req_flags & req_null)
-					return NULL;
-			}
-		}
-
-		switch (node->nod_type) {
-		case nod_gen_id:		/* return a 32-bit generator value */
-			impure->vlu_misc.vlu_long =
-				(SLONG) DPM_gen_id(tdbb, (SLONG)(IPTR) node->nod_arg[e_gen_id],
-									false, MOV_get_int64(values[0], 0));
-			impure->vlu_desc.dsc_dtype = dtype_long;
-			impure->vlu_desc.dsc_length = sizeof(SLONG);
-			impure->vlu_desc.dsc_scale = 0;
-			impure->vlu_desc.dsc_sub_type = 0;
-			impure->vlu_desc.dsc_address =
-				(UCHAR *) & impure->vlu_misc.vlu_long;
-			return &impure->vlu_desc;
-
-		case nod_gen_id2:
-			impure->vlu_misc.vlu_int64 = DPM_gen_id(tdbb,
-				(IPTR) node->nod_arg[e_gen_id], false, MOV_get_int64(values[0], 0));
-			impure->vlu_desc.dsc_dtype = dtype_int64;
-			impure->vlu_desc.dsc_length = sizeof(SINT64);
-			impure->vlu_desc.dsc_scale = 0;
-			impure->vlu_desc.dsc_sub_type = 0;
-			impure->vlu_desc.dsc_address =
-				(UCHAR *) & impure->vlu_misc.vlu_int64;
-			return &impure->vlu_desc;
-
-		case nod_negate:
-			return negate_dsc(tdbb, values[0], impure);
-
-		case nod_substr:
-			return substring(tdbb, impure, values[0], values[1], values[2]);
-
-		case nod_upcase:
-			return low_up_case(tdbb, values[0], impure, INTL_str_to_upper, &TextType::str_to_upper);
-
-		case nod_lowcase:
-			return low_up_case(tdbb, values[0], impure, INTL_str_to_lower, &TextType::str_to_lower);
-
-		case nod_cast:
-			return cast(tdbb, values[0], node, impure);
-
-		case nod_internal_info:
-			return internal_info(tdbb, values[0], impure);
-
-		default:
-			BUGCHECK(232);		/* msg 232 EVL_expr: invalid operation */
+	if (node->nod_count) {
+		dsc** v = values;
+		jrd_nod** ptr = node->nod_arg;
+		for (const jrd_nod* const* const end = ptr + node->nod_count;
+			 ptr < end;)
+		{
+			*v++ = EVL_expr(tdbb, *ptr++);
+			if (request->req_flags & req_null)
+				return NULL;
 		}
 	}
+
+	switch (node->nod_type) {
+	case nod_gen_id:		// return a 32-bit generator value
+		impure->vlu_misc.vlu_long =
+			(SLONG) DPM_gen_id(tdbb, (SLONG)(IPTR) node->nod_arg[e_gen_id],
+								false, MOV_get_int64(values[0], 0));
+		impure->vlu_desc.dsc_dtype = dtype_long;
+		impure->vlu_desc.dsc_length = sizeof(SLONG);
+		impure->vlu_desc.dsc_scale = 0;
+		impure->vlu_desc.dsc_sub_type = 0;
+		impure->vlu_desc.dsc_address =
+			(UCHAR *) & impure->vlu_misc.vlu_long;
+		return &impure->vlu_desc;
+
+	case nod_gen_id2:
+		impure->vlu_misc.vlu_int64 = DPM_gen_id(tdbb,
+			(IPTR) node->nod_arg[e_gen_id], false, MOV_get_int64(values[0], 0));
+		impure->vlu_desc.dsc_dtype = dtype_int64;
+		impure->vlu_desc.dsc_length = sizeof(SINT64);
+		impure->vlu_desc.dsc_scale = 0;
+		impure->vlu_desc.dsc_sub_type = 0;
+		impure->vlu_desc.dsc_address =
+			(UCHAR *) & impure->vlu_misc.vlu_int64;
+		return &impure->vlu_desc;
+
+	case nod_negate:
+		return negate_dsc(tdbb, values[0], impure);
+
+	case nod_substr:
+		return substring(tdbb, impure, values[0], values[1], values[2]);
+
+	case nod_upcase:
+		return low_up_case(tdbb, values[0], impure, INTL_str_to_upper, &TextType::str_to_upper);
+
+	case nod_lowcase:
+		return low_up_case(tdbb, values[0], impure, INTL_str_to_lower, &TextType::str_to_lower);
+
+	case nod_cast:
+		return cast(tdbb, values[0], node, impure);
+
+	case nod_internal_info:
+		return internal_info(tdbb, values[0], impure);
+
+	default:
+		BUGCHECK(232);		/* msg 232 EVL_expr: invalid operation */
+	}
+
 	return NULL;
 }
 
@@ -1253,12 +1252,15 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 
 						const dsc* default_desc = &default_literal->lit_desc;
 						// CVC: This could be a bitwise copy in one line
+						/*
 						desc->dsc_dtype    = default_desc->dsc_dtype;
 						desc->dsc_scale    = default_desc->dsc_scale;
 						desc->dsc_length   = default_desc->dsc_length;
 						desc->dsc_sub_type = default_desc->dsc_sub_type;
 						desc->dsc_flags    = default_desc->dsc_flags;
 						desc->dsc_address  = default_desc->dsc_address;
+						*/
+						*desc = *default_desc;
 					}
 					return true;
 				}
@@ -1500,6 +1502,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 					EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
 				else
 					vtemp.vlu_desc.dsc_address = NULL;
+					
 				desc = EVL_expr(tdbb, from);
 				if (request->req_flags & req_null) {
 					impure->vlu_desc.dsc_address = NULL;
@@ -1604,8 +1607,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 				if (request->req_flags & req_null)
 					break;
 				if (impure->vlux_count) {
-					const dsc* const delimiter =
-						EVL_expr(tdbb, from->nod_arg[1]);
+					const dsc* const delimiter = EVL_expr(tdbb, from->nod_arg[1]);
 					if (request->req_flags & req_null) {
 						// mark the result as NULL
 						impure->vlu_desc.dsc_dtype = 0;
@@ -2248,8 +2250,7 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 		fb_assert(d1 >= 0 && d1 < ISC_TICKS_PER_DAY);
 	}
 	else
-		d1 =
-			MOV_get_int64(&value->vlu_desc, ISC_TIME_SECONDS_PRECISION_SCALE);
+		d1 = MOV_get_int64(&value->vlu_desc, ISC_TIME_SECONDS_PRECISION_SCALE);
 
 	SINT64 d2;
 /* Coerce operand2 to a count of seconds */
@@ -2458,78 +2459,78 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 	{ // This block solves the goto v/s var initialization error
 
-/* Coerce operand1 to a count of microseconds */
+		// Coerce operand1 to a count of microseconds
 
-	bool op1_is_timestamp = false;
-	if ((value->vlu_desc.dsc_dtype == dtype_timestamp)
-		|| (DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
-	{
-		op1_is_timestamp = true;
-	}
+		bool op1_is_timestamp = false;
+		if ((value->vlu_desc.dsc_dtype == dtype_timestamp)
+			|| (DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
+		{
+			op1_is_timestamp = true;
+		}
 
-/* Coerce operand2 to a count of microseconds */
+		// Coerce operand2 to a count of microseconds
 
-	bool op2_is_timestamp = false;
-	if ((desc->dsc_dtype == dtype_timestamp)
-		|| (DTYPE_IS_TEXT(desc->dsc_dtype)))
-	{
-		op2_is_timestamp = true;
-	}
+		bool op2_is_timestamp = false;
+		if ((desc->dsc_dtype == dtype_timestamp)
+			|| (DTYPE_IS_TEXT(desc->dsc_dtype)))
+		{
+			op2_is_timestamp = true;
+		}
 
-/* Exactly one of the operands must be a timestamp or
-   convertable into a timestamp, otherwise it's one of
-	   <numeric>   +/- <numeric>
-	or <timestamp> +/- <timestamp>
-	or <string>    +/- <string>
-   which are errors */
+		/* Exactly one of the operands must be a timestamp or
+		   convertable into a timestamp, otherwise it's one of
+			   <numeric>   +/- <numeric>
+			or <timestamp> +/- <timestamp>
+			or <string>    +/- <string>
+		   which are errors */
 
-	if (op1_is_timestamp == op2_is_timestamp)
-		ERR_post(isc_expression_eval_err, 0);
+		if (op1_is_timestamp == op2_is_timestamp)
+			ERR_post(isc_expression_eval_err, 0);
 
-	if (op1_is_timestamp) {
-		d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
-		d2 = get_day_fraction(desc);
-	}
-	else {
-		fb_assert((node->nod_type == nod_add) || (node->nod_type == nod_add2));
-		fb_assert(op2_is_timestamp);
-		d1 = get_day_fraction(&value->vlu_desc);
-		d2 = get_timestamp_to_isc_ticks(desc);
-	}
+		if (op1_is_timestamp) {
+			d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
+			d2 = get_day_fraction(desc);
+		}
+		else {
+			fb_assert((node->nod_type == nod_add) || (node->nod_type == nod_add2));
+			fb_assert(op2_is_timestamp);
+			d1 = get_day_fraction(&value->vlu_desc);
+			d2 = get_timestamp_to_isc_ticks(desc);
+		}
 
-/* Perform the operation */
+		// Perform the operation
 
-	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
-		fb_assert(op1_is_timestamp);
-		d2 = d1 - d2;
-	}
-	else
-		d2 = d1 + d2;
+		if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
+			fb_assert(op1_is_timestamp);
+			d2 = d1 - d2;
+		}
+		else
+			d2 = d1 + d2;
 
-/* Convert the count of microseconds back to a date / time format */
+		// Convert the count of microseconds back to a date / time format
 
-	value->vlu_misc.vlu_timestamp.timestamp_date = d2 / (ISC_TICKS_PER_DAY);
-	value->vlu_misc.vlu_timestamp.timestamp_time = (d2 % ISC_TICKS_PER_DAY);
+		value->vlu_misc.vlu_timestamp.timestamp_date = d2 / (ISC_TICKS_PER_DAY);
+		value->vlu_misc.vlu_timestamp.timestamp_time = (d2 % ISC_TICKS_PER_DAY);
 
-	Firebird::TimeStamp ts(value->vlu_misc.vlu_timestamp);
+		Firebird::TimeStamp ts(value->vlu_misc.vlu_timestamp);
 
-	if (!ts.isRangeValid()) {
-		ERR_post(isc_date_range_exceeded, 0);
-	}
+		if (!ts.isRangeValid()) {
+			ERR_post(isc_date_range_exceeded, 0);
+		}
 
-/* Make sure the TIME portion is non-negative */
+		// Make sure the TIME portion is non-negative
 
-	if ((SLONG) value->vlu_misc.vlu_timestamp.timestamp_time < 0) {
-		value->vlu_misc.vlu_timestamp.timestamp_time =
-			((SLONG) value->vlu_misc.vlu_timestamp.timestamp_time) +
-			ISC_TICKS_PER_DAY;
-		value->vlu_misc.vlu_timestamp.timestamp_date -= 1;
-	}
+		if ((SLONG) value->vlu_misc.vlu_timestamp.timestamp_time < 0) {
+			value->vlu_misc.vlu_timestamp.timestamp_time =
+				((SLONG) value->vlu_misc.vlu_timestamp.timestamp_time) +
+				ISC_TICKS_PER_DAY;
+			value->vlu_misc.vlu_timestamp.timestamp_date -= 1;
+		}
 
 	} // scope block for goto v/s var initialization error
 
-  return_result:
-/* Caution: target of GOTO */
+return_result:
+	// Caution: target of GOTO
 
 	fb_assert(value->vlu_misc.vlu_timestamp.timestamp_time >= 0 &&
 		   value->vlu_misc.vlu_timestamp.timestamp_time < ISC_TICKS_PER_DAY);
@@ -2989,7 +2990,7 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 
-	// If it don't point to a valid record, return NULL
+	// If it doesn't point to a valid record, return NULL
 	if (!rpb->rpb_number.isValid())
 	{
 		request->req_flags |= req_null;
@@ -3041,10 +3042,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
  *      Evaluate a statistical expression.
  *
  **************************************/
-	dsc* value;
 	USHORT* invariant_flags;
-	SSHORT result;
-	double d;
 
 	SET_TDBB(tdbb);
 
@@ -3068,7 +3066,6 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		}
 	}
 
-	ULONG flag = req_null;
 	if ((nod_average2 == node->nod_type)) {
 		impure->vlu_misc.vlu_int64 = 0;
 		impure->vlu_desc.dsc_dtype = dtype_int64;
@@ -3082,12 +3079,15 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		impure->vlu_desc.dsc_length = sizeof(SLONG);
 		impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
 	}
-	SLONG count = 0;
 
 	RecordSource* rsb = (RecordSource*) node->nod_arg[e_stat_rsb];
 	RSE_open(tdbb, rsb);
 
-/* Handle each variety separately */
+	SLONG count = 0;
+	ULONG flag = req_null;
+	double d;
+	
+	// Handle each variety separately
 
 	switch (node->nod_type)
 	{
@@ -3104,7 +3104,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		flag = 0;
 		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
-			value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
+			EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			if (!(request->req_flags & req_null)) {
 				++impure->vlu_misc.vlu_long;
 			}
@@ -3116,10 +3116,11 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	case nod_max:
 		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 		{
-			value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
+			dsc* value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			if (request->req_flags & req_null) {
 				continue;
 			}
+			SSHORT result;
 			if (flag ||
 				((result = MOV_compare(value, desc)) < 0 &&
 				 node->nod_type == nod_min) ||
@@ -3381,12 +3382,12 @@ static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
 		case nod_agg_total_distinct2:
 		case nod_agg_list_distinct:
 			{
-			const size_t asb_index =
-				(from->nod_type == nod_agg_list_distinct) ? 2 : 1;
-			const AggregateSort* asb = (AggregateSort*) from->nod_arg[asb_index];
-			impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
-			SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
-			asb_impure->iasb_sort_handle = NULL;
+				const size_t asb_index =
+					(from->nod_type == nod_agg_list_distinct) ? 2 : 1;
+				const AggregateSort* asb = (AggregateSort*) from->nod_arg[asb_index];
+				impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
+				SORT_fini(asb_impure->iasb_sort_handle, tdbb->tdbb_attachment);
+				asb_impure->iasb_sort_handle = NULL;
 			}
 		}
 	}
@@ -4103,10 +4104,11 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 
 	DEV_BLKCHK(node, type_nod);
 
-/* Get request, record parameter block for stream */
+	// Get request, record parameter block for stream
 
 	jrd_req* request = tdbb->tdbb_request;
-	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+	// Already set by the caller
+	//impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 
 /* If the current transaction has updated the record, the record version
@@ -4189,18 +4191,18 @@ static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		return NULL;
 
 	if (desc->dsc_dtype != dtype_array)
-		IBERROR(261);			/* msg 261 scalar operator used on field which is not an array */
+		IBERROR(261);			// msg 261 scalar operator used on field which is not an array
 
 	jrd_nod* list = node->nod_arg[e_scl_subscripts];
 
 	SLONG subscripts[16];
-    SLONG* p = subscripts;
+    int iter = 0;
 	jrd_nod** ptr = list->nod_arg;
 	for (const jrd_nod* const* const end = ptr + list->nod_count; ptr < end;)
 	{
 		const dsc* temp = EVL_expr(tdbb, *ptr++);
 		if (temp && !(request->req_flags & req_null))
-			*p++ = MOV_get_long(temp, 0);
+			subscripts[iter++] = MOV_get_long(temp, 0);
 		else
 			return NULL;
 	}
@@ -5054,7 +5056,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	{
 		if (specification == blr_trim_both || specification == blr_trim_leading)
 		{
-			// CVC: Allow surprises with offsetLead < valueCanonicalLen; it may fail.
+			// CVC: Prevent surprises with offsetLead < valueCanonicalLen; it may fail.
 			for (; offsetLead + charactersCanonicalLen <= valueCanonicalLen; offsetLead += charactersCanonicalLen)
 			{
 				if (memcmp(charactersCanonical.begin(), &valueCanonical[offsetLead], charactersCanonicalLen) != 0)

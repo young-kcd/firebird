@@ -53,7 +53,7 @@ void BLB_put_segment(Jrd::thread_db*, Jrd::blb*, const UCHAR*, USHORT);
 void BLB_put_slice(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, const UCHAR*, USHORT,
 	const SLONG*, SLONG, UCHAR*);
 void BLB_release_array(Jrd::ArrayField*);
-void BLB_scalar(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, SLONG*, Jrd::impure_value*);
+void BLB_scalar(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const SLONG*, Jrd::impure_value*);
 
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM

@@ -1692,7 +1692,7 @@ void BLB_scalar(thread_db*		tdbb,
 				jrd_tra*		transaction,
 				const bid*		blob_id,
 				USHORT			count,
-				SLONG*			subscripts,
+				const SLONG*	subscripts,
 				impure_value*	value)
 {
 /**************************************
