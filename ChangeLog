@@ -1,3 +1,29 @@
+2006-09-09 10:32  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.130), blb_proto.h (1.26), evl.cpp
+	(1.199):
+	
+	Cleanup.
+
+2006-09-09 10:17  robocop
+
+	* firebird2/src/jrd/cmp.cpp (1.233):
+	
+	Make compilable by older compilers.
+
+2006-09-09 10:16  robocop
+
+	* firebird2/src/msgs/messages.sql (1.92):
+	
+	Totally misc.
+
+2006-09-09 10:03  hvlad
+
+	* firebird2/src/jrd/tpc.cpp (1.26):
+	
+	Fixed CORE-911: AV in Classic server after long idle period when
+	using long running read committed readonly transaction
+
 2006-09-08 23:13  asfernandes
 
 	* firebird2/src/isql/: isql.epp (1.201), show.epp (1.108):
