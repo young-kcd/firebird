@@ -3718,7 +3718,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 
 			if (!desc || (request->req_flags & req_null))
 			{
-				value = NULL_STRING;
+				value = NULL_STRING_MARK;
 			}
 			else if (!length)
 			{

@@ -62,7 +62,7 @@ const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
 const size_t MAX_SQL_IDENTIFIER_LEN = MAX_SQL_IDENTIFIER_SIZE - 1;
 typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 
-const char* const NULL_STRING = "*** null ***";
+const char* const NULL_STRING_MARK = "*** null ***";
 
 const char* const NULL_ROLE = "NONE";
 
@@ -152,6 +152,8 @@ const size_t MAX_TIME_PRECISION			= 3;
 const size_t DEFAULT_TIME_PRECISION		= 0;
 // Should be 6 as per SQL spec
 const size_t DEFAULT_TIMESTAMP_PRECISION	= 3;
+
+const size_t MAX_ARRAY_DIMENSIONS = 16;
 
 // relation types
 

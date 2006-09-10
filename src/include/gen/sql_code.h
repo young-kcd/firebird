@@ -573,6 +573,7 @@ static const struct {
 	{335544870, -901}, /* 550 collation_name                   */
 	{335544871, -901}, /* 551 domain_name                      */
 	{335544872, -219}, /* 552 domnotdef                        */
+	{335544873, -171}, /* 553 array_max_dimensions             */
 	{335740929, -901}, /*   1 gfix_db_name                     */
 	{335740930, -901}, /*   2 gfix_invalid_sw                  */
 	{335740932, -901}, /*   4 gfix_incmp_sw                    */
@@ -740,6 +741,7 @@ static const struct {
 	{336397211, -901}, /* 923 dsql_too_many_values             */
 	{336397212, -607}, /* 924 dsql_no_array_computed           */
 	{336397213, -637}, /* 925 dsql_implicit_domain_name        */
+	{336397214, -607}, /* 926 dsql_only_can_subscript_array    */
 	{336723983, -901}, /*  15 gsec_cant_open_db                */
 	{336723984, -901}, /*  16 gsec_switches_error              */
 	{336723985, -901}, /*  17 gsec_no_op_spec                  */

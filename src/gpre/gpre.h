@@ -64,6 +64,7 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
+#include "../jrd/constants.h"
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun
@@ -343,8 +344,6 @@ const size_t VAL_LEN = sizeof(val);
 /* Array information block.  Used to hold info about an array field.
    Note: the dimension (dim) block used to hold dimension information.
    The preferred mechanism is the repeating tail on the array block. */
-
-const int MAX_ARRAY_DIMENSIONS = 16;
 
 struct ary {
 	USHORT ary_dtype;			/* data type of array */

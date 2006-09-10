@@ -921,6 +921,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				IBERROR(223);	// msg 223 argument of scalar operation must be an array
 			}
 			*desc = array->arr_desc.iad_rpt[0].iad_desc;
+			if (array->arr_desc.iad_dimensions > MAX_ARRAY_DIMENSIONS)
+				IBERROR(306); // Found array data type with more than 16 dimensions
 			return;
 		}
 

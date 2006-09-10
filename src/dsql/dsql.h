@@ -240,8 +240,6 @@ enum fld_flags_vals {
 	FLD_system		= 8
 };
 
-const int MAX_ARRAY_DIMENSIONS = 16; //!< max array dimensions
-
 //! database/log/cache file block
 class dsql_fil : public pool_alloc<dsql_type_fil>
 {

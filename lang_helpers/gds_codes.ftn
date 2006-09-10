@@ -1156,6 +1156,8 @@ C --
       PARAMETER (GDS__domain_name                      = 335544871)
       INTEGER*4 GDS__domnotdef                       
       PARAMETER (GDS__domnotdef                        = 335544872)
+      INTEGER*4 GDS__array_max_dimensions            
+      PARAMETER (GDS__array_max_dimensions             = 335544873)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1490,6 +1492,8 @@ C --
       PARAMETER (GDS__dsql_no_array_computed           = 336397212)
       INTEGER*4 GDS__dsql_implicit_domain_name       
       PARAMETER (GDS__dsql_implicit_domain_name        = 336397213)
+      INTEGER*4 GDS__dsql_only_can_subscript_array   
+      PARAMETER (GDS__dsql_only_can_subscript_array    = 336397214)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

@@ -1245,7 +1245,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						{
 							ERR_post(isc_not_valid,
 									 isc_arg_string, temp_field->fld_name.c_str(),
-									 isc_arg_string, NULL_STRING, 0);
+									 isc_arg_string, NULL_STRING_MARK, 0);
 						}
 
 						fb_assert(default_literal->nod_type == nod_literal);
@@ -4194,9 +4194,11 @@ static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		IBERROR(261);			// msg 261 scalar operator used on field which is not an array
 
 	jrd_nod* list = node->nod_arg[e_scl_subscripts];
+	if (list->nod_count > MAX_ARRAY_DIMENSIONS)
+		ERR_post(isc_array_max_dimensions, isc_arg_number, SLONG(MAX_ARRAY_DIMENSIONS), 0);
 
-	SLONG subscripts[16];
-    int iter = 0;
+	SLONG subscripts[MAX_ARRAY_DIMENSIONS];
+	int iter = 0;
 	jrd_nod** ptr = list->nod_arg;
 	for (const jrd_nod* const* const end = ptr + list->nod_count; ptr < end;)
 	{
@@ -4266,8 +4268,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 
 /* Merge search and control strings */
 	UCHAR control[BUFFER_SMALL];
-	l2 = obj->sleuth_merge(tdbb, p2, l2, p1, l1, control,
-										 BUFFER_SMALL);
+	l2 = obj->sleuth_merge(tdbb, p2, l2, p1, l1, control, BUFFER_SMALL);
 
 /* l2 is result's byte-count */
 

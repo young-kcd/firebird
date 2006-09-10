@@ -585,6 +585,7 @@ const
 	gds_collation_name                   = 335544870;
 	gds_domain_name                      = 335544871;
 	gds_domnotdef                        = 335544872;
+	gds_array_max_dimensions             = 335544873;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
@@ -752,6 +753,7 @@ const
 	gds_dsql_too_many_values             = 336397211;
 	gds_dsql_no_array_computed           = 336397212;
 	gds_dsql_implicit_domain_name        = 336397213;
+	gds_dsql_only_can_subscript_array    = 336397214;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

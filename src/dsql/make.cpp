@@ -1766,7 +1766,13 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		}
 	}
 	else {
-		fb_assert(!indices);
+		if (indices)
+		{
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
+					  isc_arg_gds, isc_dsql_only_can_subscript_array,
+					  isc_arg_string, field->fld_name, 0);
+		}
+
 		MAKE_desc_from_field(&node->nod_desc, field);
 	}
 
