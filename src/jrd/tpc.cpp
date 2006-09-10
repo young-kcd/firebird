@@ -446,11 +446,11 @@ static int extend_cache(thread_db* tdbb, SLONG number)
 	Database* dbb = tdbb->tdbb_database;
 	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 
-/* find the end of the linked list, and cache
-   all transactions from that point up to the
-   most recent transaction */
+	// find the end of the linked list, and cache
+	// all transactions from that point up to the
+	// most recent transaction
 
-	const TxPageCache* tip_cache = 0;
+	TxPageCache* tip_cache = 0;
 	TxPageCache** tip_cache_ptr;
 	for (tip_cache_ptr = &dbb->dbb_tip_cache; *tip_cache_ptr;
 		 tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)
@@ -477,7 +477,7 @@ static int extend_cache(thread_db* tdbb, SLONG number)
 	if (number < oldest)
 		return tra_committed;
 
-/* find the right block for this transaction and return the state */
+	// find the right block for this transaction and return the state
 
 	for (tip_cache = dbb->dbb_tip_cache; tip_cache;
 		 tip_cache = tip_cache->tpc_next) 
@@ -487,8 +487,8 @@ static int extend_cache(thread_db* tdbb, SLONG number)
 				number);
 	}
 
-/* we should never get to this point, but if we do the
-   safest thing to do is return active */
+	// we should never get to this point, but if we do the
+	// safest thing to do is return active
 
 	return tra_active;
 }
