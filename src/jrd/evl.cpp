@@ -2477,12 +2477,12 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 			op2_is_timestamp = true;
 		}
 
-		/* Exactly one of the operands must be a timestamp or
-		   convertable into a timestamp, otherwise it's one of
-			   <numeric>   +/- <numeric>
-			or <timestamp> +/- <timestamp>
-			or <string>    +/- <string>
-		   which are errors */
+		// Exactly one of the operands must be a timestamp or
+		// convertable into a timestamp, otherwise it's one of
+		//    <numeric>   +/- <numeric>
+		// or <timestamp> +/- <timestamp>
+		// or <string>    +/- <string>
+		// which are errors
 
 		if (op1_is_timestamp == op2_is_timestamp)
 			ERR_post(isc_expression_eval_err, 0);
