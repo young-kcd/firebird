@@ -1,3 +1,10 @@
+2006-09-09 10:25  hvlad
+
+	* firebird2/src/jrd/tpc.cpp (1.21.4.1):
+	
+	Backport fix for CORE-911: AV in Classic server after long idle
+	period when using long running read committed readonly transaction
+
 2006-09-05 14:28  alexpeshkoff
 
 	* firebird2/src/jrd/jrd.cpp (1.237.2.2):
