@@ -237,8 +237,19 @@ rec_err:
 		}
 		d->dsc_flags &= ~DSC_null;
 		SSHORT length = DscType2SqlType[d->dsc_dtype].DataLength;
-		if (! length)
+		if (! length) 
+		{
 			length = d->dsc_length;
+			SSHORT sqllen = var->sqllen;
+			if (d->dsc_dtype == dtype_varying)
+			{
+				sqllen += sizeof(SSHORT);
+			}
+			if (length > sqllen)
+			{
+				length = sqllen;
+			}
+		}
 		memcpy(d->dsc_address, var->sqldata, length);
 		if (d->dsc_scale != var->sqlscale) {
 			double DeltaPow = pow(10.0, var->sqlscale - d->dsc_scale);
