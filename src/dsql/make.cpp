@@ -2152,8 +2152,14 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_dbkey:
 		parameter->par_name = parameter->par_alias = db_key_name;
 		context = (dsql_ctx*) item->nod_arg[0]->nod_arg[0];
-		parameter->par_rel_name = context->ctx_relation->rel_name;
-		parameter->par_owner_name = context->ctx_relation->rel_owner;
+		if (context->ctx_relation) {
+			parameter->par_rel_name = context->ctx_relation->rel_name;
+			parameter->par_owner_name = context->ctx_relation->rel_owner;
+		}
+		else if (context->ctx_procedure) {
+			parameter->par_rel_name = context->ctx_procedure->prc_name;
+			parameter->par_owner_name = context->ctx_procedure->prc_owner;
+		}
 		parameter->par_rel_alias = context->ctx_alias;
 		break;
 	case nod_alias:
