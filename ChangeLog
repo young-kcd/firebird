@@ -1,3 +1,9 @@
+2006-09-11 16:55  alexpeshkoff
+
+	* firebird2/src/jrd/execute_statement.cpp (1.14.4.2):
+	
+	Fixed CORE-921
+
 2006-09-09 10:25  hvlad
 
 	* firebird2/src/jrd/tpc.cpp (1.21.4.1):
