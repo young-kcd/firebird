@@ -2108,6 +2108,8 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 
 	for (NodeStack::iterator stack1(org_stack); stack1.hasData(); ++stack1) {
 		jrd_nod* boolean = stack1.object();
+		if (boolean->nod_flags & nod_deoptimize)
+			continue;
 		if (boolean->nod_type != nod_eql)
 			continue;
 		jrd_nod* node1 = boolean->nod_arg[0];
@@ -5018,7 +5020,6 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++) {
 			jrd_nod* node = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				!(node->nod_flags & nod_deoptimize) &&
 				OPT_computable(csb, node, -1, false, false))
 			{
 				compose(return_boolean, node, nod_and);
@@ -5058,16 +5059,13 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			if ((inversion && expression_contains_stream(csb, node, stream, NULL)) ||
 				(!inversion && OPT_computable(csb, node, stream, false, true)))
 			{
-				// ANY/ALL boolean should always be left as a residual one
-				if (!(node->nod_flags & nod_deoptimize)) {
-					compose(&opt_boolean, node, nod_and);
-					tail->opt_conjunct_flags |= opt_conjunct_used;
+				compose(&opt_boolean, node, nod_and);
+				tail->opt_conjunct_flags |= opt_conjunct_used;
 
-					if (!outer_flag &&
-						!(tail->opt_conjunct_flags & opt_conjunct_matched))
-					{
-						csb_tail->csb_flags |= csb_unmatched;
-					}
+				if (!outer_flag &&
+					!(tail->opt_conjunct_flags & opt_conjunct_matched))
+				{
+					csb_tail->csb_flags |= csb_unmatched;
 				}
 			}
 		}
@@ -5693,7 +5691,6 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		{
 			jrd_nod* node1 = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				!(node1->nod_flags & nod_deoptimize) &&
 				OPT_computable(opt->opt_csb, node1, -1, false, false))
 			{
 				compose(&node, node1, nod_and);

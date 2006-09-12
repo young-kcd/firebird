@@ -622,11 +622,18 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			RecordSource* select = (RecordSource*) (node->nod_arg[e_any_rsb]);
 			if (node->nod_type != nod_any)
 			{
-				select->rsb_any_boolean = ((RecordSelExpr*) (node->nod_arg[e_any_rse]))->rse_boolean;
-				if (node->nod_type == nod_ansi_any)
+				select->rsb_any_boolean =
+					((RecordSelExpr*) (node->nod_arg[e_any_rse]))->rse_boolean;
+				if (node->nod_type == nod_ansi_any) {
 					request->req_flags |= req_ansi_any;
-				else
+				}
+				else {
 					request->req_flags |= req_ansi_all;
+					// dimitr:	Even if we can evaluate ANY without a residual
+					//			boolean (what I still doubt), it's impossible
+					//			for ALL. Hence this assertion.
+					fb_assert(select->rsb_type == rsb_boolean);
+				}
 			}
 			RSE_open(tdbb, select);
 			value = RSE_get_record(tdbb, select, g_RSE_get_mode);

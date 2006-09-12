@@ -83,12 +83,16 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-	// Recurse thru interesting sub-nodes
-	jrd_nod** ptr = node->nod_arg;
+	if (node->nod_flags & nod_deoptimize) {
+		return false;
+	}
 
 	if (node->nod_type == nod_procedure) {
 		return false;
 	}
+
+	// Recurse thru interesting sub-nodes
+	jrd_nod** ptr = node->nod_arg;
 
 	if (node->nod_type == nod_union) {
 		jrd_nod* clauses = node->nod_arg[e_uni_clauses];
