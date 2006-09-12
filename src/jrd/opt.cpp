@@ -5218,7 +5218,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 	dsc descriptor;
 
 	CompilerScratch* csb = opt->opt_csb;
-	USHORT items =
+	ULONG items =
 		sort->nod_count + (streams[0] * 3) +
 		2 * (dbkey_streams ? dbkey_streams[0] : 0);
 	const UCHAR* const end_ptr = streams + streams[0];
@@ -5256,16 +5256,19 @@ static RecordSource* gen_sort(thread_db* tdbb,
 			} while (accessor.getNext());
 	}
 
+	if (items > MAX_USHORT)
+		ERR_post(isc_imp_exc, 0);
+
 /* Now that we know the number of items, allocate a sort map block.  Allocate
    it sufficiently large that there is room for a sort key descriptor on the
    end. */
 
-	const USHORT count = items +
+	const ULONG count = items +
 		(sizeof(sort_key_def) * 2 * sort->nod_count + sizeof(smb_repeat) -
 		 1) / sizeof(smb_repeat);
 	SortMap* map = FB_NEW_RPT(*tdbb->getDefaultPool(), count) SortMap();
 	map->smb_keys = sort->nod_count * 2;
-	map->smb_count = items;
+	map->smb_count = (USHORT) items;
 	if (project_flag) {
 		map->smb_flags |= SMB_project;
 	}
@@ -5316,13 +5319,13 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		sort_key->skd_flags = SKD_ascending;
 		if (tdbb->tdbb_database->dbb_ods_version < ODS_VERSION11) {
 			// Put nulls at the tail for ODS10 and earlier
-			if ((IPTR)*(node_ptr + sort->nod_count*2) == rse_nulls_first)
+			if ((IPTR)*(node_ptr + sort->nod_count * 2) == rse_nulls_first)
 				sort_key->skd_flags |= SKD_descending;
 		}
 		else {
 			// Have SQL-compliant nulls ordering for ODS11+
-			if (((IPTR)*(node_ptr + sort->nod_count*2) == rse_nulls_default && !*(node_ptr + sort->nod_count)) ||
-				(IPTR)*(node_ptr + sort->nod_count*2) == rse_nulls_first)
+			if (((IPTR)*(node_ptr + sort->nod_count * 2) == rse_nulls_default && !*(node_ptr + sort->nod_count)) ||
+				(IPTR)*(node_ptr + sort->nod_count * 2) == rse_nulls_first)
 			{
 				sort_key->skd_flags |= SKD_descending;
 			}
