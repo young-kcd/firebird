@@ -770,7 +770,7 @@ void DYN_delete_local_field(Global* gbl,
 **  ===============================================================
 **  ==
 **  ==  If the column to be dropped is being used as a foreign key
-**  ==  and the coulmn was not part of any compound foreign key,
+**  ==  and the column was not part of any compound foreign key,
 **  ==  then we can drop the column. But we have to drop the foreign key
 **  ==  constraint first.
 **  ==
@@ -815,7 +815,7 @@ void DYN_delete_local_field(Global* gbl,
 /*
 **  ================================================================
 **  ==
-**  ==  make sure that column is not referenced in any indexes
+**  ==  make sure that column is not referenced in any user-defined indexes
 **  ==
 **  ==  NOTE: You still could see the system generated indices even though
 **  ==        they were already been deleted when dropping column that was 
@@ -826,43 +826,25 @@ void DYN_delete_local_field(Global* gbl,
 
 	request = CMP_find_request(tdbb, drq_e_l_idx, DYN_REQUESTS);
 	id = drq_e_l_idx;
-	
-	jrd_req* old_request = NULL;
 
-	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		IDX IN RDB$INDICES
-			WITH IDX.RDB$RELATION_NAME EQ tbl_nm.c_str()
+		IDX IN RDB$INDICES CROSS
+			IDX_SEG IN RDB$INDEX_SEGMENTS
+			WITH IDX.RDB$INDEX_NAME EQ IDX_SEG.RDB$INDEX_NAME
+			AND IDX.RDB$RELATION_NAME EQ tbl_nm.c_str()
+			AND IDX_SEG.RDB$FIELD_NAME EQ col_nm.c_str()
+			AND NOT ANY
+				REL_CONST IN RDB$RELATION_CONSTRAINTS
+				WITH REL_CONST.RDB$RELATION_NAME EQ IDX.RDB$RELATION_NAME
+				AND REL_CONST.RDB$INDEX_NAME EQ IDX.RDB$INDEX_NAME
         if (!DYN_REQUEST(drq_e_l_idx)) 
             DYN_REQUEST(drq_e_l_idx) = request;
 
-		found = false;
-		if (!fb_utils::implicit_domain(IDX.RDB$INDEX_NAME))
-		{
-			old_request = request;
-
-			id = drq_l_idx_seg;
-			request = CMP_find_request(tdbb, drq_l_idx_seg, DYN_REQUESTS);
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				FIRST 1 IDX_SEG IN RDB$INDEX_SEGMENTS
-					WITH IDX_SEG.RDB$INDEX_NAME EQ IDX.RDB$INDEX_NAME AND
-					IDX_SEG.RDB$FIELD_NAME = col_nm.c_str()
-                if (!DYN_REQUEST(drq_l_idx_seg))
-                    DYN_REQUEST(drq_l_idx_seg) = request;
-				found = true;
-			END_FOR;
-			if (!DYN_REQUEST(drq_l_idx_seg))
-				DYN_REQUEST(drq_l_idx_seg) = request;
-			request = old_request;
-			id = drq_e_l_idx;
-		}
-		if (found) {
-			DYN_rundown_request(request, -1);
-			DYN_error_punt(false, 187, col_nm.c_str(), tbl_nm.c_str(),
-							fb_utils::exact_name_limit(IDX.RDB$INDEX_NAME, sizeof(IDX.RDB$INDEX_NAME)),
-							NULL, NULL);
-			// msg 187: "field %s from relation %s is referenced in index %s"
-		}
+		DYN_rundown_request(request, -1);
+		DYN_error_punt(false, 187, col_nm.c_str(), tbl_nm.c_str(),
+						fb_utils::exact_name_limit(IDX.RDB$INDEX_NAME, sizeof(IDX.RDB$INDEX_NAME)),
+						NULL, NULL);
+		// msg 187: "field %s from relation %s is referenced in index %s"
 	END_FOR;
 	if (!DYN_REQUEST(drq_e_l_idx))
 		DYN_REQUEST(drq_e_l_idx) = request;
