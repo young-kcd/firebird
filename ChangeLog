@@ -1,3 +1,15 @@
+2006-09-12 10:53  dimitr
+
+	* firebird2/src/dsql/make.cpp (1.110.2.2):
+	
+	Fixed CORE-924.
+
+2006-09-12 08:49  dimitr
+
+	* firebird2/src/remote/xnet.cpp (1.70.4.1):
+	
+	Fixed CORE-923.
+
 2006-09-11 16:55  alexpeshkoff
 
 	* firebird2/src/jrd/execute_statement.cpp (1.14.4.2):
