@@ -1106,17 +1106,18 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		sub1 = node->nod_arg[0];
 		sub2 = node->nod_arg[1];
 
-		/* Try to force sub1 to be same type as sub2 eg: ? = FIELD case */
-		if (!set_parameter_type(request, sub1, sub2, false))
-		{
-			/* That didn't work - try to force sub2 same type as sub 1 eg: FIELD = ? case */
-			set_parameter_type(request, sub2, sub1, false);
-		}
+		// Try to force sub1 to be same type as sub2 eg: ? = FIELD case
+		set_parameter_type(request, sub1, sub2, false);
 
-		/* X BETWEEN Y AND ? case */
+		// Try to force sub2 to be same type as sub1 eg: FIELD = ? case
+		// Try even when the above call succeeded, because "sub2" may
+		// have sub-expressions that should be resolved.
+		set_parameter_type(request, sub2, sub1, false);
+
+		// X BETWEEN Y AND ? case
 		if (!set_parameter_type(request, sub3, sub1, false))
 		{
-			/* ? BETWEEN Y AND ? case */
+			// ? BETWEEN Y AND ? case
 			set_parameter_type(request, sub3, sub2, false);
 		}
 		break;
@@ -1131,14 +1132,15 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		sub1 = node->nod_arg[0];
 		sub2 = node->nod_arg[1];
 
-		/* Try to force sub1 to be same type as sub2 eg: ? LIKE FIELD case */
-		if (!set_parameter_type(request, sub1, sub2, true))
-		{
-			/* That didn't work - try to force sub2 same type as sub 1 eg: FIELD LIKE ? case */
-			set_parameter_type(request, sub2, sub1, true);
-		}
+		// Try to force sub1 to be same type as sub2 eg: ? LIKE FIELD case
+		set_parameter_type(request, sub1, sub2, true);
 
-		/* X LIKE Y ESCAPE ? case */
+		// Try to force sub2 same type as sub 1 eg: FIELD LIKE ? case
+		// Try even when the above call succeeded, because "sub2" may
+		// have sub-expressions that should be resolved.
+		set_parameter_type(request, sub2, sub1, true);
+
+		// X LIKE Y ESCAPE ? case
 		set_parameter_type(request, sub3, sub2, true);
 		break;
 
@@ -1150,7 +1152,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		sub1 = node->nod_arg[e_trim_characters];
 		sub2 = node->nod_arg[e_trim_value];
 
-		/* Try to force sub1 to be same type as sub2 eg: TRIM(? FROM FIELD) case */
+		// Try to force sub1 to be same type as sub2 eg: TRIM(? FROM FIELD) case
 		set_parameter_type(request, sub1, sub2, false);
 		break;
 
