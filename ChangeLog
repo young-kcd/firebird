@@ -1,3 +1,72 @@
+2006-09-12 18:31  asfernandes
+
+	* firebird2/src/jrd/opt.cpp (1.279):
+	
+	Check limits
+
+2006-09-12 14:29  dimitr
+
+	* firebird2/src/jrd/dyn_del.epp (1.65):
+	
+	Fixed CORE-878.
+
+2006-09-12 13:36  dimitr
+
+	* firebird2/src/jrd/: evl.cpp (1.202), Optimizer.cpp (1.71),
+	opt.cpp (1.278):
+	
+	1) Fixed CORE-925 2) Added assertion to EVL to catch other related
+	bugs 3) An attempt to simplify my previous solution
+
+2006-09-12 10:52  dimitr
+
+	* firebird2/src/dsql/make.cpp (1.124):
+	
+	Fixed CORE-924.
+
+2006-09-12 08:48  dimitr
+
+	* firebird2/src/remote/xnet.cpp (1.74):
+	
+	Fixed CORE-923.
+
+2006-09-12 07:53  dimitr
+
+	* firebird2/: extern/icu/source/test/cintltst/cintltst_8.vcproj
+	(1.1), extern/icu/source/common/common_8.vcproj (1.1),
+	extern/icu/source/tools/ctestfw/ctestfw_8.vcproj (1.1),
+	extern/icu/source/tools/gencmn/decmn_8.vcproj (1.1),
+	extern/icu/source/tools/gencmn/gencmn_8.vcproj (1.1),
+	extern/icu/source/tools/genrb/derb_8.vcproj (1.1),
+	extern/icu/source/tools/genrb/genrb_8.vcproj (1.1),
+	extern/icu/source/tools/genbrk/genbrk_8.vcproj (1.1),
+	extern/icu/source/tools/genccode/genccode_8.vcproj (1.1),
+	extern/icu/source/tools/gencnval/gencnval_8.vcproj (1.1),
+	extern/icu/source/tools/gennames/gennames_8.vcproj (1.1),
+	extern/icu/source/tools/gennorm/gennorm_8.vcproj (1.1),
+	extern/icu/source/tools/genpname/genpname_8.vcproj (1.1),
+	extern/icu/source/tools/genprops/genprops_8.vcproj (1.1),
+	extern/icu/source/tools/gensprep/gensprep_8.vcproj (1.1),
+	extern/icu/source/tools/gentest/gentest_8.vcproj (1.1),
+	extern/icu/source/tools/genuca/genuca_8.vcproj (1.1),
+	extern/icu/source/i18n/i18n_8.vcproj (1.1),
+	extern/icu/source/tools/icuswap/icuswap_8.vcproj (1.1),
+	extern/icu/source/test/intltest/intltest_8.vcproj (1.1),
+	extern/icu/source/io/io_8.vcproj (1.1),
+	extern/icu/source/test/iotest/iotest_8.vcproj (1.1),
+	extern/icu/source/layout/layout_8.vcproj (1.1),
+	extern/icu/source/layoutex/layoutex_8.vcproj (1.1),
+	extern/icu/source/tools/makeconv/makeconv_8.vcproj (1.1),
+	extern/icu/source/data/makedata_8.vcproj (1.1),
+	extern/icu/source/tools/pkgdata/pkgdata_8.vcproj (1.1),
+	extern/icu/source/stubdata/stubdata_8.vcproj (1.1),
+	extern/icu/source/tools/toolutil/toolutil_8.vcproj (1.1),
+	extern/icu/source/extra/uconv/uconv_8.vcproj (1.1),
+	extern/icu/source/allinone/allinone_8.sln (1.1),
+	builds/win32/make_icu.bat (1.9):
+	
+	Added makefiles for MSVC8.
+
 2006-09-11 18:10  alexpeshkoff
 
 	* firebird2/src/jrd/execute_statement.cpp (1.16):
