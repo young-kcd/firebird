@@ -382,7 +382,14 @@ void DatabaseSnapshot::putAttachment(Attachment* attachment, RecordBuffer* buffe
 	// remote protocol
 	putField(record, f_mon_att_remote_proto, attachment->att_network_protocol.c_str());
 	// remote address
-	putField(record, f_mon_att_remote_addr, attachment->att_remote_address.c_str());
+	if (attachment->att_remote_address.hasData()) {
+		putField(record, f_mon_att_remote_addr, attachment->att_remote_address.c_str());
+	}
+	// remote process id
+	if (attachment->att_remote_pid) {
+		temp_long = attachment->att_remote_pid;
+		putField(record, f_mon_att_remote_pid, &temp_long);
+	}
 	// charset
 	putField(record, f_mon_att_charset_id, &attachment->att_charset);
 	// timestamp

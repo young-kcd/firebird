@@ -523,6 +523,7 @@ public:
 	Firebird::StringMap att_context_vars;	// Context variables for the connection
 	Firebird::string att_network_protocol;	// Network protocol used by client for connection
 	Firebird::string att_remote_address;	// Protocol-specific addess of remote client
+	SLONG att_remote_pid;					// Process id of remote client
 #ifndef SUPERSERVER
 	Lock*		att_temp_pg_lock;			// temporary pagespace ID lock
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<

@@ -101,6 +101,7 @@
 #define isc_dpb_set_db_charset            68
 #define isc_dpb_gsec_attach               69
 #define isc_dpb_address_path              70
+#define isc_dpb_pid                       71
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -237,7 +238,7 @@
 
 #define isc_spb_version1                  1
 #define isc_spb_current_version           2
-#define isc_spb_version			  isc_spb_current_version
+#define isc_spb_version                   isc_spb_current_version
 #define isc_spb_user_name                 isc_dpb_user_name
 #define isc_spb_sys_user_name             isc_dpb_sys_user_name
 #define isc_spb_sys_user_name_enc         isc_dpb_sys_user_name_enc
@@ -248,6 +249,7 @@
 #define isc_spb_verbose                   107
 #define isc_spb_options                   108
 #define isc_spb_address_path              109
+#define isc_spb_pid                       110
 
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout

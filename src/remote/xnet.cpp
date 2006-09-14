@@ -637,8 +637,8 @@ static int accept_connection(rem_port* port, P_CNCT * cnct)
 	if (xcc) {
 		XPS xps = (XPS) xcc->xcc_mapped_addr;
 		if (xps) {
-			Firebird::string address;
-			address.printf("%u", xps->xps_client_proc_id);
+			Firebird::string address(MAX_COMPUTERNAME_LENGTH);
+			ISC_get_host(address.begin(), address.capacity() + 1);
 			port->port_address_str = REMOTE_make_string(address.c_str());
 		}
 	}

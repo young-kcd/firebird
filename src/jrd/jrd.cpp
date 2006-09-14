@@ -309,6 +309,7 @@ public:
 	bool	dpb_gstat_attach;
 	USHORT	dpb_sql_dialect;
 	USHORT	dpb_set_db_sql_dialect;
+	SLONG	dpb_remote_pid;
 // here begin compound objects
 // for constructor to work properly dpb_sys_user_name 
 // MUST be FIRST
@@ -709,6 +710,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	attachment->att_filename = expanded_name;
 	attachment->att_network_protocol = options.dpb_network_protocol;
 	attachment->att_remote_address = options.dpb_remote_address;
+	attachment->att_remote_pid = options.dpb_remote_pid;
 
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
@@ -1778,6 +1780,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	attachment->att_filename = expanded_name;
 	attachment->att_network_protocol = options.dpb_network_protocol;
 	attachment->att_remote_address = options.dpb_remote_address;
+	attachment->att_remote_pid = options.dpb_remote_pid;
 	attachment->att_next = dbb->dbb_attachments;
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
@@ -5460,6 +5463,10 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			}
 			break;
 		}
+
+		case isc_dpb_pid:
+			dpb_remote_pid = rdr.getInt();
+			break;
 
 		default:
 			break;

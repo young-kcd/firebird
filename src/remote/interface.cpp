@@ -71,6 +71,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef WIN_NT
+#include <process.h>
+#endif
+
 #if defined(WIN_NT)
 #if !defined(EMBEDDED)
 #define XNET
@@ -106,20 +110,22 @@ namespace {
 	// for both services and databases attachments
 	struct ParametersSet {
 		UCHAR dummy_packet_interval, user_name, sys_user_name, 
-			  password, password_enc, address_path;
+			  password, password_enc, address_path, pid;
 	};
 	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval, 
 									isc_dpb_user_name, 
 									isc_dpb_sys_user_name, 
 									isc_dpb_password, 
 									isc_dpb_password_enc,
-									isc_dpb_address_path};
+									isc_dpb_address_path,
+									isc_dpb_pid};
 	const ParametersSet spbParam = {isc_spb_dummy_packet_interval, 
 									isc_spb_user_name, 
 									isc_spb_sys_user_name, 
 									isc_spb_password, 
 									isc_spb_password_enc,
-									isc_spb_address_path};
+									isc_spb_address_path,
+									isc_spb_pid};
 }
 
 static RVNT add_event(rem_port*);
@@ -5680,7 +5686,12 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb,
 			Firebird::status_exception::raise(isc_unavailable, isc_arg_end);
 		}
 	}
-	
+
+    if (dpb.find(par.pid)) {
+		dpb.deleteClumplet();
+	}
+	dpb.insertInt(par.pid, getpid());
+
 #ifndef NO_PASSWORD_ENCRYPTION
 	if (dpb.find(par.password))
 	{
@@ -5693,7 +5704,7 @@ static bool get_new_dpb(Firebird::ClumpletWriter& dpb,
 		dpb.insertString(par.password_enc, password);
 	}
 #endif
-	
+
 	if (dpb.find(par.sys_user_name)) 
 	{
 		dpb.getString(user_string);
