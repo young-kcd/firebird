@@ -349,7 +349,7 @@ enum nod_t
 	nod_with,
 	nod_replace,
 	nod_merge,
-	nod_merge_when,
+	nod_merge_when, // 280
 	nod_merge_update,
 	nod_merge_insert
 };

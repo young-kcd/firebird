@@ -390,7 +390,10 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
 			fb_assert(stream <= MAX_UCHAR);
-			fb_assert(beds[0] < MAX_STREAMS && beds[0] < MAX_UCHAR);
+			fb_assert(beds[0] < MAX_STREAMS && beds[0] < MAX_UCHAR); // debug check
+			//if (beds[0] >= MAX_STREAMS) // all builds check
+			//	ERR_post(isc_too_many_contexts, 0);
+
 			beds[++beds[0]] = (UCHAR) stream;
 		}
 
@@ -910,9 +913,9 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		rsb = gen_first(tdbb, opt, rsb, rse->rse_first);
 	}
 
-// release memory allocated for index descriptions
-	for (i = 0; i < streams[0]; i++) {
-		stream = streams[i + 1];
+	// release memory allocated for index descriptions
+	for (i = 1; i <= streams[0]; ++i) {
+		stream = streams[i];
 		delete csb->csb_rpt[stream].csb_idx;
 		csb->csb_rpt[stream].csb_idx = 0;
 
@@ -937,8 +940,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 	}	// try
 	catch (const Firebird::Exception&) {
-		for (SSHORT i = 0; i < streams[0]; i++) {
-			const SSHORT stream = streams[i + 1];
+		for (SSHORT i = 1; i <= streams[0]; ++i) {
+			const SSHORT stream = streams[i];
 			delete csb->csb_rpt[stream].csb_idx;
 			csb->csb_rpt[stream].csb_idx = 0;
 			csb->csb_rpt[stream].csb_indices = 0; // Probably needed to be safe
