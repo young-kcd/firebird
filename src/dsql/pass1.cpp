@@ -6373,14 +6373,13 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
 	request->req_scope_level--;
 	request->req_context->pop();
 
-	// build a IF (target.RDB$DB_KEY IS NOT NULL)
+	// build a IF (target.RDB$DB_KEY IS NULL)
 	dsql_nod* action = MAKE_node(nod_if, e_if_count);
-	action->nod_arg[e_if_condition] = MAKE_node(nod_not, 1);
-	action->nod_arg[e_if_condition]->nod_arg[0] = MAKE_node(nod_missing, 1);
-	action->nod_arg[e_if_condition]->nod_arg[0]->nod_arg[0] = MAKE_node(nod_dbkey, 1);
-	action->nod_arg[e_if_condition]->nod_arg[0]->nod_arg[0]->nod_arg[0] = target;
-	action->nod_arg[e_if_true] = modify;	// then UPDATE
-	action->nod_arg[e_if_false] = insert;	// else INSERT
+	action->nod_arg[e_if_condition] = MAKE_node(nod_missing, 1);
+	action->nod_arg[e_if_condition]->nod_arg[0] = MAKE_node(nod_dbkey, 1);
+	action->nod_arg[e_if_condition]->nod_arg[0]->nod_arg[0] = target;
+	action->nod_arg[e_if_true] = insert;	// else INSERT
+	action->nod_arg[e_if_false] = modify;	// then UPDATE
 
 	// insert the IF inside the FOR SELECT
 	for_select->nod_arg[e_flp_action] = action;
