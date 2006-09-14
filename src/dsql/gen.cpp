@@ -1772,18 +1772,23 @@ static void gen_for_select( dsql_req* request, const dsql_nod* for_select)
 	
 	dsql_nod* list = rse->nod_arg[e_rse_items];
 	dsql_nod* list_to = for_select->nod_arg[e_flp_into];
-	if (list->nod_count != list_to->nod_count)
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
-				  isc_arg_gds, isc_dsql_count_mismatch, 0);
-	dsql_nod** ptr = list->nod_arg;
-	dsql_nod** ptr_to = list_to->nod_arg;
-	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end;
-		ptr++, ptr_to++) 
+
+	if (list_to)
 	{
-		stuff(request, blr_assignment);
-		GEN_expr(request, *ptr);
-		GEN_expr(request, *ptr_to);
+		if (list->nod_count != list_to->nod_count)
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
+					isc_arg_gds, isc_dsql_count_mismatch, 0);
+		dsql_nod** ptr = list->nod_arg;
+		dsql_nod** ptr_to = list_to->nod_arg;
+		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end;
+			ptr++, ptr_to++) 
+		{
+			stuff(request, blr_assignment);
+			GEN_expr(request, *ptr);
+			GEN_expr(request, *ptr_to);
+		}
 	}
+
 	if (for_select->nod_arg[e_flp_action])
 		GEN_statement(request, for_select->nod_arg[e_flp_action]);
 	stuff(request, blr_end);

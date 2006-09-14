@@ -190,6 +190,7 @@ static const TOK tokens[] =
 	{KW_LONG, "LONG", 1, false},
 	{KW_LOWER, "LOWER", 2, false},
 	{MANUAL, "MANUAL", 1, false},
+	{MATCHED, "MATCHED", 2, false},
 	{MATCHING, "MATCHING", 2, false},
 	{MAXIMUM, "MAX", 1, false},
 	{MAX_SEGMENT, "MAXIMUM_SEGMENT", 1, false},

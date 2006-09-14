@@ -517,6 +517,7 @@ static LexerState lex;
 %token GLOBAL 
 %token INSENSITIVE
 %token LIST
+%token MATCHED
 %token MATCHING
 %token PAD
 %token PRESERVE
@@ -571,6 +572,7 @@ statement	: alter
 		| drop
 		| grant
 		| insert
+		| merge
 		| exec_procedure
 		| exec_block
 		| recreate
@@ -1618,6 +1620,7 @@ stmt_start_column :
 		
 simple_proc_statement	: assignment
 		| insert
+		| merge
 		| replace
 		| update
 		| delete
@@ -3037,7 +3040,7 @@ with_list	: with_item
 		;
 
 with_item	: symbol_table_alias_name derived_column_list AS '(' select_expr ')'
-				{ $$ = make_node (nod_derived_table, (int) e_derived_table_count, $5, $1, $2); }
+				{ $$ = make_node (nod_derived_table, (int) e_derived_table_count, $5, $1, $2, NULL); }
 		;
 
 column_select	: select_expr_body order_clause rows_clause
@@ -3148,7 +3151,7 @@ table_primary	: table_proc
 /* AB: derived table support */
 derived_table :
 		'(' select_expr ')' as_noise correlation_name derived_column_list
-			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6); }
+			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6, NULL); }
 		;
 
 correlation_name : symbol_table_alias_name
@@ -3286,9 +3289,9 @@ plan_expression	: plan_type '(' plan_item_list ')'
 plan_type	: JOIN
 			{ $$ = 0; }
 		| SORT MERGE
-			{ $$ = make_node (nod_merge, (int) 0, NULL); }
+			{ $$ = make_node (nod_merge_plan, (int) 0, NULL); }
 		| MERGE
-			{ $$ = make_node (nod_merge, (int) 0, NULL); }
+			{ $$ = make_node (nod_merge_plan, (int) 0, NULL); }
 
 		/* for now the SORT operator is a no-op; it does not 
 		   change the place where a sort happens, but is just intended 
@@ -3398,6 +3401,43 @@ insert		: INSERT INTO simple_table_name ins_column_parens_opt
 			{ $$ = make_node (nod_insert, (int) e_ins_count,
 				$3, $4, NULL, $5, NULL); }
 		;
+
+
+/* MERGE statement */
+merge
+	: MERGE INTO simple_table_name USING table_reference ON search_condition
+		merge_when_clause
+		{
+			$$ = make_node(nod_merge, e_mrg_count, $3, $5, $7, $8);
+		}
+	;
+
+merge_when_clause
+	: merge_when_matched_clause merge_when_not_matched_clause
+		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $1, $2); }
+	| merge_when_not_matched_clause merge_when_matched_clause
+		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $2, $1); }
+	;
+
+merge_when_matched_clause
+	: WHEN MATCHED THEN merge_update_specification
+		{ $$ = $4; }
+	;
+
+merge_when_not_matched_clause
+	: WHEN NOT MATCHED THEN merge_insert_specification
+		{ $$ = $5; }
+	;
+
+merge_update_specification
+	: UPDATE SET assignments
+		{ $$ = make_node(nod_merge_update, e_mrg_update_count, make_list($3)); }
+	;
+
+merge_insert_specification
+	: INSERT ins_column_parens_opt VALUES '(' value_list ')'
+		{ $$ = make_node(nod_merge_insert, e_mrg_insert_count, make_list($2), make_list($5)); }
+	;
 
 
 /* DELETE statement */
@@ -4402,6 +4442,7 @@ non_reserved_word :
 	| TIMEOUT
 	| ACCENT				/* added in FB 2.1 */
 	| LIST
+	| MATCHED
 	| MATCHING
 	| PAD
 	| PRESERVE

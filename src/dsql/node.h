@@ -237,7 +237,7 @@ enum nod_t
 	// access plan stuff
 	nod_plan_expr,
 	nod_plan_item,
-	nod_merge, // 180
+	nod_merge_plan, // 180
 	nod_natural,
 	nod_index,
 	nod_index_order,
@@ -347,7 +347,11 @@ enum nod_t
 	nod_agg_list,
 	nod_src_info,
 	nod_with,
-	nod_replace
+	nod_replace,
+	nod_merge,
+	nod_merge_when,
+	nod_merge_update,
+	nod_merge_insert
 };
 
 typedef nod_t NOD_TYPE;
@@ -605,6 +609,23 @@ enum node_args {
 	e_ins_select,
 	e_ins_return,
 	e_ins_count,
+
+	e_mrg_relation = 0,		// nod_merge
+	e_mrg_using,
+	e_mrg_condition,
+	e_mrg_when,
+	e_mrg_count,
+
+	e_mrg_when_matched = 0,	// nod_merge_when
+	e_mrg_when_not_matched,
+	e_mrg_when_count,
+
+	e_mrg_update_statement = 0,	// nod_merge_update
+	e_mrg_update_count,
+
+	e_mrg_insert_fields = 0,	// nod_merge_insert
+	e_mrg_insert_values,
+	e_mrg_insert_count,
 
 	e_sto_relation = 0,		// nod_store
 	e_sto_statement,
@@ -949,6 +970,7 @@ enum node_args {
 	e_derived_table_rse = 0,		// Contains select_expr
 	e_derived_table_alias,			// Alias name for derived table
 	e_derived_table_column_alias,	// List with alias names from derived table columns
+	e_derived_table_context,		// Context for derived table
 	e_derived_table_count,
 
 	e_derived_field_value = 0,		// Contains the source expression

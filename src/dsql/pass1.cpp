@@ -193,11 +193,12 @@ static void check_unique_fields_names(StrArray& names, const dsql_nod* fields);
 static dsql_nod* compose(dsql_nod*, dsql_nod*, NOD_TYPE);
 static dsql_nod* explode_fields(dsql_rel*);
 static dsql_nod* explode_outputs(dsql_req*, const dsql_prc*);
-static void field_appears_once(const dsql_nod*, const dsql_nod*, const bool, const char* );
+static void field_appears_once(const dsql_nod*, const dsql_nod*, const bool, const char*);
 static void field_duplication(const TEXT*, const TEXT*, const dsql_nod*, const char*);
 static void field_unknown(const TEXT*, const TEXT*, const dsql_nod*);
 static dsql_par* find_dbkey(const dsql_req*, const dsql_nod*);
 static dsql_par* find_record_version(const dsql_req*, const dsql_nod*);
+static dsql_ctx* get_context(const dsql_nod* node);
 static bool invalid_reference(const dsql_ctx*, const dsql_nod*,
 	const dsql_nod*, bool, bool);
 static bool node_match(const dsql_nod*, const dsql_nod*, bool);
@@ -228,6 +229,7 @@ static dsql_nod* pass1_join(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_label(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_lookup_alias(dsql_req*, const dsql_str*, dsql_nod*);
 static dsql_nod* pass1_make_derived_field(dsql_req*, tsql*, dsql_nod*);
+static dsql_nod* pass1_merge(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_not(dsql_req*, const dsql_nod*, bool, bool);
 static void	pass1_put_args_on_stack(dsql_req*, dsql_nod*, DsqlNodStack&, bool);
 static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool proc_flag);
@@ -657,6 +659,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_delete:
 	case nod_insert:
+	case nod_merge:
 	case nod_replace:
 	case nod_order:
 	case nod_select:
@@ -1512,16 +1515,20 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			}
 
 			dsql_nod* into_in = input->nod_arg[e_flp_into];
-			dsql_nod* into_out = MAKE_node(into_in->nod_type, into_in->nod_count);
-			node->nod_arg[e_flp_into] = into_out;
-			const dsql_nod** ptr2 = const_cast<const dsql_nod**>(into_out->nod_arg);
-			dsql_nod** ptr = into_in->nod_arg;
-			for (const dsql_nod* const* const end = ptr + into_in->nod_count;
-				 ptr < end; ptr++)
+
+			if (into_in)
 			{
-				DEV_BLKCHK(*ptr, dsql_type_nod);
-				*ptr2++ = PASS1_node(request, *ptr, proc_flag);
-				DEV_BLKCHK(*(ptr2 - 1), dsql_type_nod);
+				dsql_nod* into_out = MAKE_node(into_in->nod_type, into_in->nod_count);
+				node->nod_arg[e_flp_into] = into_out;
+				const dsql_nod** ptr2 = const_cast<const dsql_nod**>(into_out->nod_arg);
+				dsql_nod** ptr = into_in->nod_arg;
+				for (const dsql_nod* const* const end = ptr + into_in->nod_count;
+					ptr < end; ptr++)
+				{
+					DEV_BLKCHK(*ptr, dsql_type_nod);
+					*ptr2++ = PASS1_node(request, *ptr, proc_flag);
+					DEV_BLKCHK(*(ptr2 - 1), dsql_type_nod);
+				}
 			}
 
 			if (input->nod_arg[e_flp_action]) {
@@ -1578,6 +1585,10 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_insert:
 		node = pass1_savepoint(request, pass1_insert(request, input, proc_flag));
+		break;
+
+	case nod_merge:
+		node = pass1_savepoint(request, pass1_merge(request, input, proc_flag));
 		break;
 
 	case nod_block:
@@ -2660,6 +2671,27 @@ static dsql_par* find_record_version(const dsql_req* request, const dsql_nod* re
 		}
 	}
 	return candidate;
+}
+
+
+/**
+
+ 	get_context
+
+    @brief	Get the context of a relation or derived table.
+
+
+    @param node
+
+ **/
+static dsql_ctx* get_context(const dsql_nod* node)
+{
+	fb_assert(node->nod_type == nod_relation || node->nod_type == nod_derived_table);
+
+	if (node->nod_type == nod_relation)
+		return (dsql_ctx*) node->nod_arg[e_rel_context];
+	else	// nod_derived_table
+		return (dsql_ctx*) node->nod_arg[e_derived_table_context];
 }
 
 
@@ -4263,6 +4295,7 @@ static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool pr
 	node->nod_arg[e_derived_table_alias] = (dsql_nod*) alias;
 	node->nod_arg[e_derived_table_column_alias] = input->nod_arg[e_derived_table_column_alias];
 	node->nod_arg[e_derived_table_rse] = select;
+	node->nod_arg[e_derived_table_context] = input->nod_arg[e_derived_table_context];
 
 	return node;
 }
@@ -4326,6 +4359,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 
 	// Create the context now, because we need to know it for the tables inside.
 	dsql_ctx* context = PASS1_make_context(request, node);
+	node->nod_arg[e_derived_table_context] = (dsql_nod*) context;
 
 	// Save some values to restore after rse process.
 	DsqlContextStack* const req_base = request->req_context;
@@ -5683,6 +5717,7 @@ static dsql_nod* pass1_group_by_list(dsql_req* request, dsql_nod* input, dsql_no
 	return node;
 }
 
+
 /**
 
  	pass1_insert
@@ -6199,6 +6234,162 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, tsql* tdsql,
 	}
 
 	return select_item;
+}
+
+
+/**
+ 	pass1_merge
+
+    @brief	Process MERGE statement.
+
+
+    @param request
+    @param input
+    @param proc_flag
+
+ **/
+static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
+{
+	DEV_BLKCHK(request, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+
+	dsql_nod* source = input->nod_arg[e_mrg_using];		// USING
+	dsql_nod* target = input->nod_arg[e_mrg_relation];	// INTO
+
+	// build a left join between USING and INTO tables
+	dsql_nod* join = MAKE_node(nod_join, e_join_count);
+	join->nod_arg[e_join_left_rel] = source;
+	join->nod_arg[e_join_type] = MAKE_node(nod_join_left, 0);
+	join->nod_arg[e_join_rght_rel] = target;
+	join->nod_arg[e_join_boolean] = input->nod_arg[e_mrg_condition];
+
+	dsql_nod* query_spec = MAKE_node(nod_query_spec, e_qry_count);
+	query_spec->nod_arg[e_qry_from] = join;
+
+	dsql_nod* select_expr = MAKE_node(nod_select_expr, e_sel_count);
+	select_expr->nod_arg[e_sel_query_spec] = query_spec;
+
+	dsql_nod* select = MAKE_node(nod_select, e_select_count);
+	select->nod_arg[e_select_expr] = select_expr;
+
+	// build a FOR SELECT node
+	dsql_nod* for_select = MAKE_node(nod_for_select, e_flp_count);
+	for_select->nod_arg[e_flp_select] = select;
+	for_select->nod_arg[e_flp_action] = MAKE_node(nod_list, 0);
+	for_select = PASS1_statement(request, for_select, proc_flag);
+
+	// get the already processed relations
+	source = for_select->nod_arg[e_flp_select]->nod_arg[e_select_expr]->nod_arg[e_join_left_rel];
+	target = for_select->nod_arg[e_flp_select]->nod_arg[e_select_expr]->nod_arg[e_join_rght_rel];
+
+	// get the assignments of the UPDATE statement
+	dsql_nod* list =
+		input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched]->nod_arg[e_mrg_update_statement];
+	fb_assert(list->nod_type == nod_list);
+
+	Firebird::Array<dsql_nod*> org_values, new_values;
+	int i;
+
+	// separate the new and org values to process in correct contexts
+	for (i = 0; i < list->nod_count; ++i)
+	{
+		const dsql_nod* const assign = list->nod_arg[i];
+		fb_assert(assign->nod_type == nod_assign);
+		org_values.add(assign->nod_arg[0]);
+		new_values.add(assign->nod_arg[1]);
+	}
+
+	// build the MODIFY node
+	dsql_nod* modify = MAKE_node(nod_modify_current, e_mdc_count);
+	dsql_ctx* context = get_context(target);
+	dsql_nod** ptr;
+
+	modify->nod_arg[e_mdc_context] = (dsql_nod*) context;
+
+	// push the USING context
+	request->req_context->push(get_context(source));
+	request->req_scope_level++;
+
+	// process old context values
+	request->req_context->push(context);
+	request->req_scope_level++;
+
+	for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
+		*ptr = PASS1_node(request, *ptr, false);
+
+	request->req_scope_level--;
+	request->req_context->pop();
+
+	// pop the USING context
+	request->req_scope_level--;
+	request->req_context->pop();
+
+	// process relation
+	modify->nod_arg[e_mdc_update] = pass1_relation(request, input->nod_arg[e_mrg_relation]);
+
+	// process new context values
+	for (ptr = new_values.begin(); ptr < new_values.end(); ++ptr)
+		*ptr = PASS1_node(request, *ptr, false);
+
+	request->req_context->pop();
+
+	// recreate list of assignments
+	modify->nod_arg[e_mdc_statement] = list =
+		MAKE_node(nod_list, list->nod_count);
+
+	for (i = 0; i < list->nod_count; ++i)
+	{
+		dsql_nod* assign = MAKE_node(nod_assign, 2);
+		assign->nod_arg[0] = org_values[i];
+		assign->nod_arg[1] = new_values[i];
+		list->nod_arg[i] = assign;
+	}
+
+	// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
+	field_appears_once(modify->nod_arg[e_mdc_statement],
+		input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched]->nod_arg[e_mrg_update_statement],
+		false, "MERGE");
+
+	// push the USING context
+	request->req_context->push(get_context(source));
+	request->req_scope_level++;
+
+	// the INSERT relation should be processed in a higher level than the source
+	request->req_scope_level++;
+
+	// build the INSERT node
+	dsql_nod* insert = MAKE_node(nod_insert, e_ins_count);
+	insert->nod_arg[e_ins_relation] = input->nod_arg[e_mrg_relation];
+	insert->nod_arg[e_ins_fields] =
+		input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_fields];
+	insert->nod_arg[e_ins_values] =
+		input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_values];
+	insert = PASS1_statement(request, insert, proc_flag);
+
+	// restore the scope level
+	request->req_scope_level--;
+
+	// pop the USING context
+	request->req_scope_level--;
+	request->req_context->pop();
+
+	// build a IF (target.RDB$DB_KEY IS NOT NULL)
+	dsql_nod* action = MAKE_node(nod_if, e_if_count);
+	action->nod_arg[e_if_condition] = MAKE_node(nod_not, 1);
+	action->nod_arg[e_if_condition]->nod_arg[0] = MAKE_node(nod_missing, 1);
+	action->nod_arg[e_if_condition]->nod_arg[0]->nod_arg[0] = MAKE_node(nod_dbkey, 1);
+	action->nod_arg[e_if_condition]->nod_arg[0]->nod_arg[0]->nod_arg[0] = target;
+	action->nod_arg[e_if_true] = modify;	// then UPDATE
+	action->nod_arg[e_if_false] = insert;	// else INSERT
+
+	// insert the IF inside the FOR SELECT
+	for_select->nod_arg[e_flp_action] = action;
+
+	// describe it as an INSERT
+	request->req_type = REQ_INSERT;
+
+	// and return the whole FOR SELECT
+	return for_select;
 }
 
 
