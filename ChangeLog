@@ -1,3 +1,18 @@
+2006-09-14 04:05  asfernandes
+
+	* firebird2/src/dsql/: dsql.cpp (1.183), gen.cpp (1.111),
+	keywords.cpp (1.55), node.h (1.82), parse.y (1.219), pass1.cpp
+	(1.286):
+	
+	MERGE statement
+
+2006-09-13 14:59  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.285):
+	
+	Fix the problem with CAST and parameters reported by Maycon Ferraça
+	in fb-devel
+
 2006-09-12 18:31  asfernandes
 
 	* firebird2/src/jrd/opt.cpp (1.279):
