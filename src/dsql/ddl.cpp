@@ -1159,9 +1159,13 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 	if (source)
 	{
 		fb_assert(source->str_length <= MAX_USHORT);
-		request->append_string(	isc_dyn_trg_source,
-								source->str_data,
-								(USHORT) source->str_length);
+		int j = find_start_of_body(source);
+		if (j < source->str_length)
+		{
+			request->append_string(	isc_dyn_trg_source,
+									source->str_data + j,
+									source->str_length - j);
+		}
 	}
 
 	request->append_number(isc_dyn_trg_sequence, 0);
@@ -3151,11 +3155,16 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 	dsql_nod* actions = (trigger_node->nod_arg[e_trg_actions]) ?
 		trigger_node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_body] : NULL;
 
-	if (source && actions) {
+	if (source && actions)
+	{
 		fb_assert(source->str_length <= MAX_USHORT);
-		request->append_string(	isc_dyn_trg_source,
-								source->str_data,
-								source->str_length);
+		int j = find_start_of_body(source);
+		if (j < source->str_length)
+		{
+			request->append_string(	isc_dyn_trg_source,
+									source->str_data + j,
+									source->str_length - j);
+		}
 	}
 
 	dsql_nod* constant = trigger_node->nod_arg[e_trg_active];
