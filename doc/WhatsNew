@@ -2,10 +2,50 @@
   * v2.0 Release Candidate 5
   **************************
 
+    * Fixed RC4 bug (CORE-924)
+        An attempt to select DB_KEY from a procedure crashes the server
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed RC4 bug (CORE-923)
+        Events (if many ones are registered) not working via the local protocol  
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug (CORE-921)
+        Core dump in stored procedure using execute statement
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Fixed bug (CORE-911)
+        AV in Classic server after long idle period when using long running read committed readonly transaction
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC4 bug (CORE-906)
+        Updating table with non-unique index causes unique data violation error  
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC4 bug (CORE-904)
+        Too big use of memory in "prepare"
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug (CORE-902)
+        Server crashes intermittently when executing DDL/DML statements
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed RC4 bug (CORE-898)
+        Two uninitialized variables cause a server crash in alice.cpp / common_main  
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
     * Fixed RC4 bug (CORE-895)
         In some rare cases unique index violation is possible. The case is when
-	existing index entry is the last entry on the page and inserted record
-	with the same key have a number less than in existing entry
+        existing index entry is the last entry on the page and inserted record
+        with the same key have a number less than in existing entry
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
