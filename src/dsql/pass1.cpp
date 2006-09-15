@@ -6378,8 +6378,8 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
 	action->nod_arg[e_if_condition] = MAKE_node(nod_missing, 1);
 	action->nod_arg[e_if_condition]->nod_arg[0] = MAKE_node(nod_dbkey, 1);
 	action->nod_arg[e_if_condition]->nod_arg[0]->nod_arg[0] = target;
-	action->nod_arg[e_if_true] = insert;	// else INSERT
-	action->nod_arg[e_if_false] = modify;	// then UPDATE
+	action->nod_arg[e_if_true] = insert;	// then INSERT
+	action->nod_arg[e_if_false] = modify;	// else UPDATE
 
 	// insert the IF inside the FOR SELECT
 	for_select->nod_arg[e_flp_action] = action;
