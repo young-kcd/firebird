@@ -491,7 +491,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
  *	i s c _ m o d i f y _ d p b
  *
  **************************************
- * CVC: This is exactly the same login than isc_expand_dpb, but for one param.
+ * CVC: This is exactly the same logic as isc_expand_dpb, but for one param.
  * However, the difference is that when presented with a dpb type it that's
  * unknown, it returns FB_FAILURE immediately. In contrast, isc_expand_dpb
  * doesn't complain and instead treats those as integers and tries to skip
