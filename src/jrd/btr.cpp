@@ -1600,7 +1600,7 @@ bool BTR_next_index(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	SSHORT id;
-	if ((USHORT)idx->idx_id == (USHORT) -1) {
+	if (idx->idx_id == (USHORT) -1) {
 		id = 0;
 		window->win_bdb = NULL;
 	}
