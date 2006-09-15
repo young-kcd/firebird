@@ -711,8 +711,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	attachment->att_network_protocol = options.dpb_network_protocol;
 	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_remote_pid = options.dpb_remote_pid;
-
 	attachment->att_next = dbb->dbb_attachments;
+
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
 	dbb->dbb_sys_trans->tra_attachment = attachment;
@@ -1782,6 +1782,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_remote_pid = options.dpb_remote_pid;
 	attachment->att_next = dbb->dbb_attachments;
+
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
 	dbb->dbb_sys_trans->tra_attachment = attachment;
