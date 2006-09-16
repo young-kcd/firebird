@@ -5830,6 +5830,8 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 	set_parameters_name(node->nod_arg[e_sto_statement],
 						node->nod_arg[e_sto_relation]);
 
+	request->req_context->pop();
+
 	return node;
 }
 
@@ -6364,7 +6366,7 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input, bool proc_flag)
 		input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_fields];
 	insert->nod_arg[e_ins_values] =
 		input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_values];
-	insert = PASS1_statement(request, insert, proc_flag);
+	insert = pass1_insert(request, insert, proc_flag);
 
 	// restore the scope level
 	request->req_scope_level--;
@@ -6914,7 +6916,7 @@ static dsql_nod* pass1_replace(dsql_req* request, dsql_nod* input, bool proc_fla
 	insert->nod_arg[e_ins_fields] = input->nod_arg[e_rep_fields];
 	insert->nod_arg[e_ins_values] = values;
 	insert->nod_arg[e_ins_return] = input->nod_arg[e_rep_return];
-	insert = PASS1_statement(request, insert, proc_flag);
+	insert = pass1_insert(request, insert, proc_flag);
 
 	// PASS1_statement will transform nod_insert to nod_store
 	fb_assert(insert->nod_type == nod_store);
@@ -7093,7 +7095,7 @@ static dsql_nod* pass1_replace(dsql_req* request, dsql_nod* input, bool proc_fla
 		}
 	}
 
-	update = PASS1_statement(request, update, proc_flag);
+	update = pass1_update(request, update, proc_flag);
 
 	// PASS1_statement will transform nod_update to nod_modify
 	fb_assert(update->nod_type == nod_modify);
