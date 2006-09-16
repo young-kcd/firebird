@@ -1,3 +1,21 @@
+2006-09-15 09:24  robocop
+
+	* firebird2/src/jrd/utl.cpp (1.94):
+	
+	Totally misc: comment.
+
+2006-09-15 09:24  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.178):
+	
+	Misc: idx_id is already USHORT.
+
+2006-09-15 08:11  dimitr
+
+	* firebird2/src/remote/xnet.cpp (1.76):
+	
+	Simplified the code as Adriano suggests.
+
 2006-09-15 04:14  asfernandes
 
 	* firebird2/src/jrd/jrd.cpp (1.268):
